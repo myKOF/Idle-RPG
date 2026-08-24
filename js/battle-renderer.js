@@ -172,6 +172,8 @@ var BattleRenderer = (function () {
     if (!ids.length) return !isTargetBoundThunderVfx(spec);
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
+      var allowDeadOrigin = !!(spec && spec.preserveDeadTargets && i === 0 &&
+        (spec.fxKind === 'chain' || spec.variant === 'knife-soulhunter'));
       if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
         if (id === 'pv-float' && (!S.player || S.player.dead)) return false;
         var thunderEnt = S.entities[id];
@@ -185,10 +187,11 @@ var BattleRenderer = (function () {
       var ent = S.entities[id];
       if (!ent) {
         /* 尚未建立的目標允許事件繼續；有 lastPos 代表它曾存在且已離場。 */
+        if (allowDeadOrigin && S.lastPos[id]) continue;
         if (S.lastPos[id]) return false;
         continue;
       }
-      if (ent.state === 'gone') return false;
+      if (ent.state === 'gone' && !allowDeadOrigin) return false;
     }
     return true;
   }
@@ -1561,10 +1564,15 @@ var BattleRenderer = (function () {
     return node;
   }
 
-  /* 投射物的拋物線離地最高點（像素）。模擬層帶 arcM（米）時換算成世界單位，
-     否則沿用原本所有投射物共用的 18px 微弧。 */
+   /* 投射物的拋物線離地最高點（像素）。飛刀固定回傳 0，其他投射物才使用
+      模擬層的 arcM（米）或原本共用的 18px 微弧。 */
   var PROJECTILE_DEFAULT_ARC_PX = 18;
+  function isKnifeProjectileSpec(spec) {
+    var v = spec && spec.variant;
+    return v === 'knife' || v === 'knife-bounce' || v === 'knife-soulhunter';
+  }
   function projectileArcPx(spec) {
+    if (isKnifeProjectileSpec(spec)) return 0;
     var m = Number(spec && spec.arcM);
     if (!(m > 0)) return PROJECTILE_DEFAULT_ARC_PX;
     var perM = (typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0)
@@ -1634,13 +1642,39 @@ var BattleRenderer = (function () {
           (isSmallFireball ? 0 : Math.sin(k * Math.PI) * projectileArcPx(spec));
         node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
         if (path && path.loopReturn) {
-          var loopRadius = Math.max(24, projectileArcPx(spec));
-          var loopAngle = Math.PI * 2 * k;
-          var loopNextAngle = Math.PI * 2 * Math.min(1, k + 0.01);
-          node.x = targetNow.x + Math.sin(loopAngle) * loopRadius;
-          node.y = targetNow.y - (1 - Math.cos(loopAngle)) * loopRadius;
-          var nextX = targetNow.x + Math.sin(loopNextAngle) * loopRadius;
-          var nextY = targetNow.y - (1 - Math.cos(loopNextAngle)) * loopRadius;
+          if (isKnifeProjectile) {
+            var returnOrigin = playerMuzzle();
+            var returnDx = targetNow.x - returnOrigin.x;
+            var returnDy = targetNow.y - returnOrigin.y;
+            var returnLength = Math.sqrt(returnDx * returnDx + returnDy * returnDy);
+            if (!(returnLength > 1)) {
+              returnDx = 1;
+              returnDy = 0;
+              returnLength = 1;
+            }
+            var penetration = Math.max(42, Math.min(96, returnLength * 0.25));
+            var throughX = targetNow.x + returnDx / returnLength * penetration;
+            var throughY = targetNow.y + returnDy / returnLength * penetration;
+            var outbound = k < 0.5;
+            var q = outbound ? k * 2 : (k - 0.5) * 2;
+            node.x = lerp(outbound ? from.x : throughX, outbound ? throughX : targetNow.x, q);
+            node.y = lerp(outbound ? from.y : throughY, outbound ? throughY : targetNow.y, q);
+            var nextK = Math.min(1, k + 0.01);
+            var nextOutbound = nextK < 0.5;
+            var nextQ = nextOutbound ? nextK * 2 : (nextK - 0.5) * 2;
+            var nextX = lerp(nextOutbound ? from.x : throughX,
+              nextOutbound ? throughX : targetNow.x, nextQ);
+            var nextY = lerp(nextOutbound ? from.y : throughY,
+              nextOutbound ? throughY : targetNow.y, nextQ);
+          } else {
+            var loopRadius = Math.max(24, projectileArcPx(spec));
+            var loopAngle = Math.PI * 2 * k;
+            var loopNextAngle = Math.PI * 2 * Math.min(1, k + 0.01);
+            node.x = targetNow.x + Math.sin(loopAngle) * loopRadius;
+            node.y = targetNow.y - (1 - Math.cos(loopAngle)) * loopRadius;
+            var nextX = targetNow.x + Math.sin(loopNextAngle) * loopRadius;
+            var nextY = targetNow.y - (1 - Math.cos(loopNextAngle)) * loopRadius;
+          }
           node.rotation = Math.atan2(nextY - node.y, nextX - node.x);
         }
         if (core && core._flameUpdate) core._flameUpdate(dt);

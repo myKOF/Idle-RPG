@@ -273,6 +273,41 @@ test('殞石術：三顆會在附近有多名敵人時先各自隨機取不同�
   assert.equal(new Set(selected).size, 3, '附近有三名敵人時不應三顆全鎖同一目標');
 });
 
+test('殞石術·火球爆裂：每顆殞石落地後再向附近 3 個目標發射小火球', () => {
+  const c = loadContext();
+  const calls = stubHits(c);
+  c.chance = () => false;
+  setLevels(c, 'fireball', [1, 1, 1, 1, 1, 1, 1]);
+  const p = playerEnt();
+  const main = enemy(1e9, 100, 0, '殞石落點');
+  // 距離落點 20 米內，但在殞石本體 15 米範圍外，避免混入本體 AOE 傷害。
+  const east = enemy(1e9, 300, 0, '東');
+  const north = enemy(1e9, 100, 200, '北');
+  const south = enemy(1e9, 100, -200, '南');
+  const enemies = [main, east, north, south];
+  const out = c.castSkill2(p, enemies, 'fireball', 'mv-float');
+
+  assert.equal(calls.length, 0, '殞石與分裂火球都必須等到飛行／落地後才命中');
+  assert.equal(c.SKILL2_RT.meteors.length, 3);
+
+  c.GT = 10;
+  c.tickSkill2(0, tickCtx(c, p, enemies));
+  const splitDmg = Math.round(1375 * 0.33); // 殞石 275% × 火球爆裂 33%
+  assert.equal(calls.filter((x) => Math.round(x.aCfg.atk) === splitDmg).length, 0,
+    '分裂火球必須在殞石落地後才建立，不能同拍直接命中');
+  assert.equal(c.SKILL2_RT.projectiles.length, 9,
+    '三顆殞石各自應建立三顆小火球');
+  assert.equal(out._pendingProjectiles, 9);
+
+  c.GT = 11;
+  c.tickSkill2(0, tickCtx(c, p, enemies));
+  assert.equal(calls.filter((x) => Math.round(x.aCfg.atk) === splitDmg).length, 9,
+    '三顆殞石的九顆小火球都應命中附近目標');
+  assert.equal(calls.filter((x) => x.ent === main && Math.round(x.aCfg.atk) === splitDmg).length, 0,
+    '小火球不得回頭命中殞石原目標');
+  assert.equal(out._pendingProjectiles, 0);
+});
+
 test('殞石術：落地前不查詢範圍命中，落地時才依當下位置結算', () => {
   const c = loadContext();
   const calls = stubHits(c);

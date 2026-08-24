@@ -30,6 +30,8 @@ test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   assert.match(skills2, /delay \+= travel;/);
   assert.match(skills2, /if \(!next \|\| next === cur \|\| next\.hp <= 0\) break;/);
   assert.match(skills2, /loopReturn: true/);
+  assert.match(skills2, /preserveDeadTargets: preserveDeadOrigin/);
+  assert.match(skills2, /extra\.preserveDeadTargets\) spec\.preserveDeadTargets = true/);
 
   const domChainStart = vfx.indexOf('function vfxChain');
   const domChainEnd = vfx.indexOf('/* ---- 時間安全', domChainStart);
@@ -49,8 +51,15 @@ test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   assert.match(canvasChain, /chainStart \+= hopTravel;/);
   assert.doesNotMatch(canvasChain, /baseDelay \+ \(hopIndex - 1\) \* stagger/);
   assert.match(vfx, /function vfxKnifeReturn\(/);
+  assert.match(vfx, /loopReturn: !!spec\.loopReturn/);
+  assert.match(vfx, /function vfxIsKnifeProjectileSpec\(spec\)/);
+  assert.match(vfx, /if \(vfxIsKnifeProjectileSpec\(spec\)\) return 0;/);
+  assert.match(vfx, /var outbound = k < 0\.5;/);
   assert.match(renderer, /pathOverride && pathOverride\.loopReturn/);
   assert.match(renderer, /spec\.loopReturn && targets\.length === 1/);
+  assert.match(renderer, /function isKnifeProjectileSpec\(spec\)/);
+  assert.match(renderer, /if \(isKnifeProjectileSpec\(spec\)\) return 0;/);
+  assert.match(renderer, /if \(isKnifeProjectile\) \{/);
 });
 
 test('普攻觸發角色動作；飛刀彈射與連鎖不觸發，目標離場後延遲事件失效', () => {
@@ -70,7 +79,7 @@ test('普攻觸發角色動作；飛刀彈射與連鎖不觸發，目標離場�
   /* 失效條件只認「離場」。若把垂死（dying／hp<=0）也算失效，普攻事件因 POS_BUFFER_MS
      延後播放，會在面板把敵人標成垂死之後才到期＝擊殺的那一刀永遠丟掉自己的動作。
      行為層的回歸測試在 tests/ui-worker-events.test.cjs。 */
-  assert.match(renderer, /if \(ent\.state === 'gone'\) return false;/);
+  assert.match(renderer, /if \(ent\.state === 'gone' && !allowDeadOrigin\) return false;/);
   assert.doesNotMatch(renderer, /ent\.state === 'dying' \|\| ent\.state === 'gone'/);
 });
 
@@ -918,11 +927,12 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.57/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.67/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.100/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.65/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260824-hp-lock-action'/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260823-gm-locks/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.69/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.101/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.70/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260824-knife-straight'/);
+  assert.match(worker, /\.\.\/skills\.js\?v=20260824-skill-ready-requeue/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260824-knife-straight/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

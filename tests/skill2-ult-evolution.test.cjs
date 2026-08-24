@@ -890,7 +890,7 @@ test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場�
   assert.ok(calls.length > baseHits, '追魂刃是額外多出來的一支');
 });
 
-test('Soulhunter returns to the only in-range target through a loop instead of A-to-A bounce', () => {
+test('Soulhunter returns to the only in-range target through straight segments instead of A-to-A bounce', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c);
   const specs = stubVfx(c);
@@ -913,7 +913,122 @@ test('Soulhunter returns to the only in-range target through a loop instead of A
   assert.equal(loop.targets.length, 1, 'return path should use one target instead of an A-to-A chain');
   assert.equal(loop.targets[0], 'only', 'return path should target the same enemy');
   assert.equal(loop.loopReturn, true, 'return chain must use the loop path');
-  assert.equal(loop.arcM, 4, 'return path should visibly arc around the target');
+  assert.equal(loop.arcM, undefined, 'return path should not request a parabolic arc');
+});
+
+test('Soulhunter continues from a killed target while in-range enemies remain', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c);
+  const specs = stubVfx(c);
+  forceRolls(c, 0);
+  maxLevels(c, 'knife'); equip(c, 'knife');
+  const p = playerEnt(); c.FIELD = { player: p };
+
+  const baseline = [
+    enemy(1e12, 3 * M, 0, 'dead'),
+    enemy(1e12, 4 * M, 0, 'alive-1'),
+    enemy(1e12, 5 * M, 0, 'alive-2'),
+    enemy(1e12, 50 * M, 0, 'out-of-range')
+  ];
+  c.castSkill2(p, baseline, 'knife', 'mv-float');
+  const body = Math.max.apply(null, calls.map((k) => k.atk));
+
+  const dead = enemy(1000, 3 * M, 0, 'dead');
+  const alive1 = enemy(1e12, 4 * M, 0, 'alive-1');
+  const alive2 = enemy(1e12, 5 * M, 0, 'alive-2');
+  const far = enemy(1e12, 50 * M, 0, 'out-of-range');
+  calls.length = 0;
+  specs.length = 0;
+  c.resolveHit = function (attacker, defender, aCfg) {
+    calls.push({ ent: defender, aCfg: aCfg, atk: aCfg.atk, elem: aCfg.skillElem, total: aCfg.totalDmgPct });
+    const boosted = aCfg.atk > body * 1.01;
+    const dmg = boosted ? defender.hp : 100;
+    defender.hp = Math.max(0, defender.hp - dmg);
+    return { dmg, crit: false, miss: false, blocked: false, killed: defender.hp <= 0 };
+  };
+
+  setUlt(c, 'knife', 'soulhunterBlade');
+  c.castSkill2(p, [dead, alive1, alive2, far], 'knife', 'mv-float');
+
+  const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
+  const soulHits = calls.filter((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6);
+  assert.ok(soulHits.some((k) => k.ent === dead), 'Soulhunter must hit the first target');
+  assert.ok(soulHits.some((k) => k.ent === alive1), 'Soulhunter must continue to another live target');
+  assert.ok(soulHits.some((k) => k.ent === alive2), 'Soulhunter must keep chaining while targets remain');
+  assert.ok(!soulHits.some((k) => k.ent === far), 'Soulhunter must not leave its 45-meter target pool');
+
+  const chains = specs.filter((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain');
+  assert.ok(chains.some((s) => s.targets[0] === 'dead' && s.targets.length === 2),
+    'the chain VFX must preserve a killed target as the launch point for the next bounce');
+  assert.ok(chains.every((s) => !s.targets.includes('out-of-range')),
+    'the chain VFX must not target an enemy outside the Soulhunter range');
+});
+
+test('Soulhunter knife remains auto-castable after its CDR reaches zero', () => {
+  const c = loadContext(['js/legendary.js']);
+  const calls = stubHits(c, { dmg: 1 });
+  forceRolls(c, 0);
+  maxLevels(c, 'knife'); equip(c, 'knife');
+  setUlt(c, 'knife', 'soulhunterBlade');
+  c.getStats = () => ({
+    atk: 1000, matk: 500, hp: 1000, mp: 1e9, level: 10, aspd: 2, cdr: 60,
+    critRate: 0, critDmg: 150, hit: 100, tenacity: 0, shieldEff: 0,
+    passives: {}, elemAtk: null, elemDmgPct: 0, elemDmgUp: {},
+    eliteDmg: 0, bossDmg: 0, normalDmg: 0, totalDmgPct: 0, dmgVsElem: null,
+    aoeDmg: 0, globalDmgRed: 0, legendaryEffects: {}, legendaryEffectMults: {}
+  });
+  const p = playerEnt(); c.FIELD = { player: p };
+  const enemies = [
+    enemy(1e12, 3 * M, 0, 'A'),
+    enemy(1e12, 4 * M, 0, 'B'),
+    enemy(1e12, 5 * M, 0, 'C')
+  ];
+  let castCount = 0;
+  c.recordRunSkillCast = (name, source) => {
+    if (source === 'skill2:knife') castCount++;
+  };
+
+  for (let i = 0; i < 160; i++) {
+    c.GT += 0.1;
+    c.tickSkillCds(p, 0.1);
+    const cast = c.tickSkillCast(p, 0.1);
+    if (!(cast && cast.casting)) c.pickAndCastSkill(p, enemies, 'mv-float');
+  }
+
+  assert.equal(c.skills2Cooldown('knife', c.skills2Levels('knife'), p), 6,
+    '60% CDR should reduce the 15-second knife cooldown to 6 seconds');
+  assert.ok(castCount >= 3, 'Soulhunter knife should be cast again after cooldown reaches zero');
+  assert.ok(calls.length > castCount, 'Soulhunter should keep producing its additional hits');
+});
+
+test('爆擊把飛刀冷卻扣到零時，技能仍會回到 ready queue', () => {
+  const c = loadContext(['js/legendary.js']);
+  stubHits(c, { dmg: 1 });
+  c.resolveHit = (attacker, defender) => {
+    defender.hp = Math.max(0, defender.hp - 1);
+    return { dmg: 1, crit: true, miss: false, blocked: false, killed: false };
+  };
+  forceRolls(c, 0);
+  maxLevels(c, 'knife'); equip(c, 'knife');
+  setUlt(c, 'knife', 'soulhunterBlade');
+  c.getStats = () => ({
+    atk: 1000, matk: 500, hp: 1000, mp: 1e9, level: 10, aspd: 2, cdr: 60,
+    critRate: 100, critDmg: 150, hit: 100, tenacity: 0, shieldEff: 0,
+    passives: {}, elemAtk: null, elemDmgPct: 0, elemDmgUp: {},
+    eliteDmg: 0, bossDmg: 0, normalDmg: 0, totalDmgPct: 0, dmgVsElem: null,
+    aoeDmg: 0, globalDmgRed: 0, legendaryEffects: {}, legendaryEffectMults: {}
+  });
+  const p = playerEnt(); p.mp = 1e9; c.FIELD = { player: p };
+  const enemies = Array.from({ length: 14 }, (_, i) => enemy(1e12, (3 + i * 0.1) * M, 0, 'E' + i));
+
+  assert.ok(c.pickAndCastSkill(p, enemies, 'mv-float'));
+  c.tickSkillCast(p, c.SKILL_CAST_LOCK);
+
+  assert.equal(p.skillCds['sg:knife'], 0, '爆擊縮減應能在同一次施放中把冷卻扣到零');
+  assert.equal(p._skillReadyQueued['sg:knife'], true,
+    '冷卻由命中事件歸零時，飛刀仍必須被標記為可施放');
+  assert.ok(c.pickAndCastSkill(p, enemies, 'mv-float'),
+    '下一次排程應能再次選到飛刀');
 });
 
 /* ---- 9) 疾風斬的三個超神進化 ---- */

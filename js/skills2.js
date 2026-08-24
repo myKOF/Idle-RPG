@@ -1317,6 +1317,7 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   if (extra && extra.variant) spec.variant = extra.variant;
   if (extra && extra.travelMs) spec.travelMs = extra.travelMs;
   if (extra && extra.delayMs > 0) spec.delayMs = Number(extra.delayMs);
+  if (extra && extra.preserveDeadTargets) spec.preserveDeadTargets = true;
   if (extra && extra.loopReturn) spec.loopReturn = true;
   if (extra && extra.projectile) spec.projectile = true;
   if (extra && extra.lineLength) spec.lineLength = Number(extra.lineLength);
@@ -2154,9 +2155,20 @@ function sgKnifeHit(cfg, target, dmgVal, delayMs, bonusPct, derived) {
    傳奇【處刑者】是唯一的例外：它的敘述明寫「優先在生命值最高的目標間彈射」，
    屬於特別指定的規則，維持挑範圍內生命值最高者。
    都彈過之後允許在範圍內回跳；範圍內沒有任何目標時回 null，不得跨距離找人。 */
-function sgKnifeNextBounce(cfg, cur, visited, maxGapPx) {
+/* 命中型冷卻縮減可能在 tickSkillCds 之外把冷卻直接扣到 0。
+   這時必須同步通知技能排程器，否則 UI 會顯示「無冷卻」，但 ready queue 仍沒有該技能。 */
+function sgReduceSkillCooldownOnHit(pEnt, cdKey, amount) {
+  if (!pEnt || !pEnt.skillCds || !(Number(amount) > 0)) return;
+  var before = Number(pEnt.skillCds[cdKey]) || 0;
+  if (!(before > 0)) return;
+  var after = Math.max(0, before - Number(amount));
+  pEnt.skillCds[cdKey] = after;
+  if (!(after > 0) && typeof markSkillReady === 'function') markSkillReady(pEnt, cdKey);
+}
+function sgKnifeNextBounce(cfg, cur, visited, maxGapPx, poolOverride) {
+  var pool = poolOverride || cfg.pool;
   if (cfg.execPct) {
-    var near = bfNearestOthers(cur, cfg.pool, cfg.pool.length, maxGapPx);
+    var near = bfNearestOthers(cur, pool, pool.length, maxGapPx);
     var best = null;
     for (var i = 0; i < near.length; i++) {
       if (visited.indexOf(near[i]) >= 0) continue;
@@ -2165,30 +2177,34 @@ function sgKnifeNextBounce(cfg, cur, visited, maxGapPx) {
     if (best) return best;
     return near.length ? near[0] : null;
   }
-  var rnd = bfRandomOther(cur, cfg.pool, maxGapPx, visited);
+  var rnd = bfRandomOther(cur, pool, maxGapPx, visited);
   if (rnd) return rnd;
-  return (typeof bfRandomOther === 'function') ? bfRandomOther(cur, cfg.pool, maxGapPx, null) : null;
+  return (typeof bfRandomOther === 'function') ? bfRandomOther(cur, pool, maxGapPx, null) : null;
 }
 
 /* 彈射鏈：從 cur 出發連續彈射 bounces 次，所有飛刀來源共用這一支。
    chainMax／chainChance＝第 6 階【連鎖彈射】的機率追加（其餘來源傳 0）。 */
-function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, chainChance, derived, vfxVariant, maxGapPx) {
+/* 命中型冷卻縮減可能在 tickSkillCds 之外把冷卻直接扣到 0。
+   這時必須同步通知技能排程器，否則 UI 會顯示「無冷卻」，但 ready queue 仍沒有該技能。 */
+function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, chainChance, derived, vfxVariant, maxGapPx, poolOverride) {
   if (!(dmgVal > 0) || !(bounces > 0)) return;
   var visited = [cur];
   var delay = startDelay;
   var chained = 0;
   var b = 0;
+  var preserveDeadOrigin = vfxVariant === 'knife-soulhunter';
   while (b < bounces) {
     b++;
     var next = sgKnifeNextBounce(cfg, cur, visited,
-      maxGapPx === undefined ? cfg.bounceRangePx : maxGapPx);
+      maxGapPx === undefined ? cfg.bounceRangePx : maxGapPx, poolOverride);
     // 允許 A→B→A，但任何自我彈射 A→A 都必須停止。
     if (!next || next === cur || next.hp <= 0) break;
     visited.push(next);
     var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(next) * 1000) : 0;
     sgEmitVfx('knife', [cur, next], cfg.floatSel, {
       fxKind: 'chain', variant: vfxVariant || 'knife-bounce', count: 1,
-      delayMs: delay, travelMs: [0, travel]
+      delayMs: delay, travelMs: [0, travel],
+      preserveDeadTargets: preserveDeadOrigin
     });
     sgKnifePathHit(cfg, cur, next, delay);
     var res = sgKnifeHit(cfg, next, dmgVal, delay + travel, cfg.execPct, derived);
@@ -2269,19 +2285,21 @@ function sgKnifeSoulhunter(cfg, ult) {
   });
   sgKnifePathHit(cfg, null, first, 0);
   sgKnifeHit(cfg, first, dmg, travel, cfg.execPct, false);
-  /* 有效追擊範圍內只剩一個目標時，不讓彈射鏈停在 A→A：
-     飛刀先貫穿目標，再繞行一圈返回，回到目標時才結算第二次傷害。 */
+   /* 有效追擊範圍內只剩一個目標時，不讓彈射鏈停在 A→A：
+      飛刀先沿直線貫穿目標，再沿直線返回，回到目標時才結算第二次傷害。 */
   if (inRange.length === 1) {
+    /* 首擊已殺死唯一目標時，範圍內沒有可供彈射的敵人，直接停止。 */
+    if (first.hp <= 0) return;
     var returnTravel = Math.max(120, travel || 0);
     sgEmitVfx('knife', [first], cfg.floatSel, {
       fxKind: 'chain', variant: 'knife-soulhunter', count: 1,
-      delayMs: travel, travelMs: [returnTravel], loopReturn: true, arcM: 4
+      delayMs: travel, travelMs: [returnTravel], loopReturn: true
     });
     sgKnifeHit(cfg, first, dmg, travel + returnTravel, cfg.execPct, false);
     return;
   }
-  sgKnifeBounceChain(cfg, first, dmg, travel, Math.max(1, live.length - 1), 0, 0, false,
-    'knife-soulhunter', 0);
+  sgKnifeBounceChain(cfg, first, dmg, travel, Math.max(0, inRange.length - 1), 0, 0, false,
+    'knife-soulhunter', 0, inRange);
 }
 
 function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
@@ -2334,9 +2352,7 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var cdrSec = lvs[6] > 0 ? sgVal(t[6].fx, 'sec', lvs[6]) : 0;
   var cdKey = SG_PREFIX + 'knife';
   function onCrit() {
-    if (cdrSec > 0 && pEnt.skillCds && pEnt.skillCds[cdKey] > 0) {
-      pEnt.skillCds[cdKey] = Math.max(0, pEnt.skillCds[cdKey] - cdrSec);
-    }
+    sgReduceSkillCooldownOnHit(pEnt, cdKey, cdrSec);
   }
 
   var cfg = {
@@ -2425,9 +2441,7 @@ function sgGaleThunderBolt(cfg, target) {
 function sgGaleOnHit(cfg, target, res) {
   if (!target || !res || res.miss) return;
   /* 傳奇【神速斬】：每次命中使疾風斬的冷卻時間 -N 秒（沿用第 6 階【極速斬】的同一個冷卻鍵）。 */
-  if (cfg.cdrSec > 0 && cfg.pEnt.skillCds && cfg.pEnt.skillCds[cfg.cdKey] > 0) {
-    cfg.pEnt.skillCds[cfg.cdKey] = Math.max(0, cfg.pEnt.skillCds[cfg.cdKey] - cfg.cdrSec);
-  }
+  sgReduceSkillCooldownOnHit(cfg.pEnt, cfg.cdKey, cfg.cdrSec);
   /* 傳奇【風捲殘雲】：機率在目標處形成龍捲風。 */
   if (cfg.tornado && chance(Number(cfg.tornado.chance) || 0)) sgGaleTornado(cfg, target);
   /* 傳奇【風行者】：附加風切狀態。移速／命中率折減與層數規則的唯一權威是
@@ -3081,6 +3095,41 @@ function sgFireballProjectilePlan(target) {
     speed: speed, waitForEnd: !geomOk };
 }
 
+/* 火球爆裂的共用投射佇列：一般火球在本體命中後呼叫，殞石則在落地回呼中呼叫。
+   兩者都必須先建立飛行物，不能在爆炸／落地的同一拍直接結算小火球傷害。 */
+function sgQueueFireballSplitProjectiles(pEnt, st, splitTargets, splitDmgVal,
+  floatSel, out, burnSpec) {
+  if (!Array.isArray(splitTargets) || !(splitDmgVal > 0)) return;
+  for (var si = 0; si < splitTargets.length; si++) {
+    var target = splitTargets[si];
+    if (!target) continue;
+    var plan = sgFireballProjectilePlan(target);
+    sgEmitVfx('fireball', [target], floatSel, {
+      fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
+      travelMs: [plan.travelMs], projectile: true
+    });
+    sgEmitVfx('fireball', [target], floatSel, {
+      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs
+    });
+    sgQueueFlyingProjectile(pEnt, st, 'fireball', splitDmgVal,
+      plan.origin, plan.angle, plan.length, floatSel, [target], {
+        singleHit: true, targetOnly: true, waitForEnd: plan.waitForEnd,
+        travelMs: plan.travelMs, speed: plan.speed, hitFn: sgFireballSplitProjectileHit,
+        burnSpec: burnSpec
+      }, out);
+  }
+}
+
+/* 殞石落地後才挑選附近目標，避免把分裂目標在施法當下鎖死。 */
+function sgFireballMeteorSplit(meteor, spec) {
+  if (!meteor || !spec || !(spec.count > 0) || !(spec.radius > 0) ||
+      !(spec.dmgVal > 0) || typeof bfRandomOthers !== 'function') return;
+  var targets = bfRandomOthers(meteor.target, meteor.pool || [],
+    spec.count, spec.radius, null);
+  sgQueueFireballSplitProjectiles(meteor.pEnt, meteor.st, targets, spec.dmgVal,
+    meteor.floatSel, meteor.out, meteor.burnSpec);
+}
+
 function sgFireballSplitProjectileHit(projectile, target, ctx) {
   var before = projectile.out.dmg;
   var res = sgHitOne(projectile.pEnt, projectile.st, target, projectile.dmgVal,
@@ -3103,22 +3152,8 @@ function sgFireballProjectileHit(projectile, target, ctx) {
 
   /* 火球爆裂必須在本體飛到並爆炸後才生成下一批一般小火球。 */
   var splits = projectile.splitTargets || [];
-  for (var si = 0; si < splits.length; si++) {
-    var plan = sgFireballProjectilePlan(splits[si]);
-    sgEmitVfx('fireball', [splits[si]], projectile.floatSel, {
-      fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
-      travelMs: [plan.travelMs], projectile: true
-    });
-    sgEmitVfx('fireball', [splits[si]], projectile.floatSel, {
-      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs
-    });
-    sgQueueFlyingProjectile(projectile.pEnt, projectile.st, 'fireball', projectile.splitDmgVal,
-      plan.origin, plan.angle, plan.length, projectile.floatSel, [splits[si]], {
-        singleHit: true, targetOnly: true, waitForEnd: plan.waitForEnd,
-        travelMs: plan.travelMs, speed: plan.speed, hitFn: sgFireballSplitProjectileHit,
-        burnSpec: projectile.burnSpec
-      }, projectile.out);
-  }
+  sgQueueFireballSplitProjectiles(projectile.pEnt, projectile.st, splits,
+    projectile.splitDmgVal, projectile.floatSel, projectile.out, projectile.burnSpec);
 }
 
 function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
@@ -3141,6 +3176,11 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   }
   var burnSpec = sgFireballBurnSpec(st, g, lvs);
   var nextMeteorTarget = meteor ? sgMeteorTargetBag(primary, pool, radius) : null;
+  var meteorSplitSpec = (meteor && lvs[2] > 0) ? {
+    count: Math.max(1, Math.floor(Number(t[2].fx.count) || 3)),
+    radius: bfMeterPx(Number(t[2].fx.m) || 20),
+    dmgVal: dmgVal * sgVal(t[2].fx, 'pct', lvs[2]) / 100
+  } : null;
 
   for (var v = 0; v < volleys; v++) {
     var meteorTarget = meteor ? nextMeteorTarget() : primary;
@@ -3170,7 +3210,9 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
     if (meteor) {
       sgQueueMeteor(pEnt, st, dmgVal, meteorTarget, pool, radius, burnSpec, floatSel, out,
-        GT + hitDelay / 1000);
+        GT + hitDelay / 1000, meteorSplitSpec ? {
+          onImpact: function (m) { sgFireballMeteorSplit(m, meteorSplitSpec); }
+        } : null);
     } else {
       var splitTargets = [];
       var splitDmgVal = 0;

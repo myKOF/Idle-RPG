@@ -2973,6 +2973,15 @@ function dequeueSkillReady(pEnt, id) {
   if (index >= 0) queue.splice(index, 1);
 }
 
+/* 施法鎖定期間目標可能被其他傷害清掉，導致 executeSkillCastJob 回傳 null。
+   這種失敗沒有寫入冷卻，但 beginSkillCast 已先移除就緒項；必須把仍可施放的技能補回佇列，
+   否則它會呈現「沒有冷卻卻永久不再施放」。 */
+function requeueSkillAfterFailedCast(pEnt, id) {
+  if (!pEnt || id === undefined || id === null) return;
+  if (pEnt.skillCds && (pEnt.skillCds[id] || 0) > 0) return;
+  queueSkillReady(pEnt, id);
+}
+
 function markSkillReady(pEnt, id) {
   ensureSkillReadyOrder(pEnt);
   pEnt._skillReadyOrder[id] = pEnt._skillReadySeq++;
@@ -3020,9 +3029,14 @@ function executeSkillCastJob(job) {
 function beginSkillCast(job) {
   var pEnt = job && job.pEnt;
   if (!pEnt || skillCastInProgress(pEnt)) return null;
-  dequeueSkillReady(pEnt, job.loadoutKey || job.skillId);
+  var readyKey = job.loadoutKey || job.skillId;
+  dequeueSkillReady(pEnt, readyKey);
   var sec = skillCastTimeFor(job.def, job.fx, job.lv, job.opts);
-  if (!(sec > 0)) return executeSkillCastJob(job);
+  if (!(sec > 0)) {
+    var immediate = executeSkillCastJob(job);
+    if (!immediate) requeueSkillAfterFailedCast(pEnt, readyKey);
+    return immediate;
+  }
 
   var entry = {
     pEnt: pEnt,
@@ -3064,7 +3078,9 @@ function tickSkillCast(pEnt, dt) {
   if (index >= 0) SKILL_CAST_RT.splice(index, 1);
   pEnt._skillCastRemaining = 0;
   pEnt._skillCastId = '';
-  var result = executeSkillCastJob(entry) || { killed: false, dmg: 0 };
+  var result = executeSkillCastJob(entry);
+  if (!result) requeueSkillAfterFailedCast(pEnt, entry.loadoutKey || entry.skillId);
+  result = result || { killed: false, dmg: 0 };
   return {
     completed: true,
     result: result,

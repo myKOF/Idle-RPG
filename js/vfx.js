@@ -830,6 +830,11 @@ function vfxProjectileCls(spec) {
   return 'vfx-proj-plain';
 }
 
+function vfxIsKnifeProjectileSpec(spec) {
+  var v = spec && spec.variant;
+  return v === 'knife' || v === 'knife-bounce' || v === 'knife-soulhunter';
+}
+
 /* 僅用於投射物路徑內的數值插值，不涉及遊戲公式。 */
 function vfxLerp(a, b, t) { return a + (b - a) * t; }
 
@@ -1009,6 +1014,7 @@ function vfxBarrageProjectile(spec, layer, from, to, side, lane, delayMs, travel
 /* 投射物的拋物線離地最高點（畫面單位）：模擬層帶 arcM（米）才走拋物線，
    沒帶就回 0 ＝維持既有的直線／微弧畫法。 */
 function vfxProjectileArcPx(spec) {
+  if (vfxIsKnifeProjectileSpec(spec)) return 0;
   var m = Number(spec && spec.arcM);
   if (!(m > 0)) return 0;
   var perM = (typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0)
@@ -1217,7 +1223,7 @@ function vfxKnifeBounce(spec, layer, from, to, delayMs, travelMs) {
   vfxProjectile(next, layer, from, to, delayMs, travelMs);
 }
 
-/* 無限追魂刃只有一個有效目標時的回繞路徑：從目標出發，繞一個弧形圈後回到同一目標。
+/* 無限追魂刃只有一個有效目標時的回返路徑：從目標出發，沿直線貫穿後再沿直線返回。
    不能把 from/to 直接交給一般投射物，否則 Canvas 會因起點已在目標上而立即結束。 */
 function vfxKnifeReturn(spec, layer, pt, delayMs, travelMs) {
   if (!pt) return;
@@ -1232,7 +1238,20 @@ function vfxKnifeReturn(spec, layer, pt, delayMs, travelMs) {
   var trail = document.createElement('span');
   trail.className = 'vfx-proj-trail';
   d.appendChild(trail);
-  var radius = Math.max(24, vfxProjectileArcPx(spec));
+  var origin = vfxPointOf('pv-float', layer) || vfxOriginPoint(layer) || { x: pt.x - 1, y: pt.y };
+  var directionX = pt.x - origin.x;
+  var directionY = pt.y - origin.y;
+  var directionLength = Math.sqrt(directionX * directionX + directionY * directionY);
+  if (!(directionLength > 1)) {
+    directionX = 1;
+    directionY = 0;
+    directionLength = 1;
+  }
+  var penetration = Math.max(42, Math.min(96, directionLength * 0.25));
+  var through = {
+    x: pt.x + directionX / directionLength * penetration,
+    y: pt.y + directionY / directionLength * penetration
+  };
   var generation = _vfxGeneration;
   var startedAt = Date.now() + Math.max(0, delayMs || 0);
   function frame() {
@@ -1242,12 +1261,19 @@ function vfxKnifeReturn(spec, layer, pt, delayMs, travelMs) {
       d.style.opacity = '0';
     } else {
       var k = Math.min(1, elapsed / Math.max(1, flight));
-      var angle = Math.PI * 2 * k;
-      var x = pt.x + Math.sin(angle) * radius;
-      var y = pt.y - (1 - Math.cos(angle)) * radius;
-      var nextAngle = Math.PI * 2 * Math.min(1, k + 0.01);
-      var nx = pt.x + Math.sin(nextAngle) * radius;
-      var ny = pt.y - (1 - Math.cos(nextAngle)) * radius;
+      var outbound = k < 0.5;
+      var q = outbound ? k * 2 : (k - 0.5) * 2;
+      var start = outbound ? pt : through;
+      var end = outbound ? through : pt;
+      var x = vfxLerp(start.x, end.x, q);
+      var y = vfxLerp(start.y, end.y, q);
+      var nextK = Math.min(1, k + 0.01);
+      var nextOutbound = nextK < 0.5;
+      var nextQ = nextOutbound ? nextK * 2 : (nextK - 0.5) * 2;
+      var nextStart = nextOutbound ? pt : through;
+      var nextEnd = nextOutbound ? through : pt;
+      var nx = vfxLerp(nextStart.x, nextEnd.x, nextQ);
+      var ny = vfxLerp(nextStart.y, nextEnd.y, nextQ);
       d.style.left = x + 'px';
       d.style.top = y + 'px';
       d.style.setProperty('--vfx-rot', Math.atan2(ny - y, nx - x).toFixed(3) + 'rad');
@@ -2300,6 +2326,8 @@ function renderCombatVfx(spec) {
     elem: spec.elem || null, cat: spec.cat || null, variant: spec.variant || null, dur: dur,
     area: spec.area || null,
     travelMs: spec.travelMs || null,
+    loopReturn: !!spec.loopReturn,
+    arcM: Number(spec.arcM) > 0 ? Number(spec.arcM) : 0,
     projectile: !!spec.projectile,
     lineLength: Number(spec.lineLength) > 0 ? Number(spec.lineLength) : null,
     lineWidth: Number(spec.lineWidth) > 0 ? Number(spec.lineWidth) : null,

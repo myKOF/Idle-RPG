@@ -145,6 +145,36 @@ test('新版技能使用完整 sg 裝載鍵解除就緒佇列，固定關卡可�
   assert.deepEqual(calls, ['alpha', 'beta', 'alpha', 'beta']);
 });
 
+test('新版技能施法期間目標消失後，冷卻為零時仍會重新加入就緒佇列', () => {
+  const context = loadGameContext();
+  context.G.player.loadout = ['sg:knife'];
+  context.SKILLS2 = { knife: { cost: 0 } };
+  context.skills2Castable = () => true;
+  context.skills2ActsPassive = () => false;
+  context.skills2CanReach = () => true;
+  const calls = [];
+  context.castSkill2 = (player, target, gid) => {
+    if (!target.some((ent) => ent && ent.hp > 0)) return null;
+    calls.push(gid);
+    player.skillCds['sg:' + gid] = 1;
+    return { killed: false, dmg: 0 };
+  };
+
+  const player = playerEntity();
+  const firstTarget = { hp: 1000 };
+  assert.ok(context.pickAndCastSkill(player, [firstTarget], 'float-layer'));
+  firstTarget.hp = 0;
+  const completed = context.tickSkillCast(player, context.SKILL_CAST_LOCK);
+  assert.equal(completed.completed, true);
+  assert.deepEqual(calls, []);
+
+  const nextTarget = { hp: 1000 };
+  context.tickSkillCds(player, 1);
+  assert.ok(context.pickAndCastSkill(player, [nextTarget], 'float-layer'));
+  context.tickSkillCast(player, context.SKILL_CAST_LOCK);
+  assert.deepEqual(calls, ['knife']);
+});
+
 test('多敵人範圍技能每個目標承受完整傷害，不依目標數分攤', () => {
   const context = loadGameContext();
   assert.equal(context.skillDamagePerTarget(10000, 100, 4), 20000);
