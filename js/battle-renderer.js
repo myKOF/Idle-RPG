@@ -2341,6 +2341,14 @@ var BattleRenderer = (function () {
     var orbR = Math.max(3, Number(a.orbR) || 0);
     var orbs = Math.max(1, Math.min(12, Math.floor(Number(a.orbs) || 1)));
     var ccw = Number(a.spin) < 0;
+    /* 超神【無限星環】／【烈陽星環】的兩組語意參數（模擬層 sgOrbitEmitVfx 送來）。
+       沒有這幾條時全部退化成 0／1，畫法與改造前完全相同。 */
+    var growPx = Math.max(0, Number(a.grow) || 0);          // 環半徑每秒外擴多少 px
+    var growMax = Math.max(0, Number(a.growMax) || 0);      // 外擴上限（0＝不設限）
+    var isSpiral = Number(a.spiral) > 0;                    // 每一團各自從圓心往外長
+    var spiralLag = Math.max(0, Number(a.spiralLag) || 0);  // 相鄰兩團的出生間隔（秒）
+    var orbGrowTo = Math.max(1, Number(a.orbGrowTo) || 1);  // 火狩體積最多長到幾倍
+    var orbGrowSec = Math.max(0.1, Number(a.orbGrowSec) || 1);
     var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.5, spec.dur || 4));
     /* 合併鍵要含變體與屬性：火狩與環體電球可能同時存在且半徑相同，
        只用「半徑＋方向」當鍵會讓後來的那一道被誤認成同一道而整組不畫。 */
@@ -2372,23 +2380,35 @@ var BattleRenderer = (function () {
         node.x = p.x; node.y = p.y - 12;      // 略高於腳底，對齊角色貼圖的視覺中心
         var fade = ring.t > ring.dur - 0.4 ? Math.max(0, (ring.dur - ring.t) / 0.4) : 1;
         var base = spin * ring.t;
+        /* 體積成長（烈陽星環）：與模擬層同一條曲線——出生後 orbGrowSec 秒內線性長到 orbGrowTo 倍。 */
+        var curOrbR = orbGrowTo > 1
+          ? orbR * (1 + (orbGrowTo - 1) * Math.max(0, Math.min(1, ring.t / orbGrowSec)))
+          : orbR;
+        /* 環半徑成長：整環一起長（虛空斬）時提前算好；螺旋則每一團各自算。 */
+        var capR = growMax > 0 ? growMax : Infinity;
+        var wholeR = growPx > 0 && !isSpiral ? Math.min(capR, ringR + growPx * ring.t) : ringR;
         g.clear();
-        g.circle(0, 0, ringR).stroke({ color: theme.c1, width: 1.5, alpha: 0.18 * fade });
+        g.circle(0, 0, wholeR).stroke({ color: theme.c1, width: 1.5, alpha: 0.18 * fade });
         for (var i = 0; i < ring.orbs; i++) {
+          /* 螺旋：第 i 團晚 i×spiralLag 秒才出生，因此它的半徑短了那一段時間的成長量——
+             一整組畫出來就是一條從圓心往外長的螺旋，而不是同心圓。 */
+          var orbT = isSpiral ? Math.max(0, ring.t - i * spiralLag) : ring.t;
+          var rNow = isSpiral ? Math.min(capR, ringR + growPx * orbT) : wholeR;
           var ang = base + Math.PI * 2 * i / ring.orbs;
-          var ox = Math.cos(ang) * ringR;
-          var oy = Math.sin(ang) * ringR * 0.62;  // 俯視壓扁，與棋盤的透視一致
-          g.circle(ox, oy, orbR).fill({ color: theme.c2, alpha: 0.85 * fade });
-          g.circle(ox, oy, orbR * 0.55).fill({ color: theme.c1, alpha: 0.95 * fade });
+          var ox = Math.cos(ang) * rNow;
+          var oy = Math.sin(ang) * rNow * 0.62;  // 俯視壓扁，與棋盤的透視一致
+          g.circle(ox, oy, curOrbR).fill({ color: theme.c2, alpha: 0.85 * fade });
+          g.circle(ox, oy, curOrbR * 0.55).fill({ color: theme.c1, alpha: 0.95 * fade });
           // 尾焰拖在行進方向的後方
-          g.circle(ox - Math.cos(ang + spin * 0.08) * orbR * 0.8, oy - Math.sin(ang + spin * 0.08) * orbR * 0.5,
-            orbR * 0.42).fill({ color: theme.glow || theme.c1, alpha: 0.4 * fade });
+          g.circle(ox - Math.cos(ang + spin * 0.08) * curOrbR * 0.8, oy - Math.sin(ang + spin * 0.08) * curOrbR * 0.5,
+            curOrbR * 0.42).fill({ color: theme.glow || theme.c1, alpha: 0.4 * fade });
         }
         partAcc += dt;
         if (partAcc > 0.12 && !REDUCED_MOTION && fade > 0.5) {
           partAcc = 0;
           var sa = base + Math.PI * 2 * Math.floor(Math.random() * ring.orbs) / ring.orbs;
-          spawnRiser(p.x + Math.cos(sa) * ringR, p.y - 12 + Math.sin(sa) * ringR * 0.62, theme, spec.glyph);
+          var riserR = growPx > 0 ? Math.min(capR, ringR + growPx * ring.t) : ringR;
+          spawnRiser(p.x + Math.cos(sa) * riserR, p.y - 12 + Math.sin(sa) * riserR * 0.62, theme, spec.glyph);
         }
         if (ring.t >= ring.dur) {
           ring.done = true;
@@ -4596,7 +4616,8 @@ var BattleRenderer = (function () {
           });
           break;
         }
-        if (spec.variant === 'firepillar-impact') {
+        /* 傳奇【炎爆】沿用火柱的爆點畫法（爆炸＋衝擊波）：它就是一次火焰爆炸。 */
+        if (spec.variant === 'firepillar-impact' || spec.variant === 'firehunt-detonate') {
           var fireImpactPt = spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)
             ? { x: Number(spec.area.x), y: Number(spec.area.y) }
             : (targets.length ? posOf(targets[0]) : null);

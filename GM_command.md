@@ -689,7 +689,7 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 
 - 第 2 個參數是**選項編號**（1／2／3，對應技能面板三選一的左中右），`off` ＝清除選擇。
 - 第 3 個參數留白＝`max`（Lv.10）；填 0 等同 `off`。
-- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲），`all` 會自動略過其餘群組。
+- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術），`all` 會自動略過其餘群組。
 - **生效前提是該群組前 7 階全部滿級**：沒滿級時指令仍會寫入，但效果暫時失效
   （面板會標「暫時失效」）。要立刻看到效果，先 `sglv thrust max` 再 `sgult thrust 1`。
 
@@ -709,6 +709,12 @@ sgult fireball 3                      （火球術＝火鳳遼原：殞石 +1 �
 sgult firepillar 1                    （火龍捲＝烈焰暴風：施放道數倍增）
 sgult firepillar 2                    （火龍捲＝永劫火獄：游走並沿路留下火池）
 sgult firepillar 3                    （火龍捲＝火龍之吞噬：聚攏在身邊並拉近敵人）
+sgult firehunt 1                      （火狩＝烈陽星環：＋1 團、體積成長、轉速與傷害提高）
+sgult firehunt 2                      （火狩＝無限星環：從圓心往外的螺旋，持續放出火狩）
+sgult firehunt 3                      （火狩＝火神降臨：常駐火焰領域＋普攻射出火狩星環）
+sgult rockarmor 1                     （岩甲術＝超重岩之術：範圍石化並放大土系受傷）
+sgult rockarmor 2                     （岩甲術＝金剛不壞：減傷、生命上限、護盾與尖刺齊漲）
+sgult rockarmor 3                     （岩甲術＝超重力場：範圍僵化＋岩甲期間土系增傷）
 sgult all off                         （清除所有超神進化選擇）
 ```
 

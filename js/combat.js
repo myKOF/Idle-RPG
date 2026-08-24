@@ -847,7 +847,10 @@ function monsterAtkCfg(m, mult) {
         ea = scaled;
     }
     return {
-        atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100),
+        /* 新版技能超神【超重力場】的【僵化】（js/skills2.js）：敵人造成的傷害下降。
+           掛在攻擊力這一格＝敵人的普攻與技能一體變弱，與【風切】的命中折減同一個位置。 */
+        atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100) *
+            ((typeof skill2EnemyDamageFactor === 'function') ? skill2EnemyDamageFactor(m) : 1),
         dmgType: m.magic ? 'magic' : 'phys', level: m.level,
         // 敵人爆擊：爆擊率依敵種（普通/菁英/BOSS）、爆傷共用，數值 → formula.js §4 ENEMY_CRIT_*
         critRate: enemyCritRateFor(m), critDmg: ENEMY_CRIT_DMG_PCT,
@@ -1007,6 +1010,17 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                 res.dmg += legendaryBasic.dmg || 0;
                 if (legendaryBasic.killed) res.killed = true;
                 logMsg += ' <span class="log-hl-good">傳奇特效追加 ' + fmt(legendaryBasic.dmg || 0) + ' 傷害</span>';
+            }
+        }
+        /* 新版技能超神【火神降臨】（火狩，js/skills2.js）：普攻同時射出數顆火狩星環。
+           掛在 depth 0 段＝只有主攻擊會附加，追加攻擊（連擊／連擊數）不重複觸發，
+           與【傳奇特效追加】同一條邊界。 */
+        if (typeof skills2OnBasicAttack === 'function') {
+            var sgBasic = skills2OnBasicAttack(pEnt, mEnt, floatSel, st);
+            if (sgBasic) {
+                res.dmg += sgBasic.dmg || 0;
+                if (sgBasic.killed) res.killed = true;
+                logMsg += ' <span class="log-hl-good">火狩星環追加 ' + fmt(sgBasic.dmg || 0) + ' 傷害</span>';
             }
         }
         if (!res.miss && typeof skillRtChargeInput === 'function') {

@@ -45,6 +45,14 @@ function bfContactDist() { return bfNum('BF_CONTACT_DIST', 46); }     // 走到�
 /* 我方只有一種速度：不是在移動就是站著。追擊與空場推進共用同一個值——
    兩段速度會讓畫面看起來忽快忽慢，像一下走路一下跑步。 */
 function bfPlayerSpeed() { return bfNum('BF_PLAYER_SPEED', 300); }
+/* 我方跑速的乘區：來源是新版技能的增益（岩甲術傳奇【輕飛甲】，
+   收斂在 js/skills2.js 的 skill2PlayerMoveFactor）。
+   本檔不認識任何技能，只認得「有沒有人提供倍率」——沒載入就恆為 1。 */
+function bfPlayerSpeedFactor(pEnt) {
+  if (typeof skill2PlayerMoveFactor !== 'function') return 1;
+  var f = Number(skill2PlayerMoveFactor(pEnt));
+  return (isFinite(f) && f > 0) ? f : 1;
+}
 /* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。 */
 function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 210); }
 /* 單一敵人的跑速倍率：來源是新版技能的場域型緩速（泥沼術×冰系寒霜，
@@ -239,7 +247,7 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   var live = bfLiveList(enemies).filter(function (e) { return !!bfPos(e); });
   if (!live.length) {
     /* 空場：往前方（+x）推進，地板會跟著往後捲，不會呆站著等下一波。 */
-    home.x += bfPlayerSpeed() * dt;
+    home.x += bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt;
     BF_PLAYER_CHASING = true;
     return true;
   }
@@ -264,7 +272,7 @@ function bfTickPlayer(enemies, dt, preferred, pEnt) {
   var dx = p.x - home.x, dy = p.y - home.y;
   var len = Math.sqrt(dx * dx + dy * dy);
   if (len <= 0.0001) return false;
-  var step = Math.min(gap, bfPlayerSpeed() * dt);
+  var step = Math.min(gap, bfPlayerSpeed() * bfPlayerSpeedFactor(pEnt) * dt);
   home.x += (dx / len) * step;
   home.y += (dy / len) * step;
   /* 這一步就走到定位了：當下就解除追擊狀態，不要拖到下一個 tick——

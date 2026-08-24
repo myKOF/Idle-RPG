@@ -1,5 +1,53 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第六批（火狩／岩甲術十特效 ＋ 兩組超神進化）（2026-08-25）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（魔法系第二批）
+- 使用者需求：實作「火狩」與「岩甲術」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）火狩、岩甲術兩段。
+- 前置依賴：無（`.claude/check-conflicts.ps1` 對 13 支目標檔案回報退出碼 0，磁碟上沒有衝突來源）。
+- 前五批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用，沒有新增架構。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 98）：水晶球→火狩＝增焰／伴生併發／烈火狩／炎爆／狩獵者；
+    法器→岩甲術＝重岩甲／輕飛甲／巨岩增幅／尖刺甲／大地之心。兩者都是單手副手，不吃雙手 ×2 補償。
+  - SKILLS2 新增 6 個超神進化（開放群組 10 → 12）：火狩＝烈陽星環／無限星環／火神降臨；
+    岩甲術＝超重岩之術／金剛不壞／超重力場。
+  - 環繞場域 `sgSpawnOrbitField` 新增兩個泛用能力：`bodyGrowTo`／`bodyGrowSec`（環繞體體積成長，
+    刻意與既有的 `growPxPerSec` 環半徑成長分開）與 `spiral`／`spiralMaxPx`／`spawnLeft`／`spawnGap`
+    （半徑改掛在每一團上、分批放出＝螺旋）。其他環繞群組沿用預設值，行為不變。
+  - 新增狀態 `sgPetrify`（石化：行動限制交給暈眩，狀態只放大土系受傷）與
+    `sgStiffen`（僵化：移動／攻速／傷害共用同一個下降值，接到三個既有收斂點）。
+  - 新增兩個收斂點：`bfPlayerSpeedFactor`（我方移動速度的唯一乘區，比照 `bfEnemySpeedFactor`）與
+    `skills2OnBasicAttack`（新版技能的普攻附加，掛在 `doPlayerAttack` 的 depth 0 段）。
+  - Worker 協議 v23 → v24：環形 `area` 新增 `growMax`／`spiral`／`spiralLag`／`orbGrowTo`／`orbGrowSec`
+    五個可選欄位（模擬與顯示共用的幾何，AI_RULES 8.3）。
+- 修改檔案：`js/data.js`、`js/skills2.js`、`js/status.js`、`js/formula.js`、`js/legendary.js`、
+  `js/battlefield.js`、`js/combat.js`、`js/vfx.js`、`js/battle-renderer.js`、`js/bridge.js`、
+  `js/worker/protocol.js`、`js/worker/sim.worker.js`、`index.html`、
+  `config/CSV/*` 與 `config/Excel/*`（Equipment_Affix／Skills2／Status）、
+  `game_formula.md`、`GM_command.md`、`PATCH.md`、`docs/WORKER_PROTOCOL.md`、
+  `tests/skill2-firehunt-rock-legendary.test.cjs`（新增，19 案例）、
+  `tests/skill2-ult-evolution.test.cjs`、`tests/legendary-affix.test.cjs`、
+  `tests/skill2-vfx.test.cjs`、`tests/worker-protocol.test.cjs`、本文件。
+- 未修改但檢查過：`js/legendary.js` 的傳奇橋不需改（只加了土系增傷那一筆）、
+  `js/gm_exec.js`（`sgult` 依 `sgUltDefs` 動態列舉，新群組自動納入）、
+  `js/save.js`（第 8 格正規化與群組無關）、`js/ui.js`（格數走 `sgSlotCount`）。
+- 驗證方式：`npm test` 全量 1741 案例（1729 通過）、`node tools/build_check.cjs`（298 檔）、
+  `config_tables --gen <表>／--sync／--apply` 往返（語意變更 0）、快取版號同步、`git diff --check`。
+- 已知風險：
+  - **本批之前就存在的 12 條紅燈未處理**（改動前後完全相同，非本次造成）：
+    多半是「所有技能 CD 統一為 15 秒」之後沒同步的斷言（`skill2-system` 的
+    `earthguard 冷卻/消耗不合法`、地／冰／雷／風四組的「群組都在表上」等），
+    另有 1 條 Canvas 投射物預判測試。要不要一併修屬另案，需使用者決定。
+  - 六個設計文檔未指定的取值與判斷見 PATCH.md 的「待確認」段
+    （金剛不壞的生命上限是否補血、無限星環的外擴上限、伴生併發是否消耗環繞體…）。
+- 未完成項目：尚未進行瀏覽器實機目視驗證與 DPS 基準測試（建議交由 Antigravity）。
+- Commit：待建立。
+
+---
+
 ## Claude｜自動施放的技能在角色死亡／倒地時停止（2026-08-24）
 
 - 狀態：已完成

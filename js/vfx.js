@@ -2609,7 +2609,9 @@ function renderCombatVfx(spec) {
 
   /* 烈焰衝擊是場域消失時的一次性範圍爆炸：特效錨定場域中心，
      不跟著受擊目標各自重播，並保留每個目標的受擊反饋。 */
-  if (kind === 'burst' && s.variant === 'firepillar-impact') {
+  /* 傳奇【炎爆】沿用火柱的爆點畫法（爆炸＋衝擊波）：它就是一次火焰爆炸，
+     沒有這條分支會掉到泛用結尾、只剩一個普通命中爆點。 */
+  if (kind === 'burst' && (s.variant === 'firepillar-impact' || s.variant === 'firehunt-detonate')) {
     var fireImpact = resolveTargets();
     var fireCenter = spec.area && isFinite(spec.area.x) && isFinite(spec.area.y)
       ? { x: Number(spec.area.x), y: Number(spec.area.y) }
