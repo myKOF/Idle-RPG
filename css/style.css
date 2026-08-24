@@ -7999,6 +7999,67 @@ textarea:disabled,
   pointer-events: none;
 }
 
+/* ---- 超神進化【地爆天星】（DOM 後備路徑；高塔）---- */
+
+/* 落下前的黑影：由一小點擴大到蓋滿整個特效層。
+   只動 transform／opacity，不動 width／height——那兩個會觸發版面重排。 */
+.vfx-starfall-shadow {
+  left: 50%;
+  top: 50%;
+  width: 240%;
+  height: 200%;
+  margin: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(10, 0, 0, 0.78) 46%,
+    rgba(20, 2, 0, 0.34) 74%,
+    rgba(0, 0, 0, 0) 100%);
+  transform: translate(-50%, -50%) scale(0.04);
+  opacity: 0;
+  pointer-events: none;
+  animation-name: vfxStarfallShadow;
+  animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55);
+  animation-fill-mode: both;
+}
+
+@keyframes vfxStarfallShadow {
+  0% { transform: translate(-50%, -50%) scale(0.04); opacity: 0; }
+  12% { opacity: 0.16; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.58; }
+}
+
+/* 超巨型殞石：沿用 .vfx-meteor 的飛行動畫，只把火焰壓成暗紅。
+   火星的顏色是 JS 逐顆寫進 style 的，因此這裡用 filter 統一壓暗＋偏紅，
+   不必為了換色去複製一份 emitter。 */
+.vfx-meteor-starfall {
+  filter: brightness(0.62) saturate(1.55) hue-rotate(-12deg);
+}
+
+/* 殞石正前方（垂直落下＝正下方）的火焰衝擊波。 */
+.vfx-starfall-shock {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--shock-size, 46px) * 0.62);
+  width: var(--shock-size, 46px);
+  height: calc(var(--shock-size, 46px) * 0.42);
+  margin-left: calc(var(--shock-size, 46px) * -0.5);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    rgba(255, 178, 87, 0.55) 0%,
+    rgba(224, 69, 26, 0.34) 52%,
+    rgba(92, 10, 6, 0) 100%);
+  box-shadow: 0 0 18px rgba(224, 69, 26, 0.75), 0 0 34px rgba(161, 18, 8, 0.5);
+  pointer-events: none;
+  animation: vfxStarfallShock 320ms ease-in-out infinite;
+}
+
+@keyframes vfxStarfallShock {
+  0% { transform: scale(0.82, 0.72); opacity: 0.72; }
+  50% { transform: scale(1.16, 1.02); opacity: 1; }
+  100% { transform: scale(0.82, 0.72); opacity: 0.72; }
+}
+
 /* 烈焰衝擊：場域消失時的爆炸衝擊波，使用更厚的外環與更強的火光。 */
 .vfx-firepillar-shockwave {
   width: 0;

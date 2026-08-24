@@ -926,13 +926,14 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.57/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.69/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.101/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.71/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260824-fire-legendary'/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.58/);
+  assert.match(index, /js\/status\.js\?v=1\.0\.16/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.70/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.102/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.72/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260824-starfall-cataclysm'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260824-skill-ready-requeue/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260824-fire-legendary/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260824-starfall-cataclysm/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
@@ -993,4 +994,53 @@ test('追蹤場域的畫面位置以指數跟隨逼近權威座標（不做固�
   assert.match(rendererField, /fieldVfxFollowStep\(fx, dt\)/);
   // 朝向取「目前位置 → 權威座標」：跟隨模型沒有補間起點可用
   assert.match(renderer, /var dx = fx\.motionToX - fx\.x, dy = fx\.motionToY - fx\.y;/);
+});
+
+/* 超神進化【地爆天星】（2026-08-24 使用者指定的三項調整）：
+   兩套顯示層都必須認得那兩個新變體。不認得的變體只會退回泛用畫法——
+   那正好是「看起來沒壞、但預警與超巨型殞石全部消失」的失敗模式，所以在這裡釘死。 */
+test('地爆天星：黑影預警與超巨型殞石在 Canvas 與 DOM 兩套顯示層都有專屬畫法', () => {
+  const skills2 = read('js/skills2.js');
+  const vfx = read('js/vfx.js');
+  const renderer = read('js/battle-renderer.js');
+  const css = read('css/style.css');
+
+  // 模擬層：三段式節奏（預警 → 下墜 → 落地），且體積與下墜倍率是共用語意參數
+  assert.match(skills2, /var SG_STARFALL_WARN_SEC = 5;/);
+  assert.match(skills2, /var SG_STARFALL_SIZE_MULT = 3;/);
+  assert.match(skills2, /var SG_STARFALL_FALL_MULT = 2;/);
+  assert.match(skills2, /variant: 'starfall-shadow'/);
+  assert.match(skills2, /variant: 'meteor-starfall'/);
+  assert.match(skills2, /variant: 'starfall-impact'/);
+  assert.match(skills2, /sizeMult: SG_STARFALL_SIZE_MULT/);
+  // sgEmitPlayerVfx 必須把 travelMs／sizeMult 帶出去（殞石不掛在任何敵人身上）
+  assert.match(skills2, /extra\.travelMs > 0\) spec\.travelMs = \[Number\(extra\.travelMs\)\]/);
+  assert.match(skills2, /extra\.sizeMult > 0\) spec\.sizeMult = Number\(extra\.sizeMult\)/);
+
+  // Canvas：專屬畫法 ＋ 暗紅色票 ＋ 前方衝擊波
+  assert.match(renderer, /function spawnStarfallShadow\(spec\)/);
+  assert.match(renderer, /function spawnStarfallMeteor\(spec\)/);
+  assert.match(renderer, /function starfallBowShock\(radius\)/);
+  assert.match(renderer, /PIXI_FLARE_COLORS_STARFALL/);
+  assert.match(renderer, /spec\.variant === 'starfall-shadow'\) \{ spawnStarfallShadow/);
+  assert.match(renderer, /spec\.variant === 'meteor-starfall'\) \{ spawnStarfallMeteor/);
+  assert.match(renderer, /spec\.variant === 'starfall-impact'/);
+
+  // Worker → 主執行緒是白名單式事件：sizeMult 漏了殞石就不會變大，而且完全不會報錯
+  const shim = read('js/worker/shim.js');
+  assert.match(shim, /sizeMult: Number\(spec\.sizeMult\) > 0 \? Number\(spec\.sizeMult\) : 0/);
+  assert.match(vfx, /sizeMult: Number\(spec\.sizeMult\) > 0 \? Number\(spec\.sizeMult\) : 0/);
+  assert.match(read('js/worker/sim.worker.js'), /shim\.js\?v=5/);
+
+  // DOM（高塔）：同樣兩支，且在 rect 解析之前就攔下來
+  assert.match(vfx, /function vfxStarfallShadow\(spec, layer\)/);
+  assert.match(vfx, /function vfxStarfallMeteor\(spec, layer, travelMs\)/);
+  assert.match(vfx, /s\.variant === 'starfall-shadow'\) \{ vfxStarfallShadow/);
+  assert.match(vfx, /s\.variant === 'meteor-starfall'\) \{/);
+
+  // CSS：黑影擴大、暗紅濾鏡、前方衝擊波
+  assert.match(css, /\.vfx-starfall-shadow \{/);
+  assert.match(css, /@keyframes vfxStarfallShadow/);
+  assert.match(css, /\.vfx-meteor-starfall \{[\s\S]*?filter: brightness/);
+  assert.match(css, /\.vfx-starfall-shock \{/);
 });

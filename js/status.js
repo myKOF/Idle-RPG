@@ -129,6 +129,7 @@ var STATUS = {
   sgThornsRage: { name: '屠戮', icon: '🪓', kind: 'buff', effect: 'stat', key: 'sgThornsRage', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 5, dur: 4, interval: 0, stack: 'stack', maxStacks: 10, desc: '傳奇【屠戮者】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使【嗜血反震】的效果提高（效果值＝單層% × 層數）。' },
   sgWarGodKill: { name: '戰神屠錄', icon: '📜', kind: 'buff', effect: 'stat', key: 'sgWarGodKill', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 4, dur: 99999, interval: 0, stack: 'stack', maxStacks: 100, desc: '超神進化【戰神屠錄】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）；設計為「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。' },
   sgAsuraFist: { name: '阿修羅霸王拳', icon: '👊', kind: 'buff', effect: 'stat', key: 'sgAsuraFist', elem: '', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 500, dur: 1, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【阿修羅霸王拳】：每隔一段時間自動發動，短暫期間內你造成的所有傷害大幅提高。' },
+  sgStarfall: { name: '地爆天星', icon: '☄️', kind: 'buff', effect: 'stat', key: 'sgStarfall', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 60, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【地爆天星】：距離下一顆超巨型殞石落下還有多久（剩餘時間即倒數，效果值本身沒有意義；比照【暴風化身】【火狩】的純計時狀態）。' },
   sgBurnAmp: { name: '爆燃', icon: '🔥', kind: 'debuff', effect: 'stat', key: 'sgBurnAmp', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 10, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效【爆燃】：火龍捲每造成 1 段傷害就疊 1 層，使該敵人受到的燃燒傷害提高（效果值＝目前的總提高%）。設計文檔未設層數上限，因此比照【火焰增幅】由引擎累加成單一數值後「後蓋前」，不使用狀態表的疊層規則。' }
 };
 

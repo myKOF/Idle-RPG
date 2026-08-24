@@ -1,5 +1,34 @@
 # AI_TASKS.md
 
+## Claude｜地爆天星：倒數狀態、5 秒黑影預警、超巨型暗紅殞石（2026-08-24）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：超神進化調整（表現層節奏 ＋ 狀態投影）
+- 使用者需求：
+  1. 地爆天星的下落間隔做成一個狀態，可由該狀態看出下次落下時間。
+  2. 落下前 5 秒，地板出現一個黑色影子逐漸擴大到全場，然後一個比正常殞石體積大三倍的殞石
+     垂直落下，落下速度比正常殞石減少一半。
+  3. 地爆天星的殞石顏色調整得更偏暗紅色，並且前方帶有火焰衝擊波效果。
+- 前置依賴：本批緊接在「傳奇進化第五批」之後，同一個超神進化。
+- 技術內容：節奏由「時間到就結算」改為三段式（預警 → 下墜 → 落地），排程改記在
+  `SKILL2_RT.starfall`；新增狀態 `sgStarfall` 投影倒數；Canvas 與 DOM 兩套顯示層各補
+  黑影與超巨型殞石的專屬畫法，並新增暗紅火焰色票與前方衝擊波。
+- 修改檔案：`js/skills2.js`、`js/status.js`、`js/battle-renderer.js`、`js/vfx.js`、
+  `js/worker/shim.js`、`css/style.css`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、
+  `config/CSV/Status.csv`、`config/Excel/Status.xlsx`、`game_formula.md`、`PATCH.md`、
+  `tests/skill2-fire-legendary.test.cjs`、`tests/skill2-vfx.test.cjs`、本文件。
+- 未修改但檢查過：`js/ui.js`（增益面板讀狀態表，不需列舉新狀態）、
+  `docs/WORKER_PROTOCOL.md`（v17 明訂「加變體不用動協議」）。
+- 驗證方式：`node --test` 全量、`node tools/build_check.cjs`、`config_tables --gen/--sync/--apply`
+  往返（語意變更 0）、快取版號同步、瀏覽器實測 DOM 特效路徑、`git diff --check`。
+- 已知風險：Canvas 路徑未目視（預覽面板無法顯示，不合成畫面）；黑影透明度上限 0.58，
+  若實機覺得太暗或太淡請告知調整。
+- 未完成項目：Canvas 實機目視與整體節奏手感（建議交由 Antigravity）。
+- Commit：待建立。
+
+---
+
 ## Claude｜傳奇進化第五批（火球術／火龍捲十特效 ＋ 兩組超神進化）（2026-08-24）
 
 - 狀態：已完成
