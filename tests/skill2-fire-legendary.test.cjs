@@ -3,8 +3,8 @@
    守住的事：
      1. 火球術五個傳奇：連珠火（數量）、燃燼（燃燒傷害）、火池（爆點場域）、
         烈焰之心（對燃燒中增傷）、爆裂（小火球數量）
-     2. 火球術三個超神：火殞天落（額外殞石＋體積＋傷害）、地爆天星（依敵種扣%最大生命）、
-        火鳳遼原（殞石＋1、伴生火球、傷害）
+     2. 火球術三個超神：火殞天落（額外殞石＋體積＋傷害）、地爆天星（依敵種扣%最大生命、
+        倒數狀態、落下前 5 秒黑影、體積 3 倍且下墜速度減半）、火鳳遼原（殞石＋1、伴生火球、傷害）
      3. 火龍捲五個傳奇：追蹤烈焰（移動）、火龍擴散（體積）、火焰爆衝（段數）、
         爆燃（燃燒受傷放大）、火龍共鳴（場上道數增傷）
      4. 火龍捲三個超神：烈焰暴風（數量倍率）、永劫火獄（游走＋軌跡火池）、
@@ -80,6 +80,13 @@ function stubDerived(c) {
     return amount;
   };
   return hits;
+}
+function stubVfx(c) {
+  const specs = [];
+  c.playCombatVfx = (spec) => specs.push(spec);
+  c.enemyEventFloatTarget = (ent) => ent.name;
+  c.playerEventFloatTarget = (sel) => sel;
+  return specs;
 }
 function tickCtx(c, p, enemies) {
   return { pEnt: p, getEnemies: () => enemies, floatSel: 'mv-float', onDeaths() {}, onDamage() {} };
@@ -303,6 +310,114 @@ test('【地爆天星】：每隔一段時間依敵種扣掉最大生命的固�
   c.GT = 120;
   c.tickSkill2(0.1, tickCtx(c, p, enemies));
   assert.equal(derived.length, before, '間隔未到不得連發');
+});
+
+test('【地爆天星】：倒數投影成狀態，落地後重新起算', () => {
+  const c = loadContext();
+  stubHits(c);
+  stubVfx(c);
+  const derived = stubDerived(c);
+  c.chance = () => false;
+  maxLevels(c, 'fireball');
+  equip(c, 'fireball');
+  setUlt(c, 'fireball', 'starfallCataclysm', 1);   // Lv.1：間隔 57 秒
+  const p = playerEnt();
+  const enemies = [enemy(1000, 100, 0)];
+
+  c.GT = 0;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));
+  const buff = p.buffs && p.buffs.sgStarfall;
+  assert.ok(buff, '排程時就要把倒數投影成狀態');
+  assert.equal(Math.round(buff.until - c.GT), 57, '狀態的剩餘時間＝距離下一次落下還有多久');
+
+  c.GT = 57.05;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));
+  assert.ok(derived.length > 0, '落地才扣血');
+  assert.equal(Math.round(p.buffs.sgStarfall.until - c.GT), 57, '落地後重新起算倒數');
+});
+
+test('【地爆天星】：倒數狀態是 RT 的投影，重置與卸下都要一起收掉', () => {
+  function armed() {
+    const c = loadContext();
+    stubHits(c);
+    stubVfx(c);
+    c.chance = () => false;
+    maxLevels(c, 'fireball');
+    equip(c, 'fireball');
+    setUlt(c, 'fireball', 'starfallCataclysm', 1);
+    const p = playerEnt();
+    const enemies = [enemy(1000, 100, 0)];
+    c.GT = 0;
+    c.tickSkill2(0.1, tickCtx(c, p, enemies));
+    assert.ok(p.buffs.sgStarfall, '排程時就要有倒數');
+    return { c: c, p: p, enemies: enemies };
+  }
+
+  // 重置（死亡／讀檔／進出塔）：留著倒數＝玩家看著一個永遠不會落下的計時
+  const a = armed();
+  a.c.resetSkill2RT();
+  assert.equal(a.p.buffs.sgStarfall, undefined, '重置後不得留下倒數');
+  assert.equal(a.c.SKILL2_RT.starfall, null);
+
+  // 卸下技能：主動型節拍的共同代價是「卸下即失效」
+  const b = armed();
+  b.c.G.player.loadout = [];
+  b.c.GT = 1;
+  b.c.tickSkill2(0.1, tickCtx(b.c, b.p, b.enemies));
+  assert.equal(b.p.buffs.sgStarfall, undefined, '卸下技能後不得留下倒數');
+  assert.equal(b.c.SKILL2_RT.starfall, null);
+});
+
+test('【地爆天星】：落下前 5 秒黑影擴大到全場，殞石體積 3 倍且下墜速度減半', () => {
+  const c = loadContext();
+  stubHits(c);
+  const specs = stubVfx(c);
+  const derived = stubDerived(c);
+  c.chance = () => false;
+  maxLevels(c, 'fireball');
+  equip(c, 'fireball');
+  setUlt(c, 'fireball', 'starfallCataclysm', 1);
+  const p = playerEnt();
+  const enemies = [enemy(1000, 100, 0)];
+  const shadows = () => specs.filter((s) => s.variant === 'starfall-shadow');
+  const drops = () => specs.filter((s) => s.variant === 'meteor-starfall');
+
+  c.GT = 0;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));   // at = 57
+
+  // 預警：落下前 SG_STARFALL_WARN_SEC 秒才出現，早一點都不行
+  c.GT = 57 - c.SG_STARFALL_WARN_SEC - 0.2;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));
+  assert.equal(shadows().length, 0, '還沒到預警時間就不該有黑影');
+  c.GT = 57 - c.SG_STARFALL_WARN_SEC + 0.1;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));
+  assert.equal(shadows().length, 1, '落下前 5 秒出現黑影');
+  assert.equal(shadows()[0].fxKind, 'aura');
+  assert.ok(shadows()[0].dur > c.SG_STARFALL_WARN_SEC - 0.3 &&
+    shadows()[0].dur <= c.SG_STARFALL_WARN_SEC, '黑影一路擴大到落地那一刻');
+
+  // 下墜：一般殞石的兩倍時間（＝速度一半），體積 3 倍
+  const fallSec = c.sgMeteorFallTiming().fallMs / 1000 * c.SG_STARFALL_FALL_MULT;
+  assert.equal(c.SG_STARFALL_FALL_MULT, 2, '下墜速度是一般殞石的一半');
+  c.GT = 57 - fallSec - 0.2;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));
+  assert.equal(drops().length, 0, '還沒到下墜時間就不該有殞石');
+  c.GT = 57 - fallSec + 0.05;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));
+  assert.equal(drops().length, 1, '開始下墜');
+  assert.equal(drops()[0].sizeMult, c.SG_STARFALL_SIZE_MULT, '體積 3 倍');
+  assert.ok(Math.abs(drops()[0].travelMs[0] - fallSec * 1000) < 150,
+    '下墜時間＝一般殞石的兩倍（顯示層靠它對齊落地時刻）');
+  assert.equal(derived.length, 0, '殞石還在天上就不能扣血');
+
+  // 落地
+  c.GT = 57.05;
+  c.tickSkill2(0.1, tickCtx(c, p, enemies));
+  assert.ok(derived.length > 0, '落地才扣血');
+  assert.equal(specs.filter((s) => s.variant === 'starfall-impact').length, 1, '落地送受擊反饋');
+  // 預警與下墜每一輪各只送一次
+  assert.equal(shadows().length, 1);
+  assert.equal(drops().length, 1);
 });
 
 test('【火鳳遼原】：殞石 +1 顆、每顆伴隨數顆火球落下，且傷害提高', () => {

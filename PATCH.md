@@ -1,5 +1,54 @@
 # PATCH.md
 
+## 地爆天星：倒數狀態、5 秒黑影預警、超巨型暗紅殞石（Claude 2026-08-24）
+
+使用者指定的三項調整，全部落在超神進化【地爆天星】：
+
+1. **下落間隔做成一個狀態**：排程當下把倒數投影成玩家身上的 `sgStarfall`，
+   狀態的**剩餘時間就是距離下一次落下還有多久**（效果值本身沒有意義，
+   比照【暴風化身】【火狩】的純計時狀態）。
+2. **落下前 5 秒的預警與超巨型殞石**：地板黑影由一小點擴大到全場，然後體積 3 倍的殞石
+   由**正上方垂直**落下，下墜速度是一般殞石的一半（＝下墜時間 2 倍）。
+3. **殞石改暗紅色，正前方帶火焰衝擊波**。
+
+- **節奏改成三段式**：原本是「時間到 → 當場結算」，現在是
+  預警（`at - 5s`）→ 下墜（`at - fallSec`）→ 落地（`at`）。
+  排程記在 `SKILL2_RT.starfall = { at, fallSec, warned, dropped }`（執行期，絕不入存檔），
+  取代原本借用的 `ultAuto.fireball`——那個欄位只能記一個時刻，記不下「已經預警過了沒」。
+- **三個常數是模擬與顯示共用的語意參數**（AI_RULES 8.3），因此寫在 `js/skills2.js` 而不是顯示層：
+  `SG_STARFALL_WARN_SEC = 5`（黑影動畫要多長）、`SG_STARFALL_SIZE_MULT = 3`（體積倍率）、
+  `SG_STARFALL_FALL_MULT = 2`（下墜時間倍率＝速度一半，決定殞石特效要從多早開始播）。
+  間隔下限跟著改為「預警秒數 + 1」——升級把間隔縮到比預警還短的話，黑影會來不及擴完就砸下來。
+- **殞石不掛在任何敵人身上**（打的是全場），所以走 `sgEmitPlayerVfx` 而不是 `sgEmitVfx`，
+  並讓它多帶 `travelMs`／`sizeMult` 出去——顯示層要靠 `travelMs` 對齊落地時刻。
+- **兩套顯示層都要做**（Canvas 戰場／DOM 高塔），因為變體不被認得只會退回泛用畫法，
+  那正好是「看起來沒壞、但預警與超巨型殞石全部消失」的失敗模式：
+  - Canvas：`spawnStarfallShadow`（黑影）／`spawnStarfallMeteor`（垂直落下＋前方 bow shock）／
+    `starfallBowShock`；火焰粒子色票新增 `PIXI_FLARE_COLORS_STARFALL`（暗紅），
+    `flameProjectile` 因此多一個色票覆寫參數。
+  - DOM：`vfxStarfallShadow`／`vfxStarfallMeteor`，在 rect 解析**之前**攔下來——
+    這兩者沒有棋盤格也沒有目標卡片可以退化。
+  - CSS：`.vfx-starfall-shadow`（只動 transform／opacity，不動 width／height）、
+    `.vfx-meteor-starfall`（火星顏色是 JS 逐顆寫進 style 的，因此用 filter 統一壓暗偏紅，
+    不必為了換色複製一份 emitter）、`.vfx-starfall-shock`。
+- **黑影與殞石都錨定在玩家世界座標**：鏡頭永遠對準玩家，那就是畫面正中央；
+  放在 world 底下的 zone／fx 層，實體與飄字才會正確地蓋在上面（overlay 會蓋住敵人）。
+  黑影的橢圓**只畫一次**，之後只動 scale／alpha——逐幀 `clear()` 的 Graphics 是本專案
+  量測過的主要渲染成本，等比放大沒有理由每幀重畫。
+- **`sizeMult` 必須補進 Worker → 主執行緒的白名單**（`js/worker/shim.js` 的 `playCombatVfx`
+  是逐欄複製的，沒列進去就會被丟掉），DOM 端 `renderCombatVfx` 的 `s` 同樣是逐欄複製、一併補上。
+  漏掉的症狀是「殞石照樣落下、只是不會變大」，完全不報錯——所以測試把兩處都釘死，
+  並把 `shim.js` 的 importScripts 版號推到 v5。
+- **倒數狀態是 RT 的投影，因此 `resetSkill2RT` 要一起撤掉**（死亡復活保留同一個戰鬥實體、
+  提前離塔亦然），卸下技能時也一樣。排程因此記住 `pEnt`——比照【戰神屠錄】那疊
+  「持續到死亡為止」的增益，回收的唯一時機就是那裡。少了這一段，玩家會看著一個
+  永遠不會落下的倒數。
+- 測試：`tests/skill2-fire-legendary.test.cjs` 新增 3 條（倒數狀態、三段式節奏的時間點與參數、
+  重置與卸下時的回收）；`tests/skill2-vfx.test.cjs` 新增 1 條釘死兩套顯示層與白名單。
+- 瀏覽器實測（DOM 路徑）：黑影節點 4900ms 動畫、殞石 x0===x1（垂直）、
+  filter 為 `brightness(0.62) saturate(1.55) hue-rotate(-12deg)`、衝擊波 138px（＝46×3）、
+  落地震波節點都正確建立。Canvas 路徑因為預覽面板無法顯示（不合成畫面）而無法目視，留給 Antigravity。
+
 ## 傳奇進化第五批：火球術／火龍捲十特效 ＋ 兩組超神進化（Claude 2026-08-24）
 
 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤的火球術、火龍捲兩段。

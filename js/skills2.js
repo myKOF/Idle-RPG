@@ -117,6 +117,13 @@ var SG_ORBIT_MAX_ORBS = 32;
 var SG_ORBIT_VFX_REFRESH_SEC = 2;   // 持續時間被【再生】延長多久才值得補送一次環繞特效
 /* 同一次施放丟出多顆／多次時，各發之間的錯開時間（純顯示節奏；傷害在施放當下就結算完畢，
    延遲只用在飄字與特效的 delayMs，比照殞石的 SG_METEOR_INTERVAL_MS）。 */
+/* ---- 超神【地爆天星】的節奏（2026-08-24 使用者指定）----
+   落下前 WARN 秒地板先出現黑影並擴大到全場；殞石體積 SIZE 倍、下墜速度是一般殞石的一半
+   （＝下墜時間 FALL 倍）。三個值都是**顯示與模擬共用**的語意參數：預警秒數決定黑影動畫多長，
+   下墜倍率決定殞石特效要從多早開始播，因此不能只寫在顯示層（AI_RULES 8.3）。 */
+var SG_STARFALL_WARN_SEC = 5;
+var SG_STARFALL_SIZE_MULT = 3;
+var SG_STARFALL_FALL_MULT = 2;
 var SG_WATERBALL_VOLLEY_MS = 220;   // 【三重流水】的第 2 顆之後每顆再錯開多久
 var SG_FROSTNOVA_VOLLEY_MS = 260;   // 【三重新星】的第 2 次之後每次再錯開多久
 
@@ -214,6 +221,11 @@ function resetSkill2RT() {
   if (SKILL2_RT && SKILL2_RT.warGod && SKILL2_RT.warGod.pEnt && SKILL2_RT.warGod.pEnt.buffs) {
     delete SKILL2_RT.warGod.pEnt.buffs.sgWarGodKill;
   }
+  /* 超神【地爆天星】的倒數狀態同樣是 RT 的投影：排程被清掉之後那個倒數就是假的，
+     不撤掉的話玩家會看著一個永遠不會落下的倒數（死亡復活保留同一個戰鬥實體、提前離塔亦然）。 */
+  if (SKILL2_RT && SKILL2_RT.starfall && SKILL2_RT.starfall.pEnt && SKILL2_RT.starfall.pEnt.buffs) {
+    delete SKILL2_RT.starfall.pEnt.buffs.sgStarfall;
+  }
   SKILL2_RT = {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
@@ -235,7 +247,8 @@ function resetSkill2RT() {
     warGod: null,    // 超神【戰神屠錄】疊層增益的持有者：{ pEnt }
                      // ——那個增益「持續到死亡為止」，狂怒本身早就回收了也還在，
                      // 所以得另外記住掛在誰身上，resetSkill2RT 才收得回來
-    asuraFist: 0     // 超神【阿修羅霸王拳】的下一次發動時刻（不入存檔）
+    asuraFist: 0,    // 超神【阿修羅霸王拳】的下一次發動時刻（不入存檔）
+    starfall: null   // 超神【地爆天星】的落下排程：{ at, fallSec, warned, dropped, pEnt }（不入存檔）
   };
 }
 resetSkill2RT(); // 載入即建立初始狀態
@@ -4230,6 +4243,10 @@ function sgEmitPlayerVfx(gid, floatSel, extra) {
     dur: (extra && extra.dur) || 0.6, count: 1
   };
   if (extra && extra.variant) spec.variant = extra.variant;
+  /* 地爆天星的殞石不掛在任何敵人身上（打的是全場），因此飛行時間與體積倍率
+     必須由這一支帶出去——顯示層要靠 travelMs 對齊落地時刻。 */
+  if (extra && extra.travelMs > 0) spec.travelMs = [Number(extra.travelMs)];
+  if (extra && extra.sizeMult > 0) spec.sizeMult = Number(extra.sizeMult);
   playCombatVfx(spec);
 }
 
@@ -6735,15 +6752,61 @@ function tickSkill2(dt, ctx) {
    扣血走 sgDerivedHit：這是「直接扣掉 N% 生命」而不是一次攻擊，因此不過防禦與爆擊；
    高塔 BOSS 的單次扣血上限由 applyEnemyHpDamage 自動接手（設計的 BOSS -20% 正好同值）。 */
 function sgTickStarfall(ctx) {
-  if (!SKILL2_RT.ultAuto) SKILL2_RT.ultAuto = {};
   var u = sgUlt('fireball', 'starfallCataclysm');
-  if (!u || !skills2Equipped('fireball')) { delete SKILL2_RT.ultAuto.fireball; return; }
-  var gap = Math.max(5, sgUltVal(u, 'gap'));
-  var next = SKILL2_RT.ultAuto.fireball;
+  if (!u || !skills2Equipped('fireball')) {
+    var old = SKILL2_RT.starfall;
+    if (old && old.pEnt && old.pEnt.buffs) delete old.pEnt.buffs.sgStarfall;
+    SKILL2_RT.starfall = null;
+    return;
+  }
+  /* 間隔至少要容得下預警：間隔被升級縮到比預警還短的話，黑影會來不及擴完就砸下來。 */
+  var gap = Math.max(SG_STARFALL_WARN_SEC + 1, sgUltVal(u, 'gap'));
+  var st = SKILL2_RT.starfall;
   // 第一次進場只起算節拍，不立刻砸——開戰瞬間白送一發不是設計的意思
-  if (!(next > 0)) { SKILL2_RT.ultAuto.fireball = GT + gap; return; }
-  if (next > GT) return;
-  SKILL2_RT.ultAuto.fireball = GT + gap;
+  if (!st || !(st.at > 0)) { SKILL2_RT.starfall = sgStarfallSchedule(ctx, gap); return; }
+
+  /* 落下前 SG_STARFALL_WARN_SEC 秒：地板黑影開始擴大到全場。 */
+  if (!st.warned && GT >= st.at - SG_STARFALL_WARN_SEC) {
+    st.warned = true;
+    sgEmitPlayerVfx('fireball', ctx.floatSel, {
+      fxKind: 'aura', variant: 'starfall-shadow', elem: 'fire',
+      dur: Math.max(0.1, st.at - GT)
+    });
+    if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '地爆天星!', 'buff');
+  }
+  /* 殞石開始下墜：下墜時間已經是一般殞石的 SG_STARFALL_FALL_MULT 倍（＝速度一半）。
+     顯示層要靠 travelMs 對齊落地時刻，因此這裡送的是「從現在到落地還有多久」。 */
+  if (!st.dropped && GT >= st.at - st.fallSec) {
+    st.dropped = true;
+    sgEmitPlayerVfx('fireball', ctx.floatSel, {
+      fxKind: 'rain', variant: 'meteor-starfall', elem: 'fire',
+      dur: Math.max(0.1, st.at - GT), travelMs: Math.max(1, Math.round((st.at - GT) * 1000)),
+      sizeMult: SG_STARFALL_SIZE_MULT
+    });
+  }
+  if (GT < st.at) return;
+  sgStarfallImpact(ctx, u);
+  SKILL2_RT.starfall = sgStarfallSchedule(ctx, gap);
+}
+
+/* 排下一次落下，並把倒數投影成玩家身上的狀態——設計要求「可由該狀態看出下次落下時間」，
+   因此狀態的剩餘時間就是權威顯示，數值本身沒有意義（比照【暴風化身】【火狩】的純計時狀態）。 */
+function sgStarfallSchedule(ctx, gap) {
+  var timing = sgMeteorFallTiming();
+  if (ctx && ctx.pEnt && ctx.pEnt.hp > 0 && typeof applyStatus === 'function') {
+    applyStatus(ctx.pEnt, 'sgStarfall', { val: 0, dur: gap });
+  }
+  return {
+    at: GT + gap,
+    fallSec: timing.fallMs / 1000 * SG_STARFALL_FALL_MULT,
+    warned: false, dropped: false,
+    // 持有者：resetSkill2RT 要靠它把倒數狀態從實體上撤掉
+    pEnt: (ctx && ctx.pEnt) || null
+  };
+}
+
+/* 落地結算：對全場敵人依敵種扣掉最大生命的固定比例。 */
+function sgStarfallImpact(ctx, u) {
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
   var victims = [];
@@ -6753,9 +6816,8 @@ function sgTickStarfall(ctx) {
   var elitePct = sgUltVal(u, 'elite');
   var bossPct = sgUltVal(u, 'boss');
   sgEmitVfx('fireball', victims, ctx.floatSel, {
-    fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1
+    fxKind: 'impact', variant: 'starfall-impact', elem: 'fire'
   });
-  if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '地爆天星!', 'buff');
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
     var e = victims[v];

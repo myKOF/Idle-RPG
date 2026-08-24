@@ -610,13 +610,16 @@ var BattleRenderer = (function () {
      advance 2000，粒子顏色沿四色色票以 quad.out 方式插值；局部方向是飛行反方向
      ±10°，等價於範例向上 -100°～-80° 發射後再旋轉到投射物軸線。 */
   var PIXI_FLARE_COLORS = [0xfacc22, 0xf89800, 0xf83600, 0x9f0404];
-  function flameColorIntAt(progress) {
+  /* 超神【地爆天星】的殞石走更暗的紅（設計指定）：同一條插值曲線，只換色票。 */
+  var PIXI_FLARE_COLORS_STARFALL = [0xe0451a, 0xa11208, 0x5c0a06, 0x260302];
+  function flameColorIntAt(progress, colors) {
+    var table = (colors && colors.length >= 2) ? colors : PIXI_FLARE_COLORS;
     var q = Math.max(0, Math.min(1, progress));
     q = 1 - (1 - q) * (1 - q);
-    var pos = q * (PIXI_FLARE_COLORS.length - 1);
-    var idx = Math.min(PIXI_FLARE_COLORS.length - 2, Math.floor(pos));
+    var pos = q * (table.length - 1);
+    var idx = Math.min(table.length - 2, Math.floor(pos));
     var local = pos - idx;
-    var a = PIXI_FLARE_COLORS[idx], b = PIXI_FLARE_COLORS[idx + 1];
+    var a = table[idx], b = table[idx + 1];
     var ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
     var br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
     return (Math.round(ar + (br - ar) * local) << 16) |
@@ -624,7 +627,7 @@ var BattleRenderer = (function () {
       Math.round(ab + (bb - ab) * local);
   }
 
-  function flameProjectile(theme, small, sizeScale) {
+  function flameProjectile(theme, small, sizeScale, colors) {
     var node = new PIXI.Container();
     var size = (typeof sizeScale === 'number' ? sizeScale : 1) * (small ? 0.58 : 1);
     var count = REDUCED_MOTION ? (small ? 8 : 14) : (small ? 14 : 26);
@@ -667,7 +670,7 @@ var BattleRenderer = (function () {
         p.x = Math.cos(p._angle) * distance;
         p.y = Math.sin(p._angle) * distance;
         p.scale.set(scale, scale);
-        p.tint = flameColorIntAt(life);
+        p.tint = flameColorIntAt(life, colors);
         p.alpha = Math.max(0, (1 - life) * (node._flameStop ? 0.7 : 1));
       }
     };
@@ -3618,6 +3621,105 @@ var BattleRenderer = (function () {
       spawnMeteorProjectile(spec, smallTheme, smallFrom, { x: cx, y: cy }, 0.52, smallDur, delaySec, null);
     }
   }
+  /* ---- 超神進化【地爆天星】----
+     落下前的黑影、垂直落下的超巨型殞石、落地的全場爆發。
+     三者都以**玩家世界座標**為錨點：鏡頭永遠對準玩家，因此那就是畫面正中央，
+     放在 world 底下的 zone／fx 層才會被實體與飄字正確地蓋在上面（overlay 會蓋住敵人）。 */
+  function starfallAnchor() {
+    var p = playerPos();
+    return (p && isFinite(p.x) && isFinite(p.y)) ? p : { x: 0, y: 0 };
+  }
+
+  /* 黑影：由一小點擴大到蓋滿全場。橢圓只畫一次，之後只動 scale／alpha——
+     逐幀 clear() 的 Graphics 是本專案量測過的主要渲染成本，等比放大沒有理由每幀重畫。 */
+  function spawnStarfallShadow(spec) {
+    var dur = Math.max(0.3, Number(spec.dur) || 5);
+    var g = new PIXI.Graphics();
+    g.ellipse(0, 0, S.W * 0.62, S.H * 0.62).fill({ color: 0x000000, alpha: 1 });
+    var anchor = starfallAnchor();
+    g.x = anchor.x; g.y = anchor.y;
+    g.scale.set(0.04);
+    g.alpha = 0;
+    S.layers.zone.addChild(g);
+    var t = 0;
+    addFx({
+      node: g,
+      update: function (dt) {
+        t += dt;
+        var k = Math.min(1, t / dur);
+        var a = starfallAnchor();
+        g.x = a.x; g.y = a.y;
+        /* 先慢後快：前段只是一小塊影子，最後一秒才整片壓下來 */
+        var e = k * k;
+        g.scale.set(0.04 + e * 0.96);
+        g.alpha = 0.10 + 0.45 * k;
+        return t < dur;
+      }
+    }, 1, dur * 1000 + 400);
+  }
+
+  /* 殞石正前方的火焰衝擊波（設計指定）：只畫一次，靠 scale／alpha 脈動。 */
+  function starfallBowShock(radius) {
+    var g = new PIXI.Graphics();
+    g.ellipse(0, 0, radius * 0.95, radius * 0.34).fill({ color: 0xd9531e, alpha: 0.20 });
+    for (var i = 0; i < 3; i++) {
+      g.ellipse(0, i * radius * 0.16, radius * (1 - i * 0.18), radius * (0.34 - i * 0.07))
+        .stroke({ color: i === 0 ? 0xffb257 : 0xe0451a, width: 4 - i, alpha: 0.85 - i * 0.2 });
+    }
+    return g;
+  }
+
+  /* 超巨型殞石：由正上方垂直落下（不是一般殞石的 60° 斜線），
+     體積 sizeMult 倍、下墜時間由模擬層帶來（已經是一般殞石的兩倍＝速度一半）。 */
+  function spawnStarfallMeteor(spec) {
+    var travel = (spec.travelMs && spec.travelMs[0]) || 1400;
+    var dur = Math.max(0.3, travel / 1000);
+    var sizeMult = Math.max(1, Number(spec.sizeMult) || 3);
+    var anchor = starfallAnchor();
+    var drop = Math.max(S.H, 480) * 1.15;
+    var theme = { c1: '#a11208', c2: '#e0451a', glow: '#5c0a06' };
+    var node = new PIXI.Container();
+    var flame = flameProjectile(theme, false, METEOR_SIZE_SCALE * sizeMult, PIXI_FLARE_COLORS_STARFALL);
+    node.addChild(flame);
+    /* 火焰衝擊波在飛行方向的正前方（垂直落下＝正下方）。 */
+    var shockR = 46 * sizeMult;
+    var shock = starfallBowShock(shockR);
+    shock.y = shockR * 0.62;
+    node.addChild(shock);
+    node.x = anchor.x; node.y = anchor.y - drop;
+    S.layers.fx.addChild(node);
+    var t = 0, arrived = false;
+    addFx({
+      node: node,
+      update: function (dt) {
+        t += dt;
+        var k = Math.min(1, t / dur);
+        var a = starfallAnchor();
+        node.x = a.x;
+        node.y = lerp(a.y - drop, a.y, k);
+        if (flame && flame._flameUpdate) flame._flameUpdate(dt);
+        if (shock) {
+          var pulse = 1 + Math.sin(t * 15) * 0.08;
+          shock.scale.set(pulse * (0.7 + 0.3 * k), pulse * (0.7 + 0.3 * k));
+          shock.alpha = k >= 1 ? 0 : 0.55 + 0.45 * k;
+        }
+        if (k >= 1) {
+          if (!arrived) {
+            arrived = true;
+            spawnImpact(a.x, a.y, spec, true);
+            addShake(14, spec);
+            addMeteorCameraShake();
+            spawnFireShockwave(a.x, a.y, shockR * 2.4,
+              { c1: '#5c0a06', c2: '#e0451a', glow: '#a11208' });
+          }
+          if (flame) flame._flameStop = true;
+          return t < dur + 0.45;
+        }
+        return true;
+      }
+    }, 2, dur * 1000 + 900);
+  }
+
   function spawnFireShockwave(cx, cy, radius, theme, targetGuard) {
     var g = new PIXI.Graphics();
     g.x = cx; g.y = cy;
@@ -4568,6 +4670,8 @@ var BattleRenderer = (function () {
           });
           break;
         }
+        /* 地爆天星：打的是全場、不掛在任何敵人身上，因此不能走 rect／targets 那條路。 */
+        if (spec.variant === 'meteor-starfall') { spawnStarfallMeteor(spec); break; }
         spawnRain(rect, spec);
         targets.forEach(function (id, ti) {
           setTimeout(function () {
@@ -4577,6 +4681,7 @@ var BattleRenderer = (function () {
         });
         break;
       case 'aura':
+        if (spec.variant === 'starfall-shadow') { spawnStarfallShadow(spec); break; }
         if (spec.variant === 'firehunt' || spec.variant === 'thunder-orbit') spawnFireHunt(spec);
         else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
@@ -4601,6 +4706,17 @@ var BattleRenderer = (function () {
         break;
       case 'impact':
       default:
+        /* 地爆天星落地：殞石本體的到達回呼已經放過爆點與鏡頭晃動，
+           這裡只補每個敵人的受擊反饋（傷害是全場的，敵人可能離爆心很遠）。 */
+        if (spec.variant === 'starfall-impact') {
+          targets.forEach(function (id, ti) {
+            setTimeout(function () {
+              if (fxGate(spec)) return;
+              hitReact(id, spec.elem || 'fire', true);
+            }, ti * 30);
+          });
+          break;
+        }
         if (spec.variant === 'wind-burst') {
           /* 狂風碎裂的沿途脈衝：圓心由模擬層帶來，範圍內沒有敵人時照樣要看得到氣浪。 */
           spawnWindBurst(spec);

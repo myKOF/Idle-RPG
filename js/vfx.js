@@ -1436,6 +1436,44 @@ function vfxShockwave(spec, layer, pt, radius, delayMs, className, colors) {
   return d;
 }
 
+/* ---- 超神進化【地爆天星】（DOM 後備路徑；高塔沒有棋盤格也沒有世界座標）----
+   「全場」＝整個特效層，因此兩支都不吃 targets 與 area，直接以層的尺寸定位。 */
+function vfxStarfallShadow(spec, layer) {
+  var d = vfxNode('vfx-starfall-shadow', layer, spec);
+  var dur = Math.max(300, (Number(spec.dur) || 5) * 1000);
+  d.style.animationDuration = dur + 'ms';
+  vfxTrack(d, dur + 400);
+}
+
+/* 超巨型殞石：由正上方**垂直**落下（不是一般殞石的 60° 斜線），
+   體積 sizeMult 倍、下墜時間由模擬層帶來（已經是一般殞石的兩倍＝速度一半），
+   火焰色票與衝擊波由 CSS 的 .vfx-meteor-starfall 負責（暗紅）。 */
+function vfxStarfallMeteor(spec, layer, travelMs) {
+  var flight = Math.max(200, Number(travelMs) || 1400);
+  var sizeMult = Math.max(1, Number(spec.sizeMult) || 3);
+  var box = (layer && layer.getBoundingClientRect) ? layer.getBoundingClientRect() : null;
+  var w = (box && box.width > 0) ? box.width : 640;
+  var h = (box && box.height > 0) ? box.height : 420;
+  var to = { x: w / 2, y: h * 0.62 };
+  var from = { x: to.x, y: -h * 0.35 };
+  var d = vfxNode('vfx-meteor vfx-meteor-starfall', layer, spec);
+  d.style.setProperty('--vfx-x0', from.x + 'px');
+  d.style.setProperty('--vfx-y0', from.y + 'px');
+  d.style.setProperty('--vfx-x1', to.x + 'px');
+  d.style.setProperty('--vfx-y1', to.y + 'px');
+  d.style.setProperty('--vfx-rot', (Math.PI / 2).toFixed(3) + 'rad');
+  d.style.animationDelay = '0ms';
+  d.style.animationDuration = flight + 'ms';
+  vfxBuildFlareFlame(d, false, VFX_METEOR_SIZE_SCALE * sizeMult);
+  /* 正前方（垂直落下＝正下方）的火焰衝擊波。 */
+  var shock = document.createElement('span');
+  shock.className = 'vfx-starfall-shock';
+  shock.style.setProperty('--shock-size', Math.round(46 * sizeMult) + 'px');
+  d.appendChild(shock);
+  vfxTrack(d, flight + VFX_FLARE_LIFESPAN_MS + 200);
+  vfxMeteorShockwave(spec, layer, to, 46 * sizeMult * 2.4, flight);
+}
+
 function vfxMeteorShockwave(spec, layer, pt, radius, delayMs) {
   return vfxShockwave(spec, layer, pt, radius, delayMs, 'vfx-meteor-shockwave', {
     c1: '#9f1d12', c2: '#f05a13', glow: '#d62f12'
@@ -2335,7 +2373,9 @@ function renderCombatVfx(spec) {
     directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null,
     directionRanges: Array.isArray(spec.directionRanges) ? spec.directionRanges.slice(0, 4).map(Number) : null,
     angle: isFinite(spec.angle) ? Number(spec.angle) : null,
-    rangeScale: Number(spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1
+    rangeScale: Number(spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1,
+    /* 超神【地爆天星】的殞石體積倍率；沒帶就由畫法自己取預設。 */
+    sizeMult: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 0
   };
   /* 舊事件沒有 variant 時，風系 aura 不得走棋盤矩形的泛用畫法。 */
   if (kind === 'aura' && s.elem === 'wind' && !s.variant) return;
@@ -2461,6 +2501,13 @@ function renderCombatVfx(spec) {
 
   /* aura／rain 需要一個範圍矩形：優先使用棋盤格，沒有格子時才退化到目標卡片。 */
   if (kind === 'aura' || kind === 'rain') {
+    /* 地爆天星打的是全場、不掛在任何敵人身上，因此必須在 rect 解析之前攔下來——
+       它沒有格子也沒有目標卡片可退化。 */
+    if (kind === 'aura' && s.variant === 'starfall-shadow') { vfxStarfallShadow(s, layer); return; }
+    if (kind === 'rain' && s.variant === 'meteor-starfall') {
+      vfxStarfallMeteor(s, layer, travelMs && travelMs.length ? travelMs[0] : 0);
+      return;
+    }
     if (kind === 'rain' && s.variant === 'pillar') {
       var pl = resolveTargets();
       for (var pi = 0; pi < pl.pts.length; pi++) {
