@@ -6663,6 +6663,31 @@ function skill2DownedActive() {
   return !!(ls && !ls.done && ls.reviveAt > GT);
 }
 
+/* ---- 自動施放的共同閘門（2026-08-24 使用者決策）----
+   「每隔 N 秒自動發動」的效果，在角色**死亡或倒地期間一律暫停**——
+   自動不等於不受角色狀態限制：人倒下了，他的技能就不該繼續打。
+   涵蓋【地爆天星】【天霸風神斬】【阿修羅霸王拳】【暴風之舞】與傳奇的三個自動觸發。
+
+   為什麼是「暫停」而不是「跳過這一拍」（暈眩走的是後者）：
+     ・跳過的話，倒地期間到期的那一發會消失，但【地爆天星】的黑影預警可能已經播完，
+       畫面上會出現「殞石照樣落下卻沒有任何傷害」的鬼影
+     ・排程若原封不動，復活的瞬間會把倒地期間累積的節拍一次補發（等效免費爆發）
+   往後推 dt 同時解決兩者：剩餘時間完全不動，倒地本身就是代價。
+
+   這是全專案自動施放的唯一判定入口——新增自動施放效果時呼叫這一支就好。
+   注意 hp<=0 也算：傳奇【不屈之誓】期間生命被夾在 1（>0），因此那 10 秒仍會照常施放，
+   與該特效「期間傷害 +100%」的設計一致。 */
+function skills2AutoCastBlocked(pEnt) {
+  if (!pEnt || pEnt.hp <= 0) return true;
+  return skill2DownedActive();
+}
+
+/* 把一條「絕對時刻」排程往後推 dt（剩餘時間因此完全不變）。 */
+function sgPauseSchedule(at, dt) {
+  var step = Math.max(0, Number(dt) || 0);
+  return (at > 0) ? at + step : at;
+}
+
 /* 倒地期滿：原地滿血站起來。 */
 function sgTickLastStand(ctx) {
   var ls = SKILL2_RT.lastStand;
@@ -6681,9 +6706,14 @@ function sgTickLastStand(ctx) {
 /* 超神【阿修羅霸王拳】：每 gap 秒自動發動一次全傷害爆發。
    口徑與【殺神領域】一致——嗜血狂怒必須裝配在技能列上才生效，但不必在狂怒期間
   （設計文檔寫的是「每 10 秒」，沒有加上狂怒期間的限定）。 */
-function sgTickAsuraFist(ctx) {
+function sgTickAsuraFist(ctx, dt) {
   var u = sgUlt('bloodrage', 'asuraFist');
   if (!u || !skills2Equipped('bloodrage')) { SKILL2_RT.asuraFist = 0; return; }
+  // 死亡／倒地：節拍往後推，剩餘時間不變（見 skills2AutoCastBlocked）
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    SKILL2_RT.asuraFist = sgPauseSchedule(SKILL2_RT.asuraFist, dt);
+    return;
+  }
   var gap = Math.max(0.5, sgUltVal(u, 'gap'));
   if (!(SKILL2_RT.asuraFist > 0)) { SKILL2_RT.asuraFist = GT + gap; return; }
   if (SKILL2_RT.asuraFist > GT) return;
@@ -6729,19 +6759,19 @@ function tickSkill2(dt, ctx) {
   sgTickMeteors(ctx);
   sgTickGrounds(dt, ctx);
   sgTickOrbits(dt, ctx);
-  sgTickStorm(ctx);
+  sgTickStorm(ctx, dt);
   sgTickBloodDots(dt, ctx);
   sgTickBloodDomains(ctx);
   sgTickDeathDefer(ctx);
   sgTickLastStand(ctx);
-  sgTickAsuraFist(ctx);
+  sgTickAsuraFist(ctx, dt);
   sgTickWarGodShield(ctx);
   sgTickBurn(dt, ctx);
   sgTickFrost(dt, ctx);
   sgTickStormBarrier(dt, ctx);
   sgTickWindRend(dt, ctx);
-  sgTickUltAutoCast(ctx);
-  sgTickStarfall(ctx);
+  sgTickUltAutoCast(ctx, dt);
+  sgTickStarfall(ctx, dt);
 }
 
 /* 超神進化【地爆天星】：每隔一段時間，天空落下一顆超巨型殞石，
@@ -6751,12 +6781,23 @@ function tickSkill2(dt, ctx) {
      ・不扣魔、不進冷卻——這不是一次施放，是超神進化的常駐節拍
    扣血走 sgDerivedHit：這是「直接扣掉 N% 生命」而不是一次攻擊，因此不過防禦與爆擊；
    高塔 BOSS 的單次扣血上限由 applyEnemyHpDamage 自動接手（設計的 BOSS -20% 正好同值）。 */
-function sgTickStarfall(ctx) {
+function sgTickStarfall(ctx, dt) {
   var u = sgUlt('fireball', 'starfallCataclysm');
   if (!u || !skills2Equipped('fireball')) {
     var old = SKILL2_RT.starfall;
     if (old && old.pEnt && old.pEnt.buffs) delete old.pEnt.buffs.sgStarfall;
     SKILL2_RT.starfall = null;
+    return;
+  }
+  /* 死亡／倒地：整條排程與倒數狀態一起往後推，剩餘時間不變。
+     倒數狀態是排程的投影，只推其中一邊會讓面板顯示與實際落下時刻對不上。 */
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    var held = SKILL2_RT.starfall;
+    if (held) {
+      held.at = sgPauseSchedule(held.at, dt);
+      var buff = held.pEnt && held.pEnt.buffs && held.pEnt.buffs.sgStarfall;
+      if (buff && buff.until > 0) buff.until += Math.max(0, Number(dt) || 0);
+    }
     return;
   }
   /* 間隔至少要容得下預警：間隔被升級縮到比預警還短的話，黑影會來不及擴完就砸下來。 */
@@ -6836,10 +6877,15 @@ function sgStarfallImpact(ctx, u) {
      ・暈眩中跳過該次，錯過的不補發
      ・法力不足就不觸發（比照反擊逐階扣魔的使用者決策）
    自動施放走 castSkill2 的正規路徑，因此扣魔、冷卻、傷害結算與手動施放完全一致。 */
-function sgTickUltAutoCast(ctx) {
+function sgTickUltAutoCast(ctx, dt) {
   if (!SKILL2_RT.ultAuto) SKILL2_RT.ultAuto = {};
   var u = sgUlt('cleave', 'stormGodSlash');
   if (!u || !skills2Equipped('cleave')) { delete SKILL2_RT.ultAuto.cleave; return; }
+  // 死亡／倒地：節拍往後推，剩餘時間不變（見 skills2AutoCastBlocked）
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    SKILL2_RT.ultAuto.cleave = sgPauseSchedule(SKILL2_RT.ultAuto.cleave, dt);
+    return;
+  }
   var gap = Math.max(0.5, sgUltVal(u, 'sec'));
   var next = SKILL2_RT.ultAuto.cleave;
   if (!(next > 0)) { SKILL2_RT.ultAuto.cleave = GT + gap; return; }
@@ -6857,10 +6903,17 @@ function sgTickUltAutoCast(ctx) {
 
 /* 暴風之舞：每 gap 秒自動施放 1 次雙刀亂舞；每次作用時挑一個敵方目標衝過去，
    到達（可近戰）或目標死亡前不換目標。 */
-function sgTickStorm(ctx) {
+function sgTickStorm(ctx, dt) {
   var stm = SKILL2_RT.storm;
   if (!stm) return;
   if (stm.until <= GT || skills2Levels('dualdance')[6] < 1) { SKILL2_RT.storm = null; return; }
+  /* 死亡／倒地：連同化身的**剩餘時間**一起往後推，否則倒地那幾秒會白白吃掉化身時間，
+     復活後還要面對一次補發的連續揮舞（見 skills2AutoCastBlocked）。 */
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    stm.until = sgPauseSchedule(stm.until, dt);
+    stm.nextAt = sgPauseSchedule(stm.nextAt, dt);
+    return;
+  }
   /* 化身期間普攻是「取消」不是「延後」（2026-08-14 審查修正）：
      戰鬥迴圈的普攻閘門只擋出手、計時器仍在倒數，若放任累積欠帳，
      化身結束後會以 tick 頻率把整段欠帳連發出去（遠超攻速上限），

@@ -50,7 +50,7 @@ test('三個指定技能使用專用 VFX 與命中規格', () => {
   assert.match(renderer, /var smallTheme = \{ c1: '#ef4b16', c2: '#ffd166', glow: '#ff7a1a' \}/);
   assert.match(renderer, /function loadFireFlare\(\)/);
   assert.match(renderer, /new PIXI\.Rectangle\(392, 2, 128, 128\)/);
-  assert.match(renderer, /function flameProjectile\(theme, small, sizeScale\)/);
+  assert.match(renderer, /function flameProjectile\(theme, small, sizeScale, colors\)/);
   assert.match(renderer, /function smallFireballProjectile\(theme\)/);
   assert.match(renderer, /var FIREBALL_SIZE_SCALE = 3/);
   assert.match(renderer, /6\.5 \* s/);

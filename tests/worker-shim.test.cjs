@@ -77,7 +77,8 @@ test('shim 傳遞突刺光槍的長度、方向與飛行物欄位', () => {
     travelMs: null, elem: null, cat: null, variant: 'thrust-octagonal', delayMs: 0,
     projectile: true, lineLength: 182.8, lineWidth: 27.6,
     laneOffsets: [-13.8, 0, 13.8], directionCount: 8,
-    rangeScale: 1.3, directionRanges: [182.8, 50, 50, 50], angle: null
+    rangeScale: 1.3, directionRanges: [182.8, 50, 50, 50], angle: null,
+    sizeMult: 0
   }]);
 });
 
