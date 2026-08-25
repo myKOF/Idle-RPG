@@ -194,6 +194,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,earthguardSoulLink,靈魂連結,0,,,,,,,,0,,【生命反射之盾】可以額外對 1 個敵人產生作用。,earth,earthguard,,shield,"{""egReflectAdd"":{""count"":1}}"
 傳奇特效,earthguardHeartOfEarth,地之心,0,,,,,,,,0,,每殺死 1 個敵人，【天地共生】的復活冷卻時間 -1 秒。,earth,earthguard,,shield,"{""egKillCdr"":{""sec"":1}}"
 傳奇特效,earthguardUndyingWill,不滅意志,0,,,,,,,,0,,【天地共生】復活後的無敵時間內，每殺死 1 個敵人則無敵時間 +0.5 秒。,earth,earthguard,,shield,"{""egKillInvuln"":{""sec"":0.5}}"
+傳奇特效,chainlightningSurge,電荷連鎖,0,,,,,,,,0,,連鎖閃電的彈射數 +2 次。,lightning,chainlightning,,sword1h,"{""chainLinkAdd"":{""count"":2}}"
+傳奇特效,chainlightningVolley,電擊,0,,,,,,,,0,,連鎖閃電的發射數量 +2 道。,lightning,chainlightning,,sword1h,"{""chainBoltAdd"":{""count"":2}}"
+傳奇特效,chainlightningScatter,雷散落,0,,,,,,,,0,,【電殛擴散】額外對 1 個敵人造成傷害，且其傷害提高 50%。,lightning,chainlightning,,sword1h,"{""chainSplashAdd"":{""count"":1},""chainSplashPct"":50}"
+傳奇特效,chainlightningSuper,超導,0,,,,,,,,0,,連鎖閃電每彈射 1 次，該道閃電鏈的傷害 +10%。,lightning,chainlightning,,sword1h,"{""chainBouncePct"":10}"
+傳奇特效,chainlightningOverload,過載,0,,,,,,,,0,,同一個敵人受到 5 次連鎖閃電的彈射後產生爆炸，對周圍 6 米內的敵人造成 200% 雷電傷害。,lightning,chainlightning,,sword1h,"{""chainOverload"":{""hits"":5,""m"":6,""pct"":200}}"
+傳奇特效,thunderstrikeTriple,三重雷,0,,,,,,,,0,,【雙重落雷】的攻擊次數 +1 次。,lightning,thunderstrike,,wand1h,"{""thunderHitAdd"":{""count"":1}}"
+傳奇特效,thunderstrikeLock,雷鎖,0,,,,,,,,0,,落雷術額外攻擊 1 個目標。,lightning,thunderstrike,,wand1h,"{""thunderTargetAdd"":{""count"":1}}"
+傳奇特效,thunderstrikeQuake,震雷,0,,,,,,,,0,,被落雷術擊中的敵人暈眩時間 +1 秒，且其在暈眩狀態下受到的傷害 +25%。,lightning,thunderstrike,,wand1h,"{""thunderStunAdd"":{""sec"":1},""thunderStunnedVulnPct"":25}"
+傳奇特效,thunderstrikeRebirth,雷之再生,0,,,,,,,,0,,【迅雷重生】的機率提高至 100%。,lightning,thunderstrike,,wand1h,"{""thunderRegenTo"":{""chance"":100}}"
+傳奇特效,thunderstrikeRod,引雷針,0,,,,,,,,0,,落雷術會優先攻擊 24 米內生命值最低的敵人，且對其造成的傷害提高 20%。,lightning,thunderstrike,,wand1h,"{""thunderRod"":{""m"":24,""pct"":20}}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

@@ -1306,6 +1306,61 @@ var PASSIVE_POOL = {
     name: '不滅意志', desc: '【天地共生】復活後的無敵時間內，每殺死 1 個敵人則無敵時間 +0.5 秒。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
     fx: { egKillInvuln: { sec: 0.5 } }
+  },
+  /* ---- 傳奇進化第八批（2026-08-26）：雷系第一批 ----
+     單手劍→連鎖閃電（chainlightning）／單手魔杖→落雷術（thunderstrike）。
+     兩者都是單手武器，不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，因此規格物件裡的
+     數字沿用設計文檔原值；仍把「次數／秒數／機率」放進 LEGENDARY_FX_NON_VALUE_KEYS
+     的保護鍵，之後若改判為雙手也不會被放大成別的東西（比照第七批）。 */
+  chainlightningSurge: {
+    name: '電荷連鎖', desc: '連鎖閃電的彈射數 +2 次。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainLinkAdd: { count: 2 } }
+  },
+  chainlightningVolley: {
+    name: '電擊', desc: '連鎖閃電的發射數量 +2 道。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainBoltAdd: { count: 2 } }
+  },
+  chainlightningScatter: {
+    name: '雷散落', desc: '【電殛擴散】額外對 1 個敵人造成傷害，且其傷害提高 50%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainSplashAdd: { count: 1 }, chainSplashPct: 50 }
+  },
+  chainlightningSuper: {
+    name: '超導', desc: '連鎖閃電每彈射 1 次，該道閃電鏈的傷害 +10%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainBouncePct: 10 }
+  },
+  chainlightningOverload: {
+    name: '過載', desc: '同一個敵人受到 5 次連鎖閃電的彈射後產生爆炸，對周圍 6 米內的敵人造成 200% 雷電傷害。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainOverload: { hits: 5, m: 6, pct: 200 } }
+  },
+  thunderstrikeTriple: {
+    name: '三重雷', desc: '【雙重落雷】的攻擊次數 +1 次。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderHitAdd: { count: 1 } }
+  },
+  thunderstrikeLock: {
+    name: '雷鎖', desc: '落雷術額外攻擊 1 個目標。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderTargetAdd: { count: 1 } }
+  },
+  thunderstrikeQuake: {
+    name: '震雷', desc: '被落雷術擊中的敵人暈眩時間 +1 秒，且其在暈眩狀態下受到的傷害 +25%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderStunAdd: { sec: 1 }, thunderStunnedVulnPct: 25 }
+  },
+  thunderstrikeRebirth: {
+    name: '雷之再生', desc: '【迅雷重生】的機率提高至 100%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderRegenTo: { chance: 100 } }
+  },
+  thunderstrikeRod: {
+    name: '引雷針', desc: '落雷術會優先攻擊 24 米內生命值最低的敵人，且對其造成的傷害提高 20%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderRod: { m: 24, pct: 20 } }
   }
 };
 

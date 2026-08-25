@@ -146,6 +146,9 @@ chainlightning,連鎖閃電,⚡,,magic,lightning,15,40,4,0|450,強化連鎖,"{""
 chainlightning,連鎖閃電,⚡,,magic,lightning,15,40,5,0|500,電殛擴散,"{""pct"":25,""pctPer"":2.5,""count"":1,""m"":6}",1500000,1.5,閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害,
 chainlightning,連鎖閃電,⚡,,magic,lightning,15,40,6,0|550,雷幻身,"{""pct"":50,""pctPer"":5}",3000000,1.5,閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）,
 chainlightning,連鎖閃電,⚡,,magic,lightning,15,40,7,0|600,雷電暴風,"{""count"":3,""add"":1,""addPer"":0.1,""pct"":100,""pctPer"":10,""chance"":20}",5000000,1.5,同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈,
+chainlightning,,,,,,,300,8,,天地雷鎖陣,"{""gap"":1,""gapPer"":-0.05,""sec"":3,""secPer"":0.3}",10000000,1.5,施放連鎖閃電後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）,skyThunderArray
+chainlightning,,,,,,,300,9,,永恒超導體,"{""m"":30,""pct"":2,""pctPer"":0.2,""maxStacks"":100}",10000000,1.5,額外射出 1 道無限彈射的閃電鏈：在自身與 {m} 米內的任意敵人之間往返彈射，每經過自身 1 次使你的雷電傷害 +{pct}%，最多 {maxStacks} 層（持續到你死亡為止）,eternalSuperconductor
+chainlightning,,,,,,,300,10,,飛雷神,"{""gap"":0.35,""count"":3,""m"":30,""r"":12,""pct"":200,""pctPer"":20,""sec"":6}",10000000,1.5,施放後每 {gap} 秒放出 {count} 道閃電，分別打向 {m} 米內最遠的 {count} 個敵人，各對命中處 {r} 米內的所有敵人造成 {pct}% 雷電傷害，持續 {sec} 秒,flyingThunderGod
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,1,0|350,落雷術,"{""pct"":200,""pctPer"":20,""count"":2,""gap"":0.2,""castM"":30}",100000,1.5,對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害,
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,2,0|400,落雷連鎖,"{""add"":1,""addPer"":0.1}",200000,1.5,攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）,
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,3,0|450,雙重落雷,"{""add"":1,""addPer"":0.1}",400000,1.5,對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）,
@@ -153,6 +156,9 @@ thunderstrike,落雷術,🌩️,,magic,lightning,15,40,4,0|500,閃電增幅,"{""
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,5,0|550,雷電脈衝,"{""sec"":1.5,""secPer"":0.15,""count"":2,""m"":6}",1500000,1.5,落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒,
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,6,0|600,迅雷重生,"{""chance"":20,""chancePer"":2,""max"":5}",3000000,1.5,每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）,
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,7,0|650,殛道落電,"{""mult"":2,""pct"":50,""pctPer"":5,""m"":6}",5000000,1.5,落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）,
+thunderstrike,,,,,,,300,8,,雷電矩陣,"{""count"":2,""countPer"":0.2,""pct"":300,""pctPer"":30,""wid"":3}",10000000,1.5,施放落雷術時同時召喚橫向與直向各 {count} 道落雷橫掃全場（每道寬 {wid} 米），對路徑上的所有敵人造成 {pct}% 雷電傷害,thunderMatrix
+thunderstrike,,,,,,,300,9,,雷霆天劫,"{""m"":30,""gap"":0.35,""pct"":400,""pctPer"":40}",10000000,1.5,額外召喚 1 道永久持續的天劫雷電：每 {gap} 秒追擊 {m} 米內生命值最低的敵人，造成 {pct}% 雷電傷害,heavenTribulation
+thunderstrike,,,,,,,300,10,,永恒雷獄,"{""gap"":1,""gapPer"":-0.05,""sec"":3,""secPer"":0.3}",10000000,1.5,施放落雷術後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）,eternalThunderPrison
 thunderorb,雷球,🔵,6*6,magic,lightning,15,40,1,0|400,雷球,"{""pct"":50,""pctPer"":5,""count"":2,""gap"":0.35,""sec"":2,""m"":3,""speed"":6,""castM"":30}",100000,1.5,召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散,
 thunderorb,雷球,🔵,6*6,magic,lightning,15,40,2,0|450,擴增雷球,"{""pct"":15,""pctPer"":1.5}",200000,1.5,雷球的體積擴大 {pct}%,
 thunderorb,雷球,🔵,6*6,magic,lightning,15,40,3,0|500,多重雷球,"{""add"":1,""addPer"":0.1}",400000,1.5,雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）,
