@@ -950,10 +950,20 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   dmg = towerBossHpDamage(defender, dmg);
   /* 新版技能【魔法盾】（大地守護 T5，js/skills2.js）：護盾吸收之後、扣生命之前，
-     把一部分傷害改由法力承擔（法力付得起多少算多少）。 */
-  if (dCfg.isPlayer && dmg > 0 && typeof skills2ManaShieldAbsorb === 'function') {
-    var mpPaid = skills2ManaShieldAbsorb(defender, dmg);
-    if (mpPaid > 0) { dmg = Math.max(0, dmg - mpPaid); out.manaShield = mpPaid; }
+     把一部分傷害改由法力承擔；manaRed 只降低實際扣除的 MP，不改變轉換的生命傷害量。 */
+  if (dCfg.isPlayer && dmg > 0 &&
+      (typeof skills2ManaShieldResult === 'function' || typeof skills2ManaShieldAbsorb === 'function')) {
+    var manaResult;
+    if (typeof skills2ManaShieldResult === 'function') {
+      manaResult = skills2ManaShieldResult(defender, dmg);
+    } else {
+      var legacyManaDamage = skills2ManaShieldAbsorb(defender, dmg);
+      manaResult = { damage: legacyManaDamage, mana: legacyManaDamage };
+    }
+    if (manaResult.damage > 0) {
+      dmg = Math.max(0, dmg - manaResult.damage);
+      out.manaShield = manaResult.mana;
+    }
   }
   if (dCfg.isPlayer && gmHpLockActive(defender)) dmg = 0;
   out.hpDamage = dmg;
