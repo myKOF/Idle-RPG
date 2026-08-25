@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex｜調整大地守護「魔法盾」承擔法力降低（2026-08-25）
+
+- 狀態：已完成
+- Owner：Codex
+- 任務分類：新版技能數值／戰鬥資源結算
+- 使用者需求：生命減少時 30% 可由法力承擔，且承擔的法力降低 30%；每級分別 +3% 轉換承傷、+5% 承擔法力降低。
+- 技術內容：`earthguard` 第 5 階新增 `manaRed`／`manaRedPer`；轉換的生命傷害量與實際扣除 MP 分開結算，法力不足時按降低後的 MP 成本反推可轉換傷害，直接扣血與 `resolveHit` 兩條路徑共用。
+- 修改檔案：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、`js/formula.js`、`tests/skill2-earth.test.cjs`、`tests/skill2-vfx.test.cjs`、`game_formula.md`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、本文件。
+- 驗證方式：魔法盾定向測試 2/2、`skill2-system` 33/33、`skill2-vfx` 31/31、`node --check`、`node tools/build_check.cjs`（等價建置檢查；PowerShell execution policy 阻擋 `npm run build` wrapper）、`git diff --check`、Skills2 xlsx/CSV/JS 往返語意檢查。
+- 已知風險：完整測試仍有 2 項既有泥沼範圍基準失敗（`skill2-earth.test.cjs`）與 1 項既有風系冷卻基準失敗（`skill2-wind.test.cjs`），皆與本次魔法盾改動無關。
+- 未完成項目：無。
+- Commit：已建立（見 Git log）。
+
+---
+
 ## Claude｜傳奇進化第六批（火狩／岩甲術十特效 ＋ 兩組超神進化）（2026-08-25）
 
 - 狀態：已完成
