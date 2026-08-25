@@ -174,6 +174,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,firepillarOutburst,火焰爆衝,0,,,,,,,,0,,火龍捲的傷害段數 +3 段。,fire,firepillar,,staff2h,"{""firepillarHitsAdd"":{""hits"":3}}"
 傳奇特效,firepillarDeflagration,爆燃,0,,,,,,,,0,,火龍捲每造成 1 段傷害就使該敵人受到的燃燒傷害 +10%。,fire,firepillar,,staff2h,"{""firepillarBurnAmp"":{""pct"":10}}"
 傳奇特效,firepillarResonance,火龍共鳴,0,,,,,,,,0,,場上每存在 1 道火龍捲，所有火龍捲造成的傷害 +4%。,fire,firepillar,,staff2h,"{""firepillarResonancePct"":4}"
+傳奇特效,firehuntAmplify,增焰,0,,,,,,,,0,,火狩的體積與環繞半徑 +25%。,fire,firehunt,,orb,"{""firehuntScalePct"":25}"
+傳奇特效,firehuntConcurrent,伴生併發,0,,,,,,,,0,,每 1 秒，你的 1 團火狩會飛出攻擊半徑 20 米內的敵人，對目標 10 米內的所有敵人造成 300% 火焰傷害。,fire,firehunt,,orb,"{""firehuntLaunch"":{""gap"":1,""m"":20,""aoeM"":10,""pct"":300}}"
+傳奇特效,firehuntBlaze,烈火狩,0,,,,,,,,0,,在火狩的持續時間內，每 0.5 秒你的火焰傷害提高 2%（火狩全部消失後結束）。,fire,firehunt,,orb,"{""firehuntFireAmp"":{""gap"":0.5,""pct"":2}}"
+傳奇特效,firehuntDetonate,炎爆,0,,,,,,,,0,,一個敵人被火狩命中 10 次後會爆炸，對其周圍 6 米內的敵人造成 250% 火焰傷害。,fire,firehunt,,orb,"{""firehuntDetonate"":{""hits"":10,""m"":6,""pct"":250}}"
+傳奇特效,firehuntHunter,狩獵者,0,,,,,,,,0,,你的火狩數量減半（無條件進位，至少 1 團），但造成的傷害額外 +150%。,fire,firehunt,,orb,"{""firehuntHunter"":{""pct"":150}}"
+傳奇特效,rockHeavyArmor,重岩甲,0,,,,,,,,0,,岩甲術獲得的生命護盾 +30%。,earth,rockarmor,,focus,"{""rockShieldPct"":30}"
+傳奇特效,rockLightArmor,輕飛甲,0,,,,,,,,0,,岩甲護盾存在期間，你的移動速度 +30%。,earth,rockarmor,,focus,"{""rockMoveSpeedPct"":30}"
+傳奇特效,rockAmpBoost,巨岩增幅,0,,,,,,,,0,,【岩甲增幅】可疊加的層數 +10 層。,earth,rockarmor,,focus,"{""rockAmpStacksAdd"":{""maxStacks"":10}}"
+傳奇特效,rockSpikeArmor,尖刺甲,0,,,,,,,,0,,【岩甲尖刺】的效果提高 100%。,earth,rockarmor,,focus,"{""rockSpikePct"":100}"
+傳奇特效,rockEarthHeart,大地之心,0,,,,,,,,0,,當你的生命護盾降至 0 時獲得無敵 2 秒；此效果每 30 秒只能觸發 1 次。,earth,rockarmor,,focus,"{""rockHeartInvuln"":{""sec"":2,""cd"":30}}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

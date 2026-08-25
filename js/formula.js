@@ -337,9 +337,13 @@ function computeStats(equipmentOverride) {
   st.base = {};
   st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
   var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
-  // 新版技能【大地守護】（earthguard T1，js/skills2.js）：生命上限的額外乘區（與天賦同層獨立相乘）
+  /* 新版技能的兩個生命上限乘區（js/skills2.js）：
+       【大地守護】（earthguard T1）＝常駐；
+       【金剛不壞】（岩甲術超神）＝只在岩甲護盾存在期間，兩端各自 markStatsDirty 一次。
+     兩者相乘而非相加：來源不同層，比照天賦【生命洪流】的獨立乘區。 */
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100) *
-    ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1));
+    ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1) *
+    ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
   st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;

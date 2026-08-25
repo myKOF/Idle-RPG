@@ -278,6 +278,12 @@ function legendaryElementDamageUp(st, pEnt) {
     var fireAmp = skill2FireAmpPct(pEnt);
     if (fireAmp > 0) out.fire = (out.fire || 0) + fireAmp;
   }
+  /* 新版技能超神【超重力場】（岩甲術，js/skills2.js）：岩甲期間的土系傷害提升。
+     與【火焰增幅】同一條路——加算進該屬性目前的提升%，不另開乘區。 */
+  if (typeof skill2RockEarthDamageUpPct === 'function') {
+    var earthAmp = skill2RockEarthDamageUpPct(pEnt);
+    if (earthAmp > 0) out.earth = (out.earth || 0) + earthAmp;
+  }
   /* 新版技能【大地祝福】（大地守護 T2）：全屬性傷害的**乘算**增幅——
      設計文檔明訂「與所有屬性增傷效果為額外的乘法計算」，因此不是再加一筆%，
      而是把每個屬性目前的加成整體放大。 */

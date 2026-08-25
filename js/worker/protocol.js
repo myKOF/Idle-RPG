@@ -11,7 +11,11 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v22（2026-08-17 火狩 VFX 速度同步）：VFX 環形 area 新增可選 spinRate（弧度／秒），
+/* v24（2026-08-25 火狩超神進化）：VFX 環形 area 新增五個可選欄位——
+   growMax／spiral／spiralLag（螺旋外擴的上限半徑、是否每團各自外擴、相鄰兩團的出生間隔）
+   與 orbGrowTo／orbGrowSec（環繞體體積在幾秒內長到幾倍）。這五個與既有的 grow 同一類：
+   都是**模擬層實際判定用的數字**，顯示層照抄即可；舊事件缺少時退化成 0／1＝改造前的畫法。
+   v22（2026-08-17 火狩 VFX 速度同步）：VFX 環形 area 新增可選 spinRate（弧度／秒），
    讓主執行緒畫面沿用模擬層實際旋轉速度；舊事件仍可用 spin 方向退化。
    v21（2026-08-16 新版技能一鍵滿級與重置）：新增指令 skill2.max／skill2.delete，90 → 92。
    v20（2026-08-15 技能視覺事件低延遲傳遞）：新增 Worker → 主執行緒的 visual 訊息，
@@ -30,7 +34,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 23;
+var WORKER_PROTOCOL_VERSION = 24;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -134,6 +138,10 @@ var EVENT_KINDS = {
              的體積半徑、環繞體數量、旋轉方向 1／-1、角速度弧度／秒）；spinRate 可選，缺少時
              顯示層以 spin 退回預設速度；x／y 為施放當下的圓心，環繞場域
              釘在玩家身上，顯示層應以自己的玩家錨點逐幀跟隨。
+             另有五個可選的成長欄位（v24）：grow（環半徑每秒外擴 px）、growMax（外擴上限）、
+             spiral（1＝每一團各自從圓心往外長，形成螺旋；0＝整環一起長）、
+             spiralLag（相鄰兩團的出生間隔秒數，決定螺旋張多開）、
+             orbGrowTo／orbGrowSec（環繞體體積在幾秒內長到幾倍）。
              ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。 */
   VFX: 'vfx'
 };

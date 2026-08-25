@@ -1196,6 +1196,61 @@ var PASSIVE_POOL = {
     name: '火龍共鳴', desc: '場上每存在 1 道火龍捲，所有火龍捲造成的傷害 +4%。',
     base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firepillar', weaponTypes: ['staff2h'],
     fx: { firepillarResonancePct: 4 }
+  },
+  /* ---- 傳奇進化第六批（2026-08-25）：魔法系第二批 ----
+     水晶球→火狩（firehunt）／法器→岩甲術（rockarmor）。
+     兩者都是單手副手武器，不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，
+     因此規格物件裡的數字沿用設計文檔原值；仍把「次數／秒數／冷卻」放進
+     LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵，之後若改判為雙手也不會被放大成別的東西。 */
+  firehuntAmplify: {
+    name: '增焰', desc: '火狩的體積與環繞半徑 +25%。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
+    fx: { firehuntScalePct: 25 }
+  },
+  firehuntConcurrent: {
+    name: '伴生併發', desc: '每 1 秒，你的 1 團火狩會飛出攻擊半徑 20 米內的敵人，對目標 10 米內的所有敵人造成 300% 火焰傷害。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
+    fx: { firehuntLaunch: { gap: 1, m: 20, aoeM: 10, pct: 300 } }
+  },
+  firehuntBlaze: {
+    name: '烈火狩', desc: '在火狩的持續時間內，每 0.5 秒你的火焰傷害提高 2%（火狩全部消失後結束）。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
+    fx: { firehuntFireAmp: { gap: 0.5, pct: 2 } }
+  },
+  firehuntDetonate: {
+    name: '炎爆', desc: '一個敵人被火狩命中 10 次後會爆炸，對其周圍 6 米內的敵人造成 250% 火焰傷害。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
+    fx: { firehuntDetonate: { hits: 10, m: 6, pct: 250 } }
+  },
+  firehuntHunter: {
+    name: '狩獵者', desc: '你的火狩數量減半（無條件進位，至少 1 團），但造成的傷害額外 +150%。',
+    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'firehunt', weaponTypes: ['orb'],
+    fx: { firehuntHunter: { pct: 150 } }
+  },
+  rockHeavyArmor: {
+    name: '重岩甲', desc: '岩甲術獲得的生命護盾 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
+    fx: { rockShieldPct: 30 }
+  },
+  rockLightArmor: {
+    name: '輕飛甲', desc: '岩甲護盾存在期間，你的移動速度 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
+    fx: { rockMoveSpeedPct: 30 }
+  },
+  rockAmpBoost: {
+    name: '巨岩增幅', desc: '【岩甲增幅】可疊加的層數 +10 層。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
+    fx: { rockAmpStacksAdd: { maxStacks: 10 } }
+  },
+  rockSpikeArmor: {
+    name: '尖刺甲', desc: '【岩甲尖刺】的效果提高 100%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
+    fx: { rockSpikePct: 100 }
+  },
+  rockEarthHeart: {
+    name: '大地之心', desc: '當你的生命護盾降至 0 時獲得無敵 2 秒；此效果每 30 秒只能觸發 1 次。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
+    fx: { rockHeartInvuln: { sec: 2, cd: 30 } }
   }
 };
 

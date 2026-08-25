@@ -114,6 +114,9 @@ var SG_METEOR_MAX_TRAVEL_MS = (typeof VFX_METEOR_RAW_TRAVEL_MS === 'number' && V
 /* 環繞場域（火狩）：伴生已由「每團只能伴生一個、伴生體不可再伴生」自然收斂，
    這個上限只是防呆（環繞體數量若失控，每個 tick 的接觸判定會跟著失控）。 */
 var SG_ORBIT_MAX_ORBS = 32;
+/* 超神【火神降臨】的普攻星環：三顆之間的起飛間隔（純節奏，與傷害無關）。
+   飛行速度本身是參數表的 mps（24 米／秒），不寫死在這裡。 */
+var SG_FIREGOD_ORB_STAGGER_SEC = 0.08;
 var SG_ORBIT_VFX_REFRESH_SEC = 2;   // 持續時間被【再生】延長多久才值得補送一次環繞特效
 /* 同一次施放丟出多顆／多次時，各發之間的錯開時間（純顯示節奏；傷害在施放當下就結算完畢，
    延遲只用在飄字與特效的 delayMs，比照殞石的 SG_METEOR_INTERVAL_MS）。 */
@@ -177,10 +180,10 @@ var SKILLS2 = {
   bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 25, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒' }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, cost: 140, fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, cost: 240, fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }], ult: [{ id: 'slayerAdvent', name: '殺神降臨', cost: 300, fx: { pct: 100, pctPer: 10, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間普攻傷害 +{pct}%，且同時對目標周圍 {m} 米內的所有敵人造成傷害' }, { id: 'warGodRoll', name: '戰神屠錄', cost: 300, fx: { pct: 4, maxStacks: 100, maxStacksPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間你無法獲得護盾，但每殺死 1 個敵人使你造成的所有傷害 +{pct}%，最多 {maxStacks} 層，持續到你死亡為止' }, { id: 'asuraFist', name: '阿修羅霸王拳', cost: 300, fx: { pct: 500, pctPer: 50, sec: 1, secPer: 0.1, gap: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，你造成的所有傷害 +{pct}%，持續 {sec} 秒' }] },
   fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { pct: 150, pctPer: 15, m: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害' }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, cost: 60, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒' }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, cost: 80, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害' }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, cost: 100, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害' }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, cost: 200, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）' }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, cost: 320, fx: { pct: 250, pctPer: 25, count: 3, m: 15, castM: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）' }], ult: [{ id: 'meteorFall', name: '火殞天落', cost: 300, fx: { count: 8, size: 30, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大殞石' }, { id: 'starfallCataclysm', name: '地爆天星', cost: 300, fx: { gap: 60, gapPer: -3, normal: 90, elite: 40, boss: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，天空落下一顆超巨型殞石：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命' }, { id: 'phoenixPrairie', name: '火鳳遼原', cost: 300, fx: { count: 1, balls: 3, ballsPer: 0.3, pct: 30, pctPer: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石數量 +{count} 顆，且每顆殞石落下時伴隨 {balls} 顆火球一同落下；火球與殞石造成的傷害 +{pct}%' }] },
   firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, cost: 40, fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火焰傷害（全程約 {sec} 秒）' }, { name: '龍捲噴發', unlock: { reinc: 0, lv: 100 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, cost: 80, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火焰傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, cost: 100, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒' }, { name: '烈焰衝擊', unlock: { reinc: 0, lv: 250 }, cost: 140, fx: { pct: 100, pctPer: 10, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火龍捲或火牆消失時，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害' }, { name: '重生', unlock: { reinc: 0, lv: 300 }, cost: 200, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', unlock: { reinc: 0, lv: 350 }, cost: 320, fx: { count: 3, hits: 8, pct: 100, pctPer: 10, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火焰傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }], ult: [{ id: 'infernoTempest', name: '烈焰暴風', cost: 300, fx: { mult: 1.2, multPer: 0.8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放的火龍捲（火牆）數量變為 {mult} 倍（小數部分依機率補 1 道）' }, { id: 'eternalInferno', name: '永劫火獄', cost: 300, fx: { m: 20, pct: 200, pctPer: 20, gap: 0.5, sec: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲會在附近 {m} 米內隨機游走，並在移動軌跡上留下火池：每 {gap} 秒造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { id: 'dragonDevour', name: '火龍之吞噬', cost: 300, fx: { m: 30, hits: 3, hitsPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '所有火龍捲改為聚攏在你身邊，並持續將 {m} 米內的敵人拉向你，且火龍捲的傷害段數 +{hits} 段' }] },
-  firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, m: 8, rps: 0.455, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, cost: 200, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, cost: 320, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }] },
-  rockarmor: { name: '岩甲術', emoji: '🪨', range: '', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '岩甲術', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { pct: 30, pctPer: 3, sec: 10, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '施放岩甲強化自身，獲得最大生命值 {pct}% 的岩甲護盾，持續 {sec} 秒' }, { name: '強化岩甲', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '進一步強化岩甲，額外獲得最大生命值 {pct}% 的岩甲護盾（與第 1 階累加）' }, { name: '岩甲尖刺', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 5, pctPer: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '岩甲護盾存在期間，攻擊你的敵人會遭受你最大生命值 {pct}% 的地系傷害（獨立於反震，兩者各自結算）' }, { name: '護盾增幅', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '主動型被動（裝配到技能列即恆時生效）：你獲得的所有護盾效率額外 +{pct}%（乘算）' }, { name: '岩之再生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 生命值即獲得最大生命 {pct}% 的護盾' }, { name: '岩甲增幅', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 0.5, pctPer: 0.05, max: 30, sec: 3 }, goldBase: 3000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 護盾即獲得 {pct}% 傷害增幅（乘算），最多疊 {max} 層，持續 {sec} 秒' }, { name: '天地逆返', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，護盾剩餘量越低則傷害減免越高，護盾歸零時最高額外 +{pct}% 傷害減免（乘算）' }] },
+  firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, m: 8, rps: 0.455, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, cost: 200, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, cost: 320, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }], ult: [{ id: 'solarRing', name: '烈陽星環', cost: 300, fx: { count: 1, grow: 60, growSec: 4, spin: 30, pct: 50, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩數量 +{count} 團，體積在 {growSec} 秒內逐漸增大最多 {grow}%，環繞速度 +{spin}%，且造成傷害 +{pct}%' }, { id: 'infiniteRing', name: '無限星環', cost: 300, fx: { count: 10, countPer: 1, m: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩改為從自身中心呈螺旋狀向外擴散（在 {m} 米處達到最外圈），並於持續時間內不斷放出火狩，最多額外 +{count} 團' }, { id: 'fireGodDescend', name: '火神降臨', cost: 300, fx: { m: 6, gap: 0.5, pct: 300, pctPer: 30, orbs: 3, orbsPer: 0.3, mps: 24 }, goldBase: 10000000, goldGrow: 1.5, desc: '你的身體被火焰包裹：每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害；普攻同時朝目標射出 {orbs} 顆火狩星環（{mps} 米／秒）' }] },
+  rockarmor: { name: '岩甲術', emoji: '🪨', range: '', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '岩甲術', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { pct: 30, pctPer: 3, sec: 10, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '施放岩甲強化自身，獲得最大生命值 {pct}% 的岩甲護盾，持續 {sec} 秒' }, { name: '強化岩甲', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '進一步強化岩甲，額外獲得最大生命值 {pct}% 的岩甲護盾（與第 1 階累加）' }, { name: '岩甲尖刺', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 5, pctPer: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '岩甲護盾存在期間，攻擊你的敵人會遭受你最大生命值 {pct}% 的地系傷害（獨立於反震，兩者各自結算）' }, { name: '護盾增幅', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '主動型被動（裝配到技能列即恆時生效）：你獲得的所有護盾效率額外 +{pct}%（乘算）' }, { name: '岩之再生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 生命值即獲得最大生命 {pct}% 的護盾' }, { name: '岩甲增幅', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 0.5, pctPer: 0.05, max: 30, sec: 3 }, goldBase: 3000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 護盾即獲得 {pct}% 傷害增幅（乘算），最多疊 {max} 層，持續 {sec} 秒' }, { name: '天地逆返', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，護盾剩餘量越低則傷害減免越高，護盾歸零時最高額外 +{pct}% 傷害減免（乘算）' }], ult: [{ id: 'superRockArt', name: '超重岩之術', cost: 300, fx: { m: 24, sec: 4, pct: 400, pctPer: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放時將巨岩之力壓縮到極致，使 {m} 米內的敵人石化 {sec} 秒：無法行動，且受到的土系傷害額外 +{pct}%' }, { id: 'adamantBody', name: '金剛不壞', cost: 300, fx: { red: 90, redPer: 0.9, hp: 50, hpPer: 5, spike: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '岩甲護盾存在期間額外獲得 +{red}% 傷害減免（乘算），生命上限與岩甲護盾 +{hp}%，且【岩甲尖刺】的效果額外提高 {spike}%' }, { id: 'gravityField', name: '超重力場', cost: 300, fx: { m: 24, pct: 300, pctPer: 30, stiff: 65, stiffSec: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放岩甲術時同時扭曲 {m} 米內的重力場，使敵人僵化（移動、攻速與傷害 -{stiff}%，持續 {stiffSec} 秒）；岩甲護盾存在期間你的土系傷害額外 +{pct}%' }] },
   mire: { name: '泥沼術', emoji: '🟤', range: '12*12', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '泥沼術', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { sec: 4, secPer: 0.4, castM: 20, move: 30, aspd: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一片 12×12 米的沼澤（射程 {castM} 米），沼澤中的敵人陷入緩速（移動速度 -{move}%、攻速 -{aspd}%），持續 {sec} 秒' }, { name: '虛弱', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '受泥沼緩速影響的敵人，受到的傷害提高 {pct}%' }, { name: '毒沼術', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { dotPct: 25, dotPctPer: 2.5, dotGap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '沼澤持續放出毒氣：沼澤中的敵人每 {dotGap} 秒受到魔法攻擊 {dotPct}% 的毒性傷害' }, { name: '毒沼增生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 40 }, goldBase: 800000, goldGrow: 1.5, desc: '沼澤結束時傳染給 {m} 米內較近的敵人，最多傳染 {add} 次（不足 1 次的部分以機率觸發）' }, { name: '沼澤漫延', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { sec: 6, pct: 40, pctPer: 4, growSec: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '沼澤持續時間提高至 {sec} 秒，且在 {growSec} 秒內逐步擴大，最大擴增 {pct}%' }, { name: '重力泥沼', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { move: 50, aspd: 75, pct: 20, pctPer: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '緩速強化為移動速度 -{move}%、攻速 -{aspd}%，且受影響目標受到的傷害再提高 {pct}%（與第 2 階累加）' }, { name: '熔岩沼', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { sec: 8, pct: 20, pctPer: 2, dotPct: 70, dotPctPer: 7, dotGap: 0.4 }, goldBase: 5000000, goldGrow: 1.5, desc: '沼澤轉變為岩漿：持續時間提高至 {sec} 秒、範圍再擴增 {pct}%（與第 5 階累加），其中的目標每 {dotGap} 秒額外受到魔法攻擊 {dotPct}% 的火焰傷害' }] },
-  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 15, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 25, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }] },
+  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 25, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }] },
   chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害' }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害' }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）' }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10, chance: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈' }] },
   thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害' }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落電', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { mult: 2, pct: 50, pctPer: 5, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）' }] },
   thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }] },
@@ -211,6 +214,10 @@ function resetSkill2RT() {
     delete SKILL2_RT.rock.pEnt.buffs.sgRockArmor;
     delete SKILL2_RT.rock.pEnt.buffs.sgRockAmp;
   }
+  /* 超神【金剛不壞】的生命上限倍率是 RT 的投影：RT 一被清掉那個 +50% 就該消失，
+     但屬性是快取的——不主動作廢的話會一路留到下一次換裝才被重算（tickSkill2 的
+     到期回收是另一半）。 */
+  if (SKILL2_RT && SKILL2_RT.rock && typeof markStatsDirty === 'function') markStatsDirty();
   if (SKILL2_RT && SKILL2_RT.barrier && SKILL2_RT.barrier.pEnt && SKILL2_RT.barrier.pEnt.buffs) {
     delete SKILL2_RT.barrier.pEnt.buffs.sgStormBarrier;
     delete SKILL2_RT.barrier.pEnt.buffs.sgStormGod;
@@ -248,7 +255,11 @@ function resetSkill2RT() {
                      // ——那個增益「持續到死亡為止」，狂怒本身早就回收了也還在，
                      // 所以得另外記住掛在誰身上，resetSkill2RT 才收得回來
     asuraFist: 0,    // 超神【阿修羅霸王拳】的下一次發動時刻（不入存檔）
-    starfall: null   // 超神【地爆天星】的落下排程：{ at, fallSec, warned, dropped, pEnt }（不入存檔）
+    starfall: null,  // 超神【地爆天星】的落下排程：{ at, fallSec, warned, dropped, pEnt }（不入存檔）
+    hunt: null,      // 火狩兩個節拍型傳奇的時刻：{ launchAt, ampAt }（【伴生併發】【烈火狩】，不入存檔）
+    fireGodAt: 0,    // 超神【火神降臨】領域的下一拍時刻（不入存檔）
+    fireGodVfxAt: 0, // 超神【火神降臨】範圍提示的下一次重畫時刻（純顯示，不入存檔）
+    rockHeartAt: 0   // 傳奇【大地之心】的內部冷卻到期時刻（不入存檔）
   };
 }
 resetSkill2RT(); // 載入即建立初始狀態
@@ -809,6 +820,8 @@ function skill2VulnACfg(aCfg, target) {
      本支同時服務普攻端（combat.js doPlayerAttack）與新版技能端（sgAtkCfg），
      因此兩邊都認得這個增幅，不必各補一次。 */
   if (typeof skill2IceAmpACfg === 'function') aCfg = skill2IceAmpACfg(aCfg, target);
+  // 超神【超重岩之術】的石化：同樣是「只針對一個屬性」的受傷增幅，走同一條路
+  if (typeof skill2PetrifyACfg === 'function') aCfg = skill2PetrifyACfg(aCfg, target);
   return aCfg;
 }
 
@@ -3972,22 +3985,37 @@ function sgTickGrounds(dt, ctx) {
    =========================================================================== */
 function sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
+  var lg = sgLegend('firehunt');
+  var ultSolar = sgUlt('firehunt', 'solarRing');
+  var ultInfinite = sgUlt('firehunt', 'infiniteRing');
   var dance = lvs[6] > 0;
   var triple = lvs[3] > 0;
   // 傷害%與持續時間取「最高的改寫階」，團數則由三重火狩決定（狩神之舞只加道數）
   var srcFx = dance ? t[6].fx : (triple ? t[3].fx : t[0].fx);
   var srcLv = dance ? lvs[6] : (triple ? lvs[3] : lvs[0]);
-  var dmgVal = sgGroupBaseStat(g, st) * sgVal(srcFx, 'pct', srcLv) / 100;
+  var dmgPct = sgVal(srcFx, 'pct', srcLv);
+  /* 兩個額外傷害乘區，各自獨立相乘：
+       ・傳奇【狩獵者】＝拿數量換威力，兩者必須同時套用才是原本的交換
+       ・超神【烈陽星環】＝直給的傷害提升 */
+  var hunter = lg.firehuntHunter;
+  if (hunter && Number(hunter.pct) > 0) dmgPct *= 1 + Number(hunter.pct) / 100;
+  if (ultSolar) dmgPct *= 1 + sgUltVal(ultSolar, 'pct') / 100;
+  var dmgVal = sgGroupBaseStat(g, st) * dmgPct / 100;
   var lifeSec = Math.max(0.5, Number(srcFx.sec) || Number(t[0].fx.sec) || 4);
   var count = Math.max(1, Math.floor(Number((triple ? t[3].fx : t[0].fx).count) || 2));
-  // 強化火狩：體積與環繞範圍同步擴大
-  var scale = lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1;
+  if (ultSolar) count += Math.max(0, Math.floor(sgUltVal(ultSolar, 'count')));
+  // 狩獵者：數量減半（無條件進位、至少 1 團），代價換上面那個傷害乘區
+  if (hunter) count = Math.max(1, Math.ceil(count / 2));
+  // 強化火狩（T2）×【增焰】（傳奇）：體積與環繞範圍同步擴大
+  var scale = (lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1) *
+    (1 + Math.max(0, Number(lg.firehuntScalePct) || 0) / 100);
   var radius = bfMeterPx(Number(t[0].fx.m) || 8) * scale;
   var body = sgRange(g.range); // 群組 range＝火狩體積（長*寬，米）
   var bodyR = bfMeterPx(Math.max(body.length, body.width) / 2) * scale;
-  // 極速火狩：旋轉速度（圈/秒 → 弧度/秒），正值＝順時針
+  // 極速火狩（T5）×【烈陽星環】（超神）：旋轉速度（圈/秒 → 弧度/秒），正值＝順時針
   var spin = Math.PI * 2 * (Number(t[0].fx.rps) || 1) *
-    (lvs[4] > 0 ? 1 + sgVal(t[4].fx, 'pct', lvs[4]) / 100 : 1);
+    (lvs[4] > 0 ? 1 + sgVal(t[4].fx, 'pct', lvs[4]) / 100 : 1) *
+    (ultSolar ? 1 + sgUltVal(ultSolar, 'spin') / 100 : 1);
 
   /* 狩神之舞：兩道火狩，外圈距內圈 m 米、旋轉方向相反；
      且每團出現時自帶伴生（不必等命中判定；伴生體本身仍不可再伴生）。 */
@@ -3999,7 +4027,7 @@ function sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     }
   }
 
-  sgSpawnOrbitField(pEnt, st, 'firehunt', {
+  var cfg = {
     tgt: primary, floatSel: floatSel, rings: rings, count: count,
     dmgVal: dmgVal, lifeSec: lifeSec, bodyR: bodyR,
     hitElem: 'fire',
@@ -4007,7 +4035,38 @@ function sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     companionPx: bfMeterPx(Number(t[2].fx.m) || 1),
     bornWithCompanion: dance,
     extendSec: lvs[5] > 0 ? sgVal(t[5].fx, 'sec', lvs[5]) : 0
-  });
+  };
+  /* 傳奇【炎爆】：命中計數滿了就爆。傷害基準與火狩本體同一個（群組基礎值×%），
+     在施放當下定版，因此不會被之後的換裝改寫。 */
+  var det = lg.firehuntDetonate;
+  if (det && Number(det.hits) > 0 && Number(det.pct) > 0) {
+    cfg.detonate = {
+      hits: Math.max(1, Math.floor(Number(det.hits))),
+      px: bfMeterPx(Math.max(0, Number(det.m) || 0)),
+      dmgVal: sgGroupBaseStat(g, st) * Number(det.pct) / 100
+    };
+  }
+  /* 【烈陽星環】：長大的是**火狩本身的體積**，不是環半徑（環半徑成長是虛空斬那條路）。
+     兩者是不同的幾何量，共用一個欄位會讓「星環越轉越大」變成「星環越飛越遠」。 */
+  if (ultSolar) {
+    cfg.bodyGrowTo = 1 + Math.max(0, sgUltVal(ultSolar, 'grow')) / 100;
+    cfg.bodyGrowSec = Math.max(0.1, Number(ultSolar.def.fx.growSec) || 4);
+  }
+  /* 【無限星環】：改為「從中心向外的螺旋」——每一團火狩各自從圓心起算半徑並持續外推
+     （spiral＝半徑掛在環繞體上而不是環上），同時在持續時間內分批再放出新的火狩。
+     新放出的那幾團同樣從圓心起算，因此畫面上是一條連續往外長的螺旋而不是同心圓。 */
+  if (ultInfinite) {
+    var maxPx = bfMeterPx(Math.max(1, Number(ultInfinite.def.fx.m) || 20));
+    var extra = Math.max(0, Math.floor(sgUltVal(ultInfinite, 'count')));
+    cfg.rings = [{ r: Math.max(1, bodyR), spin: spin }];   // 從圓心（＝一個火狩的半徑）起算
+    cfg.spiral = true;
+    cfg.spiralMaxPx = maxPx;
+    cfg.growPxPerSec = maxPx / lifeSec;
+    cfg.spawnLeft = extra;
+    cfg.spawnGap = lifeSec / (extra + 1);
+    cfg.fieldKey = 'firehunt-spiral';
+  }
+  sgSpawnOrbitField(pEnt, st, 'firehunt', cfg);
 }
 
 /* 建立一次施放的環繞場域：每一道（ring）平均散開 count 團火狩。
@@ -4031,10 +4090,29 @@ function sgSpawnOrbitField(pEnt, st, gid, cfg) {
     /* 半徑成長（虛空斬）：環半徑每秒加長多少像素。0＝固定半徑（火狩／環體電球原本的行為）。
        成長是「平滑的」——每個 tick 依 dt 累加，不是每秒跳一次（設計文檔明列此要求）。 */
     growPxPerSec: Math.max(0, Number(cfg.growPxPerSec) || 0),
+    /* 螺旋（超神【無限星環】）：半徑改掛在**每一團**環繞體上，各自從圓心往外長。
+       與 growPxPerSec 的差別是「誰在成長」：那條長的是整個環（同心圓一起變大），
+       這條長的是各團自己（先出現的在外圈、後放出的在內圈＝一條螺旋）。 */
+    spiral: !!cfg.spiral,
+    spiralMaxPx: Math.max(0, Number(cfg.spiralMaxPx) || 0),
+    spawnLeft: Math.max(0, Math.floor(Number(cfg.spawnLeft) || 0)),
+    spawnGap: Math.max(0.05, Number(cfg.spawnGap) || 1),
+    spawnAt: 0, spawnSeq: 0,
+    /* 傳奇【炎爆】：{ hits, px, dmgVal }。規格在施放當下定版（傷害值要吃施放時的魔攻），
+       之後不隨屬性變動，與其他場域型效果一致。 */
+    detonate: cfg.detonate || null,
+    /* 體積成長（超神【烈陽星環】）：bodyR 由 bodyR0 逐幀重算，不是每秒跳一次。
+       bornAt 是這一組的出生時刻，成長曲線只認它，因此【再生】延長持續時間
+       不會把已經長滿的體積重新縮回去。 */
+    bodyR0: Math.max(1, Number(cfg.bodyR) || 0),
+    bodyGrowTo: Math.max(1, Number(cfg.bodyGrowTo) || 1),
+    bodyGrowSec: Math.max(0.1, Number(cfg.bodyGrowSec) || 1),
+    bornAt: GT,
     startAng: Number(cfg.startAng) || 0,
     fieldKey: cfg.fieldKey || null,
     rings: [], orbs: [], vfxUntil: 0
   };
+  f.spawnAt = f.spawnLeft > 0 ? GT + f.spawnGap : 0;
   var count = Math.max(1, Math.floor(Number(cfg.count) || 1));
   var startAng = f.startAng;
   for (var i = 0; i < cfg.rings.length; i++) {
@@ -4073,7 +4151,7 @@ function sgOrbitSyncStatus(pEnt, statusId) {
 }
 
 function sgOrbitOrb(ang, ring) {
-  return { ang: ang, spin: ring.spin, radius: ring.r, lap: 0, canSpawn: true, contacts: [] };
+  return { ang: ang, spin: ring.spin, radius: ring.r, lap: 0, canSpawn: true, companion: false, contacts: [] };
 }
 
 /* 伴生火狩：生在母體的正後方（沿環繞路徑往回 companionPx，弧長換算成弧度）。
@@ -4082,7 +4160,9 @@ function sgOrbitCompanion(f, orb) {
   var back = orb.radius > 0 ? f.companionPx / orb.radius : 0;
   return {
     ang: orb.ang - (orb.spin >= 0 ? back : -back), spin: orb.spin,
-    radius: orb.radius, lap: 0, canSpawn: false, contacts: []
+    /* companion 只有一個用途：傳奇【伴生併發】要「消耗一團伴生火狩」，
+       得先分得出哪一團才是伴生體——母體與伴生體的 canSpawn 都是 false，那個旗標區分不了。 */
+    radius: orb.radius, lap: 0, canSpawn: false, companion: true, contacts: []
   };
 }
 
@@ -4123,17 +4203,47 @@ function sgOrbitLapTarget(f, live) {
 function sgOrbitStep(f, enemies, dt, ctx) {
   var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : [];
   var center = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
-  /* 半徑成長（虛空斬）：環半徑是權威，環繞體每一步都回頭讀自己那一環的當下半徑。 */
+  /* 體積成長（超神【烈陽星環】）：bodyR 是接觸判定的權威，逐幀由「出生時刻」重算，
+     不是每秒跳一次；也因此【再生】把持續時間往後推不會讓已經長滿的體積縮回去。 */
+  if (f.bodyGrowTo > 1) {
+    var gp = Math.max(0, Math.min(1, (GT - f.bornAt) / f.bodyGrowSec));
+    f.bodyR = f.bodyR0 * (1 + (f.bodyGrowTo - 1) * gp);
+  }
+  /* 半徑成長：環半徑是權威（虛空斬）；螺旋（無限星環）則改由每一團自己往外長。 */
   if (f.growPxPerSec > 0 && dt > 0) {
-    for (var gi = 0; gi < f.rings.length; gi++) f.rings[gi].r += f.growPxPerSec * dt;
-    for (var oi = 0; oi < f.orbs.length; oi++) {
-      var ring = f.rings[f.orbs[oi].ringIdx || 0];
-      if (ring) f.orbs[oi].radius = ring.r;
+    if (f.spiral) {
+      var cap = f.spiralMaxPx > 0 ? f.spiralMaxPx : Infinity;
+      for (var pi = 0; pi < f.orbs.length; pi++) {
+        f.orbs[pi].radius = Math.min(cap, f.orbs[pi].radius + f.growPxPerSec * dt);
+      }
+    } else {
+      for (var gi = 0; gi < f.rings.length; gi++) f.rings[gi].r += f.growPxPerSec * dt;
+      for (var oi = 0; oi < f.orbs.length; oi++) {
+        var ring = f.rings[f.orbs[oi].ringIdx || 0];
+        if (ring) f.orbs[oi].radius = ring.r;
+      }
+    }
+  }
+  /* 分批放出（超神【無限星環】）：每 spawnGap 秒從圓心再放一團。
+     角度用黃金角遞增而不是亂數——螺旋要看得出是同一條線往外長，亂數會散成一團。 */
+  if (f.spawnLeft > 0 && f.spawnAt > 0 && GT >= f.spawnAt) {
+    f.spawnAt = (f.spawnLeft > 1) ? GT + f.spawnGap : 0;
+    f.spawnLeft--;
+    if (f.orbs.length < SG_ORBIT_MAX_ORBS) {
+      f.spawnSeq++;
+      var seed = f.rings[0] || { r: 1, spin: 0 };
+      var fresh = sgOrbitOrb(f.startAng + Math.PI * 2 * 0.618034 * f.spawnSeq, seed);
+      fresh.ringIdx = 0;
+      fresh.radius = Math.max(1, f.bodyR);   // 從圓心（＝一個火狩的半徑）重新起算
+      fresh.canSpawn = false;                // 螺旋放出的那幾團不再走伴生規則
+      f.orbs.push(fresh);
+      sgOrbitEmitVfx(f);                     // 團數變了，環繞特效要跟著補送
     }
   }
   var out = { killed: false, dmg: 0, crit: false };
   var born = [];
   var struck = [];
+  var blasts = [];
   var extended = false;
   var strikes = [];
   for (var i = 0; i < f.orbs.length; i++) {
@@ -4156,6 +4266,15 @@ function sgOrbitStep(f, enemies, dt, ctx) {
       var res = sgHitOne(f.pEnt, f.st, fresh[h], f.dmgVal, f.gid, f.floatSel, out, sgStaggerMs(struck.length));
       if (!res || res.miss) continue;
       struck.push(fresh[h]);
+      /* 傳奇【炎爆】：同一個敵人被火狩命中滿 N 次就爆炸。計數掛在敵人實體上
+         （純數字、隨實體自然回收），與 sgBurn／sgFrost 的每敵累加器同一套做法。 */
+      if (f.detonate && fresh[h].hp > 0) {
+        fresh[h]._sgHuntHits = (Number(fresh[h]._sgHuntHits) || 0) + 1;
+        if (fresh[h]._sgHuntHits >= f.detonate.hits) {
+          fresh[h]._sgHuntHits = 0;
+          if (blasts.indexOf(fresh[h]) < 0) blasts.push(fresh[h]);
+        }
+      }
       /* 一顆環繞體這一拍只算「一次命中」（設計文檔：受擊一次可能命中多個敵人，
          但也只算一次命中機率）——伴生雷球的機率判定因此掛在這裡去重。 */
       if (f.onStrike && strikes.indexOf(orb) < 0) strikes.push(orb);
@@ -4170,6 +4289,7 @@ function sgOrbitStep(f, enemies, dt, ctx) {
     }
   }
   if (born.length) f.orbs = f.orbs.concat(born);
+  for (var bi = 0; bi < blasts.length; bi++) sgFirehuntDetonate(f, blasts[bi], live, out);
   if (extended) sgOrbitSyncStatus(f.pEnt, f.statusId);
   for (var si = 0; si < strikes.length; si++) f.onStrike(f, strikes[si], sgOrbitPos(strikes[si], center), ctx);
   if (struck.length) {
@@ -4197,7 +4317,19 @@ function sgOrbitEmitVfx(f) {
         startAng: f.startAng,
         id: f.fieldKey || null,
         /* 顯示層據此逐幀把環半徑補成連續的（模擬層只在建立時送一次事件）。 */
-        grow: f.growPxPerSec || 0
+        grow: f.growPxPerSec || 0,
+        /* 螺旋（超神【無限星環】）與體積成長（超神【烈陽星環】）：
+           這兩個是**顯示與模擬共用的語意參數**（AI_RULES 8.3），不能只寫在其中一邊——
+           模擬層的接觸判定就是照這組數字在跑，畫面照同一組畫才對得起來。
+             growMax  ＝ 螺旋外擴的上限半徑（px）
+             spiral   ＝ 每一團各自從圓心往外長（1）還是整環一起長（0）
+             spiralLag＝ 相鄰兩團的出生間隔（秒），決定螺旋張得多開
+             orbGrowTo／orbGrowSec ＝ 火狩體積在幾秒內長到幾倍 */
+        growMax: f.spiralMaxPx || 0,
+        spiral: f.spiral ? 1 : 0,
+        spiralLag: f.spiral ? f.spawnGap : 0,
+        orbGrowTo: f.bodyGrowTo || 1,
+        orbGrowSec: f.bodyGrowSec || 1
       }
     });
   }
@@ -4223,6 +4355,267 @@ function sgTickOrbits(dt, ctx) {
     sgOrbitRefreshVfx(f);
     enemies = ctx.getEnemies ? ctx.getEnemies() : enemies;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   火狩的傳奇特效與超神進化（2026-08-25 第六批）
+   ---------------------------------------------------------------------------
+   三個「不在環繞判定裡」的效果各自獨立：
+     ・【炎爆】跟著命中走，因此掛在 sgOrbitStep 的命中段（爆炸結算在本段下方）
+     ・【伴生併發】【烈火狩】是節拍，掛在 sgTickFirehuntLegend（每 tick 一次）
+     ・【火神降臨】是常駐領域＋普攻附加，與火狩本體是否在場無關
+   共同前提：這些都是「火狩」這個群組的效果，因此一律先確認群組有裝配
+   （skills2Equipped）——沒裝在技能列就不該生效，與其他主動型被動同一條代價。
+   --------------------------------------------------------------------------- */
+
+/* 傳奇【炎爆】：被火狩命中滿 N 次的敵人爆炸，對其周圍 m 米內的敵人造成火焰傷害。
+   範圍以「那個敵人」為圓心（設計文檔：對其周圍 6 米），不是以玩家為圓心。 */
+function sgFirehuntDetonate(f, victim, live, out) {
+  var spec = f.detonate;
+  if (!spec || !(spec.dmgVal > 0) || !victim) return;
+  var victims = [victim];
+  if (typeof bfNearestOthers === 'function' && live && live.length) {
+    var near = bfNearestOthers(victim, live, live.length, spec.px);
+    for (var i = 0; i < near.length; i++) if (victims.indexOf(near[i]) < 0) victims.push(near[i]);
+  }
+  sgEmitVfx('firehunt', victims, f.floatSel, {
+    fxKind: 'burst', variant: 'firehunt-detonate', elem: 'fire', dur: 0.5
+  });
+  for (var v = 0; v < victims.length; v++) {
+    sgHitOne(f.pEnt, f.st, victims[v], spec.dmgVal, 'firehunt', f.floatSel, out, sgStaggerMs(v));
+  }
+}
+
+/* 目前場上還有沒有「這名玩家的火狩」（【伴生併發】【烈火狩】的共同前提）。
+   空掉的場域不算——【伴生併發】會把環繞體一團一團消耗掉。 */
+function sgFirehuntFieldActive(pEnt) {
+  var list = SKILL2_RT && SKILL2_RT.orbits;
+  for (var i = 0; list && i < list.length; i++) {
+    if (list[i] && list[i].gid === 'firehunt' && list[i].pEnt === pEnt && list[i].until > GT &&
+        list[i].orbs.length) return true;
+  }
+  return false;
+}
+
+/* 【伴生併發】的「消耗一團」（使用者決策 2026-08-25：飛出去的那一團會從場上消失）。
+   取用順序：**先找伴生體**（設計文字是「你的 1 個併生火狩會飛出」），整個場上都沒有伴生體時
+   才退而拿一般的火狩——否則沒投資第 3 階【伴生火狩】的人整條特效永遠不會生效。
+   回傳有沒有真的消耗掉一團。 */
+function sgFirehuntConsumeOrb(pEnt) {
+  var list = (SKILL2_RT && SKILL2_RT.orbits) || [];
+  var mine = [];
+  for (var i = 0; i < list.length; i++) {
+    var f = list[i];
+    if (f && f.gid === 'firehunt' && f.pEnt === pEnt && f.until > GT && f.orbs.length) mine.push(f);
+  }
+  if (!mine.length) return null;
+  /* 兩輪：第一輪只找伴生體（跨所有場域），找不到才在第二輪拿第一團。
+     一輪內就決定的話，第一個場域剛好沒有伴生體時就會誤拿母體，
+     即使下一個場域還有伴生體可用。 */
+  var field = null, idx = -1;
+  for (var m = 0; m < mine.length && !field; m++) {
+    for (var k = 0; k < mine[m].orbs.length; k++) {
+      if (mine[m].orbs[k].companion) { field = mine[m]; idx = k; break; }
+    }
+  }
+  if (!field) { field = mine[0]; idx = 0; }
+  field.orbs.splice(idx, 1);
+  /* 整組被消耗光就地收掉：留著一個沒有環繞體的空場域只會讓狀態列的剩餘時間
+     與實際畫面對不上（畫面上一團都沒有，狀態卻還在倒數）。 */
+  if (!field.orbs.length) {
+    var at = list.indexOf(field);
+    if (at >= 0) list.splice(at, 1);
+    sgOrbitSyncStatus(pEnt, field.statusId);
+  }
+  return true;
+}
+
+/* 火狩兩個「節拍型」傳奇特效。兩者都只在火狩還在場上時才走，因此共用同一個前提判定；
+   節拍存在 SKILL2_RT.hunt（執行期，絕不入存檔），火狩不在場時歸零＝下一次施放重新起算。 */
+function sgTickFirehuntLegend(ctx, dt) {
+  if (!SKILL2_RT.hunt) SKILL2_RT.hunt = { launchAt: 0, ampAt: 0 };
+  var rt = SKILL2_RT.hunt;
+  if (!skills2Equipped('firehunt') || !sgFirehuntFieldActive(ctx.pEnt)) {
+    rt.launchAt = 0; rt.ampAt = 0;
+    return;
+  }
+  // 死亡／倒地：節拍往後推，剩餘時間不變（與超神自動施放同一條規則）
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    rt.launchAt = sgPauseSchedule(rt.launchAt, dt);
+    rt.ampAt = sgPauseSchedule(rt.ampAt, dt);
+    return;
+  }
+  /* 每個 tick 都會走到，因此用一拍快取（sgLegend 會掃整個傳奇特效池並深拷貝 fx）。 */
+  var lg = sgLegendTick('firehunt');
+
+  /* 【烈火狩】：火狩在場期間每 gap 秒把火焰傷害再堆高一層。
+     層數無上限，因此比照【火焰增幅】由引擎累加成單一數值後「後蓋前」寫入 sgFireAmp；
+     持續時間只給兩拍，火狩消失後就自然退場（設計文檔：只在火狩持續時間內）。 */
+  var amp = lg.firehuntFireAmp;
+  if (amp && Number(amp.pct) > 0) {
+    var ampGap = Math.max(0.1, Number(amp.gap) || 0.5);
+    if (!(rt.ampAt > 0)) rt.ampAt = GT + ampGap;
+    else if (GT >= rt.ampAt) {
+      rt.ampAt = GT + ampGap;
+      applyStatus(ctx.pEnt, 'sgFireAmp', {
+        val: skill2FireAmpPct(ctx.pEnt) + Number(amp.pct), dur: ampGap * 2
+      });
+    }
+  } else rt.ampAt = 0;
+
+  /* 【伴生併發】：每 gap 秒放一團火狩飛出去，對半徑 m 米內的一個敵人及其 aoeM 米內
+     的所有敵人造成傷害。挑目標以玩家為圓心（設計文檔：飛出攻擊半徑 20 米內的敵人）。 */
+  var lc = lg.firehuntLaunch;
+  if (lc && Number(lc.pct) > 0) {
+    var gap = Math.max(0.1, Number(lc.gap) || 1);
+    if (!(rt.launchAt > 0)) { rt.launchAt = GT + gap; return; }
+    if (GT < rt.launchAt) return;
+    rt.launchAt = GT + gap;
+    /* 先確認消耗得到再結算：沒有可消耗的火狩就這一拍不發動（節拍照走，錯過的不補發）。
+       ⚠️ 消耗要**無條件**發生，不能等「有沒有打得到的敵人」——否則空場時
+       節拍會一直空轉，敵人一出現就變成連續發動。 */
+    if (sgFirehuntConsumeOrb(ctx.pEnt)) sgFirehuntLaunch(ctx, lc);
+  } else rt.launchAt = 0;
+}
+
+/* 【伴生併發】的一次飛出：挑一個玩家 m 米內的敵人，對它與周圍 aoeM 米內的敵人結算。
+   呼叫端已經先消耗掉一團火狩（sgFirehuntConsumeOrb），本支只負責結算與特效。 */
+function sgFirehuntLaunch(ctx, spec) {
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  var dmgVal = sgGroupBaseStat(SKILLS2.firehunt, st) * Number(spec.pct) / 100;
+  if (!(dmgVal > 0)) return;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
+  var reach = bfMeterPx(Math.max(0, Number(spec.m) || 0));
+  /* 射程內的敵群先篩出來，再交給既有的選敵規則挑主目標——
+     直接取陣列第一個會變成「永遠打最早生成的那隻」，與其他技能的選敵行為不一致。 */
+  var inRange = [];
+  for (var i = 0; i < live.length; i++) {
+    var e = live[i];
+    if (!e || e.hp <= 0) continue;
+    if (typeof bfPos === 'function' && bfPos(e) && typeof bfEntityDistance === 'function' &&
+        bfEntityDistance(e) > reach) continue;
+    inRange.push(e);
+  }
+  if (!inRange.length) return;
+  var tgt = (typeof bfPickPrimary === 'function') ? bfPickPrimary(inRange, null) : inRange[0];
+  if (!tgt) tgt = inRange[0];
+  var victims = [tgt];
+  if (typeof bfNearestOthers === 'function' && live.length) {
+    var near = bfNearestOthers(tgt, live, live.length, bfMeterPx(Math.max(0, Number(spec.aoeM) || 0)));
+    for (var n = 0; n < near.length; n++) if (victims.indexOf(near[n]) < 0) victims.push(near[n]);
+  }
+  /* 「飛出去」要看得見：比照火球，先送一則投射物、再送一則爆點（爆點延到抵達那一刻）。
+     傷害仍在當下結算完畢，delayMs 只用在飄字與特效的時序上。 */
+  var travelMs = (typeof bfTravelSeconds === 'function' && typeof bfPos === 'function' && bfPos(tgt))
+    ? Math.max(1, Math.round(bfTravelSeconds(tgt) * 1000)) : 0;
+  sgEmitVfx('firehunt', [tgt], ctx.floatSel, {
+    fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
+    travelMs: [travelMs], projectile: true
+  });
+  sgEmitVfx('firehunt', victims, ctx.floatSel, {
+    fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', dur: 0.5, delayMs: travelMs
+  });
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var v = 0; v < victims.length; v++) {
+    sgHitOne(ctx.pEnt, st, victims[v], dmgVal, 'firehunt', ctx.floatSel, out, travelMs + sgStaggerMs(v));
+  }
+  if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 超神【火神降臨】：常駐的火焰纏身領域，每 gap 秒對周圍 m 米內的敵人造成火焰傷害。
+   與火狩本體是否在場無關（設計文檔：你的身體被火焰包裹），因此節拍不看 orbits，
+   只看「有沒有裝配 ＋ 有沒有選這個超神進化」——與血刃斬的永久領域同一套語意。 */
+function sgTickFireGod(ctx, dt) {
+  var u = sgUlt('firehunt', 'fireGodDescend');
+  if (!u || !skills2Equipped('firehunt')) { SKILL2_RT.fireGodAt = 0; SKILL2_RT.fireGodVfxAt = 0; return; }
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    SKILL2_RT.fireGodAt = sgPauseSchedule(SKILL2_RT.fireGodAt, dt);
+    return;
+  }
+  var gap = Math.max(0.1, Number(u.def.fx.gap) || 0.5);
+  if (!(SKILL2_RT.fireGodAt > 0)) { SKILL2_RT.fireGodAt = GT + gap; return; }
+  if (GT < SKILL2_RT.fireGodAt) return;
+  SKILL2_RT.fireGodAt = GT + gap;
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  var dmgVal = sgGroupBaseStat(SKILLS2.firehunt, st) * sgUltVal(u, 'pct') / 100;
+  var radius = bfMeterPx(Math.max(0, Number(u.def.fx.m) || 6));
+  /* 範圍提示的重畫走**顯示節拍**（SG_DOMAIN_VFX_SEC）而不是作用節拍：領域每 0.5 秒打一次，
+     但範圍圈不必跟著每 0.5 秒重送一則事件。畫法沿用泥沼池的地面光環（兩個顯示層都認得），
+     熔岩色＝火屬性領域，帶 id 讓顯示層重用同一個節點（沒有 id 會退化成以座標當快取鍵，
+     而領域跟著玩家走＝每一次都新建一個節點）。與血刃斬的永久領域同一套決策。 */
+  var pp = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  if (pp && radius > 0 && (SKILL2_RT.fireGodVfxAt || 0) <= GT) {
+    SKILL2_RT.fireGodVfxAt = GT + SG_DOMAIN_VFX_SEC;
+    sgEmitPlayerVfx('firehunt', ctx.floatSel, {
+      fxKind: 'aura', variant: 'mire-lava', elem: 'fire', dur: SG_DOMAIN_VFX_SEC,
+      area: { id: 'sg-firegod-aura', x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
+    });
+  }
+  if (!(dmgVal > 0)) return;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
+  var victims = [];
+  for (var i = 0; i < live.length; i++) {
+    var e = live[i];
+    if (!e || e.hp <= 0) continue;
+    if (typeof bfPos === 'function' && bfPos(e) && typeof bfEntityDistance === 'function' &&
+        bfEntityDistance(e) > radius) continue;
+    victims.push(e);
+  }
+  if (!victims.length) return;
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var v = 0; v < victims.length; v++) {
+    sgHitOne(ctx.pEnt, st, victims[v], dmgVal, 'firehunt', ctx.floatSel, out, sgStaggerMs(v));
+  }
+  if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 超神【火神降臨】的另一半：普攻朝目標發射 N 顆火狩星環。
+   掛在普攻的收斂點（js/combat.js doPlayerAttack 的 depth 0 段），
+   與【殺神降臨】的普攻加成同一個位置——那裡才分得出「主攻擊」與「追加攻擊」。
+   不足 1 顆的部分以機率補（sgRollCount），與其他小數數量的既有決策一致。 */
+function skills2OnBasicAttack(pEnt, target, floatSel, st) {
+  var u = sgUlt('firehunt', 'fireGodDescend');
+  if (!u || !skills2Equipped('firehunt') || !target || target.hp <= 0) return 0;
+  var lvs = skills2Levels('firehunt');
+  if (!lvs || lvs[0] < 1) return 0;
+  var orbs = sgRollCount(sgUltVal(u, 'orbs'));
+  if (orbs <= 0) return 0;
+  /* 星環的威力＝火狩在**第 6 階**時的每次命中傷害（使用者決策 2026-08-25）。
+     火狩只有第 1／4／7 三階改寫傷害（第 5、6 階不動傷害），所以「第 6 階的火狩」
+     ＝有投資第 4 階【三重火狩】就取第 4 階，否則取第 1 階；
+     刻意**不取**第 7 階【狩神之舞】——那是第 7 階才有的威力。 */
+  var t = SKILLS2.firehunt.tiers;
+  var srcFx = lvs[3] > 0 ? t[3].fx : t[0].fx;
+  var srcLv = lvs[3] > 0 ? lvs[3] : lvs[0];
+  var dmgVal = sgGroupBaseStat(SKILLS2.firehunt, st) * sgVal(srcFx, 'pct', srcLv) / 100;
+  if (!(dmgVal > 0)) return 0;
+  /* 星環是**飛出去的投射物**（表定 mps 米／秒，使用者決策 2026-08-25），不是立即命中：
+     傷害在抵達時才由 sgTickFlyingProjectiles 結算，因此**不計入這一次普攻的傷害合計**
+     （比照火球的投射物；ctx.onDamage 與擊殺回呼都由飛行物的 tick 負責）。 */
+  var speed = bfMeterPx(Math.max(1, Number(u.def.fx.mps) || 24));
+  var geomOk = (typeof bfPos === 'function') && !!bfPos(target) &&
+    (typeof bfPlayerPos === 'function') && (typeof bfTravelDistance === 'function');
+  var origin = geomOk ? bfPlayerPos() : null;
+  var length = geomOk ? Math.max(1, bfTravelDistance(target)) : 1;
+  var angle = (geomOk && typeof bfAngleTo === 'function') ? bfAngleTo(target) : 0;
+  var travelMs = geomOk ? Math.max(1, Math.round(length / speed * 1000)) : 260;
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var i = 0; i < orbs; i++) {
+    var beginSec = i * SG_FIREGOD_ORB_STAGGER_SEC;
+    sgQueueFlyingProjectile(pEnt, st, 'firehunt', dmgVal, origin, angle, length, floatSel, [target], {
+      singleHit: true, targetOnly: true, waitForEnd: !geomOk,
+      speed: speed, travelMs: travelMs, beginSec: beginSec
+    }, out);
+    sgEmitVfx('firehunt', [target], floatSel, {
+      fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
+      travelMs: [travelMs], projectile: true, delayMs: Math.round(beginSec * 1000)
+    });
+  }
+  return orbs;
 }
 
 /* 我方自身的特效事件（護盾光殼、復活光柱等）：sgEmitVfx 的目標一律走敵人定址，
@@ -4265,23 +4658,190 @@ function sgEmitPlayerVfx(gid, floatSel, extra) {
    =========================================================================== */
 function sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
+  var lg = sgLegend('rockarmor');
+  var ultAdamant = sgUlt('rockarmor', 'adamantBody');
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);   // 強化岩甲：與第 1 階累加
+  /* 護盾的兩個乘區：傳奇【重岩甲】與超神【金剛不壞】。兩者都是「岩甲術獲得的護盾」，
+     因此乘在這個 pct 上而不是全域護盾效率（那條是 T4【護盾增幅】的位置）。 */
+  pct *= (1 + Math.max(0, Number(lg.rockShieldPct) || 0) / 100);
+  if (ultAdamant) pct *= 1 + sgUltVal(ultAdamant, 'hp') / 100;
   var dur = Math.max(0.5, Number(t[0].fx.sec) || 10);
   var before = Math.max(0, pEnt.shield || 0);
+  /* ⚠️ 順序有意義：RT 必須**先**成立，`skill2RockMaxHpFactor` 才看得到岩甲已經生效；
+     否則【金剛不壞】的 +生命上限會慢一拍，這一次的護盾（＝最大生命的 pct%）
+     仍照舊上限計算，下一次施放才吃得到——玩家看到的是「第一次放沒效」。
+     base 先給 1 佔位，等護盾真的塗上去之後再改寫成真值。 */
+  SKILL2_RT.rock = { until: GT + dur, pEnt: pEnt, base: 1, amp: 0 };
+  if (ultAdamant && typeof markStatsDirty === 'function') {
+    var hpMaxBefore = Math.max(1, Number(st && st.hp) || 0);
+    markStatsDirty();
+    st = (typeof getStats === 'function') ? getStats() : st;
+    /* 使用者決策（2026-08-25）：生命上限與**當前生命**一起提升，維持原本的生命百分比。
+       只拉上限不補血的話，施放瞬間百分比會掉（1000/1000 → 1000/1550），
+       低血增傷／低血保命類的效果會被誤觸；到期時再按同一個比例縮回去（見 tickSkill2），
+       因此整個循環下來玩家不會白賺任何一點相對生命。 */
+    skill2RockScaleHp(pEnt, (Number(st && st.hp) || hpMaxBefore) / hpMaxBefore, st);
+  }
   applyStatus(pEnt, 'shield', { val: pct, dur: dur, stats: st });
   applyStatus(pEnt, 'sgRockArmor', { val: pct, dur: dur });
   /* base 取「這次施放後的護盾總量」而不是增量：護盾是共用的一池（applyShield 取 max），
      分母用增量會在既有護盾較高時算出負數比例。 */
-  SKILL2_RT.rock = {
-    until: GT + dur, pEnt: pEnt,
-    base: Math.max(1, Math.max(before, pEnt.shield || 0)), amp: 0
-  };
+  SKILL2_RT.rock.base = Math.max(1, Math.max(before, pEnt.shield || 0));
   sgEmitPlayerVfx('rockarmor', floatSel, { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: Math.min(6, dur) });
   if (typeof floatPlayerEvent === 'function') {
     var pSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
     floatPlayerEvent(pSel, '🪨+' + fmt(Math.max(0, (pEnt.shield || 0) - before)), 'shield');
   }
+  /* 兩個「施放瞬間對周圍生效」的超神進化。兩者互斥（三選一），各自獨立判定。 */
+  sgRockPetrifyBurst(pEnt, st, pool, floatSel);
+  sgRockGravityBurst(pEnt, st, pool, floatSel);
+}
+
+/* ---------------------------------------------------------------------------
+   岩甲術的傳奇特效與超神進化（2026-08-25 第六批）
+   ---------------------------------------------------------------------------
+   收斂點沿用岩甲術本來那一套：權威是 SKILL2_RT.rock（施放期），增益只是投影。
+     ・【重岩甲】【金剛不壞】的護盾量 → 施放當下換算（sgCastRockarmor）
+     ・【尖刺甲】【金剛不壞】的尖刺   → sgRockOnPlayerDamaged 的 T3 段
+     ・【巨岩增幅】的層數上限         → sgRockOnPlayerDamaged 的 T6 段
+     ・【輕飛甲】的移速               → js/battlefield.js bfPlayerSpeedFactor（我方移動的唯一乘區）
+     ・【大地之心】的無敵             → sgRockOnPlayerDamaged 末端（護盾剛好被打光的那一下）
+     ・【金剛不壞】的減傷             → skill2DamageTakenMultiplier
+     ・【超重力場】的土系增傷         → legendaryElementDamageUp（屬性傷害提升的唯一收斂點）
+   --------------------------------------------------------------------------- */
+
+/* 施放時 m 米內的敵人一律進入「這一招的範圍」（兩個超神爆發共用）。
+   敵群取施放端傳進來的 pool（＝完整敵群），不另外回頭問戰場——高塔與野外共用同一支。 */
+function sgRockBurstVictims(pool, m) {
+  var radius = bfMeterPx(Math.max(0, Number(m) || 0));
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(pool || []) : (pool || []);
+  var out = [];
+  for (var i = 0; i < live.length; i++) {
+    var e = live[i];
+    if (!e || e.hp <= 0) continue;
+    if (typeof bfPos === 'function' && bfPos(e) && typeof bfEntityDistance === 'function' &&
+        bfEntityDistance(e) > radius) continue;
+    out.push(e);
+  }
+  return out;
+}
+
+/* 兩個超神爆發的範圍提示：以玩家為圓心的地面光環。畫法沿用泥沼池（兩個顯示層都認得），
+   帶 id 讓顯示層重用同一個節點；沒有這一圈的話，範圍內沒有敵人時整招是看不見的。 */
+function sgRockBurstAura(floatSel, m, id) {
+  var pp = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
+  var radius = bfMeterPx(Math.max(0, Number(m) || 0));
+  if (!pp || !(radius > 0)) return;
+  sgEmitPlayerVfx('rockarmor', floatSel, {
+    fxKind: 'aura', variant: 'mire', elem: 'earth', dur: 1.2,
+    area: { id: id, x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
+  });
+}
+
+/* 超神【超重岩之術】：施放時石化 m 米內的敵人。
+   「無法行動」沿用暈眩承擔（因此完整吃 BOSS 控場免疫、韌性折減與控場遞減），
+   sgPetrify 本身只負責「受到的土系傷害額外提高」——與寒霜的【凍結】同一套拆法。 */
+function sgRockPetrifyBurst(pEnt, st, pool, floatSel) {
+  var u = sgUlt('rockarmor', 'superRockArt');
+  if (!u) return;
+  var victims = sgRockBurstVictims(pool, u.def.fx.m);
+  if (!victims.length) return;
+  var sec = Math.max(0.5, Number(u.def.fx.sec) || 4);
+  var pct = Math.max(0, sgUltVal(u, 'pct'));
+  sgRockBurstAura(floatSel, u.def.fx.m, 'sg-rock-petrify');
+  sgEmitVfx('rockarmor', victims, floatSel, {
+    fxKind: 'burst', variant: 'rock-petrify', elem: 'earth', dur: 0.8
+  });
+  for (var i = 0; i < victims.length; i++) {
+    /* 石化標記照塗（增傷不是控場，不受控場免疫影響）；行動限制則交給暈眩，
+       BOSS 擋得掉的是後者——這正是設計上「BOSS 不會被定住但仍會變脆」的差別。 */
+    applyStatus(victims[i], 'sgPetrify', { val: pct, dur: sec });
+    sgTryStun(victims[i], sec);
+  }
+}
+
+/* 超神【超重力場】：施放時使 m 米內的敵人僵化（移動、攻速與傷害同時下降）。
+   比照【泥沼緩速】不吃控場遞減與韌性——它是場域型減益，不是控場。 */
+function sgRockGravityBurst(pEnt, st, pool, floatSel) {
+  var u = sgUlt('rockarmor', 'gravityField');
+  if (!u) return;
+  var victims = sgRockBurstVictims(pool, u.def.fx.m);
+  if (!victims.length) return;
+  var sec = Math.max(0.5, Number(u.def.fx.stiffSec) || 5);
+  var pct = Math.max(0, Math.min(95, Number(u.def.fx.stiff) || 0));
+  sgRockBurstAura(floatSel, u.def.fx.m, 'sg-gravity-field');
+  sgEmitVfx('rockarmor', victims, floatSel, {
+    fxKind: 'burst', variant: 'gravity-field', elem: 'earth', dur: 0.8
+  });
+  for (var i = 0; i < victims.length; i++) applyStatus(victims[i], 'sgStiffen', { val: pct, dur: sec });
+}
+
+/* 【石化】：這個敵人受到的土系傷害額外提高%（0＝沒有）。
+   與【寒冰逆轉】同一條路：只針對單一屬性的受傷增幅走 skillElemAmp，
+   不能混進 totalDmgPct（那會連同一次攻擊的其他屬性段一起放大）。 */
+function skill2PetrifyEarthPct(target) {
+  return (typeof buffVal === 'function') ? Math.max(0, buffVal(target, 'sgPetrify')) : 0;
+}
+function skill2PetrifyACfg(aCfg, target) {
+  var pct = skill2PetrifyEarthPct(target);
+  if (!(pct > 0)) return aCfg;
+  var amp = {};
+  for (var k in (aCfg.skillElemAmp || {})) amp[k] = aCfg.skillElemAmp[k];
+  amp.earth = (Number(amp.earth) || 1) * (1 + pct / 100);
+  aCfg.skillElemAmp = amp;
+  return aCfg;
+}
+
+/* 【僵化】：三個下降共用同一個效果值。
+     攻速 → formula.js slowFactor（skill2SlowAspdFactor）
+     移速 → battlefield.js bfEnemySpeedFactor（skill2SlowMoveFactor）
+     傷害 → combat.js doMonsterAttack 的攻擊力乘區（skill2EnemyDamageFactor） */
+function sgStiffenOn(ent) {
+  return (typeof buffVal === 'function') ? Math.max(0, buffVal(ent, 'sgStiffen')) : 0;
+}
+function skill2StiffenFactor(ent) {
+  var v = sgStiffenOn(ent);
+  return v > 0 ? Math.max(0.05, 1 - Math.min(95, v) / 100) : 1;
+}
+/* 敵人造成的傷害乘區（目前唯一來源是【僵化】）。掛點：js/combat.js doMonsterAttack。 */
+function skill2EnemyDamageFactor(ent) {
+  return skill2StiffenFactor(ent);
+}
+
+/* 超神【超重力場】：岩甲護盾存在期間，你的土系傷害額外提高%。
+   掛點：js/legendary.js legendaryElementDamageUp——全專案屬性傷害提升的唯一收斂點。 */
+function skill2RockEarthDamageUpPct(pEnt) {
+  var u = sgUlt('rockarmor', 'gravityField');
+  if (!u || !skill2RockActive(pEnt)) return 0;
+  return Math.max(0, sgUltVal(u, 'pct'));
+}
+
+/* 傳奇【輕飛甲】：岩甲護盾存在期間的我方移動速度乘區（沒生效＝1）。
+   掛點：js/battlefield.js bfPlayerSpeedFactor——我方移動速度的唯一乘區。 */
+function skill2PlayerMoveFactor(pEnt) {
+  if (!skill2RockActive(pEnt)) return 1;
+  /* 每個 tick 都會問一次（我方移動），因此走一拍快取而不是每次掃整個傳奇特效池。 */
+  var pct = Math.max(0, Number(sgLegendTick('rockarmor').rockMoveSpeedPct) || 0);
+  return pct > 0 ? 1 + pct / 100 : 1;
+}
+
+/* 超神【金剛不壞】：岩甲期間的生命上限倍率（沒生效＝1）。
+   ⚠️ 這一支會在 computeStats 途中被呼叫，因此**不得**回頭呼叫 getStats()；
+   skill2RockActive 只讀 SKILL2_RT，安全。屬性快取由施放與到期兩處各 markStatsDirty 一次。 */
+function skill2RockMaxHpFactor() {
+  var rt = SKILL2_RT && SKILL2_RT.rock;
+  if (!rt || rt.until <= GT) return 1;
+  var u = sgUlt('rockarmor', 'adamantBody');
+  return u ? 1 + sgUltVal(u, 'hp') / 100 : 1;
+}
+
+/* 【金剛不壞】的生命上限倍率變動時，把當前生命按同一個比例帶著走（維持生命百分比）。
+   夾在 1..新上限之間：活著的人不會因為縮回去而被除成 0（那會變成「技能到期把自己殺了」）。 */
+function skill2RockScaleHp(pEnt, ratio, st) {
+  if (!pEnt || !(pEnt.hp > 0) || !(ratio > 0) || ratio === 1) return;
+  var cap = Math.max(1, Number(st && st.hp) || 0);
+  pEnt.hp = Math.max(1, Math.min(cap, pEnt.hp * ratio));
 }
 
 /* 岩甲護盾是否生效中（RT 為權威；增益圖示只是投影）。 */
@@ -4328,9 +4888,16 @@ function sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel) {
   var rt = SKILL2_RT.rock;
   var absorbed = Math.max(0, (res && res.absorbed) || 0);
 
+  /* 受擊是每秒數次的路徑，因此走一拍快取（sgLegend 會掃整個傳奇特效池並深拷貝 fx）。 */
+  var lg = sgLegendTick('rockarmor');
+  var ultAdamant = sgUlt('rockarmor', 'adamantBody');
+
   // T3 岩甲尖刺：獨立的一段地屬性反擊傷害（走完整傷害管線＝吃地屬性加成與敵人地抗）
   if (lvs[2] > 0 && mEnt && mEnt.hp > 0) {
-    var spikeVal = st.hp * sgVal(t[2].fx, 'pct', lvs[2]) / 100;
+    /* 【尖刺甲】與【金剛不壞】都寫「岩甲尖刺的效果提高 X%」——同一種語意，故相加成一個乘區。 */
+    var spikeUp = Math.max(0, Number(lg.rockSpikePct) || 0) +
+      (ultAdamant ? Math.max(0, sgUltVal(ultAdamant, 'spike')) : 0);
+    var spikeVal = st.hp * sgVal(t[2].fx, 'pct', lvs[2]) / 100 * (1 + spikeUp / 100);
     var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
     var spikeOut = { killed: false, dmg: 0, crit: false };
     sgEmitVfx('rockarmor', [mEnt], eSel, { fxKind: 'impact', variant: 'rock-spike', elem: 'earth' });
@@ -4354,10 +4921,27 @@ function sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel) {
      但層值是引擎自己累加的總量（比照【火焰增幅】以「後蓋前」寫入單一數值）。 */
   if (lvs[5] > 0 && absorbed > 0 && rt.base > 0) {
     var per = sgVal(t[5].fx, 'pct', lvs[5]);
-    var cap = per * Math.max(1, Math.floor(Number(t[5].fx.max) || 30));
+    // 傳奇【巨岩增幅】：可疊層數 +N（層數是保護鍵，不吃雙手補償的數值放大）
+    var maxStacks = Math.max(1, Math.floor(Number(t[5].fx.max) || 30)) +
+      Math.max(0, Math.floor(Number(lg.rockAmpStacksAdd && lg.rockAmpStacksAdd.maxStacks) || 0));
+    var cap = per * maxStacks;
     var add = absorbed / rt.base * 100 * per;
     var total = Math.min(cap, Math.max(0, buffVal(pEnt, 'sgRockAmp')) + add);
     if (total > 0) applyStatus(pEnt, 'sgRockAmp', { val: total, dur: Number(t[5].fx.sec) || 3 });
+  }
+
+  /* 傳奇【大地之心】：護盾剛好在這一下被打光就給無敵，內部冷卻 cd 秒。
+     判定點放在這裡而不是每個 tick 掃一次——「降至 0」是一個事件，
+     每 tick 輪詢會在護盾長時間為 0 的整段期間反覆觸發。 */
+  var heart = lg.rockHeartInvuln;
+  if (heart && Number(heart.sec) > 0 && absorbed > 0 && !(pEnt.shield > 0) &&
+      GT >= (SKILL2_RT.rockHeartAt || 0)) {
+    SKILL2_RT.rockHeartAt = GT + Math.max(0, Number(heart.cd) || 0);
+    applyStatus(pEnt, 'invuln', { dur: Number(heart.sec) });
+    if (typeof floatPlayerEvent === 'function') {
+      var hSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
+      floatPlayerEvent(hSel, '🪨無敵!', 'buff');
+    }
   }
 }
 
@@ -4545,6 +5129,12 @@ function skill2DamageTakenMultiplier(pEnt) {
   if (rk && rk[6] > 0) {
     var red = sgVal(SKILLS2.rockarmor.tiers[6].fx, 'pct', rk[6]) * (1 - skill2RockShieldRemain(pEnt));
     if (red > 0) mult *= 1 - Math.min(90, red) / 100;
+  }
+  /* 超神【金剛不壞】：岩甲期間的額外減傷。獨立乘區（與 T7 相乘而非相加），
+     上限 99% 是為了避免滿級的 99% 與其他來源疊成完全免疫。 */
+  if (rk) {
+    var adamant = sgUlt('rockarmor', 'adamantBody');
+    if (adamant) mult *= 1 - Math.min(99, Math.max(0, sgUltVal(adamant, 'red'))) / 100;
   }
   /* 風系（暴風屏障【屏障】＋【暴風神體】）：兩者先相加成一個「風系減免」再整體乘算，
      依設計文檔註記——風系減免只與風系類型的減免相加總，對其他來源仍是額外乘算。
@@ -5164,9 +5754,10 @@ function skill2FrostSlowFactor(ent) {
   var v = skill2FrostSlowPct(ent);
   return v > 0 ? Math.max(0.05, 1 - Math.min(95, v) / 100) : 1;
 }
-function skill2SlowAspdFactor(ent) { return skill2MireAspdFactor(ent) * skill2FrostSlowFactor(ent); }
+function skill2SlowAspdFactor(ent) { return skill2MireAspdFactor(ent) * skill2FrostSlowFactor(ent) * skill2StiffenFactor(ent); }
 function skill2SlowMoveFactor(ent) {
-  return skill2MoveSlowFactor(ent) * skill2FrostSlowFactor(ent) * skill2WindMoveFactor(ent);
+  return skill2MoveSlowFactor(ent) * skill2FrostSlowFactor(ent) * skill2WindMoveFactor(ent) *
+    skill2StiffenFactor(ent);
 }
 
 /* ---- 【寒冰逆轉】（水流彈 T2）：敵人屬性標籤強制改寫 ----
@@ -6754,7 +7345,22 @@ function sgCounterSplashTargets(exclude, enemies, fx) {
 function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
-  if (SKILL2_RT.rock && SKILL2_RT.rock.until <= GT) SKILL2_RT.rock = null; // 岩甲到期回收
+  if (SKILL2_RT.rock && SKILL2_RT.rock.until <= GT) {
+    /* 【金剛不壞】的生命上限倍率跟著岩甲走：到期不重算屬性的話，那 +55% 會一直留著。
+       順序有意義——倍率要在 RT 還在時先讀出來，清掉之後就讀不到了。
+       當前生命按同一個比例縮回去（施放時漲多少、到期就掉多少），整個循環不白賺相對生命。 */
+    var adamantEnt = SKILL2_RT.rock.pEnt;
+    /* ⚠️ 不能用 skill2RockMaxHpFactor()：那一支本身就以「岩甲還在不在」為前提，
+       到期這一刻它已經回 1 了。倍率要直接從超神進化的參數重算。 */
+    var adamantU = (typeof markStatsDirty === 'function') ? sgUlt('rockarmor', 'adamantBody') : null;
+    var adamantRatio = adamantU ? 1 + sgUltVal(adamantU, 'hp') / 100 : 1;
+    SKILL2_RT.rock = null;                                                 // 岩甲到期回收
+    if (adamantRatio > 1) {
+      markStatsDirty();
+      var afterSt = (typeof getStats === 'function') ? getStats() : null;
+      skill2RockScaleHp(adamantEnt, 1 / adamantRatio, afterSt);
+    }
+  }
   sgTickFlyingProjectiles(dt, ctx);
   sgTickMeteors(ctx);
   sgTickGrounds(dt, ctx);
@@ -6772,6 +7378,8 @@ function tickSkill2(dt, ctx) {
   sgTickWindRend(dt, ctx);
   sgTickUltAutoCast(ctx, dt);
   sgTickStarfall(ctx, dt);
+  sgTickFirehuntLegend(ctx, dt);
+  sgTickFireGod(ctx, dt);
 }
 
 /* 超神進化【地爆天星】：每隔一段時間，天空落下一顆超巨型殞石，
