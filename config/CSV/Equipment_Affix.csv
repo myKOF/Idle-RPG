@@ -184,6 +184,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,rockAmpBoost,巨岩增幅,0,,,,,,,,0,,【岩甲增幅】可疊加的層數 +10 層。,earth,rockarmor,,focus,"{""rockAmpStacksAdd"":{""maxStacks"":10}}"
 傳奇特效,rockSpikeArmor,尖刺甲,0,,,,,,,,0,,【岩甲尖刺】的效果提高 100%。,earth,rockarmor,,focus,"{""rockSpikePct"":100}"
 傳奇特效,rockEarthHeart,大地之心,0,,,,,,,,0,,當你的生命護盾降至 0 時獲得無敵 2 秒；此效果每 30 秒只能觸發 1 次。,earth,rockarmor,,focus,"{""rockHeartInvuln"":{""sec"":2,""cd"":30}}"
+傳奇特效,mireSpread,蔓延,0,,,,,,,,0,,泥沼術的範圍 +25%。,earth,mire,,magicSword1h,"{""mireScalePct"":25}"
+傳奇特效,mireWeaken,削弱,0,,,,,,,,0,,在泥沼術範圍中的敵人造成的傷害 -30%。,earth,mire,,magicSword1h,"{""mireWeaken"":{""reducePct"":30}}"
+傳奇特效,mireCorrupt,腐化,0,,,,,,,,0,,在泥沼術範圍內所有受到控場的敵人，受到的傷害 +30%。,earth,mire,,magicSword1h,"{""mireCorruptPct"":30}"
+傳奇特效,mireLavaBurn,熔火,0,,,,,,,,0,,熔岩沼的火焰傷害 +70%。,earth,mire,,magicSword1h,"{""mireLavaPct"":70}"
+傳奇特效,mireErode,侵蝕,0,,,,,,,,0,,泥沼術會附加流血，每 0.5 秒造成 150% 物理傷害，持續 5 秒。,earth,mire,,magicSword1h,"{""mireBleed"":{""tickPowerPct"":150,""tickSec"":0.5,""dur"":5}}"
+傳奇特效,earthguardManaFeed,魔力滋養,0,,,,,,,,0,,大地守護會使溢出的 50% 法力轉為你的生命護盾。,earth,earthguard,,shield,"{""egManaOverflowShield"":{""pct"":50}}"
+傳奇特效,earthguardLifeFeed,生命滋養,0,,,,,,,,0,,大地守護會使溢出的 10% 生命轉為你的法力值。,earth,earthguard,,shield,"{""egHpOverflowMana"":{""pct"":10}}"
+傳奇特效,earthguardSoulLink,靈魂連結,0,,,,,,,,0,,【生命反射之盾】可以額外對 1 個敵人產生作用。,earth,earthguard,,shield,"{""egReflectAdd"":{""count"":1}}"
+傳奇特效,earthguardHeartOfEarth,地之心,0,,,,,,,,0,,每殺死 1 個敵人，【天地共生】的復活冷卻時間 -1 秒。,earth,earthguard,,shield,"{""egKillCdr"":{""sec"":1}}"
+傳奇特效,earthguardUndyingWill,不滅意志,0,,,,,,,,0,,【天地共生】復活後的無敵時間內，每殺死 1 個敵人則無敵時間 +0.5 秒。,earth,earthguard,,shield,"{""egKillInvuln"":{""sec"":0.5}}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=25', 'shim.js?v=5');
 importScripts(
-  '../util.js?v=20260814-skill-summary', '../data.js?v=20260825-firehunt-rock-legendary', '../status.js?v=20260825-firehunt-rock-legendary', '../formula.js?v=20260825-firehunt-rock-legendary', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
+  '../util.js?v=20260814-skill-summary', '../data.js?v=20260825-mire-earthguard-legendary', '../status.js?v=20260825-mire-earthguard-legendary', '../formula.js?v=20260825-mire-earthguard-legendary', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260824-skill-ready-requeue', '../skills2.js?v=20260825-magic-shield-mana-reduction', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260825-mire-earthguard-legendary', '../skills2.js?v=20260825-mire-earthguard-legendary', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
-  '../combat.js?v=20260825-firehunt-rock-legendary-2', '../legendary.js?v=20260825-firehunt-rock-legendary', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260824-hp-lock-action',
+  '../combat.js?v=20260825-mire-earthguard-legendary', '../legendary.js?v=20260825-firehunt-rock-legendary', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260825-mire-earthguard-legendary',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
   '../tasks.js'
 );

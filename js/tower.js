@@ -144,10 +144,12 @@ function towerTick(dt) {
      （大地守護 T3／T4）的乘算則兩邊都要吃，故單獨乘在屬性值上。 */
   var regenHpMul = (typeof skill2RegenFactor === 'function') ? skill2RegenFactor('hp') : 1;
   var regenMpMul = (typeof skill2RegenFactor === 'function') ? skill2RegenFactor('mp') : 1;
-  p.mp = Math.min(st.mp, p.mp + st.mpRegen * regenMpMul * dt);
+  /* 入帳一律走 formula.js 的收斂點（夾上限的行為與改版前相同），溢出量才有地方可以接
+     ——大地守護的傳奇【生命滋養】【魔力滋養】與超神【光耀之堂】吃的就是這一份。 */
+  gainPlayerMana(p, st.mpRegen * regenMpMul * dt, st);
   var hot = buffVal(p, 'hot');
-  if ((st.hpRegen > 0 || hot > 0) && p.hp < st.hp) {
-    p.hp = Math.min(st.hp, p.hp + (st.hpRegen * regenHpMul + st.hp * hot / 100) * dt);
+  if (st.hpRegen > 0 || hot > 0) {
+    healPlayer(p, (st.hpRegen * regenHpMul + st.hp * hot / 100) * dt, st, { noShield: true });
   }
   tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 

@@ -1,5 +1,52 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第七批（泥沼術／大地守護十特效 ＋ 兩組超神進化）（2026-08-25）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（地系第二批）
+- 使用者需求：實作「泥沼術」與「大地守護」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）泥沼術、大地守護兩段。
+- 前置依賴：無（`.claude/check-conflicts.ps1` 對全部 23 支目標檔案回報退出碼 0，磁碟上沒有衝突來源）。
+- 前六批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用，沒有新增架構。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 108）：魔劍→泥沼術＝蔓延／削弱／腐化／熔火／侵蝕；
+    盾牌→大地守護＝魔力滋養／生命滋養／靈魂連結／地之心／不滅意志。兩者都不吃雙手 ×2 補償。
+  - SKILLS2 新增 6 個超神進化（開放群組 12 → 14）：泥沼術＝惡疫魔沼／深淵火獄／黃泉沼；
+    大地守護＝光耀之堂／天地再造／逆轉乾坤。
+  - 新增三個狀態 `sgMireBleed`（泥沼裂傷）／`sgPlague`（惡疫）／`sgInferno`（火獄烙印）。
+  - 新增兩個收斂點：`gainPlayerMana`（`js/formula.js`；法力入帳的唯一出口，比照 `healPlayer`，
+    讓「溢出的法力」第一次有地方可以接）與 `skills2OnEnemyKill`（`js/combat.js onFieldKill` 尾端；
+    新版技能的擊殺掛點）。另新增 `skill2DotElemFactor`（依狀態表傷害屬性分流的持續傷害乘區）。
+  - 【黃泉沼】的斬殺刻意分兩段（受傷掛點只立旗標、`tickSkill2` 才結算），避免在
+    `resolveHit`／`applyEnemyHpDamage` 中途遞迴且繞過致死分支。
+  - Worker 協議未變（仍是 v25）：本批沒有新增需要顯示層重現的幾何欄位。
+- 修改檔案：`js/data.js`、`js/skills2.js`、`js/status.js`、`js/formula.js`、`js/combat.js`、
+  `js/skills.js`、`js/tower.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`index.html`、
+  `config/CSV/*` 與 `config/Excel/*`（Equipment_Affix／Skills2／Status）、
+  `game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-mire-earthguard-legendary.test.cjs`（新增，20 案例）、
+  `tests/skill2-ult-evolution.test.cjs`、`tests/legendary-affix.test.cjs`、
+  `tests/skill2-vfx.test.cjs`（它釘住 index.html／bridge.js／sim.worker.js 的**目前版號**，
+  版號往上推時本來就要一起更新，見該檔的註釋）、本文件。
+- 未修改但檢查過：`js/legendary.js`（傳奇橋不必改，這一批沒有屬性增傷型效果）、
+  `js/gm_exec.js`（`sgult` 依 `sgUltDefs` 動態列舉，新群組自動納入）、
+  `js/save.js`（第 8 格正規化與群組無關）、`js/ui.js`（格數走 `sgSlotCount`）、
+  `js/battle-renderer.js`（垂死實體被活體資料頂替時已會砍掉重建，【天地再造】不必改顯示層）。
+- 驗證方式：`npm test` 全量（新增 20 案例全過）、`node tools/build_check.cjs`（300 檔）、
+  `config_tables --gen <表>／--sync／--apply` 往返（語意變更 0）、`apply_params` 試跑（將變更 0、
+  錨點問題 0、對應參數總數 554 不變）、快取版號同步、`git diff --check`。
+- 已知風險：
+  - **本批之前就存在的 10 條紅燈未處理**（改動前後完全相同，非本次造成；已在 HEAD 的乾淨
+    worktree 逐條比對確認）：`skill2-earth` 的兩條（泥沼術範圍由 10×10 改為 12×12 之後沒同步的
+    斷言）、冰系四條、雷系一條、風系一條、Canvas 投射物預判一條。要不要一併修屬另案。
+  - 七個設計文檔未指定的取值與判斷見 PATCH.md 的「待確認」段（天地再造是否再給獎勵、
+    逆轉乾坤的取整、侵蝕的傷害基準…）。
+- 未完成項目：尚未進行瀏覽器實機目視驗證與 DPS 基準測試（建議交由 Antigravity）。
+- Commit：待建立。
+
+---
+
 ## Codex｜調整大地守護「魔法盾」承擔法力降低（2026-08-25）
 
 - 狀態：已完成

@@ -1251,6 +1251,61 @@ var PASSIVE_POOL = {
     name: '大地之心', desc: '當你的生命護盾降至 0 時獲得無敵 2 秒；此效果每 30 秒只能觸發 1 次。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
     fx: { rockHeartInvuln: { sec: 2, cd: 30 } }
+  },
+  /* ---- 傳奇進化第七批（2026-08-25）：地系第二批 ----
+     魔劍→泥沼術（mire）／盾牌→大地守護（earthguard）。
+     兩者都不是雙手武器，不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，
+     因此規格物件裡的數字沿用設計文檔原值；仍把「次數／秒數」放進
+     LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵，之後若改判為雙手也不會被放大成別的東西。 */
+  mireSpread: {
+    name: '蔓延', desc: '泥沼術的範圍 +25%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireScalePct: 25 }
+  },
+  mireWeaken: {
+    name: '削弱', desc: '在泥沼術範圍中的敵人造成的傷害 -30%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireWeaken: { reducePct: 30 } }
+  },
+  mireCorrupt: {
+    name: '腐化', desc: '在泥沼術範圍內所有受到控場的敵人，受到的傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireCorruptPct: 30 }
+  },
+  mireLavaBurn: {
+    name: '熔火', desc: '熔岩沼的火焰傷害 +70%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireLavaPct: 70 }
+  },
+  mireErode: {
+    name: '侵蝕', desc: '泥沼術會附加流血，每 0.5 秒造成 150% 物理傷害，持續 5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireBleed: { tickPowerPct: 150, tickSec: 0.5, dur: 5 } }
+  },
+  earthguardManaFeed: {
+    name: '魔力滋養', desc: '大地守護會使溢出的 50% 法力轉為你的生命護盾。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egManaOverflowShield: { pct: 50 } }
+  },
+  earthguardLifeFeed: {
+    name: '生命滋養', desc: '大地守護會使溢出的 10% 生命轉為你的法力值。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egHpOverflowMana: { pct: 10 } }
+  },
+  earthguardSoulLink: {
+    name: '靈魂連結', desc: '【生命反射之盾】可以額外對 1 個敵人產生作用。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egReflectAdd: { count: 1 } }
+  },
+  earthguardHeartOfEarth: {
+    name: '地之心', desc: '每殺死 1 個敵人，【天地共生】的復活冷卻時間 -1 秒。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egKillCdr: { sec: 1 } }
+  },
+  earthguardUndyingWill: {
+    name: '不滅意志', desc: '【天地共生】復活後的無敵時間內，每殺死 1 個敵人則無敵時間 +0.5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egKillInvuln: { sec: 0.5 } }
   }
 };
 

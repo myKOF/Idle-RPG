@@ -1050,15 +1050,38 @@ function healPlayer(pEnt, amount, st, opts) {
   var space = st.hp - pEnt.hp;
   if (amount <= space) { pEnt.hp += amount; return; }
   pEnt.hp = st.hp;
+  var over = amount - Math.max(0, space);
+  /* 新版技能（大地守護，js/skills2.js）：溢出的生命是傳奇【生命滋養】與
+     超神【光耀之堂】的來源。刻意放在 noShield 判斷**之前**——那個旗標管的是
+     「治療溢出轉護盾」這條既有規則，與大地守護的轉換是兩回事；而且回復、吸血
+     這些非技能來源（一律帶 noShield）正好就是設計文檔說的「溢出的生命」。 */
+  if (over > 0 && typeof skills2OnResourceOverflow === 'function') {
+    skills2OnResourceOverflow(pEnt, st, 'hp', over);
+  }
   if (opts && opts.noShield) return;   // 非技能來源：溢出不轉護盾
   /* 【戰神屠錄】：溢出轉護盾是護盾的第二條入口，不一起擋的話代價會被整個繞過去。 */
   if (typeof skills2ShieldBlocked === 'function' && skills2ShieldBlocked()) return;
-  var over = amount - space;
   var cap = st.hp * (SHIELD_HEAL_CAP_PCT / 100) * (1 + (st.shieldEff || 0) / 100);
   var beforeShield = Math.max(0, pEnt.shield || 0);
   var nextShield = Math.min(cap, beforeShield + over * (SHIELD_OVERFLOW_PCT / 100));
   pEnt.shield = Math.max(beforeShield, nextShield);
   refreshShieldMaxAfterGain(pEnt, beforeShield);
+}
+
+/* ---- 法力入帳的唯一收斂點（比照 healPlayer）----
+   2026-08-25 新增。在此之前每個入帳點各自 `Math.min(st.mp, mp + x)`，溢出直接丟掉，
+   大地守護的傳奇【魔力滋養】與超神【光耀之堂】因此沒有東西可以接。
+   回傳實際入帳量；溢出交給 js/skills2.js 的轉換掛點（未啟用時零成本）。 */
+function gainPlayerMana(pEnt, amount, st) {
+  if (!pEnt || !st || !(amount > 0)) return 0;
+  var space = Math.max(0, (Number(st.mp) || 0) - (Number(pEnt.mp) || 0));
+  var gain = Math.min(amount, space);
+  pEnt.mp = (Number(pEnt.mp) || 0) + gain;
+  var over = amount - gain;
+  if (over > 0 && typeof skills2OnResourceOverflow === 'function') {
+    skills2OnResourceOverflow(pEnt, st, 'mp', over);
+  }
+  return gain;
 }
 
 /* 直接給予護盾（大地元素特效【岩甲】等非治療來源）。

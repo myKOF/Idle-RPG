@@ -689,7 +689,7 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 
 - 第 2 個參數是**選項編號**（1／2／3，對應技能面板三選一的左中右），`off` ＝清除選擇。
 - 第 3 個參數留白＝`max`（Lv.10）；填 0 等同 `off`。
-- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術），`all` 會自動略過其餘群組。
+- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術）、`mire`（泥沼術）、`earthguard`（大地守護），`all` 會自動略過其餘群組。
 - **生效前提是該群組前 7 階全部滿級**：沒滿級時指令仍會寫入，但效果暫時失效
   （面板會標「暫時失效」）。要立刻看到效果，先 `sglv thrust max` 再 `sgult thrust 1`。
 
@@ -715,6 +715,12 @@ sgult firehunt 3                      （火狩＝火神降臨：常駐火焰領
 sgult rockarmor 1                     （岩甲術＝超重岩之術：範圍石化並放大土系受傷）
 sgult rockarmor 2                     （岩甲術＝金剛不壞：減傷、生命上限、護盾與尖刺齊漲）
 sgult rockarmor 3                     （岩甲術＝超重力場：範圍僵化＋岩甲期間土系增傷）
+sgult mire 1                          （泥沼術＝惡疫魔沼：惡疫 DoT ＋ 毒屬性持續傷害放大）
+sgult mire 2                          （泥沼術＝深淵火獄：熔岩沼定期噴火龍捲＋屬性改寫）
+sgult mire 3                          （泥沼術＝黃泉沼：低血敵人每次受傷累加斬殺機率）
+sgult earthguard 1                    （大地守護＝光耀之堂：回復倍率＋溢出轉護盾）
+sgult earthguard 2                    （大地守護＝天地再造：普通／菁英敵人機率重生）
+sgult earthguard 3                    （大地守護＝逆轉乾坤：天地共生可累積復活次數）
 sgult all off                         （清除所有超神進化選擇）
 ```
 
