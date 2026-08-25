@@ -156,7 +156,7 @@ test('【炎爆】：同一個敵人被火狩命中滿次數就爆炸，波及�
   assert.ok(calls.some((k) => k.ent === beside), '周圍的敵人也吃到');
 });
 
-test('【伴生併發】：火狩在場時每 1 秒飛出一團，打目標與其周圍', () => {
+test('【伴生併發】：火狩在場時每 1 秒飛出一團，且飛出的那一團會從場上消失', () => {
   /* 環繞本體的接觸命中也走 resolveHit，因此要以傷害值把兩者分開：
      飛出的那一團是 300% 魔攻（500×3＝1500），環繞本體是 Lv.1 的 110%（550）。 */
   const LAUNCH_ATK = 1500;
@@ -170,11 +170,19 @@ test('【伴生併發】：火狩在場時每 1 秒飛出一團，打目標與�
   const p = playerEnt();
   const m = enemy(1e9, 60, 0);
   c.castSkill2(p, [m], 'firehunt', 'mv-float');
+  assert.equal(c.SKILL2_RT.orbits[0].orbs.length, 2, '基準：2 團');
   calls.length = 0;
   advance(c, p, [m], 0.5);
   assert.equal(launched(calls), 0, '不到 1 秒不飛出');
   advance(c, p, [m], 0.7);
   assert.equal(launched(calls), 1, '滿 1 秒飛出一團');
+  // 使用者決策 2026-08-25：飛出去的那一團會被消耗掉
+  assert.equal(c.SKILL2_RT.orbits[0].orbs.length, 1, '飛出去的那一團從場上消失');
+
+  // 再飛一次就把整組消耗光，空掉的場域要就地收掉（狀態列不能繼續倒數）
+  advance(c, p, [m], 1);
+  assert.equal(c.SKILL2_RT.orbits.length, 0, '消耗光的場域要收掉');
+  assert.equal(c.sgFirehuntFieldActive(p), false);
 
   // 沒裝配在技能列就不生效（與其他主動型被動同一條代價）
   const c2 = loadContext();
@@ -187,6 +195,26 @@ test('【伴生併發】：火狩在場時每 1 秒飛出一團，打目標與�
   calls2.length = 0;
   advance(c2, p2, [m2], 1.5);
   assert.equal(launched(calls2), 0, '未裝配時不飛出');
+  assert.equal(c2.SKILL2_RT.orbits[0].orbs.length, 2, '未裝配時也不會被消耗');
+});
+
+test('【伴生併發】優先消耗伴生體，沒有伴生體才拿一般的火狩', () => {
+  const c = loadContext();
+  stubHits(c); stubVfx(c);
+  setLegendary(c, ['firehuntConcurrent']);
+  // 第 7 階【狩神之舞】＝每團出現時自帶伴生，因此場上一定有伴生體可消耗
+  maxLevels(c, 'firehunt');
+  equip(c, 'firehunt');
+  const p = playerEnt();
+  const m = enemy(1e9, 60, 0);
+  c.castSkill2(p, [m], 'firehunt', 'mv-float');
+  const f = c.SKILL2_RT.orbits[0];
+  const companionsBefore = f.orbs.filter((o) => o.companion).length;
+  const mothersBefore = f.orbs.filter((o) => !o.companion).length;
+  assert.ok(companionsBefore > 0 && mothersBefore > 0, '狩神之舞應同時有母體與伴生體');
+  advance(c, p, [m], 1.1);
+  assert.equal(f.orbs.filter((o) => o.companion).length, companionsBefore - 1, '消耗的是伴生體');
+  assert.equal(f.orbs.filter((o) => !o.companion).length, mothersBefore, '母體不動');
 });
 
 test('【烈火狩】：火狩在場期間每 0.5 秒把火焰傷害再堆高一層，火狩消失後退場', () => {
@@ -265,6 +293,7 @@ test('【無限星環】：改為從圓心向外的螺旋，並在持續時間�
   assert.equal(f.spiral, true, '半徑改掛在每一團身上');
   assert.ok(f.growPxPerSec > 0, '要往外長');
   assert.equal(f.spawnLeft, 11, 'Lv.1 額外 11 團（10 ＋ 每級 1）');
+  assert.equal(f.spiralMaxPx, c.bfMeterPx(40), '外擴上限 40 米（使用者決策 2026-08-25）');
   const born = f.orbs.length;
   const startR = f.orbs[0].radius;
   advance(c, p, [m], 3);
@@ -289,12 +318,25 @@ test('【火神降臨】：常駐火焰領域每 0.5 秒打一次，且普攻附
   assert.ok(calls.length > 0, '領域要自己開始打');
   assert.ok(calls.every((k) => k.ent === near), '只打範圍內的敵人');
 
-  // 普攻附加：3 顆星環（Lv.1 ＝ 3 ＋ 每級 0.3 → 3.3，小數以機率補）
+  /* 普攻附加：3 顆星環（Lv.1 ＝ 3 ＋ 每級 0.3 → 3.3，小數以機率補）。
+     使用者決策 2026-08-25：星環改為 24 米／秒的飛行投射物，因此普攻當下**不結算傷害**，
+     只排進飛行物佇列；回傳的是射出幾顆，不是傷害。 */
   calls.length = 0;
   c.chance = () => false;             // 不補那 0.3 顆
-  const out = c.skills2OnBasicAttack(p, near, 'mv-float', c.BASE_STATS);
-  assert.ok(out, '應回傳結算結果');
-  assert.equal(calls.length, 3, '固定 3 顆');
+  c.SKILL2_RT.projectiles.length = 0;
+  const fired = c.skills2OnBasicAttack(p, near, 'mv-float', c.BASE_STATS);
+  assert.equal(fired, 3, '固定 3 顆');
+  assert.equal(calls.length, 0, '普攻當下不結算傷害（要等飛到）');
+  assert.equal(c.SKILL2_RT.projectiles.length, 3, '三顆都進飛行物佇列');
+  const orb = c.SKILL2_RT.projectiles[0];
+  assert.equal(Math.round(orb.speed), c.bfMeterPx(24), '飛行速度 24 米／秒');
+  /* 威力取「第 6 階時的火狩」＝第 4 階【三重火狩】的改寫值（120 ＋ 每級 12，Lv.10 ＝ 240%），
+     不是第 1 階的 200%、也不是第 7 階【狩神之舞】的 300%。 */
+  assert.equal(Math.round(orb.dmgVal), Math.round(500 * 240 / 100));
+  // 飛到之後才結算
+  c.GT += 5;
+  c.tickSkill2(0.1, tickCtx(c, p, [near, far]));
+  assert.ok(calls.length >= 3, '抵達後才結算三顆的傷害');
 
   // 沒選這個超神進化就完全不作用
   const c2 = loadContext();
@@ -304,7 +346,7 @@ test('【火神降臨】：常駐火焰領域每 0.5 秒打一次，且普攻附
   const p2 = playerEnt();
   advance(c2, p2, [enemy(1e9, 30, 0)], 1);
   assert.equal(calls2.length, 0);
-  assert.equal(c2.skills2OnBasicAttack(p2, enemy(1e9, 30, 0), 'mv-float', c2.BASE_STATS), null);
+  assert.equal(c2.skills2OnBasicAttack(p2, enemy(1e9, 30, 0), 'mv-float', c2.BASE_STATS), 0);
 });
 
 /* ===========================================================================
@@ -462,6 +504,8 @@ test('【金剛不壞】：岩甲期間的減傷、生命上限、護盾與尖�
 
   // 生命上限：Lv.1 ＝ 50 ＋ 每級 5 → +55%
   assert.equal(Math.round(c.skill2RockMaxHpFactor() * 100), 155);
+  /* 使用者決策 2026-08-25：當前生命跟著上限等比例一起漲，生命百分比維持不變。 */
+  assert.equal(Math.round(p.hp), 1550, '滿血施放：1000/1000 → 1550/1550');
   // 護盾＝放大後的生命上限 × 放大後的護盾比例（1550 × 155%），不是 1000 × 155%
   assert.equal(Math.round(p.shield), Math.round(1000 * 1.55 * 1.55), '第一次施放就吃到放大後的生命上限');
   // 護盾比例同樣 ×1.55（表定 100% → 155%）
@@ -487,10 +531,45 @@ test('【金剛不壞】：岩甲期間的減傷、生命上限、護盾與尖�
      尖刺效果 +100%（×2）與生命上限 +55%（×1.55）→ 合計 ×3.1。 */
   assert.equal(Math.round(withUlt / calls2[0].atk * 100), 310, '尖刺 +100% × 生命上限 +55%');
 
-  // 岩甲到期：生命上限倍率跟著收回去
+  // 岩甲到期：生命上限倍率跟著收回去，當前生命按同一個比例縮回（不白賺相對生命）
   c.GT = 999;
   c.tickSkill2(0.1, tickCtx(c, p, [m]));
   assert.equal(c.skill2RockMaxHpFactor(), 1);
+  assert.equal(Math.round(p.hp), 1000, '到期縮回 1000/1000，百分比不變');
+});
+
+test('【金剛不壞】半血施放與到期都維持生命百分比，且不會把人縮死', () => {
+  const c = loadContext();
+  stubHits(c); stubVfx(c);
+  maxLevels(c, 'rockarmor');
+  setUlt(c, 'rockarmor', 'adamantBody', 1);
+  equip(c, 'rockarmor');
+  c.markStatsDirty = () => {};
+  c.getStats = () => Object.assign({}, c.BASE_STATS, { hp: 1000 * c.skill2RockMaxHpFactor() });
+  const p = playerEnt();
+  const m = enemy(1e9, 60, 0);
+  p.hp = 500;                                   // 半血
+  c.castSkill2(p, [m], 'rockarmor', 'mv-float');
+  assert.equal(Math.round(p.hp), 775, '半血施放：500/1000 → 775/1550（仍是 50%）');
+  c.GT = 999;
+  c.tickSkill2(0.1, tickCtx(c, p, [m]));
+  assert.equal(Math.round(p.hp), 500, '到期縮回 500/1000（仍是 50%）');
+
+  // 只剩 1 點生命時到期不能被除成 0（那等於技能自己把人殺了）
+  const c2 = loadContext();
+  stubHits(c2); stubVfx(c2);
+  maxLevels(c2, 'rockarmor');
+  setUlt(c2, 'rockarmor', 'adamantBody', 1);
+  equip(c2, 'rockarmor');
+  c2.markStatsDirty = () => {};
+  c2.getStats = () => Object.assign({}, c2.BASE_STATS, { hp: 1000 * c2.skill2RockMaxHpFactor() });
+  const p2 = playerEnt();
+  const m2 = enemy(1e9, 60, 0);
+  c2.castSkill2(p2, [m2], 'rockarmor', 'mv-float');
+  p2.hp = 1;
+  c2.GT = 999;
+  c2.tickSkill2(0.1, tickCtx(c2, p2, [m2]));
+  assert.ok(p2.hp >= 1, '到期不得把生命縮到 0');
 });
 
 test('【超重力場】：施放時使範圍內的敵人僵化，且岩甲期間土系傷害提高', () => {

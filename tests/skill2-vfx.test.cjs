@@ -930,10 +930,10 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.17/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.71/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.103/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.74/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260825-firehunt-rock-legendary'/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.75/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260825-firehunt-rock-legendary-2'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260824-skill-ready-requeue/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260825-firehunt-rock-legendary/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260825-firehunt-rock-legendary-2/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260825-firehunt-rock-legendary/);
 });
 

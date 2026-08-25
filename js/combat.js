@@ -1014,13 +1014,13 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         }
         /* 新版技能超神【火神降臨】（火狩，js/skills2.js）：普攻同時射出數顆火狩星環。
            掛在 depth 0 段＝只有主攻擊會附加，追加攻擊（連擊／連擊數）不重複觸發，
-           與【傳奇特效追加】同一條邊界。 */
+           與【傳奇特效追加】同一條邊界。
+           星環是飛行投射物，傷害要等抵達才結算，因此**不計入這一次普攻的傷害合計**
+           （回傳的是射出幾顆，不是傷害）——併進去會變成「還沒命中就先記帳」。 */
         if (typeof skills2OnBasicAttack === 'function') {
-            var sgBasic = skills2OnBasicAttack(pEnt, mEnt, floatSel, st);
-            if (sgBasic) {
-                res.dmg += sgBasic.dmg || 0;
-                if (sgBasic.killed) res.killed = true;
-                logMsg += ' <span class="log-hl-good">火狩星環追加 ' + fmt(sgBasic.dmg || 0) + ' 傷害</span>';
+            var sgOrbs = skills2OnBasicAttack(pEnt, mEnt, floatSel, st);
+            if (sgOrbs > 0) {
+                logMsg += ' <span class="log-hl-good">火狩星環 ×' + sgOrbs + '</span>';
             }
         }
         if (!res.miss && typeof skillRtChargeInput === 'function') {
