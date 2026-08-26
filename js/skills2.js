@@ -186,8 +186,8 @@ var SKILLS2 = {
   earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 30, pctPer: 3, manaRed: 30, manaRedPer: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔，承擔的法力降低 {manaRed}%（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 25, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }], ult: [{ id: 'hallOfRadiance', name: '光耀之堂', cost: 300, fx: { pct: 250, pctPer: 25, conv: 100, convPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '生命與法力回復額外 +{pct}%（乘算），且溢出的生命與法力以 {conv}% 轉為你的生命護盾' }, { id: 'worldRebirth', name: '天地再造', cost: 300, fx: { chance: 15, chancePer: 15, hp: 80, hpPer: -5 }, goldBase: 10000000, goldGrow: 1.5, desc: '被你殺死的普通與菁英敵人有 {chance}% 機率（上限 100%）以 {hp}% 生命重生（同一個敵人只會重生一次）' }, { id: 'fateReversal', name: '逆轉乾坤', cost: 300, fx: { max: 2, maxPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '【天地共生】的冷卻結束後可累積復活次數，最多累積 {max} 次（小數四捨五入取整）' }] },
   chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害' }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害' }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）' }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10, chance: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈' }], ult: [{ id: 'skyThunderArray', name: '天地雷鎖陣', cost: 300, fx: { gap: 1, gapPer: -0.05, sec: 3, secPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放連鎖閃電後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）' }, { id: 'eternalSuperconductor', name: '永恒超導體', cost: 300, fx: { m: 30, pct: 2, pctPer: 0.2, maxStacks: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外射出 1 道無限彈射的閃電鏈：在自身與 {m} 米內的任意敵人之間往返彈射，每經過自身 1 次使你的雷電傷害 +{pct}%，最多 {maxStacks} 層（持續到你死亡為止）' }, { id: 'flyingThunderGod', name: '飛雷神', cost: 300, fx: { gap: 0.35, count: 3, m: 30, r: 12, pct: 200, pctPer: 20, sec: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放後每 {gap} 秒放出 {count} 道閃電，分別打向 {m} 米內最遠的 {count} 個敵人，各對命中處 {r} 米內的所有敵人造成 {pct}% 雷電傷害，持續 {sec} 秒' }] },
   thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害' }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落電', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { mult: 2, pct: 50, pctPer: 5, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）' }], ult: [{ id: 'thunderMatrix', name: '雷電矩陣', cost: 300, fx: { count: 2, countPer: 0.2, pct: 300, pctPer: 30, wid: 3, mps: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術時同時召喚橫向與直向各 {count} 道雷幕橫掃全場（每道寬 {wid} 米、{mps} 米／秒，相鄰兩道由反方向交錯掃過），對掃過的所有敵人各造成 1 次 {pct}% 雷電傷害' }, { id: 'heavenTribulation', name: '雷霆天劫', cost: 300, fx: { m: 30, gap: 0.35, pct: 400, pctPer: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外召喚 1 道永久持續的天劫雷電：每 {gap} 秒追擊 {m} 米內生命值最低的敵人，造成 {pct}% 雷電傷害' }, { id: 'eternalThunderPrison', name: '永恒雷獄', cost: 300, fx: { gap: 1, gapPer: -0.05, sec: 3, secPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）' }] },
-  thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }] },
-  icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 2, deg: 15, castM: 30, speed: 45 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出 {count} 支寒冰箭，每支箭夾角 {deg} 度（射程 {castM} 米、飛行速度 {speed} 米／秒），每支對 1 個敵人造成 {pct}% 寒冰傷害' }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結' }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）' }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 400, pctPer: 40, sec: 6, m: 6, chaseM: 30, bodyM: 1.5, gap: 0.1, waves: 3, waveGap: 0.3 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰爆裂箭連射 {waves} 波，每波間隔 {waveGap} 秒；寒冰箭變為追蹤冰箭，在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害' }] },
+  thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }], ult: [{ id: 'criticalThunderbolt', name: '臨界雷劫', cost: 300, fx: { count: 4, chanceMult: 2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【伴生雷球】改為一次生成 {count} 顆、觸發機率 ×{chanceMult}，且所有雷球與電球的傷害額外 +{pct}%' }, { id: 'thunderBurst', name: '雷爆', cost: 300, fx: { chance: 15, chancePer: 0.15, bounces: 4, m: 12, pct: 100, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次被雷球命中的敵人有 {chance}% 機率觸發 1 顆小型雷球，在附近 {m} 米範圍內彈射 {bounces} 次，每次造成 {pct}% 雷電傷害' }, { id: 'thunderfallShatter', name: '雷殞天地碎', cost: 300, fx: { scale: 50, gap: 1, pct: 200, pctPer: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '【雷殞天落】的雷殞石體積增大 {scale}%、傷害額外 +{pct}%，並額外每 {gap} 秒不斷再降下 1 顆' }] },
+  icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 2, deg: 15, castM: 30, speed: 45 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出 {count} 支寒冰箭，每支箭夾角 {deg} 度（射程 {castM} 米、飛行速度 {speed} 米／秒），每支對 1 個敵人造成 {pct}% 寒冰傷害' }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結' }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）' }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 400, pctPer: 40, sec: 6, m: 6, chaseM: 30, bodyM: 1.5, gap: 0.1, waves: 3, waveGap: 0.3 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰爆裂箭連射 {waves} 波，每波間隔 {waveGap} 秒；寒冰箭變為追蹤冰箭，在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害' }], ult: [{ id: 'absoluteZeroBurst', name: '極寒冰爆', cost: 300, fx: { waves: 10, waveGap: 0.35, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【寒冰爆裂箭】改為每 {waveGap} 秒連射 {waves} 波，且寒冰箭傷害額外 +{pct}%' }, { id: 'infiniteIceRift', name: '無限冰裂', cost: 300, fx: { sec: 0.1, count: 4, countPer: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '寒冰箭每造成 1 次傷害就使寒冰箭的冷卻時間 -{sec} 秒，且每次發射的寒冰箭數量額外 +{count} 支（不足 1 支的部分以機率觸發）' }, { id: 'tearsOfIce', name: '冰之淚', cost: 300, fx: { waves: 10, gap: 0.35, m: 30, pct: 200, pctPer: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放寒冰箭時同時召喚 {waves} 波寒冰箭雨從天射下（每波間隔 {gap} 秒），每波對我方 {m} 米內的所有敵人造成 {pct}% 寒冰傷害' }] },
   waterball: { name: '水流彈', emoji: '💧', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '水流彈', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, arcM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一顆水彈砸向敵人（射程 {castM} 米、拋物線離地最高 {arcM} 米），造成 {pct}% 寒冰傷害' }, { name: '寒冰逆轉', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 20, pctPer: 2, sec: 6 }, goldBase: 200000, goldGrow: 1.5, desc: '被水流彈擊中的敵人強制轉變為寒冰屬性，且受到的寒冰傷害 +{pct}%，持續 {sec} 秒' }, { name: '寒流彈', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { frostPct: 50, frostPctPer: 20, stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '被水流彈擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成水流彈傷害 {frostPct}% 的寒冰傷害' }, { name: '寒流爆散', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { m: 8, bounce: 2, bouncePer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '水流彈改為範圍攻擊，對目標 {m} 米內的所有敵人造成傷害，並再彈射 {bounce} 次（不足 1 次的部分以機率觸發）' }, { name: '寒霜擴散', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { chance: 25, chancePer: 2.5, m: 10, count: 1 }, goldBase: 1500000, goldGrow: 1.5, desc: '寒霜狀態每次作用時有 {chance}% 機率擴散至目標 {m} 米內的 {count} 個敵人' }, { name: '三重流水', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '朝隨機目標額外丟出 {add} 顆水流彈（不足 1 顆的部分以機率觸發）' }, { name: '水龍捲', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 4, hits: 6, pct: 100, pctPer: 10, m: 5, side: 10, frozen: 2, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外在我方 {side}×{side} 米正方形的四個頂點召喚 {count} 道水龍捲（傷害半徑 {m} 米），每道造成連續 {hits} 段 {pct}% 寒冰傷害，且對凍結中的敵人傷害為 {frozen} 倍' }] },
   frostnova: { name: '冰霜新星', emoji: '🧊', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '冰霜新星', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 150, pctPer: 5, m: 12, castM: 12, stacks: 2, frostPct: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '對周圍 {m} 米內的敵人釋放冰霜新星，造成 {pct}% 寒冰傷害並附加 {stacks} 層寒霜狀態（寒霜每跳造成新星傷害 {frostPct}% 的寒冰傷害）' }, { name: '冰霜衝擊', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { m: 13, mPer: 0.6, castM: 13, castMPer: 0.6, pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '冰霜新星的範圍擴展至 {m} 米，且寒冰傷害額外 +{pct}%' }, { name: '寒冰體', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '施放冰霜新星後的 6 秒內，攻擊你的敵人有 25% 機率被附加 {stacks} 層寒霜狀態' }, { name: '極致寒霜', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { dmgPct: 40, dmgPctPer: 4, durPct: 40, durPctPer: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '所有來源的寒霜狀態傷害提高 {dmgPct}%，且持續時間增加 {durPct}%' }, { name: '三重新星', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '冰霜新星的施放次數額外 +{add} 次，且每次釋放的範圍再 +{m} 米（不足 1 次的部分以機率觸發）' }, { name: '死亡新星', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { chance: 35, chancePer: 6.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '帶寒霜狀態的敵人死亡時有 {chance}% 機率再釋放 1 次冰霜新星' }, { name: '暴風雪', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { pct: 100, pctPer: 10, gap: 0.4, sec: 8, side: 24 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 1 道暴風雪籠罩天空，對 {side}×{side} 米範圍內的敵人每 {gap} 秒造成 {pct}% 寒冰傷害，暴風雪跟隨我方移動，持續 {sec} 秒' }] },
   windblade: { name: '風刃', emoji: '🍃', range: '4*8', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '風刃', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, m: 80, speed: 18 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出一道弧形風刃（射程 {castM} 米、飛行速度 {speed} 米/秒），貫穿飛行路徑 {m} 米上的所有敵人，各造成 {pct}% 風系傷害' }, { name: '巨型風刃', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { size: 30, sizePer: 3 }, goldBase: 200000, goldGrow: 1.5, desc: '風刃的體積 +{size}%（判定範圍與特效同步放大）' }, { name: '雙重風刃', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { pct: 30, pctPer: 30 }, goldBase: 400000, goldGrow: 1.5, desc: '同時向前方與後方各射出一道風刃，且風刃傷害額外 +{pct}%（與第 1 階累加）' }, { name: '亂披風', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 30, pctPer: 3, deg: 30, lenM: 3, widthM: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '風刃射出時同時朝其兩側各 {deg} 度發射 1 道小型風刃（體積 {lenM}×{widthM} 米、同樣貫穿全場），每道造成原風刃 {pct}% 的傷害' }, { name: '追跡風刃', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { sec: 4, secPer: 0.3, chaseM: 30, gap: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '小型風刃不再向前射出，改為在 {chaseM} 米內隨機追擊敵人 {sec} 秒，對路徑上的所有敵人造成傷害（碰到才算一次命中）' }, { name: '狂風碎裂', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { move: 60, gap: 0.6, gapPer: -0.03, pct: 50, m: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '風刃命中的敵人移動速度 -{move}%；風刃並在飛行途中每 {gap} 秒對半徑 {m} 米內的敵人造成風刃 {pct}% 的傷害（不含小型風刃）' }, { name: '暴風真空刃', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { pct: 40, pctPer: 40, count: 3, directions: 4, gap: 0.2 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為朝前後左右 {directions} 個方向各連續射出 {count} 道風刃（每道間隔 {gap} 秒，小型風刃同步發射），且風刃傷害額外 +{pct}%' }] },
@@ -272,7 +272,8 @@ function resetSkill2RT() {
     superconduct: null, // 超神【永恒超導體】疊層增益的持有者：{ pEnt }
                         // ——那個增益「持續到死亡為止」，所以得另外記住掛在誰身上（比照 warGod）
     flyThunder: null,   // 超神【飛雷神】的放電期：{ until, nextAt }（不入存檔）
-    tribulationAt: 0 // 超神【雷霆天劫】那道永久雷電的下一拍時刻（不入存檔）
+    tribulationAt: 0, // 超神【雷霆天劫】那道永久雷電的下一拍時刻（不入存檔）
+    thunderfallAt: 0 // 超神【雷殞天地碎】那串不斷落下的雷殞石的下一拍時刻（不入存檔）
   };
 }
 resetSkill2RT(); // 載入即建立初始狀態
@@ -1327,7 +1328,20 @@ function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTo
     floatEnemyEvent(target, floatSel, 'MISS', 'miss enemy-dodge', undefined, delayMs);
   }
   if (res.killed) out.killed = true;
+  if (!res.miss && SG_ULT_HIT_CDR[gid]) sgUltHitCdr(pEnt, gid);
   return res;
+}
+
+/* ---- 超神「每造成 1 次傷害就把自己的冷卻往回扣」的共用掛點 ----
+   目前唯一的使用者是寒冰箭【無限冰裂】。掛在 sgHitOne 而不是各形態各寫一次，
+   是因為那是寒冰箭所有形態（單體／貫穿／追擊場域／冰爆／分裂箭）唯一的共同結算點；
+   查表命中才進函式，沒有這種超神的群組只多一次物件查詢。 */
+var SG_ULT_HIT_CDR = { icearrow: { id: 'infiniteIceRift', key: 'sec' } };
+function sgUltHitCdr(pEnt, gid) {
+  var spec = SG_ULT_HIT_CDR[gid];
+  var u = sgUlt(gid, spec.id);
+  if (!u) return;
+  sgReduceSkillCooldownOnHit(pEnt, SG_PREFIX + gid, sgUltVal(u, spec.key));
 }
 
 /* 衍生傷害（占「已造成傷害」比例的擴散等）：不再過防禦與爆擊，直接扣血。 */
@@ -1434,6 +1448,9 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     burnBonusPct: extra && Number(extra.burnBonusPct) > 0 ? Number(extra.burnBonusPct) : 0,
     poolSpec: extra && extra.poolSpec || null,
     frostSpec: extra && extra.frostSpec || null,
+    /* 寒冰箭的傳奇附加規格（【冰裂箭】的分裂箭與【深度凍結】的控場增傷）：
+       貫穿段的每一次命中都要拿得到，因此掛在飛行物上而不是每次重算。 */
+    iceSpec: extra && extra.iceSpec || null,
     victims: extra && extra.victims || null,
     splitTargets: extra && extra.splitTargets || null,
     splitDmgVal: extra && Number(extra.splitDmgVal) > 0 ? Number(extra.splitDmgVal) : 0,
@@ -3614,6 +3631,14 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     contacts: [],
     /* 對凍結中的敵人的傷害倍率（水龍捲）；1＝沒有額外倍率。 */
     frozenMult: Math.max(1, Number(cfg.frozenMult) || 1),
+    /* 對「暈眩或凍結中」的敵人的額外傷害百分點（傳奇【深度凍結】）。
+       與 frozenMult 分開是因為那一支只認凍結、而且是倍率不是百分點；
+       兩者同時存在時各自加總（都走 sgHitOne 的總傷加成，仍完整過防禦與爆擊）。 */
+    ctrlPct: Math.max(0, Number(cfg.ctrlPct) || 0),
+    /* 命中後的附加效果，每個受害者各呼叫一次：onHit(f, victim, enemies, out, ctx)。
+       語意比照環繞場域的 onStrike——超神【雷爆】的小型雷球與傳奇【冰裂箭】的分裂箭
+       都掛在這裡，不必為每一種形態再開一個場域旗標。 */
+    onHit: cfg.onHit || null,
     frostSpec: cfg.frostSpec || null,
     /* ---- 傳奇進化第五批（火龍捲）----
        wanderM＝超神【永劫火獄】的隨機游走半徑（以 home 為圓心；chaseM 優先，兩者不並用）
@@ -3854,7 +3879,8 @@ function sgGroundTick(f, enemies, ctx) {
     /* 對凍結中的敵人的傷害倍率（水龍捲）：走 sgHitOne 的總傷加成參數，
        因此仍完整經過防禦、抗性與爆擊，不是事後再乘一次的獨立傷害。 */
     var bonusPct = ((f.frozenMult > 1 && sgFrozenOn(victims[i])) ? (f.frozenMult - 1) * 100 : 0) +
-      resonancePct;
+      resonancePct +
+      ((f.ctrlPct > 0 && sgIceControlled(victims[i])) ? f.ctrlPct : 0);
     var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out,
       sgStaggerMs(i), bonusPct, f.hitElem);
     if (!res || res.miss) continue;
@@ -3863,6 +3889,7 @@ function sgGroundTick(f, enemies, ctx) {
        因為 sgApplyBurnAmp 會把已經在燒的那一份就地重寫成放大後的每跳量）。 */
     if (f.burnAmp && victims[i].hp > 0) sgApplyBurnAmp(victims[i], f.burnAmp);
     if (f.frostSpec && victims[i].hp > 0) sgApplyFrost(victims[i], f.frostSpec);
+    if (f.onHit) f.onHit(f, victims[i], enemies, out, ctx);
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
@@ -3873,11 +3900,11 @@ function sgGroundTick(f, enemies, ctx) {
 function sgGroundVfxSpec(f) {
   var area = sgGroundArea(f);
   if (f.kind === 'wall') return { fxKind: 'aura', variant: 'firewall', elem: 'fire', dur: f.gap, area: area };
-  /* 雷電矩陣的雷幕：形狀語意與火牆完全相同（一道立在地面、沿軸向延伸的能量牆），
-     因此沿用 firewall 的既有畫法只換屬性配色（themeOf 讀 elem）。
-     另立一個顯示層不認得的 variant 只會退回泛用光環，反而看不出是一道牆。
+  /* 雷電矩陣的雷幕：一排從天而降的落雷沿著判定矩形排開、隨矩形橫掃過去。
+     ⚠️ 不能沿用 firewall：那一支的火焰色是寫死在多邊形裡的（theme 只影響少數幾層），
+     換成 elem lightning 畫出來還是一道火牆——2026-08-26 使用者實機回報的就是這個。
      kind 用 thunderwall 而不是 wall：wall 會讓 sgGroundExpire 去跑火龍捲樹的第 5／6 階。 */
-  if (f.kind === 'thunderwall') return { fxKind: 'aura', variant: 'firewall', elem: 'lightning', dur: f.gap, area: area };
+  if (f.kind === 'thunderwall') return { fxKind: 'aura', variant: 'thunder-curtain', elem: 'lightning', dur: f.gap, area: area };
   if (f.kind === 'orb') return { fxKind: 'aura', variant: 'thunder-orb', dur: f.gap, area: area };
   if (f.kind === 'tornado') return { fxKind: 'aura', variant: 'water-tornado', elem: 'ice', dur: f.gap, area: area };
   /* 逐風者的龍捲風：沿用水龍捲的柱狀畫法，只換屬性配色（顯示層不認得 wind-tornado
@@ -3888,6 +3915,10 @@ function sgGroundVfxSpec(f) {
   if (f.kind === 'firepool') return { fxKind: 'aura', variant: 'mire-lava', elem: 'fire', dur: f.gap, area: area };
   if (f.kind === 'blizzard') return { fxKind: 'aura', variant: 'blizzard', elem: 'ice', dur: f.gap, area: area };
   if (f.kind === 'icearrow') return { fxKind: 'aura', variant: 'ice-arrow-homing', elem: 'ice', dur: f.gap, area: area };
+  /* 超神【冰之淚】的箭雨：從天而降的一片箭，語意就是既有的 rain。
+     不自創顯示層不認得的 variant——兩個渲染器對 rain 都有泛用分支（Canvas 的
+     spawnRain 與 DOM 的範圍矩形），因此不必為它各補一支畫法。 */
+  if (f.kind === 'icerain') return { fxKind: 'rain', variant: 'ice-rain', elem: 'ice', dur: f.gap, area: area };
   if (f.kind === 'windblade') return { fxKind: 'aura', variant: 'wind-blade-homing', elem: 'wind', dur: f.gap, area: area };
   /* 毒爆／血霧留下的是一灘東西，語意與泥沼池相同，因此直接沿用 mire 的既有畫法；
      沿用既有 variant 而不是自創，是因為顯示層不認得的 variant 只會退回泛用光環。 */
@@ -3908,7 +3939,10 @@ function sgGroundArea(f) {
        在兩次模擬快照之間補間，destX／destY／speed 僅保留方向語意，
        不得由顯示層另建一條與傷害位置脫節的追擊路徑。 */
     if (f.follow) rect.follow = true;
-    if ((f.kind === 'icearrow' || f.kind === 'windblade') && f.dest) {
+    /* thunderwall（雷電矩陣的雷幕）同樣要帶落點與速度：它是等速直線橫掃，
+       顯示層拿這三個值就能在兩則事件之間完全重現同一段運動（AI_RULES 8.3.1），
+       不必也不得自己另外編一條路徑。 */
+    if ((f.kind === 'icearrow' || f.kind === 'windblade' || f.kind === 'thunderwall') && f.dest) {
       rect.destX = f.dest.x;
       rect.destY = f.dest.y;
       rect.speed = f.speed;
@@ -5968,8 +6002,9 @@ function sgSuperconductStack(pEnt, perStack, maxStacks) {
 /* 超神【永恒超導體】的雷電傷害增幅（掛在 legendary.js legendaryElementDamageUp——
    全專案「屬性傷害提升%」的唯一收斂點，普攻與新舊技能因此一體生效）。 */
 function skill2LightningDamageUpPct(pEnt) {
-  if (!pEnt || typeof buffVal !== 'function') return 0;
-  return Math.max(0, buffVal(pEnt, 'sgSuperconduct'));
+  var pct = (pEnt && typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgSuperconduct')) : 0;
+  // 傳奇【超載】（雷球）：場上每有 1 個雷球就再加一份，走同一個收斂點
+  return pct + sgThunderorbFieldAmpPct();
 }
 
 /* 超神【飛雷神】：施放連鎖閃電後進入放電期，期間每 gap 秒放出 count 道閃電。
@@ -6376,14 +6411,24 @@ function sgTickUltRepeat(ctx, dt) {
    =========================================================================== */
 function sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
+  var lg = sgLegend('thunderorb');
+  var ultCritical = sgUlt('thunderorb', 'criticalThunderbolt');
   var ampPct = lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0;   // 【強化雷球】：所有形態共用
-  var scale = lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1;
+  /* 超神【臨界雷劫】的「傷害 +50%」是獨立乘區（比照【烈陽星環】的既有裁定），
+     與 T5 那個加算的百分點不是同一種量，因此各自套用而不是併進 ampPct。 */
+  var ultMult = ultCritical ? 1 + sgUltVal(ultCritical, 'pct') / 100 : 1;
+  /* 體積：T2【擴增雷球】×傳奇【雷核】。兩者都是「體積 +N%」，因此相乘
+     （比照火狩的 T2【強化火狩】×傳奇【增焰】）。 */
+  var scale = (lvs[1] > 0 ? 1 + sgVal(t[1].fx, 'pct', lvs[1]) / 100 : 1) *
+    (1 + Math.max(0, Number(lg.thunderorbScalePct) || 0) / 100);
+  var burst = sgThunderorbBurstSpec(g, st);   // 超神【雷爆】：命中後觸發的小型雷球
   var orbCfg = {
-    dmgVal: sgGroupBaseStat(g, st) * (sgVal(t[0].fx, 'pct', lvs[0]) + ampPct) / 100,
+    dmgVal: sgGroupBaseStat(g, st) * (sgVal(t[0].fx, 'pct', lvs[0]) + ampPct) / 100 * ultMult,
     radius: bfMeterPx(Number(t[0].fx.m) || 3) * scale,
     gap: Math.max(0.05, Number(t[0].fx.gap) || 0.35),
     parkSec: Math.max(0, Number(t[0].fx.sec) || 2),
-    speedPx: Math.max(1, bfMeterPx(Number(t[0].fx.speed) || 6))
+    speedPx: Math.max(1, bfMeterPx(Number(t[0].fx.speed) || 6)),
+    burst: burst
   };
   var count = Math.max(1, Math.floor(Number(t[0].fx.count) || 2));
   if (lvs[2] > 0) count += sgRollCount(sgVal(t[2].fx, 'add', lvs[2]));
@@ -6399,50 +6444,178 @@ function sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[3] > 0) {
     var ofx = t[3].fx;
     var body = sgRange(g.range);
+    /* 【伴生雷球】的機率、顆數與持續時間：
+         傳奇【感電核心】→ 持續時間 +100%
+         超神【臨界雷劫】→ 顆數改為 N 顆、機率乘上倍率（「提高 1 倍」＝×2） */
     var companionChance = lvs[5] > 0 ? sgVal(t[5].fx, 'chance', lvs[5]) : 0;
-    var companionSec = Math.max(0.5, Number(t[5].fx.sec) || 2);
+    if (ultCritical) companionChance *= Math.max(1, sgUltVal(ultCritical, 'chanceMult'));
+    var companionSec = Math.max(0.5, Number(t[5].fx.sec) || 2) *
+      (1 + Math.max(0, Number(lg.thunderorbCompanionSecPct) || 0) / 100);
+    var companionCount = ultCritical ? Math.max(1, Math.floor(sgUltVal(ultCritical, 'count'))) : 1;
     sgSpawnOrbitField(pEnt, st, 'thunderorb', {
       tgt: primary, floatSel: floatSel,
       rings: [{ r: bfMeterPx(Number(ofx.m) || 8), spin: Math.PI * 2 * (Number(ofx.rps) || 0.7) }],
       count: Math.max(1, Math.floor(Number(ofx.count) || 2)),
-      dmgVal: sgGroupBaseStat(g, st) * (sgVal(ofx, 'pct', lvs[3]) + ampPct) / 100,
+      dmgVal: sgGroupBaseStat(g, st) * (sgVal(ofx, 'pct', lvs[3]) + ampPct) / 100 * ultMult,
       lifeSec: Math.max(0.5, Number(ofx.sec) || 6),
       bodyR: bfMeterPx(Math.max(body.length, body.width) / 2) * scale,
       statusId: 'sgThunderOrb', auraVariant: 'thunder-orbit',
       hitVariant: 'thunder-burst', hitElem: 'lightning',
-      /* 【伴生雷球】：命中處留下一顆靜止雷球（傷害與體積比照飛行雷球）。 */
+      /* 【伴生雷球】：命中處留下靜止雷球（傷害與體積比照飛行雷球）。 */
       onStrike: companionChance > 0 ? function (f, orb, pos) {
         if (!pos || !chance(companionChance)) return;
-        sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, orbCfg, pos, companionSec);
+        for (var c = 0; c < companionCount; c++) {
+          sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, orbCfg, pos, companionSec);
+        }
       } : null
     });
   }
 
-  // 【雷殞天落】：追加兩顆從天而降的巨大雷球（不取代飛行雷球）
+  // 【雷殞天落】：追加從天而降的巨大雷球（不取代飛行雷球）
   if (lvs[6] > 0) {
-    var ffx = t[6].fx;
-    var fallDmg = sgGroupBaseStat(g, st) * (sgVal(ffx, 'pct', lvs[6]) + ampPct) / 100;
-    var fallRadius = bfMeterPx(Number(ffx.m) || 15);
-    var fallCount = Math.max(1, Math.floor(Number(ffx.count) || 2));
-    var fallStun = Math.max(0, Number(ffx.sec) || 3);
-    var timing = sgMeteorFallTiming();
-    var nextFallTarget = sgMeteorTargetBag(primary, pool, fallRadius);
-    for (var f = 0; f < fallCount; f++) {
-      var fallTarget = nextFallTarget();
-      var castDelay = f * SG_METEOR_INTERVAL_MS;
-      sgEmitVfx('thunderorb', [fallTarget], floatSel, {
-        fxKind: 'rain', variant: 'thunder-fall', elem: 'lightning', count: 1,
-        area: sgAreaAround(fallTarget, fallRadius), delayMs: castDelay, travelMs: [timing.travelMs]
-      });
-      sgQueueMeteor(pEnt, st, fallDmg, fallTarget, pool, fallRadius, null, floatSel, out,
-        GT + (castDelay + timing.fallMs) / 1000, {
-          gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning',
-          onImpact: function (m, victims) {
-            for (var vi = 0; vi < victims.length; vi++) sgTryStun(victims[vi], fallStun);
-          }
-        });
-    }
+    var fallSpec = sgThunderfallSpec(g, st, lvs, lg,
+      sgUlt('thunderorb', 'thunderfallShatter'), ultMult, burst);
+    sgDropThunderfall(pEnt, st, fallSpec, fallSpec.count, pool, primary, floatSel, out);
   }
+}
+
+/* 【雷殞天落】的一次降下規格。施放時的降下與超神【雷殞天地碎】的永久節拍共用這一支，
+   規格因此只寫一次，兩條路徑不會漂移。 */
+function sgThunderfallSpec(g, st, lvs, lg, ultShatter, ultMult, burst) {
+  var ffx = g.tiers[6].fx;
+  var ampPct = lvs[4] > 0 ? sgVal(g.tiers[4].fx, 'pct', lvs[4]) : 0;
+  var pct = sgVal(ffx, 'pct', lvs[6]) + ampPct;
+  var scale = 1;
+  if (ultShatter) {
+    pct *= 1 + sgUltVal(ultShatter, 'pct') / 100;   // 「雷殞石傷害 +200%」＝乘區（比照【烈陽星環】）
+    scale = 1 + sgUltVal(ultShatter, 'scale') / 100;
+  }
+  /* 傳奇【雷殞震】：擊中的敵人「會暈眩 4 秒」。表定本來就會暈（衝擊波 3 秒），
+     因此取兩者的高者——直接覆寫會讓這個特效在表定值更長時反而變成降級。 */
+  var stunSec = Math.max(0, Number(ffx.sec) || 3);
+  var stunTo = lg.thunderorbFallStunTo;
+  if (stunTo && Number(stunTo.sec) > 0) stunSec = Math.max(stunSec, Number(stunTo.sec));
+  return {
+    dmgVal: sgGroupBaseStat(g, st) * pct / 100 * (ultMult || 1),
+    radius: bfMeterPx(Number(ffx.m) || 15) * scale,
+    // 【雷殞落】：降下的顆數 +N
+    count: Math.max(1, Math.floor(Number(ffx.count) || 2) + sgLegendCount(lg.thunderorbFallAdd)),
+    stunSec: stunSec,
+    burst: burst || null
+  };
+}
+
+/* 降下 n 顆巨大雷球（施放時與【雷殞天地碎】的永久節拍共用同一支）。 */
+function sgDropThunderfall(pEnt, st, spec, n, pool, primary, floatSel, out) {
+  var timing = sgMeteorFallTiming();
+  var nextTarget = sgMeteorTargetBag(primary, pool, spec.radius);
+  for (var f = 0; f < n; f++) {
+    var target = nextTarget();
+    var castDelay = f * SG_METEOR_INTERVAL_MS;
+    sgEmitVfx('thunderorb', [target], floatSel, {
+      fxKind: 'rain', variant: 'thunder-fall', elem: 'lightning', count: 1,
+      area: sgAreaAround(target, spec.radius), delayMs: castDelay, travelMs: [timing.travelMs]
+    });
+    sgQueueMeteor(pEnt, st, spec.dmgVal, target, pool, spec.radius, null, floatSel, out,
+      GT + (castDelay + timing.fallMs) / 1000, {
+        gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning',
+        onImpact: function (m, victims) {
+          for (var vi = 0; vi < victims.length; vi++) {
+            sgTryStun(victims[vi], spec.stunSec);
+            /* 雷殞石也是「雷球」，因此超神【雷爆】同樣由它的命中觸發
+               （沒選那個超神時 spec.burst 為 null，整段不進判定）。 */
+            sgThunderorbBurst(m.pEnt, m.st, m.floatSel, spec.burst, victims[vi], m.pool, m.out);
+          }
+        }
+      });
+  }
+}
+
+/* 超神【雷殞天地碎】：雷殞石不再只在施放時降下，而是每 gap 秒不斷再落下 1 顆。
+   「不斷落下」＝只要雷球還裝配在技能列上就一直跑（比照【雷霆天劫】那道永久雷電），
+   因此節拍記在 RT、由 tickSkill2 驅動，而不是綁在某一次施放上。
+   超神要前 7 階全滿才選得起，所以這裡不必再確認【雷殞天落】有沒有點出來。 */
+function sgTickThunderfallShatter(ctx, dt) {
+  var u = sgUlt('thunderorb', 'thunderfallShatter');
+  if (!u || !skills2Equipped('thunderorb')) { SKILL2_RT.thunderfallAt = 0; return; }
+  // 死亡／倒地：節拍往後推，剩餘時間不變（見 skills2AutoCastBlocked）
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    SKILL2_RT.thunderfallAt = sgPauseSchedule(SKILL2_RT.thunderfallAt, dt);
+    return;
+  }
+  var gap = Math.max(0.1, sgUltVal(u, 'gap'));
+  if (!(SKILL2_RT.thunderfallAt > 0)) { SKILL2_RT.thunderfallAt = GT + gap; return; }
+  if (GT < SKILL2_RT.thunderfallAt) return;
+  SKILL2_RT.thunderfallAt = GT + gap;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : enemies;
+  if (!live.length) return;
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  if (!st) return;
+  var g = SKILLS2.thunderorb;
+  /* 落點隨機（設計沒有指定目標規則，比照飛行雷球的「隨機選」）。
+     ultMult 固定為 1：一個群組同時只有一個超神生效，【臨界雷劫】不可能同時在。 */
+  var primary = live[Math.floor(Math.random() * live.length)];
+  var spec = sgThunderfallSpec(g, st, skills2Levels('thunderorb'), sgLegend('thunderorb'),
+    u, 1, sgThunderorbBurstSpec(g, st));
+  sgDropThunderfall(ctx.pEnt, st, spec, 1, enemies, primary, ctx.floatSel,
+    { killed: false, dmg: 0, crit: false });
+}
+
+/* 超神【雷爆】的規格：被雷球命中的敵人有機率觸發一顆會彈射的小型雷球。
+   傷害基準在施放當下定版（比照傳奇【炎爆】），因此不會被之後的換裝改寫。 */
+function sgThunderorbBurstSpec(g, st) {
+  var u = sgUlt('thunderorb', 'thunderBurst');
+  if (!u) return null;
+  var chancePct = sgUltVal(u, 'chance');
+  var dmgVal = sgGroupBaseStat(g, st) * sgUltVal(u, 'pct') / 100;
+  if (!(chancePct > 0) || !(dmgVal > 0)) return null;
+  return {
+    chance: chancePct,
+    bounces: Math.max(1, Math.floor(sgUltVal(u, 'bounces'))),
+    px: bfMeterPx(sgUltVal(u, 'm')),
+    dmgVal: dmgVal
+  };
+}
+
+/* 一顆小型雷球的彈射：從被命中的那個敵人身上開始，在 m 米內逐一跳過去，
+   總共命中 bounces 次。第一次就打在觸發它的敵人身上（而不是強制先跳走）——
+   否則場上只剩一個 BOSS 時這個超神完全不會生效。
+   下一個目標的選法沿用連鎖閃電的既有裁定（設計只規定範圍、沒有寫「最近」＝範圍內隨機）。 */
+function sgThunderorbBurst(pEnt, st, floatSel, spec, victim, enemies, out) {
+  if (!spec || !victim || victim.hp <= 0 || !chance(spec.chance)) return;
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
+  var cur = victim;
+  var visited = [victim];
+  var delayMs = 0;
+  for (var i = 0; i < spec.bounces && cur && cur.hp > 0; i++) {
+    sgEmitVfx('thunderorb', [cur], floatSel, {
+      fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3
+    });
+    sgHitOne(pEnt, st, cur, spec.dmgVal, 'thunderorb', floatSel, out, delayMs, 0, 'lightning');
+    var next = sgChainNextTarget(cur, live, visited, spec.px);
+    if (!next) break;
+    visited.push(next);
+    delayMs += sgStaggerMs(i + 1);
+    cur = next;
+  }
+}
+
+/* 傳奇【超載】：場上每存在 1 個雷球，你的雷電傷害就提高一份。
+   只數地板場域裡 gid thunderorb、kind orb 的那些＝飛行雷球與伴生雷球——
+   環繞的那些在設計文檔裡叫「電球」（見 T4【環體電球】與 T5「所有雷球與電球」），
+   不是這一條說的「雷球」。比照傳奇【火龍共鳴】只數火龍捲本體。
+   掛點：js/legendary.js legendaryElementDamageUp（屬性傷害提升% 的唯一收斂點）。 */
+function sgThunderorbFieldAmpPct() {
+  if (!SKILL2_RT || !SKILL2_RT.grounds || !SKILL2_RT.grounds.length) return 0;
+  var per = Number(sgLegendTick('thunderorb').thunderorbFieldAmpPct) || 0;
+  if (!(per > 0)) return 0;
+  var n = 0;
+  for (var i = 0; i < SKILL2_RT.grounds.length; i++) {
+    var f = SKILL2_RT.grounds[i];
+    if (f && f.gid === 'thunderorb' && f.kind === 'orb') n++;
+  }
+  return per * n;
 }
 
 /* 一顆飛行雷球：從玩家腳下出發、沿直線飛向目標當下的位置，抵達後停駐 parkSec 秒。
@@ -6465,7 +6638,8 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
     from: from ? { x: from.x, y: from.y } : null,
     dest: (from && to) ? { x: to.x, y: to.y } : null,
     speed: cfg.speedPx, radius: cfg.radius,
-    dmgVal: cfg.dmgVal, hits: hits, gap: cfg.gap
+    dmgVal: cfg.dmgVal, hits: hits, gap: cfg.gap,
+    onHit: sgThunderorbBurstHook(cfg.burst)
   });
 }
 
@@ -6475,8 +6649,17 @@ function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec) {
     kind: 'orb', tgt: null, floatSel: floatSel,
     from: { x: pos.x, y: pos.y }, dest: null, speed: 0,
     radius: cfg.radius, dmgVal: cfg.dmgVal,
-    hits: Math.max(1, Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap
+    hits: Math.max(1, Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap,
+    onHit: sgThunderorbBurstHook(cfg.burst)
   });
+}
+
+/* 兩種雷球場域共用的命中後回呼（沒選【雷爆】就是 null＝完全不進判定）。 */
+function sgThunderorbBurstHook(burst) {
+  if (!burst) return null;
+  return function (f, victim, enemies, out) {
+    sgThunderorbBurst(f.pEnt, f.st, f.floatSel, burst, victim, enemies, out);
+  };
 }
 
 /* ===========================================================================
@@ -6581,6 +6764,9 @@ function sgFrostStacks(ent) {
 /* 「帶著寒霜狀態」＝層數還在，或凍傷還在跳（兩者同時到期，任一存在都算）。 */
 function sgFrostOn(ent) { return sgFrostStacks(ent) > 0 || sgHasDot(ent, 'sgFrostBite'); }
 function sgFrozenOn(ent) { return sgBuffActive(ent, 'sgFrozen'); }
+/* 傳奇【深度凍結】的判定對象：「暈眩或凍結中」的敵人。兩者都是控場管線的產物
+   （凍結是寒霜疊滿塗上的標記、暈眩走 sgTryStun），因此不必另外記一筆狀態。 */
+function sgIceControlled(ent) { return sgFrozenOn(ent) || sgIsStunned(ent); }
 
 /* 塗上寒霜。回傳實際增加的層數（0＝沒塗上）。
    疊滿層數的**那一次**才凍結：維持在滿層時的重塗不再重新凍結——否則每 0.5 秒
@@ -6829,23 +7015,43 @@ function sgIcearrowPierceLen(lvs, fx, primary) {
 
 function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
-  /* 本體每支傷害：第 1 階 ＋【冰系強化】（文檔明寫「與 1 階的傷害為累加效果」）。 */
+  var lg = sgLegend('icearrow');
+  var ultBurst = sgUlt('icearrow', 'absoluteZeroBurst');
+  var ultRift = sgUlt('icearrow', 'infiniteIceRift');
+  /* 本體每支傷害：第 1 階 ＋【冰系強化】（文檔明寫「與 1 階的傷害為累加效果」），
+     再乘上兩個獨立乘區——傳奇【冰封】與超神【極寒冰爆】的「寒冰箭傷害 +N%」。 */
   var pct = sgVal(t[0].fx, 'pct', lvs[0]) + (lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0);
-  var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
-  // 【冰箭散射】：數量額外 +N 支（不足 1 支的部分以機率觸發）
+  var dmgVal = sgGroupBaseStat(g, st) * pct / 100 *
+    (1 + Math.max(0, Number(lg.icearrowDamagePct) || 0) / 100) *
+    (ultBurst ? 1 + sgUltVal(ultBurst, 'pct') / 100 : 1);
+  /* 支數：表定 ＋【冰箭散射】＋ 傳奇【連射】＋ 超神【無限冰裂】
+     （後兩者的「不足 1 支的部分」同樣以機率觸發，比照【冰箭散射】）。 */
   var count = Math.max(1, Math.floor(Number(t[0].fx.count) || 2) +
-    (lvs[4] > 0 ? sgRollCount(sgVal(t[4].fx, 'add', lvs[4])) : 0));
-  var frost = sgFrostSpec(g, lvs, 1, dmgVal);
+    (lvs[4] > 0 ? sgRollCount(sgVal(t[4].fx, 'add', lvs[4])) : 0) +
+    sgLegendCount(lg.icearrowCountAdd) +
+    (ultRift ? sgRollCount(sgUltVal(ultRift, 'count')) : 0));
+  // 傳奇【凜冬侵蝕】：這棵樹塗出來的寒霜，每跳量與持續時間一起放大
+  var frost = sgIcearrowWinterFrost(sgFrostSpec(g, lvs, 1, dmgVal), lg);
+  // 傳奇【冰裂箭】與【深度凍結】：每一次命中共用同一份規格（施放當下定版）
+  var iceSpec = sgIcearrowLegendSpec(g, st, lvs, lg, pool);
   var pierce = lvs[3] > 0 || lvs[6] > 0;   // 追蹤冰箭同樣先貫穿一次
   var geomOk = (typeof bfAngleTo === 'function') && bfAngleTo(primary) !== null;
   var laneStepDeg = Number(t[0].fx.deg) || 15;
   var centerAngle = geomOk ? bfAngleTo(primary) : 0;
 
+  // 超神【冰之淚】：與本體同時召喚的箭雨（與下面的連射彼此獨立）
+  sgCastIceTears(pEnt, st, g, floatSel, primary);
+
   /* 【寒冰爆裂箭】的連射：波數是第 7 階的性質，與有沒有座標無關，
-     因此兩條分支（貫穿／無座標的單體）共用同一組波次參數。 */
+     因此兩條分支（貫穿／無座標的單體）共用同一組波次參數。
+     超神【極寒冰爆】把波數與間隔一起改寫（10 波 / 0.35 秒）。 */
   var homingFx = lvs[6] > 0 ? t[6].fx : null;
   var waveCount = homingFx ? Math.max(1, Math.floor(Number(homingFx.waves) || 3)) : 1;
   var waveGap = homingFx ? Math.max(0, Number(homingFx.waveGap) || 0.3) : 0;
+  if (homingFx && ultBurst) {
+    waveCount = Math.max(1, Math.floor(sgUltVal(ultBurst, 'waves')));
+    waveGap = Math.max(0, sgUltVal(ultBurst, 'waveGap'));
+  }
 
   if (pierce && geomOk) {
     /* 貫穿之後就沒有「這支箭該對準誰」的問題了：路徑上的敵人一律受傷，
@@ -6871,13 +7077,14 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         });
         sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, laneAngle, lineLen,
           floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
-            frostSpec: frost, speed: sgIcearrowSpeed(), beginSec: waveDelay }, out);
+            frostSpec: frost, iceSpec: iceSpec, speed: sgIcearrowSpeed(), beginSec: waveDelay }, out);
         // 這支箭飛完直線之後，就地從終點轉入追擊模式（同一個飛行物換飛法）
         if (homingFx) {
           sgSpawnIcearrowHoming(pEnt, st, homingFx, primary, dmgVal, frost, floatSel, {
             from: { x: origin.x + Math.cos(laneAngle) * lineLen,
               y: origin.y + Math.sin(laneAngle) * lineLen },
-            moveAngle: laneAngle, wave: wave, startDelaySec: waveDelay + flightSec
+            moveAngle: laneAngle, wave: wave, startDelaySec: waveDelay + flightSec,
+            iceSpec: iceSpec
           });
         }
       }
@@ -6900,16 +7107,96 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
           delayMs: wvDelayMs
         });
         sgIcearrowHit(pEnt, st, arrows[i], dmgVal, frost, lvs, floatSel, out,
-          wvDelayMs + travelMs, null);
+          wvDelayMs + travelMs, null, iceSpec, pool);
         /* 無座標（高塔）時沒有幾何可言，但時序仍然成立：箭飛到目標身上才轉入追擊。 */
         if (homingFx) {
           sgSpawnIcearrowHoming(pEnt, st, homingFx, arrows[i], dmgVal, frost, floatSel, {
-            wave: wv, startDelaySec: (wvDelayMs + travelMs) / 1000
+            wave: wv, startDelaySec: (wvDelayMs + travelMs) / 1000, iceSpec: iceSpec
           });
         }
       }
     }
   }
+}
+
+/* 傳奇【凜冬侵蝕】：寒冰箭塗出來的寒霜，每跳量與持續時間一起 +N%。
+   只放大這棵樹的那一份——共用層的【極致寒霜】（冰霜新星 T4）是三個群組一起吃的，
+   兩者各自相乘，語意上不衝突。 */
+function sgIcearrowWinterFrost(spec, lg) {
+  var pct = Math.max(0, Number(lg.icearrowFrostPct) || 0);
+  if (!spec || !(pct > 0)) return spec;
+  var mult = 1 + pct / 100;
+  return { dps: spec.dps * mult, dur: spec.dur * mult, interval: spec.interval, stacksRaw: spec.stacksRaw };
+}
+
+/* 寒冰箭這一次施放的傳奇附加規格（【冰裂箭】的分裂箭與【深度凍結】的控場增傷）。
+   施放當下定版，之後每一次命中共用同一份；兩個特效都沒裝時回 null＝完全不進判定。
+   分裂箭的「150% 寒冰傷害」比照技能樹的既有寫法＝群組基礎值的百分比，
+   不是「本體這一箭傷害的 150%」——後者會讓它跟著 T1／T3 的投資一起複利。 */
+function sgIcearrowLegendSpec(g, st, lvs, lg, pool) {
+  var split = null;
+  var sp = lg.icearrowSplit;
+  if (sp && Number(sp.count) > 0 && Number(sp.pct) > 0) {
+    split = {
+      count: Math.max(1, Math.floor(Number(sp.count))),
+      dmgVal: sgGroupBaseStat(g, st) * Number(sp.pct) / 100,
+      lenPx: skills2CastRangePx('icearrow', lvs),
+      pool: pool || null
+    };
+  }
+  var ctrlPct = Math.max(0, Number(lg.icearrowControlPct) || 0);
+  return (split || ctrlPct > 0) ? { split: split, ctrlPct: ctrlPct } : null;
+}
+
+/* 傳奇【冰裂箭】：一支寒冰箭命中之後，從該敵人身上再往前分裂出 n 支小箭。
+   「前方」＝我方→該敵人的方位（箭本來就是朝那個方向飛的），路徑長度取寒冰箭
+   表定射程，不另外發明一個距離。小箭一支咬一個，目標不足時輪流分配
+   （比照飛刀與寒冰箭第 1 階的既有語意）。
+   前方沒有敵人、或沒有座標（高塔）時就落在原目標身上——那裡沒有前後可言。 */
+function sgIcearrowSplit(pEnt, st, spec, victim, enemies, floatSel, out, angleHint) {
+  if (!spec || !spec.split || !victim) return;
+  var n = spec.split.count;
+  var dmgVal = spec.split.dmgVal;
+  if (!(n > 0) || !(dmgVal > 0)) return;
+  var pool = (enemies && enemies.length) ? enemies : spec.split.pool;
+  var from = (typeof bfPos === 'function') ? bfPos(victim) : null;
+  var ang = (typeof angleHint === 'number' && isFinite(angleHint)) ? angleHint
+    : ((typeof bfAngleTo === 'function') ? bfAngleTo(victim) : null);
+  var picks = [];
+  if (from && ang !== null && ang !== undefined && typeof bfLineTargets === 'function' && pool) {
+    var path = bfLineTargets(ang, spec.split.lenPx, pool, SG_FLYING_PROJECTILE_HALF_WIDTH, from);
+    for (var i = 0; i < path.length && picks.length < n; i++) {
+      if (path[i] !== victim && path[i].hp > 0) picks.push(path[i]);
+    }
+  }
+  if (!picks.length) picks = [victim];
+  sgEmitVfx('icearrow', picks, floatSel, {
+    fxKind: 'projectile', variant: 'ice-arrow', elem: 'ice', count: picks.length, dur: 0.25
+  });
+  for (var k = 0; k < n; k++) {
+    sgHitOne(pEnt, st, picks[k % picks.length], dmgVal, 'icearrow', floatSel, out, sgStaggerMs(k + 1));
+  }
+}
+
+/* 超神【冰之淚】：施放寒冰箭時同時召喚 N 波箭雨從天射下。
+   走既有的「跟隨我方的地板場域」（暴風雪那一條路）：圓心恆等於我方當下座標、
+   每一拍對範圍內的所有敵人各打一次，波數＝拍數、波距＝節拍。
+   「範圍 30 米內」沒有指定圓心，取我方——這是施放者放出來的箭雨，
+   錨定方式與【火神降臨】的領域一致。
+   顯示層用既有的 rain 泛用畫法（見 sgGroundVfxSpec 的 icerain）。 */
+function sgCastIceTears(pEnt, st, g, floatSel, primary) {
+  var u = sgUlt('icearrow', 'tearsOfIce');
+  if (!u) return;
+  var waves = Math.max(1, Math.floor(sgUltVal(u, 'waves')));
+  var dmgVal = sgGroupBaseStat(g, st) * sgUltVal(u, 'pct') / 100;
+  if (!(dmgVal > 0)) return;
+  sgSpawnGround(pEnt, st, 'icearrow', {
+    kind: 'icerain', tgt: primary, floatSel: floatSel, follow: true,
+    from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
+    radius: bfMeterPx(sgUltVal(u, 'm')),
+    dmgVal: dmgVal, hits: waves, gap: Math.max(0.05, sgUltVal(u, 'gap')),
+    tickAtStart: true
+  });
 }
 
 /* 【寒冰爆裂箭】的追擊段：由「這支箭飛完直線的那一刻、那個位置、那個航向」接手，
@@ -6918,6 +7205,7 @@ function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, o
   var lifeSec = Math.max(0.5, Number(hfx.sec) || 6);
   var gap = Math.max(0.05, Number(hfx.gap) || 0.1);
   var o = opts || {};
+  var ice = o.iceSpec || null;
   sgSpawnGround(pEnt, st, 'icearrow', {
     kind: 'icearrow', tgt: target, floatSel: floatSel,
     from: o.from || null,
@@ -6928,20 +7216,31 @@ function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, o
     dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
     speed: sgIcearrowSpeed(), chaseM: Number(hfx.chaseM) || 30,
     contact: true, frostSpec: frost, tickAtStart: true,
+    /* 追擊段同樣是「寒冰箭擊中敵人」，因此兩個傳奇特效照樣生效：
+       【深度凍結】走場域的控場增傷、【冰裂箭】走場域的命中後回呼。 */
+    ctrlPct: ice ? ice.ctrlPct : 0,
+    onHit: (ice && ice.split) ? function (f, victim, enemies, o2) {
+      sgIcearrowSplit(f.pEnt, f.st, ice, victim, enemies, f.floatSel, o2, f.moveAngle);
+    } : null,
     wave: o.wave, startDelaySec: o.startDelaySec
   });
 }
 
 /* 一支冰箭命中一個敵人：本體傷害 → 寒霜 →【寒霜凍結】的追加層數與剩餘傷害引爆。
    順序是刻意的：先讓本體傷害結算完，再判斷「命中前」是否已帶寒霜——
-   否則本次自己塗上的寒霜會讓第 6 階每一箭都必定觸發。 */
-function sgIcearrowHit(pEnt, st, target, dmgVal, frost, lvs, floatSel, out, delayMs, ctx) {
+   否則本次自己塗上的寒霜會讓第 6 階每一箭都必定觸發。
+   iceSpec＝這一次施放的傳奇附加規格（【深度凍結】的增傷在命中前套、
+   【冰裂箭】的分裂箭在命中後放），沒裝那兩個特效時為 null。 */
+function sgIcearrowHit(pEnt, st, target, dmgVal, frost, lvs, floatSel, out, delayMs, ctx, iceSpec, pool) {
   if (!target || target.hp <= 0) return null;
   var hadFrost = sgFrostOn(target);
-  var res = sgHitOne(pEnt, st, target, dmgVal, 'icearrow', floatSel, out, delayMs);
+  // 傳奇【深度凍結】：擊中暈眩或凍結中的敵人時增傷（走 sgHitOne 的總傷加成，仍過防禦與爆擊）
+  var bonusPct = (iceSpec && iceSpec.ctrlPct > 0 && sgIceControlled(target)) ? iceSpec.ctrlPct : 0;
+  var res = sgHitOne(pEnt, st, target, dmgVal, 'icearrow', floatSel, out, delayMs, bonusPct);
   if (!res || res.miss) return res;
   if (hadFrost && lvs[5] > 0) sgFrostShatter(target, lvs, floatSel, out, ctx);
   if (frost && target.hp > 0) sgApplyFrost(target, frost);
+  if (iceSpec && iceSpec.split) sgIcearrowSplit(pEnt, st, iceSpec, target, pool, floatSel, out);
   return res;
 }
 
@@ -6974,7 +7273,8 @@ function sgFrostShatter(target, lvs, floatSel, out, ctx) {
 function sgIcearrowProjectileHit(projectile, target, ctx) {
   var before = projectile.out.dmg;
   sgIcearrowHit(projectile.pEnt, projectile.st, target, projectile.dmgVal,
-    projectile.frostSpec, skills2Levels('icearrow'), projectile.floatSel, projectile.out, 0, ctx);
+    projectile.frostSpec, skills2Levels('icearrow'), projectile.floatSel, projectile.out, 0, ctx,
+    projectile.iceSpec, ctx && ctx.getEnemies ? ctx.getEnemies() : null);
   if (ctx && ctx.onDamage && projectile.out.dmg > before) ctx.onDamage(projectile.out.dmg - before);
   if (target.hp <= 0 && ctx && ctx.onDeaths) ctx.onDeaths();
 }
@@ -8260,6 +8560,7 @@ function tickSkill2(dt, ctx) {
   sgTickUltRepeat(ctx, dt);
   sgTickFlyingThunder(ctx, dt);
   sgTickHeavenTribulation(ctx, dt);
+  sgTickThunderfallShatter(ctx, dt);
 }
 
 /* 超神進化【地爆天星】：每隔一段時間，天空落下一顆超巨型殞石，

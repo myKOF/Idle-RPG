@@ -204,6 +204,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,thunderstrikeQuake,震雷,0,,,,,,,,0,,被落雷術擊中的敵人暈眩時間 +1 秒，且其在暈眩狀態下受到的傷害 +25%。,lightning,thunderstrike,,wand1h,"{""thunderStunAdd"":{""sec"":1},""thunderStunnedVulnPct"":25}"
 傳奇特效,thunderstrikeRebirth,雷之再生,0,,,,,,,,0,,【迅雷重生】的機率提高至 100%。,lightning,thunderstrike,,wand1h,"{""thunderRegenTo"":{""chance"":100}}"
 傳奇特效,thunderstrikeRod,引雷針,0,,,,,,,,0,,落雷術會優先攻擊 24 米內生命值最低的敵人，且對其造成的傷害提高 20%。,lightning,thunderstrike,,wand1h,"{""thunderRod"":{""m"":24,""pct"":20}}"
+傳奇特效,thunderorbCore,雷核,0,,,,,,,,0,,雷球的體積增大 30%。,lightning,thunderorb,,orb,"{""thunderorbScalePct"":30}"
+傳奇特效,thunderorbOverload,超載,0,,,,,,,,0,,場上每擁有 1 個雷球，你的雷電傷害 +3%。,lightning,thunderorb,,orb,"{""thunderorbFieldAmpPct"":3}"
+傳奇特效,thunderorbShockCore,感電核心,0,,,,,,,,0,,【伴生雷球】的持續時間增加 100%。,lightning,thunderorb,,orb,"{""thunderorbCompanionSecPct"":100}"
+傳奇特效,thunderorbFallCount,雷殞落,0,,,,,,,,0,,【雷殞天落】降下的雷球數量 +1 顆。,lightning,thunderorb,,orb,"{""thunderorbFallAdd"":{""count"":1}}"
+傳奇特效,thunderorbFallStun,雷殞震,0,,,,,,,,0,,被【雷殞天落】降下的雷球擊中的敵人會暈眩 4 秒。,lightning,thunderorb,,orb,"{""thunderorbFallStunTo"":{""sec"":4}}"
+傳奇特效,icearrowVolley,連射,0,,,,,,,,0,,寒冰箭射出數量 +2 支。,ice,icearrow,,spellbook,"{""icearrowCountAdd"":{""count"":2}}"
+傳奇特效,icearrowSeal,冰封,0,,,,,,,,0,,寒冰箭傷害 +50%。,ice,icearrow,,spellbook,"{""icearrowDamagePct"":50}"
+傳奇特效,icearrowWinter,凜冬侵蝕,0,,,,,,,,0,,寒冰箭造成的寒霜狀態傷害與持續時間 +50%。,ice,icearrow,,spellbook,"{""icearrowFrostPct"":50}"
+傳奇特效,icearrowSplit,冰裂箭,0,,,,,,,,0,,寒冰箭擊中敵人後會再分裂出 2 支小型寒冰箭，向前方的敵人造成 150% 寒冰傷害。,ice,icearrow,,spellbook,"{""icearrowSplit"":{""count"":2,""pct"":150}}"
+傳奇特效,icearrowDeepFreeze,深度凍結,0,,,,,,,,0,,寒冰箭擊中暈眩或凍結的敵人造成的傷害 +50%。,ice,icearrow,,spellbook,"{""icearrowControlPct"":50}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,
