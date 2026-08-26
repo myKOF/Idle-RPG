@@ -1361,6 +1361,62 @@ var PASSIVE_POOL = {
     name: '引雷針', desc: '落雷術會優先攻擊 24 米內生命值最低的敵人，且對其造成的傷害提高 20%。',
     base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
     fx: { thunderRod: { m: 24, pct: 20 } }
+  },
+  /* ---- 傳奇進化第九批（2026-08-26）：雷系第二批 ＋ 冰系第一批 ----
+     水晶球→雷球（thunderorb）／魔法書→寒冰箭（icearrow）。
+     兩者都是單手副手武器（WEAPON_TYPES 的 orb／spellbook，cat: offHand、hands: 1），
+     不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，因此規格物件裡的數字沿用設計文檔原值；
+     仍把「次數／秒數／機率」放進 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵，
+     之後若改判為雙手也不會被放大成別的東西（比照第七、第八批）。 */
+  thunderorbCore: {
+    name: '雷核', desc: '雷球的體積增大 30%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
+    fx: { thunderorbScalePct: 30 }
+  },
+  thunderorbOverload: {
+    name: '超載', desc: '場上每擁有 1 個雷球，你的雷電傷害 +3%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
+    fx: { thunderorbFieldAmpPct: 3 }
+  },
+  thunderorbShockCore: {
+    name: '感電核心', desc: '【伴生雷球】的持續時間增加 100%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
+    fx: { thunderorbCompanionSecPct: 100 }
+  },
+  thunderorbFallCount: {
+    name: '雷殞落', desc: '【雷殞天落】降下的雷球數量 +1 顆。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
+    fx: { thunderorbFallAdd: { count: 1 } }
+  },
+  thunderorbFallStun: {
+    name: '雷殞震', desc: '被【雷殞天落】降下的雷球擊中的敵人會暈眩 4 秒。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderorb', weaponTypes: ['orb'],
+    fx: { thunderorbFallStunTo: { sec: 4 } }
+  },
+  icearrowVolley: {
+    name: '連射', desc: '寒冰箭射出數量 +2 支。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
+    fx: { icearrowCountAdd: { count: 2 } }
+  },
+  icearrowSeal: {
+    name: '冰封', desc: '寒冰箭傷害 +50%。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
+    fx: { icearrowDamagePct: 50 }
+  },
+  icearrowWinter: {
+    name: '凜冬侵蝕', desc: '寒冰箭造成的寒霜狀態傷害與持續時間 +50%。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
+    fx: { icearrowFrostPct: 50 }
+  },
+  icearrowSplit: {
+    name: '冰裂箭', desc: '寒冰箭擊中敵人後會再分裂出 2 支小型寒冰箭，向前方的敵人造成 150% 寒冰傷害。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
+    fx: { icearrowSplit: { count: 2, pct: 150 } }
+  },
+  icearrowDeepFreeze: {
+    name: '深度凍結', desc: '寒冰箭擊中暈眩或凍結的敵人造成的傷害 +50%。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
+    fx: { icearrowControlPct: 50 }
   }
 };
 

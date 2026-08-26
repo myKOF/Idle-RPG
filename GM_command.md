@@ -689,7 +689,7 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 
 - 第 2 個參數是**選項編號**（1／2／3，對應技能面板三選一的左中右），`off` ＝清除選擇。
 - 第 3 個參數留白＝`max`（Lv.10）；填 0 等同 `off`。
-- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術）、`mire`（泥沼術）、`earthguard`（大地守護）、`chainlightning`（連鎖閃電）、`thunderstrike`（落雷術），`all` 會自動略過其餘群組。
+- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術）、`mire`（泥沼術）、`earthguard`（大地守護）、`chainlightning`（連鎖閃電）、`thunderstrike`（落雷術）、`thunderorb`（雷球）、`icearrow`（寒冰箭），`all` 會自動略過其餘群組。
 - **生效前提是該群組前 7 階全部滿級**：沒滿級時指令仍會寫入，但效果暫時失效
   （面板會標「暫時失效」）。要立刻看到效果，先 `sglv thrust max` 再 `sgult thrust 1`。
 
@@ -727,6 +727,12 @@ sgult chainlightning 3                （連鎖閃電＝飛雷神：放電期每
 sgult thunderstrike 1                 （落雷術＝雷電矩陣：橫直各 2 道雷幕交錯橫掃全場）
 sgult thunderstrike 2                 （落雷術＝雷霆天劫：永久追擊最低血敵人的天劫雷電）
 sgult thunderstrike 3                 （落雷術＝永恒雷獄：施放後每 1 秒自動再施放，持續 3 秒）
+sgult thunderorb 1                    （雷球＝臨界雷劫：伴生雷球一次 4 顆、機率翻倍、傷害 +50%）
+sgult thunderorb 2                    （雷球＝雷爆：雷球命中時機率觸發會彈射 4 次的小型雷球）
+sgult thunderorb 3                    （雷球＝雷殞天地碎：雷殞石變大變痛，並每 1 秒不斷再降下 1 顆）
+sgult icearrow 1                      （寒冰箭＝極寒冰爆：連射改為 10 波／0.35 秒，傷害 +50%）
+sgult icearrow 2                      （寒冰箭＝無限冰裂：每次命中回扣 0.1 秒冷卻，支數 +4）
+sgult icearrow 3                      （寒冰箭＝冰之淚：另召喚 10 波箭雨蓋住我方 30 米）
 sgult all off                         （清除所有超神進化選擇）
 ```
 

@@ -1,5 +1,62 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第九批（雷球／寒冰箭十特效 ＋ 兩組超神進化）（2026-08-27）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（雷系第二批 ＋ 冰系第一批）
+- 使用者需求：實作「雷球」與「寒冰箭」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）雷球、寒冰箭兩段。
+- 前置依賴：無（`.claude/check-conflicts.ps1` 總覽模式回報退出碼 0，全部副本乾淨、
+  `ai/antigravity` 與 `ai/codex` 都沒有未合併的 commit）。
+- 前八批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 128）：水晶球→雷球＝雷核／超載／感電核心／
+    雷殞落／雷殞震；魔法書→寒冰箭＝連射／冰封／凜冬侵蝕／冰裂箭／深度凍結。
+    `orb` 與 `spellbook` 都是單手副手武器，不吃雙手 ×2 補償。
+  - SKILLS2 新增 6 個超神進化（開放群組 16 → 18）：雷球＝臨界雷劫／雷爆／雷殞天地碎；
+    寒冰箭＝極寒冰爆／無限冰裂／冰之淚。
+  - 引擎層只多兩個共用掛點（不是這兩個技能的特例）：
+    ① 地板場域的 `onHit`（每個受害者各呼叫一次的命中後回呼，語意比照環繞場域既有的
+       `onStrike`）與 `ctrlPct`（對暈眩或凍結中的敵人的額外傷害百分點）；
+    ② `SG_ULT_HIT_CDR`／`sgUltHitCdr`：「每造成 1 次傷害就回扣自己冷卻」的查表式掛點，
+       掛在 `sgHitOne`——那是寒冰箭所有形態唯一的共同結算點。
+  - 【超載】的雷電傷害增幅掛在 `legendaryElementDamageUp`（屬性傷害提升% 的唯一收斂點），
+    與【永恒超導體】【火焰增幅】同一條路；場上雷球數每拍重數（走 `sgLegendTick` 一拍快取）。
+  - 【雷殞天地碎】新增 `SKILL2_RT.thunderfallAt` 的永久節拍（比照【雷霆天劫】），
+    與施放時的降下共用 `sgThunderfallSpec`／`sgDropThunderfall`，兩條路徑不會漂移。
+  - 沒有新增狀態（Status 表未動）。Worker 協議未變（仍是 v26）。
+  - 顯示層一律沿用既有變體；只有【冰之淚】的箭雨新增 `kind: icerain`，
+    但它對應的是既有的泛用 `rain` 畫法（Canvas 的 `spawnRain` 與 DOM 的範圍矩形都有分支）。
+- 修改檔案：`js/data.js`、`js/skills2.js`、`index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、
+  `config/CSV/Skills2.csv`／`Equipment_Affix.csv` 與對應的 `config/Excel/*.xlsx`、
+  `game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-thunderorb-icearrow-legendary.test.cjs`（新增，23 案例）、
+  `tests/skill2-ult-evolution.test.cjs`（開放群組 16 → 18；控制組由雷球改為水流彈）、
+  `tests/legendary-affix.test.cjs`（池內總數 118 → 128）、
+  `tests/skill2-vfx.test.cjs`（它釘住 index.html／bridge.js／sim.worker.js 的**目前版號**）、本文件。
+- 未修改但檢查過：`js/legendary.js`（`skill2LightningDamageUpPct` 的掛點第八批就接好了，
+  本批只是讓那一支多回傳一份）、`js/status.js`（本批沒有新狀態）、
+  `js/gm_exec.js`（`sgult` 依 `sgUltDefs` 動態列舉，新群組自動納入）、
+  `js/save.js`（第 8 格正規化與群組無關）、`js/ui.js`（格數走 `sgSlotCount`）、
+  `js/battle-renderer.js`／`js/vfx.js`（本批只用既有變體與泛用 rain 分支）。
+- 驗證方式：`npm test` 全量 1815 案例（1805 通過；新增的 23 案例全過）、
+  `node tools/build_check.cjs`（302 檔）、`config_tables --gen <表>／--sync／--apply` 往返
+  （語意變更 0）、`apply_params` 試跑（對應參數總數 554、將變更 0、錨點問題 0）與
+  `--check-anchors`、快取版號同步、`git diff --check`。
+- 已知風險：
+  - **本批之前就存在的 10 條紅燈未處理**：泥沼術 2、冰系 5、雷系 1、風系 1（都是參數表調過
+    冷卻／速度之後沒同步的表定斷言），以及 Canvas 投射物預判 1。已用 HEAD 的暫時 worktree
+    對照跑過，失敗訊息逐字相同，確定非本次造成。要不要一併修屬另案。
+  - 【無限冰裂】照設計文檔字面實作的結果實質等於「寒冰箭無冷卻」（滿級單次施放的命中
+    次數是三位數 ×0.1 秒），【極寒冰爆】把波數 3 → 10 會讓追擊場域數量 ×3.3——
+    兩者的 DPS 與場域上限都要重估，見 PATCH.md 的「建議重估的數值」。
+  - 設計文檔未指定而由我取值的九處已列在 PATCH.md 的「待確認」段。
+- 未完成項目：尚未進行瀏覽器實機目視驗證與 DPS 基準測試（建議交由 Antigravity）。
+- Commit：待建立。
+
+---
+
 ## Claude｜雷幕改用專屬的藍白落雷畫法（2026-08-26）
 
 - 狀態：已完成
