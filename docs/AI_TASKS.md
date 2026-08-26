@@ -40,7 +40,7 @@
   起掃間隔、雷幕錨定在施放當下的我方位置）。
 - 未完成項目：尚未目視確認畫面（Browser pane 未顯示，rAF 凍結、特效佇列不流動，
   取不到畫格）；已改以「攔截 Worker 送出的 area 事件」驗證幾何。目視與 DPS 建議交 Antigravity。
-- Commit：見 Git log。
+- Commit：94f8101。
 
 ---
 
