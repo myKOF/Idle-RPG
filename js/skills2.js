@@ -3873,11 +3873,11 @@ function sgGroundTick(f, enemies, ctx) {
 function sgGroundVfxSpec(f) {
   var area = sgGroundArea(f);
   if (f.kind === 'wall') return { fxKind: 'aura', variant: 'firewall', elem: 'fire', dur: f.gap, area: area };
-  /* 雷電矩陣的雷幕：形狀語意與火牆完全相同（一道立在地面、沿軸向延伸的能量牆），
-     因此沿用 firewall 的既有畫法只換屬性配色（themeOf 讀 elem）。
-     另立一個顯示層不認得的 variant 只會退回泛用光環，反而看不出是一道牆。
+  /* 雷電矩陣的雷幕：一排從天而降的落雷沿著判定矩形排開、隨矩形橫掃過去。
+     ⚠️ 不能沿用 firewall：那一支的火焰色是寫死在多邊形裡的（theme 只影響少數幾層），
+     換成 elem lightning 畫出來還是一道火牆——2026-08-26 使用者實機回報的就是這個。
      kind 用 thunderwall 而不是 wall：wall 會讓 sgGroundExpire 去跑火龍捲樹的第 5／6 階。 */
-  if (f.kind === 'thunderwall') return { fxKind: 'aura', variant: 'firewall', elem: 'lightning', dur: f.gap, area: area };
+  if (f.kind === 'thunderwall') return { fxKind: 'aura', variant: 'thunder-curtain', elem: 'lightning', dur: f.gap, area: area };
   if (f.kind === 'orb') return { fxKind: 'aura', variant: 'thunder-orb', dur: f.gap, area: area };
   if (f.kind === 'tornado') return { fxKind: 'aura', variant: 'water-tornado', elem: 'ice', dur: f.gap, area: area };
   /* 逐風者的龍捲風：沿用水龍捲的柱狀畫法，只換屬性配色（顯示層不認得 wind-tornado
@@ -3908,7 +3908,10 @@ function sgGroundArea(f) {
        在兩次模擬快照之間補間，destX／destY／speed 僅保留方向語意，
        不得由顯示層另建一條與傷害位置脫節的追擊路徑。 */
     if (f.follow) rect.follow = true;
-    if ((f.kind === 'icearrow' || f.kind === 'windblade') && f.dest) {
+    /* thunderwall（雷電矩陣的雷幕）同樣要帶落點與速度：它是等速直線橫掃，
+       顯示層拿這三個值就能在兩則事件之間完全重現同一段運動（AI_RULES 8.3.1），
+       不必也不得自己另外編一條路徑。 */
+    if ((f.kind === 'icearrow' || f.kind === 'windblade' || f.kind === 'thunderwall') && f.dest) {
       rect.destX = f.dest.x;
       rect.destY = f.dest.y;
       rect.speed = f.speed;

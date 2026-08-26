@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## Claude｜雷幕改用專屬的藍白落雷畫法（2026-08-26）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：顯示層（雷系超神進化）
+- 使用者需求：實機回報「橫掃的機制對了，但特效還是火系」，要藍白色系的雷電，
+  且應該是落雷移動掃過的樣子。
+- 技術內容：
+  - 原因：雷幕原本沿用 `firewall` 的畫法，而 `spawnFireWall` 把火焰色寫死在多邊形裡
+    （`themeOf` 只影響少數幾層），`elem` 換成 lightning 也還是一道火牆。
+  - `js/battle-renderer.js` 新增 `spawnThunderCurtain` 與 variant `thunder-curtain`：
+    一排從天而降的落雷沿判定矩形長軸排開（折線沿用既有的 `boltPath`），
+    加一條貼地亮帶（長寬直接用判定矩形），整排隨矩形橫掃。
+  - 配色是專屬的藍白電漿常數，**不動** `VFX_ELEM_THEME.lightning`（金黃色，
+    是既有雷系特效的配色，改它會波及所有既有雷電畫面）。
+  - `sgGroundArea` 比照追蹤冰箭／風刃，替 `thunderwall` 帶上 `destX`／`destY`／`speed`；
+    顯示層據此等速自走並在收到權威座標時往回修正（事件成批送達，純跟事件走會停三幀跳一次）。
+  - `js/vfx.js` 補一條明寫的 DOM 分支（高塔不會收到帶座標的雷幕，但漏掉會掉進泛用光環）。
+- 修改檔案：`js/battle-renderer.js`、`js/vfx.js`、`js/skills2.js`、`index.html`、
+  `js/bridge.js`、`js/worker/sim.worker.js`、`PATCH.md`、
+  `tests/skill2-chainlightning-thunder-legendary.test.cjs`（新增「兩個渲染器都要有自己的
+  雷電分支」與事件要帶足落點／速度的斷言）、`tests/skill2-vfx.test.cjs`（版號釘樁）、本文件。
+- 驗證方式：`npm test` 全量、`node tools/build_check.cjs`、快取版號同步、`git diff --check`、
+  瀏覽器實機確認 Worker 只送 `thunder-curtain`（425 則、`firewall` 0 則、帶 destX／destY／
+  speed），並直接以真實事件呼叫 `BattleRenderer.onVfx` 兩次（建立與更新兩條路徑）無例外、
+  Console 無錯誤。
+- 已知風險：**畫面本身仍未目視確認**——Browser pane 未顯示時 rAF 凍結，特效佇列不流動、
+  截圖取不到畫格，因此只驗到「事件正確、渲染函式被接上且不拋例外」。
+  落雷密度（每 150 像素一道、上限 8 道）與亮帶透明度是我取的值，請實機看過後再調。
+- 未完成項目：目視確認與 DPS 基準測試（建議交 Antigravity）。
+- Commit：見 Git log。
+
+---
+
 ## Claude｜雷電矩陣改為「移動雷幕橫掃全場」（2026-08-26）
 
 - 狀態：已完成

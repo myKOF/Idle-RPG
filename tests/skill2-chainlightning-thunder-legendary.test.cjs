@@ -490,12 +490,16 @@ test('【雷電矩陣】：顯示矩形與傷害矩形是同一個（牆身垂�
   const es = [enemy(1e9, 120, 90, 'q1')];
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');
   const wall = c.SKILL2_RT.grounds.filter((f) => f.kind === 'thunderwall')[0];
+  // 落點在抵達時會被清成 null（場域就地停駐），因此先把出生時的落點與速度留下來
+  const born = { destX: wall.dest.x, destY: wall.dest.y, speed: wall.speed };
   // 牆身軸向必須垂直於行進方向；這一支同時餵傷害矩形與顯示矩形
   assert.equal(Math.round((c.sgGroundRectAxis(wall) - wall.angle) * 1000) / 1000,
     Math.round(Math.PI / 2 * 1000) / 1000, '牆身垂直於行進方向');
   advance(c, p, es, 4);
-  const track = specs.filter((s) => s.variant === 'firewall' && s.elem === 'lightning' &&
-    s.area && s.area.id === wall.vfxId).map((s) => ({ x: s.area.x, y: s.area.y, w: s.area.w, h: s.area.h, a: s.area.a }));
+  const track = specs.filter((s) => s.variant === 'thunder-curtain' && s.elem === 'lightning' &&
+    s.area && s.area.id === wall.vfxId)
+    .map((s) => ({ x: s.area.x, y: s.area.y, w: s.area.w, h: s.area.h, a: s.area.a,
+      destX: s.area.destX, destY: s.area.destY, speed: s.area.speed }));
   assert.ok(track.length > 10, '每一拍都要送出這道雷幕的當下位置（顯示層才跟得上）');
   assert.equal(Math.round(track[0].h), Math.round(wall.width), '顯示厚度＝判定厚度');
   assert.equal(Math.round(track[0].w), Math.round(wall.length), '顯示長度＝判定長度');
@@ -506,6 +510,24 @@ test('【雷電矩陣】：顯示矩形與傷害矩形是同一個（牆身垂�
   }
   assert.ok(maxStep > 0, '雷幕確實在移動');
   assert.ok(maxStep <= wall.width + 1e-6, '一拍推進不超過一個牆厚，否則會跳過敵人');
+  /* 顯示層要能在兩則事件之間自己把這段等速直線補完，因此事件必須帶足落點與速度
+     （AI_RULES 8.3.1：不能只傳一個類型旗標讓顯示層自己猜）。 */
+  assert.equal(track[0].destX, born.destX, '事件要帶落點 X');
+  assert.equal(track[0].destY, born.destY, '事件要帶落點 Y');
+  assert.equal(track[0].speed, born.speed, '事件要帶速度');
+});
+
+test('雷幕不得沿用火牆的畫法：兩個渲染器都要有自己的雷電分支', () => {
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  /* 火牆那一支把火焰色寫死在多邊形裡（theme 只影響少數幾層），借用它的話
+     即使 elem 是 lightning，畫出來仍然是一道火牆——2026-08-26 使用者實機回報的就是這個。 */
+  assert.match(renderer, /spec\.variant === 'thunder-curtain'\) spawnThunderCurtain\(spec\)/);
+  assert.match(renderer, /function spawnThunderCurtain\(spec\)/);
+  // 藍白電漿：刻意不動 VFX_ELEM_THEME.lightning（那是金黃色，改它會波及所有既有雷系特效）
+  assert.match(renderer, /THUNDER_CURTAIN_THEME = \{ c1: '#7dd3fc'/);
+  assert.match(vfx, /VFX_ELEM_THEME = \{[\s\S]*?lightning: \{ c1: '#f2b705'/, '既有雷系配色不得被本次改動');
+  assert.match(vfx, /s\.variant === 'thunder-curtain'/);
 });
 
 test('【雷霆天劫】：只要落雷術裝配著就永久運轉，每拍追擊範圍內最低血的敵人', () => {

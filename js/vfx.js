@@ -2561,6 +2561,10 @@ function renderCombatVfx(spec) {
     if (kind === 'aura') {
       if (s.variant === 'cyclone') vfxCyclone(s, layer, rect);
       else if (s.variant === 'firewall') vfxFireWall(s, layer, spec.area, rect);
+      /* 雷電矩陣的雷幕：DOM 是高塔用的後備路徑，而矩陣在高塔（無座標）本來就退化成
+         「每一道各命中一次」、不生成場域，因此這裡不會收到帶座標的雷幕。
+         仍明寫一條分支：漏掉的話它會掉進泛用光環，被畫成一個與判定範圍無關的圓。 */
+      else if (s.variant === 'thunder-curtain') vfxAura(s, layer, rect);
       else if (s.variant === 'mire' || s.variant === 'mire-lava' || s.variant === 'mire-poison' || s.variant === 'mire-lava-poison') vfxMirePool(s, layer, spec.area, rect);
       else if (s.variant === 'thunder-orb') vfxThunderOrb(s, layer, spec.area, rect);
       else if (s.variant === 'water-tornado' || s.variant === 'wind-tornado') {

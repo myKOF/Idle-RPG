@@ -2680,6 +2680,123 @@ var BattleRenderer = (function () {
     return fx;
   }
 
+  /* ---- 雷電矩陣的雷幕（2026-08-26）----
+     一排從天而降的落雷沿著判定矩形的長軸排開，整排隨著矩形橫掃過去。
+     刻意**不**沿用火牆的畫法：那一支把火焰色寫死在多邊形裡（theme 只影響少數幾層），
+     即使把 elem 換成 lightning 畫出來仍然是一道火牆。
+     配色用專屬的藍白電漿，而不是 VFX_ELEM_THEME.lightning（那是金黃色，
+     是既有雷系特效的配色，改動它會連帶改掉每一個既有的雷電畫面）。
+
+     位置採「等速直線自走 ＋ 收到權威座標時往回修正」：Worker 的事件是成批送達的
+     （一批帶好幾拍），純粹跟著事件走會變成「停三幀、跳一次」。雷幕的運動本身就是
+     等速直線，因此顯示層拿同一組語意參數（destX／destY／speed）就能完全重現，
+     不是另外捏一條與傷害位置脫節的路徑（AI_RULES 8.3.1）。 */
+  var THUNDER_CURTAIN_THEME = { c1: '#7dd3fc', c2: '#ffffff', glow: '#2563eb' };
+  var THUNDER_CURTAIN_BOLT_GAP = 150;    // 相鄰兩道落雷的間距（像素）
+  var THUNDER_CURTAIN_MAX_BOLTS = 8;     // 每道雷幕最多畫幾道落雷（效能上限，與傷害無關）
+  var THUNDER_CURTAIN_REDRAW_SEC = 0.07; // 重新抽電弧折線的間隔（越短越像持續放電）
+  var THUNDER_CURTAIN_MAX_LIFE_SEC = 8;
+  var _thunderCurtainFx = Object.create(null);
+
+  /* 權威座標到達時：把落點與尺寸更新上去，畫面位置只做部分修正（保留自走的連續性）。 */
+  function thunderCurtainSync(fx, a) {
+    fx.w = Math.max(10, Number(a.w) || fx.w);
+    fx.h = Math.max(6, Number(a.h) || fx.h);
+    fx.angle = Number(a.a) || 0;
+    if (isFinite(a.destX) && isFinite(a.destY)) { fx.destX = Number(a.destX); fx.destY = Number(a.destY); }
+    if (Number(a.speed) > 0) fx.speed = Number(a.speed);
+    var tx = Number(a.x), ty = Number(a.y);
+    var err = Math.sqrt((tx - fx.x) * (tx - fx.x) + (ty - fx.y) * (ty - fx.y));
+    /* 偏差大於一個牆厚＝自走已經跟丟（剛出生、或分頁被凍結過），直接歸位；
+       其餘只補一部分，讓修正不會變成看得見的抽動。 */
+    if (err > fx.h) { fx.x = tx; fx.y = ty; return; }
+    fx.x += (tx - fx.x) * 0.3;
+    fx.y += (ty - fx.y) * 0.3;
+  }
+
+  function spawnThunderCurtain(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return null;
+    var key = a.id || [Math.round(a.x), Math.round(a.y), Math.round(a.w || 0), Math.round(a.a || 0)].join(':');
+    var holdMs = Math.max(400, Number(spec.dur || 0.5) * 2400);
+    var current = _thunderCurtainFx[key];
+    if (current && !current.dead && current.node && !current.node.destroyed) {
+      thunderCurtainSync(current, a);
+      current.expiresAt = nowMs() + holdMs;
+      return current;
+    }
+
+    var node = new PIXI.Container();
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    S.layers.fx.addChild(node);
+    var fx = {
+      node: node, x: Number(a.x), y: Number(a.y),
+      w: Math.max(10, Number(a.w) || 10), h: Math.max(6, Number(a.h) || 8),
+      angle: Number(a.a) || 0,
+      destX: isFinite(a.destX) ? Number(a.destX) : null,
+      destY: isFinite(a.destY) ? Number(a.destY) : null,
+      speed: Number(a.speed) > 0 ? Number(a.speed) : 0,
+      redrawAt: 0, seed: Math.random() * 10,
+      expiresAt: nowMs() + holdMs, key: key, dead: false
+    };
+    _thunderCurtainFx[key] = fx;
+
+    addFx({
+      node: node,
+      update: function (dt) {
+        // 等速直線自走：方向由模擬層給的落點決定，走到落點就停（與場域自己的行為一致）
+        if (fx.speed > 0 && fx.destX !== null) {
+          var dx = fx.destX - fx.x, dy = fx.destY - fx.y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          var step = fx.speed * dt;
+          if (dist > 0.5) {
+            if (step >= dist) { fx.x = fx.destX; fx.y = fx.destY; }
+            else { fx.x += dx / dist * step; fx.y += dy / dist * step; }
+          }
+        }
+        node.x = 0; node.y = 0; node.rotation = 0;
+        var fade = fx.expiresAt - nowMs() < 240 ? Math.max(0, (fx.expiresAt - nowMs()) / 240) : 1;
+        fx.redrawAt -= dt;
+        if (fx.redrawAt <= 0) {
+          fx.redrawAt = THUNDER_CURTAIN_REDRAW_SEC;
+          var axisX = Math.cos(fx.angle), axisY = Math.sin(fx.angle);
+          var bolts = Math.max(2, Math.min(THUNDER_CURTAIN_MAX_BOLTS,
+            Math.round(fx.w / THUNDER_CURTAIN_BOLT_GAP)));
+          var skyY = S.H * 0.7;
+          g.clear();
+          /* 貼地的亮帶：兩道落雷之間也要看得出這是一整道牆，而不是幾根分開的電柱。
+             長寬直接用判定矩形，玩家看到的亮帶就是實際會被打到的範圍。 */
+          var halfLong = fx.w / 2, halfWide = Math.max(3, fx.h / 2);
+          var perpX = -axisY, perpY = axisX;
+          g.poly([
+            fx.x - axisX * halfLong + perpX * halfWide, fx.y - axisY * halfLong + perpY * halfWide,
+            fx.x + axisX * halfLong + perpX * halfWide, fx.y + axisY * halfLong + perpY * halfWide,
+            fx.x + axisX * halfLong - perpX * halfWide, fx.y + axisY * halfLong - perpY * halfWide,
+            fx.x - axisX * halfLong - perpX * halfWide, fx.y - axisY * halfLong - perpY * halfWide
+          ]).fill({ color: 0x7dd3fc, alpha: 0.22 * fade });
+          for (var bi = 0; bi < bolts; bi++) {
+            var u = bolts === 1 ? 0 : (bi / (bolts - 1) - 0.5);
+            var bx = fx.x + axisX * fx.w * u;
+            var by = fx.y + axisY * fx.w * u;
+            boltPath(g, bx + (Math.random() * 26 - 13), by - skyY, bx, by,
+              THUNDER_CURTAIN_THEME, 0.92 * fade, false, false);
+            // 落點的白熱光斑：讓「打在地上」這件事有明確的接點
+            g.circle(bx, by, Math.max(5, fx.h * 0.6)).fill({ color: 0xffffff, alpha: 0.5 * fade });
+            g.circle(bx, by, Math.max(9, fx.h * 1.05)).fill({ color: 0x2563eb, alpha: 0.24 * fade });
+          }
+        }
+        if (nowMs() >= fx.expiresAt) {
+          fx.dead = true;
+          if (_thunderCurtainFx[key] === fx) delete _thunderCurtainFx[key];
+          return false;
+        }
+        return true;
+      }
+    }, 2, THUNDER_CURTAIN_MAX_LIFE_SEC * 1000);
+    return fx;
+  }
+
   /* 場域的移動／尺寸只屬於顯示層：模擬層仍以自己的 tick 頻率判定傷害，
      這裡只把兩次權威快照之間的畫面補齊，避免場域一格一格跳動。
      Worker 事件通常每 0.2 秒批次送達；最短補間不能跟著技能的 0.1 秒傷害間隔
@@ -4825,6 +4942,7 @@ var BattleRenderer = (function () {
         if (spec.variant === 'firehunt' || spec.variant === 'thunder-orbit') spawnFireHunt(spec);
         else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);
+        else if (spec.variant === 'thunder-curtain') spawnThunderCurtain(spec);
         else if (spec.variant === 'mire' || spec.variant === 'mire-lava' || spec.variant === 'mire-poison' || spec.variant === 'mire-lava-poison') spawnMirePool(spec);
         else if (spec.variant === 'blizzard' || spec.variant === 'water-tornado' || spec.variant === 'wind-tornado' ||
                  spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing') spawnIceField(spec);
