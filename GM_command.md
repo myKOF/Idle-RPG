@@ -724,7 +724,7 @@ sgult earthguard 3                    （大地守護＝逆轉乾坤：天地共
 sgult chainlightning 1                （連鎖閃電＝天地雷鎖陣：施放後每 1 秒自動再施放，持續 3 秒）
 sgult chainlightning 2                （連鎖閃電＝永恒超導體：往返鏈疊超導電荷，雷電傷害越打越高）
 sgult chainlightning 3                （連鎖閃電＝飛雷神：放電期每 0.35 秒打最遠的 3 個敵人）
-sgult thunderstrike 1                 （落雷術＝雷電矩陣：橫直各 2 道落雷橫掃全場）
+sgult thunderstrike 1                 （落雷術＝雷電矩陣：橫直各 2 道雷幕交錯橫掃全場）
 sgult thunderstrike 2                 （落雷術＝雷霆天劫：永久追擊最低血敵人的天劫雷電）
 sgult thunderstrike 3                 （落雷術＝永恒雷獄：施放後每 1 秒自動再施放，持續 3 秒）
 sgult all off                         （清除所有超神進化選擇）
