@@ -1,5 +1,106 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第八批（連鎖閃電／落雷術十特效 ＋ 兩組超神進化）（2026-08-26）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（雷系第一批）
+- 使用者需求：實作「連鎖閃電」與「落雷術」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）連鎖閃電、落雷術兩段
+  （使用者訊息寫「連鎖電電」，表上的正式名稱是「連鎖閃電」）。
+- 前置依賴：無（`.claude/check-conflicts.ps1` 總覽模式回報退出碼 0，全部副本乾淨、
+  `ai/antigravity` 與 `ai/codex` 都沒有未合併的 commit）。
+- 前七批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用，沒有新增架構。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 118）：單手劍→連鎖閃電＝電荷連鎖／電擊／雷散落／
+    超導／過載；單手魔杖→落雷術＝三重雷／雷鎖／震雷／雷之再生／引雷針。兩者都是單手，
+    不吃雙手 ×2 補償。
+  - SKILLS2 新增 6 個超神進化（開放群組 14 → 16）：連鎖閃電＝天地雷鎖陣／永恒超導體／飛雷神；
+    落雷術＝雷電矩陣／雷霆天劫／永恒雷獄。
+  - 新增兩個狀態 `sgSuperconduct`（超導電荷，持續到死亡為止）／`sgThunderQuake`（震雷雷痕）。
+  - 新增一個收斂點：`sgArmUltRepeat`／`sgTickUltRepeat` ＋ `SG_ULT_REPEAT_IDS`
+    ＝「持續 N 秒內每 gap 秒自動再施放 1 次」的共用節拍（【天地雷鎖陣】與【永恒雷獄】共用）。
+    `castSkill2` 新增 `opts.repeat`，與既有的 `opts.storm` 併成同一個 `freeCast` 分支
+    （不扣魔、不進冷卻、不寫戰報與飄字），且重複施放不會再起算節拍。
+  - 新增 `skill2LightningDamageUpPct`：【永恒超導體】的雷電傷害增幅掛在
+    `legendaryElementDamageUp`（屬性傷害提升% 的唯一收斂點），與【火焰增幅】【超重力場】同一條路。
+  - 新增 `sgLegendCount`：傳奇「次數／個數 +N」規格的統一取值（保護鍵 + 取整 + null 保護）。
+  - Worker 協議未變（仍是 v25）：本批沒有新增需要顯示層重現的幾何欄位；
+    顯示層一律沿用既有的雷系變體（`lightning-chain`／`thunder-burst`／`thunder-strike`／
+    `lightning-relay`），兩個渲染器都已認得。
+- 修改檔案：`js/data.js`、`js/skills2.js`、`js/status.js`、`js/legendary.js`、`index.html`、
+  `js/bridge.js`、`js/worker/sim.worker.js`、`config/CSV/*` 與 `config/Excel/*`
+  （Skills2／Status／Equipment_Affix）、`game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-chainlightning-thunder-legendary.test.cjs`（新增，19 案例）、
+  `tests/skill2-ult-evolution.test.cjs`（開放群組 14 → 16；控制組由連鎖閃電改為雷球）、
+  `tests/legendary-affix.test.cjs`（池內總數 108 → 118）、
+  `tests/skill2-vfx.test.cjs`（它釘住 index.html／bridge.js／sim.worker.js 的**目前版號**）、本文件。
+- 未修改但檢查過：`js/gm_exec.js`（`sgult` 依 `sgUltDefs` 動態列舉，新群組自動納入）、
+  `js/save.js`（第 8 格正規化與群組無關）、`js/ui.js`（格數走 `sgSlotCount`）、
+  `js/battle-renderer.js`／`js/vfx.js`（本批只用既有雷系變體）、
+  `js/combat.js`（震雷的增傷併進既有的 `skill2VulnACfg`，普攻端不必另接）。
+- 驗證方式：`npm test` 全量（新增 19 案例全過，連跑 5 次無浮動）、`node tools/build_check.cjs`、
+  `config_tables --gen <表>／--sync／--apply` 往返（語意變更 0）、`apply_params` 試跑
+  （將變更 0、錨點問題 0、對應參數總數 554 不變）與 `--check-anchors`、快取版號同步、
+  `git diff --check`。
+- 已知風險：
+  - **本批之前就存在的 10 條紅燈未處理**（改動前後完全相同，非本次造成）：`skill2-earth` 兩條、
+    冰系五條、雷系一條與風系一條（都是 `調整技能CD` 之後沒同步的冷卻基準）、Canvas 投射物預判一條。
+    要不要一併修屬另案。
+  - 九個設計文檔未指定的取值與判斷見 PATCH.md 的「待確認」段（超導電荷的持續時間、
+    三重雷／雷之再生的前提差異、引雷針加傷的範圍、過載計數跨施放…）。
+- 未完成項目：尚未進行瀏覽器實機目視驗證與 DPS 基準測試（建議交由 Antigravity）。
+- Commit：5c975b8。
+
+---
+
+## Claude｜傳奇進化第七批（泥沼術／大地守護十特效 ＋ 兩組超神進化）（2026-08-25）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（地系第二批）
+- 使用者需求：實作「泥沼術」與「大地守護」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）泥沼術、大地守護兩段。
+- 前置依賴：無（`.claude/check-conflicts.ps1` 對全部 23 支目標檔案回報退出碼 0，磁碟上沒有衝突來源）。
+- 前六批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用，沒有新增架構。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 108）：魔劍→泥沼術＝蔓延／削弱／腐化／熔火／侵蝕；
+    盾牌→大地守護＝魔力滋養／生命滋養／靈魂連結／地之心／不滅意志。兩者都不吃雙手 ×2 補償。
+  - SKILLS2 新增 6 個超神進化（開放群組 12 → 14）：泥沼術＝惡疫魔沼／深淵火獄／黃泉沼；
+    大地守護＝光耀之堂／天地再造／逆轉乾坤。
+  - 新增三個狀態 `sgMireBleed`（泥沼裂傷）／`sgPlague`（惡疫）／`sgInferno`（火獄烙印）。
+  - 新增兩個收斂點：`gainPlayerMana`（`js/formula.js`；法力入帳的唯一出口，比照 `healPlayer`，
+    讓「溢出的法力」第一次有地方可以接）與 `skills2OnEnemyKill`（`js/combat.js onFieldKill` 尾端；
+    新版技能的擊殺掛點）。另新增 `skill2DotElemFactor`（依狀態表傷害屬性分流的持續傷害乘區）。
+  - 【黃泉沼】的斬殺刻意分兩段（受傷掛點只立旗標、`tickSkill2` 才結算），避免在
+    `resolveHit`／`applyEnemyHpDamage` 中途遞迴且繞過致死分支。
+  - Worker 協議未變（仍是 v25）：本批沒有新增需要顯示層重現的幾何欄位。
+- 修改檔案：`js/data.js`、`js/skills2.js`、`js/status.js`、`js/formula.js`、`js/combat.js`、
+  `js/skills.js`、`js/tower.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`index.html`、
+  `config/CSV/*` 與 `config/Excel/*`（Equipment_Affix／Skills2／Status）、
+  `game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-mire-earthguard-legendary.test.cjs`（新增，20 案例）、
+  `tests/skill2-ult-evolution.test.cjs`、`tests/legendary-affix.test.cjs`、
+  `tests/skill2-vfx.test.cjs`（它釘住 index.html／bridge.js／sim.worker.js 的**目前版號**，
+  版號往上推時本來就要一起更新，見該檔的註釋）、本文件。
+- 未修改但檢查過：`js/legendary.js`（傳奇橋不必改，這一批沒有屬性增傷型效果）、
+  `js/gm_exec.js`（`sgult` 依 `sgUltDefs` 動態列舉，新群組自動納入）、
+  `js/save.js`（第 8 格正規化與群組無關）、`js/ui.js`（格數走 `sgSlotCount`）、
+  `js/battle-renderer.js`（垂死實體被活體資料頂替時已會砍掉重建，【天地再造】不必改顯示層）。
+- 驗證方式：`npm test` 全量（新增 20 案例全過）、`node tools/build_check.cjs`（300 檔）、
+  `config_tables --gen <表>／--sync／--apply` 往返（語意變更 0）、`apply_params` 試跑（將變更 0、
+  錨點問題 0、對應參數總數 554 不變）、快取版號同步、`git diff --check`。
+- 已知風險：
+  - **本批之前就存在的 10 條紅燈未處理**（改動前後完全相同，非本次造成；已在 HEAD 的乾淨
+    worktree 逐條比對確認）：`skill2-earth` 的兩條（泥沼術範圍由 10×10 改為 12×12 之後沒同步的
+    斷言）、冰系四條、雷系一條、風系一條、Canvas 投射物預判一條。要不要一併修屬另案。
+  - 七個設計文檔未指定的取值與判斷見 PATCH.md 的「待確認」段（天地再造是否再給獎勵、
+    逆轉乾坤的取整、侵蝕的傷害基準…）。
+- 未完成項目：尚未進行瀏覽器實機目視驗證與 DPS 基準測試（建議交由 Antigravity）。
+- Commit：93ddd88。
+
+---
+
 ## Codex｜調整大地守護「魔法盾」承擔法力降低（2026-08-25）
 
 - 狀態：已完成

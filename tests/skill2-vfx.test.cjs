@@ -927,14 +927,14 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.58/);
-  assert.match(index, /js\/status\.js\?v=1\.0\.17/);
+  assert.match(index, /js\/status\.js\?v=1\.0\.19/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.71/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.103/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.76/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260825-magic-shield-mana-reduction'/);
-  assert.match(worker, /\.\.\/skills\.js\?v=20260824-skill-ready-requeue/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260825-magic-shield-mana-reduction/);
-  assert.match(worker, /\.\.\/legendary\.js\?v=20260825-firehunt-rock-legendary/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.78/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260826-chain-thunder-legendary'/);
+  assert.match(worker, /\.\.\/skills\.js\?v=20260825-mire-earthguard-legendary/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260826-chain-thunder-legendary/);
+  assert.match(worker, /\.\.\/legendary\.js\?v=20260826-chain-thunder-legendary/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。

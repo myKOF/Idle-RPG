@@ -1251,6 +1251,116 @@ var PASSIVE_POOL = {
     name: '大地之心', desc: '當你的生命護盾降至 0 時獲得無敵 2 秒；此效果每 30 秒只能觸發 1 次。',
     base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'rockarmor', weaponTypes: ['focus'],
     fx: { rockHeartInvuln: { sec: 2, cd: 30 } }
+  },
+  /* ---- 傳奇進化第七批（2026-08-25）：地系第二批 ----
+     魔劍→泥沼術（mire）／盾牌→大地守護（earthguard）。
+     兩者都不是雙手武器，不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，
+     因此規格物件裡的數字沿用設計文檔原值；仍把「次數／秒數」放進
+     LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵，之後若改判為雙手也不會被放大成別的東西。 */
+  mireSpread: {
+    name: '蔓延', desc: '泥沼術的範圍 +25%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireScalePct: 25 }
+  },
+  mireWeaken: {
+    name: '削弱', desc: '在泥沼術範圍中的敵人造成的傷害 -30%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireWeaken: { reducePct: 30 } }
+  },
+  mireCorrupt: {
+    name: '腐化', desc: '在泥沼術範圍內所有受到控場的敵人，受到的傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireCorruptPct: 30 }
+  },
+  mireLavaBurn: {
+    name: '熔火', desc: '熔岩沼的火焰傷害 +70%。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireLavaPct: 70 }
+  },
+  mireErode: {
+    name: '侵蝕', desc: '泥沼術會附加流血，每 0.5 秒造成 150% 物理傷害，持續 5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'mire', weaponTypes: ['magicSword1h'],
+    fx: { mireBleed: { tickPowerPct: 150, tickSec: 0.5, dur: 5 } }
+  },
+  earthguardManaFeed: {
+    name: '魔力滋養', desc: '大地守護會使溢出的 50% 法力轉為你的生命護盾。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egManaOverflowShield: { pct: 50 } }
+  },
+  earthguardLifeFeed: {
+    name: '生命滋養', desc: '大地守護會使溢出的 10% 生命轉為你的法力值。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egHpOverflowMana: { pct: 10 } }
+  },
+  earthguardSoulLink: {
+    name: '靈魂連結', desc: '【生命反射之盾】可以額外對 1 個敵人產生作用。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egReflectAdd: { count: 1 } }
+  },
+  earthguardHeartOfEarth: {
+    name: '地之心', desc: '每殺死 1 個敵人，【天地共生】的復活冷卻時間 -1 秒。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egKillCdr: { sec: 1 } }
+  },
+  earthguardUndyingWill: {
+    name: '不滅意志', desc: '【天地共生】復活後的無敵時間內，每殺死 1 個敵人則無敵時間 +0.5 秒。',
+    base: 0, perR: 0, legendary: true, type: 'earth', relatedSkill: 'earthguard', weaponTypes: ['shield'],
+    fx: { egKillInvuln: { sec: 0.5 } }
+  },
+  /* ---- 傳奇進化第八批（2026-08-26）：雷系第一批 ----
+     單手劍→連鎖閃電（chainlightning）／單手魔杖→落雷術（thunderstrike）。
+     兩者都是單手武器，不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，因此規格物件裡的
+     數字沿用設計文檔原值；仍把「次數／秒數／機率」放進 LEGENDARY_FX_NON_VALUE_KEYS
+     的保護鍵，之後若改判為雙手也不會被放大成別的東西（比照第七批）。 */
+  chainlightningSurge: {
+    name: '電荷連鎖', desc: '連鎖閃電的彈射數 +2 次。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainLinkAdd: { count: 2 } }
+  },
+  chainlightningVolley: {
+    name: '電擊', desc: '連鎖閃電的發射數量 +2 道。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainBoltAdd: { count: 2 } }
+  },
+  chainlightningScatter: {
+    name: '雷散落', desc: '【電殛擴散】額外對 1 個敵人造成傷害，且其傷害提高 50%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainSplashAdd: { count: 1 }, chainSplashPct: 50 }
+  },
+  chainlightningSuper: {
+    name: '超導', desc: '連鎖閃電每彈射 1 次，該道閃電鏈的傷害 +10%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainBouncePct: 10 }
+  },
+  chainlightningOverload: {
+    name: '過載', desc: '同一個敵人受到 5 次連鎖閃電的彈射後產生爆炸，對周圍 6 米內的敵人造成 200% 雷電傷害。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'chainlightning', weaponTypes: ['sword1h'],
+    fx: { chainOverload: { hits: 5, m: 6, pct: 200 } }
+  },
+  thunderstrikeTriple: {
+    name: '三重雷', desc: '【雙重落雷】的攻擊次數 +1 次。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderHitAdd: { count: 1 } }
+  },
+  thunderstrikeLock: {
+    name: '雷鎖', desc: '落雷術額外攻擊 1 個目標。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderTargetAdd: { count: 1 } }
+  },
+  thunderstrikeQuake: {
+    name: '震雷', desc: '被落雷術擊中的敵人暈眩時間 +1 秒，且其在暈眩狀態下受到的傷害 +25%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderStunAdd: { sec: 1 }, thunderStunnedVulnPct: 25 }
+  },
+  thunderstrikeRebirth: {
+    name: '雷之再生', desc: '【迅雷重生】的機率提高至 100%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderRegenTo: { chance: 100 } }
+  },
+  thunderstrikeRod: {
+    name: '引雷針', desc: '落雷術會優先攻擊 24 米內生命值最低的敵人，且對其造成的傷害提高 20%。',
+    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'thunderstrike', weaponTypes: ['wand1h'],
+    fx: { thunderRod: { m: 24, pct: 20 } }
   }
 };
 

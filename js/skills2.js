@@ -182,16 +182,16 @@ var SKILLS2 = {
   firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, cost: 40, fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火焰傷害（全程約 {sec} 秒）' }, { name: '龍捲噴發', unlock: { reinc: 0, lv: 100 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, cost: 80, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火焰傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, cost: 100, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒' }, { name: '烈焰衝擊', unlock: { reinc: 0, lv: 250 }, cost: 140, fx: { pct: 100, pctPer: 10, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火龍捲或火牆消失時，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害' }, { name: '重生', unlock: { reinc: 0, lv: 300 }, cost: 200, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', unlock: { reinc: 0, lv: 350 }, cost: 320, fx: { count: 3, hits: 8, pct: 100, pctPer: 10, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火焰傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）' }], ult: [{ id: 'infernoTempest', name: '烈焰暴風', cost: 300, fx: { mult: 1.2, multPer: 0.8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放的火龍捲（火牆）數量變為 {mult} 倍（小數部分依機率補 1 道）' }, { id: 'eternalInferno', name: '永劫火獄', cost: 300, fx: { m: 20, pct: 200, pctPer: 20, gap: 0.5, sec: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲會在附近 {m} 米內隨機游走，並在移動軌跡上留下火池：每 {gap} 秒造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { id: 'dragonDevour', name: '火龍之吞噬', cost: 300, fx: { m: 30, hits: 3, hitsPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '所有火龍捲改為聚攏在你身邊，並持續將 {m} 米內的敵人拉向你，且火龍捲的傷害段數 +{hits} 段' }] },
   firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, m: 8, rps: 0.455, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, cost: 200, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, cost: 320, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }], ult: [{ id: 'solarRing', name: '烈陽星環', cost: 300, fx: { count: 1, grow: 60, growSec: 4, spin: 30, pct: 50, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩數量 +{count} 團，體積在 {growSec} 秒內逐漸增大最多 {grow}%，環繞速度 +{spin}%，且造成傷害 +{pct}%' }, { id: 'infiniteRing', name: '無限星環', cost: 300, fx: { count: 10, countPer: 1, m: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩改為從自身中心呈螺旋狀向外擴散（在 {m} 米處達到最外圈），並於持續時間內不斷放出火狩，最多額外 +{count} 團' }, { id: 'fireGodDescend', name: '火神降臨', cost: 300, fx: { m: 6, gap: 0.5, pct: 300, pctPer: 30, orbs: 3, orbsPer: 0.3, mps: 24 }, goldBase: 10000000, goldGrow: 1.5, desc: '你的身體被火焰包裹：每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害；普攻同時朝目標射出 {orbs} 顆火狩星環（{mps} 米／秒）' }] },
   rockarmor: { name: '岩甲術', emoji: '🪨', range: '', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '岩甲術', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { pct: 30, pctPer: 3, sec: 10, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '施放岩甲強化自身，獲得最大生命值 {pct}% 的岩甲護盾，持續 {sec} 秒' }, { name: '強化岩甲', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '進一步強化岩甲，額外獲得最大生命值 {pct}% 的岩甲護盾（與第 1 階累加）' }, { name: '岩甲尖刺', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 5, pctPer: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '岩甲護盾存在期間，攻擊你的敵人會遭受你最大生命值 {pct}% 的地系傷害（獨立於反震，兩者各自結算）' }, { name: '護盾增幅', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '主動型被動（裝配到技能列即恆時生效）：你獲得的所有護盾效率額外 +{pct}%（乘算）' }, { name: '岩之再生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 生命值即獲得最大生命 {pct}% 的護盾' }, { name: '岩甲增幅', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 0.5, pctPer: 0.05, max: 30, sec: 3 }, goldBase: 3000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 護盾即獲得 {pct}% 傷害增幅（乘算），最多疊 {max} 層，持續 {sec} 秒' }, { name: '天地逆返', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，護盾剩餘量越低則傷害減免越高，護盾歸零時最高額外 +{pct}% 傷害減免（乘算）' }], ult: [{ id: 'superRockArt', name: '超重岩之術', cost: 300, fx: { m: 24, sec: 4, pct: 400, pctPer: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放時將巨岩之力壓縮到極致，使 {m} 米內的敵人石化 {sec} 秒：無法行動，且受到的土系傷害額外 +{pct}%' }, { id: 'adamantBody', name: '金剛不壞', cost: 300, fx: { red: 90, redPer: 0.9, hp: 50, hpPer: 5, spike: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '岩甲護盾存在期間額外獲得 +{red}% 傷害減免（乘算），生命上限與岩甲護盾 +{hp}%，且【岩甲尖刺】的效果額外提高 {spike}%' }, { id: 'gravityField', name: '超重力場', cost: 300, fx: { m: 24, pct: 300, pctPer: 30, stiff: 65, stiffSec: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放岩甲術時同時扭曲 {m} 米內的重力場，使敵人僵化（移動、攻速與傷害 -{stiff}%，持續 {stiffSec} 秒）；岩甲護盾存在期間你的土系傷害額外 +{pct}%' }] },
-  mire: { name: '泥沼術', emoji: '🟤', range: '12*12', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '泥沼術', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { sec: 4, secPer: 0.4, castM: 20, move: 30, aspd: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一片 12×12 米的沼澤（射程 {castM} 米），沼澤中的敵人陷入緩速（移動速度 -{move}%、攻速 -{aspd}%），持續 {sec} 秒' }, { name: '虛弱', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '受泥沼緩速影響的敵人，受到的傷害提高 {pct}%' }, { name: '毒沼術', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { dotPct: 25, dotPctPer: 2.5, dotGap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '沼澤持續放出毒氣：沼澤中的敵人每 {dotGap} 秒受到魔法攻擊 {dotPct}% 的毒性傷害' }, { name: '毒沼增生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 40 }, goldBase: 800000, goldGrow: 1.5, desc: '沼澤結束時傳染給 {m} 米內較近的敵人，最多傳染 {add} 次（不足 1 次的部分以機率觸發）' }, { name: '沼澤漫延', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { sec: 6, pct: 40, pctPer: 4, growSec: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '沼澤持續時間提高至 {sec} 秒，且在 {growSec} 秒內逐步擴大，最大擴增 {pct}%' }, { name: '重力泥沼', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { move: 50, aspd: 75, pct: 20, pctPer: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '緩速強化為移動速度 -{move}%、攻速 -{aspd}%，且受影響目標受到的傷害再提高 {pct}%（與第 2 階累加）' }, { name: '熔岩沼', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { sec: 8, pct: 20, pctPer: 2, dotPct: 70, dotPctPer: 7, dotGap: 0.4 }, goldBase: 5000000, goldGrow: 1.5, desc: '沼澤轉變為岩漿：持續時間提高至 {sec} 秒、範圍再擴增 {pct}%（與第 5 階累加），其中的目標每 {dotGap} 秒額外受到魔法攻擊 {dotPct}% 的火焰傷害' }] },
-  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 30, pctPer: 3, manaRed: 30, manaRedPer: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔，承擔的法力降低 {manaRed}%（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 25, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }] },
-  chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害' }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害' }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）' }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10, chance: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈' }] },
-  thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害' }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落電', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { mult: 2, pct: 50, pctPer: 5, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）' }] },
+  mire: { name: '泥沼術', emoji: '🟤', range: '12*12', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '泥沼術', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { sec: 4, secPer: 0.4, castM: 20, move: 30, aspd: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一片 12×12 米的沼澤（射程 {castM} 米），沼澤中的敵人陷入緩速（移動速度 -{move}%、攻速 -{aspd}%），持續 {sec} 秒' }, { name: '虛弱', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '受泥沼緩速影響的敵人，受到的傷害提高 {pct}%' }, { name: '毒沼術', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { dotPct: 25, dotPctPer: 2.5, dotGap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '沼澤持續放出毒氣：沼澤中的敵人每 {dotGap} 秒受到魔法攻擊 {dotPct}% 的毒性傷害' }, { name: '毒沼增生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 40 }, goldBase: 800000, goldGrow: 1.5, desc: '沼澤結束時傳染給 {m} 米內較近的敵人，最多傳染 {add} 次（不足 1 次的部分以機率觸發）' }, { name: '沼澤漫延', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { sec: 6, pct: 40, pctPer: 4, growSec: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '沼澤持續時間提高至 {sec} 秒，且在 {growSec} 秒內逐步擴大，最大擴增 {pct}%' }, { name: '重力泥沼', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { move: 50, aspd: 75, pct: 20, pctPer: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '緩速強化為移動速度 -{move}%、攻速 -{aspd}%，且受影響目標受到的傷害再提高 {pct}%（與第 2 階累加）' }, { name: '熔岩沼', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { sec: 8, pct: 20, pctPer: 2, dotPct: 70, dotPctPer: 7, dotGap: 0.4 }, goldBase: 5000000, goldGrow: 1.5, desc: '沼澤轉變為岩漿：持續時間提高至 {sec} 秒、範圍再擴增 {pct}%（與第 5 階累加），其中的目標每 {dotGap} 秒額外受到魔法攻擊 {dotPct}% 的火焰傷害' }], ult: [{ id: 'plagueMire', name: '惡疫魔沼', cost: 300, fx: { gap: 0.35, pct: 200, pctPer: 20, amp: 100, ampPer: 10, sec: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '沼澤範圍內的敵人染上【瘟疫】：每 {gap} 秒受到魔法攻擊 {pct}% 的毒性傷害，且受到的毒性傷害額外 +{amp}%；離開沼澤後仍持續 {sec} 秒' }, { id: 'abyssInferno', name: '深淵火獄', cost: 300, fx: { gap: 2, hits: 8, pct: 100, pctPer: 10, sec: 8, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '熔岩沼每 {gap} 秒對範圍內的敵人噴出 1 道火龍捲（半徑 {m} 米、{hits} 段、每段 {pct}% 火焰傷害），並將命中的敵人屬性改變為火屬性，持續 {sec} 秒' }, { id: 'netherMire', name: '黃泉沼', cost: 300, fx: { hpPct: 30, chance: 0.5, chancePer: 0.05, add: 0.5, addPer: 0.05 }, goldBase: 10000000, goldGrow: 1.5, desc: '沼澤範圍內生命值 {hpPct}% 以下的敵人，每次受到傷害有 {chance}% 機率直接被斬殺，且該機率每次受傷再累加 {add}%' }] },
+  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 30, pctPer: 3, manaRed: 30, manaRedPer: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔，承擔的法力降低 {manaRed}%（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命' }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 25, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）' }], ult: [{ id: 'hallOfRadiance', name: '光耀之堂', cost: 300, fx: { pct: 250, pctPer: 25, conv: 100, convPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '生命與法力回復額外 +{pct}%（乘算），且溢出的生命與法力以 {conv}% 轉為你的生命護盾' }, { id: 'worldRebirth', name: '天地再造', cost: 300, fx: { chance: 15, chancePer: 15, hp: 80, hpPer: -5 }, goldBase: 10000000, goldGrow: 1.5, desc: '被你殺死的普通與菁英敵人有 {chance}% 機率（上限 100%）以 {hp}% 生命重生（同一個敵人只會重生一次）' }, { id: 'fateReversal', name: '逆轉乾坤', cost: 300, fx: { max: 2, maxPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '【天地共生】的冷卻結束後可累積復活次數，最多累積 {max} 次（小數四捨五入取整）' }] },
+  chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害' }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害' }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）' }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10, chance: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈' }], ult: [{ id: 'skyThunderArray', name: '天地雷鎖陣', cost: 300, fx: { gap: 1, gapPer: -0.05, sec: 3, secPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放連鎖閃電後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）' }, { id: 'eternalSuperconductor', name: '永恒超導體', cost: 300, fx: { m: 30, pct: 2, pctPer: 0.2, maxStacks: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外射出 1 道無限彈射的閃電鏈：在自身與 {m} 米內的任意敵人之間往返彈射，每經過自身 1 次使你的雷電傷害 +{pct}%，最多 {maxStacks} 層（持續到你死亡為止）' }, { id: 'flyingThunderGod', name: '飛雷神', cost: 300, fx: { gap: 0.35, count: 3, m: 30, r: 12, pct: 200, pctPer: 20, sec: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放後每 {gap} 秒放出 {count} 道閃電，分別打向 {m} 米內最遠的 {count} 個敵人，各對命中處 {r} 米內的所有敵人造成 {pct}% 雷電傷害，持續 {sec} 秒' }] },
+  thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害' }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落電', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { mult: 2, pct: 50, pctPer: 5, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）' }], ult: [{ id: 'thunderMatrix', name: '雷電矩陣', cost: 300, fx: { count: 2, countPer: 0.2, pct: 300, pctPer: 30, wid: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術時同時召喚橫向與直向各 {count} 道落雷橫掃全場（每道寬 {wid} 米），對路徑上的所有敵人造成 {pct}% 雷電傷害' }, { id: 'heavenTribulation', name: '雷霆天劫', cost: 300, fx: { m: 30, gap: 0.35, pct: 400, pctPer: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外召喚 1 道永久持續的天劫雷電：每 {gap} 秒追擊 {m} 米內生命值最低的敵人，造成 {pct}% 雷電傷害' }, { id: 'eternalThunderPrison', name: '永恒雷獄', cost: 300, fx: { gap: 1, gapPer: -0.05, sec: 3, secPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）' }] },
   thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散' }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒' }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）' }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒' }] },
   icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 2, deg: 15, castM: 30, speed: 45 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出 {count} 支寒冰箭，每支箭夾角 {deg} 度（射程 {castM} 米、飛行速度 {speed} 米／秒），每支對 1 個敵人造成 {pct}% 寒冰傷害' }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結' }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）' }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 400, pctPer: 40, sec: 6, m: 6, chaseM: 30, bodyM: 1.5, gap: 0.1, waves: 3, waveGap: 0.3 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰爆裂箭連射 {waves} 波，每波間隔 {waveGap} 秒；寒冰箭變為追蹤冰箭，在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害' }] },
   waterball: { name: '水流彈', emoji: '💧', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '水流彈', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, arcM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一顆水彈砸向敵人（射程 {castM} 米、拋物線離地最高 {arcM} 米），造成 {pct}% 寒冰傷害' }, { name: '寒冰逆轉', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 20, pctPer: 2, sec: 6 }, goldBase: 200000, goldGrow: 1.5, desc: '被水流彈擊中的敵人強制轉變為寒冰屬性，且受到的寒冰傷害 +{pct}%，持續 {sec} 秒' }, { name: '寒流彈', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { frostPct: 50, frostPctPer: 20, stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '被水流彈擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成水流彈傷害 {frostPct}% 的寒冰傷害' }, { name: '寒流爆散', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { m: 8, bounce: 2, bouncePer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '水流彈改為範圍攻擊，對目標 {m} 米內的所有敵人造成傷害，並再彈射 {bounce} 次（不足 1 次的部分以機率觸發）' }, { name: '寒霜擴散', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { chance: 25, chancePer: 2.5, m: 10, count: 1 }, goldBase: 1500000, goldGrow: 1.5, desc: '寒霜狀態每次作用時有 {chance}% 機率擴散至目標 {m} 米內的 {count} 個敵人' }, { name: '三重流水', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '朝隨機目標額外丟出 {add} 顆水流彈（不足 1 顆的部分以機率觸發）' }, { name: '水龍捲', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 4, hits: 6, pct: 100, pctPer: 10, m: 5, side: 10, frozen: 2, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外在我方 {side}×{side} 米正方形的四個頂點召喚 {count} 道水龍捲（傷害半徑 {m} 米），每道造成連續 {hits} 段 {pct}% 寒冰傷害，且對凍結中的敵人傷害為 {frozen} 倍' }] },
   frostnova: { name: '冰霜新星', emoji: '🧊', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '冰霜新星', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 150, pctPer: 5, m: 12, castM: 12, stacks: 2, frostPct: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '對周圍 {m} 米內的敵人釋放冰霜新星，造成 {pct}% 寒冰傷害並附加 {stacks} 層寒霜狀態（寒霜每跳造成新星傷害 {frostPct}% 的寒冰傷害）' }, { name: '冰霜衝擊', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { m: 13, mPer: 0.6, castM: 13, castMPer: 0.6, pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '冰霜新星的範圍擴展至 {m} 米，且寒冰傷害額外 +{pct}%' }, { name: '寒冰體', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '施放冰霜新星後的 6 秒內，攻擊你的敵人有 25% 機率被附加 {stacks} 層寒霜狀態' }, { name: '極致寒霜', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { dmgPct: 40, dmgPctPer: 4, durPct: 40, durPctPer: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '所有來源的寒霜狀態傷害提高 {dmgPct}%，且持續時間增加 {durPct}%' }, { name: '三重新星', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '冰霜新星的施放次數額外 +{add} 次，且每次釋放的範圍再 +{m} 米（不足 1 次的部分以機率觸發）' }, { name: '死亡新星', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { chance: 35, chancePer: 6.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '帶寒霜狀態的敵人死亡時有 {chance}% 機率再釋放 1 次冰霜新星' }, { name: '暴風雪', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { pct: 100, pctPer: 10, gap: 0.4, sec: 8, side: 24 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 1 道暴風雪籠罩天空，對 {side}×{side} 米範圍內的敵人每 {gap} 秒造成 {pct}% 寒冰傷害，暴風雪跟隨我方移動，持續 {sec} 秒' }] },
   windblade: { name: '風刃', emoji: '🍃', range: '4*8', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '風刃', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, m: 80, speed: 18 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出一道弧形風刃（射程 {castM} 米、飛行速度 {speed} 米/秒），貫穿飛行路徑 {m} 米上的所有敵人，各造成 {pct}% 風系傷害' }, { name: '巨型風刃', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { size: 30, sizePer: 3 }, goldBase: 200000, goldGrow: 1.5, desc: '風刃的體積 +{size}%（判定範圍與特效同步放大）' }, { name: '雙重風刃', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { pct: 30, pctPer: 30 }, goldBase: 400000, goldGrow: 1.5, desc: '同時向前方與後方各射出一道風刃，且風刃傷害額外 +{pct}%（與第 1 階累加）' }, { name: '亂披風', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 30, pctPer: 3, deg: 30, lenM: 3, widthM: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '風刃射出時同時朝其兩側各 {deg} 度發射 1 道小型風刃（體積 {lenM}×{widthM} 米、同樣貫穿全場），每道造成原風刃 {pct}% 的傷害' }, { name: '追跡風刃', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { sec: 4, secPer: 0.3, chaseM: 30, gap: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '小型風刃不再向前射出，改為在 {chaseM} 米內隨機追擊敵人 {sec} 秒，對路徑上的所有敵人造成傷害（碰到才算一次命中）' }, { name: '狂風碎裂', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { move: 60, gap: 0.6, gapPer: -0.03, pct: 50, m: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '風刃命中的敵人移動速度 -{move}%；風刃並在飛行途中每 {gap} 秒對半徑 {m} 米內的敵人造成風刃 {pct}% 的傷害（不含小型風刃）' }, { name: '暴風真空刃', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { pct: 40, pctPer: 40, count: 3, directions: 4, gap: 0.2 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為朝前後左右 {directions} 個方向各連續射出 {count} 道風刃（每道間隔 {gap} 秒，小型風刃同步發射），且風刃傷害額外 +{pct}%' }] },
-  vacuumslash: { name: '真空斬', emoji: '🌀', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '真空斬', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 3, m: 6, castM: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {m} 米範圍內的 {count} 名敵人揮出一道真空斬擊，造成 {pct}% 風系傷害' }, { name: '真空爆震', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { hits: 1, hitsPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '真空斬會爆發出震波，額外造成 {hits} 次傷害（不足 1 次的部分以機率觸發）' }, { name: '風切', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { cutPct: 50, cutPctPer: 5, move: 80, hit: 50, sec: 4, gap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '被真空斬擊中的敵人附加風切狀態：移動速度 -{move}%、命中率 -{hit}%，且每 {gap} 秒受到真空斬傷害 {cutPct}% 的風系傷害，持續 {sec} 秒' }, { name: '迴旋斬', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { pct: 30, pctPer: 3, m: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '真空斬改為對自身周圍 {m} 米內的所有敵人造成傷害，且造成的傷害額外 +{pct}%' }, { name: '迴旋三重奏', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { add: 2, addPer: 0.2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '迴旋斬額外連續施展 {add} 次，每次的範圍再擴大 {m} 米（不足 1 次的部分以機率觸發）' }, { name: '無限風切', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { stacks: 3, pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '風切狀態可堆疊至 {stacks} 層，每多 1 層使風切每跳額外造成 {pct}% 的風系傷害' }, { name: '虛空斬', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { pct: 400, pctPer: 40, count: 4, sec: 6, m: 6, growM: 4, bodyM: 6, rps: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外斬出 {count} 道虛空斬擊：以自身為中心從半徑 {m} 米起每秒擴大 {growM} 米、{count} 道皆順時針繞行 {rps} 圈，對碰到的敵人造成 {pct}% 風系傷害，持續 {sec} 秒' }] },
+  vacuumslash: { name: '真空斬', emoji: '🌀', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '真空斬', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 3, m: 6, castM: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {m} 米範圍內的 {count} 名敵人揮出一道真空斬擊，造成 {pct}% 風系傷害' }, { name: '真空爆震', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { hits: 1, hitsPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '真空斬會爆發出震波，額外造成 {hits} 次傷害（不足 1 次的部分以機率觸發）' }, { name: '風切', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { cutPct: 50, cutPctPer: 5, move: 80, hit: 50, sec: 4, gap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '被真空斬擊中的敵人附加風切狀態：移動速度 -{move}%、命中率 -{hit}%，且每 {gap} 秒受到真空斬傷害 {cutPct}% 的風系傷害，持續 {sec} 秒' }, { name: '真空迴旋', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { pct: 30, pctPer: 3, m: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '真空斬改為對自身周圍 {m} 米內的所有敵人造成傷害，且造成的傷害額外 +{pct}%' }, { name: '真空三重奏', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { add: 2, addPer: 0.2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '迴旋斬額外連續施展 {add} 次，每次的範圍再擴大 {m} 米（不足 1 次的部分以機率觸發）' }, { name: '無限風切', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { stacks: 3, pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '風切狀態可堆疊至 {stacks} 層，每多 1 層使風切每跳額外造成 {pct}% 的風系傷害' }, { name: '虛空斬', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { pct: 400, pctPer: 40, count: 4, sec: 6, m: 6, growM: 4, bodyM: 6, rps: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外斬出 {count} 道虛空斬擊：以自身為中心從半徑 {m} 米起每秒擴大 {growM} 米、{count} 道皆順時針繞行 {rps} 圈，對碰到的敵人造成 {pct}% 風系傷害，持續 {sec} 秒' }] },
   stormbarrier: { name: '暴風屏障', emoji: '🌪️', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '暴風屏障', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { shield: 1, shieldPer: 1, red: 10, redPer: 1, sec: 8, gap: 0.5, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對自身施加暴風屏障：每 {gap} 秒獲得最大生命 {shield}% 的護盾，且傷害減免 +{red}%（乘算，只與風系類型的減免相加總），持續 {sec} 秒' }, { name: '暴風撕裂', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 50, pctPer: 5, m: 8 }, goldBase: 200000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對自身半徑 {m} 米內的敵人造成 {pct}% 風系傷害' }, { name: '亂風切', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 1, countPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對周圍的 {count} 個敵人附加風切狀態（不足 1 個的部分以機率觸發）' }, { name: '暴風之刃', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { chance: 15, chancePer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '暴風屏障作用中受到傷害時，有 {chance}% 機率射出 1 道貫穿風刃（【風刃】第 1 階的效果，不含其後續進化）' }, { name: '風切擴散', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { count: 1, countPer: 0.1, m: 10 }, goldBase: 1500000, goldGrow: 1.5, desc: '風切狀態結束後擴散至 {m} 米內的 {count} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '颶風屏障', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { shield: 2, shieldPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '暴風屏障每次作用時額外獲得最大生命 {shield}% 的護盾（與第 1 階相加）' }, { name: '暴風神體', unlock: { reinc: 0, lv: 1000 }, cost: 40, fx: { red: 99, sec: 2, secPer: 0.2, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '施放暴風屏障時同時召喚風暴之神附體：{sec} 秒內傷害減免 +{red}%，且自身的風系傷害額外 ×(1+{pct}%)' }] }
 };
 
@@ -233,6 +233,11 @@ function resetSkill2RT() {
   if (SKILL2_RT && SKILL2_RT.starfall && SKILL2_RT.starfall.pEnt && SKILL2_RT.starfall.pEnt.buffs) {
     delete SKILL2_RT.starfall.pEnt.buffs.sgStarfall;
   }
+  /* 超神【永恒超導體】的疊層增益同樣是「持續到死亡為止」（狀態表給了一個單場戰鬥
+     走不完的持續時間），回收的唯一時機就是這裡——比照【戰神屠錄】。 */
+  if (SKILL2_RT && SKILL2_RT.superconduct && SKILL2_RT.superconduct.pEnt && SKILL2_RT.superconduct.pEnt.buffs) {
+    delete SKILL2_RT.superconduct.pEnt.buffs.sgSuperconduct;
+  }
   SKILL2_RT = {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
@@ -259,7 +264,15 @@ function resetSkill2RT() {
     hunt: null,      // 火狩兩個節拍型傳奇的時刻：{ launchAt, ampAt }（【伴生併發】【烈火狩】，不入存檔）
     fireGodAt: 0,    // 超神【火神降臨】領域的下一拍時刻（不入存檔）
     fireGodVfxAt: 0, // 超神【火神降臨】範圍提示的下一次重畫時刻（純顯示，不入存檔）
-    rockHeartAt: 0   // 傳奇【大地之心】的內部冷卻到期時刻（不入存檔）
+    rockHeartAt: 0,  // 傳奇【大地之心】的內部冷卻到期時刻（不入存檔）
+    rebirth: null,   // 超神【逆轉乾坤】累積的復活次數：{ charges }（不入存檔）
+    rebirthInvuln: 0, // 【天地共生】給的那一段無敵的到期時刻（傳奇【不滅意志】只延長這一段）
+    ultRepeat: {},   // 超神「持續 N 秒內每 gap 秒自動再施放 1 次」的節拍：
+                     // { <群組id>: { until, nextAt, gap } }（【天地雷鎖陣】【永恒雷獄】，不入存檔）
+    superconduct: null, // 超神【永恒超導體】疊層增益的持有者：{ pEnt }
+                        // ——那個增益「持續到死亡為止」，所以得另外記住掛在誰身上（比照 warGod）
+    flyThunder: null,   // 超神【飛雷神】的放電期：{ until, nextAt }（不入存檔）
+    tribulationAt: 0 // 超神【雷霆天劫】那道永久雷電的下一拍時刻（不入存檔）
   };
 }
 resetSkill2RT(); // 載入即建立初始狀態
@@ -452,6 +465,15 @@ function sgLegendTick(gid) {
 
 function sgLegend(gid) {
   return ((typeof legendarySkill2Mods === 'function') ? legendarySkill2Mods(gid) : null) || {};
+}
+
+/* 「次數／個數 +N」型傳奇規格的取值：值放在 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵裡
+   （count／hits／sec…），沒有裝備該特效時規格物件不存在＝回 0。
+   收斂成一支的理由：這種讀法在施放端會重複十幾次，各自寫一串 Math.max(0, Math.floor(...))
+   遲早會有一處漏掉取整或漏掉 null 保護。 */
+function sgLegendCount(spec, key) {
+  if (!spec) return 0;
+  return Math.max(0, Math.floor(Number(spec[key || 'count']) || 0));
 }
 
 /* ---- 修羅亂舞（雙刀亂舞超神進化）：裝備規則的唯一判定入口 ----
@@ -807,13 +829,21 @@ function skill2StackVulnPct(target) {
   return Math.max(0, buffVal(target, 'sgThrustVuln')) + Math.max(0, buffVal(target, 'sgSoulRend'));
 }
 
+/* 傳奇【震雷】：被落雷術擊中的敵人在「暈眩中」才吃這一份增傷。
+   兩個條件都必須成立——雷痕（狀態）是「被落雷打過」的證明，暈眩是設計文檔寫明的前提。 */
+function skill2ThunderQuakeVulnPct(target) {
+  if (!target || typeof buffVal !== 'function') return 0;
+  var pct = Math.max(0, buffVal(target, 'sgThunderQuake'));
+  return (pct > 0 && sgIsStunned(target)) ? pct : 0;
+}
+
 function skill2VulnACfg(aCfg, target) {
-  /* 「目標受到的傷害提高」目前有四個來源：血刃斬【虛弱】、泥沼術【虛弱／重力泥沼】、
-     傳奇【千瘡百孔】與超神【暗影絕殺者】。全部加算進同一個 totalDmgPct，
+  /* 「目標受到的傷害提高」目前有五個來源：血刃斬【虛弱】、泥沼術【虛弱／重力泥沼】、
+     傳奇【千瘡百孔】、超神【暗影絕殺者】與傳奇【震雷】。全部加算進同一個 totalDmgPct，
      收斂在這一支——呼叫端（普攻 doPlayerAttack ／新版技能 sgAtkCfg）不必逐一補判。 */
   var pct = skill2VulnPct(target) +
     ((typeof skill2MireVulnPct === 'function') ? skill2MireVulnPct(target) : 0) +
-    skill2StackVulnPct(target);
+    skill2StackVulnPct(target) + skill2ThunderQuakeVulnPct(target);
   if (pct > 0) aCfg.totalDmgPct = (aCfg.totalDmgPct || 0) + pct;
   /* 只針對「某一個屬性」的受傷增幅走另一條路：水流彈【寒冰逆轉】的 +X% 寒冰傷害
      不能混進 totalDmgPct（那會連同一次攻擊的火／雷段一起放大）。
@@ -1030,6 +1060,7 @@ function skills2OnEnemyDamaged(ent, amount) {
   if (!(amount > 0) || !ent || ent._sgPreview) return; // 預覽命中（legendaryPreviewBasicAttack）不算受傷
   sgBloodrageBackfire(ent);   // 嗜血狂怒【血飲術】反噬
   sgBloodMistDrain(ent);      // 血刃斬傳奇【血霧】吸血
+  sgNetherMireOnDamaged(ent); // 泥沼術超神【黃泉沼】斬殺判定（只立旗標，斬殺在 tickSkill2）
 }
 
 /* 嗜血狂怒【血飲術】（T6）：期間範圍內的敵人每次受傷，你也付出一點生命；HP_lock 時免除代價。 */
@@ -1609,6 +1640,8 @@ function sgTickFlyingProjectiles(dt, ctx) {
 /* ---- 施放總入口 ----
    pEnt 玩家戰鬥實體、target 為敵人陣列（野外）或單一實體（高塔）、gid 群組 id。
    opts.storm＝暴風之舞自動施放（不扣魔、不進自身冷卻、不重複觸發暴風）。
+   opts.repeat＝超神進化的重複施放（【天地雷鎖陣】【永恒雷獄】）：同樣不扣魔、不進冷卻，
+   且不再重新起算重複節拍——否則第一次施放就會把自己續成無限迴圈。
    回傳 { killed, dmg, crit } 或 null（無法施放）。 */
 function castSkill2(pEnt, target, gid, floatSel, opts) {
   var g = SKILLS2[gid];
@@ -1617,6 +1650,9 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
   var st = getStats();
   var lvs = skills2Levels(gid);
   var storm = !!(opts && opts.storm);
+  /* 兩種「不是玩家自己按下去」的施放共用同一組代價豁免：暴風之舞的化身與超神的重複施放。
+     storm 仍單獨留著，因為雙刀亂舞另有「化身期間才生效」的分支要區分。 */
+  var freeCast = storm || !!(opts && opts.repeat);
   var rawPool = Array.isArray(target)
     ? target.filter(function (e) { return e && e.hp > 0; })
     : ((target && target.hp > 0) ? [target] : []);
@@ -1631,12 +1667,13 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     ? bfPickPrimary(reachable, pEnt._lockTarget) : reachable[0];
   if (!primary) return null;
 
-  if (!storm) {
+  if (!freeCast) {
     if (!(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
       pEnt.mp = Math.max(0, pEnt.mp - (Number(g.cost) || 0));
     }
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
+    sgArmUltRepeat(gid);
   }
 
   var out = { killed: false, dmg: 0, crit: false };
@@ -1664,10 +1701,10 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'stormbarrier': sgCastStormbarrier(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
-  if (!storm && typeof recordRunSkillCast === 'function') {
+  if (!freeCast && typeof recordRunSkillCast === 'function') {
     recordRunSkillCast(g.name, 'skill2:' + gid, sgTotalLevel(lvs));
   }
-  if (!storm && typeof floatPlayerSkillCast === 'function') {
+  if (!freeCast && typeof floatPlayerSkillCast === 'function') {
     var skillFloat = { emoji: g.emoji, name: g.name };
     if (out._pendingProjectiles > 0) {
       out._skillFloatPending = { floatSel: floatSel, skill: skillFloat };
@@ -1675,7 +1712,7 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
       floatPlayerSkillCast(floatSel, skillFloat, out.dmg);
     }
   }
-  if (typeof blog === 'function' && !storm) {
+  if (typeof blog === 'function' && !freeCast) {
     blog(g.emoji + ' 你施放【' + g.name + ' Lv.' + sgTotalLevel(lvs) + '】' +
       (out.dmg > 0 ? '，造成 ' + fmt(out.dmg) + ' 傷害' : ''));
   }
@@ -4804,9 +4841,11 @@ function skill2StiffenFactor(ent) {
   var v = sgStiffenOn(ent);
   return v > 0 ? Math.max(0.05, 1 - Math.min(95, v) / 100) : 1;
 }
-/* 敵人造成的傷害乘區（目前唯一來源是【僵化】）。掛點：js/combat.js doMonsterAttack。 */
+/* 敵人造成的傷害乘區（【僵化】與泥沼傳奇【削弱】，兩個獨立來源相乘）。
+   掛點：js/combat.js doMonsterAttack。 */
 function skill2EnemyDamageFactor(ent) {
-  return skill2StiffenFactor(ent);
+  return skill2StiffenFactor(ent) *
+    ((typeof skill2MireWeakenFactor === 'function') ? skill2MireWeakenFactor(ent) : 1);
 }
 
 /* 超神【超重力場】：岩甲護盾存在期間，你的土系傷害額外提高%。
@@ -4968,7 +5007,11 @@ function sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[4] > 0) lifeSec = Math.max(lifeSec, Number(t[4].fx.sec) || 6);
   if (lvs[6] > 0) lifeSec = Math.max(lifeSec, Number(t[6].fx.sec) || 8);
   var hits = Math.max(1, Math.round(lifeSec / SG_MIRE_TICK_SEC));
-  var side = bfMeterPx(sgRange(g.range).length || 10);
+  /* 傳奇【蔓延】：範圍提高。乘在**出生尺寸**上而不是併進 growTo——
+     growTo 是第 5／7 階「隨時間逐步擴大」的目標倍率，把一個立即生效的放大
+     塞進去會變成「一開始沒有變大、四秒後才長到 +25%」。 */
+  var side = bfMeterPx(sgRange(g.range).length || 10) *
+    (1 + Math.max(0, Number(sgLegend('mire').mireScalePct) || 0) / 100);
   var growTo = 1;
   if (lvs[4] > 0) growTo += sgVal(t[4].fx, 'pct', lvs[4]) / 100;
   if (lvs[6] > 0) growTo += sgVal(t[6].fx, 'pct', lvs[6]) / 100;   // 熔岩沼：與第 5 階累加
@@ -4983,21 +5026,72 @@ function sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   });
 }
 
-/* 沼澤這一攤要發的三種狀態規格（施放當下定版，之後不隨屬性變動）。 */
+/* 沼澤這一攤要發的狀態規格（施放當下定版，之後不隨屬性變動）。
+   【毒沼增生】傳染出去的那幾攤直接沿用同一份（見 sgMireGroundExpire），
+   因此傳奇與超神的規格也一併帶過去，不必在傳染路徑再算一次。 */
 function sgMireSpec(g, lvs, st) {
   var t = g.tiers;
   var base = sgGroupBaseStat(g, st);
+  var lg = sgLegend('mire');
   var gravity = lvs[5] > 0;                                   // 重力泥沼：緩速換代
   var poisonGap = Math.max(0.1, Number(t[2].fx.dotGap) || 0.5);
   var lavaGap = Math.max(0.1, Number(t[6].fx.dotGap) || 0.4);
+  /* 傳奇【熔火】：熔岩沼的火焰傷害提高（乘在施放當下的每跳量上，
+     與第 7 階自身的每級成長相乘）。 */
+  var lavaMult = 1 + Math.max(0, Number(lg.mireLavaPct) || 0) / 100;
   return {
     aspd: Number((gravity ? t[5].fx : t[0].fx).aspd) || 50,
     move: Number((gravity ? t[5].fx : t[0].fx).move) || 30,
     poisonDps: lvs[2] > 0 ? base * sgVal(t[2].fx, 'dotPct', lvs[2]) / 100 / poisonGap : 0,
     poisonGap: poisonGap,
-    lavaDps: lvs[6] > 0 ? base * sgVal(t[6].fx, 'dotPct', lvs[6]) / 100 / lavaGap : 0,
+    lavaDps: lvs[6] > 0 ? base * sgVal(t[6].fx, 'dotPct', lvs[6]) / 100 * lavaMult / lavaGap : 0,
     lavaGap: lavaGap,
-    lava: lvs[6] > 0
+    lava: lvs[6] > 0,
+    bleed: sgMireBleedSpec(lg, st),
+    plague: sgMirePlagueSpec(base),
+    inferno: sgMireInfernoSpec(lvs, base)
+  };
+}
+
+/* 傳奇【侵蝕】：泥沼附加的流血規格（沒有這個特效＝null）。
+   基準取**物攻**——設計文檔寫的是「物理傷害」，與突刺的【穿心裂血】同一個口徑；
+   泥沼術本身是魔法群組（吃魔攻），但這一段流血不是泥沼的本體傷害。 */
+function sgMireBleedSpec(lg, st) {
+  var b = lg && lg.mireBleed;
+  if (!b || !(Number(b.tickPowerPct) > 0)) return null;
+  var gap = Math.max(0.1, Number(b.tickSec) || 0.5);
+  return {
+    dps: (Number(st && st.atk) || 0) * Number(b.tickPowerPct) / 100 / gap,
+    interval: gap,
+    dur: Math.max(gap, Number(b.dur) || 5)
+  };
+}
+
+/* 超神【惡疫魔沼】：沼澤塗上的惡疫規格（沒選中＝null）。
+   與泥沼的其他狀態不同，它「離開後仍會存在 sec 秒」，因此持續時間不是 f.gap × 2，
+   而是超神進化自己的 sec；每一拍重塗只是把剩餘時間推回滿值。 */
+function sgMirePlagueSpec(base) {
+  var u = sgUlt('mire', 'plagueMire');
+  if (!u) return null;
+  var gap = Math.max(0.05, Number(u.def.fx.gap) || 0.35);
+  return {
+    dps: base * sgUltVal(u, 'pct') / 100 / gap,
+    interval: gap,
+    dur: Math.max(gap, Number(u.def.fx.sec) || 8)
+  };
+}
+
+/* 超神【深淵火獄】：熔岩沼每隔一段時間噴出的火龍捲規格（沒選中或還沒練到熔岩沼＝null）。
+   dmgVal 是**每一段**的傷害；段數與壽命的關係比照火龍捲本體（壽命 ÷ 段數＝節拍）。 */
+function sgMireInfernoSpec(lvs, base) {
+  var u = sgUlt('mire', 'abyssInferno');
+  if (!u || !(lvs[6] > 0)) return null;
+  return {
+    gap: Math.max(0.2, Number(u.def.fx.gap) || 2),
+    hits: Math.max(1, Math.floor(Number(u.def.fx.hits) || 8)),
+    dmgVal: base * sgUltVal(u, 'pct') / 100,
+    radiusPx: bfMeterPx(Math.max(1, Number(u.def.fx.m) || 6)),
+    brandSec: Math.max(0.5, Number(u.def.fx.sec) || 8)
   };
 }
 
@@ -5026,7 +5120,41 @@ function sgMireGroundTick(f, victims, ctx) {
     applyStatus(e, 'sgMire', { val: m.aspd || 0, dur: hold });
     if (m.poisonDps > 0) applyStatus(e, 'sgMirePoison', { dps: m.poisonDps, dur: hold, interval: m.poisonGap, source: mireSource });
     if (m.lavaDps > 0) applyStatus(e, 'sgMireLava', { dps: m.lavaDps, dur: hold, interval: m.lavaGap, source: mireSource });
+    /* 傳奇【侵蝕】與超神【惡疫魔沼】：兩者都是「離開沼澤後仍走完自己的持續時間」，
+       因此持續時間用各自的規格，而不是上面那個只給兩跳的 hold。 */
+    if (m.bleed) applyStatus(e, 'sgMireBleed', { dps: m.bleed.dps, dur: m.bleed.dur, interval: m.bleed.interval, source: mireSource });
+    if (m.plague) applyStatus(e, 'sgPlague', { dps: m.plague.dps, dur: m.plague.dur, interval: m.plague.interval, source: mireSource });
   }
+  // 超神【深淵火獄】：熔岩沼每隔一段時間噴出一道火龍捲（自己的節拍，不跟著沼澤每一拍）
+  sgMireInfernoTick(f, victims);
+}
+
+/* 超神【深淵火獄】的節拍：熔岩沼每 gap 秒在範圍內的一個敵人腳下噴出一道火龍捲，
+   並把該敵人的屬性標籤改寫為火屬性。節拍時刻記在場域實例上（執行期物件，不入存檔），
+   因此每一攤沼澤（含【毒沼增生】傳染出去的）各自獨立計時。 */
+function sgMireInfernoTick(f, victims) {
+  var spec = f.mire && f.mire.inferno;
+  if (!spec) return;
+  if (!(f.infernoAt > 0)) { f.infernoAt = GT + spec.gap; return; }   // 出生後先等一個節拍再噴
+  if (GT < f.infernoAt) return;
+  f.infernoAt = GT + spec.gap;
+  if (!victims.length) return;
+  var spot = victims[Math.floor(Math.random() * victims.length)];
+  if (!spot || spot.hp <= 0) return;
+  /* 屬性改寫塗在「被噴到的那個敵人」身上：火龍捲本身是場域，之後打到誰由幾何決定，
+     在這裡對整片沼澤全塗會讓一道火龍捲的效果擴散成整片，與設計文字不符。 */
+  if (typeof applyStatus === 'function') applyStatus(spot, 'sgInferno', { dur: spec.brandSec });
+  /* kind 刻意不用 'pillar'：sgGroundExpire 對 pillar／wall 會去跑**火龍捲樹**的
+     第 5／6 階（烈焰衝擊、重生），而這一道的 gid 是 mire——那兩階在泥沼術的表上
+     是完全不同的東西，會讀出一組沒有意義的數字並照樣播一發衝擊波特效。
+     顯示層不認得 'lavapillar'，會落到 sgGroundVfxSpec 的預設分支（火柱畫法），
+     正好就是我們要的那一道火龍捲。 */
+  sgSpawnGround(f.pEnt, f.st, 'mire', {
+    kind: 'lavapillar', tgt: spot, floatSel: f.floatSel,
+    radius: spec.radiusPx,
+    dmgVal: spec.dmgVal, hits: spec.hits, gap: spec.gap / spec.hits,
+    hitElem: 'fire'
+  });
 }
 
 /* 【毒沼增生】（T4）：沼澤結束時在附近較近的敵人腳下重新長出一攤（可再傳染的次數遞減）。 */
@@ -5085,7 +5213,8 @@ function skill2MoveSlowFactor(ent) {
   if (!(sgMireOn(ent) > 0)) return 1;
   return Math.max(0.05, 1 - Math.min(95, skill2MireMovePct()) / 100);
 }
-/* 【虛弱】（T2）＋【重力泥沼】（T6）：受泥沼影響的敵人受到的傷害提高（兩者累加）。 */
+/* 【虛弱】（T2）＋【重力泥沼】（T6）＋傳奇【腐化】：
+   受泥沼影響的敵人受到的傷害提高（三者累加，走 skill2VulnACfg 的 totalDmgPct）。 */
 function skill2MireVulnPct(target) {
   if (!(sgMireOn(target) > 0)) return 0;
   var lvs = skills2Levels('mire');
@@ -5094,7 +5223,74 @@ function skill2MireVulnPct(target) {
   var pct = 0;
   if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);
   if (lvs[5] > 0) pct += sgVal(t[5].fx, 'pct', lvs[5]);
+  /* 傳奇【腐化】：只對「泥沼範圍內**且**正在被控場」的敵人生效。
+     控場的判定沿用全專案既有的口徑（暈眩／減速，凍結與石化的行動限制也走暈眩管線），
+     與傳奇【崩山裂地者】完全同一條規則，不另立一套「什麼算控場」。 */
+  var corrupt = Number(sgLegendTick('mire').mireCorruptPct) || 0;
+  if (corrupt > 0 && typeof effectActive === 'function' &&
+      (effectActive(target, 'stun') || effectActive(target, 'slow'))) {
+    pct += corrupt;
+  }
   return pct;
+}
+
+/* 傳奇【削弱】：泥沼範圍中的敵人造成的傷害降低（乘區，掛在 skill2EnemyDamageFactor）。
+   與【僵化】相乘而不是相加——兩者是不同來源的獨立減益。 */
+function skill2MireWeakenFactor(ent) {
+  if (!(sgMireOn(ent) > 0)) return 1;
+  var w = sgLegendTick('mire').mireWeaken;
+  var cut = w ? Math.max(0, Math.min(95, Number(w.reducePct) || 0)) : 0;
+  return cut > 0 ? 1 - cut / 100 : 1;
+}
+
+/* 超神【惡疫魔沼】：中了【惡疫】的敵人，受到的**毒屬性**持續傷害額外提高。
+   掛點：js/combat.js tickStatuses 的每一跳（依狀態表的「傷害屬性」欄分流）。
+   走這裡而不是 resolveHit 既有的 skillElemAmp，是因為本專案的持續傷害一律是
+   「施放當下定版的平坦 dps」、根本不經過 resolveHit——與【火焰增幅】對燃燒
+   的既有關係一致。放大量的權威是**目前的超神進化等級**（不存在狀態值上），
+   與【泥沼緩速】同一種做法。 */
+function skill2DotElemFactor(ent, sid) {
+  var u = sgUlt('mire', 'plagueMire');
+  if (!u || !ent || !sid || !sgHasDot(ent, 'sgPlague')) return 1;
+  var def = (typeof statusDef === 'function') ? statusDef(sid) : null;
+  if (!def || def.elem !== 'poison') return 1;
+  return 1 + Math.max(0, sgUltVal(u, 'amp')) / 100;
+}
+
+/* ---- 超神【黃泉沼】：沼澤內的低血敵人每次受傷都有機率被直接斬殺 ----
+   機率逐次累加，計數與旗標掛在敵人實體上（純數字／布林，隨實體自然回收、不入存檔）。
+   ⚠️ 判定掛在 skills2OnEnemyDamaged（「每次受到傷害」的唯一收斂點），
+   但**不在那裡扣血**：那支是 resolveHit／applyEnemyHpDamage 中途呼叫的，
+   在裡面再打一次會遞迴，而且致死分支（out.killed）當下已經算完，
+   殺掉也不會有人去跑死亡結算。因此那裡只立旗標，實際斬殺留到 tickSkill2
+   的排程——那裡才有 ctx.onDeaths 可以收尾。 */
+function sgNetherMireOnDamaged(ent) {
+  var u = sgUlt('mire', 'netherMire');
+  if (!u || !ent || ent.hp <= 0 || ent._sgNetherKill) return;
+  // 比照傳奇【斬殺】：BOSS 不吃斬殺
+  if (ent.isBoss || ent.towerBoss || !(ent.maxHp > 0)) return;
+  if (!(sgMireOn(ent) > 0)) return;
+  var hpPct = Math.max(0, Math.min(100, Number(u.def.fx.hpPct) || 30));
+  if (ent.hp > ent.maxHp * hpPct / 100) return;
+  var stacks = Math.max(0, Number(ent._sgNetherStacks) || 0);
+  var pct = sgUltVal(u, 'chance') + stacks * sgUltVal(u, 'add');
+  ent._sgNetherStacks = stacks + 1;
+  if (chance(pct)) ent._sgNetherKill = true;
+}
+
+function sgTickNetherMire(ctx) {
+  if (!sgUlt('mire', 'netherMire')) return;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    if (!e || e.hp <= 0 || !e._sgNetherKill) continue;
+    e._sgNetherKill = false;
+    var before = out.dmg;
+    sgDerivedHit(e, e.hp, 'mire', ctx.floatSel, out, '💀', 0);
+    if (ctx.onDamage && out.dmg > before) ctx.onDamage(out.dmg - before);
+  }
+  if (out.killed && ctx.onDeaths) ctx.onDeaths();
 }
 
 /* ===========================================================================
@@ -5171,7 +5367,44 @@ function sgEarthguardRegenTier(kind) {
 }
 function skill2RegenFactor(kind) {
   var t = sgEarthguardRegenTier(kind);
-  return t ? 1 + sgVal(t.fx, 'pct', t.lv) / 100 : 1;
+  var mult = t ? 1 + sgVal(t.fx, 'pct', t.lv) / 100 : 1;
+  /* 超神【光耀之堂】：生命與法力回復再提高。獨立乘區（與 T3／T4 相乘而不是相加），
+     且只放大「回復」——設計文字沒有提到吸血／吸魔，那兩個仍只吃 T3／T4 的 drain 倍率。
+     ⚠️ 不看 sgEarthguardRegenTier：沒投資 T3／T4 時本效果照樣要生效。 */
+  var u = skill2EarthguardLevels() ? sgUlt('earthguard', 'hallOfRadiance') : null;
+  if (u) mult *= 1 + Math.max(0, sgUltVal(u, 'pct')) / 100;
+  return mult;
+}
+
+/* ---- 溢出的生命／法力：大地守護三個效果共用的收斂點 ----
+   掛點：formula.js 的 healPlayer（生命）與 gainPlayerMana（法力）——本專案
+   「我方資源入帳」的唯二出口，每秒回復、吸血、吸魔、過關回復全部經過它們。
+     ・傳奇【魔力滋養】：溢出法力的 pct% → 生命護盾
+     ・傳奇【生命滋養】：溢出生命的 pct% → 法力
+     ・超神【光耀之堂】：溢出的生命**與**法力各以 conv% → 生命護盾
+   護盾一律走 grantShield（護盾的唯一入口，因此吃護盾效率、技能護盾上限
+   與【戰神屠錄】的封鎖）。 */
+function skills2OnResourceOverflow(pEnt, st, kind, over) {
+  if (!pEnt || !st || !(over > 0)) return;
+  if (!skill2EarthguardLevels()) return;          // 沒裝配／沒投資大地守護＝零成本
+  var lg = sgLegendTick('earthguard');
+  var shield = 0;
+  if (kind === 'mp') {
+    var mf = lg.egManaOverflowShield;
+    if (mf) shield += over * Math.max(0, Number(mf.pct) || 0) / 100;
+  } else {
+    var hf = lg.egHpOverflowMana;
+    if (hf) {
+      /* 直接寫 mp 而不是再呼叫一次 gainPlayerMana：那會讓
+         「生命溢出 → 法力溢出 → 生命護盾」互相餵食成一個迴圈。
+         這一條路上的法力溢出直接捨棄。 */
+      var toMana = over * Math.max(0, Number(hf.pct) || 0) / 100;
+      if (toMana > 0) pEnt.mp = Math.min(Number(st.mp) || 0, (Number(pEnt.mp) || 0) + toMana);
+    }
+  }
+  var u = sgUlt('earthguard', 'hallOfRadiance');
+  if (u) shield += over * Math.max(0, sgUltVal(u, 'conv')) / 100;
+  if (shield > 0 && typeof grantShield === 'function') grantShield(pEnt, shield, st);
 }
 function skill2DrainFactor(kind) {
   var t = sgEarthguardRegenTier(kind);
@@ -5249,10 +5482,13 @@ function sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel) {
   }
 }
 
-/* 反射目標：範圍內任意 count 個；「除非只剩一個目標，否則避開當前攻擊者」。 */
+/* 反射目標：範圍內任意 count 個；「除非只剩一個目標，否則避開當前攻擊者」。
+   傳奇【靈魂連結】：可作用的敵人數 +count。 */
 function sgEarthguardReflectTargets(exclude, enemies, fx) {
   var radius = bfMeterPx(Number(fx.m) || 20);
-  var count = Math.max(1, Math.floor(Number(fx.count) || 1));
+  var link = sgLegendTick('earthguard').egReflectAdd;
+  var count = Math.max(1, Math.floor(Number(fx.count) || 1) +
+    Math.max(0, Math.floor(Number(link && link.count) || 0)));
   var others = [], self = [];
   for (var i = 0; i < (enemies || []).length; i++) {
     var e = enemies[i];
@@ -5269,6 +5505,37 @@ function sgEarthguardReflectTargets(exclude, enemies, fx) {
   return pick.slice(0, count);
 }
 
+/* ---- 【天地共生】的復活次數（超神【逆轉乾坤】）----
+   沒選【逆轉乾坤】時上限＝1，語意與改造前完全相同（「冷卻好了就是可以復活一次」）。
+   選了以後多出來的那幾次記在 SKILL2_RT.rebirth.charges（執行期，絕不入存檔）：
+     可用次數 ＝（冷卻已結束？1：0）＋ charges，上限為 cap。
+   充能規則：冷卻歸零時若還沒滿，charges +1 並重新起算冷卻；滿了就讓冷卻停在 0。
+   ⚠️ 上限用 Math.round 取整：表定「最多 2 次、每級 +0.1 次」＝ Lv.5 起變 3 次。
+   容量是一個**要能被看見**的整數，不適合像「不足 1 次以機率補」那樣每次擲骰。 */
+function skills2RebirthMaxCharges() {
+  var u = sgUlt('earthguard', 'fateReversal');
+  return u ? Math.max(1, Math.round(sgUltVal(u, 'max'))) : 1;
+}
+function sgRebirthCdSec(lvs) {
+  return Math.max(1, sgVal(SKILLS2.earthguard.tiers[6].fx, 'cd', lvs[6]));
+}
+/* 每 tick 的充能（掛在 tickSkill2）。沒選【逆轉乾坤】時直接返回＝零成本。 */
+function sgTickRebirthCharge(pEnt) {
+  var cap = skills2RebirthMaxCharges();
+  if (cap <= 1) { SKILL2_RT.rebirth = null; return; }
+  var lvs = skill2EarthguardLevels();
+  if (!lvs || lvs[6] < 1 || !pEnt) { SKILL2_RT.rebirth = null; return; }
+  if (!SKILL2_RT.rebirth) SKILL2_RT.rebirth = { charges: cap - 1 };   // 進場即滿
+  var rt = SKILL2_RT.rebirth;
+  rt.charges = Math.max(0, Math.min(cap - 1, Math.floor(Number(rt.charges) || 0)));
+  if (!pEnt.skillCds) pEnt.skillCds = {};
+  if ((pEnt.skillCds[SG_PREFIX + 'earthguard'] || 0) > 0) return;
+  if (rt.charges >= cap - 1) return;                                  // 已經滿了：冷卻停在 0
+  rt.charges++;
+  pEnt.skillCds[SG_PREFIX + 'earthguard'] = sgRebirthCdSec(lvs);
+  if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.skills = true;
+}
+
 /* 【天地共生】（T7）：死亡攔截。掛在野外 onPlayerFieldDeath 與高塔 endTowerFight
    兩個判死收斂點的最前端——持續傷害、自傷技能與敵人攻擊都會經過那裡。
    冷卻寫進 pEnt.skillCds['sg:earthguard']，直接沿用技能格的通用冷卻顯示。 */
@@ -5277,19 +5544,96 @@ function skills2TryRebirth(pEnt) {
   var lvs = skill2EarthguardLevels();
   if (!lvs || lvs[6] < 1) return false;
   if (!pEnt.skillCds) pEnt.skillCds = {};
-  if ((pEnt.skillCds[SG_PREFIX + 'earthguard'] || 0) > 0) return false;
+  var ready = !((pEnt.skillCds[SG_PREFIX + 'earthguard'] || 0) > 0);
+  var stored = (SKILL2_RT.rebirth && skills2RebirthMaxCharges() > 1)
+    ? Math.max(0, Math.floor(Number(SKILL2_RT.rebirth.charges) || 0)) : 0;
+  if (!ready && stored <= 0) return false;
   var fx = SKILLS2.earthguard.tiers[6].fx;
   var st = getStats();
   if (typeof cleanse === 'function') cleanse(pEnt);   // 先淨化再上無敵，避免無敵被自己清掉
   pEnt.hp = Math.max(1, Math.round(st.hp * sgVal(fx, 'pct', lvs[6]) / 100));
-  pEnt.skillCds[SG_PREFIX + 'earthguard'] = Math.max(1, sgVal(fx, 'cd', lvs[6]));
-  applyStatus(pEnt, 'invuln', { dur: Math.max(0.5, Number(fx.sec) || 5) });
+  /* 先花掉「冷卻已結束」的那一次，累積的次數留到最後——這樣冷卻才會立刻開始跑，
+     不會出現「還有存量所以冷卻一直停在 0」的無限復活。 */
+  if (ready) pEnt.skillCds[SG_PREFIX + 'earthguard'] = sgRebirthCdSec(lvs);
+  else SKILL2_RT.rebirth.charges = stored - 1;
+  var invulnSec = Math.max(0.5, Number(fx.sec) || 5);
+  applyStatus(pEnt, 'invuln', { dur: invulnSec });
+  /* 傳奇【不滅意志】要知道「這段無敵是天地共生給的」——玩家身上的無敵可能來自
+     潛力、神鑄或【大地之心】，那幾種不該被擊殺延長。 */
+  SKILL2_RT.rebirthInvuln = GT + invulnSec;
   sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: 1.2 });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '天地共生!', 'buff');
   if (typeof blog === 'function') {
-    blog('🌍 【天地共生】大地將你托起——你原地復活，回復 ' + fmt(pEnt.hp) + ' 生命並獲得無敵！', 'info');
+    var left = (SKILL2_RT.rebirth && skills2RebirthMaxCharges() > 1)
+      ? '（剩餘累積復活 ' + Math.max(0, Math.floor(Number(SKILL2_RT.rebirth.charges) || 0)) + ' 次）' : '';
+    blog('🌍 【天地共生】大地將你托起——你原地復活，回復 ' + fmt(pEnt.hp) + ' 生命並獲得無敵！' + left, 'info');
   }
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.battle = true; UI.dirty.skills = true; }
+  return true;
+}
+
+/* ===========================================================================
+   新版技能的擊殺掛點（js/combat.js onFieldKill）
+   ---------------------------------------------------------------------------
+   目前三個來源全部屬於大地守護：
+     傳奇【地之心】   → 【天地共生】的復活冷卻 -sec 秒
+     傳奇【不滅意志】 → 天地共生的無敵期間，每殺 1 個敵人無敵 +sec 秒
+     超神【天地再造】 → 普通／菁英敵人機率原地重生
+   回傳 true ＝「這隻敵人要重生」，實際把牠放回戰鬥的欄位由 combat.js 負責
+  （`_rewarded`／`_deathClearCd` 那幾個是野外戰鬥自己的簿記，不該由技能層去動）。
+   高塔沒有掛這一支：那邊的擊殺只有「BOSS 死了＝戰鬥結束」一種，
+   三個效果沒有一個在那個時間點還有意義。 */
+function skills2OnEnemyKill(pEnt, mEnt, floatSel) {
+  var lvs = skill2EarthguardLevels();
+  if (!lvs) return false;
+  var lg = sgLegendTick('earthguard');
+  sgEarthguardKillCdr(pEnt, lvs, lg);
+  sgEarthguardKillInvuln(pEnt, lg);
+  return sgEarthguardRebirthEnemy(mEnt, floatSel);
+}
+
+/* 傳奇【地之心】：每殺 1 個敵人，【天地共生】的復活冷卻縮短。 */
+function sgEarthguardKillCdr(pEnt, lvs, lg) {
+  var c = lg.egKillCdr;
+  if (!c || !pEnt || lvs[6] < 1) return;
+  var sec = Math.max(0, Number(c.sec) || 0);
+  if (!(sec > 0) || !pEnt.skillCds) return;
+  var cd = Number(pEnt.skillCds[SG_PREFIX + 'earthguard']) || 0;
+  if (!(cd > 0)) return;
+  pEnt.skillCds[SG_PREFIX + 'earthguard'] = Math.max(0, cd - sec);
+  if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.skills = true;
+}
+
+/* 傳奇【不滅意志】：天地共生的無敵期間，每殺 1 個敵人無敵時間延長。
+   只延長**天地共生給的那一段**（SKILL2_RT.rebirthInvuln 是它的時戳），
+   其他來源的無敵（潛力、神鑄、【大地之心】）不受影響。 */
+function sgEarthguardKillInvuln(pEnt, lg) {
+  var w = lg.egKillInvuln;
+  if (!w || !pEnt) return;
+  var sec = Math.max(0, Number(w.sec) || 0);
+  if (!(sec > 0) || !(SKILL2_RT.rebirthInvuln > GT)) return;
+  if (!pEnt.effects || !(pEnt.effects.invuln > GT)) return;
+  pEnt.effects.invuln += sec;
+  SKILL2_RT.rebirthInvuln = pEnt.effects.invuln;
+}
+
+/* 超神【天地再造】：被殺死的普通／菁英敵人機率以一定比例的生命重生。
+   `_sgReborn` 掛在敵人實體上（隨實體回收、不入存檔），因此**同一隻只會重生一次**——
+   滿級機率會被夾到 100%，沒有這道閘門就是無限刷怪。 */
+function sgEarthguardRebirthEnemy(mEnt, floatSel) {
+  var u = sgUlt('earthguard', 'worldRebirth');
+  if (!u || !mEnt || mEnt._sgReborn) return false;
+  if (mEnt.isBoss || mEnt.towerBoss || !(Number(mEnt.maxHp) > 0)) return false;
+  if (!chance(Math.min(100, sgUltVal(u, 'chance')))) return false;
+  var hpPct = Math.max(1, Math.min(100, sgUltVal(u, 'hp')));
+  mEnt._sgReborn = true;
+  mEnt.hp = Math.max(1, Math.round(mEnt.maxHp * hpPct / 100));
+  mEnt._sgNetherKill = false;   // 上一條命留下的斬殺旗標不帶到新的一條命
+  /* preserveDeadTargets：這一刻牠的 hp 已經被寫回去了，但顯示層那一側仍在播死亡動畫，
+     特效必須指名這隻屍體才看得到「牠被重新塑形」。 */
+  sgEmitVfx('earthguard', [mEnt], floatSel || 'mv-float', {
+    fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1, preserveDeadTargets: true
+  });
   return true;
 }
 
@@ -5309,20 +5653,33 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[1] > 0) pct += sgVal(t[1].fx, 'pct', lvs[1]);   // 強化閃電
   if (lvs[5] > 0) pct += sgVal(t[5].fx, 'pct', lvs[5]);   // 雷幻身（使用者決策：整道鏈恆時增傷）
   if (lvs[6] > 0) pct += sgVal(t[6].fx, 'pct', lvs[6]);   // 雷電暴風
+  var lg = sgLegend('chainlightning');
   var links = Math.max(1, Math.floor(Number(t[0].fx.count) || 4));
   if (lvs[3] > 0) links += sgRollCount(sgVal(t[3].fx, 'add', lvs[3]));
   if (lvs[6] > 0) links += sgRollCount(sgVal(t[6].fx, 'add', lvs[6]));
+  links += sgLegendCount(lg.chainLinkAdd);           // 傳奇【電荷連鎖】
+  var splashPct = lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0;
   var cfg = {
     dmgVal: sgGroupBaseStat(g, st) * pct / 100,
     links: links,
     hopPx: bfMeterPx(Number(t[0].fx.m) || 30),
     extraHits: lvs[2] > 0 ? sgRollCount(sgVal(t[2].fx, 'add', lvs[2])) : 0,
-    splashPct: lvs[4] > 0 ? sgVal(t[4].fx, 'pct', lvs[4]) : 0,
-    splashCount: Math.max(1, Math.floor(Number(t[4].fx.count) || 1)),
+    // 傳奇【雷散落】：擴散的傷害提高（乘算在該階自己的比例上），且多打 1 個敵人
+    splashPct: splashPct * (1 + Math.max(0, Number(lg.chainSplashPct) || 0) / 100),
+    splashCount: Math.max(1, Math.floor(Number(t[4].fx.count) || 1)) + sgLegendCount(lg.chainSplashAdd),
     splashPx: bfMeterPx(Number(t[4].fx.m) || 6),
-    selfRelay: lvs[5] > 0
+    selfRelay: lvs[5] > 0,
+    // 傳奇【超導】：同一道鏈每彈射 1 次，之後每一擊的傷害再加一份（加算，不複利）
+    bouncePct: Math.max(0, Number(lg.chainBouncePct) || 0),
+    // 傳奇【過載】：同一個敵人被閃電鏈打滿 N 次就炸開一次（計數掛在敵人實體上，隨實體回收）
+    overload: lg.chainOverload || null,
+    overloadDmg: lg.chainOverload
+      ? sgGroupBaseStat(g, st) * (Number(lg.chainOverload.pct) || 0) / 100 : 0,
+    overloadPx: lg.chainOverload ? bfMeterPx(Number(lg.chainOverload.m) || 0) : 0,
+    pool: pool, floatSel: floatSel, out: out, pEnt: pEnt, st: st
   };
   var bolts = lvs[6] > 0 ? Math.max(1, Math.floor(Number(t[6].fx.count) || 3)) : 1;
+  bolts += sgLegendCount(lg.chainBoltAdd);           // 傳奇【電擊】
   var starts = sgChainStarts(primary, pool, bolts);
   /* 【雷電暴風】：每次彈射有機率排入一條從該彈射目標起手的獨立閃電鏈。
      生成鏈也沿用相同規則，因此每條鏈的彈射都能再次觸發；上限只作為極端
@@ -5339,6 +5696,10 @@ function sgCastChainlightning(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   while (cfg.spawnQueue.length) {
     sgChainlightningBolt(pEnt, st, cfg, cfg.spawnQueue.shift(), pool, floatSel, out);
   }
+  // 超神【永恒超導體】：另外一道只在「自身 ↔ 敵人」之間往返的閃電鏈
+  sgChainSuperconductor(pEnt, st, cfg, pool, floatSel, out);
+  // 超神【飛雷神】：施放後進入放電期，節拍由 sgTickFlyingThunder 驅動
+  sgArmFlyingThunder();
 }
 
 /* 【雷電暴風】的三道鏈盡量從不同的敵人起手；敵人不夠時才輪流重用同一個起點。
@@ -5365,6 +5726,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   var cur = start;
   var visited = [start];
   var isBounce = false;   // 起手那一擊不算彈射（電殛擴散只在彈射時追加）
+  var bounces = 0;        // 這一道鏈已經彈射幾次（傳奇【超導】的傷害成長）
   var linksLeft = cfg.links;
   var delayMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(start) * 1000) : 0;
   sgEmitVfx(gid, [start], floatSel, {
@@ -5375,10 +5737,14 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   while (linksLeft > 0 && cur && cur.hp > 0 && guard < 64) {
     guard++;
     linksLeft--;
-    sgHitOne(pEnt, st, cur, cfg.dmgVal, gid, floatSel, out, delayMs);
+    /* 傳奇【超導】：每彈射 1 次，這一道鏈之後每一擊的傷害就多一份（加算而非複利——
+       設計文檔寫的是「每彈射 1 次傷害 +10%」，複利會讓長鏈的尾段爆炸成完全不同的量級）。 */
+    var hopDmg = cfg.dmgVal * (1 + cfg.bouncePct * bounces / 100);
+    sgHitOne(pEnt, st, cur, hopDmg, gid, floatSel, out, delayMs);
+    sgChainOverload(cfg, cur, pool, delayMs);
     // 【雷鳴術】：被擊中的敵人再多吃幾次同樣的閃電傷害（不足 1 次的部分已於施放時擲骰）
     for (var e = 0; e < cfg.extraHits; e++) {
-      sgHitOne(pEnt, st, cur, cfg.dmgVal, gid, floatSel, out, delayMs + sgStaggerMs(e + 1));
+      sgHitOne(pEnt, st, cur, hopDmg, gid, floatSel, out, delayMs + sgStaggerMs(e + 1));
     }
     // 【電殛擴散】：每次彈射時劈向附近的敵人（不占彈射數、不繼續延伸鏈）
     if (isBounce && cfg.splashPct > 0) {
@@ -5386,7 +5752,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       var splash = (typeof bfRandomOthers === 'function')
         ? bfRandomOthers(cur, pool, cfg.splashCount, cfg.splashPx, null) : [];
       for (var s = 0; s < splash.length; s++) {
-        sgHitOne(pEnt, st, splash[s], cfg.dmgVal * cfg.splashPct / 100, gid, floatSel, out,
+        sgHitOne(pEnt, st, splash[s], hopDmg * cfg.splashPct / 100, gid, floatSel, out,
           delayMs + sgStaggerMs(s + 1));
       }
       if (splash.length) {
@@ -5420,7 +5786,161 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
     delayMs += hopMs;
     cur = next;
     isBounce = true;
+    bounces++;
   }
+}
+
+/* 傳奇【過載】：同一個敵人被閃電鏈打滿 N 次就在牠身上炸開一次，計數隨即歸零重算。
+   計數掛在敵人實體上（純 JSON、隨實體自然回收），因此跨施放也會累積——
+   設計文檔寫的是「1 個敵人受到 5 次彈射效果後」，沒有限定同一次施放。
+   爆炸傷害是衍生傷害（sgDerivedHit）：它不是一次攻擊，不再過命中與爆擊。 */
+function sgChainOverload(cfg, target, pool, delayMs) {
+  if (!cfg.overload || !target || target.hp <= 0) return;
+  var need = Math.max(1, Math.floor(Number(cfg.overload.hits) || 0));
+  target._sgChainHits = (Number(target._sgChainHits) || 0) + 1;
+  if (target._sgChainHits < need) return;
+  target._sgChainHits -= need;
+  if (!(cfg.overloadDmg > 0)) return;
+  var victims = sgEnemiesAround(target, pool, cfg.overloadPx);
+  if (!victims.length) return;
+  sgEmitVfx('chainlightning', victims, cfg.floatSel, {
+    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.4
+  });
+  for (var i = 0; i < victims.length; i++) {
+    sgDerivedHit(victims[i], cfg.overloadDmg, 'chainlightning', cfg.floatSel, cfg.out, '⚡',
+      delayMs + sgStaggerMs(i));
+  }
+}
+
+/* 超神【永恒超導體】：一道只在「自身 ↔ 敵人」之間往返的閃電鏈。
+   「無限彈射」比照【無限追魂刃】的既有裁定＝範圍內每個敵人各命中一次
+   （真的不設上限會在敵人一多時變成單次施放無限迴圈）。
+   每經過自身一次就疊 1 層超導電荷，該增益提高你的雷電傷害（見 skill2LightningDamageUpPct）。 */
+function sgChainSuperconductor(pEnt, st, cfg, pool, floatSel, out) {
+  var u = sgUlt('chainlightning', 'eternalSuperconductor');
+  if (!u) return;
+  var rPx = bfMeterPx(sgUltVal(u, 'm'));
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(pool)
+    : (pool || []).filter(function (e) { return e && e.hp > 0; });
+  var inRange = [];
+  for (var i = 0; i < live.length; i++) {
+    var d = (typeof bfEntityDistance === 'function') ? bfEntityDistance(live[i]) : null;
+    // 無座標（高塔）的敵人距離為 null／NaN：一律視為在範圍內，退化為純單體往返
+    if (!(d > 0) || d <= rPx) inRange.push(live[i]);
+  }
+  if (!inRange.length) return;
+  // 「範圍內的任意敵人」＝隨機順序（設計文檔沒有指定最近）
+  var order = (typeof bfRandomOthers === 'function')
+    ? bfRandomOthers(null, inRange, inRange.length, 0, null) : inRange.slice();
+  if (!order.length) order = inRange.slice();
+  var perStack = sgUltVal(u, 'pct');
+  var maxStacks = Math.max(1, Math.floor(Number(u.def.fx.maxStacks) || 100));
+  var delayMs = 0;
+  sgEmitPlayerVfx('chainlightning', floatSel,
+    { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35 });
+  for (var k = 0; k < order.length; k++) {
+    var tgt = order[k];
+    if (!tgt || tgt.hp <= 0) continue;
+    var hopMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(tgt) * 1000) : 0;
+    /* 每一跳都是「自身 → 敵人」，因此特效恆是單目標的雷鏈（起點就是玩家）。 */
+    sgEmitVfx('chainlightning', [tgt], floatSel, {
+      fxKind: 'chain', variant: 'lightning-chain', count: 1,
+      delayMs: delayMs, travelMs: [hopMs], preserveDeadTargets: true
+    });
+    delayMs += hopMs;
+    sgHitOne(pEnt, st, tgt, cfg.dmgVal, 'chainlightning', floatSel, out, delayMs);
+    sgSuperconductStack(pEnt, perStack, maxStacks);   // 彈回自身＝疊 1 層
+  }
+}
+
+/* 超導電荷的疊層：層數上限與單層值都來自參數表，引擎只負責疊。
+   持有者記在 RT，死亡／讀檔／進出塔時由 resetSkill2RT 收回（比照【戰神屠錄】）。 */
+function sgSuperconductStack(pEnt, perStack, maxStacks) {
+  if (!pEnt || !(perStack > 0) || typeof applyStatus !== 'function') return;
+  applyStatus(pEnt, 'sgSuperconduct', { val: perStack, maxStacks: maxStacks });
+  SKILL2_RT.superconduct = { pEnt: pEnt };
+}
+
+/* 超神【永恒超導體】的雷電傷害增幅（掛在 legendary.js legendaryElementDamageUp——
+   全專案「屬性傷害提升%」的唯一收斂點，普攻與新舊技能因此一體生效）。 */
+function skill2LightningDamageUpPct(pEnt) {
+  if (!pEnt || typeof buffVal !== 'function') return 0;
+  return Math.max(0, buffVal(pEnt, 'sgSuperconduct'));
+}
+
+/* 超神【飛雷神】：施放連鎖閃電後進入放電期，期間每 gap 秒放出 count 道閃電。
+   節拍記在 RT（不入存檔）；重複施放會直接重新起算整段持續時間。
+   放電對象與飄字都由 tickSkill2 的 ctx 提供，因此這裡只需要時刻。 */
+function sgArmFlyingThunder() {
+  var u = sgUlt('chainlightning', 'flyingThunderGod');
+  if (!u) return;
+  var sec = sgUltVal(u, 'sec');
+  if (!(sec > 0)) return;
+  SKILL2_RT.flyThunder = { until: GT + sec, nextAt: GT };
+}
+
+/* 放電期的每一拍：打向範圍內「最遠」的 count 個敵人，各自再炸開一個半徑 r 的範圍。
+   最遠而不是最近＝這一招的用意是把打不到的遠處敵人一起收掉，因此距離由遠到近排序。 */
+function sgTickFlyingThunder(ctx, dt) {
+  var ft = SKILL2_RT.flyThunder;
+  if (!ft) return;
+  var u = sgUlt('chainlightning', 'flyingThunderGod');
+  if (!u || ft.until <= GT || !skills2Equipped('chainlightning')) { SKILL2_RT.flyThunder = null; return; }
+  // 死亡／倒地：整段放電期與下一拍一起往後推，剩餘時間不變
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    ft.until = sgPauseSchedule(ft.until, dt);
+    ft.nextAt = sgPauseSchedule(ft.nextAt, dt);
+    return;
+  }
+  var gap = Math.max(0.05, sgUltVal(u, 'gap'));
+  if (GT < ft.nextAt) return;
+  ft.nextAt = GT + gap;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var farthest = sgFarthestEnemies(enemies, bfMeterPx(sgUltVal(u, 'm')),
+    Math.max(1, Math.floor(Number(u.def.fx.count) || 3)));
+  if (!farthest.length) return;
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  if (!st) return;
+  var dmgVal = sgGroupBaseStat(SKILLS2.chainlightning, st) * sgUltVal(u, 'pct') / 100;
+  var burstPx = bfMeterPx(Number(u.def.fx.r) || 0);
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var i = 0; i < farthest.length; i++) {
+    /* 「目標範圍 r 米內的所有敵人」包含被打中的那一個，因此用 bfTargetsAround（含中心）
+       而不是 sgEnemiesAround（排除中心）。無座標（高塔）時退化為只打該目標。 */
+    var victims = (typeof bfTargetsAround === 'function' && burstPx > 0)
+      ? bfTargetsAround(farthest[i], enemies, burstPx) : [];
+    if (!victims.length) victims = [farthest[i]];
+    sgEmitVfx('chainlightning', [farthest[i]], ctx.floatSel, {
+      fxKind: 'chain', variant: 'lightning-chain', count: 1, delayMs: sgStaggerMs(i),
+      preserveDeadTargets: true
+    });
+    sgEmitVfx('chainlightning', victims, ctx.floatSel, {
+      fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning',
+      delayMs: sgStaggerMs(i), dur: 0.3, area: sgAreaAround(farthest[i], burstPx)
+    });
+    for (var v = 0; v < victims.length; v++) {
+      sgHitOne(ctx.pEnt, st, victims[v], dmgVal, 'chainlightning', ctx.floatSel, out, sgStaggerMs(i));
+    }
+  }
+  if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* 範圍內距離我方「最遠」的 count 個敵人（無座標者排在最後，因為算不出距離）。 */
+function sgFarthestEnemies(enemies, rPx, count) {
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies)
+    : (enemies || []).filter(function (e) { return e && e.hp > 0; });
+  var deco = [];
+  for (var i = 0; i < live.length; i++) {
+    var d = (typeof bfEntityDistance === 'function') ? bfEntityDistance(live[i]) : null;
+    if (!(d > 0)) d = 0;                      // 高塔（無座標）：距離視為 0，仍納入候選
+    if (rPx > 0 && d > rPx) continue;
+    deco.push({ ent: live[i], d: d });
+  }
+  deco.sort(function (a, b) { return b.d - a.d; });
+  var out = [];
+  for (var k = 0; k < deco.length && out.length < count; k++) out.push(deco[k].ent);
+  return out;
 }
 
 /* ===========================================================================
@@ -5436,10 +5956,16 @@ function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[3] > 0) pct += sgVal(t[3].fx, 'pct', lvs[3]);   // 閃電增幅
   var dmgVal = sgGroupBaseStat(g, st) * pct / 100;
+  var lg = sgLegend('thunderstrike');
   var targetCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 2));
   if (lvs[1] > 0) targetCount += sgRollCount(sgVal(t[1].fx, 'add', lvs[1]));
+  targetCount += sgLegendCount(lg.thunderTargetAdd);   // 傳奇【雷鎖】
   var hitsPer = 1;
   if (lvs[2] > 0) hitsPer += sgRollCount(sgVal(t[2].fx, 'add', lvs[2]));
+  /* 傳奇【三重雷】：直接加在「每個目標的攻擊次數」這個計數上。
+     不以【雙重落雷】是否已學為前提——它加的是計數本身（底值 1），
+     與【雷之再生】那種「把某一階的機率改寫成 100%」的效果性質不同。 */
+  hitsPer += sgLegendCount(lg.thunderHitAdd);
   if (lvs[6] > 0) {
     // 【殛道落雷】：攻擊次數與目標數同時乘倍（在第 2／3 階的追加之後才乘）
     var mult = Math.max(1, Math.floor(Number(t[6].fx.mult) || 2));
@@ -5447,7 +5973,7 @@ function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     hitsPer *= mult;
   }
   var gapMs = Math.max(0, Number(t[0].fx.gap) || 0.2) * 1000;
-  var targets = sgThunderTargets(primary, pool, lvs, targetCount);
+  var targets = sgThunderTargets(primary, pool, lvs, targetCount, lg);
   var boltIndex = 0;
   for (var i = 0; i < targets.length; i++) {
     for (var h = 0; h < hitsPer; h++) {
@@ -5455,20 +5981,64 @@ function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       boltIndex++;
     }
   }
+  // 超神【雷電矩陣】：與落雷同時橫掃全場的十字雷幕
+  sgThunderMatrix(pEnt, st, g, pool, floatSel, out);
 }
 
 /* 落雷的目標清單：射程內隨機取 count 個；敵人不足時輪流重用
    （表定是「對 castM 米內的 N 個目標降下落雷」，沒有指定最近＝射程內隨機；
-   敵人少於 N 時全落在同一批人身上）。第 1 道固定落在施放的主目標身上。 */
-function sgThunderTargets(primary, pool, lvs, count) {
-  var rest = (typeof bfRandomOthers === 'function') ? bfRandomOthers(null, pool, pool.length, 0, null) : [];
-  var inRange = [primary];
-  for (var i = 0; i < rest.length; i++) {
-    if (rest[i] !== primary && skills2CanReach('thunderstrike', rest[i], lvs)) inRange.push(rest[i]);
+   敵人少於 N 時全落在同一批人身上）。第 1 道固定落在施放的主目標身上。
+   傳奇【引雷針】改寫這個順序：範圍內生命值最低的敵人優先，主目標不再固定第 1 順位
+  （「優先攻擊」的字面意思就是換掉選目標的規則）。範圍內沒有敵人時退回原本的隨機規則。 */
+function sgThunderTargets(primary, pool, lvs, count, lg) {
+  var rod = sgThunderRodSpec(lg);
+  var inRange;
+  if (rod) {
+    inRange = sgThunderRodTargets(pool, rod);
+    if (!inRange.length) inRange = null;
+  }
+  if (!inRange) {
+    var rest = (typeof bfRandomOthers === 'function') ? bfRandomOthers(null, pool, pool.length, 0, null) : [];
+    inRange = [primary];
+    for (var i = 0; i < rest.length; i++) {
+      if (rest[i] !== primary && skills2CanReach('thunderstrike', rest[i], lvs)) inRange.push(rest[i]);
+    }
   }
   var out = [];
   for (var k = 0; k < count; k++) out.push(inRange[k % inRange.length]);
   return out;
+}
+
+/* 傳奇【引雷針】的規格（沒裝就是 null）。 */
+function sgThunderRodSpec(lg) {
+  var spec = lg && lg.thunderRod;
+  return (spec && Number(spec.m) > 0) ? spec : null;
+}
+
+/* 引雷針的候選：我方 m 米內的存活敵人，依「目前生命值」由低到高排序。
+   無座標（高塔）的敵人一律視為在範圍內，否則高塔會整個選不到目標。 */
+function sgThunderRodTargets(pool, spec) {
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(pool)
+    : (pool || []).filter(function (e) { return e && e.hp > 0; });
+  var rPx = bfMeterPx(Number(spec.m) || 0);
+  var picked = [];
+  for (var i = 0; i < live.length; i++) {
+    var d = (typeof bfEntityDistance === 'function') ? bfEntityDistance(live[i]) : null;
+    if (!(d > 0) || d <= rPx) picked.push(live[i]);
+  }
+  picked.sort(function (a, b) { return (Number(a.hp) || 0) - (Number(b.hp) || 0); });
+  return picked;
+}
+
+/* 引雷針的加傷：落地當下才判定「這個目標還在不在引雷範圍內」，
+   與【殛道落雷】的暈眩加成同一個掛點，因此【迅雷重生】再生出來的落雷也吃得到。
+   加成給「範圍內的敵人」而不是只給生命值最低的那一個：選目標本來就已經把範圍內
+   最弱的挑出來了，再收斂到單一實體會讓多目標時的加成幾乎全部落空。 */
+function sgThunderRodBonusPct(target, spec) {
+  if (!spec || !target) return 0;
+  var d = (typeof bfEntityDistance === 'function') ? bfEntityDistance(target) : null;
+  if (d > 0 && d > bfMeterPx(Number(spec.m) || 0)) return 0;
+  return Math.max(0, Number(spec.pct) || 0);
 }
 
 /* 一道落雷：排程落地結算，並掛上【雷電脈衝】的暈眩與【迅雷重生】的再生。
@@ -5476,14 +6046,25 @@ function sgThunderTargets(primary, pool, lvs, count) {
 function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, out, castDelayMs, regenDone) {
   if (!target || target.hp <= 0) return;
   var t = g.tiers;
+  var lg = sgLegend('thunderstrike');
   var timing = sgMeteorFallTiming();
-  var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
-  var stunCount = Math.max(1, Math.floor(Number(t[4].fx.count) || 2));
+  /* 傳奇【震雷】：暈眩時間 +N 秒。第 5 階沒學時仍會暈——它加的是「被落雷擊中的敵人
+     的暈眩時間」這個量本身；但同時暈眩的顆數退回 1（表定的 2 顆屬於【雷電脈衝】）。 */
+  var stunSec = (lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0) +
+    Math.max(0, Number(lg.thunderStunAdd && lg.thunderStunAdd.sec) || 0);
+  var stunCount = lvs[4] > 0 ? Math.max(1, Math.floor(Number(t[4].fx.count) || 2)) : 1;
   var stunPx = bfMeterPx(Number(t[4].fx.m) || 6);
+  var quakeVulnPct = Math.max(0, Number(lg.thunderStunnedVulnPct) || 0);
   var vulnPct = lvs[6] > 0 ? sgVal(t[6].fx, 'pct', lvs[6]) : 0;
   var impactRadius = lvs[6] > 0 ? bfMeterPx(Number(t[6].fx.m) || 6) : 0;
+  /* 傳奇【雷之再生】：把【迅雷重生】的機率改寫成表定值（提高「至」，不是加上去）。
+     只在該階已學時生效——它改寫的是那一階的機率，那一階不存在就沒有東西可以改。 */
   var regenChance = lvs[5] > 0 ? sgVal(t[5].fx, 'chance', lvs[5]) : 0;
+  if (lvs[5] > 0 && lg.thunderRegenTo) {
+    regenChance = Math.max(regenChance, Math.max(0, Number(lg.thunderRegenTo.chance) || 0));
+  }
   var regenMax = Math.max(0, Math.floor(Number(t[5].fx.max) || 5));
+  var rod = sgThunderRodSpec(lg);
 
   sgEmitVfx('thunderstrike', [target], floatSel, {
     fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
@@ -5492,9 +6073,20 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
   sgQueueMeteor(pEnt, st, dmgVal, target, pool, impactRadius, null, floatSel, out,
     GT + (castDelayMs + timing.fallMs) / 1000, {
       gid: 'thunderstrike', variant: 'thunder-impact', elem: 'lightning',
-      /* 【殛道落雷】：加成在落地當下才判定——先落的雷把人暈住，後落的才吃得到。 */
-      bonusPctFn: vulnPct > 0 ? function (tgt) { return sgIsStunned(tgt) ? vulnPct : 0; } : null,
+      /* 【殛道落雷】：加成在落地當下才判定——先落的雷把人暈住，後落的才吃得到。
+         傳奇【引雷針】的加傷走同一條路（同樣是落地當下的狀態決定）。 */
+      bonusPctFn: (vulnPct > 0 || rod) ? function (tgt) {
+        return (vulnPct > 0 && sgIsStunned(tgt) ? vulnPct : 0) + sgThunderRodBonusPct(tgt, rod);
+      } : null,
       onImpact: function (m, victims, ctx) {
+        /* 傳奇【震雷】：被落雷擊中的敵人留下雷痕，暈眩中受到的傷害提高。
+           塗在「所有被這道雷打到的敵人」身上，而不是只有被暈的那幾個——
+           設計文檔寫的是「受到落雷術擊中的敵人」。 */
+        if (quakeVulnPct > 0 && typeof applyStatus === 'function') {
+          for (var qi = 0; qi < victims.length; qi++) {
+            if (victims[qi] && victims[qi].hp > 0) applyStatus(victims[qi], 'sgThunderQuake', { val: quakeVulnPct });
+          }
+        }
         if (stunSec > 0) {
           /* 表定範圍＝「目標本身以及 6 米內的任 1 個敵人」，共 stunCount 個。 */
           var stunned = (m.target && m.target.hp > 0) ? [m.target] : [];
@@ -5514,6 +6106,128 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
         }
       }
     });
+}
+
+/* 超神【雷電矩陣】：橫向與直向各 count 道貫穿全場的雷幕，一次結算完畢。
+   幾何走 battlefield.js 的線段命中（bfSegmentTargets）——與貫穿突刺、裂空飛斬同一支，
+   本檔不自己算「誰在線上」。每道雷幕的位置以場上敵人當錨點：
+   設計文檔寫的是「橫掃全場」，錨在敵人身上才保證每一道都掃得到人，
+   而不是在空場上隨機畫四條線。 */
+function sgThunderMatrix(pEnt, st, g, pool, floatSel, out) {
+  var u = sgUlt('thunderstrike', 'thunderMatrix');
+  if (!u || typeof bfSegmentTargets !== 'function') return;
+  var lines = Math.max(1, Math.round(sgUltVal(u, 'count')));
+  var dmgVal = sgGroupBaseStat(g, st) * sgUltVal(u, 'pct') / 100;
+  if (!(dmgVal > 0)) return;
+  var halfW = bfMeterPx(Number(u.def.fx.wid) || 3) / 2;
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(pool)
+    : (pool || []).filter(function (e) { return e && e.hp > 0; });
+  if (!live.length) return;
+  // 錨點：場上隨機取 lines×2 個敵人（不足時輪流重用），前半橫向、後半直向
+  var anchors = (typeof bfRandomOthers === 'function')
+    ? bfRandomOthers(null, live, lines * 2, 0, null) : live.slice();
+  if (!anchors.length) anchors = live.slice();
+  /* 全場長度：以出怪距離的兩倍為界（場上任何敵人都在這個範圍內），
+     線段由錨點往兩側各延伸一半，因此整條線確實橫貫全場。 */
+  var span = (typeof bfSpawnDist === 'function') ? bfSpawnDist() * 2 : 1000;
+  var hitSet = [];
+  for (var i = 0; i < lines * 2; i++) {
+    var anchor = anchors[i % anchors.length];
+    var p = (typeof bfPos === 'function') ? bfPos(anchor) : null;
+    if (!p) continue;
+    var angle = (i < lines) ? 0 : Math.PI / 2;          // 前半橫向、後半直向
+    var origin = { x: p.x - Math.cos(angle) * span, y: p.y - Math.sin(angle) * span };
+    var victims = bfSegmentTargets(origin, angle, 0, span * 2, live, halfW);
+    for (var v = 0; v < victims.length; v++) {
+      if (hitSet.indexOf(victims[v]) < 0) hitSet.push(victims[v]);
+      sgHitOne(pEnt, st, victims[v], dmgVal, 'thunderstrike', floatSel, out, sgStaggerMs(i));
+    }
+  }
+  if (!hitSet.length) return;
+  sgEmitVfx('thunderstrike', hitSet, floatSel, {
+    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1, dur: 0.5
+  });
+}
+
+/* 超神【雷霆天劫】：一道永久存在的雷電，每 gap 秒自己找 m 米內生命值最低的敵人劈下去。
+   「永久持續」＝只要落雷術還裝配在技能列上就一直跑（比照【殺神領域】的永久領域），
+   因此節拍記在 RT、由 tickSkill2 驅動，而不是綁在某一次施放上。 */
+function sgTickHeavenTribulation(ctx, dt) {
+  var u = sgUlt('thunderstrike', 'heavenTribulation');
+  if (!u || !skills2Equipped('thunderstrike')) { SKILL2_RT.tribulationAt = 0; return; }
+  // 死亡／倒地：節拍往後推，剩餘時間不變（見 skills2AutoCastBlocked）
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    SKILL2_RT.tribulationAt = sgPauseSchedule(SKILL2_RT.tribulationAt, dt);
+    return;
+  }
+  var gap = Math.max(0.05, sgUltVal(u, 'gap'));
+  if (!(SKILL2_RT.tribulationAt > 0)) { SKILL2_RT.tribulationAt = GT + gap; return; }
+  if (GT < SKILL2_RT.tribulationAt) return;
+  SKILL2_RT.tribulationAt = GT + gap;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  // 目標規則與傳奇【引雷針】相同（範圍內生命值最低），因此直接沿用同一支選目標
+  var candidates = sgThunderRodTargets(enemies, { m: sgUltVal(u, 'm') });
+  var target = candidates[0];
+  if (!target || target.hp <= 0) return;
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  if (!st) return;
+  var out = { killed: false, dmg: 0, crit: false };
+  sgEmitVfx('thunderstrike', [target], ctx.floatSel, {
+    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1, dur: 0.35
+  });
+  sgHitOne(ctx.pEnt, st, target,
+    sgGroupBaseStat(SKILLS2.thunderstrike, st) * sgUltVal(u, 'pct') / 100,
+    'thunderstrike', ctx.floatSel, out, 0);
+  if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
+  if (out.killed && ctx.onDeaths) ctx.onDeaths();
+}
+
+/* ---- 超神「持續 N 秒內每 gap 秒自動再施放 1 次」的共用節拍（2026-08-26）----
+   目前兩個使用者：連鎖閃電【天地雷鎖陣】與落雷術【永恒雷獄】——設計文檔的敘述
+   一字不差（每隔 X 秒不斷施放，持續 Y 秒），因此收斂成一支而不是各寫一份。
+   手動施放時起算（castSkill2 的付費分支），重複施放走 opts.repeat：
+   不扣魔、不進冷卻、也不會再把自己續下去。 */
+var SG_ULT_REPEAT_IDS = { chainlightning: 'skyThunderArray', thunderstrike: 'eternalThunderPrison' };
+function sgArmUltRepeat(gid) {
+  var id = SG_ULT_REPEAT_IDS[gid];
+  if (!id) return;
+  var u = sgUlt(gid, id);
+  if (!u) return;
+  var sec = sgUltVal(u, 'sec');
+  if (!(sec > 0)) return;
+  var gap = Math.max(0.1, sgUltVal(u, 'gap'));
+  if (!SKILL2_RT.ultRepeat) SKILL2_RT.ultRepeat = {};
+  SKILL2_RT.ultRepeat[gid] = { until: GT + sec, nextAt: GT + gap, gap: gap };
+}
+
+function sgTickUltRepeat(ctx, dt) {
+  if (!SKILL2_RT.ultRepeat) { SKILL2_RT.ultRepeat = {}; return; }
+  for (var gid in SKILL2_RT.ultRepeat) {
+    var rp = SKILL2_RT.ultRepeat[gid];
+    if (!rp || rp.until <= GT || !sgUlt(gid, SG_ULT_REPEAT_IDS[gid]) || !skills2Equipped(gid)) {
+      delete SKILL2_RT.ultRepeat[gid];
+      continue;
+    }
+    /* 死亡／倒地：整段持續時間與下一拍一起往後推，剩餘時間不變（比照暴風之舞）。 */
+    if (skills2AutoCastBlocked(ctx.pEnt)) {
+      rp.until = sgPauseSchedule(rp.until, dt);
+      rp.nextAt = sgPauseSchedule(rp.nextAt, dt);
+      continue;
+    }
+    var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+    var guard = 0;
+    while (rp.nextAt <= GT && rp.until > GT && guard < 50) {
+      guard++;
+      rp.nextAt += Math.max(0.1, rp.gap);
+      // 暈眩中跳過該次，錯過的不補發（比照暴風之舞與【天霸風神斬】）
+      if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) continue;
+      var res = castSkill2(ctx.pEnt, enemies, gid, ctx.floatSel, { repeat: true });
+      if (!res) continue;
+      if (ctx.onDamage) ctx.onDamage(res.dmg);
+      if (res.killed && ctx.onDeaths) ctx.onDeaths();
+      enemies = ctx.getEnemies ? ctx.getEnemies() : enemies;
+    }
+  }
 }
 
 /* ===========================================================================
@@ -5784,7 +6498,12 @@ function skill2SlowMoveFactor(ent) {
    掛點：combat.js monsterDefCfg 的 attr 欄——全專案「防守方屬性標籤」的唯一出口，
    因此攻方的「對屬性敵人傷害%」與守方的「對屬性敵人抗性%」兩條既有規則會一起
    認得這次改寫，不必在各傷害端各補一次判斷。 */
-function skill2ForcedAttr(ent) { return sgBuffActive(ent, 'sgIceRevert') ? 'ice' : ''; }
+/* 超神【深淵火獄】的【火獄烙印】走同一個掛點：屬性改寫只有一個出口，
+   兩個來源同時成立時以火獄烙印為準（它是更晚加入、且是超神進化的效果）。 */
+function skill2ForcedAttr(ent) {
+  if (sgBuffActive(ent, 'sgInferno')) return 'fire';
+  return sgBuffActive(ent, 'sgIceRevert') ? 'ice' : '';
+}
 
 /* 受到的寒冰傷害增幅：掛在 resolveHit 既有的 skillElemAmp（每系獨立乘區，原本服務
    舊技能的元素領域），因此只放大「技能屬性化為寒冰」的本體段，不會誤放大同一次
@@ -7400,6 +8119,11 @@ function tickSkill2(dt, ctx) {
   sgTickStarfall(ctx, dt);
   sgTickFirehuntLegend(ctx, dt);
   sgTickFireGod(ctx, dt);
+  sgTickNetherMire(ctx);
+  sgTickRebirthCharge(ctx.pEnt);
+  sgTickUltRepeat(ctx, dt);
+  sgTickFlyingThunder(ctx, dt);
+  sgTickHeavenTribulation(ctx, dt);
 }
 
 /* 超神進化【地爆天星】：每隔一段時間，天空落下一顆超巨型殞石，

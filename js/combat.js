@@ -705,7 +705,12 @@ function tickStatuses(ent, dt) {
             d.acc = elapsed;
         }
         if (seconds > 0 && d.dps > 0) {
-            var dDmg = d.dps * seconds;
+            /* 新版技能超神【惡疫魔沼】（泥沼術，js/skills2.js）：依狀態表的「傷害屬性」欄
+               分流的持續傷害乘區（未啟用時恆為 1）。放在這裡而不是 resolveHit，
+               是因為本專案的持續傷害是施放當下定版的平坦 dps，不經過 resolveHit。 */
+            var dElemMult = (ent.maxHp && typeof skill2DotElemFactor === 'function')
+                ? skill2DotElemFactor(ent, d.sid) : 1;
+            var dDmg = d.dps * seconds * dElemMult;
             total += dDmg;
             dotDamageItems.push({ d: d, baseDamage: dDmg });
             if (d.name && dotNames.indexOf(d.name) < 0) dotNames.push(d.name);
@@ -948,7 +953,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         }
         if (st.manaSteal + omni > 0) {
             var mpGain = manaStealAmount(st, st.manaSteal + omni);
-            pEnt.mp = Math.min(st.mp, pEnt.mp + mpGain);
+            gainPlayerMana(pEnt, mpGain, st);   // 溢出交給 formula.js 的唯一收斂點
             floatText(playerFloatSel, '+' + fmt(Math.round(mpGain)) + ' MP', 'mp', Math.round(mpGain));
         }
         // 被動：暈眩 / 減速
@@ -1308,11 +1313,13 @@ function fieldTick(dt) {
         return;
     }
 
-    // 回復：每秒生命回復（基礎 BASE_HP_REGEN_PCT% + 生命恢復屬性；formula.js §3）+ 再生增益；法力恢復；技能冷卻
-    // 生命回復本身不會溢出（Math.min 夾在生命上限），與改版後「回復不轉護盾」一致。
+    /* 回復：每秒生命回復（基礎 BASE_HP_REGEN_PCT% + 生命恢復屬性；formula.js §3）+ 再生增益；法力恢復；技能冷卻
+       兩者都走 formula.js 的入帳收斂點（healPlayer／gainPlayerMana）：夾在上限的行為與
+       改版前完全相同（noShield ＝ 溢出不轉護盾），差別只在**溢出量**現在有地方可以接——
+       大地守護的傳奇【生命滋養】【魔力滋養】與超神【光耀之堂】就吃這一份。 */
     var hot = buffVal(p, 'hot');
-    if (p.hp < st.hp) p.hp = Math.min(st.hp, p.hp + (playerHpRegenPerSec(st) + st.hp * hot / 100) * dt);
-    p.mp = Math.min(st.mp, p.mp + playerMpRegenPerSec(st) * dt);
+    healPlayer(p, (playerHpRegenPerSec(st) + st.hp * hot / 100) * dt, st, { noShield: true });
+    gainPlayerMana(p, playerMpRegenPerSec(st) * dt, st);
     tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
     /* 普攻冷卻：每個 tick 都要走完，而且只夾在 0（＝ready），不累積負數欠債。
@@ -1647,7 +1654,36 @@ function onFieldKill(m) {
         FIELD.stageKills = (Number(FIELD.stageKills) || 0) + 1;
         if (FIELD.stageKills >= quota) FIELD._waveClearPending = true;
     }
+    /* 新版技能的擊殺掛點（大地守護的三個效果，js/skills2.js）。
+       放在整段結算的**最後**：這一次擊殺的獎勵、掉落與過關進度全部照算，
+       超神【天地再造】重生出來的那一隻等同一隻新的敵人，再被殺死時同樣再算一次。
+       同一隻只會重生一次（旗標記在敵人實體上），因此不會變成無限刷怪。 */
+    if (typeof skills2OnEnemyKill === 'function' && skills2OnEnemyKill(FIELD.player, m, 'mv-float')) {
+        reviveFieldEnemy(m);
+    }
     UI.dirty.battle = true; UI.dirty.header = true;
+}
+
+/* 讓一隻已經結算完死亡的敵人回到戰鬥（目前唯一來源：超神【天地再造】）。
+   生命值由 skills2 那一側先設好，這裡只負責把「死亡」的痕跡清乾淨——
+   `_rewarded` 與 `_deathClearCd` 是野外戰鬥自己的簿記（決定牠還在不在場上、
+   下一次死亡要不要再發獎勵），不清掉的話牠會站著卻既不掉東西也會被定時清除。 */
+function reviveFieldEnemy(m) {
+    if (!m) return;
+    m._rewarded = false;
+    m._deathClearCd = undefined;
+    m._enterCd = 0;
+    m.atkCd = 0;
+    m.shield = 0;
+    if (typeof cleanse === 'function') cleanse(m);
+    var enemies = fieldEnemyList();
+    FIELD.monsters = enemies;
+    markFieldEnemyFloatTargets(enemies);
+    syncFieldPrimary();
+    /* 走 'combat' 頻道：滿級機率是 100%，每殺一隻就一行的話會把戰鬥日誌洗掉，
+       與擊敗訊息（'log-kill', 'combat'）放在同一個可過濾的頻道才合理。 */
+    blog('🌍 【天地再造】' + m.name + ' 被大地重新塑形，再度站了起來！', 'info', 'combat');
+    UI.dirty.battle = true;
 }
 
 function onFieldDeaths() {

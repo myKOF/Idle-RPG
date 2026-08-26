@@ -284,6 +284,12 @@ function legendaryElementDamageUp(st, pEnt) {
     var earthAmp = skill2RockEarthDamageUpPct(pEnt);
     if (earthAmp > 0) out.earth = (out.earth || 0) + earthAmp;
   }
+  /* 新版技能超神【永恒超導體】（連鎖閃電，js/skills2.js）：超導電荷的雷電傷害提升。
+     與前兩者同一條路——加算進該屬性目前的提升%，不另開乘區。 */
+  if (typeof skill2LightningDamageUpPct === 'function') {
+    var lightningAmp = skill2LightningDamageUpPct(pEnt);
+    if (lightningAmp > 0) out.lightning = (out.lightning || 0) + lightningAmp;
+  }
   /* 新版技能【大地祝福】（大地守護 T2）：全屬性傷害的**乘算**增幅——
      設計文檔明訂「與所有屬性增傷效果為額外的乘法計算」，因此不是再加一筆%，
      而是把每個屬性目前的加成整體放大。 */
