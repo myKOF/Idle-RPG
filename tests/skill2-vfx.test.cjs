@@ -930,10 +930,10 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.19/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.72/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.105/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.80/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260826-firegod-ring-pierce'/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.81/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260826-thunder-matrix-sweep'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260825-mire-earthguard-legendary/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260826-firegod-ring-pierce/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260826-thunder-matrix-sweep/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260826-chain-thunder-legendary/);
 });
 

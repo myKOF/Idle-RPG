@@ -156,7 +156,7 @@ thunderstrike,落雷術,🌩️,,magic,lightning,15,40,4,0|500,閃電增幅,"{""
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,5,0|550,雷電脈衝,"{""sec"":1.5,""secPer"":0.15,""count"":2,""m"":6}",1500000,1.5,落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒,
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,6,0|600,迅雷重生,"{""chance"":20,""chancePer"":2,""max"":5}",3000000,1.5,每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）,
 thunderstrike,落雷術,🌩️,,magic,lightning,15,40,7,0|650,殛道落電,"{""mult"":2,""pct"":50,""pctPer"":5,""m"":6}",5000000,1.5,落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）,
-thunderstrike,,,,,,,300,8,,雷電矩陣,"{""count"":2,""countPer"":0.2,""pct"":300,""pctPer"":30,""wid"":3}",10000000,1.5,施放落雷術時同時召喚橫向與直向各 {count} 道落雷橫掃全場（每道寬 {wid} 米），對路徑上的所有敵人造成 {pct}% 雷電傷害,thunderMatrix
+thunderstrike,,,,,,,300,8,,雷電矩陣,"{""count"":2,""countPer"":0.2,""pct"":300,""pctPer"":30,""wid"":3,""mps"":30}",10000000,1.5,施放落雷術時同時召喚橫向與直向各 {count} 道雷幕橫掃全場（每道寬 {wid} 米、{mps} 米／秒，相鄰兩道由反方向交錯掃過），對掃過的所有敵人各造成 1 次 {pct}% 雷電傷害,thunderMatrix
 thunderstrike,,,,,,,300,9,,雷霆天劫,"{""m"":30,""gap"":0.35,""pct"":400,""pctPer"":40}",10000000,1.5,額外召喚 1 道永久持續的天劫雷電：每 {gap} 秒追擊 {m} 米內生命值最低的敵人，造成 {pct}% 雷電傷害,heavenTribulation
 thunderstrike,,,,,,,300,10,,永恒雷獄,"{""gap"":1,""gapPer"":-0.05,""sec"":3,""secPer"":0.3}",10000000,1.5,施放落雷術後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）,eternalThunderPrison
 thunderorb,雷球,🔵,6*6,magic,lightning,15,40,1,0|400,雷球,"{""pct"":50,""pctPer"":5,""count"":2,""gap"":0.35,""sec"":2,""m"":3,""speed"":6,""castM"":30}",100000,1.5,召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散,

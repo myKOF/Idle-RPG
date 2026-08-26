@@ -1,5 +1,49 @@
 # AI_TASKS.md
 
+## Claude｜雷電矩陣改為「移動雷幕橫掃全場」（2026-08-26）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：超神進化行為修正（雷系）
+- 使用者需求：【雷電矩陣】的「橫掃全場」是真的掃過去——橫向與直向各 4 道雷幕，
+  同一軸向的第 1／3 道順向、第 2／4 道逆向，相鄰兩道交錯而過（使用者附圖說明）。
+- 設計來源：使用者 2026-08-26 的裁定與示意圖（原本實作為施放當下一次結算的靜態直線）。
+- 前置依賴：接在第八批（5c975b8）之上；期間 develop 併入了火狩／火神降臨／岩甲的三項調整
+  （087cf46、e6abb6f），兩者都沒有動到場域生成與場域特效分派，語意不衝突。
+- 技術內容：
+  - `sgThunderMatrix` 改走既有的移動場域（`sgSpawnGround` 的牆型場域 ＋ `dest`／`speed`），
+    不再用 `bfSegmentTargets` 在施放當下算完。牆身垂直於行進方向、長度蓋滿全場，
+    厚度＝表定的「每道寬」；顯示與傷害共用同一個場域實例（AI_RULES 8.3／8.3.1）。
+  - 採**接觸判定**（`contact`）：同一道雷幕對每個敵人只結算一次。
+  - `sgSpawnGround` 新增 `cfg.angle`（沿指定方位掃，沒有目標可以推算朝向）。
+  - 新增 `kind: thunderwall`，沿用 `firewall` 的既有畫法只換屬性配色；
+    不用 `wall` 是因為那會讓 `sgGroundExpire` 去跑火龍捲樹的第 5／6 階。
+  - 新增可調參數 `mps`（掃描速度，米／秒，預設 30）與兩個節奏常數
+    （`SG_MATRIX_SPAN_MULT`、`SG_MATRIX_STAGGER_SEC`）。
+  - 掃描速度有一個由「每道寬」決定的天花板（`SG_SIM_MAX_STEP_SEC`，鏡射 Worker 的
+    `TICK_MS`）：一個模擬步長最多前進一個牆厚，否則接觸判定會整個跳過站在中間的敵人。
+  - 高塔（無座標）退化為「每一道各命中場上敵人一次」。
+  - 順手修掉 `sgGroundRectAxis` 的陷阱：它同時決定傷害矩形與顯示矩形的牆身軸向，
+    原本只認 `wall`，新的 `thunderwall` 會拿到軸向 0＝牆身沿行進方向躺平。
+    瀏覽器實機比對 Worker 送出的 area 才抓到；已補回歸測試（四象限各一隻 ＋ 軸向釘樁）。
+  - Worker 協議未變（仍是 v25）。
+- 修改檔案：`js/skills2.js`、`config/CSV/Skills2.csv`、`config/Excel/Skills2.xlsx`、
+  `index.html`、`js/bridge.js`、`js/worker/sim.worker.js`、`game_formula.md`、
+  `GM_command.md`、`PATCH.md`、`tests/skill2-chainlightning-thunder-legendary.test.cjs`
+  （雷電矩陣改為兩個案例：幾何／方向交錯，以及「每道只命中一次」）、
+  `tests/skill2-vfx.test.cjs`（版號釘樁）、本文件。
+- 驗證方式：`npm test` 全量、`node tools/build_check.cjs`、`config_tables --gen/--sync/--apply`
+  往返（語意變更 0）、`apply_params` 試跑與 `--check-anchors`、快取版號同步、`git diff --check`、
+  瀏覽器實機比對 Worker 送出的雷幕 area（8 道、牆身垂直於行進方向、同軸向兩兩反向、
+  尺寸 1056×30 像素、每拍推進不超過一個牆厚），Console 無錯誤。
+- 已知風險：四項待確認見 PATCH.md（每道都橫貫全場故練滿時每個敵人吃 8 次、速度天花板、
+  起掃間隔、雷幕錨定在施放當下的我方位置）。
+- 未完成項目：尚未目視確認畫面（Browser pane 未顯示，rAF 凍結、特效佇列不流動，
+  取不到畫格）；已改以「攔截 Worker 送出的 area 事件」驗證幾何。目視與 DPS 建議交 Antigravity。
+- Commit：94f8101。
+
+---
+
 ## Claude｜火狩圈距、火神降臨跟隨領域與旋轉星環、岩甲兩超神改為持續領域（2026-08-26）
 
 - 狀態：已完成

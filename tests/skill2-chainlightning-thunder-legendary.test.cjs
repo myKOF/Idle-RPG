@@ -417,24 +417,95 @@ test('【引雷針】：優先劈範圍內生命值最低的敵人，且對範�
    4) 落雷術的三個超神進化
    =========================================================================== */
 
-test('【雷電矩陣】：橫向與直向各 N 道貫穿全場的雷幕，一次結算完畢', () => {
-  function matrixHits(withUlt) {
-    const c = loadContext();
-    stubVfx(c);
-    const calls = stubHits(c);
-    maxLevels(c, 'thunderstrike');
-    equip(c, 'thunderstrike');
-    if (withUlt) setUlt(c, 'thunderstrike', 'thunderMatrix', 1);
-    const p = playerEnt();
-    // 同一條橫線上排開：橫向雷幕一定掃得到全部
-    const es = [enemy(1e9, 20, 0, 'a'), enemy(1e9, 60, 0, 'b'), enemy(1e9, 100, 0, 'c')];
-    c.castSkill2(p, es, 'thunderstrike', 'mv-float');
-    return calls.length;   // 矩陣在施放當下就結算，不必等落地
+test('【雷電矩陣】：橫向與直向各 N 道雷幕從場外掃到場外，相鄰兩道方向相反', () => {
+  const c = loadContext();
+  stubVfx(c);
+  stubHits(c);
+  maxLevels(c, 'thunderstrike');
+  equip(c, 'thunderstrike');
+  setUlt(c, 'thunderstrike', 'thunderMatrix', 1);
+  const u = c.skills2Ult('thunderstrike');
+  const lines = Math.round(u.def.fx.count + u.def.fx.countPer * u.lv);
+  const p = playerEnt();
+  c.castSkill2(p, [enemy(1e9, 0, 0, 'center')], 'thunderstrike', 'mv-float');
+
+  const walls = c.SKILL2_RT.grounds.filter((f) => f.kind === 'thunderwall');
+  assert.equal(walls.length, lines * 2, '橫向與直向各 ' + lines + ' 道');
+  const norm = (a) => ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const angles = walls.map((f) => Math.round(norm(f.angle) * 1000) / 1000);
+  // 橫向：0（左→右）與 π（右→左）；直向：π/2 與 3π/2。相鄰兩道恰好差 180 度
+  [0, Math.PI, Math.PI / 2, Math.PI * 1.5].forEach((want) => {
+    assert.ok(angles.includes(Math.round(want * 1000) / 1000), '缺少朝向 ' + want.toFixed(3) + ' 的雷幕');
+  });
+
+  const span = c.bfSpawnDist();
+  walls.forEach((f) => {
+    assert.ok(f.length > span * 2, '牆身要蓋滿全場（' + f.length + ' > ' + span * 2 + '）');
+    assert.ok(f.contact, '接觸判定：掃過去只算一次');
+    assert.ok(f.speed > 0 && f.dest, '雷幕會移動，不是釘在原地');
+    // 出生在行進方向的後方、落點在正前方＝真的橫貫全場
+    const ux = Math.cos(f.angle), uy = Math.sin(f.angle);
+    assert.ok(f.pos.x * ux + f.pos.y * uy < 0, '從行進方向的後方進場');
+    assert.ok(f.dest.x * ux + f.dest.y * uy > 0, '掃到行進方向的前方出場');
+    // 一個模擬步長最多前進一個牆厚，否則會跳過站在中間的敵人
+    assert.ok(f.speed * c.SG_SIM_MAX_STEP_SEC <= f.width + 1e-6, '掃描速度不得超過牆厚 ÷ 模擬步長');
+  });
+});
+
+test('【雷電矩陣】：掃過的敵人每道各吃 1 次傷害（不是每個節拍都吃）', () => {
+  const c = loadContext();
+  stubVfx(c);
+  const calls = stubHits(c);
+  maxLevels(c, 'thunderstrike');
+  equip(c, 'thunderstrike');
+  setUlt(c, 'thunderstrike', 'thunderMatrix', 1);
+  const u = c.skills2Ult('thunderstrike');
+  const lines = Math.round(u.def.fx.count + u.def.fx.countPer * u.lv);
+  // 矩陣那一段的傷害值是固定的（魔攻 × pct%），用它把落雷本體的命中篩掉
+  const matrixAtk = c.getStats().matk * (u.def.fx.pct + u.def.fx.pctPer * u.lv) / 100;
+  const p = playerEnt();
+  /* 四個象限各放一隻：牆身若沿著行進方向躺平（sgGroundRectAxis 漏掉這種牆型），
+     只有站在中軸線上的敵人會被掃到——所以刻意沒有人站在 x=0 或 y=0 上。 */
+  const es = [enemy(1e9, 120, 90, 'q1'), enemy(1e9, -150, 60, 'q2'),
+    enemy(1e9, -80, -130, 'q3'), enemy(1e9, 200, -70, 'q4')];
+  c.castSkill2(p, es, 'thunderstrike', 'mv-float');
+  assert.equal(calls.length, 0, '施放當下不結算：落雷要落地、雷幕要掃過來');
+  advance(c, p, es, 8);
+  es.forEach((e) => {
+    const matrixHits = calls.filter((h) => Math.abs(h.atk - matrixAtk) < 1e-6 && h.ent === e);
+    assert.equal(matrixHits.length, lines * 2,
+      e.name + ' 應被每一道各命中 1 次，共 ' + lines * 2 + ' 次');
+  });
+  assert.equal(c.SKILL2_RT.grounds.filter((f) => f.kind === 'thunderwall').length, 0, '掃完就收掉');
+});
+
+test('【雷電矩陣】：顯示矩形與傷害矩形是同一個（牆身垂直於行進方向、每拍推進不超過一個牆厚）', () => {
+  const c = loadContext();
+  const specs = stubVfx(c);
+  stubHits(c);
+  maxLevels(c, 'thunderstrike');
+  equip(c, 'thunderstrike');
+  setUlt(c, 'thunderstrike', 'thunderMatrix', 1);
+  const p = playerEnt();
+  const es = [enemy(1e9, 120, 90, 'q1')];
+  c.castSkill2(p, es, 'thunderstrike', 'mv-float');
+  const wall = c.SKILL2_RT.grounds.filter((f) => f.kind === 'thunderwall')[0];
+  // 牆身軸向必須垂直於行進方向；這一支同時餵傷害矩形與顯示矩形
+  assert.equal(Math.round((c.sgGroundRectAxis(wall) - wall.angle) * 1000) / 1000,
+    Math.round(Math.PI / 2 * 1000) / 1000, '牆身垂直於行進方向');
+  advance(c, p, es, 4);
+  const track = specs.filter((s) => s.variant === 'firewall' && s.elem === 'lightning' &&
+    s.area && s.area.id === wall.vfxId).map((s) => ({ x: s.area.x, y: s.area.y, w: s.area.w, h: s.area.h, a: s.area.a }));
+  assert.ok(track.length > 10, '每一拍都要送出這道雷幕的當下位置（顯示層才跟得上）');
+  assert.equal(Math.round(track[0].h), Math.round(wall.width), '顯示厚度＝判定厚度');
+  assert.equal(Math.round(track[0].w), Math.round(wall.length), '顯示長度＝判定長度');
+  assert.equal(track[0].a, c.sgGroundRectAxis(wall), '顯示軸向＝判定軸向');
+  let maxStep = 0;
+  for (let i = 1; i < track.length; i++) {
+    maxStep = Math.max(maxStep, Math.hypot(track[i].x - track[i - 1].x, track[i].y - track[i - 1].y));
   }
-  const base = matrixHits(false);
-  const withMatrix = matrixHits(true);
-  assert.equal(base, 0, '落雷本體要等落地才結算，施放當下沒有傷害');
-  assert.ok(withMatrix > 0, '矩陣在施放當下就掃過全場');
+  assert.ok(maxStep > 0, '雷幕確實在移動');
+  assert.ok(maxStep <= wall.width + 1e-6, '一拍推進不超過一個牆厚，否則會跳過敵人');
 });
 
 test('【雷霆天劫】：只要落雷術裝配著就永久運轉，每拍追擊範圍內最低血的敵人', () => {
