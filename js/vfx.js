@@ -825,6 +825,8 @@ function vfxProjectileCls(spec) {
   if (v === 'venom' || v === 'poison-spread' || v === 'poison-bullet') return 'vfx-proj-poison';
   if (v === 'waterball' || v === 'water-bounce' || v === 'frost-bullet' || v === 'frost-spread') return 'vfx-proj-ice vfx-proj-water';
   if (v === 'flamewave') return 'vfx-proj-fire vfx-proj-big';
+  /* 超神【火神降臨】的普攻星環：旋轉的火焰圓環（Canvas 端另有專屬畫法）。 */
+  if (v === 'firehunt-ring') return 'vfx-proj-fire vfx-proj-firehunt-ring';
   if (spec.elem && VFX_ELEM_THEME[spec.elem]) return 'vfx-proj-' + spec.elem;
   if (spec.cat === 'special' || spec.cat === 'potential' || spec.cat === 'fusion') return 'vfx-proj-glyph';
   return 'vfx-proj-plain';
@@ -2568,6 +2570,11 @@ function renderCombatVfx(spec) {
         vfxFirePillar(s, layer, spec.area, tornadoPt);
       }
       else if (s.variant === 'void-disc') vfxVoidDisc(s, layer, rect);
+      /* 玩家錨定的常駐領域（火神降臨的火焰領域、岩甲術的重力場）：
+         DOM 是高塔用的後備路徑，那裡是靜態卡片場景、我方不會移動，因此泛用光環就夠了——
+         「平滑跟隨玩家」是戰場（Canvas）那條的要求，
+         由 battle-renderer.js 的 spawnFollowAura 逐幀取玩家錨點負責。 */
+      else if (s.variant === 'follow-aura') vfxAura(s, layer, rect);
       else if (isIceField) vfxIceField(s, layer, spec.area, rect);
       else vfxAura(s, layer, rect);
       return;

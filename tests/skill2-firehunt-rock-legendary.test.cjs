@@ -612,6 +612,144 @@ test('參數表往返：Skills2 的六個超神進化列與 Equipment_Affix 的�
   ['sgPetrify', 'sgStiffen'].forEach((id) => assert.ok(statusCsv.includes(id), 'Status 表缺少狀態 ' + id));
 });
 
+test('圈距跟著火狩體積一起放大：靜態的【增焰】與隨時間長大的【烈陽星環】都算', () => {
+  /* 使用者決策 2026-08-26：體積 +30% 圈距就 +30%。圈距不動的話，
+     火狩一變大兩圈就會疊在一起。 */
+  function danceField(keys) {
+    const c = loadContext();
+    stubHits(c); stubVfx(c);
+    if (keys.length) setLegendary(c, keys);
+    /* 第 7 階【狩神之舞】＝兩道環，才有「圈距」可言。
+       各階是循序解鎖的（sgEffectiveLevels 會把前面沒學的後階夾成 0），
+       所以要每一階都給 1，不能只點第 1 與第 7 階。 */
+    setLevels(c, 'firehunt', [1, 1, 1, 1, 1, 1, 1]);
+    c.castSkill2(playerEnt(), [enemy(1e9, 60, 0)], 'firehunt', 'mv-float');
+    return { c, f: c.SKILL2_RT.orbits[0] };
+  }
+  const base = danceField([]);
+  const amp = danceField(['firehuntAmplify']);
+  const gapOf = (f) => f.rings[1].r - f.rings[0].r;
+  assert.equal(base.f.rings.length, 2, '狩神之舞應有兩道環');
+  assert.equal(Math.round(amp.f.ringGapPx / base.f.ringGapPx * 100), 125,
+    '【增焰】＋25% 體積 → 圈距也 +25%');
+  assert.equal(Math.round(gapOf(amp.f) / gapOf(base.f) * 100), 125, '實際的兩圈距離同步拉開');
+
+  /* 【烈陽星環】的體積是隨時間長大的，圈距要跟著逐幀拉開（不是只在施放當下算一次）。 */
+  const c2 = loadContext();
+  stubHits(c2); stubVfx(c2);
+  maxLevels(c2, 'firehunt');
+  setUlt(c2, 'firehunt', 'solarRing', 1);
+  equip(c2, 'firehunt');
+  const p2 = playerEnt();
+  const m2 = enemy(1e9, 60, 0);
+  c2.castSkill2(p2, [m2], 'firehunt', 'mv-float');
+  const f2 = c2.SKILL2_RT.orbits[0];
+  const gap0 = f2.rings[1].r - f2.rings[0].r;
+  advance(c2, p2, [m2], 5);                       // 走完 4 秒的成長期
+  const gapEnd = f2.rings[1].r - f2.rings[0].r;
+  assert.equal(Math.round(f2.bodyR / f2.bodyR0 * 100), 160, '體積長到 1.6 倍');
+  assert.equal(Math.round(gapEnd / gap0 * 100), 160, '圈距也跟著長到 1.6 倍');
+  // 最內圈不動：拉開的是「圈與圈的間距」，不是整體外擴
+  assert.equal(Math.round(f2.rings[0].r), Math.round(f2.ringR0[0]));
+  // 環繞體的判定半徑要跟著新的圈半徑走，否則畫面與傷害範圍會對不上
+  const outer = f2.orbs.filter((o) => o.ringIdx === 1);
+  assert.ok(outer.length > 0);
+  assert.equal(Math.round(outer[0].radius), Math.round(f2.rings[1].r));
+});
+
+test('環形特效事件送的是出生半徑，成長交給 rGrowTo／rGrowSec（否則會多畫一圈）', () => {
+  const c = loadContext();
+  stubHits(c);
+  const specs = stubVfx(c);
+  maxLevels(c, 'firehunt');
+  setUlt(c, 'firehunt', 'solarRing', 1);
+  equip(c, 'firehunt');
+  c.castSkill2(playerEnt(), [enemy(1e9, 60, 0)], 'firehunt', 'mv-float');
+  const f = c.SKILL2_RT.orbits[0];
+  const auras = specs.filter((s) => s.fxKind === 'aura' && s.area && isFinite(s.area.r));
+  assert.equal(auras.length, f.rings.length, '一道環一則事件');
+  // 內圈不成長、外圈成長到與模擬層相同的倍率
+  assert.equal(auras[0].area.rGrowTo, 1, '最內圈不成長');
+  const outerFinal = f.ringR0[0] + f.ringGapPx * f.bodyGrowTo * 1;
+  assert.equal(Math.round(auras[1].area.r), Math.round(f.ringR0[1]), '送的是出生半徑');
+  assert.equal(Math.round(auras[1].area.r * auras[1].area.rGrowTo), Math.round(outerFinal),
+    'r × rGrowTo 要等於模擬層長滿後的半徑');
+  assert.equal(auras[1].area.rGrowSec, f.bodyGrowSec);
+});
+
+test('【火神降臨】的領域走玩家錨定變體，星環走旋轉圓環變體（不是泥沼池與小火球）', () => {
+  const c = loadContext();
+  stubHits(c);
+  const specs = stubVfx(c);
+  maxLevels(c, 'firehunt');
+  setUlt(c, 'firehunt', 'fireGodDescend', 1);
+  equip(c, 'firehunt');
+  const p = playerEnt();
+  const m = enemy(1e9, 30, 0);
+  advance(c, p, [m], 0.6);
+  const aura = specs.filter((s) => s.fxKind === 'aura' && s.variant === 'follow-aura');
+  assert.ok(aura.length > 0, '領域要送 follow-aura');
+  assert.ok(aura[0].area && aura[0].area.id === 'sg-firegod-aura', '帶穩定 id 才會重用同一個節點');
+  assert.equal(aura[0].area.x, undefined, '不送座標＝位置由顯示層逐幀取玩家錨點');
+  assert.equal(specs.filter((s) => s.variant === 'mire-lava').length, 0, '不再沿用泥沼池畫法');
+
+  specs.length = 0;
+  c.chance = () => false;
+  c.skills2OnBasicAttack(p, m, 'mv-float', c.BASE_STATS);
+  const rings = specs.filter((s) => s.fxKind === 'projectile' && s.variant === 'firehunt-ring');
+  assert.equal(rings.length, 3, '三顆星環各一則投射物事件');
+  assert.equal(specs.filter((s) => s.variant === 'fireball-small').length, 0, '不再畫成小火球');
+});
+
+test('岩甲領域：施放當下作用一次，之後**進入**範圍的敵人也立即受作用', () => {
+  /* 使用者決策 2026-08-26：兩個超神進化不是施放瞬間打一次就結束，
+     而是在岩甲護盾存在期間持續成立的領域。 */
+  function fieldRun(ultId, statusKey) {
+    const c = loadContext();
+    stubHits(c); stubVfx(c);
+    maxLevels(c, 'rockarmor');
+    setUlt(c, 'rockarmor', ultId, 1);
+    equip(c, 'rockarmor');
+    const p = playerEnt();
+    const near = enemy(1e9, 60, 0);      // 施放當下就在 24 米內
+    const far = enemy(1e9, 900, 0);      // 遠在範圍外
+    c.castSkill2(p, [near, far], 'rockarmor', 'mv-float');
+    assert.ok(c.buffVal(near, statusKey) > 0, '施放當下範圍內的敵人受作用');
+    assert.equal(c.buffVal(far, statusKey), 0, '範圍外不受影響');
+
+    // 讓第一次的效果自然結束，確認「站著沒動」不會被無限重塗
+    advance(c, p, [near, far], 6);
+    assert.equal(c.buffVal(near, statusKey), 0, '待在裡面不動的敵人不會被永久重塗');
+
+    // 遠處那隻走進範圍 → 下一拍就要受作用
+    far.pos.x = 60;
+    advance(c, p, [near, far], 0.2);
+    assert.ok(c.buffVal(far, statusKey) > 0, '之後進入範圍的敵人立即受作用');
+    return { c, p, near, far };
+  }
+  fieldRun('superRockArt', 'sgPetrify');
+  fieldRun('gravityField', 'sgStiffen');
+});
+
+test('岩甲領域：岩甲護盾結束後領域就不再作用', () => {
+  const c = loadContext();
+  stubHits(c); stubVfx(c);
+  maxLevels(c, 'rockarmor');
+  setUlt(c, 'rockarmor', 'gravityField', 1);
+  equip(c, 'rockarmor');
+  const p = playerEnt();
+  const far = enemy(1e9, 900, 0);
+  c.castSkill2(p, [far], 'rockarmor', 'mv-float');
+  // 岩甲到期
+  c.GT = 999;
+  c.tickSkill2(0.1, tickCtx(c, p, [far]));
+  assert.equal(c.SKILL2_RT.rock, null, '岩甲已回收');
+  // 之後才走進來的敵人不該受作用
+  far.pos.x = 60;
+  advance(c, p, [far], 0.5);
+  assert.equal(c.buffVal(far, 'sgStiffen'), 0, '領域結束後不再作用');
+});
+
 test('五個新掛點都接上了戰鬥主流程（不是只寫了函式沒人呼叫）', () => {
   /* 這五條是「函式寫好了但沒人呼叫」最容易發生的地方——它們各自在別的檔裡，
      單檔測試看不出來。比照 tests/legendary-affix.test.cjs 的執行期路由檢查。 */
@@ -635,8 +773,26 @@ test('五個新掛點都接上了戰鬥主流程（不是只寫了函式沒人�
   assert.match(legendary, /skill2RockEarthDamageUpPct === 'function'/);
   // 石化的單屬性受傷增幅：與寒冰逆轉同一條路（skill2VulnACfg）
   assert.match(skills2, /if \(typeof skill2PetrifyACfg === 'function'\) aCfg = skill2PetrifyACfg\(aCfg, target\);/);
-  // 兩個新節拍要真的排進 tickSkill2，否則整組傳奇與火神降臨都不會動
-  assert.match(skills2, /sgTickFirehuntLegend\(ctx, dt\);\s*[\r\n]+\s*sgTickFireGod\(ctx, dt\);/);
+  // 三個新節拍要真的排進 tickSkill2，否則整組傳奇、火神降臨與岩甲領域都不會動
+  assert.match(skills2, /sgTickFirehuntLegend\(ctx, dt\);\s*[\r\n]+\s*sgTickFireGod\(ctx, dt\);\s*[\r\n]+\s*sgTickRockField\(ctx, dt\);/);
+
+  /* 兩個新變體在兩套顯示層都要有專屬畫法——變體不被認得時只會**安靜地**退回泛用畫法，
+     那正是「看起來沒壞、但要的效果根本沒出現」的失敗模式。 */
+  const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
+  const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  assert.match(renderer, /spec\.variant === 'follow-aura'\) \{ spawnFollowAura\(spec\); break; \}/);
+  assert.match(renderer, /function spawnFollowAura\(spec\)/);
+  assert.match(renderer, /node\.x = p\.x; node\.y = p\.y - 12;\s*\/\/ 與環繞場域同一個視覺中心/,
+    '領域要逐幀取玩家錨點才會平滑跟隨');
+  assert.match(renderer, /spec\.variant === 'firehunt-ring'\) \{\s*[\r\n]+\s*core = fireHuntRingProjectile\(theme\);/);
+  assert.match(renderer, /core\._ringUpdate\(dt\)/, '圓環的翻轉要每一幀推進');
+  assert.match(vfx, /v === 'firehunt-ring'/);
+  assert.match(vfx, /s\.variant === 'follow-aura'/);
+  assert.match(css, /\.vfx-proj-firehunt-ring[\s\S]*?vfx-firehunt-ring-spin/);
+  // 環半徑成長：模擬層與顯示層必須讀同一組語意參數
+  assert.match(skills2, /rGrowTo: rGrowTo, rGrowSec: f\.bodyGrowSec/);
+  assert.match(renderer, /var rGrowTo = Math\.max\(1, Number\(a\.rGrowTo\) \|\| 1\);/);
 });
 
 test('十個新傳奇特效：各自只出現在指定武器類型，且關聯到對應的技能群組', () => {

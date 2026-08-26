@@ -11,7 +11,13 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v24（2026-08-25 火狩超神進化）：VFX 環形 area 新增五個可選欄位——
+/* v25（2026-08-26 火狩圈距與火神降臨）：VFX 環形 area 再新增 rGrowTo／rGrowSec
+   （這一道環的半徑在幾秒內長到幾倍）——【烈陽星環】把火狩體積放大時，
+   內外圈的間距要照同一個比例拉開，否則兩圈的火狩會疊在一起。
+   同一批新增 aura 變體 firegod-aura（玩家錨定、逐幀跟隨的領域光環）與
+   projectile 變體 firehunt-ring（翻轉中的火焰圓環）；變體本身依 v17 的規則不必動協議，
+   但那兩個「成長」欄位是模擬層實際判定用的幾何，故照 v22／v24 的前例列進來。
+   v24（2026-08-25 火狩超神進化）：VFX 環形 area 新增五個可選欄位——
    growMax／spiral／spiralLag（螺旋外擴的上限半徑、是否每團各自外擴、相鄰兩團的出生間隔）
    與 orbGrowTo／orbGrowSec（環繞體體積在幾秒內長到幾倍）。這五個與既有的 grow 同一類：
    都是**模擬層實際判定用的數字**，顯示層照抄即可；舊事件缺少時退化成 0／1＝改造前的畫法。
@@ -34,7 +40,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 24;
+var WORKER_PROTOCOL_VERSION = 25;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -141,7 +147,10 @@ var EVENT_KINDS = {
              另有五個可選的成長欄位（v24）：grow（環半徑每秒外擴 px）、growMax（外擴上限）、
              spiral（1＝每一團各自從圓心往外長，形成螺旋；0＝整環一起長）、
              spiralLag（相鄰兩團的出生間隔秒數，決定螺旋張多開）、
-             orbGrowTo／orbGrowSec（環繞體體積在幾秒內長到幾倍）。
+             orbGrowTo／orbGrowSec（環繞體體積在幾秒內長到幾倍）、
+             rGrowTo／rGrowSec（v25：**這一道環**的半徑在幾秒內長到幾倍；最內圈恆為 1）。
+             ⚠️ 環形事件的 r 送的是**出生半徑**而不是當下半徑——顯示層的節點合併鍵含半徑，
+             送當下值會讓每次補送都被當成另一道環而多畫一圈。
              ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。 */
   VFX: 'vfx'
 };

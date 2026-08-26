@@ -10,11 +10,11 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=25', 'shim.js?v=5');
+importScripts('protocol.js?v=26', 'shim.js?v=5');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260826-chain-thunder-legendary', '../status.js?v=20260826-chain-thunder-legendary', '../formula.js?v=20260825-mire-earthguard-legendary', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260825-mire-earthguard-legendary', '../skills2.js?v=20260826-chain-thunder-legendary', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260825-mire-earthguard-legendary', '../skills2.js?v=20260826-firegod-ring', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
   '../combat.js?v=20260825-mire-earthguard-legendary', '../legendary.js?v=20260826-chain-thunder-legendary', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260825-mire-earthguard-legendary',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',

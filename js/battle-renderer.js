@@ -1583,6 +1583,33 @@ var BattleRenderer = (function () {
     return m * perM;
   }
 
+  /* 超神【火神降臨】的普攻星環：一個**翻轉中的火焰圓環**（設計要求「像丟出一個旋轉的圓環」）。
+     對稱的圓環在平面內轉是看不出來的，所以旋轉感來自「繞著自身直徑翻轉」——
+     以 scale.y 隨相位收放模擬立體翻轉，再讓一段高亮弧在環上跑，兩者合起來才讀得出在轉。 */
+  var FIREGOD_RING_SPIN_RPS = 2.6;   // 每秒翻轉圈數（純視覺節奏）
+  function fireHuntRingProjectile(theme) {
+    var wrap = new PIXI.Container();
+    var ring = new PIXI.Graphics();
+    var arc = new PIXI.Graphics();
+    var R = 11;
+    ring.ellipse(0, 0, R, R).stroke({ color: theme.c2, width: 3.2, alpha: 0.95 });
+    ring.ellipse(0, 0, R, R).stroke({ color: theme.glow || theme.c1, width: 6, alpha: 0.28 });
+    ring.ellipse(0, 0, R * 0.62, R * 0.62).stroke({ color: theme.c1, width: 1.4, alpha: 0.55 });
+    /* 高亮弧：畫成一小段亮弧，隨相位在環上跑，讓翻轉方向看得出來。 */
+    arc.arc(0, 0, R, -0.5, 0.5).stroke({ color: 0xffffff, width: 3.2, alpha: 0.9 });
+    wrap.addChild(ring);
+    wrap.addChild(arc);
+    var phase = 0;
+    wrap._ringUpdate = function (dt) {
+      phase += dt * Math.PI * 2 * FIREGOD_RING_SPIN_RPS;
+      // |cos| ＝ 一個圓環繞自身直徑翻轉時的投影寬度；留 0.22 的下限才不會整個消失
+      wrap.scale.y = 0.22 + 0.78 * Math.abs(Math.cos(phase));
+      arc.rotation = phase;
+      arc.alpha = 0.35 + 0.65 * Math.abs(Math.cos(phase));
+    };
+    return wrap;
+  }
+
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride, pathOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
@@ -1599,12 +1626,15 @@ var BattleRenderer = (function () {
     if (glyphOnly) {
       core = new PIXI.Text({ text: spec.glyph, style: { fontSize: 20 } });
       core.anchor.set(0.5);
+    } else if (spec.variant === 'firehunt-ring') {
+      core = fireHuntRingProjectile(theme);
     } else if (spec.variant === 'fireball-small' || spec.variant === 'fireball') {
       core = smallFireballProjectile(theme);
     } else {
       core = projectileCore(spec, theme);
     }
-    var isSmallFireball = spec.variant === 'fireball-small' || spec.variant === 'fireball';
+    var isSmallFireball = spec.variant === 'fireball-small' || spec.variant === 'fireball' ||
+      spec.variant === 'firehunt-ring';
     if (!isSmallFireball) {
       var isSoulhunterKnife = spec.variant === 'knife-soulhunter';
       var isKnifeProjectile = spec.variant === 'knife' || spec.variant === 'knife-bounce' || isSoulhunterKnife;
@@ -1682,6 +1712,7 @@ var BattleRenderer = (function () {
         }
         if (core && core._flameUpdate) core._flameUpdate(dt);
         if (core && core._fireballUpdate) core._fireballUpdate(dt);
+        if (core && core._ringUpdate) core._ringUpdate(dt);
         trailAcc += dt;
         if (!isSmallFireball && trailAcc > trailIntervalSec() && !REDUCED_MOTION) {
           trailAcc = 0;
@@ -2349,6 +2380,10 @@ var BattleRenderer = (function () {
     var spiralLag = Math.max(0, Number(a.spiralLag) || 0);  // 相鄰兩團的出生間隔（秒）
     var orbGrowTo = Math.max(1, Number(a.orbGrowTo) || 1);  // 火狩體積最多長到幾倍
     var orbGrowSec = Math.max(0.1, Number(a.orbGrowSec) || 1);
+    /* 圈距隨體積一起拉開（模擬層 sgOrbitStep 的同一條曲線）：這一道環的半徑
+       在 rGrowSec 秒內線性長到 rGrowTo 倍。最內圈恆為 1＝不動。 */
+    var rGrowTo = Math.max(1, Number(a.rGrowTo) || 1);
+    var rGrowSec = Math.max(0.1, Number(a.rGrowSec) || orbGrowSec);
     var dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(0.5, spec.dur || 4));
     /* 合併鍵要含變體與屬性：火狩與環體電球可能同時存在且半徑相同，
        只用「半徑＋方向」當鍵會讓後來的那一道被誤認成同一道而整組不畫。 */
@@ -2386,14 +2421,18 @@ var BattleRenderer = (function () {
           : orbR;
         /* 環半徑成長：整環一起長（虛空斬）時提前算好；螺旋則每一團各自算。 */
         var capR = growMax > 0 ? growMax : Infinity;
-        var wholeR = growPx > 0 && !isSpiral ? Math.min(capR, ringR + growPx * ring.t) : ringR;
+        /* 圈距成長：與模擬層同一條曲線（線性、只認出生後經過多久、到 rGrowSec 就停）。 */
+        var ringRNow = rGrowTo > 1
+          ? ringR * (1 + (rGrowTo - 1) * Math.max(0, Math.min(1, ring.t / rGrowSec)))
+          : ringR;
+        var wholeR = growPx > 0 && !isSpiral ? Math.min(capR, ringRNow + growPx * ring.t) : ringRNow;
         g.clear();
         g.circle(0, 0, wholeR).stroke({ color: theme.c1, width: 1.5, alpha: 0.18 * fade });
         for (var i = 0; i < ring.orbs; i++) {
           /* 螺旋：第 i 團晚 i×spiralLag 秒才出生，因此它的半徑短了那一段時間的成長量——
              一整組畫出來就是一條從圓心往外長的螺旋，而不是同心圓。 */
           var orbT = isSpiral ? Math.max(0, ring.t - i * spiralLag) : ring.t;
-          var rNow = isSpiral ? Math.min(capR, ringR + growPx * orbT) : wholeR;
+          var rNow = isSpiral ? Math.min(capR, ringRNow + growPx * orbT) : wholeR;
           var ang = base + Math.PI * 2 * i / ring.orbs;
           var ox = Math.cos(ang) * rNow;
           var oy = Math.sin(ang) * rNow * 0.62;  // 俯視壓扁，與棋盤的透視一致
@@ -2407,7 +2446,7 @@ var BattleRenderer = (function () {
         if (partAcc > 0.12 && !REDUCED_MOTION && fade > 0.5) {
           partAcc = 0;
           var sa = base + Math.PI * 2 * Math.floor(Math.random() * ring.orbs) / ring.orbs;
-          var riserR = growPx > 0 ? Math.min(capR, ringR + growPx * ring.t) : ringR;
+          var riserR = growPx > 0 ? Math.min(capR, ringRNow + growPx * ring.t) : ringRNow;
           spawnRiser(p.x + Math.cos(sa) * riserR, p.y - 12 + Math.sin(sa) * riserR * 0.62, theme, spec.glyph);
         }
         if (ring.t >= ring.dur) {
@@ -2425,6 +2464,71 @@ var BattleRenderer = (function () {
       return;
     }
     ring.fx = ringFx;
+  }
+
+  /* 玩家錨定的常駐領域光環（超神【火神降臨】的火焰領域、岩甲術【超重岩之術】
+     【超重力場】的重力場共用）：**釘在玩家身上**、逐幀取玩家錨點，
+     因此玩家移動時圈是平滑跟著走的（比照 spawnFireHunt 的環繞場域）。
+     顏色走 spec.elem 的主題色，所以同一支就服務得了火與土兩種領域。
+     刻意不沿用泥沼池的地面光環——那個釘在世界座標上，而事件是每秒重送一次，
+     玩家一移動就會看到圈每秒「跳」一格到新位置，那正是使用者回報的現象。
+     以 area.id 合併：重送只延長壽命，不再建第二個節點。 */
+  var _followAuras = Object.create(null);
+  var FOLLOW_AURA_MAX_SEC = 12;
+  function spawnFollowAura(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.r) || !(Number(a.r) > 0)) return;
+    var key = a.id || 'follow-aura';
+    var radius = Math.max(8, Number(a.r));
+    var dur = Math.min(FOLLOW_AURA_MAX_SEC, Math.max(0.5, spec.dur || 2));
+    var live = _followAuras[key];
+    if (live && !live.done && live.fx && !live.fx.dead) {
+      live.dur = Math.min(FOLLOW_AURA_MAX_SEC, Math.max(live.dur, live.t + dur));
+      live.radius = radius;                 // 半徑會隨升級改變，續期時一併更新
+      return;
+    }
+    var theme = themeOf(spec);
+    var node = new PIXI.Container();
+    S.layers.fx.addChild(node);
+    var g = new PIXI.Graphics();
+    node.addChild(g);
+    var state = { t: 0, dur: dur, radius: radius, done: false, fx: null };
+    _followAuras[key] = state;
+    var emberAcc = 0;
+    var auraFx = addFx({
+      node: node,
+      update: function (dt) {
+        state.t += dt;
+        var p = playerPos();
+        node.x = p.x; node.y = p.y - 12;    // 與環繞場域同一個視覺中心
+        var fade = state.t > state.dur - 0.4 ? Math.max(0, (state.dur - state.t) / 0.4) : 1;
+        var pulse = 1 + Math.sin(state.t * 3.4) * 0.04;
+        var rr = state.radius * pulse;
+        g.clear();
+        /* 俯視壓扁 0.62：與棋盤透視、環繞場域的畫法一致。 */
+        g.ellipse(0, 0, rr, rr * 0.62).fill({ color: theme.c2, alpha: 0.10 * fade });
+        g.ellipse(0, 0, rr, rr * 0.62).stroke({ color: theme.c1, width: 2, alpha: 0.5 * fade });
+        g.ellipse(0, 0, rr * 0.72, rr * 0.72 * 0.62)
+          .stroke({ color: theme.glow || theme.c1, width: 1, alpha: 0.22 * fade });
+        emberAcc += dt;
+        if (emberAcc > 0.1 && !REDUCED_MOTION && fade > 0.5) {
+          emberAcc = 0;
+          var ea = Math.random() * Math.PI * 2;
+          spawnRiser(p.x + Math.cos(ea) * rr, p.y - 12 + Math.sin(ea) * rr * 0.62, theme, spec.glyph);
+        }
+        if (state.t >= state.dur) {
+          state.done = true;
+          if (_followAuras[key] === state) delete _followAuras[key];
+        }
+        return state.t < state.dur;
+      }
+    }, FX_PERSISTENT_AURA_PRIORITY, (FOLLOW_AURA_MAX_SEC + 1) * 1000);
+    if (!auraFx) {
+      state.done = true;
+      if (_followAuras[key] === state) delete _followAuras[key];
+      return;
+    }
+    state.fx = auraFx;
   }
 
   /* 火牆（新版技能【無限火牆】）：沿傷害矩形長軸排列的直立火焰柱。
@@ -4703,6 +4807,7 @@ var BattleRenderer = (function () {
         break;
       case 'aura':
         if (spec.variant === 'starfall-shadow') { spawnStarfallShadow(spec); break; }
+        if (spec.variant === 'follow-aura') { spawnFollowAura(spec); break; }
         if (spec.variant === 'firehunt' || spec.variant === 'thunder-orbit') spawnFireHunt(spec);
         else if (spec.variant === 'thunder-orb') spawnThunderOrbField(spec);
         else if (spec.variant === 'firewall') spawnFireWall(spec);

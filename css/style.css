@@ -7077,6 +7077,29 @@ textarea:disabled,
 /* 火球術由 JS 從我方到敵方直線飛行；一般火球使用獨立核心與短尾焰。 */
 .vfx-proj-fire .vfx-proj-trail { display: none; }
 
+/* 超神【火神降臨】的普攻星環（DOM 後備路徑）：一個翻轉中的火焰圓環。
+   對稱的環在平面內轉是看不出來的，所以用 rotateY 讓它繞自身直徑翻轉——
+   與 Canvas 端 fireHuntRingProjectile 的 scale.y 收放是同一種讀法。 */
+.vfx-proj-firehunt-ring .vfx-proj-core {
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid #ffc247;
+  box-shadow: 0 0 10px 2px rgba(240, 74, 25, 0.75), inset 0 0 6px rgba(255, 248, 176, 0.85);
+  background: none;
+  transform: translate(-50%, -50%);
+  animation: vfx-firehunt-ring-spin 0.38s linear infinite;
+}
+
+.vfx-proj-firehunt-ring .vfx-proj-trail { display: none; }
+
+@keyframes vfx-firehunt-ring-spin {
+  from { transform: translate(-50%, -50%) rotateY(0deg); }
+  to { transform: translate(-50%, -50%) rotateY(360deg); }
+}
+
 /* 一般火球：獨立的小型平射彈體，不使用殞石的 flare emitter／天降尾焰。 */
 .vfx-proj-fireball-small {
   z-index: 2;
