@@ -330,6 +330,10 @@ test('【火神降臨】：常駐火焰領域每 0.5 秒打一次，且普攻附
   assert.equal(c.SKILL2_RT.projectiles.length, 3, '三顆都進飛行物佇列');
   const orb = c.SKILL2_RT.projectiles[0];
   assert.equal(Math.round(orb.speed), c.bfMeterPx(24), '飛行速度 24 米／秒');
+  /* 使用者決策 2026-08-26：星環是**貫穿型**，飛固定的 40 米，不是打到目標就停。 */
+  assert.equal(Math.round(orb.length), c.bfMeterPx(40), '飛行距離固定 40 米');
+  assert.equal(orb.targetOnly, false, '貫穿：不是只結算主目標的單體投射物');
+  assert.equal(orb.rehit, false, '同一顆星環對同一個敵人只算一次');
   /* 威力取「第 6 階時的火狩」＝第 4 階【三重火狩】的改寫值（120 ＋ 每級 12，Lv.10 ＝ 240%），
      不是第 1 階的 200%、也不是第 7 階【狩神之舞】的 300%。 */
   assert.equal(Math.round(orb.dmgVal), Math.round(500 * 240 / 100));
@@ -701,6 +705,38 @@ test('【火神降臨】的領域走玩家錨定變體，星環走旋轉圓環�
   assert.equal(specs.filter((s) => s.variant === 'fireball-small').length, 0, '不再畫成小火球');
 });
 
+test('【火神降臨】的星環會貫穿：沿途每個敵人都吃一次，射程外的也打得到', () => {
+  const c = loadContext();
+  const calls = stubHits(c); stubVfx(c);
+  maxLevels(c, 'firehunt');
+  setUlt(c, 'firehunt', 'fireGodDescend', 1);
+  equip(c, 'firehunt');
+  c.chance = () => false;                 // 固定 3 顆，不補那 0.3 顆
+  const p = playerEnt();
+  /* 三隻排成一直線：近的當普攻目標，中段與遠段都在 40 米（400px）的飛行路徑上。
+     遠的那一隻刻意放在「比普攻目標更遠」的位置——貫穿的重點就是它也要吃得到。
+     ⚠️ 全部放在 6 米（60px）之外：火神降臨的常駐領域每 0.5 秒也會打一次，
+     擺在領域裡的話這裡數到的命中會混進領域的傷害。 */
+  const near = enemy(1e9, 100, 0);
+  const mid = enemy(1e9, 250, 0);
+  const far = enemy(1e9, 380, 0);
+  const behind = enemy(1e9, 900, 0);      // 超過 40 米，打不到
+  const all = [near, mid, far, behind];
+
+  c.SKILL2_RT.projectiles.length = 0;
+  c.skills2OnBasicAttack(p, near, 'mv-float', c.BASE_STATS);
+  assert.equal(c.SKILL2_RT.projectiles.length, 3);
+  calls.length = 0;
+  // 飛完 40 米（24 米／秒 → 約 1.67 秒），加上三顆的起飛錯開
+  advance(c, p, all, 2.5);
+
+  const hitOf = (e) => calls.filter((k) => k.ent === e).length;
+  assert.equal(hitOf(near), 3, '主目標被三顆各打一次');
+  assert.equal(hitOf(mid), 3, '路徑中段的敵人也被三顆各打一次');
+  assert.equal(hitOf(far), 3, '比主目標更遠、但仍在 40 米內的敵人照樣吃到');
+  assert.equal(hitOf(behind), 0, '超過飛行距離的打不到');
+});
+
 test('岩甲領域：施放當下作用一次，之後**進入**範圍的敵人也立即受作用', () => {
   /* 使用者決策 2026-08-26：兩個超神進化不是施放瞬間打一次就結束，
      而是在岩甲護盾存在期間持續成立的領域。 */
@@ -787,6 +823,9 @@ test('五個新掛點都接上了戰鬥主流程（不是只寫了函式沒人�
     '領域要逐幀取玩家錨點才會平滑跟隨');
   assert.match(renderer, /spec\.variant === 'firehunt-ring'\) \{\s*[\r\n]+\s*core = fireHuntRingProjectile\(theme\);/);
   assert.match(renderer, /core\._ringUpdate\(dt\)/, '圓環的翻轉要每一幀推進');
+  /* 貫穿型：顯示層要沿固定方向飛完整段，不能咬著目標飛（那會停在目標身上）。 */
+  assert.match(renderer, /spec\.variant === 'firehunt-ring' && isFinite\(spec\.angle\) && Number\(spec\.lineLength\) > 0/);
+  assert.match(skills2, /angle: angle, lineLength: flyPx/);
   assert.match(vfx, /v === 'firehunt-ring'/);
   assert.match(vfx, /s\.variant === 'follow-aura'/);
   assert.match(css, /\.vfx-proj-firehunt-ring[\s\S]*?vfx-firehunt-ring-spin/);

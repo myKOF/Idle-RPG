@@ -4523,6 +4523,20 @@ var BattleRenderer = (function () {
             spec.travelMs && spec.travelMs[0], baseDelay, stagger, count);
           break;
         }
+        /* 超神【火神降臨】的星環是貫穿型：沿固定方向飛完整段距離，不咬著目標飛，
+           也沒有「抵達目標」這件事（沿途命中的傷害數字由模擬層各自跳）。 */
+        if (spec.variant === 'firehunt-ring' && isFinite(spec.angle) && Number(spec.lineLength) > 0) {
+          var ringTravel = projectileTravelMs(spec.travelMs && spec.travelMs[0],
+            spec.dur ? spec.dur * 1000 : 300);
+          var ringAngle = Number(spec.angle);
+          var ringLength = Number(spec.lineLength);
+          setTimeout(function () {
+            if (fxGate(spec)) return;
+            spawnProjectile(null, ringTravel, spec, null, playerMuzzle(),
+              { angle: ringAngle, length: ringLength });
+          }, baseDelay);
+          break;
+        }
         if (spec.variant === 'ice-arrow' && isFinite(spec.angle) && Number(spec.lineLength) > 0) {
           targets.forEach(function (id, ti) {
             var travel = projectileTravelMs(spec.travelMs && spec.travelMs[ti], spec.dur ? spec.dur * 1000 : 300);

@@ -6,13 +6,16 @@
 - Owner：Claude
 - 任務分類：傳奇特效／超神進化（第六批的實機回饋調整）
 - 使用者需求：① 火狩體積變大時內外兩圈的距離同步加大；② 火神降臨的傷害範圍要平滑實時跟隨玩家，
-  射出的星環要畫成旋轉的圓環；③ 岩甲術兩個超神的控場要改成「施放當下作用 ＋ 之後進入範圍也立即作用」。
+  射出的星環要畫成旋轉的圓環；③ 岩甲術兩個超神的控場要改成「施放當下作用 ＋ 之後進入範圍也立即作用」；
+  ④ 星環改為貫穿型飛行道具、飛行距離 40 米。
 - 前置依賴：無（`.claude/check-conflicts.ps1` 對三支目標檔案回報退出碼 0）。
 - 技術內容：
   - 圈距：施放端乘 `ringGapPx`，成長端在 `sgOrbitStep` 逐幀拉開；顯示層以 `rGrowTo`／`rGrowSec`
     讀同一條曲線。環形事件改送「出生半徑」，避免補送時被當成另一道環而多畫一圈。
   - 新增 `follow-aura`（玩家錨定、逐幀跟隨的領域光環）與 `firehunt-ring`（翻轉中的火焰圓環）
     兩個變體，Canvas 與 DOM 兩套顯示層都接。
+  - 星環改為貫穿型：拿掉 `targetOnly`、`length` 改取表定 `flyM`（40 米），
+    顯示層帶 `angle`／`lineLength` 沿直線飛完整段（既有欄位，不必動協議）。
   - 岩甲領域：新增 `sgTickRockField`（進入偵測），施放期與 tick 共用
     `sgRockPetrifyApply`／`sgRockGravityApply`；`SKILL2_RT.rock` 多帶 `inside`／`vfxAt`。
   - Worker 協議 v24 → v25。
