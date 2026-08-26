@@ -4055,17 +4055,22 @@ function sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     (ultSolar ? 1 + sgUltVal(ultSolar, 'spin') / 100 : 1);
 
   /* 狩神之舞：兩道火狩，外圈距內圈 m 米、旋轉方向相反；
-     且每團出現時自帶伴生（不必等命中判定；伴生體本身仍不可再伴生）。 */
+     且每團出現時自帶伴生（不必等命中判定；伴生體本身仍不可再伴生）。
+     ⚠️ 圈距要跟著**火狩體積**一起放大（使用者決策 2026-08-26）：體積 +30% 圈距就 +30%。
+     圈距不動的話，火狩一變大兩圈就會互相重疊、看起來黏成一團。
+     這裡吃的是 scale（第 2 階【強化火狩】×傳奇【增焰】）；超神【烈陽星環】那種
+     「隨時間長大」的部分是逐幀的，交給 sgOrbitStep continue 放大。 */
+  var ringGapPx = bfMeterPx(Number(t[6].fx.m) || 6) * scale;
   var rings = [{ r: radius, spin: spin }];
   if (dance) {
     var ringCount = Math.max(1, Math.floor(Number(t[6].fx.rings) || 2));
     for (var ri = 1; ri < ringCount; ri++) {
-      rings.push({ r: radius + bfMeterPx(Number(t[6].fx.m) || 6) * ri, spin: (ri % 2) ? -spin : spin });
+      rings.push({ r: radius + ringGapPx * ri, spin: (ri % 2) ? -spin : spin });
     }
   }
 
   var cfg = {
-    tgt: primary, floatSel: floatSel, rings: rings, count: count,
+    tgt: primary, floatSel: floatSel, rings: rings, count: count, ringGapPx: ringGapPx,
     dmgVal: dmgVal, lifeSec: lifeSec, bodyR: bodyR,
     hitElem: 'fire',
     companionChance: lvs[2] > 0 ? sgVal(t[2].fx, 'chance', lvs[2]) : 0,
@@ -4144,6 +4149,10 @@ function sgSpawnOrbitField(pEnt, st, gid, cfg) {
     bodyR0: Math.max(1, Number(cfg.bodyR) || 0),
     bodyGrowTo: Math.max(1, Number(cfg.bodyGrowTo) || 1),
     bodyGrowSec: Math.max(0.1, Number(cfg.bodyGrowSec) || 1),
+    /* 圈與圈的基準間距（px）。體積隨時間長大時，圈距要照同一個比例跟著拉開——
+       否則外圈的火狩會長進內圈裡。0＝只有一圈（或呼叫端沒提供），不做這件事。 */
+    ringGapPx: Math.max(0, Number(cfg.ringGapPx) || 0),
+    ringR0: [],
     bornAt: GT,
     startAng: Number(cfg.startAng) || 0,
     fieldKey: cfg.fieldKey || null,
@@ -4155,6 +4164,7 @@ function sgSpawnOrbitField(pEnt, st, gid, cfg) {
   for (var i = 0; i < cfg.rings.length; i++) {
     var ring = { r: Math.max(1, Number(cfg.rings[i].r) || 0), spin: Number(cfg.rings[i].spin) || 0 };
     f.rings.push(ring);
+    f.ringR0.push(ring.r);   // 出生半徑：圈距成長與特效事件的合併鍵都以它為基準
     for (var k = 0; k < count; k++) {
       var orb = sgOrbitOrb(startAng + Math.PI * 2 * k / count, ring);
       orb.ringIdx = i;
@@ -4244,7 +4254,20 @@ function sgOrbitStep(f, enemies, dt, ctx) {
      不是每秒跳一次；也因此【再生】把持續時間往後推不會讓已經長滿的體積縮回去。 */
   if (f.bodyGrowTo > 1) {
     var gp = Math.max(0, Math.min(1, (GT - f.bornAt) / f.bodyGrowSec));
-    f.bodyR = f.bodyR0 * (1 + (f.bodyGrowTo - 1) * gp);
+    var bodyGrow = 1 + (f.bodyGrowTo - 1) * gp;
+    f.bodyR = f.bodyR0 * bodyGrow;
+    /* 圈距同步放大（使用者決策 2026-08-26）：最內圈的半徑不動，只把「圈與圈的間距」
+       照體積的同一個比例拉開，火狩變大時兩圈才不會疊在一起。
+       螺旋（無限星環）只有一圈、而且半徑掛在每一團身上，不走這條。 */
+    if (!f.spiral && f.ringGapPx > 0 && f.rings.length > 1) {
+      for (var ri2 = 1; ri2 < f.rings.length; ri2++) {
+        f.rings[ri2].r = f.ringR0[0] + f.ringGapPx * bodyGrow * ri2;
+      }
+      for (var oi2 = 0; oi2 < f.orbs.length; oi2++) {
+        var ringNow = f.rings[f.orbs[oi2].ringIdx || 0];
+        if (ringNow) f.orbs[oi2].radius = ringNow.r;
+      }
+    }
   }
   /* 半徑成長：環半徑是權威（虛空斬）；螺旋（無限星環）則改由每一團自己往外長。 */
   if (f.growPxPerSec > 0 && dt > 0) {
@@ -4345,10 +4368,17 @@ function sgOrbitEmitVfx(f) {
   var dur = Math.max(0.5, f.until - GT);
   var perRing = Math.max(1, Math.round(f.orbs.length / Math.max(1, f.rings.length)));
   for (var i = 0; i < f.rings.length; i++) {
+    /* 圈距成長（烈陽星環）：事件送的是**出生半徑**而不是當下半徑——
+       顯示層的節點合併鍵含半徑，送當下值會讓每次補送都被當成另一道環而多畫一圈。
+       成長本身交給 rGrowTo／rGrowSec，顯示層照同一條曲線補。 */
+    var r0 = f.ringR0[i] || f.rings[i].r;
+    var rGrowTo = (f.bodyGrowTo > 1 && !f.spiral && f.ringGapPx > 0 && i > 0)
+      ? (f.ringR0[0] + f.ringGapPx * f.bodyGrowTo * i) / r0 : 1;
     sgEmitVfx(f.gid, f.tgt ? [f.tgt] : [], f.floatSel, {
       fxKind: 'aura', variant: f.auraVariant, elem: f.hitElem, dur: dur, count: perRing,
       area: {
-        x: center ? center.x : 0, y: center ? center.y : 0, r: f.rings[i].r,
+        x: center ? center.x : 0, y: center ? center.y : 0, r: r0,
+        rGrowTo: rGrowTo, rGrowSec: f.bodyGrowSec,
         orbR: f.bodyR, orbs: perRing, spin: f.rings[i].spin >= 0 ? 1 : -1,
         spinRate: f.rings[i].spin,
         startAng: f.startAng,
@@ -4578,16 +4608,17 @@ function sgTickFireGod(ctx, dt) {
   var st = (typeof getStats === 'function') ? getStats() : null;
   var dmgVal = sgGroupBaseStat(SKILLS2.firehunt, st) * sgUltVal(u, 'pct') / 100;
   var radius = bfMeterPx(Math.max(0, Number(u.def.fx.m) || 6));
-  /* 範圍提示的重畫走**顯示節拍**（SG_DOMAIN_VFX_SEC）而不是作用節拍：領域每 0.5 秒打一次，
-     但範圍圈不必跟著每 0.5 秒重送一則事件。畫法沿用泥沼池的地面光環（兩個顯示層都認得），
-     熔岩色＝火屬性領域，帶 id 讓顯示層重用同一個節點（沒有 id 會退化成以座標當快取鍵，
-     而領域跟著玩家走＝每一次都新建一個節點）。與血刃斬的永久領域同一套決策。 */
-  var pp = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
-  if (pp && radius > 0 && (SKILL2_RT.fireGodVfxAt || 0) <= GT) {
+  /* 範圍提示：**專屬的玩家錨定光環**（使用者決策 2026-08-26 要求平滑實時跟隨）。
+     原本沿用泥沼池的地面光環，那個是釘在世界座標上的——重畫節拍是 1 秒一次，
+     所以玩家一移動，圈就會每秒「跳」一次到新位置，看起來是瞬移不是跟隨。
+     改用 follow-aura：顯示層自己每一幀取玩家錨點（比照火狩環繞場域 spawnFireHunt），
+     事件只負責「這個領域還在、半徑多少」，位置完全由顯示層逐幀決定。
+     仍以顯示節拍重送（帶同一個 id ＝ 續期同一個節點），效果被卸下時就自然到期消失。 */
+  if (radius > 0 && (SKILL2_RT.fireGodVfxAt || 0) <= GT) {
     SKILL2_RT.fireGodVfxAt = GT + SG_DOMAIN_VFX_SEC;
     sgEmitPlayerVfx('firehunt', ctx.floatSel, {
-      fxKind: 'aura', variant: 'mire-lava', elem: 'fire', dur: SG_DOMAIN_VFX_SEC,
-      area: { id: 'sg-firegod-aura', x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
+      fxKind: 'aura', variant: 'follow-aura', elem: 'fire', dur: SG_DOMAIN_VFX_SEC * 2,
+      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2 }
     });
   }
   if (!(dmgVal > 0)) return;
@@ -4647,8 +4678,10 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
       singleHit: true, targetOnly: true, waitForEnd: !geomOk,
       speed: speed, travelMs: travelMs, beginSec: beginSec
     }, out);
+    /* 使用者決策 2026-08-26：星環要畫成「丟出去的旋轉圓環」，不是小火球。
+       firehunt-ring 兩個顯示層各有專屬畫法；不被認得時才退回泛用投射物。 */
     sgEmitVfx('firehunt', [target], floatSel, {
-      fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
+      fxKind: 'projectile', variant: 'firehunt-ring', elem: 'fire', count: 1,
       travelMs: [travelMs], projectile: true, delayMs: Math.round(beginSec * 1000)
     });
   }
@@ -4709,7 +4742,7 @@ function sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out) {
      否則【金剛不壞】的 +生命上限會慢一拍，這一次的護盾（＝最大生命的 pct%）
      仍照舊上限計算，下一次施放才吃得到——玩家看到的是「第一次放沒效」。
      base 先給 1 佔位，等護盾真的塗上去之後再改寫成真值。 */
-  SKILL2_RT.rock = { until: GT + dur, pEnt: pEnt, base: 1, amp: 0 };
+  SKILL2_RT.rock = { until: GT + dur, pEnt: pEnt, base: 1, amp: 0, inside: null, vfxAt: 0 };
   if (ultAdamant && typeof markStatsDirty === 'function') {
     var hpMaxBefore = Math.max(1, Number(st && st.hp) || 0);
     markStatsDirty();
@@ -4730,9 +4763,9 @@ function sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var pSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
     floatPlayerEvent(pSel, '🪨+' + fmt(Math.max(0, (pEnt.shield || 0) - before)), 'shield');
   }
-  /* 兩個「施放瞬間對周圍生效」的超神進化。兩者互斥（三選一），各自獨立判定。 */
-  sgRockPetrifyBurst(pEnt, st, pool, floatSel);
-  sgRockGravityBurst(pEnt, st, pool, floatSel);
+  /* 兩個領域型超神進化（三選一、互斥）：施放當下先對範圍內的敵人作用一次，
+     之後由 sgTickRockField 接手「進入範圍就作用」。 */
+  sgRockFieldCast(pEnt, st, pool, floatSel);
 }
 
 /* ---------------------------------------------------------------------------
@@ -4764,29 +4797,27 @@ function sgRockBurstVictims(pool, m) {
   return out;
 }
 
-/* 兩個超神爆發的範圍提示：以玩家為圓心的地面光環。畫法沿用泥沼池（兩個顯示層都認得），
-   帶 id 讓顯示層重用同一個節點；沒有這一圈的話，範圍內沒有敵人時整招是看不見的。 */
-function sgRockBurstAura(floatSel, m, id) {
-  var pp = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
-  var radius = bfMeterPx(Math.max(0, Number(m) || 0));
-  if (!pp || !(radius > 0)) return;
+/* 岩甲領域的範圍提示：玩家錨定、逐幀跟隨（判定本來就是以玩家為圓心的 bfEntityDistance）。
+   ⚠️ 沒有這一圈的話，範圍內剛好沒有敵人時整個領域是看不見的。 */
+function sgRockFieldAura(floatSel, radius) {
+  if (!(radius > 0)) return;
   sgEmitPlayerVfx('rockarmor', floatSel, {
-    fxKind: 'aura', variant: 'mire', elem: 'earth', dur: 1.2,
-    area: { id: id, x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
+    fxKind: 'aura', variant: 'follow-aura', elem: 'earth', dur: SG_DOMAIN_VFX_SEC * 2,
+    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2 }
   });
 }
 
-/* 超神【超重岩之術】：施放時石化 m 米內的敵人。
-   「無法行動」沿用暈眩承擔（因此完整吃 BOSS 控場免疫、韌性折減與控場遞減），
-   sgPetrify 本身只負責「受到的土系傷害額外提高」——與寒霜的【凍結】同一套拆法。 */
-function sgRockPetrifyBurst(pEnt, st, pool, floatSel) {
-  var u = sgUlt('rockarmor', 'superRockArt');
-  if (!u) return;
-  var victims = sgRockBurstVictims(pool, u.def.fx.m);
-  if (!victims.length) return;
+/* 目前生效中的岩甲領域是哪一個超神進化（兩者三選一、互斥）；沒有就回 null。 */
+function sgRockFieldUlt() {
+  if (!skills2Equipped('rockarmor')) return null;
+  return sgUlt('rockarmor', 'superRockArt') || sgUlt('rockarmor', 'gravityField');
+}
+
+/* 對這一批敵人套用【超重岩之術】的石化。 */
+function sgRockPetrifyApply(victims, u, floatSel) {
+  if (!victims || !victims.length) return;
   var sec = Math.max(0.5, Number(u.def.fx.sec) || 4);
   var pct = Math.max(0, sgUltVal(u, 'pct'));
-  sgRockBurstAura(floatSel, u.def.fx.m, 'sg-rock-petrify');
   sgEmitVfx('rockarmor', victims, floatSel, {
     fxKind: 'burst', variant: 'rock-petrify', elem: 'earth', dur: 0.8
   });
@@ -4798,20 +4829,71 @@ function sgRockPetrifyBurst(pEnt, st, pool, floatSel) {
   }
 }
 
-/* 超神【超重力場】：施放時使 m 米內的敵人僵化（移動、攻速與傷害同時下降）。
-   比照【泥沼緩速】不吃控場遞減與韌性——它是場域型減益，不是控場。 */
-function sgRockGravityBurst(pEnt, st, pool, floatSel) {
-  var u = sgUlt('rockarmor', 'gravityField');
-  if (!u) return;
-  var victims = sgRockBurstVictims(pool, u.def.fx.m);
-  if (!victims.length) return;
+/* 對這一批敵人套用【超重力場】的僵化。 */
+function sgRockGravityApply(victims, u, floatSel) {
+  if (!victims || !victims.length) return;
   var sec = Math.max(0.5, Number(u.def.fx.stiffSec) || 5);
   var pct = Math.max(0, Math.min(95, Number(u.def.fx.stiff) || 0));
-  sgRockBurstAura(floatSel, u.def.fx.m, 'sg-gravity-field');
   sgEmitVfx('rockarmor', victims, floatSel, {
     fxKind: 'burst', variant: 'gravity-field', elem: 'earth', dur: 0.8
   });
   for (var i = 0; i < victims.length; i++) applyStatus(victims[i], 'sgStiffen', { val: pct, dur: sec });
+}
+
+/* 岩甲領域的每 tick 推進（使用者決策 2026-08-26）：
+   兩個超神進化不是「施放瞬間打一次就結束」，而是**在岩甲護盾存在期間持續成立的領域**——
+   施放當下範圍內的敵人受作用，之後**進入**範圍的敵人也立即受作用。
+   採「進入偵測」而不是「每拍重塗」：
+     ・每拍重塗會讓站著不動的敵人被永久定住（石化含暈眩），控場遞減也會把它打成 0 秒
+     ・只在施放當下算一次，則後來生成／走進來的敵人完全不受影響——那正是要修的問題
+   因此記住「上一拍在範圍內的是誰」，只對 外→內 這個轉換套用；離開再回來會再吃一次。 */
+function sgTickRockField(ctx, dt) {
+  var rt = SKILL2_RT && SKILL2_RT.rock;
+  if (!rt || rt.until <= GT || (rt.pEnt && rt.pEnt !== ctx.pEnt)) return;
+  var u = sgRockFieldUlt();
+  if (!u) { rt.inside = null; return; }
+  var radius = bfMeterPx(Math.max(0, Number(u.def.fx.m) || 0));
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
+  var was = rt.inside || [];
+  var now = [];
+  var fresh = [];
+  for (var i = 0; i < live.length; i++) {
+    var e = live[i];
+    if (!e || e.hp <= 0) continue;
+    if (typeof bfPos === 'function' && bfPos(e) && typeof bfEntityDistance === 'function' &&
+        bfEntityDistance(e) > radius) continue;
+    now.push(e);
+    if (was.indexOf(e) < 0) fresh.push(e);
+  }
+  rt.inside = now;
+  // 範圍提示走顯示節拍重送（同一個 id ＝ 續期同一個節點），領域在就一直看得見
+  if ((rt.vfxAt || 0) <= GT) {
+    rt.vfxAt = GT + SG_DOMAIN_VFX_SEC;
+    sgRockFieldAura(ctx.floatSel, radius);
+  }
+  if (!fresh.length) return;
+  if (u.id === 'superRockArt') sgRockPetrifyApply(fresh, u, ctx.floatSel);
+  else sgRockGravityApply(fresh, u, ctx.floatSel);
+}
+
+/* 超神【超重岩之術】：施放時石化 m 米內的敵人。
+   「無法行動」沿用暈眩承擔（因此完整吃 BOSS 控場免疫、韌性折減與控場遞減），
+   sgPetrify 本身只負責「受到的土系傷害額外提高」——與寒霜的【凍結】同一套拆法。 */
+function sgRockFieldCast(pEnt, st, pool, floatSel) {
+  var u = sgRockFieldUlt();
+  if (!u) return;
+  var radius = bfMeterPx(Math.max(0, Number(u.def.fx.m) || 0));
+  var victims = sgRockBurstVictims(pool, u.def.fx.m);
+  /* 記住「施放當下已經在裡面的是誰」：不記的話，下一拍的進入偵測會把他們全部
+     當成剛進來而再作用一次（石化那條會馬上吃到控場遞減，等於白白折損一次）。 */
+  if (SKILL2_RT.rock) {
+    SKILL2_RT.rock.inside = victims.slice();
+    SKILL2_RT.rock.vfxAt = GT + SG_DOMAIN_VFX_SEC;
+  }
+  sgRockFieldAura(floatSel, radius);
+  if (u.id === 'superRockArt') sgRockPetrifyApply(victims, u, floatSel);
+  else sgRockGravityApply(victims, u, floatSel);
 }
 
 /* 【石化】：這個敵人受到的土系傷害額外提高%（0＝沒有）。
@@ -8119,6 +8201,7 @@ function tickSkill2(dt, ctx) {
   sgTickStarfall(ctx, dt);
   sgTickFirehuntLegend(ctx, dt);
   sgTickFireGod(ctx, dt);
+  sgTickRockField(ctx, dt);
   sgTickNetherMire(ctx);
   sgTickRebirthCharge(ctx.pEnt);
   sgTickUltRepeat(ctx, dt);

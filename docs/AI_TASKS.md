@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## Claude｜火狩圈距、火神降臨跟隨領域與旋轉星環、岩甲兩超神改為持續領域（2026-08-26）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（第六批的實機回饋調整）
+- 使用者需求：① 火狩體積變大時內外兩圈的距離同步加大；② 火神降臨的傷害範圍要平滑實時跟隨玩家，
+  射出的星環要畫成旋轉的圓環；③ 岩甲術兩個超神的控場要改成「施放當下作用 ＋ 之後進入範圍也立即作用」。
+- 前置依賴：無（`.claude/check-conflicts.ps1` 對三支目標檔案回報退出碼 0）。
+- 技術內容：
+  - 圈距：施放端乘 `ringGapPx`，成長端在 `sgOrbitStep` 逐幀拉開；顯示層以 `rGrowTo`／`rGrowSec`
+    讀同一條曲線。環形事件改送「出生半徑」，避免補送時被當成另一道環而多畫一圈。
+  - 新增 `follow-aura`（玩家錨定、逐幀跟隨的領域光環）與 `firehunt-ring`（翻轉中的火焰圓環）
+    兩個變體，Canvas 與 DOM 兩套顯示層都接。
+  - 岩甲領域：新增 `sgTickRockField`（進入偵測），施放期與 tick 共用
+    `sgRockPetrifyApply`／`sgRockGravityApply`；`SKILL2_RT.rock` 多帶 `inside`／`vfxAt`。
+  - Worker 協議 v24 → v25。
+- 修改檔案：`js/skills2.js`、`js/battle-renderer.js`、`js/vfx.js`、`css/style.css`、`js/bridge.js`、
+  `js/worker/protocol.js`、`js/worker/sim.worker.js`、`index.html`、
+  `game_formula.md`、`PATCH.md`、`docs/WORKER_PROTOCOL.md`、
+  `tests/skill2-firehunt-rock-legendary.test.cjs`、`tests/skill2-magic-firehunt.test.cjs`、
+  `tests/skill2-vfx.test.cjs`、`tests/worker-protocol.test.cjs`、本文件。
+- 驗證方式：`npm test` 全量 1788 案例（1778 通過；本檔測試 27/27）、
+  `node tools/build_check.cjs`（301 檔）、快取版號同步、`git diff --check`。
+- 已知風險：
+  - **本次之前就存在的 10 條紅燈未處理**（改動前後完全相同，非本次造成）：泥沼術、冰系、
+    雷系、風系四組的表定斷言與 1 條 Canvas 投射物預判測試。
+  - 岩甲領域改為持續之後，控場覆蓋率明顯上升（尤其【超重力場】的僵化），DPS／存活基準要重新量。
+  - 「站在領域裡不動的敵人只吃一次」是刻意的取捨（見 PATCH.md）；若希望改成持續壓制，
+    要另外設計一套不會被控場遞減吃掉的重塗規則。
+- 未完成項目：尚未進行瀏覽器實機目視驗證（建議交由 Antigravity；本次三項都是視覺為主的調整）。
+- Commit：待建立。
+
+---
+
 ## Claude｜傳奇進化第八批（連鎖閃電／落雷術十特效 ＋ 兩組超神進化）（2026-08-26）
 
 - 狀態：已完成

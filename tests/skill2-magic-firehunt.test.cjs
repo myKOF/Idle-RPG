@@ -327,7 +327,7 @@ test('火狩的持續時間以狀態呈現，剩餘時間隨【再生】的擊�
   assert.equal(firehuntState(), undefined, '火狩結束後狀態不得殘留');
 });
 
-test('狩神之舞：兩道反向火狩、外圈距內圈 6 米、出現即自帶伴生、傷害與時間改讀第 7 階', () => {
+test('狩神之舞：兩道反向火狩、圈距＝6 米 × 體積倍率、出現即自帶伴生、傷害與時間改讀第 7 階', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -338,7 +338,14 @@ test('狩神之舞：兩道反向火狩、外圈距內圈 6 米、出現即自�
   c.castSkill2(p, [m], 'firehunt', 'mv-float');
   const f = c.SKILL2_RT.orbits[0];
   assert.equal(f.rings.length, 2, '一次施放 2 道');
-  assert.ok(Math.abs(f.rings[1].r - (f.rings[0].r + 6 * M)) < 1e-6, '第 2 道在 6 米外的更外圈');
+  /* 圈距跟著火狩體積一起放大（使用者決策 2026-08-26）：體積 +N% 圈距就 +N%。
+     這裡第 2 階【強化火狩】已投資，所以體積倍率＞1，圈距也照同一個倍率拉開——
+     表定的 6 米是**未放大前**的基準值。倍率直接由內圈半徑反推，才不會在這裡
+     再抄一份 scale 的算式（抄一份就會與 sgCastFirehunt 各自演化）。 */
+  var bodyScale = f.rings[0].r / (8 * M);
+  assert.ok(bodyScale > 1, '第 2 階【強化火狩】會放大體積');
+  assert.ok(Math.abs(f.rings[1].r - (f.rings[0].r + 6 * M * bodyScale)) < 1e-6,
+    '第 2 道在「6 米 × 體積倍率」外的更外圈');
   assert.equal(Math.sign(f.rings[1].spin), -Math.sign(f.rings[0].spin), '兩道旋轉方向相反');
   // 3 團／道 × 2 道，且每團出現時自帶伴生 → 12 團
   assert.equal(f.orbs.length, 12);
