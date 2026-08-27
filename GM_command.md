@@ -689,7 +689,7 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 
 - 第 2 個參數是**選項編號**（1／2／3，對應技能面板三選一的左中右），`off` ＝清除選擇。
 - 第 3 個參數留白＝`max`（Lv.10）；填 0 等同 `off`。
-- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術）、`mire`（泥沼術）、`earthguard`（大地守護）、`chainlightning`（連鎖閃電）、`thunderstrike`（落雷術）、`thunderorb`（雷球）、`icearrow`（寒冰箭），`all` 會自動略過其餘群組。
+- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術）、`mire`（泥沼術）、`earthguard`（大地守護）、`chainlightning`（連鎖閃電）、`thunderstrike`（落雷術）、`thunderorb`（雷球）、`icearrow`（寒冰箭）、`waterball`（水流彈）、`frostnova`（冰霜新星），`all` 會自動略過其餘群組。
 - **生效前提是該群組前 7 階全部滿級**：沒滿級時指令仍會寫入，但效果暫時失效
   （面板會標「暫時失效」）。要立刻看到效果，先 `sglv thrust max` 再 `sgult thrust 1`。
 
@@ -733,6 +733,12 @@ sgult thunderorb 3                    （雷球＝雷殞天地碎：雷殞石變
 sgult icearrow 1                      （寒冰箭＝極寒冰爆：連射改為 10 波／0.35 秒，傷害 +50%）
 sgult icearrow 2                      （寒冰箭＝無限冰裂：每次命中回扣 0.1 秒冷卻，支數 +4）
 sgult icearrow 3                      （寒冰箭＝冰之淚：另召喚 10 波箭雨蓋住我方 30 米）
+sgult waterball 1                     （水流彈＝水牢天瀑：周圍 20 米水牢，擋遠程、關住的敵人變弱變脆）
+sgult waterball 2                     （水流彈＝怒海狂濤：場上 10 道水龍捲時在中央再生成一道巨大的）
+sgult waterball 3                     （水流彈＝海淵葬界：永久水之領域，逐拍塗寒霜且可多疊 10 層）
+sgult frostnova 1                     （冰霜新星＝無限新星：每 1 秒自動施放 1 次，新星傷害 +50%）
+sgult frostnova 2                     （冰霜新星＝極致之冰：凍結中的敵人彼此冰晶共鳴）
+sgult frostnova 3                     （冰霜新星＝冰皇領域：暴風雪放大 50%，每秒昇起 2～8 根冰錐）
 sgult all off                         （清除所有超神進化選擇）
 ```
 

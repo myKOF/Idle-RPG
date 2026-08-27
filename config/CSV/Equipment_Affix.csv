@@ -214,6 +214,16 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,icearrowWinter,凜冬侵蝕,0,,,,,,,,0,,寒冰箭造成的寒霜狀態傷害與持續時間 +50%。,ice,icearrow,,spellbook,"{""icearrowFrostPct"":50}"
 傳奇特效,icearrowSplit,冰裂箭,0,,,,,,,,0,,寒冰箭擊中敵人後會再分裂出 2 支小型寒冰箭，向前方的敵人造成 150% 寒冰傷害。,ice,icearrow,,spellbook,"{""icearrowSplit"":{""count"":2,""pct"":150}}"
 傳奇特效,icearrowDeepFreeze,深度凍結,0,,,,,,,,0,,寒冰箭擊中暈眩或凍結的敵人造成的傷害 +50%。,ice,icearrow,,spellbook,"{""icearrowControlPct"":50}"
+傳奇特效,waterballVolley,水流連彈,0,,,,,,,,0,,水流彈的發射數量 +2 顆。,ice,waterball,,focus,"{""waterballShotAdd"":{""count"":2}}"
+傳奇特效,waterballNovaBurst,冰霜擴散,0,,,,,,,,0,,【寒流爆散】的擴散爆炸變成冰霜新星，且範圍增大 30%。,ice,waterball,,focus,"{""waterballBurstNova"":{""scalePct"":30}}"
+傳奇特效,waterballFrostSurge,寒霜湧動,0,,,,,,,,0,,水流彈造成的寒霜狀態可在凍結後再疊加 5 層，每層再增加 50% 寒冰傷害。,ice,waterball,,focus,"{""waterballFrostOver"":{""count"":5,""pct"":50}}"
+傳奇特效,waterballTorrent,激流,0,,,,,,,,0,,水流彈的彈射次數 +2 次，且彈射速度 +30%。,ice,waterball,,focus,"{""waterballBounceAdd"":{""count"":2},""waterballBounceSpeedPct"":30}"
+傳奇特效,waterballTornado,水龍勢,0,,,,,,,,0,,水流彈擊中時有 10% 機率在目標處形成 1 道水龍捲，造成 4 段 100% 寒冰傷害。,ice,waterball,,focus,"{""waterballTornadoProc"":{""chance"":10,""hits"":4,""pct"":100}}"
+傳奇特效,frostnovaShatter,碎冰,0,,,,,,,,0,,冰霜新星的攻擊範圍 +30%。,ice,frostnova,,staff2h,"{""frostnovaScalePct"":30}"
+傳奇特效,frostnovaTwinBurst,雙冰爆,0,,,,,,,,0,,冰霜新星擊中帶有寒霜狀態的敵人時，有 35% 機率在目標處再爆發 1 次冰霜新星。,ice,frostnova,,staff2h,"{""frostnovaTwinBurst"":{""chance"":35}}"
+傳奇特效,frostnovaIceSpike,寒冰衝擊,0,,,,,,,,0,,冰霜新星殺死被凍結的敵人時，會在目標地面昇起 1 根冰錐，對周圍 8 米內的敵人造成 4 段 100% 寒冰傷害。,ice,frostnova,,staff2h,"{""frostnovaKillSpike"":{""hits"":4,""pct"":100,""m"":8}}"
+傳奇特效,frostnovaColdTide,寒潮,0,,,,,,,,0,,冰霜新星擊中帶有寒霜狀態的敵人時，有 20% 機率在目標處再爆發 1 次冰霜新星。,ice,frostnova,,staff2h,"{""frostnovaColdTide"":{""chance"":20}}"
+傳奇特效,frostnovaWinterFrost,凜冬寒霜,0,,,,,,,,0,,暴風雪持續時間內會不斷對範圍內的敵人施加寒霜狀態，且寒霜狀態傷害 +30%。,ice,frostnova,,staff2h,"{""frostnovaBlizzardFrost"":{""stacks"":1},""frostnovaFrostDmgPct"":30}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

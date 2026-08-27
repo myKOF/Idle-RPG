@@ -84,3 +84,4 @@ sgPlague,惡疫,🦠,debuff,dot,,poison,skill,200,,0,0,8,0.35,strongest,1,超神
 sgInferno,火獄烙印,🌋,debuff,stat,sgInferno,fire,,0,,0,1,8,0,refresh,1,超神進化【深淵火獄】：敵人的屬性標籤強制改為火屬性（效果值本身沒有意義，比照【地爆天星】只是一個計時容器）。屬性改寫走 skill2ForcedAttr，與【寒冰逆轉】同一個掛點。
 sgSuperconduct,超導電荷,🔋,buff,stat,sgSuperconduct,lightning,,0,,0,2,99999,0,stack,100,超神進化【永恒超導體】：閃電鏈每經過自身 1 次疊 1 層，每層使你的雷電傷害提高（效果值＝單層% × 層數）；設計未寫持續時間，比照【戰神屠錄】採「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。
 sgThunderQuake,震雷,⚡,debuff,stat,sgThunderQuake,lightning,,0,,0,25,8,0,refresh,1,傳奇特效【震雷】：被落雷術擊中留下的雷痕（效果值＝該敵人「暈眩中」時受到的傷害提高%）。只有同時暈眩中才會吃到增傷，因此持續時間只要蓋得住一次落雷的暈眩即可。
+sgWaterPrison,水牢,🌊,debuff,stat,sgWaterPrison,ice,,0,,0,100,6,0,refresh,1,超神進化【水牢天瀑】：被關進水牢的敵人（效果值＝受到的傷害提高%）。攻擊力下降那一半沿用既有的【攻擊】減益 atkDown，不另建一筆。
