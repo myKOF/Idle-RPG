@@ -1240,6 +1240,8 @@ function fieldMonsterAttack(m, p) {
     /* 打不到就不打。座標制改版前這裡沒有任何距離判定——站在戰場最遠端的敵人
        照樣打得到玩家，畫面上就是隔空互毆。魔法系是遠程，其餘要貼到近戰距離。 */
     if (typeof bfInAttackRange === 'function' && !bfInAttackRange(m)) return false;
+    /* 超神【水牢天瀑】：水牢擋下由圈外射進來的遠程攻擊（判定的唯一入口在 js/skills2.js）。 */
+    if (typeof skill2WaterPrisonBlocks === 'function' && skill2WaterPrisonBlocks(m)) return false;
     var attackTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
     var mres = doMonsterAttack(m, attackTarget, 'pv-float');

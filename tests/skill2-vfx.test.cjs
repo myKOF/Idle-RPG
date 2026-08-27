@@ -927,13 +927,13 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.59/);
-  assert.match(index, /js\/status\.js\?v=1\.0\.19/);
+  assert.match(index, /js\/status\.js\?v=1\.0\.20/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.73/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.106/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.83/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260827-orb-icearrow-legendary'/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.84/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260828-water-frost-legendary'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260825-mire-earthguard-legendary/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260827-orb-icearrow-legendary/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260828-water-frost-legendary/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260826-chain-thunder-legendary/);
 });
 

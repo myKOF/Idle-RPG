@@ -1,5 +1,52 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第十批（水流彈／冰霜新星十特效 ＋ 兩組超神進化）（2026-08-28）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（冰系第二批）
+- 使用者需求：實作「水流彈」與「冰霜新星」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）水流彈、冰霜新星兩段。
+- 前置依賴：無（`.claude/check-conflicts.ps1` 總覽模式回報退出碼 0，全部副本乾淨、
+  `ai/antigravity` 與 `ai/codex` 都沒有未合併的 commit）。
+- 前九批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 138）：法器→水流彈＝水流連彈／冰霜擴散／
+    寒霜湧動／激流／水龍勢；雙手法杖→冰霜新星＝碎冰／雙冰爆／寒冰衝擊／寒潮／凜冬寒霜。
+    `focus` 是單手副手武器，不吃雙手 ×2 補償；`staff2h` 吃，因此冰霜新星那五個的
+    「數量／段數／機率」一律包在 `LEGENDARY_FX_NON_VALUE_KEYS` 的保護鍵裡。
+  - SKILLS2 新增 6 個超神進化（開放群組 18 → 20）：水流彈＝水牢天瀑／怒海狂濤／海淵葬界；
+    冰霜新星＝無限新星／極致之冰／冰皇領域。
+  - 引擎層只多三個共用掛點：
+    ① 寒霜的「疊層上限」與「凍結門檻」分家（`sgApplyFrost`）：門檻不變，上限可被
+       傳奇【寒霜湧動】（只放寬水流彈那一份）與超神【海淵葬界】（放寬領域內的每一份）
+       往上放寬，並以目前層數為地板，低上限的來源不會把層數壓回來；
+    ② 冰錐 `sgSpawnIceSpike`／`kind: icespike`：傳奇【寒冰衝擊】與超神【冰皇領域】共用；
+    ③ `skill2WaterPrisonBlocks`：超神【水牢天瀑】擋下圈外遠程攻擊的唯一判定入口，
+       掛在 `js/combat.js fieldMonsterAttack`（野外敵人攻擊成不成立的唯一閘門）。
+  - 冰霜新星那一棵樹的本體傷害／範圍／一次命中收斂成三支共用函式
+    （`sgFrostnovaBodyDamage`／`sgFrostnovaBaseM`＋`sgFrostnovaScale`／`sgFrostnovaHit`），
+    施放、死亡新星、【雙冰爆】的再爆發走的都是它們，超神的傷害乘區不會漏套在某一條路上。
+  - 新增一筆狀態 `sgWaterPrison`（水牢的受傷提高%）；攻擊力下降沿用既有的 `atkDown`。
+    Worker 協議未變（仍是 v26）。
+  - 顯示層一律沿用既有變體：`follow-aura`（水牢／水之領域）、`water-tornado`
+    （巨大水龍捲／冰錐）、`frost-nova`（爆散改為新星）、`frost-spread`（冰晶共鳴）。
+- 修改檔案：`js/data.js`、`js/status.js`、`js/skills2.js`、`js/combat.js`、`index.html`、
+  `js/bridge.js`、`js/worker/sim.worker.js`、
+  `config/CSV/Skills2.csv`／`Equipment_Affix.csv`／`Status.csv` 與對應的 `config/Excel/*.xlsx`、
+  `game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-waterball-frostnova-legendary.test.cjs`（新增，20 案例）、
+  `tests/skill2-ult-evolution.test.cjs`（開放群組 18 → 20；控制組由水流彈改為風刃）、
+  `tests/legendary-affix.test.cjs`（池內總數 128 → 138）、
+  `tests/skill2-vfx.test.cjs`（它釘住 index.html／bridge.js／sim.worker.js 的**目前版號**）、本文件。
+- 驗證：`npm test` 1835 案例（1825 通過，新增 20 案例全過；10 條紅燈已用 HEAD 的暫時 worktree
+  逐檔對照跑過，失敗訊息逐字相同，確定為本批之前既有）、`node tools/build_check.cjs` 303 檔、
+  `config_tables --gen／--sync／--apply` 往返（語意變更 0）、`apply_params` 試跑（將變更 0、
+  錨點問題 0、對應參數總數 554 不變）與 `--check-anchors`、快取版號同步、
+  本機 8124 起頁面確認 console 無錯誤且六個超神說明字串在 Lv.1／Lv.10 都正確代入、`git diff --check`。
+- 已知風險與待確認：設計文檔未指定而由我裁定的十四處，以及【無限新星】【水龍勢】
+  【寒霜湧動】三項需要重估數值的風險，已列在 `PATCH.md` 的「待確認」與「建議重估的數值」兩段。
+
 ## Claude｜傳奇進化第九批（雷球／寒冰箭十特效 ＋ 兩組超神進化）（2026-08-27）
 
 - 狀態：已完成

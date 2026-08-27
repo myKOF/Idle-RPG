@@ -1417,6 +1417,62 @@ var PASSIVE_POOL = {
     name: '深度凍結', desc: '寒冰箭擊中暈眩或凍結的敵人造成的傷害 +50%。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'icearrow', weaponTypes: ['spellbook'],
     fx: { icearrowControlPct: 50 }
+  },
+  /* ---- 傳奇進化第十批（2026-08-28）：冰系第二批 ----
+     法器→水流彈（waterball）／雙手杖→冰霜新星（frostnova）。
+     法器是單手副手武器（cat: offHand、hands: 1），不吃 TWO_HAND_EFFECT_VALUE_MULT
+     的 ×2 補償；雙手杖吃，因此冰霜新星那五個的「數量／段數／機率」一律包在
+     LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵裡（count／hits／chance），
+     被放大的只有威力與範圍（比照第五批的火龍捲）。 */
+  waterballVolley: {
+    name: '水流連彈', desc: '水流彈的發射數量 +2 顆。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'waterball', weaponTypes: ['focus'],
+    fx: { waterballShotAdd: { count: 2 } }
+  },
+  waterballNovaBurst: {
+    name: '冰霜擴散', desc: '【寒流爆散】的擴散爆炸變成冰霜新星，且範圍增大 30%。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'waterball', weaponTypes: ['focus'],
+    fx: { waterballBurstNova: { scalePct: 30 } }
+  },
+  waterballFrostSurge: {
+    name: '寒霜湧動', desc: '水流彈造成的寒霜狀態可在凍結後再疊加 5 層，每層再增加 50% 寒冰傷害。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'waterball', weaponTypes: ['focus'],
+    fx: { waterballFrostOver: { count: 5, pct: 50 } }
+  },
+  waterballTorrent: {
+    name: '激流', desc: '水流彈的彈射次數 +2 次，且彈射速度 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'waterball', weaponTypes: ['focus'],
+    fx: { waterballBounceAdd: { count: 2 }, waterballBounceSpeedPct: 30 }
+  },
+  waterballTornado: {
+    name: '水龍勢', desc: '水流彈擊中時有 10% 機率在目標處形成 1 道水龍捲，造成 4 段 100% 寒冰傷害。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'waterball', weaponTypes: ['focus'],
+    fx: { waterballTornadoProc: { chance: 10, hits: 4, pct: 100 } }
+  },
+  frostnovaShatter: {
+    name: '碎冰', desc: '冰霜新星的攻擊範圍 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
+    fx: { frostnovaScalePct: 30 }
+  },
+  frostnovaTwinBurst: {
+    name: '雙冰爆', desc: '冰霜新星擊中帶有寒霜狀態的敵人時，有 35% 機率在目標處再爆發 1 次冰霜新星。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
+    fx: { frostnovaTwinBurst: { chance: 35 } }
+  },
+  frostnovaIceSpike: {
+    name: '寒冰衝擊', desc: '冰霜新星殺死被凍結的敵人時，會在目標地面昇起 1 根冰錐，對周圍 8 米內的敵人造成 4 段 100% 寒冰傷害。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
+    fx: { frostnovaKillSpike: { hits: 4, pct: 100, m: 8 } }
+  },
+  frostnovaColdTide: {
+    name: '寒潮', desc: '冰霜新星擊中帶有寒霜狀態的敵人時，有 20% 機率在目標處再爆發 1 次冰霜新星。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
+    fx: { frostnovaColdTide: { chance: 20 } }
+  },
+  frostnovaWinterFrost: {
+    name: '凜冬寒霜', desc: '暴風雪持續時間內會不斷對範圍內的敵人施加寒霜狀態，且寒霜狀態傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
+    fx: { frostnovaBlizzardFrost: { stacks: 1 }, frostnovaFrostDmgPct: 30 }
   }
 };
 
