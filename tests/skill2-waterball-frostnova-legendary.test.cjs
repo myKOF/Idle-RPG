@@ -168,7 +168,7 @@ test('【冰霜擴散】：爆散改為冰霜新星（範圍 +30%、層數改用
   assert.equal(nova.stacks, 2, '層數改用冰霜新星第 1 階的層數');
 });
 
-test('【寒霜湧動】：寒霜可疊過凍結門檻 5 層，且每一層額外層使凍傷 +50%', () => {
+test('【寒霜湧動】：額外上限層數也納入寒霜總層數增傷', () => {
   function stack(keys) {
     const c = loadContext();
     stubVfx(c); stubHits(c);
@@ -186,8 +186,39 @@ test('【寒霜湧動】：寒霜可疊過凍結門檻 5 層，且每一層額�
   const over = stack(['waterballFrostSurge']);
   assert.equal(base.stacks, 5, '表定疊到 5 層（＝凍結門檻）為止');
   assert.equal(over.stacks, 10, '額外再疊 5 層');
-  // 超過門檻 5 層 × 每層 +50% ＝ ×3.5
-  assert.equal(Math.round(over.dps / base.dps * 100) / 100, 3.5, '額外層各使凍傷 +50%');
+  // 水流彈 Lv.10：5 層＝450%，10 層＝700%，比例 700／450＝1.56。
+  assert.equal(Math.round(over.dps / base.dps * 100) / 100, 1.56, '額外層數依寒霜總層數納入公式');
+});
+
+test('【海淵葬界】：Lv.10 的 20 層額外上限會進入寒霜凍傷公式', () => {
+  const c = loadContext();
+  maxLevels(c, 'waterball');
+  equip(c, 'waterball');
+  setUlt(c, 'waterball', 'abyssBurial', 10);
+  const e = enemy(1e9);
+  const spec = c.sgFrostSpec(c.SKILLS2.waterball, c.G.player.skills2.levels.waterball, 2, 2000);
+  c.sgApplyFrost(e, spec, 25);
+  const dot = frostDot(c, e);
+  assert.equal(frostStacks(e), 25, '5 層基礎上限＋海淵 Lv.10 額外 20 層');
+  assert.ok(dot, '寒霜凍傷存在');
+  assert.ok(Math.abs(dot.dps * 0.5 - 2000 * 1450 / 100) < 1e-9,
+    '每跳＝B ×（50×25＋20×10）%');
+});
+
+test('寒霜總層數跨技能來源共用', () => {
+  const c = loadContext();
+  setLevels(c, 'frostnova', [1, 0, 0, 0, 0, 0, 0]);
+  maxLevels(c, 'waterball');
+  equip(c, 'waterball');
+  const e = enemy(1e9);
+  const novaSpec = c.sgFrostSpec(c.SKILLS2.frostnova, c.G.player.skills2.levels.frostnova, 0, 775);
+  const waterSpec = c.sgFrostSpec(c.SKILLS2.waterball, c.G.player.skills2.levels.waterball, 2, 2000);
+  c.sgApplyFrost(e, novaSpec, 2);
+  c.sgApplyFrost(e, waterSpec, 1);
+  const dot = frostDot(c, e);
+  assert.equal(frostStacks(e), 3, '冰霜新星 2 層＋水流彈 1 層');
+  assert.ok(Math.abs(dot.dps * 0.5 - 2000 * 350 / 100) < 1e-9,
+    '水流彈凍傷使用跨技能共用的 3 層');
 });
 
 test('【激流】：彈射次數 +2，且每一段彈射的飛行時間 ÷1.3', () => {

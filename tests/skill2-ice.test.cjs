@@ -3,8 +3,9 @@
      寒冰箭   icearrow   ─ 扇形單體 → 貫穿 → 追蹤，三形態共用同一支命中結算
      水流彈   waterball  ─ 拋物線水彈；爆散改為範圍＋彈射；水龍捲為追加的四道地板場域
      冰霜新星 frostnova  ─ 自身範圍爆發；暴風雪為追加的跟隨場域
-   以及使用者於實作前的兩項決策：
-     - 【寒霜狀態】的持續傷害不隨層數提高（層數只累積緩速，疊滿才凍結）
+   以及使用者於 2026-08-28 更新的規則：
+     - 【寒霜狀態】的凍傷每跳量隨目前寒霜總層數提高，且總層數共用於三個技能群組
+     - 寒霜移速下降維持加總，攻速下降改為每層倍率相乘
      - 【凍結】走既有控場管線（BOSS 控場免疫、韌性折減、控場遞減全部適用）
    另外釘住兩件「不得回歸」的既有行為：
      - 泥沼緩速換成通用收斂點（skill2SlowAspdFactor／skill2SlowMoveFactor）後數值不變
@@ -162,11 +163,12 @@ test('冰霜新星起手附加 2 層寒霜，緩速＝單層×層數', () => {
   c.castSkill2(p, [e], 'frostnova', 'mv-float');
   assert.equal(c.sgFrostStacks(e), 2, '文檔：附加 2 層寒霜狀態');
   assert.equal(c.buffVal(e, 'sgFrost'), 40, '2 層 ＝ 緩速 40%');
-  assert.ok(Math.abs(c.skill2FrostSlowFactor(e) - 0.6) < 1e-9, '攻速與移速倍率同為 0.6');
+  assert.ok(Math.abs(c.skill2FrostSlowFactor(e) - 0.6) < 1e-9, '2 層移速倍率仍為 0.6');
+  assert.ok(Math.abs(c.skill2FrostAspdFactor(e) - 0.8 ** 2) < 1e-9, '2 層攻速倍率為 0.8^2');
   assert.ok(c.sgFindDot(e, 'sgFrostBite'), '同時掛上寒霜的持續傷害');
 });
 
-test('寒霜的持續傷害不隨層數提高（使用者決策 2026-08-17）', () => {
+test('寒霜凍傷依目前寒霜總層數提高', () => {
   const c = loadContext(); stubHits(c); stubVfx(c);
   setLevels(c, 'frostnova', [1, 0, 0, 0, 0, 0, 0]); equip(c, 'frostnova');
   const p = playerEnt(); c.FIELD.player = p;
@@ -175,7 +177,7 @@ test('寒霜的持續傷害不隨層數提高（使用者決策 2026-08-17）', 
   const dps1 = c.sgFindDot(e, 'sgFrostBite').dps;
   c.castSkill2(p, [e], 'frostnova', 'mv-float');
   assert.equal(c.sgFrostStacks(e), 4, '層數會累積');
-  assert.ok(Math.abs(c.sgFindDot(e, 'sgFrostBite').dps - dps1) < 1e-9, '每跳傷害不變');
+  assert.ok(Math.abs(c.sgFindDot(e, 'sgFrostBite').dps / dps1 - 2) < 1e-9, '2 層到 4 層，凍傷每跳量加倍');
 });
 
 test('寒霜每跳占施放群組的本體技能傷害', () => {
@@ -185,9 +187,19 @@ test('寒霜每跳占施放群組的本體技能傷害', () => {
   const e = enemy(1e9, 3 * M, 0);
   c.castSkill2(p, [e], 'frostnova', 'mv-float');
   const novaBody = 500 * (150 + 5) / 100;          // matk × (pct + pctPer×Lv1)
-  const perTick = novaBody * 50 / 100;             // frostPct = 50
+  const perTick = novaBody * (50 * 2) / 100;      // 初次附加 2 層，總層數倍率為 100%
   const dot = c.sgFindDot(e, 'sgFrostBite');
-  assert.ok(Math.abs(dot.dps * 0.5 - perTick) < 1e-6, '每跳量＝本體傷害的 50%');
+  assert.ok(Math.abs(dot.dps * 0.5 - perTick) < 1e-6, '每跳量＝本體傷害 ×（50×目前層數）%');
+});
+
+test('寒霜攻速下降逐層累乘，移速下降仍為層數加總', () => {
+  const c = loadContext();
+  const e = enemy(1e9);
+  c.sgApplyFrost(e, { dps: 0, dur: 5, interval: 0.5, stacksRaw: 10, over: 5 });
+  assert.equal(c.sgFrostStacks(e), 10, '測試目標疊到 10 層');
+  assert.ok(Math.abs(c.skill2FrostAspdFactor(e) - (0.8 ** 10)) < 1e-12, '攻速倍率＝0.8^10');
+  assert.ok(Math.abs(c.skill2SlowAspdFactor(e) - (0.8 ** 10)) < 1e-12, '通用攻速倍率採寒霜累乘');
+  assert.ok(Math.abs(c.skill2FrostSlowFactor(e) - 0.05) < 1e-12, '移速仍為加總後的 95% 下限');
 });
 
 test('疊滿層數才凍結，且維持滿層時不重複凍結', () => {

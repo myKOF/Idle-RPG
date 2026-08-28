@@ -1435,7 +1435,7 @@ var PASSIVE_POOL = {
     fx: { waterballBurstNova: { scalePct: 30 } }
   },
   waterballFrostSurge: {
-    name: '寒霜湧動', desc: '水流彈造成的寒霜狀態可在凍結後再疊加 5 層，每層再增加 50% 寒冰傷害。',
+    name: '寒霜湧動', desc: '水流彈造成的寒霜狀態可在凍結後再疊加 5 層；寒霜凍傷依目前寒霜總層數計算。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'waterball', weaponTypes: ['focus'],
     fx: { waterballFrostOver: { count: 5, pct: 50 } }
   },
