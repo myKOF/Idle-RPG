@@ -932,10 +932,10 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.59/);
   assert.match(index, /js\/status\.js\?v=1\.0\.21/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.73/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.106/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.74/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.107/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.88/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260828-skycollapse-full-cast'/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260828-skycollapse-combo-float'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260828-skill-cast-reset/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260828-skycollapse-full-cast/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260826-chain-thunder-legendary/);
