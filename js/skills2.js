@@ -6700,11 +6700,12 @@ function sgThunderorbBurstHook(burst) {
    三個群組全部是魔法傷害／寒冰屬性，並共用同一個核心狀態【寒霜】——設計文檔把
    寒霜的整段說明重複寫在三棵樹裡（寒霜箭 T2／寒流彈 T3／冰霜新星 T1），實際上是
    同一個狀態，因此寒霜一律寫在群組共用層，不掛在任何一個技能的施放流程裡。
-   使用者於實作前的兩項決策（2026-08-17）：
-     1. 寒霜的持續傷害**不隨層數提高**：層數只累積移動與攻速的下降，並在疊滿時凍結。
-        （所以寒霜刻意拆成 sgFrost「層數＋緩速」與 sgFrostBite「傷害」兩筆狀態——
-         若併成一筆走疊層規則，實際效果會變成「單層值 × 層數」而違反此決策。）
-     2. 凍結**走既有控場管線**：BOSS 控場免疫、韌性折減與控場遞減全部適用。
+   使用者於 2026-08-28 更新的規則：
+     1. 寒霜凍傷每跳量依「該次施放的本體傷害 B × 寒霜共用倍率 × 疊層增傷倍率」計算。
+        疊層增傷倍率＝(50×目前寒霜總層數＋該來源寒霜階的每級增量×該階等級)%。
+        目前水流彈【寒流彈】的每級增量是 20%，且總層數包含所有技能來源的寒霜層數。
+     2. 寒霜的移速下降維持加總；攻速下降改為每層乘上 (1−單層下降%)。
+     3. 凍結**走既有控場管線**：BOSS 控場免疫、韌性折減與控場遞減全部適用。
    本批帶進四個群組共用能力（皆為引擎收斂點，不是這三個技能的特例）：
      13. 寒霜狀態（sgApplyFrost／sgFrostStacks／sgTickFrost ＋ 通用緩速收斂點
          skill2SlowAspdFactor／skill2SlowMoveFactor）：可疊層的緩速兼持續傷害，
@@ -6763,14 +6764,21 @@ function skill2FrostDurFactor() {
 function sgFrostSpec(g, lvs, tierIdx, bodyDmg) {
   if (!lvs || lvs[tierIdx] < 1 || !(bodyDmg > 0)) return null;
   var fx = g.tiers[tierIdx].fx;
-  var pct = sgVal(fx, 'frostPct', lvs[tierIdx]);
-  if (!(pct > 0)) return null;
+  var level = Math.max(0, Number(lvs[tierIdx]) || 0);
+  var basePct = Number(fx.frostPct);
+  if (!(basePct > 0)) basePct = 50;
+  var perLevelPct = Math.max(0, Number(fx.frostPctPer) || 0);
   var gap = sgFrostGap();
+  var frostMult = skill2FrostDmgFactor();
+  var oneStackPct = basePct + perLevelPct * level;
   return {
-    dps: bodyDmg * pct / 100 * skill2FrostDmgFactor() / gap,
+    dps: bodyDmg * oneStackPct / 100 * frostMult / gap,
     dur: sgFrostBaseDur() * skill2FrostDurFactor(),
     interval: gap,
-    stacksRaw: sgVal(fx, 'stacks', lvs[tierIdx])
+    stacksRaw: sgVal(fx, 'stacks', lvs[tierIdx]),
+    bodyDmg: bodyDmg,
+    frostMult: frostMult,
+    frostFormula: { basePct: basePct, perLevelPct: perLevelPct, level: level }
   };
 }
 
@@ -6787,12 +6795,26 @@ function sgFrozenOn(ent) { return sgBuffActive(ent, 'sgFrozen'); }
    （凍結是寒霜疊滿塗上的標記、暈眩走 sgTryStun），因此不必另外記一筆狀態。 */
 function sgIceControlled(ent) { return sgFrozenOn(ent) || sgIsStunned(ent); }
 
+/* 依目前總寒霜層數重算這一份凍傷的 DPS。
+   每個來源保留自己的 B 與寒霜階等級；層數則讀目標身上的共用 sgFrost，
+   因此【海淵葬界】及其他技能塗上的層數都會進入同一個倍率。 */
+function sgFrostDps(spec, stacks) {
+  if (!spec || !(spec.bodyDmg > 0) || !spec.frostFormula) return Number(spec && spec.dps) || 0;
+  var f = spec.frostFormula;
+  var pct = Math.max(0, Number(f.basePct) || 50) * Math.max(0, Math.floor(Number(stacks) || 0)) +
+    Math.max(0, Number(f.perLevelPct) || 0) * Math.max(0, Number(f.level) || 0);
+  var gap = Math.max(0.05, Number(spec.interval) || sgFrostGap());
+  var mult = Number(spec.frostMult);
+  if (!(mult > 0)) mult = skill2FrostDmgFactor();
+  return spec.bodyDmg * pct / 100 * mult / gap;
+}
+
 /* 塗上寒霜。回傳實際增加的層數（0＝沒塗上）。
    疊滿層數的**那一次**才凍結：維持在滿層時的重塗不再重新凍結——否則每 0.5 秒
    重塗一次就是永久凍結，等於繞過使用者指定要走的控場遞減。
    ⚠️ 疊層上限與凍結門檻是兩個數字：門檻恆為狀態表的 maxStacks（疊到就凍結），
    上限則可以被兩個來源往上放寬——傳奇【寒霜湧動】（只放寬水流彈自己塗的那一份，
-   規格帶著 over／overPct）與超神【海淵葬界】（放寬領域內的每一份，不分來源）。
+   規格帶著 over）與超神【海淵葬界】（放寬領域內的每一份，不分來源）。
    上限再以「目前層數」為地板：上限比較低的來源重塗時不得把已經疊上去的層數壓回來。 */
 function sgApplyFrost(ent, spec, stacksOverride) {
   if (!ent || ent.hp <= 0 || !spec || typeof applyStatus !== 'function') return 0;
@@ -6807,11 +6829,12 @@ function sgApplyFrost(ent, spec, stacksOverride) {
     applyStatus(ent, 'sgFrost', { val: sgFrostSlowPerStack(), dur: spec.dur, maxStacks: cap });
   }
   var after = sgFrostStacks(ent);
-  /* 傳奇【寒霜湧動】：超出凍結門檻的每一層再放大凍傷。凍傷是「取高並重新計時」，
-     因此放大後的每跳量直接重塗上去就會取代原本那一份。 */
-  if (spec.dps > 0) {
-    var overMult = 1 + Math.max(0, Number(spec.overPct) || 0) / 100 * Math.max(0, after - max);
-    applyStatus(ent, 'sgFrostBite', { dps: spec.dps * overMult, dur: spec.dur, interval: spec.interval });
+  var frostDps = sgFrostDps(spec, after);
+  if (frostDps > 0) {
+    applyStatus(ent, 'sgFrostBite', {
+      dps: frostDps, dur: spec.dur, interval: spec.interval,
+      bodyDmg: spec.bodyDmg, frostMult: spec.frostMult, frostFormula: spec.frostFormula
+    });
   }
   if (before < max && after >= max) sgFreezeTarget(ent);
   return after - before;
@@ -6832,17 +6855,26 @@ function sgFreezeTarget(ent) {
 /* ---- 寒霜緩速的兩個對外掛點（比照泥沼緩速）----
    攻速：formula.js slowFactor｜移速：battlefield.js bfEnemySpeedFactor。
    兩支檔案改吃通用收斂點，日後再增加第三種場域型緩速就不必再動它們。
-   寒霜的移速與攻速同幅（文檔：每疊 1 層「移動及攻速」-20%），不必像泥沼分開兩個值。 */
+   寒霜的移速與攻速單層幅度相同，但兩者的疊加運算不同。 */
 function skill2FrostSlowPct(ent) {
   return (typeof buffVal === 'function') ? Math.max(0, buffVal(ent, 'sgFrost')) : 0;
 }
-function skill2FrostSlowFactor(ent) {
+function skill2FrostMoveFactor(ent) {
   var v = skill2FrostSlowPct(ent);
   return v > 0 ? Math.max(0.05, 1 - Math.min(95, v) / 100) : 1;
 }
-function skill2SlowAspdFactor(ent) { return skill2MireAspdFactor(ent) * skill2FrostSlowFactor(ent) * skill2StiffenFactor(ent); }
+function skill2FrostAspdFactor(ent) {
+  var stacks = sgFrostStacks(ent);
+  if (!(stacks > 0)) return 1;
+  var per = Math.max(0, Math.min(100, sgFrostSlowPerStack())) / 100;
+  return Math.max(0.05, Math.pow(1 - per, stacks));
+}
+function skill2FrostSlowFactor(ent) {
+  return skill2FrostMoveFactor(ent);
+}
+function skill2SlowAspdFactor(ent) { return skill2MireAspdFactor(ent) * skill2FrostAspdFactor(ent) * skill2StiffenFactor(ent); }
 function skill2SlowMoveFactor(ent) {
-  return skill2MoveSlowFactor(ent) * skill2FrostSlowFactor(ent) * skill2WindMoveFactor(ent) *
+  return skill2MoveSlowFactor(ent) * skill2FrostMoveFactor(ent) * skill2WindMoveFactor(ent) *
     skill2StiffenFactor(ent);
 }
 
@@ -6925,15 +6957,18 @@ function sgTickFrost(dt, ctx) {
   }
 }
 
-/* 【寒霜擴散】：把「當下這一份寒霜」複製給附近的敵人（同樣的每跳量與剩餘時間，固定 1 層）。
-   複製而不是重新計算：來源的凍傷可能已被【極致寒霜】放大過，重算會把它打回表定值。 */
+/* 【寒霜擴散】：把「當下這一份寒霜」複製給附近的敵人（固定 1 層）。
+   保留來源的 B／共用倍率設定，但在新目標疊層後重新計算，讓目標自己的寒霜總層數生效。 */
 function sgSpreadFrost(from, enemies, fx, dot) {
   var radius = bfMeterPx(Number(fx.m) || 10);
   var count = Math.max(1, Math.floor(Number(fx.count) || 1));
   // 「擴散至目標 m 米內的 count 個敵人」沒有指定最近＝範圍內隨機
   var victims = bfRandomOthers(from, enemies, count, radius, null);
   if (!victims.length) return;
-  var spec = { dps: dot.dps, dur: Math.max(0.1, dot.until - GT), interval: dot.interval, stacksRaw: 1 };
+  var spec = {
+    dps: dot.dps, dur: Math.max(0.1, dot.until - GT), interval: dot.interval, stacksRaw: 1,
+    bodyDmg: dot.bodyDmg, frostMult: dot.frostMult, frostFormula: dot.frostFormula
+  };
   var spread = [];
   for (var i = 0; i < victims.length; i++) {
     if (sgApplyFrost(victims[i], spec, 1) > 0) spread.push(victims[i]);
@@ -7157,7 +7192,10 @@ function sgIcearrowWinterFrost(spec, lg) {
   var pct = Math.max(0, Number(lg.icearrowFrostPct) || 0);
   if (!spec || !(pct > 0)) return spec;
   var mult = 1 + pct / 100;
-  return { dps: spec.dps * mult, dur: spec.dur * mult, interval: spec.interval, stacksRaw: spec.stacksRaw };
+  return Object.assign({}, spec, {
+    dps: spec.dps * mult, dur: spec.dur * mult,
+    frostMult: (Number(spec.frostMult) || skill2FrostDmgFactor()) * mult
+  });
 }
 
 /* 寒冰箭這一次施放的傳奇附加規格（【冰裂箭】的分裂箭與【深度凍結】的控場增傷）。
@@ -7326,7 +7364,7 @@ function sgCastWaterball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
   var lg = sgLegend('waterball');
   var dmgVal = sgGroupBaseStat(g, st) * sgVal(t[0].fx, 'pct', lvs[0]) / 100;
-  // 傳奇【寒霜湧動】：這棵樹塗出來的寒霜可以疊過凍結門檻，且額外層再放大凍傷
+  // 傳奇【寒霜湧動】：這棵樹塗出來的寒霜可以疊過凍結門檻；凍傷倍率走共用總層數公式
   var frost = sgWaterballFrostSpec(sgFrostSpec(g, lvs, 2, dmgVal), lg);
   var revertSec = lvs[1] > 0 ? Math.max(0.1, Number(t[1].fx.sec) || 6) : 0;
   var revertPct = lvs[1] > 0 ? sgVal(t[1].fx, 'pct', lvs[1]) : 0;
@@ -7379,17 +7417,15 @@ function sgWaterballNovaSpec(lg) {
   };
 }
 
-/* 傳奇【寒霜湧動】：水流彈塗出來的寒霜可以疊過凍結門檻，每一層額外層再放大凍傷。
-   只掛在這棵樹塗出來的那一份（設計文字寫的是「水流彈造成的寒霜狀態」）；
-   超神【海淵葬界】那一份額外層數不分來源，掛在疊層上限的共用層（sgApplyFrost）。 */
+/* 傳奇【寒霜湧動】：水流彈塗出來的寒霜可以疊過凍結門檻再多 5 層。
+   凍傷倍率已統一由 sgApplyFrost 依目標的寒霜總層數計算；超神【海淵葬界】的額外層數
+   同樣掛在疊層上限的共用層，因此不分來源都會進入該倍率。 */
 function sgWaterballFrostSpec(spec, lg) {
   var o = lg && lg.waterballFrostOver;
   if (!spec || !o) return spec;
-  return {
-    dps: spec.dps, dur: spec.dur, interval: spec.interval, stacksRaw: spec.stacksRaw,
-    over: Math.max(0, Math.floor(Number(o.count) || 0)),
-    overPct: Math.max(0, Number(o.pct) || 0)
-  };
+  return Object.assign({}, spec, {
+    over: Math.max(0, Math.floor(Number(o.count) || 0))
+  });
 }
 
 /* 傳奇【水龍勢】的規格：捲起來的就是一道【水龍捲】，因此半徑、節拍與對凍結敵人的

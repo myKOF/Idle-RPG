@@ -623,6 +623,9 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
     var sKey = (sourceCtx && (sourceCtx.sourceKey || sourceCtx.statKey)) || '';
     var sName = (sourceCtx && (sourceCtx.sourceName || sourceCtx.skillName)) || '';
     var sLv = (sourceCtx && sourceCtx.sourceLevel !== undefined) ? sourceCtx.sourceLevel : undefined;
+    var frostFormula = sourceCtx && sourceCtx.frostFormula;
+    var frostBodyDmg = sourceCtx && sourceCtx.bodyDmg;
+    var frostMult = sourceCtx && sourceCtx.frostMult;
     if (!sName && sid) {
         var resDef = resolveDotSource(sid);
         if (resDef) {
@@ -646,6 +649,9 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
             cur.ext = 0;
             cur.sid = sid;
             cur.interval = interval;
+            if (frostFormula) cur.frostFormula = frostFormula;
+            if (frostBodyDmg !== undefined) cur.bodyDmg = frostBodyDmg;
+            if (frostMult !== undefined) cur.frostMult = frostMult;
             if (sName) cur.sourceName = sName;
             if (sKey) cur.sourceKey = sKey;
             if (sLv !== undefined) cur.sourceLevel = sLv;
@@ -658,6 +664,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
     ent.dots.push({
         dps: step3.value, until: GT + dur, name: name, dur: dur, ext: 0, sid: sid,
         interval: interval, acc: 0, unit: step3.unit, stacks: step3.stacks,
+        frostFormula: frostFormula, bodyDmg: frostBodyDmg, frostMult: frostMult,
         sourceName: sName || undefined, sourceKey: sKey || undefined, sourceLevel: sLv
     });
 }

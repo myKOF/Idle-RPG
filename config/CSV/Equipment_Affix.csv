@@ -216,7 +216,7 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,icearrowDeepFreeze,深度凍結,0,,,,,,,,0,,寒冰箭擊中暈眩或凍結的敵人造成的傷害 +50%。,ice,icearrow,,spellbook,"{""icearrowControlPct"":50}"
 傳奇特效,waterballVolley,水流連彈,0,,,,,,,,0,,水流彈的發射數量 +2 顆。,ice,waterball,,focus,"{""waterballShotAdd"":{""count"":2}}"
 傳奇特效,waterballNovaBurst,冰霜擴散,0,,,,,,,,0,,【寒流爆散】的擴散爆炸變成冰霜新星，且範圍增大 30%。,ice,waterball,,focus,"{""waterballBurstNova"":{""scalePct"":30}}"
-傳奇特效,waterballFrostSurge,寒霜湧動,0,,,,,,,,0,,水流彈造成的寒霜狀態可在凍結後再疊加 5 層，每層再增加 50% 寒冰傷害。,ice,waterball,,focus,"{""waterballFrostOver"":{""count"":5,""pct"":50}}"
+傳奇特效,waterballFrostSurge,寒霜湧動,0,,,,,,,,0,,水流彈造成的寒霜狀態可在凍結後再疊加 5 層；寒霜凍傷依目前寒霜總層數計算。,ice,waterball,,focus,"{""waterballFrostOver"":{""count"":5,""pct"":50}}"
 傳奇特效,waterballTorrent,激流,0,,,,,,,,0,,水流彈的彈射次數 +2 次，且彈射速度 +30%。,ice,waterball,,focus,"{""waterballBounceAdd"":{""count"":2},""waterballBounceSpeedPct"":30}"
 傳奇特效,waterballTornado,水龍勢,0,,,,,,,,0,,水流彈擊中時有 10% 機率在目標處形成 1 道水龍捲，造成 4 段 100% 寒冰傷害。,ice,waterball,,focus,"{""waterballTornadoProc"":{""chance"":10,""hits"":4,""pct"":100}}"
 傳奇特效,frostnovaShatter,碎冰,0,,,,,,,,0,,冰霜新星的攻擊範圍 +30%。,ice,frostnova,,staff2h,"{""frostnovaScalePct"":30}"
