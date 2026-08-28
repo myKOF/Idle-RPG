@@ -1,6 +1,6 @@
 /* 新版主動技能第八批：風系三群組（2026-08-18，js/skills2.js）
    守住設計文檔「技能」頁籤〈魔法〉區塊新增的三個群組與其註記：
-     風刃     windblade    ─ 貫穿全場的飛行風刃；小風刃可轉為追擊；四方向三連射
+     風刃     windblade    ─ 貫穿全場的飛行風刃；小風刃可轉為追擊；四方向二連射
      真空斬   vacuumslash  ─ 前方斬擊 →【迴旋斬】改為全周 →【虛空斬】螺旋圓盤
      暴風屏障 stormbarrier ─ 節拍護盾＋減免；撕裂／亂風切／暴風之刃／風切擴散／神體
    以及三項實作決策：
@@ -189,8 +189,8 @@ test('【雙重風刃】：前後各一道，且傷害與第 1 階累加', () =>
   assert.ok(Math.abs(calls[0].atk - 500 * (2.2 + 0.6)) < 1e-6, '220% + 60%（30+30×Lv1）');
 });
 
-test('【亂披風】：兩側各一道小型風刃，傷害為原風刃的 (30+3×Lv)%', () => {
-  const c = loadContext(); const calls = stubHits(c); stubVfx(c);
+test('【亂披風】：單側一道小型風刃，傷害為原風刃的 (30+3×Lv)%', () => {
+  const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
   setLevels(c, 'windblade', [1, 1, 1, 1, 0, 0, 0]); equip(c, 'windblade');
   const p = playerEnt(); c.FIELD.player = p;
   const near = enemy(1e9, 3 * M, 0, '主目標');           // 最近＝主風刃的方位（0 度）
@@ -199,7 +199,8 @@ test('【亂披風】：兩側各一道小型風刃，傷害為原風刃的 (30+
   run(c, p, [near, side], 3);
   const main = 500 * (2.2 + 0.6);
   const smalls = calls.filter((x) => Math.abs(x.atk - main * 0.33) < 1e-6);
-  assert.ok(smalls.length > 0, '小型風刃 ＝ 原風刃 33%');
+  const smallSpecs = specs.filter((s) => s.variant === 'wind-blade-small');
+  assert.equal(smallSpecs.length, 2, '前後兩支主風刃各只發射 1 道小型風刃');
   assert.ok(smalls.some((x) => x.ent === side), '+30 度的小風刃打得到側面的敵人');
 });
 
@@ -210,7 +211,7 @@ test('【追跡風刃】：小型風刃改為追擊場域，不再向前射出',
   const e = enemy(1e9, 10 * M, 0);
   c.castSkill2(p, [e], 'windblade', 'mv-float');
   const fields = c.SKILL2_RT.grounds.filter((f) => f.kind === 'windblade');
-  assert.equal(fields.length, 4, '前後兩道風刃各帶兩道小風刃，全部變成追擊場域');
+  assert.equal(fields.length, 2, '前後兩道風刃各帶一道小風刃，全部變成追擊場域');
   assert.ok(fields[0].contact, '採接觸判定（碰到才算一次命中）');
   assert.ok(fields[0].chaseM > 0, '在範圍內隨機追擊');
   assert.equal(c.SKILL2_RT.projectiles.length, 2, '只剩前後兩道主風刃還是飛行物');
@@ -310,7 +311,7 @@ test('【狂風碎裂】：命中附加移速減益，並在飛行途中沿路�
   assert.ok(pulseHits.length >= 1, '脈衝傷害 ＝ 風刃傷害的 50%');
 });
 
-test('【暴風真空刃】：四方向各連續三道，第 2 道之後延遲發射', () => {
+test('【暴風真空刃】：四方向各連續兩道，第 2 道之後延遲發射', () => {
   const c = loadContext(); const calls = stubHits(c); stubVfx(c);
   setLevels(c, 'windblade', [1, 1, 1, 1, 1, 1, 1]); equip(c, 'windblade');
   const p = playerEnt(); c.FIELD.player = p;
@@ -320,9 +321,9 @@ test('【暴風真空刃】：四方向各連續三道，第 2 道之後延遲�
   const south = enemy(1e9, 0, 10 * M, '南');
   const all = [east, west, north, south];
   c.castSkill2(p, all, 'windblade', 'mv-float');
-  assert.equal(c.SKILL2_RT.projectiles.length, 12, '4 方向 × 3 道');
+  assert.equal(c.SKILL2_RT.projectiles.length, 8, '4 方向 × 2 道');
   const launchAt = c.SKILL2_RT.projectiles.map((x) => x.beginAt);
-  [0, 0.2, 0.4].forEach((at, i) => {
+  [0, 0.2].forEach((at, i) => {
     assert.equal(launchAt.filter((v) => Math.abs(v - at) < 1e-9).length, 4,
       '第 ' + (i + 1) + ' 波：四個方向同時發射，與前一波相隔 0.2 秒（時間軸掛在飛行物上）');
   });
@@ -333,7 +334,7 @@ test('【暴風真空刃】：四方向各連續三道，第 2 道之後延遲�
   run(c, p, all, 0.2);
   assert.equal(mains(), 8, '第 2 波在 0.2 秒後才發射');
   run(c, p, all, 0.2);
-  assert.ok(mains() >= 12, '第 3 波再隔 0.2 秒，12 道主風刃全部到位（之後還會有二次命中）');
+  assert.ok(mains() >= 8, '第 2 波再隔 0.2 秒，8 道主風刃全部到位（之後還會有二次命中）');
 });
 
 /* ---- 真空斬 ---- */

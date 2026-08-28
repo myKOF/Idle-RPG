@@ -1,5 +1,31 @@
 # AI_TASKS.md
 
+## Codex｜風刃兩項火力平衡調整（2026-08-28）
+
+- Owner：Codex
+- 狀態：已完成
+- 目的：依使用者要求降低風刃第 4 階【亂披風】與第 7 階【暴風真空刃】的強度。
+- 修改內容：
+  - 【亂披風】每支主風刃由兩側各發射 1 道小型風刃，調整為固定只向一側發射 1 道。
+  - 【暴風真空刃】每個方向的連射數由 3 道調整為 2 道，四方向總主風刃由 12 道降為 8 道。
+  - 同步 Skills2 CSV／Excel／JS、遊戲與 Worker 快取版本，以及風系回歸測試。
+- 修改檔案：`config/Excel/Skills2.xlsx`、`config/CSV/Skills2.csv`、`js/skills2.js`、
+  `js/bridge.js`、`js/worker/sim.worker.js`、`index.html`、`tests/skill2-wind.test.cjs`、
+  `tests/skill2-vfx.test.cjs`、本文件。
+- 未修改但檢查過：`js/vfx.js`、`js/battle-renderer.js`（沿用既有 `wind-blade`／
+  `wind-blade-small`／`wind-blade-homing` 變體，事件欄位與畫法不需調整）。
+- 驗證結果：`node --test --test-name-pattern "亂披風|追跡風刃|暴風真空刃" tests/skill2-wind.test.cjs`
+  4/4 通過；`node --test tests/skill2-wind.test.cjs tests/skill2-vfx.test.cjs` 60/61 通過，
+  唯一失敗是既有的風刃冷卻 18 秒斷言（現行表定值為 15 秒）；三支 JavaScript 語法檢查、
+  `node tools/config_tables.cjs --apply Skills2`（語意變更 0）、`node tools/build_check.cjs`
+  （303 檔）與 `git diff --check` 皆通過。
+- 已知風險：風系測試中既有的冷卻基準仍期待 18 秒，但目前表定冷卻為 15 秒，與本次數量調整無關。
+- 未完成項目：無；尚未進行瀏覽器實機目視驗證。
+- 建議下一步：使用者重新整理頁面後確認兩項技能的實際發射數量與傷害體感。
+- 是否可以合併：可以。
+
+---
+
 ## Codex｜寒霜總層數傷害與攻速累乘修正（2026-08-28）
 
 - Owner：Codex
