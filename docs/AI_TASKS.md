@@ -1,5 +1,58 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第十一批（風刃／真空斬十特效 ＋ 兩組超神進化）（2026-08-28）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（風系）
+- 使用者需求：實作「風刃」與「真空斬」的 10 個傳奇特效，與其各 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）風刃、真空斬兩段。
+- 前十批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用。
+- 技術內容：
+  - PASSIVE_POOL 新增 10 個傳奇特效（池內共 148）：單手魔杖→風刃＝裂風／增壓／風之痕／
+    風蝕／斷空刃；雙手斧→真空斬＝共振／裂痕／真空風刃／空間澎脹／虛空漲落。
+    `wand1h` 是單手武器，不吃雙手 ×2 補償；`axe2h` 吃，因此真空斬那五個的
+    「次數／段數／層數／秒數」一律包在 `LEGENDARY_FX_NON_VALUE_KEYS` 的保護鍵裡
+    （`count`／`hits`／`maxStacks`／`sec`），被放大的只有體積。
+  - SKILLS2 新增 6 個超神進化（開放群組 20 → 22，只剩暴風屏障尚未開放）：
+    風刃＝暴風萬刃／嵐之山／天穹崩裂；真空斬＝萬象風劫／虛空滅界／時空崩解。
+  - 引擎層只多三個共用掛點：
+    ① `sgRampPct` ＋每一道風刃自己的累加器：傳奇【裂風】的「每命中 1 次再 +5%」。
+       加成在命中前讀、命中後才累加（比照連鎖閃電【超導】）；飛行物走既有的
+       `bonusPctFn`、地板場域走新增的 `f.ramp`，兩條路都接才不會在追擊形態下失效；
+    ② 地板場域的沿途脈衝（`sgGroundPulse` ＋與飛行物同名同義的 `pulse*`／`slowStatus`）：
+       超神【暴風萬刃】把大型風刃改成追擊場域，第 6 階【狂風碎裂】的沿途爆炸與緩速
+       得跟著換這條路走，選了超神不會少掉半個第 6 階；
+    ③ `sgWindbladeBodyDamage`／`sgWindbladeDmgPct`：風刃本體傷害的唯一來源，
+       施放、追擊、【嵐之山】的融合與【天穹崩裂】的被動射出都讀它。
+  - 新增一筆狀態 `sgWindErode`（傳奇【風蝕】的受傷提高%，走 `skill2VulnACfg` 的同一個
+    `totalDmgPct`）；`sgWindRend` 的狀態表 `maxStacks` 由 3 放寬到 6，**當下允許幾層仍由
+    `sgWindRendMaxStacks` 決定**（沒有裝【裂痕】時行為完全不變）。Worker 協議未變（仍是 v26）。
+  - 【天穹崩裂】把風刃改為被動：`skills2ActsPassive` 由「只認【天霸風神斬】」擴為
+    「【天霸風神斬】∪【天穹崩裂】」，觸發時機掛在我方受擊收斂點 `skills2OnPlayerDamaged`。
+  - 顯示層一律沿用既有變體：追擊與靜止的刃用 `wind-blade-homing`、巨型與融合風刃用
+    `wind-blade`、沿途脈衝用 `wind-burst`、虛空斬用 `void-disc`；沒有新增兩個渲染器
+    不認得的變體。
+- 修改檔案：`js/data.js`、`js/status.js`、`js/skills2.js`、`index.html`、`js/bridge.js`、
+  `js/worker/sim.worker.js`、
+  `config/CSV/Skills2.csv`／`Equipment_Affix.csv`／`Status.csv` 與對應的 `config/Excel/*.xlsx`、
+  `game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-windblade-vacuum-legendary.test.cjs`（新增，20 案例）、
+  `tests/skill2-ult-evolution.test.cjs`（開放群組 20 → 22；控制組由風刃改為暴風屏障）、
+  `tests/legendary-affix.test.cjs`（池內總數 138 → 148）、
+  `tests/skill2-vfx.test.cjs`（它釘住 index.html／bridge.js／sim.worker.js 的**目前版號**）、本文件。
+- 驗證：`npm test` 1859 案例（1849 通過，新增 20 案例全過；10 條紅燈已用 HEAD 的暫時 worktree
+  跑過完整套件對照——該處是 1839 案例 1829 通過、同樣 10 條紅燈，失敗訊息逐字相同，
+  確定為本批之前既有）、`node tools/build_check.cjs` 304 檔、
+  `config_tables --gen／--sync／--apply` 往返（語意變更 0）、`apply_params` 試跑（將變更 0、
+  錨點問題 0、對應參數總數 554 不變）與 `--check-anchors`、快取版號同步、
+  本機 8331 起頁面確認 console 無錯誤、Worker 存活且 errors 0、六個超神說明字串在 Lv.1／Lv.10
+  都正確代入，並以 GM（`sglv`／`sgult`／`spawn`）實機輪過六個超神的三種組合各一輪、
+  `git diff --check`。
+- 已知風險與待確認：設計文檔未指定而由我裁定的十六處，以及【暴風萬刃】的場域量、
+  【嵐之山】的命中次數取捨、【萬象風劫】的實際道數、【裂風】兩種形態的疊滿速度
+  四項需要重估數值的風險，已列在 `PATCH.md` 的「待確認」與「建議重估的數值」兩段。
+
 ## Codex｜風刃兩項火力平衡調整（2026-08-28）
 
 - Owner：Codex

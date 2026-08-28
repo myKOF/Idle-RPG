@@ -1473,6 +1473,62 @@ var PASSIVE_POOL = {
     name: '凜冬寒霜', desc: '暴風雪持續時間內會不斷對範圍內的敵人施加寒霜狀態，且寒霜狀態傷害 +30%。',
     base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostnova', weaponTypes: ['staff2h'],
     fx: { frostnovaBlizzardFrost: { stacks: 1 }, frostnovaFrostDmgPct: 30 }
+  },
+  /* ---- 傳奇進化第十一批（2026-08-28）：風系 ----
+     單手魔杖→風刃（windblade）／雙手斧→真空斬（vacuumslash）。
+     單手魔杖不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，因此風刃那五個的數字沿用設計文檔原值；
+     雙手斧吃，因此真空斬那五個的「次數／段數／層數／秒數」一律包在
+     LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵裡（count／hits／maxStacks／sec），
+     被放大的只有威力與體積（比照第五批的火龍捲）。 */
+  windbladeRend: {
+    name: '裂風', desc: '風刃每擊中敵人 1 次則傷害額外 +5%，最高為 +100%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'windblade', weaponTypes: ['wand1h'],
+    fx: { windbladeRamp: { pct: 5, max: 100 } }
+  },
+  windbladePressure: {
+    name: '增壓', desc: '風刃的體積增大 25%，且飛行速度 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'windblade', weaponTypes: ['wand1h'],
+    fx: { windbladeSizePct: 25, windbladeSpeedPct: 30 }
+  },
+  windbladeTrace: {
+    name: '風之痕', desc: '【亂披風】會在風刃另一側額外射出 1 道小型風刃，且小型風刃傷害 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'windblade', weaponTypes: ['wand1h'],
+    fx: { windbladeSmallMirror: { count: 1 }, windbladeSmallDmgPct: 30 }
+  },
+  windbladeErode: {
+    name: '風蝕', desc: '風刃擊中敵人時會附加風蝕狀態，讓敵人受到的傷害 +25%，持續 4 秒。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'windblade', weaponTypes: ['wand1h'],
+    fx: { windbladeErode: { pct: 25, sec: 4 } }
+  },
+  windbladeVoidCut: {
+    name: '斷空刃', desc: '【暴風真空刃】每個方向改為連續射出 3 道風刃，且風刃傷害額外 +30%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'windblade', weaponTypes: ['wand1h'],
+    fx: { windbladeVolleyTo: { count: 3 }, windbladeDmgPct: 30 }
+  },
+  vacuumResonance: {
+    name: '共振', desc: '【真空爆震】會額外多造成 1 次傷害。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'vacuumslash', weaponTypes: ['axe2h'],
+    fx: { vacuumBurstAdd: { hits: 1 } }
+  },
+  vacuumRift: {
+    name: '裂痕', desc: '真空斬造成的風切狀態疊加層數 +3 層。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'vacuumslash', weaponTypes: ['axe2h'],
+    fx: { vacuumRendStacks: { maxStacks: 3 } }
+  },
+  vacuumWindBlade: {
+    name: '真空風刃', desc: '每次施放真空斬會額外射出 2 道小型風刃。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'vacuumslash', weaponTypes: ['axe2h'],
+    fx: { vacuumSmallBlades: { count: 2 } }
+  },
+  vacuumExpand: {
+    name: '空間澎脹', desc: '真空斬的體積 +25%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'vacuumslash', weaponTypes: ['axe2h'],
+    fx: { vacuumScalePct: 25 }
+  },
+  vacuumFlux: {
+    name: '虛空漲落', desc: '【虛空斬】的持續時間 +3 秒。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'vacuumslash', weaponTypes: ['axe2h'],
+    fx: { vacuumVoidSec: { sec: 3 } }
   }
 };
 
