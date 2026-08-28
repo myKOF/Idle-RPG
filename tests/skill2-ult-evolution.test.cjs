@@ -149,12 +149,12 @@ function counterMaxSingleStrike(c) {
 
 /* ---- 1) 資料形狀 ---- */
 
-test('超神進化：二十個已開放群組各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
+test('超神進化：二十三個群組（全部）各三個選項，欄位齊全且說明模板的參數鍵都存在', () => {
   const c = loadContext();
   ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage',
     'fireball', 'firepillar', 'firehunt', 'rockarmor', 'mire', 'earthguard',
     'chainlightning', 'thunderstrike', 'thunderorb', 'icearrow',
-    'waterball', 'frostnova'].forEach((gid) => {
+    'waterball', 'frostnova', 'windblade', 'vacuumslash', 'stormbarrier'].forEach((gid) => {
     const list = c.sgUltDefs(gid);
     assert.ok(list, gid + ' 應有超神進化');
     assert.equal(list.length, c.SG_ULT_OPTION_COUNT, gid + ' 超神進化必須剛好三選一');
@@ -172,8 +172,12 @@ test('超神進化：二十個已開放群組各三個選項，欄位齊全且�
       });
     });
   });
-  // 其餘 3 個群組尚未開放；風刃當控制組（設計文檔尚未給它超神進化）
-  assert.equal(c.sgUltDefs('windblade'), null);
+  assert.equal(Object.keys(c.SKILLS2).filter((gid) => !c.sgUltDefs(gid)).length, 0,
+    '設計文檔已給完二十三組，因此不應該再有「尚未開放」的群組');
+  /* 「尚未開放」那條路已經沒有現成的控制組，改用一個臨時拿掉 ult 的群組
+     （那條路的判定就是 sgUltDefs 回 null，與群組是誰無關）。 */
+  delete c.SKILLS2.stormbarrier.ult;
+  assert.equal(c.sgUltDefs('stormbarrier'), null);
   assert.equal(c.sgSlotCount('thrust'), 8);
   assert.equal(c.sgSlotCount('fireball'), 8);
   assert.equal(c.sgSlotCount('firepillar'), 8);
@@ -187,7 +191,9 @@ test('超神進化：二十個已開放群組各三個選項，欄位齊全且�
   assert.equal(c.sgSlotCount('icearrow'), 8);
   assert.equal(c.sgSlotCount('waterball'), 8);
   assert.equal(c.sgSlotCount('frostnova'), 8);
-  assert.equal(c.sgSlotCount('windblade'), 7);
+  assert.equal(c.sgSlotCount('windblade'), 8);
+  assert.equal(c.sgSlotCount('vacuumslash'), 8);
+  assert.equal(c.sgSlotCount('stormbarrier'), 7, '（上面剛把它的 ult 拿掉）');
   assert.equal(c.SG_ULT_SLOT, c.SG_TIER_COUNT, '第 8 格的索引＝各階數（0-based 接在最後一階之後）');
 });
 
@@ -309,9 +315,10 @@ test('超神進化的唯一解鎖條件＝前 7 階全滿；未滿級時不可�
   maxLevels(c, 'thrust');
   assert.equal(c.sgUltUnlockedBy('thrust', c.skills2Levels('thrust')), true);
   assert.equal(c.skills2UltPick('thrust', 0), null, '前 7 階全滿即可三選一');
-  // 尚未開放超神進化的群組一律拒絕
-  maxLevels(c, 'windblade');
-  assert.match(c.skills2UltPick('windblade', 0), /尚未開放/);
+  // 尚未開放超神進化的群組一律拒絕（二十三組全開之後，控制組得自己造）
+  delete c.SKILLS2.stormbarrier.ult;
+  maxLevels(c, 'stormbarrier');
+  assert.match(c.skills2UltPick('stormbarrier', 0), /尚未開放/);
 });
 
 test('三選一：選定＝Lv.1 並扣款；已選過不得改選；降到 Lv.0 才可重選', () => {
@@ -346,14 +353,15 @@ test('第 8 格走 skills2Learn／skills2Downgrade 的同一個入口（UI 只�
   maxLevels(c, 'thrust');
   c.G.player.gold = 1e12;
   assert.equal(c.sgIsUltSlot('thrust', c.SG_ULT_SLOT), true);
-  assert.equal(c.sgIsUltSlot('windblade', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
+  delete c.SKILLS2.stormbarrier.ult;
+  assert.equal(c.sgIsUltSlot('stormbarrier', c.SG_ULT_SLOT), false, '未開放的群組沒有第 8 格');
   assert.match(c.skills2Learn('thrust', c.SG_ULT_SLOT), /請先選擇/);
   assert.equal(c.skills2UltPick('thrust', 0), null);
   assert.equal(c.skills2Learn('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 2);
   assert.equal(c.skills2Downgrade('thrust', c.SG_ULT_SLOT), null);
   assert.equal(c.skills2Ult('thrust').lv, 1);
-  assert.match(c.skills2Learn('windblade', c.SG_ULT_SLOT), /未知階數/);
+  assert.match(c.skills2Learn('stormbarrier', c.SG_ULT_SLOT), /未知階數/);
 });
 
 test('前 7 階任一階離開滿級：超神進化暫時失效，但存檔的選擇與等級原樣保留', () => {
@@ -703,7 +711,7 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
         ult: {
           thrust: { pick: 0, lv: 99 },        // 超過上限 → 夾回
           cleave: { pick: 9, lv: 3 },         // 選項越界 → 刪除
-          windblade: { pick: 0, lv: 1 },      // 該群組沒有超神進化 → 刪除
+          noSuchGroup: { pick: 0, lv: 1 },    // 不存在的群組 → 刪除
           gale: { pick: 0, lv: 0 }            // 等級不合法 → 刪除
         }
       },
@@ -716,7 +724,7 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
   assert.match(norm, /data\.player\.skills2\.ult/);
   // 純函式端：壞資料一律被視為「沒選」
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'cleave'), null);
-  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'windblade'), null);
+  assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'noSuchGroup'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'gale'), null);
   assert.equal(c.sgUltPickOf(data.player.skills2.ult, 'thrust').lv, c.SG_TIER_MAX_LV);
 });

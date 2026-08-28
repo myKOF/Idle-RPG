@@ -224,6 +224,21 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,frostnovaIceSpike,寒冰衝擊,0,,,,,,,,0,,冰霜新星殺死被凍結的敵人時，會在目標地面昇起 1 根冰錐，對周圍 8 米內的敵人造成 4 段 100% 寒冰傷害。,ice,frostnova,,staff2h,"{""frostnovaKillSpike"":{""hits"":4,""pct"":100,""m"":8}}"
 傳奇特效,frostnovaColdTide,寒潮,0,,,,,,,,0,,冰霜新星擊中帶有寒霜狀態的敵人時，有 20% 機率在目標處再爆發 1 次冰霜新星。,ice,frostnova,,staff2h,"{""frostnovaColdTide"":{""chance"":20}}"
 傳奇特效,frostnovaWinterFrost,凜冬寒霜,0,,,,,,,,0,,暴風雪持續時間內會不斷對範圍內的敵人施加寒霜狀態，且寒霜狀態傷害 +30%。,ice,frostnova,,staff2h,"{""frostnovaBlizzardFrost"":{""stacks"":1},""frostnovaFrostDmgPct"":30}"
+傳奇特效,windbladeRend,裂風,0,,,,,,,,0,,風刃每擊中敵人 1 次則傷害額外 +5%，最高為 +100%。,wind,windblade,,wand1h,"{""windbladeRamp"":{""pct"":5,""max"":100}}"
+傳奇特效,windbladePressure,增壓,0,,,,,,,,0,,風刃的體積增大 25%，且飛行速度 +30%。,wind,windblade,,wand1h,"{""windbladeSizePct"":25,""windbladeSpeedPct"":30}"
+傳奇特效,windbladeTrace,風之痕,0,,,,,,,,0,,【亂披風】會在風刃另一側額外射出 1 道小型風刃，且小型風刃傷害 +30%。,wind,windblade,,wand1h,"{""windbladeSmallMirror"":{""count"":1},""windbladeSmallDmgPct"":30}"
+傳奇特效,windbladeErode,風蝕,0,,,,,,,,0,,風刃擊中敵人時會附加風蝕狀態，讓敵人受到的傷害 +25%，持續 4 秒。,wind,windblade,,wand1h,"{""windbladeErode"":{""pct"":25,""sec"":4}}"
+傳奇特效,windbladeVoidCut,斷空刃,0,,,,,,,,0,,【暴風真空刃】每個方向改為連續射出 3 道風刃，且風刃傷害額外 +30%。,wind,windblade,,wand1h,"{""windbladeVolleyTo"":{""count"":3},""windbladeDmgPct"":30}"
+傳奇特效,vacuumResonance,共振,0,,,,,,,,0,,【真空爆震】會額外多造成 1 次傷害。,wind,vacuumslash,,axe2h,"{""vacuumBurstAdd"":{""hits"":1}}"
+傳奇特效,vacuumRift,裂痕,0,,,,,,,,0,,真空斬造成的風切狀態疊加層數 +3 層。,wind,vacuumslash,,axe2h,"{""vacuumRendStacks"":{""maxStacks"":3}}"
+傳奇特效,vacuumWindBlade,真空風刃,0,,,,,,,,0,,每次施放真空斬會額外射出 2 道小型風刃。,wind,vacuumslash,,axe2h,"{""vacuumSmallBlades"":{""count"":2}}"
+傳奇特效,vacuumExpand,空間澎脹,0,,,,,,,,0,,真空斬的體積 +25%。,wind,vacuumslash,,axe2h,"{""vacuumScalePct"":25}"
+傳奇特效,vacuumFlux,虛空漲落,0,,,,,,,,0,,【虛空斬】的持續時間 +3 秒。,wind,vacuumslash,,axe2h,"{""vacuumVoidSec"":{""sec"":3}}"
+傳奇特效,stormbarrierAbsorb,吸收,0,,,,,,,,0,,暴風屏障的傷害減免 +10%。,wind,stormbarrier,,shield,"{""stormbarrierRedPct"":10}"
+傳奇特效,stormbarrierReflect,暴風反射,0,,,,,,,,0,,【暴風之刃】射出風刃的機率 +10%。,wind,stormbarrier,,shield,"{""stormbladeChanceAdd"":{""chance"":10}}"
+傳奇特效,stormbarrierCounterCut,逆風切,0,,,,,,,,0,,【亂風切】所附加的風切狀態，每層傷害 +35%。,wind,stormbarrier,,shield,"{""stormRendDmgPct"":35}"
+傳奇特效,stormbarrierWall,風之壁,0,,,,,,,,0,,暴風屏障作用中，你的物理與魔法防禦額外 +20%。,wind,stormbarrier,,shield,"{""stormbarrierDefPct"":20}"
+傳奇特效,stormbarrierCore,風暴核心,0,,,,,,,,0,,【暴風神體】的持續時間 +50%。,wind,stormbarrier,,shield,"{""stormGodSecPct"":50}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

@@ -824,7 +824,10 @@ function playerAtkCfg(pEnt) {
 }
 function playerDefCfg(pEnt) {
     var st = getStats();
-    var defMul = 1 + buffVal(pEnt, 'defUp') / 100;
+    /* 傳奇【風之壁】：暴風屏障作用中的防禦乘算（判定的唯一入口在 js/skills2.js）。
+       乘在 defUp 之後＝與舊技能【鐵壁】的增益相乘，兩者互不覆寫。 */
+    var defMul = (1 + buffVal(pEnt, 'defUp') / 100) *
+        ((typeof skill2DefFactor === 'function') ? skill2DefFactor(pEnt) : 1);
     return {
         def: st.def * defMul, mdef: st.mdef * defMul, level: st.level,
         dodge: st.evasion + buffVal(pEnt, 'evasionUp'),

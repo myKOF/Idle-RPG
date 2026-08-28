@@ -752,7 +752,11 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(renderer, /dur \* 1000 \+ 500/);
   assert.match(renderer, /形成連續螺旋/);
   assert.match(skills2, /grow: f\.growPxPerSec \|\| 0/);
-  assert.match(skills2, /fieldKey: 'void-disc-' \+ i/);
+  /* 合併鍵：第 7 階本體斬出的那幾道沿用 'void-disc-<i>'（重複施放時延長既有圓盤），
+     超神【虛空滅界】每 2 秒自動斬出的那一道另外帶序號，否則每一道都會被當成同一道。 */
+  assert.match(skills2, /var keyBase = opts\.keyPrefix \|\| 'void-disc-';/);
+  assert.match(skills2, /fieldKey: keyBase \+ i/);
+  assert.match(skills2, /keyPrefix: 'void-anni-' \+ \(\+\+SG_VOID_DISC_SEQ\) \+ '-'/);
   assert.match(skills2, /startAng: baseAngle \+ Math\.PI \* 2 \* i \/ discs/);
   assert.match(skills2, /rings: \[\{ r: startR, spin: spin \}\]/);
   assert.match(renderer, /var key = 'void:' \+ \(a\.id \|\|/);
@@ -927,13 +931,13 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.59/);
-  assert.match(index, /js\/status\.js\?v=1\.0\.20/);
+  assert.match(index, /js\/status\.js\?v=1\.0\.21/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.73/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.106/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.85/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260828-windblade-balance'/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.87/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260828-stormbarrier-legendary'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260828-skill-cast-reset/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260828-windblade-balance/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260828-stormbarrier-legendary/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260826-chain-thunder-legendary/);
 });
 
