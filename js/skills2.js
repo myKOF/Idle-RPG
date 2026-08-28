@@ -8412,14 +8412,20 @@ function sgWindbladeDmgPct(g, lvs, lg) {
     + Math.max(0, Number(lg && lg.windbladeDmgPct) || 0);
 }
 
-/* 風刃的本體傷害。超神【暴風萬刃】的「風刃傷害 +50%」是**獨立乘區**
-  （比照【極寒冰爆】【無限新星】的既有裁定：階數本身已經累加到上千個百分點，
-   超神那一份若也丟進同一個池子，實際增幅會只剩個位數%）。
-   施放、追擊與超神【天穹崩裂】的被動射出共用這一支，乘區不會漏在某一條路上。 */
+/* 風刃的本體傷害。兩個超神的傷害加成都是**獨立乘區**（比照【極寒冰爆】【無限新星】的
+   既有裁定：階數本身已經累加到上千個百分點，超神那一份若也丟進同一個池子，
+   實際增幅會只剩個位數%）：
+     【暴風萬刃】：風刃傷害 +50%
+     【天穹崩裂】：被動射出的那一道傷害 +50%——選了它之後，風刃退出主動輪替，
+                  唯一的出手方式就是那一道，因此直接掛在本體傷害上就等同「那一道的加成」，
+                  不必再為單一形態另闢一條乘區（也就不會有「哪條路忘了乘」的漏洞）
+   施放、追擊與被動射出共用這一支。 */
 function sgWindbladeBodyDamage(g, st, lvs, lg) {
   var myriad = sgUlt('windblade', 'stormMyriad');
+  var collapse = sgUlt('windblade', 'skyCollapse');
   return sgGroupBaseStat(g, st) * sgWindbladeDmgPct(g, lvs, lg) / 100
-    * (myriad ? 1 + sgUltVal(myriad, 'pct') / 100 : 1);
+    * (myriad ? 1 + sgUltVal(myriad, 'pct') / 100 : 1)
+    * (collapse ? 1 + sgUltVal(collapse, 'pct') / 100 : 1);
 }
 
 /* 射出一道大型風刃。超神【暴風萬刃】把它改成全場追擊的場域，其餘情況照舊直線飛出；
@@ -8538,29 +8544,24 @@ function sgCastWindblade(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 }
 
 /* 超神【天穹崩裂】：風刃改為被動技能——受到攻擊時機率朝攻擊者射出一道風刃。
-   與暴風屏障【暴風之刃】走同一個受擊收斂點，但那一道刃固定取風刃第 1 階的 Lv.1 表定值，
-   這一道則是**風刃自己**的完整形態（吃自己的階數、傳奇與超神加成），因此傷害走
-   sgWindbladeBodyDamage，再乘上這個超神自己的加成。 */
+   「一道風刃」＝**照玩家當下的風刃進化情況完整施放一次**（使用者決策 2026-08-28）：
+   七階全滿就是七階的形態（四方向連射、小型追擊風刃、狂風碎裂的沿途脈衝都在），
+   連帶吃到風刃自己的傳奇特效。因此走 castSkill2 的 opts.repeat（不扣法力、不進冷卻），
+   而不是在這裡自己複製一份施放流程——複製的話，風刃日後每加一階或一個傳奇，
+   這裡就會漏掉一個。傷害的 +50% 掛在 sgWindbladeBodyDamage（見那一支的說明）。
+   與暴風屏障【暴風之刃】的差別：那一道固定取風刃第 1 階的 Lv.1 表定值，這一道是本尊。 */
 function sgSkyCollapseOnPlayerDamaged(mEnt, pEnt, floatSel) {
   var u = sgUlt('windblade', 'skyCollapse');
   if (!u || !skills2Equipped('windblade') || !mEnt || mEnt.hp <= 0) return;
-  var lvs = skills2Levels('windblade');
-  if (!lvs || lvs[0] < 1) return;
   if (!chance(sgUltVal(u, 'chance'))) return;
-  var st = getStats();
-  var g = SKILLS2.windblade;
-  var lg = sgLegend('windblade');
-  var dmgVal = sgWindbladeBodyDamage(g, st, lvs, lg) * (1 + sgUltVal(u, 'pct') / 100);
-  if (!(dmgVal > 0)) return;
-  var angle = (typeof bfAngleTo === 'function') ? bfAngleTo(mEnt) : null;
-  var geomOk = (angle !== null && angle !== undefined);
   var enemies = (typeof FIELD !== 'undefined' && FIELD && FIELD.enemies) ? FIELD.enemies : [mEnt];
-  var ramp = sgWindbladeRamp(lg);
-  sgLaunchWindBlade(pEnt, st, 'windblade', {
-    geom: sgWindbladeGeom(g, lvs, lg), angle: geomOk ? angle : 0, dmgVal: dmgVal,
-    pool: enemies, geomOk: geomOk, fallback: [mEnt], ramp: ramp,
-    onHit: sgWindbladeProjectileHit(ramp, sgWindErodeSpec(lg))
-  }, floatSel || 'mv-float', { killed: false, dmg: 0, crit: false });
+  /* 「向**目標**發射」＝朝攻擊者：castSkill2 的主目標取 pEnt._lockTarget（bfPickPrimary），
+     因此暫時把鎖定指向攻擊者、射完立刻還原，不影響玩家原本的追擊目標。
+     傳進去的仍是完整敵群，貫穿路徑上的其他敵人照樣打得到。 */
+  var prevLock = pEnt._lockTarget;
+  pEnt._lockTarget = mEnt;
+  castSkill2(pEnt, enemies, 'windblade', floatSel || 'mv-float', { repeat: true });
+  pEnt._lockTarget = prevLock;
 }
 
 /* ===========================================================================

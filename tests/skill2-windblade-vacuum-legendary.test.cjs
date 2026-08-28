@@ -349,33 +349,66 @@ test('【嵐之山】：四方向各一道融合後的巨型風刃，且不再�
     '融合的是同一個方向那一疊（2 道大型＋2 道小型）再乘上 110%');
 });
 
-test('【天穹崩裂】：風刃退出主動輪替，改為受擊時機率朝攻擊者射出一道', () => {
-  const c = loadContext();
-  stubVfx(c);
-  const hits = stubHits(c);
-  maxLevels(c, 'windblade');
-  equip(c, 'windblade');
-  setUlt(c, 'windblade', 'skyCollapse', 1);
-  assert.equal(c.skills2ActsPassive('windblade'), true, '不再進入主動施放輪替');
-  const p = playerEnt();
-  const m = enemy(1e9, 20, 0, 'atk');
-  c.FIELD = { player: p, enemies: [m] };
-  c.chance = () => false;
-  c.skills2OnPlayerDamaged(m, p, 100, false, { miss: false }, 'mv-float');
-  assert.equal(c.SKILL2_RT.projectiles.length, 0, '機率沒中就不射');
-  c.chance = () => true;
-  c.skills2OnPlayerDamaged(m, p, 100, false, { miss: false }, 'mv-float');
-  assert.equal(c.SKILL2_RT.projectiles.length, 1, '機率成立射出一道風刃');
-  // 傷害＝風刃本體 ×（1＋55%）（Lv.1 ＝ 50＋5×1）
-  const lvs = c.skills2Levels('windblade');
-  const body = c.sgWindbladeBodyDamage(c.SKILLS2.windblade, c.getStats(), lvs, {});
-  assert.ok(Math.abs(c.SKILL2_RT.projectiles[0].dmgVal - body * 1.55) < 1e-6,
-    '這一道的傷害額外 +50%');
+/* 使用者決策 2026-08-28：被動射出的那一道要「比照當下角色的風刃進化情況」——
+   七階全滿就是七階的風刃，帶著 1~7 階（以及風刃自己的傳奇特效）的效果，
+   而不是只射出一道第 1 階的貫穿刃。 */
+test('【天穹崩裂】：風刃退出主動輪替，受擊時機率完整施放一次當下的風刃', () => {
+  function shot(opts) {
+    opts = opts || {};
+    const c = loadContext();
+    const specs = stubVfx(c);
+    stubHits(c);
+    if (opts.legendary) setLegendary(c, opts.legendary);
+    maxLevels(c, 'windblade');
+    equip(c, 'windblade');
+    if (!opts.noUlt) setUlt(c, 'windblade', 'skyCollapse', 1);
+    const p = playerEnt();
+    const m = enemy(1e9, 20, 0, 'atk');
+    const other = enemy(1e9, 40, 0, 'other');
+    c.FIELD = { player: p, enemies: [m, other], dpsWindow: [] };
+    p._lockTarget = other;                 // 原本鎖定別人：射完必須原樣還原
+    const mp0 = p.mp;
+    c.chance = () => (opts.miss ? false : true);
+    c.skills2OnPlayerDamaged(m, p, 100, false, { miss: false }, 'mv-float');
+    return {
+      c: c, p: p, m: m, mp0: mp0,
+      blades: specs.filter((s) => s.variant === 'wind-blade').length,
+      chasers: c.SKILL2_RT.grounds.filter((f) => f.gid === 'windblade' && f.kind === 'windblade').length
+    };
+  }
+  const base = loadContext();
+  maxLevels(base, 'windblade');
+  equip(base, 'windblade');
+  setUlt(base, 'windblade', 'skyCollapse', 1);
+  assert.equal(base.skills2ActsPassive('windblade'), true, '不再進入主動施放輪替');
+
+  assert.equal(shot({ miss: true }).c.SKILL2_RT.projectiles.length, 0, '機率沒中就不射');
+
+  const r = shot();
+  /* 七階全滿＝【暴風真空刃】的四個方向各連射 2 道，且小型風刃已是追擊場域——
+     也就是「完整的一次風刃」，不是單獨一道貫穿刃。 */
+  assert.equal(r.blades, 8);
+  assert.ok(r.chasers > 0, '第 5 階【追跡風刃】的追擊場域也要跟著出來');
+  assert.ok(r.c.SKILL2_RT.projectiles.every((pr) => pr.gid === 'windblade'));
+  // 傷害＝風刃本體 ×（1＋55%）（Lv.1 ＝ 50＋5×1），乘區收斂在 sgWindbladeBodyDamage
+  const plain = shot({ noUlt: true });
+  const withUlt = r.c.sgWindbladeBodyDamage(r.c.SKILLS2.windblade, r.c.getStats(),
+    r.c.skills2Levels('windblade'), {});
+  const without = plain.c.sgWindbladeBodyDamage(plain.c.SKILLS2.windblade, plain.c.getStats(),
+    plain.c.skills2Levels('windblade'), {});
+  assert.ok(Math.abs(withUlt - without * 1.55) < 1e-6, '這一道的傷害額外 +50%');
+  assert.ok(Math.abs(r.c.SKILL2_RT.projectiles[0].dmgVal - withUlt) < 1e-6);
+  // 風刃自己的傳奇特效也一起吃到
+  assert.equal(shot({ legendary: ['windbladeVoidCut'] }).blades, 12, '傳奇【斷空刃】：每方向 3 道');
+  // 自動射出不扣法力、不進冷卻，且不會改掉玩家原本的鎖定目標
+  assert.equal(r.p.mp, r.mp0, '不扣法力');
+  assert.equal((r.p.skillCds && r.p.skillCds[r.c.SG_PREFIX + 'windblade']) || 0, 0, '不進冷卻');
+  assert.equal(r.p._lockTarget !== r.m, true, '射完把鎖定目標原樣還原');
   // 沒裝配在技能列就不生效（與其他「主動型被動」同一條代價）
-  c.G.player.loadout = [];
-  c.SKILL2_RT.projectiles.length = 0;
-  c.skills2OnPlayerDamaged(m, p, 100, false, { miss: false }, 'mv-float');
-  assert.equal(c.SKILL2_RT.projectiles.length, 0);
+  r.c.G.player.loadout = [];
+  r.c.SKILL2_RT.projectiles.length = 0;
+  r.c.skills2OnPlayerDamaged(r.m, r.p, 100, false, { miss: false }, 'mv-float');
+  assert.equal(r.c.SKILL2_RT.projectiles.length, 0);
 });
 
 /* ===========================================================================
