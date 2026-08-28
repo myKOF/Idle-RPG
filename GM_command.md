@@ -689,7 +689,7 @@ sgult 群組|all 1|2|3|off [等級|max] （直設超神進化的三選一與等�
 
 - 第 2 個參數是**選項編號**（1／2／3，對應技能面板三選一的左中右），`off` ＝清除選擇。
 - 第 3 個參數留白＝`max`（Lv.10）；填 0 等同 `off`。
-- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術）、`mire`（泥沼術）、`earthguard`（大地守護）、`chainlightning`（連鎖閃電）、`thunderstrike`（落雷術）、`thunderorb`（雷球）、`icearrow`（寒冰箭）、`waterball`（水流彈）、`frostnova`（冰霜新星）、`windblade`（風刃）、`vacuumslash`（真空斬），`all` 會自動略過其餘群組。
+- 目前開放超神進化的是 `thrust`（突刺）、`cleave`（迴旋斬）、`knife`（飛刀）、`gale`（疾風斬）、`bloodblade`（血刃斬）、`dualdance`（雙刀亂舞）、`counter`（反擊）、`bloodrage`（嗜血狂怒）、`fireball`（火球術）、`firepillar`（火龍捲）、`firehunt`（火狩）、`rockarmor`（岩甲術）、`mire`（泥沼術）、`earthguard`（大地守護）、`chainlightning`（連鎖閃電）、`thunderstrike`（落雷術）、`thunderorb`（雷球）、`icearrow`（寒冰箭）、`waterball`（水流彈）、`frostnova`（冰霜新星）、`windblade`（風刃）、`vacuumslash`（真空斬）、`stormbarrier`（暴風屏障）。二十三個群組已全部開放，因此 `all` 不會再略過任何群組。
 - **生效前提是該群組前 7 階全部滿級**：沒滿級時指令仍會寫入，但效果暫時失效
   （面板會標「暫時失效」）。要立刻看到效果，先 `sglv thrust max` 再 `sgult thrust 1`。
 
@@ -745,6 +745,9 @@ sgult windblade 3                     （風刃＝天穹崩裂：改為被動，
 sgult vacuumslash 1                   （真空斬＝萬象風劫：命中處留下會長大的靜止真空斬）
 sgult vacuumslash 2                   （真空斬＝虛空滅界：每 2 秒自動斬出 1 道虛空斬）
 sgult vacuumslash 3                   （真空斬＝時空崩解：虛空斬改為固定環繞周圍 12 米）
+sgult stormbarrier 1                  （暴風屏障＝瓦爾格之力：神體更久、更硬，風系傷害再乘一層）
+sgult stormbarrier 2                  （暴風屏障＝天穹崩裂：每 2 秒落下 1～3 個召喚星體）
+sgult stormbarrier 3                  （暴風屏障＝森羅萬象：施放時同時打出暴風真空刃與虛空斬）
 sgult all off                         （清除所有超神進化選擇）
 ```
 

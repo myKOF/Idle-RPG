@@ -234,6 +234,11 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,vacuumWindBlade,真空風刃,0,,,,,,,,0,,每次施放真空斬會額外射出 2 道小型風刃。,wind,vacuumslash,,axe2h,"{""vacuumSmallBlades"":{""count"":2}}"
 傳奇特效,vacuumExpand,空間澎脹,0,,,,,,,,0,,真空斬的體積 +25%。,wind,vacuumslash,,axe2h,"{""vacuumScalePct"":25}"
 傳奇特效,vacuumFlux,虛空漲落,0,,,,,,,,0,,【虛空斬】的持續時間 +3 秒。,wind,vacuumslash,,axe2h,"{""vacuumVoidSec"":{""sec"":3}}"
+傳奇特效,stormbarrierAbsorb,吸收,0,,,,,,,,0,,暴風屏障的傷害減免 +10%。,wind,stormbarrier,,shield,"{""stormbarrierRedPct"":10}"
+傳奇特效,stormbarrierReflect,暴風反射,0,,,,,,,,0,,【暴風之刃】射出風刃的機率 +10%。,wind,stormbarrier,,shield,"{""stormbladeChanceAdd"":{""chance"":10}}"
+傳奇特效,stormbarrierCounterCut,逆風切,0,,,,,,,,0,,【亂風切】所附加的風切狀態，每層傷害 +35%。,wind,stormbarrier,,shield,"{""stormRendDmgPct"":35}"
+傳奇特效,stormbarrierWall,風之壁,0,,,,,,,,0,,暴風屏障作用中，你的物理與魔法防禦額外 +20%。,wind,stormbarrier,,shield,"{""stormbarrierDefPct"":20}"
+傳奇特效,stormbarrierCore,風暴核心,0,,,,,,,,0,,【暴風神體】的持續時間 +50%。,wind,stormbarrier,,shield,"{""stormGodSecPct"":50}"
 神鑄特效,dragonBlood,龍血,25,,,,,,,,,hpPct,生命上限提高 {v}%,,,,,
 神鑄特效,godMight,神力,18,,,,,,,,,atkPct;matkPct,物理與魔法攻擊額外提高 {v}%,,,,,
 神鑄特效,godHaste,神速,15,,,,,,,,,aspdPct,攻擊速度提高 {v}%,,,,,

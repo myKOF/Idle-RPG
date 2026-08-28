@@ -1529,6 +1529,36 @@ var PASSIVE_POOL = {
     name: '虛空漲落', desc: '【虛空斬】的持續時間 +3 秒。',
     base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'vacuumslash', weaponTypes: ['axe2h'],
     fx: { vacuumVoidSec: { sec: 3 } }
+  },
+  /* ---- 傳奇進化第十二批（2026-08-28）：暴風屏障（最後一組）----
+     盾牌→暴風屏障（stormbarrier）。盾牌是單手副手武器（cat: offHand、hands: 1），
+     不吃 TWO_HAND_EFFECT_VALUE_MULT 的 ×2 補償，因此這五個的數字沿用設計文檔原值；
+     仍把「機率」放進 LEGENDARY_FX_NON_VALUE_KEYS 的保護鍵（chance），
+     之後若改判為雙手也不會被放大成別的東西。 */
+  stormbarrierAbsorb: {
+    name: '吸收', desc: '暴風屏障的傷害減免 +10%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'stormbarrier', weaponTypes: ['shield'],
+    fx: { stormbarrierRedPct: 10 }
+  },
+  stormbarrierReflect: {
+    name: '暴風反射', desc: '【暴風之刃】射出風刃的機率 +10%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'stormbarrier', weaponTypes: ['shield'],
+    fx: { stormbladeChanceAdd: { chance: 10 } }
+  },
+  stormbarrierCounterCut: {
+    name: '逆風切', desc: '【亂風切】所附加的風切狀態，每層傷害 +35%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'stormbarrier', weaponTypes: ['shield'],
+    fx: { stormRendDmgPct: 35 }
+  },
+  stormbarrierWall: {
+    name: '風之壁', desc: '暴風屏障作用中，你的物理與魔法防禦額外 +20%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'stormbarrier', weaponTypes: ['shield'],
+    fx: { stormbarrierDefPct: 20 }
+  },
+  stormbarrierCore: {
+    name: '風暴核心', desc: '【暴風神體】的持續時間 +50%。',
+    base: 0, perR: 0, legendary: true, type: 'wind', relatedSkill: 'stormbarrier', weaponTypes: ['shield'],
+    fx: { stormGodSecPct: 50 }
   }
 };
 

@@ -1,5 +1,49 @@
 # AI_TASKS.md
 
+## Claude｜傳奇進化第十二批（暴風屏障五特效 ＋ 一組超神進化）（2026-08-28）
+
+- 狀態：已完成
+- Owner：Claude
+- 任務分類：傳奇特效／超神進化（風系，設計文檔的最後一組）
+- 使用者需求：實作「暴風屏障」的 5 個傳奇特效，與其 3 個超神進化效果。
+- 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤（gid=1805975024）暴風屏障那一段。
+- 前十一批的兩條收斂路徑（`legendarySkill2Mods` 傳奇橋、群組層 `ult` 超神進化）原封沿用。
+- 技術內容：
+  - PASSIVE_POOL 新增 5 個傳奇特效（池內共 153）：盾牌→暴風屏障＝吸收／暴風反射／
+    逆風切／風之壁／風暴核心。盾牌是單手副手武器，不吃雙手 ×2 補償。
+  - SKILLS2 新增 3 個超神進化（開放群組 22 → 23，**二十三個群組全部開放完畢**）：
+    瓦爾格之力／天穹崩裂／森羅萬象。
+  - 引擎層只多兩個掛點：
+    ① `skill2DefFactor`：傳奇【風之壁】的唯一判定入口，掛在 `js/combat.js playerDefCfg`
+       的 `defMul`（我方防禦的唯一出口）。刻意不走既有的 `defUp` 增益——那一格是
+       「取代」規則的共用鍵（舊技能【鐵壁】也在用），每 0.5 秒重塗會把鐵壁的數值蓋掉；
+    ② `SG_ULT_PASSIVE` 查表：把「被超神改為被動技能」的判定從「逐一比對選項 id」
+       改成「群組 → 該群組那一個 id」。暴風屏障也有一個叫【天穹崩裂】的超神
+       （設計文檔如此命名，id 是 `skyfallStars`），舊寫法遲早會讓它安靜地退出主動輪替。
+  - `sgSpawnVoidDiscs` 另外接受「被借去的形態」（`opts.plain`／`opts.gid`／`opts.dmgVal`），
+    供超神【森羅萬象】使用：借的是形態而不是玩家在真空斬上的投資（比照【暴風之刃】）。
+  - 沒有新增狀態、沒有新增顯示層變體（一律沿用 `wind-blade`／`void-disc`／`meteor`／
+    `thunder-fall`）。Worker 協議未變（仍是 v26）。
+- 修改檔案：`js/data.js`、`js/skills2.js`、`js/combat.js`、`index.html`、`js/bridge.js`、
+  `js/worker/sim.worker.js`、`config/CSV/Skills2.csv`／`Equipment_Affix.csv` 與對應的
+  `config/Excel/*.xlsx`、`game_formula.md`、`GM_command.md`、`PATCH.md`、
+  `tests/skill2-stormbarrier-legendary.test.cjs`（新增，13 案例）、
+  `tests/skill2-ult-evolution.test.cjs`（開放群組 22 → 23；「尚未開放」那條路已無現成
+  控制組，改成臨時拿掉某一組的 `ult` 來測）、`tests/legendary-affix.test.cjs`
+  （池內總數 148 → 153）、`tests/skill2-vfx.test.cjs`（版號釘樁）、本文件。
+- 驗證：`npm test` 1872 案例（1862 通過，新增 13 案例全過；10 條紅燈與上一批（HEAD）
+  完整套件的紅燈逐字相同——該處是 1859 案例 1849 通過、同樣 10 條，確定為本批之前既有）、
+  `node tools/build_check.cjs` 305 檔、`config_tables --gen／--sync／--apply` 往返
+  （語意變更 0）、`apply_params` 試跑（將變更 0、錨點問題 0、對應參數總數 554 不變）與
+  `--check-anchors`、快取版號同步、本機 8331 起頁面確認 console 無錯誤、Worker 存活且
+  errors 0、三個超神說明字串在 Lv.1／Lv.10 都正確代入，並以 GM（`sglv`／`sgult`／`spawn`）
+  實機輪過三個超神各一輪（皆無執行期錯誤）、`git diff --check`。
+- 已知風險與待確認：設計文檔未指定而由我裁定的十二處，以及【吸收】撞到風系減免 99% 上限、
+  【瓦爾格之力】的 +0.1% 減免量級可疑、【天穹崩裂】的永久輸出、【森羅萬象】的單次爆發量
+  四項需要重估數值的風險，已列在 `PATCH.md` 的「待確認」與「建議重估的數值」兩段。
+  ⚠️ 其中第 12 點請優先看：**風刃與暴風屏障各有一個叫【天穹崩裂】的超神**，效果完全不同，
+  玩家在技能面板上會看到兩個同名選項；若不是刻意的，建議直接改設計文檔其中一個的名字。
+
 ## Claude｜傳奇進化第十一批（風刃／真空斬十特效 ＋ 兩組超神進化）（2026-08-28）
 
 - 狀態：已完成

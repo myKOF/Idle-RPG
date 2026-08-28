@@ -192,7 +192,7 @@ var SKILLS2 = {
   frostnova: { name: '冰霜新星', emoji: '🧊', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '冰霜新星', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 150, pctPer: 5, m: 12, castM: 12, stacks: 2, frostPct: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '對周圍 {m} 米內的敵人釋放冰霜新星，造成 {pct}% 寒冰傷害並附加 {stacks} 層寒霜狀態（寒霜每跳造成新星傷害 {frostPct}% 的寒冰傷害）' }, { name: '冰霜衝擊', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { m: 13, mPer: 0.6, castM: 13, castMPer: 0.6, pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '冰霜新星的範圍擴展至 {m} 米，且寒冰傷害額外 +{pct}%' }, { name: '寒冰體', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '施放冰霜新星後的 6 秒內，攻擊你的敵人有 25% 機率被附加 {stacks} 層寒霜狀態' }, { name: '極致寒霜', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { dmgPct: 40, dmgPctPer: 4, durPct: 40, durPctPer: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '所有來源的寒霜狀態傷害提高 {dmgPct}%，且持續時間增加 {durPct}%' }, { name: '三重新星', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '冰霜新星的施放次數額外 +{add} 次，且每次釋放的範圍再 +{m} 米（不足 1 次的部分以機率觸發）' }, { name: '死亡新星', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { chance: 35, chancePer: 6.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '帶寒霜狀態的敵人死亡時有 {chance}% 機率再釋放 1 次冰霜新星' }, { name: '暴風雪', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { pct: 100, pctPer: 10, gap: 0.4, sec: 8, side: 24 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 1 道暴風雪籠罩天空，對 {side}×{side} 米範圍內的敵人每 {gap} 秒造成 {pct}% 寒冰傷害，暴風雪跟隨我方移動，持續 {sec} 秒' }], ult: [{ id: 'infiniteNova', name: '無限新星', cost: 300, fx: { gap: 1, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '每隔 {gap} 秒自動施放 1 次冰霜新星（不扣法力、不進冷卻），且冰霜新星傷害額外 +{pct}%' }, { id: 'crystalResonance', name: '極致之冰', cost: 300, fx: { m: 8, gap: 0.4, pct: 200, pctPer: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '凍結中的敵人形成冰晶共鳴：每 {gap} 秒對相距 {m} 米內的其他凍結敵人造成 {pct}% 寒冰傷害' }, { id: 'iceKingDomain', name: '冰皇領域', cost: 300, fx: { scale: 50, gap: 1, min: 2, max: 8, hits: 4, pct: 200, pctPer: 20, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '暴風雪的範圍擴大 {scale}%，且每 {gap} 秒在範圍內隨機 {min}～{max} 個目標的地面昇起冰錐，每根冰錐對周圍 {m} 米內的敵人造成連續 {hits} 段 {pct}% 寒冰傷害' }] },
   windblade: { name: '風刃', emoji: '🍃', range: '4*8', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '風刃', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, m: 80, speed: 18 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出一道弧形風刃（射程 {castM} 米、飛行速度 {speed} 米/秒），貫穿飛行路徑 {m} 米上的所有敵人，各造成 {pct}% 風系傷害' }, { name: '巨型風刃', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { size: 30, sizePer: 3 }, goldBase: 200000, goldGrow: 1.5, desc: '風刃的體積 +{size}%（判定範圍與特效同步放大）' }, { name: '雙重風刃', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { pct: 30, pctPer: 30 }, goldBase: 400000, goldGrow: 1.5, desc: '同時向前方與後方各射出一道風刃，且風刃傷害額外 +{pct}%（與第 1 階累加）' }, { name: '亂披風', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 30, pctPer: 3, deg: 30, lenM: 3, widthM: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '風刃射出時同時朝其一側 {deg} 度發射 1 道小型風刃（體積 {lenM}×{widthM} 米、同樣貫穿全場），造成原風刃 {pct}% 的傷害' }, { name: '追跡風刃', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { sec: 4, secPer: 0.3, chaseM: 30, gap: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '小型風刃不再向前射出，改為在 {chaseM} 米內隨機追擊敵人 {sec} 秒，對路徑上的所有敵人造成傷害（碰到才算一次命中）' }, { name: '狂風碎裂', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { move: 60, gap: 0.6, gapPer: -0.03, pct: 50, m: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '風刃命中的敵人移動速度 -{move}%；風刃並在飛行途中每 {gap} 秒對半徑 {m} 米內的敵人造成風刃 {pct}% 的傷害（不含小型風刃）' }, { name: '暴風真空刃', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { pct: 40, pctPer: 40, count: 2, directions: 4, gap: 0.2 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為朝前後左右 {directions} 個方向各連續射出 {count} 道風刃（每道間隔 {gap} 秒，小型風刃同步發射），且風刃傷害額外 +{pct}%' }], ult: [{ id: 'stormMyriad', name: '暴風萬刃', cost: 300, fx: { pct: 50, pctPer: 5, add: 1, chaseM: 60, sec: 4 }, goldBase: 10000000, goldGrow: 1.5, desc: '大型風刃改為在 {chaseM} 米內持續追擊敵人 {sec} 秒，【暴風真空刃】每個方向再多射出 {add} 道風刃，且風刃傷害額外 +{pct}%' }, { id: 'stormMountain', name: '嵐之山', cost: 300, fx: { pct: 100, pctPer: 10, directions: 4, scale: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '【暴風真空刃】改為把該次所有大型與小型風刃融合，朝 {directions} 個方向各射出 1 道體積 +{scale}% 的巨型風刃，每道傷害為所融合風刃總和的 {pct}%' }, { id: 'skyCollapse', name: '天穹崩裂', cost: 300, fx: { chance: 20, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '風刃改為被動技能：受到攻擊時有 {chance}% 機率朝攻擊者射出一道風刃，且其傷害額外 +{pct}%' }] },
   vacuumslash: { name: '真空斬', emoji: '🌀', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '真空斬', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 3, m: 6, castM: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {m} 米範圍內的 {count} 名敵人揮出一道真空斬擊，造成 {pct}% 風系傷害' }, { name: '真空爆震', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { hits: 1, hitsPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '真空斬會爆發出震波，額外造成 {hits} 次傷害（不足 1 次的部分以機率觸發）' }, { name: '風切', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { cutPct: 50, cutPctPer: 5, move: 80, hit: 50, sec: 4, gap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '被真空斬擊中的敵人附加風切狀態：移動速度 -{move}%、命中率 -{hit}%，且每 {gap} 秒受到真空斬傷害 {cutPct}% 的風系傷害，持續 {sec} 秒' }, { name: '真空迴旋', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { pct: 30, pctPer: 3, m: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '真空斬改為對自身周圍 {m} 米內的所有敵人造成傷害，且造成的傷害額外 +{pct}%' }, { name: '真空三重奏', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { add: 2, addPer: 0.2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '迴旋斬額外連續施展 {add} 次，每次的範圍再擴大 {m} 米（不足 1 次的部分以機率觸發）' }, { name: '無限風切', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { stacks: 3, pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '風切狀態可堆疊至 {stacks} 層，每多 1 層使風切每跳額外造成 {pct}% 的風系傷害' }, { name: '虛空斬', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { pct: 400, pctPer: 40, count: 4, sec: 6, m: 6, growM: 4, bodyM: 6, rps: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外斬出 {count} 道虛空斬擊：以自身為中心從半徑 {m} 米起每秒擴大 {growM} 米、{count} 道皆順時針繞行 {rps} 圈，對碰到的敵人造成 {pct}% 風系傷害，持續 {sec} 秒' }], ult: [{ id: 'vacuumOmen', name: '萬象風劫', cost: 300, fx: { chance: 15, chancePer: 1.5, pct: 100, sec: 3, gap: 0.25, grow: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '真空斬命中時有 {chance}% 機率在該處留下一道靜止的真空斬：持續 {sec} 秒、半徑隨時間擴大為 {grow} 倍，對碰到的敵人造成 {pct}% 風系傷害' }, { id: 'voidAnnihilation', name: '虛空滅界', cost: 300, fx: { gap: 2, pct: 100, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒自動斬出 1 道【虛空斬】，且虛空斬傷害額外 +{pct}%' }, { id: 'spacetimeCollapse', name: '時空崩解', cost: 300, fx: { m: 12, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【虛空斬】不再向外擴展，改為全部固定在你周圍 {m} 米環繞，且持續時間額外 +{pct}%' }] },
-  stormbarrier: { name: '暴風屏障', emoji: '🌪️', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '暴風屏障', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { shield: 1, shieldPer: 1, red: 10, redPer: 1, sec: 8, gap: 0.5, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對自身施加暴風屏障：每 {gap} 秒獲得最大生命 {shield}% 的護盾，且傷害減免 +{red}%（乘算，只與風系類型的減免相加總），持續 {sec} 秒' }, { name: '暴風撕裂', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 50, pctPer: 5, m: 8 }, goldBase: 200000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對自身半徑 {m} 米內的敵人造成 {pct}% 風系傷害' }, { name: '亂風切', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 1, countPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對周圍的 {count} 個敵人附加風切狀態（不足 1 個的部分以機率觸發）' }, { name: '暴風之刃', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { chance: 15, chancePer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '暴風屏障作用中受到傷害時，有 {chance}% 機率射出 1 道貫穿風刃（【風刃】第 1 階的效果，不含其後續進化）' }, { name: '風切擴散', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { count: 1, countPer: 0.1, m: 10 }, goldBase: 1500000, goldGrow: 1.5, desc: '風切狀態結束後擴散至 {m} 米內的 {count} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '颶風屏障', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { shield: 2, shieldPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '暴風屏障每次作用時額外獲得最大生命 {shield}% 的護盾（與第 1 階相加）' }, { name: '暴風神體', unlock: { reinc: 0, lv: 1000 }, cost: 40, fx: { red: 99, sec: 2, secPer: 0.2, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '施放暴風屏障時同時召喚風暴之神附體：{sec} 秒內傷害減免 +{red}%，且自身的風系傷害額外 ×(1+{pct}%)' }] }
+  stormbarrier: { name: '暴風屏障', emoji: '🌪️', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '暴風屏障', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { shield: 1, shieldPer: 1, red: 10, redPer: 1, sec: 8, gap: 0.5, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對自身施加暴風屏障：每 {gap} 秒獲得最大生命 {shield}% 的護盾，且傷害減免 +{red}%（乘算，只與風系類型的減免相加總），持續 {sec} 秒' }, { name: '暴風撕裂', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 50, pctPer: 5, m: 8 }, goldBase: 200000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對自身半徑 {m} 米內的敵人造成 {pct}% 風系傷害' }, { name: '亂風切', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 1, countPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對周圍的 {count} 個敵人附加風切狀態（不足 1 個的部分以機率觸發）' }, { name: '暴風之刃', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { chance: 15, chancePer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '暴風屏障作用中受到傷害時，有 {chance}% 機率射出 1 道貫穿風刃（【風刃】第 1 階的效果，不含其後續進化）' }, { name: '風切擴散', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { count: 1, countPer: 0.1, m: 10 }, goldBase: 1500000, goldGrow: 1.5, desc: '風切狀態結束後擴散至 {m} 米內的 {count} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '颶風屏障', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { shield: 2, shieldPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '暴風屏障每次作用時額外獲得最大生命 {shield}% 的護盾（與第 1 階相加）' }, { name: '暴風神體', unlock: { reinc: 0, lv: 1000 }, cost: 40, fx: { red: 99, sec: 2, secPer: 0.2, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '施放暴風屏障時同時召喚風暴之神附體：{sec} 秒內傷害減免 +{red}%，且自身的風系傷害額外 ×(1+{pct}%)' }], ult: [{ id: 'valgrForce', name: '瓦爾格之力', cost: 300, fx: { sec: 50, secPer: 5, red: 0.1, redPer: 0.1, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '召喚風之神祇降臨：【暴風神體】的持續時間 +{sec}%、傷害減免再 +{red}%，且自身風系傷害額外 +{pct}%' }, { id: 'skyfallStars', name: '天穹崩裂', cost: 300, fx: { gap: 2, min: 1, max: 3, maxPer: 0.3, pct: 400, pctPer: 40, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒從天上落下 {min}～{max} 個召喚星體（巨大風刃／雷殞石／火殞石隨機，不足 1 個的部分以機率觸發），每個對落點 {m} 米內的敵人造成 {pct}% 傷害' }, { id: 'myriadPhenomena', name: '森羅萬象', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放暴風屏障時同時打出【暴風真空刃】與【虛空斬】，且這兩者的傷害額外 +{pct}%' }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -281,7 +281,8 @@ function resetSkill2RT() {
     infiniteNovaAt: 0, // 超神【無限新星】自動施放的下一次時刻（不入存檔）
     resonanceAt: 0,    // 超神【極致之冰】冰晶共鳴的下一拍時刻（不入存檔）
     iceKingAt: 0,      // 超神【冰皇領域】昇起冰錐的下一拍時刻（不入存檔）
-    voidAnnihilateAt: 0 // 超神【虛空滅界】自動斬出虛空斬的下一次時刻（不入存檔）
+    voidAnnihilateAt: 0, // 超神【虛空滅界】自動斬出虛空斬的下一次時刻（不入存檔）
+    skyfallAt: 0        // 超神【天穹崩裂】召喚星體落下的下一次時刻（不入存檔）
   };
 }
 resetSkill2RT(); // 載入即建立初始狀態
@@ -441,13 +442,17 @@ function sgSlotCount(gid) {
   if (!g) return 0;
   return g.tiers.length + (sgUltDefs(gid) ? 1 : 0);
 }
-/* 天霸風神斬：迴旋斬「改為被動技能」——選中並投資後就不再進入主動施放輪替，
-   改由 sgTickUltAutoCast 每 N 秒自動施放。這一支是全專案唯一的判定入口。
-   超神【天穹崩裂】（風刃）走的是同一條「改為被動技能」的語意，但沒有自動施放的節拍：
-   它的觸發時機是**受到攻擊**（sgSkyCollapseOnPlayerDamaged），因此只要退出主動輪替即可。 */
+/* 「被超神進化改為被動技能」的查表。這一支是全專案唯一的判定入口。
+     cleave／天霸風神斬     ：改由 sgTickUltAutoCast 每 N 秒自動施放
+     windblade／天穹崩裂    ：沒有節拍，觸發時機是受到攻擊（sgSkyCollapseOnPlayerDamaged）
+   ⚠️ 用「群組 → 選項 id」的查表而不是逐一 sgUlt(gid, id)：暴風屏障也有一個叫
+   【天穹崩裂】的超神（設計文檔如此命名，id 是 skyfallStars），只比對 id 的寫法
+   遲早會被下一個同名選項踩到——那會讓暴風屏障安靜地退出主動輪替。 */
+var SG_ULT_PASSIVE = { cleave: 'stormGodSlash', windblade: 'skyCollapse' };
 function skills2ActsPassive(gid) {
   if (skills2IsPassive(gid)) return true;
-  return !!(sgUlt(gid, 'stormGodSlash') || sgUlt(gid, 'skyCollapse'));
+  var id = SG_ULT_PASSIVE[gid];
+  return !!(id && sgUlt(gid, id));
 }
 
 /* 這個群組目前生效的傳奇特效參數（合併後的平坦物件）。
@@ -8208,9 +8213,13 @@ function sgWindRendSpec(g, lvs, tierIdx, bodyDmg) {
   var vs = skills2Levels('vacuumslash');
   var extraPct = (vs && vs[0] > 0 && vs[5] > 0)
     ? sgVal(SKILLS2.vacuumslash.tiers[5].fx, 'pct', vs[5]) : 0;
+  /* 傳奇【逆風切】：只放大**暴風屏障【亂風切】**塗出來的那一份（設計文檔明寫是那一階），
+     真空斬自己塗的那一份不受影響。每層都放大，因此連同【無限風切】的額外每跳量一起乘。 */
+  var cutMult = (g === SKILLS2.stormbarrier)
+    ? 1 + Math.max(0, Number(sgLegendTick('stormbarrier').stormRendDmgPct) || 0) / 100 : 1;
   return {
-    per: bodyDmg * pct / 100 / gap,
-    extra: bodyDmg * extraPct / 100 / gap,
+    per: bodyDmg * pct / 100 / gap * cutMult,
+    extra: bodyDmg * extraPct / 100 / gap * cutMult,
     dur: sgWindRendDur(), interval: gap
   };
 }
@@ -8287,12 +8296,26 @@ function skill2WindAmpACfg(aCfg, pEnt) {
   var lvs = skills2Levels('stormbarrier');
   if (!lvs || lvs[6] < 1) return aCfg;
   var pct = sgVal(SKILLS2.stormbarrier.tiers[6].fx, 'pct', lvs[6]);
-  if (!(pct > 0)) return aCfg;
+  /* 超神【瓦爾格之力】的「風系傷害 +50%」是**獨立乘區**（比照【極寒冰爆】的既有裁定），
+     與第 7 階自己的乘區相乘，不與它的百分點相加。 */
+  var valgr = sgUlt('stormbarrier', 'valgrForce');
+  var mult = (pct > 0 ? 1 + pct / 100 : 1) * (valgr ? 1 + sgUltVal(valgr, 'pct') / 100 : 1);
+  if (!(mult > 1)) return aCfg;
   var amp = {};
   for (var k in (aCfg.skillElemAmp || {})) amp[k] = aCfg.skillElemAmp[k];
-  amp.wind = (amp.wind || 1) * (1 + pct / 100);
+  amp.wind = (amp.wind || 1) * mult;
   aCfg.skillElemAmp = amp;
   return aCfg;
+}
+
+/* 傳奇【風之壁】：暴風屏障作用中，我方物理與魔法防禦的額外乘算倍率（1＝沒生效）。
+   掛在 js/combat.js playerDefCfg 的 defMul——那是我方防禦的唯一出口，野外與高塔一體生效。
+   ⚠️ 刻意不走既有的 defUp 增益：那一格是「取代」規則的共用鍵（舊技能【鐵壁】也在用），
+   每 0.5 秒重塗一次會把玩家的鐵壁數值蓋成屏障這一份。 */
+function skill2DefFactor(pEnt) {
+  if (!skill2BarrierLevels(pEnt)) return 1;
+  var pct = Math.max(0, Number(sgLegendTick('stormbarrier').stormbarrierDefPct) || 0);
+  return pct > 0 ? 1 + pct / 100 : 1;
 }
 
 /* ===========================================================================
@@ -8675,12 +8698,17 @@ function sgSpawnStaticVacuum(pEnt, st, u, victim, floatSel, bodyDmg, radiusPx) {
 function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
   opts = opts || {};
   var fx = g.tiers[6].fx;
-  var lg = sgLegendTick('vacuumslash');
-  var annihilate = sgUlt('vacuumslash', 'voidAnnihilation');
-  var collapse = sgUlt('vacuumslash', 'spacetimeCollapse');
+  /* opts.plain＝這一組是「被別的技能借去的形態」（超神【森羅萬象】），
+     因此不吃玩家在真空斬上的傳奇與超神，也不歸真空斬記帳（gid／dmgVal 由呼叫端指定）。 */
+  var plain = !!opts.plain;
+  var gid = opts.gid || 'vacuumslash';
+  var lg = plain ? {} : sgLegendTick('vacuumslash');
+  var annihilate = plain ? null : sgUlt('vacuumslash', 'voidAnnihilation');
+  var collapse = plain ? null : sgUlt('vacuumslash', 'spacetimeCollapse');
   // 超神【虛空滅界】：虛空斬傷害額外 +N%（獨立乘區，比照【極寒冰爆】）
-  var dmgVal = sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100
-    * (annihilate ? 1 + sgUltVal(annihilate, 'pct') / 100 : 1);
+  var dmgVal = (Number(opts.dmgVal) > 0) ? Number(opts.dmgVal)
+    : sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100
+      * (annihilate ? 1 + sgUltVal(annihilate, 'pct') / 100 : 1);
   if (!(dmgVal > 0)) return;
   var discs = Math.max(1, Math.floor(Number(opts.discs) > 0 ? opts.discs : (Number(fx.count) || 2)));
   // 傳奇【虛空漲落】：持續時間 +N 秒；超神【時空崩解】：再額外 +N%
@@ -8694,7 +8722,7 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
   var bodyR = bfMeterPx(Math.max(1, Number(fx.bodyM) || 6)) / 2;
   var keyBase = opts.keyPrefix || 'void-disc-';
   for (var i = 0; i < discs; i++) {
-    sgSpawnOrbitField(pEnt, st, 'vacuumslash', {
+    sgSpawnOrbitField(pEnt, st, gid, {
       floatSel: floatSel, lifeSec: lifeSec, dmgVal: dmgVal, bodyR: bodyR,
       count: 1, startAng: baseAngle + Math.PI * 2 * i / discs, growPxPerSec: grow,
       fieldKey: keyBase + i,
@@ -8702,6 +8730,76 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
       statusId: 'sgVoidBlade', auraVariant: 'void-disc',
       hitVariant: 'wind-burst', hitElem: 'wind'
     });
+  }
+}
+
+/* ---- 超神【天穹崩裂】（暴風屏障）：每 gap 秒從天上落下 1~3 個召喚星體 ----
+   三種星體共用同一份傷害規格（設計只寫了「星體可能為…」，沒有分別給數值），
+   差別只在形態與屬性：雷殞石與火殞石走既有的殞石佇列（從天而降＋落點範圍傷害），
+   巨大風刃走風刃自己的既有畫法（放大的貫穿刃）——那是兩個渲染器都認得的變體，
+   硬要它「落下」只會退回泛用雨點畫法，反而看不出來那是一道風刃。
+   ⚠️ 這一個超神與風刃的【天穹崩裂】同名不同物（設計文檔就是這樣命名的），
+   id 是 skyfallStars；風刃那一個是 skyCollapse，兩者沒有任何共用程式。 */
+var SG_SKYFALL_KINDS = ['blade', 'thunder', 'fire'];
+var SG_SKYFALL_BLADE_SCALE = 2;   // 「巨大風刃」的體積倍率（設計只寫「巨大」）
+
+function sgDropSkyfallBlade(pEnt, st, dmgVal, target, pool, floatSel, out) {
+  var wb = SKILLS2.windblade;
+  var angle = (typeof bfAngleTo === 'function') ? bfAngleTo(target) : null;
+  var geomOk = (angle !== null && angle !== undefined);
+  sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
+    geom: sgWindbladeGeom(wb, [1, 0, 0, 0, 0, 0, 0], null),
+    angle: geomOk ? angle : 0, dmgVal: dmgVal, pool: pool,
+    geomOk: geomOk, fallback: [target], sizeMult: SG_SKYFALL_BLADE_SCALE
+  }, floatSel, out);
+}
+
+function sgTickSkyfallStars(ctx, dt) {
+  var u = sgUlt('stormbarrier', 'skyfallStars');
+  if (!u || !skills2Equipped('stormbarrier')) { SKILL2_RT.skyfallAt = 0; return; }
+  // 死亡／倒地：節拍往後推，剩餘時間不變（見 skills2AutoCastBlocked）
+  if (skills2AutoCastBlocked(ctx.pEnt)) {
+    SKILL2_RT.skyfallAt = sgPauseSchedule(SKILL2_RT.skyfallAt, dt);
+    return;
+  }
+  var gap = Math.max(0.1, Number(u.def.fx.gap) || 2);
+  if (!(SKILL2_RT.skyfallAt > 0)) { SKILL2_RT.skyfallAt = GT + gap; return; }
+  if (GT < SKILL2_RT.skyfallAt) return;
+  SKILL2_RT.skyfallAt = GT + gap;
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  var live = (typeof bfLiveList === 'function') ? bfLiveList(enemies) : (enemies || []);
+  if (!live.length) return;
+  var st = (typeof getStats === 'function') ? getStats() : null;
+  if (!st) return;
+  var dmgVal = sgGroupBaseStat(SKILLS2.stormbarrier, st) * sgUltVal(u, 'pct') / 100;
+  if (!(dmgVal > 0)) return;
+  var lo = Math.max(1, Math.floor(Number(u.def.fx.min) || 1));
+  // 顆數上限隨等級成長（不足 1 個的部分以機率觸發，比照其他「+N 個」的既有做法）
+  var hi = Math.max(lo, sgRollCount(sgUltVal(u, 'max')));
+  var n = lo + Math.floor(Math.random() * (hi - lo + 1));
+  var radius = bfMeterPx(Math.max(1, Number(u.def.fx.m) || 8));
+  var timing = sgMeteorFallTiming();
+  var out = { killed: false, dmg: 0, crit: false };
+  for (var i = 0; i < n; i++) {
+    var target = live[Math.floor(Math.random() * live.length)];
+    var kind = SG_SKYFALL_KINDS[Math.floor(Math.random() * SG_SKYFALL_KINDS.length)];
+    if (kind === 'blade') {
+      sgDropSkyfallBlade(ctx.pEnt, st, dmgVal, target, enemies, ctx.floatSel, out);
+      continue;
+    }
+    var bolt = (kind === 'thunder');
+    var castDelay = i * SG_METEOR_INTERVAL_MS;
+    sgEmitVfx('stormbarrier', [target], ctx.floatSel, {
+      fxKind: 'rain', variant: bolt ? 'thunder-fall' : 'meteor',
+      elem: bolt ? 'lightning' : 'fire', count: 1,
+      area: sgAreaAround(target, radius), delayMs: castDelay, travelMs: [timing.travelMs]
+    });
+    sgQueueMeteor(ctx.pEnt, st, dmgVal, target, enemies, radius, null, ctx.floatSel, out,
+      GT + (castDelay + timing.fallMs) / 1000, {
+        gid: 'stormbarrier',
+        variant: bolt ? 'thunder-fall-impact' : 'meteor-impact',
+        elem: bolt ? 'lightning' : 'fire'
+      });
   }
 }
 
@@ -8742,22 +8840,77 @@ function sgTickVoidAnnihilation(ctx, dt) {
    =========================================================================== */
 function sgCastStormbarrier(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var t = g.tiers;
+  var lg = sgLegend('stormbarrier');
+  var valgr = sgUlt('stormbarrier', 'valgrForce');
   var dur = Math.max(0.5, Number(t[0].fx.sec) || 8);
   var gap = Math.max(0.1, Number(t[0].fx.gap) || 0.5);
-  applyStatus(pEnt, 'sgStormBarrier', { val: sgVal(t[0].fx, 'red', lvs[0]), dur: dur });
+  // 傳奇【吸收】：屏障的傷害減免加算（與第 1 階同一個池子，之後才整體乘算）
+  var red = sgVal(t[0].fx, 'red', lvs[0]) + Math.max(0, Number(lg.stormbarrierRedPct) || 0);
+  applyStatus(pEnt, 'sgStormBarrier', { val: red, dur: dur });
   SKILL2_RT.barrier = { until: GT + dur, pEnt: pEnt, nextAt: GT + gap, gap: gap, floatSel: floatSel };
   sgEmitPlayerVfx('stormbarrier', floatSel, {
     fxKind: 'aura', variant: 'storm-barrier', elem: 'wind', dur: Math.min(6, dur)
   });
   // 【暴風神體】：與屏障同時施放、分開結算的另一個狀態
   if (lvs[6] > 0) {
-    var godSec = Math.max(0.1, sgVal(t[6].fx, 'sec', lvs[6]));
-    applyStatus(pEnt, 'sgStormGod', { val: sgVal(t[6].fx, 'red', lvs[6]), dur: godSec });
+    /* 持續時間的兩個延長是**相乘**：傳奇【風暴核心】與超神【瓦爾格之力】各是一個
+       「+50%」，兩者都寫成獨立的百分比，相加會讓兩個滿級來源直接變成 ×2 的線性堆疊。 */
+    var godSec = Math.max(0.1, sgVal(t[6].fx, 'sec', lvs[6]))
+      * (1 + Math.max(0, Number(lg.stormGodSecPct) || 0) / 100)
+      * (valgr ? 1 + sgUltVal(valgr, 'sec') / 100 : 1);
+    // 超神【瓦爾格之力】：神體的傷害減免再加一點（與屏障那一份一起走風系的加總）
+    var godRed = sgVal(t[6].fx, 'red', lvs[6]) + (valgr ? sgUltVal(valgr, 'red') : 0);
+    applyStatus(pEnt, 'sgStormGod', { val: godRed, dur: godSec });
     sgEmitPlayerVfx('stormbarrier', floatSel, {
       fxKind: 'aura', variant: 'storm-god', elem: 'wind', dur: godSec
     });
   }
+  // 超神【森羅萬象】：同時打出【暴風真空刃】與【虛空斬】兩個形態
+  var myriad = sgUlt('stormbarrier', 'myriadPhenomena');
+  if (myriad) sgCastMyriadPhenomena(pEnt, st, myriad, pool, primary, floatSel, out);
   sgStormBarrierPulse(SKILL2_RT.barrier, lvs, null);   // 施放當下先給一拍，不必等 0.5 秒
+}
+
+/* 超神【森羅萬象】：施放暴風屏障時同時打出【暴風真空刃】與【虛空斬】兩個形態。
+   比照【暴風之刃】的既有裁定——借的是**形態**而不是玩家在那兩棵樹上的投資：
+   幾何、道數與持續時間取那兩階的 Lv.1 表定值，基準攻擊力與傷害紀錄都歸暴風屏障
+   （它才是這些刃的來源，因此沒有投資風刃／真空斬的人一樣拿得到完整效果）。 */
+function sgCastMyriadPhenomena(pEnt, st, u, pool, primary, floatSel, out) {
+  var mult = 1 + sgUltVal(u, 'pct') / 100;
+  var baseAngle = (typeof bfAngleTo === 'function') ? bfAngleTo(primary) : null;
+  var geomOk = (baseAngle !== null && baseAngle !== undefined);
+  if (!geomOk) baseAngle = 0;
+  /* ① 暴風真空刃＝風刃第 1＋7 階的 Lv.1 形態（不含第 4／5 階的小型風刃與追擊，
+     那兩階不在設計文字裡）。 */
+  var wb = SKILLS2.windblade;
+  var wlvs = [1, 0, 0, 0, 0, 0, 1];
+  var t7 = wb.tiers[6].fx;
+  var bladeDmg = sgGroupBaseStat(SKILLS2.stormbarrier, st)
+    * sgWindbladeDmgPct(wb, wlvs, null) / 100 * mult;
+  if (bladeDmg > 0) {
+    var geom = sgWindbladeGeom(wb, wlvs, null);
+    var dirs = Math.max(1, Math.floor(Number(t7.directions) || 4));
+    var volleys = Math.max(1, Math.floor(Number(t7.count) || 2));
+    var volleyGap = Math.max(0, Number(t7.gap) || 0.2);
+    for (var d = 0; d < dirs; d++) {
+      for (var v = 0; v < volleys; v++) {
+        sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
+          geom: geom, angle: baseAngle + Math.PI * 2 * d / dirs, dmgVal: bladeDmg,
+          pool: pool, geomOk: geomOk, fallback: [primary], beginSec: v * volleyGap
+        }, floatSel, out);
+      }
+    }
+  }
+  // ② 虛空斬＝真空斬第 7 階的 Lv.1 形態（plain＝不吃玩家在真空斬上的傳奇與超神）
+  var vs = SKILLS2.vacuumslash;
+  var discDmg = sgGroupBaseStat(SKILLS2.stormbarrier, st)
+    * sgVal(vs.tiers[6].fx, 'pct', 1) / 100 * mult;
+  if (discDmg > 0) {
+    sgSpawnVoidDiscs(pEnt, st, vs, [1, 1, 1, 1, 1, 1, 1], floatSel, baseAngle, {
+      plain: true, gid: 'stormbarrier', dmgVal: discDmg,
+      keyPrefix: 'void-myriad-' + (++SG_VOID_DISC_SEQ) + '-'
+    });
+  }
 }
 
 /* 屏障是否生效中（RT 為權威；增益圖示只是投影）。 */
@@ -8848,7 +9001,10 @@ function sgStormbladeOnPlayerDamaged(mEnt, pEnt, floatSel) {
   var lvs = skill2BarrierLevels(pEnt);
   if (!lvs || lvs[3] < 1 || !mEnt || mEnt.hp <= 0) return;
   var t = SKILLS2.stormbarrier.tiers;
-  if (!chance(sgVal(t[3].fx, 'chance', lvs[3]))) return;
+  // 傳奇【暴風反射】：射出風刃的機率加算
+  var chancePct = sgVal(t[3].fx, 'chance', lvs[3])
+    + sgLegendCount(sgLegendTick('stormbarrier').stormbladeChanceAdd, 'chance');
+  if (!chance(chancePct)) return;
   var st = getStats();
   var wb = SKILLS2.windblade;
   var wlvs = [1, 0, 0, 0, 0, 0, 0];
@@ -9429,6 +9585,7 @@ function tickSkill2(dt, ctx) {
   sgTickCrystalResonance(ctx, dt);
   sgTickIceKing(ctx, dt);
   sgTickVoidAnnihilation(ctx, dt);
+  sgTickSkyfallStars(ctx, dt);
 }
 
 /* 超神進化【地爆天星】：每隔一段時間，天空落下一顆超巨型殞石，
