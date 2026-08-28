@@ -210,7 +210,8 @@ var BattleRenderer = (function () {
   }
   function shouldAnimatePlayer(spec) {
     return !!spec && spec.cat !== 'enemy' &&
-      spec.fxKind !== 'chain' && spec.variant !== 'knife-bounce';
+      spec.fxKind !== 'chain' && spec.variant !== 'knife-bounce' &&
+      spec.variant !== 'swordwave-extra';
   }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function cssColorToInt(c, fallback) {
@@ -5064,8 +5065,16 @@ var BattleRenderer = (function () {
     }
     return s;
   }
+  function floatDamageGroupId(cls) {
+    var match = /(?:^|\s)damage-group-([A-Za-z0-9_-]+)/.exec(cls || '');
+    return match ? match[1] : '';
+  }
   function floatMergeKey(elId, cls) {
-    /* 與 DOM 版同精神：同目標、同類別在短窗內合併成一個滾動數字 */
+    var groupId = floatDamageGroupId(cls);
+    /* 指定群組代表同一次主普攻的連擊段數：不受短合併窗限制，
+       但 elId 仍保留在 key 中，確保不同敵人的數字不會互相累加。 */
+    if (groupId) return elId + '|damage-group:' + groupId;
+    /* 舊事件維持同目標、同類別在短窗內合併成一個滾動數字 */
     var base = (cls || '').replace(/crit-high-roll/, '').trim();
     return elId + '|' + base;
   }
@@ -5123,11 +5132,15 @@ var BattleRenderer = (function () {
     if (!enemyFloatTargetAvailable(ev.elId)) return;
 
     var val = Number(ev.damageValue);
+    var damageGroupId = floatDamageGroupId(ev.cls);
     var mergeable = isFinite(val) && val > 0 && /^[-+]?/.test(ev.text || '') && (ev.cls || '').indexOf('player-event') < 0;
     if (mergeable) {
       var key = floatMergeKey(ev.elId, ev.cls);
       var exist = S.floatMerge[key];
-      if (exist && !exist.dead && nowMs() - exist.bornAt < FLOAT_MERGE_MS && exist.hits < 8) {
+      var groupMerge = !!damageGroupId;
+      if (exist && !exist.dead &&
+          (groupMerge || nowMs() - exist.bornAt < FLOAT_MERGE_MS) &&
+          (groupMerge || exist.hits < 8)) {
         exist.total += val;
         exist.hits++;
         exist.node.text = exist.prefix + fmtNum(exist.total);

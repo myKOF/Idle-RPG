@@ -290,16 +290,16 @@ test('傷害浮字合併上限依連擊數與攻速計算', () => {
   assert.equal(getLimit({ stats }), 20);
 });
 
-/* 使用者要求暫時關閉合併，以便觀察實際的多段受擊。
-   這支測試釘住「目前是關的」這個事實——恢復時會失敗，提醒把這段一併改掉。 */
-test('傷害浮字合併目前為關閉狀態（暫時設定）', () => {
+/* 一般傷害合併仍維持關閉，以便觀察非連擊的多段受擊；明確標記的主普攻群組
+   不受這個全域開關影響，另由「每次主普攻」測試驗證。 */
+test('一般傷害浮字合併目前為關閉狀態', () => {
   assert.match(ui, /var ENEMY_DAMAGE_FLOAT_MERGE_ENABLED = false;/);
   const helperSource = ui.match(/function enemyDamageFloatMergeLimit\(battleSnapshot\) \{[\s\S]*?\n\}/)[0];
   const getLimit = vm.runInNewContext(
     '(function () { ' + helperSource + '; return enemyDamageFloatMergeLimit; })()',
     { Math, Number, isFinite, ENEMY_DAMAGE_FLOAT_MAX_HITS: 20, ENEMY_DAMAGE_FLOAT_MERGE_ENABLED: false }
   );
-  // 0 = 不合併：合併迴圈的 hits >= limit 恆成立，每一段都會各自飄字
+  // 0 = 一般事件不合併；明確的 damage-group 會在 floatText 內使用 Infinity 上限
   assert.equal(getLimit({ stats: { comboHits: 100, aspd: 5 } }), 0);
 });
 
@@ -312,9 +312,40 @@ test('傷害浮字高峰會自動合併並跳過昂貴的碰撞排版', () => {
   assert.match(ui, /if \(damageMergeLimit > 0\) \{[\s\S]*?damageFloats = layer\.querySelectorAll/);
 });
 
+test('每次主普攻的連擊傷害獨立累加，追加劍氣不重播普攻動作', () => {
+  assert.match(combat, /var BASIC_DAMAGE_FLOAT_GROUP_SEQ = 0;/);
+  assert.match(combat, /function basicDamageFloatGroupClass\(cls, groupId\)/);
+  assert.match(combat, /var damageGroupId = \(opts && opts\.damageGroupId\) \|\|/);
+  assert.match(combat, /!depth \? 'basic-' \+ \(\+\+BASIC_DAMAGE_FLOAT_GROUP_SEQ\) : ''/);
+  assert.match(combat, /basicDamageFloatGroupClass\(combatDamageFloatClass\('enemy-attack', res\), damageGroupId\)/);
+  assert.match(combat, /damageGroupId: damageGroupId/);
+  assert.match(combat, /variant: depth \? 'swordwave-extra' : 'swordwave'/);
+
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const vfx = fs.readFileSync(path.join(root, 'js', 'vfx.js'), 'utf8');
+  assert.match(renderer, /function floatDamageGroupId\(cls\)/);
+  assert.match(renderer, /if \(groupId\) return elId \+ '\|damage-group:' \+ groupId;/);
+  assert.match(renderer, /spec\.variant !== 'swordwave-extra'/);
+  assert.match(renderer, /\(groupMerge \|\| nowMs\(\) - exist\.bornAt < FLOAT_MERGE_MS\)/);
+  assert.match(vfx, /if \(v === 'swordwave' \|\| v === 'swordwave-extra'\) return 'vfx-proj-sword';/);
+
+  assert.match(ui, /function enemyDamageFloatGroupId\(cls\)/);
+  assert.match(ui, /if \(groupId\) return 'damage-group:' \+ groupId;/);
+  assert.match(ui, /var damageMergeLimit = enemyDamageFloatMergeLimitForLayer\(battleSnapshot, layer\);[\s\S]*?if \(damageGroupId\) damageMergeLimit = Infinity;/);
+
+  const helperSource = ui.match(/function enemyDamageFloatGroupId\(cls\) \{[\s\S]*?function enemyDamageFloatKey\(cls\) \{[\s\S]*?\n\}/)[0];
+  const getKey = vm.runInNewContext(
+    '(function () { ' + helperSource + '; return enemyDamageFloatKey; })()',
+    {}
+  );
+  assert.equal(getKey('dmg enemy-attack damage-group-basic-1'), 'damage-group:basic-1');
+  assert.equal(getKey('crit enemy-attack damage-group-basic-2'), 'damage-group:basic-2');
+  assert.notEqual(getKey('dmg enemy-attack damage-group-basic-1'), getKey('dmg enemy-attack damage-group-basic-2'));
+});
+
 test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源顏色', () => {
   // v17 起普攻傷害數字與劍氣命中同步（atkHitDelayMs）
-  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*combatDamageFloatClass\('enemy-attack',\s*res\),\s*res\.dmg,\s*atkHitDelayMs\)/);
+  assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*basicDamageFloatGroupClass\(combatDamageFloatClass\('enemy-attack',\s*res\),\s*damageGroupId\),\s*res\.dmg,\s*atkHitDelayMs\)/);
   assert.match(combat, /'crit enemy-attack'/);
   assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*sk\.emoji \+ dmgStr,\s*combatDamageFloatClass\('enemy-skill',\s*dmgRes\),\s*dmgRes\.dmg,\s*hitDelayMs\)/);
   assert.match(skills, /'crit enemy-skill'/);

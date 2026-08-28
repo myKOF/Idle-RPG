@@ -819,7 +819,7 @@ function vfxImpact(spec, layer, pt, targetId, delayMs, targetGuard) {
    表現視覺飛行，命中時機由 renderCombatVfx 的 travelMs／delayMs 對齊。 */
 function vfxProjectileCls(spec) {
   var v = spec.variant;
-  if (v === 'swordwave') return 'vfx-proj-sword';
+  if (v === 'swordwave' || v === 'swordwave-extra') return 'vfx-proj-sword';
   if (v === 'knife-soulhunter') return 'vfx-proj-knife vfx-proj-knife-soulhunter';
   if (v === 'knife' || v === 'knife-bounce') return 'vfx-proj-knife';
   if (v === 'venom' || v === 'poison-spread' || v === 'poison-bullet') return 'vfx-proj-poison';

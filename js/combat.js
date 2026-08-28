@@ -13,6 +13,7 @@ var FIELD = {
 
 var COMBAT_PAUSED = false;
 var FIELD_ENEMY_FLOAT_SEQ = 0;
+var BASIC_DAMAGE_FLOAT_GROUP_SEQ = 0;
 
 function isCombatPaused() {
     return COMBAT_PAUSED;
@@ -898,12 +899,22 @@ function monsterDefCfg(m) {
    溢出不再轉護盾，因此不需要「溢出轉護盾」的浮動字提示（技能路徑用 skills.js 的
    showPlayerShieldGainAfterHeal）。 */
 
+/* 同一次主普攻的連擊傷害共用一個浮字群組；攻速產生的下一次主普攻會拿到新的群組。
+   群組只存在於顯示 class，不改變傷害結算或 Worker FLOAT 欄位。 */
+function basicDamageFloatGroupClass(cls, groupId) {
+    if (!groupId) return cls;
+    return (cls || '') + ' damage-group-' + groupId;
+}
+
 // 完整的一次玩家普攻（含連擊/暈眩/減速/吸血/吸魔/暗影汲取）
 // 45 新技能基建：可選末參 opts（不影響既有呼叫、回傳值不變）——
 //   forceCrit：該次攻擊必定暴擊（殺陣反射 M4 等引動攻擊用）；
-//   noProc：不再觸發連擊/連擊數等後續追加攻擊（procCast 族引動的免費普攻防遞迴用）。
+//   noProc：不再觸發連擊/連擊數等後續追加攻擊（procCast 族引動的免費普攻防遞迴用）；
+//   damageGroupId：沿用主普攻的連擊傷害浮字群組。
 function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     var st = getStats();
+    var damageGroupId = (opts && opts.damageGroupId) ||
+        (!depth ? 'basic-' + (++BASIC_DAMAGE_FLOAT_GROUP_SEQ) : '');
     var aCfg = playerAtkCfg(pEnt);
     // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（普攻端；elemAtk 於函式內先淺拷貝防污染）
     if (typeof skillRtFieldAmpACfg === 'function') aCfg = skillRtFieldAmpACfg(aCfg, mEnt);
@@ -915,14 +926,15 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     if (opts && opts.forceCrit) aCfg.critRate = Math.max(100, aCfg.critRate || 0); // 必定暴擊
     /* 普攻特效（協議 v17）：不再原地出手——發射一道「劍氣」飛向目標，命中時的受擊反饋
        由顯示層（js/vfx.js）處理。浮字延遲與劍氣飛行共用同一個數字（比照技能 travelMs），
-       追加攻擊（連擊／連擊數／引動攻擊）的第 N 波劍氣以 opts.vfxDelayMs 依序錯開。
+       追加攻擊（連擊／連擊數／引動攻擊）的第 N 波劍氣以 opts.vfxDelayMs 依序錯開；
+       但只有 depth 0 的主普攻允許觸發玩家攻擊動作，追加劍氣不重播動作。
        純顯示時序：傷害在本函式內當下結算完畢，戰鬥結果不受影響。 */
     var atkTravelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(mEnt) * 1000) : 0;
     var atkWaveDelayMs = (opts && opts.vfxDelayMs > 0) ? opts.vfxDelayMs : 0;
     var atkHitDelayMs = atkWaveDelayMs + atkTravelMs;
     if (typeof playCombatVfx === 'function') {
         playCombatVfx({
-            fxKind: 'projectile', variant: 'swordwave', cat: 'basic', elem: null,
+            fxKind: 'projectile', variant: depth ? 'swordwave-extra' : 'swordwave', cat: 'basic', elem: null,
             glyph: '⚔️', color: '#e6ddc8',
             targets: [enemyEventFloatTarget(mEnt, floatSel)],
             travelMs: [atkTravelMs], delayMs: atkWaveDelayMs, dur: 0.5, count: 1
@@ -939,7 +951,9 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         var dmgStr = fmt(res.dmg);
         if (res.crit) dmgStr = '爆擊 ' + dmgStr;
         if (res.blocked) dmgStr = '格擋 ' + dmgStr;
-        floatEnemyEvent(mEnt, floatSel, dmgStr, combatDamageFloatClass('enemy-attack', res), res.dmg, atkHitDelayMs);
+        floatEnemyEvent(mEnt, floatSel, dmgStr,
+            basicDamageFloatGroupClass(combatDamageFloatClass('enemy-attack', res), damageGroupId),
+            res.dmg, atkHitDelayMs);
         trackDps(res.dmg);
         recordRunDamage('普攻', res.dmg);
         logMsg += (res.crit ? '<span class="log-hl-good">爆擊</span> ' : '造成 ') + fmt(res.dmg) + ' 傷害。';
@@ -997,10 +1011,13 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         }
     }
     // 連擊（僅一層）；補刀擊殺必須回報給呼叫端（opts.noProc：引動攻擊不再觸發追加攻擊）
-    // 追加攻擊的劍氣以固定間隔錯開（vfxDelayMs），看起來是一波接一波追出去的
+    // 追加攻擊的劍氣以固定間隔錯開（vfxDelayMs），看起來是一波接一波追出去的；
+    // 顯示層只保留主普攻的玩家動作，這裡的每段傷害則回到同一個累加浮字。
     var atkWaveStepMs = 130;
     if (!res.killed && !depth && !(opts && opts.noProc) && (st.passives.doubleHit || 0) > 0 && chance(st.passives.doubleHit)) {
-        var res2 = doPlayerAttack(pEnt, mEnt, floatSel, 1, { vfxDelayMs: atkWaveDelayMs + atkWaveStepMs });
+        var res2 = doPlayerAttack(pEnt, mEnt, floatSel, 1, {
+            vfxDelayMs: atkWaveDelayMs + atkWaveStepMs, damageGroupId: damageGroupId
+        });
         logMsg += ' <span class="log-hl-good">觸發連擊！</span>追加' + res2.logText;
         if (res2 && res2.killed) { res.killed = true; res.dmg += res2.dmg; }
     }
@@ -1010,7 +1027,9 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         var comboBonus = (typeof skill2ComboBonus === 'function') ? skill2ComboBonus() : 0;
         var comboN = rollComboHits(comboBonus > 0 ? { comboHits: (st.comboHits || 0) + comboBonus } : st);
         for (var cbi = 0; cbi < comboN && !res.killed; cbi++) {
-            var resc = doPlayerAttack(pEnt, mEnt, floatSel, 1, { vfxDelayMs: atkWaveDelayMs + atkWaveStepMs * (cbi + 1) });
+            var resc = doPlayerAttack(pEnt, mEnt, floatSel, 1, {
+                vfxDelayMs: atkWaveDelayMs + atkWaveStepMs * (cbi + 1), damageGroupId: damageGroupId
+            });
             if (resc) { res.dmg += resc.dmg; if (resc.killed) res.killed = true; }
         }
         if (comboN > 0) logMsg += ' <span class="log-hl-good">連擊數 ×' + comboN + '</span>';

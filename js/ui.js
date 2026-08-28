@@ -1731,9 +1731,9 @@ function flushPendingEnemyFloats(battleSnapshot) {
   PENDING_ENEMY_FLOATS = keep;
 }
 
-/* 低負載時保留每段傷害，方便觀察多段受擊；當同一層浮字累積到壓力門檻，
-   自動啟用小幅合併，避免每個命中都觸發一次 DOM 掃描與碰撞排版。這是純
-   視覺降載，Worker 仍然送出完整事件，戰鬥數值與時序不變。 */
+/* 一般傷害預設保留每段傷害，方便觀察多段受擊；同一次主普攻的連擊段數
+   會由 combat.js 加上專屬群組，固定累加成一個浮字。其他來源仍沿用低負載時
+   才啟用的小幅自動合併，Worker 仍然送出完整事件，戰鬥數值與時序不變。 */
 var ENEMY_DAMAGE_FLOAT_MERGE_ENABLED = false;
 var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_THRESHOLD = 12;
 var ENEMY_DAMAGE_FLOAT_AUTO_MERGE_LIMIT = 4;
@@ -1762,11 +1762,18 @@ function enemyDamageFloatMergeLimitForLayer(battleSnapshot, layer) {
   return 0;
 }
 
+function enemyDamageFloatGroupId(cls) {
+  var match = /(?:^|\s)damage-group-([A-Za-z0-9_-]+)/.exec(cls || '');
+  return match ? match[1] : '';
+}
+
 function enemyDamageFloatKey(cls) {
   var tokens = (cls || '').split(/\s+/);
   var source = tokens.indexOf('enemy-skill') >= 0 ? 'skill' :
     (tokens.indexOf('enemy-attack') >= 0 ? 'attack' : '');
   if (!source) return '';
+  var groupId = enemyDamageFloatGroupId(cls);
+  if (groupId) return 'damage-group:' + groupId;
   return source + ':' + (tokens.indexOf('crit') >= 0 ? 'crit' : 'normal');
 }
 
@@ -2124,10 +2131,12 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
 
   var damageInfo = enemyHitFloat ? enemyDamageFloatInfo(text, damageValue) : null;
   var damageKey = damageInfo ? enemyDamageFloatKey(cls) : '';
+  var damageGroupId = damageInfo ? enemyDamageFloatGroupId(cls) : '';
   var recoveryInfo = playerRecoveryFloatInfo(elId, cls, text, damageValue);
   var recoveryKey = recoveryInfo ? recoveryInfo.key : '';
   if (damageKey) {
     var damageMergeLimit = enemyDamageFloatMergeLimitForLayer(battleSnapshot, layer);
+    if (damageGroupId) damageMergeLimit = Infinity;
     if (damageMergeLimit > 0) {
       var damageFloats = layer.querySelectorAll('.float-txt.enemy-hit-float');
       for (var di = damageFloats.length - 1; di >= 0; di--) {

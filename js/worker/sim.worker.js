@@ -16,7 +16,7 @@ importScripts(
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260828-skill-cast-reset', '../skills2.js?v=20260828-stormbarrier-legendary', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
-  '../combat.js?v=20260828-stormbarrier-legendary', '../legendary.js?v=20260826-chain-thunder-legendary', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260825-mire-earthguard-legendary',
+  '../combat.js?v=20260828-basic-combo-float', '../legendary.js?v=20260826-chain-thunder-legendary', '../potential.js?v=20260821-bounce-random', '../tower.js?v=20260825-mire-earthguard-legendary',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
   '../tasks.js'
 );
