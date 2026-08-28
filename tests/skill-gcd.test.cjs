@@ -145,6 +145,26 @@ test('新版技能使用完整 sg 裝載鍵解除就緒佇列，固定關卡可�
   assert.deepEqual(calls, ['alpha', 'beta', 'alpha', 'beta']);
 });
 
+test('吟唱被戰鬥重置中斷後，技能會回到就緒佇列', () => {
+  const context = loadGameContext();
+  context.G.player.loadout = ['sg:alpha'];
+  context.SKILLS2 = { alpha: { cost: 0 } };
+  context.skills2Castable = () => true;
+  context.skills2ActsPassive = () => false;
+  context.skills2CanReach = () => true;
+  context.castSkill2 = () => ({ killed: false, dmg: 0 });
+
+  const player = playerEntity();
+  const target = { hp: 1000 };
+  const first = context.pickAndCastSkill(player, [target], 'float-layer');
+  assert.equal(first.casting, true);
+
+  // 死亡／切場等戰鬥重置會清除尚未完成的吟唱；技能不能因此永久消失。
+  context.resetSkillRT();
+  const second = context.pickAndCastSkill(player, [target], 'float-layer');
+  assert.equal(second.casting, true);
+});
+
 test('新版技能施法期間目標消失後，冷卻為零時仍會重新加入就緒佇列', () => {
   const context = loadGameContext();
   context.G.player.loadout = ['sg:knife'];

@@ -22,10 +22,14 @@ var SKILL_CAST_RT = [];
 var SKILL_RT = null;
 function resetSkillRT() {
   for (var castI = 0; castI < SKILL_CAST_RT.length; castI++) {
-    if (SKILL_CAST_RT[castI] && SKILL_CAST_RT[castI].pEnt) {
-      SKILL_CAST_RT[castI].pEnt._skillCastRemaining = 0;
-      SKILL_CAST_RT[castI].pEnt._skillCastId = '';
-    }
+    var interrupted = SKILL_CAST_RT[castI];
+    if (!interrupted || !interrupted.pEnt) continue;
+    /* 開始吟唱時已先把技能從就緒佇列移除，但冷卻要等施法完成才寫入。
+       戰鬥重置／死亡若在這裡中斷吟唱，若不補回就緒項，該技能會以「無冷卻、
+       卻永遠不在佇列」的狀態永久失效；長時間掛機反覆死亡後可能逐一耗盡所有技能。 */
+    requeueSkillAfterFailedCast(interrupted.pEnt, interrupted.loadoutKey || interrupted.skillId);
+    interrupted.pEnt._skillCastRemaining = 0;
+    interrupted.pEnt._skillCastId = '';
   }
   SKILL_CAST_RT = [];
   SKILL_RT = {

@@ -931,8 +931,8 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/vfx\.js\?v=1\.0\.73/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.106/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.84/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260828-water-frost-legendary'/);
-  assert.match(worker, /\.\.\/skills\.js\?v=20260825-mire-earthguard-legendary/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260828-skill-cast-reset'/);
+  assert.match(worker, /\.\.\/skills\.js\?v=20260828-skill-cast-reset/);
   assert.match(worker, /\.\.\/skills2\.js\?v=20260828-water-frost-legendary/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260826-chain-thunder-legendary/);
 });
