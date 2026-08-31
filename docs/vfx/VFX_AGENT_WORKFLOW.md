@@ -313,7 +313,64 @@ Claude 負責最終判斷與整合
 
 QA 結果屬於建議（第 3.1 節），採用與否由 Claude 判斷並說明理由。
 
-## 4.5 分級判斷責任
+## 4.5 Material Gap（素材不足時的長期規則）
+
+適用於所有 VFX 工作：選材、設計、Preset、Editor、Runtime、改善既有效果。
+
+**禁止為了「完成任務」而勉強使用不適合的素材。**
+判定為素材問題時，必須主動提出 Material Gap，而不是硬做或無止境調參數。
+
+### 4.5.1 必須提出的情況（任一即可）
+
+1. 現有素材沒有適合的類型
+2. 有類似素材，但品質／形狀／解析度／Alpha／可染色性／可平鋪性不足
+3. 勉強使用會明顯降低 VFX 品質
+4. 只能靠大量複雜 Shader 或程式技巧，才能補救「用對素材就很簡單」的問題
+5. 做得出「能看」的結果，但與目標仍有明顯品質差距
+6. **使用者看過實機後表示不夠理想／不夠真實／不夠有質感／不符預期**
+
+第 6 點觸發時，必須依序重新診斷，不得永遠只調參數：
+
+```
+Visual Problem → Layer / Parameter 診斷 → Shader 診斷 → Material 診斷
+```
+
+### 4.5.2 格式（不得只說「素材不足」）
+
+至少包含：Missing Asset Type、Intended Usage、Required 或 Recommended、
+Desired Visual Characteristics、Technical Requirements、Current Substitute、
+Quality Impact；知道的話再加 Suggested Search Keywords，
+讓使用者知道該去素材網站找什麼。
+
+### 4.5.3 Required 與 Recommended 必須分開
+
+- **Required**：沒有這類素材，核心效果無法合理完成
+- **Recommended**：現在能完成，但補素材能顯著提高品質
+
+不得因為「存在更漂亮的素材」就持續要求補素材。
+
+### 4.5.4 反向濫用同樣禁止
+
+若問題可由 particle behavior、shader、mask、UV 動畫、圖層組合、混合模式、
+顏色、縮放、旋轉、時序合理解決，就用現有素材解決。
+只有當「補素材」相較「繼續堆程式技巧」能明顯改善品質、複雜度或效能時才提出。
+
+### 4.5.5 不得自行取得第三方素材
+
+可以指出缺口、建議種類與規格、提供搜尋關鍵字；
+但除非使用者明確要求，**不得自行下載、加入或替換**第三方素材。
+授權狀態不明的素材不得進入 Asset Library。
+
+### 4.5.6 納入素材充分性驗收
+
+素材搜尋不只要回答「有哪些素材可用」，還要回答「現有素材是否足以完成這個 VFX」。
+每次選材驗收都必須輸出下列其一，不是 SUFFICIENT 就必須附 Material Gap：
+
+`SUFFICIENT` ／ `SUFFICIENT_WITH_LIMITATIONS` ／ `INSUFFICIENT`
+
+工具：`node tools/vfx/semantic-query.cjs --coverage <spec.json>`
+
+## 4.6 分級判斷責任
 
 分級由 Claude 判斷，並在回報中寫出判斷結果與理由。
 
