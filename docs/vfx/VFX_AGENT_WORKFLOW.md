@@ -1,0 +1,464 @@
+# VFX_AGENT_WORKFLOW.md
+
+# VFX 多 Agent 協作規範
+
+本文件定義 **VFX 工程專用** 的多 Agent 協作流程。
+
+本文件**不是全域 Agent 規則**。
+
+只有當目前任務明確屬於 VFX 工程（第 1 節）時才啟用；
+其他任務完全維持專案原本的工作方式。
+
+---
+
+# 0. 文件位階與影響範圍
+
+## 0.1 位階
+
+```
+AI_RULES.md            ← 最高層共通規範，任何情況都必須遵守
+    │
+    ├── AGENTS.md / docs/AI_WORKFLOW.md / docs/AI_TASKS.md   ← 專案既有流程
+    │
+    └── docs/vfx/VFX_AGENT_WORKFLOW.md（本文件）             ← 僅 VFX 任務啟用
+```
+
+本文件與 `AI_RULES.md` 衝突時，一律以 `AI_RULES.md` 為準。
+
+`AI_RULES.md` 中的技術性限制（模擬層不得改 ESM、共載檔不得寫入狀態、
+協議變更一律改 `js/worker/protocol.js`、不得自行合併或推送 `develop`）
+在 VFX 任務中同樣有效，本文件不提供任何豁免。
+
+## 0.2 本文件不修改的東西
+
+本文件**不修改**下列文件的任何既有規定：
+
+- `CLAUDE.md`
+- `AI_RULES.md`
+- `AGENTS.md`
+- `GIT_WORKFLOW.md`
+- `docs/AI_WORKFLOW.md`
+- `docs/AI_TASKS.md`
+
+## 0.3 與 CLAUDE.md 的角色差異
+
+`CLAUDE.md` 定義 Claude 的專案角色為 **Architecture Engineer**，
+實作可視情況交由 Codex。
+
+在 **VFX 任務內**，Claude 的角色調整為 **Lead Engineer**：架構與實作皆由 Claude 負責，
+Codex 只做 Review（第 3 節）。
+
+此調整**僅在 VFX 任務範圍內生效**，離開 VFX 任務即自動失效，
+不改寫 `CLAUDE.md`，也不影響任何非 VFX 任務的分派方式。
+
+---
+
+# 1. 適用範圍
+
+## 1.1 適用（啟用本工作流）
+
+- VFX Editor
+- VFX Runtime
+- VFX Renderer
+- Particle System
+- VFX Sprite
+- Animated Sprite / Flipbook
+- Beam
+- Trail
+- Ground Ring / Shockwave
+- Glow
+- Distortion
+- VFX Shader
+- VFX Mask
+- UV Scroll
+- VFX Preset
+- VFX JSON / Schema
+- VFX Asset loading
+- VFX Preview
+- VFX Timeline
+- VFX performance optimization
+
+## 1.2 不適用（維持原有流程）
+
+- Gameplay
+- 戰鬥數值
+- 角色系統
+- 怪物 AI
+- 關卡
+- 掉落
+- 存檔
+- 一般 UI
+- 經濟系統
+- 非 VFX Bug
+- 其他既有遊戲功能
+
+## 1.3 判斷範例
+
+| 需求 | 判定 | 流程 |
+|---|---|---|
+| 火龍捲增加 Distortion | VFX | 啟用本工作流 |
+| 火龍捲傷害從 500 改成 600 | Gameplay | 不啟用，依既有流程 |
+| 新增 Beam 圖層與對應 Schema 欄位 | VFX | 啟用，且建議 Codex Review |
+| 技能特效顏色由橘改為藍白 | VFX（低風險） | 啟用，Claude 可單獨完成 |
+| 技能施放間隔調整 | Gameplay | 不啟用 |
+| 特效在手機瀏覽器掉幀 | VFX（效能） | 啟用，建議 Codex Review |
+| 背包虛擬捲動卡頓 | 一般 UI | 不啟用 |
+
+## 1.4 混合任務（同時含 Gameplay 與 VFX）
+
+**只有 VFX 部分可以使用本工作流。**
+
+處理原則：
+
+1. Claude 先把需求切成「Gameplay 子任務」與「VFX 子任務」，並在回報中寫明切分結果。
+2. Gameplay 子任務依專案既有流程處理（`AGENTS.md`、`docs/AI_WORKFLOW.md`）。
+3. VFX 子任務才適用本文件的角色分工、Review 次數限制與 Worktree 規則。
+4. **不得**因為任務中含有 VFX 成分，就把整包需求（含數值、規則、存檔）
+   一併塞進本工作流，或據此呼叫 Codex／Antigravity 檢查非 VFX 的部分。
+5. 若切分本身不明確，先向使用者確認再開始。
+
+---
+
+# 2. 目前的 VFX 程式範圍（現況記錄）
+
+啟用本工作流前，先確認實際受影響的檔案。目前專案的 VFX 相關資產：
+
+| 路徑 | 內容 |
+|---|---|
+| `js/vfx.js` | DOM／CSS 技能特效層 |
+| `js/battle-renderer.js` | PixiJS 即時戰鬥渲染器（Canvas／WebGL 側） |
+| `js/vendor/pixi.min.js` | PixiJS 函式庫 |
+| `images/vfx/` | VFX 貼圖 |
+| `images/sprites/` | 序列幀圖集與 `.json` |
+| `tests/*vfx*.test.cjs` | VFX 相關自動測試 |
+| `docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md` | 既有 VFX UI 測試案例 |
+
+**VFX Editor 目前尚未建立。** 本文件先定義流程，實作時機由使用者決定。
+
+此表為現況記錄，不是清單式的授權範圍；實際修改前一律依 `AI_RULES.md` 第 3.2 節
+以目前程式碼重新分析影響範圍。
+
+---
+
+# 3. Agent 角色
+
+## 3.1 Claude Code — Lead Engineer
+
+負責：
+
+- VFX 整體架構
+- 任務拆分
+- 主要實作
+- 最終技術決策
+- 整合
+- 測試
+- 判斷其他 Agent 的建議是否採用
+
+Claude 是 VFX 工程唯一的實作者與決策者。
+Codex 與 Antigravity 的產出都是**建議**，採用與否由 Claude 判斷並說明理由。
+
+## 3.2 Codex — Independent Code / Architecture Reviewer
+
+負責：
+
+- Code Review
+- Architecture Review
+- WebGL Performance Review
+- Shader / Rendering Review
+- Memory / Object Allocation Review
+- Mobile / Browser Compatibility Review
+- Regression Risk Review
+
+**預設：Codex 只 Review，不修改 Claude worktree。**
+
+## 3.3 Antigravity — VFX UI / Browser / UX QA
+
+**定位：Optional Manual QA Agent（選用，且一律由使用者人工執行）。**
+
+負責：
+
+- VFX Editor 操作流程
+- Inspector usability
+- Preview correctness
+- Browser behavior
+- UI / UX
+- Save / Load 操作驗證
+- 視覺化編輯流程檢查
+
+**預設：Antigravity 不直接修改 Claude worktree。**
+
+### 3.3.1 不得由 CLI 自動呼叫
+
+**Claude 不得嘗試透過 CLI 自動呼叫 Antigravity 執行 VFX QA。**
+
+依 `docs/vfx/ANTIGRAVITY_CLI_CAPABILITIES.md`（2026-08-31 實測，Antigravity IDE 1.107.0）：
+CLI 沒有 headless、沒有結果輸出（stdout／輸出檔／JSON）、沒有唯讀旗標，
+CLI 層也沒有 browser automation，判定為「不適合 CLI 自動整合」。
+在無法取回結果、也無法保證不寫檔的前提下，包裝自動呼叫工具只會製造「已整合」的錯覺。
+
+因此 Antigravity QA 一律由使用者在 Antigravity IDE 內人工執行。
+
+### 3.3.2 重新評估自動整合的條件
+
+只有當 Antigravity 同時提供下列**可靠**能力時，才重新評估自動整合：
+
+- headless（non-interactive）執行
+- result output（stdout／輸出檔／JSON，結論可程式化取回）
+- read-only（可強制不修改工作區，等同 Codex 的 `--sandbox read-only`）
+- browser automation API
+
+在此之前不得建立 Antigravity 自動呼叫工具。
+
+## 3.4 呼叫時機
+
+本文件只定義「什麼情況建議呼叫哪個 Agent」，
+**實際是否呼叫由使用者決定**（`CLAUDE.md` 第 10 節）。
+
+Claude 不得因為本文件存在就自動呼叫 Codex 或 Antigravity；
+應在回報中說明「建議進行哪一項 Review／QA、原因為何」，由使用者裁決。
+
+---
+
+# 4. 標準 VFX 工作流程
+
+## 4.1 完整流程
+
+```
+User
+ ↓
+Claude Code
+ ↓
+分析 / 設計 / 實作
+ ↓
+本地測試
+ ↓
+Codex Review
+ ↓
+Claude 判斷 Review 結果
+ ↓
+必要時修正
+ ↓
+Antigravity UI / Browser QA（選用，且為人工執行：
+   Claude 出 QA 指示書 → 使用者在 IDE 執行 → 結果交回 Claude）
+ ↓
+Claude 最終整合與驗證
+ ↓
+回報 User
+```
+
+**不是所有 VFX 修改都必須跑完整流程。**
+
+## 4.2 Claude 可單獨完成
+
+- 小型數值調整
+- 已有 Preset 微調
+- 顏色修改
+- 單純參數調整
+- 明確且低風險的小 Bug
+
+## 4.3 建議 Codex Review
+
+- 新 VFX Layer
+- Renderer 修改
+- Particle Engine 修改
+- Shader 系統
+- JSON Schema 修改
+- Runtime 架構修改
+- 效能敏感修改
+- 大型重構
+
+## 4.4 建議 Antigravity QA
+
+**Antigravity QA 不是每個 VFX Feature 的必要步驟。**
+只有 UI / UX / Browser interaction 值得額外驗證時才使用。
+
+以下情況建議進行：
+
+- VFX Editor UI
+- Inspector
+- Preview 操作
+- Timeline
+- Asset Browser
+- Preset Browser
+- Save / Load UI
+- Browser interaction
+- UX / usability
+
+### 4.4.1 交付方式：QA 指示書
+
+Antigravity 不由 CLI 自動呼叫（第 3.3.1 節），
+因此 Claude 在上述情況下的交付物是一份**QA 指示書**，至少包含：
+
+| 欄位 | 內容 |
+|---|---|
+| Feature | 這次要驗證的 VFX 功能 |
+| Test Goal | 這次 QA 要證明什麼 |
+| Preconditions | 前置狀態、測試資料、開啟方式 |
+| Test Steps | 可照做的操作步驟，逐步編號 |
+| Expected Result | 每一步的預期結果 |
+| Edge Cases | 必須額外測試的邊界情況 |
+| Visual / UX checks | 視覺表現與操作手感的主觀檢查項 |
+
+執行與回收：
+
+```
+Claude 產生 QA 指示書
+ ↓
+使用者自行在 Antigravity IDE 執行
+ ↓
+Antigravity 的結果交回 Claude
+ ↓
+Claude 負責最終判斷與整合
+```
+
+QA 結果屬於建議（第 3.1 節），採用與否由 Claude 判斷並說明理由。
+
+## 4.5 分級判斷責任
+
+分級由 Claude 判斷，並在回報中寫出判斷結果與理由。
+
+判斷標準以**影響範圍**為主，不是以修改行數為主：
+
+- 只動單一特效的常數 → 4.2
+- 動到多個特效共用的繪製路徑、生命週期或資源載入 → 4.3
+- 使用者需要用滑鼠操作才能驗證的行為 → 4.4
+
+判斷不確定時，往嚴格的一級靠。
+
+---
+
+# 5. Review 次數限制
+
+## 5.1 上限
+
+| 項目 | 預設上限 | 條件性追加 |
+|---|---|---|
+| Codex Review | 1 次 | 發現 CRITICAL 問題時，Claude 修正後最多再 1 次 |
+| Antigravity QA | 1 次 | 無 |
+
+即單一 VFX Feature 的 Codex Review 上限為 **2 次**，Antigravity QA 上限為 **1 次**。
+
+## 5.2 問題分級
+
+追加 Review 只在 CRITICAL 成立時觸發，因此分級必須明確：
+
+**CRITICAL**（可追加 1 次 Review）
+
+- 功能不正確或直接破圖
+- Crash、WebGL context lost、載入失敗
+- 記憶體洩漏、未釋放的 texture／Graphics
+- 明顯掉幀或每幀配置造成的 GC 尖峰
+- 破壞既有特效或既有測試（Regression）
+- 破壞存檔、協議或 Schema 相容性
+
+**MAJOR**（不追加 Review；由 Claude 直接修正或記錄）
+
+- 架構不理想但可運作
+- 重複程式、命名不一致
+- 邊界情況處理不足但不影響主流程
+
+**MINOR**（不追加 Review）
+
+- 風格、註解、可讀性建議
+
+## 5.3 停止條件
+
+出現下列任一情況，**立即停止自動修正並回報使用者**：
+
+- 已用完 Review 次數，問題仍未解決
+- Codex 與 Antigravity 的建議互相衝突，且 Claude 無法單方面判定
+- 修正需要擴大到 VFX 範圍以外（Gameplay、存檔、協議）
+- 修正需要變更需求本身
+
+回報時必須說明：目前狀態、剩餘問題、已嘗試的方案、建議的下一步。
+
+## 5.4 禁止事項
+
+- 無限 Review
+- Agent 互相反覆討論
+- 無限制的自動修正循環
+- 為了「讓 Review 通過」而擴大修改範圍
+- 把同一份程式換個說法重複送審以繞過次數上限
+
+---
+
+# 6. Worktree 安全規則
+
+本專案使用 Git worktree，Claude、Codex、Antigravity 各自可能具有獨立 worktree
+（`GIT_WORKFLOW.md`）：
+
+| Folder | Branch |
+|---|---|
+| `claude` | `ai/claude` |
+| `codex` | `ai/codex` |
+| `antigravity` | `ai/antigravity` |
+| `develop` | `develop` |
+| `production` | `main` |
+
+規則：
+
+1. **Claude worktree 是 VFX 主開發工作區。**
+2. Codex 在 Claude worktree 執行 Review 時**只能讀取，不得修改**。
+3. Antigravity 在 Claude worktree 執行 QA 時**不得修改**。
+4. 若未來需要 Codex 或 Antigravity 實際開發，**必須使用各自的 worktree / branch**。
+5. **不允許多個 Agent 同時修改同一個 worktree。**
+6. 跨 worktree 的程式修改必須透過明確的 Git 整合流程處理
+   （`GIT_WORKFLOW.md`、`docs/AI_WORKFLOW.md` 第 9 節）。
+7. **不得自動覆蓋其他 Agent 尚未整合的修改。**
+
+補充（沿用既有規範，非本文件新增）：
+
+- 修改任何既有檔案前，仍須執行 `AI_RULES.md` 第 3.2 節的衝突預檢；
+  查到衝突來源必須先告知使用者並取得同意。
+- 「只讀不寫」是**約定**，不是技術保證。Review 或 QA 結束後，
+  Claude 應自行以 `git status` 確認工作區未被更動。
+- 改動 `js/` 下的檔案時，仍須依既有慣例更新 `index.html` 的 `?v=` 快取版本號。
+
+---
+
+# 7. 啟用與停用
+
+## 7.1 啟用條件
+
+同時滿足下列兩點才啟用本工作流：
+
+1. 任務內容落在第 1.1 節的適用範圍內。
+2. Claude 在開始前於回報中**明確聲明**「本任務套用 VFX 工作流」，
+   並說明適用的是全部或僅其中的 VFX 子任務。
+
+## 7.2 停用
+
+- 任務不屬於 VFX 工程 → 完全維持專案原本的工作方式。
+- VFX 子任務完成後，後續的 Gameplay／整合／發版流程回到既有規範。
+
+## 7.3 明確禁止
+
+- **不得**因為本文件存在，就讓其他專案任務自動使用 Codex 或 Antigravity。
+- **不得**把本文件的角色定義（Claude=Lead、Codex=Reviewer only）
+  套用到非 VFX 任務。
+- **不得**以本文件為由跳過 `AI_RULES.md` 的任何規定。
+
+---
+
+# 8. 目前階段
+
+已建立：本規範文件、`tools/vfx/review-with-codex.cjs`、
+`docs/vfx/ANTIGRAVITY_CLI_CAPABILITIES.md`。
+
+## 8.1 Antigravity 的正式規則（非階段性狀態）
+
+Antigravity 是 **Optional Manual QA Agent**，**不進行 CLI 自動呼叫**（第 3.3.1 節）。
+需要 UI / UX / Browser QA 時，由 Claude 產生 QA 指示書（第 4.4.1 節），
+使用者在 Antigravity IDE 人工執行，結果再交回 Claude 判斷與整合。
+
+這是常態規則，不是「這個階段還沒做」。
+
+## 8.2 未經使用者指示不得自行開始
+
+- VFX Editor 開發
+- 呼叫 Codex（工具已就緒，是否執行仍由使用者決定，第 3.4 節）
+- 修改 `CLAUDE.md` 或其他既有規則文件
+- 修改 VFX 以外的任何程式碼
+- Commit
+
+下一步由使用者決定。
