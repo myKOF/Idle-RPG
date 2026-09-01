@@ -1,0 +1,223 @@
+# VFX_CORE_AND_PRESET_SCHEMA.md
+
+# VFX Core 架構 ＋ VFX Preset Schema v1
+
+狀態：`schemaVersion 1`（Preset）。適用範圍見 `docs/vfx/VFX_AGENT_WORKFLOW.md` §1.1。
+素材事實層／語意層規格見 `VFX_ASSET_SCHEMA.md`、`VFX_ASSET_SEMANTICS.md`。
+
+---
+
+# 0. 架構總覽
+
+```
+                  VFX Core（js/vfx-core.js）
+                  純 JS：驗證＋模擬＋生命週期＋預算
+                  不依賴 PixiJS、不碰 DOM、不認得 Idle-RPG
+                              │
+              ┌───────────────┴───────────────┐
+              │                               │
+    VFX Editor（tools/vfx/editor）      Game Runtime（未來）
+              │                               │
+              └── 同一個 backend：js/vfx-pixi-backend.js
+              └── 同一個 Preset：vfx/presets/*.json
+```
+
+**為什麼 Editor 不可能長出第二套 renderer**：畫面上會動的一切——位置、縮放、旋轉、
+透明度、粒子軌跡——全部在 `vfx-core.js` 算完，backend 只負責
+「建節點／套 transform／回收節點」三件事，本身沒有任何動態邏輯。
+Editor 端沒有節點 API 的呼叫（有測試強制），因此預覽 ＝ Runtime 之後會播的東西。
+
+## 0.1 與 Idle-RPG 的界線
+
+Core 不認得 `player`／`enemy`／`battleManager`／`skillManager`／傷害／等級。
+對外只有泛用輸入：
+
+```js
+runtime.play('demo-basic', {
+  position: { x, y }, rotation, scale, seed
+});
+```
+
+Idle-RPG 之後只需要一層薄 Adapter（把技能事件翻成上面這個呼叫）。
+Core 可以整包搬到其他 Web 遊戲。
+
+---
+
+# 1. Preset Schema v1
+
+```jsonc
+{
+  "schemaVersion": 1,
+  "id": "demo-basic",          // 小寫英數與連字號；與檔名一致
+  "duration": 1.6,             // 秒，正數，上限 60
+  "loop": false,
+  "layers": [ /* 見 §2 */ ]
+}
+```
+
+規則：JSON、決定性序列化、只用 `assetId` 引用素材、不含任何絕對路徑。
+
+## 1.1 決定性序列化
+
+`VFXCore.serialisePreset(preset)` 以固定欄位順序輸出，因此
+**Editor 存檔 → 載入 → 再存檔 位元相同**（有測試）。
+欄位順序固定也讓 Preset 的 git diff 只反映真正的內容變更。
+
+---
+
+# 2. 圖層型別（只有三種是真正不同的繪圖原語）
+
+需求裡列了 Sprite / Mask / Particle / Ring / Glow / Procedural 六項，
+實際評估後**只保留三種 layer type**，其餘是 sprite 的參數組合而非新的 renderer：
+
+| 需求名稱 | 實作方式 | 為什麼不另立型別 |
+|---|---|---|
+| Sprite | `type: "sprite"` | — |
+| **Ring** | sprite ＋ 環形素材 ＋ `scaleOverLife` | 繪圖行為與 sprite 完全相同，只是素材與參數不同 |
+| **Glow** | sprite ＋ 光暈素材 ＋ `blendMode: "add"` | 同上 |
+| **Mask** | **延後**（見 §6） | 真正的遮罩是「改變別的圖層怎麼被畫」，不是自己畫一張圖；MVP 不需要 |
+| Particle | `type: "particle"` | 需要生成、模擬、池化，與 sprite 本質不同 |
+| Procedural | `type: "procedural"` | 需要在 GPU 上持續變動 UV，與靜態 quad 不同 |
+
+多做 `ring`／`glow` 兩個型別只會讓三份幾乎相同的 renderer 各自長歪，
+之後改一個忘了改另外兩個。
+
+## 2.1 共通欄位
+
+`id`（同一 preset 內唯一）、`type`、`enabled`、`assetId`、`zIndex`、
+`position{x,y}`、`rotation`（弧度）、`scale{x,y}`、`anchor{x,y}`、
+`alpha`(0..1)、`tint`(`#rrggbb`)、`blendMode`(`normal|add|multiply|screen`)、
+`delay`、`duration`（省略時吃 preset 的 duration）。
+
+動畫：`alphaOverLife`、`scaleOverLife`、`rotationOverLife`，
+格式一律 `[[t, value], …]`，`t` 為 0..1 的生命進度，線性內插，最多 16 點。
+刻意不做貝茲／緩動曲線——MVP 用不到。
+
+## 2.2 particle 專屬
+
+`emission`（`{mode:"burst",count}` 或 `{mode:"rate",rate}`）、`maxParticles`、
+`lifetime`、`spawn`（`point`／`circle{radius}`／`box{width,height}`）、
+`speed`、`direction`(度)、`spread`(度)、`gravity{x,y}`、
+`startScale`、`rotationStart`、`rotationSpeed`。
+
+數值欄位都接受「固定值」或 `[min,max]` 區間（區間取決定性亂數）。
+
+刻意**不做**：子發射器、碰撞、貼圖動畫、噪聲場、trail renderer、
+以及 Unity 那套完整曲線編輯——目前的火焰龍捲與一般 Web VFX 用不到。
+
+## 2.3 procedural 專屬
+
+`effect`（目前只有 `uvScroll`）、`size{x,y}`、`scrollSpeed{x,y}`。
+
+`uvScroll` 用 Pixi 的 `TilingSprite` 捲動 `tilePosition` 實作——
+不需要自訂 shader 就能可靠完成，而且只有**可平鋪**的素材才有意義（見 §7 Material Gap）。
+未來要加 `distortion`／`dissolve`／`noise` 時，在 backend 的 `kind` 上擴充即可，
+不必動 Core 的模擬迴圈。**本階段不建立 Shader Graph。**
+
+---
+
+# 3. Asset Resolver
+
+```
+assetId → Resolver → relativePath（來自事實層 asset-index.json）→ 實際 URL
+```
+
+Core 只認得 `assetId`，連 Asset Library Root 存不存在都不知道。
+
+```js
+VFXCore.createIndexResolver(assetIndex, baseUrl)   // 介面：resolve(assetId) -> URL
+```
+
+| 消費端 | baseUrl | 由誰提供實體檔案 |
+|---|---|---|
+| Editor（本機） | `/asset-library/<libraryId>` | `tools/vfx/editor-server.cjs` 把本機 Root 掛成 URL |
+| Game Runtime（未來） | 打包後的 `images/vfx/…` | export 步驟複製被引用到的素材子集 |
+
+Resolver 是介面，換一個實作就能換來源，**沒有任何 Windows 檔案系統相依**。
+未知 `assetId` 一律丟錯，不 silent fallback 成空白貼圖。
+
+---
+
+# 4. 驗證（不 silent fallback）
+
+`VFXCore.validatePreset(preset)` 回傳 `{ok, errors[]}`，會擋下：
+
+未知 `schemaVersion`、未知 layer type、重複 layer id、缺少或非法 `assetId`、
+**assetId 夾帶絕對路徑或 URL**、NaN／Infinity、負的 duration／delay、
+非法 blendMode、非法顏色（非 `#rrggbb`）、粒子數超過硬上限、
+曲線格式錯誤或 `t` 未遞增、`spawn.shape` 非法。
+
+硬上限：圖層 32、單層粒子 2000、duration 60 秒、曲線 16 點。
+
+Runtime 在 **註冊時** 就解析所有 `assetId`，未知素材當場失敗，
+而不是播放時默默不顯示。
+
+---
+
+# 5. 效能預算
+
+```js
+VFXCore.createRuntime({ backend, resolver, budget: {
+  maxActiveEffects: 24,        // 超過就不播新的，回傳 null 並計入 droppedEffects
+  maxParticles: 1200,          // 全域粒子上限
+  perEffectParticleLimit: 300  // 單一特效上限
+}});
+```
+
+`runtime.stats()` 回報 `activeEffects / activeParticles / pooledNodes /
+droppedEffects / droppedParticles`，Editor 直接顯示在工具列。
+
+**節點池**：粒子生滅頻繁，每顆都 new 會讓 GC 在戰鬥中出現尖峰。
+節點依 `(kind, assetUrl, blendMode)` 分池回收重用；
+測試驗證「三輪各 10 顆粒子只建立 10 個節點」。
+
+MVP 不做 adaptive quality；目標只是讓幾十個特效同時存在時
+**有一個地方可以統一控制成本**。
+
+---
+
+# 6. 本階段刻意不做
+
+- Mask layer（遮罩是「改變別人怎麼被畫」，需要先想清楚與 zIndex／群組的關係）
+- Shader Graph、自訂 GLSL
+- Timeline／Keyframe editor／Node graph
+- Undo/Redo
+- 子發射器、粒子碰撞、trail renderer
+- Runtime 與 Idle-RPG 的 Adapter（下一階段）
+
+---
+
+# 7. Material Gap（依 `VFX_AGENT_WORKFLOW.md` §4.5）
+
+`procedural/uvScroll` 已經可以動，但**只有可平鋪素材才有意義**。
+語意層查詢 `usage=noise tileable` 的結果仍然只有水波焦散與葉隙光斑，
+兩者都不是火焰湍流噪聲——這與上一階段回報的 Material Gap #1／#2 相同，
+本階段沒有新增素材，也**沒有為了補素材缺口而寫複雜 shader**（§4.5.4）。
+
+---
+
+# 8. 已知限制
+
+1. **`uvScroll` 目前只有平鋪捲動**，沒有扭曲；要做熱扭曲需要 flow map（Material Gap #2）。
+2. **Runtime Adapter 尚未接上**：`js/vfx.js` 與 `js/battle-renderer.js` 仍是遊戲目前的特效路徑，
+   本階段完全沒有改動它們（見 §9）。
+3. Editor 沒有 Undo／多選／拖曳排序，屬 MVP 範圍外。
+
+---
+
+# 9. 與既有 VFX 的關係（沒有 regression）
+
+本階段**沒有修改** `js/vfx.js`（DOM 特效）與 `js/battle-renderer.js`（PixiJS 戰鬥渲染器），
+`index.html` 也沒有載入新的 Core。新舊兩套並存，遊戲行為零變化。
+
+盤點結果：
+
+| 既有能力 | 評估 |
+|---|---|
+| `js/vfx.js` 的品質裁切、事件佇列、節點上限、分頁隱藏停用 | **概念可重用**：Core 的 budget 已吸收「上限」與「丟棄計數」的想法 |
+| `js/vfx.js` 的 `fxKind/elem/cat/variant` 分派 | **與 gameplay 耦合**：屬於未來 Adapter 的職責，不進 Core |
+| `js/battle-renderer.js` 的貼圖快取、序列幀、批次化經驗 | **可重用**：Pixi backend 走同樣的「共用貼圖 ＋ Sprite 批次」策略 |
+| `js/battle-renderer.js` 的 `onVfx`／`wantsVfx` 路由 | **留在 Adapter**：決定「哪些事件走 Canvas、哪些走 DOM」是遊戲側的事 |
+
+遷移建議：先讓新 Core 服務**新做的特效**，舊特效維持原狀；
+等 Adapter 與 export 流程穩定後再逐一搬移，不要一次重寫。
