@@ -437,6 +437,35 @@ Quality Impact；知道的話再加 Suggested Search Keywords，
 - 為了「讓 Review 通過」而擴大修改範圍
 - 把同一份程式換個說法重複送審以繞過次數上限
 
+## 5.5 CRITICAL 修正的限縮驗證（`--mode fix-verification`）
+
+`tools/vfx/review-with-codex.cjs` 提供兩種模式：
+
+| 模式 | 用途 | 輸出 |
+|---|---|---|
+| `full`（預設） | 一般 Codex Review，主動找問題 | CRITICAL / MAJOR / MINOR / RECOMMENDATIONS |
+| `fix-verification` | 5.1 表格中「CRITICAL 修正後的追加驗證」 | 各項 PASS / FAIL 與 FINAL |
+
+```
+node tools/vfx/review-with-codex.cjs "<scope>" --mode fix-verification --brief <說明檔>
+```
+
+`--brief` 說明本次要驗證哪些 CRITICAL、修正位置、對應測試，以及必須維持的
+invariant。內容每次不同，由呼叫端提供；工具只負責把它包進固定的限縮框架。
+
+限縮模式**只判定已知的 CRITICAL 修好了沒有**，明確禁止 Codex 找新的
+MAJOR／MINOR、review 未列在說明檔中的子系統、或提出架構重寫。
+範圍一旦放寬，就等於偷跑一輪完整 Review。
+
+兩種模式共用同一支工具，因此唯讀保護完全相同：Codex 一律以
+`--sandbox read-only` 執行，工具在前後各取一次工作樹快照
+（分支、HEAD、`git status`、`git diff` 雜湊、未追蹤檔內容雜湊）並比對，
+不一致即以 exit code 3 判定唯讀違規。不得為了限縮驗證另建一套 review 機制。
+
+**本節不改變 5.1 的次數規則**：一般 Codex Review 仍為預設 1 次，
+只有 CRITICAL 修正才需要再次驗證，且仍受 5.1 的上限約束。
+限縮驗證不是「第三輪 Review」，也不得用來取得額外的完整 Review 次數。
+
 ---
 
 # 6. Worktree 安全規則
