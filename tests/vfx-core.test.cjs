@@ -608,10 +608,21 @@ test('editor-server 的 safeJoin 擋掉路徑穿越', function () {
 
 test('Editor 存檔前會驗證，避免存出無法載入的檔案', function () {
   const editorJs = fs.readFileSync(path.join(root, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8');
+  /* 回寫與下載共用同一道擋門，兩條路不得有一條偷偷繞過驗證 */
+  const gate = editorJs.slice(editorJs.indexOf('function presetSaveProblems'),
+    editorJs.indexOf('function showSaveError'));
+  assert.ok(/validatePreset/.test(gate), '存檔擋門必須先驗證 preset');
+  assert.ok(/resolver\.has/.test(gate), '存檔擋門必須檢查 assetId 是否存在');
+
   const saveFn = editorJs.slice(editorJs.indexOf('function savePreset'),
+    editorJs.indexOf('function downloadPreset'));
+  const downloadFn = editorJs.slice(editorJs.indexOf('function downloadPreset'),
     editorJs.indexOf('function loadPresetFromFile'));
-  assert.ok(/validatePreset/.test(saveFn), 'savePreset 必須先驗證');
-  assert.ok(/resolver\.has/.test(saveFn), 'savePreset 必須檢查 assetId 是否存在');
+  assert.ok(/presetSaveProblems\(\)/.test(saveFn), '回寫前必須走擋門');
+  assert.ok(/presetSaveProblems\(\)/.test(downloadFn), '下載前必須走擋門');
+  /* Save 是真的回寫 server，不是又下載一份 */
+  assert.ok(/method: 'PUT'/.test(saveFn) && /presetUrl\(state\.preset\.id\)/.test(saveFn),
+    'savePreset 必須 PUT 回 /vfx/presets/<id>.json');
 });
 
 /* ---------------- Codex Review 第 2 輪修正的回歸保護 ---------------- */

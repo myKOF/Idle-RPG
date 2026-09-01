@@ -68,3 +68,9 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
                border-top: 1px solid #26262c; padding-top: 8px; }
 .err { color: #ff8080; }
 .ok { color: #7fd18a; }
+
+/* 存檔狀態：dirty 標記與 Saving/Saved/失敗 訊息 */
+.dirty { color: #e0b34a; font-size: 12px; min-width: 60px; }
+.save-status { color: #8a8a96; font-size: 12px; }
+.save-status.ok { color: #7fd18a; }
+.save-status.err { color: #ff8080; }

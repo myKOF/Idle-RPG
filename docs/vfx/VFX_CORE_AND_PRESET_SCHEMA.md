@@ -63,6 +63,58 @@ Core 可以整包搬到其他 Web 遊戲。
 **Editor 存檔 → 載入 → 再存檔 位元相同**（有測試）。
 欄位順序固定也讓 Preset 的 git diff 只反映真正的內容變更。
 
+`vfx/presets/*.json` 一律以 canonical 形式存放，由測試把關
+（`tests/vfx-editor-save.test.cjs` 的「所有正式 preset 都是 canonical 形式」）。
+手寫的緊湊寫法（例如把 `"position": { "x": 0, "y": 0 }` 排成一行）雖然合法，
+但第一次從 Editor 存檔就會被展開成 canonical 形式；之後每次要看「這次到底改了什麼」
+都得先跳過那一大段純格式差異，所以檔案本身先正規化。
+
+## 1.2 Editor 存檔回寫（PUT）
+
+Editor 的「儲存到 repo」把目前的 Preset 直接寫回 `vfx/presets/`：
+
+```
+PUT /vfx/presets/<presetId>.json     （tools/vfx/editor-server.cjs，只聽 127.0.0.1）
+```
+
+契約：
+
+| 項目 | 內容 |
+| --- | --- |
+| 目的地 | 固定為 `vfx/presets/`（模組常數），呼叫端無法指定路徑 |
+| presetId | 取自**未解碼**的 URL，規則見 `tools/vfx/editor/preset-id-policy.js` |
+| 落檔內容 | `parse → validatePreset → serialisePreset` 的結果，不是 request body 原文 |
+| 失敗 | 任一步失敗即回 4xx/5xx，原檔 byte-identical |
+| 寫入方式 | 同目錄獨佔建立暫存檔 → 補寫至完整 → fsync → 驗大小 → rename；暫存檔不以 `.json` 結尾 |
+| 來源 | 連線、Host、Origin 都必須是 loopback，Content-Type 必須是 `application/json` |
+
+檔名規則（長度、Windows 裝置名）獨立成 `preset-id-policy.js`，
+由伺服器與 Editor 頁面載入**同一份**實作。
+Core 的 `validatePreset` 仍是 preset 合法性的單一來源；
+「這個 id 能不能當檔名」是另一個問題，兩邊各寫一份遲早會變成
+「Editor 說可以存、伺服器回 400」。
+
+存檔目的地由 `preset.id` 決定，而不是由開場的 `?preset=` 決定，
+因此之後要加 Save As，只要讓使用者能改 `preset.id` 就成立。
+但 Editor 會記住「這份是以哪個 id 載進來的」，兩者不一致時**停用存檔**——
+否則開著 `fire-tornado` 按存檔卻改掉 `black-hole.json`，而且畫面上看不出來。
+
+存檔**不會**觸發 `tools/vfx/export-assets.cjs`。
+把素材發佈綁進編輯動作，等於每按一次存檔就重寫一次 `images/vfx/assets/`；
+正式匯出仍然是獨立的一步。
+
+### 已知限制：符號連結檢查是 TOCTOU-racy
+
+連結檢查通過之後，落檔仍然是用路徑呼叫 `openSync` / `renameSync`，
+中間存在一段可以把 `vfx/presets` 換成 junction 的窗口。
+要真正關掉它需要 `openat` / `O_NOFOLLOW` 這類對已開啟目錄 handle 操作的介面，
+Node 的 `fs` 在 Windows 上沒有可攜的等價物。
+
+接受的理由是威脅模型：能贏這場競態的人必須已經能在本機以同一個使用者身分
+執行程式碼，而那種人本來就能直接改任何檔案，不需要來搶一台只聽 `127.0.0.1`
+的開發伺服器。對「遠端」與「瀏覽器裡的其他分頁」這兩種真正要防的來源，
+這條路走不通。實作上仍在 rename 前重新檢查一次，把窗口縮到最小。
+
 ---
 
 # 2. 圖層型別（只有三種是真正不同的繪圖原語）

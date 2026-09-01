@@ -20,14 +20,15 @@
      原本只寫死 demo-basic，要看別的 preset 只能走檔案挑選對話框，
      開發時每次重整都要重挑一次。id 限制成 preset id 的合法字元
      （見 Core 的 preset.id 規則），順便擋掉 ../ 之類的路徑穿越。 */
-  function presetUrlFromQuery() {
-    var id = DEFAULT_PRESET_ID;
+  function presetIdFromQuery() {
     try {
       var q = new URLSearchParams(window.location.search).get('preset');
-      if (q && /^[a-z0-9][a-z0-9-]*$/.test(q)) id = q;
+      if (q && VFXPresetIdPolicy.isWritablePresetId(q)) return q;
     } catch (e) { /* 不支援 URLSearchParams 就用預設值 */ }
-    return '/vfx/presets/' + id + '.json';
+    return DEFAULT_PRESET_ID;
   }
+
+  function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
 
   var state = {
     index: null,
@@ -42,7 +43,17 @@
     backend: null,
     resolver: null,
     app: null,
-    stageRoot: null
+    stageRoot: null,
+    /* 上次「與 repo 檔案一致」的 canonical 文字。
+       null 代表這份 preset 從來沒有存回 repo 過（例如從本機檔案匯入的），
+       此時一律視為 dirty——比起假裝乾淨，寧可讓人多按一次存檔。 */
+    savedText: null,
+    saving: false,
+    /* 這份內容是「以哪個 id 載進來的」。存檔目標是 preset.id，兩者不一致時
+       按下存檔會寫到另一個檔案上——開著 fire-tornado 卻改掉 black-hole.json。
+       所以不一致就直接擋住存檔，而不是只顯示一行警告。
+       之後做 Save As 時，就是由 Save As 明確地把這個值改成新 id。 */
+    sourcePresetId: null
   };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -360,6 +371,9 @@
   /* ---------------- 預覽（使用 VFX Core） ---------------- */
 
   function onPresetChanged() {
+    /* 不管合不合法都要更新 dirty：改壞了也是「改過了」，
+       這時候把它顯示成乾淨反而最危險。 */
+    refreshDirty();
     var result = VFXCore.validatePreset(state.preset);
     var box = $('validation');
     if (!result.ok) {
@@ -418,23 +432,139 @@
 
   /* ---------------- 存讀檔 ---------------- */
 
-  function savePreset() {
-    // 存檔前一定要驗證：否則存出去的檔案下次載入會被拒絕，Save/Load 不一致
-    var check = VFXCore.validatePreset(state.preset);
-    if (!check.ok) {
-      $('validation').className = 'hint err';
-      $('validation').textContent = '無法存檔，preset 不合法：\n- ' + check.errors.join('\n- ');
-      return;
+  /* 目前編輯內容的 canonical 文字。dirty 判斷與存檔送出的都是這一份，
+     兩邊用同一個函式，才不會出現「顯示已存檔但送出的是別的東西」。 */
+  function currentPresetText() {
+    try {
+      return VFXCore.serialisePreset(state.preset);
+    } catch (e) {
+      return null;                            // 序列化不出來就當作 dirty
     }
+  }
+
+  function isDirty() {
+    if (state.savedText === null) return true;
+    return currentPresetText() !== state.savedText;
+  }
+
+  function refreshDirty() {
+    var el = $('dirty-flag');
+    if (!el) return;
+    var dirty = isDirty();
+    el.textContent = dirty ? '● 未存檔' : '';
+    el.className = dirty ? 'dirty on' : 'dirty';
+    /* 一旦又動過，上一次的「已存檔」就不再成立，讓它繼續掛在旁邊會變成
+       「已存檔」與「未存檔」同時亮著。失敗訊息則留著——那是還沒解決的問題。 */
+    var st = $('save-status');
+    if (dirty && st && st.className.indexOf('ok') >= 0) setSaveStatus('', '');
+  }
+
+  function setSaveStatus(text, cls) {
+    var el = $('save-status');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'save-status' + (cls ? ' ' + cls : '');
+  }
+
+  /* 存檔（回寫與下載）共用的擋門條件。
+     驗證必須在送出前做：存出去的檔案下次載入會被 Core 拒絕的話，Save/Load 就不一致了。
+     伺服器端會再驗一次——這裡擋是為了讓人當場看到原因，不是為了取代伺服器的驗證。 */
+  function presetSaveProblems() {
+    var check = VFXCore.validatePreset(state.preset);
+    if (!check.ok) return { title: 'preset 不合法', list: check.errors };
     var missing = state.preset.layers
       .filter(function (l) { return l.assetId && !state.resolver.has(l.assetId); })
       .map(function (l) { return l.id + ' → ' + l.assetId; });
-    if (missing.length) {
-      $('validation').className = 'hint err';
-      $('validation').textContent = '無法存檔，引用了不存在的 assetId：\n- ' + missing.join('\n- ');
+    if (missing.length) return { title: '引用了不存在的 assetId', list: missing };
+    /* 檔名規則用的是伺服器同一份 policy，這樣「Editor 說可以存、伺服器回 400」
+       這種契約分歧就不會發生。 */
+    var idProblem = VFXPresetIdPolicy.presetIdProblem(state.preset.id);
+    if (idProblem) return { title: '無法作為檔名', list: [idProblem] };
+    return null;
+  }
+
+  /* 存檔目標與載入來源必須是同一個 id，否則就是在改別人的檔案。 */
+  function saveTargetProblem() {
+    if (state.sourcePresetId === null) return null;      // 匯入的內容以自己的 id 為準
+    if (state.preset.id === state.sourcePresetId) return null;
+    return 'preset.id（' + state.preset.id + '）與載入來源（' + state.sourcePresetId +
+      '）不一致。存下去會覆寫 ' + state.preset.id + '.json，而不是你打開的那一份。' +
+      '請先修正檔案內的 preset.id。';
+  }
+
+  function showSaveError(title, list) {
+    $('validation').className = 'hint err';
+    $('validation').textContent = title + (list && list.length ? '：\n- ' + list.join('\n- ') : '');
+  }
+
+  /* Save：把目前的 Preset 回寫到 repo 的 vfx/presets/<preset.id>.json。
+     目的地由 preset.id 決定而不是由「開場的 ?preset= 」決定，
+     之後要做 Save As 時只要能改 preset.id 就成立，不必動這條路徑。 */
+  function savePreset() {
+    if (state.saving) return;                 // 連按兩下不該送出兩次 PUT
+    var targetProblem = saveTargetProblem();
+    if (targetProblem) {
+      showSaveError('無法存檔', [targetProblem]);
+      setSaveStatus('存檔失敗', 'err');
       return;
     }
-    var text = VFXCore.serialisePreset(state.preset);
+    var problems = presetSaveProblems();
+    if (problems) {
+      showSaveError('無法存檔，' + problems.title, problems.list);
+      setSaveStatus('存檔失敗', 'err');
+      return;
+    }
+    var text = currentPresetText();
+    if (text === null) {
+      showSaveError('無法存檔，序列化失敗', []);
+      setSaveStatus('存檔失敗', 'err');
+      return;
+    }
+
+    state.saving = true;
+    $('btn-save').disabled = true;
+    setSaveStatus('存檔中…', '');
+    fetch(presetUrl(state.preset.id), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: text
+    }).then(function (r) {
+      return r.json().catch(function () {
+        throw new Error('伺服器回應不是 JSON（HTTP ' + r.status + '）');
+      }).then(function (body) {
+        if (!r.ok || !body.ok) {
+          var detail = (body.problems && body.problems.length)
+            ? body.error + '\n- ' + body.problems.join('\n- ')
+            : body.error || ('HTTP ' + r.status);
+          throw new Error(detail);
+        }
+        return body;
+      });
+    }).then(function (body) {
+      /* 成功：只更新「已存檔基準」。不重新載入、不動 selection、不動 preset.id。 */
+      state.savedText = text;
+      setSaveStatus('已存檔 · ' + body.bytes + ' bytes', 'ok');
+      $('validation').className = 'hint ok';
+      $('validation').textContent = '✓ 已寫入 vfx/presets/' + body.presetId + '.json';
+      refreshDirty();
+    }).catch(function (e) {
+      /* 失敗：Editor 狀態原封不動，dirty 維持 true，錯誤照伺服器講的原因顯示。 */
+      setSaveStatus('存檔失敗', 'err');
+      showSaveError('存檔失敗（repo 檔案未變動）', String(e && e.message || e).split('\n'));
+      refreshDirty();
+    }).then(function () {
+      state.saving = false;
+      $('btn-save').disabled = false;
+    });
+  }
+
+  /* 下載一份複本。回寫上線之後這條路仍然留著：要把 Preset 交給別人、
+     或想在不碰 repo 的情況下留個備份時還是需要它。 */
+  function downloadPreset() {
+    var problems = presetSaveProblems();
+    if (problems) return showSaveError('無法下載，' + problems.title, problems.list);
+    var text = currentPresetText();
+    if (text === null) return showSaveError('無法下載，序列化失敗', []);
     var blob = new Blob([text], { type: 'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -456,6 +586,12 @@
         }
         state.preset = parsed;
         state.selectedLayerId = parsed.layers[0] ? parsed.layers[0].id : null;
+        /* 從本機檔案匯入的內容還沒進 repo，一律當成未存檔。
+           匯入等於「這份就是它自己宣告的那個 preset」，所以來源 id 交給它自己，
+           存檔會寫到 <preset.id>.json——這也是把外部改好的 preset 收回 repo 的路。 */
+        state.savedText = null;
+        state.sourcePresetId = null;
+        setSaveStatus('', '');
         $('chk-loop').checked = !!parsed.loop;
         renderLayerList(); renderInspector(); onPresetChanged();
       } catch (e) {
@@ -519,15 +655,24 @@
   }
 
   function boot() {
+    var bootPresetId = presetIdFromQuery();
     Promise.all([
       fetchJson(ASSET_INDEX_URL),
       fetchJson(ASSET_SEMANTICS_URL),
-      fetchJson(presetUrlFromQuery())
+      fetchJson(presetUrl(bootPresetId))
     ]).then(function (res) {
       state.index = res[0];
       state.semantics = res[1];
       state.preset = res[2];
       state.selectedLayerId = state.preset.layers[0].id;
+      /* 剛載入的內容就是 repo 上的內容 → 基準線，dirty = false。
+         用 canonical 文字而不是原始 bytes：檔案若還沒 canonical 化，
+         每次一開啟就會顯示未存檔，那個提示很快就會被無視。 */
+      state.savedText = VFXCore.serialisePreset(state.preset);
+      state.sourcePresetId = bootPresetId;
+      if (state.preset.id !== bootPresetId) {
+        setSaveStatus('preset.id 與檔名不一致，已停用存檔', 'err');
+      }
 
       // Editor 端的 resolver：assetId → 本機資產伺服器 URL。
       // Runtime 之後換成打包後的 URL，Core 不需要任何改動。
@@ -597,6 +742,13 @@
 
         // 除錯用把手：Editor 是開發工具，讓瀏覽器主控台與人工 QA 能查看實際場景
         window.__vfxEditor = state;
+        /* 存檔／dirty 這條路只有在真的瀏覽器裡才跑得起來（fetch ＋ DOM），
+           把入口露出來，QA 與端對端驗證才能斷言結果而不是用看的。 */
+        window.__vfxEditorApi = {
+          isDirty: isDirty,
+          savePreset: savePreset,
+          currentPresetText: currentPresetText
+        };
 
         fillSelect($('new-layer-type'), VFXCore.LAYER_TYPES, 'layer type');
         $('new-layer-type').value = 'sprite';
@@ -622,6 +774,7 @@
     $('chk-loop').onchange = function () { state.preset.loop = $('chk-loop').checked; onPresetChanged(); };
     $('sel-bg').onchange = function () { setBackground($('sel-bg').value); };
     $('btn-save').onclick = savePreset;
+    $('btn-download').onclick = downloadPreset;
     $('btn-load').onclick = function () { $('file-load').click(); };
     $('file-load').onchange = function (e) {
       if (e.target.files[0]) loadPresetFromFile(e.target.files[0]);
