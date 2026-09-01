@@ -14,7 +14,20 @@
 
   var ASSET_INDEX_URL = '/vfx/asset-index.json';
   var ASSET_SEMANTICS_URL = '/vfx/asset-semantics.json';
-  var DEMO_PRESET_URL = '/vfx/presets/demo-basic.json';
+  var DEFAULT_PRESET_ID = 'demo-basic';
+
+  /* ?preset=<id> 決定開場載入哪一份 preset。
+     原本只寫死 demo-basic，要看別的 preset 只能走檔案挑選對話框，
+     開發時每次重整都要重挑一次。id 限制成 preset id 的合法字元
+     （見 Core 的 preset.id 規則），順便擋掉 ../ 之類的路徑穿越。 */
+  function presetUrlFromQuery() {
+    var id = DEFAULT_PRESET_ID;
+    try {
+      var q = new URLSearchParams(window.location.search).get('preset');
+      if (q && /^[a-z0-9][a-z0-9-]*$/.test(q)) id = q;
+    } catch (e) { /* 不支援 URLSearchParams 就用預設值 */ }
+    return '/vfx/presets/' + id + '.json';
+  }
 
   var state = {
     index: null,
@@ -502,7 +515,7 @@
     Promise.all([
       fetchJson(ASSET_INDEX_URL),
       fetchJson(ASSET_SEMANTICS_URL),
-      fetchJson(DEMO_PRESET_URL)
+      fetchJson(presetUrlFromQuery())
     ]).then(function (res) {
       state.index = res[0];
       state.semantics = res[1];
