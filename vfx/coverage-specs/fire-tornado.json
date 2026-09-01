@@ -1,0 +1,58 @@
+{
+  "name": "Fire Tornado（大型火焰龍捲）",
+  "note": "素材充分性評估用的圖層需求。查詢條件全部走語意層＋事實層，不寫死 assetId。",
+  "layers": [
+    {
+      "layer": "旋轉火焰主體（rotating fire core）",
+      "required": true,
+      "query": { "usage": "core", "shape": "cloud", "element": "neutral", "tintable": true, "blend": "additive" }
+    },
+    {
+      "layer": "渦流／螺旋感（spiral）",
+      "required": true,
+      "query": { "tag": "swirl", "blend": "additive" }
+    },
+    {
+      "layer": "龍捲體型輪廓（cone silhouette）",
+      "required": false,
+      "query": { "shape": "cone", "usage": "core", "blend": "additive" }
+    },
+    {
+      "layer": "火星（sparks）",
+      "required": true,
+      "query": { "usage": "spark", "shape": "star", "blend": "additive" }
+    },
+    {
+      "layer": "餘燼拖尾（embers）",
+      "required": true,
+      "query": { "usage": "ember", "aspect": "tall", "blend": "alphaBlend" }
+    },
+    {
+      "layer": "少量煙霧（smoke）",
+      "required": true,
+      "query": { "usage": "smoke", "shape": "cloud", "tintable": true, "blend": "alphaBlend" }
+    },
+    {
+      "layer": "地面火環（ground fire ring）",
+      "required": true,
+      "query": { "usage": "ring", "shape": "ring", "blend": "additive" }
+    },
+    {
+      "layer": "整體輝光（glow）",
+      "required": true,
+      "query": { "usage": "glow", "shape": "disc", "blend": "additive" }
+    },
+    {
+      "layer": "火焰流動的湍流噪聲（UV scroll turbulence）",
+      "required": false,
+      "query": { "usage": "noise", "tileable": true },
+      "qualityConcern": "可平鋪候選只有水波焦散（硬邊細胞網格）與葉隙光斑，兩者都不是火焰湍流噪聲；用它們做 UV scroll 會出現水面或樹葉的視覺特徵"
+    },
+    {
+      "layer": "熱扭曲（heat distortion / flow map）",
+      "required": false,
+      "query": { "usage": "distortion", "tileable": true },
+      "qualityConcern": "全庫沒有 normal map 或 dudv flow map；僅有的 distortion 候選是水波焦散，方向性與頻率都不符合火焰上升的熱擾動"
+    }
+  ]
+}

@@ -313,7 +313,64 @@ Claude 負責最終判斷與整合
 
 QA 結果屬於建議（第 3.1 節），採用與否由 Claude 判斷並說明理由。
 
-## 4.5 分級判斷責任
+## 4.5 Material Gap（素材不足時的長期規則）
+
+適用於所有 VFX 工作：選材、設計、Preset、Editor、Runtime、改善既有效果。
+
+**禁止為了「完成任務」而勉強使用不適合的素材。**
+判定為素材問題時，必須主動提出 Material Gap，而不是硬做或無止境調參數。
+
+### 4.5.1 必須提出的情況（任一即可）
+
+1. 現有素材沒有適合的類型
+2. 有類似素材，但品質／形狀／解析度／Alpha／可染色性／可平鋪性不足
+3. 勉強使用會明顯降低 VFX 品質
+4. 只能靠大量複雜 Shader 或程式技巧，才能補救「用對素材就很簡單」的問題
+5. 做得出「能看」的結果，但與目標仍有明顯品質差距
+6. **使用者看過實機後表示不夠理想／不夠真實／不夠有質感／不符預期**
+
+第 6 點觸發時，必須依序重新診斷，不得永遠只調參數：
+
+```
+Visual Problem → Layer / Parameter 診斷 → Shader 診斷 → Material 診斷
+```
+
+### 4.5.2 格式（不得只說「素材不足」）
+
+至少包含：Missing Asset Type、Intended Usage、Required 或 Recommended、
+Desired Visual Characteristics、Technical Requirements、Current Substitute、
+Quality Impact；知道的話再加 Suggested Search Keywords，
+讓使用者知道該去素材網站找什麼。
+
+### 4.5.3 Required 與 Recommended 必須分開
+
+- **Required**：沒有這類素材，核心效果無法合理完成
+- **Recommended**：現在能完成，但補素材能顯著提高品質
+
+不得因為「存在更漂亮的素材」就持續要求補素材。
+
+### 4.5.4 反向濫用同樣禁止
+
+若問題可由 particle behavior、shader、mask、UV 動畫、圖層組合、混合模式、
+顏色、縮放、旋轉、時序合理解決，就用現有素材解決。
+只有當「補素材」相較「繼續堆程式技巧」能明顯改善品質、複雜度或效能時才提出。
+
+### 4.5.5 不得自行取得第三方素材
+
+可以指出缺口、建議種類與規格、提供搜尋關鍵字；
+但除非使用者明確要求，**不得自行下載、加入或替換**第三方素材。
+授權狀態不明的素材不得進入 Asset Library。
+
+### 4.5.6 納入素材充分性驗收
+
+素材搜尋不只要回答「有哪些素材可用」，還要回答「現有素材是否足以完成這個 VFX」。
+每次選材驗收都必須輸出下列其一，不是 SUFFICIENT 就必須附 Material Gap：
+
+`SUFFICIENT` ／ `SUFFICIENT_WITH_LIMITATIONS` ／ `INSUFFICIENT`
+
+工具：`node tools/vfx/semantic-query.cjs --coverage <spec.json>`
+
+## 4.6 分級判斷責任
 
 分級由 Claude 判斷，並在回報中寫出判斷結果與理由。
 
@@ -380,6 +437,35 @@ QA 結果屬於建議（第 3.1 節），採用與否由 Claude 判斷並說明�
 - 為了「讓 Review 通過」而擴大修改範圍
 - 把同一份程式換個說法重複送審以繞過次數上限
 
+## 5.5 CRITICAL 修正的限縮驗證（`--mode fix-verification`）
+
+`tools/vfx/review-with-codex.cjs` 提供兩種模式：
+
+| 模式 | 用途 | 輸出 |
+|---|---|---|
+| `full`（預設） | 一般 Codex Review，主動找問題 | CRITICAL / MAJOR / MINOR / RECOMMENDATIONS |
+| `fix-verification` | 5.1 表格中「CRITICAL 修正後的追加驗證」 | 各項 PASS / FAIL 與 FINAL |
+
+```
+node tools/vfx/review-with-codex.cjs "<scope>" --mode fix-verification --brief <說明檔>
+```
+
+`--brief` 說明本次要驗證哪些 CRITICAL、修正位置、對應測試，以及必須維持的
+invariant。內容每次不同，由呼叫端提供；工具只負責把它包進固定的限縮框架。
+
+限縮模式**只判定已知的 CRITICAL 修好了沒有**，明確禁止 Codex 找新的
+MAJOR／MINOR、review 未列在說明檔中的子系統、或提出架構重寫。
+範圍一旦放寬，就等於偷跑一輪完整 Review。
+
+兩種模式共用同一支工具，因此唯讀保護完全相同：Codex 一律以
+`--sandbox read-only` 執行，工具在前後各取一次工作樹快照
+（分支、HEAD、`git status`、`git diff` 雜湊、未追蹤檔內容雜湊）並比對，
+不一致即以 exit code 3 判定唯讀違規。不得為了限縮驗證另建一套 review 機制。
+
+**本節不改變 5.1 的次數規則**：一般 Codex Review 仍為預設 1 次，
+只有 CRITICAL 修正才需要再次驗證，且仍受 5.1 的上限約束。
+限縮驗證不是「第三輪 Review」，也不得用來取得額外的完整 Review 次數。
+
 ---
 
 # 6. Worktree 安全規則
@@ -445,6 +531,10 @@ QA 結果屬於建議（第 3.1 節），採用與否由 Claude 判斷並說明�
 已建立：本規範文件、`tools/vfx/review-with-codex.cjs`、
 `docs/vfx/ANTIGRAVITY_CLI_CAPABILITIES.md`。
 
+VFX Core、Pixi Backend、Editor、Asset Library／Semantic Search、
+Production Asset Export、Editor 存檔回寫皆已完成並通過人工驗收。
+**自 P0-2 起，VFX 正式進入 Production 階段，開發策略改為第 9 節。**
+
 ## 8.1 Antigravity 的正式規則（非階段性狀態）
 
 Antigravity 是 **Optional Manual QA Agent**，**不進行 CLI 自動呼叫**（第 3.3.1 節）。
@@ -462,3 +552,162 @@ Antigravity 是 **Optional Manual QA Agent**，**不進行 CLI 自動呼叫**（
 - Commit
 
 下一步由使用者決定。
+
+---
+
+# 9. VFX Production 階段
+
+> **本節只適用於 VFX Production，不是 Idle-RPG 的全域工作流。**
+> Gameplay、存檔、UI、經濟數值等工作一律沿用原有流程（第 1.2 節）。
+
+## 9.1 開發策略：工具跟著真實需求走
+
+Production 階段**不再以「先把 Editor 所有功能做完」為開發策略**。
+
+```
+先製作真正的 VFX，實際遇到工具痛點之後才補工具。
+```
+
+以下項目**不得預先實作**，除非真實 Production 已證明其中某項成為明確阻礙：
+
+- Timeline
+- Curve GUI
+- Zoom / Pan
+- Duplicate Layer
+- Layer Reorder
+- Undo / Redo
+- Mask
+- Vortex / Attractor
+- Runtime Adapter
+
+「明確阻礙」指的是在實際做特效的過程中反覆卡住並可具體描述，
+不是「想像中將來會需要」。
+
+## 9.2 標準流程（Reference-driven）
+
+```
+Reference
+  ↓
+Reference Breakdown
+  ↓
+Semantic Asset Search
+  ↓
+VFX Prototype
+  ↓
+Preview（使用者可觀看）
+  ↓
+User Feedback
+  ↓
+Refinement
+  ↓
+Final Preset
+```
+
+## 9.3 Reference 的使用方式
+
+使用者可提供遊戲截圖、VFX 截圖、動畫截圖，或多張不同來源的 Reference。
+
+**Reference 不代表逐像素複製。** 目標是拆解它的視覺語言：
+
+silhouette、color hierarchy、brightness hierarchy、motion、particle density、
+particle direction、timing、scale、layer composition、glow、trail、smoke、
+ground interaction、impact/readability
+
+再用**我們自己的** VFX Runtime、Preset Schema、`effects-materials` Asset Library、
+Semantic Search 與 procedural 能力，重新建立相近的視覺語言。
+
+多份 Reference 可以分工，例如：
+
+| Reference | 負責 |
+| --- | --- |
+| A | silhouette |
+| B | color |
+| C | particle |
+| D | ground effect |
+
+**必須記錄每份 Reference 的用途與優先順序**，否則後續回饋無法判斷該調哪一項。
+
+## 9.4 Reference Breakdown（動手前必做）
+
+看到 Reference 不得直接開始堆 Layer。先回答：
+
+- Reference 的主要視覺特徵是什麼？
+- 哪些目前 Runtime 做得到？
+- 哪些只能近似？
+- 哪些目前做不到？
+- 哪些是 **Material Gap**（素材不足，見第 4.5 節）？
+- 哪些是真正的 **Core Gap**（能力不足）？
+
+Material Gap 與 Core Gap 必須分開講。素材不足卻去改 Core，
+是這條線最容易犯、也最貴的錯。
+
+## 9.5 不得因為 Reference 用了我們沒有的技術就擴充 Core
+
+Reference 若使用 volumetric rendering、3D mesh、GPU simulation、distortion、
+flow map、depth particle、複雜 masking 等技術：
+
+**先用現有能力做低成本近似。**
+
+只有在真實 Production 證明現有能力無法達到可接受結果之後，
+才提出 Core Enhancement，並依第 4 節的流程處理。
+
+## 9.6 使用者的回饋是視覺語言，不是參數
+
+使用者不是 VFX 專業美術。**不得要求使用者知道**
+`emissionRate`、`alphaOverLife`、`rotationSpeed`、particle lifetime、
+blend mode、velocity、curve control point 這類欄位。
+
+使用者只需要用視覺語言回饋，例如：
+
+> 「火太散」「旋轉不夠明顯」「核心不夠亮」「速度太快」
+> 「粒子太多」「不像 Reference A」「我要更有重量感」
+
+**把這些翻譯成具體參數修改是 Claude 的工作。**
+
+## 9.7 兩個合理方向時先做低成本 Preview
+
+若存在 A / B 兩個合理的視覺方向：
+
+**不得自行選一個並花大量時間做到最終版。**
+
+先各做一份低成本 Preview，讓使用者看過後決定方向。
+
+## 9.8 中間產品制度：視覺工作不得只用文字證據交付
+
+視覺型工作**不得**只以 tests、logs、JSON、benchmark 作為完成證據。
+
+正式 VFX 應在適當節點提供使用者可直接觀看的 Editor Preview：
+
+| Checkpoint | 內容 |
+| --- | --- |
+| 1 | 主體輪廓 / 基本運動 |
+| 2 | Particle / Glow / Trail / Secondary Motion |
+| 3 | Timing / Color / Polish |
+| Final | 最終候選 |
+
+不要求機械式的 30% / 60% / 90%。核心原則是：
+
+```
+在視覺方向還便宜、還容易修改的時候讓使用者看到，
+而不是全部做完才展示。
+```
+
+Preview 的提供方式：啟動既有 Editor Server，給出
+`?preset=<id>` 網址讓使用者實際觀看與操作。
+
+## 9.9 Reference 與版權
+
+第三方遊戲或網路上的 VFX 圖片**只能**作為 visual / composition / motion /
+color reference。
+
+不得：
+
+- 擷取第三方遊戲素材
+- 直接使用來源遊戲的 texture
+- 嘗試逐像素重建具有高度識別性的美術
+- 把 Reference 當成我們自己的 production asset
+
+最終 VFX 必須由我們自己的 Runtime ＋ 合法 Asset Library ＋
+procedural / data-driven composition 建立。
+
+這一條與第 4.5.5 節（不得自行取得第三方素材）一致，不是新增的例外。

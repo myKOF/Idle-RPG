@@ -77,3 +77,6 @@ sim_server.log
 
 # 模擬伺服器實際使用的連接埠（啟動時挑，每次可能不同）
 sim_server.port
+
+# VFX 素材庫的本機路徑設定（每台電腦不同，不進版控）
+/vfx/library.local.json

@@ -6,10 +6,20 @@
      以唯讀模式呼叫本機 Codex CLI，對指定的 VFX 範圍做 Code / Architecture Review，
      並在 Review 前後比對工作樹狀態，確認 Codex 確實沒有修改任何檔案。
 
+   兩種模式共用同一套唯讀保護與 Codex 呼叫路徑，只有 Prompt 不同：
+     full              完整 Review，主動找問題，輸出 CRITICAL/MAJOR/MINOR/RECOMMENDATIONS
+     fix-verification  限縮驗證，只判定「已知的 CRITICAL 修好了沒有」，
+                       禁止找新問題，輸出 PASS/FAIL
+
    用法：
      node tools/vfx/review-with-codex.cjs "<review scope>"
      node tools/vfx/review-with-codex.cjs                       → scope 預設 "current VFX changes"
      node tools/vfx/review-with-codex.cjs "<scope>" --dry-run    → 只印出 Prompt，不呼叫 Codex
+     node tools/vfx/review-with-codex.cjs "<scope>" --mode fix-verification --brief <檔案>
+
+   --brief 指向一份「本次要驗證什麼」的說明檔（原始 CRITICAL、修正位置、
+   對應測試、必須維持的 invariant）。這份內容每次都不同，因此由呼叫端提供，
+   工具只負責把它包進固定的限縮框架裡。
 
    環境變數：
      CODEX_BIN                 指定 codex 執行檔或 bin/codex.js 路徑（PATH 找不到時使用）
@@ -33,6 +43,8 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const WORKFLOW_DOC_REL = 'docs/vfx/VFX_AGENT_WORKFLOW.md';
 const WORKFLOW_DOC = path.join(ROOT, WORKFLOW_DOC_REL);
 const DEFAULT_SCOPE = 'current VFX changes';
+const MODES = ['full', 'fix-verification'];
+const DEFAULT_MODE = 'full';
 const MAX_DOC_CHARS = 12000;          // 規範全文超過此長度才改用重點節錄，避免 Prompt 膨脹
 const DEFAULT_TIMEOUT_MS = 900000;
 
@@ -222,26 +234,26 @@ function resolveCodex() {
 
 /* ---------------- Prompt ---------------- */
 
-function buildPrompt(scope, spec, ctx) {
+/* 兩種模式共用同一份唯讀約束，不各寫一份——這段是規範的核心，
+   分成兩份遲早會只改到其中一份。 */
+const STRICT_RULES = [
+  '# STRICT RULES (non-negotiable)',
+  '- REVIEW ONLY',
+  '- DO NOT MODIFY FILES',
+  '- DO NOT CREATE FILES',
+  '- DO NOT DELETE FILES',
+  '- DO NOT RUN FORMATTING THAT MODIFIES FILES',
+  '- DO NOT COMMIT',
+  '- DO NOT CHANGE BRANCH',
+  '- DO NOT MODIFY GIT STATE (no add / stash / checkout / reset / clean / config)',
+  '',
+  'You may ONLY read, analyse, review, and return suggestions.',
+  'You run in a read-only sandbox, and the caller compares the worktree state before and',
+  'after this run; any write is a protocol violation that fails the review.'
+];
+
+function specBlock(spec) {
   return [
-    '# ROLE',
-    'You are an Independent VFX Code / Architecture Reviewer for the Idle-RPG project.',
-    'You are NOT the implementer. Claude Code is the Lead Engineer and decides what to adopt.',
-    '',
-    '# STRICT RULES (non-negotiable)',
-    '- REVIEW ONLY',
-    '- DO NOT MODIFY FILES',
-    '- DO NOT CREATE FILES',
-    '- DO NOT DELETE FILES',
-    '- DO NOT RUN FORMATTING THAT MODIFIES FILES',
-    '- DO NOT COMMIT',
-    '- DO NOT CHANGE BRANCH',
-    '- DO NOT MODIFY GIT STATE (no add / stash / checkout / reset / clean / config)',
-    '',
-    'You may ONLY read, analyse, review, and return suggestions.',
-    'You run in a read-only sandbox, and the caller compares the worktree state before and',
-    'after this run; any write is a protocol violation that fails the review.',
-    '',
     '# VFX WORKFLOW SPEC',
     '以下為 VFX 專用工作流規範（' + WORKFLOW_DOC_REL + '），Review 必須遵守。',
     spec.condensed
@@ -250,7 +262,17 @@ function buildPrompt(scope, spec, ctx) {
     '',
     '<vfx-workflow-spec>',
     spec.text,
-    '</vfx-workflow-spec>',
+    '</vfx-workflow-spec>'
+  ];
+}
+
+function buildPrompt(scope, spec, ctx) {
+  return [
+    '# ROLE',
+    'You are an Independent VFX Code / Architecture Reviewer for the Idle-RPG project.',
+    'You are NOT the implementer. Claude Code is the Lead Engineer and decides what to adopt.',
+    ''
+  ].concat(STRICT_RULES).concat(['']).concat(specBlock(spec)).concat([
     '',
     '# SCOPE OF THIS REVIEW',
     scope,
@@ -338,7 +360,88 @@ function buildPrompt(scope, spec, ctx) {
     '',
     'If a category has no findings, write exactly: None',
     ''
-  ].join('\n');
+  ]).join('\n');
+}
+
+/* 限縮驗證模式。
+   完整 Review 的職責是主動找問題；這裡刻意相反——只判定「已知的 CRITICAL
+   修好了沒有」。範圍一旦放寬就等於偷跑一輪完整 Review，違反規範 §5.1 的次數限制。
+   唯讀保護、Codex sandbox、工作樹前後比對全部沿用 main()，這裡只換 Prompt。 */
+function buildFixVerificationPrompt(scope, spec, ctx, brief) {
+  return [
+    '# ROLE',
+    'You are an Independent Reviewer for the Idle-RPG VFX subsystem.',
+    'You are NOT the implementer. Claude Code is the Lead Engineer.',
+    '',
+    '# THIS IS NOT A NEW FULL REVIEW',
+    '',
+    'This is a BOUNDED VERIFICATION of previously identified CRITICAL fixes only.',
+    '',
+    'Do NOT perform a general code review.',
+    'Do NOT look for new MAJOR or MINOR issues.',
+    'Do NOT review subsystems that are not named in the briefing.',
+    'Do NOT propose architectural rewrites.',
+    'Do NOT expand the scope.',
+    'Do NOT use web search.',
+    '',
+    'Verify ONLY:',
+    '  1. The CRITICAL findings listed in the briefing below.',
+    '  2. Their implemented fixes.',
+    '  3. Their regression tests.',
+    '  4. Whether those fixes violate any previously fixed CRITICAL safety invariant.',
+    ''
+  ].concat(STRICT_RULES).concat(['']).concat(specBlock(spec)).concat([
+    '',
+    '# SCOPE',
+    scope,
+    '',
+    '# REPOSITORY CONTEXT',
+    'Repo root: ' + ROOT,
+    'Branch: ' + ctx.branch + '   HEAD: ' + ctx.head.slice(0, 12),
+    '',
+    'git status --short:',
+    ctx.statusText || '(clean)',
+    '',
+    '# BRIEFING — the only material in scope',
+    '',
+    '<fix-briefing>',
+    brief,
+    '</fix-briefing>',
+    '',
+    '# EFFICIENCY',
+    'Read only the files and line ranges named in the briefing, plus the minimum you need',
+    'to confirm or refute them. Do not survey the repository. Do not re-read a file.',
+    'Stop investigating and write the report as soon as you can support your verdicts.',
+    '',
+    '# OUTPUT FORMAT (mandatory — output ONLY this, nothing else)',
+    '',
+    'Reply in 繁體中文 for the reason lines, but keep the section labels and the',
+    'PASS / FAIL tokens exactly as written. Emit one CRITICAL_FIX_<n> block for each',
+    'CRITICAL fix in the briefing, numbered in the same order as the briefing, then the',
+    'three fixed sections:',
+    '',
+    'CRITICAL_FIX_1:',
+    'PASS / FAIL',
+    'reason',
+    '',
+    '(… one block per CRITICAL fix in the briefing …)',
+    '',
+    'REGRESSION_TESTS:',
+    'PASS / FAIL',
+    'reason',
+    '',
+    'PREVIOUS_CRITICAL_INVARIANTS:',
+    'PASS / FAIL',
+    'reason',
+    '',
+    'FINAL:',
+    'PASS / FAIL',
+    '',
+    'FINAL is PASS only if every section above is PASS.',
+    'Do not report MAJOR. Do not report MINOR.',
+    'Do not search for unrelated issues. Do not add any other section.',
+    ''
+  ]).join('\n');
 }
 
 /* ---------------- 主流程 ---------------- */
@@ -351,31 +454,74 @@ function main() {
       '',
       '  node tools/vfx/review-with-codex.cjs "<review scope>"',
       '  node tools/vfx/review-with-codex.cjs "<review scope>" --dry-run',
+      '  node tools/vfx/review-with-codex.cjs "<scope>" --mode fix-verification --brief <檔案>',
+      '',
+      '  --mode   ' + MODES.join(' | ') + '（預設 ' + DEFAULT_MODE + '）',
+      '  --brief  fix-verification 專用：說明本次要驗證哪些 CRITICAL、修正位置、',
+      '           對應測試與必須維持的 invariant',
       '',
       '  scope 省略時預設為 "' + DEFAULT_SCOPE + '"'
     ].join('\n'));
     process.exit(EXIT.OK);
   }
 
-  // 拼錯的參數若被靜默忽略，使用者會以為 review 的是別的範圍 → 一律報錯
-  const KNOWN_FLAGS = ['--dry-run', '--help'];
-  const unknown = argv.filter(function (a) {
-    return a.indexOf('-') === 0 && KNOWN_FLAGS.indexOf(a) < 0;
-  });
-  if (unknown.length) {
-    fail(EXIT.PRECONDITION, '未知參數：' + unknown.join(' '),
-      '可用參數：' + KNOWN_FLAGS.join('、') + '（scope 請用單一引號字串傳入）');
+  /* 拼錯的參數若被靜默忽略，使用者會以為 review 的是別的範圍 → 一律報錯。
+     帶值的參數必須逐個走訪，不能只用 filter：--mode 的值不以 - 開頭，
+     單純過濾會把它誤當成第二個 scope。 */
+  const VALUE_OPTS = ['--mode', '--brief'];
+  const BOOL_FLAGS = ['--dry-run'];
+  let dryRun = false;
+  let mode = DEFAULT_MODE;
+  let briefPath = null;
+  const positional = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (BOOL_FLAGS.indexOf(a) >= 0) { dryRun = true; continue; }
+    if (VALUE_OPTS.indexOf(a) >= 0) {
+      const v = argv[++i];
+      if (v === undefined || v.indexOf('-') === 0) {
+        fail(EXIT.PRECONDITION, a + ' 需要一個值', '例如：' + a + ' <值>');
+      }
+      if (a === '--mode') mode = v; else briefPath = v;
+      continue;
+    }
+    if (a.indexOf('-') === 0) {
+      fail(EXIT.PRECONDITION, '未知參數：' + a,
+        '可用參數：' + BOOL_FLAGS.concat(VALUE_OPTS).join('、') + '、--help');
+    }
+    positional.push(a);
   }
-  const dryRun = argv.indexOf('--dry-run') >= 0;
-  const positional = argv.filter(function (a) { return a.indexOf('-') !== 0; });
   if (positional.length > 1) {
     fail(EXIT.PRECONDITION, 'scope 只能有一個，收到 ' + positional.length + ' 個：' + positional.join(' | '),
       '含空白的 scope 請用引號包起來。');
   }
+  if (MODES.indexOf(mode) < 0) {
+    fail(EXIT.PRECONDITION, '未知的 --mode：' + mode, '可用模式：' + MODES.join('、'));
+  }
+  if (mode === 'fix-verification' && !briefPath) {
+    fail(EXIT.PRECONDITION, '--mode fix-verification 需要 --brief <檔案>',
+      '限縮驗證必須明確指出要驗證哪些 CRITICAL，否則會退化成一輪完整 Review。');
+  }
+  if (mode !== 'fix-verification' && briefPath) {
+    fail(EXIT.PRECONDITION, '--brief 只能搭配 --mode fix-verification 使用');
+  }
+  let brief = '';
+  if (briefPath) {
+    const briefAbs = path.resolve(ROOT, briefPath);
+    try {
+      brief = fs.readFileSync(briefAbs, 'utf8').trim();
+    } catch (e) {
+      fail(EXIT.PRECONDITION, '無法讀取 --brief 檔案：' + briefAbs, e.message);
+    }
+    if (!brief) fail(EXIT.PRECONDITION, '--brief 檔案是空的：' + briefAbs);
+  }
   const scope = (positional[0] || '').trim() || DEFAULT_SCOPE;
 
   console.log(line('='));
-  console.log('VFX Codex Review');
+  console.log(mode === 'fix-verification'
+    ? 'VFX CRITICAL FIX VERIFICATION（限縮範圍，非完整 Review）'
+    : 'VFX Codex Review');
+  console.log('Mode  : ' + mode);
   console.log('Scope : ' + scope);
   console.log('Root  : ' + ROOT);
   console.log(line('='));
@@ -404,12 +550,15 @@ function main() {
   console.log('[2/5] 已記錄 Review 前工作樹狀態（branch ' + before.branch + '，' +
     (before.statusText ? before.statusText.split('\n').length + ' 筆變更' : '無變更') + '）');
 
-  const prompt = buildPrompt(scope, spec, {
+  const ctx = {
     branch: before.branch,
     head: before.head,
     statusText: before.statusText,
     diffStat: diffStat.trim()
-  });
+  };
+  const prompt = mode === 'fix-verification'
+    ? buildFixVerificationPrompt(scope, spec, ctx, brief)
+    : buildPrompt(scope, spec, ctx);
 
   if (dryRun) {
     console.log('[3/5] --dry-run：只輸出 Prompt，不呼叫 Codex\n');
@@ -528,5 +677,11 @@ function main() {
 if (require.main === module) {
   main();
 } else {
-  module.exports = { snapshotWorktree: snapshotWorktree, diffSnapshots: diffSnapshots, buildPrompt: buildPrompt };
+  module.exports = {
+    snapshotWorktree: snapshotWorktree,
+    diffSnapshots: diffSnapshots,
+    buildPrompt: buildPrompt,
+    buildFixVerificationPrompt: buildFixVerificationPrompt,
+    MODES: MODES
+  };
 }

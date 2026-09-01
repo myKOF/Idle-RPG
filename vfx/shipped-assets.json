@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "kind": "vfx-shipped-assets",
+  "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
+  "libraryId": "effects-materials",
+  "baseUrl": "images/vfx/assets",
+  "assetCount": 20,
+  "assets": [
+    {
+      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "relativePath": "kenney_light-masks-1.0/Default/circle_a.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:57afeb410f3bf31bcc1a8389714853a775eb5a65f969d045ef29f35d1401bea1",
+      "fileSize": 38943
+    },
+    {
+      "assetId": "kenney_light-masks-1.0/default/circle_a_noise.png",
+      "relativePath": "kenney_light-masks-1.0/Default/circle_a_noise.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:3b9fcce9ae7d9da09236bf6a6d1e583f28b077f636513393b1160500e81acd33",
+      "fileSize": 53243
+    },
+    {
+      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "relativePath": "kenney_light-masks-1.0/Default/circle_b.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:5aecddcbfe6ad85375bed88824c198db060220c77643248348ea186407bd1e09",
+      "fileSize": 40886
+    },
+    {
+      "assetId": "kenney_light-masks-1.0/default/circle_rings_a.png",
+      "relativePath": "kenney_light-masks-1.0/Default/circle_rings_a.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:6309618d598f3ea7f0bed2786f98f6886cb9a29e8e86001e1d8f3c7402091849",
+      "fileSize": 58449
+    },
+    {
+      "assetId": "kenney_light-masks-1.0/default/cone_composed_c_noise.png",
+      "relativePath": "kenney_light-masks-1.0/Default/cone_composed_c_noise.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:d4f73305287160da4f513ee524a0b84b0c129af82319afcfb0e585ddb3de05c6",
+      "fileSize": 32930
+    },
+    {
+      "assetId": "kenney_light-masks-1.0/default/ring_a.png",
+      "relativePath": "kenney_light-masks-1.0/Default/ring_a.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:5195cfa66d737c660f6e75e9a251eea813534f939455136a344002bf16ea3726",
+      "fileSize": 26291
+    },
+    {
+      "assetId": "kenney_light-masks-1.0/transparent/circle_a.png",
+      "relativePath": "kenney_light-masks-1.0/Transparent/circle_a.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:d67bd3dc5d202a21c6c259f79c66cb9d8c8fd19343972d24bb99aba2426ec71c",
+      "fileSize": 40937
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/flame_04.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/flame_04.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:abc25d707440796489d42e53315b89aa3da54b1b72338e0a0b708ccde78fc0a7",
+      "fileSize": 43388
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/light_03.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:adbef8446fe55f8a5ad1fe8423e2683f8102bca792164c95f276ab77abefeb5f",
+      "fileSize": 62268
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/magic_03.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/magic_03.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:d6d41342a586c223c057d0f4000725e639787d31d8ec9ec72c58948b58177c75",
+      "fileSize": 43622
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/spark_01.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/spark_01.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:d74634d80aed77812c69e071c92f6ea7e81e54b86e8d4310407a15fcc8a0afb7",
+      "fileSize": 82487
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/spark_05.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/spark_05.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:173bcf3e75969a08d8db3e64ec4f5e78ffe11fee156186e30076baea649f673d",
+      "fileSize": 44785
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/spark_06.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:b615e988e12bbff49ad061c59d8d08f976fab9f72ceac0224b67b4558e336857",
+      "fileSize": 42423
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/star_02.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/star_02.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:48b61d81a78523361d51a0c190ead189851501ef752e441c2c63c8a0335ec33c",
+      "fileSize": 37858
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/star_08.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/star_08.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:83e451b6a931f968216196f39e00949c26bfeccea5257f859a944d735266d48d",
+      "fileSize": 22840
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/trace_02.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/trace_02.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:590bf09870a76e840068cd84333d14cde0666d1816e5636efac6201440dc66c7",
+      "fileSize": 20280
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/twirl_01.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/twirl_01.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:18137131f93a9f97dbe9ba6f405a6c89236759875635c97be8c4859617a6a5f7",
+      "fileSize": 31267
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/twirl_02.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/twirl_02.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:e74be64a75891e88188f4f8e3726835d796837972ab0571d7de88086d7df8ac0",
+      "fileSize": 45770
+    },
+    {
+      "assetId": "kenney_particle-pack/png-transparent/smoke_04.png",
+      "relativePath": "kenney_particle-pack/PNG (Transparent)/smoke_04.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:2db2f69874cdb1e5203f2f86803d5debde30402590cf50a810afaba882184616",
+      "fileSize": 97568
+    },
+    {
+      "assetId": "kenney_splat-pack/png/double-512px/splat05.png",
+      "relativePath": "kenney_splat-pack/PNG/Double (512px)/splat05.png",
+      "package": "kenney_splat-pack",
+      "contentHash": "sha256:73f82c9367268f3569566ec89c71e42d66e35f8586b679d68ed7048101e87434",
+      "fileSize": 4286
+    }
+  ]
+}

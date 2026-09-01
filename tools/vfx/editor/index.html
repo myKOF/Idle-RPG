@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>VFX Editor MVP</title>
+<link rel="stylesheet" href="/tools/vfx/editor/editor.css">
+</head>
+<body>
+<header id="topbar">
+  <strong>VFX Editor</strong>
+  <span class="sep"></span>
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-pause">⏸ Pause</button>
+  <button id="btn-restart">⟲ Restart</button>
+  <label><input type="checkbox" id="chk-loop"> Loop</label>
+  <span class="sep"></span>
+  <label>背景
+    <select id="sel-bg">
+      <option value="#101014">深色</option>
+      <option value="#000000">純黑</option>
+      <option value="#7a7a7a">中灰</option>
+      <option value="#e8e8e8">淺色</option>
+      <option value="checker">棋盤格</option>
+    </select>
+  </label>
+  <span class="sep"></span>
+  <button id="btn-load">載入 Preset</button>
+  <button id="btn-save">儲存到 repo</button>
+  <button id="btn-download">下載複本</button>
+  <input type="file" id="file-load" accept="application/json" hidden>
+  <span id="dirty-flag" class="dirty"></span>
+  <span id="save-status" class="save-status"></span>
+  <span class="sep"></span>
+  <span id="stats" class="stats"></span>
+</header>
+
+<main id="layout">
+  <aside id="left">
+    <section id="asset-browser">
+      <h2>Asset Browser</h2>
+      <div class="filters">
+        <input type="search" id="f-text" placeholder="搜尋 assetId…">
+        <select id="f-usage"><option value="">usage（全部）</option></select>
+        <select id="f-shape"><option value="">shape（全部）</option></select>
+        <select id="f-element"><option value="">element（全部）</option></select>
+        <select id="f-tag"><option value="">tag（全部）</option></select>
+        <label class="inline"><input type="checkbox" id="f-high"> 只看 high</label>
+      </div>
+      <div id="asset-count" class="hint"></div>
+      <div id="asset-list"></div>
+    </section>
+    <section id="layer-panel">
+      <h2>Layers</h2>
+      <div class="row">
+        <select id="new-layer-type">
+          <option value="sprite">sprite</option>
+          <option value="particle">particle</option>
+          <option value="procedural">procedural</option>
+        </select>
+        <button id="btn-add-layer">＋ 新增</button>
+        <button id="btn-del-layer">刪除</button>
+      </div>
+      <div id="layer-list"></div>
+    </section>
+  </aside>
+
+  <section id="center">
+    <div id="preview-host"></div>
+    <div id="preview-msg" class="hint"></div>
+  </section>
+
+  <aside id="right">
+    <h2>Inspector</h2>
+    <div id="inspector"></div>
+    <h2>驗證</h2>
+    <div id="validation" class="hint"></div>
+  </aside>
+</main>
+
+<script src="/js/vendor/pixi.min.js"></script>
+<script src="/js/vfx-core.js"></script>
+<script src="/js/vfx-pixi-backend.js"></script>
+<script src="/tools/vfx/editor/preset-id-policy.js"></script>
+<script src="/tools/vfx/editor/editor.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "name": "Black Hole（黑洞吸入漩渦）",
+  "note": "素材充分性評估用的圖層需求。查詢條件全部走語意層＋事實層，不寫死 assetId。",
+  "layers": [
+    {
+      "layer": "事件視界（不透光的黑色圓盤）",
+      "required": true,
+      "query": { "shape": "disc", "usage": "mask", "tintable": true, "blend": "alphaBlend" },
+      "qualityConcern": "全庫的 disc 都標 tags=soft；沒有硬邊圓盤，事件視界邊緣必然是漸層而非銳利剪影"
+    },
+    {
+      "layer": "吸積盤（同心環）",
+      "required": true,
+      "query": { "usage": "ring", "shape": "ring", "tag": "layered", "blend": "additive" }
+    },
+    {
+      "layer": "光子環（細亮環）",
+      "required": true,
+      "query": { "usage": "ring", "shape": "ring", "tag": "hollow", "blend": "additive" }
+    },
+    {
+      "layer": "外圍旋轉能量（弧形掃掠）",
+      "required": true,
+      "query": { "tag": "swirl", "blend": "additive" }
+    },
+    {
+      "layer": "吸入粒子（拖尾條紋）",
+      "required": true,
+      "query": { "usage": "trail", "shape": "streak", "blend": "additive" }
+    },
+    {
+      "layer": "外圍碎屑／星點",
+      "required": true,
+      "query": { "usage": "spark", "shape": "star", "blend": "additive" }
+    },
+    {
+      "layer": "整體輝光",
+      "required": true,
+      "query": { "usage": "glow", "shape": "disc", "blend": "additive" }
+    },
+    {
+      "layer": "重力透鏡扭曲（lensing / distortion）",
+      "required": false,
+      "query": { "usage": "distortion", "tileable": true },
+      "qualityConcern": "與 Fire Tornado 相同的既有缺口：全庫沒有 normal map 或 dudv flow map，唯一候選是水波焦散，無法表現徑向透鏡"
+    }
+  ]
+}
