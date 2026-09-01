@@ -98,9 +98,42 @@ Core 可以整包搬到其他 Web 遊戲。
 `emission`（`{mode:"burst",count}` 或 `{mode:"rate",rate}`）、`maxParticles`、
 `lifetime`、`spawn`（`point`／`circle{radius}`／`box{width,height}`）、
 `speed`、`direction`(度)、`spread`(度)、`gravity{x,y}`、
-`startScale`、`rotationStart`、`rotationSpeed`。
+`startScale`、`rotationStart`、`rotationSpeed`、
+`alignToVelocity`、`velocityRotationOffset`。
 
 數值欄位都接受「固定值」或 `[min,max]` 區間（區間取決定性亂數）。
+
+### 2.2.1 alignToVelocity（粒子朝向對齊速度）
+
+`alignToVelocity`（布林，預設 `false`）讓粒子的算繪朝向跟隨自己的速度向量；
+`velocityRotationOffset`（弧度，預設 `0`）補償素材本身的繪製方向——
+例如 `trace_02` 的條紋畫成朝上，要 `+π/2` 才會沿著行進方向躺平。
+同一張素材只需要一個固定 offset，不必為每個方向各寫一個。
+
+朝向是**加上去的一項，不是取代**：
+
+```
+renderRotation = effect.rotation + layer.rotation
+               + velocityAngle + velocityRotationOffset    ← 僅在啟用且有有效速度時
+               + rotationStart + 累積的 rotationSpeed
+               + rotationOverLife 取樣值
+```
+
+`velocityAngle = atan2(vy, vx)`，於速度積分之後計算，因此 `gravity` 造成的
+轉向當幀就會反映出來。`rotationStart` 仍是初始偏移、`rotationSpeed` 仍是
+相對於行進方向的自轉、`rotationOverLife` 仍是疊加曲線，三者都不會被覆蓋。
+
+**零速度**：速率必須**嚴格大於** `VFXCore.VELOCITY_EPSILON`（0.001 px/s）才算有效方向；
+恰好等於門檻視為無效。低於門檻時**保留上一次的
+有效角度**，不歸零——`atan2(0, 0)` 會回傳 0，會讓粒子在減速到靜止的瞬間彈回
+0 弧度，甚至因為浮點負零而翻轉 180 度。若粒子從出生到現在**從未**有過有效
+速度，則完全不加入這一項，行為與未啟用時相同。
+
+`velocityRotationOffset` 在未啟用 `alignToVelocity` 時沒有作用，且**不會**被
+驗證擋下——Editor 取消勾選時 offset 仍留在資料裡，若強制檢查會讓單純的開關
+動作產生不合法的 preset。
+
+關閉時（預設）算繪結果與加入本功能之前完全相同，既有 preset 不受影響。
 
 刻意**不做**：子發射器、碰撞、貼圖動畫、噪聲場、trail renderer、
 以及 Unity 那套完整曲線編輯——目前的火焰龍捲與一般 Web VFX 用不到。

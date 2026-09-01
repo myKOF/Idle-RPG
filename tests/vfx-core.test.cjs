@@ -1047,3 +1047,288 @@ test('載入失敗的 URL 在最後一個 owner 歸零時，仍會實際呼叫 A
   assert.deepEqual(pixi._unloaded, [url],
     '從未成功載入不代表沒有 ownership；歸零時必須實際呼叫 unload');
 });
+
+/* ---------------- alignToVelocity（粒子朝向對齊速度） ---------------- */
+
+/* 錄下實際送進 backend 的 render rotation。
+   Core 的 transform 是共用的 scratch 物件，只能在呼叫當下讀，不能保存引用。 */
+function rotationSeries(layerExtra, steps, dt) {
+  const rotations = [];
+  const backend = {
+    createNode: function () { return {}; },
+    updateNode: function (node, t) { if (t && t.visible !== false) rotations.push(t.rotation); },
+    destroyNode: function () {}
+  };
+  const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+  rt.registerPreset({
+    schemaVersion: 1, id: 'align-case', duration: 20,
+    layers: [Object.assign({
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'burst', count: 1 },
+      lifetime: 19, spawn: { shape: 'point' }, spread: 0
+    }, layerExtra)]
+  });
+  rt.play('align-case');
+  for (let i = 0; i < steps; i++) rt.update(dt === undefined ? 1 / 60 : dt);
+  return rotations;
+}
+
+const HALF_PI = Math.PI / 2;
+
+test('1. alignToVelocity 預設 false：既有 rotation 行為完全不變', function () {
+  const base = { speed: 100, direction: 0, rotationStart: 0.25, rotationSpeed: 1.5 };
+  const implicit = rotationSeries(base, 20);
+  const explicitOff = rotationSeries(Object.assign({}, base, { alignToVelocity: false }), 20);
+  assert.deepEqual(implicit, explicitOff, '明寫 false 與不寫必須位元相同');
+  // 速度是 +x（角度 0），但沒開啟時不得把 velocity 角度加進去
+  assert.ok(Math.abs(implicit[0] - (0.25 + 1.5 / 60)) < 1e-9,
+    '關閉時只有 rotationStart + rotationSpeed*dt，收到 ' + implicit[0]);
+});
+
+test('2. 水平速度 → render rotation 為 0', function () {
+  const r = rotationSeries({ speed: 100, direction: 0, alignToVelocity: true }, 5);
+  r.forEach(function (v) { assert.ok(Math.abs(v) < 1e-9, '應為 0，收到 ' + v); });
+});
+
+test('3. 垂直速度 → render rotation 為 -π/2', function () {
+  const r = rotationSeries({ speed: 100, direction: -90, alignToVelocity: true }, 5);
+  r.forEach(function (v) {
+    assert.ok(Math.abs(v + HALF_PI) < 1e-6, '應為 -π/2，收到 ' + v);
+  });
+});
+
+test('4. gravity 改變速度後，render rotation 跟著改變', function () {
+  // 初速朝 +x，重力朝 +y：角度應從 0 單調轉向 +π/2
+  const r = rotationSeries({
+    speed: 100, direction: 0, gravity: { x: 0, y: 200 }, alignToVelocity: true
+  }, 60);
+  assert.ok(Math.abs(r[0]) < 0.05, '第一幀仍接近 0，收到 ' + r[0]);
+  for (let i = 1; i < r.length; i++) {
+    assert.ok(r[i] > r[i - 1], '角度必須持續增加（第 ' + i + ' 幀 ' + r[i] + '）');
+  }
+  assert.ok(r[r.length - 1] > 0.9, '一秒後應明顯轉向下方，收到 ' + r[r.length - 1]);
+  assert.ok(r[r.length - 1] < HALF_PI, '不得超過 +π/2');
+});
+
+test('5. velocityRotationOffset 正確疊加', function () {
+  const off = 0.75;
+  const a = rotationSeries({ speed: 100, direction: 0, alignToVelocity: true }, 3);
+  const b = rotationSeries({
+    speed: 100, direction: 0, alignToVelocity: true, velocityRotationOffset: off
+  }, 3);
+  for (let i = 0; i < a.length; i++) {
+    assert.ok(Math.abs((b[i] - a[i]) - off) < 1e-9, '差值應為 offset，收到 ' + (b[i] - a[i]));
+  }
+});
+
+test('6. rotationStart 在啟用後仍然疊加，不被覆蓋', function () {
+  const start = 0.3;
+  const a = rotationSeries({ speed: 100, direction: 0, alignToVelocity: true }, 3);
+  const b = rotationSeries({
+    speed: 100, direction: 0, alignToVelocity: true, rotationStart: start
+  }, 3);
+  for (let i = 0; i < a.length; i++) {
+    assert.ok(Math.abs((b[i] - a[i]) - start) < 1e-9, '差值應為 rotationStart');
+  }
+});
+
+test('7. rotationSpeed 在啟用後仍然疊加（相對自轉）', function () {
+  const spin = 2;
+  const dt = 1 / 60;
+  const a = rotationSeries({ speed: 100, direction: 0, alignToVelocity: true }, 10, dt);
+  const b = rotationSeries({
+    speed: 100, direction: 0, alignToVelocity: true, rotationSpeed: spin
+  }, 10, dt);
+  for (let i = 0; i < a.length; i++) {
+    const expected = spin * dt * (i + 1);
+    assert.ok(Math.abs((b[i] - a[i]) - expected) < 1e-9,
+      '第 ' + i + ' 幀自轉量應為 ' + expected + '，收到 ' + (b[i] - a[i]));
+  }
+});
+
+test('8. rotationOverLife 在啟用後仍然疊加', function () {
+  const curve = [[0, 0], [1, 2]];
+  const a = rotationSeries({ speed: 100, direction: 0, alignToVelocity: true }, 10);
+  const b = rotationSeries({
+    speed: 100, direction: 0, alignToVelocity: true, rotationOverLife: curve
+  }, 10);
+  let anyDifferent = false;
+  for (let i = 0; i < a.length; i++) {
+    const delta = b[i] - a[i];
+    assert.ok(delta >= 0 && delta < 2, '曲線值應落在 0..2');
+    if (delta > 0) anyDifferent = true;
+  }
+  assert.ok(anyDifferent, 'rotationOverLife 必須真的產生影響');
+});
+
+test('9. 速度降到 epsilon 以下時保留最後一次有效角度', function () {
+  /* dt=0.1、初速 6（+x）、重力 -30（-x）：
+     第 1 幀 vx=3 → 角度 0；第 2 幀 vx≈-8.9e-16，遠低於 epsilon。
+     少了門檻的話 atan2(0, 負數) 會回傳 π，朝向瞬間翻轉 180 度。 */
+  const r = rotationSeries({
+    speed: 6, direction: 0, gravity: { x: -30, y: 0 }, alignToVelocity: true
+  }, 2, 0.1);
+  assert.ok(Math.abs(r[0]) < 1e-9, '第一幀角度應為 0，收到 ' + r[0]);
+  assert.ok(Math.abs(r[1]) < 1e-9,
+    '速度低於 epsilon 時應沿用上一次的 0，而不是翻成 π，收到 ' + r[1]);
+  assert.ok(VFXCore.VELOCITY_EPSILON > 0, 'epsilon 必須是明確匯出的正值常數');
+});
+
+test('10. 出生起就零速度：維持既有固定 rotation，不加 velocity 項', function () {
+  const start = 0.7;
+  const withAlign = rotationSeries({
+    speed: 0, direction: 0, gravity: { x: 0, y: 0 },
+    rotationStart: start, alignToVelocity: true
+  }, 5);
+  const withoutAlign = rotationSeries({
+    speed: 0, direction: 0, gravity: { x: 0, y: 0 }, rotationStart: start
+  }, 5);
+  assert.deepEqual(withAlign, withoutAlign, '從未有有效速度時，開不開啟結果必須一致');
+  withAlign.forEach(function (v) {
+    assert.ok(Math.abs(v - start) < 1e-9, '應維持 rotationStart，收到 ' + v);
+  });
+});
+
+test('11. 非 particle 圖層使用 particle 專屬欄位會被 closed-field 檢查擋下', function () {
+  const p = basePreset();
+  p.layers[0].alignToVelocity = true;
+  const r = VFXCore.validatePreset(p);
+  assert.ok(r.errors.some(function (e) { return /不支援的欄位：alignToVelocity/.test(e); }),
+    r.errors.join('；'));
+
+  const q = basePreset();
+  q.layers[0].velocityRotationOffset = 1.57;
+  assert.ok(VFXCore.validatePreset(q).errors.some(function (e) {
+    return /不支援的欄位：velocityRotationOffset/.test(e);
+  }));
+
+  // 型別檢查
+  const bad = basePreset();
+  bad.layers = [{
+    id: 'p', type: 'particle', assetId: 'pack/star.png',
+    emission: { mode: 'burst', count: 1 }, lifetime: 1,
+    alignToVelocity: 'yes', velocityRotationOffset: 'x'
+  }];
+  const errs = VFXCore.validatePreset(bad).errors;
+  assert.ok(errs.some(function (e) { return /alignToVelocity 必須是布林值/.test(e); }), errs.join('；'));
+  assert.ok(errs.some(function (e) { return /velocityRotationOffset 必須是有限數/.test(e); }));
+});
+
+test('12. 新欄位進入 canonical 序列化，且往返穩定', function () {
+  const preset = {
+    schemaVersion: 1, id: 'align-serial', duration: 1,
+    layers: [{
+      velocityRotationOffset: 1.5708, alignToVelocity: true,
+      emission: { mode: 'burst', count: 3 }, lifetime: 1,
+      assetId: 'pack/star.png', type: 'particle', id: 'p'
+    }]
+  };
+  assert.equal(VFXCore.validatePreset(preset).ok, true);
+  const once = VFXCore.serialisePreset(preset);
+  const twice = VFXCore.serialisePreset(JSON.parse(once));
+  assert.equal(once, twice, '往返必須位元相同');
+  assert.ok(once.indexOf('"alignToVelocity"') > 0, '新欄位必須出現在輸出中');
+  assert.ok(once.indexOf('"velocityRotationOffset"') > 0);
+  // key order：兩個新欄位排在 rotationSpeed 之後、over-life 曲線之前
+  assert.ok(once.indexOf('"alignToVelocity"') < once.indexOf('"velocityRotationOffset"'),
+    'alignToVelocity 應排在 velocityRotationOffset 之前');
+});
+
+/* ---- Codex Review 三項 MINOR 的回歸保護 ＋ 旋轉特效下的對齊 ---- */
+
+test('13. 特效本身被旋轉時，朝向仍對齊世界座標的行進方向', function () {
+  /* p.vx/p.vy 在 effect-local space，toWorld() 才把位置轉到世界座標。
+     render rotation 加了 effect.rotation，兩者必須剛好抵銷成世界方向；
+     少加會落後、重複加會多轉一次。 */
+  [0, 0.9, -2.1].forEach(function (effectRotation) {
+    const samples = [];
+    const backend = {
+      createNode: function () { return {}; },
+      updateNode: function (node, t) {
+        if (t && t.visible !== false) samples.push({ x: t.x, y: t.y, rot: t.rotation });
+      },
+      destroyNode: function () {}
+    };
+    const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+    rt.registerPreset({
+      schemaVersion: 1, id: 'rot-effect', duration: 5,
+      layers: [{
+        id: 'p', type: 'particle', assetId: 'pack/star.png',
+        emission: { mode: 'burst', count: 1 }, lifetime: 4,
+        spawn: { shape: 'point' }, spread: 0, speed: 100, direction: 0,
+        gravity: { x: 0, y: 120 }, alignToVelocity: true
+      }]
+    });
+    rt.play('rot-effect', { rotation: effectRotation });
+    for (let i = 0; i < 40; i++) rt.update(1 / 60);
+
+    for (let i = 1; i < samples.length; i++) {
+      const travel = Math.atan2(samples[i].y - samples[i - 1].y, samples[i].x - samples[i - 1].x);
+      let diff = samples[i].rot - travel;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+      assert.ok(Math.abs(diff) < 1e-6,
+        'effect.rotation=' + effectRotation + ' 第 ' + i + ' 幀偏差 ' + diff);
+    }
+  });
+});
+
+test('14. epsilon 是嚴格大於：恰好等於門檻視為無效速度', function () {
+  const eps = VFXCore.VELOCITY_EPSILON;
+  // 速率剛好等於 eps（朝 +x）：不得取得有效角度，應維持 rotationStart
+  const atThreshold = rotationSeries({
+    speed: eps, direction: 0, gravity: { x: 0, y: 0 },
+    rotationStart: 0.4, alignToVelocity: true
+  }, 3);
+  atThreshold.forEach(function (v) {
+    assert.ok(Math.abs(v - 0.4) < 1e-9, '等於門檻應視為無效，收到 ' + v);
+  });
+  // 略高於門檻：應取得角度 0，總和變成 0.4
+  const above = rotationSeries({
+    speed: eps * 10, direction: 0, gravity: { x: 0, y: 0 },
+    rotationStart: 0.4, alignToVelocity: true
+  }, 3);
+  above.forEach(function (v) {
+    assert.ok(Math.abs(v - 0.4) < 1e-9, '角度為 0，總和仍是 0.4，收到 ' + v);
+  });
+  // 用垂直方向確認「高於門檻時確實有加上角度」
+  const aboveVertical = rotationSeries({
+    speed: eps * 10, direction: -90, gravity: { x: 0, y: 0 },
+    rotationStart: 0.4, alignToVelocity: true
+  }, 3);
+  aboveVertical.forEach(function (v) {
+    assert.ok(Math.abs(v - (0.4 - Math.PI / 2)) < 1e-6,
+      '高於門檻時必須加上 -π/2，收到 ' + v);
+  });
+});
+
+test('15. procedural 圖層使用 particle 專屬欄位同樣被擋下', function () {
+  const p = basePreset();
+  p.layers = [{
+    id: 'uv', type: 'procedural', assetId: 'pack/ring.png', effect: 'uvScroll',
+    size: { x: 128, y: 128 }, scrollSpeed: { x: 0.1, y: 0 },
+    alignToVelocity: true, velocityRotationOffset: 1
+  }];
+  const errs = VFXCore.validatePreset(p).errors;
+  assert.ok(errs.some(function (e) { return /不支援的欄位：alignToVelocity/.test(e); }), errs.join('；'));
+  assert.ok(errs.some(function (e) { return /不支援的欄位：velocityRotationOffset/.test(e); }));
+});
+
+test('16. destroy 會清空粒子 free-list，不留下殘餘狀態', function () {
+  const env = runtime();
+  env.rt.registerPreset({
+    schemaVersion: 1, id: 'pool-clear', duration: 0.3,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'burst', count: 40 }, lifetime: 0.1, speed: 10
+    }]
+  });
+  env.rt.play('pool-clear');
+  for (let i = 0; i < 20; i++) env.rt.update(0.05);      // 讓粒子生了又死，free-list 填滿
+  env.rt.destroy();
+  // 沒有公開 API 可讀 free-list，改由原始碼確認 destroy 有清空它
+  const src = fs.readFileSync(path.join(root, 'js', 'vfx-core.js'), 'utf8');
+  assert.ok(/particlePool\.length = 0/.test(src), 'destroy 必須清空 particlePool');
+  const destroyBody = src.slice(src.indexOf('function destroy()'), src.indexOf('function destroy()') + 700);
+  assert.ok(/particlePool\.length = 0/.test(destroyBody), '清空必須發生在 destroy() 內');
+});

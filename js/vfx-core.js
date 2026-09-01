@@ -65,6 +65,12 @@ var VFXCore = (function () {
     }
   };
 
+  /* alignToVelocity 的「有效速度」門檻（px/s）。
+     速率必須「嚴格大於」這個值才算有方向；恰好等於時視為無效。
+     低於門檻就當作沒有方向可言——直接用 atan2(0, 0) 會回傳 0，
+     粒子的朝向會在減速到靜止的那一刻突然彈回 0 弧度。 */
+  var VELOCITY_EPSILON = 0.001;
+
   /* 預設預算。呼叫端可覆寫；用途是讓「幾十個特效同時存在」有單一控制點。 */
   var DEFAULT_BUDGET = {
     maxActiveEffects: 24,
@@ -253,6 +259,16 @@ var VFXCore = (function () {
     validateRange(layer.rotationStart, where + '.rotationStart', errors);
     validateRange(layer.rotationSpeed, where + '.rotationSpeed', errors);
     validateRange(layer.startScale, where + '.startScale', errors, { nonNegative: true });
+    if (layer.alignToVelocity !== undefined && typeof layer.alignToVelocity !== 'boolean') {
+      errors.push(where + '.alignToVelocity 必須是布林值');
+    }
+    /* 刻意不強制「有 velocityRotationOffset 就必須 alignToVelocity」：
+       Editor 的勾選框關掉時 offset 仍留在資料裡，強制檢查會讓純粹的開關動作
+       產生不合法的 preset。offset 單獨存在時沒有作用，這一點寫在 Schema 文件。 */
+    if (layer.velocityRotationOffset !== undefined &&
+        !isFiniteNumber(layer.velocityRotationOffset)) {
+      errors.push(where + '.velocityRotationOffset 必須是有限數（弧度）');
+    }
     if (layer.direction !== undefined && !isFiniteNumber(layer.direction)) {
       errors.push(where + '.direction 必須是有限數（角度）');
     }
@@ -297,7 +313,8 @@ var VFXCore = (function () {
   var TYPE_ONLY_FIELDS = {
     sprite: [],
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
-      'spread', 'gravity', 'startScale', 'rotationStart', 'rotationSpeed'],
+      'spread', 'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
+      'alignToVelocity', 'velocityRotationOffset'],
     procedural: ['effect', 'size', 'scrollSpeed']
   };
 
@@ -387,6 +404,7 @@ var VFXCore = (function () {
     'delay', 'duration', 'scrollSpeed',
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
     'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
+    'alignToVelocity', 'velocityRotationOffset',
     'alphaOverLife', 'scaleOverLife', 'rotationOverLife'];
 
   /* 巢狀物件（position、spawn、emission…）也要遞迴排序，否則同樣語意的 preset
@@ -443,6 +461,9 @@ var VFXCore = (function () {
       startScale: layer.startScale === undefined ? 1 : layer.startScale,
       rotationStart: layer.rotationStart === undefined ? 0 : layer.rotationStart,
       rotationSpeed: layer.rotationSpeed === undefined ? 0 : layer.rotationSpeed,
+      alignToVelocity: layer.alignToVelocity === true,
+      velocityRotationOffset: layer.velocityRotationOffset === undefined
+        ? 0 : layer.velocityRotationOffset,
       alphaOverLife: layer.alphaOverLife,
       scaleOverLife: layer.scaleOverLife,
       rotationOverLife: layer.rotationOverLife
@@ -703,6 +724,10 @@ var VFXCore = (function () {
       p.rotation = sampleRange(d.rotationStart, rng);
       p.rotationSpeed = sampleRange(d.rotationSpeed, rng);
       p.baseScale = sampleRange(d.startScale, rng);
+      /* 速度朝向的記憶。粒子是從 free-list 重用的，這兩個欄位一定要重設，
+         否則新粒子會繼承上一顆的朝向。 */
+      p.velAngle = 0;
+      p.hasVelAngle = false;
       p.node = acquireNode(spec);
       layer.particles.push(p);
       totalParticles++;
@@ -761,6 +786,16 @@ var VFXCore = (function () {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         p.rotation += p.rotationSpeed * dt;
+        /* 速度朝向在積分之後才更新，這樣 gravity 造成的轉向當幀就會反映出來。
+           低於門檻時保留上一次的有效角度，而不是歸零；從出生到現在都沒動過的
+           粒子則完全不加這一項，維持原本的固定旋轉行為。 */
+        if (d.alignToVelocity) {
+          var sp2 = p.vx * p.vx + p.vy * p.vy;
+          if (sp2 > VELOCITY_EPSILON * VELOCITY_EPSILON) {
+            p.velAngle = Math.atan2(p.vy, p.vx);
+            p.hasVelAngle = true;
+          }
+        }
         var k = p.life / p.maxLife;
         var alphaK = sampleCurve(d.alphaOverLife, k);
         var scaleK = sampleCurve(d.scaleOverLife, k);
@@ -770,8 +805,14 @@ var VFXCore = (function () {
         t.visible = true;
         t.x = world.x;
         t.y = world.y;
-        // 粒子朝向要跟著整個特效與圖層一起轉，否則旋轉特效時只有位置轉、圖沒轉
+        /* 粒子朝向要跟著整個特效與圖層一起轉，否則旋轉特效時只有位置轉、圖沒轉。
+           alignToVelocity 是「再加上去」的一項，不是取代：rotationStart 仍是初始
+           偏移、rotationSpeed 仍是相對自轉、rotationOverLife 仍是疊加曲線。
+           關閉時這一行與加入本功能之前完全相同。 */
         t.rotation = effect.rotation + d.rotation + p.rotation + (rotK === null ? 0 : rotK);
+        if (d.alignToVelocity && p.hasVelAngle) {
+          t.rotation += p.velAngle + d.velocityRotationOffset;
+        }
         t.scaleX = p.baseScale * effect.scale * (scaleK === null ? 1 : scaleK);
         t.scaleY = t.scaleX;
         t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
@@ -859,6 +900,8 @@ var VFXCore = (function () {
         pools[key] = [];
       });
       pools = {};
+      // 粒子狀態的 free-list 也要清掉：destroy 是終態，留著等於白佔記憶體
+      particlePool.length = 0;
       // 後端可能持有貼圖等 GPU 資源，Runtime 收攤時要一併通知
       if (typeof backend.destroy === 'function') backend.destroy();
     }
@@ -954,6 +997,7 @@ var VFXCore = (function () {
     PROCEDURAL_EFFECTS: PROCEDURAL_EFFECTS,
     HARD_LIMITS: HARD_LIMITS,
     DEFAULT_BUDGET: DEFAULT_BUDGET,
+    VELOCITY_EPSILON: VELOCITY_EPSILON,
     validatePreset: validatePreset,
     serialisePreset: serialisePreset,
     createRuntime: createRuntime,

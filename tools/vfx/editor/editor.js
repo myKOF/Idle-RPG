@@ -55,7 +55,7 @@
 
   var COMMON_FIELDS = [
     { key: 'id', label: 'id', kind: 'text' },
-    { key: 'enabled', label: 'enabled', kind: 'bool' },
+    { key: 'enabled', label: 'enabled', kind: 'bool', default: true },
     { key: 'assetId', label: 'assetId', kind: 'asset' },
     num('zIndex', 'zIndex', 1),
     vec('position', 'position'),
@@ -98,7 +98,11 @@
       vec('gravity', 'gravity'),
       json('startScale', 'startScale'),
       json('rotationStart', 'rotationStart'),
-      json('rotationSpeed', 'rotationSpeed')
+      json('rotationSpeed', 'rotationSpeed'),
+      /* particle 專屬：只掛在 TYPE_FIELDS.particle 底下，
+         sprite／procedural 的 Inspector 不會出現這兩欄。 */
+      { key: 'alignToVelocity', label: 'alignToVelocity', kind: 'bool', default: false },
+      num('velocityRotationOffset', 'velocityRotationOffset(rad)')
     ],
     procedural: [
       { key: 'effect', label: 'effect', kind: 'select', options: function () { return VFXCore.PROCEDURAL_EFFECTS; } },
@@ -267,7 +271,10 @@
       if (f.kind === 'bool') {
         control = document.createElement('input');
         control.type = 'checkbox';
-        control.checked = layer[f.key] !== false;
+        /* 每個布林欄位的預設值不同：enabled 沒寫就是開，alignToVelocity 沒寫就是關。
+           一律用「!== false」會讓沒設定的 alignToVelocity 顯示成已勾選。 */
+        var boolDefault = f.default !== false;
+        control.checked = layer[f.key] === undefined ? boolDefault : layer[f.key] !== false;
         control.onchange = function () { layer[f.key] = control.checked; onPresetChanged(); };
       } else if (f.kind === 'select') {
         control = document.createElement('select');
