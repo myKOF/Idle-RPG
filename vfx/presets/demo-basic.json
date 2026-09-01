@@ -9,50 +9,164 @@
       "type": "sprite",
       "assetId": "kenney_light-masks-1.0/default/ring_a.png",
       "zIndex": 0,
-      "position": { "x": 0, "y": 0 },
-      "scale": { "x": 0.5, "y": 0.25 },
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.5,
+        "y": 0.25
+      },
       "tint": "#ffb066",
       "blendMode": "add",
       "duration": 1.2,
-      "alphaOverLife": [[0, 0], [0.15, 0.9], [1, 0]],
-      "scaleOverLife": [[0, 0.4], [1, 1.6]]
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          1,
+          1.6
+        ]
+      ]
     },
     {
       "id": "smoke",
       "type": "sprite",
       "assetId": "kenney_particle-pack/png-transparent/smoke_04.png",
       "zIndex": 1,
-      "position": { "x": 0, "y": -40 },
-      "scale": { "x": 0.6, "y": 0.6 },
+      "position": {
+        "x": 0,
+        "y": -40
+      },
+      "scale": {
+        "x": 0.6,
+        "y": 0.6
+      },
       "tint": "#8a8a8a",
       "blendMode": "normal",
       "delay": 0.1,
       "duration": 1.5,
-      "alphaOverLife": [[0, 0], [0.3, 0.55], [1, 0]],
-      "scaleOverLife": [[0, 0.6], [1, 1.3]],
-      "rotationOverLife": [[0, 0], [1, 0.6]]
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          1.3
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
     },
     {
       "id": "sparks",
       "type": "particle",
       "assetId": "kenney_particle-pack/png-black-background/star_02.png",
       "zIndex": 2,
-      "position": { "x": 0, "y": 0 },
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "tint": "#ffd27f",
       "blendMode": "add",
-      "emission": { "mode": "burst", "count": 24 },
+      "emission": {
+        "count": 24,
+        "mode": "burst"
+      },
       "maxParticles": 48,
-      "lifetime": [0.45, 0.9],
-      "spawn": { "shape": "circle", "radius": 8 },
-      "speed": [60, 140],
+      "lifetime": [
+        0.45,
+        0.9
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        60,
+        140
+      ],
       "direction": -90,
       "spread": 110,
-      "gravity": { "x": 0, "y": 90 },
-      "startScale": [0.12, 0.28],
-      "rotationStart": [0, 6.28],
-      "rotationSpeed": [-3, 3],
-      "alphaOverLife": [[0, 1], [0.7, 0.8], [1, 0]],
-      "scaleOverLife": [[0, 1], [1, 0.3]]
+      "gravity": {
+        "x": 0,
+        "y": 90
+      },
+      "startScale": [
+        0.12,
+        0.28
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -3,
+        3
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
     }
   ]
 }
