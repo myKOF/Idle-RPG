@@ -531,6 +531,10 @@ MAJOR／MINOR、review 未列在說明檔中的子系統、或提出架構重寫
 已建立：本規範文件、`tools/vfx/review-with-codex.cjs`、
 `docs/vfx/ANTIGRAVITY_CLI_CAPABILITIES.md`。
 
+VFX Core、Pixi Backend、Editor、Asset Library／Semantic Search、
+Production Asset Export、Editor 存檔回寫皆已完成並通過人工驗收。
+**自 P0-2 起，VFX 正式進入 Production 階段，開發策略改為第 9 節。**
+
 ## 8.1 Antigravity 的正式規則（非階段性狀態）
 
 Antigravity 是 **Optional Manual QA Agent**，**不進行 CLI 自動呼叫**（第 3.3.1 節）。
@@ -548,3 +552,162 @@ Antigravity 是 **Optional Manual QA Agent**，**不進行 CLI 自動呼叫**（
 - Commit
 
 下一步由使用者決定。
+
+---
+
+# 9. VFX Production 階段
+
+> **本節只適用於 VFX Production，不是 Idle-RPG 的全域工作流。**
+> Gameplay、存檔、UI、經濟數值等工作一律沿用原有流程（第 1.2 節）。
+
+## 9.1 開發策略：工具跟著真實需求走
+
+Production 階段**不再以「先把 Editor 所有功能做完」為開發策略**。
+
+```
+先製作真正的 VFX，實際遇到工具痛點之後才補工具。
+```
+
+以下項目**不得預先實作**，除非真實 Production 已證明其中某項成為明確阻礙：
+
+- Timeline
+- Curve GUI
+- Zoom / Pan
+- Duplicate Layer
+- Layer Reorder
+- Undo / Redo
+- Mask
+- Vortex / Attractor
+- Runtime Adapter
+
+「明確阻礙」指的是在實際做特效的過程中反覆卡住並可具體描述，
+不是「想像中將來會需要」。
+
+## 9.2 標準流程（Reference-driven）
+
+```
+Reference
+  ↓
+Reference Breakdown
+  ↓
+Semantic Asset Search
+  ↓
+VFX Prototype
+  ↓
+Preview（使用者可觀看）
+  ↓
+User Feedback
+  ↓
+Refinement
+  ↓
+Final Preset
+```
+
+## 9.3 Reference 的使用方式
+
+使用者可提供遊戲截圖、VFX 截圖、動畫截圖，或多張不同來源的 Reference。
+
+**Reference 不代表逐像素複製。** 目標是拆解它的視覺語言：
+
+silhouette、color hierarchy、brightness hierarchy、motion、particle density、
+particle direction、timing、scale、layer composition、glow、trail、smoke、
+ground interaction、impact/readability
+
+再用**我們自己的** VFX Runtime、Preset Schema、`effects-materials` Asset Library、
+Semantic Search 與 procedural 能力，重新建立相近的視覺語言。
+
+多份 Reference 可以分工，例如：
+
+| Reference | 負責 |
+| --- | --- |
+| A | silhouette |
+| B | color |
+| C | particle |
+| D | ground effect |
+
+**必須記錄每份 Reference 的用途與優先順序**，否則後續回饋無法判斷該調哪一項。
+
+## 9.4 Reference Breakdown（動手前必做）
+
+看到 Reference 不得直接開始堆 Layer。先回答：
+
+- Reference 的主要視覺特徵是什麼？
+- 哪些目前 Runtime 做得到？
+- 哪些只能近似？
+- 哪些目前做不到？
+- 哪些是 **Material Gap**（素材不足，見第 4.5 節）？
+- 哪些是真正的 **Core Gap**（能力不足）？
+
+Material Gap 與 Core Gap 必須分開講。素材不足卻去改 Core，
+是這條線最容易犯、也最貴的錯。
+
+## 9.5 不得因為 Reference 用了我們沒有的技術就擴充 Core
+
+Reference 若使用 volumetric rendering、3D mesh、GPU simulation、distortion、
+flow map、depth particle、複雜 masking 等技術：
+
+**先用現有能力做低成本近似。**
+
+只有在真實 Production 證明現有能力無法達到可接受結果之後，
+才提出 Core Enhancement，並依第 4 節的流程處理。
+
+## 9.6 使用者的回饋是視覺語言，不是參數
+
+使用者不是 VFX 專業美術。**不得要求使用者知道**
+`emissionRate`、`alphaOverLife`、`rotationSpeed`、particle lifetime、
+blend mode、velocity、curve control point 這類欄位。
+
+使用者只需要用視覺語言回饋，例如：
+
+> 「火太散」「旋轉不夠明顯」「核心不夠亮」「速度太快」
+> 「粒子太多」「不像 Reference A」「我要更有重量感」
+
+**把這些翻譯成具體參數修改是 Claude 的工作。**
+
+## 9.7 兩個合理方向時先做低成本 Preview
+
+若存在 A / B 兩個合理的視覺方向：
+
+**不得自行選一個並花大量時間做到最終版。**
+
+先各做一份低成本 Preview，讓使用者看過後決定方向。
+
+## 9.8 中間產品制度：視覺工作不得只用文字證據交付
+
+視覺型工作**不得**只以 tests、logs、JSON、benchmark 作為完成證據。
+
+正式 VFX 應在適當節點提供使用者可直接觀看的 Editor Preview：
+
+| Checkpoint | 內容 |
+| --- | --- |
+| 1 | 主體輪廓 / 基本運動 |
+| 2 | Particle / Glow / Trail / Secondary Motion |
+| 3 | Timing / Color / Polish |
+| Final | 最終候選 |
+
+不要求機械式的 30% / 60% / 90%。核心原則是：
+
+```
+在視覺方向還便宜、還容易修改的時候讓使用者看到，
+而不是全部做完才展示。
+```
+
+Preview 的提供方式：啟動既有 Editor Server，給出
+`?preset=<id>` 網址讓使用者實際觀看與操作。
+
+## 9.9 Reference 與版權
+
+第三方遊戲或網路上的 VFX 圖片**只能**作為 visual / composition / motion /
+color reference。
+
+不得：
+
+- 擷取第三方遊戲素材
+- 直接使用來源遊戲的 texture
+- 嘗試逐像素重建具有高度識別性的美術
+- 把 Reference 當成我們自己的 production asset
+
+最終 VFX 必須由我們自己的 Runtime ＋ 合法 Asset Library ＋
+procedural / data-driven composition 建立。
+
+這一條與第 4.5.5 節（不得自行取得第三方素材）一致，不是新增的例外。
