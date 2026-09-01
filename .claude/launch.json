@@ -2,9 +2,21 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "vfx-editor",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/vfx/editor-server.cjs",
+        "--port",
+        "28361"
+      ],
+      "port": 28361
+    },
+    {
       "name": "sim-dashboard",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["tools/sim_server.cjs"],
+      "runtimeArgs": [
+        "tools/sim_server.cjs"
+      ],
       "port": 28342
     },
     {
