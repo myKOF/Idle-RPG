@@ -651,6 +651,85 @@ test('R1 GET 仍可讀 preset，且非 GET/PUT 的方法被擋',
   }));
 
 /* ============================================================
+   啟動器依賴的身分端點
+   ============================================================ */
+
+/* 啟動VFX編輯器.bat 用 /__whoami 判斷「這個埠上的是不是本副本的 Editor」。
+   五份 worktree 共用同一個埠範圍，端點若被拿掉或不再回報目錄，
+   啟動器會靜靜地把別的副本當成自己的，改了半天才發現改錯地方。 */
+test('W6 /__whoami 回報服務中的目錄，供啟動器辨識工作副本',
+  withSandbox(async function (sb, h) {
+    const res = await request(h.port, { path: '/__whoami' });
+    assert.equal(res.status, 200);
+    assert.ok(/^idle-rpg-vfx-editor /.test(res.text), '必須以固定標記開頭：' + res.text);
+    assert.equal(res.text.trim(), 'idle-rpg-vfx-editor ' + path.resolve(sb.repoRoot),
+      '必須含服務中的絕對目錄，否則不同副本無法區分');
+
+    /* 兩個不同的沙箱必須回報不同的目錄——這才是它存在的理由 */
+    const sb2 = makeSandbox();
+    const h2 = await withServer(sb2);
+    try {
+      const res2 = await request(h2.port, { path: '/__whoami' });
+      assert.notEqual(res2.text, res.text, '不同工作副本必須回報不同身分');
+    } finally {
+      await closeServer(h2);
+      cleanup(sb2);
+    }
+  }));
+
+test('W7 啟動器與伺服器對身分標記與埠範圍的認知一致', function () {
+  const serverSrc = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
+  const launcher = fs.readFileSync(path.join(REPO, '啟動VFX編輯器.bat'), 'utf8');
+
+  const markMatch = serverSrc.match(/const WHOAMI_MARK = '([^']+)'/);
+  assert.ok(markMatch, '伺服器必須定義 WHOAMI_MARK');
+  assert.ok(launcher.indexOf('set MARK=' + markMatch[1] + ' %CD%') >= 0,
+    '啟動器的 MARK 必須等於伺服器的標記加上工作目錄');
+
+  const base = Number(serverSrc.match(/const PORT_BASE = (\d+)/)[1]);
+  const tries = Number(serverSrc.match(/const PORT_TRIES = (\d+)/)[1]);
+  assert.ok(launcher.indexOf('for /l %%p in (' + base + ',1,' + (base + tries - 1) + ')') >= 0,
+    '啟動器掃描的埠範圍必須涵蓋伺服器會用到的 ' + base + '~' + (base + tries - 1));
+});
+
+test('W8 兩支 .bat 必須是 CRLF，且非 echo 行不得含多位元組字元', function () {
+  /* cmd 是逐段解析的，chcp 切換編碼後，rem／指令位置上的多位元組字元會被
+     打散成指令執行；LF 行尾則會讓 cmd 在檔案中途失去同步。
+     這兩件事都只在實際雙擊時才會炸，測試裡釘住比較實在。 */
+  [path.join(REPO, '啟動VFX編輯器.bat'),
+    path.join(REPO, 'tools', 'vfx', 'editor_server_window.bat')].forEach(function (file) {
+    const raw = fs.readFileSync(file);
+    const name = path.basename(file);
+    assert.ok(raw.includes(Buffer.from('\r\n')), name + ' 必須是 CRLF');
+    assert.equal((raw.toString('latin1').match(/[^\r]\n/g) || []).length, 0,
+      name + ' 不得有單獨的 LF 行尾');
+    /* 0x0B 之類的控制字元代表路徑字面量在產生過程被轉義吃掉了（tools\vfx → tools+VT+fx） */
+    assert.equal((raw.toString('latin1').match(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g) || []).length, 0,
+      name + ' 含異常控制字元，路徑字面量可能被轉義破壞');
+
+    raw.toString('utf8').split('\r\n').forEach(function (line, i) {
+      const isEcho = /^\s*echo(\s|\.|$)/i.test(line);
+      if (isEcho) {
+        /* 中文與 %VAR% 同行時，實測 echo 前綴會在 chcp 之後遺失，
+           cmd 會把中文當成指令執行。標籤與值必須拆行。 */
+        const hasCJK = /[一-鿿＀-￯]/.test(line);
+        const hasVar = /%[A-Za-z_][A-Za-z0-9_]*%/.test(line);
+        assert.ok(!(hasCJK && hasVar),
+          name + ':' + (i + 1) + ' 中文與變數不得同行：' + line);
+        return;
+      }
+      /* 非 echo 行：只有「被雙引號包住的參數」可以是多位元組。
+         真正的危險是 rem／指令位置上的裸中文——編碼錯位後它會被當成指令執行；
+         引號內的字串最壞只是顯示錯字（既有的 啟動數值模擬器.bat 也是這樣寫
+         start 的視窗標題，實測沒問題），所以不必連那個也禁掉。 */
+      const outsideQuotes = line.replace(/"[^"]*"/g, '""');
+      assert.ok(!/[^\x00-\x7f]/.test(outsideQuotes),
+        name + ':' + (i + 1) + ' 非 echo 行的引號外必須是純 ASCII：' + line);
+    });
+  });
+});
+
+/* ============================================================
    測試縫隙不得被正式路徑使用
    ============================================================ */
 

@@ -55,6 +55,9 @@ const ASSET_PREFIX = '/asset-library/';
 const REPO_ALLOWLIST = ['/tools/vfx/editor/', '/js/', '/vfx/'];
 const PORT_BASE = 28361;
 const PORT_TRIES = 10;
+/* 啟動器用來確認「這個埠上的是不是本副本的 Editor」，見下方路由處的說明 */
+const WHOAMI_PATH = '/__whoami';
+const WHOAMI_MARK = 'idle-rpg-vfx-editor';
 
 /* ---- Preset 存檔 API 的常數（全部是常數，沒有一個來自請求） ---- */
 const PRESETS_DIR_REL = 'vfx/presets';
@@ -456,6 +459,16 @@ function createServer(ctx) {
     } catch (e) {
       return send(res, 400, 'Bad URL');
     }
+
+    /* 身分端點：回報「我是哪一份工作副本的 VFX Editor」。
+       五份 worktree（claude／codex／antigravity／develop／production）跑的是
+       同一支伺服器與同一個連接埠範圍，只問「這個埠有沒有人回應」的話，
+       從 claude 按下啟動卻開到 develop 的 Editor，改了半天才發現改錯副本。
+       啟動器用這個端點確認身分，所以必須含 repo 路徑，不能只回專案名稱。 */
+    if (pathname === WHOAMI_PATH) {
+      return send(res, 200, WHOAMI_MARK + ' ' + path.resolve(ctx.repoRoot) + '\n');
+    }
+
     if (pathname === '/') pathname = '/tools/vfx/editor/index.html';
 
     if (pathname.indexOf(ASSET_PREFIX) === 0) {
@@ -506,6 +519,7 @@ function start(assetRoots, port) {
     });
     console.log('  存檔 API：PUT ' + SAVE_PREFIX + '<presetId>' + SAVE_SUFFIX +
       ' → ' + path.join(REPO_ROOT, PRESETS_DIR_REL));
+    console.log('  身分     ：' + WHOAMI_PATH + ' → ' + WHOAMI_MARK + ' ' + REPO_ROOT);
     console.log('  Ctrl+C 結束');
   });
   return server;
