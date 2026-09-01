@@ -4,8 +4,15 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 15,
+  "assetCount": 20,
   "assets": [
+    {
+      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "relativePath": "kenney_light-masks-1.0/Default/circle_a.png",
+      "package": "kenney_light-masks-1.0",
+      "contentHash": "sha256:57afeb410f3bf31bcc1a8389714853a775eb5a65f969d045ef29f35d1401bea1",
+      "fileSize": 38943
+    },
     {
       "assetId": "kenney_light-masks-1.0/default/circle_a_noise.png",
       "relativePath": "kenney_light-masks-1.0/Default/circle_a_noise.png",
@@ -56,6 +63,13 @@
       "fileSize": 43388
     },
     {
+      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/light_03.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:adbef8446fe55f8a5ad1fe8423e2683f8102bca792164c95f276ab77abefeb5f",
+      "fileSize": 62268
+    },
+    {
       "assetId": "kenney_particle-pack/png-black-background/magic_03.png",
       "relativePath": "kenney_particle-pack/PNG (Black background)/magic_03.png",
       "package": "kenney_particle-pack",
@@ -70,11 +84,32 @@
       "fileSize": 82487
     },
     {
+      "assetId": "kenney_particle-pack/png-black-background/spark_05.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/spark_05.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:173bcf3e75969a08d8db3e64ec4f5e78ffe11fee156186e30076baea649f673d",
+      "fileSize": 44785
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/spark_06.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:b615e988e12bbff49ad061c59d8d08f976fab9f72ceac0224b67b4558e336857",
+      "fileSize": 42423
+    },
+    {
       "assetId": "kenney_particle-pack/png-black-background/star_02.png",
       "relativePath": "kenney_particle-pack/PNG (Black background)/star_02.png",
       "package": "kenney_particle-pack",
       "contentHash": "sha256:48b61d81a78523361d51a0c190ead189851501ef752e441c2c63c8a0335ec33c",
       "fileSize": 37858
+    },
+    {
+      "assetId": "kenney_particle-pack/png-black-background/star_08.png",
+      "relativePath": "kenney_particle-pack/PNG (Black background)/star_08.png",
+      "package": "kenney_particle-pack",
+      "contentHash": "sha256:83e451b6a931f968216196f39e00949c26bfeccea5257f859a944d735266d48d",
+      "fileSize": 22840
     },
     {
       "assetId": "kenney_particle-pack/png-black-background/trace_02.png",
