@@ -1,0 +1,7 @@
+{
+  "kind": "vfx-export-root",
+  "schemaVersion": 1,
+  "owner": "idle-rpg-vfx-exporter",
+  "repoRelativePath": "images/vfx/assets",
+  "note": "這個目錄由 tools/vfx/export-assets.cjs 完全管理，內容會被整棵替換與刪除。不要手動放檔案。"
+}
