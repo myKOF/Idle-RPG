@@ -33,7 +33,7 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 /* 側欄用 minmax：空間夠時維持 300/320，視窗變窄時先收縮側欄，
    而不是讓中央的預覽被擠成 0 寬。 */
 #layout { flex: 1 1 auto; display: grid;
-          grid-template-columns: minmax(210px, 300px) minmax(0, 1fr) minmax(240px, 320px);
+          grid-template-columns: minmax(210px, 280px) minmax(0, 1fr) minmax(360px, 440px);
           min-height: 0; overflow: hidden; }
 #left, #right { background: #1a1a20; overflow: auto; border-right: 1px solid #2c2c34;
                 min-width: 0; }
@@ -74,7 +74,7 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .row { display: flex; gap: 6px; padding: 0 10px 6px; }
 
 #inspector { padding: 0 10px 12px; }
-.field { display: grid; grid-template-columns: 110px 1fr; gap: 6px;
+.field { display: grid; grid-template-columns: 132px 1fr; gap: 6px;
          align-items: center; margin-bottom: 5px; }
 .field > label { color: #9a9aa6; font-size: 12px; }
 .field input, .field select { width: 100%; }
@@ -178,3 +178,37 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .asset-field { display: flex; gap: 4px; min-width: 0; }
 .asset-field input { flex: 1 1 auto; min-width: 0; }
 .asset-field .pick-btn { flex: 0 0 auto; white-space: nowrap; }
+
+/* ---- Over-Life 曲線編輯 ---- */
+.ol-section { border: 1px solid #26262e; border-radius: 4px; margin: 4px 0; overflow: hidden; }
+.ol-head { display: block; width: 100%; text-align: left; padding: 5px 8px;
+           background: #22222a; border: 0; color: #c8c8d2; font-size: 12px; cursor: pointer; }
+.ol-head:hover { background: #2a2a34; }
+.ol-body { padding: 6px; }
+.ol-row { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px;
+          align-items: start; margin-bottom: 6px; }
+.ol-row .curve, .ol-row .ol-tools { grid-column: 2; }
+.ol-axis { grid-row: 1; color: #7fb2ff; font-size: 11px; padding-top: 4px; }
+.ol-link { display: block; font-size: 11px; color: #9a9aa6; margin-bottom: 6px; }
+.ol-hint { font-size: 10px; color: #70707c; line-height: 1.5; }
+.ol-tools { display: flex; gap: 4px; margin-top: 3px; }
+.ol-tools button { font-size: 10px; padding: 1px 6px; }
+
+.curve { position: relative; outline: none; }
+/* 焦點框不是裝飾：Delete 的去向由焦點決定，看不出焦點在哪就會刪錯東西 */
+.curve:focus-within .curve-canvas { border-color: #7fb2ff; }
+.curve-canvas { display: block; width: 100%; border: 1px solid #2c2c34;
+                border-radius: 3px; background: #15151a; }
+.curve-readout { height: 13px; font-size: 10px; color: #8a8a96; padding-top: 2px;
+                 font-variant-numeric: tabular-nums; }
+.curve-readout.warn { color: #ffb454; }
+
+/* 分區／對照切換 */
+.ol-title { display: flex; align-items: center; justify-content: space-between; }
+.ol-modes { display: flex; gap: 2px; }
+.ol-modes button { font-size: 10px; padding: 1px 8px; background: #22222a;
+                   border: 1px solid #2c2c34; color: #8a8a96; cursor: pointer; }
+.ol-modes button.on { background: #2f4a72; border-color: #4a6ea8; color: #d6e4ff; }
+.ol-head:disabled { cursor: default; color: #7fb2ff; background: #1d1d24; }
+/* 游標讀數用暖色，和「選取的控制點」讀數區分開 */
+.curve-readout.cursor { color: #ffb454; }

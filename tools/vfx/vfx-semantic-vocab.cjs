@@ -84,6 +84,60 @@ const VOCAB = {
 };
 
 
+/* ---------------- 顯示標籤 ----------------
+
+   詞彙表的值本身永遠是英文——它們是資料，會進 semantics 檔、進搜尋、進規則。
+   這裡只是給人看的那一層。使用者不是 VFX 專業人員，看到 caustics、filament、
+   scorch 猜不出是什麼；但把值也改成中文的話，metadata 與程式就得跟著改，
+   那是把顯示問題變成資料問題。
+
+   保留英文在括號裡，是因為右側的素材資訊面板顯示的是原始值（usage: core, glow），
+   兩邊要能對得起來，否則使用者會以為那是兩套不同的分類。
+
+   註解裡本來就有這些中文說明，這裡只是把它們變成可以用的資料。 */
+const LABELS = {
+  kind: {
+    vfx: '特效素材', nonVfx: '非特效', preview: '套件預覽圖'
+  },
+  shape: {
+    disc: '實心圓／光點', ring: '環帶', cone: '錐狀投影', fan: '放射扇葉',
+    star: '星芒閃光', streak: '單向長條', arc: '弧形帶', filament: '細絲電弧',
+    cloud: '團塊煙霧', splat: '潑濺', polygon: '幾何塊面', caustics: '水波焦散',
+    silhouette: '實體剪影', irregular: '不規則'
+  },
+  usage: {
+    core: '特效主體', particle: '通用粒子', spark: '火花', ember: '餘燼',
+    smoke: '煙霧', glow: '輝光光暈', ring: '環狀擴散', trail: '拖尾',
+    beam: '光束', mask: '遮罩', impact: '命中爆閃', scorch: '地面痕跡',
+    distortion: '扭曲來源', noise: '噪聲來源'
+  },
+  element: {
+    neutral: '中性（可染色）', fire: '火', ice: '冰', water: '水',
+    lightning: '雷', poison: '毒', nature: '自然', dark: '暗', light: '光'
+  },
+  tag: {
+    soft: '柔邊', sharp: '銳利', noisy: '雜訊感', smooth: '平滑',
+    wispy: '稀疏飄散', dense: '濃密', radial: '放射狀', directional: '有方向性',
+    swirl: '漩渦', symmetric: '對稱', hollow: '中空', layered: '多層'
+  },
+  confidence: {
+    high: '高', medium: '中', low: '低'
+  },
+  /* 篩選欄位本身的名稱 */
+  field: {
+    kind: '種類', shape: '形狀', usage: '用途', element: '元素',
+    tag: '標籤', confidence: '信心'
+  }
+};
+
+/* 顯示用字串。查不到就原樣回傳——新增字彙時忘了補中文，
+   結果是看到英文原值，而不是空白或 undefined。 */
+function labelOf(group, value) {
+  const g = LABELS[group];
+  const zh = g && g[value];
+  return zh ? zh + '（' + value + '）' : String(value);
+}
+
 /* blendModeHint 不存進語意檔——它可以由事實層的 backgroundVariant 推導，
    存下來就是複製事實資料。這裡提供唯一的推導規則，查詢端共用。 */
 function blendModeFromFacts(facts) {
@@ -187,6 +241,7 @@ function validateAgainstFacts(record, facts) {
     VOCAB: VOCAB,
     KIND: KIND, SHAPE: SHAPE, USAGE: USAGE, ELEMENT: ELEMENT, TAG: TAG,
     CONFIDENCE: CONFIDENCE, SOURCE: SOURCE,
+    LABELS: LABELS, labelOf: labelOf,
     blendModeFromFacts: blendModeFromFacts,
     tintableFromFacts: tintableFromFacts,
     tileableCandidateFromFacts: tileableCandidateFromFacts,

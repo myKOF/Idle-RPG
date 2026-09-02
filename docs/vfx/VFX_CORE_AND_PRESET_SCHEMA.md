@@ -165,6 +165,101 @@ Node 的 `fs` 在 Windows 上沒有可攜的等價物。
 
 ---
 
+
+## 1.4 Over-Life 曲線與分軸縮放
+
+曲線的資料形式只有一種，Editor 的圖形化編輯器並沒有引入第二種格式：
+
+```
+undefined            這個屬性沒有曲線
+<number>             整段生命週期都是這個值
+[[t,v],[t,v],…]      線性插值，t ∈ 0..1 且遞增，最多 16 點
+```
+
+### 端點不必落在 0 與 1
+
+`sampleCurve` 對超出範圍的取樣取端點值（`t <= curve[0][0]` 取第一點、
+`t >= last[0]` 取最後一點），所以 `[[0.3, 2]]` 這種曲線是合法且有意義的：
+整段生命週期都是 2。Editor 的圖上把這段水平延伸也畫出來，
+免得有人以為一定要先補兩個端點。
+
+### `alphaOverLife` 是係數，不是不透明度
+
+它乘在 `layer.alpha` 上，**可以大於 1**。現有 preset 大量利用這一點做過曝：
+`lightning-orb-field-b` 的 `field-glow`、`orb-*-glow`、`orb-*-core` 都用到 1.09～1.26。
+
+所以 Editor 只夾下限 0（與 Core 的 `nonNegative` 一致），**不夾上限**。
+把它當成 0..1 的不透明度去夾，會靜靜改掉這些既有數值。
+
+### `rotationOverLife` 是弧度，且是 Z 軸
+
+它直接加進 `transform.rotation`，而後端把它交給 `node.rotation`——
+Pixi 的 2D Sprite 只有這一個真正的旋轉量，也就是平面上的 Z 旋轉。
+
+Editor 顯示為度、儲存為弧度，換算只發生在 `curve-model.js`。
+現有旋轉曲線跨度從 ±2.9°（`fire-tornado` / `funnel-body`）到 ±1440°
+（`black-hole`），以弧度顯示就是 ±0.05 到 ±25.13——沒有人能靠那些數字判斷轉了幾圈。
+
+### 分軸縮放：`scaleXOverLife` / `scaleYOverLife`
+
+`transform` 契約本來就有獨立的 `scaleX` 與 `scaleY`，後端也是
+`node.scale.set(t.scaleX, t.scaleY)`，靜態的 `layer.scale` 更早就是 `{x, y}`。
+唯一等比的是**曲線**：擴充前兩軸共用同一個 `scaleOverLife` 取樣值。
+
+相容規則（沒給就沿用等比曲線，所以舊 preset 逐位元不變）：
+
+```
+兩個都沒有      →  X = Y = scaleOverLife        （擴充前的行為）
+只有 X          →  X = scaleXOverLife, Y = scaleOverLife
+只有 Y          →  X = scaleOverLife, Y = scaleYOverLife
+兩個都有        →  各走各的
+```
+
+**只有 `sprite` 與 `procedural` 接受這兩個欄位。** 它們走 `updateSpriteLayer`，
+兩軸各自取樣；粒子走 `updateParticleLayer`，那裡 `t.scaleY = t.scaleX`，
+兩軸永遠相等。粒子層寫了也不會生效，所以由 `TYPE_ONLY_FIELDS` 直接判定為
+「不支援的欄位」而報錯——收下來再靜靜忽略正是規格禁止的 silent fallback。
+
+### `rotationXOverLife` / `rotationYOverLife`：正交投影的翻轉
+
+`transform` 契約裡沒有 rotationX／rotationY，後端也沒有 skew／projection，
+所以這兩個欄位**不是**真的 3D 旋轉。它們做的是正交投影：
+
+一張沒有厚度的平面繞著自己的水平軸轉 θ，在沒有透視的情況下，
+投影到螢幕上的高度就是原本的 `cos θ` 倍。這不是近似值，是正確的結果。
+
+```
+0°   → cos = 1     正面
+90°  → cos = 0     側面，看不見
+180° → cos = -1    翻到背面（負縮放＝鏡像）
+```
+
+所以實作就是乘在對應的軸上，而且**軸與被壓縮的方向是交叉的**：
+
+```
+rotationXOverLife  →  scaleY *= cos(θ)     繞水平軸轉，變矮
+rotationYOverLife  →  scaleX *= cos(θ)     繞垂直軸轉，變窄
+```
+
+與真 3D 的差別有兩點，要用之前先知道：沒有近大遠小；
+翻到背面看到的是同一張圖的鏡像，不會露出另一面。
+做翻牌、風車葉片、旋轉光環這類都夠用；真的需要透視就得換一個帶投影矩陣的
+後端，那會動到所有既有 preset 的座標語意，是另一個層級的改動。
+
+欄位歸屬與分軸縮放相同（只有 `sprite` 與 `procedural`），
+因為它們最終就是套用在 `scaleX` / `scaleY` 上，粒子層沒有分軸縮放可以承載。
+
+沒給就是 1（`cos(0)`），所以舊 preset 逐位元不變。
+
+### `play(presetId, { startTime })`
+
+從生命週期的第幾秒開始播，預設 0。給 Editor 用的：
+註冊過的 preset 是凍結深拷貝，改任何參數都必須重新註冊並重播，
+播放頭若總是歸零，正在調 50% 位置的曲線就永遠看不到自己改的那一段。
+
+搭配 `timeOf(handle)` 讀出目前時間。Sprite 的 transform 是 progress 的純函數，
+所以直接跳到該時間是精確的；粒子則是從沒有歷史的狀態開始，與原本的重播行為一致。
+
 # 2. 圖層型別（只有三種是真正不同的繪圖原語）
 
 需求裡列了 Sprite / Mask / Particle / Ring / Glow / Procedural 六項，

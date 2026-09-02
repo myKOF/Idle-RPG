@@ -74,6 +74,16 @@
   /* ---------------- Inspector 欄位描述（schema 驅動） ---------------- */
 
   function num(key, label, step) { return { key: key, label: label, kind: 'number', step: step || 0.01 }; }
+  /* 角度欄位：畫面上是度，檔案裡是弧度。
+     Schema 不動——Core 把 rotation 直接交給 Pixi 的 node.rotation，那就是弧度。
+     但整個編輯器（以及遊戲的其他參數表）都以度為單位，Inspector 裡混著
+     1.5708 這種數字只會逼人拿計算機。換算集中在這個 kind，不散落各處。 */
+  function deg(key, label, step) {
+    return { key: key, label: label, kind: 'angle', step: step || 1 };
+  }
+  /* 角度範圍：值可能是單一數字或 [min, max]（Core 的 sampleRange）。
+     兩種形式都要換算，所以不能沿用純 JSON 欄位。 */
+  function degRange(key, label) { return { key: key, label: label, kind: 'angleRange' }; }
   function vec(key, label) { return { key: key, label: label, kind: 'vec2' }; }
   function json(key, label) { return { key: key, label: label, kind: 'json' }; }
 
@@ -83,7 +93,7 @@
     { key: 'assetId', label: 'assetId', kind: 'asset' },
     num('zIndex', 'zIndex', 1),
     vec('position', 'position'),
-    num('rotation', 'rotation(rad)'),
+    deg('rotation', 'rotation(°)'),
     vec('scale', 'scale'),
     vec('anchor', 'anchor'),
     num('alpha', 'alpha'),
@@ -103,11 +113,41 @@
     scrollSpeed: { x: 0, y: 0 }
   };
 
-  var CURVE_FIELDS = [
-    json('alphaOverLife', 'alphaOverLife'),
-    json('scaleOverLife', 'scaleOverLife'),
-    json('rotationOverLife', 'rotationOverLife')
-  ];
+  /* ---------------- Over-Life 曲線區塊 ----------------
+
+     每個屬性的 policy 決定值的上下限、單位與顯示換算；curve-editor 本身
+     不認識 alpha／scale／rotation，換一個屬性只要換一份 policy。
+
+     透明度**不夾到 1**。alphaOverLife 是乘在 layer.alpha 上的係數，不是
+     絕對不透明度：現有 preset（lightning-orb-field-b 的 field-glow、orb-*-glow…）
+     大量使用 1.09～1.26 讓亮部過曝。夾到 1 會靜靜改掉這些既有數值，
+     那正是規格禁止的行為。所以只夾下限 0（與 Core 的 nonNegative 一致），
+     Y 軸基準顯示 0..1，超過就自動放大。 */
+  var CURVE_POLICY = {
+    alpha: {
+      min: 0, max: null, baseline: [0, 1], defaultValue: 1, decimals: 3, unit: ''
+    },
+    scale: {
+      min: 0, max: null, baseline: [0, 1.5], defaultValue: 1, decimals: 3, unit: ''
+    },
+    /* 旋轉在檔案裡是弧度，在畫面上是度。
+       上下限釘死在 ±360°（＝一整圈），而且**軸不隨資料放大**：
+       會跟著拖曳一直長高的軸，永遠拉不到盡頭，也就看不出自己轉了幾分之幾圈。
+
+       min／max／baseline 都是拿來跟**儲存值**比的，所以一律寫成弧度。
+       寫 [-360, 360] 會被當成 360 弧度（兩萬多度）——見測試 CURVE-20。 */
+    rotation: {
+      min: -Math.PI * 2, max: Math.PI * 2, fixedRange: true,
+      baseline: [-Math.PI * 2, Math.PI * 2], defaultValue: 0, decimals: 1,
+      unit: '°', toDisplay: VFXCurveModel.radToDeg, fromDisplay: VFXCurveModel.degToRad
+    }
+  };
+
+  /* 哪些型別支援分軸縮放。與 Core 的 TYPE_ONLY_FIELDS 對齊：
+     這兩型走 updateSpriteLayer（兩軸各自取樣），粒子層的兩軸永遠相等。 */
+  function supportsPerAxisScale(layer) {
+    return layer.type === 'sprite' || layer.type === 'procedural';
+  }
 
   var TYPE_FIELDS = {
     sprite: [],
@@ -121,12 +161,12 @@
       num('spread', 'spread(deg)', 1),
       vec('gravity', 'gravity'),
       json('startScale', 'startScale'),
-      json('rotationStart', 'rotationStart'),
-      json('rotationSpeed', 'rotationSpeed'),
+      degRange('rotationStart', 'rotationStart(°)'),
+      degRange('rotationSpeed', 'rotationSpeed(°/s)'),
       /* particle 專屬：只掛在 TYPE_FIELDS.particle 底下，
          sprite／procedural 的 Inspector 不會出現這兩欄。 */
       { key: 'alignToVelocity', label: 'alignToVelocity', kind: 'bool', default: false },
-      num('velocityRotationOffset', 'velocityRotationOffset(rad)')
+      deg('velocityRotationOffset', 'velocityRotationOffset(°)')
     ],
     procedural: [
       { key: 'effect', label: 'effect', kind: 'select', options: function () { return VFXCore.PROCEDURAL_EFFECTS; } },
@@ -148,16 +188,21 @@
 
   /* 用 createElement + textContent，不用 innerHTML 拼字串：
      語意 metadata 是產生出來的資料，不應該有機會變成 Editor 的 DOM。 */
-  function fillSelect(el, values, label) {
+  /* group 是詞彙表的分組名（shape／usage／element／tag）。
+     option 的 value 一律維持英文原值——它會直接拿去和 semantics 檔比對，
+     改成中文就等於把顯示問題變成資料問題。只有 textContent 換成中文。 */
+  function fillSelect(el, values, group) {
     el.textContent = '';
     var all = document.createElement('option');
     all.value = '';
-    all.textContent = label + '（全部）';
+    /* 沒登記在詞彙表裡的分組（例如圖層型別）就用原字串當標題。
+       少了這個 fallback，第一個選項會顯示成「undefined（全部）」。 */
+    all.textContent = (VFXSemanticVocab.LABELS.field[group] || group) + '（全部）';
     el.appendChild(all);
     values.forEach(function (v) {
       var o = document.createElement('option');
       o.value = v;
-      o.textContent = v;
+      o.textContent = VFXSemanticVocab.labelOf(group, v);
       el.appendChild(o);
     });
   }
@@ -327,16 +372,19 @@
 
     var sem = findById(state.semantics.records, picker.selected);
     var fact = findById(state.index.assets, picker.selected);
+    var L = VFXSemanticVocab.labelOf;
     row('assetId', picker.selected);
     if (fact && fact.facts && fact.facts.dimensions) {
       row('尺寸', fact.facts.dimensions.width + ' × ' + fact.facts.dimensions.height);
     }
     if (sem) {
-      row('shape', sem.shape);
-      row('usage', (sem.usage || []).join(', '));
-      row('element', sem.element);
-      row('tags', (sem.tags || []).join(', '));
-      row('信心', sem.confidence + (sem.needsReview ? '（需人工確認）' : ''));
+      /* 這裡跟著下拉選單一起中文化，但保留括號裡的英文原值：
+         使用者用中文找素材，看到的資訊要對得上他剛才選的那一項。 */
+      row('形狀', L('shape', sem.shape));
+      row('用途', (sem.usage || []).map(function (u) { return L('usage', u); }).join('、'));
+      row('元素', L('element', sem.element));
+      row('標籤', (sem.tags || []).map(function (t) { return L('tag', t); }).join('、'));
+      row('信心', L('confidence', sem.confidence) + (sem.needsReview ? ' 需人工確認' : ''));
     }
     /* blendMode 與 tintable 是**推導**出來的，不是存下來的欄位。規則只有一份，
        在 vfx-semantic-vocab.cjs，這裡直接呼叫，不在 Editor 裡抄第二份。 */
@@ -811,12 +859,22 @@
 
   function isTextEntry(el) { return M.isTextEntry(el); }
 
+  /* 焦點是否落在某個曲線編輯器裡。用 closest 而不是逐一問每個元件，
+     這樣即使元件已經被換掉，判斷仍然只看目前的 DOM。 */
+  function inCurveEditor(el) {
+    return !!(el && el.closest && el.closest('.curve'));
+  }
+
   function onKeyDown(e) {
     if (!state.preset) return;
     if (!$('picker').hidden) return;                      // Picker 開著時鍵盤歸它
     /* 焦點在任何可輸入的欄位裡就完全不攔截：在 JSON 參數框或搜尋框按 Delete
        要刪字元，不是刪圖層；按 Ctrl+C 要複製文字，不是複製圖層。 */
     if (isTextEntry(document.activeElement)) return;
+    /* 焦點在曲線編輯器裡時，Delete 屬於曲線的控制點。
+       曲線元件自己會 stopPropagation，這裡是第二道防線：即使事件因為
+       某個路徑繞過了它，也不能把整個圖層刪掉——刪錯的代價差太多。 */
+    if (inCurveEditor(document.activeElement)) return;
 
     var k = (e.key || '').toLowerCase();
     if (k === 'delete') {
@@ -843,8 +901,39 @@
     return wrap;
   }
 
+  /* 換算後的小數尾巴（0.5235987755982988 → 30）不該出現在輸入框裡 */
+  function round4(v) { return Math.round(v * 10000) / 10000; }
+
+  var INVALID = {};
+
+  function angleRangeToText(v) {
+    if (v === undefined || v === null) return '';
+    if (Array.isArray(v)) {
+      return '[' + v.map(function (x) { return round4(VFXCurveModel.radToDeg(x)); }).join(', ') + ']';
+    }
+    return String(round4(VFXCurveModel.radToDeg(v)));
+  }
+
+  /* 空字串＝這個欄位不存在。格式錯誤回傳 INVALID，讓呼叫端把輸入框標紅，
+     而不是靜靜吃掉——寫錯了卻沒有反應是最難查的那種。 */
+  function angleRangeFromText(text) {
+    var t = String(text).trim();
+    if (!t) return undefined;
+    var parsed;
+    try { parsed = JSON.parse(t); } catch (e) { return INVALID; }
+    if (typeof parsed === 'number' && isFinite(parsed)) return VFXCurveModel.degToRad(parsed);
+    if (Array.isArray(parsed) && parsed.length === 2 &&
+        parsed.every(function (x) { return typeof x === 'number' && isFinite(x); })) {
+      return parsed.map(VFXCurveModel.degToRad);
+    }
+    return INVALID;
+  }
+
   function renderInspector() {
     var host = $('inspector');
+    /* 舊的曲線元件在 window 上掛了 mousemove／mouseup，不收掉會越積越多，
+       而且已被移除的 canvas 仍會在每次滑鼠移動時做命中測試。 */
+    destroyCurveEditors();
     host.innerHTML = '';
     var layer = selectedLayer();
     if (!layer) {
@@ -864,9 +953,7 @@
 
     var fields = COMMON_FIELDS
       .concat([{ kind: 'title', label: layer.type + ' 專屬' }])
-      .concat(TYPE_FIELDS[layer.type] || [])
-      .concat([{ kind: 'title', label: 'over-life 曲線' }])
-      .concat(CURVE_FIELDS);
+      .concat(TYPE_FIELDS[layer.type] || []);
 
     fields.forEach(function (f) {
       if (f.kind === 'title') {
@@ -985,6 +1072,30 @@
           layer[f.key] = control.value;
           onPresetChanged(); renderLayerList();
         };
+      } else if (f.kind === 'angle') {
+        control = document.createElement('input');
+        control.type = 'number';
+        control.step = String(f.step);
+        control.value = layer[f.key] === undefined
+          ? '' : round4(VFXCurveModel.radToDeg(layer[f.key]));
+        control.oninput = function () {
+          if (control.value === '') delete layer[f.key];
+          else layer[f.key] = VFXCurveModel.degToRad(Number(control.value));
+          onPresetChanged();
+        };
+      } else if (f.kind === 'angleRange') {
+        control = document.createElement('input');
+        control.type = 'text';
+        control.placeholder = '30 或 [0, 360]';
+        control.value = angleRangeToText(layer[f.key]);
+        control.onchange = function () {
+          var next = angleRangeFromText(control.value);
+          if (next === INVALID) { control.classList.add('err'); return; }
+          control.classList.remove('err');
+          if (next === undefined) delete layer[f.key];
+          else layer[f.key] = next;
+          onPresetChanged();
+        };
       } else {
         control = document.createElement('input');
         control.type = 'number';
@@ -998,6 +1109,222 @@
       }
       host.appendChild(makeField(f.label, control));
     });
+
+    renderOverLife(host, layer);
+    /* Canvas 要量得到自己的寬高才畫得對，而元素剛 append 時版面還沒定案。
+       等下一幀再統一重繪一次——這比依賴 ResizeObserver 可靠，
+       它在某些嵌入式瀏覽器裡根本不會觸發。 */
+    requestAnimationFrame(function () {
+      liveEditors.forEach(function (c) { c.redraw(); });
+    });
+  }
+
+  /* ---------------- Over-Life 區塊 ----------------
+
+     Inspector 很窄，七張圖同時展開會變成幾千像素的長條。所以分成三個
+     可收合群組，預設只開 Opacity——多數調整從它開始。
+     收合狀態存在 state 而不是 localStorage：它跟著「目前在編哪一層」，
+     不是使用者的長期偏好。 */
+
+  var overLifeOpen = { opacity: true, scale: false, rotation: false };
+  var liveEditors = [];                      // 目前掛在畫面上的曲線元件，換層時要收掉
+  /* 'sections' 分區收合（省空間）／'compare' 全部攤開對照（共用時間軸）。
+     存在 state 而不是 localStorage：它是當下的工作方式，不是長期偏好。 */
+  var overLifeMode = 'sections';
+
+  /* 把時間游標同步到所有圖上。這是「對照」的核心：滑鼠停在 42% 的位置，
+     每一張圖都畫上同一條線並顯示自己在那個時間的值，一眼就能讀出
+     「這一刻透明度 0.8、縮放 1.5、轉了 90 度」。 */
+  function broadcastCursor(t) {
+    liveEditors.forEach(function (c) { c.setCursor(t); });
+  }
+
+  function destroyCurveEditors() {
+    liveEditors.forEach(function (c) { c.destroy(); });
+    liveEditors = [];
+  }
+
+  function curveSection(host, key, title, build) {
+    var wrap = document.createElement('div');
+    wrap.className = 'ol-section';
+    var head = document.createElement('button');
+    head.type = 'button';
+    head.className = 'ol-head';
+    /* 對照模式一律攤開：那個模式的重點就是同時看到全部，
+       留一個能把它收起來的按鈕只會讓人不小心破壞對照。 */
+    var open = overLifeMode === 'compare' || overLifeOpen[key];
+    head.textContent = (overLifeMode === 'compare' ? '' : (open ? '▾ ' : '▸ ')) + title;
+    head.disabled = overLifeMode === 'compare';
+    head.onclick = function () { overLifeOpen[key] = !overLifeOpen[key]; renderInspector(); };
+    wrap.appendChild(head);
+    if (open) {
+      var body = document.createElement('div');
+      body.className = 'ol-body';
+      build(body);
+      wrap.appendChild(body);
+    }
+    host.appendChild(wrap);
+  }
+
+  /* 一張圖 ＋ 它的兩顆按鈕。curve-editor 只管畫與拖，
+     「寫回哪個欄位」「什麼時候算改過」留在這裡。 */
+  function curveBlock(host, layer, field, policy, label, opts) {
+    var row = document.createElement('div');
+    row.className = 'ol-row';
+    if (label) {
+      var tag = document.createElement('span');
+      tag.className = 'ol-axis';
+      tag.textContent = label;
+      row.appendChild(tag);
+    }
+    var editor = VFXCurveEditor.create({
+      curve: layer[field],
+      policy: policy,
+      height: opts && opts.height,
+      /* onLive 在拖曳途中一直呼叫：只更新預覽，不重畫 Inspector
+         （重畫會把正在拖的 canvas 換掉，拖曳就斷了）。 */
+      onLive: function (curve) { writeCurve(layer, field, curve); previewSoon(); },
+      onChange: function (curve) { writeCurve(layer, field, curve); onPresetChanged(); },
+      onCursor: broadcastCursor
+    });
+    liveEditors.push(editor);
+    row.appendChild(editor.el);
+
+    var tools = document.createElement('div');
+    tools.className = 'ol-tools';
+    var reset = document.createElement('button');
+    reset.type = 'button'; reset.textContent = 'Reset';
+    reset.title = '回到單一常數點';
+    reset.onclick = function () { editor.reset(); renderInspector(); };
+    var off = document.createElement('button');
+    off.type = 'button';
+    off.textContent = layer[field] === undefined ? '啟用' : '停用';
+    off.title = '停用＝移除這條曲線，該屬性整段生命週期維持基礎值';
+    off.onclick = function () {
+      if (layer[field] === undefined) editor.reset();
+      else editor.clear();
+      renderInspector();
+    };
+    tools.appendChild(reset); tools.appendChild(off);
+    row.appendChild(tools);
+    host.appendChild(row);
+  }
+
+  /* undefined 代表「沒有這條曲線」，要 delete 而不是寫 undefined 進去——
+     JSON.stringify 會把 undefined 的鍵丟掉，但 canonical 比對與未知欄位
+     檢查是看實際的鍵，留著會讓兩邊看到的東西不一樣。 */
+  function writeCurve(layer, field, curve) {
+    if (curve === undefined) delete layer[field];
+    else layer[field] = curve;
+  }
+
+  function renderOverLife(host, layer) {
+    var title = document.createElement('div');
+    title.className = 'group-title ol-title';
+    title.textContent = 'OVER-LIFE 曲線';
+
+    /* 分區／對照切換。分區省空間，對照則把所有曲線攤在同一條時間軸上，
+       滑鼠移到任何一張圖，每張圖都會畫上同一條時間線並顯示自己在那一刻的值。
+       調整互相牽動的屬性（縮到最大時透明度剩多少）非得這樣看不可。 */
+    var modes = document.createElement('div');
+    modes.className = 'ol-modes';
+    [['sections', '分區'], ['compare', '對照']].forEach(function (m) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = m[1];
+      b.className = overLifeMode === m[0] ? 'on' : '';
+      b.onclick = function () { overLifeMode = m[0]; renderInspector(); };
+      modes.appendChild(b);
+    });
+    title.appendChild(modes);
+    host.appendChild(title);
+
+    if (overLifeMode === 'compare') {
+      var tip = document.createElement('div');
+      tip.className = 'ol-hint';
+      tip.textContent = '滑鼠移到任一張圖上，所有曲線會顯示同一個時間點的數值。';
+      host.appendChild(tip);
+    }
+
+    curveSection(host, 'opacity', 'Opacity', function (body) {
+      curveBlock(body, layer, 'alphaOverLife', CURVE_POLICY.alpha, null);
+      hintLine(body, 'alphaOverLife 是乘在 alpha 上的係數，可以大於 1（過曝）。');
+    });
+
+    curveSection(host, 'scale', 'Scale', function (body) {
+      if (!supportsPerAxisScale(layer)) {
+        curveBlock(body, layer, 'scaleOverLife', CURVE_POLICY.scale, 'XY');
+        hintLine(body, 'particle 的兩軸永遠等比，沒有分軸縮放。');
+        return;
+      }
+      var linked = !(layer.scaleXOverLife !== undefined || layer.scaleYOverLife !== undefined);
+      var link = document.createElement('label');
+      link.className = 'ol-link';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = linked;
+      cb.onchange = function () { setScaleLink(layer, cb.checked); renderInspector(); };
+      link.appendChild(cb);
+      link.appendChild(document.createTextNode(' Link X/Y'));
+      body.appendChild(link);
+
+      if (linked) {
+        curveBlock(body, layer, 'scaleOverLife', CURVE_POLICY.scale, 'XY');
+      } else {
+        curveBlock(body, layer, 'scaleXOverLife', CURVE_POLICY.scale, 'X');
+        curveBlock(body, layer, 'scaleYOverLife', CURVE_POLICY.scale, 'Y');
+      }
+    });
+
+    curveSection(host, 'rotation', 'Rotation', function (body) {
+      curveBlock(body, layer, 'rotationOverLife', CURVE_POLICY.rotation, 'Z', { height: 170 });
+      if (!supportsPerAxisScale(layer)) {
+        hintLine(body, '以度顯示、以弧度儲存。particle 只有平面旋轉。');
+        return;
+      }
+      curveBlock(body, layer, 'rotationXOverLife', CURVE_POLICY.rotation, 'X', { height: 170 });
+      curveBlock(body, layer, 'rotationYOverLife', CURVE_POLICY.rotation, 'Y', { height: 170 });
+      hintLine(body,
+        'Z＝平面旋轉。X／Y 是正交投影的翻轉：繞 X 轉會壓縮高度、繞 Y 轉會壓縮寬度，' +
+        '180° 時變成鏡像（翻到背面）。沒有透視，背面看到的仍是同一張圖。');
+      hintLine(body, '以度顯示、以弧度儲存。');
+    });
+  }
+
+  function hintLine(host, text) {
+    var d = document.createElement('div');
+    d.className = 'ol-hint';
+    d.textContent = text;
+    host.appendChild(d);
+  }
+
+  /* Link 開↔關的資料轉換。關鍵是不能在切換的當下改變畫面：
+     解除連動時把目前的等比曲線複製到兩軸，接回去時把 X 的曲線收回等比欄位。
+     使用者只是想「分開調」，不是想讓特效在按下核取方塊的瞬間變樣。 */
+  function setScaleLink(layer, linked) {
+    if (linked) {
+      /* 收回等比：以 X 為準（畫面上 X 在上面，是使用者主要在調的那一條）。
+         Y 與 X 不同時會遺失 Y——這是解除連動的必然代價，所以先問。 */
+      var x = layer.scaleXOverLife, y = layer.scaleYOverLife;
+      var differs = JSON.stringify(x) !== JSON.stringify(y);
+      if (differs && !window.confirm('X 與 Y 目前不同，接回等比會以 X 為準並捨棄 Y。要繼續嗎？')) {
+        return;
+      }
+      if (x !== undefined) layer.scaleOverLife = x;
+      delete layer.scaleXOverLife;
+      delete layer.scaleYOverLife;
+    } else {
+      var base = layer.scaleOverLife;
+      if (base !== undefined) {
+        layer.scaleXOverLife = JSON.parse(JSON.stringify(base));
+        layer.scaleYOverLife = JSON.parse(JSON.stringify(base));
+      } else {
+        /* 沒有等比曲線可複製時，兩軸都給常數 1：那與「沒有曲線」等價，
+           畫面同樣不變，但使用者拿到兩個可以直接拖的點。 */
+        layer.scaleXOverLife = 1;
+        layer.scaleYOverLife = 1;
+      }
+    }
+    onPresetChanged();
   }
 
   /* ---------------- 預覽（使用 VFX Core） ---------------- */
@@ -1018,8 +1345,13 @@
     rebuildPreview();
   }
 
+  /* 改任何參數都要重建預覽（註冊過的 preset 是凍結深拷貝，不能就地改）。
+     重建會重播，所以先把播放頭記下來再帶回去——否則調一條 50% 位置的曲線時，
+     畫面永遠停在第 0 秒，等於看不到自己改的那一段。 */
   function rebuildPreview() {
     if (!state.runtime) return;
+    var resumeAt = state.handle === null || state.handle === undefined
+      ? 0 : (state.runtime.timeOf(state.handle) || 0);
     state.runtime.stopAll();
     try {
       state.runtime.registerPreset(state.preset);
@@ -1030,7 +1362,24 @@
     }
     state.handle = state.runtime.play(state.preset.id, {
       position: { x: 0, y: 0 },
-      seed: 12345                                // 固定 seed：編輯時每次重播畫面一致
+      seed: 12345,                               // 固定 seed：編輯時每次重播畫面一致
+      startTime: resumeAt
+    });
+  }
+
+  /* 拖曳曲線時每次 mousemove 都要更新預覽，但一幀之內做兩次沒有意義
+     （畫面只畫一次），所以用 rAF 合併。註冊素材走的是 resolver 的雜湊查表，
+     貼圖由後端依 URL 快取，重建不會重新載圖。 */
+  var previewPending = false;
+  function previewSoon() {
+    if (previewPending) return;
+    previewPending = true;
+    requestAnimationFrame(function () {
+      previewPending = false;
+      refreshDirty();
+      var result = VFXCore.validatePreset(state.preset);
+      if (!result.ok) return;                    // 中途不合法就先不重建，放開滑鼠時會報錯
+      rebuildPreview();
     });
   }
 
@@ -1398,7 +1747,39 @@
     });
   }
 
+  /* 頁面靠 <script> 全域載入這些模組，任何一個沒載進來，錯誤都會在很後面
+     才以 "X is not defined" 的形式炸出來，訊息完全指不到真正的原因。
+     所以在動任何東西之前先點名一次，缺了就講清楚是哪一個、以及最可能的成因。 */
+  function checkModules() {
+    var need = [
+      ['PIXI', 'js/vendor/pixi.min.js'],
+      ['VFXCore', 'js/vfx-core.js'],
+      ['VFXPixiBackend', 'js/vfx-pixi-backend.js'],
+      ['VFXPresetIdPolicy', 'tools/vfx/editor/preset-id-policy.js'],
+      ['VFXLayoutSchema', 'tools/vfx/editor/layout-schema.js'],
+      ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
+      ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
+      ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],
+      ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs']
+    ];
+    var missing = need.filter(function (m) {
+      return typeof window[m[0]] === 'undefined';
+    });
+    if (!missing.length) return null;
+    return [
+      '這幾個模組沒有載入：' + missing.map(function (m) { return m[1]; }).join('、'),
+      '最常見的原因是連到了一個舊的 editor-server 行程——它啟動時還沒有開放這些檔案，',
+      '所以會回 403。把那個伺服器視窗關掉、重新執行「啟動VFX編輯器.bat」即可。'
+    ].join('\n');
+  }
+
   function boot() {
+    var moduleError = checkModules();
+    if (moduleError) {
+      document.getElementById('preview-msg').className = 'hint err';
+      document.getElementById('preview-msg').textContent = '啟動失敗\n' + moduleError;
+      return;
+    }
     var bootPresetId = presetIdFromQuery();
     Promise.all([
       fetchJson(ASSET_INDEX_URL),
@@ -1534,16 +1915,20 @@
           currentPresetText: currentPresetText
         };
 
-        fillSelect($('new-layer-type'), VFXCore.LAYER_TYPES, 'layer type');
+        /* 順序有意義：先把圖層樹與 Inspector 畫出來，再處理素材瀏覽器。
+           左邊那一組要用到素材詞彙表，一旦它出問題，至少不會連圖層分組
+           一起消失——那會讓人以為群組被刪掉了，實際上只是沒渲染。 */
+        renderLayerList();
+        renderInspector();
+        onPresetChanged();
+
+        fillSelect($('new-layer-type'), VFXCore.LAYER_TYPES, '型別');
         $('new-layer-type').value = 'sprite';
         /* 必須在 app／bgSolid／checker 都建好之後才能套用背景 */
         buildBackgroundBar();
         collectVocab();
         wirePicker();
         renderAssetBrowser();
-        renderLayerList();
-        renderInspector();
-        onPresetChanged();
       });
     }).catch(function (e) {
       document.getElementById('preview-msg').className = 'hint err';
