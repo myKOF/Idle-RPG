@@ -266,7 +266,9 @@
       div.onclick = function () {
         state.selectedAssetId = rec.assetId;
         var layer = selectedLayer();
-        if (layer) { layer.assetId = rec.assetId; onPresetChanged(); }
+        if (layer) {
+          edit('更換素材', function () { layer.assetId = rec.assetId; onPresetChanged(); });
+        }
         renderInspector();
       };
       host.appendChild(div);
@@ -315,9 +317,9 @@
 
   function applyPicker() {
     if (!picker.layer || !picker.selected) return;
-    picker.layer[picker.field] = picker.selected;
+    var target = picker.layer, field = picker.field, value = picker.selected;
+    edit('更換素材', function () { target[field] = value; onPresetChanged(); });
     closePicker();
-    onPresetChanged();
     renderInspector();
   }
 
@@ -609,7 +611,11 @@
     e.preventDefault();
   }
 
+  var DRAG_LABEL = { move: '移動', scale: '縮放', rotate: '旋轉' };
+
   function beginDrag(target, mode, handle, startPoint, bounds) {
+    /* 一次拖曳＝一筆歷史。pointermove 期間只更新畫面，不記錄。 */
+    editBegin((DRAG_LABEL[mode] || '變形') + (target.kind === 'group' ? '群組' : '圖層'));
     gizmo.drag = {
       target: target,
       mode: mode,
@@ -681,10 +687,11 @@
     var moved = gizmo.drag.moved;
     gizmo.drag = null;
     setPreviewCursor(null);
-    if (!moved) return;           // 只是點一下選取，不算修改
+    if (!moved) { editCancel(); return; }   // 只是點一下選取，不算修改
     markGizmoDirty();
     onPresetChanged();            // 這一刻才寫進 dirty 狀態並重建預覽
     renderInspector();
+    editCommit();                 // 整段拖曳在這裡才變成一步
   }
 
   /* Escape 取消：把 pointerdown 當下的快照寫回去。
@@ -694,6 +701,7 @@
     var d = gizmo.drag;
     if (d.target.kind === 'group') G.restoreGroup(d.target.layers, d.snap);
     else G.restore(d.target.layer, d.snap);
+    editCancel();                 // 取消的拖曳不進歷史
     gizmo.drag = null;
     setPreviewCursor(null);
     markGizmoDirty();
@@ -751,6 +759,91 @@
     window.addEventListener('pointermove', onPreviewPointerMove);
     window.addEventListener('pointerup', onPreviewPointerUp);
   }
+
+  /* ---------------- Undo / Redo ----------------
+
+     整個 Editor 只有這一份歷史。快照記的是 authoring 資料，
+     不記播放狀態、搜尋字串、收合狀態、hover、粒子、貼圖快取那些。
+
+     快照用 canonical 文字：比較是否相同就是字串比較（免費），
+     而且與 dirty 判斷用的是同一種表示法，「Undo 回到存檔時的狀態」
+     會自動變回乾淨，不需要另外處理。 */
+
+  var history = null;
+
+  function historySnapshot() {
+    return {
+      preset: currentPresetText(),
+      layout: state.layout ? VFXLayoutSchema.serialiseLayout(state.layout) : null,
+      /* 選取也記：刪掉一層再 Undo，焦點應該回到那一層而不是隨便一個。
+         這是 authoring 的一部分，不是「UI 狀態」。 */
+      selected: state.selectedKeys.slice(),
+      active: state.activeKey,
+      anchor: state.anchorKey
+    };
+  }
+
+  function snapshotEqual(a, b) {
+    /* 只比 authoring 資料。選取不同不足以成為一步——
+       否則單純點來點去就會塞滿整個歷史。 */
+    return a.preset === b.preset && a.layout === b.layout;
+  }
+
+  function historyApply(snap) {
+    if (snap.preset === null) return;         // 序列化不出來的狀態不該被記進去
+    state.preset = JSON.parse(snap.preset);
+    if (snap.layout !== null) {
+      state.layout = JSON.parse(snap.layout);
+      state.layoutRevision = (state.layoutRevision || 0) + 1;
+    }
+    /* 還原選取，但要先確認那些 key 還存在：Undo 回到「圖層還沒建立」的狀態時，
+       舊的 activeKey 會指向不存在的圖層，Inspector 就會空引用。 */
+    var alive = snap.selected.filter(keyStillExists);
+    var active = keyStillExists(snap.active) ? snap.active : (alive.length ? alive[0] : null);
+    setSelection(alive, active);
+    state.anchorKey = keyStillExists(snap.anchor) ? snap.anchor : active;
+
+    markGizmoDirty();
+    renderLayerList();
+    renderInspector();
+    onPresetChanged();
+    refreshHistoryButtons();
+  }
+
+  function keyStillExists(key) {
+    if (!key) return false;
+    if (keyKind(key) === 'group') return !!groupById(keyId(key));
+    return !!layerById(keyId(key));
+  }
+
+  function initHistory() {
+    history = VFXHistory.create({
+      capture: historySnapshot,
+      apply: historyApply,
+      equal: snapshotEqual,
+      onChange: refreshHistoryButtons
+    });
+    refreshHistoryButtons();
+  }
+
+  function refreshHistoryButtons() {
+    var u = $('btn-undo'), r = $('btn-redo');
+    if (!u || !r || !history) return;
+    u.disabled = !history.canUndo();
+    r.disabled = !history.canRedo();
+    u.title = history.canUndo() ? ('復原：' + history.undoLabel() + '（Ctrl+Z）') : '沒有可復原的動作';
+    r.title = history.canRedo() ? ('重做：' + history.redoLabel() + '（Ctrl+Y）') : '沒有可重做的動作';
+  }
+
+  /* 給呼叫端用的三個入口。history 還沒建好時（啟動途中）直接執行，
+     不要因為歷史沒準備好就讓編輯功能壞掉。 */
+  function edit(label, fn) {
+    if (!history) { fn(); return; }
+    history.execute(label, fn);
+  }
+  function editBegin(label) { if (history) history.begin(label); }
+  function editCommit() { if (history) history.commit(); }
+  function editCancel() { if (history) history.cancel(); }
 
   /* ---------------- Layer list ---------------- */
 
@@ -815,8 +908,10 @@
       done = true;
       var next = String(input.value).trim();
       if (save && next && next !== group.name) {
-        group.name = next.slice(0, VFXLayoutSchema.LIMITS.maxNameLength);
-        markLayoutDirty();
+        edit('重新命名群組', function () {
+          group.name = next.slice(0, VFXLayoutSchema.LIMITS.maxNameLength);
+          markLayoutDirty();
+        });
       }
       renderLayerList();
     }
@@ -961,7 +1056,9 @@
     cb.onclick = function (e) {
       e.stopPropagation();
       var turnOn = cb.checked;
-      members.forEach(function (l) { l.enabled = turnOn; });
+      edit(turnOn ? '啟用群組' : '停用群組', function () {
+        members.forEach(function (l) { l.enabled = turnOn; });
+      });
       selectGroupById(r.id);          // 與圖層列一致：改了勾就選到它
       onPresetChanged();
       renderLayerList();
@@ -999,7 +1096,8 @@
     cb.onmousedown = function (e) { e.stopPropagation(); };
     cb.onclick = function (e) {
       e.stopPropagation();
-      layer.enabled = cb.checked;
+      var on = cb.checked;
+      edit(on ? '啟用圖層' : '停用圖層', function () { layer.enabled = on; });
       /* 改了誰的勾選，焦點就跟到誰身上：接著多半要調它的參數，
          而且 Inspector 與 Preview 的框也會一起跟過去。 */
       selectLayerById(layer.id);
@@ -1090,6 +1188,10 @@
   }
 
   function performDrop(targetKey, mode) {
+    edit('調整順序', function () { performDropInner(targetKey, mode); });
+  }
+
+  function performDropInner(targetKey, mode) {
     ensureLayout();
     if (!M.applyDrop(state.preset, state.layout, state.dragKeys.slice(), targetKey, mode)) return;
     /* 這裡刻意**不呼叫** onPresetChanged()：拖曳只改 layout，preset 一個 byte
@@ -1120,6 +1222,10 @@
 
   function pasteClipboard() {
     if (!state.clipboard || !state.clipboard.items.length) return;
+    edit('貼上圖層', pasteClipboardInner);
+  }
+
+  function pasteClipboardInner() {
     ensureLayout();
     /* 以目前 active 當插入錨點，貼在它後面，而不是丟到整個列表最下面 */
     var newKeys = M.pasteClipboard(state.preset, state.layout, state.clipboard, state.activeKey);
@@ -1153,6 +1259,10 @@
   }
 
   function groupSelection() {
+    edit('組成群組', groupSelectionInner);
+  }
+
+  function groupSelectionInner() {
     var ids = state.selectedKeys.filter(function (k) { return keyKind(k) === "layer"; })
       .map(keyId);
     if (!ids.length) return;
@@ -1167,6 +1277,10 @@
   }
 
   function ungroupSelection() {
+    edit('解散群組', ungroupSelectionInner);
+  }
+
+  function ungroupSelectionInner() {
     var gids = state.selectedKeys.filter(function (k) { return keyKind(k) === "group"; }).map(keyId);
     if (!gids.length || !state.layout) return;
     M.ungroup(state.layout, gids);
@@ -1218,10 +1332,26 @@
 
   /* 每次改動 layout 就 +1。存檔成功時只有「revision 沒變」才敢清 dirty——
      否則使用者在 request 飛在半空中時改的東西會被當成已存檔，重整後靜默消失。 */
+  /* 分組有沒有改過，一律以內容比對為準，不用黏著的旗標。
+
+     用旗標的話，「存檔 → 改分組 → Undo 回存檔時的狀態」仍會顯示未存檔，
+     而使用者眼前的內容其實和 repo 一模一樣。revision 仍然保留——
+     那是給非同步存檔判斷「這次回應能不能替現在的內容背書」用的，
+     與「內容有沒有變」是兩件事。 */
   function markLayoutDirty() {
     state.layoutRevision = (state.layoutRevision || 0) + 1;
-    state.layoutDirty = true;
     refreshDirty();
+  }
+
+  function currentLayoutText() {
+    if (!state.layout) return null;
+    try { return VFXLayoutSchema.serialiseLayout(state.layout); }
+    catch (e) { return null; }
+  }
+
+  function layoutDirty() {
+    if (state.savedLayoutText === undefined) return false;   // 還沒載完
+    return currentLayoutText() !== state.savedLayoutText;
   }
 
   function saveLayout() {
@@ -1240,7 +1370,11 @@
     }).then(function (r) {
       return r.json().then(function (body) {
         if (!r.ok || !body.ok) throw new Error(body.error || ("HTTP " + r.status));
-        if ((state.layoutRevision || 0) === sentAt) state.layoutDirty = false;
+        /* 只有在送出之後沒有再改過時，才把基準線推到這次存的內容上。
+           中途又改了的話，那些改動仍然算未存檔。 */
+        if ((state.layoutRevision || 0) === sentAt) {
+          state.savedLayoutText = VFXLayoutSchema.serialiseLayout(state.layout);
+        }
         refreshDirty();
         return body;
       });
@@ -1272,6 +1406,21 @@
 
   function isTextEntry(el) { return M.isTextEntry(el); }
 
+  /* 搜尋／篩選欄位。它們打的字不是 authoring 資料，Ctrl+Z 留給瀏覽器。
+     用 type=search 判斷而不是列 id：新增搜尋框時不必回來改這裡。 */
+  function isSearchInput(el) {
+    return !!(el && el.tagName === 'INPUT' && String(el.type).toLowerCase() === 'search');
+  }
+
+  function doUndo() {
+    if (!history || !history.canUndo()) return;
+    history.undo();
+  }
+  function doRedo() {
+    if (!history || !history.canRedo()) return;
+    history.redo();
+  }
+
   /* 焦點是否落在某個曲線編輯器裡。用 closest 而不是逐一問每個元件，
      這樣即使元件已經被換掉，判斷仍然只看目前的 DOM。 */
   function inCurveEditor(el) {
@@ -1281,6 +1430,18 @@
   function onKeyDown(e) {
     if (!state.preset) return;
     if (e.key === 'Escape' && cancelDrag()) { e.preventDefault(); return; }
+
+    /* Undo／Redo 排在文字輸入的守門**之前**：這是編輯器，不是文字編輯器，
+       在 Inspector 的數值欄位按 Ctrl+Z 應該回上一步編輯，而不是還原那一格的字。
+
+       唯一的例外是搜尋框（type=search）：Asset Browser 與素材選擇器的搜尋字串
+       不是 authoring 資料，在那裡按 Ctrl+Z 卻回滾整份 preset 會非常嚇人，
+       所以那裡交還給瀏覽器原生行為。 */
+    if ((e.ctrlKey || e.metaKey) && !isSearchInput(document.activeElement)) {
+      var uk = (e.key || '').toLowerCase();
+      if (uk === 'z' && !e.shiftKey) { doUndo(); e.preventDefault(); return; }
+      if (uk === 'y' || (uk === 'z' && e.shiftKey)) { doRedo(); e.preventDefault(); return; }
+    }
     if (!$('picker').hidden) return;                      // Picker 開著時鍵盤歸它
     /* 焦點在任何可輸入的欄位裡就完全不攔截：在 JSON 參數框或搜尋框按 Delete
        要刪字元，不是刪圖層；按 Ctrl+C 要複製文字，不是複製圖層。 */
@@ -1313,6 +1474,35 @@
     wrap.appendChild(l);
     wrap.appendChild(control);
     return wrap;
+  }
+
+  /* 輸入框的交易邊界：focus 開始、blur 收尾。
+
+     不這樣做的話，打「1.25」會變成 1、1.（無效）、1.2、1.25 四筆歷史，
+     Ctrl+Z 要按四次才回得到原值。核取方塊與下拉選單沒有「輸入到一半」的
+     狀態，change 當下就是完整的一步。
+
+     值最後沒變就不會留下任何一步——那是 history.commit() 自己判斷的。 */
+  function wireFieldTransaction(control, label) {
+    var inputs = control.tagName === 'INPUT' || control.tagName === 'SELECT' ||
+      control.tagName === 'TEXTAREA' ? [control] : control.querySelectorAll('input, select, textarea');
+    Array.prototype.forEach.call(inputs, function (el) {
+      var type = String(el.type || '').toLowerCase();
+      if (el.tagName === 'SELECT' || type === 'checkbox' || type === 'color') {
+        /* 一次點擊就是完整的一步，沒有中間狀態 */
+        el.addEventListener('change', function () { editCommit(); });
+        el.addEventListener('mousedown', function () { editBegin('修改 ' + label); });
+        el.addEventListener('keydown', function () { editBegin('修改 ' + label); });
+        return;
+      }
+      el.addEventListener('focus', function () { editBegin('修改 ' + label); });
+      el.addEventListener('blur', function () { editCommit(); });
+      /* Enter 當場收尾：使用者按了 Enter 就是「我改完了」，
+         不該等到焦點離開才算數。 */
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') editCommit();
+      });
+    });
   }
 
   /* 換算後的小數尾巴（0.5235987755982988 → 30）不該出現在輸入框裡 */
@@ -1525,6 +1715,7 @@
           onPresetChanged();
         };
       }
+      wireFieldTransaction(control, f.label);
       host.appendChild(makeField(f.label, control));
     });
 
@@ -1587,6 +1778,9 @@
   /* 一張圖 ＋ 它的兩顆按鈕。curve-editor 只管畫與拖，
      「寫回哪個欄位」「什麼時候算改過」留在這裡。 */
   function curveBlock(host, layer, field, policy, label, opts) {
+    /* 歷史標籤要看得懂。label 是圖上的軸標（X／Y／Z／XY），
+       透明度那一格沒有軸，所以另外給名字。 */
+    var what = (opts && opts.name) || (label ? label + ' 軸' : '') || '曲線';
     var row = document.createElement('div');
     row.className = 'ol-row';
     if (label) {
@@ -1601,8 +1795,11 @@
       height: opts && opts.height,
       /* onLive 在拖曳途中一直呼叫：只更新預覽，不重畫 Inspector
          （重畫會把正在拖的 canvas 換掉，拖曳就斷了）。 */
+      /* 曲線的一次操作＝一筆歷史。onBegin 在 pointerdown／按下 Delete 時觸發，
+         onChange 是收尾點；中間的 onLive 只更新畫面。 */
+      onBegin: function (action) { editBegin(action + what); },
       onLive: function (curve) { writeCurve(layer, field, curve); previewSoon(); },
-      onChange: function (curve) { writeCurve(layer, field, curve); onPresetChanged(); },
+      onChange: function (curve) { writeCurve(layer, field, curve); onPresetChanged(); editCommit(); },
       onCursor: broadcastCursor
     });
     liveEditors.push(editor);
@@ -1613,14 +1810,19 @@
     var reset = document.createElement('button');
     reset.type = 'button'; reset.textContent = 'Reset';
     reset.title = '回到單一常數點';
-    reset.onclick = function () { editor.reset(); renderInspector(); };
+    reset.onclick = function () {
+      edit('重設 ' + what, function () { editor.reset(); });
+      renderInspector();
+    };
     var off = document.createElement('button');
     off.type = 'button';
     off.textContent = layer[field] === undefined ? '啟用' : '停用';
     off.title = '停用＝移除這條曲線，該屬性整段生命週期維持基礎值';
     off.onclick = function () {
-      if (layer[field] === undefined) editor.reset();
-      else editor.clear();
+      var on = layer[field] === undefined;
+      edit((on ? '啟用 ' : '停用 ') + what, function () {
+        if (on) editor.reset(); else editor.clear();
+      });
       renderInspector();
     };
     tools.appendChild(reset); tools.appendChild(off);
@@ -1665,7 +1867,7 @@
     }
 
     curveSection(host, 'opacity', 'Opacity', function (body) {
-      curveBlock(body, layer, 'alphaOverLife', CURVE_POLICY.alpha, null);
+      curveBlock(body, layer, 'alphaOverLife', CURVE_POLICY.alpha, null, { name: '透明度' });
       hintLine(body, 'alphaOverLife 是乘在 alpha 上的係數，可以大於 1（過曝）。');
     });
 
@@ -1680,7 +1882,11 @@
       link.className = 'ol-link';
       var cb = document.createElement('input');
       cb.type = 'checkbox'; cb.checked = linked;
-      cb.onchange = function () { setScaleLink(layer, cb.checked); renderInspector(); };
+      cb.onchange = function () {
+        edit(cb.checked ? '連動 X/Y' : '解除 X/Y 連動',
+          function () { setScaleLink(layer, cb.checked); });
+        renderInspector();
+      };
       link.appendChild(cb);
       link.appendChild(document.createTextNode(' Link X/Y'));
       body.appendChild(link);
@@ -1916,7 +2122,7 @@
   }
 
   function isDirty() {
-    if (state.layoutDirty) return true;
+    if (layoutDirty()) return true;
     if (state.savedText === null) return true;
     return currentPresetText() !== state.savedText;
   }
@@ -2053,6 +2259,12 @@
     URL.revokeObjectURL(a.href);
   }
 
+  /* 換一份 preset 就要清空歷史：把上一份的 Undo 套到這一份會產生
+     完全不相干的內容，而且圖層 id 多半對不上。 */
+  function clearHistoryForNewPreset() {
+    if (history) history.clear();
+  }
+
   function loadPresetFromFile(file) {
     var reader = new FileReader();
     reader.onload = function () {
@@ -2066,6 +2278,7 @@
         }
         state.preset = parsed;
         state.layout = VFXLayoutSchema.emptyLayout(parsed.id);
+        state.savedLayoutText = null;        // 匯入的內容還沒進 repo
         var first = parsed.layers[0] ? keyOf('layer', parsed.layers[0].id) : null;
         setSelection(first ? [first] : [], first);
         state.anchorKey = first;
@@ -2075,7 +2288,9 @@
         state.savedText = null;
         state.sourcePresetId = null;
         setSaveStatus('', '');
+        clearHistoryForNewPreset();          // 上一份的 Undo 不適用於這一份
         $('chk-loop').checked = !!parsed.loop;
+        markGizmoDirty();
         renderLayerList(); renderInspector(); onPresetChanged();
       } catch (e) {
         $('validation').className = 'hint err';
@@ -2096,6 +2311,10 @@
   }
 
   function addLayer(type) {
+    edit('新增圖層', function () { addLayerInner(type); });
+  }
+
+  function addLayerInner(type) {
     var base = { id: uniqueLayerId(type), type: type, assetId: state.selectedAssetId || '' };
     if (type === 'particle') {
       base.emission = { mode: 'burst', count: 16 };
@@ -2120,6 +2339,10 @@
      一個物件，只刪掉標題列卻留下散落的子圖層會很難理解。 */
   function deleteSelection() {
     if (!state.selectedKeys.length) return;
+    edit('刪除圖層', deleteSelectionInner);
+  }
+
+  function deleteSelectionInner() {
     /* 先算出「刪完之後焦點該落在哪」：整個清空會讓人失去位置感，連按兩次
        Delete 還得重新找位置。取被刪範圍在可見列表中的前一列。 */
     var vis = visibleKeys();
@@ -2180,6 +2403,7 @@
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
       ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],
       ['VFXGizmoModel', 'tools/vfx/editor/gizmo-model.js'],
+      ['VFXHistory', 'tools/vfx/editor/history.js'],
       ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs']
     ];
     var missing = need.filter(function (m) {
@@ -2222,6 +2446,9 @@
       state.sourcePresetId = bootPresetId;
       state.layout = res[3].layout;
       state.layoutRevision = 0;
+      /* 分組的「已存檔基準」。載不到分組檔時基準就是空分組，
+         所以一份沒有分組的 preset 打開來不會顯示未存檔。 */
+      state.savedLayoutText = VFXLayoutSchema.serialiseLayout(res[3].layout);
       if (res[3].error) {
         /* 明確告訴使用者「分組沒載進來」，而不是讓他以為群組被刪光了 */
         setSaveStatus('分組載入失敗', 'err');
@@ -2340,6 +2567,7 @@
            左邊那一組要用到素材詞彙表，一旦它出問題，至少不會連圖層分組
            一起消失——那會讓人以為群組被刪掉了，實際上只是沒渲染。 */
         wireGizmo();
+        initHistory();
         renderLayerList();
         renderInspector();
         onPresetChanged();
@@ -2362,10 +2590,15 @@
     ['f-text', 'f-usage', 'f-shape', 'f-element', 'f-tag', 'f-high'].forEach(function (id) {
       $(id).addEventListener('input', renderAssetBrowser);
     });
+    $('btn-undo').onclick = doUndo;
+    $('btn-redo').onclick = doRedo;
     $('btn-play').onclick = function () { state.playing = true; };
     $('btn-pause').onclick = function () { state.playing = false; };
     $('btn-restart').onclick = restart;
-    $('chk-loop').onchange = function () { state.preset.loop = $('chk-loop').checked; onPresetChanged(); };
+    $('chk-loop').onchange = function () {
+      edit('切換循環', function () { state.preset.loop = $('chk-loop').checked; });
+      onPresetChanged();
+    };
     /* 背景控制項已從左上角工具列移到預覽區正上方（見 buildBackgroundBar）。
        兩處都留的話，兩個控制項的顯示狀態會分家。 */
     $('btn-save').onclick = savePreset;

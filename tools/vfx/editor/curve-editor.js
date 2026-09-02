@@ -24,6 +24,8 @@ var VFXCurveEditor = (function () {
        opts.curve      目前的曲線（undefined／number／[[t,v],…]）
        opts.policy     見 curve-model 的 policyDefaults
        opts.onChange   fn(curve)，值已是可直接寫進 preset 的 canonical 形式
+       opts.onBegin    fn(what)，一次操作開始時呼叫一次（拖曳按下、按刪除鍵）。
+                       呼叫端用它開啟一筆歷史交易；中間的 onLive 不進歷史。
        opts.onLive     fn()，拖曳過程中每次變動都會呼叫（可省略）
        opts.height     畫布高度，預設 120
 
@@ -240,6 +242,9 @@ var VFXCurveEditor = (function () {
       var pos = localPos(e);
       el.focus({ preventScroll: true });
       var at = hitTest(pos.x, pos.y);
+      /* 一次拖曳（含「點空白處新增再拖到位」）算一筆歷史，
+         中間的每一次 onLive 都不記錄。 */
+      if (opts.onBegin) opts.onBegin(at < 0 ? '新增控制點於 ' : '調整 ');
       if (at < 0) {
         /* 空白處按下＝新增一個點，而且直接進入拖曳：
            「點一下再拖到位」比「點一下、放開、再按住拖」少一次操作。 */
@@ -302,6 +307,7 @@ var VFXCurveEditor = (function () {
       if (k !== 'Delete' && k !== 'Backspace') return;
       e.stopPropagation();                     // 不讓 document 上的刪圖層 handler 收到
       if (selected < 0 || !points) { e.preventDefault(); return; }
+      if (opts.onBegin) opts.onBegin('刪除控制點於 ');
       var r = M.removePoint(points, selected);
       points = r.points; selected = r.index;
       if (!points.length) points = null;

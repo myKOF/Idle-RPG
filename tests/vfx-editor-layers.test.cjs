@@ -1154,7 +1154,8 @@ test('D4 editor.js 的 Delete 分支擋在 isTextEntry 之後', function () {
 test('D5 Delete 後焦點落在鄰近一列，而不是整個清空', function () {
   const src = noComments(fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8'));
-  const fn = src.slice(src.indexOf('function deleteSelection'));
+  /* 實際刪除的邏輯在 deleteSelectionInner——外層只是把它包成一筆歷史。 */
+  const fn = src.slice(src.indexOf('function deleteSelectionInner'));
   const end = fn.indexOf('\n  }');
   assert.ok(/survivor/.test(fn.slice(0, end)),
     'deleteSelection 要挑一個倖存列接手焦點');
@@ -1195,8 +1196,14 @@ test('K3 Picker 寫回的是 index 裡的 assetId，不是檔案系統路徑', f
     path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8'));
   assert.ok(!/type\s*=\s*'file'/.test(src) && !/showOpenFilePicker/.test(src),
     '不得用作業系統的檔案選擇器：那會選到本機絕對路徑，寫進 Preset 就不可攜');
-  /* 候選清單只可能來自 semantics.records，那份的 assetId 一律是 index 的 id */
-  assert.ok(/picker\.layer\[picker\.field\] = picker\.selected;/.test(src));
+  /* 候選清單只可能來自 semantics.records，那份的 assetId 一律是 index 的 id。
+     套用時把選中的 assetId 寫進圖層的那個欄位——變數名稱不重要，
+     重要的是來源是 picker.selected，不是任何檔案系統路徑。 */
+  const applyFn = src.slice(src.indexOf('function applyPicker'));
+  const applyBody = applyFn.slice(0, applyFn.indexOf('\n  }'));
+  assert.ok(/picker\.selected/.test(applyBody), '套用的值必須來自 Picker 的選取');
+  assert.ok(/\[field\] = value|picker\.layer\[picker\.field\] = picker\.selected/.test(applyBody),
+    'applyPicker 要把選中的 assetId 寫進圖層欄位');
   const index = JSON.parse(fs.readFileSync(
     path.join(REPO, 'vfx', 'asset-index.json'), 'utf8'));
   const bad = index.assets.filter(function (a) {
