@@ -221,7 +221,16 @@ var VFXCore = (function () {
     }
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
     validateCurve(layer.scaleOverLife, where + '.scaleOverLife', errors, { nonNegative: true });
+    /* 分軸縮放曲線。只有走 updateSpriteLayer 的 sprite／procedural 支援，
+       粒子層的兩軸永遠相等（見 updateParticleLayer），所以那裡不收這兩個欄位——
+       由 TYPE_ONLY_FIELDS 擋下並報錯，而不是收下來再靜靜忽略。 */
+    validateCurve(layer.scaleXOverLife, where + '.scaleXOverLife', errors, { nonNegative: true });
+    validateCurve(layer.scaleYOverLife, where + '.scaleYOverLife', errors, { nonNegative: true });
     validateCurve(layer.rotationOverLife, where + '.rotationOverLife', errors);
+    /* 繞 X／Y 軸的翻轉。與 scaleX／scaleYOverLife 同一組限制（只有 sprite 與
+       procedural 支援），因為它們最終就是套用在 scaleY／scaleX 上。 */
+    validateCurve(layer.rotationXOverLife, where + '.rotationXOverLife', errors);
+    validateCurve(layer.rotationYOverLife, where + '.rotationYOverLife', errors);
   }
 
   function validateParticleLayer(layer, where, errors) {
@@ -310,12 +319,21 @@ var VFXCore = (function () {
   var COMMON_LAYER_FIELDS = ['id', 'type', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'scaleOverLife', 'rotationOverLife'];
+  /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
+     這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
+     那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
+     silent fallback，所以寧可讓它報「不支援的欄位」。
+
+     rotationX／rotationYOverLife 也在這一組，因為它們最終是乘在
+     scaleY／scaleX 上——粒子層那邊沒有分軸縮放可以承載它們。 */
+  var PER_AXIS_SCALE_FIELDS = ['scaleXOverLife', 'scaleYOverLife',
+    'rotationXOverLife', 'rotationYOverLife'];
   var TYPE_ONLY_FIELDS = {
-    sprite: [],
+    sprite: PER_AXIS_SCALE_FIELDS,
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
       'alignToVelocity', 'velocityRotationOffset'],
-    procedural: ['effect', 'size', 'scrollSpeed']
+    procedural: ['effect', 'size', 'scrollSpeed'].concat(PER_AXIS_SCALE_FIELDS)
   };
 
   /* 未知欄位必須報錯：拼錯的 alpah 若被靜靜忽略，使用者會看到「設定沒有效果」
@@ -405,7 +423,8 @@ var VFXCore = (function () {
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
     'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
     'alignToVelocity', 'velocityRotationOffset',
-    'alphaOverLife', 'scaleOverLife', 'rotationOverLife'];
+    'alphaOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
+    'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife'];
 
   /* 巢狀物件（position、spawn、emission…）也要遞迴排序，否則同樣語意的 preset
      只因為插入順序不同就產生不同 bytes，「位元穩定」的承諾會落空。 */
@@ -466,7 +485,13 @@ var VFXCore = (function () {
         ? 0 : layer.velocityRotationOffset,
       alphaOverLife: layer.alphaOverLife,
       scaleOverLife: layer.scaleOverLife,
-      rotationOverLife: layer.rotationOverLife
+      /* 刻意保留 undefined 而不填預設值：updateSpriteLayer 要靠
+         「有沒有給」來決定該軸是走自己的曲線還是沿用 scaleOverLife。 */
+      scaleXOverLife: layer.scaleXOverLife,
+      scaleYOverLife: layer.scaleYOverLife,
+      rotationOverLife: layer.rotationOverLife,
+      rotationXOverLife: layer.rotationXOverLife,
+      rotationYOverLife: layer.rotationYOverLife
     };
   }
 
@@ -572,11 +597,20 @@ var VFXCore = (function () {
         return null;                       // 超出預算就不播，寧可少一個特效也不要掉幀
       }
       var p = params || {};
+      /* startTime：從生命週期的第幾秒開始播，預設 0（與擴充前完全相同）。
+         給 Editor 用的：改一個參數就重播，播放頭若總是歸零，正在調 50% 位置的
+         曲線就永遠看不到自己改的那一段。Sprite 的 transform 是 progress 的
+         純函數，所以直接跳到該時間是精確的；粒子則是從沒有歷史的狀態開始，
+         與原本的重播行為一致。 */
+      var startTime = p.startTime === undefined ? 0 : p.startTime;
+      if (!isFiniteNumber(startTime) || startTime < 0) {
+        throw new Error('play(startTime) 需要非負的有限數');
+      }
       var effect = {
         handle: nextEffectId++,
         presetId: presetId,
         preset: preset,
-        time: 0,
+        time: startTime,
         done: false,
         origin: { x: (p.position && p.position.x) || 0, y: (p.position && p.position.y) || 0 },
         rotation: p.rotation || 0,
@@ -661,14 +695,37 @@ var VFXCore = (function () {
       var alphaK = sampleCurve(d.alphaOverLife, life.progress);
       var scaleK = sampleCurve(d.scaleOverLife, life.progress);
       var rotK = sampleCurve(d.rotationOverLife, life.progress);
+      /* 分軸縮放的相容規則：沒給就沿用等比的 scaleOverLife。
+         舊 preset 一個欄位都沒有 → 兩軸都拿 scaleK → 輸出與擴充前完全相同。 */
+      var scaleKX = d.scaleXOverLife === undefined
+        ? scaleK : sampleCurve(d.scaleXOverLife, life.progress);
+      var scaleKY = d.scaleYOverLife === undefined
+        ? scaleK : sampleCurve(d.scaleYOverLife, life.progress);
+
+      /* 繞 X／Y 軸翻轉。2D 貼圖沒有厚度，也沒有相機，所以這裡做的是
+         **正交投影**：一張平面繞著自己的水平軸轉 θ，投影到螢幕上的高度
+         就是原本的 cos θ 倍。這不是近似值，是沒有透視時的正確結果。
+
+           0°   → cos = 1     正面
+           90°  → cos = 0     側面，看不見
+           180° → cos = -1    翻到背面（負縮放＝鏡像），正是翻牌要的
+
+         與真 3D 的差別是沒有近大遠小，而且背面看到的是同一張圖的鏡像，
+         不會露出另一面。做翻牌、風車葉片、旋轉光環這類都夠用；
+         需要透視的話得換一個帶投影矩陣的後端，那是另一個層級的改動。 */
+      var flipY = d.rotationXOverLife === undefined
+        ? 1 : Math.cos(sampleCurve(d.rotationXOverLife, life.progress) || 0);
+      var flipX = d.rotationYOverLife === undefined
+        ? 1 : Math.cos(sampleCurve(d.rotationYOverLife, life.progress) || 0);
       var world = toWorld(effect, d.position.x, d.position.y);
       var t = scratchTransform;
       t.visible = true;
       t.x = world.x;
       t.y = world.y;
       t.rotation = effect.rotation + d.rotation + (rotK === null ? 0 : rotK);
-      t.scaleX = d.scale.x * effect.scale * (scaleK === null ? 1 : scaleK);
-      t.scaleY = d.scale.y * effect.scale * (scaleK === null ? 1 : scaleK);
+      /* 繞 Y 軸轉會壓縮水平方向，繞 X 軸轉會壓縮垂直方向——軸與被壓的方向是交叉的 */
+      t.scaleX = d.scale.x * effect.scale * (scaleKX === null ? 1 : scaleKX) * flipX;
+      t.scaleY = d.scale.y * effect.scale * (scaleKY === null ? 1 : scaleKY) * flipY;
       t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
       t.tint = colorToInt(d.tint);
       t.anchorX = d.anchor.x;
@@ -912,6 +969,15 @@ var VFXCore = (function () {
       update: update,
       stop: stop,
       stopAll: stopAll,
+      /* 播放頭查詢。與 play(startTime) 成對：Editor 重建預覽時先讀出目前時間，
+         再用它重播，畫面就不會每改一個參數就跳回開頭。
+         回傳 null 代表這個 handle 已經結束或不存在。 */
+      timeOf: function (handle) {
+        for (var i = 0; i < effects.length; i++) {
+          if (effects[i].handle === handle) return effects[i].time;
+        }
+        return null;
+      },
       destroy: destroy,
       getPreset: function (id) { return presets[id]; },
       stats: function () {
