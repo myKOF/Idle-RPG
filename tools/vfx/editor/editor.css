@@ -212,3 +212,7 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .ol-head:disabled { cursor: default; color: #7fb2ff; background: #1d1d24; }
 /* 游標讀數用暖色，和「選取的控制點」讀數區分開 */
 .curve-readout.cursor { color: #ffb454; }
+
+/* 群組就地改名 */
+.gname-edit { width: 100%; font: inherit; padding: 0 2px;
+              background: #0f0f14; border: 1px solid #7fb2ff; color: #e6e6ec; }

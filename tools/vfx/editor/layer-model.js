@@ -125,6 +125,12 @@
       if (at >= 0) selected.splice(at, 1); else selected.push(key);
       return { selected: selected, active: key, anchor: key };
     }
+    /* 點一個「已經是唯一選取且有焦點」的項目＝取消選取。
+       多選狀態下的普通點擊仍然收斂成單選（那是慣例，也是把選取範圍縮小的
+       唯一辦法），只有在它本來就是唯一選取時才切換成空。 */
+    if (selected.length === 1 && selected[0] === key && sel.active === key) {
+      return { selected: [], active: null, anchor: null };
+    }
     return { selected: [key], active: key, anchor: key };
   }
 
