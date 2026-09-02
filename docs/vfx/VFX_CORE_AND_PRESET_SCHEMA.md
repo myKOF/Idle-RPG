@@ -103,6 +103,54 @@ Core 的 `validatePreset` 仍是 preset 合法性的單一來源；
 把素材發佈綁進編輯動作，等於每按一次存檔就重寫一次 `images/vfx/assets/`；
 正式匯出仍然是獨立的一步。
 
+## 1.3 不變量：Editor 的 authoring 狀態不得改變 Runtime 輸出
+
+```
+EDITOR AUTHORING STATE MUST NOT CHANGE RUNTIME OUTPUT
+```
+
+以下全部屬於 Editor metadata，存在 `vfx/layouts/<presetId>.json` 或 localStorage：
+
+| 項目 | 存放位置 |
+| --- | --- |
+| Group（成員與名稱） | `layout.groups` |
+| Authoring order（頂層排列） | `layout.order` |
+| Group 內排列 | `layout.groups[].layerIds` |
+| Collapse | localStorage |
+| Selection | 只在記憶體 |
+
+它們**不得影響**：`preset.layers`、`zIndex`、RNG seed、繪製順序、粒子輸出、
+任何 runtime 輸出——除非使用者執行的是明確修改 VFX 資料的操作
+（改參數、換素材、新增／刪除圖層）。
+
+### 為什麼這條要寫死成不變量
+
+因為「看起來沒改到」是不夠的。實測結果：
+
+```
+拖一個圖層、zIndex 一個都沒動
+拖曳前 transform 指紋: 42a3bfe57527218e (5726 筆)
+拖曳後 transform 指紋: b9355597d29837b3 (5792 筆)   ← 不同
+```
+
+兩個原因都在 Core：
+
+1. **粒子亂數種子綁在陣列索引上** —— `rng: makeRng(effect.seed + i * 0x9E3779B9)`，
+   `i` 是 `preset.layers` 的索引。搬動一層，後面每一層的種子都變。
+2. **相同 `zIndex` 的繪製順序由 child 加入順序決定** ——
+   `lightning-orb-field` 有四組各 7 層共用同一個 `zIndex`。
+
+修法刻意**不動 Core**：改 seed 推導會讓所有既有 preset 的粒子位置一次性改變。
+改成把 authoring order 移出 `preset.layers`，讓這條不變量**結構上必然成立**，
+而不是靠測試去追。
+
+回歸保護在 `tests/vfx-editor-layers.test.cjs`：R1 先證明指紋抓得到重排
+（有鑑別力），R2 才驗證整串 authoring 操作後指紋完全相同。
+只比對欄位（zIndex/assetId/position/scale/alpha）是不夠的——
+那正是先前漏掉這個 bug 的原因。
+
+---
+
 ### 已知限制：符號連結檢查是 TOCTOU-racy
 
 連結檢查通過之後，落檔仍然是用路徑呼叫 `openSync` / `renameSync`，

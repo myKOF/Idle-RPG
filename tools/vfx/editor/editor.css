@@ -7,6 +7,11 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  /* 三欄式工具視窗，整頁永遠不該捲動——各欄自己捲。
+     這不只是美觀問題：內容只要多撐出 1px，整頁捲軸就會出現並吃掉 15px 寬度，
+     中央欄跟著變窄，而 Pixi 的畫布尺寸是啟動時量一次就不再更新的，
+     結果就是畫布比欄位寬 15px，直接蓋在右側 Inspector 的文字上。 */
+  overflow: hidden;
 }
 #topbar {
   display: flex; align-items: center; gap: 8px;
@@ -23,11 +28,22 @@ button:hover { background: #30303a; }
 button.active { background: #3d5a80; border-color: #4d7ab0; }
 .stats { margin-left: auto; color: #8a8a96; font-variant-numeric: tabular-nums; }
 
-#layout { flex: 1 1 auto; display: grid; grid-template-columns: 300px 1fr 320px; min-height: 0; }
-#left, #right { background: #1a1a20; overflow: auto; border-right: 1px solid #2c2c34; }
+/* minmax(0, 1fr) 而不是 1fr：grid item 的自動最小尺寸預設是 auto，
+   中央欄的內容（畫布）就能把軌道推得比 1fr 還寬。寫死下限為 0 才是真的可縮。 */
+/* 側欄用 minmax：空間夠時維持 300/320，視窗變窄時先收縮側欄，
+   而不是讓中央的預覽被擠成 0 寬。 */
+#layout { flex: 1 1 auto; display: grid;
+          grid-template-columns: minmax(210px, 300px) minmax(0, 1fr) minmax(240px, 320px);
+          min-height: 0; overflow: hidden; }
+#left, #right { background: #1a1a20; overflow: auto; border-right: 1px solid #2c2c34;
+                min-width: 0; }
 #right { border-right: none; border-left: 1px solid #2c2c34; }
-#center { position: relative; display: flex; flex-direction: column; min-width: 0; }
-#preview-host { flex: 1 1 auto; min-height: 0; background: #101014; }
+#center { position: relative; display: flex; flex-direction: column; min-width: 0;
+          overflow: hidden; }
+/* overflow:hidden 是結構性保證：不論 Pixi 把畫布做多大，都不可能畫到欄位外面。
+   畫布尺寸另外由 editor.js 的 ResizeObserver 跟著這個元素校正。 */
+#preview-host { flex: 1 1 auto; min-height: 0; min-width: 0; background: #101014;
+                overflow: hidden; }
 #preview-host canvas { display: block; }
 
 h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
@@ -74,3 +90,91 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .save-status { color: #8a8a96; font-size: 12px; }
 .save-status.ok { color: #7fd18a; }
 .save-status.err { color: #ff8080; }
+
+/* ---- 預覽區上方的背景色列 ---- */
+#bg-bar {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; background: #1e1e24; border-bottom: 1px solid #2c2c34;
+  flex-wrap: wrap;
+}
+#bg-bar .bg-label { color: #8a8a96; font-size: 12px; }
+#bg-swatches { display: flex; gap: 4px; flex-wrap: wrap; }
+/* 色票本身就是它代表的顏色，不需要文字說明；hover 才出 title */
+.bg-swatch {
+  width: 22px; height: 22px; padding: 0; border-radius: 4px;
+  border: 1px solid #3a3a44; cursor: pointer; background-size: cover;
+}
+.bg-swatch:hover { border-color: #6a6a7a; }
+/* 選中的色票要一眼看得出來。用外框而不是變色，才不會蓋掉色票本身的顏色 */
+.bg-swatch.sel { border-color: #7fb2ff; box-shadow: 0 0 0 2px #2e4a7a; }
+.bg-custom { display: flex; align-items: center; gap: 4px; color: #8a8a96; font-size: 12px; }
+.bg-custom input[type="color"] {
+  width: 26px; height: 22px; padding: 1px; border: 1px solid #3a3a44;
+  border-radius: 4px; background: #26262e; cursor: pointer;
+}
+.bg-current { margin-left: auto; color: #7a7a86; font-size: 11px;
+              font-variant-numeric: tabular-nums; }
+
+/* ---- Layer 樹狀面板 ---- */
+.layer-row.active { outline: 1px solid #6f9fe0; outline-offset: -1px; }
+/* 子項縮排。用 padding 而不是 margin，整列才都還是 drop target */
+.layer-row.child { padding-left: 24px; }
+.group-row { background: #23232b; font-weight: 600; }
+.group-row.sel { background: #33465f; }
+.group-row .gname { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis;
+                    white-space: nowrap; }
+.twisty { background: none; border: none; color: #9a9aa6; padding: 0 2px;
+          font-size: 10px; line-height: 1; cursor: pointer; }
+.twisty:hover { color: #d6d6dc; background: none; }
+.layer-row.dragging { opacity: .45; }
+/* 插入位置指示線：用 box-shadow 畫在列的上／下緣，不改變版面高度，
+   否則拖曳過程中每一列都會跳動。 */
+.layer-row.drop-before { box-shadow: inset 0 2px 0 0 #7fb2ff; }
+.layer-row.drop-after { box-shadow: inset 0 -2px 0 0 #7fb2ff; }
+.layer-row.drop-into { background: #2f4a2f; box-shadow: inset 0 0 0 1px #7fd18a; }
+.layer-hint { color: #7a7a86; font-size: 11px; gap: 10px; }
+
+/* ---- Asset Picker ---- */
+#picker { position: fixed; inset: 0; background: rgba(0,0,0,.6);
+          display: flex; align-items: center; justify-content: center; z-index: 50; }
+/* #picker 的 display 比瀏覽器內建的 [hidden] { display: none } 更明確，
+   少了這一條，對話框會從載入起就一直蓋在整個編輯器上面。 */
+#picker[hidden] { display: none; }
+.picker-box { width: min(1000px, 92vw); height: min(680px, 88vh);
+              background: #1a1a20; border: 1px solid #3a3a44; border-radius: 8px;
+              display: flex; flex-direction: column; overflow: hidden; }
+.picker-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+               padding: 8px 10px; background: #23232b; border-bottom: 1px solid #2c2c34; }
+.picker-head .sep { width: 1px; height: 18px; background: #34343e; }
+.picker-target { color: #7fb2ff; font-size: 12px; }
+.picker-body { flex: 1 1 auto; min-height: 0; display: grid;
+               grid-template-columns: minmax(0, 1fr) 280px; }
+#picker-list { overflow: auto; padding: 6px; display: grid;
+               grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px;
+               align-content: start; }
+/* 縮圖底色用棋盤格：透明素材在純色底上會看不出邊界 */
+.pick { border: 1px solid #2c2c34; border-radius: 4px; padding: 4px; cursor: pointer;
+        background: #15151a; text-align: center; }
+.pick:hover { border-color: #6a6a7a; }
+.pick.sel { border-color: #7fb2ff; box-shadow: 0 0 0 1px #7fb2ff inset; }
+.pick img { width: 100%; height: 72px; object-fit: contain; display: block;
+            background: repeating-conic-gradient(#22222a 0% 25%, #1a1a20 0% 50%) 50% / 12px 12px; }
+.pick span { display: block; font-size: 10px; color: #9a9aa6; margin-top: 3px;
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#picker-detail { border-left: 1px solid #2c2c34; overflow: auto; padding: 10px; }
+#picker-preview img { width: 100%; height: 220px; object-fit: contain;
+                      background: repeating-conic-gradient(#22222a 0% 25%, #1a1a20 0% 50%) 50% / 16px 16px;
+                      border: 1px solid #2c2c34; border-radius: 4px; }
+#picker-meta { margin-top: 10px; font-size: 12px; }
+#picker-meta .row2 { display: grid; grid-template-columns: 96px 1fr; gap: 4px;
+                     padding: 2px 0; border-bottom: 1px solid #23232a; }
+#picker-meta .k { color: #8a8a96; }
+#picker-meta .v { color: #d6d6dc; word-break: break-all; }
+.picker-foot { display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+               background: #23232b; border-top: 1px solid #2c2c34; }
+.picker-foot button { margin-left: auto; }
+
+/* assetId 欄位：文字框 + 開啟 Picker 的按鈕 */
+.asset-field { display: flex; gap: 4px; min-width: 0; }
+.asset-field input { flex: 1 1 auto; min-width: 0; }
+.asset-field .pick-btn { flex: 0 0 auto; white-space: nowrap; }

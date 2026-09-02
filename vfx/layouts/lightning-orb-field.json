@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "presetId": "lightning-orb-field",
+  "groups": [
+    {
+      "id": "orb-a",
+      "name": "Orb A",
+      "layerIds": [
+        "orb-a-glow",
+        "orb-a-body",
+        "orb-a-core",
+        "orb-a-arc"
+      ]
+    },
+    {
+      "id": "orb-b",
+      "name": "Orb B",
+      "layerIds": [
+        "orb-b-glow",
+        "orb-b-body",
+        "orb-b-core",
+        "orb-b-arc"
+      ]
+    },
+    {
+      "id": "orb-c",
+      "name": "Orb C",
+      "layerIds": [
+        "orb-c-glow",
+        "orb-c-body",
+        "orb-c-core",
+        "orb-c-arc"
+      ]
+    },
+    {
+      "id": "orb-d",
+      "name": "Orb D",
+      "layerIds": [
+        "orb-d-glow",
+        "orb-d-body",
+        "orb-d-core",
+        "orb-d-arc"
+      ]
+    },
+    {
+      "id": "orb-e",
+      "name": "Orb E",
+      "layerIds": [
+        "orb-e-glow",
+        "orb-e-body",
+        "orb-e-core",
+        "orb-e-arc"
+      ]
+    },
+    {
+      "id": "orb-f",
+      "name": "Orb F",
+      "layerIds": [
+        "orb-f-glow",
+        "orb-f-body",
+        "orb-f-core",
+        "orb-f-arc"
+      ]
+    },
+    {
+      "id": "orb-g",
+      "name": "Orb G",
+      "layerIds": [
+        "orb-g-glow",
+        "orb-g-body",
+        "orb-g-core",
+        "orb-g-arc"
+      ]
+    }
+  ],
+  "order": [
+    "layer:field-glow",
+    "group:orb-a",
+    "group:orb-b",
+    "group:orb-c",
+    "group:orb-d",
+    "group:orb-e",
+    "group:orb-f",
+    "group:orb-g",
+    "layer:sparkles"
+  ]
+}

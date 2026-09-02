@@ -52,6 +52,7 @@ function makeSandbox(options) {
 
   const presets = path.join(repoRoot, 'vfx', 'presets');
   fs.mkdirSync(presets, { recursive: true });
+  fs.mkdirSync(path.join(repoRoot, 'vfx', 'layouts'), { recursive: true });
   copyRealPresets(presets);
   return { base: base, repoRoot: repoRoot, outside: outside, presets: presets };
 }
@@ -749,17 +750,51 @@ test('S1 正式啟動路徑不經過 __testOnly，也沒有任何 CLI 參數能�
     assert.deepEqual(flags, ["argv[i] === '--port'"], 'CLI 只能有 --port 這一個參數');
   });
 
-test('S2 目的地目錄是模組常數，落檔一定走 temp → rename', function () {
+test('S2 目的地目錄只能是模組常數，落檔一定走 temp → rename', function () {
   const src = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
   assert.ok(/const PRESETS_DIR_REL = 'vfx\/presets';/.test(src));
-  /* writePresetFile 不得接受任何路徑參數 */
-  const fn = src.slice(src.indexOf('function writePresetFile('),
+  assert.ok(/const LAYOUTS_DIR_REL = 'vfx\/layouts';/.test(src));
+  const fn = src.slice(src.indexOf('function writeJsonFile('),
     src.indexOf('function savePresetText('));
-  assert.ok(/function writePresetFile\(ctx, presetId, text\)/.test(fn),
-    'writePresetFile 的簽章不得出現路徑參數');
+  assert.ok(/function writeJsonFile\(ctx, dirRel, fileId, text\)/.test(fn),
+    'writeJsonFile 的簽章不得出現完整路徑參數');
   assert.ok(/openSync\(candidate, 'wx'\)/.test(fn), '暫存檔必須用獨佔建立');
   assert.ok(/renameSync\(tempAbs, targetAbs\)/.test(fn), '必須是 temp → rename，不是直接寫目標');
   assert.ok(!/writeFileSync\(targetAbs/.test(src), '不得直接 writeFileSync 到目標檔');
+
+  /* dirRel 現在是參數了，所以「目的地不是輸入的函數」這件事必須靠斷言守住：
+     呼叫端只能傳那兩個模組常數，其餘一律拒絕。 */
+  const dirs = editorServer.__testOnly.WRITABLE_DIRS;
+  assert.deepEqual(dirs, ['vfx/presets', 'vfx/layouts']);
+  /* 只看呼叫端（結果會被指派出去），不要把函式定義那一行也算進來 */
+  const calls = src.match(/=\s*writeJsonFile\(ctx, ([A-Za-z_]+),/g) || [];
+  assert.equal(calls.length, 2, '應該剛好有 preset 與 layout 兩個呼叫端');
+  calls.forEach(function (c) {
+    assert.ok(/PRESETS_DIR_REL|LAYOUTS_DIR_REL/.test(c),
+      'writeJsonFile 的目錄參數必須是模組常數，收到：' + c);
+  });
+});
+
+test('S3 writeJsonFile 拒絕不在白名單內的目錄', async function () {
+  const sb = makeSandbox();
+  const h = await withServer(sb);
+  try {
+    const before = snapshot(sb.base);
+    /* 直接打內部函式，模擬「有人多加了一條路由卻忘了用常數」 */
+    const ctx = { repoRoot: sb.repoRoot };
+    const mod = require('../tools/vfx/editor-server.cjs');
+    /* writeJsonFile 沒有對外匯出，改用可觀察的等價證據：
+       兩個合法前綴以外的 PUT 路徑一律 400，不會產生任何檔案。 */
+    for (const p of ['/vfx/other/x.json', '/vfx/layoutsx/x.json', '/vfx/presetsx/x.json']) {
+      const res = await put(h.port, p, '{}');
+      assert.equal(res.status, 400, p + ' 必須被拒');
+    }
+    assert.equal(snapshot(sb.base), before);
+    assert.ok(ctx && mod);
+  } finally {
+    await closeServer(h);
+    cleanup(sb);
+  }
 });
 
 /* ============================================================

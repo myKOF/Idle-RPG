@@ -14,16 +14,6 @@
   <button id="btn-restart">⟲ Restart</button>
   <label><input type="checkbox" id="chk-loop"> Loop</label>
   <span class="sep"></span>
-  <label>背景
-    <select id="sel-bg">
-      <option value="#101014">深色</option>
-      <option value="#000000">純黑</option>
-      <option value="#7a7a7a">中灰</option>
-      <option value="#e8e8e8">淺色</option>
-      <option value="checker">棋盤格</option>
-    </select>
-  </label>
-  <span class="sep"></span>
   <button id="btn-load">載入 Preset</button>
   <button id="btn-save">儲存到 repo</button>
   <button id="btn-download">下載複本</button>
@@ -60,11 +50,35 @@
         <button id="btn-add-layer">＋ 新增</button>
         <button id="btn-del-layer">刪除</button>
       </div>
+      <div class="row">
+        <button id="btn-group" title="把選取的圖層組成一個群組">組成群組</button>
+        <button id="btn-ungroup" title="解散選取的群組（圖層本身不會被刪）">解散</button>
+        <!-- 顯示排序。它只改「畫面上怎麼排」，不動 preset.layers，也不動 zIndex。 -->
+        <select id="sel-sort" title="只影響顯示順序，不改變資料與繪製順序">
+          <option value="creation">建立順序</option>
+          <option value="name">名稱 A→Z</option>
+        </select>
+      </div>
+      <div class="row layer-hint">
+        <span id="layer-status"></span>
+        <span id="clipboard-status"></span>
+      </div>
       <div id="layer-list"></div>
     </section>
   </aside>
 
   <section id="center">
+    <!-- 背景色列：緊貼預覽區上方。特效是否「在這個場景裡看得清楚」
+         只有換背景才判斷得出來，所以控制項要離畫面近、一下就能點。 -->
+    <div id="bg-bar">
+      <span class="bg-label">背景</span>
+      <div id="bg-swatches"></div>
+      <label class="bg-custom" title="自訂背景色">
+        <input type="color" id="bg-picker" value="#101014">
+        <span>自訂</span>
+      </label>
+      <span id="bg-current" class="bg-current"></span>
+    </div>
     <div id="preview-host"></div>
     <div id="preview-msg" class="hint"></div>
   </section>
@@ -77,10 +91,45 @@
   </aside>
 </main>
 
+<!-- Asset Picker：從 Asset Library Index 選 assetId。
+     刻意不用作業系統的檔案選擇器——那會選到 D:\... 之類的絕對路徑，
+     一存進 Preset 就失去可移植性，換台電腦就壞。 -->
+<div id="picker" hidden>
+  <div class="picker-box">
+    <header class="picker-head">
+      <strong>選擇素材</strong>
+      <span id="picker-target" class="picker-target"></span>
+      <span class="sep"></span>
+      <input type="search" id="pf-text" placeholder="搜尋 assetId…">
+      <select id="pf-usage"></select>
+      <select id="pf-shape"></select>
+      <select id="pf-element"></select>
+      <select id="pf-tag"></select>
+      <label class="inline"><input type="checkbox" id="pf-high"> 只看 high</label>
+      <span id="picker-count" class="hint"></span>
+      <button id="picker-close" title="Esc">✕</button>
+    </header>
+    <div class="picker-body">
+      <div id="picker-list"></div>
+      <aside id="picker-detail">
+        <div id="picker-preview"></div>
+        <div id="picker-meta"></div>
+      </aside>
+    </div>
+    <footer class="picker-foot">
+      <span class="hint">單擊預覽　雙擊套用　Esc 取消</span>
+      <button id="picker-apply" disabled>套用到目前圖層</button>
+    </footer>
+  </div>
+</div>
+
 <script src="/js/vendor/pixi.min.js"></script>
 <script src="/js/vfx-core.js"></script>
 <script src="/js/vfx-pixi-backend.js"></script>
+<script src="/tools/vfx/vfx-semantic-vocab.cjs"></script>
 <script src="/tools/vfx/editor/preset-id-policy.js"></script>
+<script src="/tools/vfx/editor/layout-schema.js"></script>
+<script src="/tools/vfx/editor/layer-model.js"></script>
 <script src="/tools/vfx/editor/editor.js"></script>
 </body>
 </html>
