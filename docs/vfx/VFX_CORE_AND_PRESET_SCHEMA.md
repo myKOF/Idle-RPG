@@ -260,6 +260,31 @@ rotationYOverLife  →  scaleX *= cos(θ)     繞垂直軸轉，變窄
 搭配 `timeOf(handle)` 讀出目前時間。Sprite 的 transform 是 progress 的純函數，
 所以直接跳到該時間是精確的；粒子則是從沒有歷史的狀態開始，與原本的重播行為一致。
 
+### `play(presetId, { scaleX, scaleY })` 與 `setTransform(handle, …)`
+
+這兩個是 Runtime Adapter 的前置：光束要依實際距離拉長、飛行物要逐幀前進、場域要跟著玩家走，
+Core 卻不認得「目標」與「玩家」，所以只提供兩個泛用旋鈕，把「跟著誰」留給 Adapter。
+
+```js
+runtime.play(id, { position, rotation, scale, scaleX, scaleY, seed, startTime });
+runtime.setTransform(handle, { position, rotation, scale, scaleX, scaleY });  // 只更新有給的欄位
+```
+
+三個縮放值的關係：
+
+| 欄位 | 作用 |
+| --- | --- |
+| `scale` | 等比縮放；也是**粒子貼圖尺寸**用的那一個 |
+| `scaleX` / `scaleY` | 圖層座標（`position`）與 sprite 尺寸各走各的軸；先在特效座標系分軸縮放，再旋轉、再平移 |
+
+沒給 `scaleX`／`scaleY` 時兩軸都等於 `scale`，等比縮放的輸出與擴充前逐位元相同。
+只給分軸、沒給 `scale` 時，粒子尺寸取兩軸絕對值的**較小者**：把光束拉長三倍不該讓沿線的火花也胖三倍——拉長是幾何，不是放大。
+
+`setTransform` 的語意：sprite 圖層的 transform 是 (origin, progress) 的純函數，下一幀就在新位置；
+**已經出生的粒子留在它出生時的區域座標**（隨新原點平移，但不會重新沿路徑補位），新粒子從新原點出生——
+飛行物的拖尾因此自然形成。未知或已結束的 handle 回 `false`；縮放、旋轉與位置一旦有給就必須是有限數，
+NaN 會讓整個特效消失卻查不到原因，屬規格禁止的 silent fallback，直接報錯。
+
 # 2. 圖層型別（只有三種是真正不同的繪圖原語）
 
 需求裡列了 Sprite / Mask / Particle / Ring / Glow / Procedural 六項，
