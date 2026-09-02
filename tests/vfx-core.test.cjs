@@ -1343,3 +1343,127 @@ test('16. destroy 會清空粒子 free-list，不留下殘餘狀態', function (
   const destroyBody = src.slice(src.indexOf('function destroy()'), src.indexOf('function destroy()') + 700);
   assert.ok(/particlePool\.length = 0/.test(destroyBody), '清空必須發生在 destroy() 內');
 });
+
+/* ---------------- 特效層級 transform：分軸縮放與播放中途移動（Runtime Adapter 前置） ---------------- */
+
+function captureRuntime() {
+  const backend = VFXCore.createNullBackend();
+  const frames = [];
+  const rt = VFXCore.createRuntime({
+    backend: {
+      createNode: backend.createNode,
+      updateNode: function (n, t) {
+        if (t && t.visible) frames.push({ node: n, x: t.x, y: t.y, scaleX: t.scaleX, scaleY: t.scaleY, rotation: t.rotation });
+      },
+      destroyNode: backend.destroyNode
+    },
+    resolver: resolver()
+  });
+  return { rt: rt, frames: frames };
+}
+
+test('play 的 scaleX / scaleY 分軸縮放：圖層位置與精靈尺寸各走各的軸，未給時等於 scale', function () {
+  const c = captureRuntime();
+  c.rt.registerPreset({
+    schemaVersion: 1, id: 'axis', duration: 1,
+    layers: [{ id: 'a', type: 'sprite', assetId: 'pack/ring.png', position: { x: 10, y: 10 } }]
+  });
+  c.rt.play('axis', { position: { x: 100, y: 100 }, scaleX: 3, scaleY: 0.5 });
+  c.rt.update(0.1);
+  const t = c.frames[c.frames.length - 1];
+  assert.equal(t.x, 130, 'x 位移沿 X 軸放大三倍');
+  assert.equal(t.y, 105, 'y 位移沿 Y 軸縮成一半');
+  assert.equal(t.scaleX, 3);
+  assert.equal(t.scaleY, 0.5);
+
+  c.frames.length = 0;
+  c.rt.stopAll();
+  c.rt.play('axis', { position: { x: 0, y: 0 }, scale: 2 });
+  c.rt.update(0.1);
+  const u = c.frames[c.frames.length - 1];
+  assert.equal(u.x, 20); assert.equal(u.y, 20);
+  assert.equal(u.scaleX, 2, '只給 scale 時兩軸都等於 scale（與擴充前相同）');
+  assert.equal(u.scaleY, 2);
+});
+
+test('分軸縮放時粒子貼圖尺寸取兩軸較小者：拉長光束不會讓火花變胖', function () {
+  const c = captureRuntime();
+  c.rt.registerPreset({
+    schemaVersion: 1, id: 'axis-p', duration: 1,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'burst', count: 4 }, maxParticles: 8, lifetime: 1,
+      speed: 0, startScale: 0.5
+    }]
+  });
+  c.rt.play('axis-p', { scaleX: 4, scaleY: 1 });
+  c.rt.update(0.1);
+  assert.ok(c.frames.length >= 4, '四顆粒子都畫了');
+  c.frames.forEach(function (f) {
+    assert.equal(f.scaleX, 0.5, '粒子尺寸 = startScale × min(|4|,|1|)');
+    assert.equal(f.scaleY, 0.5);
+  });
+  c.rt.stopAll();
+  c.frames.length = 0;
+  c.rt.play('axis-p', { scale: 2, scaleX: 4 });
+  c.rt.update(0.1);
+  c.frames.forEach(function (f) {
+    assert.equal(f.scaleX, 1, '有給 scale 就以 scale 為粒子尺寸，scaleX 只影響幾何');
+  });
+});
+
+test('setTransform 在播放中途移動特效：精靈下一幀就在新位置，已出生的粒子留在原地', function () {
+  const c = captureRuntime();
+  c.rt.registerPreset({
+    schemaVersion: 1, id: 'move', duration: 2,
+    layers: [
+      { id: 's', type: 'sprite', assetId: 'pack/ring.png', position: { x: 5, y: 0 } },
+      { id: 'p', type: 'particle', assetId: 'pack/star.png', zIndex: 1,
+        emission: { mode: 'burst', count: 1 }, maxParticles: 4, lifetime: 5, speed: 0 }
+    ]
+  });
+  const h = c.rt.play('move', { position: { x: 0, y: 0 } });
+  c.rt.update(0.1);
+  const first = c.frames.slice();
+  const spriteNode = first.find(function (f) { return f.x === 5; }).node;
+  const particleNode = first.find(function (f) { return f.x === 0; }).node;
+  c.frames.length = 0;
+  assert.equal(c.rt.setTransform(h, { position: { x: 100, y: 50 }, rotation: Math.PI / 2, scale: 2 }), true);
+  c.rt.update(0.1);
+  const sprite = c.frames.find(function (f) { return f.node === spriteNode; });
+  const particle = c.frames.find(function (f) { return f.node === particleNode; });
+  assert.ok(Math.abs(sprite.x - 100) < 1e-9, '旋轉 90° 後 x 位移歸零，落在新原點 x');
+  assert.ok(Math.abs(sprite.y - 60) < 1e-9, 'y = 50 + 5×2');
+  assert.equal(sprite.scaleX, 2);
+  assert.ok(Math.abs(sprite.rotation - Math.PI / 2) < 1e-9, '整個特效的旋轉套到精靈上');
+  /* 粒子的位置是出生時就固定在區域座標 (0,0)，toWorld 會跟著新原點走——
+     這代表「出生點 + 原點位移」：粒子本身沒有動，是原點動了。
+     速度為 0 的粒子因此落在新原點上；拖尾效果來自「新粒子在新原點出生、舊粒子留在舊區域座標」。 */
+  assert.ok(Math.abs(particle.x - 100) < 1e-9);
+  assert.ok(Math.abs(particle.y - 50) < 1e-9);
+});
+
+test('setTransform 只更新有給的欄位；未知 handle 回 false；非有限數直接報錯', function () {
+  const c = captureRuntime();
+  c.rt.registerPreset(basePreset({ id: 'partial', layers: [{ id: 'a', type: 'sprite', assetId: 'pack/ring.png', position: { x: 10, y: 0 } }] }));
+  const h = c.rt.play('partial', { position: { x: 1, y: 2 }, rotation: 0, scale: 3 });
+  assert.equal(c.rt.setTransform(h, { position: { x: 7 } }), true, '只給 x');
+  c.rt.update(0.01);
+  let t = c.frames[c.frames.length - 1];
+  assert.equal(t.x, 37, 'x 換成 7，位移仍 ×3');
+  assert.equal(t.y, 2, 'y 沒給就不動');
+  assert.equal(t.scaleX, 3, 'scale 沒給就不動');
+  assert.equal(c.rt.setTransform(h, { scaleX: 1 }), true);
+  c.rt.update(0.01);
+  t = c.frames[c.frames.length - 1];
+  assert.equal(t.scaleX, 1, '只給 scaleX 就只改 X 軸');
+  assert.equal(t.scaleY, 3, 'Y 軸保留原本的 scale');
+  assert.equal(c.rt.setTransform(9999, { rotation: 1 }), false, '不存在的 handle');
+  assert.throws(function () { c.rt.setTransform(h, { rotation: NaN }); }, /rotation/);
+  assert.throws(function () { c.rt.setTransform(h, { position: { x: Infinity } }); }, /position\.x/);
+  assert.throws(function () { c.rt.play('partial', { scaleX: NaN }); }, /scaleX/);
+  c.rt.stop(h);
+  assert.equal(c.rt.setTransform(h, { rotation: 1 }), false, '停掉之後也回 false');
+  c.rt.destroy();
+  assert.throws(function () { c.rt.setTransform(h, {}); }, /destroy/);
+});

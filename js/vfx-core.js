@@ -612,12 +612,13 @@ var VFXCore = (function () {
         preset: preset,
         time: startTime,
         done: false,
-        origin: { x: (p.position && p.position.x) || 0, y: (p.position && p.position.y) || 0 },
-        rotation: p.rotation || 0,
-        scale: p.scale === undefined ? 1 : p.scale,
+        origin: { x: 0, y: 0 },
+        rotation: 0,
+        scale: 1, scaleX: 1, scaleY: 1,
         seed: (p.seed === undefined ? (nextEffectId * 2654435761) : p.seed) >>> 0,
         layers: []
       };
+      applyTransformParams(effect, p);
       preset.layers.forEach(function (raw, i) {
         var layer = layerDefaults(raw);
         if (!layer.enabled) return;
@@ -636,6 +637,65 @@ var VFXCore = (function () {
       });
       effects.push(effect);
       return effect.handle;
+    }
+
+    /* ---- 特效層級的 transform（play 與 setTransform 共用同一套解讀） ----
+       position / rotation / scale 是 play 原本就有的欄位；scaleX / scaleY 是分軸縮放，
+       給光束、劍氣這類「沿著一個方向拉長」的特效用：preset 以名目長度作畫，
+       Runtime 再依實際距離只拉 X 軸。
+
+       三個縮放值的關係：
+         scale            等比縮放，也是**粒子貼圖尺寸**用的那一個
+         scaleX / scaleY  圖層座標（position）與 sprite 尺寸各走各的軸
+       沒給 scaleX／scaleY 時兩軸都等於 scale（與擴充前完全相同）。
+       只給分軸、沒給 scale 時，粒子尺寸取兩軸絕對值的**較小者**：
+       把光束拉長三倍不該讓沿線的火花也胖三倍——拉長是幾何，不是放大。
+
+       play 對 position 沿用原本的寬鬆解讀（缺欄位＝0）；縮放與旋轉一旦有給就必須是
+       有限數——NaN 進到 transform 會讓整個特效消失卻查不到原因，屬規格禁止的 silent fallback。 */
+    function transformNumber(value, name) {
+      if (!isFiniteNumber(value)) throw new Error(name + ' 必須是有限數，收到：' + value);
+      return value;
+    }
+    function applyTransformParams(effect, p) {
+      if (p.position !== undefined && p.position !== null) {
+        if (p.position.x !== undefined) effect.origin.x = transformNumber(p.position.x, 'position.x');
+        if (p.position.y !== undefined) effect.origin.y = transformNumber(p.position.y, 'position.y');
+      }
+      if (p.rotation !== undefined) effect.rotation = transformNumber(p.rotation, 'rotation');
+      var hasScale = p.scale !== undefined;
+      var hasAxis = p.scaleX !== undefined || p.scaleY !== undefined;
+      if (hasScale) {
+        var s = transformNumber(p.scale, 'scale');
+        effect.scale = s;
+        effect.scaleX = s;
+        effect.scaleY = s;
+      }
+      if (hasAxis) {
+        if (p.scaleX !== undefined) effect.scaleX = transformNumber(p.scaleX, 'scaleX');
+        if (p.scaleY !== undefined) effect.scaleY = transformNumber(p.scaleY, 'scaleY');
+        if (!hasScale) effect.scale = Math.min(Math.abs(effect.scaleX), Math.abs(effect.scaleY));
+      }
+    }
+
+    function findEffect(handle) {
+      for (var i = 0; i < effects.length; i++) {
+        if (effects[i].handle === handle) return effects[i];
+      }
+      return null;
+    }
+
+    /* 播放中途改變特效的位置／旋轉／縮放。Runtime Adapter 靠這支讓飛行物逐幀前進、
+       讓場域跟著玩家走、讓環繞體轉圈——Core 本身不認得「目標」與「玩家」，
+       只提供這個泛用的旋鈕。只更新有給的欄位；未知 handle 回 false。
+       Sprite 圖層的 transform 是 (origin, progress) 的純函數，下一幀就會在新位置；
+       已經出生的粒子留在它出生時的世界座標上（拖尾因此自然形成），新粒子從新原點出生。 */
+    function setTransform(handle, params) {
+      assertLive('setTransform');
+      var effect = findEffect(handle);
+      if (!effect) return false;
+      applyTransformParams(effect, params || {});
+      return true;
     }
 
     /* 共用結果物件：每層每幀都 new 一個，在 24 特效 × 32 層下同樣是可觀的配置量。
@@ -665,10 +725,12 @@ var VFXCore = (function () {
        「遊戲裡播出來的位置」是同一套算式。 */
     var scratchWorld = { x: 0, y: 0 };
     function toWorld(effect, x, y) {
-      var s = effect.scale;
+      /* 先在特效自己的座標系分軸縮放，再旋轉、再平移——
+         等比縮放時與擴充前（(x*c - y*sn) * s）逐位元相同。 */
+      var lx = x * effect.scaleX, ly = y * effect.scaleY;
       var c = Math.cos(effect.rotation), sn = Math.sin(effect.rotation);
-      scratchWorld.x = effect.origin.x + (x * c - y * sn) * s;
-      scratchWorld.y = effect.origin.y + (x * sn + y * c) * s;
+      scratchWorld.x = effect.origin.x + (lx * c - ly * sn);
+      scratchWorld.y = effect.origin.y + (lx * sn + ly * c);
       return scratchWorld;
     }
 
@@ -724,8 +786,8 @@ var VFXCore = (function () {
       t.y = world.y;
       t.rotation = effect.rotation + d.rotation + (rotK === null ? 0 : rotK);
       /* 繞 Y 軸轉會壓縮水平方向，繞 X 軸轉會壓縮垂直方向——軸與被壓的方向是交叉的 */
-      t.scaleX = d.scale.x * effect.scale * (scaleKX === null ? 1 : scaleKX) * flipX;
-      t.scaleY = d.scale.y * effect.scale * (scaleKY === null ? 1 : scaleKY) * flipY;
+      t.scaleX = d.scale.x * effect.scaleX * (scaleKX === null ? 1 : scaleKX) * flipX;
+      t.scaleY = d.scale.y * effect.scaleY * (scaleKY === null ? 1 : scaleKY) * flipY;
       t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
       t.tint = colorToInt(d.tint);
       t.anchorX = d.anchor.x;
@@ -966,6 +1028,7 @@ var VFXCore = (function () {
     return {
       registerPreset: registerPreset,
       play: play,
+      setTransform: setTransform,
       update: update,
       stop: stop,
       stopAll: stopAll,
@@ -973,10 +1036,8 @@ var VFXCore = (function () {
          再用它重播，畫面就不會每改一個參數就跳回開頭。
          回傳 null 代表這個 handle 已經結束或不存在。 */
       timeOf: function (handle) {
-        for (var i = 0; i < effects.length; i++) {
-          if (effects[i].handle === handle) return effects[i].time;
-        }
-        return null;
+        var effect = findEffect(handle);
+        return effect ? effect.time : null;
       },
       destroy: destroy,
       getPreset: function (id) { return presets[id]; },
