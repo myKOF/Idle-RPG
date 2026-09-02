@@ -397,6 +397,361 @@
     }
   }
 
+
+  /* ---------------- Preview Gizmo ----------------
+
+     選取的圖層在預覽上會出現一個框，可以直接拖曳移動、縮放、旋轉。
+
+     三個必須守住的邊界：
+
+     1. **不進 Renderer。** 框畫在 app.stage 底下、stageRoot 之外的另一個容器，
+        後端從頭到尾看不到它。正式遊戲的 Runtime 也不會知道有 gizmo 這回事。
+     2. **只改 base transform。** 曲線在當下時間的取樣值不寫回 preset，
+        否則播到 1.5 倍時拖一下就變 2.25，再拖一次 3.375。
+     3. **座標換算集中一處。** 不直接用 clientX 加減，否則之後加 zoom 或
+        換 DPI 一定壞。 */
+
+  var gizmo = {
+    overlay: null,          // PIXI.Container，掛在 stageRoot 之後
+    gfx: null,              // PIXI.Graphics
+    dirty: true,
+    drag: null,             // { mode, handle, snapshot, startPoint, pivot, ... }
+    assetSize: null         // assetId → { width, height }
+  };
+
+  /* 素材尺寸取自 asset-index 的事實層。不問 renderer：貼圖可能還沒載完，
+     而且那會讓框的大小取決於載入時序。 */
+  function buildAssetSizeMap() {
+    var map = Object.create(null);
+    (state.index.assets || []).forEach(function (a) {
+      var d = a.facts && a.facts.dimensions;
+      if (d) map[a.assetId] = { width: d.width, height: d.height };
+    });
+    gizmo.assetSize = map;
+  }
+
+  function sizeOf(layer) {
+    return (gizmo.assetSize && layer.assetId && gizmo.assetSize[layer.assetId]) || null;
+  }
+
+  function boundsOf(layer) { return G.baseBounds(layer, sizeOf(layer)); }
+
+  /* 目前的變形目標。圖層與群組共用同一套框、把手與拖曳邏輯，
+     差別只在「動的是一層還是一批」。
+
+     群組是 authoring 上的父物件，但 preset 裡沒有父子結構——
+     變形會當場攤到子圖層的 base transform 上，存出去仍是一張平的表。
+     細節見 gizmo-model.js 的「群組變形」段落。 */
+  function gizmoTarget() {
+    var layer = selectedLayer();
+    if (layer) {
+      return {
+        kind: 'layer', layer: layer, layers: [layer],
+        bounds: boundsOf(layer), caps: G.capabilities(layer)
+      };
+    }
+    var g = activeGroup();
+    if (!g) return null;
+    var members = g.layerIds.map(layerById).filter(Boolean);
+    if (!members.length) return null;
+    return {
+      kind: 'group', group: g, layers: members,
+      bounds: G.groupBounds(members, sizeOf), caps: G.groupCapabilities(members)
+    };
+  }
+
+  /* ---------------- 座標換算 ----------------
+
+     client（滑鼠事件）→ preview（畫布內像素）→ effect-local（特效原點為 0,0）
+
+     preview 這一段用 canvas 的實際 bounding rect 去換算，而不是假設
+     1 CSS px = 1 renderer px：畫布被 CSS 縮放、DPR 不是 1、或之後加了 zoom，
+     這個比例就不是 1。全部集中在這兩個函式裡，之後加 zoom 只要改這裡。 */
+  function clientToPreview(clientX, clientY) {
+    var rect = state.app.canvas.getBoundingClientRect();
+    var sx = rect.width ? state.app.renderer.width / rect.width : 1;
+    var sy = rect.height ? state.app.renderer.height / rect.height : 1;
+    return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+  }
+
+  /* stageRoot 目前只被平移到畫布中心（見 boot 的 centre()），沒有縮放或旋轉。
+     還是把 scale 與 rotation 算進去，這樣之後加 zoom 不必回頭改拖曳邏輯。 */
+  function previewToEffectLocal(px, py) {
+    var root = state.stageRoot;
+    var dx = px - root.x, dy = py - root.y;
+    var s = root.scale && root.scale.x ? root.scale.x : 1;
+    var rot = root.rotation || 0;
+    if (rot) {
+      var c = Math.cos(-rot), sn = Math.sin(-rot);
+      var rx = dx * c - dy * sn, ry = dx * sn + dy * c;
+      dx = rx; dy = ry;
+    }
+    return { x: dx / s, y: dy / s };
+  }
+
+  function clientToEffectLocal(clientX, clientY) {
+    var p = clientToPreview(clientX, clientY);
+    return previewToEffectLocal(p.x, p.y);
+  }
+
+  /* 螢幕上想要固定的像素半徑，換算成 effect 單位 */
+  function screenRadiusToLocal(px) {
+    var root = state.stageRoot;
+    var s = root.scale && root.scale.x ? root.scale.x : 1;
+    return px / s;
+  }
+
+  /* ---------------- 繪製 ---------------- */
+
+  function ensureOverlay() {
+    if (gizmo.overlay) return;
+    /* 加在 stageRoot **之後**＝畫在特效上面，而且與 stageRoot 平行——
+       後端只拿到 stageRoot，永遠碰不到這一層。 */
+    var c = new PIXI.Container();
+    c.x = state.stageRoot.x; c.y = state.stageRoot.y;
+    state.app.stage.addChild(c);
+    var g = new PIXI.Graphics();
+    c.addChild(g);
+    gizmo.overlay = c;
+    gizmo.gfx = g;
+  }
+
+  function markGizmoDirty() { gizmo.dirty = true; }
+
+  /* 只在需要時重畫。每幀 clear() 一個 Graphics 是實測過的效能陷阱，
+     而 base transform 只有在編輯時才會變。 */
+  function drawGizmo() {
+    if (!gizmo.gfx) return;
+    var c = gizmo.overlay;
+    /* 畫布尺寸變了要跟著 stageRoot 一起移動 */
+    if (c.x !== state.stageRoot.x || c.y !== state.stageRoot.y) {
+      c.x = state.stageRoot.x; c.y = state.stageRoot.y;
+      gizmo.dirty = true;
+    }
+    if (!gizmo.dirty) return;
+    gizmo.dirty = false;
+
+    var g = gizmo.gfx;
+    g.clear();
+    var target = gizmoTarget();
+    if (!target || !target.bounds) return;
+    var b = target.bounds;
+    var caps = target.caps;
+    var hs = G.handles(b, caps);
+    /* 群組用虛線區分，一眼看得出動的是一整批而不是單層 */
+    var isGroup = target.kind === 'group';
+
+    var corners = [
+      { x: b.x, y: b.y }, { x: b.x + b.w, y: b.y },
+      { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }
+    ].map(function (p) { return G.rotateAround(p, b.pivot, b.rotation); });
+
+    /* 框。白色細線在任何背景上都看得見，而且不會被誤認為特效的一部分。 */
+    g.moveTo(corners[0].x, corners[0].y);
+    corners.slice(1).forEach(function (p) { g.lineTo(p.x, p.y); });
+    g.lineTo(corners[0].x, corners[0].y);
+    g.stroke({ width: isGroup ? 2 : 1, color: isGroup ? 0x9be08a : 0xffffff, alpha: 0.85 });
+
+    /* 旋轉把手到框上緣的連線 */
+    var rot = hs.filter(function (h) { return h.kind === 'rotate'; })[0];
+    if (rot) {
+      var top = G.rotateAround({ x: b.x + b.w / 2, y: b.y }, b.pivot, b.rotation);
+      g.moveTo(top.x, top.y); g.lineTo(rot.x, rot.y);
+      g.stroke({ width: 1, color: 0xffffff, alpha: 0.5 });
+    }
+
+    /* pivot：十字，標出 position 實際落在哪裡（受 anchor 影響） */
+    var pv = b.pivot, r = screenRadiusToLocal(6);
+    g.moveTo(pv.x - r, pv.y); g.lineTo(pv.x + r, pv.y);
+    g.moveTo(pv.x, pv.y - r); g.lineTo(pv.x, pv.y + r);
+    g.stroke({ width: 1, color: 0xffb454, alpha: 0.95 });
+
+    var hr = screenRadiusToLocal(4);
+    hs.forEach(function (h) {
+      if (h.kind === 'rotate') {
+        g.circle(h.x, h.y, hr);
+        g.fill({ color: 0x7fb2ff });
+        g.stroke({ width: 1, color: 0xffffff, alpha: 0.9 });
+      } else {
+        g.rect(h.x - hr, h.y - hr, hr * 2, hr * 2);
+        g.fill({ color: 0xffffff });
+      }
+    });
+  }
+
+  /* ---------------- 指標操作 ---------------- */
+
+  function onPreviewPointerDown(e) {
+    if (!state.preset || !state.app) return;
+    if (e.button !== 0) return;
+    var pt = clientToEffectLocal(e.clientX, e.clientY);
+    var target = gizmoTarget();
+
+    /* 先問把手，再問框內，最後才重新選取：
+       已經選好的目標上有把手時，把手優先，否則永遠拖不到角落。 */
+    if (target && target.bounds) {
+      var b = target.bounds;
+      var caps = target.caps;
+      var h = G.hitHandle(pt, G.handles(b, caps), screenRadiusToLocal(9));
+      if (h) { beginDrag(target, h.kind, h, pt, b); e.preventDefault(); return; }
+      if (caps.move && G.insideBounds(pt, b)) {
+        beginDrag(target, 'move', null, pt, b); e.preventDefault(); return;
+      }
+    }
+
+    /* 沒打中就當作重新選取。命中規則與繪製順序一致：最上面的優先。 */
+    var hit = G.hitLayer(pt, state.preset.layers, boundsOf);
+    if (!hit) return;
+    selectLayerById(hit.id);
+    /* 選到就直接可以拖，不必先放開再按一次 */
+    var nt = gizmoTarget();
+    if (nt && nt.caps.move) beginDrag(nt, 'move', null, pt, nt.bounds);
+    e.preventDefault();
+  }
+
+  function beginDrag(target, mode, handle, startPoint, bounds) {
+    gizmo.drag = {
+      target: target,
+      mode: mode,
+      handle: handle,
+      startPoint: startPoint,
+      pivot: { x: bounds.pivot.x, y: bounds.pivot.y },
+      rotation: bounds.rotation,
+      /* 群組要多存幾個欄位：縮放會動到粒子的 speed／spawn／startScale，
+         旋轉會動到 direction 與 gravity。 */
+      snap: target.kind === 'group'
+        ? G.groupSnapshot(target.layers) : G.snapshot(target.layer),
+      startScale: target.kind === 'group'
+        ? null : (target.layer.scale ? { x: target.layer.scale.x, y: target.layer.scale.y } : { x: 1, y: 1 }),
+      moved: false
+    };
+    setPreviewCursor(mode);
+  }
+
+  function onPreviewPointerMove(e) {
+    if (!gizmo.drag) {
+      updateHoverCursor(e);
+      return;
+    }
+    var d = gizmo.drag;
+    var pt = clientToEffectLocal(e.clientX, e.clientY);
+    var shift = e.shiftKey;
+
+    if (d.target.kind === 'group') dragGroup(d, pt, shift);
+    else dragLayer(d, pt, shift);
+
+    d.moved = true;
+    markGizmoDirty();
+    if (d.target.kind === 'layer') syncTransformInputs(d.target.layer);
+    previewSoon();                // rAF 合併，不重載素材
+    e.preventDefault();
+  }
+
+  function dragLayer(d, pt, shift) {
+    var layer = d.target.layer;
+    if (d.mode === 'move') {
+      layer.position = G.applyMove(d.snap.position || { x: 0, y: 0 }, d.startPoint, pt, { snap: shift });
+    } else if (d.mode === 'scale') {
+      layer.scale = G.applyScale(d.snap.scale || { x: 1, y: 1 }, d.handle,
+        d.pivot, d.rotation, d.startPoint, pt, { snap: shift });
+    } else if (d.mode === 'rotate') {
+      layer.rotation = G.applyRotate(d.snap.rotation || 0, d.pivot, d.startPoint, pt, { snap: shift });
+    }
+  }
+
+  /* 群組：把一次變形量攤到所有子圖層。每次都從快照重算，不累加。 */
+  function dragGroup(d, pt, shift) {
+    var delta = { dx: 0, dy: 0, sx: 1, sy: 1, rot: 0 };
+    if (d.mode === 'move') {
+      var m = G.applyMove({ x: 0, y: 0 }, d.startPoint, pt, { snap: shift });
+      delta.dx = m.x; delta.dy = m.y;
+    } else if (d.mode === 'scale') {
+      /* 借用單層的縮放計算：以 1 當起始倍率，算出來的就是倍率本身 */
+      var f = G.applyScale({ x: 1, y: 1 }, d.handle, d.pivot, 0, d.startPoint, pt, { snap: shift });
+      delta.sx = f.x; delta.sy = f.y;
+    } else if (d.mode === 'rotate') {
+      delta.rot = G.applyRotate(0, d.pivot, d.startPoint, pt, { snap: shift });
+    }
+    G.writeGroupTransform(d.target.layers,
+      G.applyGroupTransform(d.snap, d.pivot, delta));
+  }
+
+  function onPreviewPointerUp() {
+    if (!gizmo.drag) return;
+    var moved = gizmo.drag.moved;
+    gizmo.drag = null;
+    setPreviewCursor(null);
+    if (!moved) return;           // 只是點一下選取，不算修改
+    markGizmoDirty();
+    onPresetChanged();            // 這一刻才寫進 dirty 狀態並重建預覽
+    renderInspector();
+  }
+
+  /* Escape 取消：把 pointerdown 當下的快照寫回去。
+     一次完整拖曳只有一個還原點，中途的每個 pointermove 都不留歷史。 */
+  function cancelDrag() {
+    if (!gizmo.drag) return false;
+    var d = gizmo.drag;
+    if (d.target.kind === 'group') G.restoreGroup(d.target.layers, d.snap);
+    else G.restore(d.target.layer, d.snap);
+    gizmo.drag = null;
+    setPreviewCursor(null);
+    markGizmoDirty();
+    onPresetChanged();
+    renderInspector();
+    return true;
+  }
+
+  function updateHoverCursor(e) {
+    if (!state.app) return;
+    var target = gizmoTarget();
+    if (!target || !target.bounds) { setPreviewCursor(null); return; }
+    var pt = clientToEffectLocal(e.clientX, e.clientY);
+    var b = target.bounds;
+    var caps = target.caps;
+    var h = G.hitHandle(pt, G.handles(b, caps), screenRadiusToLocal(9));
+    if (h) setPreviewCursor(h.kind === 'rotate' ? 'rotate' : 'scale');
+    else if (caps.move && G.insideBounds(pt, b)) setPreviewCursor('move');
+    else setPreviewCursor(null);
+  }
+
+  var CURSORS = { move: 'move', scale: 'nwse-resize', rotate: 'grab' };
+  function setPreviewCursor(mode) {
+    if (!state.app) return;
+    state.app.canvas.style.cursor = (mode && CURSORS[mode]) || 'default';
+  }
+
+  /* ---------------- 與 Inspector 的雙向同步 ----------------
+
+     SSOT 仍然是 preset 上的 layer 物件。拖曳期間不重建整個 Inspector
+     （那會把曲線元件整組換掉、也會讓輸入框失焦），只把這三個欄位的
+     輸入值寫過去。反方向本來就成立：Inspector 改值 → onPresetChanged →
+     markGizmoDirty → 框跟著移動。 */
+  function syncTransformInputs(layer) {
+    var host = $('inspector');
+    if (!host) return;
+    ['position', 'scale'].forEach(function (key) {
+      ['x', 'y'].forEach(function (axis) {
+        var el = host.querySelector('[data-tf="' + key + '.' + axis + '"]');
+        if (el && layer[key]) el.value = layer[key][axis];
+      });
+    });
+    var rotEl = host.querySelector('[data-tf="rotation"]');
+    if (rotEl) {
+      rotEl.value = layer.rotation === undefined
+        ? '' : round4(VFXCurveModel.radToDeg(layer.rotation));
+    }
+  }
+
+  function wireGizmo() {
+    ensureOverlay();
+    buildAssetSizeMap();
+    var canvas = state.app.canvas;
+    canvas.addEventListener('pointerdown', onPreviewPointerDown);
+    window.addEventListener('pointermove', onPreviewPointerMove);
+    window.addEventListener('pointerup', onPreviewPointerUp);
+  }
+
   /* ---------------- Layer list ---------------- */
 
   /* ============================================================
@@ -415,6 +770,7 @@
      這裡只負責畫面與事件。兩邊各寫一份的話遲早會分家，
      而分家的症狀是「測試都過、實際點下去行為不一樣」。 */
   var M = VFXLayerModel;
+  var G = VFXGizmoModel;
 
   function keyOf(kind, id) { return M.keyOf(kind, id); }
   function keyKind(key) { return M.keyKind(key); }
@@ -425,6 +781,70 @@
   function selectedLayer() {
     if (keyKind(state.activeKey) !== "layer") return null;
     return layerById(keyId(state.activeKey));
+  }
+
+  /* 選取群組。與 selectLayerById 走同一條路，只是 key 的種類不同。 */
+  function selectGroupById(gid) {
+    var key = keyOf('group', gid);
+    if (state.activeKey === key && state.selectedKeys.length === 1) return;
+    setSelection([key], key);
+    state.anchorKey = key;
+    markGizmoDirty();
+    renderLayerList();
+    renderInspector();
+  }
+
+  /* 就地改名。原本用 window.prompt——那會擋住整個分頁，而且看不到自己
+     正在改的是哪一列。改成把文字換成輸入框，Enter 套用、Escape 取消、
+     失焦視同套用（照使用者的直覺，離開就是寫下去）。 */
+  function beginInlineRename(span, row) {
+    /* row 是 reconcile 產生的顯示列，name 只是副本；真正的群組在 layout 裡。
+       寫到 row 上不會有任何效果，而且畫面重繪後就消失了。 */
+    var group = groupById(row.id);
+    if (!group) return;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'gname-edit';
+    input.value = group.name;
+    input.maxLength = VFXLayoutSchema.LIMITS.maxNameLength;
+    /* 這是文字輸入：Delete 與方向鍵都歸它，不能讓圖層面板的快捷鍵搶走。
+       onKeyDown 的第一道守門本來就是 isTextEntry，所以只要它是 input 就安全。 */
+    var done = false;
+    function commit(save) {
+      if (done) return;
+      done = true;
+      var next = String(input.value).trim();
+      if (save && next && next !== group.name) {
+        group.name = next.slice(0, VFXLayoutSchema.LIMITS.maxNameLength);
+        markLayoutDirty();
+      }
+      renderLayerList();
+    }
+    input.onkeydown = function (e) {
+      e.stopPropagation();
+      if (e.key === 'Enter') { commit(true); e.preventDefault(); }
+      else if (e.key === 'Escape') { commit(false); e.preventDefault(); }
+    };
+    input.onblur = function () { commit(true); };
+    input.onmousedown = function (e) { e.stopPropagation(); };
+    input.onclick = function (e) { e.stopPropagation(); };
+    input.ondblclick = function (e) { e.stopPropagation(); };
+    span.textContent = '';
+    span.appendChild(input);
+    input.focus();
+    input.select();
+  }
+
+  /* 從 Preview 選取。刻意走與 Layer List 完全相同的 state 與重繪路徑——
+     兩套 selection state 遲早會分家，變成左邊選 A、中間框 B。 */
+  function selectLayerById(id) {
+    var key = keyOf('layer', id);
+    if (state.activeKey === key && state.selectedKeys.length === 1) return;
+    setSelection([key], key);
+    state.anchorKey = key;
+    markGizmoDirty();
+    renderLayerList();
+    renderInspector();
   }
 
   function activeGroup() {
@@ -473,6 +893,7 @@
       { shift: e.shiftKey, ctrl: e.ctrlKey || e.metaKey });
     setSelection(next.selected, next.active);
     state.anchorKey = next.anchor;
+    markGizmoDirty();
     renderLayerList();
     renderInspector();
   }
@@ -541,6 +962,7 @@
       e.stopPropagation();
       var turnOn = cb.checked;
       members.forEach(function (l) { l.enabled = turnOn; });
+      selectGroupById(r.id);          // 與圖層列一致：改了勾就選到它
       onPresetChanged();
       renderLayerList();
     };
@@ -549,7 +971,10 @@
     name.className = "gname";
     name.textContent = r.name;
     name.title = "雙擊重新命名";
-    name.ondblclick = function (e) { e.stopPropagation(); renameGroup(r.id); };
+    name.ondblclick = function (e) {
+      e.stopPropagation();
+      beginInlineRename(name, r);
+    };
 
     var count = document.createElement("span");
     count.className = "type";
@@ -575,6 +1000,9 @@
     cb.onclick = function (e) {
       e.stopPropagation();
       layer.enabled = cb.checked;
+      /* 改了誰的勾選，焦點就跟到誰身上：接著多半要調它的參數，
+         而且 Inspector 與 Preview 的框也會一起跟過去。 */
+      selectLayerById(layer.id);
       onPresetChanged();
     };
 
@@ -748,21 +1176,6 @@
     renderInspector();
   }
 
-  function renameGroup(gid) {
-    var g = groupById(gid);
-    if (!g) return;
-    var name = window.prompt("群組名稱", g.name);
-    if (name === null) return;
-    name = String(name).trim();
-    if (!name) return;
-    if (name.length > VFXLayoutSchema.LIMITS.maxNameLength) {
-      name = name.slice(0, VFXLayoutSchema.LIMITS.maxNameLength);
-    }
-    g.name = name;
-    markLayoutDirty();
-    renderLayerList();
-  }
-
   /* ---------------- layout 的載入與存檔 ---------------- */
 
   function layoutUrl(id) { return "/vfx/layouts/" + id + ".json"; }
@@ -867,6 +1280,7 @@
 
   function onKeyDown(e) {
     if (!state.preset) return;
+    if (e.key === 'Escape' && cancelDrag()) { e.preventDefault(); return; }
     if (!$('picker').hidden) return;                      // Picker 開著時鍵盤歸它
     /* 焦點在任何可輸入的欄位裡就完全不攔截：在 JSON 參數框或搜尋框按 Delete
        要刪字元，不是刪圖層；按 Ctrl+C 要複製文字，不是複製圖層。 */
@@ -997,6 +1411,9 @@
           var input = document.createElement('input');
           input.type = 'number';
           input.step = '0.01';
+          /* 給 Gizmo 拖曳時定位用。整個 Inspector 重繪會把曲線元件也換掉，
+             拖曳期間只更新這幾格就好。 */
+          input.setAttribute('data-tf', f.key + '.' + axis);
           input.value = (layer[f.key] && layer[f.key][axis] !== undefined)
             ? layer[f.key][axis] : fallback[axis];
           input.oninput = function () {
@@ -1076,6 +1493,7 @@
         control = document.createElement('input');
         control.type = 'number';
         control.step = String(f.step);
+        control.setAttribute('data-tf', f.key);
         control.value = layer[f.key] === undefined
           ? '' : round4(VFXCurveModel.radToDeg(layer[f.key]));
         control.oninput = function () {
@@ -1333,6 +1751,7 @@
     /* 不管合不合法都要更新 dirty：改壞了也是「改過了」，
        這時候把它顯示成乾淨反而最危險。 */
     refreshDirty();
+    markGizmoDirty();                          // Inspector 改數值 → 框跟著移動
     var result = VFXCore.validatePreset(state.preset);
     var box = $('validation');
     if (!result.ok) {
@@ -1760,6 +2179,7 @@
       ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
       ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],
+      ['VFXGizmoModel', 'tools/vfx/editor/gizmo-model.js'],
       ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs']
     ];
     var missing = need.filter(function (m) {
@@ -1891,6 +2311,7 @@
         app.ticker.add(function (ticker) {
           /* 在 playing 判斷之前：暫停時改變視窗大小，畫布一樣要跟上 */
           state.syncCanvasSize();
+          drawGizmo();                         // 只在 dirty 時才真的重畫
           if (!state.playing) return;
           state.runtime.update(Math.min(ticker.deltaMS, 100) / 1000);
           var s = state.runtime.stats();
@@ -1918,6 +2339,7 @@
         /* 順序有意義：先把圖層樹與 Inspector 畫出來，再處理素材瀏覽器。
            左邊那一組要用到素材詞彙表，一旦它出問題，至少不會連圖層分組
            一起消失——那會讓人以為群組被刪掉了，實際上只是沒渲染。 */
+        wireGizmo();
         renderLayerList();
         renderInspector();
         onPresetChanged();
