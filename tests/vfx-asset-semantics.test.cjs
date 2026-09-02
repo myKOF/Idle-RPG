@@ -69,12 +69,21 @@ test('灰階可染色素材不得因檔名被標成具體元素', { skip: !ready
   }
   assert.deepEqual(offenders, [], '灰階素材必須維持 neutral 才能跨元素重用');
 
-  // 具體回歸：檔名含 fire/flame 的素材必須是 neutral
+  /* 具體回歸：檔名含 fire/flame 的素材，**是灰階的**就必須是 neutral。
+     原本這裡寫的是「一律必須 neutral」，那是在素材庫只有 Kenney 灰階火焰遮罩
+     的年代成立的。後來匯入了真正預先上色的火焰（new_materials/fire/），
+     那些標 element=fire 是正確的，硬套舊斷言反而會逼人把對的標成錯的。
+     判準改回像素：檔名依舊不是證據，**可染色與否才是**。 */
   const fireNamed = semantics.records.filter(function (r) {
     return /\/(fire|flame)_\d+/.test(r.assetId);
   });
   assert.ok(fireNamed.length > 0, '應該找得到 fire/flame 命名的素材');
-  fireNamed.forEach(function (r) {
+  const grayFireNamed = fireNamed.filter(function (r) {
+    const asset = factsById.get(r.assetId);
+    return asset && vocab.tintableFromFacts(asset.facts) === true;
+  });
+  assert.ok(grayFireNamed.length > 0, '應該找得到灰階的 fire/flame 命名素材');
+  grayFireNamed.forEach(function (r) {
     assert.equal(r.element, 'neutral', r.assetId + ' 是灰階遮罩，不該被檔名帶成 fire');
   });
 });
@@ -120,7 +129,7 @@ test('候選分組必須有像素證據：同組成員的簽章距離在門檻�
   }
   // 已知同一圖形的三個載體必須被合併
   const ringGroup = groups.groups.find(function (g) {
-    return g.groupId === 'kenney_light-masks-1.0/default/ring_a.png';
+    return g.groupId === 'light-masks-1.0/default/ring_a.png';
   });
   if (ringGroup) {
     assert.equal(ringGroup.members.length, 3, 'ring_a 的 Default/Inverted/Transparent 應合併為同一組');

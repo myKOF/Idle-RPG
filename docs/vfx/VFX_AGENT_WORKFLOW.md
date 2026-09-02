@@ -695,7 +695,23 @@ blend mode、velocity、curve control point 這類欄位。
 Preview 的提供方式：啟動既有 Editor Server，給出
 `?preset=<id>` 網址讓使用者實際觀看與操作。
 
-## 9.9 Reference 與版權
+## 9.9 新素材匯入與自動分類
+
+使用者取得新素材包時，分類是 **Agent 的工作**，不是使用者的工作 ——
+不得要求使用者自己判斷每張圖屬於 particle／lightning／trail／glow／noise…
+哪一類。
+
+完整規則（兩層分類模型、新分類的建立條件、新舊素材的搬動差異、`_inbox`
+管線、信心度、variantGroup、重複偵測、Classification Plan 格式）
+一律以 **`VFX_ASSET_LIBRARY_DESIGN.md` §8 為 SSOT**，本文件不重複。
+
+只重申三條最容易違反的：
+
+1. **第一輪只做 Inventory ＋ Classification Plan，不得 Move。**
+2. **已被正式 Preset 引用的素材預設不搬**；真要搬必須走完整 migration。
+3. **IMAGE CONTENT > FILENAME** —— 檔名可能是錯的，必須實際看素材內容。
+
+## 9.10 Reference 與版權
 
 第三方遊戲或網路上的 VFX 圖片**只能**作為 visual / composition / motion /
 color reference。

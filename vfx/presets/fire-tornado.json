@@ -7,7 +7,7 @@
     {
       "id": "scorch",
       "type": "sprite",
-      "assetId": "kenney_splat-pack/png/double-512px/splat05.png",
+      "assetId": "splat-pack/png/double-512px/splat05.png",
       "zIndex": 0,
       "position": {
         "x": 0,
@@ -24,7 +24,7 @@
     {
       "id": "ground-ring",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/ring_a.png",
+      "assetId": "light-masks-1.0/default/ring_a.png",
       "zIndex": 1,
       "position": {
         "x": 0,
@@ -68,7 +68,7 @@
     {
       "id": "base-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 2,
       "position": {
         "x": 0,
@@ -99,7 +99,7 @@
     {
       "id": "funnel-body",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/cone_composed_c_noise.png",
+      "assetId": "light-masks-1.0/default/cone_composed_c_noise.png",
       "zIndex": 3,
       "position": {
         "x": 0,
@@ -130,7 +130,7 @@
     {
       "id": "swirl-lower",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/twirl_01.png",
+      "assetId": "particle-pack/png-black-background/twirl_01.png",
       "zIndex": 4,
       "position": {
         "x": 0,
@@ -157,7 +157,7 @@
     {
       "id": "swirl-upper",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/twirl_02.png",
+      "assetId": "particle-pack/png-black-background/twirl_02.png",
       "zIndex": 5,
       "position": {
         "x": 0,
@@ -184,7 +184,7 @@
     {
       "id": "flame-core",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/flame_04.png",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 6,
       "position": {
         "x": 0,
@@ -263,7 +263,7 @@
     {
       "id": "embers",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/trace_02.png",
+      "assetId": "particle-pack/png-black-background/trace_02.png",
       "zIndex": 7,
       "position": {
         "x": 0,
@@ -330,7 +330,7 @@
     {
       "id": "sparks",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_01.png",
+      "assetId": "particle-pack/png-black-background/spark_01.png",
       "zIndex": 8,
       "position": {
         "x": 0,
@@ -383,7 +383,7 @@
     {
       "id": "smoke",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-transparent/smoke_04.png",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 9,
       "position": {
         "x": 0,

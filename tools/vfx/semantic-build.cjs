@@ -52,6 +52,13 @@ function matchesRule(asset, rule) {
     const name = grouping.normalizedName(asset.relativePath);
     if (!new RegExp(select.namePattern).test(name)) return false;
   }
+  /* 依相對路徑選取。Kenney 那幾包的分類藏在檔名裡（fire_01、smoke_04…），
+     所以原本只有 namePattern 就夠；但經過 Import 分類的素材，
+     **資料夾本身就是分類**（new_materials/muzzle-flash/…），
+     這時用路徑選比用檔名選可靠得多——檔名可能是錯的，資料夾是我們判定的。 */
+  if (select.pathPattern) {
+    if (!new RegExp(select.pathPattern).test(asset.relativePath)) return false;
+  }
   return true;
 }
 

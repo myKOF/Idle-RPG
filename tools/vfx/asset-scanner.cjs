@@ -36,6 +36,16 @@ const DEFAULT_OUT_REL = 'vfx/asset-index.json';
 /* 永遠排除的目錄名稱。素材庫本身可能是 Git repo（本專案的素材庫就是），
    不排除的話 .git 底下上千個檔案會灌爆索引。 */
 const ALWAYS_EXCLUDED_DIRS = new Set(['.git']);
+/* 以底線開頭的目錄一律不掃進索引。這是 VFX_ASSET_LIBRARY_DESIGN §8.5 的
+   `_inbox` 慣例能成立的前提，同時也讓「存在但不可使用」的區域有地方放：
+     _inbox/        還沒分類的新素材
+     _restricted/   商標／不適用內容，保留可追溯但絕不可進遊戲
+     _excluded/     人工判定不收的素材
+     _thumbnails/   套件附的預覽縮圖，不是素材本身
+   這些目錄裡的檔案不會有 assetId，因此 Preset 引用不到、export 也帶不走。 */
+function isExcludedDir(name) {
+  return ALWAYS_EXCLUDED_DIRS.has(name) || name.charAt(0) === '_';
+}
 
 /* 支援的素材格式。要新增格式只需擴充這張表，不必改流程。 */
 const SUPPORTED_FORMATS = {
@@ -78,7 +88,7 @@ function walk(dir, root, out) {
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (ALWAYS_EXCLUDED_DIRS.has(entry.name)) continue;
+      if (isExcludedDir(entry.name)) continue;
       walk(full, root, out);
     } else if (entry.isFile()) {
       out.push({

@@ -5,918 +5,6 @@
   "libraryId": "effects-materials",
   "rules": [
     {
-      "ruleId": "particle/fire",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^fire_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/fire_01.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "core",
-          "smoke"
-        ],
-        "element": "neutral",
-        "tags": [
-          "noisy",
-          "dense"
-        ]
-      },
-      "observation": "灰階湍流雲團，非彩色火焰；可染成任何元素色"
-    },
-    {
-      "ruleId": "particle/flame",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^flame_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/flame_01.png",
-        "kenney_particle-pack/png-transparent/flame_04.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "core",
-          "smoke"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "dense"
-        ]
-      },
-      "observation": "柔邊團塊帶褶皺，兩個樣本一致"
-    },
-    {
-      "ruleId": "particle/smoke",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^smoke_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/smoke_04.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "smoke",
-          "core"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "dense"
-        ]
-      }
-    },
-    {
-      "ruleId": "particle/spark",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^spark_\\d+(_rotated)?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/spark_01.png",
-        "kenney_particle-pack/png-transparent/spark_04.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "filament",
-        "usage": [
-          "spark",
-          "impact",
-          "trail"
-        ],
-        "element": "neutral",
-        "tags": [
-          "sharp",
-          "noisy"
-        ]
-      },
-      "observation": "檔名叫 spark，實際是細絲狀電弧／裂紋，不是點狀火花。兩個樣本一致。真正的星芒火花在 star_*"
-    },
-    {
-      "ruleId": "particle/star",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^star_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/star_02.png",
-        "kenney_particle-pack/png-transparent/star_08.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "star",
-        "usage": [
-          "spark",
-          "glow",
-          "impact"
-        ],
-        "element": "neutral",
-        "tags": [
-          "radial",
-          "symmetric",
-          "sharp"
-        ]
-      },
-      "observation": "四芒星閃光疊在柔光圓盤上，這才是點狀火花的來源"
-    },
-    {
-      "ruleId": "particle/light",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^light_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/light_01.png",
-        "kenney_particle-pack/png-transparent/light_02.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "disc",
-        "usage": [
-          "glow"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "radial"
-        ]
-      }
-    },
-    {
-      "ruleId": "particle/trace",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^trace_\\d+(_rotated)?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/trace_02.png",
-        "kenney_particle-pack/png-transparent/trace_06.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "streak",
-        "usage": [
-          "trail",
-          "beam",
-          "ember"
-        ],
-        "element": "neutral",
-        "tags": [
-          "directional",
-          "soft"
-        ]
-      },
-      "observation": "縱向長條，上下漸淡；適合上升餘燼拖尾"
-    },
-    {
-      "ruleId": "particle/twirl",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^twirl_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/twirl_01.png",
-        "kenney_particle-pack/png-transparent/twirl_02.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "arc",
-        "usage": [
-          "core",
-          "trail"
-        ],
-        "element": "neutral",
-        "tags": [
-          "swirl",
-          "directional"
-        ]
-      },
-      "observation": "C 形弧帶（非完整螺旋），堆疊反轉可讀出旋轉感"
-    },
-    {
-      "ruleId": "particle/circle",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^circle_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/circle_02.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "ring",
-        "usage": [
-          "ring",
-          "glow",
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "hollow",
-          "symmetric"
-        ]
-      }
-    },
-    {
-      "ruleId": "particle/dirt",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^dirt_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/dirt_01.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "irregular",
-        "usage": [
-          "particle",
-          "impact"
-        ],
-        "element": "neutral",
-        "tags": [
-          "sharp",
-          "dense"
-        ]
-      },
-      "observation": "散落的不規則碎塊，適合碎屑粒子"
-    },
-    {
-      "ruleId": "particle/magic",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^magic_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/magic_03.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "ring",
-        "usage": [
-          "glow",
-          "ring",
-          "impact"
-        ],
-        "element": "neutral",
-        "tags": [
-          "symmetric",
-          "radial",
-          "layered"
-        ]
-      },
-      "observation": "環＋四芒星疊合；magic 只是套件命名，圖像本身是中性幾何光環"
-    },
-    {
-      "ruleId": "particle/muzzle",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^muzzle_\\d+(_rotated)?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/muzzle_02.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "impact",
-          "core"
-        ],
-        "element": "neutral",
-        "tags": [
-          "directional",
-          "dense"
-        ]
-      },
-      "observation": "縱向火舌／爆閃羽狀"
-    },
-    {
-      "ruleId": "particle/scorch",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^scorch_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/scorch_02.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "star",
-        "usage": [
-          "impact",
-          "glow"
-        ],
-        "element": "neutral",
-        "tags": [
-          "radial",
-          "sharp"
-        ]
-      },
-      "observation": "檔名叫 scorch，實際是放射狀爆閃，不是地面燒痕。刻意不給 usage=scorch"
-    },
-    {
-      "ruleId": "particle/slash",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^slash_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/slash_02.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "arc",
-        "usage": [
-          "trail",
-          "impact"
-        ],
-        "element": "neutral",
-        "tags": [
-          "directional",
-          "soft"
-        ]
-      }
-    },
-    {
-      "ruleId": "particle/scratch",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^scratch_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/scratch_01.png"
-      ],
-      "propagation": "group",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "streak",
-        "usage": [
-          "trail",
-          "impact"
-        ],
-        "element": "neutral",
-        "tags": [
-          "directional",
-          "sharp"
-        ]
-      },
-      "observation": "三道斜向抓痕"
-    },
-    {
-      "ruleId": "particle/window",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^window_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/window_02.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "polygon",
-        "usage": [
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "sharp",
-          "symmetric"
-        ]
-      },
-      "observation": "矩形窗格陣列，是投影遮罩不是 UI"
-    },
-    {
-      "ruleId": "particle/symbol",
-      "select": {
-        "package": "kenney_particle-pack",
-        "namePattern": "^symbol_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_particle-pack/png-transparent/symbol_01.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "polygon",
-        "usage": [
-          "mask",
-          "particle"
-        ],
-        "element": "neutral",
-        "tags": [
-          "sharp",
-          "symmetric"
-        ]
-      },
-      "observation": "具體圖案（實測為愛心），泛用性低"
-    },
-    {
-      "ruleId": "lightmask/ring",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^ring_[a-z](_(noise|streaks))?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/ring_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "ring",
-        "usage": [
-          "ring",
-          "mask",
-          "glow"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "hollow",
-          "symmetric"
-        ]
-      },
-      "observation": "乾淨細環；黑底版加法混合可直接用作地面環"
-    },
-    {
-      "ruleId": "lightmask/circle_rings",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^circle_rings_[a-z](_(noise|streaks))?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/circle_rings_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "ring",
-        "usage": [
-          "ring",
-          "glow",
-          "impact"
-        ],
-        "element": "neutral",
-        "tags": [
-          "radial",
-          "layered",
-          "symmetric"
-        ]
-      },
-      "observation": "同心多環＋亮心"
-    },
-    {
-      "ruleId": "lightmask/circle",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^circle_[a-z](_(noise|streaks|streaks_noise))?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/circle_a_noise.png",
-        "kenney_light-masks-1.0/default/circle_b.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "disc",
-        "usage": [
-          "glow",
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "radial"
-        ]
-      }
-    },
-    {
-      "ruleId": "lightmask/cone_composed",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^cone_composed_[a-z](_noise)?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/cone_composed_a.png",
-        "kenney_light-masks-1.0/default/cone_composed_c_noise.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cone",
-        "usage": [
-          "beam",
-          "mask",
-          "core"
-        ],
-        "element": "neutral",
-        "tags": [
-          "directional",
-          "soft"
-        ]
-      },
-      "observation": "上寬下窄的錐狀漸層，可當龍捲／光錐體型"
-    },
-    {
-      "ruleId": "lightmask/cone_plain",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^cone_[a-z](_(blur|noise|blur_noise))?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/cone_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "streak",
-        "usage": [
-          "beam",
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "directional",
-          "smooth"
-        ]
-      },
-      "observation": "檔名叫 cone，實際是等寬縱向漸層長條（光柱），與 cone_composed_* 形狀不同，故分成兩條規則"
-    },
-    {
-      "ruleId": "lightmask/fan",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^fan_[a-z](_(blur|gradient))?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/fan_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "fan",
-        "usage": [
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "sharp",
-          "symmetric"
-        ]
-      },
-      "observation": "三葉風扇剪影，硬邊 gobo 遮罩"
-    },
-    {
-      "ruleId": "lightmask/shape",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^shape_[a-z]$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/shape_c.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "disc",
-        "usage": [
-          "mask",
-          "glow"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "noisy"
-        ]
-      }
-    },
-    {
-      "ruleId": "lightmask/streaks_composed",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^streaks_composed_[a-z](_noise)?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/streaks_composed_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "streak",
-        "usage": [
-          "beam",
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "directional",
-          "soft"
-        ]
-      }
-    },
-    {
-      "ruleId": "lightmask/water_caustics",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^water_caustics_[a-z]$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/water_caustics_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "caustics",
-        "usage": [
-          "noise",
-          "distortion",
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "layered",
-          "sharp"
-        ]
-      },
-      "observation": "全庫少數真正可平鋪的圖樣（邊界非均勻且對邊吻合），是目前唯一的噪聲／扭曲來源"
-    },
-    {
-      "ruleId": "lightmask/window",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^window_[a-z](_(blur|noise))?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/window_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "polygon",
-        "usage": [
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "sharp",
-          "symmetric"
-        ]
-      }
-    },
-    {
-      "ruleId": "lightmask/foliage_canopy",
-      "select": {
-        "package": "kenney_light-masks-1.0",
-        "namePattern": "^foliage_canopy_[a-z](_(blur|noise))?$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_light-masks-1.0/default/foliage_canopy_a.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "irregular",
-        "usage": [
-          "mask",
-          "noise"
-        ],
-        "element": "neutral",
-        "tags": [
-          "layered",
-          "dense"
-        ]
-      },
-      "observation": "葉隙光斑圖樣，可平鋪"
-    },
-    {
-      "ruleId": "smoke/blacksmoke",
-      "select": {
-        "package": "kenney_smoke-particles",
-        "namePattern": "^blacksmoke\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_smoke-particles/png/black-smoke/blacksmoke00.png",
-        "kenney_smoke-particles/png/black-smoke/blacksmoke12.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "smoke"
-        ],
-        "element": "neutral",
-        "tags": [
-          "dense",
-          "soft"
-        ]
-      },
-      "observation": "灰階濃煙；兩個樣本形狀不同但性質一致（是變體不是動畫幀）"
-    },
-    {
-      "ruleId": "smoke/whitepuff",
-      "select": {
-        "package": "kenney_smoke-particles",
-        "namePattern": "^whitepuff\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_smoke-particles/png/white-puff/whitepuff05.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "smoke"
-        ],
-        "element": "neutral",
-        "tags": [
-          "soft",
-          "wispy"
-        ]
-      }
-    },
-    {
-      "ruleId": "smoke/explosion",
-      "select": {
-        "package": "kenney_smoke-particles",
-        "namePattern": "^explosion\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_smoke-particles/png/explosion/explosion04.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "impact",
-          "core",
-          "smoke"
-        ],
-        "element": "fire",
-        "tags": [
-          "dense"
-        ]
-      },
-      "needsReview": true,
-      "observation": "預先上色的橘黃火球（飽和度 0.67），無法染成其他元素；element 需人工確認"
-    },
-    {
-      "ruleId": "smoke/fart",
-      "select": {
-        "package": "kenney_smoke-particles",
-        "namePattern": "^fart\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_smoke-particles/png/fart/fart04.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "smoke"
-        ],
-        "element": "poison",
-        "tags": [
-          "soft",
-          "wispy"
-        ]
-      },
-      "needsReview": true,
-      "observation": "預先上色的黃綠煙霧；element 需人工確認（poison 或 nature）"
-    },
-    {
-      "ruleId": "smoke/flash",
-      "select": {
-        "package": "kenney_smoke-particles",
-        "namePattern": "^flash\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_smoke-particles/png/flash/flash04.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "cloud",
-        "usage": [
-          "impact",
-          "glow"
-        ],
-        "element": "light",
-        "tags": [
-          "soft",
-          "radial"
-        ]
-      },
-      "needsReview": true,
-      "observation": "預先上色的黃白閃光；element 需人工確認（light 或 fire）"
-    },
-    {
-      "ruleId": "splat/splat",
-      "select": {
-        "package": "kenney_splat-pack",
-        "namePattern": "^splat\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_splat-pack/png/default-256px/splat03.png",
-        "kenney_splat-pack/png/double-512px/splat05.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "vfx",
-        "shape": "splat",
-        "usage": [
-          "scorch",
-          "impact",
-          "mask"
-        ],
-        "element": "neutral",
-        "tags": [
-          "dense",
-          "sharp"
-        ]
-      },
-      "observation": "不規則潑濺團塊＋衛星液滴；適合地面殘留痕跡"
-    },
-    {
-      "ruleId": "foliage/sprite",
-      "select": {
-        "package": "kenney_foliage-sprites",
-        "namePattern": "^sprite_\\d+$",
-        "format": "png"
-      },
-      "evidence": [
-        "kenney_foliage-sprites/png/flat/sprite_0001.png"
-      ],
-      "propagation": "family",
-      "semantics": {
-        "kind": "nonVfx"
-      },
-      "observation": "植物剪影，非特效素材；納入索引只為了讓搜尋能明確排除"
-    },
-    {
       "ruleId": "any/pack-preview",
       "select": {
         "namePattern": "^(preview|sample|overview)$",
@@ -941,6 +29,1339 @@
         "kind": "nonVfx"
       },
       "observation": "向量原稿，runtime 不能直接使用（需先點陣化），且沒有像素可供判讀形狀；標為 nonVfx 以免被選成貼圖"
+    },
+    {
+      "ruleId": "foliage/sprite",
+      "select": {
+        "package": "foliage-sprites",
+        "namePattern": "^sprite_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "foliage-sprites/png/flat/sprite_0001.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "nonVfx"
+      },
+      "observation": "植物剪影，非特效素材；納入索引只為了讓搜尋能明確排除"
+    },
+    {
+      "ruleId": "lightmask/circle",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^circle_[a-z](_(noise|streaks|streaks_noise))?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/circle_a_noise.png",
+        "light-masks-1.0/default/circle_b.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "disc",
+        "usage": [
+          "glow",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "radial"
+        ]
+      }
+    },
+    {
+      "ruleId": "lightmask/circle_rings",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^circle_rings_[a-z](_(noise|streaks))?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/circle_rings_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "ring",
+        "usage": [
+          "ring",
+          "glow",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "radial",
+          "layered",
+          "symmetric"
+        ]
+      },
+      "observation": "同心多環＋亮心"
+    },
+    {
+      "ruleId": "lightmask/cone_composed",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^cone_composed_[a-z](_noise)?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/cone_composed_a.png",
+        "light-masks-1.0/default/cone_composed_c_noise.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cone",
+        "usage": [
+          "beam",
+          "mask",
+          "core"
+        ],
+        "element": "neutral",
+        "tags": [
+          "directional",
+          "soft"
+        ]
+      },
+      "observation": "上寬下窄的錐狀漸層，可當龍捲／光錐體型"
+    },
+    {
+      "ruleId": "lightmask/cone_plain",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^cone_[a-z](_(blur|noise|blur_noise))?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/cone_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "streak",
+        "usage": [
+          "beam",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "directional",
+          "smooth"
+        ]
+      },
+      "observation": "檔名叫 cone，實際是等寬縱向漸層長條（光柱），與 cone_composed_* 形狀不同，故分成兩條規則"
+    },
+    {
+      "ruleId": "lightmask/fan",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^fan_[a-z](_(blur|gradient))?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/fan_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "fan",
+        "usage": [
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "symmetric"
+        ]
+      },
+      "observation": "三葉風扇剪影，硬邊 gobo 遮罩"
+    },
+    {
+      "ruleId": "lightmask/foliage_canopy",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^foliage_canopy_[a-z](_(blur|noise))?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/foliage_canopy_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "irregular",
+        "usage": [
+          "mask",
+          "noise"
+        ],
+        "element": "neutral",
+        "tags": [
+          "layered",
+          "dense"
+        ]
+      },
+      "observation": "葉隙光斑圖樣，可平鋪"
+    },
+    {
+      "ruleId": "lightmask/ring",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^ring_[a-z](_(noise|streaks))?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/ring_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "ring",
+        "usage": [
+          "ring",
+          "mask",
+          "glow"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "hollow",
+          "symmetric"
+        ]
+      },
+      "observation": "乾淨細環；黑底版加法混合可直接用作地面環"
+    },
+    {
+      "ruleId": "lightmask/shape",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^shape_[a-z]$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/shape_c.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "disc",
+        "usage": [
+          "mask",
+          "glow"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "noisy"
+        ]
+      }
+    },
+    {
+      "ruleId": "lightmask/streaks_composed",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^streaks_composed_[a-z](_noise)?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/streaks_composed_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "streak",
+        "usage": [
+          "beam",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "directional",
+          "soft"
+        ]
+      }
+    },
+    {
+      "ruleId": "lightmask/water_caustics",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^water_caustics_[a-z]$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/water_caustics_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "caustics",
+        "usage": [
+          "noise",
+          "distortion",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "layered",
+          "sharp"
+        ]
+      },
+      "observation": "全庫少數真正可平鋪的圖樣（邊界非均勻且對邊吻合），是目前唯一的噪聲／扭曲來源"
+    },
+    {
+      "ruleId": "lightmask/window",
+      "select": {
+        "package": "light-masks-1.0",
+        "namePattern": "^window_[a-z](_(blur|noise))?$",
+        "format": "png"
+      },
+      "evidence": [
+        "light-masks-1.0/default/window_a.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "polygon",
+        "usage": [
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "symmetric"
+        ]
+      }
+    },
+    {
+      "ruleId": "new/arcane-ring",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/arcane-ring/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/arcane-ring/dingbats-1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "ring",
+        "usage": [
+          "ring",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "hollow",
+          "symmetric"
+        ]
+      },
+      "observation": "同心圓／軌道／輻射／齒輪環等圓形符號，硬邊純白剪影可染；魔法陣與符文的底"
+    },
+    {
+      "ruleId": "new/beam",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/beam/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/beam/lightrays_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cone",
+        "usage": [
+          "beam",
+          "glow"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "directional"
+        ]
+      },
+      "observation": "自頂點向下擴散的柔光錐，像舞台聚光；灰階可染"
+    },
+    {
+      "ruleId": "new/burst",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/burst/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/burst/color_burst_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "star",
+        "usage": [
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "radial",
+          "sharp"
+        ]
+      },
+      "observation": "已上色的環狀爆發，密集針狀向外；不可染色"
+    },
+    {
+      "ruleId": "new/fan",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/fan/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/fan/turbine_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "fan",
+        "usage": [
+          "core",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "radial",
+          "symmetric"
+        ]
+      },
+      "observation": "葉片狀放射（渦輪/風車），中心亮；灰階可染"
+    },
+    {
+      "ruleId": "new/fire",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/fire/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/fire/fire_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "core",
+          "smoke"
+        ],
+        "element": "fire",
+        "tags": [
+          "noisy",
+          "dense"
+        ]
+      },
+      "observation": "已上色的真實火焰（橙黃），非灰階；不可染色，只能用於火系",
+      "needsReview": true
+    },
+    {
+      "ruleId": "new/flare",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/flare/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/flare/flare_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "star",
+        "usage": [
+          "spark",
+          "glow",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "radial",
+          "sharp",
+          "symmetric"
+        ]
+      },
+      "observation": "星芒閃光，四~多道尖刺自中心放射；灰階可染，適合高光點與命中閃"
+    },
+    {
+      "ruleId": "new/hud-reticle",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/hud-reticle/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/hud-reticle/target_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "ring",
+        "usage": [
+          "mask",
+          "ring"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "hollow",
+          "symmetric"
+        ]
+      },
+      "observation": "準星與目標環，科幻 HUD 風格；嚴格說是 UI 素材，但當鎖定特效與法陣底座很合用"
+    },
+    {
+      "ruleId": "new/impact-ring",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/impact-ring/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/impact-ring/impact_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "ring",
+        "usage": [
+          "impact",
+          "ring"
+        ],
+        "element": "neutral",
+        "tags": [
+          "radial",
+          "hollow"
+        ]
+      },
+      "observation": "命中環：柔邊圓環，部分帶向內收的尖瓣；灰階可染，補足地面環與衝擊波"
+    },
+    {
+      "ruleId": "new/mask-shape",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/mask-shape/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/mask-shape/shape_star_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "irregular",
+        "usage": [
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp"
+        ]
+      },
+      "observation": "硬邊剪影：星形、雪花、心形、四葉草、方塊等；主要當遮罩與裝飾粒子。圖案主題差異大，用 tags 區分而不再拆資料夾"
+    },
+    {
+      "ruleId": "new/muzzle-flash",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/muzzle-flash/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/muzzle-flash/muzzle_flash_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "irregular",
+        "usage": [
+          "impact",
+          "beam"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "directional"
+        ]
+      },
+      "observation": "自單點向外爆出的密集針狀噴發，有明確方向與根部；anchor 應設在底部而非中心"
+    },
+    {
+      "ruleId": "new/orb",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/orb/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/orb/sphere_11.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "disc",
+        "usage": [
+          "core",
+          "glow",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "smooth",
+          "layered"
+        ]
+      },
+      "observation": "球體與圓盤：含硬邊圓環(rounded)、平滑球體(sphere)、尖刺圓(spiky)；多為灰階可染"
+    },
+    {
+      "ruleId": "new/plasma",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/plasma/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/plasma/magic_particles_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "filament",
+        "usage": [
+          "core",
+          "spark"
+        ],
+        "element": "lightning",
+        "tags": [
+          "noisy",
+          "layered"
+        ]
+      },
+      "observation": "分叉電漿雲團，與 kenney spark_01~04 同類；已上色不可染",
+      "needsReview": true
+    },
+    {
+      "ruleId": "new/smoke",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/smoke/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/smoke/smoke_13.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "smoke",
+          "trail"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "noisy",
+          "dense"
+        ]
+      },
+      "observation": "灰階湍流煙團，邊緣鬆散；比既有 kenney smoke 大且細節多，適合大範圍煙霧"
+    },
+    {
+      "ruleId": "new/spiro",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/spiro/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/spiro/color_spirowires_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "irregular",
+        "usage": [
+          "core",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "layered",
+          "swirl"
+        ]
+      },
+      "observation": "數學曲線織成的環狀線圈；部分已上色。適合魔法陣、傳送門、儀式圈"
+    },
+    {
+      "ruleId": "new/splat",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/splat/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/splat/dingbats-392.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "splat",
+        "usage": [
+          "scorch",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "noisy"
+        ]
+      },
+      "observation": "硬邊潑濺，主塊加衛星液滴；純白剪影可染，適合地面殘留與命中痕"
+    },
+    {
+      "ruleId": "new/streak",
+      "select": {
+        "package": "new_materials",
+        "pathPattern": "^new_materials/streak/",
+        "format": "png"
+      },
+      "evidence": [
+        "new_materials/streak/lines_1.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "streak",
+        "usage": [
+          "trail",
+          "beam"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "directional"
+        ]
+      },
+      "observation": "柔邊漸層長條，中央亮兩端收；**不是閃電**——沒有任何分叉或折線"
+    },
+    {
+      "ruleId": "particle/circle",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^circle_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/circle_02.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "ring",
+        "usage": [
+          "ring",
+          "glow",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "hollow",
+          "symmetric"
+        ]
+      }
+    },
+    {
+      "ruleId": "particle/dirt",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^dirt_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/dirt_01.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "irregular",
+        "usage": [
+          "particle",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "dense"
+        ]
+      },
+      "observation": "散落的不規則碎塊，適合碎屑粒子"
+    },
+    {
+      "ruleId": "particle/fire",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^fire_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/fire_01.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "core",
+          "smoke"
+        ],
+        "element": "neutral",
+        "tags": [
+          "noisy",
+          "dense"
+        ]
+      },
+      "observation": "灰階湍流雲團，非彩色火焰；可染成任何元素色"
+    },
+    {
+      "ruleId": "particle/flame",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^flame_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/flame_01.png",
+        "particle-pack/png-transparent/flame_04.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "core",
+          "smoke"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "dense"
+        ]
+      },
+      "observation": "柔邊團塊帶褶皺，兩個樣本一致"
+    },
+    {
+      "ruleId": "particle/light",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^light_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/light_01.png",
+        "particle-pack/png-transparent/light_02.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "disc",
+        "usage": [
+          "glow"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "radial"
+        ]
+      }
+    },
+    {
+      "ruleId": "particle/magic",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^magic_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/magic_03.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "ring",
+        "usage": [
+          "glow",
+          "ring",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "symmetric",
+          "radial",
+          "layered"
+        ]
+      },
+      "observation": "環＋四芒星疊合；magic 只是套件命名，圖像本身是中性幾何光環"
+    },
+    {
+      "ruleId": "particle/muzzle",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^muzzle_\\d+(_rotated)?$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/muzzle_02.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "impact",
+          "core"
+        ],
+        "element": "neutral",
+        "tags": [
+          "directional",
+          "dense"
+        ]
+      },
+      "observation": "縱向火舌／爆閃羽狀"
+    },
+    {
+      "ruleId": "particle/scorch",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^scorch_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/scorch_02.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "star",
+        "usage": [
+          "impact",
+          "glow"
+        ],
+        "element": "neutral",
+        "tags": [
+          "radial",
+          "sharp"
+        ]
+      },
+      "observation": "檔名叫 scorch，實際是放射狀爆閃，不是地面燒痕。刻意不給 usage=scorch"
+    },
+    {
+      "ruleId": "particle/scratch",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^scratch_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/scratch_01.png"
+      ],
+      "propagation": "group",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "streak",
+        "usage": [
+          "trail",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "directional",
+          "sharp"
+        ]
+      },
+      "observation": "三道斜向抓痕"
+    },
+    {
+      "ruleId": "particle/slash",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^slash_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/slash_02.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "arc",
+        "usage": [
+          "trail",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "directional",
+          "soft"
+        ]
+      }
+    },
+    {
+      "ruleId": "particle/smoke",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^smoke_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/smoke_04.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "smoke",
+          "core"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "dense"
+        ]
+      }
+    },
+    {
+      "ruleId": "particle/spark",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^spark_\\d+(_rotated)?$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/spark_01.png",
+        "particle-pack/png-transparent/spark_04.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "filament",
+        "usage": [
+          "spark",
+          "impact",
+          "trail"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "noisy"
+        ]
+      },
+      "observation": "檔名叫 spark，實際是細絲狀電弧／裂紋，不是點狀火花。兩個樣本一致。真正的星芒火花在 star_*"
+    },
+    {
+      "ruleId": "particle/star",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^star_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/star_02.png",
+        "particle-pack/png-transparent/star_08.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "star",
+        "usage": [
+          "spark",
+          "glow",
+          "impact"
+        ],
+        "element": "neutral",
+        "tags": [
+          "radial",
+          "symmetric",
+          "sharp"
+        ]
+      },
+      "observation": "四芒星閃光疊在柔光圓盤上，這才是點狀火花的來源"
+    },
+    {
+      "ruleId": "particle/symbol",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^symbol_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/symbol_01.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "polygon",
+        "usage": [
+          "mask",
+          "particle"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "symmetric"
+        ]
+      },
+      "observation": "具體圖案（實測為愛心），泛用性低"
+    },
+    {
+      "ruleId": "particle/trace",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^trace_\\d+(_rotated)?$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/trace_02.png",
+        "particle-pack/png-transparent/trace_06.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "streak",
+        "usage": [
+          "trail",
+          "beam",
+          "ember"
+        ],
+        "element": "neutral",
+        "tags": [
+          "directional",
+          "soft"
+        ]
+      },
+      "observation": "縱向長條，上下漸淡；適合上升餘燼拖尾"
+    },
+    {
+      "ruleId": "particle/twirl",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^twirl_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/twirl_01.png",
+        "particle-pack/png-transparent/twirl_02.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "arc",
+        "usage": [
+          "core",
+          "trail"
+        ],
+        "element": "neutral",
+        "tags": [
+          "swirl",
+          "directional"
+        ]
+      },
+      "observation": "C 形弧帶（非完整螺旋），堆疊反轉可讀出旋轉感"
+    },
+    {
+      "ruleId": "particle/window",
+      "select": {
+        "package": "particle-pack",
+        "namePattern": "^window_\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "particle-pack/png-transparent/window_02.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "polygon",
+        "usage": [
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "sharp",
+          "symmetric"
+        ]
+      },
+      "observation": "矩形窗格陣列，是投影遮罩不是 UI"
+    },
+    {
+      "ruleId": "smoke/blacksmoke",
+      "select": {
+        "package": "smoke-particles",
+        "namePattern": "^blacksmoke\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "smoke-particles/png/black-smoke/blacksmoke00.png",
+        "smoke-particles/png/black-smoke/blacksmoke12.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "smoke"
+        ],
+        "element": "neutral",
+        "tags": [
+          "dense",
+          "soft"
+        ]
+      },
+      "observation": "灰階濃煙；兩個樣本形狀不同但性質一致（是變體不是動畫幀）"
+    },
+    {
+      "ruleId": "smoke/explosion",
+      "select": {
+        "package": "smoke-particles",
+        "namePattern": "^explosion\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "smoke-particles/png/explosion/explosion04.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "impact",
+          "core",
+          "smoke"
+        ],
+        "element": "fire",
+        "tags": [
+          "dense"
+        ]
+      },
+      "needsReview": true,
+      "observation": "預先上色的橘黃火球（飽和度 0.67），無法染成其他元素；element 需人工確認"
+    },
+    {
+      "ruleId": "smoke/fart",
+      "select": {
+        "package": "smoke-particles",
+        "namePattern": "^fart\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "smoke-particles/png/fart/fart04.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "smoke"
+        ],
+        "element": "poison",
+        "tags": [
+          "soft",
+          "wispy"
+        ]
+      },
+      "needsReview": true,
+      "observation": "預先上色的黃綠煙霧；element 需人工確認（poison 或 nature）"
+    },
+    {
+      "ruleId": "smoke/flash",
+      "select": {
+        "package": "smoke-particles",
+        "namePattern": "^flash\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "smoke-particles/png/flash/flash04.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "impact",
+          "glow"
+        ],
+        "element": "light",
+        "tags": [
+          "soft",
+          "radial"
+        ]
+      },
+      "needsReview": true,
+      "observation": "預先上色的黃白閃光；element 需人工確認（light 或 fire）"
+    },
+    {
+      "ruleId": "smoke/whitepuff",
+      "select": {
+        "package": "smoke-particles",
+        "namePattern": "^whitepuff\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "smoke-particles/png/white-puff/whitepuff05.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "cloud",
+        "usage": [
+          "smoke"
+        ],
+        "element": "neutral",
+        "tags": [
+          "soft",
+          "wispy"
+        ]
+      }
+    },
+    {
+      "ruleId": "splat/splat",
+      "select": {
+        "package": "splat-pack",
+        "namePattern": "^splat\\d+$",
+        "format": "png"
+      },
+      "evidence": [
+        "splat-pack/png/default-256px/splat03.png",
+        "splat-pack/png/double-512px/splat05.png"
+      ],
+      "propagation": "family",
+      "semantics": {
+        "kind": "vfx",
+        "shape": "splat",
+        "usage": [
+          "scorch",
+          "impact",
+          "mask"
+        ],
+        "element": "neutral",
+        "tags": [
+          "dense",
+          "sharp"
+        ]
+      },
+      "observation": "不規則潑濺團塊＋衛星液滴；適合地面殘留痕跡"
     }
   ]
 }

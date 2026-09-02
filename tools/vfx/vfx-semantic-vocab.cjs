@@ -1,4 +1,9 @@
 'use strict';
+/* 這個檔案同時給 Node 工具與瀏覽器端的 VFX Editor 使用：
+   Editor 的 Asset Picker 要顯示 blendMode／tintable，那是**推導**出來的，
+   不是存下來的欄位；規則只能有一份，所以直接載這個模組，
+   不在 Editor 裡再抄一次同樣的 switch。 */
+var VFXSemanticVocab = (function () {
 /* ============================================================
    vfx-semantic-vocab.cjs — Semantic Layer 的受控詞彙表（VFX 專用）
 
@@ -178,13 +183,18 @@ function validateAgainstFacts(record, facts) {
   return errors;
 }
 
-module.exports = {
-  VOCAB: VOCAB,
-  KIND: KIND, SHAPE: SHAPE, USAGE: USAGE, ELEMENT: ELEMENT, TAG: TAG,
-  CONFIDENCE: CONFIDENCE, SOURCE: SOURCE,
-  blendModeFromFacts: blendModeFromFacts,
-  tintableFromFacts: tintableFromFacts,
-  tileableCandidateFromFacts: tileableCandidateFromFacts,
-  validateRecord: validateRecord,
-  validateAgainstFacts: validateAgainstFacts
-};
+  return {
+    VOCAB: VOCAB,
+    KIND: KIND, SHAPE: SHAPE, USAGE: USAGE, ELEMENT: ELEMENT, TAG: TAG,
+    CONFIDENCE: CONFIDENCE, SOURCE: SOURCE,
+    blendModeFromFacts: blendModeFromFacts,
+    tintableFromFacts: tintableFromFacts,
+    tileableCandidateFromFacts: tileableCandidateFromFacts,
+    validateRecord: validateRecord,
+    validateAgainstFacts: validateAgainstFacts
+  };
+})();
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = VFXSemanticVocab;
+}

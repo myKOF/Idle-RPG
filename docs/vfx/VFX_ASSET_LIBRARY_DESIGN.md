@@ -466,3 +466,333 @@ Metadata 設計是否有用，看它能不能擋掉錯誤選材。三個實際�
 - 不要為了分類而搬動第三方套件的檔案（§2.2）
 - 不要在 Schema 定版前寫任何讀取索引的 Runtime 程式
 - 不要把 library root 寫進任何 Preset 或程式碼
+
+---
+
+# 8. Asset Import / Auto Classification（正式規則）
+
+> 本節是 VFX 素材匯入與自動分類的 **SSOT**。
+> 只適用 VFX Asset Library，**不適用** Idle-RPG 其他 assets（`images/` 底下的一般美術）。
+> `VFX_AGENT_WORKFLOW.md` 只放一行指向這裡，不重複內容。
+
+## 8.1 為什麼需要這條規則
+
+使用者會持續取得新的 VFX 素材包，但**使用者不是 VFX／美術專業人員**，
+不應該要求他自己判斷每張圖屬於 particle／lightning／trail／beam／glow／
+mask／noise／distortion／impact／smoke／magic 之中的哪一類。
+
+分類是 Agent 的工作：
+
+```
+掃描 → 分析 → 分類 → Metadata → Index → Semantic Search
+```
+
+現有分類不足時，**允許建立新的合理分類**。
+
+## 8.2 兩層分類模型
+
+素材分類必須區分兩件事：
+
+| | 說明 | 數量限制 |
+| --- | --- | --- |
+| **Physical Classification** | 實體資料夾位置 | 一個素材**只能有一個** |
+| **Semantic Classification** | metadata / tags / usage | 一個素材**可以有多個** |
+
+範例：
+
+```
+physical:  lightning/arc_017.png
+
+semantic:
+  type              = particle
+  shape             = filament
+  element           = electric
+  recommendedUsage  = lightning, connection, trail, spark
+  tintable          = true
+  blendModeHint     = add
+  tags              = branch, thin, sharp, energetic
+```
+
+**不要強迫實體資料夾表達素材的所有用途。**
+Semantic metadata 才是 Agent 與 Asset Browser 搜尋的主要依據。
+
+## 8.3 允許建立新的實體分類
+
+現有 taxonomy 無法合理容納時，允許新增實體資料夾。
+
+但**不得預先建立**：只有真實素材證明需要時才建立。
+
+### 8.3.1 防止分類爆炸
+
+不得產生本質相同、名稱不同的平行資料夾：
+
+```
+✗ electric-arc / lightning-arc / thunder-arc / electric-lightning / electric-filament
+```
+
+建立新分類前必須回答四個問題：
+
+1. 現有分類真的不能合理容納嗎？
+2. 新素材是否形成一個穩定且可重用的類別？
+3. 未來 Agent 與人類是否容易理解這個分類？
+4. **這是不是其實只需要一個 semantic tag，而不需要實體資料夾？**
+
+原則：
+
+```
+少量穩定的 Physical Categories  ＋  豐富的 Semantic Metadata
+而不是大量細碎資料夾
+```
+
+## 8.4 新舊素材的處理差異
+
+### A. 已被引用的素材 — `DO NOT MOVE`
+
+素材若符合任一條件：
+
+- 已被正式 Preset 引用
+- 已有穩定 assetId
+- 已進 shipped production assets
+- 已有其他可靠依賴
+
+則**預設不搬動**。不得為了「整理得比較漂亮」重新搬移。
+
+日後真要搬必須走 migration，同步處理：
+`assetId` / `relativePath` / index / metadata / preset references / export / tests。
+**不得偷偷搬。**
+
+### B. 新導入、尚未被引用的素材 — `ALLOW CLASSIFY_AND_MOVE`
+
+Agent 可以建立分類、移動、整理、建 metadata 與 index。
+
+但**第一次 Import 必須先提出 Classification Plan 並取得使用者確認**。
+
+## 8.5 Inbox 模型
+
+正式支援 `effects-materials/_inbox/` 作為新素材暫存區。
+
+標準管線：
+
+```
+SCAN → INVENTORY → DUPLICATE CHECK → IMAGE ANALYSIS
+→ EXISTING TAXONOMY MATCH → NEW CATEGORY PROPOSAL
+→ SEMANTIC CLASSIFICATION → CONFIDENCE
+→ CLASSIFICATION PLAN → USER APPROVAL
+→ MOVE → METADATA → INDEX → SEMANTIC SEARCH VERIFICATION
+```
+
+`_inbox` 是未來的標準做法，**不是強制前置條件**：
+新素材若不在 `_inbox`，直接分析它實際所在的位置即可，
+不得為了符合流程擅自把它搬進 `_inbox`。
+
+## 8.6 分類信心度
+
+每個素材或 variantGroup 都要有分類信心：
+
+| 等級 | 範圍 | 處置 |
+| --- | --- | --- |
+| HIGH | ≥ 0.85 | 可建議自動分類 |
+| MEDIUM | 0.60 – 0.84 | 可提出分類，但標記 `REVIEW_RECOMMENDED` |
+| LOW | < 0.60 | **不要硬猜**，留在 Unclassified／Review 或保持原位 |
+
+沿用現有 metadata／index 能力即可，**不要為此建立大型 ML 系統**。
+
+## 8.7 Variant Group
+
+同一視覺素材的 Transparent／Default／Inverted／Black Background／White Background
+等版本必須辨識為同一個 `variantGroup`。
+
+- Semantic classification 以**代表圖**為主，variant 繼承主要語意
+- 但 `backgroundVariant`、alpha carrier/mode、blend suitability **仍需個別記錄**
+
+不要把每個 variant 當成完全不同的素材重複做昂貴分析。
+
+## 8.8 重複偵測
+
+Import 前先做 `contentHash` 比對，區分三種：
+
+| 類型 | 定義 |
+| --- | --- |
+| `EXACT_DUPLICATE` | 同一檔案內容（sha256 相同） |
+| `VISUAL_VARIANT` | 同一素材的不同 background／alpha／inversion |
+| `SIMILAR_BUT_DISTINCT` | 視覺相近但不是同一素材 |
+
+檔名不同不構成保留 exact duplicate 的理由。
+
+**但第一輪分析不得直接刪檔**，只回報 duplicate plan。
+任何刪除都必須另外取得使用者確認。
+
+## 8.9 視覺判斷優先於檔名
+
+判斷 `shape` / `recommendedUsage` / `tags` / `element` / `blendModeHint` / `tintable`
+時必須結合：
+
+filename、dimensions、alpha、saturation、luminance、bbox、既有像素分析、
+以及**代表圖的實際目視檢查**。
+
+```
+IMAGE CONTENT  >  FILENAME
+```
+
+檔名只是弱訊號，而且可能是錯的。已證實的案例：
+
+> `spark_04` 的檔名看起來是普通火花，實際上是**分叉電弧雲團**。
+> 同一批的 `spark_05`／`spark_06` 才是單條銳利電柱。
+> 兩者的 metadata 完全相同，Semantic Search 分不出來——只能靠眼睛看。
+
+這個教訓直接造成 Lightning Orb Field 的 Checkpoint 1 走錯方向一整輪。
+
+## 8.10 Material Gap 更新
+
+每批新素材分析後必須重新檢查已知 Material Gaps，並明確標示：
+
+- `MATERIAL_GAP_RESOLVED`
+- `MATERIAL_GAP_PARTIALLY_RESOLVED`
+
+**不得因為檔名看起來符合就宣告 resolved，必須實際看素材內容。**
+
+## 8.11 Classification Plan 的必要欄位
+
+第一輪只做 Inventory ＋ Plan，**不得 Move**。Plan 至少要列：
+
+```
+CURRENT LOCATION / PROPOSED PHYSICAL CATEGORY / SEMANTIC TYPE / SHAPE /
+ELEMENT / RECOMMENDED USAGE / TAGS / TINTABLE / BLEND HINT / CONFIDENCE / ACTION
+```
+
+`ACTION` 只能是這五種之一：
+
+```
+KEEP  |  MOVE  |  NEW_CATEGORY  |  REVIEW  |  DUPLICATE_CANDIDATE
+```
+
+新分類提案要單獨列出，每個說明：分類名稱、為什麼現有分類不適合、
+哪些素材會進去、大約幾個、**為什麼這是 Physical Category 而不只是一個 Tag**。
+
+## 8.12 使用者確認後的第二階段
+
+只有 Plan 經確認後才進入 `EXECUTE CLASSIFICATION`，允許 mkdir、移動未被引用的
+新素材、更新 metadata、重建 index 與 semantics、驗證 semantic search。
+
+仍然禁止：
+
+- 未經確認的刪除
+- 搬動已被引用的 production 素材
+- 修改 presets / shipped assets / Runtime / Core
+- hardcode 機器專屬的素材庫路徑
+
+## 8.13 Portability
+
+Asset Library Root 永遠是 per-machine 本機設定。
+`D:\MyGame\effects-materials` 只是其中一台機器目前的位置，**不得寫死**。
+
+所有 metadata / index / semantic 資料一律使用 `assetId` 與 `relativePath`，
+不得出現機器絕對路徑。
+
+---
+
+# 9. 第一批 Import 的執行結果（`new_materials`）
+
+§8 是規則，這一節是**規則第一次跑完後的實際結果**，供後續批次對照。
+
+## 9.1 數量結算
+
+| 項目 | 數量 |
+|---|---|
+| 掃到的檔案 | 2,004 |
+| 其中縮圖（`*_thumbnail.png`，每張正片一張） | 1,002 |
+| **實際素材** | **1,002** |
+| 進入 Asset Index 的 | 765 |
+| `_restricted/`（法務風險，永不進索引） | 59 |
+| `_excluded/`（不是 VFX 素材） | 178 |
+
+`765 + 59 + 178 = 1,002`，沒有素材下落不明。
+
+縮圖與 `_` 開頭的目錄都由掃描器排除（`isExcludedDir`），
+所以 `_thumbnails/` 這 1,002 張不會變成 1,002 筆假素材。
+
+## 9.2 建立的實體分類（16 個）
+
+| 分類 | 數量 | 內容（依實際圖像，非檔名） |
+|---|---|---|
+| `arcane-ring` | 132 | 同心圓／軌道／輻射／齒輪環，硬邊純白剪影。魔法陣與符文的底 |
+| `mask-shape` | 114 | 硬邊剪影：星形、雪花、心形、四葉草、方塊。主題差異大但用途同一，靠 tags 區分而不再拆資料夾 |
+| `orb` | 110 | 球體與圓盤（rounded／sphere／spiky），多為灰階可染 |
+| `smoke` | 80 | 灰階湍流煙團，比既有 smoke-particles 更大且細節更多 |
+| `splat` | 48 | 硬邊潑濺，主塊加衛星液滴。純白可染 |
+| `flare` | 41 | 星芒閃光，尖刺自中心放射 |
+| `fire` | 40 | **已上色**的真實火焰（橙黃），不可染色 |
+| `hud-reticle` | 40 | 準星與目標環。嚴格說是 UI 素材，當鎖定特效與法陣底座合用 |
+| `burst` | 30 | 已上色的環狀爆發，密集針狀向外 |
+| `spiro` | 30 | 數學曲線織成的環狀線圈，適合傳送門與儀式圈 |
+| `fan` | 20 | 葉片狀放射（渦輪／風車），中心亮 |
+| `impact-ring` | 20 | 柔邊圓環，部分帶向內收的尖瓣 |
+| `muzzle-flash` | 20 | 自單點爆出的針狀噴發，**anchor 要設在底部而非中心** |
+| `plasma` | 20 | 分叉電漿雲團，已上色不可染 |
+| `beam` | 10 | 自頂點向下擴散的柔光錐 |
+| `streak` | 10 | 柔邊漸層長條，中央亮兩端收 |
+
+依 §8.3.1 的四問，這 16 個都通過「不只是一個 tag」這一關：
+它們的**用法**不同（遮罩／地面痕／方向性噴發／可染與不可染），不只是外觀不同。
+
+反例也記錄下來：原始資料夾把剪影拆成 `ding shapes`／`ding circles`／`star`／
+`targets` 四個，實際看圖後合併成 `mask-shape` 與 `hud-reticle` 兩個——
+拆四個是**檔名分類**，不是用途分類。
+
+## 9.3 `_restricted/`：法務風險（59 張）
+
+| 子分類 | 數量 | 內容 |
+|---|---|---|
+| `social-media` | 50 | 各家社群平台商標 |
+| `comic-hero` | 7 | Batman ×3、Superman、Ghostbusters ×2、鷹形徽章 ×1 |
+| `sensitive` | 2 | 大麻葉、舉拳 |
+
+這批**不是**授權不明，是**明確屬於他人的商標**。
+素材包作者無權轉授這些標誌，收錄在包裡不代表可以商用。
+
+規則：`_restricted/` 底下的東西永遠不進 Asset Index、不進 semantics、
+不進 shipped assets、不得出現在任何 Preset。留著只是為了不假裝它不存在，
+以及讓下一批匯入時能對照著認出同類。
+
+`sensitive` 兩張不是商標問題，是題材問題——技術上可用，但這款遊戲用不到，
+放進來只會增加日後誤用的機會。
+
+## 9.4 `_excluded/`：不是 VFX 素材（178 張）
+
+| 子分類 | 數量 | 為什麼排除 |
+|---|---|---|
+| `medal-star` | 100 | 獎章／評等星星，是 UI 圖示不是特效 |
+| `onomatopoeia` | 78 | 漫畫狀聲詞（BANG／POW）與血跡字樣，帶語言與畫風 |
+
+排除不等於刪除。它們留在原地，只是不進索引。
+
+## 9.5 Material Gap 重新檢查
+
+依 §8.10，逐項實際看圖確認，不憑檔名宣告：
+
+| 缺口 | 狀態 | 依據 |
+|---|---|---|
+| **seamless noise** | `MATERIAL_GAP_NOT_RESOLVED` | 全庫 35 筆可平鋪候選，**new_materials 貢獻 0 筆**。這批全部是置中構圖的單一圖案，對邊不連續 |
+| **distortion 素材** | `MATERIAL_GAP_NOT_RESOLVED` | 這批沒有法線圖或位移圖；`usage: distortion` 在全庫仍為 0 筆 |
+| **細長閃電絲**（Checkpoint 2A 需要） | `MATERIAL_GAP_RESOLVED`（既有素材，不是這批補的） | `shape: filament` 全庫 38 筆：`particle-pack` 18 筆（`spark_01`～`spark_07` 及預旋轉版）確實是白色細分叉電弧；`plasma` 那 20 筆是**團狀**不是絲狀，不能拿來當纏繞電流 |
+
+> 這裡有一個必須寫下來的教訓：上一輪曾因為只看了 `spark_01` 與 `spark_04`，
+> 就下結論「素材庫沒有細長 lightning」。實際上 `spark_05`～`spark_07` 正是要找的東西。
+> **抽樣看圖不等於看過**——宣告缺口前要把該系列整組看完。
+
+## 9.6 已知的分類瑕疵（尚未修，待決定）
+
+`plasma` 這 16 個分類裡唯一標得不準的一個：
+
+- 規則 `new/plasma` 給整組 `element: lightning`、`confidence: high`。
+- 但實際看圖，這 20 張是**橙、金、綠、洋紅、青、藍、紅**的多色能量團，
+  只有藍色那幾張像電；橙色那幾張其實更接近 `fire`。
+- `shape: filament` 也過度承諾：外輪廓是團塊，分叉只是內部紋理。
+  用 `shape=filament` 搜細電弧的人會被這 20 張稀釋掉結果。
+
+成因：規則是用**資料夾名**（`plasma`）套整組的，而資料夾名本身是分類階段的產物。
+規則式 `high` 信心建立在一個猜出來的名字上，信心被灌水了。
+
+建議（未執行，等確認）：改成逐檔取主色相 → 依色相給 `element`，
+`shape` 改 `irregular`，`confidence` 降為 `medium`。
+涉及 `vfx/semantic-rules.json` 與重建 semantics，不動任何檔案位置。

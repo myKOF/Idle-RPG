@@ -48,11 +48,18 @@ const VFXCore = require('../../js/vfx-core.js');
 /* 「這個 id 能不能當檔名」只有一份定義，Editor 端載入的是同一個檔，
    否則遲早會變成 Editor 顯示可以存、伺服器回 400。 */
 const presetIdPolicy = require('./editor/preset-id-policy.js');
+/* Layer 分組是 Editor 專用的 authoring metadata，不進 Preset／Runtime。
+   驗證與序列化同樣只有一份，Editor 頁面載入的是同一個檔。 */
+const layoutSchema = require('./editor/layout-schema.js');
 
 const REPO_ROOT = libraryRoot.REPO_ROOT;
 const ASSET_PREFIX = '/asset-library/';
-/* Editor 只需要這幾個目錄；其餘 repo 內容一律不對外 */
-const REPO_ALLOWLIST = ['/tools/vfx/editor/', '/js/', '/vfx/'];
+/* Editor 只需要這幾個目錄；其餘 repo 內容一律不對外。
+   最後一筆是**單一檔案**而不是目錄：Asset Picker 要顯示 blendMode／tintable，
+   那兩個是由事實層推導出來的，規則只有一份在 vfx-semantic-vocab.cjs。
+   為了不讓 Editor 抄第二份，開放這一個檔；其餘 tools/vfx 的建置工具仍不對外。 */
+const REPO_ALLOWLIST = ['/tools/vfx/editor/', '/tools/vfx/vfx-semantic-vocab.cjs',
+  '/js/', '/vfx/'];
 const PORT_BASE = 28361;
 const PORT_TRIES = 10;
 /* 啟動器用來確認「這個埠上的是不是本副本的 Editor」，見下方路由處的說明 */
@@ -61,7 +68,14 @@ const WHOAMI_MARK = 'idle-rpg-vfx-editor';
 
 /* ---- Preset 存檔 API 的常數（全部是常數，沒有一個來自請求） ---- */
 const PRESETS_DIR_REL = 'vfx/presets';
+/* 刻意不放在 vfx/presets 底下：export-assets.cjs 會把那個目錄裡每一個
+   *.json 都當成正式 Preset 讀，layout 檔放進去會變成一份幽靈 preset。 */
+const LAYOUTS_DIR_REL = 'vfx/layouts';
 const SAVE_PREFIX = '/vfx/presets/';
+const LAYOUT_PREFIX = '/vfx/layouts/';
+/* 寫入目的地只能是這兩個常數之一。這個陣列存在的目的是讓「目的地不是
+   輸入的函數」這件事可以被斷言，而不是靠讀程式碼相信。 */
+const WRITABLE_DIRS = [PRESETS_DIR_REL, LAYOUTS_DIR_REL];
 const SAVE_SUFFIX = '.json';
 const MAX_SAVE_BODY_BYTES = 1024 * 1024;
 /* 暫存檔名故意不以 .json 結尾：export-assets.cjs 會把 vfx/presets 底下
@@ -129,13 +143,22 @@ function safeJoin(root, relative) {
   return target;
 }
 
-function serveFile(res, filePath) {
+/* Editor 自己的檔案一律 no-store，其餘（素材縮圖等）維持 no-cache。
+   原因是實測過的：no-cache 只要求「重新驗證」，而本伺服器不送 ETag／
+   Last-Modified，瀏覽器沒有驗證依據時仍可能直接用舊的 editor.js。
+   結果是改了程式、重整、行為沒變——量到的數字對不上程式碼，很難查。
+   Asset Browser 有 900 多張縮圖，那些不能一起 no-store，否則每次重整全部重抓。 */
+function cacheControlFor(pathname) {
+  return pathname.indexOf('/tools/vfx/editor/') === 0 ? 'no-store' : 'no-cache';
+}
+
+function serveFile(res, filePath, pathname) {
   fs.stat(filePath, function (err, stat) {
     if (err || !stat.isFile()) return send(res, 404, 'Not found: ' + filePath);
     res.writeHead(200, {
       'Content-Type': MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream',
       'Content-Length': stat.size,
-      'Cache-Control': 'no-cache'
+      'Cache-Control': cacheControlFor(pathname || '')
     });
     fs.createReadStream(filePath).pipe(res);
   });
@@ -150,10 +173,10 @@ function serveFile(res, filePath) {
    %2e%2e 解碼後就變成真的 ..，等於把穿越字元餵給後面的檢查。
    改成看原始字串之後，% 本身就不在 PRESET_ID_RE 的字元集內，
    任何 percent-encoding 都在第一關結束，不必去推理「解碼幾次才安全」。 */
-function presetIdFromRawPath(rawPathname) {
+function idFromRawPath(rawPathname, prefix) {
   if (typeof rawPathname !== 'string') return null;
-  if (rawPathname.indexOf(SAVE_PREFIX) !== 0) return null;
-  const rest = rawPathname.slice(SAVE_PREFIX.length);
+  if (rawPathname.indexOf(prefix) !== 0) return null;
+  const rest = rawPathname.slice(prefix.length);
   if (rest.length <= SAVE_SUFFIX.length) return null;
   if (rest.slice(-SAVE_SUFFIX.length) !== SAVE_SUFFIX) return null;
   const id = rest.slice(0, rest.length - SAVE_SUFFIX.length);
@@ -161,6 +184,11 @@ function presetIdFromRawPath(rawPathname) {
      全部在這裡就結束，後面不需要再做第二套字串清理。 */
   if (!presetIdPolicy.isWritablePresetId(id)) return null;
   return id;
+}
+
+/* 既有呼叫端與測試用的名字保留，語意不變：只認 preset 那條前綴。 */
+function presetIdFromRawPath(rawPathname) {
+  return idFromRawPath(rawPathname, SAVE_PREFIX);
 }
 
 /* 從 repo root 逐段往下檢查有沒有符號連結／junction。
@@ -192,29 +220,35 @@ function findLinkOnPath(rootAbs, targetAbs) {
   return null;
 }
 
-/* 實際落檔。只做一件事：把 canonical text 寫成 vfx/presets/<id>.json。
-   目錄與檔名都由常數與白名單 id 決定，這裡不接受任何路徑參數。 */
-function writePresetFile(ctx, presetId, text) {
+/* 實際落檔。把 canonical text 寫成 <dirRel>/<id>.json。
+   dirRel 只能是 WRITABLE_DIRS 裡的模組常數——由路由挑，不是由請求挑，
+   下面第一行就把這件事斷言掉。檔名同樣是白名單 id，
+   所以「寫到哪裡」依然不是輸入的函數。 */
+function writeJsonFile(ctx, dirRel, fileId, text) {
+  if (WRITABLE_DIRS.indexOf(dirRel) < 0) {
+    return { status: 500, error: '不是允許的寫入目錄：' + dirRel };
+  }
+  const presetId = fileId;
   const repoRootAbs = path.resolve(ctx.repoRoot);
-  const presetsDirAbs = path.join(repoRootAbs, PRESETS_DIR_REL.split('/').join(path.sep));
+  const presetsDirAbs = path.join(repoRootAbs, dirRel.split('/').join(path.sep));
   const hooks = ctx.hooks || {};
 
   const linkProblem = findLinkOnPath(repoRootAbs, presetsDirAbs);
-  if (linkProblem) return { status: 403, error: 'preset 目錄不可用：' + linkProblem };
+  if (linkProblem) return { status: 403, error: dirRel + ' 目錄不可用：' + linkProblem };
 
   let dirStat;
   try { dirStat = fs.lstatSync(presetsDirAbs); } catch (e) {
-    return { status: 500, error: '找不到 preset 目錄：' + presetsDirAbs };
+    return { status: 500, error: '找不到目錄：' + presetsDirAbs };
   }
   if (!dirStat.isDirectory()) {
-    return { status: 403, error: 'preset 目錄不是目錄：' + presetsDirAbs };
+    return { status: 403, error: '目標不是目錄：' + presetsDirAbs };
   }
 
   const targetAbs = path.join(presetsDirAbs, presetId + SAVE_SUFFIX);
   /* 縱深防禦：presetId 已經過白名單，這行理論上不可能失敗，
      但「理論上不可能」是最不該省略檢查的地方。 */
   if (path.dirname(targetAbs) !== presetsDirAbs) {
-    return { status: 403, error: '目標檔逃出 preset 目錄：' + targetAbs };
+    return { status: 403, error: '目標檔逃出指定目錄：' + targetAbs };
   }
 
   let existing = null;
@@ -324,7 +358,38 @@ function savePresetText(ctx, presetId, bodyText) {
     return { status: 500, error: '序列化失敗，未寫入：' + (e && e.message || e) };
   }
 
-  const written = writePresetFile(ctx, presetId, text);
+  const written = writeJsonFile(ctx, PRESETS_DIR_REL, presetId, text);
+  if (written.status !== 200) return written;
+  return { status: 200, presetId: presetId, bytes: written.bytes };
+}
+
+/* layout 檔的存檔管線，與 preset 同形：
+   parse → validate → canonical serialise → 落檔。
+   驗證用的是 Editor 端載入的同一份 layout-schema.js。 */
+function saveLayoutText(ctx, presetId, bodyText) {
+  let parsed;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch (e) {
+    return { status: 400, error: 'JSON 解析失敗：' + (e && e.message || e) };
+  }
+  const check = layoutSchema.validateLayout(parsed);
+  if (!check.ok) {
+    return { status: 400, error: 'layout 不合法，未寫入', problems: check.errors };
+  }
+  if (parsed.presetId !== presetId) {
+    return {
+      status: 400,
+      error: 'layout.presetId（' + parsed.presetId + '）與檔名（' + presetId + '）不一致，未寫入'
+    };
+  }
+  let text;
+  try {
+    text = layoutSchema.serialiseLayout(parsed);
+  } catch (e) {
+    return { status: 500, error: '序列化失敗，未寫入：' + (e && e.message || e) };
+  }
+  const written = writeJsonFile(ctx, LAYOUTS_DIR_REL, presetId, text);
   if (written.status !== 200) return written;
   return { status: 200, presetId: presetId, bytes: written.bytes };
 }
@@ -386,7 +451,7 @@ function checkWriteOrigin(req) {
   return null;
 }
 
-function handleSaveRequest(ctx, req, res, presetId) {
+function handleSaveRequest(ctx, req, res, presetId, kind) {
   const originProblem = checkWriteOrigin(req);
   if (originProblem) return sendJson(res, 403, { ok: false, error: originProblem });
 
@@ -417,7 +482,10 @@ function handleSaveRequest(ctx, req, res, presetId) {
     if (aborted) return;
     let result;
     try {
-      result = savePresetText(ctx, presetId, Buffer.concat(chunks).toString('utf8'));
+      const body = Buffer.concat(chunks).toString('utf8');
+      result = kind === 'layout'
+        ? saveLayoutText(ctx, presetId, body)
+        : savePresetText(ctx, presetId, body);
     } catch (e) {
       result = { status: 500, error: '存檔時發生未預期錯誤：' + (e && e.message || e) };
     }
@@ -439,15 +507,17 @@ function createServer(ctx) {
 
     /* 寫入路由必須在 decodeURIComponent 之前分支，理由見 presetIdFromRawPath。 */
     if (req.method === 'PUT') {
-      const presetId = presetIdFromRawPath(rawPathname);
-      if (!presetId) {
-        return sendJson(res, 400, {
-          ok: false,
-          error: '只接受 PUT ' + SAVE_PREFIX + '<presetId>' + SAVE_SUFFIX +
-            '，presetId 僅限小寫英數與連字號'
-        });
-      }
-      return handleSaveRequest(ctx, req, res, presetId);
+      /* 兩條寫入路由，各自綁死一個目的地常數。
+         id 一律取自未解碼的 pathname，理由見 presetIdFromRawPath。 */
+      const presetId = idFromRawPath(rawPathname, SAVE_PREFIX);
+      if (presetId) return handleSaveRequest(ctx, req, res, presetId, 'preset');
+      const layoutId = idFromRawPath(rawPathname, LAYOUT_PREFIX);
+      if (layoutId) return handleSaveRequest(ctx, req, res, layoutId, 'layout');
+      return sendJson(res, 400, {
+        ok: false,
+        error: '只接受 PUT ' + SAVE_PREFIX + ' 或 ' + LAYOUT_PREFIX +
+          ' 底下的 <id>' + SAVE_SUFFIX + '，id 僅限小寫英數與連字號'
+      });
     }
     if (req.method !== 'GET') {
       return send(res, 405, '不支援的方法：' + req.method);
@@ -481,7 +551,7 @@ function createServer(ctx) {
       if (!root) return send(res, 404, '未設定的 libraryId：' + libraryId);
       const target = safeJoin(root, relative);
       if (!target) return send(res, 403, '路徑不合法');
-      return serveFile(res, target);
+      return serveFile(res, target, pathname);
     }
 
     /* 只服務 Editor 真正需要的目錄。整個 repo 都開出去的話，
@@ -494,7 +564,7 @@ function createServer(ctx) {
     }
     const target = safeJoin(ctx.repoRoot, pathname);
     if (!target) return send(res, 403, '路徑不合法');
-    serveFile(res, target);
+    serveFile(res, target, pathname);
   });
 }
 
@@ -563,8 +633,12 @@ else module.exports = {
   presetIdFromRawPath: presetIdFromRawPath,
   /* 測試專用縫隙：唯一能換掉 repoRoot、唯一能注入失敗 hook 的入口。
      正式路徑（main → start）不經過這裡，也沒有任何 CLI 參數能到達。 */
+  LAYOUT_PREFIX: LAYOUT_PREFIX,
   __testOnly: {
     createServer: createServer,
-    savePresetText: savePresetText
+    savePresetText: savePresetText,
+    saveLayoutText: saveLayoutText,
+    idFromRawPath: idFromRawPath,
+    WRITABLE_DIRS: WRITABLE_DIRS
   }
 };

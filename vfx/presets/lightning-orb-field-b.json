@@ -7,7 +7,7 @@
     {
       "id": "field-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 0,
       "position": {
         "x": 0,
@@ -78,7 +78,7 @@
     {
       "id": "orb-a-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 10,
       "position": {
         "x": 188,
@@ -203,7 +203,7 @@
     {
       "id": "orb-a-body",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 20,
       "position": {
         "x": 188,
@@ -328,7 +328,7 @@
     {
       "id": "orb-a-core",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 21,
       "position": {
         "x": 188,
@@ -453,7 +453,7 @@
     {
       "id": "orb-a-arc",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 22,
       "position": {
         "x": 188,
@@ -523,7 +523,7 @@
     {
       "id": "orb-b-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 10,
       "position": {
         "x": 78,
@@ -648,7 +648,7 @@
     {
       "id": "orb-b-body",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 20,
       "position": {
         "x": 78,
@@ -773,7 +773,7 @@
     {
       "id": "orb-b-core",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 21,
       "position": {
         "x": 78,
@@ -898,7 +898,7 @@
     {
       "id": "orb-b-arc",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 22,
       "position": {
         "x": 78,
@@ -968,7 +968,7 @@
     {
       "id": "orb-c-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 10,
       "position": {
         "x": -38,
@@ -1093,7 +1093,7 @@
     {
       "id": "orb-c-body",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 20,
       "position": {
         "x": -38,
@@ -1218,7 +1218,7 @@
     {
       "id": "orb-c-core",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 21,
       "position": {
         "x": -38,
@@ -1343,7 +1343,7 @@
     {
       "id": "orb-c-arc",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 22,
       "position": {
         "x": -38,
@@ -1413,7 +1413,7 @@
     {
       "id": "orb-d-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 10,
       "position": {
         "x": -148,
@@ -1538,7 +1538,7 @@
     {
       "id": "orb-d-body",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 20,
       "position": {
         "x": -148,
@@ -1663,7 +1663,7 @@
     {
       "id": "orb-d-core",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 21,
       "position": {
         "x": -148,
@@ -1788,7 +1788,7 @@
     {
       "id": "orb-d-arc",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 22,
       "position": {
         "x": -148,
@@ -1858,7 +1858,7 @@
     {
       "id": "orb-e-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 10,
       "position": {
         "x": -187,
@@ -1983,7 +1983,7 @@
     {
       "id": "orb-e-body",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 20,
       "position": {
         "x": -187,
@@ -2108,7 +2108,7 @@
     {
       "id": "orb-e-core",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 21,
       "position": {
         "x": -187,
@@ -2233,7 +2233,7 @@
     {
       "id": "orb-e-arc",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 22,
       "position": {
         "x": -187,
@@ -2303,7 +2303,7 @@
     {
       "id": "orb-f-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 10,
       "position": {
         "x": -68,
@@ -2428,7 +2428,7 @@
     {
       "id": "orb-f-body",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 20,
       "position": {
         "x": -68,
@@ -2553,7 +2553,7 @@
     {
       "id": "orb-f-core",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 21,
       "position": {
         "x": -68,
@@ -2678,7 +2678,7 @@
     {
       "id": "orb-f-arc",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 22,
       "position": {
         "x": -68,
@@ -2748,7 +2748,7 @@
     {
       "id": "orb-g-glow",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/circle_a.png",
       "zIndex": 10,
       "position": {
         "x": 109,
@@ -2873,7 +2873,7 @@
     {
       "id": "orb-g-body",
       "type": "sprite",
-      "assetId": "kenney_particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 20,
       "position": {
         "x": 109,
@@ -2998,7 +2998,7 @@
     {
       "id": "orb-g-core",
       "type": "sprite",
-      "assetId": "kenney_light-masks-1.0/default/circle_b.png",
+      "assetId": "light-masks-1.0/default/circle_b.png",
       "zIndex": 21,
       "position": {
         "x": 109,
@@ -3123,7 +3123,7 @@
     {
       "id": "orb-g-arc",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 22,
       "position": {
         "x": 109,
@@ -3193,7 +3193,7 @@
     {
       "id": "sparkles",
       "type": "particle",
-      "assetId": "kenney_particle-pack/png-black-background/star_08.png",
+      "assetId": "particle-pack/png-black-background/star_08.png",
       "zIndex": 31,
       "position": {
         "x": 0,

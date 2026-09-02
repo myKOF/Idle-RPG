@@ -234,8 +234,8 @@ test('9. 各種不可攜／可構造目的路徑的 relativePath 一律被擋', 
     assert.ok(exporter.checkPortableRelativePath(rel).length > 0,
       '應被擋下：' + JSON.stringify(rel));
   });
-  ['kenney_particle-pack/PNG (Black background)/trace_02.png',
-    'kenney_splat-pack/PNG/Double (512px)/splat05.png'].forEach(function (rel) {
+  ['particle-pack/PNG (Black background)/trace_02.png',
+    'splat-pack/PNG/Double (512px)/splat05.png'].forEach(function (rel) {
     assert.deepEqual(exporter.checkPortableRelativePath(rel), [], rel + ' 應該合法');
   });
 });
