@@ -11457,3 +11457,947 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
 #battle-info-drawer-body .log-header-actions {
   flex-wrap: wrap;
 }
+
+/* ==========================================================================
+   Dark fantasy visual system
+   Pure presentation overrides: DOM structure, events and gameplay remain intact.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --bg: #070504;
+  --bg2: #100c09;
+  --panel: rgba(18, 13, 10, .94);
+  --panel2: rgba(27, 19, 14, .96);
+  --border: #4b3526;
+  --border-light: #8d6338;
+  --text: #e4d8c5;
+  --dim: #a8957b;
+  --accent: #d9ad64;
+  --good: #78b966;
+  --bad: #dc5c4d;
+  --warn: #e2a449;
+  --info: #69a8c8;
+  --df-ink: #070504;
+  --df-coal: #0e0a08;
+  --df-iron: #1a1715;
+  --df-iron-light: #29231f;
+  --df-copper: #9f6135;
+  --df-copper-hot: #d4813f;
+  --df-gold: #d9ad64;
+  --df-line: rgba(190, 132, 72, .44);
+  --df-line-soft: rgba(190, 132, 72, .18);
+  --df-inset: rgba(0, 0, 0, .78);
+  --df-glow: rgba(220, 101, 36, .18);
+}
+
+html {
+  background: #020202;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 76% 48%, rgba(122, 48, 19, .16), transparent 38%),
+    linear-gradient(90deg, rgba(0, 0, 0, .9), rgba(5, 4, 3, .72) 34%, rgba(7, 5, 4, .58) 72%, rgba(0, 0, 0, .9)),
+    url('../images/diablo_main_bg.png') center 48% / cover no-repeat fixed,
+    #050403;
+  color: var(--text);
+  letter-spacing: .015em;
+  text-shadow: 0 1px 2px #000, 0 0 5px rgba(0, 0, 0, .4);
+}
+
+#ui-stage {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(112, 61, 29, .14), transparent 62%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .012) 0 1px, transparent 1px 5px),
+    #020202;
+}
+
+#ui-shell {
+  isolation: isolate;
+  background: rgba(3, 3, 3, .3);
+  box-shadow: 0 0 80px 30px #000;
+}
+
+::selection {
+  background: rgba(202, 121, 58, .55);
+  color: #fff7e8;
+}
+
+/* Top resource bar */
+#topbar {
+  position: relative;
+  min-height: 50px;
+  padding: 8px 18px;
+  background:
+    linear-gradient(180deg, rgba(48, 34, 25, .82), rgba(9, 7, 6, .96)),
+    url('../images/diablo_panel_tex.png') center / 480px auto repeat;
+  background-blend-mode: normal, soft-light;
+  border: 0;
+  border-bottom: 1px solid #6f4a2d;
+  box-shadow:
+    inset 0 1px rgba(255, 225, 174, .08),
+    inset 0 -8px 20px rgba(0, 0, 0, .72),
+    0 7px 18px rgba(0, 0, 0, .82);
+}
+
+#topbar::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -2px;
+  left: 0;
+  height: 3px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 1%, #4b2b1c 12%, #c1783d 50%, #4b2b1c 88%, transparent 99%);
+  opacity: .62;
+}
+
+.brand {
+  color: #e6bb72;
+  font-size: 19px;
+  letter-spacing: .08em;
+  text-shadow: 0 2px 2px #000, 0 0 12px rgba(217, 173, 100, .2);
+}
+
+.brand-sub {
+  color: #8f7a62;
+  letter-spacing: .34em;
+}
+
+.fs-btn {
+  border-color: #6d4d31;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #32251c, #110d0a);
+  color: #cda55f;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .07), inset 0 -5px 9px rgba(0, 0, 0, .65);
+}
+
+#res-bar {
+  gap: 2px;
+}
+
+.res {
+  min-height: 26px;
+  padding: 2px 9px;
+  border-left: 1px solid rgba(154, 105, 60, .2);
+  color: #a9967c;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .018), transparent);
+}
+
+.res:first-child {
+  border-left-color: transparent;
+}
+
+.res b {
+  color: #e8dcc8;
+  text-shadow: 0 1px 2px #000, 0 0 7px rgba(217, 173, 100, .12);
+}
+
+.res-icon {
+  filter: drop-shadow(0 1px 2px #000) saturate(.88) brightness(.96);
+}
+
+/* Main left function area and right combat area */
+#game-layout {
+  gap: 8px;
+  padding: 0 6px 6px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .22), rgba(0, 0, 0, .48));
+}
+
+#stats-sidebar,
+#workspace-area,
+#combat-area {
+  position: relative;
+  border: 1px solid #493322;
+  border-image: none;
+  border-radius: 3px;
+  background:
+    linear-gradient(135deg, rgba(42, 29, 21, .8), rgba(10, 8, 7, .96) 32%, rgba(15, 10, 8, .97)),
+    url('../images/diablo_panel_tex.png') center / 520px auto repeat;
+  background-blend-mode: normal, soft-light;
+  box-shadow:
+    inset 0 0 0 1px rgba(213, 160, 89, .08),
+    inset 0 0 34px 10px rgba(0, 0, 0, .72),
+    0 6px 18px rgba(0, 0, 0, .72);
+}
+
+#stats-sidebar::after,
+#workspace-area::after,
+#combat-area::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: 20;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(231, 142, 66, .72) 0 2px, transparent 2px) left top / 22px 22px no-repeat,
+    linear-gradient(225deg, rgba(231, 142, 66, .72) 0 2px, transparent 2px) right top / 22px 22px no-repeat,
+    linear-gradient(45deg, rgba(231, 142, 66, .52) 0 2px, transparent 2px) left bottom / 22px 22px no-repeat,
+    linear-gradient(315deg, rgba(231, 142, 66, .52) 0 2px, transparent 2px) right bottom / 22px 22px no-repeat;
+  opacity: .82;
+}
+
+#stats-sidebar {
+  padding: 16px 13px 14px;
+  border-right-color: #765033;
+}
+
+#workspace-area {
+  overflow: hidden;
+}
+
+#workspace-area main {
+  padding: 12px 14px 14px;
+  background:
+    radial-gradient(circle at 16% 10%, rgba(116, 67, 31, .08), transparent 28%),
+    linear-gradient(180deg, rgba(0, 0, 0, .1), rgba(0, 0, 0, .24));
+  scrollbar-color: #70482b #0b0806;
+  scrollbar-width: thin;
+}
+
+#combat-area {
+  padding: 10px 12px 8px;
+  border-left-color: #7a4d2c;
+}
+
+/* Shared surfaces */
+.panel,
+.equip-section-box,
+.tree-panel,
+.log,
+.detail-log-box {
+  border: 1px solid #493322;
+  border-image: none;
+  border-radius: 3px;
+  background:
+    linear-gradient(145deg, rgba(40, 28, 20, .64), rgba(11, 8, 6, .93) 44%, rgba(17, 12, 9, .94)),
+    url('../images/diablo_panel_tex.png') center / 460px auto repeat;
+  background-blend-mode: normal, soft-light;
+  box-shadow:
+    inset 0 0 0 1px rgba(220, 168, 98, .055),
+    inset 0 0 22px rgba(0, 0, 0, .62),
+    0 4px 10px rgba(0, 0, 0, .46);
+}
+
+.panel,
+.equip-section-box,
+.tree-panel {
+  padding: 12px;
+}
+
+.sec-title,
+.node-title,
+.tree-title,
+.tower-section-title,
+.stats-sec-title {
+  position: relative;
+  color: #deb574;
+  border-bottom: 1px solid rgba(159, 97, 53, .52);
+  text-shadow: 0 2px 2px #000, 0 0 8px rgba(217, 173, 100, .12);
+}
+
+.sec-title::after,
+.node-title::after,
+.tree-title::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, #d17b3d, rgba(119, 71, 39, .35) 34%, transparent 88%);
+}
+
+.sec-sub {
+  color: #b49b79;
+  letter-spacing: .04em;
+}
+
+.hint,
+.dim-text {
+  color: #9e8b73;
+}
+
+.node-info,
+.gem-result,
+.detail-log-content,
+.detail-log-stats,
+.save-folder-files {
+  border: 1px solid rgba(112, 73, 43, .58);
+  border-radius: 3px;
+  background: rgba(6, 5, 4, .62);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .52);
+}
+
+/* Navigation */
+#workspace-area #tabs {
+  gap: 5px;
+  min-height: 47px;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid #60412a;
+  background: linear-gradient(180deg, rgba(36, 25, 19, .55), rgba(6, 5, 4, .72));
+  box-shadow: inset 0 -7px 14px rgba(0, 0, 0, .5);
+}
+
+.tab-btn {
+  min-width: 88px;
+  min-height: 38px;
+  padding: 7px 14px 8px;
+  border: 1px solid #493426;
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  background:
+    linear-gradient(180deg, rgba(55, 40, 31, .92), rgba(15, 11, 9, .98)),
+    url('../images/diablo_panel_tex.png') center / 260px auto;
+  background-blend-mode: normal, soft-light;
+  color: #a28d73;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .055), inset 0 -8px 13px rgba(0, 0, 0, .58);
+  transition: color .14s ease, border-color .14s ease, background-color .14s ease, transform .14s ease;
+}
+
+.tab-btn:hover {
+  color: #eadcc7;
+  border-color: #8a5d37;
+  filter: none;
+  transform: translateY(-1px);
+}
+
+.tab-btn.active {
+  margin-bottom: -1px;
+  border-color: #b2783f;
+  border-bottom: 1px solid #1b120d;
+  background:
+    linear-gradient(180deg, rgba(88, 49, 28, .96), rgba(27, 17, 12, .98)),
+    url('../images/diablo_panel_tex.png') center / 260px auto;
+  background-blend-mode: normal, soft-light;
+  color: #f0c377;
+  box-shadow: inset 0 1px rgba(255, 224, 168, .15), 0 -2px 10px rgba(191, 91, 37, .13);
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  right: 18%;
+  bottom: 0;
+  left: 18%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #e98239, transparent);
+  box-shadow: 0 0 6px rgba(224, 105, 46, .5);
+}
+
+/* Buttons and form controls */
+.btn,
+.dropdown,
+.input,
+select,
+input[type='text'],
+input[type='number'],
+textarea {
+  border: 1px solid #69482e !important;
+  border-radius: 3px !important;
+  background: linear-gradient(180deg, #30231a, #120d0a) !important;
+  color: #dfd1bd !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .065), inset 0 -6px 10px rgba(0, 0, 0, .58), 0 2px 4px rgba(0, 0, 0, .42);
+  text-shadow: 0 1px 2px #000;
+}
+
+.btn {
+  letter-spacing: .035em;
+  transition: color .13s ease, border-color .13s ease, background .13s ease, transform .13s ease, box-shadow .13s ease;
+}
+
+.btn:hover,
+.dropdown:hover,
+.input:hover,
+select:hover,
+input[type='text']:hover,
+input[type='number']:hover,
+textarea:hover {
+  border-color: #c18447 !important;
+  background: linear-gradient(180deg, #463020, #1a110c) !important;
+  color: #f0c477 !important;
+  filter: none;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px rgba(255, 235, 196, .12), inset 0 -5px 9px rgba(0, 0, 0, .5), 0 3px 8px rgba(0, 0, 0, .6), 0 0 7px rgba(209, 112, 48, .1);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 5px 10px rgba(0, 0, 0, .72);
+}
+
+.btn.warn {
+  border-color: #87542c !important;
+  background: linear-gradient(180deg, #4b2a19, #1c100b) !important;
+  color: #ebb06b !important;
+}
+
+.btn.danger {
+  border-color: #7e382f !important;
+  background: linear-gradient(180deg, #451d19, #180b09) !important;
+  color: #e58c7e !important;
+}
+
+.btn.active,
+.forge-inv-tabs .btn.active {
+  border-color: #c98845 !important;
+  background: linear-gradient(180deg, #60371f, #20120c) !important;
+  color: #ffd08a !important;
+  box-shadow: inset 0 0 9px rgba(212, 117, 47, .18), 0 0 7px rgba(212, 117, 47, .16);
+}
+
+.btn:focus-visible,
+.tab-btn:focus-visible,
+.zone-btn:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(233, 157, 77, .8);
+  outline-offset: 2px;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[disabled],
+.btn[disabled] {
+  opacity: .42;
+  filter: grayscale(.45);
+  transform: none !important;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: #b76c35;
+}
+
+/* Character profile and attribute sidebar */
+.sidebar-avatar {
+  position: relative;
+  margin-bottom: 9px;
+}
+
+.sidebar-avatar::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 92px;
+  height: 92px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  border: 1px solid #8b6039;
+  background: linear-gradient(135deg, #c37a3d 0 2px, transparent 2px) left top / 16px 16px no-repeat,
+    linear-gradient(225deg, #c37a3d 0 2px, transparent 2px) right top / 16px 16px no-repeat,
+    linear-gradient(45deg, #c37a3d 0 2px, transparent 2px) left bottom / 16px 16px no-repeat,
+    linear-gradient(315deg, #c37a3d 0 2px, transparent 2px) right bottom / 16px 16px no-repeat;
+  box-shadow: 0 0 12px rgba(0, 0, 0, .9), inset 0 0 12px rgba(0, 0, 0, .45);
+}
+
+.sidebar-avatar img {
+  width: 84px;
+  height: 84px;
+  border: 1px solid #94704d;
+  border-radius: 2px;
+  filter: saturate(.82) contrast(1.08);
+  box-shadow: inset 0 0 12px #000, 0 4px 13px rgba(0, 0, 0, .86);
+}
+
+.sidebar-title {
+  margin-top: 3px;
+  color: #d7bc91;
+  font-size: 17px;
+  letter-spacing: .08em;
+}
+
+#stats-sidebar #xp-bar,
+.mastery-bar,
+.hp-bar,
+.mp-bar,
+.shield-bar,
+.forge-progress-track {
+  border: 1px solid #5d4029;
+  border-radius: 2px;
+  background: #050403;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .9), 0 1px rgba(255, 255, 255, .025);
+}
+
+#stats-sidebar #xp-fill,
+.mastery-bar-fill,
+#forge-progress-fill {
+  background: linear-gradient(90deg, #6f2d14, #b9692f 55%, #e0b064);
+  box-shadow: inset 0 1px rgba(255, 230, 184, .22), 0 0 7px rgba(205, 101, 42, .25);
+}
+
+.sidebar-stats {
+  gap: 8px;
+  margin-left: 0;
+}
+
+.attr-group {
+  border-bottom: 1px solid rgba(126, 82, 47, .34);
+  padding-bottom: 4px;
+}
+
+.attr-group summary {
+  margin: 0 -5px 4px;
+  padding: 4px 7px !important;
+  border-left: 2px solid #9b6036;
+  background: linear-gradient(90deg, rgba(132, 76, 37, .16), transparent 78%);
+  color: #cdb081;
+}
+
+.attr-group .stat-row,
+.stat-row {
+  border-bottom-color: rgba(116, 83, 56, .36);
+  color: #aa987f;
+}
+
+.attr-group .stat-row b,
+.stat-row b {
+  color: #eadfce;
+}
+
+/* Equipment, inventory and item details */
+#equip-grid {
+  filter: saturate(.82) contrast(1.07) brightness(.92);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(115, 78, 48, .32), 0 10px 24px rgba(0, 0, 0, .48);
+}
+
+.equip-material-panel {
+  border-color: #6d492d;
+  border-radius: 3px;
+  background:
+    linear-gradient(160deg, rgba(45, 30, 20, .52), rgba(7, 5, 4, .9)),
+    url('../images/diablo_panel_tex.png') center / 320px auto;
+  background-blend-mode: normal, soft-light;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, .72);
+}
+
+.eqset-tab,
+.gconv-slot {
+  border-color: #59402c;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(41, 30, 23, .9), rgba(10, 8, 6, .94));
+  box-shadow: inset 0 0 9px rgba(0, 0, 0, .48);
+}
+
+.eqset-tab.viewing {
+  border-color: #bd7a3e;
+  background: linear-gradient(180deg, rgba(102, 56, 30, .52), rgba(17, 10, 7, .96));
+  box-shadow: inset 0 0 10px rgba(202, 102, 42, .14), 0 0 6px rgba(202, 102, 42, .12);
+}
+
+.eq-slot.filled,
+.item-cell,
+.forge-slot,
+.forge-center,
+.gem-inventory-cell {
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(92, 64, 42, .22), transparent 58%),
+    linear-gradient(145deg, #19130f, #080605);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .025), inset 0 0 13px rgba(0, 0, 0, .72), 0 2px 5px rgba(0, 0, 0, .48);
+}
+
+.eq-slot.filled:hover,
+.item-cell:hover,
+.forge-slot.filled:hover,
+.gem-inventory-cell:hover {
+  background:
+    radial-gradient(circle at 50% 38%, rgba(180, 108, 55, .24), transparent 62%),
+    linear-gradient(145deg, #24180f, #090605);
+  box-shadow: inset 0 0 10px rgba(220, 130, 61, .08), 0 0 8px rgba(216, 111, 46, .14);
+  filter: brightness(1.14);
+}
+
+#inventory-grid,
+#forge-inventory-grid,
+#gem-shop-grid {
+  scrollbar-color: #784a2a #0a0705;
+  scrollbar-width: thin;
+}
+
+#inv-section-box,
+#forge-inv-box {
+  border-color: #5d402a;
+  background:
+    linear-gradient(145deg, rgba(39, 27, 19, .68), rgba(8, 6, 5, .94)),
+    url('../images/diablo_panel_tex.png') center / 480px auto repeat;
+  background-blend-mode: normal, soft-light;
+}
+
+#detail-pane,
+.equip-detail-card {
+  background:
+    radial-gradient(circle at 50% 0, rgba(132, 76, 37, .12), transparent 42%),
+    rgba(8, 6, 5, .82);
+}
+
+.it-affix-row,
+.stats-row {
+  border-bottom-color: rgba(116, 79, 48, .34);
+}
+
+/* Skill and talent pages */
+.skill-row,
+.sg-group-row,
+.sg-ult-pick,
+.talent-summary,
+.talent-tree-panel {
+  border-color: rgba(133, 86, 48, .56);
+  border-radius: 3px;
+  background:
+    linear-gradient(90deg, rgba(93, 51, 27, .12), transparent 34%),
+    rgba(7, 5, 4, .7);
+  box-shadow: inset 0 0 11px rgba(0, 0, 0, .5);
+}
+
+.sg-group-row:hover,
+.skill-row:hover {
+  border-color: rgba(196, 125, 62, .68);
+  background:
+    linear-gradient(90deg, rgba(143, 75, 35, .18), transparent 44%),
+    rgba(10, 7, 5, .82);
+}
+
+.sg-group-label {
+  border-left-color: #765033;
+  background: linear-gradient(90deg, rgba(112, 62, 31, .12), transparent);
+}
+
+.tree-cell,
+.sg-stage-node,
+.talent-icon,
+.battle-skill-slot {
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(89, 62, 43, .24), transparent 60%),
+    #0b0806;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, .72), 0 2px 5px rgba(0, 0, 0, .48);
+}
+
+.sg-stage-node.sg-stage-unlocked,
+.tree-cell.learned,
+.talent-icon.learned {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(77, 145, 165, .22), transparent 62%),
+    linear-gradient(145deg, #172126, #090a0a);
+}
+
+.sg-stage-node.sg-stage-learned,
+.talent-icon.maxed {
+  box-shadow: inset 0 0 12px rgba(96, 190, 215, .12), 0 0 8px rgba(96, 190, 215, .22);
+}
+
+.sg-stage-node.sg-stage-ult.sg-stage-unlocked {
+  background:
+    radial-gradient(circle at 50% 36%, rgba(220, 159, 67, .3), transparent 62%),
+    linear-gradient(145deg, #2c1c0e, #0b0704);
+}
+
+.sg-stage-arrow {
+  color: #b2763e;
+  text-shadow: 0 1px 0 #000, 0 0 5px rgba(196, 111, 49, .24);
+}
+
+.mastery-bar {
+  overflow: hidden;
+}
+
+/* Gems, forge, tower and settings */
+.shop-card,
+.nf-part-upgrade-card,
+.nf-furnace,
+.tower-floor,
+.save-row,
+.stats-mat-card {
+  border-color: #4e3726;
+  border-radius: 3px;
+  background:
+    linear-gradient(145deg, rgba(47, 32, 23, .78), rgba(9, 7, 5, .94)),
+    url('../images/diablo_panel_tex.png') center / 340px auto;
+  background-blend-mode: normal, soft-light;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, .58), 0 2px 6px rgba(0, 0, 0, .4);
+}
+
+.shop-card:hover,
+.nf-part-upgrade-card:hover,
+.tower-floor:not(.locked):hover,
+.save-row:hover {
+  border-color: #9f6637;
+  background:
+    linear-gradient(145deg, rgba(72, 43, 25, .86), rgba(12, 8, 6, .96)),
+    url('../images/diablo_panel_tex.png') center / 340px auto;
+  background-blend-mode: normal, soft-light;
+}
+
+#save-folder-banner {
+  border-color: #9a6335 !important;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(205, 116, 43, .16), transparent 36%),
+    linear-gradient(145deg, rgba(74, 43, 24, .82), rgba(17, 11, 8, .96)) !important;
+  color: #d9c3a0;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, .54), 0 3px 8px rgba(0, 0, 0, .45);
+}
+
+.gem-tbl,
+.gem-tbl th,
+.gem-tbl td {
+  border-color: rgba(107, 72, 43, .5);
+}
+
+.gem-tbl th,
+.quest-list-head,
+.nf-lines,
+.save-folder-files-title {
+  background: rgba(71, 43, 25, .2);
+  color: #d7b078;
+}
+
+.nf-belt,
+.forge-stage,
+#forge-stage {
+  border-color: #604027;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(151, 75, 30, .13), transparent 50%),
+    rgba(6, 5, 4, .72);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, .72);
+}
+
+.nf-part-upgrade-button,
+.sg-row-action-btn {
+  border-radius: 3px;
+}
+
+.tower-head,
+.tower-auto-bar {
+  border-color: #5e3d26;
+  background: linear-gradient(180deg, rgba(63, 40, 25, .42), rgba(9, 6, 5, .72));
+}
+
+.tower-section-title {
+  background: linear-gradient(90deg, rgba(116, 64, 32, .18), transparent);
+}
+
+/* Combat frame and action bar */
+#zone-bar {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.zone-btn {
+  min-height: 38px;
+  border: 1px solid #4a3527;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(47, 35, 28, .9), rgba(12, 9, 7, .96)),
+    url('../images/diablo_panel_tex.png') center / 260px auto;
+  background-blend-mode: normal, soft-light;
+  color: #9c8972;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .04), inset 0 -8px 12px rgba(0, 0, 0, .58);
+  transition: color .13s ease, border-color .13s ease, transform .13s ease;
+}
+
+.zone-btn:hover {
+  border-color: #9a6639;
+  color: #eadcc8;
+  transform: translateY(-1px);
+}
+
+.zone-btn.active {
+  border-color: #c18143;
+  background:
+    linear-gradient(180deg, rgba(103, 57, 31, .94), rgba(24, 14, 10, .98)),
+    url('../images/diablo_panel_tex.png') center / 260px auto;
+  background-blend-mode: normal, soft-light;
+  color: #f1c477;
+  box-shadow: inset 0 0 10px rgba(220, 109, 43, .14), 0 0 8px rgba(220, 109, 43, .12);
+}
+
+.zone-best {
+  border: 1px solid rgba(111, 72, 43, .46);
+  border-radius: 3px;
+  background: rgba(5, 4, 3, .68);
+}
+
+.battle-scene-wrapper {
+  border: 1px solid #604029;
+  border-radius: 3px;
+  background: #070504;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, .72), 0 5px 14px rgba(0, 0, 0, .56);
+}
+
+#battle-canvas-host {
+  position: relative;
+  border: 1px solid rgba(136, 87, 48, .52);
+  border-radius: 2px;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(151, 91, 44, .12), transparent 46%),
+    #080605;
+  box-shadow: inset 0 0 34px rgba(0, 0, 0, .7);
+}
+
+#battle-canvas-host::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+  border: 1px solid rgba(225, 159, 83, .12);
+  box-shadow: inset 0 0 34px 7px rgba(4, 3, 2, .56), inset 0 0 0 3px rgba(40, 23, 14, .15);
+}
+
+#battle-skill-bar {
+  border: 1px solid #6e4729;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(43, 29, 21, .96), rgba(8, 6, 5, .98)),
+    url('../images/diablo_panel_tex.png') center / 320px auto;
+  background-blend-mode: normal, soft-light;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .8), 0 4px 12px rgba(0, 0, 0, .68);
+}
+
+.battle-skill-slot {
+  border-color: #58402d;
+}
+
+.battle-skill-slot.equipped.ready,
+.battle-skill-slot.selected {
+  border-color: #d39a4d;
+  box-shadow: inset 0 0 8px rgba(221, 143, 63, .12), 0 0 8px rgba(221, 143, 63, .26);
+}
+
+#battle-canvas-buttons .btn,
+.info-btn,
+.damage-toggle-btn {
+  border-color: #705036 !important;
+  background: linear-gradient(180deg, rgba(48, 35, 27, .95), rgba(10, 8, 6, .96)) !important;
+}
+
+#quest-bar {
+  border-color: rgba(144, 93, 49, .66);
+  background: rgba(11, 8, 6, .88);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .62), inset 0 0 8px rgba(184, 96, 40, .08);
+}
+
+#battle-info-drawer {
+  background:
+    linear-gradient(160deg, rgba(42, 28, 20, .96), rgba(7, 5, 4, .98)),
+    url('../images/diablo_panel_tex.png') center / 420px auto;
+  background-blend-mode: normal, soft-light;
+  border-left-color: #895832;
+  box-shadow: -12px 0 26px rgba(0, 0, 0, .8), inset 4px 0 12px rgba(0, 0, 0, .48);
+}
+
+/* Logs, overlays and tooltips */
+.log {
+  padding: 8px 10px;
+  background: rgba(5, 4, 3, .86);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, .82);
+}
+
+.log-line {
+  border-bottom-color: rgba(89, 61, 40, .28);
+}
+
+.modal-overlay,
+.detail-log-modal {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(76, 42, 23, .2), transparent 38%),
+    rgba(0, 0, 0, .88);
+  backdrop-filter: blur(3px) saturate(.72);
+}
+
+.modal-box,
+.confirm-box,
+.detail-log-box {
+  border: 1px solid #8e5e36;
+  border-radius: 3px;
+  background:
+    linear-gradient(150deg, rgba(57, 37, 25, .98), rgba(10, 7, 5, .99) 46%, rgba(20, 13, 9, .99)),
+    url('../images/diablo_panel_tex.png') center / 440px auto;
+  background-blend-mode: normal, soft-light;
+  box-shadow:
+    inset 0 0 0 1px rgba(236, 184, 110, .07),
+    inset 0 0 24px rgba(0, 0, 0, .7),
+    0 18px 55px rgba(0, 0, 0, .94),
+    0 0 18px rgba(184, 83, 34, .12);
+}
+
+.modal-box::after,
+.detail-log-box::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, #c97738 0 2px, transparent 2px) left top / 20px 20px no-repeat,
+    linear-gradient(225deg, #c97738 0 2px, transparent 2px) right top / 20px 20px no-repeat,
+    linear-gradient(45deg, #8d542e 0 2px, transparent 2px) left bottom / 20px 20px no-repeat,
+    linear-gradient(315deg, #8d542e 0 2px, transparent 2px) right bottom / 20px 20px no-repeat;
+  opacity: .66;
+}
+
+.modal-x {
+  border-color: #633f29;
+  background: linear-gradient(180deg, #2b1e17, #0b0806);
+  color: #a99074;
+}
+
+.modal-x:hover {
+  border-color: #a94838;
+  color: #f08f7f;
+}
+
+#sk-tooltip,
+.act-btn-tooltip .btn-tip {
+  border: 1px solid #a46b3b;
+  border-radius: 3px;
+  background:
+    linear-gradient(150deg, rgba(47, 31, 22, .98), rgba(7, 5, 4, .98)),
+    url('../images/diablo_panel_tex.png') center / 320px auto;
+  background-blend-mode: normal, soft-light;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .7), 0 8px 24px rgba(0, 0, 0, .9), 0 0 8px rgba(199, 106, 46, .14);
+}
+
+/* Unified scrollbars */
+* {
+  scrollbar-color: #70472a #090605;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #080605;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, .9);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid #080605;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #805232, #4b2f20);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #a66b3b, #603a24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .tab-btn,
+  .zone-btn {
+    transition-duration: .01ms !important;
+  }
+}
