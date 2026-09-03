@@ -1,5 +1,36 @@
 # AI_TASKS.md
 
+## Claude｜VFX Preset 化：用 VFX 編輯器重做全部戰鬥特效（2026-09-03，進行中）
+
+- 狀態：In Progress（第一段收尾提交；使用者換機器前的交接點）
+- Owner：Claude（VFX 工作流：Lead Engineer；Codex／Antigravity 未呼叫）
+- 任務分類：VFX（Preset／Runtime Adapter）＋ 參數表欄位（技能表、狀態表）
+- 使用者需求：(1) 用現有 VFX 編輯器重做遊戲全部特效；(2) 技能表新增多個特效欄位，該技能用到的特效都寫上檔名、之後自己改；(3) 狀態的特效也寫在 Status。
+- 設計與交接文件：`docs/vfx/VFX_RUNTIME_ADAPTER.md`（架構、角色語意、名目尺寸、進度、emit 點標記對照表、目錄待修正項）。
+- 前置依賴：無。衝突預檢（.claude/check-conflicts.ps1）2026-09-03 對全部目標檔均為「可以直接改」。
+- 允許修改：`js/vfx-core.js`、`js/vfx-pixi-backend.js`、`js/vfx-runtime.js`（新）、`js/battle-renderer.js`、`js/skills.js`、`js/skills2.js`、`js/status.js`、`js/combat.js`、`js/data.js`、`js/legendary.js`、`js/potential.js`、`js/worker/protocol.js`、`js/worker/sim.worker.js`、`js/bridge.js`、`index.html`、`tools/config_tables.cjs`、`tools/vfx/**`、`config/CSV|Excel/{Skills,Skills2,Status}.*`、`vfx/presets/**`、`vfx/shipped-assets.json`、`images/vfx/assets/**`、`docs/vfx/**`、`docs/WORKER_PROTOCOL.md`、相關測試與本文件。
+- 禁止修改：戰鬥數值、技能規則、存檔格式、高塔 DOM 路徑（`js/vfx.js` 維持舊畫法作為退回）。
+- 已完成：
+  1. Core 擴充：`setTransform(handle,…)`、`play({scaleX, scaleY})`（commit 207138d，4 條測試）。
+  2. 參數表：Skills／Skills2 每列新增五欄（施放特效／攻擊特效／飛行子彈／受擊特效／地板特效）、Status 新增三欄（施加特效／持續特效／作用特效），回寫成 `sk.vfx`／`tiers[i].vfx`／`ult[i].vfx`／`st.vfx`；三張表已依目錄填值（Skills 80 列、Skills2 105 列、Status 80 列），`--apply` 往返語意變更 0；說明頁補欄位定義。
+  3. 發送端：`skillVfxSpec` 帶 `sk.vfx`；`sgVfxRoles(gid, extra)`（vfxTier／vfxUlt／vfxGid／vfxRoles）＋ `sgEmitVfx`／`sgEmitPlayerVfx` 帶 `spec.vfx`；`sgSpawnGround`／`sgSpawnOrbitField`／`sgQueueMeteor` 存列標記並由 `sgGroundVfxSpec`／`sgOrbitEmitVfx`／`sgTickMeteors` 帶出；`statusVfxRoles(sid, role)`。
+  4. 協議 v26：VFX 事件可選欄位 `vfx`（角色 → preset id）；`protocol.js`、`docs/WORKER_PROTOCOL.md`、`tests/worker-protocol.test.cjs`；`WORKER_ASSET_VERSION` 與 index.html／sim.worker 版號已 bump。
+  5. Preset：受擊家族 13 份（`vfx/presets/hit-*.json`），`tools/vfx/export-assets.cjs` 已匯出（shipped 20 → 35 個素材）。
+  6. 製作工具進 repo：`tools/vfx/authoring/`（目錄、工具箱、填表腳本、hits 製作腳本）；盤點資料 `scratch/vfx-inventory/`（渲染器逐變體行為、emit 點、狀態資料路徑、素材色盤、Preset 慣例）。
+- 未完成（依序，細節見 VFX_RUNTIME_ADAPTER.md §2／§3／§4）：
+  1. `js/skills2.js` 約 70 個 emit 點補 vfxTier／vfxUlt／vfxGid 標記（對照表 §3）；目前全部事件讀第 1 階那一列。
+  2. 其餘 133 份 Preset（目錄 `tools/vfx/authoring/vfx-catalog.cjs` PRESETS）＋ 匯出素材。
+  3. 目錄修正（§4）後重跑 `fill-vfx-cells.cjs` → `config_tables --apply --write`。
+  4. Runtime Adapter `js/vfx-runtime.js` 接進 `battle-renderer.js`（onVfx 先問 tryPlay；狀態 aura 由 5Hz 快照 reconcile）。
+  5. 狀態每跳掛鉤（`combat.js tickStatuses`）、普攻／敵方／潛力預設對應（`data.js VFX_COMBAT_DEFAULTS`）。
+  6. index.html 載入 vfx-core／vfx-pixi-backend／vfx-runtime；新增 `tests/vfx-catalog.test.cjs`、`tests/vfx-runtime.test.cjs`；文件更新；Editor preset 下拉；目視 QA。
+- 驗證（本段）：`node --check` 全部改到的 js；`config_tables --apply` 語意變更 0；`npm test` 與基線（2289 案例、16 條既有紅燈）比對——見提交訊息。
+- 已知風險：`spec.vfx` 已隨事件送出但顯示層尚未讀取，畫面應與前一版完全相同；若實機看到差異即為回歸。`fill-vfx-cells.cjs` 會覆寫三張表的特效欄，使用者手改過的格子會被蓋掉（目錄修正後重填時要留意）。高塔（DOM）本輪不播 Preset。
+- 未完成項目：如上列 1～6。
+- Commit：見本次 Git 提交（分 4 個：參數表欄位與發送端接線／協議 v26 與版號／受擊 Preset 與素材匯出／製作工具與盤點資料）。
+
+---
+
 ## Codex｜普攻動作與連擊傷害浮字分離（2026-08-28）
 
 - 狀態：已完成

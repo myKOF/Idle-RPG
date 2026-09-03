@@ -1,0 +1,1200 @@
+sharedHelpers: FILES: js/vfx.js (DOM/CSS fallback; entry playCombatVfx 2965-2969 -> vfxSpecForQuality 2862-2878 -> vfxEnqueue 2929-2961 -> RAF vfxFlushQueue 2910-2925 -> renderCombatVfx 2352-2837). CSS block css/style.css 6909-9856.
+   
+   THEME (vfx.js 77-86 VFX_ELEM_THEME, c1=main, c2=highlight, glow): light {#ffe47a,#fffef4,#fff3a3}; dark {#6f2da8,#1a0c2e,#913dcc}; fire {#e63924,#ffd447,#ff6a2a}; ice {#4da6ff,#f2fbff,#79d8ff}; lightning {#f2b705,#fff8b0,#ffd23f}; earth {#ad7444,#5b3a27,#c48a55}; poison {#4caf2b,#d8ff8a,#76d83b}; wind {#86efac,#ffffff,#b9f6cf}. vfxTheme(spec) 415-430 priority: variant 'knife-soulhunter' -> gold {#f2b705,#fff8b0,#ffd23f}; variant 'thunder-strike' -> purple {#c084fc,#fdf4ff,#9333ea}; variant 'bleed'|'bleed-tick' -> red {#d92846,#ffd0d8,#ff4962}; else VFX_ELEM_THEME[spec.elem]; else {c1: spec.color||'#ffffff', c2:'#ffffff', glow:c1}. vfxNode(cls, layer, spec) 575-586 creates <div class="vfx <cls>"> and writes --vfx-c1/--vfx-c2/--vfx-glow inline (CSS fallbacks in style.css are older palette e.g. #b76cff dark, #54c7fc ice, #9ee34a poison, #fb7233 fire, #ffe9a8 light, #d2a05c earth — only used when spec is null, i.e. vfx-field-motion wrappers). Explicit palette overrides: vfxImpact fire-explosion (762-766: #c51e0d/#ffd447/#ff3b0a); vfxShockwave takes colors arg (meteor #9f1d12/#f05a13/#d62f12 at 1480-1482; firepillar #7d1708/#ffb21c/#ff3b0a at 1488-1490); vfxBolt purple literal #c084fc/#fdf4ff/#9333ea else c1 = spec.color if set (1950-1952); vfxPurpleThunder forces elem lightning color #c084fc (2050).
+   
+   GEOMETRY/ANCHORS: layer = #bf-vfx-layer appended to the .battle-scene containing the first target (vfxLayer 136-150); CSS .bf-vfx-layer absolute inset 0, overflow visible, pointer-events none, z-index 4 (below damage floats, above cards). All coords are layer-relative px; vfxPlace 589-592 sets left/top = center, CSS centers with negative margins or translate(-50%,-50%). vfxPointOf(id) 333-348 = center of element's .enemy-card/.combatant (tower boss 'tb-float' -> #tb-emoji img/span visual, 308-331); null if missing/zero-size (targets silently skipped). vfxOriginPoint 358-375 = player card right edge minus 4px, vertical center (fallback {x:-12, y:layerH/2}); player anchor id 'pv-float'. vfxCellsRect 380-401 = union of .bf-cell-guide boxes for spec.cells (battlefieldCols() default 4); vfxRectAround 404-410 = {2r x 2r} if area.r else 140x160 centered on point. Caches keyed by _vfxLayoutVersion (vfxInvalidateLayout 112-117). Note: several branches treat spec.area.x/y (simulation world coords) directly as layer px (frost-nova 1307, tornado 2571, fire shockwave 2627, ice field rect 2543-2553).
+   
+   TIMING HELPERS: vfxStagger 596-598 = VFX_HIT_STAGGER_SEC*1000 = 90ms (data.js 1689). vfxProjectileFlightMs(travel, durSec) 851-854 = travel if >0 else round(dur*1000/0.6) (VFX_PROJECTILE_SPEED_MULTIPLIER 0.6, data.js 1694). vfxProjectileArcPx 1018-1025 = arcM * BF_SYSTEM_UNITS_PER_METER(10) px, 0 for knives. vfxCleaveArcFlightMs 1185-1187 = max(0.38,dur)*1000. vfxFieldMotionSec 434-439 = max(0.12, dur||fallback). Meteor constants (data.js 1702-1708): VFX_METEOR_SPEED_MULTIPLIER 0.70, DROP_RUN 180, DROP_ANGLE 60deg, RAW_TRAVEL 700ms -> VFX_METEOR_MAX_TRAVEL_MS 700 (vfx.js 48), VFX_METEOR_MAX_DELAY_MS 900, VFX_METEOR_HARD_LIFETIME_MS 2800, VFX_METEOR_SIZE_SCALE 1.30.
+   
+   NODE LIFECYCLE vfxTrack(node, ttlMs, targetGuard) 243-293: node._vfxExpiresAt; meteor/area-flash TTL capped 2800; optional targetGuard polled every RAF (removes node when vfxTargetIsLive 622-640 false: card .is-dead/.dead/data-dead, or player reviving); pushes to _vfxNodes; VFX_MAX_NODES 96 hard cap — on overflow evicts the first node whose class lacks 'vfx-aura'/'vfx-field-motion' (aura/field nodes survive); setTimeout removal at TTL plus watchdog every 1000ms (221-239). Child <span> particles never count toward cap. vfxClear 154-198 bumps _vfxGeneration (all pending setTimeout/RAF callbacks check generation), wipes nodes, hit classes, scene-shake classes, field maps. document.hidden -> events dropped.
+   
+   HIT REACT vfxHitReact(targetId, elem, delayMs, strong, guard, suppressShake) 650-688: skipped in REDUCED unless strong; per-card cooldown VFX_HIT_COOLDOWN_MS 3000 (one flash per 3s per card!); target visual = .cb-icon/.cb-emoji/.enemy-emoji-fallback (boss: #tb-emoji img/span); after 2 RAFs adds 'vfx-hit-target' + 'vfx-hit' (+'vfx-hit-strong') unless suppressShake + 'vfx-hit-<elem>'; removed after 360ms. CSS 9691-9818: vfxCardShake .24s ease-out (+-1.5px x, +-0.5px y), strong .3s (+-2.5px, +-1.5px); elem filters: fire brightness1.45 sat1.25, ice 1.4/1.2, lightning 1.6, poison 1.3/1.35, light 1.65, dark 1.15/1.6, earth 1.3/1.3, wind 1.35/1.15, no-elem 1.45. isBloodbladeNoHitShakeSpec 645-649 (poison-spread, bleed, poison, bleed-tick, poison-tick) -> suppressShake.
+   
+   SCENE SHAKE vfxSceneShake(layer, delay, strong, spec) 705-728: allow-list vfxAllowsSceneShake 692-704 = meteor, pillar, purple-thunder, storm-sigil, detonate, nova, venomburst, vortex (never poison-spread, bleed*, poison*, blood-explosion, zero-infection); FULL quality only except meteor; adds .vfx-scene-shake (vfxCardShake .32s) / -strong or -meteor (vfxSceneShakeStrong .54s, +-4.5px/2.5px) to .battle-scene, removed after 340/520ms. Actually invoked only by: vfxImpact detonate (808), vfxPurpleThunder (2083, normal), vfxMeteor (1588, strong).
+   
+   IMPACT CORE vfxImpact(spec, layer, pt, targetId, delayMs, guard) 742-811 + VFX_IMPACT_PARTS 741 {fire6, ice5, lightning5, poison4, light6, dark5, earth6, phys3, claw3, other 4}: class 'vfx-impact vfx-impact-<variant|elem|phys>'; base CSS 9295-9371: 10x10 anchor; ::before flash inset -15px radial c2 -> glow 50% -> transparent 75%, vfxImpactFlash .35s (scale .3->.8, fade); ::after ring inset -9px border 2px c1, vfxImpactRing .4s (scale .3->1.4 fade); n particles .vfx-p 5px c1 discs 4px glow, vfxPart .55s (translate --dx/--dy, rotate --rot, scale 1->.25 fade), spawn angle 2pi*i/n + rand .9rad, dist 6-15px (+5 when strong; fire-explosion 14-36), particle delays +i*22ms; poison particles drift dx +-17 dy -20..-50. REDUCED -> n=1. TTL delay+life (800 default). Always ends with vfxHitReact(target, spec.elem, delay, strong, guard, suppress). Elem CSS (9373-9534): fire flash inset -20, 6px parts; ice 8px diamonds gradient c2->c1 radius 1px, ring border c2; lightning 13x2.5 bars c2 glow 6px .4s; poison hollow 9px bubbles border 2px c1 .9s ease-in-out, flash blur 2px 65% c1; light flash inset -22, 4px white dots; dark flash = conic c1/c2 vortex vfxVortexIn .5s (scale 1.7->.45 rot 520 -> 1.9 rot 600); wind 12x3 slivers gradient transparent->c2->c1, ring c2; earth flash radial c1->c2 .34s, 5px squares c1 shadow c2; phys flash inset -13 .28s, 4px squares; claw see record.
+   
+   PROJECTILE CORE vfxProjectile 1027-1079 + vfxProjectileCls 820-833 + CSS 6935-7311: outer .vfx-proj animates vfxFly (translate(--vfx-x0,--vfx-y0) scale .75 opacity 0 -> 12% opacity 1 -> 92% -> translate(x1,y1) scale 1.1 opacity .9; easing cubic-bezier(.3,.1,.25,1); duration = flight, delay = delayMs); .vfx-proj-arc uses vfxFlyArc (linear, midpoint lifted by --vfx-arc). Children: .vfx-proj-core rotated by --vfx-rot; .vfx-proj-trail 36x6 rounded bar gradient transparent->c1, opacity .75, blur 1px, offset -38px behind along rot. TTL delay+flight+2400+160. Class table: swordwave|swordwave-extra 'vfx-proj-sword'; knife-soulhunter 'vfx-proj-knife vfx-proj-knife-soulhunter'; knife|knife-bounce 'vfx-proj-knife'; venom|poison-spread|poison-bullet 'vfx-proj-poison'; waterball|water-bounce|frost-bullet|frost-spread 'vfx-proj-ice vfx-proj-water'; flamewave 'vfx-proj-fire vfx-proj-big'; firehunt-ring 'vfx-proj-fire vfx-proj-firehunt-ring'; else elem 'vfx-proj-<elem>'; else cat special|potential|fusion 'vfx-proj-glyph' (core = glyph text 18px); else 'vfx-proj-plain' (12px c2 disc 8px glow). Core visuals: sword 26px ring border 3px transparent + border-left 5px c2 crescent, 6px glow, trail 3px .6; ice 16px diamond gradient c2->c1 rotate 45deg glow 6, trail blur 3 .55; lightning 28x18 bolt clip-path gradient c2->c1 glow 5 vfxCorePulse .1s; poison 15px teardrop radial c2->c1 glow 7 vfxWobble +-4px .24s; dark 18px conic c1/c2 vortex glow 8 vfxSpin .45s; wind 30x20 crescent clip path('M 2 10 Q 15 -4 28 10 Q 15 4 2 10 Z') gradient c2->c1 glow 6, trail blur 2 .45; earth 16px rock polygon gradient c1->c2 glow 7 vfxSpin .6s; light 14px radial #fff->c1 shadows 12/26px glow + ::before spinning cross .7s; fire: trail hidden and core has NO styling unless fireball/firehunt-ring (flamewave 'vfx-proj-big' 52x52 unstyled core => effectively invisible); glyph text 18px glow 6; knife glyph text 22px (spec.glyph or 🔪) rotated, drop-shadow 5px rgba(255,56,80,.2), trail 28x3 .65; soulhunter core 3 drop-shadows (5px c2, 11px c1, 20px glow), trail gradient transparent->c1->c2 .9 blur1 glow6. fireball|fireball-small (1034,1054): no core/trail, vfxBuildSmallFireball 942-952 scale 3: core 39px radial #fff8b0 18% -> #ffc247 34% -> #f04a19 70% -> #9f1d12, shadows 15px #ffcf54 + 36px #f04a19, vfxFireballCorePulse .16s alt (scale .92<->1.08, brightness .95<->1.22); tail 42x18 behind along rot, jagged clip polygon, gradient transparent -> #e52f15 45% -> #ffd166 92%, blur 3 + 12px #f04a19 glow, vfxFireballTailFlicker .12s steps(2) (scale .82/.78<->1.10/1.16 skew +-5deg). variant 'drain' 1064-1078: extra 'vfx-proj-wisp' returning target->origin (10px radial c2->c1 blur 1 glow 6), delay +flight+70, duration max(280,flight).
+   
+   FLARE EMITTER vfxBuildFlareFlame(parent, small, sizeScale) 883-938 (Phaser port, used only by meteors): span.vfx-flare 128x128 masked from images/flares.png white frame (mask-position -392px -2px, mask-size 652x132), background-color --flare-color, drop-shadow 8px, mix-blend plus-lighter (fallback screen); count 26 (small 14; REDUCED 14/8), interval 2000/count, pre-advanced 2000ms; each particle angle pi +-10deg (opposite flight, rotated by parent --vfx-rot), speed 100px/s, lifespan 2400ms, scale = size*0.70*cos(life*pi/2) where size = sizeScale*(small?0.58:1), color quad.out over [#facc22,#f89800,#f83600,#9f0404], opacity 1-life; RAF-driven, continuous emission while parent lives.
+   
+   SHOCKWAVE vfxShockwave(spec, layer, pt, radius, delay, className, colors) 1399-1439 (radius default 80): 3 .vfx-shockwave-ring ellipses 44x18 border 4px c2, shadow 12px glow + inset 8px c1, vfxShockwaveRing .78s cubic-bezier(.12,.72,.22,1) scale (.12,.22) -> (--ring-sx = r/22*(.78+.16i), --ring-sy = r/11*(.66+.12i)), delays +62i; 18 (REDUCED 9) .vfx-shockwave-particle flame shards 4/6/8px gradient #fff2a0 -> c2 38% -> c1, clip polygon, glow 8, flying to (cos*d, sin*d*.48 - 10 - (i%4)*5) with d = r*(.42 + (i%5)*.075), +28px gravity, scale .3->.08, .72s, delays (i%5)*18; 6 .vfx-shockwave-dust 28x9 c1 blur 3, dx (i-2.5)*r*.23, dy -(8+(i%3)*4), scale (.35,.5)->(2.6,.75), .86s, delays 80+22i. TTL delay+980.
+   
+   BOLT vfxBolt(spec, layer, from, to, delay, opts{weak|mega|purple}, guard) 1915-2017: SVG polyline in a div positioned at bbox-40px; segs 6 (mega/purple 8); interior points jittered perpendicular by rand*min(48, len*.35); per segment 3 <line>s: glow (stroke glowColor, width max(3, outer*1.3), opacity .6), main (c1, width outer), core (c2, width inner), round caps; taper widths outer/inner: normal 12-9.5t / 4.4-3.4t, weak 5.2-3.2t / 1.8-.8t, mega 18-11t / 5.5-3.2t, purple 22-13t / 6.5-3.8t; mega/purple add 2 branch arcs at points 2 and 4 (length 22-42px, alternating side, 3 lines c1 w3 .85 / c2 w1.2 / c1 w2 .75). CSS 8816-8924: .vfx-bolt drop-shadow 8px glow + 16px c1, vfxBoltFlash .38s (opacity 0->1(8%)->.6(24%)->1(38%)->.75(60%)->0, scale 1.02->1->.98); -mega shadows 12/24/36px(#fff) vfxBoltFlashMega .45s brightness 2.2->2->1.4->1.8 fade; -purple shadows 10px #c084fc/22px #9333ea/35px #581c87 vfxBoltFlashPurple .5s; -weak 4px glow vfxBoltFlashWeak. TTL delay+420 (mega 460, purple 520). vfxLightningGroundImpact 2020-2042: wrap translate(-50%,-50%); ring 64x28 ellipse border 2px c2 shadow 12px glow inset 8px c1 vfxLightningRingExpand .4s scale .2->1.6 fade (purple: border #f5d0fe shadow 16px #c084fc inset 10px #9333ea); sparks 8 (purple 10) 4px c2 dots glow 6 (purple #fdf4ff / #c084fc) flying dist 28-60 (purple 28-70) y*.65, vfxLightningSparkFly .45s scale 1.4->.2, delays (i%3)*16; TTL delay+550.
+   
+   TELEGRAPH vfxTargetTelegraph(spec, layer, pt, radius, delay, durationMs, guard) 1496-1512: ellipse width 2r, height 1.04r (r min 36, default 72), translate(-50%,-50%), border 2px, radial fill, shadow 18px + inset 18px; palettes fire (fill rgba(220,38,38,.18) border rgba(248,113,113,.92) glow rgba(239,68,68,.56) inset rgba(127,29,29,.36)) and lightning (rgba(37,99,235,.18) / rgba(96,165,250,.94) / rgba(59,130,246,.62) / rgba(30,64,175,.38)); vfxTargetTelegraph keyframes opacity 0->.82(12%)->.68(82%)->0, scale (.96,.92)->(1.02,1.02); duration max(280, durationMs||700); TTL +240.
+   
+   FIELD MOTION (persistent DOM fields) 441-573: wrapper 'vfx-field-motion' (0x0, transform-origin 0 0) positioned by transform translate3d(center) scale(w/baseW, h/baseH) via vfxFieldMotionApply; vfxFieldMotionSet tweens x/y/w/h linearly over duration via RAF; vfxFieldMotionFollowPlayer snaps to 'pv-float' every frame; vfxFieldMotionHome (speed-integrated homing) exists but is NOT called from renderCombatVfx. Visual child created by vfxFieldVisual centered at (-w/2,-h/2). Merge maps keyed by area.id (vfxFieldKey 441-448; homing variants require area.id|fieldKey|vfxId else skipped): _vfxFirePillars, _vfxFireWalls, _vfxMirePools, _vfxThunderOrbs, _vfxIceFields; each node tracked 3600ms (VFX_*_LIFE_MS) and every tick sets _vfxExpiresAt = now + max(900|700, dur*2400).
+   
+   SHARED KEYFRAMES: vfxFlash (scale .3->.8 fade), vfxRing (scale .3->1.4, .95->0), vfxPart (particle fly), vfxSpin/vfxSpinCenter (360deg), vfxCorePulse (opacity .78<->1), vfxAreaFlash (scale .12->.45->1, opacity 0->.65->0, .6s). @media prefers-reduced-motion (9835-9856): all .vfx animations 1ms single iteration, .vfx-proj/.vfx-meteor opacity 0.
+   
+   DOM-ONLY MECHANICS a preset replacement must respect: (1) Quality tiers vfxSetQuality 102-109 FULL/REDUCED/OFF; vfxSpecForQuality 2862-2878: OFF drops all; REDUCED drops fxKind 'aura' entirely, forces count=1, targets sliced to 3 (chain/variant chain: 2), travelMs sliced to match; frame budget VFX_FRAME_BUDGET_FULL 8 / REDUCED 4 events per RAF; REDUCED also: hitReact only when strong, scene shake only meteor, impact particles 1, flare 14/8, shockwave particles 9, fire tongues 3, wall ribbons 3 smoke 3, mire bubbles 3 currents 2, orb arcs 2, blizzard flakes/tornado rings 3, venom residual cloud skipped. (2) vfxNormalizeTiming 2842-2857: rain/meteor delayMs clamped <=900, travelMs each <=700. (3) Queue vfxEnqueue 2929-2961: VFX_EVENT_QUEUE_MAX 48; vfxMergeKey 2882-2886 = [fxKind,cat,elem,variant,firstTarget].join('|') ONLY for fxKind 'impact' or cat 'basic' (other events never merge); within VFX_MERGE_WINDOW_MS 120 a same-key event replaces the queued spec (later spec wins, timestamp refreshed); VFX_STALE_EVENT_MS 1500 -> stale entries skipped at flush; on full queue eviction by vfxQueuePriority 2890-2895 (aura+firehunt 3, aura 2, else 0): incoming priority-0 evicts the oldest priority-0 entry, higher priority evicts a lower one, otherwise incoming is dropped. (4) VFX_MAX_TARGETS 8 (2385); count clamp min(5, count) (thrust 8) (2362). (5) Node cap 96 with aura/field protection, watchdog 1000ms, meteor hard 2800ms, target-death guards on lightning/telegraph/impact nodes. (6) Legacy guard: aura + elem wind + no variant => dropped (2383); vfxAura returns null for elem wind (2254). (7) Hit cooldown 3000ms per card. (8) Barrage trigger also fires on glyph '💫' + cat 'magic' without variant (2431).
+   
+   DOM-ONLY VARIANTS (handled in vfx.js, no branch in battle-renderer.js): 'swordfield' (aura -> vfx-aura-sword), 'drain' (projectile wisp return), 'flamewave' (vfx-proj-fire vfx-proj-big), 'poison-bullet' (poison projectile alias), 'water-burst' and 'frost-tick' (impact variant names synthesized inside vfxChain 2147/2163; no CSS, fall through to vfx-impact-ice), fxKind 'impact' + variant 'pillar' -> vfxFirePillar (2477-2485), theme overrides for 'thunder-strike'/'bleed'/'bleed-tick'/'knife-soulhunter' (vfxTheme), '💫'+magic barrage trigger. CANVAS-ONLY (in battle-renderer.js, absent from DOM): lightning-chain, starfall-impact, storm-barrier, storm-god, storm-rip, thunder-orbit, wind-burst, wind-slash, wind-spin, glyph, aura 'firehunt' (DOM only gives it queue priority 3; it renders via generic vfxAura). ORPHANS: CSS .vfx-meteor-ember (7920-7945) never created by JS; JS classes vfx-burst-<elem>, vfx-proj-water, vfx-proj-barrage have no CSS rules; vfxChain 'strikes' argument is unused; vfxIceField's 'vfx-water-tornado' ring visual (1851, 1882-1885) is unreachable because renderCombatVfx routes water/wind-tornado to vfxFirePillar first.
+variants:
+  - [0]
+    variant: enemy-projectile
+    fxKinds:
+      - [0]
+        enemy-attack
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2406-2419
+      - [1]
+        vfxProjectile vfx.js:1027-1079
+      - [2]
+        vfxProjectileFlightMs vfx.js:851-854
+      - [3]
+        vfxImpact vfx.js:742-811
+    placement: Requires cat 'enemy'. Only the first live target is used (usually player 'pv-float'). Source point = vfxPointOf(spec.sourceId) (boss card / #tb-emoji visual); if source unresolvable falls into the melee default branch instead.
+    motion: Straight flight source -> target via CSS vfxFly (translate x0,y0 -> x1,y1, scale .75 -> 1.1, opacity 0 -> 1 @12% -> .9), easing cubic-bezier(.3,.1,.25,1); core rotated to atan2(dy,dx).
+    timing: travel = travelMs[0] > 0 ? travelMs[0] : 260ms; animation delay = baseDelay; impact at baseDelay + vfxProjectileFlightMs(travel, dur||0.35) (= travel). Projectile node TTL delay+flight+2560ms.
+    visual: Class from vfxProjectileCls: enemy specs normally have no elem and cat 'enemy' -> 'vfx-proj-plain' (12px disc colored c2 with 8px glow) + 36x6 trail gradient transparent->c1 (blur 1px, opacity .75); with elem uses that elem core. Theme = elem or spec.color.
+    feedback: If spec.hit !== false: vfxImpact(spec) at target (variant 'enemy-projectile' has no impact class -> 'vfx-impact-<elem|phys>') which triggers vfxHitReact (non-strong).
+    specFields:
+      - [0]
+        sourceId
+      - [1]
+        hit
+      - [2]
+        travelMs[0]
+      - [3]
+        dur
+      - [4]
+        elem
+      - [5]
+        cat
+    notes: Canvas path handles enemy attacks separately; DOM version is used for tower battles.
+  - [1]
+    variant: <default:enemy-attack>
+    fxKinds:
+      - [0]
+        enemy-attack
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2420-2426
+      - [1]
+        vfxSlash vfx.js:1083-1091
+      - [2]
+        vfxImpact vfx.js:742-811
+    placement: On the first resolved target; tilt angle (deg) = atan2 from enemy source to target (0 when no source).
+    motion: Two counter-rotating arc strokes (::before vfxSlashArc rotate -80 -> 120deg scale .5 -> 1.3 opacity 0 -> 1 @25% -> 0; ::after vfxSlashArcB rotate 150 -> -60deg scale .45 -> 1.2, opacity peak .95 @35%), ease-out.
+    timing: animationDelay = baseDelay; duration = dur*1000 (default 500ms); TTL delay+dur+160. Impact at baseDelay (same instant) when hit !== false.
+    visual: .vfx-slash 58x58 (margin -29) rotated by --vfx-tilt; pseudo rings border 3px transparent with border-top c1 (before) / c2 (after), drop-shadow 6px glow. Colors from elem theme or spec.color.
+    feedback: vfxImpact at baseDelay -> hitReact; impact class from elem (phys default).
+    specFields:
+      - [0]
+        sourceId
+      - [1]
+        hit
+      - [2]
+        dur
+      - [3]
+        elem
+  - [2]
+    variant: arcane-barrage
+    fxKinds:
+      - [0]
+        *any (checked before fxKind dispatch)*
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2431-2445
+      - [1]
+        vfxBarrageProjectile vfx.js:956-1014
+      - [2]
+        vfxProjectileCls vfx.js:820-833
+    placement: Also triggered by glyph '💫' + cat 'magic'. From player anchor 'pv-float' (fallback vfxOriginPoint) to every resolved target. Per target 6 projectiles: side in {-1,+1} x lane 0..2. start = (from.x + side*(12+lane*8), from.y + 10 + lane*7); turn = (start.x + side*(48+lane*18), start.y - 16 - lane*8); end = target.
+    motion: JS RAF (CSS animation disabled): k<0.38 smoothstep start->turn, then quadratic ease-in turn->target; --vfx-rot faces next waypoint; opacity 1 until k>=1 then 0. Net effect: fan outwards left/right then curve into the target.
+    timing: flight = travelMs[targetIdx] || round(dur*1000/0.6) (dur default 0.55 -> 917ms); delay = baseDelay + targetIdx*40 + lane*35; TTL delay+flight+220.
+    visual: 'vfx-proj <projClass> vfx-proj-barrage' (barrage class has no CSS). Core from projClass (elem core, or glyph text for glyph/knife classes) + default 36x6 trail.
+    feedback: None: DOM path spawns no impact or hitReact for barrage.
+    specFields:
+      - [0]
+        glyph
+      - [1]
+        cat
+      - [2]
+        travelMs
+      - [3]
+        dur
+      - [4]
+        elem
+  - [3]
+    variant: chain / <default:chain> (lightning chain)
+    fxKinds:
+      - [0]
+        chain
+      - [1]
+        *any with variant 'chain'*
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2450-2463
+      - [1]
+        vfxChain vfx.js:2095-2097,2203-2224
+      - [2]
+        vfxBolt vfx.js:1915-2017
+      - [3]
+        vfxLightningGroundImpact vfx.js:2020-2042
+      - [4]
+        vfxImpact vfx.js:742-811
+    placement: targets order = bounce path (not re-sorted). 1 target: bolt from player anchor ('pv-float' or origin) to it. >=2 targets: bolts drawn between consecutive targets i-1 -> i only (no caster->first bolt). Ground ring + impact at each struck target.
+    motion: Static jagged SVG polylines that flash (no travel); hops appear sequentially.
+    timing: chBase = baseDelay (+ travelMs[0] when fxKind !== 'chain'); hop = max(110, 90) = 110ms per bounce; bolt at bounceDelay (TTL +420), ground ring +30 (TTL +550), impact +40. count/strikes ignored.
+    visual: vfxBolt normal mode: 6 segments, 3-layer strokes (glow var(--vfx-glow) width max(3,outer*1.3) opacity .6; main c1 = spec.color if set else var(--vfx-c1) width 12-9.5*taper; core var(--vfx-c2) width 4.4-3.4*taper), .vfx-bolt drop-shadow 8px glow + 16px c1, vfxBoltFlash .38s flicker. Ground: 64x28 ellipse ring border 2px c2 + 8 sparks 4px c2 (see sharedHelpers).
+    feedback: vfxImpact {elem lightning, variant null} at each target (+40) -> hitReact lightning. No scene shake.
+    specFields:
+      - [0]
+        targets order
+      - [1]
+        travelMs[0]
+      - [2]
+        elem
+      - [3]
+        color
+    notes: Non-lightning chain variants without a dedicated branch (2203-2209) draw ONLY vfxImpact per target staggered max(60,90)=90ms (white-list rule shared with Canvas). REDUCED quality caps chain targets at 2.
+  - [4]
+    variant: knife-bounce / knife-soulhunter
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        vfxChain vfx.js:2099-2117
+      - [1]
+        vfxKnifeBounce vfx.js:1220-1226
+      - [2]
+        vfxKnifeReturn vfx.js:1230-1290
+      - [3]
+        vfxProjectile vfx.js:1027-1079
+      - [4]
+        vfxTheme vfx.js:416-418
+    placement: Bounce legs between consecutive targets ptList[i-1] -> ptList[i] (the caster -> first-target leg is a separate earlier projectile event). loopReturn && single target: knife leaves target along caster->target direction by penetration = clamp(dist*0.25, 42, 96) px then returns to the target.
+    motion: Bounces: CSS vfxFly straight, knife glyph rotated to flight direction (arc forced 0 for knives). Return: JS RAF lerp out for k<0.5 then back, rotation follows velocity, opacity 1 then 0.
+    timing: Per hop flight = travelMs[i] || dur/0.6; cumulative pathStart += flight; impact at each arrival. Return: travelMs[0] || 120 -> flight; impact at baseDelay+flight. TTL flight+2560.
+    visual: .vfx-proj-knife core = text glyph (spec.glyph || 🔪) 22px rotated by --vfx-rot, drop-shadow 5px rgba(255,56,80,.2); trail 28x3 opacity .65. knife-soulhunter: theme forced gold (#f2b705/#fff8b0/#ffd23f), core drop-shadows 5px c2 + 11px c1 + 20px glow, trail gradient transparent->c1->c2 opacity .9 blur 1 + 6px glow.
+    feedback: vfxImpact {elem null -> phys class (3 square shards), color spec.color} at each hop arrival -> hitReact.
+    specFields:
+      - [0]
+        loopReturn
+      - [1]
+        travelMs[]
+      - [2]
+        glyph
+      - [3]
+        dur
+  - [5]
+    variant: poison-spread
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        vfxChain vfx.js:2120-2133
+      - [1]
+        vfxProjectile vfx.js:1027-1079
+      - [2]
+        vfxImpact vfx.js:742-811
+      - [3]
+        isBloodbladeNoHitShakeSpec vfx.js:645-649
+    placement: Source = ptList[0] (infected enemy) when >1 targets, else player anchor; targets = ptList[1..]. All bullets fired simultaneously from the same point.
+    motion: Straight vfxFly (arcM forced 0); poison core wobbles +-4px perpendicular (vfxWobble .24s alt).
+    timing: travel = travelMs[i+1] || 80ms; flight = travel (fallback dur .2 -> 333ms); all at baseDelay; impact at baseDelay+flight.
+    visual: Spec cloned with variant 'venom', elem poison, glyph '' -> 'vfx-proj-poison': 15px teardrop (radius 50% 50% 50% 0) radial c2 #d8ff8a -> c1 #4caf2b, 7px glow #76d83b; default trail.
+    feedback: vfxImpact {elem poison, color #4ade80, _suppressHitShake} -> 4 hollow bubble particles floating up + flash; hitReact with suppressShake (brightness flash only, no shake). No scene shake, no residual cloud (venom variant is on the projectile spec, not the impact spec).
+  - [6]
+    variant: water-bounce
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        vfxChain vfx.js:2136-2151
+      - [1]
+        vfxProjectile vfx.js:1027-1079
+      - [2]
+        vfxProjectileArcPx vfx.js:1018-1025
+    placement: Hops between consecutive targets ptList[i-1] -> ptList[i].
+    motion: Parabolic vfxFlyArc (linear timing): midpoint raised by --vfx-arc = arcM*10 px (arcM default 8 -> 80px apex), scale .75 -> 1 -> 1.1.
+    timing: travel = travelMs[i] || 140; flight = travel (fallback dur .4); cumulative per hop; impact at arrival.
+    visual: Cloned spec variant 'waterball' elem ice -> 'vfx-proj-ice vfx-proj-water' (water class has no CSS): 16px diamond gradient #f2fbff -> #4da6ff rotated 45deg, glow 6px #79d8ff; trail blur 3px opacity .55.
+    feedback: vfxImpact {elem ice, variant 'water-burst'} -> no class match -> vfx-impact-ice (5 diamond shards 8px, ring border c2) -> hitReact ice.
+    specFields:
+      - [0]
+        arcM
+      - [1]
+        travelMs[]
+      - [2]
+        dur
+  - [7]
+    variant: frost-spread
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        vfxChain vfx.js:2154-2166
+    placement: Source = ptList[0] when >1 targets else player anchor; targets = rest; simultaneous.
+    motion: Straight vfxFly, arcM 0.
+    timing: travel = travelMs[i+1] || 80; flight = travel (fallback dur .2); impact at baseDelay+flight.
+    visual: Cloned variant 'frost-bullet' elem ice glyph '' -> ice diamond core + blurred trail (same as waterball).
+    feedback: vfxImpact {elem ice, variant 'frost-tick', color #7dd3fc} -> falls to vfx-impact-ice (elem theme overrides color) -> hitReact ice (shake allowed).
+  - [8]
+    variant: earth-reflect
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        vfxChain vfx.js:2169-2177
+      - [1]
+        vfxBeam vfx.js:1360-1373
+    placement: Beam from player anchor ('pv-float' or origin) to each target.
+    motion: Static line; vfxBeam keyframes opacity 0 -> 1 @18% -> 0 with brightness 2.2 at start.
+    timing: Beam ignores baseDelay (no animationDelay), duration dur*1000 (default 500), TTL +160; impact at baseDelay+100.
+    visual: Cloned elem light color #fff -> '.vfx-beam.vfx-beam-light': 3px tall white line (gradient transparent -> #fff 18%-85% -> transparent), glow shadows 6/18/34px var(--vfx-glow) (#fff3a3), width = distance, rotated atan2.
+    feedback: vfxImpact {elem light, color #fff} (6 white 4px dust particles, flash inset -22) -> hitReact light.
+  - [9]
+    variant: counter-sweep
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        vfxChain vfx.js:2180-2182
+    placement: none
+    motion: none
+    timing: none
+    visual: Explicitly draws nothing in the DOM path (returns immediately).
+    feedback: none
+  - [10]
+    variant: wind-rend-spread
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        vfxChain vfx.js:2185-2197
+    placement: Source = ptList[0] when >1 targets else player anchor; targets = rest; simultaneous.
+    motion: Straight vfxFly.
+    timing: travel = travelMs[0] || 80 for every bullet; flight = travel (fallback dur .2); impact at baseDelay+flight.
+    visual: Cloned variant 'wind-blade-small' elem wind glyph '' -> 'vfx-proj-wind': 30x20 crescent clip-path path('M 2 10 Q 15 -4 28 10 Q 15 4 2 10 Z') gradient #fff -> #86efac, glow 6px; trail blur 2 opacity .45.
+    feedback: vfxImpact {elem wind, color spec.color} -> 4 particles 12x3 slivers + ring border c2 -> hitReact wind.
+  - [11]
+    variant: purple-thunder / storm-sigil
+    fxKinds:
+      - [0]
+        *any (checked before fxKind dispatch)*
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2466-2472
+      - [1]
+        vfxPurpleThunder vfx.js:2049-2087
+      - [2]
+        vfxBolt vfx.js:1915-2017
+      - [3]
+        vfxLightningGroundImpact vfx.js:2020-2042
+      - [4]
+        vfxSceneShake vfx.js:705-728
+      - [5]
+        vfxHitReact vfx.js:650-688
+    placement: Per resolved target, staggered 80ms per target index. Bolt from sky point (pt.x + rand(-15..15), y = -70) down to target; ground ring and sigil centered on target.
+    motion: Bolt: static flash. Sigil: outer ring spins 0 -> 180deg while imploding (scale 1.3 -> 1.1 @15% -> 1 @70% -> .35, opacity 0 -> 1 -> .95 -> 0); inner ring spins 0 -> -180deg with same implode; rune scales .5 -> 1.3 @20% -> 1 @65% -> .2.
+    timing: bolt at delay (TTL +520); ground impact +40 (TTL +550); sigil +60, all 0.7s anims (TTL +800); scene shake at +50 (normal .32s class, FULL quality only); hitReact +50 strong.
+    visual: Spec forced elem lightning, variant purple-thunder, color #c084fc. Bolt purple+mega: 8 segs, outer 22-13t / inner 6.5-3.8t, colors c1 #c084fc c2 #fdf4ff glow #9333ea, .vfx-bolt-purple drop-shadows 10px #c084fc / 22px #9333ea / 35px #581c87, vfxBoltFlashPurple .5s, 2 branch arcs. Ground: .vfx-purple-ring border #f5d0fe shadow 16px #c084fc inset 10px #9333ea scale .2 -> 1.6 .4s; 10 sparks #fdf4ff glow 8px #c084fc dist 28-70px (y*.65). Sigil wrap 72x72: .vfx-storm-sigil-ring 2px dashed #c084fc shadow 15px #9333ea inset 12px #a855f7; .vfx-storm-sigil-inner inset 12px border 2px solid #fdf4ff radial rgba(192,132,252,.45) -> rgba(147,51,234,.15) 60% -> transparent 80%; .vfx-storm-sigil-rune text '⚡' 20px #fdf4ff text-shadow 10px #c084fc + 18px #9333ea.
+    feedback: vfxSceneShake (allow-listed) + vfxHitReact lightning strong. No vfxImpact node.
+    notes: Both variant names share one implementation.
+  - [12]
+    variant: <default:impact>
+    fxKinds:
+      - [0]
+        impact
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2475-2488
+      - [1]
+        vfxImpact vfx.js:742-811
+      - [2]
+        vfxHitReact vfx.js:650-688
+    placement: vfxImpact at every resolved target (<=8), all with the same baseDelay.
+    motion: Static burst: center flash (scale .3 -> .8 fade .35s), ring (scale .3 -> 1.4 fade .4s), n radial particles (vfxPart .55s, scale 1 -> .25, rotate --rot).
+    timing: animationDelay = baseDelay; particle i delayed +i*22ms; TTL baseDelay+800.
+    visual: Class 'vfx-impact vfx-impact-<elem|phys>' with elem-specific flash/ring/particle styles listed in sharedHelpers IMPACT CORE; particle counts fire6 ice5 lightning5 poison4 light6 dark5 earth6 phys3 (wind 4).
+    feedback: vfxHitReact(target, elem, baseDelay, strong=false) — card icon shake .24s + elem brightness filter, 3s cooldown per card.
+    specFields:
+      - [0]
+        elem
+      - [1]
+        variant
+      - [2]
+        color
+      - [3]
+        targets
+    notes: Merge-eligible in the queue (fxKind impact): same fxKind|cat|elem|variant|firstTarget within 120ms collapses to the latest spec.
+  - [13]
+    variant: claw
+    fxKinds:
+      - [0]
+        impact
+      - [1]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:749,769
+      - [1]
+        CSS style.css:9479-9482,9524-9550
+    placement: On target.
+    motion: 3 red streaks sweep from -0.6*(dx,dy) to (dx,dy) with scaleX .2 -> 1.15 (vfxClaw .4s), rotated by random --rot; flash only (ring hidden).
+    timing: delay baseDelay; TTL +800.
+    visual: Class 'vfx-impact vfx-impact-claw'; elemKey 'claw' (3 particles); flash inset -18 radial 70% c1; particles 30x3 bars gradient transparent -> c1 30% -> c2 55% -> c1 75% -> transparent (CSS fallback c1 #ff6b6b c2 #ffd0d0, actual from spec.color/elem); ::after ring display none.
+    feedback: hitReact non-strong.
+  - [14]
+    variant: vortex
+    fxKinds:
+      - [0]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:750
+      - [1]
+        CSS style.css:9553-9588
+    placement: On target.
+    motion: ::before conic vortex vfxVortexIn .55s ease-in: scale 1.7 rot 0 -> .45 rot 520deg @75% -> 1.9 rot 600deg fade (contract then explode); ::after ring inset -14 border 3px .5s.
+    timing: life 1000ms; strong (particle dist +5).
+    visual: 'vfx-impact vfx-impact-vortex': flash inset -30 conic-gradient c1,c2,c1,c2,c1 (dark theme #6f2da8/#1a0c2e). Particle count from elem.
+    feedback: hitReact strong (.3s shake). Listed in scene-shake allow-list but vfxImpact only shakes for detonate, so no scene shake in DOM.
+  - [15]
+    variant: detonate
+    fxKinds:
+      - [0]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:751,771,808
+      - [1]
+        CSS style.css:9591-9607
+    placement: On target.
+    motion: Big flash inset -34 (.55s), ring inset -16 border 3px with 8px halo (box-shadow 0 0 0 8px 30% c1 + 26px glow) .6s, 7 particles 7px .7s.
+    timing: life 1000; scene shake at delay (normal .32s, FULL only).
+    visual: 'vfx-impact vfx-impact-detonate' in elem theme.
+    feedback: vfxSceneShake normal + hitReact strong.
+  - [16]
+    variant: venomburst
+    fxKinds:
+      - [0]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:752
+      - [1]
+        CSS style.css:9610-9622
+    placement: On target.
+    motion: Flash inset -26 .5s; hollow bubble particles 9px border 2px c1 .85s (drift upward when elem poison).
+    timing: life 800; strong.
+    visual: 'vfx-impact vfx-impact-venomburst': flash radial c2 -> 80% c1 45% -> transparent 72%.
+    feedback: hitReact strong; no scene shake (not invoked).
+  - [17]
+    variant: venom
+    fxKinds:
+      - [0]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:792-806
+      - [1]
+        CSS style.css:9647-9688
+    placement: Standard elem impact (poison) plus residual cloud node at the same point (FULL quality only).
+    motion: .vfx-cloud vfxCloud 2.5s (scale .5 -> 1 @18% -> 1.15, opacity 0 -> .85 -> .6 @75% -> 0); 5 hollow bubbles 8px from (50%,65%) drifting dx +-22, dy -24..-54 over 1s (vfxPart ease-in-out), delays +150+b*420.
+    timing: cloud TTL delay+2600.
+    visual: Cloud 64x44 ellipse radial 40% c1 -> transparent 70%, blur 3px; bubbles border 2px c1, no filter.
+    feedback: hitReact from the base impact.
+  - [18]
+    variant: nova
+    fxKinds:
+      - [0]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:757,771
+      - [1]
+        CSS style.css:9625-9644
+    placement: On target.
+    motion: Flash inset -26; ring inset -20 border 3px c2 with 18px glow + inset 12px glow .65s; 7 diamond shards 8px gradient c2 -> c1 .7s.
+    timing: life 1000; strong.
+    visual: 'vfx-impact vfx-impact-nova' (ice palette).
+    feedback: hitReact strong; no scene shake call.
+  - [19]
+    variant: fire-explosion
+    fxKinds:
+      - [0]
+        burst
+      - [1]
+        slash
+      - [2]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:758,762-766,770,781-782
+      - [1]
+        vfxBurst vfx.js:1294-1302
+      - [2]
+        CSS style.css:7543-7609
+    placement: Reached via generic burst/slash tail passing s.variant into vfxImpact (2828, 2832); vfxBurst also adds class 'vfx-burst-fireball' at the target.
+    motion: Impact: ::before vfxFireballExplosion .62s cubic-bezier(.12,.7,.25,1) scale .15 -> 1.05 @30% -> 1.65 fade; ::after vfxFireballRing .72s scale .18 -> 2.15 fade; 16 flame-drop particles dist 14-36px .72s. Burst node: ::before .58s explosion inset -25, ::after .7s ring inset -12.
+    timing: impact life 900, strong; burst duration dur*1000 TTL +160.
+    visual: Impact theme forced c1 #c51e0d c2 #ffd447 glow #ff3b0a; flash inset -30 radial #fff8b0 9% -> #ffd447 20% -> #ff6800 42% -> #c51e0d 64% -> #68100c 78% -> transparent 88%, drop-shadow 20px #ff3b0a + 34px #b51f0f; ring border 4px #ff8a00 shadow 25px #ff3b0a / 42px #b51f0f / inset 16px #ff5a00; particles 9x14 pentagon-clipped drops gradient #fff3a3 -> #ff9d00 35% -> #c51e0d, glow 7px #ff3b0a. Burst-fireball 44x44: flash radial #fff8b0 10% -> #ffd447 22% -> #ff7a00 42% -> #d3260d 64% -> #72120d 76% -> transparent 86% drop-shadow 18px #ff3b0a + 30px #d3260d; ring border 4px #ff9d00 shadow 24px #ff3b0a / 42px #b51f0f / inset 16px #ff5a00.
+    feedback: hitReact strong.
+  - [20]
+    variant: bleed-tick
+    fxKinds:
+      - [0]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:755
+      - [1]
+        vfxTheme vfx.js:423-425
+      - [2]
+        CSS style.css:9262-9264
+    placement: On target.
+    motion: Phys impact (flash inset -13 .28s, 3 square 4px shards).
+    timing: life 800; non-strong.
+    visual: 'vfx-impact vfx-impact-phys vfx-impact-bleed': theme forced c1 #d92846 c2 #ffd0d8 glow #ff4962; flash radial #ffced5 -> #ff405c 52% -> transparent 75%.
+    feedback: hitReact with suppressShake (bloodblade list): brightness flash only.
+  - [21]
+    variant: poison-tick
+    fxKinds:
+      - [0]
+        *vfxImpact variant*
+    functions:
+      - [0]
+        vfxImpact vfx.js:756,769,776-778
+    placement: On target.
+    motion: Poison impact bubbles (hollow 9px, .9s) drifting up only when spec.elem === 'poison' (elemKey drives particle count/direction).
+    timing: life 800; non-strong.
+    visual: 'vfx-impact vfx-impact-poison' blurred green flash.
+    feedback: hitReact suppressShake.
+  - [22]
+    variant: blood-explosion
+    fxKinds:
+      - [0]
+        burst
+      - [1]
+        impact
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2599-2605
+      - [1]
+        vfxImpact vfx.js:753,771
+    placement: Per target at its own point (not area center), stagger 40ms per target.
+    motion: Same as detonate visuals.
+    timing: delay baseDelay + i*40; life 1000; strong; 7 particles.
+    visual: 'vfx-impact vfx-impact-detonate' in elem theme.
+    feedback: hitReact strong; scene shake explicitly excluded (vfxAllowsSceneShake false).
+  - [23]
+    variant: zero-infection
+    fxKinds:
+      - [0]
+        burst
+      - [1]
+        impact
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2599-2605
+      - [1]
+        vfxImpact vfx.js:754,771
+      - [2]
+        CSS style.css:9266-9269
+    placement: Per target, stagger 40ms.
+    motion: Poison impact with 7 particles; ring gets 8px halo.
+    timing: life 900; strong.
+    visual: 'vfx-impact vfx-impact-poison vfx-impact-zero': ::after border c2 + box-shadow 0 0 0 8px 30% c1 + 26px glow.
+    feedback: hitReact strong; scene shake excluded.
+  - [24]
+    variant: pillar (impact kind -> fire pillar)
+    fxKinds:
+      - [0]
+        impact
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2477-2485
+      - [1]
+        vfxFirePillar vfx.js:1619-1653
+      - [2]
+        CSS style.css:8258-8328
+    placement: Single persistent flame pillar anchored at the FIRST resolved target point (fallback anchor for the field), bottom-center (translate -50%,-100%); width = radius*2.2, height = max(150, radius*3.5), radius = max(22, area.r||30). Merged by area.id (else rounded x:y:r) in _vfxFirePillars; each tick re-places and extends life.
+    motion: Looping: vfxFirePillarPulse .72s alt (opacity .78<->1, scaleX .94<->1.04); ::before body vfxFirePillarSway 1.1s alt (translateX +-4%, skewX +-3deg, scaleY .96<->1.02); ::after base ellipse vfxFirePillarBase .48s alt (scale .92/.84<->1.08/1.12); 7 tongues (REDUCED 3) vfxFireTongue .85s alt (rotate +-7deg around own --vfx-tongue-rot, scaleY .88<->1.06, margin-left -3%<->3%) with random negative delays 0..-0.9s.
+    timing: TTL 3600ms (VFX_FIRE_PILLAR_LIFE_MS); on each tick _vfxExpiresAt = now + max(900, dur*2400).
+    visual: ::before body: clip-path polygon(8% 100%,0 74%,18% 48%,28% 16%,43% 0,54% 18%,72% 5%,82% 38%,100% 64%,89% 100%), gradient #ff6b18 -> #e52d13 38% -> #ff8b1c 72% -> #ffd447, opacity .76, mix-blend screen; ::after base radial rgba(255,245,151,.95) 15% -> rgba(255,125,17,.68) 38% -> rgba(201,35,13,.2) 68% -> transparent, shadow 18px rgba(255,82,16,.8), height radius*.62; tongues width max(5, radius*(.26-i*.018)), height 70-100%, x offset (i-(n-1)/2)*radius*.12, gradient #fff8a8 -> #ffd447 22% -> #ff761b 66% -> #d92c13, glow 8px #ff7a1a, opacity .88; parent drop-shadow 12px glow (#ff6a2a).
+    feedback: vfxHitReact(target, elem||'fire', baseDelay, false) per target; no impact nodes.
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.r
+      - [2]
+        dur
+  - [25]
+    variant: bleed / poison / <default:curse>
+    fxKinds:
+      - [0]
+        curse
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2491-2495
+      - [1]
+        vfxCurse vfx.js:2336-2347
+      - [2]
+        CSS style.css:9218-9291
+    placement: On each target, stagger 60ms per target.
+    motion: Glyph drops in: vfxCurse 1s ease-in-out translateY -14 -> 0 @25% -> 4 @70% -> 14, scale .5 -> 1.15 -> 1 -> .7, opacity 0 -> 1 -> .95 -> 0; ::before dashed ring (inset -16) spins reverse 1.2s infinite; ::after conic sweep (inset -22, 45% c1) spins .9s infinite.
+    timing: delay baseDelay + i*60; TTL +1100; hitReact at +150 non-strong (elem = spec.elem || 'dark'; bleed -> null).
+    visual: font 20px text: bleed 🩸 (color #ff4d5f, drop-shadow 8px #ff334d, ring #ff596d; theme c1 #d92846), poison ☠️ (color #b5ff65, shadow #55d83b, ring #73df4f), default spec.glyph||☠️ with drop-shadow 8px glow and ring c1.
+    feedback: hitReact; suppressShake for bleed/poison variants.
+  - [26]
+    variant: <default:selfBuff>
+    fxKinds:
+      - [0]
+        selfBuff
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2498-2502
+      - [1]
+        vfxSelfBuff vfx.js:2318-2332
+      - [2]
+        CSS style.css:9172-9215
+    placement: At anchorId (first target) or player 'pv-float'.
+    motion: Ring contracts: vfxSelfBuffRing scale 1.45 -> .7, opacity 0 -> 1 @30% -> 0, ease-out, duration dur*1000; 4 particles rise from (50%,60%) dx +-22, dy -26..-50, vfxPart .9s, delays +i*70.
+    timing: delay baseDelay; TTL baseDelay+dur*1000+400.
+    visual: 68x68 ring border 2px c1, box-shadow 16px glow + inset 12px 45% c1; particles 5px c2 discs 6px glow.
+    feedback: none
+  - [27]
+    variant: starfall-shadow
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2508
+      - [1]
+        vfxStarfallShadow vfx.js:1443-1448
+      - [2]
+        CSS style.css:8029-8053
+    placement: Whole layer: left/top 50%, width 240% height 200% of layer, ignores targets/area/cells.
+    motion: Radial black ellipse scale .04 -> 1, opacity 0 -> .16 @12% -> .58, cubic-bezier(.55,0,.9,.55), fill both.
+    timing: duration max(300, dur*1000) (dur default 5s); TTL +400.
+    visual: radial rgba(0,0,0,.92) -> rgba(10,0,0,.78) 46% -> rgba(20,2,0,.34) 74% -> transparent.
+    feedback: none
+    notes: Checked before rect resolution (2506-2508).
+  - [28]
+    variant: meteor-starfall
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2509-2512
+      - [1]
+        vfxStarfallMeteor vfx.js:1453-1477
+      - [2]
+        vfxBuildFlareFlame vfx.js:883-938
+      - [3]
+        vfxMeteorShockwave vfx.js:1479-1483
+      - [4]
+        vfxShockwave vfx.js:1399-1439
+      - [5]
+        CSS style.css:8058-8084
+    placement: Layer-relative: impact at (w/2, h*0.62), start (w/2, -h*0.35) (layer box, fallback 640x420); vertical fall, --vfx-rot = 90deg. Ignores targets.
+    motion: CSS vfxFly with .vfx-meteor easing cubic-bezier(.5,0,.85,.6) over flight; flare emitter trails upward (opposite flight); shock ellipse pulses under the head.
+    timing: flight = max(200, travelMs[0] || 1400); animationDelay 0 (ignores baseDelay); TTL flight+2600; shockwave at flight with radius 46*sizeMult*2.4 (TTL +980).
+    visual: 'vfx-meteor vfx-meteor-starfall' filter brightness(.62) saturate(1.55) hue-rotate(-12deg) over the standard flare emitter (sizeScale 1.3*sizeMult, sizeMult = max(1, spec.sizeMult||3), 26 particles / 14 REDUCED); .vfx-starfall-shock: --shock-size = 46*sizeMult px wide, height .42x, top .62x below head, radial rgba(255,178,87,.55) -> rgba(224,69,26,.34) 52% -> transparent, shadows 18px rgba(224,69,26,.75) + 34px rgba(161,18,8,.5), vfxStarfallShock 320ms infinite scale (.82,.72)<->(1.16,1.02) opacity .72<->1. Shockwave palette #9f1d12/#f05a13/#d62f12.
+    feedback: none (no impact/hitReact/scene shake in DOM).
+    specFields:
+      - [0]
+        sizeMult
+      - [1]
+        travelMs[0]
+  - [29]
+    variant: pillar (rain)
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2513-2521
+      - [1]
+        vfxPillar vfx.js:1595-1614
+      - [2]
+        CSS style.css:8758-8813
+    placement: Per target: light column 40px wide from above the layer down to the target (height --vfx-size = pt.y+40, bottom at pt.y+18), glow flash + particles at target.
+    motion: vfxPillar .8s ease-out: scaleY 0 -> 1 @22% (origin top), hold, opacity .9 @70% -> 0; glow ::before vfxFlash .6s (inset -30 radial #fff -> c1 45%); 5 particles 5px c2 discs vfxPart .8s dx +-25 dy -26..-56.
+    timing: delay = baseDelay + max(0, travelMs[idx] - 200) (fallback travel = idx*90+200); column TTL +900; glow at +200 TTL +1100; particles +220+i*60; hitReact +220 (elem||'light', non-strong).
+    visual: Column radius 8px gradient transparent -> c2 30% -> c1 100%, box-shadow 24px glow (light theme #ffe47a/#fffef4/#fff3a3).
+    feedback: hitReact only; no impact node; scene shake not invoked despite allow-list.
+  - [30]
+    variant: thunder-strike / thunder-fall / smite
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2523-2535
+      - [1]
+        vfxSmite vfx.js:2227-2245
+      - [2]
+        vfxBolt vfx.js:1915-2017
+      - [3]
+        vfxLightningGroundImpact vfx.js:2020-2042
+      - [4]
+        vfxTargetTelegraph vfx.js:1496-1512
+      - [5]
+        vfxTargetIsLive vfx.js:622-640
+    placement: Per target (skipped if target already dead): bolt from (pt.x+26, y=-50) to target; ground ring at target; thunder-fall adds telegraph ellipse at target with radius area.r (default 72, min 36).
+    motion: Static mega bolt flash + expanding ground ring/sparks; telegraph fades in then out.
+    timing: delay baseDelay for all three (travelMs only sizes the thunder-fall telegraph duration = travelMs[idx], min 280 default 700); bolt TTL +460 (mega) / +520 (thunder-strike purple); ground +30 (TTL +550); impact +40. All nodes carry a target-death guard.
+    visual: smite/thunder-fall: mega yellow bolt (8 segs, outer 18-11t, inner 5.5-3.2t, c1 spec.color||theme, .vfx-bolt-mega shadows 12px glow/24px c1/36px #fff, vfxBoltFlashMega .45s) + yellow ground ring + 8 sparks. thunder-strike: isPurple -> theme override #c084fc/#fdf4ff/#9333ea, purple bolt class, purple ring + 10 sparks. Telegraph (thunder-fall) uses lightning palette (fill rgba(37,99,235,.18), border rgba(96,165,250,.94), glow rgba(59,130,246,.62)), width 2r height 1.04r.
+    feedback: vfxImpact {elem lightning, variant null} at +40 with guard -> hitReact lightning.
+    specFields:
+      - [0]
+        travelMs[idx]
+      - [1]
+        area.r
+      - [2]
+        color
+  - [31]
+    variant: cyclone
+    fxKinds:
+      - [0]
+        aura
+      - [1]
+        burst
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2562,2640-2651
+      - [1]
+        vfxCyclone vfx.js:1327-1339
+      - [2]
+        vfxCellsRect vfx.js:380-401
+      - [3]
+        vfxRectAround vfx.js:404-410
+      - [4]
+        CSS style.css:7636-7671
+    placement: Centered on rect (cells rect; else 140x160 around anchor / first target); size = min(w,h)*1.05.
+    motion: vfxCycloneSpin .95s cubic-bezier(.2,.4,.4,1): rotate 0 -> 760deg, scale .25 -> 1.05, opacity 0 -> 1 @18% -> .9 @80% -> 0.
+    timing: No animation delay (ignores baseDelay); TTL 1000. Burst branch adds vfxImpact {variant null} per target at baseDelay+140+i*70.
+    visual: 3 .vfx-cyc-blade rings (inset 0, border 4px transparent, border-top c2, border-right c1) rotated i*120deg, opacity .9; parent drop-shadow 10px glow.
+    feedback: burst: impacts + hitReact per target; aura: none.
+  - [32]
+    variant: bladestorm
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2640-2651
+      - [1]
+        vfxBladestorm vfx.js:1343-1356
+      - [2]
+        CSS style.css:7800-7823
+    placement: slashes = clamp(count+2, 4, 7) at random points inside rect (18%..82% of w/h).
+    motion: vfxBstorm .4s ease-out: scaleX .1 -> 1.35 with random rotation 0-360deg, opacity 0 -> 1 @30% -> 0.
+    timing: delay i*70 (ignores baseDelay), TTL i*70+500; impacts per target at baseDelay+140+i*70.
+    visual: 52x4 streak gradient transparent -> c2 30% -> c1 70% -> transparent, 5px glow.
+    feedback: vfxImpact {variant null} per target -> hitReact.
+  - [33]
+    variant: firewall
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2563
+      - [1]
+        vfxFireWall vfx.js:1657-1724
+      - [2]
+        CSS style.css:8362-8489
+    placement: Rect-based wall: wallW = max(70, rect.w||140); rectH = rect.h||120; wallH = clamp(rectH*1.15, 84, 180); left = rect.x; floor = rect.y + rectH*0.54; top = floor - wallH. area.a (rad) shifts the 3 vortices along the wall axis (x = 50 + cos(a)*(vi-1)*31 %, bottom = 7 - sin(a)*(wallW*.31/wallH*100)*(vi-1) %). Merged by area.id in _vfxFireWalls; ticks re-size/re-position.
+    motion: Looping: node vfxFireWallPulse .74s alt opacity .76<->1; vortices vfxFireWallVortex .9s alt rotate -2<->2deg scaleX .94<->1.04; ribbons vfxFireWallRibbon .78s alt rotate -8<->8deg scaleY .9<->1.06; smoke vfxFireWallSmoke 1.4s alt translate(-50%,3px) scale .82 opacity .38 <-> translate(-44%,-8px) scale 1.12 opacity .78; ::before floor ellipse vfxFireWallBase .46s; ::after top haze 1.25s.
+    timing: TTL 3600ms; per tick _vfxExpiresAt = now + max(900, dur*2400).
+    visual: 3 vortices width 31% (34% middle), height 86/90/94%, clip-path flame polygon(50% 0,78% 14%,64% 32%,92% 54%,72% 76%,100% 100%,0 100%,27% 76%,8% 54%,36% 32%,22% 14%), gradient 90deg rgba(170,35,12,.6) -> rgba(255,117,20,.82) 45% -> rgba(183,31,11,.58), glow 7px rgba(255,92,16,.82), opacity .78; vortex ::before inner glow ellipse rgba(255,255,190,.78) -> rgba(255,183,42,.46) -> rgba(218,48,12,.12), ::after base rgba(255,220,88,.72) -> rgba(255,89,14,.22); 4 ribbons each (REDUCED 3) 43%x82% clip polygon, gradient #ffe98a -> #ff9c20 34% -> #f04a13 72% -> #a92211 (even: #fff8b0 -> #ffd044 -> #ff6916 -> #bd2910), opacity .72, rotated (i-1.5)*9deg; 6 smoke puffs (REDUCED 3) 13/18/23px radial rgba(89,79,68,.34) blur 2 at bottom 72%, x=(i+.5)/n; ::before floor rgba(255,96,15,.65) -> rgba(91,29,17,.35) 18% tall; ::after haze rgba(81,73,66,.2) 42% tall blur 4.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.a
+      - [2]
+        dur
+      - [3]
+        cells/rect
+  - [34]
+    variant: mire / mire-lava / mire-poison / mire-lava-poison
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2568
+      - [1]
+        vfxMirePool vfx.js:1730-1777
+      - [2]
+        vfxFieldMotionSet vfx.js:516-542
+      - [3]
+        CSS style.css:8493-8594
+    placement: vfx-field-motion wrapper positioned at rect center with logical size w x h (min 48) and visual child w x (h*0.52) (VFX_MIRE_VISUAL_HEIGHT_RATIO) — flattened ground rectangle; merged by area.id (+':lava'/':poison').
+    motion: Position/size tween per tick over max(.12, dur||.5)s via RAF transform; visual vfxMirePoolPulse 2.4s alt (opacity .78<->1, scale .985<->1.015); ::after ripple ring inset 6% vfxMireRipple 2.1s infinite (scale .35 -> 1 fade); 5 bubbles (REDUCED 3) vfxMireBubble 1.5s infinite (scale .4 -> 1.1 @45% -> .5 translateY -6, opacity 0 -> .85 -> 0); poison currents vfxMireCurrent 2.1s (rotate +18deg drift).
+    timing: TTL 3600ms; per tick _vfxExpiresAt = now + max(900, dur*2400).
+    visual: mire: radius 10px, gradient 135deg rgba(139,94,50,.68) -> rgba(91,53,29,.58) 52% -> rgba(57,34,22,.48), inset shadow 18px rgba(30,18,10,.62) + 12px rgba(92,55,29,.28); ripple border 2px rgba(196,155,93,.44); bubbles 7px radial rgba(224,188,126,.82) at x = 12+76*(i+.5)/n %, y = 24+(i%3)*22 %. lava: gradient rgba(255,140,48,.62) -> rgba(160,48,12,.54) 60% -> rgba(96,26,8,.48), inset 22px rgba(255,122,42,.4), ripple rgba(255,179,71,.5), bubbles rgba(255,210,130,.8). poison: extra shadow inset 20px rgba(43,20,53,.7) + 16px rgba(91,43,114,.32); 3 currents (REDUCED 2) 34%x18% quarter-arc borders 2px rgba(91,43,114,.82) glow 5px, at x 24+ci*27 %, y 35+(ci%2)*24 %, angle +-10/12deg; bubbles rgba(168,85,199,.9) glow 7px. lava+poison: base brown gradient with poison shadow.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        dur
+      - [2]
+        cells/rect
+  - [35]
+    variant: thunder-orb
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2569
+      - [1]
+        vfxThunderOrb vfx.js:1782-1809
+      - [2]
+        CSS style.css:8597-8627
+    placement: vfx-field-motion wrapper, circle diameter d = max(28, (area.r||30)*2) centered on rect center; merged by area.id; each tick tweens to the new center.
+    motion: Center tween over max(.12, dur||.35)s; vfxThunderOrbPulse .9s alt (opacity .82<->1, scale .94<->1.06); 4 arcs (REDUCED 2) each rotating 360deg per .7s linear infinite, phase offset i*(360/n) deg and -i*.18s delay, opacity .9 -> .45.
+    timing: TTL 3600ms; per tick now + max(700, dur*2400).
+    visual: radial at 50% 45%: rgba(255,255,255,.92) -> rgba(96,165,250,.62) 42% -> rgba(29,78,216,.32) 72% -> transparent 92%; shadow 22px rgba(96,165,250,.55); arcs inset 8% border 2px rgba(219,234,254,.55) with left/bottom transparent (half-ring).
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.r
+      - [2]
+        dur
+  - [36]
+    variant: water-tornado / wind-tornado
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2570-2575
+      - [1]
+        vfxFirePillar vfx.js:1619-1653
+      - [2]
+        CSS style.css:8330-8359
+    placement: Tornado point = (area.x, area.y) used directly as layer px if finite, else anchor point, else rect center. Persistent pillar anchored bottom-center, width radius*2.2, height max(150, radius*3.5), radius = max(22, area.r||30). Merge key area.id (or rounded x:y:r) + ':water' / ':wind'.
+    motion: Identical loop to fire pillar (pulse .72s, body sway 1.1s, base pulse .48s, 7 tongues .85s alt).
+    timing: TTL 3600; per tick now + max(900, dur*2400).
+    visual: water ('vfx-water-tornado-pillar'): body gradient #0284c7 -> #0369a1 38% -> #38bdf8 72% -> #e0f2fe, glow 10px #38bdf8; base radial rgba(240,249,255,.95) -> rgba(56,189,248,.68) -> rgba(2,132,199,.2), shadow 18px rgba(56,189,248,.85); tongues #f0f9ff -> #bae6fd 22% -> #38bdf8 66% -> #0284c7 glow #38bdf8. wind ('vfx-wind-tornado-pillar'): body #bbf7d0 -> #86efac 38% -> #dcfce7 72% -> #fff, glow #86efac; base #fff -> rgba(134,239,172,.68) -> rgba(74,222,128,.2), shadow rgba(134,239,172,.85); tongues #fff -> #dcfce7 -> #86efac -> #4ade80. Parent drop-shadow 12px theme glow.
+    feedback: none
+    notes: isIceField is also true for these variants but this branch wins; vfxIceField's tornado ring look is unreachable.
+  - [37]
+    variant: void-disc
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2554-2560,2576
+      - [1]
+        vfxVoidDisc vfx.js:2279-2314
+      - [2]
+        CSS style.css:7675-7797
+    placement: Center = first target anchor, else player origin (also used as rect fallback at 2557), else rect center. Box = endRadius*2 wide x endRadius*1.24 tall (ellipse). startRadius = area.r (else max(48, min(rect.w,h)/2)); endRadius = startRadius + area.grow*duration.
+    motion: duration = max(.12, dur||6)s. Node vfxVoidDiscLife: opacity .15 (0-8%) -> .9 (16-84%) -> 0. ::before outer ring scale --vfx-void-start-scale (start/end) -> 1 while rotating 0 -> +-920deg (sign of area.spin); ::after inner ring (inset 12%) scale start -> 1 rotating +-560deg. One .vfx-void-blade 42x9 pivoting at center: rotate from --void-angle (area.startAng deg) by +560deg @84% (+920deg @100%) while translateX from r-start to r-end, scale .45 -> 1 -> .55, opacity 0 -> .95 -> .86 -> 0.
+    timing: TTL duration*1000; no delay.
+    visual: radial fill 12% c1 (color-mix) to 35% then transparent 72%, drop-shadow 8px glow; outer ring border 2px (top c1, right 72% c2); inner ring 1px (bottom c2, left 70% c1); blade gradient transparent -> c1 30% -> c2, clip polygon(0 50%,28% 10%,100% 0,72% 50%,100% 100%,28% 90%), 5px glow. CSS fallbacks #86efac.
+    feedback: none
+    specFields:
+      - [0]
+        area.r
+      - [1]
+        area.grow
+      - [2]
+        area.spin
+      - [3]
+        area.startAng
+      - [4]
+        dur
+      - [5]
+        targets[0]
+    notes: Each simulation event = one blade; four events with startAng 0/90/180/270 produce 4 blades.
+  - [38]
+    variant: thunder-curtain / follow-aura / swordfield / <default:aura>
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2536-2560,2567,2581,2583
+      - [1]
+        vfxAura vfx.js:2250-2274
+      - [2]
+        CSS style.css:9077-9169,9484-9522
+    placement: Rectangle = rect exactly (cells union; tower fallback 140x160 around anchor). thunder-curtain and follow-aura are explicitly routed to this generic aura (DOM tower scene is static so no follow).
+    motion: vfxAuraPulse 1.6s infinite opacity .5 <-> .95; 5 .vfx-aura-p particles at bottom 4px, random left 8-92%, random delay 0-1.8s, vfxAuraRise 2s linear infinite translateY 0 -> -74px, scale 1 -> .5, opacity 0 -> .9 @15% -> 0.
+    timing: TTL clamp(dur, 1, 60)*1000; no animation delay; whole fxKind dropped in REDUCED quality.
+    visual: border 1px c1, radius 4px, radial 22% c1 fill to 70%, inset shadow 18px 35% c1, overflow hidden; particles 6px c1 discs glow 4px. Elem classes: fire (radial at 50% 90% 34% c1; particles 7x11 flame drops gradient c1 -> c2 blur .6 glow 5), light (32%), dark (30%), ice (8px diamonds gradient c2->c1 rotate 45), lightning (17x9 bolt clip gradient c2->c1 glow), earth (8px square c1 inset 2px c2 highlight), poison (hollow bubbles border 2px c1). swordfield -> 'vfx-aura-sword': ::after dashed ring inset 10% 2px 75% c1 spinning 5s linear infinite (vfxSpinCenter); particles 3x16 vertical sword slivers gradient transparent -> c2.
+    feedback: none
+    specFields:
+      - [0]
+        cells
+      - [1]
+        dur
+      - [2]
+        elem
+      - [3]
+        variant
+    notes: vfxAura returns null for elem 'wind' (2254) and renderCombatVfx drops aura+wind+no-variant events (2383); the .vfx-aura-wind CSS (14x3 slivers) is therefore unreachable. Queue priority: aura 2, aura+variant 'firehunt' 3.
+  - [39]
+    variant: blizzard / ice-arrow-homing / wind-blade-homing
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2536-2553,2582
+      - [1]
+        vfxIceField vfx.js:1820-1893
+      - [2]
+        vfxFieldKey vfx.js:441-448
+      - [3]
+        vfxFieldMotionFollowPlayer vfx.js:544-552
+      - [4]
+        vfxWindHomingSetAngle vfx.js:1813-1818
+      - [5]
+        CSS style.css:8632-8665,8698-8755
+    placement: Rect from cells, else from area (x/y as layer px, w/h or r*2, 2543-2553; wind-blade-homing never reads cells). blizzard: rect w x h (min 48), visual height h*0.52, wrapper re-centered on player 'pv-float' every frame. homing: square side = max(16, (area.r||30)*2) centered on rect center; merge key requires area.id|fieldKey|vfxId (else event skipped); blizzard may fall back to rounded x:y key.
+    motion: Wrapper transform tween over max(.12, dur||.4)s per tick (blizzard: RAF follow-player instead). blizzard visual vfxBlizzardDrift 2.6s alt opacity .72<->1; 6 flakes (REDUCED 3) 4px white dots falling from top -8% to +130% with -14px drift over 1.5s linear infinite, staggered -i*.28s. ice-arrow-homing: single 18x22 diamond shard vfxIceHomingPulse .55s alt (opacity .85<->1, glow 4<->9px). wind-blade-homing: single 30x20 crescent rotated toward (area.destX, area.destY) via --vfx-wind-angle (transition 120ms), vfxWindHomingPulse .55s alt.
+    timing: TTL 3600 (VFX_ICE_FIELD_LIFE_MS); per tick now + max(700, dur*2400).
+    visual: blizzard: border-radius 42%/58%, radial rgba(224,242,254,.34) -> rgba(125,211,252,.2) 52% -> transparent 88%, border 2px rgba(34,211,238,.42), inset shadow 26px rgba(34,211,238,.32), overflow hidden; flakes rgba(240,249,255,.92) glow 6px. ice shard: gradient 160deg #f2fbff -> #4da6ff 62%, clip diamond, glow 6px #79d8ff, scale max(.55, side/30). wind blade: gradient 120deg #fff -> #86efac 62%, clip path('M 2 10 Q 15 -4 28 10 Q 15 4 2 10 Z'), glow 6px #86efac, scale max(.55, side/30). Wrapper visuals transparent (no orb/spikes).
+    feedback: none
+    specFields:
+      - [0]
+        area.id|fieldKey|vfxId
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.r
+      - [4]
+        area.w
+      - [5]
+        area.h
+      - [6]
+        area.destX
+      - [7]
+        area.destY
+      - [8]
+        dur
+  - [40]
+    variant: meteor
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2554-2560,2586-2589
+      - [1]
+        vfxMeteor vfx.js:1524-1592
+      - [2]
+        vfxMeteorProjectile vfx.js:1380-1392
+      - [3]
+        vfxBuildFlareFlame vfx.js:883-938
+      - [4]
+        vfxTargetTelegraph vfx.js:1496-1512
+      - [5]
+        vfxMeteorShockwave vfx.js:1479-1483
+      - [6]
+        vfxSceneShake vfx.js:705-728
+      - [7]
+        vfxNormalizeTiming vfx.js:2842-2857
+      - [8]
+        CSS style.css:7899-7981,8186-8191,8240-8255
+    placement: Impact center = first target anchor if resolvable, else rect center (rect = cells union, or vfxRectAround(anchor, spec.area) -> 2r square). Main meteor from (cx+180, cy-180*tan(60deg)~311.8) i.e. 60deg descent from upper-right; 4 small meteors start at ratio .78+.12i along the same diagonal with y offsets [-.22,-.04,.16,.32]*180.
+    motion: CSS vfxFly (.vfx-meteor easing cubic-bezier(.5,0,.85,.6)) heads; Phaser-style flare emitter tails trailing opposite to flight; telegraph ellipse on ground; on landing boom flash+ring+8 particles, area flash circle, shockwave rings/particles/dust, scene shake.
+    timing: baseDelay clamped <=900 (also by vfxNormalizeTiming); fall = round(min(700, travelMs[0]||700)/0.70) ~ 1000ms; telegraph at baseDelay for fall ms (fire palette); small meteors delay +36+42i with flight fall-36-42i (min 180) so all land at hitAt = baseDelay+fall; boom TTL hitAt+1000; area flash TTL +700; shockwave TTL +980; scene shake class 'vfx-scene-shake-meteor' (.54s, allowed even in REDUCED); hitReact fire strong per target at hitAt+(t%3)*40. Meteor & area-flash nodes hard-capped at 2800ms TTL.
+    visual: Meteor: no core/trail, flare emitter sizeScale 1.30 (small x.58), 26/14 particles (REDUCED 14/8), colors #facc22 -> #f89800 -> #f83600 -> #9f0404, plus-lighter blend. Boom (.vfx-meteor-boom): ::before inset -46 radial #fff8dd -> c2 35% -> c1 62% -> transparent vfxFlash .55s; ::after inset -18 ring 3px c1 glow 22px vfxRing .6s; 8 particles 7px c2 discs glow 4, dist 34-80 (y*.7), vfxPart .7s, delays +18i. Area flash: circle diameter min(rect.w, rect.h), border 3px c1, radial glow fill, vfxAreaFlash .6s (scale .12 -> .45 @20% -> 1, opacity 0 -> .65 -> 0). Shockwave palette c1 #9f1d12 c2 #f05a13 glow #d62f12 (3 rings, 18 shards, 6 dust). Telegraph fire palette. Theme fire (#e63924/#ffd447/#ff6a2a).
+    feedback: vfxSceneShake strong(meteor) + vfxHitReact('fire', strong) per target id; no vfxImpact.
+    specFields:
+      - [0]
+        travelMs[0]
+      - [1]
+        delayMs
+      - [2]
+        area.r
+      - [3]
+        cells
+      - [4]
+        targets
+  - [41]
+    variant: <default:rain>
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2590-2595
+      - [1]
+        vfxRainDrops vfx.js:1896-1908
+      - [2]
+        CSS style.css:7871-7896
+    placement: drops = clamp(round(rect.w/60), 3, 6) evenly spaced across rect width at rect mid-height.
+    motion: Glyph falls: vfxRainDrop translateY(-rect.h) scale .8 -> translateY(+rect.h*0.5) scale 1.2, opacity 0 -> 1 @25% -> 0, cubic-bezier(.4,0,.9,.6).
+    timing: delay i*70 (ignores baseDelay); duration dur*1000 (default 750); TTL +160; hitReact per target (<=4) at baseDelay+300+i*60 non-strong.
+    visual: .vfx-rain text glyph (spec.glyph || ✨) 20px colored c1 with drop-shadow 6px currentColor; --vfx-size = rect.h.
+    feedback: hitReact only.
+  - [42]
+    variant: frost-nova
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2609-2619
+      - [1]
+        vfxFrostNova vfx.js:1306-1323
+      - [2]
+        CSS style.css:7512-7540
+    placement: Center = (area.x, area.y) used as layer px if finite, else first target, else player anchor; radius = area.r || 90; box 2r.
+    motion: vfxFrostNovaExpand: scale .24 -> 1.06, opacity 0 -> .95 @18% -> .72 @68% -> 0, ease-out; duration max(.32, dur).
+    timing: delay baseDelay; TTL +180; impacts {variant null, elem} per target at baseDelay+i*40.
+    visual: Circle radial rgba(224,242,254,.3) -> rgba(125,211,252,.18) 54% -> rgba(34,211,238,.05) 76% -> transparent 88%, border 3px rgba(224,242,254,.86), shadow 22px rgba(34,211,238,.62) + inset 20px rgba(125,211,252,.42); inner ring inset 14% border 2px rgba(186,230,253,.7) inset glow 14px.
+    feedback: vfxImpact ice per target -> hitReact.
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+      - [3]
+        dur
+  - [43]
+    variant: firepillar-impact / firehunt-detonate
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2625-2637
+      - [1]
+        vfxFirePillarShockwave vfx.js:1487-1491
+      - [2]
+        vfxShockwave vfx.js:1399-1439
+      - [3]
+        CSS style.css:8087-8183
+    placement: Center = (area.x, area.y) as layer px if finite else first target; radius = area.r || 60.
+    motion: Shockwave: 3 ellipse rings expand (vfxFirePillarShockwaveRing .86s scale (.08,.14) -> ring-sx/sy), 18 flame shards fly radially with +28px drop, 6 dust puffs spread.
+    timing: at baseDelay; TTL +980; hitReact strong per target at baseDelay.
+    visual: .vfx-firepillar-shockwave rings border 5px #ffb21c, shadow 18px #ff3b0a + inset 12px #7d1708; palette c1 #7d1708 c2 #ffb21c glow #ff3b0a for shards/dust.
+    feedback: vfxHitReact(target, elem||'fire', baseDelay, strong=true) only; no impact node, no scene shake.
+  - [44]
+    variant: thrust / thrust-pierce / thrust-parallel / thrust-octagonal
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2360-2362,2661-2691
+      - [1]
+        vfxThrustLine vfx.js:1191-1216
+      - [2]
+        CSS style.css:8193-8238
+    placement: From player origin along frontAngle (toward first target). thrust-octagonal: directions = max(1, directionCount||8) at frontAngle + td*2pi/dirs. Lanes = laneOffsets (<=3) perpendicular px offsets (default [0]). distance = max(48, lineLength||70); non-final strikes: bodyLength = clamp(distance*.34, 42, 96), flight = distance-bodyLength; final strike: body = full distance. Node centered at start + dir*body/2.
+    motion: Final strike (.vfx-thrust-line): lance image revealed from the player end via animated mask (--vfx-reveal-end 33% -> 50% @20% -> 100% @40%), hold, fade to 0 at 100%. Non-final (.vfx-thrust-flight): short lance head translates along its axis by --vfx-flight-distance over 76% then fades.
+    timing: count clamp <= 8 (isThrust); per strike delay baseDelay + tc*220; duration final max(.24, dur||.3), flight clamp(dur*.75, .16, .22); TTL +180; if !projectile: vfxImpact {variant null} per target at thrustDelay+100+i*24.
+    visual: background url('../images/vfx/thrust_lance.png') stretched to width max(28, lineWidth||36) x height bodyLength, rotated (angle - 90deg), drop-shadow 8px rgba(255,244,186,.9) + 20px rgba(226,157,49,.7).
+    feedback: impacts per target per strike (unless spec.projectile) -> hitReact.
+    specFields:
+      - [0]
+        laneOffsets
+      - [1]
+        directionCount
+      - [2]
+        lineLength
+      - [3]
+        lineWidth
+      - [4]
+        projectile
+      - [5]
+        count
+      - [6]
+        dur
+  - [45]
+    variant: ice-arrow / ice-arrow-pierce / wind-blade / wind-blade-small
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2698-2730
+      - [1]
+        vfxProjectile vfx.js:1027-1079
+    placement: From player origin along angle (spec.angle if finite else toward first target) for length lineLength (else distance to first target) -> fixed end point; count arrows.
+    motion: CSS vfxFly straight to the line end (core ice diamond / wind crescent rotated to angle).
+    timing: travel = travelMs[0] || 0; flight = travel or dur/0.6; arrow delay baseDelay + iac*90; per-target hit = arrowDelay + round(travel*clamp(along/length,0,1)) (or dur*1000 when no travel); vfxImpact for first arrow or <=3 targets, else hitReact only.
+    visual: ice: 'vfx-proj-ice' 16px diamond gradient #f2fbff -> #4da6ff glow #79d8ff, trail blur 3 .55; wind: 'vfx-proj-wind' 30x20 crescent gradient #fff -> #86efac glow 6, trail blur 2 .45. wind-blade-small is visually identical to wind-blade in DOM.
+    feedback: vfxImpact(spec) at along-line time -> hitReact.
+    specFields:
+      - [0]
+        angle
+      - [1]
+        lineLength
+      - [2]
+        travelMs[0]
+      - [3]
+        count
+      - [4]
+        dur
+  - [46]
+    variant: cleave / cleave-shockwave / cleave-back / cleave-dual / cleave-cross / cleave-cross-shockwave
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2734-2794
+      - [1]
+        vfxCleaveArc vfx.js:1096-1131
+      - [2]
+        vfxCleaveSector vfx.js:1136-1173
+      - [3]
+        vfxCleaveArcFlightMs vfx.js:1185-1187
+      - [4]
+        CSS style.css:7313-7400
+    placement: At player origin, frontAngle toward first target. cleave: static arc at origin. cleave-shockwave: forward arc travelling arcLen = lineLength||120. cleave-back and cleave-dual: forward arc + backward arc (class vfx-cleave-arc-back, angle+180). cleave-cross(-shockwave): 4 x 60deg sectors at frontAngle + k*90deg, each length directionRanges[k] || arcLen.
+    motion: Arc: ::before vfxCleaveArc rotate -72 -> 118deg scale .42 -> 1.12 opacity 0 -> 1 @22% -> 0; ::after vfxCleaveArcB rotate 142 -> -52deg scale .36 -> 1.05 (peak .95 @28%), ease-out, duration max(.38, dur). Travelling arcs: RAF smoothstep translation along angle by max(48, len). Sector: RAF scale .08 -> 1 (smoothstep), shifts 8% of radius along angle, rotates +45deg/s continuously, opacity ramps in over first 8%, fades after 76%.
+    timing: per count stagger 90ms; arcFlightMs = max(.38,dur)*1000; per-target hit delay: cross -> flight*clamp(dist/rangeOfQuadrant); forward & along>=0 -> flight*clamp(along/arcLen); back & along<0 -> flight*clamp(-along/arcLen); else 90; impact at baseDelay + c*90 + hitDelay + t*35 + 90 (skipped when spec.projectile). Arc/sector TTL delay+duration+180.
+    visual: Arc 52x52 (scaled by rangeScale) ring: ::before border 2.6px top c1, ::after 0.87px top c2, drop-shadow 10px glow. Sector: box 2r, radial transparent 10% -> c1 28% -> c2 68% -> transparent 78%, clip 60deg wedge polygon(50% 50%,100% 21.13%,100% 78.87%), drop-shadow 12px glow, mix-blend screen (CSS fallback #60a5fa/#bfdbfe).
+    feedback: vfxImpact {variant null} per target per count -> hitReact.
+    specFields:
+      - [0]
+        lineLength
+      - [1]
+        directionRanges[4]
+      - [2]
+        rangeScale
+      - [3]
+        projectile
+      - [4]
+        count
+      - [5]
+        dur
+  - [47]
+    variant: gale-slashes
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2797-2806
+      - [1]
+        vfxGaleSweep vfx.js:1177-1183
+      - [2]
+        vfxCleaveSector vfx.js:1136-1173
+      - [3]
+        CSS style.css:7362-7368
+    placement: Single sector at player origin facing first target; radius max(48, lineLength||120).
+    motion: Same RAF sector animation (scale .08 -> 1, 8% shift, 45deg/s rotation, fade after 76%).
+    timing: delay baseDelay; duration max(.38, dur); TTL +180; hitReact per target at baseDelay+120 non-strong (no impact nodes).
+    visual: 'vfx-cleave-sector vfx-gale-sweep': 180deg half-disc clip polygon(50% 50%,50% 0,85.36% 14.64%,100% 50%,85.36% 85.36%,50% 100%), radial ring transparent 60% -> c1 64% -> c2 70% -> transparent 76% (wind theme).
+    feedback: hitReact only.
+  - [48]
+    variant: <default:beam>
+    fxKinds:
+      - [0]
+        beam
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2811-2815
+      - [1]
+        vfxBeam vfx.js:1360-1373
+      - [2]
+        CSS style.css:7826-7868
+    placement: Line from player origin to each target: left/top at origin, width = distance, rotate(atan2), transform-origin 0 50%.
+    motion: Static; vfxBeam opacity 0 (brightness 2.2) -> 1 @18% -> 0, ease-out, duration dur*1000 (default 500).
+    timing: No animation delay (ignores baseDelay); TTL dur+160; impact {variant null} at baseDelay+100.
+    visual: Default 5px tall gradient transparent -> c1 25% -> c2 55% -> c1 75% -> transparent, shadow 12px glow. elem ice ('vfx-beam-ice'): 8px tall, repeating 105deg white stripes over c1 -> c2 -> c1 gradient. elem light ('vfx-beam-light'): 3px white core with 6/18/34px glow shadows.
+    feedback: vfxImpact per target -> hitReact.
+  - [49]
+    variant: <default:projectile> (incl. swordwave, swordwave-extra, knife, flamewave, firehunt-ring, fireball, fireball-small, venom, poison-bullet, waterball, frost-bullet, drain, glyph/plain)
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2816-2825
+      - [1]
+        vfxProjectile vfx.js:1027-1079
+      - [2]
+        vfxProjectileCls vfx.js:820-833
+      - [3]
+        vfxProjectileArcPx vfx.js:1018-1025
+      - [4]
+        vfxBuildSmallFireball vfx.js:942-952
+      - [5]
+        CSS style.css:6935-7311,7403-7409
+    placement: Player origin -> each target; count shots per target.
+    motion: CSS vfxFly straight (scale .75 -> 1.1, opacity 0 -> 1 @12% -> .9), or vfxFlyArc (linear, apex lifted by arcM*10 px) when spec.arcM > 0 and not a knife. Core rotated to flight angle; 'drain' adds a returning wisp.
+    timing: delay = baseDelay + c*90 + t*40; flight = travelMs[idx] || round(dur*1000/0.6); hitAt = delay + (travel || dur*1000) [note: fallback mismatch vs flight]; vfxImpact for c===0 or <=3 targets else hitReact; TTL delay+flight+2560; drain wisp delay +flight+70 duration max(280, flight).
+    visual: Per class (see sharedHelpers PROJECTILE CORE): sword crescent (swordwave/-extra), knife glyph, poison teardrop (venom/poison-spread/poison-bullet), ice diamond (waterball/water-bounce/frost-bullet/frost-spread), flamewave = 'vfx-proj-fire vfx-proj-big' (52x52 unstyled core, trail hidden -> effectively invisible), firehunt-ring = 22px ring border 3px #ffc247 shadow 10px 2px rgba(240,74,25,.75) inset 6px rgba(255,248,176,.85) rotateY 360deg/.38s, trail hidden; elem cores fire/ice/lightning/poison/dark/wind/earth/light; cat special/potential/fusion -> glyph text 18px; else plain 12px c2 disc. fireball/fireball-small -> 39px pulsing radial core + 42x18 flickering jagged tail (no default core/trail). drain wisp 10px radial c2 -> c1 blur 1 glow 6.
+    feedback: vfxImpact(spec incl. variant -> impact class mapping) -> hitReact; extra shots only hitReact when >3 targets.
+    specFields:
+      - [0]
+        variant
+      - [1]
+        elem
+      - [2]
+        cat
+      - [3]
+        glyph
+      - [4]
+        arcM
+      - [5]
+        travelMs[]
+      - [6]
+        count
+      - [7]
+        dur
+  - [50]
+    variant: <default:slash>
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2826-2829
+      - [1]
+        vfxSlash vfx.js:1083-1091
+      - [2]
+        CSS style.css:7423-7479
+    placement: On each target; random tilt -25..25deg per node.
+    motion: Crossed arc strokes vfxSlashArc / vfxSlashArcB (see enemy melee record).
+    timing: delay baseDelay + c*90 + t*40; duration dur*1000; TTL +160; impact (variant passthrough s.variant) at +70 for c===0, else hitReact +70.
+    visual: 58x58 ring pair, border-top c1 / c2, 6px glow.
+    feedback: vfxImpact / hitReact per hit.
+  - [51]
+    variant: <default:burst>
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        renderCombatVfx vfx.js:2830-2833
+      - [1]
+        vfxBurst vfx.js:1294-1302
+      - [2]
+        CSS style.css:7482-7509,7611-7633
+    placement: On each target.
+    motion: ::before flash radial c2 -> glow 45% -> transparent 72% (inset -4) vfxFlash scale .3 -> .8 fade; ::after ring border 2px c1 shadow 12px glow + inset 8px vfxRing scale .3 -> 1.4 fade; duration dur*1000.
+    timing: delay baseDelay + c*90 + t*40; TTL +160; impact (variant passthrough) at +80 for c===0 else hitReact +80.
+    visual: 22x22 base; class 'vfx-burst-<elem>' is added but has NO CSS (elem only affects theme vars); variant fire-explosion adds 'vfx-burst-fireball' (44x44 big explosion, see fire-explosion record).
+    feedback: vfxImpact / hitReact.

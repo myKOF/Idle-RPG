@@ -11,7 +11,13 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v25（2026-08-26 火狩圈距與火神降臨）：VFX 環形 area 再新增 rGrowTo／rGrowSec
+/* v26（2026-09-03 VFX Preset 化）：VFX 事件新增可選欄位 vfx＝{ cast, attack, projectile, hit, ground }
+   （角色 → vfx/presets/<id>.json 的 preset id），值來自技能表／狀態表新增的特效欄
+   （config/CSV/Skills.csv、Skills2.csv 五欄；Status.csv 三欄），由發送端（skillVfxSpec／
+   sgEmitVfx／sgEmitPlayerVfx）依「這一發屬於表上哪一列」帶出。顯示層（Runtime Adapter）
+   有 vfx 就播 Preset、沒有就退回既有的程式畫法；舊事件缺此欄位＝完全沿用舊畫法。
+   fxKind／variant 仍然決定行為與時序（飛行、落下、跟隨、持續），vfx 只決定「長什麼樣」。
+   v25（2026-08-26 火狩圈距與火神降臨）：VFX 環形 area 再新增 rGrowTo／rGrowSec
    （這一道環的半徑在幾秒內長到幾倍）——【烈陽星環】把火狩體積放大時，
    內外圈的間距要照同一個比例拉開，否則兩圈的火狩會疊在一起。
    同一批新增 aura 變體 firegod-aura（玩家錨定、逐幀跟隨的領域光環）與
@@ -40,7 +46,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 25;
+var WORKER_PROTOCOL_VERSION = 26;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -151,7 +157,13 @@ var EVENT_KINDS = {
              rGrowTo／rGrowSec（v25：**這一道環**的半徑在幾秒內長到幾倍；最內圈恆為 1）。
              ⚠️ 環形事件的 r 送的是**出生半徑**而不是當下半徑——顯示層的節點合併鍵含半徑，
              送當下值會讓每次補送都被當成另一道環而多畫一圈。
-             ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。 */
+             ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。
+     vfx（v26，可選）：{ cast, attack, projectile, hit, ground } 角色 → Preset id
+             （vfx/presets/<id>.json），每個鍵都可省略。值來自技能表／狀態表的特效欄，
+             發送端依「這一發屬於表上哪一列」帶出（js/skills.js skillVfxSpec、
+             js/skills2.js sgVfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，
+             fxKind／variant／travelMs／area 仍決定行為與時序；沒有欄位＝退回程式畫法。
+             只放 id 字串，不放路徑、不放 Preset 內容。 */
   VFX: 'vfx'
 };
 

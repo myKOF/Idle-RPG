@@ -1,0 +1,1926 @@
+families:
+  - [0]
+    family: fire-core
+    query: node tools/vfx/semantic-query.cjs --usage core --shape cloud --tintable   |   node tools/vfx/semantic-query.cjs --usage core --element fire
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/flame_04.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft folded grayscale wisp-cloud with bright creases, no hard silhouette; tint orange = fireball body / tint any color = generic energy core. SHIPPED.
+      - [1]
+        assetId: particle-pack/png-black-background/fire_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Granular speckled burst cloud with hot white center and ragged fringe (NOT a colored flame); explosion core / burst core when tinted. Unshipped.
+      - [2]
+        assetId: particle-pack/png-black-background/flame_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Single soft flame-sheet wisp with a bright folded ridge, asymmetric; layer 2-3 rotated copies for licking flames. Unshipped.
+      - [3]
+        assetId: particle-pack/png-black-background/flame_05.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Small candle-flame teardrop: solid bright base, narrow curling tip pointing up; ideal single flame tongue / fire projectile head. Unshipped (rotated/flame_05_rotated = horizontal).
+      - [4]
+        assetId: particle-pack/png-black-background/muzzle_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Vertical flame plume: dense bright base at bottom, tapering tongue upward with spark specks; anchor bottom. Unshipped (rotated/muzzle_02_rotated = comet pointing right, viewed).
+      - [5]
+        assetId: new_materials/smoke/smoke3_11.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Very soft blurry white cumulus blob, no internal detail; tinted and additive-stacked it becomes a fire glow halo / heat bloom. Unshipped.
+  - [1]
+    family: explosion-colored
+    query: node tools/vfx/semantic-query.cjs --usage core --element fire   |   node tools/vfx/semantic-query.cjs --usage impact --shape cloud
+    candidates:
+      - [0]
+        assetId: smoke-particles/png/explosion/explosion04.png
+        blend: alphaBlend
+        tintable: false
+        size: 600x618
+        lookedAt: true
+        description: Pre-colored orange-yellow fireball with dark red rim and brown smoke fringe (sat 0.67); ready-made explosion puff, only for fire. needsReview flag in semantics. Unshipped.
+      - [1]
+        assetId: smoke-particles/png/explosion/explosion00.png
+        blend: alphaBlend
+        tintable: false
+        size: 583x536
+        lookedAt: true
+        description: Same family, taller irregular fireball with more yellow core; 9 variants (explosion00-08) usable as random pick, not a frame sequence. Unshipped.
+      - [2]
+        assetId: new_materials/fire/fire_1.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Realistic roundish orange fire blob wrapped in gray smoke haze (fire_1-10 are blob/explosion style). Unshipped.
+      - [3]
+        assetId: new_materials/fire/fire_4.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Larger, more diffuse realistic fireball with heavy smoke, brighter yellow core. Unshipped.
+      - [4]
+        assetId: new_materials/plasma/magic_particles_1.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Orange-white hot core inside a cellular brown smoke cloud; actually reads as a fireball, not lightning (semantics label element=lightning is misleading). Unshipped.
+  - [2]
+    family: fire-pillar-wall
+    query: node tools/vfx/semantic-query.cjs --usage core --element fire --aspect tall   |   node tools/vfx/semantic-query.cjs --usage beam --shape cone
+    candidates:
+      - [0]
+        assetId: new_materials/fire/fire_20.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Pre-colored tall campfire-style flame wall: flat glowing base, licking tongues, smoke at top (fire_11-30 all this style, base at bottom). Unshipped.
+      - [1]
+        assetId: new_materials/fire/fire_28.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Widest, brightest flame wall variant with a broad yellow base; best for fire-wall lane segments. Unshipped.
+      - [2]
+        assetId: new_materials/fire/fire_31.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512 (content ~tall, cov 43%)
+        lookedAt: true
+        description: Narrow tall flame column (fire_31-40 are narrow columns, content 'tall' aspect); pillar / meteor tail. Unshipped.
+      - [3]
+        assetId: light-masks-1.0/default/cone_composed_c.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Grayscale wide V-shaped soft cone, bright apex at bottom fading upward; tinted = pillar body of any element. Unshipped (cone_composed_c_noise is SHIPPED).
+      - [4]
+        assetId: new_materials/muzzle-flash/muzzle_flash_5.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: White wide spiky eruption column rising from a splayed base row of rays; anchor bottom; ground-eruption pillar when tinted. Unshipped.
+      - [5]
+        assetId: light-masks-1.0/default/cone_a.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Narrow constant-width vertical gradient bar, bright at bottom, black at top (filename says cone, it is a bar); simple pillar core. Unshipped.
+  - [3]
+    family: ice-shard
+    query: node tools/vfx/semantic-query.cjs --usage spark --shape star --blend additive   |   node tools/vfx/semantic-query.cjs --usage mask --tag sharp --package new_materials
+    gap: No faceted crystal / icicle sprite exists. Build a shard from a hard triangle or diamond mask (dingbats-370/366) scaled tall, plus a sphere_41 style rim highlight and star_08 sparkle; lines_1 gives a soft tapered shard body.
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/star_08.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Six razor-thin crossing lines (3 axes) with a tiny ring at center; the classic ice/cold sparkle. SHIPPED.
+      - [1]
+        assetId: new_materials/streak/lines_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (tall, cov 20%)
+        lookedAt: true
+        description: Soft vertical teardrop streak, wide bright top tapering to a point at bottom; rotate to aim = shard body / icicle. Unshipped.
+      - [2]
+        assetId: new_materials/mask-shape/dingbats-370.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard-edged solid white downward triangle silhouette; scale tall for a crystal shard mask. Unshipped.
+      - [3]
+        assetId: new_materials/mask-shape/dingbats-366.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard solid white diamond (rotated square); shard / crystal chunk mask. Unshipped.
+      - [4]
+        assetId: new_materials/mask-shape/dingbats-489.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard 4-point sparkle (concave diamond); crisp ice glint particle. Unshipped.
+      - [5]
+        assetId: new_materials/flare/star_9.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin-armed 5-point star with radial gradient (star_7-10 thin, star_1-6 fat); frost sparkle / starfall. Unshipped.
+  - [4]
+    family: snowflake
+    query: node tools/vfx/semantic-query.cjs --usage mask --shape irregular --package new_materials
+    candidates:
+      - [0]
+        assetId: new_materials/mask-shape/dingbats-459.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Classic 6-arm snowflake silhouette with branching side spurs, hard white edge. Unshipped.
+      - [1]
+        assetId: new_materials/mask-shape/dingbats-460.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bolder 6-arm snowflake with hexagonal core and short branches. Unshipped.
+      - [2]
+        assetId: new_materials/mask-shape/dingbats-461.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 6-arm snowflake with arrow/chevron tips. Unshipped.
+      - [3]
+        assetId: new_materials/mask-shape/dingbats-480.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 8-spoke thin asterisk; simple frost crystal / spinner. Unshipped.
+      - [4]
+        assetId: new_materials/mask-shape/dingbats-376.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Solid disc with ~24 short radial spikes (sun/burst disc); frost burst mask. Unshipped.
+  - [5]
+    family: ice-nova-frost-ring
+    query: node tools/vfx/semantic-query.cjs --usage impact --shape ring   |   node tools/vfx/semantic-query.cjs --usage ring --blend additive --tintable
+    candidates:
+      - [0]
+        assetId: light-masks-1.0/default/circle_rings_a.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Three soft concentric rings around a bright solid center disc; nova / frost pulse. SHIPPED.
+      - [1]
+        assetId: light-masks-1.0/default/circle_rings_c.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Four tight sharp concentric rings + bright center (ripple). Unshipped.
+      - [2]
+        assetId: new_materials/impact-ring/impact_9.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft gray ring with 6 sharp spikes pointing inward toward center; frost nova / converging burst. Unshipped.
+      - [3]
+        assetId: new_materials/impact-ring/impact_14.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft ring with 12 teardrop spikes pointing outward; expanding icy shockwave. Unshipped.
+      - [4]
+        assetId: new_materials/arcane-ring/spiral_20.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Concentric wavy/hexagonal hard-edged rings (5 nested); frost field decal. Unshipped.
+      - [5]
+        assetId: new_materials/orb/spiky_6.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft 12-point serrated ring (hollow center); frost crown ring. Unshipped.
+  - [6]
+    family: tornado-vortex-body
+    query: node tools/vfx/semantic-query.cjs --usage beam --shape cone   |   node tools/vfx/semantic-query.cjs --tag swirl
+    candidates:
+      - [0]
+        assetId: light-masks-1.0/default/cone_composed_f.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Wide soft V cone, bright apex at bottom widening upward; flip/scale for tornado funnel silhouette (water/wind when tinted). Unshipped.
+      - [1]
+        assetId: new_materials/beam/lightrays_8.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Smooth bright spotlight cone from top apex, no striations, curved bottom edge; funnel body or god-ray. Unshipped.
+      - [2]
+        assetId: new_materials/beam/lightrays_7.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Striated wide cone (visible ray bands) from top apex; spinning tornado texture when UV-scrolled/rotated. Unshipped.
+      - [3]
+        assetId: particle-pack/png-black-background/twirl_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Top-down multi-arm spiral vortex, bright outer arm fading inward; tornado top / whirlpool. SHIPPED.
+      - [4]
+        assetId: new_materials/fan/turbine_4.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 14-blade shaded turbine disc with bright hub; rotate for spinning vortex cap / wind spin. Unshipped.
+      - [5]
+        assetId: new_materials/smoke/smoke_4.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Foamy bubbly ring-shaped cloud with open center; dust ring at tornado base / water spray ring. Unshipped.
+  - [7]
+    family: water-caustics-noise
+    query: node tools/vfx/semantic-query.cjs --usage noise   |   node tools/vfx/semantic-query.cjs --usage distortion
+    candidates:
+      - [0]
+        assetId: light-masks-1.0/default/water_caustics_a.png
+        blend: additive (opaqueOther: tool cannot derive; content touches border)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bold white cell-network caustics (thick veins on black), tileable; water surface, frost cracks, shield hex-ish cells. Unshipped.
+      - [1]
+        assetId: light-masks-1.0/default/water_caustics_b.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thinner, denser caustic vein network; subtle water shimmer overlay. Unshipped.
+      - [2]
+        assetId: light-masks-1.0/default/water_caustics_d.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Gray low-contrast caustic network; good as a mask/noise multiplier. Unshipped.
+      - [3]
+        assetId: light-masks-1.0/default/foliage_canopy_a.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Scattered soft 3-petal bokeh blobs (canopy light pattern), tileable; noise for dappled glow / bubbles. Unshipped.
+  - [8]
+    family: lightning-bolt
+    query: node tools/vfx/semantic-query.cjs --usage spark --shape filament --tintable
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/spark_05.png
+        blend: additive (opaqueOther: bolt touches top/bottom border so --blend additive filter excludes it)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Single sharp vertical zigzag bolt spanning full height, offset left of center, a few short side branches. SHIPPED.
+      - [1]
+        assetId: particle-pack/png-black-background/spark_06.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Single centered vertical bolt, full height, dense micro-branches and glow; thunder strike core. SHIPPED.
+      - [2]
+        assetId: particle-pack/png-black-background/spark_07.png
+        blend: additive (opaqueOther: touches left/right border)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Horizontal thin bolt spanning full width with faint side filaments; chain-lightning connector when stretched. Unshipped.
+      - [3]
+        assetId: particle-pack/png-black-background/rotated/spark_06_rotated.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: spark_06 rotated 90deg: thick horizontal bolt full width with branching arcs above/below; lance / beam-bolt. Unshipped.
+      - [4]
+        assetId: particle-pack/png-black-background/rotated/spark_05_rotated.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: false
+        description: spark_05 rotated 90deg (horizontal zigzag bolt, offset). Unshipped.
+      - [5]
+        assetId: new_materials/streak/lines_3.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512 (tall, cov 21%)
+        lookedAt: true
+        description: Speckled crackling vertical streak tapering downward (sat 0.05 borderline, near-gray); electric spark trail. Unshipped.
+  - [9]
+    family: lightning-arc-cloud-chain
+    query: node tools/vfx/semantic-query.cjs --usage spark --shape filament --tintable
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/spark_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Diagonal main bolt (lower-left to upper-right) with many branching filaments inside a diffuse plasma haze cloud; chain/orb arcs. SHIPPED.
+      - [1]
+        assetId: particle-pack/png-black-background/spark_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dense branching arc web with two bright nodes and strong haze; electric orb body. Unshipped.
+      - [2]
+        assetId: particle-pack/png-black-background/spark_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Sparse, dim branching filaments with one short bright bolt; subtle residual static. Unshipped.
+      - [3]
+        assetId: particle-pack/png-black-background/spark_04.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Diffuse branching arc cloud, no dominant bolt (filename lies: it is an arc web, not a point spark); ambient electric field. Unshipped.
+  - [10]
+    family: plasma-energy-cloud-colored
+    query: node tools/vfx/semantic-query.cjs --element lightning
+    gap: Semantics label plasma/* as filament/lightning but the images are cellular/veiny noise clouds in many colors; no grayscale version, so not tintable. Use element by color: blue 2/10/14 (lightning/ice), green 6/13/15 (poison/nature), magenta 7/18/19 (dark), orange 1/4/5/16/20 (fire/lava), red 3/17.
+    candidates:
+      - [0]
+        assetId: new_materials/plasma/magic_particles_2.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Blue veiny energy cloud with bright branching cells; lightning orb / arcane cloud (pre-colored blue). Unshipped.
+      - [1]
+        assetId: new_materials/plasma/magic_particles_14.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Cyan cellular crack network cloud, even coverage; ice/lightning field. Unshipped.
+      - [2]
+        assetId: new_materials/plasma/magic_particles_10.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Deep blue turbulent plasma with white hot filaments; storm core. Unshipped.
+      - [3]
+        assetId: new_materials/plasma/magic_particles_5.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Orange cracked lava-crust cells (dark cracks, glowing cells); magma / earth-fire ground. Unshipped.
+      - [4]
+        assetId: new_materials/plasma/magic_particles_7.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Magenta blobby veined cloud; dark/curse energy. Unshipped.
+      - [5]
+        assetId: new_materials/plasma/magic_particles_15.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Green cellular crack cloud; poison/nature energy field. Unshipped.
+  - [11]
+    family: slash-arc-wind-crescent
+    query: node tools/vfx/semantic-query.cjs --usage trail --shape arc
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/slash_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thick soft bottom crescent (U-shaped arc, open at top), bright center fading at tips; wind blade / cleave arc. Unshipped.
+      - [1]
+        assetId: particle-pack/png-black-background/slash_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin sharp bottom crescent, same orientation as slash_02; quick slash line. Unshipped.
+      - [2]
+        assetId: particle-pack/png-black-background/slash_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Tall vertical crescent on the right side (C reversed), bright hard inner edge; sword-wave / forward slash. Unshipped.
+      - [3]
+        assetId: particle-pack/png-black-background/slash_04.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Flat shallow arc band across the top (frown shape), even brightness; horizontal sweep / cleave. Unshipped.
+      - [4]
+        assetId: particle-pack/png-black-background/twirl_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: C-shaped arc band (~270deg) with bright thick head at top-left tapering to a thin tail; rotating slash / swirl trail. SHIPPED.
+      - [5]
+        assetId: new_materials/mask-shape/dingbats-481.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard-edged solid crescent moon silhouette; crisp wind crescent projectile mask. Unshipped.
+  - [12]
+    family: thrust-lance-horizontal-streak
+    query: node tools/vfx/semantic-query.cjs --usage trail --shape streak --aspect tall   (rotate 90deg or use particle-pack rotated/ variants)
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/rotated/muzzle_02_rotated.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Horizontal comet: dense bright head at left, wispy tail with sparks trailing right; thrust / dash / meteor. Unshipped.
+      - [1]
+        assetId: particle-pack/png-black-background/rotated/trace_02_rotated.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: false
+        description: trace_02 rotated 90deg: thin sharp horizontal streak, bright center fading at both ends; lance shaft. Unshipped (vertical trace_02 is SHIPPED).
+      - [2]
+        assetId: particle-pack/png-black-background/rotated/trace_06_rotated.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: false
+        description: trace_06 rotated: wide smooth horizontal streak, soft edges; beam/lance glow. Unshipped.
+      - [3]
+        assetId: new_materials/streak/lines_2.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (tall, cov 32%)
+        lookedAt: true
+        description: Thick bright capsule bar with soft glow, vertical; rotate for a solid lance / laser core. Unshipped.
+      - [4]
+        assetId: new_materials/flare/flare_3.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Anamorphic horizontal streak with a tiny 4-ray center burst; piercing thrust flash / speed line. Unshipped.
+      - [5]
+        assetId: particle-pack/png-black-background/flare_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Horizontal anamorphic streak with tiny center burst and large soft glow disc; UNCLASSIFIED in asset-semantics (only asset without a record). Unshipped.
+  - [13]
+    family: claw-knife-scratch
+    query: node tools/vfx/semantic-query.cjs --shape streak --usage impact
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/scratch_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Three parallel diagonal slash lines (lower-left to upper-right), tapered ends; claw / triple knife. Unshipped.
+      - [1]
+        assetId: new_materials/mask-shape/dingbats-283.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Small hard left-pointing triangle; knife tip / arrowhead mask. Unshipped.
+      - [2]
+        assetId: new_materials/mask-shape/dingbats-389.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Arrow-cursor pointer silhouette (long tapered dart); dagger/knife projectile mask. Unshipped.
+      - [3]
+        assetId: new_materials/mask-shape/dingbats-278.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bold hard X cross; double-slash impact mark. Unshipped.
+      - [4]
+        assetId: new_materials/mask-shape/dingbats-277.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Short thick horizontal dash; tiny cut mark. Unshipped.
+  - [14]
+    family: wind-burst-spin
+    query: node tools/vfx/semantic-query.cjs --shape fan   |   node tools/vfx/semantic-query.cjs --tag swirl
+    candidates:
+      - [0]
+        assetId: new_materials/fan/turbine_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 7 curved shaded blades around a bright hub (pinwheel); rotate for wind spin / tornado cap. Unshipped.
+      - [1]
+        assetId: new_materials/fan/turbine_6.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 16 thin needle rays with bright hub; radial gust burst. Unshipped.
+      - [2]
+        assetId: new_materials/fan/turbine_9.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 3 broad curved blades (propeller) with hub; slow spinning wind sigil. Unshipped.
+      - [3]
+        assetId: new_materials/orb/spiky_4.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft 3-lobe swirl (rotating comma shapes) in a faint disc; wind swirl core. Unshipped.
+      - [4]
+        assetId: new_materials/arcane-ring/dingbats-78.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard tribal 8-blade swirl with curled feather-like blades; wind emblem / spinning burst. Unshipped.
+      - [5]
+        assetId: new_materials/arcane-ring/spiral_26.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 16-blade sawtooth vortex ring (curved teeth), hollow center; cyclone ring. Unshipped.
+      - [6]
+        assetId: light-masks-1.0/default/fan_a.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard 3-blade fan silhouette with hub hole (fan_b 4-blade, fan_c X 4-blade, fan_d 5-tooth). Unshipped.
+  - [15]
+    family: rock-earth-debris
+    query: node tools/vfx/semantic-query.cjs --usage particle   |   node tools/vfx/semantic-query.cjs --shape disc --package new_materials
+    gap: No rock chunk sprite. Approximate with dirt_* debris fields, textured spheres (sphere_22/23/29) as boulders, splat-pack blobs as rock silhouettes, magic_particles_5 as lava crust.
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/dirt_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Sparse scattered irregular chunks and specks (debris cloud, off-center); tint brown, alpha-blend for dust/rubble. Unshipped.
+      - [1]
+        assetId: particle-pack/png-black-background/dirt_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dense debris field with larger chunks and fine spray; heavy rubble burst. Unshipped.
+      - [2]
+        assetId: new_materials/orb/sphere_22.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Crinkled chrome/foil-textured shaded sphere; reads as a craggy rock/meteor ball when tinted brown. Unshipped.
+      - [3]
+        assetId: new_materials/orb/sphere_29.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Cracked dark sphere with bright fissures (planet-like); rock boulder / petrified orb. Unshipped.
+      - [4]
+        assetId: splat-pack/png/double-512px/splat12.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Rounded 6-lobe blob silhouette (cartoon splat); as a hard mask it doubles as a rock/mud lump. Unshipped.
+      - [5]
+        assetId: new_materials/plasma/magic_particles_20.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Gold-orange cracked lava cells with dark seams; magma ground / earth-fire. Unshipped.
+  - [16]
+    family: mire-gravity-field-decal
+    query: node tools/vfx/semantic-query.cjs --usage scorch --shape splat   |   node tools/vfx/semantic-query.cjs --usage impact --shape ring
+    candidates:
+      - [0]
+        assetId: splat-pack/png/double-512px/splat05.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Large rounded blob with 6 bulges and a droplet, centered; mud/mire pool decal. SHIPPED.
+      - [1]
+        assetId: splat-pack/png/double-512px/splat25.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Compact rounded 4-lobe puddle blob; small mire patch. Unshipped.
+      - [2]
+        assetId: new_materials/orb/rounded_18.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Disc filled with a radial (angular) sweep gradient from a bright notch to dark (clock/cooldown sweep); gravity swirl or charge-up fill. Unshipped (rounded_19/21 similar).
+      - [3]
+        assetId: new_materials/impact-ring/impact_12.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft ring with 4 diagonal spikes pointing inward; gravity pull sigil. Unshipped.
+      - [4]
+        assetId: new_materials/impact-ring/impact_19.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft ring with 6 long spikes converging on center; implosion / gravity well. Unshipped.
+      - [5]
+        assetId: new_materials/arcane-ring/spiral_28.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Ring of curved claw/flame teeth spiralling inward, hollow center; gravity vortex decal. Unshipped.
+  - [17]
+    family: petrify-dark-orb
+    query: node tools/vfx/semantic-query.cjs --shape disc --usage core --tintable --package new_materials
+    candidates:
+      - [0]
+        assetId: new_materials/orb/sphere_35.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Very dark matte sphere with faint rim light; stone/void orb (needs alpha blend, nearly black). Unshipped.
+      - [1]
+        assetId: new_materials/orb/sphere_47.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark glossy sphere with one small highlight; obsidian orb. Unshipped.
+      - [2]
+        assetId: new_materials/orb/sphere_36.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark sphere with mottled bright edge and speckled texture; cursed stone. Unshipped.
+      - [3]
+        assetId: new_materials/orb/sphere_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Plain matte gray shaded sphere, top-left light (sphere_1-20 are matte variants); generic 3D ball for boulders/orbs. Unshipped.
+      - [4]
+        assetId: new_materials/arcane-ring/dingbats-472.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Solid disc with an off-center hole (eclipse look); dark moon / petrify sigil. Unshipped.
+  - [18]
+    family: poison-mist
+    query: node tools/vfx/semantic-query.cjs --element poison   |   node tools/vfx/semantic-query.cjs --usage smoke --tintable --blend alphaBlend
+    candidates:
+      - [0]
+        assetId: smoke-particles/png/fart/fart04.png
+        blend: alphaBlend
+        tintable: false
+        size: 586x629
+        lookedAt: true
+        description: Pre-colored yellow-green soft wispy gas cloud with brighter center (sat 0.38); ready poison puff. needsReview. Unshipped.
+      - [1]
+        assetId: smoke-particles/png/fart/fart00.png
+        blend: alphaBlend
+        tintable: false
+        size: 543x547
+        lookedAt: true
+        description: Same family, rounder green cloud; 9 variants fart00-08 for random picks. Unshipped.
+      - [2]
+        assetId: new_materials/smoke/smoke2_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark wispy low-alpha noisy smoke (smoke2_1-30 all dim/transparent); tint green for creeping mist, purple for curse fog. Unshipped.
+      - [3]
+        assetId: new_materials/smoke/smoke2_16.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark wispy cloud with a brighter dense core; toxic cloud center. Unshipped.
+      - [4]
+        assetId: smoke-particles/png/white-puff/whitepuff05.png
+        blend: alphaBlend
+        tintable: true
+        size: 337x378
+        lookedAt: true
+        description: Bright solid white puff with soft ragged edge; tint for any colored gas. Unshipped.
+      - [5]
+        assetId: particle-pack/png-transparent/smoke_04.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: false
+        description: Transparent carrier of kenney smoke_04 (dense puffy cluster). SHIPPED (black-bg variant viewed).
+  - [19]
+    family: poison-bubble
+    query: node tools/vfx/semantic-query.cjs --shape disc --usage core --tintable --package new_materials
+    candidates:
+      - [0]
+        assetId: new_materials/orb/sphere_28.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Glass bubble: bright thin rim, large curved specular highlight, transparent-looking interior. Unshipped.
+      - [1]
+        assetId: new_materials/orb/sphere_38.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Clear soap-bubble look with thin bright rim and two small highlights. Unshipped.
+      - [2]
+        assetId: new_materials/orb/sphere_41.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark sphere with crisp bright rim and top-left highlight blob; bubble / shield node. Unshipped (sphere_42 similar).
+      - [3]
+        assetId: new_materials/orb/sphere_30.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Frosted/wavy glass sphere with rim; viscous bubble. Unshipped.
+      - [4]
+        assetId: new_materials/orb/rounded_7.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin hard-edged circle outline; minimal bubble ring. Unshipped.
+      - [5]
+        assetId: new_materials/impact-ring/impact_8.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (cov 25%)
+        lookedAt: true
+        description: Small thin bright ring, hard edge; bubble outline / mini telegraph. Unshipped.
+  - [20]
+    family: holy-pillar-beam
+    query: node tools/vfx/semantic-query.cjs --usage beam --shape cone   |   node tools/vfx/semantic-query.cjs --usage beam --shape streak
+    candidates:
+      - [0]
+        assetId: light-masks-1.0/default/cone_composed_c_noise.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Wide soft V beam (apex bottom) with cloudy noise texture; holy pillar with volumetric feel. SHIPPED.
+      - [1]
+        assetId: light-masks-1.0/default/streaks_composed_b.png
+        blend: additive (opaqueOther: touches bottom border)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bright vertical beam with soft side falloff, brightest at bottom; clean light pillar. Unshipped.
+      - [2]
+        assetId: light-masks-1.0/default/streaks_composed_f.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Narrow very bright vertical beam with faint outer side rays; laser / smite core. Unshipped.
+      - [3]
+        assetId: light-masks-1.0/default/streaks_composed_h.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Central beam with angled side rays fanning upward (god-ray bundle). Unshipped.
+      - [4]
+        assetId: light-masks-1.0/default/cone_b.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Medium-width vertical gradient bar, bright bottom to black top; pillar core or beam shaft. Unshipped.
+      - [5]
+        assetId: new_materials/beam/lightrays_6.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512 (tall, cov 18%)
+        lookedAt: true
+        description: Needle-thin faint cone from top apex (sat 0.09, near-gray); thin descending smite ray. Unshipped.
+  - [21]
+    family: holy-light-burst-halo
+    query: node tools/vfx/semantic-query.cjs --usage spark --shape star --blend additive   |   node tools/vfx/semantic-query.cjs --element light
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/star_09.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 6-point sharp star over a soft glow disc with a faint ring; holy burst centerpiece. Unshipped.
+      - [1]
+        assetId: particle-pack/png-black-background/star_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft 4-point cross flare with a thin halo ring around it. SHIPPED.
+      - [2]
+        assetId: particle-pack/png-black-background/star_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Small 4-point flare inside a large soft halo ring; halo/aureole. Unshipped.
+      - [3]
+        assetId: new_materials/flare/flare_25.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin sharp halo ring with a 6-ray star at center; angelic halo. Unshipped.
+      - [4]
+        assetId: new_materials/flare/flare_28.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bright core + halo ring + many long soft rays (large lens burst); divine flash. Unshipped.
+      - [5]
+        assetId: particle-pack/png-black-background/magic_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft ring with 4 sharp diamond spikes at cardinal points (compass/holy targeting). SHIPPED.
+      - [6]
+        assetId: smoke-particles/png/flash/flash04.png
+        blend: alphaBlend
+        tintable: false
+        size: 483x502
+        lookedAt: true
+        description: Pre-colored yellow-white glowing cloud puff (sat 0.38); holy/light explosion cloud. needsReview. Unshipped.
+      - [7]
+        assetId: new_materials/mask-shape/dingbats-482.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Outlined Latin cross silhouette; holy glyph. Unshipped (dingbats-4 = 4-point star inside circle).
+  - [22]
+    family: dark-vortex
+    query: node tools/vfx/semantic-query.cjs --tag swirl   |   node tools/vfx/semantic-query.cjs --shape arc --usage core
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/twirl_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Multi-arm spiral vortex, bright outer arm, dark center; tint violet/black for void swirl. SHIPPED.
+      - [1]
+        assetId: particle-pack/png-black-background/twirl_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Denser spiral vortex with more arms and brighter core streaks. Unshipped.
+      - [2]
+        assetId: new_materials/orb/energyball_9.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Pre-colored magenta spiral-galaxy orb with white core; curse orb. Unshipped (energyball_10 = purple).
+      - [3]
+        assetId: new_materials/arcane-ring/spiral_5.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Wispy thin-line tendril spiral (many curling filaments) hollow center; shadow vortex outline. Unshipped.
+      - [4]
+        assetId: new_materials/arcane-ring/spiral_25.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Small 12-tooth sawblade swirl; compact dark whirl. Unshipped (spiral_29 = 4-claw swirl).
+      - [5]
+        assetId: new_materials/plasma/magic_particles_18.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Hot pink/magenta filament cloud on near-black (sat 0.98); void energy wisps. Unshipped.
+      - [6]
+        assetId: new_materials/mask-shape/dingbats-378.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dotted 6-arm spiral of shrinking dots; particle-vortex sigil. Unshipped.
+  - [23]
+    family: arcane-circle-curse-rune
+    query: node tools/vfx/semantic-query.cjs --usage mask --shape ring --package new_materials   |   node tools/vfx/semantic-query.cjs --usage core --shape irregular --tag layered
+    gap: No letter-like rune glyphs; only geometric emblems. Compose a magic circle from a concentric ring (spiral_21/dingbats-384) + an emblem (dingbats-22/25/100) + a spirowire lattice.
+    candidates:
+      - [0]
+        assetId: new_materials/arcane-ring/dingbats-2.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Circular maze/labyrinth ring of broken concentric arcs; classic rune-circle base. Unshipped (dingbats-28 denser maze).
+      - [1]
+        assetId: new_materials/arcane-ring/dingbats-22.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Constellation-style network: circles of varying size linked by thin lines; summoning diagram. Unshipped.
+      - [2]
+        assetId: new_materials/arcane-ring/dingbats-25.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thick ring with a central disc and 4 orbiting dots on an inner ring; planetary sigil. Unshipped (dingbats-26 ring of 10 dots, -32 ball-bearing ring).
+      - [3]
+        assetId: new_materials/arcane-ring/dingbats-100.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Segmented crosshair emblem: ring with 4 tick spokes and inner broken ring; tech/arcane targeting seal. Unshipped (dingbats-102 spiked variant).
+      - [4]
+        assetId: new_materials/arcane-ring/spiral_6.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Nested zigzag 12-point star outlines forming a spiky ring; hex/curse seal. Unshipped (spiral_12-14 spiky ring variants).
+      - [5]
+        assetId: new_materials/arcane-ring/spiral_35.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Sci-fi segmented ring: thick ring, tick marks, partial arcs (spiral_31-40 family); tech-magic circle. Unshipped.
+      - [6]
+        assetId: new_materials/spiro/spirowires_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Grayscale spirograph of nested hexagonal loops (thin wires), hollow center; rotating lattice layer. Unshipped (spirowires_12 zigzag ring, _15 8-pt star loops, _17 8-pt star).
+      - [7]
+        assetId: particle-pack/png-black-background/magic_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft-glow pentagon of 5 small circles connected by lines inside a faint ring; pentagram-ish node circle. Unshipped (magic_02 = octagon of 8 nodes).
+      - [8]
+        assetId: new_materials/mask-shape/dingbats-115.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Biohazard trefoil symbol; plague/curse glyph. Unshipped (dingbats-139 filled biohazard, -147/-148 radiation trefoils).
+  - [24]
+    family: drain-tendril-stream
+    query: node tools/vfx/semantic-query.cjs --usage ember   |   node tools/vfx/semantic-query.cjs --usage trail --shape streak --aspect tall
+    gap: No drip / liquid tendril sprite. Jagged vertical streaks (trace_03-05) and speckled lines (lines_3/4) scrolled along a path are the closest.
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/trace_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Jagged wavy vertical streak with irregular width (like a thin flame/energy ribbon); drain stream segment. Unshipped.
+      - [1]
+        assetId: particle-pack/png-black-background/trace_04.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Wavy vertical streak with a brighter knotted middle; life-drain ribbon. Unshipped.
+      - [2]
+        assetId: particle-pack/png-black-background/trace_05.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Short bright jagged vertical filament with soft glow; soul wisp. Unshipped.
+      - [3]
+        assetId: new_materials/streak/lines_4.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (tall, cov 21%)
+        lookedAt: true
+        description: Speckled grainy vertical streak, denser at top, dissolving downward; particle drain trail. Unshipped.
+      - [4]
+        assetId: new_materials/arcane-ring/spiral_2.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Three thin curling tendrils spiralling from a center (triskelion of filaments); tentacle drain sigil. Unshipped.
+  - [25]
+    family: impact-hit-flash
+    query: node tools/vfx/semantic-query.cjs --shape star --usage impact   |   node tools/vfx/semantic-query.cjs --shape irregular --usage impact
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/scorch_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Radial spiky burst with a noisy granular core (filename lies: not a ground scorch); generic hit flash. Unshipped (scorch_01 sparser, scorch_03 denser).
+      - [1]
+        assetId: particle-pack/png-black-background/fire_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Speckled burst cloud with bright irregular center and debris specks; impact puff. Unshipped.
+      - [2]
+        assetId: new_materials/flare/flare_16.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Large soft many-ray star burst, solid bright center (flare_15/18/24 siblings); big hit flash. Unshipped.
+      - [3]
+        assetId: new_materials/flare/flare_30.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Solid bright core disc with medium soft rays; punchy critical flash. Unshipped.
+      - [4]
+        assetId: new_materials/muzzle-flash/muzzle_flash_11.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Radial spike fan erupting upward from a bright point at bottom (sat 0.09, near-gray); ground hit spray, anchor bottom. Unshipped.
+      - [5]
+        assetId: new_materials/burst/color_burst_1.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Pre-colored white/gray spiky radial burst ring with hollow dark center (all color_burst_1-30 share this shape; 28 yellow, 25/26 cyan, 3 dark red, 19 pink, 21-24 gold). Unshipped.
+      - [6]
+        assetId: particle-pack/png-black-background/star_05.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 10-point blurry soft star (no sharp rays); soft impact glow. Unshipped.
+  - [26]
+    family: hit-ring-shockwave
+    query: node tools/vfx/semantic-query.cjs --usage ring --blend additive --tintable   |   node tools/vfx/semantic-query.cjs --usage impact --shape ring
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/circle_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin bright ring with hard inner edge and soft outer glow; crisp expanding shockwave. Unshipped.
+      - [1]
+        assetId: particle-pack/png-black-background/circle_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thick soft gray ring (donut), even falloff both sides; soft hit ring. Unshipped (circle_03 = double ring, circle_04 = thin soft).
+      - [2]
+        assetId: light-masks-1.0/default/ring_a.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Clean thin soft ring, medium gray; ground ring / telegraph. SHIPPED (ring_b double thin, ring_c bright).
+      - [3]
+        assetId: new_materials/impact-ring/impact_2.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin bright outer edge with soft inward gradient (lens-like ring); shockwave front. Unshipped.
+      - [4]
+        assetId: new_materials/impact-ring/impact_5.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thick bright donut with hard outer edge and hollow center; heavy stomp ring. Unshipped (impact_7 = bright disc with ripple arcs).
+      - [5]
+        assetId: new_materials/impact-ring/impact_20.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Flat mid-gray double concentric ring, hard edges; UI-like range ring. Unshipped.
+      - [6]
+        assetId: new_materials/orb/rounded_14.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft thick donut with serrated inner edge; energetic shock ring. Unshipped (rounded_13 smaller, rounded_17 plain soft ring).
+  - [27]
+    family: spark
+    query: node tools/vfx/semantic-query.cjs --usage spark --shape star --blend additive
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/star_08.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 6 thin sharp crossing lines + tiny center ring; twinkle sparkle. SHIPPED.
+      - [1]
+        assetId: particle-pack/png-black-background/star_06.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bright 4-point cross flare with long soft vertical arm; classic spark. Unshipped (star_04 thinner, star_01 softer, star_07 6-point).
+      - [2]
+        assetId: new_materials/flare/flare_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (cov 50%)
+        lookedAt: true
+        description: Tiny bright core with 3 short rays (trefoil glint); micro spark. Unshipped.
+      - [3]
+        assetId: new_materials/flare/flare_5.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin 4-ray star with long vertical rays and small core; pin-spark. Unshipped (flare_11 tiny 5-ray, flare_2 6-ray lens flare).
+      - [4]
+        assetId: new_materials/orb/spiky_2.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (cov 49%)
+        lookedAt: true
+        description: Small soft 12-ray radial glint; twinkle particle. Unshipped (spiky_14 8 thin rays, spiky_10 8-ray star).
+      - [5]
+        assetId: light-masks-1.0/default/shape_g.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft 4-point star with bright hot core (shape_e/f softer); glow spark. Unshipped.
+  - [28]
+    family: scorch-decal
+    query: node tools/vfx/semantic-query.cjs --usage scorch --shape splat
+    gap: No burnt/charred ground texture. Approximate: splat mask tinted near-black at low alpha + smoke2_* dark noise overlay + circle_d soft dark disc; particle-pack scorch_* are NOT scorch marks (they are radial flashes).
+    candidates:
+      - [0]
+        assetId: splat-pack/png/double-512px/splat05.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Rounded 6-lobe blob silhouette; tint dark for scorch patch. SHIPPED.
+      - [1]
+        assetId: splat-pack/png/double-512px/splat20.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Spiky splat with long thin tendrils radiating; explosive scorch. Unshipped.
+      - [2]
+        assetId: new_materials/splat/dingbats-439.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Compact round splat with fine spiky edge, centered; burn spot. Unshipped.
+      - [3]
+        assetId: new_materials/smoke/smoke2_16.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark low-alpha noisy cloud; overlay for charred/sooty texture. Unshipped.
+      - [4]
+        assetId: light-masks-1.0/default/circle_d.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft disc with darker outer band and small bright center; use inverted/transparent carrier as a dark ground stain. Unshipped.
+      - [5]
+        assetId: light-masks-1.0/default/shape_c.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft irregular lumpy blob glow (shape_a-d family); soft stain / glow patch. Unshipped.
+  - [29]
+    family: blood-liquid-splat
+    query: node tools/vfx/semantic-query.cjs --usage scorch --shape splat --package new_materials
+    gap: Only splat silhouettes; no drip/run or pooled-liquid highlight. Combine a splat mask with sphere_38 style highlights for wet look.
+    candidates:
+      - [0]
+        assetId: new_materials/splat/dingbats-392.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Diagonal spray of drops from a blob at lower-left toward upper-right; directional blood spatter. Unshipped.
+      - [1]
+        assetId: new_materials/splat/dingbats-396.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Heavy splat at left edge with fine spray and droplets to the right; wall/edge splatter. Unshipped.
+      - [2]
+        assetId: new_materials/splat/dingbats-425.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Central splat with thin radiating streaks and satellite drops; impact spatter. Unshipped (dingbats-441 heavier).
+      - [3]
+        assetId: new_materials/splat/dingbats-422.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Fine mist spray of many tiny droplets with a small core; blood mist. Unshipped.
+      - [4]
+        assetId: new_materials/splat/dingbats-430.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Chain of connected round blobs with spiky rims; dripping blob cluster. Unshipped.
+      - [5]
+        assetId: splat-pack/png/double-512px/splat28.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Cartoon splat with long thin drips radiating; stylized splat. Unshipped (splat29/19 similar).
+  - [30]
+    family: rune-circle-ground-decal
+    query: node tools/vfx/semantic-query.cjs --usage mask --shape ring --package new_materials
+    candidates:
+      - [0]
+        assetId: new_materials/arcane-ring/spiral_21.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Seven evenly spaced concentric hard circles with center dot; target/rune base. Unshipped.
+      - [1]
+        assetId: new_materials/arcane-ring/spiral_17.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Concentric wavy (rounded-polygon) rings, thick; organic rune base. Unshipped (spiral_22 angular polygon rings).
+      - [2]
+        assetId: new_materials/arcane-ring/dingbats-384.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bold double ring with thick inner disc ring; sturdy circle frame. Unshipped (dingbats-383 single bold ring).
+      - [3]
+        assetId: new_materials/arcane-ring/dingbats-106.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin 3-ring target with crosshair ticks and center dot; precise ground reticle. Unshipped (dingbats-24 orbits with 2 dots).
+      - [4]
+        assetId: new_materials/hud-reticle/target_21.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Large thin circle with 4 gaps, dashed cross ticks and tiny center reticle; AoE marker. Unshipped (target_23 diagonal ticks, target_31 double arcs).
+      - [5]
+        assetId: new_materials/arcane-ring/spiral_37.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dense radial tick ring (sun-dial) with inner rings; rotating rune band. Unshipped.
+  - [31]
+    family: telegraph-ring-reticle
+    query: node tools/vfx/semantic-query.cjs --usage mask --shape ring --package new_materials   |   node tools/vfx/semantic-query.cjs --usage ring --blend additive --tintable
+    candidates:
+      - [0]
+        assetId: new_materials/hud-reticle/target_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin 12-gon outline ring (near-circle), hard edge; minimal target ring. Unshipped (target_9 thick hexagon).
+      - [1]
+        assetId: new_materials/hud-reticle/target_11.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dashed thin circle (12 dashes); rotating telegraph ring. Unshipped (target_12-15 dash density variants).
+      - [2]
+        assetId: new_materials/hud-reticle/target_2.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dense radial tick ring (~60 bars); charging/timer ring. Unshipped (target_4 finer ticks).
+      - [3]
+        assetId: new_materials/hud-reticle/target_3.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Six chunky trapezoid segments in a ring; segmented lock-on ring. Unshipped (target_17 ten segments, target_16 five).
+      - [4]
+        assetId: new_materials/hud-reticle/target_7.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Four square corner brackets; lock-on box. Unshipped (target_10 six arrow brackets, target_6/18-20 triangle bracket sets).
+      - [5]
+        assetId: new_materials/orb/rounded_6.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft ring broken into 4 arc segments with gaps; rotating telegraph. Unshipped (rounded_22-30 small 4-6 segment rings).
+      - [6]
+        assetId: new_materials/impact-ring/impact_6.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (cov 38%)
+        lookedAt: true
+        description: Thick ring with one gap and a notch (progress arc ~330deg); cast-time ring. Unshipped.
+      - [7]
+        assetId: particle-pack/png-black-background/magic_04.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin 4-point star spikes crossing a soft small ring (crosshair star). Unshipped (magic_05 = soft 4-point diamond glow).
+  - [32]
+    family: glow-disc
+    query: node tools/vfx/semantic-query.cjs --usage glow --shape disc --blend additive
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/light_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Large soft-edged disc with faint concentric ring texture, bright center; big ambient glow. SHIPPED (light_01 has stronger rings, light_02 mid).
+      - [1]
+        assetId: light-masks-1.0/default/circle_a.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft gray disc with a small hot white center dot; point light. SHIPPED (transparent/circle_a.png also SHIPPED for alpha).
+      - [2]
+        assetId: light-masks-1.0/default/circle_b.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Brighter soft disc with hot center; strong glow. SHIPPED.
+      - [3]
+        assetId: particle-pack/png-black-background/circle_05.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Small clean soft radial disc (gaussian blob), no ring texture; the default particle sprite. Unshipped.
+      - [4]
+        assetId: light-masks-1.0/default/circle_a_streaks.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft disc with radial sector streaks (spinning light wedges); rotating glow. Unshipped (circle_a_noise SHIPPED: disc with cloudy noise).
+      - [5]
+        assetId: new_materials/flare/flare_12.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (cov 43%)
+        lookedAt: true
+        description: Soft round glow with faint short rays; warm point glow. Unshipped.
+      - [6]
+        assetId: light-masks-1.0/default/shape_a.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft irregular lumpy blob glow (organic, not perfectly round); shape_a-d family. Unshipped.
+  - [33]
+    family: smoke
+    query: node tools/vfx/semantic-query.cjs --usage smoke --tintable --blend alphaBlend   |   node tools/vfx/semantic-query.cjs --usage smoke --tintable
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/smoke_04.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dense puffy cumulus cluster, medium detail; workhorse smoke puff. Transparent carrier particle-pack/png-transparent/smoke_04.png is SHIPPED (smoke_05-08 similar puffs, smoke_09/10 ring-shaped, smoke_01/02 noisy diffuse, smoke_03 small cluster).
+      - [1]
+        assetId: new_materials/smoke/smoke_13.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bright detailed cumulus cloud, solid mass (high confidence record); large explosion smoke. Unshipped.
+      - [2]
+        assetId: new_materials/smoke/smoke_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Bright cumulus with a dark hole in the center (many smoke_1-30 are donut/ring clouds: 3,4,19,20,23,25-28,30); mushroom-cloud ring. Unshipped.
+      - [3]
+        assetId: new_materials/smoke/smoke3_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft bubbly cauliflower cloud, medium contrast (smoke3_6-8 foamy bubble texture, smoke3_11-17 very soft blur). Unshipped.
+      - [4]
+        assetId: new_materials/smoke/smoke2_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark wispy low-alpha smoke (whole smoke2 set is dim); thin haze / fading trail. Unshipped.
+      - [5]
+        assetId: smoke-particles/png/black-smoke/blacksmoke00.png
+        blend: alphaBlend
+        tintable: true
+        size: 362x336
+        lookedAt: true
+        description: Dark gray dense soft smoke puff (25 variants, all similar, non-512 sizes ~340-400px); dark smoke. Unshipped.
+      - [6]
+        assetId: smoke-particles/png/white-puff/whitepuff05.png
+        blend: alphaBlend
+        tintable: true
+        size: 337x378
+        lookedAt: true
+        description: Solid bright white puff with soft ragged edge (25 variants); steam / dust puff. Unshipped.
+  - [34]
+    family: meteor-starfall
+    query: node tools/vfx/semantic-query.cjs --usage trail --shape streak --aspect tall   |   node tools/vfx/semantic-query.cjs --usage core --element fire --aspect tall
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/rotated/muzzle_02_rotated.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Comet: bright dense head at left, wispy sparking tail to the right; rotate to fall angle. Unshipped.
+      - [1]
+        assetId: particle-pack/png-black-background/muzzle_03.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Vertical plume with bright rounded base and streaky tail up; inverted = falling meteor with tail. Unshipped (muzzle_04/05 variants).
+      - [2]
+        assetId: new_materials/orb/sphere_23.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark crinkled-texture sphere with bright rim; meteor rock head. Unshipped (sphere_22 brighter chrome).
+      - [3]
+        assetId: new_materials/fire/fire_36.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512 (tall, cov 42%)
+        lookedAt: true
+        description: Pre-colored narrow tall flame column; burning meteor tail when rotated. Unshipped.
+      - [4]
+        assetId: new_materials/flare/star_3.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Fat solid 5-point star with bright radial-gradient center; starfall star body. Unshipped (star_1-6 fat, star_7-10 thin).
+      - [5]
+        assetId: particle-pack/png-black-background/trace_06.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Wide smooth vertical streak, bright center fading both ends; falling light trail. Unshipped (trace_07 narrower smooth).
+  - [35]
+    family: shield-barrier-shell
+    query: node tools/vfx/semantic-query.cjs --shape disc --usage core --tintable --package new_materials   |   node tools/vfx/semantic-query.cjs --shape polygon
+    gap: No hex-cell shield texture. Use a glass sphere (sphere_28/38) for the dome, water_caustics_b as a cell pattern overlay, and a hard polygon ring (target_1/9) for a rim.
+    candidates:
+      - [0]
+        assetId: new_materials/orb/sphere_28.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Glass bubble with bright rim and big specular; translucent shield dome. Unshipped.
+      - [1]
+        assetId: new_materials/orb/sphere_42.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Dark sphere with crisp bright rim and two highlights; energy shell (alpha low for see-through). Unshipped.
+      - [2]
+        assetId: new_materials/hud-reticle/target_9.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thick hard hexagon outline; hex-shield rim. Unshipped (target_1 = thin 12-gon).
+      - [3]
+        assetId: light-masks-1.0/default/window_h.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Solid hard-edged white disc (window_h_blur soft, window_h_noise cloudy); flat shield disc mask. Unshipped.
+      - [4]
+        assetId: new_materials/hud-reticle/target_31.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Two concentric arc rings broken into quadrants with tick crosshair; rotating barrier ring. Unshipped.
+      - [5]
+        assetId: new_materials/mask-shape/squared_6.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft gray square frame with gradient inner border (squared_1-10 soft square gradients/frames); square barrier / wall panel. Unshipped.
+  - [36]
+    family: buff-aura-riser-sparkle
+    query: node tools/vfx/semantic-query.cjs --usage ember   |   node tools/vfx/semantic-query.cjs --usage spark --shape star --blend additive
+    candidates:
+      - [0]
+        assetId: particle-pack/png-black-background/trace_02.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin sharp vertical streak, bright middle fading to both ends; rising ember / aura riser. SHIPPED (trace_01 nearly identical).
+      - [1]
+        assetId: new_materials/streak/lines_9.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (tall, cov 21%)
+        lookedAt: true
+        description: Bright soft vertical capsule streak; rising light mote. Unshipped (lines_5 softer, lines_10 thinner).
+      - [2]
+        assetId: particle-pack/png-black-background/star_04.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Thin 4-point sparkle, small; twinkling aura particle. Unshipped.
+      - [3]
+        assetId: new_materials/mask-shape/dingbats-489.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard 4-point sparkle diamond; crisp buff glint. Unshipped.
+      - [4]
+        assetId: particle-pack/png-black-background/symbol_01.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft-shaded heart silhouette; heal/regen riser. Unshipped (symbol_02 = shaded 5-point star; dingbats-490 hard heart).
+      - [5]
+        assetId: light-masks-1.0/default/shape_e.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft blurry 4-point star glow; gentle aura sparkle. Unshipped.
+      - [6]
+        assetId: new_materials/mask-shape/dingbats-280.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Small hard upward triangle; attack-up / stat arrow riser. Unshipped (dingbats-281 down triangle, -282 up+down).
+  - [37]
+    family: beam-generic
+    query: node tools/vfx/semantic-query.cjs --usage beam --shape streak   |   node tools/vfx/semantic-query.cjs --usage beam --shape cone
+    candidates:
+      - [0]
+        assetId: new_materials/streak/lines_2.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (tall, cov 32%)
+        lookedAt: true
+        description: Thick bright capsule with soft glow; solid laser/beam core segment (stretch along axis). Unshipped.
+      - [1]
+        assetId: light-masks-1.0/default/streaks_composed_d.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Wide bright vertical beam, soft edges, brightest bottom; broad beam. Unshipped.
+      - [2]
+        assetId: light-masks-1.0/default/cone_b.png
+        blend: additive (opaqueOther)
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Constant-width gradient bar (bright bottom to black top); beam shaft with falloff. Unshipped (cone_a narrower, cone_c/d trapezoid, cone_e triangle).
+      - [3]
+        assetId: new_materials/beam/lightrays_9.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512 (tall, cov 39%)
+        lookedAt: true
+        description: Thin striated cone from top apex (sat 0.07); narrow spotlight / sniper beam. Unshipped.
+      - [4]
+        assetId: particle-pack/png-black-background/trace_07.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Smooth medium-width vertical streak with even glow; beam glow layer. Unshipped.
+      - [5]
+        assetId: new_materials/streak/lines_7.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512 (tall)
+        lookedAt: true
+        description: Hollow soft oval outline (elongated ring); beam sheath / energy tube. Unshipped.
+  - [38]
+    family: leaf-nature
+    query: node tools/vfx/semantic-query.cjs --usage noise   |   node tools/vfx/semantic-query.cjs --usage mask --shape irregular --package new_materials
+    gap: No single soft leaf particle. Use dingbats-493 maple leaf as the leaf sprite; foliage_canopy_c/d are tileable vine/fern patterns, not single leaves.
+    candidates:
+      - [0]
+        assetId: new_materials/mask-shape/dingbats-493.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Hard maple-leaf silhouette; leaf particle. Unshipped.
+      - [1]
+        assetId: new_materials/mask-shape/dingbats-491.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Four-leaf clover silhouette with stem; luck/nature glyph. Unshipped (dingbats-478 clover of 4 hearts).
+      - [2]
+        assetId: new_materials/mask-shape/dingbats-492.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Six-petal flower silhouette; bloom burst. Unshipped (dingbats-465 outlined flower, -470 8-petal).
+      - [3]
+        assetId: light-masks-1.0/default/foliage_canopy_d.png
+        blend: additive
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Curling leafy vine silhouettes on black, tileable; nature aura overlay. Unshipped (foliage_canopy_c = fern fronds).
+      - [4]
+        assetId: new_materials/orb/energyball_3.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Pre-colored green spiral-galaxy orb with white core; nature/poison orb. Unshipped (energyball_6 darker green).
+  - [39]
+    family: orb-colored-energyball
+    query: node tools/vfx/semantic-query.cjs --shape disc --usage core --package new_materials
+    candidates:
+      - [0]
+        assetId: new_materials/orb/energyball_1.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Blue spiral-galaxy orb, white-hot core, wispy arms; ice/water/arcane orb. Unshipped.
+      - [1]
+        assetId: new_materials/orb/energyball_7.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Cyan spiral orb; lightning/ice orb. Unshipped (energyball_2 cyan-white, _5 blue-teal).
+      - [2]
+        assetId: new_materials/orb/energyball_4.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Orange-gold spiral orb; fire orb. Unshipped (energyball_8 gold).
+      - [3]
+        assetId: new_materials/orb/energyball_3.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Green spiral orb; poison/nature orb. Unshipped (energyball_6).
+      - [4]
+        assetId: new_materials/orb/energyball_9.png
+        blend: alphaBlend
+        tintable: false
+        size: 512x512
+        lookedAt: true
+        description: Magenta spiral orb; dark/curse orb. Unshipped (energyball_10 purple).
+  - [40]
+    family: ray-fan-disc
+    query: node tools/vfx/semantic-query.cjs --shape disc --usage core --tintable --package new_materials
+    candidates:
+      - [0]
+        assetId: new_materials/orb/rounded_8.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Disc of 16 soft radial wedge rays (alternating light/dark), hard circular edge; spinning sun/burst disc. Unshipped (rounded_12 twelve rays, rounded_15 ten rays).
+      - [1]
+        assetId: new_materials/orb/rounded_9.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Disc split into 6 gradient pie sectors; rotating sector wheel. Unshipped.
+      - [2]
+        assetId: new_materials/orb/spiky_1.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 8 soft gradient blades pinwheel with bright center; energy burst spinner. Unshipped.
+      - [3]
+        assetId: new_materials/orb/spiky_11.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: 16-blade soft sawtooth ring (hollow center); buzzsaw burst. Unshipped (spiky_20 serrated ring outline, spiky_18 16-point star outline).
+      - [4]
+        assetId: new_materials/orb/spiky_15.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Disc with 12 radial ridges and bright center point; radiating shield disc. Unshipped.
+      - [5]
+        assetId: new_materials/orb/rounded_4.png
+        blend: alphaBlend
+        tintable: true
+        size: 512x512
+        lookedAt: true
+        description: Soft radial fan glow with a bright wedge (cone of light inside a disc). Unshipped (rounded_5 soft radial burst).
+notes: METHOD: Read tools/vfx/semantic-query.cjs (flags lines 235-256: --usage --shape --element --tag --kind --blend --aspect --package --tintable --tileable --high --limit --coverage --validate), vfx-semantic-vocab.cjs (blend derived from facts.backgroundVariant: blackBackground=additive, transparent=alphaBlend, whiteBackground=multiply, opaqueOther=undetermined; tintable = saturation.mean<=0.05), semantic-rules.json (per-family observations), asset-index.json (1708 assets, facts) and asset-semantics.json (1706 records; 1560 kind=vfx). Library root D:/MyGames/Effects-Materials (vfx/library.local.json). Viewed ~110 files at full resolution with Read, then generated 32 labeled contact sheets (192px cells, composited on black via PowerShell System.Drawing, in scratchpad sheet_*.png) covering EVERY file in particle-pack black-bg, light-masks default, all 16 new_materials categories, smoke-particles, and splat-pack 512px. lookedAt=true means the exact assetId was seen full-res or on a sheet; transparent/inverted/256px/other rotated carriers share pixels with a viewed sibling but are marked false.
+   
+   PACKAGE INVENTORY (vfx records): light-masks-1.0 default/inverted/transparent 152 each (512, all grayscale); particle-pack png-black-background 96 (+16 rotated) and png-transparent 96 (512, all grayscale); new_materials 765: arcane-ring 132 (dingbats-* + spiral_1-40), mask-shape 114 (dingbats-*, shape_star_1-21, squared_1-10), orb 110 (energyball_1-10 colored, rounded_1-30, sphere_1-50, spiky_1-20), smoke 80 (smoke_1-30 bright cumulus, smoke2_1-30 dark wispy, smoke3_1-20 soft bubbly), splat 48 (dingbats-392..442), flare 41 (flare_1-30 + star_1-10), fire 40 (colored), hud-reticle 40 (target_1-40), burst 30 (color_burst, colored), spiro 30 (color_spirowires_1-10 colored, spirowires_1-20 gray), fan 20 (turbine), impact-ring 20, muzzle-flash 20, plasma 20 (colored), beam 10 (lightrays), streak 10 (lines); smoke-particles 77 (black-smoke 25, explosion 9, fart 9, flash 9, white-puff 25; NON-512 sizes 337x378..620x526); splat-pack 72 (default-256px + double-512px, splat00-35). All new_materials are transparent PNG (alphaBlend carrier); white silhouettes with alpha can still be drawn additive.
+   
+   SHIPPED (vfx/shipped-assets.json, 20): light-masks default circle_a, circle_a_noise, circle_b, circle_rings_a, cone_composed_c_noise, ring_a; light-masks transparent circle_a; particle-pack black-bg flame_04, light_03, magic_03, spark_01, spark_05, spark_06, star_02, star_08, trace_02, twirl_01, twirl_02; particle-pack transparent smoke_04; splat-pack double-512px splat05. Everything else in the palette is unshipped (export later via tools/vfx/export-assets.cjs).
+   
+   FILENAME/LABEL TRAPS FOUND: (1) plasma/magic_particles_* are cellular/veiny NOISE CLOUDS in many colors (orange 1/4/5/16/20, blue 2/10, cyan 8/11/14, green 6/9/13/15, magenta 7/18/19, red 3/17, white 12), not branching bolts; semantics element=lightning is misleading and none are tintable. (2) particle-pack scorch_01-03 are radial hit flashes, not ground scorch (rule already notes this). (3) spark_01-04 = arc-web clouds; spark_05/06 = single vertical bolts; spark_07 = horizontal bolt; rotated/ variants are 90deg rotations (muzzle_02_rotated = comet head left tail right; spark_06_rotated = horizontal bolt). (4) spark_05, spark_07 (and their rotated) are backgroundVariant=opaqueOther because the bolt touches the border, so --blend additive filtering excludes them; same for light-masks cone_b/c, cone_composed_a/e, streaks_composed_a-e/g/h, water_caustics, foliage_canopy - all are still on pure black and work additively. (5) light-masks cone_a-e are constant-width/trapezoid BARS, cone_composed_* are true V cones. (6) new_materials smoke_1-30: many are donut clouds with a dark hole (3,4,19,20,23,25-28,30). (7) new_materials fire_1-10 = blobs, fire_11-30 = flame walls with base, fire_31-40 = narrow tall columns. (8) muzzle_flash_* anchor at bottom; 10-20 have slight warm tint (sat 0.07-0.10, flagged not tintable by rule but visually near-gray). (9) beam/lightrays_1-6,9,10 are very dim and slightly tinted (sat 0.05-0.09); only 7 and 8 are bright and gray. (10) orb/rounded_18/19/21 are angular sweep gradients (cooldown-clock look). (11) particle-pack flare_01 (anamorphic streak) is the only asset with NO semantic record (unclassified). (12) hud-reticle target_1-20 simple rings/brackets, target_21-40 complex multi-ring crosshairs with ticks. (13) smoke-particles explosion/fart/flash are pre-colored and flagged needsReview (element fire/poison/light).
+   
+   MATERIAL GAPS (nothing in library): faceted ice crystal/icicle; burnt-ground scorch texture; single soft leaf; rock chunk sprite; hex-cell shield texture; liquid drip/tendril; letter-like rune glyphs; horizontal wind streak (use trace rotated / slash arcs). Proposed composites are noted in each family's gap field.

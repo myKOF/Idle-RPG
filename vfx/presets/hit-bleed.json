@@ -1,0 +1,319 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-bleed",
+  "duration": 0.45,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1172,
+        "y": 0.1172
+      },
+      "alpha": 0.45,
+      "tint": "#d92846",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 0.6,
+      "tint": "#d92846",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.55,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.33
+        ],
+        [
+          0.35,
+          0.8
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 3,
+      "rotation": 0,
+      "scale": {
+        "x": 0.0703,
+        "y": 0.0703
+      },
+      "alpha": 1,
+      "tint": "#d92846",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.16,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "splat",
+      "type": "sprite",
+      "assetId": "new_materials/splat/dingbats-425.png",
+      "zIndex": 2,
+      "rotation": 0.5236,
+      "scale": {
+        "x": 0.0703,
+        "y": 0.0703
+      },
+      "alpha": 0.85,
+      "tint": "#d92846",
+      "blendMode": "normal",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "drops",
+      "type": "particle",
+      "assetId": "new_materials/streak/lines_1.png",
+      "zIndex": 5,
+      "tint": "#ffd0d8",
+      "blendMode": "normal",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.24,
+        0.32
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        30,
+        90
+      ],
+      "direction": 90,
+      "spread": 150,
+      "gravity": {
+        "x": 0,
+        "y": 400
+      },
+      "startScale": [
+        0.0234,
+        0.0352
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "mist",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 6,
+      "tint": "#ffd0d8",
+      "blendMode": "add",
+      "emission": {
+        "count": 4,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.18,
+        0.28
+      ],
+      "spawn": {
+        "radius": 6,
+        "shape": "circle"
+      },
+      "speed": [
+        40,
+        90
+      ],
+      "direction": 90,
+      "spread": 220,
+      "gravity": {
+        "x": 0,
+        "y": 300
+      },
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

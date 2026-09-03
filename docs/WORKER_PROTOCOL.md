@@ -1,6 +1,6 @@
-# Worker 協議 v25
+# Worker 協議 v26
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 25`　最後更新：2026-08-26
+> 協議版本：`WORKER_PROTOCOL_VERSION = 26`　最後更新：2026-09-03
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -67,6 +67,7 @@
 
 | 欄位 | 語意 | 戰鬥暫停時 |
 | :--- | :--- | :--- |
+| 26 | 2026-09-03 | **VFX Preset 化**：`vfx` 事件新增**可選**欄位 `vfx`＝`{ cast, attack, projectile, hit, ground }`（角色 → `vfx/presets/<id>.json` 的 preset id，每個鍵都可省略）。值來自技能表／狀態表新增的特效欄（`config/CSV/Skills.csv`、`Skills2.csv` 五欄；`Status.csv` 三欄，經 config_tables.cjs 回寫成 `sk.vfx`／`tiers[i].vfx`／`ult[i].vfx`／`st.vfx`），由發送端依「這一發屬於表上哪一列」帶出（`js/skills.js skillVfxSpec`、`js/skills2.js sgVfxRoles`：extra.vfxTier／vfxUlt／vfxGid／vfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，`fxKind`／`variant`／`travelMs`／`area` 仍決定行為與時序；沒有欄位＝退回程式畫法，舊事件完全相容。指令表未變動（仍 93 條）。<br>理由：使用者要求「用 VFX 編輯器重做全部特效，且每個技能用到的特效檔名都寫在技能表裡、之後自己改」。長相要能由表格換掉，事件就必須帶「表上寫的那幾個檔名」；而行為與時序（AI_RULES 8.3 的計算層／表現層一致）仍由既有欄位負責，兩者分離才不會讓改一個檔名就改動命中時序。 |
 | `gt` | 遊戲時鐘（`js/util.js` 的 `GT`），衡量「打了多久」，給玩家看 | **停住** |
 | `simT` | 模擬時鐘（`js/worker/sim.worker.js` 的 `SIM_T`，v14 新增），衡量「模擬跑了多久」 | 照走 |
 

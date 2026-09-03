@@ -1,0 +1,983 @@
+summary: Inventory of every VFX emit site in js/skills2.js lines 1-5200 (51 entries incl. the 4 spec-building helpers). Two emitters exist: sgEmitVfx (L1388, enemy-addressed) and sgEmitPlayerVfx (L4828, player-addressed). Both build spec = {fxKind, glyph: SKILLS2[gid].emoji, color, cat: sgVfxCat(g) ('magic' iff g.dmgType==='magic', else 'phys'), elem: extra.elem||g.elem||null, targets[], area, dur, count} then call playCombatVfx(spec). Color: sgEmitVfx = extra.color || VFX_CAT_COLORS[cat] || '#f97316' (data.js: phys '#e6ddc8', magic '#8ea2ff'); sgEmitPlayerVfx = VFX_CAT_COLORS[cat] || '#a3a3a3' (no override). sgEmitVfx targets = up to 8 enemyEventFloatTarget(ent, floatSel) ids of ALIVE targets (dead kept only with preserveDeadTargets); dur default 0.5; count clamped to 1..5 (thrust's min(8,..) is therefore capped at 5); optional passthroughs: variant, travelMs (array as-is), delayMs (>0), preserveDeadTargets, loopReturn, projectile, lineLength, lineWidth, laneOffsets (first 3), directionCount, rangeScale (>0), directionRanges (first 4, Number), angle (finite), bodyLength (>0), arcM (>0). sgEmitPlayerVfx: fxKind default 'aura', targets=[playerEventFloatTarget(floatSel)], dur default 0.6, count 1, optional variant, travelMs scalar->[n], sizeMult, area (with area.id for persistent domains). Shared dispatch sites: L3906 ground tick (spec via sgGroundVfxSpec by f.kind; per-gid enumeration in entry), L3185 meteor landing (variant per sgQueueMeteor caller), L4483/L4493 orbit fields (hitVariant/auraVariant per sgSpawnOrbitField caller), L1604/L4099 pulse (windblade only, always 'wind-burst'). Group ids in range: thrust, cleave, knife, gale, bloodblade, dualdance, bloodrage (phys; no elem), fireball, firepillar, firehunt (magic, fire), rockarmor (magic, earth). Notable quirks: cleave 'cleave-cross' branch is unreachable (isFlying always true at T7); fireball T1 'fire-explosion' burst has delayMs 0 (hitDelay=0 when not meteor) so it plays at cast not at arrival; dualdance T7 'cyclone' aura and bloodrage 'bloodrage-aura' are enemy-addressed auras (sgEmitVfx on enemy targets); knife split chain's origin is the dead enemy and gets dropped from targets (no preserveDeadTargets).
+sites:
+  - [0]
+    file: js/skills2.js
+    line: 1145
+    fn: sgBloodMistGroundTick
+    owner: bloodblade
+    fxKind: aura
+    variant: mire (via sgGroundVfxSpec, f.kind==='bloodmist')
+    elem: dark
+    targetsKind: area
+    tierOrFeature: legendary:血霧 (bloodMistField); field spawned at L9955 kind 'bloodmist'
+    when: ground field tick: every f.gap sec while the blood-mist pool lives (emitted before the sgBloodMist mark is applied; this branch returns before the generic L3906 emit)
+    extraFields:
+      - [0]
+        dur=f.gap
+      - [1]
+        area={id:vfxId,x,y,r,w:r*2,h:r*2} circle (sgGroundArea adds w/h for poisonmist/bloodmist/firepool)
+    note: targets=victims inside pool (may be empty; still emitted). cat phys color '#e6ddc8', glyph 🩸
+  - [1]
+    file: js/skills2.js
+    line: 1245
+    fn: sgDisintegrate
+    owner: bloodblade
+    fxKind: burst
+    variant: blood-explosion
+    elem: poison when sid==='sgPoison', else null (group has no elem -> null)
+    targetsKind: enemies
+    tierOrFeature: ult: disintegrate 崩解
+    when: on DOT application: instead of applying bleed/poison, whole DOT is settled instantly and this burst plays on the target; followed by derived splash hits (no extra vfx)
+    extraFields:
+      - [0]
+        dur default 0.5
+      - [1]
+        count 1
+    note: targets=[ent] the DOT target only; splash victims get no VFX
+  - [2]
+    file: js/skills2.js
+    line: 1388
+    fn: sgEmitVfx (definition)
+    owner: basic
+    fxKind: any (default 'slash' when extra.fxKind absent)
+    variant: extra.variant passthrough (only set if truthy)
+    elem: extra.elem || SKILLS2[gid].elem || null
+    targetsKind: enemies
+    tierOrFeature: emitter helper
+    when: called by every enemy-addressed site
+    extraFields:
+      - [0]
+        glyph=g.emoji
+      - [1]
+        color=extra.color || VFX_CAT_COLORS[cat] || '#f97316' (phys '#e6ddc8', magic '#8ea2ff')
+      - [2]
+        cat=sgVfxCat(g): 'magic' iff g.dmgType==='magic' else 'phys'
+      - [3]
+        targets=up to 8 enemyEventFloatTarget(ent,floatSel) ids; only hp>0 unless extra.preserveDeadTargets
+      - [4]
+        area=extra.area||null
+      - [5]
+        dur=extra.dur||0.5
+      - [6]
+        count=clamp(1,5,extra.count||1)
+      - [7]
+        travelMs=extra.travelMs (array passthrough, any truthy)
+      - [8]
+        delayMs=Number(extra.delayMs) only if >0
+      - [9]
+        preserveDeadTargets=true flag
+      - [10]
+        loopReturn=true flag
+      - [11]
+        projectile=true flag
+      - [12]
+        lineLength=Number
+      - [13]
+        lineWidth=Number
+      - [14]
+        laneOffsets=slice(0,3)
+      - [15]
+        directionCount=Number
+      - [16]
+        rangeScale=Number if >0
+      - [17]
+        directionRanges=slice(0,4).map(Number)
+      - [18]
+        angle=Number if isFinite
+      - [19]
+        bodyLength=Number if >0
+      - [20]
+        arcM=Number if >0
+    note: early-return if playCombatVfx/enemyEventFloatTarget missing. Hit stagger helper sgStaggerMs(i)=i*VFX_HIT_STAGGER_SEC(0.09 fallback)*1000 used by callers for delayMs
+  - [3]
+    file: js/skills2.js
+    line: 1604
+    fn: sgProjectilePulse
+    owner: windblade (only group that sets pulseGap/pulseVariant on flying projectiles: L8373, L8400 pulseVariant:'wind-burst')
+    fxKind: burst
+    variant: projectile.pulseVariant || 'wind-burst' -> always 'wind-burst'
+    elem: null -> group elem 'wind'
+    targetsKind: area
+    tierOrFeature: T6 狂風碎裂 (pulse along flight path)
+    when: during flying-projectile flight, every pulseGap sec (loop guard 10) until endAt; emitted even when victims empty
+    extraFields:
+      - [0]
+        area={x:cx,y:cy,r:pulseRadius} at projectile's current position
+      - [1]
+        dur default 0.5
+      - [2]
+        count 1
+    note: targets=enemies inside pulse radius at that instant
+  - [4]
+    file: js/skills2.js
+    line: 1919
+    fn: sgCastThrust
+    owner: thrust
+    fxKind: slash
+    variant: thrustVariant: 'thrust' (base) | 'thrust-parallel' (lvs[3]>0 T4, not T7) | 'thrust-pierce' (lvs[5]>0 T6 without T4/T7, OR octaSingle = T7 + (legendary:貫日之刺 octaToSingle or ult oneStrikeKill)) | 'thrust-octagonal' (lvs[6]>0 T7 and not octaSingle)
+    elem: null (phys group)
+    targetsKind: enemies
+    tierOrFeature: T1 突刺 base; T2 連刺 (+count on chance); T4 超連刺 (3 parallel lanes, laneOffsets, projectile); T6 貫穿突刺 (+lineLength, projectile); T7 八方連刺 (directionCount=8); legendary 凝鋒穿刺/貫日之刺 scale lineLen/lineWidth; ult oneStrikeKill/phantomOcta
+    when: on cast, once, before hits are resolved (direct hits use sgStaggerMs per round; piercing form queues flying projectiles with no extra vfx)
+    extraFields:
+      - [0]
+        count=min(8,thrustCount) -> clamped to 5 by sgEmitVfx
+      - [1]
+        projectile=isPiercing (lvs[3]>0||lvs[5]>0||lvs[6]>0)
+      - [2]
+        dur=0.3
+      - [3]
+        lineLength=lineLen px (range.length m * rangeScale + T6 m, * legendary lenPct)
+      - [4]
+        lineWidth=max(28,lineWidth px)
+      - [5]
+        laneOffsets=[-w/2,0,w/2] when T4 else [0]
+      - [6]
+        directionCount=8 (T7) else 1
+    note: targets=planned (union of enemies on all lanes/directions, primary first). Comment L1912: thrust-pierce is the only variant that reads lineLength/lineWidth; unknown variants fall back to per-enemy random-angle small slash
+  - [5]
+    file: js/skills2.js
+    line: 2010
+    fn: sgCleaveWhirlwind
+    owner: cleave
+    fxKind: slash
+    variant: wind-spin
+    elem: wind
+    targetsKind: area
+    tierOrFeature: legendary:旋風劍舞 (cleaveWhirl)
+    when: once per slash iteration (before each cleave slash), enemies within whirl.m of player; skipped if none
+    extraFields:
+      - [0]
+        dur=0.35
+      - [1]
+        count 1
+    note: Comment: reuses vacuumslash's wind-spin under fxKind 'slash' because wind 'aura' is suppressed by both renderers. cat phys color '#e6ddc8'
+  - [6]
+    file: js/skills2.js
+    line: 2144
+    fn: sgCastCleave
+    owner: cleave
+    fxKind: slash
+    variant: cleaveVariant: 'cleave' (melee, no fly) | 'cleave-shockwave' (isFlying: T6 震碎斬 or legendary 裂空飛斬 cleaveFlyM) | 'cleave-cross-shockwave' (lvs[6]>0 T7; isFlying is always true at T7) | 'cleave-cross' (dead branch: unreachable)
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T1 迴旋斬 base; T2 強化斬 target cap; T4 連斬 slashes; T6 震碎斬 fly forward; T7 迴身四方斬 4 directions x 60° cones; legendary 裂空飛斬 all directions fly; ult voidShatter/windChaser
+    when: on cast, once (before direct hits or flying projectiles; each slash round also runs whirlwind if legendary)
+    extraFields:
+      - [0]
+        count=min(5,slashes)
+      - [1]
+        projectile=isFlying
+      - [2]
+        lineLength=cleaveVfxRange (T7: max(directionRanges); else frontFlyPx — 0 when melee -> not set -> renderer default 120px)
+      - [3]
+        directionRanges=[4 ranges px] when T7 else null
+      - [4]
+        rangeScale=skills2CleaveRangeScale(lvs)
+      - [5]
+        color='#60a5fa' (blue override)
+    note: targets=all enemies in the sector(s)/line union, primary first
+  - [7]
+    file: js/skills2.js
+    line: 2308
+    fn: sgKnifeBounceChain
+    owner: knife
+    fxKind: chain
+    variant: vfxVariant || 'knife-bounce': 'knife-bounce' (T3/T4/T6 bounces, legendary 連鎖 knifeBounceAdd, legendary 分裂者 sub-chains) | 'knife-soulhunter' (ult soulhunterBlade via L2405)
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T3 彈射飛刀 (base bounces); T4 強化彈射 (+bounces); T6 連鎖彈射 (chance extra hop, max); legendary 連鎖/分裂者/處刑者; ult 無限追魂刃
+    when: per bounce hop, at the moment the chain is planned (delayMs accumulates previous travel times; hit resolved at delay+travel)
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        delayMs=delay (cumulative ms)
+      - [2]
+        travelMs=[0, travel] (travel=bfTravelSeconds(next)*1000)
+      - [3]
+        preserveDeadTargets=true only for 'knife-soulhunter'
+    note: targets=[cur,next] two-point segment; A->A self-bounce stops the chain
+  - [8]
+    file: js/skills2.js
+    line: 2339
+    fn: sgKnifeSplit
+    owner: knife
+    fxKind: chain
+    variant: knife-bounce
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: legendary:分裂者 (knifeSplit)
+    when: on knife kill: N small knives fly from the kill spot to random enemies, each then runs sgKnifeBounceChain (derived)
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        delayMs=delayMs (kill time)
+      - [2]
+        travelMs=[0, travel]
+    note: targets=[from(dead enemy), tgt] — 'from' is dead (hp<=0) and no preserveDeadTargets, so only tgt id survives in spec.targets
+  - [9]
+    file: js/skills2.js
+    line: 2387
+    fn: sgKnifeSoulhunter
+    owner: knife
+    fxKind: projectile
+    variant: knife-soulhunter
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: ult: soulhunterBlade 無限追魂刃
+    when: on cast (after main knives): one extra homing knife to a random in-range enemy
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        travelMs=[travel]
+    note: targets=[first]
+  - [10]
+    file: js/skills2.js
+    line: 2398
+    fn: sgKnifeSoulhunter
+    owner: knife
+    fxKind: chain
+    variant: knife-soulhunter
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: ult: soulhunterBlade 無限追魂刃 (single-target loop-back case)
+    when: when only one enemy is in range: knife pierces through then returns to the same target for a second hit
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        delayMs=travel
+      - [2]
+        travelMs=[returnTravel] where returnTravel=max(120,travel)
+      - [3]
+        loopReturn=true
+    note: targets=[first] (single id; renderer must draw out-and-back loop from loopReturn)
+  - [11]
+    file: js/skills2.js
+    line: 2485
+    fn: sgCastKnife
+    owner: knife
+    fxKind: projectile
+    variant: knife
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T1 飛刀 (cone targeting); T5 迴旋飛刀 (all-around random targets); legendary 影刃 (+count); legendary 輪舞刃 (first knife replaced by orbit -> knives.slice(1))
+    when: on cast, once; one target entry per knife (targets may repeat the same enemy)
+    extraFields:
+      - [0]
+        count=1 (fixed: one target = one knife)
+      - [1]
+        travelMs=per-knife array [ms...] aligned to targets, or null
+    note: targets=flying (kCount entries)
+  - [12]
+    file: js/skills2.js
+    line: 2533
+    fn: sgGaleThunderBolt
+    owner: gale
+    fxKind: rain
+    variant: thunder-strike
+    elem: lightning
+    targetsKind: mixed
+    tierOrFeature: ult: thunderGodSlash 雷神斬
+    when: on every gale slash hit (sgGaleOnHit): a bolt drops on the hit target and splashes enemies within bolt.m
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        area=sgAreaAround(target, r) circle {x,y,r} or null
+      - [2]
+        dur default 0.5
+    note: targets=victims around target + target
+  - [13]
+    file: js/skills2.js
+    line: 2615
+    fn: sgCastGale
+    owner: gale
+    fxKind: slash
+    variant: gale-slashes
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T1 疾風斬 base; T2 疾風連斬 (+hits); T7 月牙斬 (shareMode: targets = enemies around primary within m)
+    when: on cast, once (hits then resolved with sgStaggerMs(h))
+    extraFields:
+      - [0]
+        count=min(5,hits)
+      - [1]
+        dur default 0.5
+    note: targets=[primary] or shareTargets (T7)
+  - [14]
+    file: js/skills2.js
+    line: 2658
+    fn: sgGaleThunderFlash
+    owner: gale
+    fxKind: impact
+    variant: thunder-burst
+    elem: lightning
+    targetsKind: area
+    tierOrFeature: ult: thunderFlash 霹靂一閃
+    when: after all slashes: final strike hits every enemy within m of the player
+    extraFields:
+      - [0]
+        dur=0.4
+      - [1]
+        count 1
+    note: targets=enemies in radius around player
+  - [15]
+    file: js/skills2.js
+    line: 2700
+    fn: sgBloodbladeSlash
+    owner: bloodblade
+    fxKind: slash
+    variant: (none -> default slash)
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T1 血刃斬; also replayed by legendary 血影 second slash (delayMs 160 only on the hit, vfx not delayed)
+    when: on cast, before the hit
+    extraFields:
+      - [0]
+        dur default 0.5
+      - [1]
+        count 1
+    note: targets=[primary]
+  - [16]
+    file: js/skills2.js
+    line: 2707
+    fn: sgBloodbladeSlash
+    owner: bloodblade
+    fxKind: curse
+    variant: bleed
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T1 血刃斬 (bleed DOT); T2 強化流血 changes gap/dur only
+    when: on hit (after sgBleed applied; skipped if miss or target died)
+    extraFields:
+      - [0]
+        dur default 0.5
+    note: targets=[primary]
+  - [17]
+    file: js/skills2.js
+    line: 2712
+    fn: sgBloodbladeSlash
+    owner: bloodblade
+    fxKind: curse
+    variant: poison
+    elem: poison
+    targetsKind: enemies
+    tierOrFeature: T4 血毒刃
+    when: on hit after sgPoison applied (lvs[3]>0)
+    extraFields:
+      - [0]
+        dur default 0.5
+    note: targets=[primary]
+  - [18]
+    file: js/skills2.js
+    line: 2761
+    fn: sgCastDualdance
+    owner: dualdance
+    fxKind: slash
+    variant: storm ? 'dual-storm' : 'dual-slash' (storm=true when auto-cast by T7 暴風亂舞 avatar tick)
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T1 雙刀亂舞 base ('dual-slash'); T2 疾風亂舞 (+strikes); legendary 雙生刃 (+targets); T7 暴風亂舞 auto-casts use 'dual-storm'
+    when: on cast (manual and each storm auto-cast), once before strikes
+    extraFields:
+      - [0]
+        count=min(5,strikes)
+    note: targets=random enemies (strikes count), fallback [primary]
+  - [19]
+    file: js/skills2.js
+    line: 2805
+    fn: sgCastDualdance
+    owner: dualdance
+    fxKind: aura
+    variant: cyclone
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T7 暴風亂舞 (storm avatar start)
+    when: on the cast that starts the storm avatar (lvs[6]>0 && !storm)
+    extraFields:
+      - [0]
+        dur=min(6,stormDur)
+    note: NOTE: enemy-addressed aura (sgEmitVfx with the strike targets), not player-addressed
+  - [20]
+    file: js/skills2.js
+    line: 2891
+    fn: skills2TryDeathDefer
+    owner: dualdance
+    fxKind: aura
+    variant: cyclone
+    elem: null (phys)
+    targetsKind: player
+    tierOrFeature: legendary:不屈之誓 (danceDeathDefer)
+    when: when the player would die during the storm avatar: death deferred, aura on player ('pv-float')
+    extraFields:
+      - [0]
+        dur=min(6,sec)
+      - [1]
+        sgEmitPlayerVfx: count 1, color VFX_CAT_COLORS.phys
+    note: also floats '不屈之誓!' text
+  - [21]
+    file: js/skills2.js
+    line: 2919
+    fn: sgCastBloodrage
+    owner: bloodrage
+    fxKind: aura
+    variant: bloodrage-aura
+    elem: null (phys)
+    targetsKind: enemies
+    tierOrFeature: T1 嗜血狂怒
+    when: on cast
+    extraFields:
+      - [0]
+        dur=min(6,dur) (dur=t[0].fx.sec||8)
+    note: NOTE: enemy-addressed via sgEmitVfx with targets=pool (all alive enemies, capped 8) — a self-buff aura drawn on enemy anchors; L9508 (out of range) uses player-addressed version
+  - [22]
+    file: js/skills2.js
+    line: 3079
+    fn: sgBurnBlast
+    owner: fireball
+    fxKind: burst
+    variant: fire-blast
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: T5 爆燃
+    when: when a burning enemy's burn ends naturally (sgTickBurn) or the enemy dies: detonation hits random enemies within fx.m of the player
+    extraFields:
+      - [0]
+        dur default 0.5
+      - [1]
+        floatSel=(ctx&&ctx.floatSel)||'mv-float'
+    note: targets=victims (count from fx.count); cat magic color '#8ea2ff'
+  - [23]
+    file: js/skills2.js
+    line: 3136
+    fn: sgTickBurn
+    owner: fireball (gid hard-coded 'fireball' even for burns applied by firepillar T4)
+    fxKind: impact
+    variant: burn-tick
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: T2 燃燒 (sgBurn DOT); T4 強化燃燒 shortens gap; firepillar T4 燃燒 shares the same status
+    when: on each burn DOT tick; all enemies that ticked in the same frame are merged into one event
+    extraFields:
+      - [0]
+        dur default 0.5
+    note: targets=tickedNow list
+  - [24]
+    file: js/skills2.js
+    line: 3185
+    fn: sgTickMeteors
+    owner: shared by sgQueueMeteor callers: fireball (default 'meteor-impact', L3438) | fireball ult phoenixPrairie ('fire-explosion', L3342) | thunderstrike ('thunder-impact', lightning, L6293) | thunderorb ('thunder-fall-impact', lightning, L6600) | stormbarrier ('thunder-fall-impact' lightning or 'meteor-impact' fire, L8801)
+    fxKind: impact
+    variant: m.variant: meteor-impact | fire-explosion | thunder-impact | thunder-fall-impact
+    elem: m.elem: null->group elem (fireball fire) | lightning | fire
+    targetsKind: area
+    tierOrFeature: fireball T7 殞石術 / ult 火鳳遼原; thunderstrike T1; thunderorb T7 雷殞天落; stormbarrier ult 天穹崩裂
+    when: on landing (meteor.at <= GT), only if victims non-empty; victims re-queried at landing (radius<=0 => single target)
+    extraFields:
+      - [0]
+        area=sgAreaAround(m.target, m.radius) circle or null
+      - [1]
+        dur default 0.5
+    note: the matching 'rain' event was emitted at cast with travelMs/delayMs so the renderer aligns landing
+  - [25]
+    file: js/skills2.js
+    line: 3249
+    fn: sgQueueFireballSplitProjectiles
+    owner: fireball
+    fxKind: projectile
+    variant: fireball-small
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: T3 火球爆裂 (split small fireballs); legendary 爆裂 (+count); called from main projectile hit (L3312) and meteor landing split (L3271)
+    when: when the main fireball explodes / a meteor lands: one event per split target
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        travelMs=[plan.travelMs]
+      - [2]
+        projectile=true
+    note: targets=[target]
+  - [26]
+    file: js/skills2.js
+    line: 3253
+    fn: sgQueueFireballSplitProjectiles
+    owner: fireball
+    fxKind: burst
+    variant: fire-explosion
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: T3 火球爆裂
+    when: split projectile arrival (delayed by plan.travelMs)
+    extraFields:
+      - [0]
+        delayMs=plan.travelMs
+      - [1]
+        dur default 0.5
+    note: targets=[target]; no area
+  - [27]
+    file: js/skills2.js
+    line: 3336
+    fn: sgFireballPhoenixBalls
+    owner: fireball
+    fxKind: rain
+    variant: fireball-small
+    elem: fire
+    targetsKind: area
+    tierOrFeature: ult: phoenixPrairie 火鳳遼原
+    when: on each meteor landing: N companion fireballs fall on random enemies inside the meteor's blast radius
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        area=sgAreaAround(tgt, spec.blastPx)
+      - [2]
+        travelMs=[sgMeteorFallTiming().travelMs]
+    note: targets=[tgt]; landing emits L3185 with variant 'fire-explosion'
+  - [28]
+    file: js/skills2.js
+    line: 3422
+    fn: sgCastFireball
+    owner: fireball
+    fxKind: rain
+    variant: meteor
+    elem: fire
+    targetsKind: area
+    tierOrFeature: T7 殞石術 (3 meteors); legendary 連珠火 (+count); ult meteorFall 火殞天落 (+count, +size); ult phoenixPrairie (+count)
+    when: on cast, one event per volley, staggered castDelay = v*SG_METEOR_INTERVAL_MS(350)
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        area=sgAreaAround(meteorTarget, radius)
+      - [2]
+        delayMs=castDelay (0 for first -> not set)
+      - [3]
+        travelMs=[sgMeteorFallTiming().travelMs] (fallMs=360/360*1000=1000ms, travelMs=min(700, 1000*0.70)=700)
+    note: targets=[meteorTarget] (random bag among enemies around primary)
+  - [29]
+    file: js/skills2.js
+    line: 3427
+    fn: sgCastFireball
+    owner: fireball
+    fxKind: projectile
+    variant: fireball-small
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: T1 火球術 (non-meteor form)
+    when: on cast
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        travelMs=[fireballPlan.travelMs]
+      - [2]
+        projectile=true
+    note: targets=[primary]
+  - [30]
+    file: js/skills2.js
+    line: 3431
+    fn: sgCastFireball
+    owner: fireball
+    fxKind: burst
+    variant: fire-explosion
+    elem: fire
+    targetsKind: area
+    tierOrFeature: T1 火球術 (blast radius m)
+    when: on cast; delayMs=hitDelay which is 0 for non-meteor (castDelay=0, meteorFallMs=0) so the burst is NOT delayed to projectile arrival
+    extraFields:
+      - [0]
+        area=sgAreaAround(primary, radius)
+      - [1]
+        delayMs=hitDelay (0 -> omitted)
+    note: targets=victims around primary (bfTargetsAround) fallback [primary]. Possible timing bug: explosion plays at cast time
+  - [31]
+    file: js/skills2.js
+    line: 3906
+    fn: sgGroundTick
+    owner: shared ground fields (f.gid,f.kind): firepillar/pillar | firepillar/wall | firepillar/firepool (trail) | fireball/firepool | cleave/windtornado | gale/windtornado | mire/lavapillar | thunderstrike/thunderwall | thunderorb/orb | icearrow/icerain | icearrow/icearrow | waterball/tornado | waterball/tidetornado | frostnova/icespike | frostnova/blizzard | windblade/windblade | vacuumslash/vacuumfield | bloodblade/poisonmist (mire/mire and bloodblade/bloodmist return earlier)
+    fxKind: per sgGroundVfxSpec: aura (most) | rain (icerain) | impact (pillar default)
+    variant: pillar (firepillar T1 pillar, mire T7 lavapillar) | firewall (firepillar T7 wall) | mire-lava (firepool: fireball legendary 火池, firepillar ult 永劫火獄 trail) | wind-tornado (cleave ult 逐風者, gale legendary 風捲殘雲) | thunder-curtain (thunderstrike thunderwall 雷電矩陣) | thunder-orb (thunderorb T1 flying / T6 伴生雷球 static) | water-tornado (waterball T7 tornado, waterball ult tidetornado 怒海狂濤, frostnova icespike legendary 寒冰衝擊 / ult 冰皇領域) | blizzard (frostnova T7) | ice-arrow-homing (icearrow 追蹤 field) | ice-rain (icearrow ult 冰之淚) | wind-blade-homing (windblade T5/ult chase field, vacuumslash ult 萬象風劫 vacuumfield) | mire-poison (bloodblade legendary 毒爆)
+    elem: fire (pillar, firewall, mire-lava, default) | lightning (thunder-curtain) | null->group (thunder-orb) | ice | wind | poison
+    targetsKind: area
+    tierOrFeature: see variant list; firepillar T1 火龍捲, T3 雙重龍捲 (count), T6 重生 (respawn), T7 無限火牆
+    when: every field tick (f.gap sec, hits times) after movement/growth/pulse; emitted even when victims empty
+    extraFields:
+      - [0]
+        dur=f.gap
+      - [1]
+        area=sgGroundArea(f): rect {id:vfxId,x,y,w:length,h:width,a:axis(wall/thunderwall: angle+90°, else 0),r:max(w,h)/2, follow?, destX/destY/speed for icearrow/windblade/thunderwall} or circle {id,x,y,r, w/h=r*2 for poisonmist/bloodmist/firepool, follow?, destX/destY/speed for windblade/icearrow}
+    note: targets=victims this tick (enemies inside). Comments: renderers ignore unknown variants (fallback generic aura), wind 'aura' generic is suppressed
+  - [32]
+    file: js/skills2.js
+    line: 3941
+    fn: sgGroundVfxSpec (definition)
+    owner: basic
+    fxKind: aura | rain | impact
+    variant: by f.kind: wall->firewall(fire) ; thunderwall->thunder-curtain(lightning) ; orb->thunder-orb(no elem) ; tornado|tidetornado|icespike->water-tornado(ice) ; windtornado->wind-tornado(wind) ; firepool->mire-lava(fire) ; blizzard->blizzard(ice) ; icearrow->ice-arrow-homing(ice) ; icerain->rain/ice-rain(ice) ; windblade|vacuumfield->wind-blade-homing(wind) ; poisonmist->mire-poison(poison) ; bloodmist->mire(dark) ; default (pillar, lavapillar, anything else)->impact/pillar(fire)
+    elem: per kind (see variant)
+    targetsKind: area
+    tierOrFeature: spec helper for ground fields
+    when: called by L1145 and L3906 each tick
+    extraFields:
+      - [0]
+        dur=f.gap
+      - [1]
+        area=sgGroundArea(f)
+    note: design intent comments: reuse existing renderer variants rather than inventing new ones
+  - [33]
+    file: js/skills2.js
+    line: 4054
+    fn: sgGroundExpire
+    owner: firepillar
+    fxKind: burst
+    variant: firepillar-impact
+    elem: fire
+    targetsKind: area
+    tierOrFeature: T5 烈焰衝擊
+    when: when a firepillar pillar/wall field finishes its hits (expire); emitted even if no victims
+    extraFields:
+      - [0]
+        area={x,y,r:impactRadius} at field pos or null
+      - [1]
+        dur default 0.5
+    note: targets=enemies within impactRadius of the field's final position
+  - [34]
+    file: js/skills2.js
+    line: 4099
+    fn: sgGroundPulse
+    owner: windblade (only ground fields with pulseGap: L8439-8523; pulseVariant never set -> default)
+    fxKind: burst
+    variant: f.pulseVariant || 'wind-burst' -> always 'wind-burst'
+    elem: null -> group 'wind'
+    targetsKind: area
+    tierOrFeature: T6 狂風碎裂 pulse carried onto ult 暴風萬刃 chasing-blade ground field
+    when: every pulseGap sec while the chasing wind-blade field lives (before its own contact tick); emitted even when empty
+    extraFields:
+      - [0]
+        area={x,y,r:pulseRadius} at field's current pos
+      - [1]
+        dur default 0.5
+    note: targets=enemies inside pulse radius
+  - [35]
+    file: js/skills2.js
+    line: 4306
+    fn: sgSpawnOrbitField -> sgOrbitEmitVfx
+    owner: shared orbit fields: firehunt (auraVariant 'firehunt', hitElem fire, L4238) | knife legendary 輪舞刃 ('void-disc', 'phys', fieldKey 'knife-waltz', L2354) | thunderorb T4 環體電球 ('thunder-orbit', lightning, L6534) | vacuumslash T7 虛空斬 ('void-disc', wind, keys 'void-disc-i' / ult 虛空滅界 'void-anni-N-' L8827) | stormbarrier ult 森羅萬象 ('void-disc', wind, gid stormbarrier, key 'void-myriad-N-', L8910)
+    fxKind: aura
+    variant: firehunt | void-disc | thunder-orbit
+    elem: fire | phys | lightning | wind (=f.hitElem)
+    targetsKind: player
+    tierOrFeature: firehunt T1 火狩 (count 2, rps), T2 強化火狩 (scale), T4 三重火狩 (count), T5 極速火狩 (spin), T7 狩神之舞 (2 rings, opposite spin, ringGapPx), ult solarRing 烈陽星環 (bodyGrowTo/Sec, +count, +spin), ult infiniteRing 無限星環 (spiral, fieldKey 'firehunt-spiral')
+    when: on orbit field spawn (once per ring)
+    extraFields:
+      - [0]
+        see L4493 for area payload
+    note: targets=[f.tgt] (primary enemy) if any, else [] — center is player pos; renderer follows player anchor
+  - [36]
+    file: js/skills2.js
+    line: 4427
+    fn: sgOrbitStep
+    owner: firehunt
+    fxKind: aura
+    variant: firehunt (f.auraVariant)
+    elem: fire
+    targetsKind: player
+    tierOrFeature: ult: infiniteRing 無限星環 (spiral batch spawn)
+    when: each time a new spiral orb is released (every spawnGap sec, spawnLeft times) -> re-emits sgOrbitEmitVfx with updated perRing count
+    extraFields:
+      - [0]
+        same payload as L4493 (spiral=1, growMax, spiralLag)
+    note: companion births (T3 伴生火狩) do NOT re-emit
+  - [37]
+    file: js/skills2.js
+    line: 4483
+    fn: sgOrbitStep
+    owner: shared orbit hit: firehunt ('fire-explosion', fire) | knife 輪舞刃 ('knife-strike', phys) | thunderorb ('thunder-burst', lightning) | vacuumslash & stormbarrier ('wind-burst', wind)
+    fxKind: impact
+    variant: f.hitVariant: fire-explosion | knife-strike | thunder-burst | wind-burst
+    elem: f.hitElem: fire | phys | lightning | wind
+    targetsKind: enemies
+    tierOrFeature: firehunt T1 contact hits; knife legendary 輪舞刃; thunderorb T4 環體電球; vacuumslash T7 虛空斬; stormbarrier ult 森羅萬象
+    when: per tick when at least one orb makes a fresh contact (enter) or lap-target hit; one merged event for all struck enemies
+    extraFields:
+      - [0]
+        dur=0.35
+    note: targets=struck (fresh contacts this tick)
+  - [38]
+    file: js/skills2.js
+    line: 4493
+    fn: sgOrbitEmitVfx (definition)
+    owner: basic (orbit fields)
+    fxKind: aura
+    variant: f.auraVariant
+    elem: f.hitElem
+    targetsKind: player
+    tierOrFeature: orbit helper; one sgEmitVfx per ring
+    when: spawn (L4306), spiral spawn (L4427), refresh (L4537)
+    extraFields:
+      - [0]
+        dur=max(0.5, f.until-GT)
+      - [1]
+        count=perRing=round(orbs/rings) (clamped ≤5 by sgEmitVfx)
+      - [2]
+        area.x/y=player pos at emit (0 if none)
+      - [3]
+        area.r=r0 birth radius of ring (ringR0)
+      - [4]
+        area.rGrowTo=(bodyGrowTo>1 && !spiral && ringGapPx>0 && i>0) ? (ringR0[0]+ringGapPx*bodyGrowTo*i)/r0 : 1
+      - [5]
+        area.rGrowSec=f.bodyGrowSec
+      - [6]
+        area.orbR=f.bodyR
+      - [7]
+        area.orbs=perRing
+      - [8]
+        area.spin=+1/-1
+      - [9]
+        area.spinRate=rad/s
+      - [10]
+        area.startAng
+      - [11]
+        area.id=f.fieldKey||null
+      - [12]
+        area.grow=growPxPerSec
+      - [13]
+        area.growMax=spiralMaxPx
+      - [14]
+        area.spiral=0|1
+      - [15]
+        area.spiralLag=spawnGap when spiral
+      - [16]
+        area.orbGrowTo=bodyGrowTo
+      - [17]
+        area.orbGrowSec=bodyGrowSec
+    note: targets=[f.tgt] or []
+  - [39]
+    file: js/skills2.js
+    line: 4534
+    fn: sgOrbitRefreshVfx (called L4549 in sgTickOrbits)
+    owner: orbit fields (firehunt T6 再生 extendSec is the only until-extender)
+    fxKind: aura
+    variant: f.auraVariant
+    elem: f.hitElem
+    targetsKind: player
+    tierOrFeature: firehunt T6 再生 (kill extends duration)
+    when: every tick check: when f.until exceeds last broadcast vfxUntil by > SG_ORBIT_VFX_REFRESH_SEC (2s), re-emit sgOrbitEmitVfx with new dur
+    extraFields:
+      - [0]
+        payload as L4493
+    note: renderer merges by (variant, r0, id) so re-sends extend the same node
+  - [40]
+    file: js/skills2.js
+    line: 4575
+    fn: sgFirehuntDetonate
+    owner: firehunt
+    fxKind: burst
+    variant: firehunt-detonate
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: legendary:炎爆 (firehuntDetonate)
+    when: when an enemy has been hit by firehunt orbs N times (counter on entity): explosion on it and enemies within px
+    extraFields:
+      - [0]
+        dur=0.5
+    note: targets=[victim]+nearby
+  - [41]
+    file: js/skills2.js
+    line: 4706
+    fn: sgFirehuntLaunch
+    owner: firehunt
+    fxKind: projectile
+    variant: fireball-small
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: legendary:伴生併發 (firehuntLaunch)
+    when: every spec.gap sec while a firehunt field is active and an orb could be consumed: one orb flies to a picked enemy within m
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        travelMs=[travelMs] (bfTravelSeconds*1000, 0 if no geometry)
+      - [2]
+        projectile=true
+    note: targets=[tgt]; damage settled immediately with delayMs only on floats
+  - [42]
+    file: js/skills2.js
+    line: 4710
+    fn: sgFirehuntLaunch
+    owner: firehunt
+    fxKind: burst
+    variant: fire-explosion
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: legendary:伴生併發
+    when: arrival of the launched orb (delayMs=travelMs)
+    extraFields:
+      - [0]
+        dur=0.5
+      - [1]
+        delayMs=travelMs
+    note: targets=victims (tgt + enemies within aoeM)
+  - [43]
+    file: js/skills2.js
+    line: 4746
+    fn: sgTickFireGod
+    owner: firehunt
+    fxKind: aura
+    variant: follow-aura
+    elem: fire
+    targetsKind: player
+    tierOrFeature: ult: fireGodDescend 火神降臨 (permanent domain)
+    when: every SG_DOMAIN_VFX_SEC (1s) while equipped+ult selected (player-anchored range hint; renderer reuses node by area.id)
+    extraFields:
+      - [0]
+        sgEmitPlayerVfx
+      - [1]
+        dur=SG_DOMAIN_VFX_SEC*2=2
+      - [2]
+        area={id:'sg-firegod-aura', r:radius, w:r*2, h:r*2} (no x/y: follows player)
+    note: damage tick separate (gap from ult fx); no per-hit vfx
+  - [44]
+    file: js/skills2.js
+    line: 4817
+    fn: skills2OnBasicAttack
+    owner: firehunt
+    fxKind: projectile
+    variant: firehunt-ring
+    elem: fire
+    targetsKind: enemies
+    tierOrFeature: ult: fireGodDescend 火神降臨 (basic-attack star rings)
+    when: on each player basic attack: N piercing rings fired toward target direction, staggered SG_FIREGOD_ORB_STAGGER_SEC (0.08s)
+    extraFields:
+      - [0]
+        count=1
+      - [1]
+        travelMs=[round(flyPx/speed*1000)] (flyM 40m @ mps 24 default)
+      - [2]
+        projectile=true
+      - [3]
+        delayMs=round(beginSec*1000) (0 for first -> omitted)
+      - [4]
+        angle=bfAngleTo(target)
+      - [5]
+        lineLength=flyPx (fixed fly distance, not distance to target)
+    note: targets=[target]; renderer should fly along angle for lineLength rather than home on target
+  - [45]
+    file: js/skills2.js
+    line: 4828
+    fn: sgEmitPlayerVfx (definition)
+    owner: basic
+    fxKind: any (default 'aura')
+    variant: extra.variant passthrough
+    elem: extra.elem || g.elem || null
+    targetsKind: player
+    tierOrFeature: emitter helper for self effects
+    when: called by every player-addressed site
+    extraFields:
+      - [0]
+        glyph=g.emoji
+      - [1]
+        color=VFX_CAT_COLORS[cat] || '#a3a3a3' (no extra.color override)
+      - [2]
+        cat=sgVfxCat(g)
+      - [3]
+        targets=[playerEventFloatTarget(floatSel)] (or raw floatSel)
+      - [4]
+        area=extra.area||null (area.id used by renderer as persistent-node cache key for following domains)
+      - [5]
+        dur=extra.dur||0.6
+      - [6]
+        count=1 (fixed)
+      - [7]
+        travelMs=[Number(extra.travelMs)] when extra.travelMs>0 (scalar in, array out)
+      - [8]
+        sizeMult=Number when >0 (used by starfall meteor, out of range)
+    note: returns early if playCombatVfx missing or gid unknown
+  - [46]
+    file: js/skills2.js
+    line: 4896
+    fn: sgCastRockarmor
+    owner: rockarmor
+    fxKind: aura
+    variant: rock-armor
+    elem: earth
+    targetsKind: player
+    tierOrFeature: T1 岩甲術 (shield); legendary 重岩甲 / ult adamantBody scale shield only
+    when: on cast, after shield applied
+    extraFields:
+      - [0]
+        sgEmitPlayerVfx
+      - [1]
+        dur=min(6,dur) (dur=t[0].fx.sec||10)
+    note: also floats '🪨+N' shield text; cat magic color '#8ea2ff'
+  - [47]
+    file: js/skills2.js
+    line: 4939
+    fn: sgRockFieldAura
+    owner: rockarmor
+    fxKind: aura
+    variant: follow-aura
+    elem: earth
+    targetsKind: player
+    tierOrFeature: ult: superRockArt 超重岩之術 / gravityField 超重力場 (rock-shield domain range hint)
+    when: on cast (sgRockFieldCast L5029) and every SG_DOMAIN_VFX_SEC (1s) while SKILL2_RT.rock active (sgTickRockField L5008)
+    extraFields:
+      - [0]
+        sgEmitPlayerVfx
+      - [1]
+        dur=2
+      - [2]
+        area={id:'sg-rock-field', r:radius, w:r*2, h:r*2}
+    note: player-anchored, renderer follows each frame
+  - [48]
+    file: js/skills2.js
+    line: 4956
+    fn: sgRockPetrifyApply
+    owner: rockarmor
+    fxKind: burst
+    variant: rock-petrify
+    elem: earth
+    targetsKind: enemies
+    tierOrFeature: ult: superRockArt 超重岩之術
+    when: on cast for enemies inside m, and whenever an enemy newly enters the radius while rock shield is active (enter-detection)
+    extraFields:
+      - [0]
+        dur=0.8
+    note: targets=victims batch; applies sgPetrify + stun
+  - [49]
+    file: js/skills2.js
+    line: 4972
+    fn: sgRockGravityApply
+    owner: rockarmor
+    fxKind: burst
+    variant: gravity-field
+    elem: earth
+    targetsKind: enemies
+    tierOrFeature: ult: gravityField 超重力場
+    when: on cast for enemies inside m, and on each enemy newly entering the radius while rock shield active
+    extraFields:
+      - [0]
+        dur=0.8
+    note: targets=victims batch; applies sgStiffen
+  - [50]
+    file: js/skills2.js
+    line: 5159
+    fn: sgRockOnPlayerDamaged
+    owner: rockarmor
+    fxKind: impact
+    variant: rock-spike
+    elem: earth
+    targetsKind: enemies
+    tierOrFeature: T3 岩甲尖刺 (legendary 尖刺甲 / ult adamantBody scale damage only)
+    when: when the player is damaged by an enemy while rock armor active: retaliation spike on the attacker
+    extraFields:
+      - [0]
+        dur default 0.5
+      - [1]
+        floatSel=THORN_FLOAT_MAP[floatSel]||floatSel
+    note: targets=[mEnt] attacker

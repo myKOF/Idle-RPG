@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 20,
+  "assetCount": 35,
   "assets": [
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -56,11 +56,81 @@
       "fileSize": 40937
     },
     {
+      "assetId": "new_materials/impact-ring/impact_2.png",
+      "relativePath": "new_materials/impact-ring/impact_2.png",
+      "package": "new_materials",
+      "contentHash": "sha256:0b301c8b940ea3c1bfaf7f8ed0140596d5ca8226a110f0f759352438b24d8ddc",
+      "fileSize": 142003
+    },
+    {
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "relativePath": "new_materials/mask-shape/dingbats-366.png",
+      "package": "new_materials",
+      "contentHash": "sha256:a1dea005a8f207d9c5f050578185ac6a50fa21c0e056bf6a26b63dc45ea75b51",
+      "fileSize": 1503
+    },
+    {
+      "assetId": "new_materials/orb/sphere_28.png",
+      "relativePath": "new_materials/orb/sphere_28.png",
+      "package": "new_materials",
+      "contentHash": "sha256:3e08e16dcd612a8a3c6df7e81759a3d7eb65be1cb160e5670bff356f645020da",
+      "fileSize": 123414
+    },
+    {
+      "assetId": "new_materials/splat/dingbats-425.png",
+      "relativePath": "new_materials/splat/dingbats-425.png",
+      "package": "new_materials",
+      "contentHash": "sha256:79f45a24cc3bdd720828d2f446d51a5d7defaa6c0767c302a976ec4e7aabcf19",
+      "fileSize": 5012
+    },
+    {
+      "assetId": "new_materials/streak/lines_1.png",
+      "relativePath": "new_materials/streak/lines_1.png",
+      "package": "new_materials",
+      "contentHash": "sha256:8adaa00726d0a5380f8773957f59684e33887885b79e86d628ce1abd161e347d",
+      "fileSize": 56357
+    },
+    {
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "relativePath": "particle-pack/PNG (Black background)/circle_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:697e6fa5948cc35cc779ae0b22995f5b17f0e02746406d05ec8548921e82ad1b",
+      "fileSize": 30403
+    },
+    {
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "relativePath": "particle-pack/PNG (Black background)/circle_05.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:05e87b80ad4e65ddc0904f91f8520bb22059ca05c053ec7f5c780118e1294012",
+      "fileSize": 27583
+    },
+    {
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "relativePath": "particle-pack/PNG (Black background)/fire_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:35fc73c16895d11e6782aba8d4a9b374cd09fad914429cef12d1f6612a38851b",
+      "fileSize": 96339
+    },
+    {
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "relativePath": "particle-pack/PNG (Black background)/flame_04.png",
       "package": "particle-pack",
       "contentHash": "sha256:abc25d707440796489d42e53315b89aa3da54b1b72338e0a0b708ccde78fc0a7",
       "fileSize": 43388
+    },
+    {
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "relativePath": "particle-pack/PNG (Black background)/flame_05.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:3c3dcda87c882027e268cc7dbae9aa121eb6af6ef24a51b140a794a7212d183a",
+      "fileSize": 11404
+    },
+    {
+      "assetId": "particle-pack/png-black-background/light_01.png",
+      "relativePath": "particle-pack/PNG (Black background)/light_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:c9e0e947892b87cb71e110e60d85798810142b11aed154542c50b17dc93033b0",
+      "fileSize": 60764
     },
     {
       "assetId": "particle-pack/png-black-background/light_03.png",
@@ -77,11 +147,25 @@
       "fileSize": 43622
     },
     {
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "relativePath": "particle-pack/PNG (Black background)/scorch_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:7c2422ab6a6e2ea940b8feec702058ee6500d8fb881461323d20677700c42ab0",
+      "fileSize": 71227
+    },
+    {
       "assetId": "particle-pack/png-black-background/spark_01.png",
       "relativePath": "particle-pack/PNG (Black background)/spark_01.png",
       "package": "particle-pack",
       "contentHash": "sha256:d74634d80aed77812c69e071c92f6ea7e81e54b86e8d4310407a15fcc8a0afb7",
       "fileSize": 82487
+    },
+    {
+      "assetId": "particle-pack/png-black-background/spark_02.png",
+      "relativePath": "particle-pack/PNG (Black background)/spark_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:13950760bbc53b24d70226c55b9dd658278806f0cc0a03370af1af6b54466998",
+      "fileSize": 100419
     },
     {
       "assetId": "particle-pack/png-black-background/spark_05.png",
@@ -105,11 +189,32 @@
       "fileSize": 37858
     },
     {
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "relativePath": "particle-pack/PNG (Black background)/star_04.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:4c8429d19fb97165a3702ac7ff7e7b41d292c8fb9956d674db7028243d86c8f3",
+      "fileSize": 21740
+    },
+    {
+      "assetId": "particle-pack/png-black-background/star_05.png",
+      "relativePath": "particle-pack/PNG (Black background)/star_05.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:3c017dd5e0d6f81b6a18ca5541de30216398aaaec1929cbfbf235497a5eb91aa",
+      "fileSize": 39630
+    },
+    {
       "assetId": "particle-pack/png-black-background/star_08.png",
       "relativePath": "particle-pack/PNG (Black background)/star_08.png",
       "package": "particle-pack",
       "contentHash": "sha256:83e451b6a931f968216196f39e00949c26bfeccea5257f859a944d735266d48d",
       "fileSize": 22840
+    },
+    {
+      "assetId": "particle-pack/png-black-background/star_09.png",
+      "relativePath": "particle-pack/PNG (Black background)/star_09.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:e7536e5457e7b45f6c8e45201c0de4c9109fbc747a9666e99db11e975383c580",
+      "fileSize": 32629
     },
     {
       "assetId": "particle-pack/png-black-background/trace_02.png",

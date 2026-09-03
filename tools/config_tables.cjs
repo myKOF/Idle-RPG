@@ -683,7 +683,18 @@ const FX_GLOSSARY_ROWS = [
   ['格式：{"等級":{覆蓋欄位},…}，例 {"4":{…},"8":{…}}；'],
   ['＝技能升到該等級後，用其中欄位「覆蓋」基礎fx的同名欄位(淺層覆蓋、達標的高等級優先)；'],
   ['可用變量與定義同上「基礎fx(JSON)」；'],
-  ['潛力技能不使用此欄；']
+  ['潛力技能不使用此欄；'],
+  [''],
+  ['施放特效 / 攻擊特效 / 飛行子彈 / 受擊特效 / 地板特效（2026-09-03 VFX Preset 化）'],
+  ['每一格填 VFX 編輯器存出來的 Preset 檔名（vfx/presets/<檔名>.json，填的時候不含 .json；含 .json 也接受）；'],
+  ['施放特效＝施放當下出現在角色身上的特效（自身增益的光環、施法閃光）；'],
+  ['攻擊特效＝攻擊本體：斬擊弧、範圍爆發、光束、天降雷柱、敵身詛咒符文；'],
+  ['飛行子彈＝會移動的東西：投射物、連鎖跳段、天降的落體；'],
+  ['受擊特效＝傷害落到敵人身上那一刻的爆點（強力版由程式放大 1.6 倍播放）；'],
+  ['地板特效＝持續存在的場域：領域、火牆、預警圈；技能是「範圍」時依範圍半徑自動縮放（Preset 以半徑 100px 繪製）；'],
+  ['留白＝該角色沒有特效；整列都留白時這個技能維持舊版程式畫法（退回機制，不會沒有畫面）；'],
+  ['想換一個特效：在 VFX 編輯器把 Preset 另存成新檔名，再把檔名填進對應的格子即可，不必改程式；'],
+  ['潛力技能與融合技不讀這五欄（沿用舊畫法）；']
 ];
 
 /* 「完整描述」是給人看的註記欄，不寫回 JS。--gen 會整份重建表格，若不特別保留就會被清空
@@ -701,10 +712,33 @@ function skillFullDescMap() {
   return map;
 }
 
+/* ---- 特效欄位（2026-09-03 VFX Preset 化）----
+   技能表（Skills／Skills2 每一列）五欄：施放特效／攻擊特效／飛行子彈／受擊特效／地板特效；
+   狀態表三欄：施加特效／持續特效／作用特效。每一格填 vfx/presets/<id>.json 的檔名（不含 .json，
+   填了 .json 也接受）。留白＝這一列在該角色沒有特效；整列都留白時 JS 字面值不寫 vfx 欄位。
+   JS 端的形狀：技能 sk.vfx = { cast, attack, projectile, hit, ground }、狀態 st.vfx = { apply, aura, tick }。
+   角色語意見 docs/vfx/VFX_RUNTIME_ADAPTER.md；顯示層（js/vfx-runtime.js）只認 preset id，
+   這裡不驗證檔案是否存在——存在性由 tests/vfx-catalog.test.cjs 把關。 */
+const SKILL_VFX_COLUMNS = [['施放特效', 'cast'], ['攻擊特效', 'attack'], ['飛行子彈', 'projectile'], ['受擊特效', 'hit'], ['地板特效', 'ground']];
+const STATUS_VFX_COLUMNS = [['施加特效', 'apply'], ['持續特效', 'aura'], ['作用特效', 'tick']];
+function vfxIdFromCell(s) {
+  const t = String(s == null ? '' : s).trim();
+  return t.replace(/\.json$/i, '');
+}
+function vfxCells(vfx, columns) {
+  return columns.map(c => (vfx && vfx[c[1]]) ? String(vfx[c[1]]) : '');
+}
+function vfxFromRow(get, row, columns) {
+  const out = {};
+  columns.forEach(c => { const id = vfxIdFromCell(get(row, c[0])); if (id) out[c[1]] = id; });
+  return Object.keys(out).length ? out : null;
+}
+
 SCHEMAS.Skills = {
   name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['SKILLS', 'UNLOCKS', 'POTENTIAL_TALENTS'],
   extraSheets: [{ name: '變量定義', rows: FX_GLOSSARY_ROWS }],
-  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)', '完整描述'],
+  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)']
+    .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['完整描述']),
   extract(src) {
     const SKILLS = evalLiteral(extractLiteral(src, 'SKILLS').literal);
     const UNLOCKS = evalLiteral(extractLiteral(src, 'UNLOCKS').literal);
@@ -715,8 +749,9 @@ SCHEMAS.Skills = {
       const un = UNLOCKS[id];
         return [id, s.cat, joinList(skillTagsForConfig(s, id)), skillUnlockLevelForConfig(s, id), s.name, s.emoji,
         s.cost == null ? '' : numStr(s.cost), s.cd == null ? '' : numStr(s.cd),
-        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : '',
-        fullDesc[id] || ''];
+        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : '']
+        .concat(vfxCells(s.vfx, SKILL_VFX_COLUMNS))
+        .concat([fullDesc[id] || '']);
     });
     // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：與一般技能同格式——
     // 共用欄放 名稱/icon/冷卻/說明文字(風味)，其餘機制參數（type/base/per/dur/dmgType/mech/en/desc）收進「基礎fx(JSON)」。
@@ -730,7 +765,8 @@ SCHEMAS.Skills = {
       fx.mech = t.mech || '';
       if (t.en) fx.en = t.en;
       if (t.desc) fx.desc = t.desc;
-       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '', fullDesc[t.id] || '']);
+       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '']
+         .concat(vfxCells(null, SKILL_VFX_COLUMNS)).concat([fullDesc[t.id] || '']));
     });
     return rows;
   },
@@ -777,6 +813,9 @@ SCHEMAS.Skills = {
       o.flavor = get(r, '說明文字');
       const fxRaw = get(r, '基礎fx(JSON)').trim();
       o.fx = fxRaw === '' ? {} : parseJsonCell(fxRaw, id + ' 基礎fx');
+      // 特效欄位：整列留白就不寫 vfx，字面值才不會多出一堆空物件
+      const skillVfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
+      if (skillVfx) o.vfx = skillVfx;
       skillEntries.push('  ' + id + ': ' + jsLit(o));
       const unRaw = get(r, '里程碑fx(JSON)').trim();
       if (unRaw !== '' && unRaw !== '{}') {
@@ -973,21 +1012,30 @@ const STATUS_GLOSSARY_ROWS = [
   ['1. 新增一列即可新增狀態；要讓技能用到它，還要在 Skills 表該技能的「基礎fx(JSON)」加 status 引用，'],
   ['   例：{"dmgType":"magic","stat":"matk","base":300,"per":60,"status":[{"id":"burn"}]}；'],
   ['2. status 陣列可帶 dmg／dur／val 覆寫本表預設值，例 {"id":"burn","dmg":35,"dur":5}；不帶就吃本表的值；'],
-  ['3. 狀態效果＝stat／ctrl 的「效果鍵值」必須是程式認得的鍵，不能自創；dot／hot 則可自由新增。']
+  ['3. 狀態效果＝stat／ctrl 的「效果鍵值」必須是程式認得的鍵，不能自創；dot／hot 則可自由新增。'],
+  [''],
+  ['施加特效 / 持續特效 / 作用特效（2026-09-03 VFX Preset 化）'],
+  ['每一格填 VFX 編輯器存出來的 Preset 檔名（vfx/presets/<檔名>.json，不含 .json；含 .json 也接受）；'],
+  ['施加特效＝狀態第一次出現在目標身上時播一次（重新計時／疊層不重播）；'],
+  ['持續特效＝狀態存在期間掛在目標身上循環播放的特效（Preset 應設 loop；原點＝腳底、身高約 60px）；'],
+  ['作用特效＝持續傷害每跳一次播一次（只對 dot 有意義；同一拍多個敵人會合併成一則事件）；'],
+  ['留白＝該狀態沒有那一段畫面；純計時用的內部狀態（如火狩剩餘時間）建議三欄都留白，畫面交給技能本身。']
 ];
 
 SCHEMAS.Status = {
   name: 'Status', jsFile: 'status', sheet: 'Status', vars: ['STATUS'],
   extraSheets: [{ name: '欄位定義', rows: STATUS_GLOSSARY_ROWS }],
   header: ['狀態ID', '狀態名稱', '狀態圖標', '狀態分類', '狀態效果', '效果鍵值', '傷害屬性', '傷害來源',
-    '狀態傷害', '傷害上限參照', '傷害上限倍率', '效果數值', '持續時間', '作用間隔時間', '疊加規則', '最大疊層', '說明'],
+    '狀態傷害', '傷害上限參照', '傷害上限倍率', '效果數值', '持續時間', '作用間隔時間', '疊加規則', '最大疊層']
+    .concat(STATUS_VFX_COLUMNS.map(c => c[0])).concat(['說明']),
   extract(src) {
     const STATUS = evalLiteral(extractLiteral(src, 'STATUS').literal);
     return Object.keys(STATUS).map(id => {
       const s = STATUS[id];
       return [id, s.name, s.icon, s.kind, s.effect, s.key || '', s.elem || '', s.dmgSource || '',
         numStr(s.dmg || 0), s.capStat || '', numStr(s.capMult || 0), numStr(s.val || 0),
-        numStr(s.dur || 0), numStr(s.interval || 0), s.stack || 'refresh', numStr(s.maxStacks || 1), s.desc || ''];
+        numStr(s.dur || 0), numStr(s.interval || 0), s.stack || 'refresh', numStr(s.maxStacks || 1)]
+        .concat(vfxCells(s.vfx, STATUS_VFX_COLUMNS)).concat([s.desc || '']);
     });
   },
   rebuild(dataRows, header) {
@@ -1015,6 +1063,8 @@ SCHEMAS.Status = {
         maxStacks: toNum(get(r, '最大疊層').trim() || '1'),
         desc: get(r, '說明')
       };
+      const statusVfx = vfxFromRow(get, r, STATUS_VFX_COLUMNS);
+      if (statusVfx) o.vfx = statusVfx;
       return '  ' + id + ': ' + jsLit(o);
     });
     if (!entries.length) throw new Error('Status 表沒有任何狀態列');
@@ -1086,7 +1136,16 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['升到下一級費用＝基數 × 倍率^目前等級（取整）；'],
   [''],
   ['效果說明模板'],
-  ['遊戲內顯示的說明文字；{鍵} 會代入目前等級的計算值（鍵名同「效果參數(JSON)」）。']
+  ['遊戲內顯示的說明文字；{鍵} 會代入目前等級的計算值（鍵名同「效果參數(JSON)」）。'],
+  [''],
+  ['施放特效 / 攻擊特效 / 飛行子彈 / 受擊特效 / 地板特效（2026-09-03 VFX Preset 化）'],
+  ['每一格填 VFX 編輯器存出來的 Preset 檔名（vfx/presets/<檔名>.json，不含 .json；含 .json 也接受）；'],
+  ['每一列＝該階（或該超神選項）「引入」的特效：第 1 階那一列是技能本體，後面各階只填那一階新增的畫面'],
+  ['　　（例：火球術第 1 階＝火球＋受擊、第 3 階火球爆裂＝小火球＋大爆炸、第 7 階殞石術＝隕石＋落點預警）；'],
+  ['程式在送出特效時會標明「這一發屬於第幾階」，然後讀那一列的格子；同一階沒填的角色就沒有那一段畫面；'],
+  ['施放特效＝角色身上；攻擊特效＝攻擊本體（斬弧／爆發／光束／雷柱／護罩）；飛行子彈＝會移動的東西（含環繞體）；'],
+  ['受擊特效＝命中爆點；地板特效＝持續場域（泥沼、火牆、軌道環、預警圈），依實際判定範圍自動縮放（Preset 以半徑 100px、矩形 200×100px 繪製）；'],
+  ['整列留白＝該階沿用舊版程式畫法（退回機制）；想換特效就在 VFX 編輯器另存新檔名再填進來，不必改程式。']
 ];
 /* 「冷卻時間」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
    因此編表者可以在後續列寫自己的註記（例如各階原本設想的冷卻曲線）。
@@ -1133,7 +1192,8 @@ SCHEMAS.Skills2 = {
      「超神ID」欄只有這三列要填，是程式判定用的穩定鍵（存檔存索引、程式判 id）。 */
   header: ['群組ID', '群組名稱', '群組圖標', 'range', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數',
     '解鎖轉生/等級', '階段名稱',
-    '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板', '超神ID'],
+    '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
+    .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID']),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1147,7 +1207,8 @@ SCHEMAS.Skills2 = {
           (note && note.cd !== '') ? note.cd : numStr(g.cd),
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
-          JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '', '']);
+          JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
+          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
       (g.ult || []).forEach((o, i) => {
@@ -1156,7 +1217,8 @@ SCHEMAS.Skills2 = {
           (note && note.cd !== '') ? note.cd : '',
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
           '', o.name,
-          JSON.stringify(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '', o.id || '']);
+          JSON.stringify(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
+          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']));
       });
     });
     return rows;
@@ -1208,19 +1270,21 @@ SCHEMAS.Skills2 = {
       /* 每階的施法消耗＝該階的觸發消耗（被動技能逐階扣魔用）；留白／0 不寫進字面值，
          讓「這一階不耗魔」在程式端就是「沒有這個欄位」。 */
       const tierCost = toNum(get(r, '施法消耗'));
+      /* 特效欄位（五欄）：這一階／這一個超神選項引入的特效；整列留白就不寫 vfx。 */
+      const tierVfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
       /* 階數 >= 8：超神進化的三選一選項（不是第 8~10 階）。
-         欄位順序須與手寫字面值一致：id／name／cost／fx／goldBase／goldGrow／desc。 */
+         欄位順序須與手寫字面值一致：id／name／cost／fx／goldBase／goldGrow／desc（／vfx）。 */
       if (tierIdx >= SKILLS2_ULT_ROW_BASE) {
         const ultIdx = tierIdx - SKILLS2_ULT_ROW_BASE;
         const ultId = get(r, '超神ID').trim();
         if (!ultId) {
           throw new Error('Skills2 群組「' + gid + '」階數=' + tierIdx + '（超神進化）缺「超神ID」');
         }
-        groups[gid].ult[ultIdx] = {
+        groups[gid].ult[ultIdx] = Object.assign({
           id: ultId, name: get(r, '階段名稱'), cost: tierCost, fx: fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
-        };
+        }, tierVfx ? { vfx: tierVfx } : null);
         return;
       }
       groups[gid].tiers[tierIdx - 1] = Object.assign(
@@ -1231,7 +1295,8 @@ SCHEMAS.Skills2 = {
           fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
-        });
+        },
+        tierVfx ? { vfx: tierVfx } : null);
     });
     order.forEach(gid => {
       const g = groups[gid];

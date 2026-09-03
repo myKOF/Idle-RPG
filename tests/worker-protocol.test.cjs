@@ -111,7 +111,8 @@ test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
   // v22：VFX 環形 area 新增可選 spinRate，讓火狩畫面同步模擬層角速度
   // v23：超神進化（技能第 8 格）——新增 skill2.ultPick、skill2.* 的 tier 上限由 6 放寬到 7、
   //      skills 面板的 skills2 新增 ult 欄位（各群組已選的選項索引與等級），92 → 93
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 25);
+  // v26：VFX 事件新增可選欄位 vfx（角色 → Preset id），值來自技能表／狀態表的特效欄
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 26);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);

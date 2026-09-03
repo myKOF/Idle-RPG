@@ -1,0 +1,574 @@
+sharedHelpers: FILE: D:\MyGames\Idle-RPG\claude\js\battle-renderer.js (all line refs below are in this file unless noted).
+   
+   DISPATCH FACTS (onVfx 4562-5000): every non-enemy event gets spec.delayMs += POS_BUFFER_MS (240 ms, line 376; 4572-4575). If delayMs>0 onVfx re-schedules itself via setTimeout and calls fxGate before replaying (4577-4584), so by the time the switch runs baseDelay is always 0 — the `baseDelay` arguments passed into spawnWindBlade/Slash/Spin/RendSpread are effectively 0. targets are sliced to max 8 (4592). Multi-hit stagger = VFX_HIT_STAGGER_SEC 0.09 s (js/data.js:1689). Routing for this range: projectile→'wind-blade'|'wind-blade-small' → spawnWindBlade (4635-4638); slash→'wind-slash' → spawnWindSlash (4706); slash→'wind-spin' → spawnWindSpin + hitReact per target at +90 ms + ti*24 ms (4707-4716); chain→'wind-rend-spread' → spawnWindRendSpread (4494-4497, inside handleChainVfx); burst→'wind-burst' → spawnWindBurst + hitReact(false) per target (4879-4887); impact/default→'wind-burst' → same (4979-4984); rain→'thunder-fall' → spawnThunderFall(spec, id, (0 + ti*90ms)/1000) per target (4924-4929); aura→'thunder-orb' → spawnThunderOrbField (4944); aura→'blizzard'|'water-tornado'|'wind-tornado'|'ice-arrow-homing'|'wind-blade-homing' → spawnIceField (4948-4949); aura→'void-disc' → spawnVoidDisc (4950); aura→'storm-barrier'|'storm-god'|'storm-rip' → spawnStormShell (4951-4952). Aura events with elem 'wind' and no variant are dropped (4591); spawnAura (2325) refuses elem wind (2329). The fxKind default branches (spawnAura 2325, spawnRain 3721, generic burst 4888-4901) are OUTSIDE 3050-3700 and not documented here.
+   
+   THEME (themeOf 66-81): table = VFX_ELEM_THEME (js/vfx.js:77-86, identical to FALLBACK_THEME 56-65): light c1 #ffe47a c2 #fffef4 glow #fff3a3; dark #6f2da8/#1a0c2e/#913dcc; fire #e63924/#ffd447/#ff6a2a; ice #4da6ff/#f2fbff/#79d8ff; lightning #f2b705/#fff8b0/#ffd23f; earth #ad7444/#5b3a27/#c48a55; poison #4caf2b/#d8ff8a/#76d83b; wind #86efac/#ffffff/#b9f6cf. Overrides: variant knife-soulhunter → lightning colors; thunder-strike → c1 #c084fc c2 #fdf4ff glow #9333ea; bleed/bleed-tick → c1 #d92846 c2 #ffd0d8 glow #ff4962. No elem → spec.color (or #9ecbff) for all three slots. cssColorToInt(c, fallback) (217-220) parses '#rrggbb'; the numeric fallbacks seen in code (0x86efac etc.) only apply if the theme string is unparsable. Hardcoded palettes in range: ICE_FIELD_THEME {c1 #7dd3fc, c2 #e0f2fe, glow #22d3ee} (3031); THUNDER_SHOCK_THEME {c1 #2563eb, c2 #dbeafe, glow #60a5fa} (3576); storm-god c2 #ffe9a3 (3365); thunder-orb/thunder-fall body colors 0x1d4ed8/0x60a5fa/0xffffff/0x93c5fd; telegraph blue fill 0x2563eb border 0x60a5fa (thunder-fall) vs red 0xdc2626/0xf87171 (others) (3805-3807).
+   
+   POSITIONS: playerPos (275-279) = player world pos; playerMuzzle (281-284) = player pos with y-52; posOf(elId) (286-298) = entity root minus 0.55*hitHeight (pv-float: player y-46), falls back to lastPos (kept 3 s) then to a point one reach (52+14 px) in front of the player at y-24. areaRect (256-260) turns area circle {x,y,r} into rect {x-r,y-r,2r,2r,r}; rectRadius (264-271). Layers: S.layers.zone (ground, under entities) vs S.layers.fx (above entities).
+   
+   addFx(fx, prio, maxLifeMs) (1359-1391): prio default 0; hard wall-clock lifetime default FX_HARD_LIFETIME_MS 3000 ms (32); MAX_FX 140 (31): when full, a new fx evicts the lowest-prio fx that has prio strictly lower than itself, else the new node is destroyed and dropped. Priorities used in range: 0 = trail dots/particles/riser, 1 = blades/bursts/slashes/impacts/telegraph/shockwave, 2 = persistent fields (void disc, storm shell, ice field, thunder orb, thunder fall). FX_ORBIT_MAX_SEC = 12 (2367); FX_AURA_MAX_SEC = 6 (33); ICE_FIELD_MAX_LIFE_SEC = 14 (3030); THUNDER_ORB_MAX_LIFE_SEC = 14 (3575); FIRE_PILLAR_MAX_LIFE_SEC = 4.5 (4168).
+   
+   fxGate(spec) (198-210): skip when renderer not ready or document hidden; additionally for variant thunder-strike/thunder-fall, cat 'basic', knife-bounce, knife-soulhunter → skip unless vfxTargetsLive(spec). vfxTargetLiveForSpec(spec,id) (159-168): only thunder-strike/thunder-fall are target-bound — target must exist and not be dying/gone; everything else returns true. REDUCED_MOTION (27) = prefers-reduced-motion; disables trail dots, particles, camera shake, and lowers counts.
+   
+   spawnImpact(x, y, spec, strong, targetGuard) (1866-1902): ring = Sprite(ringTexture 128 px, soft bright band at radius 59.2 px, band width about 16% of radius; 540-559), tint theme.c1 (fire-explosion variant uses {c1 #c51e0d, c2 #ffd447, glow #ff3b0a}); radius animates 1.3 px → 1.3+maxR with maxR 8.5 (normal) / 15 (strong) / 30 (fire-explosion), alpha 1→0 linear, dur 0.26 / 0.4 / 0.62 s, prio 1. Then spawnParticles count 6 / 12 / 22, speed 0.55 / 0.9 / 1.35, radiusScale 1 / 1 / 1.45. strong → addShake(5, spec) (usually a no-op, see addShake).
+   
+   spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard) (1439-1474): skipped under REDUCED_MOTION; count = min(count,14) then particleBudget (571-576: fx load ≥85% → 0, ≥60% → 35%). Each: Sprite(dotTexture 32 px soft dot, DOT_TEX_RADIUS 12.8; 504-522), radius 1.6-4.0 px × radiusScale (visible halo up to 1.25×), tint random theme.c1 or c2, blendMode 'add', random direction, speed (60-180)×speed×radiusScale×0.55 px/s, initial vy -40 px/s, gravity +260 px/s², life 0.45-0.75 s, alpha linear to 0, prio 0.
+   
+   spawnTrailDot(x, y, theme) (1843-1863): dot sprite radius 2.2 px, tint theme.c2, alpha 0.7, blend add; alpha 0.7→0 over 0.28 s while scale shrinks by (1 - t/0.4); prio 0.
+   
+   hitReact(elId, elem, strong, suppressJolt) (1308-1331): entity flash tint = themeOf({elem}).c1 for 0.15 s (0.24 strong), jolt ±2.5 px x / ±1.5 px y for 0.12 s (0.18 strong) with 3 s per-unit cooldown (HIT_JOLT_COOLDOWN_MS 3000), scale pop 0.15 s (0.24 strong) for non-player; boss 'hurt' anim.
+   
+   addShake(px, spec) (1332-1336): no-op under REDUCED_MOTION and unless isSpecialScreenShakeSpec(spec) (1348-1356) — allowlist variants: meteor, pillar, purple-thunder, storm-sigil, detonate, nova, venomburst, vortex. NOTE: none of the variants in this range are in the allowlist, so addShake(6) in thunder-fall and addShake(5) from strong spawnImpact are no-ops for them.
+   
+   spawnTargetTelegraph(spec, cx, cy, radius, delaySec, durationSec, targetId) (3800-3830): zone-layer ground ellipse radius max(36, r) × 0.52 vertical, pulse ×(1 + 0.025 sin(5.5 t)); fill alpha 0.16 + stroke 2.5 px alpha 0.82; colors blue (0x2563eb / 0x60a5fa) if variant thunder-fall else red (0xdc2626 / 0xf87171); hidden during delaySec, then lives dur = max(0.28, durationSec), fades over last 16%; cancels if target dies (thunder variants); prio 1, hard life (dur+delay)*1000+500.
+   
+   spawnFireShockwave(cx, cy, radius, theme, targetGuard) (3965-4015): dur 0.86 s, prio 1, radius default 80. (a) flash ellipse (11 + 0.22 r) × (5 + 0.07 r) fill theme.c2 alpha 0.3→0 over first 0.18 s; (b) 3 elliptical rings, ring i starts at k = 0.075 i, radius (10 + r·rk·(0.78 + 0.16 i)) × (4 + r·rk·(0.22 + 0.05 i)), stroke width 5→1, alpha 0.92→0, color c2 for i=0 else c1; (c) 18 (9 reduced) elliptical 'tongue' particles: angle 2π·bi/18 (+0.12 jitter), distance r·(0.42 + 0.075·(bi%5)), size 2 + 1.2·(bi%3), delay (bi%5)·0.018 s, move outward over 0.62 s with y = sin·dist·pk·0.48 + 28 pk² − 10 (arcs then falls), ellipse (0.65 size × 1.8 size)·(1−pk), alt c1/c2, alpha 0.95→0.
+   
+   WIND CRESCENT PRIMITIVE — windCrescentPoly(width, body) (3050-3065) + drawWindCrescent(g, width, body, theme, alpha) (3068-3076): local +x = travel direction, origin at the tips' baseline. Front edge = parabola x = body·(1−t²), y = (width/2)·t (11 samples, t∈[−1,1]); back edge = x = 0.26·body·(1−t²), y = 0.9·(width/2)·t. Result: arrow-head/half-moon that spans 0..body in x and ±width/2 in y, thickest (0.74·body) at center, pointed tips. Layers: outer poly fill theme.c1 alpha 0.85·a; inner poly (0.7 width, 0.72 body) fill theme.c2 alpha 0.9·a; outer poly stroke theme.c2 width 2 alpha 0.85·a. Wind theme → light green #86efac body with white #ffffff core/outline. Minimums: half-width ≥3, body ≥3.
+   
+   drawIceShard(g, scale, c1, c2, alpha) (1480-1486): diamond poly (±9·s wide, ±11·s tall) fill c1 alpha a, stroke c2 width 2 alpha 0.95 a. glowTexture (482-495): 64 px radial gradient white 0.9 → 0.28 at 50% → 0.
+   
+   FIELD MOTION HELPERS (2805-2905): fieldVfxMotionSec(spec, fallback) = max(0.12, spec.dur || fallback). fieldVfxKey(area, variant) (2845-2850) = (area.id || fieldKey || vfxId) + ':' + variant; homing variants return null (no draw) without an id; others fall back to rounded 'x:y:variant'. fieldVfxSetTarget/SetPositionTarget + fieldVfxStep = linear lerp of x/y(/w/h) from current to the event's target over motionDur (default 0.35 s). fieldVfxSetFollowTarget + fieldVfxFollowStep (2827-2840) = exponential follow: step = min(dist, min(dist/0.14 s, 2×area.speed)·dt). fieldVfxWindAngleStep (2864-2873) = heading toward motion target (fallback destX/destY), smoothed with k = 1 − exp(−14 dt), returned as node.rotation. MIRE_VISUAL_HEIGHT_RATIO = 0.52 (2912) squashes blizzard height.
+   
+   projectileTravelMs(travelMs, fallbackMs) (1537-1540): travelMs if >0 else fallback / VFX_PROJECTILE_SPEED_MULTIPLIER (0.6, js/data.js:1694) → e.g. fallback 120 → 200 ms.
+   
+   spawnFirePillar(area, spec) (4169-4282) — reused by water-tornado / wind-tornado; documented under those variants.
+variants:
+  - [0]
+    variant: wind-blade
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        spawnWindBlade 3080-3127
+      - [1]
+        drawWindCrescent 3068-3076
+      - [2]
+        windCrescentPoly 3050-3065
+      - [3]
+        dispatch onVfx 4635-4638
+    specFields:
+      - [0]
+        lineLength
+      - [1]
+        lineWidth
+      - [2]
+        bodyLength
+      - [3]
+        travelMs[0]
+      - [4]
+        angle
+      - [5]
+        targets
+      - [6]
+        elem
+      - [7]
+        delayMs
+    placement: Spawned at playerMuzzle (player pos, y-52) with node.rotation = spec.angle (fallback: atan2 toward posOf(targets[0]); else facing: PI if player faces left, 0 otherwise). Not attached to any target; the crescent leads the node origin by `body` px along +x. Layer fx.
+    motion: Linear (no easing) flight along `angle` for `length` px: pos = from + (cos,sin)·length·k, k = t/dur. Constant alpha 1 until k>0.88, then linear fade to 0 over the last 12% of flight. Every 0.06 s drops a spawnTrailDot (theme.c2, r 2.2 px, 0.28 s) unless REDUCED_MOTION. No rotation change, no scaling.
+    timing: length = max(40, lineLength || 240) px; flight = max(120, travelMs[0] || 700) ms; dur = flight/1000 s; hard life flight+400 ms; prio 1. Whole spawn is wrapped in setTimeout(baseDelay) (effectively 0 after onVfx's own delay handling). One blade per event (count ignored).
+    visual: Static PIXI.Graphics crescent drawn once: width = max(8, lineWidth || 40) px (tip-to-tip), body = max(5, bodyLength || 0.4·width) px depth. Outer crescent fill theme.c1 alpha 0.85; inner crescent (0.7 width × 0.72 body) fill theme.c2 alpha 0.9; outer stroke theme.c2 width 2 alpha 0.85. Wind: #86efac body, #ffffff core+outline. Trail: additive white-ish dots (theme.c2).
+    feedback: For each target (positions sampled ONCE at launch via posOf): projected distance along the flight axis → impact time = flight × clamp(along/length, 0, 1) ms; then spawnImpact(pt, spec, false) [ring theme.c1 → 9.8 px over 0.26 s + 6 particles] and hitReact(id, elem, false). Gated by fxGate at both launch and each hit.
+    notes: Look derived from element theme (c1/c2 only; glow unused) — wind is the only intended elem but any elem theme works → one preset per elem if reused. Sizes come from the simulation (lineLength/lineWidth/bodyLength); the crescent geometry constants (0.26 back-edge depth, 0.7/0.72 inner scale, 10 steps) are hardcoded.
+  - [1]
+    variant: wind-blade-small
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        spawnWindBlade 3080-3127
+      - [1]
+        drawWindCrescent 3068-3076
+      - [2]
+        dispatch onVfx 4635-4638
+    specFields:
+      - [0]
+        lineLength
+      - [1]
+        lineWidth
+      - [2]
+        bodyLength
+      - [3]
+        travelMs[0]
+      - [4]
+        angle
+      - [5]
+        targets
+      - [6]
+        elem
+    placement: Identical code path to wind-blade (same function, no variant branch).
+    motion: Identical to wind-blade.
+    timing: Identical to wind-blade; only differs by whatever smaller lineLength/lineWidth/bodyLength/travelMs the simulation sends.
+    visual: Identical drawing to wind-blade with the spec-provided smaller dimensions (defaults 40 px width / 16 px body / 240 px length if fields missing).
+    feedback: Identical to wind-blade.
+    notes: Can share one preset with wind-blade parameterized by spec fields.
+  - [2]
+    variant: wind-rend-spread
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        spawnWindRendSpread 3157-3195
+      - [1]
+        drawWindCrescent 3068-3076
+      - [2]
+        dispatch handleChainVfx 4494-4497
+    specFields:
+      - [0]
+        targets (targets[0] = source enemy, targets[1..] = infected enemies)
+      - [1]
+        travelMs[0]
+      - [2]
+        elem
+      - [3]
+        delayMs
+    placement: One small crescent per infected target, spawned at posOf(targets[0]) (sampled once at spawn) and flying to posOf(toId) which is re-sampled every frame (tracks moving enemy). node.rotation = atan2 toward the current target. Layer fx. Requires ≥2 targets, else nothing is drawn.
+    motion: Linear interpolation from → to over dur (k = t/dur), heading updated each frame; alpha 1 until k>0.85 then linear fade over the last 15%. No trail dots, no scaling.
+    timing: travel = projectileTravelMs(travelMs[0], 120) → travelMs[0] if >0 else 200 ms; dur = max(0.08, travel/1000) s; each blade i (0-based over slice(1)) starts at baseDelay + i·40 ms; hard life travel+400 ms; prio 1.
+    visual: Fixed-size crescent: width 20 px, body 8 px (hardcoded, not from spec), drawWindCrescent with theme c1 fill 0.85, c2 inner fill 0.9, c2 stroke 2 px 0.85, alpha 1 → fading last 15%. Wind: #86efac / #ffffff.
+    feedback: On arrival (k>=1, once): spawnImpact(to, spec, false) [ring theme.c1 9.8 px 0.26 s + 6 particles] and hitReact(toId, elem || 'wind', false). No range circle drawn (spread does no damage).
+    notes: Colors derived from element theme (falls to wind). Dimensions hardcoded.
+  - [3]
+    variant: wind-burst
+    fxKinds:
+      - [0]
+        burst
+      - [1]
+        impact (default branch)
+    functions:
+      - [0]
+        spawnWindBurst 3130-3152
+      - [1]
+        dispatch onVfx 4879-4887 (burst) and 4979-4984 (impact/default)
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+      - [3]
+        elem
+      - [4]
+        targets
+    placement: Single Graphics at (area.x, area.y - 10), world coords from the simulation. Requires finite area.x/y else nothing. Layer fx. Rings are flattened ellipses (ry = 0.6·rx) suggesting a ground-plane shockwave.
+    motion: Two concentric ellipses expand: outer radius r·(0.45 + 0.6k) (0.45r → 1.05r), inner radius r·(0.2 + 0.5k) (0.2r → 0.7r); both alpha fade linearly with (1-k). Redrawn every frame.
+    timing: dur 0.34 s; hard life 540 ms; prio 1; spawned immediately (no setTimeout inside).
+    visual: r = max(12, area.r || 40) px. Outer ring stroke theme.c1 width 3 alpha 0.9·(1-k); inner ring stroke theme.c2 width 1.5 alpha 0.7·(1-k). Wind: #86efac outer, #ffffff inner. No fill, no particles.
+    feedback: Dispatcher calls hitReact(id, elem || 'wind', false) for each target immediately (no spawnImpact, no delay). Drawn even when targets is empty.
+    notes: Colors from element theme (c1/c2). Size from area.r. Both burst and impact fxKinds route here.
+  - [4]
+    variant: wind-slash
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        spawnWindSlash 3198-3231
+      - [1]
+        drawWindCrescent 3068-3076
+      - [2]
+        dispatch onVfx 4706
+    specFields:
+      - [0]
+        lineLength
+      - [1]
+        targets
+      - [2]
+        elem
+      - [3]
+        delayMs
+    placement: Graphics at playerMuzzle (player pos, y-52) at spawn time (does NOT follow the player afterwards), rotation = atan2 toward posOf(targets[0]) else facing (PI/0). Crescent extends forward from that point. Layer fx.
+    motion: Stationary; the crescent grows in place: reach = radius·(0.55 + 0.45k) so width = 1.25·reach (0.69·radius → 1.25·radius) and body = 0.55·reach (0.30·radius → 0.55·radius); alpha multiplier 1 − 0.85k (1 → 0.15) then node removed (small pop at end). Redrawn each frame (clear + drawWindCrescent).
+    timing: radius = max(24, lineLength || 60) px; dur 0.32 s; hard life 520 ms; prio 1; spawn wrapped in setTimeout(baseDelay).
+    visual: drawWindCrescent layered colors: theme.c1 fill 0.85·a, theme.c2 inner fill 0.9·a, theme.c2 stroke 2 px 0.85·a. Final size ≈ 1.25·radius tip-to-tip × 0.55·radius deep (for default 60: 75 × 33 px). Wind: #86efac / #ffffff.
+    feedback: Per target at 60 + ti·30 ms after spawn: spawnImpact(posOf(id), spec, false) + hitReact(id, elem, false).
+    notes: Color from element theme; size from lineLength.
+  - [5]
+    variant: wind-spin
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        spawnWindSpin 3235-3268
+      - [1]
+        dispatch onVfx 4707-4716
+    specFields:
+      - [0]
+        area.r
+      - [1]
+        lineLength
+      - [2]
+        targets
+      - [3]
+        elem
+      - [4]
+        delayMs
+    placement: Graphics re-centered every frame on playerPos (x, y-12) — follows the player. Ground-plane ellipse (ry = 0.62·rx). Layer fx.
+    motion: Ring radius r grows radius·(0.5 + 0.5k) (half → full); everything fades with (1-k). Four blade-shadow ellipses orbit at angles k·2π + i·π/2 (one full revolution over the 0.42 s), positioned at (cos·r, sin·r·0.62).
+    timing: radius = max(24, area.r || lineLength || 60) px; dur 0.42 s; hard life 620 ms; prio 1; spawn wrapped in setTimeout(baseDelay).
+    visual: Outer ellipse r × 0.62r stroke theme.c1 width 4 alpha 0.75·(1-k); inner ellipse 0.88r × 0.55r stroke theme.c2 width 2 alpha 0.6·(1-k); 4 filled ellipses (0.16r × 0.07r) theme.c2 alpha 0.7·(1-k) riding the outer ring. Wind: #86efac ring, #ffffff inner ring + blades. Redrawn each frame.
+    feedback: Dispatcher only: hitReact(id, elem, false) per target at baseDelay + 90 + ti·24 ms. No spawnImpact, no particles.
+    notes: Colors from element theme; radius from area.r (actual hit radius).
+  - [6]
+    variant: void-disc
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnVoidDisc 3273-3344 (module state _voidDiscs 3272)
+      - [1]
+        dispatch onVfx 4950
+    specFields:
+      - [0]
+        area.r
+      - [1]
+        area.spin (<0 → ccw)
+      - [2]
+        area.id
+      - [3]
+        area.spinRate (rad/s)
+      - [4]
+        area.startAng
+      - [5]
+        area.grow (px/s)
+      - [6]
+        area.orbR
+      - [7]
+        dur
+    placement: Graphics re-centered each frame on playerPos (x, y-12); a saw-tooth blade orbits the player on a flattened ellipse (orbit y × 0.62) at orbit radius disc.r (starts max(8, area.r || 60), grows area.grow px/s continuously). Keyed 'void:' + (area.id || 'cw'/'ccw'); a re-event for the same key only extends dur (max(old, t + new)) and maxLife, never respawns. Layer fx.
+    motion: Orbit angle = startAng + spin·t, spin = area.spinRate if nonzero else ±2π rad/s (one revolution/s, sign from area.spin). Blade self-rotates at 3× orbit angle. Radius grows linearly by grow·dt per frame. Trail: 5 ghost blades at 0.11 s intervals back in time (0.11..0.55 s) with radius rolled back (r − grow·dt), alpha 0.18·(1 − ti/6) → 0.15, 0.12, 0.09, 0.06, 0.03; live blade alpha 1. Fade over last 0.4 s.
+    timing: dur = max(0.5, spec.dur || 6) s (NOT capped by FX_AURA_MAX_SEC); hard life dur·1000+500 ms (extended on re-events); prio 2. Persistent/mergeable by area.id.
+    visual: Faint orbit ellipse (disc.r × 0.62 disc.r) stroke c1 width 1.5 alpha 0.16·fade. Blade = 12-tooth sawtooth polygon (24 vertices alternating radius bodyR and 0.68·bodyR, y squashed ×0.85), bodyR = max(6, area.orbR || 24) px, fill c1 alpha 0.8, stroke c2 width 2 alpha 0.9, plus center circle 0.42·bodyR filled c2 alpha 0.85. Wind: #86efac disc with white #ffffff outline/center. All alphas × fade. Redrawn every frame.
+    feedback: None (no impact, no hitReact, no particles).
+    notes: Colors from element theme (c1/c2). Two discs (cw/ccw) can coexist under different keys. Geometry constants (12 teeth, 0.68 inner tooth, 3× self-spin, 5-step trail) hardcoded.
+  - [7]
+    variant: storm-barrier
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnStormShell 3349-3405 (module state _stormShells 3348)
+      - [1]
+        dispatch onVfx 4951-4952
+    specFields:
+      - [0]
+        variant
+      - [1]
+        dur
+      - [2]
+        elem
+    placement: Graphics re-centered every frame on playerPos (x, y-24) — a shell around the player's body. Keyed by variant; re-event extends dur (capped by FX_ORBIT_MAX_SEC 12). Layer fx.
+    motion: Phase ph = 4.2·t rad/s. Three stacked rings breathe horizontally: rx = 30 + 5·sin(ph + i). One dot per ring orbits at angle ph·1.6 + i·2.1 rad/s (x = cos·rx, y = yy + sin·4.5). Fade over last 0.4 s.
+    timing: dur = min(12, max(0.3, spec.dur || 4)) s; hard life 13000 ms; prio 2. Persistent, extended by repeated events.
+    visual: 3 ellipse rings at local y = -6, +10, +26 (16 px apart), rx ≈ 25–35 px, ry 9 px, stroke width 2.5, color theme.c2 for the middle ring (i=1) else theme.c1, alpha 0.6·fade; 3 orbiting dots radius 2.6 px fill theme.c2 alpha 0.9·fade. Wind: #86efac outer/lower rings, #ffffff middle ring + dots. Redrawn each frame.
+    feedback: None.
+    notes: Colors from element theme (c1/c2). Ring sizes hardcoded (not from area).
+  - [8]
+    variant: storm-god
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnStormShell 3349-3405
+      - [1]
+        dispatch onVfx 4951-4952
+    specFields:
+      - [0]
+        variant
+      - [1]
+        dur
+      - [2]
+        elem
+    placement: Same as storm-barrier (player-following, y-24), separate key 'storm-god' so it can coexist with storm-barrier.
+    motion: Same ring/dot animation but faster: ph = 7·t rad/s. Fade last 0.4 s.
+    timing: Same as storm-barrier: dur = min(12, max(0.3, dur || 4)); hard 13 s; prio 2.
+    visual: Same three rings (rx 30±5, ry 9, y -6/10/26) but alpha 0.9·fade (brighter), dots radius 3.6 px; c2 is HARDCODED gold #ffe9a3 (replaces theme.c2 for middle ring, dots and the extra ellipse); c1 still theme.c1 (#86efac for wind). Extra: large ellipse at (0, +6) rx 40 ry 46 stroke #ffe9a3 width 2 alpha 0.35·fade (full-body golden aura).
+    feedback: None.
+    notes: Mixed: c1 from element theme, c2 hardcoded gold.
+  - [9]
+    variant: storm-rip
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnStormShell 3349-3405 (rip branch 3375-3385)
+      - [1]
+        dispatch onVfx 4951-4952
+    specFields:
+      - [0]
+        variant
+      - [1]
+        dur
+      - [2]
+        elem
+    placement: Player-following Graphics at (x, y-24); 6 small air-blades on a flattened ring (y × 0.62). Keyed 'storm-rip'; re-event extends dur (which also stretches the expansion since k = t/dur).
+    motion: k = t/dur: ring radius rr = 26 + 34k (26 → 60 px) while the 6 blades rotate at ph = 4.2·t rad/s (angles ph + ri·π/3); alpha 0.7·(1-k) → fades to 0 at end. Not using the 0.4 s fade (uses 1-k).
+    timing: dur = min(12, max(0.3, spec.dur || 4)) s — intended as a short per-beat pulse; hard 13 s; prio 2.
+    visual: 6 filled ellipses 9 × 3.4 px, fill theme.c2 (wind #ffffff) alpha 0.7·(1-k). No c1 usage, no rings.
+    feedback: None.
+    notes: Color from element theme c2 only. Sizes hardcoded.
+  - [10]
+    variant: blizzard
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnIceField 3407-3568 (blizzard branches 3414-3417, 3481-3488, 3505-3528)
+      - [1]
+        fieldVfxKey 2845-2850
+      - [2]
+        dispatch onVfx 4948
+    specFields:
+      - [0]
+        area.w
+      - [1]
+        area.h
+      - [2]
+        area.x/area.y (initial only)
+      - [3]
+        area.id / area.fieldKey / area.vfxId
+      - [4]
+        area.speed (stored, unused)
+      - [5]
+        dur
+    placement: Container in the ZONE layer (ground, under entities). Position is re-synced every frame to playerPos (follows the player, ignores later event coordinates). Keyed by fieldVfxKey (id or rounded x:y) + ':blizzard'; repeated events only refresh expiresAt.
+    motion: Static rectangle following the player. 3 cloud polylines wave with phase 2.2·t·0.7 (≈1.54 rad/s) amplitude 0.12·ry; 10 snow dots fall at 26 + 3·fi px/s, wrapping over visualH (deterministic, no random). Fade over last 420 ms before expiresAt.
+    timing: holdMs = max(520, dur·2400) ms per event (dur default 0.4 → 960 ms), refreshed each event; hard life ICE_FIELD_MAX_LIFE_SEC 14 s; prio 2. Particles: every 0.3 s while fade>0.4 and not REDUCED_MOTION.
+    visual: w = max(24, area.w || 120), h = max(24, area.h || 120); visualH = max(20, 0.52·h). HARDCODED ICE_FIELD_THEME: c1 #7dd3fc, c2 #e0f2fe, glow #22d3ee. Rect (w × visualH, centered) fill c1 alpha 0.2·fade + stroke glow width 3 alpha 0.5·fade; 3 wavy lines (8 pts spanning ≈86% of w at y = -0.5ry, 0, +0.5ry) stroke c2 width 2 alpha 0.34·fade; 10 circles radius 1.6/2.3/3.0 px fill c2 alpha 0.6·fade at x = sin(fi·2.7)·0.46w. Particles: spawnParticles(2, ICE_FIELD_THEME, speed 0.8, radiusScale 0.5) at random point within 0.6w × 0.4h. Rotation 0.
+    feedback: None.
+    notes: Hardcoded ice-field palette regardless of spec.elem → single preset.
+  - [11]
+    variant: water-tornado
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnIceField 3407-3413 (early return)
+      - [1]
+        spawnFirePillar 4169-4282
+      - [2]
+        dispatch onVfx 4948
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+      - [3]
+        area.id
+      - [4]
+        dur
+      - [5]
+        elem
+    placement: Container in the ZONE layer at (area.x, area.y), updated directly (no interpolation) on each re-event. Key = (area.id || 'x:y:r') + ':water'. Funnel rises upward from the ground point (all geometry at negative y).
+    motion: Appear scale-in over 0.28 s (h, baseW, topW × appear). phase = 4.2·t: 4 ribbons sway sin(phase + 1.55·ri + 8.2·u)·baseW·(0.22 − 0.1u) plus cos(0.7·phase + ri)·0.08·baseW. Fade over last 360 ms. Sparks every 0.11 s.
+    timing: holdMs = max(900, dur·2400) ms per event, refreshed; hard life FIRE_PILLAR_MAX_LIFE_SEC 4.5 s; prio 2. Spark particles every 0.11 s while fade>0.45 (3 particles, speed 1.1, radiusScale 0.7).
+    visual: radius = max(16, area.r || 28); h = max(118, 3.45·radius), baseW = max(44, 2.2·radius), topW = max(18, 0.62·radius). Ground ellipse (0,+4) 0.58·baseW × max(8, 0.34 r) fill 0x0369a1 alpha 0.42 + stroke 0x38bdf8 width 2 alpha 0.78; inner ellipse 0.46·baseW × max(5, 0.2 r) fill 0x7dd3fc alpha 0.32; tapered silhouette polygon (base ±0.55 baseW → top ±0.34 topW at −h) fill 0x0284c7 alpha 0.52; 4 ribbons (7 segments, width baseW·0.18 or 0.12 inner ·(1−0.7u)) fill inner (ri 1,2) 0xf0f9ff alpha 0.82, odd 0x38bdf8 / even 0x7dd3fc alpha 0.7; core ellipse at (0, −0.4h) max(5, 0.12 baseW) × max(18, 0.34h) fill 0xf0f9ff alpha 0.62; top tongue poly fill 0x38bdf8 alpha 0.82. Particles use ICE_FIELD_THEME (#7dd3fc/#e0f2fe).
+    feedback: None (the aura path passes no targets).
+    notes: HARDCODED water palette (isWater also true for any spec.elem === 'ice' routed to spawnFirePillar). DEAD CODE: spawnIceField 3529-3541 contains an alternate 'water/wind-tornado' funnel (circle r fill c1 0.14 + stroke glow 2px 0.5, 5 stacked ellipses shrinking 1−0.72u, rising −1.5·r·u, spin 1.6·phase, stroke width 2.4 alt c2/glow alpha 0.62−0.3u) that is unreachable because of the early return at 3411-3413.
+  - [12]
+    variant: wind-tornado
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnIceField 3407-3413 (early return)
+      - [1]
+        spawnFirePillar 4169-4282
+      - [2]
+        dispatch onVfx 4948
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+      - [3]
+        area.id
+      - [4]
+        dur
+      - [5]
+        elem
+    placement: Same as water-tornado (zone layer, at area.x/y, key suffix ':wind').
+    motion: Same as water-tornado.
+    timing: Same as water-tornado: holdMs max(900, dur·2400), hard 4.5 s, prio 2, sparks every 0.11 s.
+    visual: Same geometry as water-tornado with HARDCODED green palette: ground ellipse fill 0x166534 alpha 0.42 stroke 0x86efac 2px alpha 0.78; inner ellipse 0xbbf7d0 alpha 0.32; silhouette 0x22c55e alpha 0.52; ribbons inner 0xffffff 0.82, odd 0x86efac, even 0xbbf7d0 alpha 0.7; core 0xffffff alpha 0.62; top tongue 0x4ade80 alpha 0.82. Spark particles use themeOf(spec) (wind theme #86efac/#ffffff).
+    feedback: None.
+    notes: Hardcoded palette; only the sparks follow the element theme.
+  - [13]
+    variant: ice-arrow-homing
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnIceField 3407-3568 (homing branches 3415, 3425-3432, 3459-3475, 3489-3492, 3498, 3546-3551)
+      - [1]
+        fieldVfxFollowStep 2831-2840
+      - [2]
+        fieldVfxWindAngleStep 2864-2873
+      - [3]
+        drawIceShard 1480-1486
+      - [4]
+        dispatch onVfx 4949
+    specFields:
+      - [0]
+        area.x/area.y (authoritative position each event)
+      - [1]
+        area.r
+      - [2]
+        area.id / fieldKey / vfxId (REQUIRED, else not drawn)
+      - [3]
+        area.speed (px/s, follow cap)
+      - [4]
+        area.destX/area.destY (heading fallback)
+      - [5]
+        dur
+    placement: Container in the FX layer representing the projectile body itself; starts at the first event's area.x/y and thereafter smoothly follows the latest event's area.x/y. node.rotation = smoothed heading toward the follow target (fallback: toward destX/destY), so the diamond points along its flight direction.
+    motion: Exponential follow: per frame step = min(dist, min(dist/0.14 s, 2·area.speed)·dt) toward the authoritative point (≈25 px lag at 180 px/s). Heading eased with k = 1 − exp(−14·dt). Fade over last 420 ms before expiresAt. Glow sprite alpha tracks fade.
+    timing: holdMs = max(520, dur·2400) ms per event (dur 0.4 → 960 ms), refreshed by each event; hard life 14 s; prio 2. Particles every 0.3 s while fade>0.4 (2 particles, ice theme, speed 0.8, scale 0.5).
+    visual: w = max(10, 2·(area.r || 30)); drawIceShard scale = max(5, w/2)/11 → diamond half-height = area.r px (min 5), half-width = 9/11·area.r, fill ICE theme c1 #4da6ff, stroke c2 #f2fbff width 2 alpha 0.95·fade. Behind it: glowTexture sprite (64 px radial white gradient) tint ice glow #79d8ff, alpha 0.8·fade, scale 0.9 (≈58 px), blendMode 'add' (matches spawnProjectile's ice-arrow glow). Particles use ice theme.
+    feedback: None (damage ticks come as separate events).
+    notes: Theme forced to themeOf({elem:'ice'}) regardless of spec.elem → single preset. Same node is reused across ticks by area.id; duplicates only if id missing (then nothing is drawn).
+  - [14]
+    variant: wind-blade-homing
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnIceField 3407-3568 (homing branches, crescent draw 3542-3545)
+      - [1]
+        fieldVfxFollowStep 2831-2840
+      - [2]
+        fieldVfxWindAngleStep 2864-2873
+      - [3]
+        drawWindCrescent 3068-3076
+      - [4]
+        dispatch onVfx 4949
+    specFields:
+      - [0]
+        area.x/area.y
+      - [1]
+        area.r
+      - [2]
+        area.id / fieldKey / vfxId (REQUIRED)
+      - [3]
+        area.speed
+      - [4]
+        area.destX/destY
+      - [5]
+        dur
+    placement: Same as ice-arrow-homing: FX-layer container following the authoritative area.x/y with exponential follow; rotation = smoothed flight heading; crescent's +x points along travel.
+    motion: Same follow/heading model as ice-arrow-homing; fade over last 420 ms.
+    timing: holdMs max(520, dur·2400); hard 14 s; prio 2. NO particles (explicitly skipped at 3554) and no glow sprite.
+    visual: w = max(10, 2·(area.r || 30)); drawWindCrescent(width = max(8, w) = 2·area.r tip-to-tip, body = max(5, 0.38·w) ≈ 0.76·area.r deep, WIND theme, alpha = fade): fill #86efac 0.85·fade, inner fill #ffffff 0.9·fade, stroke #ffffff 2 px 0.85·fade. Redrawn each frame (for fade).
+    feedback: None.
+    notes: Theme forced to wind (themeOf({elem:'wind'})) → single preset; same crescent primitive as wind-blade.
+  - [15]
+    variant: thunder-orb
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnThunderOrbField 3577-3642 (state _thunderOrbFx 3574, THUNDER_ORB_MAX_LIFE_SEC 3575)
+      - [1]
+        fieldVfxSetPositionTarget 2888-2895
+      - [2]
+        fieldVfxStep 2897-2905
+      - [3]
+        dispatch onVfx 4944
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+      - [3]
+        area.id
+      - [4]
+        dur
+    placement: Container in FX layer at (fx.x, fx.y − 10) (hovering slightly above the ground point). Keyed by area.id (fallback rounded x:y); each event updates r and sets a new position target.
+    motion: Position lerps linearly from current to the event's area.x/y over fieldVfxMotionSec(spec, 0.35) = max(0.12, dur) s (events arrive every ~0.35 s). Body pulses scale 1 ± 0.06·sin(9·t). 4 surface arcs crawl: base angle = t·(2.2 + 0.6·ai) + 1.7·ai, 3 segments each with step 0.9 + 0.25·sin(3t + ai) rad and radius r·(1 − 0.18·seg), y × 0.72. Fade over last 260 ms.
+    timing: holdMs = max(520, dur·2400) (dur 0.35 → 840 ms) refreshed per event; hard life 14 s; prio 2.
+    visual: r = max(8, area.r || 30). HARDCODED colors: outer circle r·pulse fill 0x1d4ed8 alpha 0.24·fade; mid circle 0.62r fill 0x60a5fa alpha 0.5·fade; core 0.3r fill 0xffffff alpha 0.8·fade; arcs stroke 0xffffff (first segment) / 0x93c5fd (others), width 1.6 / 1.2 / 1.0 px, alpha 0.7·fade. Redrawn each frame. No particles.
+    feedback: None.
+    notes: Palette hardcoded (blue/white), ignores spec.elem → single preset.
+  - [16]
+    variant: thunder-fall
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        spawnThunderFall 3646-3694
+      - [1]
+        spawnTargetTelegraph 3800-3830
+      - [2]
+        spawnFireShockwave 3965-4015
+      - [3]
+        spawnImpact 1866-1902
+      - [4]
+        vfxTargetLiveForSpec 159-168
+      - [5]
+        dispatch onVfx 4924-4929
+    specFields:
+      - [0]
+        targets
+      - [1]
+        area.x/area.y (landing point, else posOf(target))
+      - [2]
+        area.r
+      - [3]
+        travelMs[0]
+      - [4]
+        elem
+      - [5]
+        delayMs
+    placement: One call per target with delay ti·0.09 s (+ baseDelay). Landing point `to` = area.x/y if finite else posOf(targetId); start `from` = (to.x + rand(−18..18), to.y − 0.7·S.H) i.e. from far above the screen. Orb Container in FX layer; telegraph in ZONE layer at `to`. Skipped entirely if the target is not alive; cancelled mid-flight (orb, telegraph, impact particles, shockwave via targetGuard) if the target dies.
+    motion: Orb hidden during delay, then linear lerp from → to over dur (no easing); 3 chord lines spin at 7 rad/s. After landing the orb keeps drawing at the ground point for 0.2 s (no fade). Telegraph pulses ±2.5% and fades over its last 16%.
+    timing: dur = max(0.35, (travelMs[0] || 700)/1000) s; telegraph visible for dur (after delay); orb lives dur + 0.2 s; hard life (dur + delay)·1000 + 900 ms; prio 2 (telegraph prio 1). Impact 0.4 s; shockwave 0.86 s.
+    visual: radius = area.r > 0 ? area.r : 90; orbR = max(16, 0.32·radius) (28.8 px at 90). HARDCODED orb: circle orbR fill 0x1d4ed8 alpha 0.34; 0.62·orbR fill 0x60a5fa alpha 0.62; 0.3·orbR fill 0xffffff alpha 0.9; 3 white chords (from angle a on orbR to a+2.4 rad on 0.7·orbR) stroke 0xffffff width 2 alpha 0.7. Telegraph: ground ellipse max(36, radius) × 0.52, fill 0x2563eb alpha 0.16, stroke 0x60a5fa 2.5 px alpha 0.82. Landing shockwave: spawnFireShockwave(radius, THUNDER_SHOCK_THEME c1 #2563eb / c2 #dbeafe) — flash ellipse, 3 expanding elliptical rings (c2, c1, c1; width 5→1, alpha 0.92→0), 18 tongue particles alternating c1/c2. Impact ring: spawnImpact(strong) tint themeOf(spec).c1 — for elem lightning that is GOLD #f2b705 (1.3 → 16.3 px over 0.4 s) + 12 particles in lightning theme (#f2b705/#fff8b0).
+    feedback: On landing (once): spawnImpact(to, spec, true, targetGuard); spawnFireShockwave(to, radius, THUNDER_SHOCK_THEME, targetGuard); addShake(6, spec) → NO-OP (thunder-fall is not in isSpecialScreenShakeSpec allowlist 1348-1356; likewise the strong impact's addShake(5)); hitReact(targetId, elem || 'lightning', true).
+    notes: Orb/telegraph/shockwave palettes are hardcoded blue; only the impact ring + its particles come from the element theme (gold for lightning) — color mismatch to be aware of when re-authoring. Strictly target-bound (fxGate + vfxTargetLiveForSpec).
+  - [17]
+    variant: <helper:riser>
+    fxKinds:
+      - [0]
+        aura (spawnAura 2325-2357)
+      - [1]
+        aura firehunt/thunder-orbit (2451)
+      - [2]
+        aura follow-aura (2518)
+      - [3]
+        selfBuff (spawnSelfBuff 4076-4096)
+    functions:
+      - [0]
+        spawnRiser 3696-3718
+      - [1]
+        callers 2352, 2451, 2518, 4094-4095
+    specFields:
+      - [0]
+        glyph (via caller)
+    placement: Single small node at the (x, y) the caller chooses: spawnAura → random point in the lower 60% of the aura rect every 0.3 s; spawnFireHunt → on the orbit ring at a random orb slot every 0.12 s; spawnFollowAura → random point on the aura ellipse rim (y × 0.62) every 0.1 s; spawnSelfBuff → two risers at player (x−14, y−30) and (x+14, y−44) once. Layer fx.
+    motion: Rises straight up at 34 px/s (≈31 px total); alpha = 1 − t/0.9 (linear fade to 0). No scaling/rotation.
+    timing: life 0.9 s; prio 0 (first to be evicted); default hard life 3000 ms.
+    visual: 40% chance (only when a glyph is given): PIXI.Text of the glyph, fontSize 13, centered anchor, normal blend. Otherwise: Graphics circle radius 2 px filled theme.c1 with blendMode 'add'. Caller passes themeOf(spec) so the dot color follows the element theme c1.
+    feedback: None.
+    notes: Color from element theme c1 (one preset per elem, or tint at spawn); glyph text variant random per spawn. Not gated by REDUCED_MOTION itself (callers gate the emission loop).

@@ -1,0 +1,1746 @@
+sharedHelpers: FILE: D:\MyGames\Idle-RPG\claude\js\battle-renderer.js (all line refs below). Theme table VFX_ELEM_THEME lives in js/vfx.js:77-86 (FALLBACK_THEME copy at 56-65): light{c1 #ffe47a,c2 #fffef4,glow #fff3a3} dark{#6f2da8,#1a0c2e,#913dcc} fire{#e63924,#ffd447,#ff6a2a} ice{#4da6ff,#f2fbff,#79d8ff} lightning{#f2b705,#fff8b0,#ffd23f} earth{#ad7444,#5b3a27,#c48a55} poison{#4caf2b,#d8ff8a,#76d83b} wind{#86efac,#ffffff,#b9f6cf}.
+   
+   themeOf(spec) 66-81: variant overrides FIRST: 'knife-soulhunter' -> gold {#f2b705,#fff8b0,#ffd23f}; 'thunder-strike' -> purple {#c084fc,#fdf4ff,#9333ea}; 'bleed'/'bleed-tick' -> red {#d92846,#ffd0d8,#ff4962}; else table[spec.elem]; else mono {c1=c2=glow = spec.color || '#9ecbff'}. So any effect that calls themeOf needs one preset per element (8) unless noted hardcoded.
+   
+   Constants 30-53: MAX_FX 140; FX_HARD_LIFETIME_MS 3000 (default hard life of every fx unless spawn passes its own); FX_AURA_MAX_SEC 6; FX_PERSISTENT_AURA_PRIORITY 3; METEOR_SIZE_SCALE 1.30; PLAYER_REACH 52; HIT_JOLT_COOLDOWN_MS 3000; HIT_JOLT_X 2.5 / HIT_JOLT_Y 1.5 px. POS_BUFFER_MS 240 (line 376). VFX_HIT_STAGGER_SEC = 0.09 (js/data.js:1689) -> 'stagger' in onVfx = 90 ms. VFX_PROJECTILE_SPEED_MULTIPLIER 0.6 (data.js:1694); VFX_METEOR_SPEED_MULTIPLIER 0.70, VFX_METEOR_DROP_RUN 180, VFX_METEOR_DROP_ANGLE_RAD pi/3 (data.js:1702-1704). BF_SYSTEM_UNITS_PER_METER 10 (battlefield.js:497). REDUCED_MOTION (line 27) disables particles/shake and reduces counts.
+   
+   Geometry helpers 256-298: areaRect(area) -> square {x:area.x-r, y:area.y-r, w:2r, h:2r, r} (r non-finite -> max(S.W,S.H)); rectRadius(rect) -> rect.r or min(w,h)/2; playerPos() = player world pos; playerMuzzle() = player pos with y-52 (projectile/beam/slash origin); posOf(elId): 'pv-float' -> player root y-46; live entity -> root.y - hitHeight*0.55; else lastPos (kept 3 s); else point PLAYER_REACH+14=66 px in front of player, y-24. projectileTargetPoint 325-351 predicts target position over remaining flight (<=1.25 s); projectileNearTarget 352-359 arrival radius max(24, hitHeight*0.35).
+   
+   Textures 482-559: glowTexture 64x64 radial white (0.9 -> 0.28 at 50% -> 0); dotTexture 32x32 solid disc soft edge, DOT_TEX_RADIUS 12.8 (scale = wantedRadius/12.8); ringTexture 128x128 soft ring whose bright band peaks at RING_TEX_RADIUS 59.2 (band ~16% of radius). Load shedding 568-582: particleBudget(n) = n (load<0.6), 35% (0.6-0.85), 0 (>=0.85); trailIntervalSec = 0.03 s / 0.075 s / none.
+   
+   addFx(fx, prio, maxLifeMs) 1359-1391: prio 0 decorative (particles/trail/riser), 1 normal, 2 fields, 3 persistent orbit/follow auras; when 140 fx exist a new fx evicts a strictly lower prio one or is destroyed. Hard life default 3000 ms.
+   
+   fxGate(spec) 198-210: abort scheduled setTimeout segments if renderer not ready / tab hidden; additionally aborts when targets left the field for thunder-strike/thunder-fall (strict: dying counts as dead), cat 'basic', 'knife-bounce', 'knife-soulhunter'. shouldAnimatePlayer 211-215: play player attack anim unless cat enemy / fxKind chain / variant knife-bounce / swordwave-extra. Player anim (4601-4615): faces first target; melee anim (with run-to-target) when cat basic|phys AND fxKind slash|impact|burst; else 'cast' anim when cat magic or fxKind rain|beam, else 'melee'.
+   
+   onVfx entry 4562-4631: (a) non-enemy-attack specs get delayMs += 240 (POS_BUFFER_MS) once; delayMs>0 -> setTimeout then re-enter with delayMs=0 (so 'baseDelay' inside the switch is ALWAYS 0 after re-entry; the setTimeout(baseDelay+...) offsets in branches are effectively relative offsets). (b) cat enemy + fxKind enemy-attack -> renderEnemyAttackVfx immediately (no buffer). (c) fxKind aura + elem wind + no variant -> dropped. (d) targets = spec.targets.slice(0,8); rect = areaRect(spec.area); count = min(isThrust?8:5, max(1, spec.count||1)); stagger = 90 ms. (e) variant 'arcane-barrage' or (glyph '💫' && cat magic) -> barrage; (f) fxKind 'chain' OR variant 'chain' -> handleChainVfx; then switch(fxKind).
+   
+   hitReact(elId, elem, strong, suppressJolt) 1308-1331: entity flash tint = themeOf({elem}).c1 for 0.15 s (0.24 strong); jolt 0.12 s (0.18 strong) amplitude 2.5x1.5 px, 3 s cooldown per entity, skipped when suppressJolt; enemies also 'pop' scale bounce 0.15/0.24 s; boss plays 'hurt' anim. isBloodbladeNoHitJoltSpec 1303-1307: variants poison-spread, bleed, poison, bleed-tick, poison-tick -> suppress jolt.
+   
+   addShake(px, spec) 1332-1336: screen shake capped 10 px, ONLY for variants meteor, pillar, purple-thunder, storm-sigil, detonate, nova, venomburst, vortex (isSpecialScreenShakeSpec 1348-1356); poison-spread, blood-explosion, zero-infection, bleed family never shake. addMeteorCameraShake 1340-1342: 14-18 px, bypasses whitelist (meteor and starfall only).
+   
+   spawnParticles(x,y,count,theme,speed,radiusScale,guard) 1439-1474: count<=14 then budget; dot sprites radius 1.6-4.0 px * radiusScale, tint random c1|c2, blendMode 'add'; velocity (60-180)*speed*radiusScale*0.55 px/s random direction, initial vy -40, gravity +260 px/s^2; life 0.45-0.75 s, alpha linear 1->0. prio 0.
+   
+   spawnTrailDot(x,y,theme) 1843-1863: dot sprite r 2.2 px tint c2, alpha 0.7 -> 0 over 0.28 s, scale shrinks (1 - t/0.4), add blend, prio 0.
+   
+   spawnImpact(x,y,spec,strong,guard) 1866-1902: ring sprite (ringTexture) tinted theme.c1, bright-band radius grows 1.3 px -> 1.3+maxR, alpha 1->0 linear. Normal: maxR 8.5, dur 0.26 s, 6 particles speed 0.55. Strong: maxR 15, dur 0.4 s, 12 particles speed 0.9, addShake(5) (whitelist). variant 'fire-explosion': HARDCODED theme {c1 #c51e0d, c2 #ffd447, glow #ff3b0a}, maxR 30, dur 0.62 s, 22 particles speed 1.35 radiusScale 1.45, visually strong but no shake unless strong flag. prio 1.
+   
+   spawnSlash(x,y,spec,big,rotation) 1920-1941: Graphics arc radius 36 (big: 54) px, arc span 0.9 rad trailing a head that sweeps from -0.7pi to +0.4pi over 0.24 s; stroke theme.c1 width 7 -> 2.8, alpha 1->0, round caps; inner arc R*0.8 span 0.7 rad white (#ffffff) width 3->0 alpha 0.8->0; rotation given or random +-0.5 rad. prio 1.
+   
+   projectileCore(spec, theme) 1488-1530 (Graphics, local coords, +x = flight dir): knife/knife-bounce/knife-soulhunter -> dart polygon (-14,0)(-4,-5)(14,0)(-4,5) fill c1 stroke c2 w2 a0.95; elem lightning -> zigzag polyline (-13,-5)(-5,4)(1,-4)(8,5)(13,-2) stroke c1 w5 + c2 w1.8; elem ice -> drawIceShard diamond 18 wide x 22 tall fill c1 stroke c2 w2; elem earth -> 16x16 square fill c1 stroke c2 w2 + 7x6 highlight c2 a0.55; elem poison -> droplet poly (~15x17) fill c1 stroke c2 w1.5 + highlight circle r2.5 c2 at (-2,-2); else circle radius meteor 10 / fireball 13 / cat basic 5 / else 6.5 fill c1 + inner circle r*0.55 fill c2. smallFireballProjectile 1545-1569 (variants fireball/fireball-small): FIREBALL_SIZE_SCALE 3 -> tail polygons (c1 a0.9 length 42 px, c2 a0.95) + core circle r 19.5 c1 with r 9.3 c2 highlight, flicker. fireHuntRingProjectile 1591-1612: ring R 11 stroke c2 w3.2 + glow w6 a0.28 + inner ring R*0.62 c1 w1.4 a0.55 + white highlight arc w3.2; scale.y = 0.22+0.78|cos(phase)| at 2.6 flips/s (looks like a tumbling ring).
+   
+   projectileTravelMs(travelMs, fallbackMs) 1537-1540: travelMs>0 ? travelMs : (fallback||300)/0.6. e.g. fallback 120 -> 200 ms, 140 -> 233 ms, 300 -> 500 ms, 360 -> 600 ms, 420 -> 700 ms.
+   
+   spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride, pathOverride) 1614-1732: from = fromOverride || playerMuzzle(). Core: glyph PIXI.Text fontSize 20 when spec.glyph && (variant glyph|knife|knife-bounce, or no elem && cat special|potential|fusion); firehunt-ring -> ring; fireball(-small) -> smallFireball; else projectileCore. Glow sprite (glowTexture) scale 0.9 blend add, tint theme.glow alpha 0.8; knife family: tint 0xff3850 alpha 0.16; knife-soulhunter: tint 0xffd23f alpha 0.9; NO glow for fireball/firehunt-ring. dur = max(60 ms, projectileTravelMs(travelMs, spec.dur*1000||300))/1000. Motion: linear lerp from -> predicted target point, plus vertical arc sin(k*pi)*arcPx where arcPx = 0 for knife family, spec.arcM*10 px if arcM>0, else 18 px (fireball: 0); node.rotation faces target. pathOverride {angle,length} -> flies fixed line from 'from' regardless of targets (no target tracking). pathOverride {loopReturn:true}: knife -> out to a point 25% past target (clamped 42-96 px) in first half then back to target; non-knife -> one full circle of radius max(24, arcPx) around target. Trail dots every trailIntervalSec while flying (not fireball). Arrives when k>=1 or within near radius -> onArrive(targetPoint). prio 1, hard life dur+600 ms.
+   
+   spawnBeam(targetId, spec) 2157-2179: straight line playerMuzzle -> posOf(target) re-read every frame; dur max(0.3, spec.dur||0.45) s; alpha ramps 0->1 in first 20% then 1->0; width 10 -> 5 px stroke theme.c1 alpha*0.9 + white core width 40% (min 1). prio 1.
+   
+   boltPath(g,x0,y0,x1,y1,theme,alpha,isMega,isPurple) 2182-2236: jagged polyline 6 segments (8 mega/purple), perpendicular jitter <= min(36, dist*0.28); three stroked layers with widths tapering from start to end: glow (theme.glow; purple 0x9333ea) width*1.3 alpha 0.6: 13->2.5 normal / 18->6 mega / 22->9 purple; main (theme.c1; purple 0xc084fc) alpha 0.95: 7->2.5 / 11->4 / 14->5; core white (purple 0xfdf4ff): 3->1 / 4.8->1.8 / 5.5->2.3; mega/purple add a 2-segment side fork w2.2. spawnBolt(fromPtOrId, targetPtOrId, spec, delaySec, isMega, isPurple) 2243-2281: isPurple forced when variant thunder-strike; from = given or SKY point (to.x +-20, to.y - 0.65*S.H); redraw every 0.03 s (flicker); dur 0.32 s normal / 0.36 mega / 0.4 purple, alpha 1 - t/dur; at t >= 25% of dur: spawnImpact(strong = mega||purple, guard), hitReact(target, elem||'lightning', strong), addShake(3 mega / 5 purple) (whitelist applies). Target-bound thunder variants abort if target dying/gone. prio 1.
+   
+   spawnRiser(x,y,theme,glyph) 3696-3718: 40% chance glyph text 13px, else 2 px dot theme.c1 add-blend; rises 34 px/s; alpha 1->0 over 0.9 s. prio 0.
+   
+   spawnAreaFlash(rect, theme) 4058-4074: zone layer roundRect(rect, corner 10) fill theme.c1 alpha 0.32 -> 0 over 0.5 s. prio 1.
+   
+   spawnFireShockwave(cx,cy,radius,theme,guard) 3965-4015: dur 0.86 s; central flash ellipse (c2, alpha 0.3->0 in 0.18 s, grows to radius*0.22 x 0.07); 3 expanding ellipse rings (ring0 c2, others c1) staggered 0.075 s, reaching radius*(0.78/0.94/1.10) x radius*(0.22/0.27/0.32) (top-down squash), width 5->1, alpha 0.92->0; 18 (9 reduced) ember ellipses flying outward to 0.42-0.72 radius with gravity (y += 28*pk^2 - 10), alternating c1/c2 alpha 0.95->0. prio 1. Palettes: spawnFirePillarShockwave 4019-4023 {c1 #7d1708, c2 #ffb21c, glow #ff3b0a}; meteor {#9f1d12,#f05a13,#d62f12}; starfall {#5c0a06,#e0451a,#a11208}; THUNDER_SHOCK_THEME {#2563eb,#dbeafe,#60a5fa}.
+   
+   spawnTargetTelegraph(spec,cx,cy,radius,delaySec,durSec,targetId) 3800-3830: zone-layer ground ellipse radius x radius*0.52 (min radius 36, default 90), fill/border: thunder-fall 0x2563eb/0x60a5fa, else 0xdc2626/0xf87171, fill alpha 0.16, border w2.5 alpha 0.82, pulse +-2.5% at 5.5 rad/s, fades over last 16%; dur max(0.28, durSec||0.7). prio 1.
+   
+   flameProjectile(theme, small, sizeScale, colors) 631-679 (meteor body): Phaser-emitter port: 26 (14 small / reduced 14|8) flare sprites (128x128 'white' flare from flares.png, add blend), continuously emitted (interval 2/count s), each lives 2.4 s, moves backward (opposite flight) at 100 px/s +-10 deg, scale 0.70*size*cos(life*pi/2) -> 0, tint interpolates quad-out along PIXI_FLARE_COLORS [0xfacc22,0xf89800,0xf83600,0x9f0404] (starfall: [0xe0451a,0xa11208,0x5c0a06,0x260302]), alpha 1-life; on arrival _flameStop -> particles age 2.5x faster and alpha*0.7.
+   
+   Field-follow helpers 2805-2905: fieldVfxMotionSec = max(0.12, spec.dur); fieldVfxStep lerps x/y/w/h to latest authoritative area over motionDur; fieldVfxFollowStep exponential follow (tau 0.14 s, capped 2x area.speed) for homing variants; fieldVfxKey = area.id|fieldKey|vfxId + variant (homing variants require an id). ICE_FIELD_THEME {c1 #7dd3fc, c2 #e0f2fe, glow #22d3ee} (3031). THUNDER_CURTAIN_THEME {#7dd3fc,#ffffff,#2563eb} (2695). drawWindCrescent(g,width,body,theme,alpha) 3068-3076: half-moon arrow polygon (windCrescentPoly 3050-3065: front edge parabola depth 'body', back edge depth 0.26*body, tips at +-width/2) fill c1 a0.85 + inner 0.7x0.72 copy fill c2 a0.9 + outline c2 w2 a0.85. drawIceShard(g,scale,c1,c2,alpha) 1480-1486: diamond 18*scale wide x 22*scale tall fill c1 stroke c2 w2.
+   
+   renderEnemyAttackVfx(spec) 1224-1267 (cat enemy, fxKind enemy-attack, dispatched at 4585-4588 with NO 240 ms buffer): target = targets[0] || 'pv-float'; themeSpec = {elem: spec.elem||null, cat 'enemy', color: spec.color||'#ff6b6b', variant, glyph: spec.glyph||'💢'} (so no-elem enemies are mono red #ff6b6b). variant 'enemy-projectile': spawnProjectile(target, travelMs[0]||260 ms, themeSpec, onArrive -> if spec.hit!==false spawnImpact(normal)+hitReact, from = posOf(sourceId)). Otherwise melee: boss plays 'attack' anim; idle source lunges toward player for 0.28-0.8 s; spawnSlash(target pos, themeSpec, big=false, rotation = angle from source to target) [R 36]; if hit: spawnImpact normal + hitReact.
+   
+   NOTE: `case 'chain'` at 4963-4965 is dead code: fxKind 'chain' is already routed to handleChainVfx at 4628-4631 before the switch.
+variants:
+  - [0]
+    variant: lightning-chain
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4380-4387
+      - [1]
+        spawnBolt 2243-2281
+      - [2]
+        boltPath 2182-2236
+      - [3]
+        spawnImpact 1866-1902
+    placement: One event = one arc segment. targets.length>=2: bolt from posOf(targets[0]) to posOf(targets[1]) (previous hop -> next). Single target: bolt from playerPos() (player feet, NOT muzzle) to targets[0]. area ignored.
+    motion: Static jagged polyline between the two points, endpoints re-resolved each frame (follows moving enemies); path re-jittered every 0.03 s (flicker). No travel animation.
+    timing: delay = baseDelay/1000 s (spec.delayMs+240 ms buffer, set by simulation per hop); bolt dur 0.32 s, alpha 1->0 linear; impact+hitReact fire at 25% of dur (0.08 s). Hard life 3 s. prio 1.
+    visual: boltPath normal (isMega=false,isPurple=false): 6 segments, jitter <= min(36, dist*0.28) px; 3 strokes tapering start->end: glow theme.glow width (13->2.5)*1.3 alpha 0.6; main theme.c1 width 7->2.5 alpha 0.95; core #ffffff width 3->1 alpha 1. Impact ring normal (theme.c1, 1.3->9.8 px, 0.26 s) + 6 particles (c1/c2). Theme from spec.elem (normally lightning: #f2b705/#fff8b0/#ffd23f) -> element-driven.
+    feedback: spawnImpact(to, spec, strong=false) and hitReact(targetId, spec.elem||'lightning', false) at 25% of bolt dur; addShake(3) only if mega (not here).
+    specFields:
+      - [0]
+        delayMs
+      - [1]
+        targets[0..1]
+      - [2]
+        elem
+    notes: No player attack anim (fxKind chain). Colors come from themeOf(spec) -> per-element preset; default lightning gold.
+  - [1]
+    variant: knife-bounce
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4388-4419
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        projectileCore 1491-1497
+      - [3]
+        spawnImpact 1866-1902
+      - [4]
+        spawnTrailDot 1843-1863
+    placement: Hop chain: for kb=1..targets.length-1 a dart flies from posOf(targets[kb-1]) to targets[kb] (target tracked/predicted). loopReturn && single target: dart flies from posOf(targets[0]) THROUGH the target (25% of distance past it, clamped 42-96 px) and back to the target.
+    motion: Straight lerp (arcPx = 0 for knife family), rotation faces flight direction; loopReturn: out-and-back two-phase path over one dur. Trail dots every 0.03 s.
+    timing: hop kb starts at baseDelay + sum(previous hopTravel); hopTravel = spec.travelMs[kb] or 200 ms fallback (120/0.6); each dart dur = hopTravel (min 60 ms), hard life hop+600 ms. loopReturn: travelMs[0] or 200 ms. fxGate aborts hop if targets gone (knife-bounce is in fxGate list). prio 1.
+    visual: Core: if spec.glyph present -> glyph Text 20px (glyphOnly rule includes knife-bounce); else dart polygon 28x10 px fill theme.c1 stroke theme.c2 w2. Glow sprite scale 0.9 tint 0xff3850 (hardcoded red) alpha 0.16, add blend. Impact normal ring theme.c1 1.3->9.8 px 0.26 s + 6 particles. Theme = themeOf(spec) -> element-driven (dart colors), glow hardcoded.
+    feedback: On arrival: spawnImpact(pt, spec, false); hitReact(toId, spec.elem, false).
+    specFields:
+      - [0]
+        travelMs[kb]
+      - [1]
+        loopReturn
+      - [2]
+        glyph
+      - [3]
+        preserveDeadTargets
+    notes: shouldAnimatePlayer excludes knife-bounce (no player anim). Not thrown from player: first hop starts at targets[0] position (the initial throw is a separate projectile event).
+  - [2]
+    variant: knife-soulhunter
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4388-4419
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        projectileCore 1491-1497
+      - [3]
+        themeOf 68-70
+    placement: Same hop logic as knife-bounce (previous target -> next, or loopReturn through single target).
+    motion: Same as knife-bounce (straight, arc 0, out-and-back for loopReturn).
+    timing: Same as knife-bounce: hop starts baseDelay+cumulative hopTravel (travelMs[kb] or 200 ms). fxGate strict on targets leaving (allowDeadOrigin for targets[0] when preserveDeadTargets).
+    visual: HARDCODED gold theme via themeOf override {c1 #f2b705, c2 #fff8b0, glow #ffd23f} regardless of elem. Dart polygon 28x10 fill #f2b705 stroke #fff8b0 w2 (glyphOnly does NOT include soulhunter -> always dart). Glow sprite scale 0.9 tint 0xffd23f alpha 0.9 add blend (much brighter than knife-bounce). Impact ring #f2b705 normal 9.8 px 0.26 s; particles gold/pale.
+    feedback: On arrival spawnImpact normal + hitReact(toId, spec.elem, false).
+    specFields:
+      - [0]
+        travelMs
+      - [1]
+        loopReturn
+      - [2]
+        preserveDeadTargets
+    notes: Single preset (hardcoded gold).
+  - [3]
+    variant: poison-spread
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4420-4436
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        projectileCore 1517-1523
+      - [3]
+        spawnImpact 1866-1902
+    placement: Origin = posOf(targets[0]) if >1 targets (source enemy), else playerPos(); one droplet flies to EACH spread target (targets.slice(1), or all targets if only one) simultaneously.
+    motion: Straight lerp, arcM forced 0 -> arcPx 18 px default? NO: arcM 0 => Number(0)>0 false -> PROJECTILE_DEFAULT_ARC_PX 18 px sine arc. Rotation faces target. Trail dots.
+    timing: All droplets start at baseDelay (no stagger); travelMs forced 80 ms -> dur 0.08 s (very fast). Impact 0.26 s. prio 1.
+    visual: pSpec = spec with variant 'venom', elem 'poison' -> poison theme {#4caf2b,#d8ff8a,#76d83b} HARDCODED by elem override. Core droplet polygon ~15x17 fill #4caf2b stroke #d8ff8a w1.5 + highlight circle r2.5 #d8ff8a; glow sprite tint #76d83b alpha 0.8 scale 0.9. Impact ring #4caf2b 1.3->9.8 px + 6 green particles.
+    feedback: spawnImpact(pt, pSpec, false); hitReact(tgtId, 'poison', false, suppressJolt=true) (no jolt). No shake (poison-spread excluded).
+    specFields:
+      - [0]
+        targets
+    notes: Always poison-colored: single preset.
+  - [4]
+    variant: water-bounce
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4437-4456
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        projectileCore 1506-1509
+      - [3]
+        drawIceShard 1480-1486
+    placement: Hop chain like knife-bounce: ball flies from posOf(targets[wb-1]) to targets[wb].
+    motion: Lerp with parabolic arc: arcM = spec.arcM or 8 m -> 80 px peak (sin arc); rotation faces target; trail dots.
+    timing: hop wb starts at baseDelay + cumulative hopTravel; hopTravel = travelMs[wb] or 233 ms (140/0.6); dur = hopTravel. prio 1.
+    visual: wSpec = variant 'waterball', elem 'ice' -> ice theme {#4da6ff,#f2fbff,#79d8ff} HARDCODED. Core = ice diamond 18x22 fill #4da6ff stroke #f2fbff w2 (elem ice branch); glow tint #79d8ff alpha 0.8. Impact ring #4da6ff normal + 6 particles.
+    feedback: spawnImpact normal; hitReact(toId, 'ice', false).
+    specFields:
+      - [0]
+        travelMs[wb]
+      - [1]
+        arcM
+    notes: Single ice preset.
+  - [5]
+    variant: frost-spread
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4457-4473
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        drawIceShard 1480-1486
+    placement: Origin posOf(targets[0]) if >1 targets else playerPos(); one shard to each spread target simultaneously.
+    motion: Straight lerp with default 18 px arc (arcM 0 -> default), rotation faces target, trail dots.
+    timing: All start at baseDelay; travelMs 80 ms -> dur 0.08 s. prio 1.
+    visual: fSpec = variant 'frost-bullet', elem 'ice' -> HARDCODED ice theme. Ice diamond 18x22 fill #4da6ff stroke #f2fbff; glow #79d8ff a0.8. Impact ring #4da6ff normal 9.8 px 0.26 s + 6 particles.
+    feedback: spawnImpact normal; hitReact(tgtId, 'ice', false).
+    specFields:
+      - [0]
+        targets
+    notes: Single ice preset.
+  - [6]
+    variant: earth-reflect
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4474-4488
+      - [1]
+        spawnBeam 2157-2179
+      - [2]
+        spawnImpact 1866-1902
+    placement: For each target: beam from playerMuzzle() to target + impact at posOf(target).
+    motion: Beam static line re-read per frame (tracks target). No travel.
+    timing: All at baseDelay; beam dur max(0.3, spec.dur||0.45) s; impact 0.26 s. prio 1.
+    visual: eSpec = elem 'light', color '#ffffff' -> light theme {#ffe47a,#fffef4,#fff3a3} HARDCODED. Beam width 10->5 px #ffe47a alpha ramp 0->0.9 (first 20%) then fade + white core 4->2 px. Impact ring #ffe47a normal + 6 particles.
+    feedback: spawnImpact normal; hitReact(tgtId, 'light', false).
+    specFields:
+      - [0]
+        dur
+      - [1]
+        targets
+    notes: Single light preset.
+  - [7]
+    variant: counter-sweep
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4489-4491
+    placement: none
+    motion: none
+    timing: none
+    visual: NO-OP: intentionally draws nothing (return).
+    feedback: none
+    specFields:
+    notes: Explicit empty branch.
+  - [8]
+    variant: wind-rend-spread
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4494-4497
+      - [1]
+        spawnWindRendSpread 3157-3195
+      - [2]
+        drawWindCrescent 3068-3076
+      - [3]
+        spawnImpact 1866-1902
+    placement: Requires >=2 targets. From posOf(targets[0]) (source enemy) a small crescent flies to each targets[1..] (destination re-read each frame).
+    motion: Linear lerp source->target, node.rotation = direction; alpha 1 until 85% then fades to 0.
+    timing: i-th blade starts at baseDelay + i*40 ms; dur = max(0.08, travel/1000), travel = travelMs[0] or 200 ms; hard life travel+400 ms. prio 1.
+    visual: Static crescent polygon width 20 px, body 8 px (hardcoded size): fill theme.c1 a0.85, inner (14x5.8) fill theme.c2 a0.9, outline c2 w2 a0.85. Theme from spec.elem (wind: #86efac/#ffffff) -> element-driven but only wind used. On arrival: impact ring normal + 6 particles.
+    feedback: On arrival spawnImpact(to, spec, false); hitReact(toId, spec.elem||'wind', false).
+    specFields:
+      - [0]
+        travelMs[0]
+      - [1]
+        targets
+    notes: No range ring drawn (spread has no damage area).
+  - [9]
+    variant: <default:chain> (any variant not listed above, not 'chain', and elem !== 'lightning')
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4502-4512
+      - [1]
+        spawnImpact 1866-1902
+    placement: Impact at posOf(id) for each target.
+    motion: Static ring expansion only.
+    timing: target ti at baseDelay + ti*90 ms (stagger). Impact 0.26 s. prio 1.
+    visual: spawnImpact normal: ring theme.c1 1.3->9.8 px 0.26 s alpha 1->0 + 6 particles c1/c2 speed 0.55. Element-driven via themeOf(spec).
+    feedback: hitReact(id, spec.elem, false, suppressJolt = isBloodbladeNoHitJoltSpec(spec)).
+    specFields:
+      - [0]
+        elem
+      - [1]
+        variant
+    notes: Whitelist fallback so unknown non-lightning chain variants never borrow the thunder drawing.
+  - [10]
+    variant: chain (potential Chain Lightning; also any unknown-variant chain event with elem 'lightning', or no variant)
+    fxKinds:
+      - [0]
+        chain
+    functions:
+      - [0]
+        handleChainVfx 4514-4558
+      - [1]
+        spawnBolt 2243-2281 (isMega=true)
+      - [2]
+        spawnContinuousChainLightning 4285-4354
+      - [3]
+        spawnNodeRing 4356-4374
+      - [4]
+        spawnImpact 1866-1902
+    placement: 1) Mega sky bolt onto firstId = targets[0] || 'pv-float' (from point (to.x+-20, to.y-0.65*S.H)). 2) Chain node list: firstId + up to 2 more distinct targets; if <3, nearest live entities to firstPos are appended; if still <3, synthetic points are generated at angle +-0.85 rad (+-0.2 jitter), distance 75-110 px, +15 px y from the last node. 3) Continuous jagged chain drawn through all nodes (node positions resolved each redraw).
+    motion: Bolt static/flickering from sky (redraw 0.03 s). Chain polyline re-jittered every 0.035 s, alpha 1 -> 0.15 over dur. Node rings expand.
+    timing: Mega bolt delay 0 (relative to buffered event), dur 0.36 s, impact at 0.09 s. Chain dur 0.42 s. Node ring + impact for node idx at idx*55 ms; node ring dur 0.38 s. prio 1.
+    visual: Mega bolt: 8 segments, glow theme.glow width (18->6)*1.3 a0.6, main theme.c1 11->4, white core 4.8->1.8, plus side fork w2.2 -> element-driven (lightning gold normally). Impact at first target STRONG (ring 1.3->16.3 px 0.4 s, 12 particles). Chain: HARDCODED gold: outer #fffbe0 width 14 a0.45, mid #ffd23f width 6.5 a0.92, core #ffffff 2.6; jitter <= min(26, dist*0.28); 4-7 segments per link (dist/32). Node ring: circle r 4->10.5 px white w1.2 alpha 0.95->0 + inner r*0.65 #ffd23f w0.8. Node impacts: idx 0 strong, others normal (theme.c1).
+    feedback: Bolt: hitReact(firstId, elem||'lightning', strong=true), addShake(3) (variant 'chain' not in whitelist -> no shake). Chain nodes: spawnImpact only (no hitReact for synthetic points/other nodes).
+    specFields:
+      - [0]
+        targets
+      - [1]
+        elem
+    notes: Chain polyline colors hardcoded gold; bolt colors element-driven.
+  - [11]
+    variant: enemy-projectile (fxKind enemy-attack)
+    fxKinds:
+      - [0]
+        enemy-attack
+    functions:
+      - [0]
+        onVfx 4571-4588
+      - [1]
+        renderEnemyAttackVfx 1236-1246
+      - [2]
+        spawnProjectile 1614-1732
+    placement: From posOf(sourceId) (enemy) to targets[0] || 'pv-float' (player, y-46).
+    motion: spawnProjectile default: lerp + 18 px arc (or arcM), faces target, trail dots.
+    timing: NO 240 ms buffer (enemy attacks play immediately); travel = travelMs[0] or 260 ms; dur = travel (min 60 ms). prio 1.
+    visual: themeSpec: elem from spec (element theme) else mono color spec.color||'#ff6b6b' (c1=c2=glow). Core via projectileCore by elem (circle r 6.5 default) or elem shape; glyph default '💢' only used when variant glyph (not here). Glow scale 0.9 alpha 0.8 tint glow. Impact normal.
+    feedback: On arrive, if spec.hit !== false: spawnImpact normal + hitReact(target, elem, false). Miss (hit false) -> projectile only.
+    specFields:
+      - [0]
+        sourceId
+      - [1]
+        hit
+      - [2]
+        travelMs[0]
+      - [3]
+        color
+      - [4]
+        elem
+    notes: Preset likely needs per-element + mono-red fallback.
+  - [12]
+    variant: <default:enemy-attack> (melee)
+    fxKinds:
+      - [0]
+        enemy-attack
+    functions:
+      - [0]
+        renderEnemyAttackVfx 1248-1266
+      - [1]
+        spawnSlash 1920-1941
+      - [2]
+        spawnImpact 1866-1902
+    placement: Slash arc centered on posOf(target) (player), rotated to angle from source enemy to target; impact at same point.
+    motion: Arc sweep 0.24 s; source entity lunges toward player (0.28-0.8 s) if idle; boss 'attack' anim.
+    timing: Immediate (no buffer). Slash 0.24 s, impact 0.26 s. prio 1.
+    visual: spawnSlash big=false: radius 36 px arc, stroke themeSpec.c1 (element theme or #ff6b6b mono) width 7->2.8 alpha 1->0 + white inner arc R 28.8 w3->0. Impact normal ring.
+    feedback: If hit: spawnImpact normal + hitReact(target, elem, false).
+    specFields:
+      - [0]
+        sourceId
+      - [1]
+        hit
+      - [2]
+        color
+      - [3]
+        elem
+    notes: 
+  - [13]
+    variant: arcane-barrage (or glyph '💫' && cat magic)
+    fxKinds:
+      - [0]
+        projectile
+      - [1]
+        *any fxKind* (checked before the switch)
+    functions:
+      - [0]
+        onVfx 4617-4626
+      - [1]
+        spawnBarrageMissile 1773-1841
+      - [2]
+        projectileCore 1488-1530
+      - [3]
+        spawnImpact 1866-1902
+    placement: Per target: 6 missiles (3 lanes x sides -1/+1). start = playerMuzzle + rear*14 + side*(10+lane*8) x, +8+lane*7 y (rear = behind facing). turn point = start + rear*(34+lane*10) + side*(48+lane*18) x, -16-lane*8 y. Then to predicted target.
+    motion: Phase 1 (k<0.38): smoothstep start->turn (spreads backward/sideways). Phase 2: quadratic ease-in turn->target (accelerating homing). Rotation faces next waypoint. Trail dots every max(0.035, trailInterval) s. Hidden until delay elapsed.
+    timing: delay = (baseDelay + ti*40 + lane*35) ms; dur = max(0.7 s, travel/1000) where travel = travelMs[ti] or 700 ms (420/0.6). prio 1, hard life 3 s.
+    visual: Core = projectileCore by elem (default circle r 6.5 c1 + r 3.6 c2; elem shapes otherwise). Glow sprite scale 0.72 alpha 0.75 tint theme.glow add blend (knife-bounce special-case: 0xff3850 a0.15). Impact normal ring theme.c1 + 6 particles. Element-driven (themeOf).
+    feedback: On arrival spawnImpact(target pos, spec, false); hitReact(target, elem, false).
+    specFields:
+      - [0]
+        glyph
+      - [1]
+        cat
+      - [2]
+        travelMs[ti]
+      - [3]
+        dur
+    notes: Returns before the fxKind switch.
+  - [14]
+    variant: wind-blade / wind-blade-small
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        onVfx 4635-4638
+      - [1]
+        spawnWindBlade 3080-3127
+      - [2]
+        drawWindCrescent 3068-3076
+      - [3]
+        spawnTrailDot 1843-1863
+      - [4]
+        spawnImpact 1866-1902
+    placement: From playerMuzzle along spec.angle (fallback: toward targets[0], else facing) for length = max(40, spec.lineLength||240) px. Does not track targets.
+    motion: Linear position along angle, k=t/dur; alpha 1 until 88% then fade to 0; trail dot every 0.06 s. Static crescent Graphics (drawn once), node.rotation = angle.
+    timing: Starts at baseDelay; flight = max(120, travelMs[0]||700) ms = dur; hard life flight+400. Hit at each target scheduled at flight * clamp(projection along path / length). prio 1.
+    visual: Crescent width = max(8, spec.lineWidth||40) px, body depth = max(5, spec.bodyLength||width*0.4); fill theme.c1 alpha 0.85, inner crescent (0.7w x 0.72body) fill c2 a0.9, outline c2 w2 a0.85. Wind theme #86efac/#ffffff. Impact normal ring c1 + 6 particles. Element-driven via themeOf (wind in practice).
+    feedback: Per target at projected time: spawnImpact(pt, spec, false) + hitReact(id, elem, false).
+    specFields:
+      - [0]
+        angle
+      - [1]
+        lineLength
+      - [2]
+        lineWidth
+      - [3]
+        bodyLength
+      - [4]
+        travelMs[0]
+    notes: wind-blade-small differs only by spec sizes.
+  - [15]
+    variant: ice-arrow-pierce
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        onVfx 4639-4643
+      - [1]
+        spawnIcearrowPierce 1736-1771
+      - [2]
+        spawnProjectile 1614-1732 (pathOverride)
+      - [3]
+        drawIceShard 1480-1486
+    placement: One arrow from playerMuzzle along spec.angle (fallback: toward targets[0]) for spec.lineLength (fallback: distance to first target); flies fixed line, no target tracking. Needs targets or angle+lineLength.
+    motion: Straight line along angle (pathOverride), 18 px sine arc (arcM default), rotation faces path end, trail dots.
+    timing: Repeat cc=0..count-1 at baseDelay + cc*90 ms; flight = travelMs[0] or 500 ms (300/0.6) or spec.dur; each target's impact at flight * clamp(along/length). prio 1.
+    visual: Ice diamond core 18x22 fill c1 stroke c2 w2 + glow sprite 0.9 tint glow a0.8. Theme by elem (ice #4da6ff/#f2fbff/#79d8ff). Impact normal.
+    feedback: spawnImpact(pt, spec, false) + hitReact(id, elem, false) per target at projected time.
+    specFields:
+      - [0]
+        angle
+      - [1]
+        lineLength
+      - [2]
+        travelMs[0]
+      - [3]
+        count
+      - [4]
+        dur
+    notes: 
+  - [16]
+    variant: firehunt-ring (requires finite angle && lineLength>0)
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        onVfx 4646-4657
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        fireHuntRingProjectile 1591-1612
+    placement: From playerMuzzle along spec.angle for spec.lineLength px (pierce; no target).
+    motion: Straight line (pathOverride), plus 18 px sine arc, rotation along path; ring visual tumbles: scale.y = 0.22+0.78|cos| at 2.6 flips/s, highlight arc rotates. NO glow sprite, NO trail (isSmallFireball group).
+    timing: Starts at baseDelay; dur = travelMs[0] or spec.dur*1000 or 500 ms (300/0.6). No onArrive. prio 1.
+    visual: Ring R 11 px: stroke c2 w3.2 a0.95 + glow-color stroke w6 a0.28 + inner ring R 6.8 c1 w1.4 a0.55 + white highlight arc (1 rad) w3.2 a0.35-1. Element-driven (fire in practice).
+    feedback: None from renderer (damage numbers come from simulation).
+    specFields:
+      - [0]
+        angle
+      - [1]
+        lineLength
+      - [2]
+        travelMs[0]
+      - [3]
+        dur
+    notes: If angle/lineLength missing falls to default projectile branch.
+  - [17]
+    variant: ice-arrow (with finite angle && lineLength>0)
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        onVfx 4658-4674
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        drawIceShard 1480-1486
+    placement: Per target ti: arrow from playerMuzzle along spec.angle for spec.lineLength (fixed lane, no tracking); impact at posOf(id) when the lane completes.
+    motion: Straight line + 18 px arc, trail dots, ice diamond core.
+    timing: target ti starts at baseDelay + ti*40 ms; travel = travelMs[ti] or dur*1000 or 500 ms. prio 1.
+    visual: Ice diamond 18x22 fill c1 stroke c2 + glow 0.9 a0.8. Theme by elem (ice). Impact normal ring.
+    feedback: At arrival: spawnImpact(posOf(id), spec, false) + hitReact(id, elem, false).
+    specFields:
+      - [0]
+        angle
+      - [1]
+        lineLength
+      - [2]
+        travelMs[ti]
+      - [3]
+        dur
+    notes: Without angle/lineLength -> default projectile branch (target-tracking).
+  - [18]
+    variant: <default:projectile> cat 'basic' (basic attack)
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        onVfx 4675-4693
+      - [1]
+        spawnSlash 1920-1941
+      - [2]
+        spawnImpact 1866-1902
+    placement: No projectile drawn. Slash arc + impact at posOf(id) for each target/count (player runs to melee in sim).
+    motion: Slash sweep 0.24 s, random rotation.
+    timing: Each hit at travel + cc*90 + ti*40 ms where travel = travelMs[ti] or 500 ms; count<=5. fxGate strict (basic). prio 1.
+    visual: spawnSlash big=true: radius 54 px arc, stroke theme.c1 width 7->2.8, inner white arc R 43 w3->0; impact normal ring + 6 particles. Element-driven (basic attacks usually carry weapon elem or mono spec.color).
+    feedback: spawnImpact normal; hitReact(id, elem, false).
+    specFields:
+      - [0]
+        travelMs[ti]
+      - [1]
+        count
+      - [2]
+        cat
+    notes: Player 'melee' anim is played (cat basic + fxKind projectile is NOT contactFx so playerAttackAnim('melee') without target run).
+  - [19]
+    variant: <default:projectile> (fireball, fireball-small, knife, glyph, detonate, meteor, any elem projectile)
+    fxKinds:
+      - [0]
+        projectile
+    functions:
+      - [0]
+        onVfx 4675-4703
+      - [1]
+        spawnProjectile 1614-1732
+      - [2]
+        projectileCore 1488-1530
+      - [3]
+        smallFireballProjectile 1545-1569
+      - [4]
+        spawnImpact 1866-1902
+    placement: Per target x count: projectile from playerMuzzle to tracked/predicted target.
+    motion: Lerp + arc (18 px default, arcM*10 px, 0 for knife/fireball), faces target, trail dots (not fireball), arrival at k>=1 or within near radius.
+    timing: start at cc*90 + ti*40 ms (baseDelay already consumed); dur = travelMs[ti] or spec.dur*1000 or 500 ms; hard life dur+600. prio 1.
+    visual: Core by variant/elem: glyph Text 20px (variant glyph/knife or no-elem special/potential/fusion); fireball(-small): 3x scaled flame teardrop (tail 42 px c1/c2, core r 19.5 c1, r 9.3 c2 highlight, flicker), no glow; knife: dart 28x10 c1/c2 + glow 0xff3850 a0.16; lightning zigzag; ice diamond; earth square; poison droplet; else circle r 6.5 (meteor 10, fireball 13) c1 + c2 center. Glow sprite 0.9 tint theme.glow a0.8. Element-driven.
+    feedback: On arrival spawnImpact(pt, spec, strong = variant==='detonate') + hitReact(id, elem, strong). detonate strong -> ring 16.3 px 0.4 s, 12 particles, addShake(5) (detonate whitelisted).
+    specFields:
+      - [0]
+        travelMs[ti]
+      - [1]
+        count
+      - [2]
+        dur
+      - [3]
+        arcM
+      - [4]
+        glyph
+      - [5]
+        variant
+      - [6]
+        cat
+    notes: 
+  - [20]
+    variant: wind-slash
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4706
+      - [1]
+        spawnWindSlash 3198-3231
+      - [2]
+        drawWindCrescent 3068-3076
+    placement: Crescent at playerMuzzle, rotated toward targets[0] (else facing). Impacts at each target.
+    motion: Redrawn per frame: reach = radius*(0.55 -> 1.0), crescent width reach*1.25, body reach*0.55; alpha 1 -> 0.15. No travel.
+    timing: Starts at baseDelay; dur 0.32 s (hard life 0.52 s); hits at 60 + ti*30 ms after start. prio 1.
+    visual: radius = max(24, spec.lineLength||60). Crescent fill theme.c1 a0.85*alpha, inner c2, outline c2 w2. Wind theme. Impact normal.
+    feedback: spawnImpact(pt, spec, false) + hitReact(id, elem, false) per target.
+    specFields:
+      - [0]
+        lineLength
+    notes: 
+  - [21]
+    variant: wind-spin
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4707-4716
+      - [1]
+        spawnWindSpin 3235-3268
+    placement: Centered on playerPos() (y-12), follows player each frame.
+    motion: r = radius*(0.5 -> 1.0); 4 blade ellipses orbit one full turn over dur; fade 1->0.
+    timing: Starts at baseDelay; dur 0.42 s (hard life 0.62). hitReact per target at baseDelay + 90 + ti*24 ms. prio 1.
+    visual: radius = max(24, area.r || lineLength || 60). Ellipse r x r*0.62 stroke c1 w4 a0.75*fade; inner ellipse r*0.88 x r*0.55 stroke c2 w2 a0.6; 4 blade ellipses (r*0.16 x r*0.07) fill c2 a0.7 at 90 deg spacing. Wind theme. No impact rings.
+    feedback: hitReact only (no spawnImpact).
+    specFields:
+      - [0]
+        area.r
+      - [1]
+        lineLength
+    notes: 
+  - [22]
+    variant: thrust / thrust-pierce / thrust-parallel / thrust-octagonal
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4717-4752
+      - [1]
+        spawnThrustLine 2045-2154
+      - [2]
+        spawnImpact 1866-1902
+    placement: Requires targets. Lance starts at playerMuzzle offset sideways by laneOffset (spec.laneOffsets, default [0]) and points along frontAngle (toward targets[0]); octagonal: directionCount (default 8) directions evenly spaced from frontAngle. lineLength = max(48, spec.lineLength||70).
+    motion: Non-final thrusts: body length clamp(lineLength*0.34, 42, 96) px flies forward (lineLength-body) over first 76% of dur then fades. Final thrust (last count repeat): full-length body revealed via mask over first 40% of dur, static, fades after 80%.
+    timing: count repeats (<=8) spaced 220 ms (thrustStagger) from baseDelay; non-final dur clamp((spec.dur||0.3)*0.75, 0.16, 0.22) s; final dur max(0.24, spec.dur||0.3). If !spec.projectile: impact+hitReact per target at baseDelay + 100 + ti*24 ms. prio 1.
+    visual: Sprite S.thrustLanceTex (image, add blend) width max(28, spec.lineWidth||36) px, anchored at base; alpha fade. Fallback Graphics lance: halo 0xd8943b w26 a0.2, body 0xa86d2d a0.88, inner 0xe1aa54 a0.9, core line 0xfff8df w4.5, theme.c2 line w1.5, edge lines 0xf3c875 / 0x6b421e -> mostly HARDCODED bronze/gold; only c2 line element-driven. Impact normal ring theme.c1.
+    feedback: spawnImpact(pt, spec, false) + hitReact(id, elem, false) unless spec.projectile.
+    specFields:
+      - [0]
+        laneOffsets
+      - [1]
+        directionCount
+      - [2]
+        lineLength
+      - [3]
+        lineWidth
+      - [4]
+        count
+      - [5]
+        dur
+      - [6]
+        projectile
+    notes: count capped at 8 for thrust variants (others 5).
+  - [23]
+    variant: cleave / cleave-shockwave / cleave-back / cleave-dual / cleave-cross / cleave-cross-shockwave
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4753-4819
+      - [1]
+        spawnCleaveArc 1946-1979
+      - [2]
+        spawnCleaveSector 1983-2026
+      - [3]
+        spawnImpact 1866-1902
+    placement: Origin playerMuzzle; frontAngle toward targets[0] (else facing). 'cleave': static arc at origin (drawStaticForward). 'cleave-shockwave': arc travels forward arcLen. 'cleave-back': forward + backward (angle+pi) traveling arcs. 'cleave-dual': forward + back. 'cleave-cross'/'cleave-cross-shockwave': 4 sectors at frontAngle + i*90deg with per-direction length spec.directionRanges[i] (fallback arcLen). arcLen = spec.lineLength>0 ? lineLength : 120 px.
+    motion: Arc: head sweeps -0.92 -> +1.03 rad over dur; traveling arcs move smoothstep along angle by max(48, arcLen); fade after 68%. Sector: radius grows maxRadius*(0.08 -> 0.95) smoothstep, whole sector rotates +45 deg/s, shifts 5% outward; fade-in first 8%, fade-out after 76%.
+    timing: count repeats at (baseDelay + clc*90)/1000 s; dur = max(0.38, spec.dur||0.5) s (arcFlightMs). Hits (if !spec.projectile): for each target, per count: baseDelay + hit*90 + arcHitDelay + ti*35 ms, arcHitDelay = 90 ms default, or arcFlightMs * (target projection / range) for traveling/cross variants. prio 1.
+    visual: Arc: R = 86/3 * rangeScale = 28.7 px * spec.rangeScale; outer stroke theme.c1 width 4.77*rangeScale a0.95, arc span 1.15 rad; inner R*0.82 stroke theme.c2 width 1.73*rangeScale, span 0.95 rad. Sector (60 deg): fill c1 a0.2, arc stroke c1 width max(2, maxR*0.025) a0.95, two edge lines c2 width max(1, maxR*0.012) a0.9. Element-driven. Impact normal.
+    feedback: spawnImpact(pt, spec, false) + hitReact(id, elem, false) per target per count (unless spec.projectile).
+    specFields:
+      - [0]
+        lineLength
+      - [1]
+        directionRanges
+      - [2]
+        rangeScale
+      - [3]
+        dur
+      - [4]
+        count
+      - [5]
+        projectile
+    notes: 
+  - [24]
+    variant: gale-slashes
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4820-4823
+      - [1]
+        spawnGaleSweep 2029-2043
+      - [2]
+        spawnCleaveSector 1983-2026
+    placement: Single 180-degree sector at playerMuzzle facing targets[0] (else facing); radius = max(48, spec.lineLength||120).
+    motion: Sector radius grows 8%->95% smoothstep, rotates 45 deg/s, fade in/out.
+    timing: Starts at baseDelay; dur max(0.38, spec.dur||0.5); hitReact per target at baseDelay + 120 ms. prio 1.
+    visual: Half-disc: fill theme.c1 a0.2, arc stroke c1 width max(2, R*0.025), edge lines c2. Element-driven (wind). No impact rings.
+    feedback: hitReact only.
+    specFields:
+      - [0]
+        lineLength
+      - [1]
+        dur
+    notes: 
+  - [25]
+    variant: claw
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4824-4841 (4830-4832)
+      - [1]
+        spawnSlash 1920-1941
+    placement: Two small slashes per hit at posOf(id) offset (-6,-6) and (+6,+2).
+    motion: Two 0.24 s arc sweeps, random rotations.
+    timing: cc*90 + ti*40 ms per target/count. prio 1.
+    visual: spawnSlash big=false x2: radius 36 arcs stroke theme.c1 w7->2.8 + white inner. Element-driven. No impact ring.
+    feedback: hitReact(id, elem, false).
+    specFields:
+      - [0]
+        count
+    notes: 
+  - [26]
+    variant: swordwave
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4824-4841 (4834)
+      - [1]
+        spawnSlash 1920-1941
+    placement: Big slash at posOf(id) per target/count.
+    motion: 0.24 s sweep, random rotation.
+    timing: cc*90 + ti*40 ms. prio 1.
+    visual: spawnSlash big=true: radius 54 px, stroke c1 w7->2.8 alpha 1->0 + white inner arc R 43 w3->0 a0.8. Element-driven.
+    feedback: hitReact(id, elem, false). No impact ring.
+    specFields:
+      - [0]
+        count
+    notes: 'swordwave-extra' shares this default but suppresses the player animation.
+  - [27]
+    variant: <default:slash>
+    fxKinds:
+      - [0]
+        slash
+    functions:
+      - [0]
+        onVfx 4824-4841
+      - [1]
+        spawnSlash 1920-1941
+    placement: spawnSlash at posOf(id) for each target x count.
+    motion: 0.24 s sweep with random rotation +-0.5 rad.
+    timing: cc*90 + ti*40 ms. prio 1.
+    visual: radius 36 px arc stroke theme.c1 width 7->2.8 alpha 1->0, inner white arc R 28.8 w3->0 a0.8. Element-driven.
+    feedback: hitReact(id, elem, false) only.
+    specFields:
+      - [0]
+        count
+      - [1]
+        variant
+    notes: Player melee anim with run-to-target when cat basic|phys.
+  - [28]
+    variant: frost-nova
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        onVfx 4843-4854
+      - [1]
+        spawnFrostNovaArea 4027-4055
+      - [2]
+        spawnImpact 1866-1902
+    placement: Expanding circle on zone layer at area.x/y (fallback playerPos) with radius = area.r || 90; impacts at each target.
+    motion: r = radius*(0.22 -> 1.04) smoothstep; alpha (1-k)*0.72.
+    timing: dur clamp(spec.dur||0.5, 0.32, 0.8) s; per-target impact at baseDelay + ti*40 ms. prio 1.
+    visual: fill theme.c1 alpha*0.24, stroke theme.c2 w3 alpha, inner circle r*0.72 stroke theme.glow w2 alpha*0.62. Element-driven (ice). Impact normal ring per target.
+    feedback: spawnImpact normal + hitReact(id, elem, false).
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+      - [3]
+        dur
+    notes: 
+  - [29]
+    variant: firepillar-impact / firehunt-detonate
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        onVfx 4856-4867
+      - [1]
+        spawnImpact 1866-1902 (variant forced 'fire-explosion')
+      - [2]
+        spawnFirePillarShockwave 4019-4023
+      - [3]
+        spawnFireShockwave 3965-4015
+    placement: Single explosion at area.x/y (fallback posOf(targets[0])); radius for shockwave = area.r || 60.
+    motion: Ring expansion + 3 shockwave rings + 18 embers outward; no delay.
+    timing: Immediate. Explosion ring 0.62 s; shockwave 0.86 s. prio 1.
+    visual: HARDCODED: spawnImpact with variant 'fire-explosion' and strong=true -> theme {#c51e0d,#ffd447,#ff3b0a}, ring 1.3->31.3 px, 22 particles speed 1.35 size x1.45, addShake(5) gated by whitelist (firepillar-impact not whitelisted -> no shake). Shockwave palette {c1 #7d1708, c2 #ffb21c}: rings up to radius*1.1 x 0.32, embers.
+    feedback: hitReact(id, elem||'fire', true) for every target immediately.
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+    notes: Single fire preset.
+  - [30]
+    variant: blood-explosion / zero-infection
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        onVfx 4868-4878
+      - [1]
+        spawnImpact 1866-1902
+    placement: Strong impact at posOf(id) per target.
+    motion: Ring expansion.
+    timing: baseDelay + ti*40 ms; ring 0.4 s. prio 1.
+    visual: spawnImpact strong: ring theme.c1 1.3->16.3 px 0.4 s, 12 particles speed 0.9. Element-driven (bleed variants would be red but these variants use spec.elem theme). NO shake (excluded in isSpecialScreenShakeSpec).
+    feedback: hitReact(id, elem, true).
+    specFields:
+      - [0]
+        targets
+    notes: 
+  - [31]
+    variant: wind-burst (burst)
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        onVfx 4879-4887
+      - [1]
+        spawnWindBurst 3130-3152
+    placement: At area.x, area.y-10; r = max(12, area.r||40). Drawn even with no targets.
+    motion: Two ellipse rings expand: outer r*(0.45->1.05), inner r*(0.2->0.7), aspect 0.6; alpha (1-k).
+    timing: Immediate; dur 0.34 s (hard life 0.54). prio 1.
+    visual: Outer stroke theme.c1 w3 alpha 0.9*(1-k); inner stroke theme.c2 w1.5 alpha 0.7*(1-k). Wind theme (#86efac/#ffffff). No particles.
+    feedback: hitReact(id, elem||'wind', false) per target immediately; no impact rings.
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+    notes: Same visual as impact/default 'wind-burst' branch.
+  - [32]
+    variant: <default:burst> (incl. fire-explosion, nova, detonate, venomburst, others)
+    fxKinds:
+      - [0]
+        burst
+    functions:
+      - [0]
+        onVfx 4888-4902
+      - [1]
+        spawnImpact 1866-1902
+      - [2]
+        spawnAreaFlash 4058-4074
+    placement: Impact at posOf(id) per target; if NO targets and rect exists and elem !== 'wind': spawnAreaFlash(rect, theme) rectangle at area square.
+    motion: Ring expansion; area flash fade.
+    timing: ti*40 ms per target. Normal 0.26 s / strong 0.4 s / fire-explosion 0.62 s; area flash 0.5 s. prio 1.
+    visual: strongBurst = variant nova|detonate (not fire-explosion): ring 1.3->16.3 px, 12 particles, addShake(5) (nova/detonate whitelisted). fire-explosion: hardcoded {#c51e0d,#ffd447,#ff3b0a} ring 1.3->31.3 px 0.62 s 22 particles, hitReact not strong, no shake. Others: normal ring theme.c1 9.8 px + 6 particles. Area flash: roundRect(rect, 10) fill theme.c1 alpha 0.32->0. Element-driven.
+    feedback: hitReact(id, elem, strongBurst).
+    specFields:
+      - [0]
+        variant
+      - [1]
+        area
+      - [2]
+        elem
+    notes: 
+  - [33]
+    variant: <default:beam>
+    fxKinds:
+      - [0]
+        beam
+    functions:
+      - [0]
+        onVfx 4903-4908
+      - [1]
+        spawnBeam 2157-2179
+    placement: Line from playerMuzzle to posOf(id) (per frame) for each target.
+    motion: Static line tracking target; alpha 0->1 (first 20%) then ->0; width 10 -> 5.
+    timing: Immediate; dur max(0.3, spec.dur||0.45) s. prio 1.
+    visual: Stroke theme.c1 width 10*(1-0.5k) alpha*0.9 + white core width 40%. Element-driven. No impact ring.
+    feedback: hitReact(id, elem, false) immediately.
+    specFields:
+      - [0]
+        dur
+    notes: Player 'cast' anim.
+  - [34]
+    variant: purple-thunder / storm-sigil
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        onVfx 4910-4915
+      - [1]
+        spawnPurpleThunder 2284-2322
+      - [2]
+        spawnBolt 2243-2281 (mega+purple)
+      - [3]
+        spawnImpact 1866-1902
+    placement: Per target: bolt from (to.x +-15, to.y - 0.7*S.H) to target; sigil Graphics at target (follows posOf each frame).
+    motion: Bolt flicker (redraw 0.03 s) 0.4 s. Sigil rotates 6 rad/s, scale 0.8->1.2 (first 20%) then shrinks to 0.36, alpha 0->1 (15%) ->0.
+    timing: target ti delay ti*0.08 s; bolt dur 0.4 s, impact at 0.1 s; sigil dur 0.65 s. prio 1.
+    visual: HARDCODED purple: bolt glow 0x9333ea width (22->9)*1.3, main 0xc084fc 14->5, core 0xfdf4ff 5.5->2.3, 8 segments + fork. Impact STRONG with purpleSpec theme (elem lightning but spec.color '#c084fc'; themeOf gives lightning gold #f2b705 ring since elem set!) -> ring 16.3 px 0.4 s 12 particles gold. Sigil: circle r 28*scale stroke 0xc084fc w2 a0.9; cross r 16*scale 0xfdf4ff w2.5; center disc r 6*scale 0x9333ea a0.7.
+    feedback: hitReact(target, 'lightning', true); addShake(5) (purple-thunder whitelisted -> shakes for both variants since purpleSpec.variant='purple-thunder').
+    specFields:
+      - [0]
+        targets
+    notes: Single purple preset; note impact ring uses lightning gold via themeOf(elem).
+  - [35]
+    variant: thunder-strike
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        onVfx 4917-4922
+      - [1]
+        spawnBolt 2243-2281 (isPurple forced)
+      - [2]
+        themeOf 71-73
+    placement: Per target: sky bolt from (to.x +-20, to.y - 0.65*S.H) to posOf(id). Aborted if target dying/gone (strict live check).
+    motion: Flickering static bolt, alpha 1->0.
+    timing: delay (baseDelay + ti*90)/1000 s; dur 0.4 s (purple); impact at 0.1 s. prio 1.
+    visual: HARDCODED purple theme via themeOf override {#c084fc,#fdf4ff,#9333ea}; boltPath purple widths (22->9)*1.3 glow, 14->5 main, 5.5->2.3 core, 8 segs + fork. Impact strong ring #c084fc 16.3 px 0.4 s + 12 particles.
+    feedback: hitReact(id, elem||'lightning', true); addShake(5) blocked (thunder-strike not whitelisted).
+    specFields:
+      - [0]
+        targets
+      - [1]
+        delayMs
+    notes: Player anim only if vfxTargetsLive.
+  - [36]
+    variant: thunder-fall
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        onVfx 4924-4929
+      - [1]
+        spawnThunderFall 3646-3694
+      - [2]
+        spawnTargetTelegraph 3800-3830
+      - [3]
+        spawnImpact 1866-1902
+      - [4]
+        spawnFireShockwave 3965-4015
+    placement: Landing point = area.x/y if present else posOf(target); orb falls from (to.x +-18, to.y - 0.7*S.H); telegraph ellipse radius = area.r || 90 at landing.
+    motion: Orb lerps sky->ground over dur; 3 white arcs rotate at 7 rad/s on orb; telegraph pulses; on land shockwave rings + embers.
+    timing: delay (baseDelay + ti*90)/1000; dur = max(0.35, travelMs[0]||700 ms); node lives dur+0.2 s; telegraph dur = fall dur. Shockwave 0.86 s. prio 2 (hard life dur+delay+900).
+    visual: HARDCODED blue: orb radius max(16, radius*0.32): circles 0x1d4ed8 a0.34, r*0.62 0x60a5fa a0.62, r*0.3 white a0.9, arcs white w2 a0.7. Telegraph fill 0x2563eb a0.16 border 0x60a5fa w2.5. Impact strong (theme.c1 of elem, lightning gold). Shockwave THUNDER_SHOCK_THEME {#2563eb,#dbeafe,#60a5fa} radius = area.r.
+    feedback: On landing: spawnImpact strong, spawnFireShockwave, addShake(6) (blocked: not whitelisted), hitReact(target, elem||'lightning', true).
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+      - [3]
+        travelMs[0]
+    notes: Strict target-live gating (cancels if target dies mid-fall).
+  - [37]
+    variant: meteor-starfall
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        onVfx 4931
+      - [1]
+        spawnStarfallMeteor 3916-3963
+      - [2]
+        flameProjectile 631-679
+      - [3]
+        starfallBowShock 3904-3912
+      - [4]
+        spawnImpact 1866-1902
+      - [5]
+        spawnFireShockwave 3965-4015
+    placement: Anchored to playerPos() (screen center): meteor falls vertically from anchor.y - max(S.H,480)*1.15 to the player position; bow shock ellipse below the meteor (offset shockR*0.62).
+    motion: Vertical lerp over dur; flame emitter trailing upward; bow shock pulses (1 +-8% at 15 rad/s) and scales 0.7->1.0, alpha 0.55->1 then 0 at landing.
+    timing: dur = travelMs[0] || 1400 ms; after landing flame lingers 0.45 s. prio 2, hard life dur+900.
+    visual: HARDCODED dark red: flame theme {#a11208,#e0451a,#5c0a06}, flare colors PIXI_FLARE_COLORS_STARFALL [0xe0451a,0xa11208,0x5c0a06,0x260302], size 1.3*sizeMult (spec.sizeMult default 3 -> flare scale 0.7*3.9). Bow shock radius 46*sizeMult (138 px): ellipse fill 0xd9531e a0.2 + 3 ellipse strokes 0xffb257/0xe0451a w4..2. Landing: spawnImpact strong (elem theme fire ring), spawnFireShockwave(radius shockR*2.4 = 331 px, {#5c0a06,#e0451a,#a11208}).
+    feedback: spawnImpact(strong), addShake(14) (blocked by whitelist), addMeteorCameraShake() (14-18 px, always), NO hitReact here (starfall-impact event does it).
+    specFields:
+      - [0]
+        travelMs[0]
+      - [1]
+        sizeMult
+    notes: Companion events: aura 'starfall-shadow' before, impact 'starfall-impact' after.
+  - [38]
+    variant: meteor (rain)
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        onVfx 4932-4938
+      - [1]
+        spawnRain 3721-3733
+      - [2]
+        spawnMeteor 3832-3865
+      - [3]
+        spawnMeteorProjectile 3767-3798
+      - [4]
+        spawnTargetTelegraph 3800-3830
+      - [5]
+        flameProjectile 631-679
+      - [6]
+        spawnFireShockwave 3965-4015
+    placement: Center (cx,cy) of rect (area square; fallback rect around first target 192x240 or screen region). Main meteor from (cx+180, cy-312) (60 deg incline, VFX_METEOR_DROP_RUN/ANGLE) to center; 4 small meteors from offsets ratio 0.78-1.14 along the same incline with y jitter [-0.22,-0.04,0.16,0.32]*180.
+    motion: Linear lerp along incline; flame emitter trail; on arrival flame stops (0.45 s linger). Telegraph pulses on ground.
+    timing: travel = travelMs[0] || 500 ms; dur = clamp(travel/1000/0.70, 0.7, 1.15) s (500 -> 0.714 s). Small meteors delays 36/78/120/162 ms, dur = dur - delay - 0.02 (min 0.18), scale 0.52. Dispatch hitReact per target at 320 + ti*90 ms. prio 2 main / 0 small.
+    visual: Main flame: theme = themeOf(spec) (fire), flare colors [0xfacc22,0xf89800,0xf83600,0x9f0404], 26 sprites scale 0.7*1.3, add blend. Small meteors hardcoded theme {#ef4b16,#ffd166,#ff7a1a} scale 0.52 (14 sprites). Telegraph red 0xdc2626/0xf87171 ellipse radius rectRadius(rect). Landing: spawnImpact strong (fire theme ring 16.3 px) + spawnFireShockwave(rectRadius, {#9f1d12,#f05a13,#d62f12}).
+    feedback: On arrival addShake(8) (meteor whitelisted) + addMeteorCameraShake(); dispatch hitReact(id, elem, strong=true) at 320+ti*90 ms.
+    specFields:
+      - [0]
+        area
+      - [1]
+        travelMs[0]
+      - [2]
+        targets
+    notes: Meteor colors mostly hardcoded fire; only main flame theme comes from elem.
+  - [39]
+    variant: <default:rain>
+    fxKinds:
+      - [0]
+        rain
+    functions:
+      - [0]
+        onVfx 4932-4938
+      - [1]
+        spawnRain 3721-3766
+      - [2]
+        projectileCore 1488-1530
+      - [3]
+        spawnImpact 1866-1902
+    placement: 5 drops (2 reduced) at random points inside rect (area square; fallback 192x240 around first target or screen region); each starts at (tx+40, ty - 0.6*S.H).
+    motion: Linear lerp sky->ground over 0.5 s (slight 40 px horizontal drift); impact on landing.
+    timing: drop idx starts at idx*0.08 s, dur 0.5 s; dispatch hitReact per target at 240 + ti*90 ms. prio 1.
+    visual: Drop = projectileCore(spec) scaled 0.82 when spec.elem (elem shapes/colors) else glyph Text (spec.glyph||'❄') 16px. Landing spawnImpact normal (theme.c1 ring 9.8 px + 6 particles). Element-driven.
+    feedback: spawnImpact at each drop landing (no target); hitReact(id, elem, false) per target at 240+ti*90 ms.
+    specFields:
+      - [0]
+        area
+      - [1]
+        glyph
+      - [2]
+        elem
+      - [3]
+        targets
+    notes: Player 'cast' anim.
+  - [40]
+    variant: starfall-shadow
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4941
+      - [1]
+        spawnStarfallShadow 3877-3901
+    placement: Zone layer black ellipse (S.W*0.62 x S.H*0.62) centered on playerPos() every frame.
+    motion: scale 0.04 -> 1.0 with ease-in (k^2); alpha 0.10 -> 0.55.
+    timing: dur = max(0.3, spec.dur||5) s; hard life dur+400. prio 1.
+    visual: HARDCODED black 0x000000 fill.
+    feedback: none
+    specFields:
+      - [0]
+        dur
+    notes: 
+  - [41]
+    variant: follow-aura
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4942
+      - [1]
+        spawnFollowAura 2479-2533
+      - [2]
+        spawnRiser 3696-3718
+    placement: Centered on playerPos() (y-12) every frame; radius = area.r (min 8); keyed by area.id (resend extends duration/updates radius).
+    motion: Pulse 1 +-4% at 3.4 rad/s; risers spawn on rim every 0.1 s (rise 34 px/s, 0.9 s).
+    timing: dur = min(12, max(0.5, spec.dur||2)) extended by resends; fade last 0.4 s. prio 3 (FX_PERSISTENT_AURA_PRIORITY), hard life 13 s.
+    visual: Ellipse r x r*0.62: fill theme.c2 a0.10, stroke theme.c1 w2 a0.5, inner ellipse r*0.72 stroke theme.glow w1 a0.22. Element-driven (fire and earth used).
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.r
+      - [2]
+        dur
+    notes: 
+  - [42]
+    variant: firehunt / thunder-orbit
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4943
+      - [1]
+        spawnFireHunt 2369-2468
+      - [2]
+        spawnRiser 3696-3718
+    placement: Centered on playerPos() (y-12) each frame. Orbit radius area.r (min 6) squashed 0.62 vertically; area.orbs orbs (1-12) evenly spaced; keyed by variant:elem:round(r):spin-dir (resend extends).
+    motion: Orbs rotate at area.spinRate rad/s (fallback +-2pi/s by area.spin sign); optional growth: ring radius += area.grow px/s up to area.growMax; spiral mode (area.spiral) each orb i born i*spiralLag s later; orb size grows to orbGrowTo over orbGrowSec; ring radius scales to rGrowTo over rGrowSec. Risers every 0.12 s at random orb.
+    timing: dur = min(12, max(0.5, spec.dur||4)), extended by resends; fade last 0.4 s. prio 3, hard life 13 s.
+    visual: Faint orbit circle stroke theme.c1 w1.5 a0.18. Each orb: circle orbR (area.orbR, min 3) fill theme.c2 a0.85 + inner 0.55 fill c1 a0.95 + trailing circle 0.42*orbR fill theme.glow a0.4 behind motion. Element-driven (fire / lightning).
+    feedback: none
+    specFields:
+      - [0]
+        area.r
+      - [1]
+        area.orbR
+      - [2]
+        area.orbs
+      - [3]
+        area.spin
+      - [4]
+        area.spinRate
+      - [5]
+        area.grow
+      - [6]
+        area.growMax
+      - [7]
+        area.spiral
+      - [8]
+        area.spiralLag
+      - [9]
+        area.orbGrowTo
+      - [10]
+        area.orbGrowSec
+      - [11]
+        area.rGrowTo
+      - [12]
+        area.rGrowSec
+      - [13]
+        dur
+    notes: 
+  - [43]
+    variant: thunder-orb
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4944
+      - [1]
+        spawnThunderOrbField 3577-3642
+    placement: fx layer at area.x, area.y-10; radius area.r (min 8, default 30); keyed by area.id; each event sets a new position target.
+    motion: Position lerps from previous to new authoritative point over max(0.12, spec.dur) s (fieldVfxStep); pulse 1 +-6% at 9 rad/s; 4 surface arcs crawl (deterministic, time-based).
+    timing: hold = max(520, spec.dur*2400) ms refreshed per event; fade last 260 ms; prio 2; hard life 14 s.
+    visual: HARDCODED blue: circle r fill 0x1d4ed8 a0.24; r*0.62 fill 0x60a5fa a0.5; r*0.3 fill white a0.8; 4 arcs of 3 segments stroke white (first) / 0x93c5fd width 1.6..0.8 a0.7.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.r
+      - [4]
+        dur
+    notes: 
+  - [44]
+    variant: firewall
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4945
+      - [1]
+        spawnFireWall 2541-2682
+      - [2]
+        spawnParticles 1439-1474
+    placement: Zone layer at area.x/y; wall long axis along area.a with length area.w, thickness area.h; 3 vertical flame vortices at offsets (-1,0,1)*w*0.31 along the axis; keyed by area.id (resends update geometry + extend).
+    motion: Flame ribbons sway sin(phase 5.2 rad/s); smoke puffs drift; particles 3 every 0.1 s. Static position.
+    timing: hold = max(900, spec.dur*2400) ms per event; fade last 360 ms; prio 2; hard life 4.5 s.
+    visual: HARDCODED fire palette: ground scorch poly 0x30231d a0.5; vortex silhouettes (width max(24,w*0.34), height clamp(h*2.8,72,180)) fill 0xc82b12 / center 0xe43b12 a0.46; 4 ribbons each 0xffd84a (a0.78) / 0xff7618 / 0xffa51d (a0.68); core ellipse 0xffffbd a0.3; tip 0xffff7a a0.62; 9 smoke circles 0x5a5148/0x76624d a0.13. Only particles use theme.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.w
+      - [4]
+        area.h
+      - [5]
+        area.a
+      - [6]
+        dur
+    notes: 
+  - [45]
+    variant: thunder-curtain
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4946
+      - [1]
+        spawnThunderCurtain 2718-2799
+      - [2]
+        thunderCurtainSync 2703-2716
+      - [3]
+        boltPath 2182-2236
+    placement: fx layer; ground band polygon area.w x area.h along area.a at (x,y); N = clamp(round(w/150), 2, 8) sky bolts evenly along the band from (bx +-13, by - 0.7*S.H) to ground; keyed by area.id.
+    motion: Self-propels toward area.destX/destY at area.speed px/s, with 30% correction toward authoritative x/y on each event (snap if error > h); bolts re-jittered every 0.07 s.
+    timing: hold = max(400, spec.dur*2400) ms; fade last 240 ms; prio 2; hard life 8 s.
+    visual: HARDCODED blue-white THUNDER_CURTAIN_THEME {#7dd3fc,#ffffff,#2563eb}: band fill 0x7dd3fc a0.22; bolts normal widths (glow #2563eb 13->2.5 *1.3, main #7dd3fc 7->2.5, core white 3->1) alpha 0.92; landing spots white circle r max(5, h*0.6) a0.5 + 0x2563eb circle r max(9, h*1.05) a0.24.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.w
+      - [4]
+        area.h
+      - [5]
+        area.a
+      - [6]
+        area.destX
+      - [7]
+        area.destY
+      - [8]
+        area.speed
+      - [9]
+        dur
+    notes: 
+  - [46]
+    variant: mire / mire-lava / mire-poison / mire-lava-poison
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4947
+      - [1]
+        spawnMirePool 2913-3017
+      - [2]
+        fieldVfxStep 2897-2905
+      - [3]
+        spawnParticles 1439-1474
+    placement: Zone layer rect at area.x/y, width area.w, visual height area.h*0.52 (judgement square drawn as flat rectangle); keyed by area.id + lava/poison flags.
+    motion: Position/size lerp to new authoritative values over max(0.12, spec.dur||0.5) s; 3 ripple rects cycle outward (phase 2.1 rad/s); 6 bubbles rise; particles 2 every 0.28 s.
+    timing: hold = max(700, spec.dur*2200) ms; fade last 420 ms; prio 2; hard life 14 s.
+    visual: HARDCODED per variant: plain body 0x4a3a20 a0.5, rim 0x7d6533 w3 a0.62, ripples 0xa37a48 w2, bubbles 0xc49b68; lava body 0x8a2b0b, rim 0xff7a2a, ripples 0xffb347, bubbles 0xffd282; poison body 0x4a3020, rim 0x5b2b72, ripples 0x7e3f9a, bubbles 0x6b2d7c + 3 wavy purple streams 0x6b2d7c w3 a0.56. Particles: poison -> {#6b2d7c,#a855c7,#7e3f9a}, else themeOf(spec).
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.w
+      - [4]
+        area.h
+      - [5]
+        dur
+      - [6]
+        variant
+    notes: mire-lava-poison = lava colors overridden by poison (poison checked first) plus streams.
+  - [47]
+    variant: blizzard
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4948-4949
+      - [1]
+        spawnIceField 3407-3568
+    placement: Zone layer rectangle area.w x area.h*0.52 that follows playerPos() every frame (authoritative anchor is the player); keyed by area.id.
+    motion: Follows player; 3 wavy cloud lines (phase 2.2 rad/s); 10 flakes fall (26-53 px/s wrapping); particles 2 every 0.3 s.
+    timing: hold = max(520, spec.dur*2400) ms; fade last 420 ms; prio 2; hard life 14 s.
+    visual: HARDCODED ICE_FIELD_THEME: fill #7dd3fc a0.2, stroke #22d3ee w3 a0.5, cloud lines #e0f2fe w2 a0.34, flakes r 1.6-3.0 #e0f2fe a0.6; particles ICE_FIELD_THEME.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.w
+      - [2]
+        area.h
+      - [3]
+        dur
+    notes: 
+  - [48]
+    variant: water-tornado / wind-tornado
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4948-4949
+      - [1]
+        spawnIceField 3411-3413
+      - [2]
+        spawnFirePillar 4169-4282
+    placement: Delegates to spawnFirePillar(area): zone layer column at area.x/y, radius = max(16, area.r||28); keyed by area.id + ':water'/':wind'.
+    motion: Appears over 0.28 s (height/width scale 0->1); 4 ribbons sway (phase 4.2 rad/s); particles 3 every 0.11 s.
+    timing: hold = max(900, spec.dur*2400) ms; fade last 360 ms; prio 2; hard life 4.5 s.
+    visual: HARDCODED palettes. height max(118, r*3.45), base width max(44, r*2.2), top width max(18, r*0.62). Water: ground 0x0369a1 a0.42 stroke 0x38bdf8, inner 0x7dd3fc, body 0x0284c7 a0.52, ribbons 0xf0f9ff/0x38bdf8/0x7dd3fc, core 0xf0f9ff, tip 0x38bdf8; particles ICE_FIELD_THEME. Wind: 0x166534/0x86efac/0xbbf7d0/0x22c55e/0xffffff/0x86efac/0xbbf7d0/0xffffff/0x4ade80; particles theme (wind).
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.r
+      - [4]
+        dur
+    notes: Same geometry as impact 'pillar' (fire).
+  - [49]
+    variant: ice-arrow-homing
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4948-4949
+      - [1]
+        spawnIceField 3407-3568
+      - [2]
+        drawIceShard 1480-1486
+      - [3]
+        fieldVfxFollowStep 2831-2840
+    placement: fx layer; ice diamond whose half-height = area.r (w = 2r) at area.x/y; requires area.id (fieldVfxKey).
+    motion: Exponential follow of authoritative area.x/y (tau 0.14 s, speed cap 2x area.speed); rotation eases toward travel direction (k = 1-exp(-14 dt)); particles 2 every 0.3 s.
+    timing: hold = max(520, spec.dur*2400) ms; fade 420 ms; prio 2; hard life 14 s.
+    visual: Ice theme (themeOf elem 'ice'): diamond fill #4da6ff stroke #f2fbff w2 alpha fade; glow sprite scale 0.9 tint #79d8ff a0.8 add blend (matches flying arrow). HARDCODED to ice theme.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.r
+      - [4]
+        area.speed
+      - [5]
+        area.destX
+      - [6]
+        area.destY
+      - [7]
+        dur
+    notes: 
+  - [50]
+    variant: wind-blade-homing
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4948-4949
+      - [1]
+        spawnIceField 3407-3568
+      - [2]
+        drawWindCrescent 3068-3076
+    placement: fx layer crescent at area.x/y, width max(8, 2*area.r), body max(5, 2r*0.38); requires area.id.
+    motion: Exponential follow (tau 0.14 s) + eased rotation toward travel direction. No particles.
+    timing: hold = max(520, spec.dur*2400); fade 420 ms; prio 2; hard life 14 s.
+    visual: Wind theme crescent (fill #86efac a0.85, inner #ffffff a0.9, outline #ffffff w2) alpha*fade. HARDCODED wind theme.
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.r
+      - [4]
+        area.speed
+      - [5]
+        area.destX
+      - [6]
+        area.destY
+      - [7]
+        dur
+    notes: 
+  - [51]
+    variant: void-disc
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4950
+      - [1]
+        spawnVoidDisc 3273-3344
+    placement: Centered on playerPos() (y-12); saw-blade orbits at radius disc.r (area.r, min 8) squashed 0.62; keyed 'void:'+area.id (or spin dir).
+    motion: Orbit angle = area.startAng + spinRate*t (fallback +-2pi/s by area.spin); radius grows area.grow px/s; 5 ghost blades at 0.11 s intervals behind (alpha 0.18*(1-i/6)); blade self-rotates 3x orbit angle.
+    timing: dur = max(0.5, spec.dur||6) (no cap), extended on resend; fade last 0.4 s; prio 2; hard life dur+500.
+    visual: Faint orbit ellipse stroke theme.c1 w1.5 a0.16; blade: 12-tooth polygon outer bodyR = max(6, area.orbR||24), inner 0.68, fill c1 a0.8 stroke c2 w2 a0.9, hub circle bodyR*0.42 fill c2 a0.85. Element-driven (wind).
+    feedback: none
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.r
+      - [2]
+        area.orbR
+      - [3]
+        area.spin
+      - [4]
+        area.spinRate
+      - [5]
+        area.startAng
+      - [6]
+        area.grow
+      - [7]
+        dur
+    notes: 
+  - [52]
+    variant: storm-barrier / storm-god / storm-rip
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4951-4952
+      - [1]
+        spawnStormShell 3349-3405
+    placement: Centered on playerPos() (y-24); keyed by variant (resend extends).
+    motion: barrier/god: 3 ellipse rings breathe (rx 30 +-5) with orbiting dots (phase 4.2 rad/s; god 7); rip: 6 blade ellipses expand radius 26 -> 60 px over dur, alpha 0.7*(1-k).
+    timing: dur = min(12, max(0.3, spec.dur||4)); fade last 0.4 s; prio 2; hard life 13 s.
+    visual: barrier: rings at y -6/10/26, ry 9, stroke c1 (middle ring c2) w2.5 a0.6; dots r 2.6 c2 a0.9. god: same but alpha 0.9, dots r 3.6, c2 forced #ffe9a3 (gold), extra outline ellipse 40x46 stroke c2 w2 a0.35. rip: ellipses 9x3.4 fill c2. c1 from theme (wind) -> element-driven, god c2 hardcoded.
+    feedback: none
+    specFields:
+      - [0]
+        dur
+      - [1]
+        variant
+    notes: 
+  - [53]
+    variant: cyclone
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4953
+      - [1]
+        spawnCyclone 4126-4151
+    placement: fx layer at rect center (area.x/y); 3 arcs radius min(rect.w,rect.h)*0.32 = 0.64*area.r.
+    motion: Container rotates 9 rad/s; alpha fades over last 0.3 s.
+    timing: dur = min(6, max(0.8, spec.dur||1.6)); prio 2; hard life dur+500.
+    visual: 3 static arcs (span -0.8..0.4 rad) at 120 deg spacing, stroke theme.c1 w5 a0.9 round caps. Element-driven.
+    feedback: none
+    specFields:
+      - [0]
+        area
+      - [1]
+        dur
+    notes: 
+  - [54]
+    variant: bladestorm
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4954
+      - [1]
+        spawnBladestorm 4152-4163
+      - [2]
+        spawnSlash 1920-1941
+    placement: 5 (2 reduced) big slashes at random points inside rect (area square).
+    motion: Each slash 0.24 s sweep, random rotation.
+    timing: idx*90 ms apart. prio 1.
+    visual: spawnSlash big=true: radius 54 stroke theme.c1 w7->2.8 + white inner. Element-driven.
+    feedback: none (no hitReact)
+    specFields:
+      - [0]
+        area
+    notes: 
+  - [55]
+    variant: <default:aura>
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4955
+      - [1]
+        spawnAura 2325-2357
+      - [2]
+        spawnRiser 3696-3718
+    placement: Zone layer roundRect covering rect inset 3 px, corner 10 (area square 2r); skipped entirely if elem === 'wind' or no rect.
+    motion: Fill alpha pulses 0.16 +-0.05 (3.2 rad/s), stroke alpha 0.5 +-0.2; risers every 0.3 s at random x, lower 60% of rect.
+    timing: dur = min(6, max(1, spec.dur||4)); fade last 0.5 s; prio 2; hard life dur+500.
+    visual: fill theme.c2, stroke theme.c1 w2. Risers: 40% glyph (spec.glyph) 13px, else 2 px c1 dot. Element-driven.
+    feedback: none
+    specFields:
+      - [0]
+        area
+      - [1]
+        dur
+      - [2]
+        glyph
+      - [3]
+        elem
+    notes: 
+  - [56]
+    variant: <default:selfBuff>
+    fxKinds:
+      - [0]
+        selfBuff
+    functions:
+      - [0]
+        onVfx 4957-4959
+      - [1]
+        spawnSelfBuff 4076-4096
+      - [2]
+        spawnRiser 3696-3718
+    placement: At playerPos() (not tracked after spawn); ellipse rising from y-8 to y-48; 2 risers at (-14,-30) and (+14,-44).
+    motion: Ellipse rises 40 px, shrinks rx 40->28, ry 12->8.4, alpha 1->0 over 0.7 s; risers 34 px/s 0.9 s.
+    timing: dur 0.7 s; prio 1.
+    visual: Ellipse stroke theme.c1 w3. Element-driven (mono spec.color when no elem).
+    feedback: none
+    specFields:
+      - [0]
+        glyph
+      - [1]
+        elem
+      - [2]
+        color
+    notes: 
+  - [57]
+    variant: <default:curse>
+    fxKinds:
+      - [0]
+        curse
+    functions:
+      - [0]
+        onVfx 4960-4962
+      - [1]
+        spawnCurse 4097-4123
+    placement: Glyph text at posOf(target) y-14, following target each frame.
+    motion: Rises 16 px/s, wobbles rotation sin(8t)*0.3, alpha 1->0 over 0.9 s.
+    timing: target ti delay ti*0.05 s; dur 0.9 s; hitReact at t>0.1 s. prio 1.
+    visual: PIXI.Text spec.glyph || '🌀' fontSize 22. No theme colors used (theme computed but unused).
+    feedback: hitReact(target, elem, false, suppressJolt=isBloodbladeNoHitJoltSpec(spec)).
+    specFields:
+      - [0]
+        glyph
+      - [1]
+        targets
+    notes: 
+  - [58]
+    variant: starfall-impact
+    fxKinds:
+      - [0]
+        impact
+    functions:
+      - [0]
+        onVfx 4970-4978
+    placement: No drawing; feedback only on each target.
+    motion: none
+    timing: ti*30 ms per target.
+    visual: none (explosion already drawn by meteor-starfall arrival).
+    feedback: hitReact(id, elem||'fire', true).
+    specFields:
+      - [0]
+        targets
+    notes: 
+  - [59]
+    variant: wind-burst (impact/default)
+    fxKinds:
+      - [0]
+        impact
+      - [1]
+        <default fxKind>
+    functions:
+      - [0]
+        onVfx 4979-4984
+      - [1]
+        spawnWindBurst 3130-3152
+    placement: Same as burst wind-burst: ellipse rings at area.x, area.y-10, r = max(12, area.r||40).
+    motion: Rings expand 0.45->1.05 r and 0.2->0.7 r, aspect 0.6, alpha 1-k.
+    timing: Immediate; dur 0.34 s. prio 1.
+    visual: Outer stroke theme.c1 w3 a0.9(1-k); inner theme.c2 w1.5 a0.7(1-k). Wind theme.
+    feedback: hitReact(id, elem||'wind', false) per target.
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r
+    notes: 
+  - [60]
+    variant: pillar
+    fxKinds:
+      - [0]
+        impact
+      - [1]
+        <default fxKind>
+    functions:
+      - [0]
+        onVfx 4985-4997
+      - [1]
+        spawnFirePillar 4169-4282
+      - [2]
+        spawnParticles 1439-1474
+    placement: Zone layer fire tornado at area.x/y (fallback posOf(targets[0]) with r 28); radius = max(16, area.r||28); keyed by area.id (resend refreshes).
+    motion: Appear 0.28 s scale-up; 4 ribbons sway (phase 4.2 rad/s); particles 3 every 0.11 s from mid-height.
+    timing: hold = max(900, spec.dur*2400) ms; fade last 360 ms; prio 2; hard life 4.5 s.
+    visual: HARDCODED fire: ground ellipse (baseW*0.58 x max(8,r*0.34)) fill 0x7d1708 a0.42 stroke 0xff6b19 w2 a0.78; inner ellipse 0xffb21c a0.32; silhouette (h = max(118, r*3.45), baseW = max(44, r*2.2), topW = max(18, r*0.62)) fill 0xd93413 a0.52; ribbons inner 0xffdf4d a0.82 / outer 0xff761c, 0xffa51d a0.7; core ellipse 0xffffbd a0.62; tip 0xff6a17 a0.82. Particles use themeOf(spec).
+    feedback: hitReact(id, elem||'fire', false) per target immediately (no impact ring).
+    specFields:
+      - [0]
+        area.id
+      - [1]
+        area.x
+      - [2]
+        area.y
+      - [3]
+        area.r
+      - [4]
+        dur
+    notes: 'pillar' is in shake whitelist but this branch never calls addShake.
+  - [61]
+    variant: smite
+    fxKinds:
+      - [0]
+        impact
+      - [1]
+        <default fxKind>
+    functions:
+      - [0]
+        onVfx 4998-5001
+      - [1]
+        spawnBolt 2243-2281
+    placement: Sky bolt (from to.x +-20, to.y - 0.65*S.H) onto each target.
+    motion: Flickering static bolt 0.32 s, alpha 1->0.
+    timing: target ti delay ti*0.06 s; impact at 0.08 s. prio 1.
+    visual: Normal bolt (6 segs): glow theme.glow (13->2.5)*1.3 a0.6, main theme.c1 7->2.5, core white 3->1. Impact normal ring theme.c1 + 6 particles. Element-driven (light typically).
+    feedback: hitReact(id, elem||'lightning', false).
+    specFields:
+      - [0]
+        targets
+      - [1]
+        elem
+    notes: 
+  - [62]
+    variant: <default:impact> (also default for any unknown fxKind)
+    fxKinds:
+      - [0]
+        impact
+      - [1]
+        <default fxKind>
+    functions:
+      - [0]
+        onVfx 5002-5011
+      - [1]
+        spawnImpact 1866-1902
+    placement: Impact at posOf(id) per target.
+    motion: Ring expansion.
+    timing: ti*40 ms per target; ring 0.26 s (strong 0.4 s). prio 1.
+    visual: strong = variant detonate|nova: ring theme.c1 1.3->16.3 px 0.4 s, 12 particles speed 0.9, addShake(5) (whitelisted). Else normal ring 9.8 px 0.26 s, 6 particles speed 0.55. bleed/bleed-tick variants get hardcoded red theme via themeOf. Element-driven.
+    feedback: hitReact(id, elem, strong, suppressJolt=isBloodbladeNoHitJoltSpec(spec)) (poison/bleed ticks no jolt).
+    specFields:
+      - [0]
+        variant
+      - [1]
+        targets
+      - [2]
+        elem
+    notes: Player melee anim with run when cat basic|phys.
+  - [63]
+    variant: <default:aura> elem wind with no variant
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        onVfx 4591
+    placement: none
+    motion: none
+    timing: none
+    visual: Dropped entirely (return) to avoid green square.
+    feedback: none
+    specFields:
+      - [0]
+        elem
+      - [1]
+        variant
+    notes: spawnAura also returns early for elem wind (2329).
