@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-fire",
+  "duration": 0.4,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.125,
+        "y": 0.125
+      },
+      "alpha": 0.55,
+      "tint": "#ff6a2a",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.9,
+      "tint": "#e63924",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.55,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.33
+        ],
+        [
+          0.35,
+          0.8
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 3,
+      "rotation": 0,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 1,
+      "tint": "#ffd447",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.16,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 5,
+      "tint": "#ffd447",
+      "blendMode": "add",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.26,
+        0.38
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        60,
+        130
+      ],
+      "direction": -90,
+      "spread": 240,
+      "gravity": {
+        "x": 0,
+        "y": -140
+      },
+      "startScale": [
+        0.0078,
+        0.0156
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    },
+    {
+      "id": "tongues",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "zIndex": 4,
+      "tint": "#e63924",
+      "blendMode": "add",
+      "emission": {
+        "count": 3,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.22,
+        0.32
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        30,
+        70
+      ],
+      "direction": -90,
+      "spread": 90,
+      "gravity": {
+        "x": 0,
+        "y": -60
+      },
+      "startScale": [
+        0.0273,
+        0.043
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

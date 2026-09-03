@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-enemy",
+  "duration": 0.3,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0742,
+        "y": 0.0742
+      },
+      "alpha": 0.9,
+      "tint": "#ff6b6b",
+      "blendMode": "add",
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.6,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0469
+      },
+      "alpha": 1,
+      "tint": "#ffd0d0",
+      "blendMode": "add",
+      "duration": 0.12,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "tint": "#ffd0d0",
+      "blendMode": "add",
+      "emission": {
+        "count": 4,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.18,
+        0.26
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        60,
+        110
+      ],
+      "direction": -90,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 220
+      },
+      "startScale": [
+        0.0078,
+        0.0137
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

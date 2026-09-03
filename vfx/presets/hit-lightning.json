@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-lightning",
+  "duration": 0.4,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.125,
+        "y": 0.125
+      },
+      "alpha": 0.55,
+      "tint": "#ffd23f",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.9,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.55,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.33
+        ],
+        [
+          0.35,
+          0.8
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 3,
+      "rotation": 0,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 1,
+      "tint": "#fff8b0",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "arcweb",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_02.png",
+      "zIndex": 2,
+      "rotation": 0.3491,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 0.9,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "duration": 0.2,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          0.45
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          0.7,
+          0.55
+        ],
+        [
+          0.85,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 5,
+      "tint": "#fff8b0",
+      "blendMode": "add",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.12,
+        0.22
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        140,
+        240
+      ],
+      "direction": -90,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 200
+      },
+      "startScale": [
+        0.0273,
+        0.043
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          0.45
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          0.7,
+          0.55
+        ],
+        [
+          0.85,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    }
+  ]
+}

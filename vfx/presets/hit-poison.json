@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-poison",
+  "duration": 0.4,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.125,
+        "y": 0.125
+      },
+      "alpha": 0.5,
+      "tint": "#76d83b",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.9,
+      "tint": "#4caf2b",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.55,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.33
+        ],
+        [
+          0.35,
+          0.8
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 3,
+      "rotation": 0,
+      "scale": {
+        "x": 0.0703,
+        "y": 0.0703
+      },
+      "alpha": 1,
+      "tint": "#d8ff8a",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.16,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "mist",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 0.35,
+      "tint": "#4caf2b",
+      "blendMode": "normal",
+      "duration": 0.38,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.35
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 5,
+      "tint": "#4caf2b",
+      "blendMode": "add",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.4
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        25,
+        60
+      ],
+      "direction": -90,
+      "spread": 150,
+      "gravity": {
+        "x": 0,
+        "y": -50
+      },
+      "startScale": [
+        0.0137,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.85,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.7,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    }
+  ]
+}
