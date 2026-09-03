@@ -436,7 +436,7 @@ MVP 不做 adaptive quality；目標只是讓幾十個特效同時存在時
 - Timeline／Keyframe editor／Node graph
 - Undo/Redo
 - 子發射器、粒子碰撞、trail renderer
-- Runtime 與 Idle-RPG 的 Adapter（下一階段）
+- ~~Runtime 與 Idle-RPG 的 Adapter（下一階段）~~ → 2026-09-03 已完成，見 `VFX_RUNTIME_ADAPTER.md`
 
 ---
 
@@ -452,16 +452,25 @@ MVP 不做 adaptive quality；目標只是讓幾十個特效同時存在時
 # 8. 已知限制
 
 1. **`uvScroll` 目前只有平鋪捲動**，沒有扭曲；要做熱扭曲需要 flow map（Material Gap #2）。
-2. **Runtime Adapter 尚未接上**：`js/vfx.js` 與 `js/battle-renderer.js` 仍是遊戲目前的特效路徑，
-   本階段完全沒有改動它們（見 §9）。
-3. Editor 沒有 Undo／多選／拖曳排序，屬 MVP 範圍外。
+2. **Runtime Adapter 已接上**（2026-09-03，`js/vfx-runtime.js`）：`battle-renderer.onVfx` 會先問它，
+   回 `false` 才走舊畫法。高塔（DOM 路徑 `js/vfx.js`）沒有 Pixi，仍然全部走舊畫法。
+   網址加 `?vfx=legacy` 可強制舊畫法，用來 A／B 比對。
+3. Editor 的 Undo／多選／拖曳排序、Preset 下拉都已補上（2026-09-02～09-03）。
 
 ---
 
-# 9. 與既有 VFX 的關係（沒有 regression）
+# 9. 與既有 VFX 的關係
 
-本階段**沒有修改** `js/vfx.js`（DOM 特效）與 `js/battle-renderer.js`（PixiJS 戰鬥渲染器），
-`index.html` 也沒有載入新的 Core。新舊兩套並存，遊戲行為零變化。
+> 2026-09-03 更新：Adapter 已接上，本節下半段的盤點仍然成立，只有「沒有改動」那一句要改寫。
+
+`index.html` 現在載入 `js/vfx-core.js`、`js/vfx-pixi-backend.js`、`js/vfx-runtime.js`（在
+`battle-renderer.js` 之前）。`battle-renderer.onVfx` 先問 `VFXRuntime.tryPlay(spec)`：
+**表格填了特效檔名、而且這一則的主要角色在手上時**才由 Preset 接手，否則原樣走舊畫法。
+新舊兩套並存，沒有填表的事件行為零變化。
+
+Preset 的節點掛在 `S.layers.presetZone`／`presetFx` 兩個獨立容器，
+不能混進 `S.layers.zone`／`fx`——`sweepOrphanFxNodes()` 會把那兩層裡沒被 `S.fx` 追蹤的
+孩子全部 destroy，Core 的節點會被當成孤兒清掉。
 
 盤點結果：
 

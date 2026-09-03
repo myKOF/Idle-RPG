@@ -677,6 +677,44 @@ function hasDots(ent) {
 /* 持續傷害結算：依各狀態的「作用間隔」分段跳傷；回傳是否致死。
    間隔 0＝連續結算。到期時把不足一次間隔的餘額補跳，總傷害維持 dps×持續時間
    （＝改造前的總量，只是改成一跳一跳給），本次改造對數值平衡因此是中性的。 */
+/* ---- 狀態每跳的 Preset 特效（2026-09-03 VFX Preset 化）----
+   同一個模擬步驟裡，同一個狀態打在多個敵人身上只送一則事件（最多 8 個目標）；
+   逐個敵人各送一則會讓事件量被敵人數放大，那正是 2026-08-18 卡頓那一輪的成因。
+   只有狀態表填了「作用特效」的狀態才送，而且標成 presetOnly——
+   沒有接上 Preset Runtime 的顯示層必須整則忽略，退回泛用受擊爆點會讓
+   每秒兩跳的 DoT 變成滿畫面的火花。
+   ⚠️ skills2 自己已經送過畫面的三種（燃燒／寒霜／流血毒）走的是它們自己的
+   sgTickBurn／sgTickFrost／sgTickBloodDots，那些在 js/skills2.js 帶 vfxRoles；
+   這裡收的是「狀態表驅動、skills2 沒有另外畫」的那些，兩邊不重複。 */
+var STATUS_TICK_VFX = null;
+var STATUS_TICK_VFX_MAX_TARGETS = 8;
+function statusTickVfxCollect(ent, sid) {
+    if (!sid || typeof statusVfxRoles !== 'function') return;
+    if (!statusVfxRoles(sid, 'tick')) return;
+    var id = (ent && ent.maxHp) ? enemyEventFloatTarget(ent, null) : 'pv-float';
+    if (!STATUS_TICK_VFX) STATUS_TICK_VFX = {};
+    var list = STATUS_TICK_VFX[sid] || (STATUS_TICK_VFX[sid] = []);
+    if (list.length < STATUS_TICK_VFX_MAX_TARGETS && list.indexOf(id) < 0) list.push(id);
+}
+function statusTickVfxFlush() {
+    if (!STATUS_TICK_VFX) return;
+    var buffer = STATUS_TICK_VFX;
+    STATUS_TICK_VFX = null;
+    if (typeof playCombatVfx !== 'function') return;
+    for (var sid in buffer) {
+        if (!Object.prototype.hasOwnProperty.call(buffer, sid)) continue;
+        var def = (typeof statusDef === 'function') ? statusDef(sid) : null;
+        playCombatVfx({
+            fxKind: 'impact', variant: 'status-tick',
+            elem: (def && def.elem) || null, cat: 'magic',
+            glyph: (def && def.icon) || '✨', color: '#c9c9c9',
+            targets: buffer[sid], dur: 0.45, count: 1,
+            presetOnly: true,
+            vfx: statusVfxRoles(sid, 'tick')
+        });
+    }
+}
+
 function tickStatuses(ent, dt) {
     tickShieldExpiry(ent);
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
@@ -719,6 +757,7 @@ function tickStatuses(ent, dt) {
             var dElemMult = (ent.maxHp && typeof skill2DotElemFactor === 'function')
                 ? skill2DotElemFactor(ent, d.sid) : 1;
             var dDmg = d.dps * seconds * dElemMult;
+            statusTickVfxCollect(ent, d.sid);
             total += dDmg;
             dotDamageItems.push({ d: d, baseDamage: dDmg });
             if (d.name && dotNames.indexOf(d.name) < 0) dotNames.push(d.name);
@@ -937,7 +976,8 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             fxKind: 'projectile', variant: depth ? 'swordwave-extra' : 'swordwave', cat: 'basic', elem: null,
             glyph: '⚔️', color: '#e6ddc8',
             targets: [enemyEventFloatTarget(mEnt, floatSel)],
-            travelMs: [atkTravelMs], delayMs: atkWaveDelayMs, dur: 0.5, count: 1
+            travelMs: [atkTravelMs], delayMs: atkWaveDelayMs, dur: 0.5, count: 1,
+            vfx: vfxCombatRoles(depth ? 'basicAttackExtra' : 'basicAttack')
         });
     }
     var res = resolveHit(pEnt, mEnt, aCfg, monsterDefCfg(mEnt));
@@ -1001,7 +1041,8 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                         fxKind: 'rain', variant: 'smite', elem: 'lightning', cat: 'basic',
                         glyph: '⚡', color: '#f2b705',
                         targets: [enemyEventFloatTarget(mEnt, floatSel)],
-                        travelMs: [0], delayMs: atkHitDelayMs, dur: 0.4, count: 1
+                        travelMs: [0], delayMs: atkHitDelayMs, dur: 0.4, count: 1,
+                        vfx: vfxCombatRoles('smite')
                     });
                 }
                 floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit enemy-attack', smiteDmg, atkHitDelayMs + 90);
@@ -1203,7 +1244,8 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
             travelMs: enemyTravelMs > 0 ? [enemyTravelMs] : null,
             dur: enemyTravelMs > 0 ? enemyTravelMs / 1000 : 0.35,
             count: 1,
-            hit: !res.invuln && !res.miss
+            hit: !res.invuln && !res.miss,
+            vfx: vfxEnemyRoles(!!(mEnt && mEnt.magic), enemyVfxElem)
         });
     }
     var hpDamage = 0;
@@ -1372,7 +1414,9 @@ function fieldTick(dt) {
     if (!effectActive(p, 'stun')) p.atkCd = Math.max(0, p.atkCd - dt * playerAttackRate);
 
     // 持續傷害（玩家：中毒 / 詛咒等）
-    if (tickStatuses(p, dt)) { onPlayerFieldDeath(); return; }
+    var playerDotDeath = tickStatuses(p, dt);
+    statusTickVfxFlush();
+    if (playerDotDeath) { onPlayerFieldDeath(); return; }
 
     tickFieldDeathClears(dt);
     var arrivedEnemies = tickFieldEnterDelays(dt);   // 進場倒數：走到定位才加入戰鬥
@@ -1471,6 +1515,7 @@ function fieldTick(dt) {
     for (var di = 0; di < enemies.length; di++) {
         if (tickStatuses(enemies[di], dt)) onFieldKill(enemies[di]);
     }
+    statusTickVfxFlush();
     combatDebugAuditFieldDeaths(debugFieldTick, 'poison/dots');
     enemies = combatFieldEnemies();
     if (!enemies.length) return;

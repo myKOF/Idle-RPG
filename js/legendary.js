@@ -490,7 +490,8 @@ function legendaryEmitChainVfx(from, to, floatSel, elem) {
   playCombatVfx({
     fxKind: 'chain', variant: 'lightning-chain', glyph: '⚡',
     color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS.magic) || '#f2b705',
-    cat: 'magic', elem: elem || 'lightning', targets: ids, area: null, dur: 0.35, count: 1
+    cat: 'magic', elem: elem || 'lightning', targets: ids, area: null, dur: 0.35, count: 1,
+    vfx: (typeof vfxCombatRoles === 'function') ? vfxCombatRoles('legendaryLightningChain') : null
   });
 }
 

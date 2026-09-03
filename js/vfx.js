@@ -2963,6 +2963,9 @@ function vfxEnqueue(spec) {
 /* 對外唯一入口：所有模擬層／UI 呼叫都從這裡進入品質裁切與佇列。
    document.hidden 時直接略過，返回前不補播背景期間累積的過期特效。 */
 function playCombatVfx(spec) {
+  /* presetOnly（協議 v27）：DOM 路徑（高塔）沒有 Pixi，也就沒有 Preset Runtime，
+     這類事件在這裡整則忽略——退回泛用畫法會憑空多出一堆爆點。 */
+  if (spec && spec.presetOnly) return;
   var next = vfxSpecForQuality(spec);
   if (!next || !_vfxEnabled || (typeof document !== 'undefined' && document.hidden)) return;
   vfxEnqueue(next);

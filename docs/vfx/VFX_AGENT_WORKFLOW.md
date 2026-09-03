@@ -125,15 +125,23 @@ Codex 只做 Review（第 3 節）。
 
 | 路徑 | 內容 |
 |---|---|
-| `js/vfx.js` | DOM／CSS 技能特效層 |
+| `js/vfx.js` | DOM／CSS 技能特效層（高塔仍走這條） |
 | `js/battle-renderer.js` | PixiJS 即時戰鬥渲染器（Canvas／WebGL 側） |
+| `js/vfx-core.js` | VFX Core：Preset 的純運算層（不碰 DOM、不認得遊戲概念） |
+| `js/vfx-pixi-backend.js` | Core 的 Pixi 繪圖後端 |
+| `js/vfx-runtime.js` | Runtime Adapter：VFX 事件 → 角色 → 擺哪裡（2026-09-03） |
 | `js/vendor/pixi.min.js` | PixiJS 函式庫 |
-| `images/vfx/` | VFX 貼圖 |
-| `images/sprites/` | 序列幀圖集與 `.json` |
+| `vfx/presets/`、`vfx/layouts/` | 151 份 Preset 與各自的單一根群組 layout |
+| `vfx/asset-index.json`、`vfx/asset-semantics.json`、`vfx/shipped-assets.json` | 素材索引、語意層、出貨清單 |
+| `images/vfx/assets/` | 匯出的正式素材（85 個） |
+| `images/vfx/`、`images/sprites/` | 既有 VFX 貼圖與序列幀圖集 |
+| `tools/vfx/editor/`、`tools/vfx/editor-server.cjs` | VFX Editor 與它的本機伺服器 |
+| `tools/vfx/authoring/` | Preset 製作工具（目錄、工具箱、各家族製作腳本；不進 Runtime） |
 | `tests/*vfx*.test.cjs` | VFX 相關自動測試 |
 | `docs/ANTIGRAVITY_VFX_UI_TEST_CASES.md` | 既有 VFX UI 測試案例 |
 
-**VFX Editor 目前尚未建立。** 本文件先定義流程，實作時機由使用者決定。
+**VFX Editor 已建立**（`啟動VFX編輯器.bat`），Runtime Adapter 也已接上遊戲。
+設計與進度見 `VFX_RUNTIME_ADAPTER.md`。
 
 此表為現況記錄，不是清單式的授權範圍；實際修改前一律依 `AI_RULES.md` 第 3.2 節
 以目前程式碼重新分析影響範圍。

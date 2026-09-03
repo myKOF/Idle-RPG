@@ -11,7 +11,11 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v26（2026-09-03 VFX Preset 化）：VFX 事件新增可選欄位 vfx＝{ cast, attack, projectile, hit, ground }
+/* v27（2026-09-03 狀態每跳的 Preset 特效）：VFX 事件新增可選旗標 presetOnly。
+   帶著它的事件只有 VFX Preset 端畫得出來（狀態表的「作用特效」），顯示層沒有接上
+   Preset Runtime 時必須整則忽略，而不是退回泛用畫法——DoT 每秒跳兩次，
+   退回泛用受擊爆點會變成滿畫面的火花。26 → 27。
+   v26（2026-09-03 VFX Preset 化）：VFX 事件新增可選欄位 vfx＝{ cast, attack, projectile, hit, ground }
    （角色 → vfx/presets/<id>.json 的 preset id），值來自技能表／狀態表新增的特效欄
    （config/CSV/Skills.csv、Skills2.csv 五欄；Status.csv 三欄），由發送端（skillVfxSpec／
    sgEmitVfx／sgEmitPlayerVfx）依「這一發屬於表上哪一列」帶出。顯示層（Runtime Adapter）
@@ -46,7 +50,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 26;
+var WORKER_PROTOCOL_VERSION = 27;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -163,7 +167,10 @@ var EVENT_KINDS = {
              發送端依「這一發屬於表上哪一列」帶出（js/skills.js skillVfxSpec、
              js/skills2.js sgVfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，
              fxKind／variant／travelMs／area 仍決定行為與時序；沒有欄位＝退回程式畫法。
-             只放 id 字串，不放路徑、不放 Preset 內容。 */
+             只放 id 字串，不放路徑、不放 Preset 內容。
+     presetOnly（v27，可選）：true＝這一則只有 Preset 端畫得出來，沒有接上 Preset
+             Runtime 的顯示層必須整則忽略。狀態每跳（status-tick）用它：那是為了
+             Preset 才新增的事件，退回泛用受擊爆點會讓每一次 DoT 跳動都閃一下。 */
   VFX: 'vfx'
 };
 

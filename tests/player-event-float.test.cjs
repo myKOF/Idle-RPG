@@ -447,7 +447,9 @@ test('skill cast summary formats total damage and keeps the doubled lifetime con
   assert.match(renderer, /skillCast: skillCast/);
   assert.match(renderer, /pendingFloats: \[\]/);
   assert.match(renderer, /if \(!S\.ready\)[\s\S]*?queueFloatUntilReady\(ev\)/);
-  assert.match(renderer, /S\.ready = true;\s*flushPendingFloats\(\);/);
+  /* 中間允許有別的開機工作（例如 VFX Preset Runtime 的組裝）；
+     這條要驗的是「一就緒就把排隊中的浮字倒出來」，不是那兩行必須相鄰。 */
+  assert.match(renderer, /S\.ready = true;[\s\S]{0,200}?flushPendingFloats\(\);/);
   assert.match(skills2, /if \(out\._pendingProjectiles > 0\)[\s\S]*?out\._skillFloatPending/);
   assert.match(skills2, /sgFinishSkillCastFloat\(projectile\.out\)/);
   assert.ok(skills.indexOf('floatPlayerSkillCast(floatSel, sk, out.dmg)') > skills.indexOf('out.dmg = totalDmg;'));

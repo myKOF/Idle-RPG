@@ -1717,6 +1717,54 @@ var VFX_CAT_COLORS = {
   potential: '#ff9de2'  // 潛力技能
 };
 
+/* ---- Preset 化 VFX：不在表上的固定對應（2026-09-03）----
+   普攻、天罰、敵方出手與兩種連鎖電擊不屬於任何一列技能，因此沒有表格欄位可填；
+   它們的角色 → preset id 寫在這裡，由 js/vfx-runtime.js 一併預載。
+   角色語意與名目尺寸見 docs/vfx/VFX_RUNTIME_ADAPTER.md §1；
+   目錄來源是 tools/vfx/authoring/vfx-catalog.cjs 的 COMBAT_DEFAULTS。 */
+var VFX_COMBAT_DEFAULTS = {
+  basicAttack: { projectile: 'proj-swordwave', attack: 'slash-phys-big', hit: 'hit-phys' },
+  basicAttackExtra: { projectile: 'proj-swordwave', attack: 'slash-phys', hit: 'hit-phys' },
+  smite: { attack: 'bolt-sky-lightning', hit: 'hit-lightning' },
+  enemyMelee: { attack: 'slash-enemy-melee', hit: 'hit-enemy' },
+  enemyProjectile: { projectile: 'proj-enemy-bolt', hit: 'hit-enemy' },
+  /* 有屬性的敵方遠程攻擊改用對應屬性的投射物與爆點（沒有屬性就用上面兩組）。 */
+  enemyProjectileByElem: {
+    fire: 'proj-fire', ice: 'proj-ice-shard', lightning: 'proj-lightning', poison: 'proj-poison-drop',
+    light: 'proj-light-orb', dark: 'proj-dark-orb', earth: 'proj-earth-rock', wind: 'proj-wind-crescent'
+  },
+  enemyHitByElem: {
+    fire: 'hit-fire', ice: 'hit-ice', lightning: 'hit-lightning', poison: 'hit-poison',
+    light: 'hit-light', dark: 'hit-dark', earth: 'hit-earth', wind: 'hit-wind'
+  },
+  chainLightning: { attack: 'bolt-sky-lightning', projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
+  legendaryLightningChain: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
+  /* 小隕石：由 Runtime 依 variant 取用，不佔表上的欄位。 */
+  meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }
+};
+
+/* 取一組固定對應的角色表（複本：呼叫端會就地覆寫屬性版本）。
+   沒有這一組就回 null——顯示層讀不到 spec.vfx 時會退回舊畫法。 */
+function vfxCombatRoles(key) {
+  var base = VFX_COMBAT_DEFAULTS[key];
+  if (!base) return null;
+  var out = {};
+  for (var k in base) if (base[k]) out[k] = base[k];
+  return out;
+}
+/* 敵方出手：遠程走投射物、近戰走攻擊本體；帶屬性時換成該屬性的投射物與爆點。 */
+function vfxEnemyRoles(magic, elem) {
+  var roles = vfxCombatRoles(magic ? 'enemyProjectile' : 'enemyMelee');
+  if (!roles) return null;
+  if (elem) {
+    var proj = VFX_COMBAT_DEFAULTS.enemyProjectileByElem[elem];
+    var hit = VFX_COMBAT_DEFAULTS.enemyHitByElem[elem];
+    if (magic && proj) roles.projectile = proj;
+    if (hit) roles.hit = hit;
+  }
+  return roles;
+}
+
 // ---- 附魔 ----
 var ENCHANTS = {
   fire: { name: '火焰附魔', cat: 'atk', elem: 'fire', desc: '附加高額火焰傷害', emoji: '🔥' },

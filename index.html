@@ -828,37 +828,43 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.1"></script>
   <script src="js/ui-scale.js"></script>
-  <script src="js/data.js?v=1.0.43"></script>
+  <script src="js/data.js?v=1.0.44"></script>
   <script src="js/status.js?v=1.0.22"></script>
   <script src="js/formula.js?v=1.0.32"></script>
   <script src="js/battlefield.js?v=1.4.0"></script>
-  <script src="js/vfx.js?v=1.0.74"></script>
+  <script src="js/vfx.js?v=1.0.75"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
-  <script src="js/battle-renderer.js?v=1.6.107"></script>
+  <!-- VFX Preset 運行時（docs/vfx/VFX_RUNTIME_ADAPTER.md）：Core 是純運算、
+       Backend 是 Pixi 繪圖、Runtime 是「事件 → 角色 → 擺哪裡」的轉接層。
+       必須在 battle-renderer 之前載入：它的 init() 會直接組裝這三支。 -->
+  <script src="js/vfx-core.js?v=1.0.3"></script>
+  <script src="js/vfx-pixi-backend.js?v=1.0.1"></script>
+  <script src="js/vfx-runtime.js?v=1.0.0"></script>
+  <script src="js/battle-renderer.js?v=1.6.108"></script>
   <script src="js/stats.js?v=1.0.1"></script>
   <script src="js/item.js?v=1.0.2"></script>
   <script src="js/skills.js?v=1.0.33"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.89"></script>
+  <script src="js/skills2.js?v=1.0.90"></script>
   <script src="js/talents.js?v=1.0.2"></script>
   <script src="js/player.js?v=1.0.7"></script>
-  <script src="js/combat.js?v=1.0.45"></script>
-  <script src="js/potential.js?v=1.0.4"></script>
-  <script src="js/tower.js?v=1.0.8"></script>
+  <script src="js/combat.js?v=1.0.46"></script>
+  <script src="js/potential.js?v=1.0.5"></script>
+  <script src="js/tower.js?v=1.0.9"></script>
   <script src="js/save.js?v=1.0.9"></script>
   <script src="js/ui.js?v=1.0.57"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=27"></script>
+  <script src="js/worker/protocol.js?v=28"></script>
   <script src="js/storage.js"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.25"></script>
+  <script src="js/bridge.js?v=1.0.26"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

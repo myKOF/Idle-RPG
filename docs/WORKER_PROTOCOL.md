@@ -1,6 +1,6 @@
-# Worker 協議 v26
+# Worker 協議 v27
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 26`　最後更新：2026-09-03
+> 協議版本：`WORKER_PROTOCOL_VERSION = 27`　最後更新：2026-09-03
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -67,7 +67,6 @@
 
 | 欄位 | 語意 | 戰鬥暫停時 |
 | :--- | :--- | :--- |
-| 26 | 2026-09-03 | **VFX Preset 化**：`vfx` 事件新增**可選**欄位 `vfx`＝`{ cast, attack, projectile, hit, ground }`（角色 → `vfx/presets/<id>.json` 的 preset id，每個鍵都可省略）。值來自技能表／狀態表新增的特效欄（`config/CSV/Skills.csv`、`Skills2.csv` 五欄；`Status.csv` 三欄，經 config_tables.cjs 回寫成 `sk.vfx`／`tiers[i].vfx`／`ult[i].vfx`／`st.vfx`），由發送端依「這一發屬於表上哪一列」帶出（`js/skills.js skillVfxSpec`、`js/skills2.js sgVfxRoles`：extra.vfxTier／vfxUlt／vfxGid／vfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，`fxKind`／`variant`／`travelMs`／`area` 仍決定行為與時序；沒有欄位＝退回程式畫法，舊事件完全相容。指令表未變動（仍 93 條）。<br>理由：使用者要求「用 VFX 編輯器重做全部特效，且每個技能用到的特效檔名都寫在技能表裡、之後自己改」。長相要能由表格換掉，事件就必須帶「表上寫的那幾個檔名」；而行為與時序（AI_RULES 8.3 的計算層／表現層一致）仍由既有欄位負責，兩者分離才不會讓改一個檔名就改動命中時序。 |
 | `gt` | 遊戲時鐘（`js/util.js` 的 `GT`），衡量「打了多久」，給玩家看 | **停住** |
 | `simT` | 模擬時鐘（`js/worker/sim.worker.js` 的 `SIM_T`，v14 新增），衡量「模擬跑了多久」 | 照走 |
 
@@ -306,6 +305,8 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 27 | 2026-09-03 | **狀態每跳的 Preset 特效**：`vfx` 事件新增**可選**旗標 `presetOnly`。帶著它的事件只有 VFX Preset 端畫得出來（值來自狀態表的「作用特效」欄），沒有接上 Preset Runtime 的顯示層必須**整則忽略**，而不是退回泛用畫法。發送端：`js/combat.js` 的 `statusTickVfxFlush()`——同一個模擬步驟裡，同一個狀態打在多個敵人身上合併成一則（最多 8 個目標）。指令表未變動（仍 93 條）。<br>理由：DoT 每秒跳兩次，若沒有這個旗標，`?vfx=legacy` 或 Preset 組裝失敗時，每一次跳動都會退回泛用受擊爆點，畫面會變成滿場火花——那是**新增的**畫面，不是「維持舊畫法」。 |
+| 26 | 2026-09-03 | **VFX Preset 化**：`vfx` 事件新增**可選**欄位 `vfx`＝`{ cast, attack, projectile, hit, ground }`（角色 → `vfx/presets/<id>.json` 的 preset id，每個鍵都可省略）。值來自技能表／狀態表新增的特效欄（`config/CSV/Skills.csv`、`Skills2.csv` 五欄；`Status.csv` 三欄，經 config_tables.cjs 回寫成 `sk.vfx`／`tiers[i].vfx`／`ult[i].vfx`／`st.vfx`），由發送端依「這一發屬於表上哪一列」帶出（`js/skills.js skillVfxSpec`、`js/skills2.js sgVfxRoles`：extra.vfxTier／vfxUlt／vfxGid／vfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，`fxKind`／`variant`／`travelMs`／`area` 仍決定行為與時序；沒有欄位＝退回程式畫法，舊事件完全相容。指令表未變動（仍 93 條）。<br>理由：使用者要求「用 VFX 編輯器重做全部特效，且每個技能用到的特效檔名都寫在技能表裡、之後自己改」。長相要能由表格換掉，事件就必須帶「表上寫的那幾個檔名」；而行為與時序（AI_RULES 8.3 的計算層／表現層一致）仍由既有欄位負責，兩者分離才不會讓改一個檔名就改動命中時序。 |
 | 25 | 2026-08-26 | **火狩圈距與火神降臨**：環形 `area` 再新增 `rGrowTo`／`rGrowSec`（**這一道環**的半徑在幾秒內長到幾倍；最內圈恆為 1）。另外明確化一條既有約定：環形事件的 `r` 送的是**出生半徑**而不是當下半徑——顯示層的節點合併鍵含半徑，送當下值會讓每次補送都被當成另一道環而多畫一圈。<br>同批新增兩個變體（依 v17 規則本身不動協議）：`aura` 的 `follow-aura`（玩家錨定、逐幀跟隨的領域光環，供【火神降臨】與岩甲術兩個領域共用）與 `projectile` 的 `firehunt-ring`（翻轉中的火焰圓環）。指令表未變動（仍 93 條）。<br>理由：【烈陽星環】把火狩體積放大時，內外圈的間距必須照同一個比例拉開，否則兩圈的火狩會疊在一起——而那個間距**就是模擬層接觸判定用的幾何**（AI_RULES 8.3），只寫在顯示層會讓畫面與傷害範圍對不起來。 |
 | 24 | 2026-08-25 | **火狩超神進化的環繞成長**：環形 `area` 新增五個**可選**欄位——`growMax`（螺旋外擴的上限半徑 px）、`spiral`（1＝每一團各自從圓心往外長，形成螺旋；0＝整環一起長）、`spiralLag`（相鄰兩團的出生間隔秒數，決定螺旋張多開）、`orbGrowTo`／`orbGrowSec`（環繞體體積在幾秒內長到幾倍）。發送端 `js/skills2.js sgOrbitEmitVfx`，繪製端 `js/battle-renderer.js spawnFireHunt`；缺少欄位的舊事件退化成 0／1＝改造前的畫法，指令表未變動（仍 93 條）。<br>理由：超神【無限星環】的螺旋與【烈陽星環】的體積成長**就是模擬層接觸判定用的幾何**（AI_RULES 8.3），只寫在顯示層會讓「畫面看到的火狩」與「實際打得到的範圍」對不起來——這正是這類環繞技能最難查的一種回報。 |
 | 23 | 2026-08-19 | **超神進化（技能第 8 格）**：新增指令 `skill2.ultPick`（`fn: skills2UltPick`，js/skills2.js；args `{group, opt}`，opt 限 0~2），92 → **93**；既有四條 `skill2.*` 的 tier 上限由 0~6 放寬到 0~**7**——索引 7 是「超神進化」那一格（`SG_ULT_SLOT`），由 Worker 端各指令以 `sgIsUltSlot` 分流，沒開放超神進化的群組傳 7 會被回「未知階數」。`skills` 面板快照的 `skills2` 新增 `ult` 欄位＝`{群組id: {pick, lv}}`（只送**存檔上的選擇**，解鎖條件由 UI 端以共載的 `sgUltUnlockedBy` 重算，理由同 `progress` 欄位）。<br>資料形狀刻意**不進 tiers**：前 7 階是「循序解鎖、同時生效、各自升級」，超神進化是「三選一、只有選中的生效」，兩種語意混在同一個陣列會讓等級正規化、存檔夾限與參數表校驗全部長出例外分支。定義放在群組層的 `SKILLS2[gid].ult`（仍在同一張 Skills2 表，階數 8/9/10 ＝選項 1/2/3），存檔放 `G.player.skills2.ult`，因此 `SG_TIER_COUNT` 維持 7、既有 7 元素等級陣列的所有讀寫完全不動。 |

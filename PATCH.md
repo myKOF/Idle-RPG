@@ -1,5 +1,61 @@
 # PATCH.md
 
+## VFX Preset 化：全部戰鬥特效改由 Preset 檔決定長相（Claude 2026-09-03）
+
+需求（使用者）：用 VFX 編輯器重做遊戲現有的全部特效；技能表新增多個特效欄位，
+該技能用到的特效都寫上檔名、之後自己改；狀態的特效也寫在 Status 表。
+
+真正解決的是**「長相」與「行為」分家**：長相變成資料（`vfx/presets/<id>.json`），
+由表格決定哪一列用哪個檔；行為與時序（飛多久、落在哪、跟著誰）仍舊由模擬層決定
+（AI_RULES 8.3：計算層與表現層共用同一個語意參數）。改一個檔名不會動到命中時序。
+
+設計與交接文件：`docs/vfx/VFX_RUNTIME_ADAPTER.md`（角色語意、名目尺寸、emit 點對照表、進度）。
+
+本輪完成：
+
+- **119 個 emit 點補上列標記**（`js/skills2.js`）：`vfxTier`／`vfxUlt`／`vfxGid`／`vfxRoles`
+  告訴顯示層「這一發屬於表上的哪一列」。沒有它們的話所有階與超神都會讀到第 1 階那一份。
+- **146 份 Preset 全部做完**（原本只有受擊 13 份）＋ 素材匯出（shipped 35 → 85 個）。
+  製作腳本在 `tools/vfx/authoring/author/`，每一支都會驗 id／zIndex 並跑 probe 核對名目尺寸。
+- **每份 Preset 一個根群組**（使用者規則）：`vfx/layouts/<id>.json`，為了之後能同時開多份特效編輯。
+  分組是 authoring metadata，不進 Preset／Runtime，對畫面零影響。
+- **Runtime Adapter**（`js/vfx-runtime.js`）接進 `battle-renderer.js`：
+  `onVfx` 先問它，缺主要角色就整則退回舊畫法。飛行物逐幀 `setTransform`、場域依 `area.id` 合併、
+  狀態光環由 5Hz 面板快照 reconcile。`?vfx=legacy` 可強制舊畫法做 A／B 比對。
+- **協議 v27**：新增可選旗標 `presetOnly`（狀態每跳那種「只有 Preset 端畫得出來」的事件，
+  接不上就整則忽略，而不是退回泛用爆點）。
+- 普攻／天罰／敵方出手／連鎖電擊改由 `js/data.js` 的 `VFX_COMBAT_DEFAULTS` 供角色表。
+- Editor topbar 加 Preset 下拉（151 份可直接切換）。
+
+### 待確認
+
+1. **shipped 素材 4.49 MB 進 git**（86 個檔案）。這些是正式 runtime 資源，不進 repo 的話
+   151 份 preset 在遊戲端全部解析不到貼圖。若要縮，方向是壓縮 PNG 或改用圖集，不是不進 repo。
+2. **旋風斬（`burst-cyclone-phys`）沒有做目錄寫的「末 0.3s 淡出」**：它標了 loop，
+   每 1.6 秒淡到 0 再亮起來會變成閃爍。淡出交給 Runtime 停止時處理。
+3. **扇形以 V 形錐體逼近**：Core 的 procedural 只有 `uvScroll`，畫不出真正的扇形。
+   張角靠 `scaleX` 撐開，看起來像但不是幾何精確；判定範圍仍在模擬層。
+4. **「繞著原點公轉」改用「整片旋轉的環形素材」**：Core 沒有父子節點。
+   受影響的是暴風屏障的繞行白點、岩甲的環繞岩石、暈眩的頭頂星星。
+5. **`cast-buff-poison` 目前沒有任何一列引用**（毒系被動施放還沒指派給哪個技能）。
+6. **狀態每跳的合併粒度是「一個模擬步驟 × 一個狀態」**（≤8 目標）。逐個敵人各送一則會
+   讓事件量被敵人數放大，那正是 2026-08-18 卡頓那一輪的成因。
+7. **環繞場域整則退回舊畫法**（`area.orbs > 0`）：Adapter 只播得出軌道環，
+   環繞體要逐幀算公轉位置。接手會把環繞體弄不見，所以寧可整則交還。
+8. **順手修掉一個既有缺陷**：`js/worker/shim.js` 的 VFX 事件是白名單式的，
+   上一輪加進 spec 的 `vfx` 欄位沒有同步列進去，所以**沒有任何一則事件帶得出表格填的檔名**。
+   本輪在實機上才驗出來（佇列裡 480 則事件、`vfx` 欄位一個都沒有）。
+   ⚠️ 同一份白名單也漏了 `preserveDeadTargets`／`loopReturn`／`bodyLength`／`arcM`——
+   那是本輪之前就存在的問題（`battle-renderer.js` 讀 `spec.preserveDeadTargets` 但永遠收不到），
+   補上會改變現有畫面，因此**沒有**在這一輪一起動，另案處理。
+
+### 尚未完成
+
+**目視 QA**：Editor 抽樣截圖各家族、實機觀察普攻／火球／隕石／火牆／狀態光環。
+這一步要人在瀏覽器前面看，程式端只能備好流程（見 `VFX_RUNTIME_ADAPTER.md` §5）。
+
+---
+
 ## 傳奇進化第十二批：暴風屏障（Claude 2026-08-28，設計文檔的最後一組）
 
 設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤的暴風屏障那一段（盾牌 → `stormbarrier`）。
