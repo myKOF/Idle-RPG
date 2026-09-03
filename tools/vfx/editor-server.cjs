@@ -65,6 +65,9 @@ const PORT_TRIES = 10;
 /* 啟動器用來確認「這個埠上的是不是本副本的 Editor」，見下方路由處的說明 */
 const WHOAMI_PATH = '/__whoami';
 const WHOAMI_MARK = 'idle-rpg-vfx-editor';
+/* Preset 清單：Editor 的 topbar 下拉用它列出目前有哪些 preset 可以開。
+   只回 id 陣列——目錄內容本來就是公開的 vfx/presets/*.json，不多給任何路徑。 */
+const PRESET_LIST_PATH = '/__presets';
 
 /* ---- Preset 存檔 API 的常數（全部是常數，沒有一個來自請求） ---- */
 const PRESETS_DIR_REL = 'vfx/presets';
@@ -537,6 +540,20 @@ function createServer(ctx) {
        啟動器用這個端點確認身分，所以必須含 repo 路徑，不能只回專案名稱。 */
     if (pathname === WHOAMI_PATH) {
       return send(res, 200, WHOAMI_MARK + ' ' + path.resolve(ctx.repoRoot) + '\n');
+    }
+
+    /* Preset 清單（下拉選單用）。id 由檔名推得，合法性沿用存檔路由的同一條規則，
+       因此列出來的每一個 id 都必然是可以再存回去的。 */
+    if (pathname === PRESET_LIST_PATH) {
+      var ids = [];
+      try {
+        ids = fs.readdirSync(path.join(ctx.repoRoot, PRESETS_DIR_REL))
+          .filter(function (f) { return f.slice(-SAVE_SUFFIX.length) === SAVE_SUFFIX; })
+          .map(function (f) { return f.slice(0, f.length - SAVE_SUFFIX.length); })
+          .filter(function (id) { return presetIdPolicy.isWritablePresetId(id); })
+          .sort();
+      } catch (e) { /* 目錄不存在＝沒有 preset，回空陣列 */ }
+      return sendJson(res, 200, { ok: true, presets: ids });
     }
 
     if (pathname === '/') pathname = '/tools/vfx/editor/index.html';

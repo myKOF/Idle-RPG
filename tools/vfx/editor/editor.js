@@ -29,6 +29,40 @@
   }
 
   function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
+  var PRESET_LIST_URL = '/__presets';
+
+  /* topbar 的 preset 下拉：列出 repo 裡現有的 preset，選了就重載成 ?preset=<id>。
+     刻意走整頁重載而不是就地換內容——preset、layout、歷史、選取、gizmo
+     全部要換成另一份，重載是唯一能保證「不會混到上一份殘留」的做法。
+     150 份 preset 之後，用檔案對話框一個一個找已經不現實。 */
+  function fillPresetPicker(currentId) {
+    var sel = document.getElementById('preset-picker');
+    if (!sel) return;
+    fetch(PRESET_LIST_URL).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        var ids = (data && data.presets) || [];
+        if (!ids.length) return;
+        sel.innerHTML = '';
+        ids.forEach(function (id) {
+          var opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = id;
+          if (id === currentId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        sel.onchange = function () {
+          var id = sel.value;
+          if (!id || id === currentId) return;
+          /* 未存檔的內容換過去就沒了，先問一聲；取消就把下拉轉回目前這一份。 */
+          if (isDirty() && !window.confirm('目前的修改尚未存檔，切換 Preset 會失去這些修改。要繼續嗎？')) {
+            sel.value = currentId;
+            return;
+          }
+          window.location.search = '?preset=' + encodeURIComponent(id);
+        };
+      })
+      .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
+  }
 
   var state = {
     index: null,
@@ -2455,6 +2489,7 @@
         window.setTimeout(function () { showSaveError('分組未套用', [res[3].error]); }, 0);
       }
       loadCollapsed();
+      fillPresetPicker(bootPresetId);
       if (state.preset.id !== bootPresetId) {
         setSaveStatus('preset.id 與檔名不一致，已停用存檔', 'err');
       }
