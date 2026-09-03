@@ -1,88 +1,88 @@
-﻿狀態ID,狀態名稱,狀態圖標,狀態分類,狀態效果,效果鍵值,傷害屬性,傷害來源,狀態傷害,傷害上限參照,傷害上限倍率,效果數值,持續時間,作用間隔時間,疊加規則,最大疊層,說明
-bleed,流血,🩸,debuff,dot,,,skill,25,,0,0,5,1,strongest,1,傷口持續失血，每次作用造成技能傷害的一部分。
-burn,燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,4,1,strongest,1,火焰持續灼燒，每次作用造成火屬性傷害。
-poison,中毒,☠️,debuff,dot,,poison,skill,40,,0,0,6,1,strongest,1,毒素侵蝕血脈，每次作用造成毒屬性傷害。
-corrode,侵蝕,🕳️,debuff,dot,,dark,skill,25,,0,0,4,1,strongest,1,暗影侵蝕軀體，每次作用造成暗屬性傷害。
-plague,瘟疫,🦠,debuff,dot,,poison,skill,40,,0,0,6,1,strongest,1,疫病蔓延，每次作用造成毒屬性傷害。
-deathCurse,詛咒,💀,debuff,dot,,dark,maxHp,2.4,matk,6,0,5,1,strongest,1,每次作用造成目標最大生命一定比例的傷害，總量受施法者魔攻上限限制。
-stun,暈眩,😵,ctrl,ctrl,stun,,,0,,0,0,1,0,refresh,1,無法行動；持續時間受控場遞減與韌性影響。
-slow,減速,🐌,ctrl,ctrl,slow,,,0,,0,0,3,0,refresh,1,攻擊速度下降；持續時間受控場遞減與韌性影響。
-invuln,無敵結界（免疫一切傷害與負面效果）,✨,buff,ctrl,invuln,,,0,,0,0,3,0,refresh,1,免疫一切傷害與負面狀態。
-regen,再生,💚,buff,hot,hot,,maxHp,2.5,,0,0,6,0,strongest,1,每秒回復最大生命的一定比例。
-shield,護盾,🛡️,buff,shield,shield,,maxHp,18,,0,0,15,0,strongest,1,吸收傷害的屏障，占施法者最大生命一定比例；被打完或時間到就消失（時間到時未用完的部分一併消失）。
-atkUp,攻擊,⚔️,buff,stat,atkUp,,,0,,0,15,6,0,refresh,1,攻擊力提高。
-defUp,防禦,🛡️,buff,stat,defUp,,,0,,0,40,6,0,refresh,1,防禦力提高。
-aspdUp,攻速,⚡,buff,stat,aspdUp,,,0,,0,25,6,0,refresh,1,攻擊速度提高。
-evasionUp,閃避,🌀,buff,stat,evasionUp,,,0,,0,25,5,0,refresh,1,閃避提高。
-critDmgUp,爆傷,💥,buff,stat,critDmgUp,,,0,,0,40,6,0,refresh,1,爆擊傷害提高。
-blockUp,格擋,🔰,buff,stat,blockUp,,,0,,0,12,6,0,refresh,1,格擋率提高。
-thornsUp,反震,🌵,buff,stat,thornsUp,,,0,,0,15,6,0,refresh,1,反震傷害提高。
-lootUp,掉寶,🎁,buff,stat,lootUp,,,0,,0,15,10,0,refresh,1,掉寶率提高。
-penUp,物理/魔法穿透,🗡️,buff,stat,penUp,,,0,,0,25,5,0,refresh,1,物理與魔法穿透提高。
-allDmgUp,時空凝滯·所有傷害,🌌,buff,stat,allDmgUp,,,0,,0,0,5,0,refresh,1,潛力【時空凝滯】：所有傷害提高。
-velocitySurge,極速之力·攻速,💨,buff,stat,velocitySurge,,,0,,0,0,5,0,refresh,1,潛力【極速之力】：攻速提高。
-lightningOverload,雷霆過載·雷電傷害,🌩️,buff,stat,lightningOverload,lightning,,0,,0,0,5,0,refresh,1,潛力【雷霆過載】：雷電傷害提高。
-chronoCdr,時間坍縮·冷卻縮減,⏱️,buff,stat,chronoCdr,,,0,,0,0,5,0,refresh,1,潛力【時間坍縮】：冷卻縮減。
-sacredInvert,聖療逆轉·回復/溢傷,🕊️,buff,stat,sacredInvert,light,,0,,0,0,5,0,refresh,1,潛力【聖療逆轉】：回復與溢傷轉換。
-legendaryDarkUp,暗影強化,🌑,buff,stat,legendaryDarkUp,dark,,0,,0,0,5,0,refresh,1,傳奇特效：暗屬性傷害提高。
-legendaryGuardRed,守護減傷,🛡️,buff,stat,legendaryGuardRed,,,0,,0,0,5,0,refresh,1,傳奇特效：受到的傷害降低。
-legendaryLightShieldRed,聖盾減傷,🔆,buff,stat,legendaryLightShieldRed,light,,0,,0,0,5,0,refresh,1,傳奇特效：受到的傷害降低。
-atkDown,攻擊,⚔️,debuff,stat,atkDown,,,0,,0,18,6,0,refresh,1,目標攻擊力下降。
-defDown,防禦,🛡️,debuff,stat,defDown,,,0,,0,0,6,0,refresh,1,目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。
-enemyAspdDown,時間結界·攻速,⏳,debuff,stat,enemyAspdDown,,,0,,0,0,5,0,refresh,1,潛力【時間結界】：目標攻擊速度下降。
-sgBleed,血刃流血,🩸,debuff,dot,,,skill,30,,0,0,5,1,strongest,1,新版技能【血刃斬】：每次作用造成技能傷害一定比例的傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
-sgPoison,血刃劇毒,☠️,debuff,dot,,poison,skill,25,,0,0,4,0.5,strongest,1,新版技能【血毒刃】：毒屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
-sgIronBleed,鐵血裂傷,🗡️,debuff,dot,,,maxHp,3.5,,0,0,3,0.35,refresh,1,新版技能【鐵血之舞】：占最大生命比例的流血；自身流血直接扣生命、不吃護盾。
-sgGale,狂風,💨,buff,stat,sgGale,,,0,,0,20,5,0,refresh,1,新版技能【狂風斬】：攻速額外提高（突破攻速上限、與自身攻速相乘）。
-sgFrenzyCr,狂暴·爆擊率,🔥,buff,stat,sgCritUp,,,0,,0,50,6,0,refresh,1,新版技能【狂暴之舞】：爆擊率提高。
-sgFrenzyCd,狂暴·爆擊傷害,💥,buff,stat,sgCritDmgUp,,,0,,0,200,6,0,refresh,1,新版技能【狂暴之舞】：爆擊傷害提高。
-sgStorm,暴風化身,🌪️,buff,stat,sgStorm,,,0,,0,0,3,0,refresh,1,新版技能【暴風之舞】：化身暴風，期間自動施放雙刀亂舞、無法普攻。
-sgBloodrage,嗜血狂怒,💢,buff,stat,sgBloodrage,,,0,,0,20,8,0,refresh,1,新版技能【嗜血狂怒】：攻速乘算提高（突破攻速上限）；期間各階狂怒效果生效。
-sgArmorBrk,破甲,⚒️,debuff,stat,sgDefBrk,,,0,,0,25,4,0,stack,4,新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。
-sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
-sgFireAmp,火焰增幅,🔥,buff,stat,sgFireAmp,fire,,0,,0,0,4,0,refresh,1,新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
-sgFirehunt,火狩,☄️,buff,stat,sgFirehunt,fire,,0,,0,0,4,0,refresh,1,新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。
-sgRockArmor,岩甲,🪨,buff,stat,sgRockArmor,earth,,0,,0,0,10,0,refresh,1,新版技能【岩甲術】：岩甲護盾的剩餘時間；第 3、5、6、7 階的效果只在此期間生效（護盾本身走「護盾」狀態）。
-sgRockAmp,岩甲增幅,🪨,buff,stat,sgRockAmp,,,0,,0,0,3,0,refresh,1,新版技能【岩甲增幅】：損失護盾換得的傷害增幅（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
-sgMire,泥沼緩速,🟤,debuff,stat,sgMire,earth,,0,,0,50,1,0,refresh,1,新版技能【泥沼術】：攻速與移動速度下降（效果值＝攻速下降%）。同類型緩速依「取代」規則後蓋前並重新計時；為場域型持續重塗，不吃控場遞減與韌性。
-sgMirePoison,泥沼劇毒,☠️,debuff,dot,,poison,skill,25,,0,0,1,0.5,refresh,1,新版技能【毒沼術】：毒性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在沼澤中才會被重塗。
-sgMireLava,熔岩灼燒,🌋,debuff,dot,,fire,skill,70,,0,0,1,0.4,refresh,1,新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。
-sgThunderOrb,環體電球,🔵,buff,stat,sgThunderOrb,lightning,,0,,0,0,6,0,refresh,1,新版技能【環體電球】：電球環繞自身的剩餘時間（與火狩各自一格，兩者互不覆蓋）。
-sgFrost,寒霜,❄️,debuff,stat,sgFrost,ice,,0,,0,20,5,0,stack,5,新版技能【寒霜狀態】的層數與緩速：每疊 1 層使移動速度下降（效果值＝單層下降% × 層數），攻速倍率則為（1 − 單層下降%）^層數，疊滿層數時凍結。比照泥沼緩速為場域型重塗，緩速本身不吃控場遞減與韌性。
-sgFrostBite,寒霜凍傷,🧊,debuff,dot,,ice,skill,50,,0,0,5,0.5,strongest,1,新版技能【寒霜狀態】的寒冰持續傷害；每跳量＝施放群組本體傷害 B × 寒霜共用倍率 ×（50×目前寒霜總層數＋該來源寒霜階每級增量×該階等級）%，總層數包含所有技能來源（引擎以 dps 覆寫）。
-sgFrozen,凍結,🥶,debuff,stat,sgFrozen,ice,,0,,0,0,3,0,refresh,1,新版技能【寒霜狀態】疊滿層數的凍結標記。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只標記「正在凍結中」，供【水龍捲】增傷與【寒冰爆裂箭】判定冰爆時機。
-sgIceRevert,寒冰逆轉,💧,debuff,stat,sgIceRevert,ice,,0,,0,20,6,0,refresh,1,新版技能【寒冰逆轉】：敵人的屬性標籤強制改為寒冰，且受到的寒冰傷害提高（效果值＝提高%）。
-sgFrostbody,寒冰體,❄️,buff,stat,sgFrostbody,ice,,0,,0,25,6,0,refresh,1,新版技能【冰霜新星】：施放後 6 秒內，攻擊你的敵人有 25% 機率被附加寒霜狀態。
-sgWindRend,風切,💨,debuff,stat,sgWindRend,wind,,0,,0,80,4,0,stack,6,新版技能【風切狀態】的減益本體：移動速度下降（效果值＝單層下降%，不隨層數再加深）且命中率下降；層數只影響風切割裂的每跳傷害，當下允許的層數上限由真空斬【無限風切】與傳奇【裂痕】決定（表上的上限只是天花板）。
-sgWindCut,風切割裂,💨,debuff,dot,,wind,skill,50,,0,0,4,0.5,strongest,1,新版技能【風切狀態】的風系持續傷害；每跳量占施放群組的本體技能傷害並隨風切層數提高（引擎以 dps 覆寫）。
-sgWindSlow,狂風緩速,🍃,debuff,stat,sgWindSlow,wind,,0,,0,60,3,0,refresh,1,新版技能【狂風碎裂】：被風刃命中的敵人移動速度下降（效果值＝下降%）。同類型緩速依「取代」規則後蓋前並重新計時。
-sgStormBarrier,暴風屏障,🌪️,buff,stat,sgStormBarrier,wind,,0,,0,10,8,0,refresh,1,新版技能【暴風屏障】：屏障的剩餘時間與傷害減免（效果值＝減免%）；第 2～6 階的效果只在此期間生效（護盾由節拍逐次給予）。
-sgVoidBlade,虛空斬,🌀,buff,stat,sgVoidBlade,wind,,0,,0,0,6,0,refresh,1,新版技能【虛空斬】：虛空斬擊還會在場上繞行多久（環繞場域的剩餘時間投影，比照火狩）。
-sgStormGod,暴風神體,⛈️,buff,stat,sgStormGod,wind,,0,,0,99,2,0,refresh,1,新版技能【暴風神體】：風暴之神附體期間的傷害減免（效果值＝減免%），且風系傷害額外乘算提高。與暴風屏障是分開的兩個狀態。
-sgThrustVuln,千瘡百孔,🕳️,debuff,stat,sgThrustVuln,,,0,,0,4,5,0,stack,10,傳奇特效【千瘡百孔】：每次突刺命中疊 1 層，每層使該敵人受到的傷害提高（效果值＝單層提高%）；層數上限由特效參數決定。
-sgSoulRend,靈魂撕裂,👻,debuff,stat,sgSoulRend,dark,,0,,0,1,30,0,stack,100,超神進化【暗影絕殺者】：每次突刺命中疊 1 層，每層使該敵人受到的傷害提高（效果值＝單層提高%）；層數上限與單層值由技能參數決定。
-sgThrustBleed,穿心裂血,🩸,debuff,dot,,,skill,50,,0,0,5,0.5,strongest,1,傳奇特效【穿心裂血】：突刺附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。
-sgPhantomDodge,幻影殘像,🌫️,buff,stat,sgPhantomDodge,,,0,,0,30,2,0,refresh,1,超神進化【幻影八方陣】：期間有一定機率絕對閃避敵方攻擊（效果值＝機率%）；此擲骰與命中率無關，先於命中判定結算。
-sgDeathReaper,死亡收割,☠️,buff,stat,sgDeathReaper,,,0,,0,25,8,0,stack,20,超神進化【死亡收割者】：飛刀每殺死 1 個敵人疊 1 層，每層使你造成的所有傷害提高（效果值＝單層提高%）；層數上限與單層值由技能參數決定。
-sgKnifeWaltz,輪舞刃,🔪,buff,stat,sgKnifeWaltz,,,0,,0,0,5,0,refresh,1,傳奇特效【輪舞刃】：繞行在你周圍的飛刀還會留在場上多久（環繞場域的剩餘時間投影，比照火狩）。
-sgSlayerMark,殺神,⚰️,buff,stat,sgSlayerMark,,,0,,0,2,6,0,stack,100,超神進化【殺神領域】：領域內的敵人死亡時疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）。
-sgVenomField,萬毒侵蝕,🧪,debuff,dot,,poison,skill,100,,0,0,6,0.5,stack,10,超神進化【萬毒血霧】：領域內每次作用疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
-sgKagura,神樂灼焰,🎇,debuff,dot,,fire,skill,10,,0,0,6,0.5,stack,20,超神進化【火之神樂】：雙刀亂舞每命中 1 次疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
-sgDeathDefer,不屈之誓,🕯️,buff,stat,sgDeathDefer,,,0,,0,100,10,0,refresh,1,傳奇【不屈之誓】：死亡延後生效的期間，你造成的所有傷害提高。
-sgBloodMist,血霧壟罩,🌫️,debuff,stat,sgBloodMist,,,0,,0,0,0.6,0,refresh,1,傳奇【血霧】：站在血霧裡的標記，受傷時回復施放者生命。效果值＝血霧生成當下定版的回復比例%（沒有任何屬性讀這個鍵，它只是把數值帶在標記上）。
-sgCounterWrath,怒火,😡,buff,stat,sgCounterWrath,,,0,,0,30,6,0,refresh,1,傳奇【怒火】：反擊累積達門檻時獲得，期間你造成的所有傷害提高。
-sgBurnBlood,燃血,🩸,buff,stat,sgBurnBlood,,,0,,0,1,4,0,stack,50,傳奇【燃血】：【血飲術】每造成 1 次自身生命損失疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）。
-sgThornsRage,屠戮,🪓,buff,stat,sgThornsRage,,,0,,0,5,4,0,stack,10,傳奇【屠戮者】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使【嗜血反震】的效果提高（效果值＝單層% × 層數）。
-sgWarGodKill,戰神屠錄,📜,buff,stat,sgWarGodKill,,,0,,0,4,99999,0,stack,100,超神進化【戰神屠錄】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）；設計為「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。
-sgAsuraFist,阿修羅霸王拳,👊,buff,stat,sgAsuraFist,,,0,,0,500,1,0,refresh,1,超神進化【阿修羅霸王拳】：每隔一段時間自動發動，短暫期間內你造成的所有傷害大幅提高。
-sgStarfall,地爆天星,☄️,buff,stat,sgStarfall,fire,,0,,0,0,60,0,refresh,1,超神進化【地爆天星】：距離下一顆超巨型殞石落下還有多久（剩餘時間即倒數，效果值本身沒有意義；比照【暴風化身】【火狩】的純計時狀態）。
-sgBurnAmp,爆燃,🔥,debuff,stat,sgBurnAmp,fire,,0,,0,10,4,0,refresh,1,傳奇特效【爆燃】：火龍捲每造成 1 段傷害就疊 1 層，使該敵人受到的燃燒傷害提高（效果值＝目前的總提高%）。設計文檔未設層數上限，因此比照【火焰增幅】由引擎累加成單一數值後「後蓋前」，不使用狀態表的疊層規則。
-sgPetrify,石化,🗿,debuff,stat,sgPetrify,earth,,0,,0,400,4,0,refresh,1,超神進化【超重岩之術】：被壓縮的巨岩之力封住的敵人。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只負責「受到的土系傷害額外提高」（效果值＝提高%）。
-sgStiffen,僵化,🌐,debuff,stat,sgStiffen,earth,,0,,0,65,5,0,refresh,1,超神進化【超重力場】：重力場扭曲造成的僵化。移動速度、攻速與造成的傷害同時下降（效果值＝三者共用的下降%）；比照【泥沼緩速】不吃控場遞減與韌性。
-sgMireBleed,泥沼裂傷,🩸,debuff,dot,,,skill,150,,0,0,5,0.5,strongest,1,傳奇特效【侵蝕】：泥沼術附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。比照【穿心裂血】採「取高並重新計時」，因此每一拍重塗不會把剩餘時間鎖死在滿值。
-sgPlague,惡疫,🦠,debuff,dot,,poison,skill,200,,0,0,8,0.35,strongest,1,超神進化【惡疫魔沼】：沼澤塗上的毒性持續傷害；每跳量與間隔由超神進化參數決定（引擎以 dps 覆寫）。與泥沼的其他狀態不同，離開沼澤後仍會走完自己的持續時間，因此不採「只給兩跳」的重塗規則。
-sgInferno,火獄烙印,🌋,debuff,stat,sgInferno,fire,,0,,0,1,8,0,refresh,1,超神進化【深淵火獄】：敵人的屬性標籤強制改為火屬性（效果值本身沒有意義，比照【地爆天星】只是一個計時容器）。屬性改寫走 skill2ForcedAttr，與【寒冰逆轉】同一個掛點。
-sgSuperconduct,超導電荷,🔋,buff,stat,sgSuperconduct,lightning,,0,,0,2,99999,0,stack,100,超神進化【永恒超導體】：閃電鏈每經過自身 1 次疊 1 層，每層使你的雷電傷害提高（效果值＝單層% × 層數）；設計未寫持續時間，比照【戰神屠錄】採「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。
-sgThunderQuake,震雷,⚡,debuff,stat,sgThunderQuake,lightning,,0,,0,25,8,0,refresh,1,傳奇特效【震雷】：被落雷術擊中留下的雷痕（效果值＝該敵人「暈眩中」時受到的傷害提高%）。只有同時暈眩中才會吃到增傷，因此持續時間只要蓋得住一次落雷的暈眩即可。
-sgWaterPrison,水牢,🌊,debuff,stat,sgWaterPrison,ice,,0,,0,100,6,0,refresh,1,超神進化【水牢天瀑】：被關進水牢的敵人（效果值＝受到的傷害提高%）。攻擊力下降那一半沿用既有的【攻擊】減益 atkDown，不另建一筆。
-sgWindErode,風蝕,🌬️,debuff,stat,sgWindErode,wind,,0,,0,25,4,0,refresh,1,傳奇特效【風蝕】：被風刃擊中留下的風蝕（效果值＝受到的傷害提高%）。沒有附加條件，狀態在身上就算數，走 skill2VulnACfg 的同一個 totalDmgPct。
+﻿狀態ID,狀態名稱,狀態圖標,狀態分類,狀態效果,效果鍵值,傷害屬性,傷害來源,狀態傷害,傷害上限參照,傷害上限倍率,效果數值,持續時間,作用間隔時間,疊加規則,最大疊層,施加特效,持續特效,作用特效,說明
+bleed,流血,🩸,debuff,dot,,,skill,25,,0,0,5,1,strongest,1,hit-bleed,st-bleed,st-tick-bleed,傷口持續失血，每次作用造成技能傷害的一部分。
+burn,燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,4,1,strongest,1,hit-fire,st-burn,st-tick-fire,火焰持續灼燒，每次作用造成火屬性傷害。
+poison,中毒,☠️,debuff,dot,,poison,skill,40,,0,0,6,1,strongest,1,hit-poison,st-poison,st-tick-poison,毒素侵蝕血脈，每次作用造成毒屬性傷害。
+corrode,侵蝕,🕳️,debuff,dot,,dark,skill,25,,0,0,4,1,strongest,1,hit-dark,st-corrode,st-tick-dark,暗影侵蝕軀體，每次作用造成暗屬性傷害。
+plague,瘟疫,🦠,debuff,dot,,poison,skill,40,,0,0,6,1,strongest,1,hit-poison,st-poison,st-tick-poison,疫病蔓延，每次作用造成毒屬性傷害。
+deathCurse,詛咒,💀,debuff,dot,,dark,maxHp,2.4,matk,6,0,5,1,strongest,1,curse-dark,st-corrode,st-tick-dark,每次作用造成目標最大生命一定比例的傷害，總量受施法者魔攻上限限制。
+stun,暈眩,😵,ctrl,ctrl,stun,,,0,,0,0,1,0,refresh,1,hit-phys,st-stun,,無法行動；持續時間受控場遞減與韌性影響。
+slow,減速,🐌,ctrl,ctrl,slow,,,0,,0,0,3,0,refresh,1,hit-ice,st-slow,,攻擊速度下降；持續時間受控場遞減與韌性影響。
+invuln,無敵結界（免疫一切傷害與負面效果）,✨,buff,ctrl,invuln,,,0,,0,0,3,0,refresh,1,cast-buff-light,st-invuln,,免疫一切傷害與負面狀態。
+regen,再生,💚,buff,hot,hot,,maxHp,2.5,,0,0,6,0,strongest,1,cast-buff-def,st-regen,,每秒回復最大生命的一定比例。
+shield,護盾,🛡️,buff,shield,shield,,maxHp,18,,0,0,15,0,strongest,1,cast-buff-def,st-shield,,吸收傷害的屏障，占施法者最大生命一定比例；被打完或時間到就消失（時間到時未用完的部分一併消失）。
+atkUp,攻擊,⚔️,buff,stat,atkUp,,,0,,0,15,6,0,refresh,1,cast-buff-phys,st-atk-up,,攻擊力提高。
+defUp,防禦,🛡️,buff,stat,defUp,,,0,,0,40,6,0,refresh,1,cast-buff-def,st-def-up,,防禦力提高。
+aspdUp,攻速,⚡,buff,stat,aspdUp,,,0,,0,25,6,0,refresh,1,cast-buff-phys,st-aspd-up,,攻擊速度提高。
+evasionUp,閃避,🌀,buff,stat,evasionUp,,,0,,0,25,5,0,refresh,1,cast-buff-special,st-buff,,閃避提高。
+critDmgUp,爆傷,💥,buff,stat,critDmgUp,,,0,,0,40,6,0,refresh,1,cast-buff-phys,st-crit-up,,爆擊傷害提高。
+blockUp,格擋,🔰,buff,stat,blockUp,,,0,,0,12,6,0,refresh,1,cast-buff-def,st-def-up,,格擋率提高。
+thornsUp,反震,🌵,buff,stat,thornsUp,,,0,,0,15,6,0,refresh,1,cast-buff-def,st-thorns,,反震傷害提高。
+lootUp,掉寶,🎁,buff,stat,lootUp,,,0,,0,15,10,0,refresh,1,cast-buff-special,st-buff,,掉寶率提高。
+penUp,物理/魔法穿透,🗡️,buff,stat,penUp,,,0,,0,25,5,0,refresh,1,cast-buff-phys,st-buff,,物理與魔法穿透提高。
+allDmgUp,時空凝滯·所有傷害,🌌,buff,stat,allDmgUp,,,0,,0,0,5,0,refresh,1,cast-buff-special,st-buff,,潛力【時空凝滯】：所有傷害提高。
+velocitySurge,極速之力·攻速,💨,buff,stat,velocitySurge,,,0,,0,0,5,0,refresh,1,cast-buff-special,st-aspd-up,,潛力【極速之力】：攻速提高。
+lightningOverload,雷霆過載·雷電傷害,🌩️,buff,stat,lightningOverload,lightning,,0,,0,0,5,0,refresh,1,hit-lightning,st-lightning,,潛力【雷霆過載】：雷電傷害提高。
+chronoCdr,時間坍縮·冷卻縮減,⏱️,buff,stat,chronoCdr,,,0,,0,0,5,0,refresh,1,cast-buff-special,st-buff,,潛力【時間坍縮】：冷卻縮減。
+sacredInvert,聖療逆轉·回復/溢傷,🕊️,buff,stat,sacredInvert,light,,0,,0,0,5,0,refresh,1,cast-buff-light,st-buff,,潛力【聖療逆轉】：回復與溢傷轉換。
+legendaryDarkUp,暗影強化,🌑,buff,stat,legendaryDarkUp,dark,,0,,0,0,5,0,refresh,1,cast-buff-dark,st-mark-dark,,傳奇特效：暗屬性傷害提高。
+legendaryGuardRed,守護減傷,🛡️,buff,stat,legendaryGuardRed,,,0,,0,0,5,0,refresh,1,cast-buff-def,st-def-up,,傳奇特效：受到的傷害降低。
+legendaryLightShieldRed,聖盾減傷,🔆,buff,stat,legendaryLightShieldRed,light,,0,,0,0,5,0,refresh,1,cast-buff-light,st-def-up,,傳奇特效：受到的傷害降低。
+atkDown,攻擊,⚔️,debuff,stat,atkDown,,,0,,0,18,6,0,refresh,1,curse-dark,st-debuff,,目標攻擊力下降。
+defDown,防禦,🛡️,debuff,stat,defDown,,,0,,0,0,6,0,refresh,1,hit-earth,st-armor-break,,目標防禦力下降（舊存檔融合技快照相容保留，新設計改用穿透提升）。
+enemyAspdDown,時間結界·攻速,⏳,debuff,stat,enemyAspdDown,,,0,,0,0,5,0,refresh,1,hit-ice,st-slow,,潛力【時間結界】：目標攻擊速度下降。
+sgBleed,血刃流血,🩸,debuff,dot,,,skill,30,,0,0,5,1,strongest,1,hit-bleed,st-bleed,st-tick-bleed,新版技能【血刃斬】：每次作用造成技能傷害一定比例的傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
+sgPoison,血刃劇毒,☠️,debuff,dot,,poison,skill,25,,0,0,4,0.5,strongest,1,hit-poison,st-poison,st-tick-poison,新版技能【血毒刃】：毒屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
+sgIronBleed,鐵血裂傷,🗡️,debuff,dot,,,maxHp,3.5,,0,0,3,0.35,refresh,1,hit-bleed,st-bleed,st-tick-bleed,新版技能【鐵血之舞】：占最大生命比例的流血；自身流血直接扣生命、不吃護盾。
+sgGale,狂風,💨,buff,stat,sgGale,,,0,,0,20,5,0,refresh,1,cast-buff-phys,st-aspd-up,,新版技能【狂風斬】：攻速額外提高（突破攻速上限、與自身攻速相乘）。
+sgFrenzyCr,狂暴·爆擊率,🔥,buff,stat,sgCritUp,,,0,,0,50,6,0,refresh,1,cast-buff-phys,st-crit-up,,新版技能【狂暴之舞】：爆擊率提高。
+sgFrenzyCd,狂暴·爆擊傷害,💥,buff,stat,sgCritDmgUp,,,0,,0,200,6,0,refresh,1,cast-buff-phys,st-crit-up,,新版技能【狂暴之舞】：爆擊傷害提高。
+sgStorm,暴風化身,🌪️,buff,stat,sgStorm,,,0,,0,0,3,0,refresh,1,cast-buff-phys,st-storm,,新版技能【暴風之舞】：化身暴風，期間自動施放雙刀亂舞、無法普攻。
+sgBloodrage,嗜血狂怒,💢,buff,stat,sgBloodrage,,,0,,0,20,8,0,refresh,1,cast-buff-phys,st-atk-up,,新版技能【嗜血狂怒】：攻速乘算提高（突破攻速上限）；期間各階狂怒效果生效。
+sgArmorBrk,破甲,⚒️,debuff,stat,sgDefBrk,,,0,,0,25,4,0,stack,4,hit-earth,st-armor-break,,新版技能【破甲擊】：防禦降低（可疊層，疊層時重置時間；獨立鍵、與舊 defDown 減益加總計算）。
+sgBurn,烈焰燃燒,🔥,debuff,dot,,fire,skill,20,,0,0,5,0.5,strongest,1,hit-fire,st-burn,st-tick-fire,新版技能【火球術／火柱】：火屬性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫）。
+sgFireAmp,火焰增幅,🔥,buff,stat,sgFireAmp,fire,,0,,0,0,4,0,refresh,1,cast-magic,st-fire-amp,,新版技能【火焰增幅】：火屬性傷害提升（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
+sgFirehunt,火狩,☄️,buff,stat,sgFirehunt,fire,,0,,0,0,4,0,refresh,1,,,,新版技能【火狩】：火狩環繞自身的剩餘時間；【再生】的擊殺延長會累加在這裡。
+sgRockArmor,岩甲,🪨,buff,stat,sgRockArmor,earth,,0,,0,0,10,0,refresh,1,,,,新版技能【岩甲術】：岩甲護盾的剩餘時間；第 3、5、6、7 階的效果只在此期間生效（護盾本身走「護盾」狀態）。
+sgRockAmp,岩甲增幅,🪨,buff,stat,sgRockAmp,,,0,,0,0,3,0,refresh,1,hit-earth,st-fire-amp,,新版技能【岩甲增幅】：損失護盾換得的傷害增幅（層數由引擎累加成單一數值，故用後蓋前並重置時間）。
+sgMire,泥沼緩速,🟤,debuff,stat,sgMire,earth,,0,,0,50,1,0,refresh,1,hit-earth,st-slow,,新版技能【泥沼術】：攻速與移動速度下降（效果值＝攻速下降%）。同類型緩速依「取代」規則後蓋前並重新計時；為場域型持續重塗，不吃控場遞減與韌性。
+sgMirePoison,泥沼劇毒,☠️,debuff,dot,,poison,skill,25,,0,0,1,0.5,refresh,1,hit-poison,st-poison,st-tick-poison,新版技能【毒沼術】：毒性持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在沼澤中才會被重塗。
+sgMireLava,熔岩灼燒,🌋,debuff,dot,,fire,skill,70,,0,0,1,0.4,refresh,1,hit-fire,st-burn,st-tick-fire,新版技能【熔岩沼】：火焰持續傷害；每跳量與間隔由技能各階決定（引擎以 dps 覆寫），站在岩漿中才會被重塗。
+sgThunderOrb,環體電球,🔵,buff,stat,sgThunderOrb,lightning,,0,,0,0,6,0,refresh,1,,,,新版技能【環體電球】：電球環繞自身的剩餘時間（與火狩各自一格，兩者互不覆蓋）。
+sgFrost,寒霜,❄️,debuff,stat,sgFrost,ice,,0,,0,20,5,0,stack,5,hit-ice,st-frost-stacks,,新版技能【寒霜狀態】的層數與緩速：每疊 1 層使移動速度下降（效果值＝單層下降% × 層數），攻速倍率則為（1 − 單層下降%）^層數，疊滿層數時凍結。比照泥沼緩速為場域型重塗，緩速本身不吃控場遞減與韌性。
+sgFrostBite,寒霜凍傷,🧊,debuff,dot,,ice,skill,50,,0,0,5,0.5,strongest,1,hit-ice,st-frostbite,st-tick-ice,新版技能【寒霜狀態】的寒冰持續傷害；每跳量＝施放群組本體傷害 B × 寒霜共用倍率 ×（50×目前寒霜總層數＋該來源寒霜階每級增量×該階等級）%，總層數包含所有技能來源（引擎以 dps 覆寫）。
+sgFrozen,凍結,🥶,debuff,stat,sgFrozen,ice,,0,,0,0,3,0,refresh,1,burst-frost-freeze,st-frozen,,新版技能【寒霜狀態】疊滿層數的凍結標記。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只標記「正在凍結中」，供【水龍捲】增傷與【寒冰爆裂箭】判定冰爆時機。
+sgIceRevert,寒冰逆轉,💧,debuff,stat,sgIceRevert,ice,,0,,0,20,6,0,refresh,1,hit-ice,st-water-prison,,新版技能【寒冰逆轉】：敵人的屬性標籤強制改為寒冰，且受到的寒冰傷害提高（效果值＝提高%）。
+sgFrostbody,寒冰體,❄️,buff,stat,sgFrostbody,ice,,0,,0,25,6,0,refresh,1,cast-magic,st-frostbite,,新版技能【冰霜新星】：施放後 6 秒內，攻擊你的敵人有 25% 機率被附加寒霜狀態。
+sgWindRend,風切,💨,debuff,stat,sgWindRend,wind,,0,,0,80,4,0,stack,6,hit-wind,st-wind-rend,,新版技能【風切狀態】的減益本體：移動速度下降（效果值＝單層下降%，不隨層數再加深）且命中率下降；層數只影響風切割裂的每跳傷害，當下允許的層數上限由真空斬【無限風切】與傳奇【裂痕】決定（表上的上限只是天花板）。
+sgWindCut,風切割裂,💨,debuff,dot,,wind,skill,50,,0,0,4,0.5,strongest,1,hit-wind,st-windcut,st-tick-wind,新版技能【風切狀態】的風系持續傷害；每跳量占施放群組的本體技能傷害並隨風切層數提高（引擎以 dps 覆寫）。
+sgWindSlow,狂風緩速,🍃,debuff,stat,sgWindSlow,wind,,0,,0,60,3,0,refresh,1,hit-wind,st-slow,,新版技能【狂風碎裂】：被風刃命中的敵人移動速度下降（效果值＝下降%）。同類型緩速依「取代」規則後蓋前並重新計時。
+sgStormBarrier,暴風屏障,🌪️,buff,stat,sgStormBarrier,wind,,0,,0,10,8,0,refresh,1,,,,新版技能【暴風屏障】：屏障的剩餘時間與傷害減免（效果值＝減免%）；第 2～6 階的效果只在此期間生效（護盾由節拍逐次給予）。
+sgVoidBlade,虛空斬,🌀,buff,stat,sgVoidBlade,wind,,0,,0,0,6,0,refresh,1,,,,新版技能【虛空斬】：虛空斬擊還會在場上繞行多久（環繞場域的剩餘時間投影，比照火狩）。
+sgStormGod,暴風神體,⛈️,buff,stat,sgStormGod,wind,,0,,0,99,2,0,refresh,1,,,,新版技能【暴風神體】：風暴之神附體期間的傷害減免（效果值＝減免%），且風系傷害額外乘算提高。與暴風屏障是分開的兩個狀態。
+sgThrustVuln,千瘡百孔,🕳️,debuff,stat,sgThrustVuln,,,0,,0,4,5,0,stack,10,hit-phys,st-debuff,,傳奇特效【千瘡百孔】：每次突刺命中疊 1 層，每層使該敵人受到的傷害提高（效果值＝單層提高%）；層數上限由特效參數決定。
+sgSoulRend,靈魂撕裂,👻,debuff,stat,sgSoulRend,dark,,0,,0,1,30,0,stack,100,curse-dark,st-mark-dark,,超神進化【暗影絕殺者】：每次突刺命中疊 1 層，每層使該敵人受到的傷害提高（效果值＝單層提高%）；層數上限與單層值由技能參數決定。
+sgThrustBleed,穿心裂血,🩸,debuff,dot,,,skill,50,,0,0,5,0.5,strongest,1,hit-bleed,st-bleed,st-tick-bleed,傳奇特效【穿心裂血】：突刺附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。
+sgPhantomDodge,幻影殘像,🌫️,buff,stat,sgPhantomDodge,,,0,,0,30,2,0,refresh,1,cast-buff-special,st-buff,,超神進化【幻影八方陣】：期間有一定機率絕對閃避敵方攻擊（效果值＝機率%）；此擲骰與命中率無關，先於命中判定結算。
+sgDeathReaper,死亡收割,☠️,buff,stat,sgDeathReaper,,,0,,0,25,8,0,stack,20,cast-buff-dark,st-mark-dark,,超神進化【死亡收割者】：飛刀每殺死 1 個敵人疊 1 層，每層使你造成的所有傷害提高（效果值＝單層提高%）；層數上限與單層值由技能參數決定。
+sgKnifeWaltz,輪舞刃,🔪,buff,stat,sgKnifeWaltz,,,0,,0,0,5,0,refresh,1,cast-buff-phys,st-storm,,傳奇特效【輪舞刃】：繞行在你周圍的飛刀還會留在場上多久（環繞場域的剩餘時間投影，比照火狩）。
+sgSlayerMark,殺神,⚰️,buff,stat,sgSlayerMark,,,0,,0,2,6,0,stack,100,curse-dark,st-mark-dark,,超神進化【殺神領域】：領域內的敵人死亡時疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）。
+sgVenomField,萬毒侵蝕,🧪,debuff,dot,,poison,skill,100,,0,0,6,0.5,stack,10,hit-poison,st-poison,st-tick-poison,超神進化【萬毒血霧】：領域內每次作用疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
+sgKagura,神樂灼焰,🎇,debuff,dot,,fire,skill,10,,0,0,6,0.5,stack,20,hit-fire,st-burn,st-tick-fire,超神進化【火之神樂】：雙刀亂舞每命中 1 次疊 1 層，每跳量＝單層量 × 層數（引擎以 dps 覆寫）。
+sgDeathDefer,不屈之誓,🕯️,buff,stat,sgDeathDefer,,,0,,0,100,10,0,refresh,1,cast-buff-light,st-invuln,,傳奇【不屈之誓】：死亡延後生效的期間，你造成的所有傷害提高。
+sgBloodMist,血霧壟罩,🌫️,debuff,stat,sgBloodMist,,,0,,0,0,0.6,0,refresh,1,hit-dark,st-debuff,,傳奇【血霧】：站在血霧裡的標記，受傷時回復施放者生命。效果值＝血霧生成當下定版的回復比例%（沒有任何屬性讀這個鍵，它只是把數值帶在標記上）。
+sgCounterWrath,怒火,😡,buff,stat,sgCounterWrath,,,0,,0,30,6,0,refresh,1,cast-buff-phys,st-atk-up,,傳奇【怒火】：反擊累積達門檻時獲得，期間你造成的所有傷害提高。
+sgBurnBlood,燃血,🩸,buff,stat,sgBurnBlood,,,0,,0,1,4,0,stack,50,cast-buff-phys,st-crit-up,,傳奇【燃血】：【血飲術】每造成 1 次自身生命損失疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）。
+sgThornsRage,屠戮,🪓,buff,stat,sgThornsRage,,,0,,0,5,4,0,stack,10,cast-buff-def,st-thorns,,傳奇【屠戮者】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使【嗜血反震】的效果提高（效果值＝單層% × 層數）。
+sgWarGodKill,戰神屠錄,📜,buff,stat,sgWarGodKill,,,0,,0,4,99999,0,stack,100,cast-buff-phys,st-atk-up,,超神進化【戰神屠錄】：狂怒期間每擊殺 1 個敵人疊 1 層，每層使你造成的所有傷害提高（效果值＝單層% × 層數）；設計為「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。
+sgAsuraFist,阿修羅霸王拳,👊,buff,stat,sgAsuraFist,,,0,,0,500,1,0,refresh,1,cast-buff-phys,st-atk-up,,超神進化【阿修羅霸王拳】：每隔一段時間自動發動，短暫期間內你造成的所有傷害大幅提高。
+sgStarfall,地爆天星,☄️,buff,stat,sgStarfall,fire,,0,,0,0,60,0,refresh,1,,,,超神進化【地爆天星】：距離下一顆超巨型殞石落下還有多久（剩餘時間即倒數，效果值本身沒有意義；比照【暴風化身】【火狩】的純計時狀態）。
+sgBurnAmp,爆燃,🔥,debuff,stat,sgBurnAmp,fire,,0,,0,10,4,0,refresh,1,hit-fire,st-fire-amp,,傳奇特效【爆燃】：火龍捲每造成 1 段傷害就疊 1 層，使該敵人受到的燃燒傷害提高（效果值＝目前的總提高%）。設計文檔未設層數上限，因此比照【火焰增幅】由引擎累加成單一數值後「後蓋前」，不使用狀態表的疊層規則。
+sgPetrify,石化,🗿,debuff,stat,sgPetrify,earth,,0,,0,400,4,0,refresh,1,burst-rock-petrify,st-petrify,,超神進化【超重岩之術】：被壓縮的巨岩之力封住的敵人。行動限制本身由「暈眩」承擔（因此完整沿用 BOSS 控場免疫、韌性折減與控場遞減），本狀態只負責「受到的土系傷害額外提高」（效果值＝提高%）。
+sgStiffen,僵化,🌐,debuff,stat,sgStiffen,earth,,0,,0,65,5,0,refresh,1,hit-earth,st-petrify,,超神進化【超重力場】：重力場扭曲造成的僵化。移動速度、攻速與造成的傷害同時下降（效果值＝三者共用的下降%）；比照【泥沼緩速】不吃控場遞減與韌性。
+sgMireBleed,泥沼裂傷,🩸,debuff,dot,,,skill,150,,0,0,5,0.5,strongest,1,hit-bleed,st-bleed,st-tick-bleed,傳奇特效【侵蝕】：泥沼術附加的流血；每跳量與間隔由特效參數決定（引擎以 dps 覆寫）。比照【穿心裂血】採「取高並重新計時」，因此每一拍重塗不會把剩餘時間鎖死在滿值。
+sgPlague,惡疫,🦠,debuff,dot,,poison,skill,200,,0,0,8,0.35,strongest,1,hit-poison,st-poison,st-tick-poison,超神進化【惡疫魔沼】：沼澤塗上的毒性持續傷害；每跳量與間隔由超神進化參數決定（引擎以 dps 覆寫）。與泥沼的其他狀態不同，離開沼澤後仍會走完自己的持續時間，因此不採「只給兩跳」的重塗規則。
+sgInferno,火獄烙印,🌋,debuff,stat,sgInferno,fire,,0,,0,1,8,0,refresh,1,hit-fire,st-fire-amp,,超神進化【深淵火獄】：敵人的屬性標籤強制改為火屬性（效果值本身沒有意義，比照【地爆天星】只是一個計時容器）。屬性改寫走 skill2ForcedAttr，與【寒冰逆轉】同一個掛點。
+sgSuperconduct,超導電荷,🔋,buff,stat,sgSuperconduct,lightning,,0,,0,2,99999,0,stack,100,hit-lightning,st-lightning,,超神進化【永恒超導體】：閃電鏈每經過自身 1 次疊 1 層，每層使你的雷電傷害提高（效果值＝單層% × 層數）；設計未寫持續時間，比照【戰神屠錄】採「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。
+sgThunderQuake,震雷,⚡,debuff,stat,sgThunderQuake,lightning,,0,,0,25,8,0,refresh,1,hit-lightning,st-lightning,,傳奇特效【震雷】：被落雷術擊中留下的雷痕（效果值＝該敵人「暈眩中」時受到的傷害提高%）。只有同時暈眩中才會吃到增傷，因此持續時間只要蓋得住一次落雷的暈眩即可。
+sgWaterPrison,水牢,🌊,debuff,stat,sgWaterPrison,ice,,0,,0,100,6,0,refresh,1,hit-ice,st-water-prison,,超神進化【水牢天瀑】：被關進水牢的敵人（效果值＝受到的傷害提高%）。攻擊力下降那一半沿用既有的【攻擊】減益 atkDown，不另建一筆。
+sgWindErode,風蝕,🌬️,debuff,stat,sgWindErode,wind,,0,,0,25,4,0,refresh,1,hit-wind,st-wind-rend,,傳奇特效【風蝕】：被風刃擊中留下的風蝕（效果值＝受到的傷害提高%）。沒有附加條件，狀態在身上就算數，走 skill2VulnACfg 的同一個 totalDmgPct。
