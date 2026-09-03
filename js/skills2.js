@@ -1273,7 +1273,8 @@ function sgDisintegrate(ent, sid, spec, dur, ult, ctx) {
   var poison = sid === 'sgPoison';
   sgDerivedHit(ent, total, 'bloodblade', floatSel, out, poison ? '☠️' : '🩸', 0);
   sgEmitVfx('bloodblade', [ent], floatSel, {
-    fxKind: 'burst', variant: 'blood-explosion', elem: poison ? 'poison' : null
+    fxKind: 'burst', variant: 'blood-explosion', elem: poison ? 'poison' : null,
+    vfxUlt: 'disintegrate'
   });
   var boom = total * sgUltVal(ult, 'pct') / 100;
   var enemies = (ctx && ctx.enemies) || null;
@@ -1636,7 +1637,8 @@ function sgProjectilePulse(projectile, now, distance, enemies, ctx) {
     var victims = bfEnemiesInArea({ x: cx, y: cy, r: projectile.pulseRadius }, bfLiveList(enemies));
     sgEmitVfx(projectile.gid, victims, projectile.floatSel, {
       fxKind: 'burst', variant: projectile.pulseVariant || 'wind-burst',
-      area: { x: cx, y: cy, r: projectile.pulseRadius }
+      area: { x: cx, y: cy, r: projectile.pulseRadius },
+      vfxGid: 'windblade', vfxTier: 6
     });
     if (!victims.length) continue;
     var before = projectile.out.dmg;
@@ -1953,7 +1955,8 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     fxKind: 'slash', variant: thrustVariant, count: Math.min(8, thrustCount), projectile: isPiercing,
     dur: 0.3,
     lineLength: lineLen, lineWidth: Math.max(28, lineWidth), laneOffsets: laneOffsets,
-    directionCount: directionCount
+    directionCount: directionCount,
+    vfxTier: isEightWay ? 7 : (lvs[5] > 0 ? 6 : (isParallel ? 4 : 1))
   });
 
   /* 命中掛鉤的參數包：只在這裡算一次，直接命中與飛行物兩條路徑共用同一份。 */
@@ -2041,7 +2044,8 @@ function sgCleaveWhirlwind(pEnt, st, whirl, pool, floatSel, out, hitIdx) {
      它掛在 fxKind 'slash' 的分派下，寫成 'aura' 會被兩個渲染器的
      「風系泛用 aura 一律不畫方框」守衛擋掉，變成完全沒有畫面。 */
   sgEmitVfx('cleave', victims, floatSel, {
-    fxKind: 'slash', variant: 'wind-spin', elem: 'wind', dur: 0.35
+    fxKind: 'slash', variant: 'wind-spin', elem: 'wind', dur: 0.35,
+    vfxGid: 'vacuumslash', vfxTier: 4
   });
   var dmg = st.atk * Number(whirl.powerPct) / 100;
   for (var i = 0; i < victims.length; i++) {
@@ -2055,7 +2059,8 @@ function sgCleaveTornado(pEnt, st, cfg, target, floatSel) {
   sgSpawnGround(pEnt, st, 'cleave', {
     tgt: target, floatSel: floatSel, kind: 'windtornado',
     radius: bfMeterPx(cfg.m), dmgVal: st.atk * cfg.pct / 100,
-    hits: cfg.hits, gap: cfg.gap, hitElem: 'wind'
+    hits: cfg.hits, gap: cfg.gap, hitElem: 'wind',
+    vfxUlt: 'windChaser'
   });
 }
 
@@ -2177,7 +2182,8 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   sgEmitVfx('cleave', targets, floatSel, {
     fxKind: 'slash', variant: cleaveVariant, count: Math.min(5, slashes), projectile: isFlying,
     lineLength: cleaveVfxRange, directionRanges: lvs[6] > 0 ? directionRanges : null,
-    rangeScale: cleaveRangeScale, color: '#60a5fa'
+    rangeScale: cleaveRangeScale, color: '#60a5fa',
+    vfxTier: lvs[6] > 0 ? 7 : (isFlying ? 6 : 1)
   });
   var stunChance = lvs[4] > 0 ? sgVal(t[4].fx, 'chance', lvs[4]) : 0;
   var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
@@ -2341,7 +2347,8 @@ function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, cha
     sgEmitVfx('knife', [cur, next], cfg.floatSel, {
       fxKind: 'chain', variant: vfxVariant || 'knife-bounce', count: 1,
       delayMs: delay, travelMs: [0, travel],
-      preserveDeadTargets: preserveDeadOrigin
+      preserveDeadTargets: preserveDeadOrigin,
+      vfxUlt: preserveDeadOrigin ? 'soulhunterBlade' : '', vfxTier: 3
     });
     sgKnifePathHit(cfg, cur, next, delay);
     var res = sgKnifeHit(cfg, next, dmgVal, delay + travel, cfg.execPct, derived);
@@ -2370,7 +2377,8 @@ function sgKnifeSplit(cfg, from, delayMs) {
     if (!tgt || tgt.hp <= 0) continue;
     var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(tgt) * 1000) : 0;
     sgEmitVfx('knife', [from, tgt], cfg.floatSel, {
-      fxKind: 'chain', variant: 'knife-bounce', count: 1, delayMs: delayMs, travelMs: [0, travel]
+      fxKind: 'chain', variant: 'knife-bounce', count: 1, delayMs: delayMs, travelMs: [0, travel],
+      vfxTier: 3
     });
     sgKnifePathHit(cfg, from, tgt, delayMs);
     sgKnifeHit(cfg, tgt, dmg, delayMs + travel, cfg.execPct, true);
@@ -2391,7 +2399,8 @@ function sgKnifeWaltz(pEnt, st, cfg, waltz) {
     fieldKey: 'knife-waltz', statusId: 'sgKnifeWaltz',
     /* 沿用虛空斬的圓盤（同樣是「繞著自己轉的一圈刀刃」），屬性改物理＝配色轉為中性；
        另立新變體會在兩個渲染器都沒有對應分支時整個沒有畫面。 */
-    auraVariant: 'void-disc', hitVariant: 'knife-strike', hitElem: 'phys'
+    auraVariant: 'void-disc', hitVariant: 'knife-strike', hitElem: 'phys',
+    vfxGid: 'vacuumslash', vfxTier: 7
   });
 }
 
@@ -2418,7 +2427,8 @@ function sgKnifeSoulhunter(cfg, ult) {
   var dmg = cfg.dmgVal * (1 + sgUltVal(ult, 'pct') / 100);
   var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(first) * 1000) : 0;
   sgEmitVfx('knife', [first], cfg.floatSel, {
-    fxKind: 'projectile', variant: 'knife-soulhunter', count: 1, travelMs: [travel]
+    fxKind: 'projectile', variant: 'knife-soulhunter', count: 1, travelMs: [travel],
+    vfxUlt: 'soulhunterBlade'
   });
   sgKnifePathHit(cfg, null, first, 0);
   sgKnifeHit(cfg, first, dmg, travel, cfg.execPct, false);
@@ -2430,7 +2440,8 @@ function sgKnifeSoulhunter(cfg, ult) {
     var returnTravel = Math.max(120, travel || 0);
     sgEmitVfx('knife', [first], cfg.floatSel, {
       fxKind: 'chain', variant: 'knife-soulhunter', count: 1,
-      delayMs: travel, travelMs: [returnTravel], loopReturn: true
+      delayMs: travel, travelMs: [returnTravel], loopReturn: true,
+      vfxUlt: 'soulhunterBlade'
     });
     sgKnifeHit(cfg, first, dmg, travel + returnTravel, cfg.execPct, false);
     return;
@@ -2553,7 +2564,8 @@ function sgGaleTornado(cfg, target) {
     tgt: target, floatSel: cfg.floatSel, kind: 'windtornado',
     radius: bfMeterPx(Number(spec.m) || 0), dmgVal: cfg.dmgVal * (Number(spec.pct) || 0) / 100,
     hits: Math.max(1, Math.floor(Number(spec.hits) || 1)), gap: Number(spec.gap) || 0.4,
-    hitElem: 'wind'
+    hitElem: 'wind',
+    vfxGid: 'cleave', vfxUlt: 'windChaser'
   });
 }
 
@@ -2565,7 +2577,8 @@ function sgGaleThunderBolt(cfg, target) {
   if (!victims.length) return;
   sgEmitVfx('gale', victims, cfg.floatSel, {
     fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
-    area: (typeof sgAreaAround === 'function') ? sgAreaAround(target, r) : null
+    area: (typeof sgAreaAround === 'function') ? sgAreaAround(target, r) : null,
+    vfxUlt: 'thunderGodSlash'
   });
   var dmg = cfg.dmgVal * (Number(cfg.bolt.pct) || 0) / 100;
   for (var i = 0; i < victims.length; i++) {
@@ -2689,7 +2702,8 @@ function sgGaleThunderFlash(cfg, ult, hits) {
     : (cfg.pool || []).filter(function (e) { return e && e.hp > 0; });
   if (!victims.length) return;
   sgEmitVfx('gale', victims, cfg.floatSel, {
-    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', dur: 0.4
+    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', dur: 0.4,
+    vfxUlt: 'thunderFlash'
   });
   var dmg = cfg.dmgVal * Math.max(1, hits) * Math.max(0, sgUltVal(ult, 'mult'));
   for (var i = 0; i < victims.length; i++) {
@@ -2737,13 +2751,14 @@ function sgBloodbladeSlash(pEnt, st, g, lvs, pool, primary, floatSel, out, lg, d
   var dotCtx = { enemies: pool, floatSel: floatSel, out: out };
   // 流血：每 dotGap 秒造成技能傷害 dotPct% 的傷害
   sgApplyBloodbladeDot(primary, 'sgBleed', sgBloodbladeDotSpec(st, lvs, t, 'sgBleed'), 0, dotCtx);
-  sgEmitVfx('bloodblade', [primary], floatSel, { fxKind: 'curse', variant: 'bleed' });
+  sgEmitVfx('bloodblade', [primary], floatSel, { fxKind: 'curse', variant: 'bleed', vfxTier: 2 });
 
   // 血毒刃：流血的同時中毒（毒屬性）
   if (lvs[3] > 0) {
     sgApplyBloodbladeDot(primary, 'sgPoison', sgBloodbladeDotSpec(st, lvs, t, 'sgPoison'), 0, dotCtx);
     sgEmitVfx('bloodblade', [primary], floatSel, {
-      fxKind: 'curse', variant: 'poison', elem: 'poison'
+      fxKind: 'curse', variant: 'poison', elem: 'poison',
+      vfxTier: 4
     });
   }
 }
@@ -2792,7 +2807,8 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   var targets = bfRandomOthers(null, pool, strikes, 0, null);
   if (!targets.length) targets = [primary];
   sgEmitVfx('dualdance', targets, floatSel, {
-    fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'dual-storm' : 'dual-slash'
+    fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'dual-storm' : 'dual-slash',
+    vfxTier: storm ? 7 : 1
   });
   var kaguraSpec = sgKaguraSpec(sgUlt('dualdance', 'flameKagura'), dmgVal);
   var kills = 0;
@@ -2836,7 +2852,8 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
     SKILL2_RT.storm = { until: GT + stormDur, nextAt: GT + stormGap, gap: stormGap, tgt: null };
     applyBuff(pEnt, 'sgStorm', 1, stormDur, 'sgStorm');
     sgEmitVfx('dualdance', targets, floatSel, {
-      fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, stormDur)
+      fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, stormDur),
+      vfxTier: 7
     });
   }
   // 傳奇【狂舞】與【殺千刀】：兩者都只在「本次施放之前化身就已經在跑」時才作用。
@@ -2921,7 +2938,7 @@ function skills2TryDeathDefer(pEnt) {
   SKILL2_RT.deathDefer = { until: GT + sec };
   if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) pEnt.hp = Math.max(1, pEnt.hp);
   applyStatus(pEnt, 'sgDeathDefer', { val: Math.max(0, Number(spec.pct) || 0), dur: sec });
-  sgEmitPlayerVfx('dualdance', 'pv-float', { fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, sec) });
+  sgEmitPlayerVfx('dualdance', 'pv-float', { fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, sec), vfxTier: 7 });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '不屈之誓!', 'buff');
   if (typeof blog === 'function') {
     blog('🕯️ 【不屈之誓】你的死亡被推遲 ' + sec + ' 秒——這段時間你造成的傷害大幅提高！', 'info');
@@ -3110,7 +3127,8 @@ function sgBurnBlast(ent, enemies, ctx) {
   var out = { killed: false, dmg: 0, crit: false };
   var per = amount * sgVal(fx, 'pct', lvs[4]) / 100;
   sgEmitVfx('fireball', victims, (ctx && ctx.floatSel) || 'mv-float', {
-    fxKind: 'burst', variant: 'fire-blast', elem: 'fire'
+    fxKind: 'burst', variant: 'fire-blast', elem: 'fire',
+    vfxTier: 5
   });
   for (var i = 0; i < victims.length; i++) {
     sgDerivedHit(victims[i], per, 'fireball', (ctx && ctx.floatSel) || 'mv-float', out, '💥', 0);
@@ -3167,7 +3185,8 @@ function sgTickBurn(dt, ctx) {
   }
   if (tickedNow) {
     sgEmitVfx('fireball', tickedNow, ctx.floatSel, {
-      fxKind: 'impact', variant: 'burn-tick', elem: 'fire'
+      fxKind: 'impact', variant: 'burn-tick', elem: 'fire',
+      vfxRoles: statusVfxRoles('sgBurn', 'tick')
     });
   }
 }
@@ -3286,10 +3305,12 @@ function sgQueueFireballSplitProjectiles(pEnt, st, splitTargets, splitDmgVal,
     var plan = sgFireballProjectilePlan(target);
     sgEmitVfx('fireball', [target], floatSel, {
       fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
-      travelMs: [plan.travelMs], projectile: true
+      travelMs: [plan.travelMs], projectile: true,
+      vfxTier: 3
     });
     sgEmitVfx('fireball', [target], floatSel, {
-      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs
+      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs,
+      vfxTier: 3
     });
     sgQueueFlyingProjectile(pEnt, st, 'fireball', splitDmgVal,
       plan.origin, plan.angle, plan.length, floatSel, [target], {
@@ -3373,11 +3394,13 @@ function sgFireballPhoenixBalls(m, spec, poolSpec) {
     if (!tgt || tgt.hp <= 0) continue;
     sgEmitVfx('fireball', [tgt], m.floatSel, {
       fxKind: 'rain', variant: 'fireball-small', elem: 'fire', count: 1,
-      area: sgAreaAround(tgt, spec.blastPx), travelMs: [timing.travelMs]
+      area: sgAreaAround(tgt, spec.blastPx), travelMs: [timing.travelMs],
+      vfxUlt: 'phoenixPrairie'
     });
     sgQueueMeteor(m.pEnt, m.st, spec.dmgVal, tgt, m.pool, spec.blastPx, m.burnSpec,
       m.floatSel, m.out, GT + timing.fallMs / 1000, {
-        variant: 'fire-explosion', bonusPctFn: m.bonusPctFn, onImpact: onImpact
+        variant: 'fire-explosion', bonusPctFn: m.bonusPctFn, onImpact: onImpact,
+        vfxUlt: 'phoenixPrairie'
       });
   }
 }
@@ -3443,8 +3466,8 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (poolSpec) sgSpawnFirePool(m.pEnt, m.st, 'fireball', poolSpec, m.floatSel, m.target, null);
     if (phoenixSpec) sgFireballPhoenixBalls(m, phoenixSpec, poolSpec);
   } : null;
-  var meteorExtra = (onMeteorImpact || bonusFn)
-    ? { bonusPctFn: bonusFn, onImpact: onMeteorImpact } : null;
+  /* 殞石＝第 7 階那一列的畫面，落地爆點要讀同一列的受擊特效，因此列標記一律帶上。 */
+  var meteorExtra = { bonusPctFn: bonusFn, onImpact: onMeteorImpact, vfxTier: 7 };
 
   for (var v = 0; v < volleys; v++) {
     var meteorTarget = meteor ? nextMeteorTarget() : primary;
@@ -3459,7 +3482,8 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (meteor) {
       sgEmitVfx('fireball', [meteorTarget], floatSel, {
         fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1,
-        area: area, delayMs: castDelay, travelMs: [travelMs]
+        area: area, delayMs: castDelay, travelMs: [travelMs],
+        vfxTier: 7
       });
     } else {
       sgEmitVfx('fireball', [primary], floatSel, {
@@ -3565,7 +3589,8 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     radiusPx: bfMeterPx(sgVal(t[0].fx, 'm', lvs[0])) * scale,  // 火池大小＝火龍捲自己的判定範圍
     gap: Number(ultInferno.def.fx.gap) || 0.5,
     sec: sgUltVal(ultInferno, 'sec'),
-    dmgVal: dmgVal * sgUltVal(ultInferno, 'pct') / 100
+    dmgVal: dmgVal * sgUltVal(ultInferno, 'pct') / 100,
+    vfxUlt: 'eternalInferno'
   } : null;
   // 傳奇【爆燃】：每段傷害使該敵人受到的燃燒傷害提高（放大量由特效參數決定）
   var burnAmp = (lg.firepillarBurnAmp && Number(lg.firepillarBurnAmp.pct) > 0) ? {
@@ -3577,7 +3602,7 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     // 目標不足時多出來的火龍捲疊在主目標身上（比照雙刀亂舞「只有 1 個敵人就都打同一個」）
     var spot = spots[i % spots.length];
     sgSpawnGround(pEnt, st, 'firepillar', {
-      kind: wall ? 'wall' : 'pillar', tgt: spot, floatSel: floatSel,
+      kind: wall ? 'wall' : 'pillar', tgt: spot, floatSel: floatSel, vfxTier: wall ? 7 : 1,
       from: homePos ? { x: homePos.x, y: homePos.y } : null,
       radius: bfMeterPx(sgVal(t[0].fx, 'm', lvs[0])) * scale,
       length: bfMeterPx(Number(t[6].fx.len) || 18) * scale,
@@ -3606,7 +3631,8 @@ function sgSpawnFirePool(pEnt, st, gid, spec, floatSel, tgt, from) {
     kind: 'firepool', tgt: tgt || null, from: from || null, floatSel: floatSel,
     radius: Number(spec.radiusPx) > 0 ? Number(spec.radiusPx) : bfMeterPx(Number(spec.m) || 6),
     dmgVal: spec.dmgVal, hits: Math.max(1, Math.round(sec / gap)), gap: gap,
-    hitElem: 'fire'
+    hitElem: 'fire',
+    vfxUlt: spec.vfxUlt || ''
   });
 }
 
@@ -4102,7 +4128,8 @@ function sgGroundExpire(f, enemies, ctx) {
     /* 即使範圍內暫時沒有敵人，也要播出場域消失的爆炸衝擊波。 */
     sgEmitVfx(f.gid, impactVictims, f.floatSel, {
       fxKind: 'burst', variant: 'firepillar-impact', elem: 'fire',
-      area: f.pos ? { x: f.pos.x, y: f.pos.y, r: impactRadius } : null
+      area: f.pos ? { x: f.pos.x, y: f.pos.y, r: impactRadius } : null,
+      vfxTier: 5
     });
     for (var ii = 0; ii < impactVictims.length; ii++) {
       sgHitOne(f.pEnt, f.st, impactVictims[ii], impactDmg, f.gid, f.floatSel,
@@ -4128,7 +4155,8 @@ function sgGroundExpire(f, enemies, ctx) {
     /* 重生／再召喚出來的那一道與原本那道是同一個技能的同一次施放，
        因此移動、軌跡火池、燃燒放大與拉近全部原樣帶過去。 */
     chaseM: f.chaseM, wanderM: f.wanderM, speed: f.speed,
-    trail: f.trail, burnAmp: f.burnAmp, pullM: f.pullM
+    trail: f.trail, burnAmp: f.burnAmp, pullM: f.pullM,
+    vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid
   });
 }
 
@@ -4146,7 +4174,8 @@ function sgGroundPulse(f, enemies, ctx) {
     var area = { x: f.pos.x, y: f.pos.y, r: f.pulseRadius };
     var victims = bfEnemiesInArea(area, bfLiveList(enemies));
     sgEmitVfx(f.gid, victims, f.floatSel, {
-      fxKind: 'burst', variant: f.pulseVariant || 'wind-burst', area: area
+      fxKind: 'burst', variant: f.pulseVariant || 'wind-burst', area: area,
+      vfxGid: 'windblade', vfxTier: 6
     });
     if (!victims.length) continue;
     var out = { killed: false, dmg: 0, crit: false };
@@ -4532,7 +4561,8 @@ function sgOrbitStep(f, enemies, dt, ctx) {
   for (var si = 0; si < strikes.length; si++) f.onStrike(f, strikes[si], sgOrbitPos(strikes[si], center), ctx);
   if (struck.length) {
     sgEmitVfx(f.gid, struck, f.floatSel, {
-      fxKind: 'impact', variant: f.hitVariant, elem: f.hitElem, dur: 0.35
+      fxKind: 'impact', variant: f.hitVariant, elem: f.hitElem, dur: 0.35,
+      vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid
     });
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
@@ -4625,7 +4655,8 @@ function sgFirehuntDetonate(f, victim, live, out) {
     for (var i = 0; i < near.length; i++) if (victims.indexOf(near[i]) < 0) victims.push(near[i]);
   }
   sgEmitVfx('firehunt', victims, f.floatSel, {
-    fxKind: 'burst', variant: 'firehunt-detonate', elem: 'fire', dur: 0.5
+    fxKind: 'burst', variant: 'firehunt-detonate', elem: 'fire', dur: 0.5,
+    vfxTier: 1
   });
   for (var v = 0; v < victims.length; v++) {
     sgHitOne(f.pEnt, f.st, victims[v], spec.dmgVal, 'firehunt', f.floatSel, out, sgStaggerMs(v));
@@ -4757,10 +4788,12 @@ function sgFirehuntLaunch(ctx, spec) {
     ? Math.max(1, Math.round(bfTravelSeconds(tgt) * 1000)) : 0;
   sgEmitVfx('firehunt', [tgt], ctx.floatSel, {
     fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
-    travelMs: [travelMs], projectile: true
+    travelMs: [travelMs], projectile: true,
+    vfxGid: 'fireball', vfxTier: 3
   });
   sgEmitVfx('firehunt', victims, ctx.floatSel, {
-    fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', dur: 0.5, delayMs: travelMs
+    fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', dur: 0.5, delayMs: travelMs,
+    vfxGid: 'fireball', vfxTier: 3
   });
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
@@ -4797,7 +4830,8 @@ function sgTickFireGod(ctx, dt) {
     SKILL2_RT.fireGodVfxAt = GT + SG_DOMAIN_VFX_SEC;
     sgEmitPlayerVfx('firehunt', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'fire', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2 }
+      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2 },
+      vfxUlt: 'fireGodDescend'
     });
   }
   if (!(dmgVal > 0)) return;
@@ -4869,7 +4903,8 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
     sgEmitVfx('firehunt', [target], floatSel, {
       fxKind: 'projectile', variant: 'firehunt-ring', elem: 'fire', count: 1,
       travelMs: [travelMs], projectile: true, delayMs: Math.round(beginSec * 1000),
-      angle: angle, lineLength: flyPx
+      angle: angle, lineLength: flyPx,
+      vfxUlt: 'fireGodDescend'
     });
   }
   return orbs;
@@ -4992,7 +5027,8 @@ function sgRockFieldAura(floatSel, radius) {
   if (!(radius > 0)) return;
   sgEmitPlayerVfx('rockarmor', floatSel, {
     fxKind: 'aura', variant: 'follow-aura', elem: 'earth', dur: SG_DOMAIN_VFX_SEC * 2,
-    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2 }
+    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2 },
+    vfxUlt: (sgRockFieldUlt() || {}).id || ''
   });
 }
 
@@ -5008,7 +5044,8 @@ function sgRockPetrifyApply(victims, u, floatSel) {
   var sec = Math.max(0.5, Number(u.def.fx.sec) || 4);
   var pct = Math.max(0, sgUltVal(u, 'pct'));
   sgEmitVfx('rockarmor', victims, floatSel, {
-    fxKind: 'burst', variant: 'rock-petrify', elem: 'earth', dur: 0.8
+    fxKind: 'burst', variant: 'rock-petrify', elem: 'earth', dur: 0.8,
+    vfxUlt: 'superRockArt'
   });
   for (var i = 0; i < victims.length; i++) {
     /* 石化標記照塗（增傷不是控場，不受控場免疫影響）；行動限制則交給暈眩，
@@ -5024,7 +5061,8 @@ function sgRockGravityApply(victims, u, floatSel) {
   var sec = Math.max(0.5, Number(u.def.fx.stiffSec) || 5);
   var pct = Math.max(0, Math.min(95, Number(u.def.fx.stiff) || 0));
   sgEmitVfx('rockarmor', victims, floatSel, {
-    fxKind: 'burst', variant: 'gravity-field', elem: 'earth', dur: 0.8
+    fxKind: 'burst', variant: 'gravity-field', elem: 'earth', dur: 0.8,
+    vfxUlt: 'gravityField'
   });
   for (var i = 0; i < victims.length; i++) applyStatus(victims[i], 'sgStiffen', { val: pct, dur: sec });
 }
@@ -5210,7 +5248,7 @@ function sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel) {
     var spikeVal = st.hp * sgVal(t[2].fx, 'pct', lvs[2]) / 100 * (1 + spikeUp / 100);
     var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
     var spikeOut = { killed: false, dmg: 0, crit: false };
-    sgEmitVfx('rockarmor', [mEnt], eSel, { fxKind: 'impact', variant: 'rock-spike', elem: 'earth' });
+    sgEmitVfx('rockarmor', [mEnt], eSel, { fxKind: 'impact', variant: 'rock-spike', elem: 'earth', vfxTier: 3 });
     sgHitOne(pEnt, st, mEnt, spikeVal, 'rockarmor', eSel, spikeOut, 0);
     if (spikeOut.killed && typeof onFieldDeaths === 'function' &&
         typeof FIELD !== 'undefined' && FIELD && FIELD.player === pEnt) {
@@ -5293,7 +5331,8 @@ function sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     hits: hits, gap: SG_MIRE_TICK_SEC,
     growTo: growTo, growSec: lvs[4] > 0 ? Math.max(0.1, Number(t[4].fx.growSec) || 4) : 0,
     respawnLeft: spread,
-    mire: sgMireSpec(g, lvs, st)
+    mire: sgMireSpec(g, lvs, st),
+    vfxTier: lvs[6] > 0 ? 7 : (lvs[2] > 0 ? 3 : 1)
   });
 }
 
@@ -5375,7 +5414,8 @@ function sgMireGroundTick(f, victims, ctx) {
     : (poison ? 'mire-poison' : 'mire');
   sgEmitVfx('mire', victims, f.floatSel, {
     fxKind: 'aura', variant: mireVariant,
-    elem: m.lava && !poison ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f)
+    elem: m.lava && !poison ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f),
+    vfxTier: m.lava ? 7 : (poison ? 3 : 1)
   });
   if (!victims.length) return;
   var hold = f.gap * 2;   // 只給兩跳：離開沼澤後最多再殘留一個節拍
@@ -5424,7 +5464,8 @@ function sgMireInfernoTick(f, victims) {
     kind: 'lavapillar', tgt: spot, floatSel: f.floatSel,
     radius: spec.radiusPx,
     dmgVal: spec.dmgVal, hits: spec.hits, gap: spec.gap / spec.hits,
-    hitElem: 'fire'
+    hitElem: 'fire',
+    vfxUlt: 'abyssInferno'
   });
 }
 
@@ -5442,7 +5483,8 @@ function sgMireGroundExpire(f, enemies, ctx) {
     hits: f.hits, gap: f.gap,
     growTo: f.growTo, growSec: f.growSec,
     respawnLeft: f.respawnLeft - 1,
-    mire: f.mire
+    mire: f.mire,
+    vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid
   });
 }
 
@@ -5734,7 +5776,7 @@ function sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel) {
   var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
   var pctOfMax = lostPct * sgVal(fx, 'pct', lvs[5]) / 100;
   var killed = false;
-  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'light' });
+  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'light', vfxTier: 6 });
   for (var i = 0; i < victims.length; i++) {
     var e = victims[i];
     var amount = Math.max(1, Math.round((Number(e.maxHp) || 0) * pctOfMax / 100));
@@ -5832,7 +5874,7 @@ function skills2TryRebirth(pEnt) {
   /* 傳奇【不滅意志】要知道「這段無敵是天地共生給的」——玩家身上的無敵可能來自
      潛力、神鑄或【大地之心】，那幾種不該被擊殺延長。 */
   SKILL2_RT.rebirthInvuln = GT + invulnSec;
-  sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: 1.2 });
+  sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: 1.2, vfxTier: 7 });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '天地共生!', 'buff');
   if (typeof blog === 'function') {
     var left = (SKILL2_RT.rebirth && skills2RebirthMaxCharges() > 1)
@@ -5903,7 +5945,8 @@ function sgEarthguardRebirthEnemy(mEnt, floatSel) {
   /* preserveDeadTargets：這一刻牠的 hp 已經被寫回去了，但顯示層那一側仍在播死亡動畫，
      特效必須指名這隻屍體才看得到「牠被重新塑形」。 */
   sgEmitVfx('earthguard', [mEnt], floatSel || 'mv-float', {
-    fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1, preserveDeadTargets: true
+    fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1, preserveDeadTargets: true,
+    vfxUlt: 'worldRebirth'
   });
   return true;
 }
@@ -6028,7 +6071,8 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       }
       if (splash.length) {
         sgEmitVfx(gid, splash, floatSel, {
-          fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3
+          fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3,
+          vfxTier: 5
         });
       }
     }
@@ -6039,7 +6083,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       visited = [];
       next = sgChainNextTarget(null, pool, visited, cfg.hopPx);
       if (next) {
-        sgEmitPlayerVfx(gid, floatSel, { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35 });
+        sgEmitPlayerVfx(gid, floatSel, { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35, vfxTier: 6 });
       }
     }
     if (!next) break;
@@ -6075,7 +6119,8 @@ function sgChainOverload(cfg, target, pool, delayMs) {
   var victims = sgEnemiesAround(target, pool, cfg.overloadPx);
   if (!victims.length) return;
   sgEmitVfx('chainlightning', victims, cfg.floatSel, {
-    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.4
+    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.4,
+    vfxTier: 5
   });
   for (var i = 0; i < victims.length; i++) {
     sgDerivedHit(victims[i], cfg.overloadDmg, 'chainlightning', cfg.floatSel, cfg.out, '⚡',
@@ -6108,7 +6153,7 @@ function sgChainSuperconductor(pEnt, st, cfg, pool, floatSel, out) {
   var maxStacks = Math.max(1, Math.floor(Number(u.def.fx.maxStacks) || 100));
   var delayMs = 0;
   sgEmitPlayerVfx('chainlightning', floatSel,
-    { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35 });
+    { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35, vfxUlt: 'eternalSuperconductor' });
   for (var k = 0; k < order.length; k++) {
     var tgt = order[k];
     if (!tgt || tgt.hp <= 0) continue;
@@ -6116,7 +6161,8 @@ function sgChainSuperconductor(pEnt, st, cfg, pool, floatSel, out) {
     /* 每一跳都是「自身 → 敵人」，因此特效恆是單目標的雷鏈（起點就是玩家）。 */
     sgEmitVfx('chainlightning', [tgt], floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1,
-      delayMs: delayMs, travelMs: [hopMs], preserveDeadTargets: true
+      delayMs: delayMs, travelMs: [hopMs], preserveDeadTargets: true,
+      vfxUlt: 'eternalSuperconductor'
     });
     delayMs += hopMs;
     sgHitOne(pEnt, st, tgt, cfg.dmgVal, 'chainlightning', floatSel, out, delayMs);
@@ -6184,11 +6230,13 @@ function sgTickFlyingThunder(ctx, dt) {
     if (!victims.length) victims = [farthest[i]];
     sgEmitVfx('chainlightning', [farthest[i]], ctx.floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1, delayMs: sgStaggerMs(i),
-      preserveDeadTargets: true
+      preserveDeadTargets: true,
+      vfxUlt: 'flyingThunderGod'
     });
     sgEmitVfx('chainlightning', victims, ctx.floatSel, {
       fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning',
-      delayMs: sgStaggerMs(i), dur: 0.3, area: sgAreaAround(farthest[i], burstPx)
+      delayMs: sgStaggerMs(i), dur: 0.3, area: sgAreaAround(farthest[i], burstPx),
+      vfxUlt: 'flyingThunderGod'
     });
     for (var v = 0; v < victims.length; v++) {
       sgHitOne(ctx.pEnt, st, victims[v], dmgVal, 'chainlightning', ctx.floatSel, out, sgStaggerMs(i));
@@ -6434,7 +6482,8 @@ function sgThunderMatrix(pEnt, st, g, pool, floatSel, out) {
            （否則以這個節拍頻率會變成「每一拍全額命中」的傷害爆炸）。 */
         contact: true,
         gap: gap, hits: hits, tickAtStart: true,
-        startDelaySec: i * SG_MATRIX_STAGGER_SEC
+        startDelaySec: i * SG_MATRIX_STAGGER_SEC,
+        vfxUlt: 'thunderMatrix'
       });
     }
   }
@@ -6476,7 +6525,8 @@ function sgTickHeavenTribulation(ctx, dt) {
   if (!st) return;
   var out = { killed: false, dmg: 0, crit: false };
   sgEmitVfx('thunderstrike', [target], ctx.floatSel, {
-    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1, dur: 0.35
+    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1, dur: 0.35,
+    vfxUlt: 'heavenTribulation'
   });
   sgHitOne(ctx.pEnt, st, target,
     sgGroupBaseStat(SKILLS2.thunderstrike, st) * sgUltVal(u, 'pct') / 100,
@@ -6592,7 +6642,7 @@ function sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       dmgVal: sgGroupBaseStat(g, st) * (sgVal(ofx, 'pct', lvs[3]) + ampPct) / 100 * ultMult,
       lifeSec: Math.max(0.5, Number(ofx.sec) || 6),
       bodyR: bfMeterPx(Math.max(body.length, body.width) / 2) * scale,
-      statusId: 'sgThunderOrb', auraVariant: 'thunder-orbit',
+      statusId: 'sgThunderOrb', auraVariant: 'thunder-orbit', vfxTier: 4,
       hitVariant: 'thunder-burst', hitElem: 'lightning',
       /* 【伴生雷球】：命中處留下靜止雷球（傷害與體積比照飛行雷球）。 */
       onStrike: companionChance > 0 ? function (f, orb, pos) {
@@ -6647,11 +6697,12 @@ function sgDropThunderfall(pEnt, st, spec, n, pool, primary, floatSel, out) {
     var castDelay = f * SG_METEOR_INTERVAL_MS;
     sgEmitVfx('thunderorb', [target], floatSel, {
       fxKind: 'rain', variant: 'thunder-fall', elem: 'lightning', count: 1,
-      area: sgAreaAround(target, spec.radius), delayMs: castDelay, travelMs: [timing.travelMs]
+      area: sgAreaAround(target, spec.radius), delayMs: castDelay, travelMs: [timing.travelMs],
+      vfxTier: 7
     });
     sgQueueMeteor(pEnt, st, spec.dmgVal, target, pool, spec.radius, null, floatSel, out,
       GT + (castDelay + timing.fallMs) / 1000, {
-        gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning',
+        gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning', vfxTier: 7,
         onImpact: function (m, victims) {
           for (var vi = 0; vi < victims.length; vi++) {
             sgTryStun(victims[vi], spec.stunSec);
@@ -6723,7 +6774,8 @@ function sgThunderorbBurst(pEnt, st, floatSel, spec, victim, enemies, out) {
   var delayMs = 0;
   for (var i = 0; i < spec.bounces && cur && cur.hp > 0; i++) {
     sgEmitVfx('thunderorb', [cur], floatSel, {
-      fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3
+      fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3,
+      vfxUlt: 'thunderBurst'
     });
     sgHitOne(pEnt, st, cur, spec.dmgVal, 'thunderorb', floatSel, out, delayMs, 0, 'lightning');
     var next = sgChainNextTarget(cur, live, visited, spec.px);
@@ -6767,7 +6819,7 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
   }
   var hits = Math.max(1, Math.ceil((flightSec + cfg.parkSec) / cfg.gap));
   sgSpawnGround(pEnt, st, 'thunderorb', {
-    kind: 'orb', tgt: target, floatSel: floatSel,
+    kind: 'orb', tgt: target, floatSel: floatSel, vfxTier: 1,
     from: from ? { x: from.x, y: from.y } : null,
     dest: (from && to) ? { x: to.x, y: to.y } : null,
     speed: cfg.speedPx, radius: cfg.radius,
@@ -6779,7 +6831,7 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
 /* 靜止雷球（【伴生雷球】）：生在環體電球的命中處，不移動，只按節拍打自己的範圍。 */
 function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec) {
   sgSpawnGround(pEnt, st, 'thunderorb', {
-    kind: 'orb', tgt: null, floatSel: floatSel,
+    kind: 'orb', tgt: null, floatSel: floatSel, vfxTier: 6,
     from: { x: pos.x, y: pos.y }, dest: null, speed: 0,
     radius: cfg.radius, dmgVal: cfg.dmgVal,
     hits: Math.max(1, Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap,
@@ -6965,7 +7017,7 @@ function sgFreezeTarget(ent) {
   var sec = Number(sgTryStun(ent, sgFrozenSec()));
   if (!(sec > 0)) return 0;
   applyStatus(ent, 'sgFrozen', { val: 0, dur: sec });
-  sgEmitVfx('frostnova', [ent], 'mv-float', { fxKind: 'burst', variant: 'frost-freeze', elem: 'ice', dur: sec });
+  sgEmitVfx('frostnova', [ent], 'mv-float', { fxKind: 'burst', variant: 'frost-freeze', elem: 'ice', dur: sec, vfxTier: 4 });
   return sec;
 }
 
@@ -7069,7 +7121,8 @@ function sgTickFrost(dt, ctx) {
      （比照燃燒節拍器，避免事件量被放大成敵人數）。 */
   if (tickedNow) {
     sgEmitVfx('icearrow', tickedNow, ctx.floatSel, {
-      fxKind: 'impact', variant: 'frost-tick', elem: 'ice'
+      fxKind: 'impact', variant: 'frost-tick', elem: 'ice',
+      vfxRoles: statusVfxRoles('sgFrostBite', 'tick')
     });
   }
 }
@@ -7091,7 +7144,7 @@ function sgSpreadFrost(from, enemies, fx, dot) {
     if (sgApplyFrost(victims[i], spec, 1) > 0) spread.push(victims[i]);
   }
   if (spread.length) {
-    sgEmitVfx('waterball', [from].concat(spread), 'mv-float', { fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80] });
+    sgEmitVfx('waterball', [from].concat(spread), 'mv-float', { fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80], vfxTier: 5 });
   }
 }
 
@@ -7112,7 +7165,8 @@ function sgIceBlast(ent, enemies, ctx) {
   var floatSel = (ctx && ctx.floatSel) || 'mv-float';
   sgEmitVfx('icearrow', [ent], floatSel, {
     fxKind: 'burst', variant: 'ice-blast', elem: 'ice',
-    area: sgAreaAround(ent, radius), preserveDeadTargets: true
+    area: sgAreaAround(ent, radius), preserveDeadTargets: true,
+    vfxTier: 7
   });
   if (!victims.length) return;
   var out = { killed: false, dmg: 0, crit: false };
@@ -7256,7 +7310,8 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
           fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
           lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: laneAngle,
           delayMs: Math.round(waveDelay * 1000),
-          travelMs: [Math.round(flightSec * 1000)]
+          travelMs: [Math.round(flightSec * 1000)],
+          vfxTier: 4
         });
         sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, laneAngle, lineLen,
           floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
@@ -7381,7 +7436,8 @@ function sgCastIceTears(pEnt, st, g, floatSel, primary) {
     from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
     radius: bfMeterPx(sgUltVal(u, 'm')),
     dmgVal: dmgVal, hits: waves, gap: Math.max(0.05, sgUltVal(u, 'gap')),
-    tickAtStart: true
+    tickAtStart: true,
+    vfxUlt: 'tearsOfIce'
   });
 }
 
@@ -7408,7 +7464,8 @@ function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, o
     onHit: (ice && ice.split) ? function (f, victim, enemies, o2) {
       sgIcearrowSplit(f.pEnt, f.st, ice, victim, enemies, f.floatSel, o2, f.moveAngle);
     } : null,
-    wave: o.wave, startDelaySec: o.startDelaySec
+    wave: o.wave, startDelaySec: o.startDelaySec,
+    vfxTier: 5
   });
 }
 
@@ -7585,7 +7642,8 @@ function sgWaterballShot(pEnt, st, g, lvs, pool, target, floatSel, out, cfg) {
       // 傳奇【冰霜擴散】：爆散改為冰霜新星，畫法一併換成新星的既有變體
       sgEmitVfx('waterball', victims, floatSel, {
         fxKind: 'burst', variant: cfg.nova ? 'frost-nova' : 'water-burst', elem: 'ice',
-        area: sgAreaAround(cur, cfg.burstR), delayMs: hopDelay
+        area: sgAreaAround(cur, cfg.burstR), delayMs: hopDelay,
+        vfxTier: 4
       });
     }
     for (var vi = 0; vi < victims.length; vi++) {
@@ -7603,7 +7661,8 @@ function sgWaterballShot(pEnt, st, g, lvs, pool, target, floatSel, out, cfg) {
       ? Math.round(bfTravelSeconds(next) * 1000 / cfg.bounceSpeed) : 0;
     sgEmitVfx('waterball', [cur, next], floatSel, {
       fxKind: 'chain', variant: 'water-bounce', elem: 'ice', count: 1,
-      delayMs: hopDelay, travelMs: [0, hopTravelMs], arcM: cfg.arcM
+      delayMs: hopDelay, travelMs: [0, hopTravelMs], arcM: cfg.arcM,
+      vfxTier: 4
     });
     cur = next;
     hopDelay += hopTravelMs;
@@ -7649,7 +7708,8 @@ function sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel) {
       from: p ? { x: p.x + c[0] * half, y: p.y + c[1] * half } : null,
       radius: radius, dmgVal: dmgVal, hits: hits, gap: gap,
       frozenMult: Math.max(1, Number(fx.frozen) || 2),
-      delaySec: i * gap * 0.15
+      delaySec: i * gap * 0.15,
+      vfxTier: 7
     });
   }
 }
@@ -7662,7 +7722,8 @@ function sgSpawnWaterTornadoAt(pEnt, st, spec, target, floatSel) {
   sgSpawnGround(pEnt, st, 'waterball', {
     kind: 'tornado', tgt: target, floatSel: floatSel,
     radius: spec.radius, dmgVal: spec.dmgVal, hits: spec.hits, gap: spec.gap,
-    frozenMult: spec.frozenMult
+    frozenMult: spec.frozenMult,
+    vfxTier: 7
   });
 }
 
@@ -7702,7 +7763,8 @@ function sgTickWaterPrison(ctx, dt) {
        與【火神降臨】的領域同一支：水牢是「周圍 20 米」，跟著人走才對得上判定。 */
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2 }
+      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2 },
+      vfxUlt: 'waterPrisonFall'
     });
   }
   if (wp.nextAt > GT) return;
@@ -7757,7 +7819,8 @@ function sgTickRagingTide(ctx) {
     from: { x: cx / spots.length, y: cy / spots.length },
     radius: bfMeterPx(sgUltVal(u, 'm')), dmgVal: dmgVal,
     hits: Math.max(1, Math.floor(Number(u.def.fx.hits) || 1)), gap: gap,
-    frozenMult: Math.max(1, Number(g.tiers[6].fx.frozen) || 2), tickAtStart: true
+    frozenMult: Math.max(1, Number(g.tiers[6].fx.frozen) || 2), tickAtStart: true,
+    vfxUlt: 'ragingTide'
   });
 }
 
@@ -7778,7 +7841,8 @@ function sgTickAbyssDomain(ctx, dt) {
     SKILL2_RT.abyssVfxAt = GT + SG_DOMAIN_VFX_SEC;
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2 }
+      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2 },
+      vfxUlt: 'abyssBurial'
     });
   }
   var gap = Math.max(0.05, Number(u.def.fx.gap) || 0.35);
@@ -7799,7 +7863,8 @@ function sgTickAbyssDomain(ctx, dt) {
   }
   if (frosted.length) {
     sgEmitVfx('waterball', frosted, ctx.floatSel, {
-      fxKind: 'impact', variant: 'frost-tick', elem: 'ice'
+      fxKind: 'impact', variant: 'frost-tick', elem: 'ice',
+      vfxRoles: statusVfxRoles('sgFrostBite', 'tick')
     });
   }
 }
@@ -7968,7 +8033,8 @@ function sgSpawnIceSpike(pEnt, st, gid, spec, floatSel, tgt, from) {
   sgSpawnGround(pEnt, st, gid, {
     kind: 'icespike', tgt: tgt || null, from: from || null, floatSel: floatSel,
     radius: spec.radius, dmgVal: spec.dmgVal, hits: spec.hits, gap: SG_ICE_SPIKE_GAP,
-    tickAtStart: true
+    tickAtStart: true,
+    vfxUlt: 'iceKingDomain'
   });
 }
 
@@ -7988,7 +8054,8 @@ function sgSpawnBlizzard(pEnt, st, g, lvs, floatSel, lg) {
     dmgVal: sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100,
     hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap, follow: true,
     frostSpec: (lg && lg.frostnovaBlizzardFrost)
-      ? sgFrostSpec(g, lvs, 0, sgFrostnovaBodyDamage(g, st, lvs)) : null
+      ? sgFrostSpec(g, lvs, 0, sgFrostnovaBodyDamage(g, st, lvs)) : null,
+    vfxTier: 7
   });
 }
 
@@ -8032,7 +8099,8 @@ function sgFrostbodyOnPlayerDamaged(mEnt, pEnt, floatSel) {
   if (!spec) return;
   if (sgApplyFrost(mEnt, spec, sgVal(t[2].fx, 'stacks', lvs[2])) > 0) {
     sgEmitVfx('frostnova', [mEnt], floatSel || 'mv-float', {
-      fxKind: 'impact', variant: 'frost-body', elem: 'ice'
+      fxKind: 'impact', variant: 'frost-body', elem: 'ice',
+      vfxTier: 3
     });
   }
 }
@@ -8086,7 +8154,8 @@ function sgTickCrystalResonance(ctx, dt) {
      否則事件量會被放大成凍結中的敵人數。 */
   if (resonators.length) {
     sgEmitVfx('frostnova', resonators, ctx.floatSel, {
-      fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80]
+      fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80],
+      vfxUlt: 'crystalResonance'
     });
   }
   if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
@@ -8418,7 +8487,8 @@ function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
     elem: 'wind', count: 1, projectile: true,
     lineLength: geom.lenPx, lineWidth: Math.max(8, halfPx * 2),
     travelMs: [travelMs], delayMs: Math.round((cfg.beginSec || 0) * 1000),
-    angle: cfg.angle, bodyLength: bodyPx
+    angle: cfg.angle, bodyLength: bodyPx,
+    vfxTier: cfg.vfxTier || (cfg.small ? 4 : 1), vfxGid: cfg.vfxGid || '', vfxUlt: cfg.vfxUlt || ''
   });
   sgQueueFlyingProjectile(pEnt, st, gid, cfg.dmgVal, geomOk ? origin : null, cfg.angle,
     geom.lenPx, floatSel, cfg.fallback || [], {
@@ -8452,7 +8522,8 @@ function sgSpawnWindChaser(pEnt, st, g, lvs, angle, dmgVal, geom, floatSel, opts
     ramp: opts.ramp || null, onHit: opts.onHit || null,
     slowStatus: (opts.slowPct > 0) ? 'sgWindSlow' : '', slowPct: opts.slowPct || 0,
     pulseGap: opts.pulseGap || 0, pulseRadius: opts.pulseRadius || 0,
-    pulseDmg: opts.pulseDmg || 0, pulseVariant: 'wind-burst'
+    pulseDmg: opts.pulseDmg || 0, pulseVariant: 'wind-burst',
+    vfxTier: 5, vfxUlt: (opts && opts.vfxUlt) || ''
   });
 }
 
@@ -8491,7 +8562,8 @@ function sgFireWindBlade(pEnt, st, g, lvs, cfg, floatSel, out) {
       sec: sgUltVal(cfg.myriad, 'sec'), chaseM: sgUltVal(cfg.myriad, 'chaseM'),
       radius: cfg.geom.halfWidthPx, ramp: ramp, onHit: sgWindbladeGroundHit(cfg.erode),
       slowPct: cfg.slowPct, pulseGap: cfg.pulseGap,
-      pulseRadius: cfg.pulseRadius, pulseDmg: cfg.pulseDmg
+      pulseRadius: cfg.pulseRadius, pulseDmg: cfg.pulseDmg,
+      vfxUlt: 'stormMyriad'
     });
     return;
   }
@@ -8678,7 +8750,7 @@ function sgCastVacuumslash(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var victims = sgVacuumWaveVictims(pool, primary, spin, radiusPx, count, baseAngle, geomOk);
     sgEmitVfx('vacuumslash', victims, floatSel, {
       fxKind: 'slash', variant: spin ? 'wind-spin' : 'wind-slash', elem: 'wind',
-      dur: 0.45, delayMs: delayMs, lineLength: radiusPx,
+      dur: 0.45, delayMs: delayMs, lineLength: radiusPx, vfxTier: spin ? 4 : 1,
       area: (spin && geomOk && typeof bfPlayerPos === 'function')
         ? { x: bfPlayerPos().x, y: bfPlayerPos().y, r: radiusPx } : null
     });
@@ -8721,7 +8793,7 @@ function sgVacuumSmallBlades(pEnt, st, lg, dmgVal, pool, primary, baseAngle, geo
     var ang = baseAngle + deg * step * ((i % 2) ? -1 : 1);
     sgLaunchWindBlade(pEnt, st, 'vacuumslash', {
       geom: geom, angle: ang, dmgVal: small, pool: pool, geomOk: geomOk,
-      fallback: [primary], small: true
+      fallback: [primary], small: true, vfxGid: 'windblade'
     }, floatSel, out);
   }
 }
@@ -8743,7 +8815,8 @@ function sgSpawnStaticVacuum(pEnt, st, u, victim, floatSel, bodyDmg, radiusPx) {
     from: (typeof bfPos === 'function') ? bfPos(victim) : null,
     radius: Math.max(4, radiusPx), dmgVal: dmgVal,
     hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
-    growTo: grow, growSec: lifeSec, contact: true, tickAtStart: true
+    growTo: grow, growSec: lifeSec, contact: true, tickAtStart: true,
+    vfxUlt: 'vacuumOmen'
   });
 }
 
@@ -8783,7 +8856,8 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
       fieldKey: keyBase + i,
       rings: [{ r: startR, spin: spin }],
       statusId: 'sgVoidBlade', auraVariant: 'void-disc',
-      hitVariant: 'wind-burst', hitElem: 'wind'
+      hitVariant: 'wind-burst', hitElem: 'wind',
+      vfxTier: 7, vfxUlt: (opts && opts.vfxUlt) || ''
     });
   }
 }
@@ -8805,7 +8879,8 @@ function sgDropSkyfallBlade(pEnt, st, dmgVal, target, pool, floatSel, out) {
   sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
     geom: sgWindbladeGeom(wb, [1, 0, 0, 0, 0, 0, 0], null),
     angle: geomOk ? angle : 0, dmgVal: dmgVal, pool: pool,
-    geomOk: geomOk, fallback: [target], sizeMult: SG_SKYFALL_BLADE_SCALE
+    geomOk: geomOk, fallback: [target], sizeMult: SG_SKYFALL_BLADE_SCALE,
+    vfxGid: 'windblade'
   }, floatSel, out);
 }
 
@@ -8847,13 +8922,15 @@ function sgTickSkyfallStars(ctx, dt) {
     sgEmitVfx('stormbarrier', [target], ctx.floatSel, {
       fxKind: 'rain', variant: bolt ? 'thunder-fall' : 'meteor',
       elem: bolt ? 'lightning' : 'fire', count: 1,
-      area: sgAreaAround(target, radius), delayMs: castDelay, travelMs: [timing.travelMs]
+      area: sgAreaAround(target, radius), delayMs: castDelay, travelMs: [timing.travelMs],
+      vfxUlt: 'skyfallStars'
     });
     sgQueueMeteor(ctx.pEnt, st, dmgVal, target, enemies, radius, null, ctx.floatSel, out,
       GT + (castDelay + timing.fallMs) / 1000, {
         gid: 'stormbarrier',
         variant: bolt ? 'thunder-fall-impact' : 'meteor-impact',
-        elem: bolt ? 'lightning' : 'fire'
+        elem: bolt ? 'lightning' : 'fire',
+        vfxUlt: 'skyfallStars'
       });
   }
 }
@@ -8917,7 +8994,8 @@ function sgCastStormbarrier(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var godRed = sgVal(t[6].fx, 'red', lvs[6]) + (valgr ? sgUltVal(valgr, 'red') : 0);
     applyStatus(pEnt, 'sgStormGod', { val: godRed, dur: godSec });
     sgEmitPlayerVfx('stormbarrier', floatSel, {
-      fxKind: 'aura', variant: 'storm-god', elem: 'wind', dur: godSec
+      fxKind: 'aura', variant: 'storm-god', elem: 'wind', dur: godSec,
+      vfxTier: 7
     });
   }
   // 超神【森羅萬象】：同時打出【暴風真空刃】與【虛空斬】兩個形態
@@ -8951,7 +9029,8 @@ function sgCastMyriadPhenomena(pEnt, st, u, pool, primary, floatSel, out) {
       for (var v = 0; v < volleys; v++) {
         sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
           geom: geom, angle: baseAngle + Math.PI * 2 * d / dirs, dmgVal: bladeDmg,
-          pool: pool, geomOk: geomOk, fallback: [primary], beginSec: v * volleyGap
+          pool: pool, geomOk: geomOk, fallback: [primary], beginSec: v * volleyGap,
+          vfxGid: 'windblade'
         }, floatSel, out);
       }
     }
@@ -8963,7 +9042,8 @@ function sgCastMyriadPhenomena(pEnt, st, u, pool, primary, floatSel, out) {
   if (discDmg > 0) {
     sgSpawnVoidDiscs(pEnt, st, vs, [1, 1, 1, 1, 1, 1, 1], floatSel, baseAngle, {
       plain: true, gid: 'stormbarrier', dmgVal: discDmg,
-      keyPrefix: 'void-myriad-' + (++SG_VOID_DISC_SEQ) + '-'
+      keyPrefix: 'void-myriad-' + (++SG_VOID_DISC_SEQ) + '-',
+      vfxUlt: 'myriadPhenomena'
     });
   }
 }
@@ -9003,7 +9083,7 @@ function sgStormBarrierPulse(rt, lvs, ctx) {
   if (lvs[1] > 0) {
     var dmgVal = sgGroupBaseStat(g, st) * sgVal(t[1].fx, 'pct', lvs[1]) / 100;
     var victims = sgEnemiesNearPlayer(enemies, radiusPx, null, 0);
-    sgEmitPlayerVfx('stormbarrier', floatSel, { fxKind: 'aura', variant: 'storm-rip', elem: 'wind', dur: rt.gap });
+    sgEmitPlayerVfx('stormbarrier', floatSel, { fxKind: 'aura', variant: 'storm-rip', elem: 'wind', dur: rt.gap, vfxTier: 2 });
     if (dmgVal > 0 && victims.length) {
       var out = { killed: false, dmg: 0, crit: false };
       for (var i = 0; i < victims.length; i++) {
@@ -9029,7 +9109,7 @@ function sgStormBarrierPulse(rt, lvs, ctx) {
         if (spec && sgApplyWindRend(picks[k], spec) >= 0) marked.push(picks[k]);
       }
       if (marked.length) {
-        sgEmitVfx('stormbarrier', marked, floatSel, { fxKind: 'impact', variant: 'wind-rend', elem: 'wind' });
+        sgEmitVfx('stormbarrier', marked, floatSel, { fxKind: 'impact', variant: 'wind-rend', elem: 'wind', vfxTier: 3 });
       }
     }
   }
@@ -9071,7 +9151,7 @@ function sgStormbladeOnPlayerDamaged(mEnt, pEnt, floatSel) {
   var enemies = (typeof FIELD !== 'undefined' && FIELD && FIELD.enemies) ? FIELD.enemies : [mEnt];
   sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
     geom: geom, angle: geomOk ? angle : 0, dmgVal: dmgVal, pool: enemies,
-    geomOk: geomOk, fallback: [mEnt]
+    geomOk: geomOk, fallback: [mEnt], vfxTier: 4
   }, floatSel || 'mv-float', { killed: false, dmg: 0, crit: false });
 }
 
@@ -9114,7 +9194,8 @@ function sgSpreadWindRend(from, enemies, lvs) {
   if (spread.length) {
     sgEmitVfx('stormbarrier', [from].concat(spread), 'mv-float', {
       fxKind: 'chain', variant: 'wind-rend-spread', elem: 'wind', travelMs: [80],
-      preserveDeadTargets: true
+      preserveDeadTargets: true,
+      vfxTier: 5
     });
   }
 }
@@ -9188,7 +9269,7 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   if (blocked && lvs[4] > 0 && mEnt.hp > 0 && chance(Number(t[4].fx.chance) || 0) &&
       sgCounterPayMp(pEnt, 4)) {
     applyStatus(mEnt, 'sgArmorBrk', { val: Number(t[4].fx.def) || 0, dur: sgVal(t[4].fx, 'sec', lvs[4]) });
-    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break' });
+    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break', vfxTier: 5 });
   }
   /* 攻擊者已死就沒有反擊可打——必須在扣魔之前先擋掉，否則會為了不會發生的
      反擊付魔（破甲那段自己有 hp>0 判定，不受影響）。 */
@@ -9422,7 +9503,8 @@ function sgCounterWindBlade(pEnt, st, target, spec, floatSel, out, delayMs) {
   var dmgVal = sgGroupBaseStat(SKILLS2.counter, st) * (Number(spec.powerPct) || 0) / 100;
   if (!(dmgVal > 0)) return;
   sgEmitVfx('counter', [target], floatSel, {
-    fxKind: 'projectile', variant: 'wind-blade-homing', elem: 'wind', dur: 0.5
+    fxKind: 'projectile', variant: 'wind-blade-homing', elem: 'wind', dur: 0.5,
+    vfxGid: 'windblade', vfxTier: 1
   });
   sgHitOne(pEnt, st, target, dmgVal, 'counter', floatSel, out, delayMs, 0, 'wind');
 }
@@ -9439,7 +9521,7 @@ function sgCounterHolyOrb(pEnt, st, target, cfg, floatSel, out, delayMs) {
     var near = bfNearestOthers(target, cfg.enemies, cfg.enemies.length, bfMeterPx(sgUltVal(u, 'm')));
     for (var i = 0; i < near.length; i++) victims.push(near[i]);
   }
-  sgEmitVfx('counter', victims, floatSel, { fxKind: 'burst', elem: 'light', dur: 0.6 });
+  sgEmitVfx('counter', victims, floatSel, { fxKind: 'burst', elem: 'light', dur: 0.6, vfxUlt: 'holyBody' });
   for (var v = 0; v < victims.length; v++) {
     sgHitOne(pEnt, st, victims[v], dmgVal, 'counter', floatSel, out, (delayMs || 0) + sgStaggerMs(v), 0, 'light');
   }
@@ -9472,7 +9554,7 @@ function skills2TryLastStand(pEnt) {
   }
   var out = { killed: false, dmg: 0, crit: false };
   if (victims.length) {
-    sgEmitVfx('counter', victims, 'mv-float', { fxKind: 'burst', elem: 'earth', dur: 0.8 });
+    sgEmitVfx('counter', victims, 'mv-float', { fxKind: 'burst', elem: 'earth', dur: 0.8, vfxUlt: 'indomitable' });
     var dmgVal = sgGroupBaseStat(SKILLS2.counter, st) * sgUltVal(u, 'pct') / 100;
     for (var v = 0; v < victims.length; v++) {
       sgHitOne(pEnt, st, victims[v], dmgVal, 'counter', 'mv-float', out, sgStaggerMs(v), 0, 'earth');
@@ -9484,7 +9566,7 @@ function skills2TryLastStand(pEnt) {
   applyStatus(pEnt, 'invuln', { dur: sec });
   pEnt.skillCds[SG_PREFIX + 'counter'] = Math.max(1, sgUltVal(u, 'cd'));
   SKILL2_RT.lastStand = { reviveAt: GT + sec, pEnt: pEnt, done: false };
-  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: Math.min(6, sec) });
+  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: Math.min(6, sec), vfxUlt: 'indomitable' });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '不屈鬥魂!', 'buff');
   if (typeof blog === 'function') {
     blog('🛡️ 【不屈鬥魂】你倒下的瞬間大地為之震動——' + Math.round(sec) + ' 秒後你將原地站起繼續戰鬥！', 'info');
@@ -9534,7 +9616,7 @@ function sgTickLastStand(ctx) {
   SKILL2_RT.lastStand = null;   // 兌現完就歸還，之後只由 60 秒冷卻把關
   if (!pEnt || typeof getStats !== 'function') return;
   pEnt.hp = getStats().hp;
-  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1.2 });
+  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1.2, vfxGid: 'earthguard', vfxUlt: 'worldRebirth' });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '復活!', 'buff');
   if (typeof blog === 'function') blog('🛡️ 【不屈鬥魂】你站了起來，生命完全恢復！', 'good');
   if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
@@ -9559,7 +9641,7 @@ function sgTickAsuraFist(ctx, dt) {
   applyStatus(ctx.pEnt, 'sgAsuraFist', {
     val: sgUltVal(u, 'pct'), dur: Math.max(0.1, sgUltVal(u, 'sec'))
   });
-  sgEmitPlayerVfx('bloodrage', 'pv-float', { fxKind: 'aura', variant: 'bloodrage-aura', dur: 1 });
+  sgEmitPlayerVfx('bloodrage', 'pv-float', { fxKind: 'aura', variant: 'bloodrage-aura', dur: 1, vfxUlt: 'asuraFist' });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '阿修羅霸王拳!', 'buff');
 }
 
@@ -9680,7 +9762,8 @@ function sgTickStarfall(ctx, dt) {
     st.warned = true;
     sgEmitPlayerVfx('fireball', ctx.floatSel, {
       fxKind: 'aura', variant: 'starfall-shadow', elem: 'fire',
-      dur: Math.max(0.1, st.at - GT)
+      dur: Math.max(0.1, st.at - GT),
+      vfxUlt: 'starfallCataclysm'
     });
     if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '地爆天星!', 'buff');
   }
@@ -9691,7 +9774,8 @@ function sgTickStarfall(ctx, dt) {
     sgEmitPlayerVfx('fireball', ctx.floatSel, {
       fxKind: 'rain', variant: 'meteor-starfall', elem: 'fire',
       dur: Math.max(0.1, st.at - GT), travelMs: Math.max(1, Math.round((st.at - GT) * 1000)),
-      sizeMult: SG_STARFALL_SIZE_MULT
+      sizeMult: SG_STARFALL_SIZE_MULT,
+      vfxUlt: 'starfallCataclysm'
     });
   }
   if (GT < st.at) return;
@@ -9726,7 +9810,8 @@ function sgStarfallImpact(ctx, u) {
   var elitePct = sgUltVal(u, 'elite');
   var bossPct = sgUltVal(u, 'boss');
   sgEmitVfx('fireball', victims, ctx.floatSel, {
-    fxKind: 'impact', variant: 'starfall-impact', elem: 'fire'
+    fxKind: 'impact', variant: 'starfall-impact', elem: 'fire',
+    vfxUlt: 'starfallCataclysm'
   });
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
@@ -9842,7 +9927,8 @@ function sgTickBloodDots(dt, ctx) {
           for (var ni = 0; ni < near.length; ni++) {
             if (near[ni].hp > 0 && !sgHasDot(near[ni], 'sgPoison')) {
               sgEmitVfx('bloodblade', [e, near[ni]], ctx.floatSel, {
-                fxKind: 'chain', variant: 'poison-spread', elem: 'poison', count: 1
+                fxKind: 'chain', variant: 'poison-spread', elem: 'poison', count: 1,
+                vfxTier: 5
               });
               /* 毒霧感染也走共用塗抹：傳染同樣算「感染 1 個敵人」，要付【毒血祭】的生命代價；
                  崩解生效時中毒根本不會存在，這條分支自然不會被走到。 */
@@ -9858,7 +9944,8 @@ function sgTickBloodDots(dt, ctx) {
         }
         sgEmitVfx('bloodblade', [e], ctx.floatSel, {
           fxKind: 'impact', variant: sids[si] === 'sgPoison' ? 'poison-tick' : 'bleed-tick',
-          elem: sids[si] === 'sgPoison' ? 'poison' : null
+          elem: sids[si] === 'sgPoison' ? 'poison' : null,
+          vfxRoles: statusVfxRoles(sids[si], 'tick')
         });
         // 零日感染：每次作用時，機率立即造成剩餘持續傷害並清除該狀態
         // 剩餘值含 tickStatuses 已累積、尚未跳出的殘額（d.acc 秒），與到期補跳的總量守恆一致
@@ -9871,7 +9958,8 @@ function sgTickBloodDots(dt, ctx) {
             if (ctx.onDamage) ctx.onDamage(zOut.dmg);
             if (zOut.killed && ctx.onDeaths) ctx.onDeaths();
             sgEmitVfx('bloodblade', [e], ctx.floatSel, {
-              fxKind: 'burst', variant: 'zero-infection', elem: 'poison'
+              fxKind: 'burst', variant: 'zero-infection', elem: 'poison',
+              vfxTier: 7
             });
           }
           // 直接移除實例（剩餘值已立即生效；不走到期流程，避免補跳殘餘）
@@ -9933,7 +10021,7 @@ function sgEmitBloodDomainAura(ctx, radius, poison) {
   if (!pp || !(radius > 0)) return;
   sgEmitPlayerVfx('bloodblade', ctx.floatSel, {
     fxKind: 'aura', variant: poison ? 'mire-poison' : 'mire',
-    elem: poison ? 'poison' : 'dark', dur: SG_DOMAIN_VFX_SEC,
+    elem: poison ? 'poison' : 'dark', dur: SG_DOMAIN_VFX_SEC, vfxUlt: poison ? 'venomDomain' : 'slayerDomain',
     area: { id: SG_BLOOD_DOMAIN_VFX_ID, x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
   });
 }
@@ -9955,7 +10043,7 @@ function sgVenomDomainPulse(ult, enemies, ctx, radius, gap) {
   for (var i = 0; i < victims.length; i++) {
     applyStatus(victims[i], 'sgVenomField', { dps: unit, dur: dur, interval: gap, maxStacks: maxStacks });
   }
-  sgEmitVfx('bloodblade', victims, ctx.floatSel, { fxKind: 'curse', variant: 'poison', elem: 'poison' });
+  sgEmitVfx('bloodblade', victims, ctx.floatSel, { fxKind: 'curse', variant: 'poison', elem: 'poison', vfxUlt: 'venomDomain' });
 }
 
 /* 超神進化【殺神領域】：領域內的敵人死亡時疊 1 層【殺神】並回復生命。
@@ -10000,7 +10088,8 @@ function sgBloodFieldsOnDeath(deadEnt) {
       kind: 'poisonmist', tgt: deadEnt, floatSel: 'mv-float',
       radius: bfMeterPx(Number(mist.m) || 6),
       dmgVal: baseVal * (Number(mist.pct) || 0) / 100,
-      hits: Math.max(1, Math.round(sec / gap)), gap: gap, hitElem: 'poison'
+      hits: Math.max(1, Math.round(sec / gap)), gap: gap, hitElem: 'poison',
+      vfxGid: 'mire', vfxTier: 3
     });
   }
   if (blood && sgHasDot(deadEnt, 'sgBleed')) {
@@ -10009,7 +10098,8 @@ function sgBloodFieldsOnDeath(deadEnt) {
     sgSpawnGround(pEnt, st, 'bloodblade', {
       kind: 'bloodmist', tgt: deadEnt, floatSel: 'mv-float',
       radius: bfMeterPx(Number(blood.m) || 6),
-      dmgVal: 0, hits: Math.max(1, Math.round(bsec / bgap)), gap: bgap
+      dmgVal: 0, hits: Math.max(1, Math.round(bsec / bgap)), gap: bgap,
+      vfxGid: 'mire', vfxTier: 1
     });
   }
 }
@@ -10092,7 +10182,8 @@ function sgDeathBoom(deadEnt, enemies) {
   var deadPoison = sgFindDot(deadEnt, 'sgPoison');
   var out = { killed: false, dmg: 0, crit: false };
   sgEmitVfx('bloodblade', [deadEnt], 'mv-float', {
-    fxKind: 'burst', variant: 'blood-explosion', elem: 'poison'
+    fxKind: 'burst', variant: 'blood-explosion', elem: 'poison',
+    vfxTier: 6
   });
   for (var i = 0; i < victims.length; i++) {
     var victim = victims[i];

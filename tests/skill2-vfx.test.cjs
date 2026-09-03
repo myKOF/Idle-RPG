@@ -471,7 +471,9 @@ test('岩甲術與大地守護的自身特效走玩家定址，不會畫到敵�
   // 天地共生的復活光柱：沿用既有 rain/pillar 畫法（設計文檔要求「從天而降的光柱」）
   assert.match(skills2, /sgEmitPlayerVfx\('earthguard', 'pv-float', \{ fxKind: 'rain', variant: 'pillar'/);
   // 岩甲尖刺打在敵人身上，走敵人定址的 impact
-  assert.match(skills2, /sgEmitVfx\('rockarmor', \[mEnt\], eSel, \{ fxKind: 'impact', variant: 'rock-spike', elem: 'earth' \}\);/);
+  /* 尾端不鎖死：特效欄位的列標記（vfxTier 等）之後會接在同一個 extra 裡，
+     這條要驗的是「敵人定址的 impact」，不是參數表的欄位。 */
+  assert.match(skills2, /sgEmitVfx\('rockarmor', \[mEnt\], eSel, \{ fxKind: 'impact', variant: 'rock-spike', elem: 'earth'/);
 });
 
 test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 與 DOM 兩條路徑都接上', () => {
