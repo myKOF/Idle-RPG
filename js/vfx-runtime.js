@@ -42,6 +42,90 @@ var VFXRuntime = (function () {
   /* 狀態光環的快照頻率是 5Hz，同樣要容忍一次遺失。 */
   var AURA_KEEP_SEC = 0.6;
 
+  /* ---- 移動場域的畫面位置／尺寸：推算自走 ＋ 連續修正（AI_RULES 8.3.1）----
+     一則場域事件＝模擬層的一個節拍快照，但事件的到達節奏本身不平均：Worker 是
+     批次送出的，場域另有自己的節拍，兩者不整除。收到就 setTransform 到權威座標
+     ＝每則事件瞬移一次，那正是玩家看到的「一格一格移動」。
+
+     只做「朝最新快照逼近」也不夠：節拍慢的場域（雷球、火龍捲）兩則事件之間隔得
+     比逼近所需的時間還久，逼到了就沒有東西可以追，畫面會停在那裡等下一則——
+     追上、停住、再衝一段，玩家看到的仍然是一格一格。
+
+     因此分成兩段：
+       ① 推算自走：沿模擬層當下的航向、用模擬層的速度前進（事件帶著 speed／moveA／
+          dest，見 skills2.sgGroundArea）。這一段與模擬層是同一條運動法則，所以
+          兩則事件之間畫面照樣在動，而且動得跟判定範圍一樣快。
+       ② 連續修正：自走與最新快照之間的殘差以一階低通衰減掉，不是瞬間歸位。
+          掉幀、分頁凍結、落點中途改變都靠這一段吸收。
+     殘差大到不像是推算誤差時直接就位——硬拖一段長距離比直接就位更難看。
+     時間常數與舊畫法（battle-renderer 的 FIELD_VFX_FOLLOW_TAU_SEC）取同一個值：
+     兩邊畫的是同一件事，數字分家就會出現「切 ?vfx=legacy 前後手感不一樣」。
+     判定位置永遠是模擬層的 area.x/y，這裡只補畫面，不改命中。 */
+  var GROUND_FOLLOW_TAU_SEC = 0.14;
+  /* 殘差上限：超過一個名目場域半徑就不吸收，直接就位。 */
+  var GROUND_MAX_RESIDUAL_PX = NOMINAL_RADIUS;
+  /* 修正速度的上限＝行進速度的一部分。事件描述的模擬時刻與它到達的時刻對不齊，
+     每則事件因此都會留下一點殘差；修正得比行進本身還快，畫面就會忽快忽慢——
+     一樣是不平滑。壓在行進速度之下，殘差會收斂成一個固定的落後量（看不出來），
+     修正過程則完全藏在行進裡。 */
+  var GROUND_CORRECT_MAX_RATIO = 0.3;
+
+  /* 逐幀朝目標值收斂的一階低通：係數只跟 dt 有關，因此掉幀時不會走過頭。 */
+  function approach(cur, target, dt, tau) {
+    if (!(dt > 0)) return cur;
+    return cur + (target - cur) * (1 - Math.exp(-dt / tau));
+  }
+  /* 角度走最短路徑，否則 ±π 交界會整圈轉回去。 */
+  function approachAngle(cur, target, dt, tau) {
+    if (!(dt > 0)) return cur;
+    var d = Math.atan2(Math.sin(target - cur), Math.cos(target - cur));
+    return cur + d * (1 - Math.exp(-dt / tau));
+  }
+
+  /* ---- 轉彎不折角：以「進場航向」為起始切線的二次貝茲（AI_RULES 8.3.1）----
+     連鎖彈射（飛刀彈射、水球彈跳、毒霧／寒霜傳染）是「飛到 A 再飛到 B」：
+     每一段各自畫直線的話，轉折處的方向會在一幀之內整個換掉——那就是硬折角。
+     改成二次貝茲：起點切線＝上一段的航向、終點仍是模擬層的目標點、飛行時間
+     仍是事件帶來的 travelMs，因此路徑彎了但抵達時刻一點都沒變，傷害數字與
+     畫面到達仍然同一刻（AI_RULES 8.3）。
+     進場角度必須夾住：正對後方時三個控制點共線，貝茲會退化成「沿原路倒退再
+     前進」，比硬折角更糟；夾到上限之後仍然是一道連續的弧。 */
+  var CURVE_ENTRY_MAX_RAD = Math.PI * 2 / 3;   // 進場航向與弦的最大夾角
+  var CURVE_HANDLE_RATIO = 0.55;               // 控制點離起點多遠（弦長的比例）
+  function curveControl(from, to, enterAngle) {
+    if (!isFinite(enterAngle)) return null;
+    var dx = to.x - from.x, dy = to.y - from.y;
+    var chord = Math.sqrt(dx * dx + dy * dy);
+    if (!(chord > 1e-6)) return null;
+    var chordAng = Math.atan2(dy, dx);
+    var diff = Math.atan2(Math.sin(enterAngle - chordAng), Math.cos(enterAngle - chordAng));
+    if (Math.abs(diff) < 1e-3) return null;    // 本來就對著目標＝直線，不必彎
+    var a = chordAng + Math.max(-CURVE_ENTRY_MAX_RAD, Math.min(CURVE_ENTRY_MAX_RAD, diff));
+    return {
+      x: from.x + Math.cos(a) * chord * CURVE_HANDLE_RATIO,
+      y: from.y + Math.sin(a) * chord * CURVE_HANDLE_RATIO
+    };
+  }
+  /* 二次貝茲取點與切線；ctrl 為 null 時退化成直線（與加入轉彎之前完全相同）。 */
+  function curvePoint(from, ctrl, to, k) {
+    if (!ctrl) return { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
+    var u = 1 - k;
+    return {
+      x: u * u * from.x + 2 * u * k * ctrl.x + k * k * to.x,
+      y: u * u * from.y + 2 * u * k * ctrl.y + k * k * to.y
+    };
+  }
+  function curveHeading(from, ctrl, to, k) {
+    if (!ctrl) return Math.atan2(to.y - from.y, to.x - from.x);
+    var u = 1 - k;
+    return Math.atan2(2 * u * (ctrl.y - from.y) + 2 * k * (to.y - ctrl.y),
+      2 * u * (ctrl.x - from.x) + 2 * k * (to.x - ctrl.x));
+  }
+  /* 機身朝向追上實際航向的時間常數：轉彎時刀鋒要跟著彎，但不能一幀轉到底。 */
+  var PROJECTILE_FACING_TAU_SEC = 0.05;
+  /* 上一段飛行抵達時的航向保留多久（連鎖的下一段要接得上）。 */
+  var ARRIVAL_KEEP_SEC = 1.2;
+
   /* 表面尺寸規則：Preset 是照野外戰場的名目尺寸畫的（身高 60px、半徑 100px、天降 500px），
      換到別的版面（高塔的 202px 卡片）就得整組縮放。三個係數分開的理由是它們對應
      三種不同的名目基準，用同一個數字縮會顧此失彼。
@@ -132,6 +216,7 @@ var VFXRuntime = (function () {
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
     var grounds = Object.create(null);      // area.id → 場域
+    var arrivals = Object.create(null);     // targetId → 上一段飛行抵達時的航向
     var orbits = Object.create(null);       // 合併鍵 → 環繞場域（軌道環＋N 個環繞體）
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
@@ -293,20 +378,33 @@ var VFXRuntime = (function () {
       } else from = ctx.playerPos();
       var to = (travel > 0 && ctx.projectileTargetPoint)
         ? ctx.projectileTargetPoint(toId, travel) : ctx.posOf(toId);
+      /* 連鎖段接上一段的航向：整條鏈因此是一條連續彎過去的線，
+         而不是每個彈射點折一次角。第一段沒有上一段，enterAngle 留 NaN＝直線。 */
+      var enterAngle = chained ? arrivalAngle(ids[0]) : NaN;
+      var ctrl = curveControl(from, to, enterAngle);
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
+      var facing = curveHeading(from, ctrl, to, 0);
       var ref = play(rt, presetId, {
         position: from,
-        rotation: Math.atan2(to.y - from.y, to.x - from.x),
+        rotation: facing,
         scale: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1
       }, mult);
       if (!ref) return false;
       projectiles.push({
         ref: ref, from: from, targetId: toId, t: 0,
         dur: travel > 0 ? travel : 0.001,
-        mult: mult,
+        mult: mult, enterAngle: enterAngle, facing: facing,
         scale: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1
       });
       return true;
+    }
+
+    /* 上一段飛行抵達某個目標時的航向（過期就當作沒有）。 */
+    function arrivalAngle(id) {
+      var a = arrivals[id];
+      if (!a) return NaN;
+      if (clock - a.at > ARRIVAL_KEEP_SEC) { delete arrivals[id]; return NaN; }
+      return a.angle;
     }
 
     /* 玩家腳底並跟著玩家走：施放特效 */
@@ -317,7 +415,86 @@ var VFXRuntime = (function () {
       return true;
     }
 
-    /* 持續場域：以 area.id 合併，重複事件只續命與更新位置 */
+    /* 這一則事件的權威幾何 → 場域的推算基準與目標尺寸。畫面值由 updateGrounds
+       逐幀推進，事件本身不動畫面（見 GROUND_FOLLOW_TAU_SEC 的說明）。 */
+    function groundAim(g, spec) {
+      if (!spec.area) {
+        /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
+        g.anchored = true;
+        g.speed = 0; g.moveA = NaN; g.hasDest = false;
+        g.uniform = true;
+        g.tsx = g.tsy = profile.groundR / NOMINAL_RADIUS;
+        g.trot = 0;
+        return;
+      }
+      var area = spec.area;
+      /* area.follow＝模擬層的圓心恆等於我方座標（暴風雪、常駐領域）。
+         這種場域不必推算：畫面每幀直接貼玩家錨點，連一點落後都沒有。 */
+      g.anchored = !!area.follow;
+      /* 運動語意（模擬層 sgGroundArea 只在這一拍真的在動時才帶）：
+         沒帶＝這一拍是靜止的，推算自走那一段自然就不會走。 */
+      g.speed = Math.max(0, num(area.speed, 0));
+      g.moveA = num(area.moveA, NaN);
+      g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
+      if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
+      var w = num(area.w, 0), h = num(area.h, 0);
+      if (w > 0 && h > 0) {
+        g.uniform = false;
+        g.tsx = w / NOMINAL_RECT_W;
+        g.tsy = h / NOMINAL_RECT_H;
+      } else {
+        var r = num(area.r, 0);
+        g.uniform = true;
+        g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
+      }
+      g.trot = num(area.a, 0);
+      if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
+      /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
+      var prevX = g.bx + g.ox, prevY = g.by + g.oy;
+      g.bx = num(area.x, 0);
+      g.by = num(area.y, 0);
+      g.ox = prevX - g.bx;
+      g.oy = prevY - g.by;
+      if (Math.sqrt(g.ox * g.ox + g.oy * g.oy) > GROUND_MAX_RESIDUAL_PX) { g.ox = 0; g.oy = 0; }
+    }
+    /* 釘在某個實體腳底的場域（高塔版面、follow 場域）每幀的權威座標。 */
+    function groundAnchorPoint(g) {
+      return footOf(g.anchor || 'pv-float');
+    }
+    /* 推算基準的自走：沿模擬層當下的航向、用模擬層的速度前進；知道落點時不越過
+       落點（等速直線飛向落點的場域抵達後就停駐，畫面必須跟著停）。 */
+    function groundDeadReckon(g, dt) {
+      if (!(g.speed > 0) || !isFinite(g.moveA) || !(dt > 0)) return;
+      var run = g.speed * dt;
+      if (g.hasDest) {
+        var dx = g.destX - g.bx, dy = g.destY - g.by;
+        var left = Math.sqrt(dx * dx + dy * dy);
+        if (!(left > 1e-6)) return;
+        run = Math.min(run, left);
+      }
+      g.bx += Math.cos(g.moveA) * run;
+      g.by += Math.sin(g.moveA) * run;
+    }
+    /* 殘差歸零：以一階低通的速度收斂，但移動中的場域另外壓上行進速度的比例上限。
+       靜止的場域沒有行進可以藏，維持單純的一階低通。 */
+    function groundCorrect(g, dt) {
+      if (!(dt > 0)) return;
+      var mag = Math.sqrt(g.ox * g.ox + g.oy * g.oy);
+      if (!(mag > 1e-4)) { g.ox = 0; g.oy = 0; return; }
+      var want = mag / GROUND_FOLLOW_TAU_SEC;
+      if (g.speed > 0) want = Math.min(want, g.speed * GROUND_CORRECT_MAX_RATIO);
+      var fix = Math.min(mag, want * dt);
+      g.ox -= g.ox / mag * fix;
+      g.oy -= g.oy / mag * fix;
+    }
+    function groundParams(g) {
+      var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
+      if (g.uniform) p.scale = g.sx;
+      else { p.scaleX = g.sx; p.scaleY = g.sy; }
+      return p;
+    }
+
+    /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec) {
       /* 沒有 area 的版面（高塔：實體沒有座標，事件的 area 一律是 null）——
          profile.groundR 給它一個名目半徑，畫在目標腳底；0 就維持退回舊畫法。 */
@@ -325,30 +502,34 @@ var VFXRuntime = (function () {
       if (noArea && !(profile.groundR > 0)) return false;
       var anchor = noArea
         ? (Array.isArray(spec.targets) && spec.targets.length ? spec.targets[0] : 'pv-float')
-        : null;
+        : 'pv-float';
       var key = noArea ? (presetId + '@' + anchor)
         : (spec.area.id ||
            (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0))));
       var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
       var mult = noArea ? profile.scale : profile.areaScale;
-      function paramsNow() {
-        if (!noArea) {
-          var p = areaScaleParams(spec.area);
-          p.position = areaCentre(spec.area);
-          return p;
-        }
-        return { position: footOf(anchor), scale: profile.groundR / NOMINAL_RADIUS };
-      }
       var live = grounds[key];
       if (live && live.presetId === presetId) {
         live.expireAt = clock + keep;
-        moveRef(live.ref, paramsNow(), mult);
+        groundAim(live, spec);
         return true;
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
-      var ref = play(rtZone, presetId, paramsNow(), mult);
+      var g = {
+        ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
+        anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
+        bx: 0, by: 0, ox: 0, oy: 0,
+        x: 0, y: 0, rot: 0, trot: 0, sx: 1, sy: 1, tsx: 1, tsy: 1, uniform: true
+      };
+      groundAim(g, spec);
+      if (g.anchored) { var p = groundAnchorPoint(g); g.bx = p.x; g.by = p.y; }
+      /* 出生的第一幀沒有推算歷史：畫面值＝權威值，殘差為 0。 */
+      g.ox = 0; g.oy = 0;
+      g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
+      var ref = play(rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
-      grounds[key] = { ref: ref, presetId: presetId, expireAt: clock + keep };
+      g.ref = ref;
+      grounds[key] = g;
       return true;
     }
 
@@ -437,6 +618,27 @@ var VFXRuntime = (function () {
       /* 一團都放不下（預算滿）＝這一則沒有畫面，交還舊畫法。 */
       if (!entry.orbs.length) { stopOrbit(key); return false; }
       return true;
+    }
+    /* 場域每幀推進：位置指數跟隨權威座標、尺寸與角度逐幀逼近，到期才收掉。
+       跟隨我方的場域直接貼玩家錨點（模擬層就是這樣定義它的圓心）。 */
+    function updateGrounds(step) {
+      Object.keys(grounds).forEach(function (k) {
+        var g = grounds[k];
+        if (g.expireAt <= clock) { stopRef(g.ref); delete grounds[k]; return; }
+        if (g.anchored) {
+          var p = groundAnchorPoint(g);
+          g.bx = p.x; g.by = p.y; g.ox = 0; g.oy = 0;
+        } else {
+          groundDeadReckon(g, step);
+          groundCorrect(g, step);
+        }
+        g.x = g.bx + g.ox;
+        g.y = g.by + g.oy;
+        g.rot = approachAngle(g.rot, g.trot, step, GROUND_FOLLOW_TAU_SEC);
+        g.sx = approach(g.sx, g.tsx, step, GROUND_FOLLOW_TAU_SEC);
+        g.sy = approach(g.sy, g.tsy, step, GROUND_FOLLOW_TAU_SEC);
+        if (!moveRef(g.ref, groundParams(g), g.mult)) delete grounds[k];
+      });
     }
     function updateOrbits(step) {
       Object.keys(orbits).forEach(function (key) {
@@ -579,20 +781,26 @@ var VFXRuntime = (function () {
         play(job.rt, job.presetId, { position: ctx.posOf(job.targetId), scale: job.scale });
       }
 
-      /* 飛行物：位置由「起點 → 目標當下座標」線性補間，目標會動就跟著動。 */
+      /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
+         有進場航向時（連鎖的第二段起）走二次貝茲，因此轉彎是一道弧而不是折角；
+         機身朝向取路徑當下的切線並逐幀追上，不會在轉折處瞬間翻面。 */
       for (var i = projectiles.length - 1; i >= 0; i--) {
         var pr = projectiles[i];
         pr.t += step;
         var k = Math.min(1, pr.t / pr.dur);
         var to = ctx.posOf(pr.targetId);
-        var x = pr.from.x + (to.x - pr.from.x) * k;
-        var y = pr.from.y + (to.y - pr.from.y) * k;
+        var ctrl = curveControl(pr.from, to, pr.enterAngle);
+        var at = curvePoint(pr.from, ctrl, to, k);
+        pr.facing = approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
+          step, PROJECTILE_FACING_TAU_SEC);
         var alive = moveRef(pr.ref, {
-          position: { x: x, y: y },
-          rotation: Math.atan2(to.y - pr.from.y, to.x - pr.from.x),
+          position: { x: at.x, y: at.y },
+          rotation: pr.facing,
           scale: pr.scale
         }, pr.mult);
         if (!alive || k >= 1) {
+          /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
+          if (k >= 1) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
           if (alive) stopRef(pr.ref);
           projectiles.splice(i, 1);
         }
@@ -617,12 +825,7 @@ var VFXRuntime = (function () {
 
       updateOrbits(step);
 
-      /* 場域到期 */
-      Object.keys(grounds).forEach(function (k) {
-        if (grounds[k].expireAt > clock) return;
-        stopRef(grounds[k].ref);
-        delete grounds[k];
-      });
+      updateGrounds(step);
 
       rtFx.update(step);
       rtZone.update(step);
@@ -632,6 +835,7 @@ var VFXRuntime = (function () {
       projectiles.length = 0;
       follows.length = 0;
       pending.length = 0;
+      arrivals = Object.create(null);
       Object.keys(orbits).forEach(stopOrbit);
       grounds = Object.create(null);
       auras = Object.create(null);

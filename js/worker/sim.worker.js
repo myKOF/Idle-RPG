@@ -14,7 +14,7 @@ importScripts('protocol.js?v=28', 'shim.js?v=6');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260903-vfx-runtime-adapter', '../status.js?v=20260903-vfx-preset-fields', '../formula.js?v=20260825-mire-earthguard-legendary', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260903-vfx-preset-fields', '../skills2.js?v=20260903-vfx-runtime-adapter', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260903-vfx-preset-fields', '../skills2.js?v=20260903-field-motion-smooth', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
   '../combat.js?v=20260903-vfx-runtime-adapter', '../legendary.js?v=20260903-vfx-runtime-adapter', '../potential.js?v=20260903-vfx-runtime-adapter', '../tower.js?v=20260903-vfx-runtime-adapter',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',

@@ -429,12 +429,10 @@ function vfxTheme(spec) {
   return { c1: c, c2: '#ffffff', glow: c };
 }
 
-/* 長駐場域的 DOM 幾何只更新一次快照；用獨立的外層容器以 transform 內插位置／尺寸，
-   內層保留原本的 pulse／泡泡／氣流 CSS 動畫。這只影響畫面，不會增加傷害判定。 */
+/* 事件節拍換算成畫面壽命的下限（虛空斬的螺旋長度）。
+   移動場域的位置不再用「固定時長的補間」表達——見 vfxFieldMotionSet。 */
 function vfxFieldMotionSec(spec, fallback) {
   var sec = Number(spec && spec.dur);
-  /* Worker 以 0.2 秒批次送事件；最短補間保留一小段畫面時間，
-     避免兩個快照同幀進來時，移動場域看起來像逐格跳動。 */
   return Math.max(0.12, isFinite(sec) && sec > 0 ? sec : fallback);
 }
 
@@ -448,14 +446,58 @@ function vfxFieldKey(area, variant) {
 }
 
 function vfxFieldMotionApply(node, state) {
-  var baseW = Math.max(1, state.baseW);
-  var baseH = Math.max(1, state.baseH);
+  var baseW = Math.max(1, state.baseSizeW);
+  var baseH = Math.max(1, state.baseSizeH);
   var cx = state.x + state.w / 2;
   var cy = state.y + state.h / 2;
   var sx = Math.max(0.01, state.w / baseW);
   var sy = Math.max(0.01, state.h / baseH);
   node.style.transform = 'translate3d(' + cx.toFixed(3) + 'px, ' + cy.toFixed(3) + 'px, 0) scale(' +
     sx.toFixed(5) + ', ' + sy.toFixed(5) + ')';
+}
+
+/* ---- 移動場域的畫面幾何：推算自走 ＋ 連續修正（AI_RULES 8.3.1）----
+   與 Canvas 端 js/battle-renderer.js 的 fieldMotion* 同一套模型、同一組常數：
+   兩邊畫的是同一件事，數字分家就會出現「切 ?canvas=0 前後手感不一樣」。
+   收到事件就搬過去＝每則事件跳一格；「固定時間內走完這一段」則會因為事件早到
+   要衝刺、晚到會走完停住而一樣看得出停頓。因此改成：沿模擬層送來的航向與速度
+   自走，再把與最新快照的殘差逐幀衰減掉。判定位置永遠是模擬層的 area.x/y。 */
+var VFX_FIELD_FOLLOW_TAU_SEC = 0.14;
+var VFX_FIELD_MAX_RESIDUAL_PX = 100;    // 殘差超過這個量就不吸收，直接就位
+var VFX_FIELD_CORRECT_MAX_RATIO = 0.3;  // 修正速度上限＝行進速度的這個比例
+
+function vfxFieldMotionStep(state, dt) {
+  if (state.speed > 0 && isFinite(state.moveA) && dt > 0) {
+    var run = state.speed * dt;
+    if (isFinite(state.destX) && isFinite(state.destY)) {
+      var ddx = state.destX - state.baseX, ddy = state.destY - state.baseY;
+      run = Math.min(run, Math.sqrt(ddx * ddx + ddy * ddy));
+    }
+    if (run > 0) {
+      state.baseX += Math.cos(state.moveA) * run;
+      state.baseY += Math.sin(state.moveA) * run;
+    }
+  }
+  var mag = Math.sqrt(state.offX * state.offX + state.offY * state.offY);
+  if (mag > 1e-4 && dt > 0) {
+    var want = mag / VFX_FIELD_FOLLOW_TAU_SEC;
+    if (state.speed > 0) want = Math.min(want, state.speed * VFX_FIELD_CORRECT_MAX_RATIO);
+    var fix = Math.min(mag, want * dt);
+    state.offX -= state.offX / mag * fix;
+    state.offY -= state.offY / mag * fix;
+  } else if (mag <= 1e-4) { state.offX = 0; state.offY = 0; }
+  var k = dt > 0 ? 1 - Math.exp(-dt / VFX_FIELD_FOLLOW_TAU_SEC) : 0;
+  state.w += (state.toW - state.w) * k;
+  state.h += (state.toH - state.h) * k;
+  state.x = state.baseX + state.offX;
+  state.y = state.baseY + state.offY;
+}
+
+/* 這一幀還有沒有東西在動——靜止的沼澤不必永遠佔著一個 rAF。 */
+function vfxFieldMotionBusy(state) {
+  return !!state.followPlayer || state.speed > 0 ||
+    Math.abs(state.offX) > 0.05 || Math.abs(state.offY) > 0.05 ||
+    Math.abs(state.toW - state.w) > 0.05 || Math.abs(state.toH - state.h) > 0.05;
 }
 
 function vfxFieldMotionSchedule(node) {
@@ -465,100 +507,80 @@ function vfxFieldMotionSchedule(node) {
     if (!node.parentNode || !node._vfxFieldMotion) return;
     var state = node._vfxFieldMotion;
     var now = Date.now();
+    var dt = Math.min(0.05, Math.max(0, now - (state.lastAt || now)) / 1000);
+    state.lastAt = now;
     if (state.followPlayer) {
-      /* 暴風雪直接跟畫面中的玩家錨點走；不再讓每個模擬事件重設
-         一條 0.1 秒的補間曲線。 */
+      /* 暴風雪／常駐領域的圓心恆等於玩家：直接貼畫面中的玩家錨點，
+         不必也不該補間（模擬層就是這樣定義它的位置的）。 */
       var player = vfxPointOf('pv-float', state.layer);
       if (player) {
-        state.x = player.x - state.w / 2;
-        state.y = player.y - state.h / 2;
+        state.baseX = player.x - state.w / 2;
+        state.baseY = player.y - state.h / 2;
+        state.offX = 0; state.offY = 0;
       }
-      state.lastAt = now;
-      vfxFieldMotionApply(node, state);
-      if (!node._vfxExpiresAt || node._vfxExpiresAt > now) vfxFieldMotionSchedule(node);
-      return;
     }
-    if (state.homing && state.speed > 0 && isFinite(state.targetX) && isFinite(state.targetY)) {
-      /* 追蹤冰箭用速度積分補足 DOM 的每幀位置，避免事件取樣形成階梯。 */
-      var elapsedHoming = Math.min(0.05, Math.max(0, now - (state.lastAt || now)) / 1000);
-      var centerX = state.x + state.w / 2;
-      var centerY = state.y + state.h / 2;
-      var dx = state.targetX - centerX, dy = state.targetY - centerY;
-      var distance = Math.sqrt(dx * dx + dy * dy);
-      var step = state.speed * elapsedHoming;
-      if (distance <= step || distance <= 0.5) {
-        centerX = state.targetX;
-        centerY = state.targetY;
-      } else if (distance > 0) {
-        centerX += dx / distance * step;
-        centerY += dy / distance * step;
-      }
-      state.x = centerX - state.w / 2;
-      state.y = centerY - state.h / 2;
-      state.lastAt = now;
-      vfxFieldMotionApply(node, state);
-      if (!node._vfxExpiresAt || node._vfxExpiresAt > now) vfxFieldMotionSchedule(node);
-      return;
-    }
-    var elapsed = Math.max(0, now - state.startedAt) / 1000;
-    var k = state.duration > 0 ? Math.min(1, elapsed / state.duration) : 1;
-    state.x = state.fromX + (state.toX - state.fromX) * k;
-    state.y = state.fromY + (state.toY - state.fromY) * k;
-    state.w = state.fromW + (state.toW - state.fromW) * k;
-    state.h = state.fromH + (state.toH - state.fromH) * k;
+    vfxFieldMotionStep(state, dt);
     vfxFieldMotionApply(node, state);
-    if (k < 1) vfxFieldMotionSchedule(node);
+    if (node._vfxExpiresAt && node._vfxExpiresAt <= now) return;
+    if (vfxFieldMotionBusy(state)) vfxFieldMotionSchedule(node);
   };
   if (typeof requestAnimationFrame === 'function') node._vfxFieldMotionHandle = requestAnimationFrame(frame);
   else node._vfxFieldMotionHandle = setTimeout(frame, 16);
 }
 
-function vfxFieldMotionSet(node, x, y, w, h, duration) {
+/* 每則事件：更新推算基準與運動語意。motion 就是事件的 area
+   （speed／moveA／destX／destY 由 skills2.sgGroundMotionFields 帶來，
+   這一拍靜止時整組不會出現，自走那一段自然就不會走）。 */
+function vfxFieldMotionSet(node, x, y, w, h, motion) {
   var state = node._vfxFieldMotion;
+  var nx = Number(x), ny = Number(y);
+  var nw = Math.max(1, Number(w)), nh = Math.max(1, Number(h));
   if (!state) {
     state = node._vfxFieldMotion = {
-      x: Number(x), y: Number(y), w: Math.max(1, Number(w)), h: Math.max(1, Number(h)),
-      fromX: Number(x), fromY: Number(y), fromW: Math.max(1, Number(w)), fromH: Math.max(1, Number(h)),
-      toX: Number(x), toY: Number(y), toW: Math.max(1, Number(w)), toH: Math.max(1, Number(h)),
-      baseW: Math.max(1, Number(w)), baseH: Math.max(1, Number(h)),
-      startedAt: Date.now(), duration: 0
+      x: nx, y: ny, w: nw, h: nh, toW: nw, toH: nh,
+      baseX: nx, baseY: ny, offX: 0, offY: 0,
+      baseSizeW: nw, baseSizeH: nh,
+      speed: 0, moveA: NaN, destX: NaN, destY: NaN,
+      lastAt: Date.now()
     };
   } else {
     state.followPlayer = false;
-    state.homing = false;
-    state.fromX = state.x;
-    state.fromY = state.y;
-    state.fromW = state.w;
-    state.fromH = state.h;
-    state.toX = Number(x);
-    state.toY = Number(y);
-    state.toW = Math.max(1, Number(w));
-    state.toH = Math.max(1, Number(h));
-    state.startedAt = Date.now();
-    state.duration = vfxFieldMotionSec({ dur: duration }, 0.35);
+    var prevX = state.baseX + state.offX, prevY = state.baseY + state.offY;
+    state.baseX = nx;
+    state.baseY = ny;
+    state.offX = prevX - nx;
+    state.offY = prevY - ny;
+    if (Math.sqrt(state.offX * state.offX + state.offY * state.offY) > VFX_FIELD_MAX_RESIDUAL_PX) {
+      state.offX = 0; state.offY = 0;
+    }
+    state.toW = nw;
+    state.toH = nh;
   }
+  /* 場域的中心在 (x + w/2, y + h/2)：推算與修正都以左上角為準，
+     因此尺寸改變時中心會跟著走，與判定矩形一致。 */
+  var m = motion || null;
+  state.speed = (m && Number(m.speed) > 0) ? Number(m.speed) : 0;
+  state.moveA = (m && isFinite(Number(m.moveA))) ? Number(m.moveA) : NaN;
+  if (m && isFinite(Number(m.destX)) && isFinite(Number(m.destY))) {
+    /* 落點也是中心座標，換算成同一個左上角基準。 */
+    state.destX = Number(m.destX) - state.w / 2;
+    state.destY = Number(m.destY) - state.h / 2;
+  } else {
+    state.destX = NaN; state.destY = NaN;
+  }
+  state.x = state.baseX + state.offX;
+  state.y = state.baseY + state.offY;
   vfxFieldMotionApply(node, state);
-  if (state.duration > 0) vfxFieldMotionSchedule(node);
+  if (vfxFieldMotionBusy(state)) vfxFieldMotionSchedule(node);
 }
 
 function vfxFieldMotionFollowPlayer(node, layer) {
   if (!node || !node._vfxFieldMotion) return;
   var state = node._vfxFieldMotion;
   state.followPlayer = true;
-  state.homing = false;
+  state.speed = 0;
+  state.moveA = NaN;
   state.layer = layer;
-  state.lastAt = Date.now();
-  vfxFieldMotionSchedule(node);
-}
-
-function vfxFieldMotionHome(node, speed, targetX, targetY) {
-  if (!node || !node._vfxFieldMotion) return;
-  var state = node._vfxFieldMotion;
-  state.followPlayer = false;
-  state.homing = true;
-  state.speed = Math.max(0, Number(speed) || 0);
-  state.targetX = Number(targetX);
-  state.targetY = Number(targetY);
   state.lastAt = Date.now();
   vfxFieldMotionSchedule(node);
 }
@@ -1741,7 +1763,7 @@ function vfxMirePool(spec, layer, area, rect) {
   var ttl = Math.max(900, Number(spec.dur || 0.5) * 2400);
   var node = _vfxMirePools[key];
   if (node && node.parentNode === layer) {
-    vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.5));
+    vfxFieldMotionSet(node, x, y, w, h, area);
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
@@ -1749,7 +1771,7 @@ function vfxMirePool(spec, layer, area, rect) {
   node._vfxFieldVisual = vfxFieldVisual(node,
     'vfx-mire-pool' + (lava ? ' vfx-mire-lava' : '') + (poison ? ' vfx-mire-poison' : ''),
     spec, w, visualH);
-  vfxFieldMotionSet(node, x, y, w, h, 0);
+  vfxFieldMotionSet(node, x, y, w, h, null);
   var bubbles = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 3 : 5;
   for (var bi = 0; bi < bubbles; bi++) {
     var bubble = document.createElement('span');
@@ -1788,13 +1810,13 @@ function vfxThunderOrb(spec, layer, area, rect) {
   var ttl = Math.max(700, Number(spec.dur || 0.35) * 2400);
   var node = _vfxThunderOrbs[key];
   if (node && node.parentNode === layer) {
-    vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, vfxFieldMotionSec(spec, 0.35));
+    vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, area);
     node._vfxExpiresAt = Date.now() + ttl;
     return node;
   }
   node = vfxNode('vfx-field-motion', layer, null);
   node._vfxFieldVisual = vfxFieldVisual(node, 'vfx-thunder-orb', spec, d, d);
-  vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, 0);
+  vfxFieldMotionSet(node, cx - d / 2, cy - d / 2, d, d, null);
   var arcs = _vfxQuality === VFX_QUALITY_LEVELS.REDUCED ? 2 : 4;
   for (var ai = 0; ai < arcs; ai++) {
     var arc = document.createElement('span');
@@ -1839,7 +1861,7 @@ function vfxIceField(spec, layer, area, rect) {
   var ttl = Math.max(700, Number(spec.dur || 0.4) * 2400);
   var node = _vfxIceFields[key];
   if (node && node.parentNode === layer) {
-    vfxFieldMotionSet(node, x, y, w, h, vfxFieldMotionSec(spec, 0.4));
+    vfxFieldMotionSet(node, x, y, w, h, area);
     if (variant === 'blizzard') {
       vfxFieldMotionFollowPlayer(node, layer);
     }
@@ -1852,7 +1874,7 @@ function vfxIceField(spec, layer, area, rect) {
       : ((variant === 'wind-blade-homing') ? 'vfx-wind-homing' : 'vfx-ice-homing'));
   node = vfxNode('vfx-field-motion', layer, null);
   node._vfxFieldVisual = vfxFieldVisual(node, cls, spec, w, visualH);
-  vfxFieldMotionSet(node, x, y, w, h, 0);
+  vfxFieldMotionSet(node, x, y, w, h, null);
   if (variant === 'blizzard') {
     vfxFieldMotionFollowPlayer(node, layer);
   }
