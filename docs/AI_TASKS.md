@@ -22,8 +22,14 @@
   8. 狀態每跳（`combat.js` 合併送出）、普攻／敵方／潛力（`data.js VFX_COMBAT_DEFAULTS`）。
   9. index.html 載入三支 VFX 檔並 bump 全部改動檔的 `?v=`；Worker 資產版號同步。
   10. `tests/vfx-runtime.test.cjs` 20 條；`tests/vfx-curve-editor.test.cjs` 的 AXIS-1 改為驗真正的不變量；文件（協議、Core Schema、Workflow、PATCH）更新；Editor 加 Preset 下拉。
+  11. **環繞場域**（火狩星環／環體電球／虛空鋸刃）改由 Preset 播：軌道環＋沿環公轉的環繞體，
+      幾何與四條成長曲線對齊舊畫法，起始角改吃 `area.startAng`（與模擬層的接觸判定同角度）。
+  12. **高塔接上**（`js/vfx-tower.js`）：`.battle-scene` 疊第二個 Pixi 表面，共用同一個 Adapter，
+      只換座標來源（DOM 卡片人像）與尺寸規則（`profile`：scale／areaScale／skyScale／groundR）。
+      事件分流在 ui.js：野外 → 高塔疊層 → DOM 舊畫法。
 - 未完成：
-  1. **目視 QA**（人工）：Editor 抽樣截圖各家族、實機觀察普攻／火球／隕石／火牆／狀態光環。
+  1. **目視 QA**（人工）：Editor 抽樣截圖各家族、實機觀察普攻／火球／隕石／火牆／狀態光環，
+     以及高塔那三個縮放係數看起來對不對（要調就改 `js/vfx-tower.js` 的 `TOWER_PROFILE`）。
   2. `cast-buff-poison` 尚未被任何一列引用。
 - 驗證：`npm run build` 318 檔全過；`npm test` 與基線（2293 案例／12 條既有紅燈）比對；`config_tables --apply` 往返語意變更 0。
 - 已知風險：shipped 素材 4.49 MB 進 git（不進去的話 preset 解析不到貼圖）；`fill-vfx-cells.cjs` 會覆寫三張表的特效欄，使用者手改過的格子會被蓋掉；高塔（DOM）本輪不播 Preset。

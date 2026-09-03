@@ -431,6 +431,56 @@ test('RAIN-1 天降飛行物同時放下落點預警', function () {
 });
 
 /* ============================================================
+   PROFILE — 表面尺寸規則（高塔的卡片版面用）
+   ============================================================ */
+
+test('PROFILE-1 預設全部是 1：野外的行為與加入 profile 之前完全相同', function () {
+  const { adapter, log } = makeAdapter([unitPreset('hit-x')]);
+  adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-2'], vfx: { hit: 'hit-x' } });
+  adapter.update(1 / 60);
+  assert.equal(lastOf(log, 'fx').scaleX, 1);
+});
+
+test('PROFILE-2 scale 縮角色身上的東西、areaScale 縮帶 area 的東西', function () {
+  const { adapter, log } = makeAdapter([unitPreset('hit-x'), unitPreset('burst-x')],
+    { profile: { scale: 0.5, areaScale: 0.25 } });
+  adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-2'], vfx: { hit: 'hit-x' } });
+  adapter.update(1 / 60);
+  assert.equal(lastOf(log, 'fx').scaleX, 0.5, '受擊吃 scale');
+
+  adapter.tryPlay({ fxKind: 'burst', targets: ['mv-float-2'], area: { x: 0, y: 0, r: 200 }, vfx: { attack: 'burst-x' } });
+  adapter.update(1 / 60);
+  /* r 200 → 2 倍，再乘 areaScale 0.25 */
+  assert.equal(lastOf(log, 'fx').scaleX, 0.5, '範圍吃 areaScale');
+});
+
+test('PROFILE-3 skyScale 同時縮天降的體積與出生高度', function () {
+  const { adapter, log } = makeAdapter([unitPreset('bolt-x', 2)], { profile: { skyScale: 0.2 } });
+  adapter.tryPlay({
+    fxKind: 'rain', targets: ['mv-float-2'], travelMs: [400], vfx: { projectile: 'bolt-x' }
+  });
+  adapter.update(1 / 60);
+  const t = lastOf(log, 'fx');
+  assert.equal(+t.scaleX.toFixed(3), 0.2, '天降吃 skyScale');
+  /* 落點在 (300,50)；出生高度 500×0.2 = 100 → 起點 y ≈ -50，第一幀還在起點附近 */
+  assert.ok(t.y < 0, '出生點要跟著縮，否則會先看到一段空白才落下來，實際 y=' + Math.round(t.y));
+  assert.ok(t.y > -60, '縮完之後不該還在 500px 之外，實際 y=' + Math.round(t.y));
+});
+
+test('PROFILE-4 沒有 area 的場域：groundR > 0 時畫在目標腳底，否則退回舊畫法', function () {
+  const noArea = { fxKind: 'aura', variant: 'mire', dur: 0.5, targets: ['mv-float-2'], vfx: { ground: 'ground-x' } };
+  const plain = makeAdapter([unitPreset('ground-x', 1, true)]);
+  assert.equal(plain.adapter.tryPlay(noArea), false, '野外設定（groundR 0）維持退回');
+
+  const tower = makeAdapter([unitPreset('ground-x', 1, true)], { profile: { groundR: 70 } });
+  assert.equal(tower.adapter.tryPlay(noArea), true);
+  tower.adapter.update(1 / 60);
+  const t = lastOf(tower.log, 'zone');
+  assert.equal(t.x, 300, '畫在目標腳底（替身的 posOf 就是 (300,50)）');
+  assert.equal(+t.scaleX.toFixed(3), 0.7, '名目半徑 70 → scale 0.7');
+});
+
+/* ============================================================
    STATUS — 狀態光環由 5Hz 快照 reconcile
    ============================================================ */
 

@@ -64,6 +64,41 @@ orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳�
 分組是 authoring metadata，不進 Preset／Runtime／shipped build，因此對畫面零影響。
 `tools/vfx/authoring/preset-kit.cjs` 的 `kit.write()` 已自動產生；既有檔案用 `kit.writeRootGroupLayout()` 補。
 
+## 1.2.2 表面尺寸規則（profile）
+
+Preset 是照**野外戰場**的名目尺寸畫的。換到別的版面就得整組縮放，而且不能用同一個數字：
+
+| 係數 | 管什麼 | 名目基準 | 高塔取值 |
+| --- | --- | --- | --- |
+| `scale` | 角色身上（受擊／施放／狀態光環／目標身上的攻擊本體） | 身高 60px | 1（卡片人像 72px、BOSS 84px，本來就接近） |
+| `areaScale` | 帶 `area` 的（範圍爆發、場域、環繞場域） | 半徑 100px（直徑 200） | 0.55（一張卡片只有 202px 寬） |
+| `skyScale` | 天降（`fxKind: 'rain'`），同時縮體積與出生高度 | 從 y=-500 落到原點 | 0.28（卡片可用高度約 140px） |
+| `groundR` | **沒有 `area`** 時場域改用的名目半徑 | — | 70（0＝維持退回舊畫法） |
+
+野外全部是預設值（1／1／1／0），因此加入 profile 之前之後行為完全相同。
+
+## 1.4 高塔：第二個表面
+
+高塔與野外是兩種版面：野外是俯視戰場（實體有世界座標、事件帶 `area`），
+高塔是 DOM 卡片版面（202px 玩家卡 ＋ VS ＋ BOSS 卡），實體**沒有座標**——
+`bfPos` 回 null ⇒ `sgAreaAround` 回 null ⇒ **高塔的事件 `area` 一律是 null**。
+
+因此 `js/vfx-tower.js` 只做兩件事：把卡片上的人像換算成座標（中心＝身體、下緣＝腳底），
+以及套上表 §1.2.2 的高塔 profile。播放邏輯完全共用同一個 Adapter。
+
+- 事件分流在 `js/ui.js`：野外（`BattleRenderer.wantsVfx`）→ 高塔疊層（`VFXTower.onVfx`）
+  → `playCombatVfx` 的 DOM 舊畫法。疊層回 false 就換下一條，與野外「缺主要角色就退回」同規則。
+- 疊層是懶啟動：第一則高塔事件觸發組裝（Pixi init ＋ 抓 preset），那一則本身走 DOM。
+- **面板量不到尺寸就不接手**：分頁不在高塔時整塊是 `display:none`，DOM 矩形全是 0，
+  接手等於把特效畫在原點又擋掉 DOM 退路。
+- 狀態光環由 `renderTowerFight` 每次重繪時 `VFXTower.sync(player, boss)` reconcile；
+  收起戰鬥區時 `VFXTower.stop()` 清乾淨，但保留 App 與已載入的 preset（下一場不必重抓）。
+- 疊層 z-index 3，壓在 DOM 浮字（`.float-layer` z-index 5）之下——傷害數字必須看得見。
+
+**沒有共用 battle-renderer 那個 Pixi Application**：它掛在野外棋盤景上、有自己的相機與
+世界容器，而高塔是另一塊 DOM、另一套座標系；共用一個 stage 等於要在同一個相機底下
+維護兩套互不相干的座標，比多開一個 App 更難維護。
+
 ## 1.3 Skills2 的「列」怎麼決定
 
 每一發特效屬於表上的某一列。發送端在 `extra` 標明：
@@ -111,6 +146,8 @@ orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳�
   「表格引用的 preset 都存在且合法」「shipped 涵蓋所有 preset 用到的素材」
   「每份 preset 都有單一根群組的 layout」。
 - Editor：topbar 加 Preset 下拉（server `/__presets` ＋ `<select>`），151 份可直接切換。
+- **高塔疊層**（`js/vfx-tower.js`）：在 `#tower-fight .battle-scene` 上疊第二個 Pixi 表面，
+  用同一個 Adapter，只換 `ctx`（DOM 卡片 → 座標）與 `profile`（尺寸規則）。見 §1.4。
 - **環繞場域**（火狩星環、環體電球、虛空鋸刃）：軌道環走 zone 層、N 個環繞體走 fx 層，
   依 `area.id` 合併與續命、團數多退少補、到期整組收掉（上限 12 秒，與舊畫法同一個值）。
   幾何與四條成長曲線（環半徑 `grow`／`growMax`、螺旋 `spiral`／`spiralLag`、
@@ -138,8 +175,9 @@ orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳�
 3. 名目尺寸只以 `kit.probe` 的 bbox 核對過，anchor 不置中的圖層（天降柱、沿 +X 的光束與光槍、
    扇形）probe 量到的是「以中心計」的框，實際位置要靠目視確認。
 
-已知範圍限制：高塔（DOM 路徑 `js/vfx.js`）沒有 Pixi，本輪不播 Preset，維持舊畫法；
-之後可在高塔 `.battle-scene` 疊一層透明 Pixi 畫布再接同一個 Adapter。
+高塔已於 2026-09-03 接上（§1.4）：`.battle-scene` 上疊第二個 Pixi 表面、共用同一個 Adapter，
+只換座標來源與尺寸規則。組裝失敗、面板量不到尺寸、或這一則缺主要角色時，
+仍然整則退回 `js/vfx.js` 的 DOM 畫法。
 
 ---
 
