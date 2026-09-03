@@ -1629,6 +1629,67 @@ var BattleRenderer = (function () {
     return wrap;
   }
 
+  /* ---- 轉彎不折角：以「進場航向」為起始切線的二次貝茲（AI_RULES 8.3.1）----
+     連鎖彈射（飛刀彈射、水球彈跳、毒霧／寒霜傳染）與迴旋飛刀都是「飛到 A 再飛到 B」。
+     每一段各自畫直線的話，轉折處的方向會在一幀之內整個換掉——那就是硬折角；
+     迴旋飛刀更是直接 180 度原路折返。
+     改成二次貝茲：起點切線＝上一段的航向、終點仍是模擬層的目標點、飛行時間仍是
+     事件帶來的 travelMs，因此路徑彎了但抵達時刻一點都沒變，傷害數字與畫面到達
+     仍然同一刻（AI_RULES 8.3）。
+     進場角度必須夾住：正對後方時三個控制點共線，貝茲會退化成「沿原路倒退再前進」，
+     比硬折角更糟；夾到上限之後仍然是一道連續的弧。
+     常數與 Preset 端 js/vfx-runtime.js 的 CURVE_* 取同一組值。 */
+  var CURVE_ENTRY_MAX_RAD = Math.PI * 2 / 3;   // 進場航向與弦的最大夾角
+  var LOOP_RETURN_SIDE = 1;                    // 迴旋飛刀固定往同一側繞（手勢一致）
+  var CURVE_HANDLE_RATIO = 0.55;               // 控制點離起點多遠（弦長的比例）
+  function curveControl(fromX, fromY, toX, toY, enterAngle) {
+    if (!isFinite(enterAngle)) return null;
+    var dx = toX - fromX, dy = toY - fromY;
+    var chord = Math.sqrt(dx * dx + dy * dy);
+    if (!(chord > 1e-6)) return null;
+    var chordAng = Math.atan2(dy, dx);
+    var diff = Math.atan2(Math.sin(enterAngle - chordAng), Math.cos(enterAngle - chordAng));
+    if (Math.abs(diff) < 1e-3) return null;    // 本來就對著目標＝直線，不必彎
+    var a = chordAng + Math.max(-CURVE_ENTRY_MAX_RAD, Math.min(CURVE_ENTRY_MAX_RAD, diff));
+    return {
+      x: fromX + Math.cos(a) * chord * CURVE_HANDLE_RATIO,
+      y: fromY + Math.sin(a) * chord * CURVE_HANDLE_RATIO
+    };
+  }
+  /* 二次貝茲的座標與切線；ctrl 為 null 時退化成直線（與加入轉彎之前完全相同）。 */
+  function curveAt(fromV, ctrlV, toV, k) {
+    if (ctrlV === null) return fromV + (toV - fromV) * k;
+    var u = 1 - k;
+    return u * u * fromV + 2 * u * k * ctrlV + k * k * toV;
+  }
+  function curveHeading(fromX, fromY, ctrl, toX, toY, k) {
+    if (!ctrl) return Math.atan2(toY - fromY, toX - fromX);
+    var u = 1 - k;
+    return Math.atan2(2 * u * (ctrl.y - fromY) + 2 * k * (toY - ctrl.y),
+      2 * u * (ctrl.x - fromX) + 2 * k * (toX - ctrl.x));
+  }
+  /* 三次貝茲：迴旋弧需要「起始切線與上一段同向、又要繞回起點附近」。
+     二次貝茲只有一個控制點，這種折返會讓三點共線而退化成原路倒退。 */
+  function cubicAt(p0, p1, p2, p3, k) {
+    var u = 1 - k;
+    return u * u * u * p0 + 3 * u * u * k * p1 + 3 * u * k * k * p2 + k * k * k * p3;
+  }
+  /* 機身朝向追上實際航向的時間常數：轉彎時刀鋒要跟著彎，但不能一幀轉到底。 */
+  var PROJECTILE_FACING_TAU_SEC = 0.05;
+  /* 預判落點的低通時間常數。projectileTargetPoint 的速度是用兩個 5Hz 取樣估的，
+     因此它是**階梯函數**：目標一停下來，速度整段掉到 0，預判點會在一幀之內
+     往回跳一整段（速度 × 預判時間）。彈體位置是預判點的函數，那一跳就直接
+     變成畫面上的瞬移。這裡讓每顆彈體自己低通一份預判點，跳變因此被攤平成
+     一段連續的修正；命中仍以實際座標判定（projectileNearTarget）。 */
+  var PROJECTILE_AIM_TAU_SEC = 0.1;
+  /* 逐幀把預判點拉向最新的權威預判；第一次呼叫直接就位。 */
+  function projectileAimStep(aim, want, dt) {
+    if (!aim || !isFinite(aim.x)) return { x: want.x, y: want.y };
+    aim.x = fieldApproach(aim.x, want.x, dt, PROJECTILE_AIM_TAU_SEC);
+    aim.y = fieldApproach(aim.y, want.y, dt, PROJECTILE_AIM_TAU_SEC);
+    return aim;
+  }
+
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride, pathOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
@@ -1675,6 +1736,11 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(node);
 
     var dur = Math.max(60, projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 300)) / 1000;
+    /* 進場航向：連鎖彈射的第二段起由呼叫端給上一段的航向，路徑因此是一條
+       連續彎過去的線，而不是每個彈射點折一次角。第一段沒有上一段＝直線。 */
+    var enterAngle = pathOverride && isFinite(Number(pathOverride.enterAngle))
+      ? Number(pathOverride.enterAngle) : NaN;
+    var facing = NaN, aim = null;
     var t = 0, trailAcc = 0, arrived = false;
     addFx({
       node: node,
@@ -1685,14 +1751,21 @@ var BattleRenderer = (function () {
           x: from.x + Math.cos(path.angle) * path.length,
           y: from.y + Math.sin(path.angle) * path.length
         } : posOf(targetId);
-        var to = path && !path.loopReturn ? targetNow : projectileTargetPoint(targetId, Math.max(0, dur - t));
-        node.x = lerp(from.x, to.x, k);
+        var to = path && !path.loopReturn ? targetNow
+          : projectileAimStep(aim, projectileTargetPoint(targetId, Math.max(0, dur - t)), dt);
+        if (!path || path.loopReturn) aim = to;
+        var ctrl = curveControl(from.x, from.y, to.x, to.y, enterAngle);
+        node.x = curveAt(from.x, ctrl ? ctrl.x : null, to.x, k);
         /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。
            水流彈的拋物線高度由模擬層的表定值決定（spec.arcM，米）——弧高是設計數值，
            顯示層不得自己挑一個固定 px（AI_RULES 8.3）。沒帶 arcM 就沿用原本的 18px 微弧。 */
-        node.y = lerp(from.y, to.y, k) -
+        node.y = curveAt(from.y, ctrl ? ctrl.y : null, to.y, k) -
           (isSmallFireball ? 0 : Math.sin(k * Math.PI) * projectileArcPx(spec));
-        node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
+        var wantFacing = curveHeading(from.x, from.y, ctrl, to.x, to.y, k);
+        facing = isFinite(facing)
+          ? fieldApproachAngle(facing, wantFacing, dt, PROJECTILE_FACING_TAU_SEC)
+          : wantFacing;
+        node.rotation = facing;
         if (path && path.loopReturn) {
           if (isKnifeProjectile) {
             var returnOrigin = playerMuzzle();
@@ -1705,19 +1778,33 @@ var BattleRenderer = (function () {
               returnLength = 1;
             }
             var penetration = Math.max(42, Math.min(96, returnLength * 0.25));
-            var throughX = targetNow.x + returnDx / returnLength * penetration;
-            var throughY = targetNow.y + returnDy / returnLength * penetration;
+            var outAng = Math.atan2(returnDy, returnDx);
+            var throughX = targetNow.x + Math.cos(outAng) * penetration;
+            var throughY = targetNow.y + Math.sin(outAng) * penetration;
             var outbound = k < 0.5;
-            var q = outbound ? k * 2 : (k - 0.5) * 2;
-            node.x = lerp(outbound ? from.x : throughX, outbound ? throughX : targetNow.x, q);
-            node.y = lerp(outbound ? from.y : throughY, outbound ? throughY : targetNow.y, q);
-            var nextK = Math.min(1, k + 0.01);
-            var nextOutbound = nextK < 0.5;
-            var nextQ = nextOutbound ? nextK * 2 : (nextK - 0.5) * 2;
-            var nextX = lerp(nextOutbound ? from.x : throughX,
-              nextOutbound ? throughX : targetNow.x, nextQ);
-            var nextY = lerp(nextOutbound ? from.y : throughY,
-              nextOutbound ? throughY : targetNow.y, nextQ);
+            if (outbound) {
+              /* 前半段是貫穿：直線飛過目標。 */
+              var q = k * 2;
+              node.x = lerp(from.x, throughX, q);
+              node.y = lerp(from.y, throughY, q);
+            } else {
+              /* 後半段是迴旋：起始切線與貫穿同向（在銜接處不折角），
+                 再從側邊繞回目標。原本是把方向 180 度反轉直接飛回來——
+                 那在畫面上就是一幀之內整把刀翻面（AI_RULES 8.3.1）。 */
+              var q2 = (k - 0.5) * 2;
+              var hookR = Math.max(28, penetration * 0.9);
+              var sideAng = outAng + LOOP_RETURN_SIDE * Math.PI / 2;
+              var c1x = throughX + Math.cos(outAng) * hookR;
+              var c1y = throughY + Math.sin(outAng) * hookR;
+              var c2x = targetNow.x + Math.cos(sideAng) * hookR;
+              var c2y = targetNow.y + Math.sin(sideAng) * hookR;
+              node.x = cubicAt(throughX, c1x, c2x, targetNow.x, q2);
+              node.y = cubicAt(throughY, c1y, c2y, targetNow.y, q2);
+              var aheadQ = Math.min(1, q2 + 0.01);
+              var nextX = cubicAt(throughX, c1x, c2x, targetNow.x, aheadQ);
+              var nextY = cubicAt(throughY, c1y, c2y, targetNow.y, aheadQ);
+            }
+            if (outbound) { nextX = throughX; nextY = throughY; }
           } else {
             var loopRadius = Math.max(24, projectileArcPx(spec));
             var loopAngle = Math.PI * 2 * k;
@@ -1727,7 +1814,14 @@ var BattleRenderer = (function () {
             var nextX = targetNow.x + Math.sin(loopNextAngle) * loopRadius;
             var nextY = targetNow.y - (1 - Math.cos(loopNextAngle)) * loopRadius;
           }
-          node.rotation = Math.atan2(nextY - node.y, nextX - node.x);
+          /* 朝向同樣連續逼近，轉折處不會瞬間翻面。 */
+          var loopFacing = Math.atan2(nextY - node.y, nextX - node.x);
+          if (Math.abs(nextX - node.x) + Math.abs(nextY - node.y) > 1e-6) {
+            facing = isFinite(facing)
+              ? fieldApproachAngle(facing, loopFacing, dt, PROJECTILE_FACING_TAU_SEC)
+              : loopFacing;
+          }
+          node.rotation = facing;
         }
         if (core && core._flameUpdate) core._flameUpdate(dt);
         if (core && core._fireballUpdate) core._fireballUpdate(dt);
@@ -1740,7 +1834,7 @@ var BattleRenderer = (function () {
         if (k >= 1 || (!path && projectileNearTarget(node.x, node.y, targetId))) {
           if (!arrived) {
             arrived = true;
-            if (onArrive) onArrive(targetNow);
+            if (onArrive) onArrive(targetNow, facing);
           }
           return false;
         }
@@ -1787,7 +1881,9 @@ var BattleRenderer = (function () {
       })(c);
     }
   }
-  /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。 */
+  /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。
+     散開點就是貝茲的控制點，因此整段是一條連續的弧，沒有「先停再彈出去」的折點。 */
+  var BARRAGE_EASE_LINEAR = 0.35;   // 進度曲線裡線性項的比重（其餘為二次項）
   function spawnBarrageMissile(targetId, spec, side, lane, delaySec, travelMs) {
     var theme = themeOf(spec);
     var origin = playerMuzzle();
@@ -1816,7 +1912,7 @@ var BattleRenderer = (function () {
 
     var dur = Math.max(0.42 / projectileSpeedMultiplier(),
       projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 360) / 1000);
-    var t = -(delaySec || 0), trailAcc = 0;
+    var t = -(delaySec || 0), trailAcc = 0, facing = NaN, aim = null;
     addFx({
       node: node,
       update: function (dt) {
@@ -1824,24 +1920,24 @@ var BattleRenderer = (function () {
         if (t < 0) { node.visible = false; return true; }
         node.visible = true;
         var k = Math.min(1, t / dur);
-        var x, y, q;
         var targetNow = posOf(targetId);
-        var targetAim = projectileTargetPoint(targetId, Math.max(0, dur - t));
-        if (k < 0.38) {
-          q = k / 0.38;
-          q = q * q * (3 - 2 * q);
-          x = lerp(start.x, turn.x, q);
-          y = lerp(start.y, turn.y, q);
-        } else {
-          q = (k - 0.38) / 0.62;
-          q = q * q;
-          x = lerp(turn.x, targetAim.x, q);
-          y = lerp(turn.y, targetAim.y, q);
-        }
-        var aheadX = k < 0.38 ? turn.x : targetAim.x;
-        var aheadY = k < 0.38 ? turn.y : targetAim.y;
+        var targetAim = projectileAimStep(aim,
+          projectileTargetPoint(targetId, Math.max(0, dur - t)), dt);
+        aim = targetAim;
+        /* 一條二次貝茲走完「向後散開 → 過彎 → 追向目標」。
+           原本是兩段各自補間、在 turn 點接起來：兩段的緩動都在接點收斂到零速度，
+           光球會在過彎處停一下再彈出去——那個停頓就是不平滑的轉彎（AI_RULES 8.3.1）。
+           進度曲線用線性與二次的混合：起步不是零速度（不會在出手處呆住），
+           後段仍然加速衝向目標。 */
+        var q = k * (BARRAGE_EASE_LINEAR + (1 - BARRAGE_EASE_LINEAR) * k);
+        var x = curveAt(start.x, turn.x, targetAim.x, q);
+        var y = curveAt(start.y, turn.y, targetAim.y, q);
         node.x = x; node.y = y;
-        node.rotation = Math.atan2(aheadY - y, aheadX - x);
+        var wantFacing = curveHeading(start.x, start.y, turn, targetAim.x, targetAim.y, q);
+        facing = isFinite(facing)
+          ? fieldApproachAngle(facing, wantFacing, dt, PROJECTILE_FACING_TAU_SEC)
+          : wantFacing;
+        node.rotation = facing;
         trailAcc += dt;
         if (trailAcc > Math.max(0.035, trailIntervalSec()) && !REDUCED_MOTION) {
           trailAcc = 0;
@@ -4423,6 +4519,25 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
+  /* 連鎖彈射的進場航向：這一跳的起點就是上一跳的終點，因此上一跳的方向
+     ＝從「上上個節點」指向「上一個節點」。第一跳的上一段是玩家射出去的那一段。
+     交給 spawnProjectile 之後，整條鏈是一條連續彎過去的線，
+     而不是每個彈射點在一幀之內折一次角（AI_RULES 8.3.1）。 */
+  function chainEnterAngle(targets, hopIndex) {
+    var to = posOf(targets[hopIndex - 1]);
+    var from = hopIndex >= 2 ? posOf(targets[hopIndex - 2]) : playerMuzzle();
+    var dx = to.x - from.x, dy = to.y - from.y;
+    return (Math.abs(dx) + Math.abs(dy) > 1e-3) ? Math.atan2(dy, dx) : NaN;
+  }
+
+  /* 傳染型（毒霧／寒霜擴散）的進場航向：那幾發是從被打中的敵人身上再散出去的，
+     上一段就是「玩家 → 來源」的那一段。 */
+  function spreadEnterAngle(origin) {
+    var muzzle = playerMuzzle();
+    var dx = origin.x - muzzle.x, dy = origin.y - muzzle.y;
+    return (Math.abs(dx) + Math.abs(dy) > 1e-3) ? Math.atan2(dy, dx) : NaN;
+  }
+
   function handleChainVfx(targets, spec, baseDelay, stagger) {
     if (!targets.length && !S.player) return;
     /* 連鎖閃電：一則事件＝一段電弧，時間點由模擬層的 delayMs 決定（傷害同一刻）。
@@ -4460,7 +4575,7 @@ var BattleRenderer = (function () {
             spawnProjectile(toId, hopTravel, spec, function (pt) {
               spawnImpact(pt.x, pt.y, spec, false);
               hitReact(toId, spec.elem, false);
-            }, posOf(fromId));
+            }, posOf(fromId), { enterAngle: chainEnterAngle(targets, hopIndex) });
           }, startDelay);
         })(kb, chainStart, hopTravel);
         chainStart += hopTravel;
@@ -4470,6 +4585,7 @@ var BattleRenderer = (function () {
     if (spec.variant === 'poison-spread') {
       var pOriginPos = targets.length > 1 ? posOf(targets[0]) : playerPos();
       var pSpreadTargets = targets.length > 1 ? targets.slice(1) : targets;
+      var pEnter = spreadEnterAngle(pOriginPos);
       for (var psi = 0; psi < pSpreadTargets.length; psi++) {
         (function (tgtId) {
           setTimeout(function () {
@@ -4478,7 +4594,7 @@ var BattleRenderer = (function () {
             spawnProjectile(tgtId, 80, pSpec, function (pt) {
               spawnImpact(pt.x, pt.y, pSpec, false);
               hitReact(tgtId, 'poison', false, true);
-            }, pOriginPos);
+            }, pOriginPos, { enterAngle: pEnter });
           }, baseDelay);
         })(pSpreadTargets[psi]);
       }
@@ -4497,7 +4613,7 @@ var BattleRenderer = (function () {
             spawnProjectile(toId, hopTravel, wSpec, function (pt) {
               spawnImpact(pt.x, pt.y, wSpec, false);
               hitReact(toId, 'ice', false);
-            }, posOf(fromId));
+            }, posOf(fromId), { enterAngle: chainEnterAngle(targets, hopIndex) });
           }, startDelay);
         })(wb, wChainStart, wHopTravel);
         wChainStart += wHopTravel;
@@ -4507,6 +4623,7 @@ var BattleRenderer = (function () {
     if (spec.variant === 'frost-spread') {
       var fOriginPos = targets.length > 1 ? posOf(targets[0]) : playerPos();
       var fSpreadTargets = targets.length > 1 ? targets.slice(1) : targets;
+      var fEnter = spreadEnterAngle(fOriginPos);
       for (var fsi = 0; fsi < fSpreadTargets.length; fsi++) {
         (function (tgtId) {
           setTimeout(function () {
@@ -4515,7 +4632,7 @@ var BattleRenderer = (function () {
             spawnProjectile(tgtId, 80, fSpec, function (pt) {
               spawnImpact(pt.x, pt.y, fSpec, false);
               hitReact(tgtId, 'ice', false);
-            }, fOriginPos);
+            }, fOriginPos, { enterAngle: fEnter });
           }, baseDelay);
         })(fSpreadTargets[fsi]);
       }

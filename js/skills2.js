@@ -3841,20 +3841,30 @@ function sgGroundChaseStep(f, step, enemies) {
 
 /* 游走場域（超神【永劫火獄】）：在出生點半徑 wanderM 的圓內隨機挑落點，
    抵達（或落點失效）就重抽一個，因此不會像雷球那樣抵達後停駐。
-   圓心固定為出生座標而不是當下位置，才不會隨機漫步漂到 20 米之外。 */
+   圓心固定為出生座標而不是當下位置，才不會隨機漫步漂到範圍之外。
+
+   轉彎與追擊場域共用同一條規則（sgGroundChaseStep）：一步能轉的角度＝
+   這一步的弧長 ÷ 轉彎半徑。直接把方向對準新落點的話，火龍捲會在每個落點
+   原地折一次角——那是實際判定位置的硬轉彎，顯示層再平滑也補不出一個本來
+   就不存在的弧（AI_RULES 8.3.1）。 */
 function sgGroundWanderStep(f, step) {
   if (!f.home) f.home = { x: f.pos.x, y: f.pos.y };
   if (!f.dest) f.dest = sgGroundWanderDest(f);
   var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
   var dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist <= step || dist <= 0.5) {
-    f.pos.x = f.dest.x; f.pos.y = f.dest.y;
+  var want = Math.atan2(dy, dx);
+  if (!isFinite(f.moveAngle)) f.moveAngle = want;
+  var turnR = sgGroundTurnRadiusPx(f);
+  var diff = Math.atan2(Math.sin(want - f.moveAngle), Math.cos(want - f.moveAngle));
+  var maxTurn = turnR > 0 ? step / turnR : Math.PI;
+  f.moveAngle += Math.max(-maxTurn, Math.min(maxTurn, diff));
+  /* 換下一個落點：走到了，或落點已經掉進自己的迴轉圈內又不在正前方——
+     最小轉彎半徑限制下那種落點永遠繞不進去，硬追只會變成繞著它打轉。 */
+  if (dist <= step || dist <= 0.5 || (dist <= turnR && Math.abs(diff) > Math.PI / 2)) {
     f.dest = sgGroundWanderDest(f);
-    return;
   }
-  f.moveAngle = Math.atan2(dy, dx);
-  f.pos.x += dx / dist * step;
-  f.pos.y += dy / dist * step;
+  f.pos.x += Math.cos(f.moveAngle) * step;
+  f.pos.y += Math.sin(f.moveAngle) * step;
 }
 
 /* 圓內均勻取點（sqrt 是為了讓面積均勻，否則會擠在圓心）。 */

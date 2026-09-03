@@ -245,6 +245,64 @@ test('MOVE-2 連鎖段從前一個目標出發，不是從玩家', function () {
   assert.ok(t.x >= 100 && t.x < 300, '起點是 mv-float-1（x=100），不是玩家（x=0），收到：' + t.x);
 });
 
+/* AI_RULES 8.3.1：轉彎不得折角。連鎖的第二段起要接上一段的航向，
+   整條鏈因此是一條連續彎過去的線，而不是每個彈射點在一幀之內折一次角。 */
+test('MOVE-2c 連鎖的下一段以上一段的航向為起始切線（不折角）', function () {
+  const { adapter, log } = makeAdapter([unitPreset('proj-x', 4)]);
+  const chain = (a, b) => ({
+    fxKind: 'chain', targets: [a, b], travelMs: [0, 400], vfx: { projectile: 'proj-x' }
+  });
+  /* 第一段：玩家(0,0) → mv-float-1(100,50)，航向約 +27 度。 */
+  adapter.tryPlay({ fxKind: 'projectile', targets: ['mv-float-1'], travelMs: [200],
+    vfx: { projectile: 'proj-x' } });
+  for (let i = 0; i < 14; i++) adapter.update(1 / 60);   // 飛完並記下抵達航向
+  assert.equal(adapter.stats().projectiles, 0, '第一段要先抵達');
+
+  /* 第二段：mv-float-1(100,50) → mv-float-2(300,50)，弦是正右方。
+     若照直線畫，方向會在銜接處從 +27 度跳到 0 度；接上航向之後，
+     出發的頭幾幀必須仍朝著上一段的方向（也就是 y 要先繼續往下走）。 */
+  adapter.tryPlay(chain('mv-float-1', 'mv-float-2'));
+  adapter.update(1 / 60);
+  const first = lastOf(log, 'fx');
+  assert.ok(first.y > 50 + 0.05,
+    '轉彎要從上一段的航向切出去（y 應先繼續往下），收到 y=' + first.y);
+
+  /* 終點仍是模擬層的目標點、抵達時刻仍是事件的 travelMs：路徑彎了，時序不變。 */
+  for (let i = 0; i < 21; i++) adapter.update(1 / 60);
+  assert.equal(adapter.stats().projectiles, 1, 'travelMs 之前還在飛');
+  for (let i = 0; i < 3; i++) adapter.update(1 / 60);
+  assert.equal(adapter.stats().projectiles, 0, '仍在 travelMs 那一刻抵達');
+  const last = lastOf(log, 'fx');
+  assert.ok(Math.abs(last.x - 300) < 1 && Math.abs(last.y - 50) < 1,
+    '終點仍是目標座標，收到 ' + last.x + ',' + last.y);
+});
+
+/* 沿路不得有折角，也不得有「停一下再彈出去」的近乎靜止點。 */
+test('MOVE-2d 連鎖的轉彎路徑處處連續（沒有折角、沒有停頓）', function () {
+  const { adapter, log } = makeAdapter([unitPreset('proj-x', 4)]);
+  adapter.tryPlay({ fxKind: 'projectile', targets: ['mv-float-1'], travelMs: [200],
+    vfx: { projectile: 'proj-x' } });
+  for (let i = 0; i < 14; i++) adapter.update(1 / 60);
+  adapter.tryPlay({ fxKind: 'chain', targets: ['mv-float-1', 'mv-float-2'],
+    travelMs: [0, 400], vfx: { projectile: 'proj-x' } });
+
+  const pts = [];
+  for (let i = 0; i < 24; i++) {
+    adapter.update(1 / 60);
+    const t = lastOf(log, 'fx');
+    pts.push({ x: t.x, y: t.y });
+  }
+  let maxTurn = 0, minStep = Infinity;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a1 = Math.atan2(pts[i].y - pts[i - 1].y, pts[i].x - pts[i - 1].x);
+    const a2 = Math.atan2(pts[i + 1].y - pts[i].y, pts[i + 1].x - pts[i].x);
+    maxTurn = Math.max(maxTurn, Math.abs(Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1))));
+    minStep = Math.min(minStep, Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  }
+  assert.ok(maxTurn < 0.25, '沿路不得有折角，實測最大單幀轉角 ' + maxTurn.toFixed(3));
+  assert.ok(minStep > 0.5, '路徑上不得出現近乎停止的點，實測最小步長 ' + minStep.toFixed(3));
+});
+
 test('MOVE-2b 敵方出手的投射物從攻擊者身上出發，不是從玩家', function () {
   const { adapter, log } = makeAdapter([unitPreset('proj-x', 2)]);
   adapter.tryPlay({
