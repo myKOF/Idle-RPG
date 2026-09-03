@@ -307,15 +307,115 @@ test('GROUND-2 事件停了之後場域會自己收掉（容忍一次遺失）',
   assert.equal(adapter.stats().grounds, 0, '久沒續命就收掉');
 });
 
-test('GROUND-3 環繞場域整則退回舊畫法（只播軌道環會弄丟環繞體）', function () {
-  const { adapter } = makeAdapter([unitPreset('ground-x', 1, true)]);
-  const ok = adapter.tryPlay({
-    fxKind: 'aura', variant: 'firehunt', dur: 0.5,
-    area: { id: 'orbit-1', x: 0, y: 0, r: 100, orbR: 20, orbs: 3, spin: 1 },
-    vfx: { ground: 'ground-x' }
+/* ============================================================
+   ORBIT — 環繞場域（軌道環 ＋ 沿環公轉的環繞體）
+   ============================================================ */
+
+/* 環繞事件：模擬層 sgOrbitEmitVfx 的形狀 */
+/* 環繞圓心＝玩家腳底往上 12px。替身的 ctx 沒有給 footOf，Adapter 會退回 posOf，
+   而 posOf('pv-float') 是 (0,0)——順帶驗到「沒有 footOf 就退回 posOf」這條相容規則。 */
+const ORBIT_CENTRE = { x: 0, y: -12 };
+function orbitRadius(t) {
+  const rx = t.x - ORBIT_CENTRE.x;
+  const ry = (t.y - ORBIT_CENTRE.y) / 0.62;
+  return Math.sqrt(rx * rx + ry * ry);
+}
+
+function orbitEvent(over) {
+  return Object.assign({
+    fxKind: 'aura', variant: 'firehunt', elem: 'fire', dur: 4,
+    area: { id: 'orbit-1', x: 0, y: 0, r: 100, orbR: 20, orbs: 3, spin: 1, spinRate: Math.PI },
+    vfx: { ground: 'ring-x', projectile: 'orb-x' }
+  }, over || {});
+}
+
+test('ORBIT-1 沒有環繞體 preset 就整則交還舊畫法（只畫軌道環會弄丟環繞體）', function () {
+  const { adapter } = makeAdapter([unitPreset('ring-x', 1, true)]);
+  const ok = adapter.tryPlay(orbitEvent({ vfx: { ground: 'ring-x' } }));
+  assert.equal(ok, false);
+  assert.equal(adapter.stats().orbits, 0);
+  assert.equal(adapter.stats().grounds, 0, '不能只留下軌道環');
+});
+
+test('ORBIT-2 軌道環進 zone 層、N 個環繞體進 fx 層，並沿橢圓公轉', function () {
+  const { adapter, log } = makeAdapter([unitPreset('ring-x', 1, true), unitPreset('orb-x', 1, true)]);
+  assert.equal(adapter.tryPlay(orbitEvent()), true);
+  assert.equal(adapter.stats().orbits, 1);
+  adapter.update(1 / 60);
+
+  const ring = lastOf(log, 'zone');
+  assert.equal(+ring.scaleX.toFixed(3), 1, '軌道環 scale = r/100');
+
+  /* 三團等分在半徑 100、縱向壓 0.62 的橢圓上 */
+  const orbs = log.updates.filter(u => u.tag === 'fx').slice(-3);
+  assert.equal(orbs.length, 3);
+  orbs.forEach(function (o) {
+    assert.ok(Math.abs(orbitRadius(o) - 100) < 1.5,
+      '環繞體要落在半徑 100 的橢圓上，實際 ' + Math.round(orbitRadius(o)));
+    assert.equal(+o.scaleX.toFixed(3), 1, '環繞體 scale = orbR/20');
   });
-  assert.equal(ok, false, '有 orbs 的場域必須交還舊畫法');
-  assert.equal(adapter.stats().grounds, 0);
+
+  /* 公轉：轉半圈（spinRate = π）之後位置必須變 */
+  const before = lastOf(log, 'fx');
+  adapter.update(1);
+  const after = lastOf(log, 'fx');
+  assert.ok(Math.abs(after.x - before.x) > 1 || Math.abs(after.y - before.y) > 1, '環繞體要動');
+});
+
+test('ORBIT-3 同一道的補送事件只續命，不會愈疊愈多團', function () {
+  const { adapter } = makeAdapter([unitPreset('ring-x', 1, true), unitPreset('orb-x', 1, true)]);
+  adapter.tryPlay(orbitEvent());
+  adapter.update(0.5);
+  const first = adapter.stats();
+  adapter.tryPlay(orbitEvent());               // 【再生】延長時模擬層會補送同一道
+  adapter.update(0.5);
+  const again = adapter.stats();
+  assert.equal(again.orbits, 1, '同一道只保留一組');
+  assert.equal(again.played, first.played, '沒有再建立新的環繞體');
+});
+
+test('ORBIT-4 團數變了就多退少補；到期整組收掉', function () {
+  const { adapter } = makeAdapter([unitPreset('ring-x', 1, true), unitPreset('orb-x', 1, true)]);
+  adapter.tryPlay(orbitEvent());
+  adapter.update(0.1);
+  adapter.tryPlay(orbitEvent({ area: { id: 'orbit-1', x: 0, y: 0, r: 100, orbR: 20, orbs: 5, spin: 1, spinRate: Math.PI } }));
+  adapter.update(0.1);
+  assert.equal(adapter.stats().orbits, 1);
+  adapter.update(12);                          // 超過 ORBIT_MAX_SEC
+  assert.equal(adapter.stats().orbits, 0, '到期整組收掉');
+});
+
+test('ORBIT-4b startAng 決定起始角：虛空鋸刃的每一片才不會疊在一起', function () {
+  const { adapter, log } = makeAdapter([unitPreset('ring-x', 20, true), unitPreset('orb-x', 20, true)]);
+  /* 模擬層 sgOrbitStep 算接觸用的就是 startAng + 2π·k/count，顯示層必須同角度。 */
+  adapter.tryPlay(orbitEvent({
+    dur: 12, area: { id: 'disc-0', x: 0, y: 0, r: 100, orbR: 20, orbs: 1, spin: 1, spinRate: 0, startAng: 0 }
+  }));
+  adapter.tryPlay(orbitEvent({
+    dur: 12, area: { id: 'disc-1', x: 0, y: 0, r: 100, orbR: 20, orbs: 1, spin: 1, spinRate: 0, startAng: Math.PI }
+  }));
+  adapter.update(1 / 60);
+  assert.equal(adapter.stats().orbits, 2, '兩片各自成組');
+  const last2 = log.updates.filter(u => u.tag === 'fx').slice(-2);
+  assert.ok(Math.abs(last2[0].x - last2[1].x) > 150,
+    '相差 180° 的兩片必須落在圓的兩側，實際 x 差 ' + Math.abs(last2[0].x - last2[1].x).toFixed(1));
+});
+
+test('ORBIT-5 半徑成長與體積成長沿用模擬層的曲線', function () {
+  /* preset 壽命要蓋過取樣時間，否則取樣那一幀圖層已經結束（visible:false，後端收不到 transform）。 */
+  const { adapter, log } = makeAdapter([unitPreset('ring-x', 20, true), unitPreset('orb-x', 20, true)]);
+  /* grow 40px/s、上限 200；體積 2 秒內長到 2 倍 */
+  adapter.tryPlay(orbitEvent({
+    dur: 12,
+    area: { id: 'g', x: 0, y: 0, r: 100, orbR: 20, orbs: 1, spin: 1, spinRate: 0, grow: 40, growMax: 200, orbGrowTo: 2, orbGrowSec: 2 }
+  }));
+  adapter.update(1);
+  const at1 = lastOf(log, 'fx');
+  assert.equal(+at1.scaleX.toFixed(2), 1.5, '1 秒時體積長到 1.5 倍');
+  assert.ok(Math.abs(orbitRadius(at1) - 140) < 2, '1 秒時環半徑 100 + 40 = 140，實際 ' + Math.round(orbitRadius(at1)));
+  adapter.update(5);
+  const at6 = lastOf(log, 'fx');
+  assert.ok(Math.abs(orbitRadius(at6) - 200) < 2, '外擴上限 200，實際 ' + Math.round(orbitRadius(at6)));
 });
 
 test('RAIN-1 天降飛行物同時放下落點預警', function () {

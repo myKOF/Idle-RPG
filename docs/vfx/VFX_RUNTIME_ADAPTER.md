@@ -111,6 +111,18 @@ orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳�
   「表格引用的 preset 都存在且合法」「shipped 涵蓋所有 preset 用到的素材」
   「每份 preset 都有單一根群組的 layout」。
 - Editor：topbar 加 Preset 下拉（server `/__presets` ＋ `<select>`），151 份可直接切換。
+- **環繞場域**（火狩星環、環體電球、虛空鋸刃）：軌道環走 zone 層、N 個環繞體走 fx 層，
+  依 `area.id` 合併與續命、團數多退少補、到期整組收掉（上限 12 秒，與舊畫法同一個值）。
+  幾何與四條成長曲線（環半徑 `grow`／`growMax`、螺旋 `spiral`／`spiralLag`、
+  體積 `orbGrowTo`／`orbGrowSec`、圈距 `rGrowTo`／`rGrowSec`）逐項對齊
+  `battle-renderer.spawnFireHunt`——那是模擬層實際判定接觸的那個圓，兩邊數字分家就會
+  出現「切 `?vfx=legacy` 前後大小不一樣」。圓心逐幀讀玩家腳底（往上 12px），
+  朝向取螢幕上的切線（橢圓壓扁 0.62 之後與 ang+90° 差得出來，拖尾會指錯邊）。
+  沒有環繞體 preset 時仍然整則交還舊畫法：只畫軌道環等於把環繞體弄不見。
+  ⚠️ 起始角吃 `area.startAng`（模擬層 `sgOrbitStep` 算接觸用的就是 `startAng + 2π·k/count`）。
+  舊畫法的 `spawnFireHunt` 沒有讀它，`spawnVoidDisc` 有——統一成讀它是刻意的：
+  虛空鋸刃是「一片盤一組環繞場域、靠 startAng 錯開」，忽略它四片會疊在一起。
+  因此 `?vfx=legacy` 與 Preset 兩邊在火狩上會有一個固定的旋轉相位差，那不是 bug。
 
 ## 尚未完成
 
@@ -119,11 +131,6 @@ orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳�
    （本輪已在 8331 驗到：Runtime 接上 145 份 preset、每一則事件都帶 `vfx`、
    53／53 事件由 Adapter 接手、0 退回、0 丟棄。但 Browser 面板隱藏時 rAF 不跑，
    畫面本身沒辦法看——那正是這一項要人做的原因。）
-1a. **環繞場域（火狩星環、電球、虛空鋸刃）目前整則退回舊畫法**：
-   它的畫面是「軌道環 ＋ 沿環公轉的 N 個環繞體」，環繞體要逐幀算公轉位置
-   （`orbs`／`spin`／`spinRate`／`startAng`／螺旋／體積成長）。Adapter 只播得出軌道環，
-   接手等於把環繞體弄不見，因此 `area.orbs > 0` 一律 `tryPlay` 回 false。
-   `orb-firehunt`／`orb-thunder`／`orb-void-disc` 三份 preset 已經做好，等這段補上就會用到。
 1b. **帶 `angle` 的方向型攻擊以突刺光槍的名目（100×36）換算**：
    目錄裡只有 `slash-thrust-lance` 是這個形狀。之後若有第二份方向型 attack preset
    而名目長度不同，要改成由 preset 自己宣告名目，而不是寫死在 Adapter。
