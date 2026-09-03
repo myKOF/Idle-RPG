@@ -14,9 +14,11 @@ const fs = require('fs');
 const path = require('path');
 const REPO = path.resolve(__dirname, '..', '..', '..').replace(/\\/g, '/');
 const VFXCore = require(REPO + '/js/vfx-core.js');
+const VFXLayoutSchema = require(REPO + '/tools/vfx/editor/layout-schema.js');
 const INDEX = JSON.parse(fs.readFileSync(REPO + '/vfx/asset-index.json', 'utf8'));
 const ASSETS = new Set(INDEX.assets.map(a => a.assetId));
 const PRESET_DIR = REPO + '/vfx/presets';
+const LAYOUT_DIR = REPO + '/vfx/layouts';
 
 function assertAsset(id, where) {
   if (ASSETS.has(id)) return id;
@@ -319,7 +321,26 @@ function write(preset) {
   if (!res.ok) throw new Error('preset ' + p.id + ' 不合法：\n  - ' + res.errors.join('\n  - '));
   const text = VFXCore.serialisePreset(p);
   fs.writeFileSync(path.join(PRESET_DIR, p.id + '.json'), text, 'utf8');
+  writeRootGroupLayout(p);
   return p.id;
+}
+
+/* 單一根群組（使用者規則 2026-09-03）：每份 Preset 的所有圖層一律收進**一個**群組。
+   理由是 Editor 之後要能同時開啟多份特效一起編輯——那時候「一列＝一個特效」才分得開，
+   散落在根層級的圖層會混成一鍋。分組是 authoring metadata（vfx/layouts/<id>.json），
+   不進 Preset、不進 Runtime，因此這條規則對畫面零影響（見 editor/layout-schema.js 檔頭）。
+   群組 id／名稱一律取 preset id：多份特效同時打開時，列表上要一眼看出這一組是誰的。 */
+function writeRootGroupLayout(p) {
+  const layout = {
+    schemaVersion: VFXLayoutSchema.SCHEMA_VERSION,
+    presetId: p.id,
+    groups: [{ id: p.id, name: p.id, layerIds: p.layers.map(l => l.id) }],
+    order: ['group:' + p.id]
+  };
+  const res = VFXLayoutSchema.validateLayout(layout);
+  if (!res.ok) throw new Error('layout ' + p.id + ' 不合法：\n  - ' + res.errors.join('\n  - '));
+  if (!fs.existsSync(LAYOUT_DIR)) fs.mkdirSync(LAYOUT_DIR, { recursive: true });
+  fs.writeFileSync(path.join(LAYOUT_DIR, p.id + '.json'), VFXLayoutSchema.serialiseLayout(layout), 'utf8');
 }
 
 /* 粗略檢查：用 NullBackend 模擬，回報每一幀最大的節點數與位置範圍，方便核對名目尺寸 */
@@ -345,4 +366,4 @@ function probe(id, opts) {
   return { id: id, layers: preset.layers.length, bbox: { x: [Math.round(minX), Math.round(maxX)], y: [Math.round(minY), Math.round(maxY)] }, maxParticles: maxNodes, duration: preset.duration, loop: preset.loop };
 }
 
-module.exports = { A, T, C, px, deg, sprite, particle, procedural, write, probe, assertAsset, ASSETS, REPO };
+module.exports = { A, T, C, px, deg, sprite, particle, procedural, write, writeRootGroupLayout, probe, assertAsset, ASSETS, REPO };

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "presetId": "lightning-orb-field-b",
+  "groups": [
+    {
+      "id": "lightning-orb-field-b",
+      "name": "lightning-orb-field-b",
+      "layerIds": [
+        "field-glow",
+        "orb-a-glow",
+        "orb-a-body",
+        "orb-a-core",
+        "orb-a-arc",
+        "orb-b-glow",
+        "orb-b-body",
+        "orb-b-core",
+        "orb-b-arc",
+        "orb-c-glow",
+        "orb-c-body",
+        "orb-c-core",
+        "orb-c-arc",
+        "orb-d-glow",
+        "orb-d-body",
+        "orb-d-core",
+        "orb-d-arc",
+        "orb-e-glow",
+        "orb-e-body",
+        "orb-e-core",
+        "orb-e-arc",
+        "orb-f-glow",
+        "orb-f-body",
+        "orb-f-core",
+        "orb-f-arc",
+        "orb-g-glow",
+        "orb-g-body",
+        "orb-g-core",
+        "orb-g-arc",
+        "sparkles"
+      ]
+    }
+  ],
+  "order": [
+    "group:lightning-orb-field-b"
+  ]
+}

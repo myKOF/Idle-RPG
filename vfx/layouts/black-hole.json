@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "presetId": "black-hole",
+  "groups": [
+    {
+      "id": "black-hole",
+      "name": "black-hole",
+      "layerIds": [
+        "outer-glow",
+        "accretion-outer",
+        "swirl-outer",
+        "swirl-inner",
+        "inflow-w",
+        "inflow-n",
+        "inflow-e",
+        "inflow-s",
+        "debris",
+        "accretion-inner",
+        "event-horizon",
+        "photon-ring"
+      ]
+    }
+  ],
+  "order": [
+    "group:black-hole"
+  ]
+}

@@ -18,10 +18,25 @@ node -e "const c=require('./tools/vfx/authoring/vfx-catalog.cjs');for(const [id,
 ```
 
 1. 讀簡述與名目尺寸（`nominal`），對照 `scratch/vfx-inventory/asset-palette.txt` 挑素材（描述是實際看圖寫的，檔名會騙人）。
-2. 寫 `author/<family>.cjs`，用 `kit.write({ id, duration, loop, layers: [...] })`。
+2. 寫 `author/<family>.cjs`，用 `kit.write({ id, duration, loop, layers: [...] })`
+   （`kit.write` 會一併寫出 `vfx/layouts/<id>.json`，見下方「單一根群組」）。
 3. `kit.probe(id)` 核對 bbox 與名目尺寸（受擊≈±40px、爆發／地板半徑 100px、天降 y∈[-500,0]、狀態 y∈[-70,10]）。
 4. `node tools/vfx/export-assets.cjs` 匯出素材、`node --test tests/vfx-core.test.cjs tests/vfx-editor-save.test.cjs` 驗證合法且 canonical。
 5. 開 Editor 目視：`啟動VFX編輯器.bat <preset-id>`。
+
+## 單一根群組（使用者規則 2026-09-03）
+
+**每份 Preset 做好之後，它的所有圖層一律收進「一個」群組。**
+
+原因：Editor 之後要能同時打開多份特效一起編輯，那時候「一列＝一個特效」才分得開；
+散在根層級的圖層會和別的特效混成一鍋。
+
+- 分組資料在 `vfx/layouts/<presetId>.json`（authoring metadata），**不進 Preset、不進 Runtime、不進 shipped build**，
+  因此這條規則對畫面零影響（設計理由見 `tools/vfx/editor/layout-schema.js` 檔頭）。
+- `kit.write()` 已自動照做：群組 `id` 與 `name` 都取 preset id（多份同時打開時要一眼看得出這一組是誰的）。
+- 手動補既有 preset：`kit.writeRootGroupLayout(presetJson)`。
+- Layout schema 目前沒有巢狀群組，因此「一個特效一個群組」就是扁平的一層；
+  真的需要再細分時，請在 Editor 裡自己拆，不要改這條預設規則。
 
 慣例（Runtime 依此縮放，做錯尺寸整批都會播錯）：+X 向右、+Y 向下、原點＝錨點；
 飛行物朝 +X 飛；光束／連鎖段沿 +X 長 200px；天降從 y≈-500 落到原點；

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "demo-basic",
+  "groups": [
+    {
+      "id": "demo-basic",
+      "name": "demo-basic",
+      "layerIds": [
+        "ground-ring",
+        "smoke",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:demo-basic"
+  ]
+}

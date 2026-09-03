@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-dark",
+  "groups": [
+    {
+      "id": "hit-dark",
+      "name": "hit-dark",
+      "layerIds": [
+        "vortex",
+        "darkcore",
+        "halo",
+        "ring",
+        "flash",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-dark"
+  ]
+}

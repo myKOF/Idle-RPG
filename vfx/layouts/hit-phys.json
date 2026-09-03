@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-phys",
+  "groups": [
+    {
+      "id": "hit-phys",
+      "name": "hit-phys",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-phys"
+  ]
+}

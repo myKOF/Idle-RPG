@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-earth",
+  "groups": [
+    {
+      "id": "hit-earth",
+      "name": "hit-earth",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "dust",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-earth"
+  ]
+}

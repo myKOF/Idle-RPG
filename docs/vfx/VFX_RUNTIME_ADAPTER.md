@@ -57,6 +57,13 @@ hit／cast／curse：目標身高 60px、主體約 40px；burst／ground 圓形�
 beam／chain 段：沿 +X 長 200px；projectile：朝 +X、主體約 40px（火球、隕石另註）；bolt：從 y=-500 落到原點；
 orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳底原點、身高 60px。
 
+## 1.2.1 單一根群組（使用者規則 2026-09-03）
+
+每份 Preset 的所有圖層一律收進**一個**群組，寫在 `vfx/layouts/<presetId>.json`（群組 id／name 都取 preset id）。
+理由是 Editor 之後要能同時打開多份特效一起編輯，「一列＝一個特效」才分得開。
+分組是 authoring metadata，不進 Preset／Runtime／shipped build，因此對畫面零影響。
+`tools/vfx/authoring/preset-kit.cjs` 的 `kit.write()` 已自動產生；既有檔案用 `kit.writeRootGroupLayout()` 補。
+
 ## 1.3 Skills2 的「列」怎麼決定
 
 每一發特效屬於表上的某一列。發送端在 `extra` 標明：
