@@ -3841,20 +3841,30 @@ function sgGroundChaseStep(f, step, enemies) {
 
 /* 游走場域（超神【永劫火獄】）：在出生點半徑 wanderM 的圓內隨機挑落點，
    抵達（或落點失效）就重抽一個，因此不會像雷球那樣抵達後停駐。
-   圓心固定為出生座標而不是當下位置，才不會隨機漫步漂到 20 米之外。 */
+   圓心固定為出生座標而不是當下位置，才不會隨機漫步漂到範圍之外。
+
+   轉彎與追擊場域共用同一條規則（sgGroundChaseStep）：一步能轉的角度＝
+   這一步的弧長 ÷ 轉彎半徑。直接把方向對準新落點的話，火龍捲會在每個落點
+   原地折一次角——那是實際判定位置的硬轉彎，顯示層再平滑也補不出一個本來
+   就不存在的弧（AI_RULES 8.3.1）。 */
 function sgGroundWanderStep(f, step) {
   if (!f.home) f.home = { x: f.pos.x, y: f.pos.y };
   if (!f.dest) f.dest = sgGroundWanderDest(f);
   var dx = f.dest.x - f.pos.x, dy = f.dest.y - f.pos.y;
   var dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist <= step || dist <= 0.5) {
-    f.pos.x = f.dest.x; f.pos.y = f.dest.y;
+  var want = Math.atan2(dy, dx);
+  if (!isFinite(f.moveAngle)) f.moveAngle = want;
+  var turnR = sgGroundTurnRadiusPx(f);
+  var diff = Math.atan2(Math.sin(want - f.moveAngle), Math.cos(want - f.moveAngle));
+  var maxTurn = turnR > 0 ? step / turnR : Math.PI;
+  f.moveAngle += Math.max(-maxTurn, Math.min(maxTurn, diff));
+  /* 換下一個落點：走到了，或落點已經掉進自己的迴轉圈內又不在正前方——
+     最小轉彎半徑限制下那種落點永遠繞不進去，硬追只會變成繞著它打轉。 */
+  if (dist <= step || dist <= 0.5 || (dist <= turnR && Math.abs(diff) > Math.PI / 2)) {
     f.dest = sgGroundWanderDest(f);
-    return;
   }
-  f.moveAngle = Math.atan2(dy, dx);
-  f.pos.x += dx / dist * step;
-  f.pos.y += dy / dist * step;
+  f.pos.x += Math.cos(f.moveAngle) * step;
+  f.pos.y += Math.sin(f.moveAngle) * step;
 }
 
 /* 圓內均勻取點（sqrt 是為了讓面積均勻，否則會擠在圓心）。 */
@@ -4054,6 +4064,33 @@ function sgGroundVfxShape(f) {
   return { fxKind: 'impact', variant: 'pillar', elem: 'fire', dur: f.gap, area: area };
 }
 
+/* 這一拍場域到底有沒有在動。sgGroundMove 的三條分支各有各的「停」：
+   追擊沒有落點時仍沿最後方向直線飛（停下來就等於不再命中任何東西）；
+   飛向落點與游走則是沒有落點＝已經停駐。 */
+function sgGroundMoving(f) {
+  if (!f.pos || !(f.speed > 0)) return false;
+  if (f.chaseM > 0) return true;
+  return !!f.dest;
+}
+
+/* 移動場域的運動語意（顯示層專用，不參與傷害幾何）。
+   AI_RULES 8.3.1：事件必須帶足以重現這段連續運動的資料，否則顯示層只拿得到
+   一串離散座標，畫出來就是一格一格。三個欄位各有職責：
+     speed  模擬層當下的移動速度        moveA  當下的航向（追擊是有轉彎半徑的）
+     destX/destY  落點（等速直線飛向落點的場域抵達後就停駐，畫面要跟著停）
+   顯示層據此在兩則事件之間自走，再把殘差連續修正回 area.x/y——
+   不得由顯示層另建一條與傷害位置脫節的路徑。 */
+function sgGroundMotionFields(f, out) {
+  if (!sgGroundMoving(f)) return out;
+  out.speed = f.speed;
+  if (isFinite(f.moveAngle)) out.moveA = f.moveAngle;
+  if (f.dest) {
+    out.destX = f.dest.x;
+    out.destY = f.dest.y;
+  }
+  return out;
+}
+
 /* 場域的地面範圍描述（顯示層用）。矩形場域帶 w/h/a 讓顯示層畫出方向正確的矩形；
    同時附上 r（外接圓半徑）讓不認得矩形的舊畫法仍有合理的退化尺寸。 */
 function sgGroundArea(f) {
@@ -4061,20 +4098,10 @@ function sgGroundArea(f) {
   if (f.length > 0 && f.width > 0) {
     var rect = { id: f.vfxId, x: f.pos.x, y: f.pos.y, w: f.length, h: f.width,
       a: sgGroundRectAxis(f), r: Math.max(f.length, f.width) / 2 };
-    /* 顯示層的跟隨／追蹤只讀這些欄位，不參與傷害幾何：
-       暴風雪每幀直接貼玩家的畫面座標；冰箭／風刃只以 area.x/y
-       在兩次模擬快照之間補間，destX／destY／speed 僅保留方向語意，
-       不得由顯示層另建一條與傷害位置脫節的追擊路徑。 */
+    /* 跟隨我方的場域（暴風雪）圓心恆等於玩家座標：顯示層每幀直接貼玩家錨點，
+       不必也不該補間。 */
     if (f.follow) rect.follow = true;
-    /* thunderwall（雷電矩陣的雷幕）同樣要帶落點與速度：它是等速直線橫掃，
-       顯示層拿這三個值就能在兩則事件之間完全重現同一段運動（AI_RULES 8.3.1），
-       不必也不得自己另外編一條路徑。 */
-    if ((f.kind === 'icearrow' || f.kind === 'windblade' || f.kind === 'thunderwall') && f.dest) {
-      rect.destX = f.dest.x;
-      rect.destY = f.dest.y;
-      rect.speed = f.speed;
-    }
-    return rect;
+    return sgGroundMotionFields(f, rect);
   }
   var circle = { id: f.vfxId, x: f.pos.x, y: f.pos.y, r: f.radius };
   /* 泥沼池系列的畫法（毒爆／血霧沿用它）只讀 a.w／a.h，完全不讀 a.r：
@@ -4086,17 +4113,7 @@ function sgGroundArea(f) {
     circle.h = f.radius * 2;
   }
   if (f.follow) circle.follow = true;
-  if (f.kind === 'windblade' && f.dest) {
-    circle.destX = f.dest.x;
-    circle.destY = f.dest.y;
-    circle.speed = f.speed;
-  }
-  if (f.kind === 'icearrow' && f.dest) {
-    circle.destX = f.dest.x;
-    circle.destY = f.dest.y;
-    circle.speed = f.speed;
-  }
-  return circle;
+  return sgGroundMotionFields(f, circle);
 }
 
 /* 烈焰衝擊：場域消失時以場域當下位置為圓心重新查詢 6 米範圍。 */

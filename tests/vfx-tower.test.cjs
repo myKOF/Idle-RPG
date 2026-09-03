@@ -68,7 +68,7 @@ test('TOWER-5 index.html 在 ui.js 之前載入疊層，且版號有跟著改', 
   assert.ok(at.tower > 0, 'index.html 要載入 js/vfx-tower.js');
   assert.ok(at.tower < at.ui, '疊層要在 ui.js 之前——ui.js 的分流會直接用到它');
   /* 版號釘住：改了檔卻沒換版號，測試者會跑到快取舊檔。 */
-  assert.match(html, /js\/vfx-runtime\.js\?v=1\.0\.2/);
+  assert.match(html, /js\/vfx-runtime\.js\?v=1\.0\.3/);
   assert.match(html, /js\/vfx-tower\.js\?v=1\.0\.0/);
   assert.match(html, /js\/ui\.js\?v=1\.0\.58/);
 });

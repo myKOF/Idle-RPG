@@ -245,6 +245,64 @@ test('MOVE-2 連鎖段從前一個目標出發，不是從玩家', function () {
   assert.ok(t.x >= 100 && t.x < 300, '起點是 mv-float-1（x=100），不是玩家（x=0），收到：' + t.x);
 });
 
+/* AI_RULES 8.3.1：轉彎不得折角。連鎖的第二段起要接上一段的航向，
+   整條鏈因此是一條連續彎過去的線，而不是每個彈射點在一幀之內折一次角。 */
+test('MOVE-2c 連鎖的下一段以上一段的航向為起始切線（不折角）', function () {
+  const { adapter, log } = makeAdapter([unitPreset('proj-x', 4)]);
+  const chain = (a, b) => ({
+    fxKind: 'chain', targets: [a, b], travelMs: [0, 400], vfx: { projectile: 'proj-x' }
+  });
+  /* 第一段：玩家(0,0) → mv-float-1(100,50)，航向約 +27 度。 */
+  adapter.tryPlay({ fxKind: 'projectile', targets: ['mv-float-1'], travelMs: [200],
+    vfx: { projectile: 'proj-x' } });
+  for (let i = 0; i < 14; i++) adapter.update(1 / 60);   // 飛完並記下抵達航向
+  assert.equal(adapter.stats().projectiles, 0, '第一段要先抵達');
+
+  /* 第二段：mv-float-1(100,50) → mv-float-2(300,50)，弦是正右方。
+     若照直線畫，方向會在銜接處從 +27 度跳到 0 度；接上航向之後，
+     出發的頭幾幀必須仍朝著上一段的方向（也就是 y 要先繼續往下走）。 */
+  adapter.tryPlay(chain('mv-float-1', 'mv-float-2'));
+  adapter.update(1 / 60);
+  const first = lastOf(log, 'fx');
+  assert.ok(first.y > 50 + 0.05,
+    '轉彎要從上一段的航向切出去（y 應先繼續往下），收到 y=' + first.y);
+
+  /* 終點仍是模擬層的目標點、抵達時刻仍是事件的 travelMs：路徑彎了，時序不變。 */
+  for (let i = 0; i < 21; i++) adapter.update(1 / 60);
+  assert.equal(adapter.stats().projectiles, 1, 'travelMs 之前還在飛');
+  for (let i = 0; i < 3; i++) adapter.update(1 / 60);
+  assert.equal(adapter.stats().projectiles, 0, '仍在 travelMs 那一刻抵達');
+  const last = lastOf(log, 'fx');
+  assert.ok(Math.abs(last.x - 300) < 1 && Math.abs(last.y - 50) < 1,
+    '終點仍是目標座標，收到 ' + last.x + ',' + last.y);
+});
+
+/* 沿路不得有折角，也不得有「停一下再彈出去」的近乎靜止點。 */
+test('MOVE-2d 連鎖的轉彎路徑處處連續（沒有折角、沒有停頓）', function () {
+  const { adapter, log } = makeAdapter([unitPreset('proj-x', 4)]);
+  adapter.tryPlay({ fxKind: 'projectile', targets: ['mv-float-1'], travelMs: [200],
+    vfx: { projectile: 'proj-x' } });
+  for (let i = 0; i < 14; i++) adapter.update(1 / 60);
+  adapter.tryPlay({ fxKind: 'chain', targets: ['mv-float-1', 'mv-float-2'],
+    travelMs: [0, 400], vfx: { projectile: 'proj-x' } });
+
+  const pts = [];
+  for (let i = 0; i < 24; i++) {
+    adapter.update(1 / 60);
+    const t = lastOf(log, 'fx');
+    pts.push({ x: t.x, y: t.y });
+  }
+  let maxTurn = 0, minStep = Infinity;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a1 = Math.atan2(pts[i].y - pts[i - 1].y, pts[i].x - pts[i - 1].x);
+    const a2 = Math.atan2(pts[i + 1].y - pts[i].y, pts[i + 1].x - pts[i].x);
+    maxTurn = Math.max(maxTurn, Math.abs(Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1))));
+    minStep = Math.min(minStep, Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  }
+  assert.ok(maxTurn < 0.25, '沿路不得有折角，實測最大單幀轉角 ' + maxTurn.toFixed(3));
+  assert.ok(minStep > 0.5, '路徑上不得出現近乎停止的點，實測最小步長 ' + minStep.toFixed(3));
+});
+
 test('MOVE-2b 敵方出手的投射物從攻擊者身上出發，不是從玩家', function () {
   const { adapter, log } = makeAdapter([unitPreset('proj-x', 2)]);
   adapter.tryPlay({
@@ -285,7 +343,7 @@ test('MOVE-3 帶飛行物的事件，受擊爆點等它抵達才播', function (
    GROUND — 場域依 area.id 合併與續命
    ============================================================ */
 
-test('GROUND-1 同一個 area.id 的連續事件只維持一份，並更新位置', function () {
+test('GROUND-1 同一個 area.id 的連續事件只維持一份，並追上最新位置', function () {
   const { adapter, log } = makeAdapter([unitPreset('ground-x', 1, true)]);
   const ev = (x) => ({ fxKind: 'aura', area: { id: 'sg-ground-7', x, y: 0, r: 100 }, dur: 0.5, vfx: { ground: 'ground-x' } });
   adapter.tryPlay(ev(10));
@@ -295,7 +353,83 @@ test('GROUND-1 同一個 area.id 的連續事件只維持一份，並更新位�
   adapter.update(0.1);
   assert.equal(adapter.stats().grounds, 1, '合併成同一份');
   assert.equal(log.nodes.length, nodesAfterFirst, '沒有重建節點');
-  assert.equal(lastOf(log, 'zone').x, 60, '位置跟著最新一則事件走');
+  /* 事件不得把畫面直接搬到新座標：那就是一格一格的來源。 */
+  const oneFrame = lastOf(log, 'zone').x;
+  assert.ok(oneFrame > 10 && oneFrame < 60, '一幀內只能逐步逼近，不得瞬移：' + oneFrame);
+  for (let i = 0; i < 60; i++) adapter.update(1 / 60);
+  assert.ok(Math.abs(lastOf(log, 'zone').x - 60) < 0.5, '足夠的時間後要完全追上權威座標');
+});
+
+/* AI_RULES 8.3.1：移動場域不得把離散事件畫成一格一格的跳動。
+   事件的到達節奏本身就不均匀（Worker 是批次送出的，場域另有自己的節拍），
+   而雷球那種節拍（每 0.35 秒一則）比「逼近所需的時間」還長——只做逼近的話
+   會追上、停住、再衝一段。這裡用時間對不齊的事件序列回放，釘住兩件事：
+   畫面每一幀都在走，而且走的速度就是模擬層的速度。 */
+test('GROUND-1b 事件到達節奏不均時，畫面仍以模擬層的速度連續前進', function () {
+  const { adapter, log } = makeAdapter([unitPreset('ground-x', 1, true)]);
+  /* 雷球的量級：速度 60px/s、節拍 0.35s、沿 +X 直線飛向 300px 外的落點。
+     事件被 0.2s 的批次量化後，到達時刻與它描述的模擬時刻對不齊。 */
+  const SPEED = 60, FRAME = 1 / 60, DEST = 300;
+  const packets = [
+    { at: 0.4, simT: 0.4 }, { at: 0.8, simT: 0.7 },
+    { at: 1.2, simT: 1.1 }, { at: 1.4, simT: 1.4 }, { at: 1.8, simT: 1.75 }
+  ];
+  let next = 0;
+  const xs = [];
+  for (let frame = 1; frame <= 120; frame++) {
+    while (next < packets.length && packets[next].at <= frame * FRAME) {
+      adapter.tryPlay({
+        fxKind: 'aura', dur: 0.35,
+        area: { id: 'orb-1', x: packets[next].simT * SPEED, y: 0, r: 30,
+          speed: SPEED, moveA: 0, destX: DEST, destY: 0 },
+        vfx: { ground: 'ground-x' }
+      });
+      next++;
+    }
+    adapter.update(FRAME);
+    const at = lastOf(log, 'zone');
+    if (at) xs.push(at.x);          // 第一則事件之前場域還不存在
+  }
+  /* 出生的那一幀畫面值＝權威值（沒有推算歷史），不計入步長統計。 */
+  const steps = xs.slice(2).map((v, i) => v - xs[i + 1]);
+  assert.ok(steps.every((d) => d > 1e-6), '每一幀都要在前進，不得出現靜止畫格');
+  /* 修正殘差時仍必須把速度壓在行進速度附近（GROUND_CORRECT_MAX_RATIO），
+     否則就算沒有靜止畫格，畫面一樣是忽快忽慢。 */
+  const perFrame = SPEED * FRAME;
+  assert.ok(Math.max.apply(null, steps) <= perFrame * 1.31,
+    '單幀位移不得遠超過模擬層的速度（那就是在瞬移補距離）');
+  assert.ok(Math.min.apply(null, steps) >= perFrame * 0.69,
+    '也不得慢到近乎停頓：兩則事件之間要靠推算自走撐住');
+});
+
+/* 抵達落點就停駐（雷球飛到定點後停留）：事件不再帶 dest，畫面也必須停。 */
+test('GROUND-1c 落點抵達後畫面跟著停駐，不會自己飄過頭', function () {
+  const { adapter, log } = makeAdapter([unitPreset('ground-x', 1, true)]);
+  const moving = { fxKind: 'aura', dur: 0.35, vfx: { ground: 'ground-x' },
+    area: { id: 'orb-2', x: 0, y: 0, r: 30, speed: 60, moveA: 0, destX: 30, destY: 0 } };
+  adapter.tryPlay(moving);
+  for (let i = 0; i < 60; i++) adapter.update(1 / 60);
+  assert.ok(Math.abs(lastOf(log, 'zone').x - 30) < 1, '自走到落點就停，不越過');
+  /* 停駐後的事件不帶運動語意。 */
+  adapter.tryPlay({ fxKind: 'aura', dur: 0.35, vfx: { ground: 'ground-x' },
+    area: { id: 'orb-2', x: 30, y: 0, r: 30 } });
+  for (let i = 0; i < 60; i++) adapter.update(1 / 60);
+  assert.ok(Math.abs(lastOf(log, 'zone').x - 30) < 0.5, '停駐後不得再前進');
+});
+
+/* 場域半徑的擴增（沼澤漫延、烈陽星環）同樣不得一拍跳一級。 */
+test('GROUND-1d 半徑擴增是逐幀逼近，不是每則事件跳一級', function () {
+  const { adapter, log } = makeAdapter([unitPreset('ground-x', 1, true)]);
+  const ev = (r) => ({ fxKind: 'aura', dur: 0.5, vfx: { ground: 'ground-x' },
+    area: { id: 'mire-1', x: 0, y: 0, r } });
+  adapter.tryPlay(ev(100));
+  adapter.update(0.1);
+  adapter.tryPlay(ev(200));
+  adapter.update(1 / 60);
+  const oneFrame = lastOf(log, 'zone').scaleX;
+  assert.ok(oneFrame > 1 && oneFrame < 2, '一幀之內只能逼近一部分：' + oneFrame);
+  for (let i = 0; i < 60; i++) adapter.update(1 / 60);
+  assert.ok(Math.abs(lastOf(log, 'zone').scaleX - 2) < 0.01, '足夠的時間後要完全追上');
 });
 
 test('GROUND-2 事件停了之後場域會自己收掉（容忍一次遺失）', function () {

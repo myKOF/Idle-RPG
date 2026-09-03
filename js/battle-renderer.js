@@ -1629,6 +1629,67 @@ var BattleRenderer = (function () {
     return wrap;
   }
 
+  /* ---- 轉彎不折角：以「進場航向」為起始切線的二次貝茲（AI_RULES 8.3.1）----
+     連鎖彈射（飛刀彈射、水球彈跳、毒霧／寒霜傳染）與迴旋飛刀都是「飛到 A 再飛到 B」。
+     每一段各自畫直線的話，轉折處的方向會在一幀之內整個換掉——那就是硬折角；
+     迴旋飛刀更是直接 180 度原路折返。
+     改成二次貝茲：起點切線＝上一段的航向、終點仍是模擬層的目標點、飛行時間仍是
+     事件帶來的 travelMs，因此路徑彎了但抵達時刻一點都沒變，傷害數字與畫面到達
+     仍然同一刻（AI_RULES 8.3）。
+     進場角度必須夾住：正對後方時三個控制點共線，貝茲會退化成「沿原路倒退再前進」，
+     比硬折角更糟；夾到上限之後仍然是一道連續的弧。
+     常數與 Preset 端 js/vfx-runtime.js 的 CURVE_* 取同一組值。 */
+  var CURVE_ENTRY_MAX_RAD = Math.PI * 2 / 3;   // 進場航向與弦的最大夾角
+  var LOOP_RETURN_SIDE = 1;                    // 迴旋飛刀固定往同一側繞（手勢一致）
+  var CURVE_HANDLE_RATIO = 0.55;               // 控制點離起點多遠（弦長的比例）
+  function curveControl(fromX, fromY, toX, toY, enterAngle) {
+    if (!isFinite(enterAngle)) return null;
+    var dx = toX - fromX, dy = toY - fromY;
+    var chord = Math.sqrt(dx * dx + dy * dy);
+    if (!(chord > 1e-6)) return null;
+    var chordAng = Math.atan2(dy, dx);
+    var diff = Math.atan2(Math.sin(enterAngle - chordAng), Math.cos(enterAngle - chordAng));
+    if (Math.abs(diff) < 1e-3) return null;    // 本來就對著目標＝直線，不必彎
+    var a = chordAng + Math.max(-CURVE_ENTRY_MAX_RAD, Math.min(CURVE_ENTRY_MAX_RAD, diff));
+    return {
+      x: fromX + Math.cos(a) * chord * CURVE_HANDLE_RATIO,
+      y: fromY + Math.sin(a) * chord * CURVE_HANDLE_RATIO
+    };
+  }
+  /* 二次貝茲的座標與切線；ctrl 為 null 時退化成直線（與加入轉彎之前完全相同）。 */
+  function curveAt(fromV, ctrlV, toV, k) {
+    if (ctrlV === null) return fromV + (toV - fromV) * k;
+    var u = 1 - k;
+    return u * u * fromV + 2 * u * k * ctrlV + k * k * toV;
+  }
+  function curveHeading(fromX, fromY, ctrl, toX, toY, k) {
+    if (!ctrl) return Math.atan2(toY - fromY, toX - fromX);
+    var u = 1 - k;
+    return Math.atan2(2 * u * (ctrl.y - fromY) + 2 * k * (toY - ctrl.y),
+      2 * u * (ctrl.x - fromX) + 2 * k * (toX - ctrl.x));
+  }
+  /* 三次貝茲：迴旋弧需要「起始切線與上一段同向、又要繞回起點附近」。
+     二次貝茲只有一個控制點，這種折返會讓三點共線而退化成原路倒退。 */
+  function cubicAt(p0, p1, p2, p3, k) {
+    var u = 1 - k;
+    return u * u * u * p0 + 3 * u * u * k * p1 + 3 * u * k * k * p2 + k * k * k * p3;
+  }
+  /* 機身朝向追上實際航向的時間常數：轉彎時刀鋒要跟著彎，但不能一幀轉到底。 */
+  var PROJECTILE_FACING_TAU_SEC = 0.05;
+  /* 預判落點的低通時間常數。projectileTargetPoint 的速度是用兩個 5Hz 取樣估的，
+     因此它是**階梯函數**：目標一停下來，速度整段掉到 0，預判點會在一幀之內
+     往回跳一整段（速度 × 預判時間）。彈體位置是預判點的函數，那一跳就直接
+     變成畫面上的瞬移。這裡讓每顆彈體自己低通一份預判點，跳變因此被攤平成
+     一段連續的修正；命中仍以實際座標判定（projectileNearTarget）。 */
+  var PROJECTILE_AIM_TAU_SEC = 0.1;
+  /* 逐幀把預判點拉向最新的權威預判；第一次呼叫直接就位。 */
+  function projectileAimStep(aim, want, dt) {
+    if (!aim || !isFinite(aim.x)) return { x: want.x, y: want.y };
+    aim.x = fieldApproach(aim.x, want.x, dt, PROJECTILE_AIM_TAU_SEC);
+    aim.y = fieldApproach(aim.y, want.y, dt, PROJECTILE_AIM_TAU_SEC);
+    return aim;
+  }
+
   function spawnProjectile(targetId, travelMs, spec, onArrive, fromOverride, pathOverride) {
     var theme = themeOf(spec);
     var from = fromOverride || playerMuzzle();
@@ -1675,6 +1736,11 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(node);
 
     var dur = Math.max(60, projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 300)) / 1000;
+    /* 進場航向：連鎖彈射的第二段起由呼叫端給上一段的航向，路徑因此是一條
+       連續彎過去的線，而不是每個彈射點折一次角。第一段沒有上一段＝直線。 */
+    var enterAngle = pathOverride && isFinite(Number(pathOverride.enterAngle))
+      ? Number(pathOverride.enterAngle) : NaN;
+    var facing = NaN, aim = null;
     var t = 0, trailAcc = 0, arrived = false;
     addFx({
       node: node,
@@ -1685,14 +1751,21 @@ var BattleRenderer = (function () {
           x: from.x + Math.cos(path.angle) * path.length,
           y: from.y + Math.sin(path.angle) * path.length
         } : posOf(targetId);
-        var to = path && !path.loopReturn ? targetNow : projectileTargetPoint(targetId, Math.max(0, dur - t));
-        node.x = lerp(from.x, to.x, k);
+        var to = path && !path.loopReturn ? targetNow
+          : projectileAimStep(aim, projectileTargetPoint(targetId, Math.max(0, dur - t)), dt);
+        if (!path || path.loopReturn) aim = to;
+        var ctrl = curveControl(from.x, from.y, to.x, to.y, enterAngle);
+        node.x = curveAt(from.x, ctrl ? ctrl.x : null, to.x, k);
         /* 火球術依使用者要求走真正直線；其他投射物保留原本的微弧線。
            水流彈的拋物線高度由模擬層的表定值決定（spec.arcM，米）——弧高是設計數值，
            顯示層不得自己挑一個固定 px（AI_RULES 8.3）。沒帶 arcM 就沿用原本的 18px 微弧。 */
-        node.y = lerp(from.y, to.y, k) -
+        node.y = curveAt(from.y, ctrl ? ctrl.y : null, to.y, k) -
           (isSmallFireball ? 0 : Math.sin(k * Math.PI) * projectileArcPx(spec));
-        node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
+        var wantFacing = curveHeading(from.x, from.y, ctrl, to.x, to.y, k);
+        facing = isFinite(facing)
+          ? fieldApproachAngle(facing, wantFacing, dt, PROJECTILE_FACING_TAU_SEC)
+          : wantFacing;
+        node.rotation = facing;
         if (path && path.loopReturn) {
           if (isKnifeProjectile) {
             var returnOrigin = playerMuzzle();
@@ -1705,19 +1778,33 @@ var BattleRenderer = (function () {
               returnLength = 1;
             }
             var penetration = Math.max(42, Math.min(96, returnLength * 0.25));
-            var throughX = targetNow.x + returnDx / returnLength * penetration;
-            var throughY = targetNow.y + returnDy / returnLength * penetration;
+            var outAng = Math.atan2(returnDy, returnDx);
+            var throughX = targetNow.x + Math.cos(outAng) * penetration;
+            var throughY = targetNow.y + Math.sin(outAng) * penetration;
             var outbound = k < 0.5;
-            var q = outbound ? k * 2 : (k - 0.5) * 2;
-            node.x = lerp(outbound ? from.x : throughX, outbound ? throughX : targetNow.x, q);
-            node.y = lerp(outbound ? from.y : throughY, outbound ? throughY : targetNow.y, q);
-            var nextK = Math.min(1, k + 0.01);
-            var nextOutbound = nextK < 0.5;
-            var nextQ = nextOutbound ? nextK * 2 : (nextK - 0.5) * 2;
-            var nextX = lerp(nextOutbound ? from.x : throughX,
-              nextOutbound ? throughX : targetNow.x, nextQ);
-            var nextY = lerp(nextOutbound ? from.y : throughY,
-              nextOutbound ? throughY : targetNow.y, nextQ);
+            if (outbound) {
+              /* 前半段是貫穿：直線飛過目標。 */
+              var q = k * 2;
+              node.x = lerp(from.x, throughX, q);
+              node.y = lerp(from.y, throughY, q);
+            } else {
+              /* 後半段是迴旋：起始切線與貫穿同向（在銜接處不折角），
+                 再從側邊繞回目標。原本是把方向 180 度反轉直接飛回來——
+                 那在畫面上就是一幀之內整把刀翻面（AI_RULES 8.3.1）。 */
+              var q2 = (k - 0.5) * 2;
+              var hookR = Math.max(28, penetration * 0.9);
+              var sideAng = outAng + LOOP_RETURN_SIDE * Math.PI / 2;
+              var c1x = throughX + Math.cos(outAng) * hookR;
+              var c1y = throughY + Math.sin(outAng) * hookR;
+              var c2x = targetNow.x + Math.cos(sideAng) * hookR;
+              var c2y = targetNow.y + Math.sin(sideAng) * hookR;
+              node.x = cubicAt(throughX, c1x, c2x, targetNow.x, q2);
+              node.y = cubicAt(throughY, c1y, c2y, targetNow.y, q2);
+              var aheadQ = Math.min(1, q2 + 0.01);
+              var nextX = cubicAt(throughX, c1x, c2x, targetNow.x, aheadQ);
+              var nextY = cubicAt(throughY, c1y, c2y, targetNow.y, aheadQ);
+            }
+            if (outbound) { nextX = throughX; nextY = throughY; }
           } else {
             var loopRadius = Math.max(24, projectileArcPx(spec));
             var loopAngle = Math.PI * 2 * k;
@@ -1727,7 +1814,14 @@ var BattleRenderer = (function () {
             var nextX = targetNow.x + Math.sin(loopNextAngle) * loopRadius;
             var nextY = targetNow.y - (1 - Math.cos(loopNextAngle)) * loopRadius;
           }
-          node.rotation = Math.atan2(nextY - node.y, nextX - node.x);
+          /* 朝向同樣連續逼近，轉折處不會瞬間翻面。 */
+          var loopFacing = Math.atan2(nextY - node.y, nextX - node.x);
+          if (Math.abs(nextX - node.x) + Math.abs(nextY - node.y) > 1e-6) {
+            facing = isFinite(facing)
+              ? fieldApproachAngle(facing, loopFacing, dt, PROJECTILE_FACING_TAU_SEC)
+              : loopFacing;
+          }
+          node.rotation = facing;
         }
         if (core && core._flameUpdate) core._flameUpdate(dt);
         if (core && core._fireballUpdate) core._fireballUpdate(dt);
@@ -1740,7 +1834,7 @@ var BattleRenderer = (function () {
         if (k >= 1 || (!path && projectileNearTarget(node.x, node.y, targetId))) {
           if (!arrived) {
             arrived = true;
-            if (onArrive) onArrive(targetNow);
+            if (onArrive) onArrive(targetNow, facing);
           }
           return false;
         }
@@ -1787,7 +1881,9 @@ var BattleRenderer = (function () {
       })(c);
     }
   }
-  /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。 */
+  /* 奧術彈幕：六顆光球先向玩家左右後方散開，過彎後以加速度追向目標。
+     散開點就是貝茲的控制點，因此整段是一條連續的弧，沒有「先停再彈出去」的折點。 */
+  var BARRAGE_EASE_LINEAR = 0.35;   // 進度曲線裡線性項的比重（其餘為二次項）
   function spawnBarrageMissile(targetId, spec, side, lane, delaySec, travelMs) {
     var theme = themeOf(spec);
     var origin = playerMuzzle();
@@ -1816,7 +1912,7 @@ var BattleRenderer = (function () {
 
     var dur = Math.max(0.42 / projectileSpeedMultiplier(),
       projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 360) / 1000);
-    var t = -(delaySec || 0), trailAcc = 0;
+    var t = -(delaySec || 0), trailAcc = 0, facing = NaN, aim = null;
     addFx({
       node: node,
       update: function (dt) {
@@ -1824,24 +1920,24 @@ var BattleRenderer = (function () {
         if (t < 0) { node.visible = false; return true; }
         node.visible = true;
         var k = Math.min(1, t / dur);
-        var x, y, q;
         var targetNow = posOf(targetId);
-        var targetAim = projectileTargetPoint(targetId, Math.max(0, dur - t));
-        if (k < 0.38) {
-          q = k / 0.38;
-          q = q * q * (3 - 2 * q);
-          x = lerp(start.x, turn.x, q);
-          y = lerp(start.y, turn.y, q);
-        } else {
-          q = (k - 0.38) / 0.62;
-          q = q * q;
-          x = lerp(turn.x, targetAim.x, q);
-          y = lerp(turn.y, targetAim.y, q);
-        }
-        var aheadX = k < 0.38 ? turn.x : targetAim.x;
-        var aheadY = k < 0.38 ? turn.y : targetAim.y;
+        var targetAim = projectileAimStep(aim,
+          projectileTargetPoint(targetId, Math.max(0, dur - t)), dt);
+        aim = targetAim;
+        /* 一條二次貝茲走完「向後散開 → 過彎 → 追向目標」。
+           原本是兩段各自補間、在 turn 點接起來：兩段的緩動都在接點收斂到零速度，
+           光球會在過彎處停一下再彈出去——那個停頓就是不平滑的轉彎（AI_RULES 8.3.1）。
+           進度曲線用線性與二次的混合：起步不是零速度（不會在出手處呆住），
+           後段仍然加速衝向目標。 */
+        var q = k * (BARRAGE_EASE_LINEAR + (1 - BARRAGE_EASE_LINEAR) * k);
+        var x = curveAt(start.x, turn.x, targetAim.x, q);
+        var y = curveAt(start.y, turn.y, targetAim.y, q);
         node.x = x; node.y = y;
-        node.rotation = Math.atan2(aheadY - y, aheadX - x);
+        var wantFacing = curveHeading(start.x, start.y, turn, targetAim.x, targetAim.y, q);
+        facing = isFinite(facing)
+          ? fieldApproachAngle(facing, wantFacing, dt, PROJECTILE_FACING_TAU_SEC)
+          : wantFacing;
+        node.rotation = facing;
         trailAcc += dt;
         if (trailAcc > Math.max(0.035, trailIntervalSec()) && !REDUCED_MOTION) {
           trailAcc = 0;
@@ -2563,11 +2659,12 @@ var BattleRenderer = (function () {
     var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
     var current = _fireWallFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.x = Number(a.x);
-      current.y = Number(a.y);
-      current.w = Math.max(10, Number(a.w) || current.w);
-      current.h = Math.max(8, Number(a.h) || current.h);
-      current.angle = Number(a.a) || 0;
+      /* 直接指派座標＝每則事件瞬移一次。火牆會跟著火龍捲樹的移動特效一起游走／
+         追擊，節拍又慢（每半秒一則），瞬移在畫面上就是整道牆每半秒跳一格。
+         改走與其他移動場域同一套的推算自走＋連續修正，長寬與角度一併逐幀逼近。 */
+      fieldMotionAim(current, a,
+        Math.max(10, Number(a.w) || current.toW), Math.max(8, Number(a.h) || current.toH));
+      current.toAngle = Number(a.a) || 0;
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -2577,11 +2674,10 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.zone.addChild(node);
-    var fx = {
-      node: node, x: Number(a.x), y: Number(a.y), w: Math.max(10, Number(a.w) || 10),
-      h: Math.max(8, Number(a.h) || 8), angle: Number(a.a) || 0,
+    var fx = fieldMotionInit({
+      node: node, angle: Number(a.a) || 0, toAngle: Number(a.a) || 0,
       t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
-    };
+    }, a, Math.max(10, Number(a.w) || 10), Math.max(8, Number(a.h) || 8));
     _fireWallFx[key] = fx;
     var particleAt = 0;
 
@@ -2589,6 +2685,8 @@ var BattleRenderer = (function () {
       node: node,
       update: function (dt) {
         fx.t += dt;
+        fieldMotionStep(fx, dt);
+        fx.angle = fieldApproachAngle(fx.angle, fx.toAngle, dt, FIELD_VFX_FOLLOW_TAU_SEC);
         node.x = fx.x;
         node.y = fx.y;
         // 柱體永遠由地面向上；方向只用來排列三個柱體，不能旋轉柱體的高度軸。
@@ -2724,13 +2822,17 @@ var BattleRenderer = (function () {
     fx.angle = Number(a.a) || 0;
     if (isFinite(a.destX) && isFinite(a.destY)) { fx.destX = Number(a.destX); fx.destY = Number(a.destY); }
     if (Number(a.speed) > 0) fx.speed = Number(a.speed);
+    /* 自走與權威座標的落差記進殘差，由 update 逐幀衰減掉。
+       原本是每則事件就地補上 30%——那是每 0.2 秒一次的位置跳動，
+       幅度雖小仍然看得出抽動（AI_RULES 8.3.1）。 */
     var tx = Number(a.x), ty = Number(a.y);
-    var err = Math.sqrt((tx - fx.x) * (tx - fx.x) + (ty - fx.y) * (ty - fx.y));
-    /* 偏差大於一個牆厚＝自走已經跟丟（剛出生、或分頁被凍結過），直接歸位；
-       其餘只補一部分，讓修正不會變成看得見的抽動。 */
-    if (err > fx.h) { fx.x = tx; fx.y = ty; return; }
-    fx.x += (tx - fx.x) * 0.3;
-    fx.y += (ty - fx.y) * 0.3;
+    fx.offX = (fx.x + fx.offX) - tx;
+    fx.offY = (fx.y + fx.offY) - ty;
+    /* 偏差大到不像是推算誤差（剛出生、或分頁被凍結過）就不吸收，直接歸位。 */
+    if (Math.sqrt(fx.offX * fx.offX + fx.offY * fx.offY) > FIELD_VFX_MAX_RESIDUAL_PX) {
+      fx.offX = 0; fx.offY = 0;
+    }
+    fx.x = tx; fx.y = ty;
   }
 
   function spawnThunderCurtain(spec) {
@@ -2756,6 +2858,7 @@ var BattleRenderer = (function () {
       destX: isFinite(a.destX) ? Number(a.destX) : null,
       destY: isFinite(a.destY) ? Number(a.destY) : null,
       speed: Number(a.speed) > 0 ? Number(a.speed) : 0,
+      offX: 0, offY: 0,
       redrawAt: 0, seed: Math.random() * 10,
       expiresAt: nowMs() + holdMs, key: key, dead: false
     };
@@ -2774,7 +2877,22 @@ var BattleRenderer = (function () {
             else { fx.x += dx / dist * step; fx.y += dy / dist * step; }
           }
         }
-        node.x = 0; node.y = 0; node.rotation = 0;
+        /* 事件留下的殘差連續衰減掉，不在事件當下就地補一段。 */
+        var offMag = Math.sqrt(fx.offX * fx.offX + fx.offY * fx.offY);
+        if (offMag > 1e-4 && dt > 0) {
+          var want = offMag / FIELD_VFX_FOLLOW_TAU_SEC;
+          if (fx.speed > 0) want = Math.min(want, fx.speed * FIELD_VFX_CORRECT_MAX_RATIO);
+          var fix = Math.min(offMag, want * dt);
+          fx.offX -= fx.offX / offMag * fix;
+          fx.offY -= fx.offY / offMag * fix;
+        } else if (offMag <= 1e-4) { fx.offX = 0; fx.offY = 0; }
+        /* ⚠️ 位置只能靠 node 每幀平移，電弧折線一律畫在**自身座標系**。
+           把絕對座標烘進 Graphics 的話，雷幕就只有重抽折線的那一刻才會移動——
+           橫掃過去會變成每個重抽間隔跳一格（AI_RULES 8.3.1）。
+           重抽本身只負責電弧的閃爍，不負責位置。 */
+        node.x = fx.x + fx.offX;
+        node.y = fx.y + fx.offY;
+        node.rotation = 0;
         var fade = fx.expiresAt - nowMs() < 240 ? Math.max(0, (fx.expiresAt - nowMs()) / 240) : 1;
         fx.redrawAt -= dt;
         if (fx.redrawAt <= 0) {
@@ -2789,15 +2907,15 @@ var BattleRenderer = (function () {
           var halfLong = fx.w / 2, halfWide = Math.max(3, fx.h / 2);
           var perpX = -axisY, perpY = axisX;
           g.poly([
-            fx.x - axisX * halfLong + perpX * halfWide, fx.y - axisY * halfLong + perpY * halfWide,
-            fx.x + axisX * halfLong + perpX * halfWide, fx.y + axisY * halfLong + perpY * halfWide,
-            fx.x + axisX * halfLong - perpX * halfWide, fx.y + axisY * halfLong - perpY * halfWide,
-            fx.x - axisX * halfLong - perpX * halfWide, fx.y - axisY * halfLong - perpY * halfWide
+            -axisX * halfLong + perpX * halfWide, -axisY * halfLong + perpY * halfWide,
+            axisX * halfLong + perpX * halfWide, axisY * halfLong + perpY * halfWide,
+            axisX * halfLong - perpX * halfWide, axisY * halfLong - perpY * halfWide,
+            -axisX * halfLong - perpX * halfWide, -axisY * halfLong - perpY * halfWide
           ]).fill({ color: 0x7dd3fc, alpha: 0.22 * fade });
           for (var bi = 0; bi < bolts; bi++) {
             var u = bolts === 1 ? 0 : (bi / (bolts - 1) - 0.5);
-            var bx = fx.x + axisX * fx.w * u;
-            var by = fx.y + axisY * fx.w * u;
+            var bx = axisX * fx.w * u;
+            var by = axisY * fx.w * u;
             boltPath(g, bx + (Math.random() * 26 - 13), by - skyY, bx, by,
               THUNDER_CURTAIN_THEME, 0.92 * fade, false, false);
             // 落點的白熱光斑：讓「打在地上」這件事有明確的接點
@@ -2816,45 +2934,113 @@ var BattleRenderer = (function () {
     return fx;
   }
 
-  /* 場域的移動／尺寸只屬於顯示層：模擬層仍以自己的 tick 頻率判定傷害，
-     這裡只把兩次權威快照之間的畫面補齊，避免場域一格一格跳動。
-     Worker 事件通常每 0.2 秒批次送達；最短補間不能跟著技能的 0.1 秒傷害間隔
-     縮成短促的瞬移，否則事件在同一幀到達時，玩家仍會看到一格一格的風刃。 */
-  var FIELD_VFX_MIN_MOTION_SEC = 0.12;
-  function fieldVfxMotionSec(spec, fallback) {
-    var sec = Number(spec && spec.dur);
-    return Math.max(FIELD_VFX_MIN_MOTION_SEC, isFinite(sec) && sec > 0 ? sec : fallback);
-  }
+  /* ---- 移動場域的畫面幾何：推算自走 ＋ 連續修正（AI_RULES 8.3.1）----
+     模擬層仍以自己的節拍判定傷害，這裡只把兩次權威快照之間的畫面補齊。
 
-  /* ---- 追蹤場域（追跡風刃／追蹤冰箭）的畫面位置：指數跟隨 ----
-     一則事件＝模擬層的一個節拍，但事件的**到達節奏本身就不平均**。
-     同一顆場域的實測到達序列（毫秒／位移）：204/35.1、0/1.6、94/16.9、110/18、
-     118/18.5、178/34.9、0/1.6……＝有時一批帶兩步、有時緊接著補一個零頭步、
-     有時單步早到。把每則都當成「固定時間內走完的一段補間」時：事件早到就得衝刺、
-     晚到就走完停住——用這條真實序列回放，有 13.9% 的畫格完全靜止、另有一批畫格
-     是兩倍速。那正是玩家說的「一格一格移動」。
+     為什麼不是「收到事件就搬過去」：事件的到達節奏本身不平均（Worker 是批次
+     送出的，場域另有自己的節拍，兩者不整除），搬一次就是跳一格。
+     為什麼也不是「固定時間內走完這一段」：事件早到要衝刺、晚到會走完停住——
+     實測序列回放有 13.9% 的畫格完全靜止，那正是使用者說的「一格一格移動」。
+     為什麼連「朝最新快照指數逼近」都不夠：節拍慢的場域（雷球每 0.35 秒、
+     火龍捲每 0.5 秒一則）兩則之間隔得比逼近所需的時間還久，逼到了就沒有東西
+     可以追，畫面停在那裡等下一則。
 
-     改用指數跟隨：速度只取決於「離權威座標多遠」（v = 距離 / TAU，並以模擬層
-     速度的 MAX_MULT 倍為上限）。目標暫停時自己平滑減速、目標跳一大步時自己加速，
-     沒有任何硬停頓；同一條序列回放後靜止畫格降到 4.9%（且最慢的畫格仍在移動，
-     剩下的都是風刃真的在轉向）。
-     平衡點的落後距離＝速度 × TAU（180px/s 約 25px），小於風刃自身的體積，
-     判定圈與畫面仍然重疊。判定位置永遠是模擬層的 area.x/y，這裡只管畫面。 */
+     因此分成兩段（與 Preset 端 js/vfx-runtime.js 同一套模型、同一組常數——
+     兩邊畫的是同一件事，數字分家就會出現「切 ?vfx=legacy 前後手感不一樣」）：
+       ① 推算自走：沿模擬層當下的航向（area.moveA）、用模擬層的速度（area.speed）
+          前進，知道落點（area.destX/destY）時不越過落點。這一段與模擬層是同一條
+          運動法則，因此兩則事件之間畫面照樣在動，而且動得跟判定範圍一樣快。
+       ② 連續修正：自走與最新快照之間的殘差逐幀衰減掉，不是瞬間歸位；移動中的
+          場域另外把修正速度壓在行進速度的一部分之下，免得畫面忽快忽慢。
+     沒有運動語意的事件（靜止場域、舊事件）自動退化成單純的一階低通跟隨。
+     判定位置永遠是模擬層的 area.x/y，這裡只補畫面，不改命中。 */
   var FIELD_VFX_FOLLOW_TAU_SEC = 0.14;
-  var FIELD_VFX_FOLLOW_MAX_MULT = 2;
-  function fieldVfxSetFollowTarget(fx, x, y) {
-    fx.motionToX = Number(x);
-    fx.motionToY = Number(y);
+  var FIELD_VFX_MAX_RESIDUAL_PX = 100;    // 殘差超過這個量就不吸收，直接就位
+  var FIELD_VFX_CORRECT_MAX_RATIO = 0.3;  // 修正速度上限＝行進速度的這個比例
+
+  /* 逐幀朝目標值收斂的一階低通：係數只跟 dt 有關，掉幀時不會走過頭。 */
+  function fieldApproach(cur, target, dt, tau) {
+    if (!(dt > 0)) return cur;
+    return cur + (target - cur) * (1 - Math.exp(-dt / tau));
   }
-  function fieldVfxFollowStep(fx, dt) {
-    var dx = fx.motionToX - fx.x, dy = fx.motionToY - fx.y;
-    var dist = Math.sqrt(dx * dx + dy * dy);
-    if (!(dist > 0.01) || !(dt > 0)) return;
-    var want = dist / FIELD_VFX_FOLLOW_TAU_SEC;
-    var cap = (Number(fx.speed) > 0 ? Number(fx.speed) : want) * FIELD_VFX_FOLLOW_MAX_MULT;
-    var step = Math.min(dist, Math.min(want, cap) * dt);
-    fx.x += dx / dist * step;
-    fx.y += dy / dist * step;
+  /* 角度走最短路徑，否則 ±π 交界會整圈轉回去。 */
+  function fieldApproachAngle(cur, target, dt, tau) {
+    if (!(dt > 0)) return cur;
+    var d = Math.atan2(Math.sin(target - cur), Math.cos(target - cur));
+    return cur + d * (1 - Math.exp(-dt / tau));
+  }
+
+  /* 出生：畫面幾何＝權威幾何，沒有推算歷史也沒有殘差。 */
+  function fieldMotionInit(fx, area, w, h) {
+    fx.baseX = Number(area.x) || 0;
+    fx.baseY = Number(area.y) || 0;
+    fx.offX = 0; fx.offY = 0;
+    fx.x = fx.baseX; fx.y = fx.baseY;
+    fx.w = Math.max(1, Number(w) || 1);
+    fx.h = Math.max(1, Number(h) || 1);
+    fx.toW = fx.w; fx.toH = fx.h;
+    fx.moveSpeed = 0; fx.moveA = NaN; fx.destX = null; fx.destY = null;
+    fieldMotionAim(fx, area, fx.w, fx.h);
+    return fx;
+  }
+
+  /* 每則事件：更新推算基準與運動語意，落差記進殘差由 fieldMotionStep 衰減掉。 */
+  function fieldMotionAim(fx, area, w, h) {
+    var prevX = fx.baseX + fx.offX, prevY = fx.baseY + fx.offY;
+    fx.baseX = Number(area.x) || 0;
+    fx.baseY = Number(area.y) || 0;
+    fx.offX = prevX - fx.baseX;
+    fx.offY = prevY - fx.baseY;
+    if (Math.sqrt(fx.offX * fx.offX + fx.offY * fx.offY) > FIELD_VFX_MAX_RESIDUAL_PX) {
+      fx.offX = 0; fx.offY = 0;
+    }
+    /* 運動語意只在這一拍真的在動時才會送來（skills2.sgGroundMotionFields）：
+       沒送＝靜止，自走那一段自然就不會走。 */
+    fx.moveSpeed = Number(area.speed) > 0 ? Number(area.speed) : 0;
+    fx.moveA = isFinite(Number(area.moveA)) ? Number(area.moveA) : NaN;
+    var hasDest = isFinite(Number(area.destX)) && isFinite(Number(area.destY));
+    fx.destX = hasDest ? Number(area.destX) : null;
+    fx.destY = hasDest ? Number(area.destY) : null;
+    if (w > 0) fx.toW = Math.max(1, Number(w));
+    if (h > 0) fx.toH = Math.max(1, Number(h));
+  }
+
+  /* 每幀：自走 → 修正殘差 → 尺寸逼近，最後寫回 fx.x／fx.y／fx.w／fx.h。 */
+  function fieldMotionStep(fx, dt) {
+    var step = Math.max(0, Number(dt) || 0);
+    if (fx.moveSpeed > 0 && isFinite(fx.moveA) && step > 0) {
+      var run = fx.moveSpeed * step;
+      if (fx.destX !== null) {
+        var dx = fx.destX - fx.baseX, dy = fx.destY - fx.baseY;
+        run = Math.min(run, Math.sqrt(dx * dx + dy * dy));
+      }
+      if (run > 0) {
+        fx.baseX += Math.cos(fx.moveA) * run;
+        fx.baseY += Math.sin(fx.moveA) * run;
+      }
+    }
+    var mag = Math.sqrt(fx.offX * fx.offX + fx.offY * fx.offY);
+    if (mag > 1e-4 && step > 0) {
+      var want = mag / FIELD_VFX_FOLLOW_TAU_SEC;
+      if (fx.moveSpeed > 0) want = Math.min(want, fx.moveSpeed * FIELD_VFX_CORRECT_MAX_RATIO);
+      var fix = Math.min(mag, want * step);
+      fx.offX -= fx.offX / mag * fix;
+      fx.offY -= fx.offY / mag * fix;
+    } else if (mag <= 1e-4) {
+      fx.offX = 0; fx.offY = 0;
+    }
+    fx.x = fx.baseX + fx.offX;
+    fx.y = fx.baseY + fx.offY;
+    fx.w = fieldApproach(fx.w, fx.toW, step, FIELD_VFX_FOLLOW_TAU_SEC);
+    fx.h = fieldApproach(fx.h, fx.toH, step, FIELD_VFX_FOLLOW_TAU_SEC);
+  }
+
+  /* 釘在我方身上的場域（暴風雪、常駐領域）：模擬層的圓心恆等於玩家座標，
+     因此畫面每幀直接貼玩家錨點，連一點落後都不留。 */
+  function fieldMotionAnchor(fx, point) {
+    if (!point || !isFinite(point.x) || !isFinite(point.y)) return;
+    fx.baseX = point.x; fx.baseY = point.y;
+    fx.offX = 0; fx.offY = 0;
   }
 
   /* 移動場域必須有模擬層發出的穩定 id。座標只能當靜態舊事件的退化鍵；
@@ -2867,59 +3053,28 @@ var BattleRenderer = (function () {
     return [Math.round(area && area.x), Math.round(area && area.y)].join(':') + ':' + variant;
   }
 
+  /* 飛行中的場域（追蹤冰箭／追跡風刃）機身該朝哪：優先用模擬層送來的航向
+     （那就是刀鋒實際在飛的方向，含它自己的轉彎半徑），沒有才退回
+     「目前位置 → 權威座標」這個向量。 */
   function fieldVfxWindAngle(fx) {
-    /* 行進方向＝從畫面目前位置指向權威座標；跟隨模型沒有「這一段的起點」，
-       而這個向量本來就是刀鋒正在飛的方向。 */
-    var dx = fx.motionToX - fx.x, dy = fx.motionToY - fx.y;
-    if (Math.abs(dx) + Math.abs(dy) <= 0.5 && isFinite(fx.destX) && isFinite(fx.destY)) {
+    if (isFinite(fx.moveA)) return fx.moveA;
+    var dx = fx.baseX - fx.x, dy = fx.baseY - fx.y;
+    if (Math.abs(dx) + Math.abs(dy) <= 0.5 && fx.destX !== null) {
       dx = fx.destX - fx.x; dy = fx.destY - fx.y;
     }
     return Math.abs(dx) + Math.abs(dy) > 0.5 ? Math.atan2(dy, dx) : fx.windAngle;
   }
 
-  /* 位置只補間權威 area.x/y；方向也沿著同一個快照方向緩慢轉向，
-     不讓半月刃在追擊轉彎時瞬間折角。這只影響畫面，不改傷害判定。 */
+  /* 朝向沿著同一個航向緩慢轉過去，不讓半月刃在追擊轉彎時瞬間折角。
+     這只影響畫面，不改傷害判定。 */
+  var FIELD_VFX_TURN_TAU_SEC = 1 / 14;
   function fieldVfxWindAngleStep(fx, dt) {
     var target = fieldVfxWindAngle(fx);
     if (!isFinite(target)) return 0;
     if (!isFinite(fx.windAngle)) fx.windAngle = target;
-    var safeDt = Math.max(0, Number(dt) || 0);
-    var k = 1 - Math.exp(-safeDt * 14);
-    var delta = Math.atan2(Math.sin(target - fx.windAngle), Math.cos(target - fx.windAngle));
-    fx.windAngle += delta * k;
+    fx.windAngle = fieldApproachAngle(fx.windAngle, target,
+      Math.max(0, Number(dt) || 0), FIELD_VFX_TURN_TAU_SEC);
     return fx.windAngle;
-  }
-
-  function fieldVfxSetTarget(fx, x, y, w, h, duration) {
-    fx.motionFromX = fx.x;
-    fx.motionFromY = fx.y;
-    fx.motionFromW = fx.w;
-    fx.motionFromH = fx.h;
-    fx.motionToX = Number(x);
-    fx.motionToY = Number(y);
-    fx.motionToW = Math.max(1, Number(w));
-    fx.motionToH = Math.max(1, Number(h));
-    fx.motionT = 0;
-    fx.motionDur = Math.max(0.05, Number(duration) || 0.35);
-  }
-
-  function fieldVfxSetPositionTarget(fx, x, y, duration) {
-    fx.motionFromX = fx.x;
-    fx.motionFromY = fx.y;
-    fx.motionToX = Number(x);
-    fx.motionToY = Number(y);
-    fx.motionT = 0;
-    fx.motionDur = Math.max(0.05, Number(duration) || 0.35);
-  }
-
-  function fieldVfxStep(fx, dt) {
-    if (!(fx.motionDur > 0)) return;
-    fx.motionT = Math.min(fx.motionDur, fx.motionT + Math.max(0, Number(dt) || 0));
-    var k = Math.min(1, fx.motionT / fx.motionDur);
-    fx.x = lerp(fx.motionFromX, fx.motionToX, k);
-    fx.y = lerp(fx.motionFromY, fx.motionToY, k);
-    fx.w = lerp(fx.motionFromW, fx.motionToW, k);
-    fx.h = lerp(fx.motionFromH, fx.motionToH, k);
   }
 
   /* 泥沼／熔岩沼（新版技能 mire）：貼地的橫向長方形場域。
@@ -2938,9 +3093,8 @@ var BattleRenderer = (function () {
     var holdMs = Math.max(700, Number(spec.dur || 0.5) * 2200);
     var current = _mirePoolFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      fieldVfxSetTarget(current, Number(a.x), Number(a.y),
-        Math.max(20, Number(a.w) || current.w), Math.max(16, Number(a.h) || current.h),
-        fieldVfxMotionSec(spec, 0.5));
+      fieldMotionAim(current, a,
+        Math.max(20, Number(a.w) || current.toW), Math.max(16, Number(a.h) || current.toH));
       current.lava = lava;
       current.poison = poison;
       current.expiresAt = nowMs() + holdMs;
@@ -2950,16 +3104,10 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.zone.addChild(node);
-    var fx = {
-      node: node, x: Number(a.x), y: Number(a.y),
-      w: Math.max(20, Number(a.w) || 100), h: Math.max(16, Number(a.h) || 100),
-      lava: lava, poison: poison, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
-      motionFromX: Number(a.x), motionFromY: Number(a.y),
-      motionFromW: Math.max(20, Number(a.w) || 100), motionFromH: Math.max(16, Number(a.h) || 100),
-      motionToX: Number(a.x), motionToY: Number(a.y),
-      motionToW: Math.max(20, Number(a.w) || 100), motionToH: Math.max(16, Number(a.h) || 100),
-      motionT: 1, motionDur: 1
-    };
+    var fx = fieldMotionInit({
+      node: node, lava: lava, poison: poison, t: 0,
+      expiresAt: nowMs() + holdMs, key: key, dead: false
+    }, a, Math.max(20, Number(a.w) || 100), Math.max(16, Number(a.h) || 100));
     _mirePoolFx[key] = fx;
     var bubbleAt = 0;
 
@@ -2967,7 +3115,7 @@ var BattleRenderer = (function () {
       node: node,
       update: function (dt) {
         fx.t += dt;
-        fieldVfxStep(fx, dt);
+        fieldMotionStep(fx, dt);
         node.x = fx.x; node.y = fx.y; node.rotation = 0;
         var left = fx.expiresAt - nowMs();
         var fade = left < 420 ? Math.max(0, left / 420) : 1;
@@ -3436,21 +3584,12 @@ var BattleRenderer = (function () {
     var key = fieldVfxKey(a, variant);
     if (!key) return null;
     var holdMs = Math.max(520, Number(spec.dur || 0.4) * 2400);
-    var motionSec = fieldVfxMotionSec(spec, 0.4);
     var current = _iceFieldFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.speed = Number(a.speed) > 0 ? Number(a.speed) : current.speed;
-      if (isHoming) {
-        /* 追跡風刃的傷害位置由模擬層 area.x/y 定義；畫面只是平滑跟隨這個座標，
-           不能另走一條追向未更新 dest 的獨立路徑。 */
-        fieldVfxSetFollowTarget(current, Number(a.x), Number(a.y));
-        if (isFinite(a.destX) && isFinite(a.destY)) {
-          current.destX = Number(a.destX);
-          current.destY = Number(a.destY);
-        }
-      } else if (variant !== 'blizzard') {
-        fieldVfxSetTarget(current, Number(a.x), Number(a.y), w, h, motionSec);
-      }
+      /* 追跡風刃／追蹤冰箭的傷害位置由模擬層 area.x/y 定義；畫面沿事件帶來的
+         航向與速度自走，再把殘差修正回這個座標，不另走一條獨立的追擊路徑。
+         暴風雪的圓心恆等於玩家，由 update 每幀直接貼錨點。 */
+      if (variant !== 'blizzard') fieldMotionAim(current, a, w, h);
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -3459,17 +3598,10 @@ var BattleRenderer = (function () {
     node.addChild(g);
     // 暴風雪是壟罩地面的雲霧 → zone 層；水龍捲與冰箭是立體物件 → fx 層
     (isRect ? S.layers.zone : S.layers.fx).addChild(node);
-    var fx = {
-      node: node, x: Number(a.x), y: Number(a.y), w: w, h: h,
-      variant: variant, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
-      speed: Number(a.speed) > 0 ? Number(a.speed) : 0,
-      destX: isFinite(a.destX) ? Number(a.destX) : null,
-      destY: isFinite(a.destY) ? Number(a.destY) : null,
-      motionFromX: Number(a.x), motionFromY: Number(a.y), motionFromW: w, motionFromH: h,
-      motionToX: Number(a.x), motionToY: Number(a.y), motionToW: w, motionToH: h,
-      motionT: 1, motionDur: 1,
-      windAngle: null
-    };
+    var fx = fieldMotionInit({
+      node: node, variant: variant, t: 0,
+      expiresAt: nowMs() + holdMs, key: key, dead: false, windAngle: null
+    }, a, w, h);
     _iceFieldFx[key] = fx;
     var flakeAt = 0;
     /* 追蹤中的冰箭／風刃是「飛行物本體」，配色必須與飛出去的那一支相同；
@@ -3497,19 +3629,14 @@ var BattleRenderer = (function () {
       update: function (dt) {
         fx.t += dt;
         if (fx.variant === 'blizzard') {
-          /* 暴風雪的權威錨點是畫面中的玩家，而不是上一個 0.1 秒事件。
+          /* 暴風雪的權威錨點是畫面中的玩家，而不是上一個事件的座標。
              playerPos() 已經使用角色的渲染內插座標，因此這裡每幀同步即可。 */
-          var follow = playerPos();
-          if (follow && isFinite(follow.x) && isFinite(follow.y)) {
-            fx.x = follow.x;
-            fx.y = follow.y;
-          }
-        } else if (isHoming) {
-          /* 傷害場域和追蹤特效共用模擬層的目前位置；畫面只平滑跟隨它，
-             不自行追目標，避免顯示位置與實際判定範圍脫節。 */
-          fieldVfxFollowStep(fx, dt);
+          fieldMotionAnchor(fx, playerPos());
+          fieldMotionStep(fx, dt);
         } else {
-          fieldVfxStep(fx, dt);
+          /* 傷害場域和追蹤特效共用模擬層的運動語意：畫面沿同一條航向自走、
+             再把殘差修正回權威座標，不自行挑目標，避免顯示位置與判定範圍脫節。 */
+          fieldMotionStep(fx, dt);
         }
         node.x = fx.x; node.y = fx.y;
         // 追擊中的飛行物一律朝著自己正在飛的方向（冰箭與風刃同一套）
@@ -3599,9 +3726,9 @@ var BattleRenderer = (function () {
     var holdMs = Math.max(520, Number(spec.dur || 0.35) * 2400);
     var current = _thunderOrbFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.r = Math.max(8, Number(a.r) || current.r);
-      fieldVfxSetPositionTarget(current, Number(a.x), Number(a.y),
-        fieldVfxMotionSec(spec, 0.35));
+      /* 半徑走與長寬同一條逼近曲線（fx.w 就是雷球的半徑），擴增才不會一拍跳一級。 */
+      var rNow = Math.max(8, Number(a.r) || current.toW);
+      fieldMotionAim(current, a, rNow, rNow);
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -3609,27 +3736,21 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.fx.addChild(node);
-    var fx = {
-      node: node, x: Number(a.x), y: Number(a.y), r: Math.max(8, Number(a.r) || 30),
-      w: Math.max(8, Number(a.r) || 30), h: Math.max(8, Number(a.r) || 30),
-      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false,
-      motionFromX: Number(a.x), motionFromY: Number(a.y),
-      motionFromW: Math.max(8, Number(a.r) || 30), motionFromH: Math.max(8, Number(a.r) || 30),
-      motionToX: Number(a.x), motionToY: Number(a.y),
-      motionToW: Math.max(8, Number(a.r) || 30), motionToH: Math.max(8, Number(a.r) || 30),
-      motionT: 1, motionDur: 1
-    };
+    var orbR = Math.max(8, Number(a.r) || 30);
+    var fx = fieldMotionInit({
+      node: node, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+    }, a, orbR, orbR);
     _thunderOrbFx[key] = fx;
     addFx({
       node: node,
       update: function (dt) {
         fx.t += dt;
-        fieldVfxStep(fx, dt);
+        fieldMotionStep(fx, dt);
         node.x = fx.x;
         node.y = fx.y - 10;                 // 略高於腳底，看起來是懸在空中的球
         var left = fx.expiresAt - nowMs();
         var fade = left < 260 ? Math.max(0, left / 260) : 1;
-        var r = fx.r;
+        var r = fx.w;
         var pulse = 1 + Math.sin(fx.t * 9) * 0.06;
         g.clear();
         g.circle(0, 0, r * pulse).fill({ color: 0x1d4ed8, alpha: 0.24 * fade });
@@ -4193,9 +4314,12 @@ var BattleRenderer = (function () {
     var holdMs = Math.max(900, Number(spec.dur || 0.5) * 2400);
     var current = _firePillarFx[key];
     if (current && !current.dead && current.node && !current.node.destroyed) {
-      current.x = Number(area.x);
-      current.y = Number(area.y);
-      current.radius = Math.max(16, Number(area.r) || current.radius);
+      /* 直接指派座標＝每則事件瞬移一次。傳奇【追蹤烈焰】的火龍捲會追著敵人跑、
+         超神【永劫火獄】的會游走，節拍又比追蹤場域慢得多，瞬移在畫面上就是
+         每半秒跳一格。改走與其他移動場域同一套的推算自走＋連續修正。
+         半徑（fx.w）同樣逐幀逼近，場域擴增不會一拍跳一級。 */
+      var pillarR = Math.max(16, Number(area.r) || current.toW);
+      fieldMotionAim(current, area, pillarR, pillarR);
       current.expiresAt = nowMs() + holdMs;
       return current;
     }
@@ -4205,8 +4329,10 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     node.addChild(g);
     S.layers.zone.addChild(node);
-    var fx = { node: node, x: Number(area.x), y: Number(area.y), radius: Math.max(16, Number(area.r) || 28),
-      t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false };
+    var pillarR0 = Math.max(16, Number(area.r) || 28);
+    var fx = fieldMotionInit({
+      node: node, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
+    }, area, pillarR0, pillarR0);
     _firePillarFx[key] = fx;
     var particleAt = 0;
 
@@ -4224,21 +4350,23 @@ var BattleRenderer = (function () {
       node: node,
       update: function (dt) {
         fx.t += dt;
+        fieldMotionStep(fx, dt);
         node.x = fx.x;
         node.y = fx.y;
+        var radius = fx.w;                  // 判定半徑（逐幀逼近權威值）
         var fade = fx.expiresAt - nowMs() < 360 ? Math.max(0, (fx.expiresAt - nowMs()) / 360) : 1;
         var appear = Math.min(1, fx.t / 0.28);
-        var h = Math.max(118, fx.radius * 3.45) * appear;
-        var baseW = Math.max(44, fx.radius * 2.2) * appear;
-        var topW = Math.max(18, fx.radius * 0.62) * appear;
+        var h = Math.max(118, radius * 3.45) * appear;
+        var baseW = Math.max(44, radius * 2.2) * appear;
+        var topW = Math.max(18, radius * 0.62) * appear;
         var phase = fx.t * 4.2;
         g.clear();
 
         // 地面圈：把「傷害半徑」直接畫出來，讓玩家看得出場域邊界。
-        g.ellipse(0, 4, baseW * 0.58, Math.max(8, fx.radius * 0.34))
+        g.ellipse(0, 4, baseW * 0.58, Math.max(8, radius * 0.34))
           .fill({ color: baseColor, alpha: 0.42 * fade })
           .stroke({ color: strokeColor, width: 2, alpha: 0.78 * fade });
-        g.ellipse(0, 0, baseW * 0.46, Math.max(5, fx.radius * 0.2))
+        g.ellipse(0, 0, baseW * 0.46, Math.max(5, radius * 0.2))
           .fill({ color: innerEllipseColor, alpha: 0.32 * fade });
 
         // 外層火焰/水流軀幹：寬底、收尖頂，並以旋臂抖動取代硬直矩形。
@@ -4391,6 +4519,25 @@ var BattleRenderer = (function () {
     }, 1);
   }
 
+  /* 連鎖彈射的進場航向：這一跳的起點就是上一跳的終點，因此上一跳的方向
+     ＝從「上上個節點」指向「上一個節點」。第一跳的上一段是玩家射出去的那一段。
+     交給 spawnProjectile 之後，整條鏈是一條連續彎過去的線，
+     而不是每個彈射點在一幀之內折一次角（AI_RULES 8.3.1）。 */
+  function chainEnterAngle(targets, hopIndex) {
+    var to = posOf(targets[hopIndex - 1]);
+    var from = hopIndex >= 2 ? posOf(targets[hopIndex - 2]) : playerMuzzle();
+    var dx = to.x - from.x, dy = to.y - from.y;
+    return (Math.abs(dx) + Math.abs(dy) > 1e-3) ? Math.atan2(dy, dx) : NaN;
+  }
+
+  /* 傳染型（毒霧／寒霜擴散）的進場航向：那幾發是從被打中的敵人身上再散出去的，
+     上一段就是「玩家 → 來源」的那一段。 */
+  function spreadEnterAngle(origin) {
+    var muzzle = playerMuzzle();
+    var dx = origin.x - muzzle.x, dy = origin.y - muzzle.y;
+    return (Math.abs(dx) + Math.abs(dy) > 1e-3) ? Math.atan2(dy, dx) : NaN;
+  }
+
   function handleChainVfx(targets, spec, baseDelay, stagger) {
     if (!targets.length && !S.player) return;
     /* 連鎖閃電：一則事件＝一段電弧，時間點由模擬層的 delayMs 決定（傷害同一刻）。
@@ -4428,7 +4575,7 @@ var BattleRenderer = (function () {
             spawnProjectile(toId, hopTravel, spec, function (pt) {
               spawnImpact(pt.x, pt.y, spec, false);
               hitReact(toId, spec.elem, false);
-            }, posOf(fromId));
+            }, posOf(fromId), { enterAngle: chainEnterAngle(targets, hopIndex) });
           }, startDelay);
         })(kb, chainStart, hopTravel);
         chainStart += hopTravel;
@@ -4438,6 +4585,7 @@ var BattleRenderer = (function () {
     if (spec.variant === 'poison-spread') {
       var pOriginPos = targets.length > 1 ? posOf(targets[0]) : playerPos();
       var pSpreadTargets = targets.length > 1 ? targets.slice(1) : targets;
+      var pEnter = spreadEnterAngle(pOriginPos);
       for (var psi = 0; psi < pSpreadTargets.length; psi++) {
         (function (tgtId) {
           setTimeout(function () {
@@ -4446,7 +4594,7 @@ var BattleRenderer = (function () {
             spawnProjectile(tgtId, 80, pSpec, function (pt) {
               spawnImpact(pt.x, pt.y, pSpec, false);
               hitReact(tgtId, 'poison', false, true);
-            }, pOriginPos);
+            }, pOriginPos, { enterAngle: pEnter });
           }, baseDelay);
         })(pSpreadTargets[psi]);
       }
@@ -4465,7 +4613,7 @@ var BattleRenderer = (function () {
             spawnProjectile(toId, hopTravel, wSpec, function (pt) {
               spawnImpact(pt.x, pt.y, wSpec, false);
               hitReact(toId, 'ice', false);
-            }, posOf(fromId));
+            }, posOf(fromId), { enterAngle: chainEnterAngle(targets, hopIndex) });
           }, startDelay);
         })(wb, wChainStart, wHopTravel);
         wChainStart += wHopTravel;
@@ -4475,6 +4623,7 @@ var BattleRenderer = (function () {
     if (spec.variant === 'frost-spread') {
       var fOriginPos = targets.length > 1 ? posOf(targets[0]) : playerPos();
       var fSpreadTargets = targets.length > 1 ? targets.slice(1) : targets;
+      var fEnter = spreadEnterAngle(fOriginPos);
       for (var fsi = 0; fsi < fSpreadTargets.length; fsi++) {
         (function (tgtId) {
           setTimeout(function () {
@@ -4483,7 +4632,7 @@ var BattleRenderer = (function () {
             spawnProjectile(tgtId, 80, fSpec, function (pt) {
               spawnImpact(pt.x, pt.y, fSpec, false);
               hitReact(tgtId, 'ice', false);
-            }, fOriginPos);
+            }, fOriginPos, { enterAngle: fEnter });
           }, baseDelay);
         })(fSpreadTargets[fsi]);
       }

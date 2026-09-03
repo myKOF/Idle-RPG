@@ -434,9 +434,10 @@ test('泥沼／熔岩沼：兩套顯示層都有貼地水窪畫法，且尺寸�
   // 同一攤沼澤要靠 area.id 合併成一個長駐節點，不是每跳生一個新的
   assert.match(vfx, /var node = _vfxMirePools\[key\];/);
   assert.match(renderer, /var current = _mirePoolFx\[key\];/);
-  assert.match(renderer, /function fieldVfxSetTarget\(fx, x, y, w, h, duration\)/);
-  assert.match(renderer, /fieldVfxStep\(fx, dt\);/);
-  assert.match(renderer, /motionToW = Math\.max\(1, Number\(w\)\)/);
+  assert.match(renderer, /function fieldMotionAim\(fx, area, w, h\)/);
+  assert.match(renderer, /fieldMotionStep\(fx, dt\);/);
+  // 尺寸也走逐幀逼近：沼澤漫延／熔岩沼的擴增不得一拍跳一級
+  assert.match(renderer, /fx\.w = fieldApproach\(fx\.w, fx\.toW, step, FIELD_VFX_FOLLOW_TAU_SEC\);/);
   // 續命與清場：切場景時長駐節點要一起回收
   assert.match(vfx, /_vfxMirePools = Object\.create\(null\);/);
   assert.match(renderer, /if \(_mirePoolFx\[key\] === fx\) delete _mirePoolFx\[key\];/);
@@ -507,11 +508,14 @@ test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 
   assert.match(skills2, /variant: 'thunder-orb'/);
   assert.match(renderer, /else if \(spec\.variant === 'thunder-orb'\) spawnThunderOrbField\(spec\);/);
   assert.match(renderer, /var current = _thunderOrbFx\[key\];/);
-  assert.match(renderer, /function fieldVfxSetPositionTarget\(fx, x, y, duration\)/);
-  assert.match(renderer, /fieldVfxSetPositionTarget\(current, Number\(a\.x\), Number\(a\.y\)/);
+  assert.match(renderer, /function fieldMotionStep\(fx, dt\)/);
+  const orbCanvas = renderer.slice(renderer.indexOf('function spawnThunderOrbField'),
+    renderer.indexOf('function spawnThunderFall'));
+  assert.match(orbCanvas, /fieldMotionAim\(current, a, rNow, rNow\);/);
+  assert.match(orbCanvas, /fieldMotionStep\(fx, dt\);/);
   assert.match(vfx, /else if \(s\.variant === 'thunder-orb'\) vfxThunderOrb\(s, layer, spec\.area, rect\);/);
   assert.match(vfx, /_vfxThunderOrbs = Object\.create\(null\);/);
-  assert.match(vfx, /function vfxFieldMotionSet\(node, x, y, w, h, duration\)/);
+  assert.match(vfx, /function vfxFieldMotionSet\(node, x, y, w, h, motion\)/);
   assert.match(vfx, /requestAnimationFrame\(frame\)/);
   assert.match(vfx, /translate3d\(/);
   assert.match(css, /\.vfx-field-motion\s*\{[\s\S]*?will-change:\s*transform/);
@@ -572,14 +576,16 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
   assert.match(renderer, /function spawnIceField\(spec\)/);
   assert.match(renderer, /spec\.variant === 'blizzard' \|\| spec\.variant === 'water-tornado' \|\|[\s\S]{0,200}spawnIceField\(spec\)/);
   assert.match(renderer, /function spawnIceField[\s\S]*?var a = spec && spec\.area;/);
-  assert.match(renderer, /fx\.variant === 'blizzard'[\s\S]*?var follow = playerPos\(\)/);
+  assert.match(renderer, /fx\.variant === 'blizzard'[\s\S]*?fieldMotionAnchor\(fx, playerPos\(\)\)/);
   const iceFieldCanvas = renderer.slice(renderer.indexOf('function spawnIceField'), renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField')));
-  assert.match(iceFieldCanvas, /if \(isHoming\)[\s\S]*?fieldVfxSetPositionTarget\(current,/);
-  assert.match(iceFieldCanvas, /else if \(isHoming\)[\s\S]*?fieldVfxStep\(fx, dt\)/);
+  assert.match(iceFieldCanvas, /if \(variant !== 'blizzard'\) fieldMotionAim\(current, a, w, h\);/);
+  assert.match(iceFieldCanvas, /fieldMotionStep\(fx, dt\);/);
   assert.doesNotMatch(iceFieldCanvas, /hdx = fx\.destX|hstep = fx\.speed/,
     '追蹤冰箭不得在顯示層另走速度追擊路徑');
   assert.match(skills2, /if \(f\.follow\) rect\.follow = true;/);
-  assert.match(skills2, /rect\.destX = f\.dest\.x;[\s\S]{0,80}rect\.speed = f\.speed;/);
+  // 運動語意（速度／航向／落點）由同一支收斂點帶給兩套顯示層
+  assert.match(skills2, /function sgGroundMotionFields\(f, out\)/);
+  assert.match(skills2, /out\.speed = f\.speed;[\s\S]{0,120}out\.moveA = f\.moveAngle;/);
 
   // DOM：aura 分派表接上 vfxIceField，且節點按 area.id 合併
   assert.match(vfx, /function vfxIceField\(spec, layer, area, rect\)/);
@@ -587,7 +593,7 @@ test('冰系特效：暴風雪／水龍捲／追蹤冰箭在 Canvas 與 DOM 兩�
   assert.match(vfx, /else if \(isIceField\) vfxIceField\(s, layer, spec\.area, rect\);/);
   assert.match(vfx, /_vfxIceFields\[key\] = node;/);
   assert.match(vfx, /function vfxFieldMotionFollowPlayer\(node, layer\)/);
-  assert.match(vfx, /function vfxFieldMotionHome\(node, speed, targetX, targetY\)/);
+  assert.match(vfx, /function vfxFieldMotionStep\(state, dt\)/);
   assert.match(vfx, /var isIceField = s\.variant === 'blizzard'/);
   const iceFieldDom = vfx.slice(vfx.indexOf('function vfxIceField'), vfx.indexOf('/* 預設天降', vfx.indexOf('function vfxIceField')));
   assert.match(iceFieldDom, /vfxFieldMotionSet\(node, x, y, w, h/);
@@ -771,8 +777,8 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
   assert.match(renderer, /variant === 'ice-arrow-homing' \|\| variant === 'wind-blade-homing'/);
   const windFieldCanvas = renderer.slice(renderer.indexOf('function spawnIceField'), renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField')));
   assert.match(windFieldCanvas, /fx\.variant === 'wind-blade-homing'[\s\S]*?drawWindCrescent\(g,/);
-  assert.match(windFieldCanvas, /variant === 'wind-blade-homing'[\s\S]*?fieldVfxSetPositionTarget\(current,/);
-  assert.match(windFieldCanvas, /fx\.variant === 'wind-blade-homing'[\s\S]*?fieldVfxStep\(fx, dt\)/);
+  assert.match(windFieldCanvas, /if \(variant !== 'blizzard'\) fieldMotionAim\(current, a, w, h\);/);
+  assert.match(windFieldCanvas, /fieldMotionStep\(fx, dt\);/);
   assert.match(windFieldCanvas, /fx\.variant !== 'wind-blade-homing'/);
 
   // DOM：大型風刃沿用直線飛行；追跡風刃沿用移動場域但只建立小型風刃
@@ -881,15 +887,24 @@ test('全技能移動與傷害範圍使用連續座標，不以棋盤格逐步�
     vfx.indexOf('function vfxIceField', vfx.indexOf('function vfxThunderOrb'))
   );
 
-  assert.match(rendererField, /fieldVfxSetPositionTarget\(/);
-  assert.match(rendererField, /fieldVfxStep\(fx, dt\)/);
+  assert.match(rendererField, /fieldMotionStep\(fx, dt\)/);
   assert.doesNotMatch(rendererField, /hdx = fx\.destX|hstep = fx\.speed/);
-  assert.match(rendererMire, /fieldVfxSetTarget\(/);
-  assert.match(rendererOrb, /fieldVfxSetPositionTarget\(/);
+  assert.match(rendererMire, /fieldMotionAim\(/);
+  assert.match(rendererOrb, /fieldMotionAim\(/);
   assert.match(domField, /vfxFieldMotionSet\(node, x, y, w, h/);
   assert.doesNotMatch(domField, /vfxFieldMotionHome/);
   assert.match(domMire, /vfxFieldMotionSet\(node, x, y, w, h/);
   assert.match(domOrb, /vfxFieldMotionSet\(node, cx - d \/ 2/);
+  /* 兩套顯示層都不得留下「收到事件就把座標指派上去」的瞬移路徑
+     （火龍捲／火牆曾經就是這樣，每半秒跳一格）。 */
+  const pillarCanvas = renderer.slice(renderer.indexOf('function spawnFirePillar('),
+    renderer.indexOf('function spawnContinuousChainLightning'));
+  assert.doesNotMatch(pillarCanvas, /current\.x = Number\(area\.x\)/);
+  assert.match(pillarCanvas, /fieldMotionAim\(current, area, pillarR, pillarR\);/);
+  const wallCanvas = renderer.slice(renderer.indexOf('function spawnFireWall('),
+    renderer.indexOf('function spawnThunderCurtain'));
+  assert.doesNotMatch(wallCanvas, /current\.x = Number\(a\.x\)/);
+  assert.match(wallCanvas, /fieldMotionAim\(current, a,/);
 });
 
 test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳格節點', () => {
@@ -922,24 +937,25 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(vfx, /function vfxFieldKey\(area, variant\)/);
   assert.match(domField, /var key = vfxFieldKey\(area, variant\);[\s\S]*if \(!key\) return null;/);
 
-  // 位置與轉彎都要是連續的：位置補間保留最低時長，方向以角度最短路徑平滑追上。
-  assert.match(renderer, /var FIELD_VFX_MIN_MOTION_SEC = 0\.12/);
+  // 位置與轉彎都要是連續的：位置沿模擬層的運動法則自走，方向以角度最短路徑平滑追上。
+  assert.match(renderer, /var FIELD_VFX_FOLLOW_TAU_SEC = 0\.14/);
   assert.match(rendererField, /fieldVfxWindAngleStep\(fx, dt\)/);
-  assert.match(renderer, /Math\.atan2\(Math\.sin\(target - fx\.windAngle\), Math\.cos\(target - fx\.windAngle\)\)/);
-  assert.match(vfx, /return Math\.max\(0\.12, isFinite\(sec\)/);
+  assert.match(renderer, /function fieldApproachAngle\(cur, target, dt, tau\)/);
+  assert.match(renderer, /Math\.atan2\(Math\.sin\(target - cur\), Math\.cos\(target - cur\)\)/);
   assert.match(css, /\.vfx-wind-homing-blade[\s\S]*?transition: transform 120ms linear/);
 
   /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
      這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.59/);
+  assert.match(index, /css\/style\.css\?v=1\.0\.60/);
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.75/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.108/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.90/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260903-vfx-runtime-adapter'/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.109/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.3/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.91/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260903-field-motion-smooth'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260903-vfx-runtime-adapter/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260903-field-motion-smooth/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 
@@ -981,8 +997,9 @@ test('風系事件不得借用雷鏈與泛用方框的畫法', () => {
   assert.match(burstCase, /!targets\.length && rect && spec\.elem !== 'wind'\) spawnAreaFlash/);
 });
 
-test('追蹤場域的畫面位置以指數跟隨逼近權威座標（不做固定時長補間）', () => {
+test('移動場域的畫面位置沿模擬層的運動法則自走，再連續修正殘差', () => {
   const renderer = read('js/battle-renderer.js');
+  const skills2 = read('js/skills2.js');
   const rendererField = renderer.slice(
     renderer.indexOf('function spawnIceField'),
     renderer.indexOf('function spawnRiser', renderer.indexOf('function spawnIceField'))
@@ -991,16 +1008,27 @@ test('追蹤場域的畫面位置以指數跟隨逼近權威座標（不做固�
   /* 事件的到達節奏本身就不平均（實測同一顆場域：204ms 帶兩步、緊接著 0ms 補一個
      零頭步、再來 94/110/118ms 各一步）。固定時長的補間在事件早到時要衝刺、晚到時
      會走完停住——以實測序列回放有 13.9% 的畫格完全靜止，那就是「一格一格移動」。
-     指數跟隨的速度只取決於離權威座標多遠，因此不會有硬停頓（同序列降到 4.9%）。 */
+     連「朝最新快照指數逼近」都不夠：雷球每 0.35 秒、火龍捲每 0.5 秒才一則，
+     逼到了就沒有東西可以追，畫面會停在那裡等下一則。
+     因此改成推算自走（沿事件帶來的 speed／moveA／dest）＋ 殘差連續修正。 */
   assert.match(renderer, /var FIELD_VFX_FOLLOW_TAU_SEC = 0\.14/);
-  assert.match(renderer, /function fieldVfxFollowStep\(fx, dt\)/);
-  assert.match(renderer, /var want = dist \/ FIELD_VFX_FOLLOW_TAU_SEC;/);
-  // 追趕速度要以模擬層的權威速度為上限，不得用瞬移補上落後的距離
-  assert.match(renderer, /Number\(fx\.speed\) > 0 \? Number\(fx\.speed\) : want\) \* FIELD_VFX_FOLLOW_MAX_MULT/);
-  assert.match(rendererField, /fieldVfxSetFollowTarget\(current, Number\(a\.x\), Number\(a\.y\)\)/);
-  assert.match(rendererField, /fieldVfxFollowStep\(fx, dt\)/);
-  // 朝向取「目前位置 → 權威座標」：跟隨模型沒有補間起點可用
-  assert.match(renderer, /var dx = fx\.motionToX - fx\.x, dy = fx\.motionToY - fx\.y;/);
+  assert.match(renderer, /function fieldMotionStep\(fx, dt\)/);
+  assert.match(renderer, /fx\.baseX \+= Math\.cos\(fx\.moveA\) \* run;/);
+  // 修正速度要壓在行進速度之下，否則就算沒有停頓，畫面一樣忽快忽慢
+  assert.match(renderer, /want = Math\.min\(want, fx\.moveSpeed \* FIELD_VFX_CORRECT_MAX_RATIO\)/);
+  // 殘差大到不像推算誤差就直接就位，不硬拖一段長距離
+  assert.match(renderer, /FIELD_VFX_MAX_RESIDUAL_PX/);
+  assert.match(rendererField, /fieldMotionAim\(current, a, w, h\)/);
+  assert.match(rendererField, /fieldMotionStep\(fx, dt\)/);
+  // 機身朝向優先用模擬層送來的航向（那條路徑本來就含它自己的轉彎半徑）
+  assert.match(renderer, /if \(isFinite\(fx\.moveA\)\) return fx\.moveA;/);
+
+  /* 模擬層必須把運動語意送出來，否則顯示層只拿得到一串離散座標
+     （AI_RULES 8.3.1 的最後一句）。 */
+  assert.match(skills2, /function sgGroundMoving\(f\)/);
+  assert.match(skills2, /if \(f\.chaseM > 0\) return true;/);
+  assert.match(skills2, /return sgGroundMotionFields\(f, rect\);/);
+  assert.match(skills2, /return sgGroundMotionFields\(f, circle\);/);
 });
 
 /* 超神進化【地爆天星】（2026-08-24 使用者指定的三項調整）：
