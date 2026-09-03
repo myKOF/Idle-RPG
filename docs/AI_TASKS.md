@@ -4668,8 +4668,8 @@ Commit：
 任務內容：在既有 DOM、事件與資料流完全不變的前提下，集中重製全域色彩、材質、面板、按鈕、
 分頁、表單、捲軸、物品格、技能格、彈窗、提示框與戰鬥區外框；強化 1920px 桌面版的左右主次層級，
 並保留窄螢幕的既有可用性。後續依使用者回饋補入原創石板、鑄鐵與透明熔鐵九宮格邊框圖片，
-讓材質與邊角不只依賴 CSS 漸層；再依畫面回饋將熔鐵框拆為四張等比例角落圖，以固定尺寸繪製，
-避免 `border-image` 壓縮角落細節。參考圖只作視覺方向，不把圖中文字或功能視為需求。
+讓材質與邊角不只依賴 CSS 漸層；再依畫面回饋移除過度突出的角落插圖，收斂為細鑄鐵外框與局部熔紅，
+避免裝飾壓過功能內容。參考圖只作視覺方向，不把圖中文字或功能視為需求。
 
 允許修改：
 
@@ -4679,10 +4679,6 @@ Commit：
 - `images/ui_dark_slate_tile.png`
 - `images/ui_cast_iron_tile.png`
 - `images/ui_molten_iron_frame.png`
-- `images/ui_molten_corner_tl.png`
-- `images/ui_molten_corner_tr.png`
-- `images/ui_molten_corner_bl.png`
-- `images/ui_molten_corner_br.png`
 
 禁止修改：
 
@@ -4709,16 +4705,15 @@ Commit：
 - 後續圖片材質優化：原創石板、鑄鐵與透明熔鐵九宮格邊框均由目前工作副本實際載入；
   1920×1080、1366×768 無橫向溢位，主框與隱藏彈窗的邊框圖片均套用成功，Console 0 error／0 warning。
 - 後續建置與 UI 定向測試再次通過：`npm run build`；13/13 項 UI 測試通過。
-- 熔鐵角落比例修正：由原始透明圖框擷取四張 300×300 等比例角圖，主框以固定 72px、彈窗以固定
-  54px 繪製；實機確認熔岩裂紋、鐵板與鉚釘完整可見，Console 0 error／0 warning。
+- 外框視覺收斂：移除所有巨型熔鐵角圖；主三欄回到深色鑄鐵細框，僅在背包與戰鬥技能列的下緣保留
+  極細熔紅提示。實機確認彈窗與主畫面無圖形壓迫或橫向溢位，Console 0 error／0 warning。
 
 修改檔案：`css/style.css`、`index.html`、`docs/AI_TASKS.md`、`images/ui_dark_slate_tile.png`、
-`images/ui_cast_iron_tile.png`、`images/ui_molten_iron_frame.png`、`images/ui_molten_corner_tl.png`、
-`images/ui_molten_corner_tr.png`、`images/ui_molten_corner_bl.png`、`images/ui_molten_corner_br.png`。未修改但檢查過 `js/ui-scale.js`、
+`images/ui_cast_iron_tile.png`、`images/ui_molten_iron_frame.png`。未修改但檢查過 `js/ui-scale.js`、
 各主要 UI 定向測試與全分頁執行期 DOM；沒有修改任何 JS、遊戲資料、公式、存檔或 Worker Protocol。
 
 已知風險：新增三張原創 PNG 圖片約 6.85 MB，會增加首次載入量；已將 CSS 查詢版號由 `1.0.59` 遞增為
-`1.0.60`。本次比例修正因另一工作副本正修改 `index.html`，無法安全遞增至 `1.0.61`；若瀏覽器快取舊的
+`1.0.60`。本次外框收斂因另一工作副本正修改 `index.html`，無法安全遞增至 `1.0.61`；若瀏覽器快取舊的
 `1.0.60` 樣式，需強制重新整理一次。專案強制快取版號規則只要求 JS 修改時遞增版本，本次未修改 JS。
 
 未完成項目：無。
