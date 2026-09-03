@@ -293,8 +293,9 @@ g('gale', [
   _, _, _, _, _, _
 ], { thunderFlash: { hit: 'hit-lightning' }, thunderGodSlash: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } });
 g('bloodblade', [
-  { attack: 'slash-bloodblade', hit: 'hit-bleed', cast: 'curse-bleed' },      // T1 血刃斬 + 流血詛咒（curse/bleed 走 cast 欄？→ 不，curse 用 attack；T1 attack 已用，見下方註記）
-  _, _,
+  { attack: 'slash-bloodblade', hit: 'hit-bleed' },                          // T1 血刃斬
+  { attack: 'curse-bleed', hit: 'hit-bleed' },                               // T2 強化流血（curse/bleed 走這一列）
+  _,
   { attack: 'curse-poison', hit: 'hit-poison' },                             // T4 血毒刃（curse/poison）
   { projectile: 'proj-poison-drop', hit: 'hit-poison' },                     // T5 毒霧感染（poison-spread）
   { attack: 'burst-blood', hit: 'hit-bleed' },                               // T6 死亡屍爆（blood-explosion）
@@ -310,7 +311,7 @@ g('counter', [
   _, _, _,
   { hit: 'hit-earth' },                               // T5 破甲擊（armor-break impact）
   _, _
-], { holyBody: { attack: 'burst-holy', hit: 'hit-light' }, indomitable: { attack: 'burst-earth', hit: 'hit-earth', ground: 'aura-rock-armor', cast: 'pillar-earth' } });
+], { holyBody: { attack: 'burst-holy', hit: 'hit-light' }, indomitable: { attack: 'burst-earth', hit: 'hit-earth', ground: 'aura-rock-armor' } });
 g('bloodrage', [
   { ground: 'aura-bloodrage' },                       // T1 嗜血狂怒（bloodrage-aura）
   _, _, _, _, _, _
@@ -318,7 +319,7 @@ g('bloodrage', [
 g('fireball', [
   { projectile: 'proj-fireball', hit: 'hit-fire', attack: 'burst-fire', cast: 'cast-magic' }, // T1 火球術 + 爆炸範圍
   { hit: 'st-tick-fire' },                                                                     // T2 燃燒（burn-tick）
-  { projectile: 'proj-fireball', hit: 'hit-fire-explosion' },                                  // T3 火球爆裂（fireball-small + fire-explosion）
+  { projectile: 'proj-fireball', hit: 'hit-fire-explosion', attack: 'burst-fire' },             // T3 火球爆裂（fireball-small + fire-explosion）
   _,
   { attack: 'burst-fire', hit: 'hit-fire' },                                                   // T5 爆燃（fire-blast）
   _,
@@ -351,7 +352,7 @@ g('mire', [
 g('earthguard', [
   _, _, _, _, _,
   { attack: 'beam-light', hit: 'hit-light' },         // T6 生命反射之盾（earth-reflect）
-  { cast: 'pillar-light' }                            // T7 天地共生（rebirth pillar on player）
+  { attack: 'pillar-light', hit: 'hit-light' }        // T7 天地共生（rain/pillar，主要角色是 attack）
 ], { worldRebirth: { attack: 'pillar-earth', hit: 'hit-earth' } });
 g('chainlightning', [
   { projectile: 'bolt-chain-lightning', hit: 'hit-lightning', cast: 'cast-magic' }, // T1 連鎖閃電
@@ -528,7 +529,9 @@ const COMBAT_DEFAULTS = {
   enemyProjectileByElem: { fire: 'proj-fire', ice: 'proj-ice-shard', lightning: 'proj-lightning', poison: 'proj-poison-drop', light: 'proj-light-orb', dark: 'proj-dark-orb', earth: 'proj-earth-rock', wind: 'proj-wind-crescent' },
   enemyHitByElem: { fire: 'hit-fire', ice: 'hit-ice', lightning: 'hit-lightning', poison: 'hit-poison', light: 'hit-light', dark: 'hit-dark', earth: 'hit-earth', wind: 'hit-wind' },
   chainLightning: { attack: 'bolt-sky-lightning', projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
-  legendaryLightningChain: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' }
+  legendaryLightningChain: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' },
+  /* 小隕石：Runtime 依 variant fireball-small／meteor-impact 取用，不佔表上的欄位。 */
+  meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }
 };
 
 module.exports = { PRESETS: P, ELEM_THEME, skillRoles, SKILLS2_VFX: S2, STATUS_VFX: ST, COMBAT_DEFAULTS, CAST_BY_CAT, CAST_BY_ELEM, PROJ_BY_ELEM };
