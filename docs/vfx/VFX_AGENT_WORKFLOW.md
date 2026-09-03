@@ -130,6 +130,7 @@ Codex 只做 Review（第 3 節）。
 | `js/vfx-core.js` | VFX Core：Preset 的純運算層（不碰 DOM、不認得遊戲概念） |
 | `js/vfx-pixi-backend.js` | Core 的 Pixi 繪圖後端 |
 | `js/vfx-runtime.js` | Runtime Adapter：VFX 事件 → 角色 → 擺哪裡（2026-09-03） |
+| `js/vfx-tower.js` | 高塔的第二個 Pixi 表面：同一個 Adapter，換座標來源與尺寸規則（2026-09-03） |
 | `js/vendor/pixi.min.js` | PixiJS 函式庫 |
 | `vfx/presets/`、`vfx/layouts/` | 151 份 Preset 與各自的單一根群組 layout |
 | `vfx/asset-index.json`、`vfx/asset-semantics.json`、`vfx/shipped-assets.json` | 素材索引、語意層、出貨清單 |

@@ -535,9 +535,14 @@ function flushWorkerVisualEvents() {
       floatText(event.elId, event.text, event.cls, event.damageValue, null,
         uiBattlePanelSnapshot(), event.delayMs);
     } else if (event.kind === 'vfx') {
-      /* Canvas 戰鬥模式：野外特效交給 PixiJS 渲染器；高塔（tb/tp 定址）維持 DOM 特效 */
+      /* 三條顯示路徑，依定址分流：
+           野外（mv/pv 定址）→ PixiJS 戰鬥渲染器
+           高塔（tb/tp 定址）→ 高塔的 Preset 疊層（js/vfx-tower.js）
+           兩邊都不接手 → js/vfx.js 的 DOM 畫法（也是 Preset 缺件時的退路） */
       if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsVfx(event)) {
         BattleRenderer.onVfx(event);
+      } else if (typeof VFXTower !== 'undefined' && VFXTower.onVfx(event)) {
+        /* 高塔疊層已接手 */
       } else if (typeof playCombatVfx === 'function') {
         playCombatVfx(event);
       }
@@ -5924,6 +5929,8 @@ function renderTower() {
   } else {
     fightBox.style.display = 'none';
     listBox.style.display = '';
+    /* 離開戰鬥畫面：疊層上還在跑的特效要收掉，否則下一場一開場就看到上一場的殘留。 */
+    if (typeof VFXTower !== 'undefined') VFXTower.stop();
     var h = '';
     var highest = Math.max(0, towerState.highest || 0);
     var maxShow = Math.min(TOWER_MAX_FLOOR, highest + 3);
@@ -6121,6 +6128,8 @@ function renderTowerFight() {
   renderPlayerShieldBar('tp', p, st);
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
   setTextIfChanged($id('tp-status'), entStatus(p));
+  /* 狀態光環要靠面板快照 reconcile（事件答不出「現在還在不在」）——與野外同一條規則。 */
+  if (typeof VFXTower !== 'undefined') VFXTower.sync(p, b);
   renderMpSkill(p, 'tp', st, snapshot.gt);
   setTextIfChanged($id('tw-dps'), 'DPS ' + fmt(runtime.elapsed > 1 ? runtime.dmgDealt / runtime.elapsed : 0) +
     '（需求 ' + fmt(b.maxHp / towerTimeLimitWithTalents(runtime.floor)) + '）');

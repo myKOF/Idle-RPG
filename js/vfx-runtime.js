@@ -27,6 +27,12 @@ var VFXRuntime = (function () {
   var NOMINAL_BEAM = 200;       // 光束／連鎖段沿 +X 的長度
   var NOMINAL_LANCE = 100;      // 帶 angle 的方向型攻擊（突刺光槍）沿 +X 的長度
   var NOMINAL_LANCE_W = 36;     // 同上的名目寬度
+  var NOMINAL_ORB = 20;         // 環繞體名目半徑（scale＝area.orbR/20）
+  /* 環繞場域的三個常數與舊畫法（battle-renderer spawnFireHunt）取同一組值：
+     兩邊畫的是同一個東西，數字分家就會出現「切 ?vfx=legacy 前後大小不一樣」。 */
+  var ORBIT_MAX_SEC = 12;       // 顯示上限（秒）；【再生】可延長，但不無限延長
+  var ORBIT_FLAT = 0.62;        // 俯視壓扁，與棋盤的透視一致
+  var ORBIT_LIFT = 12;          // 圓心略高於腳底，對齊角色貼圖的視覺中心
   var STRONG_HIT_SCALE = 1.6;   // 範圍型命中的受擊爆點放大倍率
 
   /* 場域事件是每一拍送一次的：這一拍之後多久沒有續命就收掉。
@@ -35,6 +41,17 @@ var VFXRuntime = (function () {
   var GROUND_MIN_KEEP_SEC = 0.35;
   /* 狀態光環的快照頻率是 5Hz，同樣要容忍一次遺失。 */
   var AURA_KEEP_SEC = 0.6;
+
+  /* 表面尺寸規則：Preset 是照野外戰場的名目尺寸畫的（身高 60px、半徑 100px、天降 500px），
+     換到別的版面（高塔的 202px 卡片）就得整組縮放。三個係數分開的理由是它們對應
+     三種不同的名目基準，用同一個數字縮會顧此失彼。
+     野外一律用這份預設（全部 1 ＋ groundR 0），因此行為與加入 profile 之前完全相同。 */
+  var DEFAULT_PROFILE = {
+    scale: 1,        // 角色身上（受擊／施放／狀態光環／目標身上的攻擊本體）
+    areaScale: 1,    // 帶 area 的（範圍爆發、場域、環繞場域）
+    skyScale: 1,     // 天降（fxKind rain）
+    groundR: 0       // 沒有 area 時場域改用的名目半徑（0＝不畫，維持退回舊畫法）
+  };
 
   var FX_BUDGET = { maxActiveEffects: 160, maxParticles: 2400 };
   var ZONE_BUDGET = { maxActiveEffects: 40, maxParticles: 1200 };
@@ -93,6 +110,12 @@ var VFXRuntime = (function () {
     /* 受擊爆點打在身體中心，施放光環與狀態光環的原點卻在腳底（名目身高 60px 的 0 點）。
        沒有 footOf 就退回 posOf——光環會浮高半個身位，但不會壞掉。 */
     var footOf = ctx.footOf || ctx.posOf;
+    var profile = {
+      scale: num(o.profile && o.profile.scale, DEFAULT_PROFILE.scale),
+      areaScale: num(o.profile && o.profile.areaScale, DEFAULT_PROFILE.areaScale),
+      skyScale: num(o.profile && o.profile.skyScale, DEFAULT_PROFILE.skyScale),
+      groundR: num(o.profile && o.profile.groundR, DEFAULT_PROFILE.groundR)
+    };
     var Core = o.core || (typeof VFXCore !== 'undefined' ? VFXCore : null);
     if (!Core) throw new Error('VFXRuntime 需要 VFXCore');
 
@@ -109,6 +132,7 @@ var VFXRuntime = (function () {
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
     var grounds = Object.create(null);      // area.id → 場域
+    var orbits = Object.create(null);       // 合併鍵 → 環繞場域（軌道環＋N 個環繞體）
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
@@ -125,13 +149,28 @@ var VFXRuntime = (function () {
 
     function has(id) { return !!(id && known[id]); }
 
+    /* 把表面的尺寸係數乘進 transform 參數。沒給任何縮放時視為 1，
+       這樣「角色身上」那類不帶 scale 的呼叫在高塔也會整組縮。 */
+    function sized(params, k) {
+      var mult = num(k, profile.scale);
+      if (mult === 1) return params;
+      var out = {};
+      for (var key in params) out[key] = params[key];
+      var hasAxis = out.scaleX !== undefined || out.scaleY !== undefined;
+      if (out.scale !== undefined) out.scale *= mult;
+      if (out.scaleX !== undefined) out.scaleX *= mult;
+      if (out.scaleY !== undefined) out.scaleY *= mult;
+      if (out.scale === undefined && !hasAxis) out.scale = mult;
+      return out;
+    }
+
     /* ---- 播放：把 Core 的 handle 連同它屬於哪個 runtime 一起記住 ----
        Core 超出 budget 時 play() 回 null（寧可少一個特效也不掉幀）。
        那會讓 tryPlay 回 false，於是這一則改由舊畫法接手——洪峰時畫面會混著兩種風格，
        但不會有「該有的特效整個不見」。降級的門檻就是 budget，不在這裡另外加限流。 */
-    function play(rt, presetId, params) {
+    function play(rt, presetId, params, mult) {
       if (!has(presetId)) { counters.missing++; return null; }
-      var handle = rt.play(presetId, params || {});
+      var handle = rt.play(presetId, sized(params || {}, mult));
       if (handle === null || handle === undefined) return null;
       counters.played++;
       return { rt: rt, handle: handle };
@@ -139,6 +178,10 @@ var VFXRuntime = (function () {
     function stopRef(ref) {
       if (!ref) return;
       ref.rt.stop(ref.handle);
+    }
+    /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
+    function moveRef(ref, params, mult) {
+      return ref.rt.setTransform(ref.handle, sized(params, mult));
     }
 
     /* ---- 幾何 ---- */
@@ -191,7 +234,7 @@ var VFXRuntime = (function () {
       if (!spec.area) return false;
       var params = areaScaleParams(spec.area);
       params.position = areaCentre(spec.area);
-      return !!play(rt, presetId, params);
+      return !!play(rt, presetId, params, profile.areaScale);
     }
 
     /* 帶 angle 的方向型攻擊（突刺光槍、齊射的風刃）：從施法者身上沿該方位拉出去。
@@ -242,21 +285,25 @@ var VFXRuntime = (function () {
       if (chained) from = ctx.posOf(ids[0]);
       else if (spec.sourceId) from = ctx.posOf(spec.sourceId);
       else if (spec.fxKind === 'rain') {
-        /* 天降：從落點正上方 500px 落下（名目高度，與 bolt 家族同一組座標慣例）。 */
+        /* 天降：從落點正上方 500px 落下（名目高度，與 bolt 家族同一組座標慣例）。
+           換到別的版面時高度要跟著整體縮——柱子縮小了、出生點卻還在 500px 之外，
+           會變成「先看到一段空白才落下來」。 */
         var landing = spec.area ? areaCentre(spec.area) : ctx.posOf(toId);
-        from = { x: landing.x, y: landing.y - 500 };
+        from = { x: landing.x, y: landing.y - 500 * profile.skyScale };
       } else from = ctx.playerPos();
       var to = (travel > 0 && ctx.projectileTargetPoint)
         ? ctx.projectileTargetPoint(toId, travel) : ctx.posOf(toId);
+      var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
       var ref = play(rt, presetId, {
         position: from,
         rotation: Math.atan2(to.y - from.y, to.x - from.x),
         scale: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1
-      });
+      }, mult);
       if (!ref) return false;
       projectiles.push({
         ref: ref, from: from, targetId: toId, t: 0,
         dur: travel > 0 ? travel : 0.001,
+        mult: mult,
         scale: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1
       });
       return true;
@@ -272,23 +319,162 @@ var VFXRuntime = (function () {
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新位置 */
     function playGround(presetId, spec) {
-      if (!spec.area) return false;
-      var key = spec.area.id ||
-        (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0)));
+      /* 沒有 area 的版面（高塔：實體沒有座標，事件的 area 一律是 null）——
+         profile.groundR 給它一個名目半徑，畫在目標腳底；0 就維持退回舊畫法。 */
+      var noArea = !spec.area;
+      if (noArea && !(profile.groundR > 0)) return false;
+      var anchor = noArea
+        ? (Array.isArray(spec.targets) && spec.targets.length ? spec.targets[0] : 'pv-float')
+        : null;
+      var key = noArea ? (presetId + '@' + anchor)
+        : (spec.area.id ||
+           (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0))));
       var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
-      var params = areaScaleParams(spec.area);
-      params.position = areaCentre(spec.area);
+      var mult = noArea ? profile.scale : profile.areaScale;
+      function paramsNow() {
+        if (!noArea) {
+          var p = areaScaleParams(spec.area);
+          p.position = areaCentre(spec.area);
+          return p;
+        }
+        return { position: footOf(anchor), scale: profile.groundR / NOMINAL_RADIUS };
+      }
       var live = grounds[key];
       if (live && live.presetId === presetId) {
         live.expireAt = clock + keep;
-        live.ref.rt.setTransform(live.ref.handle, params);
+        moveRef(live.ref, paramsNow(), mult);
         return true;
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
-      var ref = play(rtZone, presetId, params);
+      var ref = play(rtZone, presetId, paramsNow(), mult);
       if (!ref) return false;
       grounds[key] = { ref: ref, presetId: presetId, expireAt: clock + keep };
       return true;
+    }
+
+    /* ---------------------------------------------------------------
+       環繞場域：軌道環（zone 層）＋ 沿環公轉的 N 個環繞體（fx 層）
+
+       幾何與成長曲線全部沿用模擬層送來的語意參數（AI_RULES 8.3），
+       公式與舊畫法 battle-renderer.spawnFireHunt 逐項對齊——那是模擬層實際判定
+       接觸的那個圓，畫小了玩家會覺得「明明沒碰到卻扣血」。
+       圓心不取 area 的 x／y 而是逐幀讀玩家座標：環繞場域本來就跟著玩家跑。
+       --------------------------------------------------------------- */
+    function orbitGeom(area) {
+      var rate = num(area.spinRate, NaN);
+      return {
+        ringR: Math.max(6, num(area.r, 0)),
+        orbR: Math.max(3, num(area.orbR, 0)),
+        /* 起始角：模擬層算接觸時用的就是 startAng + 2π·k/count（sgOrbitStep），
+           顯示層必須用同一個角度，否則畫面上的球與實際會打到人的球對不起來
+           （AI_RULES 8.3）。虛空鋸刃更是靠它把四片盤錯開——忽略它會四片疊在一起。 */
+        startAng: num(area.startAng, 0),
+        orbs: Math.max(1, Math.min(12, Math.floor(num(area.orbs, 1)))),
+        /* 角速度沿用模擬層的實際值；舊事件沒有 spinRate 就退回每秒 1 圈。 */
+        spin: (isFinite(rate) && Math.abs(rate) > 1e-6) ? rate
+          : (num(area.spin, 1) < 0 ? -1 : 1) * Math.PI * 2,
+        growPx: Math.max(0, num(area.grow, 0)),          // 環半徑每秒外擴 px
+        growMax: Math.max(0, num(area.growMax, 0)),      // 外擴上限（0＝不設限）
+        spiral: num(area.spiral, 0) > 0,                 // 每一團各自從圓心往外長
+        spiralLag: Math.max(0, num(area.spiralLag, 0)),  // 相鄰兩團的出生間隔（秒）
+        orbGrowTo: Math.max(1, num(area.orbGrowTo, 1)),
+        orbGrowSec: Math.max(0.1, num(area.orbGrowSec, 1)),
+        rGrowTo: Math.max(1, num(area.rGrowTo, 1)),
+        rGrowSec: Math.max(0.1, num(area.rGrowSec, num(area.orbGrowSec, 1)))
+      };
+    }
+    function orbitCentre() {
+      var p = footOf('pv-float');
+      return { x: p.x, y: p.y - ORBIT_LIFT };
+    }
+    /* 合併鍵：同一道（半徑＋方向相同）只保留一組。【再生】延長持續時間時
+       模擬層會補送同一道的事件，沒有這層合併就會愈疊愈多團。
+       鍵含變體與屬性——火狩與環體電球可能同時存在且半徑相同。 */
+    function orbitKeyOf(spec, geo) {
+      if (spec.area && spec.area.id) return String(spec.area.id);
+      return (spec.variant || 'orbit') + ':' + (spec.elem || '') + ':' +
+        Math.round(geo.ringR) + ':' + (geo.spin < 0 ? 'ccw' : 'cw');
+    }
+    /* 團數會變（火狩每投資一階多一團）：多退少補，不整組重建。 */
+    function syncOrbCount(entry) {
+      while (entry.orbs.length > entry.geo.orbs) stopRef(entry.orbs.pop());
+      while (entry.orbs.length < entry.geo.orbs) {
+        var ref = play(rtFx, entry.orbId, { position: orbitCentre(), scale: entry.geo.orbR / NOMINAL_ORB }, profile.areaScale);
+        if (!ref) break;                    // 預算滿了就先少幾團，下一次事件再補
+        entry.orbs.push(ref);
+      }
+    }
+    function stopOrbit(key) {
+      var o = orbits[key];
+      if (!o) return;
+      if (o.ring) stopRef(o.ring);
+      o.orbs.forEach(stopRef);
+      delete orbits[key];
+    }
+    function playOrbit(spec, roles) {
+      /* 沒有環繞體的 preset 就整則交還舊畫法：只畫軌道環等於把環繞體弄不見。 */
+      var orbId = roles.projectile;
+      if (!orbId || !has(orbId)) return false;
+      var geo = orbitGeom(spec.area);
+      var key = orbitKeyOf(spec, geo);
+      var dur = Math.min(ORBIT_MAX_SEC, Math.max(0.5, num(spec.dur, 4)));
+      var live = orbits[key];
+      if (live && live.orbId === orbId) {
+        live.dur = Math.min(ORBIT_MAX_SEC, Math.max(live.dur, live.t + dur));
+        live.geo = geo;
+        syncOrbCount(live);
+        return true;
+      }
+      if (live) stopOrbit(key);
+      var ringId = (roles.ground && has(roles.ground)) ? roles.ground : '';
+      var centre = orbitCentre();
+      var entry = {
+        orbId: orbId, ringId: ringId, geo: geo, t: 0, dur: dur, orbs: [],
+        ring: ringId ? play(rtZone, ringId, { position: centre, scale: geo.ringR / NOMINAL_RADIUS }, profile.areaScale) : null
+      };
+      orbits[key] = entry;
+      syncOrbCount(entry);
+      /* 一團都放不下（預算滿）＝這一則沒有畫面，交還舊畫法。 */
+      if (!entry.orbs.length) { stopOrbit(key); return false; }
+      return true;
+    }
+    function updateOrbits(step) {
+      Object.keys(orbits).forEach(function (key) {
+        var o = orbits[key];
+        o.t += step;
+        if (o.t >= o.dur) { stopOrbit(key); return; }
+        var g = o.geo;
+        var centre = orbitCentre();
+        function ease(sec) { return Math.max(0, Math.min(1, o.t / sec)); }
+        /* 體積成長（超神【烈陽星環】）：出生後 orbGrowSec 秒內線性長到 orbGrowTo 倍。 */
+        var orbR = g.orbGrowTo > 1 ? g.orbR * (1 + (g.orbGrowTo - 1) * ease(g.orbGrowSec)) : g.orbR;
+        /* 圈距成長：這一道環的半徑在 rGrowSec 秒內線性長到 rGrowTo 倍（最內圈恆為 1）。 */
+        var ringRNow = g.rGrowTo > 1 ? g.ringR * (1 + (g.rGrowTo - 1) * ease(g.rGrowSec)) : g.ringR;
+        var capR = g.growMax > 0 ? g.growMax : Infinity;
+        /* 整環一起長（虛空斬）先算好；螺旋（超神【無限星環】）則每一團各自算。 */
+        var wholeR = (g.growPx > 0 && !g.spiral) ? Math.min(capR, ringRNow + g.growPx * o.t) : ringRNow;
+        if (o.ring && !moveRef(o.ring, { position: centre, scale: wholeR / NOMINAL_RADIUS },
+          profile.areaScale)) o.ring = null;
+        var base = g.startAng + g.spin * o.t;
+        var dir = g.spin < 0 ? -1 : 1;
+        for (var i = o.orbs.length - 1; i >= 0; i--) {
+          /* 螺旋：第 i 團晚 i×spiralLag 秒才出生，半徑因此短了那一段時間的成長量——
+             整組畫出來是一條從圓心往外長的螺旋，而不是同心圓。 */
+          var orbT = g.spiral ? Math.max(0, o.t - i * g.spiralLag) : o.t;
+          var rNow = g.spiral ? Math.min(capR, ringRNow + g.growPx * orbT) : wholeR;
+          var ang = base + Math.PI * 2 * i / o.orbs.length;
+          /* 朝向取「螢幕上的切線方向」而不是 ang＋90°：橢圓被壓扁 0.62 之後，
+             那兩者差得出來（Preset 一律朝 +X 繪製，拖尾會指錯邊）。 */
+          var heading = Math.atan2(Math.cos(ang) * ORBIT_FLAT * dir, -Math.sin(ang) * dir);
+          var alive = moveRef(o.orbs[i], {
+            position: { x: centre.x + Math.cos(ang) * rNow, y: centre.y + Math.sin(ang) * rNow * ORBIT_FLAT },
+            rotation: heading,
+            scale: orbR / NOMINAL_ORB
+          }, profile.areaScale);
+          if (!alive) o.orbs.splice(i, 1);
+        }
+        if (!o.orbs.length && !o.ring) stopOrbit(key);
+      });
     }
 
     /* ---------------------------------------------------------------
@@ -298,11 +484,9 @@ var VFXRuntime = (function () {
       if (!spec) return false;
       var roles = spec.vfx;
       if (!roles || typeof roles !== 'object') return false;
-      /* 環繞場域（火狩星環、電球、虛空鋸刃）整則交還舊畫法。
-         它的畫面是「軌道環 ＋ 沿環公轉的 N 個環繞體」，而環繞體要逐幀算公轉位置
-         （orbs／spin／spinRate／startAng／螺旋／體積成長）。這一層目前只播得出軌道環，
-         接手等於把環繞體整個弄不見——那比維持舊畫法更糟。 */
-      if (spec.area && num(spec.area.orbs, 0) > 0) return false;
+      /* 環繞場域（火狩星環、環體電球、虛空鋸刃）：軌道環與環繞體是同一件事，
+         必須一起接手，因此走自己的路徑而不是一般的角色分派。 */
+      if (spec.area && num(spec.area.orbs, 0) > 0) return playOrbit(spec, roles);
       var role = primaryRoleOf(spec, roles);
       var presetId = role ? roles[role] : '';
       if (!presetId || !has(presetId)) { counters.skipped++; return false; }
@@ -403,11 +587,11 @@ var VFXRuntime = (function () {
         var to = ctx.posOf(pr.targetId);
         var x = pr.from.x + (to.x - pr.from.x) * k;
         var y = pr.from.y + (to.y - pr.from.y) * k;
-        var alive = pr.ref.rt.setTransform(pr.ref.handle, {
+        var alive = moveRef(pr.ref, {
           position: { x: x, y: y },
           rotation: Math.atan2(to.y - pr.from.y, to.x - pr.from.x),
           scale: pr.scale
-        });
+        }, pr.mult);
         if (!alive || k >= 1) {
           if (alive) stopRef(pr.ref);
           projectiles.splice(i, 1);
@@ -417,7 +601,7 @@ var VFXRuntime = (function () {
       /* 跟隨玩家的施放特效 */
       for (var f = follows.length - 1; f >= 0; f--) {
         var fo = follows[f];
-        var live = fo.ref.rt.setTransform(fo.ref.handle, { position: footOf(fo.key) });
+        var live = moveRef(fo.ref, { position: footOf(fo.key) });
         if (!live || fo.until <= clock) {
           if (live && fo.until <= clock) stopRef(fo.ref);
           follows.splice(f, 1);
@@ -428,8 +612,10 @@ var VFXRuntime = (function () {
       Object.keys(auras).forEach(function (k) {
         var a = auras[k];
         if (a.expireAt <= clock) { stopRef(a.ref); delete auras[k]; return; }
-        if (!a.ref.rt.setTransform(a.ref.handle, { position: footOf(a.key) })) delete auras[k];
+        if (!moveRef(a.ref, { position: footOf(a.key) })) delete auras[k];
       });
+
+      updateOrbits(step);
 
       /* 場域到期 */
       Object.keys(grounds).forEach(function (k) {
@@ -446,6 +632,7 @@ var VFXRuntime = (function () {
       projectiles.length = 0;
       follows.length = 0;
       pending.length = 0;
+      Object.keys(orbits).forEach(stopOrbit);
       grounds = Object.create(null);
       auras = Object.create(null);
       rtFx.stopAll();
@@ -471,6 +658,7 @@ var VFXRuntime = (function () {
           presets: Object.keys(known).length,
           projectiles: projectiles.length,
           grounds: Object.keys(grounds).length,
+          orbits: Object.keys(orbits).length,
           auras: Object.keys(auras).length,
           pending: pending.length,
           played: counters.played, skipped: counters.skipped, missing: counters.missing,
@@ -555,10 +743,11 @@ var VFXRuntime = (function () {
     create: create,
     boot: boot,
     collectPresetIds: collectPresetIds,
+    loadPresets: loadPresets,
     primaryRoleOf: primaryRoleOf,
     NOMINAL: {
       radius: NOMINAL_RADIUS, rectW: NOMINAL_RECT_W, rectH: NOMINAL_RECT_H,
-      beam: NOMINAL_BEAM, lance: NOMINAL_LANCE, lanceWidth: NOMINAL_LANCE_W
+      beam: NOMINAL_BEAM, lance: NOMINAL_LANCE, lanceWidth: NOMINAL_LANCE_W, orb: NOMINAL_ORB
     }
   };
 })();
