@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "st-bleed",
+  "duration": 1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.1016,
+        "y": 0.1328
+      },
+      "alpha": 0.2,
+      "tint": "#d92846",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.24
+        ],
+        [
+          0.5,
+          0.38
+        ],
+        [
+          1,
+          0.24
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.97
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          1,
+          0.97
+        ]
+      ]
+    },
+    {
+      "id": "drops",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#d92846",
+      "blendMode": "normal",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 4
+      },
+      "lifetime": [
+        0.5,
+        0.8
+      ],
+      "spawn": {
+        "height": 40,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        10,
+        30
+      ],
+      "direction": 90,
+      "spread": 60,
+      "gravity": {
+        "x": 0,
+        "y": 260
+      },
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}

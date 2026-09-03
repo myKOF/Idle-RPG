@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-mire-lava",
+  "groups": [
+    {
+      "id": "ground-mire-lava",
+      "name": "ground-mire-lava",
+      "layerIds": [
+        "fill",
+        "edge",
+        "ripple-a",
+        "ripple-b",
+        "ripple-c",
+        "bubbles",
+        "embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-mire-lava"
+  ]
+}

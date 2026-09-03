@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-fire-amp",
+  "groups": [
+    {
+      "id": "st-fire-amp",
+      "name": "st-fire-amp",
+      "layerIds": [
+        "ring",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-fire-amp"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-atk-up",
+  "groups": [
+    {
+      "id": "st-atk-up",
+      "name": "st-atk-up",
+      "layerIds": [
+        "ring",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-atk-up"
+  ]
+}

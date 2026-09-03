@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-thrust-lance",
+  "duration": 0.3,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shaft",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0703
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.85,
+      "tint": "#a86d2d",
+      "blendMode": "add",
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.8,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          0.85
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0273
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#ffd166",
+      "blendMode": "add",
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.8,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "tip",
+      "type": "sprite",
+      "assetId": "new_materials/flare/flare_16.png",
+      "zIndex": 3,
+      "position": {
+        "x": 100,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 1,
+      "tint": "#fff3c4",
+      "blendMode": "add",
+      "delay": 0.1,
+      "duration": 0.18,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    }
+  ]
+}

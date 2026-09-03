@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "pillar-earth",
+  "groups": [
+    {
+      "id": "pillar-earth",
+      "name": "pillar-earth",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "land",
+        "ring",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:pillar-earth"
+  ]
+}

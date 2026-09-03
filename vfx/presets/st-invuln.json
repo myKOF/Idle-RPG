@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "id": "st-invuln",
+  "duration": 1.5,
+  "loop": true,
+  "layers": [
+    {
+      "id": "dome",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.1094,
+        "y": 0.1406
+      },
+      "alpha": 0.25,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.22
+        ],
+        [
+          0.5,
+          0.34
+        ],
+        [
+          1,
+          0.22
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.97
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          1,
+          0.97
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -3
+      },
+      "scale": {
+        "x": 0.1016,
+        "y": 0.0391
+      },
+      "alpha": 0.65,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.65
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    },
+    {
+      "id": "glints",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_02.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#fffef4",
+      "blendMode": "add",
+      "duration": 1.5,
+      "emission": {
+        "mode": "rate",
+        "rate": 4
+      },
+      "lifetime": [
+        0.4,
+        0.7
+      ],
+      "spawn": {
+        "radius": 28,
+        "shape": "circle"
+      },
+      "speed": [
+        0,
+        12
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0137,
+        0.0254
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    }
+  ]
+}

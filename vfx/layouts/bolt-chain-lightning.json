@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "bolt-chain-lightning",
+  "groups": [
+    {
+      "id": "bolt-chain-lightning",
+      "name": "bolt-chain-lightning",
+      "layerIds": [
+        "glow",
+        "seg-a",
+        "seg-b",
+        "core"
+      ]
+    }
+  ],
+  "order": [
+    "group:bolt-chain-lightning"
+  ]
+}

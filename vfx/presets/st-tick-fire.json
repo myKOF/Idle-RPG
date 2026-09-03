@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "id": "st-tick-fire",
+  "duration": 0.45,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flames",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#ff7a24",
+      "blendMode": "add",
+      "emission": {
+        "count": 3,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.4
+      ],
+      "spawn": {
+        "height": 26,
+        "shape": "box",
+        "width": 20
+      },
+      "speed": [
+        40,
+        80
+      ],
+      "direction": -90,
+      "spread": 40,
+      "gravity": {
+        "x": 0,
+        "y": -90
+      },
+      "startScale": [
+        0.0313,
+        0.0508
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    },
+    {
+      "id": "embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#ffd447",
+      "blendMode": "add",
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.25,
+        0.4
+      ],
+      "spawn": {
+        "radius": 10,
+        "shape": "circle"
+      },
+      "speed": [
+        50,
+        100
+      ],
+      "direction": -90,
+      "spread": 70,
+      "gravity": {
+        "x": 0,
+        "y": -70
+      },
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

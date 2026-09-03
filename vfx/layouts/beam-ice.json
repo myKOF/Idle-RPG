@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "beam-ice",
+  "groups": [
+    {
+      "id": "beam-ice",
+      "name": "beam-ice",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "streaks"
+      ]
+    }
+  ],
+  "order": [
+    "group:beam-ice"
+  ]
+}

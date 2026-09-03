@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-buff",
+  "groups": [
+    {
+      "id": "st-buff",
+      "name": "st-buff",
+      "layerIds": [
+        "ring",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-buff"
+  ]
+}

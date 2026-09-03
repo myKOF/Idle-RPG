@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "cast-drain",
+  "groups": [
+    {
+      "id": "cast-drain",
+      "name": "cast-drain",
+      "layerIds": [
+        "glow",
+        "inflow",
+        "inflow-green",
+        "flash"
+      ]
+    }
+  ],
+  "order": [
+    "group:cast-drain"
+  ]
+}

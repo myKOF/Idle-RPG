@@ -257,13 +257,28 @@ test('AXIS-1 舊的等比 preset 一個欄位都沒加時，runtime 輸出逐位
   const b = fingerprint(spritePreset({ scaleOverLife: [[0, 1], [1, 3]] }));
   assert.notEqual(a, b, '指紋必須分得出不同的縮放曲線');
 
-  /* 真正的回歸保護：拿現有 preset 跑，結果必須與這次擴充無關 */
+  /* 真正的回歸保護：拿現有 preset 跑，結果必須與這次擴充無關。
+     2026-09-03：正式 preset 已經開始使用分軸欄位（火球拖尾的抖動、天降光柱的伸展、
+     沿 +X 的光束與光槍），因此不再斷言「一份都沒有」——那只在功能剛加進來、
+     還沒有人用的時候成立。改為驗證真正的不變量：**沒有指定分軸曲線的圖層，
+     把兩軸都綁上同一條等比曲線之後，runtime 輸出必須逐位元相同**。 */
   const dir = path.join(REPO, 'vfx', 'presets');
   fs.readdirSync(dir).filter(f => /\.json$/.test(f)).forEach(function (f) {
     const preset = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
-    const hasNew = preset.layers.some(l =>
-      l.scaleXOverLife !== undefined || l.scaleYOverLife !== undefined);
-    assert.equal(hasNew, false, f + ' 不該已經帶有分軸欄位');
+    const bound = JSON.parse(JSON.stringify(preset));
+    let touched = 0;
+    bound.layers.forEach(function (l) {
+      /* 粒子層不支援分軸欄位（schema 會擋），因此只處理 sprite／procedural。 */
+      if (l.type !== 'sprite' && l.type !== 'procedural') return;
+      if (l.scaleXOverLife !== undefined || l.scaleYOverLife !== undefined) return;
+      if (l.scaleOverLife === undefined) return;
+      l.scaleXOverLife = l.scaleOverLife;
+      l.scaleYOverLife = l.scaleOverLife;
+      touched++;
+    });
+    if (!touched) return;
+    assert.equal(fingerprint(preset, 20), fingerprint(bound, 20),
+      f + '：等比曲線改寫成兩條相同的分軸曲線後，輸出必須逐位元相同');
   });
 
   /* 等價性：不給分軸 vs 兩軸都給同一條曲線 → 必須完全相同 */

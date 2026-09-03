@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-tornado-water",
+  "groups": [
+    {
+      "id": "ground-tornado-water",
+      "name": "ground-tornado-water",
+      "layerIds": [
+        "ground",
+        "funnel",
+        "band-a",
+        "band-b",
+        "band-c",
+        "core",
+        "cap",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-tornado-water"
+  ]
+}

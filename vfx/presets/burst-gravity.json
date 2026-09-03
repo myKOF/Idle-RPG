@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-gravity",
+  "duration": 0.8,
+  "loop": false,
+  "layers": [
+    {
+      "id": "swirl-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_02.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2188
+      },
+      "alpha": 0.8,
+      "tint": "#5b3a27",
+      "blendMode": "normal",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.9
+        ],
+        [
+          0.65,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.3
+        ],
+        [
+          1,
+          0.4
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          7.53982
+        ]
+      ]
+    },
+    {
+      "id": "swirl-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.332,
+        "y": 0.1859
+      },
+      "alpha": 0.75,
+      "tint": "#6f2da8",
+      "blendMode": "add",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.9
+        ],
+        [
+          0.65,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.3
+        ],
+        [
+          1,
+          0.4
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -9.42478
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.9,
+      "tint": "#1a0c2e",
+      "blendMode": "normal",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          0.85,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.7,
+          1
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2188
+      },
+      "alpha": 0.7,
+      "tint": "#913dcc",
+      "blendMode": "add",
+      "duration": 0.6,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    },
+    {
+      "id": "pull",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 4,
+      "tint": "#913dcc",
+      "blendMode": "add",
+      "emission": {
+        "count": 12,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.4,
+        0.6
+      ],
+      "spawn": {
+        "radius": 96,
+        "shape": "circle"
+      },
+      "speed": [
+        -170,
+        -110
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-storm",
+  "groups": [
+    {
+      "id": "st-storm",
+      "name": "st-storm",
+      "layerIds": [
+        "ring",
+        "trace"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-storm"
+  ]
+}

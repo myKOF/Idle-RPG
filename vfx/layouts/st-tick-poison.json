@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-tick-poison",
+  "groups": [
+    {
+      "id": "st-tick-poison",
+      "name": "st-tick-poison",
+      "layerIds": [
+        "bubbles"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-tick-poison"
+  ]
+}

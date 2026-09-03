@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "id": "bolt-curtain-lightning",
+  "duration": 0.4,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.8789
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.4,
+      "tint": "#2563eb",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    },
+    {
+      "id": "column",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_06.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0273,
+        "y": 0.8789
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.95,
+      "tint": "#7dd3fc",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.1,
+          1.25
+        ],
+        [
+          0.2,
+          0.8
+        ],
+        [
+          0.3,
+          1.2
+        ],
+        [
+          0.4,
+          0.85
+        ],
+        [
+          0.5,
+          1.15
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          0.7,
+          1.2
+        ],
+        [
+          0.8,
+          0.9
+        ],
+        [
+          0.9,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_a.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0078,
+        "y": 0.8789
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.1,
+          1.25
+        ],
+        [
+          0.2,
+          0.8
+        ],
+        [
+          0.3,
+          1.2
+        ],
+        [
+          0.4,
+          0.85
+        ],
+        [
+          0.5,
+          1.15
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          0.7,
+          1.2
+        ],
+        [
+          0.8,
+          0.9
+        ],
+        [
+          0.9,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "jitter",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -225
+      },
+      "tint": "#7dd3fc",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.06,
+        0.08
+      ],
+      "spawn": {
+        "height": 450,
+        "shape": "box",
+        "width": 10
+      },
+      "speed": [
+        0,
+        0
+      ],
+      "direction": 0,
+      "spread": 0,
+      "startScale": [
+        0.1758,
+        0.293
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ground",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "alpha": 0.95,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "ground-glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.1172,
+        "y": 0.0508
+      },
+      "alpha": 0.55,
+      "tint": "#2563eb",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    }
+  ]
+}

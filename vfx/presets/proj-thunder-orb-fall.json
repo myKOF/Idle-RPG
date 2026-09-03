@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-thunder-orb-fall",
+  "duration": 1.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "outer",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1133,
+        "y": 0.1133
+      },
+      "alpha": 0.34,
+      "tint": "#1d4ed8",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "mid",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 0.85,
+      "tint": "#60a5fa",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0391,
+        "y": 0.0391
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "chord-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_07.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1133,
+        "y": 0.0195
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          10.5
+        ]
+      ]
+    },
+    {
+      "id": "chord-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_07.png",
+      "zIndex": 4,
+      "rotation": 1.0472,
+      "scale": {
+        "x": 0.1133,
+        "y": 0.0195
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          10.5
+        ]
+      ]
+    },
+    {
+      "id": "chord-c",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_07.png",
+      "zIndex": 5,
+      "rotation": 2.0944,
+      "scale": {
+        "x": 0.1133,
+        "y": 0.0195
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          10.5
+        ]
+      ]
+    }
+  ]
+}

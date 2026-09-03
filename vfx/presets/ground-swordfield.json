@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-swordfield",
+  "duration": 5,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.12,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "duration": 5,
+      "alphaOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.5,
+          0.16
+        ],
+        [
+          1,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "dashes",
+      "type": "sprite",
+      "assetId": "new_materials/hud-reticle/target_11.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.6,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "duration": 5,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.5,
+          0.75
+        ],
+        [
+          1,
+          0.55
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          6.28319
+        ]
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.5,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 5,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    },
+    {
+      "id": "blades",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/trace_02.png",
+      "zIndex": 3,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 8
+      },
+      "lifetime": [
+        0.8,
+        1.3
+      ],
+      "spawn": {
+        "radius": 92,
+        "shape": "circle"
+      },
+      "speed": [
+        25,
+        55
+      ],
+      "direction": -90,
+      "spread": 25,
+      "gravity": {
+        "x": 0,
+        "y": -30
+      },
+      "startScale": [
+        0.0313,
+        0.0586
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "st-def-up",
+  "duration": 1.5,
+  "loop": true,
+  "layers": [
+    {
+      "id": "hex",
+      "type": "sprite",
+      "assetId": "new_materials/hud-reticle/target_9.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0977
+      },
+      "alpha": 0.55,
+      "tint": "#93c5fd",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.72
+        ],
+        [
+          1,
+          0.45
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -3
+      },
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0352
+      },
+      "alpha": 0.45,
+      "tint": "#93c5fd",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.65
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    }
+  ]
+}

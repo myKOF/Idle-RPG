@@ -1,0 +1,344 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-starfall",
+  "duration": 3,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 1.0938,
+        "y": 1.0938
+      },
+      "alpha": 0.5,
+      "tint": "#e0451a",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "shell",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.6836,
+        "y": 0.6836
+      },
+      "alpha": 0.95,
+      "tint": "#a11208",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1.88496
+        ]
+      ]
+    },
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.5371,
+        "y": 0.5371
+      },
+      "alpha": 1,
+      "tint": "#5c0a06",
+      "blendMode": "normal",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -2.51327
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.293,
+        "y": 0.293
+      },
+      "alpha": 1,
+      "tint": "#e0451a",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.6953,
+        "y": 0.6953
+      },
+      "alpha": 0.6,
+      "tint": "#260302",
+      "blendMode": "normal",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "bow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 96
+      },
+      "scale": {
+        "x": 0.5391,
+        "y": 0.2344
+      },
+      "alpha": 0.75,
+      "tint": "#ffb257",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.85
+        ],
+        [
+          0.9,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.25,
+          1.08
+        ],
+        [
+          0.5,
+          0.94
+        ],
+        [
+          0.75,
+          1.06
+        ],
+        [
+          1,
+          0.95
+        ]
+      ]
+    },
+    {
+      "id": "tail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "zIndex": 6,
+      "tint": "#e0451a",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 18
+      },
+      "lifetime": [
+        1.6,
+        2.4
+      ],
+      "spawn": {
+        "radius": 90,
+        "shape": "circle"
+      },
+      "speed": [
+        180,
+        300
+      ],
+      "direction": 180,
+      "spread": 26,
+      "startScale": [
+        0.2148,
+        0.3711
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.4,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

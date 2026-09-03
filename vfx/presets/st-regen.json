@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "st-regen",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.1016,
+        "y": 0.1328
+      },
+      "alpha": 0.24,
+      "tint": "#4ade80",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.24
+        ],
+        [
+          0.5,
+          0.38
+        ],
+        [
+          1,
+          0.24
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.97
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          1,
+          0.97
+        ]
+      ]
+    },
+    {
+      "id": "crosses",
+      "type": "particle",
+      "assetId": "new_materials/mask-shape/dingbats-482.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#4ade80",
+      "blendMode": "add",
+      "duration": 1.2,
+      "emission": {
+        "mode": "rate",
+        "rate": 4
+      },
+      "lifetime": [
+        0.6,
+        1
+      ],
+      "spawn": {
+        "height": 44,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        22,
+        45
+      ],
+      "direction": -90,
+      "spread": 40,
+      "gravity": {
+        "x": 0,
+        "y": -30
+      },
+      "startScale": [
+        0.0195,
+        0.0313
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

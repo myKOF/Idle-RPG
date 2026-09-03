@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "cast-buff-def",
+  "groups": [
+    {
+      "id": "cast-buff-def",
+      "name": "cast-buff-def",
+      "layerIds": [
+        "ring",
+        "ring-inner",
+        "glow",
+        "flash",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:cast-buff-def"
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-homing-wind-crescent",
+  "duration": 0.55,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1094,
+        "y": 0.1523
+      },
+      "alpha": 0.35,
+      "tint": "#b9f6cf",
+      "blendMode": "add",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.45
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.1172
+      },
+      "alpha": 1,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0.95
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.95
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0313,
+        "y": 0.0859
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.9
+        ]
+      ]
+    },
+    {
+      "id": "wisp",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.18,
+        0.3
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        20,
+        50
+      ],
+      "direction": 180,
+      "spread": 40,
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

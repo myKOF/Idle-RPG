@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-frost-freeze",
+  "duration": 0.8,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1484,
+        "y": 0.1484
+      },
+      "alpha": 0.5,
+      "tint": "#79d8ff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ice-a",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-370.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 3.1416,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.1211
+      },
+      "alpha": 0.85,
+      "tint": "#4da6ff",
+      "blendMode": "normal",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ice-b",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-370.png",
+      "zIndex": 2,
+      "position": {
+        "x": -13,
+        "y": 6
+      },
+      "rotation": 2.8798,
+      "scale": {
+        "x": 0.043,
+        "y": 0.0898
+      },
+      "alpha": 0.8,
+      "tint": "#4da6ff",
+      "blendMode": "normal",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ice-c",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-370.png",
+      "zIndex": 3,
+      "position": {
+        "x": 13,
+        "y": 4
+      },
+      "rotation": 3.4034,
+      "scale": {
+        "x": 0.0391,
+        "y": 0.082
+      },
+      "alpha": 0.8,
+      "tint": "#4da6ff",
+      "blendMode": "normal",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ice-hi",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-370.png",
+      "zIndex": 4,
+      "position": {
+        "x": -5,
+        "y": -8
+      },
+      "rotation": 3.1067,
+      "scale": {
+        "x": 0.0273,
+        "y": 0.0664
+      },
+      "alpha": 0.9,
+      "tint": "#f2fbff",
+      "blendMode": "normal",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "gloss",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 5,
+      "position": {
+        "x": -8,
+        "y": -14
+      },
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "alpha": 0.9,
+      "tint": "#f2fbff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "crack",
+      "type": "particle",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 6,
+      "tint": "#f2fbff",
+      "blendMode": "normal",
+      "delay": 0.62,
+      "emission": {
+        "count": 10,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.18,
+        0.28
+      ],
+      "spawn": {
+        "radius": 16,
+        "shape": "circle"
+      },
+      "speed": [
+        90,
+        170
+      ],
+      "direction": 0,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 420
+      },
+      "startScale": [
+        0.0098,
+        0.0195
+      ],
+      "rotationStart": [
+        0,
+        3.141592653589793
+      ],
+      "rotationSpeed": [
+        -8,
+        8
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

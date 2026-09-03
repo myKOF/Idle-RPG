@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "mark-red",
+  "duration": 1.14,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 0.16,
+      "tint": "#dc2626",
+      "blendMode": "add",
+      "duration": 1.14,
+      "alphaOverLife": [
+        [
+          0,
+          0.16
+        ],
+        [
+          0.5,
+          0.2
+        ],
+        [
+          1,
+          0.16
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.975
+        ],
+        [
+          0.5,
+          1.025
+        ],
+        [
+          1,
+          0.975
+        ]
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 0.8,
+      "tint": "#f87171",
+      "blendMode": "add",
+      "duration": 1.14,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.975
+        ],
+        [
+          0.5,
+          1.025
+        ],
+        [
+          1,
+          0.975
+        ]
+      ]
+    }
+  ]
+}

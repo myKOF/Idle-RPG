@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-dual",
+  "groups": [
+    {
+      "id": "slash-dual",
+      "name": "slash-dual",
+      "layerIds": [
+        "arc-a",
+        "arc-a-inner",
+        "arc-b",
+        "arc-b-inner",
+        "chips"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-dual"
+  ]
+}

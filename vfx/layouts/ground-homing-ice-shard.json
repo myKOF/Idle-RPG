@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-homing-ice-shard",
+  "groups": [
+    {
+      "id": "ground-homing-ice-shard",
+      "name": "ground-homing-ice-shard",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "dust"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-homing-ice-shard"
+  ]
+}

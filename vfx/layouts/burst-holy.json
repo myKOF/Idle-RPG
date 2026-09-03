@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-holy",
+  "groups": [
+    {
+      "id": "burst-holy",
+      "name": "burst-holy",
+      "layerIds": [
+        "glow",
+        "rays",
+        "rim",
+        "flash",
+        "shards"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-holy"
+  ]
+}

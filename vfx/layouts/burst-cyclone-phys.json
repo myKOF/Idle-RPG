@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-cyclone-phys",
+  "groups": [
+    {
+      "id": "burst-cyclone-phys",
+      "name": "burst-cyclone-phys",
+      "layerIds": [
+        "haze",
+        "blade-a",
+        "blade-b",
+        "blade-c"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-cyclone-phys"
+  ]
+}

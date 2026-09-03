@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "st-corrode",
+  "duration": 1.5,
+  "loop": true,
+  "layers": [
+    {
+      "id": "shadow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.0977,
+        "y": 0.1289
+      },
+      "alpha": 0.3,
+      "tint": "#1a0c2e",
+      "blendMode": "normal",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.25
+        ],
+        [
+          0.5,
+          0.42
+        ],
+        [
+          1,
+          0.25
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.97
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.97
+        ]
+      ]
+    },
+    {
+      "id": "wisps",
+      "type": "particle",
+      "assetId": "new_materials/smoke/smoke2_1.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#6f2da8",
+      "blendMode": "normal",
+      "duration": 1.5,
+      "emission": {
+        "mode": "rate",
+        "rate": 5
+      },
+      "lifetime": [
+        0.9,
+        1.4
+      ],
+      "spawn": {
+        "height": 44,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        12,
+        30
+      ],
+      "direction": -90,
+      "spread": 60,
+      "gravity": {
+        "x": 0,
+        "y": -20
+      },
+      "startScale": [
+        0.0273,
+        0.0508
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    }
+  ]
+}

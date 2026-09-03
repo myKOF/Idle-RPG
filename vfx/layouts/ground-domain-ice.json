@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-domain-ice",
+  "groups": [
+    {
+      "id": "ground-domain-ice",
+      "name": "ground-domain-ice",
+      "layerIds": [
+        "fill",
+        "edge",
+        "inner",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-domain-ice"
+  ]
+}

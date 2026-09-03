@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-orbit-ring-fire",
+  "groups": [
+    {
+      "id": "ground-orbit-ring-fire",
+      "name": "ground-orbit-ring-fire",
+      "layerIds": [
+        "ring",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-orbit-ring-fire"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-mire",
+  "groups": [
+    {
+      "id": "ground-mire",
+      "name": "ground-mire",
+      "layerIds": [
+        "fill",
+        "edge",
+        "ripple-a",
+        "ripple-b",
+        "ripple-c",
+        "bubbles"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-mire"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-tick-ice",
+  "groups": [
+    {
+      "id": "st-tick-ice",
+      "name": "st-tick-ice",
+      "layerIds": [
+        "flash",
+        "shards"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-tick-ice"
+  ]
+}

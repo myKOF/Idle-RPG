@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "orb-firehunt",
+  "groups": [
+    {
+      "id": "orb-firehunt",
+      "name": "orb-firehunt",
+      "layerIds": [
+        "glow",
+        "tail",
+        "body",
+        "core",
+        "embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:orb-firehunt"
+  ]
+}

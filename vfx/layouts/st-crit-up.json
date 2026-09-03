@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-crit-up",
+  "groups": [
+    {
+      "id": "st-crit-up",
+      "name": "st-crit-up",
+      "layerIds": [
+        "ring",
+        "ring-outer",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-crit-up"
+  ]
+}

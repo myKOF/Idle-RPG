@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-dark-orb",
+  "duration": 1.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.6,
+      "tint": "#913dcc",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "swirl",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0508
+      },
+      "alpha": 0.9,
+      "tint": "#6f2da8",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -15.70796
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0352,
+        "y": 0.0352
+      },
+      "alpha": 1,
+      "tint": "#1a0c2e",
+      "blendMode": "normal",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 4,
+      "tint": "#6f2da8",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.24,
+        0.4
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        10,
+        40
+      ],
+      "direction": 180,
+      "spread": 40,
+      "startScale": [
+        0.0195,
+        0.0352
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

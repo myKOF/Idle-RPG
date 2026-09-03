@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-earth",
+  "duration": 0.8,
+  "loop": false,
+  "layers": [
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2188
+      },
+      "alpha": 0.9,
+      "tint": "#c48a55",
+      "blendMode": "add",
+      "duration": 0.6,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "dust",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2188
+      },
+      "alpha": 0.5,
+      "tint": "#c9a06a",
+      "blendMode": "normal",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.9
+        ],
+        [
+          0.65,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.1367,
+        "y": 0.1367
+      },
+      "alpha": 1,
+      "tint": "#c48a55",
+      "blendMode": "add",
+      "duration": 0.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "rocks",
+      "type": "particle",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 6,
+      "tint": "#ad7444",
+      "blendMode": "normal",
+      "emission": {
+        "count": 12,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.4,
+        0.65
+      ],
+      "spawn": {
+        "radius": 12,
+        "shape": "circle"
+      },
+      "speed": [
+        120,
+        210
+      ],
+      "direction": -90,
+      "spread": 200,
+      "gravity": {
+        "x": 0,
+        "y": 520
+      },
+      "startScale": [
+        0.0195,
+        0.0391
+      ],
+      "rotationStart": [
+        0,
+        3.141592653589793
+      ],
+      "rotationSpeed": [
+        -6,
+        6
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

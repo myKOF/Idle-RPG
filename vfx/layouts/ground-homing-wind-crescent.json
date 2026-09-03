@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-homing-wind-crescent",
+  "groups": [
+    {
+      "id": "ground-homing-wind-crescent",
+      "name": "ground-homing-wind-crescent",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "wisp"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-homing-wind-crescent"
+  ]
+}

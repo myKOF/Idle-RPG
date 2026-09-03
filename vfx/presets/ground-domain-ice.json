@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-domain-ice",
+  "duration": 1.85,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.1,
+      "tint": "#f2fbff",
+      "blendMode": "add",
+      "duration": 1.85,
+      "alphaOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.14
+        ],
+        [
+          1,
+          0.1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.75,
+      "tint": "#4da6ff",
+      "blendMode": "add",
+      "duration": 1.85,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "inner",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.293,
+        "y": 0.1816
+      },
+      "alpha": 0.55,
+      "tint": "#79d8ff",
+      "blendMode": "add",
+      "duration": 1.85,
+      "alphaOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0.5
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.04
+        ],
+        [
+          0.5,
+          0.96
+        ],
+        [
+          1,
+          1.04
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 3,
+      "tint": "#79d8ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 10
+      },
+      "lifetime": [
+        0.7,
+        1.1
+      ],
+      "spawn": {
+        "radius": 98,
+        "shape": "circle"
+      },
+      "speed": [
+        20,
+        50
+      ],
+      "direction": -90,
+      "spread": 50,
+      "gravity": {
+        "x": 0,
+        "y": -50
+      },
+      "startScale": [
+        0.0117,
+        0.0234
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-starfall-shadow",
+  "duration": 5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shadow",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/window_h.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 1,
+      "tint": "#000000",
+      "blendMode": "normal",
+      "duration": 5,
+      "alphaOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.21
+        ],
+        [
+          0.8,
+          0.36
+        ],
+        [
+          1,
+          0.55
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.04
+        ],
+        [
+          0.5,
+          0.28
+        ],
+        [
+          0.8,
+          0.62
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    }
+  ]
+}

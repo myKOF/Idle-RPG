@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "curse-bleed",
+  "groups": [
+    {
+      "id": "curse-bleed",
+      "name": "curse-bleed",
+      "layerIds": [
+        "glow",
+        "ring",
+        "sigil",
+        "drops"
+      ]
+    }
+  ],
+  "order": [
+    "group:curse-bleed"
+  ]
+}

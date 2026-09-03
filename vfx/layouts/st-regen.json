@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-regen",
+  "groups": [
+    {
+      "id": "st-regen",
+      "name": "st-regen",
+      "layerIds": [
+        "glow",
+        "crosses"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-regen"
+  ]
+}

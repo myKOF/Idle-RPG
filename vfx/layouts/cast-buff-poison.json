@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "cast-buff-poison",
+  "groups": [
+    {
+      "id": "cast-buff-poison",
+      "name": "cast-buff-poison",
+      "layerIds": [
+        "ring",
+        "ring-inner",
+        "glow",
+        "flash",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:cast-buff-poison"
+  ]
+}

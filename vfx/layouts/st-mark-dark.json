@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-mark-dark",
+  "groups": [
+    {
+      "id": "st-mark-dark",
+      "name": "st-mark-dark",
+      "layerIds": [
+        "rune",
+        "flames"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-mark-dark"
+  ]
+}

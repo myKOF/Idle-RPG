@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-thunder-orb",
+  "duration": 1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "outer",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1172,
+        "y": 0.1172
+      },
+      "alpha": 0.24,
+      "tint": "#1d4ed8",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.24
+        ],
+        [
+          0.5,
+          0.34
+        ],
+        [
+          1,
+          0.24
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          1.08
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "mid",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 0.8,
+      "tint": "#60a5fa",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.75
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0391,
+        "y": 0.0391
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.95
+        ],
+        [
+          0.5,
+          1.1
+        ],
+        [
+          1,
+          0.95
+        ]
+      ]
+    },
+    {
+      "id": "web",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_02.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1094,
+        "y": 0.1094
+      },
+      "alpha": 0.75,
+      "tint": "#7dd3fc",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.1,
+          1.25
+        ],
+        [
+          0.2,
+          0.8
+        ],
+        [
+          0.3,
+          1.2
+        ],
+        [
+          0.4,
+          0.85
+        ],
+        [
+          0.5,
+          1.15
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          0.7,
+          1.2
+        ],
+        [
+          0.8,
+          0.9
+        ],
+        [
+          0.9,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "arcs",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 4,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.1,
+        0.2
+      ],
+      "spawn": {
+        "radius": 26,
+        "shape": "circle"
+      },
+      "speed": [
+        0,
+        15
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0195,
+        0.0352
+      ],
+      "rotationStart": [
+        0,
+        6.283185307179586
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}

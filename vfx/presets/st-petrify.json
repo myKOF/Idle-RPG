@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "id": "st-petrify",
+  "duration": 2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "stone",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_a_noise.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.0898,
+        "y": 0.1211
+      },
+      "alpha": 0.5,
+      "tint": "#8a7a6a",
+      "blendMode": "normal",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.58
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    },
+    {
+      "id": "dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#a89886",
+      "blendMode": "normal",
+      "duration": 2,
+      "emission": {
+        "mode": "rate",
+        "rate": 3
+      },
+      "lifetime": [
+        0.9,
+        1.4
+      ],
+      "spawn": {
+        "height": 40,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        3,
+        10
+      ],
+      "direction": 90,
+      "spread": 60,
+      "gravity": {
+        "x": 0,
+        "y": 70
+      },
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}

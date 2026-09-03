@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-cyclone-avatar",
+  "groups": [
+    {
+      "id": "ground-cyclone-avatar",
+      "name": "ground-cyclone-avatar",
+      "layerIds": [
+        "blade-a",
+        "blade-b",
+        "blade-c",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-cyclone-avatar"
+  ]
+}

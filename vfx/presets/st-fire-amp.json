@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "st-fire-amp",
+  "duration": 1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.1016,
+        "y": 0.1289
+      },
+      "alpha": 0.5,
+      "tint": "#ff6a2a",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0.4
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#ffd447",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 5
+      },
+      "lifetime": [
+        0.6,
+        1
+      ],
+      "spawn": {
+        "height": 44,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        35,
+        70
+      ],
+      "direction": -90,
+      "spread": 40,
+      "gravity": {
+        "x": 0,
+        "y": -60
+      },
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

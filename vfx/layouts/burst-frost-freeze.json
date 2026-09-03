@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-frost-freeze",
+  "groups": [
+    {
+      "id": "burst-frost-freeze",
+      "name": "burst-frost-freeze",
+      "layerIds": [
+        "glow",
+        "ice-a",
+        "ice-b",
+        "ice-c",
+        "ice-hi",
+        "gloss",
+        "crack"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-frost-freeze"
+  ]
+}

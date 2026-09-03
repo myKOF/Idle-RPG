@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-orbit-ring-lightning",
+  "duration": 2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.18,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.18
+        ],
+        [
+          0.5,
+          0.252
+        ],
+        [
+          1,
+          0.18
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 1,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 8
+      },
+      "lifetime": [
+        0.12,
+        0.22
+      ],
+      "spawn": {
+        "radius": 96,
+        "shape": "circle"
+      },
+      "speed": [
+        0,
+        10
+      ],
+      "direction": -90,
+      "spread": 60,
+      "gravity": {
+        "x": 0,
+        "y": 0
+      },
+      "startScale": [
+        0.0156,
+        0.0273
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

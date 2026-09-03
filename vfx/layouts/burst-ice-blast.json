@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-ice-blast",
+  "groups": [
+    {
+      "id": "burst-ice-blast",
+      "name": "burst-ice-blast",
+      "layerIds": [
+        "mist",
+        "rim",
+        "flash",
+        "shards",
+        "glints"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-ice-blast"
+  ]
+}

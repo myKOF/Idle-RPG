@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-meteor",
+  "groups": [
+    {
+      "id": "proj-meteor",
+      "name": "proj-meteor",
+      "layerIds": [
+        "glow",
+        "shell",
+        "body",
+        "core",
+        "rim",
+        "tail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-meteor"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-corrode",
+  "groups": [
+    {
+      "id": "st-corrode",
+      "name": "st-corrode",
+      "layerIds": [
+        "shadow",
+        "wisps"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-corrode"
+  ]
+}

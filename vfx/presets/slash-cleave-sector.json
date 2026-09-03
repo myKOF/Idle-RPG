@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-cleave-sector",
+  "duration": 0.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 1,
+      "rotation": 1.5708,
+      "scale": {
+        "x": 0.1758,
+        "y": 0.3906
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.2,
+      "tint": "#60a5fa",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0.95
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.3927
+        ]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.5,
+      "tint": "#bfdbfe",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.6
+        ],
+        [
+          0.75,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0.95
+        ]
+      ]
+    },
+    {
+      "id": "edge-a",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_a.png",
+      "zIndex": 3,
+      "rotation": 1.0472,
+      "scale": {
+        "x": 0.0156,
+        "y": 0.1953
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.8,
+      "tint": "#bfdbfe",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0.95
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.3927
+        ]
+      ]
+    },
+    {
+      "id": "edge-b",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_a.png",
+      "zIndex": 4,
+      "rotation": 2.0944,
+      "scale": {
+        "x": 0.0156,
+        "y": 0.1953
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.8,
+      "tint": "#bfdbfe",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0.95
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.3927
+        ]
+      ]
+    }
+  ]
+}

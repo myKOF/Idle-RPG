@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-fire",
+  "duration": 0.9,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.4297,
+        "y": 0.4297
+      },
+      "alpha": 0.55,
+      "tint": "#ff6a2a",
+      "blendMode": "add",
+      "duration": 0.6,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.9
+        ],
+        [
+          0.65,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "ball",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.95,
+      "tint": "#e63924",
+      "blendMode": "add",
+      "duration": 0.62,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.9
+        ],
+        [
+          0.65,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1.5708
+        ]
+      ]
+    },
+    {
+      "id": "wave-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2188
+      },
+      "alpha": 0.9,
+      "tint": "#ffb21c",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "wave-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.4102,
+        "y": 0.2297
+      },
+      "alpha": 0.8,
+      "tint": "#7d1708",
+      "blendMode": "add",
+      "delay": 0.1,
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "wave-c",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.4297,
+        "y": 0.2406
+      },
+      "alpha": 0.6,
+      "tint": "#ffb21c",
+      "blendMode": "add",
+      "delay": 0.22,
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.1367,
+        "y": 0.1367
+      },
+      "alpha": 1,
+      "tint": "#ffd447",
+      "blendMode": "add",
+      "duration": 0.22,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "tongues",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "zIndex": 6,
+      "tint": "#ff8a3d",
+      "blendMode": "add",
+      "emission": {
+        "count": 18,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.32,
+        0.56
+      ],
+      "spawn": {
+        "radius": 12,
+        "shape": "circle"
+      },
+      "speed": [
+        150,
+        290
+      ],
+      "direction": 0,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 260
+      },
+      "startScale": [
+        0.0313,
+        0.0586
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

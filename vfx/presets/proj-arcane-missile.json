@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-arcane-missile",
+  "duration": 1.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.0703,
+        "y": 0.0703
+      },
+      "alpha": 0.55,
+      "tint": "#a9b8ff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0234,
+        "y": 0.0234
+      },
+      "alpha": 1,
+      "tint": "#8ea2ff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0117,
+        "y": 0.0117
+      },
+      "alpha": 1,
+      "tint": "#e6ecff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 4,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 20
+      },
+      "lifetime": [
+        0.12,
+        0.22
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        5,
+        20
+      ],
+      "direction": 180,
+      "spread": 40,
+      "startScale": [
+        0.0156,
+        0.0273
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 0,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-meteor",
+  "duration": 2.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3652,
+        "y": 0.3652
+      },
+      "alpha": 0.6,
+      "tint": "#f89800",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "shell",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.2148,
+        "y": 0.2148
+      },
+      "alpha": 0.95,
+      "tint": "#f83600",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2.51327
+        ]
+      ]
+    },
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.1676,
+        "y": 0.1676
+      },
+      "alpha": 1,
+      "tint": "#f89800",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -3.76991
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.073,
+        "y": 0.073
+      },
+      "alpha": 1,
+      "tint": "#facc22",
+      "blendMode": "add",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.2256,
+        "y": 0.2256
+      },
+      "alpha": 0.5,
+      "tint": "#9f0404",
+      "blendMode": "normal",
+      "duration": 2.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "tail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "zIndex": 5,
+      "tint": "#f89800",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 13
+      },
+      "lifetime": [
+        1.68,
+        2.4
+      ],
+      "spawn": {
+        "radius": 27.5,
+        "shape": "circle"
+      },
+      "speed": [
+        70,
+        100
+      ],
+      "direction": 180,
+      "spread": 26,
+      "startScale": [
+        0.0645,
+        0.1182
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.4,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-thunder-orb-fall",
+  "groups": [
+    {
+      "id": "proj-thunder-orb-fall",
+      "name": "proj-thunder-orb-fall",
+      "layerIds": [
+        "outer",
+        "mid",
+        "core",
+        "chord-a",
+        "chord-b",
+        "chord-c"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-thunder-orb-fall"
+  ]
+}

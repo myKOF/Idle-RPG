@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-storm-rip",
+  "groups": [
+    {
+      "id": "ground-storm-rip",
+      "name": "ground-storm-rip",
+      "layerIds": [
+        "blades",
+        "ring"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-storm-rip"
+  ]
+}

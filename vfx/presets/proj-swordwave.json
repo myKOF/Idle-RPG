@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-swordwave",
+  "duration": 1.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 0.35,
+      "tint": "#f5ecd6",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0273,
+        "y": 0.0586
+      },
+      "alpha": 1,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0156,
+        "y": 0.043
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 4,
+      "tint": "#f0e2b8",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 22
+      },
+      "lifetime": [
+        0.16,
+        0.3
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        5,
+        25
+      ],
+      "direction": 180,
+      "spread": 40,
+      "startScale": [
+        0.0195,
+        0.0352
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 0,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

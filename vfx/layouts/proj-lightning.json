@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-lightning",
+  "groups": [
+    {
+      "id": "proj-lightning",
+      "name": "proj-lightning",
+      "layerIds": [
+        "glow",
+        "bolt",
+        "bolt-b",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-lightning"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-wind-crescent",
+  "duration": 0.32,
+  "loop": false,
+  "layers": [
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0645,
+        "y": 0.1465
+      },
+      "alpha": 0.95,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.6
+        ],
+        [
+          1,
+          0.15
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0391,
+        "y": 0.1172
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0.1
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    }
+  ]
+}

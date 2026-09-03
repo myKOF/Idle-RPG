@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-detonate-dark",
+  "duration": 0.7,
+  "loop": false,
+  "layers": [
+    {
+      "id": "swirl",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2188
+      },
+      "alpha": 0.9,
+      "tint": "#6f2da8",
+      "blendMode": "add",
+      "duration": 0.7,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.95
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.35,
+          0.35
+        ],
+        [
+          0.6,
+          1
+        ],
+        [
+          1,
+          1.05
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          10.472
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1172,
+        "y": 0.1172
+      },
+      "alpha": 1,
+      "tint": "#1a0c2e",
+      "blendMode": "normal",
+      "duration": 0.7,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.35,
+          0.3
+        ],
+        [
+          0.6,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2188
+      },
+      "alpha": 0.9,
+      "tint": "#913dcc",
+      "blendMode": "add",
+      "delay": 0.24,
+      "duration": 0.46,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.1758,
+        "y": 0.1758
+      },
+      "alpha": 1,
+      "tint": "#913dcc",
+      "blendMode": "add",
+      "delay": 0.24,
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    }
+  ]
+}

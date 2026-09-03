@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-dual",
+  "duration": 0.35,
+  "loop": false,
+  "layers": [
+    {
+      "id": "arc-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "zIndex": 1,
+      "rotation": -0.8727,
+      "scale": {
+        "x": 0.1563,
+        "y": 0.1563
+      },
+      "alpha": 0.95,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.82
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.384
+        ],
+        [
+          1,
+          0.384
+        ]
+      ]
+    },
+    {
+      "id": "arc-a-inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "zIndex": 2,
+      "rotation": -0.8727,
+      "scale": {
+        "x": 0.1281,
+        "y": 0.1281
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0.02,
+      "duration": 0.18,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          1,
+          1.08
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.384
+        ],
+        [
+          1,
+          0.384
+        ]
+      ]
+    },
+    {
+      "id": "arc-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "zIndex": 3,
+      "rotation": 0.8727,
+      "scale": {
+        "x": 0.1563,
+        "y": 0.1563
+      },
+      "alpha": 0.95,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "delay": 0.06,
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.82
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0.384
+        ],
+        [
+          1,
+          -0.384
+        ]
+      ]
+    },
+    {
+      "id": "arc-b-inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "zIndex": 4,
+      "rotation": 0.8727,
+      "scale": {
+        "x": 0.1281,
+        "y": 0.1281
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0.08,
+      "duration": 0.18,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          1,
+          1.08
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0.384
+        ],
+        [
+          1,
+          -0.384
+        ]
+      ]
+    },
+    {
+      "id": "chips",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 6,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.16,
+        0.26
+      ],
+      "spawn": {
+        "radius": 10,
+        "shape": "circle"
+      },
+      "speed": [
+        90,
+        170
+      ],
+      "direction": 0,
+      "spread": 200,
+      "gravity": {
+        "x": 0,
+        "y": 260
+      },
+      "startScale": [
+        0.0078,
+        0.0137
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    }
+  ]
+}

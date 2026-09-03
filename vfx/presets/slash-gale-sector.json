@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-gale-sector",
+  "duration": 0.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.2,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0.95
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.3927
+        ]
+      ]
+    },
+    {
+      "id": "front",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "zIndex": 2,
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0.95
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -1.5708
+        ],
+        [
+          1,
+          1.5708
+        ]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.55,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.7
+        ],
+        [
+          0.75,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0.95
+        ]
+      ]
+    }
+  ]
+}

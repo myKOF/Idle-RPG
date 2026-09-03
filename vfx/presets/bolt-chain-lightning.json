@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "id": "bolt-chain-lightning",
+  "duration": 0.32,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.043
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.45,
+      "tint": "#ffd23f",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.8
+        ],
+        [
+          0.6,
+          0.45
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "seg-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_07.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0137
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          0.32,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "seg-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
+      "zIndex": 2,
+      "position": {
+        "x": 100,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1953,
+        "y": 0.0049
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          0.32,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.0039
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.32,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.22,
+          0.5
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          0.55,
+          0.4
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-bloodblade",
+  "duration": 0.32,
+  "loop": false,
+  "layers": [
+    {
+      "id": "arc",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "zIndex": 1,
+      "rotation": -0.8727,
+      "scale": {
+        "x": 0.1563,
+        "y": 0.1563
+      },
+      "alpha": 0.95,
+      "tint": "#d92846",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.82
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.4538
+        ],
+        [
+          1,
+          0.4538
+        ]
+      ]
+    },
+    {
+      "id": "arc-inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "zIndex": 2,
+      "rotation": -0.8727,
+      "scale": {
+        "x": 0.1281,
+        "y": 0.1281
+      },
+      "alpha": 1,
+      "tint": "#ffd0d8",
+      "blendMode": "add",
+      "delay": 0.02,
+      "duration": 0.195,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          1,
+          1.08
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.4538
+        ],
+        [
+          1,
+          0.4538
+        ]
+      ]
+    },
+    {
+      "id": "drops",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 6,
+      "tint": "#d92846",
+      "blendMode": "normal",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.2,
+        0.32
+      ],
+      "spawn": {
+        "radius": 12,
+        "shape": "circle"
+      },
+      "speed": [
+        70,
+        140
+      ],
+      "direction": 40,
+      "spread": 120,
+      "gravity": {
+        "x": 0,
+        "y": 420
+      },
+      "startScale": [
+        0.0078,
+        0.0156
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}

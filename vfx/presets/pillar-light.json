@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "id": "pillar-light",
+  "duration": 0.9,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_b.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -400
+      },
+      "scale": {
+        "x": 0.1445,
+        "y": 0.7813
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alpha": 0.4,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.8
+        ],
+        [
+          0.7,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.22,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/streaks_composed_d.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -400
+      },
+      "scale": {
+        "x": 0.0781,
+        "y": 0.7813
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alpha": 0.95,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.22,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/streaks_composed_b.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -400
+      },
+      "scale": {
+        "x": 0.0313,
+        "y": 0.7813
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alpha": 1,
+      "tint": "#fffef4",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.95
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "land",
+      "type": "sprite",
+      "assetId": "new_materials/flare/flare_30.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1367,
+        "y": 0.1367
+      },
+      "alpha": 1,
+      "tint": "#fffef4",
+      "blendMode": "add",
+      "delay": 0.2,
+      "duration": 0.36,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.1758,
+        "y": 0.0664
+      },
+      "alpha": 0.8,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "delay": 0.2,
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 5,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "emission": {
+        "count": 5,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.4,
+        0.6
+      ],
+      "spawn": {
+        "radius": 22,
+        "shape": "circle"
+      },
+      "speed": [
+        30,
+        60
+      ],
+      "direction": -90,
+      "spread": 70,
+      "gravity": {
+        "x": 0,
+        "y": -50
+      },
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-stun",
+  "groups": [
+    {
+      "id": "st-stun",
+      "name": "st-stun",
+      "layerIds": [
+        "orbit",
+        "star"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-stun"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-frost-nova",
+  "groups": [
+    {
+      "id": "burst-frost-nova",
+      "name": "burst-frost-nova",
+      "layerIds": [
+        "fill",
+        "rim",
+        "rim-inner",
+        "flash",
+        "shards"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-frost-nova"
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-storm-rip",
+  "duration": 0.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "blades",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "zIndex": 0,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.5,
+        0.5
+      ],
+      "spawn": {
+        "radius": 26,
+        "shape": "circle"
+      },
+      "speed": [
+        68,
+        68
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0176,
+        0.0176
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 0,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.2344,
+        "y": 0.1172
+      },
+      "alpha": 0.5,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.43
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    }
+  ]
+}

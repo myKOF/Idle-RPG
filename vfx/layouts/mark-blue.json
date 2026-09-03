@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "mark-blue",
+  "groups": [
+    {
+      "id": "mark-blue",
+      "name": "mark-blue",
+      "layerIds": [
+        "fill",
+        "edge"
+      ]
+    }
+  ],
+  "order": [
+    "group:mark-blue"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-mire-poison",
+  "groups": [
+    {
+      "id": "ground-mire-poison",
+      "name": "ground-mire-poison",
+      "layerIds": [
+        "fill",
+        "edge",
+        "ripple-a",
+        "ripple-b",
+        "ripple-c",
+        "bubbles",
+        "fume-a",
+        "fume-b",
+        "fume-c"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-mire-poison"
+  ]
+}

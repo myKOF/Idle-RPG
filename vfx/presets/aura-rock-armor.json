@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "id": "aura-rock-armor",
+  "duration": 3,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1367,
+        "y": 0.0615
+      },
+      "alpha": 0.6,
+      "tint": "#c48a55",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.5,
+          0.75
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "rocks",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-25.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -22
+      },
+      "scale": {
+        "x": 0.1484,
+        "y": 0.0664
+      },
+      "alpha": 0.9,
+      "tint": "#ad7444",
+      "blendMode": "normal",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.85
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.85
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          6.28319
+        ]
+      ]
+    },
+    {
+      "id": "rocks-hi",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-25.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -38
+      },
+      "scale": {
+        "x": 0.1211,
+        "y": 0.0547
+      },
+      "alpha": 0.75,
+      "tint": "#c48a55",
+      "blendMode": "normal",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -6.28319
+        ]
+      ]
+    },
+    {
+      "id": "dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 3,
+      "tint": "#c9a06a",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 4
+      },
+      "lifetime": [
+        0.8,
+        1.3
+      ],
+      "spawn": {
+        "radius": 26,
+        "shape": "circle"
+      },
+      "speed": [
+        10,
+        30
+      ],
+      "direction": -90,
+      "spread": 80,
+      "gravity": {
+        "x": 0,
+        "y": -20
+      },
+      "startScale": [
+        0.0195,
+        0.0352
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    }
+  ]
+}
