@@ -12411,10 +12411,6 @@ input[type='radio'] {
 :root {
   --ui-slate-texture: url('../images/ui_dark_slate_tile.png');
   --ui-iron-texture: url('../images/ui_cast_iron_tile.png');
-  --ui-molten-corner-tl: url('../images/ui_molten_corner_tl.png');
-  --ui-molten-corner-tr: url('../images/ui_molten_corner_tr.png');
-  --ui-molten-corner-bl: url('../images/ui_molten_corner_bl.png');
-  --ui-molten-corner-br: url('../images/ui_molten_corner_br.png');
 }
 
 /* Large structural surfaces use cool slate, so the functional areas read as stone rooms. */
@@ -12446,24 +12442,34 @@ input[type='radio'] {
   background-blend-mode: normal, normal, soft-light;
 }
 
-/* Fixed-size corner crops keep the forged plates at their original proportions. */
+/* The reference keeps the three structural columns plain and recessed. */
 #stats-sidebar::after,
 #workspace-area::after,
 #combat-area::after {
-  inset: 0;
-  z-index: 28;
-  border: 0;
-  border-image: none;
-  background-image:
-    var(--ui-molten-corner-tl),
-    var(--ui-molten-corner-tr),
-    var(--ui-molten-corner-bl),
-    var(--ui-molten-corner-br);
-  background-position: left top, right top, left bottom, right bottom;
-  background-size: 72px 72px, 72px 72px, 72px 72px, 72px 72px;
-  background-repeat: no-repeat;
-  opacity: 1;
-  filter: none;
+  display: none;
+}
+
+/* Only the inventory and action bar receive a small, low-mounted ember accent. */
+#inv-section-box,
+#battle-skill-bar {
+  position: relative;
+}
+
+#inv-section-box::after,
+#battle-skill-bar::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid rgba(117, 70, 36, .72);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 7px calc(100% - 7px), rgba(244, 126, 43, .82) 0 1px, rgba(173, 54, 15, .6) 2px, transparent 10px) left bottom / 32px 32px no-repeat,
+    radial-gradient(circle at calc(100% - 7px) calc(100% - 7px), rgba(244, 126, 43, .82) 0 1px, rgba(173, 54, 15, .6) 2px, transparent 10px) right bottom / 32px 32px no-repeat,
+    linear-gradient(90deg, rgba(200, 77, 25, .74), transparent 13%, transparent 87%, rgba(200, 77, 25, .74)) bottom / 100% 1px no-repeat;
+  box-shadow: inset 0 -8px 12px rgba(110, 40, 13, .08);
+  opacity: .78;
 }
 
 /* Inner panels remain stone, while raised controls shift to rough cast iron. */
@@ -12602,21 +12608,18 @@ textarea:hover {
   background-blend-mode: normal, normal, soft-light;
 }
 
-/* Dialogue corners use the same unscaled crops at a smaller fixed size. */
+/* Dialogue frames keep the same restrained inset treatment. */
 .modal-box::after,
 .detail-log-box::after {
-  inset: 0;
+  inset: 3px;
   z-index: 4;
-  border: 0;
+  border: 1px solid rgba(132, 82, 43, .74);
   border-image: none;
-  background-image:
-    var(--ui-molten-corner-tl),
-    var(--ui-molten-corner-tr),
-    var(--ui-molten-corner-bl),
-    var(--ui-molten-corner-br);
-  background-position: left top, right top, left bottom, right bottom;
-  background-size: 54px 54px, 54px 54px, 54px 54px, 54px 54px;
-  background-repeat: no-repeat;
-  opacity: .96;
-  filter: none;
+  background:
+    radial-gradient(circle at 0 0, rgba(244, 132, 56, .78) 0 1px, transparent 7px) left top / 23px 23px no-repeat,
+    radial-gradient(circle at 100% 0, rgba(244, 132, 56, .78) 0 1px, transparent 7px) right top / 23px 23px no-repeat,
+    radial-gradient(circle at 0 100%, rgba(205, 82, 30, .62) 0 1px, transparent 7px) left bottom / 23px 23px no-repeat,
+    radial-gradient(circle at 100% 100%, rgba(205, 82, 30, .62) 0 1px, transparent 7px) right bottom / 23px 23px no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .52);
+  opacity: .82;
 }
