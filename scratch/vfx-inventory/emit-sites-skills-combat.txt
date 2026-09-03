@@ -1,0 +1,3480 @@
+summary: Inventory of VFX emit sites in the OLD skill system (js/skills.js) + js/combat.js + js/legendary.js + js/potential.js (+ tower.js/talents.js checked: ZERO emit sites). Derivation pipeline (js/skills.js): SKILL_VFX_OVERRIDE table 2447-2475; skillVfxColor 2477-2484 (elem→ELEM_INFO[elem].color, else VFX_CAT_COLORS[cat], else #ffffff); skillVfxKind 2492-2510 (no dmgType → curse if only-enemy status refs / dotPulse and no self status / heal, else selfBuff; shape all→rain; box w>1&&h>1→burst; box line→beam; single: cat==='phys'→slash else projectile); skillVfxSpec 2512-2540 (fields fxKind, glyph=sk.emoji||✨, color, elem=skillElemOf (elemOverride > tags[0] > max fx.elems weight > null), cat, targets[], area, dur 0.5, count=clamp(hits,1,5); then override merge, extra merge, rain→dur 0.75, aura→count 1, meteor→all travelMs set to max); emitSkillVfx 2542-2544 → playCombatVfx; skillVfxTravelMs 2549-2552 (per-target round(bfTravelSeconds*1000)); skillVfxImpactDelayMs 2561-2572 (projectile/rain: travelMs[i]/1000 else dur; meteor /0.70; + hitIndex*VFX_HIT_STAGGER_SEC 0.09). Only two emitSkillVfx call sites exist: castSkill 2618-2623 (emitted at cast before damage resolves; extra={travelMs}, targets fallback [player float] when no targets; area=placement.area circle {x,y,r}) and skillRtOpenField 1509-1510 (fxKind forced 'aura', dur=field.dur, targets=out.vfxTargets, area=out.area). SKILLS table lines 1723-1827: 99 keys = 80 castable (one record each below with derived fxKind/variant/elem/cat/color/count) + 19 passives (never cast; derived listed for completeness). Override variants in use: fireball, arcane-barrage, cyclone(whirlwind), bladestorm(swiftCuts, echoBlade), detonate(sinDetonate, runeShatter), swordfield(swordDomain; also on its aura), meteor(fxKind forced rain), flamewave(infernoDomain; also on its aura), nova(frostNova), chain(chainLightning), purple-thunder(stormSigil; forced rain), venom(venomCloud), venomburst(plagueBurst), vortex(voidRift), drain(shadowBolt, lifeLink, soulEcho), pillar(holySmite; forced rain). Other paths: castSkill is also entered by fusion skills (resolveFusionRecord 3636: emoji 🧬, cat 'fusion' → single→projectile, color=elem color or #ffffff since VFX_CAT_COLORS has no fusion key) and by legendary triggered skills (legendary.js legendaryCastTriggeredSkill 110-124: whirlwindRift→whirlwind, shadowRipper→rendWound, skyfallMeteor→meteor). Potential skills (potential.js castPotentialSkill 59-89) emit via skillVfxSpec with pSk={cat:'potential',tags} pFx={dmgType} shape null → selfBuff (buffs) / projectile (omegaImpact), colour VFX_CAT_COLORS.potential #ff9de2 (elem colour if tagged); lightningOverdrive instead emits chain/chain (firePotentialLightning 178, applyPotentialChainLightning 286). legendary.js 484-495 emits chain/lightning-chain per hop for 閃電飛越 (lightningLeap). combat.js: basic attack projectile swordwave / swordwave-extra (936), smite rain/smite (1000), enemy-attack enemy-melee / enemy-projectile (1194, ENEMY_PROJECTILE_HIT_DELAY_SEC 0.26). Colour tables: data.js ELEM_INFO 1674 (fire #e63924, ice #4da6ff, lightning #f2b705, poison #4caf2b, light #ffe47a, dark #6f2da8, earth #ad7444, wind #86efac), VFX_CAT_COLORS 1711 (phys #e6ddc8, magic #8ea2ff, def #7ff0c0, special #ffc773, passive #c9c9c9, potential #ff9de2). Out of scope but noted: js/skills2.js has its own emits (knife-bounce, knife-soulhunter, thrustChain 迅雷穿刺, knifeSplit); js/ui.js:541 is the worker→display dispatch, not an emit.
+sites:
+  - [0]
+    file: js/skills.js
+    line: 1724
+    fn: skillVfxSpec(derived)
+    owner: powerSlash
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 強力斬
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🗡️
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=stun(enemy)
+    note: single phys→slash; default drawing
+  - [1]
+    file: js/skills.js
+    line: 1725
+    fn: skillVfxSpec(derived)
+    owner: doubleStrike
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 二連擊
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⚔️
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=3(hits=3)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single phys→slash; default drawing
+  - [2]
+    file: js/skills.js
+    line: 1726
+    fn: skillVfxSpec(derived)
+    owner: whirlwind
+    fxKind: burst
+    variant: cyclone
+    elem: null
+    cat: phys
+    targetsKind: area
+    tierOrFeature: 旋風斬
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌪️
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=3*3
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=slow(enemy),penUp(self)
+    note: box NxM→burst; override variant=cyclone
+  - [3]
+    file: js/skills.js
+    line: 1727
+    fn: skillVfxSpec(derived)
+    owner: armorBreak
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 破甲擊
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔨
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=stun(enemy),penUp(self)
+    note: single phys→slash; default drawing
+  - [4]
+    file: js/skills.js
+    line: 1728
+    fn: skillVfxSpec(derived)
+    owner: executeStrike
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 處決
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💀
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single phys→slash; default drawing
+  - [5]
+    file: js/skills.js
+    line: 1729
+    fn: skillVfxSpec(derived)
+    owner: rendWound
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 撕裂
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🩸
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=bleed(enemy)
+    note: single phys→slash; default drawing
+  - [6]
+    file: js/skills.js
+    line: 1730
+    fn: skillVfxSpec(derived)
+    owner: stunBlow
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 震盪重擊
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💫
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=stun(enemy),atkDown(enemy)
+    note: single phys→slash; default drawing
+  - [7]
+    file: js/skills.js
+    line: 1731
+    fn: skillVfxSpec(derived)
+    owner: berserkStrike
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 狂暴打擊
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=😤
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single phys→slash; default drawing
+  - [8]
+    file: js/skills.js
+    line: 1732
+    fn: skillVfxSpec(derived)
+    owner: preciseThrust
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 精準突刺
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🎯
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single phys→slash; default drawing
+  - [9]
+    file: js/skills.js
+    line: 1733
+    fn: skillVfxSpec(derived)
+    owner: heavySmash
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 泰山壓頂
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🪨
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=stun(enemy),slow(enemy)
+    note: single phys→slash; default drawing
+  - [10]
+    file: js/skills.js
+    line: 1734
+    fn: skillVfxSpec(derived)
+    owner: swiftCuts
+    fxKind: burst
+    variant: bladestorm
+    elem: null
+    cat: phys
+    targetsKind: area
+    tierOrFeature: 疾風連斬
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🍃
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=5(hits=5)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=3*3
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=bleed(enemy)
+    note: box NxM→burst; override variant=bladestorm
+  - [11]
+    file: js/skills.js
+    line: 1735
+    fn: skillVfxSpec(derived)
+    owner: counterStance
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: player
+    tierOrFeature: 反擊架勢
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔄
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=thornsUp(self),blockUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [12]
+    file: js/skills.js
+    line: 1736
+    fn: skillVfxSpec(derived)
+    owner: soulBrandFlurry
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 烙魂連斬
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🪓
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=3(hits=3)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single phys→slash; default drawing
+  - [13]
+    file: js/skills.js
+    line: 1737
+    fn: skillVfxSpec(derived)
+    owner: sinDetonate
+    fxKind: slash
+    variant: detonate
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 斷罪引爆
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🧨
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single phys→slash; override variant=detonate (large explosion + screen shake)
+  - [14]
+    file: js/skills.js
+    line: 1738
+    fn: skillVfxSpec(derived)
+    owner: echoBlade
+    fxKind: burst
+    variant: bladestorm
+    elem: null
+    cat: phys
+    targetsKind: area
+    tierOrFeature: 殘影迴斬
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌒
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=2*2
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: box NxM→burst; override variant=bladestorm
+  - [15]
+    file: js/skills.js
+    line: 1739
+    fn: skillVfxSpec(derived)
+    owner: warSpiritEngine
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: player
+    tierOrFeature: 鬥氣輪轉
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🥊
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [16]
+    file: js/skills.js
+    line: 1740
+    fn: skillVfxSpec(derived)
+    owner: pursuitDecree
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: player
+    tierOrFeature: 追擊號令
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=📯
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [17]
+    file: js/skills.js
+    line: 1741
+    fn: skillVfxSpec(derived)
+    owner: warOverture
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: player
+    tierOrFeature: 破軍先聲
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⚜️
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [18]
+    file: js/skills.js
+    line: 1742
+    fn: skillVfxSpec(derived)
+    owner: woundCollapse
+    fxKind: curse
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 萬創崩裂
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💔
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        dotPulse=true
+    note: noDmg + fx.dotPulse and no self status → curse (enemy-body rune glyph); default drawing
+  - [19]
+    file: js/skills.js
+    line: 1743
+    fn: skillVfxSpec(derived)
+    owner: mindflowChain
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: player
+    tierOrFeature: 連環戰訣
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔗
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [20]
+    file: js/skills.js
+    line: 1744
+    fn: skillVfxSpec(derived)
+    owner: swordDomain
+    fxKind: slash
+    variant: swordfield
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 劍域千鋒
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🗡️
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        +aura emit via skillRtOpenField (see line 1509 record)
+    note: single phys→slash; override variant=swordfield (same variant also rides the aura emit)
+  - [21]
+    file: js/skills.js
+    line: 1745
+    fn: skillVfxSpec(derived)
+    owner: arcaneBurst
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 奧術衝擊
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌠
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [22]
+    file: js/skills.js
+    line: 1746
+    fn: skillVfxSpec(derived)
+    owner: fireball
+    fxKind: projectile
+    variant: fireball
+    elem: fire
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 火球術
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔥
+      - [1]
+        color=#e63924
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=burn(enemy)
+    note: single non-phys→projectile; override variant=fireball (single fireball straight line from player)
+  - [23]
+    file: js/skills.js
+    line: 1747
+    fn: skillVfxSpec(derived)
+    owner: iceLance
+    fxKind: beam
+    variant: (none)
+    elem: ice
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 寒冰槍
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=❄️
+      - [1]
+        color=#4da6ff
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=1*3
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=stun(enemy),slow(enemy)
+    note: box line→beam; default drawing; the ONLY beam-kind skill in old system
+  - [24]
+    file: js/skills.js
+    line: 1748
+    fn: skillVfxSpec(derived)
+    owner: chainLightning
+    fxKind: projectile
+    variant: chain
+    elem: lightning
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 連鎖閃電
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⚡
+      - [1]
+        color=#f2b705
+      - [2]
+        count=3(hits=3)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; override variant=chain → renderers check variant (sky bolt + inter-enemy arcs) regardless of fxKind
+  - [25]
+    file: js/skills.js
+    line: 1749
+    fn: skillVfxSpec(derived)
+    owner: venomCloud
+    fxKind: projectile
+    variant: venom
+    elem: poison
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 劇毒雲霧
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=☠️
+      - [1]
+        color=#4caf2b
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=poison(enemy),atkDown(enemy)
+    note: single non-phys→projectile; override variant=venom (green mist bolt + lingering poison cloud bubbles)
+  - [26]
+    file: js/skills.js
+    line: 1750
+    fn: skillVfxSpec(derived)
+    owner: holySmite
+    fxKind: rain
+    variant: pillar
+    elem: light
+    cat: magic
+    targetsKind: area
+    tierOrFeature: 聖光審判
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌟
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.75
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area (null for single)
+      - [8]
+        status=atkUp(self)
+      - [9]
+        healPctMax present
+    note: single non-phys would be projectile; override fxKind=rain + variant=pillar (light pillar descends on target, spreads on ground); dur forced 0.75
+  - [27]
+    file: js/skills.js
+    line: 1751
+    fn: skillVfxSpec(derived)
+    owner: shadowBolt
+    fxKind: projectile
+    variant: drain
+    elem: dark
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 暗影箭
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌑
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=corrode(enemy)
+    note: single non-phys→projectile; override variant=drain (life wisp returns to player after hit)
+  - [28]
+    file: js/skills.js
+    line: 1752
+    fn: skillVfxSpec(derived)
+    owner: arcaneBarrage
+    fxKind: projectile
+    variant: arcane-barrage
+    elem: light
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 奧術彈幕
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💫
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=5(hits=6)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; override variant=arcane-barrage; 6 hits clamped to count 5, floats staggered 0.09s per hit
+  - [29]
+    file: js/skills.js
+    line: 1753
+    fn: skillVfxSpec(derived)
+    owner: meteor
+    fxKind: rain
+    variant: meteor
+    elem: fire
+    cat: magic
+    targetsKind: area
+    tierOrFeature: 隕石術
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=☄️
+      - [1]
+        color=#e63924
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.75
+      - [4]
+        shape=4*4
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target, all equalised to max (skillVfxSpec 2534-2538)
+      - [7]
+        area=placement.area circle
+      - [8]
+        status=burn(enemy),stun(enemy)
+    note: box NxM would be burst; override fxKind=rain + variant=meteor (one big meteor from zenith onto whole area; all dmg floats pop at same landing moment; impact delay /0.70 = 30% slower fall)
+  - [30]
+    file: js/skills.js
+    line: 1754
+    fn: skillVfxSpec(derived)
+    owner: manaBurn
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 法力灼燒
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔮
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=penUp(self)
+    note: single non-phys→projectile; default drawing
+  - [31]
+    file: js/skills.js
+    line: 1755
+    fn: skillVfxSpec(derived)
+    owner: frostNova
+    fxKind: projectile
+    variant: nova
+    elem: ice
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 霜之新星
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🧊
+      - [1]
+        color=#4da6ff
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=stun(enemy),slow(enemy)
+    note: single non-phys→projectile; override variant=nova (ice ring burst + ground frost)
+  - [32]
+    file: js/skills.js
+    line: 1756
+    fn: skillVfxSpec(derived)
+    owner: voidRift
+    fxKind: projectile
+    variant: vortex
+    elem: dark
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 虛空裂隙
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🕳️
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=true
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; override variant=vortex (dark-purple vortex contracts and detonates on target); dmgType true
+  - [33]
+    file: js/skills.js
+    line: 1757
+    fn: skillVfxSpec(derived)
+    owner: stormSigil
+    fxKind: rain
+    variant: purple-thunder
+    elem: lightning
+    cat: magic
+    targetsKind: area
+    tierOrFeature: 雷紋刻印
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⛈️
+      - [1]
+        color=#f2b705
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.75
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area (null for single)
+    note: single non-phys would be projectile; override fxKind=rain + variant=purple-thunder (giant purple sky lightning + thunder-rune magic circle); dur forced 0.75
+  - [34]
+    file: js/skills.js
+    line: 1758
+    fn: skillVfxSpec(derived)
+    owner: runeShatter
+    fxKind: projectile
+    variant: detonate
+    elem: dark
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 碎印湮滅
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💥
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; override variant=detonate (large explosion + screen shake)
+  - [35]
+    file: js/skills.js
+    line: 1759
+    fn: skillVfxSpec(derived)
+    owner: emberEcho
+    fxKind: burst
+    variant: (none)
+    elem: fire
+    cat: magic
+    targetsKind: area
+    tierOrFeature: 燼焰回響
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🎆
+      - [1]
+        color=#e63924
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=3*3
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area circle
+    note: box NxM→burst; default burst drawing (fire-elem colouring)
+  - [36]
+    file: js/skills.js
+    line: 1760
+    fn: skillVfxSpec(derived)
+    owner: infernoDomain
+    fxKind: projectile
+    variant: flamewave
+    elem: fire
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 焚世領域
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌋
+      - [1]
+        color=#e63924
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        +aura emit via skillRtOpenField (see line 1509 record)
+    note: single non-phys→projectile; override variant=flamewave (fire wave projectile with enhanced flame trail)
+  - [37]
+    file: js/skills.js
+    line: 1761
+    fn: skillVfxSpec(derived)
+    owner: plagueBurst
+    fxKind: projectile
+    variant: venomburst
+    elem: poison
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 疫爆術
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🦠
+      - [1]
+        color=#4caf2b
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=plague(enemy)
+    note: single non-phys→projectile; override variant=venomburst (green burst + poison bubbles)
+  - [38]
+    file: js/skills.js
+    line: 1762
+    fn: skillVfxSpec(derived)
+    owner: frostResonance
+    fxKind: projectile
+    variant: (none)
+    elem: ice
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 霜晶共鳴
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌨️
+      - [1]
+        color=#4da6ff
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [39]
+    file: js/skills.js
+    line: 1763
+    fn: skillVfxSpec(derived)
+    owner: astralConduit
+    fxKind: selfBuff
+    variant: (none)
+    elem: light
+    cat: magic
+    targetsKind: player
+    tierOrFeature: 星辰引導
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔯
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [40]
+    file: js/skills.js
+    line: 1764
+    fn: skillVfxSpec(derived)
+    owner: bloodSurge
+    fxKind: projectile
+    variant: (none)
+    elem: dark
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 瀝血狂濤
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🩸
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [41]
+    file: js/skills.js
+    line: 1765
+    fn: skillVfxSpec(derived)
+    owner: rimeTide
+    fxKind: projectile
+    variant: (none)
+    elem: ice
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 凜冬迴潮
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌬️
+      - [1]
+        color=#4da6ff
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [42]
+    file: js/skills.js
+    line: 1766
+    fn: skillVfxSpec(derived)
+    owner: healWound
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 治癒術
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💚
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=defUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [43]
+    file: js/skills.js
+    line: 1767
+    fn: skillVfxSpec(derived)
+    owner: regenerate
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 再生術
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌿
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=regen(self)
+    note: noDmg→selfBuff; default drawing
+  - [44]
+    file: js/skills.js
+    line: 1768
+    fn: skillVfxSpec(derived)
+    owner: manaBarrier
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 魔法屏障
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🛡️
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=shield(self),blockUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [45]
+    file: js/skills.js
+    line: 1769
+    fn: skillVfxSpec(derived)
+    owner: ironWall
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 鐵壁
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🏰
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=defUp(self),thornsUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [46]
+    file: js/skills.js
+    line: 1770
+    fn: skillVfxSpec(derived)
+    owner: purify
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 淨化術
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=✨
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=evasionUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [47]
+    file: js/skills.js
+    line: 1771
+    fn: skillVfxSpec(derived)
+    owner: lifeLink
+    fxKind: projectile
+    variant: drain
+    elem: dark
+    cat: def
+    targetsKind: enemies
+    tierOrFeature: 生命汲取
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🧛
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=corrode(enemy)
+    note: def-cat with magic dmg → single non-phys→projectile; override variant=drain (life wisp returns to player)
+  - [48]
+    file: js/skills.js
+    line: 1772
+    fn: skillVfxSpec(derived)
+    owner: sanctuary
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 庇護所
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⛪
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=evasionUp(self),defUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [49]
+    file: js/skills.js
+    line: 1773
+    fn: skillVfxSpec(derived)
+    owner: secondWind
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 回春氣息
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💨
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        healPctMax present
+    note: noDmg→selfBuff; default drawing
+  - [50]
+    file: js/skills.js
+    line: 1774
+    fn: skillVfxSpec(derived)
+    owner: reflectShield
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 反射護盾
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🪞
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=shield(self),thornsUp(self),blockUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [51]
+    file: js/skills.js
+    line: 1775
+    fn: skillVfxSpec(derived)
+    owner: lastStand
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 背水一戰
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🚩
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=atkUp(self),aspdUp(self)
+      - [9]
+        healPctMax present
+    note: noDmg→selfBuff; default drawing
+  - [52]
+    file: js/skills.js
+    line: 1776
+    fn: skillVfxSpec(derived)
+    owner: aegisBurst
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: def
+    targetsKind: enemies
+    tierOrFeature: 聖盾崩華
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💠
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: def-cat with magic dmg → single non-phys→projectile; default drawing
+  - [53]
+    file: js/skills.js
+    line: 1777
+    fn: skillVfxSpec(derived)
+    owner: overflowVerdict
+    fxKind: selfBuff
+    variant: (none)
+    elem: light
+    cat: def
+    targetsKind: player
+    tierOrFeature: 溢流聖罰
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⛲
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        healPctMax present
+    note: noDmg→selfBuff; default drawing
+  - [54]
+    file: js/skills.js
+    line: 1778
+    fn: skillVfxSpec(derived)
+    owner: stigmaCycle
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: def
+    targetsKind: enemies
+    tierOrFeature: 聖痕輪迴
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🪬
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: def-cat with magic dmg → single non-phys→projectile; default drawing
+  - [55]
+    file: js/skills.js
+    line: 1779
+    fn: skillVfxSpec(derived)
+    owner: soulEcho
+    fxKind: projectile
+    variant: drain
+    elem: dark
+    cat: def
+    targetsKind: enemies
+    tierOrFeature: 汲魂回響
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔔
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: def-cat with magic dmg → projectile; override variant=drain
+  - [56]
+    file: js/skills.js
+    line: 1780
+    fn: skillVfxSpec(derived)
+    owner: holyLitany
+    fxKind: selfBuff
+    variant: (none)
+    elem: light
+    cat: def
+    targetsKind: player
+    tierOrFeature: 連禱聖言
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=📜
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        healPctMax present
+    note: noDmg→selfBuff; default drawing
+  - [57]
+    file: js/skills.js
+    line: 1781
+    fn: skillVfxSpec(derived)
+    owner: sustainHymn
+    fxKind: selfBuff
+    variant: (none)
+    elem: light
+    cat: def
+    targetsKind: player
+    tierOrFeature: 續光聖詠
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🎐
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        healPctMax present
+    note: noDmg→selfBuff; default drawing
+  - [58]
+    file: js/skills.js
+    line: 1782
+    fn: skillVfxSpec(derived)
+    owner: bastionCycle
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: player
+    tierOrFeature: 壁壘迴環
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=♻️
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=shield(self)
+    note: noDmg→selfBuff; default drawing
+  - [59]
+    file: js/skills.js
+    line: 1783
+    fn: skillVfxSpec(derived)
+    owner: martyrCharge
+    fxKind: projectile
+    variant: (none)
+    elem: null
+    cat: def
+    targetsKind: enemies
+    tierOrFeature: 蓄怒之盾
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=😤
+      - [1]
+        color=#7ff0c0
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: phys dmg but cat=def (≠phys) → projectile not slash; default drawing, def colour
+  - [60]
+    file: js/skills.js
+    line: 1784
+    fn: skillVfxSpec(derived)
+    owner: sanctify
+    fxKind: selfBuff
+    variant: (none)
+    elem: light
+    cat: def
+    targetsKind: player
+    tierOrFeature: 聖化禱言
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🙏
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        healPctMax present
+    note: noDmg→selfBuff; default drawing
+  - [61]
+    file: js/skills.js
+    line: 1785
+    fn: skillVfxSpec(derived)
+    owner: timeWarp
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 時間扭曲
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⏳
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=aspdUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [62]
+    file: js/skills.js
+    line: 1786
+    fn: skillVfxSpec(derived)
+    owner: midasTouch
+    fxKind: projectile
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 點金手
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🪙
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=lootUp(self)
+    note: phys dmg but cat=special → projectile not slash; default drawing
+  - [63]
+    file: js/skills.js
+    line: 1787
+    fn: skillVfxSpec(derived)
+    owner: treasureSense
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 尋寶直覺
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔍
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=lootUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [64]
+    file: js/skills.js
+    line: 1788
+    fn: skillVfxSpec(derived)
+    owner: weakenCurse
+    fxKind: curse
+    variant: (none)
+    elem: dark
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 虛弱詛咒
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=📉
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=slow(enemy),atkDown(enemy)
+    note: noDmg + enemy-only statuses → curse (rune glyph on enemy bodies); default drawing, dark colour
+  - [65]
+    file: js/skills.js
+    line: 1789
+    fn: skillVfxSpec(derived)
+    owner: deathCurse
+    fxKind: curse
+    variant: (none)
+    elem: dark
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 死亡詛咒
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⚰️
+      - [1]
+        color=#6f2da8
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=deathCurse(enemy)
+    note: noDmg + enemy-only status → curse; default drawing, dark colour
+  - [66]
+    file: js/skills.js
+    line: 1790
+    fn: skillVfxSpec(derived)
+    owner: blinkDodge
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 瞬身
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌀
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=evasionUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [67]
+    file: js/skills.js
+    line: 1791
+    fn: skillVfxSpec(derived)
+    owner: mpSiphon
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 法力虹吸
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🌊
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=atkDown(enemy)
+    note: single non-phys→projectile; default drawing
+  - [68]
+    file: js/skills.js
+    line: 1792
+    fn: skillVfxSpec(derived)
+    owner: overload
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 超載
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=💥
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=critDmgUp(self)
+    note: noDmg→selfBuff; default drawing
+  - [69]
+    file: js/skills.js
+    line: 1793
+    fn: skillVfxSpec(derived)
+    owner: warcry
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 戰吼
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=📣
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+      - [8]
+        status=atkUp(self),atkDown(enemy)
+    note: noDmg with a self status → selfBuff (enemy debuff not visualised); default drawing
+  - [70]
+    file: js/skills.js
+    line: 1794
+    fn: skillVfxSpec(derived)
+    owner: gamble
+    fxKind: projectile
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 孤注一擲
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🎲
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: phys dmg but cat=special → projectile not slash; default drawing
+  - [71]
+    file: js/skills.js
+    line: 1795
+    fn: skillVfxSpec(derived)
+    owner: fateRoulette
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 命運輪盤
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🎰
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [72]
+    file: js/skills.js
+    line: 1796
+    fn: skillVfxSpec(derived)
+    owner: bestReplay
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 昔日重演
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=📽️
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing (the replayed skill via skillRtSimpleCast emits NO vfx of its own)
+  - [73]
+    file: js/skills.js
+    line: 1797
+    fn: skillVfxSpec(derived)
+    owner: chronoPilfer
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 竊時者
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🕰️
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [74]
+    file: js/skills.js
+    line: 1798
+    fn: skillVfxSpec(derived)
+    owner: gamblerChips
+    fxKind: projectile
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 賭徒籌碼
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🃏
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=phys
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: phys dmg but cat=special → projectile not slash; default drawing
+  - [75]
+    file: js/skills.js
+    line: 1799
+    fn: skillVfxSpec(derived)
+    owner: omniBrand
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 萬象烙印
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🔱
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [76]
+    file: js/skills.js
+    line: 1800
+    fn: skillVfxSpec(derived)
+    owner: arcaneAllIn
+    fxKind: projectile
+    variant: (none)
+    elem: light
+    cat: special
+    targetsKind: enemies
+    tierOrFeature: 奧能梭哈
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🎇
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=magic
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: single non-phys→projectile; default drawing
+  - [77]
+    file: js/skills.js
+    line: 1801
+    fn: skillVfxSpec(derived)
+    owner: flowSurge
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 心流湧動
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🧘
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [78]
+    file: js/skills.js
+    line: 1802
+    fn: skillVfxSpec(derived)
+    owner: comboResonance
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 連段共鳴
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=🎶
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [79]
+    file: js/skills.js
+    line: 1803
+    fn: skillVfxSpec(derived)
+    owner: chronoAnchor
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: special
+    targetsKind: player
+    tierOrFeature: 時之錨
+    when: on cast (castSkill 2620-2623), before dmg resolves; impact=travelMs[i] for projectile/rain else immediate
+    extraFields:
+      - [0]
+        glyph=⚓
+      - [1]
+        color=#ffc773
+      - [2]
+        count=1(hits=1)
+      - [3]
+        dur=0.5
+      - [4]
+        shape=single
+      - [5]
+        dmgType=none
+      - [6]
+        travelMs=per-target
+      - [7]
+        area=placement.area
+    note: noDmg→selfBuff; default drawing
+  - [80]
+    file: js/skills.js
+    line: 1804
+    fn: skillVfxSpec(derived)
+    owner: toughness
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 堅韌體魄
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🪨
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [81]
+    file: js/skills.js
+    line: 1805
+    fn: skillVfxSpec(derived)
+    owner: sharpBlade
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 利刃專精
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=⚔️
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [82]
+    file: js/skills.js
+    line: 1806
+    fn: skillVfxSpec(derived)
+    owner: arcaneMind
+    fxKind: selfBuff
+    variant: (none)
+    elem: light
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 奧術心智
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🧠
+      - [1]
+        color=#ffe47a
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [83]
+    file: js/skills.js
+    line: 1807
+    fn: skillVfxSpec(derived)
+    owner: swiftness
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 迅捷步伐
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=💨
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [84]
+    file: js/skills.js
+    line: 1808
+    fn: skillVfxSpec(derived)
+    owner: keenEye
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 銳眼
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=👁️
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [85]
+    file: js/skills.js
+    line: 1809
+    fn: skillVfxSpec(derived)
+    owner: brutality
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 殘暴
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=💢
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [86]
+    file: js/skills.js
+    line: 1810
+    fn: skillVfxSpec(derived)
+    owner: vampirism
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 嗜血本能
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🧛
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [87]
+    file: js/skills.js
+    line: 1811
+    fn: skillVfxSpec(derived)
+    owner: meditation
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 冥想
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🧘
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [88]
+    file: js/skills.js
+    line: 1812
+    fn: skillVfxSpec(derived)
+    owner: ironSkin
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 鋼鐵之膚
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🛡️
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [89]
+    file: js/skills.js
+    line: 1813
+    fn: skillVfxSpec(derived)
+    owner: fortuneFavor
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 財運亨通
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🍀
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [90]
+    file: js/skills.js
+    line: 1814
+    fn: skillVfxSpec(derived)
+    owner: phantomEcho
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 殘響法則
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🔁
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [91]
+    file: js/skills.js
+    line: 1815
+    fn: skillVfxSpec(derived)
+    owner: reaperTempo
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 死神節拍
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🪦
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [92]
+    file: js/skills.js
+    line: 1816
+    fn: skillVfxSpec(derived)
+    owner: battleReflex
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 殺陣反射
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🥷
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff (its procCast triggers doPlayerAttack depth 1 → swordwave-extra emit in combat.js)
+  - [93]
+    file: js/skills.js
+    line: 1817
+    fn: skillVfxSpec(derived)
+    owner: virulentPulse
+    fxKind: selfBuff
+    variant: (none)
+    elem: poison
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 蝕骨頻率
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🧫
+      - [1]
+        color=#4caf2b
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [94]
+    file: js/skills.js
+    line: 1818
+    fn: skillVfxSpec(derived)
+    owner: zeroCadence
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 零式節律
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🧿
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [95]
+    file: js/skills.js
+    line: 1819
+    fn: skillVfxSpec(derived)
+    owner: afterimagePursuit
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 幻影連鋒
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=👥
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [96]
+    file: js/skills.js
+    line: 1820
+    fn: skillVfxSpec(derived)
+    owner: bulwarkFeedback
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 守勢反哺
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=⚙️
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [97]
+    file: js/skills.js
+    line: 1821
+    fn: skillVfxSpec(derived)
+    owner: huntSigil
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 獵殺烙印
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🏹
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [98]
+    file: js/skills.js
+    line: 1822
+    fn: skillVfxSpec(derived)
+    owner: lingeringGlow
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: passive
+    targetsKind: player
+    tierOrFeature: 流光永續
+    when: never (passive)
+    extraFields:
+      - [0]
+        glyph=🕯️
+      - [1]
+        color=#c9c9c9
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        dmgType=none
+    note: PASSIVE: never cast/emitted; derived only. noDmg→selfBuff
+  - [99]
+    file: js/skills.js
+    line: 1509
+    fn: skillRtOpenField
+    owner: swordDomain
+    fxKind: aura
+    variant: swordfield
+    elem: null
+    cat: phys
+    targetsKind: area
+    tierOrFeature: 劍域千鋒 field (fx.field name 劍域, dur 6, tickSec 1, tickPct 25)
+    when: ground field spawn/refresh: right after cast inside skillRtOnCastMechB → skillRtOpenField (1410); re-emitted on every re-cast (same-name field is replaced, aura restarts)
+    extraFields:
+      - [0]
+        glyph=🗡️
+      - [1]
+        color=#e6ddc8 (VFX_CAT_COLORS.phys)
+      - [2]
+        count=1 (forced for aura)
+      - [3]
+        dur=fDur=6 (field.dur, matches field lifetime)
+      - [4]
+        shape=null passed → base kind slash, overridden by extra fxKind aura
+      - [5]
+        targets=out.vfxTargets (cast targets' float ids, kept for tower tb-float)
+      - [6]
+        area=out.area circle {x,y,r} (null in tower → whole field)
+      - [7]
+        travelMs=none
+      - [8]
+        delayMs=none
+    note: skillVfxSpec(sk, fx, null, vfxTargets, out.area, {fxKind:'aura', dur:fDur}); SKILL_VFX_OVERRIDE.swordDomain adds variant swordfield → rotating sword-qi ring covering the field. Second emit for the same cast (first is the slash/swordfield at castSkill).
+  - [100]
+    file: js/skills.js
+    line: 1509
+    fn: skillRtOpenField
+    owner: infernoDomain
+    fxKind: aura
+    variant: flamewave
+    elem: fire
+    cat: magic
+    targetsKind: area
+    tierOrFeature: 焚世領域 field (fx.field name 焚世領域, dur 6, tickSec 1, tickPct 25, elem fire, takenAmpPct 15)
+    when: ground field spawn/refresh: right after cast inside skillRtOnCastMechB → skillRtOpenField (1410); re-emitted on every re-cast (same-name field replaced)
+    extraFields:
+      - [0]
+        glyph=🌋
+      - [1]
+        color=#e63924 (ELEM_INFO.fire)
+      - [2]
+        count=1 (forced for aura)
+      - [3]
+        dur=fDur=6
+      - [4]
+        shape=null passed → base projectile, overridden by extra fxKind aura
+      - [5]
+        targets=out.vfxTargets
+      - [6]
+        area=out.area circle (null in tower)
+      - [7]
+        travelMs=none
+      - [8]
+        delayMs=none
+    note: Override comment: '本體火浪；領域由 elem 自動火焰化' — the aura is elem-driven fire field; variant flamewave is carried along from SKILL_VFX_OVERRIDE (renderer may ignore for aura). Second emit for the same cast (first is projectile/flamewave).
+  - [101]
+    file: js/skills.js
+    line: 3636
+    fn: resolveFusionRecord → castSkill
+    owner: fusion:<dynamic id fusion_<uid>>
+    fxKind: derived: single→projectile (cat 'fusion' ≠ phys, never slash); box NxM→burst; box line→beam; all→rain; noDmg→selfBuff/curse
+    variant: (none — no SKILL_VFX_OVERRIDE entry possible for random ids)
+    elem: fx.elemOverride > sk.tags[0] > max-weight key of fx.elems > null
+    cat: fusion
+    targetsKind: mixed
+    tierOrFeature: player-created fusion skills
+    when: on cast (castSkill 2620-2623) same as regular skills
+    extraFields:
+      - [0]
+        glyph=🧬 (fixed fusion emoji)
+      - [1]
+        color=ELEM_INFO[elem].color if elem else '#ffffff' (VFX_CAT_COLORS has no 'fusion' key → white fallback)
+      - [2]
+        count=clamp(hits,1,5)
+      - [3]
+        dur=0.5 (0.75 if rain)
+      - [4]
+        dmgType may be 'both' (phys+magic) — still projectile
+    note: Same castSkill emit path; only sk fields differ. Field-type fusions (fx.field) would also emit aura via skillRtOpenField with snapshot.isFusion.
+  - [102]
+    file: js/legendary.js
+    line: 123
+    fn: legendaryCastTriggeredSkill → castSkill
+    owner: legendary:whirlwindRift
+    fxKind: burst
+    variant: cyclone
+    elem: null
+    cat: phys
+    targetsKind: area
+    tierOrFeature: 旋風裂隙 (data.js 759-760: onSkillCast cat phys chance 30 triggerSkill whirlwind)
+    when: on proc: 30% after any phys skill cast (legendary.js 572-580) → castSkill('whirlwind') free/noCooldown → normal derived emit
+    extraFields:
+      - [0]
+        glyph=🌪️
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        shape=3*3
+      - [5]
+        targets=original cast targets
+    note: Identical spec to the whirlwind record; extra cast = extra cyclone burst.
+  - [103]
+    file: js/legendary.js
+    line: 123
+    fn: legendaryCastTriggeredSkill → castSkill
+    owner: legendary:shadowRipper
+    fxKind: slash
+    variant: (none)
+    elem: null
+    cat: phys
+    targetsKind: enemies
+    tierOrFeature: 暗影撕裂者 (data.js 779-780: onHealthLost chance 25 triggerSkill rendWound)
+    when: on proc: 25% when player loses HP (legendary.js 695-698) → castSkill('rendWound') on all active enemies
+    extraFields:
+      - [0]
+        glyph=🩸
+      - [1]
+        color=#e6ddc8
+      - [2]
+        count=1
+      - [3]
+        dur=0.5
+      - [4]
+        targets=all active enemies' float ids
+    note: Identical spec to rendWound record but targets = whole field.
+  - [104]
+    file: js/legendary.js
+    line: 123
+    fn: legendaryCastTriggeredSkill → castSkill
+    owner: legendary:skyfallMeteor
+    fxKind: rain
+    variant: meteor
+    elem: fire
+    cat: magic
+    targetsKind: area
+    tierOrFeature: 天隕 (data.js 849: autoTrigger every meteor.sec, skill meteor)
+    when: auto every meteor.sec seconds while equipped (legendary.js 901-906) → castSkill('meteor') on all enemies
+    extraFields:
+      - [0]
+        glyph=☄️
+      - [1]
+        color=#e63924
+      - [2]
+        count=1
+      - [3]
+        dur=0.75
+      - [4]
+        travelMs equalised to max, impact /0.70
+    note: Identical spec to meteor record; periodic.
+  - [105]
+    file: js/legendary.js
+    line: 490
+    fn: legendaryEmitChainVfx (called from legendaryScheduleChain 497-515)
+    owner: legendary:lightningLeap
+    fxKind: chain
+    variant: lightning-chain
+    elem: spec.elem || 'lightning' (lightningLeap: lightning)
+    cat: magic
+    targetsKind: enemies
+    tierOrFeature: 閃電飛越 (data.js 825: onSkillCastChain cat magic chance 35 powerPct 50 bounces 5 tickSec 0.3)
+    when: per chain hop: on 35% proc after a magic skill cast (legendary.js 582-583) hops are queued at GT + 0.3s*(i+1) for i<5; one emit per hop just before that hop's damage
+    extraFields:
+      - [0]
+        glyph=⚡
+      - [1]
+        color=VFX_CAT_COLORS.magic #8ea2ff (fallback #f2b705)
+      - [2]
+        targets=[prevTarget?, nextTarget] — 1 id on first hop (from omitted → renderer draws from player), 2 ids afterwards (dead prev omitted)
+      - [3]
+        area=null
+      - [4]
+        dur=0.35
+      - [5]
+        count=1
+      - [6]
+        travelMs=none
+      - [7]
+        delayMs=none
+    note: Same 'lightning-chain' variant as skills2 連鎖閃電; both renderers recognise it. thrustChain 迅雷穿刺 (data.js 938) is consumed by js/skills2.js, not here.
+  - [106]
+    file: js/potential.js
+    line: 178
+    fn: firePotentialLightning
+    owner: potential:lightningOverdrive
+    fxKind: chain
+    variant: chain
+    elem: lightning
+    cat: potential
+    targetsKind: enemies
+    tierOrFeature: 雷霆過載 main strike (bounces 5)
+    when: on cast (castPotentialSkill → firePotentialActive mech chainLightning) AND every 1s re-strike during 8s dur (tickPotentialOverdrive 312-321 → firePotentialLightning); floats staggered hopMs=90 per hop
+    extraFields:
+      - [0]
+        glyph=def.emoji 🌩️
+      - [1]
+        color=#f2b705
+      - [2]
+        targets=bfChainOrder(lockTarget, live, 5) float ids (alive only)
+      - [3]
+        cells=null
+      - [4]
+        area=none
+      - [5]
+        dur=0.4
+      - [6]
+        count=1
+      - [7]
+        travelMs=none
+      - [8]
+        delayMs=none
+    note: castPotentialSkill skips its generic emit for mech chainLightning (line 72) so this is the only vfx for 雷霆過載. Renderer: inter-enemy bouncing lightning chain along path.
+  - [107]
+    file: js/potential.js
+    line: 286
+    fn: applyPotentialChainLightning
+    owner: potential:lightningOverdrive (chain proc)
+    fxKind: chain
+    variant: chain
+    elem: lightning
+    cat: potential
+    targetsKind: enemies
+    tierOrFeature: 雷霆過載 secondary chain (bounces = 3 + comboReps, 10% of totalDmg per hop)
+    when: on hit: called from castSkill after a lightning-elem skill deals damage while overdrive active; floats staggered hopMs=90 per hop
+    extraFields:
+      - [0]
+        glyph=🌩️
+      - [1]
+        color=#f2b705
+      - [2]
+        targets=bfChainOrder(firstAliveTarget, whole field, bounces) float ids
+      - [3]
+        cells=null
+      - [4]
+        dur=0.4
+      - [5]
+        count=1
+      - [6]
+        travelMs=none
+      - [7]
+        delayMs=none
+    note: Same visual as line 178 emit; distinct trigger.
+  - [108]
+    file: js/potential.js
+    line: 76
+    fn: castPotentialSkill
+    owner: potential:velocityForce
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: potential
+    targetsKind: player
+    tierOrFeature: 極速之力
+    when: on cast (potential skills bypass castSkill; emitted before firePotentialActive)
+    extraFields:
+      - [0]
+        glyph=⚡
+      - [1]
+        color=#ff9de2 (VFX_CAT_COLORS.potential)
+      - [2]
+        targets=[playerEventFloatTarget] (extra override)
+      - [3]
+        area=null
+      - [4]
+        dur=0.5
+      - [5]
+        count=1
+      - [6]
+        travelMs=none (impact delay falls back to dur)
+    note: pSk={id,name,emoji,cat:'potential',tags:[]} pFx={dmgType:null} shape null → selfBuff
+  - [109]
+    file: js/potential.js
+    line: 76
+    fn: castPotentialSkill
+    owner: potential:chronoCollapse
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: potential
+    targetsKind: player
+    tierOrFeature: 時間坍縮
+    when: on cast
+    extraFields:
+      - [0]
+        glyph=🕳️
+      - [1]
+        color=#ff9de2
+      - [2]
+        targets=[player]
+      - [3]
+        dur=0.5
+      - [4]
+        count=1
+      - [5]
+        travelMs=none
+    note: pFx dmgType null → selfBuff
+  - [110]
+    file: js/potential.js
+    line: 76
+    fn: castPotentialSkill
+    owner: potential:absoluteSanctuary
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: potential
+    targetsKind: player
+    tierOrFeature: 絕對領域
+    when: on cast
+    extraFields:
+      - [0]
+        glyph=🛡️
+      - [1]
+        color=#ff9de2
+      - [2]
+        targets=[player]
+      - [3]
+        dur=0.5
+      - [4]
+        count=1
+      - [5]
+        travelMs=none
+    note: pFx dmgType null → selfBuff
+  - [111]
+    file: js/potential.js
+    line: 76
+    fn: castPotentialSkill
+    owner: potential:timeBarrier
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: potential
+    targetsKind: player
+    tierOrFeature: 時間結界
+    when: on cast
+    extraFields:
+      - [0]
+        glyph=⏱️
+      - [1]
+        color=#ff9de2
+      - [2]
+        targets=[player]
+      - [3]
+        dur=0.5
+      - [4]
+        count=1
+      - [5]
+        travelMs=none
+    note: enemy-slow effect but pFx carries no status refs → selfBuff on player (not curse)
+  - [112]
+    file: js/potential.js
+    line: 76
+    fn: castPotentialSkill
+    owner: potential:omegaImpact
+    fxKind: projectile
+    variant: (none)
+    elem: null
+    cat: potential
+    targetsKind: enemies
+    tierOrFeature: 必殺一擊
+    when: on cast; impact delay = dur (no travelMs)
+    extraFields:
+      - [0]
+        glyph=🎯
+      - [1]
+        color=#ff9de2
+      - [2]
+        targets=enemy float ids (fallback [player] if none)
+      - [3]
+        dur=0.5
+      - [4]
+        count=1
+      - [5]
+        travelMs=none
+    note: pFx dmgType phys but cat 'potential' ≠ phys → projectile (not slash)
+  - [113]
+    file: js/potential.js
+    line: 76
+    fn: castPotentialSkill
+    owner: potential:sacredInversion
+    fxKind: selfBuff
+    variant: (none)
+    elem: light
+    cat: potential
+    targetsKind: player
+    tierOrFeature: 聖療逆轉
+    when: on cast
+    extraFields:
+      - [0]
+        glyph=✨
+      - [1]
+        color=#ffe47a (ELEM_INFO.light via tags ['light'])
+      - [2]
+        targets=[player]
+      - [3]
+        dur=0.5
+      - [4]
+        count=1
+      - [5]
+        travelMs=none
+    note: pFx dmgType null → selfBuff; only tagged potential buff (light colour)
+  - [114]
+    file: js/potential.js
+    line: 76
+    fn: castPotentialSkill
+    owner: potential:chronosStasis
+    fxKind: selfBuff
+    variant: (none)
+    elem: null
+    cat: potential
+    targetsKind: player
+    tierOrFeature: 時空凝滯
+    when: on cast
+    extraFields:
+      - [0]
+        glyph=🌀
+      - [1]
+        color=#ff9de2
+      - [2]
+        targets=[player]
+      - [3]
+        dur=0.5
+      - [4]
+        count=1
+      - [5]
+        travelMs=none
+    note: pFx dmgType null → selfBuff. (lastStandUndying / dualCoreFusion are passive/passiveTrigger → never cast, no emit.)
+  - [115]
+    file: js/combat.js
+    line: 936
+    fn: doPlayerAttack
+    owner: basic
+    fxKind: projectile
+    variant: swordwave (depth 0 main attack) | swordwave-extra (depth>0: combo / extra-hit / procCast-triggered attacks)
+    elem: null
+    cat: basic
+    targetsKind: enemies
+    tierOrFeature: player basic attack sword-qi
+    when: every player basic attack, emitted BEFORE resolveHit; hit = delayMs + travelMs[0]; only depth-0 wave triggers the player attack animation in the renderer
+    extraFields:
+      - [0]
+        glyph=⚔️
+      - [1]
+        color=#e6ddc8
+      - [2]
+        targets=[enemyEventFloatTarget(mEnt)]
+      - [3]
+        travelMs=[round(bfTravelSeconds(mEnt)*1000)]
+      - [4]
+        delayMs=opts.vfxDelayMs || 0 (Nth extra wave staggered by caller)
+      - [5]
+        dur=0.5
+      - [6]
+        count=1
+      - [7]
+        area=none
+    note: Float text of damage/MISS delayed by the same atkHitDelayMs. Renderer handles hit feedback on arrival.
+  - [116]
+    file: js/combat.js
+    line: 1000
+    fn: doPlayerAttack (smite passive branch)
+    owner: basic (passive 天罰 smite)
+    fxKind: rain
+    variant: smite
+    elem: lightning
+    cat: basic
+    targetsKind: enemies
+    tierOrFeature: 神鑄特效【天罰】 (st.passives.smite chance %)
+    when: on basic-attack hit: when smite proc rolls true (target not killed by the hit), timed to the sword-wave impact moment via delayMs; damage float +90ms after
+    extraFields:
+      - [0]
+        glyph=⚡
+      - [1]
+        color=#f2b705
+      - [2]
+        targets=[enemy float id]
+      - [3]
+        travelMs=[0]
+      - [4]
+        delayMs=atkHitDelayMs (wave delay + travel)
+      - [5]
+        dur=0.4
+      - [6]
+        count=1
+      - [7]
+        area=none
+    note: Single divine bolt from zenith onto the target at the instant the sword-qi lands.
+  - [117]
+    file: js/combat.js
+    line: 1194
+    fn: doMonsterAttack
+    owner: enemy
+    fxKind: enemy-attack
+    variant: enemy-melee (mEnt.magic falsy) | enemy-projectile (mEnt.magic truthy)
+    elem: mEnt.attr if ELEM_INFO[mEnt.attr] else null
+    cat: enemy
+    targetsKind: player
+    tierOrFeature: enemy basic/skill attack (skillName passed for boss skills; same spec)
+    when: every enemy attack: after resolveHit, before thorns/retaliation settles; magic hits land after travelMs 260ms (shared with DEFERRED_ENEMY_RETALIATIONS)
+    extraFields:
+      - [0]
+        glyph=✦ (magic) | 💢 (melee)
+      - [1]
+        color=ELEM_INFO[elem].color if elem else '#c084fc' (magic) | '#ff6b6b' (melee)
+      - [2]
+        sourceId=enemyAttackSourceId: 'tb-float' (tower boss) | ent.floatSel | floatSel if starts with 'mv-float-' | null
+      - [3]
+        targets=[playerEventFloatTarget(floatSel)] (pv-float)
+      - [4]
+        travelMs=[260] when magic (ENEMY_PROJECTILE_HIT_DELAY_SEC 0.26) else null
+      - [5]
+        dur=0.26 (magic) | 0.35 (melee)
+      - [6]
+        count=1
+      - [7]
+        hit=!res.invuln && !res.miss (renderer uses to show hit vs whiff)
+      - [8]
+        area=none
+    note: legendaryMonsterAttackDoll path (pEnt._legendaryDoll) returns early and emits nothing. Renderer: battle-renderer 4571 treats cat enemy + fxKind enemy-attack specially (source-anchored).

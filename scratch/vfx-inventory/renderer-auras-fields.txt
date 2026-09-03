@@ -1,0 +1,334 @@
+sharedHelpers: FILE: D:\MyGames\Idle-RPG\claude\js\battle-renderer.js (read-only analysis, worktree branch ai/claude)
+   
+   == Dispatch for this range (onVfx, case 'aura', lines 4940-4955) ==
+   - rect = areaRect(spec.area) computed at line 4593 for every spec; onVfx line 4591 drops any aura spec with elem 'wind' and no variant before dispatch.
+   - 'starfall-shadow' -> spawnStarfallShadow (out of range); 'follow-aura' -> spawnFollowAura (2479); 'firehunt' | 'thunder-orbit' -> spawnFireHunt (2369); 'thunder-orb' -> spawnThunderOrbField (out of range); 'firewall' -> spawnFireWall (2541); 'thunder-curtain' -> spawnThunderCurtain (2718); 'mire' | 'mire-lava' | 'mire-poison' | 'mire-lava-poison' -> spawnMirePool (2913); blizzard/water-tornado/wind-tornado/ice-arrow-homing/wind-blade-homing -> spawnIceField, void-disc -> spawnVoidDisc, storm-* -> spawnStormShell, cyclone -> spawnCyclone, bladestorm -> spawnBladestorm (all out of range); EVERYTHING ELSE -> spawnAura(rect, spec) (2325) = the fxKind 'aura' default branch.
+   - Every spawn* in this range receives the spec after POS_BUFFER_MS delay (4572-4584); no baseDelay/stagger/count is used by any of them.
+   
+   == Layers (line 87) == order bottom->top: ground / zone / entity / fx / float / overlay. spawnAura, spawnFireWall, spawnMirePool draw on S.layers.zone (UNDER entities); spawnFireHunt, spawnFollowAura, spawnThunderCurtain draw on S.layers.fx (OVER entities). Risers/particles always go to S.layers.fx.
+   
+   == Constants (30-53) == MAX_FX 140 (fx-object cap); FX_HARD_LIFETIME_MS 3000 default hard wall-clock life; FX_AURA_MAX_SEC 6 (aura display cap); FX_PERSISTENT_AURA_PRIORITY 3; REDUCED_MOTION (27-28) = prefers-reduced-motion media query -> disables all risers/particles in this range. FX_ORBIT_MAX_SEC 12 (2367); FOLLOW_AURA_MAX_SEC 12 (2478); FIRE_WALL_MAX_LIFE_SEC 4.5 (2540); THUNDER_CURTAIN_* (2695-2699): THEME {c1 #7dd3fc, c2 #ffffff, glow #2563eb}, BOLT_GAP 150 px, MAX_BOLTS 8, REDRAW_SEC 0.07, MAX_LIFE_SEC 8; MIRE_POOL_MAX_LIFE_SEC 14, MIRE_VISUAL_HEIGHT_RATIO 0.52 (2911-2912); FIELD_VFX_MIN_MOTION_SEC 0.12 (2805); FIELD_VFX_FOLLOW_TAU_SEC 0.14, FIELD_VFX_FOLLOW_MAX_MULT 2 (2825-2826).
+   
+   == themeOf(spec) (66-81) == table = VFX_ELEM_THEME (js/vfx.js) else FALLBACK_THEME (56-65): light {c1 #ffe47a c2 #fffef4 glow #fff3a3}, dark {#6f2da8, #1a0c2e, #913dcc}, fire {#e63924, #ffd447, #ff6a2a}, ice {#4da6ff, #f2fbff, #79d8ff}, lightning {#f2b705, #fff8b0, #ffd23f}, earth {#ad7444, #5b3a27, #c48a55}, poison {#4caf2b, #d8ff8a, #76d83b}, wind {#86efac, #ffffff, #b9f6cf}. Variant overrides: knife-soulhunter -> lightning gold; thunder-strike -> {#c084fc, #fdf4ff, #9333ea}; bleed/bleed-tick -> {#d92846, #ffd0d8, #ff4962}. No elem -> mono theme from spec.color (default #9ecbff): c1=c2=glow=color.
+   
+   == areaRect(area) (256-260) == returns {x: area.x - r, y: area.y - r, w: 2r, h: 2r, r} where r = area.r if finite else max(S.W,S.H) (near full-screen). Null if no area. rectRadius (264-271) unused in this range.
+   == playerPos() (275-279) == player world coords (S.player.wx/wy) — used every frame by spawnFireHunt/spawnFollowAura (anchored at y-12).
+   == nowMs() (221) == performance.now(); lerp(a,b,t) (216).
+   
+   == addFx(fx, prio, maxLifeMs) (1359-1391) == fx.update(dt) called per rAF; returning false removes. Hard wall-clock life maxLifeMs (default 3000). When S.fx.length >= 140: evicts the LOWEST-priority fx with prio < new prio; if none, destroys the new node and returns null (spawnFireHunt/spawnFollowAura check this and drop their merge-registry entry). Same-priority never evicts each other. Priorities used here: risers/particles 0, bolts 1, aura/firewall/thunder-curtain/mire 2, firehunt/follow-aura 3.
+   
+   == spawnRiser(x, y, theme, glyph) (3696-3718) == 40% chance (if glyph) a PIXI.Text of spec.glyph (emoji) fontSize 13, anchor 0.5, normal blend; else a PIXI.Graphics 2 px radius disc filled theme.c1 with blendMode 'add'. Rises at 34 px/s (node.y -= 34*dt), alpha = 1 - t/0.9, life 0.9 s, priority 0, hard life 3 s. Not gated by REDUCED_MOTION itself (callers gate).
+   
+   == spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard) (1439-1474) == returns if REDUCED_MOTION; count = particleBudget(min(count,14)) where particleBudget (571-576): load = S.fx.length/140; >=0.85 -> 0; >=0.6 -> max(1, round(n*0.35)); else n. Each particle: PIXI.Sprite(dotTexture()) — dotTexture (504-522) is a 32x32 canvas radial gradient white, solid to 80% radius then fading to 0 at edge; DOT_TEX_RADIUS 12.8 so visible halo is ~1.25x the nominal radius. Nominal radius r = 1.6..4.0 px * radiusScale; tint 50/50 theme.c1 / theme.c2 (cssColorToInt); blendMode 'add'; velocity magnitude (60..180)*speed*radiusScale*0.55 px/s at random angle, extra -40 px/s upward; gravity +260 px/s^2; life 0.45..0.75 s with linear alpha fade; priority 0.
+   
+   == boltPath(g, x0,y0, x1,y1, theme, alpha, isMega, isPurple) (2182-2236) == polyline with seg=6 (8 if mega/purple) segments; interior points jittered perpendicular by ±min(36, dist*0.28) px (random every redraw). Colors: c1 = theme.c1 (fallback 0xffd93d), cGlow = theme.glow (fallback 0xffb703), core 0xffffff (purple: 0xc084fc/0x9333ea/0xfdf4ff). Three passes per segment with q = i/last tapering toward the end point: (1) glow stroke width max(3, 1.3*(13 - 10.5q)) [mega 18-12q; purple 22-13q] alpha 0.6*alpha; (2) mid stroke c1 width max(1.8, 7 - 4.5q) [mega 11-7q; purple 14-9q] alpha 0.95*alpha; (3) core white width max(0.8, 3 - 2q) [mega 4.8-3q; purple 5.5-3.2q] alpha alpha; round caps/joins. Mega/purple add a fork branch (width 2.2) from point 2. Thunder curtain uses non-mega non-purple.
+   
+   == fieldVfx helpers (2805-2905) — display-only motion between authoritative sim snapshots ==
+   - fieldVfxMotionSec(spec, fallback) (2806-2809): max(0.12, spec.dur if >0 else fallback).
+   - Exponential follow (2827-2840): fieldVfxSetFollowTarget(fx,x,y) sets motionToX/Y; fieldVfxFollowStep(fx,dt): want = dist/0.14 px/s, cap = (fx.speed || want) * 2, step = min(dist, min(want, cap)*dt) toward target -> speed proportional to distance, equilibrium lag = speed*0.14 s (~25 px at 180 px/s). Used by homing ice-arrow/wind-blade fields (spawnIceField, out of range).
+   - fieldVfxKey(area, variant) (2845-2850): (area.id || fieldKey || vfxId) + ':' + variant; homing variants WITHOUT an id return null (not drawn); others fall back to round(x):round(y):variant.
+   - fieldVfxWindAngle(fx) (2852-2860): heading = atan2 from current pos to motionTo (or destX/Y if within 0.5 px); fieldVfxWindAngleStep(fx, dt) (2864-2873): smooth rotate toward it with k = 1 - exp(-14*dt) (time constant ~0.07 s), shortest-arc delta.
+   - Linear tween (2875-2905): fieldVfxSetTarget(fx,x,y,w,h,duration) / fieldVfxSetPositionTarget(fx,x,y,duration) store from/to and motionDur = max(0.05, duration||0.35); fieldVfxStep(fx,dt) lerps x,y,(w,h) with k = motionT/motionDur (linear, no easing). spawnMirePool uses SetTarget+Step; spawnFireWall and spawnThunderCurtain do NOT use these (firewall snaps; curtain self-propels).
+   
+   == Sim-side producers (for preset planning) ==
+   - js/skills2.js sgOrbitEmitVfx (4493-4530): firehunt/thunder-orbit/void-disc specs: fxKind 'aura', variant f.auraVariant, elem f.hitElem, dur = until-GT (>=0.5), count perRing, area {x,y (player pos at cast), r (BIRTH radius), rGrowTo, rGrowSec, orbR, orbs, spin ±1, spinRate (rad/s, signed), startAng (ignored by renderer), id, grow px/s, growMax, spiral 0/1, spiralLag s, orbGrowTo, orbGrowSec}. Re-sent when 【再生】 extends duration by >2 s (sgOrbitRefreshVfx 4534).
+   - follow-aura producers: skills2.js 4746 (fire, id 'sg-firegod-aura'), 4939 (earth, 'sg-rock-field'), 7649 (ice, 'sg-water-prison'), 7725 (ice, 'sg-abyss-domain'); all dur = 2 s re-sent every SG_DOMAIN_VFX_SEC = 1 s (9845), area {id, r, w:2r, h:2r}.
+   - Ground fields sgGroundVfxSpec (3941-3979) + sgGroundArea (3984-4018): rect fields carry {id: vfxId, x, y, w: length, h: width, a: axis radians, r}; thunderwall adds destX/destY/speed; circle fields carry {id, x, y, r} and only poisonmist/bloodmist/firepool add w/h = 2r. firewall = elem fire; thunder-curtain = elem lightning; mire-lava (firepool) = fire; mire-poison (poisonmist) = poison; mire (bloodmist) = dark. sgMireGroundTick (5316-5325): mire variants by lava/poison flags, elem 'fire' only when lava && !poison, otherwise 'earth'. sgEmitBloodDomainAura (9877-9885): 'mire-poison' (poison) / 'mire' (dark), area {id, x: player x, y: player y, r, w:2r, h:2r}, dur 1, re-sent every 1 s -> pool tweens after the player.
+   - Default spawnAura producers: legacy js/skills.js field auras (skillVfxSpec 2512-2539 with extra {fxKind 'aura', dur fDur} at 1509-1510: no variant, elem from skillElemOf, glyph = skill emoji, area = out.area); skills2 'rock-armor' (4896, 9433, elem earth), 'bloodrage-aura' (2919, 9508, no elem -> spec.color from VFX_CAT_COLORS), 'lightning-relay' (5988, 6057, elem lightning, dur 0.35). NOTE: sgEmitVfx (1388-1416) and sgEmitPlayerVfx (4828-4843) set area = extra.area || null, and none of these three pass an area, so on the Pixi path rect is null and spawnAura returns at line 2329 -> rock-armor / bloodrage-aura / lightning-relay currently render NOTHING on canvas (only the DOM vfx.js path may draw them).
+variants:
+  - [0]
+    variant: <default:aura>
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnAura(rect, spec) lines 2325-2357
+      - [1]
+        dispatch: onVfx case 'aura' final else, line 4955; wind no-variant skip line 4591; rect = areaRect(spec.area) line 4593
+    specFields:
+      - [0]
+        area.x
+      - [1]
+        area.y
+      - [2]
+        area.r (finite -> square side 2r; non-finite -> near full-screen max(S.W,S.H))
+      - [3]
+        dur
+      - [4]
+        elem
+      - [5]
+        glyph
+      - [6]
+        color (mono theme when elem missing)
+    placement: World-anchored square rect from areaRect(spec.area): centered on area.x/y, side = 2*area.r. Drawn as a rounded rect inset 3 px on every side (rect.x+3, rect.y+3, w-6, h-6) with corner radius 10, on S.layers.zone (under entities). Returns immediately (draws nothing) when rect is null (no area) or spec.elem === 'wind' (line 2329).
+    motion: Static (no translation). Fill/stroke alpha pulse with sin(t*3.2) (~0.51 Hz). Risers drift upward from random points in the lower 60% of the rect.
+    timing: dur = clamp(spec.dur || 4, 1, 6) s (FX_AURA_MAX_SEC). Linear fade-out over the final 0.5 s (fade = (dur-t)/0.5). Hard life dur*1000+500 ms. Priority 2. Riser emitter: one spawnRiser every 0.3 s while fade > 0.5 and !REDUCED_MOTION, at x = rect.x + rand*rect.w, y = rect.y + rect.h*(0.4 + rand*0.6). Legacy skills.js fields send dur = field duration (fDur); rock-armor/counter send min(6,dur); lightning-relay sends 0.35 (clamped up to 1 s).
+    visual: Single PIXI.Graphics, normal blend: roundRect fill theme.c2 alpha (0.16 + 0.05*sin(t*3.2))*fade (0.11..0.21); stroke theme.c1 width 2 alpha (0.5 + 0.2*sin(t*3.2))*fade (0.3..0.7). Risers: 2 px disc filled theme.c1 additive OR (40%, if glyph) spec.glyph emoji text 13 px; rise 34 px/s, life 0.9 s linear fade. THEME-DERIVED (c1, c2 from spec.elem; falls back to spec.color mono) -> needs one preset per element plus a color-parameterised fallback.
+    feedback: None (no hitReact, no spawnImpact, no addShake).
+    notes: Reached by legacy js/skills.js field auras (no variant) and by unknown/unhandled aura variants. skills2 variants 'rock-armor', 'bloodrage-aura', 'lightning-relay' also fall here but carry area = null, so on the Pixi path they draw NOTHING (spawnAura returns at 2329). Comment 2326-2328: the green rect is explicitly forbidden for wind skills.
+  - [1]
+    variant: firehunt
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnFireHunt(spec) lines 2369-2468
+      - [1]
+        registry _fireHuntRings line 2368; FX_ORBIT_MAX_SEC line 2367
+      - [2]
+        dispatch line 4943
+    specFields:
+      - [0]
+        area.r (orbit birth radius, min 6)
+      - [1]
+        area.orbR (orb body radius, min 3)
+      - [2]
+        area.orbs (1..12; renderer reads this, not spec.count)
+      - [3]
+        area.spin (sign -> ccw when < 0)
+      - [4]
+        area.spinRate (signed rad/s; fallback ±2π rad/s = 1 rev/s)
+      - [5]
+        area.grow (ring radius growth px/s)
+      - [6]
+        area.growMax (cap px, 0 = none)
+      - [7]
+        area.spiral (1 -> each orb grows from its own birth time)
+      - [8]
+        area.spiralLag (s between orb births)
+      - [9]
+        area.orbGrowTo / area.orbGrowSec (orb body size multiplier over time)
+      - [10]
+        area.rGrowTo / area.rGrowSec (ring radius multiplier over time)
+      - [11]
+        dur
+      - [12]
+        elem
+      - [13]
+        variant
+      - [14]
+        glyph
+      - [15]
+        (ignored: area.x/y, area.startAng, area.id, count)
+    placement: Pinned to the player: every frame node.x/y = playerPos() with y - 12 px (visual centre of the sprite), on S.layers.fx (above entities). Orbs sit on an ellipse: ox = cos(ang)*rNow, oy = sin(ang)*rNow*0.62 (top-down 0.62 vertical squash). rNow starts at ringR = max(6, area.r) and follows the sim growth curves; orb radius = max(3, area.orbR) scaled by the orbGrow curve. Merge key = variant:elem:round(ringR):cw|ccw — a second event with the same key only extends duration and updates orb count (2393-2398).
+    motion: Follows player + continuous orbit: ang_i = spin*t + 2π*i/orbs, spin = area.spinRate (rad/s, sign = direction) else (ccw ? -1 : 1)*2π. Ring radius: ringRNow = ringR*(1 + (rGrowTo-1)*clamp(t/rGrowSec)); non-spiral whole ring: min(growMax||∞, ringRNow + grow*t); spiral: orb i uses orbT = max(0, t - i*spiralLag) -> rNow_i = min(cap, ringRNow + grow*orbT) (orbs born later sit further in -> a spiral). Orb body: curOrbR = orbR*(1 + (orbGrowTo-1)*clamp(t/orbGrowSec)). Trail blob trails behind the direction of travel (angle offset spin*0.08).
+    timing: dur = clamp(spec.dur || 4, 0.5, 12) s; refresh extends ring.dur = min(12, max(ring.dur, ring.t + dur)) and sets ring.orbs. Fade linear over the final 0.4 s. Priority 3 (FX_PERSISTENT_AURA_PRIORITY), hard life 13 s. Risers: one spawnRiser every 0.12 s while fade > 0.5 && !REDUCED_MOTION at a random orb angle on radius riserR = (grow>0 ? min(cap, ringRNow + grow*t) : ringRNow) (note: uses the whole-ring radius even for spiral). If addFx refuses (capacity), registry entry is dropped (2460-2466).
+    visual: One PIXI.Graphics redrawn per frame, normal blend. Faint orbit guide: circle radius wholeR stroke theme.c1 width 1.5 alpha 0.18*fade. Per orb: disc radius curOrbR fill theme.c2 alpha 0.85*fade; inner core disc radius 0.55*curOrbR fill theme.c1 alpha 0.95*fade; trail blob radius 0.42*curOrbR at (ox - cos(ang+spin*0.08)*curOrbR*0.8, oy - sin(ang+spin*0.08)*curOrbR*0.5) fill theme.glow||c1 alpha 0.4*fade. Risers: 2 px c1 additive dot or 13 px glyph emoji rising 34 px/s for 0.9 s. THEME-DERIVED via themeOf(spec) with elem = sim hitElem (fire by default -> c1 #e63924, c2 #ffd447, glow #ff6a2a) -> one preset per element the sim may send.
+    feedback: None. Damage feedback comes from separate burst/impact events (e.g. 'firehunt-detonate', 'fire-explosion').
+    notes: Comment 2358-2366: sizes MUST equal the sim's contact circle. Sim producer sgOrbitEmitVfx (skills2.js 4493-4530) sends area.r as the BIRTH radius so the merge key stays stable while the ring grows. Same drawing serves 【火狩】, 超神【無限星環】 (spiral, grow, growMax, spiralLag) and 【烈陽星環】 (orbGrowTo/orbGrowSec, rGrowTo/rGrowSec).
+  - [2]
+    variant: thunder-orbit
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnFireHunt(spec) lines 2369-2468 (shared with firehunt)
+      - [1]
+        dispatch line 4943
+    specFields:
+      - [0]
+        same as firehunt: area.r, orbR, orbs, spin, spinRate, grow, growMax, spiral, spiralLag, orbGrowTo, orbGrowSec, rGrowTo, rGrowSec, dur, elem, glyph
+    placement: Identical to firehunt: pinned to playerPos() (y - 12), orbs on a 0.62-squashed ellipse of radius area.r, S.layers.fx. Separate merge key because the key includes variant and elem (2389-2392) so a thunder orbit and a fire orbit of equal radius coexist.
+    motion: Identical to firehunt (orbit at area.spinRate rad/s, growth curves, trailing blob).
+    timing: Identical to firehunt: dur clamp 0.5..12 s, 0.4 s fade, priority 3, hard life 13 s, riser every 0.12 s.
+    visual: Same geometry as firehunt but themed lightning (sim sends hitElem 'lightning', skills2.js 6541-6542): guide ring c1 #f2b705 alpha 0.18; orb disc c2 #fff8b0 alpha 0.85; core c1 #f2b705 alpha 0.95 at 0.55 r; trail glow #ffd23f alpha 0.4 at 0.42 r. Risers 2 px #f2b705 additive dots / 13 px glyph. THEME-DERIVED (lightning slot of VFX_ELEM_THEME).
+    feedback: None.
+    notes: Produced by the 【雷球】 orbit field (skills2.js 6539-6542, statusId sgThunderOrb, hitVariant 'thunder-burst'). Visually it is the fire-hunt orbiter recoloured gold; a lightning-flavoured preset (arcs/sparks) would be a look change, not a port.
+  - [3]
+    variant: follow-aura
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnFollowAura(spec) lines 2479-2533
+      - [1]
+        registry _followAuras line 2477; FOLLOW_AURA_MAX_SEC line 2478
+      - [2]
+        dispatch line 4942
+    specFields:
+      - [0]
+        area.id (merge key; default 'follow-aura')
+      - [1]
+        area.r (radius, min 8; updated on refresh)
+      - [2]
+        dur
+      - [3]
+        elem
+      - [4]
+        glyph
+      - [5]
+        (ignored: area.w/h, area.x/y)
+    placement: Pinned to the player: node.x/y = playerPos() with y - 12 every frame, S.layers.fx (above entities). Ellipse radii (rr, rr*0.62) with rr = radius*pulse, radius = max(8, area.r). Same area.id -> one node, refresh extends life and updates radius (2485-2490).
+    motion: Follows the player smoothly each frame. Radius pulse 1 + 0.04*sin(t*3.4) (~0.54 Hz). Embers rise from random points on the ellipse rim.
+    timing: dur = clamp(spec.dur || 2, 0.5, 12) s; refresh sets live.dur = min(12, max(live.dur, live.t + dur)). Sim re-sends every 1 s with dur 2 s (SG_DOMAIN_VFX_SEC*2), so it persists while the domain is active and dies ~2 s after the last event. Linear fade over the final 0.4 s. Priority 3, hard life 13 s. Ember emitter: spawnRiser every 0.1 s while fade > 0.5 && !REDUCED_MOTION at angle rand*2π on the rim (p.x + cos*rr, p.y - 12 + sin*rr*0.62).
+    visual: One PIXI.Graphics, normal blend, redrawn per frame: ellipse (rr, 0.62rr) fill theme.c2 alpha 0.10*fade; same ellipse stroke theme.c1 width 2 alpha 0.5*fade; inner ellipse at 0.72 scale stroke theme.glow||c1 width 1 alpha 0.22*fade. Embers: 2 px theme.c1 additive dots (or 13 px glyph 40%) rising 34 px/s, life 0.9 s. THEME-DERIVED by spec.elem: fire (火神降臨, id sg-firegod-aura), earth (超重岩/重力場, sg-rock-field), ice (水牢 sg-water-prison, 深淵 sg-abyss-domain) -> one preset per element.
+    feedback: None.
+    notes: Comment 2470-2476: deliberately not the mire-pool ground ring because that is world-anchored and would 'jump' once per second as the player moves.
+  - [4]
+    variant: firewall
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnFireWall(spec) lines 2541-2682
+      - [1]
+        registry _fireWallFx line 2539; FIRE_WALL_MAX_LIFE_SEC line 2540
+      - [2]
+        dispatch line 4945
+    specFields:
+      - [0]
+        area.id (merge key; fallback round(x):y:w:h:a)
+      - [1]
+        area.x, area.y (wall centre, world)
+      - [2]
+        area.w (length along the axis, min 10)
+      - [3]
+        area.h (thickness, min 8)
+      - [4]
+        area.a (axis angle, radians)
+      - [5]
+        dur (tick gap -> hold time)
+      - [6]
+        elem (particles only)
+    placement: World-anchored at (area.x, area.y), node.rotation always 0, S.layers.zone (under entities). Local frame: axis unit (cos a, sin a), perp (-sin a, cos a). Ground line offset groundY = h*0.32 below centre; baseDepth = clamp(h*0.48, 10, 30); flame height flameH = clamp(h*2.8, 72, 180) px straight UP in screen space regardless of axis. Three vortex columns at axis offsets -0.31w, 0, +0.31w; vortexW = max(24, w*0.34). Refresh with same key snaps x/y/w/h/angle instantly (no tween) and extends expiresAt (2547-2555).
+    motion: Static position; flame shapes undulate with phase = t*5.2 rad/s (silhouette sway sin(phase + vu*7.2), ribbons sin(phase + ri*1.55 + ru*8.6)); smoke puffs bob slowly (sin(phase*0.35+i)*5 px x, sin(phase*0.48+i*1.3)*4 px y). Particles pop upward from the flame zone.
+    timing: holdMs = max(900, spec.dur*2400) per event (dur 0.5 -> 1200 ms); each tick event resets expiresAt = now + holdMs. Fade linear over the final 360 ms. Priority 2, hard life 4.5 s (FIRE_WALL_MAX_LIFE_SEC). Particle emitter: every 0.1 s while fade > 0.45 && !REDUCED_MOTION: spawnParticles(count 3, themeOf(spec), speed 1.2, radiusScale 0.7) at axis offset rand(-0.36w..0.36w), y = wall centre - flameH*(0.45..0.75).
+    visual: All HARDCODED fire colours (theme only tints particles), single PIXI.Graphics redrawn per frame, normal blend: (1) ground scorch quad along axis half-length 0.5w, half-width baseDepth*0.34, centred groundY + baseDepth*0.16 below centre, fill #30231d alpha 0.5. (2) For each of 3 vortices (vi 0..2): height vortexH = flameH*(0.88 + 0.035*vi); silhouette polygon 7 samples tall, half-width vortexW*(0.52 - 0.12u) (tapers 0.52->0.40), sway vortexW*0.13*(1-0.45u); fill centre vortex #e43b12 / outer two #c82b12, alpha 0.46. Four inner ribbons per vortex: half-width max(3, vortexW*(0.13 - 0.035u)), sway vortexW*0.29*(1-0.38u); colours ri=1 #ffd84a alpha 0.78, ri=3 #ff7618 alpha 0.68, ri=0/2 #ffa51d alpha 0.68. Hot core ellipse at height 0.38*vortexH, radii (0.18*vortexW, 0.31*vortexH) fill #ffffbd alpha 0.3. Tip flame quad spanning 0.70..1.08*vortexH fill #ffff7a alpha 0.62. (3) 9 smoke puffs above the wall (axis span ±0.43w) at heights flameH*(0.72 + 0.08*(i%3)), radius 4 / 6.2 / 8.4 px, alternating #5a5148 / #76624d, alpha 0.13. (4) Particles: additive soft dots 1.1..2.8 px tinted fire c1 #e63924 / c2 #ffd447, life 0.45..0.75 s.
+    feedback: None (damage ticks arrive as separate events; no hitReact/shake here).
+    notes: Comments 2535-2538 and 2684-2689: sizes MUST come from the sim rect; colours are baked into the polygons so changing elem does not recolour it (that is why thunder-curtain exists). Sim producer: sgGroundVfxSpec kind 'wall' (skills2.js 3943), elem fire, dur = f.gap.
+  - [5]
+    variant: thunder-curtain
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnThunderCurtain(spec) lines 2718-2799
+      - [1]
+        thunderCurtainSync(fx, a) lines 2703-2716
+      - [2]
+        constants/registry lines 2695-2700
+      - [3]
+        boltPath (shared) lines 2182-2236
+      - [4]
+        dispatch line 4946
+    specFields:
+      - [0]
+        area.id (merge key; fallback round(x):y:w:a)
+      - [1]
+        area.x, area.y (authoritative centre)
+      - [2]
+        area.w (length, min 10)
+      - [3]
+        area.h (thickness, min 6)
+      - [4]
+        area.a (axis angle radians)
+      - [5]
+        area.destX, area.destY (sweep destination)
+      - [6]
+        area.speed (px/s)
+      - [7]
+        dur (tick gap -> hold time)
+    placement: Node stays at origin (0,0), rotation 0; all geometry drawn in world coordinates around fx.x/fx.y on S.layers.fx (above entities). Ground band = rotated rect half-length w/2 along axis, half-width max(3, h/2). Bolt count = clamp(round(w/150), 2, 8) spaced evenly along the axis (u = bi/(bolts-1) - 0.5, position fx.x + axisX*w*u). Each bolt starts skyY = S.H*0.7 px above its landing point with ±13 px random x offset and ends exactly at the landing point.
+    motion: Self-propelled constant-speed straight line toward (destX, destY) at area.speed px/s, stops within 0.5 px of dest (2750-2758). On each refresh event thunderCurtainSync: if |authoritative - current| > h snap to it, else move 30% of the way (soft correction); w/h/angle/dest/speed updated instantly. Bolts re-randomised every 0.07 s (flicker).
+    timing: holdMs = max(400, spec.dur*2400); each event resets expiresAt. Fade linear over the final 240 ms. Bolt polyline redrawn every THUNDER_CURTAIN_REDRAW_SEC = 0.07 s (the whole Graphics is cleared and rebuilt only then; position updates between redraws are not visible until the next redraw). Priority 2, hard life 8 s.
+    visual: HARDCODED blue-white plasma (THUNDER_CURTAIN_THEME c1 #7dd3fc, c2 #ffffff, glow #2563eb — deliberately NOT the gold lightning elem theme). Normal blend. Ground band quad fill #7dd3fc alpha 0.22*fade. Per bolt (boltPath non-mega/non-purple, alpha 0.92*fade): 6 segments, perpendicular jitter ±min(36, dist*0.28) px; three strokes tapering toward the ground end (q 0->1): glow #2563eb width max(3, 1.3*(13 - 10.5q)) alpha 0.6*a; mid #7dd3fc width max(1.8, 7 - 4.5q) alpha 0.95*a; core #ffffff width max(0.8, 3 - 2q) alpha a; round caps. Landing spot: circle radius max(5, 0.6h) fill #ffffff alpha 0.5*fade over circle radius max(9, 1.05h) fill #2563eb alpha 0.24*fade. No particles, no risers.
+    feedback: None (no hitReact/impact/shake; damage ticks are separate events).
+    notes: Sim producer sgGroundVfxSpec kind 'thunderwall' (skills2.js 3948), area from sgGroundArea with destX/destY/speed (3997-4001). Comment 2690-2694: motion model = 'constant-velocity self-drive + partial correction on authoritative events' to avoid batch-arrival stutter.
+  - [6]
+    variant: mire
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnMirePool(spec) lines 2913-3017
+      - [1]
+        registry/constants lines 2910-2912
+      - [2]
+        fieldVfxSetTarget 2875-2886, fieldVfxStep 2897-2905, fieldVfxMotionSec 2806-2809
+      - [3]
+        dispatch line 4947
+    specFields:
+      - [0]
+        area.id (merge key; fallback round(x):round(y)) + ':lava'/':poison' suffix
+      - [1]
+        area.x, area.y
+      - [2]
+        area.w (min 20, default 100)
+      - [3]
+        area.h (min 16, default 100) -> visual height = max(16, 0.52*h)
+      - [4]
+        dur (tick gap -> hold time and tween duration)
+      - [5]
+        elem (particle tint only: earth or dark)
+      - [6]
+        variant
+    placement: World-anchored at (fx.x, fx.y), rotation 0, S.layers.zone (under entities). Axis-aligned rect of width fx.w and height visualH = max(16, fx.h*0.52) centred on the node (only reads area.w/h, never area.r). rx = w/2, ry = visualH/2.
+    motion: Static between events; a refresh with the same key linearly tweens x, y, w, h from current to the new authoritative values over fieldVfxMotionSec(spec, 0.5) = max(0.12, spec.dur) s (blood domain re-sends every 1 s with dur 1 -> the pool glides after the player over 1 s). Surface animation with phase = t*2.1: expanding rect ripples cycle every ~1.49 s; bubbles orbit slowly (angle phase*0.7 + 1.9*bi) and rise (t*(14+2bi) px/s wrapped at 0.55*ry).
+    timing: holdMs = max(700, spec.dur*2200); each event resets expiresAt (and updates lava/poison flags). Fade linear over the final 420 ms. Priority 2, hard life 14 s (MIRE_POOL_MAX_LIFE_SEC). Particle emitter: every 0.28 s while fade > 0.4 && !REDUCED_MOTION: spawnParticles(count 2, theme, speed 0.9, radiusScale 0.5) at x ± 0.3w, y ± 0.6*ry.
+    visual: HARDCODED plain-mud palette, normal blend: body rect fill #4a3a20 alpha 0.5*fade; rim stroke #7d6533 width 3 alpha 0.62*fade; 3 concentric rect ripples with u = (phase*0.32 + ri/3) % 1, half-size (0.28 + 0.62u)*(rx, ry), stroke #a37a48 width 2 alpha 0.34*(1-u)*fade; 6 bubbles radius 2.4 + 1.4*(bi%3) + 0.9*sin(phase*1.7+bi) px at (cos(ba)*rx*brr, sin(ba)*ry*brr - rise) with brr = 0.28 + ((0.17bi + 0.11phase) % 0.62), fill #c49b68 alpha 0.34*fade, stroke #a37a48 width 1.3 alpha 0.52*fade. Particles: additive soft dots 0.8..2 px tinted themeOf(spec) (earth c1 #ad7444/c2 #5b3a27, or dark #6f2da8/#1a0c2e for the blood domain), life 0.45..0.75 s.
+    feedback: None.
+    notes: Producers: sgMireGroundTick (skills2.js 5316-5325, elem earth), bloodmist ground field (3978, elem dark), sgEmitBloodDomainAura (9877-9885, elem dark, id SG_BLOOD_DOMAIN_VFX_ID, follows player via re-send + tween). Comment 2907-2909: the sim hit-box stays square; only the drawn height is compressed to 52%.
+  - [7]
+    variant: mire-lava
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnMirePool(spec) lines 2913-3017 (lava = true, poison = false; colour selects at 2961-2964)
+      - [1]
+        dispatch line 4947
+    specFields:
+      - [0]
+        area.id, area.x, area.y, area.w, area.h, dur, elem (fire -> particle tint), variant
+    placement: Same as mire: world-anchored axis-aligned rect w x max(16, 0.52h) on S.layers.zone.
+    motion: Same as mire: static, linear tween of x/y/w/h on refresh over max(0.12, dur) s; ripples/bubbles animate with phase = 2.1*t.
+    timing: Same as mire: holdMs max(700, dur*2200), 420 ms fade, priority 2, hard life 14 s, particles every 0.28 s (count 2, speed 0.9, scale 0.5).
+    visual: HARDCODED lava palette: body fill #8a2b0b alpha 0.5; rim stroke #ff7a2a width 3 alpha 0.62; 3 rect ripples stroke #ffb347 width 2 alpha 0.34*(1-u); 6 bubbles fill #ffd282 alpha 0.34 with stroke #ffb347 width 1.3 alpha 0.52; no gas streaks. Particles tinted themeOf(spec) = fire (c1 #e63924 / c2 #ffd447), additive.
+    feedback: None.
+    notes: Producers: sgMireGroundTick with lava && !poison (elem fire), firepool ground field (skills2.js 3962, 傳奇【火池】/超神【永劫火獄】, elem fire; sgGroundArea adds w/h = 2r for it, 4009-4012).
+  - [8]
+    variant: mire-poison
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnMirePool(spec) lines 2913-3017 (poison = true; gas streaks 2975-2987; particle theme override 3002-3004)
+      - [1]
+        dispatch line 4947
+    specFields:
+      - [0]
+        area.id, area.x, area.y, area.w, area.h, dur, variant (elem is ignored for colours; particles use a fixed purple theme)
+    placement: Same as mire: world-anchored axis-aligned rect w x max(16, 0.52h) on S.layers.zone.
+    motion: Same as mire (static + linear tween on refresh); additionally 3 horizontal gas streaks undulate with sin(phase*0.9 + 1.7ci + 7su).
+    timing: Same as mire: holdMs max(700, dur*2200), 420 ms fade, priority 2, hard life 14 s, particles every 0.28 s (count 2, speed 0.9, radiusScale 0.5).
+    visual: HARDCODED dark-purple palette: body fill #4a3020 alpha 0.5; rim stroke #5b2b72 width 3 alpha 0.62; ripples stroke #7e3f9a width 2 alpha 0.34*(1-u); 3 wavy gas lines at y = -0.48ry + 0.46ry*ci spanning x -0.78rx..+0.78rx in 6 segments, amplitude 0.1*ry, stroke #6b2d7c width 3 alpha 0.56; 6 bubbles fill #6b2d7c alpha 0.34 stroke #7e3f9a width 1.3 alpha 0.52. Particles use fixed theme {c1 #6b2d7c, c2 #a855c7, glow #7e3f9a} (additive dots). NOT elem-derived.
+    feedback: None.
+    notes: Producers: sgMireGroundTick with poison && !lava (elem earth), poisonmist ground field (skills2.js 3977, elem poison), sgEmitBloodDomainAura poison branch (9881, elem poison, follows player via 1 s tween).
+  - [9]
+    variant: mire-lava-poison
+    fxKinds:
+      - [0]
+        aura
+    functions:
+      - [0]
+        spawnMirePool(spec) lines 2913-3017 (lava = true AND poison = true)
+      - [1]
+        dispatch line 4947
+    specFields:
+      - [0]
+        area.id, area.x, area.y, area.w, area.h, dur, variant
+    placement: Same as mire: world-anchored axis-aligned rect w x max(16, 0.52h) on S.layers.zone. Merge key gets both ':lava' and ':poison' suffixes.
+    motion: Same as mire-poison (static + tween; gas streaks undulate).
+    timing: Same as mire: holdMs max(700, dur*2200), 420 ms fade, priority 2, hard life 14 s, particles every 0.28 s.
+    visual: Because every colour ternary tests poison FIRST (lines 2961-2964), this renders IDENTICALLY to mire-poison: body #4a3020, rim #5b2b72, ripple/bubble glow #7e3f9a, bubbles #6b2d7c, purple gas streaks, fixed purple particle theme. The lava flag only affects the merge key.
+    feedback: None.
+    notes: Producer: sgMireGroundTick when m.lava && poisonDps > 0 (skills2.js 5319-5324, elem earth). For the preset port this can alias the mire-poison preset.

@@ -1,0 +1,1361 @@
+summary: Inventory of every VFX emit site in D:\MyGames\Idle-RPG\claude\js\skills2.js lines 5200-10109 (59 direct sgEmitVfx/sgEmitPlayerVfx calls), plus 19 INDIRECT entries whose visual is configured in this range but whose playCombatVfx call lives outside it (ground fields -> sgGroundVfxSpec@3941 emitted at L3906 (or L1145 for bloodmist); orbit fields -> aura emitted in sgOrbitEmitVfx@4504 and hit impact @4483; meteor queue -> impact emitted in sgTickMeteors@3185; flying-projectile pulse @1604; ground pulse @4099). Conventions: `owner` = SKILLS2 gid whose emoji/color/cat the spec inherits (sgEmitVfx: glyph=g.emoji, color=VFX_CAT_COLORS[cat] (phys #e6ddc8 / magic #8ea2ff), cat=sgVfxCat(g)='magic' for all elemental groups and 'phys' for counter/bloodrage/bloodblade, elem=extra.elem||g.elem, dur default 0.5, count clamp 1..5, targets = up to 8 live enemy anchors (dead ones dropped unless preserveDeadTargets); sgEmitPlayerVfx: fxKind default 'aura', dur default 0.6, count 1, targets=[player anchor], travelMs number -> [n], sizeMult passthrough). `tierOrFeature` names the tier (index+name from SKILLS2[gid].tiers) or ult option id/name or legendary param key that introduces the visual. Group elems: mire/earthguard=earth, chainlightning/thunderstrike/thunderorb=lightning, icearrow/waterball/frostnova=ice, windblade/vacuumslash/stormbarrier=wind, fireball=fire, counter/bloodrage/bloodblade=null (phys). Timing constants: sgStaggerMs(i)=i*90ms; SG_METEOR_INTERVAL_MS=350; sgMeteorFallTiming(): fallMs=1000, travelMs=700 (display applies 0.70 meteor slow); SG_DOMAIN_VFX_SEC=1; SG_WATERBALL_VOLLEY_MS=220; SG_FROSTNOVA_VOLLEY_MS=260; SG_VACUUM_WAVE_MS=260; SG_STARFALL_WARN_SEC=5, SIZE_MULT=3, FALL_MULT=2. Notable quirks: L10040 blood-explosion targets the dead entity without preserveDeadTargets so `targets` is always [] (area null) – effectively invisible unless renderer handles empty targets; L9805 bleed/poison tick impacts only fire when T5 or T7 of bloodblade is invested (sgTickBloodDots early-returns otherwise); L6914 frost-freeze always uses gid 'frostnova' and floatSel 'mv-float' regardless of the frost source; L7017 frost-tick always uses gid 'icearrow'.
+sites:
+  - [0]
+    file: js/skills2.js
+    line: 5322
+    fn: sgMireGroundTick
+    owner: mire
+    fxKind: aura
+    variant: mireVariant: m.lava ? (poison ? 'mire-lava-poison' : 'mire-lava') : (poison ? 'mire-poison' : 'mire') — lava = lvs[6]>0 (T7); poison = lvs[2]>0 (T3, m.poisonDps>0)
+    elem: m.lava && !poison ? 'fire' : 'earth' (so mire-lava-poison keeps earth)
+    when: ground field tick every f.gap=0.5s while a mire pool is alive (spawned on cast L5236; respawned by T4 毒沼增生 at L5385); also emitted when victims is empty (area-only)
+    targetsKind: mixed
+    tierOrFeature: T1 泥沼術 → 'mire'; T3 毒沼術 → 'mire-poison'; T7 熔岩沼 → 'mire-lava' / 'mire-lava-poison'; T5 沼澤漫延 (growTo/growSec) & legendary mireScalePct affect area size
+    extraFields:
+      - [0]
+        dur: f.gap (0.5)
+      - [1]
+        area: sgGroundArea(f) = axis-aligned square rect {id:f.vfxId,x,y,w:length,h:width,a,r} that grows to growTo over growSec
+      - [2]
+        count: 1 (default)
+    note: mire kind is routed here by sgGroundTick (L3887) instead of the generic ground emit; the same 'mire'/'mire-poison' variants are reused as player-anchored domain rings at L9880
+  - [1]
+    file: js/skills2.js
+    line: 5369
+    fn: sgMireInfernoTick
+    owner: mire
+    fxKind: impact
+    variant: 'pillar' (INDIRECT: sgSpawnGround kind 'lavapillar' is unknown to sgGroundVfxSpec → default branch L3979 {fxKind:'impact', variant:'pillar', elem:'fire'})
+    elem: fire
+    when: every spec.gap/spec.hits seconds for `hits` ticks after the lava mire spawns a fire pillar under a random enemy inside the pool (first pillar after one gap)
+    targetsKind: mixed
+    tierOrFeature: ult abyssInferno 深淵火獄 (requires T7 熔岩沼)
+    extraFields:
+      - [0]
+        dur: f.gap
+      - [1]
+        area: sgGroundArea(f) circle {x,y,r:radiusPx (6m)}
+      - [2]
+        hitElem: 'fire'
+    note: INDIRECT — actual sgEmitVfx call is L3906 in sgGroundTick; glyph 🟤 (mire) with fire elem
+  - [2]
+    file: js/skills2.js
+    line: 5683
+    fn: sgEarthguardReflect
+    owner: earthguard
+    fxKind: chain
+    variant: 'earth-reflect'
+    elem: light
+    when: on player damaged (skills2OnPlayerDamaged) when T6 invested; one event per hit, before damage applied to victims
+    targetsKind: enemies
+    tierOrFeature: T6 生命反射之盾 (legendary egReflectAdd 靈魂連結 adds target count)
+    extraFields:
+      - [0]
+        dur: 0.5 (default)
+      - [1]
+        count: 1
+      - [2]
+        targets: up to fx.count(+legend) random enemies within 20m, attacker avoided unless alone; floatSel via THORN_FLOAT_MAP
+    note: chain from player toward each victim (no travelMs given)
+  - [3]
+    file: js/skills2.js
+    line: 5781
+    fn: skills2TryRebirth
+    owner: earthguard
+    fxKind: rain
+    variant: 'pillar'
+    elem: light
+    when: on player death intercept (rebirth) — once per rebirth charge
+    targetsKind: player
+    tierOrFeature: T7 天地共生 (ult fateReversal 逆轉乾坤 adds charges but same visual)
+    extraFields:
+      - [0]
+        dur: 1.2
+      - [1]
+        floatSel 'pv-float' fixed
+      - [2]
+        count: 1
+    note: sgEmitPlayerVfx — player-anchored light pillar; paired with floatPlayerEvent '天地共生!'
+  - [4]
+    file: js/skills2.js
+    line: 5851
+    fn: sgEarthguardRebirthEnemy
+    owner: earthguard
+    fxKind: rain
+    variant: 'pillar'
+    elem: earth
+    when: on enemy kill (skills2OnEnemyKill) when the killed normal/elite enemy passes the rebirth chance — enemy is revived at hp%
+    targetsKind: enemies
+    tierOrFeature: ult worldRebirth 天地再造
+    extraFields:
+      - [0]
+        dur: 1
+      - [1]
+        preserveDeadTargets: true (target hp already restored but renderer is still playing death)
+      - [2]
+        count: 1
+    note: floatSel || 'mv-float'
+  - [5]
+    file: js/skills2.js
+    line: 5949
+    fn: sgChainlightningBolt
+    owner: chainlightning
+    fxKind: chain
+    variant: 'lightning-chain'
+    elem: lightning (group)
+    when: on cast — opening hop player→start target of each bolt (1 bolt by default; T7 雷電暴風 = 3 bolts + spawn-chance extra chains; legendary chainBoltAdd 電擊 adds bolts)
+    targetsKind: enemies
+    tierOrFeature: T1 連鎖閃電 (T7 雷電暴風 / legendary 電擊 multiply bolts)
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        travelMs: [delayMs] where delayMs = bfTravelSeconds(start)*1000
+      - [2]
+        preserveDeadTargets: true
+      - [3]
+        dur: 0.5 default
+      - [4]
+        targets: [start]
+    note: single-target chain = origin is the player
+  - [6]
+    file: js/skills2.js
+    line: 5976
+    fn: sgChainlightningBolt
+    owner: chainlightning
+    fxKind: impact
+    variant: 'thunder-burst'
+    elem: lightning
+    when: on each bounce (not the opening hit) when T5 splash picks nearby enemies within 6m
+    targetsKind: enemies
+    tierOrFeature: T5 電殛擴散 (legendary chainSplashAdd 雷散落 adds a target)
+    extraFields:
+      - [0]
+        delayMs: delayMs (accumulated hop time)
+      - [1]
+        dur: 0.3
+      - [2]
+        targets: splash list (random within splashPx)
+    note: 
+  - [7]
+    file: js/skills2.js
+    line: 5988
+    fn: sgChainlightningBolt
+    owner: chainlightning
+    fxKind: aura
+    variant: 'lightning-relay'
+    elem: lightning
+    when: when a chain runs out of unvisited enemies and relays through the player (visited reset), before the next hop
+    targetsKind: player
+    tierOrFeature: T6 雷幻身
+    extraFields:
+      - [0]
+        dur: 0.35
+      - [1]
+        count: 1
+    note: sgEmitPlayerVfx; no delayMs is passed (player-side aura is not synced to the chain's delay)
+  - [8]
+    file: js/skills2.js
+    line: 5999
+    fn: sgChainlightningBolt
+    owner: chainlightning
+    fxKind: chain
+    variant: 'lightning-chain'
+    elem: lightning (group)
+    when: each hop cur→next of a bolt (up to `links` hops, T4 強化連鎖 / T7 / legendary chainLinkAdd 電荷連鎖 add hops)
+    targetsKind: enemies
+    tierOrFeature: T1 連鎖閃電
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        delayMs: accumulated delay
+      - [2]
+        travelMs: [0, hopMs] (hopMs = bfTravelSeconds(next)*1000)
+      - [3]
+        preserveDeadTargets: true
+      - [4]
+        targets: [cur, next]
+    note: after a T6 relay, cur is still the last enemy so the visual chain goes enemy→enemy even though gameplay hop went via player
+  - [9]
+    file: js/skills2.js
+    line: 6023
+    fn: sgChainOverload
+    owner: chainlightning
+    fxKind: impact
+    variant: 'thunder-burst'
+    elem: lightning
+    when: when one enemy accumulates cfg.overload.hits chain hits (counter on entity, persists across casts) → explosion on enemies around it within overloadPx
+    targetsKind: enemies
+    tierOrFeature: legendary chainOverload 過載
+    extraFields:
+      - [0]
+        delayMs: delayMs
+      - [1]
+        dur: 0.4
+      - [2]
+        targets: sgEnemiesAround(target, overloadPx) (center excluded)
+    note: damage is sgDerivedHit (no hit/crit)
+  - [10]
+    file: js/skills2.js
+    line: 6056
+    fn: sgChainSuperconductor
+    owner: chainlightning
+    fxKind: aura
+    variant: 'lightning-relay'
+    elem: lightning
+    when: on cast, once, before the self↔enemy ping-pong chain starts
+    targetsKind: player
+    tierOrFeature: ult eternalSuperconductor 永恒超導體
+    extraFields:
+      - [0]
+        dur: 0.35
+    note: sgEmitPlayerVfx
+  - [11]
+    file: js/skills2.js
+    line: 6063
+    fn: sgChainSuperconductor
+    owner: chainlightning
+    fxKind: chain
+    variant: 'lightning-chain'
+    elem: lightning (group)
+    when: for each enemy in range (random order) — one player→enemy hop each, delays accumulate by hopMs
+    targetsKind: enemies
+    tierOrFeature: ult eternalSuperconductor 永恒超導體
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        delayMs: accumulated
+      - [2]
+        travelMs: [hopMs]
+      - [3]
+        preserveDeadTargets: true
+      - [4]
+        targets: [tgt] (origin = player)
+    note: 
+  - [12]
+    file: js/skills2.js
+    line: 6131
+    fn: sgTickFlyingThunder
+    owner: chainlightning
+    fxKind: chain
+    variant: 'lightning-chain'
+    elem: lightning (group)
+    when: every `gap` s during the discharge window after casting; one per farthest target (count from fx.count, default 3)
+    targetsKind: enemies
+    tierOrFeature: ult flyingThunderGod 飛雷神
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        delayMs: sgStaggerMs(i)
+      - [2]
+        preserveDeadTargets: true
+      - [3]
+        targets: [farthest[i]]
+    note: no travelMs → renderer default
+  - [13]
+    file: js/skills2.js
+    line: 6135
+    fn: sgTickFlyingThunder
+    owner: chainlightning
+    fxKind: impact
+    variant: 'thunder-burst'
+    elem: lightning
+    when: same tick as L6131, area burst around each farthest target (radius fx.r)
+    targetsKind: area
+    tierOrFeature: ult flyingThunderGod 飛雷神
+    extraFields:
+      - [0]
+        delayMs: sgStaggerMs(i)
+      - [1]
+        dur: 0.3
+      - [2]
+        area: sgAreaAround(farthest[i], burstPx) circle
+      - [3]
+        targets: bfTargetsAround(farthest[i]) incl. center
+    note: 
+  - [14]
+    file: js/skills2.js
+    line: 6287
+    fn: sgQueueThunderBolt
+    owner: thunderstrike
+    fxKind: rain
+    variant: 'thunder-strike'
+    elem: lightning
+    when: on cast, one per bolt: targets×hitsPer bolts, each delayed boltIndex*gapMs (fx.gap 0.2s); also for T6 迅雷重生 regen bolts (castDelayMs 0) fired from onImpact
+    targetsKind: enemies
+    tierOrFeature: T1 落雷術 (T2 落雷連鎖 more targets, T3 雙重落雷 more hits, T7 殛道落電 ×2 both; legendary thunderTargetAdd/thunderHitAdd)
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        delayMs: castDelayMs
+      - [2]
+        travelMs: [sgMeteorFallTiming().travelMs = 700]
+      - [3]
+        dur: 0.5 default
+      - [4]
+        targets: [target]
+    note: landing impact is INDIRECT via sgQueueMeteor(L6291) → sgTickMeteors L3185 emits {fxKind:'impact', variant:'thunder-impact', elem:'lightning', area: sgAreaAround(target, impactRadius)} where impactRadius = 0 (single target, area null) unless T7 殛道落電 → 6m circle; damage lands at castDelay+fallMs(1000)
+  - [15]
+    file: js/skills2.js
+    line: 6424
+    fn: sgTickHeavenTribulation
+    owner: thunderstrike
+    fxKind: rain
+    variant: 'thunder-strike'
+    elem: lightning
+    when: permanent tick every `gap` s while thunderstrike is equipped: strikes the lowest-hp enemy within m
+    targetsKind: enemies
+    tierOrFeature: ult heavenTribulation 雷霆天劫
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        dur: 0.35
+      - [2]
+        targets: [target]
+      - [3]
+        no travelMs/delayMs (damage applied immediately via sgHitOne delay 0)
+    note: 
+  - [16]
+    file: js/skills2.js
+    line: 6372
+    fn: sgThunderMatrix
+    owner: thunderstrike
+    fxKind: aura
+    variant: 'thunder-curtain' (INDIRECT: sgSpawnGround kind 'thunderwall' → sgGroundVfxSpec L3948)
+    elem: lightning
+    when: on cast (with the bolts): 2 axes × `count` walls, each a moving wall sweeping across the whole field (from→dest at speed), ticking every gap (≈0.05s) with contact hits; adjacent walls alternate direction, staggered 0.12s
+    targetsKind: area
+    tierOrFeature: ult thunderMatrix 雷電矩陣
+    extraFields:
+      - [0]
+        dur: f.gap
+      - [1]
+        area: sgGroundArea(f) rect {id,x,y,w:length(full field),h:width(3m),a:angle, destX/destY/speed}
+      - [2]
+        hits/contact: true
+    note: INDIRECT — emitted at L3906 every tick; high tick rate means many aura events per wall
+  - [17]
+    file: js/skills2.js
+    line: 6534
+    fn: sgCastThunderorb
+    owner: thunderorb
+    fxKind: aura + impact
+    variant: auraVariant 'thunder-orbit' (aura, INDIRECT via sgOrbitEmitVfx L4504) ; hitVariant 'thunder-burst' (impact, INDIRECT via sgTickOrbits L4483)
+    elem: lightning (hitElem)
+    when: aura: once on orbit-field creation (and refresh when extended); impact: each orbit tick when an orb body touches a fresh enemy (dur 0.35)
+    targetsKind: mixed
+    tierOrFeature: T4 環體電球 (T5 強化雷球 dmg, T6 伴生雷球 onStrike spawns stationary orbs, T2/legendary scale bodyR)
+    extraFields:
+      - [0]
+        aura area: {x,y (player pos at cast), r: ring radius (8m), orbR: bodyR, orbs: count(2), spin ±1, spinRate 2π·rps(0.7), startAng, id: fieldKey, grow}
+      - [1]
+        aura dur: lifeSec (6s)
+      - [2]
+        aura count: perRing
+    note: INDIRECT — orbit field shared with firehunt implementation
+  - [18]
+    file: js/skills2.js
+    line: 6594
+    fn: sgDropThunderfall
+    owner: thunderorb
+    fxKind: rain
+    variant: 'thunder-fall'
+    elem: lightning
+    when: on cast when T7 invested (spec.count orbs, each delayed f*350ms); also every `gap` s permanently (1 orb) from sgTickThunderfallShatter
+    targetsKind: area
+    tierOrFeature: T7 雷殞天落 (legendary thunderorbFallAdd 雷殞落 +count; ult thunderfallShatter 雷殞天地碎 permanent + scale)
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        area: sgAreaAround(target, spec.radius) (15m × ult scale)
+      - [2]
+        delayMs: f*SG_METEOR_INTERVAL_MS
+      - [3]
+        travelMs: [700]
+    note: landing impact is INDIRECT via sgQueueMeteor(L6598) → L3185 emits {fxKind:'impact', variant:'thunder-fall-impact', elem:'lightning', area: circle radius}
+  - [19]
+    file: js/skills2.js
+    line: 6671
+    fn: sgThunderorbBurst
+    owner: thunderorb
+    fxKind: impact
+    variant: 'thunder-burst'
+    elem: lightning
+    when: when any thunder orb (flying/stationary/thunderfall) hits an enemy and the chance passes: a small orb bounces `bounces` times, one impact per bounce, delays accumulate by 90ms
+    targetsKind: enemies
+    tierOrFeature: ult thunderBurst 雷爆
+    extraFields:
+      - [0]
+        delayMs: accumulated sgStaggerMs
+      - [1]
+        dur: 0.3
+      - [2]
+        targets: [cur]
+    note: no chain visual between bounces — only impacts
+  - [20]
+    file: js/skills2.js
+    line: 6715
+    fn: sgSpawnThunderOrb / sgSpawnStationaryThunderOrb (L6727)
+    owner: thunderorb
+    fxKind: aura
+    variant: 'thunder-orb' (INDIRECT: sgSpawnGround kind 'orb' → sgGroundVfxSpec L3949, elem not overridden → group lightning)
+    elem: lightning (group default)
+    when: every f.gap (0.35s) tick while the orb lives: flying orb travels from player pos to target pos then parks parkSec; stationary orb (T6) sits at the orbit-hit position for companionSec
+    targetsKind: area
+    tierOrFeature: T1 雷球 (flying, count 2 + T3 多重雷球); T6 伴生雷球 (stationary); T2 擴增雷球 / legendary thunderorbScalePct scale radius
+    extraFields:
+      - [0]
+        dur: f.gap
+      - [1]
+        area: sgGroundArea(f) circle {id,x,y,r:radius(3m×scale), destX/destY/speed for flight}
+    note: INDIRECT — emitted at L3906
+  - [21]
+    file: js/skills2.js
+    line: 6914
+    fn: sgFreezeTarget
+    owner: frostnova
+    fxKind: burst
+    variant: 'frost-freeze'
+    elem: ice
+    when: when a frost source pushes an enemy from below maxStacks to ≥ maxStacks (5) and the stun pipeline actually lands — freeze
+    targetsKind: enemies
+    tierOrFeature: shared frost layer: introduced by icearrow T2 寒霜箭, waterball T3 寒流彈, frostnova T1 冰霜新星 (any stacking source)
+    extraFields:
+      - [0]
+        dur: sec (actual stun seconds after diminishing, base sgFrozen.dur 3)
+      - [1]
+        floatSel fixed 'mv-float'
+      - [2]
+        targets: [ent]
+    note: always uses gid 'frostnova' (🧊) regardless of which tree froze the target
+  - [22]
+    file: js/skills2.js
+    line: 7017
+    fn: sgTickFrost
+    owner: icearrow
+    fxKind: impact
+    variant: 'frost-tick'
+    elem: ice
+    when: each frame in which ≥1 enemy's sgFrostBite DoT ticks (interval 0.5s); all ticking enemies merged into one event
+    targetsKind: enemies
+    tierOrFeature: shared frost DoT (icearrow T2 寒霜箭 / waterball T3 寒流彈 / frostnova T1)
+    extraFields:
+      - [0]
+        dur: 0.5 default
+      - [1]
+        targets: tickedNow (merged list, ≤8)
+    note: always gid 'icearrow' (❄️); same variant reused at L7747 with gid waterball
+  - [23]
+    file: js/skills2.js
+    line: 7040
+    fn: sgSpreadFrost
+    owner: waterball
+    fxKind: chain
+    variant: 'frost-spread'
+    elem: ice
+    when: on a frost tick when T5 chance passes: frost copied to `count` random enemies within 10m
+    targetsKind: enemies
+    tierOrFeature: T5 寒霜擴散 (waterball)
+    extraFields:
+      - [0]
+        travelMs: [80]
+      - [1]
+        floatSel fixed 'mv-float'
+      - [2]
+        targets: [from].concat(spread)
+    note: same variant reused at L8034 (frostnova ult)
+  - [24]
+    file: js/skills2.js
+    line: 7059
+    fn: sgIceBlast
+    owner: icearrow
+    fxKind: burst
+    variant: 'ice-blast'
+    elem: ice
+    when: the frame a frozen enemy's freeze ends (or it dies while frozen): explosion centred on that enemy, radius fx.m (6m)
+    targetsKind: area
+    tierOrFeature: T7 寒冰爆裂箭 (icearrow)
+    extraFields:
+      - [0]
+        area: sgAreaAround(ent, 6m)
+      - [1]
+        preserveDeadTargets: true
+      - [2]
+        targets: [ent]
+      - [3]
+        dur: 0.5 default
+    note: 
+  - [25]
+    file: js/skills2.js
+    line: 7201
+    fn: sgCastIcearrow
+    owner: icearrow
+    fxKind: projectile
+    variant: 'ice-arrow-pierce'
+    elem: ice
+    when: on cast when pierce (lvs[3]>0 || lvs[6]>0) and geometry ok: one per lane (count arrows fanned ±stepDeg 15° around primary) per wave (T7: 3 waves 0.3s apart; ult absoluteZeroBurst: 10 waves 0.35s)
+    targetsKind: mixed
+    tierOrFeature: T4 貫穿冰箭 (T5 冰箭散射 / legendary icearrowCountAdd 連射 / ult infiniteIceRift add lanes; T7 寒冰爆裂箭 waves; ult absoluteZeroBurst 極寒冰爆 waves)
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        lineLength: lineLen px (max(pierce m, reach to primary))
+      - [2]
+        lineWidth: max(20, 16)=20
+      - [3]
+        angle: laneAngle
+      - [4]
+        delayMs: wave*waveGap*1000
+      - [5]
+        travelMs: [lineLen/300px·s]
+      - [6]
+        targets: enemies on the lane (may be EMPTY — arrow still drawn from angle/lineLength)
+    note: after the line, the same arrow continues as an INDIRECT homing ground field (L7341, kind 'icearrow' → sgGroundVfxSpec L3964 {aura,'ice-arrow-homing',ice, area circle radius bodyM 1.5m, chase within 30m}) emitted at L3906 per gap 0.1s tick
+  - [26]
+    file: js/skills2.js
+    line: 7233
+    fn: sgCastIcearrow
+    owner: icearrow
+    fxKind: projectile
+    variant: 'ice-arrow'
+    elem: ice
+    when: on cast when not pierce (T1–T3 only) or no geometry (tower): one per arrow (front-cone 45° nearest picks, cycled) per wave
+    targetsKind: enemies
+    tierOrFeature: T1 寒冰箭
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        angle: bfAngleTo(target)
+      - [2]
+        lineLength: bfTravelDistance(target)
+      - [3]
+        travelMs: [distance/300px·s]
+      - [4]
+        delayMs: wave delay
+      - [5]
+        targets: [arrow target]
+    note: 
+  - [27]
+    file: js/skills2.js
+    line: 7305
+    fn: sgIcearrowSplit
+    owner: icearrow
+    fxKind: projectile
+    variant: 'ice-arrow'
+    elem: ice
+    when: after an ice arrow (or homing field) hits an enemy: n small arrows split forward along the arrow direction to enemies on that line (fallback: same victim)
+    targetsKind: enemies
+    tierOrFeature: legendary icearrowSplit 冰裂箭
+    extraFields:
+      - [0]
+        count: picks.length (≤5)
+      - [1]
+        dur: 0.25
+      - [2]
+        targets: picks (origin implied = victim, but spec has no origin field)
+    note: no angle/lineLength passed — renderer will draw from player unless it infers
+  - [28]
+    file: js/skills2.js
+    line: 7325
+    fn: sgCastIceTears
+    owner: icearrow
+    fxKind: rain
+    variant: 'ice-rain' (INDIRECT: sgSpawnGround kind 'icerain' → sgGroundVfxSpec L3968)
+    elem: ice
+    when: on cast: a player-following circle field (radius m) that rains `waves` times every gap (tickAtStart)
+    targetsKind: area
+    tierOrFeature: ult tearsOfIce 冰之淚
+    extraFields:
+      - [0]
+        dur: f.gap
+      - [1]
+        area: sgGroundArea(f) circle {id,x,y,r, follow:true}
+    note: INDIRECT — emitted at L3906 each wave
+  - [29]
+    file: js/skills2.js
+    line: 7518
+    fn: sgWaterballShot
+    owner: waterball
+    fxKind: projectile
+    variant: 'waterball'
+    elem: ice
+    when: on cast, one per shot (primary + T6/legendary extra random targets), shots staggered 220ms
+    targetsKind: enemies
+    tierOrFeature: T1 水流彈 (T6 三重流水 / legendary waterballShotAdd 水流連彈 add shots)
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        travelMs: [bfTravelSeconds(target)*1000]
+      - [2]
+        delayMs: si*220
+      - [3]
+        arcM: fx.arcM (8) — parabolic apex height
+      - [4]
+        projectile: true
+    note: 
+  - [30]
+    file: js/skills2.js
+    line: 7532
+    fn: sgWaterballShot
+    owner: waterball
+    fxKind: burst
+    variant: cfg.nova ? 'frost-nova' : 'water-burst' — nova = legendary waterballBurstNova 冰霜擴散 installed
+    elem: ice
+    when: on each landing (initial + every bounce) when T4 burst radius > 0: AoE around cur
+    targetsKind: area
+    tierOrFeature: T4 寒流爆散 → 'water-burst'; legendary waterballBurstNova 冰霜擴散 → 'frost-nova' (radius ×scale)
+    extraFields:
+      - [0]
+        area: sgAreaAround(cur, burstR) (8m × nova.scale)
+      - [1]
+        delayMs: hopDelay
+      - [2]
+        targets: bfTargetsAround(cur) incl. center
+    note: 
+  - [31]
+    file: js/skills2.js
+    line: 7550
+    fn: sgWaterballShot
+    owner: waterball
+    fxKind: chain
+    variant: 'water-bounce'
+    elem: ice
+    when: each bounce cur→next (random unvisited enemy anywhere), `bounces` times
+    targetsKind: enemies
+    tierOrFeature: T4 寒流爆散 (bounce count; legendary waterballBounceAdd 激流 adds bounces & speeds travel)
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        delayMs: hopDelay
+      - [2]
+        travelMs: [0, hopTravelMs/bounceSpeed]
+      - [3]
+        arcM: cfg.arcM
+      - [4]
+        targets: [cur, next]
+    note: 
+  - [32]
+    file: js/skills2.js
+    line: 7593
+    fn: sgSpawnWaterTornadoes / sgSpawnWaterTornadoAt (L7608) / sgTickRagingTide (L7701)
+    owner: waterball
+    fxKind: aura
+    variant: 'water-tornado' (INDIRECT: kinds 'tornado' L3950 and 'tidetornado' L3953 in sgGroundVfxSpec)
+    elem: ice
+    when: tornado: on cast 4 pillars at the corners of a side×side square around the player (delaySec i*gap*0.15), ticking every gap 0.35 for hits(6); legendary proc: one under a hit enemy; tidetornado: once when ≥need tornadoes exist, at their centroid
+    targetsKind: area
+    tierOrFeature: T7 水龍捲; legendary waterballTornadoProc 水龍勢; ult ragingTide 怒海狂濤 (tidetornado, larger radius)
+    extraFields:
+      - [0]
+        dur: f.gap
+      - [1]
+        area: sgGroundArea(f) circle {id,x,y,r:5m (tide: ult m)}
+    note: INDIRECT — emitted at L3906; same variant also used for icespike (L7914)
+  - [33]
+    file: js/skills2.js
+    line: 7649
+    fn: sgTickWaterPrison
+    owner: waterball
+    fxKind: aura
+    variant: 'follow-aura'
+    elem: ice
+    when: every SG_DOMAIN_VFX_SEC=1s while the water prison (cast-triggered, sec 6) is active
+    targetsKind: player
+    tierOrFeature: ult waterPrisonFall 水牢天瀑
+    extraFields:
+      - [0]
+        dur: 2
+      - [1]
+        area: {id:'sg-water-prison', r: radius (20m), w: 2r, h: 2r} — no x/y, renderer follows player anchor
+    note: sgEmitPlayerVfx; same variant as firehunt/rockarmor domains
+  - [34]
+    file: js/skills2.js
+    line: 7725
+    fn: sgTickAbyssDomain
+    owner: waterball
+    fxKind: aura
+    variant: 'follow-aura'
+    elem: ice
+    when: every 1s permanently while waterball equipped and ult chosen
+    targetsKind: player
+    tierOrFeature: ult abyssBurial 海淵葬界
+    extraFields:
+      - [0]
+        dur: 2
+      - [1]
+        area: {id:'sg-abyss-domain', r, w:2r, h:2r}
+    note: sgEmitPlayerVfx
+  - [35]
+    file: js/skills2.js
+    line: 7747
+    fn: sgTickAbyssDomain
+    owner: waterball
+    fxKind: impact
+    variant: 'frost-tick'
+    elem: ice
+    when: every gap (0.35s) when ≥1 enemy inside the domain received frost stacks this tick
+    targetsKind: enemies
+    tierOrFeature: ult abyssBurial 海淵葬界
+    extraFields:
+      - [0]
+        dur: 0.5 default
+      - [1]
+        targets: frosted list
+    note: 
+  - [36]
+    file: js/skills2.js
+    line: 7843
+    fn: sgFrostnovaBurst
+    owner: frostnova
+    fxKind: burst
+    variant: 'frost-nova'
+    elem: ice
+    when: on cast (1 + T5 extra casts, each delayed i*260ms and radius +3m per cast); also from sgDeathNova (T6, floatSel 'mv-float', delay 0) and ult infiniteNova auto-cast every gap
+    targetsKind: area
+    tierOrFeature: T1 冰霜新星 (T2 冰霜衝擊 radius 13m; T5 三重新星 repeats; T6 死亡新星 on death; legendary frostnovaScalePct 碎冰 radius; ult infiniteNova 無限新星 auto)
+    extraFields:
+      - [0]
+        delayMs: delayMs
+      - [1]
+        area: {x,y: player pos, r: radiusPx} (null in tower)
+      - [2]
+        targets: enemies within radius of player (may be EMPTY → area only)
+    note: 
+  - [37]
+    file: js/skills2.js
+    line: 7886
+    fn: sgFrostnovaEcho
+    owner: frostnova
+    fxKind: burst
+    variant: 'frost-nova'
+    elem: ice
+    when: when a nova hits an enemy that already had frost and the echo chance passes: second nova centred on that enemy (depth 1 only)
+    targetsKind: area
+    tierOrFeature: legendary frostnovaTwinBurst 雙冰爆 / frostnovaColdTide 寒潮 (chances add)
+    extraFields:
+      - [0]
+        delayMs: delayMs
+      - [1]
+        area: sgAreaAround(center, opts.radiusPx) (base radius, no T5 growth)
+      - [2]
+        preserveDeadTargets: true
+      - [3]
+        targets: center + sgEnemiesAround
+    note: 
+  - [38]
+    file: js/skills2.js
+    line: 7914
+    fn: sgSpawnIceSpike
+    owner: frostnova
+    fxKind: aura
+    variant: 'water-tornado' (INDIRECT: kind 'icespike' → sgGroundVfxSpec L3956, reuses the tornado pillar look)
+    elem: ice
+    when: legendary: when a nova kills a frozen enemy → spike at corpse; ult iceKingDomain: every gap (1s) 1–3 spikes under random enemies inside each blizzard; ticks every 0.35s for hits
+    targetsKind: area
+    tierOrFeature: legendary frostnovaKillSpike 寒冰衝擊; ult iceKingDomain 冰皇領域
+    extraFields:
+      - [0]
+        dur: 0.35 (SG_ICE_SPIKE_GAP)
+      - [1]
+        area: circle {id,x,y,r: src.m (8m)}
+      - [2]
+        tickAtStart: true
+    note: INDIRECT — emitted at L3906
+  - [39]
+    file: js/skills2.js
+    line: 7930
+    fn: sgSpawnBlizzard
+    owner: frostnova
+    fxKind: aura
+    variant: 'blizzard' (INDIRECT: kind 'blizzard' → sgGroundVfxSpec L3963)
+    elem: ice
+    when: on cast when T7: player-following square field side 20m (× ult scale) ticking every 0.4s for 8s
+    targetsKind: area
+    tierOrFeature: T7 暴風雪 (ult iceKingDomain 冰皇領域 enlarges; legendary frostnovaBlizzardFrost 凜冬寒霜 adds frost per tick)
+    extraFields:
+      - [0]
+        dur: f.gap (0.4)
+      - [1]
+        area: rect {id,x,y,w,h,a, follow:true}
+    note: INDIRECT — emitted at L3906
+  - [40]
+    file: js/skills2.js
+    line: 7980
+    fn: sgFrostbodyOnPlayerDamaged
+    owner: frostnova
+    fxKind: impact
+    variant: 'frost-body'
+    elem: ice
+    when: on player damaged within 6s after casting frostnova (sgFrostbody status) when the 25% chance passes and frost is applied to the attacker
+    targetsKind: enemies
+    tierOrFeature: T3 寒冰體
+    extraFields:
+      - [0]
+        dur: 0.5 default
+      - [1]
+        targets: [mEnt]
+      - [2]
+        floatSel || 'mv-float'
+    note: 
+  - [41]
+    file: js/skills2.js
+    line: 8034
+    fn: sgTickCrystalResonance
+    owner: frostnova
+    fxKind: chain
+    variant: 'frost-spread'
+    elem: ice
+    when: every gap (0.4s) permanently when ≥2 frozen enemies are within m of each other; all resonating victims merged into one event
+    targetsKind: enemies
+    tierOrFeature: ult crystalResonance 極致之冰
+    extraFields:
+      - [0]
+        travelMs: [80]
+      - [1]
+        targets: resonators (frozen victims)
+    note: chain drawn between frozen enemies (first→rest)
+  - [42]
+    file: js/skills2.js
+    line: 8362
+    fn: sgLaunchWindBlade
+    owner: gid param: 'windblade' | 'vacuumslash' | 'stormbarrier'
+    fxKind: projectile
+    variant: cfg.small ? 'wind-blade-small' : 'wind-blade'
+    elem: wind
+    when: on launch of a straight-flying wind blade: windblade cast (front; T3 back; T7 4 dirs × volleys 0.2s apart; T4 small blades ±30° when not chasing; ult stormMountain fused blade sizeMult); vacuumslash legendary 真空風刃 small blades (L8680); stormbarrier T4 暴風之刃 on damaged (L9015), ult myriadPhenomena 4-dir volleys (L8890), ult skyfallStars 'blade' star sizeMult 2 (L8735)
+    targetsKind: mixed
+    tierOrFeature: windblade: T1 風刃 ('wind-blade'), T2 巨型風刃 (scale), T3 雙重風刃, T4 亂披風 ('wind-blade-small'), T7 暴風真空刃, legendary windbladeSizePct/SpeedPct 增壓, windbladeVolleyTo 斷空刃, windbladeSmallMirror 風之痕, ult stormMountain 嵐之山; vacuumslash legendary vacuumSmallBlades 真空風刃; stormbarrier T4 暴風之刃, ult myriadPhenomena 森羅萬象, ult skyfallStars 天穹崩裂
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        projectile: true
+      - [2]
+        lineLength: geom.lenPx (80m = 800px flight)
+      - [3]
+        lineWidth: max(8, halfPx*2) (body 8m×scale×sizeMult; small 6m)
+      - [4]
+        travelMs: [lenPx/speedPx (18 m/s ×speed legend)]
+      - [5]
+        delayMs: beginSec*1000
+      - [6]
+        angle: cfg.angle
+      - [7]
+        bodyLength: bodyPx (4m×scale; small 3m)
+      - [8]
+        targets: enemies on the line (may be EMPTY) or fallback [primary] in tower
+    note: T6 狂風碎裂 adds INDIRECT pulses: flying projectile pulseVariant 'wind-burst' emitted at L1604 {fxKind:'burst', variant:'wind-burst'} every pulseGap along the flight (main blades only)
+  - [43]
+    file: js/skills2.js
+    line: 8392
+    fn: sgSpawnWindChaser
+    owner: windblade
+    fxKind: aura
+    variant: 'wind-blade-homing' (INDIRECT: kind 'windblade' → sgGroundVfxSpec L3969)
+    elem: wind
+    when: T5: small blades become chase fields (dest = angle × chaseM 30m, then random chase, contact hits) ticking every 0.1s for sec; ult stormMyriad: main blades too (bigger radius, own sec/chaseM)
+    targetsKind: area
+    tierOrFeature: T5 追跡風刃; ult stormMyriad 暴風萬刃
+    extraFields:
+      - [0]
+        dur: f.gap (0.1)
+      - [1]
+        area: circle {id,x,y,r: smallHalfPx (or halfWidthPx), destX/destY/speed}
+      - [2]
+        pulseVariant 'wind-burst' → INDIRECT ground pulse burst at L4099 when T6 狂風碎裂 (myriad path)
+    note: INDIRECT — emitted at L3906 per tick
+  - [44]
+    file: js/skills2.js
+    line: 8625
+    fn: sgCastVacuumslash
+    owner: vacuumslash
+    fxKind: slash
+    variant: spin ? 'wind-spin' : 'wind-slash' — spin = lvs[3]>0 (T4 真空迴旋)
+    elem: wind
+    when: on cast, one per wave (1 + T5 extra waves, each delayed w*260ms, radius +6m per wave × legendary scale)
+    targetsKind: mixed
+    tierOrFeature: T1 真空斬 → 'wind-slash' (front half-circle 6m, up to 3 targets); T4 真空迴旋 → 'wind-spin' (full circle around player); T5 真空三重奏 waves; legendary vacuumScalePct 空間澎脹 radius
+    extraFields:
+      - [0]
+        dur: 0.45
+      - [1]
+        delayMs: w*SG_VACUUM_WAVE_MS
+      - [2]
+        lineLength: radiusPx
+      - [3]
+        area: spin && geomOk ? {x,y: player pos, r: radiusPx} : null
+      - [4]
+        targets: victims (cone picks or in-circle; fallback [primary])
+    note: 'wind-spin' also used by cleave (out of range)
+  - [45]
+    file: js/skills2.js
+    line: 8687
+    fn: sgSpawnStaticVacuum
+    owner: vacuumslash
+    fxKind: aura
+    variant: 'wind-blade-homing' (INDIRECT: kind 'vacuumfield' → sgGroundVfxSpec L3974)
+    elem: wind
+    when: per hit victim when chance passes: static field at victim pos, radius grows ×grow(2) over sec(3), contact hits every gap 0.5
+    targetsKind: area
+    tierOrFeature: ult vacuumOmen 萬象風劫
+    extraFields:
+      - [0]
+        dur: f.gap
+      - [1]
+        area: circle {id,x,y,r} growing (growTo/growSec)
+      - [2]
+        tickAtStart: true
+    note: INDIRECT — emitted at L3906
+  - [46]
+    file: js/skills2.js
+    line: 8726
+    fn: sgSpawnVoidDiscs
+    owner: gid param: 'vacuumslash' (default) | 'stormbarrier' (myriad)
+    fxKind: aura + impact
+    variant: auraVariant 'void-disc' (aura, INDIRECT via sgOrbitEmitVfx L4504); hitVariant 'wind-burst' (impact, INDIRECT via sgTickOrbits L4483, dur 0.35)
+    elem: wind (hitElem)
+    when: T7 on cast: `discs`(2) orbit fields around player starting at baseAngle + i·2π/discs, radius m(6) growing growM/s, spin 2π·rps, life sec(6)+legend; ult voidAnnihilation: 1 disc every gap (L8825, unique key); ult spacetimeCollapse: fixed radius (grow 0), life ×; stormbarrier ult myriadPhenomena: plain Lv1 discs (L8912)
+    targetsKind: mixed
+    tierOrFeature: T7 虛空斬; legendary vacuumVoidSec 虛空漲落; ult voidAnnihilation 虛空滅界; ult spacetimeCollapse 時空崩解; stormbarrier ult myriadPhenomena 森羅萬象
+    extraFields:
+      - [0]
+        aura area: {x,y player pos, r: startR, orbR: bodyR (3m), orbs:1, spin:1, spinRate, startAng, id: fieldKey ('void-disc-i' / 'void-anni-N-i' / 'void-myriad-N-i'), grow: px/s}
+      - [1]
+        aura dur: lifeSec
+      - [2]
+        statusId sgVoidBlade
+    note: INDIRECT — 'void-disc' also used by knife ult (L2361, out of range)
+  - [47]
+    file: js/skills2.js
+    line: 8793
+    fn: sgTickSkyfallStars
+    owner: stormbarrier
+    fxKind: rain
+    variant: bolt ? 'thunder-fall' : 'meteor' — kind random from ['blade','thunder','fire']; bolt = kind==='thunder'; 'blade' kind instead launches a wind-blade (L8735, sizeMult 2)
+    elem: bolt ? 'lightning' : 'fire'
+    when: every gap (2s) permanently: 1..max stars on random enemies, each delayed i*350ms
+    targetsKind: area
+    tierOrFeature: ult skyfallStars 天穹崩裂 (stormbarrier; NOT the windblade skyCollapse)
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        area: sgAreaAround(target, 8m)
+      - [2]
+        delayMs: i*SG_METEOR_INTERVAL_MS
+      - [3]
+        travelMs: [700]
+    note: landing impact INDIRECT via sgQueueMeteor(L8800) → L3185 emits {fxKind:'impact', variant: bolt ? 'thunder-fall-impact' : 'meteor-impact', elem: lightning|fire, area circle}; glyph is 🌪️ (stormbarrier) even for fire/lightning stars
+  - [48]
+    file: js/skills2.js
+    line: 8852
+    fn: sgCastStormbarrier
+    owner: stormbarrier
+    fxKind: aura
+    variant: 'storm-barrier'
+    elem: wind
+    when: on cast (barrier starts, sec 8)
+    targetsKind: player
+    tierOrFeature: T1 暴風屏障
+    extraFields:
+      - [0]
+        dur: min(6, dur=8) = 6
+    note: sgEmitPlayerVfx
+  - [49]
+    file: js/skills2.js
+    line: 8865
+    fn: sgCastStormbarrier
+    owner: stormbarrier
+    fxKind: aura
+    variant: 'storm-god'
+    elem: wind
+    when: on cast when T7 invested (storm god state, godSec = fx.sec × legend × ult)
+    targetsKind: player
+    tierOrFeature: T7 暴風神體 (legendary stormGodSecPct 風暴核心, ult valgrForce 瓦爾格之力 extend)
+    extraFields:
+      - [0]
+        dur: godSec (not clamped)
+    note: sgEmitPlayerVfx
+  - [50]
+    file: js/skills2.js
+    line: 8952
+    fn: sgStormBarrierPulse
+    owner: stormbarrier
+    fxKind: aura
+    variant: 'storm-rip'
+    elem: wind
+    when: every barrier pulse (gap 0.5s, incl. the immediate pulse on cast) while T2 invested — emitted even with no victims
+    targetsKind: player
+    tierOrFeature: T2 暴風撕裂 (8m radius damage around player)
+    extraFields:
+      - [0]
+        dur: rt.gap (0.5)
+    note: sgEmitPlayerVfx; radius not passed in spec
+  - [51]
+    file: js/skills2.js
+    line: 8978
+    fn: sgStormBarrierPulse
+    owner: stormbarrier
+    fxKind: impact
+    variant: 'wind-rend'
+    elem: wind
+    when: every barrier pulse when T3 picks `want` random enemies within 8m and applies wind-rend
+    targetsKind: enemies
+    tierOrFeature: T3 亂風切
+    extraFields:
+      - [0]
+        dur: 0.5 default
+      - [1]
+        targets: marked
+    note: 
+  - [52]
+    file: js/skills2.js
+    line: 9061
+    fn: sgSpreadWindRend
+    owner: stormbarrier
+    fxKind: chain
+    variant: 'wind-rend-spread'
+    elem: wind
+    when: the frame an enemy's wind-rend status ends (or it dies with it): copied to `count` random enemies within 10m not already rended
+    targetsKind: enemies
+    tierOrFeature: T5 風切擴散
+    extraFields:
+      - [0]
+        travelMs: [80]
+      - [1]
+        preserveDeadTargets: true
+      - [2]
+        floatSel fixed 'mv-float'
+      - [3]
+        targets: [from].concat(spread)
+    note: 
+  - [53]
+    file: js/skills2.js
+    line: 9137
+    fn: sgCounterOnPlayerDamaged
+    owner: counter
+    fxKind: impact
+    variant: 'armor-break'
+    elem: null (phys)
+    when: on player damaged when the hit was blocked, T5 chance passes and MP paid → sgArmorBrk applied to attacker
+    targetsKind: enemies
+    tierOrFeature: T5 破甲擊
+    extraFields:
+      - [0]
+        dur: 0.5 default
+      - [1]
+        targets: [mEnt] (THORN_FLOAT_MAP sel)
+    note: cat 'phys' color #e6ddc8, glyph 🛡️
+  - [54]
+    file: js/skills2.js
+    line: 9175
+    fn: sgCounterOnPlayerDamaged
+    owner: counter
+    fxKind: strike
+    variant: 'counter-riposte'
+    elem: null (phys)
+    when: on a counter event (T1 chance on damage taken and/or T2 on block), once per event before the strike loop
+    targetsKind: enemies
+    tierOrFeature: T1 反擊 (T2 招架, T6 二次反擊 raise count)
+    extraFields:
+      - [0]
+        count: min(5, all.length) = number of strikes in this event
+      - [1]
+        targets: [mEnt]
+      - [2]
+        dur: 0.5 default
+    note: T7 狂化反殺 splash victims get no separate VFX (only damage floats)
+  - [55]
+    file: js/skills2.js
+    line: 9370
+    fn: sgCounterWindBlade
+    owner: counter
+    fxKind: projectile
+    variant: 'wind-blade-homing'
+    elem: wind
+    when: after each counter strike when the legendary chance passes
+    targetsKind: enemies
+    tierOrFeature: legendary counterWindBlade 風之體
+    extraFields:
+      - [0]
+        dur: 0.5
+      - [1]
+        targets: [target]
+      - [2]
+        no travelMs/angle
+    note: variant name shared with the ground-field aura but here it is a projectile fxKind
+  - [56]
+    file: js/skills2.js
+    line: 9388
+    fn: sgCounterHolyOrb
+    owner: counter
+    fxKind: burst
+    variant: (none — renderer default burst)
+    elem: light
+    when: every `count` counter strikes: holy orb toward target, AoE m around target
+    targetsKind: enemies
+    tierOrFeature: ult holyBody 神聖之體
+    extraFields:
+      - [0]
+        dur: 0.6
+      - [1]
+        targets: [target] + bfNearestOthers within m
+      - [2]
+        no area field
+    note: no variant
+  - [57]
+    file: js/skills2.js
+    line: 9421
+    fn: skills2TryLastStand
+    owner: counter
+    fxKind: burst
+    variant: (none — renderer default burst)
+    elem: earth
+    when: on player death intercept (once per 60s cd): earth burst on all enemies within m
+    targetsKind: enemies
+    tierOrFeature: ult indomitable 不屈鬥魂
+    extraFields:
+      - [0]
+        dur: 0.8
+      - [1]
+        floatSel fixed 'mv-float'
+      - [2]
+        targets: victims in radius
+    note: no variant
+  - [58]
+    file: js/skills2.js
+    line: 9433
+    fn: skills2TryLastStand
+    owner: counter
+    fxKind: aura
+    variant: 'rock-armor'
+    elem: earth
+    when: right after the death intercept: player downed for sec (invuln)
+    targetsKind: player
+    tierOrFeature: ult indomitable 不屈鬥魂
+    extraFields:
+      - [0]
+        dur: min(6, sec)
+      - [1]
+        floatSel 'pv-float'
+    note: sgEmitPlayerVfx; reuses rockarmor's variant with counter glyph 🛡️
+  - [59]
+    file: js/skills2.js
+    line: 9483
+    fn: sgTickLastStand
+    owner: counter
+    fxKind: rain
+    variant: 'pillar'
+    elem: earth
+    when: when the downed timer expires: player revives at full hp
+    targetsKind: player
+    tierOrFeature: ult indomitable 不屈鬥魂
+    extraFields:
+      - [0]
+        dur: 1.2
+      - [1]
+        floatSel 'pv-float'
+    note: sgEmitPlayerVfx
+  - [60]
+    file: js/skills2.js
+    line: 9508
+    fn: sgTickAsuraFist
+    owner: bloodrage
+    fxKind: aura
+    variant: 'bloodrage-aura'
+    elem: null (phys)
+    when: every gap (10s) permanently while bloodrage equipped: sgAsuraFist buff applied
+    targetsKind: player
+    tierOrFeature: ult asuraFist 阿修羅霸王拳
+    extraFields:
+      - [0]
+        dur: 1
+      - [1]
+        floatSel 'pv-float'
+    note: sgEmitPlayerVfx; glyph 💢 color phys
+  - [61]
+    file: js/skills2.js
+    line: 9627
+    fn: sgTickStarfall
+    owner: fireball
+    fxKind: aura
+    variant: 'starfall-shadow'
+    elem: fire
+    when: SG_STARFALL_WARN_SEC (5s) before each starfall impact: ground shadow grows to full field
+    targetsKind: player
+    tierOrFeature: ult starfallCataclysm 地爆天星
+    extraFields:
+      - [0]
+        dur: st.at - GT (≈5s)
+    note: sgEmitPlayerVfx; paired with floatPlayerEvent '地爆天星!'
+  - [62]
+    file: js/skills2.js
+    line: 9637
+    fn: sgTickStarfall
+    owner: fireball
+    fxKind: rain
+    variant: 'meteor-starfall'
+    elem: fire
+    when: fallSec (= 1000ms × SG_STARFALL_FALL_MULT 2 = 2s) before impact: giant meteor starts falling
+    targetsKind: player
+    tierOrFeature: ult starfallCataclysm 地爆天星
+    extraFields:
+      - [0]
+        dur: st.at - GT
+      - [1]
+        travelMs: [ms until impact] (number wrapped to array by sgEmitPlayerVfx)
+      - [2]
+        sizeMult: 3
+    note: sgEmitPlayerVfx — not attached to any enemy, hits whole field
+  - [63]
+    file: js/skills2.js
+    line: 9674
+    fn: sgStarfallImpact
+    owner: fireball
+    fxKind: impact
+    variant: 'starfall-impact'
+    elem: fire
+    when: at impact time: all live enemies lose max-hp % (sgDerivedHit)
+    targetsKind: enemies
+    tierOrFeature: ult starfallCataclysm 地爆天星
+    extraFields:
+      - [0]
+        dur: 0.5 default
+      - [1]
+        targets: all live enemies (≤8 anchors)
+    note: 
+  - [64]
+    file: js/skills2.js
+    line: 9790
+    fn: sgTickBloodDots
+    owner: bloodblade
+    fxKind: chain
+    variant: 'poison-spread'
+    elem: poison
+    when: on a poison DoT tick when T5 chance passes: one event per newly infected enemy (random, not yet poisoned), up to count
+    targetsKind: enemies
+    tierOrFeature: T5 毒霧感染
+    extraFields:
+      - [0]
+        count: 1
+      - [1]
+        targets: [e, near[ni]]
+      - [2]
+        dur: 0.5 default
+    note: 
+  - [65]
+    file: js/skills2.js
+    line: 9805
+    fn: sgTickBloodDots
+    owner: bloodblade
+    fxKind: impact
+    variant: sids[si]==='sgPoison' ? 'poison-tick' : 'bleed-tick'
+    elem: sgPoison → 'poison'; sgBleed → null (phys color)
+    when: every DoT tick (interval from the dot, default 1s) of sgBleed / sgPoison on each enemy — but only while lvs[4]≥1 or lvs[6]≥1 (function early-returns otherwise)
+    targetsKind: enemies
+    tierOrFeature: 'bleed-tick' ← T1 血刃斬 bleed; 'poison-tick' ← T4 血毒刃 poison (both only visible once T5 毒霧感染 or T7 零日感染 is invested)
+    extraFields:
+      - [0]
+        targets: [e]
+      - [1]
+        dur: 0.5 default
+    note: one event per enemy per tick (not merged like frost)
+  - [66]
+    file: js/skills2.js
+    line: 9819
+    fn: sgTickBloodDots
+    owner: bloodblade
+    fxKind: burst
+    variant: 'zero-infection'
+    elem: poison
+    when: on a DoT tick when T7 chance passes: remaining DoT dealt instantly, dot removed, bleed/poison spread
+    targetsKind: enemies
+    tierOrFeature: T7 零日感染
+    extraFields:
+      - [0]
+        targets: [e]
+      - [1]
+        dur: 0.5 default
+    note: emitted after the derived hit (same frame)
+  - [67]
+    file: js/skills2.js
+    line: 9880
+    fn: sgEmitBloodDomainAura
+    owner: bloodblade
+    fxKind: aura
+    variant: poison ? 'mire-poison' : 'mire' — poison = ult venomDomain chosen (else slayerDomain)
+    elem: poison ? 'poison' : 'dark'
+    when: every SG_DOMAIN_VFX_SEC (1s) permanently while bloodblade equipped and one of the two domain ults chosen
+    targetsKind: player
+    tierOrFeature: ult venomDomain 萬毒血霧 → 'mire-poison'/poison; ult slayerDomain 殺神領域 → 'mire'/dark
+    extraFields:
+      - [0]
+        dur: 1
+      - [1]
+        area: {id:'sg-blood-domain', x,y: player pos, r: radius, w:2r, h:2r}
+    note: sgEmitPlayerVfx reusing the mire ground ring look
+  - [68]
+    file: js/skills2.js
+    line: 9904
+    fn: sgVenomDomainPulse
+    owner: bloodblade
+    fxKind: curse
+    variant: 'poison'
+    elem: poison
+    when: every gap (0.5s) when enemies are inside the venom domain (sgVenomField stack applied)
+    targetsKind: enemies
+    tierOrFeature: ult venomDomain 萬毒血霧
+    extraFields:
+      - [0]
+        targets: victims within radius of player
+      - [1]
+        dur: 0.5 default
+    note: same curse/poison as T4 on-hit (L2712, out of range)
+  - [69]
+    file: js/skills2.js
+    line: 9945
+    fn: sgBloodFieldsOnDeath
+    owner: bloodblade
+    fxKind: aura
+    variant: 'mire-poison' (INDIRECT: kind 'poisonmist' → sgGroundVfxSpec L3977) ; 'mire' (INDIRECT: kind 'bloodmist' L9955 → L3978, emitted via sgBloodMistGroundTick L1145)
+    elem: poisonmist → 'poison'; bloodmist → 'dark'
+    when: on enemy death carrying sgPoison (poisonmist: radius m, gap 0.5, sec 3, damage) / sgBleed (bloodmist: radius m, gap 0.25, sec 4, no damage) — ground pool at corpse ticking
+    targetsKind: area
+    tierOrFeature: legendary bloodPoisonMist 毒爆 / bloodMistField 血霧
+    extraFields:
+      - [0]
+        dur: f.gap
+      - [1]
+        area: circle {id,x,y,r}
+      - [2]
+        floatSel 'mv-float'
+    note: INDIRECT — poisonmist emitted at L3906, bloodmist at L1145
+  - [70]
+    file: js/skills2.js
+    line: 10040
+    fn: sgDeathBoom
+    owner: bloodblade
+    fxKind: burst
+    variant: 'blood-explosion'
+    elem: poison
+    when: on enemy death when it had bleed or poison and T6 invested: explosion damaging `count` random enemies and spreading poison
+    targetsKind: enemies
+    tierOrFeature: T6 死亡屍爆
+    extraFields:
+      - [0]
+        targets: [deadEnt] — hp≤0 and NO preserveDeadTargets, so sgEmitVfx drops it → targets [] and area null
+      - [1]
+        floatSel fixed 'mv-float'
+      - [2]
+        dur: 0.5 default
+    note: BUG-LIKE: the event carries no anchors; compare L1245 (out of range) which emits the same variant on a live entity
