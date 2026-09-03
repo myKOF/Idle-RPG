@@ -12411,7 +12411,10 @@ input[type='radio'] {
 :root {
   --ui-slate-texture: url('../images/ui_dark_slate_tile.png');
   --ui-iron-texture: url('../images/ui_cast_iron_tile.png');
-  --ui-molten-frame: url('../images/ui_molten_iron_frame.png');
+  --ui-molten-corner-tl: url('../images/ui_molten_corner_tl.png');
+  --ui-molten-corner-tr: url('../images/ui_molten_corner_tr.png');
+  --ui-molten-corner-bl: url('../images/ui_molten_corner_bl.png');
+  --ui-molten-corner-br: url('../images/ui_molten_corner_br.png');
 }
 
 /* Large structural surfaces use cool slate, so the functional areas read as stone rooms. */
@@ -12443,20 +12446,24 @@ input[type='radio'] {
   background-blend-mode: normal, normal, soft-light;
 }
 
-/* The generated frame is sliced into a fixed-width overlay: corners stay detailed on every panel size. */
+/* Fixed-size corner crops keep the forged plates at their original proportions. */
 #stats-sidebar::after,
 #workspace-area::after,
 #combat-area::after {
   inset: 0;
   z-index: 28;
-  border: 11px solid transparent;
-  border-image-source: var(--ui-molten-frame);
-  border-image-slice: 160;
-  border-image-width: 11px;
-  border-image-repeat: stretch;
-  background: none;
-  opacity: .94;
-  filter: saturate(.86) brightness(.92);
+  border: 0;
+  border-image: none;
+  background-image:
+    var(--ui-molten-corner-tl),
+    var(--ui-molten-corner-tr),
+    var(--ui-molten-corner-bl),
+    var(--ui-molten-corner-br);
+  background-position: left top, right top, left bottom, right bottom;
+  background-size: 72px 72px, 72px 72px, 72px 72px, 72px 72px;
+  background-repeat: no-repeat;
+  opacity: 1;
+  filter: none;
 }
 
 /* Inner panels remain stone, while raised controls shift to rough cast iron. */
@@ -12595,17 +12602,21 @@ textarea:hover {
   background-blend-mode: normal, normal, soft-light;
 }
 
-/* Reuse the same molten frame on dialogue surfaces without creating or moving controls. */
+/* Dialogue corners use the same unscaled crops at a smaller fixed size. */
 .modal-box::after,
 .detail-log-box::after {
   inset: 0;
   z-index: 4;
-  border: 8px solid transparent;
-  border-image-source: var(--ui-molten-frame);
-  border-image-slice: 160;
-  border-image-width: 8px;
-  border-image-repeat: stretch;
-  background: none;
-  opacity: .87;
-  filter: saturate(.82) brightness(.88);
+  border: 0;
+  border-image: none;
+  background-image:
+    var(--ui-molten-corner-tl),
+    var(--ui-molten-corner-tr),
+    var(--ui-molten-corner-bl),
+    var(--ui-molten-corner-br);
+  background-position: left top, right top, left bottom, right bottom;
+  background-size: 54px 54px, 54px 54px, 54px 54px, 54px 54px;
+  background-repeat: no-repeat;
+  opacity: .96;
+  filter: none;
 }
