@@ -12401,3 +12401,222 @@ input[type='radio'] {
     transition-duration: .01ms !important;
   }
 }
+
+/* ==========================================================================
+   Image-backed material upgrade
+   Original UI assets: slate panels, cast-iron controls and molten iron frames.
+   Presentation only: no DOM, event or gameplay behaviour is changed.
+   ========================================================================== */
+
+:root {
+  --ui-slate-texture: url('../images/ui_dark_slate_tile.png');
+  --ui-iron-texture: url('../images/ui_cast_iron_tile.png');
+  --ui-molten-corner-tl: url('../images/ui_molten_corner_tl.png');
+  --ui-molten-corner-tr: url('../images/ui_molten_corner_tr.png');
+  --ui-molten-corner-bl: url('../images/ui_molten_corner_bl.png');
+  --ui-molten-corner-br: url('../images/ui_molten_corner_br.png');
+}
+
+/* Large structural surfaces use cool slate, so the functional areas read as stone rooms. */
+#stats-sidebar,
+#workspace-area,
+#combat-area {
+  border-color: #67472d;
+  background-image:
+    linear-gradient(135deg, rgba(33, 28, 25, .69), rgba(7, 8, 9, .84) 38%, rgba(18, 13, 10, .86)),
+    var(--ui-slate-texture);
+  background-position: center, center;
+  background-size: 100% 100%, 520px 520px;
+  background-repeat: no-repeat, repeat;
+  background-blend-mode: normal, normal;
+  box-shadow:
+    inset 0 0 0 1px rgba(224, 157, 73, .12),
+    inset 0 0 38px 12px rgba(0, 0, 0, .74),
+    0 7px 19px rgba(0, 0, 0, .76);
+}
+
+#workspace-area main {
+  background-image:
+    radial-gradient(circle at 16% 10%, rgba(163, 83, 31, .09), transparent 28%),
+    linear-gradient(180deg, rgba(3, 4, 5, .16), rgba(3, 3, 4, .44)),
+    var(--ui-slate-texture);
+  background-position: center, center, center;
+  background-size: 100% 100%, 100% 100%, 540px 540px;
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-blend-mode: normal, normal, soft-light;
+}
+
+/* Fixed-size corner crops keep the forged plates at their original proportions. */
+#stats-sidebar::after,
+#workspace-area::after,
+#combat-area::after {
+  inset: 0;
+  z-index: 28;
+  border: 0;
+  border-image: none;
+  background-image:
+    var(--ui-molten-corner-tl),
+    var(--ui-molten-corner-tr),
+    var(--ui-molten-corner-bl),
+    var(--ui-molten-corner-br);
+  background-position: left top, right top, left bottom, right bottom;
+  background-size: 72px 72px, 72px 72px, 72px 72px, 72px 72px;
+  background-repeat: no-repeat;
+  opacity: 1;
+  filter: none;
+}
+
+/* Inner panels remain stone, while raised controls shift to rough cast iron. */
+.panel,
+.equip-section-box,
+.tree-panel,
+.log,
+.detail-log-box,
+.equip-material-panel,
+#inv-section-box,
+#forge-inv-box,
+#detail-pane,
+.equip-detail-card,
+.shop-card,
+.nf-part-upgrade-card,
+.nf-furnace,
+.tower-floor,
+.save-row,
+.stats-mat-card,
+#battle-info-drawer,
+.modal-box,
+.confirm-box {
+  background-image:
+    linear-gradient(145deg, rgba(37, 33, 29, .68), rgba(7, 8, 9, .89) 46%, rgba(16, 11, 9, .91)),
+    var(--ui-slate-texture);
+  background-position: center, center;
+  background-size: 100% 100%, 420px 420px;
+  background-repeat: no-repeat, repeat;
+  background-blend-mode: normal, normal;
+}
+
+#workspace-area #tabs,
+.tab-btn,
+.zone-btn,
+#battle-skill-bar,
+.tower-head,
+.tower-auto-bar {
+  background-image:
+    linear-gradient(180deg, rgba(53, 49, 44, .79), rgba(10, 10, 10, .92)),
+    var(--ui-iron-texture);
+  background-position: center, center;
+  background-size: 100% 100%, 250px 250px;
+  background-repeat: no-repeat, repeat;
+  background-blend-mode: normal, normal;
+}
+
+.tab-btn.active,
+.zone-btn.active {
+  background-image:
+    linear-gradient(180deg, rgba(101, 58, 31, .78), rgba(21, 15, 12, .92)),
+    var(--ui-iron-texture);
+  background-size: 100% 100%, 250px 250px;
+  background-repeat: no-repeat, repeat;
+}
+
+.btn,
+.dropdown,
+.input,
+select,
+input[type='text'],
+input[type='number'],
+textarea,
+#battle-canvas-buttons .btn,
+.info-btn,
+.damage-toggle-btn {
+  background-image:
+    linear-gradient(180deg, rgba(55, 51, 46, .82), rgba(13, 12, 11, .96)) !important,
+    var(--ui-iron-texture) !important;
+  background-position: center, center !important;
+  background-size: 100% 100%, 180px 180px !important;
+  background-repeat: no-repeat, repeat !important;
+  background-blend-mode: normal, normal !important;
+}
+
+.btn:hover,
+.dropdown:hover,
+.input:hover,
+select:hover,
+input[type='text']:hover,
+input[type='number']:hover,
+textarea:hover {
+  background-image:
+    linear-gradient(180deg, rgba(86, 62, 42, .84), rgba(21, 15, 12, .96)) !important,
+    var(--ui-iron-texture) !important;
+}
+
+.btn.warn {
+  background-image:
+    linear-gradient(180deg, rgba(93, 48, 28, .86), rgba(29, 14, 10, .97)) !important,
+    var(--ui-iron-texture) !important;
+}
+
+.btn.danger {
+  background-image:
+    linear-gradient(180deg, rgba(83, 31, 28, .87), rgba(24, 10, 9, .97)) !important,
+    var(--ui-iron-texture) !important;
+}
+
+.btn.active,
+.forge-inv-tabs .btn.active {
+  background-image:
+    linear-gradient(180deg, rgba(110, 62, 31, .88), rgba(28, 16, 10, .98)) !important,
+    var(--ui-iron-texture) !important;
+}
+
+.eq-slot.filled,
+.item-cell,
+.forge-slot,
+.forge-center,
+.gem-inventory-cell,
+.tree-cell,
+.sg-stage-node,
+.talent-icon,
+.battle-skill-slot,
+.eqset-tab,
+.gconv-slot {
+  background-image:
+    radial-gradient(circle at 50% 34%, rgba(137, 103, 71, .14), transparent 59%),
+    linear-gradient(145deg, rgba(33, 34, 33, .58), rgba(7, 7, 7, .89)),
+    var(--ui-iron-texture);
+  background-position: center, center, center;
+  background-size: 100% 100%, 100% 100%, 150px 150px;
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-blend-mode: normal, normal, soft-light;
+}
+
+.battle-scene-wrapper,
+#battle-canvas-host {
+  background-image:
+    radial-gradient(circle at 50% 48%, rgba(148, 85, 38, .09), transparent 48%),
+    linear-gradient(145deg, rgba(20, 22, 22, .4), rgba(4, 5, 6, .72)),
+    var(--ui-slate-texture);
+  background-position: center, center, center;
+  background-size: 100% 100%, 100% 100%, 500px 500px;
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-blend-mode: normal, normal, soft-light;
+}
+
+/* Dialogue corners use the same unscaled crops at a smaller fixed size. */
+.modal-box::after,
+.detail-log-box::after {
+  inset: 0;
+  z-index: 4;
+  border: 0;
+  border-image: none;
+  background-image:
+    var(--ui-molten-corner-tl),
+    var(--ui-molten-corner-tr),
+    var(--ui-molten-corner-bl),
+    var(--ui-molten-corner-br);
+  background-position: left top, right top, left bottom, right bottom;
+  background-size: 54px 54px, 54px 54px, 54px 54px, 54px 54px;
+  background-repeat: no-repeat;
+  opacity: .96;
+  filter: none;
+}

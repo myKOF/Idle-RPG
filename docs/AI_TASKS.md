@@ -4667,21 +4667,30 @@ Commit：
 
 任務內容：在既有 DOM、事件與資料流完全不變的前提下，集中重製全域色彩、材質、面板、按鈕、
 分頁、表單、捲軸、物品格、技能格、彈窗、提示框與戰鬥區外框；強化 1920px 桌面版的左右主次層級，
-並保留窄螢幕的既有可用性。參考圖只作視覺方向，不把圖中文字或功能視為需求。
+並保留窄螢幕的既有可用性。後續依使用者回饋補入原創石板、鑄鐵與透明熔鐵九宮格邊框圖片，
+讓材質與邊角不只依賴 CSS 漸層；再依畫面回饋將熔鐵框拆為四張等比例角落圖，以固定尺寸繪製，
+避免 `border-image` 壓縮角落細節。參考圖只作視覺方向，不把圖中文字或功能視為需求。
 
 允許修改：
 
 - `css/style.css`
+- `index.html`（僅遞增 CSS 快取查詢版號）
 - `docs/AI_TASKS.md`
+- `images/ui_dark_slate_tile.png`
+- `images/ui_cast_iron_tile.png`
+- `images/ui_molten_iron_frame.png`
+- `images/ui_molten_corner_tl.png`
+- `images/ui_molten_corner_tr.png`
+- `images/ui_molten_corner_bl.png`
+- `images/ui_molten_corner_br.png`
 
 禁止修改：
 
-- `index.html`（另一工作副本有進行中修改）
 - `js/**`
 - 遊戲資料、公式、Worker Protocol、存檔格式與任何功能行為
 
-前置依賴：無。`docs/AI_TASKS.md` 與 `css/style.css` 衝突預檢無來源；`index.html` 有其他副本未提交修改，
-本任務明確避開該檔。
+前置依賴：無。2026-09-03 使用者確認各分支合併後，`docs/AI_TASKS.md`、`css/style.css` 與三個新增圖片
+路徑的衝突預檢皆無來源；本任務仍明確避開 `index.html`。
 
 測試要求：`npm run build`、UI 相關定向測試、`git diff --check`；以本機瀏覽器檢查主要分頁、彈窗、
 左右分區、1920×1080 與窄螢幕排版，確認 Console 無新增錯誤。
@@ -4697,13 +4706,20 @@ Commit：
 - 本機瀏覽器逐頁檢查裝備、熔爐、寶石、技能、高塔、設定與技能詳情彈窗；各功能頁無橫向溢位，
   1920×1080 與 1366×768 固定畫布皆完整保留左側功能區、右側戰鬥區，Console 0 error／0 warning。
 - `git diff --check` 通過。
+- 後續圖片材質優化：原創石板、鑄鐵與透明熔鐵九宮格邊框均由目前工作副本實際載入；
+  1920×1080、1366×768 無橫向溢位，主框與隱藏彈窗的邊框圖片均套用成功，Console 0 error／0 warning。
+- 後續建置與 UI 定向測試再次通過：`npm run build`；13/13 項 UI 測試通過。
+- 熔鐵角落比例修正：由原始透明圖框擷取四張 300×300 等比例角圖，主框以固定 72px、彈窗以固定
+  54px 繪製；實機確認熔岩裂紋、鐵板與鉚釘完整可見，Console 0 error／0 warning。
 
-修改檔案：`css/style.css`、`docs/AI_TASKS.md`。未修改但檢查過 `index.html`、`js/ui-scale.js`、
+修改檔案：`css/style.css`、`index.html`、`docs/AI_TASKS.md`、`images/ui_dark_slate_tile.png`、
+`images/ui_cast_iron_tile.png`、`images/ui_molten_iron_frame.png`、`images/ui_molten_corner_tl.png`、
+`images/ui_molten_corner_tr.png`、`images/ui_molten_corner_bl.png`、`images/ui_molten_corner_br.png`。未修改但檢查過 `js/ui-scale.js`、
 各主要 UI 定向測試與全分頁執行期 DOM；沒有修改任何 JS、遊戲資料、公式、存檔或 Worker Protocol。
 
-已知風險：`index.html` 因另一工作副本正在修改而刻意不碰，因此本次沒有遞增 CSS 查詢字串；
-若瀏覽器保留舊 CSS，需以重新整理或清除該頁快取載入新樣式。專案強制快取版號規則只要求 JS 修改時遞增版本，
-本次未修改 JS。
+已知風險：新增三張原創 PNG 圖片約 6.85 MB，會增加首次載入量；已將 CSS 查詢版號由 `1.0.59` 遞增為
+`1.0.60`。本次比例修正因另一工作副本正修改 `index.html`，無法安全遞增至 `1.0.61`；若瀏覽器快取舊的
+`1.0.60` 樣式，需強制重新整理一次。專案強制快取版號規則只要求 JS 修改時遞增版本，本次未修改 JS。
 
 未完成項目：無。
 
