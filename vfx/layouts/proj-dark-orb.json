@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-dark-orb",
+  "groups": [
+    {
+      "id": "proj-dark-orb",
+      "name": "proj-dark-orb",
+      "layerIds": [
+        "glow",
+        "swirl",
+        "core",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-dark-orb"
+  ]
+}

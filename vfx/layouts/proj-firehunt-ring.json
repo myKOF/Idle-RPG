@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-firehunt-ring",
+  "groups": [
+    {
+      "id": "proj-firehunt-ring",
+      "name": "proj-firehunt-ring",
+      "layerIds": [
+        "glow",
+        "ring",
+        "gloss",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-firehunt-ring"
+  ]
+}

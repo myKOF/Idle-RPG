@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-debuff",
+  "groups": [
+    {
+      "id": "st-debuff",
+      "name": "st-debuff",
+      "layerIds": [
+        "ring",
+        "wisps"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-debuff"
+  ]
+}

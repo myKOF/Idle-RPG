@@ -154,8 +154,13 @@ function towerTick(dt) {
   tickSkillCds(p, dt); // 潛力技能冷卻共用 skillCds（鍵 'potential:<id>'），一併在此遞減
 
   // 持續傷害
-  if (tickStatuses(p, dt)) { endTowerFight(false, 'death'); return; }
-  if (tickStatuses(b, dt)) { endTowerFight(true); return; }
+  var towerPlayerDotDeath = tickStatuses(p, dt);
+  var towerBossDotDeath = towerPlayerDotDeath ? false : tickStatuses(b, dt);
+  /* 高塔走 DOM 顯示層、目前不播 Preset，但緩衝仍要清掉，
+     否則這一批目標會殘留到下一個模擬步驟才送出去。 */
+  if (typeof statusTickVfxFlush === 'function') statusTickVfxFlush();
+  if (towerPlayerDotDeath) { endTowerFight(false, 'death'); return; }
+  if (towerBossDotDeath) { endTowerFight(true); return; }
 
   // 潛力【聖療逆轉】溢出傷害（持續效果）
   if (typeof tickPotentialRegen === 'function' && tickPotentialRegen(p, st, dt, [b], 'tb-float')) { endTowerFight(true); return; }

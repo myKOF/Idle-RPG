@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-earth",
+  "groups": [
+    {
+      "id": "burst-earth",
+      "name": "burst-earth",
+      "layerIds": [
+        "rim",
+        "dust",
+        "flash",
+        "rocks"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-earth"
+  ]
+}

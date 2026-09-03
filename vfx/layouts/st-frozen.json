@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-frozen",
+  "groups": [
+    {
+      "id": "st-frozen",
+      "name": "st-frozen",
+      "layerIds": [
+        "glow",
+        "ice-a",
+        "ice-b",
+        "ice-c",
+        "ice-hi",
+        "sheen"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-frozen"
+  ]
+}

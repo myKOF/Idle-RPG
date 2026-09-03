@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "id": "st-buff",
+  "duration": 1.5,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -3
+      },
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0352
+      },
+      "alpha": 0.45,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.65
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#fffef4",
+      "blendMode": "add",
+      "duration": 1.5,
+      "emission": {
+        "mode": "rate",
+        "rate": 3
+      },
+      "lifetime": [
+        0.6,
+        1
+      ],
+      "spawn": {
+        "height": 44,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        18,
+        40
+      ],
+      "direction": -90,
+      "spread": 40,
+      "gravity": {
+        "x": 0,
+        "y": -30
+      },
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

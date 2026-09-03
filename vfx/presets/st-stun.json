@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "st-stun",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "orbit",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/magic_01.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -64
+      },
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0352
+      },
+      "alpha": 0.85,
+      "tint": "#ffe47a",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          6.28319
+        ]
+      ]
+    },
+    {
+      "id": "star",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -64
+      },
+      "scale": {
+        "x": 0.0352,
+        "y": 0.0352
+      },
+      "alpha": 0.9,
+      "tint": "#fffef4",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -3.14159
+        ]
+      ]
+    }
+  ]
+}

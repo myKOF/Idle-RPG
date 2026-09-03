@@ -24,6 +24,10 @@ var BattleRenderer = (function () {
   function disabledByQuery() {
     return typeof location !== 'undefined' && /[?&]canvas=0(&|$)/.test(location.search || '');
   }
+  /* ?vfx=legacy：強制走舊的程式畫法，用來 A／B 比對 Preset 化前後的畫面。 */
+  function legacyVfxByQuery() {
+    return typeof location !== 'undefined' && /[?&]vfx=legacy(&|$)/.test(location.search || '');
+  }
   var REDUCED_MOTION = (typeof matchMedia === 'function') &&
     matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -277,6 +281,15 @@ var BattleRenderer = (function () {
     if (p && typeof p.wx === 'number') return { x: p.wx, y: p.wy };
     return { x: 0, y: 0 };
   }
+  /* elId → 腳底座標。受擊爆點打在身體中心（posOf），但施放光環與狀態光環的
+     原點在腳底——Preset 的名目身高 60px 就是從這裡往上量的。 */
+  function footOf(elId) {
+    if (elId === 'pv-float' && S.player) return { x: S.player.root.x, y: S.player.root.y };
+    var ent = S.entities[elId];
+    if (ent) return { x: ent.root.x, y: ent.root.y };
+    return posOf(elId);
+  }
+
   /* 投射物起點：跟著玩家目前位置（近戰突進時玩家會離開原位） */
   function playerMuzzle() {
     var p = playerPos();
@@ -1216,6 +1229,9 @@ var BattleRenderer = (function () {
       S.emptyText.visible = !!S.towerActive && !anyLive;
       if (S.emptyText.visible && S.emptyText.text !== '（高塔戰鬥中…）') S.emptyText.text = '（高塔戰鬥中…）';
     }
+
+    /* 狀態光環：只有面板快照答得出「現在還掛著哪些狀態」，因此在這裡 reconcile。 */
+    syncVfxStatuses(field, list);
   }
 
   /* 敵人出手：由模擬層即時送入，而不是等下一張面板快照反推。
@@ -1399,6 +1415,8 @@ var BattleRenderer = (function () {
     for (var i = 0; i < S.fx.length; i++) killFx(S.fx[i]);
     S.fx.length = 0;
     sweepOrphanFxNodes();
+    /* Preset 端是另一套生命週期（Core 自己管節點），要分別清。 */
+    if (S.vfxrt) S.vfxrt.clear();
   }
 
   /* 孤兒節點清掃：特效層裡任何「沒有被 S.fx 追蹤」的顯示物件一律移除。
@@ -4582,6 +4600,12 @@ var BattleRenderer = (function () {
       }, baseDelay);
       return;
     }
+    /* Preset 化（docs/vfx/VFX_RUNTIME_ADAPTER.md）：表格填了特效檔名、
+       而且這一則的主要角色在手上時，整則交給 VFX Runtime。
+       回 false＝沒有對應的 preset，照舊走下面的程式畫法。 */
+    if (S.vfxrt && S.vfxrt.tryPlay(spec)) return;
+    /* presetOnly（協議 v27）：只有 Preset 端畫得出來的事件，接不上就整則忽略。 */
+    if (spec.presetOnly) return;
     if (isEnemyAttack) {
       renderEnemyAttackVfx(spec);
       return;
@@ -5452,6 +5476,10 @@ var BattleRenderer = (function () {
         }
       }
     }
+
+    /* Preset 化 VFX：飛行物前進、場域到期、光環跟隨都在這裡推進。
+       暫停時 dt 已經是 0，因此不必另外判斷 S.paused。 */
+    if (S.vfxrt) S.vfxrt.update(dt);
   }
 
   function updateFlashJolt(ent, dt) {
@@ -5505,11 +5533,18 @@ var BattleRenderer = (function () {
     entity.sortableChildren = true;
     var fx = new PIXI.Container();
     var floatLayer = new PIXI.Container();
+    /* Preset 化 VFX 的兩個掛載點（見 docs/vfx/VFX_RUNTIME_ADAPTER.md）。
+       ⚠️ 一定要獨立成層，不能掛進 zone／fx：sweepOrphanFxNodes 會把那兩層裡
+       「沒有被 S.fx 追蹤」的孩子全部 destroy，Core 的節點會被當成孤兒清掉。 */
+    var presetZone = new PIXI.Container();
+    var presetFx = new PIXI.Container();
     /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，
        但仍跟著 world 一起移動，避免被任何戰鬥表現層蓋住。 */
     var playerHud = new PIXI.Container();
     var overlay = new PIXI.Container();
-    world.addChild(zone); world.addChild(entity); world.addChild(fx); world.addChild(floatLayer);
+    world.addChild(zone); world.addChild(presetZone);
+    world.addChild(entity);
+    world.addChild(fx); world.addChild(presetFx); world.addChild(floatLayer);
     world.addChild(playerHud);
     app.stage.addChild(bg);
     app.stage.addChild(world);
@@ -5553,6 +5588,7 @@ var BattleRenderer = (function () {
 
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
+      presetZone: presetZone, presetFx: presetFx,
       playerHud: playerHud, overlay: overlay
     };
     drawDeathFog(0);
@@ -5719,6 +5755,52 @@ var BattleRenderer = (function () {
     return true;
   }
 
+  /* Preset 化 VFX 的組裝：非同步（要抓 shipped-assets 與 150 份 preset），
+     成功之後 onVfx 才會先問它。任何一步失敗就整批維持舊畫法。 */
+  function bootVfxRuntime() {
+    if (legacyVfxByQuery() || typeof VFXRuntime === 'undefined' || !S.layers) return;
+    VFXRuntime.boot({
+      fxContainer: S.layers.presetFx,
+      zoneContainer: S.layers.presetZone,
+      ctx: {
+        posOf: posOf,
+        footOf: footOf,
+        playerPos: playerMuzzle,
+        projectileTargetPoint: projectileTargetPoint
+      }
+    }).then(function (rt) {
+      S.vfxrt = rt || null;
+      if (!rt) return;
+      console.info('[battle-renderer] VFX Preset Runtime 已接上（' +
+        rt.stats().presets + ' 份 preset）。網址加 ?vfx=legacy 可強制舊畫法。');
+    }).catch(function (err) {
+      S.vfxrt = null;
+      console.warn('[battle-renderer] VFX Preset Runtime 組裝失敗，維持舊畫法：',
+        err && err.message ? err.message : err);
+    });
+  }
+
+  /* 狀態光環要靠 5Hz 面板快照 reconcile：事件驅動答不出「現在還在不在」。 */
+  function syncVfxStatuses(field, monsters) {
+    if (!S.vfxrt) return;
+    var out = [];
+    function push(key, ent) {
+      if (!key || !ent) return;
+      var sids = [];
+      if (typeof statusEntries === 'function') {
+        var list = statusEntries(ent);
+        for (var i = 0; i < list.length; i++) if (list[i] && list[i].sid) sids.push(list[i].sid);
+      }
+      out.push({ key: key, sids: sids });
+    }
+    push('pv-float', field.player);
+    for (var m = 0; m < monsters.length; m++) {
+      var d = monsters[m];
+      if (d && d.floatSel && d.hp > 0) push(d.floatSel, d);
+    }
+    S.vfxrt.syncStatuses(out);
+  }
+
   function init(host) {
     if (S.initStarted) return Promise.resolve(active());
     S.initStarted = true;
@@ -5763,6 +5845,7 @@ var BattleRenderer = (function () {
       window.addEventListener('resize', resize, { passive: true });
       S.watchdogTimer = setInterval(fxWatchdog, FX_WATCHDOG_MS);
       S.ready = true;
+      bootVfxRuntime();
       flushPendingFloats();
       /* 開機時 battle 面板可能已經在手上（bridge 比渲染器先跑），先同步一次 */
       if (typeof peekUiPanelData === 'function') {
@@ -5793,6 +5876,8 @@ var BattleRenderer = (function () {
       size: S.W + 'x' + S.H,
       entities: Object.keys(S.entities).length,
       fx: S.fx.length, floats: S.floats.length,
+      /* Preset 端是另一套集合，同樣要看得到「只增不減」。 */
+      preset: S.vfxrt ? S.vfxrt.stats() : null,
       paused: S.paused, zone: S.zoneKey,
       /* ---- 洩漏診斷 ---- */
       lastPos: Object.keys(S.lastPos).length,          // 離場實體的殘留座標，應隨 LASTPOS_KEEP_MS 回落

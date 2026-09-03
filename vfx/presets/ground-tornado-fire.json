@@ -1,0 +1,422 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-tornado-fire",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ground",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1328,
+        "y": 0.0598
+      },
+      "alpha": 0.6,
+      "tint": "#7d1708",
+      "blendMode": "normal",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "funnel",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_f.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1211,
+        "y": 0.2305
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.9,
+      "tint": "#d93413",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.85
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.85
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          1.08
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "band-a",
+      "type": "sprite",
+      "assetId": "new_materials/beam/lightrays_7.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1055,
+        "y": 0.2031
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.75,
+      "tint": "#ffa51d",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.33,
+          1.14
+        ],
+        [
+          0.66,
+          0.88
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.0873
+        ],
+        [
+          0.5,
+          0.0873
+        ],
+        [
+          1,
+          -0.0873
+        ]
+      ]
+    },
+    {
+      "id": "band-b",
+      "type": "sprite",
+      "assetId": "new_materials/beam/lightrays_7.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0859,
+        "y": 0.1719
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.75,
+      "tint": "#ff761c",
+      "blendMode": "add",
+      "delay": 0.4,
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.33,
+          1.14
+        ],
+        [
+          0.66,
+          0.88
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.0873
+        ],
+        [
+          0.5,
+          0.0873
+        ],
+        [
+          1,
+          -0.0873
+        ]
+      ]
+    },
+    {
+      "id": "band-c",
+      "type": "sprite",
+      "assetId": "new_materials/beam/lightrays_7.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0664,
+        "y": 0.1367
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.75,
+      "tint": "#ffa51d",
+      "blendMode": "add",
+      "delay": 0.8,
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.33,
+          1.14
+        ],
+        [
+          0.66,
+          0.88
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.0873
+        ],
+        [
+          0.5,
+          0.0873
+        ],
+        [
+          1,
+          -0.0873
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_a.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.0273,
+        "y": 0.2148
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.9,
+      "tint": "#ffdf4d",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "cap",
+      "type": "sprite",
+      "assetId": "new_materials/fan/turbine_1.png",
+      "zIndex": 6,
+      "position": {
+        "x": 0,
+        "y": -112
+      },
+      "scale": {
+        "x": 0.1289,
+        "y": 0.0508
+      },
+      "alpha": 0.8,
+      "tint": "#ffa51d",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          9.42478
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 7,
+      "tint": "#ffdf4d",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.5,
+        0.85
+      ],
+      "spawn": {
+        "height": 16,
+        "shape": "box",
+        "width": 50
+      },
+      "speed": [
+        60,
+        120
+      ],
+      "direction": -90,
+      "spread": 40,
+      "gravity": {
+        "x": 0,
+        "y": -70
+      },
+      "startScale": [
+        0.0078,
+        0.0156
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

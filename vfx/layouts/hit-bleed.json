@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-bleed",
+  "groups": [
+    {
+      "id": "hit-bleed",
+      "name": "hit-bleed",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "splat",
+        "drops",
+        "mist"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-bleed"
+  ]
+}

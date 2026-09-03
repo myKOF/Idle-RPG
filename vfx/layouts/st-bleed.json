@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-bleed",
+  "groups": [
+    {
+      "id": "st-bleed",
+      "name": "st-bleed",
+      "layerIds": [
+        "glow",
+        "drops"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-bleed"
+  ]
+}

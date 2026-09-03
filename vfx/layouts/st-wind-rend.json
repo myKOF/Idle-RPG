@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-wind-rend",
+  "groups": [
+    {
+      "id": "st-wind-rend",
+      "name": "st-wind-rend",
+      "layerIds": [
+        "cut-a",
+        "cut-b",
+        "shards"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-wind-rend"
+  ]
+}

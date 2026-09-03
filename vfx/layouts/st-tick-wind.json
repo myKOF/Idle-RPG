@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-tick-wind",
+  "groups": [
+    {
+      "id": "st-tick-wind",
+      "name": "st-tick-wind",
+      "layerIds": [
+        "cut-a",
+        "cut-b"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-tick-wind"
+  ]
+}

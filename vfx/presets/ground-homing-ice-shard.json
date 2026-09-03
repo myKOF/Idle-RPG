@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-homing-ice-shard",
+  "duration": 0.55,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1523,
+        "y": 0.1523
+      },
+      "alpha": 0.45,
+      "tint": "#79d8ff",
+      "blendMode": "add",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          1,
+          0.4
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          1.08
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "body",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1172,
+        "y": 0.0859
+      },
+      "alpha": 1,
+      "tint": "#4da6ff",
+      "blendMode": "normal",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0.95
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.95
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0703,
+        "y": 0.0508
+      },
+      "alpha": 1,
+      "tint": "#f2fbff",
+      "blendMode": "add",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.9
+        ]
+      ]
+    },
+    {
+      "id": "dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "tint": "#f2fbff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 16
+      },
+      "lifetime": [
+        0.2,
+        0.35
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        20,
+        50
+      ],
+      "direction": 180,
+      "spread": 50,
+      "startScale": [
+        0.0078,
+        0.0156
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-domain-fire",
+  "groups": [
+    {
+      "id": "ground-domain-fire",
+      "name": "ground-domain-fire",
+      "layerIds": [
+        "fill",
+        "edge",
+        "inner",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-domain-fire"
+  ]
+}

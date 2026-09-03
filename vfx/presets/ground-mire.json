@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-mire",
+  "duration": 2.1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "splat-pack/png/double-512px/splat05.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 0.5,
+      "tint": "#4a3a20",
+      "blendMode": "normal",
+      "duration": 2.1,
+      "alphaOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.5,
+          0.58
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 0.55,
+      "tint": "#7d6533",
+      "blendMode": "add",
+      "duration": 2.1,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.5,
+          0.4
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "ripple-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 0.45,
+      "tint": "#a37a48",
+      "blendMode": "add",
+      "duration": 2.1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.45
+        ],
+        [
+          0.9,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ripple-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 0.4,
+      "tint": "#a37a48",
+      "blendMode": "add",
+      "delay": 0.7,
+      "duration": 2.1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.4
+        ],
+        [
+          0.9,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "ripple-c",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2031
+      },
+      "alpha": 0.35,
+      "tint": "#a37a48",
+      "blendMode": "add",
+      "delay": 1.4,
+      "duration": 2.1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.35
+        ],
+        [
+          0.9,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "bubbles",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 5,
+      "tint": "#c49b68",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 3
+      },
+      "lifetime": [
+        0.9,
+        1.4
+      ],
+      "spawn": {
+        "height": 90,
+        "shape": "box",
+        "width": 180
+      },
+      "speed": [
+        4,
+        14
+      ],
+      "direction": -90,
+      "spread": 60,
+      "startScale": [
+        0.0137,
+        0.0254
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.85
+        ],
+        [
+          0.8,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    }
+  ]
+}

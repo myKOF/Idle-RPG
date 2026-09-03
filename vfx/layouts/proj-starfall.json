@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-starfall",
+  "groups": [
+    {
+      "id": "proj-starfall",
+      "name": "proj-starfall",
+      "layerIds": [
+        "glow",
+        "shell",
+        "body",
+        "core",
+        "rim",
+        "bow",
+        "tail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-starfall"
+  ]
+}

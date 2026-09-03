@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-phys-big",
+  "duration": 0.3,
+  "loop": false,
+  "layers": [
+    {
+      "id": "arc",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "zIndex": 1,
+      "rotation": -0.7854,
+      "scale": {
+        "x": 0.2109,
+        "y": 0.2109
+      },
+      "alpha": 1,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.82
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.4887
+        ],
+        [
+          1,
+          0.4887
+        ]
+      ]
+    },
+    {
+      "id": "arc-inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "zIndex": 2,
+      "rotation": -0.7854,
+      "scale": {
+        "x": 0.173,
+        "y": 0.173
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0.02,
+      "duration": 0.18,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          1,
+          1.08
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.4887
+        ],
+        [
+          1,
+          0.4887
+        ]
+      ]
+    },
+    {
+      "id": "gleam",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 3,
+      "rotation": -0.7854,
+      "scale": {
+        "x": 0.2109,
+        "y": 0.0313
+      },
+      "alpha": 0.8,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0.02,
+      "duration": 0.16,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "chips",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 6,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "count": 7,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.16,
+        0.26
+      ],
+      "spawn": {
+        "radius": 10,
+        "shape": "circle"
+      },
+      "speed": [
+        130,
+        230
+      ],
+      "direction": 35,
+      "spread": 110,
+      "gravity": {
+        "x": 0,
+        "y": 260
+      },
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    }
+  ]
+}

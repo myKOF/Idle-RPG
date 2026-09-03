@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-tick-dark",
+  "groups": [
+    {
+      "id": "st-tick-dark",
+      "name": "st-tick-dark",
+      "layerIds": [
+        "flash",
+        "wisp"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-tick-dark"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "bolt-sky-lightning",
+  "groups": [
+    {
+      "id": "bolt-sky-lightning",
+      "name": "bolt-sky-lightning",
+      "layerIds": [
+        "glow",
+        "seg-a",
+        "seg-b",
+        "seg-c",
+        "core",
+        "ground",
+        "flash"
+      ]
+    }
+  ],
+  "order": [
+    "group:bolt-sky-lightning"
+  ]
+}

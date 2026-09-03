@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-poison",
+  "groups": [
+    {
+      "id": "st-poison",
+      "name": "st-poison",
+      "layerIds": [
+        "glow",
+        "mist",
+        "bubbles"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-poison"
+  ]
+}

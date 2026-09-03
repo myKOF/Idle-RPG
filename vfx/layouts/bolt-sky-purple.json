@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "bolt-sky-purple",
+  "groups": [
+    {
+      "id": "bolt-sky-purple",
+      "name": "bolt-sky-purple",
+      "layerIds": [
+        "glow",
+        "seg-a",
+        "seg-b",
+        "seg-c",
+        "core",
+        "sigil",
+        "flash"
+      ]
+    }
+  ],
+  "order": [
+    "group:bolt-sky-purple"
+  ]
+}

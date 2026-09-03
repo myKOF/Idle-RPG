@@ -57,6 +57,13 @@ hit／cast／curse：目標身高 60px、主體約 40px；burst／ground 圓形�
 beam／chain 段：沿 +X 長 200px；projectile：朝 +X、主體約 40px（火球、隕石另註）；bolt：從 y=-500 落到原點；
 orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳底原點、身高 60px。
 
+## 1.2.1 單一根群組（使用者規則 2026-09-03）
+
+每份 Preset 的所有圖層一律收進**一個**群組，寫在 `vfx/layouts/<presetId>.json`（群組 id／name 都取 preset id）。
+理由是 Editor 之後要能同時打開多份特效一起編輯，「一列＝一個特效」才分得開。
+分組是 authoring metadata，不進 Preset／Runtime／shipped build，因此對畫面零影響。
+`tools/vfx/authoring/preset-kit.cjs` 的 `kit.write()` 已自動產生；既有檔案用 `kit.writeRootGroupLayout()` 補。
+
 ## 1.3 Skills2 的「列」怎麼決定
 
 每一發特效屬於表上的某一列。發送端在 `extra` 標明：
@@ -75,29 +82,57 @@ orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳�
 
 # 2. 進度
 
-## 已完成（已提交或本次提交）
+## 已完成
 
 - Core：`setTransform`、`play({scaleX, scaleY})`（commit 207138d）。
-- 參數表：`tools/config_tables.cjs` Skills／Skills2 五欄、Status 三欄（回寫成 `vfx` 物件、整列留白不寫）；三張 CSV／xlsx 已重生並依目錄填值（Skills 80 列、Skills2 105 列、Status 80 列）；`--apply` 往返語意變更 0。
-- 發送端：`skillVfxSpec` 帶 `sk.vfx`；`sgVfxRoles` ＋ `sgEmitVfx`／`sgEmitPlayerVfx` 帶 `spec.vfx`；場域／環繞／天降佇列帶列標記；`statusVfxRoles`。
-- 協議 v26：VFX 事件可選欄位 `vfx`（protocol.js、WORKER_PROTOCOL.md、worker-protocol.test）。
-- Preset：受擊家族 13 份（`hit-*`），素材已匯出（`images/vfx/assets`、`vfx/shipped-assets.json`）。
-- 製作工具與盤點資料進 repo：`tools/vfx/authoring/`、`scratch/vfx-inventory/`。
+- 參數表：`tools/config_tables.cjs` Skills／Skills2 五欄、Status 三欄；三張 CSV／xlsx 已依目錄填值。
+  §4 的目錄修正已套用並重填（血刃斬 T1／T2、火球 T3、大地守護 T7、不屈鬥魂、meteorSmall）。
+- 發送端：`skillVfxSpec` 帶 `sk.vfx`；`sgVfxRoles` ＋ `sgEmitVfx`／`sgEmitPlayerVfx` 帶 `spec.vfx`；
+  **§3 對照表的 119 個 emit 點列標記已全部補上**（含場域／環繞／天降佇列的傳遞與共用 helper）。
+- 協議 v26：VFX 事件可選欄位 `vfx`。v27：可選旗標 `presetOnly`（只有 Preset 端畫得出來的事件）。
+- **Preset：目錄上的 146 份全部完成**（受擊 13、斬擊 11、飛行子彈 20、天降／光柱／光束 8、
+  範圍爆發 16、地板與環繞 33、施放 8、詛咒 3、狀態 34），另有三份原型（demo-basic／
+  fire-tornado／black-hole）與電球兩份。每一份都帶一份單一根群組的 layout（§1.2.1）。
+  素材已匯出：`images/vfx/assets` 85 個、`vfx/shipped-assets.json`。
+- **Runtime Adapter `js/vfx-runtime.js` 已接上 `battle-renderer.js`**：
+  `onVfx` 先問 `tryPlay`；`tickWorld` 推進；`syncBattle` 以 5Hz 快照 reconcile 狀態光環；
+  節點掛在獨立的 `presetZone`／`presetFx` 容器（不能混進 `zone`／`fx`，會被 `sweepOrphanFxNodes` 清掉）；
+  `clearAllFx` 一併清。預算 fx `{160, 2400}`、zone `{40, 1200}`。`?vfx=legacy` 強制舊畫法。
+- 狀態每跳：`js/combat.js` 的 `statusTickVfxCollect`／`statusTickVfxFlush`，
+  同一個模擬步驟裡同一個狀態合併成一則（≤8 目標）並標 `presetOnly`。
+- 普攻／敵方／潛力：`js/data.js` 的 `VFX_COMBAT_DEFAULTS` ＋ `vfxCombatRoles()`／`vfxEnemyRoles()`；
+  `combat.js` 普攻／天罰／敵方出手、`legendary.js`／`potential.js` 的連鎖電擊都已帶 `vfx`。
+- 載入與版號：`index.html` 載入 vfx-core／vfx-pixi-backend／vfx-runtime（在 battle-renderer 之前），
+  改到的 js 全部 bump `?v=`，Worker 端資產版號同步。
+- 測試：`tests/vfx-runtime.test.cjs`（24 條：角色選擇、退回、擺位與縮放、飛行、場域合併、
+  環繞場域交還舊畫法、天降落點預警、狀態 reconcile）。
+  原本規劃的 `tests/vfx-catalog.test.cjs` 併進同一檔的 CATALOG 三條，
+  不另開檔案——它們的前置（載入正式資料、Core 驗證）與 Adapter 測試完全相同：
+  「表格引用的 preset 都存在且合法」「shipped 涵蓋所有 preset 用到的素材」
+  「每份 preset 都有單一根群組的 layout」。
+- Editor：topbar 加 Preset 下拉（server `/__presets` ＋ `<select>`），151 份可直接切換。
 
-## 尚未完成（依序）
+## 尚未完成
 
-1. **emit 點補列標記**（js/skills2.js，約 70 處）——對照表見第 3 節。沒補的話所有事件都讀第 1 階那一列。
-2. **其餘 133 份 Preset**——目錄 `tools/vfx/authoring/vfx-catalog.cjs` 的 `PRESETS`（家族：slash 11、proj 22、bolt/beam/pillar 8、burst 16、ground/orb/aura/mark 32、cast/curse 11、status 36）。製作腳本範例 `author/hits.cjs`。做完跑 `node tools/vfx/export-assets.cjs`。
-3. **目錄修正後重填表格**（第 4 節），然後 `node tools/vfx/authoring/fill-vfx-cells.cjs` → `node tools/config_tables.cjs --apply --write`。
-4. **Runtime Adapter** `js/vfx-runtime.js`：兩個 Core runtime（zone／fx 各一）、production resolver＝`VFXCore.createIndexResolver(shippedAssets, 'images/vfx/assets')`、開機預載表格引用到的所有 preset（fetch `vfx/presets/<id>.json`）、`tryPlay(spec, ctx)`（依 1.1 的角色規則；缺主要角色回 false）、`update(dt)`（tickWorld 呼叫）、`syncStatuses(entities)`（aura reconcile）、`clear()`；`?vfx=legacy` 強制舊畫法。`battle-renderer.js`：`onVfx` 先問 `VFXRuntime.tryPlay`；`syncBattle` 對每個 `field.monsters[i]` 與 `field.player` 用 `statusEntries()` 算出 sid 集合交給 reconcile；`init` 掛容器與預載。預算：fx `{maxActiveEffects:160, maxParticles:2400}`、ground `{40, 1200}`（HARD_LIMITS 內）。
-5. **狀態 tick 掛鉤**：`js/combat.js tickStatuses` 在 `seconds > 0 && d.dps > 0` 處收集 (targetId, sid)，每個模擬步驟合併成一則 `{ fxKind:'impact', variant:'status-tick', vfx: statusVfxRoles(sid,'tick'), targets }`（≤8 目標；skills2 自己的 sgTickBurn／sgTickFrost／sgTickBloodDots 已有 emit，改帶 `vfxRoles`，不重複）。
-6. **普攻／敵方／潛力**：`js/data.js` 新增 `VFX_COMBAT_DEFAULTS`（值見 catalog `COMBAT_DEFAULTS`），`combat.js` 普攻／天罰／敵方攻擊事件帶 `vfx`；`legendary.js`／`potential.js` 的 chain 事件帶 `vfx`。
-7. **載入與版號**：index.html 載入 `js/vfx-core.js`、`js/vfx-pixi-backend.js`、`js/vfx-runtime.js`（在 battle-renderer 之前），改到的 js 都 bump `?v=`。
-8. **測試**：`tests/vfx-catalog.test.cjs`（表格引用的 preset 都存在、shipped-assets 最新）、`tests/vfx-runtime.test.cjs`（角色選擇／退回／移動／狀態 reconcile，以 NullBackend）、參數表往返含新欄位。
-9. **文件**：`VFX_CORE_AND_PRESET_SCHEMA.md` §6／§8／§9（Adapter 已接上）、`VFX_AGENT_WORKFLOW.md` §2 現況表、AI_TASKS、PATCH。Editor 加 preset 下拉（server `/__presets` 路由 ＋ topbar `<select>`）方便使用者在 150 份 preset 間切換。
-10. 目視 QA：以 Editor 抽樣截圖各家族，實機（8331）觀察普攻、火球、隕石、火牆、狀態光環。
+1. **目視 QA**（本文件 §5）：Editor 抽樣截圖各家族、實機（8331）觀察普攻、火球、隕石、火牆、
+   狀態光環。這一步需要人在瀏覽器前面看，Claude 只能備好流程。
+   （本輪已在 8331 驗到：Runtime 接上 145 份 preset、每一則事件都帶 `vfx`、
+   53／53 事件由 Adapter 接手、0 退回、0 丟棄。但 Browser 面板隱藏時 rAF 不跑，
+   畫面本身沒辦法看——那正是這一項要人做的原因。）
+1a. **環繞場域（火狩星環、電球、虛空鋸刃）目前整則退回舊畫法**：
+   它的畫面是「軌道環 ＋ 沿環公轉的 N 個環繞體」，環繞體要逐幀算公轉位置
+   （`orbs`／`spin`／`spinRate`／`startAng`／螺旋／體積成長）。Adapter 只播得出軌道環，
+   接手等於把環繞體弄不見，因此 `area.orbs > 0` 一律 `tryPlay` 回 false。
+   `orb-firehunt`／`orb-thunder`／`orb-void-disc` 三份 preset 已經做好，等這段補上就會用到。
+1b. **帶 `angle` 的方向型攻擊以突刺光槍的名目（100×36）換算**：
+   目錄裡只有 `slash-thrust-lance` 是這個形狀。之後若有第二份方向型 attack preset
+   而名目長度不同，要改成由 preset 自己宣告名目，而不是寫死在 Adapter。
+2. `cast-buff-poison` 目前沒有任何一列引用（毒系被動施放尚未指派給哪個技能）。
+3. 名目尺寸只以 `kit.probe` 的 bbox 核對過，anchor 不置中的圖層（天降柱、沿 +X 的光束與光槍、
+   扇形）probe 量到的是「以中心計」的框，實際位置要靠目視確認。
 
-已知範圍限制：高塔（DOM 路徑 `js/vfx.js`）沒有 Pixi，本輪不播 Preset，維持舊畫法；之後可在高塔 `.battle-scene` 疊一層透明 Pixi 畫布再接同一個 Adapter。
+已知範圍限制：高塔（DOM 路徑 `js/vfx.js`）沒有 Pixi，本輪不播 Preset，維持舊畫法；
+之後可在高塔 `.battle-scene` 疊一層透明 Pixi 畫布再接同一個 Adapter。
 
 ---
 

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-poison",
+  "groups": [
+    {
+      "id": "hit-poison",
+      "name": "hit-poison",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "mist",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-poison"
+  ]
+}

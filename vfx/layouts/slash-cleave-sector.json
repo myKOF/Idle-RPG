@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-cleave-sector",
+  "groups": [
+    {
+      "id": "slash-cleave-sector",
+      "name": "slash-cleave-sector",
+      "layerIds": [
+        "fill",
+        "rim",
+        "edge-a",
+        "edge-b"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-cleave-sector"
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-field-fire",
+  "duration": 1.6,
+  "loop": true,
+  "layers": [
+    {
+      "id": "fill",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.14,
+      "tint": "#e63924",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.14
+        ],
+        [
+          0.5,
+          0.2
+        ],
+        [
+          1,
+          0.14
+        ]
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.7,
+      "tint": "#ffd447",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.5,
+          0.85
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "flames",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "zIndex": 2,
+      "tint": "#e63924",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "radius": 92,
+        "shape": "circle"
+      },
+      "speed": [
+        30,
+        70
+      ],
+      "direction": -90,
+      "spread": 40,
+      "gravity": {
+        "x": 0,
+        "y": -80
+      },
+      "startScale": [
+        0.0273,
+        0.0508
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "tint": "#ffd447",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 10
+      },
+      "lifetime": [
+        0.4,
+        0.7
+      ],
+      "spawn": {
+        "radius": 92,
+        "shape": "circle"
+      },
+      "speed": [
+        40,
+        90
+      ],
+      "direction": -90,
+      "spread": 50,
+      "gravity": {
+        "x": 0,
+        "y": -70
+      },
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-wind-spin",
+  "duration": 0.42,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_b.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.2344,
+        "y": 0.1445
+      },
+      "alpha": 0.9,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          3.14159
+        ]
+      ]
+    },
+    {
+      "id": "ring-inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.1875,
+        "y": 0.1152
+      },
+      "alpha": 0.8,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          0.7,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -3.14159
+        ]
+      ]
+    },
+    {
+      "id": "blades",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_02.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.2344,
+        "y": 0.1445
+      },
+      "alpha": 0.7,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.8
+        ],
+        [
+          0.7,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          1.05
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          6.28319
+        ]
+      ]
+    }
+  ]
+}

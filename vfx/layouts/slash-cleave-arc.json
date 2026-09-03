@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-cleave-arc",
+  "groups": [
+    {
+      "id": "slash-cleave-arc",
+      "name": "slash-cleave-arc",
+      "layerIds": [
+        "arc",
+        "arc-inner"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-cleave-arc"
+  ]
+}

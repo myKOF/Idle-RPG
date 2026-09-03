@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-lightning",
+  "duration": 1.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 0.55,
+      "tint": "#ffd23f",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "bolt",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0508,
+        "y": 0.0195
+      },
+      "alpha": 1,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.1,
+          1.25
+        ],
+        [
+          0.2,
+          0.8
+        ],
+        [
+          0.3,
+          1.2
+        ],
+        [
+          0.4,
+          0.85
+        ],
+        [
+          0.5,
+          1.15
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          0.7,
+          1.2
+        ],
+        [
+          0.8,
+          0.9
+        ],
+        [
+          0.9,
+          1.1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "bolt-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0391,
+        "y": 0.0156
+      },
+      "alpha": 0.9,
+      "tint": "#fff8b0",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.15,
+          0.6
+        ],
+        [
+          0.3,
+          1.1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          0.7,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 4,
+      "tint": "#ffd23f",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 22
+      },
+      "lifetime": [
+        0.1,
+        0.2
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        10,
+        40
+      ],
+      "direction": 180,
+      "spread": 40,
+      "startScale": [
+        0.0117,
+        0.0215
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

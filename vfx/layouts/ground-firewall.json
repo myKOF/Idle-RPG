@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-firewall",
+  "groups": [
+    {
+      "id": "ground-firewall",
+      "name": "ground-firewall",
+      "layerIds": [
+        "scorch",
+        "base",
+        "flame-a",
+        "flame-b",
+        "flame-c",
+        "core",
+        "smoke",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-firewall"
+  ]
+}

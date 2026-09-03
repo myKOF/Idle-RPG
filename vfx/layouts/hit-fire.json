@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-fire",
+  "groups": [
+    {
+      "id": "hit-fire",
+      "name": "hit-fire",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "sparks",
+        "tongues"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-fire"
+  ]
+}

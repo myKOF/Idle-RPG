@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "id": "st-frostbite",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.1016,
+        "y": 0.1328
+      },
+      "alpha": 0.25,
+      "tint": "#f2fbff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.24
+        ],
+        [
+          0.5,
+          0.38
+        ],
+        [
+          1,
+          0.24
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.97
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          1,
+          0.97
+        ]
+      ]
+    },
+    {
+      "id": "mist",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.0938,
+        "y": 0.082
+      },
+      "alpha": 0.28,
+      "tint": "#79d8ff",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.24
+        ],
+        [
+          0.5,
+          0.36
+        ],
+        [
+          1,
+          0.24
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "flakes",
+      "type": "particle",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -46
+      },
+      "tint": "#f2fbff",
+      "blendMode": "normal",
+      "duration": 1.2,
+      "emission": {
+        "mode": "rate",
+        "rate": 5
+      },
+      "lifetime": [
+        0.8,
+        1.2
+      ],
+      "spawn": {
+        "height": 30,
+        "shape": "box",
+        "width": 34
+      },
+      "speed": [
+        8,
+        22
+      ],
+      "direction": 90,
+      "spread": 50,
+      "gravity": {
+        "x": 0,
+        "y": 40
+      },
+      "startScale": [
+        0.0078,
+        0.0156
+      ],
+      "rotationStart": [
+        0,
+        3.141592653589793
+      ],
+      "rotationSpeed": [
+        -3,
+        3
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    }
+  ]
+}

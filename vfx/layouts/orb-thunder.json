@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "orb-thunder",
+  "groups": [
+    {
+      "id": "orb-thunder",
+      "name": "orb-thunder",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "web"
+      ]
+    }
+  ],
+  "order": [
+    "group:orb-thunder"
+  ]
+}

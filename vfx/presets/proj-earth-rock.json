@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-earth-rock",
+  "duration": 1.2,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shadow",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 0,
+      "rotation": 0.2094,
+      "scale": {
+        "x": 0.0371,
+        "y": 0.0371
+      },
+      "alpha": 0.9,
+      "tint": "#5b3a27",
+      "blendMode": "normal",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          5.02655
+        ]
+      ]
+    },
+    {
+      "id": "rock",
+      "type": "sprite",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 1,
+      "rotation": 0.2094,
+      "scale": {
+        "x": 0.0313,
+        "y": 0.0313
+      },
+      "alpha": 1,
+      "tint": "#ad7444",
+      "blendMode": "normal",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          5.02655
+        ]
+      ]
+    },
+    {
+      "id": "trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 4,
+      "tint": "#c9a06a",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.2,
+        0.36
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        10,
+        40
+      ],
+      "direction": 180,
+      "spread": 40,
+      "startScale": [
+        0.0156,
+        0.0273
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

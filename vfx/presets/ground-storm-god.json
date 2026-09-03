@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-storm-god",
+  "duration": 0.9,
+  "loop": true,
+  "layers": [
+    {
+      "id": "band-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -6
+      },
+      "scale": {
+        "x": 0.1172,
+        "y": 0.0352
+      },
+      "alpha": 0.9,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1.125
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "band-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 10
+      },
+      "scale": {
+        "x": 0.1172,
+        "y": 0.0352
+      },
+      "alpha": 0.9,
+      "tint": "#ffe9a3",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1.125
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "band-c",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 26
+      },
+      "scale": {
+        "x": 0.1172,
+        "y": 0.0352
+      },
+      "alpha": 0.9,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1.125
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.06
+        ],
+        [
+          1,
+          0.96
+        ]
+      ]
+    },
+    {
+      "id": "dots",
+      "type": "sprite",
+      "assetId": "new_materials/orb/rounded_6.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 10
+      },
+      "scale": {
+        "x": 0.1211,
+        "y": 0.0371
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1.1700000000000002
+        ],
+        [
+          1,
+          0.9
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          6.3
+        ]
+      ]
+    },
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 6
+      },
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0898
+      },
+      "alpha": 0.5,
+      "tint": "#ffe9a3",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.65
+        ],
+        [
+          1,
+          0.45
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          1.08
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    }
+  ]
+}

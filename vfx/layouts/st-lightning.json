@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-lightning",
+  "groups": [
+    {
+      "id": "st-lightning",
+      "name": "st-lightning",
+      "layerIds": [
+        "glow",
+        "arcs"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-lightning"
+  ]
+}

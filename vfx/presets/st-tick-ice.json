@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "id": "st-tick-ice",
+  "duration": 0.45,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.0586,
+        "y": 0.0586
+      },
+      "alpha": 1,
+      "tint": "#79d8ff",
+      "blendMode": "add",
+      "duration": 0.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "shards",
+      "type": "particle",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#f2fbff",
+      "blendMode": "normal",
+      "emission": {
+        "count": 3,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.45
+      ],
+      "spawn": {
+        "radius": 10,
+        "shape": "circle"
+      },
+      "speed": [
+        60,
+        120
+      ],
+      "direction": 0,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 380
+      },
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "rotationStart": [
+        0,
+        3.141592653589793
+      ],
+      "rotationSpeed": [
+        -6,
+        6
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}

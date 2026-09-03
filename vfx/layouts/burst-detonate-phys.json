@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-detonate-phys",
+  "groups": [
+    {
+      "id": "burst-detonate-phys",
+      "name": "burst-detonate-phys",
+      "layerIds": [
+        "glow",
+        "rim-glow",
+        "rim",
+        "flash",
+        "shards"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-detonate-phys"
+  ]
+}

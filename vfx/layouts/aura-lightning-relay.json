@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-lightning-relay",
+  "groups": [
+    {
+      "id": "aura-lightning-relay",
+      "name": "aura-lightning-relay",
+      "layerIds": [
+        "flash",
+        "web",
+        "arcs"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-lightning-relay"
+  ]
+}

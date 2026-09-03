@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-lightning",
+  "groups": [
+    {
+      "id": "hit-lightning",
+      "name": "hit-lightning",
+      "layerIds": [
+        "halo",
+        "ring",
+        "flash",
+        "arcweb",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-lightning"
+  ]
+}

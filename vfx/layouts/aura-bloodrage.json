@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-bloodrage",
+  "groups": [
+    {
+      "id": "aura-bloodrage",
+      "name": "aura-bloodrage",
+      "layerIds": [
+        "glow",
+        "ring",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-bloodrage"
+  ]
+}

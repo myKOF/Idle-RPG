@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-cleave-arc",
+  "duration": 0.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "arc",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "zIndex": 1,
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.1172,
+        "y": 0.1172
+      },
+      "alpha": 0.95,
+      "tint": "#60a5fa",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.75,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          1.04
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.925
+        ],
+        [
+          1,
+          1.0297
+        ]
+      ]
+    },
+    {
+      "id": "arc-inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "zIndex": 2,
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.0977,
+        "y": 0.0977
+      },
+      "alpha": 1,
+      "tint": "#bfdbfe",
+      "blendMode": "add",
+      "delay": 0.03,
+      "duration": 0.44,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.95
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.8378
+        ],
+        [
+          1,
+          0.9774
+        ]
+      ]
+    }
+  ]
+}

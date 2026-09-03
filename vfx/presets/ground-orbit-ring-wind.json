@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-orbit-ring-wind",
+  "duration": 2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.16,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.16
+        ],
+        [
+          0.5,
+          0.22399999999999998
+        ],
+        [
+          1,
+          0.16
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 1,
+      "tint": "#86efac",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 6
+      },
+      "lifetime": [
+        0.5,
+        0.9
+      ],
+      "spawn": {
+        "radius": 96,
+        "shape": "circle"
+      },
+      "speed": [
+        15,
+        40
+      ],
+      "direction": -90,
+      "spread": 60,
+      "gravity": {
+        "x": 0,
+        "y": -40
+      },
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

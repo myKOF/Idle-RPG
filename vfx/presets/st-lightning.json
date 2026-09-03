@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "st-lightning",
+  "duration": 0.5,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.1016,
+        "y": 0.1328
+      },
+      "alpha": 0.24,
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0.24
+        ],
+        [
+          0.5,
+          0.38
+        ],
+        [
+          1,
+          0.24
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.97
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          1,
+          0.97
+        ]
+      ]
+    },
+    {
+      "id": "arcs",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#f2b705",
+      "blendMode": "add",
+      "duration": 0.5,
+      "emission": {
+        "mode": "rate",
+        "rate": 10
+      },
+      "lifetime": [
+        0.1,
+        0.3
+      ],
+      "spawn": {
+        "height": 46,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        0,
+        20
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0234,
+        0.043
+      ],
+      "rotationStart": [
+        0,
+        6.283185307179586
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}

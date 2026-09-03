@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "orb-void-disc",
+  "groups": [
+    {
+      "id": "orb-void-disc",
+      "name": "orb-void-disc",
+      "layerIds": [
+        "ghost-d",
+        "ghost-c",
+        "ghost-b",
+        "ghost-a",
+        "disc",
+        "rim",
+        "hub"
+      ]
+    }
+  ],
+  "order": [
+    "group:orb-void-disc"
+  ]
+}

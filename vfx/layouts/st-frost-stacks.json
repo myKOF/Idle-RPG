@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-frost-stacks",
+  "groups": [
+    {
+      "id": "st-frost-stacks",
+      "name": "st-frost-stacks",
+      "layerIds": [
+        "glow",
+        "flakes"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-frost-stacks"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-wind",
+  "groups": [
+    {
+      "id": "burst-wind",
+      "name": "burst-wind",
+      "layerIds": [
+        "outer",
+        "inner"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-wind"
+  ]
+}

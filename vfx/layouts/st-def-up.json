@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-def-up",
+  "groups": [
+    {
+      "id": "st-def-up",
+      "name": "st-def-up",
+      "layerIds": [
+        "hex",
+        "ring"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-def-up"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-petrify",
+  "groups": [
+    {
+      "id": "st-petrify",
+      "name": "st-petrify",
+      "layerIds": [
+        "stone",
+        "dust"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-petrify"
+  ]
+}

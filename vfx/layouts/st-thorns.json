@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-thorns",
+  "groups": [
+    {
+      "id": "st-thorns",
+      "name": "st-thorns",
+      "layerIds": [
+        "spikes",
+        "ring"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-thorns"
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "id": "cast-buff-poison",
+  "duration": 0.9,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -4
+      },
+      "scale": {
+        "x": 0.1289,
+        "y": 0.0586
+      },
+      "alpha": 0.85,
+      "tint": "#4caf2b",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.9
+        ],
+        [
+          0.75,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.45
+        ],
+        [
+          0.78,
+          0.7
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "ring-inner",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -4
+      },
+      "scale": {
+        "x": 0.1016,
+        "y": 0.0469
+      },
+      "alpha": 0.6,
+      "tint": "#4caf2b",
+      "blendMode": "add",
+      "delay": 0.08,
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.9
+        ],
+        [
+          0.75,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.45
+        ],
+        [
+          0.78,
+          0.7
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.1094,
+        "y": 0.1406
+      },
+      "alpha": 0.35,
+      "tint": "#4caf2b",
+      "blendMode": "add",
+      "duration": 0.9,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.5
+        ],
+        [
+          0.7,
+          0.35
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "motes",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 4,
+      "tint": "#d8ff8a",
+      "blendMode": "normal",
+      "emission": {
+        "count": 4,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "height": 12,
+        "shape": "box",
+        "width": 40
+      },
+      "speed": [
+        20,
+        45
+      ],
+      "direction": -90,
+      "spread": 45,
+      "gravity": {
+        "x": 0,
+        "y": -25
+      },
+      "startScale": [
+        0.0137,
+        0.0254
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    }
+  ]
+}

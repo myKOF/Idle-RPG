@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-wind-crescent",
+  "groups": [
+    {
+      "id": "slash-wind-crescent",
+      "name": "slash-wind-crescent",
+      "layerIds": [
+        "body",
+        "core"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-wind-crescent"
+  ]
+}

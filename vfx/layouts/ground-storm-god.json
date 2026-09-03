@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-storm-god",
+  "groups": [
+    {
+      "id": "ground-storm-god",
+      "name": "ground-storm-god",
+      "layerIds": [
+        "band-a",
+        "band-b",
+        "band-c",
+        "dots",
+        "halo"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-storm-god"
+  ]
+}

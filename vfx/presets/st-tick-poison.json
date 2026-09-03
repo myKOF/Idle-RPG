@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "id": "st-tick-poison",
+  "duration": 0.6,
+  "loop": false,
+  "layers": [
+    {
+      "id": "bubbles",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#4caf2b",
+      "blendMode": "normal",
+      "emission": {
+        "count": 3,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.4,
+        0.6
+      ],
+      "spawn": {
+        "height": 24,
+        "shape": "box",
+        "width": 18
+      },
+      "speed": [
+        18,
+        45
+      ],
+      "direction": -90,
+      "spread": 55,
+      "gravity": {
+        "x": 0,
+        "y": -50
+      },
+      "startScale": [
+        0.0137,
+        0.0254
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.95
+        ],
+        [
+          0.85,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.8,
+          1.1
+        ],
+        [
+          1,
+          1.3
+        ]
+      ]
+    }
+  ]
+}

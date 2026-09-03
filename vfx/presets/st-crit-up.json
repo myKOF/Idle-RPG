@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "id": "st-crit-up",
+  "duration": 0.8,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -3
+      },
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0352
+      },
+      "alpha": 0.55,
+      "tint": "#ff4a08",
+      "blendMode": "add",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.5,
+          0.65
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    },
+    {
+      "id": "ring-outer",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -3
+      },
+      "scale": {
+        "x": 0.1133,
+        "y": 0.043
+      },
+      "alpha": 0.35,
+      "tint": "#ff4a08",
+      "blendMode": "add",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#ff4a08",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.6,
+        1
+      ],
+      "spawn": {
+        "height": 44,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        50,
+        100
+      ],
+      "direction": -90,
+      "spread": 70,
+      "gravity": {
+        "x": 0,
+        "y": -60
+      },
+      "startScale": [
+        0.0078,
+        0.0156
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

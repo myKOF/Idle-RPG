@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-slow",
+  "groups": [
+    {
+      "id": "st-slow",
+      "name": "st-slow",
+      "layerIds": [
+        "ring",
+        "drips"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-slow"
+  ]
+}

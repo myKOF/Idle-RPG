@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-storm-barrier",
+  "groups": [
+    {
+      "id": "ground-storm-barrier",
+      "name": "ground-storm-barrier",
+      "layerIds": [
+        "band-a",
+        "band-b",
+        "band-c",
+        "dots"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-storm-barrier"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-gravity",
+  "groups": [
+    {
+      "id": "burst-gravity",
+      "name": "burst-gravity",
+      "layerIds": [
+        "swirl-a",
+        "swirl-b",
+        "core",
+        "rim",
+        "pull"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-gravity"
+  ]
+}

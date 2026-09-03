@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-starfall-shadow",
+  "groups": [
+    {
+      "id": "ground-starfall-shadow",
+      "name": "ground-starfall-shadow",
+      "layerIds": [
+        "shadow"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-starfall-shadow"
+  ]
+}

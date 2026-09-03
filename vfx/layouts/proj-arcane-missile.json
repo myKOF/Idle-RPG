@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-arcane-missile",
+  "groups": [
+    {
+      "id": "proj-arcane-missile",
+      "name": "proj-arcane-missile",
+      "layerIds": [
+        "glow",
+        "body",
+        "core",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-arcane-missile"
+  ]
+}

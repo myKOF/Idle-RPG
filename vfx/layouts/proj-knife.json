@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-knife",
+  "groups": [
+    {
+      "id": "proj-knife",
+      "name": "proj-knife",
+      "layerIds": [
+        "glow",
+        "blade",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-knife"
+  ]
+}

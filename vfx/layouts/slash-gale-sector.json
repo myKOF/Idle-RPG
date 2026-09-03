@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-gale-sector",
+  "groups": [
+    {
+      "id": "slash-gale-sector",
+      "name": "slash-gale-sector",
+      "layerIds": [
+        "fill",
+        "front",
+        "rim"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-gale-sector"
+  ]
+}

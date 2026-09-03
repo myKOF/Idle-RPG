@@ -57,7 +57,13 @@ test('Canvas 玩家護盾條以護盾最大值為分母，不以最大生命鎖�
 });
 
 test('Canvas 玩家血條、法力條與護盾條位於敵人及所有浮字之上', () => {
-  assert.match(renderer, /world\.addChild\(zone\); world\.addChild\(entity\); world\.addChild\(fx\); world\.addChild\(floatLayer\);\s*world\.addChild\(playerHud\);/);
+  /* 釘的是「相對順序」而不是那一行的字面：VFX Preset 的 presetZone／presetFx
+     之後插在 zone 與 fx 後面，字面比對會因為無關的層而失效，但這條要驗的
+     一直都是「玩家 HUD 在敵人與所有浮字之上」。 */
+  const order = ['zone', 'entity', 'fx', 'floatLayer', 'playerHud']
+    .map(function (name) { return renderer.indexOf('world.addChild(' + name + ')'); });
+  order.forEach(function (at, i) { assert.ok(at > 0, '找不到 world.addChild(' + ['zone', 'entity', 'fx', 'floatLayer', 'playerHud'][i] + ')'); });
+  for (let i = 1; i < order.length; i++) assert.ok(order[i] > order[i - 1], '層順序不對：playerHud 必須最後加入');
   assert.match(renderer, /playerHud:\s*playerHud/);
   assert.match(renderer, /S\.layers\.playerHud\.addChild\(vitals\)/);
   assert.match(renderer, /S\.layers\.playerHud\.addChild\(hpText\)/);

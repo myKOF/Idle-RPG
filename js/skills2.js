@@ -174,16 +174,16 @@ var SKILLS2 = {
   cleave: { name: '迴旋斬', emoji: '🪓', range: '', cd: 15, cost: 25, tiers: [{ name: '迴旋斬', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 200, pctPer: 20 }, goldBase: 100000, goldGrow: 1.5, desc: '對範圍內的所有敵人造成 1 次 {pct}% 物理傷害', vfx: { attack: 'slash-cleave-arc', hit: 'hit-phys' } }, { name: '強化斬', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { range: 15, rangePer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊範圍擴大 {range}%（每級 +1.5% 範圍）' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 50, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '連斬', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { chance: 25, chancePer: 2.5, times: 2, timesPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率連續劈出共 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒' }, { name: '震碎斬', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 12, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '斬擊會向前飛出 {m} 米距離，命中路徑上的敵人', vfx: { attack: 'slash-cleave-arc', hit: 'hit-phys' } }, { name: '迴身四方斬', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 50, pctPer: 5, times: 3, timesPer: 0 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時朝前後左右四個方向各使出 {times} 次斬擊，且傷害額外 +{pct}%（每級 +5% 傷害；與原有傷害乘法計算）', vfx: { attack: 'slash-cleave-sector', hit: 'hit-phys' } }], ult: [{ id: 'voidShatter', name: '虛空碎裂斬', cost: 300, fx: { times: 1, timesPer: 0.2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【迴身四方斬】的攻擊次數 +{times} 次，且物理傷害再額外 +{pct}%' }, { id: 'windChaser', name: '逐風者', cost: 300, fx: { hits: 4, hitsPer: 0.4, pct: 100, pctPer: 10, m: 4, gap: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬每命中 1 次，就在該敵人所在位置生成一道龍捲風：對半徑 {m} 米內的敵人造成 {hits} 段、每段 {pct}% 風系傷害', vfx: { ground: 'ground-tornado-wind' } }, { id: 'stormGodSlash', name: '天霸風神斬', cost: 300, fx: { sec: 8, secPer: -0.5, range: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬範圍擴大 {range}%，並改為被動技能：不再主動施放，改為每 {sec} 秒自動施放 1 次（每級施放間隔 -0.5 秒，仍需裝配在技能列才生效）' }] },
   knife: { name: '飛刀', emoji: '🔪', range: '', cd: 15, cost: 25, tiers: [{ name: '飛刀', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, deg: 60 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化飛刀', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 30, pctPer: 5, count: 1, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在範圍20米內的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化彈射', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 4, countPer: 0.2 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', unlock: { reinc: 0, lv: 350 }, cost: 240, fx: { sec: 0.05, secPer: 0.01 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使飛刀技能冷卻時間 -{sec} 秒' }], ult: [{ id: 'petalStorm', name: '暴雨梨花', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）都會對飛行路徑上的所有敵人造成 {pct}% 技能傷害' }, { id: 'deathReaper', name: '死亡收割者', cost: 300, fx: { pct: 25, pctPer: 2.5, maxStacks: 20, dur: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '飛刀殺死敵人時堆疊【死亡收割】：每層使你造成的傷害提高 {pct}%，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'soulhunterBlade', name: '無限追魂刃', cost: 300, fx: { pct: 50, pctPer: 5, m: 45 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放飛刀時額外射出 1 支無限飛刀，追擊周圍 {m} 米內的任意敵人：傷害提高 {pct}%，彈射次數不受限制；只有一個目標時會貫穿後繞回再次攻擊，不會停留原地重複傷害', vfx: { projectile: 'proj-knife-gold', hit: 'hit-lightning' } }] },
   gale: { name: '疾風斬', emoji: '💨', range: '', cd: 15, cost: 25, tiers: [{ name: '疾風斬', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 250, pctPer: 20, hits: 3 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）', vfx: { attack: 'slash-gale-sector', hit: 'hit-phys' } }, { name: '疾風連斬', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', unlock: { reinc: 0, lv: 200 }, cost: 60, fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', unlock: { reinc: 0, lv: 250 }, cost: 80, fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', unlock: { reinc: 0, lv: 300 }, cost: 100, fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', unlock: { reinc: 0, lv: 350 }, cost: 140, fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '月牙斬', unlock: { reinc: 0, lv: 400 }, cost: 240, fx: { pct: 300, pctPer: 30, m: 5 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%' }], ult: [{ id: 'thunderFlash', name: '霹靂一閃', cost: 300, fx: { mult: 5, multPer: 0.5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬的最後一斬會對你周圍 {m} 米內的敵人造成「單段傷害 × 連擊數 × {mult}」的傷害', vfx: { hit: 'hit-lightning' } }, { id: 'thunderGodSlash', name: '雷神斬', cost: 300, fx: { pct: 200, pctPer: 20, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬附加雷電：每次斬擊命中時降下 1 道落雷，對命中處周圍 {m} 米內的敵人造成 {pct}% 閃電傷害', vfx: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { id: 'chidori', name: '千鳥', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【月牙斬】不再由範圍內的敵人均分傷害，改為每個敵人都受到完整傷害，且傷害再額外 +{pct}%' }] },
-  bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 15, cost: 25, tiers: [{ name: '血刃斬', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒', vfx: { cast: 'curse-bleed', attack: 'slash-bloodblade', hit: 'hit-bleed' } }, { name: '強化流血', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' }, { name: '虛弱', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', unlock: { reinc: 0, lv: 350 }, cost: 80, fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒', vfx: { attack: 'curse-poison', hit: 'hit-poison' } }, { name: '毒霧感染', unlock: { reinc: 0, lv: 400 }, cost: 100, fx: { chance: 30, chancePer: 2, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人', vfx: { projectile: 'proj-poison-drop', hit: 'hit-poison' } }, { name: '死亡屍爆', unlock: { reinc: 0, lv: 450 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }, { name: '零日感染', unlock: { reinc: 0, lv: 500 }, cost: 240, fx: { chance: 20, chancePer: 2, pct: 40, pctPer: 4, m: 20, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%', vfx: { attack: 'burst-zero-infection', hit: 'hit-poison' } }], ult: [{ id: 'slayerDomain', name: '殺神領域', cost: 300, fx: { pct: 2, pctPer: 0.2, healPct: 2, healPctPer: 0.2, m: 24, dur: 6, maxStacks: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的殺神領域：領域內的敵人死亡時堆疊【殺神】，每層使你造成的傷害 +{pct}%，同時回復 {healPct}% 最大生命；最多 {maxStacks} 層，持續 {dur} 秒', vfx: { ground: 'ground-mire' } }, { id: 'venomDomain', name: '萬毒血霧', cost: 300, fx: { pct: 100, pctPer: 10, m: 24, gap: 0.5, dur: 6, maxStacks: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的萬毒領域：領域內的敵人每 {gap} 秒受到 {pct}% 中毒傷害，該中毒持續 {dur} 秒且可堆疊至 {maxStacks} 層', vfx: { attack: 'curse-poison', hit: 'hit-poison', ground: 'ground-mire-poison' } }, { id: 'disintegrate', name: '崩解', cost: 300, fx: { pct: 50, pctPer: 5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '中毒與流血不再有持續時間，塗上的當下就結算完整傷害；結算後爆炸，對周圍 {m} 米內的敵人造成該效果 {pct}% 的傷害', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }] },
+  bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 15, cost: 25, tiers: [{ name: '血刃斬', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒', vfx: { attack: 'slash-bloodblade', hit: 'hit-bleed' } }, { name: '強化流血', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）', vfx: { attack: 'curse-bleed', hit: 'hit-bleed' } }, { name: '虛弱', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', unlock: { reinc: 0, lv: 350 }, cost: 80, fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒', vfx: { attack: 'curse-poison', hit: 'hit-poison' } }, { name: '毒霧感染', unlock: { reinc: 0, lv: 400 }, cost: 100, fx: { chance: 30, chancePer: 2, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人', vfx: { projectile: 'proj-poison-drop', hit: 'hit-poison' } }, { name: '死亡屍爆', unlock: { reinc: 0, lv: 450 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }, { name: '零日感染', unlock: { reinc: 0, lv: 500 }, cost: 240, fx: { chance: 20, chancePer: 2, pct: 40, pctPer: 4, m: 20, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%', vfx: { attack: 'burst-zero-infection', hit: 'hit-poison' } }], ult: [{ id: 'slayerDomain', name: '殺神領域', cost: 300, fx: { pct: 2, pctPer: 0.2, healPct: 2, healPctPer: 0.2, m: 24, dur: 6, maxStacks: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的殺神領域：領域內的敵人死亡時堆疊【殺神】，每層使你造成的傷害 +{pct}%，同時回復 {healPct}% 最大生命；最多 {maxStacks} 層，持續 {dur} 秒', vfx: { ground: 'ground-mire' } }, { id: 'venomDomain', name: '萬毒血霧', cost: 300, fx: { pct: 100, pctPer: 10, m: 24, gap: 0.5, dur: 6, maxStacks: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的萬毒領域：領域內的敵人每 {gap} 秒受到 {pct}% 中毒傷害，該中毒持續 {dur} 秒且可堆疊至 {maxStacks} 層', vfx: { attack: 'curse-poison', hit: 'hit-poison', ground: 'ground-mire-poison' } }, { id: 'disintegrate', name: '崩解', cost: 300, fx: { pct: 50, pctPer: 5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '中毒與流血不再有持續時間，塗上的當下就結算完整傷害；結算後爆炸，對周圍 {m} 米內的敵人造成該效果 {pct}% 的傷害', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }] },
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', range: '', cd: 15, cost: 25, tiers: [{ name: '雙刀亂舞', unlock: { reinc: 0, lv: 250 }, cost: 25, fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對附近 {count} 個敵人各造成 1 次 {pct}% 物理傷害（只有 1 個敵人時全部打向同一目標）', vfx: { attack: 'slash-dual', hit: 'hit-phys' } }, { name: '疾風亂舞', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外攻擊附近 {add} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '強化雙刀', unlock: { reinc: 0, lv: 350 }, cost: 60, fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', unlock: { reinc: 0, lv: 400 }, cost: 80, fx: { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '讓你的暴擊率 +{cr}%、連擊數 +{add}，持續 {sec} 秒' }, { name: '鐵血之舞', unlock: { reinc: 0, lv: 450 }, cost: 100, fx: { pct: 3.5, pctPer: 0.35, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放雙刀亂舞時使你以及附近 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命值 {pct}% 傷害，持續 {sec} 秒' }, { name: '嗜血狂化', unlock: { reinc: 0, lv: 500 }, cost: 140, fx: { pct: 0.25, pctPer: 0.025, sec: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放雙刀亂舞後 {sec} 秒內，生命值或護盾每減少 1%，獲得 {pct}% 技能傷害提升' }, { name: '暴風亂舞', unlock: { reinc: 0, lv: 550 }, cost: 240, fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間無法普攻但可施放技能', vfx: { attack: 'slash-dual', hit: 'hit-phys', ground: 'ground-cyclone-avatar' } }], ult: [{ id: 'doomDance', name: '毀滅之舞', cost: 300, fx: { hpPct: 10, hpPctPer: -0.5, pct: 200, pctPer: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '每施放 1 次雙刀亂舞就失去當下 {hpPct}% 生命值（不會致死），但雙刀亂舞的傷害提高 {pct}%' }, { id: 'flameKagura', name: '火之神樂', cost: 300, fx: { pct: 10, pctPer: 1, gap: 0.5, dur: 6, maxStacks: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '雙刀亂舞附加火焰：每次命中堆疊 1 層【神樂灼焰】，每層每 {gap} 秒造成 {pct}% 火屬性傷害，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'asuraDance', name: '修羅亂舞', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '讓你可以同時裝備兩把雙手武器（主手與副手各一把），且雙手武器的詞條效果提升 {pct}%' }] },
-  counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 5, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, cost: 5, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害', vfx: { attack: 'slash-phys', hit: 'hit-phys' } }, { name: '招架', unlock: { reinc: 0, lv: 350 }, cost: 10, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, cost: 20, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）', vfx: { hit: 'hit-earth' } }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { chance: 50, chancePer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 50, pctPer: 5, count: 2, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }], ult: [{ id: 'holyBody', name: '神聖之體', cost: 300, fx: { count: 10, pct: 400, pctPer: 40, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {count} 次反擊後朝目標射出一顆光彈，對其周圍 {m} 米內的敵人造成 {pct}% 神聖傷害', vfx: { attack: 'burst-holy', hit: 'hit-light' } }, { id: 'indomitable', name: '不屈鬥魂', cost: 300, fx: { pct: 2000, pctPer: 200, m: 30, sec: 5, cd: 60 }, goldBase: 10000000, goldGrow: 1.5, desc: '死亡時對 {m} 米內的所有敵人造成 {pct}% 地系傷害，並在 {sec} 秒後原地復活繼續戰鬥（不算戰鬥失敗）；冷卻 {cd} 秒', vfx: { cast: 'pillar-earth', attack: 'burst-earth', hit: 'hit-earth', ground: 'aura-rock-armor' } }, { id: 'warGodBody', name: '戰神體', cost: 300, fx: { sec: 1, secPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '你在 {sec} 秒內損失的生命百分比，會在接下來 {sec} 秒內的反擊中一併附加到敵人身上' }] },
+  counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 5, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, cost: 5, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害', vfx: { attack: 'slash-phys', hit: 'hit-phys' } }, { name: '招架', unlock: { reinc: 0, lv: 350 }, cost: 10, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, cost: 20, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）', vfx: { hit: 'hit-earth' } }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { chance: 50, chancePer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 50, pctPer: 5, count: 2, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }], ult: [{ id: 'holyBody', name: '神聖之體', cost: 300, fx: { count: 10, pct: 400, pctPer: 40, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {count} 次反擊後朝目標射出一顆光彈，對其周圍 {m} 米內的敵人造成 {pct}% 神聖傷害', vfx: { attack: 'burst-holy', hit: 'hit-light' } }, { id: 'indomitable', name: '不屈鬥魂', cost: 300, fx: { pct: 2000, pctPer: 200, m: 30, sec: 5, cd: 60 }, goldBase: 10000000, goldGrow: 1.5, desc: '死亡時對 {m} 米內的所有敵人造成 {pct}% 地系傷害，並在 {sec} 秒後原地復活繼續戰鬥（不算戰鬥失敗）；冷卻 {cd} 秒', vfx: { attack: 'burst-earth', hit: 'hit-earth', ground: 'aura-rock-armor' } }, { id: 'warGodBody', name: '戰神體', cost: 300, fx: { sec: 1, secPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '你在 {sec} 秒內損失的生命百分比，會在接下來 {sec} 秒內的反擊中一併附加到敵人身上' }] },
   bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 25, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒', vfx: { ground: 'aura-bloodrage' } }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, cost: 140, fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, cost: 240, fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }], ult: [{ id: 'slayerAdvent', name: '殺神降臨', cost: 300, fx: { pct: 100, pctPer: 10, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間普攻傷害 +{pct}%，且同時對目標周圍 {m} 米內的所有敵人造成傷害' }, { id: 'warGodRoll', name: '戰神屠錄', cost: 300, fx: { pct: 4, maxStacks: 100, maxStacksPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間你無法獲得護盾，但每殺死 1 個敵人使你造成的所有傷害 +{pct}%，最多 {maxStacks} 層，持續到你死亡為止' }, { id: 'asuraFist', name: '阿修羅霸王拳', cost: 300, fx: { pct: 500, pctPer: 50, sec: 1, secPer: 0.1, gap: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，你造成的所有傷害 +{pct}%，持續 {sec} 秒', vfx: { ground: 'aura-bloodrage' } }] },
-  fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { pct: 150, pctPer: 15, m: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { cast: 'cast-magic', attack: 'burst-fire', projectile: 'proj-fireball', hit: 'hit-fire' } }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, cost: 60, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', vfx: { hit: 'st-tick-fire' } }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, cost: 80, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害', vfx: { projectile: 'proj-fireball', hit: 'hit-fire-explosion' } }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, cost: 100, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害', vfx: { attack: 'burst-fire', hit: 'hit-fire' } }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, cost: 200, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）' }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, cost: 320, fx: { pct: 250, pctPer: 25, count: 3, m: 15, castM: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）', vfx: { attack: 'burst-fire-shockwave', projectile: 'proj-meteor', hit: 'hit-fire-explosion', ground: 'mark-red' } }], ult: [{ id: 'meteorFall', name: '火殞天落', cost: 300, fx: { count: 8, size: 30, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大殞石' }, { id: 'starfallCataclysm', name: '地爆天星', cost: 300, fx: { gap: 60, gapPer: -3, normal: 90, elite: 40, boss: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，天空落下一顆超巨型殞石：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命', vfx: { attack: 'burst-fire-shockwave', projectile: 'proj-starfall', hit: 'hit-fire', ground: 'ground-starfall-shadow' } }, { id: 'phoenixPrairie', name: '火鳳遼原', cost: 300, fx: { count: 1, balls: 3, ballsPer: 0.3, pct: 30, pctPer: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石數量 +{count} 顆，且每顆殞石落下時伴隨 {balls} 顆火球一同落下；火球與殞石造成的傷害 +{pct}%', vfx: { projectile: 'proj-fireball', hit: 'hit-fire-explosion' } }] },
+  fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { pct: 150, pctPer: 15, m: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { cast: 'cast-magic', attack: 'burst-fire', projectile: 'proj-fireball', hit: 'hit-fire' } }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, cost: 60, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', vfx: { hit: 'st-tick-fire' } }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, cost: 80, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害', vfx: { attack: 'burst-fire', projectile: 'proj-fireball', hit: 'hit-fire-explosion' } }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, cost: 100, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害', vfx: { attack: 'burst-fire', hit: 'hit-fire' } }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, cost: 200, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）' }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, cost: 320, fx: { pct: 250, pctPer: 25, count: 3, m: 15, castM: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）', vfx: { attack: 'burst-fire-shockwave', projectile: 'proj-meteor', hit: 'hit-fire-explosion', ground: 'mark-red' } }], ult: [{ id: 'meteorFall', name: '火殞天落', cost: 300, fx: { count: 8, size: 30, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大殞石' }, { id: 'starfallCataclysm', name: '地爆天星', cost: 300, fx: { gap: 60, gapPer: -3, normal: 90, elite: 40, boss: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，天空落下一顆超巨型殞石：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命', vfx: { attack: 'burst-fire-shockwave', projectile: 'proj-starfall', hit: 'hit-fire', ground: 'ground-starfall-shadow' } }, { id: 'phoenixPrairie', name: '火鳳遼原', cost: 300, fx: { count: 1, balls: 3, ballsPer: 0.3, pct: 30, pctPer: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石數量 +{count} 顆，且每顆殞石落下時伴隨 {balls} 顆火球一同落下；火球與殞石造成的傷害 +{pct}%', vfx: { projectile: 'proj-fireball', hit: 'hit-fire-explosion' } }] },
   firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, cost: 40, fx: { pct: 60, pctPer: 6, hits: 5, m: 3, castM: 30, sec: 2.5 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火焰傷害（全程約 {sec} 秒）', vfx: { hit: 'hit-fire', ground: 'ground-tornado-fire' } }, { name: '龍捲噴發', unlock: { reinc: 0, lv: 100 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, cost: 80, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火焰傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, cost: 100, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒' }, { name: '烈焰衝擊', unlock: { reinc: 0, lv: 250 }, cost: 140, fx: { pct: 100, pctPer: 10, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火龍捲或火牆消失時，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { attack: 'burst-fire-shockwave', hit: 'hit-fire' } }, { name: '重生', unlock: { reinc: 0, lv: 300 }, cost: 200, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火牆', unlock: { reinc: 0, lv: 350 }, cost: 320, fx: { count: 3, hits: 8, pct: 100, pctPer: 10, len: 18, wid: 6, respawn: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為施放 {count} 道火牆（橫向 {len}×{wid} 米），每道造成 {hits} 段 {pct}% 火焰傷害；每道火牆消失後再召喚 1 道（僅能再觸發一次；第 2~6 階效果仍然生效）', vfx: { hit: 'hit-fire', ground: 'ground-firewall' } }], ult: [{ id: 'infernoTempest', name: '烈焰暴風', cost: 300, fx: { mult: 1.2, multPer: 0.8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放的火龍捲（火牆）數量變為 {mult} 倍（小數部分依機率補 1 道）' }, { id: 'eternalInferno', name: '永劫火獄', cost: 300, fx: { m: 20, pct: 200, pctPer: 20, gap: 0.5, sec: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲會在附近 {m} 米內隨機游走，並在移動軌跡上留下火池：每 {gap} 秒造成 {pct}% 火焰傷害，持續 {sec} 秒', vfx: { ground: 'ground-mire-lava' } }, { id: 'dragonDevour', name: '火龍之吞噬', cost: 300, fx: { m: 30, hits: 3, hitsPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '所有火龍捲改為聚攏在你身邊，並持續將 {m} 米內的敵人拉向你，且火龍捲的傷害段數 +{hits} 段' }] },
   firehunt: { name: '火狩', emoji: '☄️', range: '3*3', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火狩', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 100, pctPer: 10, count: 2, sec: 4, m: 8, rps: 0.455, castM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 團火狩環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 火焰傷害，持續 {sec} 秒', vfx: { attack: 'burst-fire', projectile: 'orb-firehunt', hit: 'hit-fire-explosion', ground: 'ground-orbit-ring-fire' } }, { name: '強化火狩', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '火狩的體積與環繞範圍同步擴大 {pct}%' }, { name: '伴生火狩', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { chance: 20, chancePer: 2, m: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '火狩命中時有 {chance}% 機率在其後方 {m} 米處伴生一團火狩（每團只能伴生一次，伴生出的不再伴生）' }, { name: '三重火狩', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 3, pct: 120, pctPer: 12, sec: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '改為召喚 {count} 團火狩，每團造成 {pct}% 火焰傷害，持續 {sec} 秒' }, { name: '極速火狩', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { pct: 25, pctPer: 2.5 }, goldBase: 1500000, goldGrow: 1.5, desc: '火狩的旋轉速度 +{pct}%' }, { name: '再生', unlock: { reinc: 0, lv: 350 }, cost: 200, fx: { sec: 0.4, secPer: 0.04 }, goldBase: 3000000, goldGrow: 1.5, desc: '火狩每擊殺 1 個敵人，全部火狩的持續時間延長 {sec} 秒' }, { name: '狩神之舞', unlock: { reinc: 0, lv: 400 }, cost: 320, fx: { rings: 2, pct: 150, pctPer: 15, sec: 6, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為一次施放 {rings} 道火狩（外圈距內圈 {m} 米、兩道旋轉方向相反），每團造成 {pct}% 火焰傷害、出現時自帶伴生，持續 {sec} 秒' }], ult: [{ id: 'solarRing', name: '烈陽星環', cost: 300, fx: { count: 1, grow: 60, growSec: 4, spin: 30, pct: 50, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩數量 +{count} 團，體積在 {growSec} 秒內逐漸增大最多 {grow}%，環繞速度 +{spin}%，且造成傷害 +{pct}%' }, { id: 'infiniteRing', name: '無限星環', cost: 300, fx: { count: 10, countPer: 1, m: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '火狩改為從自身中心呈螺旋狀向外擴散（在 {m} 米處達到最外圈），並於持續時間內不斷放出火狩，最多額外 +{count} 團' }, { id: 'fireGodDescend', name: '火神降臨', cost: 300, fx: { m: 6, gap: 0.5, pct: 300, pctPer: 30, orbs: 3, orbsPer: 0.3, mps: 24, flyM: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '你的身體被火焰包裹：每 {gap} 秒對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害；普攻同時朝目標射出 {orbs} 顆火狩星環，以 {mps} 米／秒貫穿飛行 {flyM} 米', vfx: { projectile: 'proj-firehunt-ring', hit: 'hit-fire', ground: 'ground-domain-fire' } }] },
   rockarmor: { name: '岩甲術', emoji: '🪨', range: '', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '岩甲術', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { pct: 30, pctPer: 3, sec: 10, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '施放岩甲強化自身，獲得最大生命值 {pct}% 的岩甲護盾，持續 {sec} 秒', vfx: { ground: 'aura-rock-armor' } }, { name: '強化岩甲', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '進一步強化岩甲，額外獲得最大生命值 {pct}% 的岩甲護盾（與第 1 階累加）' }, { name: '岩甲尖刺', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 5, pctPer: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '岩甲護盾存在期間，攻擊你的敵人會遭受你最大生命值 {pct}% 的地系傷害（獨立於反震，兩者各自結算）', vfx: { hit: 'hit-earth' } }, { name: '護盾增幅', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '主動型被動（裝配到技能列即恆時生效）：你獲得的所有護盾效率額外 +{pct}%（乘算）' }, { name: '岩之再生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 生命值即獲得最大生命 {pct}% 的護盾' }, { name: '岩甲增幅', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 0.5, pctPer: 0.05, max: 30, sec: 3 }, goldBase: 3000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，你每減少 1% 護盾即獲得 {pct}% 傷害增幅（乘算），最多疊 {max} 層，持續 {sec} 秒' }, { name: '天地逆返', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '岩甲護盾存在期間，護盾剩餘量越低則傷害減免越高，護盾歸零時最高額外 +{pct}% 傷害減免（乘算）' }], ult: [{ id: 'superRockArt', name: '超重岩之術', cost: 300, fx: { m: 24, sec: 4, pct: 400, pctPer: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放時將巨岩之力壓縮到極致，使 {m} 米內的敵人石化 {sec} 秒：無法行動，且受到的土系傷害額外 +{pct}%', vfx: { attack: 'burst-rock-petrify', hit: 'hit-earth', ground: 'ground-domain-earth' } }, { id: 'adamantBody', name: '金剛不壞', cost: 300, fx: { red: 90, redPer: 0.9, hp: 50, hpPer: 5, spike: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '岩甲護盾存在期間額外獲得 +{red}% 傷害減免（乘算），生命上限與岩甲護盾 +{hp}%，且【岩甲尖刺】的效果額外提高 {spike}%' }, { id: 'gravityField', name: '超重力場', cost: 300, fx: { m: 24, pct: 300, pctPer: 30, stiff: 65, stiffSec: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放岩甲術時同時扭曲 {m} 米內的重力場，使敵人僵化（移動、攻速與傷害 -{stiff}%，持續 {stiffSec} 秒）；岩甲護盾存在期間你的土系傷害額外 +{pct}%', vfx: { attack: 'burst-gravity', hit: 'hit-earth', ground: 'ground-domain-earth' } }] },
   mire: { name: '泥沼術', emoji: '🟤', range: '12*12', dmgType: 'magic', elem: 'earth', cd: 15, cost: 40, tiers: [{ name: '泥沼術', unlock: { reinc: 0, lv: 200 }, cost: 40, fx: { sec: 4, secPer: 0.4, castM: 20, move: 30, aspd: 50 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一片 12×12 米的沼澤（射程 {castM} 米），沼澤中的敵人陷入緩速（移動速度 -{move}%、攻速 -{aspd}%），持續 {sec} 秒', vfx: { ground: 'ground-mire' } }, { name: '虛弱', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '受泥沼緩速影響的敵人，受到的傷害提高 {pct}%' }, { name: '毒沼術', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { dotPct: 25, dotPctPer: 2.5, dotGap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '沼澤持續放出毒氣：沼澤中的敵人每 {dotGap} 秒受到魔法攻擊 {dotPct}% 的毒性傷害', vfx: { ground: 'ground-mire-poison' } }, { name: '毒沼增生', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 40 }, goldBase: 800000, goldGrow: 1.5, desc: '沼澤結束時傳染給 {m} 米內較近的敵人，最多傳染 {add} 次（不足 1 次的部分以機率觸發）' }, { name: '沼澤漫延', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { sec: 6, pct: 40, pctPer: 4, growSec: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '沼澤持續時間提高至 {sec} 秒，且在 {growSec} 秒內逐步擴大，最大擴增 {pct}%' }, { name: '重力泥沼', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { move: 50, aspd: 75, pct: 20, pctPer: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '緩速強化為移動速度 -{move}%、攻速 -{aspd}%，且受影響目標受到的傷害再提高 {pct}%（與第 2 階累加）' }, { name: '熔岩沼', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { sec: 8, pct: 20, pctPer: 2, dotPct: 70, dotPctPer: 7, dotGap: 0.4 }, goldBase: 5000000, goldGrow: 1.5, desc: '沼澤轉變為岩漿：持續時間提高至 {sec} 秒、範圍再擴增 {pct}%（與第 5 階累加），其中的目標每 {dotGap} 秒額外受到魔法攻擊 {dotPct}% 的火焰傷害', vfx: { ground: 'ground-mire-lava' } }], ult: [{ id: 'plagueMire', name: '惡疫魔沼', cost: 300, fx: { gap: 0.35, pct: 200, pctPer: 20, amp: 100, ampPer: 10, sec: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '沼澤範圍內的敵人染上【瘟疫】：每 {gap} 秒受到魔法攻擊 {pct}% 的毒性傷害，且受到的毒性傷害額外 +{amp}%；離開沼澤後仍持續 {sec} 秒' }, { id: 'abyssInferno', name: '深淵火獄', cost: 300, fx: { gap: 2, hits: 8, pct: 100, pctPer: 10, sec: 8, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '熔岩沼每 {gap} 秒對範圍內的敵人噴出 1 道火龍捲（半徑 {m} 米、{hits} 段、每段 {pct}% 火焰傷害），並將命中的敵人屬性改變為火屬性，持續 {sec} 秒', vfx: { hit: 'hit-fire', ground: 'ground-tornado-fire' } }, { id: 'netherMire', name: '黃泉沼', cost: 300, fx: { hpPct: 30, chance: 0.5, chancePer: 0.05, add: 0.5, addPer: 0.05 }, goldBase: 10000000, goldGrow: 1.5, desc: '沼澤範圍內生命值 {hpPct}% 以下的敵人，每次受到傷害有 {chance}% 機率直接被斬殺，且該機率每次受傷再累加 {add}%' }] },
-  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 30, pctPer: 3, manaRed: 30, manaRedPer: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔，承擔的法力降低 {manaRed}%（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命', vfx: { attack: 'beam-light', hit: 'hit-light' } }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 25, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）', vfx: { cast: 'pillar-light' } }], ult: [{ id: 'hallOfRadiance', name: '光耀之堂', cost: 300, fx: { pct: 250, pctPer: 25, conv: 100, convPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '生命與法力回復額外 +{pct}%（乘算），且溢出的生命與法力以 {conv}% 轉為你的生命護盾' }, { id: 'worldRebirth', name: '天地再造', cost: 300, fx: { chance: 15, chancePer: 15, hp: 80, hpPer: -5 }, goldBase: 10000000, goldGrow: 1.5, desc: '被你殺死的普通與菁英敵人有 {chance}% 機率（上限 100%）以 {hp}% 生命重生（同一個敵人只會重生一次）', vfx: { attack: 'pillar-earth', hit: 'hit-earth' } }, { id: 'fateReversal', name: '逆轉乾坤', cost: 300, fx: { max: 2, maxPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '【天地共生】的冷卻結束後可累積復活次數，最多累積 {max} 次（小數四捨五入取整）' }] },
+  earthguard: { name: '大地守護', emoji: '🌍', range: '', dmgType: 'magic', elem: 'earth', cd: 0, cost: 0, tiers: [{ name: '大地守護', unlock: { reinc: 0, lv: 250 }, fx: { pct: 10, pctPer: 1, hp: 20, hpPer: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '主動型被動：自身傷害減免額外 +{pct}%、生命上限額外 +{hp}%（皆為乘算）' }, { name: '大地祝福', unlock: { reinc: 0, lv: 300 }, cost: 25, fx: { pct: 25, pctPer: 2.5 }, goldBase: 200000, goldGrow: 1.5, desc: '全屬性傷害額外 +{pct}%（與所有屬性增傷效果為額外的乘法計算）' }, { name: '生命再生', unlock: { reinc: 0, lv: 350 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '生命回復額外 +{pct}%、吸血額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔力再生', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 100, pctPer: 10, drain: 50, drainPer: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '法力回復額外 +{pct}%、吸魔額外 +{drain}%（皆與原屬性為額外的乘法計算）' }, { name: '魔法盾', unlock: { reinc: 0, lv: 450 }, cost: 25, fx: { pct: 30, pctPer: 3, manaRed: 30, manaRedPer: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '你的生命減少時，其中 {pct}% 改由消耗法力承擔，承擔的法力降低 {manaRed}%（法力不足時只轉換付得起的部分，餘額仍扣生命）' }, { name: '生命反射之盾', unlock: { reinc: 0, lv: 500 }, cost: 25, fx: { pct: 1, pctPer: 0.1, m: 20, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '你每消耗 1% 生命或護盾，{m} 米內的 {count} 個敵人同步損失 {pct}% 最大生命', vfx: { attack: 'beam-light', hit: 'hit-light' } }, { name: '天地共生', unlock: { reinc: 0, lv: 550 }, cost: 25, fx: { pct: 20, pctPer: 8, sec: 5, cd: 60, cdPer: -3 }, goldBase: 5000000, goldGrow: 1.5, desc: '死亡時原地復活並回復 {pct}% 生命，復活後 {sec} 秒無敵；此招自身冷卻 {cd} 秒（顯示於技能格）', vfx: { attack: 'pillar-light', hit: 'hit-light' } }], ult: [{ id: 'hallOfRadiance', name: '光耀之堂', cost: 300, fx: { pct: 250, pctPer: 25, conv: 100, convPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '生命與法力回復額外 +{pct}%（乘算），且溢出的生命與法力以 {conv}% 轉為你的生命護盾' }, { id: 'worldRebirth', name: '天地再造', cost: 300, fx: { chance: 15, chancePer: 15, hp: 80, hpPer: -5 }, goldBase: 10000000, goldGrow: 1.5, desc: '被你殺死的普通與菁英敵人有 {chance}% 機率（上限 100%）以 {hp}% 生命重生（同一個敵人只會重生一次）', vfx: { attack: 'pillar-earth', hit: 'hit-earth' } }, { id: 'fateReversal', name: '逆轉乾坤', cost: 300, fx: { max: 2, maxPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '【天地共生】的冷卻結束後可累積復活次數，最多累積 {max} 次（小數四捨五入取整）' }] },
   chainlightning: { name: '連鎖閃電', emoji: '⚡', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '連鎖閃電', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { pct: 150, pctPer: 15, count: 4, m: 30, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '丟出一道閃電鏈（射程 {castM} 米），在最多 {count} 個目標間彈射（每段彈射範圍 {m} 米），每擊造成 {pct}% 雷電傷害', vfx: { cast: 'cast-magic', projectile: 'bolt-chain-lightning', hit: 'hit-lightning' } }, { name: '強化閃電', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 200000, goldGrow: 1.5, desc: '強化閃電威力，閃電鏈傷害進一步 +{pct}% 雷電傷害' }, { name: '雷鳴術', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '被閃電鏈擊中的敵人額外再受到 {add} 次雷電傷害（不足 1 次的部分以機率觸發）' }, { name: '強化連鎖', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 800000, goldGrow: 1.5, desc: '閃電鏈的彈射數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '電殛擴散', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 25, pctPer: 2.5, count: 1, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '閃電鏈每次彈射時，額外對 {m} 米內的 {count} 個敵人造成閃電鏈 {pct}% 的雷電傷害', vfx: { hit: 'hit-lightning' } }, { name: '雷幻身', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '閃電鏈傷害額外 +{pct}% 雷電傷害；沒有其它彈射目標時可用自身當中繼點繼續彈射（彈到自身不消耗彈射數）', vfx: { ground: 'aura-lightning-relay' } }, { name: '雷電暴風', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { count: 3, add: 1, addPer: 0.1, pct: 100, pctPer: 10, chance: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時發射 {count} 道閃電鏈，彈射數額外 +{add} 次，且閃電傷害額外 +{pct}%；每次彈射有 {chance}% 機率生成 1 條閃電鏈' }], ult: [{ id: 'skyThunderArray', name: '天地雷鎖陣', cost: 300, fx: { gap: 1, gapPer: -0.05, sec: 3, secPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放連鎖閃電後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）' }, { id: 'eternalSuperconductor', name: '永恒超導體', cost: 300, fx: { m: 30, pct: 2, pctPer: 0.2, maxStacks: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外射出 1 道無限彈射的閃電鏈：在自身與 {m} 米內的任意敵人之間往返彈射，每經過自身 1 次使你的雷電傷害 +{pct}%，最多 {maxStacks} 層（持續到你死亡為止）', vfx: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning', ground: 'aura-lightning-relay' } }, { id: 'flyingThunderGod', name: '飛雷神', cost: 300, fx: { gap: 0.35, count: 3, m: 30, r: 12, pct: 200, pctPer: 20, sec: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放後每 {gap} 秒放出 {count} 道閃電，分別打向 {m} 米內最遠的 {count} 個敵人，各對命中處 {r} 米內的所有敵人造成 {pct}% 雷電傷害，持續 {sec} 秒', vfx: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' } }] },
   thunderstrike: { name: '落雷術', emoji: '🌩️', range: '', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '落雷術', unlock: { reinc: 0, lv: 350 }, cost: 40, fx: { pct: 200, pctPer: 20, count: 2, gap: 0.2, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '對 {castM} 米內的 {count} 個目標降下落雷（每道間隔 {gap} 秒），每道造成 {pct}% 雷電傷害', vfx: { cast: 'cast-magic', attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { name: '落雷連鎖', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '攻擊目標額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '雙重落雷', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '對每個目標的攻擊次數額外 +{add} 次（不足 1 次的部分以機率觸發）' }, { name: '閃電增幅', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '進一步強化落雷傷害，額外 +{pct}% 雷電傷害' }, { name: '雷電脈衝', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { sec: 1.5, secPer: 0.15, count: 2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '落雷落地時產生衝擊波，震暈目標本身與 {m} 米內共 {count} 個敵人 {sec} 秒' }, { name: '迅雷重生', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { chance: 20, chancePer: 2, max: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '每道落雷結束後有 {chance}% 機率再產生 1 道落雷（同一次施放最多再生 {max} 道）' }, { name: '殛道落電', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { mult: 2, pct: 50, pctPer: 5, m: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '落雷擊中時對目標 {m} 米內的所有敵人造成傷害；攻擊次數與目標數量 ×{mult}，且命中暈眩中的敵人時傷害額外 +{pct}%（與原傷害乘算）' }], ult: [{ id: 'thunderMatrix', name: '雷電矩陣', cost: 300, fx: { count: 2, countPer: 0.2, pct: 300, pctPer: 30, wid: 3, mps: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術時同時召喚橫向與直向各 {count} 道雷幕橫掃全場（每道寬 {wid} 米、{mps} 米／秒，相鄰兩道由反方向交錯掃過），對掃過的所有敵人各造成 1 次 {pct}% 雷電傷害', vfx: { attack: 'bolt-curtain-lightning', ground: 'ground-thunder-curtain' } }, { id: 'heavenTribulation', name: '雷霆天劫', cost: 300, fx: { m: 30, gap: 0.35, pct: 400, pctPer: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '額外召喚 1 道永久持續的天劫雷電：每 {gap} 秒追擊 {m} 米內生命值最低的敵人，造成 {pct}% 雷電傷害', vfx: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { id: 'eternalThunderPrison', name: '永恒雷獄', cost: 300, fx: { gap: 1, gapPer: -0.05, sec: 3, secPer: 0.3 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放落雷術後每 {gap} 秒自動再施放 1 次，持續 {sec} 秒（自動施放不扣法力、不進冷卻）' }] },
   thunderorb: { name: '雷球', emoji: '🔵', range: '6*6', dmgType: 'magic', elem: 'lightning', cd: 15, cost: 40, tiers: [{ name: '雷球', unlock: { reinc: 0, lv: 400 }, cost: 40, fx: { pct: 50, pctPer: 5, count: 2, gap: 0.35, sec: 2, m: 3, speed: 6, castM: 30 }, goldBase: 100000, goldGrow: 1.5, desc: '召喚 {count} 個雷球緩慢飛向目標（射程 {castM} 米、飛行速度 {speed} 米/秒），途中每 {gap} 秒對半徑 {m} 米內的所有敵人造成 {pct}% 雷電傷害，抵達後停留 {sec} 秒才消散', vfx: { cast: 'cast-magic', hit: 'hit-lightning', ground: 'ground-thunder-orb' } }, { name: '擴增雷球', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 15, pctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '雷球的體積擴大 {pct}%' }, { name: '多重雷球', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '雷球數量額外 +{add} 個（不足 1 個的部分以機率觸發）' }, { name: '環體電球', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { count: 2, pct: 100, pctPer: 10, sec: 6, m: 8, rps: 0.7 }, goldBase: 800000, goldGrow: 1.5, desc: '額外召喚 {count} 個電球環繞自身（環繞半徑 {m} 米、每秒 {rps} 圈），碰到敵人即命中一次，每次造成 {pct}% 雷電傷害，持續 {sec} 秒', vfx: { projectile: 'orb-thunder', hit: 'hit-lightning', ground: 'ground-orbit-ring-lightning' } }, { name: '強化雷球', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 30, pctPer: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '所有雷球與電球的雷電傷害額外 +{pct}%' }, { name: '伴生雷球', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { chance: 15, chancePer: 1.5, sec: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '環體電球命中時有 {chance}% 機率在該處生成一個靜止雷球，持續 {sec} 秒（每次作用只判定一次機率）', vfx: { hit: 'hit-lightning', ground: 'ground-thunder-orb' } }, { name: '雷殞天落', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { count: 2, pct: 300, pctPer: 30, m: 15, sec: 3 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 {count} 個巨大雷球從天而降，各對 {m} 米內的敵人造成 {pct}% 雷電傷害，並以衝擊波擊暈 {sec} 秒', vfx: { attack: 'burst-fire-shockwave', projectile: 'proj-thunder-orb-fall', hit: 'hit-lightning', ground: 'mark-blue' } }], ult: [{ id: 'criticalThunderbolt', name: '臨界雷劫', cost: 300, fx: { count: 4, chanceMult: 2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【伴生雷球】改為一次生成 {count} 顆、觸發機率 ×{chanceMult}，且所有雷球與電球的傷害額外 +{pct}%' }, { id: 'thunderBurst', name: '雷爆', cost: 300, fx: { chance: 15, chancePer: 0.15, bounces: 4, m: 12, pct: 100, pctPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次被雷球命中的敵人有 {chance}% 機率觸發 1 顆小型雷球，在附近 {m} 米範圍內彈射 {bounces} 次，每次造成 {pct}% 雷電傷害', vfx: { hit: 'hit-lightning' } }, { id: 'thunderfallShatter', name: '雷殞天地碎', cost: 300, fx: { scale: 50, gap: 1, pct: 200, pctPer: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '【雷殞天落】的雷殞石體積增大 {scale}%、傷害額外 +{pct}%，並額外每 {gap} 秒不斷再降下 1 顆' }] },
@@ -1273,7 +1273,8 @@ function sgDisintegrate(ent, sid, spec, dur, ult, ctx) {
   var poison = sid === 'sgPoison';
   sgDerivedHit(ent, total, 'bloodblade', floatSel, out, poison ? '☠️' : '🩸', 0);
   sgEmitVfx('bloodblade', [ent], floatSel, {
-    fxKind: 'burst', variant: 'blood-explosion', elem: poison ? 'poison' : null
+    fxKind: 'burst', variant: 'blood-explosion', elem: poison ? 'poison' : null,
+    vfxUlt: 'disintegrate'
   });
   var boom = total * sgUltVal(ult, 'pct') / 100;
   var enemies = (ctx && ctx.enemies) || null;
@@ -1636,7 +1637,8 @@ function sgProjectilePulse(projectile, now, distance, enemies, ctx) {
     var victims = bfEnemiesInArea({ x: cx, y: cy, r: projectile.pulseRadius }, bfLiveList(enemies));
     sgEmitVfx(projectile.gid, victims, projectile.floatSel, {
       fxKind: 'burst', variant: projectile.pulseVariant || 'wind-burst',
-      area: { x: cx, y: cy, r: projectile.pulseRadius }
+      area: { x: cx, y: cy, r: projectile.pulseRadius },
+      vfxGid: 'windblade', vfxTier: 6
     });
     if (!victims.length) continue;
     var before = projectile.out.dmg;
@@ -1953,7 +1955,8 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     fxKind: 'slash', variant: thrustVariant, count: Math.min(8, thrustCount), projectile: isPiercing,
     dur: 0.3,
     lineLength: lineLen, lineWidth: Math.max(28, lineWidth), laneOffsets: laneOffsets,
-    directionCount: directionCount
+    directionCount: directionCount,
+    vfxTier: isEightWay ? 7 : (lvs[5] > 0 ? 6 : (isParallel ? 4 : 1))
   });
 
   /* 命中掛鉤的參數包：只在這裡算一次，直接命中與飛行物兩條路徑共用同一份。 */
@@ -2041,7 +2044,8 @@ function sgCleaveWhirlwind(pEnt, st, whirl, pool, floatSel, out, hitIdx) {
      它掛在 fxKind 'slash' 的分派下，寫成 'aura' 會被兩個渲染器的
      「風系泛用 aura 一律不畫方框」守衛擋掉，變成完全沒有畫面。 */
   sgEmitVfx('cleave', victims, floatSel, {
-    fxKind: 'slash', variant: 'wind-spin', elem: 'wind', dur: 0.35
+    fxKind: 'slash', variant: 'wind-spin', elem: 'wind', dur: 0.35,
+    vfxGid: 'vacuumslash', vfxTier: 4
   });
   var dmg = st.atk * Number(whirl.powerPct) / 100;
   for (var i = 0; i < victims.length; i++) {
@@ -2055,7 +2059,8 @@ function sgCleaveTornado(pEnt, st, cfg, target, floatSel) {
   sgSpawnGround(pEnt, st, 'cleave', {
     tgt: target, floatSel: floatSel, kind: 'windtornado',
     radius: bfMeterPx(cfg.m), dmgVal: st.atk * cfg.pct / 100,
-    hits: cfg.hits, gap: cfg.gap, hitElem: 'wind'
+    hits: cfg.hits, gap: cfg.gap, hitElem: 'wind',
+    vfxUlt: 'windChaser'
   });
 }
 
@@ -2177,7 +2182,8 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   sgEmitVfx('cleave', targets, floatSel, {
     fxKind: 'slash', variant: cleaveVariant, count: Math.min(5, slashes), projectile: isFlying,
     lineLength: cleaveVfxRange, directionRanges: lvs[6] > 0 ? directionRanges : null,
-    rangeScale: cleaveRangeScale, color: '#60a5fa'
+    rangeScale: cleaveRangeScale, color: '#60a5fa',
+    vfxTier: lvs[6] > 0 ? 7 : (isFlying ? 6 : 1)
   });
   var stunChance = lvs[4] > 0 ? sgVal(t[4].fx, 'chance', lvs[4]) : 0;
   var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
@@ -2341,7 +2347,8 @@ function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, cha
     sgEmitVfx('knife', [cur, next], cfg.floatSel, {
       fxKind: 'chain', variant: vfxVariant || 'knife-bounce', count: 1,
       delayMs: delay, travelMs: [0, travel],
-      preserveDeadTargets: preserveDeadOrigin
+      preserveDeadTargets: preserveDeadOrigin,
+      vfxUlt: preserveDeadOrigin ? 'soulhunterBlade' : '', vfxTier: 3
     });
     sgKnifePathHit(cfg, cur, next, delay);
     var res = sgKnifeHit(cfg, next, dmgVal, delay + travel, cfg.execPct, derived);
@@ -2370,7 +2377,8 @@ function sgKnifeSplit(cfg, from, delayMs) {
     if (!tgt || tgt.hp <= 0) continue;
     var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(tgt) * 1000) : 0;
     sgEmitVfx('knife', [from, tgt], cfg.floatSel, {
-      fxKind: 'chain', variant: 'knife-bounce', count: 1, delayMs: delayMs, travelMs: [0, travel]
+      fxKind: 'chain', variant: 'knife-bounce', count: 1, delayMs: delayMs, travelMs: [0, travel],
+      vfxTier: 3
     });
     sgKnifePathHit(cfg, from, tgt, delayMs);
     sgKnifeHit(cfg, tgt, dmg, delayMs + travel, cfg.execPct, true);
@@ -2391,7 +2399,8 @@ function sgKnifeWaltz(pEnt, st, cfg, waltz) {
     fieldKey: 'knife-waltz', statusId: 'sgKnifeWaltz',
     /* 沿用虛空斬的圓盤（同樣是「繞著自己轉的一圈刀刃」），屬性改物理＝配色轉為中性；
        另立新變體會在兩個渲染器都沒有對應分支時整個沒有畫面。 */
-    auraVariant: 'void-disc', hitVariant: 'knife-strike', hitElem: 'phys'
+    auraVariant: 'void-disc', hitVariant: 'knife-strike', hitElem: 'phys',
+    vfxGid: 'vacuumslash', vfxTier: 7
   });
 }
 
@@ -2418,7 +2427,8 @@ function sgKnifeSoulhunter(cfg, ult) {
   var dmg = cfg.dmgVal * (1 + sgUltVal(ult, 'pct') / 100);
   var travel = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(first) * 1000) : 0;
   sgEmitVfx('knife', [first], cfg.floatSel, {
-    fxKind: 'projectile', variant: 'knife-soulhunter', count: 1, travelMs: [travel]
+    fxKind: 'projectile', variant: 'knife-soulhunter', count: 1, travelMs: [travel],
+    vfxUlt: 'soulhunterBlade'
   });
   sgKnifePathHit(cfg, null, first, 0);
   sgKnifeHit(cfg, first, dmg, travel, cfg.execPct, false);
@@ -2430,7 +2440,8 @@ function sgKnifeSoulhunter(cfg, ult) {
     var returnTravel = Math.max(120, travel || 0);
     sgEmitVfx('knife', [first], cfg.floatSel, {
       fxKind: 'chain', variant: 'knife-soulhunter', count: 1,
-      delayMs: travel, travelMs: [returnTravel], loopReturn: true
+      delayMs: travel, travelMs: [returnTravel], loopReturn: true,
+      vfxUlt: 'soulhunterBlade'
     });
     sgKnifeHit(cfg, first, dmg, travel + returnTravel, cfg.execPct, false);
     return;
@@ -2553,7 +2564,8 @@ function sgGaleTornado(cfg, target) {
     tgt: target, floatSel: cfg.floatSel, kind: 'windtornado',
     radius: bfMeterPx(Number(spec.m) || 0), dmgVal: cfg.dmgVal * (Number(spec.pct) || 0) / 100,
     hits: Math.max(1, Math.floor(Number(spec.hits) || 1)), gap: Number(spec.gap) || 0.4,
-    hitElem: 'wind'
+    hitElem: 'wind',
+    vfxGid: 'cleave', vfxUlt: 'windChaser'
   });
 }
 
@@ -2565,7 +2577,8 @@ function sgGaleThunderBolt(cfg, target) {
   if (!victims.length) return;
   sgEmitVfx('gale', victims, cfg.floatSel, {
     fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
-    area: (typeof sgAreaAround === 'function') ? sgAreaAround(target, r) : null
+    area: (typeof sgAreaAround === 'function') ? sgAreaAround(target, r) : null,
+    vfxUlt: 'thunderGodSlash'
   });
   var dmg = cfg.dmgVal * (Number(cfg.bolt.pct) || 0) / 100;
   for (var i = 0; i < victims.length; i++) {
@@ -2689,7 +2702,8 @@ function sgGaleThunderFlash(cfg, ult, hits) {
     : (cfg.pool || []).filter(function (e) { return e && e.hp > 0; });
   if (!victims.length) return;
   sgEmitVfx('gale', victims, cfg.floatSel, {
-    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', dur: 0.4
+    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', dur: 0.4,
+    vfxUlt: 'thunderFlash'
   });
   var dmg = cfg.dmgVal * Math.max(1, hits) * Math.max(0, sgUltVal(ult, 'mult'));
   for (var i = 0; i < victims.length; i++) {
@@ -2737,13 +2751,14 @@ function sgBloodbladeSlash(pEnt, st, g, lvs, pool, primary, floatSel, out, lg, d
   var dotCtx = { enemies: pool, floatSel: floatSel, out: out };
   // 流血：每 dotGap 秒造成技能傷害 dotPct% 的傷害
   sgApplyBloodbladeDot(primary, 'sgBleed', sgBloodbladeDotSpec(st, lvs, t, 'sgBleed'), 0, dotCtx);
-  sgEmitVfx('bloodblade', [primary], floatSel, { fxKind: 'curse', variant: 'bleed' });
+  sgEmitVfx('bloodblade', [primary], floatSel, { fxKind: 'curse', variant: 'bleed', vfxTier: 2 });
 
   // 血毒刃：流血的同時中毒（毒屬性）
   if (lvs[3] > 0) {
     sgApplyBloodbladeDot(primary, 'sgPoison', sgBloodbladeDotSpec(st, lvs, t, 'sgPoison'), 0, dotCtx);
     sgEmitVfx('bloodblade', [primary], floatSel, {
-      fxKind: 'curse', variant: 'poison', elem: 'poison'
+      fxKind: 'curse', variant: 'poison', elem: 'poison',
+      vfxTier: 4
     });
   }
 }
@@ -2792,7 +2807,8 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   var targets = bfRandomOthers(null, pool, strikes, 0, null);
   if (!targets.length) targets = [primary];
   sgEmitVfx('dualdance', targets, floatSel, {
-    fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'dual-storm' : 'dual-slash'
+    fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'dual-storm' : 'dual-slash',
+    vfxTier: storm ? 7 : 1
   });
   var kaguraSpec = sgKaguraSpec(sgUlt('dualdance', 'flameKagura'), dmgVal);
   var kills = 0;
@@ -2836,7 +2852,8 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
     SKILL2_RT.storm = { until: GT + stormDur, nextAt: GT + stormGap, gap: stormGap, tgt: null };
     applyBuff(pEnt, 'sgStorm', 1, stormDur, 'sgStorm');
     sgEmitVfx('dualdance', targets, floatSel, {
-      fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, stormDur)
+      fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, stormDur),
+      vfxTier: 7
     });
   }
   // 傳奇【狂舞】與【殺千刀】：兩者都只在「本次施放之前化身就已經在跑」時才作用。
@@ -2921,7 +2938,7 @@ function skills2TryDeathDefer(pEnt) {
   SKILL2_RT.deathDefer = { until: GT + sec };
   if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) pEnt.hp = Math.max(1, pEnt.hp);
   applyStatus(pEnt, 'sgDeathDefer', { val: Math.max(0, Number(spec.pct) || 0), dur: sec });
-  sgEmitPlayerVfx('dualdance', 'pv-float', { fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, sec) });
+  sgEmitPlayerVfx('dualdance', 'pv-float', { fxKind: 'aura', variant: 'cyclone', dur: Math.min(6, sec), vfxTier: 7 });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '不屈之誓!', 'buff');
   if (typeof blog === 'function') {
     blog('🕯️ 【不屈之誓】你的死亡被推遲 ' + sec + ' 秒——這段時間你造成的傷害大幅提高！', 'info');
@@ -3110,7 +3127,8 @@ function sgBurnBlast(ent, enemies, ctx) {
   var out = { killed: false, dmg: 0, crit: false };
   var per = amount * sgVal(fx, 'pct', lvs[4]) / 100;
   sgEmitVfx('fireball', victims, (ctx && ctx.floatSel) || 'mv-float', {
-    fxKind: 'burst', variant: 'fire-blast', elem: 'fire'
+    fxKind: 'burst', variant: 'fire-blast', elem: 'fire',
+    vfxTier: 5
   });
   for (var i = 0; i < victims.length; i++) {
     sgDerivedHit(victims[i], per, 'fireball', (ctx && ctx.floatSel) || 'mv-float', out, '💥', 0);
@@ -3167,7 +3185,8 @@ function sgTickBurn(dt, ctx) {
   }
   if (tickedNow) {
     sgEmitVfx('fireball', tickedNow, ctx.floatSel, {
-      fxKind: 'impact', variant: 'burn-tick', elem: 'fire'
+      fxKind: 'impact', variant: 'burn-tick', elem: 'fire',
+      vfxRoles: statusVfxRoles('sgBurn', 'tick')
     });
   }
 }
@@ -3286,10 +3305,12 @@ function sgQueueFireballSplitProjectiles(pEnt, st, splitTargets, splitDmgVal,
     var plan = sgFireballProjectilePlan(target);
     sgEmitVfx('fireball', [target], floatSel, {
       fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
-      travelMs: [plan.travelMs], projectile: true
+      travelMs: [plan.travelMs], projectile: true,
+      vfxTier: 3
     });
     sgEmitVfx('fireball', [target], floatSel, {
-      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs
+      fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', delayMs: plan.travelMs,
+      vfxTier: 3
     });
     sgQueueFlyingProjectile(pEnt, st, 'fireball', splitDmgVal,
       plan.origin, plan.angle, plan.length, floatSel, [target], {
@@ -3373,11 +3394,13 @@ function sgFireballPhoenixBalls(m, spec, poolSpec) {
     if (!tgt || tgt.hp <= 0) continue;
     sgEmitVfx('fireball', [tgt], m.floatSel, {
       fxKind: 'rain', variant: 'fireball-small', elem: 'fire', count: 1,
-      area: sgAreaAround(tgt, spec.blastPx), travelMs: [timing.travelMs]
+      area: sgAreaAround(tgt, spec.blastPx), travelMs: [timing.travelMs],
+      vfxUlt: 'phoenixPrairie'
     });
     sgQueueMeteor(m.pEnt, m.st, spec.dmgVal, tgt, m.pool, spec.blastPx, m.burnSpec,
       m.floatSel, m.out, GT + timing.fallMs / 1000, {
-        variant: 'fire-explosion', bonusPctFn: m.bonusPctFn, onImpact: onImpact
+        variant: 'fire-explosion', bonusPctFn: m.bonusPctFn, onImpact: onImpact,
+        vfxUlt: 'phoenixPrairie'
       });
   }
 }
@@ -3443,8 +3466,8 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (poolSpec) sgSpawnFirePool(m.pEnt, m.st, 'fireball', poolSpec, m.floatSel, m.target, null);
     if (phoenixSpec) sgFireballPhoenixBalls(m, phoenixSpec, poolSpec);
   } : null;
-  var meteorExtra = (onMeteorImpact || bonusFn)
-    ? { bonusPctFn: bonusFn, onImpact: onMeteorImpact } : null;
+  /* 殞石＝第 7 階那一列的畫面，落地爆點要讀同一列的受擊特效，因此列標記一律帶上。 */
+  var meteorExtra = { bonusPctFn: bonusFn, onImpact: onMeteorImpact, vfxTier: 7 };
 
   for (var v = 0; v < volleys; v++) {
     var meteorTarget = meteor ? nextMeteorTarget() : primary;
@@ -3459,7 +3482,8 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (meteor) {
       sgEmitVfx('fireball', [meteorTarget], floatSel, {
         fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1,
-        area: area, delayMs: castDelay, travelMs: [travelMs]
+        area: area, delayMs: castDelay, travelMs: [travelMs],
+        vfxTier: 7
       });
     } else {
       sgEmitVfx('fireball', [primary], floatSel, {
@@ -3565,7 +3589,8 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     radiusPx: bfMeterPx(sgVal(t[0].fx, 'm', lvs[0])) * scale,  // 火池大小＝火龍捲自己的判定範圍
     gap: Number(ultInferno.def.fx.gap) || 0.5,
     sec: sgUltVal(ultInferno, 'sec'),
-    dmgVal: dmgVal * sgUltVal(ultInferno, 'pct') / 100
+    dmgVal: dmgVal * sgUltVal(ultInferno, 'pct') / 100,
+    vfxUlt: 'eternalInferno'
   } : null;
   // 傳奇【爆燃】：每段傷害使該敵人受到的燃燒傷害提高（放大量由特效參數決定）
   var burnAmp = (lg.firepillarBurnAmp && Number(lg.firepillarBurnAmp.pct) > 0) ? {
@@ -3577,7 +3602,7 @@ function sgCastFirepillar(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     // 目標不足時多出來的火龍捲疊在主目標身上（比照雙刀亂舞「只有 1 個敵人就都打同一個」）
     var spot = spots[i % spots.length];
     sgSpawnGround(pEnt, st, 'firepillar', {
-      kind: wall ? 'wall' : 'pillar', tgt: spot, floatSel: floatSel,
+      kind: wall ? 'wall' : 'pillar', tgt: spot, floatSel: floatSel, vfxTier: wall ? 7 : 1,
       from: homePos ? { x: homePos.x, y: homePos.y } : null,
       radius: bfMeterPx(sgVal(t[0].fx, 'm', lvs[0])) * scale,
       length: bfMeterPx(Number(t[6].fx.len) || 18) * scale,
@@ -3606,7 +3631,8 @@ function sgSpawnFirePool(pEnt, st, gid, spec, floatSel, tgt, from) {
     kind: 'firepool', tgt: tgt || null, from: from || null, floatSel: floatSel,
     radius: Number(spec.radiusPx) > 0 ? Number(spec.radiusPx) : bfMeterPx(Number(spec.m) || 6),
     dmgVal: spec.dmgVal, hits: Math.max(1, Math.round(sec / gap)), gap: gap,
-    hitElem: 'fire'
+    hitElem: 'fire',
+    vfxUlt: spec.vfxUlt || ''
   });
 }
 
@@ -4102,7 +4128,8 @@ function sgGroundExpire(f, enemies, ctx) {
     /* 即使範圍內暫時沒有敵人，也要播出場域消失的爆炸衝擊波。 */
     sgEmitVfx(f.gid, impactVictims, f.floatSel, {
       fxKind: 'burst', variant: 'firepillar-impact', elem: 'fire',
-      area: f.pos ? { x: f.pos.x, y: f.pos.y, r: impactRadius } : null
+      area: f.pos ? { x: f.pos.x, y: f.pos.y, r: impactRadius } : null,
+      vfxTier: 5
     });
     for (var ii = 0; ii < impactVictims.length; ii++) {
       sgHitOne(f.pEnt, f.st, impactVictims[ii], impactDmg, f.gid, f.floatSel,
@@ -4128,7 +4155,8 @@ function sgGroundExpire(f, enemies, ctx) {
     /* 重生／再召喚出來的那一道與原本那道是同一個技能的同一次施放，
        因此移動、軌跡火池、燃燒放大與拉近全部原樣帶過去。 */
     chaseM: f.chaseM, wanderM: f.wanderM, speed: f.speed,
-    trail: f.trail, burnAmp: f.burnAmp, pullM: f.pullM
+    trail: f.trail, burnAmp: f.burnAmp, pullM: f.pullM,
+    vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid
   });
 }
 
@@ -4146,7 +4174,8 @@ function sgGroundPulse(f, enemies, ctx) {
     var area = { x: f.pos.x, y: f.pos.y, r: f.pulseRadius };
     var victims = bfEnemiesInArea(area, bfLiveList(enemies));
     sgEmitVfx(f.gid, victims, f.floatSel, {
-      fxKind: 'burst', variant: f.pulseVariant || 'wind-burst', area: area
+      fxKind: 'burst', variant: f.pulseVariant || 'wind-burst', area: area,
+      vfxGid: 'windblade', vfxTier: 6
     });
     if (!victims.length) continue;
     var out = { killed: false, dmg: 0, crit: false };
@@ -4532,7 +4561,8 @@ function sgOrbitStep(f, enemies, dt, ctx) {
   for (var si = 0; si < strikes.length; si++) f.onStrike(f, strikes[si], sgOrbitPos(strikes[si], center), ctx);
   if (struck.length) {
     sgEmitVfx(f.gid, struck, f.floatSel, {
-      fxKind: 'impact', variant: f.hitVariant, elem: f.hitElem, dur: 0.35
+      fxKind: 'impact', variant: f.hitVariant, elem: f.hitElem, dur: 0.35,
+      vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid
     });
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
@@ -4625,7 +4655,8 @@ function sgFirehuntDetonate(f, victim, live, out) {
     for (var i = 0; i < near.length; i++) if (victims.indexOf(near[i]) < 0) victims.push(near[i]);
   }
   sgEmitVfx('firehunt', victims, f.floatSel, {
-    fxKind: 'burst', variant: 'firehunt-detonate', elem: 'fire', dur: 0.5
+    fxKind: 'burst', variant: 'firehunt-detonate', elem: 'fire', dur: 0.5,
+    vfxTier: 1
   });
   for (var v = 0; v < victims.length; v++) {
     sgHitOne(f.pEnt, f.st, victims[v], spec.dmgVal, 'firehunt', f.floatSel, out, sgStaggerMs(v));
@@ -4757,10 +4788,12 @@ function sgFirehuntLaunch(ctx, spec) {
     ? Math.max(1, Math.round(bfTravelSeconds(tgt) * 1000)) : 0;
   sgEmitVfx('firehunt', [tgt], ctx.floatSel, {
     fxKind: 'projectile', variant: 'fireball-small', elem: 'fire', count: 1,
-    travelMs: [travelMs], projectile: true
+    travelMs: [travelMs], projectile: true,
+    vfxGid: 'fireball', vfxTier: 3
   });
   sgEmitVfx('firehunt', victims, ctx.floatSel, {
-    fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', dur: 0.5, delayMs: travelMs
+    fxKind: 'burst', variant: 'fire-explosion', elem: 'fire', dur: 0.5, delayMs: travelMs,
+    vfxGid: 'fireball', vfxTier: 3
   });
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
@@ -4797,7 +4830,8 @@ function sgTickFireGod(ctx, dt) {
     SKILL2_RT.fireGodVfxAt = GT + SG_DOMAIN_VFX_SEC;
     sgEmitPlayerVfx('firehunt', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'fire', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2 }
+      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2 },
+      vfxUlt: 'fireGodDescend'
     });
   }
   if (!(dmgVal > 0)) return;
@@ -4869,7 +4903,8 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
     sgEmitVfx('firehunt', [target], floatSel, {
       fxKind: 'projectile', variant: 'firehunt-ring', elem: 'fire', count: 1,
       travelMs: [travelMs], projectile: true, delayMs: Math.round(beginSec * 1000),
-      angle: angle, lineLength: flyPx
+      angle: angle, lineLength: flyPx,
+      vfxUlt: 'fireGodDescend'
     });
   }
   return orbs;
@@ -4992,7 +5027,8 @@ function sgRockFieldAura(floatSel, radius) {
   if (!(radius > 0)) return;
   sgEmitPlayerVfx('rockarmor', floatSel, {
     fxKind: 'aura', variant: 'follow-aura', elem: 'earth', dur: SG_DOMAIN_VFX_SEC * 2,
-    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2 }
+    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2 },
+    vfxUlt: (sgRockFieldUlt() || {}).id || ''
   });
 }
 
@@ -5008,7 +5044,8 @@ function sgRockPetrifyApply(victims, u, floatSel) {
   var sec = Math.max(0.5, Number(u.def.fx.sec) || 4);
   var pct = Math.max(0, sgUltVal(u, 'pct'));
   sgEmitVfx('rockarmor', victims, floatSel, {
-    fxKind: 'burst', variant: 'rock-petrify', elem: 'earth', dur: 0.8
+    fxKind: 'burst', variant: 'rock-petrify', elem: 'earth', dur: 0.8,
+    vfxUlt: 'superRockArt'
   });
   for (var i = 0; i < victims.length; i++) {
     /* 石化標記照塗（增傷不是控場，不受控場免疫影響）；行動限制則交給暈眩，
@@ -5024,7 +5061,8 @@ function sgRockGravityApply(victims, u, floatSel) {
   var sec = Math.max(0.5, Number(u.def.fx.stiffSec) || 5);
   var pct = Math.max(0, Math.min(95, Number(u.def.fx.stiff) || 0));
   sgEmitVfx('rockarmor', victims, floatSel, {
-    fxKind: 'burst', variant: 'gravity-field', elem: 'earth', dur: 0.8
+    fxKind: 'burst', variant: 'gravity-field', elem: 'earth', dur: 0.8,
+    vfxUlt: 'gravityField'
   });
   for (var i = 0; i < victims.length; i++) applyStatus(victims[i], 'sgStiffen', { val: pct, dur: sec });
 }
@@ -5210,7 +5248,7 @@ function sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel) {
     var spikeVal = st.hp * sgVal(t[2].fx, 'pct', lvs[2]) / 100 * (1 + spikeUp / 100);
     var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
     var spikeOut = { killed: false, dmg: 0, crit: false };
-    sgEmitVfx('rockarmor', [mEnt], eSel, { fxKind: 'impact', variant: 'rock-spike', elem: 'earth' });
+    sgEmitVfx('rockarmor', [mEnt], eSel, { fxKind: 'impact', variant: 'rock-spike', elem: 'earth', vfxTier: 3 });
     sgHitOne(pEnt, st, mEnt, spikeVal, 'rockarmor', eSel, spikeOut, 0);
     if (spikeOut.killed && typeof onFieldDeaths === 'function' &&
         typeof FIELD !== 'undefined' && FIELD && FIELD.player === pEnt) {
@@ -5293,7 +5331,8 @@ function sgCastMire(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     hits: hits, gap: SG_MIRE_TICK_SEC,
     growTo: growTo, growSec: lvs[4] > 0 ? Math.max(0.1, Number(t[4].fx.growSec) || 4) : 0,
     respawnLeft: spread,
-    mire: sgMireSpec(g, lvs, st)
+    mire: sgMireSpec(g, lvs, st),
+    vfxTier: lvs[6] > 0 ? 7 : (lvs[2] > 0 ? 3 : 1)
   });
 }
 
@@ -5375,7 +5414,8 @@ function sgMireGroundTick(f, victims, ctx) {
     : (poison ? 'mire-poison' : 'mire');
   sgEmitVfx('mire', victims, f.floatSel, {
     fxKind: 'aura', variant: mireVariant,
-    elem: m.lava && !poison ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f)
+    elem: m.lava && !poison ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f),
+    vfxTier: m.lava ? 7 : (poison ? 3 : 1)
   });
   if (!victims.length) return;
   var hold = f.gap * 2;   // 只給兩跳：離開沼澤後最多再殘留一個節拍
@@ -5424,7 +5464,8 @@ function sgMireInfernoTick(f, victims) {
     kind: 'lavapillar', tgt: spot, floatSel: f.floatSel,
     radius: spec.radiusPx,
     dmgVal: spec.dmgVal, hits: spec.hits, gap: spec.gap / spec.hits,
-    hitElem: 'fire'
+    hitElem: 'fire',
+    vfxUlt: 'abyssInferno'
   });
 }
 
@@ -5442,7 +5483,8 @@ function sgMireGroundExpire(f, enemies, ctx) {
     hits: f.hits, gap: f.gap,
     growTo: f.growTo, growSec: f.growSec,
     respawnLeft: f.respawnLeft - 1,
-    mire: f.mire
+    mire: f.mire,
+    vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid
   });
 }
 
@@ -5734,7 +5776,7 @@ function sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel) {
   var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
   var pctOfMax = lostPct * sgVal(fx, 'pct', lvs[5]) / 100;
   var killed = false;
-  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'light' });
+  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'light', vfxTier: 6 });
   for (var i = 0; i < victims.length; i++) {
     var e = victims[i];
     var amount = Math.max(1, Math.round((Number(e.maxHp) || 0) * pctOfMax / 100));
@@ -5832,7 +5874,7 @@ function skills2TryRebirth(pEnt) {
   /* 傳奇【不滅意志】要知道「這段無敵是天地共生給的」——玩家身上的無敵可能來自
      潛力、神鑄或【大地之心】，那幾種不該被擊殺延長。 */
   SKILL2_RT.rebirthInvuln = GT + invulnSec;
-  sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: 1.2 });
+  sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: 1.2, vfxTier: 7 });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '天地共生!', 'buff');
   if (typeof blog === 'function') {
     var left = (SKILL2_RT.rebirth && skills2RebirthMaxCharges() > 1)
@@ -5903,7 +5945,8 @@ function sgEarthguardRebirthEnemy(mEnt, floatSel) {
   /* preserveDeadTargets：這一刻牠的 hp 已經被寫回去了，但顯示層那一側仍在播死亡動畫，
      特效必須指名這隻屍體才看得到「牠被重新塑形」。 */
   sgEmitVfx('earthguard', [mEnt], floatSel || 'mv-float', {
-    fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1, preserveDeadTargets: true
+    fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1, preserveDeadTargets: true,
+    vfxUlt: 'worldRebirth'
   });
   return true;
 }
@@ -6028,7 +6071,8 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       }
       if (splash.length) {
         sgEmitVfx(gid, splash, floatSel, {
-          fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3
+          fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3,
+          vfxTier: 5
         });
       }
     }
@@ -6039,7 +6083,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       visited = [];
       next = sgChainNextTarget(null, pool, visited, cfg.hopPx);
       if (next) {
-        sgEmitPlayerVfx(gid, floatSel, { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35 });
+        sgEmitPlayerVfx(gid, floatSel, { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35, vfxTier: 6 });
       }
     }
     if (!next) break;
@@ -6075,7 +6119,8 @@ function sgChainOverload(cfg, target, pool, delayMs) {
   var victims = sgEnemiesAround(target, pool, cfg.overloadPx);
   if (!victims.length) return;
   sgEmitVfx('chainlightning', victims, cfg.floatSel, {
-    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.4
+    fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.4,
+    vfxTier: 5
   });
   for (var i = 0; i < victims.length; i++) {
     sgDerivedHit(victims[i], cfg.overloadDmg, 'chainlightning', cfg.floatSel, cfg.out, '⚡',
@@ -6108,7 +6153,7 @@ function sgChainSuperconductor(pEnt, st, cfg, pool, floatSel, out) {
   var maxStacks = Math.max(1, Math.floor(Number(u.def.fx.maxStacks) || 100));
   var delayMs = 0;
   sgEmitPlayerVfx('chainlightning', floatSel,
-    { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35 });
+    { fxKind: 'aura', variant: 'lightning-relay', elem: 'lightning', dur: 0.35, vfxUlt: 'eternalSuperconductor' });
   for (var k = 0; k < order.length; k++) {
     var tgt = order[k];
     if (!tgt || tgt.hp <= 0) continue;
@@ -6116,7 +6161,8 @@ function sgChainSuperconductor(pEnt, st, cfg, pool, floatSel, out) {
     /* 每一跳都是「自身 → 敵人」，因此特效恆是單目標的雷鏈（起點就是玩家）。 */
     sgEmitVfx('chainlightning', [tgt], floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1,
-      delayMs: delayMs, travelMs: [hopMs], preserveDeadTargets: true
+      delayMs: delayMs, travelMs: [hopMs], preserveDeadTargets: true,
+      vfxUlt: 'eternalSuperconductor'
     });
     delayMs += hopMs;
     sgHitOne(pEnt, st, tgt, cfg.dmgVal, 'chainlightning', floatSel, out, delayMs);
@@ -6184,11 +6230,13 @@ function sgTickFlyingThunder(ctx, dt) {
     if (!victims.length) victims = [farthest[i]];
     sgEmitVfx('chainlightning', [farthest[i]], ctx.floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1, delayMs: sgStaggerMs(i),
-      preserveDeadTargets: true
+      preserveDeadTargets: true,
+      vfxUlt: 'flyingThunderGod'
     });
     sgEmitVfx('chainlightning', victims, ctx.floatSel, {
       fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning',
-      delayMs: sgStaggerMs(i), dur: 0.3, area: sgAreaAround(farthest[i], burstPx)
+      delayMs: sgStaggerMs(i), dur: 0.3, area: sgAreaAround(farthest[i], burstPx),
+      vfxUlt: 'flyingThunderGod'
     });
     for (var v = 0; v < victims.length; v++) {
       sgHitOne(ctx.pEnt, st, victims[v], dmgVal, 'chainlightning', ctx.floatSel, out, sgStaggerMs(i));
@@ -6434,7 +6482,8 @@ function sgThunderMatrix(pEnt, st, g, pool, floatSel, out) {
            （否則以這個節拍頻率會變成「每一拍全額命中」的傷害爆炸）。 */
         contact: true,
         gap: gap, hits: hits, tickAtStart: true,
-        startDelaySec: i * SG_MATRIX_STAGGER_SEC
+        startDelaySec: i * SG_MATRIX_STAGGER_SEC,
+        vfxUlt: 'thunderMatrix'
       });
     }
   }
@@ -6476,7 +6525,8 @@ function sgTickHeavenTribulation(ctx, dt) {
   if (!st) return;
   var out = { killed: false, dmg: 0, crit: false };
   sgEmitVfx('thunderstrike', [target], ctx.floatSel, {
-    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1, dur: 0.35
+    fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1, dur: 0.35,
+    vfxUlt: 'heavenTribulation'
   });
   sgHitOne(ctx.pEnt, st, target,
     sgGroupBaseStat(SKILLS2.thunderstrike, st) * sgUltVal(u, 'pct') / 100,
@@ -6592,7 +6642,7 @@ function sgCastThunderorb(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       dmgVal: sgGroupBaseStat(g, st) * (sgVal(ofx, 'pct', lvs[3]) + ampPct) / 100 * ultMult,
       lifeSec: Math.max(0.5, Number(ofx.sec) || 6),
       bodyR: bfMeterPx(Math.max(body.length, body.width) / 2) * scale,
-      statusId: 'sgThunderOrb', auraVariant: 'thunder-orbit',
+      statusId: 'sgThunderOrb', auraVariant: 'thunder-orbit', vfxTier: 4,
       hitVariant: 'thunder-burst', hitElem: 'lightning',
       /* 【伴生雷球】：命中處留下靜止雷球（傷害與體積比照飛行雷球）。 */
       onStrike: companionChance > 0 ? function (f, orb, pos) {
@@ -6647,11 +6697,12 @@ function sgDropThunderfall(pEnt, st, spec, n, pool, primary, floatSel, out) {
     var castDelay = f * SG_METEOR_INTERVAL_MS;
     sgEmitVfx('thunderorb', [target], floatSel, {
       fxKind: 'rain', variant: 'thunder-fall', elem: 'lightning', count: 1,
-      area: sgAreaAround(target, spec.radius), delayMs: castDelay, travelMs: [timing.travelMs]
+      area: sgAreaAround(target, spec.radius), delayMs: castDelay, travelMs: [timing.travelMs],
+      vfxTier: 7
     });
     sgQueueMeteor(pEnt, st, spec.dmgVal, target, pool, spec.radius, null, floatSel, out,
       GT + (castDelay + timing.fallMs) / 1000, {
-        gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning',
+        gid: 'thunderorb', variant: 'thunder-fall-impact', elem: 'lightning', vfxTier: 7,
         onImpact: function (m, victims) {
           for (var vi = 0; vi < victims.length; vi++) {
             sgTryStun(victims[vi], spec.stunSec);
@@ -6723,7 +6774,8 @@ function sgThunderorbBurst(pEnt, st, floatSel, spec, victim, enemies, out) {
   var delayMs = 0;
   for (var i = 0; i < spec.bounces && cur && cur.hp > 0; i++) {
     sgEmitVfx('thunderorb', [cur], floatSel, {
-      fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3
+      fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3,
+      vfxUlt: 'thunderBurst'
     });
     sgHitOne(pEnt, st, cur, spec.dmgVal, 'thunderorb', floatSel, out, delayMs, 0, 'lightning');
     var next = sgChainNextTarget(cur, live, visited, spec.px);
@@ -6767,7 +6819,7 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
   }
   var hits = Math.max(1, Math.ceil((flightSec + cfg.parkSec) / cfg.gap));
   sgSpawnGround(pEnt, st, 'thunderorb', {
-    kind: 'orb', tgt: target, floatSel: floatSel,
+    kind: 'orb', tgt: target, floatSel: floatSel, vfxTier: 1,
     from: from ? { x: from.x, y: from.y } : null,
     dest: (from && to) ? { x: to.x, y: to.y } : null,
     speed: cfg.speedPx, radius: cfg.radius,
@@ -6779,7 +6831,7 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
 /* 靜止雷球（【伴生雷球】）：生在環體電球的命中處，不移動，只按節拍打自己的範圍。 */
 function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec) {
   sgSpawnGround(pEnt, st, 'thunderorb', {
-    kind: 'orb', tgt: null, floatSel: floatSel,
+    kind: 'orb', tgt: null, floatSel: floatSel, vfxTier: 6,
     from: { x: pos.x, y: pos.y }, dest: null, speed: 0,
     radius: cfg.radius, dmgVal: cfg.dmgVal,
     hits: Math.max(1, Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap,
@@ -6965,7 +7017,7 @@ function sgFreezeTarget(ent) {
   var sec = Number(sgTryStun(ent, sgFrozenSec()));
   if (!(sec > 0)) return 0;
   applyStatus(ent, 'sgFrozen', { val: 0, dur: sec });
-  sgEmitVfx('frostnova', [ent], 'mv-float', { fxKind: 'burst', variant: 'frost-freeze', elem: 'ice', dur: sec });
+  sgEmitVfx('frostnova', [ent], 'mv-float', { fxKind: 'burst', variant: 'frost-freeze', elem: 'ice', dur: sec, vfxTier: 4 });
   return sec;
 }
 
@@ -7069,7 +7121,8 @@ function sgTickFrost(dt, ctx) {
      （比照燃燒節拍器，避免事件量被放大成敵人數）。 */
   if (tickedNow) {
     sgEmitVfx('icearrow', tickedNow, ctx.floatSel, {
-      fxKind: 'impact', variant: 'frost-tick', elem: 'ice'
+      fxKind: 'impact', variant: 'frost-tick', elem: 'ice',
+      vfxRoles: statusVfxRoles('sgFrostBite', 'tick')
     });
   }
 }
@@ -7091,7 +7144,7 @@ function sgSpreadFrost(from, enemies, fx, dot) {
     if (sgApplyFrost(victims[i], spec, 1) > 0) spread.push(victims[i]);
   }
   if (spread.length) {
-    sgEmitVfx('waterball', [from].concat(spread), 'mv-float', { fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80] });
+    sgEmitVfx('waterball', [from].concat(spread), 'mv-float', { fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80], vfxTier: 5 });
   }
 }
 
@@ -7112,7 +7165,8 @@ function sgIceBlast(ent, enemies, ctx) {
   var floatSel = (ctx && ctx.floatSel) || 'mv-float';
   sgEmitVfx('icearrow', [ent], floatSel, {
     fxKind: 'burst', variant: 'ice-blast', elem: 'ice',
-    area: sgAreaAround(ent, radius), preserveDeadTargets: true
+    area: sgAreaAround(ent, radius), preserveDeadTargets: true,
+    vfxTier: 7
   });
   if (!victims.length) return;
   var out = { killed: false, dmg: 0, crit: false };
@@ -7256,7 +7310,8 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
           fxKind: 'projectile', variant: 'ice-arrow-pierce', elem: 'ice', count: 1,
           lineLength: lineLen, lineWidth: Math.max(20, halfWidth * 2), angle: laneAngle,
           delayMs: Math.round(waveDelay * 1000),
-          travelMs: [Math.round(flightSec * 1000)]
+          travelMs: [Math.round(flightSec * 1000)],
+          vfxTier: 4
         });
         sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, laneAngle, lineLen,
           floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
@@ -7381,7 +7436,8 @@ function sgCastIceTears(pEnt, st, g, floatSel, primary) {
     from: (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null,
     radius: bfMeterPx(sgUltVal(u, 'm')),
     dmgVal: dmgVal, hits: waves, gap: Math.max(0.05, sgUltVal(u, 'gap')),
-    tickAtStart: true
+    tickAtStart: true,
+    vfxUlt: 'tearsOfIce'
   });
 }
 
@@ -7408,7 +7464,8 @@ function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, o
     onHit: (ice && ice.split) ? function (f, victim, enemies, o2) {
       sgIcearrowSplit(f.pEnt, f.st, ice, victim, enemies, f.floatSel, o2, f.moveAngle);
     } : null,
-    wave: o.wave, startDelaySec: o.startDelaySec
+    wave: o.wave, startDelaySec: o.startDelaySec,
+    vfxTier: 5
   });
 }
 
@@ -7585,7 +7642,8 @@ function sgWaterballShot(pEnt, st, g, lvs, pool, target, floatSel, out, cfg) {
       // 傳奇【冰霜擴散】：爆散改為冰霜新星，畫法一併換成新星的既有變體
       sgEmitVfx('waterball', victims, floatSel, {
         fxKind: 'burst', variant: cfg.nova ? 'frost-nova' : 'water-burst', elem: 'ice',
-        area: sgAreaAround(cur, cfg.burstR), delayMs: hopDelay
+        area: sgAreaAround(cur, cfg.burstR), delayMs: hopDelay,
+        vfxTier: 4
       });
     }
     for (var vi = 0; vi < victims.length; vi++) {
@@ -7603,7 +7661,8 @@ function sgWaterballShot(pEnt, st, g, lvs, pool, target, floatSel, out, cfg) {
       ? Math.round(bfTravelSeconds(next) * 1000 / cfg.bounceSpeed) : 0;
     sgEmitVfx('waterball', [cur, next], floatSel, {
       fxKind: 'chain', variant: 'water-bounce', elem: 'ice', count: 1,
-      delayMs: hopDelay, travelMs: [0, hopTravelMs], arcM: cfg.arcM
+      delayMs: hopDelay, travelMs: [0, hopTravelMs], arcM: cfg.arcM,
+      vfxTier: 4
     });
     cur = next;
     hopDelay += hopTravelMs;
@@ -7649,7 +7708,8 @@ function sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel) {
       from: p ? { x: p.x + c[0] * half, y: p.y + c[1] * half } : null,
       radius: radius, dmgVal: dmgVal, hits: hits, gap: gap,
       frozenMult: Math.max(1, Number(fx.frozen) || 2),
-      delaySec: i * gap * 0.15
+      delaySec: i * gap * 0.15,
+      vfxTier: 7
     });
   }
 }
@@ -7662,7 +7722,8 @@ function sgSpawnWaterTornadoAt(pEnt, st, spec, target, floatSel) {
   sgSpawnGround(pEnt, st, 'waterball', {
     kind: 'tornado', tgt: target, floatSel: floatSel,
     radius: spec.radius, dmgVal: spec.dmgVal, hits: spec.hits, gap: spec.gap,
-    frozenMult: spec.frozenMult
+    frozenMult: spec.frozenMult,
+    vfxTier: 7
   });
 }
 
@@ -7702,7 +7763,8 @@ function sgTickWaterPrison(ctx, dt) {
        與【火神降臨】的領域同一支：水牢是「周圍 20 米」，跟著人走才對得上判定。 */
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2 }
+      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2 },
+      vfxUlt: 'waterPrisonFall'
     });
   }
   if (wp.nextAt > GT) return;
@@ -7757,7 +7819,8 @@ function sgTickRagingTide(ctx) {
     from: { x: cx / spots.length, y: cy / spots.length },
     radius: bfMeterPx(sgUltVal(u, 'm')), dmgVal: dmgVal,
     hits: Math.max(1, Math.floor(Number(u.def.fx.hits) || 1)), gap: gap,
-    frozenMult: Math.max(1, Number(g.tiers[6].fx.frozen) || 2), tickAtStart: true
+    frozenMult: Math.max(1, Number(g.tiers[6].fx.frozen) || 2), tickAtStart: true,
+    vfxUlt: 'ragingTide'
   });
 }
 
@@ -7778,7 +7841,8 @@ function sgTickAbyssDomain(ctx, dt) {
     SKILL2_RT.abyssVfxAt = GT + SG_DOMAIN_VFX_SEC;
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2 }
+      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2 },
+      vfxUlt: 'abyssBurial'
     });
   }
   var gap = Math.max(0.05, Number(u.def.fx.gap) || 0.35);
@@ -7799,7 +7863,8 @@ function sgTickAbyssDomain(ctx, dt) {
   }
   if (frosted.length) {
     sgEmitVfx('waterball', frosted, ctx.floatSel, {
-      fxKind: 'impact', variant: 'frost-tick', elem: 'ice'
+      fxKind: 'impact', variant: 'frost-tick', elem: 'ice',
+      vfxRoles: statusVfxRoles('sgFrostBite', 'tick')
     });
   }
 }
@@ -7968,7 +8033,8 @@ function sgSpawnIceSpike(pEnt, st, gid, spec, floatSel, tgt, from) {
   sgSpawnGround(pEnt, st, gid, {
     kind: 'icespike', tgt: tgt || null, from: from || null, floatSel: floatSel,
     radius: spec.radius, dmgVal: spec.dmgVal, hits: spec.hits, gap: SG_ICE_SPIKE_GAP,
-    tickAtStart: true
+    tickAtStart: true,
+    vfxUlt: 'iceKingDomain'
   });
 }
 
@@ -7988,7 +8054,8 @@ function sgSpawnBlizzard(pEnt, st, g, lvs, floatSel, lg) {
     dmgVal: sgGroupBaseStat(g, st) * sgVal(fx, 'pct', lvs[6]) / 100,
     hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap, follow: true,
     frostSpec: (lg && lg.frostnovaBlizzardFrost)
-      ? sgFrostSpec(g, lvs, 0, sgFrostnovaBodyDamage(g, st, lvs)) : null
+      ? sgFrostSpec(g, lvs, 0, sgFrostnovaBodyDamage(g, st, lvs)) : null,
+    vfxTier: 7
   });
 }
 
@@ -8032,7 +8099,8 @@ function sgFrostbodyOnPlayerDamaged(mEnt, pEnt, floatSel) {
   if (!spec) return;
   if (sgApplyFrost(mEnt, spec, sgVal(t[2].fx, 'stacks', lvs[2])) > 0) {
     sgEmitVfx('frostnova', [mEnt], floatSel || 'mv-float', {
-      fxKind: 'impact', variant: 'frost-body', elem: 'ice'
+      fxKind: 'impact', variant: 'frost-body', elem: 'ice',
+      vfxTier: 3
     });
   }
 }
@@ -8086,7 +8154,8 @@ function sgTickCrystalResonance(ctx, dt) {
      否則事件量會被放大成凍結中的敵人數。 */
   if (resonators.length) {
     sgEmitVfx('frostnova', resonators, ctx.floatSel, {
-      fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80]
+      fxKind: 'chain', variant: 'frost-spread', elem: 'ice', travelMs: [80],
+      vfxUlt: 'crystalResonance'
     });
   }
   if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
@@ -8418,7 +8487,8 @@ function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
     elem: 'wind', count: 1, projectile: true,
     lineLength: geom.lenPx, lineWidth: Math.max(8, halfPx * 2),
     travelMs: [travelMs], delayMs: Math.round((cfg.beginSec || 0) * 1000),
-    angle: cfg.angle, bodyLength: bodyPx
+    angle: cfg.angle, bodyLength: bodyPx,
+    vfxTier: cfg.vfxTier || (cfg.small ? 4 : 1), vfxGid: cfg.vfxGid || '', vfxUlt: cfg.vfxUlt || ''
   });
   sgQueueFlyingProjectile(pEnt, st, gid, cfg.dmgVal, geomOk ? origin : null, cfg.angle,
     geom.lenPx, floatSel, cfg.fallback || [], {
@@ -8452,7 +8522,8 @@ function sgSpawnWindChaser(pEnt, st, g, lvs, angle, dmgVal, geom, floatSel, opts
     ramp: opts.ramp || null, onHit: opts.onHit || null,
     slowStatus: (opts.slowPct > 0) ? 'sgWindSlow' : '', slowPct: opts.slowPct || 0,
     pulseGap: opts.pulseGap || 0, pulseRadius: opts.pulseRadius || 0,
-    pulseDmg: opts.pulseDmg || 0, pulseVariant: 'wind-burst'
+    pulseDmg: opts.pulseDmg || 0, pulseVariant: 'wind-burst',
+    vfxTier: 5, vfxUlt: (opts && opts.vfxUlt) || ''
   });
 }
 
@@ -8491,7 +8562,8 @@ function sgFireWindBlade(pEnt, st, g, lvs, cfg, floatSel, out) {
       sec: sgUltVal(cfg.myriad, 'sec'), chaseM: sgUltVal(cfg.myriad, 'chaseM'),
       radius: cfg.geom.halfWidthPx, ramp: ramp, onHit: sgWindbladeGroundHit(cfg.erode),
       slowPct: cfg.slowPct, pulseGap: cfg.pulseGap,
-      pulseRadius: cfg.pulseRadius, pulseDmg: cfg.pulseDmg
+      pulseRadius: cfg.pulseRadius, pulseDmg: cfg.pulseDmg,
+      vfxUlt: 'stormMyriad'
     });
     return;
   }
@@ -8678,7 +8750,7 @@ function sgCastVacuumslash(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var victims = sgVacuumWaveVictims(pool, primary, spin, radiusPx, count, baseAngle, geomOk);
     sgEmitVfx('vacuumslash', victims, floatSel, {
       fxKind: 'slash', variant: spin ? 'wind-spin' : 'wind-slash', elem: 'wind',
-      dur: 0.45, delayMs: delayMs, lineLength: radiusPx,
+      dur: 0.45, delayMs: delayMs, lineLength: radiusPx, vfxTier: spin ? 4 : 1,
       area: (spin && geomOk && typeof bfPlayerPos === 'function')
         ? { x: bfPlayerPos().x, y: bfPlayerPos().y, r: radiusPx } : null
     });
@@ -8721,7 +8793,7 @@ function sgVacuumSmallBlades(pEnt, st, lg, dmgVal, pool, primary, baseAngle, geo
     var ang = baseAngle + deg * step * ((i % 2) ? -1 : 1);
     sgLaunchWindBlade(pEnt, st, 'vacuumslash', {
       geom: geom, angle: ang, dmgVal: small, pool: pool, geomOk: geomOk,
-      fallback: [primary], small: true
+      fallback: [primary], small: true, vfxGid: 'windblade'
     }, floatSel, out);
   }
 }
@@ -8743,7 +8815,8 @@ function sgSpawnStaticVacuum(pEnt, st, u, victim, floatSel, bodyDmg, radiusPx) {
     from: (typeof bfPos === 'function') ? bfPos(victim) : null,
     radius: Math.max(4, radiusPx), dmgVal: dmgVal,
     hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
-    growTo: grow, growSec: lifeSec, contact: true, tickAtStart: true
+    growTo: grow, growSec: lifeSec, contact: true, tickAtStart: true,
+    vfxUlt: 'vacuumOmen'
   });
 }
 
@@ -8783,7 +8856,8 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
       fieldKey: keyBase + i,
       rings: [{ r: startR, spin: spin }],
       statusId: 'sgVoidBlade', auraVariant: 'void-disc',
-      hitVariant: 'wind-burst', hitElem: 'wind'
+      hitVariant: 'wind-burst', hitElem: 'wind',
+      vfxTier: 7, vfxUlt: (opts && opts.vfxUlt) || ''
     });
   }
 }
@@ -8805,7 +8879,8 @@ function sgDropSkyfallBlade(pEnt, st, dmgVal, target, pool, floatSel, out) {
   sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
     geom: sgWindbladeGeom(wb, [1, 0, 0, 0, 0, 0, 0], null),
     angle: geomOk ? angle : 0, dmgVal: dmgVal, pool: pool,
-    geomOk: geomOk, fallback: [target], sizeMult: SG_SKYFALL_BLADE_SCALE
+    geomOk: geomOk, fallback: [target], sizeMult: SG_SKYFALL_BLADE_SCALE,
+    vfxGid: 'windblade'
   }, floatSel, out);
 }
 
@@ -8847,13 +8922,15 @@ function sgTickSkyfallStars(ctx, dt) {
     sgEmitVfx('stormbarrier', [target], ctx.floatSel, {
       fxKind: 'rain', variant: bolt ? 'thunder-fall' : 'meteor',
       elem: bolt ? 'lightning' : 'fire', count: 1,
-      area: sgAreaAround(target, radius), delayMs: castDelay, travelMs: [timing.travelMs]
+      area: sgAreaAround(target, radius), delayMs: castDelay, travelMs: [timing.travelMs],
+      vfxUlt: 'skyfallStars'
     });
     sgQueueMeteor(ctx.pEnt, st, dmgVal, target, enemies, radius, null, ctx.floatSel, out,
       GT + (castDelay + timing.fallMs) / 1000, {
         gid: 'stormbarrier',
         variant: bolt ? 'thunder-fall-impact' : 'meteor-impact',
-        elem: bolt ? 'lightning' : 'fire'
+        elem: bolt ? 'lightning' : 'fire',
+        vfxUlt: 'skyfallStars'
       });
   }
 }
@@ -8917,7 +8994,8 @@ function sgCastStormbarrier(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var godRed = sgVal(t[6].fx, 'red', lvs[6]) + (valgr ? sgUltVal(valgr, 'red') : 0);
     applyStatus(pEnt, 'sgStormGod', { val: godRed, dur: godSec });
     sgEmitPlayerVfx('stormbarrier', floatSel, {
-      fxKind: 'aura', variant: 'storm-god', elem: 'wind', dur: godSec
+      fxKind: 'aura', variant: 'storm-god', elem: 'wind', dur: godSec,
+      vfxTier: 7
     });
   }
   // 超神【森羅萬象】：同時打出【暴風真空刃】與【虛空斬】兩個形態
@@ -8951,7 +9029,8 @@ function sgCastMyriadPhenomena(pEnt, st, u, pool, primary, floatSel, out) {
       for (var v = 0; v < volleys; v++) {
         sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
           geom: geom, angle: baseAngle + Math.PI * 2 * d / dirs, dmgVal: bladeDmg,
-          pool: pool, geomOk: geomOk, fallback: [primary], beginSec: v * volleyGap
+          pool: pool, geomOk: geomOk, fallback: [primary], beginSec: v * volleyGap,
+          vfxGid: 'windblade'
         }, floatSel, out);
       }
     }
@@ -8963,7 +9042,8 @@ function sgCastMyriadPhenomena(pEnt, st, u, pool, primary, floatSel, out) {
   if (discDmg > 0) {
     sgSpawnVoidDiscs(pEnt, st, vs, [1, 1, 1, 1, 1, 1, 1], floatSel, baseAngle, {
       plain: true, gid: 'stormbarrier', dmgVal: discDmg,
-      keyPrefix: 'void-myriad-' + (++SG_VOID_DISC_SEQ) + '-'
+      keyPrefix: 'void-myriad-' + (++SG_VOID_DISC_SEQ) + '-',
+      vfxUlt: 'myriadPhenomena'
     });
   }
 }
@@ -9003,7 +9083,7 @@ function sgStormBarrierPulse(rt, lvs, ctx) {
   if (lvs[1] > 0) {
     var dmgVal = sgGroupBaseStat(g, st) * sgVal(t[1].fx, 'pct', lvs[1]) / 100;
     var victims = sgEnemiesNearPlayer(enemies, radiusPx, null, 0);
-    sgEmitPlayerVfx('stormbarrier', floatSel, { fxKind: 'aura', variant: 'storm-rip', elem: 'wind', dur: rt.gap });
+    sgEmitPlayerVfx('stormbarrier', floatSel, { fxKind: 'aura', variant: 'storm-rip', elem: 'wind', dur: rt.gap, vfxTier: 2 });
     if (dmgVal > 0 && victims.length) {
       var out = { killed: false, dmg: 0, crit: false };
       for (var i = 0; i < victims.length; i++) {
@@ -9029,7 +9109,7 @@ function sgStormBarrierPulse(rt, lvs, ctx) {
         if (spec && sgApplyWindRend(picks[k], spec) >= 0) marked.push(picks[k]);
       }
       if (marked.length) {
-        sgEmitVfx('stormbarrier', marked, floatSel, { fxKind: 'impact', variant: 'wind-rend', elem: 'wind' });
+        sgEmitVfx('stormbarrier', marked, floatSel, { fxKind: 'impact', variant: 'wind-rend', elem: 'wind', vfxTier: 3 });
       }
     }
   }
@@ -9071,7 +9151,7 @@ function sgStormbladeOnPlayerDamaged(mEnt, pEnt, floatSel) {
   var enemies = (typeof FIELD !== 'undefined' && FIELD && FIELD.enemies) ? FIELD.enemies : [mEnt];
   sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
     geom: geom, angle: geomOk ? angle : 0, dmgVal: dmgVal, pool: enemies,
-    geomOk: geomOk, fallback: [mEnt]
+    geomOk: geomOk, fallback: [mEnt], vfxTier: 4
   }, floatSel || 'mv-float', { killed: false, dmg: 0, crit: false });
 }
 
@@ -9114,7 +9194,8 @@ function sgSpreadWindRend(from, enemies, lvs) {
   if (spread.length) {
     sgEmitVfx('stormbarrier', [from].concat(spread), 'mv-float', {
       fxKind: 'chain', variant: 'wind-rend-spread', elem: 'wind', travelMs: [80],
-      preserveDeadTargets: true
+      preserveDeadTargets: true,
+      vfxTier: 5
     });
   }
 }
@@ -9188,7 +9269,7 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   if (blocked && lvs[4] > 0 && mEnt.hp > 0 && chance(Number(t[4].fx.chance) || 0) &&
       sgCounterPayMp(pEnt, 4)) {
     applyStatus(mEnt, 'sgArmorBrk', { val: Number(t[4].fx.def) || 0, dur: sgVal(t[4].fx, 'sec', lvs[4]) });
-    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break' });
+    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break', vfxTier: 5 });
   }
   /* 攻擊者已死就沒有反擊可打——必須在扣魔之前先擋掉，否則會為了不會發生的
      反擊付魔（破甲那段自己有 hp>0 判定，不受影響）。 */
@@ -9422,7 +9503,8 @@ function sgCounterWindBlade(pEnt, st, target, spec, floatSel, out, delayMs) {
   var dmgVal = sgGroupBaseStat(SKILLS2.counter, st) * (Number(spec.powerPct) || 0) / 100;
   if (!(dmgVal > 0)) return;
   sgEmitVfx('counter', [target], floatSel, {
-    fxKind: 'projectile', variant: 'wind-blade-homing', elem: 'wind', dur: 0.5
+    fxKind: 'projectile', variant: 'wind-blade-homing', elem: 'wind', dur: 0.5,
+    vfxGid: 'windblade', vfxTier: 1
   });
   sgHitOne(pEnt, st, target, dmgVal, 'counter', floatSel, out, delayMs, 0, 'wind');
 }
@@ -9439,7 +9521,7 @@ function sgCounterHolyOrb(pEnt, st, target, cfg, floatSel, out, delayMs) {
     var near = bfNearestOthers(target, cfg.enemies, cfg.enemies.length, bfMeterPx(sgUltVal(u, 'm')));
     for (var i = 0; i < near.length; i++) victims.push(near[i]);
   }
-  sgEmitVfx('counter', victims, floatSel, { fxKind: 'burst', elem: 'light', dur: 0.6 });
+  sgEmitVfx('counter', victims, floatSel, { fxKind: 'burst', elem: 'light', dur: 0.6, vfxUlt: 'holyBody' });
   for (var v = 0; v < victims.length; v++) {
     sgHitOne(pEnt, st, victims[v], dmgVal, 'counter', floatSel, out, (delayMs || 0) + sgStaggerMs(v), 0, 'light');
   }
@@ -9472,7 +9554,7 @@ function skills2TryLastStand(pEnt) {
   }
   var out = { killed: false, dmg: 0, crit: false };
   if (victims.length) {
-    sgEmitVfx('counter', victims, 'mv-float', { fxKind: 'burst', elem: 'earth', dur: 0.8 });
+    sgEmitVfx('counter', victims, 'mv-float', { fxKind: 'burst', elem: 'earth', dur: 0.8, vfxUlt: 'indomitable' });
     var dmgVal = sgGroupBaseStat(SKILLS2.counter, st) * sgUltVal(u, 'pct') / 100;
     for (var v = 0; v < victims.length; v++) {
       sgHitOne(pEnt, st, victims[v], dmgVal, 'counter', 'mv-float', out, sgStaggerMs(v), 0, 'earth');
@@ -9484,7 +9566,7 @@ function skills2TryLastStand(pEnt) {
   applyStatus(pEnt, 'invuln', { dur: sec });
   pEnt.skillCds[SG_PREFIX + 'counter'] = Math.max(1, sgUltVal(u, 'cd'));
   SKILL2_RT.lastStand = { reviveAt: GT + sec, pEnt: pEnt, done: false };
-  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: Math.min(6, sec) });
+  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: Math.min(6, sec), vfxUlt: 'indomitable' });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '不屈鬥魂!', 'buff');
   if (typeof blog === 'function') {
     blog('🛡️ 【不屈鬥魂】你倒下的瞬間大地為之震動——' + Math.round(sec) + ' 秒後你將原地站起繼續戰鬥！', 'info');
@@ -9534,7 +9616,7 @@ function sgTickLastStand(ctx) {
   SKILL2_RT.lastStand = null;   // 兌現完就歸還，之後只由 60 秒冷卻把關
   if (!pEnt || typeof getStats !== 'function') return;
   pEnt.hp = getStats().hp;
-  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1.2 });
+  sgEmitPlayerVfx('counter', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'earth', dur: 1.2, vfxGid: 'earthguard', vfxUlt: 'worldRebirth' });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '復活!', 'buff');
   if (typeof blog === 'function') blog('🛡️ 【不屈鬥魂】你站了起來，生命完全恢復！', 'good');
   if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
@@ -9559,7 +9641,7 @@ function sgTickAsuraFist(ctx, dt) {
   applyStatus(ctx.pEnt, 'sgAsuraFist', {
     val: sgUltVal(u, 'pct'), dur: Math.max(0.1, sgUltVal(u, 'sec'))
   });
-  sgEmitPlayerVfx('bloodrage', 'pv-float', { fxKind: 'aura', variant: 'bloodrage-aura', dur: 1 });
+  sgEmitPlayerVfx('bloodrage', 'pv-float', { fxKind: 'aura', variant: 'bloodrage-aura', dur: 1, vfxUlt: 'asuraFist' });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '阿修羅霸王拳!', 'buff');
 }
 
@@ -9680,7 +9762,8 @@ function sgTickStarfall(ctx, dt) {
     st.warned = true;
     sgEmitPlayerVfx('fireball', ctx.floatSel, {
       fxKind: 'aura', variant: 'starfall-shadow', elem: 'fire',
-      dur: Math.max(0.1, st.at - GT)
+      dur: Math.max(0.1, st.at - GT),
+      vfxUlt: 'starfallCataclysm'
     });
     if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '地爆天星!', 'buff');
   }
@@ -9691,7 +9774,8 @@ function sgTickStarfall(ctx, dt) {
     sgEmitPlayerVfx('fireball', ctx.floatSel, {
       fxKind: 'rain', variant: 'meteor-starfall', elem: 'fire',
       dur: Math.max(0.1, st.at - GT), travelMs: Math.max(1, Math.round((st.at - GT) * 1000)),
-      sizeMult: SG_STARFALL_SIZE_MULT
+      sizeMult: SG_STARFALL_SIZE_MULT,
+      vfxUlt: 'starfallCataclysm'
     });
   }
   if (GT < st.at) return;
@@ -9726,7 +9810,8 @@ function sgStarfallImpact(ctx, u) {
   var elitePct = sgUltVal(u, 'elite');
   var bossPct = sgUltVal(u, 'boss');
   sgEmitVfx('fireball', victims, ctx.floatSel, {
-    fxKind: 'impact', variant: 'starfall-impact', elem: 'fire'
+    fxKind: 'impact', variant: 'starfall-impact', elem: 'fire',
+    vfxUlt: 'starfallCataclysm'
   });
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
@@ -9842,7 +9927,8 @@ function sgTickBloodDots(dt, ctx) {
           for (var ni = 0; ni < near.length; ni++) {
             if (near[ni].hp > 0 && !sgHasDot(near[ni], 'sgPoison')) {
               sgEmitVfx('bloodblade', [e, near[ni]], ctx.floatSel, {
-                fxKind: 'chain', variant: 'poison-spread', elem: 'poison', count: 1
+                fxKind: 'chain', variant: 'poison-spread', elem: 'poison', count: 1,
+                vfxTier: 5
               });
               /* 毒霧感染也走共用塗抹：傳染同樣算「感染 1 個敵人」，要付【毒血祭】的生命代價；
                  崩解生效時中毒根本不會存在，這條分支自然不會被走到。 */
@@ -9858,7 +9944,8 @@ function sgTickBloodDots(dt, ctx) {
         }
         sgEmitVfx('bloodblade', [e], ctx.floatSel, {
           fxKind: 'impact', variant: sids[si] === 'sgPoison' ? 'poison-tick' : 'bleed-tick',
-          elem: sids[si] === 'sgPoison' ? 'poison' : null
+          elem: sids[si] === 'sgPoison' ? 'poison' : null,
+          vfxRoles: statusVfxRoles(sids[si], 'tick')
         });
         // 零日感染：每次作用時，機率立即造成剩餘持續傷害並清除該狀態
         // 剩餘值含 tickStatuses 已累積、尚未跳出的殘額（d.acc 秒），與到期補跳的總量守恆一致
@@ -9871,7 +9958,8 @@ function sgTickBloodDots(dt, ctx) {
             if (ctx.onDamage) ctx.onDamage(zOut.dmg);
             if (zOut.killed && ctx.onDeaths) ctx.onDeaths();
             sgEmitVfx('bloodblade', [e], ctx.floatSel, {
-              fxKind: 'burst', variant: 'zero-infection', elem: 'poison'
+              fxKind: 'burst', variant: 'zero-infection', elem: 'poison',
+              vfxTier: 7
             });
           }
           // 直接移除實例（剩餘值已立即生效；不走到期流程，避免補跳殘餘）
@@ -9933,7 +10021,7 @@ function sgEmitBloodDomainAura(ctx, radius, poison) {
   if (!pp || !(radius > 0)) return;
   sgEmitPlayerVfx('bloodblade', ctx.floatSel, {
     fxKind: 'aura', variant: poison ? 'mire-poison' : 'mire',
-    elem: poison ? 'poison' : 'dark', dur: SG_DOMAIN_VFX_SEC,
+    elem: poison ? 'poison' : 'dark', dur: SG_DOMAIN_VFX_SEC, vfxUlt: poison ? 'venomDomain' : 'slayerDomain',
     area: { id: SG_BLOOD_DOMAIN_VFX_ID, x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
   });
 }
@@ -9955,7 +10043,7 @@ function sgVenomDomainPulse(ult, enemies, ctx, radius, gap) {
   for (var i = 0; i < victims.length; i++) {
     applyStatus(victims[i], 'sgVenomField', { dps: unit, dur: dur, interval: gap, maxStacks: maxStacks });
   }
-  sgEmitVfx('bloodblade', victims, ctx.floatSel, { fxKind: 'curse', variant: 'poison', elem: 'poison' });
+  sgEmitVfx('bloodblade', victims, ctx.floatSel, { fxKind: 'curse', variant: 'poison', elem: 'poison', vfxUlt: 'venomDomain' });
 }
 
 /* 超神進化【殺神領域】：領域內的敵人死亡時疊 1 層【殺神】並回復生命。
@@ -10000,7 +10088,8 @@ function sgBloodFieldsOnDeath(deadEnt) {
       kind: 'poisonmist', tgt: deadEnt, floatSel: 'mv-float',
       radius: bfMeterPx(Number(mist.m) || 6),
       dmgVal: baseVal * (Number(mist.pct) || 0) / 100,
-      hits: Math.max(1, Math.round(sec / gap)), gap: gap, hitElem: 'poison'
+      hits: Math.max(1, Math.round(sec / gap)), gap: gap, hitElem: 'poison',
+      vfxGid: 'mire', vfxTier: 3
     });
   }
   if (blood && sgHasDot(deadEnt, 'sgBleed')) {
@@ -10009,7 +10098,8 @@ function sgBloodFieldsOnDeath(deadEnt) {
     sgSpawnGround(pEnt, st, 'bloodblade', {
       kind: 'bloodmist', tgt: deadEnt, floatSel: 'mv-float',
       radius: bfMeterPx(Number(blood.m) || 6),
-      dmgVal: 0, hits: Math.max(1, Math.round(bsec / bgap)), gap: bgap
+      dmgVal: 0, hits: Math.max(1, Math.round(bsec / bgap)), gap: bgap,
+      vfxGid: 'mire', vfxTier: 1
     });
   }
 }
@@ -10092,7 +10182,8 @@ function sgDeathBoom(deadEnt, enemies) {
   var deadPoison = sgFindDot(deadEnt, 'sgPoison');
   var out = { killed: false, dmg: 0, crit: false };
   sgEmitVfx('bloodblade', [deadEnt], 'mv-float', {
-    fxKind: 'burst', variant: 'blood-explosion', elem: 'poison'
+    fxKind: 'burst', variant: 'blood-explosion', elem: 'poison',
+    vfxTier: 6
   });
   for (var i = 0; i < victims.length; i++) {
     var victim = victims[i];

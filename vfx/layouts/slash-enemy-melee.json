@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-enemy-melee",
+  "groups": [
+    {
+      "id": "slash-enemy-melee",
+      "name": "slash-enemy-melee",
+      "layerIds": [
+        "claw",
+        "claw-inner"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-enemy-melee"
+  ]
+}

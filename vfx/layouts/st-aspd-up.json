@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-aspd-up",
+  "groups": [
+    {
+      "id": "st-aspd-up",
+      "name": "st-aspd-up",
+      "layerIds": [
+        "ring",
+        "lines"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-aspd-up"
+  ]
+}

@@ -471,7 +471,9 @@ test('岩甲術與大地守護的自身特效走玩家定址，不會畫到敵�
   // 天地共生的復活光柱：沿用既有 rain/pillar 畫法（設計文檔要求「從天而降的光柱」）
   assert.match(skills2, /sgEmitPlayerVfx\('earthguard', 'pv-float', \{ fxKind: 'rain', variant: 'pillar'/);
   // 岩甲尖刺打在敵人身上，走敵人定址的 impact
-  assert.match(skills2, /sgEmitVfx\('rockarmor', \[mEnt\], eSel, \{ fxKind: 'impact', variant: 'rock-spike', elem: 'earth' \}\);/);
+  /* 尾端不鎖死：特效欄位的列標記（vfxTier 等）之後會接在同一個 extra 裡，
+     這條要驗的是「敵人定址的 impact」，不是參數表的欄位。 */
+  assert.match(skills2, /sgEmitVfx\('rockarmor', \[mEnt\], eSel, \{ fxKind: 'impact', variant: 'rock-spike', elem: 'earth'/);
 });
 
 test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 與 DOM 兩條路徑都接上', () => {
@@ -932,13 +934,13 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.59/);
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.74/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.107/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.89/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260903-vfx-preset-fields'/);
-  assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260903-vfx-preset-fields/);
-  assert.match(worker, /\.\.\/legendary\.js\?v=20260826-chain-thunder-legendary/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.75/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.108/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.90/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260903-vfx-runtime-adapter'/);
+  assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260903-vfx-runtime-adapter/);
+  assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
@@ -1035,7 +1037,7 @@ test('地爆天星：黑影預警與超巨型殞石在 Canvas 與 DOM 兩套顯�
   const shim = read('js/worker/shim.js');
   assert.match(shim, /sizeMult: Number\(spec\.sizeMult\) > 0 \? Number\(spec\.sizeMult\) : 0/);
   assert.match(vfx, /sizeMult: Number\(spec\.sizeMult\) > 0 \? Number\(spec\.sizeMult\) : 0/);
-  assert.match(read('js/worker/sim.worker.js'), /shim\.js\?v=5/);
+  assert.match(read('js/worker/sim.worker.js'), /shim\.js\?v=6/);
 
   // DOM（高塔）：同樣兩支，且在 rect 解析之前就攔下來
   assert.match(vfx, /function vfxStarfallShadow\(spec, layer\)/);

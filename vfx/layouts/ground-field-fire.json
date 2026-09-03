@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-field-fire",
+  "groups": [
+    {
+      "id": "ground-field-fire",
+      "name": "ground-field-fire",
+      "layerIds": [
+        "fill",
+        "edge",
+        "flames",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-field-fire"
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-cyclone-avatar",
+  "duration": 1.6,
+  "loop": true,
+  "layers": [
+    {
+      "id": "blade-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_01.png",
+      "zIndex": 0,
+      "rotation": 0,
+      "scale": {
+        "x": 0.25,
+        "y": 0.155
+      },
+      "alpha": 0.85,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          14.4
+        ]
+      ]
+    },
+    {
+      "id": "blade-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_01.png",
+      "zIndex": 1,
+      "rotation": 2.0944,
+      "scale": {
+        "x": 0.25,
+        "y": 0.155
+      },
+      "alpha": 0.85,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          14.4
+        ]
+      ]
+    },
+    {
+      "id": "blade-c",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_01.png",
+      "zIndex": 2,
+      "rotation": 4.1888,
+      "scale": {
+        "x": 0.25,
+        "y": 0.155
+      },
+      "alpha": 0.85,
+      "tint": "#e6ddc8",
+      "blendMode": "add",
+      "duration": 1.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          14.4
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 10
+      },
+      "lifetime": [
+        0.5,
+        0.8
+      ],
+      "spawn": {
+        "radius": 60,
+        "shape": "circle"
+      },
+      "speed": [
+        40,
+        80
+      ],
+      "direction": -90,
+      "spread": 50,
+      "gravity": {
+        "x": 0,
+        "y": -70
+      },
+      "startScale": [
+        0.0059,
+        0.0117
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.35
+        ]
+      ]
+    }
+  ]
+}

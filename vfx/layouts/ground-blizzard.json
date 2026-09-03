@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-blizzard",
+  "groups": [
+    {
+      "id": "ground-blizzard",
+      "name": "ground-blizzard",
+      "layerIds": [
+        "fill",
+        "edge",
+        "cloud-a",
+        "cloud-b",
+        "cloud-c",
+        "snow"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-blizzard"
+  ]
+}

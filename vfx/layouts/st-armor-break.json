@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-armor-break",
+  "groups": [
+    {
+      "id": "st-armor-break",
+      "name": "st-armor-break",
+      "layerIds": [
+        "crack",
+        "chips"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-armor-break"
+  ]
+}

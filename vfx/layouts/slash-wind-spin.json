@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-wind-spin",
+  "groups": [
+    {
+      "id": "slash-wind-spin",
+      "name": "slash-wind-spin",
+      "layerIds": [
+        "ring",
+        "ring-inner",
+        "blades"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-wind-spin"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-swordfield",
+  "groups": [
+    {
+      "id": "ground-swordfield",
+      "name": "ground-swordfield",
+      "layerIds": [
+        "fill",
+        "dashes",
+        "edge",
+        "blades"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-swordfield"
+  ]
+}

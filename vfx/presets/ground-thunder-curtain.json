@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-thunder-curtain",
+  "duration": 1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "band",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.0391
+      },
+      "alpha": 0.22,
+      "tint": "#7dd3fc",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.22
+        ],
+        [
+          0.5,
+          0.32
+        ],
+        [
+          1,
+          0.22
+        ]
+      ]
+    },
+    {
+      "id": "band-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.0117
+      },
+      "alpha": 0.5,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    },
+    {
+      "id": "ends",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 2,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 10
+      },
+      "lifetime": [
+        0.08,
+        0.16
+      ],
+      "spawn": {
+        "height": 14,
+        "shape": "box",
+        "width": 200
+      },
+      "speed": [
+        0,
+        20
+      ],
+      "direction": -90,
+      "spread": 360,
+      "startScale": [
+        0.0195,
+        0.0391
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "cast-magic",
+  "groups": [
+    {
+      "id": "cast-magic",
+      "name": "cast-magic",
+      "layerIds": [
+        "circle",
+        "glow",
+        "glints"
+      ]
+    }
+  ],
+  "order": [
+    "group:cast-magic"
+  ]
+}

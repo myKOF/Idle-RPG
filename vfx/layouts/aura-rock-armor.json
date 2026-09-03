@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-rock-armor",
+  "groups": [
+    {
+      "id": "aura-rock-armor",
+      "name": "aura-rock-armor",
+      "layerIds": [
+        "ring",
+        "rocks",
+        "rocks-hi",
+        "dust"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-rock-armor"
+  ]
+}

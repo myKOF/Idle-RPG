@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-tick-fire",
+  "groups": [
+    {
+      "id": "st-tick-fire",
+      "name": "st-tick-fire",
+      "layerIds": [
+        "flames",
+        "embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-tick-fire"
+  ]
+}

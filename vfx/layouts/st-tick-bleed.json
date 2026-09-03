@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-tick-bleed",
+  "groups": [
+    {
+      "id": "st-tick-bleed",
+      "name": "st-tick-bleed",
+      "layerIds": [
+        "flash",
+        "drops"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-tick-bleed"
+  ]
+}

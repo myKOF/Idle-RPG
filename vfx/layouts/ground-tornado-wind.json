@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-tornado-wind",
+  "groups": [
+    {
+      "id": "ground-tornado-wind",
+      "name": "ground-tornado-wind",
+      "layerIds": [
+        "ground",
+        "funnel",
+        "band-a",
+        "band-b",
+        "band-c",
+        "core",
+        "cap",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-tornado-wind"
+  ]
+}

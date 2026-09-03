@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "st-water-prison",
+  "groups": [
+    {
+      "id": "st-water-prison",
+      "name": "st-water-prison",
+      "layerIds": [
+        "glow",
+        "water",
+        "drops"
+      ]
+    }
+  ],
+  "order": [
+    "group:st-water-prison"
+  ]
+}

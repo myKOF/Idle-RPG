@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-fire-explosion",
+  "groups": [
+    {
+      "id": "hit-fire-explosion",
+      "name": "hit-fire-explosion",
+      "layerIds": [
+        "halo",
+        "smoke",
+        "ring",
+        "ring-lens",
+        "fireball",
+        "core",
+        "hot",
+        "sparks",
+        "tongues"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-fire-explosion"
+  ]
+}

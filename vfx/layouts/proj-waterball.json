@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-waterball",
+  "groups": [
+    {
+      "id": "proj-waterball",
+      "name": "proj-waterball",
+      "layerIds": [
+        "glow",
+        "body",
+        "gloss",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-waterball"
+  ]
+}

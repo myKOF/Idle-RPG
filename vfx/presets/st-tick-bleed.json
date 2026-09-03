@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "id": "st-tick-bleed",
+  "duration": 0.45,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.0664,
+        "y": 0.0781
+      },
+      "alpha": 0.7,
+      "tint": "#ffd0d8",
+      "blendMode": "add",
+      "duration": 0.18,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "drops",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#d92846",
+      "blendMode": "normal",
+      "emission": {
+        "count": 3,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.45
+      ],
+      "spawn": {
+        "height": 22,
+        "shape": "box",
+        "width": 18
+      },
+      "speed": [
+        30,
+        70
+      ],
+      "direction": 90,
+      "spread": 90,
+      "gravity": {
+        "x": 0,
+        "y": 420
+      },
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}

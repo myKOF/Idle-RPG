@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "presetId": "fire-tornado",
+  "groups": [
+    {
+      "id": "fire-tornado",
+      "name": "fire-tornado",
+      "layerIds": [
+        "scorch",
+        "ground-ring",
+        "base-glow",
+        "funnel-body",
+        "swirl-lower",
+        "swirl-upper",
+        "flame-core",
+        "embers",
+        "sparks",
+        "smoke"
+      ]
+    }
+  ],
+  "order": [
+    "group:fire-tornado"
+  ]
+}

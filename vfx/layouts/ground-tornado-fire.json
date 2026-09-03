@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-tornado-fire",
+  "groups": [
+    {
+      "id": "ground-tornado-fire",
+      "name": "ground-tornado-fire",
+      "layerIds": [
+        "ground",
+        "funnel",
+        "band-a",
+        "band-b",
+        "band-c",
+        "core",
+        "cap",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-tornado-fire"
+  ]
+}

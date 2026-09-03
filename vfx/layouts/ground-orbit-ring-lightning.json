@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-orbit-ring-lightning",
+  "groups": [
+    {
+      "id": "ground-orbit-ring-lightning",
+      "name": "ground-orbit-ring-lightning",
+      "layerIds": [
+        "ring",
+        "motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-orbit-ring-lightning"
+  ]
+}

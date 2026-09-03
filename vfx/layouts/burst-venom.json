@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-venom",
+  "groups": [
+    {
+      "id": "burst-venom",
+      "name": "burst-venom",
+      "layerIds": [
+        "rim",
+        "flash",
+        "cloud",
+        "cloud-b",
+        "bubbles"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-venom"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "curse-poison",
+  "groups": [
+    {
+      "id": "curse-poison",
+      "name": "curse-poison",
+      "layerIds": [
+        "glow",
+        "ring",
+        "sigil",
+        "bubbles"
+      ]
+    }
+  ],
+  "order": [
+    "group:curse-poison"
+  ]
+}

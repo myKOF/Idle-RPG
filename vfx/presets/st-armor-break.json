@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "id": "st-armor-break",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "crack",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "scale": {
+        "x": 0.082,
+        "y": 0.0977
+      },
+      "alpha": 0.4,
+      "tint": "#ad7444",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "chips",
+      "type": "particle",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -30
+      },
+      "tint": "#ad7444",
+      "blendMode": "normal",
+      "duration": 1.2,
+      "emission": {
+        "mode": "rate",
+        "rate": 3
+      },
+      "lifetime": [
+        0.5,
+        0.8
+      ],
+      "spawn": {
+        "height": 40,
+        "shape": "box",
+        "width": 30
+      },
+      "speed": [
+        10,
+        30
+      ],
+      "direction": 90,
+      "spread": 60,
+      "gravity": {
+        "x": 0,
+        "y": 340
+      },
+      "startScale": [
+        0.0117,
+        0.0215
+      ],
+      "rotationStart": [
+        0,
+        3.141592653589793
+      ],
+      "rotationSpeed": [
+        -5,
+        5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ]
+}
