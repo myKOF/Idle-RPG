@@ -12434,12 +12434,11 @@ input[type='radio'] {
 #workspace-area main {
   background-image:
     radial-gradient(circle at 16% 10%, rgba(163, 83, 31, .09), transparent 28%),
-    linear-gradient(180deg, rgba(3, 4, 5, .16), rgba(3, 3, 4, .44)),
-    var(--ui-slate-texture);
-  background-position: center, center, center;
-  background-size: 100% 100%, 100% 100%, 540px 540px;
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-blend-mode: normal, normal, soft-light;
+    linear-gradient(180deg, rgba(3, 4, 5, .28), rgba(3, 3, 4, .48));
+  background-position: center, center;
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: normal;
 }
 
 /* The reference keeps the three structural columns plain and recessed. */
@@ -12450,9 +12449,13 @@ input[type='radio'] {
 }
 
 /* Only the inventory and action bar receive a small, low-mounted ember accent. */
-#inv-section-box,
-#battle-skill-bar {
+#inv-section-box {
   position: relative;
+}
+
+/* Preserve the original combat action bar layout: anchored to the scene bottom. */
+#battle-skill-bar {
+  position: absolute;
 }
 
 #inv-section-box::after,
@@ -12588,12 +12591,11 @@ textarea:hover {
 .gconv-slot {
   background-image:
     radial-gradient(circle at 50% 34%, rgba(137, 103, 71, .14), transparent 59%),
-    linear-gradient(145deg, rgba(33, 34, 33, .58), rgba(7, 7, 7, .89)),
-    var(--ui-iron-texture);
-  background-position: center, center, center;
-  background-size: 100% 100%, 100% 100%, 150px 150px;
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-blend-mode: normal, normal, soft-light;
+    linear-gradient(145deg, rgba(33, 34, 33, .72), rgba(7, 7, 7, .94));
+  background-position: center, center;
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: normal;
 }
 
 .battle-scene-wrapper,
