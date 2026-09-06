@@ -77,6 +77,25 @@ Preset 是照**野外戰場**的名目尺寸畫的。換到別的版面就得整
 
 野外全部是預設值（1／1／1／0），因此加入 profile 之前之後行為完全相同。
 
+## 1.2.3 方向型飛行物：航向由模擬層決定，不從 targets 反推
+
+有一類飛行物模擬層說的是「朝這個方位飛這麼遠」，而不是「飛向這個人」：
+風刃（`wind-blade` / `wind-blade-small`）、貫穿冰箭（`ice-arrow-pierce`）、
+火神星環（`firehunt-ring`）、單體冰箭（`ice-arrow`，`lineLength` 就是到目標的距離）。
+判別條件：帶 `angle` 且 `lineLength > 0`，而且不是連鎖段（`targets.length < 2`）、
+不是敵方出手（無 `sourceId`）、不是天降（`fxKind !== 'rain'`）。
+
+這一類必須守兩條，兩條都是實機回報換來的：
+
+1. **沒有目標也要接手。** `bfLineTargets` 在那條刀道上找不到人就回空陣列，
+   四方向齊射時多半有幾道是空的。Adapter 若因為 `targets` 是空的就 `return false`，
+   那幾道會退回舊畫法，於是**同一個技能在同一幀同時出現新舊兩種畫面**
+   （2026-09-03 使用者截圖：風刃的大綠弧與 Preset 刀鋒並存）。
+2. **有目標也不准追。** 終點一律是 `from + (cos/sin(angle)) * lineLength`，
+   不走 `projectileTargetPoint` 的預判。追過去畫面就與判定的直線路徑分家（AI_RULES 8.3）。
+
+由 `tests/vfx-runtime.test.cjs` 的 MOVE-4／MOVE-5 各釘住一條。
+
 ## 1.4 高塔：第二個表面
 
 高塔與野外是兩種版面：野外是俯視戰場（實體有世界座標、事件帶 `area`），

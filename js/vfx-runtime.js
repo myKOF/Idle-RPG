@@ -362,7 +362,16 @@ var VFXRuntime = (function () {
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       var chained = ids.length >= 2;
       var toId = chained ? ids[1] : ids[0];
-      if (!toId) return false;
+      /* 方向型飛行物（風刃、貫穿冰箭、火神星環）：模擬層說的是「朝這個方位飛這麼遠」，
+         路徑上可能一個敵人都沒有（四方向齊射就是這樣），所以
+           ① 不能從 targets 反推航向——那會讓刀鋒轉去追人，與判定的直線路徑分家
+           ② 更不能因為沒有目標就整則退回舊畫法
+         ②正是「同一個技能同時出現新舊兩種畫面」的成因：有敵人在路徑上的那幾把走
+         Preset、沒有的那幾把走舊畫法。方位與刀身長度是模擬層的表定值（AI_RULES 8.3），
+         直接照用。連鎖段與敵方出手另有各自的起點規則，不套這條。 */
+      var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
+        !chained && !spec.sourceId && spec.fxKind !== 'rain';
+      if (!toId && !directed) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
       var from;
       /* 起點：連鎖段從前一個目標、敵方出手從攻擊者（sourceId）、天降從落點正上方，
@@ -376,8 +385,11 @@ var VFXRuntime = (function () {
         var landing = spec.area ? areaCentre(spec.area) : ctx.posOf(toId);
         from = { x: landing.x, y: landing.y - 500 * profile.skyScale };
       } else from = ctx.playerPos();
-      var to = (travel > 0 && ctx.projectileTargetPoint)
-        ? ctx.projectileTargetPoint(toId, travel) : ctx.posOf(toId);
+      var to = directed
+        ? { x: from.x + Math.cos(spec.angle) * num(spec.lineLength, 0),
+            y: from.y + Math.sin(spec.angle) * num(spec.lineLength, 0) }
+        : ((travel > 0 && ctx.projectileTargetPoint)
+          ? ctx.projectileTargetPoint(toId, travel) : ctx.posOf(toId));
       /* 連鎖段接上一段的航向：整條鏈因此是一條連續彎過去的線，
          而不是每個彈射點折一次角。第一段沒有上一段，enterAngle 留 NaN＝直線。 */
       var enterAngle = chained ? arrivalAngle(ids[0]) : NaN;
@@ -391,7 +403,8 @@ var VFXRuntime = (function () {
       }, mult);
       if (!ref) return false;
       projectiles.push({
-        ref: ref, from: from, targetId: toId, t: 0,
+        /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
+        ref: ref, from: from, targetId: toId, to: directed ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing,
         scale: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1
@@ -788,7 +801,7 @@ var VFXRuntime = (function () {
         var pr = projectiles[i];
         pr.t += step;
         var k = Math.min(1, pr.t / pr.dur);
-        var to = ctx.posOf(pr.targetId);
+        var to = pr.to || ctx.posOf(pr.targetId);
         var ctrl = curveControl(pr.from, to, pr.enterAngle);
         var at = curvePoint(pr.from, ctrl, to, k);
         pr.facing = approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
@@ -800,7 +813,7 @@ var VFXRuntime = (function () {
         }, pr.mult);
         if (!alive || k >= 1) {
           /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
-          if (k >= 1) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
+          if (k >= 1 && pr.targetId) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
           if (alive) stopRef(pr.ref);
           projectiles.splice(i, 1);
         }
