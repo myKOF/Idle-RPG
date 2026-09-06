@@ -141,8 +141,19 @@ var VFXRuntime = (function () {
     groundR: 100
   };
 
-  var FX_BUDGET = { maxActiveEffects: 160, maxParticles: 2400 };
-  var ZONE_BUDGET = { maxActiveEffects: 40, maxParticles: 1200 };
+  /* 特效預算＝效能節流。使用者決策 2026-09-06：**先整個拿掉**，
+     不管畫面上同時有幾個特效，之後再依實機體感決定該調到多少。
+
+     為什麼是決策而不是預設值：節流一旦作用，超出的那幾則會被丟掉，
+     而在 2026-09-06 之前它們是退回舊畫法——同一次風刃齊射裡因此混著
+     新舊兩種畫風（實機回報）。退回舊畫法已經修掉了（見 play 的說明），
+     但「峰值時少掉幾道特效」仍然是看得出來的，所以先讓它完全不綁。
+
+     要重新開啟節流：把下面三個數字改小即可（單一控制點，兩個表面各一份）。
+     取值是 Core 的硬上限——Core 仍然保留有限上限，只是高到不會綁住任何合理用途。
+     ⚠️ perEffectParticleLimit 不能再往上調，Core 的發射迴圈靠它保證終止。 */
+  var FX_BUDGET = { maxActiveEffects: 65536, maxParticles: 64000, perEffectParticleLimit: 2000 };
+  var ZONE_BUDGET = { maxActiveEffects: 65536, maxParticles: 64000, perEffectParticleLimit: 2000 };
 
   /* ---------------------------------------------------------------
      角色選擇：這一則事件的「主要角色」是誰
@@ -225,7 +236,7 @@ var VFXRuntime = (function () {
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
-    var counters = { played: 0, skipped: 0, missing: 0 };
+    var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     function registerPresets(list) {
       (list || []).forEach(function (p) {
@@ -255,12 +266,16 @@ var VFXRuntime = (function () {
 
     /* ---- 播放：把 Core 的 handle 連同它屬於哪個 runtime 一起記住 ----
        Core 超出 budget 時 play() 回 null（寧可少一個特效也不掉幀）。
-       那會讓 tryPlay 回 false，於是這一則改由舊畫法接手——洪峰時畫面會混著兩種風格，
-       但不會有「該有的特效整個不見」。降級的門檻就是 budget，不在這裡另外加限流。 */
+       ⚠️ 這一種 null 與「沒有這份 preset」是兩回事，必須分得出來：
+       沒有 preset ＝ 本來就該退回舊畫法；超出 budget ＝ 這一幀畫不下，
+       退回舊畫法只會讓同一次齊射裡有幾道是 Preset、有幾道是舊鐮刀
+       （2026-09-06 實機回報）。少一道遠比多一種畫風不顯眼，所以超預算時整則丟掉。
+       budgetDrops 就是給 tryPlay 分辨這兩者用的。 */
+    var budgetDrops = 0;
     function play(rt, presetId, params, mult) {
       if (!has(presetId)) { counters.missing++; return null; }
       var handle = rt.play(presetId, sized(params || {}, mult));
-      if (handle === null || handle === undefined) return null;
+      if (handle === null || handle === undefined) { budgetDrops++; return null; }
       counters.played++;
       return { rt: rt, handle: handle };
     }
@@ -706,12 +721,19 @@ var VFXRuntime = (function () {
       if (!roles || typeof roles !== 'object') return false;
       /* 環繞場域（火狩星環、環體電球、虛空鋸刃）：軌道環與環繞體是同一件事，
          必須一起接手，因此走自己的路徑而不是一般的角色分派。 */
-      if (spec.area && num(spec.area.orbs, 0) > 0) return playOrbit(spec, roles);
+      if (spec.area && num(spec.area.orbs, 0) > 0) {
+        var orbDrops = budgetDrops;
+        if (playOrbit(spec, roles)) return true;
+        /* 與下面同一條規則：超出 budget 就整則丟掉，不落回舊畫法。 */
+        if (budgetDrops > orbDrops) { counters.dropped++; return true; }
+        return false;
+      }
       var role = primaryRoleOf(spec, roles);
       var presetId = role ? roles[role] : '';
       if (!presetId || !has(presetId)) { counters.skipped++; return false; }
 
       var ok = false;
+      var drops0 = budgetDrops;
       switch (role) {
         case 'hit':
           ok = playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
@@ -734,7 +756,11 @@ var VFXRuntime = (function () {
         default:
           ok = false;
       }
-      if (!ok) { counters.skipped++; return false; }
+      /* 播不出來有兩種：超出 budget（丟掉，見 play 的說明）與其他（交還舊畫法）。 */
+      if (!ok) {
+        if (budgetDrops > drops0) { counters.dropped++; return true; }
+        counters.skipped++; return false;
+      }
 
       /* 天降類的落點預警：飛行物在天上飛的同時，地上要有那一圈紅／藍標記。
          舊畫法本來就兩個都畫，只接手飛行物會讓預警圈消失。 */
@@ -884,6 +910,7 @@ var VFXRuntime = (function () {
           auras: Object.keys(auras).length,
           pending: pending.length,
           played: counters.played, skipped: counters.skipped, missing: counters.missing,
+          dropped: counters.dropped,
           fx: rtFx.stats(), zone: rtZone.stats()
         };
       }
