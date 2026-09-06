@@ -9,7 +9,7 @@
    ⚠️ Core 沒有父子節點，因此「繞著原點公轉」做不到；改用「本身就畫著若干個點的
       環形素材整片旋轉」來表現（runePlanet／ringSegments4／sawRing 等）。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, deg, sprite, particle } = kit;
+const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const FLAT = 0.52;          // 地板矩形／落點預警的縱向壓縮
@@ -182,10 +182,18 @@ function tornado(o) {
       alpha: 0.8, tint: o.edge, blend: 'add', duration: 1.2,
       alphaOverLife: LOOP_A(0.7, 0.95), rotationOverLife: C.spin(1.5)
     }),
+    /* 漏斗裡的碎屑：湍流 ＋ 阻力。
+
+       ⚠️ 這裡**不能**用 orbitalSpeed。那是螢幕平面上的旋轉，龍捲風要的卻是
+       「繞著一根鉛直軸盤旋」——用平面旋轉的話，往上飄的碎屑會連同 y 位移
+       一起被轉回來，變成繞著漏斗底部打轉的風車，而不是螺旋上升。
+       軸向受限的環繞是另一個功能，目前沒有，所以老實地用噪聲做亂流。 */
     particle(Object.assign({
       id: 'motes', asset: A.dot, z: 7, blend: 'add', tint: o.core,
       rate: 14, lifetime: [0.5, 0.85], spawnBox: [50, 16], speed: [60, 120], direction: -90, spread: 40,
-      gravity: { x: 0, y: -70 }, startPx: [4, 8],
+      gravity: { x: 0, y: -70 }, drag: 1.2,
+      noise: { strength: 7, frequency: 0.05, scrollSpeed: 2.5 },
+      startPx: [4, 8],
       alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
     }, o.motes || {}))
   ];
@@ -288,10 +296,13 @@ P['orb-void-disc'] = () => {
 function orbitRing(o) {
   return [
     disc({ id: 'ring', asset: A.ringA, z: 0, d: 200, flat: FLAT_R, alpha: o.alpha, tint: o.tint, dur: 2, alphaOverLife: LOOP_A(o.alpha, o.alpha * 1.4) }),
+    /* 這一個才是真的螢幕平面環繞：地板環是俯視壓扁的橢圓，模擬層的
+       sgOrbitStep 算接觸也是在螢幕平面上繞，兩邊同一件事。
+       0.4 圈／秒是環境感的慢飄，不是判定用的環繞體（那是 Adapter 另外播的）。 */
     particle(Object.assign({
       id: 'motes', asset: A.dot, z: 1, blend: 'add', tint: o.tint,
       rate: 6, lifetime: [0.5, 0.9], spawnRadius: 96, speed: [15, 40], direction: -90, spread: 60,
-      gravity: { x: 0, y: -40 }, startPx: [3, 6],
+      gravity: { x: 0, y: -40 }, orbitRps: 0.4, drag: 0.8, startPx: [3, 6],
       alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
     }, o.motes || {}))
   ];
