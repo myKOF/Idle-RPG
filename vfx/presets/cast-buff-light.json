@@ -217,6 +217,12 @@
         "x": 0,
         "y": -40
       },
+      "drag": 2,
+      "noise": {
+        "frequency": 0.05,
+        "scrollSpeed": 1,
+        "strength": 4
+      },
       "startScale": [
         0.0137,
         0.0254
@@ -233,6 +239,20 @@
         [
           1,
           0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.5,
+          "#ffffff"
+        ],
+        [
+          1,
+          "#2a2a30"
         ]
       ],
       "scaleOverLife": [

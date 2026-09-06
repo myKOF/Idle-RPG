@@ -147,6 +147,7 @@
       ],
       "direction": 180,
       "spread": 40,
+      "drag": 5,
       "startScale": [
         0.0156,
         0.0273
@@ -165,6 +166,20 @@
         [
           1,
           0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.5,
+          "#ffffff"
+        ],
+        [
+          1,
+          "#2a2a30"
         ]
       ],
       "scaleOverLife": [

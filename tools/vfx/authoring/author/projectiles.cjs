@@ -4,7 +4,7 @@
    Runtime 逐幀 setTransform 帶著它移動並依飛行方位旋轉，Preset 本身不做位移。
    名目尺寸見 vfx-catalog.cjs（D＝直徑、L＝長、W＝寬、R＝半徑）。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, deg, sprite, particle } = kit;
+const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const BODY_A = [[0, 0], [0.06, 1], [0.9, 1], [1, 0]];      // 出現 → 全程亮著 → 收尾淡出
@@ -36,11 +36,18 @@ function orb(o) {
 }
 
 /* ---- 拖尾：往 -X 灑出去（direction 180） ---- */
+/* 拖尾：飛行物一路灑下的碎屑。
+
+   drag：灑下來的東西會停在原地，不會維持初速一直往後飛。沒有它的話拖尾
+   是一條等速往後延伸的直線，看起來像固定長度的尾巴被拖著走；有了它，
+   碎屑會在生成點附近慢下來，尾巴自然地散開。
+   tintOverLife：末段壓暗但不改色相，各元素共用同一條。 */
 function trail(o) {
   return particle(Object.assign({
     id: 'trail', asset: A.dot, z: 4, blend: 'add',
     rate: 26, lifetime: [0.16, 0.3], spawnRadius: 3,
     speed: [10, 40], direction: 180, spread: 40,
+    drag: 5, tintOverLife: RAMP.fadeDark,
     startPx: [4, 8], alphaOverLife: TRAIL_A, scaleOverLife: TRAIL_S
   }, o));
 }
@@ -226,6 +233,10 @@ function meteor(o) {
       id: 'tail', asset: A.flame05, z: 5, blend: 'add', tint: '#f89800',
       rate: o.rate, lifetime: [o.tailSec * 0.7, o.tailSec], spawnRadius: o.d * 0.25,
       speed: [o.tailPx / o.tailSec * 0.7, o.tailPx / o.tailSec], direction: 180, spread: 26,
+      /* 隕石尾：走火焰色階（燃燒物冷卻會偏紅），加亂流讓火舌翻滾。
+         drag 給小的——尾巴要拖得夠長，減速太快會變成一團跟在後面的球。 */
+      drag: 1.2, tintOverLife: RAMP.fireCore,
+      noise: { strength: o.d * 0.09, frequency: 0.03, scrollSpeed: 1.6 },
       startPx: [o.d * 0.3, o.d * 0.55],
       alphaOverLife: [[0, 0.9], [0.4, 0.7], [1, 0]], scaleOverLife: [[0, 1], [1, 0.35]]
     })
@@ -259,6 +270,9 @@ P['proj-starfall'] = () => ({
     particle({
       id: 'tail', asset: A.flame05, z: 6, blend: 'add', tint: '#e0451a',
       rate: 18, lifetime: [1.6, 2.4], spawnRadius: 90, speed: [180, 300], direction: 180, spread: 26,
+      /* 同隕石尾，尺度放大：亂流強度跟著體積走，否則在 190px 的火舌上看不見。 */
+      drag: 1, tintOverLife: RAMP.fireCore,
+      noise: { strength: 26, frequency: 0.012, scrollSpeed: 1.2 },
       startPx: [110, 190], alphaOverLife: [[0, 0.9], [0.4, 0.6], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
     })
   ]
