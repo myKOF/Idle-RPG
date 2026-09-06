@@ -141,6 +141,59 @@ test('FALLBACK-2 受擊沒有任何目標時回 false（不能炸在原點）', 
   assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: [], vfx: { hit: 'hit-x' } }), false);
 });
 
+/* 這一組共用：把 budget 縮到極小，才驗得到「超預算時怎麼辦」。
+   正式設定已經不節流了（見 BUDGET-1），所以不能靠預設值打爆它。 */
+function tinyBudgetAdapter() {
+  return makeAdapter([unitPreset('proj-x', 5)], { fxBudget: { maxActiveEffects: 3 } });
+}
+const SHOT = {
+  fxKind: 'projectile', targets: [], angle: 0, lineLength: 300, travelMs: [4000],
+  vfx: { projectile: 'proj-x' }
+};
+
+test('FALLBACK-3 超出 budget 時整則丟掉，不落回舊畫法', function () {
+  /* 2026-09-06 實機回報：一次風刃齊射裡有幾道是 Preset、有幾道是舊的綠鐮刀。
+     成因不是缺 preset，是 Core 的 maxActiveEffects 被打爆——play() 回 null，
+     tryPlay 就回 false，於是那幾道改由 battle-renderer 的 drawWindCrescent 畫。
+     兩種畫風並存比少一道明顯得多，所以超預算時要「吃掉」這一則。 */
+  const { adapter } = tinyBudgetAdapter();
+  let played = 0;
+  for (let i = 0; i < 20; i++) if (adapter.tryPlay(Object.assign({}, SHOT))) played++;
+  const s = adapter.stats();
+  assert.ok(s.fx.droppedEffects > 0, '這一輪要真的打爆預算，否則這條沒驗到東西');
+  assert.equal(played, 20, '每一則都要被接手——回 false 就會有舊畫法混進來');
+  assert.equal(s.skipped, 0, '超預算不算「沒有 preset」，不能記成 skipped');
+  assert.equal(s.dropped, s.fx.droppedEffects, '丟掉幾則要對得上 Core 丟掉幾個特效');
+});
+
+test('FALLBACK-4 超預算被吃掉，缺 preset 仍然退回舊畫法', function () {
+  /* 上一條的反面：不能為了不混畫風就把「這份 preset 根本不存在」也吞掉，
+     那會變成該有的特效整個不見。 */
+  const { adapter } = tinyBudgetAdapter();
+  for (let i = 0; i < 20; i++) adapter.tryPlay(Object.assign({}, SHOT));
+  assert.ok(adapter.stats().fx.droppedEffects > 0, '預算已經滿了');
+  assert.equal(adapter.tryPlay({
+    fxKind: 'projectile', targets: [], angle: 0, lineLength: 300, travelMs: [400],
+    vfx: { projectile: 'not-loaded' }
+  }), false, '沒有這份 preset 就該退回舊畫法，與預算滿不滿無關');
+});
+
+test('BUDGET-1 正式設定不節流：畫面上同時幾百個特效也不丟', function () {
+  /* 使用者決策 2026-09-06：效能節流先整個拿掉，等實機體感再決定數字。
+     這一條釘住「預設不綁」——之後要重新開啟節流時它會紅，那正是提醒：
+     改了數字就要一起想清楚「被丟掉的那幾則會不會被看出來」。 */
+  const { adapter } = makeAdapter([unitPreset('proj-x', 5)]);
+  for (let i = 0; i < 500; i++) adapter.tryPlay(Object.assign({}, SHOT));
+  const s = adapter.stats();
+  assert.equal(s.fx.droppedEffects, 0, '500 個同時存在也不該被丟掉');
+  assert.equal(s.dropped, 0);
+  assert.equal(s.played, 500);
+  /* 上限仍然是個有限值（Core 的硬上限），只是高到不會綁住任何合理用途。 */
+  assert.ok(isFinite(s.fx.budget.maxActiveEffects));
+  assert.ok(s.fx.budget.maxActiveEffects >= 65536, '同時特效數不該再是節流點');
+  assert.ok(s.zone.budget.maxActiveEffects >= 65536, '場域那一面也一樣');
+});
+
 /* ============================================================
    PLACE — 擺在哪、多大（§1.1 的 Runtime 怎麼放 / §1.2 名目尺寸）
    ============================================================ */
