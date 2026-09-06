@@ -4,7 +4,7 @@
    Runtime 以 scale = area.r / 100 播放。
    地面向的環一律壓成扁橢圓（縱向 0.5～0.62）——戰場是俯視斜角，正圓會浮在半空。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, deg, sprite, particle } = kit;
+const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const FLASH_A = [[0, 0], [0.08, 1], [0.4, 0.5], [1, 0]];
@@ -32,12 +32,17 @@ function ring(o) {
   }, o, { sizeX: d, sizeY: d * (o.flat === undefined ? FLAT : o.flat), d: undefined, flat: undefined }));
 }
 
-/* ---- 向外飛散的碎片 ---- */
+/* ---- 向外飛散的碎片 ----
+   drag 4/秒：爆炸拋出的碎屑一開始很快、很快就被空氣拖慢，最後幾乎是自由落體。
+   沒有它的話 180～300 px/s 是等速維持到消失，看起來像被均勻拋出的珠子，
+   而不是被炸開的碎片——爆炸的「爆」感有一半在這個減速上。
+   tintOverLife 末段壓暗（不改色相），所以各元素共用同一條。 */
 function shards(o) {
   return particle(Object.assign({
     id: 'shards', asset: A.dot, z: 6, blend: 'add',
     burst: 14, lifetime: [0.3, 0.5], spawnRadius: 12,
     speed: [180, 300], direction: 0, spread: 360, gravity: { x: 0, y: 260 },
+    drag: 4, tintOverLife: RAMP.fadeDark,
     startPx: [6, 11], alphaOverLife: SHARD_A, scaleOverLife: SHARD_S
   }, o));
 }
@@ -53,7 +58,10 @@ P['burst-fire'] = () => ({
     ring({ id: 'wave-b', z: 3, tint: '#7d1708', d: 210, delay: 0.1, duration: 0.5, alpha: 0.8 }),
     ring({ id: 'wave-c', z: 4, tint: '#ffb21c', d: 220, delay: 0.22, duration: 0.5, alpha: 0.6 }),
     flash({ tint: '#ffd447' }),
-    shards({ id: 'tongues', asset: A.flame05, tint: '#ff8a3d', burst: 18, startPx: [16, 30], lifetime: [0.32, 0.56], speed: [150, 290] })
+    /* 火舌走火焰色階（白熱 → 黃 → 橙紅 → 燼）：火的顏色就是溫度，
+       冷卻該偏紅而不是單純變暗。噪聲讓十八片火舌各自扭一下，不是十八根直線。 */
+    shards({ id: 'tongues', asset: A.flame05, tint: '#ff8a3d', burst: 18, startPx: [16, 30], lifetime: [0.32, 0.56], speed: [150, 290],
+      tintOverLife: RAMP.fireCore, noise: { strength: 9, frequency: 0.04, scrollSpeed: 2 } })
   ]
 });
 
@@ -248,7 +256,11 @@ P['burst-fire-shockwave'] = () => ({
     ring({ id: 'wave-c', z: 4, tint: '#ffb21c', d: 220, delay: 0.26, duration: 0.55, alpha: 0.6 }),
     flash({ tint: '#ffd447', size: 120 }),
     shards({ id: 'tongues', asset: A.flame05, tint: '#ffd447', burst: 18, startPx: [18, 34], speed: [180, 330], lifetime: [0.34, 0.6] }),
-    shards({ id: 'smoke', asset: A.smokeT, z: 7, blend: 'normal', tint: '#5b4436', burst: 6, startPx: [30, 54], speed: [70, 140], gravity: { x: 0, y: -40 }, lifetime: [0.5, 0.85], alphaOverLife: [[0, 0], [0.2, 0.55], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.3]] })
+    /* 煙：被拖慢、翻滾、由餘燼色轉灰。這三件事一起做，煙才會「散開」
+       而不是「整團平移出去」。 */
+    shards({ id: 'smoke', asset: A.smokeT, z: 7, blend: 'normal', tint: '#5b4436', burst: 6, startPx: [30, 54], speed: [70, 140], gravity: { x: 0, y: -40 }, lifetime: [0.5, 0.85],
+      drag: 2.5, noise: { strength: 12, frequency: 0.02, scrollSpeed: 1.2 }, tintOverLife: RAMP.fireSmoke,
+      alphaOverLife: [[0, 0], [0.2, 0.55], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.3]] })
   ]
 });
 

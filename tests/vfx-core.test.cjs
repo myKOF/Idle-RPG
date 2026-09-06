@@ -1059,6 +1059,224 @@ test('載入失敗的 URL 在最後一個 owner 歸零時，仍會實際呼叫 A
     '從未成功載入不代表沒有 ownership；歸零時必須實際呼叫 unload');
 });
 
+/* ---------------- 序列幀（sprite sheet） ----------------
+   加入之前，一個圖層一輩子只能是同一張靜圖。火焰、爆炸、煙霧、電弧這幾類
+   本質上就是序列幀，靠靜態四邊形疊再多層也只會像「發光的形狀」而不像火。
+
+   ⚠️ 這一組同時是「素材缺口」的紀錄：目前素材庫裡一張圖集都沒有
+   （見 docs/vfx/VFX_ASSET_LIBRARY_DESIGN.md §1.4），所以能力做好了但
+   正式 preset 一份都還沒用。測試用的是合成的格線，不依賴任何素材。 */
+
+function frameSeries(layerExtra, steps, dt, presetExtra) {
+  const frames = [];
+  const backend = {
+    createNode: function () { return {}; },
+    updateNode: function (node, t) { if (t && t.visible !== false) frames.push(t.frame); },
+    destroyNode: function () {}
+  };
+  const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+  rt.registerPreset(Object.assign({
+    schemaVersion: 1, id: 'sheet-case', duration: 1,
+    layers: [Object.assign({ id: 'a', type: 'sprite', assetId: 'pack/ring.png' }, layerExtra)]
+  }, presetExtra || {}));
+  rt.play('sheet-case');
+  for (let i = 0; i < steps; i++) rt.update(dt === undefined ? 0.1 : dt);
+  return frames;
+}
+
+test('SHEET-1 沒有 sheet 的圖層不帶 frame（既有 151 份完全不受影響）', function () {
+  const f = frameSeries({}, 5);
+  assert.ok(f.length >= 4);
+  f.forEach(function (v) { assert.equal(v, undefined); });
+});
+
+test('SHEET-2 life 模式：整份序列攤在生命週期上播完一次', function () {
+  /* 4 格、duration 1 秒、每 0.1 秒一次 update。update 是先推進再畫，
+     所以取樣的進度是 0.1…1.0，幀號＝floor(進度×4)：
+       0.1→0  0.2→0  0.3→1  0.4→1  0.5→2  0.6→2  0.7→2(2.8)  0.8→3  0.9→3  1.0→3 */
+  const f = frameSeries({ sheet: { columns: 2, rows: 2 } }, 10);
+  assert.deepEqual(f, [0, 0, 1, 1, 2, 2, 2, 3, 3, 3]);
+});
+
+test('SHEET-3 用 floor 不用 round：頭尾兩格不該只出現一半的時間', function () {
+  /* round 會讓第 0 格只在 progress < 1/(2n) 時出現，等速播放的序列
+     因此在頭尾各閃一下。這一條直接量每一格出現幾次。 */
+  const f = frameSeries({ sheet: { columns: 4, rows: 1 } }, 40, 0.025);
+  const count = {};
+  f.forEach(function (v) { count[v] = (count[v] || 0) + 1; });
+  const times = Object.keys(count).map(function (k) { return count[k]; });
+  const spread = Math.max.apply(null, times) - Math.min.apply(null, times);
+  assert.ok(spread <= 1, '每一格的停留時間應該一樣長，實得 ' + JSON.stringify(count));
+});
+
+test('SHEET-4 count 可以小於格數（圖集末尾常常是空白格）', function () {
+  const f = frameSeries({ sheet: { columns: 4, rows: 4, count: 5 } }, 10);
+  assert.equal(Math.max.apply(null, f), 4, '不該播到第 5 格以後的空白');
+});
+
+test('SHEET-5 fps 模式與生命長短無關，且預設會循環', function () {
+  /* 10 fps、每幀 0.1 秒 → 每一次 update 前進一格；4 格所以會繞回去。 */
+  const f = frameSeries({ sheet: { columns: 4, rows: 1, mode: 'fps', fps: 10 } }, 9);
+  assert.deepEqual(f, [1, 2, 3, 0, 1, 2, 3, 0, 1]);
+});
+
+test('SHEET-6 life 模式預設不循環：演完停在最後一格', function () {
+  const f = frameSeries({ sheet: { columns: 3, rows: 1 } }, 12, 0.09);
+  assert.equal(f[f.length - 1], 2, '最後應該停在第 2 格而不是繞回 0');
+  /* 明確要求循環時才循環。 */
+  const looped = frameSeries({ sheet: { columns: 3, rows: 1, mode: 'fps', fps: 30, loop: true } }, 20, 0.04);
+  assert.equal(new Set(looped).size, 3, '三格都要出現');
+  const after2 = looped.indexOf(2);
+  assert.ok(after2 >= 0 && looped.indexOf(0, after2) > after2, '播到最後一格之後要繞回 0');
+});
+
+test('SHEET-7 粒子的 randomStart 讓同層的粒子不同步', function () {
+  const seen = [];
+  const backend = {
+    createNode: function () { return {}; },
+    updateNode: function (node, t) { if (t && t.visible !== false) seen.push(t.frame); },
+    destroyNode: function () {}
+  };
+  const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+  rt.registerPreset({
+    schemaVersion: 1, id: 'sheet-particles', duration: 2,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'burst', count: 12 }, lifetime: 1.5, spawn: { shape: 'point' },
+      sheet: { columns: 4, rows: 2, randomStart: true, loop: true }
+    }]
+  });
+  rt.play('sheet-particles');
+  rt.update(1 / 60);
+  /* 第一幀就該看到多種格號——十二顆粒子同時出生，若沒有起始偏移，
+     它們會像同一個動畫被複製十二份。 */
+  assert.ok(new Set(seen).size > 3, '同時出生的粒子格號只有 ' + new Set(seen).size + ' 種');
+});
+
+test('SHEET-8 randomStart 由 rng 決定：重播兩次逐位元相同', function () {
+  function run() {
+    const seen = [];
+    const rt = VFXCore.createRuntime({
+      backend: {
+        createNode: function () { return {}; },
+        updateNode: function (n, t) { if (t && t.visible !== false) seen.push(t.frame); },
+        destroyNode: function () {}
+      },
+      resolver: resolver()
+    });
+    rt.registerPreset({
+      schemaVersion: 1, id: 'sheet-det', duration: 2,
+      layers: [{
+        id: 'p', type: 'particle', assetId: 'pack/star.png',
+        emission: { mode: 'burst', count: 10 }, lifetime: 1.5, spawn: { shape: 'point' },
+        sheet: { columns: 4, rows: 2, randomStart: true }
+      }]
+    });
+    rt.play('sheet-det');
+    for (let i = 0; i < 20; i++) rt.update(1 / 60);
+    return seen;
+  }
+  assert.deepEqual(run(), run(), '起始格必須來自圖層的 rng，不能用 Math.random');
+});
+
+test('SHEET-9 節點池以格線分開：8×8 的節點不會被重用成 4×4', function () {
+  /* 同一張圖切成不同格線是不同的節點規格。共用池的話，換一個特效之後
+     會拿到一個已經切成別種格線的節點——畫面上是「動畫突然變成別的東西」，
+     而且因為只在池子命中時才發生，重現條件極難掌握。 */
+  const specs = [];
+  const backend = {
+    createNode: function (spec) { specs.push(spec); return {}; },
+    updateNode: function () {}, destroyNode: function () {}
+  };
+  const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+  ['a', 'b'].forEach(function (id, i) {
+    rt.registerPreset({
+      schemaVersion: 1, id: 'grid-' + id, duration: 0.2,
+      layers: [{
+        id: 'x', type: 'sprite', assetId: 'pack/ring.png',
+        sheet: { columns: i === 0 ? 8 : 4, rows: i === 0 ? 8 : 4 }
+      }]
+    });
+  });
+  rt.play('grid-a'); rt.update(0.05); rt.update(0.3);   // 播完並回收
+  rt.play('grid-b'); rt.update(0.05);
+  assert.equal(specs.length, 2, '格線不同就必須新建節點，不能從池子拿');
+  assert.deepEqual(specs.map(function (s) { return s.sheet; }),
+    [{ columns: 8, rows: 8 }, { columns: 4, rows: 4 }]);
+});
+
+test('SHEET-10 nodeSpec 帶著格線交給後端（後端要據此切圖）', function () {
+  const specs = [];
+  const rt = VFXCore.createRuntime({
+    backend: {
+      createNode: function (s) { specs.push(s); return {}; },
+      updateNode: function () {}, destroyNode: function () {}
+    },
+    resolver: resolver()
+  });
+  rt.registerPreset({
+    schemaVersion: 1, id: 'spec-case', duration: 1,
+    layers: [{ id: 'a', type: 'sprite', assetId: 'pack/ring.png', sheet: { columns: 6, rows: 5 } }]
+  });
+  rt.play('spec-case'); rt.update(0.1);
+  assert.deepEqual(specs[0].sheet, { columns: 6, rows: 5 });
+});
+
+test('SHEET-11 驗證：格線與模式錯了要報錯', function () {
+  function errs(sheet) {
+    return VFXCore.validatePreset({
+      schemaVersion: 1, id: 's', duration: 1,
+      layers: [{ id: 'a', type: 'sprite', assetId: 'pack/ring.png', sheet: sheet }]
+    }).errors.join('；');
+  }
+  assert.match(errs({ columns: 0, rows: 4 }), /columns/);
+  assert.match(errs({ columns: 4.5, rows: 4 }), /columns/);
+  assert.match(errs({ columns: 4, rows: 4, count: 20 }), /超過格數 16/);
+  assert.match(errs({ columns: 4, rows: 4, mode: 'pingpong' }), /mode 非法值/);
+  assert.match(errs({ columns: 4, rows: 4, mode: 'fps' }), /必須給 fps/);
+  assert.match(errs({ columns: 4, rows: 4, fps: -1 }), /fps/);
+  assert.match(errs({ columns: 999, rows: 1 }), /硬上限/);
+  assert.match(errs({ columns: 4, rows: 4, wrap: true }), /wrap/);
+  assert.match(errs('8x8'), /必須是 \{ columns/);
+  assert.deepEqual(VFXCore.validatePreset({
+    schemaVersion: 1, id: 's', duration: 1,
+    layers: [{
+      id: 'a', type: 'sprite', assetId: 'pack/ring.png',
+      sheet: { columns: 8, rows: 8, count: 60, mode: 'fps', fps: 24, randomStart: true, loop: true }
+    }]
+  }).errors, []);
+});
+
+test('SHEET-12 序列化：欄位進得去也出得來，且不影響沒有它的 preset', function () {
+  const withSheet = {
+    schemaVersion: 1, id: 'sheet-ser', duration: 1,
+    layers: [{ id: 'a', type: 'sprite', assetId: 'pack/ring.png', sheet: { columns: 8, rows: 8 } }]
+  };
+  const once = VFXCore.serialisePreset(withSheet);
+  assert.equal(VFXCore.serialisePreset(JSON.parse(once)), once, '存→載→再存必須位元相同');
+  assert.match(once, /"sheet"/);
+  /* 沒有這個欄位的 preset 不該因為新增欄位而多出任何東西。
+     比對 '"sheet"'（含引號）而不是 'sheet'——preset 的 id 本身就含這個字。 */
+  const plain = {
+    schemaVersion: 1, id: 'plain-case', duration: 1,
+    layers: [{ id: 'a', type: 'sprite', assetId: 'pack/ring.png' }]
+  };
+  assert.ok(VFXCore.serialisePreset(plain).indexOf('"sheet"') < 0);
+});
+
+test('SHEET-13 Pixi 後端不改共用貼圖的 frame，而是為每一格各建一個 Texture', function () {
+  /* Pixi 的 Texture 是可以共用的物件。一個節點把 texture.frame 改掉，
+     所有用同一張圖的節點會一起變——畫面上是「別的特效跟著換格」，
+     而且完全查不出是誰動的。這一條釘住實作方式，不是行為。 */
+  const src = fs.readFileSync(path.join(root, 'js/vfx-pixi-backend.js'), 'utf8');
+  assert.match(src, /new PixiLib\.Texture\(\{[\s\S]{0,120}frame: new PixiLib\.Rectangle/,
+    '每一格要各建一個 Texture');
+  assert.ok(!/\.texture\.frame\s*=/.test(src), '不得直接改貼圖自己的 frame');
+  assert.match(src, /sheetCache/, '切好的格子要快取，不能每個節點重切一次');
+  /* 非同步載入期間收到的幀號要記著，載完補上，否則會停在第 0 格。 */
+  assert.match(src, /__frameWanted/);
+});
+
 /* ---------------- 粒子運動：阻力、徑向、環繞、噪聲 ----------------
    這四項的共同點是**不需要任何新素材**，成本純粹是模擬迴圈。
    加入之前粒子只會「以固定初速直線飛、外加重力」，做不出漩渦、吸引子、

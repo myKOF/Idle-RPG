@@ -4,7 +4,7 @@
      anchor y=1（底端釘在原點）＋ sizeY=H 就是整根柱子；分段收窄用多個 sprite 疊。
    光束類：沿 +X 長 200px，anchor x=0（根部在原點）；Runtime 以 scaleX = 距離/200 拉長。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, deg, sprite, particle } = kit;
+const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const BOT = { x: 0.5, y: 1 };     // 底端對齊原點（天降柱）
@@ -111,7 +111,8 @@ function pillar(o) {
     particle(Object.assign({
       id: 'motes', asset: A.dot, z: 5, blend: 'add', tint: o.edge,
       burst: 5, lifetime: [0.4, 0.6], spawnRadius: 22, speed: [30, 60], direction: -90, spread: 70,
-      gravity: { x: 0, y: -50 }, startPx: [5, 9],
+      /* 著地揚起的塵：往上噴之後被空氣拖住、慢慢淡掉。 */
+      gravity: { x: 0, y: -50 }, drag: 2.5, tintOverLife: RAMP.fadeDark, startPx: [5, 9],
       alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 0.7], [1, 0.4]]
     }, o.motes || {}))
   ];

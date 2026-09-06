@@ -4,7 +4,7 @@
    curse-*：原點＝目標身體中心，符號緩慢上升並淡出。
    ⚠️ Core 的圖層不能位移，「上升＋擺動的符號」一律用 burst:1 的粒子表現。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, deg, sprite, particle } = kit;
+const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const CAST_DUR = 0.9;
@@ -38,7 +38,9 @@ function cast(o) {
     particle(Object.assign({
       id: 'motes', asset: A.dot, z: 4, blend: 'add', tint: o.mote || o.tint,
       burst: 4, lifetime: [0.45, 0.7], spawnBox: [40, 12], speed: [35, 70], direction: -90, spread: 45,
-      gravity: { x: 0, y: -40 }, startPx: [5, 9],
+      /* 施法時被吸起來的光點：上升途中減速並飄移，像懸浮而不是被彈射出去。 */
+      gravity: { x: 0, y: -40 }, drag: 2, noise: { strength: 4, frequency: 0.05, scrollSpeed: 1 },
+      tintOverLife: RAMP.fadeDark, startPx: [5, 9],
       alphaOverLife: MOTE_A, scaleOverLife: [[0, 0.8], [1, 0.4]]
     }, o.motes || {}))
   ];

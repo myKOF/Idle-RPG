@@ -89,6 +89,20 @@
           0
         ]
       ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.5,
+          "#ffffff"
+        ],
+        [
+          1,
+          "#2a2a30"
+        ]
+      ],
       "scaleOverLife": [
         [
           0,

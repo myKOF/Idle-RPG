@@ -241,6 +241,28 @@ const T = {
   blueThunder: { c1: '#7dd3fc', c2: '#ffffff', glow: '#2563eb' }
 };
 
+/* ---- 元素色階（tintOverLife 用） ----
+   色票 T 給的是「這個元素長什麼顏色」，色階給的是「它隨時間怎麼變」。
+   兩者分開，因為同一個元素在不同角色上的變化方式不同：
+   火的核心要走「白熱 → 黃 → 紅 → 暗」，火的煙卻要走「暗紅 → 灰」。
+
+   一律以白色（＝乘 1）當起點的那幾條，可以直接掛在原本就有 tint 的圖層上，
+   不必改它的 tint——相乘語意下起點不變，只是後面開始變色。 */
+const RAMP = {
+  /* 白熱 → 黃 → 橙紅 → 燼。火焰、爆炸的核心與火星。 */
+  fireCore: [[0, '#ffffff'], [0.18, '#ffe08a'], [0.45, '#ff7a2a'], [0.75, '#c02a12'], [1, '#3a1008']],
+  /* 亮 → 暗紅 → 灰。爆炸後的煙。 */
+  fireSmoke: [[0, '#ffffff'], [0.25, '#c8613a'], [0.6, '#6b5148'], [1, '#3a3a3c']],
+  /* 白 → 藍白 → 深藍。閃電放電後的餘輝。 */
+  lightning: [[0, '#ffffff'], [0.3, '#eaf4ff'], [0.7, '#8fc4ff'], [1, '#2a4a8a']],
+  /* 白 → 冰藍 → 深藍。冰晶碎片。 */
+  ice: [[0, '#ffffff'], [0.35, '#cfefff'], [0.75, '#5aa8e6'], [1, '#1e4d78']],
+  /* 亮綠 → 深綠。毒與風的餘韻。 */
+  poison: [[0, '#ffffff'], [0.4, '#b6f07a'], [0.8, '#4a8f24'], [1, '#1e3a10']],
+  /* 白 → 元素色 → 透黑。通用的「亮起來再暗下去」，給不特別指定的元素用。 */
+  fadeDark: [[0, '#ffffff'], [0.5, '#ffffff'], [1, '#2a2a30']]
+};
+
 const px = n => +(n / 512).toFixed(4);
 const deg = d => +(d * Math.PI / 180).toFixed(4);
 const num = (v, name) => { if (typeof v !== 'number' || !isFinite(v)) throw new Error(name + ' 必須是數字'); return v; };
@@ -264,7 +286,7 @@ function common(o, out) {
   if (o.blend !== undefined) out.blendMode = o.blend;
   if (o.delay !== undefined) out.delay = o.delay;
   if (o.duration !== undefined) out.duration = o.duration;
-  ['alphaOverLife', 'scaleOverLife', 'rotationOverLife'].forEach(k => { if (o[k] !== undefined) out[k] = o[k]; });
+  ['alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife'].forEach(k => { if (o[k] !== undefined) out[k] = o[k]; });
   return out;
 }
 function sprite(o) {
@@ -284,7 +306,11 @@ function particle(o) {
   if (o.spawnRadius !== undefined) out.spawn = { shape: 'circle', radius: o.spawnRadius };
   else if (o.spawnBox !== undefined) out.spawn = { shape: 'box', width: o.spawnBox[0], height: o.spawnBox[1] };
   else if (o.spawn) out.spawn = o.spawn;
-  ['speed', 'direction', 'spread', 'gravity', 'startScale', 'rotationStart', 'rotationSpeed', 'alignToVelocity', 'velocityRotationOffset'].forEach(k => { if (o[k] !== undefined) out[k] = o[k]; });
+  ['speed', 'direction', 'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
+    'startScale', 'rotationStart', 'rotationSpeed', 'alignToVelocity', 'velocityRotationOffset']
+    .forEach(k => { if (o[k] !== undefined) out[k] = o[k]; });
+  /* 角速度以「圈／秒」給比較好想（技能表寫的就是「繞行 N 圈」），存檔仍是弧度／秒。 */
+  if (o.orbitRps !== undefined) out.orbitalSpeed = +(o.orbitRps * Math.PI * 2).toFixed(4);
   if (o.startPx !== undefined) out.startScale = Array.isArray(o.startPx) ? [px(o.startPx[0]), px(o.startPx[1])] : px(o.startPx); // 粒子尺寸以像素給
   return out;
 }
@@ -366,4 +392,4 @@ function probe(id, opts) {
   return { id: id, layers: preset.layers.length, bbox: { x: [Math.round(minX), Math.round(maxX)], y: [Math.round(minY), Math.round(maxY)] }, maxParticles: maxNodes, duration: preset.duration, loop: preset.loop };
 }
 
-module.exports = { A, T, C, px, deg, sprite, particle, procedural, write, writeRootGroupLayout, probe, assertAsset, ASSETS, REPO };
+module.exports = { A, T, C, RAMP, px, deg, sprite, particle, procedural, write, writeRootGroupLayout, probe, assertAsset, ASSETS, REPO };

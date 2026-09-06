@@ -134,7 +134,13 @@
     { key: 'tint', label: 'tint', kind: 'color' },
     { key: 'blendMode', label: 'blendMode', kind: 'select', options: function () { return VFXCore.BLEND_MODES; } },
     num('delay', 'delay(s)'),
-    num('duration', 'duration(s)')
+    num('duration', 'duration(s)'),
+    /* 序列幀（2026-09-06）。掛在共通欄位而不是型別專屬：三種圖層都真的吃得到
+       ——procedural 走 TilingSprite，換格等於換它平鋪的那一小塊，
+       與 uvScroll 疊起來就是「會播動畫的平鋪紋理」，是有意義的組合。
+         { columns, rows, count?, mode?('life'|'fps'), fps?, randomStart?, loop? }
+       素材庫目前一張圖集都沒有，所以正式 preset 還沒有人用（Material Gap）。 */
+    json('sheet', 'sheet')
   ];
 
   /* 與 vfx-core.js layerDefaults() 對齊的向量預設值 */

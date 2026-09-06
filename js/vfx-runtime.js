@@ -952,10 +952,16 @@ var VFXRuntime = (function () {
     return Object.keys(ids);
   }
 
+  /* vfx/presets/*.json 與 vfx/shipped-assets.json 是**資料**，不是被 index.html
+     的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
+     舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
+     ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
+  var DATA_VERSION = '20260906-motion-and-tint-b';
+
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
     return Promise.all(ids.map(function (id) {
-      return fetch(prefix + id + '.json')
+      return fetch(prefix + id + '.json?v=' + DATA_VERSION)
         .then(function (r) { return r.ok ? r.json() : null; })
         .catch(function () { return null; });
     })).then(function (list) {
@@ -968,7 +974,7 @@ var VFXRuntime = (function () {
   function boot(o) {
     var opts = o || {};
     if (typeof VFXCore === 'undefined' || typeof VFXPixiBackend === 'undefined') return Promise.resolve(null);
-    return fetch(opts.shippedUrl || 'vfx/shipped-assets.json')
+    return fetch((opts.shippedUrl || 'vfx/shipped-assets.json') + '?v=' + DATA_VERSION)
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (index) {
         if (!index) return null;

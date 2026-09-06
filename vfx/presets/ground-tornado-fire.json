@@ -389,6 +389,12 @@
         "x": 0,
         "y": -70
       },
+      "drag": 1.2,
+      "noise": {
+        "frequency": 0.05,
+        "scrollSpeed": 2.5,
+        "strength": 7
+      },
       "startScale": [
         0.0078,
         0.0156

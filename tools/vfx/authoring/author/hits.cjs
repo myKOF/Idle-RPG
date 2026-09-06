@@ -4,7 +4,7 @@
    → 6 顆加法火花向外飛並受重力下墜；元素差異放在火花素材／行為與額外圖層。
    座標：原點 = 目標身體中心；名目：目標身高 60px、主體約 40px。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, sprite, particle } = kit;
+const { A, T, C, RAMP, sprite, particle } = kit;
 const PI = Math.PI;
 
 /* ---- 共用曲線（attack ≤ 12%、release 55%~ 之後） ---- */
@@ -42,12 +42,18 @@ function core(o) {
   return layers;
 }
 
-/* ---- 共用火花：6 顆、向外、受重力 ---- */
+/* ---- 共用火花：6 顆、向外、受重力、被空氣拖慢、末段變暗 ----
+   drag：碎屑噴出去之後會減速。沒有它的話火花是等速直線＋重力的拋物線，
+   看起來像被彈開的硬物，而不是被炸散的碎屑。3/秒 在 0.3 秒的壽命裡
+   大約掉到四成速度（v ≈ v0·e^(-drag·t)），夠明顯但不會讓它們原地停住。
+   tintOverLife：末段壓暗但不改色相（fadeDark 前半是白＝乘 1），
+   所以十三種元素共用同一條——冷卻是共通的，顏色不是。 */
 function sparks(o) {
   return particle(Object.assign({
     id: 'sparks', asset: A.dot, z: 5, blend: 'add',
     burst: 6, lifetime: [0.22, 0.34], spawnRadius: 4,
     speed: [80, 130], direction: -90, spread: 360, gravity: { x: 0, y: 320 },
+    drag: 3, tintOverLife: RAMP.fadeDark,
     startPx: [5, 9], alphaOverLife: SPARK_A, scaleOverLife: SPARK_S
   }, o));
 }
@@ -66,11 +72,17 @@ P['hit-phys'] = () => ({
 P['hit-fire'] = () => ({
   id: 'hit-fire', duration: 0.4, layers: [
     ...core({ haloTint: T.fire.glow, haloAlpha: 0.55, ringTint: T.fire.c1, flashAsset: A.fire01, flashTint: T.fire.c2, flashSize: 44 }),
-    sparks({ tint: T.fire.c2, direction: -90, spread: 240, speed: [60, 130], gravity: { x: 0, y: -140 }, lifetime: [0.26, 0.38], startPx: [4, 8] }),
+    /* 火星走火焰色階（白熱 → 黃 → 橙紅 → 燼）而不是共用的壓暗：
+       火花的顏色本來就是溫度，冷卻時該偏紅而不是單純變暗。 */
+    sparks({ tint: T.fire.c2, direction: -90, spread: 240, speed: [60, 130], gravity: { x: 0, y: -140 }, lifetime: [0.26, 0.38], startPx: [4, 8], tintOverLife: RAMP.fireCore }),
     particle({
       id: 'tongues', asset: A.flame05, z: 4, blend: 'add', tint: T.fire.c1,
       burst: 3, lifetime: [0.22, 0.32], spawnRadius: 8, speed: [30, 70], direction: -90, spread: 90,
-      gravity: { x: 0, y: -60 }, startPx: [14, 22], alphaOverLife: [[0, 0], [0.15, 1], [0.6, 0.8], [1, 0]], scaleOverLife: [[0, 0.7], [0.4, 1], [1, 0.5]]
+      /* 火舌往上竄然後被自己的浮力拖住：drag 讓它在頂點附近停留，
+         而不是等速一路衝出畫面。噪聲讓三片火舌各自扭一下，不像三根直棒。 */
+      gravity: { x: 0, y: -60 }, drag: 4, noise: { strength: 5, frequency: 0.06, scrollSpeed: 3 },
+      tintOverLife: RAMP.fireCore,
+      startPx: [14, 22], alphaOverLife: [[0, 0], [0.15, 1], [0.6, 0.8], [1, 0]], scaleOverLife: [[0, 0.7], [0.4, 1], [1, 0.5]]
     })
   ]
 });
@@ -79,7 +91,7 @@ P['hit-fire'] = () => ({
 P['hit-ice'] = () => ({
   id: 'hit-ice', duration: 0.4, layers: [
     ...core({ haloTint: T.ice.glow, ringTint: T.ice.c1, flashAsset: A.star09, flashTint: T.ice.c2, flashSize: 44, flashRot: 15 }),
-    sparks({ asset: A.diamond, tint: T.ice.c2, startPx: [6, 10], rotationStart: [0, PI], rotationSpeed: [-7, 7], speed: [90, 160], gravity: { x: 0, y: 380 } }),
+    sparks({ asset: A.diamond, tint: T.ice.c2, startPx: [6, 10], rotationStart: [0, PI], rotationSpeed: [-7, 7], speed: [90, 160], gravity: { x: 0, y: 380 }, tintOverLife: RAMP.ice }),
     particle({
       id: 'glints', asset: A.star08, z: 6, blend: 'add', tint: T.ice.c1,
       burst: 3, lifetime: [0.18, 0.28], spawnRadius: 12, speed: [10, 30], direction: -90, spread: 360,

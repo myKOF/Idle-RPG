@@ -61,6 +61,8 @@
         "x": 0,
         "y": 0
       },
+      "drag": 0.8,
+      "orbitalSpeed": 2.5133,
       "startScale": [
         0.0156,
         0.0273

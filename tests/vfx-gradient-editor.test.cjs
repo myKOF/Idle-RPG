@@ -185,11 +185,73 @@ test('WIRE-4 index.html 有載入兩個新檔，且在 editor.js 之前', functi
   assert.ok(at.editor < at.main, '要在 editor.js 之前');
 });
 
-test('WIRE-5 既有 151 份 preset 沒有一份帶 tintOverLife（本次不動既有資料）', function () {
+test('WIRE-5 正式 preset 真的用上新能力，而且每一份都仍然合法與 canonical', function () {
+  /* 這一條原本是「本輪不動資料」的護欄；資料在 2026-09-06 用 authoring 腳本
+     重新產生之後，改成守真正該守的東西——能力有沒有落地、落地之後有沒有壞掉。
+     ⚠️ vfx/presets 是 tools/vfx/authoring/author/*.cjs 產生的，不是手寫的。
+     手改 JSON 會在下一次重新產生時被沖掉，所以這裡只驗結果，修改一律改腳本。 */
   const dir = path.join(REPO, 'vfx/presets');
-  const withCurve = fs.readdirSync(dir).filter(function (f) {
-    return f.endsWith('.json') && read('vfx/presets/' + f).indexOf('tintOverLife') >= 0;
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
+  const NEW = ['tintOverLife', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise'];
+  const used = {};
+  let adopters = 0;
+  const bad = [];
+  files.forEach(function (f) {
+    const raw = read('vfx/presets/' + f);
+    const p = JSON.parse(raw);
+    const r = VFXCore.validatePreset(p);
+    if (!r.ok) bad.push(f + '：' + r.errors.join('；'));
+    /* 用 fromCharCode 去掉 CR，不寫成正規表示式字面值：這個檔案本身會被
+       跨平台的工具改寫換行，字面上的逃逸序列很容易在搬運途中被吃掉。 */
+    const lf = raw.split(String.fromCharCode(13)).join('');
+    if (VFXCore.serialisePreset(p) !== lf) bad.push(f + '：不是 canonical 形式');
+    let hit = false;
+    (p.layers || []).forEach(function (l) {
+      NEW.forEach(function (k) { if (l[k] !== undefined) { used[k] = (used[k] || 0) + 1; hit = true; } });
+    });
+    if (hit) adopters++;
   });
-  assert.deepEqual(withCurve, [],
-    '這一輪只加能力不改資料；要改既有 preset 應該是另一次獨立的提交');
+  assert.deepEqual(bad, []);
+  assert.ok(adopters >= 20, '採用新能力的 preset 太少（' + adopters + '），腳本可能沒有重新產生');
+  ['tintOverLife', 'drag'].forEach(function (k) {
+    assert.ok(used[k] > 0, k + ' 一次都沒用到');
+  });
+});
+
+test('WIRE-6 authoring kit 會把新欄位傳下去（不傳的話腳本寫了也是白寫）', function () {
+  /* preset-kit 的 common／particle 是白名單式的複製，漏一個欄位不會報錯，
+     只會靜靜地不出現在輸出裡——那正是最難發現的一種壞法。 */
+  const kit = require('../tools/vfx/authoring/preset-kit.cjs');
+  const l = kit.particle({
+    id: 'x', asset: kit.A.dot, burst: 3, lifetime: 1,
+    drag: 2, radialSpeed: -30, orbitRps: 0.5,
+    noise: { strength: 8, frequency: 0.03, scrollSpeed: 1 },
+    tintOverLife: kit.RAMP.fireCore
+  });
+  assert.equal(l.drag, 2);
+  assert.equal(l.radialSpeed, -30);
+  assert.ok(Math.abs(l.orbitalSpeed - Math.PI) < 1e-3, 'orbitRps 要換算成弧度／秒');
+  assert.deepEqual(l.noise, { strength: 8, frequency: 0.03, scrollSpeed: 1 });
+  assert.deepEqual(l.tintOverLife, kit.RAMP.fireCore);
+  /* 色階本身也要是合法的顏色曲線，否則會在產生 preset 時才炸。 */
+  Object.keys(kit.RAMP).forEach(function (name) {
+    const r = VFXCore.validatePreset({
+      schemaVersion: 1, id: 'r', duration: 1,
+      layers: [{ id: 'a', type: 'sprite', assetId: 'p/a.png', tintOverLife: kit.RAMP[name] }]
+    });
+    assert.deepEqual(r.errors, [], 'RAMP.' + name + ' 不是合法的顏色曲線');
+  });
+});
+
+test('WIRE-7 preset 資料有自己的快取版號（它不受 index.html 的 ?v= 管）', function () {
+  /* vfx/presets/*.json 是執行時 fetch 的資料，不是 <script> 載入的程式，
+     所以 index.html 那一排 ?v= 完全管不到它。改了 preset 卻沒換版號，
+     測試者會拿到快取裡的舊檔，回報的現象與 repo 內容對不起來。 */
+  const src = read('js/vfx-runtime.js');
+  const m = src.match(/DATA_VERSION = '([^']+)'/);
+  assert.ok(m, 'js/vfx-runtime.js 要有 DATA_VERSION');
+  assert.ok(m[1].length >= 6, '版號要看得出是哪一次：' + m[1]);
+  /* 兩個資料端點都要帶上，漏一個就等於漏一半。 */
+  assert.match(src, /presets.*\.json\?v=' \+ DATA_VERSION|\.json\?v=' \+ DATA_VERSION/);
+  assert.match(src, /shipped-assets\.json'\) \+ '\?v=' \+ DATA_VERSION/);
 });

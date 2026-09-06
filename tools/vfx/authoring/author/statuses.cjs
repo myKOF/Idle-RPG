@@ -5,7 +5,7 @@
    ⚠️ 迴圈型（aura）的 alphaOverLife 兩端必須同值，否則每個週期都會閃一下。
    ⚠️ Core 沒有父子節點，「繞著身體公轉」一律用「本身就畫著一圈物件的素材整片旋轉」表現。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, deg, sprite, particle } = kit;
+const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const BODY_Y = -30;                       // 身體中心
@@ -34,6 +34,11 @@ function riser(o) {
     id: 'motes', asset: A.dot, z: 3, blend: 'add',
     rate: 4, lifetime: [0.6, 1], spawnBox: [30, 44], y: BODY_Y,
     speed: [18, 40], direction: -90, spread: 40, gravity: { x: 0, y: -30 },
+    /* 從身上飄起的光點：狀態光環是長時間掛著的東西，等速直線上升會非常規律，
+       規律就是假。drag 讓它們升到一半慢下來、noise 讓每一顆各自飄，
+       兩個都給小值——這是背景層級的細節，不該搶走技能特效的注意力。 */
+    drag: 1.5, noise: { strength: 5, frequency: 0.04, scrollSpeed: 0.8 },
+    tintOverLife: RAMP.fadeDark,
     startPx: [4, 8], alphaOverLife: RISE_A, scaleOverLife: [[0, 1], [1, 0.5]]
   }, o));
 }
@@ -43,6 +48,9 @@ function faller(o) {
     id: 'drops', asset: A.dot, z: 3, blend: 'normal',
     rate: 4, lifetime: [0.5, 0.8], spawnBox: [30, 40], y: BODY_Y,
     speed: [10, 30], direction: 90, spread: 60, gravity: { x: 0, y: 260 },
+    /* 往下滴的東西（血、毒液）：刻意**不加 drag**——落下的液滴就是該加速，
+       減速會讓它看起來像浮在空中。只讓顏色隨時間變深（血離開身體會變暗）。 */
+    tintOverLife: RAMP.fadeDark,
     startPx: [4, 7], alphaOverLife: FALL_A, scaleOverLife: [[0, 1], [1, 0.7]]
   }, o));
 }

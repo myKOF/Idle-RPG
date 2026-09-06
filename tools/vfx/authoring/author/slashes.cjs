@@ -8,7 +8,7 @@
    因此以 cone_composed_* 的 V 形錐體逼近：頂點在原點、以 scaleX 撐開張角。
    角度是「看起來像」而不是幾何精確——真正的判定範圍在模擬層，這裡只負責畫面。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, deg, sprite, particle } = kit;
+const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 /* ---- 共用曲線 ---- */
@@ -52,6 +52,9 @@ function chips(o) {
     id: 'chips', asset: A.dot, z: 6, blend: 'add',
     burst: 5, lifetime: [0.16, 0.26], spawnRadius: 10,
     speed: [110, 190], direction: 35, spread: 110, gravity: { x: 0, y: 260 },
+    /* 削下來的碎屑：與受擊火花同一個道理，噴出去之後會被空氣拖慢。
+       壽命只有 0.2 秒左右，drag 給大一點才看得出來。 */
+    drag: 4, tintOverLife: RAMP.fadeDark,
     startPx: [4, 7], alphaOverLife: SPARK_A, scaleOverLife: SPARK_S
   }, o));
 }
