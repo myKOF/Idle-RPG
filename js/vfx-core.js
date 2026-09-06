@@ -126,6 +126,57 @@ var VFXCore = (function () {
   var COLOR_RE = /^#[0-9a-fA-F]{6}$/;
   function colorToInt(hex) { return parseInt(hex.slice(1), 16); }
 
+  /* 顏色曲線：[[t, '#rrggbb'], …]，在 sRGB 分量上線性內插。
+
+     為什麼與 sampleCurve 分成兩支而不是共用：值不是數字，內插必須逐分量做。
+     混在同一支裡只會讓兩邊都長出型別判斷，而熱路徑（逐幀逐粒子）最不需要的
+     就是每次取樣都先問一次「這是數字還是顏色」。 */
+  function lerpColorInt(a, b, k) {
+    var ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
+    var br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+    var r = (ar + (br - ar) * k) | 0;
+    var g = (ag + (bg - ag) * k) | 0;
+    var bl = (ab + (bb - ab) * k) | 0;
+    return (r << 16) | (g << 8) | bl;
+  }
+
+  /* 曲線在 layerDefaults（也就是 play 的時候）就先轉成 [[t, int]]。
+     逐幀逐粒子取樣時再 parseInt 一次十六進位字串，是這一層最容易長出來的
+     隱形成本——一個 500 顆粒子的特效每秒就是三萬次字串解析。 */
+  function toColorCurve(value) {
+    if (value === undefined || value === null) return null;
+    if (typeof value === 'string') return [[0, colorToInt(value)]];
+    var out = [];
+    for (var i = 0; i < value.length; i++) out.push([value[i][0], colorToInt(String(value[i][1]))]);
+    return out;
+  }
+
+  function sampleColorCurve(curve, t) {
+    if (!curve) return null;
+    if (t <= curve[0][0]) return curve[0][1];
+    var last = curve[curve.length - 1];
+    if (t >= last[0]) return last[1];
+    for (var i = 1; i < curve.length; i++) {
+      if (t <= curve[i][0]) {
+        var a = curve[i - 1], b = curve[i];
+        var span = b[0] - a[0];
+        return span > 0 ? lerpColorInt(a[1], b[1], (t - a[0]) / span) : a[1];
+      }
+    }
+    return last[1];
+  }
+
+  /* 逐分量相乘。與 alphaOverLife 乘在 alpha 上是同一個道理：曲線是「在基底色上
+     再乘一層」，不是取代它——因此 tint 永遠有作用，不會出現「填了卻沒效果」。
+     這也與 Unity 的 startColor × colorOverLifetime 同語意，日後要機器轉換
+     Unity 的粒子設定時是 1:1 對應，不必在轉換器裡另外想一套折衷。 */
+  function mulColorInt(a, b) {
+    var r = (((a >> 16) & 255) * ((b >> 16) & 255) / 255) | 0;
+    var g = (((a >> 8) & 255) * ((b >> 8) & 255) / 255) | 0;
+    var bl = ((a & 255) * (b & 255) / 255) | 0;
+    return (r << 16) | (g << 8) | bl;
+  }
+
   /* ---------- 驗證 ----------
      嚴格、不做 silent fallback：任何不合法的 preset 一律回傳錯誤而不是「盡量播」。
      播出一個悄悄變形的特效，比明確報錯難查太多。 */
@@ -157,6 +208,33 @@ var VFXCore = (function () {
       if (p[0] < prevT) errors.push(where + '[' + i + '] 的 t 必須遞增');
       prevT = p[0];
       if (opts && opts.nonNegative && p[1] < 0) errors.push(where + '[' + i + '] 不得為負');
+    }
+  }
+
+  function validateColorCurve(value, where, errors) {
+    if (value === undefined) return;
+    if (typeof value === 'string') {
+      if (!COLOR_RE.test(value)) errors.push(where + ' 必須是 #rrggbb');
+      return;
+    }
+    if (!Array.isArray(value) || !value.length) {
+      errors.push(where + " 必須是 #rrggbb 或 [[t,'#rrggbb'],…] 曲線");
+      return;
+    }
+    if (value.length > HARD_LIMITS.maxCurvePoints) {
+      errors.push(where + ' 曲線點數超過上限 ' + HARD_LIMITS.maxCurvePoints);
+    }
+    var prevT = -Infinity;
+    for (var i = 0; i < value.length; i++) {
+      var p = value[i];
+      if (!Array.isArray(p) || p.length !== 2 || !isFiniteNumber(p[0]) ||
+          !COLOR_RE.test(String(p[1]))) {
+        errors.push(where + '[' + i + "] 必須是 [t, '#rrggbb']");
+        continue;
+      }
+      if (p[0] < 0 || p[0] > 1) errors.push(where + '[' + i + '] 的 t 必須在 0..1');
+      if (p[0] < prevT) errors.push(where + '[' + i + '] 的 t 必須遞增');
+      prevT = p[0];
     }
   }
 
@@ -224,6 +302,7 @@ var VFXCore = (function () {
       }
     }
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
+    validateColorCurve(layer.tintOverLife, where + '.tintOverLife', errors);
     validateCurve(layer.scaleOverLife, where + '.scaleOverLife', errors, { nonNegative: true });
     /* 分軸縮放曲線。只有走 updateSpriteLayer 的 sprite／procedural 支援，
        粒子層的兩軸永遠相等（見 updateParticleLayer），所以那裡不收這兩個欄位——
@@ -322,7 +401,7 @@ var VFXCore = (function () {
   var PRESET_FIELDS = ['schemaVersion', 'id', 'duration', 'loop', 'layers'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
-    'alphaOverLife', 'scaleOverLife', 'rotationOverLife'];
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
      這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
      那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
@@ -427,7 +506,7 @@ var VFXCore = (function () {
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
     'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
     'alignToVelocity', 'velocityRotationOffset',
-    'alphaOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife'];
 
   /* 巢狀物件（position、spawn、emission…）也要遞迴排序，否則同樣語意的 preset
@@ -488,6 +567,11 @@ var VFXCore = (function () {
       velocityRotationOffset: layer.velocityRotationOffset === undefined
         ? 0 : layer.velocityRotationOffset,
       alphaOverLife: layer.alphaOverLife,
+      tintOverLife: layer.tintOverLife,
+      /* 派生欄位（不進 preset、不參與序列化）：熱路徑只讀這一份已解析好的
+         [[t,int]]，逐幀逐粒子不再解析十六進位字串。沒有曲線時是 null，
+         更新迴圈可以整段跳過，行為與加入本功能之前完全相同。 */
+      tintCurve: toColorCurve(layer.tintOverLife),
       scaleOverLife: layer.scaleOverLife,
       /* 刻意保留 undefined 而不填預設值：updateSpriteLayer 要靠
          「有沒有給」來決定該軸是走自己的曲線還是沿用 scaleOverLife。 */
@@ -793,7 +877,8 @@ var VFXCore = (function () {
       t.scaleX = d.scale.x * effect.scaleX * (scaleKX === null ? 1 : scaleKX) * flipX;
       t.scaleY = d.scale.y * effect.scaleY * (scaleKY === null ? 1 : scaleKY) * flipY;
       t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
-      t.tint = colorToInt(d.tint);
+      var tintK = sampleColorCurve(d.tintCurve, life.progress);
+      t.tint = tintK === null ? colorToInt(d.tint) : mulColorInt(colorToInt(d.tint), tintK);
       t.anchorX = d.anchor.x;
       t.anchorY = d.anchor.y;
       t.zIndex = d.zIndex;
@@ -893,6 +978,9 @@ var VFXCore = (function () {
          在 1200 顆粒子的預算下等於每秒配置六十個陣列＋大量短命 transform，
          GC 尖峰會直接變成掉幀。這裡改成就地覆寫並截短。 */
       var tint = colorToInt(d.tint);
+      /* 沒有曲線時 tint 仍然是整層一個常數（提到迴圈外算一次）；
+         有曲線才逐顆粒子取樣——粒子的生命進度各自不同，不能共用。 */
+      var tintCurve = d.tintCurve;
       var write = 0;
       for (var j = 0; j < layer.particles.length; j++) {
         var p = layer.particles[j];
@@ -939,7 +1027,7 @@ var VFXCore = (function () {
         t.scaleX = p.baseScale * effect.scale * (scaleK === null ? 1 : scaleK);
         t.scaleY = t.scaleX;
         t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
-        t.tint = tint;
+        t.tint = tintCurve === null ? tint : mulColorInt(tint, sampleColorCurve(tintCurve, k));
         t.anchorX = d.anchor.x;
         t.anchorY = d.anchor.y;
         t.zIndex = d.zIndex;
@@ -1135,7 +1223,12 @@ var VFXCore = (function () {
     createNullBackend: createNullBackend,
     createIndexResolver: createIndexResolver,
     makeRng: makeRng,
-    sampleCurve: sampleCurve
+    sampleCurve: sampleCurve,
+    /* 顏色曲線的取樣與 sampleCurve 對稱地公開：Editor 的色帶必須與遊戲實際
+       播出來的顏色逐位元相同，唯一可靠的保證方式是兩邊呼叫同一支函式，
+       而不是各寫一份再用測試比對。 */
+    toColorCurve: toColorCurve,
+    sampleColorCurve: sampleColorCurve
   };
 })();
 

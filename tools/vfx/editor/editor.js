@@ -1769,7 +1769,7 @@
      收合狀態存在 state 而不是 localStorage：它跟著「目前在編哪一層」，
      不是使用者的長期偏好。 */
 
-  var overLifeOpen = { opacity: true, scale: false, rotation: false };
+  var overLifeOpen = { opacity: true, color: false, scale: false, rotation: false };
   var liveEditors = [];                      // 目前掛在畫面上的曲線元件，換層時要收掉
   /* 'sections' 分區收合（省空間）／'compare' 全部攤開對照（共用時間軸）。
      存在 state 而不是 localStorage：它是當下的工作方式，不是長期偏好。 */
@@ -1864,6 +1864,48 @@
     host.appendChild(row);
   }
 
+  /* 顏色曲線用另一個元件（色帶＋色標），但外框、歷史、停用按鈕與數值曲線共用。
+     沒有把兩者合進 curveBlock：分支條件會從「哪個欄位」變成「哪一種曲線」，
+     而兩邊的 policy、readout、鍵盤行為其實沒有共同點。 */
+  function gradientBlock(host, layer, field, opts) {
+    var what = (opts && opts.name) || '顏色';
+    var row = document.createElement('div');
+    row.className = 'ol-row';
+    var editor = VFXGradientEditor.create({
+      curve: layer[field],
+      onBegin: function (action) { editBegin(action + what); },
+      onLive: function (curve) { writeCurve(layer, field, curve); previewSoon(); },
+      onChange: function (curve) { writeCurve(layer, field, curve); onPresetChanged(); editCommit(); },
+      onCursor: broadcastCursor
+    });
+    liveEditors.push(editor);
+    row.appendChild(editor.el);
+
+    var tools = document.createElement('div');
+    tools.className = 'ol-tools';
+    var reset = document.createElement('button');
+    reset.type = 'button'; reset.textContent = 'Reset';
+    reset.title = '回到白 → 白（相乘語意下等於沒有變化）';
+    reset.onclick = function () {
+      edit('重設 ' + what, function () { editor.reset(); });
+      renderInspector();
+    };
+    var off = document.createElement('button');
+    off.type = 'button';
+    off.textContent = layer[field] === undefined ? '啟用' : '停用';
+    off.title = '停用＝移除這條曲線，整段生命維持圖層的 tint';
+    off.onclick = function () {
+      var on = layer[field] === undefined;
+      edit((on ? '啟用 ' : '停用 ') + what, function () {
+        if (on) editor.reset(); else editor.clear();
+      });
+      renderInspector();
+    };
+    tools.appendChild(reset); tools.appendChild(off);
+    row.appendChild(tools);
+    host.appendChild(row);
+  }
+
   /* undefined 代表「沒有這條曲線」，要 delete 而不是寫 undefined 進去——
      JSON.stringify 會把 undefined 的鍵丟掉，但 canonical 比對與未知欄位
      檢查是看實際的鍵，留著會讓兩邊看到的東西不一樣。 */
@@ -1903,6 +1945,14 @@
     curveSection(host, 'opacity', 'Opacity', function (body) {
       curveBlock(body, layer, 'alphaOverLife', CURVE_POLICY.alpha, null, { name: '透明度' });
       hintLine(body, 'alphaOverLife 是乘在 alpha 上的係數，可以大於 1（過曝）。');
+    });
+
+    curveSection(host, 'color', 'Color', function (body) {
+      gradientBlock(body, layer, 'tintOverLife');
+      hintLine(body, 'tintOverLife 是**乘在 tint 上**的顏色，不是取代它——' +
+        '所以 tint 留白（#ffffff）時，色帶上是什麼顏色就播什麼顏色。');
+      hintLine(body, '點色帶空白處新增色標（顏色取當下漸層值，新增當下畫面不變），' +
+        '拖色標改時間，選中後用色票改顏色，Delete 刪除。');
     });
 
     curveSection(host, 'scale', 'Scale', function (body) {
@@ -2436,6 +2486,8 @@
       ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
       ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],
+      ['VFXGradientModel', 'tools/vfx/editor/gradient-model.js'],
+      ['VFXGradientEditor', 'tools/vfx/editor/gradient-editor.js'],
       ['VFXGizmoModel', 'tools/vfx/editor/gizmo-model.js'],
       ['VFXHistory', 'tools/vfx/editor/history.js'],
       ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs']

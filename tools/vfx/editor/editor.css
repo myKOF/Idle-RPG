@@ -203,6 +203,19 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
                  font-variant-numeric: tabular-nums; }
 .curve-readout.warn { color: #ffb454; }
 
+/* 顏色曲線（tintOverLife）：一條色帶＋下方的色標，與數值曲線共用外框樣式。
+   色帶本身要看得出真實顏色，所以不給它半透明背景或濾鏡。 */
+.gradient-canvas { background: #15151a; }
+.gradient-bottom { display: flex; align-items: center; gap: 6px; }
+/* 色票要夠小才不會把 readout 擠掉，但要夠大才點得到。跨瀏覽器的 input[type=color]
+   內距差很多，統一把內部 swatch 的 padding 歸零。 */
+.gradient-swatch { width: 26px; height: 15px; padding: 0; border: 1px solid #2c2c34;
+                   border-radius: 3px; background: #15151a; cursor: pointer; flex: none; }
+.gradient-swatch::-webkit-color-swatch-wrapper { padding: 1px; }
+.gradient-swatch::-webkit-color-swatch { border: none; border-radius: 2px; }
+.gradient-swatch:disabled { opacity: 0.35; cursor: default; }
+.gradient .curve-readout { flex: 1; min-width: 0; }
+
 /* 分區／對照切換 */
 .ol-title { display: flex; align-items: center; justify-content: space-between; }
 .ol-modes { display: flex; gap: 2px; }

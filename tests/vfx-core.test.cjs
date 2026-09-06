@@ -1059,6 +1059,133 @@ test('載入失敗的 URL 在最後一個 owner 歸零時，仍會實際呼叫 A
     '從未成功載入不代表沒有 ownership；歸零時必須實際呼叫 unload');
 });
 
+/* ---------------- tintOverLife（顏色隨生命變化） ----------------
+   加入這一項之前，一個圖層從生到死只有一個固定顏色：火星不會冷卻、
+   煙不會轉灰、電弧不會褪成藍白。作者只能把同一張圖疊三層、各給一個顏色，
+   用離散階梯假裝漸層——151 份 preset 裡有 36 組這樣的疊層，佔掉 16% 的圖層預算。 */
+
+/* 錄下實際送進 backend 的 tint（scratch 物件只能當下讀，不能存引用）。 */
+function tintSeries(preset, steps, dt) {
+  const tints = [];
+  const backend = {
+    createNode: function () { return {}; },
+    updateNode: function (node, t) { if (t && t.visible !== false) tints.push(t.tint); },
+    destroyNode: function () {}
+  };
+  const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+  rt.registerPreset(preset);
+  rt.play(preset.id);
+  for (let i = 0; i < steps; i++) rt.update(dt === undefined ? 0.25 : dt);
+  return tints;
+}
+function spritePreset(layerExtra) {
+  return {
+    schemaVersion: 1, id: 'tint-case', duration: 1,
+    layers: [Object.assign({ id: 'a', type: 'sprite', assetId: 'pack/ring.png' }, layerExtra)]
+  };
+}
+
+test('TINT-1 沒有 tintOverLife 時行為完全不變（既有 151 份 preset 的相容性）', function () {
+  const flat = tintSeries(spritePreset({ tint: '#86efac' }), 4);
+  assert.ok(flat.length >= 3);
+  flat.forEach(function (v) { assert.equal(v, 0x86efac); });
+});
+
+test('TINT-2 曲線在 sRGB 分量上線性內插', function () {
+  /* 黑→白。update 是「先推進再畫」，所以 4 次 0.25 秒取到的是
+     生命進度 0.25／0.5／0.75 三格（t=1 時特效已結束，不再送 transform）。 */
+  const series = tintSeries(spritePreset({
+    tint: '#ffffff', tintOverLife: [[0, '#000000'], [1, '#ffffff']]
+  }), 4);
+  assert.equal(series.length, 3, '取樣格數：' + series.length);
+  const grey = series.map(function (v) { return (v >> 16) & 255; });
+  assert.ok(Math.abs(grey[0] - 64) <= 2, '25% 應該是 1/4 灰，實際 ' + grey[0]);
+  assert.ok(Math.abs(grey[1] - 127) <= 2, '50% 應該是中灰，實際 ' + grey[1]);
+  assert.ok(Math.abs(grey[2] - 191) <= 2, '75% 應該是 3/4 灰，實際 ' + grey[2]);
+  series.forEach(function (v, i) {
+    assert.equal((v >> 8) & 255, grey[i], '灰階三分量要一致');
+    assert.equal(v & 255, grey[i]);
+  });
+});
+
+test('TINT-3 曲線是「乘在 tint 上」，不是取代它', function () {
+  /* 這是與 alphaOverLife 一致的語意，也是 Unity 的 startColor × colorOverLifetime。
+     取代語意會讓 tint 變成填了沒用的欄位，那正是規格禁止的 silent fallback。 */
+  const series = tintSeries(spritePreset({
+    tint: '#ff0000', tintOverLife: [[0, '#ffffff'], [1, '#ffffff']]
+  }), 3);
+  series.forEach(function (v) { assert.equal(v, 0xff0000, '乘白色＝不變'); });
+
+  const halved = tintSeries(spritePreset({
+    tint: '#ff0000', tintOverLife: '#808080'
+  }), 2);
+  assert.equal((halved[0] >> 16) & 255, 128, '乘 50% 灰＝紅色減半');
+  assert.equal(halved[0] & 0xffff, 0, '沒有紅色以外的分量被憑空加進來');
+});
+
+test('TINT-4 粒子逐顆各自取樣自己的生命進度', function () {
+  /* 整層共用一個 tint 是加入本功能之前的行為；有曲線時同一層裡先出生的
+     粒子必須比後出生的更「老」，顏色因此不同——這正是火星冷卻的做法。 */
+  const seen = [];
+  const backend = {
+    createNode: function () { return {}; },
+    updateNode: function (node, t) { if (t && t.visible !== false) seen.push(t.tint); },
+    destroyNode: function () {}
+  };
+  const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+  rt.registerPreset({
+    schemaVersion: 1, id: 'tint-particles', duration: 10,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'rate', rate: 20 }, lifetime: 1,
+      tint: '#ffffff', tintOverLife: [[0, '#ffffff'], [1, '#000000']]
+    }]
+  });
+  rt.play('tint-particles');
+  for (let i = 0; i < 40; i++) rt.update(1 / 30);
+  const distinct = new Set(seen);
+  assert.ok(distinct.size > 3, '同一層的粒子應該有多種顏色，實際只有 ' + distinct.size + ' 種');
+  assert.ok(Math.max.apply(null, [...distinct].map(function (v) { return (v >> 16) & 255; })) > 200,
+    '剛出生的粒子要接近白');
+  assert.ok(Math.min.apply(null, [...distinct].map(function (v) { return (v >> 16) & 255; })) < 60,
+    '快死的粒子要接近黑');
+});
+
+test('TINT-5 驗證：格式錯誤要報錯，不 silent fallback', function () {
+  function errsOf(v) {
+    const p = spritePreset({ tintOverLife: v });
+    return VFXCore.validatePreset(p).errors.join('；');
+  }
+  assert.match(errsOf('red'), /必須是 #rrggbb/);
+  assert.match(errsOf([[0, '#fff']]), /\[t, '#rrggbb'\]/);
+  assert.match(errsOf([[1, '#000000'], [0, '#ffffff']]), /遞增/);
+  assert.match(errsOf([[1.5, '#000000']]), /0\.\.1/);
+  assert.match(errsOf([]), /必須是 #rrggbb 或/);
+  assert.deepEqual(VFXCore.validatePreset(spritePreset({
+    tintOverLife: [[0, '#ffffff'], [0.5, '#ffcc00'], [1, '#000000']]
+  })).errors, []);
+});
+
+test('TINT-6 三種圖層型別都吃得到（沒有型別會「填了卻沒效果」）', function () {
+  ['sprite', 'particle', 'procedural'].forEach(function (type) {
+    const layer = { id: 'x', type: type, assetId: 'pack/ring.png', tintOverLife: '#808080' };
+    if (type === 'particle') { layer.emission = { mode: 'burst', count: 1 }; layer.lifetime = 1; }
+    if (type === 'procedural') { layer.effect = 'uvScroll'; layer.size = { x: 8, y: 8 }; }
+    const r = VFXCore.validatePreset({ schemaVersion: 1, id: 't', duration: 1, layers: [layer] });
+    assert.deepEqual(r.errors, [], type + ' 應該接受 tintOverLife');
+  });
+});
+
+test('TINT-7 序列化後仍然位元穩定，且既有 preset 的輸出不變', function () {
+  const withCurve = spritePreset({ tint: '#86efac', tintOverLife: [[0, '#ffffff'], [1, '#000000']] });
+  const once = VFXCore.serialisePreset(withCurve);
+  assert.equal(VFXCore.serialisePreset(JSON.parse(once)), once, '存→載→再存必須位元相同');
+  assert.match(once, /"tintOverLife"/);
+  /* 沒有這個欄位的 preset，序列化結果不因為新增欄位而改變。 */
+  const plain = spritePreset({ tint: '#86efac' });
+  assert.ok(VFXCore.serialisePreset(plain).indexOf('tintOverLife') < 0);
+});
+
 /* ---------------- alignToVelocity（粒子朝向對齊速度） ---------------- */
 
 /* 錄下實際送進 backend 的 render rotation。

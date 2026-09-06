@@ -191,6 +191,30 @@ undefined            這個屬性沒有曲線
 所以 Editor 只夾下限 0（與 Core 的 `nonNegative` 一致），**不夾上限**。
 把它當成 0..1 的不透明度去夾，會靜靜改掉這些既有數值。
 
+### `tintOverLife` 是「乘上去」的顏色（2026-09-06）
+
+與 `alphaOverLife` 同一個語意：曲線的值**乘在** `layer.tint` 上，逐分量相乘
+（`a * b / 255`）。三個理由：
+
+1. 與 `alphaOverLife` 一致。同一區塊裡兩條曲線，一條是係數、另一條是取代，
+   沒有人記得住。
+2. `tint` 永遠有作用。取代語意會讓「填了 tint 又填了曲線」的那一格靜靜失效，
+   那正是本規格禁止的 silent fallback。
+3. 與 Unity 的 `startColor × colorOverLifetime` 同語意。日後要機器轉換 Unity
+   的粒子設定時是 1:1 對應，不必在轉換器裡另外想一套折衷。
+
+實務上要「色帶上是什麼顏色就播什麼顏色」，把 `tint` 留在預設的 `#ffffff` 即可。
+
+**取樣只有一份實作。** Core 匯出 `toColorCurve`／`sampleColorCurve`，
+Editor 的色帶（`tools/vfx/editor/gradient-model.js`）直接呼叫它們而不自己內插——
+色帶是 Editor 畫的、實際播放是 Core 跑的，兩份實作只要差一個 `|0` 與
+`Math.round` 就會差一階，而那正是「Editor 調好的顏色進遊戲不對」的來源。
+用測試比對兩份實作只能事後發現；共用同一支函式是結構上不可能分家。
+
+**效能**：曲線在 `layerDefaults`（也就是 `play()`）時就轉成 `[[t, int]]` 存進
+派生欄位 `tintCurve`，逐幀逐粒子的熱路徑不解析十六進位字串。沒有曲線時
+`tintCurve` 是 null，更新迴圈整段跳過——既有 preset 的輸出因此逐位元不變。
+
 ### `rotationOverLife` 是弧度，且是 Z 軸
 
 它直接加進 `transform.rotation`，而後端把它交給 `node.rotation`——
@@ -313,6 +337,9 @@ NaN 會讓整個特效消失卻查不到原因，屬規格禁止的 silent fallb
 格式一律 `[[t, value], …]`，`t` 為 0..1 的生命進度，線性內插，最多 16 點。
 刻意不做貝茲／緩動曲線——MVP 用不到。
 
+顏色動畫：`tintOverLife`，格式 `[[t, "#rrggbb"], …]`（單點可寫成 `"#rrggbb"`），
+同樣是 0..1 的生命進度、線性內插、最多 16 點。詳見 §2.1.1。
+
 ## 2.2 particle 專屬
 
 `emission`（`{mode:"burst",count}` 或 `{mode:"rate",rate}`）、`maxParticles`、
@@ -357,6 +384,12 @@ renderRotation = effect.rotation + layer.rotation
 
 刻意**不做**：子發射器、碰撞、貼圖動畫、噪聲場、trail renderer、
 以及 Unity 那套完整曲線編輯——目前的火焰龍捲與一般 Web VFX 用不到。
+
+⚠️ 2026-09-06 起「顏色隨生命變化」已經做了（`tintOverLife`，見 §2.1.1）。
+它原本不在這份清單上，但實際上一直缺席——151 份 preset 裡有 36 組是把同一張圖
+疊多層、各給一個顏色，用離散階梯假裝漸層，佔掉 16% 的圖層預算。
+剩下的缺口依「要不要新素材」排序：噪聲場、徑向／環繞速度、阻力三項純數學，
+不需要任何素材；貼圖動畫與扭曲則要先有序列幀與噪聲貼圖（見 §7 Material Gap）。
 
 ## 2.3 procedural 專屬
 
