@@ -324,6 +324,40 @@ test('MOVE-3b 被閃避／無敵擋下的攻擊不畫受擊爆點', function () 
   assert.equal(adapter.stats().pending, 0, 'hit:false 時不排受擊');
 });
 
+test('MOVE-4 方向型飛行物：沒有任何目標也要接手，並沿 angle 飛滿 lineLength', function () {
+  const { adapter, log } = makeAdapter([unitPreset('blade-x', 2)]);
+  /* 風刃是「朝某個方位射出」——四方向齊射時路徑上可能一個敵人都沒有。
+     這裡若退回 false，同一個技能就會同時出現新舊兩種畫面（2026-09-03 實機回報）。 */
+  const ok = adapter.tryPlay({
+    fxKind: 'projectile', variant: 'wind-blade', targets: [],
+    angle: 0, lineLength: 300, lineWidth: 40, travelMs: [500],
+    vfx: { projectile: 'blade-x' }
+  });
+  assert.equal(ok, true, '沒有目標也必須接手');
+  adapter.update(0.25);
+  const mid = lastOf(log, 'fx');
+  /* 起點是 playerPos（替身 (0,0)），角度 0 → 半程應在 x=150 */
+  assert.ok(Math.abs(mid.x - 150) < 2, '半程要在方位上飛一半，實際 x=' + Math.round(mid.x));
+  assert.ok(Math.abs(mid.y) < 2, '角度 0 不該有 y 位移，實際 y=' + Math.round(mid.y));
+  adapter.update(0.3);
+  assert.equal(adapter.stats().projectiles, 0, '飛滿 lineLength 就結束');
+});
+
+test('MOVE-5 方向型飛行物不追目標：有敵人也照著方位飛', function () {
+  const { adapter, log } = makeAdapter([unitPreset('blade-x', 2)]);
+  /* 目標在 (300,50)，但模擬層的方位是 0（正右）——判定走的是那條直線，
+     畫面轉去追人就會與判定分家（AI_RULES 8.3）。 */
+  adapter.tryPlay({
+    fxKind: 'projectile', variant: 'wind-blade', targets: ['mv-float-2'],
+    angle: 0, lineLength: 300, travelMs: [500], vfx: { projectile: 'blade-x' }
+  });
+  /* 不要剛好推到 k=1：抵達的那一幀特效已經被收掉，後端不會再收到 transform。 */
+  adapter.update(0.4);
+  const end = lastOf(log, 'fx');
+  assert.ok(Math.abs(end.y) < 2, '不該被目標的 y=50 拉過去，實際 y=' + Math.round(end.y));
+  assert.ok(end.x > 200, '要沿方位飛出去，實際 x=' + Math.round(end.x));
+});
+
 test('MOVE-3 帶飛行物的事件，受擊爆點等它抵達才播', function () {
   const { adapter, log } = makeAdapter([unitPreset('proj-x', 2), unitPreset('hit-x')]);
   adapter.tryPlay({
@@ -601,17 +635,28 @@ test('PROFILE-3 skyScale 同時縮天降的體積與出生高度', function () {
   assert.ok(t.y > -60, '縮完之後不該還在 500px 之外，實際 y=' + Math.round(t.y));
 });
 
-test('PROFILE-4 沒有 area 的場域：groundR > 0 時畫在目標腳底，否則退回舊畫法', function () {
+test('PROFILE-4 沒有 area 的場域：畫在目標腳底，大小由 groundR 決定', function () {
+  /* 自身增益光殼（暴風屏障、岩甲、狂血…）沒有判定半徑，模擬層不會給 area。
+     野外取名目半徑＝照 Preset 原尺寸畫；不接手的話這些會退回舊畫法，
+     於是同一場戰鬥裡新舊兩套光殼並存（2026-09-03 實機回報的同一類問題）。 */
   const noArea = { fxKind: 'aura', variant: 'mire', dur: 0.5, targets: ['mv-float-2'], vfx: { ground: 'ground-x' } };
   const plain = makeAdapter([unitPreset('ground-x', 1, true)]);
-  assert.equal(plain.adapter.tryPlay(noArea), false, '野外設定（groundR 0）維持退回');
+  assert.equal(plain.adapter.tryPlay(noArea), true, '野外也要接手');
+  plain.adapter.update(1 / 60);
+  const f = lastOf(plain.log, 'zone');
+  assert.equal(f.x, 300, '畫在目標腳底（替身的 posOf 就是 (300,50)）');
+  assert.equal(+f.scaleX.toFixed(3), 1, '野外名目半徑 100 → 原尺寸');
 
   const tower = makeAdapter([unitPreset('ground-x', 1, true)], { profile: { groundR: 70 } });
   assert.equal(tower.adapter.tryPlay(noArea), true);
   tower.adapter.update(1 / 60);
   const t = lastOf(tower.log, 'zone');
-  assert.equal(t.x, 300, '畫在目標腳底（替身的 posOf 就是 (300,50)）');
+  assert.equal(t.x, 300, '畫在目標腳底');
   assert.equal(+t.scaleX.toFixed(3), 0.7, '名目半徑 70 → scale 0.7');
+
+  /* 0 仍然是「不畫」：留給還沒決定尺寸規則的新版面。 */
+  const off = makeAdapter([unitPreset('ground-x', 1, true)], { profile: { groundR: 0 } });
+  assert.equal(off.adapter.tryPlay(noArea), false, 'groundR 0 維持退回舊畫法');
 });
 
 /* ============================================================

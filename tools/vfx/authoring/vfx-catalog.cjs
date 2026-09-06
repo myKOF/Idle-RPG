@@ -421,7 +421,7 @@ g('stormbarrier', [
   { projectile: 'proj-wind-crescent', hit: 'hit-wind' }, // T5 風切擴散（wind-rend-spread 小風刃）
   _,
   { ground: 'ground-storm-god' }                      // T7 暴風神體
-], { skyfallStars: { projectile: 'proj-meteor', hit: 'hit-fire-explosion', ground: 'mark-red', attack: 'burst-fire-shockwave' }, myriadPhenomena: { projectile: 'orb-void-disc', ground: 'ground-orbit-ring-wind', hit: 'hit-wind' } });
+], { skyfallStars: { projectile: 'proj-meteor', hit: 'hit-fire-explosion', ground: 'mark-red', attack: 'burst-fire-shockwave' }, myriadPhenomena: { projectile: 'orb-void-disc', ground: 'ground-orbit-ring-wind', hit: 'hit-wind', attack: 'burst-wind' } });
 
 /* ---------- 狀態表（STATUS）欄位對應：apply／aura／tick ---------- */
 const ST = {};
