@@ -41,6 +41,11 @@ var VFXCore = (function () {
   var SPAWN_SHAPES = ['point', 'circle', 'box'];
   var EMISSION_MODES = ['burst', 'rate'];
   var PROCEDURAL_EFFECTS = ['uvScroll'];
+  /* 序列幀的播放方式。
+       life：整份序列攤在圖層（或粒子）的生命週期上播完一次——爆炸、火花這類
+             「一生只演一次」的用法，也是 Unity Texture Sheet Animation 的預設。
+       fps ：固定張數／秒，與生命長短無關——火焰、水流這類循環動畫。 */
+  var SHEET_MODES = ['life', 'fps'];
 
   /* 硬上限：超過就是 preset 寫錯，不是效能調校問題，直接擋在驗證階段。 */
   var HARD_LIMITS = {
@@ -49,6 +54,10 @@ var VFXCore = (function () {
     maxEmissionRate: 2000,
     maxDuration: 60,
     maxCurvePoints: 16,
+    /* 格線邊長上限。64×64＝4096 格已經遠超任何合理的序列幀圖集，
+       而且後端要為每一格建立一個 Texture，沒有上限等於讓一個打錯的
+       columns 值配置出幾十萬個物件。 */
+    maxSheetSide: 64,
 
     /* budget 三個欄位的硬上限（見 createRuntime 的 budgetValue）。
        budget 是呼叫端可調的效能旋鈕，但不能被調成「等於沒有上限」：
@@ -148,6 +157,34 @@ var VFXCore = (function () {
     return (top + (bottom - top) * uy) * 2 - 1;
   }
 
+  /* 序列幀的幀索引。
+
+     life：把整份序列攤在 0..1 的生命進度上。用 floor 而不是 round——
+           round 會讓第一格與最後一格各只出現半格的時間，等速播放的序列
+           因此在頭尾各閃一下。
+     fps ：與生命長短無關的固定張數／秒。
+
+     不循環時夾在最後一格（演完停住），循環時取餘數。
+     offset 是每顆粒子自己的起始格（randomStart），讓同一層的粒子不同步——
+     否則二十顆火花會像同一個動畫被複製二十份，非常假。 */
+  function sheetFrame(sheet, progress, ageSec, offset) {
+    var n = sheet.count;
+    if (n <= 1) return 0;
+    var raw = sheet.mode === 'fps' ? ageSec * sheet.fps : progress * n;
+    /* +ε 再取整。時間是逐幀累加出來的浮點數，0.1 加八次是 0.7999999999999999，
+       乘上 10 fps 取整會得到 7 而不是 8——序列因此會在格子邊界重播或跳過一格
+       （實測 fps 模式跑出 [1,2,3,0,1,2,3,3,1]，第 8 格卡住了）。
+       1e-6 格約等於一微秒的動畫時間，遠低於看得出來的程度，
+       也遠高於累加誤差的量級（跑幾百格也只有 1e-13）。 */
+    var i = Math.floor(raw + 1e-6) + (offset || 0);
+    if (sheet.loop) {
+      i %= n;
+      return i < 0 ? i + n : i;
+    }
+    /* 不循環時 offset 仍然有效，但不能讓它把序列推到超出尾端。 */
+    return i < 0 ? 0 : (i >= n ? n - 1 : i);
+  }
+
   /* 範圍值：數字表示固定，[min,max] 表示在區間內取決定性亂數 */
   function sampleRange(value, rng) {
     if (Array.isArray(value)) return value[0] + (value[1] - value[0]) * rng();
@@ -243,6 +280,47 @@ var VFXCore = (function () {
     }
   }
 
+  /* 序列幀（sprite sheet）。格線切法由 preset 宣告，不從素材推——
+     一張 512×512 的圖，Core 沒有任何辦法知道它是 8×8 還是 4×4。 */
+  function validateSheet(value, where, errors) {
+    if (value === undefined) return;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      errors.push(where + ' 必須是 { columns, rows, … }');
+      return;
+    }
+    ['columns', 'rows'].forEach(function (k) {
+      var v = value[k];
+      if (!isFiniteNumber(v) || v < 1 || Math.floor(v) !== v) {
+        errors.push(where + '.' + k + ' 必須是正整數');
+      } else if (v > HARD_LIMITS.maxSheetSide) {
+        errors.push(where + '.' + k + ' 超過硬上限 ' + HARD_LIMITS.maxSheetSide);
+      }
+    });
+    if (value.count !== undefined) {
+      var total = (value.columns || 0) * (value.rows || 0);
+      if (!isFiniteNumber(value.count) || value.count < 1 || Math.floor(value.count) !== value.count) {
+        errors.push(where + '.count 必須是正整數');
+      } else if (total && value.count > total) {
+        errors.push(where + '.count（' + value.count + '）超過格數 ' + total);
+      }
+    }
+    if (value.mode !== undefined && SHEET_MODES.indexOf(value.mode) < 0) {
+      errors.push(where + '.mode 非法值：' + value.mode + '（支援 ' + SHEET_MODES.join('、') + '）');
+    }
+    if (value.fps !== undefined && (!isFiniteNumber(value.fps) || value.fps <= 0)) {
+      errors.push(where + '.fps 必須是正數');
+    }
+    if (value.mode === 'fps' && value.fps === undefined) {
+      errors.push(where + '.mode 是 fps 時必須給 fps');
+    }
+    if (value.randomStart !== undefined && typeof value.randomStart !== 'boolean') {
+      errors.push(where + '.randomStart 必須是布林值');
+    }
+    if (value.loop !== undefined && typeof value.loop !== 'boolean') {
+      errors.push(where + '.loop 必須是布林值');
+    }
+  }
+
   function validateColorCurve(value, where, errors) {
     if (value === undefined) return;
     if (typeof value === 'string') {
@@ -335,6 +413,7 @@ var VFXCore = (function () {
     }
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
     validateColorCurve(layer.tintOverLife, where + '.tintOverLife', errors);
+    validateSheet(layer.sheet, where + '.sheet', errors);
     validateCurve(layer.scaleOverLife, where + '.scaleOverLife', errors, { nonNegative: true });
     /* 分軸縮放曲線。只有走 updateSpriteLayer 的 sprite／procedural 支援，
        粒子層的兩軸永遠相等（見 updateParticleLayer），所以那裡不收這兩個欄位——
@@ -459,7 +538,7 @@ var VFXCore = (function () {
   var PRESET_FIELDS = ['schemaVersion', 'id', 'duration', 'loop', 'layers'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
-    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife'];
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
      這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
      那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
@@ -493,7 +572,8 @@ var VFXCore = (function () {
     gravity: ['x', 'y'], size: ['x', 'y'], scrollSpeed: ['x', 'y'],
     emission: ['mode', 'count', 'rate'],
     spawn: ['shape', 'radius', 'width', 'height'],
-    noise: ['strength', 'frequency', 'scrollSpeed']
+    noise: ['strength', 'frequency', 'scrollSpeed'],
+    sheet: ['columns', 'rows', 'count', 'mode', 'fps', 'randomStart', 'loop']
   };
 
   function checkNestedFields(layer, where, errors) {
@@ -568,7 +648,7 @@ var VFXCore = (function () {
     'startScale', 'rotationStart', 'rotationSpeed',
     'alignToVelocity', 'velocityRotationOffset',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
-    'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife'];
+    'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife', 'sheet'];
 
   /* 巢狀物件（position、spawn、emission…）也要遞迴排序，否則同樣語意的 preset
      只因為插入順序不同就產生不同 bytes，「位元穩定」的承諾會落空。 */
@@ -642,6 +722,21 @@ var VFXCore = (function () {
          [[t,int]]，逐幀逐粒子不再解析十六進位字串。沒有曲線時是 null，
          更新迴圈可以整段跳過，行為與加入本功能之前完全相同。 */
       tintCurve: toColorCurve(layer.tintOverLife),
+      /* 正規化成「一定有 count／mode／loop」的形狀，更新迴圈就不必逐幀補預設值。
+         沒有 sheet 就是 null，整段跳過。 */
+      sheet: layer.sheet ? {
+        columns: layer.sheet.columns,
+        rows: layer.sheet.rows,
+        count: layer.sheet.count === undefined
+          ? layer.sheet.columns * layer.sheet.rows : layer.sheet.count,
+        mode: layer.sheet.mode || 'life',
+        fps: layer.sheet.fps === undefined ? 0 : layer.sheet.fps,
+        randomStart: layer.sheet.randomStart === true,
+        /* life 模式預設不循環（演完停在最後一格），fps 模式預設循環。
+           這兩個預設分別對應它們最常見的用途，寫反了會很明顯。 */
+        loop: layer.sheet.loop === undefined
+          ? (layer.sheet.mode === 'fps') : layer.sheet.loop
+      } : null,
       scaleOverLife: layer.scaleOverLife,
       /* 刻意保留 undefined 而不填預設值：updateSpriteLayer 要靠
          「有沒有給」來決定該軸是走自己的曲線還是沿用 scaleOverLife。 */
@@ -711,7 +806,10 @@ var VFXCore = (function () {
        依 (assetUrl, blendMode, kind) 分池回收。 */
     var pools = {};
     var particlePool = [];      // 粒子狀態物件的 free-list
-    function poolKey(spec) { return spec.kind + '|' + spec.assetUrl + '|' + spec.blendMode; }
+    function poolKey(spec) {
+      return spec.kind + '|' + spec.assetUrl + '|' + spec.blendMode +
+        (spec.sheet ? '|' + spec.sheet.columns + 'x' + spec.sheet.rows : '');
+    }
     function acquireNode(spec) {
       var key = poolKey(spec);
       var pool = pools[key];
@@ -860,7 +958,7 @@ var VFXCore = (function () {
 
     /* 共用結果物件：每層每幀都 new 一個，在 24 特效 × 32 層下同樣是可觀的配置量。
        呼叫端必須立即讀取，不得保存。 */
-    var lifeResult = { active: false, progress: 0 };
+    var lifeResult = { active: false, progress: 0, elapsed: 0 };
     function layerLife(effect, layer) {
       var duration = layer.def.duration === undefined ? effect.preset.duration : layer.def.duration;
       var t = effect.time - layer.def.delay;
@@ -869,15 +967,24 @@ var VFXCore = (function () {
       if (t >= duration) { lifeResult.active = false; lifeResult.progress = 1; return lifeResult; }
       lifeResult.active = true;
       lifeResult.progress = t / duration;
+      /* fps 模式的序列幀要的是「這一層已經播了幾秒」，不是 0..1 的進度。 */
+      lifeResult.elapsed = t;
       return lifeResult;
     }
 
     function nodeSpecFor(layer) {
-      return {
+      var spec = {
         kind: layer.def.type === 'procedural' ? 'tiled' : 'sprite',
         assetUrl: resolver.resolve(layer.def.assetId),
         blendMode: layer.def.blendMode
       };
+      /* 後端要靠這個把整張圖切成每一格的貼圖。同一張圖切成不同格線就是
+         不同的節點規格，所以 poolKey 也要帶上——否則 8×8 的節點會被
+         重用成 4×4 的，畫面上是「動畫突然變成別的東西」。 */
+      if (layer.def.sheet) {
+        spec.sheet = { columns: layer.def.sheet.columns, rows: layer.def.sheet.rows };
+      }
+      return spec;
     }
 
     /* 世界座標：特效本身的 rotation/scale 套用到圖層的區域座標上。
@@ -899,7 +1006,7 @@ var VFXCore = (function () {
        後端契約：updateNode 收到的 transform 只在該次呼叫內有效，不得保存引用。 */
     var scratchTransform = {
       visible: true, x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
-      alpha: 1, tint: 0xffffff, anchorX: 0.5, anchorY: 0.5, zIndex: 0,
+      alpha: 1, tint: 0xffffff, frame: undefined, anchorX: 0.5, anchorY: 0.5, zIndex: 0,
       width: undefined, height: undefined, tileX: undefined, tileY: undefined
     };
 
@@ -951,6 +1058,8 @@ var VFXCore = (function () {
       t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
       var tintK = sampleColorCurve(d.tintCurve, life.progress);
       t.tint = tintK === null ? colorToInt(d.tint) : mulColorInt(colorToInt(d.tint), tintK);
+      /* 序列幀：sprite 的年紀就是它自己這一段的經過時間。 */
+      t.frame = d.sheet ? sheetFrame(d.sheet, life.progress, life.elapsed, 0) : undefined;
       t.anchorX = d.anchor.x;
       t.anchorY = d.anchor.y;
       t.zIndex = d.zIndex;
@@ -1008,6 +1117,10 @@ var VFXCore = (function () {
          否則新粒子會繼承上一顆的朝向。 */
       p.velAngle = 0;
       p.hasVelAngle = false;
+      /* 序列幀的起始格。用圖層自己的 rng（決定性），不用 Math.random。
+         沒開 randomStart 就一律從第 0 格開始，與加入本功能之前一致。 */
+      p.frameOffset = (d.sheet && d.sheet.randomStart)
+        ? Math.floor(rng() * d.sheet.count) : 0;
       p.node = acquireNode(spec);
       layer.particles.push(p);
       totalParticles++;
@@ -1059,6 +1172,7 @@ var VFXCore = (function () {
       var noise = (d.noise && d.noise.strength > 0) ? d.noise : null;
       var noiseSeed = layer.noiseSeed;
       var swirl = d.radialSpeed !== 0 || d.orbitalSpeed !== 0;
+      var sheet = d.sheet;
       var write = 0;
       for (var j = 0; j < layer.particles.length; j++) {
         var p = layer.particles[j];
@@ -1170,6 +1284,7 @@ var VFXCore = (function () {
         t.scaleY = t.scaleX;
         t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
         t.tint = tintCurve === null ? tint : mulColorInt(tint, sampleColorCurve(tintCurve, k));
+        t.frame = sheet ? sheetFrame(sheet, k, p.life, p.frameOffset) : undefined;
         t.anchorX = d.anchor.x;
         t.anchorY = d.anchor.y;
         t.zIndex = d.zIndex;
@@ -1310,7 +1425,7 @@ var VFXCore = (function () {
         if (!t) return;
         node.transform = {
           visible: t.visible, x: t.x, y: t.y, rotation: t.rotation,
-          scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, tint: t.tint,
+          scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, tint: t.tint, frame: t.frame,
           anchorX: t.anchorX, anchorY: t.anchorY, zIndex: t.zIndex,
           width: t.width, height: t.height, tileX: t.tileX, tileY: t.tileY
         };

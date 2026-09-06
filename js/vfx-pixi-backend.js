@@ -92,6 +92,40 @@ var VFXPixiBackend = (function () {
       entry.promise.then(function (tex) { if (tex && !destroyed) onReady(tex); });
     }
 
+    /* 序列幀：把一張圖切成 columns×rows 個 Texture，全部共用同一個 TextureSource。
+
+       ⚠️ 絕對不能改共用貼圖自己的 frame。Pixi 的 Texture 是可以共用的物件，
+       一個節點把 texture.frame 改掉，所有用同一張圖的節點會一起變——
+       畫面上是「別的特效跟著一起換格」，而且完全查不出誰動的。
+       正確作法是為每一格各建一個 Texture，節點只換 texture 的**指向**。
+
+       每個 (url, columns, rows) 只切一次並快取：一個 8×8 的序列在畫面上
+       同時有幾十顆粒子，重切就是幾十倍的物件配置。 */
+    var sheetCache = Object.create(null);
+    function sheetKey(spec) { return spec.assetUrl + '|' + spec.sheet.columns + 'x' + spec.sheet.rows; }
+    function buildFrames(spec, baseTex) {
+      var key = sheetKey(spec);
+      if (sheetCache[key]) return sheetCache[key];
+      var cols = spec.sheet.columns, rows = spec.sheet.rows;
+      var src = baseTex.source;
+      /* 用 frame 的寬高而不是 source 的：素材若本身就是某張圖的一部分
+         （atlas），source 是整張大圖，切出來會整個歪掉。 */
+      var fw = baseTex.frame.width / cols;
+      var fh = baseTex.frame.height / rows;
+      var ox = baseTex.frame.x, oy = baseTex.frame.y;
+      var list = [];
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          list.push(new PixiLib.Texture({
+            source: src,
+            frame: new PixiLib.Rectangle(ox + c * fw, oy + r * fh, fw, fh)
+          }));
+        }
+      }
+      sheetCache[key] = list;
+      return list;
+    }
+
     function createNode(spec) {
       var node;
       if (spec.kind === 'tiled') {
@@ -108,7 +142,14 @@ var VFXPixiBackend = (function () {
       container.addChild(node);
       getTexture(spec.assetUrl, function (tex) {
         if (node.destroyed) return;
-        node.texture = tex;
+        if (spec.sheet) {
+          node.__frames = buildFrames(spec, tex);
+          /* 貼圖是非同步載入的，這期間 updateNode 已經跑過好幾幀了——
+             把最後收到的幀號補上，否則會停在第 0 格直到下一次更新。 */
+          node.texture = node.__frames[Math.min(node.__frameWanted || 0, node.__frames.length - 1)];
+        } else {
+          node.texture = tex;
+        }
       });
       return node;
     }
@@ -117,6 +158,14 @@ var VFXPixiBackend = (function () {
       if (!t) return;
       if (t.visible === false) { node.visible = false; return; }
       node.visible = true;
+      if (t.frame !== undefined) {
+        node.__frameWanted = t.frame;
+        var fr = node.__frames;
+        if (fr && fr.length) {
+          var want = fr[t.frame < 0 ? 0 : (t.frame >= fr.length ? fr.length - 1 : t.frame)];
+          if (node.texture !== want) node.texture = want;
+        }
+      }
       if (t.x !== undefined) node.x = t.x;
       if (t.y !== undefined) node.y = t.y;
       if (t.rotation !== undefined) node.rotation = t.rotation;
@@ -134,6 +183,9 @@ var VFXPixiBackend = (function () {
 
     function destroyNode(node) {
       if (node.parent) node.parent.removeChild(node);
+      /* 切好的 Texture 是整個 backend 共用的（sheetCache），不能跟著單一節點
+         被銷毀——只把節點對它的指向拿掉。實際釋放在 destroy() 一次做完。 */
+      node.__frames = null;
       node.destroy();
     }
 
@@ -143,6 +195,13 @@ var VFXPixiBackend = (function () {
       var urls = Object.keys(entries);
       entries = Object.create(null);
       urls.forEach(function (url) { releaseTexture(PixiLib, url); });
+      /* 切好的每一格 Texture 只是同一個 TextureSource 上的一個矩形，
+         銷毀它們不會動到 source（那由上面的 releaseTexture 管），
+         但這些 Texture 物件本身要收掉，否則重開 Editor 會一直累積。 */
+      Object.keys(sheetCache).forEach(function (k) {
+        sheetCache[k].forEach(function (tex) { tex.destroy(false); });
+      });
+      sheetCache = Object.create(null);
     }
 
     return {
