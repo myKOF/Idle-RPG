@@ -129,12 +129,16 @@ var VFXRuntime = (function () {
   /* 表面尺寸規則：Preset 是照野外戰場的名目尺寸畫的（身高 60px、半徑 100px、天降 500px），
      換到別的版面（高塔的 202px 卡片）就得整組縮放。三個係數分開的理由是它們對應
      三種不同的名目基準，用同一個數字縮會顧此失彼。
-     野外一律用這份預設（全部 1 ＋ groundR 0），因此行為與加入 profile 之前完全相同。 */
+     野外一律用這份預設（全部 1），畫出來就是 Preset 原本被畫成的尺寸。 */
   var DEFAULT_PROFILE = {
     scale: 1,        // 角色身上（受擊／施放／狀態光環／目標身上的攻擊本體）
     areaScale: 1,    // 帶 area 的（範圍爆發、場域、環繞場域）
     skyScale: 1,     // 天降（fxKind rain）
-    groundR: 0       // 沒有 area 時場域改用的名目半徑（0＝不畫，維持退回舊畫法）
+    /* 沒有 area 時場域改用的名目半徑。野外取名目值＝照 Preset 原尺寸畫：
+       自身增益光殼（暴風屏障、岩甲、狂血、暴風之舞、雷幻身）本來就沒有判定半徑
+       可言，模擬層也不會給 area，這一類只能照作者畫的大小貼在腳底。
+       0＝不畫（維持退回舊畫法），只留給還沒決定尺寸規則的新版面。 */
+    groundR: 100
   };
 
   var FX_BUDGET = { maxActiveEffects: 160, maxParticles: 2400 };
@@ -509,8 +513,9 @@ var VFXRuntime = (function () {
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec) {
-      /* 沒有 area 的版面（高塔：實體沒有座標，事件的 area 一律是 null）——
-         profile.groundR 給它一個名目半徑，畫在目標腳底；0 就維持退回舊畫法。 */
+      /* 沒有 area 的事件有兩種：高塔（實體沒有座標，area 一律 null）與
+         自身增益光殼（沒有判定半徑可言）。兩種都畫在目標腳底並跟著它走，
+         大小由 profile.groundR 這個名目半徑決定；0 才維持退回舊畫法。 */
       var noArea = !spec.area;
       if (noArea && !(profile.groundR > 0)) return false;
       var anchor = noArea

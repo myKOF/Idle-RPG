@@ -635,17 +635,28 @@ test('PROFILE-3 skyScale 同時縮天降的體積與出生高度', function () {
   assert.ok(t.y > -60, '縮完之後不該還在 500px 之外，實際 y=' + Math.round(t.y));
 });
 
-test('PROFILE-4 沒有 area 的場域：groundR > 0 時畫在目標腳底，否則退回舊畫法', function () {
+test('PROFILE-4 沒有 area 的場域：畫在目標腳底，大小由 groundR 決定', function () {
+  /* 自身增益光殼（暴風屏障、岩甲、狂血…）沒有判定半徑，模擬層不會給 area。
+     野外取名目半徑＝照 Preset 原尺寸畫；不接手的話這些會退回舊畫法，
+     於是同一場戰鬥裡新舊兩套光殼並存（2026-09-03 實機回報的同一類問題）。 */
   const noArea = { fxKind: 'aura', variant: 'mire', dur: 0.5, targets: ['mv-float-2'], vfx: { ground: 'ground-x' } };
   const plain = makeAdapter([unitPreset('ground-x', 1, true)]);
-  assert.equal(plain.adapter.tryPlay(noArea), false, '野外設定（groundR 0）維持退回');
+  assert.equal(plain.adapter.tryPlay(noArea), true, '野外也要接手');
+  plain.adapter.update(1 / 60);
+  const f = lastOf(plain.log, 'zone');
+  assert.equal(f.x, 300, '畫在目標腳底（替身的 posOf 就是 (300,50)）');
+  assert.equal(+f.scaleX.toFixed(3), 1, '野外名目半徑 100 → 原尺寸');
 
   const tower = makeAdapter([unitPreset('ground-x', 1, true)], { profile: { groundR: 70 } });
   assert.equal(tower.adapter.tryPlay(noArea), true);
   tower.adapter.update(1 / 60);
   const t = lastOf(tower.log, 'zone');
-  assert.equal(t.x, 300, '畫在目標腳底（替身的 posOf 就是 (300,50)）');
+  assert.equal(t.x, 300, '畫在目標腳底');
   assert.equal(+t.scaleX.toFixed(3), 0.7, '名目半徑 70 → scale 0.7');
+
+  /* 0 仍然是「不畫」：留給還沒決定尺寸規則的新版面。 */
+  const off = makeAdapter([unitPreset('ground-x', 1, true)], { profile: { groundR: 0 } });
+  assert.equal(off.adapter.tryPlay(noArea), false, 'groundR 0 維持退回舊畫法');
 });
 
 /* ============================================================
