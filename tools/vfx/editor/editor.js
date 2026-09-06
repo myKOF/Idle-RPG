@@ -194,6 +194,17 @@
       num('direction', 'direction(deg)', 1),
       num('spread', 'spread(deg)', 1),
       vec('gravity', 'gravity'),
+      /* 運動的三個補充項（2026-09-06）。都可以留白＝0，留白時的行為與加入
+         它們之前完全相同，所以既有 preset 不必也不該補上這些欄位。
+           drag         每秒衰減率，1/(1+drag*dt)
+           radialSpeed  px／秒，正＝離心、負＝向心（吸引子）
+           orbitalSpeed 畫面上是度／秒、檔案裡是弧度／秒；正值在螢幕上是順時針
+           noise        { strength(px), frequency(每 px 的週期), scrollSpeed(每秒) }
+                        位移擾動，不進速度，所以粒子不會被吹走 */
+      num('drag', 'drag(/s)', 0.1),
+      num('radialSpeed', 'radialSpeed(px/s)', 1),
+      deg('orbitalSpeed', 'orbitalSpeed(°/s)', 1),
+      json('noise', 'noise'),
       json('startScale', 'startScale'),
       degRange('rotationStart', 'rotationStart(°)'),
       degRange('rotationSpeed', 'rotationSpeed(°/s)'),

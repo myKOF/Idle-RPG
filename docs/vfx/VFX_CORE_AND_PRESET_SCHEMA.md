@@ -215,6 +215,48 @@ Editor 的色帶（`tools/vfx/editor/gradient-model.js`）直接呼叫它們而�
 派生欄位 `tintCurve`，逐幀逐粒子的熱路徑不解析十六進位字串。沒有曲線時
 `tintCurve` 是 null，更新迴圈整段跳過——既有 preset 的輸出因此逐位元不變。
 
+### 2.2.1 粒子運動的四個補充項（2026-09-06）
+
+加入之前，粒子只會「以固定初速直線飛、外加重力」。做不出漩渦、吸引子、
+減速的餘燼，也做不出火焰與煙霧的湍流。這四項的共同點是**不需要任何新素材**，
+成本純粹在模擬迴圈——與序列幀、扭曲那類「要先有素材才有意義」的缺口不同。
+
+| 欄位 | 單位 | 語意 |
+| --- | --- | --- |
+| `drag` | 每秒 | 線性阻尼，`v *= 1/(1+drag*dt)` |
+| `radialSpeed` | px／秒 | 沿半徑方向的位移速度。正＝離心，負＝向心（吸引子） |
+| `orbitalSpeed` | 弧度／秒 | 繞圓心的角速度。正值在螢幕上是**順時針** |
+| `noise` | — | `{ strength(px), frequency(每 px 的週期), scrollSpeed(每秒) }` |
+
+四項都可以省略；省略時的行為與加入它們之前**逐位元相同**（`MOTION-1` 釘住）。
+
+**更新順序不能重排**：重力（加速度）→ 阻力 → 線性位移積分 → 徑向與環繞 → 噪聲偏移。
+
+**阻力為什麼是 `1/(1+drag*dt)` 而不是 `(1-drag*dt)`**：後者在 `drag*dt > 1` 時
+會讓速度反向——掉幀的那一幀粒子會往回飛。前者對任何 `dt` 都落在 0..1、單調趨近 0，
+因此不必為它另外夾限 `dt`（`DRAG-1` 用 dt=2 秒的極端幀釘住）。
+
+**環繞為什麼是「旋轉位移向量」而不是「加一個切線速度」**：後者是顯式 Euler，
+半徑會指數發散——ω=1 轉/秒、dt=1/60 跑 6 秒，起始半徑 100 會變成 **712**。
+改成把位移向量精確旋轉 `ω·dt`，半徑守恆到浮點精度（`ORBIT-1` 釘住 0.1% 以內）。
+徑向則是沿半徑的直線位移，本來就沒有積分誤差。圓心取**圖層自己的 `position`**
+（發射器所在），不是特效原點——掛在偏移位置的漩渦該繞自己的中心。
+
+**噪聲為什麼是位移偏移而不是力**：做成力會累積成漂移，粒子被吹出畫面；
+做成偏移則是粒子在自己的彈道附近抖動，永遠不離開 `strength` 的範圍
+（`NOISE-1` 跑 600 幀釘住）。這也是 Unity Noise 模組 Position Amount 的行為。
+噪聲是**一片場**不是每顆粒子各自的亂數：擠在 2px 內的粒子會被推往同一邊
+（`NOISE-3` 釘住），看起來才像被氣流帶著走。取樣種子由特效的 seed 派生，
+因此重播同一份 preset 逐位元相同（`NOISE-2`）。
+
+`alignToVelocity` 在有徑向／環繞時改看**實際位移**而不是 `p.v`——環繞是直接改
+位置的，`p.v` 完全不知道它的存在。沒有漩渦時仍走原本的速度路徑，既有 preset
+的輸出因此不變。
+
+尚未做的相關項目：`orbitalSpeed` 隨半徑衰減（真實漩渦中心轉得快）、
+每顆粒子的隨機範圍（`[min,max]`）、噪聲的多階（octaves）。三者都是加法，
+需要時再補；目前的剛體旋轉與模擬層 `sgOrbitStep` 的「順時針繞行 N 圈」一致。
+
 ### `rotationOverLife` 是弧度，且是 Z 軸
 
 它直接加進 `transform.rotation`，而後端把它交給 `node.rotation`——
@@ -345,6 +387,7 @@ NaN 會讓整個特效消失卻查不到原因，屬規格禁止的 silent fallb
 `emission`（`{mode:"burst",count}` 或 `{mode:"rate",rate}`）、`maxParticles`、
 `lifetime`、`spawn`（`point`／`circle{radius}`／`box{width,height}`）、
 `speed`、`direction`(度)、`spread`(度)、`gravity{x,y}`、
+`drag`、`radialSpeed`、`orbitalSpeed`、`noise{strength,frequency,scrollSpeed}`（見 §2.2.1）、
 `startScale`、`rotationStart`、`rotationSpeed`、
 `alignToVelocity`、`velocityRotationOffset`。
 
@@ -388,8 +431,10 @@ renderRotation = effect.rotation + layer.rotation
 ⚠️ 2026-09-06 起「顏色隨生命變化」已經做了（`tintOverLife`，見 §2.1.1）。
 它原本不在這份清單上，但實際上一直缺席——151 份 preset 裡有 36 組是把同一張圖
 疊多層、各給一個顏色，用離散階梯假裝漸層，佔掉 16% 的圖層預算。
-剩下的缺口依「要不要新素材」排序：噪聲場、徑向／環繞速度、阻力三項純數學，
-不需要任何素材；貼圖動畫與扭曲則要先有序列幀與噪聲貼圖（見 §7 Material Gap）。
+⚠️ 2026-09-06 同日，噪聲場、徑向／環繞速度、阻力三項也做了（見 §2.2.1）——
+它們同樣不需要任何素材。清單上還沒做而且**不需要新素材**的只剩子發射器與 trail；
+貼圖動畫與扭曲則要先有序列幀與噪聲貼圖（見 §7 Material Gap），
+那才是「要不要花錢買素材」的決策點。
 
 ## 2.3 procedural 專屬
 

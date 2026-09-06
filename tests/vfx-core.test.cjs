@@ -1059,6 +1059,212 @@ test('載入失敗的 URL 在最後一個 owner 歸零時，仍會實際呼叫 A
     '從未成功載入不代表沒有 ownership；歸零時必須實際呼叫 unload');
 });
 
+/* ---------------- 粒子運動：阻力、徑向、環繞、噪聲 ----------------
+   這四項的共同點是**不需要任何新素材**，成本純粹是模擬迴圈。
+   加入之前粒子只會「以固定初速直線飛、外加重力」，做不出漩渦、吸引子、
+   減速的餘燼，也做不出火焰與煙霧的湍流。 */
+
+/* 錄下每個節點各自的位置序列（節點身分＝粒子身分）。 */
+function motionSeries(layerExtra, steps, dt) {
+  const byNode = new Map();
+  const backend = {
+    createNode: function () { const n = {}; byNode.set(n, []); return n; },
+    updateNode: function (node, t) {
+      if (t && t.visible !== false && byNode.has(node)) {
+        byNode.get(node).push({ x: t.x, y: t.y, r: t.rotation });
+      }
+    },
+    destroyNode: function () {}
+  };
+  const rt = VFXCore.createRuntime({ backend: backend, resolver: resolver() });
+  rt.registerPreset({
+    schemaVersion: 1, id: 'motion-case', duration: 30,
+    layers: [Object.assign({
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'burst', count: 1 },
+      lifetime: 29, spawn: { shape: 'point' }, spread: 0, speed: 0
+    }, layerExtra)]
+  });
+  rt.play('motion-case');
+  for (let i = 0; i < steps; i++) rt.update(dt === undefined ? 1 / 60 : dt);
+  return [...byNode.values()].filter(function (s) { return s.length; });
+}
+const hyp = (p) => Math.sqrt(p.x * p.x + p.y * p.y);
+
+test('MOTION-1 四個欄位都不給時，輸出與加入它們之前完全相同', function () {
+  /* 這是每一次擴充都要守的那條線：既有 151 份 preset 一個欄位都沒改，
+     畫面就不准有任何差別。 */
+  const base = motionSeries({ speed: 120, direction: 0, gravity: { x: 0, y: 300 } }, 30)[0];
+  const same = motionSeries({
+    speed: 120, direction: 0, gravity: { x: 0, y: 300 },
+    drag: 0, radialSpeed: 0, orbitalSpeed: 0
+  }, 30)[0];
+  assert.deepEqual(same, base, '把三個新欄位顯式寫成 0，結果必須逐位元相同');
+});
+
+test('DRAG-1 阻力讓粒子減速，且任何 dt 都不會把速度推成反向', function () {
+  const free = motionSeries({ speed: 200, direction: 0 }, 60)[0];
+  const dragged = motionSeries({ speed: 200, direction: 0, drag: 4 }, 60)[0];
+  assert.ok(dragged[59].x < free[59].x * 0.5, '有阻力應該明顯落後');
+  /* 一直往前，不會倒退：1/(1+d*dt) 對任何 dt 都落在 0..1。 */
+  for (let i = 1; i < dragged.length; i++) {
+    assert.ok(dragged[i].x >= dragged[i - 1].x - 1e-9,
+      '第 ' + i + ' 幀往回跑了（阻力寫成 1-d*dt 就會這樣）');
+  }
+  /* 掉幀的極端情形：一幀就是 2 秒、drag=4 → 1-d*dt = -7，會把粒子甩到後面去。 */
+  const spike = motionSeries({ speed: 200, direction: 0, drag: 4 }, 2, 2)[0];
+  assert.ok(spike[1].x >= spike[0].x, 'dt=2s 的那一幀也不准倒退');
+});
+
+test('ORBIT-1 純環繞的粒子半徑守恆（顯式 Euler 會讓它飛散）', function () {
+  /* 這一條是設計的核心：環繞若做成「加一個切線速度再積分」，
+     ω=1 轉/秒、dt=1/60 跑 6 秒，起始半徑 100 會變成 712。
+     所以實作是把位移向量精確旋轉 ω·dt，而不是加一個速度。 */
+  const s = motionSeries({
+    speed: 0, spawn: { shape: 'circle', radius: 100 },
+    orbitalSpeed: Math.PI * 2
+  }, 360)[0];
+  const r0 = hyp(s[0]);
+  assert.ok(r0 > 1, '要真的離心才驗得到（實得半徑 ' + r0.toFixed(1) + '）');
+  s.forEach(function (p, i) {
+    assert.ok(Math.abs(hyp(p) - r0) < r0 * 0.001,
+      '第 ' + i + ' 幀半徑 ' + hyp(p).toFixed(2) + '，起始 ' + r0.toFixed(2));
+  });
+});
+
+test('ORBIT-2 正的角速度在螢幕上是順時針（與技能表的說法一致）', function () {
+  /* 螢幕座標 y 向下。技能表寫「順時針繞行 {rps} 圈」，兩邊必須同號，
+     否則同一個數字在模擬層與顯示層轉不同方向。 */
+  const s = motionSeries({
+    speed: 0, spawn: { shape: 'circle', radius: 100 }, orbitalSpeed: 1
+  }, 20)[0];
+  const a0 = Math.atan2(s[0].y, s[0].x);
+  const a1 = Math.atan2(s[5].y, s[5].x);
+  let d = a1 - a0;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  assert.ok(d > 0, '角度應該遞增（y 向下時即為順時針），實得 ' + d.toFixed(3));
+});
+
+test('ORBIT-3 一圈的時間就是 2π/ω（角速度是真的角速度）', function () {
+  const s = motionSeries({
+    speed: 0, spawn: { shape: 'circle', radius: 80 }, orbitalSpeed: Math.PI * 2
+  }, 61)[0];
+  /* 1 轉/秒、60fps。s[0] 是**第一次 update 之後**的位置（粒子在出生的那一幀
+     就會轉一格），所以整整一圈是 s[0] → s[60]，不是 s[59]。 */
+  assert.ok(Math.abs(s[60].x - s[0].x) < 0.5 && Math.abs(s[60].y - s[0].y) < 0.5,
+    '一秒之後應該回到原處，實得 (' + s[60].x.toFixed(2) + ',' + s[60].y.toFixed(2) +
+    ')、起點 (' + s[0].x.toFixed(2) + ',' + s[0].y.toFixed(2) + ')');
+});
+
+test('RADIAL-1 負值向心（吸引子）、正值離心', function () {
+  const out = motionSeries({
+    speed: 0, spawn: { shape: 'circle', radius: 50 }, radialSpeed: 100
+  }, 30)[0];
+  assert.ok(hyp(out[29]) > hyp(out[0]) + 40, '正值要往外');
+
+  const inward = motionSeries({
+    speed: 0, spawn: { shape: 'circle', radius: 50 }, radialSpeed: -100
+  }, 30)[0];
+  assert.ok(hyp(inward[29]) < hyp(inward[0]), '負值要往內（黑洞）');
+});
+
+test('RADIAL-2 位在圓心的粒子不會爆掉（方向未定義）', function () {
+  /* r=0 時徑向方向沒有意義，除法會得到 NaN，畫面上就是粒子整個消失。 */
+  const s = motionSeries({ speed: 0, spawn: { shape: 'point' }, radialSpeed: 100 }, 10)[0];
+  s.forEach(function (p, i) {
+    assert.ok(isFinite(p.x) && isFinite(p.y), '第 ' + i + ' 幀成了 NaN');
+  });
+});
+
+test('NOISE-1 噪聲是位移偏移，不會累積成漂移', function () {
+  /* 靜止不動的粒子加上噪聲，應該永遠待在出生點的 strength 半徑內。
+     若把噪聲做成加速度，它會被吹到畫面外。 */
+  const s = motionSeries({
+    speed: 0, spawn: { shape: 'point' },
+    noise: { strength: 20, frequency: 0.05, scrollSpeed: 2 }
+  }, 600)[0];
+  s.forEach(function (p, i) {
+    assert.ok(hyp(p) <= 20 * Math.SQRT2 + 1e-6, '第 ' + i + ' 幀跑到 ' + hyp(p).toFixed(1) + ' 了');
+  });
+  const spread = Math.max.apply(null, s.map(hyp));
+  assert.ok(spread > 1, '完全不動的話就不是噪聲了（最大位移 ' + spread.toFixed(2) + '）');
+});
+
+test('NOISE-2 決定性：同一份 preset 重播兩次逐位元相同', function () {
+  const opts = {
+    speed: 40, direction: -90, spawn: { shape: 'circle', radius: 30 },
+    emission: { mode: 'rate', rate: 30 },
+    noise: { strength: 15, frequency: 0.03, scrollSpeed: 1.5 }
+  };
+  const a = motionSeries(opts, 90);
+  const b = motionSeries(opts, 90);
+  assert.deepEqual(b, a, '噪聲必須由 seed 決定，不能用 Math.random');
+});
+
+test('NOISE-3 是一片場，不是每顆粒子各抖各的', function () {
+  /* 相鄰的粒子要被推向同一邊（看起來才像被氣流帶著走）。
+     驗法：把八顆粒子擠在 2px 內，它們的位移方向應該高度一致；
+     若是各自獨立的亂數，方向就會散開。 */
+  const near = motionSeries({
+    speed: 0, spawn: { shape: 'box', width: 2, height: 2 },
+    emission: { mode: 'burst', count: 8 },
+    noise: { strength: 30, frequency: 0.02, scrollSpeed: 0 }
+  }, 5);
+  assert.equal(near.length, 8);
+  const dirs = near.map(function (s) { return Math.atan2(s[4].y, s[4].x); });
+  const spreadAng = Math.max.apply(null, dirs) - Math.min.apply(null, dirs);
+  assert.ok(spreadAng < 0.5,
+    '擠在 2px 內的八顆粒子被推往差很多的方向（' + spreadAng.toFixed(2) + ' 弧度），那是雜訊不是場');
+});
+
+test('NOISE-4 驗證：格式錯誤要報錯', function () {
+  function errs(noise) {
+    return VFXCore.validatePreset({
+      schemaVersion: 1, id: 'n', duration: 1,
+      layers: [{
+        id: 'p', type: 'particle', assetId: 'pack/star.png',
+        emission: { mode: 'burst', count: 1 }, lifetime: 1, noise: noise
+      }]
+    }).errors.join('；');
+  }
+  assert.match(errs({ strength: -1 }), /strength/);
+  assert.match(errs({ strength: 5, frequency: 0 }), /frequency/);
+  assert.match(errs({ frequency: 1 }), /strength/);
+  assert.match(errs('big'), /必須是/);
+  assert.match(errs({ strength: 5, wobble: 1 }), /wobble/);
+  assert.deepEqual(VFXCore.validatePreset({
+    schemaVersion: 1, id: 'n', duration: 1,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'burst', count: 1 }, lifetime: 1,
+      noise: { strength: 12, frequency: 0.04, scrollSpeed: 1 },
+      drag: 2, radialSpeed: -40, orbitalSpeed: 3
+    }]
+  }).errors, []);
+});
+
+test('MOTION-2 這四項只掛在 particle：sprite 寫了要報錯，不 silent 忽略', function () {
+  ['drag', 'radialSpeed', 'orbitalSpeed', 'noise'].forEach(function (f) {
+    const layer = { id: 'a', type: 'sprite', assetId: 'pack/ring.png' };
+    layer[f] = f === 'noise' ? { strength: 1 } : 1;
+    const r = VFXCore.validatePreset({ schemaVersion: 1, id: 'm', duration: 1, layers: [layer] });
+    assert.equal(r.ok, false, f + ' 掛在 sprite 上應該被擋');
+  });
+});
+
+test('MOTION-3 alignToVelocity 在有漩渦時看實際位移，不是看 p.v', function () {
+  /* 環繞是直接改位置的，p.v 完全不知道它的存在。只看速度的話，
+     一顆速度為 0 卻在繞圈的粒子，拖尾會永遠指著出生方向。 */
+  const s = motionSeries({
+    speed: 0, spawn: { shape: 'circle', radius: 100 },
+    orbitalSpeed: Math.PI * 2, alignToVelocity: true
+  }, 30)[0];
+  const rots = s.map(function (p) { return p.r; });
+  const distinct = new Set(rots.map(function (v) { return Math.round(v * 100); }));
+  assert.ok(distinct.size > 10, '朝向應該跟著繞圈一直變，實際只有 ' + distinct.size + ' 種');
+});
+
 /* ---------------- tintOverLife（顏色隨生命變化） ----------------
    加入這一項之前，一個圖層從生到死只有一個固定顏色：火星不會冷卻、
    煙不會轉灰、電弧不會褪成藍白。作者只能把同一張圖疊三層、各給一個顏色，

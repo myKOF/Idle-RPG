@@ -116,6 +116,38 @@ var VFXCore = (function () {
     return last[1];
   }
 
+  /* ---------- 噪聲場 ----------
+     粒子的湍流。與 makeRng 的分工不同：亂數是「每顆粒子出生時抽一次」，
+     噪聲是「同一個位置在同一個時刻永遠得到同一個值」——相鄰的粒子因此會
+     一起被推向同一邊，看起來才像被氣流帶著走，而不是各抖各的。
+
+     用整數格點的 value noise（hash → smoothstep 內插）而不是 Perlin：
+     少一組梯度表、少一次查表，而在「拿來當位移擾動」這個用途上，
+     兩者的視覺差別小到看不出來。
+
+     hash 用 Math.imul：粒子座標乘上大質數會超過 2^31，普通乘法會掉精度，
+     於是噪聲場在畫面某些區域整片變成同一個值（看起來像整塊在平移）。 */
+  function noiseHash(ix, iy, seed) {
+    var h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(seed, 1442695041);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  }
+
+  /* 回傳 -1..1。 */
+  function valueNoise2(x, y, seed) {
+    var ix = Math.floor(x), iy = Math.floor(y);
+    var fx = x - ix, fy = y - iy;
+    var ux = fx * fx * (3 - 2 * fx);           // smoothstep：格點邊界不會有折角
+    var uy = fy * fy * (3 - 2 * fy);
+    var a = noiseHash(ix, iy, seed);
+    var b = noiseHash(ix + 1, iy, seed);
+    var c = noiseHash(ix, iy + 1, seed);
+    var d = noiseHash(ix + 1, iy + 1, seed);
+    var top = a + (b - a) * ux;
+    var bottom = c + (d - c) * ux;
+    return (top + (bottom - top) * uy) * 2 - 1;
+  }
+
   /* 範圍值：數字表示固定，[min,max] 表示在區間內取決定性亂數 */
   function sampleRange(value, rng) {
     if (Array.isArray(value)) return value[0] + (value[1] - value[0]) * rng();
@@ -368,6 +400,32 @@ var VFXCore = (function () {
       errors.push(where + '.spread 必須是非負有限數（角度）');
     }
     validateVec2(layer.gravity, where + '.gravity', errors);
+    /* 運動的三個補充項。全部可以省略，省略時的行為與加入它們之前完全相同。 */
+    if (layer.drag !== undefined && (!isFiniteNumber(layer.drag) || layer.drag < 0)) {
+      errors.push(where + '.drag 必須是非負有限數（每秒衰減率）');
+    }
+    if (layer.radialSpeed !== undefined && !isFiniteNumber(layer.radialSpeed)) {
+      errors.push(where + '.radialSpeed 必須是有限數（px／秒，負值＝向心）');
+    }
+    if (layer.orbitalSpeed !== undefined && !isFiniteNumber(layer.orbitalSpeed)) {
+      errors.push(where + '.orbitalSpeed 必須是有限數（弧度／秒）');
+    }
+    if (layer.noise !== undefined) {
+      var n = layer.noise;
+      if (!n || typeof n !== 'object' || Array.isArray(n)) {
+        errors.push(where + '.noise 必須是 { strength, frequency, scrollSpeed }');
+      } else {
+        if (!isFiniteNumber(n.strength) || n.strength < 0) {
+          errors.push(where + '.noise.strength 必須是非負有限數（像素）');
+        }
+        if (n.frequency !== undefined && (!isFiniteNumber(n.frequency) || n.frequency <= 0)) {
+          errors.push(where + '.noise.frequency 必須是正的有限數');
+        }
+        if (n.scrollSpeed !== undefined && !isFiniteNumber(n.scrollSpeed)) {
+          errors.push(where + '.noise.scrollSpeed 必須是有限數');
+        }
+      }
+    }
     var spawn = layer.spawn;
     if (spawn !== undefined) {
       if (!spawn || SPAWN_SHAPES.indexOf(spawn.shape) < 0) {
@@ -414,7 +472,8 @@ var VFXCore = (function () {
   var TYPE_ONLY_FIELDS = {
     sprite: PER_AXIS_SCALE_FIELDS,
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
-      'spread', 'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
+      'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
+      'startScale', 'rotationStart', 'rotationSpeed',
       'alignToVelocity', 'velocityRotationOffset'],
     procedural: ['effect', 'size', 'scrollSpeed'].concat(PER_AXIS_SCALE_FIELDS)
   };
@@ -433,7 +492,8 @@ var VFXCore = (function () {
     position: ['x', 'y'], scale: ['x', 'y'], anchor: ['x', 'y'],
     gravity: ['x', 'y'], size: ['x', 'y'], scrollSpeed: ['x', 'y'],
     emission: ['mode', 'count', 'rate'],
-    spawn: ['shape', 'radius', 'width', 'height']
+    spawn: ['shape', 'radius', 'width', 'height'],
+    noise: ['strength', 'frequency', 'scrollSpeed']
   };
 
   function checkNestedFields(layer, where, errors) {
@@ -504,7 +564,8 @@ var VFXCore = (function () {
     'position', 'rotation', 'scale', 'anchor', 'size', 'alpha', 'tint', 'blendMode',
     'delay', 'duration', 'scrollSpeed',
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
-    'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
+    'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
+    'startScale', 'rotationStart', 'rotationSpeed',
     'alignToVelocity', 'velocityRotationOffset',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife'];
@@ -560,6 +621,15 @@ var VFXCore = (function () {
       direction: layer.direction === undefined ? -90 : layer.direction,
       spread: layer.spread === undefined ? 0 : layer.spread,
       gravity: layer.gravity || { x: 0, y: 0 },
+      drag: layer.drag === undefined ? 0 : layer.drag,
+      radialSpeed: layer.radialSpeed === undefined ? 0 : layer.radialSpeed,
+      orbitalSpeed: layer.orbitalSpeed === undefined ? 0 : layer.orbitalSpeed,
+      /* null 而不是補一個 strength:0 的物件：更新迴圈用它一次判斷就整段跳過。 */
+      noise: layer.noise ? {
+        strength: layer.noise.strength,
+        frequency: layer.noise.frequency === undefined ? 0.01 : layer.noise.frequency,
+        scrollSpeed: layer.noise.scrollSpeed === undefined ? 0 : layer.noise.scrollSpeed
+      } : null,
       startScale: layer.startScale === undefined ? 1 : layer.startScale,
       rotationStart: layer.rotationStart === undefined ? 0 : layer.rotationStart,
       rotationSpeed: layer.rotationSpeed === undefined ? 0 : layer.rotationSpeed,
@@ -718,6 +788,8 @@ var VFXCore = (function () {
           particles: [],
           emitAccumulator: 0,
           burstDone: false,
+          noiseSeed: (effect.seed + i * 0x85EBCA6B) | 0,
+
           scrollX: 0,
           scrollY: 0
         };
@@ -981,6 +1053,12 @@ var VFXCore = (function () {
       /* 沒有曲線時 tint 仍然是整層一個常數（提到迴圈外算一次）；
          有曲線才逐顆粒子取樣——粒子的生命進度各自不同，不能共用。 */
       var tintCurve = d.tintCurve;
+      /* 噪聲的取樣種子固定在圖層上（不是每顆粒子）：同一片場才會讓相鄰的
+         粒子一起被推向同一邊。seed 由特效的 seed 派生，因此重播同一份 preset
+         得到逐位元相同的結果（Core 的決定性承諾）。 */
+      var noise = (d.noise && d.noise.strength > 0) ? d.noise : null;
+      var noiseSeed = layer.noiseSeed;
+      var swirl = d.radialSpeed !== 0 || d.orbitalSpeed !== 0;
       var write = 0;
       for (var j = 0; j < layer.particles.length; j++) {
         var p = layer.particles[j];
@@ -992,18 +1070,70 @@ var VFXCore = (function () {
           totalParticles--;
           continue;
         }
+        /* ---- 運動 ----
+           分成四步，順序不能重排：
+
+           1. 重力是**加速度**，累積進速度。
+           2. 阻力作用在累積速度上，用 1/(1+drag*dt) 而不是 (1-drag*dt)：
+              後者在 drag*dt > 1 時會讓速度反向（掉幀的那一幀粒子往回飛），
+              前者對任何 dt 都單調趨近 0，不必為此夾限 dt。
+           3. 線性位移積分。
+           4. 徑向與環繞**直接作用在位置上**，不進速度、不累積。
+
+           第 4 步為什麼不做成「加一個切線速度再積分」：那是顯式 Euler，
+           半徑會指數發散——ω=1 轉/秒、dt=1/60 跑 6 秒，起始半徑 100 會變成 712。
+           改成把位移向量**精確旋轉** ω·dt，半徑就守恆到浮點精度，
+           一顆純環繞的粒子永遠繞在同一個圈上。徑向則是沿半徑方向的直線位移，
+           本來就沒有積分誤差可言。 */
         p.vx += d.gravity.x * dt;
         p.vy += d.gravity.y * dt;
+        if (d.drag > 0) {
+          var damp = 1 / (1 + d.drag * dt);
+          p.vx *= damp;
+          p.vy *= damp;
+        }
+        var prevX = p.x, prevY = p.y;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
+        if (swirl) {
+          /* 圓心取圖層自己的 position（發射器所在），不是特效原點：
+             一個掛在偏移位置的漩渦，該繞的是它自己的中心。 */
+          var ox = p.x - d.position.x, oy = p.y - d.position.y;
+          var r2 = ox * ox + oy * oy;
+          if (r2 > 1e-9) {
+            if (d.radialSpeed !== 0) {
+              var inv = 1 / Math.sqrt(r2);
+              ox += d.radialSpeed * ox * inv * dt;
+              oy += d.radialSpeed * oy * inv * dt;
+            }
+            if (d.orbitalSpeed !== 0) {
+              /* 螢幕座標 y 向下，所以正的 ω 在畫面上是**順時針**——
+                 與技能表「順時針繞行 {rps} 圈」的說法一致。 */
+              var ang = d.orbitalSpeed * dt;
+              var ca = Math.cos(ang), sa = Math.sin(ang);
+              var rx = ox * ca - oy * sa;
+              oy = ox * sa + oy * ca;
+              ox = rx;
+            }
+            p.x = d.position.x + ox;
+            p.y = d.position.y + oy;
+          }
+        }
         p.rotation += p.rotationSpeed * dt;
         /* 速度朝向在積分之後才更新，這樣 gravity 造成的轉向當幀就會反映出來。
            低於門檻時保留上一次的有效角度，而不是歸零；從出生到現在都沒動過的
            粒子則完全不加這一項，維持原本的固定旋轉行為。 */
         if (d.alignToVelocity) {
-          var sp2 = p.vx * p.vx + p.vy * p.vy;
+          /* 沒有漩渦時看速度、有漩渦時看**實際位移**：環繞是直接改位置的，
+             p.v 完全不知道它的存在，只看速度會讓拖尾指錯邊。
+             不無條件改用位移，是為了讓既有 preset 的輸出逐位元不變——
+             純線性運動下位移就是 v*dt，atan2 對正倍率不變，但浮點的最後一位
+             不保證相同，而「既有 preset 完全不變」是這個 Core 的承諾。 */
+          var avx = p.vx, avy = p.vy;
+          if (swirl) { avx = p.x - prevX; avy = p.y - prevY; }
+          var sp2 = avx * avx + avy * avy;
           if (sp2 > VELOCITY_EPSILON * VELOCITY_EPSILON) {
-            p.velAngle = Math.atan2(p.vy, p.vx);
+            p.velAngle = Math.atan2(avy, avx);
             p.hasVelAngle = true;
           }
         }
@@ -1011,7 +1141,19 @@ var VFXCore = (function () {
         var alphaK = sampleCurve(d.alphaOverLife, k);
         var scaleK = sampleCurve(d.scaleOverLife, k);
         var rotK = sampleCurve(d.rotationOverLife, k);
-        var world = toWorld(effect, p.x, p.y);
+        var nx = p.x, ny = p.y;
+        if (noise) {
+          /* 兩個分量各取一次噪聲，而且是**平移取樣域**而不是換 seed：
+             同一片場的兩個切面，相鄰粒子的擾動因此仍然相關（一起被帶走），
+             換 seed 會變成兩片完全無關的場，看起來就是各抖各的。
+             時間也走平移：整片場隨時間漂過去，就是氣流的樣子。 */
+          var fx2 = nx * noise.frequency;
+          var fy2 = ny * noise.frequency;
+          var ft = effect.time * noise.scrollSpeed;
+          nx += valueNoise2(fx2 + ft, fy2, noiseSeed) * noise.strength;
+          ny += valueNoise2(fx2, fy2 + ft + 31.4, noiseSeed) * noise.strength;
+        }
+        var world = toWorld(effect, nx, ny);
         var t = scratchTransform;
         t.visible = true;
         t.x = world.x;
