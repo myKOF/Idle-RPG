@@ -331,6 +331,12 @@
         0.0313,
         0.0586
       ],
+      "subEmitter": {
+        "count": 1,
+        "inheritVelocity": 0.35,
+        "layer": "ember-puff",
+        "on": "death"
+      },
       "alphaOverLife": [
         [
           0,
@@ -375,6 +381,87 @@
         [
           1,
           0.5
+        ]
+      ]
+    },
+    {
+      "id": "ember-puff",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 8,
+      "tint": "#7a5140",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "sub"
+      },
+      "lifetime": [
+        0.35,
+        0.62
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        4,
+        16
+      ],
+      "direction": -90,
+      "spread": 140,
+      "gravity": {
+        "x": 0,
+        "y": -34
+      },
+      "drag": 2.2,
+      "noise": {
+        "frequency": 0.03,
+        "scrollSpeed": 1,
+        "strength": 6
+      },
+      "startScale": [
+        0.0195,
+        0.0391
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.42
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.25,
+          "#c8613a"
+        ],
+        [
+          0.6,
+          "#6b5148"
+        ],
+        [
+          1,
+          "#3a3a3c"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.5
         ]
       ]
     }

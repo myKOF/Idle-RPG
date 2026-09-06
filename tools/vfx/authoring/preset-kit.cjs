@@ -291,6 +291,7 @@ function common(o, out) {
 }
 function sprite(o) {
   const out = common(o, { type: 'sprite' });
+  if (o.sheet !== undefined) out.sheet = o.sheet;
   ['scaleXOverLife', 'scaleYOverLife', 'rotationXOverLife', 'rotationYOverLife'].forEach(k => { if (o[k] !== undefined) out[k] = o[k]; });
   return out;
 }
@@ -307,6 +308,7 @@ function particle(o) {
   else if (o.spawnBox !== undefined) out.spawn = { shape: 'box', width: o.spawnBox[0], height: o.spawnBox[1] };
   else if (o.spawn) out.spawn = o.spawn;
   ['speed', 'direction', 'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
+    'subEmitter', 'sheet',
     'startScale', 'rotationStart', 'rotationSpeed', 'alignToVelocity', 'velocityRotationOffset']
     .forEach(k => { if (o[k] !== undefined) out[k] = o[k]; });
   /* 角速度以「圈／秒」給比較好想（技能表寫的就是「繞行 N 圈」），存檔仍是弧度／秒。 */

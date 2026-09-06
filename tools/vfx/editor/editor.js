@@ -211,6 +211,10 @@
       num('radialSpeed', 'radialSpeed(px/s)', 1),
       deg('orbitalSpeed', 'orbitalSpeed(°/s)', 1),
       json('noise', 'noise'),
+      /* 子發射器（2026-09-06）：{ layer, on?('death'|'birth'), count?, inheritVelocity? }
+         目標層必須是同一份 preset 裡 emission.mode = 'sub' 的 particle 層。
+         驗證會擋掉指錯層、目標不是 sub、沒人觸發的 sub 層、以及成環。 */
+      json('subEmitter', 'subEmitter'),
       json('startScale', 'startScale'),
       degRange('rotationStart', 'rotationStart(°)'),
       degRange('rotationSpeed', 'rotationSpeed(°/s)'),
