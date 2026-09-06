@@ -191,6 +191,72 @@ undefined            這個屬性沒有曲線
 所以 Editor 只夾下限 0（與 Core 的 `nonNegative` 一致），**不夾上限**。
 把它當成 0..1 的不透明度去夾，會靜靜改掉這些既有數值。
 
+### `tintOverLife` 是「乘上去」的顏色（2026-09-06）
+
+與 `alphaOverLife` 同一個語意：曲線的值**乘在** `layer.tint` 上，逐分量相乘
+（`a * b / 255`）。三個理由：
+
+1. 與 `alphaOverLife` 一致。同一區塊裡兩條曲線，一條是係數、另一條是取代，
+   沒有人記得住。
+2. `tint` 永遠有作用。取代語意會讓「填了 tint 又填了曲線」的那一格靜靜失效，
+   那正是本規格禁止的 silent fallback。
+3. 與 Unity 的 `startColor × colorOverLifetime` 同語意。日後要機器轉換 Unity
+   的粒子設定時是 1:1 對應，不必在轉換器裡另外想一套折衷。
+
+實務上要「色帶上是什麼顏色就播什麼顏色」，把 `tint` 留在預設的 `#ffffff` 即可。
+
+**取樣只有一份實作。** Core 匯出 `toColorCurve`／`sampleColorCurve`，
+Editor 的色帶（`tools/vfx/editor/gradient-model.js`）直接呼叫它們而不自己內插——
+色帶是 Editor 畫的、實際播放是 Core 跑的，兩份實作只要差一個 `|0` 與
+`Math.round` 就會差一階，而那正是「Editor 調好的顏色進遊戲不對」的來源。
+用測試比對兩份實作只能事後發現；共用同一支函式是結構上不可能分家。
+
+**效能**：曲線在 `layerDefaults`（也就是 `play()`）時就轉成 `[[t, int]]` 存進
+派生欄位 `tintCurve`，逐幀逐粒子的熱路徑不解析十六進位字串。沒有曲線時
+`tintCurve` 是 null，更新迴圈整段跳過——既有 preset 的輸出因此逐位元不變。
+
+### 2.2.1 粒子運動的四個補充項（2026-09-06）
+
+加入之前，粒子只會「以固定初速直線飛、外加重力」。做不出漩渦、吸引子、
+減速的餘燼，也做不出火焰與煙霧的湍流。這四項的共同點是**不需要任何新素材**，
+成本純粹在模擬迴圈——與序列幀、扭曲那類「要先有素材才有意義」的缺口不同。
+
+| 欄位 | 單位 | 語意 |
+| --- | --- | --- |
+| `drag` | 每秒 | 線性阻尼，`v *= 1/(1+drag*dt)` |
+| `radialSpeed` | px／秒 | 沿半徑方向的位移速度。正＝離心，負＝向心（吸引子） |
+| `orbitalSpeed` | 弧度／秒 | 繞圓心的角速度。正值在螢幕上是**順時針** |
+| `noise` | — | `{ strength(px), frequency(每 px 的週期), scrollSpeed(每秒) }` |
+
+四項都可以省略；省略時的行為與加入它們之前**逐位元相同**（`MOTION-1` 釘住）。
+
+**更新順序不能重排**：重力（加速度）→ 阻力 → 線性位移積分 → 徑向與環繞 → 噪聲偏移。
+
+**阻力為什麼是 `1/(1+drag*dt)` 而不是 `(1-drag*dt)`**：後者在 `drag*dt > 1` 時
+會讓速度反向——掉幀的那一幀粒子會往回飛。前者對任何 `dt` 都落在 0..1、單調趨近 0，
+因此不必為它另外夾限 `dt`（`DRAG-1` 用 dt=2 秒的極端幀釘住）。
+
+**環繞為什麼是「旋轉位移向量」而不是「加一個切線速度」**：後者是顯式 Euler，
+半徑會指數發散——ω=1 轉/秒、dt=1/60 跑 6 秒，起始半徑 100 會變成 **712**。
+改成把位移向量精確旋轉 `ω·dt`，半徑守恆到浮點精度（`ORBIT-1` 釘住 0.1% 以內）。
+徑向則是沿半徑的直線位移，本來就沒有積分誤差。圓心取**圖層自己的 `position`**
+（發射器所在），不是特效原點——掛在偏移位置的漩渦該繞自己的中心。
+
+**噪聲為什麼是位移偏移而不是力**：做成力會累積成漂移，粒子被吹出畫面；
+做成偏移則是粒子在自己的彈道附近抖動，永遠不離開 `strength` 的範圍
+（`NOISE-1` 跑 600 幀釘住）。這也是 Unity Noise 模組 Position Amount 的行為。
+噪聲是**一片場**不是每顆粒子各自的亂數：擠在 2px 內的粒子會被推往同一邊
+（`NOISE-3` 釘住），看起來才像被氣流帶著走。取樣種子由特效的 seed 派生，
+因此重播同一份 preset 逐位元相同（`NOISE-2`）。
+
+`alignToVelocity` 在有徑向／環繞時改看**實際位移**而不是 `p.v`——環繞是直接改
+位置的，`p.v` 完全不知道它的存在。沒有漩渦時仍走原本的速度路徑，既有 preset
+的輸出因此不變。
+
+尚未做的相關項目：`orbitalSpeed` 隨半徑衰減（真實漩渦中心轉得快）、
+每顆粒子的隨機範圍（`[min,max]`）、噪聲的多階（octaves）。三者都是加法，
+需要時再補；目前的剛體旋轉與模擬層 `sgOrbitStep` 的「順時針繞行 N 圈」一致。
+
 ### `rotationOverLife` 是弧度，且是 Z 軸
 
 它直接加進 `transform.rotation`，而後端把它交給 `node.rotation`——
@@ -313,11 +379,15 @@ NaN 會讓整個特效消失卻查不到原因，屬規格禁止的 silent fallb
 格式一律 `[[t, value], …]`，`t` 為 0..1 的生命進度，線性內插，最多 16 點。
 刻意不做貝茲／緩動曲線——MVP 用不到。
 
+顏色動畫：`tintOverLife`，格式 `[[t, "#rrggbb"], …]`（單點可寫成 `"#rrggbb"`），
+同樣是 0..1 的生命進度、線性內插、最多 16 點。詳見 §2.1.1。
+
 ## 2.2 particle 專屬
 
 `emission`（`{mode:"burst",count}` 或 `{mode:"rate",rate}`）、`maxParticles`、
 `lifetime`、`spawn`（`point`／`circle{radius}`／`box{width,height}`）、
 `speed`、`direction`(度)、`spread`(度)、`gravity{x,y}`、
+`drag`、`radialSpeed`、`orbitalSpeed`、`noise{strength,frequency,scrollSpeed}`（見 §2.2.1）、
 `startScale`、`rotationStart`、`rotationSpeed`、
 `alignToVelocity`、`velocityRotationOffset`。
 
@@ -357,6 +427,14 @@ renderRotation = effect.rotation + layer.rotation
 
 刻意**不做**：子發射器、碰撞、貼圖動畫、噪聲場、trail renderer、
 以及 Unity 那套完整曲線編輯——目前的火焰龍捲與一般 Web VFX 用不到。
+
+⚠️ 2026-09-06 起「顏色隨生命變化」已經做了（`tintOverLife`，見 §2.1.1）。
+它原本不在這份清單上，但實際上一直缺席——151 份 preset 裡有 36 組是把同一張圖
+疊多層、各給一個顏色，用離散階梯假裝漸層，佔掉 16% 的圖層預算。
+⚠️ 2026-09-06 同日，噪聲場、徑向／環繞速度、阻力三項也做了（見 §2.2.1）——
+它們同樣不需要任何素材。清單上還沒做而且**不需要新素材**的只剩子發射器與 trail；
+貼圖動畫與扭曲則要先有序列幀與噪聲貼圖（見 §7 Material Gap），
+那才是「要不要花錢買素材」的決策點。
 
 ## 2.3 procedural 專屬
 

@@ -116,6 +116,38 @@ var VFXCore = (function () {
     return last[1];
   }
 
+  /* ---------- 噪聲場 ----------
+     粒子的湍流。與 makeRng 的分工不同：亂數是「每顆粒子出生時抽一次」，
+     噪聲是「同一個位置在同一個時刻永遠得到同一個值」——相鄰的粒子因此會
+     一起被推向同一邊，看起來才像被氣流帶著走，而不是各抖各的。
+
+     用整數格點的 value noise（hash → smoothstep 內插）而不是 Perlin：
+     少一組梯度表、少一次查表，而在「拿來當位移擾動」這個用途上，
+     兩者的視覺差別小到看不出來。
+
+     hash 用 Math.imul：粒子座標乘上大質數會超過 2^31，普通乘法會掉精度，
+     於是噪聲場在畫面某些區域整片變成同一個值（看起來像整塊在平移）。 */
+  function noiseHash(ix, iy, seed) {
+    var h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(seed, 1442695041);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  }
+
+  /* 回傳 -1..1。 */
+  function valueNoise2(x, y, seed) {
+    var ix = Math.floor(x), iy = Math.floor(y);
+    var fx = x - ix, fy = y - iy;
+    var ux = fx * fx * (3 - 2 * fx);           // smoothstep：格點邊界不會有折角
+    var uy = fy * fy * (3 - 2 * fy);
+    var a = noiseHash(ix, iy, seed);
+    var b = noiseHash(ix + 1, iy, seed);
+    var c = noiseHash(ix, iy + 1, seed);
+    var d = noiseHash(ix + 1, iy + 1, seed);
+    var top = a + (b - a) * ux;
+    var bottom = c + (d - c) * ux;
+    return (top + (bottom - top) * uy) * 2 - 1;
+  }
+
   /* 範圍值：數字表示固定，[min,max] 表示在區間內取決定性亂數 */
   function sampleRange(value, rng) {
     if (Array.isArray(value)) return value[0] + (value[1] - value[0]) * rng();
@@ -125,6 +157,57 @@ var VFXCore = (function () {
   /* ---------- 顏色 ---------- */
   var COLOR_RE = /^#[0-9a-fA-F]{6}$/;
   function colorToInt(hex) { return parseInt(hex.slice(1), 16); }
+
+  /* 顏色曲線：[[t, '#rrggbb'], …]，在 sRGB 分量上線性內插。
+
+     為什麼與 sampleCurve 分成兩支而不是共用：值不是數字，內插必須逐分量做。
+     混在同一支裡只會讓兩邊都長出型別判斷，而熱路徑（逐幀逐粒子）最不需要的
+     就是每次取樣都先問一次「這是數字還是顏色」。 */
+  function lerpColorInt(a, b, k) {
+    var ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
+    var br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+    var r = (ar + (br - ar) * k) | 0;
+    var g = (ag + (bg - ag) * k) | 0;
+    var bl = (ab + (bb - ab) * k) | 0;
+    return (r << 16) | (g << 8) | bl;
+  }
+
+  /* 曲線在 layerDefaults（也就是 play 的時候）就先轉成 [[t, int]]。
+     逐幀逐粒子取樣時再 parseInt 一次十六進位字串，是這一層最容易長出來的
+     隱形成本——一個 500 顆粒子的特效每秒就是三萬次字串解析。 */
+  function toColorCurve(value) {
+    if (value === undefined || value === null) return null;
+    if (typeof value === 'string') return [[0, colorToInt(value)]];
+    var out = [];
+    for (var i = 0; i < value.length; i++) out.push([value[i][0], colorToInt(String(value[i][1]))]);
+    return out;
+  }
+
+  function sampleColorCurve(curve, t) {
+    if (!curve) return null;
+    if (t <= curve[0][0]) return curve[0][1];
+    var last = curve[curve.length - 1];
+    if (t >= last[0]) return last[1];
+    for (var i = 1; i < curve.length; i++) {
+      if (t <= curve[i][0]) {
+        var a = curve[i - 1], b = curve[i];
+        var span = b[0] - a[0];
+        return span > 0 ? lerpColorInt(a[1], b[1], (t - a[0]) / span) : a[1];
+      }
+    }
+    return last[1];
+  }
+
+  /* 逐分量相乘。與 alphaOverLife 乘在 alpha 上是同一個道理：曲線是「在基底色上
+     再乘一層」，不是取代它——因此 tint 永遠有作用，不會出現「填了卻沒效果」。
+     這也與 Unity 的 startColor × colorOverLifetime 同語意，日後要機器轉換
+     Unity 的粒子設定時是 1:1 對應，不必在轉換器裡另外想一套折衷。 */
+  function mulColorInt(a, b) {
+    var r = (((a >> 16) & 255) * ((b >> 16) & 255) / 255) | 0;
+    var g = (((a >> 8) & 255) * ((b >> 8) & 255) / 255) | 0;
+    var bl = ((a & 255) * (b & 255) / 255) | 0;
+    return (r << 16) | (g << 8) | bl;
+  }
 
   /* ---------- 驗證 ----------
      嚴格、不做 silent fallback：任何不合法的 preset 一律回傳錯誤而不是「盡量播」。
@@ -157,6 +240,33 @@ var VFXCore = (function () {
       if (p[0] < prevT) errors.push(where + '[' + i + '] 的 t 必須遞增');
       prevT = p[0];
       if (opts && opts.nonNegative && p[1] < 0) errors.push(where + '[' + i + '] 不得為負');
+    }
+  }
+
+  function validateColorCurve(value, where, errors) {
+    if (value === undefined) return;
+    if (typeof value === 'string') {
+      if (!COLOR_RE.test(value)) errors.push(where + ' 必須是 #rrggbb');
+      return;
+    }
+    if (!Array.isArray(value) || !value.length) {
+      errors.push(where + " 必須是 #rrggbb 或 [[t,'#rrggbb'],…] 曲線");
+      return;
+    }
+    if (value.length > HARD_LIMITS.maxCurvePoints) {
+      errors.push(where + ' 曲線點數超過上限 ' + HARD_LIMITS.maxCurvePoints);
+    }
+    var prevT = -Infinity;
+    for (var i = 0; i < value.length; i++) {
+      var p = value[i];
+      if (!Array.isArray(p) || p.length !== 2 || !isFiniteNumber(p[0]) ||
+          !COLOR_RE.test(String(p[1]))) {
+        errors.push(where + '[' + i + "] 必須是 [t, '#rrggbb']");
+        continue;
+      }
+      if (p[0] < 0 || p[0] > 1) errors.push(where + '[' + i + '] 的 t 必須在 0..1');
+      if (p[0] < prevT) errors.push(where + '[' + i + '] 的 t 必須遞增');
+      prevT = p[0];
     }
   }
 
@@ -224,6 +334,7 @@ var VFXCore = (function () {
       }
     }
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
+    validateColorCurve(layer.tintOverLife, where + '.tintOverLife', errors);
     validateCurve(layer.scaleOverLife, where + '.scaleOverLife', errors, { nonNegative: true });
     /* 分軸縮放曲線。只有走 updateSpriteLayer 的 sprite／procedural 支援，
        粒子層的兩軸永遠相等（見 updateParticleLayer），所以那裡不收這兩個欄位——
@@ -289,6 +400,32 @@ var VFXCore = (function () {
       errors.push(where + '.spread 必須是非負有限數（角度）');
     }
     validateVec2(layer.gravity, where + '.gravity', errors);
+    /* 運動的三個補充項。全部可以省略，省略時的行為與加入它們之前完全相同。 */
+    if (layer.drag !== undefined && (!isFiniteNumber(layer.drag) || layer.drag < 0)) {
+      errors.push(where + '.drag 必須是非負有限數（每秒衰減率）');
+    }
+    if (layer.radialSpeed !== undefined && !isFiniteNumber(layer.radialSpeed)) {
+      errors.push(where + '.radialSpeed 必須是有限數（px／秒，負值＝向心）');
+    }
+    if (layer.orbitalSpeed !== undefined && !isFiniteNumber(layer.orbitalSpeed)) {
+      errors.push(where + '.orbitalSpeed 必須是有限數（弧度／秒）');
+    }
+    if (layer.noise !== undefined) {
+      var n = layer.noise;
+      if (!n || typeof n !== 'object' || Array.isArray(n)) {
+        errors.push(where + '.noise 必須是 { strength, frequency, scrollSpeed }');
+      } else {
+        if (!isFiniteNumber(n.strength) || n.strength < 0) {
+          errors.push(where + '.noise.strength 必須是非負有限數（像素）');
+        }
+        if (n.frequency !== undefined && (!isFiniteNumber(n.frequency) || n.frequency <= 0)) {
+          errors.push(where + '.noise.frequency 必須是正的有限數');
+        }
+        if (n.scrollSpeed !== undefined && !isFiniteNumber(n.scrollSpeed)) {
+          errors.push(where + '.noise.scrollSpeed 必須是有限數');
+        }
+      }
+    }
     var spawn = layer.spawn;
     if (spawn !== undefined) {
       if (!spawn || SPAWN_SHAPES.indexOf(spawn.shape) < 0) {
@@ -322,7 +459,7 @@ var VFXCore = (function () {
   var PRESET_FIELDS = ['schemaVersion', 'id', 'duration', 'loop', 'layers'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
-    'alphaOverLife', 'scaleOverLife', 'rotationOverLife'];
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
      這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
      那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
@@ -335,7 +472,8 @@ var VFXCore = (function () {
   var TYPE_ONLY_FIELDS = {
     sprite: PER_AXIS_SCALE_FIELDS,
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
-      'spread', 'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
+      'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
+      'startScale', 'rotationStart', 'rotationSpeed',
       'alignToVelocity', 'velocityRotationOffset'],
     procedural: ['effect', 'size', 'scrollSpeed'].concat(PER_AXIS_SCALE_FIELDS)
   };
@@ -354,7 +492,8 @@ var VFXCore = (function () {
     position: ['x', 'y'], scale: ['x', 'y'], anchor: ['x', 'y'],
     gravity: ['x', 'y'], size: ['x', 'y'], scrollSpeed: ['x', 'y'],
     emission: ['mode', 'count', 'rate'],
-    spawn: ['shape', 'radius', 'width', 'height']
+    spawn: ['shape', 'radius', 'width', 'height'],
+    noise: ['strength', 'frequency', 'scrollSpeed']
   };
 
   function checkNestedFields(layer, where, errors) {
@@ -425,9 +564,10 @@ var VFXCore = (function () {
     'position', 'rotation', 'scale', 'anchor', 'size', 'alpha', 'tint', 'blendMode',
     'delay', 'duration', 'scrollSpeed',
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
-    'gravity', 'startScale', 'rotationStart', 'rotationSpeed',
+    'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
+    'startScale', 'rotationStart', 'rotationSpeed',
     'alignToVelocity', 'velocityRotationOffset',
-    'alphaOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife'];
 
   /* 巢狀物件（position、spawn、emission…）也要遞迴排序，否則同樣語意的 preset
@@ -481,6 +621,15 @@ var VFXCore = (function () {
       direction: layer.direction === undefined ? -90 : layer.direction,
       spread: layer.spread === undefined ? 0 : layer.spread,
       gravity: layer.gravity || { x: 0, y: 0 },
+      drag: layer.drag === undefined ? 0 : layer.drag,
+      radialSpeed: layer.radialSpeed === undefined ? 0 : layer.radialSpeed,
+      orbitalSpeed: layer.orbitalSpeed === undefined ? 0 : layer.orbitalSpeed,
+      /* null 而不是補一個 strength:0 的物件：更新迴圈用它一次判斷就整段跳過。 */
+      noise: layer.noise ? {
+        strength: layer.noise.strength,
+        frequency: layer.noise.frequency === undefined ? 0.01 : layer.noise.frequency,
+        scrollSpeed: layer.noise.scrollSpeed === undefined ? 0 : layer.noise.scrollSpeed
+      } : null,
       startScale: layer.startScale === undefined ? 1 : layer.startScale,
       rotationStart: layer.rotationStart === undefined ? 0 : layer.rotationStart,
       rotationSpeed: layer.rotationSpeed === undefined ? 0 : layer.rotationSpeed,
@@ -488,6 +637,11 @@ var VFXCore = (function () {
       velocityRotationOffset: layer.velocityRotationOffset === undefined
         ? 0 : layer.velocityRotationOffset,
       alphaOverLife: layer.alphaOverLife,
+      tintOverLife: layer.tintOverLife,
+      /* 派生欄位（不進 preset、不參與序列化）：熱路徑只讀這一份已解析好的
+         [[t,int]]，逐幀逐粒子不再解析十六進位字串。沒有曲線時是 null，
+         更新迴圈可以整段跳過，行為與加入本功能之前完全相同。 */
+      tintCurve: toColorCurve(layer.tintOverLife),
       scaleOverLife: layer.scaleOverLife,
       /* 刻意保留 undefined 而不填預設值：updateSpriteLayer 要靠
          「有沒有給」來決定該軸是走自己的曲線還是沿用 scaleOverLife。 */
@@ -634,6 +788,8 @@ var VFXCore = (function () {
           particles: [],
           emitAccumulator: 0,
           burstDone: false,
+          noiseSeed: (effect.seed + i * 0x85EBCA6B) | 0,
+
           scrollX: 0,
           scrollY: 0
         };
@@ -793,7 +949,8 @@ var VFXCore = (function () {
       t.scaleX = d.scale.x * effect.scaleX * (scaleKX === null ? 1 : scaleKX) * flipX;
       t.scaleY = d.scale.y * effect.scaleY * (scaleKY === null ? 1 : scaleKY) * flipY;
       t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
-      t.tint = colorToInt(d.tint);
+      var tintK = sampleColorCurve(d.tintCurve, life.progress);
+      t.tint = tintK === null ? colorToInt(d.tint) : mulColorInt(colorToInt(d.tint), tintK);
       t.anchorX = d.anchor.x;
       t.anchorY = d.anchor.y;
       t.zIndex = d.zIndex;
@@ -893,6 +1050,15 @@ var VFXCore = (function () {
          在 1200 顆粒子的預算下等於每秒配置六十個陣列＋大量短命 transform，
          GC 尖峰會直接變成掉幀。這裡改成就地覆寫並截短。 */
       var tint = colorToInt(d.tint);
+      /* 沒有曲線時 tint 仍然是整層一個常數（提到迴圈外算一次）；
+         有曲線才逐顆粒子取樣——粒子的生命進度各自不同，不能共用。 */
+      var tintCurve = d.tintCurve;
+      /* 噪聲的取樣種子固定在圖層上（不是每顆粒子）：同一片場才會讓相鄰的
+         粒子一起被推向同一邊。seed 由特效的 seed 派生，因此重播同一份 preset
+         得到逐位元相同的結果（Core 的決定性承諾）。 */
+      var noise = (d.noise && d.noise.strength > 0) ? d.noise : null;
+      var noiseSeed = layer.noiseSeed;
+      var swirl = d.radialSpeed !== 0 || d.orbitalSpeed !== 0;
       var write = 0;
       for (var j = 0; j < layer.particles.length; j++) {
         var p = layer.particles[j];
@@ -904,18 +1070,70 @@ var VFXCore = (function () {
           totalParticles--;
           continue;
         }
+        /* ---- 運動 ----
+           分成四步，順序不能重排：
+
+           1. 重力是**加速度**，累積進速度。
+           2. 阻力作用在累積速度上，用 1/(1+drag*dt) 而不是 (1-drag*dt)：
+              後者在 drag*dt > 1 時會讓速度反向（掉幀的那一幀粒子往回飛），
+              前者對任何 dt 都單調趨近 0，不必為此夾限 dt。
+           3. 線性位移積分。
+           4. 徑向與環繞**直接作用在位置上**，不進速度、不累積。
+
+           第 4 步為什麼不做成「加一個切線速度再積分」：那是顯式 Euler，
+           半徑會指數發散——ω=1 轉/秒、dt=1/60 跑 6 秒，起始半徑 100 會變成 712。
+           改成把位移向量**精確旋轉** ω·dt，半徑就守恆到浮點精度，
+           一顆純環繞的粒子永遠繞在同一個圈上。徑向則是沿半徑方向的直線位移，
+           本來就沒有積分誤差可言。 */
         p.vx += d.gravity.x * dt;
         p.vy += d.gravity.y * dt;
+        if (d.drag > 0) {
+          var damp = 1 / (1 + d.drag * dt);
+          p.vx *= damp;
+          p.vy *= damp;
+        }
+        var prevX = p.x, prevY = p.y;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
+        if (swirl) {
+          /* 圓心取圖層自己的 position（發射器所在），不是特效原點：
+             一個掛在偏移位置的漩渦，該繞的是它自己的中心。 */
+          var ox = p.x - d.position.x, oy = p.y - d.position.y;
+          var r2 = ox * ox + oy * oy;
+          if (r2 > 1e-9) {
+            if (d.radialSpeed !== 0) {
+              var inv = 1 / Math.sqrt(r2);
+              ox += d.radialSpeed * ox * inv * dt;
+              oy += d.radialSpeed * oy * inv * dt;
+            }
+            if (d.orbitalSpeed !== 0) {
+              /* 螢幕座標 y 向下，所以正的 ω 在畫面上是**順時針**——
+                 與技能表「順時針繞行 {rps} 圈」的說法一致。 */
+              var ang = d.orbitalSpeed * dt;
+              var ca = Math.cos(ang), sa = Math.sin(ang);
+              var rx = ox * ca - oy * sa;
+              oy = ox * sa + oy * ca;
+              ox = rx;
+            }
+            p.x = d.position.x + ox;
+            p.y = d.position.y + oy;
+          }
+        }
         p.rotation += p.rotationSpeed * dt;
         /* 速度朝向在積分之後才更新，這樣 gravity 造成的轉向當幀就會反映出來。
            低於門檻時保留上一次的有效角度，而不是歸零；從出生到現在都沒動過的
            粒子則完全不加這一項，維持原本的固定旋轉行為。 */
         if (d.alignToVelocity) {
-          var sp2 = p.vx * p.vx + p.vy * p.vy;
+          /* 沒有漩渦時看速度、有漩渦時看**實際位移**：環繞是直接改位置的，
+             p.v 完全不知道它的存在，只看速度會讓拖尾指錯邊。
+             不無條件改用位移，是為了讓既有 preset 的輸出逐位元不變——
+             純線性運動下位移就是 v*dt，atan2 對正倍率不變，但浮點的最後一位
+             不保證相同，而「既有 preset 完全不變」是這個 Core 的承諾。 */
+          var avx = p.vx, avy = p.vy;
+          if (swirl) { avx = p.x - prevX; avy = p.y - prevY; }
+          var sp2 = avx * avx + avy * avy;
           if (sp2 > VELOCITY_EPSILON * VELOCITY_EPSILON) {
-            p.velAngle = Math.atan2(p.vy, p.vx);
+            p.velAngle = Math.atan2(avy, avx);
             p.hasVelAngle = true;
           }
         }
@@ -923,7 +1141,19 @@ var VFXCore = (function () {
         var alphaK = sampleCurve(d.alphaOverLife, k);
         var scaleK = sampleCurve(d.scaleOverLife, k);
         var rotK = sampleCurve(d.rotationOverLife, k);
-        var world = toWorld(effect, p.x, p.y);
+        var nx = p.x, ny = p.y;
+        if (noise) {
+          /* 兩個分量各取一次噪聲，而且是**平移取樣域**而不是換 seed：
+             同一片場的兩個切面，相鄰粒子的擾動因此仍然相關（一起被帶走），
+             換 seed 會變成兩片完全無關的場，看起來就是各抖各的。
+             時間也走平移：整片場隨時間漂過去，就是氣流的樣子。 */
+          var fx2 = nx * noise.frequency;
+          var fy2 = ny * noise.frequency;
+          var ft = effect.time * noise.scrollSpeed;
+          nx += valueNoise2(fx2 + ft, fy2, noiseSeed) * noise.strength;
+          ny += valueNoise2(fx2, fy2 + ft + 31.4, noiseSeed) * noise.strength;
+        }
+        var world = toWorld(effect, nx, ny);
         var t = scratchTransform;
         t.visible = true;
         t.x = world.x;
@@ -939,7 +1169,7 @@ var VFXCore = (function () {
         t.scaleX = p.baseScale * effect.scale * (scaleK === null ? 1 : scaleK);
         t.scaleY = t.scaleX;
         t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
-        t.tint = tint;
+        t.tint = tintCurve === null ? tint : mulColorInt(tint, sampleColorCurve(tintCurve, k));
         t.anchorX = d.anchor.x;
         t.anchorY = d.anchor.y;
         t.zIndex = d.zIndex;
@@ -1135,7 +1365,12 @@ var VFXCore = (function () {
     createNullBackend: createNullBackend,
     createIndexResolver: createIndexResolver,
     makeRng: makeRng,
-    sampleCurve: sampleCurve
+    sampleCurve: sampleCurve,
+    /* 顏色曲線的取樣與 sampleCurve 對稱地公開：Editor 的色帶必須與遊戲實際
+       播出來的顏色逐位元相同，唯一可靠的保證方式是兩邊呼叫同一支函式，
+       而不是各寫一份再用測試比對。 */
+    toColorCurve: toColorCurve,
+    sampleColorCurve: sampleColorCurve
   };
 })();
 
