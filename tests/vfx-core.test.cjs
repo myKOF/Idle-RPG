@@ -1059,6 +1059,229 @@ test('載入失敗的 URL 在最後一個 owner 歸零時，仍會實際呼叫 A
     '從未成功載入不代表沒有 ownership；歸零時必須實際呼叫 unload');
 });
 
+/* ---------------- 子發射器（subEmitter） ----------------
+   「爆炸碎片飛完之後化成一小團煙」需要兩組完全不同的壽命、重力與貼圖，
+   塞在同一層做不到。子發射器讓一層的粒子在出生或死亡時往另一層丟幾顆。
+
+   目標層用 emission.mode = 'sub'：自己完全不發射，只由子發射器觸發。
+   （用 burst count 1 再想辦法壓掉自發的那一次，是那種讀者永遠看不懂的寫法。） */
+
+function subRuntime(preset) {
+  const rt = VFXCore.createRuntime({
+    backend: {
+      createNode: function () { return {}; },
+      updateNode: function () {}, destroyNode: function () {}
+    },
+    resolver: resolver()
+  });
+  rt.registerPreset(preset);
+  return rt;
+}
+function subPreset(over) {
+  return {
+    schemaVersion: 1, id: 'sub-case', duration: 5,
+    layers: [
+      Object.assign({
+        id: 'shard', type: 'particle', assetId: 'pack/star.png',
+        emission: { mode: 'burst', count: 4 }, lifetime: 0.3,
+        speed: 100, spread: 360, spawn: { shape: 'point' },
+        subEmitter: { layer: 'puff', on: 'death', count: 2 }
+      }, (over || {}).shard),
+      Object.assign({
+        id: 'puff', type: 'particle', assetId: 'pack/smoke.png',
+        emission: { mode: 'sub' }, lifetime: 2, speed: 0, spawn: { shape: 'point' }
+      }, (over || {}).puff)
+    ]
+  };
+}
+
+test('SUB-1 母粒子死亡時往目標層丟出指定數量', function () {
+  const rt = subRuntime(subPreset());
+  rt.play('sub-case');
+  for (let i = 0; i < 4; i++) rt.update(0.05);
+  assert.equal(rt.stats().activeParticles, 4, '碎片都還活著，煙還沒生');
+  for (let i = 0; i < 6; i++) rt.update(0.05);
+  assert.equal(rt.stats().activeParticles, 8, '四顆碎片各生兩顆煙');
+});
+
+test('SUB-2 sub 模式自己完全不發射', function () {
+  /* 這是整個設計的前提：目標層若會自發，畫面上會有兩份——一份在原點
+     憑空出現、一份才是碎片炸出來的。 */
+  const preset = subPreset();
+  preset.layers[0].subEmitter = undefined;      // 沒有人觸發它了
+  preset.layers[0].emission = { mode: 'burst', count: 1 };
+  /* 沒人觸發的 sub 層要被驗證擋下（見 SUB-7），所以這裡改成留著觸發但數量 0 秒後才死 */
+  preset.layers[0].subEmitter = { layer: 'puff', on: 'death', count: 1 };
+  preset.layers[0].lifetime = 10;               // 母粒子這一輪不會死
+  const rt = subRuntime(preset);
+  rt.play('sub-case');
+  for (let i = 0; i < 20; i++) rt.update(0.05);
+  assert.equal(rt.stats().activeParticles, 1, 'sub 層不該自己冒出粒子');
+});
+
+test('SUB-3 出生點是母粒子當下的位置，不是圖層原點', function () {
+  /* 煙要在碎片消失的地方冒出來。生在圖層原點的話，一場爆炸的煙會全部
+     擠在中心，與碎片飛散的位置完全對不上。 */
+  const positions = [];
+  const rt = VFXCore.createRuntime({
+    backend: {
+      createNode: function () { return {}; },
+      updateNode: function (n, t) { if (t && t.visible !== false) positions.push({ x: t.x, y: t.y }); },
+      destroyNode: function () {}
+    },
+    resolver: resolver()
+  });
+  const preset = subPreset();
+  preset.layers[0].emission = { mode: 'burst', count: 1 };
+  preset.layers[0].direction = 0;               // 正右方
+  preset.layers[0].spread = 0;
+  preset.layers[0].speed = 200;
+  rt.registerPreset(preset);
+  rt.play('sub-case');
+  for (let i = 0; i < 8; i++) rt.update(0.05);
+  const last = positions[positions.length - 1];
+  assert.ok(last.x > 40, '煙應該出現在碎片飛到的地方（x≈60），實得 ' + Math.round(last.x));
+});
+
+test('SUB-4 inheritVelocity 是加上去的，不是取代子層自己的速度', function () {
+  function endX(inherit, childSpeed) {
+    const positions = [];
+    const rt = VFXCore.createRuntime({
+      backend: {
+        createNode: function () { return {}; },
+        updateNode: function (n, t) { if (t && t.visible !== false) positions.push(t.x); },
+        destroyNode: function () {}
+      },
+      resolver: resolver()
+    });
+    const preset = subPreset();
+    preset.layers[0].emission = { mode: 'burst', count: 1 };
+    preset.layers[0].direction = 0; preset.layers[0].spread = 0; preset.layers[0].speed = 200;
+    preset.layers[0].subEmitter = { layer: 'puff', on: 'death', count: 1, inheritVelocity: inherit };
+    preset.layers[1].speed = childSpeed;
+    preset.layers[1].direction = 0; preset.layers[1].spread = 0;
+    rt.registerPreset(preset);
+    rt.play('sub-case');
+    for (let i = 0; i < 16; i++) rt.update(0.05);
+    return positions[positions.length - 1];
+  }
+  const noInherit = endX(0, 50);
+  const inherited = endX(1, 50);
+  assert.ok(inherited > noInherit + 40,
+    '繼承速度應該讓煙再往前飄一段（' + Math.round(noInherit) + ' → ' + Math.round(inherited) + '）');
+  /* 取代語意的話，inheritVelocity 0 會讓子層速度歸零。 */
+  assert.ok(noInherit > 60, '沒有繼承時子層自己的 speed 仍要生效，實得 ' + Math.round(noInherit));
+});
+
+test('SUB-5 on: birth 在母粒子出生的當下觸發', function () {
+  const preset = subPreset();
+  preset.layers[0].subEmitter = { layer: 'puff', on: 'birth', count: 3 };
+  preset.layers[0].lifetime = 10;
+  const rt = subRuntime(preset);
+  rt.play('sub-case');
+  rt.update(1 / 60);
+  assert.equal(rt.stats().activeParticles, 4 + 12, '四顆母粒子出生時各生三顆');
+});
+
+test('SUB-6 子發射一樣受粒子預算管，不會繞過上限', function () {
+  const rt = VFXCore.createRuntime({
+    backend: {
+      createNode: function () { return {}; },
+      updateNode: function () {}, destroyNode: function () {}
+    },
+    resolver: resolver(),
+    budget: { maxParticles: 10, perEffectParticleLimit: 100 }
+  });
+  const preset = subPreset();
+  preset.layers[0].emission = { mode: 'burst', count: 4 };
+  preset.layers[0].subEmitter = { layer: 'puff', on: 'death', count: 8 };
+  rt.registerPreset(preset);
+  rt.play('sub-case');
+  for (let i = 0; i < 10; i++) rt.update(0.05);
+  assert.ok(rt.stats().activeParticles <= 10, '實得 ' + rt.stats().activeParticles);
+  assert.ok(rt.stats().droppedParticles > 0, '超出的要記在 dropped，不是靜靜多生');
+});
+
+test('SUB-7 驗證：指錯層、目標不是 sub、沒人觸發的 sub 層都要報錯', function () {
+  function errs(mut) {
+    const p = subPreset();
+    mut(p);
+    return VFXCore.validatePreset(p).errors.join('；');
+  }
+  assert.match(errs((p) => { p.layers[0].subEmitter.layer = 'nope'; }), /不存在的圖層/);
+  assert.match(errs((p) => { p.layers[1].type = 'sprite'; delete p.layers[1].emission; }),
+    /必須指向 particle/);
+  assert.match(errs((p) => { p.layers[1].emission = { mode: 'burst', count: 2 }; }),
+    /必須是 emission\.mode = "sub"/);
+  /* 沒有人觸發的 sub 層＝一層永遠不會出現的死圖層 */
+  assert.match(errs((p) => { delete p.layers[0].subEmitter; }), /沒有任何圖層觸發它/);
+  assert.match(errs((p) => { p.layers[0].subEmitter.on = 'collision'; }), /on 非法值/);
+  assert.match(errs((p) => { p.layers[0].subEmitter.count = 999; }), /硬上限/);
+  assert.match(errs((p) => { p.layers[0].subEmitter.inheritVelocity = 2; }), /介於 0 與 1/);
+  assert.match(errs((p) => { p.layers[0].subEmitter.wobble = 1; }), /wobble/);
+  assert.deepEqual(VFXCore.validatePreset(subPreset()).errors, []);
+});
+
+test('SUB-8 成環要被擋下（粒子數會每一輪翻倍）', function () {
+  /* A 死了生 B、B 死了生 A：不是無窮迴圈，是「跑幾秒之後整個分頁凍住」，
+     而且在 Editor 裡看起來只是「怎麼越來越卡」，非常難查。 */
+  const p = subPreset();
+  p.layers[1].subEmitter = { layer: 'shard', on: 'death', count: 1 };
+  p.layers[0].emission = { mode: 'sub' };
+  const r = VFXCore.validatePreset(p);
+  assert.equal(r.ok, false);
+  assert.match(r.errors.join('；'), /形成環/);
+
+  /* 自己指自己也是環。 */
+  const self = subPreset();
+  self.layers[1].subEmitter = { layer: 'puff', on: 'death', count: 1 };
+  assert.match(VFXCore.validatePreset(self).errors.join('；'), /形成環/);
+});
+
+test('SUB-9 目標層被 enabled:false 關掉時不會炸', function () {
+  /* Editor 常常暫時關掉某一層。母層還在跑，目標層卻不存在於 effect.layers 裡。 */
+  const p = subPreset();
+  p.layers[1].enabled = false;
+  const rt = subRuntime(p);
+  rt.play('sub-case');
+  for (let i = 0; i < 10; i++) rt.update(0.05);
+  assert.equal(rt.stats().activeParticles, 0, '碎片死光、煙被關掉，不該有東西也不該丟例外');
+});
+
+test('SUB-10 決定性：同一份 preset 重播兩次逐位元相同', function () {
+  function run() {
+    const out = [];
+    const rt = VFXCore.createRuntime({
+      backend: {
+        createNode: function () { return {}; },
+        updateNode: function (n, t) { if (t && t.visible !== false) out.push([t.x, t.y]); },
+        destroyNode: function () {}
+      },
+      resolver: resolver()
+    });
+    const p = subPreset();
+    p.layers[1].speed = [10, 60];
+    p.layers[1].spread = 360;
+    rt.registerPreset(p);
+    rt.play('sub-case');
+    for (let i = 0; i < 30; i++) rt.update(0.05);
+    return out;
+  }
+  assert.deepEqual(run(), run());
+});
+
+test('SUB-11 沒有 subEmitter 的 preset 行為完全不變', function () {
+  const plain = {
+    schemaVersion: 1, id: 'plain-sub', duration: 1,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'pack/star.png',
+      emission: { mode: 'burst', count: 3 }, lifetime: 0.5, speed: 100, spread: 90
+    }]
+  };
+  assert.deepEqual(VFXCore.validatePreset(plain).errors, []);
+  assert.ok(VFXCore.serialisePreset(plain).indexOf('subEmitter') < 0);
+});
+
 /* ---------------- 序列幀（sprite sheet） ----------------
    加入之前，一個圖層一輩子只能是同一張靜圖。火焰、爆炸、煙霧、電弧這幾類
    本質上就是序列幀，靠靜態四邊形疊再多層也只會像「發光的形狀」而不像火。

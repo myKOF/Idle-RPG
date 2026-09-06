@@ -59,9 +59,25 @@ P['burst-fire'] = () => ({
     ring({ id: 'wave-c', z: 4, tint: '#ffb21c', d: 220, delay: 0.22, duration: 0.5, alpha: 0.6 }),
     flash({ tint: '#ffd447' }),
     /* 火舌走火焰色階（白熱 → 黃 → 橙紅 → 燼）：火的顏色就是溫度，
-       冷卻該偏紅而不是單純變暗。噪聲讓十八片火舌各自扭一下，不是十八根直線。 */
+       冷卻該偏紅而不是單純變暗。噪聲讓十八片火舌各自扭一下，不是十八根直線。
+
+       ⚠️ subEmitter：每一片火舌燒完之後，在**它自己燒完的地方**留下一小團煙。
+       這件事在單一圖層裡做不到——煙的壽命、重力、貼圖、顏色全都和火舌不同。
+       inheritVelocity 0.35：煙帶著火舌三成的去向再飄一小段，才像是同一件事
+       的延續，而不是憑空冒出來的另一個東西。 */
     shards({ id: 'tongues', asset: A.flame05, tint: '#ff8a3d', burst: 18, startPx: [16, 30], lifetime: [0.32, 0.56], speed: [150, 290],
-      tintOverLife: RAMP.fireCore, noise: { strength: 9, frequency: 0.04, scrollSpeed: 2 } })
+      tintOverLife: RAMP.fireCore, noise: { strength: 9, frequency: 0.04, scrollSpeed: 2 },
+      subEmitter: { layer: 'ember-puff', on: 'death', count: 1, inheritVelocity: 0.35 } }),
+    /* 只由上面那一層觸發（emission.mode = 'sub'），自己完全不發射。
+       擺在火舌後面：圖層是照順序更新的，排在後面才會在同一幀就被畫出來。 */
+    particle({
+      id: 'ember-puff', asset: A.smokeT, z: 8, blend: 'normal', tint: '#7a5140',
+      emission: { mode: 'sub' }, lifetime: [0.35, 0.62], spawnRadius: 4,
+      speed: [4, 16], direction: -90, spread: 140, gravity: { x: 0, y: -34 },
+      drag: 2.2, noise: { strength: 6, frequency: 0.03, scrollSpeed: 1 },
+      tintOverLife: RAMP.fireSmoke, startPx: [10, 20],
+      alphaOverLife: [[0, 0], [0.25, 0.42], [1, 0]], scaleOverLife: [[0, 0.5], [1, 1.5]]
+    })
   ]
 });
 

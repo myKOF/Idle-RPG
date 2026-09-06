@@ -39,13 +39,18 @@ var VFXCore = (function () {
   var LAYER_TYPES = ['sprite', 'particle', 'procedural'];
   var BLEND_MODES = ['normal', 'add', 'multiply', 'screen'];
   var SPAWN_SHAPES = ['point', 'circle', 'box'];
-  var EMISSION_MODES = ['burst', 'rate'];
+  /* burst：一次噴完　rate：每秒 N 顆　sub：自己完全不發射，只由子發射器觸發
+     （sub 是為了讓「這一層只在別人死掉時出現」講得出來——用 burst count 1
+     再想辦法壓掉自發的那一次，是那種讀者永遠看不懂的寫法）。 */
+  var EMISSION_MODES = ['burst', 'rate', 'sub'];
   var PROCEDURAL_EFFECTS = ['uvScroll'];
   /* 序列幀的播放方式。
        life：整份序列攤在圖層（或粒子）的生命週期上播完一次——爆炸、火花這類
              「一生只演一次」的用法，也是 Unity Texture Sheet Animation 的預設。
        fps ：固定張數／秒，與生命長短無關——火焰、水流這類循環動畫。 */
   var SHEET_MODES = ['life', 'fps'];
+  /* 子發射器的觸發時機。刻意只有這兩個：碰撞與觸發器需要碰撞系統，本 Core 沒有。 */
+  var SUB_EVENTS = ['death', 'birth'];
 
   /* 硬上限：超過就是 preset 寫錯，不是效能調校問題，直接擋在驗證階段。 */
   var HARD_LIMITS = {
@@ -58,6 +63,10 @@ var VFXCore = (function () {
        而且後端要為每一格建立一個 Texture，沒有上限等於讓一個打錯的
        columns 值配置出幾十萬個物件。 */
     maxSheetSide: 64,
+    /* 一顆粒子最多能生幾顆。子發射是會相乘的：母層 50 顆 × 每顆 32 顆＝1600，
+       再串一層就是五萬。上限擋在這裡，而不是等 maxParticles 去救——
+       那時候迴圈已經跑過幾萬次了。 */
+    maxSubCount: 32,
 
     /* budget 三個欄位的硬上限（見 createRuntime 的 budgetValue）。
        budget 是呼叫端可調的效能旋鈕，但不能被調成「等於沒有上限」：
@@ -427,7 +436,36 @@ var VFXCore = (function () {
     validateCurve(layer.rotationYOverLife, where + '.rotationYOverLife', errors);
   }
 
+  /* 子發射器：這一層的粒子在出生或死亡時，往另一層丟幾顆。
+     典型用途是「爆炸碎片飛完之後化成一小團煙」——那需要兩組完全不同的
+     壽命、重力與貼圖，塞在同一層做不到。 */
+  function validateSubEmitter(value, where, errors) {
+    if (value === undefined) return;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      errors.push(where + ' 必須是 { layer, on?, count?, inheritVelocity? }');
+      return;
+    }
+    if (typeof value.layer !== 'string' || !value.layer) {
+      errors.push(where + '.layer 必填（目標圖層的 id）');
+    }
+    if (value.on !== undefined && SUB_EVENTS.indexOf(value.on) < 0) {
+      errors.push(where + '.on 非法值：' + value.on + '（支援 ' + SUB_EVENTS.join('、') + '）');
+    }
+    if (value.count !== undefined) {
+      if (!isFiniteNumber(value.count) || value.count < 1 || Math.floor(value.count) !== value.count) {
+        errors.push(where + '.count 必須是正整數');
+      } else if (value.count > HARD_LIMITS.maxSubCount) {
+        errors.push(where + '.count 超過硬上限 ' + HARD_LIMITS.maxSubCount);
+      }
+    }
+    if (value.inheritVelocity !== undefined &&
+        (!isFiniteNumber(value.inheritVelocity) || value.inheritVelocity < 0 || value.inheritVelocity > 1)) {
+      errors.push(where + '.inheritVelocity 必須介於 0 與 1');
+    }
+  }
+
   function validateParticleLayer(layer, where, errors) {
+    validateSubEmitter(layer.subEmitter, where + '.subEmitter', errors);
     var e = layer.emission;
     if (!e || typeof e !== 'object') {
       errors.push(where + '.emission 必填');
@@ -553,7 +591,7 @@ var VFXCore = (function () {
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
-      'alignToVelocity', 'velocityRotationOffset'],
+      'alignToVelocity', 'velocityRotationOffset', 'subEmitter'],
     procedural: ['effect', 'size', 'scrollSpeed'].concat(PER_AXIS_SCALE_FIELDS)
   };
 
@@ -573,7 +611,8 @@ var VFXCore = (function () {
     emission: ['mode', 'count', 'rate'],
     spawn: ['shape', 'radius', 'width', 'height'],
     noise: ['strength', 'frequency', 'scrollSpeed'],
-    sheet: ['columns', 'rows', 'count', 'mode', 'fps', 'randomStart', 'loop']
+    sheet: ['columns', 'rows', 'count', 'mode', 'fps', 'randomStart', 'loop'],
+    subEmitter: ['layer', 'on', 'count', 'inheritVelocity']
   };
 
   function checkNestedFields(layer, where, errors) {
@@ -635,7 +674,66 @@ var VFXCore = (function () {
       else if (!layer.assetId) errors.push(where + '.assetId 必填');
     });
 
+    validateSubEmitterGraph(preset, errors);
+
     return { ok: errors.length === 0, errors: errors };
+  }
+
+  /* 子發射器要跨圖層看才驗得出來：指到不存在的層、指到不是 sub 模式的層、
+     沒有人觸發的 sub 層（那是一層永遠不會出現的死圖層），以及環。
+
+     環為什麼非擋不可：A 死了生 B、B 死了生 A，只要 B 的壽命不是 0，
+     粒子數就會每一輪翻倍——不是無窮迴圈，是「跑幾秒之後整個分頁凍住」，
+     而且在 Editor 裡看起來只是「怎麼越來越卡」。 */
+  function validateSubEmitterGraph(preset, errors) {
+    if (!preset || !Array.isArray(preset.layers)) return;
+    var byId = Object.create(null);
+    preset.layers.forEach(function (l) { if (l && typeof l.id === 'string') byId[l.id] = l; });
+
+    var referenced = Object.create(null);
+    var edges = Object.create(null);
+    preset.layers.forEach(function (l, i) {
+      var se = l && l.subEmitter;
+      if (!se || typeof se !== 'object' || typeof se.layer !== 'string') return;
+      var where = 'layers[' + i + '].subEmitter';
+      var target = byId[se.layer];
+      if (!target) {
+        errors.push(where + '.layer 指向不存在的圖層：' + se.layer);
+        return;
+      }
+      if (target.type !== 'particle') {
+        errors.push(where + '.layer 必須指向 particle 圖層：' + se.layer);
+        return;
+      }
+      if (!target.emission || target.emission.mode !== 'sub') {
+        errors.push(where + '.layer 指向的 ' + se.layer +
+          ' 必須是 emission.mode = "sub"（否則它會自己發射一次，變成兩份）');
+        return;
+      }
+      referenced[se.layer] = true;
+      (edges[l.id] = edges[l.id] || []).push(se.layer);
+    });
+
+    preset.layers.forEach(function (l, i) {
+      if (l && l.emission && l.emission.mode === 'sub' && !referenced[l.id]) {
+        errors.push('layers[' + i + '] 的 emission.mode 是 "sub" 卻沒有任何圖層觸發它' +
+          '——這一層永遠不會出現');
+      }
+    });
+
+    /* 深度優先找環。層數上限 32，遞迴深度不會有問題。 */
+    var state = Object.create(null);            // 1=造訪中 2=已完成
+    var cycle = null;
+    function walk(id) {
+      if (cycle) return;
+      if (state[id] === 1) { cycle = id; return; }
+      if (state[id] === 2) return;
+      state[id] = 1;
+      (edges[id] || []).forEach(walk);
+      state[id] = 2;
+    }
+    Object.keys(edges).forEach(walk);
+    if (cycle) errors.push('子發射器形成環：' + cycle + ' 會間接觸發自己（粒子數會每一輪翻倍）');
   }
 
   /* 決定性序列化：欄位順序固定，Editor 存檔→載入→再存檔必須位元相同。 */
@@ -646,7 +744,7 @@ var VFXCore = (function () {
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
     'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
     'startScale', 'rotationStart', 'rotationSpeed',
-    'alignToVelocity', 'velocityRotationOffset',
+    'alignToVelocity', 'velocityRotationOffset', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife', 'sheet'];
 
@@ -714,6 +812,13 @@ var VFXCore = (function () {
       rotationStart: layer.rotationStart === undefined ? 0 : layer.rotationStart,
       rotationSpeed: layer.rotationSpeed === undefined ? 0 : layer.rotationSpeed,
       alignToVelocity: layer.alignToVelocity === true,
+      subEmitter: layer.subEmitter ? {
+        layer: layer.subEmitter.layer,
+        on: layer.subEmitter.on || 'death',
+        count: layer.subEmitter.count === undefined ? 1 : layer.subEmitter.count,
+        inheritVelocity: layer.subEmitter.inheritVelocity === undefined
+          ? 0 : layer.subEmitter.inheritVelocity
+      } : null,
       velocityRotationOffset: layer.velocityRotationOffset === undefined
         ? 0 : layer.velocityRotationOffset,
       alphaOverLife: layer.alphaOverLife,
@@ -872,7 +977,10 @@ var VFXCore = (function () {
         rotation: 0,
         scale: 1, scaleX: 1, scaleY: 1,
         seed: (p.seed === undefined ? (nextEffectId * 2654435761) : p.seed) >>> 0,
-        layers: []
+        layers: [],
+        /* 圖層 id → 圖層狀態。子發射器要靠 id 找到目標層；
+           每次都線性搜尋的話，一顆粒子死掉就掃一次整個圖層陣列。 */
+        byId: Object.create(null)
       };
       applyTransformParams(effect, p);
       preset.layers.forEach(function (raw, i) {
@@ -892,6 +1000,7 @@ var VFXCore = (function () {
           scrollY: 0
         };
         effect.layers.push(state);
+        effect.byId[layer.id] = state;
       });
       effects.push(effect);
       return effect.handle;
@@ -1083,7 +1192,26 @@ var VFXCore = (function () {
       return Math.min(layerLimit, budget.perEffectParticleLimit);
     }
 
-    function spawnParticle(effect, layer) {
+    /* 子發射：把 count 顆粒子丟進目標圖層，出生點是母粒子當下的位置。
+
+       目標層可能在這一幀已經更新過了（圖層是照順序跑的），那些粒子就會晚一幀
+       才被畫出來。這不是問題：節點從池子拿出來時是隱藏的（releaseNode 會先送
+       一次 hideTransform），所以那一幀它不會以上一次使用時的樣子出現。
+       為了少一幀而重排圖層順序，代價是 zIndex 與更新順序糾纏在一起，不划算。 */
+    var subOrigin = { x: 0, y: 0, vx: 0, vy: 0 };
+    function emitSub(effect, se, parent) {
+      var target = effect.byId[se.layer];
+      if (!target) return;                       // 被 enabled:false 關掉的層
+      subOrigin.x = parent.x;
+      subOrigin.y = parent.y;
+      subOrigin.vx = parent.vx * se.inheritVelocity;
+      subOrigin.vy = parent.vy * se.inheritVelocity;
+      for (var i = 0; i < se.count; i++) spawnParticle(effect, target, subOrigin);
+    }
+
+    /* at：由子發射器指定的出生點與繼承速度（{ x, y, vx, vy }）。
+       省略時就是圖層自己的 position，也就是加入子發射器之前的行為。 */
+    function spawnParticle(effect, layer, at) {
       var d = layer.def;
       var perLayer = layerParticleCap(d);
       if (layer.particles.length >= perLayer || totalParticles >= budget.maxParticles) {
@@ -1093,7 +1221,7 @@ var VFXCore = (function () {
       var rng = layer.rng;
       var angle = (d.direction + (rng() - 0.5) * d.spread) * Math.PI / 180;
       var speed = sampleRange(d.speed, rng);
-      var px = d.position.x, py = d.position.y;
+      var px = at ? at.x : d.position.x, py = at ? at.y : d.position.y;
       if (d.spawn.shape === 'circle') {
         var a = rng() * Math.PI * 2;
         var r = Math.sqrt(rng()) * d.spawn.radius;
@@ -1108,6 +1236,9 @@ var VFXCore = (function () {
       p.x = px; p.y = py;
       p.vx = Math.cos(angle) * speed;
       p.vy = Math.sin(angle) * speed;
+      /* 繼承母粒子的速度：煙要跟著碎片的去向飄一段，而不是原地冒出來。
+         是「加上去」不是「取代」——子層自己的 speed／direction 仍然有效。 */
+      if (at) { p.vx += at.vx; p.vy += at.vy; }
       p.life = 0;
       p.maxLife = sampleRange(d.lifetime, rng);
       p.rotation = sampleRange(d.rotationStart, rng);
@@ -1123,13 +1254,17 @@ var VFXCore = (function () {
         ? Math.floor(rng() * d.sheet.count) : 0;
       p.node = acquireNode(spec);
       layer.particles.push(p);
+      /* 出生觸發。放在最後（粒子已經完全初始化）才讀得到它的位置與速度。
+         子發射器不准成環，所以這裡不會無限遞迴——由 validateSubEmitterGraph 擋。 */
+      if (d.subEmitter && d.subEmitter.on === 'birth') emitSub(effect, d.subEmitter, p);
       totalParticles++;
     }
 
     function updateParticleLayer(effect, layer, dt) {
       var d = layer.def;
       var life = layerLife(effect, layer);
-      if (life.active) {
+      /* sub 模式完全不自發射：這一層的粒子只由別人的子發射器丟進來。 */
+      if (life.active && d.emission.mode !== 'sub') {
         if (d.emission.mode === 'burst') {
           if (!layer.burstDone) {
             var cap = layerParticleCap(d);
@@ -1173,11 +1308,14 @@ var VFXCore = (function () {
       var noiseSeed = layer.noiseSeed;
       var swirl = d.radialSpeed !== 0 || d.orbitalSpeed !== 0;
       var sheet = d.sheet;
+      var subOn = d.subEmitter ? d.subEmitter.on : '';
       var write = 0;
       for (var j = 0; j < layer.particles.length; j++) {
         var p = layer.particles[j];
         p.life += dt;
         if (p.life >= p.maxLife) {
+          /* 先觸發子發射再回收：p.x／p.vx 要在還沒被清掉之前讀。 */
+          if (subOn === 'death') emitSub(effect, d.subEmitter, p);
           releaseNode(layer.nodeSpec, p.node);
           p.node = null;
           if (particlePool.length < 512) particlePool.push(p);
