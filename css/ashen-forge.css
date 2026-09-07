@@ -1,0 +1,319 @@
+/* Ashen Forge — reference-driven visual skin. Layout and game state remain in their original modules.
+   Thorn frame is a real alpha PNG. 25% slices contain each complete corner; rails tile proportionally instead of stretching. */
+:root {
+  --bg: #090b0c;
+  --bg2: #151919;
+  --panel: #191d1e;
+  --panel2: #242829;
+  --border: #495354;
+  --border-light: #8b8b7d;
+  --text: #d5d1c4;
+  --dim: #96978e;
+  --accent: #c7ae79;
+  --font-main: 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
+  --af-serif: 'Noto Serif TC', 'PMingLiU', 'MingLiU', Georgia, serif;
+  --af-frame: url('../images/ui/ashen-forge/clean-iron-frame.png');
+  --af-stone: url('../images/ui_dark_slate_tile.png');
+  --af-iron: url('../images/ui_cast_iron_tile.png');
+  --af-surface: linear-gradient(120deg, #161c1dd9, #101314a8 55%, #0b0e0ee6), var(--af-stone);
+  --af-raised: linear-gradient(#45474599, #232727bd 40%, #171c1edb), var(--af-iron);
+}
+
+#ui-shell {
+  background: linear-gradient(#090c0d8c, #070a0bdd), url('../images/diablo_main_bg.png') center / cover;
+}
+body { color: var(--text); }
+#topbar {
+  min-height: 52px;
+  border: 0;
+  border-bottom: 3px double #4f5b5a;
+  background: linear-gradient(#101516c9, #101415f2), var(--af-iron) center / 420px;
+  box-shadow: inset 0 -1px #000, 0 4px 14px #000a;
+}
+#topbar::after { background: linear-gradient(90deg, transparent, #80918a66, transparent); }
+.brand { font-family: var(--af-serif); color: #d8d3c0; letter-spacing: .13em; text-shadow: 0 2px 2px #000; }
+.brand-sub { color: #9b9c8e; letter-spacing: .24em; }
+.res { border-color: #62696340; background: #0002; }
+.res b { color: #d6bd83; font-weight: 500; }
+#ui-shell #game-layout { gap: 32px !important; padding: 26px 26px 28px !important; max-width: none !important; height: calc(var(--ui-canvas-height, 900px) - 50px) !important; min-height: 0 !important; }
+#ui-shell #stats-sidebar { flex-basis: 230px !important; width: 230px !important; min-width: 230px !important; }
+#ui-shell #combat-area { flex-basis: 720px !important; width: 720px !important; min-width: 720px !important; }
+
+#stats-sidebar, #workspace-area, #combat-area {
+  position: relative;
+  border: 1px solid #3b4848;
+  border-radius: 0;
+  background: var(--af-surface);
+  background-size: auto, 520px;
+  box-shadow: inset 0 0 0 4px #060a0be6, inset 0 0 50px #0009, 0 8px 24px #000b;
+}
+#stats-sidebar { padding: 15px 15px 20px; }
+#workspace-area { overflow: visible; }
+#combat-area { padding: 24px 20px 20px; }
+#stats-sidebar::after, #workspace-area::after, #combat-area::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: -12px;
+  z-index: 25;
+  pointer-events: none;
+  border: 72px solid transparent;
+  border-image: var(--af-frame) 25% / 72px / 0 round;
+  background: none;
+  box-shadow: none;
+  opacity: 1;
+}
+#stats-sidebar::after { display: none; }
+/* Sidebar scrolls independently; the frame belongs to its scrollport, not the long attribute content. */
+#stats-sidebar { border: 20px solid transparent; border-image: var(--af-frame) 25% / 68px / 10px round; padding: 8px 7px 16px; }
+#workspace-area main { padding: 16px 24px 24px; scrollbar-color: #58615c #101415; background: transparent; }
+.af-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 4px 28px;
+  border: 0;
+  background: url('../images/ui/ashen-forge/title-plaque.png') center / 100% auto no-repeat;
+  color: #282b28;
+  font: 600 20px / 1.3 var(--af-serif);
+  letter-spacing: .3em;
+  text-shadow: 0 1px #e0ddc280;
+  box-shadow: 0 2px 3px #0008;
+}
+.af-heading::before, .af-heading::after { content: '◆'; position: absolute; font-size: 10px; color: #384a48; }
+.af-heading::before { left: 17px; }
+.af-heading::after { right: 17px; }
+#workspace-area > .af-heading { margin: 24px 24px 0; }
+#stats-sidebar > .af-heading { margin: 0 -1px 14px; min-height: 34px; font-size: 18px; }
+#battle-area > .af-heading { margin: -3px 0 9px; min-height: 35px; font-size: 18px; }
+#workspace-area #tabs {
+  gap: 4px;
+  min-height: 44px;
+  padding: 7px 24px 5px;
+  background: linear-gradient(#343c3970, #0a0f10c9), var(--af-iron) center / 360px;
+  border-bottom: 3px double #475250;
+  box-shadow: inset 0 1px #70776b33, inset 0 -2px 4px #000;
+}
+.tab-btn, .zone-btn {
+  border: 2px ridge #6a7069;
+  border-radius: 0;
+  background: var(--af-raised);
+  background-size: auto, 180px;
+  color: #bfc0b5;
+  box-shadow: inset 0 0 0 1px #090c0d, inset 0 0 9px #0009, 0 2px 3px #0008;
+  font-family: var(--af-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-shadow: 0 2px 2px #000;
+  transition: filter .15s, border-color .15s;
+}
+.tab-btn { min-width: 84px; min-height: 33px; padding: 4px 12px; }
+.tab-btn.active, .zone-btn.active {
+  border: 2px ridge #ae7460;
+  background: linear-gradient(90deg, #440b0bd9, #a92316c7 45%, #560e0fdb), var(--af-iron) center / 170px;
+  color: #f0e1bf;
+  box-shadow: inset 0 0 0 1px #d96b4055, inset 0 0 10px #200000, 0 0 5px #190400;
+}
+.tab-btn.active { margin-bottom: 0; }
+.tab-btn.active::after { display: none; }
+.tab-btn:hover, .zone-btn:hover { transform: none; filter: brightness(1.2); border-color: #a1a190; color: #eee8d7; }
+.af-nav-icon { display: inline-block; margin-right: 7px; font-family: Georgia, serif; font-size: 18px; vertical-align: -1px; color: #c8c8b9; }
+
+.panel, .equip-section-box, .tree-panel, .log, .detail-log-box,
+.equip-material-panel, #inv-section-box, #forge-inv-box,
+.shop-card, .nf-part-upgrade-card, .nf-furnace, .tower-floor, .save-row, .stats-mat-card,
+.skill-row, .sg-group-row, .sg-ult-pick, .talent-summary, .talent-tree-panel,
+.modal-box, .confirm-box, #battle-info-drawer {
+  border-color: #515b58;
+  border-radius: 0;
+  background: var(--af-surface);
+  background-size: auto, 360px;
+  box-shadow: inset 0 0 0 1px #89918216, inset 0 0 24px #0007, 0 3px 7px #0007;
+}
+.sec-title, .node-title, .tree-title, .tower-section-title, .stats-sec-title,
+.equip-material-title, .summary-card-title {
+  font-family: var(--af-serif);
+  font-weight: 600;
+  color: #d0cbbb;
+  border-color: #67716a66;
+  text-shadow: 0 2px 2px #000;
+  letter-spacing: .08em;
+}
+.sec-title::after, .node-title::after, .tree-title::after { background: linear-gradient(90deg, #90978a88, #49595333, transparent); }
+.hint, .dim-text { color: #a0a398; }
+.sec-sub { color: #b6b4a3; }
+
+/* The old sheet uses inline/important form colors, so this skin must override those declarations. */
+.btn, .dropdown, .input, select, input[type='text'], input[type='number'], textarea,
+#battle-canvas-buttons .btn, .info-btn, .damage-toggle-btn, .fs-btn {
+  border: 2px ridge #71776d !important;
+  border-radius: 0 !important;
+  background: var(--af-raised) !important;
+  background-size: auto, 180px !important;
+  color: #d3d0c4 !important;
+  box-shadow: inset 0 0 0 1px #121717, inset 0 -4px 7px #0007, 0 2px 3px #0009;
+  text-shadow: 0 2px 2px #000;
+}
+.btn { font-family: var(--af-serif); letter-spacing: .06em; }
+.btn:hover, .dropdown:hover, .input:hover, select:hover,
+input[type='text']:hover, input[type='number']:hover, textarea:hover {
+  background: linear-gradient(#69706888, #2a3030dd), var(--af-iron) center / 180px !important;
+  border-color: #a6a999 !important;
+  color: #f0ecda !important;
+}
+.btn:hover:not(:disabled) { transform: none; box-shadow: inset 0 0 0 1px #b6b7a34d, 0 2px 4px #000b; }
+.btn.warn, .btn.danger, .btn.active, .forge-inv-tabs .btn.active,
+#btn-salvage-confirm, #fuse-btn, #forge-go {
+  border-color: #9b6d59 !important;
+  background: linear-gradient(#98251cce, #681310d9 45%, #32090deb), var(--af-iron) center / 180px !important;
+  color: #e9d9c0 !important;
+  box-shadow: inset 0 0 0 1px #c974463d, inset 0 0 10px #230504, 0 2px 4px #000a;
+}
+.btn.warn:hover, .btn.danger:hover, .btn.active:hover { filter: brightness(1.18); }
+input[type='checkbox'], input[type='radio'] { accent-color: #98281d; }
+.btn:focus-visible, .tab-btn:focus-visible, .zone-btn:focus-visible, select:focus-visible,
+input:focus-visible, textarea:focus-visible { outline: 2px solid #d9c9a7; outline-offset: 3px; }
+select option { background: #1b2222; color: #ded9c8; }
+
+/* Character portrait and item sockets are separate, so every original slot remains interactive. */
+#ui-shell .equip-top-layout { grid-template-columns: minmax(0, 1fr) 164px !important; gap: 10px; }
+#ui-shell .equip-top-layout:has(#equip-material-panel:empty) { grid-template-columns: minmax(0, 1fr) !important; }
+#ui-shell .equip-layout { grid-template-columns: 270px minmax(264px, 1fr) !important; gap: 22px; }
+#equip-grid {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 3 / 4;
+  background: url('../images/ui/ashen-forge/armored-knight.png') center / cover no-repeat;
+  border-radius: 0;
+  filter: none;
+  box-shadow: inset 0 0 0 2px #080d0e, inset 0 0 30px #000a, 0 3px 9px #000a;
+}
+#equip-grid::after {
+  content: ''; position: absolute; inset: -12px; pointer-events: none; z-index: 5;
+  border: 36px solid transparent;
+  border-image: var(--af-frame) 25% / 36px / 0 round;
+}
+#equip-grid .eq-slot { width: 17%; height: 11%; border-radius: 0; border-width: 1px; z-index: 6; }
+#equip-grid .eq-slot.empty { border-color: #626e64; background: linear-gradient(#090f14d9, #060a0be6), var(--af-iron) center / 120px; box-shadow: inset 0 0 0 3px #202626, 0 2px 3px #000; }
+#equip-grid .eq-slot.filled { background: radial-gradient(ellipse at center, #3c36565e, #070a0fe8), var(--af-iron) center / 110px; }
+#equip-grid .eq-slot::before {
+  content: ''; position: absolute; inset: 0; border: 6px solid transparent;
+  border-image: var(--af-frame) 25% / 6px / 0 round; pointer-events: none; z-index: 2;
+}
+#equip-grid .eq-slot.filled::before { display: none; }
+#equip-grid .eq-slot .eq-icon { width: 76%; height: 76%; }
+#equip-grid .eq-slot.empty .eq-icon { opacity: .37; filter: grayscale(1); }
+#equip-grid .slot-helmet { left: 12%; top: 10%; }
+#equip-grid .slot-shoulder { left: 12%; top: 23%; }
+#equip-grid .slot-chest { left: 12%; top: 36%; }
+#equip-grid .slot-gloves { left: 12%; top: 49%; }
+#equip-grid .slot-wrist { left: 12%; top: 62%; }
+#equip-grid .slot-belt { left: 12%; top: 75%; }
+#equip-grid .slot-weapon { left: 12%; top: 89%; height: 13%; }
+#equip-grid .slot-amulet { left: 88%; top: 10%; }
+#equip-grid .slot-ring { left: 88%; top: 23%; }
+#equip-grid .slot-ring2 { left: 88%; top: 36%; }
+#equip-grid .slot-legs { left: 88%; top: 49%; }
+#equip-grid .slot-boots { left: 88%; top: 62%; }
+#equip-grid .slot-weapon2 { left: 88%; top: 87%; height: 17%; }
+#equip-set-tabs { margin-top: 8px; }
+.eqset-tab { padding: 3px 4px; border-radius: 0; border: 2px ridge #5e6761; background: var(--af-raised); color: #c6c6b7; }
+.eqset-tab.viewing { background: linear-gradient(#7e2118b3, #200e10e6), var(--af-iron); border-color: #a4775c; box-shadow: inset 0 0 8px #160708; }
+.eqset-tab.active { color: #d9c498; }
+.eqset-confirm { padding: 2px 4px; font-size: 12px; }
+.eqset-confirm:disabled { display: none; }
+.eqset-badge { color: #a8b69c; }
+.equip-detail-head { min-height: 32px; margin-bottom: 8px; }
+#detail-pane, #detail-pane.has-detail, .equip-detail-card {
+  border: 4px ridge #777b72 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(155deg, #29203bea, #191a23ed 45%, #191c1bef), var(--af-stone) center / 320px !important;
+  box-shadow: inset 0 0 0 1px #0b1012, inset 0 0 0 3px #8b84962b, inset 0 0 24px #0008, 0 4px 12px #0009 !important;
+  background-blend-mode: normal !important;
+  padding: 17px !important;
+}
+#detail-pane { height: 326px !important; }
+#detail-pane:not(.has-detail) { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+#detail-pane:not(.has-detail)::before { content: '✧'; font: 72px / 1.2 var(--af-serif); color: #69647a; text-shadow: 0 2px #000; margin-bottom: 16px; }
+#detail-pane:not(.has-detail) .hint { font-family: var(--af-serif); font-size: 15px; letter-spacing: .12em; }
+.it-name { font-family: var(--af-serif); text-shadow: 0 2px 2px #000; }
+.it-sub, .it-score { border-color: #79708066; }
+.it-affix-row { border-bottom-color: #77778326; }
+.equip-material-panel { margin-top: 40px; height: 326px; max-height: 326px; padding: 9px; border: 3px ridge #5c6762; }
+.equip-material-grid { gap: 4px; }
+.equip-material-icon { border-radius: 0; background: var(--af-raised); box-shadow: inset 0 0 0 1px #919c7833; }
+
+#inv-section-box, #forge-inv-box { position: relative; padding: 20px; border: 1px solid #56635f; margin-top: 12px; }
+#inv-section-box::after, #forge-inv-box::after {
+  content: ''; position: absolute; inset: -16px; z-index: 3; pointer-events: none;
+  border: 40px solid transparent; border-radius: 0;
+  border-image: var(--af-frame) 25% / 40px / 0 round;
+  background: none; box-shadow: none; opacity: 1;
+}
+.inv-head { background: linear-gradient(#3c46415e, #121719b3), var(--af-iron) center / 240px; margin: -6px -5px 10px; padding: 6px; border-bottom: 3px double #4c5a56; flex-wrap: wrap; row-gap: 6px; }
+.inv-head .sec-title { color: #d1cebd; font-size: 16px; }
+#inventory-grid, #forge-inventory-grid {
+  scrollbar-color: #59665e #111618;
+  background-color: #0b1013;
+  background-image: linear-gradient(90deg, #6b736233 1px, transparent 1px), linear-gradient(#6b736233 1px, transparent 1px), linear-gradient(#0b1013b3, #0b1013b3), var(--af-stone);
+  background-size: 64px 64px, 64px 64px, auto, 320px;
+  background-position: 3px 3px;
+  box-shadow: inset 0 0 15px #0008;
+}
+#inventory-grid > .hint { grid-column: 1 / -1; padding: 12px; background: #111719dd; }
+.item-cell, .gem-inventory-cell, .gconv-slot, .forge-slot, .forge-center {
+  border-radius: 0;
+  background: radial-gradient(ellipse at 50% 25%, #4b455333, transparent), linear-gradient(#151b1ebb, #070b0fe8), var(--af-iron) center / 100px;
+  box-shadow: inset 0 0 0 1px #d0d2bb20, inset 0 0 9px #000b;
+}
+.item-cell.selected, .eq-slot.selected { outline: 2px solid #ead5c5; outline-offset: 1px; box-shadow: 0 0 7px #a63129aa !important; }
+.item-cell:hover { filter: brightness(1.15); }
+
+.sidebar-avatar img { border-color: #738075; filter: saturate(.5); }
+.sidebar-avatar::before { border-color: #52655f; background: none; }
+.sidebar-title { font-family: var(--af-serif); color: #d0caba; letter-spacing: .15em; }
+.attr-group { border-color: #59635b55; }
+.attr-group summary { background: linear-gradient(90deg, #454e4766, #12191a33); border-left: 2px solid #83917b; color: #c8c7b6; font-family: var(--af-serif); }
+.attr-group .stat-row, .stat-row { border-bottom: 1px solid #70796626; color: #a8ada2; }
+.attr-group .stat-row b, .stat-row b { color: #d2ba82; font-weight: 500; }
+#stats-sidebar #xp-bar, .mastery-bar, .hp-bar, .mp-bar, .shield-bar, .forge-progress-track { border-color: #626f66; border-radius: 0; }
+#stats-sidebar #xp-fill, .mastery-bar-fill, #forge-progress-fill { background: linear-gradient(90deg, #526b66, #adbd9b); box-shadow: inset 0 1px #d7ddb55e; }
+.sg-group-label { border-color: #5a6760; background: linear-gradient(90deg, #43534c33, transparent); }
+.sg-group-row:hover, .skill-row:hover, .shop-card:hover, .nf-part-upgrade-card:hover, .tower-floor:not(.locked):hover, .save-row:hover { border-color: #899282; background: linear-gradient(90deg, #37453b70, #111719bd), var(--af-stone) center / 300px; }
+.tree-cell, .sg-stage-node, .talent-icon, .battle-skill-slot { border-radius: 0; }
+.sg-stage-arrow { color: #a3a791; text-shadow: 0 1px #000; }
+.gem-tbl, .gem-tbl th, .gem-tbl td { border-color: #616d5e55; }
+.gem-tbl th, .quest-list-head, .nf-lines, .save-folder-files-title { background: #48514833; color: #c5c6b0; }
+.nf-belt, #forge-stage { border-color: #59665e; background: linear-gradient(#0b1112b3, #060a0bd9), var(--af-iron) center / 350px; }
+.tower-head, .tower-auto-bar { border-color: #5d695e; background: var(--af-raised); }
+.node-info, .gem-result, .detail-log-content, .detail-log-stats, .save-folder-files { border-color: #59675c77; background: #090f10aa; }
+#save-folder-banner { border-color: #74785c !important; background: var(--af-surface) !important; color: #c7c6b6; }
+
+/* Combat gets the same physical frame; canvas coordinates and effects are untouched. */
+.zone-btn { min-height: 35px; }
+.zone-best { border-color: #606b615e; border-radius: 0; }
+.battle-scene-wrapper, #battle-canvas-host { border: 2px ridge #637167; border-radius: 0; box-shadow: inset 0 0 26px #0009; }
+#battle-canvas-host::after { border-color: #6a79715e; box-shadow: inset 0 0 18px #0009; }
+#battle-skill-bar { border-color: #68756a; border-radius: 0; background: var(--af-surface); padding: 14px 20px; }
+#battle-skill-bar::after { border: 28px solid transparent; border-image: var(--af-frame) 25% / 28px / 0 round; background: none; box-shadow: none; inset: -10px; opacity: 1; }
+.battle-skill-slot { border-color: #6c786b; background: var(--af-raised); }
+#sk-tooltip:not(:has(.equip-detail-card)), .confirm-box, .modal-box { border: 4px ridge #67756c; background: var(--af-surface); border-radius: 0; }
+.modal-box::after, .detail-log-box::after { border: 30px solid transparent; border-image: var(--af-frame) 25% / 30px / 0 round; background: none; box-shadow: none; inset: -5px; opacity: 1; pointer-events: none; }
+.modal-x { color: #dcc5af; border: 2px ridge #8f7763; border-radius: 50%; background: #741c17; }
+#salvage-settings-panel { top: auto !important; bottom: calc(100% + 8px); margin-top: 0 !important; border: 4px ridge #6b756a !important; border-radius: 0 !important; background: var(--af-surface) !important; }
+#salvage-settings-panel .btn { min-height: 32px; }
+/* Use one native grey scrollbar palette, including panels with legacy explicit colors. */
+html * { scrollbar-color: #777c7e #141719 !important; scrollbar-width: thin; }
+html *::-webkit-scrollbar { width: 9px; height: 9px; }
+html *::-webkit-scrollbar-track { background: #141719; }
+html *::-webkit-scrollbar-thumb { background: #777c7e; border: 2px solid #141719; border-radius: 2px; }
+html *::-webkit-scrollbar-thumb:hover { background: #a3a7a9; }
+html *::-webkit-scrollbar-corner { background: #141719; }
+@media (prefers-reduced-motion: reduce) {
+  .tab-btn, .zone-btn, .btn, .item-cell, .eq-slot { transition: none; }
+}

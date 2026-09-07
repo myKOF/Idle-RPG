@@ -1,4 +1,4 @@
-/* Fixed-size game canvas scaler. */
+/* Keep the reference UI readable while extending the canvas to fill the viewport. */
 (function () {
   'use strict';
 
@@ -28,6 +28,11 @@
     var width = Math.max(1, document.documentElement.clientWidth || window.innerWidth);
     var height = Math.max(1, document.documentElement.clientHeight || window.innerHeight);
     var scale = Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT);
+    // Retain uniform scaling; give the surplus viewport space to the layout, not letterboxing.
+    stage.style.setProperty('--ui-canvas-width', (width / scale) + 'px');
+    stage.style.setProperty('--ui-canvas-height', (height / scale) + 'px');
+    shell.style.width = (width / scale) + 'px';
+    shell.style.height = (height / scale) + 'px';
     shell.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
     stage.style.setProperty('--ui-scale', String(scale));
   }
