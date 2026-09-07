@@ -5,7 +5,7 @@
    ⚠️ 迴圈型（aura）的 alphaOverLife 兩端必須同值，否則每個週期都會閃一下。
    ⚠️ Core 沒有父子節點，「繞著身體公轉」一律用「本身就畫著一圈物件的素材整片旋轉」表現。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const BODY_Y = -30;                       // 身體中心
@@ -45,7 +45,7 @@ function riser(o) {
 /* 從身上落下的粒子 */
 function faller(o) {
   return particle(Object.assign({
-    id: 'drops', asset: A.dot, z: 3, blend: 'normal',
+    id: 'drops', asset: AT.dot, z: 3, blend: 'normal',
     rate: 4, lifetime: [0.5, 0.8], spawnBox: [30, 40], y: BODY_Y,
     speed: [10, 30], direction: 90, spread: 60, gravity: { x: 0, y: 260 },
     /* 往下滴的東西（血、毒液）：刻意**不加 drag**——落下的液滴就是該加速，
@@ -95,7 +95,7 @@ def('st-poison', 1.2, true, () => [
 ]);
 
 def('st-corrode', 1.5, true, () => [
-  sprite({ id: 'shadow', asset: A.glowSoft, z: 0, sizeX: 50, sizeY: 66, y: BODY_Y, alpha: 0.3, tint: '#1a0c2e', blend: 'normal', alphaOverLife: LOOP_A(0.25, 0.42), scaleOverLife: LOOP_A(0.97, 1.06) }),
+  sprite({ id: 'shadow', asset: AT.glowSoft, z: 0, sizeX: 50, sizeY: 66, y: BODY_Y, alpha: 0.3, tint: '#1a0c2e', blend: 'normal', alphaOverLife: LOOP_A(0.25, 0.42), scaleOverLife: LOOP_A(0.97, 1.06) }),
   particle({
     id: 'wisps', asset: A.smokeDark, z: 1, blend: 'normal', tint: '#6f2da8',
     rate: 5, lifetime: [0.9, 1.4], spawnBox: [30, 44], y: BODY_Y,
@@ -163,7 +163,7 @@ def('st-slow', 1.6, true, () => [
 ]);
 
 def('st-petrify', 2, true, () => [
-  sprite({ id: 'stone', asset: A.discNoise, z: 0, sizeX: 46, sizeY: 62, y: BODY_Y, alpha: 0.5, tint: '#8a7a6a', blend: 'normal', alphaOverLife: LOOP_A(0.45, 0.58) }),
+  sprite({ id: 'stone', asset: AT.discNoise, z: 0, sizeX: 46, sizeY: 62, y: BODY_Y, alpha: 0.5, tint: '#8a7a6a', blend: 'normal', alphaOverLife: LOOP_A(0.45, 0.58) }),
   faller({ id: 'dust', tint: '#a89886', rate: 3, startPx: [3, 6], gravity: { x: 0, y: 70 }, speed: [3, 10], lifetime: [0.9, 1.4] })
 ]);
 
@@ -309,7 +309,7 @@ def('st-tick-poison', 0.6, false, () => [
 def('st-tick-bleed', 0.45, false, () => [
   sprite({ id: 'flash', asset: A.flash, z: 0, sizeX: 34, sizeY: 40, y: BODY_Y, alpha: 0.7, tint: T.bleed.c2, blend: 'add', duration: 0.18, alphaOverLife: C.pop }),
   particle({
-    id: 'drops', asset: A.dot, z: 1, blend: 'normal', tint: T.bleed.c1,
+    id: 'drops', asset: AT.dot, z: 1, blend: 'normal', tint: T.bleed.c1,
     burst: 3, lifetime: [0.3, 0.45], spawnBox: [18, 22], y: BODY_Y,
     speed: [30, 70], direction: 90, spread: 90, gravity: { x: 0, y: 420 },
     startPx: [5, 9], alphaOverLife: FALL_A, scaleOverLife: [[0, 1], [1, 0.7]]

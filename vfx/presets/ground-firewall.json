@@ -7,7 +7,7 @@
     {
       "id": "scorch",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "assetId": "particle-pack/png-transparent/rotated/trace_06_rotated.png",
       "zIndex": 0,
       "scale": {
         "x": 0.3906,

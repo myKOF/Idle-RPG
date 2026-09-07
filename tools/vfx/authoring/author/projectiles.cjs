@@ -4,7 +4,7 @@
    Runtime 逐幀 setTransform 帶著它移動並依飛行方位旋轉，Preset 本身不做位移。
    名目尺寸見 vfx-catalog.cjs（D＝直徑、L＝長、W＝寬、R＝半徑）。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const BODY_A = [[0, 0], [0.06, 1], [0.9, 1], [1, 0]];      // 出現 → 全程亮著 → 收尾淡出
@@ -155,7 +155,7 @@ P['proj-dark-orb'] = () => ({
   id: 'proj-dark-orb', duration: 1.2, layers: [
     sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 46, alpha: 0.6, tint: '#913dcc', blend: 'add', duration: 1.2, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
     sprite({ id: 'swirl', asset: A.twirl03, z: 1, size: 26, alpha: 0.9, tint: T.dark.c1, blend: 'add', duration: 1.2, alphaOverLife: BODY_A, rotationOverLife: C.spin(-2.5) }),
-    sprite({ id: 'core', asset: A.dot, z: 2, size: 18, alpha: 1, tint: T.dark.c2, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A }),
+    sprite({ id: 'core', asset: AT.dot, z: 2, size: 18, alpha: 1, tint: T.dark.c2, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A }),
     trail({ asset: A.smokeT, tint: '#6f2da8', blend: 'normal', rate: 14, startPx: [10, 18], lifetime: [0.24, 0.4], alphaOverLife: [[0, 0.55], [1, 0]] })
   ]
 });
@@ -191,7 +191,7 @@ P['proj-arcane-missile'] = () => ({
 P['proj-waterball'] = () => ({
   id: 'proj-waterball', duration: 1.2, layers: [
     sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 42, alpha: 0.45, tint: T.water.glow, blend: 'add', duration: 1.2, alphaOverLife: GLOW_A }),
-    sprite({ id: 'body', asset: A.dot, z: 1, size: 18, alpha: 1, tint: T.water.c1, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
+    sprite({ id: 'body', asset: AT.dot, z: 1, size: 18, alpha: 1, tint: T.water.c1, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
     sprite({ id: 'gloss', asset: A.dot, z: 2, size: 7, x: -3, y: -4, alpha: 0.95, tint: T.water.c2, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
     trail({ tint: T.water.c2, rate: 18, startPx: [3, 6], lifetime: [0.18, 0.3], gravity: { x: 0, y: 200 }, spread: 70 })
   ]
@@ -228,7 +228,7 @@ function meteor(o) {
     sprite({ id: 'shell', asset: A.flame04, z: 1, size: o.d, alpha: 0.95, tint: '#f83600', blend: 'add', duration: o.dur, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.4) }),
     sprite({ id: 'body', asset: A.fire01, z: 2, size: o.d * 0.78, alpha: 1, tint: '#f89800', blend: 'add', duration: o.dur, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.6) }),
     sprite({ id: 'core', asset: A.dot, z: 3, size: o.d * 0.34, alpha: 1, tint: '#facc22', blend: 'add', duration: o.dur, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
-    sprite({ id: 'rim', asset: A.ringSoft, z: 4, size: o.d * 1.05, alpha: 0.5, tint: '#9f0404', blend: 'normal', duration: o.dur, alphaOverLife: GLOW_A }),
+    sprite({ id: 'rim', asset: AT.ringSoft, z: 4, size: o.d * 1.05, alpha: 0.5, tint: '#9f0404', blend: 'normal', duration: o.dur, alphaOverLife: GLOW_A }),
     particle({
       id: 'tail', asset: A.flame05, z: 5, blend: 'add', tint: '#f89800',
       rate: o.rate, lifetime: [o.tailSec * 0.7, o.tailSec], spawnRadius: o.d * 0.25,
@@ -258,9 +258,9 @@ P['proj-starfall'] = () => ({
   id: 'proj-starfall', duration: 3, layers: [
     sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 560, alpha: 0.5, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
     sprite({ id: 'shell', asset: A.flame04, z: 1, size: 350, alpha: 0.95, tint: '#a11208', blend: 'add', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.3) }),
-    sprite({ id: 'body', asset: A.fire01, z: 2, size: 275, alpha: 1, tint: '#5c0a06', blend: 'normal', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.4) }),
+    sprite({ id: 'body', asset: AT.fire01, z: 2, size: 275, alpha: 1, tint: '#5c0a06', blend: 'normal', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.4) }),
     sprite({ id: 'core', asset: A.flame04, z: 3, size: 150, alpha: 1, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
-    sprite({ id: 'rim', asset: A.ringSoft, z: 4, size: 356, alpha: 0.6, tint: '#260302', blend: 'normal', duration: 3, alphaOverLife: GLOW_A }),
+    sprite({ id: 'rim', asset: AT.ringSoft, z: 4, size: 356, alpha: 0.6, tint: '#260302', blend: 'normal', duration: 3, alphaOverLife: GLOW_A }),
     /* 底部弓形震波：壓扁的橢圓環，半徑約 138px，隨飛行脈動 */
     sprite({
       id: 'bow', asset: A.ringThin, z: 5, sizeX: 276, sizeY: 120, y: 96, alpha: 0.75, tint: '#ffb257', blend: 'add',

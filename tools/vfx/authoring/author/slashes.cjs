@@ -8,7 +8,7 @@
    因此以 cone_composed_* 的 V 形錐體逼近：頂點在原點、以 scaleX 撐開張角。
    角度是「看起來像」而不是幾何精確——真正的判定範圍在模擬層，這裡只負責畫面。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 /* ---- 共用曲線 ---- */
@@ -87,7 +87,7 @@ P['slash-bloodblade'] = () => ({
   id: 'slash-bloodblade', duration: 0.32, layers: [
     ...arc({ R: 40, tint: T.bleed.c1, innerTint: T.bleed.c2, base: -50, swing: 26, dur: 0.26 }),
     particle({
-      id: 'drops', asset: A.dot, z: 6, blend: 'normal', tint: T.bleed.c1,
+      id: 'drops', asset: AT.dot, z: 6, blend: 'normal', tint: T.bleed.c1,
       burst: 6, lifetime: [0.2, 0.32], spawnRadius: 12, speed: [70, 140], direction: 40, spread: 120,
       gravity: { x: 0, y: 420 }, startPx: [4, 8],
       alphaOverLife: [[0, 1], [0.6, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.7]]

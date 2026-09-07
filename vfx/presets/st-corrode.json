@@ -7,7 +7,7 @@
     {
       "id": "shadow",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-transparent/light_03.png",
       "zIndex": 0,
       "position": {
         "x": 0,

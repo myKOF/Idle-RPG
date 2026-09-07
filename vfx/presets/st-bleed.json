@@ -53,7 +53,7 @@
     {
       "id": "drops",
       "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 3,
       "position": {
         "x": 0,

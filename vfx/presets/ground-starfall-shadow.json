@@ -7,7 +7,7 @@
     {
       "id": "shadow",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/window_h.png",
+      "assetId": "light-masks-1.0/transparent/window_h.png",
       "zIndex": 0,
       "scale": {
         "x": 0.3906,

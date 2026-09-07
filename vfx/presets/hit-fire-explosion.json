@@ -123,6 +123,8 @@
       ],
       "sheet": {
         "columns": 6,
+        "count": 27,
+        "loop": false,
         "mode": "life",
         "rows": 5
       }

@@ -9,7 +9,7 @@
    ⚠️ Core 沒有父子節點，因此「繞著原點公轉」做不到；改用「本身就畫著若干個點的
       環形素材整片旋轉」來表現（runePlanet／ringSegments4／sawRing 等）。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const FLAT = 0.52;          // 地板矩形／落點預警的縱向壓縮
@@ -85,7 +85,7 @@ P['ground-firewall'] = () => {
   });
   return {
     id: 'ground-firewall', duration: 1.2, loop: true, layers: [
-      sprite({ id: 'scorch', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 40, alpha: 0.75, tint: '#30231d', blend: 'normal', duration: 1.2, alphaOverLife: LOOP_A(0.75, 0.65) }),
+      sprite({ id: 'scorch', asset: AT.trace06H, z: 0, sizeX: 200, sizeY: 40, alpha: 0.75, tint: '#30231d', blend: 'normal', duration: 1.2, alphaOverLife: LOOP_A(0.75, 0.65) }),
       sprite({ id: 'base', asset: A.trace06H, z: 1, sizeX: 200, sizeY: 26, alpha: 0.8, tint: '#ffa51d', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.7, 0.9) }),
       column('flame-a', 2, -62, 0),
       column('flame-b', 3, 0, 0.28),
@@ -164,7 +164,7 @@ function tornado(o) {
     rotationOverLife: [[0, deg(-5)], [0.5, deg(5)], [1, deg(-5)]]
   });
   return [
-    disc({ id: 'ground', asset: A.ringSoft, z: 0, d: 68, flat: 0.45, alpha: 0.6, tint: o.ground, blend: 'normal', dur: 1.2, alphaOverLife: LOOP_A(0.55, 0.7) }),
+    disc({ id: 'ground', asset: AT.ringSoft, z: 0, d: 68, flat: 0.45, alpha: 0.6, tint: o.ground, blend: 'normal', dur: 1.2, alphaOverLife: LOOP_A(0.55, 0.7) }),
     sprite({
       id: 'funnel', asset: A.coneF, z: 1, sizeX: 62, sizeY: 118, anchor: { x: 0.5, y: 1 },
       alpha: 0.9, tint: o.body, blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.85, 1),
@@ -501,7 +501,7 @@ P['mark-blue'] = () => ({ id: 'mark-blue', duration: 1.14, loop: true, layers: m
 P['ground-starfall-shadow'] = () => ({
   id: 'ground-starfall-shadow', duration: 5, layers: [
     disc({
-      id: 'shadow', asset: A.discWhite, z: 0, d: 200, flat: FLAT, alpha: 1, tint: '#000000', blend: 'normal', dur: 5,
+      id: 'shadow', asset: AT.discWhite, z: 0, d: 200, flat: FLAT, alpha: 1, tint: '#000000', blend: 'normal', dur: 5,
       /* ease-in：前段慢、後段快，與殞石逼近的速度感一致 */
       alphaOverLife: [[0, 0.1], [0.5, 0.21], [0.8, 0.36], [1, 0.55]],
       scaleOverLife: [[0, 0.04], [0.5, 0.28], [0.8, 0.62], [1, 1]]

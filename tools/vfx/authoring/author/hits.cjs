@@ -4,7 +4,7 @@
    → 6 顆加法火花向外飛並受重力下墜；元素差異放在火花素材／行為與額外圖層。
    座標：原點 = 目標身體中心；名目：目標身高 60px、主體約 40px。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, SHEET, sheetLayer, sprite, particle } = kit;
 const PI = Math.PI;
 
 /* ---- 共用曲線（attack ≤ 12%、release 55%~ 之後） ---- */
@@ -54,16 +54,15 @@ function core(o) {
    ⚠️ 一律用 30fps 版。60fps 版畫面內容相同但格數多一倍，等於兩倍 VRAM。
    ⚠️ blend 用 normal：這些是有完整 alpha 的彩色畫，不是灰階遮罩。
       用 add 的話煙的灰色會變成發光的霧、白色核心會過曝成一片死白。 */
-const SHEET = {
-  explosion:   { asset: 'spritemancer-vfx-256/30fps/effect_explosion_1_256x256.png', cols: 6, rows: 5 },
-  explosion2:  { asset: 'spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png', cols: 6, rows: 5 },
-  bloodImpact: { asset: 'spritemancer-vfx-256/30fps/effect_bloodimpact_1_69x60.png', cols: 6, rows: 5 }
-};
+/* 格線與實際用到的格數在 preset-kit 的 SHEET 目錄（由 sheet-facts.cjs 量出來）。
+   Explosion 是 6x5＝30 格但只畫了 27 格，目測完全看不出來；
+   照 30 格播的話尾巴會空白三格。
+
+   size 對 sheetLayer 而言是**螢幕像素**（sprite() 的 size 是 512 基準）。
+   下面的 95／52 就是畫面上的實際大小。 */
 function sheetFx(def, o) {
-  return sprite(Object.assign({
-    id: 'sheet', asset: def.asset, z: o.z === undefined ? 1 : o.z,
-    blend: 'normal', alpha: 1,
-    sheet: { columns: def.cols, rows: def.rows, mode: 'life' },
+  return sheetLayer(def, Object.assign({
+    id: 'sheet', z: o.z === undefined ? 1 : o.z,
     /* 尾端淡出：素材最後幾格常常還有淡煙，硬切會看到它突然消失。 */
     alphaOverLife: [[0, 1], [0.82, 1], [1, 0]]
   }, o));
@@ -114,7 +113,7 @@ P['hit-fire'] = () => ({
       id: 'halo', asset: A.glowSoft, z: 0, size: 72, alpha: 0.5, tint: T.fire.glow, blend: 'add',
       duration: 0.28, alphaOverLife: HALO_A, scaleOverLife: HALO_S
     }),
-    sheetFx(SHEET.explosion2, { size: 104, z: 1 }),
+    sheetFx(SHEET.explosion2, { size: 52, z: 1 }),
     sparks({
       tint: T.fire.c2, direction: -90, spread: 240, speed: [60, 130],
       gravity: { x: 0, y: -140 }, lifetime: [0.26, 0.38], startPx: [4, 8],
@@ -271,7 +270,7 @@ P['hit-fire-explosion'] = () => ({
       duration: 0.62, alphaOverLife: [[0, 0], [0.06, 1], [0.6, 0.6], [1, 0]],
       scaleOverLife: [[0, 0.1], [0.4, 0.72], [1, 1]]
     }),
-    sheetFx(SHEET.explosion, { size: 190, z: 2 })
+    sheetFx(SHEET.explosion, { size: 95, z: 2 })
   ]
 });
 

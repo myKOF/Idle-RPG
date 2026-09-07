@@ -7,7 +7,7 @@
     {
       "id": "ground",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "assetId": "particle-pack/png-transparent/circle_01.png",
       "zIndex": 0,
       "scale": {
         "x": 0.1328,

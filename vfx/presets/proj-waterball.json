@@ -39,7 +39,7 @@
     {
       "id": "body",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 1,
       "scale": {
         "x": 0.0352,
