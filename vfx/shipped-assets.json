@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 85,
+  "assetCount": 87,
   "assets": [
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -208,13 +208,6 @@
       "package": "new_materials",
       "contentHash": "sha256:a4ee688c893d04134aa993d2f29cdba9f78026c44b63946db0efe259fccd1ed8",
       "fileSize": 19949
-    },
-    {
-      "assetId": "new_materials/impact-ring/impact_2.png",
-      "relativePath": "new_materials/impact-ring/impact_2.png",
-      "package": "new_materials",
-      "contentHash": "sha256:0b301c8b940ea3c1bfaf7f8ed0140596d5ca8226a110f0f759352438b24d8ddc",
-      "fileSize": 142003
     },
     {
       "assetId": "new_materials/mask-shape/dingbats-115.png",
@@ -600,6 +593,27 @@
       "package": "splat-pack",
       "contentHash": "sha256:4b3444415554461f282c972eeba68cd4abc6cac4febf4da0ff8c53a7a3f4533b",
       "fileSize": 5638
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Explosion2_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "contentHash": "sha256:cd3e8a9f97104ffebb788db00a10016221c65f661cf323d88f7208b206072762",
+      "fileSize": 661468
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion_1_256x256.png",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Explosion_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "contentHash": "sha256:407183f84815d1d8bee98d3e46f7379296b59796350f8de2e675ccc94fea3793",
+      "fileSize": 1044673
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_explosion_1_517x517.png",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Explosion_1_517x517.png",
+      "package": "spritemancer-vfx",
+      "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
+      "fileSize": 2834222
     }
   ]
 }
