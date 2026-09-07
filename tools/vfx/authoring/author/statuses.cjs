@@ -5,7 +5,7 @@
    ⚠️ 迴圈型（aura）的 alphaOverLife 兩端必須同值，否則每個週期都會閃一下。
    ⚠️ Core 沒有父子節點，「繞著身體公轉」一律用「本身就畫著一圈物件的素材整片旋轉」表現。 */
 const kit = require('../preset-kit.cjs');
-const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, SHEET, sheetLayer, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const BODY_Y = -30;                       // 身體中心
@@ -152,9 +152,16 @@ def('st-windcut', 0.8, true, () => [
 ]);
 
 /* =============== 控場類 =============== */
+/* 暈眩：頭上冒星星是這個題材幾十年來的固定畫法，玩家一眼就懂。
+   原本用「五角法陣 + 一顆星」轉來轉去，在 46x18 的尺寸下讀起來是一團模糊。
+   換成 PuffAndStars 序列幀——素材裡本來就是橙色星星在暗煙裡打轉。
+
+   duration 1.2 = 一個循環播完整份序列（sheet mode 'life' 把序列攤在生命上），
+   preset loop 讓它一輪一輪重來。這一份量測判定是 pulse（首尾都接近全空），
+   對暈眩反而正好：星星冒出來、散掉、再冒一輪，而不是一直掛在頭上。 */
 def('st-stun', 1.2, true, () => [
-  sprite({ id: 'orbit', asset: A.magicPenta, z: 0, sizeX: 46, sizeY: 18, y: -64, alpha: 0.85, tint: '#ffe47a', blend: 'add', alphaOverLife: LOOP_A(0.8, 1), rotationOverLife: C.spin(1) }),
-  sprite({ id: 'star', asset: A.star08, z: 1, size: 18, y: -64, alpha: 0.9, tint: '#fffef4', blend: 'add', alphaOverLife: LOOP_A(0.7, 1), rotationOverLife: C.spin(-0.5) })
+  sheetLayer(SHEET.puffAndStars, { id: 'stars', z: 0, size: 58, y: -70, duration: 1.2 }),
+  sprite({ id: 'glow', asset: A.glowSoft, z: 1, sizeX: 44, sizeY: 26, y: -68, alpha: 0.3, tint: '#ffe47a', blend: 'screen', alphaOverLife: LOOP_A(0.22, 0.38) })
 ]);
 
 def('st-slow', 1.6, true, () => [

@@ -301,13 +301,6 @@
       "fileSize": 169585
     },
     {
-      "assetId": "new_materials/splat/dingbats-425.png",
-      "relativePath": "new_materials/splat/dingbats-425.png",
-      "package": "new_materials",
-      "contentHash": "sha256:79f45a24cc3bdd720828d2f446d51a5d7defaa6c0767c302a976ec4e7aabcf19",
-      "fileSize": 5012
-    },
-    {
       "assetId": "new_materials/streak/lines_1.png",
       "relativePath": "new_materials/streak/lines_1.png",
       "package": "new_materials",
@@ -383,13 +376,6 @@
       "package": "particle-pack",
       "contentHash": "sha256:adbef8446fe55f8a5ad1fe8423e2683f8102bca792164c95f276ab77abefeb5f",
       "fileSize": 62268
-    },
-    {
-      "assetId": "particle-pack/png-black-background/magic_01.png",
-      "relativePath": "particle-pack/PNG (Black background)/magic_01.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:ba25d57c52ba4bfe83953acac9ef697135ecdf75aa27b75811380f9771070c36",
-      "fileSize": 60113
     },
     {
       "assetId": "particle-pack/png-black-background/magic_03.png",
@@ -651,6 +637,13 @@
       "fileSize": 5638
     },
     {
+      "assetId": "spritemancer-vfx-256/30fps/effect_bloodimpact_1_69x60.png",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_BloodImpact_1_69x60.png",
+      "package": "spritemancer-vfx-256",
+      "contentHash": "sha256:5fbe13dc4e8b7dd3827a06458a24a73c7c0fca768e21e3a29300ba9bbb348803",
+      "fileSize": 9280
+    },
+    {
       "assetId": "spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png",
       "relativePath": "spritemancer-vfx-256/30fps/Effect_Explosion2_1_256x256.png",
       "package": "spritemancer-vfx-256",
@@ -663,6 +656,13 @@
       "package": "spritemancer-vfx-256",
       "contentHash": "sha256:407183f84815d1d8bee98d3e46f7379296b59796350f8de2e675ccc94fea3793",
       "fileSize": 1044673
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_puffandstars_1_120x109.png",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_PuffAndStars_1_120x109.png",
+      "package": "spritemancer-vfx-256",
+      "contentHash": "sha256:f6bd0cf936d3ae02133fb1364b70eb289323b9f140fa8c7df13f6549c94f1fa9",
+      "fileSize": 254659
     },
     {
       "assetId": "spritemancer-vfx/30fps/effect_explosion_1_517x517.png",

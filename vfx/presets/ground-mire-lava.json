@@ -263,7 +263,7 @@
       "id": "embers",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 6,
+      "zIndex": 7,
       "tint": "#ffb347",
       "blendMode": "add",
       "emission": {

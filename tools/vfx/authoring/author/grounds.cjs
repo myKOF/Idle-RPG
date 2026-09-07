@@ -9,7 +9,7 @@
    ⚠️ Core 沒有父子節點，因此「繞著原點公轉」做不到；改用「本身就畫著若干個點的
       環形素材整片旋轉」來表現（runePlanet／ringSegments4／sawRing 等）。 */
 const kit = require('../preset-kit.cjs');
-const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, SHEET, sheetLayer, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const FLAT = 0.52;          // 地板矩形／落點預警的縱向壓縮
@@ -51,8 +51,19 @@ P['ground-mire-lava'] = () => ({
   id: 'ground-mire-lava', duration: 2.1, loop: true,
   layers: mire({
     fill: '#8a2b0b', edge: '#ff7a2a', ripple: '#ffb347', bubble: '#ffd282',
-    extra: [particle({
-      id: 'embers', asset: A.dot, z: 6, blend: 'add', tint: '#ffb347',
+    extra: [
+      /* ⚠️ 試過用 Effect_Magma 序列幀當噴發層，退回了。
+         那份素材是「左右對稱的向上噴發」，動畫的高潮是一朵**蘑菇雲頂蓋**——
+         一片寬而扁的淡色弧。疊在深色的岩漿池上，那個蓋子讀起來是一塊
+         灰色方塊蓋住角色，而不是噴發。素材本身沒問題（實測 alpha 邊界為 0、
+         半透明像素只佔 5%），是題材不合：Magma 適合「火山噴發」這種
+         以垂直噴柱為主體的技能，不適合當一灘池子的點綴。
+
+         與 hit-phys 那次退回是同一類判斷：序列幀要接得進來，
+         光看「元素對不對、循環得起來」不夠，還要看動畫的**高潮那一格**
+         在目標構圖裡是什麼形狀。 */
+      particle({
+      id: 'embers', asset: A.dot, z: 7, blend: 'add', tint: '#ffb347',
       rate: 6, lifetime: [0.5, 0.9], spawnBox: [180, 80], speed: [20, 50], direction: -90, spread: 50,
       gravity: { x: 0, y: -40 }, startPx: [3, 6],
       alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]

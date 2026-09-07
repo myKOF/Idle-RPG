@@ -257,10 +257,11 @@ P['hit-wind'] = () => ({
 P['hit-bleed'] = () => ({
   id: 'hit-bleed', duration: 0.45, layers: [
     ...core({ haloTint: T.bleed.c1, haloAlpha: 0.45, haloSize: 60, ringTint: T.bleed.c1, ringAlpha: 0.6, ringSize: 40, flashTint: T.bleed.c1, flashSize: 36 }),
-    sprite({
-      id: 'splat', asset: A.spatterCenter, z: 2, size: 36, alpha: 0.85, tint: T.bleed.c1, blend: 'normal', rotDeg: 30,
-      duration: 0.42, alphaOverLife: [[0, 0], [0.08, 1], [0.5, 0.9], [1, 0]], scaleOverLife: [[0, 0.4], [0.12, 1], [1, 1.1]]
-    }),
+    /* 噴濺改用序列幀：靜圖的潑濺只能靠縮放曲線「長大」，那是所有方向
+       同時擴散；真實的血是先噴出去、再往下掛。動畫在素材裡就有了。
+       BloodImpact 是這批圖集裡少數格子很小的（69x60），縮到 44px 仍然
+       是粗實的色塊，不會踩到細線條在小尺寸下消失的那條界線。 */
+    sheetFx(SHEET.bloodImpact, { id: 'splat', z: 2, size: 44, duration: 0.42 }),
     particle({
       id: 'drops', asset: A.lines1, z: 5, blend: 'normal', tint: T.bleed.c2,
       burst: 6, lifetime: [0.24, 0.32], spawnRadius: 5, speed: [30, 90], direction: 90, spread: 150,
