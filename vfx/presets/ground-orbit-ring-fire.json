@@ -5,30 +5,58 @@
   "loop": true,
   "layers": [
     {
-      "id": "ring",
+      "id": "halo",
       "type": "sprite",
       "assetId": "light-masks-1.0/default/ring_a.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.3906,
-        "y": 0.2422
+        "x": 0.4063,
+        "y": 0.2519
       },
-      "alpha": 0.18,
+      "alpha": 0.162,
       "tint": "#e63924",
       "blendMode": "add",
       "duration": 2,
       "alphaOverLife": [
         [
           0,
-          0.18
+          0.162
         ],
         [
           0.5,
-          0.252
+          0.23399999999999999
         ],
         [
           1,
-          0.18
+          0.162
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2422
+      },
+      "alpha": 0.46799999999999997,
+      "tint": "#e63924",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.46799999999999997
+        ],
+        [
+          0.5,
+          0.612
+        ],
+        [
+          1,
+          0.46799999999999997
         ]
       ]
     },
@@ -36,7 +64,7 @@
       "id": "motes",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 1,
+      "zIndex": 2,
       "tint": "#e63924",
       "blendMode": "add",
       "emission": {

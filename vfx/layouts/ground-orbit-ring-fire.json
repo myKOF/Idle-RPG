@@ -6,6 +6,7 @@
       "id": "ground-orbit-ring-fire",
       "name": "ground-orbit-ring-fire",
       "layerIds": [
+        "halo",
         "ring",
         "motes"
       ]

@@ -198,28 +198,44 @@ P['pillar-earth'] = () => ({
 });
 
 /* ---- 光束共用：沿 +X、根部在原點 ---- */
+/* ---- 光束：w 是**可見的粗細**，不是圖層高度 ----
+
+   trace 系列的素材（trace_01/02/06_rotated）雖然是 512x512，筆畫只集中在
+   中央很窄的一條：實測 80% 的墨量落在 58～63px 之內，也就是圖高的 11～12%，
+   其餘全是透明留白。
+
+   原本 beam() 直接把 w 當圖層高度用，w:10 於是畫出一道**一個像素**粗的光。
+   角色身高 60px，那在畫面上就是一條刮痕。第一次修正把 w 從 10 拉到 26，
+   仍然只有 3px——因為放大的是留白，不是筆畫。
+
+   所以這裡除以墨量佔比：想要 18px 粗的光束，圖層要開到 18/0.115 ≈ 157px。
+   留白是透明的，不會多畫任何東西，只是把筆畫放到該有的大小。 */
+const BEAM_INK = 0.115;      // trace 系素材的有效筆畫佔圖高的比例（量測值）
+
 function beam(o) {
   const A_IN_OUT = [[0, 0], [0.25, 1], [0.7, 0.9], [1, 0]];
+  const q = o.w / BEAM_INK;
   return [
-    sprite({ id: 'glow', asset: A.trace06H, z: 0, sizeX: 200, sizeY: o.w * 3, anchor: LEFT, alpha: 0.5, tint: o.glow, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT }),
-    sprite({ id: 'body', asset: A.trace06H, z: 1, sizeX: 200, sizeY: o.w, anchor: LEFT, alpha: 0.95, tint: o.body, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT }),
-    sprite({ id: 'core', asset: A.trace02H, z: 2, sizeX: 200, sizeY: o.w * 0.5, anchor: LEFT, alpha: 1, tint: o.core, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT })
+    sprite({ id: 'glow', asset: A.trace06H, z: 0, sizeX: 200, sizeY: q * 1.7, anchor: LEFT, alpha: 0.4, tint: o.glow, blend: 'screen', duration: 0.45, alphaOverLife: A_IN_OUT }),
+    sprite({ id: 'body', asset: A.trace06H, z: 1, sizeX: 200, sizeY: q, anchor: LEFT, alpha: 0.95, tint: o.body, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT }),
+    sprite({ id: 'core', asset: A.trace02H, z: 2, sizeX: 200, sizeY: q * 0.42, anchor: LEFT, alpha: 1, tint: o.core, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT })
   ];
 }
+
 
 /* ---------- beam-light：聖光光束 ---------- */
 P['beam-light'] = () => ({
   id: 'beam-light', duration: 0.45,
-  layers: beam({ w: 10, body: '#fffef4', core: '#ffffff', glow: '#ffe47a' })
+  layers: beam({ w: 20, body: '#fffef4', core: '#ffffff', glow: '#ffe47a' })
 });
 
 /* ---------- beam-ice：寒冰槍光束（帶白色斜紋） ---------- */
 P['beam-ice'] = () => ({
   id: 'beam-ice', duration: 0.45, layers: [
-    ...beam({ w: 8, body: '#4da6ff', core: '#f2fbff', glow: '#79d8ff' }),
+    ...beam({ w: 17, body: '#4da6ff', core: '#f2fbff', glow: '#79d8ff' }),
     /* 斜紋：uvScroll 讓條紋沿光束流動（Core 目前唯一的程序化效果） */
     kit.procedural({
-      id: 'streaks', asset: A.lines4, z: 3, effect: 'uvScroll', sizePx: [200, 8],
+      id: 'streaks', asset: A.lines4, z: 3, effect: 'uvScroll', sizePx: [200, 30],
       anchor: LEFT, alpha: 0.7, tint: '#f2fbff', blend: 'add',
       scrollSpeed: { x: -2.4, y: 0 }, duration: 0.45,
       alphaOverLife: [[0, 0], [0.25, 0.8], [0.7, 0.7], [1, 0]]

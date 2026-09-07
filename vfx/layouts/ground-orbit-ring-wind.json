@@ -6,6 +6,7 @@
       "id": "ground-orbit-ring-wind",
       "name": "ground-orbit-ring-wind",
       "layerIds": [
+        "halo",
         "ring",
         "motes"
       ]

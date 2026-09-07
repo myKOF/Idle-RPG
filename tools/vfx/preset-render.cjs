@@ -217,7 +217,10 @@ function renderPreset(opts) {
     while (next < wantAt.length && t >= wantAt[next]) {
       const canvas = new Uint8Array(W * H * 4);
       fillBg(canvas, W, H, opts.bg);
-      if (opts.figure) drawFigure(canvas, W, H, W >> 1, cy + 18);
+      /* 假人的**腳底**對齊特效原點：st-*／ground-* 的原點就是目標腳底
+         （見 statuses.cjs 開頭的座標慣例），身體佔 y ∈ [-60, 0]。
+         擺錯的話「這一層是不是浮在半空」會判斷錯。 */
+      if (opts.figure) drawFigure(canvas, W, H, W >> 1, cy);
       state.draws.length = 0;
       rt.update(0);                        // dt=0：只重新輸出 transform，不推進時間
       state.draws.sort(function (a, b) { return (a.z || 0) - (b.z || 0); });

@@ -86,11 +86,16 @@ P['ground-firewall'] = () => {
   return {
     id: 'ground-firewall', duration: 1.2, loop: true, layers: [
       sprite({ id: 'scorch', asset: AT.trace06H, z: 0, sizeX: 200, sizeY: 40, alpha: 0.75, tint: '#30231d', blend: 'normal', duration: 1.2, alphaOverLife: LOOP_A(0.75, 0.65) }),
-      sprite({ id: 'base', asset: A.trace06H, z: 1, sizeX: 200, sizeY: 26, alpha: 0.8, tint: '#ffa51d', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.7, 0.9) }),
+      /* 底部餘燼用扁橢圓的柔光，不用 trace。
+         trace 系素材的筆畫只佔圖高的 11%（見 bolts.cjs 的 BEAM_INK），
+         畫成 200x26 的結果是一條又細又硬的亮線橫貫整面火牆——
+         畫面上像有人把日光燈管放在火裡，而且正好切過站在牆邊的角色。
+         火牆底部要的是「地面被烤紅」那種瀰漫的暖光，本來就不該有邊。 */
+      sprite({ id: 'base', asset: A.discA, z: 1, sizeX: 210, sizeY: 44, y: -6, alpha: 0.5, tint: '#ffa51d', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.42, 0.58) }),
       column('flame-a', 2, -62, 0),
       column('flame-b', 3, 0, 0.28),
       column('flame-c', 4, 62, 0.56),
-      sprite({ id: 'core', asset: A.trace06H, z: 5, sizeX: 190, sizeY: 14, y: -12, alpha: 0.9, tint: '#ffd84a', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.8, 1) }),
+      sprite({ id: 'core', asset: A.discA, z: 5, sizeX: 176, sizeY: 26, y: -16, alpha: 0.55, tint: '#ffd84a', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.5, 0.68) }),
       particle({
         id: 'smoke', asset: A.smokeT, z: 6, blend: 'normal', tint: '#4a3b33',
         rate: 5, lifetime: [0.7, 1.1], spawnBox: [180, 20], y: -80, speed: [20, 45], direction: -90, spread: 40,
@@ -109,8 +114,12 @@ P['ground-firewall'] = () => {
 
 P['ground-thunder-curtain'] = () => ({
   id: 'ground-thunder-curtain', duration: 1, loop: true, layers: [
-    sprite({ id: 'band', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 20, alpha: 0.22, tint: '#7dd3fc', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.22, 0.32) }),
-    sprite({ id: 'band-core', asset: A.trace02H, z: 1, sizeX: 200, sizeY: 6, alpha: 0.5, tint: '#ffffff', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.4, 0.6) }),
+    /* sizeY 是圖層高度，不是看得見的粗細：trace 系素材的筆畫只佔圖高
+       11%（bolts.cjs 的 BEAM_INK），所以 20 畫出來是 2px、6 畫出來不到 1px。
+       配上 alpha 0.22 的結果就是整條雷幕在畫面上不存在。
+       改成 90／34 之後可見粗細約 10px／4px，才有「一道橫向電幕」的樣子。 */
+    sprite({ id: 'band', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 90, alpha: 0.3, tint: '#7dd3fc', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.3, 0.42) }),
+    sprite({ id: 'band-core', asset: A.trace02H, z: 1, sizeX: 200, sizeY: 34, alpha: 0.6, tint: '#ffffff', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.5, 0.7) }),
     particle({
       id: 'ends', asset: A.bolt05, z: 2, blend: 'add', tint: '#ffffff',
       rate: 10, lifetime: [0.08, 0.16], spawnBox: [200, 14], speed: [0, 20], direction: -90, spread: 360,
@@ -297,12 +306,18 @@ P['orb-void-disc'] = () => {
 /* =========================== 軌道環 =========================== */
 function orbitRing(o) {
   return [
-    disc({ id: 'ring', asset: A.ringA, z: 0, d: 200, flat: FLAT_R, alpha: o.alpha, tint: o.tint, dur: 2, alphaOverLife: LOOP_A(o.alpha, o.alpha * 1.4) }),
+    /* 兩層環：外圈是寬而淡的光暈、內圈是細而亮的線。
+       只有一層淡環時（原本 alpha 0.18）在深色戰場上根本看不見——
+       這是「環繞體繞著哪一圈跑」的唯一提示，看不見等於資訊消失。
+       低 alpha 的用意是不要搶戲，但那要靠「細」而不是靠「淡」：
+       一條看得清楚的細線遠比一片看不清楚的寬光低調。 */
+    disc({ id: 'halo', asset: A.ringA, z: 0, d: 208, flat: FLAT_R, alpha: o.alpha * 0.9, tint: o.tint, dur: 2, alphaOverLife: LOOP_A(o.alpha * 0.9, o.alpha * 1.3) }),
+    disc({ id: 'ring', asset: A.ringThin, z: 1, d: 200, flat: FLAT_R, alpha: o.alpha * 2.6, tint: o.tint, dur: 2, alphaOverLife: LOOP_A(o.alpha * 2.6, o.alpha * 3.4) }),
     /* 這一個才是真的螢幕平面環繞：地板環是俯視壓扁的橢圓，模擬層的
        sgOrbitStep 算接觸也是在螢幕平面上繞，兩邊同一件事。
        0.4 圈／秒是環境感的慢飄，不是判定用的環繞體（那是 Adapter 另外播的）。 */
     particle(Object.assign({
-      id: 'motes', asset: A.dot, z: 1, blend: 'add', tint: o.tint,
+      id: 'motes', asset: A.dot, z: 2, blend: 'add', tint: o.tint,
       rate: 6, lifetime: [0.5, 0.9], spawnRadius: 96, speed: [15, 40], direction: -90, spread: 60,
       gravity: { x: 0, y: -40 }, orbitRps: 0.4, drag: 0.8, startPx: [3, 6],
       alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]

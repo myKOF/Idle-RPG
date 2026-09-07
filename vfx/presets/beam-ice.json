@@ -11,15 +11,15 @@
       "zIndex": 0,
       "scale": {
         "x": 0.3906,
-        "y": 0.0469
+        "y": 0.4908
       },
       "anchor": {
         "x": 0,
         "y": 0.5
       },
-      "alpha": 0.5,
+      "alpha": 0.4,
       "tint": "#79d8ff",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 0.45,
       "alphaOverLife": [
         [
@@ -47,7 +47,7 @@
       "zIndex": 1,
       "scale": {
         "x": 0.3906,
-        "y": 0.0156
+        "y": 0.2887
       },
       "anchor": {
         "x": 0,
@@ -83,7 +83,7 @@
       "zIndex": 2,
       "scale": {
         "x": 0.3906,
-        "y": 0.0078
+        "y": 0.1213
       },
       "anchor": {
         "x": 0,
@@ -124,7 +124,7 @@
       },
       "size": {
         "x": 200,
-        "y": 8
+        "y": 30
       },
       "alpha": 0.7,
       "tint": "#f2fbff",
