@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-explosion-sheet",
+  "groups": [
+    {
+      "id": "burst-explosion-sheet",
+      "name": "burst-explosion-sheet",
+      "layerIds": [
+        "boom"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-explosion-sheet"
+  ]
+}

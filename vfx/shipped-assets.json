@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 85,
+  "assetCount": 86,
   "assets": [
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -600,6 +600,13 @@
       "package": "splat-pack",
       "contentHash": "sha256:4b3444415554461f282c972eeba68cd4abc6cac4febf4da0ff8c53a7a3f4533b",
       "fileSize": 5638
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_explosion_1_517x517.png",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Explosion_1_517x517.png",
+      "package": "spritemancer-vfx",
+      "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
+      "fileSize": 2834222
     }
   ]
 }
