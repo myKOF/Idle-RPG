@@ -7,13 +7,14 @@
     {
       "id": "glow",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 0,
+      "rotation": -1.5708,
       "scale": {
-        "x": 0.1094,
-        "y": 0.1523
+        "x": 0.1641,
+        "y": 0.1484
       },
-      "alpha": 0.35,
+      "alpha": 0.3,
       "tint": "#b9f6cf",
       "blendMode": "add",
       "duration": 0.55,
@@ -35,10 +36,11 @@
     {
       "id": "body",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 1,
+      "rotation": -1.5708,
       "scale": {
-        "x": 0.0508,
+        "x": 0.1289,
         "y": 0.1172
       },
       "alpha": 1,
@@ -77,10 +79,11 @@
     {
       "id": "core",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 2,
+      "rotation": -1.5708,
       "scale": {
-        "x": 0.0313,
+        "x": 0.0938,
         "y": 0.0859
       },
       "alpha": 1,

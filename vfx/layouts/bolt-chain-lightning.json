@@ -8,8 +8,7 @@
       "layerIds": [
         "glow",
         "seg-a",
-        "seg-b",
-        "core"
+        "seg-b"
       ]
     }
   ],

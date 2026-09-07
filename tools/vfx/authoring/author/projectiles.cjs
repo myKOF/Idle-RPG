@@ -169,13 +169,26 @@ P['proj-earth-rock'] = () => ({
   ]
 });
 
-/* ---------- proj-wind-crescent：風刃（寬 40、深 16，尖端朝 +X） ---------- */
+/* ---------- proj-wind-crescent：風刃 ----------
+   原本是 slash03 畫成 16x40——長寬比對，但只有 16 個像素寬，畫面上是一根
+   小指甲片。使用者的說法是「非常小，形狀也不太適合，應該像半月斬擊那種的」。
+
+   改成與 slash-phys-big 同一組素材（slash02 外弧 + slash01 內芯），
+   尺寸 96x104，接近 slash-phys-big 的 108。
+
+   rotDeg -90 是關鍵：slash02 的月牙原生是「開口朝上」的 ∪ 形。風刃朝 +X 飛，
+   開口必須朝後（-X），凸面朝前，所以要逆時針轉 90 度。
+   轉 180 度會變成開口朝下、轉 0 度是開口朝上，兩者看起來都像側著飛。
+
+   三層同形狀疊出厚度：外圈是寬一號的暗色輝光、中間是元素色刃身、
+   內芯是小一號的白熱。用同一個形狀而不是另外找素材當「銳邊」，
+   月牙的輪廓才不會被第二種形狀切斷。 */
 P['proj-wind-crescent'] = () => ({
   id: 'proj-wind-crescent', duration: 1.5, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 30, sizeY: 56, alpha: 0.35, tint: T.wind.glow, blend: 'add', duration: 1.5, alphaOverLife: GLOW_A }),
-    sprite({ id: 'body', asset: A.slash03, z: 1, sizeX: 16, sizeY: 40, alpha: 1, tint: T.wind.c1, blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
-    sprite({ id: 'core', asset: A.slash03, z: 2, sizeX: 10, sizeY: 30, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
-    trail({ tint: '#ffffff', rate: 16, startPx: [3, 5], lifetime: [0.1, 0.2], spread: 20 })
+    sprite({ id: 'glow', asset: A.slash02, z: 0, sizeX: 130, sizeY: 118, rotDeg: -90, alpha: 0.3, tint: T.wind.glow, blend: 'add', duration: 1.5, alphaOverLife: GLOW_A }),
+    sprite({ id: 'body', asset: A.slash02, z: 1, sizeX: 104, sizeY: 96, rotDeg: -90, alpha: 0.95, tint: T.wind.c1, blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
+    sprite({ id: 'core', asset: A.slash01, z: 2, sizeX: 78, sizeY: 72, rotDeg: -90, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
+    trail({ tint: '#ffffff', rate: 16, startPx: [4, 7], lifetime: [0.1, 0.2], spread: 20 })
   ]
 });
 

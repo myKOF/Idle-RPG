@@ -134,6 +134,7 @@ const A = {
   flare03: 'new_materials/flare/flare_3.png',
   flare01: 'particle-pack/png-black-background/flare_01.png',
   // 電
+  bolt04: 'particle-pack/png-black-background/spark_04.png',
   bolt05: 'particle-pack/png-black-background/spark_05.png',
   bolt06: 'particle-pack/png-black-background/spark_06.png',
   bolt07H: 'particle-pack/png-black-background/spark_07.png',

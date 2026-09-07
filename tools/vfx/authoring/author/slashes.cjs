@@ -197,18 +197,22 @@ P['slash-thrust-lance'] = () => ({
   ]
 });
 
-/* ---------- slash-wind-crescent：真空斬新月（寬 75、深 33，朝 +X） ---------- */
+/* ---------- slash-wind-crescent：真空斬新月（朝 +X） ----------
+   與 proj-wind-crescent 同一套形狀語彙：slash02 外弧 + slash01 內芯 + rotDeg -90。
+   原本用 slash03（細長刀片）畫成 33x75，畫面上是一道細絲；
+   風系的斬擊要與物理系的半月斬（slash-phys-big）讀起來是同一種東西，
+   只是顏色不同——用不同的素材會讓它看起來像另一個系統畫的。 */
 P['slash-wind-crescent'] = () => ({
   id: 'slash-wind-crescent', duration: 0.32, layers: [
     sprite({
-      id: 'body', asset: A.slash03, z: 1, sizeX: 33, sizeY: 75, alpha: 0.95, tint: T.wind.c1,
-      blend: 'add', duration: 0.32,
+      id: 'body', asset: A.slash02, z: 1, sizeX: 96, sizeY: 88, rotDeg: -90,
+      alpha: 0.95, tint: T.wind.c1, blend: 'add', duration: 0.32,
       alphaOverLife: [[0, 0], [0.12, 1], [0.7, 0.6], [1, 0.15]],
       scaleOverLife: [[0, 0.55], [1, 1]]
     }),
     sprite({
-      id: 'core', asset: A.slash03, z: 2, sizeX: 20, sizeY: 60, alpha: 1, tint: '#ffffff',
-      blend: 'add', duration: 0.3,
+      id: 'core', asset: A.slash01, z: 2, sizeX: 72, sizeY: 66, rotDeg: -90,
+      alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.3,
       alphaOverLife: [[0, 0], [0.12, 1], [0.7, 0.5], [1, 0.1]],
       scaleOverLife: [[0, 0.55], [1, 1]]
     })

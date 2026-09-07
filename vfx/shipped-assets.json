@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 94,
+  "assetCount": 95,
   "assets": [
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -488,6 +488,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:89c6159f0a532c3d2409e20e36f9885435ceaa42817da40f5f37112527ffd869",
       "fileSize": 72740
+    },
+    {
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "relativePath": "particle-pack/PNG (Black background)/spark_04.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:542198dcb07aab51469cdb6211c87583ebc2516e6b03238fafbf92c6c8966707",
+      "fileSize": 77451
     },
     {
       "assetId": "particle-pack/png-black-background/spark_05.png",

@@ -236,9 +236,11 @@ P['ground-homing-ice-shard'] = () => ({
 
 P['ground-homing-wind-crescent'] = () => ({
   id: 'ground-homing-wind-crescent', duration: 0.55, loop: true, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 56, sizeY: 78, alpha: 0.35, tint: T.wind.glow, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.3, 0.45) }),
-    sprite({ id: 'body', asset: A.slash03, z: 1, sizeX: 26, sizeY: 60, alpha: 1, tint: T.wind.c1, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.95, 1), scaleOverLife: LOOP_A(1, 1.06) }),
-    sprite({ id: 'core', asset: A.slash03, z: 2, sizeX: 16, sizeY: 44, alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.9, 1) }),
+    /* 形狀與 proj-wind-crescent 一致（slash02/01 + rotDeg -90），只是小一號：
+       這是繞著自己轉的追蹤刃，不是射出去的那一道。 */
+    sprite({ id: 'glow', asset: A.slash02, z: 0, sizeX: 84, sizeY: 76, rotDeg: -90, alpha: 0.3, tint: T.wind.glow, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.3, 0.45) }),
+    sprite({ id: 'body', asset: A.slash02, z: 1, sizeX: 66, sizeY: 60, rotDeg: -90, alpha: 1, tint: T.wind.c1, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.95, 1), scaleOverLife: LOOP_A(1, 1.06) }),
+    sprite({ id: 'core', asset: A.slash01, z: 2, sizeX: 48, sizeY: 44, rotDeg: -90, alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.9, 1) }),
     particle({
       id: 'wisp', asset: A.dot, z: 3, blend: 'add', tint: '#ffffff',
       rate: 12, lifetime: [0.18, 0.3], spawnRadius: 8, speed: [20, 50], direction: 180, spread: 40,
