@@ -42,6 +42,33 @@ function core(o) {
   return layers;
 }
 
+/* ---- 序列幀圖層 ----
+   素材：CodeManu「VFX Free Pack」（OpenGameArt，CC0，不需標註），
+   經 tools/vfx/shrink-sheets.cjs 降到 256px 的格子（原始 517px 用不到，
+   在遊戲裡最多播到 300px，VRAM 卻是四倍）。
+
+   與手工疊層的差別：動畫在素材裡，不在曲線裡。所以這一類 preset 常常只有
+   一個圖層——形狀的演變（白閃 → 火球 → 碎裂 → 煙環）是畫出來的，
+   不是用五六層靜圖的縮放與透明度湊出來的。
+
+   ⚠️ 一律用 30fps 版。60fps 版畫面內容相同但格數多一倍，等於兩倍 VRAM。
+   ⚠️ blend 用 normal：這些是有完整 alpha 的彩色畫，不是灰階遮罩。
+      用 add 的話煙的灰色會變成發光的霧、白色核心會過曝成一片死白。 */
+const SHEET = {
+  explosion:   { asset: 'spritemancer-vfx-256/30fps/effect_explosion_1_256x256.png', cols: 6, rows: 5 },
+  explosion2:  { asset: 'spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png', cols: 6, rows: 5 },
+  bloodImpact: { asset: 'spritemancer-vfx-256/30fps/effect_bloodimpact_1_69x60.png', cols: 6, rows: 5 }
+};
+function sheetFx(def, o) {
+  return sprite(Object.assign({
+    id: 'sheet', asset: def.asset, z: o.z === undefined ? 1 : o.z,
+    blend: 'normal', alpha: 1,
+    sheet: { columns: def.cols, rows: def.rows, mode: 'life' },
+    /* 尾端淡出：素材最後幾格常常還有淡煙，硬切會看到它突然消失。 */
+    alphaOverLife: [[0, 1], [0.82, 1], [1, 0]]
+  }, o));
+}
+
 /* ---- 共用火花：6 顆、向外、受重力、被空氣拖慢、末段變暗 ----
    drag：碎屑噴出去之後會減速。沒有它的話火花是等速直線＋重力的拋物線，
    看起來像被彈開的硬物，而不是被炸散的碎屑。3/秒 在 0.3 秒的壽命裡
@@ -61,6 +88,14 @@ function sparks(o) {
 const P = {};
 
 /* ---------- hit-phys：暖白方形碎片 ---------- */
+/* ⚠️ 這一份試過序列幀（Effect_SmallHit）之後**退回手工版**。
+   SmallHit 是一圈細白線的星芒，在 96px 下幾乎看不見——線寬不到一個像素，
+   縮放時直接被抹掉。實測對照圖：手工版的環與閃光清楚，序列幀版是一團灰霧。
+
+   這是「哪些特效適合序列幀」的分界：**粗實高對比的形狀**（火球、爆炸、
+   血漬）縮到 60～96px 仍然讀得出來；**細線條**（星芒、萬花筒、電弧絲）
+   要 200px 以上才成立。受擊特效在這個遊戲裡只有 60～96px，所以這一類
+   一律留手工版。 */
 P['hit-phys'] = () => ({
   id: 'hit-phys', duration: 0.4, layers: [
     ...core({ haloTint: T.phys.glow, haloAlpha: 0.4, ringTint: T.phys.c1, flashTint: T.phys.c2 }),
@@ -69,20 +104,21 @@ P['hit-phys'] = () => ({
 });
 
 /* ---------- hit-fire：火花偏向上飄 + 3 片火舌 ---------- */
+/* 序列幀（Effect_Explosion2，中型火球）＋ 元素色光暈。
+   原本是 core（光暈／環／閃光）＋ 火星 ＋ 三片火舌共五層，靠縮放與透明度
+   湊出「炸開」的感覺；序列幀直接把形狀的演變畫出來，兩層就夠。
+   火星那一層留著——它是往上飄的，與素材的球狀擴散是不同方向的動態。 */
 P['hit-fire'] = () => ({
-  id: 'hit-fire', duration: 0.4, layers: [
-    ...core({ haloTint: T.fire.glow, haloAlpha: 0.55, ringTint: T.fire.c1, flashAsset: A.fire01, flashTint: T.fire.c2, flashSize: 44 }),
-    /* 火星走火焰色階（白熱 → 黃 → 橙紅 → 燼）而不是共用的壓暗：
-       火花的顏色本來就是溫度，冷卻時該偏紅而不是單純變暗。 */
-    sparks({ tint: T.fire.c2, direction: -90, spread: 240, speed: [60, 130], gravity: { x: 0, y: -140 }, lifetime: [0.26, 0.38], startPx: [4, 8], tintOverLife: RAMP.fireCore }),
-    particle({
-      id: 'tongues', asset: A.flame05, z: 4, blend: 'add', tint: T.fire.c1,
-      burst: 3, lifetime: [0.22, 0.32], spawnRadius: 8, speed: [30, 70], direction: -90, spread: 90,
-      /* 火舌往上竄然後被自己的浮力拖住：drag 讓它在頂點附近停留，
-         而不是等速一路衝出畫面。噪聲讓三片火舌各自扭一下，不像三根直棒。 */
-      gravity: { x: 0, y: -60 }, drag: 4, noise: { strength: 5, frequency: 0.06, scrollSpeed: 3 },
-      tintOverLife: RAMP.fireCore,
-      startPx: [14, 22], alphaOverLife: [[0, 0], [0.15, 1], [0.6, 0.8], [1, 0]], scaleOverLife: [[0, 0.7], [0.4, 1], [1, 0.5]]
+  id: 'hit-fire', duration: 0.45, layers: [
+    sprite({
+      id: 'halo', asset: A.glowSoft, z: 0, size: 72, alpha: 0.5, tint: T.fire.glow, blend: 'add',
+      duration: 0.28, alphaOverLife: HALO_A, scaleOverLife: HALO_S
+    }),
+    sheetFx(SHEET.explosion2, { size: 104, z: 1 }),
+    sparks({
+      tint: T.fire.c2, direction: -90, spread: 240, speed: [60, 130],
+      gravity: { x: 0, y: -140 }, lifetime: [0.26, 0.38], startPx: [4, 8],
+      tintOverLife: RAMP.fireCore, z: 2
     })
   ]
 });
@@ -219,53 +255,26 @@ P['hit-bleed'] = () => ({
 });
 
 /* ---------- hit-fire-explosion：大型火球爆炸（環半徑 6→60px、0.62s；18 顆火花 + 6 火舌 + 煙） ---------- */
+/* 序列幀（Effect_Explosion，大爆炸）。原本是九層手工疊出來的，
+   序列幀版有完整的爆炸生命史：白閃 → 火球膨脹 → 碎裂成橘色顆粒 → 白煙環 → 灰煙散開。
+   那個「碎裂」的階段是靜圖疊層做不出來的——形狀本身要變。
+
+   保留兩層：底下的元素色光暈（屬性辨識）與衝擊環（範圍感，素材本身沒有明確邊界）。 */
 P['hit-fire-explosion'] = () => ({
-  id: 'hit-fire-explosion', duration: 0.7, layers: [
+  id: 'hit-fire-explosion', duration: 0.75, layers: [
     sprite({
-      id: 'halo', asset: A.glowSoft, z: 0, size: 150, alpha: 0.6, tint: T.fire.glow, blend: 'add',
+      id: 'halo', asset: A.glowSoft, z: 0, size: 150, alpha: 0.55, tint: T.fire.glow, blend: 'add',
       duration: 0.45, alphaOverLife: HALO_A, scaleOverLife: [[0, 0.5], [0.3, 1], [1, 1.2]]
     }),
-    particle({
-      id: 'smoke', asset: A.smokeT, z: 1, blend: 'normal', tint: '#3a2a24', alpha: 0.55,
-      burst: 4, lifetime: [0.45, 0.6], spawnRadius: 10, speed: [30, 70], direction: -90, spread: 360,
-      gravity: { x: 0, y: -40 }, startPx: [30, 50], delay: 0.08,
-      alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.6]], rotationStart: [0, PI], rotationSpeed: [-1.5, 1.5]
-    }),
     sprite({
-      id: 'ring', asset: A.ringThin, z: 2, size: 150, alpha: 0.95, tint: T.fire.glow, blend: 'add',
-      duration: 0.62, alphaOverLife: [[0, 0], [0.06, 1], [0.6, 0.6], [1, 0]], scaleOverLife: [[0, 0.1], [0.4, 0.72], [1, 1]]
+      id: 'ring', asset: A.ringThin, z: 1, size: 150, alpha: 0.85, tint: T.fire.glow, blend: 'add',
+      duration: 0.62, alphaOverLife: [[0, 0], [0.06, 1], [0.6, 0.6], [1, 0]],
+      scaleOverLife: [[0, 0.1], [0.4, 0.72], [1, 1]]
     }),
-    sprite({
-      id: 'ring-lens', asset: A.impactRingLens, z: 3, size: 136, alpha: 0.8, tint: '#ffb21c', blend: 'add', delay: 0.05,
-      duration: 0.5, alphaOverLife: [[0, 0], [0.1, 1], [0.55, 0.5], [1, 0]], scaleOverLife: [[0, 0.15], [0.45, 0.8], [1, 1]]
-    }),
-    sprite({
-      id: 'fireball', asset: A.flame04, z: 4, size: 96, alpha: 1, tint: '#c51e0d', blend: 'add',
-      duration: 0.5, alphaOverLife: [[0, 0], [0.1, 1], [0.5, 0.8], [1, 0]], scaleOverLife: [[0, 0.3], [0.25, 1], [1, 1.3]], rotationOverLife: [[0, 0], [1, 0.5]]
-    }),
-    sprite({
-      id: 'core', asset: A.fire01, z: 5, size: 64, alpha: 1, tint: T.fire.c2, blend: 'add',
-      duration: 0.3, alphaOverLife: FLASH_A, scaleOverLife: [[0, 0.4], [0.15, 1], [1, 1.25]]
-    }),
-    sprite({
-      id: 'hot', asset: A.discB, z: 6, size: 34, alpha: 1, tint: '#fff1c0', blend: 'add',
-      duration: 0.14, alphaOverLife: C.pop, scaleOverLife: [[0, 0.6], [0.2, 1], [1, 1.3]]
-    }),
-    particle({
-      id: 'sparks', asset: A.dot, z: 7, blend: 'add', tint: T.fire.c2,
-      burst: 18, lifetime: [0.28, 0.42], spawnRadius: 8, speed: [120, 220], direction: -90, spread: 360,
-      gravity: { x: 0, y: 360 }, startPx: [6, 11], alphaOverLife: [[0, 1], [0.5, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.35]]
-    }),
-    particle({
-      id: 'tongues', asset: A.flame05, z: 8, blend: 'add', tint: T.fire.glow,
-      burst: 6, lifetime: [0.24, 0.36], spawnRadius: 10, speed: [90, 170], direction: -90, spread: 360,
-      gravity: { x: 0, y: 280 }, startPx: [18, 28], alignToVelocity: true, velocityRotationOffset: -+(PI / 2).toFixed(4),
-      alphaOverLife: [[0, 0.6], [0.15, 1], [0.6, 0.8], [1, 0]], scaleOverLife: [[0, 0.8], [0.3, 1], [1, 0.5]]
-    })
+    sheetFx(SHEET.explosion, { size: 190, z: 2 })
   ]
 });
 
-/* ---------- hit-thunder-purple：紫環 R 6→24 + 10 顆電花 + 紫外暈 + 電弧網 ---------- */
 P['hit-thunder-purple'] = () => ({
   id: 'hit-thunder-purple', duration: 0.45, layers: [
     sprite({

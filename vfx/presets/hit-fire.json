@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-fire",
-  "duration": 0.4,
+  "duration": 0.45,
   "loop": false,
   "layers": [
     {
@@ -10,14 +10,13 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.125,
-        "y": 0.125
+        "x": 0.1406,
+        "y": 0.1406
       },
-      "alpha": 0.55,
+      "alpha": 0.5,
       "tint": "#ff6a2a",
       "blendMode": "add",
-      "delay": 0,
-      "duration": 0.26,
+      "duration": 0.28,
       "alphaOverLife": [
         [
           0,
@@ -52,105 +51,41 @@
       ]
     },
     {
-      "id": "ring",
+      "id": "sheet",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.0898,
-        "y": 0.0898
-      },
-      "alpha": 0.9,
-      "tint": "#e63924",
-      "blendMode": "add",
-      "delay": 0,
-      "duration": 0.3,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.08,
-          1
-        ],
-        [
-          0.55,
-          0.75
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.33
-        ],
-        [
-          0.35,
-          0.8
-        ],
-        [
-          1,
-          1
-        ]
-      ]
-    },
-    {
-      "id": "flash",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/fire_01.png",
-      "zIndex": 3,
-      "rotation": 0,
-      "scale": {
-        "x": 0.0859,
-        "y": 0.0859
+        "x": 0.2031,
+        "y": 0.2031
       },
       "alpha": 1,
-      "tint": "#ffd447",
-      "blendMode": "add",
-      "delay": 0,
-      "duration": 0.16,
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
-          0
-        ],
-        [
-          0.12,
           1
         ],
         [
-          0.5,
-          0.7
+          0.82,
+          1
         ],
         [
           1,
           0
         ]
       ],
-      "scaleOverLife": [
-        [
-          0,
-          0.5
-        ],
-        [
-          0.2,
-          1
-        ],
-        [
-          1,
-          1.15
-        ]
-      ]
+      "sheet": {
+        "columns": 6,
+        "mode": "life",
+        "rows": 5
+      }
     },
     {
       "id": "sparks",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 5,
+      "zIndex": 2,
       "tint": "#ffd447",
       "blendMode": "add",
       "emission": {
@@ -224,100 +159,6 @@
         [
           1,
           0.4
-        ]
-      ]
-    },
-    {
-      "id": "tongues",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_05.png",
-      "zIndex": 4,
-      "tint": "#e63924",
-      "blendMode": "add",
-      "emission": {
-        "count": 3,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.22,
-        0.32
-      ],
-      "spawn": {
-        "radius": 8,
-        "shape": "circle"
-      },
-      "speed": [
-        30,
-        70
-      ],
-      "direction": -90,
-      "spread": 90,
-      "gravity": {
-        "x": 0,
-        "y": -60
-      },
-      "drag": 4,
-      "noise": {
-        "frequency": 0.06,
-        "scrollSpeed": 3,
-        "strength": 5
-      },
-      "startScale": [
-        0.0273,
-        0.043
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.15,
-          1
-        ],
-        [
-          0.6,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#ffffff"
-        ],
-        [
-          0.18,
-          "#ffe08a"
-        ],
-        [
-          0.45,
-          "#ff7a2a"
-        ],
-        [
-          0.75,
-          "#c02a12"
-        ],
-        [
-          1,
-          "#3a1008"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.4,
-          1
-        ],
-        [
-          1,
-          0.5
         ]
       ]
     }

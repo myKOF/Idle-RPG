@@ -7,10 +7,8 @@
       "name": "hit-fire",
       "layerIds": [
         "halo",
-        "ring",
-        "flash",
-        "sparks",
-        "tongues"
+        "sheet",
+        "sparks"
       ]
     }
   ],

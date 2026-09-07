@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 1890,
+  "assetCount": 1973,
   "assets": [
     {
       "assetId": "foliage-sprites/png/flat/sprite_0001.png",
@@ -85549,6 +85549,2444 @@
       }
     },
     {
+      "assetId": "spritemancer-vfx-256/30fps/effect_anima_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Anima_1_256x256.png",
+      "format": "png",
+      "fileSize": 392077,
+      "contentHash": "sha256:c3136e08d08f63f4d76f8758a1e3995f92d2fea5acdaaaa03209ad47e60e0a01",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3087,
+          "visibleRatio": 0.3324,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7143,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5257,
+          "max": 0.8206
+        },
+        "contentBounds": {
+          "x": 10,
+          "y": 5,
+          "width": 1520,
+          "height": 1271
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_bighit_1_256x254.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_BigHit_1_256x254.png",
+      "format": "png",
+      "fileSize": 140427,
+      "contentHash": "sha256:a054d7748f1dff48ff2b113bd0ff4f7ecccf7b64479a7eeb85eb5d3a92074ff6",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1270
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0161,
+          "visibleRatio": 0.0292,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7344,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6859,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 28,
+          "y": 38,
+          "width": 1486,
+          "height": 468
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_bloodimpact_1_69x60.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_BloodImpact_1_69x60.png",
+      "format": "png",
+      "fileSize": 9280,
+      "contentHash": "sha256:5fbe13dc4e8b7dd3827a06458a24a73c7c0fca768e21e3a29300ba9bbb348803",
+      "facts": {
+        "dimensions": {
+          "width": 414,
+          "height": 300
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0339,
+          "visibleRatio": 0.0395,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4539,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8118,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 5,
+          "y": 16,
+          "width": 406,
+          "height": 236
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_charged_1_221x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Charged_1_221x256.png",
+      "format": "png",
+      "fileSize": 133789,
+      "contentHash": "sha256:3224c5a8f9ae4ba9c4f868c709013d01d9f28bf158bcf6ee1a4ac0b30c0da79a",
+      "facts": {
+        "dimensions": {
+          "width": 1547,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0115,
+          "visibleRatio": 0.0183,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5115,
+          "max": 0.9925,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8717,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 35,
+          "y": 53,
+          "width": 1477,
+          "height": 1448
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_constellation_1_245x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Constellation_1_245x256.png",
+      "format": "png",
+      "fileSize": 737052,
+      "contentHash": "sha256:5109a04d0c70b66a95fb0c60682f1a9ebc204433bbcc48f37e930f2c56c51f7f",
+      "facts": {
+        "dimensions": {
+          "width": 1470,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.246,
+          "visibleRatio": 0.2771,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6875,
+          "max": 0.9852,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3802,
+          "max": 0.8016
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 7,
+          "width": 1465,
+          "height": 1269
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_ditheredfire_1_256x122.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_DitheredFire_1_256x122.png",
+      "format": "png",
+      "fileSize": 506428,
+      "contentHash": "sha256:e729d6cd9b54fbfe22069879414d496e3029ab6f8ed366d19bb7068d9c13ca69",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 610
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.6304,
+          "visibleRatio": 0.6742,
+          "borderMean": 0.0005
+        },
+        "luminance": {
+          "mean": 0.7871,
+          "max": 1,
+          "borderMean": 0.0467,
+          "borderNearBlackRatio": 0.9384,
+          "borderNearWhiteRatio": 0.0161
+        },
+        "saturation": {
+          "mean": 0.4716,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 3,
+          "width": 1535,
+          "height": 606
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.7609,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_eldenring_1_254x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_EldenRing_1_254x256.png",
+      "format": "png",
+      "fileSize": 348553,
+      "contentHash": "sha256:30fa5a424734ed6a289209328f8ea1fbbf8dc2ab71d4effc51a19997d2341f2b",
+      "facts": {
+        "dimensions": {
+          "width": 1524,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2179,
+          "visibleRatio": 0.2328,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7514,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5082,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 3,
+          "width": 1522,
+          "height": 1268
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_electricshield_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_ElectricShield_1_256x256.png",
+      "format": "png",
+      "fileSize": 240970,
+      "contentHash": "sha256:277cafa5463b865e0437dbd59e2ed871f77d919fa604c0ceedb321fac61d993e",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2454,
+          "visibleRatio": 0.2605,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7133,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4353,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 1,
+          "width": 1533,
+          "height": 1269
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Explosion2_1_256x256.png",
+      "format": "png",
+      "fileSize": 661468,
+      "contentHash": "sha256:cd3e8a9f97104ffebb788db00a10016221c65f661cf323d88f7208b206072762",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1707,
+          "visibleRatio": 0.275,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8982,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3479,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 5,
+          "y": 64,
+          "width": 1529,
+          "height": 1202
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Explosion_1_256x256.png",
+      "format": "png",
+      "fileSize": 1044673,
+      "contentHash": "sha256:407183f84815d1d8bee98d3e46f7379296b59796350f8de2e675ccc94fea3793",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1262,
+          "visibleRatio": 0.2457,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6598,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4813,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 32,
+          "y": 1,
+          "width": 1482,
+          "height": 1233
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_fastpixelfire_1_173x193.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_FastPixelFire_1_173x193.png",
+      "format": "png",
+      "fileSize": 22729,
+      "contentHash": "sha256:0223a3e012e5f8c41a65b39d5f99d5ce8fd34a662b38f8aa00103e9fb5a7954a",
+      "facts": {
+        "dimensions": {
+          "width": 1038,
+          "height": 965
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4156,
+          "visibleRatio": 0.4156,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5384,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6783,
+          "max": 0.9615
+        },
+        "contentBounds": {
+          "x": 6,
+          "y": 6,
+          "width": 1021,
+          "height": 956
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_hyperspeed_1_256x255.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Hyperspeed_1_256x255.png",
+      "format": "png",
+      "fileSize": 542862,
+      "contentHash": "sha256:a70d99e29f30930edda69b6d05b264d97302705dd15202462129c8490bea03c4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1275
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3941,
+          "visibleRatio": 0.4834,
+          "borderMean": 0.0012
+        },
+        "luminance": {
+          "mean": 0.6285,
+          "max": 1,
+          "borderMean": 0.1187,
+          "borderNearBlackRatio": 0.8295,
+          "borderNearWhiteRatio": 0.0009
+        },
+        "saturation": {
+          "mean": 0.8298,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1535,
+          "height": 1274
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.7327,
+          "v": 0.8966
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_impact_1_247x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Impact_1_247x256.png",
+      "format": "png",
+      "fileSize": 58514,
+      "contentHash": "sha256:1b34f2418860a6737ad351a3532f2c545a426aee1ce4d87577318910c9791d8c",
+      "facts": {
+        "dimensions": {
+          "width": 1482,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0145,
+          "visibleRatio": 0.0278,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 9,
+          "y": 26,
+          "width": 1468,
+          "height": 678
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_kabooms_1_256x207.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Kabooms_1_256x207.png",
+      "format": "png",
+      "fileSize": 789971,
+      "contentHash": "sha256:b2f19f07f032d06c868eab6e578af06e26f0ed3ada88717b2095e636e87ee8df",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1035
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3583,
+          "visibleRatio": 0.4135,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4893,
+          "max": 0.9969,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.648,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 1,
+          "width": 1533,
+          "height": 1032
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_magma_1_256x125.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Magma_1_256x125.png",
+      "format": "png",
+      "fileSize": 398654,
+      "contentHash": "sha256:f9403bede661c1c00f8bdb7b83a3cc745b739e4393a2a8ab099500ffcc690677",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 625
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3602,
+          "visibleRatio": 0.3742,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.612,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6433,
+          "max": 0.9585
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 10,
+          "width": 1531,
+          "height": 613
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_powerchords_1_256x175.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_PowerChords_1_256x175.png",
+      "format": "png",
+      "fileSize": 987749,
+      "contentHash": "sha256:47e791f4260e10c4e452f62de0be85d456d3ff5437080fea695745bbfe6db4f4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 875
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4406,
+          "visibleRatio": 0.4594,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8376,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2605,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 4,
+          "y": 6,
+          "width": 1527,
+          "height": 868
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_puffandstars_1_120x109.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_PuffAndStars_1_120x109.png",
+      "format": "png",
+      "fileSize": 254659,
+      "contentHash": "sha256:f6bd0cf936d3ae02133fb1364b70eb289323b9f140fa8c7df13f6549c94f1fa9",
+      "facts": {
+        "dimensions": {
+          "width": 840,
+          "height": 654
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1328,
+          "visibleRatio": 0.1971,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2558,
+          "max": 0.9538,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2026,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 5,
+          "y": 9,
+          "width": 820,
+          "height": 528
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_smallhit_1_256x254.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_SmallHit_1_256x254.png",
+      "format": "png",
+      "fileSize": 119061,
+      "contentHash": "sha256:c4eb9fbd166e00ce6c856e3d390c2017cee62e012987043be9e74e29a61d8ccb",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1270
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0139,
+          "visibleRatio": 0.0242,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7366,
+          "max": 1,
+          "borderMean": 0.0002,
+          "borderNearBlackRatio": 0.9996,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6775,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 5,
+          "y": 35,
+          "width": 1531,
+          "height": 727
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9993,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_tentacles_1_256x190.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Tentacles_1_256x190.png",
+      "format": "png",
+      "fileSize": 443293,
+      "contentHash": "sha256:9d54e78ba7f65ff467cb7b883083979134d15262a9c87aca0401ad9dfd4abc7c",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 950
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4338,
+          "visibleRatio": 0.465,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6404,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3745,
+          "max": 0.8
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 3,
+          "width": 1516,
+          "height": 946
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_thevortex_1_254x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_TheVortex_1_254x256.png",
+      "format": "png",
+      "fileSize": 828368,
+      "contentHash": "sha256:26814419dc82e5b307dec1ed104dff4e9cb90d9fbb5439b299effafef8fdcce1",
+      "facts": {
+        "dimensions": {
+          "width": 1524,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2297,
+          "visibleRatio": 0.2457,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8305,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3354,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 12,
+          "y": 26,
+          "width": 1508,
+          "height": 1131
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_wheel_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Wheel_1_256x256.png",
+      "format": "png",
+      "fileSize": 781150,
+      "contentHash": "sha256:b5b5f148b5d7e2dd274654cc8505f0d5fb71eed3be921bf18ab74624d4e622f2",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1280
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2175,
+          "visibleRatio": 0.2493,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8456,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4671,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 15,
+          "width": 1530,
+          "height": 1233
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_worm_1_256x229.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_Worm_1_256x229.png",
+      "format": "png",
+      "fileSize": 463573,
+      "contentHash": "sha256:2d7c1499794e15589152fef75b8054878fb985620f0f56e9c65d48a0fea344a5",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1145
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4212,
+          "visibleRatio": 0.4435,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8136,
+          "max": 0.9477,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3012,
+          "max": 0.843
+        },
+        "contentBounds": {
+          "x": 8,
+          "y": 1,
+          "width": 1519,
+          "height": 1143
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_anima_1_251x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Anima_1_251x256.png",
+      "format": "png",
+      "fileSize": 720638,
+      "contentHash": "sha256:ff15ca6a6873482f1ac498497073ba00a7511675d8c2502a144de24a96f48fea",
+      "facts": {
+        "dimensions": {
+          "width": 2259,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2992,
+          "visibleRatio": 0.3225,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7138,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5263,
+          "max": 0.8206
+        },
+        "contentBounds": {
+          "x": 5,
+          "y": 5,
+          "width": 2248,
+          "height": 1783
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_bighit_1_250x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_BigHit_1_250x256.png",
+      "format": "png",
+      "fileSize": 287497,
+      "contentHash": "sha256:5a22950d999ffdcbb3c577bf56327a8599199fd318248fe32ca26e3f7e267ba5",
+      "facts": {
+        "dimensions": {
+          "width": 2250,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0188,
+          "visibleRatio": 0.0319,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7597,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6364,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 8,
+          "y": 50,
+          "width": 2233,
+          "height": 717
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_bloodimpact_1_60x63.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_BloodImpact_1_60x63.png",
+      "format": "png",
+      "fileSize": 18101,
+      "contentHash": "sha256:c91163de877b1f9d0798a5cf8eb2f27b066c8773c0b1d0693ac35aa40014a382",
+      "facts": {
+        "dimensions": {
+          "width": 540,
+          "height": 441
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0326,
+          "visibleRatio": 0.0386,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4578,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.7939,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 9,
+          "width": 536,
+          "height": 367
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_charged_1_256x212.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Charged_1_256x212.png",
+      "format": "png",
+      "fileSize": 273107,
+      "contentHash": "sha256:928a036c39accd71e9cd35439cb0a262c59509708aa11820fb6577513f82e434",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 1696
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0135,
+          "visibleRatio": 0.0213,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5069,
+          "max": 0.9847,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8697,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 25,
+          "y": 26,
+          "width": 2501,
+          "height": 1645
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_constellation_1_253x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Constellation_1_253x256.png",
+      "format": "png",
+      "fileSize": 1433082,
+      "contentHash": "sha256:d059426581e9358e09ee596d659c092800b965ae5b4a3532ca9a1dc0158bfae2",
+      "facts": {
+        "dimensions": {
+          "width": 2277,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.229,
+          "visibleRatio": 0.2575,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6878,
+          "max": 0.9852,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3792,
+          "max": 0.8016
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 8,
+          "width": 2274,
+          "height": 1780
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_ditheredfire_1_256x122.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_DitheredFire_1_256x122.png",
+      "format": "png",
+      "fileSize": 988594,
+      "contentHash": "sha256:4fdb1d9fee20ac1cd02915ed66e9bb9bac344c982416ef39d216d3dd1a331d33",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 854
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.6003,
+          "visibleRatio": 0.6417,
+          "borderMean": 0.0005
+        },
+        "luminance": {
+          "mean": 0.7879,
+          "max": 1,
+          "borderMean": 0.045,
+          "borderNearBlackRatio": 0.9384,
+          "borderNearWhiteRatio": 0.0171
+        },
+        "saturation": {
+          "mean": 0.4708,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 3,
+          "width": 2303,
+          "height": 850
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.7526,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_eldenring_1_254x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_EldenRing_1_254x256.png",
+      "format": "png",
+      "fileSize": 583082,
+      "contentHash": "sha256:e0e657b2ed7d56e5732344af5d82807806dd3f3ffe944d9d50d4d81590621af1",
+      "facts": {
+        "dimensions": {
+          "width": 2286,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2075,
+          "visibleRatio": 0.2218,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7509,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5083,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 6,
+          "width": 2284,
+          "height": 1777
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_electricshield_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_ElectricShield_1_256x256.png",
+      "format": "png",
+      "fileSize": 449337,
+      "contentHash": "sha256:0d66c3d6c996bf63d705c275faf7ba7e8e41379ebd91d636bf33bc0985777aae",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2339,
+          "visibleRatio": 0.2481,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.715,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4333,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 1,
+          "width": 2301,
+          "height": 1781
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_explosion2_1_249x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Explosion2_1_249x256.png",
+      "format": "png",
+      "fileSize": 1286851,
+      "contentHash": "sha256:db1682120326b5017f242be54a2b06a9a3006e280a4b444722f7b67d662e1382",
+      "facts": {
+        "dimensions": {
+          "width": 2241,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1641,
+          "visibleRatio": 0.2599,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8938,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.362,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 7,
+          "y": 66,
+          "width": 2232,
+          "height": 1452
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_explosion_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Explosion_1_256x256.png",
+      "format": "png",
+      "fileSize": 2175156,
+      "contentHash": "sha256:3b946cc4766abdfa3b5909165371abdd7730cb23460abcb9b0805effb9e6a9e1",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1233,
+          "visibleRatio": 0.2416,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6472,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 0.9993,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4989,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 24,
+          "y": 1,
+          "width": 2251,
+          "height": 1489
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 0.9998
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_fastpixelfire_1_173x197.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_FastPixelFire_1_173x197.png",
+      "format": "png",
+      "fileSize": 44274,
+      "contentHash": "sha256:67b60aa6fb8eeacb876c1d9735bf86bc178a341fbb4396b4cfb887b7dbaf8da2",
+      "facts": {
+        "dimensions": {
+          "width": 1557,
+          "height": 1379
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3857,
+          "visibleRatio": 0.3857,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5394,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6781,
+          "max": 0.9615
+        },
+        "contentBounds": {
+          "x": 14,
+          "y": 10,
+          "width": 1536,
+          "height": 1358
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_hyperspeed_1_256x255.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Hyperspeed_1_256x255.png",
+      "format": "png",
+      "fileSize": 1096495,
+      "contentHash": "sha256:a3fdca7c22f709f364b12f6bcee0924d67f100d7ff66cb2eaf86d6f2e5c705a6",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1785
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3755,
+          "visibleRatio": 0.46,
+          "borderMean": 0.0009
+        },
+        "luminance": {
+          "mean": 0.6347,
+          "max": 1,
+          "borderMean": 0.0884,
+          "borderNearBlackRatio": 0.8687,
+          "borderNearWhiteRatio": 0.0002
+        },
+        "saturation": {
+          "mean": 0.8265,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2303,
+          "height": 1784
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.723,
+          "v": 0.9759
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_impact_1_204x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Impact_1_204x256.png",
+      "format": "png",
+      "fileSize": 88677,
+      "contentHash": "sha256:e64a3833ad8c373253759ba2f629d396fdfe4d8b2b4ed99058da8d1e304c3f6f",
+      "facts": {
+        "dimensions": {
+          "width": 1836,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0121,
+          "visibleRatio": 0.0252,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 23,
+          "width": 1833,
+          "height": 996
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_kabooms_1_256x207.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Kabooms_1_256x207.png",
+      "format": "png",
+      "fileSize": 1589076,
+      "contentHash": "sha256:44cb8d6793909d6cd238edbde1adc0aec8c1d54a3eef71f5727552fad95283c2",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1449
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.341,
+          "visibleRatio": 0.3954,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4874,
+          "max": 0.9969,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6493,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 1,
+          "width": 2302,
+          "height": 1447
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_magma_1_256x125.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Magma_1_256x125.png",
+      "format": "png",
+      "fileSize": 796214,
+      "contentHash": "sha256:7c1a2f8d8845671edf29709ecdf306e4282848fb5836872b74bcd7ae7beee6de",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 875
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.341,
+          "visibleRatio": 0.3542,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6108,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6439,
+          "max": 0.9635
+        },
+        "contentBounds": {
+          "x": 12,
+          "y": 12,
+          "width": 2290,
+          "height": 861
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_powerchords_1_256x175.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_PowerChords_1_256x175.png",
+      "format": "png",
+      "fileSize": 2011514,
+      "contentHash": "sha256:52535fde79288cc3f61d05b90abb9fbd633a2e9fe55954f28806be4e57f156ef",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1225
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4183,
+          "visibleRatio": 0.4367,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8284,
+          "max": 1,
+          "borderMean": 0.0005,
+          "borderNearBlackRatio": 0.9986,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2764,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 1,
+          "width": 2303,
+          "height": 1223
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9974,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_puffandstars_1_108x116.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_PuffAndStars_1_108x116.png",
+      "format": "png",
+      "fileSize": 447759,
+      "contentHash": "sha256:bffb39c1530ccbaeff5c368a65d5583f28583e5840e9cfa82ab0412ba393b25e",
+      "facts": {
+        "dimensions": {
+          "width": 1080,
+          "height": 928
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1341,
+          "visibleRatio": 0.2019,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2818,
+          "max": 0.9465,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2546,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 21,
+          "width": 1071,
+          "height": 662
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_smallhit_1_256x230.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_SmallHit_1_256x230.png",
+      "format": "png",
+      "fileSize": 221467,
+      "contentHash": "sha256:1eb4c2b203b0ea4b509f419f32232b9465a0a070541142f3407d0f0e382b2de5",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1610
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0172,
+          "visibleRatio": 0.0287,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7561,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6235,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 1,
+          "y": 42,
+          "width": 2300,
+          "height": 878
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_tentacles_1_256x199.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Tentacles_1_256x199.png",
+      "format": "png",
+      "fileSize": 837542,
+      "contentHash": "sha256:627e1408a7fd1ccbed28d64a25c425a6973539f06c00d1faa68571f2ab0574e3",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1393
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4314,
+          "visibleRatio": 0.4612,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6409,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3749,
+          "max": 0.8
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 5,
+          "width": 2293,
+          "height": 1387
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_thevortex_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_TheVortex_1_256x256.png",
+      "format": "png",
+      "fileSize": 1722210,
+      "contentHash": "sha256:dd5d67c5d232f521cb377517d24a7a297b0f31849a11a7b41468f8a29cbe98df",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2241,
+          "visibleRatio": 0.2388,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8323,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3291,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 4,
+          "y": 39,
+          "width": 2298,
+          "height": 1411
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_wheel_1_256x256.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Wheel_1_256x256.png",
+      "format": "png",
+      "fileSize": 1590079,
+      "contentHash": "sha256:f60e06111f3d45973676334424e4206cc603855b35e65a620408b154911d3eb9",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1792
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2033,
+          "visibleRatio": 0.2326,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8574,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4514,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 21,
+          "width": 2298,
+          "height": 1484
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_worm_1_256x224.png",
+      "package": "spritemancer-vfx-256",
+      "relativePath": "spritemancer-vfx-256/60fps/Effect_Worm_1_256x224.png",
+      "format": "png",
+      "fileSize": 861590,
+      "contentHash": "sha256:82ac58f9baf0428c40039c3ff8c7f18f5fe37d664e95055a430a09aa6e63af12",
+      "facts": {
+        "dimensions": {
+          "width": 2304,
+          "height": 1568
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3947,
+          "visibleRatio": 0.4158,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8124,
+          "max": 0.9477,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3022,
+          "max": 0.843
+        },
+        "contentBounds": {
+          "x": 8,
+          "y": 1,
+          "width": 2287,
+          "height": 1566
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_anima_1_437x437.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Anima_1_437x437.png",
+      "format": "png",
+      "fileSize": 72912,
+      "contentHash": "sha256:4be78c0c4e9d3aff1a88ba4774bfd7620fc731c5167dfdd66023239632e09b11",
+      "facts": {
+        "dimensions": {
+          "width": 2622,
+          "height": 2185
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3087,
+          "visibleRatio": 0.3087,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7286,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5115,
+          "max": 0.8206
+        },
+        "contentBounds": {
+          "x": 18,
+          "y": 10,
+          "width": 2593,
+          "height": 2168
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_bighit_1_557x553.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_BigHit_1_557x553.png",
+      "format": "png",
+      "fileSize": 128799,
+      "contentHash": "sha256:e9a3699c444ade1ffbb60661f0f08110d495d0494f8840a66af2560198af40f7",
+      "facts": {
+        "dimensions": {
+          "width": 3342,
+          "height": 2765
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0161,
+          "visibleRatio": 0.0208,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7641,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6304,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 62,
+          "y": 84,
+          "width": 3231,
+          "height": 1017
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_bloodimpact_1_69x60.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_BloodImpact_1_69x60.png",
+      "format": "png",
+      "fileSize": 9280,
+      "contentHash": "sha256:5fbe13dc4e8b7dd3827a06458a24a73c7c0fca768e21e3a29300ba9bbb348803",
+      "facts": {
+        "dimensions": {
+          "width": 414,
+          "height": 300
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0339,
+          "visibleRatio": 0.0395,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4539,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8118,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 5,
+          "y": 16,
+          "width": 406,
+          "height": 236
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_charged_1_321x371.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Charged_1_321x371.png",
+      "format": "png",
+      "fileSize": 100940,
+      "contentHash": "sha256:80f45167f8f47a07f374ab1b8fb0d056f8338b6b65dee8aeba80063636a34f7d",
+      "facts": {
+        "dimensions": {
+          "width": 2247,
+          "height": 2226
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0115,
+          "visibleRatio": 0.0115,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5238,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8752,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 52,
+          "y": 78,
+          "width": 2143,
+          "height": 2096
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_constellation_1_299x313.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Constellation_1_299x313.png",
+      "format": "png",
+      "fileSize": 179830,
+      "contentHash": "sha256:8bd8124e856008cb5fd970de77c5780e81fcd648c152000905ad2fa52c019fb3",
+      "facts": {
+        "dimensions": {
+          "width": 1794,
+          "height": 1565
+        },
+        "colorModel": "palette",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.246,
+          "visibleRatio": 0.246,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7031,
+          "max": 0.9852,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3731,
+          "max": 0.8
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 9,
+          "width": 1787,
+          "height": 1551
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_ditheredfire_1_517x246.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_DitheredFire_1_517x246.png",
+      "format": "png",
+      "fileSize": 98676,
+      "contentHash": "sha256:1ffcbf90b05e8cb41b8aab8fa5ea424d56252b66d0f8c6911dd8bc8d88360fe2",
+      "facts": {
+        "dimensions": {
+          "width": 3102,
+          "height": 1230
+        },
+        "colorModel": "palette",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.6304,
+          "visibleRatio": 0.637,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8079,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4558,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 7,
+          "width": 3097,
+          "height": 1220
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_eldenring_1_421x425.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_EldenRing_1_421x425.png",
+      "format": "png",
+      "fileSize": 64706,
+      "contentHash": "sha256:e6eee268e1fb45d28cae252f629b29a3ba9c3221208a07310617cd835541b5ca",
+      "facts": {
+        "dimensions": {
+          "width": 2526,
+          "height": 2125
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2179,
+          "visibleRatio": 0.2179,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7726,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4879,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 6,
+          "width": 2521,
+          "height": 2104
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_electricshield_1_265x265.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_ElectricShield_1_265x265.png",
+      "format": "png",
+      "fileSize": 29128,
+      "contentHash": "sha256:df900af9fe00b24f1968913f69596540b0f56422db282cdd13295b9d73c79f28",
+      "facts": {
+        "dimensions": {
+          "width": 1590,
+          "height": 1325
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2454,
+          "visibleRatio": 0.2454,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7373,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4061,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 1585,
+          "height": 1312
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_explosion2_1_355x355.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Explosion2_1_355x355.png",
+      "format": "png",
+      "fileSize": 832686,
+      "contentHash": "sha256:09037c2791964dedb0e2db2f41221f665163200a0f8c178b05566cb6f807cefc",
+      "facts": {
+        "dimensions": {
+          "width": 2130,
+          "height": 1775
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1707,
+          "visibleRatio": 0.2644,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.9128,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3227,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 8,
+          "y": 90,
+          "width": 2119,
+          "height": 1666
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
       "assetId": "spritemancer-vfx/30fps/effect_explosion_1_517x517.png",
       "package": "spritemancer-vfx",
       "relativePath": "spritemancer-vfx/30fps/Effect_Explosion_1_517x517.png",
@@ -85595,6 +88033,236 @@
       }
     },
     {
+      "assetId": "spritemancer-vfx/30fps/effect_fastpixelfire_1_173x193.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_FastPixelFire_1_173x193.png",
+      "format": "png",
+      "fileSize": 22729,
+      "contentHash": "sha256:0223a3e012e5f8c41a65b39d5f99d5ce8fd34a662b38f8aa00103e9fb5a7954a",
+      "facts": {
+        "dimensions": {
+          "width": 1038,
+          "height": 965
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4156,
+          "visibleRatio": 0.4156,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5384,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6783,
+          "max": 0.9615
+        },
+        "contentBounds": {
+          "x": 6,
+          "y": 6,
+          "width": 1021,
+          "height": 956
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_hyperspeed_1_517x515.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Hyperspeed_1_517x515.png",
+      "format": "png",
+      "fileSize": 486741,
+      "contentHash": "sha256:70df65315452cbe7683b30e44140b2818a8b8940621d0cbdfbed312de4711a5b",
+      "facts": {
+        "dimensions": {
+          "width": 3102,
+          "height": 2575
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3941,
+          "visibleRatio": 0.4064,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6367,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8245,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 3097,
+          "height": 2570
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_impact_1_291x301.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Impact_1_291x301.png",
+      "format": "png",
+      "fileSize": 36390,
+      "contentHash": "sha256:e9c617918526f839e1382e4da6b01abf62dc6ba0262ecb08f0abfefa1290d839",
+      "facts": {
+        "dimensions": {
+          "width": 1746,
+          "height": 1505
+        },
+        "colorModel": "grayAlpha",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0145,
+          "visibleRatio": 0.024,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 10,
+          "y": 31,
+          "width": 1730,
+          "height": 796
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_kabooms_1_401x325.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Kabooms_1_401x325.png",
+      "format": "png",
+      "fileSize": 706830,
+      "contentHash": "sha256:e1a20733d674ba7ed4a9849590c6851d7455173c91bbdcec0fb4c86a06f3ce71",
+      "facts": {
+        "dimensions": {
+          "width": 2406,
+          "height": 1625
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3583,
+          "visibleRatio": 0.4021,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.475,
+          "max": 0.9969,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6148,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 4,
+          "y": 3,
+          "width": 2400,
+          "height": 1618
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_magma_1_381x186.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Magma_1_381x186.png",
+      "format": "png",
+      "fileSize": 144360,
+      "contentHash": "sha256:c2d033c8cb309829a49e295c20bfe072822fc7789f7b4252608e5424fd9a4710",
+      "facts": {
+        "dimensions": {
+          "width": 2286,
+          "height": 930
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3602,
+          "visibleRatio": 0.3602,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6242,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6341,
+          "max": 0.9585
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 15,
+          "width": 2277,
+          "height": 912
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
       "assetId": "spritemancer-vfx/30fps/effect_powerchords_1_517x353.png",
       "package": "spritemancer-vfx",
       "relativePath": "spritemancer-vfx/30fps/Effect_PowerChords_1_517x353.png",
@@ -85631,6 +88299,650 @@
           "y": 14,
           "width": 3081,
           "height": 1748
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_puffandstars_1_120x109.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_PuffAndStars_1_120x109.png",
+      "format": "png",
+      "fileSize": 254659,
+      "contentHash": "sha256:f6bd0cf936d3ae02133fb1364b70eb289323b9f140fa8c7df13f6549c94f1fa9",
+      "facts": {
+        "dimensions": {
+          "width": 840,
+          "height": 654
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1328,
+          "visibleRatio": 0.1971,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2558,
+          "max": 0.9538,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2026,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 5,
+          "y": 9,
+          "width": 820,
+          "height": 528
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_smallhit_1_532x528.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_SmallHit_1_532x528.png",
+      "format": "png",
+      "fileSize": 108153,
+      "contentHash": "sha256:2f8898264558737ba0e18add22bdaf114828a207df7eec5330e1b95582996c9b",
+      "facts": {
+        "dimensions": {
+          "width": 3192,
+          "height": 2640
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0139,
+          "visibleRatio": 0.0175,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7638,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6232,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 12,
+          "y": 73,
+          "width": 3178,
+          "height": 1510
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_tentacles_1_453x337.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Tentacles_1_453x337.png",
+      "format": "png",
+      "fileSize": 72149,
+      "contentHash": "sha256:03ba2e37b47a03f5f65a7b438668ff5798601849b45446b0ae4899f5994490c0",
+      "facts": {
+        "dimensions": {
+          "width": 2718,
+          "height": 1685
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4338,
+          "visibleRatio": 0.4338,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6553,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3697,
+          "max": 0.8
+        },
+        "contentBounds": {
+          "x": 6,
+          "y": 6,
+          "width": 2681,
+          "height": 1676
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_thevortex_1_427x431.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_TheVortex_1_427x431.png",
+      "format": "png",
+      "fileSize": 1444067,
+      "contentHash": "sha256:19be4c3e67af6b845dcfe1da033944812f6c26acdf02e25bafd32415417576e3",
+      "facts": {
+        "dimensions": {
+          "width": 2562,
+          "height": 2155
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2297,
+          "visibleRatio": 0.2297,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8527,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3114,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 21,
+          "y": 45,
+          "width": 2534,
+          "height": 1902
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_wheel_1_273x273.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Wheel_1_273x273.png",
+      "format": "png",
+      "fileSize": 453183,
+      "contentHash": "sha256:7f7de1c4e1366f530849b72b16d8594d07533548fde83b6d1fc8f03c68ca07d7",
+      "facts": {
+        "dimensions": {
+          "width": 1638,
+          "height": 1365
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2175,
+          "visibleRatio": 0.2232,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.863,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4357,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 4,
+          "y": 17,
+          "width": 1630,
+          "height": 1313
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_worm_1_413x369.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/30fps/Effect_Worm_1_413x369.png",
+      "format": "png",
+      "fileSize": 90827,
+      "contentHash": "sha256:497c94b40dfcde536935032f10b42a48c7e764b2cae6b9eaaf1d208a71324294",
+      "facts": {
+        "dimensions": {
+          "width": 2478,
+          "height": 1845
+        },
+        "colorModel": "palette",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4212,
+          "visibleRatio": 0.4212,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8233,
+          "max": 0.9477,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2919,
+          "max": 0.843
+        },
+        "contentBounds": {
+          "x": 14,
+          "y": 2,
+          "width": 2449,
+          "height": 1840
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_anima_1_429x437.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Anima_1_429x437.png",
+      "format": "png",
+      "fileSize": 141918,
+      "contentHash": "sha256:2651cbacecb5400768a248ee479b80d1cf7cd4cc5d88d0fbf321074a92061eb0",
+      "facts": {
+        "dimensions": {
+          "width": 3861,
+          "height": 3059
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2992,
+          "visibleRatio": 0.2992,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7284,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5119,
+          "max": 0.8206
+        },
+        "contentBounds": {
+          "x": 10,
+          "y": 10,
+          "width": 3840,
+          "height": 3042
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_bighit_1_516x528.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_BigHit_1_516x528.png",
+      "format": "png",
+      "fileSize": 283750,
+      "contentHash": "sha256:b6c119ee894a182b40c88ed8e432c5fd4673d4ca050d94e820965adf98e143ed",
+      "facts": {
+        "dimensions": {
+          "width": 4644,
+          "height": 3696
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0188,
+          "visibleRatio": 0.0236,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7911,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5725,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 18,
+          "y": 105,
+          "width": 4606,
+          "height": 1476
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_bloodimpact_1_60x63.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_BloodImpact_1_60x63.png",
+      "format": "png",
+      "fileSize": 18101,
+      "contentHash": "sha256:c91163de877b1f9d0798a5cf8eb2f27b066c8773c0b1d0693ac35aa40014a382",
+      "facts": {
+        "dimensions": {
+          "width": 540,
+          "height": 441
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0326,
+          "visibleRatio": 0.0386,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4578,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.7939,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 9,
+          "width": 536,
+          "height": 367
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_charged_1_357x295.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Charged_1_357x295.png",
+      "format": "png",
+      "fileSize": 193948,
+      "contentHash": "sha256:325bdbd758c308f7e3acd11005b93aff27891789e69ed671d89d9c8881e4cf9c",
+      "facts": {
+        "dimensions": {
+          "width": 3570,
+          "height": 2360
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0135,
+          "visibleRatio": 0.0135,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5198,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8731,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 35,
+          "y": 37,
+          "width": 3487,
+          "height": 2288
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_constellation_1_309x313.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Constellation_1_309x313.png",
+      "format": "png",
+      "fileSize": 352368,
+      "contentHash": "sha256:4a5d07e6a33be766a811f5fa3fec435911e72d159e9a4a7c869a24656fa2514d",
+      "facts": {
+        "dimensions": {
+          "width": 2781,
+          "height": 2191
+        },
+        "colorModel": "palette",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.229,
+          "visibleRatio": 0.229,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7031,
+          "max": 0.9852,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3721,
+          "max": 0.8
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 10,
+          "width": 2776,
+          "height": 2175
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_ditheredfire_1_517x246.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_DitheredFire_1_517x246.png",
+      "format": "png",
+      "fileSize": 213142,
+      "contentHash": "sha256:4c2199ac2c0bbd8f3e0d3f32504f3b2aefecab9c7d3095c8317472975a45ae35",
+      "facts": {
+        "dimensions": {
+          "width": 4653,
+          "height": 1722
+        },
+        "colorModel": "palette",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.6003,
+          "visibleRatio": 0.6064,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8086,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4552,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 7,
+          "width": 4648,
+          "height": 1712
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_eldenring_1_421x425.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_EldenRing_1_421x425.png",
+      "format": "png",
+      "fileSize": 125961,
+      "contentHash": "sha256:723376f2179cc169a8931257103a10ec84e876272b05a7481a2b06a412fec427",
+      "facts": {
+        "dimensions": {
+          "width": 3789,
+          "height": 2975
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2075,
+          "visibleRatio": 0.2075,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7721,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.488,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 10,
+          "width": 3784,
+          "height": 2950
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_electricshield_1_265x265.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_ElectricShield_1_265x265.png",
+      "format": "png",
+      "fileSize": 59114,
+      "contentHash": "sha256:1dbca72e50e98e9f4a26c5f900c5f42b6abcdd2badd322f9b1cfcc5f14958903",
+      "facts": {
+        "dimensions": {
+          "width": 2385,
+          "height": 1855
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2339,
+          "visibleRatio": 0.2339,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7389,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4043,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 2380,
+          "height": 1842
         },
         "trimmed": false,
         "edgeContinuity": {
@@ -85733,6 +89045,236 @@
       }
     },
     {
+      "assetId": "spritemancer-vfx/60fps/effect_fastpixelfire_1_173x197.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_FastPixelFire_1_173x197.png",
+      "format": "png",
+      "fileSize": 44274,
+      "contentHash": "sha256:67b60aa6fb8eeacb876c1d9735bf86bc178a341fbb4396b4cfb887b7dbaf8da2",
+      "facts": {
+        "dimensions": {
+          "width": 1557,
+          "height": 1379
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3857,
+          "visibleRatio": 0.3857,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5394,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6781,
+          "max": 0.9615
+        },
+        "contentBounds": {
+          "x": 14,
+          "y": 10,
+          "width": 1536,
+          "height": 1358
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_hyperspeed_1_517x515.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Hyperspeed_1_517x515.png",
+      "format": "png",
+      "fileSize": 970711,
+      "contentHash": "sha256:60fce9edbe10059d17eedf0113ed051e276e420506e4279275eeda54fadadc27",
+      "facts": {
+        "dimensions": {
+          "width": 4653,
+          "height": 3605
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3755,
+          "visibleRatio": 0.3873,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6437,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8209,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 2,
+          "width": 4648,
+          "height": 3600
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_impact_1_305x383.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Impact_1_305x383.png",
+      "format": "png",
+      "fileSize": 75671,
+      "contentHash": "sha256:f1eb6b636ac5ec11cd5fb5bdf6855f9fe42bf3dd54717001004f1c233ebb46c7",
+      "facts": {
+        "dimensions": {
+          "width": 2745,
+          "height": 2681
+        },
+        "colorModel": "grayAlpha",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0121,
+          "visibleRatio": 0.0218,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 4,
+          "y": 35,
+          "width": 2739,
+          "height": 1489
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_kabooms_1_401x325.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Kabooms_1_401x325.png",
+      "format": "png",
+      "fileSize": 1423025,
+      "contentHash": "sha256:a849476b82a6114056f7301b685ec71761976f4f2f3450140213371929cde1de",
+      "facts": {
+        "dimensions": {
+          "width": 3609,
+          "height": 2275
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.341,
+          "visibleRatio": 0.3846,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4729,
+          "max": 0.9969,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6161,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 2,
+          "y": 3,
+          "width": 3605,
+          "height": 2269
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_magma_1_381x186.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Magma_1_381x186.png",
+      "format": "png",
+      "fileSize": 281008,
+      "contentHash": "sha256:1210a0a964c583ed628235e41a2a40adb4843333ca6ae76425b2f889c1a84269",
+      "facts": {
+        "dimensions": {
+          "width": 3429,
+          "height": 1302
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.341,
+          "visibleRatio": 0.341,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6229,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6348,
+          "max": 0.9635
+        },
+        "contentBounds": {
+          "x": 18,
+          "y": 19,
+          "width": 3408,
+          "height": 1280
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
       "assetId": "spritemancer-vfx/60fps/effect_powerchords_1_517x353.png",
       "package": "spritemancer-vfx",
       "relativePath": "spritemancer-vfx/60fps/Effect_PowerChords_1_517x353.png",
@@ -85769,6 +89311,282 @@
           "y": 3,
           "width": 4648,
           "height": 2465
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_puffandstars_1_108x116.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_PuffAndStars_1_108x116.png",
+      "format": "png",
+      "fileSize": 447759,
+      "contentHash": "sha256:bffb39c1530ccbaeff5c368a65d5583f28583e5840e9cfa82ab0412ba393b25e",
+      "facts": {
+        "dimensions": {
+          "width": 1080,
+          "height": 928
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1341,
+          "visibleRatio": 0.2019,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2818,
+          "max": 0.9465,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2546,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 21,
+          "width": 1071,
+          "height": 662
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_smallhit_1_516x463.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_SmallHit_1_516x463.png",
+      "format": "png",
+      "fileSize": 258677,
+      "contentHash": "sha256:16cf8d9392fed872bb6349ab23793aaf7e944e85100345eba40bcf587f6c9f38",
+      "facts": {
+        "dimensions": {
+          "width": 4644,
+          "height": 3241
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0172,
+          "visibleRatio": 0.0215,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7863,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5584,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 85,
+          "width": 4634,
+          "height": 1767
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_tentacles_1_433x337.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Tentacles_1_433x337.png",
+      "format": "png",
+      "fileSize": 146582,
+      "contentHash": "sha256:19d6d23429986cee78cfc71eed5f9f33f78e73c3ba01278e354d5f7f2a3f47d7",
+      "facts": {
+        "dimensions": {
+          "width": 3897,
+          "height": 2359
+        },
+        "colorModel": "palette",
+        "bitDepth": 4,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.4314,
+          "visibleRatio": 0.4314,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.655,
+          "max": 0.9452,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3704,
+          "max": 0.8
+        },
+        "contentBounds": {
+          "x": 6,
+          "y": 10,
+          "width": 3876,
+          "height": 2346
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_thevortex_1_429x429.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_TheVortex_1_429x429.png",
+      "format": "png",
+      "fileSize": 3039582,
+      "contentHash": "sha256:be583b8e85e51e5f85f0f88564917978e8d600efbb004ef6ea316d7252d442cf",
+      "facts": {
+        "dimensions": {
+          "width": 3861,
+          "height": 3003
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2241,
+          "visibleRatio": 0.2241,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8543,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3062,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 8,
+          "y": 66,
+          "width": 3849,
+          "height": 2363
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_wheel_1_273x273.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Wheel_1_273x273.png",
+      "format": "png",
+      "fileSize": 897853,
+      "contentHash": "sha256:4cad867342597d86c79deb484f8f4ccfd5012bf8b56ef703f1054b84e3ea538c",
+      "facts": {
+        "dimensions": {
+          "width": 2457,
+          "height": 1911
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2033,
+          "visibleRatio": 0.2086,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8747,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4197,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 23,
+          "width": 2449,
+          "height": 1581
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_worm_1_421x369.png",
+      "package": "spritemancer-vfx",
+      "relativePath": "spritemancer-vfx/60fps/Effect_Worm_1_421x369.png",
+      "format": "png",
+      "fileSize": 181870,
+      "contentHash": "sha256:9cbbd5eba595df2ab982728275e326d179bf9776fec133c7ee1a03312345873e",
+      "facts": {
+        "dimensions": {
+          "width": 3789,
+          "height": 2583
+        },
+        "colorModel": "palette",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3947,
+          "visibleRatio": 0.3947,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.8225,
+          "max": 0.9477,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2929,
+          "max": 0.843
+        },
+        "contentBounds": {
+          "x": 14,
+          "y": 2,
+          "width": 3760,
+          "height": 2578
         },
         "trimmed": false,
         "edgeContinuity": {

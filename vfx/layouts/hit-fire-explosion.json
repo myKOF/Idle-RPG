@@ -7,14 +7,8 @@
       "name": "hit-fire-explosion",
       "layerIds": [
         "halo",
-        "smoke",
         "ring",
-        "ring-lens",
-        "fireball",
-        "core",
-        "hot",
-        "sparks",
-        "tongues"
+        "sheet"
       ]
     }
   ],
