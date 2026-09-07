@@ -130,22 +130,27 @@ P['slash-cleave-sector'] = () => ({
   id: 'slash-cleave-sector', duration: 0.5, layers: [
     /* 錐體頂點在素材底邊 → anchor y=1 把頂點釘在原點，再轉 +90° 讓它朝 +X。 */
     sprite({
+      /* fill 是扇形的**本體**，原本 alpha 0.2 幾乎看不見，看得見的只剩下
+         兩條筆直的邊界線與一整圈細環——畫面上是一張線框示意圖，
+         不是一記橫掃。扇形要靠「面」讀出來，邊界線只是輪廓。 */
       id: 'fill', asset: A.coneC, z: 1, sizeX: 90, sizeY: 200, anchor: { x: 0.5, y: 1 },
-      alpha: 0.2, tint: '#60a5fa', blend: 'add', rotDeg: 90, duration: 0.5,
+      alpha: 0.55, tint: '#60a5fa', blend: 'add', rotDeg: 90, duration: 0.5,
       alphaOverLife: SECTOR_A, scaleOverLife: SECTOR_S, rotationOverLife: sweepDegPerSec(0.5)
     }),
     sprite({
-      id: 'rim', asset: A.ringA, z: 2, size: 200, alpha: 0.5, tint: '#bfdbfe', blend: 'add',
+      /* ringA 是**整圈**環，但這一招只掃一個扇形；整圈亮著會讓人以為
+         範圍是 360 度。壓到 0.16 當作外緣的餘光，不當作範圍指示。 */
+      id: 'rim', asset: A.ringA, z: 2, size: 200, alpha: 0.16, tint: '#bfdbfe', blend: 'add',
       duration: 0.5, alphaOverLife: [[0, 0], [0.2, 0.6], [0.75, 0.5], [1, 0]], scaleOverLife: SECTOR_S
     }),
     sprite({
       id: 'edge-a', asset: A.barA, z: 3, sizeX: 8, sizeY: 100, anchor: { x: 0.5, y: 1 },
-      alpha: 0.8, tint: '#bfdbfe', blend: 'add', rotDeg: 60, duration: 0.5,
+      alpha: 0.45, tint: '#bfdbfe', blend: 'add', rotDeg: 60, duration: 0.5,
       alphaOverLife: SECTOR_A, scaleOverLife: SECTOR_S, rotationOverLife: sweepDegPerSec(0.5)
     }),
     sprite({
       id: 'edge-b', asset: A.barA, z: 4, sizeX: 8, sizeY: 100, anchor: { x: 0.5, y: 1 },
-      alpha: 0.8, tint: '#bfdbfe', blend: 'add', rotDeg: 120, duration: 0.5,
+      alpha: 0.45, tint: '#bfdbfe', blend: 'add', rotDeg: 120, duration: 0.5,
       alphaOverLife: SECTOR_A, scaleOverLife: SECTOR_S, rotationOverLife: sweepDegPerSec(0.5)
     })
   ]

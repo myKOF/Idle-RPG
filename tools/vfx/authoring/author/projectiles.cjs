@@ -55,11 +55,16 @@ function trail(o) {
 const P = {};
 
 /* ---------- proj-swordwave：普攻劍氣 ---------- */
+/* 劍氣：普攻打出去的那一道，出現頻率是全遊戲最高的。
+   原本用 slash03 畫成 14x30——十四個像素寬，畫面上是一個小亮點，
+   讀起來像火花而不是劍氣。與風刃是同一個問題（見 proj-wind-crescent），
+   所以用同一套解法：slash02 外弧 + slash01 內芯 + rotDeg -90，
+   凸面朝飛行方向。尺寸取風刃的七成——劍氣是普攻，不該比技能還大。 */
 P['proj-swordwave'] = () => ({
   id: 'proj-swordwave', duration: 1.2, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 44, alpha: 0.35, tint: T.phys.glow, blend: 'add', duration: 1.2, alphaOverLife: GLOW_A }),
-    sprite({ id: 'body', asset: A.slash03, z: 1, sizeX: 14, sizeY: 30, alpha: 1, tint: T.phys.c1, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
-    sprite({ id: 'core', asset: A.slash03, z: 2, sizeX: 8, sizeY: 22, alpha: 1, tint: T.phys.c2, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
+    sprite({ id: 'glow', asset: A.slash02, z: 0, sizeX: 88, sizeY: 80, rotDeg: -90, alpha: 0.28, tint: T.phys.glow, blend: 'add', duration: 1.2, alphaOverLife: GLOW_A }),
+    sprite({ id: 'body', asset: A.slash02, z: 1, sizeX: 72, sizeY: 66, rotDeg: -90, alpha: 0.95, tint: T.phys.c1, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
+    sprite({ id: 'core', asset: A.slash01, z: 2, sizeX: 54, sizeY: 50, rotDeg: -90, alpha: 1, tint: T.phys.c2, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
     trail({ asset: A.trace02H, tint: '#f0e2b8', rate: 22, startPx: [10, 18], speed: [5, 25], alignToVelocity: true, velocityRotationOffset: 0 })
   ]
 });
