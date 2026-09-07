@@ -18,25 +18,47 @@ const SPARK_A = [[0, 1], [0.5, 1], [1, 0]];
 const SPARK_S = [[0, 1], [1, 0.4]];
 const FLICKER_A = [[0, 1], [0.25, 0.45], [0.45, 1], [0.7, 0.55], [0.85, 0.9], [1, 0]];
 
-/* ---- 共用三件組：halo / ring / flash ---- */
+/* ---- 共用三件組：halo / ring / flash ----
+
+   ⚠️ halo 用 screen 而不是 add，這是刻意的，理由是「十個敵人同時受擊」。
+
+   加法混色沒有上限：兩個 0.5 疊起來是 1.0，十個是 5.0。單獨看每一個受擊
+   都很漂亮，十個敵人在同一塊區域一起被打到時，十層柔光相加會變成一大團
+   純白，把中間的角色整個蓋掉——使用者回報的正是這個。
+
+   screen 是 1-(1-a)(1-b)：永遠逼近 1 但到不了。十層 0.5 的 screen 是 0.999，
+   亮，但仍然是「一片亮」而不是「一片死白」，底下的東西還看得見輪廓。
+   實測十發同時：halo 面積最大，所以只要改它就足夠；ring 與 flash 又小又短，
+   維持加法保有打擊的銳利感。
+
+   （對照組是 hit-fire：它的主體是 normal 混色的序列幀，十發疊起來仍然是
+    十個分得開的火球——使用者說那一個「不錯」。normal 完全不累加，
+    但柔光用 normal 會把背景壓暗，所以柔光要的是 screen 而不是 normal。）
+
+   flash 也改 screen：它是三層裡最白、最集中的一層，加法之下十發疊起來
+   就是實心的一片。halo 的名目尺寸從 64 降到 56——角色身高才 60px，
+   64px 的柔光本來就比角色還大，十個散在 9 公尺內就必然連成一片。
+
+   ring 維持加法：它是細環，面積小，而且環與環疊在一起仍然看得出是好幾個環
+   （交叉點亮一點正是想要的），那一層負責「有幾個敵人被打到」的資訊。 */
 function core(o) {
   const d = o.delay || 0;
   const layers = [];
   if (o.halo !== false) {
     layers.push(sprite({
-      id: 'halo', asset: o.haloAsset || A.glowSoft, z: 0, size: o.haloSize || 64,
-      alpha: o.haloAlpha === undefined ? 0.5 : o.haloAlpha, tint: o.haloTint, blend: 'add',
+      id: 'halo', asset: o.haloAsset || A.glowSoft, z: 0, size: o.haloSize || 56,
+      alpha: o.haloAlpha === undefined ? 0.62 : o.haloAlpha, tint: o.haloTint, blend: 'screen',
       delay: d, duration: o.haloDur || 0.26, alphaOverLife: HALO_A, scaleOverLife: HALO_S
     }));
   }
   layers.push(sprite({
     id: 'ring', asset: o.ringAsset || A.ringThin, z: 1, size: o.ringSize || 46,
-    alpha: o.ringAlpha === undefined ? 0.9 : o.ringAlpha, tint: o.ringTint, blend: 'add',
+    alpha: o.ringAlpha === undefined ? 0.85 : o.ringAlpha, tint: o.ringTint, blend: 'add',
     delay: d, duration: o.ringDur || 0.3, alphaOverLife: RING_A, scaleOverLife: o.ringScale || RING_S
   }));
   layers.push(sprite({
     id: 'flash', asset: o.flashAsset || A.flash, z: 3, size: o.flashSize || 40,
-    alpha: 1, tint: o.flashTint, blend: 'add', rotDeg: o.flashRot || 0,
+    alpha: 0.85, tint: o.flashTint, blend: 'screen', rotDeg: o.flashRot || 0,
     delay: d, duration: o.flashDur || 0.16, alphaOverLife: FLASH_A, scaleOverLife: FLASH_S
   }));
   return layers;

@@ -15,7 +15,7 @@
       },
       "alpha": 0.45,
       "tint": "#d92846",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
       "duration": 0.26,
       "alphaOverLife": [
@@ -108,9 +108,9 @@
         "x": 0.0703,
         "y": 0.0703
       },
-      "alpha": 1,
+      "alpha": 0.85,
       "tint": "#d92846",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
       "duration": 0.16,
       "alphaOverLife": [

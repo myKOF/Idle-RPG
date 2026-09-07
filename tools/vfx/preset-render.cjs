@@ -179,11 +179,26 @@ function renderPreset(opts) {
   /* 場域類的原點在腳底／地面，畫面上要往下擺才看得到全部；
      其餘置中。ground/aura/mark 這幾類的 y 原點是地面線。 */
   const cy = opts.groundLike ? Math.round(H * 0.66) : Math.round(H * 0.5);
-  const handle = rt.play(preset.id, { seed: opts.seed || 12345 });
-  if (handle === null) throw new Error('play 失敗（預算或未註冊）');
-  /* 位置不是 play 的參數——Core 把「播哪一份」與「擺在哪裡」分開，
-     因為特效常常要跟著移動中的目標走（投射物）。 */
-  rt.setTransform(handle, { position: { x: W / 2, y: cy }, scale: opts.scale || 1 });
+  /* stack：同一份 preset 同時播 N 個，散佈在一小塊區域裡。
+     「十個敵人同時受擊會不會白掉」是加法混色特有的問題——單獨看每一個
+     都很正常，疊起來才爆掉，所以非得真的疊起來量不可。
+     位置用固定的偽亂數，讓同一次比較的前後兩張圖疊法完全一樣。 */
+  const n = Math.max(1, opts.stack || 1);
+  const rng = VFXCore.makeRng((opts.seed || 12345) ^ 0x5f3a7);
+  for (let i = 0; i < n; i++) {
+    const handle = rt.play(preset.id, { seed: (opts.seed || 12345) + i * 977 });
+    if (handle === null) throw new Error('play 失敗（預算或未註冊）');
+    const spread = n > 1 ? opts.spread || W * 0.28 : 0;
+    /* 位置不是 play 的參數——Core 把「播哪一份」與「擺在哪裡」分開，
+       因為特效常常要跟著移動中的目標走（投射物）。 */
+    rt.setTransform(handle, {
+      position: {
+        x: W / 2 + (n > 1 ? (rng() - 0.5) * 2 * spread : 0),
+        y: cy + (n > 1 ? (rng() - 0.5) * 2 * spread * 0.55 : 0)
+      },
+      scale: opts.scale || 1
+    });
+  }
 
   const dur = preset.duration;
   const total = opts.duration || (preset.loop ? dur : dur * 1.05);
@@ -202,6 +217,7 @@ function renderPreset(opts) {
     while (next < wantAt.length && t >= wantAt[next]) {
       const canvas = new Uint8Array(W * H * 4);
       fillBg(canvas, W, H, opts.bg);
+      if (opts.figure) drawFigure(canvas, W, H, W >> 1, cy + 18);
       state.draws.length = 0;
       rt.update(0);                        // dt=0：只重新輸出 transform，不推進時間
       state.draws.sort(function (a, b) { return (a.z || 0) - (b.z || 0); });
@@ -210,13 +226,28 @@ function renderPreset(opts) {
         if (!tex) return;
         drawSprite(canvas, W, H, tex, frameRect(tex, d.spec.sheet, d.frame || 0), d, d.spec.blendMode);
       });
-      shots.push({ rgba: canvas, w: W, h: H, label: (wantAt[next] / total * 100).toFixed(0) });
+      shots.push({
+        rgba: canvas, w: W, h: H,
+        label: (wantAt[next] / total * 100).toFixed(0),
+        blown: blownRatio(canvas)
+      });
       next++;
     }
     if (t > total * 3) break;              // 保險：不讓任何 preset 讓工具跑不完
   }
   rt.destroy();
   return shots;
+}
+
+/* 「亮到看不見背後的東西」的比例。門檻 232：加法混色疊到這個亮度時，
+   底下不管是角色還是地面都已經只剩一片白。用比例而不是平均亮度——
+   一個很小但全白的核心是正常的（那是閃光），整片都很白才是問題。 */
+function blownRatio(canvas) {
+  let n = 0;
+  for (let i = 0; i < canvas.length; i += 4) {
+    if (canvas[i] > 232 && canvas[i + 1] > 232 && canvas[i + 2] > 232) n++;
+  }
+  return n / (canvas.length / 4);
 }
 
 const BG = {
@@ -231,6 +262,27 @@ const BG = {
   dark: function () { return [18, 18, 22]; },
   grey: function () { return [110, 110, 112]; }
 };
+
+/* 站在特效中間的角色替身：26x60 的暗色膠囊，加上一條亮邊。
+   「十個敵人一起受擊就完全看不到人物」這句話沒辦法用亮度數字回答——
+   要看的是「這個東西還在不在」。畫一個假人比量任何指標都直接。
+   尺寸取自 Runtime 的名目身高 60px。 */
+function drawFigure(canvas, W, H, cx, cy) {
+  const w = 26, h = 60, x0 = cx - (w >> 1), y0 = cy - h;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      /* 圓角：上下 8px 內縮 */
+      const ry = Math.min(y, h - 1 - y);
+      if (ry < 8 && Math.abs(x - w / 2) > w / 2 - (8 - ry) * 0.7) continue;
+      const o = ((y0 + y) * W + x0 + x) * 4;
+      if (o < 0 || o + 3 >= canvas.length) continue;
+      const edge = (x < 2 || x > w - 3 || ry < 2);
+      canvas[o] = edge ? 190 : 38;
+      canvas[o + 1] = edge ? 200 : 42;
+      canvas[o + 2] = edge ? 210 : 54;
+    }
+  }
+}
 
 function fillBg(canvas, W, H, kind) {
   const fn = BG[kind] || BG.battle;
@@ -278,7 +330,8 @@ function run(opts) {
       shots = renderPreset({
         preset: preset, root: root, index: index, size: opts.size,
         frames: opts.contact ? 1 : opts.frames, bg: opts.bg,
-        groundLike: GROUND_LIKE.test(id), seed: opts.seed, scale: opts.scale
+        groundLike: GROUND_LIKE.test(id), seed: opts.seed, scale: opts.scale,
+        stack: opts.stack, spread: opts.spread, figure: opts.figure
       });
     } catch (e) {
       console.error('  ✗ ' + id + '：' + e.message);
@@ -291,9 +344,11 @@ function run(opts) {
       t.label = id.replace(/^(ground|burst|slash|proj|cast|bolt|hit|st|aura|mark|orb|curse|pillar|beam)-/, '');
       contactTiles.push(t);
     } else {
+      const worst = shots.reduce(function (m, s) { return Math.max(m, s.blown); }, 0);
       const tiles = shots.map(function (s) {
-        return { rgba: s.rgba, w: s.w, h: s.h, label: s.label };
+        return { rgba: s.rgba, w: s.w, h: s.h, label: s.label + '. ' + (s.blown * 100).toFixed(1) };
       });
+      console.log('  ' + id.padEnd(24) + ' 最高過曝 ' + (worst * 100).toFixed(1) + '%');
       const sheet = contact.layout(tiles, {
         thumb: opts.size, cols: opts.frames, bg: 'grey', label: true
       });
@@ -317,7 +372,7 @@ function run(opts) {
 function parseArgs(argv) {
   const opts = {
     ids: [], grep: '', frames: 6, size: 200, thumb: 132, cols: 0,
-    bg: 'battle', scale: 1, out: 'C:/Users/user/AppData/Local/Temp/vfx-render',
+    bg: 'battle', scale: 1, stack: 1, spread: 0, figure: false, out: 'C:/Users/user/AppData/Local/Temp/vfx-render',
     contact: false, name: '', seed: 12345, root: undefined
   };
   for (let i = 0; i < argv.length; i++) {
@@ -332,6 +387,9 @@ function parseArgs(argv) {
     else if (a === '--name') opts.name = argv[++i];
     else if (a === '--seed') opts.seed = +argv[++i];
     else if (a === '--scale') opts.scale = +argv[++i];
+    else if (a === '--stack') opts.stack = +argv[++i];
+    else if (a === '--figure') opts.figure = true;
+    else if (a === '--spread') opts.spread = +argv[++i];
     else if (a === '--root') opts.root = argv[++i];
     else if (a === '--contact') opts.contact = true;
     else if (a === '--all') opts.grep = '';

@@ -10,12 +10,12 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.125,
-        "y": 0.125
+        "x": 0.1094,
+        "y": 0.1094
       },
       "alpha": 0.4,
       "tint": "#c48a55",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
       "duration": 0.26,
       "alphaOverLife": [
@@ -60,7 +60,7 @@
         "x": 0.0898,
         "y": 0.0898
       },
-      "alpha": 0.9,
+      "alpha": 0.85,
       "tint": "#ad7444",
       "blendMode": "add",
       "delay": 0,
@@ -108,9 +108,9 @@
         "x": 0.0742,
         "y": 0.0742
       },
-      "alpha": 1,
+      "alpha": 0.85,
       "tint": "#c48a55",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
       "duration": 0.16,
       "alphaOverLife": [
