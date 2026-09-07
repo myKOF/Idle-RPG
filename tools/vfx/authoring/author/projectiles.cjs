@@ -266,30 +266,47 @@ P['proj-meteor-small'] = () => ({
   id: 'proj-meteor-small', duration: 2, layers: meteor({ d: 35, dur: 2, rate: 7, tailPx: 125, tailSec: 1.6 })
 });
 
-/* ---------- proj-starfall：地爆天星（直徑 350、底部弓形震波） ---------- */
+/* ---------- proj-starfall：地爆天星 ----------
+   技能描述是「超巨型殞石」，所以它本來就該是全場最大的東西——
+   但實際量過之後，原本的尺寸不是「很大」而是「蓋住整個戰場」：
+
+     戰場 640x480
+     glow 560x560  = 戰場寬的 88%、高的 117%
+     rim  356x356  = 寬的 56%
+
+   輝光比戰場還高，落下來的那一秒整片畫面變成橘色，看不到自己站在哪裡，
+   也看不到落點影子——使用者回報「地爆天星的影子及特效消失」時，
+   除了 Runtime 的兩個判斷錯誤（見 vfx-runtime 的 rain 修正），
+   這個尺寸也是原因之一。
+
+   縮到大約 0.62 倍：shell 216px 仍然是隕石術（110px）的兩倍，是畫面上
+   最大的單一物件，「超巨型」讀得出來，但戰場還看得見。
+   縮的是尺寸不是氣勢——尾焰、弓形震波、脈動全部保留。 */
 P['proj-starfall'] = () => ({
   id: 'proj-starfall', duration: 3, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 560, alpha: 0.5, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
-    sprite({ id: 'shell', asset: A.flame04, z: 1, size: 350, alpha: 0.95, tint: '#a11208', blend: 'add', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.3) }),
-    sprite({ id: 'body', asset: AT.fire01, z: 2, size: 275, alpha: 1, tint: '#5c0a06', blend: 'normal', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.4) }),
-    sprite({ id: 'core', asset: A.flame04, z: 3, size: 150, alpha: 1, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
-    sprite({ id: 'rim', asset: AT.ringSoft, z: 4, size: 356, alpha: 0.6, tint: '#260302', blend: 'normal', duration: 3, alphaOverLife: GLOW_A }),
-    /* 底部弓形震波：壓扁的橢圓環，半徑約 138px，隨飛行脈動 */
+    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 348, alpha: 0.5, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
+    sprite({ id: 'shell', asset: A.flame04, z: 1, size: 216, alpha: 0.95, tint: '#a11208', blend: 'add', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.3) }),
+    sprite({ id: 'body', asset: AT.fire01, z: 2, size: 170, alpha: 1, tint: '#5c0a06', blend: 'normal', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.4) }),
+    sprite({ id: 'core', asset: A.flame04, z: 3, size: 93, alpha: 1, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
+    sprite({ id: 'rim', asset: AT.ringSoft, z: 4, size: 220, alpha: 0.6, tint: '#260302', blend: 'normal', duration: 3, alphaOverLife: GLOW_A }),
+    /* 底部弓形震波：壓扁的橢圓環，隨飛行脈動 */
     sprite({
-      id: 'bow', asset: A.ringThin, z: 5, sizeX: 276, sizeY: 120, y: 96, alpha: 0.75, tint: '#ffb257', blend: 'add',
+      id: 'bow', asset: A.ringThin, z: 5, sizeX: 171, sizeY: 74, y: 60, alpha: 0.75, tint: '#ffb257', blend: 'add',
       duration: 3, alphaOverLife: [[0, 0], [0.1, 0.85], [0.9, 0.7], [1, 0]],
       scaleOverLife: [[0, 0.9], [0.25, 1.08], [0.5, 0.94], [0.75, 1.06], [1, 0.95]]
     }),
     particle({
       id: 'tail', asset: A.flame05, z: 6, blend: 'add', tint: '#e0451a',
-      rate: 18, lifetime: [1.6, 2.4], spawnRadius: 90, speed: [180, 300], direction: 180, spread: 26,
-      /* 同隕石尾，尺度放大：亂流強度跟著體積走，否則在 190px 的火舌上看不見。 */
+      rate: 18, lifetime: [1.6, 2.4], spawnRadius: 56, speed: [112, 186], direction: 180, spread: 26,
+      /* 同隕石尾，尺度跟著本體一起縮：亂流強度要與火舌大小成比例，
+         否則縮小之後噪聲的擺幅相對變大，火舌會抖得像雜訊。 */
       drag: 1, tintOverLife: RAMP.fireCore,
-      noise: { strength: 26, frequency: 0.012, scrollSpeed: 1.2 },
-      startPx: [110, 190], alphaOverLife: [[0, 0.9], [0.4, 0.6], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
+      noise: { strength: 16, frequency: 0.012, scrollSpeed: 1.2 },
+      startPx: [68, 118], alphaOverLife: [[0, 0.9], [0.4, 0.6], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
     })
   ]
 });
+
 
 /* ---------- proj-thunder-orb-fall：雷殞天落的落體 ---------- */
 P['proj-thunder-orb-fall'] = () => {
