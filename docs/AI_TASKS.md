@@ -1,5 +1,25 @@
 # AI_TASKS.md
 
+## Codex｜普攻近戰改造（MELEE-20260908）
+
+- 狀態：Done；Owner：Codex；使用者授權直接實作並驗證。
+- 內容：普攻取消飛行劍氣、沿用近戰距離；恢復既有角色揮砍動畫並依攻速縮放，追加連擊不重播主動作。
+- 允許修改：`js/combat.js`、`js/battle-renderer.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`index.html`、相關測試與本文件。
+- 禁止修改：傷害公式、連擊數值、存檔格式、其它技能規則與其他工作副本。
+- 前置依賴：無；本次目標檔案衝突預檢乾淨。
+- 測試：近戰距離／VFX 事件／動畫分流定向回歸、build、瀏覽器實機與 diff check。
+- 完成：普攻事件改為 slash／melee（追加 melee-extra），浮字取消飛行延遲；共用實際攻速倍率決定動畫週期，完整素材按影格比例加速；Preset 接手普攻後仍播放角色動作，其他技能分流維持原行為。
+- 修改檔案：上述 5 個程式／快取檔、本文件、tests/basic-melee.test.cjs、tests/player-event-float.test.cjs、tests/skill2-vfx.test.cjs。
+- 未修改但已檢查：js/battlefield.js、js/vfx-runtime.js、js/vfx.js、js/vfx-tower.js、js/data.js、images/sprites/player.json／player.png、js/worker/protocol.js、專案協作規範。
+- 測試指令：node --test tests/basic-melee.test.cjs tests/player-event-float.test.cjs tests/battlefield.test.cjs tests/combo-hits.test.cjs tests/skill2-vfx.test.cjs tests/vfx-runtime.test.cjs tests/battlefield-rt.test.cjs tests/skill2-counter-bloodrage.test.cjs；npm.cmd run build；git diff --check。
+- 結果：175/175 回歸通過、build 325 檔通過；新增 3 項測試覆蓋傷害與連擊分組、零飛行與近戰 Preset 選擇、Preset 接手仍播動畫、攻速縮放與死亡守門。
+- 實機：隔離本機預覽 18 秒捕捉 7 次普攻，全部 slash／melee、travelMs=0，取樣到 idle／walk／attack1／attack2／attack3；正式遊戲頁開啟時 console 無 error／warning。取樣工具頁曾出現一筆 MutationObserver 非 Node 錯誤，遊戲內錯誤監聽為 0，未把工具頁的錯誤宣稱為遊戲回歸。
+- 已知限制：傷害維持原本出手時結算，尚未改為特定揮刀影格扣血；低攻速沿用素材原速，高攻速縮短完整揮擊；高塔沿用卡片版面與近戰斬擊特效，沒有野外角色動畫。完整 npm test 本輪未執行。
+- 未完成項目：無本次程式實作未完成項；高塔與極端攻速的人工體感可在整合前複查。
+- Commit：見本次 [Codex] feat 提交。可交付 Review／由使用者合併。
+- 後續接手者：使用者／主整合工作區；不自行合併 develop。
+
+
 ## Codex｜參考圖鍛鐵 UI 改造（UI-20260907）
 
 - 狀態：Done（2026-09-08）

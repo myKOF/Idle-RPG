@@ -215,7 +215,7 @@ var BattleRenderer = (function () {
   function shouldAnimatePlayer(spec) {
     return !!spec && spec.cat !== 'enemy' &&
       spec.fxKind !== 'chain' && spec.variant !== 'knife-bounce' &&
-      spec.variant !== 'swordwave-extra';
+      spec.variant !== 'swordwave-extra' && spec.variant !== 'melee-extra';
   }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function cssColorToInt(c, fallback) {
@@ -1127,13 +1127,22 @@ var BattleRenderer = (function () {
 
   /* 出手動作。近戰不再「瞬間衝過去再彈回原位」——角色平常就會跑向目標
      （見 tickWorld 的追擊移動），出手時只播揮擊動作與一點前傾。 */
-  function playerAttackAnim(kind, targetId) {
+  function playerAttackAnim(kind, targetId, duration) {
     var p = S.player;
     if (!p || p.dead) return;
     var melee = kind !== 'cast';
     var name = melee ? ('attack' + (1 + Math.floor(Math.random() * 3))) : 'attack2';
     p.baseAnim = p.walking ? 'walk' : 'idle';
     playAnim(p, name, p.baseAnim);
+    var sheet = S.sheets[p.sheetName];
+    var meta = sheet && sheet.manifest.anims[name];
+    if (meta && p.body && duration > 0) {
+      var naturalMs = Array.isArray(meta.durations)
+        ? meta.durations.reduce(function (sum, ms) { return sum + ms; }, 0)
+        : meta.frames / meta.fps * 1000;
+      /* 短於原素材時加速整段，保留各影格比例；低攻速不把揮刀拖成慢動作。 */
+      p.body.animationSpeed *= Math.max(1, naturalMs / (duration * 1000));
+    }
     p.lunge = melee ? 0.18 : 0.12;
   }
 
@@ -4791,7 +4800,8 @@ var BattleRenderer = (function () {
     /* Preset 化（docs/vfx/VFX_RUNTIME_ADAPTER.md）：表格填了特效檔名、
        而且這一則的主要角色在手上時，整則交給 VFX Runtime。
        回 false＝沒有對應的 preset，照舊走下面的程式畫法。 */
-    if (S.vfxrt && S.vfxrt.tryPlay(spec)) return;
+    var presetHandled = S.vfxrt && S.vfxrt.tryPlay(spec);
+    if (presetHandled && spec.cat !== 'basic') return;
     /* presetOnly（協議 v27）：只有 Preset 端畫得出來的事件，接不上就整則忽略。 */
     if (spec.presetOnly) return;
     if (isEnemyAttack) {
@@ -4808,23 +4818,24 @@ var BattleRenderer = (function () {
     var count = Math.min(isThrust ? 8 : 5, Math.max(1, spec.count || 1));
     var stagger = ((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000;
 
-    /* 只有技能施放事件觸發角色動作；普攻與連鎖／彈射是特效自身的行為，
-       不得因每一發子彈或每一段折射重新播放玩家攻擊動畫。 */
+    /* 普攻即使已由 Preset 接手仍要播角色動作；其它技能維持既有分流。 */
     if (shouldAnimatePlayer(spec) && vfxTargetsLive(spec)) {
       var contactFx = spec.fxKind === 'slash' || spec.fxKind === 'impact' || spec.fxKind === 'burst';
       var meleeCat = spec.cat === 'basic' || spec.cat === 'phys';
-      var firstTarget = targets.length ? targets[0] : null;
+      var firstTarget = spec.targets && spec.targets.length ? spec.targets[0] : null;
       if (firstTarget) {
         /* 出手當下先面向目標；跑不跑過去由模擬層決定，這裡只管朝向。 */
         var tp = posOf(firstTarget);
         S.player.facing = (tp.x < S.player.root.x) ? -1 : 1;
       }
       if (meleeCat && contactFx && firstTarget) {
-        playerAttackAnim('melee', firstTarget);
+        playerAttackAnim('melee', firstTarget, spec.cat === 'basic' ? spec.dur : 0);
       } else {
         playerAttackAnim(spec.cat === 'magic' || spec.fxKind === 'rain' || spec.fxKind === 'beam' ? 'cast' : 'melee');
       }
     }
+
+    if (presetHandled) return;
 
     if (spec.variant === 'arcane-barrage' || (spec.glyph === '💫' && spec.cat === 'magic')) {
       targets.forEach(function (id, ti) {

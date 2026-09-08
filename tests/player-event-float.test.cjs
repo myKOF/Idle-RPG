@@ -319,7 +319,7 @@ test('每次主普攻的連擊傷害獨立累加，追加劍氣不重播普攻�
   assert.match(combat, /!depth \? 'basic-' \+ \(\+\+BASIC_DAMAGE_FLOAT_GROUP_SEQ\) : ''/);
   assert.match(combat, /basicDamageFloatGroupClass\(combatDamageFloatClass\('enemy-attack', res\), damageGroupId\)/);
   assert.match(combat, /damageGroupId: damageGroupId/);
-  assert.match(combat, /variant: depth \? 'swordwave-extra' : 'swordwave'/);
+  assert.match(combat, /variant: depth \? 'melee-extra' : 'melee'/);
 
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   const vfx = fs.readFileSync(path.join(root, 'js', 'vfx.js'), 'utf8');
