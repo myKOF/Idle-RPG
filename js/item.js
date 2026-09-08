@@ -695,6 +695,7 @@ function itemDetailHTML(it, cmp, opts) {
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
     if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(k)) continue;
+    if (d.minR !== undefined && it.rarity < d.minR) continue;
     if (d.slots && d.slots.indexOf(it.slot) < 0 && d.slots.indexOf('all') < 0) continue;
     var reqRarity = d.minR ? ' <span style="font-size:10.5px;color:' + RARITIES[d.minR].color + '">(' + RARITIES[d.minR].name + '+)</span>' : '';
 

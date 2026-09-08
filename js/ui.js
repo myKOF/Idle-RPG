@@ -4615,9 +4615,11 @@ function findSelItem() {
 
 
 function renderDetail() {
-  hideAffixPool();
   var pane = $id('detail-pane');
   var it = findSelItem();
+  if (!it || !UI.sel || UI.affixPoolItemId !== it.id) {
+    hideAffixPool();
+  }
   var headerSnapshot = uiHeaderPanelSnapshot();
   var invSnapshot = uiInventoryPanelSnapshot();
   var gemsSnapshot = uiGemsPanelSnapshot();
@@ -4725,6 +4727,17 @@ function renderDetail() {
   if (actionBar) {
     actionBar.innerHTML = actionsHtml;
     actionBar.style.display = 'flex';
+  }
+  if (UI.affixPoolItemId && it && UI.sel && UI.affixPoolItemId === it.id) {
+    var overlay = $id('affix-pool-overlay');
+    if (overlay && overlay.style.display !== 'none') {
+      var poolBtn = pane ? pane.querySelector('[data-affix-pool-toggle]') : null;
+      var newSource = poolBtn && poolBtn.nextElementSibling;
+      if (newSource) {
+        overlay.innerHTML = newSource.innerHTML;
+        UI.affixPoolSource = newSource;
+      }
+    }
   }
 }
 
@@ -8827,6 +8840,7 @@ function hideAffixPool() {
   overlay.style.display = 'none';
   overlay.innerHTML = '';
   UI.affixPoolSource = null;
+  UI.affixPoolItemId = null;
 }
 
 function toggleAffixPool(anchorEl) {
@@ -8840,6 +8854,7 @@ function toggleAffixPool(anchorEl) {
   overlay.innerHTML = source.innerHTML;
   overlay.style.display = 'block';
   UI.affixPoolSource = source;
+  UI.affixPoolItemId = UI.sel ? UI.sel.id : null;
 
   var r = anchorEl.getBoundingClientRect();
   var tw = overlay.offsetWidth, th = overlay.offsetHeight;
@@ -11057,7 +11072,7 @@ function initUI() {
       toggleAffixPool(poolBtn);
       return;
     }
-    if (!e.target.closest('#affix-pool-overlay')) hideAffixPool();
+    if (!e.target.closest('#affix-pool-overlay, #detail-pane')) hideAffixPool();
     // 神鑄：法陣槽位（點擊取回）/ 魔塵符位（點擊放入或取下）
     var fslot = e.target.closest('[data-forge-slot]');
     if (fslot) {
