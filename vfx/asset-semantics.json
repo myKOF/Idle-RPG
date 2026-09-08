@@ -75,12 +75,12 @@
       "medium"
     ]
   },
-  "recordCount": 1973,
+  "recordCount": 2399,
   "confidenceCounts": {
-    "high": 154,
-    "medium": 1819
+    "high": 186,
+    "medium": 2213
   },
-  "needsReviewCount": 87,
+  "needsReviewCount": 97,
   "unclassifiedCount": 0,
   "records": [
     {
@@ -25244,6 +25244,6416 @@
       "ruleId": "any/pack-preview"
     },
     {
+      "assetId": "sci-fi-effects-sheets/absorption_128x128.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial",
+        "noisy"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-explosion",
+      "needsReview": true
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/bending_lightning_128x128.png",
+      "kind": "vfx",
+      "shape": "filament",
+      "usage": [
+        "core",
+        "spark"
+      ],
+      "element": "lightning",
+      "tags": [
+        "sharp",
+        "noisy",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-lightning",
+      "needsReview": true
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/expanding_circle_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/explosion2_128x128.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial",
+        "noisy"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-explosion",
+      "needsReview": true
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/explosion3_128x128.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial",
+        "noisy"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-explosion",
+      "needsReview": true
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/explosion4_128x128.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial",
+        "noisy"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-explosion",
+      "needsReview": true
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/explosion5_128x128.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial",
+        "noisy"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-explosion",
+      "needsReview": true
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/explosion_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/flame_warp_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/front_shield_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/front_shieldb_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/lightning_128x128.png",
+      "kind": "vfx",
+      "shape": "filament",
+      "usage": [
+        "core",
+        "spark"
+      ],
+      "element": "lightning",
+      "tags": [
+        "sharp",
+        "noisy",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-lightning",
+      "needsReview": true
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/odd_thruster_88x128.png",
+      "kind": "vfx",
+      "shape": "cone",
+      "usage": [
+        "beam",
+        "trail"
+      ],
+      "element": "neutral",
+      "tags": [
+        "directional",
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-beam"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/pulsating_beam2_128x128.png",
+      "kind": "vfx",
+      "shape": "cone",
+      "usage": [
+        "beam",
+        "trail"
+      ],
+      "element": "neutral",
+      "tags": [
+        "directional",
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-beam"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/pulsating_beam_128x128.png",
+      "kind": "vfx",
+      "shape": "cone",
+      "usage": [
+        "beam",
+        "trail"
+      ],
+      "element": "neutral",
+      "tags": [
+        "directional",
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-beam"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/pulsating_shield_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/pulsating_star_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/radar_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/rays_128x128.png",
+      "kind": "vfx",
+      "shape": "cone",
+      "usage": [
+        "beam",
+        "trail"
+      ],
+      "element": "neutral",
+      "tags": [
+        "directional",
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-beam"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/rings_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/rotating_boxes_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/rotating_cone_128x128.png",
+      "kind": "vfx",
+      "shape": "cone",
+      "usage": [
+        "beam",
+        "trail"
+      ],
+      "element": "neutral",
+      "tags": [
+        "directional",
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-beam"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/rotating_shield_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/rotator3_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/shield2_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/shield3_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/shield4_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "ring",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "symmetric",
+        "hollow"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-shield"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/smoke_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/tractor_beam_128x128.png",
+      "kind": "vfx",
+      "shape": "cone",
+      "usage": [
+        "beam",
+        "trail"
+      ],
+      "element": "neutral",
+      "tags": [
+        "directional",
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-beam"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/waves_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/windshield_wiper_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects-sheets/yellow_cloud_128x128.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sheet-misc"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/absorption/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/bending_lightning/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/elements/radar.png",
+      "kind": "vfx",
+      "shape": "streak",
+      "usage": [
+        "beam",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/element-part"
+    },
+    {
+      "assetId": "sci-fi-effects/elements/ray.png",
+      "kind": "vfx",
+      "shape": "streak",
+      "usage": [
+        "beam",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/element-part"
+    },
+    {
+      "assetId": "sci-fi-effects/elements/rotating_star.png",
+      "kind": "vfx",
+      "shape": "streak",
+      "usage": [
+        "beam",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/element-part"
+    },
+    {
+      "assetId": "sci-fi-effects/elements/tractor_beam.png",
+      "kind": "vfx",
+      "shape": "streak",
+      "usage": [
+        "beam",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/element-part"
+    },
+    {
+      "assetId": "sci-fi-effects/elements/tractor_beam2.png",
+      "kind": "vfx",
+      "shape": "streak",
+      "usage": [
+        "beam",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/element-part"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/expanding_circle/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0000.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion/0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0014.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion2/e_0015.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0014.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion3/i_0015.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0014.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion4/k2_0015.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0014.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/explosion5/h_0015.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/12.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/13.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/14.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/15.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/16.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/17.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/flame_warp/18.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0014.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0015.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shield/a_0016.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0014.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0015.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/front_shieldb/b_0016.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/12.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/13.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/14.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/15.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/16.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/lightning/17.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/12.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/13.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/14.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/odd_thruster/15.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0000_frame-8.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0001_frame-7.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0002_frame-6.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0003_frame-5.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0004_frame-4.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0005_frame-3.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0006_frame-2.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam/_0007_frame-1.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam2/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam2/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam2/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_beam2/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_shield/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_star/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_star/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_star/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_star/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_star/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/pulsating_star/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/radar/12.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rays/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rays/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rays/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rays/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rays/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rays/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rings/d_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_boxes/d_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0001.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0002.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0003.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0004.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0005.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0006.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0007.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0008.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0009.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0010.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0011.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0012.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0013.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0014.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0015.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_cone/h_st_0016.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotating_shield/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotator3/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotator3/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotator3/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotator3/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotator3/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotator3/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/rotators/radar2c.png",
+      "kind": "vfx",
+      "shape": "fan",
+      "usage": [
+        "core",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/rotator"
+    },
+    {
+      "assetId": "sci-fi-effects/rotators/rotator1.png",
+      "kind": "vfx",
+      "shape": "fan",
+      "usage": [
+        "core",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/rotator"
+    },
+    {
+      "assetId": "sci-fi-effects/rotators/rotator1b.png",
+      "kind": "vfx",
+      "shape": "fan",
+      "usage": [
+        "core",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/rotator"
+    },
+    {
+      "assetId": "sci-fi-effects/rotators/rotator2.png",
+      "kind": "vfx",
+      "shape": "fan",
+      "usage": [
+        "core",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/rotator"
+    },
+    {
+      "assetId": "sci-fi-effects/rotators/rotator4.png",
+      "kind": "vfx",
+      "shape": "fan",
+      "usage": [
+        "core",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/rotator"
+    },
+    {
+      "assetId": "sci-fi-effects/rotators/rotator5.png",
+      "kind": "vfx",
+      "shape": "fan",
+      "usage": [
+        "core",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "scifi/rotator"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield2/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield3/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/12.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/13.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/14.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/15.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/16.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/17.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/18.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/shield4/19.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/12.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/13.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/smoke/14.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/tractor_beam/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/tractor_beam/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/tractor_beam/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/waves/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/waves/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/waves/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/waves/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/waves/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/waves/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/waves/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/windshield_wiper/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/00.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/01.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/02.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/03.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/04.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/05.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/06.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/07.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/08.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/09.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/10.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
+      "assetId": "sci-fi-effects/yellow_cloud/11.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "scifi/sequence-frame"
+    },
+    {
       "assetId": "shape-alpha/pdalpha_001.png",
       "kind": "nonVfx",
       "confidence": "medium",
@@ -28198,6 +34608,96 @@
       "confidence": "medium",
       "source": "family",
       "ruleId": "any/pack-preview"
+    },
+    {
+      "assetId": "spell-sheets/effect36_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "core",
+        "ring"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "spell/arcane-sheet"
+    },
+    {
+      "assetId": "spell-sheets/effect51_128x128.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "core",
+        "ring"
+      ],
+      "element": "neutral",
+      "tags": [
+        "smooth",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "spell/arcane-sheet"
+    },
+    {
+      "assetId": "spell-sheets/explosion25_128x128.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "spell/fire-sheet",
+      "needsReview": true
+    },
+    {
+      "assetId": "spell-sheets/fire01_128x256.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "spell/fire-sheet",
+      "needsReview": true
+    },
+    {
+      "assetId": "spell-sheets/toonexplosion31_128x128.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "spell/fire-sheet",
+      "needsReview": true
     },
     {
       "assetId": "splat-pack/png/default-256px/splat00.png",

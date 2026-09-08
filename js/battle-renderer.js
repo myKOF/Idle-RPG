@@ -428,8 +428,21 @@ var BattleRenderer = (function () {
   function renderClock() { return nowMs() - POS_BUFFER_MS; }
 
   /* ---- 序列幀載入 ----
-     幀定義 JSON：{ image, frameWidth, frameHeight, anims: { name: { row, frames, fps, loop } } }
-     正式圖替換時只要維持這個結構即可，程式不用改。 */
+     幀定義 JSON：
+       { image, frameWidth, frameHeight,
+         scale?, anchorY?,                       // 見 makeAnimSprite
+         anims: { name: { row, frames, fps, loop, durations? } } }
+     正式圖替換時只要維持這個結構即可，程式不用改。
+
+     durations（每格毫秒，選填）：美術給的節奏往往不是等速——
+     普攻在出手的那兩格是 75ms、其餘 100ms，那個落差就是打擊感。
+     只有一個 fps 的話會被抹平。PIXI 的 AnimatedSprite 本來就吃
+     {texture, time} 陣列並逐格計時，這裡只是把它接起來；
+     有 durations 時 animationSpeed 要設 1（那時它是時間倍率，不是幀率）。
+     沒給就照舊用 fps，舊資源一個字都不用改。
+
+     多個動作可以指到同一個 row：普攻會在 attack1~3 之間隨機挑，
+     但素材可能只有一段，指同一列即可，不必把同一段畫三份。 */
   function loadSheet(name, base) {
     return fetch(base + '.json?v=' + Date.now()).then(function (r) {
       if (!r.ok) throw new Error('manifest http ' + r.status);
@@ -438,33 +451,58 @@ var BattleRenderer = (function () {
       return PIXI.Assets.load(base + '.png').then(function (tex) {
         tex.source.scaleMode = 'nearest';   // 像素風：放大不要糊
         var anims = {};
+        var speeds = {};
         var fw = manifest.frameWidth, fh = manifest.frameHeight;
         for (var key in manifest.anims) {
           if (!Object.prototype.hasOwnProperty.call(manifest.anims, key)) continue;
           var a = manifest.anims[key];
+          var hasDur = Array.isArray(a.durations) && a.durations.length === a.frames;
           var frames = [];
           for (var i = 0; i < a.frames; i++) {
-            frames.push(new PIXI.Texture({
+            var t = new PIXI.Texture({
               source: tex.source,
               frame: new PIXI.Rectangle(i * fw, a.row * fh, fw, fh)
-            }));
+            });
+            frames.push(hasDur ? { texture: t, time: a.durations[i] } : t);
           }
           anims[key] = frames;
+          /* 有逐格時間時 animationSpeed 是「時間倍率」，1 ＝ 照美術給的節奏；
+             沒有的話它是幀率（PIXI 以 60fps 為基準）。 */
+          speeds[key] = hasDur ? 1 : (a.fps || 8) / 60;
         }
-        S.sheets[name] = { manifest: manifest, anims: anims };
+        S.sheets[name] = { manifest: manifest, anims: anims, speeds: speeds };
       });
     });
   }
 
-  /* 建立一個序列幀動畫精靈。anchor 腳底置中。 */
+  /* 建立一個序列幀動畫精靈。
+
+     scale 與 anchorY 由 manifest 給，因為它們是**那份素材的性質**，不是
+     程式的設定：不同來源的角色圖，格子多大、角色在格子裡佔多少、腳底在
+     第幾條掃描線，全都不一樣。寫死在這裡的話，換一組圖就得改程式。
+       scale   把素材畫成想要的螢幕大小（像素風角色常常只佔格子的一小塊）
+       anchorX 角色站立點在格子裡的**水平**比例。預設 0.5。
+       anchorY 腳底在格子裡的比例。預設 0.92 是舊佔位圖的值，
+               略高於實際腳底，讓陰影疊得進去。
+     三者都沒給就維持原本的行為，舊資源不受影響。
+
+     ⚠️ anchorX 不能想當然耳是 0.5。攻擊動作的斬弧會往兩側掃出去，
+        所以匯出的格子往往比角色寬很多，而角色**不會**站在格子正中央——
+        Clarice 的腳底在 96 寬的格子裡是 x=32.8，寫死 0.5（x=48）的結果是
+        角色被畫在站立點左邊 15 貼圖px，乘上 3.15 倍就是螢幕上偏左 48px。 */
   function makeAnimSprite(sheetName, animName) {
     var sheet = S.sheets[sheetName];
     if (!sheet || !sheet.anims[animName]) return null;
     var meta = sheet.manifest.anims[animName];
     var sp = new PIXI.AnimatedSprite(sheet.anims[animName]);
-    sp.animationSpeed = (meta.fps || 8) / 60;
+    sp.animationSpeed = sheet.speeds[animName];
     sp.loop = !!meta.loop;
-    sp.anchor.set(0.5, 0.92);   // 腳底稍微上收，陰影疊得進去
+    var ax = sheet.manifest.anchorX;
+    var ay = sheet.manifest.anchorY;
+    sp.anchor.set((typeof ax === 'number' && isFinite(ax)) ? ax : 0.5,
+      (typeof ay === 'number' && isFinite(ay)) ? ay : 0.92);
+    var k = sheet.manifest.scale;
+    if (typeof k === 'number' && k > 0) sp.scale.set(k);
     sp.play();
     return sp;
   }
@@ -475,7 +513,7 @@ var BattleRenderer = (function () {
     var meta = sheet.manifest.anims[animName];
     entity.curAnim = animName;
     entity.body.textures = sheet.anims[animName];
-    entity.body.animationSpeed = (meta.fps || 8) / 60;
+    entity.body.animationSpeed = sheet.speeds[animName];
     entity.body.loop = !!meta.loop;
     entity.body.gotoAndPlay(0);
     if (!meta.loop) {
@@ -991,8 +1029,9 @@ var BattleRenderer = (function () {
     shadow.ellipse(0, 0, 24, 8).fill({ color: 0x000000, alpha: 0.4 });
     root.addChild(shadow);
     var bodyWrap = new PIXI.Container();
+    /* 縮放交給 player.json 的 scale：那個倍率取決於素材裡的角色佔格子多大，
+       是素材的性質而不是程式的設定（原本寫死 1.09，換一組圖就得改這一行）。 */
     var body = makeAnimSprite('player', 'idle');
-    body.scale.set(1.09);   // 原 1.55，縮小約 30%
     bodyWrap.addChild(body);
     root.addChild(bodyWrap);
 

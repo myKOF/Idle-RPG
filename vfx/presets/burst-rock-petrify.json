@@ -5,16 +5,16 @@
   "loop": false,
   "layers": [
     {
-      "id": "crack",
+      "id": "ground",
       "type": "sprite",
-      "assetId": "splat-pack/png/double-512px/splat20.png",
+      "assetId": "light-masks-1.0/transparent/circle_a.png",
       "zIndex": 0,
       "scale": {
         "x": 0.3906,
         "y": 0.2188
       },
-      "alpha": 0.85,
-      "tint": "#5b3a27",
+      "alpha": 0.42,
+      "tint": "#3d3025",
       "blendMode": "normal",
       "duration": 0.8,
       "alphaOverLife": [
@@ -51,10 +51,48 @@
       ]
     },
     {
-      "id": "rim",
+      "id": "wave",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
+      "scale": {
+        "x": 0.4102,
+        "y": 0.2297
+      },
+      "alpha": 0.55,
+      "tint": "#e8e0d0",
+      "blendMode": "screen",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.25
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "rim",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
       "scale": {
         "x": 0.3906,
         "y": 0.2188
@@ -100,7 +138,7 @@
       "id": "dust",
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 2,
+      "zIndex": 3,
       "scale": {
         "x": 0.3711,
         "y": 0.2078
@@ -139,46 +177,46 @@
       ]
     },
     {
-      "id": "shards",
+      "id": "rubble",
       "type": "particle",
       "assetId": "new_materials/mask-shape/dingbats-366.png",
-      "zIndex": 6,
-      "tint": "#ad7444",
+      "zIndex": 4,
+      "tint": "#8a7f6e",
       "blendMode": "normal",
       "emission": {
-        "count": 14,
+        "count": 26,
         "mode": "burst"
       },
       "lifetime": [
-        0.35,
-        0.6
+        0.4,
+        0.68
       ],
       "spawn": {
         "radius": 12,
         "shape": "circle"
       },
       "speed": [
-        180,
-        300
+        140,
+        260
       ],
       "direction": 0,
       "spread": 360,
       "gravity": {
         "x": 0,
-        "y": 420
+        "y": 430
       },
       "drag": 4,
       "startScale": [
-        0.0156,
-        0.0313
+        0.0098,
+        0.0215
       ],
       "rotationStart": [
         0,
         3.141592653589793
       ],
       "rotationSpeed": [
-        -5,
-        5
+        -7,
+        7
       ],
       "alphaOverLife": [
         [

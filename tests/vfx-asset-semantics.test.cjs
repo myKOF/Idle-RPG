@@ -215,7 +215,14 @@ test('語意建置具決定性：同樣輸入產生位元相同的輸出', { ski
   const a = builder.serialise(index, builder.build(index, groups, rules));
   const b = builder.serialise(index, builder.build(index, groups, rules));
   assert.equal(a, b);
-  assert.equal(a, fs.readFileSync(semanticsPath, 'utf8'),
+  /* 比對前先把行尾正規化。這個 repo 的 core.autocrlf=true，檔案簽出時會被
+     轉成 CRLF，而 serialise 產生的是 LF——直接比位元的話，任何一次乾淨的
+     簽出都會讓這條轉紅，而它其實只是行尾風格不同。
+     這條測的是「語意檔有沒有被手改」，行尾不在那個問題的範圍內。
+     （先前會通過，是因為工作樹裡那份剛好是 builder 自己寫出來的 LF 版；
+      git checkout 一次就會失效——等於是靠巧合在綠燈。） */
+  const eol = (t) => t.split(String.fromCharCode(13)).join('');
+  assert.equal(eol(a), eol(fs.readFileSync(semanticsPath, 'utf8')),
     '磁碟上的語意檔應與重新建置的結果一致（未被手改）');
 });
 

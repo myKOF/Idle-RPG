@@ -1234,6 +1234,235 @@
    "observation": "矩形窗格陣列，是投影遮罩不是 UI"
   },
   {
+   "ruleId": "scifi/element-part",
+   "select": {
+    "package": "sci-fi-effects",
+    "format": "png",
+    "pathPattern": "^sci-fi-effects/elements/"
+   },
+   "evidence": [
+    "sci-fi-effects/elements/ray.png",
+    "sci-fi-effects/elements/tractor_beam.png",
+    "sci-fi-effects/elements/radar.png",
+    "sci-fi-effects/elements/rotating_star.png",
+    "sci-fi-effects/elements/tractor_beam2.png"
+   ],
+   "propagation": "evidence",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "streak",
+    "usage": [
+     "beam",
+     "core"
+    ],
+    "element": "neutral",
+    "tags": [
+     "sharp",
+     "directional"
+    ]
+   },
+   "observation": "各自獨立的靜圖零件（radar／ray／rotating_star／tractor_beam），不是序列。尺寸各不相同（29x300 到 496x152），拼不成圖集也不該拼"
+  },
+  {
+   "ruleId": "scifi/rotator",
+   "select": {
+    "package": "sci-fi-effects",
+    "format": "png",
+    "pathPattern": "^sci-fi-effects/rotators/"
+   },
+   "evidence": [
+    "sci-fi-effects/rotators/rotator1.png",
+    "sci-fi-effects/rotators/rotator2.png",
+    "sci-fi-effects/rotators/rotator4.png",
+    "sci-fi-effects/rotators/rotator5.png",
+    "sci-fi-effects/rotators/rotator1b.png",
+    "sci-fi-effects/rotators/radar2c.png"
+   ],
+   "propagation": "evidence",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "fan",
+    "usage": [
+     "core",
+     "mask"
+    ],
+    "element": "neutral",
+    "tags": [
+     "sharp",
+     "radial",
+     "symmetric"
+    ]
+   },
+   "observation": "作者註明「這幾張是要用程式旋轉的」，所以是靜圖不是序列。配 rotationOverLife 使用"
+  },
+  {
+   "ruleId": "scifi/sequence-frame",
+   "select": {
+    "package": "sci-fi-effects",
+    "format": "png",
+    "pathPattern": "^sci-fi-effects/(?!elements/|rotators/)[^/]+/"
+   },
+   "evidence": [
+    "sci-fi-effects/lightning/00.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "irregular",
+    "usage": [
+     "core"
+    ],
+    "element": "neutral",
+    "tags": [
+     "sharp"
+    ]
+   },
+   "observation": "frame sequence 的單格（一格一個檔）。⚠️ Runtime 只認 sprite sheet，這些直接引用只會得到動畫裡的某一格；可用的形式是 pack-sequence.cjs 拼出來的 sci-fi-effects-sheets。這一包留著當母帶"
+  },
+  {
+   "ruleId": "scifi/sheet-beam",
+   "select": {
+    "package": "sci-fi-effects-sheets",
+    "format": "png",
+    "namePattern": "^(pulsating_beam|pulsating_beam2|tractor_beam|odd_thruster|rays|rotating_cone)_\\d+x\\d+$"
+   },
+   "evidence": [
+    "sci-fi-effects-sheets/tractor_beam_128x128.png",
+    "sci-fi-effects-sheets/pulsating_beam_128x128.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "cone",
+    "usage": [
+     "beam",
+     "trail"
+    ],
+    "element": "neutral",
+    "tags": [
+     "directional",
+     "smooth"
+    ]
+   },
+   "observation": "光束與噴流：直立光柱、牽引光錐、推進器尾焰、放射光線。青／綠／紫，預先上色不可染"
+  },
+  {
+   "ruleId": "scifi/sheet-explosion",
+   "select": {
+    "package": "sci-fi-effects-sheets",
+    "format": "png",
+    "namePattern": "^(absorption|explosion2|explosion3|explosion4|explosion5)_\\d+x\\d+$"
+   },
+   "evidence": [
+    "sci-fi-effects-sheets/absorption_128x128.png",
+    "sci-fi-effects-sheets/explosion2_128x128.png",
+    "sci-fi-effects-sheets/explosion3_128x128.png",
+    "sci-fi-effects-sheets/explosion4_128x128.png",
+    "sci-fi-effects-sheets/explosion5_128x128.png"
+   ],
+   "propagation": "evidence",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "cloud",
+    "usage": [
+     "impact",
+     "core"
+    ],
+    "element": "fire",
+    "tags": [
+     "dense",
+     "radial",
+     "noisy"
+    ]
+   },
+   "observation": "黃橙色的爆炸與吸收爆閃，預先上色不可染。一次性動畫（無→有→無）。五張都在總覽圖上逐一看過，所以列為 evidence 而不是靠命名傳播——預上色素材標具體元素必須人工確認過",
+   "needsReview": true
+  },
+  {
+   "ruleId": "scifi/sheet-lightning",
+   "select": {
+    "package": "sci-fi-effects-sheets",
+    "format": "png",
+    "namePattern": "^(lightning|bending_lightning)_\\d+x\\d+$"
+   },
+   "evidence": [
+    "sci-fi-effects-sheets/lightning_128x128.png",
+    "sci-fi-effects-sheets/bending_lightning_128x128.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "filament",
+    "usage": [
+     "core",
+     "spark"
+    ],
+    "element": "lightning",
+    "tags": [
+     "sharp",
+     "noisy",
+     "directional"
+    ]
+   },
+   "observation": "分叉電弧，螢光綠，預先上色不可染。與遊戲既有的金黃色雷電不同色系，要用得先確認美術方向",
+   "needsReview": true
+  },
+  {
+   "ruleId": "scifi/sheet-misc",
+   "select": {
+    "package": "sci-fi-effects-sheets",
+    "format": "png",
+    "namePattern": "^(?!(?:absorption|bending_lightning|expanding_circle|explosion2|explosion3|explosion4|explosion5|front_shield|front_shieldb|lightning|odd_thruster|pulsating_beam|pulsating_beam2|pulsating_shield|rays|rings|rotating_cone|rotating_shield|shield2|shield3|shield4|tractor_beam)_)"
+   },
+   "evidence": [
+    "sci-fi-effects-sheets/radar_128x128.png",
+    "sci-fi-effects-sheets/waves_128x128.png",
+    "sci-fi-effects-sheets/yellow_cloud_128x128.png",
+    "sci-fi-effects-sheets/smoke_128x128.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "irregular",
+    "usage": [
+     "core"
+    ],
+    "element": "neutral",
+    "tags": [
+     "smooth"
+    ]
+   },
+   "observation": "其餘：雷達掃描扇、波紋、旋轉方框、黃色雲氣、煙、藍色光球、火焰扭曲。⚠️ 這條是同 package 的收尾規則，放在最後撿走前四條沒挑走的"
+  },
+  {
+   "ruleId": "scifi/sheet-shield",
+   "select": {
+    "package": "sci-fi-effects-sheets",
+    "format": "png",
+    "namePattern": "^(front_shield|front_shieldb|pulsating_shield|rotating_shield|shield2|shield3|shield4|expanding_circle|rings)_\\d+x\\d+$"
+   },
+   "evidence": [
+    "sci-fi-effects-sheets/front_shield_128x128.png",
+    "sci-fi-effects-sheets/shield4_128x128.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "ring",
+    "usage": [
+     "ring",
+     "glow"
+    ],
+    "element": "neutral",
+    "tags": [
+     "smooth",
+     "symmetric",
+     "hollow"
+    ]
+   },
+   "observation": "護盾／屏障：半球罩、橢圓環、擴散環。實際顏色是青、藍、綠三種，預先上色不可染；標 neutral 是因為這些是能量屏障，對不上任何一個遊戲元素"
+  },
+  {
    "ruleId": "shape/frame",
    "select": {
     "package": "shape-alpha",
@@ -1615,6 +1844,63 @@
      "wispy"
     ]
    }
+  },
+  {
+   "ruleId": "spell/arcane-sheet",
+   "select": {
+    "package": "spell-sheets",
+    "format": "png",
+    "namePattern": "^(effect36|effect51)_\\d+x\\d+$"
+   },
+   "evidence": [
+    "spell-sheets/effect36_128x128.png",
+    "spell-sheets/effect51_128x128.png"
+   ],
+   "propagation": "evidence",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "ring",
+    "usage": [
+     "core",
+     "ring"
+    ],
+    "element": "neutral",
+    "tags": [
+     "smooth",
+     "radial",
+     "symmetric"
+    ]
+   },
+   "observation": "藍色光球脈動(4x4)與青→白→紫的三色魔法環(4x4，末格空)。⚠️ 來源與授權未確認，見素材庫的 PROVENANCE.md"
+  },
+  {
+   "ruleId": "spell/fire-sheet",
+   "select": {
+    "package": "spell-sheets",
+    "format": "png",
+    "namePattern": "^(explosion25|toonexplosion31|fire01)_\\d+x\\d+$"
+   },
+   "evidence": [
+    "spell-sheets/explosion25_128x128.png",
+    "spell-sheets/fire01_128x256.png",
+    "spell-sheets/toonexplosion31_128x128.png"
+   ],
+   "propagation": "evidence",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "cloud",
+    "usage": [
+     "impact",
+     "core"
+    ],
+    "element": "fire",
+    "tags": [
+     "dense",
+     "radial"
+    ]
+   },
+   "observation": "橘紅火系圖集：寫實爆炸(4x4)、卡通星狀爆(4x4)、下墜火焰(8x4，格 128x256 是直立的)。⚠️ 來源與授權未確認，見素材庫的 PROVENANCE.md，確認前不要讓 preset 引用",
+   "needsReview": true
   },
   {
    "ruleId": "splat/splat",
