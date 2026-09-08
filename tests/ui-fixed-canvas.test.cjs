@@ -1,24 +1,59 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const css = fs.readFileSync('css/style.css', 'utf8');
+const skin = fs.readFileSync('css/ashen-forge.css', 'utf8');
 const scaler = fs.readFileSync('js/ui-scale.js', 'utf8');
 
-test('UI uses a fixed reference canvas instead of responsive reflow', () => {
-  assert.match(css, /#ui-stage\s*\{[\s\S]*position:\s*fixed/);
-  assert.match(css, /#ui-shell\s*\{[\s\S]*width:\s*1920px[\s\S]*height:\s*900px/);
+function mountScaler(width, height) {
+  const properties = {};
+  const listeners = {};
+  const shell = { style: {} };
+  const stage = { style: { setProperty(key, value) { properties[key] = value; } } };
+  const document = {
+    readyState: 'complete',
+    documentElement: { clientWidth: width, clientHeight: height },
+    getElementById(id) { return { 'ui-stage': stage, 'ui-shell': shell }[id] || null; },
+    addEventListener(type, callback) { listeners[type] = callback; }
+  };
+  const window = { innerWidth: width, innerHeight: height, addEventListener(type, callback) { listeners[type] = callback; } };
+  vm.runInNewContext(scaler, { document, window });
+  return { document, properties, listeners, shell };
+}
+
+function assertFillsViewport(ui, width, height) {
+  const scale = Number(ui.properties['--ui-scale']);
+  assert.ok(scale > 0 && Number.isFinite(scale));
+  assert.ok(Math.abs(parseFloat(ui.shell.style.width) * scale - width) < 0.001, 'canvas fills viewport width');
+  assert.ok(Math.abs(parseFloat(ui.shell.style.height) * scale - height) < 0.001, 'canvas fills viewport height');
+  assert.equal(parseFloat(ui.properties['--ui-canvas-height']), parseFloat(ui.shell.style.height));
+  assert.match(ui.shell.style.transform, /translate\(-50%, -50%\) scale\(/);
+}
+
+test('UI retains one reference-width layout and gives extra height to the game panels', () => {
   assert.match(css, /#ui-shell #game-layout\s*\{[\s\S]*flex-direction:\s*row\s*!important/);
-  // 戰鬥改造：戰鬥區 816px ＝ 1920 設計寬的約 42.5%，將空間讓給裝備功能區。
-  assert.match(css, /#ui-shell #combat-area\s*\{[\s\S]*width:\s*816px\s*!important/);
-  // 高塔沿用三欄；野外的 4×4 棋盤版型（.multi-enemy-layout）另有一組固定欄寬
-  assert.match(css, /#ui-shell \.battle-scene\s*\{[\s\S]*grid-template-columns:\s*202px auto minmax\(0, 1fr\)\s*!important/);
-  assert.match(css, /#ui-shell \.battle-scene\.multi-enemy-layout\s*\{[\s\S]*grid-template-columns:\s*132px minmax\(0, 1fr\)\s*!important/);
+  assert.match(skin, /height:\s*calc\(var\(--ui-canvas-height, 900px\) - 50px\)\s*!important/);
+  assert.match(skin, /max-width:\s*none\s*!important/);
 });
 
-test('UI scaler preserves the 1920x900 aspect ratio', () => {
-  assert.match(scaler, /DESIGN_WIDTH\s*=\s*1920/);
-  assert.match(scaler, /DESIGN_HEIGHT\s*=\s*900/);
-  assert.match(scaler, /Math\.min\(width \/ DESIGN_WIDTH, height \/ DESIGN_HEIGHT\)/);
-  assert.match(scaler, /translate\(-50%, -50%\) scale\(/);
+for (const [width, height] of [[1920, 1080], [1920, 900], [1536, 864], [1280, 720], [960, 720], [3440, 1440], [390, 844]]) {
+  test(`canvas fills ${width}x${height} without letterboxing or nonuniform scaling`, () => {
+    const ui = mountScaler(width, height);
+    assertFillsViewport(ui, width, height);
+    assert.equal(Number(ui.properties['--ui-scale']), Math.min(width / 1920, height / 900));
+  });
+}
+
+test('fullscreen and resize both refresh the canvas extent', () => {
+  const ui = mountScaler(1280, 720);
+  ui.document.documentElement.clientWidth = 1920;
+  ui.document.documentElement.clientHeight = 1080;
+  ui.listeners.fullscreenchange();
+  assertFillsViewport(ui, 1920, 1080);
+  ui.document.documentElement.clientWidth = 960;
+  ui.document.documentElement.clientHeight = 720;
+  ui.listeners.resize();
+  assertFillsViewport(ui, 960, 720);
 });

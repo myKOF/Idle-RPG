@@ -5,8 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
+  <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.60">
   <link rel="stylesheet" href="css/inventory-offset.css">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.2">
 </head>
 
 <body>
@@ -68,6 +70,7 @@
 
   <div id="game-layout">
     <div id="stats-sidebar" class="panel">
+      <h2 class="af-heading">角色</h2>
       <div class="sidebar-avatar"><img src="images/icon_avatar.png" alt="Avatar"></div>
       <div class="sidebar-title" id="p-class">冒險者</div>
       <div class="sidebar-level">
@@ -85,15 +88,16 @@
     </div>
 
     <div id="workspace-area">
+      <h1 class="af-heading">裝備與工藝</h1>
       <nav id="tabs">
-        <button class="tab-btn active" data-tab="equip">🎒 裝備</button>
-        <button class="tab-btn" data-tab="newforge">🏭 熔爐</button>
-        <button class="tab-btn" data-tab="gems">💎 寶石</button>
-        <button class="tab-btn" data-tab="skills">🧠 技能</button>
-        <button class="tab-btn" data-tab="talents">🌟 天賦</button>
+        <button class="tab-btn active" data-tab="equip"><span class="af-nav-icon" aria-hidden="true">♜</span>裝備</button>
+        <button class="tab-btn" data-tab="newforge"><span class="af-nav-icon" aria-hidden="true">⚒</span>熔爐</button>
+        <button class="tab-btn" data-tab="gems"><span class="af-nav-icon" aria-hidden="true">◈</span>寶石</button>
+        <button class="tab-btn" data-tab="skills"><span class="af-nav-icon" aria-hidden="true">✧</span>技能</button>
+        <button class="tab-btn" data-tab="talents"><span class="af-nav-icon" aria-hidden="true">✵</span>天賦</button>
         <button class="tab-btn" data-tab="forge" style="display:none">🔯 神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
-        <button class="tab-btn" data-tab="tower">🗼 高塔</button>
-        <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
+        <button class="tab-btn" data-tab="tower"><span class="af-nav-icon" aria-hidden="true">♜</span>高塔</button>
+        <button class="tab-btn" data-tab="settings"><span class="af-nav-icon" aria-hidden="true">⚙</span>設定</button>
       </nav>
 
       <main>
@@ -570,6 +574,7 @@
 
     <div id="combat-area">
       <div id="battle-area">
+        <h2 class="af-heading">無限征途</h2>
         <div id="zone-bar">
           <button class="zone-btn" data-zone="desert">🏜️ 荒漠<span class="zone-best" id="zb-desert"></span></button>
           <button class="zone-btn" data-zone="Icefield" data-tt-title="冰原" data-tt-desc="敵人更強；經驗、金幣與材料掉落 ×2（裝備掉落不變）">🧊 冰原<span class="zone-best"
@@ -827,7 +832,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.1"></script>
-  <script src="js/ui-scale.js"></script>
+  <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.44"></script>
   <script src="js/status.js?v=1.0.22"></script>
   <script src="js/formula.js?v=1.0.32"></script>

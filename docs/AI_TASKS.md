@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## Codex｜參考圖鍛鐵 UI 改造（UI-20260907）
+
+- 狀態：Done（2026-09-08）
+- Owner：Codex；使用者直接授權整體 UI 改造。
+- 工作目錄：`D:\MyGames\Idle-RPG\codex`（使用者指定，本次及後續 Codex 任務使用）。
+- 內容：依 200火花.png 重製高清鍛鐵九宮格邊框、灰黑石材面板、猩紅按鈕、角色展示與裝備欄、紫黑 tooltip；保留遊戲操作與資料流程。
+- 允許修改：`index.html`、`css/ashen-forge.css`、`images/ui/ashen-forge/`、本文件、`prompts/codex.md`、`js/ui-scale.js`、`tests/ui-fixed-canvas.test.cjs`、UI 驗證與交接文件。
+- 禁止修改：戰鬥規則、數值、存檔、Worker 協議與其他 AI worktree。
+- 前置依賴：無；2026-09-07 衝突預檢乾淨。如發現其他 AI 同檔修改，依使用者授權另建分支隔離。
+- 追加需求：邊框約放大兩倍、同步留足外側與內容間距；移除固定畫布上下留黑，依視窗填滿可用高度（含全螢幕）。
+- 完成：使用乾淨灰鐵透明圖檔與比例平鋪，消除邊框雕飾拉伸；全部原生捲動條統一灰色。
+- 驗證：build 324 檔通過、31 項相關測試通過；Edge 各主要分頁、裝備選取與 tooltip、窄視窗操作正常，console／資源錯誤為 0；Fullscreen API 下畫布完整填滿 1920×1080；16 個可捲動容器的計算樣式均為同一灰色。
+- 交接：`docs/UI_ASHEN_FORGE.md`；預覽 `http://127.0.0.1:8347`。
+- 後續接手者：使用者／主整合工作區；不自行合併 develop。
+
+
 ## Claude｜VFX Preset 化：用 VFX 編輯器重做全部戰鬥特效（2026-09-03）
 
 - 狀態：Done（程式與資料全部完成；剩人工目視 QA）
