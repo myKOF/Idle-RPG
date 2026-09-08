@@ -945,6 +945,14 @@ function basicDamageFloatGroupClass(cls, groupId) {
     return (cls || '') + ' damage-group-' + groupId;
 }
 
+/* 冷卻推進與近戰動畫共用實際攻速倍率。 */
+function playerBasicAttackRate(p, st) {
+    return slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
+        (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
+        (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
+        (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
+}
+
 // 完整的一次玩家普攻（含連擊/暈眩/減速/吸血/吸魔/暗影汲取）
 // 45 新技能基建：可選末參 opts（不影響既有呼叫、回傳值不變）——
 //   forceCrit：該次攻擊必定暴擊（殺陣反射 M4 等引動攻擊用）；
@@ -963,20 +971,17 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
        只掛在這裡——playerAtkCfg 同時服務反擊與新版技能，掛在那裡會變成「所有傷害」。 */
     if (typeof skill2RageBasicAtkACfg === 'function') aCfg = skill2RageBasicAtkACfg(aCfg);
     if (opts && opts.forceCrit) aCfg.critRate = Math.max(100, aCfg.critRate || 0); // 必定暴擊
-    /* 普攻特效（協議 v17）：不再原地出手——發射一道「劍氣」飛向目標，命中時的受擊反饋
-       由顯示層（js/vfx.js）處理。浮字延遲與劍氣飛行共用同一個數字（比照技能 travelMs），
-       追加攻擊（連擊／連擊數／引動攻擊）的第 N 波劍氣以 opts.vfxDelayMs 依序錯開；
-       但只有 depth 0 的主普攻允許觸發玩家攻擊動作，追加劍氣不重播動作。
-       純顯示時序：傷害在本函式內當下結算完畢，戰鬥結果不受影響。 */
-    var atkTravelMs = (typeof bfTravelSeconds === 'function') ? Math.round(bfTravelSeconds(mEnt) * 1000) : 0;
+    /* 近戰斬擊沒有飛行時間；追加連擊只錯開受擊與浮字，不重播角色動作。
+       dur 傳遞本次實際攻速週期，讓完整揮擊能在下一次普攻前播完。 */
     var atkWaveDelayMs = (opts && opts.vfxDelayMs > 0) ? opts.vfxDelayMs : 0;
-    var atkHitDelayMs = atkWaveDelayMs + atkTravelMs;
+    var atkHitDelayMs = atkWaveDelayMs;
+    var atkDuration = 1 / Math.max(0.01, st.aspd * playerBasicAttackRate(pEnt, st));
     if (typeof playCombatVfx === 'function') {
         playCombatVfx({
-            fxKind: 'projectile', variant: depth ? 'swordwave-extra' : 'swordwave', cat: 'basic', elem: null,
+            fxKind: 'slash', variant: depth ? 'melee-extra' : 'melee', cat: 'basic', elem: null,
             glyph: '⚔️', color: '#e6ddc8',
             targets: [enemyEventFloatTarget(mEnt, floatSel)],
-            travelMs: [atkTravelMs], delayMs: atkWaveDelayMs, dur: 0.5, count: 1,
+            travelMs: [0], delayMs: atkWaveDelayMs, dur: atkDuration, count: 1,
             vfx: vfxCombatRoles(depth ? 'basicAttackExtra' : 'basicAttack')
         });
     }
@@ -1052,7 +1057,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         }
     }
     // 連擊（僅一層）；補刀擊殺必須回報給呼叫端（opts.noProc：引動攻擊不再觸發追加攻擊）
-    // 追加攻擊的劍氣以固定間隔錯開（vfxDelayMs），看起來是一波接一波追出去的；
+    // 追加斬擊的受擊效果以固定間隔錯開（vfxDelayMs）；
     // 顯示層只保留主普攻的玩家動作，這裡的每段傷害則回到同一個累加浮字。
     var atkWaveStepMs = 130;
     if (!res.killed && !depth && !(opts && opts.noProc) && (st.passives.doubleHit || 0) > 0 && chance(st.passives.doubleHit)) {
@@ -1407,10 +1412,7 @@ function fieldTick(dt) {
        暈眩期間維持停住（無法行動就不該累積 ready），與下方玩家行動閘門一致。
        ── 潛力【極速之力】施放期間以倍率放大攻擊頻率（突破一般攻速上限）；
           新版技能【狂風斬】同樣是突破上限的攻速乘算（js/skills2.js skill2AspdFactor）。 */
-    var playerAttackRate = slowFactor(p) * (1 + buffVal(p, 'aspdUp') / 100) *
-        (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
-        (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
-        (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
+    var playerAttackRate = playerBasicAttackRate(p, st);
     if (!effectActive(p, 'stun')) p.atkCd = Math.max(0, p.atkCd - dt * playerAttackRate);
 
     // 持續傷害（玩家：中毒 / 詛咒等）
