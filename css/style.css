@@ -2243,7 +2243,7 @@ textarea#save-io {
   width: 100%;
   max-width: 400px;
   aspect-ratio: 780 / 1024;
-  background-image: url('../images/character_UI .png');
+  background-image: url('../images/ui/character_UI.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
