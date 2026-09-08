@@ -2511,7 +2511,8 @@
       ['VFXGradientEditor', 'tools/vfx/editor/gradient-editor.js'],
       ['VFXGizmoModel', 'tools/vfx/editor/gizmo-model.js'],
       ['VFXHistory', 'tools/vfx/editor/history.js'],
-      ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs']
+      ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs'],
+      ['SpineRef', 'tools/vfx/editor/spine-ref.js']
     ];
     var missing = need.filter(function (m) {
       return typeof window[m[0]] === 'undefined';
