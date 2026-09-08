@@ -1,0 +1,73 @@
+{
+ "skeleton": {
+  "hash": "fixture",
+  "spine": "4.2.00",
+  "x": -32,
+  "y": 0,
+  "width": 64,
+  "height": 64,
+  "images": "./",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  }
+ ],
+ "slots": [
+  {
+   "name": "box",
+   "bone": "root",
+   "attachment": "box"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {
+    "box": {
+     "box": {
+      "width": 64,
+      "height": 64
+     }
+    }
+   }
+  }
+ ],
+ "animations": {
+  "spin": {
+   "bones": {
+    "root": {
+     "rotate": [
+      {
+       "time": 0,
+       "value": 0
+      },
+      {
+       "time": 1,
+       "value": 350
+      }
+     ]
+    }
+   }
+  },
+  "grow": {
+   "bones": {
+    "root": {
+     "scale": [
+      {
+       "time": 0,
+       "x": 1,
+       "y": 1
+      },
+      {
+       "time": 1,
+       "x": 2,
+       "y": 2
+      }
+     ]
+    }
+   }
+  }
+ }
+}

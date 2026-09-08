@@ -80,3 +80,8 @@ sim_server.port
 
 # VFX 素材庫的本機路徑設定（每台電腦不同，不進版控）
 /vfx/library.local.json
+
+# --- Spine runtime（第三方，不進版控）---
+# runtime 的授權綁 Spine 編輯器授權，把二進位檔提交進 repo 等於散布它。
+# 要用的人自己抓：node tools/spine/fetch-runtime.cjs
+tools/spine/vendor/*.js
