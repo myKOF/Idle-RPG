@@ -15,14 +15,15 @@
   --af-frame: url('../images/ui/ashen-forge/clean-iron-frame.png');
   --af-corner-tl: url('../images/ui/ashen-forge/iron-corner-tl.png');
   --af-line-center: url('../images/ui/ashen-forge/line-center.png');
-  --af-line-height: 22px;
-  /* The artwork's rail intersection is deliberately the transform pivot. */
+  --af-line-height: 12px;
+  --af-frame-inset: 12px;
+  /* Offset is calibrated in the top-left artwork's axes and mirrored per corner. */
   --af-corner-size: 60px;
-  --af-corner-anchor-x: 30px;
-  --af-corner-anchor-y: 30px;
-  --af-corner-scale: 1;
-  --af-corner-offset-x: 0px;
-  --af-corner-offset-y: 0px;
+  --af-corner-anchor-x: 50%;
+  --af-corner-anchor-y: 50%;
+  --af-corner-scale: 1.2;
+  --af-corner-offset-x: 29px;
+  --af-corner-offset-y: 31px;
   --af-stone: url('../images/ui_dark_slate_tile.png');
   --af-iron: url('../images/ui_cast_iron_tile.png');
   --af-surface: linear-gradient(120deg, #161c1dd9, #101314a8 55%, #0b0e0ee6), var(--af-stone);
@@ -57,7 +58,8 @@ body { color: var(--text); }
   background-size: auto, 520px;
   box-shadow: inset 0 0 0 4px #060a0be6, inset 0 0 50px #0009, 0 8px 24px #000b;
 }
-#stats-sidebar { padding: 15px 15px 20px; }
+/* Compensate for the sidebar's wider transparent border when aligning the frames. */
+#stats-sidebar { padding: 15px 15px 20px; --af-frame-inset: 31px; }
 #workspace-area { overflow: visible; }
 #combat-area { padding: 24px 20px 20px; }
 #stats-sidebar::after, #workspace-area::after, #combat-area::after { display: none; }
@@ -68,13 +70,12 @@ body { color: var(--text); }
 #workspace-area .af-frame-lines,
 #combat-area .af-frame-lines {
   position: absolute;
-  inset: -12px;
+  inset: calc(0px - var(--af-frame-inset));
   z-index: 25;
   display: block;
   container-type: size;
   pointer-events: none;
 }
-#stats-sidebar .af-frame-lines { inset: -20px; }
 .af-frame-line {
   position: absolute;
   display: none;
@@ -83,13 +84,17 @@ body { color: var(--text); }
 }
 .af-frame-line.center {
   display: block;
-  background: var(--af-line-center) center / 100% 100% no-repeat;
+  /* Preserve the source aspect ratio: tile it along the edge, never stretch it. */
+  background-image: var(--af-line-center);
+  background-position: left center;
+  background-size: auto var(--af-line-height);
+  background-repeat: repeat-x;
   transform-origin: center;
 }
 .af-frame-line.top-c { top: 0; left: 0; width: 100cqw; }
 .af-frame-line.bottom-c { bottom: 0; left: 0; width: 100cqw; transform: scaleY(-1); }
-.af-frame-line.left-c { left: calc(-50cqh + 11px); top: calc(50cqh - 11px); width: 100cqh; transform: rotate(90deg); }
-.af-frame-line.right-c { left: calc(100cqw - 50cqh - 11px); top: calc(50cqh - 11px); width: 100cqh; transform: rotate(-90deg); }
+.af-frame-line.left-c { left: calc(-50cqh + var(--af-line-height) / 2); top: calc(50cqh - var(--af-line-height) / 2); width: 100cqh; transform: rotate(90deg); }
+.af-frame-line.right-c { left: calc(100cqw - 50cqh - var(--af-line-height) / 2); top: calc(50cqh - var(--af-line-height) / 2); width: 100cqh; transform: rotate(-90deg); }
 #stats-sidebar .af-frame-corner,
 #workspace-area .af-frame-corner,
 #combat-area .af-frame-corner {
@@ -101,10 +106,12 @@ body { color: var(--text); }
   background: var(--af-corner-tl) center / contain no-repeat;
   transform-origin: var(--af-corner-anchor-x) var(--af-corner-anchor-y);
 }
-.af-frame-corner.tl { top: calc(var(--af-corner-offset-y) - var(--af-corner-anchor-y)); left: calc(var(--af-corner-offset-x) - var(--af-corner-anchor-x)); transform: scale(var(--af-corner-scale)); }
-.af-frame-corner.tr { top: calc(var(--af-corner-offset-y) - var(--af-corner-anchor-y)); right: calc(var(--af-corner-offset-x) - var(--af-corner-anchor-x)); transform: scaleX(-1) scale(var(--af-corner-scale)); }
-.af-frame-corner.bl { bottom: calc(var(--af-corner-offset-y) - var(--af-corner-anchor-y)); left: calc(var(--af-corner-offset-x) - var(--af-corner-anchor-x)); transform: scaleY(-1) scale(var(--af-corner-scale)); }
-.af-frame-corner.br { right: calc(var(--af-corner-offset-x) - var(--af-corner-anchor-x)); bottom: calc(var(--af-corner-offset-y) - var(--af-corner-anchor-y)); transform: scale(-1) scale(var(--af-corner-scale)); }
+/* translate() percentages are relative to the corner itself, so its centre
+   remains pinned even when --af-corner-size changes. */
+.af-frame-corner.tl { top: calc(var(--af-corner-offset-y) - var(--af-frame-inset)); left: calc(var(--af-corner-offset-x) - var(--af-frame-inset)); transform: translate(-50%, -50%) scale(var(--af-corner-scale)); }
+.af-frame-corner.tr { top: calc(var(--af-corner-offset-y) - var(--af-frame-inset)); right: calc(var(--af-corner-offset-x) - var(--af-frame-inset)); transform: translate(50%, -50%) scaleX(-1) scale(var(--af-corner-scale)); }
+.af-frame-corner.bl { bottom: calc(var(--af-corner-offset-y) - var(--af-frame-inset)); left: calc(var(--af-corner-offset-x) - var(--af-frame-inset)); transform: translate(-50%, 50%) scaleY(-1) scale(var(--af-corner-scale)); }
+.af-frame-corner.br { right: calc(var(--af-corner-offset-x) - var(--af-frame-inset)); bottom: calc(var(--af-corner-offset-y) - var(--af-frame-inset)); transform: translate(50%, 50%) scale(-1) scale(var(--af-corner-scale)); }
 #workspace-area main { padding: 16px 24px 24px; scrollbar-color: #58615c #101415; background: transparent; }
 .af-heading {
   position: relative;
