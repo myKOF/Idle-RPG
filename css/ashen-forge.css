@@ -58,13 +58,11 @@ body { color: var(--text); }
   background-size: auto, 520px;
   box-shadow: inset 0 0 0 4px #060a0be6, inset 0 0 50px #0009, 0 8px 24px #000b;
 }
-/* Compensate for the sidebar's wider transparent border when aligning the frames. */
-#stats-sidebar { padding: 15px 15px 20px; --af-frame-inset: 31px; }
 #workspace-area { overflow: visible; }
 #combat-area { padding: 24px 20px 20px; }
 #stats-sidebar::after, #workspace-area::after, #combat-area::after { display: none; }
 /* Sidebar scrolls independently; the frame belongs to its scrollport, not the long attribute content. */
-#stats-sidebar { border: 20px solid transparent; border-image: none; padding: 8px 7px 16px; overflow: visible; }
+#stats-sidebar { border: 1px solid transparent; border-image: none; padding: 8px 7px 10px; overflow: visible; }
 #stats-sidebar #attr-panel { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 4px; }
 #stats-sidebar .af-frame-lines,
 #workspace-area .af-frame-lines,
@@ -133,9 +131,12 @@ body { color: var(--text); }
 .af-heading::before, .af-heading::after { content: '◆'; position: absolute; font-size: 10px; color: #384a48; }
 .af-heading::before { left: 17px; }
 .af-heading::after { right: 17px; }
-#workspace-area > .af-heading { margin: 24px 24px 0; }
-#stats-sidebar > .af-heading { margin: 0 -1px 14px; min-height: 34px; font-size: 18px; }
-#battle-area > .af-heading { margin: -3px 0 9px; min-height: 35px; font-size: 18px; }
+#workspace-area > .af-heading,
+#stats-sidebar > .af-heading,
+#battle-area > .af-heading { background-size: 100% 100%; }
+#workspace-area > .af-heading { margin: 0; }
+#stats-sidebar > .af-heading { margin: -8px -7px 14px; min-height: 34px; font-size: 18px; }
+#battle-area > .af-heading { margin: -24px -20px 9px; min-height: 35px; font-size: 18px; }
 #workspace-area #tabs {
   gap: 4px;
   min-height: 44px;
