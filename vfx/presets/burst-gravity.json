@@ -7,7 +7,7 @@
     {
       "id": "swirl-a",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/twirl_02.png",
+      "assetId": "particle-pack/png-transparent/twirl_02.png",
       "zIndex": 0,
       "scale": {
         "x": 0.3906,
@@ -111,7 +111,7 @@
     {
       "id": "core",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 2,
       "scale": {
         "x": 0.0898,

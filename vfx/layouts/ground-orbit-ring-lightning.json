@@ -6,6 +6,7 @@
       "id": "ground-orbit-ring-lightning",
       "name": "ground-orbit-ring-lightning",
       "layerIds": [
+        "halo",
         "ring",
         "motes"
       ]

@@ -81,7 +81,7 @@
     {
       "id": "sigil",
       "type": "particle",
-      "assetId": "particle-pack/png-black-background/magic_02.png",
+      "assetId": "particle-pack/png-transparent/magic_02.png",
       "zIndex": 2,
       "tint": "#1a0c2e",
       "blendMode": "normal",

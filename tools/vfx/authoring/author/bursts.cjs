@@ -4,7 +4,7 @@
    Runtime 以 scale = area.r / 100 播放。
    地面向的環一律壓成扁橢圓（縱向 0.5～0.62）——戰場是俯視斜角，正圓會浮在半空。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const FLASH_A = [[0, 0], [0.08, 1], [0.4, 0.5], [1, 0]];
@@ -144,7 +144,7 @@ P['burst-blood'] = () => ({
     sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 170, alpha: 0.5, tint: T.bleed.c1, blend: 'add', duration: 0.4, alphaOverLife: FILL_A, scaleOverLife: [[0, 0.3], [1, 1]] }),
     ring({ id: 'rim', z: 1, tint: T.bleed.c1, d: 200, duration: 0.45 }),
     flash({ tint: T.bleed.c2, size: 80, duration: 0.18 }),
-    shards({ id: 'drops', tint: T.bleed.c1, blend: 'normal', burst: 12, startPx: [6, 12], speed: [140, 260], gravity: { x: 0, y: 520 }, lifetime: [0.28, 0.45] })
+    shards({ id: 'drops', asset: AT.dot, tint: T.bleed.c1, blend: 'normal', burst: 12, startPx: [6, 12], speed: [140, 260], gravity: { x: 0, y: 520 }, lifetime: [0.28, 0.45] })
   ]
 });
 
@@ -177,9 +177,9 @@ P['burst-rock-petrify'] = () => ({
 /* ---------- burst-gravity：超重力場（內縮漩渦） ---------- */
 P['burst-gravity'] = () => ({
   id: 'burst-gravity', duration: 0.8, layers: [
-    sprite({ id: 'swirl-a', asset: A.twirl02, z: 0, sizeX: 200, sizeY: 200 * FLAT, alpha: 0.8, tint: T.earth.c2, blend: 'normal', duration: 0.8, alphaOverLife: FILL_A, scaleOverLife: [[0, 1.3], [1, 0.4]], rotationOverLife: C.spin(1.2) }),
+    sprite({ id: 'swirl-a', asset: AT.twirl02, z: 0, sizeX: 200, sizeY: 200 * FLAT, alpha: 0.8, tint: T.earth.c2, blend: 'normal', duration: 0.8, alphaOverLife: FILL_A, scaleOverLife: [[0, 1.3], [1, 0.4]], rotationOverLife: C.spin(1.2) }),
     sprite({ id: 'swirl-b', asset: A.twirl03, z: 1, sizeX: 170, sizeY: 170 * FLAT, alpha: 0.75, tint: '#6f2da8', blend: 'add', duration: 0.8, alphaOverLife: FILL_A, scaleOverLife: [[0, 1.3], [1, 0.4]], rotationOverLife: C.spin(-1.5) }),
-    sprite({ id: 'core', asset: A.dot, z: 2, size: 46, alpha: 0.9, tint: T.dark.c2, blend: 'normal', duration: 0.8, alphaOverLife: [[0, 0], [0.3, 1], [0.85, 1], [1, 0]], scaleOverLife: [[0, 0.4], [0.7, 1], [1, 0.6]] }),
+    sprite({ id: 'core', asset: AT.dot, z: 2, size: 46, alpha: 0.9, tint: T.dark.c2, blend: 'normal', duration: 0.8, alphaOverLife: [[0, 0], [0.3, 1], [0.85, 1], [1, 0]], scaleOverLife: [[0, 0.4], [0.7, 1], [1, 0.6]] }),
     ring({ id: 'rim', z: 3, tint: '#913dcc', d: 200, duration: 0.6, alpha: 0.7, scaleOverLife: [[0, 1], [1, 0.35]] }),
     particle({
       id: 'pull', asset: A.dot, z: 4, blend: 'add', tint: '#913dcc',
@@ -230,7 +230,7 @@ P['burst-detonate-dark'] = () => ({
       duration: 0.7, alphaOverLife: [[0, 0], [0.12, 0.95], [0.75, 0.8], [1, 0]],
       scaleOverLife: [[0, 0.9], [0.35, 0.35], [0.6, 1], [1, 1.05]], rotationOverLife: [[0, 0], [1, deg(600)]]
     }),
-    sprite({ id: 'core', asset: A.dot, z: 1, size: 60, alpha: 1, tint: T.dark.c2, blend: 'normal', duration: 0.7, alphaOverLife: [[0, 0], [0.2, 1], [0.7, 0.9], [1, 0]], scaleOverLife: [[0, 0.8], [0.35, 0.3], [0.6, 1], [1, 0.7]] }),
+    sprite({ id: 'core', asset: AT.dot, z: 1, size: 60, alpha: 1, tint: T.dark.c2, blend: 'normal', duration: 0.7, alphaOverLife: [[0, 0], [0.2, 1], [0.7, 0.9], [1, 0]], scaleOverLife: [[0, 0.8], [0.35, 0.3], [0.6, 1], [1, 0.7]] }),
     ring({ id: 'rim', z: 2, tint: '#913dcc', d: 200, delay: 0.24, duration: 0.46 }),
     flash({ tint: '#913dcc', size: 90, delay: 0.24, duration: 0.24 })
   ]

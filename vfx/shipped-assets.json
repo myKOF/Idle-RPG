@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 87,
+  "assetCount": 94,
   "assets": [
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -105,18 +105,25 @@
       "fileSize": 22338
     },
     {
-      "assetId": "light-masks-1.0/default/window_h.png",
-      "relativePath": "light-masks-1.0/Default/window_h.png",
-      "package": "light-masks-1.0",
-      "contentHash": "sha256:52942c7e6955156d41d57d0dd46886d4b659ff4b4f5b7c3425d1e59b7d87b5a7",
-      "fileSize": 3289
-    },
-    {
       "assetId": "light-masks-1.0/transparent/circle_a.png",
       "relativePath": "light-masks-1.0/Transparent/circle_a.png",
       "package": "light-masks-1.0",
       "contentHash": "sha256:d67bd3dc5d202a21c6c259f79c66cb9d8c8fd19343972d24bb99aba2426ec71c",
       "fileSize": 40937
+    },
+    {
+      "assetId": "light-masks-1.0/transparent/circle_a_noise.png",
+      "relativePath": "light-masks-1.0/Transparent/circle_a_noise.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:a7c440fb4f8f6b9287d0edb6142b0c9f09b75f37c52f22f51b92580c48b5e8cf",
+      "fileSize": 52740
+    },
+    {
+      "assetId": "light-masks-1.0/transparent/window_h.png",
+      "relativePath": "light-masks-1.0/Transparent/window_h.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:79753c48b6f80532620de58fadf6e1b2c280231d57d53ac96dd90f32ac56ca09",
+      "fileSize": 3317
     },
     {
       "assetId": "new_materials/arcane-ring/dingbats-2.png",
@@ -294,13 +301,6 @@
       "fileSize": 169585
     },
     {
-      "assetId": "new_materials/splat/dingbats-425.png",
-      "relativePath": "new_materials/splat/dingbats-425.png",
-      "package": "new_materials",
-      "contentHash": "sha256:79f45a24cc3bdd720828d2f446d51a5d7defaa6c0767c302a976ec4e7aabcf19",
-      "fileSize": 5012
-    },
-    {
       "assetId": "new_materials/streak/lines_1.png",
       "relativePath": "new_materials/streak/lines_1.png",
       "package": "new_materials",
@@ -378,20 +378,6 @@
       "fileSize": 62268
     },
     {
-      "assetId": "particle-pack/png-black-background/magic_01.png",
-      "relativePath": "particle-pack/PNG (Black background)/magic_01.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:ba25d57c52ba4bfe83953acac9ef697135ecdf75aa27b75811380f9771070c36",
-      "fileSize": 60113
-    },
-    {
-      "assetId": "particle-pack/png-black-background/magic_02.png",
-      "relativePath": "particle-pack/PNG (Black background)/magic_02.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:5aa9465da6c2ca15620e4f1f8f94cf141feb02b8274689d6ae36796484339ae5",
-      "fileSize": 68717
-    },
-    {
       "assetId": "particle-pack/png-black-background/magic_03.png",
       "relativePath": "particle-pack/PNG (Black background)/magic_03.png",
       "package": "particle-pack",
@@ -462,13 +448,6 @@
       "fileSize": 28122
     },
     {
-      "assetId": "particle-pack/png-black-background/slash_03.png",
-      "relativePath": "particle-pack/PNG (Black background)/slash_03.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:4769866a5afc40b61835c4b9f8ee910b2560893a506802a57d35286a03b66a9f",
-      "fileSize": 14700
-    },
-    {
       "assetId": "particle-pack/png-black-background/spark_01.png",
       "relativePath": "particle-pack/PNG (Black background)/spark_01.png",
       "package": "particle-pack",
@@ -488,6 +467,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:89c6159f0a532c3d2409e20e36f9885435ceaa42817da40f5f37112527ffd869",
       "fileSize": 72740
+    },
+    {
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "relativePath": "particle-pack/PNG (Black background)/spark_04.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:542198dcb07aab51469cdb6211c87583ebc2516e6b03238fafbf92c6c8966707",
+      "fileSize": 77451
     },
     {
       "assetId": "particle-pack/png-black-background/spark_05.png",
@@ -574,11 +560,60 @@
       "fileSize": 53410
     },
     {
+      "assetId": "particle-pack/png-transparent/circle_01.png",
+      "relativePath": "particle-pack/PNG (Transparent)/circle_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:4b2d03683bf0fe4a946567adc3bd86b8ba045da84cee58dc2cf8aef63bbfaa06",
+      "fileSize": 69755
+    },
+    {
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "relativePath": "particle-pack/PNG (Transparent)/circle_05.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:925b8ac284436f74f9cadf0ecd058da1c08fba65c098e4e34fd220603022f02e",
+      "fileSize": 65336
+    },
+    {
+      "assetId": "particle-pack/png-transparent/fire_01.png",
+      "relativePath": "particle-pack/PNG (Transparent)/fire_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:9727a9743ac6ab8dd4dd79f5fc5b0266290efae45f4d4452279eb5e4bcf3a978",
+      "fileSize": 99891
+    },
+    {
+      "assetId": "particle-pack/png-transparent/light_03.png",
+      "relativePath": "particle-pack/PNG (Transparent)/light_03.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:b68627734d08aab3eaf3f94718521553628c75aace1de6c74de28501c1a4c147",
+      "fileSize": 100114
+    },
+    {
+      "assetId": "particle-pack/png-transparent/magic_02.png",
+      "relativePath": "particle-pack/PNG (Transparent)/magic_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:6443e90834abcae4c3848d7ebca99ff0d9fcad19a07f49f77ad64710a3e39b36",
+      "fileSize": 86500
+    },
+    {
+      "assetId": "particle-pack/png-transparent/rotated/trace_06_rotated.png",
+      "relativePath": "particle-pack/PNG (Transparent)/Rotated/trace_06_rotated.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:098bd782fbbac098e30357acdef764184e601ccdf05d109f3dcfb698e5a7ea60",
+      "fileSize": 30533
+    },
+    {
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "relativePath": "particle-pack/PNG (Transparent)/smoke_04.png",
       "package": "particle-pack",
       "contentHash": "sha256:2db2f69874cdb1e5203f2f86803d5debde30402590cf50a810afaba882184616",
       "fileSize": 97568
+    },
+    {
+      "assetId": "particle-pack/png-transparent/twirl_02.png",
+      "relativePath": "particle-pack/PNG (Transparent)/twirl_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:3963633f6b2395a3fa95b9f4f65f22a4d38a2c561d9312dfff4646b71c7aa6e2",
+      "fileSize": 76886
     },
     {
       "assetId": "splat-pack/png/double-512px/splat05.png",
@@ -595,6 +630,13 @@
       "fileSize": 5638
     },
     {
+      "assetId": "spritemancer-vfx-256/30fps/effect_bloodimpact_1_69x60.png",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_BloodImpact_1_69x60.png",
+      "package": "spritemancer-vfx-256",
+      "contentHash": "sha256:5fbe13dc4e8b7dd3827a06458a24a73c7c0fca768e21e3a29300ba9bbb348803",
+      "fileSize": 9280
+    },
+    {
       "assetId": "spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png",
       "relativePath": "spritemancer-vfx-256/30fps/Effect_Explosion2_1_256x256.png",
       "package": "spritemancer-vfx-256",
@@ -607,6 +649,13 @@
       "package": "spritemancer-vfx-256",
       "contentHash": "sha256:407183f84815d1d8bee98d3e46f7379296b59796350f8de2e675ccc94fea3793",
       "fileSize": 1044673
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_puffandstars_1_120x109.png",
+      "relativePath": "spritemancer-vfx-256/30fps/Effect_PuffAndStars_1_120x109.png",
+      "package": "spritemancer-vfx-256",
+      "contentHash": "sha256:f6bd0cf936d3ae02133fb1364b70eb289323b9f140fa8c7df13f6549c94f1fa9",
+      "fileSize": 254659
     },
     {
       "assetId": "spritemancer-vfx/30fps/effect_explosion_1_517x517.png",

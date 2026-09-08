@@ -7,11 +7,12 @@
     {
       "id": "body",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 1,
+      "rotation": -1.5708,
       "scale": {
-        "x": 0.0645,
-        "y": 0.1465
+        "x": 0.1875,
+        "y": 0.1719
       },
       "alpha": 0.95,
       "tint": "#86efac",
@@ -49,11 +50,12 @@
     {
       "id": "core",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 2,
+      "rotation": -1.5708,
       "scale": {
-        "x": 0.0391,
-        "y": 0.1172
+        "x": 0.1406,
+        "y": 0.1289
       },
       "alpha": 1,
       "tint": "#ffffff",

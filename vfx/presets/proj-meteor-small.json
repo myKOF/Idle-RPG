@@ -199,7 +199,7 @@
     {
       "id": "rim",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_01.png",
+      "assetId": "particle-pack/png-transparent/circle_01.png",
       "zIndex": 4,
       "scale": {
         "x": 0.0718,

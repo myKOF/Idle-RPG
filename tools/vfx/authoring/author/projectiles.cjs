@@ -4,7 +4,7 @@
    Runtime 逐幀 setTransform 帶著它移動並依飛行方位旋轉，Preset 本身不做位移。
    名目尺寸見 vfx-catalog.cjs（D＝直徑、L＝長、W＝寬、R＝半徑）。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const BODY_A = [[0, 0], [0.06, 1], [0.9, 1], [1, 0]];      // 出現 → 全程亮著 → 收尾淡出
@@ -55,11 +55,16 @@ function trail(o) {
 const P = {};
 
 /* ---------- proj-swordwave：普攻劍氣 ---------- */
+/* 劍氣：普攻打出去的那一道，出現頻率是全遊戲最高的。
+   原本用 slash03 畫成 14x30——十四個像素寬，畫面上是一個小亮點，
+   讀起來像火花而不是劍氣。與風刃是同一個問題（見 proj-wind-crescent），
+   所以用同一套解法：slash02 外弧 + slash01 內芯 + rotDeg -90，
+   凸面朝飛行方向。尺寸取風刃的七成——劍氣是普攻，不該比技能還大。 */
 P['proj-swordwave'] = () => ({
   id: 'proj-swordwave', duration: 1.2, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 44, alpha: 0.35, tint: T.phys.glow, blend: 'add', duration: 1.2, alphaOverLife: GLOW_A }),
-    sprite({ id: 'body', asset: A.slash03, z: 1, sizeX: 14, sizeY: 30, alpha: 1, tint: T.phys.c1, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
-    sprite({ id: 'core', asset: A.slash03, z: 2, sizeX: 8, sizeY: 22, alpha: 1, tint: T.phys.c2, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
+    sprite({ id: 'glow', asset: A.slash02, z: 0, sizeX: 88, sizeY: 80, rotDeg: -90, alpha: 0.28, tint: T.phys.glow, blend: 'add', duration: 1.2, alphaOverLife: GLOW_A }),
+    sprite({ id: 'body', asset: A.slash02, z: 1, sizeX: 72, sizeY: 66, rotDeg: -90, alpha: 0.95, tint: T.phys.c1, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
+    sprite({ id: 'core', asset: A.slash01, z: 2, sizeX: 54, sizeY: 50, rotDeg: -90, alpha: 1, tint: T.phys.c2, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
     trail({ asset: A.trace02H, tint: '#f0e2b8', rate: 22, startPx: [10, 18], speed: [5, 25], alignToVelocity: true, velocityRotationOffset: 0 })
   ]
 });
@@ -155,7 +160,7 @@ P['proj-dark-orb'] = () => ({
   id: 'proj-dark-orb', duration: 1.2, layers: [
     sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 46, alpha: 0.6, tint: '#913dcc', blend: 'add', duration: 1.2, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
     sprite({ id: 'swirl', asset: A.twirl03, z: 1, size: 26, alpha: 0.9, tint: T.dark.c1, blend: 'add', duration: 1.2, alphaOverLife: BODY_A, rotationOverLife: C.spin(-2.5) }),
-    sprite({ id: 'core', asset: A.dot, z: 2, size: 18, alpha: 1, tint: T.dark.c2, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A }),
+    sprite({ id: 'core', asset: AT.dot, z: 2, size: 18, alpha: 1, tint: T.dark.c2, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A }),
     trail({ asset: A.smokeT, tint: '#6f2da8', blend: 'normal', rate: 14, startPx: [10, 18], lifetime: [0.24, 0.4], alphaOverLife: [[0, 0.55], [1, 0]] })
   ]
 });
@@ -169,13 +174,26 @@ P['proj-earth-rock'] = () => ({
   ]
 });
 
-/* ---------- proj-wind-crescent：風刃（寬 40、深 16，尖端朝 +X） ---------- */
+/* ---------- proj-wind-crescent：風刃 ----------
+   原本是 slash03 畫成 16x40——長寬比對，但只有 16 個像素寬，畫面上是一根
+   小指甲片。使用者的說法是「非常小，形狀也不太適合，應該像半月斬擊那種的」。
+
+   改成與 slash-phys-big 同一組素材（slash02 外弧 + slash01 內芯），
+   尺寸 96x104，接近 slash-phys-big 的 108。
+
+   rotDeg -90 是關鍵：slash02 的月牙原生是「開口朝上」的 ∪ 形。風刃朝 +X 飛，
+   開口必須朝後（-X），凸面朝前，所以要逆時針轉 90 度。
+   轉 180 度會變成開口朝下、轉 0 度是開口朝上，兩者看起來都像側著飛。
+
+   三層同形狀疊出厚度：外圈是寬一號的暗色輝光、中間是元素色刃身、
+   內芯是小一號的白熱。用同一個形狀而不是另外找素材當「銳邊」，
+   月牙的輪廓才不會被第二種形狀切斷。 */
 P['proj-wind-crescent'] = () => ({
   id: 'proj-wind-crescent', duration: 1.5, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 30, sizeY: 56, alpha: 0.35, tint: T.wind.glow, blend: 'add', duration: 1.5, alphaOverLife: GLOW_A }),
-    sprite({ id: 'body', asset: A.slash03, z: 1, sizeX: 16, sizeY: 40, alpha: 1, tint: T.wind.c1, blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
-    sprite({ id: 'core', asset: A.slash03, z: 2, sizeX: 10, sizeY: 30, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
-    trail({ tint: '#ffffff', rate: 16, startPx: [3, 5], lifetime: [0.1, 0.2], spread: 20 })
+    sprite({ id: 'glow', asset: A.slash02, z: 0, sizeX: 130, sizeY: 118, rotDeg: -90, alpha: 0.3, tint: T.wind.glow, blend: 'add', duration: 1.5, alphaOverLife: GLOW_A }),
+    sprite({ id: 'body', asset: A.slash02, z: 1, sizeX: 104, sizeY: 96, rotDeg: -90, alpha: 0.95, tint: T.wind.c1, blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
+    sprite({ id: 'core', asset: A.slash01, z: 2, sizeX: 78, sizeY: 72, rotDeg: -90, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1.5, alphaOverLife: BODY_A }),
+    trail({ tint: '#ffffff', rate: 16, startPx: [4, 7], lifetime: [0.1, 0.2], spread: 20 })
   ]
 });
 
@@ -191,7 +209,7 @@ P['proj-arcane-missile'] = () => ({
 P['proj-waterball'] = () => ({
   id: 'proj-waterball', duration: 1.2, layers: [
     sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 42, alpha: 0.45, tint: T.water.glow, blend: 'add', duration: 1.2, alphaOverLife: GLOW_A }),
-    sprite({ id: 'body', asset: A.dot, z: 1, size: 18, alpha: 1, tint: T.water.c1, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
+    sprite({ id: 'body', asset: AT.dot, z: 1, size: 18, alpha: 1, tint: T.water.c1, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
     sprite({ id: 'gloss', asset: A.dot, z: 2, size: 7, x: -3, y: -4, alpha: 0.95, tint: T.water.c2, blend: 'add', duration: 1.2, alphaOverLife: BODY_A }),
     trail({ tint: T.water.c2, rate: 18, startPx: [3, 6], lifetime: [0.18, 0.3], gravity: { x: 0, y: 200 }, spread: 70 })
   ]
@@ -228,7 +246,7 @@ function meteor(o) {
     sprite({ id: 'shell', asset: A.flame04, z: 1, size: o.d, alpha: 0.95, tint: '#f83600', blend: 'add', duration: o.dur, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.4) }),
     sprite({ id: 'body', asset: A.fire01, z: 2, size: o.d * 0.78, alpha: 1, tint: '#f89800', blend: 'add', duration: o.dur, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.6) }),
     sprite({ id: 'core', asset: A.dot, z: 3, size: o.d * 0.34, alpha: 1, tint: '#facc22', blend: 'add', duration: o.dur, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
-    sprite({ id: 'rim', asset: A.ringSoft, z: 4, size: o.d * 1.05, alpha: 0.5, tint: '#9f0404', blend: 'normal', duration: o.dur, alphaOverLife: GLOW_A }),
+    sprite({ id: 'rim', asset: AT.ringSoft, z: 4, size: o.d * 1.05, alpha: 0.5, tint: '#9f0404', blend: 'normal', duration: o.dur, alphaOverLife: GLOW_A }),
     particle({
       id: 'tail', asset: A.flame05, z: 5, blend: 'add', tint: '#f89800',
       rate: o.rate, lifetime: [o.tailSec * 0.7, o.tailSec], spawnRadius: o.d * 0.25,
@@ -253,30 +271,47 @@ P['proj-meteor-small'] = () => ({
   id: 'proj-meteor-small', duration: 2, layers: meteor({ d: 35, dur: 2, rate: 7, tailPx: 125, tailSec: 1.6 })
 });
 
-/* ---------- proj-starfall：地爆天星（直徑 350、底部弓形震波） ---------- */
+/* ---------- proj-starfall：地爆天星 ----------
+   技能描述是「超巨型殞石」，所以它本來就該是全場最大的東西——
+   但實際量過之後，原本的尺寸不是「很大」而是「蓋住整個戰場」：
+
+     戰場 640x480
+     glow 560x560  = 戰場寬的 88%、高的 117%
+     rim  356x356  = 寬的 56%
+
+   輝光比戰場還高，落下來的那一秒整片畫面變成橘色，看不到自己站在哪裡，
+   也看不到落點影子——使用者回報「地爆天星的影子及特效消失」時，
+   除了 Runtime 的兩個判斷錯誤（見 vfx-runtime 的 rain 修正），
+   這個尺寸也是原因之一。
+
+   縮到大約 0.62 倍：shell 216px 仍然是隕石術（110px）的兩倍，是畫面上
+   最大的單一物件，「超巨型」讀得出來，但戰場還看得見。
+   縮的是尺寸不是氣勢——尾焰、弓形震波、脈動全部保留。 */
 P['proj-starfall'] = () => ({
   id: 'proj-starfall', duration: 3, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 560, alpha: 0.5, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
-    sprite({ id: 'shell', asset: A.flame04, z: 1, size: 350, alpha: 0.95, tint: '#a11208', blend: 'add', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.3) }),
-    sprite({ id: 'body', asset: A.fire01, z: 2, size: 275, alpha: 1, tint: '#5c0a06', blend: 'normal', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.4) }),
-    sprite({ id: 'core', asset: A.flame04, z: 3, size: 150, alpha: 1, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
-    sprite({ id: 'rim', asset: A.ringSoft, z: 4, size: 356, alpha: 0.6, tint: '#260302', blend: 'normal', duration: 3, alphaOverLife: GLOW_A }),
-    /* 底部弓形震波：壓扁的橢圓環，半徑約 138px，隨飛行脈動 */
+    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 348, alpha: 0.5, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
+    sprite({ id: 'shell', asset: A.flame04, z: 1, size: 216, alpha: 0.95, tint: '#a11208', blend: 'add', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.3) }),
+    sprite({ id: 'body', asset: AT.fire01, z: 2, size: 170, alpha: 1, tint: '#5c0a06', blend: 'normal', duration: 3, alphaOverLife: BODY_A, rotationOverLife: C.spin(-0.4) }),
+    sprite({ id: 'core', asset: A.flame04, z: 3, size: 93, alpha: 1, tint: '#e0451a', blend: 'add', duration: 3, alphaOverLife: BODY_A, scaleOverLife: PULSE }),
+    sprite({ id: 'rim', asset: AT.ringSoft, z: 4, size: 220, alpha: 0.6, tint: '#260302', blend: 'normal', duration: 3, alphaOverLife: GLOW_A }),
+    /* 底部弓形震波：壓扁的橢圓環，隨飛行脈動 */
     sprite({
-      id: 'bow', asset: A.ringThin, z: 5, sizeX: 276, sizeY: 120, y: 96, alpha: 0.75, tint: '#ffb257', blend: 'add',
+      id: 'bow', asset: A.ringThin, z: 5, sizeX: 171, sizeY: 74, y: 60, alpha: 0.75, tint: '#ffb257', blend: 'add',
       duration: 3, alphaOverLife: [[0, 0], [0.1, 0.85], [0.9, 0.7], [1, 0]],
       scaleOverLife: [[0, 0.9], [0.25, 1.08], [0.5, 0.94], [0.75, 1.06], [1, 0.95]]
     }),
     particle({
       id: 'tail', asset: A.flame05, z: 6, blend: 'add', tint: '#e0451a',
-      rate: 18, lifetime: [1.6, 2.4], spawnRadius: 90, speed: [180, 300], direction: 180, spread: 26,
-      /* 同隕石尾，尺度放大：亂流強度跟著體積走，否則在 190px 的火舌上看不見。 */
+      rate: 18, lifetime: [1.6, 2.4], spawnRadius: 56, speed: [112, 186], direction: 180, spread: 26,
+      /* 同隕石尾，尺度跟著本體一起縮：亂流強度要與火舌大小成比例，
+         否則縮小之後噪聲的擺幅相對變大，火舌會抖得像雜訊。 */
       drag: 1, tintOverLife: RAMP.fireCore,
-      noise: { strength: 26, frequency: 0.012, scrollSpeed: 1.2 },
-      startPx: [110, 190], alphaOverLife: [[0, 0.9], [0.4, 0.6], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
+      noise: { strength: 16, frequency: 0.012, scrollSpeed: 1.2 },
+      startPx: [68, 118], alphaOverLife: [[0, 0.9], [0.4, 0.6], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
     })
   ]
 });
+
 
 /* ---------- proj-thunder-orb-fall：雷殞天落的落體 ---------- */
 P['proj-thunder-orb-fall'] = () => {

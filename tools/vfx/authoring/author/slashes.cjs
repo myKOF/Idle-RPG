@@ -8,7 +8,7 @@
    因此以 cone_composed_* 的 V 形錐體逼近：頂點在原點、以 scaleX 撐開張角。
    角度是「看起來像」而不是幾何精確——真正的判定範圍在模擬層，這裡只負責畫面。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 /* ---- 共用曲線 ---- */
@@ -87,7 +87,7 @@ P['slash-bloodblade'] = () => ({
   id: 'slash-bloodblade', duration: 0.32, layers: [
     ...arc({ R: 40, tint: T.bleed.c1, innerTint: T.bleed.c2, base: -50, swing: 26, dur: 0.26 }),
     particle({
-      id: 'drops', asset: A.dot, z: 6, blend: 'normal', tint: T.bleed.c1,
+      id: 'drops', asset: AT.dot, z: 6, blend: 'normal', tint: T.bleed.c1,
       burst: 6, lifetime: [0.2, 0.32], spawnRadius: 12, speed: [70, 140], direction: 40, spread: 120,
       gravity: { x: 0, y: 420 }, startPx: [4, 8],
       alphaOverLife: [[0, 1], [0.6, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.7]]
@@ -130,22 +130,27 @@ P['slash-cleave-sector'] = () => ({
   id: 'slash-cleave-sector', duration: 0.5, layers: [
     /* 錐體頂點在素材底邊 → anchor y=1 把頂點釘在原點，再轉 +90° 讓它朝 +X。 */
     sprite({
+      /* fill 是扇形的**本體**，原本 alpha 0.2 幾乎看不見，看得見的只剩下
+         兩條筆直的邊界線與一整圈細環——畫面上是一張線框示意圖，
+         不是一記橫掃。扇形要靠「面」讀出來，邊界線只是輪廓。 */
       id: 'fill', asset: A.coneC, z: 1, sizeX: 90, sizeY: 200, anchor: { x: 0.5, y: 1 },
-      alpha: 0.2, tint: '#60a5fa', blend: 'add', rotDeg: 90, duration: 0.5,
+      alpha: 0.55, tint: '#60a5fa', blend: 'add', rotDeg: 90, duration: 0.5,
       alphaOverLife: SECTOR_A, scaleOverLife: SECTOR_S, rotationOverLife: sweepDegPerSec(0.5)
     }),
     sprite({
-      id: 'rim', asset: A.ringA, z: 2, size: 200, alpha: 0.5, tint: '#bfdbfe', blend: 'add',
+      /* ringA 是**整圈**環，但這一招只掃一個扇形；整圈亮著會讓人以為
+         範圍是 360 度。壓到 0.16 當作外緣的餘光，不當作範圍指示。 */
+      id: 'rim', asset: A.ringA, z: 2, size: 200, alpha: 0.16, tint: '#bfdbfe', blend: 'add',
       duration: 0.5, alphaOverLife: [[0, 0], [0.2, 0.6], [0.75, 0.5], [1, 0]], scaleOverLife: SECTOR_S
     }),
     sprite({
       id: 'edge-a', asset: A.barA, z: 3, sizeX: 8, sizeY: 100, anchor: { x: 0.5, y: 1 },
-      alpha: 0.8, tint: '#bfdbfe', blend: 'add', rotDeg: 60, duration: 0.5,
+      alpha: 0.45, tint: '#bfdbfe', blend: 'add', rotDeg: 60, duration: 0.5,
       alphaOverLife: SECTOR_A, scaleOverLife: SECTOR_S, rotationOverLife: sweepDegPerSec(0.5)
     }),
     sprite({
       id: 'edge-b', asset: A.barA, z: 4, sizeX: 8, sizeY: 100, anchor: { x: 0.5, y: 1 },
-      alpha: 0.8, tint: '#bfdbfe', blend: 'add', rotDeg: 120, duration: 0.5,
+      alpha: 0.45, tint: '#bfdbfe', blend: 'add', rotDeg: 120, duration: 0.5,
       alphaOverLife: SECTOR_A, scaleOverLife: SECTOR_S, rotationOverLife: sweepDegPerSec(0.5)
     })
   ]
@@ -197,18 +202,22 @@ P['slash-thrust-lance'] = () => ({
   ]
 });
 
-/* ---------- slash-wind-crescent：真空斬新月（寬 75、深 33，朝 +X） ---------- */
+/* ---------- slash-wind-crescent：真空斬新月（朝 +X） ----------
+   與 proj-wind-crescent 同一套形狀語彙：slash02 外弧 + slash01 內芯 + rotDeg -90。
+   原本用 slash03（細長刀片）畫成 33x75，畫面上是一道細絲；
+   風系的斬擊要與物理系的半月斬（slash-phys-big）讀起來是同一種東西，
+   只是顏色不同——用不同的素材會讓它看起來像另一個系統畫的。 */
 P['slash-wind-crescent'] = () => ({
   id: 'slash-wind-crescent', duration: 0.32, layers: [
     sprite({
-      id: 'body', asset: A.slash03, z: 1, sizeX: 33, sizeY: 75, alpha: 0.95, tint: T.wind.c1,
-      blend: 'add', duration: 0.32,
+      id: 'body', asset: A.slash02, z: 1, sizeX: 96, sizeY: 88, rotDeg: -90,
+      alpha: 0.95, tint: T.wind.c1, blend: 'add', duration: 0.32,
       alphaOverLife: [[0, 0], [0.12, 1], [0.7, 0.6], [1, 0.15]],
       scaleOverLife: [[0, 0.55], [1, 1]]
     }),
     sprite({
-      id: 'core', asset: A.slash03, z: 2, sizeX: 20, sizeY: 60, alpha: 1, tint: '#ffffff',
-      blend: 'add', duration: 0.3,
+      id: 'core', asset: A.slash01, z: 2, sizeX: 72, sizeY: 66, rotDeg: -90,
+      alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.3,
       alphaOverLife: [[0, 0], [0.12, 1], [0.7, 0.5], [1, 0.1]],
       scaleOverLife: [[0, 0.55], [1, 1]]
     })

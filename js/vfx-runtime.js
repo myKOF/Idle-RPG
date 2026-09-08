@@ -379,7 +379,12 @@ var VFXRuntime = (function () {
     /* 飛行物：逐幀 setTransform 從起點移到目標，朝飛行方向旋轉 */
     function playProjectile(rt, presetId, spec) {
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
-      var chained = ids.length >= 2;
+      /* 天降永遠不是連鎖段。少了後半這個條件，一顆同時打到兩個以上敵人的
+         隕石會被當成雷鏈：起點取 ids[0] 的位置、終點取 ids[1]，於是
+         「從天而降」變成「在兩個敵人之間橫著飛過去」，而且尺寸還是天降的
+         放大倍率——畫面上是一團巨大的火球從旁邊滑過，看起來像特效不見了。
+         地爆天星（打全場，targets 是所有敵人）必然踩到這一條。 */
+      var chained = ids.length >= 2 && spec.fxKind !== 'rain';
       var toId = chained ? ids[1] : ids[0];
       /* 方向型飛行物（風刃、貫穿冰箭、火神星環）：模擬層說的是「朝這個方位飛這麼遠」，
          路徑上可能一個敵人都沒有（四方向齊射就是這樣），所以
@@ -763,8 +768,14 @@ var VFXRuntime = (function () {
       }
 
       /* 天降類的落點預警：飛行物在天上飛的同時，地上要有那一圈紅／藍標記。
-         舊畫法本來就兩個都畫，只接手飛行物會讓預警圈消失。 */
-      if (role === 'projectile' && spec.area && roles.ground && has(roles.ground)) {
+         舊畫法本來就兩個都畫，只接手飛行物會讓預警圈消失。
+
+         沒有 area 的天降也要畫。地爆天星打的是全場、不掛在任何敵人身上，
+         模擬層因此不給 area；原本的條件把它整個濾掉，落地影子就永遠不出現。
+         playGround 本來就處理得了無 area 的情形（畫在 targets[0] 腳底、
+         大小由 profile.groundR 決定），這裡只是別提前擋掉它。 */
+      if (role === 'projectile' && roles.ground && has(roles.ground) &&
+          (spec.area || spec.fxKind === 'rain')) {
         playGround(roles.ground, spec);
       }
 
@@ -956,7 +967,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260907-sheet-adopt';
+  var DATA_VERSION = '20260908-hit-blend';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

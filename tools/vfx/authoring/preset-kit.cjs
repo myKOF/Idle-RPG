@@ -28,6 +28,53 @@ function assertAsset(id, where) {
 }
 
 /* 常用素材（都已確認存在於索引；製作時可直接用，也可以自己填 assetId） */
+/* ---- 不透明素材 × 非加法混色 = 畫面上一個方塊 ----
+
+   有幾個套件同時提供「黑底」與「透明」兩個版本的同一張圖。黑底版沒有
+   alpha 通道，整個矩形都是不透明的；用加法混色時黑色加 0 等於看不見，
+   所以用起來完全正常，因此這個地雷可以埋很久都不爆。
+   一旦某一層改成 normal 或 multiply，畫面上就會出現一個實心方塊——
+   而且方塊的顏色是 tint 過的，看起來不像「畫錯了」，
+   比較像「這個特效本來就有一塊背景」，於是會往完全錯的方向查。
+
+   （實際發生過：火殞石的 rim 層、地爆天星的 shadow 層、石化的 stone 層…
+    一共 23 層，全都是同一個原因。）
+
+   兩個版本的內容並不等價，不能無腦互換：黑底版的 RGB 已經是「乘完
+   亮度」的結果（rgb 193、alpha 255），透明版則是原色配上亮度當 alpha
+   （rgb 194、alpha 169）。加法混色下透明版會暗三成左右。
+   所以這裡只擋錯誤用法，不自動替換——替換會悄悄改掉八十幾層的亮度。 */
+const OPAQUE_ALPHA_TWIN = [
+  ['particle-pack/png-black-background/', 'particle-pack/png-transparent/'],
+  ['light-masks-1.0/default/', 'light-masks-1.0/transparent/'],
+  ['light-masks-1.0/inverted/', 'light-masks-1.0/transparent/']
+];
+const OPAQUE_IDS = new Set(INDEX.assets
+  .filter(a => a.facts && a.facts.pixelsAnalyzed &&
+    (a.facts.hasAlphaChannel === false || (a.facts.alpha && a.facts.alpha.borderMean > 0.5)))
+  .map(a => a.assetId));
+
+/* 同一張圖的透明版 assetId；沒有對應版本時回 null。 */
+function alphaTwin(id) {
+  for (const pair of OPAQUE_ALPHA_TWIN) {
+    if (id.startsWith(pair[0])) {
+      const twin = pair[1] + id.slice(pair[0].length);
+      if (ASSETS.has(twin)) return twin;
+    }
+  }
+  return null;
+}
+
+function assertBlendable(id, blend, where) {
+  if (blend === 'add' || blend === 'screen') return;
+  if (!OPAQUE_IDS.has(id)) return;
+  const twin = alphaTwin(id);
+  throw new Error(where + ' 用了不透明素材配 blend="' + (blend || 'normal') +
+    '"，畫面上會是一個實心方塊：\n  ' + id +
+    (twin ? '\n  改用透明版：' + twin + '（加法亮度會不同，必要時調 alpha）'
+          : '\n  這個素材沒有透明版；改成 blend:"add"，或換一張帶 alpha 的素材'));
+}
+
 const A = {
   // 光暈／圓盤（加法）
   glowSoft: 'particle-pack/png-black-background/light_03.png',
@@ -87,6 +134,7 @@ const A = {
   flare03: 'new_materials/flare/flare_3.png',
   flare01: 'particle-pack/png-black-background/flare_01.png',
   // 電
+  bolt04: 'particle-pack/png-black-background/spark_04.png',
   bolt05: 'particle-pack/png-black-background/spark_05.png',
   bolt06: 'particle-pack/png-black-background/spark_06.png',
   bolt07H: 'particle-pack/png-black-background/spark_07.png',
@@ -222,6 +270,18 @@ const A = {
 };
 Object.keys(A).forEach(k => { if (!ASSETS.has(A[k])) throw new Error('kit.A.' + k + ' 指向不存在的 assetId：' + A[k]); });
 
+/* A 的透明版對照表。同一個 key，指向同一張圖的帶 alpha 版本。
+
+   為什麼要有這一份而不是直接在 A 裡改掉：加法混色的圖層用黑底版是正確的，
+   而且比透明版亮三成（見 assertBlendable 上方的說明）。八十幾層加法圖層
+   的亮度是調過的，整批換掉等於把它們全部調暗一次。
+   所以兩份並存：加法用 A，normal／multiply 用 AT。
+
+   自動生成而不是手寫，是為了不讓兩份清單有機會分歧——手寫的那一份
+   遲早會漏掉某一個 key，而漏掉的症狀就是那個方塊又長回來。 */
+const AT = {};
+Object.keys(A).forEach(k => { const t = alphaTwin(A[k]); if (t) AT[k] = t; });
+
 /* 色票 */
 const T = {
   light: { c1: '#ffe47a', c2: '#fffef4', glow: '#fff3a3' },
@@ -263,6 +323,62 @@ const RAMP = {
   fadeDark: [[0, '#ffffff'], [0.5, '#ffffff'], [1, '#2a2a30']]
 };
 
+/* ---- 序列幀圖集目錄 ----
+
+   一張圖集要正確播放，需要三個數字：格線幾欄幾列、實際用了幾格、
+   接回第一格會不會跳。三個都不能用看的——尤其是「用了幾格」：
+   Effect_BigHit 是 6x5＝30 格但只畫了 12 格，照 30 格播的話後面
+   18 格是全空的，動畫演完會憑空停頓 0.6 秒。
+
+   底下的數字全部由 `node tools/vfx/sheet-facts.cjs` 量出來，
+   素材換版時重跑一次即可對照。放在這裡而不是各家族腳本裡，是因為
+   同一張圖集常常被兩三個 preset 用到，抄第二份就會有一份先過期。
+
+   loop 欄位是量測給的判定：
+     true  末格接回首格的差異與相鄰格相當 → 可以無縫循環（場域、光環）
+     false 一次性動畫（無 → 有 → 無）     → 播一次就結束（受擊、爆炸）
+
+   全部素材的內容都填滿格子（佔格 0.92～0.99），所以 preset 的 size
+   直接就是想要的畫面尺寸，不需要再除以佔格比例。 */
+const SHEET_DIR = 'spritemancer-vfx-256/30fps/';
+function sheetDef(file, cols, rows, count, loop) {
+  /* 每格尺寸寫在檔名結尾（..._256x125.png）。sheetLayer 要靠它把
+     「螢幕上幾像素」換算成 scale——見下方那段註解。 */
+  const m = /_(\d+)x(\d+)\.png$/i.exec(file);
+  if (!m) throw new Error('圖集檔名沒有格尺寸：' + file);
+  return {
+    asset: SHEET_DIR + file, columns: cols, rows: rows, count: count, loop: loop,
+    cellW: +m[1], cellH: +m[2]
+  };
+}
+const SHEET = {
+  /* --- 可無縫循環：場域、光環、持續狀態 --- */
+  anima:       sheetDef('effect_anima_1_256x256.png', 6, 5, 30, true),   // 青色靈焰三舌上竄
+  constellation: sheetDef('effect_constellation_1_245x256.png', 6, 5, 30, true), // 彩色星屑飄散
+  ditheredFire: sheetDef('effect_ditheredfire_1_256x122.png', 6, 5, 30, true),   // 橫帶烈焰（火牆）
+  eldenRing:   sheetDef('effect_eldenring_1_254x256.png', 6, 5, 30, true),       // 橙色火環，亮弧繞行
+  electricShield: sheetDef('effect_electricshield_1_256x256.png', 6, 5, 30, true), // 藍色電環
+  fastPixelFire: sheetDef('effect_fastpixelfire_1_173x193.png', 6, 5, 30, true), // 團狀火焰翻騰
+  hyperspeed:  sheetDef('effect_hyperspeed_1_256x255.png', 6, 5, 30, true),      // 藍色水平速度線
+  magma:       sheetDef('effect_magma_1_256x125.png', 6, 5, 30, true),           // 岩漿向上噴發（左右對稱）
+  powerChords: sheetDef('effect_powerchords_1_256x175.png', 6, 5, 30, true),     // 由一點向上張開的光錐
+  tentacles:   sheetDef('effect_tentacles_1_256x190.png', 6, 5, 30, true),       // 粉紅觸手上竄
+  worm:        sheetDef('effect_worm_1_256x229.png', 6, 5, 30, true),            // 青白扭曲觸鬚
+
+  /* --- 一次性：受擊、爆炸、爆發 --- */
+  bigHit:      sheetDef('effect_bighit_1_256x254.png', 6, 5, 12, false),  // 黃色星芒 → 白閃（只有 12 格）
+  bloodImpact: sheetDef('effect_bloodimpact_1_69x60.png', 6, 5, 25, false), // 血液噴濺
+  charged:     sheetDef('effect_charged_1_221x256.png', 7, 6, 40, false), // 藍色放射電花（7x6 格）
+  explosion:   sheetDef('effect_explosion_1_256x256.png', 6, 5, 27, false), // 黃橙爆炸＋日冕
+  explosion2:  sheetDef('effect_explosion2_1_256x256.png', 6, 5, 27, false), // 橙白爆炸
+  impact:      sheetDef('effect_impact_1_247x256.png', 6, 5, 15, false),  // 白色細星芒（線很細，200px 以下會消失）
+  puffAndStars: sheetDef('effect_puffandstars_1_120x109.png', 7, 6, 30, false), // 橙星＋暗煙（暈眩）
+  smallHit:    sheetDef('effect_smallhit_1_256x254.png', 6, 5, 15, false), // 小型星芒（同樣是細線）
+  theVortex:   sheetDef('effect_thevortex_1_254x256.png', 6, 5, 25, false), // 紫→青漩渦球，脹縮一次
+  wheel:       sheetDef('effect_wheel_1_256x256.png', 6, 5, 25, false)     // 綠色放射輪爆
+  /* effect_kabooms 未收錄：內容是漫畫「KABOOM」字樣，不是特效。 */
+};
+
 const px = n => +(n / 512).toFixed(4);
 const deg = d => +(d * Math.PI / 180).toFixed(4);
 const num = (v, name) => { if (typeof v !== 'number' || !isFinite(v)) throw new Error(name + ' 必須是數字'); return v; };
@@ -272,6 +388,7 @@ function common(o, out) {
   out.id = o.id;
   if (o.enabled === false) out.enabled = false;
   out.assetId = assertAsset(o.asset || o.assetId, 'layer ' + o.id);
+  assertBlendable(out.assetId, o.blend, 'layer ' + o.id);
   if (o.z !== undefined) out.zIndex = o.z;
   if (o.x !== undefined || o.y !== undefined) out.position = { x: o.x || 0, y: o.y || 0 };
   if (o.rotation !== undefined) out.rotation = o.rotation;
@@ -394,4 +511,49 @@ function probe(id, opts) {
   return { id: id, layers: preset.layers.length, bbox: { x: [Math.round(minX), Math.round(maxX)], y: [Math.round(minY), Math.round(maxY)] }, maxParticles: maxNodes, duration: preset.duration, loop: preset.loop };
 }
 
-module.exports = { A, T, C, RAMP, px, deg, sprite, particle, procedural, write, writeRootGroupLayout, probe, assertAsset, ASSETS, REPO };
+/* 一張序列幀圖層。把「圖集怎麼播」與「這一層長什麼樣」分開：
+   def 來自上面的目錄（格線、格數、能不能循環），o 是這一次的用法。
+
+   ⚠️ size 是**螢幕像素**，這一點與 sprite() 不同，而且非這樣不可。
+
+   sprite() 的 px(n) = n/512：那個 512 是素材庫裡一般貼圖的邊長，
+   所以對一張 512x512 的圖來說「size: 200」剛好就是畫面上 200px。
+   序列幀不是這樣——貼圖是**一格**，Magma 的格子只有 256x125。
+   同一句 size: 200 套到那張圖上會得到 256 x 200/512 = 100px 寬、
+   125 x 200/512 = 49px 高，寬高各差一半，而且兩張格子尺寸不同的圖集
+   寫同一個數字會得到不同大小。這種錯不會報錯，只會讓特效小一號，
+   在畫面上很容易被當成「素材本來就這麼小」而去改別的地方。
+
+   （已經寫好的三份 preset 正是踩了這個坑：原始碼寫 190，畫面上是 95。
+    改用 sheetLayer 時數字一併改成實際的 95，行為不變、原始碼終於誠實。）
+
+   mode 預設 'life'：整份序列攤在圖層生命上，所以 duration 就是播放速度旋鈕。
+   要照素材原速（30fps）播，duration 設成 count/30。 */
+function sheetLayer(def, o) {
+  const over = Object.assign({}, o);
+  delete over.mode;
+  /* 螢幕像素 → sprite() 期待的「512 基準」尺寸。兩軸各自換算，
+     因為非正方的格子（256x125）兩軸的比例本來就不同。 */
+  const toBase = (v, cell) => v === undefined ? undefined : +(v * 512 / cell).toFixed(2);
+  if (over.size !== undefined) {
+    over.sizeX = toBase(over.size, def.cellW);
+    over.sizeY = toBase(over.size * def.cellH / def.cellW, def.cellH);   // 等比
+    delete over.size;
+  } else {
+    if (over.sizeX !== undefined) over.sizeX = toBase(over.sizeX, def.cellW);
+    if (over.sizeY !== undefined) over.sizeY = toBase(over.sizeY, def.cellH);
+  }
+  return sprite(Object.assign({
+    asset: def.asset,
+    blend: 'normal',
+    alpha: 1
+  }, over, {
+    sheet: {
+      columns: def.columns, rows: def.rows, count: def.count,
+      mode: o.mode || 'life',
+      loop: def.loop
+    }
+  }));
+}
+
+module.exports = { A, AT, T, C, RAMP, SHEET, sheetLayer, alphaTwin, px, deg, sprite, particle, procedural, write, writeRootGroupLayout, probe, assertAsset, ASSETS, REPO };

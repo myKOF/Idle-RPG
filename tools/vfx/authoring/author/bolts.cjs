@@ -18,59 +18,126 @@ const GLOW_A = [[0, 0], [0.08, 0.8], [0.6, 0.45], [1, 0]];
 const RING_A = [[0, 0], [0.1, 0.9], [1, 0]];
 const RING_S = [[0, 0.3], [1, 1]];
 
+/* ---- 為什麼閃電會畫成一根直棍 ----
+
+   spark_05／06 這幾張素材本身就是漂亮的鋸齒狀閃電（512x512，內容
+   328x512，長寬比 0.64）。問題出在 preset 把它壓成 13x167——長寬比
+   0.078，橫向被壓縮了八倍。鋸齒的左右擺幅隨著寬度一起縮到剩下 8px，
+   於是畫面上就是一條直線；再疊上 barA（4x500 的直棍）當核心，
+   看起來就完全是「一道光束從天空照下」而不是閃電劈下。
+
+   所以規則是：**鋸齒的擺幅 ≈ 素材寬度 × 0.64，不能把它壓掉。**
+   一段 167px 高的雷要看得出鋸齒，寬度至少要 60～90px。
+
+   連鎖雷是同一個問題轉 90 度：spark_07 的內容長寬比 1.44，preset 畫成
+   200x7（14.3）。要注意的是 Runtime 只拉伸 X（scaleX = 距離/200，
+   scaleY 固定 1），所以**縱向擺幅完全由 sizeY 決定**，與敵人距離無關——
+   sizeY 給足，拉多長都還是鋸齒。
+
+   白熱核心不再用直棍疊，改用 tintOverLife：一開始白熱，很快冷卻成元素色，
+   末段轉暗。核心因此永遠與鋸齒重合，不會有一根筆直的白線穿過去。 */
+const STRIKE_TINT = {
+  gold:   [[0, '#ffffff'], [0.08, '#fff8b0'], [0.35, '#f2b705'], [1, '#6b3f00']],
+  purple: [[0, '#ffffff'], [0.08, '#f5e8ff'], [0.35, '#c084fc'], [1, '#3b1060']],
+  blue:   [[0, '#ffffff'], [0.15, '#dbeafe'], [0.6, '#7dd3fc'], [1, '#1e3a8a']]
+};
+
 const P = {};
 
-/* ---------- bolt-sky-lightning：金黃天雷 ---------- */
+/* ---------- 天降雷：三段鋸齒接力落地 ----------
+   三段各 190px 高、上下重疊約 30px，x 有小幅偏移讓路徑蜿蜒（真實的雷
+   不會落在一條垂直線上）。branch 是分岔：一小段偏出去又消失，
+   這一層對「像不像閃電」的貢獻遠大於它的大小。
+
+   glow 保留但壓到 0.2：雷擊瞬間空氣確實會整片發亮，那是對的；
+   它會變成光束是因為原本 alpha 0.45 又疊了一根直棍核心。 */
+function skyBolt(o) {
+  const seg = (id, z, asset, w, y, x) => sprite({
+    id: id, asset: asset, z: z, sizeX: w, sizeY: 190, y: y, x: x,
+    alpha: 1, tint: '#ffffff', tintOverLife: o.ramp, blend: 'add',
+    duration: o.strikeDur, alphaOverLife: STRIKE_A
+  });
+  return [
+    /* 輝光用柔邊圓盤拉長，不用 barB。barB 是 cone_b——舞台燈的光錐，
+       左右是**硬邊**；壓成 100x500 就是一個半透明的長方形框在雷的外面，
+       正是使用者說的「包著一個方塊」。光錐當光柱是對的，當雷的輝光不對。 */
+    sprite({
+      id: 'glow', asset: A.discA, z: 0, sizeX: o.glowW, sizeY: 560, anchor: BOT,
+      alpha: 0.24, tint: o.edge, blend: 'add', duration: o.dur, alphaOverLife: GLOW_A
+    }),
+    seg('seg-a', 1, A.bolt06, o.w, -405, 0),
+    seg('seg-b', 2, A.bolt05, o.w * 0.9, -250, 12),
+    seg('seg-c', 3, A.bolt06, o.w * 0.75, -95, -9),
+    sprite({
+      id: 'branch', asset: A.bolt04, z: 4, sizeX: o.w * 0.62, sizeY: o.w * 0.62,
+      x: o.w * 0.42, y: -300, rotDeg: 34,
+      alpha: 0.85, tint: '#ffffff', tintOverLife: o.ramp, blend: 'add',
+      duration: o.strikeDur * 0.7, alphaOverLife: STRIKE_A
+    })
+  ].concat(o.extra || []);
+}
+
 P['bolt-sky-lightning'] = () => ({
-  id: 'bolt-sky-lightning', duration: 0.4, layers: [
-    sprite({ id: 'glow', asset: A.barB, z: 0, sizeX: 46, sizeY: 500, anchor: BOT, alpha: 0.45, tint: '#ffd23f', blend: 'add', duration: 0.4, alphaOverLife: GLOW_A }),
-    sprite({ id: 'seg-a', asset: A.bolt06, z: 1, sizeX: 13, sizeY: 167, y: -417, alpha: 1, tint: '#f2b705', blend: 'add', duration: 0.4, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'seg-b', asset: A.bolt05, z: 2, sizeX: 8, sizeY: 167, y: -250, alpha: 1, tint: '#f2b705', blend: 'add', duration: 0.4, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'seg-c', asset: A.bolt06, z: 3, sizeX: 3, sizeY: 167, y: -83, alpha: 1, tint: '#f2b705', blend: 'add', duration: 0.4, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'core', asset: A.barA, z: 4, sizeX: 4, sizeY: 500, anchor: BOT, alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.4, alphaOverLife: CORE_A }),
-    sprite({ id: 'ground', asset: A.ringA, z: 5, sizeX: 56, sizeY: 22, alpha: 0.9, tint: '#ffd23f', blend: 'add', delay: 0.04, duration: 0.34, alphaOverLife: RING_A, scaleOverLife: RING_S }),
-    sprite({ id: 'flash', asset: A.flash, z: 6, size: 42, alpha: 1, tint: '#fff8b0', blend: 'add', delay: 0.03, duration: 0.16, alphaOverLife: C.pop, scaleOverLife: [[0, 0.5], [1, 1.2]] })
-  ]
+  id: 'bolt-sky-lightning', duration: 0.4, layers: skyBolt({
+    ramp: STRIKE_TINT.gold, edge: '#ffd23f', w: 84, glowW: 100, dur: 0.4, strikeDur: 0.4,
+    extra: [
+      sprite({ id: 'ground', asset: A.ringA, z: 5, sizeX: 56, sizeY: 22, alpha: 0.9, tint: '#ffd23f', blend: 'add', delay: 0.04, duration: 0.34, alphaOverLife: RING_A, scaleOverLife: RING_S }),
+      sprite({ id: 'flash', asset: A.flash, z: 6, size: 42, alpha: 1, tint: '#fff8b0', blend: 'add', delay: 0.03, duration: 0.16, alphaOverLife: C.pop, scaleOverLife: [[0, 0.5], [1, 1.2]] })
+    ]
+  })
 });
 
 /* ---------- bolt-sky-purple：紫雷（更粗 + 著地符紋環） ---------- */
 P['bolt-sky-purple'] = () => ({
-  id: 'bolt-sky-purple', duration: 0.65, layers: [
-    sprite({ id: 'glow', asset: A.barB, z: 0, sizeX: 70, sizeY: 500, anchor: BOT, alpha: 0.5, tint: '#9333ea', blend: 'add', duration: 0.65, alphaOverLife: GLOW_A }),
-    sprite({ id: 'seg-a', asset: A.bolt06, z: 1, sizeX: 22, sizeY: 167, y: -417, alpha: 1, tint: '#c084fc', blend: 'add', duration: 0.5, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'seg-b', asset: A.bolt05, z: 2, sizeX: 15, sizeY: 167, y: -250, alpha: 1, tint: '#c084fc', blend: 'add', duration: 0.5, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'seg-c', asset: A.bolt06, z: 3, sizeX: 9, sizeY: 167, y: -83, alpha: 1, tint: '#c084fc', blend: 'add', duration: 0.5, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'core', asset: A.barA, z: 4, sizeX: 7, sizeY: 500, anchor: BOT, alpha: 1, tint: '#fdf4ff', blend: 'add', duration: 0.5, alphaOverLife: CORE_A }),
-    /* 符紋環：6 rad/s × 0.65s ＝ 3.9 rad */
-    sprite({
-      id: 'sigil', asset: A.rings3, z: 5, sizeX: 56, sizeY: 26, alpha: 0.9, tint: '#c084fc', blend: 'add',
-      delay: 0.04, duration: 0.61, alphaOverLife: [[0, 0], [0.12, 0.95], [0.7, 0.7], [1, 0]],
-      scaleOverLife: RING_S, rotationOverLife: [[0, 0], [1, 3.9]]
-    }),
-    sprite({ id: 'flash', asset: A.flash, z: 6, size: 52, alpha: 1, tint: '#fdf4ff', blend: 'add', delay: 0.03, duration: 0.2, alphaOverLife: C.pop, scaleOverLife: [[0, 0.5], [1, 1.25]] })
-  ]
+  id: 'bolt-sky-purple', duration: 0.65, layers: skyBolt({
+    ramp: STRIKE_TINT.purple, edge: '#9333ea', w: 104, glowW: 130, dur: 0.65, strikeDur: 0.5,
+    extra: [
+      /* 符紋環：6 rad/s x 0.65s = 3.9 rad */
+      sprite({
+        id: 'sigil', asset: A.rings3, z: 5, sizeX: 56, sizeY: 26, alpha: 0.9, tint: '#c084fc', blend: 'add',
+        delay: 0.04, duration: 0.61, alphaOverLife: [[0, 0], [0.12, 0.95], [0.7, 0.7], [1, 0]],
+        scaleOverLife: RING_S, rotationOverLife: [[0, 0], [1, 3.9]]
+      }),
+      sprite({ id: 'flash', asset: A.flash, z: 6, size: 52, alpha: 1, tint: '#fdf4ff', blend: 'add', delay: 0.03, duration: 0.2, alphaOverLife: C.pop, scaleOverLife: [[0, 0.5], [1, 1.25]] })
+    ]
+  })
 });
 
-/* ---------- bolt-chain-lightning：沿 +X 的雷鏈段（200px） ---------- */
+/* ---------- bolt-chain-lightning：沿 +X 的雷鏈段（名目 200px） ----------
+   Runtime 只拉伸 X（scaleX = 兩敵距離 / 200），scaleY 固定 1，
+   所以縱向擺幅完全由 sizeY 決定：sizeY 96 x 素材內容比 0.69 = 66px 的上下
+   蜿蜒，敵人距離多遠都保得住。原本是 sizeY 7，擺幅 5px——那就是直線。
+
+   兩段用不同素材反向疊：spark_07 與旋轉過的 spark_06 鋸齒節奏不同，
+   疊起來才不會像同一條線描了兩次。 */
 P['bolt-chain-lightning'] = () => ({
   id: 'bolt-chain-lightning', duration: 0.32, layers: [
-    sprite({ id: 'glow', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 22, anchor: LEFT, alpha: 0.45, tint: '#ffd23f', blend: 'add', duration: 0.32, alphaOverLife: GLOW_A }),
-    sprite({ id: 'seg-a', asset: A.bolt07H, z: 1, sizeX: 100, sizeY: 7, anchor: LEFT, alpha: 1, tint: '#f2b705', blend: 'add', duration: 0.32, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'seg-b', asset: A.bolt06H, z: 2, sizeX: 100, sizeY: 2.5, x: 100, anchor: LEFT, alpha: 1, tint: '#f2b705', blend: 'add', duration: 0.32, alphaOverLife: STRIKE_A }),
-    sprite({ id: 'core', asset: A.trace02H, z: 3, sizeX: 200, sizeY: 2, anchor: LEFT, alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.32, alphaOverLife: CORE_A })
+    sprite({ id: 'glow', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 44, anchor: LEFT, alpha: 0.3, tint: '#ffd23f', blend: 'add', duration: 0.32, alphaOverLife: GLOW_A }),
+    sprite({
+      id: 'seg-a', asset: A.bolt07H, z: 1, sizeX: 200, sizeY: 96, anchor: LEFT,
+      alpha: 1, tint: '#ffffff', tintOverLife: STRIKE_TINT.gold, blend: 'add',
+      duration: 0.32, alphaOverLife: STRIKE_A
+    }),
+    sprite({
+      id: 'seg-b', asset: A.bolt06H, z: 2, sizeX: 200, sizeY: 68, anchor: LEFT,
+      alpha: 0.8, tint: '#ffffff', tintOverLife: STRIKE_TINT.gold, blend: 'add',
+      duration: 0.32, alphaOverLife: CORE_A
+    })
   ]
 });
 
-/* ---------- bolt-curtain-lightning：雷幕電柱（loop、持續重抖） ---------- */
+/* ---------- bolt-curtain-lightning：雷幕電柱（loop、持續重抖） ----------
+   同樣把 14x450 的直棍拆成兩段 70x235 的鋸齒；核心不再是 barA 直棍，
+   改由 tintOverLife 讓鋸齒本身白熱。 */
 P['bolt-curtain-lightning'] = () => ({
   id: 'bolt-curtain-lightning', duration: 0.4, loop: true, layers: [
-    sprite({ id: 'glow', asset: A.barB, z: 0, sizeX: 44, sizeY: 450, anchor: BOT, alpha: 0.4, tint: '#2563eb', blend: 'add', duration: 0.4, alphaOverLife: [[0, 0.6], [0.5, 0.9], [1, 0.6]] }),
-    sprite({ id: 'column', asset: A.bolt06, z: 1, sizeX: 14, sizeY: 450, anchor: BOT, alpha: 0.95, tint: '#7dd3fc', blend: 'add', duration: 0.4, alphaOverLife: C.flicker }),
-    sprite({ id: 'core', asset: A.barA, z: 2, sizeX: 4, sizeY: 450, anchor: BOT, alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.4, alphaOverLife: C.flicker }),
+    sprite({ id: 'glow', asset: A.discA, z: 0, sizeX: 78, sizeY: 500, anchor: BOT, alpha: 0.3, tint: '#2563eb', blend: 'add', duration: 0.4, alphaOverLife: [[0, 0.6], [0.5, 0.9], [1, 0.6]] }),
+    sprite({ id: 'col-a', asset: A.bolt06, z: 1, sizeX: 70, sizeY: 235, y: -335, alpha: 0.95, tint: '#ffffff', tintOverLife: STRIKE_TINT.blue, blend: 'add', duration: 0.4, alphaOverLife: C.flicker }),
+    sprite({ id: 'col-b', asset: A.bolt05, z: 2, sizeX: 62, sizeY: 235, y: -115, x: 8, alpha: 0.95, tint: '#ffffff', tintOverLife: STRIKE_TINT.blue, blend: 'add', duration: 0.4, alphaOverLife: C.flicker }),
     /* 每 0.07s 重抖一次：壽命 0.07s 的短命電弧以 rate 發射，沿柱體隨機出現 */
     particle({
       id: 'jitter', asset: A.bolt05, z: 3, blend: 'add', tint: '#7dd3fc',
-      rate: 14, lifetime: [0.06, 0.08], spawnBox: [10, 450], y: -225,
+      rate: 14, lifetime: [0.06, 0.08], spawnBox: [40, 390], y: -245,
       speed: [0, 0], direction: 0, spread: 0, startPx: [90, 150],
       alphaOverLife: [[0, 1], [0.6, 0.9], [1, 0]], scaleOverLife: [[0, 1], [1, 1]]
     }),
@@ -131,28 +198,44 @@ P['pillar-earth'] = () => ({
 });
 
 /* ---- 光束共用：沿 +X、根部在原點 ---- */
+/* ---- 光束：w 是**可見的粗細**，不是圖層高度 ----
+
+   trace 系列的素材（trace_01/02/06_rotated）雖然是 512x512，筆畫只集中在
+   中央很窄的一條：實測 80% 的墨量落在 58～63px 之內，也就是圖高的 11～12%，
+   其餘全是透明留白。
+
+   原本 beam() 直接把 w 當圖層高度用，w:10 於是畫出一道**一個像素**粗的光。
+   角色身高 60px，那在畫面上就是一條刮痕。第一次修正把 w 從 10 拉到 26，
+   仍然只有 3px——因為放大的是留白，不是筆畫。
+
+   所以這裡除以墨量佔比：想要 18px 粗的光束，圖層要開到 18/0.115 ≈ 157px。
+   留白是透明的，不會多畫任何東西，只是把筆畫放到該有的大小。 */
+const BEAM_INK = 0.115;      // trace 系素材的有效筆畫佔圖高的比例（量測值）
+
 function beam(o) {
   const A_IN_OUT = [[0, 0], [0.25, 1], [0.7, 0.9], [1, 0]];
+  const q = o.w / BEAM_INK;
   return [
-    sprite({ id: 'glow', asset: A.trace06H, z: 0, sizeX: 200, sizeY: o.w * 3, anchor: LEFT, alpha: 0.5, tint: o.glow, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT }),
-    sprite({ id: 'body', asset: A.trace06H, z: 1, sizeX: 200, sizeY: o.w, anchor: LEFT, alpha: 0.95, tint: o.body, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT }),
-    sprite({ id: 'core', asset: A.trace02H, z: 2, sizeX: 200, sizeY: o.w * 0.5, anchor: LEFT, alpha: 1, tint: o.core, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT })
+    sprite({ id: 'glow', asset: A.trace06H, z: 0, sizeX: 200, sizeY: q * 1.7, anchor: LEFT, alpha: 0.4, tint: o.glow, blend: 'screen', duration: 0.45, alphaOverLife: A_IN_OUT }),
+    sprite({ id: 'body', asset: A.trace06H, z: 1, sizeX: 200, sizeY: q, anchor: LEFT, alpha: 0.95, tint: o.body, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT }),
+    sprite({ id: 'core', asset: A.trace02H, z: 2, sizeX: 200, sizeY: q * 0.42, anchor: LEFT, alpha: 1, tint: o.core, blend: 'add', duration: 0.45, alphaOverLife: A_IN_OUT })
   ];
 }
+
 
 /* ---------- beam-light：聖光光束 ---------- */
 P['beam-light'] = () => ({
   id: 'beam-light', duration: 0.45,
-  layers: beam({ w: 10, body: '#fffef4', core: '#ffffff', glow: '#ffe47a' })
+  layers: beam({ w: 20, body: '#fffef4', core: '#ffffff', glow: '#ffe47a' })
 });
 
 /* ---------- beam-ice：寒冰槍光束（帶白色斜紋） ---------- */
 P['beam-ice'] = () => ({
   id: 'beam-ice', duration: 0.45, layers: [
-    ...beam({ w: 8, body: '#4da6ff', core: '#f2fbff', glow: '#79d8ff' }),
+    ...beam({ w: 17, body: '#4da6ff', core: '#f2fbff', glow: '#79d8ff' }),
     /* 斜紋：uvScroll 讓條紋沿光束流動（Core 目前唯一的程序化效果） */
     kit.procedural({
-      id: 'streaks', asset: A.lines4, z: 3, effect: 'uvScroll', sizePx: [200, 8],
+      id: 'streaks', asset: A.lines4, z: 3, effect: 'uvScroll', sizePx: [200, 30],
       anchor: LEFT, alpha: 0.7, tint: '#f2fbff', blend: 'add',
       scrollSpeed: { x: -2.4, y: 0 }, duration: 0.45,
       alphaOverLife: [[0, 0], [0.25, 0.8], [0.7, 0.7], [1, 0]]

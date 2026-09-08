@@ -9,7 +9,7 @@
    ⚠️ Core 沒有父子節點，因此「繞著原點公轉」做不到；改用「本身就畫著若干個點的
       環形素材整片旋轉」來表現（runePlanet／ringSegments4／sawRing 等）。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, SHEET, sheetLayer, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const FLAT = 0.52;          // 地板矩形／落點預警的縱向壓縮
@@ -51,8 +51,19 @@ P['ground-mire-lava'] = () => ({
   id: 'ground-mire-lava', duration: 2.1, loop: true,
   layers: mire({
     fill: '#8a2b0b', edge: '#ff7a2a', ripple: '#ffb347', bubble: '#ffd282',
-    extra: [particle({
-      id: 'embers', asset: A.dot, z: 6, blend: 'add', tint: '#ffb347',
+    extra: [
+      /* ⚠️ 試過用 Effect_Magma 序列幀當噴發層，退回了。
+         那份素材是「左右對稱的向上噴發」，動畫的高潮是一朵**蘑菇雲頂蓋**——
+         一片寬而扁的淡色弧。疊在深色的岩漿池上，那個蓋子讀起來是一塊
+         灰色方塊蓋住角色，而不是噴發。素材本身沒問題（實測 alpha 邊界為 0、
+         半透明像素只佔 5%），是題材不合：Magma 適合「火山噴發」這種
+         以垂直噴柱為主體的技能，不適合當一灘池子的點綴。
+
+         與 hit-phys 那次退回是同一類判斷：序列幀要接得進來，
+         光看「元素對不對、循環得起來」不夠，還要看動畫的**高潮那一格**
+         在目標構圖裡是什麼形狀。 */
+      particle({
+      id: 'embers', asset: A.dot, z: 7, blend: 'add', tint: '#ffb347',
       rate: 6, lifetime: [0.5, 0.9], spawnBox: [180, 80], speed: [20, 50], direction: -90, spread: 50,
       gravity: { x: 0, y: -40 }, startPx: [3, 6],
       alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
@@ -85,12 +96,17 @@ P['ground-firewall'] = () => {
   });
   return {
     id: 'ground-firewall', duration: 1.2, loop: true, layers: [
-      sprite({ id: 'scorch', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 40, alpha: 0.75, tint: '#30231d', blend: 'normal', duration: 1.2, alphaOverLife: LOOP_A(0.75, 0.65) }),
-      sprite({ id: 'base', asset: A.trace06H, z: 1, sizeX: 200, sizeY: 26, alpha: 0.8, tint: '#ffa51d', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.7, 0.9) }),
+      sprite({ id: 'scorch', asset: AT.trace06H, z: 0, sizeX: 200, sizeY: 40, alpha: 0.75, tint: '#30231d', blend: 'normal', duration: 1.2, alphaOverLife: LOOP_A(0.75, 0.65) }),
+      /* 底部餘燼用扁橢圓的柔光，不用 trace。
+         trace 系素材的筆畫只佔圖高的 11%（見 bolts.cjs 的 BEAM_INK），
+         畫成 200x26 的結果是一條又細又硬的亮線橫貫整面火牆——
+         畫面上像有人把日光燈管放在火裡，而且正好切過站在牆邊的角色。
+         火牆底部要的是「地面被烤紅」那種瀰漫的暖光，本來就不該有邊。 */
+      sprite({ id: 'base', asset: A.discA, z: 1, sizeX: 210, sizeY: 44, y: -6, alpha: 0.5, tint: '#ffa51d', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.42, 0.58) }),
       column('flame-a', 2, -62, 0),
       column('flame-b', 3, 0, 0.28),
       column('flame-c', 4, 62, 0.56),
-      sprite({ id: 'core', asset: A.trace06H, z: 5, sizeX: 190, sizeY: 14, y: -12, alpha: 0.9, tint: '#ffd84a', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.8, 1) }),
+      sprite({ id: 'core', asset: A.discA, z: 5, sizeX: 176, sizeY: 26, y: -16, alpha: 0.55, tint: '#ffd84a', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.5, 0.68) }),
       particle({
         id: 'smoke', asset: A.smokeT, z: 6, blend: 'normal', tint: '#4a3b33',
         rate: 5, lifetime: [0.7, 1.1], spawnBox: [180, 20], y: -80, speed: [20, 45], direction: -90, spread: 40,
@@ -109,8 +125,12 @@ P['ground-firewall'] = () => {
 
 P['ground-thunder-curtain'] = () => ({
   id: 'ground-thunder-curtain', duration: 1, loop: true, layers: [
-    sprite({ id: 'band', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 20, alpha: 0.22, tint: '#7dd3fc', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.22, 0.32) }),
-    sprite({ id: 'band-core', asset: A.trace02H, z: 1, sizeX: 200, sizeY: 6, alpha: 0.5, tint: '#ffffff', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.4, 0.6) }),
+    /* sizeY 是圖層高度，不是看得見的粗細：trace 系素材的筆畫只佔圖高
+       11%（bolts.cjs 的 BEAM_INK），所以 20 畫出來是 2px、6 畫出來不到 1px。
+       配上 alpha 0.22 的結果就是整條雷幕在畫面上不存在。
+       改成 90／34 之後可見粗細約 10px／4px，才有「一道橫向電幕」的樣子。 */
+    sprite({ id: 'band', asset: A.trace06H, z: 0, sizeX: 200, sizeY: 90, alpha: 0.3, tint: '#7dd3fc', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.3, 0.42) }),
+    sprite({ id: 'band-core', asset: A.trace02H, z: 1, sizeX: 200, sizeY: 34, alpha: 0.6, tint: '#ffffff', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.5, 0.7) }),
     particle({
       id: 'ends', asset: A.bolt05, z: 2, blend: 'add', tint: '#ffffff',
       rate: 10, lifetime: [0.08, 0.16], spawnBox: [200, 14], speed: [0, 20], direction: -90, spread: 360,
@@ -164,7 +184,7 @@ function tornado(o) {
     rotationOverLife: [[0, deg(-5)], [0.5, deg(5)], [1, deg(-5)]]
   });
   return [
-    disc({ id: 'ground', asset: A.ringSoft, z: 0, d: 68, flat: 0.45, alpha: 0.6, tint: o.ground, blend: 'normal', dur: 1.2, alphaOverLife: LOOP_A(0.55, 0.7) }),
+    disc({ id: 'ground', asset: AT.ringSoft, z: 0, d: 68, flat: 0.45, alpha: 0.6, tint: o.ground, blend: 'normal', dur: 1.2, alphaOverLife: LOOP_A(0.55, 0.7) }),
     sprite({
       id: 'funnel', asset: A.coneF, z: 1, sizeX: 62, sizeY: 118, anchor: { x: 0.5, y: 1 },
       alpha: 0.9, tint: o.body, blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.85, 1),
@@ -236,9 +256,11 @@ P['ground-homing-ice-shard'] = () => ({
 
 P['ground-homing-wind-crescent'] = () => ({
   id: 'ground-homing-wind-crescent', duration: 0.55, loop: true, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, sizeX: 56, sizeY: 78, alpha: 0.35, tint: T.wind.glow, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.3, 0.45) }),
-    sprite({ id: 'body', asset: A.slash03, z: 1, sizeX: 26, sizeY: 60, alpha: 1, tint: T.wind.c1, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.95, 1), scaleOverLife: LOOP_A(1, 1.06) }),
-    sprite({ id: 'core', asset: A.slash03, z: 2, sizeX: 16, sizeY: 44, alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.9, 1) }),
+    /* 形狀與 proj-wind-crescent 一致（slash02/01 + rotDeg -90），只是小一號：
+       這是繞著自己轉的追蹤刃，不是射出去的那一道。 */
+    sprite({ id: 'glow', asset: A.slash02, z: 0, sizeX: 84, sizeY: 76, rotDeg: -90, alpha: 0.3, tint: T.wind.glow, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.3, 0.45) }),
+    sprite({ id: 'body', asset: A.slash02, z: 1, sizeX: 66, sizeY: 60, rotDeg: -90, alpha: 1, tint: T.wind.c1, blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.95, 1), scaleOverLife: LOOP_A(1, 1.06) }),
+    sprite({ id: 'core', asset: A.slash01, z: 2, sizeX: 48, sizeY: 44, rotDeg: -90, alpha: 1, tint: '#ffffff', blend: 'add', duration: 0.55, alphaOverLife: LOOP_A(0.9, 1) }),
     particle({
       id: 'wisp', asset: A.dot, z: 3, blend: 'add', tint: '#ffffff',
       rate: 12, lifetime: [0.18, 0.3], spawnRadius: 8, speed: [20, 50], direction: 180, spread: 40,
@@ -295,12 +317,18 @@ P['orb-void-disc'] = () => {
 /* =========================== 軌道環 =========================== */
 function orbitRing(o) {
   return [
-    disc({ id: 'ring', asset: A.ringA, z: 0, d: 200, flat: FLAT_R, alpha: o.alpha, tint: o.tint, dur: 2, alphaOverLife: LOOP_A(o.alpha, o.alpha * 1.4) }),
+    /* 兩層環：外圈是寬而淡的光暈、內圈是細而亮的線。
+       只有一層淡環時（原本 alpha 0.18）在深色戰場上根本看不見——
+       這是「環繞體繞著哪一圈跑」的唯一提示，看不見等於資訊消失。
+       低 alpha 的用意是不要搶戲，但那要靠「細」而不是靠「淡」：
+       一條看得清楚的細線遠比一片看不清楚的寬光低調。 */
+    disc({ id: 'halo', asset: A.ringA, z: 0, d: 208, flat: FLAT_R, alpha: o.alpha * 0.9, tint: o.tint, dur: 2, alphaOverLife: LOOP_A(o.alpha * 0.9, o.alpha * 1.3) }),
+    disc({ id: 'ring', asset: A.ringThin, z: 1, d: 200, flat: FLAT_R, alpha: o.alpha * 2.6, tint: o.tint, dur: 2, alphaOverLife: LOOP_A(o.alpha * 2.6, o.alpha * 3.4) }),
     /* 這一個才是真的螢幕平面環繞：地板環是俯視壓扁的橢圓，模擬層的
        sgOrbitStep 算接觸也是在螢幕平面上繞，兩邊同一件事。
        0.4 圈／秒是環境感的慢飄，不是判定用的環繞體（那是 Adapter 另外播的）。 */
     particle(Object.assign({
-      id: 'motes', asset: A.dot, z: 1, blend: 'add', tint: o.tint,
+      id: 'motes', asset: A.dot, z: 2, blend: 'add', tint: o.tint,
       rate: 6, lifetime: [0.5, 0.9], spawnRadius: 96, speed: [15, 40], direction: -90, spread: 60,
       gravity: { x: 0, y: -40 }, orbitRps: 0.4, drag: 0.8, startPx: [3, 6],
       alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]]
@@ -501,7 +529,7 @@ P['mark-blue'] = () => ({ id: 'mark-blue', duration: 1.14, loop: true, layers: m
 P['ground-starfall-shadow'] = () => ({
   id: 'ground-starfall-shadow', duration: 5, layers: [
     disc({
-      id: 'shadow', asset: A.discWhite, z: 0, d: 200, flat: FLAT, alpha: 1, tint: '#000000', blend: 'normal', dur: 5,
+      id: 'shadow', asset: AT.discWhite, z: 0, d: 200, flat: FLAT, alpha: 1, tint: '#000000', blend: 'normal', dur: 5,
       /* ease-in：前段慢、後段快，與殞石逼近的速度感一致 */
       alphaOverLife: [[0, 0.1], [0.5, 0.21], [0.8, 0.36], [1, 0.55]],
       scaleOverLife: [[0, 0.04], [0.5, 0.28], [0.8, 0.62], [1, 1]]

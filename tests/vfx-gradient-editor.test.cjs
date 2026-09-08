@@ -218,12 +218,36 @@ test('WIRE-5 正式 preset 真的用上新能力，而且每一份都仍然合�
   });
 });
 
+test('WIRE-8 不透明素材配非加法混色會被擋下（那是畫面上的實心方塊）', function () {
+  const kit = require('../tools/vfx/authoring/preset-kit.cjs');
+  /* 黑底版沒有 alpha 通道，整個矩形都是不透明的。用加法時黑色加 0 等於
+     看不見，所以這個地雷可以埋很久都不爆；一旦某一層改成 normal，
+     畫面上就會出現一個 tint 過的實心方塊。 */
+  assert.throws(
+    () => kit.sprite({ id: 'x', asset: kit.A.dot, blend: 'normal', size: 40 }),
+    /實心方塊/);
+  assert.throws(
+    () => kit.sprite({ id: 'x', asset: kit.A.dot, size: 40 }),
+    /實心方塊/, 'blend 沒給時預設是 normal，同樣要擋');
+  /* 加法與 screen 是對的用法，不能誤擋。 */
+  assert.ok(kit.sprite({ id: 'x', asset: kit.A.dot, blend: 'add', size: 40 }));
+  assert.ok(kit.sprite({ id: 'x', asset: kit.A.dot, blend: 'screen', size: 40 }));
+  /* 透明版本來就帶 alpha，normal 是正當用法。 */
+  assert.ok(kit.sprite({ id: 'x', asset: kit.AT.dot, blend: 'normal', size: 40 }));
+  /* 錯誤訊息要直接說出該換成哪一個 assetId——否則得自己去猜對照關係。 */
+  try { kit.sprite({ id: 'x', asset: kit.A.dot, blend: 'normal', size: 40 }); }
+  catch (e) { assert.match(e.message, /png-transparent/); }
+});
+
 test('WIRE-6 authoring kit 會把新欄位傳下去（不傳的話腳本寫了也是白寫）', function () {
   /* preset-kit 的 common／particle 是白名單式的複製，漏一個欄位不會報錯，
      只會靜靜地不出現在輸出裡——那正是最難發現的一種壞法。 */
   const kit = require('../tools/vfx/authoring/preset-kit.cjs');
   const l = kit.particle({
-    id: 'x', asset: kit.A.dot, burst: 3, lifetime: 1,
+    /* blend 明寫 add：A.dot 是黑底無 alpha 的素材，preset-kit 現在會擋下
+       「不透明素材配 normal」的組合（那會在畫面上變成一個實心方塊）。
+       這條測的是欄位有沒有傳下去，不是混色；火花本來就走加法。 */
+    id: 'x', asset: kit.A.dot, blend: 'add', burst: 3, lifetime: 1,
     drag: 2, radialSpeed: -30, orbitRps: 0.5,
     noise: { strength: 8, frequency: 0.03, scrollSpeed: 1 },
     tintOverLife: kit.RAMP.fireCore

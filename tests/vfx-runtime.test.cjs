@@ -651,6 +651,48 @@ test('RAIN-1 天降飛行物同時放下落點預警', function () {
   assert.equal(adapter.stats().grounds, 1, '地上要有那一圈預警');
 });
 
+test('RAIN-2 打到多個敵人的天降仍然從天上落下，不會被當成連鎖段', function () {
+  /* 地爆天星打的是全場，targets 是所有敵人。chained 判定若只看
+     targets.length >= 2，起點會變成 ids[0] 的位置、終點是 ids[1]，
+     於是巨型隕石在兩個敵人之間橫著滑過去。 */
+  const { adapter, log } = makeAdapter([unitPreset('proj-x', 2)]);
+  const ok = adapter.tryPlay({
+    fxKind: 'rain', variant: 'meteor-starfall',
+    targets: ['mv-float-1', 'mv-float-2'], travelMs: [600, 600], dur: 1.2,
+    vfx: { projectile: 'proj-x' }
+  });
+  assert.equal(ok, true);
+  adapter.update(1 / 60);
+  const first = log.updates.find((u) => u.tag === 'fx');
+  /* 落點是 targets[0]（y=50），出生點在它正上方 500px。 */
+  assert.ok(first.y < -300, '應該從天上開始落下，實得 y=' + Math.round(first.y));
+  assert.ok(Math.abs(first.x - 100) < 2, 'x 應該對齊落點 100，實得 ' + Math.round(first.x));
+});
+
+test('RAIN-3 沒有 area 的天降照樣放下落點影子', function () {
+  /* 地爆天星不掛在任何敵人身上，模擬層因此不給 area。
+     原本的條件要求 spec.area，落地影子就永遠不出現。 */
+  const { adapter } = makeAdapter([unitPreset('proj-x', 2), unitPreset('shadow-x', 5, true)]);
+  const ok = adapter.tryPlay({
+    fxKind: 'rain', variant: 'meteor-starfall',
+    targets: ['mv-float-1'], travelMs: [600], dur: 1.2,
+    vfx: { projectile: 'proj-x', ground: 'shadow-x' }
+  });
+  assert.equal(ok, true);
+  assert.equal(adapter.stats().grounds, 1, '沒有 area 也要有落點影子');
+});
+
+test('RAIN-4 一般飛行物不會因為表格填了地板特效就多畫一個場域', function () {
+  /* RAIN-3 放寬的條件只針對天降。焚世領域那種「飛行物 + 地板場域」的組合
+     仍然要由 area 決定，否則每一發火球都會在敵人腳下留一塊場域。 */
+  const { adapter } = makeAdapter([unitPreset('proj-x', 2), unitPreset('field-x', 5, true)]);
+  adapter.tryPlay({
+    fxKind: 'projectile', targets: ['mv-float-1'], travelMs: [400],
+    vfx: { projectile: 'proj-x', ground: 'field-x' }
+  });
+  assert.equal(adapter.stats().grounds, 0, '沒有 area 的一般飛行物不該自己長出場域');
+});
+
 /* ============================================================
    PROFILE — 表面尺寸規則（高塔的卡片版面用）
    ============================================================ */

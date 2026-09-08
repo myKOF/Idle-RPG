@@ -75,13 +75,13 @@
       "medium"
     ]
   },
-  "recordCount": 1706,
+  "recordCount": 1973,
   "confidenceCounts": {
-    "high": 106,
-    "medium": 1600
+    "high": 154,
+    "medium": 1819
   },
   "needsReviewCount": 87,
-  "unclassifiedCount": 267,
+  "unclassifiedCount": 0,
   "records": [
     {
       "assetId": "foliage-sprites/png/flat/sprite_0001.png",
@@ -22143,6 +22143,25 @@
       "ruleId": "particle/flame"
     },
     {
+      "assetId": "particle-pack/png-black-background/flare_01.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "spark",
+        "glow",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "soft",
+        "directional",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "group",
+      "ruleId": "particle/flare"
+    },
+    {
       "assetId": "particle-pack/png-black-background/light_01.png",
       "kind": "vfx",
       "shape": "disc",
@@ -23812,6 +23831,25 @@
       "ruleId": "particle/flame"
     },
     {
+      "assetId": "particle-pack/png-transparent/flare_01.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "spark",
+        "glow",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "soft",
+        "directional",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "particle/flare"
+    },
+    {
       "assetId": "particle-pack/png-transparent/light_01.png",
       "kind": "vfx",
       "shape": "disc",
@@ -25204,6 +25242,1671 @@
       "confidence": "medium",
       "source": "family",
       "ruleId": "any/pack-preview"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_001.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_002.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_003.png",
+      "kind": "nonVfx",
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_004.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_005.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_006.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_007.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_008.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_009.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_010.png",
+      "kind": "nonVfx",
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_011.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_012.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_013.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_014.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_015.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_016.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_017.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "hollow",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/frame"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_018.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "hollow",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/frame"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_019.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_020.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "hollow",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/frame"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_021.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "hollow",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/frame"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_022.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_023.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_024.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_025.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_026.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_027.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_028.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_029.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_030.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_031.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_032.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_033.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_034.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_035.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_036.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_037.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_038.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_039.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_040.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_041.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_042.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_043.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_044.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_045.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_046.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_047.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_048.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_049.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_050.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_051.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_052.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_053.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_054.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_055.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_056.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_057.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_058.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_059.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_060.png",
+      "kind": "nonVfx",
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_061.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_062.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_063.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_064.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_065.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_066.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_067.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_068.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_069.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_070.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_071.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_072.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_073.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_074.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_075.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_076.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_077.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_078.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_079.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_080.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_081.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_082.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_083.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_084.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_085.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_086.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_087.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_088.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_089.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_090.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_091.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_092.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_093.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_094.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_095.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_096.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_097.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_098.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_099.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_100.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_101.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_102.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_103.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_104.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_105.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_106.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "core",
+        "impact",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "radial",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/radial-burst"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_107.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_108.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_109.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_110.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_111.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_112.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_113.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "noise",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/tileable-pattern"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_114.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "noise",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/tileable-pattern"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_115.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "noise",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/tileable-pattern"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_116.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "noise",
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/tileable-pattern"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_117.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_118.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_119.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_120.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_121.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_122.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_123.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_124.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_125.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_126.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_127.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_128.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_129.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_130.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_131.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_132.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_133.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_134.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_135.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_136.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_137.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_138.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_139.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_140.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_141.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_142.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_143.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_144.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_145.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_146.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_147.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_148.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_149.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_150.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_151.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_152.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_153.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_154.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_155.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_156.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "symmetric",
+        "hollow",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/sigil"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_157.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_158.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_159.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_160.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_161.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_162.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_163.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_164.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_165.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_166.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_167.png",
+      "kind": "vfx",
+      "shape": "ring",
+      "usage": [
+        "mask"
+      ],
+      "element": "neutral",
+      "tags": [
+        "sharp",
+        "hollow",
+        "symmetric"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "shape/frame"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_168.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_169.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_170.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_171.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_172.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_173.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_175.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_176.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_177.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_178.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "shape/ornament"
     },
     {
       "assetId": "smoke-particles/png/black-smoke/blacksmoke00.png",
@@ -28057,6 +29760,1438 @@
       "confidence": "medium",
       "source": "family",
       "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_anima_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_bighit_1_256x254.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_bloodimpact_1_69x60.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_charged_1_221x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_constellation_1_245x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_ditheredfire_1_256x122.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_eldenring_1_254x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_electricshield_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion2_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_explosion_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_fastpixelfire_1_173x193.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_hyperspeed_1_256x255.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_impact_1_247x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_kabooms_1_256x207.png",
+      "kind": "nonVfx",
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "sheet/lettering"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_magma_1_256x125.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_powerchords_1_256x175.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_puffandstars_1_120x109.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_smallhit_1_256x254.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_tentacles_1_256x190.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_thevortex_1_254x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_wheel_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/30fps/effect_worm_1_256x229.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_anima_1_251x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_bighit_1_250x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_bloodimpact_1_60x63.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_charged_1_256x212.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_constellation_1_253x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_ditheredfire_1_256x122.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_eldenring_1_254x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_electricshield_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_explosion2_1_249x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_explosion_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_fastpixelfire_1_173x197.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_hyperspeed_1_256x255.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_impact_1_204x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_kabooms_1_256x207.png",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/lettering"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_magma_1_256x125.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_powerchords_1_256x175.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_puffandstars_1_108x116.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_smallhit_1_256x230.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_tentacles_1_256x199.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_thevortex_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_wheel_1_256x256.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "impact",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "radial"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/oneshot"
+    },
+    {
+      "assetId": "spritemancer-vfx-256/60fps/effect_worm_1_256x224.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense",
+        "noisy",
+        "layered"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/loopable"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_anima_1_437x437.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_bighit_1_557x553.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_bloodimpact_1_69x60.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_charged_1_321x371.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_constellation_1_299x313.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_ditheredfire_1_517x246.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_eldenring_1_421x425.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_electricshield_1_265x265.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_explosion2_1_355x355.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_explosion_1_517x517.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_fastpixelfire_1_173x193.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_hyperspeed_1_517x515.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_impact_1_291x301.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_kabooms_1_401x325.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_magma_1_381x186.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_powerchords_1_517x353.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_puffandstars_1_120x109.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_smallhit_1_532x528.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_tentacles_1_453x337.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_thevortex_1_427x431.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_wheel_1_273x273.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/30fps/effect_worm_1_413x369.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_anima_1_429x437.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_bighit_1_516x528.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_bloodimpact_1_60x63.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_charged_1_357x295.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_constellation_1_309x313.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_ditheredfire_1_517x246.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_eldenring_1_421x425.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_electricshield_1_265x265.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_explosion2_1_355x365.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_explosion_1_517x517.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_fastpixelfire_1_173x197.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_hyperspeed_1_517x515.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_impact_1_305x383.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_kabooms_1_401x325.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_magma_1_381x186.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_powerchords_1_517x353.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_puffandstars_1_108x116.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_smallhit_1_516x463.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_tentacles_1_433x337.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_thevortex_1_429x429.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_wheel_1_273x273.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
+    },
+    {
+      "assetId": "spritemancer-vfx/60fps/effect_worm_1_421x369.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "impact"
+      ],
+      "element": "neutral",
+      "tags": [
+        "dense"
+      ],
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "sheet/source-hires"
     }
   ]
 }

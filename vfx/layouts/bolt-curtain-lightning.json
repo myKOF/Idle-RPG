@@ -7,8 +7,8 @@
       "name": "bolt-curtain-lightning",
       "layerIds": [
         "glow",
-        "column",
-        "core",
+        "col-a",
+        "col-b",
         "jitter",
         "ground",
         "ground-glow"

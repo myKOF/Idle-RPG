@@ -4,7 +4,7 @@
    curse-*：原點＝目標身體中心，符號緩慢上升並淡出。
    ⚠️ Core 的圖層不能位移，「上升＋擺動的符號」一律用 burst:1 的粒子表現。 */
 const kit = require('../preset-kit.cjs');
-const { A, T, C, RAMP, deg, sprite, particle } = kit;
+const { A, AT, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
 const CAST_DUR = 0.9;
@@ -142,7 +142,7 @@ function curse(o) {
 
 P['curse-dark'] = () => ({
   id: 'curse-dark', duration: 1,
-  layers: curse({ tint: '#c084fc', sigil: A.magicOcta, sigilTint: '#1a0c2e', sigilBlend: 'normal', sigilPx: 20, spin: 0.6 })
+  layers: curse({ tint: '#c084fc', sigil: AT.magicOcta, sigilTint: '#1a0c2e', sigilBlend: 'normal', sigilPx: 20, spin: 0.6 })
 });
 
 P['curse-bleed'] = () => ({
@@ -150,7 +150,7 @@ P['curse-bleed'] = () => ({
   layers: curse({
     tint: T.bleed.c1, ring: A.ringSegments4, sigil: A.lines1, sigilPx: 18, spin: 0.3,
     extra: [particle({
-      id: 'drops', asset: A.dot, z: 3, blend: 'normal', tint: T.bleed.c1,
+      id: 'drops', asset: AT.dot, z: 3, blend: 'normal', tint: T.bleed.c1,
       burst: 4, lifetime: [0.4, 0.6], spawnRadius: 14, speed: [20, 50], direction: 90, spread: 80,
       gravity: { x: 0, y: 380 }, startPx: [4, 7],
       alphaOverLife: [[0, 1], [0.6, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.7]]
