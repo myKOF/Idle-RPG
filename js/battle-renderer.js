@@ -481,9 +481,15 @@ var BattleRenderer = (function () {
      程式的設定：不同來源的角色圖，格子多大、角色在格子裡佔多少、腳底在
      第幾條掃描線，全都不一樣。寫死在這裡的話，換一組圖就得改程式。
        scale   把素材畫成想要的螢幕大小（像素風角色常常只佔格子的一小塊）
+       anchorX 角色站立點在格子裡的**水平**比例。預設 0.5。
        anchorY 腳底在格子裡的比例。預設 0.92 是舊佔位圖的值，
                略高於實際腳底，讓陰影疊得進去。
-     兩者都沒給就維持原本的行為，舊資源不受影響。 */
+     三者都沒給就維持原本的行為，舊資源不受影響。
+
+     ⚠️ anchorX 不能想當然耳是 0.5。攻擊動作的斬弧會往兩側掃出去，
+        所以匯出的格子往往比角色寬很多，而角色**不會**站在格子正中央——
+        Clarice 的腳底在 96 寬的格子裡是 x=32.8，寫死 0.5（x=48）的結果是
+        角色被畫在站立點左邊 15 貼圖px，乘上 3.15 倍就是螢幕上偏左 48px。 */
   function makeAnimSprite(sheetName, animName) {
     var sheet = S.sheets[sheetName];
     if (!sheet || !sheet.anims[animName]) return null;
@@ -491,8 +497,10 @@ var BattleRenderer = (function () {
     var sp = new PIXI.AnimatedSprite(sheet.anims[animName]);
     sp.animationSpeed = sheet.speeds[animName];
     sp.loop = !!meta.loop;
+    var ax = sheet.manifest.anchorX;
     var ay = sheet.manifest.anchorY;
-    sp.anchor.set(0.5, (typeof ay === 'number' && isFinite(ay)) ? ay : 0.92);
+    sp.anchor.set((typeof ax === 'number' && isFinite(ax)) ? ax : 0.5,
+      (typeof ay === 'number' && isFinite(ay)) ? ay : 0.92);
     var k = sheet.manifest.scale;
     if (typeof k === 'number' && k > 0) sp.scale.set(k);
     sp.play();

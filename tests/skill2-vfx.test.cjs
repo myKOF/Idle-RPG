@@ -950,7 +950,7 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /css\/style\.css\?v=1\.0\.60/);
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.110/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.111/);
   assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.12/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.92/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260906-preset-fallback-sweep'/);

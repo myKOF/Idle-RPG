@@ -20,14 +20,28 @@ battle-renderer 要的是「一張圖、一個動作一列」：
    但素材只有一段攻擊。manifest 的 row 是每個動作各自指定的，
    所以三個動作可以指到同一列——不必把同一段畫三份。
 
+3. 站立點與大小。這三個數字（scale／anchorX／anchorY）是**素材的性質**，
+   量得出來就不該用眼睛調：
+
+   - 角色在格子裡不會置中。攻擊的斬弧要往兩側掃，所以格子開得比角色寬，
+     Clarice 的腳底在 96 寬的格子裡是 x=32.8 而不是 48。anchorX 寫死 0.5
+     的話，角色會被畫在站立點左邊 15 貼圖px（乘上縮放就是螢幕上 48px）。
+   - 角色只佔格子的一小塊（26px 高 / 64px 格），所以要放大才會是合理的
+     螢幕尺寸。
+
+   所以 --target-height 給「角色在螢幕上要多高」，其餘由 --ref 那一段
+   素材量出來。量的是**腳部**（內容最下面 20%）的水平中心，不是整體
+   外接矩形的中心——披風、武器會讓整體偏一邊，腳才是站立點。
+
 用法：
     python tools/pack_character_sheet.py <來源資料夾> <輸出基底> \\
         --map idle=Idle --map walk=Run \\
         --map attack1,attack2,attack3="normal attack" --map hurt=Hurt \\
-        --loop idle,walk --scale 3.15 --anchor-y 0.725
+        --loop idle,walk --target-height 82 --ref idle
 
     來源資料夾要有 SpriteSheets/ 與 json/ 兩個子目錄。
     輸出基底例如 images/sprites/player（會寫出 .png 與 .json）。
+    也可以用 --scale / --anchor-x / --anchor-y 直接指定，覆蓋量測值。
 """
 import io
 import json
@@ -74,6 +88,46 @@ def load_clip(src, clip):
     return imgs, durs, fw, fh
 
 
+def measure(imgs, lift_pct=0.06):
+    """從一段動畫量出角色的大小與站立點。
+
+    回傳 (角色高, 腳部水平中心, 腳底 y)。都取各格的平均／極值，
+    單看一格會被呼吸起伏或某一格的動作帶偏。
+    """
+    heights, foot_cx, bottoms = [], [], []
+    for im in imgs:
+        px = im.load()
+        w, h = im.size
+        mnx, mxx, mny, mxy = w, -1, h, -1
+        for y in range(h):
+            for x in range(w):
+                if px[x, y][3] < 8:
+                    continue
+                mnx = min(mnx, x); mxx = max(mxx, x)
+                mny = min(mny, y); mxy = max(mxy, y)
+        if mxx < 0:
+            continue
+        heights.append(mxy - mny + 1)
+        bottoms.append(mxy + 1)
+        # 腳部：內容最下面 20%——披風與武器會讓整體外接矩形偏一邊，腳才是站立點
+        foot_top = mxy - max(1, int(round((mxy - mny) * 0.2)))
+        fmn, fmx = w, -1
+        for y in range(foot_top, mxy + 1):
+            for x in range(w):
+                if px[x, y][3] < 8:
+                    continue
+                fmn = min(fmn, x); fmx = max(fmx, x)
+        if fmx >= 0:
+            foot_cx.append((fmn + fmx + 1) / 2.0)
+    if not heights:
+        raise SystemExit('參考動作全是空白格，量不出站立點')
+    art_h = max(heights)
+    cx = sum(foot_cx) / len(foot_cx)
+    bottom = max(bottoms)
+    # 腳底略往上收，讓陰影疊得進去（舊佔位圖是角色高的 6%）
+    return art_h, cx, bottom - art_h * lift_pct
+
+
 def main():
     args = sys.argv[1:]
     if len(args) < 2:
@@ -83,7 +137,10 @@ def main():
     mapping = []            # [(names[], clip)]
     loops = set()
     scale = None
+    anchor_x = None
     anchor_y = None
+    target_h = None
+    ref = None
     i = 2
     while i < len(args):
         a = args[i]
@@ -97,8 +154,14 @@ def main():
             i += 2
         elif a == '--scale':
             scale = float(args[i + 1]); i += 2
+        elif a == '--anchor-x':
+            anchor_x = float(args[i + 1]); i += 2
         elif a == '--anchor-y':
             anchor_y = float(args[i + 1]); i += 2
+        elif a == '--target-height':
+            target_h = float(args[i + 1]); i += 2
+        elif a == '--ref':
+            ref = args[i + 1].strip(); i += 2
         else:
             raise SystemExit('不認得的參數：' + a)
     if not mapping:
@@ -132,6 +195,20 @@ def main():
                 'durations': r['durs'],
             }
 
+    # 量測：拿參考動作（預設第一個 --map 的第一個名字）算出大小與站立點
+    if target_h is not None or anchor_x is None or anchor_y is None:
+        refname = ref or rows[0]['names'][0]
+        refrow = next((r for r in rows if refname in r['names']), rows[0])
+        art_h, foot_cx, foot_y = measure(refrow['imgs'])
+        print('量測（參考 %s）：角色高 %dpx，腳部中心 x=%.1f，腳底 y=%.1f（格 %dx%d）'
+              % (refname, art_h, foot_cx, foot_y, fw, fh))
+        if scale is None and target_h is not None:
+            scale = round(target_h / art_h, 3)
+        if anchor_x is None:
+            anchor_x = round(foot_cx / fw, 3)
+        if anchor_y is None:
+            anchor_y = round(foot_y / fh, 3)
+
     manifest = {
         'image': os.path.basename(outbase) + '.png',
         'frameWidth': fw,
@@ -140,6 +217,8 @@ def main():
     }
     if scale is not None:
         manifest['scale'] = scale
+    if anchor_x is not None:
+        manifest['anchorX'] = anchor_x
     if anchor_y is not None:
         manifest['anchorY'] = anchor_y
 
@@ -147,8 +226,9 @@ def main():
     io.open(outbase + '.json', 'w', encoding='utf-8', newline='\n').write(
         json.dumps(manifest, ensure_ascii=False, indent=1) + '\n')
 
-    print('%s.png  %dx%d（%d 欄 x %d 列，格 %dx%d）'
-          % (outbase, sheet.width, sheet.height, cols, len(rows), fw, fh))
+    print('%s.png  %dx%d（%d 欄 x %d 列，格 %dx%d）  scale=%s anchor=(%s, %s)'
+          % (outbase, sheet.width, sheet.height, cols, len(rows), fw, fh,
+             scale, anchor_x, anchor_y))
     for ri, r in enumerate(rows):
         print('  row %d  %-28s %2d 格  %4dms  %s'
               % (ri, '/'.join(r['names']), len(r['imgs']), sum(r['durs']),
