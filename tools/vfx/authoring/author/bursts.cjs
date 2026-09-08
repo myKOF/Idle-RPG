@@ -165,12 +165,51 @@ P['burst-zero-infection'] = () => ({
 });
 
 /* ---------- burst-rock-petrify：石化 ---------- */
+/* ---------- burst-rock-petrify：超重岩之術 ----------
+   技能是「將巨岩之力壓縮到極致，使 24 米內的敵人石化 4 秒」。
+
+   原本第一層叫 crack，用的卻是 splat20——一塊實心的潑濺色塊，200px、
+   alpha 0.85、normal 混色。畫面上是一灘咖啡色的泥巴，與石化完全對不上
+   （層的名字倒是一直是對的）。
+
+   ⚠️ 三次失敗的嘗試，理由都值得記下來，免得下次再走一遍：
+
+     ① 用細長條組出放射狀裂紋 → 等長等角的放射線加上外圈的環＝一個船舵。
+     ② 改成長短不一 → 仍然看不見。**裂紋是靠對比讀出來的**，而這個戰場的
+        地面本來就是暗的，深褐色的線畫在上面等於沒畫。素材庫也沒有裂紋圖
+        （語意層查過，filament 那一類全是電漿絲）。
+     ③ 六根淺色三角形當石刺剪影 → 純色三角形在 45px 下是剪貼畫，不是石頭。
+        **剪影要成立，形狀本身就得帶有石頭的資訊**，等邊三角形沒有。
+        換成有明暗的球體素材（sphere_23/29）之後變成六顆行星——
+        完美的圓形永遠讀作球，不會讀作岩石。
+
+   最後成立的版本沒有加任何新元素，而是把原本就有的兩樣調對：
+
+     碎石從 14 顆放到 26 顆、顏色從暖橘（#ad7444，讀起來像木箱）改成灰岩
+     （#8a7f6e），尺寸維持小——diamond 這張素材放大就是個方塊，
+     它能當碎石是因為小到看不出形狀。爆開的碎石本來就是「岩石碎裂」
+     最直接的訊號，原本只是太少、太橘。
+
+     地面那一層換掉 splat20。潑濺素材有放射狀的手臂，淡化之後在畫面上
+     是一個褐色的螺旋槳；地面被震裂要的是「一塊暗下去的地」，不是一個形狀。
+     改用柔邊圓盤。
+
+   再加一道由外向內收的亮環，對應技能描述的「壓縮到極致」——
+   這是整份 preset 唯一的亮色元素，也是它在暗色戰場上讀得出來的原因。 */
 P['burst-rock-petrify'] = () => ({
   id: 'burst-rock-petrify', duration: 0.8, layers: [
-    sprite({ id: 'crack', asset: A.splat20, z: 0, sizeX: 200, sizeY: 200 * FLAT, alpha: 0.85, tint: T.earth.c2, blend: 'normal', duration: 0.8, alphaOverLife: [[0, 0], [0.1, 1], [0.7, 0.9], [1, 0]], scaleOverLife: RING_S }),
-    ring({ id: 'rim', z: 1, tint: T.earth.c1, d: 200, duration: 0.6 }),
-    sprite({ id: 'dust', asset: A.smokeT, z: 2, sizeX: 190, sizeY: 190 * FLAT, alpha: 0.45, tint: '#c9a06a', blend: 'normal', duration: 0.8, alphaOverLife: FILL_A, scaleOverLife: [[0, 0.35], [1, 1.2]] }),
-    shards({ asset: A.diamond, tint: T.earth.c1, blend: 'normal', burst: 14, startPx: [8, 16], rotationStart: [0, PI], rotationSpeed: [-5, 5], gravity: { x: 0, y: 420 }, lifetime: [0.35, 0.6] })
+    sprite({ id: 'ground', asset: AT.discA, z: 0, sizeX: 200, sizeY: 200 * FLAT, alpha: 0.42, tint: '#3d3025', blend: 'normal', duration: 0.8, alphaOverLife: [[0, 0], [0.1, 1], [0.7, 0.9], [1, 0]], scaleOverLife: RING_S }),
+    /* 壓縮波：由外向內收的亮環。scaleOverLife 是 1.25 → 0.55，不是一般
+       爆炸的由內向外——「壓縮」與「炸開」的差別就在這條曲線的方向。 */
+    sprite({ id: 'wave', asset: A.ringThin, z: 1, sizeX: 210, sizeY: 210 * FLAT, alpha: 0.55, tint: '#e8e0d0', blend: 'screen', duration: 0.42, alphaOverLife: [[0, 0], [0.15, 0.9], [1, 0]], scaleOverLife: [[0, 1.25], [1, 0.55]] }),
+    ring({ id: 'rim', z: 2, tint: T.earth.c1, d: 200, duration: 0.6 }),
+    sprite({ id: 'dust', asset: A.smokeT, z: 3, sizeX: 190, sizeY: 190 * FLAT, alpha: 0.45, tint: '#c9a06a', blend: 'normal', duration: 0.8, alphaOverLife: FILL_A, scaleOverLife: [[0, 0.35], [1, 1.2]] }),
+    shards({
+      id: 'rubble', z: 4, asset: A.diamond, tint: '#8a7f6e', blend: 'normal',
+      burst: 26, startPx: [5, 11], speed: [140, 260], spread: 360,
+      rotationStart: [0, PI], rotationSpeed: [-7, 7],
+      gravity: { x: 0, y: 430 }, lifetime: [0.4, 0.68]
+    })
   ]
 });
 

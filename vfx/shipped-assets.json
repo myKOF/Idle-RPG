@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 94,
+  "assetCount": 93,
   "assets": [
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -621,13 +621,6 @@
       "package": "splat-pack",
       "contentHash": "sha256:73f82c9367268f3569566ec89c71e42d66e35f8586b679d68ed7048101e87434",
       "fileSize": 4286
-    },
-    {
-      "assetId": "splat-pack/png/double-512px/splat20.png",
-      "relativePath": "splat-pack/PNG/Double (512px)/splat20.png",
-      "package": "splat-pack",
-      "contentHash": "sha256:4b3444415554461f282c972eeba68cd4abc6cac4febf4da0ff8c53a7a3f4533b",
-      "fileSize": 5638
     },
     {
       "assetId": "spritemancer-vfx-256/30fps/effect_bloodimpact_1_69x60.png",
