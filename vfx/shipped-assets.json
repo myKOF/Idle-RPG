@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 93,
+  "assetCount": 95,
   "assets": [
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -273,11 +273,25 @@
       "fileSize": 51827
     },
     {
+      "assetId": "new_materials/orb/sphere_23.png",
+      "relativePath": "new_materials/orb/sphere_23.png",
+      "package": "new_materials",
+      "contentHash": "sha256:1f0eb1274cd4775f8b37159e5fb28c1200a3727f5983044fabfece4c502d46e7",
+      "fileSize": 344829
+    },
+    {
       "assetId": "new_materials/orb/sphere_28.png",
       "relativePath": "new_materials/orb/sphere_28.png",
       "package": "new_materials",
       "contentHash": "sha256:3e08e16dcd612a8a3c6df7e81759a3d7eb65be1cb160e5670bff356f645020da",
       "fileSize": 123414
+    },
+    {
+      "assetId": "new_materials/orb/sphere_29.png",
+      "relativePath": "new_materials/orb/sphere_29.png",
+      "package": "new_materials",
+      "contentHash": "sha256:9d6bd69b4ed950f277cf48b88dde9769d1796ef79757dad157ae108cd59b82a0",
+      "fileSize": 175965
     },
     {
       "assetId": "new_materials/orb/spiky_6.png",

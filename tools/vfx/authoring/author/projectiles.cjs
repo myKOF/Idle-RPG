@@ -166,10 +166,23 @@ P['proj-dark-orb'] = () => ({
 });
 
 /* ---------- proj-earth-rock：土屬性投射物 ---------- */
+/* 兩件事一起改：
+
+   尺寸——投射物家族的其餘十發都落在 34～40px（proj-fire 36、proj-knife 34、
+   proj-ice-shard 40…），只有這一發是 19px，畫面上是別人的一半。
+   這種問題單獨看那一發是看不出來的，要並排量過才會浮出來。
+
+   素材——放大之後才發現 diamond 在 36px 下會清楚地讀成一個「轉了 12 度的
+   方塊」。那張素材是實心菱形，它能當碎石是因為小到看不出形狀；
+   一顆單獨飛行的落石反而需要看得出是石頭。
+   改用有明暗的球體素材（sphere_29 是 3D 算圖的岩石），
+   單獨一顆飛行時陰影就把「這是顆石頭」講清楚了。
+   （同一批球體拿去當「六顆巨岩豎起」時反而失敗——並排的完美圓形讀作行星。
+    素材合不合用要看它在**那個構圖裡**的樣子，不能只看素材本身。） */
 P['proj-earth-rock'] = () => ({
   id: 'proj-earth-rock', duration: 1.2, layers: [
-    sprite({ id: 'shadow', asset: A.diamond, z: 0, size: 19, rotDeg: 12, alpha: 0.9, tint: T.earth.c2, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.8) }),
-    sprite({ id: 'rock', asset: A.diamond, z: 1, size: 16, rotDeg: 12, alpha: 1, tint: T.earth.c1, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.8) }),
+    sprite({ id: 'shadow', asset: A.rockDark, z: 0, size: 38, alpha: 0.55, tint: T.earth.c2, blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.8) }),
+    sprite({ id: 'rock', asset: A.rockCracked, z: 1, size: 33, alpha: 1, tint: '#b98d5e', blend: 'normal', duration: 1.2, alphaOverLife: BODY_A, rotationOverLife: C.spin(0.8) }),
     trail({ asset: A.smokeT, tint: '#c9a06a', blend: 'normal', rate: 12, startPx: [8, 14], lifetime: [0.2, 0.36], alphaOverLife: [[0, 0.5], [1, 0]] })
   ]
 });

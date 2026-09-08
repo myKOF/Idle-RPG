@@ -7,14 +7,13 @@
     {
       "id": "shadow",
       "type": "sprite",
-      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "assetId": "new_materials/orb/sphere_23.png",
       "zIndex": 0,
-      "rotation": 0.2094,
       "scale": {
-        "x": 0.0371,
-        "y": 0.0371
+        "x": 0.0742,
+        "y": 0.0742
       },
-      "alpha": 0.9,
+      "alpha": 0.55,
       "tint": "#5b3a27",
       "blendMode": "normal",
       "duration": 1.2,
@@ -50,15 +49,14 @@
     {
       "id": "rock",
       "type": "sprite",
-      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "assetId": "new_materials/orb/sphere_29.png",
       "zIndex": 1,
-      "rotation": 0.2094,
       "scale": {
-        "x": 0.0313,
-        "y": 0.0313
+        "x": 0.0645,
+        "y": 0.0645
       },
       "alpha": 1,
-      "tint": "#ad7444",
+      "tint": "#b98d5e",
       "blendMode": "normal",
       "duration": 1.2,
       "alphaOverLife": [
