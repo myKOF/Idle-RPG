@@ -1608,7 +1608,7 @@
 
     var name = document.createElement("span");
     var waterNames = { halo: '外層光暈', 'rear-ribbons': '後方飄帶', 'rear-sheets': '後方水片', body: '水柱本體', 'front-sheets': '前方水片', 'white-crests': '白色浪尖', 'front-ribbons': '前方飄帶', base: '底部旋流水環', bloom: '浪尖泛光', dust: '底部煙塵', spray: '藍色水花粒子' };
-    name.textContent = layer.effect === 'waterTornado' ? (waterNames[layer.water.part] || layer.id) + ' · ' + layer.id : layer.id;
+    name.textContent = (layer.effect === 'waterTornado' || (state.preset.id === 'field-water-tornado' && waterNames[layer.id])) ? (waterNames[layer.water ? layer.water.part : layer.id] || layer.id) + ' · ' + layer.id : layer.id;
 
     var type = document.createElement("span");
     type.className = "type";
@@ -2211,7 +2211,7 @@
     var fields = COMMON_FIELDS
       .concat([{ kind: 'title', label: layer.type + ' 專屬' }])
       .concat(TYPE_FIELDS[layer.type] || []);
-    if (layer.effect === 'waterTornado') fields = fields.filter(function (f) { return ['assetId', 'sheet', 'size', 'scrollSpeed', 'effect'].indexOf(f.key) < 0; });
+    if (layer.effect === 'waterTornado') fields = fields.filter(function (f) { return ['sheet', 'size', 'scrollSpeed', 'effect'].indexOf(f.key) < 0; });
 
     fields.forEach(function (f) {
       if (f.kind === 'title') {
@@ -2222,7 +2222,14 @@
         return;
       }
       var control;
-      if (f.kind === 'bool') {
+      if (f.kind === 'asset' && layer.effect === 'waterTornado') {
+        control = document.createElement('div'); control.className = 'asset-field';
+        var source = document.createElement('input'); source.type = 'text'; source.readOnly = true;
+        source.value = 'waterTornado/' + layer.water.part; source.title = '內建程序組件識別，不是素材路徑';
+        source.setAttribute('data-generated-source', layer.water.part);
+        var badge = document.createElement('span'); badge.textContent = '程序生成'; badge.style.whiteSpace = 'nowrap'; badge.style.alignSelf = 'center';
+        control.appendChild(source); control.appendChild(badge);
+      } else if (f.kind === 'bool') {
         control = document.createElement('input');
         control.type = 'checkbox';
         /* 每個布林欄位的預設值不同：enabled 沒寫就是開，alignToVelocity 沒寫就是關。

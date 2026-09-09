@@ -6,36 +6,21 @@
   "layers": [
     {
       "id": "halo",
-      "type": "procedural",
-      "enabled": true,
-      "effect": "waterTornado",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/light_01.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -58
+      },
       "scale": {
-        "x": 0.4,
-        "y": 0.4
+        "x": 0.18,
+        "y": 0.28
       },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.9296875
-      },
-      "alpha": 1,
-      "tint": "#ffffff",
-      "blendMode": "normal",
-      "duration": 4,
-      "radiusProfile": {
-        "bottomRatio": 2,
-        "bottomY": 0.915625,
-        "centerScale": 1,
-        "centerY": 0.4640625,
-        "sourceBottomRatio": 2,
-        "sourceTopRatio": 2,
-        "topRatio": 2,
-        "topY": 0.0125
-      },
-      "water": {
-        "part": "halo",
-        "speed": 1
-      }
+      "alpha": 0.2,
+      "tint": "#219dff",
+      "blendMode": "add",
+      "duration": 4
     },
     {
       "id": "rear-ribbons",
@@ -303,71 +288,140 @@
     },
     {
       "id": "dust",
-      "type": "procedural",
-      "enabled": true,
-      "effect": "waterTornado",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_01.png",
       "zIndex": 9,
-      "scale": {
-        "x": 0.4,
-        "y": 0.4
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.9296875
-      },
-      "alpha": 1,
-      "tint": "#ffffff",
+      "alpha": 0.12,
+      "tint": "#6c869a",
       "blendMode": "normal",
       "duration": 4,
-      "radiusProfile": {
-        "bottomRatio": 2,
-        "bottomY": 0.915625,
-        "centerScale": 1,
-        "centerY": 0.4640625,
-        "sourceBottomRatio": 2,
-        "sourceTopRatio": 2,
-        "topRatio": 2,
-        "topY": 0.0125
+      "emission": {
+        "mode": "rate",
+        "rate": 22
       },
-      "water": {
-        "density": 1,
-        "part": "dust",
-        "speed": 1
-      }
+      "maxParticles": 32,
+      "lifetime": [
+        0.7,
+        1.2
+      ],
+      "spawn": {
+        "height": 4,
+        "shape": "box",
+        "width": 48
+      },
+      "speed": [
+        8,
+        18
+      ],
+      "direction": -90,
+      "spread": 180,
+      "startScale": [
+        0.025,
+        0.055
+      ],
+      "rotationStart": [
+        0,
+        360
+      ],
+      "rotationSpeed": [
+        -23,
+        23
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.7
+        ]
+      ]
     },
     {
       "id": "spray",
-      "type": "procedural",
-      "enabled": true,
-      "effect": "waterTornado",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/spark_01.png",
       "zIndex": 10,
-      "scale": {
-        "x": 0.4,
-        "y": 0.4
+      "position": {
+        "x": 0,
+        "y": -58
       },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.9296875
-      },
-      "alpha": 1,
-      "tint": "#ffffff",
+      "alpha": 0.6,
+      "tint": "#69d2ff",
       "blendMode": "add",
       "duration": 4,
-      "radiusProfile": {
-        "bottomRatio": 2,
-        "bottomY": 0.915625,
-        "centerScale": 1,
-        "centerY": 0.4640625,
-        "sourceBottomRatio": 2,
-        "sourceTopRatio": 2,
-        "topRatio": 2,
-        "topY": 0.0125
+      "emission": {
+        "mode": "rate",
+        "rate": 55
       },
-      "water": {
-        "density": 1,
-        "part": "spray",
-        "speed": 1
-      }
+      "maxParticles": 60,
+      "lifetime": [
+        0.35,
+        0.8
+      ],
+      "spawn": {
+        "height": 110,
+        "shape": "box",
+        "width": 58
+      },
+      "speed": [
+        12,
+        26
+      ],
+      "direction": -90,
+      "spread": 180,
+      "startScale": [
+        0.004,
+        0.009
+      ],
+      "alignToVelocity": true,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
     }
   ],
   "sizing": {

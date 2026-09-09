@@ -9,7 +9,7 @@ const runtime=require('../js/vfx-runtime.js');
 const preset=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/field-water-tornado.json'),'utf8'));
 
 test('WATER radius profile independently controls ends and center; default is an identity',()=>{
- const p=preset.layers[0].radiusProfile;
+ const p=preset.layers.find(l=>l.id==='body').radiusProfile;
  for(let y=0;y<=1;y+=.01) assert.equal(core.radiusProfileScale(p,y),1);
  assert.equal(core.radiusProfileScale({...p,topRatio:4},p.topY),2);
  assert.equal(core.radiusProfileScale({...p,topRatio:4},p.centerY),1);
@@ -22,10 +22,10 @@ test('WATER profile schema rejects invalid or unsupported input and roundtrips',
  assert.equal(core.validatePreset(preset).ok,true);
  assert.equal(core.serialisePreset(JSON.parse(core.serialisePreset(preset))),core.serialisePreset(preset));
  for(const change of [{topRatio:0},{bottomRatio:Infinity},{centerScale:9},{centerY:1},{topRatio:NaN},{typo:2}]){
-  const p=structuredClone(preset); Object.assign(p.layers[0].radiusProfile,change);
+  const p=structuredClone(preset); Object.assign(p.layers.find(l=>l.id==='body').radiusProfile,change);
   assert.equal(core.validatePreset(p).ok,false,JSON.stringify(change));
  }
- const p=structuredClone(preset);p.layers[0].type='particle';assert.equal(core.validatePreset(p).ok,false);
+ const p=structuredClone(preset);p.layers.find(l=>l.id==='body').type='particle';assert.equal(core.validatePreset(p).ok,false);
 });
 
 function fakePixi(){
@@ -66,19 +66,22 @@ test('WATER four tier-7 fields use fx layer, retain phase between hits and expir
  const specs=Array.from({length:4},(_,i)=>({fxKind:'aura',variant:'water-tornado',dur:.35,
   area:{id:'water-'+i,x:i*100,y:80,r:50},vfx:{field:preset.id}}));
  specs.forEach(s=>assert.equal(a.tryPlay(s),true));a.update(.2);
- assert.equal(nodes.length,44);assert.ok(nodes.every(n=>n.tag==='fx' && n.spec.kind==='generated'));
- assert.match(nodes[0].t.generated.key, /^halo:4:/);assert.equal(nodes[0].t.x,0);assert.equal(nodes[0].t.y,80);
- assert.equal(nodes[0].t.scaleX,nodes[0].t.scaleY);
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,32);assert.ok(nodes.every(n=>n.tag==='fx'));
+ const column=nodes.find(n=>n.spec.generated==='body');
+ assert.match(column.t.generated.key, /^body:4:/);assert.equal(column.t.x,0);assert.equal(column.t.y,80);
+ assert.equal(column.t.scaleX,column.t.scaleY);
  specs.forEach(s=>a.tryPlay(s));a.update(.2);
- assert.equal(nodes.length,44);assert.match(nodes[0].t.generated.key, /^halo:8:/);assert.equal(a.stats().played,4);
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,32);assert.match(column.t.generated.key, /^body:8:/);assert.equal(a.stats().played,4);
  a.update(3);assert.equal(a.stats().grounds,0);a.clear();
 });
 
 const generator=require('../js/vfx-water-tornado.js');
 test('WATER independent procedural parts have no atlas and retain deterministic motion',()=>{
  assert.equal(preset.layers.length,11);
- assert.deepEqual(preset.layers.map(l=>l.water.part),generator.PARTS);
- for(const l of preset.layers){assert.equal(l.assetId,undefined);assert.equal(l.sheet,undefined);}
+ assert.deepEqual(preset.layers.map(l=>l.id),generator.PARTS);
+ for(const l of preset.layers){assert.equal(l.sheet,undefined);if(l.effect==='waterTornado')assert.equal(l.assetId,undefined);else assert.ok(l.assetId);}
+ assert.equal(preset.layers.find(l=>l.id==='halo').type,'sprite');
+ for(const id of ['dust','spray']){const l=preset.layers.find(l=>l.id===id);assert.equal(l.type,'particle');assert.equal(l.direction,-90);assert.equal(l.spread,180);}
  const index=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/asset-index.json')));
  assert.ok(!index.assets.some(a=>a.assetId==='codex-authored/water-tornado/water-tornado-v10.png'));
  assert.ok(!fs.existsSync(path.join(__dirname,'../images/vfx/assets/codex-authored/water-tornado/water-tornado-v10.png')));
@@ -89,16 +92,16 @@ test('WATER independent procedural parts have no atlas and retain deterministic 
  const body=generator.sample('body',.5).pixels;
  const k=(150*320+160)*4;assert.ok(body[k+2]>100&&body[k+3]>220,'central volume is blue and filled');
  for(const change of [{part:'unknown'},{speed:-1},{density:Infinity},{speed:NaN}]){
-  const invalid=structuredClone(preset);Object.assign(invalid.layers[0].water,change);assert.equal(core.validatePreset(invalid).ok,false);
+  const invalid=structuredClone(preset);Object.assign(invalid.layers.find(l=>l.id==='body').water,change);assert.equal(core.validatePreset(invalid).ok,false);
  }
 });
 
 test('WATER disabled parts do not generate nodes, and per-layer color/scale remain editable',()=>{
- const p=structuredClone(preset);p.layers.forEach(l=>{l.enabled=l.water.part==='body'});
- const body=p.layers.find(l=>l.water.part==='body');body.tint='#ff0000';body.alpha=.4;body.scale={x:.7,y:.3};
- const nodes=[];const r=core.createRuntime({resolver:{resolve(){throw Error('no asset allowed')}},backend:{createNode(s){const n={s};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(){}}});
+ const p=structuredClone(preset);p.layers.forEach(l=>{l.enabled=l.id==='body'});
+ const body=p.layers.find(l=>l.id==='body');body.tint='#ff0000';body.alpha=.4;body.scale={x:.7,y:.3};
+ const nodes=[];const r=core.createRuntime({resolver:{resolve:id=>id},backend:{createNode(s){const n={s};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(){}}});
  r.registerPreset(p);r.play(p.id);r.update(.5);
- assert.equal(nodes.length,1);assert.equal(nodes[0].s.generated,'body');assert.equal(nodes[0].t.tint,0xff0000);assert.equal(nodes[0].t.alpha,.4);assert.equal(nodes[0].t.scaleX,.7);
+ assert.equal(nodes.length,1);assert.equal(nodes[0].s.generated,'body');const column=nodes[0];assert.equal(column.t.tint,0xff0000);assert.equal(column.t.alpha,.4);assert.equal(column.t.scaleX,.7);
  r.destroy();
 });
 

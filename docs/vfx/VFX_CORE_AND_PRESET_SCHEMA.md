@@ -655,11 +655,11 @@ Preset 的節點掛在 `S.layers.presetZone`／`presetFx` 兩個獨立容器，
 
 ### 水龍捲獨立程序圖層（2026-09-10）
 
-field-water-tornado 由 11 個 procedural / waterTornado 圖層組成：外層光暈、後方飄帶、後方水片、水柱本體、前方水片、白色浪尖、前方飄帶、底部水環、浪尖泛光、煙塵、水花。原 v10 合併 PNG 圖集已從素材庫、索引、遊戲匯出移除，Preset 不再含 assetId 或 sheet。
+field-water-tornado 由 8 個 procedural / waterTornado、1 個 sprite 與 2 個 particle 圖層組成：外層光暈、後方飄帶、後方水片、水柱本體、前方水片、白色浪尖、前方飄帶、底部水環、浪尖泛光、煙塵、水花。原 v10 合併 PNG 圖集已從素材庫、索引、遊戲匯出移除，程序層不含 assetId 或 sheet；素材層使用一般 assetId，所有層都不依賴合併序列圖集。
 
 原製作公式移植至 js/vfx-water-tornado.js，由 Core 傳入圖層時間，產生像素／幾何指令；Pixi 後端只將指令畫到獨立透明表面。這些表面是運行中的圖層，不是磁碟上的序列圖集。採每秒 20 次程序取樣、4 秒循環；近期取樣快取有上限，動態貼圖同相位共用、不同相位隔離，無使用者時回收重用。Editor 與遊戲共用同一套 Core／Backend。
 
-water 物件欄位：part 必須是產生器 PARTS 的值；speed 預設 1（0 可凍結圖層）；density 預設 1，用於 dust／spray 的數量。speed／density 限制 0–4。圖層可獨立開關、調色、透明度、位置、縮放、旋轉、播放速度與 Over-Life 曲線。水花／煙塵位置由程序產生，可調數量和速度，不使用原生 particle 發射器，因此 Editor 的 activeParticles 計數不含它們。浪尖／水片的細部輪廓仍由公式控制；bloom 依浪尖公式產生但亮度是獨立層，關閉浪尖時若也要關掉餘光，須同步關閉 bloom。
+water 物件欄位：part 必須是產生器 PARTS 的值；speed 預設 1（0 可凍結圖層）；density 預設 1，用於 dust／spray 的數量。speed／density 限制 0–4。圖層可獨立開關、調色、透明度、位置、縮放、旋轉、播放速度與 Over-Life 曲線。此 Preset 的光暈採一般 sprite 素材，水花／煙塵採原生 particle 發射器，使用一般 assetId 路徑與「選擇素材」按鈕；可換圖、調發射率、壽命、速度與範圍，activeParticles 會計數。原生粒子的 direction／spread／rotationStart／rotationSpeed 以角度為單位。程序水柱、水片、變形飄帶、水環與浪尖泛光的 assetId 列顯示唯讀組件識別及「程序生成」，不提供無效的換圖按鈕。浪尖／水片的細部輪廓仍由公式控制；bloom 依浪尖公式產生但亮度是獨立層，關閉浪尖時若也要關掉餘光，須同步關閉 bloom。
 
 #### radiusProfile 半徑輪廓
 

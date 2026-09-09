@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 104,
+  "assetCount": 107,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -651,6 +651,13 @@
       "fileSize": 99891
     },
     {
+      "assetId": "particle-pack/png-transparent/light_01.png",
+      "relativePath": "particle-pack/PNG (Transparent)/light_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:caedcc5df5bcac4470244d2520d6a64b45b20c1ccf4d918da516c55e3fa365a6",
+      "fileSize": 93470
+    },
+    {
       "assetId": "particle-pack/png-transparent/light_03.png",
       "relativePath": "particle-pack/PNG (Transparent)/light_03.png",
       "package": "particle-pack",
@@ -665,11 +672,25 @@
       "fileSize": 86500
     },
     {
+      "assetId": "particle-pack/png-transparent/smoke_01.png",
+      "relativePath": "particle-pack/PNG (Transparent)/smoke_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:e8724c219e8d35859167fc0a7e207e13c72ccf0c29704909b9bb3d3dc71c6cf7",
+      "fileSize": 97452
+    },
+    {
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "relativePath": "particle-pack/PNG (Transparent)/smoke_04.png",
       "package": "particle-pack",
       "contentHash": "sha256:2db2f69874cdb1e5203f2f86803d5debde30402590cf50a810afaba882184616",
       "fileSize": 97568
+    },
+    {
+      "assetId": "particle-pack/png-transparent/spark_01.png",
+      "relativePath": "particle-pack/PNG (Transparent)/spark_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:5902da3a324cad0a4b5a88ce1e3c9cc18fee50922c358ce93d8c9f1ad7708f0a",
+      "fileSize": 95070
     },
     {
       "assetId": "particle-pack/png-transparent/star_04.png",
