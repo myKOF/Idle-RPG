@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜迴旋斬多波間隔（VFX-CLEAVE-GAP-20260909）
+
+- 狀態：Done；使用者要求每波 0.2 秒，並設為未特別指定時的多段攻擊預設。
+- 完成：共用 SG_MULTI_ATTACK_GAP_SEC=0.2；突刺沿用，迴旋斬視覺／傷害起飛／近戰浮字同步，四方向同波齊發。規則已記入 prompts/codex.md。
+- 修改：js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html、兩份技能測試、本文件與 prompts/codex.md。檢查但未修改：使用者突刺 Preset／layout。
+- 驗證：node --test tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs（65/65）；npm.cmd run build（326 檔）；diff check；已更新預覽並截圖。
+- 限制：未全域重寫其他技能既有專用節奏；後續技能無特別指定時使用 0.2 秒。碰撞／傷害數值／二次命中保留。無本次未完成項，可審查合併，未自行合併／推送 develop。
+- 範圍：Skills2 共用預設常數／突刺及迴旋斬引用、快取、節奏測試與文件。
+- 預檢顯示的 Antigravity 提交均為當前已包含的 Codex 提交；HEAD..ai/antigravity 的 Skills2 記錄與檔案 diff 均為空，無實際衝突。
+
+
 ## Codex｜迴旋斬特效改造（VFX-CLEAVE-20260909）
 
 - 狀態：Done；Owner：Codex；使用者確認半月刀光外形，已串接遊戲。

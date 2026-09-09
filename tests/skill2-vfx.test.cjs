@@ -954,10 +954,10 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.112/);
   assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.16/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.96/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-cleave-vfx'/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.97/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-cleave-gap'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260909-cleave-vfx/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260909-cleave-gap/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 

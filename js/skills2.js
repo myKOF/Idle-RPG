@@ -95,6 +95,7 @@ var SG_TIER_COUNT = 7;        // 每群組階數
 var SG_ULT_SLOT = SG_TIER_COUNT;   // 超神進化在技能面板的格位索引（第 8 格）
 var SG_ULT_OPTION_COUNT = 3;       // 三選一
 var SG_FLYING_PROJECTILE_SPEED = 240;
+var SG_MULTI_ATTACK_GAP_SEC = 0.2; // 未另訂節奏的多段／多次攻擊預設間隔
 var SG_THRUST_PROJECTILE_SPEED = SG_FLYING_PROJECTILE_SPEED * 2;
 /* 寒冰箭表定速度：30 米／秒；戰場座標固定為 10 單位／米。 */
 var SG_ICEARROW_SPEED = 300;
@@ -1950,7 +1951,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     : (isEightWay ? 'thrust-octagonal' : (isParallel ? 'thrust-parallel' :
       (lvs[5] > 0 ? 'thrust-pierce' : 'thrust')));
   // 每波一則事件；出手延遲和執行期飛行物共用，平行／八方向在同一波同步。
-  var thrustWaveGap = 0.2;
+  var thrustWaveGap = SG_MULTI_ATTACK_GAP_SEC;
   var thrustVisualTier = lvs[4] > 0 ? 5 : (lvs[2] > 0 ? 3 : 1);
   for (var wave = 0; wave < thrustCount; wave++) {
     sgEmitVfx('thrust', planned, floatSel, {
@@ -2188,7 +2189,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   for (var cw = 0; cw < slashes; cw++) {
     sgEmitVfx('cleave', targets, floatSel, {
       fxKind: 'slash', variant: cleaveVariant, count: 1, projectile: isFlying,
-      delayMs: sgStaggerMs(cw), angle: geomOk ? baseAngle : undefined,
+      delayMs: Math.round(cw * SG_MULTI_ATTACK_GAP_SEC * 1000), angle: geomOk ? baseAngle : undefined,
       lineLength: cleaveVfxRange, directionRanges: lvs[6] > 0 ? directionRanges : null,
       directionCount: directions.length, rangeScale: cleaveRangeScale,
       travelMs: [Math.max(50, cleaveVfxRange / SG_FLYING_PROJECTILE_SPEED * 1000)],
@@ -2229,7 +2230,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
           geomOk ? baseAngle + directions[pdi2] : 0, projectileLen, floatSel,
           directionTargets[pdi2],
           { stunChance: stunChance, stunSec: stunSec, onHit: onCleaveHit, bonusPctFn: bonusFor,
-            beginSec: sgStaggerMs(ps) / 1000,
+            beginSec: ps * SG_MULTI_ATTACK_GAP_SEC,
             coneDeg: lvs[6] > 0 ? 60 : 0, coneBaseAngle: baseAngle,
             coneIndex: lvs[6] > 0 ? pdi2 : -1, coneCount: lvs[6] > 0 ? directions.length : 0 }, out);
       }
@@ -2241,7 +2242,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     for (var di2 = 0; di2 < directionTargets.length; di2++) {
       for (var ti = 0; ti < directionTargets[di2].length; ti++) {
         var victim = directionTargets[di2][ti];
-        var res = sgHitOne(pEnt, st, victim, dmgVal, 'cleave', floatSel, out, sgStaggerMs(s), bonusFor(victim));
+        var res = sgHitOne(pEnt, st, victim, dmgVal, 'cleave', floatSel, out, Math.round(s * SG_MULTI_ATTACK_GAP_SEC * 1000), bonusFor(victim));
       // 暈眩擊：每次命中獨立判定（BOSS 免疫與控場遞減由低階寫入器負責）
         if (res && !res.miss && stunChance > 0 && chance(stunChance)) {
           if (!(typeof isBossControlImmune === 'function' && isBossControlImmune(victim)) &&

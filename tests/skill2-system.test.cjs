@@ -110,18 +110,20 @@ test('迴身四方斬四道 60 度扇形共用最大半徑，且半徑逐步向�
 
   c.castSkill2(p, targets, 'cleave', 'mv-float');
   assert.equal(calls.length, 0, '四方斬應先建立向外飛行的傷害判定');
+  const starts = c.SKILL2_RT.projectiles.filter(x=>x.gid==='cleave').map(x=>x.beginAt);
+  assert.deepEqual(Array.from(starts), [0,0,0,0,0.2,0.2,0.2,0.2,0.4,0.4,0.4,0.4]);
   c.GT = 0.05;
   c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
   assert.equal(calls.length, 1, '第二波尚未起飛，僅第一波命中中心附近的基準目標');
-  for (let step=2;step<=16;step++) {
+  for (let step=2;step<=40;step++) {
     c.GT=step*0.05;
     c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
   }
 
-  assert.equal(calls.length, targets.length * 3 + 3, '各方向三波命中；近處基準目標已到既有二次命中的時間');
+  assert.equal(calls.length, targets.length * 6, '三波於 0／0.2／0.4 秒起飛，完整結束後各波保留一次既有二次命中');
   for (const target of targets) {
-    assert.equal(calls.filter((hit) => hit === target).length, target === anchor ? 6 : 3,
-      target.name + ' 每波僅歸屬一個方向，近處保留既有二次命中');
+    assert.equal(calls.filter((hit) => hit === target).length, 6,
+      target.name + ' 每波僅歸屬一個方向，保留既有二次命中');
   }
 });
 
