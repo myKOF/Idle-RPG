@@ -123,10 +123,17 @@ const LABELS = {
   confidence: {
     high: '高', medium: '中', low: '低'
   },
+  /* 事實層的 backgroundVariant。它不在語意檔裡（見下面 blendModeFromFacts 的
+     說明：那是事實，不是判斷），但選材時是最實用的一個條件之一——
+     素材底色決定了該用哪一種混色，挑錯就會在畫面上疊出黑方塊或整片死白。 */
+  background: {
+    transparent: '透明底', blackBackground: '黑底',
+    whiteBackground: '白底', opaqueOther: '不透明其他'
+  },
   /* 篩選欄位本身的名稱 */
   field: {
     kind: '種類', shape: '形狀', usage: '用途', element: '元素',
-    tag: '標籤', confidence: '信心'
+    tag: '標籤', confidence: '信心', background: '背景'
   }
 };
 
