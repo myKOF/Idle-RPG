@@ -718,6 +718,63 @@ test('W7 啟動器與伺服器對身分標記與埠範圍的認知一致', funct
     '啟動器掃描的埠範圍必須涵蓋伺服器會用到的 ' + base + '~' + (base + tries - 1));
 });
 
+test('W9 關閉端點的防護與存檔 API 同一套（不是任何網頁都殺得掉伺服器）',
+  withSandbox(async function (sb, h) {
+    /* 這是一個「任何人打得到就能停掉服務」的端點，所以它必須通過與寫入 API
+       一模一樣的四道：本機連線、loopback Host、Origin 若有必須也是 loopback、
+       Content-Type 必須是 application/json。最後一條是關鍵——跨來源要送這個
+       Content-Type 會被迫先 preflight，而伺服器不回任何 CORS 標頭。 */
+    const badHost = await request(h.port, {
+      method: 'POST', path: '/__shutdown', body: '{}',
+      headers: { host: 'evil.com', 'content-type': 'application/json' }
+    });
+    assert.equal(badHost.status, 403, '非 loopback Host 必須被擋');
+
+    const badOrigin = await request(h.port, {
+      method: 'POST', path: '/__shutdown', body: '{}',
+      headers: { origin: 'https://evil.com', 'content-type': 'application/json' }
+    });
+    assert.equal(badOrigin.status, 403, '跨來源 Origin 必須被擋');
+
+    const badType = await request(h.port, {
+      method: 'POST', path: '/__shutdown', body: '{}',
+      headers: { 'content-type': 'text/plain' }
+    });
+    assert.equal(badType.status, 403, 'Content-Type 不對必須被擋');
+
+    /* 擋掉之後伺服器要還活著——不然這條測試自己就把它關了 */
+    const stillAlive = await request(h.port, { path: '/__whoami' });
+    assert.equal(stillAlive.status, 200, '被擋下的請求不得影響伺服器');
+  }));
+
+test('W9B 關閉是先回應再收攤，而且用結束代碼 0 告訴 .bat 這不是當掉', function () {
+  /* 反過來（先關再回應）的話瀏覽器收到的是連線中斷，頁面分不出
+     「關掉了」與「壞掉了」。而 .bat 靠結束代碼決定要不要 pause 住視窗：
+     伺服器平常跑到被殺為止，所以 0 只可能是「頁面要求關閉」。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
+  const fn = src.slice(src.indexOf('function handleShutdown'));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+  const respondAt = body.indexOf('sendJson(res, 200');
+  const closeAt = body.indexOf('server.close(');
+  assert.ok(respondAt >= 0 && closeAt >= 0);
+  assert.ok(respondAt < closeAt, '要先回應再關閉');
+  assert.ok(/res\.on\('finish'/.test(body), '要等回應真的送完');
+  assert.ok(/closeIdleConnections/.test(body),
+    'keep-alive 連線不斷開的話 server.close 的回呼永遠不會來');
+  assert.ok(/setTimeout\([\s\S]{0,60}process\.exit\(0\)/.test(body),
+    '要有硬退的上限——留一個關不掉的行程正是這顆按鈕要解決的問題');
+
+  const win = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor_server_window.bat'), 'utf8');
+  assert.ok(/if "%ERRORLEVEL%"=="0" exit \/b 0/.test(win),
+    '結束代碼 0 時視窗要自己關掉，不要 pause');
+  /* 比對的是「真正的 pause 指令那一行」，不是註釋裡提到的那個字——
+     否則這條會被自己的說明文字騙過去。 */
+  const exitAt = win.indexOf('if "%ERRORLEVEL%"=="0"');
+  const pauseAt = win.search(/^pause\s*$/m);
+  assert.ok(exitAt > 0 && pauseAt > 0, '兩行都要存在');
+  assert.ok(exitAt < pauseAt, '結束代碼判斷必須排在 pause 之前');
+});
+
 test('W7B 啟動器不得沿用一個程式已經過期的伺服器', function () {
   /* 伺服器是常駐行程：editor-server.cjs 與它 require 的檔在啟動當下就載進
      記憶體，之後 merge 不會生效；但它服務的 editor.js／css／html 是每次請求

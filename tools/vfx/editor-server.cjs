@@ -123,6 +123,8 @@ const WHOAMI_STALE_MARK = 'idle-rpg-vfx-editor-stale';
 /* Preset 清單：Editor 的 topbar 下拉用它列出目前有哪些 preset 可以開。
    只回 id 陣列——目錄內容本來就是公開的 vfx/presets/*.json，不多給任何路徑。 */
 const PRESET_LIST_PATH = '/__presets';
+/* 頁面上的「關閉編輯器」按鈕打這裡。理由見 handleShutdown。 */
+const SHUTDOWN_PATH = '/__shutdown';
 
 /* ---- Preset 存檔 API 的常數（全部是常數，沒有一個來自請求） ---- */
 const PRESETS_DIR_REL = 'vfx/presets';
@@ -565,9 +567,42 @@ function handleSaveRequest(ctx, req, res, presetId, kind) {
    伺服器
    ============================================================ */
 
+/* 頁面上的「關閉編輯器」按鈕。存在的理由不是省一次點擊：伺服器視窗會不見
+   （console 被關掉時 node 不一定跟著死），於是行程活著、視窗沒了、啟動器每次
+   掃到它就沿用——使用者永遠等不到那個「要他關掉」的視窗。有一個從頁面就能
+   停掉伺服器的路，這個死結才拆得開。
+
+   防護與存檔 API 完全同一套（checkWriteOrigin）：只收本機連線、loopback Host、
+   Origin 若有必須也是 loopback、Content-Type 必須是 application/json。
+   最後一條是關鍵——跨來源要送這個 Content-Type 會被迫先 preflight，
+   而本伺服器不回任何 CORS 標頭，所以隨便一個網頁殺不掉它。 */
+function handleShutdown(ctx, req, res, server) {
+  const originProblem = checkWriteOrigin(req);
+  if (originProblem) return sendJson(res, 403, { ok: false, error: originProblem });
+
+  sendJson(res, 200, { ok: true });
+  /* 先把回應送完再收攤。反過來的話瀏覽器收到的是連線中斷，
+     頁面分不出「關掉了」與「壞掉了」。 */
+  res.on('finish', function () {
+    console.log('收到頁面的關閉要求，伺服器停止。');
+    /* 閒置的 keep-alive 連線不主動斷的話，server.close 的回呼永遠不會來。 */
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+    server.close(function () { process.exit(0); });
+    /* 還是有連線收不掉的情況（正在下載的縮圖）。給一個上限，
+       寧可硬退也不要留一個關不掉的行程——那正是這顆按鈕要解決的問題。 */
+    setTimeout(function () { process.exit(0); }, 800).unref();
+  });
+}
+
 function createServer(ctx) {
-  return http.createServer(function (req, res) {
+  const server = http.createServer(function (req, res) {
     const rawPathname = rawPathnameOf(req.url);
+
+    /* 唯一的 POST 路由。其餘 POST 交給下面那條「非 GET 一律 405」，
+       維持既有契約：對不收 POST 的路徑回 405 才是對的，不是 404。 */
+    if (req.method === 'POST' && rawPathname === SHUTDOWN_PATH) {
+      return handleShutdown(ctx, req, res, server);
+    }
 
     /* 寫入路由必須在 decodeURIComponent 之前分支，理由見 presetIdFromRawPath。 */
     if (req.method === 'PUT') {
@@ -665,6 +700,7 @@ function createServer(ctx) {
     if (!target) return send(res, 403, '路徑不合法');
     serveFile(res, target, pathname);
   });
+  return server;
 }
 
 function start(assetRoots, port) {

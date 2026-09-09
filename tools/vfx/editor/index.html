@@ -9,8 +9,9 @@
 <header id="topbar">
   <strong>VFX Editor</strong>
   <span class="sep"></span>
-  <button id="btn-play">▶ Play</button>
-  <button id="btn-pause">⏸ Pause</button>
+  <!-- 播放與暫停是同一顆按鈕的兩個狀態，不是兩個動作：兩顆並排的話，
+       畫面正在動還是停著要靠「哪一顆看起來被按下去」去猜。 -->
+  <button id="btn-playpause" class="playpause">⏸ 暫停</button>
   <button id="btn-restart">⟲ Restart</button>
   <!-- 預覽循環：只影響編輯時的預覽，不是 preset.loop（那是會出貨的資料，
        在右邊 Inspector 的「Preset」區塊編輯）。混在一起的話，
@@ -48,6 +49,11 @@
   <button id="spine-open" title="播放 Spine 特效當作重做時的參考（唯讀）">🦴 Spine 參考</button>
   <span class="sep"></span>
   <span id="stats" class="stats"></span>
+  <span class="sep"></span>
+  <!-- 關閉編輯器＝連伺服器一起停。存在的理由是那個 console 視窗會不見
+       （關掉時 node 不一定跟著死），行程卻還活著佔著埠，啟動器每次掃到它
+       就沿用，於是永遠等不到那個「要你關掉」的視窗。 -->
+  <button id="btn-quit" class="quit-btn" title="關閉編輯器並停止伺服器">⏻ 關閉編輯器</button>
 </header>
 
 <main id="layout">
