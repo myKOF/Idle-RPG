@@ -69,3 +69,5 @@ git diff --check
 ## 2026-09-09 貫穿動作修正
 
 突刺的 lineLength 只表示行進路徑，bodyLength 表示固定槍身長度（維持每道寬度的四倍）。槍尖由中心向外，起始段從中心伸出，槍身完全伸出後以固定尺寸沿直線移動。travelMs 與模擬層的 length / SG_FLYING_PROJECTILE_SPEED 一致；VFX Core 的播放 timeScale 使各層生命週期覆蓋飛行時間，不改傷害結算與碰撞。三道平行仍各自沿既有 laneOffsets 移動。首三階原有直接傷害結算維持不變；貫穿階段的傷害由飛行物掃過路徑觸發。
+
+最新節奏調整：突刺專用速度 SG_THRUST_PROJECTILE_SPEED = 480（其他技能仍用原本速度）；每波 delayMs／beginSec 固定間隔 0.2 秒，直接傷害的浮字亦依波次間隔。視覺寬度額外乘二，bodyLength 與碰撞寬度不变；travelMs 使用突刺專用速度。

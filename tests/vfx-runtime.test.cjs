@@ -26,15 +26,15 @@ test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行�
   lance.sizing = { shape: 'rectangle', widthM: 12, heightM: 3, authored: { width: 120, height: 30 } };
   const { adapter, log } = makeAdapter([lance, unitPreset('hit')]);
   assert.equal(adapter.tryPlay({ fxKind: 'slash', variant: 'thrust-octagonal', projectile: true,
-    targets: ['mv-float-1'], angle: Math.PI / 2, lineLength: 240, lineWidth: 60,
+    targets: ['mv-float-1'], angle: Math.PI / 2, lineLength: 240, lineWidth: 60, travelMs: [1000],
     laneOffsets: [-30, 0, 30], directionCount: 8, vfx: { attack: 'lance', hit: 'hit' } }), true);
   adapter.update(0.01);
   assert.equal(log.nodes.length, 24);
   const transforms = log.nodes.map(n => n.transforms.at(-1));
-  assert.ok(transforms.every(t => Math.abs(t.scaleX - 0.02) < 1e-8 && t.scaleY === 2 / 3));
+  assert.ok(transforms.every(t => Math.abs(t.scaleX - 0.02) < 1e-8 && t.scaleY === 4 / 3));
   adapter.update(0.49);
   const moved = log.nodes.map(n => n.transforms.at(-1));
-  assert.ok(moved.every(t => Math.abs(t.scaleX - 2 / 3) < 1e-8 && t.scaleY === 2 / 3));
+  assert.ok(moved.every(t => Math.abs(t.scaleX - 2 / 3) < 1e-8 && t.scaleY === 4 / 3));
   assert.ok(moved.some(t => Math.abs(t.x - 30) < 1e-8 && Math.abs(t.y - 40) < 1e-8));
   adapter.update(0.2);
   assert.ok(log.nodes.every(n => Math.abs(n.transforms.at(-1).scaleX - 2 / 3) < 1e-8));

@@ -95,6 +95,7 @@ var SG_TIER_COUNT = 7;        // 每群組階數
 var SG_ULT_SLOT = SG_TIER_COUNT;   // 超神進化在技能面板的格位索引（第 8 格）
 var SG_ULT_OPTION_COUNT = 3;       // 三選一
 var SG_FLYING_PROJECTILE_SPEED = 240;
+var SG_THRUST_PROJECTILE_SPEED = SG_FLYING_PROJECTILE_SPEED * 2;
 /* 寒冰箭表定速度：30 米／秒；戰場座標固定為 10 單位／米。 */
 var SG_ICEARROW_SPEED = 300;
 /* 寒冰箭第 1 階（還沒變成貫穿）挑目標用的「前方正面」扇形。這一階是單體攻擊，
@@ -1949,7 +1950,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     : (isEightWay ? 'thrust-octagonal' : (isParallel ? 'thrust-parallel' :
       (lvs[5] > 0 ? 'thrust-pierce' : 'thrust')));
   // 每波一則事件；出手延遲和執行期飛行物共用，平行／八方向在同一波同步。
-  var thrustWaveGap = sgStaggerMs(1) / 1000;
+  var thrustWaveGap = 0.2;
   var thrustVisualTier = lvs[4] > 0 ? 5 : (lvs[2] > 0 ? 3 : 1);
   for (var wave = 0; wave < thrustCount; wave++) {
     sgEmitVfx('thrust', planned, floatSel, {
@@ -1958,7 +1959,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       angle: geomOk ? baseAngle : undefined,
       lineLength: lineLen, lineWidth: lineWidth, laneOffsets: laneOffsets,
       bodyLength: laneHalfWidth * 2 * 4,
-      travelMs: [Math.max(50, lineLen / SG_FLYING_PROJECTILE_SPEED * 1000)],
+      travelMs: [Math.max(50, lineLen / SG_THRUST_PROJECTILE_SPEED * 1000)],
       directionCount: directionCount, vfxTier: thrustVisualTier
     });
   }
@@ -2002,7 +2003,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         sgQueueFlyingProjectile(pEnt, st, 'thrust', dmgVal,
           plan.origin, plan.angle, lineLen, floatSel, plan.targets,
           { spreadPct: spreadPct, spreadCount: spreadCount, halfWidthPx: plan.halfWidth,
-            beginSec: pr * thrustWaveGap,
+            beginSec: pr * thrustWaveGap, speed: SG_THRUST_PROJECTILE_SPEED,
             onHit: onThrustHit }, out);
       }
     }
@@ -2014,7 +2015,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     for (var pi2 = 0; pi2 < plans.length; pi2++) {
       var hitTargets = plans[pi2].targets;
       for (var ti = 0; ti < hitTargets.length; ti++) {
-        var res = sgHitOne(pEnt, st, hitTargets[ti], dmgVal, 'thrust', floatSel, out, sgStaggerMs(hitIdx));
+        var res = sgHitOne(pEnt, st, hitTargets[ti], dmgVal, 'thrust', floatSel, out, Math.round(r * thrustWaveGap * 1000));
         if (res && !res.miss && lvs[4] > 0) {
           var spreadPct2 = sgVal(t[4].fx, 'pct', lvs[4]);
           // 「擴散至周圍的 N 個敵人」沒有指定最近＝隨機（候選同原本＝整個戰場）

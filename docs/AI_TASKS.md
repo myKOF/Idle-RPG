@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜突刺粗度與節奏調整（VFX-THRUST-TUNING-20260909）
+
+- 狀態：Done；使用者授權視覺寬度 2 倍、前進速度 2 倍、每波 0.2 秒。
+- 範圍：Skills2 突刺速度／波次、Runtime 視覺寬度、快取、相關測試與文件；碰撞寬度與傷害數值維持。
+- 修改：js/skills2.js、js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、index.html、4 份相關測試、本文件及尺寸文檔。檢查但未修改：突刺 author／Presets、Core。
+- 驗證：node --test tests/vfx-runtime.test.cjs tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs tests/vfx-tower.test.cjs（118/118）；npm.cmd run build（326 檔通過）；git diff --check。預覽更新為每 0.2 秒一波三連刺。
+- 已知影響：貫穿傷害飛行速度由 240 改為 480，間隔由 0.09 改為 0.2 秒；傷害與碰撞範圍維持。無未完成項。Commit 見本次調整提交，可審查／合併，未自行合併或推送 develop。
+
+
 ## Codex｜突刺向外貫穿動畫修正（VFX-FLIGHT-20260909）
 
 - 狀態：Done；使用者要求槍形由中心向外行進，不以射程拉伸本體。

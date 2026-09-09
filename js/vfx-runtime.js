@@ -401,7 +401,7 @@ var VFXRuntime = (function () {
       var dirs = thrust ? Math.max(1, Math.min(8, Math.floor(num(spec.directionCount, 1)))) : 1;
       var laneWidth = width / lanes.length;
       var body = thrust ? num(spec.bodyLength, laneWidth > 0 ? laneWidth * 4 : 120) : len;
-      var shape = sizeOf(presetId, { w: body, h: laneWidth }) || {
+      var shape = sizeOf(presetId, { w: body, h: thrust ? laneWidth * 2 : laneWidth }) || {
         scaleX: len / NOMINAL_LANCE, scaleY: width > 0 ? width / NOMINAL_LANCE_W : 1 };
       var any = false;
       for (var d = 0; d < dirs; d++) {
@@ -411,7 +411,7 @@ var VFXRuntime = (function () {
           shape.position = { x: from.x - Math.sin(angle) * offset, y: from.y + Math.cos(angle) * offset };
           shape.rotation = angle;
           if (thrust) {
-            var travel = Math.max(0.05, travelSecAt(spec, 0) || len / 240);
+            var travel = Math.max(0.05, travelSecAt(spec, 0) || len / 480);
             var origin = { x: shape.position.x, y: shape.position.y };
             var dimensions = { scaleX: shape.scaleX, scaleY: shape.scaleY };
             var ref = play(rt, presetId, Object.assign({}, shape, {
@@ -1067,7 +1067,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260909-thrust-flight';
+  var DATA_VERSION = '20260909-thrust-tuning';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
