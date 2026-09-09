@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "presetId": "slash-cleave-arc",
+  "presetId": "slash-cleave-stun",
   "groups": [
     {
-      "id": "slash-cleave-arc",
-      "name": "slash-cleave-arc",
+      "id": "slash-cleave-stun",
+      "name": "slash-cleave-stun",
       "layerIds": [
         "outer-glow",
         "crescent-body",
@@ -16,6 +16,6 @@
     }
   ],
   "order": [
-    "group:slash-cleave-arc"
+    "group:slash-cleave-stun"
   ]
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "slash-cleave-arc",
+  "id": "slash-cleave-stun",
   "duration": 0.46,
   "loop": false,
   "layers": [
@@ -14,7 +14,7 @@
         "y": 0.3711
       },
       "alpha": 0.28,
-      "tint": "#ff962d",
+      "tint": "#ff4825",
       "blendMode": "add",
       "duration": 0.42,
       "alphaOverLife": [
@@ -64,7 +64,7 @@
         "y": 0.3398
       },
       "alpha": 1,
-      "tint": "#ff962d",
+      "tint": "#ff4825",
       "blendMode": "add",
       "duration": 0.42,
       "alphaOverLife": [
@@ -118,7 +118,7 @@
         "y": 0.3262
       },
       "alpha": 1,
-      "tint": "#ffe06a",
+      "tint": "#ffb638",
       "blendMode": "add",
       "duration": 0.42,
       "alphaOverLife": [
@@ -226,7 +226,7 @@
         "y": 0.2793
       },
       "alpha": 0.5,
-      "tint": "#ff962d",
+      "tint": "#ff4825",
       "blendMode": "add",
       "delay": 0.025,
       "duration": 0.42,
@@ -273,7 +273,7 @@
         "y": 0.3516
       },
       "alpha": 0.24,
-      "tint": "#ff962d",
+      "tint": "#ff4825",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.42,

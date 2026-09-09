@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜迴旋斬特效改造（VFX-CLEAVE-20260909）
+
+- 狀態：Done；Owner：Codex；使用者確認半月刀光外形，已串接遊戲。
+- 使用者持續偏好：每次製作新特效，先截圖展示，再依回饋調整。
+- 規格：技能表 J46／K46 參考圖；近半圓黃紅刀光，五階偏紅黃，六階變飛行，七階四方向連斬。
+- 範圍：迴旋斬 author／Preset／layout、必要的 Runtime／技能事件／表格 VFX 欄位／快取／測試／文件。
+- 保留：使用者尚未提交的突刺 Preset 與 layout，不覆寫或代為提交。
+- 完成：一階黃紅半月刀光、五階紅黃版、六階前向飛行、七階四向連斬；每波各發一則事件並同步飛行傷害起飛時間，保持本體尺寸。
+- 修改：迴旋斬 author／兩份 Preset／layout、Runtime、Skills2、CSV／Excel VFX 欄位、快取、catalog、相關測試與本文件。未修改但檢查：Worker shim、使用者突刺 Preset／layout。
+- 測試：node --test tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs tests/vfx-tower.test.cjs（70/70）；node --test --test-name-pattern=CLEAVE tests/vfx-runtime.test.cjs（1/1）；npm.cmd run build（326 檔通過）；Skills2 往返語意 0；diff check。
+- 已知限制：廣泛 VFX 測試另有使用者突刺檔案缺 sizing／群組改動引起的失敗，未覆寫使用者修改。現有遊戲近戰選敵／七階 60 度扇形／六階前向飛行與表格部分描述不同，本輪不改傷害與碰撞；視覺本體依文檔六米半徑。既有飛行物二次命中保留，連斬傷害跟著波次錯開。
+- 未完成：無本次迴旋斬視覺串接未完成項；上述規則差異留待企劃獨立調整。Commit 見本次迴旋斬提交，可交付審查，未合併／推送 develop。
+
+
 ## Codex｜突刺粗度與節奏調整（VFX-THRUST-TUNING-20260909）
 
 - 狀態：Done；使用者授權視覺寬度 2 倍、前進速度 2 倍、每波 0.2 秒。

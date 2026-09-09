@@ -429,6 +429,30 @@ var VFXRuntime = (function () {
       return any;
     }
 
+    // 迴旋斬：同一半月本體，近戰原地掃過；飛行版本只改位置。
+    function playCleave(rt, presetId, spec) {
+      var origin = ctx.playerPos();
+      var target = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : origin;
+      var angle = typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle : Math.atan2(target.y-origin.y,target.x-origin.x);
+      var dirs = /cleave-cross/.test(spec.variant || '') ? 4 : 1;
+      var dimensions = defaultSize(presetId, num(spec.rangeScale, 1));
+      var any = false;
+      for (var d = 0; d < dirs; d++) {
+        var facing = angle + d * Math.PI / 2;
+        var len = spec.directionRanges && spec.directionRanges[d] > 0 ? spec.directionRanges[d] : num(spec.lineLength, 0);
+        var flight = !!spec.projectile && len > 0;
+        var travel = Math.max(0.05, len / 240);
+        var ref = play(rt, presetId, Object.assign({position:origin,rotation:facing,
+          timeScale:flight ? presetDurations[presetId] / (travel + 0.08) : 1}, dimensions));
+        if (!ref) continue;
+        any = true;
+        if (flight) projectiles.push({ref:ref,from:{x:origin.x,y:origin.y},
+          to:{x:origin.x+Math.cos(facing)*len,y:origin.y+Math.sin(facing)*len},
+          t:0,dur:travel,facing:facing,enterAngle:NaN,mult:profile.scale,dimensions:dimensions});
+      }
+      return any;
+    }
+
     /* 從玩家（或起點）沿方向拉長到目標：光束與連鎖段 */
     function playBeam(rt, presetId, spec) {
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
@@ -838,7 +862,9 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec);
           break;
         case 'attack':
-          if (/^thrust(?:-|$)/.test(spec.variant || '') && num(spec.lineLength, 0) > 0) {
+          if (/^cleave(?:-|$)/.test(spec.variant || '')) {
+            ok = playCleave(rtFx, presetId, spec);
+          } else if (/^thrust(?:-|$)/.test(spec.variant || '') && num(spec.lineLength, 0) > 0) {
             var aimed = Object.assign({}, spec);
             if (typeof spec.angle !== 'number' || !isFinite(spec.angle)) {
               var origin = ctx.playerPos();
@@ -875,7 +901,7 @@ var VFXRuntime = (function () {
       /* 受擊爆點：同一則事件的 hit 角色跟著主要角色走（飛行物則等它抵達）；
          主要角色本身就是 hit 時不重複播。
          spec.hit === false＝這一擊被閃避或被無敵擋下，舊畫法同樣不畫爆點。 */
-      if (role !== 'hit' && spec.hit !== false && !(spec.projectile && /^thrust(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
+      if (role !== 'hit' && spec.hit !== false && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
         playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
           role === 'projectile' ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
@@ -1067,7 +1093,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260909-thrust-tuning';
+  var DATA_VERSION = '20260909-cleave-vfx';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

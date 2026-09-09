@@ -107,23 +107,7 @@ P['slash-dual'] = () => ({
 /* ---------- slash-cleave-arc：迴旋斬弧（-53° → +59°） ----------
    原點＝玩家、+X＝面向。素材的月牙原本在下方（+Y＝90°），因此底角 -90°
    才會落在 +X；再由 rotationOverLife 掃過 -53°→+59°。 */
-P['slash-cleave-arc'] = () => ({
-  id: 'slash-cleave-arc', duration: 0.5, layers: [
-    sprite({
-      id: 'arc', asset: A.slash02, z: 1, size: 60, alpha: 0.95, tint: '#60a5fa', blend: 'add',
-      rotDeg: -90, duration: 0.5,
-      alphaOverLife: [[0, 0], [0.1, 1], [0.75, 0.9], [1, 0]],
-      scaleOverLife: [[0, 0.9], [0.4, 1], [1, 1.04]],
-      rotationOverLife: [[0, deg(-53)], [1, deg(59)]]
-    }),
-    sprite({
-      id: 'arc-inner', asset: A.slash01, z: 2, size: 50, alpha: 1, tint: '#bfdbfe', blend: 'add',
-      rotDeg: -90, delay: 0.03, duration: 0.44,
-      alphaOverLife: INNER_A, scaleOverLife: [[0, 0.95], [1, 1.06]],
-      rotationOverLife: [[0, deg(-48)], [1, deg(56)]]
-    })
-  ]
-});
+P['slash-cleave-arc'] = () => require('./cleave.cjs').make('slash-cleave-arc', false);
 
 /* ---------- slash-cleave-sector：迴身四方斬的 60° 楔形 ---------- */
 P['slash-cleave-sector'] = () => ({

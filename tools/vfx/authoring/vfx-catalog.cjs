@@ -59,7 +59,8 @@ def('slash-phys', 'slash', '單道斬擊弧：半徑 36px 的弧線從左上掃�
 def('slash-phys-big', 'slash', '大型斬擊弧：同 slash-phys 但半徑 54px、更亮；普攻劍氣、疾風連斬亂舞使用。', { nominal: 'R 54px', dur: 0.3 });
 def('slash-bloodblade', 'slash', '血刃斬：半徑 40px 的紅色 #d92846 斬弧 + 幾滴血珠飛濺。', { nominal: 'R 40px', dur: 0.32 });
 def('slash-dual', 'slash', '雙刀亂舞：兩道交叉的暖白斬弧（X 形，各半徑 40px）錯開 0.06s 出現，加少量白色火花。', { nominal: 'R 40px', dur: 0.35 });
-def('slash-cleave-arc', 'slash', '迴旋斬弧：藍色 #60a5fa 弧線（名目半徑 30px，寬 4.8px）由 -53° 掃到 +59°（0.5s），內側淺藍 #bfdbfe 細弧；原點＝玩家、+X＝面向。Runtime 以 rangeScale 縮放，震碎斬時整體沿 +X 前進。', { nominal: 'R 30px', dur: 0.5 });
+def('slash-cleave-stun', 'slash', '五階紅黃半月刀光，與基礎版共用六米半徑；向外飛行不拉長本體。', { nominal: 'R 60px', dur: 0.46 });
+def('slash-cleave-arc', 'slash', '六米半徑近半圓黃紅刀光，白亮刃口與交錯殘影；六階整體飛出，不以射程拉長本體。', { nominal: 'R 60px', dur: 0.46 });
 def('slash-cleave-sector', 'slash', '迴身四方斬扇形：60° 楔形（名目半徑 100px、頂點在原點、朝 +X），藍色 #60a5fa 填色 α0.2 + 邊緣亮線 + 兩條淺藍徑向邊；由 8% 長到 95% 半徑並整體旋轉 45°/s，尾段淡出。', { nominal: 'R 100px', dur: 0.5 });
 def('slash-gale-sector', 'slash', '疾風斬半圓：180° 半碟（名目半徑 100px、朝 +X），風系淺綠 #86efac 填色 α0.2 + 白色 #ffffff 外緣，8%→95% 放大並旋轉 45°/s。', { nominal: 'R 100px', dur: 0.5 });
 def('slash-thrust-lance', 'slash', '黃白光長槍；尺寸契約見 VFX_SIZE_STANDARD.md，圖層由 author/thrust.cjs 製作。', { nominal: 'L 120px', dur: 0.3 });
@@ -279,11 +280,13 @@ g('thrust', [
   { attack: 'slash-thrust-scatter', hit: 'hit-phys' }
 ]);
 g('cleave', [
-  { attack: 'slash-cleave-arc', hit: 'hit-phys' },    // T1 迴旋斬（cleave）
-  _, _, _, _,
-  { attack: 'slash-cleave-arc', hit: 'hit-phys' },    // T6 震碎斬（cleave-shockwave）
-  { attack: 'slash-cleave-sector', hit: 'hit-phys' }  // T7 迴身四方斬（cleave-cross-shockwave）
-], { windChaser: { ground: 'ground-tornado-wind' } }); // 逐風者：風龍捲
+  { attack: 'slash-cleave-arc', hit: 'hit-phys' },
+  _, _, _,
+  { attack: 'slash-cleave-stun', hit: 'hit-phys' },
+  { attack: 'slash-cleave-stun', hit: 'hit-phys' },
+  { attack: 'slash-cleave-stun', hit: 'hit-phys' }
+], { windChaser: { ground: 'ground-tornado-wind' } });
+
 g('knife', [
   { projectile: 'proj-knife', hit: 'hit-phys' },      // T1 飛刀
   _,

@@ -112,14 +112,16 @@ test('迴身四方斬四道 60 度扇形共用最大半徑，且半徑逐步向�
   assert.equal(calls.length, 0, '四方斬應先建立向外飛行的傷害判定');
   c.GT = 0.05;
   c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(calls.length, 3, '半徑尚未擴大前，只應命中中心附近的基準目標');
-  c.GT = 0.5;
-  c.tickSkill2(0.45, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(calls.length, 1, '第二波尚未起飛，僅第一波命中中心附近的基準目標');
+  for (let step=2;step<=16;step++) {
+    c.GT=step*0.05;
+    c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
+  }
 
-  assert.equal(calls.length, targets.length * 3, '四道 60 度扇形應各自命中範圍內敵人，並各斬 3 次');
+  assert.equal(calls.length, targets.length * 3 + 3, '各方向三波命中；近處基準目標已到既有二次命中的時間');
   for (const target of targets) {
-    assert.equal(calls.filter((hit) => hit === target).length, 3,
-      target.name + ' 應只被一個方向的扇形命中 3 次');
+    assert.equal(calls.filter((hit) => hit === target).length, target === anchor ? 6 : 3,
+      target.name + ' 每波僅歸屬一個方向，近處保留既有二次命中');
   }
 });
 

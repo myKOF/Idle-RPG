@@ -893,3 +893,20 @@ function extractLiteral(src, from) {
   }
   return null;
 }
+
+
+test('CLEAVE 四方向從中心飛行，保持本體尺寸、不預播命中，連斬延遲可取消', () => {
+  const {adapter,log}=makeAdapter([unitPreset('arc'),unitPreset('hit')]);
+  const spec={fxKind:'slash',variant:'cleave-cross-shockwave',projectile:true,
+    angle:0,lineLength:240,directionRanges:[240,240,240,240],rangeScale:2,
+    targets:['mv-float-1'],vfx:{attack:'arc',hit:'hit'}};
+  adapter.tryPlay(spec);adapter.update(0.1);
+  assert.equal(log.nodes.length,4);
+  assert.ok(log.nodes.every(n=>n.transforms.at(-1).scaleX===2));
+  assert.ok(log.nodes.some(n=>Math.abs(n.transforms.at(-1).x-24)<1e-8));
+  adapter.update(0.2);
+  assert.ok(log.nodes.some(n=>Math.abs(n.transforms.at(-1).x-72)<1e-8));
+  assert.ok(log.nodes.every(n=>n.transforms.at(-1).scaleX===2));
+  adapter.tryPlay({...spec,delayMs:90});adapter.clear();adapter.update(1);
+  assert.equal(adapter.stats().fx.activeEffects,0);
+});
