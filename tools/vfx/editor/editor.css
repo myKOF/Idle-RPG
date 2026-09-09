@@ -26,6 +26,11 @@ button, select, input[type="search"], input[type="text"], input[type="number"] {
 button { cursor: pointer; }
 button:hover { background: #30303a; }
 button.active { background: #3d5a80; border-color: #4d7ab0; }
+/* 選項文字是「id（用途）」，比純 id 長得多。寬度寫死而不是讓它跟著內容長：
+   <select> 的寬度取決於最長的那一個選項，157 份裡只要有一個長名字，
+   整條工具列就會被推到換行。展開的清單不受這個寬度限制，仍然看得到全文。 */
+#preset-picker { width: 320px; }
+
 /* 按下去之後標籤會換成「✓ 已複製」再換回來。寬度釘住，否則整條工具列
    會跟著抽動一下——旁邊的按鈕全部左右位移，看起來像畫面壞了。 */
 .copy-btn { min-width: 74px; text-align: center; }

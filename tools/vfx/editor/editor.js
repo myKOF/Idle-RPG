@@ -42,11 +42,21 @@
       .then(function (data) {
         var ids = (data && data.presets) || [];
         if (!ids.length) return;
+        /* usage[id].label ＝這份 preset 在遊戲裡的第一個使用者（技能名稱，或
+           普攻那種寫死對應的標籤）。來源與判定規則見 tools/vfx/preset-usage.cjs。
+           **沒有括號就代表沒有人在用**——那個空白本身是資訊，157 份裡有 56 份
+           是這種狀態，挑素材時一眼就分得出哪些還是孤兒。 */
+        var usage = (data && data.usage) || {};
         sel.innerHTML = '';
         ids.forEach(function (id) {
           var opt = document.createElement('option');
           opt.value = id;
-          opt.textContent = id;
+          var u = usage[id];
+          opt.textContent = u && u.label ? id + '（' + u.label + '）' : id;
+          /* 多處使用時下拉只顯示第一個，滑鼠停留才說有幾處——
+             括號裡再塞一個數字會把選單撐得更寬，而那不是挑 preset 時要看的。 */
+          if (u && u.count > 1) opt.title = id + '：共 ' + u.count + ' 處使用，這裡顯示第一個';
+          else if (!u) opt.title = id + '：目前沒有任何技能或程式碼用到';
           if (id === currentId) opt.selected = true;
           sel.appendChild(opt);
         });
