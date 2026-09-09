@@ -805,10 +805,14 @@
   }
 
   function sizeOf(layer) {
-    return (gizmo.assetSize && layer.assetId && gizmo.assetSize[layer.assetId]) || null;
+    var size = (gizmo.assetSize && layer.assetId && gizmo.assetSize[layer.assetId]) || null;
+    // 序列素材的編輯框使用單格尺寸，不能把整張 atlas 當成水柱本體。
+    if (layer.effect === 'waterTornado') return { width: 320, height: 320 };
+    if (size && layer.sheet) return { width: size.width / layer.sheet.columns, height: size.height / layer.sheet.rows };
+    return size;
   }
 
-  function boundsOf(layer) { return G.baseBounds(layer, sizeOf(layer)); }
+  function boundsOf(layer) { return G.baseBounds(layer.effect === 'waterTornado' ? Object.assign({}, layer, { type: 'sprite' }) : layer, sizeOf(layer)); }
 
   /* 目前的變形目標。圖層與群組共用同一套框、把手與拖曳邏輯，
      差別只在「動的是一層還是一批」。
@@ -1603,7 +1607,8 @@
     };
 
     var name = document.createElement("span");
-    name.textContent = layer.id;
+    var waterNames = { halo: '外層光暈', 'rear-ribbons': '後方飄帶', 'rear-sheets': '後方水片', body: '水柱本體', 'front-sheets': '前方水片', 'white-crests': '白色浪尖', 'front-ribbons': '前方飄帶', base: '底部旋流水環', bloom: '浪尖泛光', dust: '底部煙塵', spray: '藍色水花粒子' };
+    name.textContent = layer.effect === 'waterTornado' ? (waterNames[layer.water.part] || layer.id) + ' · ' + layer.id : layer.id;
 
     var type = document.createElement("span");
     type.className = "type";
@@ -2206,6 +2211,7 @@
     var fields = COMMON_FIELDS
       .concat([{ kind: 'title', label: layer.type + ' 專屬' }])
       .concat(TYPE_FIELDS[layer.type] || []);
+    if (layer.effect === 'waterTornado') fields = fields.filter(function (f) { return ['assetId', 'sheet', 'size', 'scrollSpeed', 'effect'].indexOf(f.key) < 0; });
 
     fields.forEach(function (f) {
       if (f.kind === 'title') {
@@ -2367,6 +2373,38 @@
       host.appendChild(makeField(f.label, control));
     });
 
+    if ((layer.type === 'sprite' || layer.effect === 'waterTornado') && layer.radiusProfile) {
+      var title = document.createElement('div');
+      title.className = 'group-title'; title.textContent = '水柱半徑輪廓'; host.appendChild(title);
+      [['centerScale', '中央半徑倍率', 1], ['topRatio', '上端／中央半徑比例', 2],
+        ['bottomRatio', '下端／中央半徑比例', 2]].forEach(function (f) {
+        var input = document.createElement('input');
+        input.type = 'number'; input.min = '0.1'; input.max = '8'; input.step = '0.1';
+        input.setAttribute('data-radius-profile', f[0]);
+        input.value = layer.radiusProfile[f[0]] === undefined ? f[2] : layer.radiusProfile[f[0]];
+        input.oninput = function () {
+          var value = Number(input.value);
+          if (!input.value || !Number.isFinite(value) || value < 0.1 || value > 8) return;
+          layer.radiusProfile[f[0]] = value; onPresetChanged();
+        };
+        wireFieldTransaction(input, f[1]); host.appendChild(makeField(f[1], input));
+      });
+      var hint = document.createElement('div'); hint.className = 'hint';
+      hint.textContent = '比例 2 表示該端半徑是中央的兩倍。只調整特效輪廓，傷害範圍仍由技能表決定。';
+      host.appendChild(hint);
+    }
+
+    if (layer.effect === 'waterTornado') {
+      [['speed', '氣流速度倍率'], ['density', '粒子數量倍率']].forEach(function (field) {
+        if (field[0] === 'density' && ['dust', 'spray'].indexOf(layer.water.part) < 0) return;
+        var input = document.createElement('input'); input.type = 'number'; input.min = 0; input.max = 4; input.step = .1;
+        input.value = layer.water[field[0]] === undefined ? 1 : layer.water[field[0]];
+        input.setAttribute('data-water-param', field[0]);
+        input.oninput = function () { var v = Number(input.value); if (input.value && Number.isFinite(v) && v >= 0 && v <= 4) { layer.water[field[0]] = v; onPresetChanged(); } };
+        wireFieldTransaction(input, field[1]); host.appendChild(makeField(field[1], input));
+      });
+      var note = document.createElement('div'); note.className = 'hint'; note.textContent = '即時計算圖層：' + layer.water.part + '。可分別調整色彩、透明度、位置、縮放與氣流速度；沒有序列圖集。'; host.appendChild(note);
+    }
     renderOverLife(host, layer);
     /* Canvas 要量得到自己的寬高才畫得對，而元素剛 append 時版面還沒定案。
        等下一幀再統一重繪一次——這比依賴 ResizeObserver 可靠，

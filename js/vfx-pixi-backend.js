@@ -102,6 +102,34 @@ var VFXPixiBackend = (function () {
        每個 (url, columns, rows) 只切一次並快取：一個 8×8 的序列在畫面上
        同時有幾十顆粒子，重切就是幾十倍的物件配置。 */
     var sheetCache = Object.create(null);
+    var profileCache = Object.create(null);
+    function buildProfileFrames(spec, tex) {
+      var key = spec.assetUrl + '|' + (spec.sheet ? spec.sheet.columns + 'x' + spec.sheet.rows : '1x1') + '|' + spec.profileScales.length;
+      if (profileCache[key]) return profileCache[key];
+      var frames = spec.sheet ? buildFrames(spec, tex) : [tex];
+      profileCache[key] = frames.map(function (frame) {
+        return spec.profileScales.map(function (_, i) {
+          var r = frame.frame, h = r.height / spec.profileScales.length;
+          return new PixiLib.Texture({ source: frame.source,
+            frame: new PixiLib.Rectangle(r.x, r.y + i * h, r.width, h) });
+        });
+      });
+      return profileCache[key];
+    }
+    function updateProfile(node) {
+      var frames = node.__profileFrames;
+      if (!frames) return;
+      var index = Math.max(0, Math.min(frames.length - 1, node.__frameWanted || 0));
+      var strips = frames[index], n = strips.length;
+      var w = strips[0].frame.width, h = strips[0].frame.height * n;
+      node.children.forEach(function (child, i) {
+        child.texture = strips[i];
+        child.scale.set(node.__profileScales[i], 1);
+        child.x = -w * node.__anchorX * node.__profileScales[i];
+        child.y = h * (i / n - node.__anchorY);
+        child.tint = node.__profileTint;
+      });
+    }
     function sheetKey(spec) { return spec.assetUrl + '|' + spec.sheet.columns + 'x' + spec.sheet.rows; }
     function buildFrames(spec, baseTex) {
       var key = sheetKey(spec);
@@ -126,9 +154,77 @@ var VFXPixiBackend = (function () {
       return list;
     }
 
+
+    // Dynamic surfaces contain one current procedural sample, never a frame atlas.
+    // Share equal samples across simultaneous fields; recycle unused surfaces.
+    var generatedCache = new Map(), surfacePool = [];
+    function canvas() { var c = opts.canvasFactory ? opts.canvasFactory() : document.createElement('canvas'); c.width = 320; c.height = 320; return c; }
+    function paintCommands(ctx, commands) {
+      commands.forEach(function (c) {
+        var color = c.color; ctx.fillStyle = ctx.strokeStyle = 'rgba(' + color.slice(0, 3).map(function (v) { return Math.round(Math.max(0, Math.min(255, v))); }).join(',') + ',' + Math.max(0, Math.min(1, color[3] / 255)) + ')';
+        ctx.beginPath();
+        if (c.ellipse) ctx.ellipse(c.ellipse[0], c.ellipse[1], c.ellipse[2], c.ellipse[3], 0, 0, Math.PI * 2);
+        else { c.points.forEach(function (pt, i) { if (i) ctx.lineTo(pt[0], pt[1]); else ctx.moveTo(pt[0], pt[1]); }); }
+        if (c.line) { ctx.lineWidth = c.line; ctx.stroke(); } else { ctx.closePath(); ctx.fill(); }
+      });
+    }
+    function raster(surface, sample) {
+      var ctx = surface.canvas.getContext('2d'); ctx.resetTransform(); ctx.clearRect(0, 0, 320, 320);
+      if (sample.pixels) { var img = ctx.createImageData(320, 320); img.data.set(sample.pixels); ctx.putImageData(img, 0, 0); }
+      if (sample.commands.length) {
+        ctx.save(); ctx.scale(.5, .5); paintCommands(ctx, sample.commands); ctx.restore();
+      }
+      var groups = sample.groups;
+      if (sample.blur) groups = [{ source: surface.canvas, blur: sample.blur, alpha: 1 }];
+      if (groups) {
+        var temp = surface.temp, tc = temp.getContext('2d');
+        groups.forEach(function (g, index) {
+          tc.resetTransform(); tc.clearRect(0, 0, 320, 320);
+          if (g.source) tc.drawImage(g.source, 0, 0);
+          else { tc.save(); tc.scale(.5, .5); paintCommands(tc, g.commands); tc.restore(); }
+          if (index === 0) ctx.clearRect(0, 0, 320, 320);
+          ctx.save(); ctx.filter = 'blur(' + g.blur / 2 + 'px)'; ctx.globalAlpha = g.alpha;
+          ctx.globalCompositeOperation = groups.length > 1 ? 'lighter' : 'source-over'; ctx.drawImage(temp, 0, 0); ctx.restore();
+        });
+      }
+      surface.texture.source.update();
+    }
+    function releaseGenerated(node) {
+      var entry = node.__generatedEntry;
+      if (!entry) return;
+      entry.refs--; node.__generatedEntry = null;
+      if (!entry.refs) { generatedCache.delete(entry.key); surfacePool.push(entry); }
+    }
+    function bindGenerated(node, sample) {
+      if (!sample || (node.__generatedEntry && node.__generatedEntry.key === sample.key)) return;
+      releaseGenerated(node);
+      var entry = generatedCache.get(sample.key);
+      if (!entry) {
+        entry = surfacePool.pop();
+        if (!entry) {
+          var c = canvas(), tex = PixiLib.Texture.from(c);
+          entry = { canvas: c, temp: canvas(), texture: tex, refs: 0, strips: [] };
+          for (var i = 0; i < 64; i++) entry.strips.push(new PixiLib.Texture({ source: tex.source, frame: new PixiLib.Rectangle(0, i * 5, 320, 5) }));
+        }
+        entry.key = sample.key; raster(entry, sample); generatedCache.set(sample.key, entry);
+      }
+      entry.refs++; node.__generatedEntry = entry; node.__profileFrames = [entry.strips]; node.__frameWanted = 0;
+    }
+
     function createNode(spec) {
       var node;
-      if (spec.kind === 'tiled') {
+      if (spec.kind === 'profiled' || spec.kind === 'generated') {
+        node = new PixiLib.Container();
+        node.__profileScales = spec.profileScales ? spec.profileScales.slice() : Array(64).fill(1);
+        node.__generated = spec.kind === 'generated';
+        node.__anchorX = 0.5; node.__anchorY = 0.5;
+        node.__profileTint = 0xffffff;
+        node.__profileScales.forEach(function () {
+          var child = new PixiLib.Sprite(PixiLib.Texture.EMPTY);
+          child.blendMode = BLEND_MAP[spec.blendMode] || 'normal';
+          node.addChild(child);
+        });
+      } else if (spec.kind === 'tiled') {
         node = new PixiLib.TilingSprite({
           texture: PixiLib.Texture.EMPTY,
           width: 256,
@@ -140,9 +236,13 @@ var VFXPixiBackend = (function () {
       node.blendMode = BLEND_MAP[spec.blendMode] || 'normal';
       node.visible = false;
       container.addChild(node);
+      if (spec.kind === 'generated') return node;
       getTexture(spec.assetUrl, function (tex) {
         if (node.destroyed) return;
-        if (spec.sheet) {
+        if (spec.kind === 'profiled') {
+          node.__profileFrames = buildProfileFrames(spec, tex);
+          updateProfile(node);
+        } else if (spec.sheet) {
           node.__frames = buildFrames(spec, tex);
           /* 貼圖是非同步載入的，這期間 updateNode 已經跑過好幾幀了——
              把最後收到的幀號補上，否則會停在第 0 格直到下一次更新。 */
@@ -158,6 +258,7 @@ var VFXPixiBackend = (function () {
       if (!t) return;
       if (t.visible === false) { node.visible = false; return; }
       node.visible = true;
+      if (node.__generated) bindGenerated(node, t.generated);
       if (t.frame !== undefined) {
         node.__frameWanted = t.frame;
         var fr = node.__frames;
@@ -172,9 +273,14 @@ var VFXPixiBackend = (function () {
       if (node.skew) node.skew.set(t.skewX || 0, 0);
       if (t.scaleX !== undefined) node.scale.set(t.scaleX, t.scaleY);
       if (t.alpha !== undefined) node.alpha = t.alpha;
-      if (t.tint !== undefined) node.tint = t.tint;
+      if (t.tint !== undefined && !node.__profileScales) node.tint = t.tint;
       if (t.zIndex !== undefined) node.zIndex = t.zIndex;
       if (node.anchor && t.anchorX !== undefined) node.anchor.set(t.anchorX, t.anchorY);
+      if (node.__profileScales) {
+        if (t.anchorX !== undefined) { node.__anchorX = t.anchorX; node.__anchorY = t.anchorY; }
+        if (t.tint !== undefined) node.__profileTint = t.tint;
+        updateProfile(node);
+      }
       if (t.width !== undefined) node.width = t.width;
       if (t.height !== undefined) node.height = t.height;
       if (t.tileX !== undefined && node.tilePosition) {
@@ -183,11 +289,13 @@ var VFXPixiBackend = (function () {
     }
 
     function destroyNode(node) {
+      releaseGenerated(node);
       if (node.parent) node.parent.removeChild(node);
       /* 切好的 Texture 是整個 backend 共用的（sheetCache），不能跟著單一節點
          被銷毀——只把節點對它的指向拿掉。實際釋放在 destroy() 一次做完。 */
       node.__frames = null;
-      node.destroy();
+      node.__profileFrames = null;
+      node.destroy({ children: true });
     }
 
     /* 貼圖是 GPU 資源，只清本地 cache 不夠——Pixi 的全域 Assets 仍持有它們。
@@ -203,6 +311,13 @@ var VFXPixiBackend = (function () {
         sheetCache[k].forEach(function (tex) { tex.destroy(false); });
       });
       sheetCache = Object.create(null);
+      var surfaces = Array.from(generatedCache.values()).concat(surfacePool);
+      surfaces.forEach(function (entry) { entry.strips.forEach(function (tex) { tex.destroy(false); }); entry.texture.destroy(true); });
+      generatedCache.clear(); surfacePool = [];
+      Object.keys(profileCache).forEach(function (k) {
+        profileCache[k].forEach(function (frame) { frame.forEach(function (tex) { tex.destroy(false); }); });
+      });
+      profileCache = Object.create(null);
     }
 
     return {

@@ -133,6 +133,7 @@ def('ground-thunder-orb', 'ground', '雷球（場域體）：半徑 30px 的藍�
 def('ground-blizzard', 'ground', '暴風雪：扁矩形（200×100，畫 52% 高）淡藍 #7dd3fc 填色 α0.2 + 青 #22d3ee 邊 + 3 條起伏雲線 + 10 片雪花持續落下（白色小圓 rate 發射）；loop 2.6s。', { nominal: 'rect 200x100', dur: 2.6, loop: true });
 def('ground-tornado-fire', 'ground', '火龍捲：以原點為底的火焰龍捲——地面橘紅 #7d1708 橢圓 + 火柱剪影（底寬 62px、高 118px，#d93413）+ 4 條擺動火焰帶（#ffdf4d/#ff761c/#ffa51d）+ 白黃火芯 + 頂部火舌 + 上升火花；loop 1.2s。名目 area.r = 28px。', { nominal: 'R 28px', dur: 1.2, loop: true });
 def('ground-tornado-water', 'ground', '水龍捲：同 ground-tornado-fire 幾何，配色深藍 #0284c7 柱、#38bdf8 邊、#f0f9ff 水芯與飛濺水珠。', { nominal: 'R 28px', dur: 1.2, loop: true });
+def('field-water-tornado', 'ground', '水龍捲：連續藍色水體、白色浪片、外層飄帶與光暈向上捲升；可調上／中／下半徑輪廓。', { nominal: 'R 28px', dur: 4, loop: true });
 def('ground-tornado-wind', 'ground', '風龍捲：同幾何，綠色 #22c55e 柱、#86efac 邊、白色風芯與葉片狀碎片。', { nominal: 'R 28px', dur: 1.2, loop: true });
 def('ground-homing-ice-shard', 'ground', '追蹤冰箭本體：半徑 30px 的冰晶菱形（#4da6ff/#f2fbff）+ 淡藍光暈 + 尾端冰塵；朝 +X；loop 脈動 0.55s。', { nominal: 'R 30px', dur: 0.55, loop: true });
 def('ground-homing-wind-crescent', 'ground', '追跡風刃本體：半徑 30px 的風系新月（尖端朝 +X，#86efac/#ffffff）+ 微風尾；loop 脈動 0.55s。', { nominal: 'R 30px', dur: 0.55, loop: true });
@@ -398,7 +399,7 @@ g('waterball', [
   { attack: 'burst-frost-nova', hit: 'hit-ice', projectile: 'proj-waterball' }, // T4 寒流爆散（water-burst + water-bounce）
   { projectile: 'proj-ice-shard', hit: 'hit-ice' },                     // T5 寒霜擴散（frost-spread）
   _,
-  { ground: 'ground-tornado-water' }                                    // T7 水龍捲
+  { field: 'field-water-tornado' }                                      // T7 水龍捲
 ], { waterPrisonFall: { ground: 'ground-domain-ice' }, ragingTide: { ground: 'ground-tornado-water' }, abyssBurial: { ground: 'ground-domain-ice', hit: 'st-tick-ice' } });
 g('frostnova', [
   { attack: 'burst-frost-nova', hit: 'hit-ice', cast: 'cast-magic' },   // T1 冰霜新星 + frost-freeze（見 vfxTier 註記：凍結走 T1 的 attack？→ 用 T4 極致寒霜）

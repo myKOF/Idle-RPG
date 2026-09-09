@@ -652,3 +652,19 @@ Preset 的節點掛在 `S.layers.presetZone`／`presetFx` 兩個獨立容器，
 
 遷移建議：先讓新 Core 服務**新做的特效**，舊特效維持原狀；
 等 Adapter 與 export 流程穩定後再逐一搬移，不要一次重寫。
+
+### 水龍捲獨立程序圖層（2026-09-10）
+
+field-water-tornado 由 11 個 procedural / waterTornado 圖層組成：外層光暈、後方飄帶、後方水片、水柱本體、前方水片、白色浪尖、前方飄帶、底部水環、浪尖泛光、煙塵、水花。原 v10 合併 PNG 圖集已從素材庫、索引、遊戲匯出移除，Preset 不再含 assetId 或 sheet。
+
+原製作公式移植至 js/vfx-water-tornado.js，由 Core 傳入圖層時間，產生像素／幾何指令；Pixi 後端只將指令畫到獨立透明表面。這些表面是運行中的圖層，不是磁碟上的序列圖集。採每秒 20 次程序取樣、4 秒循環；近期取樣快取有上限，動態貼圖同相位共用、不同相位隔離，無使用者時回收重用。Editor 與遊戲共用同一套 Core／Backend。
+
+water 物件欄位：part 必須是產生器 PARTS 的值；speed 預設 1（0 可凍結圖層）；density 預設 1，用於 dust／spray 的數量。speed／density 限制 0–4。圖層可獨立開關、調色、透明度、位置、縮放、旋轉、播放速度與 Over-Life 曲線。水花／煙塵位置由程序產生，可調數量和速度，不使用原生 particle 發射器，因此 Editor 的 activeParticles 計數不含它們。浪尖／水片的細部輪廓仍由公式控制；bloom 依浪尖公式產生但亮度是獨立層，關閉浪尖時若也要關掉餘光，須同步關閉 bloom。
+
+#### radiusProfile 半徑輪廓
+
+sprite 與 waterTornado 圖層可選 radiusProfile。Editor 顯示中央半徑倍率 centerScale（預設 1）、上端／中央比例 topRatio（預設 2）、下端／中央比例 bottomRatio（預設 2），三者限制 0.1–8。各層可獨立調整，只改視覺寬度，不改技能傷害範圍。要維持所有層一致輪廓，需對相關層套用相同比例。
+
+來源校準 sourceTopRatio／sourceBottomRatio 預設 2；topY／centerY／bottomY 預設 0／0.5／1，滿足 0 ≤ topY < centerY < bottomY ≤ 1。此 Preset 依來源使用 0.0125／0.4640625／0.915625，通常毋須改動。Core 按上下二次曲線計算目標／來源半徑比，Pixi 使用 64 個水平截面，預設為恒等變換。節點池 key 包含組件與半徑輪廓，避免重新播放取到其他層的幾何。
+
+製作入口：tools/vfx/authoring/author/water-tornado.cjs。第七階 Skills2 的 field-water-tornado 映射、CSV／Excel 保持有效，本輪未改動遊戲判定。
