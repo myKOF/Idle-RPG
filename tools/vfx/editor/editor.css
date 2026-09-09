@@ -82,6 +82,9 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .group-title { margin: 10px 0 6px; color: #7a7a86; font-size: 11px;
                text-transform: uppercase; letter-spacing: .06em;
                border-top: 1px solid #26262c; padding-top: 8px; }
+/* 標題裡含有使用者自己取的名字時要保留大小寫：群組 id 一律小寫，
+   被 uppercase 改寫之後看起來像是另一個名字。 */
+.group-title.keep-case { text-transform: none; letter-spacing: 0; }
 .err { color: #ff8080; }
 .ok { color: #7fd18a; }
 
@@ -112,8 +115,21 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
   width: 26px; height: 22px; padding: 1px; border: 1px solid #3a3a44;
   border-radius: 4px; background: #26262e; cursor: pointer;
 }
+/* margin-left:auto 只給這一個，右邊的檢視控制項才會整組靠到最右邊。
+   兩個元素都設 auto 的話剩餘空間會被平分，中間出現一段莫名其妙的空白。 */
 .bg-current { margin-left: auto; color: #7a7a86; font-size: 11px;
               font-variant-numeric: tabular-nums; }
+
+/* ---- 檢視控制：格線與縮放 ---- */
+.bg-toggle { display: flex; align-items: center; gap: 4px;
+             color: #8a8a96; font-size: 12px; cursor: pointer; }
+.zoom-reset {
+  min-width: 82px; padding: 2px 6px; border: 1px solid #3a3a44; border-radius: 4px;
+  background: #26262e; color: #c8c8d2; font-size: 11px; cursor: pointer;
+  font-variant-numeric: tabular-nums;   /* 數字跳動時按鈕不要跟著抖 */
+}
+.zoom-reset:hover { border-color: #6a6a7a; }
+.scale-note { color: #7a7a86; font-size: 11px; font-variant-numeric: tabular-nums; }
 
 /* ---- Layer 樹狀面板 ---- */
 .layer-row.active { outline: 1px solid #6f9fe0; outline-offset: -1px; }

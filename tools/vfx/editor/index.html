@@ -12,14 +12,17 @@
   <button id="btn-play">▶ Play</button>
   <button id="btn-pause">⏸ Pause</button>
   <button id="btn-restart">⟲ Restart</button>
-  <label><input type="checkbox" id="chk-loop"> Loop</label>
+  <!-- 預覽循環：只影響編輯時的預覽，不是 preset.loop（那是會出貨的資料，
+       在右邊 Inspector 的「Preset」區塊編輯）。混在一起的話，
+       想重複看一次爆點就會把它改成永遠不結束的特效。 -->
+  <label title="播完自動重播，只影響預覽，不會寫進 Preset"><input type="checkbox" id="chk-preview-loop" checked> 預覽循環</label>
   <span class="sep"></span>
   <button id="btn-undo" disabled>↶ 復原</button>
   <button id="btn-redo" disabled>↷ 重做</button>
   <span class="sep"></span>
   <select id="preset-picker" title="切換 repo 裡的 Preset"><option value="">Preset…</option></select>
   <button id="btn-load">載入 Preset</button>
-  <button id="btn-save">儲存到 repo</button>
+  <button id="btn-save" title="儲存到 repo（Ctrl+S）">儲存到 repo</button>
   <button id="btn-download">下載複本</button>
   <input type="file" id="file-load" accept="application/json" hidden>
   <span id="dirty-flag" class="dirty"></span>
@@ -85,6 +88,14 @@
         <span>自訂</span>
       </label>
       <span id="bg-current" class="bg-current"></span>
+      <span class="sep"></span>
+      <!-- 格線與縮放同屬「怎麼看」，所以跟背景色放同一列，離預覽區最近。 -->
+      <label class="bg-toggle" title="淺色座標格線；1 大格 = 6 米，與遊戲同比例">
+        <input type="checkbox" id="chk-grid" checked><span>格線</span>
+      </label>
+      <button id="zoom-reset" class="zoom-reset"
+              title="在預覽區用滾輪縮放；按中鍵或點這裡回到 100%">縮放 100%</button>
+      <span id="grid-scale" class="scale-note"></span>
     </div>
     <div id="preview-host"></div>
     <div id="preview-msg" class="hint"></div>
@@ -189,6 +200,7 @@
 <script src="/js/vfx-pixi-backend.js"></script>
 <script src="/tools/vfx/vfx-semantic-vocab.cjs"></script>
 <script src="/tools/vfx/editor/preset-id-policy.js"></script>
+<script src="/tools/vfx/editor/view-model.js"></script>
 <script src="/tools/vfx/editor/layout-schema.js"></script>
 <script src="/tools/vfx/editor/layer-model.js"></script>
 <script src="/tools/vfx/editor/curve-model.js"></script>
