@@ -6,8 +6,12 @@
       "id": "slash-cleave-arc",
       "name": "slash-cleave-arc",
       "layerIds": [
-        "arc",
-        "arc-inner"
+        "outer-glow",
+        "crescent-body",
+        "gold-edge",
+        "white-edge",
+        "inner-trail",
+        "afterimage"
       ]
     }
   ],

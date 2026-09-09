@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "slash-thrust-lance",
   "duration": 0.3,
-  "loop": false,
+  "loop": true,
   "layers": [
     {
       "id": "shaft",

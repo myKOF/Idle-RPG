@@ -301,5 +301,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 80,
+      "width": 80
+    },
+    "heightM": 8,
+    "shape": "custom",
+    "widthM": 8
+  }
 }

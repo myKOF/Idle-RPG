@@ -59,10 +59,15 @@ def('slash-phys', 'slash', '單道斬擊弧：半徑 36px 的弧線從左上掃�
 def('slash-phys-big', 'slash', '大型斬擊弧：同 slash-phys 但半徑 54px、更亮；普攻劍氣、疾風連斬亂舞使用。', { nominal: 'R 54px', dur: 0.3 });
 def('slash-bloodblade', 'slash', '血刃斬：半徑 40px 的紅色 #d92846 斬弧 + 幾滴血珠飛濺。', { nominal: 'R 40px', dur: 0.32 });
 def('slash-dual', 'slash', '雙刀亂舞：兩道交叉的暖白斬弧（X 形，各半徑 40px）錯開 0.06s 出現，加少量白色火花。', { nominal: 'R 40px', dur: 0.35 });
-def('slash-cleave-arc', 'slash', '迴旋斬弧：藍色 #60a5fa 弧線（名目半徑 30px，寬 4.8px）由 -53° 掃到 +59°（0.5s），內側淺藍 #bfdbfe 細弧；原點＝玩家、+X＝面向。Runtime 以 rangeScale 縮放，震碎斬時整體沿 +X 前進。', { nominal: 'R 30px', dur: 0.5 });
+def('slash-cleave-stun', 'slash', '五階紅黃半月刀光，與基礎版共用六米半徑；向外飛行不拉長本體。', { nominal: 'R 60px', dur: 0.46 });
+def('slash-cleave-arc', 'slash', '六米半徑近半圓黃紅刀光，白亮刃口與交錯殘影；六階整體飛出，不以射程拉長本體。', { nominal: 'R 60px', dur: 0.46 });
 def('slash-cleave-sector', 'slash', '迴身四方斬扇形：60° 楔形（名目半徑 100px、頂點在原點、朝 +X），藍色 #60a5fa 填色 α0.2 + 邊緣亮線 + 兩條淺藍徑向邊；由 8% 長到 95% 半徑並整體旋轉 45°/s，尾段淡出。', { nominal: 'R 100px', dur: 0.5 });
+def('hit-gale-burst', 'hit', '疾風斬黃白單點爆破。', { nominal: 'rect 120x120', dur: 0.27 });
+def('slash-gale-moon', 'slash', '目標中心藍紫下劈月牙與錯位殘影。', { nominal: 'R 50px', dur: 0.37 });
 def('slash-gale-sector', 'slash', '疾風斬半圓：180° 半碟（名目半徑 100px、朝 +X），風系淺綠 #86efac 填色 α0.2 + 白色 #ffffff 外緣，8%→95% 放大並旋轉 45°/s。', { nominal: 'R 100px', dur: 0.5 });
-def('slash-thrust-lance', 'slash', '突刺光槍：沿 +X 從原點刺出的金色光槍（名目長 100px、寬 36px），加法混合、亮金 #ffd166 中心線 + 古銅 #a86d2d 邊；前 40% 從根部往尖端顯露、80% 後淡出。Runtime 以 scaleX = lineLength/100、scaleY = lineWidth/36。', { nominal: 'L 100px', dur: 0.3 });
+def('slash-thrust-lance', 'slash', '黃白光長槍；尺寸契約見 VFX_SIZE_STANDARD.md，圖層由 author/thrust.cjs 製作。', { nominal: 'L 120px', dur: 0.3 });
+def('slash-thrust-empowered', 'slash', '突刺三階黃紅光槍', { nominal: 'L 120px', dur: 0.3 });
+def('slash-thrust-scatter', 'slash', '突刺五階黃紅光槍與飛濺粒子', { nominal: 'L 120px', dur: 0.3 });
 def('slash-wind-crescent', 'slash', '真空斬：從原點朝 +X 展開的風系新月（名目寬 75px、深 33px），淺綠 #86efac 填色 + 白色 #ffffff 內芯與描邊，0.32s 內由 55% 長到 100% 並淡至 15%。', { nominal: 'W 75px', dur: 0.32 });
 def('slash-wind-spin', 'slash', '真空迴旋：以原點為中心的扁橢圓風環（名目半徑 60px、縱向壓 0.62），淺綠 #86efac 粗環 + 白色細環 + 4 片白色刀影繞一圈（0.42s），整體淡出。', { nominal: 'R 60px', dur: 0.42 });
 def('slash-enemy-melee', 'slash', '敵方近戰爪痕：紅 #ff6b6b 半徑 36px 斬弧 + 白色內弧，方向由 Runtime 依敵→我方角度旋轉。', { nominal: 'R 36px', dur: 0.26 });
@@ -268,20 +273,22 @@ function g(gid, tiers, ult) { S2[gid] = { tiers: tiers, ult: ult || {} }; }
 const _ = null; // 該階沒有自己的特效
 
 g('thrust', [
-  { attack: 'slash-thrust-lance', hit: 'hit-phys' },  // T1 突刺
-  _,                                                 // T2 連刺
-  _,                                                 // T3 傷害強化
-  { attack: 'slash-thrust-lance', hit: 'hit-phys' },  // T4 超連刺（thrust-parallel）
-  { hit: 'hit-phys' },                               // T5 擴散（擴散傷害的受擊）
-  { attack: 'slash-thrust-lance', hit: 'hit-phys' },  // T6 貫穿突刺（thrust-pierce）
-  { attack: 'slash-thrust-lance', hit: 'hit-phys' }   // T7 八方連刺（thrust-octagonal）
+  { attack: 'slash-thrust-lance', hit: 'hit-phys' },
+  null,
+  { attack: 'slash-thrust-empowered', hit: 'hit-phys' },
+  { attack: 'slash-thrust-empowered', hit: 'hit-phys' },
+  { attack: 'slash-thrust-scatter', hit: 'hit-phys' },
+  { attack: 'slash-thrust-scatter', hit: 'hit-phys' },
+  { attack: 'slash-thrust-scatter', hit: 'hit-phys' }
 ]);
 g('cleave', [
-  { attack: 'slash-cleave-arc', hit: 'hit-phys' },    // T1 迴旋斬（cleave）
-  _, _, _, _,
-  { attack: 'slash-cleave-arc', hit: 'hit-phys' },    // T6 震碎斬（cleave-shockwave）
-  { attack: 'slash-cleave-sector', hit: 'hit-phys' }  // T7 迴身四方斬（cleave-cross-shockwave）
-], { windChaser: { ground: 'ground-tornado-wind' } }); // 逐風者：風龍捲
+  { attack: 'slash-cleave-arc', hit: 'hit-phys' },
+  _, _, _,
+  { attack: 'slash-cleave-stun', hit: 'hit-phys' },
+  { attack: 'slash-cleave-stun', hit: 'hit-phys' },
+  { attack: 'slash-cleave-stun', hit: 'hit-phys' }
+], { windChaser: { ground: 'ground-tornado-wind' } });
+
 g('knife', [
   { projectile: 'proj-knife', hit: 'hit-phys' },      // T1 飛刀
   _,
@@ -289,8 +296,8 @@ g('knife', [
   _, _, _, _
 ], { soulhunterBlade: { projectile: 'proj-knife-gold', hit: 'hit-lightning' } });
 g('gale', [
-  { attack: 'slash-gale-sector', hit: 'hit-phys' },   // T1 疾風斬（gale-slashes）
-  _, _, _, _, _, _
+  { attack: 'hit-gale-burst', hit: 'hit-phys' },   // T1 疾風斬
+  _, _, _, _, _, { attack: 'slash-gale-moon' }
 ], { thunderFlash: { hit: 'hit-lightning' }, thunderGodSlash: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } });
 g('bloodblade', [
   { attack: 'slash-bloodblade', hit: 'hit-bleed' },                          // T1 血刃斬

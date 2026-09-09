@@ -147,7 +147,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
 
   for (const variant of [
     'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce', 'knife-soulhunter',
-    'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
+    'gale-burst', 'gale-moon', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
     assert.ok(skills2.includes("'" + variant + "'") || skills2.includes('"' + variant + '"'), variant);
@@ -358,8 +358,10 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   const vfx = read('js/vfx.js');
   const renderer = read('js/battle-renderer.js');
 
-  assert.match(skills2, /variant: thrustVariant, count: Math\.min\(8, thrustCount\), projectile: isPiercing/);
-  assert.match(skills2, /variant: cleaveVariant, count: Math\.min\(5, slashes\), projectile: isFlying/);
+  assert.match(skills2, /for \(var wave = 0; wave < thrustCount; wave\+\+\)/);
+  assert.match(skills2, /variant: thrustVariant, count: 1, projectile: isPiercing/);
+  assert.match(skills2, /beginSec: pr \* thrustWaveGap/);
+  assert.match(skills2, /variant: cleaveVariant, count: 1, projectile: isFlying/);
   const thrustVfx = vfx.slice(vfx.indexOf("s.variant === 'thrust-pierce'"), vfx.indexOf("s.variant === 'cleave'"));
   const thrustRenderer = renderer.slice(renderer.indexOf("spec.variant === 'thrust-pierce'"), renderer.indexOf("spec.variant === 'cleave'"));
   assert.match(thrustVfx, /if \(!s\.projectile\)/);
@@ -951,11 +953,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.112/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.12/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.92/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260908-basic-melee'/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.18/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.99/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-gale-config'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260906-preset-fallback-sweep/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260909-gale-config/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 

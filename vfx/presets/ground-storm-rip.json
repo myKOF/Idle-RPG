@@ -90,5 +90,11 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 60
+    },
+    "shape": "circle"
+  }
 }

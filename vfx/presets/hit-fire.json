@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-fire",
-  "duration": 0.45,
+  "duration": 0.14,
   "loop": false,
   "layers": [
     {
@@ -16,7 +16,8 @@
       "alpha": 0.5,
       "tint": "#ff6a2a",
       "blendMode": "add",
-      "duration": 0.28,
+      "delay": 0,
+      "duration": 0.087111,
       "alphaOverLife": [
         [
           0,
@@ -27,8 +28,12 @@
           1
         ],
         [
-          0.5,
-          0.6
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -61,14 +66,24 @@
       },
       "alpha": 1,
       "blendMode": "normal",
+      "delay": 0,
+      "duration": 0.14,
       "alphaOverLife": [
         [
           0,
+          0
+        ],
+        [
+          0.1,
           1
         ],
         [
-          0.82,
-          1
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -90,29 +105,31 @@
       "zIndex": 2,
       "tint": "#ffd447",
       "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
       "emission": {
         "count": 6,
         "mode": "burst"
       },
       "lifetime": [
-        0.26,
-        0.38
+        0.080889,
+        0.118222
       ],
       "spawn": {
         "radius": 4,
         "shape": "circle"
       },
       "speed": [
-        60,
-        130
+        192.857143,
+        417.857143
       ],
       "direction": -90,
       "spread": 240,
       "gravity": {
         "x": 0,
-        "y": -140
+        "y": -1446.428571
       },
-      "drag": 3,
+      "drag": 9.642857,
       "startScale": [
         0.0078,
         0.0156
@@ -123,8 +140,12 @@
           1
         ],
         [
-          0.5,
-          1
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
         ],
         [
           1,
@@ -164,5 +185,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
 }

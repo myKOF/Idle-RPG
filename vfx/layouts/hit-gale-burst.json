@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-gale-burst",
+  "groups": [
+    {
+      "id": "hit-gale-burst",
+      "name": "hit-gale-burst",
+      "layerIds": [
+        "amber-halo",
+        "burst-spikes",
+        "cross-spikes",
+        "white-impact",
+        "hot-core",
+        "fracture-0",
+        "fracture-1",
+        "fracture-2",
+        "fracture-3",
+        "fracture-4",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-gale-burst"
+  ]
+}

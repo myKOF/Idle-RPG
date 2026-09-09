@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-gale-moon",
+  "groups": [
+    {
+      "id": "slash-gale-moon",
+      "name": "slash-gale-moon",
+      "layerIds": [
+        "violet-afterimage",
+        "purple-crescent",
+        "blue-blade",
+        "white-edge",
+        "swing-trail",
+        "outer-echo",
+        "falling-cut",
+        "blade-fragments"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-gale-moon"
+  ]
+}

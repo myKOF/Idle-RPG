@@ -573,7 +573,7 @@ var VFXCore = (function () {
     validateVec2(layer.scrollSpeed, where + '.scrollSpeed', errors);
   }
 
-  var PRESET_FIELDS = ['schemaVersion', 'id', 'duration', 'loop', 'layers'];
+  var PRESET_FIELDS = ['schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet'];
@@ -652,6 +652,7 @@ var VFXCore = (function () {
     }
 
     checkUnknownFields(preset, PRESET_FIELDS, 'preset', errors);
+    if (preset.sizing !== undefined) validateSizing(preset.sizing, errors);
 
     var seenIds = Object.create(null);
     preset.layers.forEach(function (layer, i) {
@@ -737,6 +738,26 @@ var VFXCore = (function () {
   }
 
   /* 決定性序列化：欄位順序固定，Editor 存檔→載入→再存檔必須位元相同。 */
+  function validateSizing(s, errors) {
+    if (!s || typeof s !== 'object' || Array.isArray(s)) { errors.push('sizing 必須是物件'); return; }
+    checkUnknownFields(s, ['shape', 'radiusM', 'widthM', 'heightM', 'authored'], 'sizing', errors);
+    if (['circle', 'square', 'rectangle', 'projectile-circle', 'projectile-square', 'custom'].indexOf(s.shape) < 0) {
+      errors.push('sizing.shape 非法');
+    }
+    ['radiusM', 'widthM', 'heightM'].forEach(function (key) {
+      if (s[key] !== undefined && (!isFiniteNumber(s[key]) || s[key] <= 0)) errors.push('sizing.' + key + ' 必須是正數');
+    });
+    var a = s.authored;
+    if (!a || typeof a !== 'object' || Array.isArray(a)) { errors.push('sizing.authored 必填'); return; }
+    checkUnknownFields(a, ['radius', 'width', 'height'], 'sizing.authored', errors);
+    Object.keys(a).forEach(function (key) {
+      if (!isFiniteNumber(a[key]) || a[key] <= 0) errors.push('sizing.authored.' + key + ' 必須是正數');
+    });
+    if (!(a.radius > 0) && !(a.width > 0 && a.height > 0)) errors.push('sizing.authored 缺少半徑或長寬');
+    if (s.shape === 'custom' && !(s.radiusM > 0) && !(s.widthM > 0 && s.heightM > 0)) {
+      errors.push('custom sizing 必須單獨定義米制尺寸');
+    }
+  }
   var PRESET_KEY_ORDER = ['schemaVersion', 'id', 'duration', 'loop', 'layers'];
   var LAYER_KEY_ORDER = ['id', 'type', 'enabled', 'assetId', 'effect', 'zIndex',
     'position', 'rotation', 'scale', 'anchor', 'size', 'alpha', 'tint', 'blendMode',
@@ -972,6 +993,7 @@ var VFXCore = (function () {
         presetId: presetId,
         preset: preset,
         time: startTime,
+        timeScale: isFiniteNumber(p.timeScale) && p.timeScale > 0 ? p.timeScale : 1,
         done: false,
         origin: { x: 0, y: 0 },
         rotation: 0,
@@ -1164,6 +1186,22 @@ var VFXCore = (function () {
       /* 繞 Y 軸轉會壓縮水平方向，繞 X 軸轉會壓縮垂直方向——軸與被壓的方向是交叉的 */
       t.scaleX = d.scale.x * effect.scaleX * (scaleKX === null ? 1 : scaleKX) * flipX;
       t.scaleY = d.scale.y * effect.scaleY * (scaleKY === null ? 1 : scaleKY) * flipY;
+      t.skewX = 0;
+      if (effect.preset.sizing && effect.scaleX !== effect.scaleY) {
+        // 尺寸屬於整個特效的座標軸，必須在圖層旋轉之後縮放。
+        var localAngle = d.rotation + (rotK === null ? 0 : rotK);
+        var ca = Math.cos(localAngle), sa = Math.sin(localAngle);
+        var qx = d.scale.x * (scaleKX === null ? 1 : scaleKX) * flipX;
+        var qy = d.scale.y * (scaleKY === null ? 1 : scaleKY) * flipY;
+        var ax = effect.scaleX * ca * qx, ay = effect.scaleY * sa * qx;
+        var bx = -effect.scaleX * sa * qy, by = effect.scaleY * ca * qy;
+        var angleX = Math.atan2(ay, ax);
+        var angleY = Math.atan2(-bx, by);
+        t.rotation = effect.rotation + angleX;
+        t.scaleX = Math.sqrt(ax * ax + ay * ay);
+        t.scaleY = Math.sqrt(bx * bx + by * by);
+        t.skewX = angleX - angleY;
+      }
       t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
       var tintK = sampleColorCurve(d.tintCurve, life.progress);
       t.tint = tintK === null ? colorToInt(d.tint) : mulColorInt(colorToInt(d.tint), tintK);
@@ -1415,6 +1453,7 @@ var VFXCore = (function () {
            偏移、rotationSpeed 仍是相對自轉、rotationOverLife 仍是疊加曲線。
            關閉時這一行與加入本功能之前完全相同。 */
         t.rotation = effect.rotation + d.rotation + p.rotation + (rotK === null ? 0 : rotK);
+        t.skewX = 0;
         if (d.alignToVelocity && p.hasVelAngle) {
           t.rotation += p.velAngle + d.velocityRotationOffset;
         }
@@ -1452,8 +1491,8 @@ var VFXCore = (function () {
       var keep = 0;                       // write-index：原地壓縮，不每幀配置新陣列
       for (var i = 0; i < effects.length; i++) {
         var effect = effects[i];
-        effect.lastDt = dt;
-        effect.time += dt;
+        effect.lastDt = dt * effect.timeScale;
+        effect.time += effect.lastDt;
         var preset = effect.preset;
         if (preset.loop && effect.time > preset.duration) {
           effect.time = effect.time % preset.duration;
@@ -1461,7 +1500,7 @@ var VFXCore = (function () {
         }
         for (var j = 0; j < effect.layers.length; j++) {
           var layer = effect.layers[j];
-          if (layer.def.type === 'particle') updateParticleLayer(effect, layer, dt);
+          if (layer.def.type === 'particle') updateParticleLayer(effect, layer, effect.lastDt);
           else updateSpriteLayer(effect, layer);
         }
         var over = !preset.loop && effect.time >= preset.duration;

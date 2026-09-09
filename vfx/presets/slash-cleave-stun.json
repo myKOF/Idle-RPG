@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-cleave-stun",
+  "duration": 0.46,
+  "loop": false,
+  "layers": [
+    {
+      "id": "outer-glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.3711,
+        "y": 0.3711
+      },
+      "alpha": 0.28,
+      "tint": "#ff4825",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.58,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.6632
+        ],
+        [
+          0.4,
+          -0.0873
+        ],
+        [
+          0.72,
+          0.2443
+        ],
+        [
+          1,
+          0.4887
+        ]
+      ]
+    },
+    {
+      "id": "crescent-body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.3398,
+        "y": 0.3398
+      },
+      "alpha": 1,
+      "tint": "#ff4825",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.58,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.6632
+        ],
+        [
+          0.4,
+          -0.0873
+        ],
+        [
+          0.72,
+          0.2443
+        ],
+        [
+          1,
+          0.4887
+        ]
+      ]
+    },
+    {
+      "id": "gold-edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "position": {
+        "x": 3,
+        "y": 0
+      },
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.3262,
+        "y": 0.3262
+      },
+      "alpha": 1,
+      "tint": "#ffb638",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.58,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.6632
+        ],
+        [
+          0.4,
+          -0.0873
+        ],
+        [
+          0.72,
+          0.2443
+        ],
+        [
+          1,
+          0.4887
+        ]
+      ]
+    },
+    {
+      "id": "white-edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "position": {
+        "x": 6,
+        "y": 0
+      },
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.3086,
+        "y": 0.3086
+      },
+      "alpha": 0.95,
+      "tint": "#fff8dd",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.58,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.6632
+        ],
+        [
+          0.4,
+          -0.0873
+        ],
+        [
+          0.72,
+          0.2443
+        ],
+        [
+          1,
+          0.4887
+        ]
+      ]
+    },
+    {
+      "id": "inner-trail",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "position": {
+        "x": -4,
+        "y": 0
+      },
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.2793,
+        "y": 0.2793
+      },
+      "alpha": 0.5,
+      "tint": "#ff4825",
+      "blendMode": "add",
+      "delay": 0.025,
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.58,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.9076
+        ],
+        [
+          0.55,
+          -0.1745
+        ],
+        [
+          1,
+          0.1396
+        ]
+      ]
+    },
+    {
+      "id": "afterimage",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.3516,
+        "y": 0.3516
+      },
+      "alpha": 0.24,
+      "tint": "#ff4825",
+      "blendMode": "add",
+      "delay": 0.035,
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.58,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -1.1345
+        ],
+        [
+          0.5,
+          -0.4538
+        ],
+        [
+          1,
+          0.0698
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 120,
+      "radius": 60,
+      "width": 60
+    },
+    "heightM": 12,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

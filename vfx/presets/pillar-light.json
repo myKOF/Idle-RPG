@@ -325,5 +325,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 400,
+      "width": 60
+    },
+    "heightM": 40,
+    "shape": "custom",
+    "widthM": 6
+  }
 }

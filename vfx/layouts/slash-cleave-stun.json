@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-cleave-stun",
+  "groups": [
+    {
+      "id": "slash-cleave-stun",
+      "name": "slash-cleave-stun",
+      "layerIds": [
+        "outer-glow",
+        "crescent-body",
+        "gold-edge",
+        "white-edge",
+        "inner-trail",
+        "afterimage"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-cleave-stun"
+  ]
+}

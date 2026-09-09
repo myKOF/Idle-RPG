@@ -2,6 +2,8 @@
 
 # VFX Core 架構 ＋ VFX Preset Schema v1
 
+> 2026-09-08：v1 新增可選 `sizing` metadata（形狀、米制尺寸、製作座標本體）。Core 驗證合法性並原樣序列化，遊戲尺寸換算由 Adapter 處理；詳見 [VFX_SIZE_STANDARD.md](VFX_SIZE_STANDARD.md)。
+
 狀態：`schemaVersion 1`（Preset）。適用範圍見 `docs/vfx/VFX_AGENT_WORKFLOW.md` §1.1。
 素材事實層／語意層規格見 `VFX_ASSET_SCHEMA.md`、`VFX_ASSET_SEMANTICS.md`。
 

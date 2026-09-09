@@ -1,5 +1,95 @@
 # AI_TASKS.md
 
+## Codex｜縮短受擊特效（VFX-HIT-TIMING-20260909）
+
+- 狀態：Done；使用者同意一般受擊 0.10～0.15 秒、重擊爆炸 0.18～0.25 秒、亮心在前 0.05 秒退去。
+- 範圍：13 份既有受擊 Preset 的時間／淡出、製作腳本、快取、測試及比較預覽；不動技能本體與場域、使用者突刺與飛刀。
+- 預檢：Antigravity 的受擊 JSON 被 Git 標示修改，但 git diff 無內容、13 份 JSON 逐一比對完全相同，無實際內容重疊。
+- 驗收：一般總長 0.14 秒、爆炸／強雷擊 0.22 秒；序列與粒子同步縮時、亮心不超過 0.05 秒；相同 25 點密集場景前後截圖完成。定向檢查 33/33，build 327 檔，schema 全部通過。
+- 修改：13 份受擊 Preset、hit-timing 製作轉換、hits author 接線、Runtime／主頁資料快取與既有快取測試。技能本體、傷害與 layout 不變；瞬間同時受擊仍可能亮，但餘光停留顯著縮短。可合併，未推送／合併 develop。
+- 清理：使用者要求參考圖與臨時測試產物不提交；臨時驗證完成後清除，已核准的未接線飛刀試作移至 repo 外保留。
+
+## Codex｜疾風斬可調距離與間隔（VFX-GALE-CONFIG-20260909）
+
+- 狀態：Done；使用者要求把範圍參數列入 Skills2 表供自行調整。
+- 範圍：Skills2 第一階明列 castM／gap、第七階明列 castM，既有四／七階 m 保留；JS 接線、CSV／Excel／說明、快取與定向測試。
+- 禁止：不改 Antigravity 飛刀、使用者突刺檔與傷害倍率；沿用已授權的共享配置分段修改。
+- 驗收：配置擾動測試確認施放距離 9／11 米、月牙半徑 8 米、間隔 0.35 秒的接線有效；正式值仍為 5／5 米、5 米、0.2 秒。相關測試 143/143；build 326 檔；表格往返語意差異 0；唯讀核對 Excel L32／L35／L38。
+- 修改：Skills2 JS／CSV／Excel、config_tables 欄位說明、Worker／主頁快取、技能測試及本任務。未修改但檢查：Antigravity 飛刀與使用者突刺。無本次未完成項，可審查合併；未合併／推送 develop。
+
+## Codex｜疾風斬特效改造（VFX-GALE-20260909）
+
+- 狀態：Done；使用者確認月牙外形並明確要求先接入遊戲。
+- 規格：前六階黃白單點爆破；七階由上往下藍紫月牙；未另訂間隔採 0.2 秒。先截圖確認外形再串接。
+- 範圍：新 hit-gale-burst／slash-gale-moon Preset、layout、gale author、後續必要事件／表格／Runtime／測試／文件。
+- 衝突：Antigravity 對舊 slash-gale-sector 有未提交修改；本次先用獨立新 Preset，不動舊檔。使用者突刺修改保留。
+- 完成：前六階目標爆破、七階目標中心單一道月牙；半徑取七階 fx.m，等比縮放。傷害與 VFX 每 0.2 秒同拍，換場清除未完成波次；霹靂一閃等最後一斬才結算。
+- 修改：Skills2 JS／CSV／Excel、VFX Runtime、Worker 快取、目錄／尺寸契約、兩份新 Preset 及 layout、gale author、相關測試及使用者預覽檔名偏好。
+- 驗證：技能／魔法／超神定向測試 143/143；GALE Adapter 測試 1/1；build 326 檔；Skills2 apply dry-run 語意差異 0；遊戲 Adapter 獨立場景截圖通過。
+- 限制：未在使用者現有存檔進行實戰操作；VFX Runtime 全集合的單一根群組檢查被使用者既有 slash-thrust-lance layout 三根群組修改擋住，本次不覆蓋。其餘 Adapter 測試通過。
+- 接線授權：使用者知悉 Antigravity 有共享技能配置修改後要求先接入；只修改疾風斬設定，保留對方飛刀版本。未修改舊 slash-gale-sector、飛刀與使用者突刺檔。
+- 合併：可審查合併本次疾風斬提交；未自行合併或推送 develop。飛刀仍為已核准獨立預覽，尚待正式化與接線。
+
+
+## Codex｜迴旋斬多波間隔（VFX-CLEAVE-GAP-20260909）
+
+- 狀態：Done；使用者要求每波 0.2 秒，並設為未特別指定時的多段攻擊預設。
+- 完成：共用 SG_MULTI_ATTACK_GAP_SEC=0.2；突刺沿用，迴旋斬視覺／傷害起飛／近戰浮字同步，四方向同波齊發。規則已記入 prompts/codex.md。
+- 修改：js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html、兩份技能測試、本文件與 prompts/codex.md。檢查但未修改：使用者突刺 Preset／layout。
+- 驗證：node --test tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs（65/65）；npm.cmd run build（326 檔）；diff check；已更新預覽並截圖。
+- 限制：未全域重寫其他技能既有專用節奏；後續技能無特別指定時使用 0.2 秒。碰撞／傷害數值／二次命中保留。無本次未完成項，可審查合併，未自行合併／推送 develop。
+- 範圍：Skills2 共用預設常數／突刺及迴旋斬引用、快取、節奏測試與文件。
+- 預檢顯示的 Antigravity 提交均為當前已包含的 Codex 提交；HEAD..ai/antigravity 的 Skills2 記錄與檔案 diff 均為空，無實際衝突。
+
+
+## Codex｜迴旋斬特效改造（VFX-CLEAVE-20260909）
+
+- 狀態：Done；Owner：Codex；使用者確認半月刀光外形，已串接遊戲。
+- 使用者持續偏好：每次製作新特效，先截圖展示，再依回饋調整。
+- 規格：技能表 J46／K46 參考圖；近半圓黃紅刀光，五階偏紅黃，六階變飛行，七階四方向連斬。
+- 範圍：迴旋斬 author／Preset／layout、必要的 Runtime／技能事件／表格 VFX 欄位／快取／測試／文件。
+- 保留：使用者尚未提交的突刺 Preset 與 layout，不覆寫或代為提交。
+- 完成：一階黃紅半月刀光、五階紅黃版、六階前向飛行、七階四向連斬；每波各發一則事件並同步飛行傷害起飛時間，保持本體尺寸。
+- 修改：迴旋斬 author／兩份 Preset／layout、Runtime、Skills2、CSV／Excel VFX 欄位、快取、catalog、相關測試與本文件。未修改但檢查：Worker shim、使用者突刺 Preset／layout。
+- 測試：node --test tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs tests/vfx-tower.test.cjs（70/70）；node --test --test-name-pattern=CLEAVE tests/vfx-runtime.test.cjs（1/1）；npm.cmd run build（326 檔通過）；Skills2 往返語意 0；diff check。
+- 已知限制：廣泛 VFX 測試另有使用者突刺檔案缺 sizing／群組改動引起的失敗，未覆寫使用者修改。現有遊戲近戰選敵／七階 60 度扇形／六階前向飛行與表格部分描述不同，本輪不改傷害與碰撞；視覺本體依文檔六米半徑。既有飛行物二次命中保留，連斬傷害跟著波次錯開。
+- 未完成：無本次迴旋斬視覺串接未完成項；上述規則差異留待企劃獨立調整。Commit 見本次迴旋斬提交，可交付審查，未合併／推送 develop。
+
+
+## Codex｜突刺粗度與節奏調整（VFX-THRUST-TUNING-20260909）
+
+- 狀態：Done；使用者授權視覺寬度 2 倍、前進速度 2 倍、每波 0.2 秒。
+- 範圍：Skills2 突刺速度／波次、Runtime 視覺寬度、快取、相關測試與文件；碰撞寬度與傷害數值維持。
+- 修改：js/skills2.js、js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、index.html、4 份相關測試、本文件及尺寸文檔。檢查但未修改：突刺 author／Presets、Core。
+- 驗證：node --test tests/vfx-runtime.test.cjs tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs tests/vfx-tower.test.cjs（118/118）；npm.cmd run build（326 檔通過）；git diff --check。預覽更新為每 0.2 秒一波三連刺。
+- 已知影響：貫穿傷害飛行速度由 240 改為 480，間隔由 0.09 改為 0.2 秒；傷害與碰撞範圍維持。無未完成項。Commit 見本次調整提交，可審查／合併，未自行合併或推送 develop。
+
+
+## Codex｜突刺向外貫穿動畫修正（VFX-FLIGHT-20260909）
+
+- 狀態：Done；使用者要求槍形由中心向外行進，不以射程拉伸本體。
+- 授權範圍：VFX Core／Runtime、Skills2 事件、突刺 author／Presets、快取版本、相關測試與文件。
+- 完成方向：保持槍身比例，初段從中心伸出，之後固定長度行進；travelMs 使用模擬速度，保留三道與八方向。
+- 驗證：node --test tests/vfx-runtime.test.cjs tests/vfx-size.test.cjs tests/skill2-vfx.test.cjs tests/skill2-system.test.cjs tests/vfx-core.test.cjs（249/249）；追加 system／tower（39/39）；npm.cmd run build（326 檔）；git diff --check。
+- 修改：上述授權檔案與測試；未修改但檢查：Worker shim 已傳遞 bodyLength／travelMs，未更動協議。預覽可循環觀察移動。
+- 限制：首三階既有直接傷害結算維持，貫穿階段維持模擬掃描；起始段是由零長度伸出至固定槍身，之後不再按射程拉長。
+- 未完成：無本次修正未完成項；Commit 見本次 fix，可交付審查／使用者合併，不自行推送或合併 develop。
+
+
+## Codex｜技能特效尺寸標準化與突刺改造（VFX-20260908）
+
+- 狀態：Done（2026-09-09）；Owner：Codex；使用者確認採用突刺與五階穿槍圓環。
+- 完成：148 份正式技能 Preset 建立尺寸契約；依明訂尺寸或預設米制尺寸正規化，再按實際範圍縮放；修正局部旋轉與非等比尺寸的矩陣組合。突刺依參考图 J34／K34 重製黃白／黃紅光槍、交錯光帶、飛濺與三枚朝右穿槍淡出圓環，支援平行／八方向／連段。
+- 修改：js/vfx-core.js、js/vfx-pixi-backend.js、js/vfx-runtime.js、js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html；vfx/presets、三份突刺 layouts；tools/vfx/authoring 製作與尺寸工具；Skills2 CSV／Excel；相關測試與 docs/vfx 文件。
+- 未修改但檢查：js/battle-renderer.js、js/vfx-tower.js、js/vfx.js、js/worker/shim.js、js/battlefield.js、編輯器與素材索引、協作規範。
+- 測試指令：node --test --test-concurrency=2 tests/vfx-*.test.cjs tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs tests/worker-shim.test.cjs tests/basic-melee.test.cjs；npm.cmd run build；node tools/config_tables.cjs --apply Skills2；git diff --check。
+- 結果：641 項中 637 pass／2 skip／2 原有 fail（vfx-editor-layers 的 L36 與 R3，已用 HEAD 獨立副本確認同樣失敗）；build 326 檔通過；Skills2 往返語意變更 0；diff check 通過。完整 npm test 曾因長時間停滯取消，未宣稱全套通過。
+- 實機：本機 Pixi 預覽、VFX Editor 載入及播放合法；使用者確認輪廓、配色及五階圓環。每份突刺維持單一根群組；所有素材已在 shipped-assets。
+- 已知限制：貫穿後續波次以相同 delayMs／beginSec 錯開實際起飛，傷害係數／波數／碰撞規則不變；legacy 除錯特效未重製；不規則形狀採個別尺寸；原有兩項編輯器測試失敗仍待其他任務處理。
+- 未完成項目：本次尺寸標準化與突刺無；其他技能的外觀大改依序另行製作。
+- Commit：見本次 [Codex] feat 提交；可交付 Review／使用者合併，未自行合併或推送 develop。
+
+
 ## Codex｜普攻近戰改造（MELEE-20260908）
 
 - 狀態：Done；Owner：Codex；使用者授權直接實作並驗證。

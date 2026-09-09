@@ -272,5 +272,11 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 29
+    },
+    "shape": "projectile-circle"
+  }
 }

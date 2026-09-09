@@ -363,7 +363,7 @@ for (const id of ORDER) {
   const zs = new Set();
   preset.layers.forEach(l => { const z = l.zIndex || 0; if (zs.has(z)) throw new Error(id + ' zIndex 重複：' + z); zs.add(z); });
   preset.layers.forEach(l => assets.add(l.assetId));
-  written.push(kit.write(preset));
+  written.push(kit.write(require('../hit-timing.cjs').shorten(preset)));
 }
 const probes = ORDER.map(id => kit.probe(id));
 console.log(JSON.stringify({ written, probes, assetsUsed: [...assets].sort() }, null, 1));

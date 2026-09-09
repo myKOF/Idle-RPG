@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-bleed",
-  "duration": 0.45,
+  "duration": 0.14,
   "loop": false,
   "layers": [
     {
@@ -17,7 +17,7 @@
       "tint": "#d92846",
       "blendMode": "screen",
       "delay": 0,
-      "duration": 0.26,
+      "duration": 0.080889,
       "alphaOverLife": [
         [
           0,
@@ -28,8 +28,12 @@
           1
         ],
         [
-          0.5,
-          0.6
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -64,19 +68,23 @@
       "tint": "#d92846",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.3,
+      "duration": 0.093333,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.08,
+          0.1,
           1
         ],
         [
-          0.55,
-          0.75
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -112,7 +120,7 @@
       "tint": "#d92846",
       "blendMode": "screen",
       "delay": 0,
-      "duration": 0.16,
+      "duration": 0.049778,
       "alphaOverLife": [
         [
           0,
@@ -123,8 +131,8 @@
           1
         ],
         [
-          0.5,
-          0.7
+          0.4,
+          0.45
         ],
         [
           1,
@@ -157,15 +165,24 @@
       },
       "alpha": 1,
       "blendMode": "normal",
-      "duration": 0.42,
+      "delay": 0,
+      "duration": 0.130667,
       "alphaOverLife": [
         [
           0,
+          0
+        ],
+        [
+          0.1,
           1
         ],
         [
-          0.82,
-          1
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -187,27 +204,29 @@
       "zIndex": 5,
       "tint": "#ffd0d8",
       "blendMode": "normal",
+      "delay": 0,
+      "duration": 0.14,
       "emission": {
         "count": 6,
         "mode": "burst"
       },
       "lifetime": [
-        0.24,
-        0.32
+        0.074667,
+        0.099556
       ],
       "spawn": {
         "radius": 5,
         "shape": "circle"
       },
       "speed": [
-        30,
-        90
+        96.428571,
+        289.285714
       ],
       "direction": 90,
       "spread": 150,
       "gravity": {
         "x": 0,
-        "y": 400
+        "y": 4132.653061
       },
       "startScale": [
         0.0234,
@@ -221,8 +240,12 @@
           1
         ],
         [
+          0.2,
+          0.65
+        ],
+        [
           0.6,
-          1
+          0.2
         ],
         [
           1,
@@ -251,27 +274,29 @@
       "zIndex": 6,
       "tint": "#ffd0d8",
       "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
       "emission": {
         "count": 4,
         "mode": "burst"
       },
       "lifetime": [
-        0.18,
-        0.28
+        0.056,
+        0.087111
       ],
       "spawn": {
         "radius": 6,
         "shape": "circle"
       },
       "speed": [
-        40,
-        90
+        128.571429,
+        289.285714
       ],
       "direction": 90,
       "spread": 220,
       "gravity": {
         "x": 0,
-        "y": 300
+        "y": 3099.489796
       },
       "startScale": [
         0.0059,
@@ -283,8 +308,12 @@
           1
         ],
         [
-          0.5,
-          1
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
         ],
         [
           1,
@@ -302,5 +331,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
 }

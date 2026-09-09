@@ -467,5 +467,12 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 40,
+      "width": 200
+    },
+    "shape": "rectangle"
+  }
 }

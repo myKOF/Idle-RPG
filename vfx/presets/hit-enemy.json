@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-enemy",
-  "duration": 0.3,
+  "duration": 0.14,
   "loop": false,
   "layers": [
     {
@@ -16,7 +16,8 @@
       "alpha": 0.9,
       "tint": "#ff6b6b",
       "blendMode": "add",
-      "duration": 0.26,
+      "delay": 0,
+      "duration": 0.121333,
       "alphaOverLife": [
         [
           0,
@@ -24,11 +25,15 @@
         ],
         [
           0.1,
-          0.95
+          1
         ],
         [
-          0.6,
-          0.6
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -58,19 +63,20 @@
       "alpha": 1,
       "tint": "#ffd0d0",
       "blendMode": "add",
-      "duration": 0.12,
+      "delay": 0,
+      "duration": 0.05,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.05,
+          0.12,
           1
         ],
         [
-          0.25,
-          0.7
+          0.4,
+          0.45
         ],
         [
           1,
@@ -99,27 +105,29 @@
       "zIndex": 3,
       "tint": "#ffd0d0",
       "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
       "emission": {
         "count": 4,
         "mode": "burst"
       },
       "lifetime": [
-        0.18,
-        0.26
+        0.084,
+        0.121333
       ],
       "spawn": {
         "radius": 4,
         "shape": "circle"
       },
       "speed": [
-        60,
-        110
+        128.571429,
+        235.714286
       ],
       "direction": -90,
       "spread": 360,
       "gravity": {
         "x": 0,
-        "y": 220
+        "y": 1010.204082
       },
       "startScale": [
         0.0078,
@@ -131,8 +139,12 @@
           1
         ],
         [
-          0.4,
-          1
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
         ],
         [
           1,
@@ -150,5 +162,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
 }

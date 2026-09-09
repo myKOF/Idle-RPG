@@ -21,6 +21,53 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複製', () => {
+  const moon = unitPreset('moon');
+  moon.sizing = {shape:'custom',widthM:10,heightM:10,authored:{width:100,height:100,radius:50}};
+  const {adapter, log} = makeAdapter([moon]);
+  adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1','mv-float-2'],
+    area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
+  adapter.update(.05);
+  assert.equal(log.nodes.length,1);
+  const t=log.nodes[0].transforms.at(-1);
+  assert.equal(t.x,100); assert.equal(t.y,50);
+  assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
+});
+
+test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行物不預播命中', () => {
+  const lance = unitPreset('lance');
+  lance.sizing = { shape: 'rectangle', widthM: 12, heightM: 3, authored: { width: 120, height: 30 } };
+  const { adapter, log } = makeAdapter([lance, unitPreset('hit')]);
+  assert.equal(adapter.tryPlay({ fxKind: 'slash', variant: 'thrust-octagonal', projectile: true,
+    targets: ['mv-float-1'], angle: Math.PI / 2, lineLength: 240, lineWidth: 60, travelMs: [1000],
+    laneOffsets: [-30, 0, 30], directionCount: 8, vfx: { attack: 'lance', hit: 'hit' } }), true);
+  adapter.update(0.01);
+  assert.equal(log.nodes.length, 24);
+  const transforms = log.nodes.map(n => n.transforms.at(-1));
+  assert.ok(transforms.every(t => Math.abs(t.scaleX - 0.02) < 1e-8 && t.scaleY === 4 / 3));
+  adapter.update(0.49);
+  const moved = log.nodes.map(n => n.transforms.at(-1));
+  assert.ok(moved.every(t => Math.abs(t.scaleX - 2 / 3) < 1e-8 && t.scaleY === 4 / 3));
+  assert.ok(moved.some(t => Math.abs(t.x - 30) < 1e-8 && Math.abs(t.y - 40) < 1e-8));
+  adapter.update(0.2);
+  assert.ok(log.nodes.every(n => Math.abs(n.transforms.at(-1).scaleX - 2 / 3) < 1e-8));
+  assert.ok(transforms.some(t => Math.abs(t.x - 30) < 1e-8 && Math.abs(t.y) < 1e-8));
+  assert.equal(new Set(transforms.map(t => t.rotation.toFixed(4))).size, 8);
+  adapter.clear(); assert.equal(adapter.stats().fx.activeEffects, 0);
+});
+
+test('THRUST 高塔直送 Adapter 的波次遵守 delayMs，clear 取消未播波次', () => {
+  const { adapter, log } = makeAdapter([unitPreset('lance')]);
+  const spec = { fxKind: 'slash', variant: 'thrust', lineLength: 120, lineWidth: 30,
+    targets: ['mv-float-1'], angle: null, delayMs: 90, vfx: { attack: 'lance' } };
+  assert.equal(adapter.tryPlay(spec), true);
+  adapter.update(0.08); assert.equal(log.nodes.length, 0);
+  adapter.update(0.02); assert.equal(log.nodes.length, 1);
+  assert.equal(log.nodes[0].transforms.at(-1).rotation, Math.atan2(50, 100));
+  adapter.tryPlay(spec); adapter.clear(); adapter.update(0.2);
+  assert.equal(adapter.stats().fx.activeEffects, 0);
+});
+
 /* ---- 測試替身 ---------------------------------------------------------- */
 
 /* 記錄每一次 createNode／updateNode，用來檢查「畫在哪、多大」。 */
@@ -859,3 +906,20 @@ function extractLiteral(src, from) {
   }
   return null;
 }
+
+
+test('CLEAVE 四方向從中心飛行，保持本體尺寸、不預播命中，連斬延遲可取消', () => {
+  const {adapter,log}=makeAdapter([unitPreset('arc'),unitPreset('hit')]);
+  const spec={fxKind:'slash',variant:'cleave-cross-shockwave',projectile:true,
+    angle:0,lineLength:240,directionRanges:[240,240,240,240],rangeScale:2,
+    targets:['mv-float-1'],vfx:{attack:'arc',hit:'hit'}};
+  adapter.tryPlay(spec);adapter.update(0.1);
+  assert.equal(log.nodes.length,4);
+  assert.ok(log.nodes.every(n=>n.transforms.at(-1).scaleX===2));
+  assert.ok(log.nodes.some(n=>Math.abs(n.transforms.at(-1).x-24)<1e-8));
+  adapter.update(0.2);
+  assert.ok(log.nodes.some(n=>Math.abs(n.transforms.at(-1).x-72)<1e-8));
+  assert.ok(log.nodes.every(n=>n.transforms.at(-1).scaleX===2));
+  adapter.tryPlay({...spec,delayMs:90});adapter.clear();adapter.update(1);
+  assert.equal(adapter.stats().fx.activeEffects,0);
+});

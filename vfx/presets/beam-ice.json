@@ -153,5 +153,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 30,
+      "width": 200
+    },
+    "heightM": 3,
+    "shape": "custom",
+    "widthM": 20
+  }
 }

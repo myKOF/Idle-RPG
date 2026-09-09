@@ -1,18 +1,10 @@
 {
   "schemaVersion": 1,
   "presetId": "slash-thrust-lance",
-  "groups": [
-    {
-      "id": "slash-thrust-lance",
-      "name": "slash-thrust-lance",
-      "layerIds": [
-        "shaft",
-        "core",
-        "tip"
-      ]
-    }
-  ],
+  "groups": [],
   "order": [
-    "group:slash-thrust-lance"
+    "layer:shaft",
+    "layer:core",
+    "layer:tip"
   ]
 }

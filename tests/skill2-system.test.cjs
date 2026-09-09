@@ -55,6 +55,49 @@ function playerEnt() {
 /* vm 內建立的陣列與宿主的 Array 原型不同，strict deepEqual 會因原型不相等而失敗；
    數值陣列一律先轉純資料再比。 */
 function plain(v) { return JSON.parse(JSON.stringify(v)); }
+
+test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且只播放一次', () => {
+  for (const [moon, adjusted] of [[false,false], [true,false], [true,true]]) {
+    const c = loadContext();
+    c.resetSkill2RT();
+    c.GT = 0;
+    if (adjusted) {
+      c.SKILLS2.gale.tiers[0].fx.castM = 9;
+      c.SKILLS2.gale.tiers[0].fx.gap = .35;
+      c.SKILLS2.gale.tiers[6].fx.castM = 11;
+      c.SKILLS2.gale.tiers[6].fx.m = 8;
+      assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,0]), 90);
+      assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,1]), 110);
+    }
+    const gap = adjusted ? .35 : .2;
+    c.sgLegend = () => ({});
+    c.sgUlt = () => null;
+    const events = [], stamps = [];
+    c.playCombatVfx = s => events.push(plain(s));
+    c.enemyEventFloatTarget = e => e.name;
+    c.sgGaleOnHit = () => {};
+    c.sgHitOne = (p, st, target, dmg, gid, sel, out, delay) => {
+      stamps.push({at: c.GT, dmg, target: target.name, delay}); out.dmg += dmg;
+      return {dmg, miss: false};
+    };
+    const targets = [enemy(100000, 30, 0, 'a'), enemy(100000, 40, 0, 'b')];
+    c.bfTargetsAround = () => targets;
+    const out = {dmg: 0, killed: false};
+    c.sgCastGale(playerEnt(), {atk: 1000}, c.SKILLS2.gale, [1,0,0,0,0,0,moon?1:0], targets, targets[0], 'mv-float', out);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].vfx.attack, moon ? 'slash-gale-moon' : 'hit-gale-burst');
+    assert.deepEqual(events[0].targets, ['a']);
+    if (moon) assert.equal(events[0].area.r, adjusted ? 80 : 50);
+    c.GT = gap - .01; c.sgTickGaleStrikes({}); assert.equal(events.length, 1);
+    c.GT = gap; c.sgTickGaleStrikes({}); assert.equal(events.length, 2);
+    c.GT = gap * 2; c.sgTickGaleStrikes({}); assert.equal(events.length, 3);
+    assert.deepEqual([...new Set(stamps.map(s => s.at))], [0,gap,gap*2]);
+    assert.ok(stamps.every(s => s.delay === 0));
+    assert.equal(stamps.length, moon ? 6 : 3);
+    assert.equal(out.dmg, moon ? 34830 : 8100);
+    c.resetSkill2RT(); assert.equal(c.SKILL2_RT.galeStrikes.length, 0);
+  }
+});
 /* 傷害管線替身：固定 100 傷、可指定爆擊——測「機制」不測「公式」（公式由既有測試守）。 */
 function stubHits(c, opts) {
   const calls = [];
@@ -110,16 +153,20 @@ test('迴身四方斬四道 60 度扇形共用最大半徑，且半徑逐步向�
 
   c.castSkill2(p, targets, 'cleave', 'mv-float');
   assert.equal(calls.length, 0, '四方斬應先建立向外飛行的傷害判定');
+  const starts = c.SKILL2_RT.projectiles.filter(x=>x.gid==='cleave').map(x=>x.beginAt);
+  assert.deepEqual(Array.from(starts), [0,0,0,0,0.2,0.2,0.2,0.2,0.4,0.4,0.4,0.4]);
   c.GT = 0.05;
   c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(calls.length, 3, '半徑尚未擴大前，只應命中中心附近的基準目標');
-  c.GT = 0.5;
-  c.tickSkill2(0.45, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(calls.length, 1, '第二波尚未起飛，僅第一波命中中心附近的基準目標');
+  for (let step=2;step<=40;step++) {
+    c.GT=step*0.05;
+    c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
+  }
 
-  assert.equal(calls.length, targets.length * 3, '四道 60 度扇形應各自命中範圍內敵人，並各斬 3 次');
+  assert.equal(calls.length, targets.length * 6, '三波於 0／0.2／0.4 秒起飛，完整結束後各波保留一次既有二次命中');
   for (const target of targets) {
-    assert.equal(calls.filter((hit) => hit === target).length, 3,
-      target.name + ' 應只被一個方向的扇形命中 3 次');
+    assert.equal(calls.filter((hit) => hit === target).length, 6,
+      target.name + ' 每波僅歸屬一個方向，保留既有二次命中');
   }
 });
 
@@ -374,6 +421,29 @@ test('突刺·連刺：機率觸發時再追加 2 次突刺', () => {
   c.castSkill2(p, [m], 'thrust', 'mv-float');
   // 第 1 階 2 次 + 第 2 階追加 2 次＝4 次
   assert.equal(calls.length, 4);
+});
+
+test('突刺波次 VFX 與飛行物共用起飛時間、方向及三階／五階畫面', () => {
+  const c = loadContext(); stubHits(c); c.chance = () => true;
+  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 1];
+  const events = []; c.playCombatVfx = s => events.push(s);
+  c.enemyEventFloatTarget = () => 'mv-float-1';
+  c.castSkill2(playerEnt(), [enemy(1e9, 0, 40)], 'thrust', 'mv-float');
+  const waves = events.filter(e => e.variant === 'thrust-octagonal');
+  assert.equal(waves.length, 7);
+  assert.ok(waves.every(e => e.count === 1 && e.directionCount === 8 && e.laneOffsets.length === 3));
+  assert.ok(waves.every(e => e.vfx.attack === 'slash-thrust-scatter'));
+  assert.ok(waves.every(e => Math.abs(e.bodyLength / (e.lineWidth / 3) - 4) < 1e-8));
+  assert.ok(waves.every(e => Math.abs(e.travelMs[0] / 1000 - e.lineLength / (c.SG_FLYING_PROJECTILE_SPEED * 2)) < 1e-8));
+  assert.ok(waves.every(e => Math.abs(e.angle - Math.PI / 2) < 1e-8));
+  const projectiles = c.SKILL2_RT.projectiles.filter(p => p.gid === 'thrust');
+  assert.equal(projectiles.length, 168);
+  for (let i = 0; i < 7; i++) {
+    const delay = (waves[i].delayMs || 0) / 1000;
+    assert.equal(waves[i].delayMs || 0, i * 200);
+    assert.ok(projectiles.slice(i * 24, (i + 1) * 24).every(p => p.speed === c.SG_FLYING_PROJECTILE_SPEED * 2));
+    assert.ok(projectiles.slice(i * 24, (i + 1) * 24).every(p => Math.abs(p.beginAt - c.GT - delay) < 1e-8));
+  }
 });
 
 test('突刺·超連刺與貫穿突刺：平行路徑上的目標都吃到飛行物命中', () => {
