@@ -1202,12 +1202,64 @@ test('K2 Picker 重用 filterAssets，沒有第二套搜尋實作', function () 
     '只能有一份篩選讀取');
   assert.ok(/filterAssets\('pf-'/.test(src), 'Picker 必須呼叫同一個 filterAssets');
   assert.ok(/filterAssets\('f-'/.test(src), 'Asset Browser 也走同一個');
-  /* 兩組控制項的欄位必須一一對應，否則共用的讀取函式會拿到 undefined */
+  /* 兩組控制項的欄位必須一一對應，否則共用的讀取函式會拿到 undefined。
+
+     欄位清單從 currentAssetFilters 現讀，不寫死：這條測試存在的目的就是守住
+     「新增一個篩選條件要兩邊都加」，清單寫死的話新增條件時它不會轉紅，
+     等於守到一半。 */
   const html = fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'index.html'), 'utf8');
-  ['text', 'usage', 'shape', 'element', 'tag', 'high'].forEach(function (f) {
+  const readFn = src.slice(src.indexOf('function currentAssetFilters'));
+  const readBody = readFn.slice(0, readFn.indexOf('\n  }'));
+  const fields = (readBody.match(/\$\(p \+ '[a-z-]+'\)/g) || [])
+    .map(function (m) { return m.match(/'([a-z-]+)'/)[1]; });
+  assert.ok(fields.length >= 6, '應該讀得到所有篩選欄位，實得：' + fields.join(','));
+  fields.forEach(function (f) {
     assert.ok(new RegExp('id="f-' + f + '"').test(html), '缺少 f-' + f);
     assert.ok(new RegExp('id="pf-' + f + '"').test(html), '缺少 pf-' + f);
+  });
+});
+
+test('K2B 背景底色篩選查的是事實層，而且先攤成表再逐筆比對', function () {
+  /* backgroundVariant 在 asset-index 的 facts 裡，不在語意檔——它是量出來的，
+     不是判斷出來的。filterAssets 走的卻是語意紀錄，所以必須有一張對照表。
+
+     為什麼不能用 findById 現查：那是每筆語意紀錄掃一次 index 陣列
+     （2111 × 2399 ≈ 五百萬次比對），而篩選是每打一個字重跑一次。 */
+  const src = noComments(fs.readFileSync(
+    path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8'));
+  const fn = src.slice(src.indexOf('function filterAssets'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/f\.background/.test(body), 'filterAssets 要吃背景條件');
+  assert.ok(/backgroundById/.test(body), '要查對照表');
+  assert.ok(!/findById\(/.test(body), 'filterAssets 內不得逐筆現查 index');
+
+  /* 選項從實際資料收集，不是寫死四個值：寫死的話某一類素材全部消失之後，
+     下拉上仍會留一個永遠 0 筆的選項。 */
+  const vocabFn = src.slice(src.indexOf('function collectVocab'));
+  const vocabBody = vocabFn.slice(0, vocabFn.indexOf('\n  }'));
+  assert.ok(/backgroundById\[r\.assetId\]/.test(vocabBody), '字彙要從實際資料收集');
+  assert.ok(/fillSelect\(\$\(p \+ 'background'\), state\.vocab\.background, 'background'\)/
+    .test(vocabBody), '兩組控制項都要填');
+
+  /* 四個值都要有中文，否則下拉上會出現英文原值 */
+  const vocab = require('../tools/vfx/vfx-semantic-vocab.cjs');
+  ['transparent', 'blackBackground', 'whiteBackground', 'opaqueOther']
+    .forEach(function (v) {
+      assert.ok(/[一-鿿]/.test(vocab.LABELS.background[v] || ''),
+        v + ' 沒有中文標籤');
+    });
+
+  /* 素材庫裡實際存在的每一種底色都要登記得到中文——新素材帶進新的分類時，
+     這條會轉紅，而不是讓下拉上默默出現一個英文選項。 */
+  const idx = JSON.parse(fs.readFileSync(
+    path.join(REPO, 'vfx', 'asset-index.json'), 'utf8'));
+  const seen = {};
+  (idx.assets || []).forEach(function (a) {
+    if (a.facts && a.facts.backgroundVariant) seen[a.facts.backgroundVariant] = 1;
+  });
+  Object.keys(seen).forEach(function (v) {
+    assert.ok(vocab.LABELS.background[v], '素材庫有未登記的背景分類：' + v);
   });
 });
 

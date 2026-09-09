@@ -3,8 +3,8 @@
   "presetId": "slash-thrust-scatter",
   "groups": [
     {
-      "id": "group",
-      "name": "新群組",
+      "id": "slash-thrust-scatter",
+      "name": "slash-thrust-scatter",
       "layerIds": [
         "aura",
         "shaft",
@@ -32,6 +32,6 @@
     }
   ],
   "order": [
-    "group:group"
+    "group:slash-thrust-scatter"
   ]
 }

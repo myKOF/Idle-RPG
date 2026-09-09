@@ -64,10 +64,87 @@
       .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
   }
 
+  /* ---------------- 複製 Preset 名稱 ----------------
+
+     下拉是原生 <select>，它的文字在任何瀏覽器裡都框不起來，所以「挑好一份特效
+     之後把名稱複製走」（貼進文件、prompt、檔名）沒有別的路。
+
+     複製的是**下拉上顯示的那個 id**，也就是實際載入的來源，而不是 state.preset.id：
+     後者是可編輯欄位，兩者不一致時存檔本來就會被擋下（見 saveTargetProblem），
+     這裡跟著畫面走才不會複製到一個還沒落檔的名字。 */
+
+  var copyFlashTimer = 0;
+
+  function copyPresetName() {
+    var sel = document.getElementById('preset-picker');
+    var id = (sel && sel.value) || (state.preset && state.preset.id) || '';
+    if (!id) return;
+    writeClipboard(id).then(flashCopyResult);
+  }
+
+  /* 兩條路都走，不挑一條：
+
+       execCommand('copy')            走文件自己的編輯指令，也就是使用者按 Ctrl+C
+                                      那一條。已被標為 deprecated，但相容性最好。
+                                      要求文字在文件裡而且被選取，所以借一個
+                                      暫時的 textarea。
+       navigator.clipboard.writeText  需要安全來源（127.0.0.1 算），舊環境沒有。
+
+     為什麼不挑一條：**兩條都無法回頭驗證自己有沒有真的寫進去**。readText 需要
+     另一個權限而且會跳詢問，所以「回報成功」只代表 API 沒有丟出錯誤。
+     2026-09-09 實測：在 Claude Code 的內嵌瀏覽器裡兩條都回報成功、剪貼簿卻完全
+     沒變（同一個環境裡真實的 Ctrl+C／Ctrl+V 正常），也就是說那個環境根本不把
+     頁面發起的寫入送到系統剪貼簿。既然分不出誰比較可靠，就兩條都試——
+     寫的是同一段文字，誰覆蓋誰都不影響結果。
+
+     兩條都回報失敗才顯示失敗，不 silent：複製沒成功卻不說，使用者會貼出
+     上一次的內容而且不會發現。 */
+  function writeClipboard(text) {
+    var legacy = legacyCopy(text);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text)
+        .then(function () { return true; })
+        .catch(function () { return legacy; });
+    }
+    return Promise.resolve(legacy);
+  }
+
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    /* 不能用 display:none 或 visibility:hidden——選取不到就複製不了。
+       改成移出畫面，並關掉 readonly 之外的一切互動痕跡。 */
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    var ok = false;
+    try {
+      ta.select();
+      ok = document.execCommand('copy');
+    } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function flashCopyResult(ok) {
+    var btn = document.getElementById('btn-copy-preset');
+    if (!btn) return;
+    window.clearTimeout(copyFlashTimer);
+    btn.textContent = ok ? '✓ 已複製' : '✕ 失敗';
+    btn.classList.toggle('err', !ok);
+    copyFlashTimer = window.setTimeout(function () {
+      btn.textContent = '⧉ 複製';
+      btn.classList.remove('err');
+    }, 1400);
+  }
+
   var state = {
     index: null,
     semantics: null,
     semanticById: {},
+    /* assetId → 事實層的 backgroundVariant（見 buildBackgroundMap）。
+       篩選要逐筆問，現查太慢，所以攤成一張表。 */
+    backgroundById: {},
     vocab: null,             // 篩選下拉的字彙，Asset Browser 與 Picker 共用
     preset: null,
     /* ---- Layer 面板的狀態 ----
@@ -282,8 +359,25 @@
       shape: $(p + 'shape').value,
       element: $(p + 'element').value,
       tag: $(p + 'tag').value,
+      background: $(p + 'background').value,
       high: $(p + 'high').checked
     };
+  }
+
+  /* assetId → backgroundVariant。
+
+     其他篩選條件都在語意紀錄上，背景底色卻在**事實層**（asset-index 的
+     facts.backgroundVariant）——那是量出來的，不是判斷出來的，所以刻意
+     沒有被複製進語意檔（見 vfx-semantic-vocab 的 blendModeFromFacts）。
+
+     篩選要逐筆問，所以先攤成一張表。用 findById 現查的話是每筆掃一次
+     2399 筆的陣列，2111 筆語意紀錄就是五百萬次比對——每打一個字重跑一次。 */
+  function buildBackgroundMap() {
+    var map = Object.create(null);
+    (state.index.assets || []).forEach(function (a) {
+      if (a.facts && a.facts.backgroundVariant) map[a.assetId] = a.facts.backgroundVariant;
+    });
+    state.backgroundById = map;
   }
 
   function filterAssets(prefix, limit) {
@@ -298,6 +392,7 @@
       if (f.element && rec.element !== f.element) continue;
       if (f.usage && (!rec.usage || rec.usage.indexOf(f.usage) < 0)) continue;
       if (f.tag && (!rec.tags || rec.tags.indexOf(f.tag) < 0)) continue;
+      if (f.background && state.backgroundById[rec.assetId] !== f.background) continue;
       if (f.text && rec.assetId.toLowerCase().indexOf(f.text) < 0) continue;
       out.push(rec);
       if (out.length >= cap) break;                      // 清單上限，避免一次塞上千個 DOM
@@ -351,7 +446,7 @@
   var picker = { layer: null, field: 'assetId', selected: null };
 
   function wirePicker() {
-    ['pf-text', 'pf-usage', 'pf-shape', 'pf-element', 'pf-tag', 'pf-high']
+    ['pf-text', 'pf-usage', 'pf-shape', 'pf-element', 'pf-tag', 'pf-background', 'pf-high']
       .forEach(function (id) { $(id).addEventListener('input', renderPickerList); });
     $('picker-close').onclick = closePicker;
     $('picker-apply').onclick = applyPicker;
@@ -2798,22 +2893,29 @@
   /* ---------------- 啟動 ---------------- */
 
   function collectVocab() {
-    var usage = {}, shape = {}, element = {}, tag = {};
+    buildBackgroundMap();
+    var usage = {}, shape = {}, element = {}, tag = {}, background = {};
     state.semantics.records.forEach(function (r) {
       if (r.kind !== 'vfx') return;
       shape[r.shape] = 1; element[r.element] = 1;
       (r.usage || []).forEach(function (u) { usage[u] = 1; });
       (r.tags || []).forEach(function (t) { tag[t] = 1; });
+      /* 從實際資料收集而不是寫死四個值：列出來的每一個選項都保證選得到東西。
+         寫死的話，哪天素材庫裡某一類整個消失，下拉上仍會留一個永遠 0 筆的選項。 */
+      var bg = state.backgroundById[r.assetId];
+      if (bg) background[bg] = 1;
     });
     state.vocab = {
       usage: Object.keys(usage).sort(), shape: Object.keys(shape).sort(),
-      element: Object.keys(element).sort(), tag: Object.keys(tag).sort()
+      element: Object.keys(element).sort(), tag: Object.keys(tag).sort(),
+      background: Object.keys(background).sort()
     };
     ['f-', 'pf-'].forEach(function (p) {
       fillSelect($(p + 'usage'), state.vocab.usage, 'usage');
       fillSelect($(p + 'shape'), state.vocab.shape, 'shape');
       fillSelect($(p + 'element'), state.vocab.element, 'element');
       fillSelect($(p + 'tag'), state.vocab.tag, 'tag');
+      fillSelect($(p + 'background'), state.vocab.background, 'background');
     });
   }
 
@@ -3028,7 +3130,7 @@
         '\n請確認是用 node tools/vfx/editor-server.cjs 啟動，而不是直接開檔案。';
     });
 
-    ['f-text', 'f-usage', 'f-shape', 'f-element', 'f-tag', 'f-high'].forEach(function (id) {
+    ['f-text', 'f-usage', 'f-shape', 'f-element', 'f-tag', 'f-background', 'f-high'].forEach(function (id) {
       $(id).addEventListener('input', renderAssetBrowser);
     });
     $('btn-undo').onclick = doUndo;
@@ -3043,6 +3145,7 @@
     };
     /* 背景控制項已從左上角工具列移到預覽區正上方（見 buildBackgroundBar）。
        兩處都留的話，兩個控制項的顯示狀態會分家。 */
+    $('btn-copy-preset').onclick = copyPresetName;
     $('btn-save').onclick = savePreset;
     $('btn-download').onclick = downloadPreset;
     $('btn-load').onclick = function () { $('file-load').click(); };

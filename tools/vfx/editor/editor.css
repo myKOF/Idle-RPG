@@ -26,6 +26,10 @@ button, select, input[type="search"], input[type="text"], input[type="number"] {
 button { cursor: pointer; }
 button:hover { background: #30303a; }
 button.active { background: #3d5a80; border-color: #4d7ab0; }
+/* 按下去之後標籤會換成「✓ 已複製」再換回來。寬度釘住，否則整條工具列
+   會跟著抽動一下——旁邊的按鈕全部左右位移，看起來像畫面壞了。 */
+.copy-btn { min-width: 74px; text-align: center; }
+.copy-btn.err { color: #ff8080; border-color: #6a3a3a; }
 .stats { margin-left: auto; color: #8a8a96; font-variant-numeric: tabular-nums; }
 
 /* minmax(0, 1fr) 而不是 1fr：grid item 的自動最小尺寸預設是 auto，

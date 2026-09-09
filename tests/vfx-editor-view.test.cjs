@@ -239,6 +239,33 @@ test('VIEW-21 preset.loop 仍然編輯得到（移到 Inspector，不是被刪�
 });
 
 /* ============================================================
+   複製 Preset 名稱
+   ============================================================ */
+
+test('VIEW-24 複製名稱兩條路都走，因為兩條都驗證不了自己', function () {
+  /* execCommand 與 navigator.clipboard 在不同環境各自會「回報成功但沒寫進去」，
+     而兩者都無法回頭讀回來確認（readText 要另一個權限、還會跳詢問）。
+     所以不能挑一條當主要路徑，只能兩條都試。 */
+  const src = stripped();
+  const fn = src.slice(src.indexOf('function writeClipboard'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/legacyCopy\(/.test(body), '要有 execCommand 那一條');
+  assert.ok(/navigator\.clipboard/.test(body), '要有 Clipboard API 那一條');
+  assert.ok(/\.catch\(/.test(body), 'Clipboard API 失敗時要退回另一條的結果，不得整個炸掉');
+});
+
+test('VIEW-25 複製的是下拉上顯示的那個 id，而且失敗要說出來', function () {
+  const src = stripped();
+  const copy = src.slice(src.indexOf('function copyPresetName'));
+  const body = copy.slice(0, copy.indexOf('\n  }'));
+  assert.ok(/preset-picker/.test(body),
+    '要複製實際載入的來源 id；state.preset.id 是可編輯欄位，可能還沒落檔');
+  const flash = src.slice(src.indexOf('function flashCopyResult'));
+  assert.ok(/ok \?/.test(flash.slice(0, 400)),
+    '成功與失敗要顯示不同的字——複製沒成功卻不說，使用者會貼出上一次的內容');
+});
+
+/* ============================================================
    群組 Inspector
    ============================================================ */
 
