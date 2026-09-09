@@ -18,6 +18,9 @@ const custom = (w, h, widthM = w / 10, heightM = h / 10) => rect(w, h, widthM, h
 
 // 不規則外觀各自定義；投射物的飛行距離絕不是物體長度。
 const overrides = {
+  'hit-gale-burst': custom(120, 120, 6, 6),
+  'slash-gale-moon': { shape: 'custom', widthM: 10, heightM: 10,
+    authored: { width: 100, height: 100, radius: 50 } },
   'slash-thrust-lance': rect(120, 30, 12, 3),
   'slash-thrust-empowered': rect(120, 30, 12, 3),
   'slash-thrust-scatter': rect(120, 30, 12, 3),

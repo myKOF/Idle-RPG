@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜疾風斬特效改造（VFX-GALE-20260909）
+
+- 狀態：Done；使用者確認月牙外形並明確要求先接入遊戲。
+- 規格：前六階黃白單點爆破；七階由上往下藍紫月牙；未另訂間隔採 0.2 秒。先截圖確認外形再串接。
+- 範圍：新 hit-gale-burst／slash-gale-moon Preset、layout、gale author、後續必要事件／表格／Runtime／測試／文件。
+- 衝突：Antigravity 對舊 slash-gale-sector 有未提交修改；本次先用獨立新 Preset，不動舊檔。使用者突刺修改保留。
+- 完成：前六階目標爆破、七階目標中心單一道月牙；半徑取七階 fx.m，等比縮放。傷害與 VFX 每 0.2 秒同拍，換場清除未完成波次；霹靂一閃等最後一斬才結算。
+- 修改：Skills2 JS／CSV／Excel、VFX Runtime、Worker 快取、目錄／尺寸契約、兩份新 Preset 及 layout、gale author、相關測試及使用者預覽檔名偏好。
+- 驗證：技能／魔法／超神定向測試 143/143；GALE Adapter 測試 1/1；build 326 檔；Skills2 apply dry-run 語意差異 0；遊戲 Adapter 獨立場景截圖通過。
+- 限制：未在使用者現有存檔進行實戰操作；VFX Runtime 全集合的單一根群組檢查被使用者既有 slash-thrust-lance layout 三根群組修改擋住，本次不覆蓋。其餘 Adapter 測試通過。
+- 接線授權：使用者知悉 Antigravity 有共享技能配置修改後要求先接入；只修改疾風斬設定，保留對方飛刀版本。未修改舊 slash-gale-sector、飛刀與使用者突刺檔。
+- 合併：可審查合併本次疾風斬提交；未自行合併或推送 develop。飛刀仍為已核准獨立預覽，尚待正式化與接線。
+
+
 ## Codex｜迴旋斬多波間隔（VFX-CLEAVE-GAP-20260909）
 
 - 狀態：Done；使用者要求每波 0.2 秒，並設為未特別指定時的多段攻擊預設。

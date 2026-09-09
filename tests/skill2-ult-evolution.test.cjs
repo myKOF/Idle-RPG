@@ -1087,8 +1087,12 @@ test('【霹靂一閃】：最後一斬對周圍打出「單段 × 連擊數 × 
   const body = Math.max.apply(null, calls.map((k) => k.atk));
 
   setUlt(c, 'gale', 'thunderFlash');
+  c.resetSkill2RT();
   calls.length = 0;
   c.castSkill2(p, mk(), 'gale', 'mv-float');
+  assert.ok(!calls.some((k) => k.elem === 'lightning'), '閃電段需等待最後一斬');
+  c.GT = Math.max(...c.SKILL2_RT.galeStrikes.map(wave => wave.at));
+  c.sgTickGaleStrikes({});
   const bolts = calls.filter((k) => k.elem === 'lightning');
   assert.ok(bolts.length >= 2, '周圍範圍內的敵人都要吃到');
   assert.ok(bolts[0].atk > body, '倍率必須明顯高於單段傷害');

@@ -62,6 +62,8 @@ def('slash-dual', 'slash', '雙刀亂舞：兩道交叉的暖白斬弧（X 形�
 def('slash-cleave-stun', 'slash', '五階紅黃半月刀光，與基礎版共用六米半徑；向外飛行不拉長本體。', { nominal: 'R 60px', dur: 0.46 });
 def('slash-cleave-arc', 'slash', '六米半徑近半圓黃紅刀光，白亮刃口與交錯殘影；六階整體飛出，不以射程拉長本體。', { nominal: 'R 60px', dur: 0.46 });
 def('slash-cleave-sector', 'slash', '迴身四方斬扇形：60° 楔形（名目半徑 100px、頂點在原點、朝 +X），藍色 #60a5fa 填色 α0.2 + 邊緣亮線 + 兩條淺藍徑向邊；由 8% 長到 95% 半徑並整體旋轉 45°/s，尾段淡出。', { nominal: 'R 100px', dur: 0.5 });
+def('hit-gale-burst', 'hit', '疾風斬黃白單點爆破。', { nominal: 'rect 120x120', dur: 0.27 });
+def('slash-gale-moon', 'slash', '目標中心藍紫下劈月牙與錯位殘影。', { nominal: 'R 50px', dur: 0.37 });
 def('slash-gale-sector', 'slash', '疾風斬半圓：180° 半碟（名目半徑 100px、朝 +X），風系淺綠 #86efac 填色 α0.2 + 白色 #ffffff 外緣，8%→95% 放大並旋轉 45°/s。', { nominal: 'R 100px', dur: 0.5 });
 def('slash-thrust-lance', 'slash', '黃白光長槍；尺寸契約見 VFX_SIZE_STANDARD.md，圖層由 author/thrust.cjs 製作。', { nominal: 'L 120px', dur: 0.3 });
 def('slash-thrust-empowered', 'slash', '突刺三階黃紅光槍', { nominal: 'L 120px', dur: 0.3 });
@@ -294,8 +296,8 @@ g('knife', [
   _, _, _, _
 ], { soulhunterBlade: { projectile: 'proj-knife-gold', hit: 'hit-lightning' } });
 g('gale', [
-  { attack: 'slash-gale-sector', hit: 'hit-phys' },   // T1 疾風斬（gale-slashes）
-  _, _, _, _, _, _
+  { attack: 'hit-gale-burst', hit: 'hit-phys' },   // T1 疾風斬
+  _, _, _, _, _, { attack: 'slash-gale-moon' }
 ], { thunderFlash: { hit: 'hit-lightning' }, thunderGodSlash: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } });
 g('bloodblade', [
   { attack: 'slash-bloodblade', hit: 'hit-bleed' },                          // T1 血刃斬

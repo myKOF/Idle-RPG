@@ -21,6 +21,19 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複製', () => {
+  const moon = unitPreset('moon');
+  moon.sizing = {shape:'custom',widthM:10,heightM:10,authored:{width:100,height:100,radius:50}};
+  const {adapter, log} = makeAdapter([moon]);
+  adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1','mv-float-2'],
+    area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
+  adapter.update(.05);
+  assert.equal(log.nodes.length,1);
+  const t=log.nodes[0].transforms.at(-1);
+  assert.equal(t.x,100); assert.equal(t.y,50);
+  assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
+});
+
 test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行物不預播命中', () => {
   const lance = unitPreset('lance');
   lance.sizing = { shape: 'rectangle', widthM: 12, heightM: 3, authored: { width: 120, height: 30 } };

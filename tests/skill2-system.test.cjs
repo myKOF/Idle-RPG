@@ -55,6 +55,40 @@ function playerEnt() {
 /* vm 內建立的陣列與宿主的 Array 原型不同，strict deepEqual 會因原型不相等而失敗；
    數值陣列一律先轉純資料再比。 */
 function plain(v) { return JSON.parse(JSON.stringify(v)); }
+
+test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且只播放一次', () => {
+  for (const moon of [false, true]) {
+    const c = loadContext();
+    c.resetSkill2RT();
+    c.GT = 0;
+    c.sgLegend = () => ({});
+    c.sgUlt = () => null;
+    const events = [], stamps = [];
+    c.playCombatVfx = s => events.push(plain(s));
+    c.enemyEventFloatTarget = e => e.name;
+    c.sgGaleOnHit = () => {};
+    c.sgHitOne = (p, st, target, dmg, gid, sel, out, delay) => {
+      stamps.push({at: c.GT, dmg, target: target.name, delay}); out.dmg += dmg;
+      return {dmg, miss: false};
+    };
+    const targets = [enemy(100000, 30, 0, 'a'), enemy(100000, 40, 0, 'b')];
+    c.bfTargetsAround = () => targets;
+    const out = {dmg: 0, killed: false};
+    c.sgCastGale(playerEnt(), {atk: 1000}, c.SKILLS2.gale, [1,0,0,0,0,0,moon?1:0], targets, targets[0], 'mv-float', out);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].vfx.attack, moon ? 'slash-gale-moon' : 'hit-gale-burst');
+    assert.deepEqual(events[0].targets, ['a']);
+    if (moon) assert.equal(events[0].area.r, 50);
+    c.GT = .19; c.sgTickGaleStrikes({}); assert.equal(events.length, 1);
+    c.GT = .2; c.sgTickGaleStrikes({}); assert.equal(events.length, 2);
+    c.GT = .4; c.sgTickGaleStrikes({}); assert.equal(events.length, 3);
+    assert.deepEqual([...new Set(stamps.map(s => s.at))], [0,.2,.4]);
+    assert.ok(stamps.every(s => s.delay === 0));
+    assert.equal(stamps.length, moon ? 6 : 3);
+    assert.equal(out.dmg, moon ? 34830 : 8100);
+    c.resetSkill2RT(); assert.equal(c.SKILL2_RT.galeStrikes.length, 0);
+  }
+});
 /* 傷害管線替身：固定 100 傷、可指定爆擊——測「機制」不測「公式」（公式由既有測試守）。 */
 function stubHits(c, opts) {
   const calls = [];

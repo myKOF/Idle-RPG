@@ -147,7 +147,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
 
   for (const variant of [
     'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce', 'knife-soulhunter',
-    'gale-slashes', 'bleed-tick', 'poison-tick', 'blood-explosion',
+    'gale-burst', 'gale-moon', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
     assert.ok(skills2.includes("'" + variant + "'") || skills2.includes('"' + variant + '"'), variant);
@@ -953,11 +953,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.112/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.16/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.97/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-cleave-gap'/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.17/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.98/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-gale-vfx'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260909-cleave-gap/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260909-gale-vfx/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 

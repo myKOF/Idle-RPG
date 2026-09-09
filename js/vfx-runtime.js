@@ -862,7 +862,11 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec);
           break;
         case 'attack':
-          if (/^cleave(?:-|$)/.test(spec.variant || '')) {
+          if (spec.variant === 'gale-moon') {
+            var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
+            moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
+            ok = !!play(rtFx, presetId, moonParams);
+          } else if (/^cleave(?:-|$)/.test(spec.variant || '')) {
             ok = playCleave(rtFx, presetId, spec);
           } else if (/^thrust(?:-|$)/.test(spec.variant || '') && num(spec.lineLength, 0) > 0) {
             var aimed = Object.assign({}, spec);
@@ -1093,7 +1097,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260909-cleave-vfx';
+  var DATA_VERSION = '20260909-gale-vfx';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
