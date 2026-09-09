@@ -1723,8 +1723,8 @@ var VFX_CAT_COLORS = {
    角色語意與名目尺寸見 docs/vfx/VFX_RUNTIME_ADAPTER.md §1；
    目錄來源是 tools/vfx/authoring/vfx-catalog.cjs 的 COMBAT_DEFAULTS。 */
 var VFX_COMBAT_DEFAULTS = {
-  basicAttack: { hit: 'hit-basic-burst' },
-  basicAttackExtra: { hit: 'hit-basic-burst' },
+  basicAttack: { hit: 'hit-basic-irregular' },
+  basicAttackExtra: { hit: 'hit-basic-irregular' },
   smite: { attack: 'bolt-sky-lightning', hit: 'hit-lightning' },
   enemyMelee: { attack: 'slash-enemy-melee', hit: 'hit-enemy' },
   enemyProjectile: { projectile: 'proj-enemy-bolt', hit: 'hit-enemy' },

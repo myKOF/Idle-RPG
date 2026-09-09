@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-basic-irregular",
+  "groups": [
+    {
+      "id": "hit-basic-irregular",
+      "name": "hit-basic-irregular",
+      "layerIds": [
+        "broken-gold-body",
+        "ivory-fractures",
+        "long-gold-splinters",
+        "uneven-chips"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-basic-irregular"
+  ]
+}

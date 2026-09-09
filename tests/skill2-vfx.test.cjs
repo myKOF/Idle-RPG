@@ -995,7 +995,7 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.113/);
   assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.29/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.104/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-basic-burst'/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-basic-irregular'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
   assert.match(worker, /\.\.\/skills2\.js\?v=20260909-counter/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
