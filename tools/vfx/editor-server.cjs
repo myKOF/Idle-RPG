@@ -51,6 +51,10 @@ const presetIdPolicy = require('./editor/preset-id-policy.js');
 /* Layer 分組是 Editor 專用的 authoring metadata，不進 Preset／Runtime。
    驗證與序列化同樣只有一份，Editor 頁面載入的是同一個檔。 */
 const layoutSchema = require('./editor/layout-schema.js');
+/* 「這個 preset 被用在遊戲哪裡」。放在伺服器算而不是讓頁面自己抓 CSV：
+   config/ 不在對外開放的白名單裡，而且開放整個設定目錄只為了填一行括號
+   不划算。也不預先產生一份 JSON——那會過期。 */
+const presetUsage = require('./preset-usage.cjs');
 
 const REPO_ROOT = libraryRoot.REPO_ROOT;
 const ASSET_PREFIX = '/asset-library/';
@@ -564,7 +568,17 @@ function createServer(ctx) {
           .filter(function (id) { return presetIdPolicy.isWritablePresetId(id); })
           .sort();
       } catch (e) { /* 目錄不存在＝沒有 preset，回空陣列 */ }
-      return sendJson(res, 200, { ok: true, presets: ids });
+      /* 順便附上「這個 preset 被用在哪裡」。跟著清單一起回，不另開端點：
+         下拉本來就只請求一次，多一趟往返只是讓選單晚一點填好。
+         算不出來（表格壞掉、文件被刪）就回空物件——下拉少了括號還是能用，
+         但不能因此連 preset 都列不出來。 */
+      var usage = {};
+      try {
+        usage = presetUsage.usageLabels(ctx.repoRoot);
+      } catch (e) {
+        console.error('[WARN] 用途標註算不出來：' + (e && e.message || e));
+      }
+      return sendJson(res, 200, { ok: true, presets: ids, usage: usage });
     }
 
     if (pathname === '/') pathname = '/tools/vfx/editor/index.html';

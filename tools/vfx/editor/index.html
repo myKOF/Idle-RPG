@@ -20,7 +20,20 @@
   <button id="btn-undo" disabled>↶ 復原</button>
   <button id="btn-redo" disabled>↷ 重做</button>
   <span class="sep"></span>
-  <select id="preset-picker" title="切換 repo 裡的 Preset"><option value="">Preset…</option></select>
+  <!-- Preset 切換：搜尋框 ＋ 清單，不是原生 <select>。
+       157 份 preset 用原生下拉一個一個捲已經找不到東西了，而原生下拉沒有辦法
+       在打開的狀態下篩選。關鍵字同時比對 id 與用途標籤，所以打「雷球」也找得到
+       lightning-orb-field。 -->
+  <div id="preset-combo" class="combo">
+    <!-- type=search 不只是語意：onKeyDown 用它判斷「這裡的 Ctrl+Z 該給瀏覽器」。
+         打錯關鍵字想復原時，不該把整份 preset 回滾一步。 -->
+    <input id="preset-search" class="combo-input" type="search" autocomplete="off"
+           spellcheck="false" placeholder="搜尋特效…（id 或技能名）"
+           title="打關鍵字篩選；↑↓ 選擇、Enter 開啟、Esc 取消">
+    <button id="preset-toggle" class="combo-arrow" type="button" tabindex="-1"
+            title="展開全部">▾</button>
+    <div id="preset-list" class="combo-list" hidden></div>
+  </div>
   <!-- <select> 的文字在任何瀏覽器裡都框不起來，所以「把這份特效的名稱複製走」
        只能靠一顆按鈕。用途是貼進文件、prompt 或檔名。 -->
   <button id="btn-copy-preset" class="copy-btn" title="複製目前的 Preset 名稱到剪貼簿">⧉ 複製</button>

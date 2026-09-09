@@ -26,6 +26,39 @@ button, select, input[type="search"], input[type="text"], input[type="number"] {
 button { cursor: pointer; }
 button:hover { background: #30303a; }
 button.active { background: #3d5a80; border-color: #4d7ab0; }
+/* ---- Preset 切換：搜尋框 ＋ 自繪清單 ----
+   原生 <select> 沒有辦法在打開的狀態下篩選，157 份用捲的找不到東西。 */
+.combo { position: relative; display: flex; align-items: center; }
+/* 寬度寫死：清單是絕對定位的，不受這個寬度限制，所以輸入框只要放得下
+   常見長度的 id 就好，不必為了最長的那一個把整條工具列推到換行。 */
+.combo-input { width: 300px; padding-right: 24px; }
+/* 藏掉 type=search 內建的 ✕：它會和右邊的 ▾ 疊在一起，而清空這件事
+   Esc 與失焦本來就會做（把顯示文字放回去）。 */
+.combo-input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+.combo-arrow {
+  position: absolute; right: 2px; padding: 0 5px; border: none; background: none;
+  color: #8a8a96; font-size: 11px; line-height: 1;
+}
+.combo-arrow:hover { background: none; color: #d6d6dc; }
+.combo-list {
+  position: absolute; top: 100%; left: 0; z-index: 40; margin-top: 3px;
+  /* 比輸入框寬：清單裡多一欄用途，而且長 id 不該被截斷——這裡正是要看全名的地方 */
+  min-width: 380px; max-height: 60vh; overflow: auto;
+  background: #1e1e24; border: 1px solid #3a3a44; border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .55);
+}
+.combo-row {
+  display: flex; align-items: baseline; gap: 10px; padding: 4px 8px;
+  cursor: pointer; white-space: nowrap;
+}
+.combo-row:hover, .combo-row.active { background: #2e3f57; }
+/* 目前開著的那一份：用左緣色條而不是變底色，才不會和鍵盤高亮搞混 */
+.combo-row.current { box-shadow: inset 2px 0 0 0 #7fb2ff; }
+.combo-id { flex: 1 1 auto; }
+/* 用途獨立一欄並右對齊：整排對齊之後，掃視「哪幾份沒人用」比讀括號快 */
+.combo-use { flex: 0 0 auto; color: #7a9a7a; font-size: 11px; }
+.combo-empty { padding: 6px 8px; color: #8a8a96; font-size: 12px; }
+
 /* 按下去之後標籤會換成「✓ 已複製」再換回來。寬度釘住，否則整條工具列
    會跟著抽動一下——旁邊的按鈕全部左右位移，看起來像畫面壞了。 */
 .copy-btn { min-width: 74px; text-align: center; }

@@ -31,37 +31,215 @@
   function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
   var PRESET_LIST_URL = '/__presets';
 
-  /* topbar 的 preset 下拉：列出 repo 裡現有的 preset，選了就重載成 ?preset=<id>。
-     刻意走整頁重載而不是就地換內容——preset、layout、歷史、選取、gizmo
-     全部要換成另一份，重載是唯一能保證「不會混到上一份殘留」的做法。
-     150 份 preset 之後，用檔案對話框一個一個找已經不現實。 */
+  /* ---------------- topbar 的 Preset 切換 ----------------
+
+     搜尋框 ＋ 自繪清單，不是原生 <select>。原生下拉沒有辦法在打開的狀態下篩選，
+     而 157 份 preset 用捲的已經找不到東西——那正是它被換掉的原因。
+
+     選了就整頁重載成 ?preset=<id>。刻意不就地換內容：preset、layout、歷史、
+     選取、gizmo 全部要換成另一份，重載是唯一能保證不會混到上一份殘留的做法。
+
+     「目前是哪一份」的真相是 state.sourcePresetId（載入來源），不是這個輸入框的
+     文字——輸入框裡放的是使用者正在打的關鍵字。兩者混在一起的話，打到一半
+     按 Esc 或去點別的地方，就會不知道自己現在開的是什麼。 */
+
+  var combo = {
+    rows: [],          // [{ id, label, text, search }]
+    shown: [],         // 目前符合關鍵字的（rows 的子集）
+    active: -1,        // shown 裡被高亮的索引
+    open: false
+  };
+
+  function comboDisplayText() {
+    var id = state.sourcePresetId || (state.preset && state.preset.id) || '';
+    var row = null;
+    for (var i = 0; i < combo.rows.length; i++) {
+      if (combo.rows[i].id === id) { row = combo.rows[i]; break; }
+    }
+    return row ? row.text : id;
+  }
+
   function fillPresetPicker(currentId) {
-    var sel = document.getElementById('preset-picker');
-    if (!sel) return;
+    var input = $('preset-search');
+    if (!input) return;
     fetch(PRESET_LIST_URL).then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         var ids = (data && data.presets) || [];
         if (!ids.length) return;
-        sel.innerHTML = '';
-        ids.forEach(function (id) {
-          var opt = document.createElement('option');
-          opt.value = id;
-          opt.textContent = id;
-          if (id === currentId) opt.selected = true;
-          sel.appendChild(opt);
+        /* usage[id].label ＝這份 preset 在遊戲裡的第一個使用者（技能名稱，或
+           普攻那種寫死對應的標籤）。來源與判定規則見 tools/vfx/preset-usage.cjs。
+           **沒有括號就代表沒有人在用**——那個空白本身是資訊，157 份裡有 56 份
+           是這種狀態，挑素材時一眼就分得出哪些還是孤兒。 */
+        var usage = (data && data.usage) || {};
+        combo.rows = ids.map(function (id) {
+          var u = usage[id];
+          var label = u && u.label ? u.label : '';
+          return {
+            id: id,
+            label: label,
+            count: (u && u.count) || 0,
+            text: label ? id + '（' + label + '）' : id,
+            /* 關鍵字同時比對 id 與用途標籤，所以打「雷球」找得到
+               lightning-orb-field。id 一律小寫，中文沒有大小寫，
+               所以只要把輸入轉小寫就夠了。 */
+            search: (id + ' ' + label).toLowerCase()
+          };
         });
-        sel.onchange = function () {
-          var id = sel.value;
-          if (!id || id === currentId) return;
-          /* 未存檔的內容換過去就沒了，先問一聲；取消就把下拉轉回目前這一份。 */
-          if (isDirty() && !window.confirm('目前的修改尚未存檔，切換 Preset 會失去這些修改。要繼續嗎？')) {
-            sel.value = currentId;
-            return;
-          }
-          window.location.search = '?preset=' + encodeURIComponent(id);
-        };
+        input.value = comboDisplayText();
+        wirePresetCombo(currentId);
       })
       .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
+  }
+
+  function comboFilter(text) {
+    var q = String(text || '').trim().toLowerCase();
+    if (!q) return combo.rows.slice();
+    /* 空白分隔的多個關鍵字要全部命中：打「ground fire」找得到 ground-field-fire，
+       但不會被「fire」的一大堆結果淹掉。 */
+    var terms = q.split(/\s+/);
+    return combo.rows.filter(function (row) {
+      for (var i = 0; i < terms.length; i++) {
+        if (row.search.indexOf(terms[i]) < 0) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderComboList(currentId) {
+    var host = $('preset-list');
+    if (!host) return;
+    host.textContent = '';
+    if (!combo.shown.length) {
+      var none = document.createElement('div');
+      none.className = 'combo-empty';
+      none.textContent = '沒有符合的 preset';
+      host.appendChild(none);
+      return;
+    }
+    combo.shown.forEach(function (row, i) {
+      var el = document.createElement('div');
+      el.className = 'combo-row' +
+        (i === combo.active ? ' active' : '') +
+        (row.id === currentId ? ' current' : '');
+      var name = document.createElement('span');
+      name.className = 'combo-id';
+      name.textContent = row.id;
+      el.appendChild(name);
+      if (row.label) {
+        var tag = document.createElement('span');
+        /* 用途另外一格而不是接在 id 後面：一整排對齊之後，
+           掃視「哪些沒人用」比讀每一行的括號快得多。 */
+        tag.className = 'combo-use';
+        tag.textContent = row.label;
+        el.appendChild(tag);
+      }
+      el.title = row.count > 1
+        ? row.id + '：共 ' + row.count + ' 處使用，這裡顯示第一個'
+        : (row.label ? row.id + '：' + row.label : row.id + '：目前沒有任何技能或程式碼用到');
+      /* mousedown 而不是 click：input 的 blur 會先關掉清單，click 就永遠打不中。 */
+      el.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        choosePreset(row.id, currentId);
+      });
+      host.appendChild(el);
+    });
+  }
+
+  function openCombo(currentId, query) {
+    combo.open = true;
+    combo.shown = comboFilter(query);
+    /* 預設高亮目前這一份，找不到就第一筆——打開之後直接按 Enter
+       不該把人帶到一個沒預期的 preset。 */
+    combo.active = 0;
+    for (var i = 0; i < combo.shown.length; i++) {
+      if (combo.shown[i].id === currentId) { combo.active = i; break; }
+    }
+    $('preset-list').hidden = false;
+    renderComboList(currentId);
+    scrollComboActive();
+  }
+
+  function closeCombo() {
+    combo.open = false;
+    var host = $('preset-list');
+    if (host) { host.hidden = true; host.textContent = ''; }
+  }
+
+  function scrollComboActive() {
+    var host = $('preset-list');
+    if (!host) return;
+    var el = host.children[combo.active];
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+  }
+
+  function moveComboActive(delta, currentId) {
+    if (!combo.shown.length) return;
+    combo.active = (combo.active + delta + combo.shown.length) % combo.shown.length;
+    renderComboList(currentId);
+    scrollComboActive();
+  }
+
+  function choosePreset(id, currentId) {
+    closeCombo();
+    $('preset-search').value = comboDisplayText();
+    if (!id || id === currentId) return;
+    /* 未存檔的內容換過去就沒了，先問一聲。 */
+    if (isDirty() && !window.confirm('目前的修改尚未存檔，切換 Preset 會失去這些修改。要繼續嗎？')) {
+      return;
+    }
+    window.location.search = '?preset=' + encodeURIComponent(id);
+  }
+
+  function wirePresetCombo(currentId) {
+    var input = $('preset-search');
+    var toggle = $('preset-toggle');
+
+    input.addEventListener('focus', function () {
+      /* 取得焦點就清空成一個空的搜尋框，直接打就是搜尋。
+         不用「全選等它被覆蓋」：點進來的那一下 mouseup 會把選取取消掉，
+         於是變成在既有文字中間插字，打出來的關鍵字一個都對不上。
+         目前開著哪一份不會因此消失——清單裡那一列有左緣色條標著。 */
+      input.value = '';
+      openCombo(currentId, '');
+    });
+    input.addEventListener('input', function () {
+      combo.shown = comboFilter(input.value);
+      combo.active = 0;
+      $('preset-list').hidden = false;
+      combo.open = true;
+      renderComboList(currentId);
+    });
+    input.addEventListener('blur', function () {
+      /* 沒選任何一份就離開＝取消，把顯示文字放回去。 */
+      closeCombo();
+      input.value = comboDisplayText();
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { if (!combo.open) openCombo(currentId, input.value); else moveComboActive(1, currentId); e.preventDefault(); return; }
+      if (e.key === 'ArrowUp') { moveComboActive(-1, currentId); e.preventDefault(); return; }
+      if (e.key === 'Enter') {
+        var row = combo.shown[combo.active];
+        if (row) choosePreset(row.id, currentId);
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'Escape') {
+        /* Esc 只收掉這個清單，不往上冒泡——外面的 onKeyDown 會拿它去取消拖曳。 */
+        closeCombo();
+        input.value = comboDisplayText();
+        input.blur();
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    toggle.addEventListener('mousedown', function (e) {
+      e.preventDefault();                       // 不要讓 input 失焦
+      if (combo.open) { closeCombo(); return; }
+      input.focus();
+      input.select();
+      openCombo(currentId, '');
+    });
   }
 
   /* ---------------- 複製 Preset 名稱 ----------------
@@ -76,8 +254,9 @@
   var copyFlashTimer = 0;
 
   function copyPresetName() {
-    var sel = document.getElementById('preset-picker');
-    var id = (sel && sel.value) || (state.preset && state.preset.id) || '';
+    /* 用載入來源而不是搜尋框裡的文字：那個框裡放的是使用者正在打的關鍵字，
+       而且顯示時是「id（用途）」，不是可以直接貼去用的檔名。 */
+    var id = state.sourcePresetId || (state.preset && state.preset.id) || '';
     if (!id) return;
     writeClipboard(id).then(flashCopyResult);
   }
