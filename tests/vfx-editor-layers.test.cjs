@@ -1201,12 +1201,14 @@ test('K2 Picker 重用 filterAssets，沒有第二套搜尋實作', function () 
   assert.equal((src.match(/function currentAssetFilters\(/g) || []).length, 1,
     '只能有一份篩選讀取');
   assert.ok(/filterAssets\('pf-'/.test(src), 'Picker 必須呼叫同一個 filterAssets');
-  assert.ok(/filterAssets\('f-'/.test(src), 'Asset Browser 也走同一個');
-  /* 兩組控制項的欄位必須一一對應，否則共用的讀取函式會拿到 undefined。
+  /* currentAssetFilters 讀到的每一個欄位，選擇器裡都要真的有那個控制項，
+     否則它會拿到 undefined，那一項篩選就悄悄失效。
 
      欄位清單從 currentAssetFilters 現讀，不寫死：這條測試存在的目的就是守住
-     「新增一個篩選條件要兩邊都加」，清單寫死的話新增條件時它不會轉紅，
-     等於守到一半。 */
+     「新增一個篩選條件要把控制項一起加上」，清單寫死的話新增條件時它不會
+     轉紅，等於守到一半。
+
+     2026-09-10：左欄的素材瀏覽器（'f-' 那一組）整區刪掉了，只剩選擇器。 */
   const html = fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'index.html'), 'utf8');
   const readFn = src.slice(src.indexOf('function currentAssetFilters'));
@@ -1215,9 +1217,9 @@ test('K2 Picker 重用 filterAssets，沒有第二套搜尋實作', function () 
     .map(function (m) { return m.match(/'([a-z-]+)'/)[1]; });
   assert.ok(fields.length >= 6, '應該讀得到所有篩選欄位，實得：' + fields.join(','));
   fields.forEach(function (f) {
-    assert.ok(new RegExp('id="f-' + f + '"').test(html), '缺少 f-' + f);
     assert.ok(new RegExp('id="pf-' + f + '"').test(html), '缺少 pf-' + f);
   });
+  assert.ok(!/id="f-text"/.test(html), '舊的左欄素材瀏覽器應該已經刪乾淨');
 });
 
 test('K2B 背景底色篩選查的是事實層，而且先攤成表再逐筆比對', function () {

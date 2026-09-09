@@ -740,18 +740,21 @@ test('BOOT-1 啟動前先點名所有相依模組，且清單與 index.html 一�
   });
 });
 
-test('BOOT-2 圖層樹先於素材瀏覽器渲染', function () {
-  /* 素材瀏覽器要用到詞彙表；它先跑的話，詞彙表一出事就會連圖層分組
-     一起消失，使用者會以為群組被刪了。順序本身就是保護。 */
+test('BOOT-2 圖層樹先於素材相關的初始化', function () {
+  /* 素材那一組要用到詞彙表；它先跑的話，詞彙表一出事就會連圖層分組一起消失，
+     使用者會以為群組被刪了。順序本身就是保護。
+
+     2026-09-10：左欄的素材瀏覽器整區刪掉了（選材一直是走素材選擇器，那份
+     300 列的清單只是把左欄佔滿），所以改成比對 collectVocab 與 wirePicker。 */
   const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
   const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
   const boot = noComments.slice(noComments.indexOf('function boot()'));
   const layers = boot.indexOf('renderLayerList();');
   const vocab = boot.indexOf('collectVocab();');
-  const browser = boot.indexOf('renderAssetBrowser();');
-  assert.ok(layers >= 0 && vocab >= 0 && browser >= 0);
+  const picker = boot.indexOf('wirePicker();');
+  assert.ok(layers >= 0 && vocab >= 0 && picker >= 0);
   assert.ok(layers < vocab, 'renderLayerList 必須排在 collectVocab 之前');
-  assert.ok(layers < browser, 'renderLayerList 必須排在 renderAssetBrowser 之前');
+  assert.ok(vocab < picker, '詞彙表要先備好，素材選擇器才填得出篩選下拉');
 });
 
 /* ============================================================
