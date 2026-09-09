@@ -32,7 +32,7 @@ Preset id 也可能出現在註解、測試、除錯開關裡。要判斷一個 
 
 | preset id | 顯示標籤 | 用在哪裡 |
 | --- | --- | --- |
-| `hit-basic-burst` | 普攻 | 我方普通攻擊的命中爆點（含連擊的額外段） |
+| `hit-basic-irregular` | 普攻 | 我方普通攻擊的命中爆點（含連擊的額外段） |
 | `bolt-sky-lightning` | 天罰／連鎖閃電 | 天罰與連鎖閃電的天降雷柱 |
 | `proj-meteor-small` | 小隕石 | 由 Runtime 依 variant 取用的小隕石投射物 |
 | `slash-enemy-melee` | 敵方近戰 | 敵人近身攻擊的斬擊 |
@@ -49,7 +49,8 @@ Preset id 也可能出現在註解、測試、除錯開關裡。要判斷一個 
 目錄來源是 `tools/vfx/authoring/vfx-catalog.cjs` 的 `COMBAT_DEFAULTS`）。
 
 2026-09-09 更新：普攻原本掛 `slash-phys-big`（斬擊本體）＋ `proj-swordwave`
-（飛出的劍氣）＋ `hit-phys`，後來整組換成單一的 `hit-basic-burst`。
+（飛出的劍氣）＋ `hit-phys`，後來整組換成單一的命中爆點，
+爆點本身又從 `hit-basic-burst` 換成 `hit-basic-irregular`（兩次都是 USAGE-2／3 抓到的）。
 `slash-phys-big` 與 `proj-swordwave` 因此變成孤兒——它們的 preset 檔還在，
 但遊戲裡已經沒有人用。這一行是測試 USAGE-2 抓出來的：清單列了它們，
 `js/` 裡卻已經找不到。
