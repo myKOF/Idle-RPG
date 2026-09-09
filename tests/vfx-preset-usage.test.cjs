@@ -146,6 +146,52 @@ test('USAGE-11 切換 Preset 走整頁重載，未存檔要先問', function () 
   assert.ok(/isDirty\(\)/.test(body), '未存檔要先問一聲');
 });
 
+test('USAGE-13 伺服器行程比磁碟舊的時候，畫面要說出來', function () {
+  /* 2026-09-09 實測踩到並且花了一輪來回才查出來的：伺服器是常駐行程，
+     require 進去的檔改了不會生效；但它服務的 editor.js／css／html 是每次請求
+     才讀磁碟（no-store）。於是「頁面是新版、伺服器是舊版」同時成立——
+     使用者看到可搜尋的清單出來了、用途標註一個都沒有，而且沒有任何線索。
+
+     兩種偵測涵蓋不同的舊法，缺一不可：
+       usage 欄位不存在  → 伺服器舊到還沒有這個功能。只有前端察覺得到，
+                           因為舊程式沒辦法回報自己舊。
+       staleFiles 非空   → 伺服器有這個功能，而且自己發現載入後檔案被改過。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor-server.cjs'), 'utf8');
+  assert.ok(/RESTART_REQUIRED_FILES/.test(src), '要列出「改了必須重啟」的檔');
+  assert.ok(/staleFiles: staleServerFiles\(\)/.test(src), '要跟著 /__presets 一起回報');
+  /* 用內容雜湊而不是 mtime：merge 與 checkout 會動 mtime 但內容可能一樣，
+     那種誤報久了就沒人理。 */
+  assert.ok(/createHash/.test(src), '要比對內容雜湊');
+  assert.ok(!/mtimeMs/.test(src), '不得用 mtime 判斷——會誤報');
+  /* 清單必須涵蓋每一個 require 進來的專案內檔案，漏一個就是一種偵測不到的舊法。 */
+  const required = (src.match(/require\('(\.[^']+)'\)/g) || [])
+    .map(function (m) { return m.match(/'(\.[^']+)'/)[1]; })
+    .filter(function (p) { return p.indexOf('export-assets') < 0; });  // 那支是延遲載入的
+  required.forEach(function (rel) {
+    const base = rel.split('/').pop();
+    assert.ok(src.indexOf("'" + base + "'") >= 0,
+      base + ' 有被 require 卻沒列進 RESTART_REQUIRED_FILES');
+  });
+
+  const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  assert.ok(/data\.usage === undefined/.test(editor),
+    '前端要能認出「舊到沒有這個欄位」的伺服器');
+  assert.ok(/staleFiles/.test(editor), '前端也要處理伺服器自己回報的過期');
+  assert.ok(/啟動VFX編輯器\.bat/.test(editor),
+    '提示要直接講怎麼修，不能只說「伺服器過期」');
+});
+
+test('USAGE-14 清單頂端多一行警告時，鍵盤高亮不得整個差一格', function () {
+  /* 警告是插在清單最上面的一個 div。用 children[i] 取列會差一格——
+     高亮在 A、捲到的卻是 B，而且只有在警告出現時才會發生。 */
+  const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = editor.slice(editor.indexOf('function scrollComboActive'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/querySelectorAll\('\.combo-row'\)/.test(body),
+    '要用 class 查，不能用 children 的索引');
+  assert.ok(!/host\.children\[/.test(body));
+});
+
 test('USAGE-12 清單用 mousedown 挑選，不是 click', function () {
   /* input 的 blur 會先關掉清單，click 永遠打不中——這是實測過的，
      不是理論：改成 click 之後整個清單會變成點不動。 */

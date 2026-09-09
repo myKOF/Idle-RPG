@@ -718,6 +718,43 @@ test('W7 啟動器與伺服器對身分標記與埠範圍的認知一致', funct
     '啟動器掃描的埠範圍必須涵蓋伺服器會用到的 ' + base + '~' + (base + tries - 1));
 });
 
+test('W7B 啟動器不得沿用一個程式已經過期的伺服器', function () {
+  /* 伺服器是常駐行程：editor-server.cjs 與它 require 的檔在啟動當下就載進
+     記憶體，之後 merge 不會生效；但它服務的 editor.js／css／html 是每次請求
+     才讀磁碟。於是「新頁面 ＋ 舊後端」會同時成立，看起來就是功能少一半，
+     而畫面上沒有任何線索。
+
+     2026-09-09 實測：使用者 merge 完重跑啟動器，啟動器掃到一個三個半小時前
+     起的行程、直接沿用、開完頁面就關掉視窗——使用者只看到黑窗閃一下，
+     以為自己已經重啟過了。所以這條要釘住三件事都在。 */
+  const serverSrc = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
+  const launcher = fs.readFileSync(path.join(REPO, '啟動VFX編輯器.bat'), 'utf8');
+
+  const staleMatch = serverSrc.match(/const WHOAMI_STALE_MARK = '([^']+)'/);
+  assert.ok(staleMatch, '伺服器必須定義 WHOAMI_STALE_MARK');
+  assert.ok(launcher.indexOf('set STALE_MARK=' + staleMatch[1]) >= 0,
+    '啟動器的 STALE_MARK 必須等於伺服器的標記');
+
+  /* 過期標記必須自成一行，否則會破壞啟動器用第一行比對身分的邏輯 */
+  assert.ok(/whoami \+= WHOAMI_STALE_MARK \+ '\\n'/.test(serverSrc),
+    '過期標記要另起一行附加');
+  const mark = serverSrc.match(/const WHOAMI_MARK = '([^']+)'/)[1];
+  assert.ok(staleMatch[1].indexOf(mark + ' ') !== 0,
+    '過期標記不得以「MARK 空白」開頭，否則 :scan 會把它誤認成身分行');
+
+  /* 沿用之前一定要先問過 */
+  const adopt = launcher.slice(launcher.indexOf('call :scan'));
+  const check = adopt.indexOf('call :checkstale');
+  const reuse = adopt.indexOf('直接開啟頁面');
+  assert.ok(check >= 0 && reuse >= 0, '啟動器要有沿用路徑與過期檢查');
+  assert.ok(check < reuse, '過期檢查必須排在「直接開啟頁面」之前');
+  assert.ok(/if defined STALE goto :stale/.test(launcher), '過期就要跳走，不得繼續沿用');
+  /* 擋下來之後要停在畫面上，不然使用者一樣只看到黑窗閃一下 */
+  const stale = launcher.slice(launcher.indexOf('\n:stale'));
+  assert.ok(/pause/.test(stale.slice(0, 1200)), '過期的說明要 pause，不能閃一下就關掉');
+  assert.ok(/taskkill/.test(stale.slice(0, 1200)), '要告訴使用者怎麼強制結束那個行程');
+});
+
 test('W8 兩支 .bat 必須是 CRLF，且非 echo 行不得含多位元組字元', function () {
   /* cmd 是逐段解析的，chcp 切換編碼後，rem／指令位置上的多位元組字元會被
      打散成指令執行；LF 行尾則會讓 cmd 在檔案中途失去同步。

@@ -58,6 +58,12 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 /* 用途獨立一欄並右對齊：整排對齊之後，掃視「哪幾份沒人用」比讀括號快 */
 .combo-use { flex: 0 0 auto; color: #7a9a7a; font-size: 11px; }
 .combo-empty { padding: 6px 8px; color: #8a8a96; font-size: 12px; }
+/* 伺服器版本對不上的提示。黏在清單頂端：捲到一半才看到警告等於沒看到。 */
+.combo-warn {
+  position: sticky; top: 0; z-index: 1;
+  padding: 6px 8px; background: #3a2a1e; color: #ffcf8a;
+  border-bottom: 1px solid #5a4430; font-size: 11px; white-space: normal;
+}
 
 /* 按下去之後標籤會換成「✓ 已複製」再換回來。寬度釘住，否則整條工具列
    會跟著抽動一下——旁邊的按鈕全部左右位移，看起來像畫面壞了。 */
