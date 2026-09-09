@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-counter-ripple",
+  "groups": [
+    {
+      "id": "proj-counter-ripple",
+      "name": "proj-counter-ripple",
+      "layerIds": [
+        "air-body",
+        "pearl-core",
+        "ripple-0",
+        "ripple-1",
+        "ripple-2"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-counter-ripple"
+  ]
+}

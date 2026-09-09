@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜反擊特效試作（VFX-COUNTER-20260909）
+
+- 提交整理：使用者要求包含自行修改一起 commit，納入目前配置表、Preset／layout 與反擊接線全部變更；臨時 counter-review.html 移除。提交前重跑 skill2-counter-bloodrage／skill2-vfx 57/57、COUNTER Adapter 1/1；素材 export dry-run 無待同步，先前 build 329 檔通過。未合併／推送；下方未 commit 為歷史記錄。
+
+- 使用者核准並要求接入：Excel Z62 攻擊特效清空／AA62 飛行子彈填 proj-counter-ripple，CSV／JS／catalog 同步；逐格驗證只有兩格差異，儲存格依欄序排列。每次 sgCounterStrike 向實際目標發射，涵蓋追加反擊與反殺，替換舊彙總事件；0.2 秒發射間隔、飛行 0.2 秒，傷害公式不變。Runtime counter-riposte 依 projectile 欄分派；主頁／Worker 快取更新，素材正式匯出 160 presets。
+- 驗證：COUNTER Adapter 飛行／延遲／回收 1/1；skill2-counter-bloodrage 與 skill2-vfx 57/57。未操作使用者存檔；未 commit。
+
+- 依使用者指派進入下一技能。技能說明表反擊第一階指定「帶淡淡波紋的飛行子彈，半透明白色系」；先製作 proj-counter-ripple，白色氣勁前端與三道淡化波紋，圓形飛行物標準半徑 6 米。
+- 本輪先提供編輯器相同 Core／Pixi 預覽與截圖，待外觀確認；尚未改 Excel／CSV、遊戲事件或反擊時序。新增 author／Preset／layout，預覽頁不提交。
+
 ## Codex｜血刃斬、火龍捲與火牆整合提交（VFX-COMMIT-20260909-B）
 
 - 使用者要求 commit 供合併；包含核准血刃斬／火龍捲／三柱火牆、0.3 秒寬高進退場、火柱圓形命中修正、Excel 儲存格順序修復，以及使用者 Skills2／毒液彈／龍捲的調整。保留毒液彈拆散圖層與龍捲透明度 0.8。

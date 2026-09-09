@@ -191,6 +191,7 @@ var VFXRuntime = (function () {
     var kind = spec.fxKind;
     var variant = spec.variant || '';
     /* 變體特例（見設計文件 §1.1 的最後一段）——先判，因為它們跨 fxKind。 */
+    if (variant === 'counter-riposte' && roles.projectile) return 'projectile';
     if (variant === 'starfall-impact') return 'hit';            // 只做受擊回饋
     if (kind === 'impact' && variant === 'pillar') return roles.field ? 'field' : 'ground';
     if ((kind === 'impact' || kind === 'burst') && variant === 'wind-burst') return 'attack';
