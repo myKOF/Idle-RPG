@@ -64,6 +64,80 @@
       .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
   }
 
+  /* ---------------- 複製 Preset 名稱 ----------------
+
+     下拉是原生 <select>，它的文字在任何瀏覽器裡都框不起來，所以「挑好一份特效
+     之後把名稱複製走」（貼進文件、prompt、檔名）沒有別的路。
+
+     複製的是**下拉上顯示的那個 id**，也就是實際載入的來源，而不是 state.preset.id：
+     後者是可編輯欄位，兩者不一致時存檔本來就會被擋下（見 saveTargetProblem），
+     這裡跟著畫面走才不會複製到一個還沒落檔的名字。 */
+
+  var copyFlashTimer = 0;
+
+  function copyPresetName() {
+    var sel = document.getElementById('preset-picker');
+    var id = (sel && sel.value) || (state.preset && state.preset.id) || '';
+    if (!id) return;
+    writeClipboard(id).then(flashCopyResult);
+  }
+
+  /* 兩條路都走，不挑一條：
+
+       execCommand('copy')            走文件自己的編輯指令，也就是使用者按 Ctrl+C
+                                      那一條。已被標為 deprecated，但相容性最好。
+                                      要求文字在文件裡而且被選取，所以借一個
+                                      暫時的 textarea。
+       navigator.clipboard.writeText  需要安全來源（127.0.0.1 算），舊環境沒有。
+
+     為什麼不挑一條：**兩條都無法回頭驗證自己有沒有真的寫進去**。readText 需要
+     另一個權限而且會跳詢問，所以「回報成功」只代表 API 沒有丟出錯誤。
+     2026-09-09 實測：在 Claude Code 的內嵌瀏覽器裡兩條都回報成功、剪貼簿卻完全
+     沒變（同一個環境裡真實的 Ctrl+C／Ctrl+V 正常），也就是說那個環境根本不把
+     頁面發起的寫入送到系統剪貼簿。既然分不出誰比較可靠，就兩條都試——
+     寫的是同一段文字，誰覆蓋誰都不影響結果。
+
+     兩條都回報失敗才顯示失敗，不 silent：複製沒成功卻不說，使用者會貼出
+     上一次的內容而且不會發現。 */
+  function writeClipboard(text) {
+    var legacy = legacyCopy(text);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text)
+        .then(function () { return true; })
+        .catch(function () { return legacy; });
+    }
+    return Promise.resolve(legacy);
+  }
+
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    /* 不能用 display:none 或 visibility:hidden——選取不到就複製不了。
+       改成移出畫面，並關掉 readonly 之外的一切互動痕跡。 */
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    var ok = false;
+    try {
+      ta.select();
+      ok = document.execCommand('copy');
+    } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function flashCopyResult(ok) {
+    var btn = document.getElementById('btn-copy-preset');
+    if (!btn) return;
+    window.clearTimeout(copyFlashTimer);
+    btn.textContent = ok ? '✓ 已複製' : '✕ 失敗';
+    btn.classList.toggle('err', !ok);
+    copyFlashTimer = window.setTimeout(function () {
+      btn.textContent = '⧉ 複製';
+      btn.classList.remove('err');
+    }, 1400);
+  }
+
   var state = {
     index: null,
     semantics: null,
@@ -3043,6 +3117,7 @@
     };
     /* 背景控制項已從左上角工具列移到預覽區正上方（見 buildBackgroundBar）。
        兩處都留的話，兩個控制項的顯示狀態會分家。 */
+    $('btn-copy-preset').onclick = copyPresetName;
     $('btn-save').onclick = savePreset;
     $('btn-download').onclick = downloadPreset;
     $('btn-load').onclick = function () { $('file-load').click(); };

@@ -21,6 +21,9 @@
   <button id="btn-redo" disabled>↷ 重做</button>
   <span class="sep"></span>
   <select id="preset-picker" title="切換 repo 裡的 Preset"><option value="">Preset…</option></select>
+  <!-- <select> 的文字在任何瀏覽器裡都框不起來，所以「把這份特效的名稱複製走」
+       只能靠一顆按鈕。用途是貼進文件、prompt 或檔名。 -->
+  <button id="btn-copy-preset" class="copy-btn" title="複製目前的 Preset 名稱到剪貼簿">⧉ 複製</button>
   <button id="btn-load">載入 Preset</button>
   <button id="btn-save" title="儲存到 repo（Ctrl+S）">儲存到 repo</button>
   <button id="btn-download">下載複本</button>

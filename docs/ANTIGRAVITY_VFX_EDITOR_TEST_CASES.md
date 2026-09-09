@@ -2,13 +2,14 @@
 
 ## Feature
 
-2026-09-09 的 VFX Editor 優化，共五項：
+2026-09-09 的 VFX Editor 優化，共六項：
 
 1. 預覽區的淺色座標格線（1 大格 = 6 米，與遊戲同比例）
 2. 滾輪縮放（中鍵回 100%）
 3. 工具列的 Loop 改成「預覽循環」，`preset.loop` 移進 Inspector 的「Preset」區塊
 4. 群組 Inspector 顯示並可輸入尺寸與變形
 5. Ctrl+S 存檔
+6. 下拉旁邊的「⧉ 複製」按鈕（把 preset 名稱複製到剪貼簿）
 
 對應 commit：`531e638`（編輯器）與 `ea390b1`（單一根群組規範）。
 
@@ -54,8 +55,11 @@ curl -s http://127.0.0.1:<實際開啟的埠>/__whoami
 ### 其他
 
 - 開著 DevTools Console，全程不得出現任何錯誤。
-- 測試用 preset：`slash-thrust-lance`（3 層，`loop: false`）與
+- 測試用 preset：`beam-light`（3 層，`loop: false`，純 sprite）與
   `lightning-orb-field`（5 層，`loop: true`，含粒子層）。
+  **開始前先確認這兩份的 `loop` 還是這個值**——preset 是使用者隨時在改的資料，
+  用 `grep '"loop"' vfx/presets/<id>.json` 核對；對不上就換一份符合的，
+  並在報告裡註明換成了哪一份。
   用網址切換：`.../tools/vfx/editor/index.html?preset=<id>`
 - **會寫檔的案例是 AG-VFXED-006、007。** 做完用
   `git -C D:/MyGame/Idle-RPG/antigravity status` 確認改到了哪些檔，
@@ -69,12 +73,12 @@ curl -s http://127.0.0.1:<實際開啟的埠>/__whoami
 
 操作：
 
-1. 開 `slash-thrust-lance`，確認右上顯示「縮放 100%」、旁邊寫「1 大格 = 6 米（60px）」。
-2. 在 Layers 選 `shaft` 圖層，Inspector 的 position 填 x = `60`、y = `0`，按 Enter。
+1. 開 `beam-light`，確認右上顯示「縮放 100%」、旁邊寫「1 大格 = 6 米（60px）」。
+2. 在 Layers 展開群組、選第一個圖層，Inspector 的 position 填 x = `60`、y = `0`，按 Enter。
 3. 觀察預覽上那個橘色十字（pivot）落在哪裡。
 4. 把 position 改成 x = `180`、y = `0`。
 5. 把 position 改回 x = `0`、y = `0`。
-6. 在 Layers 選群組列 `slash-thrust-lance`，讀 Inspector 的「寬（px）」與底下那行米數。
+6. 在 Layers 選群組列 `beam-light`，讀 Inspector 的「寬（px）」與底下那行米數。
 
 預期：
 
@@ -143,7 +147,7 @@ curl -s http://127.0.0.1:<實際開啟的埠>/__whoami
 
 操作：
 
-1. 開 `slash-thrust-lance`（`loop: false`）。看工具列的「預覽循環」是否**預設勾選**。
+1. 開 `beam-light`（`loop: false`）。看工具列的「預覽循環」是否**預設勾選**。
 2. 觀察預覽：特效播完之後會不會自己再來一次。
 3. 看 Inspector 最上方的「Preset」區塊，`loop` 應該是**沒勾**的。
 4. 確認右上角**沒有**出現未存檔標記（`*` 或「未存檔」）——光是打開不該讓它變髒。
@@ -196,14 +200,14 @@ curl -s http://127.0.0.1:<實際開啟的埠>/__whoami
 
 操作：
 
-1. 開 `slash-thrust-lance`，選一個圖層。
+1. 開 `beam-light`，選一個圖層。
 2. 在 `alpha` 欄位打 `0.42`，**不要按 Enter、不要點別的地方**，直接按 Ctrl+S。
 3. 觀察：瀏覽器有沒有跳出「另存新檔」對話框。
 4. 觀察右上的存檔狀態文字。
-5. 用文字編輯器直接打開 `vfx/presets/slash-thrust-lance.json`，看 `alpha` 存的是多少。
+5. 用文字編輯器直接打開 `vfx/presets/beam-light.json`，看 `alpha` 存的是多少。
 6. 在瀏覽器分頁的其他地方（例如 Asset Browser 的搜尋框）按 Ctrl+S，確認一樣不會跳對話框。
 7. 把 `preset.id` 改成一個與檔名不同的值，再按 Ctrl+S。
-8. 還原：`git checkout -- vfx/presets/slash-thrust-lance.json`
+8. 還原：`git checkout -- vfx/presets/beam-light.json`
 
 預期：
 
@@ -230,6 +234,26 @@ curl -s http://127.0.0.1:<實際開啟的埠>/__whoami
 - 步驟 4：格線開關與背景色記得住（存 localStorage）；**縮放回到 100%**（刻意不記——
   隔天打開看到 320% 會以為素材被誰改大了）。
 - 整個過程右上都不該出現未存檔標記。
+
+### AG-VFXED-010：複製 Preset 名稱
+
+操作：
+
+1. 開任何一份 preset，點下拉右邊的「⧉ 複製」。
+2. 觀察按鈕的文字變化。
+3. 到記事本或網址列按 Ctrl+V。
+4. 用下拉切換到另一份 preset，再按一次「⧉ 複製」、再貼一次。
+5. 把 Inspector 裡的 `id` 欄位改成別的名字（**不要存檔**），再按「⧉ 複製」、再貼一次。
+
+預期：
+
+- 步驟 2：文字暫時變成「✓ 已複製」，約一秒半後變回「⧉ 複製」；
+  整條工具列不得因為文字變長變短而左右抽動。
+- 步驟 3、4：貼出來的就是下拉上顯示的那個 preset id，沒有多餘的空白或引號。
+- 步驟 5：貼出來的仍然是**下拉上顯示的**那個 id（實際載入的來源），
+  不是剛剛改的那個還沒落檔的名字。
+- 如果顯示「✕ 失敗」（紅字），請回報你的瀏覽器與是否為 `http://127.0.0.1`——
+  這條路在某些內嵌瀏覽器裡會整個失效，需要知道是哪一種環境。
 
 ### AG-VFXED-009：既有功能迴歸
 
