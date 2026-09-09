@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜月牙斬重疊辨識成品（VFX-MOON-READABLE-20260909）
+
+- 狀態：Done；使用者確認藍紫刃面、薄亮刃口、掠光星芒及碎晶版本，已正式接入。
+- 範圍：替換既有 slash-gale-moon Preset／layout／author、三張原創 SVG 素材及索引、Runtime 小幅角度交替與快取；不動使用者正在修改的 Skills2 表格及 JS。
+- 驗收：遊戲與編輯器共用正式 Preset；三連斬正常混色、亮度不相加成整塊白；依既有事件半徑等比縮放，傷害判定與攻擊節奏不變。
+- 修改：slash-gale-moon Preset／layout、gale author、三張 SVG 及 asset-index／shipped-assets、vfx-runtime／index 快取、兩份既有測試及本文件。檢查但未修改：VFX Core／Pixi backend／Editor、config_tables 與使用者 Skills2 配置。
+- 測試：`node --test tests/skill2-vfx.test.cjs` 31/31、`node --test --test-name-pattern=GALE tests/vfx-runtime.test.cjs` 1/1、`node tools/build_check.cjs` 328 檔通過、Preset schema 通過。CSV 既有測試改依中文欄名讀獨立距離欄，支援使用者換欄序。
+- 畫面：正式遊戲 Adapter 三道刀光（0.08 秒壓力展示，未更動遊戲配置間隔）截圖通過；Editor 已載入四層正式 Preset 並通過驗證。未操作使用者存檔實戰。
+- 限制：既有匯出目錄 ownership 標記與工具預期不符，整批匯出拒絕執行；本次僅新增三張素材並採工具 dry-run 生成的 shipped index，未更動其餘素材或標記。此工具既有問題另案處理。
+- 交付：正式檔名 slash-gale-moon.json；可合併本次提交，未自行合併或推送。使用者未提交的表格／技能 JS 保留；scratch 預覽不提交。下一步重新載入遊戲確認實戰效果。
+
 ## Codex｜Skills2 獨立距離與間隔欄（CONFIG-SKILLS2-COLUMNS-20260909）
 
 - 狀態：Done；使用者要求 Excel／CSV 獨立欄位及清楚的中文欄名。

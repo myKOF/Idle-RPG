@@ -6,8 +6,65 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2399,
+  "assetCount": 2402,
   "assets": [
+    {
+      "assetId": "codex-authored/moon/moon-polished-accents.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon/moon-polished-accents.svg",
+      "format": "svg",
+      "fileSize": 1717,
+      "contentHash": "sha256:e9ecb02d0a3e6b61716b45376e3b4edac7b329289c1828347ceed6aaf16a6f9d",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-body.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon/moon-polished-body.svg",
+      "format": "svg",
+      "fileSize": 1275,
+      "contentHash": "sha256:434451456ef9c38f6b8b0e690501156165a780af63d320dde3706f5920520ed2",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-edge.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon/moon-polished-edge.svg",
+      "format": "svg",
+      "fileSize": 942,
+      "contentHash": "sha256:22ce17bfc33b34bb61e262b35abd6bf95bf7fc150bde42e443aae5d21ca832d7",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
     {
       "assetId": "foliage-sprites/png/flat/sprite_0001.png",
       "package": "foliage-sprites",

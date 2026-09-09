@@ -267,6 +267,7 @@ var VFXRuntime = (function () {
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
+    var moonSwingIndex = 0;                 // 圓形判定內的刀光朝向差，避免連斬輪廓完全重合
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     function registerPresets(list) {
@@ -865,6 +866,7 @@ var VFXRuntime = (function () {
           if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
+            moonParams.rotation = [-0.15, 0, 0.15][moonSwingIndex++ % 3];
             ok = !!play(rtFx, presetId, moonParams);
           } else if (/^cleave(?:-|$)/.test(spec.variant || '')) {
             ok = playCleave(rtFx, presetId, spec);
@@ -1017,6 +1019,7 @@ var VFXRuntime = (function () {
     }
 
     function clear() {
+      moonSwingIndex = 0;
       projectiles.length = 0;
       follows.length = 0;
       pending.length = 0;
@@ -1097,7 +1100,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260909-hit-short';
+  var DATA_VERSION = '20260909-moon-readable';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

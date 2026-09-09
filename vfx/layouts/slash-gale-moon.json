@@ -6,14 +6,10 @@
       "id": "slash-gale-moon",
       "name": "slash-gale-moon",
       "layerIds": [
-        "violet-afterimage",
-        "purple-crescent",
-        "blue-blade",
-        "white-edge",
-        "swing-trail",
-        "outer-echo",
-        "falling-cut",
-        "blade-fragments"
+        "blade-face",
+        "thin-edge",
+        "blade-shards",
+        "spectral-accents"
       ]
     }
   ],

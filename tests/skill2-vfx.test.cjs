@@ -346,10 +346,15 @@ test('迴旋斬主斬擊特效採藍色，且尺寸跟隨範圍倍率', () => {
 test('震碎斬距離使用 12 米（120 系統距離單位）', () => {
   const skills2 = read('js/skills2.js');
   const csv = read('config/CSV/Skills2.csv');
-  const cleaveCsvLine = csv.split(/\r?\n/).find((line) => /,6,[^,]*,震碎斬,/.test(line));
+  // 沿用正式 CSV parser，依中文欄名讀值，允許使用者調整欄位順序。
+  const tableTool = read('tools/config_tables.cjs');
+  const csvParse = vm.runInNewContext('(' + tableTool.slice(tableTool.indexOf('function csvParse('), tableTool.indexOf('function csvField(')).trim() + ')');
+  const [headers, ...rows] = csvParse(csv);
+  const cleaveRow = rows.find(row => row[headers.indexOf('階段名稱')] === '震碎斬');
   // 階段名稱與 fx 之間可能還有「解鎖轉生/等級」欄位（unlock: { … }）
   assert.match(skills2, /name: '震碎斬',.*?fx: \{ m: 12, mPer: 0\.5 \}/);
-  assert.ok(cleaveCsvLine && cleaveCsvLine.includes('""m"":12'), 'Skills2 CSV 應使用 12 米');
+  assert.ok(cleaveRow, 'Skills2 CSV 應有震碎斬');
+  assert.equal(Number(cleaveRow[headers.indexOf('作用距離（米；用途見說明）')]), 12, 'Skills2 CSV 應使用 12 米');
   assert.match(read('js/battlefield.js'), /BF_SYSTEM_UNITS_PER_METER = 10/);
 });
 
@@ -953,7 +958,7 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.112/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.18/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.19/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.99/);
   assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-gale-config'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動

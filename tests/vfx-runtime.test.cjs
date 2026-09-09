@@ -32,6 +32,18 @@ test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複
   const t=log.nodes[0].transforms.at(-1);
   assert.equal(t.x,100); assert.equal(t.y,50);
   assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
+  assert.equal(t.rotation,-.15);
+  for (const angle of [0,.15]) {
+    adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
+      area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
+    adapter.update(.01);
+    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,angle);
+  }
+  adapter.clear();
+  adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
+    area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
+  adapter.update(.01);
+  assert.equal(log.updates.at(-1).rotation,-.15);
 });
 
 test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行物不預播命中', () => {

@@ -4,8 +4,29 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 95,
+  "assetCount": 98,
   "assets": [
+    {
+      "assetId": "codex-authored/moon/moon-polished-accents.svg",
+      "relativePath": "codex-authored/moon/moon-polished-accents.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:e9ecb02d0a3e6b61716b45376e3b4edac7b329289c1828347ceed6aaf16a6f9d",
+      "fileSize": 1717
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-body.svg",
+      "relativePath": "codex-authored/moon/moon-polished-body.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:434451456ef9c38f6b8b0e690501156165a780af63d320dde3706f5920520ed2",
+      "fileSize": 1275
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-edge.svg",
+      "relativePath": "codex-authored/moon/moon-polished-edge.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:22ce17bfc33b34bb61e262b35abd6bf95bf7fc150bde42e443aae5d21ca832d7",
+      "fileSize": 942
+    },
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
       "relativePath": "light-masks-1.0/Default/circle_a.png",
