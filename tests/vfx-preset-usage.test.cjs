@@ -114,8 +114,46 @@ test('USAGE-8 下拉的標註跟著 preset 清單一起送，不另開端點', f
   const fn = editor.slice(editor.indexOf('function fillPresetPicker'));
   const body = fn.slice(0, fn.indexOf('\n  }'));
   assert.ok(/data\.usage/.test(body), '下拉要讀 usage');
-  assert.ok(/opt\.value = id;/.test(body),
-    'option 的 value 必須維持純 id——它會被拿去組網址與比對目前這一份');
+  /* 每一列同時留著純 id 與顯示文字：id 拿去組網址與比對目前這一份，
+     顯示文字只給人看。混成一個欄位的話，切換 preset 會帶著括號去打網址。 */
+  assert.ok(/id: id,/.test(body), '每一列要保留純 id');
+  assert.ok(/text:/.test(body), '顯示文字要另外存一欄');
+});
+
+test('USAGE-10 搜尋同時比對 id 與用途，否則打技能名等於找不到', function () {
+  /* 用途標註最大的價值就是「打雷球找得到 lightning-orb-field」。
+     只比對 id 的話，那個標註就只是裝飾。 */
+  const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fill = editor.slice(editor.indexOf('function fillPresetPicker'));
+  const body = fill.slice(0, fill.indexOf('\n  }'));
+  assert.ok(/search:/.test(body) && /label/.test(body),
+    '搜尋字串要含 id 與用途標籤');
+
+  const filter = editor.slice(editor.indexOf('function comboFilter'));
+  const fbody = filter.slice(0, filter.indexOf('\n  }'));
+  assert.ok(/toLowerCase\(\)/.test(fbody), 'id 是小寫，輸入要先轉小寫再比對');
+  assert.ok(/split\(/.test(fbody),
+    '空白分隔的多個關鍵字要全部命中，否則「ground fire」會被 fire 的一大堆結果淹掉');
+});
+
+test('USAGE-11 切換 Preset 走整頁重載，未存檔要先問', function () {
+  /* preset、layout、歷史、選取、gizmo 全部要換成另一份，
+     重載是唯一能保證不會混到上一份殘留的做法。 */
+  const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = editor.slice(editor.indexOf('function choosePreset'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/encodeURIComponent\(id\)/.test(body), '要整頁重載，而且 id 要編碼');
+  assert.ok(/isDirty\(\)/.test(body), '未存檔要先問一聲');
+});
+
+test('USAGE-12 清單用 mousedown 挑選，不是 click', function () {
+  /* input 的 blur 會先關掉清單，click 永遠打不中——這是實測過的，
+     不是理論：改成 click 之後整個清單會變成點不動。 */
+  const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = editor.slice(editor.indexOf('function renderComboList'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/addEventListener\('mousedown'/.test(body), '要用 mousedown');
+  assert.ok(!/addEventListener\('click'/.test(body), '不得用 click');
 });
 
 test('USAGE-9 現況記錄：有用途的與孤兒的數量', function () {

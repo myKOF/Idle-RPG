@@ -254,12 +254,15 @@ test('VIEW-24 複製名稱兩條路都走，因為兩條都驗證不了自己', 
   assert.ok(/\.catch\(/.test(body), 'Clipboard API 失敗時要退回另一條的結果，不得整個炸掉');
 });
 
-test('VIEW-25 複製的是下拉上顯示的那個 id，而且失敗要說出來', function () {
+test('VIEW-25 複製的是實際載入的那一份，而且失敗要說出來', function () {
   const src = stripped();
   const copy = src.slice(src.indexOf('function copyPresetName'));
   const body = copy.slice(0, copy.indexOf('\n  }'));
-  assert.ok(/preset-picker/.test(body),
+  assert.ok(/state\.sourcePresetId/.test(body),
     '要複製實際載入的來源 id；state.preset.id 是可編輯欄位，可能還沒落檔');
+  /* 更不能取搜尋框裡的文字：那裡放的是使用者正在打的關鍵字，而且顯示時是
+     「id（用途）」，不是可以直接貼去用的檔名。 */
+  assert.ok(!/preset-search/.test(body), '不得從搜尋框取值');
   const flash = src.slice(src.indexOf('function flashCopyResult'));
   assert.ok(/ok \?/.test(flash.slice(0, 400)),
     '成功與失敗要顯示不同的字——複製沒成功卻不說，使用者會貼出上一次的內容');
