@@ -91,6 +91,16 @@
     resolver: null,
     app: null,
     stageRoot: null,
+    /* ---- 檢視狀態（「怎麼看」，不是 Preset 內容）----
+       和背景色同一類，所以一樣不進 preset、不進 Undo 歷史。
+       zoom 刻意不記進 localStorage：留著 320% 隔天再打開，第一眼會以為
+       素材被誰改大了；格線開關則是穩定的偏好，記得住比較省事。 */
+    zoom: 1,
+    gridOn: true,
+    /* 預覽循環＝播完自動重播，只影響編輯時的畫面。
+       preset.loop 是出貨資料（決定遊戲裡這個特效會不會自己重複），
+       兩者共用一個勾選框的話，想重看一次爆點就會把它改成永不結束。 */
+    previewLoop: true,
     /* 上次「與 repo 檔案一致」的 canonical 文字。
        null 代表這份 preset 從來沒有存回 repo 過（例如從本機檔案匯入的），
        此時一律視為 dirty——比起假裝乾淨，寧可讓人多按一次存檔。 */
@@ -580,9 +590,14 @@
   function drawGizmo() {
     if (!gizmo.gfx) return;
     var c = gizmo.overlay;
-    /* 畫布尺寸變了要跟著 stageRoot 一起移動 */
-    if (c.x !== state.stageRoot.x || c.y !== state.stageRoot.y) {
+    /* 框畫的是 effect-local 座標，所以這一層要與 stageRoot 保持同一個變換：
+       畫布尺寸變了要跟著移動，縮放變了要跟著縮。少同步 scale 的話，
+       放大之後框會停在 100% 的大小，看起來像框跑掉了。
+       把手與十字的**螢幕**尺寸不受影響——它們走 screenRadiusToLocal 反算。 */
+    if (c.x !== state.stageRoot.x || c.y !== state.stageRoot.y ||
+        c.scale.x !== state.stageRoot.scale.x) {
       c.x = state.stageRoot.x; c.y = state.stageRoot.y;
+      c.scale.set(state.stageRoot.scale.x, state.stageRoot.scale.y);
       gizmo.dirty = true;
     }
     if (!gizmo.dirty) return;
@@ -640,6 +655,9 @@
 
   function onPreviewPointerDown(e) {
     if (!state.preset || !state.app) return;
+    /* 中鍵＝回到 100%。滾輪縮放的配套：手已經在滾輪上，不必再去找按鈕。
+       preventDefault 順便擋掉瀏覽器的中鍵自動捲動。 */
+    if (e.button === 1) { e.preventDefault(); applyZoom(1); return; }
     if (e.button !== 0) return;
     var pt = clientToEffectLocal(e.clientX, e.clientY);
     var target = gizmoTarget();
@@ -813,6 +831,124 @@
     canvas.addEventListener('pointerdown', onPreviewPointerDown);
     window.addEventListener('pointermove', onPreviewPointerMove);
     window.addEventListener('pointerup', onPreviewPointerUp);
+  }
+
+  /* ---------------- 座標格線與縮放 ----------------
+
+     格線是量尺，不是裝飾：它讓「這顆爆點在遊戲裡有多大」變成讀得出來的數字，
+     而不是靠感覺。比例尺與遊戲相同（1 米 = 10px、一大格 6 米），
+     間距與取捨規則全部在 view-model.js，連同它為什麼是 10px 的來源說明；
+     這裡只負責畫出來與接滑鼠。
+
+     兩件刻意不做的事：
+
+     1. **格線不掛在 stageRoot 底下。** 它畫在畫布座標上，線寬永遠是 1px。
+        跟著縮放的話，放大 8 倍時線也會變成 8px 粗的柵欄，量尺變成鐵窗。
+     2. **不每幀重畫。** 每幀 clear() 一個 Graphics 是實測過的效能陷阱
+        （與 drawGizmo 同一條理由）。這裡比對「上次是用什麼條件畫的」，
+        條件沒變就整個跳過——用欄位逐一比較而不是組字串，避免每幀產生垃圾。 */
+
+  var grid = { gfx: null, last: null };
+
+  function drawGrid() {
+    var g = grid.gfx;
+    if (!g || !state.stageRoot) return;
+    var w = state.app.renderer.width, h = state.app.renderer.height;
+    var ox = state.stageRoot.x, oy = state.stageRoot.y;
+    var last = grid.last;
+    if (last && last.w === w && last.h === h && last.ox === ox && last.oy === oy &&
+        last.zoom === state.zoom && last.on === state.gridOn && last.bg === state.background) {
+      return;
+    }
+    grid.last = { w: w, h: h, ox: ox, oy: oy, zoom: state.zoom,
+                  on: state.gridOn, bg: state.background };
+    g.clear();
+    if (!state.gridOn) return;
+
+    var spec = VFXViewModel.gridSpec({
+      width: w, height: h, originX: ox, originY: oy, zoom: state.zoom
+    });
+    var pal = VFXViewModel.gridPalette(state.background);
+    strokeGridLines(g, spec.minorX, spec.minorY, w, h, pal.colour, pal.minorAlpha);
+    strokeGridLines(g, spec.majorX, spec.majorY, w, h, pal.colour, pal.majorAlpha);
+    /* 軸線最後畫、也最亮：它標的是特效原點，拖曳與 position 都以它為 0。 */
+    strokeGridLines(g,
+      spec.axisX === null ? [] : [spec.axisX],
+      spec.axisY === null ? [] : [spec.axisY],
+      w, h, pal.colour, pal.axisAlpha);
+  }
+
+  /* 同一種線一次 stroke 完。每條線各自 stroke() 會變成幾百次填色，
+     而它們的顏色與 alpha 完全一樣。 */
+  function strokeGridLines(g, xs, ys, w, h, colour, alpha) {
+    if (!xs.length && !ys.length) return;
+    /* 半像素對齊：1px 的線落在整數座標上會跨到相鄰兩個像素，
+       變成兩條半亮的灰線——整張圖看起來會糊。 */
+    xs.forEach(function (x) {
+      var v = Math.round(x) + 0.5;
+      g.moveTo(v, 0); g.lineTo(v, h);
+    });
+    ys.forEach(function (y) {
+      var v = Math.round(y) + 0.5;
+      g.moveTo(0, v); g.lineTo(w, v);
+    });
+    g.stroke({ width: 1, color: colour, alpha: alpha });
+  }
+
+  function applyZoom(z) {
+    state.zoom = VFXViewModel.clampZoom(z);
+    /* 縮放中心固定在特效原點（畫布正中央）。不做「以游標為中心」是因為那必須
+       一併引入平移，而預覽區的左鍵已經是 Gizmo 拖曳；特效本來就繞著原點做，
+       對著原點縮放就夠用，而且永遠不會縮到迷路。 */
+    if (state.stageRoot) state.stageRoot.scale.set(state.zoom);
+    markGizmoDirty();                 // 框畫的是 effect-local，換算比例變了
+    updateViewReadout();
+  }
+
+  var GRID_STORAGE_KEY = 'vfx-editor.grid';
+
+  function setGridOn(on) {
+    state.gridOn = !!on;
+    var chk = $('chk-grid');
+    if (chk) chk.checked = state.gridOn;
+    /* 與背景色同一類的檢視偏好，所以同樣走 localStorage，不進 preset。 */
+    try { window.localStorage.setItem(GRID_STORAGE_KEY, state.gridOn ? '1' : '0'); } catch (e) { }
+    updateViewReadout();
+  }
+
+  function updateViewReadout() {
+    var btn = $('zoom-reset');
+    if (btn) btn.textContent = '縮放 ' + Math.round(state.zoom * 100) + '%';
+    var note = $('grid-scale');
+    if (!note) return;
+    /* 格線關掉時不留「1 大格 = 6 米」那行字：畫面上沒有格可以對照，
+       那句話只會讓人去找不存在的線。 */
+    note.textContent = state.gridOn
+      ? '1 大格 = ' + VFXViewModel.METRES_PER_CELL + ' 米（' +
+        Math.round(VFXViewModel.PX_PER_METRE * VFXViewModel.METRES_PER_CELL * state.zoom) + 'px）'
+      : '';
+  }
+
+  function wirePreviewView() {
+    var saved = null;
+    try { saved = window.localStorage.getItem(GRID_STORAGE_KEY); } catch (e) { }
+    state.gridOn = saved === null ? true : saved === '1';
+
+    /* passive:false 才 preventDefault 得了。少了它，滾輪會在縮放的同時
+       把整頁一起捲走——而這一頁本來就會因為工具列換行而出現捲軸。 */
+    state.app.canvas.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      applyZoom(VFXViewModel.zoomByWheel(state.zoom, e.deltaY, e.deltaMode));
+    }, { passive: false });
+
+    var chk = $('chk-grid');
+    if (chk) {
+      chk.checked = state.gridOn;
+      chk.onchange = function () { setGridOn(chk.checked); };
+    }
+    var btn = $('zoom-reset');
+    if (btn) btn.onclick = function () { applyZoom(1); };
+    updateViewReadout();
   }
 
   /* ---------------- Undo / Redo ----------------
@@ -1483,8 +1619,29 @@
   }
 
   function onKeyDown(e) {
-    if (!state.preset) return;
+    /* Escape 仍然排第一：拖曳中不論焦點在哪都要取消得掉，而且它不會誤刪東西。
+       沒有拖曳時 cancelDrag() 回 false，所以擺在 state.preset 的守門之前也安全。 */
     if (e.key === 'Escape' && cancelDrag()) { e.preventDefault(); return; }
+
+    /* Ctrl+S 排在其餘所有守門之前，連 state.preset 都還沒判斷。
+
+       第一件事是 preventDefault：不擋的話瀏覽器會跳出「另存新檔」，把整個
+       編輯器頁面存成 .html——那個對話框還會吃掉焦點。所以只要在這一頁按了
+       Ctrl+S，就一律由我們接手，即使當下沒有東西可存。
+
+       第二件事是先讓輸入框收尾。數值欄位是 change（失焦或 Enter）才寫回
+       preset 的，在欄位裡打完數字直接按 Ctrl+S 的話，序列化會取到打字之前的
+       舊值——存進去的內容和畫面上看到的不一樣，而且完全沒有跡象。
+       blur() 會同步觸發那一格的 change 與 wireFieldTransaction 的 editCommit，
+       所以走到 savePreset 時資料與歷史都已經是最新的。 */
+    if ((e.ctrlKey || e.metaKey) && (e.key || '').toLowerCase() === 's' && !e.altKey) {
+      e.preventDefault();
+      var active = document.activeElement;
+      if (active && isTextEntry(active) && typeof active.blur === 'function') active.blur();
+      if (state.preset) savePreset();
+      return;
+    }
+    if (!state.preset) return;
 
     /* Undo／Redo 排在文字輸入的守門**之前**：這是編輯器，不是文字編輯器，
        在 Inspector 的數值欄位按 Ctrl+Z 應該回上一步編輯，而不是還原那一格的字。
@@ -1562,6 +1719,8 @@
 
   /* 換算後的小數尾巴（0.5235987755982988 → 30）不該出現在輸入框裡 */
   function round4(v) { return Math.round(v * 10000) / 10000; }
+  /* 米數是給人讀的參考值，一位小數就夠——30.4 米比 30.4128 米好讀。 */
+  function round1(v) { return Math.round(v * 10) / 10; }
 
   var INVALID = {};
 
@@ -1588,24 +1747,149 @@
     return INVALID;
   }
 
+  /* ---------------- Preset 區塊 ----------------
+
+     圖層以外的 Preset 級欄位，目前只有 loop。
+
+     它原本在工具列，就擠在 ▶ ⏸ ⟲ 旁邊——那個位置讀起來像播放控制，於是
+     「我想重複看這顆爆點」會被改到出貨資料上：loop 決定的是**遊戲裡**這個特效
+     會不會自己重複（光環會、爆點不會，152 份 preset 各有各的答案）。
+     移進 Inspector 之後它與其他會寫進 json 的欄位並排，語意才一致；
+     工具列原本那一格換成純預覽的「預覽循環」。 */
+  function renderPresetSection(host) {
+    if (!state.preset) return;
+    var title = document.createElement('div');
+    title.className = 'group-title';
+    title.textContent = 'Preset';
+    host.appendChild(title);
+
+    var chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = !!state.preset.loop;
+    chk.title = '遊戲裡這個特效會不會自己重複播放。' +
+      '只是想在編輯時反覆看，請用工具列的「預覽循環」。';
+    chk.onchange = function () {
+      state.preset.loop = chk.checked;
+      onPresetChanged();
+    };
+    wireFieldTransaction(chk, 'loop');
+    host.appendChild(makeField('loop', chk));
+  }
+
+  /* ---------------- 群組區塊 ----------------
+
+     群組在資料上並不存在：preset 沒有父子結構，一次群組變形當場就攤到每個子圖層
+     的 base transform 上（見 gizmo-model.js 的「群組變形」段落）。所以群組沒有
+     「自己的」scale 與 rotation 可以顯示出來。
+
+     於是這裡的欄位分成兩種，而且在標籤上就分得出來：
+
+       絕對值（中心 x/y、寬、高）
+         由目前的子圖層即時算出來（groupBounds），永遠是真的。輸入絕對值，
+         換算成一次群組變形套下去。
+       相對值（縮放 ×、旋轉 Δ°）
+         群組沒有基準可以比對。硬記一個「原始大小」進 layout 的話，只要有人
+         單獨改過其中一層，那個數字就開始說謊——而且不會有任何跡象。
+         所以這兩格是「再套用多少」，套完歸回 1 與 0。
+
+     「不知道具體縮放了多少」問的其實是「現在這東西多大」。那是寬與高，
+     所以底下直接標出米數，與預覽格線同一把尺（1 米 = 10px）。 */
+  function renderGroupSection(host, group) {
+    var members = group.layerIds.map(layerById).filter(Boolean);
+    var title = document.createElement('div');
+    title.className = 'group-title keep-case';   // 群組名是使用者取的，不要被 uppercase 改寫
+    title.textContent = '群組「' + group.name + '」（' + members.length + ' 層）';
+    host.appendChild(title);
+
+    var b = members.length ? G.groupBounds(members, sizeOf) : null;
+    if (!b) {
+      var hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.textContent = '這個群組量不出框（成員都沒有可用的尺寸）。\n' +
+        '選取單一圖層仍然可以編輯它的參數。';
+      host.appendChild(hint);
+      return;
+    }
+
+    groupField(host, '中心 x', round4(b.pivot.x), function (v) {
+      applyGroupDelta('移動群組', { dx: v - b.pivot.x, dy: 0 });
+    });
+    groupField(host, '中心 y', round4(b.pivot.y), function (v) {
+      applyGroupDelta('移動群組', { dx: 0, dy: v - b.pivot.y });
+    });
+    groupField(host, '寬（px）', round4(b.w), function (v) {
+      if (!(v > 0) || !(b.w > 0)) return;
+      applyGroupDelta('縮放群組', { sx: v / b.w, sy: 1 });
+    }, '整個群組的外框寬度');
+    groupField(host, '高（px）', round4(b.h), function (v) {
+      if (!(v > 0) || !(b.h > 0)) return;
+      applyGroupDelta('縮放群組', { sx: 1, sy: v / b.h });
+    }, '整個群組的外框高度');
+    groupField(host, '縮放 ×', 1, function (v) {
+      if (!(v > 0) || v === 1) return;
+      applyGroupDelta('縮放群組', { sx: v, sy: v });
+    }, '再等比乘上這個倍率。群組沒有「原始大小」可以比對，所以套用後歸 1');
+    groupField(host, '旋轉 Δ°', 0, function (v) {
+      if (!v) return;
+      applyGroupDelta('旋轉群組', { rot: VFXCurveModel.degToRad(v) });
+    }, '再轉這麼多度（子圖層各有各的角度，群組沒有單一角度可顯示）。套用後歸 0');
+
+    var note = document.createElement('div');
+    note.className = 'hint';
+    note.textContent =
+      round1(b.w / VFXViewModel.PX_PER_METRE) + ' × ' +
+      round1(b.h / VFXViewModel.PX_PER_METRE) + ' 米' +
+      '（預覽格線 1 大格 = ' + VFXViewModel.METRES_PER_CELL + ' 米）';
+    host.appendChild(note);
+  }
+
+  /* 用 change（失焦或 Enter）而不是 input：套用一次群組變形會重算每個子圖層
+     並重繪 Inspector，逐字觸發的話打「1.25」會連做三次全群組縮放。 */
+  function groupField(host, label, value, commit, title) {
+    var el = document.createElement('input');
+    el.type = 'number';
+    el.step = '0.01';
+    el.value = value;
+    if (title) el.title = title;
+    el.onchange = function () {
+      var v = Number(el.value);
+      if (!isFinite(v)) { el.value = value; return; }
+      commit(v);
+    };
+    host.appendChild(makeField(label, el));
+  }
+
+  /* 走的是與拖曳完全相同的那條路（snapshot → applyGroupTransform →
+     writeGroupTransform）。自己另外寫一套「用數字縮放」的話，粒子的
+     startScale／speed／spawn／gravity 這些只有群組變形才會動到的欄位
+     一定會漏掉，於是用拖的和用打的結果不一樣。 */
+  function applyGroupDelta(label, delta) {
+    var t = gizmoTarget();
+    if (!t || t.kind !== 'group' || !t.bounds) return;
+    edit(label, function () {
+      G.writeGroupTransform(t.layers,
+        G.applyGroupTransform(G.groupSnapshot(t.layers), t.bounds.pivot, delta));
+    });
+    markGizmoDirty();
+    onPresetChanged();
+    renderInspector();                 // 欄位要顯示變形後的新數值
+  }
+
   function renderInspector() {
     var host = $('inspector');
     /* 舊的曲線元件在 window 上掛了 mousemove／mouseup，不收掉會越積越多，
        而且已被移除的 canvas 仍會在每次滑鼠移動時做命中測試。 */
     destroyCurveEditors();
     host.innerHTML = '';
+    /* Preset 級欄位不隨選取變動，所以永遠在最上面——包括沒選任何圖層的時候。 */
+    renderPresetSection(host);
     var layer = selectedLayer();
     if (!layer) {
-      /* 選到群組時 Inspector 沒有東西可編（這一版的 Group 是純組織用的，
-         沒有 transform），但要說清楚選中的是什麼，而不是顯示「未選取」。 */
       var g = activeGroup();
+      if (g) { renderGroupSection(host, g); return; }
       var hint = document.createElement('div');
       hint.className = 'hint';
-      hint.textContent = g
-        ? ('群組「' + g.name + '」（' + g.layerIds.length + ' 層）\n' +
-           '群組只用來整理圖層，本身沒有可調參數。\n' +
-           '選取單一圖層才會顯示參數。')
-        : '未選取圖層';
+      hint.textContent = '未選取圖層';
       host.appendChild(hint);
       return;
     }
@@ -2090,11 +2374,51 @@
       $('validation').textContent = String(e.message || e);
       return;
     }
+    playPreview(resumeAt);
+  }
+
+  var PREVIEW_SEED = 12345;                      // 固定 seed：編輯時每次重播畫面一致
+
+  function playPreview(startTime) {
     state.handle = state.runtime.play(state.preset.id, {
       position: { x: 0, y: 0 },
-      seed: 12345,                               // 固定 seed：編輯時每次重播畫面一致
-      startTime: resumeAt
+      seed: PREVIEW_SEED,
+      startTime: startTime || 0
     });
+  }
+
+  /* 預覽循環：這一輪播完就從頭再來，調參數時不必一直去按 ⟲。
+
+     判斷用 timeOf 回傳 null——那代表 Core 已經把這個 effect 收掉了，而 Core
+     要等拖尾粒子也散完才收（見 vfx-core 的 particlesLeft），所以重播不會把
+     尾巴切斷。用 preset.duration 自己算時間就會切到。
+
+     這是**檢視偏好**，與 preset.loop 沒有關係：loop 為 true 的特效根本不會結束，
+     timeOf 永遠不是 null，這條路自然不會被觸發，兩邊不會打架。 */
+  function tickPreviewLoop() {
+    if (!state.previewLoop || !state.runtime) return;
+    if (state.handle === null || state.handle === undefined) return;
+    if (state.runtime.timeOf(state.handle) !== null) return;
+    playPreview(0);
+  }
+
+  var PREVIEW_LOOP_KEY = 'vfx-editor.previewLoop';
+
+  function setPreviewLoop(on) {
+    state.previewLoop = !!on;
+    var chk = $('chk-preview-loop');
+    if (chk) chk.checked = state.previewLoop;
+    try { window.localStorage.setItem(PREVIEW_LOOP_KEY, state.previewLoop ? '1' : '0'); } catch (e) { }
+  }
+
+  function loadPreviewLoopPreference() {
+    var saved = null;
+    try { saved = window.localStorage.getItem(PREVIEW_LOOP_KEY); } catch (e) { }
+    /* 沒存過就是開著：一次性的特效播完就消失，預設關閉的話新開一份 preset
+       只會看到一瞬間的畫面，然後對著空白背景調參數。 */
+    state.previewLoop = saved === null ? true : saved === '1';
+    var chk = $('chk-preview-loop');
+    if (chk) chk.checked = state.previewLoop;
   }
 
   /* 拖曳曲線時每次 mousemove 都要更新預覽，但一幀之內做兩次沒有意義
@@ -2394,8 +2718,7 @@
         state.sourcePresetId = null;
         setSaveStatus('', '');
         clearHistoryForNewPreset();          // 上一份的 Undo 不適用於這一份
-        $('chk-loop').checked = !!parsed.loop;
-        markGizmoDirty();
+        markGizmoDirty();                    // preset.loop 由 renderInspector 一起帶出來
         renderLayerList(); renderInspector(); onPresetChanged();
       } catch (e) {
         $('validation').className = 'hint err';
@@ -2503,6 +2826,7 @@
       ['VFXCore', 'js/vfx-core.js'],
       ['VFXPixiBackend', 'js/vfx-pixi-backend.js'],
       ['VFXPresetIdPolicy', 'tools/vfx/editor/preset-id-policy.js'],
+      ['VFXViewModel', 'tools/vfx/editor/view-model.js'],
       ['VFXLayoutSchema', 'tools/vfx/editor/layout-schema.js'],
       ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
@@ -2511,7 +2835,8 @@
       ['VFXGradientEditor', 'tools/vfx/editor/gradient-editor.js'],
       ['VFXGizmoModel', 'tools/vfx/editor/gizmo-model.js'],
       ['VFXHistory', 'tools/vfx/editor/history.js'],
-      ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs']
+      ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs'],
+      ['SpineRef', 'tools/vfx/editor/spine-ref.js']
     ];
     var missing = need.filter(function (m) {
       return typeof window[m[0]] === 'undefined';
@@ -2602,6 +2927,10 @@
         checker.visible = false;
         app.stage.addChild(checker);
         state.checker = checker;
+        /* 格線夾在背景與特效之間：畫在特效上面的話，一條條線會橫過火焰，
+           看起來像素材裂了。順序就是唯一的保證，所以在這裡就位。 */
+        grid.gfx = new PIXI.Graphics();
+        app.stage.addChild(grid.gfx);
         var root = new PIXI.Container();
         app.stage.addChild(root);
         state.stageRoot = root;
@@ -2646,9 +2975,11 @@
         app.ticker.add(function (ticker) {
           /* 在 playing 判斷之前：暫停時改變視窗大小，畫布一樣要跟上 */
           state.syncCanvasSize();
-          drawGizmo();                         // 只在 dirty 時才真的重畫
+          drawGrid();                          // 兩者都只在條件變了才真的重畫
+          drawGizmo();
           if (!state.playing) return;
           state.runtime.update(Math.min(ticker.deltaMS, 100) / 1000);
+          tickPreviewLoop();                   // 播完就重來（純預覽，不碰 preset.loop）
           var s = state.runtime.stats();
           $('stats').textContent = 'effects ' + s.activeEffects +
             ' · particles ' + s.activeParticles +
@@ -2675,6 +3006,8 @@
            左邊那一組要用到素材詞彙表，一旦它出問題，至少不會連圖層分組
            一起消失——那會讓人以為群組被刪掉了，實際上只是沒渲染。 */
         wireGizmo();
+        wirePreviewView();
+        loadPreviewLoopPreference();
         initHistory();
         renderLayerList();
         renderInspector();
@@ -2703,9 +3036,10 @@
     $('btn-play').onclick = function () { state.playing = true; };
     $('btn-pause').onclick = function () { state.playing = false; };
     $('btn-restart').onclick = restart;
-    $('chk-loop').onchange = function () {
-      edit('切換循環', function () { state.preset.loop = $('chk-loop').checked; });
-      onPresetChanged();
+    /* 預覽循環是檢視偏好，不進歷史也不進 preset——與播放／暫停同一類。
+       preset.loop 改由 Inspector 的「Preset」區塊編輯（見 renderPresetSection）。 */
+    $('chk-preview-loop').onchange = function () {
+      setPreviewLoop($('chk-preview-loop').checked);
     };
     /* 背景控制項已從左上角工具列移到預覽區正上方（見 buildBackgroundBar）。
        兩處都留的話，兩個控制項的顯示狀態會分家。 */

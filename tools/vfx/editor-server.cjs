@@ -59,6 +59,11 @@ const ASSET_PREFIX = '/asset-library/';
    那兩個是由事實層推導出來的，規則只有一份在 vfx-semantic-vocab.cjs。
    為了不讓 Editor 抄第二份，開放這一個檔；其餘 tools/vfx 的建置工具仍不對外。 */
 const REPO_ALLOWLIST = ['/tools/vfx/editor/', '/tools/vfx/vfx-semantic-vocab.cjs',
+  /* Spine 參考面板要的兩樣：vendor/ 的 runtime（按下按鈕才載）與
+     fixture/（手寫的最小骨架，讓沒有 Spine 素材的人也能確認面板沒壞）。
+     只開這兩個子目錄，不開整個 /tools/spine/——同一層還有 spine-probe.cjs
+     那支命令列工具，維持「建置工具不對外」的既有規矩。 */
+  '/tools/spine/vendor/', '/tools/spine/fixture/',
   '/js/', '/vfx/'];
 const PORT_BASE = 28361;
 const PORT_TRIES = 10;

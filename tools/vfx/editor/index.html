@@ -12,18 +12,24 @@
   <button id="btn-play">▶ Play</button>
   <button id="btn-pause">⏸ Pause</button>
   <button id="btn-restart">⟲ Restart</button>
-  <label><input type="checkbox" id="chk-loop"> Loop</label>
+  <!-- 預覽循環：只影響編輯時的預覽，不是 preset.loop（那是會出貨的資料，
+       在右邊 Inspector 的「Preset」區塊編輯）。混在一起的話，
+       想重複看一次爆點就會把它改成永遠不結束的特效。 -->
+  <label title="播完自動重播，只影響預覽，不會寫進 Preset"><input type="checkbox" id="chk-preview-loop" checked> 預覽循環</label>
   <span class="sep"></span>
   <button id="btn-undo" disabled>↶ 復原</button>
   <button id="btn-redo" disabled>↷ 重做</button>
   <span class="sep"></span>
   <select id="preset-picker" title="切換 repo 裡的 Preset"><option value="">Preset…</option></select>
   <button id="btn-load">載入 Preset</button>
-  <button id="btn-save">儲存到 repo</button>
+  <button id="btn-save" title="儲存到 repo（Ctrl+S）">儲存到 repo</button>
   <button id="btn-download">下載複本</button>
   <input type="file" id="file-load" accept="application/json" hidden>
   <span id="dirty-flag" class="dirty"></span>
   <span id="save-status" class="save-status"></span>
+  <span class="sep"></span>
+  <!-- Spine 參考：只看不改。runtime 是按下去才載的，見 spine-ref.js -->
+  <button id="spine-open" title="播放 Spine 特效當作重做時的參考（唯讀）">🦴 Spine 參考</button>
   <span class="sep"></span>
   <span id="stats" class="stats"></span>
 </header>
@@ -82,6 +88,14 @@
         <span>自訂</span>
       </label>
       <span id="bg-current" class="bg-current"></span>
+      <span class="sep"></span>
+      <!-- 格線與縮放同屬「怎麼看」，所以跟背景色放同一列，離預覽區最近。 -->
+      <label class="bg-toggle" title="淺色座標格線；1 大格 = 6 米，與遊戲同比例">
+        <input type="checkbox" id="chk-grid" checked><span>格線</span>
+      </label>
+      <button id="zoom-reset" class="zoom-reset"
+              title="在預覽區用滾輪縮放；按中鍵或點這裡回到 100%">縮放 100%</button>
+      <span id="grid-scale" class="scale-note"></span>
     </div>
     <div id="preview-host"></div>
     <div id="preview-msg" class="hint"></div>
@@ -127,11 +141,66 @@
   </div>
 </div>
 
+<!-- Spine 參考面板：把買來的 Spine 特效播出來看，作為自己用 preset 重做的參照。
+     刻意沒有任何編輯功能——它不是第二套特效系統，是一張會動的參考圖。
+     Spine runtime 不在下面的 script 清單裡，是這個面板按下按鈕才動態載入的，
+     所以它不會隨遊戲出貨（授權上那是兩件不同的事）。 -->
+<div id="spine-ref" hidden>
+  <div class="spine-box">
+    <header class="picker-head">
+      <strong>Spine 參考</strong>
+      <span class="picker-target">唯讀，不會動到目前的 Preset</span>
+      <span class="sep"></span>
+      <span id="spine-status" class="spine-status"></span>
+      <button id="spine-close" title="Esc">✕</button>
+    </header>
+    <div class="spine-body">
+      <aside class="spine-side">
+        <div id="spine-drop">
+          選整個資料夾<br><span class="hint">骨架 ＋ atlas ＋ 圖集頁要在同一層</span>
+          <input id="spine-pick" type="file" webkitdirectory multiple hidden>
+        </div>
+        <h3>骨架</h3>
+        <div id="spine-list" class="spine-listbox"></div>
+        <h3>動畫</h3>
+        <div id="spine-anims" class="spine-listbox"></div>
+      </aside>
+      <div class="spine-main">
+        <div id="spine-host"></div>
+        <div class="spine-ctl">
+          <label><input type="checkbox" id="spine-loop" checked> 循環</label>
+          <label>速度
+            <select id="spine-speed">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1x</option>
+              <option value="2">2x</option>
+            </select>
+          </label>
+          <label>縮放 <span id="spine-scale-val">1.00</span>
+            <input id="spine-scale" type="range" min="0.05" max="4" step="0.05" value="1">
+          </label>
+          <span class="sep"></span>
+          <label>逐格
+            <select id="spine-frames"><option>8</option><option selected>12</option><option>16</option><option>24</option></select>
+          </label>
+          <label>每格
+            <select id="spine-cell"><option>96</option><option selected>128</option><option>192</option><option>256</option></select>
+          </label>
+          <button id="spine-strip" title="把這一段動畫攤成逐格圖存下來">存逐格圖</button>
+        </div>
+        <div id="spine-info" class="hint"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/js/vendor/pixi.min.js"></script>
 <script src="/js/vfx-core.js"></script>
 <script src="/js/vfx-pixi-backend.js"></script>
 <script src="/tools/vfx/vfx-semantic-vocab.cjs"></script>
 <script src="/tools/vfx/editor/preset-id-policy.js"></script>
+<script src="/tools/vfx/editor/view-model.js"></script>
 <script src="/tools/vfx/editor/layout-schema.js"></script>
 <script src="/tools/vfx/editor/layer-model.js"></script>
 <script src="/tools/vfx/editor/curve-model.js"></script>
@@ -140,6 +209,7 @@
 <script src="/tools/vfx/editor/gradient-editor.js"></script>
 <script src="/tools/vfx/editor/gizmo-model.js"></script>
 <script src="/tools/vfx/editor/history.js"></script>
+<script src="/tools/vfx/editor/spine-ref.js"></script>
 <script src="/tools/vfx/editor/editor.js"></script>
 </body>
 </html>

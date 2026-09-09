@@ -736,3 +736,40 @@ color reference。
 procedural / data-driven composition 建立。
 
 這一條與第 4.5.5 節（不得自行取得第三方素材）一致，不是新增的例外。
+
+## 9.11 每份 Preset 的圖層一律收進單一根群組（必要）
+
+做完一份 Preset 之後，**它的所有圖層必須收進「一個」群組**，寫在
+`vfx/layouts/<presetId>.json`，群組的 `id` 與 `name` 都取 preset id。
+
+不得：
+
+- 讓圖層散落在根層級（`layout.order` 直接列 `layer:<id>`）
+- 一份 Preset 切成兩個以上的群組
+- 只把一部分圖層收進群組、其餘留在根層級
+
+### 為什麼
+
+Editor 之後要能**同時打開多份特效一起編輯**。到那個時候「Layers 面板上一列
+＝一個特效」才分得開；散在根層級的圖層會和別份特效的圖層混成一鍋，
+而且沒有任何線索指出哪一層屬於誰。
+
+分組是 authoring metadata：它存在 `vfx/layouts/`，不進 Preset、不進 Runtime、
+不隨遊戲出貨（見 `tools/vfx/editor/layout-schema.js` 檔頭與
+`VFX_CORE_AND_PRESET_SCHEMA.md` §1.3）。所以這條規則對畫面**零影響**，
+純粹是把「以後會很難整理」的成本現在先付掉。
+
+### 怎麼做
+
+`tools/vfx/authoring/preset-kit.cjs` 的 `write()` 已經自動產生單一根群組的
+layout，照既有流程寫 Preset 就自然符合。要補既有檔案時單獨呼叫
+`writeRootGroupLayout(preset)`。
+
+layout schema 沒有巢狀群組，所以就是**扁平一層**，不要自作主張再細分成
+「核心／拖尾／火花」之類的子群組。
+
+### 驗收
+
+`tests/vfx-preset-layout.test.cjs` 會走過 `vfx/presets/` 的每一份檔案，
+確認它有對應的 layout、只有一個群組、而且該群組收滿全部圖層。
+新增 Preset 時不必另外寫測試，這一條自動涵蓋。

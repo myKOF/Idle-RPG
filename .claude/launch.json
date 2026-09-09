@@ -12,6 +12,17 @@
       "port": 28361
     },
     {
+      "//": "五份工作副本共用 28361~28370，而 28361 常被別的副本占走。伺服器遇到 EADDRINUSE 會自己換下一個埠，但預覽視窗仍然開在設定的埠上——於是看的是別人的編輯器。每個副本各自認一個埠就不會撞。",
+      "name": "vfx-editor-claude",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/vfx/editor-server.cjs",
+        "--port",
+        "28362"
+      ],
+      "port": 28362
+    },
+    {
       "name": "sim-dashboard",
       "runtimeExecutable": "node",
       "runtimeArgs": [
