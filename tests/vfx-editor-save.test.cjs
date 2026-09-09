@@ -688,7 +688,10 @@ test('W6 /__whoami 回報服務中的目錄，供啟動器辨識工作副本',
     const res = await request(h.port, { path: '/__whoami' });
     assert.equal(res.status, 200);
     assert.ok(/^idle-rpg-vfx-editor /.test(res.text), '必須以固定標記開頭：' + res.text);
-    assert.equal(res.text.trim(), 'idle-rpg-vfx-editor ' + path.resolve(sb.repoRoot),
+    /* 身分在**第一行**。後面還有一行狀態標記（-ok／-stale，見 W7B），
+       所以這裡比對第一行而不是整段——啟動器的 :scan 也是這樣比的。 */
+    const identity = res.text.split('\n')[0];
+    assert.equal(identity, 'idle-rpg-vfx-editor ' + path.resolve(sb.repoRoot),
       '必須含服務中的絕對目錄，否則不同副本無法區分');
 
     /* 兩個不同的沙箱必須回報不同的目錄——這才是它存在的理由 */
@@ -696,7 +699,7 @@ test('W6 /__whoami 回報服務中的目錄，供啟動器辨識工作副本',
     const h2 = await withServer(sb2);
     try {
       const res2 = await request(h2.port, { path: '/__whoami' });
-      assert.notEqual(res2.text, res.text, '不同工作副本必須回報不同身分');
+      assert.notEqual(res2.text.split('\n')[0], identity, '不同工作副本必須回報不同身分');
     } finally {
       await closeServer(h2);
       cleanup(sb2);
@@ -787,25 +790,37 @@ test('W7B 啟動器不得沿用一個程式已經過期的伺服器', function (
   const serverSrc = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
   const launcher = fs.readFileSync(path.join(REPO, '啟動VFX編輯器.bat'), 'utf8');
 
-  const staleMatch = serverSrc.match(/const WHOAMI_STALE_MARK = '([^']+)'/);
-  assert.ok(staleMatch, '伺服器必須定義 WHOAMI_STALE_MARK');
-  assert.ok(launcher.indexOf('set STALE_MARK=' + staleMatch[1]) >= 0,
-    '啟動器的 STALE_MARK 必須等於伺服器的標記');
+  const freshMatch = serverSrc.match(/const WHOAMI_FRESH_MARK = '([^']+)'/);
+  assert.ok(freshMatch, '伺服器必須定義 WHOAMI_FRESH_MARK');
+  assert.ok(launcher.indexOf('set FRESH_MARK=' + freshMatch[1]) >= 0,
+    '啟動器的 FRESH_MARK 必須等於伺服器的標記');
 
-  /* 過期標記必須自成一行，否則會破壞啟動器用第一行比對身分的邏輯 */
-  assert.ok(/whoami \+= WHOAMI_STALE_MARK \+ '\\n'/.test(serverSrc),
-    '過期標記要另起一行附加');
+  /* **判定要用白名單，不是黑名單。** 第一版寫成「看到 -stale 才擋」，
+     結果擋不到真正出事的那種：舊到還沒有這套標記的伺服器什麼都不回報，
+     於是照樣被沿用——使用者遇到的正是這一種。改成「看到 -ok 才沿用」，
+     沒有回報就一律當成過期。舊程式沒辦法回報自己舊，不能等它自首。 */
+  assert.ok(/staleServerFiles\(\)\.length \? WHOAMI_STALE_MARK : WHOAMI_FRESH_MARK/.test(serverSrc),
+    '兩個標記必須二選一、一定要有一個，否則「沒有回報」分不出是舊還是壞');
+  assert.ok(/if not defined FRESH goto :stale/.test(launcher),
+    '啟動器必須是「沒有 FRESH 就當過期」，不是「有 STALE 才當過期」');
+
+  /* 標記必須自成一行，否則會破壞啟動器用第一行比對身分的邏輯 */
   const mark = serverSrc.match(/const WHOAMI_MARK = '([^']+)'/)[1];
-  assert.ok(staleMatch[1].indexOf(mark + ' ') !== 0,
-    '過期標記不得以「MARK 空白」開頭，否則 :scan 會把它誤認成身分行');
+  [freshMatch[1], serverSrc.match(/const WHOAMI_STALE_MARK = '([^']+)'/)[1]]
+    .forEach(function (m) {
+      assert.ok(m.indexOf(mark + ' ') !== 0,
+        m + ' 不得以「MARK 空白」開頭，否則 :scan 會把它誤認成身分行');
+    });
 
   /* 沿用之前一定要先問過 */
   const adopt = launcher.slice(launcher.indexOf('call :scan'));
-  const check = adopt.indexOf('call :checkstale');
+  const check = adopt.indexOf('call :checkfresh');
   const reuse = adopt.indexOf('直接開啟頁面');
-  assert.ok(check >= 0 && reuse >= 0, '啟動器要有沿用路徑與過期檢查');
-  assert.ok(check < reuse, '過期檢查必須排在「直接開啟頁面」之前');
-  assert.ok(/if defined STALE goto :stale/.test(launcher), '過期就要跳走，不得繼續沿用');
+  assert.ok(check >= 0 && reuse >= 0, '啟動器要有沿用路徑與新舊檢查');
+  assert.ok(check < reuse, '檢查必須排在「直接開啟頁面」之前');
+  /* cmd 的括號區塊 ＋ call ＋ if defined 是會出事的組合，而這裡不需要區塊 */
+  assert.ok(!/if defined PORT \(/.test(launcher),
+    '沿用判斷不要放在括號區塊裡，攤平寫');
   /* 擋下來之後要停在畫面上，不然使用者一樣只看到黑窗閃一下 */
   const stale = launcher.slice(launcher.indexOf('\n:stale'));
   assert.ok(/pause/.test(stale.slice(0, 1200)), '過期的說明要 pause，不能閃一下就關掉');

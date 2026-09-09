@@ -117,9 +117,18 @@ const PORT_TRIES = 10;
 /* 啟動器用來確認「這個埠上的是不是本副本的 Editor」，見下方路由處的說明 */
 const WHOAMI_PATH = '/__whoami';
 const WHOAMI_MARK = 'idle-rpg-vfx-editor';
-/* 啟動器用這個字串判斷「掃到的這個伺服器該不該沿用」。刻意做成 MARK 的
-   延伸字串，這樣兩邊的比對規則看得出是同一組東西。 */
+/* 第二行一定會有，而且只會是這兩個之一。啟動器的規則是「看到 -ok 才沿用」，
+   所以三種狀況都涵蓋得到：
+
+     -ok       程式與磁碟一致 → 沿用
+     -stale    這個行程載入之後檔案被改過 → 不沿用
+     兩個都沒有 這個伺服器舊到還沒有這套標記 → 不沿用
+
+   第三種是關鍵，也是第一版漏掉的：舊程式沒辦法回報自己舊，所以不能等它
+   自首，只能用「沒有回報＝舊」來判定。實測就是這樣卡住的——使用者的伺服器
+   起於 15:43、程式 19:19 才落地，啟動器照樣沿用，黑窗連出現都沒出現。 */
 const WHOAMI_STALE_MARK = 'idle-rpg-vfx-editor-stale';
+const WHOAMI_FRESH_MARK = 'idle-rpg-vfx-editor-ok';
 /* Preset 清單：Editor 的 topbar 下拉用它列出目前有哪些 preset 可以開。
    只回 id 陣列——目錄內容本來就是公開的 vfx/presets/*.json，不多給任何路徑。 */
 const PRESET_LIST_PATH = '/__presets';
@@ -641,7 +650,7 @@ function createServer(ctx) {
          才擋得住，不然使用者只會看到啟動器閃一下就關掉、什麼都沒變。
          標記自成一行，不影響原本用第一行比對身分的邏輯。 */
       var whoami = WHOAMI_MARK + ' ' + path.resolve(ctx.repoRoot) + '\n';
-      if (staleServerFiles().length) whoami += WHOAMI_STALE_MARK + '\n';
+      whoami += (staleServerFiles().length ? WHOAMI_STALE_MARK : WHOAMI_FRESH_MARK) + '\n';
       return send(res, 200, whoami);
     }
 

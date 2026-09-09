@@ -26,8 +26,11 @@ set PRESET=%~1
 if "%PRESET%"=="" set PRESET=lightning-orb-field
 
 set MARK=idle-rpg-vfx-editor %CD%
-rem Second marker on /__whoami: the server saying its own code is out of date.
-set STALE_MARK=idle-rpg-vfx-editor-stale
+rem Second marker on /__whoami.  Adopt only when the server explicitly says its
+rem code is current: a server old enough to predate this handshake reports
+rem neither marker, and "no answer" must count as stale.  Waiting for an old
+rem process to admit it is old cannot work -- it has no code to do so.
+set FRESH_MARK=idle-rpg-vfx-editor-ok
 set PORT=
 
 where node >nul 2>nul
@@ -62,15 +65,18 @@ rem explain it.  Measured 2026-09-09: the preset dropdown's new search UI showed
 rem up while the usage labels it needs from the server did not -- the process had
 rem been running for three and a half hours before that code landed.
 rem The server reports this itself on /__whoami; refuse to adopt when it does.
+rem Flat, no parentheses: `call` plus `if defined` inside a block is exactly the
+rem kind of batch construct that works until it doesn't.  Nothing here needs a
+rem block, so don't use one.
 call :scan
-if defined PORT (
-  call :checkstale
-  if defined STALE goto :stale
-  echo 伺服器已在執行中，直接開啟頁面。連接埠：
-  echo     %PORT%
-  goto :open
-)
+if not defined PORT goto :startnew
+call :checkfresh
+if not defined FRESH goto :stale
+echo 伺服器已在執行中，直接開啟頁面。連接埠：
+echo     %PORT%
+goto :open
 
+:startnew
 echo 啟動伺服器...
 start "VFX 編輯器伺服器 - 關閉此視窗即停止" cmd /c tools\vfx\editor_server_window.bat
 
@@ -115,6 +121,9 @@ echo   這個埠上的伺服器行程比磁碟上的程式舊，多半是 merge 
 echo   沒有重啟。它會服務新版的頁面檔，卻用舊版的後端邏輯，結果是
 echo   功能少一半，而且畫面上看不出原因。
 echo.
+echo   （伺服器新到會自己回報狀態時，這裡才會放行；舊到不會回報的
+echo     一律當成過期，因為舊程式沒辦法回報自己舊。）
+echo.
 echo   請把那個「VFX 編輯器伺服器」視窗關掉，再執行一次本檔。
 echo   找不到那個視窗時，用下面列出的 PID 強制結束：
 echo     taskkill /F /PID 那個PID
@@ -125,12 +134,13 @@ echo ========================================================
 pause
 exit /b 1
 
-rem ---- checkstale : set STALE when the adopted server reports outdated code ----
+rem ---- checkfresh : set FRESH only when the server says its code is current ----
 rem Separate marker line on /__whoami, so the identity match above is untouched.
-:checkstale
-set STALE=
-curl -s --max-time 2 http://127.0.0.1:%PORT%/__whoami 2>nul | find /i "%STALE_MARK%" > nul
-if not errorlevel 1 set STALE=1
+rem Absence of the marker means the server predates this handshake -- also stale.
+:checkfresh
+set FRESH=
+curl -s --max-time 2 http://127.0.0.1:%PORT%/__whoami 2>nul | find /i "%FRESH_MARK%" > nul
+if not errorlevel 1 set FRESH=1
 goto :eof
 
 rem ---- scan : set PORT to the first port in range serving OUR editor ----
