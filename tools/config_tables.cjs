@@ -249,7 +249,18 @@ function colName(idx) { let n = idx + 1, s = ''; while (n > 0) { const r = (n - 
 function isNumericCell(v) { return typeof v === 'number' || (typeof v === 'string' && /^-?(0|[1-9]\d*)(\.\d+)?$/.test(v.trim()) && v.trim() !== ''); }
 function sheetXml(rows) {
   const parts = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
-    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'];
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'];
+  const isSkills2 = rows[0] && rows[0].includes('作用方式與距離用途（唯讀說明）');
+  if (isSkills2) {
+    parts.push('<sheetViews><sheetView workbookViewId="0"><pane xSplit="3" ySplit="1" topLeftCell="D2" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols>');
+    rows[0].forEach((label, i) => {
+      const width = i >= 21 ? (i === rows[0].length - 1 ? 90 : 34) :
+        (/JSON|效果說明/.test(label) ? 55 : /名稱|解鎖/.test(label) ? 24 : 15);
+      parts.push('<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+width+'" customWidth="1"/>');
+    });
+    parts.push('</cols>');
+  }
+  parts.push('<sheetData>');
   rows.forEach((row, ri) => {
     parts.push('<row r="' + (ri + 1) + '">');
     row.forEach((cell, ci) => {
@@ -260,7 +271,9 @@ function sheetXml(rows) {
     });
     parts.push('</row>');
   });
-  parts.push('</sheetData></worksheet>');
+  parts.push('</sheetData>');
+  if (isSkills2) parts.push('<autoFilter ref="A1:'+colName(rows[0].length-1)+rows.length+'"/>');
+  parts.push('</worksheet>');
   return Buffer.from(parts.join(''), 'utf8');
 }
 function zipStore(files) {
@@ -1113,7 +1126,7 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['　　　　　主動技能目前只讀群組值，後續列填多少都不影響施放成本；'],
   [''],
   ['效果參數(JSON)'],
-  ['各階的數值參數。命名慣例：<鍵>＝不含升級效果的底值、<鍵>Per＝每級增量，值＝底值＋增量×等級；'],
+  ['其餘未拆成獨立欄的數值參數；距離、間隔、長寬與角度請改右側中文欄。命名慣例：<鍵>＝不含升級效果的底值、<鍵>Per＝每級增量，值＝底值＋增量×等級；'],
   ['　　　　Lv.1 就已含 1 級升級效果（底值＋增量×1），練滿 10 級＝底值＋增量×10；底值本身不會直接出現在遊戲裡；'],
   ['常用鍵：pct＝傷害/效果百分比、chance＝機率%、add＝追加次數/目標數（小數部分以機率觸發）、'],
   ['　　　　count＝目標/次數、m＝距離（米，近戰攻擊距離=5米換算）、sec＝秒數、deg＝角度、'],
@@ -1139,7 +1152,7 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['升到下一級費用＝基數 × 倍率^目前等級（取整）；'],
   [''],
   ['效果說明模板'],
-  ['遊戲內顯示的說明文字；{鍵} 會代入目前等級的計算值（鍵名同「效果參數(JSON)」）。'],
+  ['遊戲內顯示的說明文字；{鍵} 會代入目前等級的計算值（鍵名同各獨立數值欄對應的 fx 鍵或「效果參數(JSON)」）。'],
   [''],
   ['施放特效 / 攻擊特效 / 飛行子彈 / 受擊特效 / 地板特效（2026-09-03 VFX Preset 化）'],
   ['每一格填 VFX 編輯器存出來的 Preset 檔名（vfx/presets/<檔名>.json，不含 .json；含 .json 也接受）；'],
@@ -1187,6 +1200,35 @@ function skills2TierCostCell(tier, note, groupCost) {
   return numStr(groupCost);
 }
 
+// 表格獨立欄是這些 fx 鍵的唯一編輯入口，JSON 只保留其餘參數。
+const SKILLS2_GEOMETRY_COLUMNS = [
+  ['施放距離（米）', 'castM'], ['施放距離每級增加（米）', 'castMPer'],
+  ['作用距離（米；用途見說明）', 'm'], ['作用距離每級增加（米）', 'mPer'],
+  ['每段或每跳間隔（秒）', 'gap'], ['間隔每級增減（秒）', 'gapPer'],
+  ['矩形長度（米）', 'len'], ['矩形長度每級增加（米）', 'lenPer'],
+  ['矩形寬度（米）', 'wid'], ['矩形寬度每級增加（米）', 'widPer'],
+  ['扇形角度（度）', 'deg'], ['角度每級增減（度）', 'degPer']
+];
+function skills2OtherFx(fx) {
+  const rest = Object.assign({}, fx);
+  SKILLS2_GEOMETRY_COLUMNS.forEach(([, key]) => delete rest[key]);
+  return JSON.stringify(rest);
+}
+function skills2GeometryCells(t) {
+  return SKILLS2_GEOMETRY_COLUMNS.map(([, key]) =>
+    Object.prototype.hasOwnProperty.call(t.fx || {}, key) ? numStr(t.fx[key]) : '')
+    .concat([t.desc || '']);
+}
+SKILLS2_GLOSSARY_ROWS.push(['獨立距離與間隔欄（優先於舊 JSON 同名鍵）'],
+  ['只改有值的欄位；留白代表本階未設定此參數，不代表 0 米或 0 秒。未接線技能勿自行填入新參數。'],
+  ['施放距離：玩家離主目標多遠可開始施放。高階明列時覆寫低階；一般技能未設時沿用近戰距離。'],
+  ['作用距離：對應 m；可能是傷害半徑、彈射搜尋距離或額外延伸長度，請搭配右側「作用方式與距離用途」閱讀，不能一概視為半徑。'],
+  ['疾風斬：第一階施放距離及間隔控制前六階；第四階作用距離是以主目標為中心的擴散搜尋半徑；第七階為月牙傷害半徑及獨立施放距離，仍共用第一階間隔。'],
+  ['每段或每跳間隔：對應 gap，具體是連斬、持續傷害或週期觸發，依本階作用說明；不是技能冷卻。'],
+  ['每級增減可填負數，例如間隔每級減少；所有數值為底值，實際值＝底值＋每級增量×等級。'],
+  ['獨立欄位會回寫原 fx 鍵；效果參數(JSON)不再重複存這些鍵。舊版沒有新欄的 CSV 仍可讀取。'],
+  ...SKILLS2_GEOMETRY_COLUMNS.map(([label,key])=>[label+' → fx.'+key]));
+
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
@@ -1196,7 +1238,8 @@ SCHEMAS.Skills2 = {
   header: ['群組ID', '群組名稱', '群組圖標', 'range', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數',
     '解鎖轉生/等級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
-    .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID']),
+    .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
+    .concat(SKILLS2_GEOMETRY_COLUMNS.map(c => c[0])).concat(['作用方式與距離用途（唯讀說明）']),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1210,8 +1253,8 @@ SCHEMAS.Skills2 = {
           (note && note.cd !== '') ? note.cd : numStr(g.cd),
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
-          JSON.stringify(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
-          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']));
+          skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
+          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(t)));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
       (g.ult || []).forEach((o, i) => {
@@ -1220,8 +1263,8 @@ SCHEMAS.Skills2 = {
           (note && note.cd !== '') ? note.cd : '',
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
           '', o.name,
-          JSON.stringify(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
-          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']));
+          skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
+          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(o)));
       });
     });
     return rows;
@@ -1258,6 +1301,17 @@ SCHEMAS.Skills2 = {
       let fx;
       try { fx = fxRaw ? JSON.parse(fxRaw) : {}; }
       catch (e) { throw new Error('Skills2 群組「' + gid + '」第 ' + tierIdx + ' 階「效果參數(JSON)」解析失敗：' + e.message); }
+      SKILLS2_GEOMETRY_COLUMNS.forEach(([label, key]) => {
+        if (!header.includes(label)) return; // 舊格式相容
+        const raw = get(r, label).trim();
+        delete fx[key];
+        if (raw === '') return;
+        const value = Number(raw);
+        if (!Number.isFinite(value) || (!key.endsWith('Per') && value < 0)) {
+          throw new Error('Skills2 '+gid+' 第 '+tierIdx+' 階「'+label+'」必須是有效數字（底值不得小於零）');
+        }
+        fx[key] = value;
+      });
       /* 解鎖門檻：「轉生次數|等級」，留白＝無門檻（不寫進字面值）。
          留白與 0|0 等價，但留白時不產生欄位，字面值才不會多出一堆 { reinc: 0, lv: 0 }。 */
       const unlockRaw = get(r, '解鎖轉生/等級').trim();

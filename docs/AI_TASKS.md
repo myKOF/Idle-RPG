@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜Skills2 獨立距離與間隔欄（CONFIG-SKILLS2-COLUMNS-20260909）
+
+- 狀態：Done；使用者要求 Excel／CSV 獨立欄位及清楚的中文欄名。
+- 範圍：config_tables Skills2 extract／rebuild、表格與欄位定義；既有 fx 數值不變，距離／間隔／長寬／角度及其每級增量移到獨立欄，JSON 保留其餘參數。
+- 驗收：全表往返語意差異 0；獨立欄數值擾動、舊格式相容、空值刪除及非法數字驗證通過；技能測試 90/90，build 328 檔。Excel 核對 34 欄、凍結 D2、篩選 A1:AH231 及疾風斬預設值。
+- 修改：config_tables、Skills2 CSV／Excel、本文件。無遊戲 JS 或技能數值修改；獨立欄於 V～AG，AH 為唯讀作用說明，JSON 不重複保留拆欄的鍵。無未完成項，可合併；未自行合併／推送。
+
 ## Codex｜縮短受擊特效（VFX-HIT-TIMING-20260909）
 
 - 狀態：Done；使用者同意一般受擊 0.10～0.15 秒、重擊爆炸 0.18～0.25 秒、亮心在前 0.05 秒退去。
