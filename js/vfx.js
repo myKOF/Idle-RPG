@@ -2425,6 +2425,13 @@ function renderCombatVfx(spec) {
   /* 敵人攻擊事件由模擬層在 resolveHit 後立即送出，不能沿用「我方出手」
      的 origin。高塔／DOM 路徑仍能用 sourceId 找到 BOSS；野外 Canvas 會
      在另一條路徑處理，這裡保留同樣的近戰／遠程時序。 */
+  if (s.cat === 'basic') {
+    var basicTargets = resolveTargets();
+    basicTargets.pts.forEach(function (pt, i) {
+      vfxImpact(s, layer, pt, basicTargets.ids[i], baseDelay);
+    });
+    return;
+  }
   if (kind === 'enemy-attack' && s.cat === 'enemy') {
     var enemyAttackTargets = resolveTargets();
     if (!enemyAttackTargets.pts.length) return;

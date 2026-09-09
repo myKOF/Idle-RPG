@@ -314,8 +314,9 @@ g('dualdance', [
   _, _, _, _, _,
   { attack: 'slash-dual', hit: 'hit-phys', ground: 'ground-cyclone-avatar' } // T7 暴風亂舞（dual-storm + cyclone）
 ]);
+def('proj-counter-ripple', 'projectile', '反擊：半透明白色氣勁飛彈，尾隨淡淡波紋。', { nominal: 'R 60px', dur: 0.6, loop: true });
 g('counter', [
-  { attack: 'slash-phys', hit: 'hit-phys' },          // T1 反擊（counter-riposte）
+  { projectile: 'proj-counter-ripple', hit: 'hit-phys' }, // T1 反擊（counter-riposte）
   _, _, _,
   { hit: 'hit-earth' },                               // T5 破甲擊（armor-break impact）
   _, _

@@ -38,7 +38,7 @@ test('近戰普攻立即傷害、零飛行，連擊延遲與浮字同步且攻�
   assert.deepEqual(events.map(e=>e.variant),['melee','melee-extra','melee-extra']);
   assert.ok(events.every(e=>e.fxKind==='slash' && e.travelMs[0]===0 && e.dur===0.125));
   const runtime=require('../js/vfx-runtime.js');
-  assert.ok(events.every(e=>runtime.primaryRoleOf(e,e.vfx)==='attack')); 
+  assert.ok(events.every(e=>runtime.primaryRoleOf(e,e.vfx)==='hit'));
   assert.deepEqual(events.map(e=>e.delayMs),[0,130,260]);
   assert.deepEqual(floats.map(e=>e[5]),[0,130,260]);
   assert.ok(floats.every(e=>e[3].includes('damage-group-basic-1')));

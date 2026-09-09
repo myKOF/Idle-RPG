@@ -4837,6 +4837,15 @@ var BattleRenderer = (function () {
 
     if (presetHandled) return;
 
+    if (spec.cat === 'basic') {
+      targets.forEach(function (id) {
+        var pt = posOf(id);
+        spawnImpact(pt.x, pt.y, spec, false);
+        hitReact(id, spec.elem, false);
+      });
+      return;
+    }
+
     if (spec.variant === 'arcane-barrage' || (spec.glyph === '💫' && spec.cat === 'magic')) {
       targets.forEach(function (id, ti) {
         var travel = projectileTravelMs(spec.travelMs && spec.travelMs[ti], spec.dur ? spec.dur * 1000 : 420);

@@ -73,6 +73,19 @@ test('TORNADO 0.3 秒升起與淡出，續命不重播進場', () => {
  adapter.update(.151);assert.equal(adapter.stats().grounds,0);
 });
 
+test('COUNTER 反擊從角色飛向敵人，追加子彈延遲 0.2 秒', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-counter-ripple.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const spec={fxKind:'strike',variant:'counter-riposte',targets:['mv-float-2'],travelMs:[200],vfx:{projectile:p.id}};
+ assert.equal(adapter.tryPlay(spec),true);
+ adapter.tryPlay({...spec,delayMs:200});
+ adapter.update(.1);assert.equal(adapter.stats().played,1);
+ const body=log.nodes.find(n=>n.spec.assetUrl===RESOLVER.resolve(p.layers[0].assetId));
+ assert.ok(body.transforms.at(-1).x>0 && body.transforms.at(-1).x<300);
+ adapter.update(.11);assert.equal(adapter.stats().played,2);
+ adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
 test('BLOODBLADE 核准爆破在命中目標播放並完整消退', () => {
   const preset = JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/hit-bloodblade-burst.json'),'utf8'));
   const {adapter,log} = makeAdapter([preset]);
@@ -248,6 +261,16 @@ function lastOf(log, tag) {
 /* ============================================================
    ROLE — 主要角色的選擇（§1.1）
    ============================================================ */
+
+test('BASIC-HIT 普攻及追加普攻忽略舊攻擊欄，只播放一次受擊', () => {
+ const {adapter}=makeAdapter([unitPreset('hit-only'),unitPreset('old-slash')]);
+ for(const variant of ['melee','melee-extra']) {
+  const before=adapter.stats().played;
+  assert.equal(adapter.tryPlay({cat:'basic',fxKind:'slash',variant,targets:['mv-float-2'],vfx:{attack:'old-slash',hit:'hit-only'}}),true);
+  assert.equal(adapter.stats().played,before+1);
+ }
+ assert.equal(VFXRuntime.primaryRoleOf({cat:'basic',fxKind:'projectile'},{hit:'hit-only',projectile:'old-slash'}),'hit');
+});
 
 test('ROLE-1 各 fxKind 的主要角色與設計文件一致', function () {
   const R = VFXRuntime.primaryRoleOf;

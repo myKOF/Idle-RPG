@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-basic-burst",
+  "groups": [
+    {
+      "id": "hit-basic-burst",
+      "name": "hit-basic-burst",
+      "layerIds": [
+        "gold-fracture",
+        "ivory-impact",
+        "gold-afterburst",
+        "tiny-heart",
+        "gold-chips",
+        "gold-splinters"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-basic-burst"
+  ]
+}
