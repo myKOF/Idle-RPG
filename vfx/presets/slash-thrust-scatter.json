@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "slash-thrust-scatter",
   "duration": 0.48,
-  "loop": false,
+  "loop": true,
   "layers": [
     {
       "id": "aura",
@@ -10,11 +10,11 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
       "zIndex": 0,
       "position": {
-        "x": 58,
+        "x": 58.524,
         "y": 0
       },
       "scale": {
-        "x": 0.2441,
+        "x": 0.4255,
         "y": 0.1328
       },
       "alpha": 0.3,
@@ -50,11 +50,11 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 1,
       "position": {
-        "x": 56,
+        "x": 55.1333,
         "y": 0
       },
       "scale": {
-        "x": 0.2461,
+        "x": 0.4173,
         "y": 0.0742
       },
       "alpha": 1,
@@ -90,11 +90,11 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 2,
       "position": {
-        "x": 60,
+        "x": 61.9146,
         "y": 0
       },
       "scale": {
-        "x": 0.2285,
+        "x": 0.3874,
         "y": 0.0273
       },
       "alpha": 1,
@@ -130,12 +130,12 @@
       "assetId": "light-masks-1.0/default/cone_composed_c.png",
       "zIndex": 3,
       "position": {
-        "x": 85,
+        "x": 104.2974,
         "y": 0
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.0449,
+        "x": 0.0761,
         "y": 0.1348
       },
       "alpha": 0.95,
@@ -172,12 +172,12 @@
       "assetId": "light-masks-1.0/default/cone_composed_c.png",
       "zIndex": 4,
       "position": {
-        "x": 94,
+        "x": 119.5552,
         "y": 0
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.0195,
+        "x": 0.0331,
         "y": 0.0996
       },
       "alpha": 1,
@@ -214,12 +214,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 5,
       "position": {
-        "x": 62,
+        "x": 65.3052,
         "y": 0
       },
       "scale": {
-        "x": 0.2324,
-        "y": 0.0098
+        "x": 0.394,
+        "y": 0.01
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -254,12 +254,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 6,
       "position": {
-        "x": 30,
+        "x": 11.0552,
         "y": 5
       },
       "rotation": 0.39479111969976155,
       "scale": {
-        "x": 0.066,
+        "x": 0.1118,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -296,12 +296,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 7,
       "position": {
-        "x": 52.5,
+        "x": 49.1997,
         "y": 0.5
       },
       "rotation": -0.7354397676755056,
       "scale": {
-        "x": 0.0719,
+        "x": 0.1219,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -338,12 +338,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 8,
       "position": {
-        "x": 73.5,
+        "x": 84.8013,
         "y": -1
       },
       "rotation": 0.6510767214444797,
       "scale": {
-        "x": 0.067,
+        "x": 0.1135,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -380,12 +380,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 9,
       "position": {
-        "x": 95,
+        "x": 121.2505,
         "y": 3.5
       },
       "rotation": -0.3080527810237764,
       "scale": {
-        "x": 0.0586,
+        "x": 0.0993,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -422,12 +422,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 10,
       "position": {
-        "x": 30,
+        "x": 11.0552,
         "y": -5
       },
       "rotation": -0.39479111969976155,
       "scale": {
-        "x": 0.066,
+        "x": 0.1118,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -464,12 +464,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 11,
       "position": {
-        "x": 52.5,
+        "x": 49.1997,
         "y": -0.5
       },
       "rotation": 0.7354397676755056,
       "scale": {
-        "x": 0.0719,
+        "x": 0.1219,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -506,12 +506,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 12,
       "position": {
-        "x": 73.5,
+        "x": 84.8013,
         "y": 1
       },
       "rotation": -0.6510767214444797,
       "scale": {
-        "x": 0.067,
+        "x": 0.1135,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -548,12 +548,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 13,
       "position": {
-        "x": 95,
+        "x": 121.2505,
         "y": -3.5
       },
       "rotation": 0.3080527810237764,
       "scale": {
-        "x": 0.0586,
+        "x": 0.0993,
         "y": 0.0156
       },
       "alpha": 0.8,
@@ -590,13 +590,13 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 14,
       "position": {
-        "x": 35,
+        "x": 19.5318,
         "y": -5
       },
       "rotation": 0.0873,
       "scale": {
-        "x": 0.127,
-        "y": 0.0059
+        "x": 0.2153,
+        "y": 0.01
       },
       "alpha": 0.65,
       "tint": "#ff5935",
@@ -632,13 +632,13 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 15,
       "position": {
-        "x": 42,
+        "x": 31.399,
         "y": 7
       },
       "rotation": -0.0873,
       "scale": {
-        "x": 0.1367,
-        "y": 0.0059
+        "x": 0.2317,
+        "y": 0.01
       },
       "alpha": 0.65,
       "tint": "#ff5935",
@@ -674,13 +674,13 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 16,
       "position": {
-        "x": 49,
+        "x": 43.2662,
         "y": -9
       },
       "rotation": 0.0873,
       "scale": {
-        "x": 0.1465,
-        "y": 0.0059
+        "x": 0.2484,
+        "y": 0.01
       },
       "alpha": 0.65,
       "tint": "#ff5935",
@@ -716,13 +716,13 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 17,
       "position": {
-        "x": 56,
+        "x": 55.1333,
         "y": 11
       },
       "rotation": -0.0873,
       "scale": {
-        "x": 0.1563,
-        "y": 0.0059
+        "x": 0.265,
+        "y": 0.01
       },
       "alpha": 0.65,
       "tint": "#ff5935",
@@ -758,7 +758,7 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 18,
       "position": {
-        "x": 75,
+        "x": 87.3443,
         "y": 0
       },
       "alpha": 0.8,
@@ -775,20 +775,20 @@
         0.22
       ],
       "spawn": {
-        "height": 14,
+        "height": 18.7411,
         "shape": "box",
-        "width": 70
+        "width": 93.7057
       },
       "speed": [
-        35,
-        85
+        46.8529,
+        113.7855
       ],
       "direction": 0,
       "spread": 130,
       "drag": 3,
       "startScale": [
-        0.0039,
-        0.0098
+        0.0053,
+        0.0131
       ],
       "alignToVelocity": true,
       "alphaOverLife": [
@@ -822,11 +822,11 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 19,
       "position": {
-        "x": 38,
+        "x": 24.6177,
         "y": 0
       },
       "scale": {
-        "x": 0.0148,
+        "x": 0.0251,
         "y": 0.0527
       },
       "alpha": 0.72,
@@ -877,11 +877,11 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 20,
       "position": {
-        "x": 66,
+        "x": 72.0865,
         "y": 0
       },
       "scale": {
-        "x": 0.0186,
+        "x": 0.0315,
         "y": 0.0664
       },
       "alpha": 0.72,
@@ -932,11 +932,11 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 21,
       "position": {
-        "x": 94,
+        "x": 119.5552,
         "y": 0
       },
       "scale": {
-        "x": 0.0137,
+        "x": 0.0232,
         "y": 0.0488
       },
       "alpha": 0.72,
