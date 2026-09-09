@@ -545,11 +545,17 @@ test('L36 lightning-orb-field 的正式 hierarchy 與 preset 完全對得上', f
   const rootLayers = rec.rows.filter(r => r.kind === 'layer').map(r => r.id);
   assert.equal(inGroups.length + rootLayers.length, p.layers.length,
     '每個 layer 剛好出現一次');
-  assert.deepEqual(rootLayers, ['field-glow', 'sparkles'], '未分組的應該只有這兩層');
-  assert.equal(rec.groups.length, 7, 'Orb A～G');
-  rec.groups.forEach(function (g) {
-    assert.equal(g.layerIds.length, 4, g.name + ' 應該有 4 層（glow/body/core/arc）');
-  });
+  /* 單一根群組（VFX_AGENT_WORKFLOW §9.11）：全部圖層收進一個群組，
+     根層級不留任何一層。這裡只驗這一份的 reconcile 結果；
+     「每一份 preset 都要符合」由 tests/vfx-preset-layout.test.cjs 涵蓋。
+
+     這條原本寫死成「7 個 Orb 群組 ＋ 2 層未分組」，而使用者重編這份 preset
+     之後它就一直是紅的。測試不該把 authoring 內容的當下形狀當成規格——
+     要釘的是規則。 */
+  assert.deepEqual(rootLayers, [], '單一根群組：不得有圖層留在根層級');
+  assert.equal(rec.groups.length, 1, '一份 Preset 只有一個群組');
+  assert.equal(rec.groups[0].id, p.id, '群組 id 取 preset id');
+  assert.equal(rec.groups[0].layerIds.length, p.layers.length, '群組要收滿全部圖層');
 });
 
 /* ============================================================
@@ -776,12 +782,21 @@ test('R2 純 authoring 拖曳後，runtime 指紋完全相同', function () {
   const before = renderFingerprint(preset);
   const presetJsonBefore = JSON.stringify(preset);
 
+  /* layout 現在是單一根群組（VFX_AGENT_WORKFLOW §9.11），但這條要涵蓋的是
+     「群組之間、群組內部、進出群組」三種拖曳，所以先臨時多開一個群組。
+     不用寫死的群組 id：那會在使用者重編這份 preset 之後靜靜失效——
+     applyDrop 對不存在的 key 是 no-op，於是測試照樣綠燈，卻什麼都沒測到。 */
+  const ids = preset.layers.map(l => l.id);
+  const main = layout.groups[0].id;
+  const spare = M.groupLayers(layout, [ids[ids.length - 1]], '雜項');
+  assert.ok(spare && spare !== main, '需要兩個群組才測得到群組之間的拖曳');
+
   /* 一整串 authoring 操作：群組排序、群組內排序、拖進群組、拖出群組 */
-  M.applyDrop(preset, layout, ['group:orb-g'], 'group:orb-a', 'before');
-  M.applyDrop(preset, layout, ['layer:orb-a-core'], 'layer:orb-a-glow', 'before');
-  M.applyDrop(preset, layout, ['layer:sparkles'], 'group:orb-b', 'into');
-  M.applyDrop(preset, layout, ['layer:sparkles'], 'layer:field-glow', 'after');
-  M.applyDrop(preset, layout, ['group:orb-c'], 'layer:field-glow', 'before');
+  M.applyDrop(preset, layout, ['group:' + spare], 'group:' + main, 'before');
+  M.applyDrop(preset, layout, ['layer:' + ids[2]], 'layer:' + ids[0], 'before');
+  M.applyDrop(preset, layout, ['layer:' + ids[1]], 'group:' + spare, 'into');
+  M.applyDrop(preset, layout, ['layer:' + ids[1]], 'layer:' + ids[0], 'after');
+  M.applyDrop(preset, layout, ['group:' + spare], 'layer:' + ids[0], 'before');
 
   assert.equal(JSON.stringify(preset), presetJsonBefore,
     'preset JSON 必須 byte-identical——authoring 操作不得碰它');
@@ -793,14 +808,16 @@ test('R2 純 authoring 拖曳後，runtime 指紋完全相同', function () {
 test('R3 相同 zIndex 的圖層不受 authoring 重排影響', function () {
   const preset = realPreset();
   const layout = realLayout();
-  /* lightning-orb-field 有四組各 7 層共用同一個 zIndex，正是最危險的情境 */
-  const byZ = {};
-  preset.layers.forEach(l => { const z = l.zIndex || 0; (byZ[z] = byZ[z] || []).push(l.id); });
-  const shared = Object.keys(byZ).filter(z => byZ[z].length > 1);
-  assert.ok(shared.length >= 3, '這份 preset 應該有多組相同 zIndex：' + shared.join(','));
+  /* 相同 zIndex 是最危險的情境：那時候繪製順序由 child 加入順序決定，
+     也就是 preset.layers 的陣列順序，於是「只整理不改畫面」最容易破功。
+
+     這裡自己把前三層壓成同一個 zIndex，而不是去 preset 裡找現成的重複值：
+     preset 是使用者隨時在改的 authoring 資料，一旦哪一版剛好沒有重複值，
+     這條不變量就會有很長一段時間完全沒被守到（而且沒有人會發現）。 */
+  const ids = preset.layers.slice(0, 3).map(function (l) { l.zIndex = 5; return l.id; });
+  assert.equal(ids.length, 3, '這份 preset 至少要有 3 層才測得到這件事');
 
   const before = renderFingerprint(preset);
-  const ids = byZ[shared[0]];
   M.applyDrop(preset, layout, ['layer:' + ids[ids.length - 1]], 'layer:' + ids[0], 'before');
   assert.equal(renderFingerprint(preset).hash, before.hash,
     '相同 zIndex 的層被 authoring 重排後，輸出仍必須相同');
@@ -810,8 +827,11 @@ test('R4 群組／收合／選取都不改 preset', function () {
   const preset = realPreset();
   const layout = realLayout();
   const before = JSON.stringify(preset);
-  M.groupLayers(layout, ['field-glow', 'sparkles'], '雜項');
-  M.ungroup(layout, ['orb-a']);
+  /* 一樣不用寫死的 id：ungroup 對不存在的群組是 no-op，寫死的話這條會在
+     使用者重編 preset 之後變成「什麼都沒做」的綠燈。 */
+  const ids = preset.layers.map(l => l.id);
+  M.groupLayers(layout, [ids[0], ids[1]], '雜項');
+  M.ungroup(layout, [layout.groups[0].id]);
   M.sortRows(LS.reconcile(preset.layers, layout).rows, 'name');
   M.visibleKeys(LS.reconcile(preset.layers, layout).rows, { 'orb-b': true });
   assert.equal(JSON.stringify(preset), before, 'preset 不得被任何 authoring 操作改到');
