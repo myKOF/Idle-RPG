@@ -102,6 +102,34 @@ var VFXPixiBackend = (function () {
        每個 (url, columns, rows) 只切一次並快取：一個 8×8 的序列在畫面上
        同時有幾十顆粒子，重切就是幾十倍的物件配置。 */
     var sheetCache = Object.create(null);
+    var profileCache = Object.create(null);
+    function buildProfileFrames(spec, tex) {
+      var key = spec.assetUrl + '|' + (spec.sheet ? spec.sheet.columns + 'x' + spec.sheet.rows : '1x1') + '|' + spec.profileScales.length;
+      if (profileCache[key]) return profileCache[key];
+      var frames = spec.sheet ? buildFrames(spec, tex) : [tex];
+      profileCache[key] = frames.map(function (frame) {
+        return spec.profileScales.map(function (_, i) {
+          var r = frame.frame, h = r.height / spec.profileScales.length;
+          return new PixiLib.Texture({ source: frame.source,
+            frame: new PixiLib.Rectangle(r.x, r.y + i * h, r.width, h) });
+        });
+      });
+      return profileCache[key];
+    }
+    function updateProfile(node) {
+      var frames = node.__profileFrames;
+      if (!frames) return;
+      var index = Math.max(0, Math.min(frames.length - 1, node.__frameWanted || 0));
+      var strips = frames[index], n = strips.length;
+      var w = strips[0].frame.width, h = strips[0].frame.height * n;
+      node.children.forEach(function (child, i) {
+        child.texture = strips[i];
+        child.scale.set(node.__profileScales[i], 1);
+        child.x = -w * node.__anchorX * node.__profileScales[i];
+        child.y = h * (i / n - node.__anchorY);
+        child.tint = node.__profileTint;
+      });
+    }
     function sheetKey(spec) { return spec.assetUrl + '|' + spec.sheet.columns + 'x' + spec.sheet.rows; }
     function buildFrames(spec, baseTex) {
       var key = sheetKey(spec);
@@ -128,7 +156,17 @@ var VFXPixiBackend = (function () {
 
     function createNode(spec) {
       var node;
-      if (spec.kind === 'tiled') {
+      if (spec.kind === 'profiled') {
+        node = new PixiLib.Container();
+        node.__profileScales = spec.profileScales.slice();
+        node.__anchorX = 0.5; node.__anchorY = 0.5;
+        node.__profileTint = 0xffffff;
+        spec.profileScales.forEach(function () {
+          var child = new PixiLib.Sprite(PixiLib.Texture.EMPTY);
+          child.blendMode = BLEND_MAP[spec.blendMode] || 'normal';
+          node.addChild(child);
+        });
+      } else if (spec.kind === 'tiled') {
         node = new PixiLib.TilingSprite({
           texture: PixiLib.Texture.EMPTY,
           width: 256,
@@ -142,7 +180,10 @@ var VFXPixiBackend = (function () {
       container.addChild(node);
       getTexture(spec.assetUrl, function (tex) {
         if (node.destroyed) return;
-        if (spec.sheet) {
+        if (spec.kind === 'profiled') {
+          node.__profileFrames = buildProfileFrames(spec, tex);
+          updateProfile(node);
+        } else if (spec.sheet) {
           node.__frames = buildFrames(spec, tex);
           /* 貼圖是非同步載入的，這期間 updateNode 已經跑過好幾幀了——
              把最後收到的幀號補上，否則會停在第 0 格直到下一次更新。 */
@@ -172,9 +213,14 @@ var VFXPixiBackend = (function () {
       if (node.skew) node.skew.set(t.skewX || 0, 0);
       if (t.scaleX !== undefined) node.scale.set(t.scaleX, t.scaleY);
       if (t.alpha !== undefined) node.alpha = t.alpha;
-      if (t.tint !== undefined) node.tint = t.tint;
+      if (t.tint !== undefined && !node.__profileScales) node.tint = t.tint;
       if (t.zIndex !== undefined) node.zIndex = t.zIndex;
       if (node.anchor && t.anchorX !== undefined) node.anchor.set(t.anchorX, t.anchorY);
+      if (node.__profileScales) {
+        if (t.anchorX !== undefined) { node.__anchorX = t.anchorX; node.__anchorY = t.anchorY; }
+        if (t.tint !== undefined) node.__profileTint = t.tint;
+        updateProfile(node);
+      }
       if (t.width !== undefined) node.width = t.width;
       if (t.height !== undefined) node.height = t.height;
       if (t.tileX !== undefined && node.tilePosition) {
@@ -187,7 +233,8 @@ var VFXPixiBackend = (function () {
       /* 切好的 Texture 是整個 backend 共用的（sheetCache），不能跟著單一節點
          被銷毀——只把節點對它的指向拿掉。實際釋放在 destroy() 一次做完。 */
       node.__frames = null;
-      node.destroy();
+      node.__profileFrames = null;
+      node.destroy({ children: true });
     }
 
     /* 貼圖是 GPU 資源，只清本地 cache 不夠——Pixi 的全域 Assets 仍持有它們。
@@ -203,6 +250,10 @@ var VFXPixiBackend = (function () {
         sheetCache[k].forEach(function (tex) { tex.destroy(false); });
       });
       sheetCache = Object.create(null);
+      Object.keys(profileCache).forEach(function (k) {
+        profileCache[k].forEach(function (frame) { frame.forEach(function (tex) { tex.destroy(false); }); });
+      });
+      profileCache = Object.create(null);
     }
 
     return {

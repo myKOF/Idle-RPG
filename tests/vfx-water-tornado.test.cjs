@@ -1,0 +1,75 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const core=require('../js/vfx-core.js');
+const pixiBackend=require('../js/vfx-pixi-backend.js');
+const runtime=require('../js/vfx-runtime.js');
+const preset=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/field-water-tornado.json'),'utf8'));
+
+test('WATER radius profile independently controls ends and center; default is an identity',()=>{
+ const p=preset.layers[0].radiusProfile;
+ for(let y=0;y<=1;y+=.01) assert.equal(core.radiusProfileScale(p,y),1);
+ assert.equal(core.radiusProfileScale({...p,topRatio:4},p.topY),2);
+ assert.equal(core.radiusProfileScale({...p,topRatio:4},p.centerY),1);
+ assert.equal(core.radiusProfileScale({...p,topRatio:4},p.bottomY),1);
+ assert.equal(core.radiusProfileScale({...p,bottomRatio:1},p.bottomY),.5);
+ assert.equal(core.radiusProfileScale({...p,centerScale:1.5},p.centerY),1.5);
+});
+
+test('WATER profile schema rejects invalid or unsupported input and roundtrips',()=>{
+ assert.equal(core.validatePreset(preset).ok,true);
+ assert.equal(core.serialisePreset(JSON.parse(core.serialisePreset(preset))),core.serialisePreset(preset));
+ for(const change of [{topRatio:0},{bottomRatio:Infinity},{centerScale:9},{centerY:1},{topRatio:NaN},{typo:2}]){
+  const p=structuredClone(preset); Object.assign(p.layers[0].radiusProfile,change);
+  assert.equal(core.validatePreset(p).ok,false,JSON.stringify(change));
+ }
+ const p=structuredClone(preset);p.layers[0].type='particle';assert.equal(core.validatePreset(p).ok,false);
+});
+
+function fakePixi(){
+ const textures=[];
+ class Rectangle {constructor(x,y,width,height){Object.assign(this,{x,y,width,height});}}
+ class Texture {constructor(o={}){this.source=o.source||{};this.frame=o.frame||new Rectangle(0,0,640,640);textures.push(this);}destroy(){this.destroyed=true;}}
+ Texture.EMPTY=new Texture();
+ class Container {
+  constructor(){this.children=[];this.scale={set:(x,y)=>{this.sx=x;this.sy=y;}};}
+  addChild(n){this.children.push(n);n.parent=this;}removeChild(n){this.children=this.children.filter(v=>v!==n);}
+  removeChildren(){this.children=[];}destroy(o){this.destroyed=true;if(o&&o.children)this.children.forEach(c=>c.destroy());}
+ }
+ class Sprite extends Container {constructor(t){super();this.texture=t;}}
+ const source=new Texture();
+ return {Rectangle,Texture,Container,Sprite,Assets:{load:()=>Promise.resolve(source),unload:()=>Promise.resolve()},textures,source};
+}
+test('WATER async profile strips preserve frames, anchors, tint and shared texture lifetime',async()=>{
+ const P=fakePixi();const b=pixiBackend.createBackend({PIXI:P,container:new P.Container()});
+ const spec={kind:'profiled',assetUrl:'/water.png',blendMode:'normal',sheet:{columns:2,rows:1},profileScales:Array(64).fill(1.5)};
+ const a=b.createNode(spec),other=b.createNode({...spec,profileScales:Array(64).fill(1)});
+ b.updateNode(a,{visible:true,frame:1,anchorX:.5,anchorY:1,tint:0xabcdef});
+ await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ assert.equal(a.children.length,64);assert.equal(a.children[0].texture.frame.x,320);
+ assert.equal(a.children[0].x,-240);assert.equal(a.children[0].y,-640);
+ assert.equal(a.children[0].tint,0xabcdef);assert.equal(a.children[0].sx,1.5);
+ assert.equal(other.children[0].texture.frame.x,0);
+ assert.equal(a.__profileFrames,other.__profileFrames);
+ const tex=a.children[0].texture;
+ b.destroyNode(a);assert.equal(a.children[0].destroyed,true);assert.ok(!tex.destroyed);
+ b.destroyNode(other);b.destroy();assert.equal(tex.destroyed,true);
+});
+
+test('WATER four tier-7 fields use fx layer, retain phase between hits and expire',()=>{
+ const nodes=[];
+ function backend(tag){return {createNode(spec){const n={spec,tag};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){},destroy(){}};}
+ const a=runtime.create({core,resolver:{has:()=>true,resolve:id=>id},fxBackend:backend('fx'),zoneBackend:backend('zone'),ctx:{posOf:()=>({x:0,y:0}),playerPos:()=>({x:0,y:0})}});
+ a.registerPresets([preset]);
+ const specs=Array.from({length:4},(_,i)=>({fxKind:'aura',variant:'water-tornado',dur:.35,
+  area:{id:'water-'+i,x:i*100,y:80,r:50},vfx:{field:preset.id}}));
+ specs.forEach(s=>assert.equal(a.tryPlay(s),true));a.update(.2);
+ assert.equal(nodes.length,4);assert.ok(nodes.every(n=>n.tag==='fx' && n.spec.kind==='profiled'));
+ assert.equal(nodes[0].t.frame,4);assert.equal(nodes[0].t.x,0);assert.equal(nodes[0].t.y,80);
+ assert.equal(nodes[0].t.scaleX,nodes[0].t.scaleY);
+ specs.forEach(s=>a.tryPlay(s));a.update(.2);
+ assert.equal(nodes.length,4);assert.equal(nodes[0].t.frame,8);assert.equal(a.stats().played,4);
+ a.update(3);assert.equal(a.stats().grounds,0);a.clear();
+});

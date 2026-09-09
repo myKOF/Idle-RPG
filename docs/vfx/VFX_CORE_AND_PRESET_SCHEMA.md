@@ -652,3 +652,19 @@ Preset 的節點掛在 `S.layers.presetZone`／`presetFx` 兩個獨立容器，
 
 遷移建議：先讓新 Core 服務**新做的特效**，舊特效維持原狀；
 等 Adapter 與 export 流程穩定後再逐一搬移，不要一次重寫。
+
+### Sprite 水柱半徑輪廓（radiusProfile，2026-09-10）
+
+`field-water-tornado` 使用原創 v10 透明序列（80 格／20 fps／4 秒循環）。製作來源為 `tools/vfx/authoring/water-tornado.py`，Preset author 為 `tools/vfx/authoring/author/water-tornado.cjs`。水流彈第七階使用 `field` 角色，續命不重置動畫；序列內含由下往上的水流、外層飄帶、光暈與底部粒子。
+
+sprite 可選 `radiusProfile` 物件，Editor 選取 water-column 後可調整：
+
+| 欄位 | 預設 | 意義 |
+|---|---:|---|
+| centerScale | 1 | 中央半徑倍率 |
+| topRatio | 2 | 上端相對中央的半徑比例 |
+| bottomRatio | 2 | 下端相對中央的半徑比例 |
+
+三項皆限制 0.1–8；只改視覺寬度，不改高度或技能傷害判定。外圍飄帶可超過主水柱輪廓。進階來源校準欄位 `sourceTopRatio/sourceBottomRatio` 預設 2，`topY/centerY/bottomY` 預設 0/0.5/1，滿足 0 ≤ topY < centerY < bottomY ≤ 1；水龍捲依來源影像使用 0.0125/0.4640625/0.915625，通常毋須改動。
+
+Core 依上下各自的二次半徑曲線，計算目標／來源半徑比；Pixi 將每格切成 64 條共用貼圖並套用水平倍率，沿用 Core 的幀號、透明度、錨點及播放時序。預設比例為恒等變換。節點池把輪廓倍率納入 key，貼圖切片由 backend 共用，避免同時多道水龍捲重複載入來源圖。其他 layer 類型不接受此欄位。

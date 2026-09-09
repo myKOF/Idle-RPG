@@ -423,6 +423,24 @@ var VFXCore = (function () {
     validateCurve(layer.alphaOverLife, where + '.alphaOverLife', errors, { nonNegative: true });
     validateColorCurve(layer.tintOverLife, where + '.tintOverLife', errors);
     validateSheet(layer.sheet, where + '.sheet', errors);
+    if (layer.radiusProfile !== undefined) {
+      var rp = layer.radiusProfile;
+      if (!rp || typeof rp !== 'object' || Array.isArray(rp)) {
+        errors.push(where + '.radiusProfile 必須是物件');
+      } else {
+        ['centerScale', 'topRatio', 'bottomRatio', 'sourceTopRatio', 'sourceBottomRatio'].forEach(function (key) {
+          if (rp[key] !== undefined && (!isFiniteNumber(rp[key]) || rp[key] < 0.1 || rp[key] > 8)) {
+            errors.push(where + '.radiusProfile.' + key + ' 必須在 0.1..8');
+          }
+        });
+        var top = rp.topY === undefined ? 0 : rp.topY;
+        var mid = rp.centerY === undefined ? 0.5 : rp.centerY;
+        var bottom = rp.bottomY === undefined ? 1 : rp.bottomY;
+        if (![top, mid, bottom].every(isFiniteNumber) || top < 0 || bottom > 1 || !(top < mid && mid < bottom)) {
+          errors.push(where + '.radiusProfile 必須符合 0 ≤ topY < centerY < bottomY ≤ 1');
+        }
+      }
+    }
     validateCurve(layer.scaleOverLife, where + '.scaleOverLife', errors, { nonNegative: true });
     /* 分軸縮放曲線。只有走 updateSpriteLayer 的 sprite／procedural 支援，
        粒子層的兩軸永遠相等（見 updateParticleLayer），所以那裡不收這兩個欄位——
@@ -587,7 +605,7 @@ var VFXCore = (function () {
   var PER_AXIS_SCALE_FIELDS = ['scaleXOverLife', 'scaleYOverLife',
     'rotationXOverLife', 'rotationYOverLife'];
   var TYPE_ONLY_FIELDS = {
-    sprite: PER_AXIS_SCALE_FIELDS,
+    sprite: PER_AXIS_SCALE_FIELDS.concat(['radiusProfile']),
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
@@ -612,6 +630,7 @@ var VFXCore = (function () {
     spawn: ['shape', 'radius', 'width', 'height'],
     noise: ['strength', 'frequency', 'scrollSpeed'],
     sheet: ['columns', 'rows', 'count', 'mode', 'fps', 'randomStart', 'loop'],
+    radiusProfile: ['centerScale', 'topRatio', 'bottomRatio', 'sourceTopRatio', 'sourceBottomRatio', 'topY', 'centerY', 'bottomY'],
     subEmitter: ['layer', 'on', 'count', 'inheritVelocity']
   };
 
@@ -767,7 +786,23 @@ var VFXCore = (function () {
     'startScale', 'rotationStart', 'rotationSpeed',
     'alignToVelocity', 'velocityRotationOffset', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
-    'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife', 'sheet'];
+    'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife', 'sheet', 'radiusProfile'];
+
+  // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
+  function radiusProfileScale(profile, y) {
+    var p = profile || {};
+    var mid = p.centerY === undefined ? 0.5 : p.centerY;
+    var top = p.topY === undefined ? 0 : p.topY;
+    var bottom = p.bottomY === undefined ? 1 : p.bottomY;
+    var upper = y < mid;
+    var k = Math.min(1, Math.abs(y - mid) / (upper ? mid - top : bottom - mid));
+    var target = upper ? p.topRatio : p.bottomRatio;
+    var source = upper ? p.sourceTopRatio : p.sourceBottomRatio;
+    target = target === undefined ? 2 : target;
+    source = source === undefined ? 2 : source;
+    return (p.centerScale === undefined ? 1 : p.centerScale) *
+      (1 + (target - 1) * k * k) / (1 + (source - 1) * k * k);
+  }
 
   /* 巢狀物件（position、spawn、emission…）也要遞迴排序，否則同樣語意的 preset
      只因為插入順序不同就產生不同 bytes，「位元穩定」的承諾會落空。 */
@@ -806,6 +841,9 @@ var VFXCore = (function () {
       scale: layer.scale || { x: 1, y: 1 },
       anchor: layer.anchor || { x: 0.5, y: 0.5 },
       size: layer.size,
+      profileScales: layer.radiusProfile ? Array.from({ length: 64 }, function (_, i) {
+        return radiusProfileScale(layer.radiusProfile, (i + 0.5) / 64);
+      }) : null,
       alpha: layer.alpha === undefined ? 1 : layer.alpha,
       tint: layer.tint || '#ffffff',
       blendMode: layer.blendMode || 'normal',
@@ -934,7 +972,8 @@ var VFXCore = (function () {
     var particlePool = [];      // 粒子狀態物件的 free-list
     function poolKey(spec) {
       return spec.kind + '|' + spec.assetUrl + '|' + spec.blendMode +
-        (spec.sheet ? '|' + spec.sheet.columns + 'x' + spec.sheet.rows : '');
+        (spec.sheet ? '|' + spec.sheet.columns + 'x' + spec.sheet.rows : '') +
+        (spec.profileScales ? '|profile:' + spec.profileScales.join(',') : '');
     }
     function acquireNode(spec) {
       var key = poolKey(spec);
@@ -1106,7 +1145,7 @@ var VFXCore = (function () {
 
     function nodeSpecFor(layer) {
       var spec = {
-        kind: layer.def.type === 'procedural' ? 'tiled' : 'sprite',
+        kind: layer.def.profileScales ? 'profiled' : (layer.def.type === 'procedural' ? 'tiled' : 'sprite'),
         assetUrl: resolver.resolve(layer.def.assetId),
         blendMode: layer.def.blendMode
       };
@@ -1116,6 +1155,7 @@ var VFXCore = (function () {
       if (layer.def.sheet) {
         spec.sheet = { columns: layer.def.sheet.columns, rows: layer.def.sheet.rows };
       }
+      if (layer.def.profileScales) spec.profileScales = layer.def.profileScales;
       return spec;
     }
 
@@ -1654,6 +1694,7 @@ var VFXCore = (function () {
     VELOCITY_EPSILON: VELOCITY_EPSILON,
     validatePreset: validatePreset,
     serialisePreset: serialisePreset,
+    radiusProfileScale: radiusProfileScale,
     createRuntime: createRuntime,
     createNullBackend: createNullBackend,
     createIndexResolver: createIndexResolver,

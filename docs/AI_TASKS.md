@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜水龍捲第十版接入（VFX-WATER-TORNADO-20260910）
+
+- 狀態：Done；已接入水流彈第七階、同步 Excel／CSV／JS、Editor 可改中央半徑與上下端比例（預設 1／2／2）。
+- 範圍：新 field-water-tornado Preset／layout／透明序列素材與製作來源、sprite 半徑輪廓參數與共用 Core／Pixi／Editor、Skills2 第七階特效欄及快取、測試與 VFX 文件。
+- 預檢：ai/codex 工作區乾淨，相關檔案無其他副本／分支衝突。前置：桌面第十版已核准。
+- 不改：技能傷害、半徑判定、召喚數量／節拍、其他技能 Preset、使用者存檔。
+- 驗收：Editor 實測三參數修改／存檔／重載與還原；隔離瀏覽器以遊戲 Runtime／Pixi 同時播放四道，透明背景正常、missing／dropped 皆 0。271 項相關測試：270 通過、1 略過。建置 330 檔通過。Excel 僅 AC188／AD188 變更，其餘儲存格及 ZIP 內容保留；表格重建語意變更 0，export --check 已最新。
+- 基線限制：冰系測試 5 項及舊 SKILLS 覆蓋測試 1 項失敗，已用修改前 HEAD 重現同樣 6 項；未操作使用者存檔實戰。預覽／驗證腳本留在 scratch，不納入提交。提交在 ai/codex，未合併／推送。
+
 ## Codex｜不規則普攻受擊試作（BASIC-IRREGULAR-20260909）
 
 - 使用者確認實戰後要求 commit 供合併：提交紅白隨機爆破 author／Preset／layout、兩張原創 SVG 與素材索引、普攻映射／快取／相關測試。素材 export dry-run 無待同步；本輪 basic-melee／skill2-vfx 36/36。臨時預覽頁移除、不提交。未合併／推送；下方未 commit 為歷史記錄。

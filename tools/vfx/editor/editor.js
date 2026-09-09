@@ -805,7 +805,10 @@
   }
 
   function sizeOf(layer) {
-    return (gizmo.assetSize && layer.assetId && gizmo.assetSize[layer.assetId]) || null;
+    var size = (gizmo.assetSize && layer.assetId && gizmo.assetSize[layer.assetId]) || null;
+    // 序列素材的編輯框使用單格尺寸，不能把整張 atlas 當成水柱本體。
+    if (size && layer.sheet) return { width: size.width / layer.sheet.columns, height: size.height / layer.sheet.rows };
+    return size;
   }
 
   function boundsOf(layer) { return G.baseBounds(layer, sizeOf(layer)); }
@@ -2366,6 +2369,27 @@
       wireFieldTransaction(control, f.label);
       host.appendChild(makeField(f.label, control));
     });
+
+    if (layer.type === 'sprite' && layer.radiusProfile) {
+      var title = document.createElement('div');
+      title.className = 'group-title'; title.textContent = '水柱半徑輪廓'; host.appendChild(title);
+      [['centerScale', '中央半徑倍率', 1], ['topRatio', '上端／中央半徑比例', 2],
+        ['bottomRatio', '下端／中央半徑比例', 2]].forEach(function (f) {
+        var input = document.createElement('input');
+        input.type = 'number'; input.min = '0.1'; input.max = '8'; input.step = '0.1';
+        input.setAttribute('data-radius-profile', f[0]);
+        input.value = layer.radiusProfile[f[0]] === undefined ? f[2] : layer.radiusProfile[f[0]];
+        input.oninput = function () {
+          var value = Number(input.value);
+          if (!input.value || !Number.isFinite(value) || value < 0.1 || value > 8) return;
+          layer.radiusProfile[f[0]] = value; onPresetChanged();
+        };
+        wireFieldTransaction(input, f[1]); host.appendChild(makeField(f[1], input));
+      });
+      var hint = document.createElement('div'); hint.className = 'hint';
+      hint.textContent = '比例 2 表示該端半徑是中央的兩倍。只調整特效輪廓，傷害範圍仍由技能表決定。';
+      host.appendChild(hint);
+    }
 
     renderOverLife(host, layer);
     /* Canvas 要量得到自己的寬高才畫得對，而元素剛 append 時版面還沒定案。

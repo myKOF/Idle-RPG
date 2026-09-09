@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "field-water-tornado",
+  "duration": 4,
+  "loop": true,
+  "layers": [
+    {
+      "id": "water-column",
+      "type": "sprite",
+      "assetId": "codex-authored/water-tornado/water-tornado-v10.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.4,
+        "y": 0.4
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9296875
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 4,
+      "sheet": {
+        "columns": 8,
+        "count": 80,
+        "fps": 20,
+        "loop": true,
+        "mode": "fps",
+        "rows": 10
+      },
+      "radiusProfile": {
+        "bottomRatio": 2,
+        "bottomY": 0.915625,
+        "centerScale": 1,
+        "centerY": 0.4640625,
+        "sourceBottomRatio": 2,
+        "sourceTopRatio": 2,
+        "topRatio": 2,
+        "topY": 0.0125
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 115.6,
+      "radius": 28,
+      "width": 56
+    },
+    "heightM": 21,
+    "shape": "custom",
+    "widthM": 10
+  }
+}
