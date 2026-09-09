@@ -3,8 +3,8 @@
   "presetId": "slash-thrust-empowered",
   "groups": [
     {
-      "id": "group",
-      "name": "新群組",
+      "id": "slash-thrust-empowered",
+      "name": "slash-thrust-empowered",
       "layerIds": [
         "aura",
         "shaft",
@@ -28,6 +28,6 @@
     }
   ],
   "order": [
-    "group:group"
+    "group:slash-thrust-empowered"
   ]
 }
