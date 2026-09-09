@@ -117,6 +117,9 @@ const PORT_TRIES = 10;
 /* 啟動器用來確認「這個埠上的是不是本副本的 Editor」，見下方路由處的說明 */
 const WHOAMI_PATH = '/__whoami';
 const WHOAMI_MARK = 'idle-rpg-vfx-editor';
+/* 啟動器用這個字串判斷「掃到的這個伺服器該不該沿用」。刻意做成 MARK 的
+   延伸字串，這樣兩邊的比對規則看得出是同一組東西。 */
+const WHOAMI_STALE_MARK = 'idle-rpg-vfx-editor-stale';
 /* Preset 清單：Editor 的 topbar 下拉用它列出目前有哪些 preset 可以開。
    只回 id 陣列——目錄內容本來就是公開的 vfx/presets/*.json，不多給任何路徑。 */
 const PRESET_LIST_PATH = '/__presets';
@@ -597,7 +600,14 @@ function createServer(ctx) {
        從 claude 按下啟動卻開到 develop 的 Editor，改了半天才發現改錯副本。
        啟動器用這個端點確認身分，所以必須含 repo 路徑，不能只回專案名稱。 */
     if (pathname === WHOAMI_PATH) {
-      return send(res, 200, WHOAMI_MARK + ' ' + path.resolve(ctx.repoRoot) + '\n');
+      /* 第二行是給啟動器看的：它掃到一個「是本副本的」伺服器就會直接沿用，
+         而沿用一個程式已經過期的行程正是 2026-09-09 那次半套更新的成因
+         （merge 完只重整頁面，後端還是幾小時前的）。有這個標記，啟動器
+         才擋得住，不然使用者只會看到啟動器閃一下就關掉、什麼都沒變。
+         標記自成一行，不影響原本用第一行比對身分的邏輯。 */
+      var whoami = WHOAMI_MARK + ' ' + path.resolve(ctx.repoRoot) + '\n';
+      if (staleServerFiles().length) whoami += WHOAMI_STALE_MARK + '\n';
+      return send(res, 200, whoami);
     }
 
     /* Preset 清單（下拉選單用）。id 由檔名推得，合法性沿用存檔路由的同一條規則，
