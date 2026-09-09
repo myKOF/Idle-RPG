@@ -1,5 +1,57 @@
 # AI_TASKS.md
 
+## Codex｜血刃斬、火龍捲與火牆整合提交（VFX-COMMIT-20260909-B）
+
+- 使用者要求 commit 供合併；包含核准血刃斬／火龍捲／三柱火牆、0.3 秒寬高進退場、火柱圓形命中修正、Excel 儲存格順序修復，以及使用者 Skills2／毒液彈／龍捲的調整。保留毒液彈拆散圖層與龍捲透明度 0.8。
+- 驗證：node --test tests/vfx-core.test.cjs tests/vfx-runtime.test.cjs tests/skill2-vfx.test.cjs：218 項中 217 通過，唯一未通過為 CATALOG-3 要求所有 layout 單根群組，使用者 proj-poison-drop 現有四個頂層圖層；未修改使用者排列或放寬測試。build_check：328 檔通過；素材 exporter dry-run 無待同步。
+- 臨時 editor 預覽頁移除、不提交；正式素材與 author 保留。未修改其他工作區，未合併／推送。可由使用者合併，需知悉上述編輯器群組規範檢查仍未通過。下方未 commit 均為歷史階段。
+
+## Codex｜火龍捲本體試作（VFX-TORNADO-INFERNO-20260909）
+
+- 進退場補充：依使用者要求，寬度也與高度同步由 0 展開／縮回；仍各 0.3 秒、底部固定，保留原有圖層寬高比例。補上進退場中點兩軸縮放斷言，Runtime 快取 1.0.27；火牆三柱同步適用。未 commit。
+
+- 進退場：使用者指定各 0.3 秒；Runtime 以場域首次生成時間控制底部向上長高／淡入，到期前 0.3 秒收回／淡出，同 id 續命不重播。火龍捲與火牆三柱共用，未改傷害節奏。Core 增加泛用 opacity transform，同時作用於 sprite／particle；主頁 Core 1.0.11、Runtime 1.0.26。TORNADO／FIREWALL 3/3；預覽 tornado-rise-review.html 不提交。未 commit。
+
+- 火牆接入：依使用者指定改成三道目前火龍捲並排，沿用其手動加寬主體設定；ground-firewall Preset／layout／author 及舊 grounds 生成入口同步。Runtime 將三柱各自立在火牆長軸上，只旋轉底部排列，保持各柱比例與直立，使用 fx 層並續命／回收。使用者追加間距縮小 20%，允許外緣重疊，已套用；傷害矩形與施放節奏不變。Runtime 主頁快取 1.0.25；素材正式匯出完成，FIREWALL／TORNADO／FIELD／GROUND 8/8 通過。預覽 firewall-review.html 不提交；未 commit。
+
+- 壓扁修正：sgCastFirepillar 在第一至六階也無條件傳入第七階長寬，導致 sgGroundArea 與 sgGroundVictims 誤走矩形；改為只有 wall 傳長寬，pillar 僅用 radius。新增實際施法→場域幾何→等比例縮放及圓形命中回歸，保留第七階矩形。Skills2／Worker／bridge 快取同步更新；skill2-vfx 33/33 通過。未更改 Excel／CSV 或核准素材外觀；未 commit。
+
+- 回報修正：新增 AD92 曾錯放在 AI92 後，造成原生 Excel 修復警告；已依欄序重新排列 OOXML 儲存格，逐格核對值完全不變、所有工作表欄序與唯一性檢查通過。使用者關閉 Excel 後已覆寫原檔，原檔另備份於系統暫存目錄。仍待使用者以原生 Excel 重開確認。
+- 實戰落差：程式在第七階已學習時明確改用 wall／vfxTier 7，指向 ground-firewall；核准新本體只在 pillar／第一阶 fire-tornado-inferno 使用。截圖舊火牆與此分支相符，並非新本體素材被替換。尚未製作第七階火牆新版，不能宣稱整棵技能樹均已換新。聚焦 mapping／Adapter 測試 2/2 通過；本輪未改技能機制或第七階映射，未 commit。
+
+- 接線完成：使用者核准中央金黃主螺旋版並要求接入。Skills2 Excel AC92 清空／AD92 填 fire-tornado-inferno，CSV／JS／catalog 同步；逐格核對只有這兩格變更，原視圖／格式保留。火牆與其他技能維持原設定。主頁、Worker 與 bridge 資料快取更新，正式素材 exporter 同步完成。
+- 接線驗證：TORNADO Adapter 目標位置、等比例縮放、同 area.id 跨節拍沿用與到期回收 1/1；skill2-vfx 32/32；build 328 檔通過。未操作使用者存檔實戰。未 commit；保留使用者其他未提交配置與毒液彈修改。下方「尚未接入」為歷史階段。
+
+- 中央聚光調整：依最新對照圖，頂／底旋渦降亮至原 45%，細流亮度由中央向兩端衰減、地面光暈降低；加一條連續金黃主螺旋，前後亮度與粗細漸變。保留細密底層火流，不採用先前被否定的整體疏環方案。schema、10 秒播放／回收通過，截图與動態預覽更新；尚未接入遊戲。
+
+- 最新回調：使用者認為疏環粗線版過假，要求回到先前較真實版本。恢復第三版 47 組／5 條細流與較柔和亮度，移除粗火帶，僅保留 0.85～1.15 倍的小幅粗細差異。已重新生成並通過 schema，預覽截圖與動態已更新；第四版不再是目前候選。
+
+- 第四版：依使用者要求降低環流密度，主體 47→17 組、每組細流 5→3 條；頂部／底部旋渦 26→16 條。加粗少數金黃主流與橙色輝光，保留環間空隙、局部起伏與地面煙塵。schema 與 10 秒播放／回收檢查通過，預覽截圖更新；尚未接入遊戲。
+
+- 第三版（參考圖環流方向）：使用者要求以環狀火流構成主體並進一步復刻提供的參考圖。改為密集細橢圓流線、局部膨縮與不對稱腰部；上方新增寬大傾斜旋渦、底部新增向外鋪開旋渦，腰部提高金黃色層次。保留地面煙塵與低矮火舌，降低表面大火焰比重。64 幀／2.5 秒循環；schema、10 秒 Core 播放／回收檢查通過，Pixi 截圖與預覽更新。此版為目前候選，尚未接入遊戲。
+
+- 第二版：依使用者回饋移除實心圓筒，改為多股帶空隙的曲折火舌；局部半徑與火流粗細不同步膨縮，減淡完整螺旋線。圖集 32→64 幀、循環放慢為 2.5 秒，外層粒子降低亮度並延長淡入淡出。依追加要求新增少量地面煙塵與低矮火焰（獨立可編輯 particle 層）。
+- 第二版驗證：schema 通過；Core 10 秒播放無 dropped effects／particles，stopAll 後 activeEffects=0；窄畫面單體近看截圖與動態預覽更新。仍待外觀確認，未接入遊戲，未更改技能配置。
+
+- 狀態：第一版預覽完成，待外觀確認，尚未接入遊戲。
+- 規格：技能說明表 I145：中心火柱、外圈火焰粒子纏繞、上下扭曲、深黃紅色；基礎作用約 2.5 秒。先製作本體，未改火牆／重生／超神機制。
+- 新增：fire-tornado-inferno author、Preset／單根 layout、32 幀原創 SVG 螺旋圖集與素材索引。分層火柱／前後盤旋火流／上升火舌／餘燼。自訂基準寬 6 米、高 12 米，原點在底部。圖集同步本機 effects-materials，repo 保留可重製素材。
+- 驗證：製作工具 schema 通過；Core 連播 10 秒無 dropped particles／effects，stopAll 回收為 0；Pixi 三時點截圖與動態播放已檢查。預覽 tools/vfx/editor/tornado-review.html 不納入提交。
+- 檢查未改：使用者 Skills2、proj-poison-drop 變更、既有 fire-tornado／ground-tornado-fire、遊戲 Runtime。Commit 尚未建立；未接線，待使用者確認外觀後處理持續場域欄與素材匯出。
+
+## Codex｜血刃斬爆破試作（VFX-BLOODBLADE-20260909）
+
+- 後續調整：使用者要求保留綠色中毒效果、加長紅色爆破。總長 0.28→0.6 秒；紅色主體 0.17→0.52 秒並延長中段停留，血珠壽命 0.35～0.6 秒；亮心仍 0.05 秒。author／Preset／catalog 同步，0.3 秒主體透明度仍高於 0.7 與結束回收測試通過，預覽截圖更新。未更改中毒特效或技能表。
+
+- 狀態：使用者核准紅色單點爆破，已接入血刃斬第一階攻擊本體。
+- 規格來源：技能說明試算表 I82「一個單點爆破並有濺射粒子的攻擊特效，紅色系」；I85 中毒為綠色半透明遮罩。
+- 新增：author/bloodblade.cjs、hit-bloodblade-burst Preset 與單根 layout；圓形基準半徑 6 米，亮心 0.05 秒、整體 0.28 秒，血珠由命中點向外飛散。
+- 驗證：製作工具的 Preset／layout schema 驗證通過；Editor 相同 Core＋Pixi 後端三個時點截圖及播放按鈕檢查。預覽 tools/vfx/editor/bloodblade-review.html 僅供檢閱，提交時排除。
+- 檢查未改：原 slash-bloodblade、Skills2 配置／技能 JS、Core 與 Editor；製作期間使用者另有 Skills2 CSV／Excel／JS 變更，保留。
+- 接線：Skills2 Excel Z42／CSV／JS 與 catalog 指向 hit-bloodblade-burst；主頁與 Worker 快取更新。Excel 逐格核對僅這一格改變，原始 OOXML 格式／視圖保留。素材 export dry-run 已最新，無缺圖。
+- 驗證：BLOODBLADE Adapter 目標定位、無 fallback、到期回收 1/1；skill2-vfx 31/31。未操作使用者存檔實戰。未 commit。
+- 未完成：中毒遮罩及高階感染／屍爆視覺屬後續改造；本次核准的第一階爆破已完成接線，其他技能機制與既有特效保留。
+
 ## Codex｜本輪整合提交（VFX-CONFIG-COMMIT-20260909）
 
 - 使用者已授權連同自行調整的配置表一起 commit；本輪提交包含工作區現有 CSV／Excel、對應技能／狀態 JS、使用者雷球 Preset／layout、月牙修正、持續場域欄、Editor 儲存自動匯出及相關測試文件。

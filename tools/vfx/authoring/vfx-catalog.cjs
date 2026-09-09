@@ -63,6 +63,7 @@ def('slash-cleave-stun', 'slash', '五階紅黃半月刀光，與基礎版共用
 def('slash-cleave-arc', 'slash', '六米半徑近半圓黃紅刀光，白亮刃口與交錯殘影；六階整體飛出，不以射程拉長本體。', { nominal: 'R 60px', dur: 0.46 });
 def('slash-cleave-sector', 'slash', '迴身四方斬扇形：60° 楔形（名目半徑 100px、頂點在原點、朝 +X），藍色 #60a5fa 填色 α0.2 + 邊緣亮線 + 兩條淺藍徑向邊；由 8% 長到 95% 半徑並整體旋轉 45°/s，尾段淡出。', { nominal: 'R 100px', dur: 0.5 });
 def('hit-gale-burst', 'hit', '疾風斬黃白單點爆破。', { nominal: 'rect 120x120', dur: 0.27 });
+def('hit-bloodblade-burst', 'hit', '血刃斬紅色單點爆破與向外血珠濺射；亮心 0.05 秒、紅色本體 0.52 秒、尾段 0.6 秒。', { nominal: 'R 60px', dur: 0.6 });
 def('slash-gale-moon', 'slash', '目標中心藍紫下劈月牙與錯位殘影。', { nominal: 'R 50px', dur: 0.37 });
 def('slash-gale-sector', 'slash', '疾風斬半圓：180° 半碟（名目半徑 100px、朝 +X），風系淺綠 #86efac 填色 α0.2 + 白色 #ffffff 外緣，8%→95% 放大並旋轉 45°/s。', { nominal: 'R 100px', dur: 0.5 });
 def('slash-thrust-lance', 'slash', '黃白光長槍；尺寸契約見 VFX_SIZE_STANDARD.md，圖層由 author/thrust.cjs 製作。', { nominal: 'L 120px', dur: 0.3 });
@@ -126,7 +127,7 @@ def('burst-cyclone-phys', 'burst', '旋風斬：三道暖白 #e6ddc8 弧刃（�
 def('ground-mire', 'ground', '泥沼：扁矩形（名目 200×100，實際只畫 52% 高度）泥棕 #4a3a20 填色 α0.5 + #7d6533 邊 + 3 圈向外擴散的矩形漣漪 #a37a48 + 6 顆泥泡 #c49b68 緩慢上浮；loop 2.1s。', { nominal: 'rect 200x100', dur: 2.1, loop: true });
 def('ground-mire-lava', 'ground', '熔岩沼：同 ground-mire 但暗紅 #8a2b0b 底、橘 #ff7a2a 邊、#ffb347 漣漪、#ffd282 岩漿泡，加零星火花。', { nominal: 'rect 200x100', dur: 2.1, loop: true });
 def('ground-mire-poison', 'ground', '毒沼：同 ground-mire 但暗褐 #4a3020 底、暗紫 #5b2b72 邊、#7e3f9a 漣漪、#6b2d7c 毒泡，加 3 條起伏的紫色毒氣流（streak 素材 uvScroll 或擺動）。', { nominal: 'rect 200x100', dur: 2.1, loop: true });
-def('ground-firewall', 'ground', '火牆：沿 +X 長 200px、厚 40px 的火牆——地面焦痕條 #30231d + 3 座火焰渦柱（高約 120px，橘紅 #e43b12 輪廓、#ffd84a/#ffa51d 內焰、白黃火芯）左右擺動 + 頂端煙霧 + 火花；loop 1.2s。', { nominal: 'rect 200x40', dur: 1.2, loop: true });
+def('ground-firewall', 'ground', '火牆：三道新版金黃火龍捲並排，底部沿判定長軸排列，各柱保持直立；地面煙塵與少量火舌。', { nominal: 'rect 180x60', dur: 2.5, loop: true });
 def('ground-thunder-curtain', 'ground', '雷幕地帶：沿 +X 長 200px、厚 20px 的藍色 #7dd3fc 帶狀光 α0.22 + 兩端白色電花；電柱由 Runtime 另放 bolt-curtain-lightning。', { nominal: 'rect 200x20', dur: 1.0, loop: true });
 def('ground-thunder-orb', 'ground', '雷球（場域體）：半徑 30px 的藍色雷球（#1d4ed8 α0.24 外層、#60a5fa 中層、白核心）以 9 rad/s 微脈動 + 4 條白／淡藍電弧沿表面爬行（spark 粒子繞圈）；loop。', { nominal: 'R 30px', dur: 1.0, loop: true });
 def('ground-blizzard', 'ground', '暴風雪：扁矩形（200×100，畫 52% 高）淡藍 #7dd3fc 填色 α0.2 + 青 #22d3ee 邊 + 3 條起伏雲線 + 10 片雪花持續落下（白色小圓 rate 發射）；loop 2.6s。', { nominal: 'rect 200x100', dur: 2.6, loop: true });
@@ -300,7 +301,7 @@ g('gale', [
   _, _, _, _, _, { attack: 'slash-gale-moon' }
 ], { thunderFlash: { hit: 'hit-lightning' }, thunderGodSlash: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } });
 g('bloodblade', [
-  { attack: 'slash-bloodblade', hit: 'hit-bleed' },                          // T1 血刃斬
+  { attack: 'hit-bloodblade-burst', hit: 'hit-bleed' },                          // T1 血刃斬
   { attack: 'curse-bleed', hit: 'hit-bleed' },                               // T2 強化流血（curse/bleed 走這一列）
   _,
   { attack: 'curse-poison', hit: 'hit-poison' },                             // T4 血毒刃（curse/poison）
@@ -332,8 +333,9 @@ g('fireball', [
   _,
   { projectile: 'proj-meteor', hit: 'hit-fire-explosion', ground: 'mark-red', attack: 'burst-fire-shockwave' } // T7 殞石術
 ], { phoenixPrairie: { projectile: 'proj-fireball', hit: 'hit-fire-explosion' }, starfallCataclysm: { ground: 'ground-starfall-shadow', projectile: 'proj-starfall', attack: 'burst-fire-shockwave', hit: 'hit-fire' } });
+def('fire-tornado-inferno', 'ground', '持續場域火龍捲：細密環流、中央金黃主螺旋與暗色上下旋渦；底部定位，64 幀循環。', { nominal: 'R 60px', dur: 2.5, loop: true });
 g('firepillar', [
-  { ground: 'ground-tornado-fire', hit: 'hit-fire' }, // T1 火龍捲（pillar 場域）
+  { field: 'fire-tornado-inferno', hit: 'hit-fire' }, // T1 火龍捲（pillar 場域）
   _, _, _,
   { attack: 'burst-fire-shockwave', hit: 'hit-fire' }, // T5 烈焰衝擊（firepillar-impact）
   _,

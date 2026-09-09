@@ -19,6 +19,41 @@ function loadSkills2() {
   return context;
 }
 
+test('火龍捲本體使用核准持續場域，火牆維持獨立地板設定', () => {
+ const c=loadSkills2();
+ assert.equal(c.SKILLS2.firepillar.tiers[0].vfx.field,'fire-tornado-inferno');
+ assert.equal(c.SKILLS2.firepillar.tiers[0].vfx.ground,undefined);
+ assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.ground,'ground-firewall');
+ assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.field,undefined);
+});
+
+test('火龍捲實際施法只產生圓形範圍，第七階才產生矩形', () => {
+ const c=loadSkills2(), spawned=[];
+ c.sgLegend=()=>({});c.sgUlt=()=>null;c.sgGroupBaseStat=()=>100;
+ c.sgFirepillarBurnSpec=()=>null;c.bfRandomOthers=()=>[];
+ c.sgSpawnGround=(p,s,g,f)=>spawned.push(f);
+ for(const tier7 of [0,1]) {
+  spawned.length=0;
+  c.sgCastFirepillar({}, {}, c.SKILLS2.firepillar,[1,0,0,0,0,0,tier7],[],{hp:1},'',{});
+  const f=Object.assign(spawned[0],{pos:{x:100,y:50},vfxId:'cast'});
+  const area=c.sgGroundArea(f);
+  if(!tier7){
+   assert.equal(area.w,undefined);assert.equal(area.h,undefined);
+   assert.equal(area.r,f.radius);
+   c.bfLiveList=x=>x;
+   c.bfEnemiesInArea=(a)=>{assert.equal(a.r,f.radius);return ['circle'];};
+   c.bfSegmentTargets=()=>{throw Error('火龍捲不可採用矩形命中');};
+   assert.deepEqual(c.sgGroundVictims(f,[]),['circle']);
+   const runtime=require('../js/vfx-runtime.js');
+   const preset=JSON.parse(read('vfx/presets/fire-tornado-inferno.json'));
+   const size=runtime.resolveSizing(preset.sizing,area);
+   assert.equal(size.scaleX,size.scaleY);
+  }else{
+   assert.equal(area.w,c.bfMeterPx(18));assert.equal(area.h,c.bfMeterPx(6));
+  }
+ }
+});
+
 test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
   const skills2 = read('js/skills2.js');
   const vfx = read('js/vfx.js');
@@ -958,11 +993,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.112/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.24/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.100/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-field-role'/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.27/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.103/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-tornado-shape'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260909-field-role/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260909-tornado-shape/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 

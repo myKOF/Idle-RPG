@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-bloodblade-burst",
+  "groups": [
+    {
+      "id": "hit-bloodblade-burst",
+      "name": "hit-bloodblade-burst",
+      "layerIds": [
+        "crimson-halo",
+        "blood-burst",
+        "rose-fracture",
+        "impact-heart",
+        "blood-droplets",
+        "hot-splinters"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-bloodblade-burst"
+  ]
+}

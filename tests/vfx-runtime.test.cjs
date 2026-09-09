@@ -21,6 +21,75 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/fire-tornado-inferno.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const spec={fxKind:'impact',variant:'pillar',dur:.5,area:{id:'fire-1',x:100,y:50,r:60},vfx:{field:p.id}};
+ assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
+ const body=log.nodes.find(n=>n.spec.assetUrl.includes('inferno-spiral.svg'));
+ assert.equal(body.tag,'fx');
+ const authored=p.layers.find(l=>l.id==='spiral-column');
+ const t=body.transforms.at(-1);assert.equal(t.x,100+(authored.position.x||0));assert.equal(t.y,50+authored.position.y);assert.equal(t.scaleX/authored.scale.x,t.scaleY/authored.scale.y);
+ adapter.tryPlay(spec);adapter.update(.3);assert.equal(adapter.stats().played,1);
+ adapter.update(3);assert.equal(adapter.stats().grounds,0);
+});
+
+test('FIREWALL 三柱沿火牆軸排列，直立等比、續命與回收', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-firewall.json'),'utf8'));
+ for(const angle of [0,Math.PI/4,Math.PI/2,Math.PI]) {
+  const {adapter,log}=makeAdapter([p]);
+  const spec={fxKind:'aura',variant:'firewall',dur:.5,area:{id:'wall',x:300,y:200,w:360,h:120,a:angle},vfx:{ground:p.id}};
+  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
+  const bodies=log.nodes.filter(n=>n.spec.assetUrl.includes('inferno-spiral.svg'));
+  assert.equal(bodies.length,3);
+  bodies.forEach((b,i)=>{
+   const t=b.transforms.at(-1);
+   const authored=p.layers.find(l=>l.id==='column-'+i+'-spiral-column');
+   assert.equal(b.tag,'fx');assert.equal(t.scaleX/authored.scale.x,t.scaleY/authored.scale.y);assert.equal(t.rotation,0);
+   assert.ok(Math.abs(t.x-(300+Math.cos(angle)*(i-1)*96+authored.position.x-(i-1)*96))<1e-6);
+   assert.ok(Math.abs(t.y-(200+Math.sin(angle)*(i-1)*96-112))<1e-6);
+  });
+  adapter.tryPlay(spec);adapter.update(.3);assert.equal(adapter.stats().played,3);
+  adapter.update(3);assert.equal(adapter.stats().grounds,0);
+ }
+});
+
+test('TORNADO 0.3 秒升起與淡出，續命不重播進場', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/fire-tornado-inferno.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const spec={fxKind:'impact',variant:'pillar',dur:.5,area:{id:'rise',x:0,y:0,r:60},vfx:{field:p.id}};
+ adapter.tryPlay(spec);adapter.update(.15);
+ const body=log.nodes.find(n=>n.spec.assetUrl.includes('inferno-spiral.svg'));
+ const authored=p.layers.find(l=>l.id==='spiral-column');
+ const alpha=authored.alpha===undefined?1:authored.alpha;
+ assert.ok(Math.abs(body.transforms.at(-1).alpha/alpha-.5)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleX/authored.scale.x-.5)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleY/authored.scale.y-.5)<1e-6);
+ adapter.update(.15);assert.equal(body.transforms.at(-1).alpha,alpha);
+ adapter.tryPlay(spec);adapter.update(.15);assert.equal(body.transforms.at(-1).alpha,alpha);
+ adapter.update(.95);assert.ok(Math.abs(body.transforms.at(-1).alpha/alpha-.5)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleX/authored.scale.x-.5)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleY/authored.scale.y-.5)<1e-6);
+ adapter.update(.151);assert.equal(adapter.stats().grounds,0);
+});
+
+test('BLOODBLADE 核准爆破在命中目標播放並完整消退', () => {
+  const preset = JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/hit-bloodblade-burst.json'),'utf8'));
+  const {adapter,log} = makeAdapter([preset]);
+  assert.equal(adapter.tryPlay({fxKind:'slash',variant:'bloodblade',targets:['mv-float-2'],vfx:{attack:preset.id}}),true);
+  adapter.update(.035);
+  const spriteAssets = preset.layers.filter(l=>l.type==='sprite').map(l=>RESOLVER.resolve(l.assetId));
+  const sprites = log.nodes.filter(n=>spriteAssets.includes(n.spec.assetUrl));
+  assert.ok(sprites.length >= 4);
+  for(const n of sprites){const t=n.transforms.at(-1);assert.equal(t.x,300);assert.equal(t.y,50);}
+  assert.equal(adapter.stats().skipped,0);
+  adapter.update(.265);
+  const burst = log.nodes.find(n=>n.spec.assetUrl===RESOLVER.resolve(preset.layers.find(l=>l.id==='blood-burst').assetId));
+  assert.ok(burst.transforms.at(-1).alpha > .7, '0.3 秒仍有清楚紅色主體');
+  adapter.update(1);
+  assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
 test('FIELD 持續本體與地面提示分層、同 id 不互相替換，舊 ground 仍可用', () => {
   const {adapter,log}=makeAdapter([unitPreset('body',5),unitPreset('floor',5)]);
   const spec={fxKind:'aura',variant:'thunder-orb',dur:.35,area:{id:'orb-1',x:10,y:20,r:30},vfx:{field:'body',ground:'floor'}};
@@ -126,7 +195,7 @@ function recordingBackend(log, tag) {
     createNode(spec) { const n = { tag, spec, transforms: [] }; log.nodes.push(n); return n; },
     updateNode(node, t) {
       if (!t || t.visible === false) return;
-      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
+      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha });
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
     destroyNode() {},

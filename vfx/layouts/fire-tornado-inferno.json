@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "fire-tornado-inferno",
+  "groups": [
+    {
+      "id": "fire-tornado-inferno",
+      "name": "fire-tornado-inferno",
+      "layerIds": [
+        "ground-dust",
+        "ground-heat",
+        "ground-fire-licks",
+        "spiral-column",
+        "ascending-flame",
+        "surface-flames",
+        "lifting-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:fire-tornado-inferno"
+  ]
+}

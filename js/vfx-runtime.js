@@ -279,6 +279,18 @@ var VFXRuntime = (function () {
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
+        // 火牆在編輯器是三柱合成；遊戲中各柱保持直立，只沿判定軸排列底部。
+        if (p.id === 'ground-firewall' && p.layers.some(function (l) { return l.id === 'column-0-spiral-column'; })) {
+          for (var column = 0; column < 3; column++) {
+            var prefix = 'column-' + column + '-';
+            var part = JSON.parse(JSON.stringify(p));
+            part.id = p.id + '-column-' + column;
+            part.layers = part.layers.filter(function (l) { return l.id.indexOf(prefix) === 0; });
+            part.layers.forEach(function (l) { l.position.x -= (column - 1) * 96; });
+            part.sizing = { shape: 'custom', widthM: 6, heightM: 12, authored: { width: 120, height: 240, radius: 60 } };
+            registerPresets([part]);
+          }
+        }
       });
     }
 
@@ -630,11 +642,38 @@ var VFXRuntime = (function () {
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
       if (g.uniform) p.scale = g.sx;
       else { p.scaleX = g.sx; p.scaleY = g.sy; }
+      if (g.rise) {
+        var enter = Math.max(0, Math.min(1, (clock - g.bornAt) / 0.3));
+        var leave = Math.max(0, Math.min(1, (g.expireAt - clock) / 0.3));
+        var amount = Math.min(enter, leave);
+        amount = amount * amount * (3 - 2 * amount);
+        delete p.scale;
+        p.scaleX = g.sx * amount; p.scaleY = g.sy * amount;
+        p.opacity = amount;
+      }
       return p;
     }
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec, role) {
+      if (presetId === 'ground-firewall' && has(presetId + '-column-0') && spec.area) {
+        var wall = spec.area, axis = num(wall.a, 0), result = false;
+        for (var column = 0; column < 3; column++) {
+          var offset = (column - 1) * num(wall.w, 180) * 0.8 / 3;
+          var area = Object.assign({}, wall, {
+            id: (wall.id || 'firewall@' + wall.x + ',' + wall.y) + '-column-' + column,
+            x: num(wall.x, 0) + Math.cos(axis) * offset,
+            y: num(wall.y, 0) + Math.sin(axis) * offset,
+            r: num(wall.h, 60) / 2, a: 0
+          });
+          delete area.w; delete area.h;
+          if (isFinite(area.destX) && isFinite(area.destY)) {
+            area.destX += Math.cos(axis) * offset; area.destY += Math.sin(axis) * offset;
+          }
+          result = playGround(presetId + '-column-' + column, Object.assign({}, spec, { area: area }), 'field') || result;
+        }
+        return result;
+      }
       /* 沒有 area 的事件有兩種：高塔（實體沒有座標，area 一律 null）與
          自身增益光殼（沒有判定半徑可言）。兩種都畫在目標腳底並跟著它走，
          大小由 profile.groundR 這個名目半徑決定；0 才維持退回舊畫法。 */
@@ -658,6 +697,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
+        bornAt: clock, rise: presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
