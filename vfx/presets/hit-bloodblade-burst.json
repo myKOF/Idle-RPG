@@ -1,0 +1,340 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-bloodblade-burst",
+  "duration": 0.6,
+  "loop": false,
+  "layers": [
+    {
+      "id": "crimson-halo",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.2777,
+        "y": 0.2777
+      },
+      "alpha": 0.8,
+      "tint": "#d10a28",
+      "blendMode": "add",
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          0.8,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "blood-burst",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0.384,
+      "scale": {
+        "x": 0.3471,
+        "y": 0.3471
+      },
+      "alpha": 1,
+      "tint": "#f52232",
+      "blendMode": "add",
+      "duration": 0.52,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          0.8,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "rose-fracture",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": -0.4189,
+      "scale": {
+        "x": 0.2278,
+        "y": 0.2278
+      },
+      "alpha": 0.95,
+      "tint": "#ff4b52",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          0.8,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "impact-heart",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0805,
+        "y": 0.0805
+      },
+      "alpha": 1,
+      "tint": "#ffe0d7",
+      "blendMode": "add",
+      "duration": 0.05,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "blood-droplets",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1
+      },
+      "tint": "#d51c32",
+      "blendMode": "normal",
+      "duration": 0.6,
+      "emission": {
+        "count": 19,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.35,
+        0.6
+      ],
+      "spawn": {
+        "radius": 9.9547,
+        "shape": "circle"
+      },
+      "speed": [
+        426.63,
+        767.934
+      ],
+      "direction": 0,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 199.094
+      },
+      "drag": 4,
+      "startScale": [
+        0.0222,
+        0.0445
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.1667,
+          1.846429
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "hot-splinters",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "tint": "#ff4c58",
+      "blendMode": "add",
+      "duration": 0.36,
+      "emission": {
+        "count": 12,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.18,
+        0.36
+      ],
+      "spawn": {
+        "radius": 5.6884,
+        "shape": "circle"
+      },
+      "speed": [
+        284.42,
+        483.514
+      ],
+      "direction": 0,
+      "spread": 360,
+      "drag": 5,
+      "startScale": [
+        0.0277,
+        0.0612
+      ],
+      "alignToVelocity": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0.15
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 60
+    },
+    "radiusM": 6,
+    "shape": "circle"
+  }
+}

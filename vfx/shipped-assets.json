@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 98,
+  "assetCount": 99,
   "assets": [
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
@@ -26,6 +26,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:4c226fe5bcc428ad8859f49832c1a933e31450dc0bafca8ab33610d15d3ea876",
       "fileSize": 28122
+    },
+    {
+      "assetId": "codex-authored/tornado/inferno-spiral.svg",
+      "relativePath": "codex-authored/tornado/inferno-spiral.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:e149f833472030a6efccfc876d5c22de55c4ddb2c4854af9a62a74fe54da4b23",
+      "fileSize": 40280008
     },
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -147,6 +154,13 @@
       "fileSize": 43409
     },
     {
+      "assetId": "light-masks-1.0/transparent/shape_a.png",
+      "relativePath": "light-masks-1.0/Transparent/shape_a.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:2f4ee9e6f36472393d936afd9242e02f964f8cb0521cc2d69b1d113365753fc2",
+      "fileSize": 25104
+    },
+    {
       "assetId": "light-masks-1.0/transparent/window_h.png",
       "relativePath": "light-masks-1.0/Transparent/window_h.png",
       "package": "light-masks-1.0",
@@ -203,11 +217,11 @@
       "fileSize": 127438
     },
     {
-      "assetId": "new_materials/fire/fire_28.png",
-      "relativePath": "new_materials/fire/fire_28.png",
+      "assetId": "new_materials/fire/fire_37.png",
+      "relativePath": "new_materials/fire/fire_37.png",
       "package": "new_materials",
-      "contentHash": "sha256:0d03de37685a0643711050e090d999a6d07c7e9b88f0ca68dc279f1ca6df0e4d",
-      "fileSize": 341400
+      "contentHash": "sha256:8979a965ddc3c2195f8fd2c9865d51caeb2ad854437f1911b2d83d07ce0decac",
+      "fileSize": 128835
     },
     {
       "assetId": "new_materials/flare/flare_16.png",
@@ -628,13 +642,6 @@
       "package": "particle-pack",
       "contentHash": "sha256:6443e90834abcae4c3848d7ebca99ff0d9fcad19a07f49f77ad64710a3e39b36",
       "fileSize": 86500
-    },
-    {
-      "assetId": "particle-pack/png-transparent/rotated/trace_06_rotated.png",
-      "relativePath": "particle-pack/PNG (Transparent)/Rotated/trace_06_rotated.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:098bd782fbbac098e30357acdef764184e601ccdf05d109f3dcfb698e5a7ea60",
-      "fileSize": 30533
     },
     {
       "assetId": "particle-pack/png-transparent/smoke_04.png",

@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "id": "fire-tornado-inferno",
+  "duration": 2.5,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ground-dust",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "alpha": 0.2,
+      "tint": "#756050",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 7
+      },
+      "lifetime": [
+        0.8,
+        1.3
+      ],
+      "spawn": {
+        "height": 5,
+        "shape": "box",
+        "width": 55
+      },
+      "speed": [
+        10,
+        24
+      ],
+      "direction": -90,
+      "spread": 155,
+      "drag": 1.1,
+      "startScale": [
+        0.0391,
+        0.0645
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.6
+        ],
+        [
+          0.6,
+          0.4
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          1.5
+        ]
+      ]
+    },
+    {
+      "id": "ground-heat",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.2637,
+        "y": 0.082
+      },
+      "alpha": 0.5,
+      "tint": "#c65010",
+      "blendMode": "add"
+    },
+    {
+      "id": "ground-fire-licks",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "new_materials/fire/fire_37.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "alpha": 0.28,
+      "tint": "#ed731c",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 9
+      },
+      "lifetime": [
+        0.45,
+        0.8
+      ],
+      "spawn": {
+        "height": 7,
+        "shape": "box",
+        "width": 90
+      },
+      "speed": [
+        12,
+        25
+      ],
+      "direction": -90,
+      "spread": 70,
+      "drag": 1.4,
+      "startScale": [
+        0.0215,
+        0.0391
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          2.855078
+        ],
+        [
+          0.2623,
+          5.032153
+        ],
+        [
+          0.7253,
+          5.03483
+        ],
+        [
+          1,
+          2.266402
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0.0123,
+          1.370521
+        ],
+        [
+          0.1944,
+          0.537105
+        ],
+        [
+          0.4568,
+          3.150987
+        ],
+        [
+          0.7623,
+          0.755902
+        ],
+        [
+          1,
+          1.677733
+        ]
+      ]
+    },
+    {
+      "id": "spiral-column",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "codex-authored/tornado/inferno-spiral.svg",
+      "zIndex": 3,
+      "position": {
+        "x": -1,
+        "y": -112
+      },
+      "scale": {
+        "x": 1.4,
+        "y": 1
+      },
+      "alpha": 0.8,
+      "blendMode": "normal",
+      "alphaOverLife": 1,
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          1,
+          "#ffffff"
+        ]
+      ],
+      "scaleOverLife": 1,
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 25.6,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      }
+    },
+    {
+      "id": "ascending-flame",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "light-masks-1.0/transparent/shape_a.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": -7
+      },
+      "alpha": 0.3,
+      "tint": "#ff6913",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 16
+      },
+      "lifetime": [
+        0.7,
+        1.1
+      ],
+      "spawn": {
+        "height": 8,
+        "shape": "box",
+        "width": 24
+      },
+      "speed": [
+        130,
+        200
+      ],
+      "direction": -90,
+      "spread": 22,
+      "drag": 0.4,
+      "startScale": [
+        0.0313,
+        0.0547
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          20.361562
+        ],
+        [
+          0.2593,
+          26.976559
+        ],
+        [
+          0.75,
+          18.15178
+        ],
+        [
+          0.9815,
+          14.363583
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0.0062,
+          0.517819
+        ],
+        [
+          0.5093,
+          0.342287
+        ],
+        [
+          1,
+          0.15
+        ]
+      ],
+      "rotationOverLife": 0
+    },
+    {
+      "id": "surface-flames",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": -125
+      },
+      "alpha": 0.1,
+      "tint": "#ff6512",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.6,
+        1
+      ],
+      "spawn": {
+        "height": 145,
+        "shape": "box",
+        "width": 75
+      },
+      "speed": [
+        30,
+        65
+      ],
+      "direction": -90,
+      "spread": 45,
+      "startScale": [
+        0.0352,
+        0.0684
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.7
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "lifting-embers",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 6,
+      "tint": "#ffd17a",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 14
+      },
+      "lifetime": [
+        0.9,
+        1.4
+      ],
+      "spawn": {
+        "height": 12,
+        "shape": "box",
+        "width": 74
+      },
+      "speed": [
+        110,
+        190
+      ],
+      "direction": -90,
+      "spread": 25,
+      "gravity": {
+        "x": 12,
+        "y": -25
+      },
+      "startScale": [
+        0.0029,
+        0.0063
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.8,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 240,
+      "radius": 60,
+      "width": 120
+    },
+    "heightM": 12,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

@@ -85,43 +85,7 @@ P['ground-mire-poison'] = () => ({
 });
 
 /* =========================== 火牆／雷幕 =========================== */
-P['ground-firewall'] = () => {
-  const column = (id, z, x, delay) => sprite({
-    id: id, asset: A.fireWallColored, z: z, sizeX: 76, sizeY: 120, x: x, y: -46,
-    alpha: 0.95, tint: '#e43b12', blend: 'add', duration: 1.2, delay: delay,
-    alphaOverLife: LOOP_A(0.9, 1),
-    scaleXOverLife: [[0, 1], [0.3, 1.12], [0.65, 0.9], [1, 1]],
-    scaleYOverLife: [[0, 1], [0.35, 1.1], [0.7, 0.92], [1, 1]],
-    rotationOverLife: [[0, deg(-4)], [0.5, deg(4)], [1, deg(-4)]]
-  });
-  return {
-    id: 'ground-firewall', duration: 1.2, loop: true, layers: [
-      sprite({ id: 'scorch', asset: AT.trace06H, z: 0, sizeX: 200, sizeY: 40, alpha: 0.75, tint: '#30231d', blend: 'normal', duration: 1.2, alphaOverLife: LOOP_A(0.75, 0.65) }),
-      /* 底部餘燼用扁橢圓的柔光，不用 trace。
-         trace 系素材的筆畫只佔圖高的 11%（見 bolts.cjs 的 BEAM_INK），
-         畫成 200x26 的結果是一條又細又硬的亮線橫貫整面火牆——
-         畫面上像有人把日光燈管放在火裡，而且正好切過站在牆邊的角色。
-         火牆底部要的是「地面被烤紅」那種瀰漫的暖光，本來就不該有邊。 */
-      sprite({ id: 'base', asset: A.discA, z: 1, sizeX: 210, sizeY: 44, y: -6, alpha: 0.5, tint: '#ffa51d', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.42, 0.58) }),
-      column('flame-a', 2, -62, 0),
-      column('flame-b', 3, 0, 0.28),
-      column('flame-c', 4, 62, 0.56),
-      sprite({ id: 'core', asset: A.discA, z: 5, sizeX: 176, sizeY: 26, y: -16, alpha: 0.55, tint: '#ffd84a', blend: 'add', duration: 1.2, alphaOverLife: LOOP_A(0.5, 0.68) }),
-      particle({
-        id: 'smoke', asset: A.smokeT, z: 6, blend: 'normal', tint: '#4a3b33',
-        rate: 5, lifetime: [0.7, 1.1], spawnBox: [180, 20], y: -80, speed: [20, 45], direction: -90, spread: 40,
-        gravity: { x: 0, y: -30 }, startPx: [26, 46],
-        alphaOverLife: [[0, 0], [0.25, 0.45], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.4]]
-      }),
-      particle({
-        id: 'sparks', asset: A.dot, z: 7, blend: 'add', tint: '#ffd84a',
-        rate: 12, lifetime: [0.4, 0.7], spawnBox: [190, 16], speed: [40, 90], direction: -90, spread: 45,
-        gravity: { x: 0, y: -60 }, startPx: [3, 6],
-        alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.35]]
-      })
-    ]
-  };
-};
+P['ground-firewall'] = () => require('./firewall.cjs').build();
 
 P['ground-thunder-curtain'] = () => ({
   id: 'ground-thunder-curtain', duration: 1, loop: true, layers: [

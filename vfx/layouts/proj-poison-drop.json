@@ -1,19 +1,11 @@
 {
   "schemaVersion": 1,
   "presetId": "proj-poison-drop",
-  "groups": [
-    {
-      "id": "proj-poison-drop",
-      "name": "proj-poison-drop",
-      "layerIds": [
-        "glow",
-        "body",
-        "gloss",
-        "trail"
-      ]
-    }
-  ],
+  "groups": [],
   "order": [
-    "group:proj-poison-drop"
+    "layer:glow",
+    "layer:body",
+    "layer:gloss",
+    "layer:trail"
   ]
 }

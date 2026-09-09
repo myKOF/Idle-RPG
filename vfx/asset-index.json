@@ -6,8 +6,28 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2405,
+  "assetCount": 2406,
   "assets": [
+    {
+      "assetId": "codex-authored/tornado/inferno-spiral.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/tornado/inferno-spiral.svg",
+      "format": "svg",
+      "fileSize": 40280008,
+      "contentHash": "sha256:e149f833472030a6efccfc876d5c22de55c4ddb2c4854af9a62a74fe54da4b23",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 2048
+        },
+        "hasAlphaChannel": true
+      },
+      "tags": [
+        "fire",
+        "tornado",
+        "sequence"
+      ]
+    },
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
       "package": "codex-authored",

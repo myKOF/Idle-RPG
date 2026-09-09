@@ -997,7 +997,7 @@ var VFXCore = (function () {
         done: false,
         origin: { x: 0, y: 0 },
         rotation: 0,
-        scale: 1, scaleX: 1, scaleY: 1,
+        scale: 1, scaleX: 1, scaleY: 1, opacity: 1,
         seed: (p.seed === undefined ? (nextEffectId * 2654435761) : p.seed) >>> 0,
         layers: [],
         /* 圖層 id → 圖層狀態。子發射器要靠 id 找到目標層；
@@ -1051,6 +1051,7 @@ var VFXCore = (function () {
         if (p.position.x !== undefined) effect.origin.x = transformNumber(p.position.x, 'position.x');
         if (p.position.y !== undefined) effect.origin.y = transformNumber(p.position.y, 'position.y');
       }
+      if (p.opacity !== undefined) effect.opacity = Math.max(0, Math.min(1, transformNumber(p.opacity, 'opacity')));
       if (p.rotation !== undefined) effect.rotation = transformNumber(p.rotation, 'rotation');
       var hasScale = p.scale !== undefined;
       var hasAxis = p.scaleX !== undefined || p.scaleY !== undefined;
@@ -1202,7 +1203,7 @@ var VFXCore = (function () {
         t.scaleY = Math.sqrt(bx * bx + by * by);
         t.skewX = angleX - angleY;
       }
-      t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
+      t.alpha = effect.opacity * d.alpha * (alphaK === null ? 1 : alphaK);
       var tintK = sampleColorCurve(d.tintCurve, life.progress);
       t.tint = tintK === null ? colorToInt(d.tint) : mulColorInt(colorToInt(d.tint), tintK);
       /* 序列幀：sprite 的年紀就是它自己這一段的經過時間。 */
@@ -1459,7 +1460,7 @@ var VFXCore = (function () {
         }
         t.scaleX = p.baseScale * effect.scale * (scaleK === null ? 1 : scaleK);
         t.scaleY = t.scaleX;
-        t.alpha = d.alpha * (alphaK === null ? 1 : alphaK);
+        t.alpha = effect.opacity * d.alpha * (alphaK === null ? 1 : alphaK);
         t.tint = tintCurve === null ? tint : mulColorInt(tint, sampleColorCurve(tintCurve, k));
         t.frame = sheet ? sheetFrame(sheet, k, p.life, p.frameOffset) : undefined;
         t.anchorX = d.anchor.x;
