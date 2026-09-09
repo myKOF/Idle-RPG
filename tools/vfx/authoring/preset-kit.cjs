@@ -458,6 +458,8 @@ const C = {
 
 function write(preset) {
   const p = { schemaVersion: 1, id: preset.id, duration: preset.duration, loop: !!preset.loop, layers: preset.layers };
+  const sizing = preset.sizing || require('./standardize-sizes.cjs').sizingFor(p.id);
+  if (sizing) p.sizing = sizing;
   if (!/^[a-z0-9][a-z0-9-]*$/.test(p.id) || p.id.length > 64) throw new Error('非法 preset id：' + p.id);
   if (p.layers.length > 32) throw new Error(p.id + ' 圖層超過 32');
   const seen = new Set();

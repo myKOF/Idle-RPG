@@ -169,6 +169,7 @@ var VFXPixiBackend = (function () {
       if (t.x !== undefined) node.x = t.x;
       if (t.y !== undefined) node.y = t.y;
       if (t.rotation !== undefined) node.rotation = t.rotation;
+      if (node.skew) node.skew.set(t.skewX || 0, 0);
       if (t.scaleX !== undefined) node.scale.set(t.scaleX, t.scaleY);
       if (t.alpha !== undefined) node.alpha = t.alpha;
       if (t.tint !== undefined) node.tint = t.tint;

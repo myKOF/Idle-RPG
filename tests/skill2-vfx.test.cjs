@@ -358,7 +358,9 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   const vfx = read('js/vfx.js');
   const renderer = read('js/battle-renderer.js');
 
-  assert.match(skills2, /variant: thrustVariant, count: Math\.min\(8, thrustCount\), projectile: isPiercing/);
+  assert.match(skills2, /for \(var wave = 0; wave < thrustCount; wave\+\+\)/);
+  assert.match(skills2, /variant: thrustVariant, count: 1, projectile: isPiercing/);
+  assert.match(skills2, /beginSec: pr \* thrustWaveGap/);
   assert.match(skills2, /variant: cleaveVariant, count: Math\.min\(5, slashes\), projectile: isFlying/);
   const thrustVfx = vfx.slice(vfx.indexOf("s.variant === 'thrust-pierce'"), vfx.indexOf("s.variant === 'cleave'"));
   const thrustRenderer = renderer.slice(renderer.indexOf("spec.variant === 'thrust-pierce'"), renderer.indexOf("spec.variant === 'cleave'"));
@@ -951,11 +953,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.112/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.12/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.92/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260908-basic-melee'/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.13/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.93/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260908-size-thrust'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260906-preset-fallback-sweep/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260908-size-thrust/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 

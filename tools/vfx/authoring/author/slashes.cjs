@@ -179,28 +179,8 @@ P['slash-gale-sector'] = () => ({
   ]
 });
 
-/* ---------- slash-thrust-lance：沿 +X 刺出的金色光槍 ----------
-   名目 100×36，原點＝槍根 → anchor x=0；Runtime scaleX＝lineLength/100。 */
-P['slash-thrust-lance'] = () => ({
-  id: 'slash-thrust-lance', duration: 0.3, layers: [
-    sprite({
-      id: 'shaft', asset: A.trace06H, z: 1, sizeX: 100, sizeY: 36, anchor: { x: 0, y: 0.5 },
-      alpha: 0.85, tint: '#a86d2d', blend: 'add', duration: 0.3,
-      alphaOverLife: [[0, 0], [0.15, 1], [0.8, 0.9], [1, 0]],
-      scaleXOverLife: [[0, 0.1], [0.4, 1], [1, 1]], scaleYOverLife: [[0, 0.7], [0.35, 1], [1, 0.85]]
-    }),
-    sprite({
-      id: 'core', asset: A.trace02H, z: 2, sizeX: 100, sizeY: 14, anchor: { x: 0, y: 0.5 },
-      alpha: 1, tint: '#ffd166', blend: 'add', duration: 0.3,
-      alphaOverLife: [[0, 0], [0.12, 1], [0.8, 1], [1, 0]],
-      scaleXOverLife: [[0, 0.1], [0.35, 1], [1, 1]], scaleYOverLife: [[0, 0.6], [0.3, 1], [1, 0.8]]
-    }),
-    sprite({
-      id: 'tip', asset: A.flare16, z: 3, size: 40, x: 100, alpha: 1, tint: '#fff3c4', blend: 'add',
-      delay: 0.1, duration: 0.18, alphaOverLife: C.pop, scaleOverLife: [[0, 0.4], [0.3, 1], [1, 0.8]]
-    })
-  ]
-});
+/* 突刺獨立製作，避免家族重生時覆蓋新版本。 */
+P['slash-thrust-lance'] = () => require('./thrust.cjs').make('slash-thrust-lance', false, false);
 
 /* ---------- slash-wind-crescent：真空斬新月（朝 +X） ----------
    與 proj-wind-crescent 同一套形狀語彙：slash02 外弧 + slash01 內芯 + rotDeg -90。

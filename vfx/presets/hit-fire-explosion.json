@@ -129,5 +129,11 @@
         "rows": 5
       }
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 60
+    },
+    "shape": "circle"
+  }
 }

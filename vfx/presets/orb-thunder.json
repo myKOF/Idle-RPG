@@ -186,5 +186,12 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 20
+    },
+    "radiusM": 3,
+    "shape": "projectile-circle"
+  }
 }

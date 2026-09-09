@@ -153,5 +153,12 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 33,
+      "width": 33
+    },
+    "shape": "projectile-square"
+  }
 }

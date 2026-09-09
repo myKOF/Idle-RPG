@@ -21,6 +21,35 @@
 
 var VFXRuntime = (function () {
 
+  /* 米制本體尺寸。authored 是素材座標中的本體，不包含外暈／拖尾。
+     保留作者的座標精度，以轉換矩陣統一尺寸；Editor 往返不必重採樣素材。 */
+  var SIZE_DEFAULTS = { circle: { radiusM: 6 }, square: { widthM: 6, heightM: 6 },
+    rectangle: { widthM: 6, heightM: 3 }, 'projectile-circle': { radiusM: 6 },
+    'projectile-square': { widthM: 6, heightM: 6 } };
+  function resolveSizing(sizing, actual, unitsPerMeter) {
+    if (!sizing) return null; // 舊版／外部 Preset 保留既有名目尺寸
+    var defaults = SIZE_DEFAULTS[sizing.shape];
+    if (!defaults && sizing.shape !== 'custom') throw new Error('未知 VFX sizing.shape');
+    var a = sizing.authored || {}, target = actual || {};
+    var unit = Number(unitsPerMeter) || 10;
+    function positive(v) { return typeof v === 'number' && isFinite(v) && v > 0; }
+    var radius = sizing.radiusM === undefined ? defaults && defaults.radiusM : sizing.radiusM;
+    var width = sizing.widthM === undefined ? defaults && defaults.widthM : sizing.widthM;
+    var height = sizing.heightM === undefined ? defaults && defaults.heightM : sizing.heightM;
+    if (positive(radius)) { width = radius * 2; height = radius * 2; }
+    if (!positive(width) || !positive(height)) throw new Error('VFX sizing 必須定義正的本體尺寸');
+    var aw = positive(a.width) ? a.width : a.radius * 2;
+    var ah = positive(a.height) ? a.height : a.radius * 2;
+    if (!positive(aw) || !positive(ah)) throw new Error('VFX sizing.authored 必須定義正的本體尺寸');
+    var w = width * unit, h = height * unit;
+    if (positive(target.w) && positive(target.h)) { w = target.w; h = target.h; }
+    else if (positive(target.r)) {
+      var ar = positive(a.radius) ? a.radius : aw / 2;
+      return { scaleX: target.r / ar, scaleY: target.r / ar };
+    }
+    return { scaleX: w / aw, scaleY: h / ah };
+  }
+
   var NOMINAL_RADIUS = 100;     // 圓形場域／範圍爆發
   var NOMINAL_RECT_W = 200;     // 矩形場域
   var NOMINAL_RECT_H = 100;
@@ -228,6 +257,7 @@ var VFXRuntime = (function () {
     });
 
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
+    var presetSizes = Object.create(null);
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
     var grounds = Object.create(null);      // area.id → 場域
@@ -241,13 +271,24 @@ var VFXRuntime = (function () {
     function registerPresets(list) {
       (list || []).forEach(function (p) {
         if (!p || !p.id || known[p.id]) return;
+        if (p.sizing) resolveSizing(p.sizing); // 載入即驗證，錯誤不可靜默變成 NaN
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
         known[p.id] = true;
+        presetSizes[p.id] = p.sizing || null;
       });
     }
 
     function has(id) { return !!(id && known[id]); }
+    function sizeOf(id, actual) {
+      var unit = typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10;
+      return resolveSizing(presetSizes[id], actual, unit);
+    }
+    function defaultSize(id, scale) {
+      var p = sizeOf(id) || { scaleX: 1, scaleY: 1 };
+      p.scaleX *= num(scale, 1); p.scaleY *= num(scale, 1);
+      return p;
+    }
 
     /* 把表面的尺寸係數乘進 transform 參數。沒給任何縮放時視為 1，
        這樣「角色身上」那類不帶 scale 的呼叫在高塔也會整組縮。 */
@@ -293,7 +334,9 @@ var VFXRuntime = (function () {
       return { x: num(area.x, 0), y: num(area.y, 0) };
     }
     /* 場域／範圍的縮放：圓形吃半徑，矩形吃長寬，兩者的名目尺寸不同。 */
-    function areaScaleParams(area) {
+    function areaScaleParams(area, presetId) {
+      var resolved = sizeOf(presetId, area);
+      if (resolved) { resolved.rotation = num(area.a, 0); return resolved; }
       var w = num(area.w, 0), h = num(area.h, 0);
       if (w > 0 && h > 0) {
         return { scaleX: w / NOMINAL_RECT_W, scaleY: h / NOMINAL_RECT_H, rotation: num(area.a, 0) };
@@ -318,7 +361,8 @@ var VFXRuntime = (function () {
           continue;
         }
         var p = ctx.posOf(ids[i]);
-        var params = { position: p, scale: scale };
+        var params = defaultSize(presetId, scale);
+        params.position = p;
         if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
@@ -336,7 +380,7 @@ var VFXRuntime = (function () {
     /* 範圍中心（爆發、場域一次性） */
     function playOnArea(rt, presetId, spec) {
       if (!spec.area) return false;
-      var params = areaScaleParams(spec.area);
+      var params = areaScaleParams(spec.area, presetId);
       params.position = areaCentre(spec.area);
       return !!play(rt, presetId, params, profile.areaScale);
     }
@@ -349,12 +393,24 @@ var VFXRuntime = (function () {
       if (!(len > 0)) return false;
       var width = num(spec.lineWidth, 0);
       var from = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
-      return !!play(rt, presetId, {
-        position: from,
-        rotation: num(spec.angle, 0),
-        scaleX: len / NOMINAL_LANCE,
-        scaleY: width > 0 ? width / NOMINAL_LANCE_W : 1
-      });
+      var thrust = /^thrust(?:-|$)/.test(spec.variant || '');
+      var lanes = thrust && Array.isArray(spec.laneOffsets) && spec.laneOffsets.length
+        ? spec.laneOffsets.slice(0, 3) : [0];
+      var dirs = thrust ? Math.max(1, Math.min(8, Math.floor(num(spec.directionCount, 1)))) : 1;
+      var laneWidth = width / lanes.length;
+      var shape = sizeOf(presetId, { w: len, h: laneWidth }) || {
+        scaleX: len / NOMINAL_LANCE, scaleY: width > 0 ? width / NOMINAL_LANCE_W : 1 };
+      var any = false;
+      for (var d = 0; d < dirs; d++) {
+        var angle = num(spec.angle, 0) + d * Math.PI * 2 / dirs;
+        for (var l = 0; l < lanes.length; l++) {
+          var offset = num(lanes[l], 0);
+          shape.position = { x: from.x - Math.sin(angle) * offset, y: from.y + Math.cos(angle) * offset };
+          shape.rotation = angle;
+          if (play(rt, presetId, shape)) any = true;
+        }
+      }
+      return any;
     }
 
     /* 從玩家（或起點）沿方向拉長到目標：光束與連鎖段 */
@@ -420,18 +476,18 @@ var VFXRuntime = (function () {
       var ctrl = curveControl(from, to, enterAngle);
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
       var facing = curveHeading(from, ctrl, to, 0);
-      var ref = play(rt, presetId, {
-        position: from,
-        rotation: facing,
-        scale: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1
-      }, mult);
+      var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
+        ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
+      dimensions = dimensions || defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1);
+      var params = Object.assign({ position: from, rotation: facing }, dimensions);
+      var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
         /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
         ref: ref, from: from, targetId: toId, to: directed ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing,
-        scale: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1
+        dimensions: dimensions
       });
       return true;
     }
@@ -446,7 +502,7 @@ var VFXRuntime = (function () {
 
     /* 玩家腳底並跟著玩家走：施放特效 */
     function playOnPlayer(rt, presetId, spec) {
-      var ref = play(rt, presetId, { position: footOf('pv-float') });
+      var ref = play(rt, presetId, Object.assign(defaultSize(presetId), { position: footOf('pv-float') }));
       if (!ref) return false;
       follows.push({ ref: ref, key: 'pv-float', until: clock + Math.max(0.2, num(spec.dur, 0.9)) });
       return true;
@@ -459,8 +515,10 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        g.uniform = true;
-        g.tsx = g.tsy = profile.groundR / NOMINAL_RADIUS;
+        var fallbackSize = sizeOf(g.presetId, o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null);
+        g.uniform = !fallbackSize;
+        g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
+        g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
         g.trot = 0;
         return;
       }
@@ -475,7 +533,10 @@ var VFXRuntime = (function () {
       g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
-      if (w > 0 && h > 0) {
+      var resolved = sizeOf(g.presetId, area);
+      if (resolved) {
+        g.uniform = false; g.tsx = resolved.scaleX; g.tsy = resolved.scaleY;
+      } else if (w > 0 && h > 0) {
         g.uniform = false;
         g.tsx = w / NOMINAL_RECT_W;
         g.tsy = h / NOMINAL_RECT_H;
@@ -618,7 +679,8 @@ var VFXRuntime = (function () {
     function syncOrbCount(entry) {
       while (entry.orbs.length > entry.geo.orbs) stopRef(entry.orbs.pop());
       while (entry.orbs.length < entry.geo.orbs) {
-        var ref = play(rtFx, entry.orbId, { position: orbitCentre(), scale: entry.geo.orbR / NOMINAL_ORB }, profile.areaScale);
+        var ref = play(rtFx, entry.orbId, Object.assign({ position: orbitCentre() },
+          sizeOf(entry.orbId, { r: entry.geo.orbR }) || { scale: entry.geo.orbR / NOMINAL_ORB }), profile.areaScale);
         if (!ref) break;                    // 預算滿了就先少幾團，下一次事件再補
         entry.orbs.push(ref);
       }
@@ -649,7 +711,8 @@ var VFXRuntime = (function () {
       var centre = orbitCentre();
       var entry = {
         orbId: orbId, ringId: ringId, geo: geo, t: 0, dur: dur, orbs: [],
-        ring: ringId ? play(rtZone, ringId, { position: centre, scale: geo.ringR / NOMINAL_RADIUS }, profile.areaScale) : null
+        ring: ringId ? play(rtZone, ringId, Object.assign({ position: centre },
+          sizeOf(ringId, { r: geo.ringR }) || { scale: geo.ringR / NOMINAL_RADIUS }), profile.areaScale) : null
       };
       orbits[key] = entry;
       syncOrbCount(entry);
@@ -693,7 +756,8 @@ var VFXRuntime = (function () {
         var capR = g.growMax > 0 ? g.growMax : Infinity;
         /* 整環一起長（虛空斬）先算好；螺旋（超神【無限星環】）則每一團各自算。 */
         var wholeR = (g.growPx > 0 && !g.spiral) ? Math.min(capR, ringRNow + g.growPx * o.t) : ringRNow;
-        if (o.ring && !moveRef(o.ring, { position: centre, scale: wholeR / NOMINAL_RADIUS },
+        if (o.ring && !moveRef(o.ring, Object.assign({ position: centre },
+          sizeOf(o.ringId, { r: wholeR }) || { scale: wholeR / NOMINAL_RADIUS }),
           profile.areaScale)) o.ring = null;
         var base = g.startAng + g.spin * o.t;
         var dir = g.spin < 0 ? -1 : 1;
@@ -706,11 +770,10 @@ var VFXRuntime = (function () {
           /* 朝向取「螢幕上的切線方向」而不是 ang＋90°：橢圓被壓扁 0.62 之後，
              那兩者差得出來（Preset 一律朝 +X 繪製，拖尾會指錯邊）。 */
           var heading = Math.atan2(Math.cos(ang) * ORBIT_FLAT * dir, -Math.sin(ang) * dir);
-          var alive = moveRef(o.orbs[i], {
+          var alive = moveRef(o.orbs[i], Object.assign({
             position: { x: centre.x + Math.cos(ang) * rNow, y: centre.y + Math.sin(ang) * rNow * ORBIT_FLAT },
-            rotation: heading,
-            scale: orbR / NOMINAL_ORB
-          }, profile.areaScale);
+            rotation: heading
+          }, sizeOf(o.orbId, { r: orbR }) || { scale: orbR / NOMINAL_ORB }), profile.areaScale);
           if (!alive) o.orbs.splice(i, 1);
         }
         if (!o.orbs.length && !o.ring) stopOrbit(key);
@@ -736,6 +799,12 @@ var VFXRuntime = (function () {
       var role = primaryRoleOf(spec, roles);
       var presetId = role ? roles[role] : '';
       if (!presetId || !has(presetId)) { counters.skipped++; return false; }
+      /* 野外渲染器已消耗 delayMs；高塔直接呼叫 Adapter，仍須保留波次間隔。
+         使用更新時鐘排程，clear() 會一起取消，不留下換頁後的計時器。 */
+      if (num(spec.delayMs, 0) > 0) {
+        pending.push({ at: clock + spec.delayMs / 1000, spec: Object.assign({}, spec, { delayMs: 0 }) });
+        return true;
+      }
 
       var ok = false;
       var drops0 = budgetDrops;
@@ -753,7 +822,15 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec);
           break;
         case 'attack':
-          if (spec.area) ok = playOnArea(rtFx, presetId, spec);
+          if (/^thrust(?:-|$)/.test(spec.variant || '') && num(spec.lineLength, 0) > 0) {
+            var aimed = Object.assign({}, spec);
+            if (typeof spec.angle !== 'number' || !isFinite(spec.angle)) {
+              var origin = ctx.playerPos();
+              var target = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : origin;
+              aimed.angle = Math.atan2(target.y - origin.y, target.x - origin.x);
+            }
+            ok = playDirectional(rtFx, presetId, aimed);
+          } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
           else ok = playOnTargets(rtFx, presetId, spec, 1, hitDelayFor(spec));
@@ -782,7 +859,7 @@ var VFXRuntime = (function () {
       /* 受擊爆點：同一則事件的 hit 角色跟著主要角色走（飛行物則等它抵達）；
          主要角色本身就是 hit 時不重複播。
          spec.hit === false＝這一擊被閃避或被無敵擋下，舊畫法同樣不畫爆點。 */
-      if (role !== 'hit' && spec.hit !== false && roles.hit && has(roles.hit)) {
+      if (role !== 'hit' && spec.hit !== false && !(spec.projectile && /^thrust(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
         playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
           role === 'projectile' ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
@@ -833,7 +910,8 @@ var VFXRuntime = (function () {
         if (pending[q].at > clock) continue;
         var job = pending[q];
         pending.splice(q, 1);
-        play(job.rt, job.presetId, { position: ctx.posOf(job.targetId), scale: job.scale });
+        if (job.spec) { tryPlay(job.spec); continue; }
+        play(job.rt, job.presetId, Object.assign(defaultSize(job.presetId, job.scale), { position: ctx.posOf(job.targetId) }));
       }
 
       /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
@@ -848,11 +926,10 @@ var VFXRuntime = (function () {
         var at = curvePoint(pr.from, ctrl, to, k);
         pr.facing = approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
           step, PROJECTILE_FACING_TAU_SEC);
-        var alive = moveRef(pr.ref, {
+        var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },
-          rotation: pr.facing,
-          scale: pr.scale
-        }, pr.mult);
+          rotation: pr.facing
+        }, pr.dimensions), pr.mult);
         if (!alive || k >= 1) {
           /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
           if (k >= 1 && pr.targetId) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
@@ -967,7 +1044,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260908-hit-blend';
+  var DATA_VERSION = '20260908-size-thrust';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -1011,6 +1088,8 @@ var VFXRuntime = (function () {
     collectPresetIds: collectPresetIds,
     loadPresets: loadPresets,
     primaryRoleOf: primaryRoleOf,
+    resolveSizing: resolveSizing,
+    SIZE_DEFAULTS: SIZE_DEFAULTS,
     NOMINAL: {
       radius: NOMINAL_RADIUS, rectW: NOMINAL_RECT_W, rectH: NOMINAL_RECT_H,
       beam: NOMINAL_BEAM, lance: NOMINAL_LANCE, lanceWidth: NOMINAL_LANCE_W, orb: NOMINAL_ORB

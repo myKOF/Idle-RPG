@@ -105,5 +105,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 72,
+      "width": 72
+    },
+    "heightM": 7.2,
+    "shape": "custom",
+    "widthM": 7.2
+  }
 }

@@ -188,5 +188,11 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
 }

@@ -90,5 +90,14 @@
         ]
       ]
     }
-  ]
+  ],
+  "sizing": {
+    "authored": {
+      "height": 96,
+      "width": 88
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
 }

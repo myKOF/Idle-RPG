@@ -376,6 +376,25 @@ test('突刺·連刺：機率觸發時再追加 2 次突刺', () => {
   assert.equal(calls.length, 4);
 });
 
+test('突刺波次 VFX 與飛行物共用起飛時間、方向及三階／五階畫面', () => {
+  const c = loadContext(); stubHits(c); c.chance = () => true;
+  c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 1];
+  const events = []; c.playCombatVfx = s => events.push(s);
+  c.enemyEventFloatTarget = () => 'mv-float-1';
+  c.castSkill2(playerEnt(), [enemy(1e9, 0, 40)], 'thrust', 'mv-float');
+  const waves = events.filter(e => e.variant === 'thrust-octagonal');
+  assert.equal(waves.length, 7);
+  assert.ok(waves.every(e => e.count === 1 && e.directionCount === 8 && e.laneOffsets.length === 3));
+  assert.ok(waves.every(e => e.vfx.attack === 'slash-thrust-scatter'));
+  assert.ok(waves.every(e => Math.abs(e.angle - Math.PI / 2) < 1e-8));
+  const projectiles = c.SKILL2_RT.projectiles.filter(p => p.gid === 'thrust');
+  assert.equal(projectiles.length, 168);
+  for (let i = 0; i < 7; i++) {
+    const delay = (waves[i].delayMs || 0) / 1000;
+    assert.ok(projectiles.slice(i * 24, (i + 1) * 24).every(p => Math.abs(p.beginAt - c.GT - delay) < 1e-8));
+  }
+});
+
 test('突刺·超連刺與貫穿突刺：平行路徑上的目標都吃到飛行物命中', () => {
   const c = loadContext();
   const calls = stubHits(c);

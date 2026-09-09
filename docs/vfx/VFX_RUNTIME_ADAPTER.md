@@ -2,6 +2,8 @@
 
 # VFX Preset 化：設計定案與交接（2026-09-03，進行中）
 
+> 2026-09-08：正式技能 Preset 已增加 `sizing` 米制本體契約。下文 §1.2 的舊名目像素只適用於未宣告 sizing 的相容檔；新尺寸權威與突刺規格見 [VFX_SIZE_STANDARD.md](VFX_SIZE_STANDARD.md)。
+
 適用範圍：`docs/vfx/VFX_AGENT_WORKFLOW.md` §1.1（本任務套用 VFX 工作流；Claude＝Lead Engineer）。
 本文件記錄「用 VFX 編輯器重做全部戰鬥特效」的架構決策、目前進度與尚未完成的工作，
 讓換機器或換對話之後能直接接手。Core／Preset 規格見 `VFX_CORE_AND_PRESET_SCHEMA.md`。

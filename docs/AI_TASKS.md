@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜技能特效尺寸標準化與突刺改造（VFX-20260908）
+
+- 狀態：Done（2026-09-09）；Owner：Codex；使用者確認採用突刺與五階穿槍圓環。
+- 完成：148 份正式技能 Preset 建立尺寸契約；依明訂尺寸或預設米制尺寸正規化，再按實際範圍縮放；修正局部旋轉與非等比尺寸的矩陣組合。突刺依參考图 J34／K34 重製黃白／黃紅光槍、交錯光帶、飛濺與三枚朝右穿槍淡出圓環，支援平行／八方向／連段。
+- 修改：js/vfx-core.js、js/vfx-pixi-backend.js、js/vfx-runtime.js、js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html；vfx/presets、三份突刺 layouts；tools/vfx/authoring 製作與尺寸工具；Skills2 CSV／Excel；相關測試與 docs/vfx 文件。
+- 未修改但檢查：js/battle-renderer.js、js/vfx-tower.js、js/vfx.js、js/worker/shim.js、js/battlefield.js、編輯器與素材索引、協作規範。
+- 測試指令：node --test --test-concurrency=2 tests/vfx-*.test.cjs tests/skill2-system.test.cjs tests/skill2-vfx.test.cjs tests/worker-shim.test.cjs tests/basic-melee.test.cjs；npm.cmd run build；node tools/config_tables.cjs --apply Skills2；git diff --check。
+- 結果：641 項中 637 pass／2 skip／2 原有 fail（vfx-editor-layers 的 L36 與 R3，已用 HEAD 獨立副本確認同樣失敗）；build 326 檔通過；Skills2 往返語意變更 0；diff check 通過。完整 npm test 曾因長時間停滯取消，未宣稱全套通過。
+- 實機：本機 Pixi 預覽、VFX Editor 載入及播放合法；使用者確認輪廓、配色及五階圓環。每份突刺維持單一根群組；所有素材已在 shipped-assets。
+- 已知限制：貫穿後續波次以相同 delayMs／beginSec 錯開實際起飛，傷害係數／波數／碰撞規則不變；legacy 除錯特效未重製；不規則形狀採個別尺寸；原有兩項編輯器測試失敗仍待其他任務處理。
+- 未完成項目：本次尺寸標準化與突刺無；其他技能的外觀大改依序另行製作。
+- Commit：見本次 [Codex] feat 提交；可交付 Review／使用者合併，未自行合併或推送 develop。
+
+
 ## Codex｜普攻近戰改造（MELEE-20260908）
 
 - 狀態：Done；Owner：Codex；使用者授權直接實作並驗證。
