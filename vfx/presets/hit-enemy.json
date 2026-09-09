@@ -7,13 +7,14 @@
     {
       "id": "ring",
       "type": "sprite",
+      "enabled": true,
       "assetId": "light-masks-1.0/default/ring_a.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.0742,
-        "y": 0.0742
+        "x": 0.2,
+        "y": 0.2
       },
-      "alpha": 0.9,
+      "alpha": 1,
       "tint": "#ff6b6b",
       "blendMode": "add",
       "delay": 0,
@@ -24,8 +25,8 @@
           0
         ],
         [
-          0.1,
-          1
+          0.1111,
+          1.98894
         ],
         [
           0.35,
@@ -47,20 +48,21 @@
         ],
         [
           1,
-          1
+          1.448138
         ]
       ]
     },
     {
       "id": "flash",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
       "scale": {
-        "x": 0.0469,
-        "y": 0.0469
+        "x": 0.2,
+        "y": 0.2
       },
-      "alpha": 1,
+      "alpha": 0.2,
       "tint": "#ffd0d0",
       "blendMode": "add",
       "delay": 0,
@@ -101,6 +103,7 @@
     {
       "id": "dust",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 3,
       "tint": "#ffd0d0",
@@ -133,32 +136,15 @@
         0.0078,
         0.0137
       ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.2,
-          0.65
-        ],
-        [
-          0.6,
-          0.2
-        ],
-        [
-          1,
-          0
-        ]
-      ],
+      "alphaOverLife": 5.572001,
       "scaleOverLife": [
         [
           0,
-          1
+          5.499659
         ],
         [
-          1,
-          0.4
+          0.9846,
+          0
         ]
       ]
     }

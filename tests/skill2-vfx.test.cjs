@@ -991,11 +991,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
      連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
   assert.match(index, /css\/style\.css\?v=1\.0\.60/);
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.76/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.112/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.28/);
+  assert.match(index, /js\/vfx\.js\?v=1\.0\.77/);
+  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.113/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.29/);
   assert.match(index, /js\/skills2\.js\?v=1\.0\.104/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-counter'/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-basic-burst'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
   assert.match(worker, /\.\.\/skills2\.js\?v=20260909-counter/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);

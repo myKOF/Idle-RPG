@@ -64,6 +64,7 @@
     {
       "id": "claw-inner",
       "type": "sprite",
+      "enabled": false,
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 2,
       "rotation": -0.6981,

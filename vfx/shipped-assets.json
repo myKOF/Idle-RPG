@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 99,
+  "assetCount": 102,
   "assets": [
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
@@ -306,6 +306,13 @@
       "package": "new_materials",
       "contentHash": "sha256:da24fd158d470946bed4fcf046f1ba7cd6968500c19d281225e345875b0c769a",
       "fileSize": 3153
+    },
+    {
+      "assetId": "new_materials/orb/energyball_1.png",
+      "relativePath": "new_materials/orb/energyball_1.png",
+      "package": "new_materials",
+      "contentHash": "sha256:86ed934dd836aa9fb8e870240f4e8354d2b4c89d945a5b2ef12fa0abe7feaddb",
+      "fileSize": 267342
     },
     {
       "assetId": "new_materials/orb/rounded_6.png",
@@ -649,6 +656,20 @@
       "package": "particle-pack",
       "contentHash": "sha256:2db2f69874cdb1e5203f2f86803d5debde30402590cf50a810afaba882184616",
       "fileSize": 97568
+    },
+    {
+      "assetId": "particle-pack/png-transparent/star_04.png",
+      "relativePath": "particle-pack/PNG (Transparent)/star_04.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:6485ac16c773663bd39346f3bedae04465ac14c661eb47cc5cfa935cdbf6c2ec",
+      "fileSize": 30613
+    },
+    {
+      "assetId": "particle-pack/png-transparent/star_08.png",
+      "relativePath": "particle-pack/PNG (Transparent)/star_08.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:05f24d1ee76c1464074cbca58155e4be517fefd34a7001bb012561647cc3dec3",
+      "fileSize": 26479
     },
     {
       "assetId": "particle-pack/png-transparent/twirl_02.png",

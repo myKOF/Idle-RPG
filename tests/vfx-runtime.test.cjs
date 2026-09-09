@@ -262,6 +262,16 @@ function lastOf(log, tag) {
    ROLE — 主要角色的選擇（§1.1）
    ============================================================ */
 
+test('BASIC-HIT 普攻及追加普攻忽略舊攻擊欄，只播放一次受擊', () => {
+ const {adapter}=makeAdapter([unitPreset('hit-only'),unitPreset('old-slash')]);
+ for(const variant of ['melee','melee-extra']) {
+  const before=adapter.stats().played;
+  assert.equal(adapter.tryPlay({cat:'basic',fxKind:'slash',variant,targets:['mv-float-2'],vfx:{attack:'old-slash',hit:'hit-only'}}),true);
+  assert.equal(adapter.stats().played,before+1);
+ }
+ assert.equal(VFXRuntime.primaryRoleOf({cat:'basic',fxKind:'projectile'},{hit:'hit-only',projectile:'old-slash'}),'hit');
+});
+
 test('ROLE-1 各 fxKind 的主要角色與設計文件一致', function () {
   const R = VFXRuntime.primaryRoleOf;
   const all = { cast: 'c', attack: 'a', projectile: 'p', hit: 'h', ground: 'g' };

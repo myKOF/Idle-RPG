@@ -7,6 +7,7 @@
     {
       "id": "halo",
       "type": "sprite",
+      "enabled": false,
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
@@ -14,7 +15,7 @@
         "y": 0.1094
       },
       "alpha": 0.4,
-      "tint": "#f5ecd6",
+      "tint": "#ffb700",
       "blendMode": "screen",
       "delay": 0,
       "duration": 0.091,
@@ -58,15 +59,16 @@
     {
       "id": "ring",
       "type": "sprite",
+      "enabled": false,
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
       "scale": {
         "x": 0.0898,
         "y": 0.0898
       },
-      "alpha": 0.85,
-      "tint": "#e6ddc8",
-      "blendMode": "add",
+      "alpha": 1,
+      "tint": "#e2b855",
+      "blendMode": "normal",
       "delay": 0,
       "duration": 0.105,
       "alphaOverLife": [
@@ -109,18 +111,19 @@
     {
       "id": "flash",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "enabled": true,
+      "assetId": "new_materials/orb/energyball_1.png",
       "zIndex": 3,
       "rotation": 0,
       "scale": {
-        "x": 0.0781,
-        "y": 0.0781
+        "x": 0.2,
+        "y": 0.2
       },
-      "alpha": 0.85,
-      "tint": "#ffffff",
-      "blendMode": "screen",
+      "alpha": 0.75,
+      "tint": "#ff811a",
+      "blendMode": "normal",
       "delay": 0,
-      "duration": 0.05,
+      "duration": 0.1,
       "alphaOverLife": [
         [
           0,
@@ -157,9 +160,10 @@
     {
       "id": "sparks",
       "type": "particle",
+      "enabled": true,
       "assetId": "new_materials/mask-shape/dingbats-366.png",
       "zIndex": 5,
-      "tint": "#e6ddc8",
+      "tint": "#d69600",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.14,

@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜普攻黃白小型爆破（BASIC-BURST-20260909）
+
+- 使用者核准接入並 commit：最終 0.25 秒、兩倍大小的 hit-basic-burst 已供普通／追加普攻使用，攻擊刀光已取消。納入使用者同期 hit-enemy／hit-phys／slash-enemy-melee Preset／layout 修改；素材重新匯出同步。提交前 basic-melee／skill2-vfx 36/36、BASIC-HIT／ROLE 2/2；臨時 basic-hit-review.html 移除，不提交。未合併／推送；下方未 commit 為歷史記錄。
+
+- 後續依使用者調整：總長延至 0.25 秒，增加錯開的金色碎裂層與 6 道飛散短火花；再將本體寬高、粒子尺寸／散射距離放大至 2 倍。Preset 與 author 同步，編輯器／遊戲使用相同尺寸；標準尺寸與 authored 同步調整，避免遊戲縮放抵消放大。預覽更新，未 commit。
+
+- 使用者要求製作並取代普攻受擊。新增 hit-basic-burst Preset／layout／author，黃白碎裂亮點與 7 顆金色碎屑，主體 normal 混色，亮心僅 11px／0.045 秒，總長 0.14 秒；自訂小型基準 3×3 米。普攻／追加普攻 defaults 改用新特效，其他技能 hit-phys 保留。主頁與 Worker 快取同步；素材正式匯出 161 presets。
+- Schema 通過，basic-melee／skill2-vfx 36/36；預覽 basic-hit-review.html 與截图供檢閱，不提交預覽。未改使用者 hit-enemy／slash-enemy-melee 調整。未 commit。
+
+## Codex｜普攻僅保留受擊（BASIC-HIT-ONLY-20260909）
+
+- 使用者要求取消普攻攻擊特效。basicAttack／basicAttackExtra 只保留 hit-phys；Runtime 對 basic 事件只播 hit，兼容舊 Worker 帶 attack 欄的事件；Canvas／DOM 後備分支同步只畫受擊。保留角色揮擊動作、傷害、連擊與浮字時序，未改共享斬擊素材。
+- 主頁及 Worker／bridge 快取更新；BASIC-HIT／ROLE 2/2、basic-melee／skill2-vfx 36/36。未操作存檔實戰，未 commit；已完成可供使用者重新整理遊戲測試。
+
 ## Codex｜反擊特效試作（VFX-COUNTER-20260909）
 
 - 提交整理：使用者要求包含自行修改一起 commit，納入目前配置表、Preset／layout 與反擊接線全部變更；臨時 counter-review.html 移除。提交前重跑 skill2-counter-bloodrage／skill2-vfx 57/57、COUNTER Adapter 1/1；素材 export dry-run 無待同步，先前 build 329 檔通過。未合併／推送；下方未 commit 為歷史記錄。
