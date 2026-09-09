@@ -57,10 +57,19 @@ function playerEnt() {
 function plain(v) { return JSON.parse(JSON.stringify(v)); }
 
 test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且只播放一次', () => {
-  for (const moon of [false, true]) {
+  for (const [moon, adjusted] of [[false,false], [true,false], [true,true]]) {
     const c = loadContext();
     c.resetSkill2RT();
     c.GT = 0;
+    if (adjusted) {
+      c.SKILLS2.gale.tiers[0].fx.castM = 9;
+      c.SKILLS2.gale.tiers[0].fx.gap = .35;
+      c.SKILLS2.gale.tiers[6].fx.castM = 11;
+      c.SKILLS2.gale.tiers[6].fx.m = 8;
+      assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,0]), 90);
+      assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,1]), 110);
+    }
+    const gap = adjusted ? .35 : .2;
     c.sgLegend = () => ({});
     c.sgUlt = () => null;
     const events = [], stamps = [];
@@ -78,11 +87,11 @@ test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且�
     assert.equal(events.length, 1);
     assert.equal(events[0].vfx.attack, moon ? 'slash-gale-moon' : 'hit-gale-burst');
     assert.deepEqual(events[0].targets, ['a']);
-    if (moon) assert.equal(events[0].area.r, 50);
-    c.GT = .19; c.sgTickGaleStrikes({}); assert.equal(events.length, 1);
-    c.GT = .2; c.sgTickGaleStrikes({}); assert.equal(events.length, 2);
-    c.GT = .4; c.sgTickGaleStrikes({}); assert.equal(events.length, 3);
-    assert.deepEqual([...new Set(stamps.map(s => s.at))], [0,.2,.4]);
+    if (moon) assert.equal(events[0].area.r, adjusted ? 80 : 50);
+    c.GT = gap - .01; c.sgTickGaleStrikes({}); assert.equal(events.length, 1);
+    c.GT = gap; c.sgTickGaleStrikes({}); assert.equal(events.length, 2);
+    c.GT = gap * 2; c.sgTickGaleStrikes({}); assert.equal(events.length, 3);
+    assert.deepEqual([...new Set(stamps.map(s => s.at))], [0,gap,gap*2]);
     assert.ok(stamps.every(s => s.delay === 0));
     assert.equal(stamps.length, moon ? 6 : 3);
     assert.equal(out.dmg, moon ? 34830 : 8100);

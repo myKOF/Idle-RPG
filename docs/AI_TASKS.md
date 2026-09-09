@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜疾風斬可調距離與間隔（VFX-GALE-CONFIG-20260909）
+
+- 狀態：Done；使用者要求把範圍參數列入 Skills2 表供自行調整。
+- 範圍：Skills2 第一階明列 castM／gap、第七階明列 castM，既有四／七階 m 保留；JS 接線、CSV／Excel／說明、快取與定向測試。
+- 禁止：不改 Antigravity 飛刀、使用者突刺檔與傷害倍率；沿用已授權的共享配置分段修改。
+- 驗收：配置擾動測試確認施放距離 9／11 米、月牙半徑 8 米、間隔 0.35 秒的接線有效；正式值仍為 5／5 米、5 米、0.2 秒。相關測試 143/143；build 326 檔；表格往返語意差異 0；唯讀核對 Excel L32／L35／L38。
+- 修改：Skills2 JS／CSV／Excel、config_tables 欄位說明、Worker／主頁快取、技能測試及本任務。未修改但檢查：Antigravity 飛刀與使用者突刺。無本次未完成項，可審查合併；未合併／推送 develop。
+
 ## Codex｜疾風斬特效改造（VFX-GALE-20260909）
 
 - 狀態：Done；使用者確認月牙外形並明確要求先接入遊戲。
