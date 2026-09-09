@@ -66,10 +66,55 @@ test('WATER four tier-7 fields use fx layer, retain phase between hits and expir
  const specs=Array.from({length:4},(_,i)=>({fxKind:'aura',variant:'water-tornado',dur:.35,
   area:{id:'water-'+i,x:i*100,y:80,r:50},vfx:{field:preset.id}}));
  specs.forEach(s=>assert.equal(a.tryPlay(s),true));a.update(.2);
- assert.equal(nodes.length,4);assert.ok(nodes.every(n=>n.tag==='fx' && n.spec.kind==='profiled'));
- assert.equal(nodes[0].t.frame,4);assert.equal(nodes[0].t.x,0);assert.equal(nodes[0].t.y,80);
+ assert.equal(nodes.length,44);assert.ok(nodes.every(n=>n.tag==='fx' && n.spec.kind==='generated'));
+ assert.match(nodes[0].t.generated.key, /^halo:4:/);assert.equal(nodes[0].t.x,0);assert.equal(nodes[0].t.y,80);
  assert.equal(nodes[0].t.scaleX,nodes[0].t.scaleY);
  specs.forEach(s=>a.tryPlay(s));a.update(.2);
- assert.equal(nodes.length,4);assert.equal(nodes[0].t.frame,8);assert.equal(a.stats().played,4);
+ assert.equal(nodes.length,44);assert.match(nodes[0].t.generated.key, /^halo:8:/);assert.equal(a.stats().played,4);
  a.update(3);assert.equal(a.stats().grounds,0);a.clear();
+});
+
+const generator=require('../js/vfx-water-tornado.js');
+test('WATER independent procedural parts have no atlas and retain deterministic motion',()=>{
+ assert.equal(preset.layers.length,11);
+ assert.deepEqual(preset.layers.map(l=>l.water.part),generator.PARTS);
+ for(const l of preset.layers){assert.equal(l.assetId,undefined);assert.equal(l.sheet,undefined);}
+ const index=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/asset-index.json')));
+ assert.ok(!index.assets.some(a=>a.assetId==='codex-authored/water-tornado/water-tornado-v10.png'));
+ assert.ok(!fs.existsSync(path.join(__dirname,'../images/vfx/assets/codex-authored/water-tornado/water-tornado-v10.png')));
+ const a=generator.sample('white-crests',.5),b=generator.sample('white-crests',.7);
+ assert.notDeepEqual(a.commands,b.commands);assert.equal(a,generator.sample('white-crests',4.5));
+ assert.equal(generator.sample('spray',0,0).commands.length,0);
+ assert.equal(generator.sample('spray',0,2).commands.length,240);
+ const body=generator.sample('body',.5).pixels;
+ const k=(150*320+160)*4;assert.ok(body[k+2]>100&&body[k+3]>220,'central volume is blue and filled');
+ for(const change of [{part:'unknown'},{speed:-1},{density:Infinity},{speed:NaN}]){
+  const invalid=structuredClone(preset);Object.assign(invalid.layers[0].water,change);assert.equal(core.validatePreset(invalid).ok,false);
+ }
+});
+
+test('WATER disabled parts do not generate nodes, and per-layer color/scale remain editable',()=>{
+ const p=structuredClone(preset);p.layers.forEach(l=>{l.enabled=l.water.part==='body'});
+ const body=p.layers.find(l=>l.water.part==='body');body.tint='#ff0000';body.alpha=.4;body.scale={x:.7,y:.3};
+ const nodes=[];const r=core.createRuntime({resolver:{resolve(){throw Error('no asset allowed')}},backend:{createNode(s){const n={s};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(){}}});
+ r.registerPreset(p);r.play(p.id);r.update(.5);
+ assert.equal(nodes.length,1);assert.equal(nodes[0].s.generated,'body');assert.equal(nodes[0].t.tint,0xff0000);assert.equal(nodes[0].t.alpha,.4);assert.equal(nodes[0].t.scaleX,.7);
+ r.destroy();
+});
+
+test('WATER generated surfaces share equal phases, isolate different phases and recycle',()=>{
+ const P=fakePixi();P.Texture.from=()=>{const tex=new P.Texture();tex.source.update=()=>{};return tex;};
+ const ctx={resetTransform(){},clearRect(){},save(){},restore(){},scale(){},beginPath(){},lineTo(){},moveTo(){},ellipse(){},closePath(){},fill(){},stroke(){},drawImage(){},createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)})};
+ const canvasFactory=()=>({getContext:()=>ctx});
+ const b=pixiBackend.createBackend({PIXI:P,container:new P.Container(),canvasFactory});
+ const spec={kind:'generated',generated:'spray',profileScales:Array(64).fill(1)};
+ const a=b.createNode(spec),other=b.createNode(spec);
+ b.updateNode(a,{generated:generator.sample('spray',0),anchorX:.5,anchorY:1});
+ b.updateNode(other,{generated:generator.sample('spray',0)});
+ assert.equal(a.__generatedEntry,other.__generatedEntry);
+ const old=other.__generatedEntry;
+ b.updateNode(a,{generated:generator.sample('spray',.1)});assert.notEqual(a.__generatedEntry,old);assert.equal(other.__generatedEntry,old);
+ for(let i=2;i<20;i++){b.updateNode(a,{generated:generator.sample('spray',i/20)});b.updateNode(other,{generated:generator.sample('spray',i/20)});}
+ assert.ok(P.textures.length<200,'two reusable surfaces, no growing image sequence');
+ const tex=a.children[0].texture;b.destroyNode(a);assert.ok(!tex.destroyed);b.destroyNode(other);b.destroy();assert.equal(tex.destroyed,true);
 });

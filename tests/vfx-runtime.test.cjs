@@ -1009,6 +1009,11 @@ test('CATALOG-2 shipped-assets 涵蓋所有 preset 用到的素材', function ()
   fs.readdirSync(dir).filter(f => /\.json$/.test(f)).forEach(function (f) {
     const preset = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
     preset.layers.forEach(function (l) {
+      if (l.type === 'procedural' && l.effect === 'waterTornado') {
+        assert.ok(require('../js/vfx-core.js').validatePreset(preset).ok, f + ' 程序圖層必須合法');
+        assert.equal(l.assetId, undefined);
+        return;
+      }
       assert.ok(shipped.has(l.assetId),
         f + ' 用到未匯出的素材：' + l.assetId + '（跑 node tools/vfx/export-assets.cjs）');
     });

@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2409,
+  "assetCount": 2408,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109356,28 +109356,6 @@
         "impact",
         "red",
         "fragment"
-      ]
-    },
-    {
-      "assetId": "codex-authored/water-tornado/water-tornado-v10.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/water-tornado/water-tornado-v10.png",
-      "format": "png",
-      "fileSize": 8495116,
-      "contentHash": "sha256:7387be209473035290ebbd0ceef392a9295faa3cbe26bd12ae5eeba4daa741e6",
-      "facts": {
-        "dimensions": {
-          "width": 2560,
-          "height": 3200
-        },
-        "hasAlphaChannel": true
-      },
-      "tags": [
-        "water",
-        "tornado",
-        "sequence",
-        "blue",
-        "original"
       ]
     }
   ]

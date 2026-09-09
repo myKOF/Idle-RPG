@@ -154,14 +154,72 @@ var VFXPixiBackend = (function () {
       return list;
     }
 
+
+    // Dynamic surfaces contain one current procedural sample, never a frame atlas.
+    // Share equal samples across simultaneous fields; recycle unused surfaces.
+    var generatedCache = new Map(), surfacePool = [];
+    function canvas() { var c = opts.canvasFactory ? opts.canvasFactory() : document.createElement('canvas'); c.width = 320; c.height = 320; return c; }
+    function paintCommands(ctx, commands) {
+      commands.forEach(function (c) {
+        var color = c.color; ctx.fillStyle = ctx.strokeStyle = 'rgba(' + color.slice(0, 3).map(function (v) { return Math.round(Math.max(0, Math.min(255, v))); }).join(',') + ',' + Math.max(0, Math.min(1, color[3] / 255)) + ')';
+        ctx.beginPath();
+        if (c.ellipse) ctx.ellipse(c.ellipse[0], c.ellipse[1], c.ellipse[2], c.ellipse[3], 0, 0, Math.PI * 2);
+        else { c.points.forEach(function (pt, i) { if (i) ctx.lineTo(pt[0], pt[1]); else ctx.moveTo(pt[0], pt[1]); }); }
+        if (c.line) { ctx.lineWidth = c.line; ctx.stroke(); } else { ctx.closePath(); ctx.fill(); }
+      });
+    }
+    function raster(surface, sample) {
+      var ctx = surface.canvas.getContext('2d'); ctx.resetTransform(); ctx.clearRect(0, 0, 320, 320);
+      if (sample.pixels) { var img = ctx.createImageData(320, 320); img.data.set(sample.pixels); ctx.putImageData(img, 0, 0); }
+      if (sample.commands.length) {
+        ctx.save(); ctx.scale(.5, .5); paintCommands(ctx, sample.commands); ctx.restore();
+      }
+      var groups = sample.groups;
+      if (sample.blur) groups = [{ source: surface.canvas, blur: sample.blur, alpha: 1 }];
+      if (groups) {
+        var temp = surface.temp, tc = temp.getContext('2d');
+        groups.forEach(function (g, index) {
+          tc.resetTransform(); tc.clearRect(0, 0, 320, 320);
+          if (g.source) tc.drawImage(g.source, 0, 0);
+          else { tc.save(); tc.scale(.5, .5); paintCommands(tc, g.commands); tc.restore(); }
+          if (index === 0) ctx.clearRect(0, 0, 320, 320);
+          ctx.save(); ctx.filter = 'blur(' + g.blur / 2 + 'px)'; ctx.globalAlpha = g.alpha;
+          ctx.globalCompositeOperation = groups.length > 1 ? 'lighter' : 'source-over'; ctx.drawImage(temp, 0, 0); ctx.restore();
+        });
+      }
+      surface.texture.source.update();
+    }
+    function releaseGenerated(node) {
+      var entry = node.__generatedEntry;
+      if (!entry) return;
+      entry.refs--; node.__generatedEntry = null;
+      if (!entry.refs) { generatedCache.delete(entry.key); surfacePool.push(entry); }
+    }
+    function bindGenerated(node, sample) {
+      if (!sample || (node.__generatedEntry && node.__generatedEntry.key === sample.key)) return;
+      releaseGenerated(node);
+      var entry = generatedCache.get(sample.key);
+      if (!entry) {
+        entry = surfacePool.pop();
+        if (!entry) {
+          var c = canvas(), tex = PixiLib.Texture.from(c);
+          entry = { canvas: c, temp: canvas(), texture: tex, refs: 0, strips: [] };
+          for (var i = 0; i < 64; i++) entry.strips.push(new PixiLib.Texture({ source: tex.source, frame: new PixiLib.Rectangle(0, i * 5, 320, 5) }));
+        }
+        entry.key = sample.key; raster(entry, sample); generatedCache.set(sample.key, entry);
+      }
+      entry.refs++; node.__generatedEntry = entry; node.__profileFrames = [entry.strips]; node.__frameWanted = 0;
+    }
+
     function createNode(spec) {
       var node;
-      if (spec.kind === 'profiled') {
+      if (spec.kind === 'profiled' || spec.kind === 'generated') {
         node = new PixiLib.Container();
-        node.__profileScales = spec.profileScales.slice();
+        node.__profileScales = spec.profileScales ? spec.profileScales.slice() : Array(64).fill(1);
+        node.__generated = spec.kind === 'generated';
         node.__anchorX = 0.5; node.__anchorY = 0.5;
         node.__profileTint = 0xffffff;
-        spec.profileScales.forEach(function () {
+        node.__profileScales.forEach(function () {
           var child = new PixiLib.Sprite(PixiLib.Texture.EMPTY);
           child.blendMode = BLEND_MAP[spec.blendMode] || 'normal';
           node.addChild(child);
@@ -178,6 +236,7 @@ var VFXPixiBackend = (function () {
       node.blendMode = BLEND_MAP[spec.blendMode] || 'normal';
       node.visible = false;
       container.addChild(node);
+      if (spec.kind === 'generated') return node;
       getTexture(spec.assetUrl, function (tex) {
         if (node.destroyed) return;
         if (spec.kind === 'profiled') {
@@ -199,6 +258,7 @@ var VFXPixiBackend = (function () {
       if (!t) return;
       if (t.visible === false) { node.visible = false; return; }
       node.visible = true;
+      if (node.__generated) bindGenerated(node, t.generated);
       if (t.frame !== undefined) {
         node.__frameWanted = t.frame;
         var fr = node.__frames;
@@ -229,6 +289,7 @@ var VFXPixiBackend = (function () {
     }
 
     function destroyNode(node) {
+      releaseGenerated(node);
       if (node.parent) node.parent.removeChild(node);
       /* 切好的 Texture 是整個 backend 共用的（sheetCache），不能跟著單一節點
          被銷毀——只把節點對它的指向拿掉。實際釋放在 destroy() 一次做完。 */
@@ -250,6 +311,9 @@ var VFXPixiBackend = (function () {
         sheetCache[k].forEach(function (tex) { tex.destroy(false); });
       });
       sheetCache = Object.create(null);
+      var surfaces = Array.from(generatedCache.values()).concat(surfacePool);
+      surfaces.forEach(function (entry) { entry.strips.forEach(function (tex) { tex.destroy(false); }); entry.texture.destroy(true); });
+      generatedCache.clear(); surfacePool = [];
       Object.keys(profileCache).forEach(function (k) {
         profileCache[k].forEach(function (frame) { frame.forEach(function (tex) { tex.destroy(false); }); });
       });

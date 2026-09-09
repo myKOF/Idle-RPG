@@ -653,18 +653,18 @@ Preset 的節點掛在 `S.layers.presetZone`／`presetFx` 兩個獨立容器，
 遷移建議：先讓新 Core 服務**新做的特效**，舊特效維持原狀；
 等 Adapter 與 export 流程穩定後再逐一搬移，不要一次重寫。
 
-### Sprite 水柱半徑輪廓（radiusProfile，2026-09-10）
+### 水龍捲獨立程序圖層（2026-09-10）
 
-`field-water-tornado` 使用原創 v10 透明序列（80 格／20 fps／4 秒循環）。製作來源為 `tools/vfx/authoring/water-tornado.py`，Preset author 為 `tools/vfx/authoring/author/water-tornado.cjs`。水流彈第七階使用 `field` 角色，續命不重置動畫；序列內含由下往上的水流、外層飄帶、光暈與底部粒子。
+field-water-tornado 由 11 個 procedural / waterTornado 圖層組成：外層光暈、後方飄帶、後方水片、水柱本體、前方水片、白色浪尖、前方飄帶、底部水環、浪尖泛光、煙塵、水花。原 v10 合併 PNG 圖集已從素材庫、索引、遊戲匯出移除，Preset 不再含 assetId 或 sheet。
 
-sprite 可選 `radiusProfile` 物件，Editor 選取 water-column 後可調整：
+原製作公式移植至 js/vfx-water-tornado.js，由 Core 傳入圖層時間，產生像素／幾何指令；Pixi 後端只將指令畫到獨立透明表面。這些表面是運行中的圖層，不是磁碟上的序列圖集。採每秒 20 次程序取樣、4 秒循環；近期取樣快取有上限，動態貼圖同相位共用、不同相位隔離，無使用者時回收重用。Editor 與遊戲共用同一套 Core／Backend。
 
-| 欄位 | 預設 | 意義 |
-|---|---:|---|
-| centerScale | 1 | 中央半徑倍率 |
-| topRatio | 2 | 上端相對中央的半徑比例 |
-| bottomRatio | 2 | 下端相對中央的半徑比例 |
+water 物件欄位：part 必須是產生器 PARTS 的值；speed 預設 1（0 可凍結圖層）；density 預設 1，用於 dust／spray 的數量。speed／density 限制 0–4。圖層可獨立開關、調色、透明度、位置、縮放、旋轉、播放速度與 Over-Life 曲線。水花／煙塵位置由程序產生，可調數量和速度，不使用原生 particle 發射器，因此 Editor 的 activeParticles 計數不含它們。浪尖／水片的細部輪廓仍由公式控制；bloom 依浪尖公式產生但亮度是獨立層，關閉浪尖時若也要關掉餘光，須同步關閉 bloom。
 
-三項皆限制 0.1–8；只改視覺寬度，不改高度或技能傷害判定。外圍飄帶可超過主水柱輪廓。進階來源校準欄位 `sourceTopRatio/sourceBottomRatio` 預設 2，`topY/centerY/bottomY` 預設 0/0.5/1，滿足 0 ≤ topY < centerY < bottomY ≤ 1；水龍捲依來源影像使用 0.0125/0.4640625/0.915625，通常毋須改動。
+#### radiusProfile 半徑輪廓
 
-Core 依上下各自的二次半徑曲線，計算目標／來源半徑比；Pixi 將每格切成 64 條共用貼圖並套用水平倍率，沿用 Core 的幀號、透明度、錨點及播放時序。預設比例為恒等變換。節點池把輪廓倍率納入 key，貼圖切片由 backend 共用，避免同時多道水龍捲重複載入來源圖。其他 layer 類型不接受此欄位。
+sprite 與 waterTornado 圖層可選 radiusProfile。Editor 顯示中央半徑倍率 centerScale（預設 1）、上端／中央比例 topRatio（預設 2）、下端／中央比例 bottomRatio（預設 2），三者限制 0.1–8。各層可獨立調整，只改視覺寬度，不改技能傷害範圍。要維持所有層一致輪廓，需對相關層套用相同比例。
+
+來源校準 sourceTopRatio／sourceBottomRatio 預設 2；topY／centerY／bottomY 預設 0／0.5／1，滿足 0 ≤ topY < centerY < bottomY ≤ 1。此 Preset 依來源使用 0.0125／0.4640625／0.915625，通常毋須改動。Core 按上下二次曲線計算目標／來源半徑比，Pixi 使用 64 個水平截面，預設為恒等變換。節點池 key 包含組件與半徑輪廓，避免重新播放取到其他層的幾何。
+
+製作入口：tools/vfx/authoring/author/water-tornado.cjs。第七階 Skills2 的 field-water-tornado 映射、CSV／Excel 保持有效，本輪未改動遊戲判定。

@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 105,
+  "assetCount": 104,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -47,13 +47,6 @@
       "package": "codex-authored",
       "contentHash": "sha256:e149f833472030a6efccfc876d5c22de55c4ddb2c4854af9a62a74fe54da4b23",
       "fileSize": 40280008
-    },
-    {
-      "assetId": "codex-authored/water-tornado/water-tornado-v10.png",
-      "relativePath": "codex-authored/water-tornado/water-tornado-v10.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:7387be209473035290ebbd0ceef392a9295faa3cbe26bd12ae5eeba4daa741e6",
-      "fileSize": 8495116
     },
     {
       "assetId": "light-masks-1.0/default/circle_a.png",

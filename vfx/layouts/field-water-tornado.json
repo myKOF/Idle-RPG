@@ -6,7 +6,17 @@
       "id": "field-water-tornado",
       "name": "field-water-tornado",
       "layerIds": [
-        "water-column"
+        "halo",
+        "rear-ribbons",
+        "rear-sheets",
+        "body",
+        "front-sheets",
+        "white-crests",
+        "front-ribbons",
+        "base",
+        "bloom",
+        "dust",
+        "spray"
       ]
     }
   ],
