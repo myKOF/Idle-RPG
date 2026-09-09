@@ -56,6 +56,49 @@ const layoutSchema = require('./editor/layout-schema.js');
    不划算。也不預先產生一份 JSON——那會過期。 */
 const presetUsage = require('./preset-usage.cjs');
 
+/* ---- 「這個伺服器行程是不是已經比磁碟上的程式舊了」 ----
+
+   伺服器是常駐行程：下面這些檔在 node 啟動的當下就被載進記憶體，之後改檔
+   一律不生效。但它服務給瀏覽器的 editor.js／css／html 是**每次請求才讀磁碟**
+   （見 cacheControlFor 的 no-store），所以「畫面是新的、伺服器是舊的」會同時
+   成立——使用者看到半套功能，而且完全沒有線索。
+
+   2026-09-09 實測就踩到：Preset 下拉換成新的可搜尋清單（前端，即時生效），
+   但用途標註要伺服器算（後端，沒生效），於是清單出來了、標註一個都沒有。
+   五份工作副本各自跑一個伺服器、開著好幾天不關，這件事只會再發生。
+
+   比 mtime 不夠：merge 與 checkout 會動到 mtime 但內容可能一樣，那種誤報
+   久了就沒人理。所以啟動當下把內容雜湊起來，之後比對雜湊。 */
+const RESTART_REQUIRED_FILES = [
+  __filename,
+  path.join(__dirname, 'preset-usage.cjs'),
+  path.join(__dirname, 'vfx-library-root.cjs'),
+  path.join(__dirname, 'editor', 'preset-id-policy.js'),
+  path.join(__dirname, 'editor', 'layout-schema.js'),
+  path.join(__dirname, '..', '..', 'js', 'vfx-core.js')
+];
+
+const crypto = require('crypto');
+
+function sourceSignature() {
+  return RESTART_REQUIRED_FILES.map(function (f) {
+    try {
+      return crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 12);
+    } catch (e) { return 'missing'; }
+  }).join(',');
+}
+
+const BOOT_SIGNATURE = sourceSignature();
+
+/* 回傳「哪幾個檔在這個行程啟動之後被改過」，沒有就是空陣列。 */
+function staleServerFiles() {
+  if (sourceSignature() === BOOT_SIGNATURE) return [];
+  const boot = BOOT_SIGNATURE.split(',');
+  const now = sourceSignature().split(',');
+  return RESTART_REQUIRED_FILES.filter(function (f, i) { return boot[i] !== now[i]; })
+    .map(function (f) { return path.relative(REPO_ROOT, f).replace(/\\/g, '/'); });
+}
+
 const REPO_ROOT = libraryRoot.REPO_ROOT;
 const ASSET_PREFIX = '/asset-library/';
 /* Editor 只需要這幾個目錄；其餘 repo 內容一律不對外。
@@ -578,7 +621,11 @@ function createServer(ctx) {
       } catch (e) {
         console.error('[WARN] 用途標註算不出來：' + (e && e.message || e));
       }
-      return sendJson(res, 200, { ok: true, presets: ids, usage: usage });
+      /* 同時回報「這個行程的程式是不是已經比磁碟舊了」。頁面拿它顯示一行提示——
+         少了這個，使用者只會看到功能少了一半而完全不知道要重啟伺服器。 */
+      return sendJson(res, 200, {
+        ok: true, presets: ids, usage: usage, staleFiles: staleServerFiles()
+      });
     }
 
     if (pathname === '/') pathname = '/tools/vfx/editor/index.html';

@@ -43,6 +43,9 @@
      文字——輸入框裡放的是使用者正在打的關鍵字。兩者混在一起的話，打到一半
      按 Esc 或去點別的地方，就會不知道自己現在開的是什麼。 */
 
+  /* 伺服器版本對不上時要顯示的那一行；正常時是 null。 */
+  var comboNotice = null;
+
   var combo = {
     rows: [],          // [{ id, label, text, search }]
     shown: [],         // 目前符合關鍵字的（rows 的子集）
@@ -71,6 +74,27 @@
            **沒有括號就代表沒有人在用**——那個空白本身是資訊，157 份裡有 56 份
            是這種狀態，挑素材時一眼就分得出哪些還是孤兒。 */
         var usage = (data && data.usage) || {};
+        /* 伺服器是常駐行程，而它服務的這一支 editor.js 是每次請求才讀磁碟的
+           （no-store）。所以「頁面已經是新版、伺服器還是舊版」會同時成立，
+           結果就是功能少了一半而畫面上沒有任何線索——2026-09-09 實測踩過：
+           可搜尋的清單出來了，用途標註一個都沒有。
+
+           兩種偵測方式，因為它們涵蓋不同的舊法：
+             usage 欄位整個不存在 → 伺服器舊到還沒有這個功能（只有這一招抓得到，
+                                    舊程式沒辦法回報自己舊）
+             staleFiles 有東西    → 伺服器有這個功能，而且自己發現載入後檔案被改過 */
+        comboNotice = null;
+        if (!data || data.usage === undefined) {
+          comboNotice = '用途標註沒有出現：編輯器伺服器還是舊版的。' +
+            '關掉「VFX 編輯器伺服器」視窗，再執行一次 啟動VFX編輯器.bat。';
+        } else if (data.staleFiles && data.staleFiles.length) {
+          comboNotice = '伺服器程式在啟動之後被改過（' + data.staleFiles.join('、') +
+            '），畫面與伺服器可能對不上。關掉伺服器視窗再啟動一次。';
+        }
+        if (comboNotice) {
+          var msg = $('preview-msg');
+          if (msg) { msg.className = 'hint err'; msg.textContent = comboNotice; }
+        }
         combo.rows = ids.map(function (id) {
           var u = usage[id];
           var label = u && u.label ? u.label : '';
@@ -109,6 +133,13 @@
     var host = $('preset-list');
     if (!host) return;
     host.textContent = '';
+    /* 提示放在清單最上面，因為「為什麼沒有技能名？」就是在這裡問出來的。 */
+    if (comboNotice) {
+      var warn = document.createElement('div');
+      warn.className = 'combo-warn';
+      warn.textContent = '⚠ ' + comboNotice;
+      host.appendChild(warn);
+    }
     if (!combo.shown.length) {
       var none = document.createElement('div');
       none.className = 'combo-empty';
@@ -168,7 +199,9 @@
   function scrollComboActive() {
     var host = $('preset-list');
     if (!host) return;
-    var el = host.children[combo.active];
+    /* 用 class 查而不是 children[i]：清單最上面可能還有一行警告，
+       用索引會整個差一格——高亮在 A、捲到的卻是 B。 */
+    var el = host.querySelectorAll('.combo-row')[combo.active];
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
   }
 
