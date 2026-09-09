@@ -68,6 +68,14 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 /* 按下去之後標籤會換成「✓ 已複製」再換回來。寬度釘住，否則整條工具列
    會跟著抽動一下——旁邊的按鈕全部左右位移，看起來像畫面壞了。 */
 .copy-btn { min-width: 74px; text-align: center; }
+/* 播放／暫停共用一顆。寬度釘住，標籤在「⏸ 暫停」與「▶ 播放」之間切換時
+   整條工具列才不會左右抽動。暫停時換色，遠遠看就知道畫面是停著的。 */
+.playpause { min-width: 76px; text-align: center; }
+.playpause.paused { background: #3d5a80; border-color: #4d7ab0; }
+/* 關閉是不可逆的（伺服器停掉就要重跑 .bat），所以給它一個和別人不一樣的顏色，
+   但不用刺眼的紅——它是正常的收工動作，不是危險操作。 */
+.quit-btn { border-color: #5a3a3a; color: #e0a0a0; }
+.quit-btn:hover { background: #4a2a2a; border-color: #8a5a5a; color: #ffd0d0; }
 .copy-btn.err { color: #ff8080; border-color: #6a3a3a; }
 .stats { margin-left: auto; color: #8a8a96; font-variant-numeric: tabular-nums; }
 
@@ -321,3 +329,19 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
               font-family: ui-monospace, monospace; font-size: 11px; }
 .spine-status { font-size: 12px; color: #8a8a96; }
 .spine-status.err { color: #ff7b72; }
+
+/* ---- 關閉之後蓋住整個畫面 ----
+   伺服器停了，留一個看起來還正常、實際上每個請求都會失敗的編輯器讓人繼續
+   操作是最糟的。z-index 要壓過素材選擇器（50）與 Spine 面板。 */
+#quit-veil {
+  position: fixed; inset: 0; z-index: 999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(10, 10, 14, .92);
+}
+.quit-box {
+  text-align: center; line-height: 2; color: #c8c8d2;
+  padding: 28px 40px; border: 1px solid #3a3a44; border-radius: 8px;
+  background: #1e1e24;
+}
+.quit-box strong { display: block; font-size: 18px; margin-bottom: 8px; color: #fff; }
+.quit-box div { font-size: 13px; color: #9a9aa6; }

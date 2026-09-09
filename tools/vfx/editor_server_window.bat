@@ -36,6 +36,12 @@ echo.
 
 node tools/vfx/editor-server.cjs
 
+rem Exit code 0 means the editor page asked us to stop (its close button).  The
+rem server otherwise runs until killed, so 0 can only mean that.  A requested
+rem shutdown is not a failure: close the window instead of holding it open with
+rem a pause nobody needs to read.
+if "%ERRORLEVEL%"=="0" exit /b 0
+
 rem If node exits on its own something went wrong -- hold the window open so the
 rem reason stays readable instead of the console vanishing.
 echo.

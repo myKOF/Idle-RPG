@@ -1926,6 +1926,8 @@
   }
 
   function onKeyDown(e) {
+    /* 已經按過關閉：伺服器沒了，任何快捷鍵都只會得到一個失敗的請求。 */
+    if (quitting) return;
     /* Escape 仍然排第一：拖曳中不論焦點在哪都要取消得掉，而且它不會誤刪東西。
        沒有拖曳時 cancelDrag() 回 false，所以擺在 state.preset 的守門之前也安全。 */
     if (e.key === 'Escape' && cancelDrag()) { e.preventDefault(); return; }
@@ -2746,6 +2748,90 @@
 
   function restart() { rebuildPreview(); }
 
+  /* ---------------- 播放／暫停 ----------------
+
+     一顆按鈕的兩個狀態，不是兩個動作。兩顆並排時，「現在是在播還是停著」
+     只能靠猜哪一顆被按下去；一顆按鈕的標籤直接就是答案（顯示的是**按下去
+     會發生什麼**：正在播就顯示「暫停」）。 */
+  function setPlaying(on) {
+    state.playing = !!on;
+    syncPlayPause();
+  }
+
+  function syncPlayPause() {
+    var btn = $('btn-playpause');
+    if (!btn) return;
+    btn.textContent = state.playing ? '⏸ 暫停' : '▶ 播放';
+    btn.classList.toggle('paused', !state.playing);
+    btn.title = state.playing ? '暫停預覽' : '繼續播放預覽';
+  }
+
+  /* ---------------- 關閉編輯器 ----------------
+
+     連伺服器一起停。這顆按鈕存在的理由不是省一次點擊：伺服器的 console 視窗
+     會不見（關掉它時 node 不一定跟著死），行程卻還活著佔著埠，而啟動器掃到
+     既有伺服器就會沿用——於是使用者永遠等不到那個「要他關掉」的視窗，
+     只能自己去 netstat 找 PID。有一條從頁面就停得掉的路，這個死結才拆得開。 */
+
+  var quitting = false;
+
+  function quitEditor() {
+    if (quitting) return;
+    var msg = isDirty()
+      ? '目前的修改尚未存檔，關閉之後就沒了。仍要關閉編輯器與伺服器嗎？'
+      : '關閉編輯器並停止伺服器？其他開著的編輯器分頁也會失去連線。';
+    if (!window.confirm(msg)) return;
+    quitting = true;
+    setSaveStatus('關閉中…', '');
+    /* Content-Type 是防護的一部分，不是格式需求：跨來源要送 application/json
+       會被迫先 preflight，而伺服器不回任何 CORS 標頭。見 checkWriteOrigin。 */
+    fetch('/__shutdown', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function (r) {
+      return r.json().catch(function () { return { ok: r.ok }; });
+    }).then(function (data) {
+      if (data && data.ok === false) {
+        quitting = false;
+        setSaveStatus('關閉失敗', 'err');
+        showSaveError('無法關閉伺服器', [data.error || '伺服器拒絕了這個請求']);
+        return;
+      }
+      finishQuit();
+    }).catch(function () {
+      /* 連線斷掉＝伺服器真的收攤了（回應與行程結束是同一瞬間的事）。
+         這條路不算失敗。 */
+      finishQuit();
+    });
+  }
+
+  function finishQuit() {
+    /* 畫面停下來：蓋一張說明之後還讓 Pixi 繼續跑，只是白燒 CPU。 */
+    state.playing = false;
+    if (state.app && state.app.ticker) state.app.ticker.stop();
+
+    /* window.close() 只關得掉「由腳本開啟的」視窗，而編輯器是啟動器用
+       start "" <url> 開的一般分頁，所以這一行多半會被瀏覽器擋下。擋下來也
+       沒關係——真正要讓人知道的是「伺服器停了、這一頁可以關了」，
+       所以蓋一張全螢幕說明，而不是留一個看起來還正常、實際上每個請求都會
+       失敗的編輯器讓人繼續操作。 */
+    var veil = document.createElement('div');
+    veil.id = 'quit-veil';
+    var box = document.createElement('div');
+    box.className = 'quit-box';
+    [['h', '編輯器已關閉'],
+     ['p', '伺服器已經停止，這個分頁可以直接關掉。'],
+     ['p', '要重新開始：執行 啟動VFX編輯器.bat']].forEach(function (row) {
+      var el = document.createElement(row[0] === 'h' ? 'strong' : 'div');
+      el.textContent = row[1];
+      box.appendChild(el);
+    });
+    veil.appendChild(box);
+    document.body.appendChild(veil);
+    window.close();
+  }
+
   /* 預覽背景一律畫在 Pixi 內部，畫布本身保持不透明。
      為什麼不能用「透明畫布 ＋ CSS 背景」：加法混合（add）在透明畫布上會把
      alpha 也一起相加，而黑底素材的 RGB 是 0、alpha 是 1，結果就是
@@ -3347,8 +3433,9 @@
     });
     $('btn-undo').onclick = doUndo;
     $('btn-redo').onclick = doRedo;
-    $('btn-play').onclick = function () { state.playing = true; };
-    $('btn-pause').onclick = function () { state.playing = false; };
+    $('btn-playpause').onclick = function () { setPlaying(!state.playing); };
+    syncPlayPause();
+    $('btn-quit').onclick = quitEditor;
     $('btn-restart').onclick = restart;
     /* 預覽循環是檢視偏好，不進歷史也不進 preset——與播放／暫停同一類。
        preset.loop 改由 Inspector 的「Preset」區塊編輯（見 renderPresetSection）。 */
