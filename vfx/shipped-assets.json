@@ -7,25 +7,25 @@
   "assetCount": 98,
   "assets": [
     {
-      "assetId": "codex-authored/moon/moon-polished-accents.svg",
-      "relativePath": "codex-authored/moon/moon-polished-accents.svg",
+      "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "relativePath": "codex-authored/moon-opaque/moon-opaque-02.svg",
       "package": "codex-authored",
-      "contentHash": "sha256:e9ecb02d0a3e6b61716b45376e3b4edac7b329289c1828347ceed6aaf16a6f9d",
-      "fileSize": 1717
+      "contentHash": "sha256:f132508ec50e25b6d1d30418cecf51c306adc050abf82248db2ccfb46d02d5e1",
+      "fileSize": 51426
     },
     {
-      "assetId": "codex-authored/moon/moon-polished-body.svg",
-      "relativePath": "codex-authored/moon/moon-polished-body.svg",
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "relativePath": "codex-authored/moon-opaque/moon-original-01.png",
       "package": "codex-authored",
-      "contentHash": "sha256:434451456ef9c38f6b8b0e690501156165a780af63d320dde3706f5920520ed2",
-      "fileSize": 1275
+      "contentHash": "sha256:09d9e92bafef8d20d08f58b181bc3daebbe0396afd90cee3e5c7b1a4dff23e49",
+      "fileSize": 16775
     },
     {
-      "assetId": "codex-authored/moon/moon-polished-edge.svg",
-      "relativePath": "codex-authored/moon/moon-polished-edge.svg",
+      "assetId": "codex-authored/moon-opaque/moon-original-02.png",
+      "relativePath": "codex-authored/moon-opaque/moon-original-02.png",
       "package": "codex-authored",
-      "contentHash": "sha256:22ce17bfc33b34bb61e262b35abd6bf95bf7fc150bde42e443aae5d21ca832d7",
-      "fileSize": 942
+      "contentHash": "sha256:4c226fe5bcc428ad8859f49832c1a933e31450dc0bafca8ab33610d15d3ea876",
+      "fileSize": 28122
     },
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
@@ -138,6 +138,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:a7c440fb4f8f6b9287d0edb6142b0c9f09b75f37c52f22f51b92580c48b5e8cf",
       "fileSize": 52740
+    },
+    {
+      "assetId": "light-masks-1.0/transparent/circle_b.png",
+      "relativePath": "light-masks-1.0/Transparent/circle_b.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:e9f809d833ed9cd59b8e3df3bcf93a9437d19d38b0495ba2650afbae4b4965c1",
+      "fileSize": 43409
     },
     {
       "assetId": "light-masks-1.0/transparent/window_h.png",
@@ -544,13 +551,6 @@
       "package": "particle-pack",
       "contentHash": "sha256:4c8429d19fb97165a3702ac7ff7e7b41d292c8fb9956d674db7028243d86c8f3",
       "fileSize": 21740
-    },
-    {
-      "assetId": "particle-pack/png-black-background/star_05.png",
-      "relativePath": "particle-pack/PNG (Black background)/star_05.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:3c017dd5e0d6f81b6a18ca5541de30216398aaaec1929cbfbf235497a5eb91aa",
-      "fileSize": 39630
     },
     {
       "assetId": "particle-pack/png-black-background/star_08.png",

@@ -11,7 +11,8 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v27（2026-09-03 狀態每跳的 Preset 特效）：VFX 事件新增可選旗標 presetOnly。
+/* v28（2026-09-09 持續場域）：vfx 新增可選 field，與 ground 地面提示分離；舊 ground 相容。
+   v27（2026-09-03 狀態每跳的 Preset 特效）：VFX 事件新增可選旗標 presetOnly。
    帶著它的事件只有 VFX Preset 端畫得出來（狀態表的「作用特效」），顯示層沒有接上
    Preset Runtime 時必須整則忽略，而不是退回泛用畫法——DoT 每秒跳兩次，
    退回泛用受擊爆點會變成滿畫面的火花。26 → 27。
@@ -50,7 +51,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 27;
+var WORKER_PROTOCOL_VERSION = 28;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -162,7 +163,7 @@ var EVENT_KINDS = {
              ⚠️ 環形事件的 r 送的是**出生半徑**而不是當下半徑——顯示層的節點合併鍵含半徑，
              送當下值會讓每次補送都被當成另一道環而多畫一圈。
              ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。
-     vfx（v26，可選）：{ cast, attack, projectile, hit, ground } 角色 → Preset id
+     vfx（v28，可選）：{ cast, attack, projectile, hit, ground, field } 角色 → Preset id
              （vfx/presets/<id>.json），每個鍵都可省略。值來自技能表／狀態表的特效欄，
              發送端依「這一發屬於表上哪一列」帶出（js/skills.js skillVfxSpec、
              js/skills2.js sgVfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，

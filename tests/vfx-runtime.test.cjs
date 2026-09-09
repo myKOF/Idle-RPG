@@ -21,6 +21,24 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('FIELD 持續本體與地面提示分層、同 id 不互相替換，舊 ground 仍可用', () => {
+  const {adapter,log}=makeAdapter([unitPreset('body',5),unitPreset('floor',5)]);
+  const spec={fxKind:'aura',variant:'thunder-orb',dur:.35,area:{id:'orb-1',x:10,y:20,r:30},vfx:{field:'body',ground:'floor'}};
+  assert.equal(adapter.tryPlay(spec),true);
+  adapter.update(.01);
+  assert.equal(adapter.stats().grounds,2);
+  assert.ok(lastOf(log,'fx'));
+  assert.ok(lastOf(log,'zone'));
+  for(let i=0;i<4;i++){adapter.tryPlay(spec);adapter.update(.1);}
+  assert.equal(adapter.stats().played,2,'重複節拍只續命，不重建本體或地面');
+  adapter.update(2);
+  assert.equal(adapter.stats().grounds,0,'本體與地面均到期回收');
+  assert.equal(adapter.tryPlay({...spec,vfx:{ground:'floor'}}),true);
+  assert.equal(adapter.stats().grounds,1);
+  adapter.clear();
+  assert.equal(adapter.stats().grounds,0);
+});
+
 test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複製', () => {
   const moon = unitPreset('moon');
   moon.sizing = {shape:'custom',widthM:10,heightM:10,authored:{width:100,height:100,radius:50}};
@@ -32,16 +50,36 @@ test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複
   const t=log.nodes[0].transforms.at(-1);
   assert.equal(t.x,100); assert.equal(t.y,50);
   assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
-  assert.equal(t.rotation,-.15);
+  assert.equal(t.rotation,Math.atan2(50,100)-.15);
   for (const angle of [0,.15]) {
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
       area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,angle);
+    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,Math.atan2(50,100)+angle);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
     area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
+  adapter.update(.01);
+  assert.equal(log.updates.at(-1).rotation,Math.atan2(50,100)-.15);
+});
+
+test('GALE 刃口隨施法者到目標的八方向旋轉，同座標保持有限角度', () => {
+  const {adapter,log}=makeAdapter([unitPreset('moon')]);
+  for (let i=0;i<8;i++) {
+    adapter.clear();
+    const a=i*Math.PI/4;
+    const x=Math.cos(a)*100,y=Math.sin(a)*100;
+    adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x,y,r:50},vfx:{attack:'moon'}});
+    adapter.update(.01);
+    assert.equal(log.updates.at(-1).rotation,Math.atan2(y,x)-.15);
+  }
+  adapter.clear();
+  adapter.tryPlay({fxKind:'slash',variant:'gale-moon',sourceId:'mv-float-2',targets:['mv-float-1'],vfx:{attack:'moon'}});
+  adapter.update(.01);
+  assert.equal(log.updates.at(-1).rotation,Math.PI-.15);
+  adapter.clear();
+  adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x:0,y:0,r:50},vfx:{attack:'moon'}});
   adapter.update(.01);
   assert.equal(log.updates.at(-1).rotation,-.15);
 });

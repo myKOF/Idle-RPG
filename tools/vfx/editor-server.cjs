@@ -336,8 +336,8 @@ function writeJsonFile(ctx, dirRel, fileId, text) {
   }
 }
 
-/* parse → validate → canonical serialise → write。
-   任何一步失敗都直接回傳，磁碟上的原檔一個 byte 都不會動。 */
+/* parse → validate → canonical serialise → write → 同步遊戲素材。
+   同步失敗時保留編輯成果，但回報失敗，不宣稱遊戲已可使用。 */
 function savePresetText(ctx, presetId, bodyText) {
   let parsed;
   try {
@@ -368,6 +368,12 @@ function savePresetText(ctx, presetId, bodyText) {
 
   const written = writeJsonFile(ctx, PRESETS_DIR_REL, presetId, text);
   if (written.status !== 200) return written;
+  if (ctx.syncAssets) {
+    try { ctx.syncAssets(); }
+    catch (e) {
+      return { status: 500, error: '特效設定已保存，但遊戲素材同步失敗，請修正後再按儲存：' + (e && e.message || e) };
+    }
+  }
   return { status: 200, presetId: presetId, bytes: written.bytes };
 }
 
@@ -592,7 +598,14 @@ function createServer(ctx) {
 
 function start(assetRoots, port) {
   /* 正式啟動時 repoRoot 一律是常數 REPO_ROOT，沒有任何參數能改。 */
-  const server = createServer({ repoRoot: REPO_ROOT, assetRoots: assetRoots });
+  const server = createServer({ repoRoot: REPO_ROOT, assetRoots: assetRoots,
+    syncAssets: function () {
+      const index = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'vfx', 'asset-index.json'), 'utf8'));
+      const root = assetRoots[index.libraryId];
+      if (!root) throw new Error('找不到素材庫：' + index.libraryId);
+      require('./export-assets.cjs').runExport({ libraryRoot: root });
+    }
+  });
 
   server.on('error', function (err) {
     if (err.code === 'EADDRINUSE' && port - PORT_BASE < PORT_TRIES - 1) {
