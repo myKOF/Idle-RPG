@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2406,
+  "assetCount": 2408,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109317,6 +109317,46 @@
         },
         "backgroundVariant": "transparent"
       }
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-0.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/impact/crimson-fragment-0.svg",
+      "format": "svg",
+      "fileSize": 595,
+      "contentHash": "sha256:8ac9cbb69da602a44fd64fb1e63174f8a9e46e9d5989751a9b5c9f92d43162e9",
+      "facts": {
+        "dimensions": {
+          "width": 128,
+          "height": 128
+        },
+        "hasAlphaChannel": true
+      },
+      "tags": [
+        "impact",
+        "red",
+        "fragment"
+      ]
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-1.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/impact/crimson-fragment-1.svg",
+      "format": "svg",
+      "fileSize": 592,
+      "contentHash": "sha256:a8cdf4c18bc74f5a9ec01077afad43b4093e76ac63371de13e56e513cba8f996",
+      "facts": {
+        "dimensions": {
+          "width": 128,
+          "height": 128
+        },
+        "hasAlphaChannel": true
+      },
+      "tags": [
+        "impact",
+        "red",
+        "fragment"
+      ]
     }
   ]
 }

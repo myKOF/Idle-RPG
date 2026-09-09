@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-basic-irregular",
+  "duration": 0.25,
+  "loop": false,
+  "layers": [
+    {
+      "id": "broken-gold-body",
+      "type": "particle",
+      "assetId": "codex-authored/impact/crimson-fragment-0.svg",
+      "zIndex": 0,
+      "alpha": 0.95,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 0.25,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.15,
+        0.23
+      ],
+      "spawn": {
+        "height": 13,
+        "shape": "box",
+        "width": 19
+      },
+      "speed": [
+        8,
+        38
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.28,
+        0.52
+      ],
+      "rotationStart": [
+        0,
+        6.283185307179586
+      ],
+      "rotationSpeed": [
+        -1.2,
+        1.2
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.45,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.12
+        ]
+      ]
+    },
+    {
+      "id": "ivory-fractures",
+      "type": "particle",
+      "assetId": "codex-authored/impact/crimson-fragment-1.svg",
+      "zIndex": 1,
+      "alpha": 0.95,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 0.25,
+      "emission": {
+        "count": 1,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.09,
+        0.17
+      ],
+      "spawn": {
+        "height": 9,
+        "shape": "box",
+        "width": 12
+      },
+      "speed": [
+        0,
+        20
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.24,
+        0.42
+      ],
+      "rotationStart": [
+        0,
+        6.283185307179586
+      ],
+      "rotationSpeed": [
+        -1,
+        1
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.45,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.25
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ]
+    },
+    {
+      "id": "long-gold-splinters",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 2,
+      "alpha": 0.65,
+      "tint": "#ff263d",
+      "blendMode": "add",
+      "duration": 0.25,
+      "emission": {
+        "count": 5,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.13,
+        0.25
+      ],
+      "spawn": {
+        "height": 6,
+        "shape": "box",
+        "width": 8
+      },
+      "speed": [
+        90,
+        280
+      ],
+      "direction": 0,
+      "spread": 360,
+      "drag": 5,
+      "startScale": [
+        0.0352,
+        0.084
+      ],
+      "alignToVelocity": true,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.45,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    },
+    {
+      "id": "uneven-chips",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/star_04.png",
+      "zIndex": 3,
+      "alpha": 0.85,
+      "tint": "#ff827b",
+      "blendMode": "normal",
+      "duration": 0.25,
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.12,
+        0.25
+      ],
+      "spawn": {
+        "height": 6,
+        "shape": "box",
+        "width": 9
+      },
+      "speed": [
+        60,
+        230
+      ],
+      "direction": 0,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 70
+      },
+      "drag": 4,
+      "startScale": [
+        0.0059,
+        0.0195
+      ],
+      "rotationStart": [
+        0,
+        6.283185307179586
+      ],
+      "rotationSpeed": [
+        -6,
+        6
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.5,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

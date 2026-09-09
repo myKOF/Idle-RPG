@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜不規則普攻受擊試作（BASIC-IRREGULAR-20260909）
+
+- 使用者確認實戰後要求 commit 供合併：提交紅白隨機爆破 author／Preset／layout、兩張原創 SVG 與素材索引、普攻映射／快取／相關測試。素材 export dry-run 無待同步；本輪 basic-melee／skill2-vfx 36/36。臨時預覽頁移除、不提交。未合併／推送；下方未 commit 為歷史記錄。
+
+- 使用者核准接入：basicAttack／basicAttackExtra 的 hit 改為 hit-basic-irregular；仍只播放受擊、不恢復半月攻擊光效。主頁 data／bridge 與 Worker 快取更新，兩張原創碎片素材正式匯出。basic-melee／skill2-vfx 36/36；先前三次播放／回收無 dropped，未固定遊戲 seed。未 commit，待使用者實戰測試。
+
+- 使用者要求依不規則爆炸／每次不同輪廓做普攻預覽。新增 hit-basic-irregular：主體也採 particle burst，兩類碎裂素材隨機位置、旋轉、大小、壽命，配少量長短不同尖刺與碎屑；使用者追加指定參考圖同色同形，改為白色爆心、紅色不對稱尖角；原創兩種 SVG 碎裂素材隨機組合，0.25 秒。未替換已接入 hit-basic-burst，先展示同時點不同種子的三次播放；無固定圓環／光暈。
+- 新增 author／Preset／layout 與暫時預覽 basic-irregular-review.html；未改配置或遊戲流程，未 commit。
+
 ## Codex｜普攻黃白小型爆破（BASIC-BURST-20260909）
 
 - 使用者核准接入並 commit：最終 0.25 秒、兩倍大小的 hit-basic-burst 已供普通／追加普攻使用，攻擊刀光已取消。納入使用者同期 hit-enemy／hit-phys／slash-enemy-melee Preset／layout 修改；素材重新匯出同步。提交前 basic-melee／skill2-vfx 36/36、BASIC-HIT／ROLE 2/2；臨時 basic-hit-review.html 移除，不提交。未合併／推送；下方未 commit 為歷史記錄。

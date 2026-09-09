@@ -4,8 +4,22 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 102,
+  "assetCount": 104,
   "assets": [
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-0.svg",
+      "relativePath": "codex-authored/impact/crimson-fragment-0.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:8ac9cbb69da602a44fd64fb1e63174f8a9e46e9d5989751a9b5c9f92d43162e9",
+      "fileSize": 595
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-1.svg",
+      "relativePath": "codex-authored/impact/crimson-fragment-1.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:a8cdf4c18bc74f5a9ec01077afad43b4093e76ac63371de13e56e513cba8f996",
+      "fileSize": 592
+    },
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
       "relativePath": "codex-authored/moon-opaque/moon-opaque-02.svg",
