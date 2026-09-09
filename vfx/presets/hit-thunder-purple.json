@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-thunder-purple",
-  "duration": 0.45,
+  "duration": 0.22,
   "loop": false,
   "layers": [
     {
@@ -16,7 +16,8 @@
       "alpha": 0.6,
       "tint": "#9333ea",
       "blendMode": "add",
-      "duration": 0.32,
+      "delay": 0,
+      "duration": 0.156444,
       "alphaOverLife": [
         [
           0,
@@ -27,8 +28,12 @@
           1
         ],
         [
-          0.5,
-          0.6
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -62,19 +67,24 @@
       "alpha": 0.95,
       "tint": "#c084fc",
       "blendMode": "add",
-      "duration": 0.34,
+      "delay": 0,
+      "duration": 0.166222,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.08,
+          0.1,
           1
         ],
         [
-          0.55,
-          0.75
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -109,27 +119,24 @@
       "alpha": 0.9,
       "tint": "#c084fc",
       "blendMode": "add",
-      "duration": 0.22,
+      "delay": 0,
+      "duration": 0.107556,
       "alphaOverLife": [
         [
           0,
+          0
+        ],
+        [
+          0.1,
           1
         ],
         [
-          0.25,
-          0.45
-        ],
-        [
-          0.45,
-          1
-        ],
-        [
-          0.7,
+          0.35,
           0.55
         ],
         [
-          0.85,
-          0.9
+          0.7,
+          0.15
         ],
         [
           1,
@@ -164,28 +171,24 @@
       "alpha": 0.8,
       "tint": "#9333ea",
       "blendMode": "add",
-      "delay": 0.05,
-      "duration": 0.2,
+      "delay": 0.024444,
+      "duration": 0.097778,
       "alphaOverLife": [
         [
           0,
+          0
+        ],
+        [
+          0.1,
           1
         ],
         [
-          0.25,
-          0.45
-        ],
-        [
-          0.45,
-          1
-        ],
-        [
-          0.7,
+          0.35,
           0.55
         ],
         [
-          0.85,
-          0.9
+          0.7,
+          0.15
         ],
         [
           1,
@@ -216,7 +219,8 @@
       "alpha": 1,
       "tint": "#fdf4ff",
       "blendMode": "add",
-      "duration": 0.16,
+      "delay": 0,
+      "duration": 0.05,
       "alphaOverLife": [
         [
           0,
@@ -227,8 +231,8 @@
           1
         ],
         [
-          0.5,
-          0.7
+          0.4,
+          0.45
         ],
         [
           1,
@@ -257,27 +261,29 @@
       "zIndex": 5,
       "tint": "#fdf4ff",
       "blendMode": "add",
+      "delay": 0,
+      "duration": 0.22,
       "emission": {
         "count": 10,
         "mode": "burst"
       },
       "lifetime": [
-        0.14,
-        0.26
+        0.068444,
+        0.127111
       ],
       "spawn": {
         "radius": 6,
         "shape": "circle"
       },
       "speed": [
-        160,
-        280
+        327.272727,
+        572.727273
       ],
       "direction": -90,
       "spread": 360,
       "gravity": {
         "x": 0,
-        "y": 220
+        "y": 920.454545
       },
       "startScale": [
         0.0313,
@@ -291,20 +297,12 @@
           1
         ],
         [
-          0.25,
-          0.45
+          0.2,
+          0.65
         ],
         [
-          0.45,
-          1
-        ],
-        [
-          0.7,
-          0.55
-        ],
-        [
-          0.85,
-          0.9
+          0.6,
+          0.2
         ],
         [
           1,
@@ -329,21 +327,23 @@
       "zIndex": 6,
       "tint": "#fdf4ff",
       "blendMode": "add",
+      "delay": 0,
+      "duration": 0.22,
       "emission": {
         "count": 4,
         "mode": "burst"
       },
       "lifetime": [
-        0.2,
-        0.3
+        0.097778,
+        0.146667
       ],
       "spawn": {
         "radius": 14,
         "shape": "circle"
       },
       "speed": [
-        40,
-        90
+        81.818182,
+        184.090909
       ],
       "direction": -90,
       "spread": 360,
@@ -354,11 +354,15 @@
       "alphaOverLife": [
         [
           0,
-          0
+          1
         ],
         [
           0.2,
-          1
+          0.65
+        ],
+        [
+          0.6,
+          0.2
         ],
         [
           1,

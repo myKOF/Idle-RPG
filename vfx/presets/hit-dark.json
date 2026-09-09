@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-dark",
-  "duration": 0.4,
+  "duration": 0.14,
   "loop": false,
   "layers": [
     {
@@ -16,23 +16,28 @@
       "alpha": 0.95,
       "tint": "#6f2da8",
       "blendMode": "add",
-      "duration": 0.17,
+      "delay": 0,
+      "duration": 0.0595,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.15,
+          0.1,
           1
         ],
         [
-          0.8,
-          1
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
-          0.5
+          0
         ]
       ],
       "scaleOverLife": [
@@ -68,19 +73,24 @@
       "alpha": 0.85,
       "tint": "#1a0c2e",
       "blendMode": "normal",
-      "duration": 0.32,
+      "delay": 0,
+      "duration": 0.112,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.35,
+          0.1,
           1
         ],
         [
+          0.35,
+          0.55
+        ],
+        [
           0.7,
-          0.8
+          0.15
         ],
         [
           1,
@@ -124,8 +134,8 @@
       "alpha": 0.6,
       "tint": "#913dcc",
       "blendMode": "screen",
-      "delay": 0.14,
-      "duration": 0.26,
+      "delay": 0.049,
+      "duration": 0.091,
       "alphaOverLife": [
         [
           0,
@@ -136,8 +146,12 @@
           1
         ],
         [
-          0.5,
-          0.6
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -171,20 +185,24 @@
       "alpha": 0.85,
       "tint": "#6f2da8",
       "blendMode": "add",
-      "delay": 0.14,
-      "duration": 0.26,
+      "delay": 0.049,
+      "duration": 0.091,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.08,
+          0.1,
           1
         ],
         [
-          0.55,
-          0.75
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -219,8 +237,8 @@
       "alpha": 0.85,
       "tint": "#c084fc",
       "blendMode": "screen",
-      "delay": 0.14,
-      "duration": 0.14,
+      "delay": 0.015,
+      "duration": 0.035,
       "alphaOverLife": [
         [
           0,
@@ -231,8 +249,8 @@
           1
         ],
         [
-          0.5,
-          0.7
+          0.4,
+          0.45
         ],
         [
           1,
@@ -261,30 +279,31 @@
       "zIndex": 5,
       "tint": "#c084fc",
       "blendMode": "add",
-      "delay": 0.14,
+      "delay": 0.049,
+      "duration": 0.14,
       "emission": {
         "count": 6,
         "mode": "burst"
       },
       "lifetime": [
-        0.18,
-        0.26
+        0.063,
+        0.091
       ],
       "spawn": {
         "radius": 4,
         "shape": "circle"
       },
       "speed": [
-        110,
-        180
+        314.285714,
+        514.285714
       ],
       "direction": -90,
       "spread": 360,
       "gravity": {
         "x": 0,
-        "y": 300
+        "y": 2448.979592
       },
-      "drag": 3,
+      "drag": 8.571429,
       "startScale": [
         0.0078,
         0.0156
@@ -295,8 +314,12 @@
           1
         ],
         [
-          0.5,
-          1
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
         ],
         [
           1,

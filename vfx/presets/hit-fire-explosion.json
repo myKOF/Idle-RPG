@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hit-fire-explosion",
-  "duration": 0.75,
+  "duration": 0.22,
   "loop": false,
   "layers": [
     {
@@ -16,7 +16,8 @@
       "alpha": 0.55,
       "tint": "#ff6a2a",
       "blendMode": "add",
-      "duration": 0.45,
+      "delay": 0,
+      "duration": 0.132,
       "alphaOverLife": [
         [
           0,
@@ -27,8 +28,12 @@
           1
         ],
         [
-          0.5,
-          0.6
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -62,19 +67,24 @@
       "alpha": 0.85,
       "tint": "#ff6a2a",
       "blendMode": "add",
-      "duration": 0.62,
+      "delay": 0,
+      "duration": 0.181867,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.06,
+          0.1,
           1
         ],
         [
-          0.6,
-          0.6
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
@@ -107,14 +117,24 @@
       },
       "alpha": 1,
       "blendMode": "normal",
+      "delay": 0,
+      "duration": 0.22,
       "alphaOverLife": [
         [
           0,
+          0
+        ],
+        [
+          0.1,
           1
         ],
         [
-          0.82,
-          1
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
         ],
         [
           1,
