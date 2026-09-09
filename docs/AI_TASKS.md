@@ -1,5 +1,72 @@
 # AI_TASKS.md
 
+## Codex｜本輪整合提交（VFX-CONFIG-COMMIT-20260909）
+
+- 使用者已授權連同自行調整的配置表一起 commit；本輪提交包含工作區現有 CSV／Excel、對應技能／狀態 JS、使用者雷球 Preset／layout、月牙修正、持續場域欄、Editor 儲存自動匯出及相關測試文件。
+- 最終狀態以此段為準：下列各任務「尚未 commit」為當時紀錄，本輪統一提交；素材同步已自動化，舊段落的手動匯出限制已由 VFX-AUTO-SYNC 解決。Windows ownership 換行阻塞也已解決。
+- 提交前驗證：editor-save／asset-export／skill2-vfx／worker-protocol 共 125 通過、2 環境限制跳過；GALE／FIELD／GROUND／ROLE／RAIN 共 16 通過；素材 export dry-run 已是最新、無待同步檔。先前 build 328 檔通過。
+- 未納入：scratch 預覽、參考素材、臨時測試產物。未修改其他工作區，也未合併或推送。
+- 未完成：素材選擇介面「已在遊戲」亮色標示仍待同檔分段修改授權，未包含在本次提交。現有已完成功能可合併；存檔實戰由使用者測試。
+
+## Codex｜編輯器儲存自動同步素材（VFX-AUTO-SYNC-20260909）
+
+- 狀態：Done；使用者要求按儲存時自動匯出，不另加手動匯出選項。
+- 修改：editor-server 正式儲存 Preset 後執行既有 transactional exporter，完成才回 HTTP 200；失敗回 500 並明示設定已保存、素材未同步，可重試。既有安全寫入與匯出防護保留。遊戲 JSON 設定／素材索引改 no-store，主頁 Runtime 快取 1.0.24。
+- 驗證：editor-save／asset-export／skill2-vfx 共 116 通過、2 跳過；build 328 檔通過；本機 8358 真實 PUT 儲存使用者雷球成功且內容未變。Codex 的 8358／28361 服務已重啟套用，其他工作區服務未動。
+- 檢查未改：Editor 前端（Claude 複製按鈕提交佔用）、使用者 Preset／layout。Commit 未建立；工作區含其他任務與使用者修改。可整理提交後合併。
+- 後續使用者新增「素材是否已在遊戲」視覺標示：editor.js／editor.css／index.html 有 Claude 75434ab 同檔未合併提交，已依 AI_RULES §3.2 詢問分段修改授權，等待回覆；此標示尚未實作。
+
+## Codex｜雷球換素材後退回舊畫法（VFX-ORB-ASSETS-20260909）
+
+- 狀態：Done。Skills2 已正確讀入 field: lightning-orb-field；Preset 新增的 light-masks-1.0/transparent/circle_b.png 未列入 shipped index，registerPresets 失敗令 boot 回 null，整體退回舊畫法。
+- 修改：export-assets 的 ownership 精確比對僅容許 Windows CRLF 換行差異（其餘內容仍拒絕）；回歸測試；正式執行素材匯出至 99 張，補齊貼圖／索引並清除三張已無正式 Preset 引用的舊月牙素材；Runtime 資料快取與主頁 1.0.23、快取測試。本機素材來源保留。
+- 檢查未修改：使用者 lightning-orb-field Preset／layout、Skills2 CSV／JS 欄位。未重新設計雷球。
+- 驗證：asset-export／skill2-vfx 共 80 通過、1 跳過（環境無符號連結權限）；build 328 檔；使用正式 shipped index 與使用者 Preset 的 Adapter 截圖通過。尚未操作存檔實戰。
+- 限制：Editor 儲存 Preset 本身不自動執行素材匯出；換用尚未匯出的貼圖仍需執行 tools/vfx/export-assets.cjs。此次已解除 Windows ownership 換行阻塞，未擴大改寫 Editor 儲存流程。Commit 未建立；工作區既有使用者修改保留，整理提交後可合併。
+
+## Codex｜原版厚亮月牙與高不透明紫邊（VFX-MOON-OPAQUE-20260909）
+
+- 狀態：Done；使用者核准試作並要求換入遊戲測試。
+- 修改：正式 slash-gale-moon Preset／layout／gale author、三張素材與素材索引、Runtime 資料快取及主頁 1.0.22、快取測試。正式檔名不變；保留既有目標朝向、技能配置與傷害節奏。
+- 驗證：Preset schema 通過；GALE 2/2、skill2-vfx 31/31、build 328 檔；正式 Adapter 左前方三連斬截圖通過。檢查未修改：技能表、技能事件、VFX Core／backend。
+- 限制：保留大招白亮感，重疊中央仍可能連成亮面；舊匯出 ownership 問題未變，本次只增素材並更新 dry-run shipped index。尚待使用者實戰測試。
+- Commit：尚未建立（沿用上一任務與使用者未提交變更）；預覽不提交。無接線未完成項，整理提交後可合併。
+
+## Codex｜月牙斬目標朝向修正（VFX-MOON-FACING-20260909）
+
+- 狀態：Done。原因：原本只套三連斬角差，漏掉施法者到目標的方位角，導致刃口固定朝向。
+- 修改：vfx-runtime 月牙分支採 atan2（目標－施法者）加原有角差；index 快取 1.0.21；兩份既有測試及本文件。未改但檢查：正式月牙 Preset、技能事件及傷害範圍。特效仍以主目標為中心，未新增飛行或改變傷害。
+- 驗證：GALE 2/2（八方位、指定來源、同座標及連斬重設）；skill2-vfx 31/31；build 328 檔通過。正式 Adapter 左前方目標三連斬截圖通過；未操作使用者存檔實戰。
+- 交付：slash-gale-moon.json 檔名不變；重新整理遊戲後生效。Commit 未建立（工作區含上一任務及使用者未提交修改）；功能無未完成項，提交整理後可合併。scratch 驗證頁不提交。
+
+## Codex｜持續場域特效欄（CONFIG-VFX-FIELD-20260909）
+
+- 狀態：Done；使用者要求在 Excel／CSV「地板特效」後新增「持續場域特效」。
+- 修改：Skills／Skills2 CSV／Excel、config_tables 六欄讀寫與中文說明、Skills2 雷球及伴生雷球欄位遷移、VFX Runtime field 分流、Worker protocol v28 與快取、三份既有測試及協議／VFX 文件。
+- 行為：field 是持續本體（fx 層），ground 是地面提示（zone 層）；同一 area.id 可同時存在兩者並各自續命回收；舊 ground 仍相容。只移雷球與伴生雷球兩列，其他技能與所有傷害／速度／時間數值保留。
+- 表格：Skills2 新欄 AD、Skills 新欄 S；新欄標題附用途說明，說明頁同步。逐格核對原值無額外差異，保留使用者欄序與原凍結位置；新版／舊 CSV、欄位重排、檔名帶 .json 的回寫檢查通過；兩表 apply dry-run 語意差異 0。
+- 驗證：`node --test --test-name-pattern="FIELD|GROUND|ROLE|RAIN" tests/vfx-runtime.test.cjs` 14/14；`node --test tests/skill2-vfx.test.cjs tests/worker-protocol.test.cjs` 40/40；`node tools/build_check.cjs` 328 檔通過，表格欄位預覽已檢查。
+- 檢查未改：VFX Core、既有雷球 Preset、Skills JS 與 Status；未操作使用者存檔實戰。
+- Commit：未建立；Skills／Skills2 配置與技能 JS 內混有使用者原先未提交變更，本次保留，未將它們一起提交。沒有功能未完成項；可供審查，合併前需整理提交。臨時腳本與預覽不納入提交。
+
+## Codex｜月牙斬重疊辨識成品（VFX-MOON-READABLE-20260909）
+
+- 狀態：Done；使用者確認藍紫刃面、薄亮刃口、掠光星芒及碎晶版本，已正式接入。
+- 範圍：替換既有 slash-gale-moon Preset／layout／author、三張原創 SVG 素材及索引、Runtime 小幅角度交替與快取；不動使用者正在修改的 Skills2 表格及 JS。
+- 驗收：遊戲與編輯器共用正式 Preset；三連斬正常混色、亮度不相加成整塊白；依既有事件半徑等比縮放，傷害判定與攻擊節奏不變。
+- 修改：slash-gale-moon Preset／layout、gale author、三張 SVG 及 asset-index／shipped-assets、vfx-runtime／index 快取、兩份既有測試及本文件。檢查但未修改：VFX Core／Pixi backend／Editor、config_tables 與使用者 Skills2 配置。
+- 測試：`node --test tests/skill2-vfx.test.cjs` 31/31、`node --test --test-name-pattern=GALE tests/vfx-runtime.test.cjs` 1/1、`node tools/build_check.cjs` 328 檔通過、Preset schema 通過。CSV 既有測試改依中文欄名讀獨立距離欄，支援使用者換欄序。
+- 畫面：正式遊戲 Adapter 三道刀光（0.08 秒壓力展示，未更動遊戲配置間隔）截圖通過；Editor 已載入四層正式 Preset 並通過驗證。未操作使用者存檔實戰。
+- 限制：既有匯出目錄 ownership 標記與工具預期不符，整批匯出拒絕執行；本次僅新增三張素材並採工具 dry-run 生成的 shipped index，未更動其餘素材或標記。此工具既有問題另案處理。
+- 交付：正式檔名 slash-gale-moon.json；可合併本次提交，未自行合併或推送。使用者未提交的表格／技能 JS 保留；scratch 預覽不提交。下一步重新載入遊戲確認實戰效果。
+
+## Codex｜Skills2 獨立距離與間隔欄（CONFIG-SKILLS2-COLUMNS-20260909）
+
+- 狀態：Done；使用者要求 Excel／CSV 獨立欄位及清楚的中文欄名。
+- 範圍：config_tables Skills2 extract／rebuild、表格與欄位定義；既有 fx 數值不變，距離／間隔／長寬／角度及其每級增量移到獨立欄，JSON 保留其餘參數。
+- 驗收：全表往返語意差異 0；獨立欄數值擾動、舊格式相容、空值刪除及非法數字驗證通過；技能測試 90/90，build 328 檔。Excel 核對 34 欄、凍結 D2、篩選 A1:AH231 及疾風斬預設值。
+- 修改：config_tables、Skills2 CSV／Excel、本文件。無遊戲 JS 或技能數值修改；獨立欄於 V～AG，AH 為唯讀作用說明，JSON 不重複保留拆欄的鍵。無未完成項，可合併；未自行合併／推送。
+
 ## Codex｜縮短受擊特效（VFX-HIT-TIMING-20260909）
 
 - 狀態：Done；使用者同意一般受擊 0.10～0.15 秒、重擊爆炸 0.18～0.25 秒、亮心在前 0.05 秒退去。

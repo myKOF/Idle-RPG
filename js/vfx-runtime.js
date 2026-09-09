@@ -192,7 +192,7 @@ var VFXRuntime = (function () {
     var variant = spec.variant || '';
     /* 變體特例（見設計文件 §1.1 的最後一段）——先判，因為它們跨 fxKind。 */
     if (variant === 'starfall-impact') return 'hit';            // 只做受擊回饋
-    if (kind === 'impact' && variant === 'pillar') return 'ground';
+    if (kind === 'impact' && variant === 'pillar') return roles.field ? 'field' : 'ground';
     if ((kind === 'impact' || kind === 'burst') && variant === 'wind-burst') return 'attack';
     if (kind === 'impact' && variant === 'smite') return 'attack';
 
@@ -201,7 +201,7 @@ var VFXRuntime = (function () {
       case 'slash': case 'strike': case 'burst': case 'beam': case 'curse': return 'attack';
       case 'rain': return roles.projectile ? 'projectile' : 'attack';
       case 'chain': return roles.projectile ? 'projectile' : 'attack';
-      case 'aura': return 'ground';
+      case 'aura': return roles.field ? 'field' : 'ground';
       case 'selfBuff': return 'cast';
       case 'impact': return 'hit';
       case 'enemy-attack': return variant === 'enemy-projectile' ? 'projectile' : 'attack';
@@ -267,6 +267,7 @@ var VFXRuntime = (function () {
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
+    var moonSwingIndex = 0;                 // 圓形判定內的刀光朝向差，避免連斬輪廓完全重合
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     function registerPresets(list) {
@@ -633,7 +634,7 @@ var VFXRuntime = (function () {
     }
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
-    function playGround(presetId, spec) {
+    function playGround(presetId, spec, role) {
       /* 沒有 area 的事件有兩種：高塔（實體沒有座標，area 一律 null）與
          自身增益光殼（沒有判定半徑可言）。兩種都畫在目標腳底並跟著它走，
          大小由 profile.groundR 這個名目半徑決定；0 才維持退回舊畫法。 */
@@ -645,6 +646,8 @@ var VFXRuntime = (function () {
       var key = noArea ? (presetId + '@' + anchor)
         : (spec.area.id ||
            (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0))));
+      // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
+      key = (role === 'field' ? 'field:' : 'ground:') + key;
       var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
       var mult = noArea ? profile.scale : profile.areaScale;
       var live = grounds[key];
@@ -665,7 +668,7 @@ var VFXRuntime = (function () {
       /* 出生的第一幀沒有推算歷史：畫面值＝權威值，殘差為 0。 */
       g.ox = 0; g.oy = 0;
       g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
-      var ref = play(rtZone, presetId, groundParams(g), mult);
+      var ref = play(role === 'field' ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -858,13 +861,19 @@ var VFXRuntime = (function () {
         case 'cast':
           ok = playOnPlayer(rtFx, presetId, spec);
           break;
-        case 'ground':
-          ok = playGround(presetId, spec);
+        case 'field': case 'ground':
+          ok = playGround(presetId, spec, role);
           break;
         case 'attack':
           if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
+            var moonSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
+            var moonDx = moonParams.position.x - moonSource.x;
+            var moonDy = moonParams.position.y - moonSource.y;
+            // 素材刃口朝 +X；連斬角差必須疊在施法者到目標的方向上。
+            var moonFacing = moonDx || moonDy ? Math.atan2(moonDy, moonDx) : num(spec.angle, 0);
+            moonParams.rotation = moonFacing + [-0.15, 0, 0.15][moonSwingIndex++ % 3];
             ok = !!play(rtFx, presetId, moonParams);
           } else if (/^cleave(?:-|$)/.test(spec.variant || '')) {
             ok = playCleave(rtFx, presetId, spec);
@@ -897,8 +906,8 @@ var VFXRuntime = (function () {
          模擬層因此不給 area；原本的條件把它整個濾掉，落地影子就永遠不出現。
          playGround 本來就處理得了無 area 的情形（畫在 targets[0] 腳底、
          大小由 profile.groundR 決定），這裡只是別提前擋掉它。 */
-      if (role === 'projectile' && roles.ground && has(roles.ground) &&
-          (spec.area || spec.fxKind === 'rain')) {
+      if ((role === 'projectile' || role === 'field') && roles.ground && has(roles.ground) &&
+          (role === 'field' || spec.area || spec.fxKind === 'rain')) {
         playGround(roles.ground, spec);
       }
 
@@ -1017,6 +1026,7 @@ var VFXRuntime = (function () {
     }
 
     function clear() {
+      moonSwingIndex = 0;
       projectiles.length = 0;
       follows.length = 0;
       pending.length = 0;
@@ -1097,12 +1107,12 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260909-hit-short';
+  var DATA_VERSION = '20260909-orb-assets';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
     return Promise.all(ids.map(function (id) {
-      return fetch(prefix + id + '.json?v=' + DATA_VERSION)
+      return fetch(prefix + id + '.json?v=' + DATA_VERSION, { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .catch(function () { return null; });
     })).then(function (list) {
@@ -1115,7 +1125,7 @@ var VFXRuntime = (function () {
   function boot(o) {
     var opts = o || {};
     if (typeof VFXCore === 'undefined' || typeof VFXPixiBackend === 'undefined') return Promise.resolve(null);
-    return fetch((opts.shippedUrl || 'vfx/shipped-assets.json') + '?v=' + DATA_VERSION)
+    return fetch((opts.shippedUrl || 'vfx/shipped-assets.json') + '?v=' + DATA_VERSION, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (index) {
         if (!index) return null;

@@ -345,6 +345,19 @@ test('15. production resolver 完全不依賴本機素材庫與開發期資料',
 
 /* ---------------- 16 決定性 ---------------- */
 
+test('Windows CRLF ownership 標記可匯出，但 note 變更仍拒絕', () => {
+  const env=scaffold({presets:[spritePreset('p-one',['pack/a.png'])]});
+  run(env);
+  const marker=path.join(exportRootOf(env),exporter.MARKER_NAME);
+  fs.writeFileSync(marker,exporter.markerContent().replace(/\n/g,'\r\n'));
+  assert.equal(exporter.checkMarkerFile(marker),null);
+  assert.doesNotThrow(()=>run(env));
+  const altered=JSON.parse(exporter.markerContent());altered.note='changed';
+  fs.writeFileSync(marker,JSON.stringify(altered,null,2)+'\r\n');
+  assert.ok(exporter.checkMarkerFile(marker));
+  assert.throws(()=>run(env));
+});
+
 test('16. 重複匯出具決定性且冪等（比對路徑、雜湊、索引、標記檔）', function () {
   const env = scaffold({ presets: [spritePreset('p-one', ['pack/a.png', 'pack/b.png'])] });
   const first = run(env);

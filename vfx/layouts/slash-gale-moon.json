@@ -7,13 +7,11 @@
       "name": "slash-gale-moon",
       "layerIds": [
         "violet-afterimage",
-        "purple-crescent",
-        "blue-blade",
-        "white-edge",
         "swing-trail",
         "outer-echo",
-        "falling-cut",
-        "blade-fragments"
+        "purple-crescent",
+        "blue-blade",
+        "white-edge"
       ]
     }
   ],

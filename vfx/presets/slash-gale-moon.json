@@ -7,164 +7,14 @@
     {
       "id": "violet-afterimage",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "assetId": "codex-authored/moon-opaque/moon-original-02.png",
       "zIndex": 0,
       "scale": {
         "x": 0.4141,
         "y": 0.3516
       },
-      "alpha": 0.44,
+      "alpha": 0.264,
       "tint": "#7d36f3",
-      "blendMode": "add",
-      "duration": 0.34,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.62,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          -2.7053
-        ],
-        [
-          0.4,
-          -1.4835
-        ],
-        [
-          0.72,
-          -0.3491
-        ],
-        [
-          1,
-          0.2618
-        ]
-      ]
-    },
-    {
-      "id": "purple-crescent",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_02.png",
-      "zIndex": 1,
-      "scale": {
-        "x": 0.3945,
-        "y": 0.3125
-      },
-      "alpha": 1,
-      "tint": "#aa55ff",
-      "blendMode": "add",
-      "duration": 0.34,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.62,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          -2.7053
-        ],
-        [
-          0.4,
-          -1.4835
-        ],
-        [
-          0.72,
-          -0.3491
-        ],
-        [
-          1,
-          0.2618
-        ]
-      ]
-    },
-    {
-      "id": "blue-blade",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
-      "zIndex": 2,
-      "scale": {
-        "x": 0.3828,
-        "y": 0.2969
-      },
-      "alpha": 1,
-      "tint": "#72bbff",
-      "blendMode": "add",
-      "duration": 0.34,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.62,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          -2.7053
-        ],
-        [
-          0.4,
-          -1.4835
-        ],
-        [
-          0.72,
-          -0.3491
-        ],
-        [
-          1,
-          0.2618
-        ]
-      ]
-    },
-    {
-      "id": "white-edge",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
-      "zIndex": 3,
-      "scale": {
-        "x": 0.3711,
-        "y": 0.2734
-      },
-      "alpha": 1,
-      "tint": "#eef7ff",
       "blendMode": "add",
       "duration": 0.34,
       "alphaOverLife": [
@@ -207,8 +57,8 @@
     {
       "id": "swing-trail",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
-      "zIndex": 4,
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "zIndex": 0,
       "position": {
         "x": -18,
         "y": -7
@@ -217,7 +67,7 @@
         "x": 0.3984,
         "y": 0.3203
       },
-      "alpha": 0.55,
+      "alpha": 0.33,
       "tint": "#8058ff",
       "blendMode": "add",
       "delay": 0.018,
@@ -258,8 +108,8 @@
     {
       "id": "outer-echo",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
-      "zIndex": 5,
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "zIndex": 0,
       "position": {
         "x": -32,
         "y": -12
@@ -268,7 +118,7 @@
         "x": 0.3516,
         "y": 0.2969
       },
-      "alpha": 0.32,
+      "alpha": 0.192,
       "tint": "#577eff",
       "blendMode": "add",
       "delay": 0.025,
@@ -307,80 +157,79 @@
       ]
     },
     {
-      "id": "falling-cut",
+      "id": "purple-crescent",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
-      "zIndex": 6,
-      "position": {
-        "x": 11,
-        "y": 12
-      },
-      "rotation": 1.1694,
+      "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "zIndex": 0,
       "scale": {
-        "x": 0.2891,
-        "y": 0.0156
+        "x": 0.41,
+        "y": 0.33
       },
-      "alpha": 0.8,
-      "tint": "#b2e4ff",
-      "blendMode": "add",
-      "delay": 0.025,
-      "duration": 0.23,
+      "alpha": 1,
+      "tint": "#542080",
+      "blendMode": "normal",
+      "duration": 0.34,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.15,
+          0.08,
+          1
+        ],
+        [
+          0.75,
           1
         ],
         [
           1,
           0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -2.7053
+        ],
+        [
+          0.4,
+          -1.4835
+        ],
+        [
+          0.72,
+          -0.3491
+        ],
+        [
+          1,
+          0.2618
         ]
       ]
     },
     {
-      "id": "blade-fragments",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
-      "zIndex": 7,
-      "position": {
-        "x": 12,
-        "y": 14
+      "id": "blue-blade",
+      "type": "sprite",
+      "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.375,
+        "y": 0.3
       },
-      "tint": "#9ecaff",
-      "blendMode": "add",
-      "delay": 0.025,
-      "duration": 0.3,
-      "emission": {
-        "count": 12,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.12,
-        0.24
-      ],
-      "spawn": {
-        "height": 75,
-        "shape": "box",
-        "width": 36
-      },
-      "speed": [
-        80,
-        160
-      ],
-      "direction": 70,
-      "spread": 40,
-      "drag": 2,
-      "startScale": [
-        0.0059,
-        0.0156
-      ],
-      "alignToVelocity": true,
+      "alpha": 1,
+      "tint": "#9b4de5",
+      "blendMode": "normal",
+      "duration": 0.34,
       "alphaOverLife": [
         [
           0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.75,
           1
         ],
         [
@@ -388,14 +237,72 @@
           0
         ]
       ],
-      "scaleOverLife": [
+      "rotationOverLife": [
         [
           0,
+          -2.7053
+        ],
+        [
+          0.4,
+          -1.4835
+        ],
+        [
+          0.72,
+          -0.3491
+        ],
+        [
+          1,
+          0.2618
+        ]
+      ]
+    },
+    {
+      "id": "white-edge",
+      "type": "sprite",
+      "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.34,
+        "y": 0.26
+      },
+      "alpha": 1,
+      "tint": "#fff4ff",
+      "blendMode": "normal",
+      "duration": 0.34,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.75,
           1
         ],
         [
           1,
-          0.15
+          0
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -2.7053
+        ],
+        [
+          0.4,
+          -1.4835
+        ],
+        [
+          0.72,
+          -0.3491
+        ],
+        [
+          1,
+          0.2618
         ]
       ]
     }

@@ -6,8 +6,114 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2399,
+  "assetCount": 2405,
   "assets": [
+    {
+      "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "format": "svg",
+      "fileSize": 51426,
+      "contentHash": "sha256:f132508ec50e25b6d1d30418cecf51c306adc050abf82248db2ccfb46d02d5e1",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon-opaque/moon-original-01.png",
+      "format": "png",
+      "fileSize": 16775,
+      "contentHash": "sha256:09d9e92bafef8d20d08f58b181bc3daebbe0396afd90cee3e5c7b1a4dff23e49",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/moon-opaque/moon-original-02.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon-opaque/moon-original-02.png",
+      "format": "png",
+      "fileSize": 28122,
+      "contentHash": "sha256:4c226fe5bcc428ad8859f49832c1a933e31450dc0bafca8ab33610d15d3ea876",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-accents.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon/moon-polished-accents.svg",
+      "format": "svg",
+      "fileSize": 1717,
+      "contentHash": "sha256:e9ecb02d0a3e6b61716b45376e3b4edac7b329289c1828347ceed6aaf16a6f9d",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-body.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon/moon-polished-body.svg",
+      "format": "svg",
+      "fileSize": 1275,
+      "contentHash": "sha256:434451456ef9c38f6b8b0e690501156165a780af63d320dde3706f5920520ed2",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-edge.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/moon/moon-polished-edge.svg",
+      "format": "svg",
+      "fileSize": 942,
+      "contentHash": "sha256:22ce17bfc33b34bb61e262b35abd6bf95bf7fc150bde42e443aae5d21ca832d7",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
     {
       "assetId": "foliage-sprites/png/flat/sprite_0001.png",
       "package": "foliage-sprites",

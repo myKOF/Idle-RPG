@@ -18,8 +18,8 @@
         "x": 0.28,
         "y": 0.28
       },
-      "alpha": 0.55,
-      "tint": "#6fb8ff",
+      "alpha": 1,
+      "tint": "#3d91ff",
       "blendMode": "add",
       "alphaOverLife": [
         [
@@ -134,19 +134,19 @@
       "id": "orb-a-body",
       "type": "sprite",
       "enabled": true,
-      "assetId": "particle-pack/png-black-background/light_03.png",
+      "assetId": "light-masks-1.0/transparent/circle_b.png",
       "zIndex": 20,
       "position": {
         "x": 0,
         "y": 0
       },
       "scale": {
-        "x": 0.188,
-        "y": 0.188
+        "x": 0.15,
+        "y": 0.15
       },
       "alpha": 1,
-      "tint": "#7094ff",
-      "blendMode": "add",
+      "tint": "#205497",
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
@@ -261,7 +261,7 @@
       "id": "orb-a-core",
       "type": "sprite",
       "enabled": true,
-      "assetId": "particle-pack/png-black-background/star_05.png",
+      "assetId": "new_materials/flare/flare_30.png",
       "zIndex": 21,
       "position": {
         "x": 0,
@@ -275,9 +275,9 @@
         "x": 0.5,
         "y": 0.5
       },
-      "alpha": 0.7,
+      "alpha": 0.5,
       "tint": "#ffffff",
-      "blendMode": "add",
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
@@ -403,7 +403,7 @@
         "mode": "rate",
         "rate": 26
       },
-      "maxParticles": 5,
+      "maxParticles": 3,
       "lifetime": [
         0.1,
         0.4

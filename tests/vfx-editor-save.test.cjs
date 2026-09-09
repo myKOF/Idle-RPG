@@ -100,11 +100,12 @@ function tempLeftovers(dir) {
 
 /* ---------------- HTTP ---------------- */
 
-function withServer(sb, hooks) {
+function withServer(sb, hooks, syncAssets) {
   const server = editorServer.__testOnly.createServer({
     repoRoot: sb.repoRoot,
     assetRoots: {},
-    hooks: hooks || null
+    hooks: hooks || null,
+    syncAssets: syncAssets
   });
   return new Promise(function (resolve) {
     server.listen(0, '127.0.0.1', function () {
@@ -152,6 +153,30 @@ function put(port, urlPath, body, extraHeaders) {
 }
 
 function savePath(id) { return '/vfx/presets/' + id + '.json'; }
+
+test('儲存先完成素材同步才回成功；同步失敗回報錯誤並保留設定供重試', async () => {
+  const sb=makeSandbox();let count=0,fail=false;
+  const h=await withServer(sb,null,()=>{
+    assert.equal(readPreset(sb,'fire-tornado').layers[0].alpha,.42,'同步必須讀到這次存下的新版本');
+    count++;
+    if(fail)throw new Error('missing source texture');
+  });
+  try {
+    const p=readPreset(sb,'fire-tornado');p.layers[0].alpha=.42;
+    let r=await put(h.port,savePath(p.id),JSON.stringify(p));
+    assert.equal(r.status,200);assert.equal(count,1);
+    fail=true;
+    r=await put(h.port,savePath(p.id),JSON.stringify(p));
+    assert.equal(r.status,500);assert.equal(r.json.ok,false);
+    assert.match(r.json.error,/素材同步失敗.*missing source texture/);
+    assert.equal(readPreset(sb,p.id).layers[0].alpha,.42);
+    fail=false;
+    r=await put(h.port,savePath(p.id),JSON.stringify(p));
+    assert.equal(r.status,200);assert.equal(count,3);
+    r=await put(h.port,savePath(p.id),'invalid json');
+    assert.equal(r.status,400);assert.equal(count,3,'非法設定不執行匯出');
+  } finally {await closeServer(h);cleanup(sb);}
+});
 
 function readPreset(sb, id) {
   return JSON.parse(fs.readFileSync(path.join(sb.presets, id + '.json'), 'utf8'));
