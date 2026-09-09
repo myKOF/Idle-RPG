@@ -31,7 +31,13 @@ test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行�
   adapter.update(0.01);
   assert.equal(log.nodes.length, 24);
   const transforms = log.nodes.map(n => n.transforms.at(-1));
-  assert.ok(transforms.every(t => t.scaleX === 2 && t.scaleY === 2 / 3));
+  assert.ok(transforms.every(t => Math.abs(t.scaleX - 0.02) < 1e-8 && t.scaleY === 2 / 3));
+  adapter.update(0.49);
+  const moved = log.nodes.map(n => n.transforms.at(-1));
+  assert.ok(moved.every(t => Math.abs(t.scaleX - 2 / 3) < 1e-8 && t.scaleY === 2 / 3));
+  assert.ok(moved.some(t => Math.abs(t.x - 30) < 1e-8 && Math.abs(t.y - 40) < 1e-8));
+  adapter.update(0.2);
+  assert.ok(log.nodes.every(n => Math.abs(n.transforms.at(-1).scaleX - 2 / 3) < 1e-8));
   assert.ok(transforms.some(t => Math.abs(t.x - 30) < 1e-8 && Math.abs(t.y) < 1e-8));
   assert.equal(new Set(transforms.map(t => t.rotation.toFixed(4))).size, 8);
   adapter.clear(); assert.equal(adapter.stats().fx.activeEffects, 0);

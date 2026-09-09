@@ -386,6 +386,8 @@ test('突刺波次 VFX 與飛行物共用起飛時間、方向及三階／五階
   assert.equal(waves.length, 7);
   assert.ok(waves.every(e => e.count === 1 && e.directionCount === 8 && e.laneOffsets.length === 3));
   assert.ok(waves.every(e => e.vfx.attack === 'slash-thrust-scatter'));
+  assert.ok(waves.every(e => Math.abs(e.bodyLength / (e.lineWidth / 3) - 4) < 1e-8));
+  assert.ok(waves.every(e => Math.abs(e.travelMs[0] / 1000 - e.lineLength / c.SG_FLYING_PROJECTILE_SPEED) < 1e-8));
   assert.ok(waves.every(e => Math.abs(e.angle - Math.PI / 2) < 1e-8));
   const projectiles = c.SKILL2_RT.projectiles.filter(p => p.gid === 'thrust');
   assert.equal(projectiles.length, 168);

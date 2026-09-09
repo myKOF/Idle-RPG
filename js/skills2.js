@@ -1944,10 +1944,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     planned.push(primary);
   }
 
-  /* 巨型單道突刺（貫日之刺／一擊必殺）沿用 thrust-pierce：那是唯一會讀 lineLength／
-     lineWidth 把刀光整條拉長的既有變體，「更長更粗」才看得出來。
-     ⚠️ 不要在這裡發明新的 variant 字串——顯示層不認得的變體會退回「每個敵人身上一道
-     隨機傾角小刀光」，長寬參數會被整個忽略。 */
+  /* 變體沿用既有名稱；本體尺寸和行進距離由獨立欄位傳遞。 */
   var thrustVariant = octaSingle ? 'thrust-pierce'
     : (isEightWay ? 'thrust-octagonal' : (isParallel ? 'thrust-parallel' :
       (lvs[5] > 0 ? 'thrust-pierce' : 'thrust')));
@@ -1960,6 +1957,8 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       dur: 0.3, delayMs: Math.round(wave * thrustWaveGap * 1000),
       angle: geomOk ? baseAngle : undefined,
       lineLength: lineLen, lineWidth: lineWidth, laneOffsets: laneOffsets,
+      bodyLength: laneHalfWidth * 2 * 4,
+      travelMs: [Math.max(50, lineLen / SG_FLYING_PROJECTILE_SPEED * 1000)],
       directionCount: directionCount, vfxTier: thrustVisualTier
     });
   }

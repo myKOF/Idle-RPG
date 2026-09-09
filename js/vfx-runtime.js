@@ -258,6 +258,7 @@ var VFXRuntime = (function () {
 
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var presetSizes = Object.create(null);
+    var presetDurations = Object.create(null);
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
     var grounds = Object.create(null);      // area.id → 場域
@@ -276,6 +277,7 @@ var VFXRuntime = (function () {
         rtZone.registerPreset(p);
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
+        presetDurations[p.id] = p.duration;
       });
     }
 
@@ -398,7 +400,8 @@ var VFXRuntime = (function () {
         ? spec.laneOffsets.slice(0, 3) : [0];
       var dirs = thrust ? Math.max(1, Math.min(8, Math.floor(num(spec.directionCount, 1)))) : 1;
       var laneWidth = width / lanes.length;
-      var shape = sizeOf(presetId, { w: len, h: laneWidth }) || {
+      var body = thrust ? num(spec.bodyLength, laneWidth > 0 ? laneWidth * 4 : 120) : len;
+      var shape = sizeOf(presetId, { w: body, h: laneWidth }) || {
         scaleX: len / NOMINAL_LANCE, scaleY: width > 0 ? width / NOMINAL_LANCE_W : 1 };
       var any = false;
       for (var d = 0; d < dirs; d++) {
@@ -407,7 +410,20 @@ var VFXRuntime = (function () {
           var offset = num(lanes[l], 0);
           shape.position = { x: from.x - Math.sin(angle) * offset, y: from.y + Math.cos(angle) * offset };
           shape.rotation = angle;
-          if (play(rt, presetId, shape)) any = true;
+          if (thrust) {
+            var travel = Math.max(0.05, travelSecAt(spec, 0) || len / 240);
+            var origin = { x: shape.position.x, y: shape.position.y };
+            var dimensions = { scaleX: shape.scaleX, scaleY: shape.scaleY };
+            var ref = play(rt, presetId, Object.assign({}, shape, {
+              scaleX: 0, timeScale: presetDurations[presetId] / (travel + 0.08)
+            }));
+            if (ref) {
+              projectiles.push({ref:ref,from:origin,to:{x:origin.x+Math.cos(angle)*len,y:origin.y+Math.sin(angle)*len},
+                t:0,dur:travel,facing:angle,enterAngle:NaN,mult:profile.scale,dimensions:dimensions,
+                thrustBody:body,thrustLength:len});
+              any = true;
+            }
+          } else if (play(rt, presetId, shape)) any = true;
         }
       }
       return any;
@@ -924,12 +940,19 @@ var VFXRuntime = (function () {
         var to = pr.to || ctx.posOf(pr.targetId);
         var ctrl = curveControl(pr.from, to, pr.enterAngle);
         var at = curvePoint(pr.from, ctrl, to, k);
+        var movingDimensions = pr.dimensions;
+        if (pr.thrustBody) {
+          var distance = pr.thrustLength * k;
+          var tailDistance = Math.max(0, distance - pr.thrustBody);
+          at = {x:pr.from.x+Math.cos(pr.facing)*tailDistance,y:pr.from.y+Math.sin(pr.facing)*tailDistance};
+          movingDimensions = {scaleX:pr.dimensions.scaleX*Math.min(1,distance/pr.thrustBody),scaleY:pr.dimensions.scaleY};
+        }
         pr.facing = approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
           step, PROJECTILE_FACING_TAU_SEC);
         var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },
           rotation: pr.facing
-        }, pr.dimensions), pr.mult);
+        }, movingDimensions), pr.mult);
         if (!alive || k >= 1) {
           /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
           if (k >= 1 && pr.targetId) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
@@ -1044,7 +1067,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260908-size-thrust';
+  var DATA_VERSION = '20260909-thrust-flight';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

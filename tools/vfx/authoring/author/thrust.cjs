@@ -4,8 +4,8 @@ const kit = require('../preset-kit.cjs');
 const { A, sprite, particle } = kit;
 function make(id, red, scatter) {
   const edge = red ? '#ff5935' : '#ffd05c';
-  const flash = [[0, 0], [0.12, 1], [0.4, 0.95], [0.72, 0.35], [1, 0]];
-  const base = { blend: 'add', duration: 0.32, alphaOverLife: flash };
+  const flash = [[0, 0], [0.04, 1], [0.72, 0.95], [0.92, 0.55], [1, 0]];
+  const base = { blend: 'add', duration: 0.48, alphaOverLife: flash };
   const layers = [
     sprite({ ...base, id:'aura', asset:A.trace06H, x:58, sizeX:125, sizeY:68, tint:edge, alpha:0.3 }),
     sprite({ ...base, id:'shaft', asset:A.trace02H, x:56, sizeX:126, sizeY:38, tint:edge, alpha:1 }),
@@ -42,7 +42,7 @@ function make(id, red, scatter) {
     });
   }
   layers.forEach((l,i)=>l.zIndex=i);
-  return { id, duration:scatter?0.48:0.37, layers };
+  return { id, duration:0.48, layers };
 }
 function write(){return [kit.write(make('slash-thrust-lance',false,false)),kit.write(make('slash-thrust-empowered',true,false)),kit.write(make('slash-thrust-scatter',true,true))];}
 if(require.main===module)console.log(write().join('\n'));

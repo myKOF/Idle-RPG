@@ -993,6 +993,7 @@ var VFXCore = (function () {
         presetId: presetId,
         preset: preset,
         time: startTime,
+        timeScale: isFiniteNumber(p.timeScale) && p.timeScale > 0 ? p.timeScale : 1,
         done: false,
         origin: { x: 0, y: 0 },
         rotation: 0,
@@ -1490,8 +1491,8 @@ var VFXCore = (function () {
       var keep = 0;                       // write-index：原地壓縮，不每幀配置新陣列
       for (var i = 0; i < effects.length; i++) {
         var effect = effects[i];
-        effect.lastDt = dt;
-        effect.time += dt;
+        effect.lastDt = dt * effect.timeScale;
+        effect.time += effect.lastDt;
         var preset = effect.preset;
         if (preset.loop && effect.time > preset.duration) {
           effect.time = effect.time % preset.duration;
@@ -1499,7 +1500,7 @@ var VFXCore = (function () {
         }
         for (var j = 0; j < effect.layers.length; j++) {
           var layer = effect.layers[j];
-          if (layer.def.type === 'particle') updateParticleLayer(effect, layer, dt);
+          if (layer.def.type === 'particle') updateParticleLayer(effect, layer, effect.lastDt);
           else updateSpriteLayer(effect, layer);
         }
         var over = !preset.loop && effect.time >= preset.duration;

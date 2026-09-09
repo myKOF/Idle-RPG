@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜突刺向外貫穿動畫修正（VFX-FLIGHT-20260909）
+
+- 狀態：Done；使用者要求槍形由中心向外行進，不以射程拉伸本體。
+- 授權範圍：VFX Core／Runtime、Skills2 事件、突刺 author／Presets、快取版本、相關測試與文件。
+- 完成方向：保持槍身比例，初段從中心伸出，之後固定長度行進；travelMs 使用模擬速度，保留三道與八方向。
+- 驗證：node --test tests/vfx-runtime.test.cjs tests/vfx-size.test.cjs tests/skill2-vfx.test.cjs tests/skill2-system.test.cjs tests/vfx-core.test.cjs（249/249）；追加 system／tower（39/39）；npm.cmd run build（326 檔）；git diff --check。
+- 修改：上述授權檔案與測試；未修改但檢查：Worker shim 已傳遞 bodyLength／travelMs，未更動協議。預覽可循環觀察移動。
+- 限制：首三階既有直接傷害結算維持，貫穿階段維持模擬掃描；起始段是由零長度伸出至固定槍身，之後不再按射程拉長。
+- 未完成：無本次修正未完成項；Commit 見本次 fix，可交付審查／使用者合併，不自行推送或合併 develop。
+
+
 ## Codex｜技能特效尺寸標準化與突刺改造（VFX-20260908）
 
 - 狀態：Done（2026-09-09）；Owner：Codex；使用者確認採用突刺與五階穿槍圓環。
