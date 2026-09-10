@@ -1269,6 +1269,7 @@ var VFXCore = (function () {
       t.anchorX = d.anchor.x;
       t.anchorY = d.anchor.y;
       t.zIndex = d.zIndex;
+      t.sortGroup = effect.handle; t.sortY = effect.origin.y;
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
       if (d.effect === 'waterTornado') {
@@ -1528,6 +1529,7 @@ var VFXCore = (function () {
         t.anchorX = d.anchor.x;
         t.anchorY = d.anchor.y;
         t.zIndex = d.zIndex;
+        t.sortGroup = effect.handle; t.sortY = effect.origin.y;
         t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined; t.generated = undefined;
         backend.updateNode(p.node, t);
         layer.particles[write++] = p;

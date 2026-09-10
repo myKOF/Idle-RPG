@@ -68,6 +68,23 @@ function fakePixi(){
  const source=new Texture();
  return {Rectangle,Texture,Container,Sprite,Assets:{load:()=>Promise.resolve(source),unload:()=>Promise.resolve()},textures,source};
 }
+
+test('Scene depth groups preserve layer order, update Y and detach pooled nodes',()=>{
+ const P=fakePixi(),root=new P.Container();
+ const b=pixiBackend.createBackend({PIXI:P,container:root,depthSort:true});
+ const front=b.createNode({kind:'sprite',assetUrl:'/a'}),rear=b.createNode({kind:'sprite',assetUrl:'/a'}),detail=b.createNode({kind:'sprite',assetUrl:'/a'});
+ b.updateNode(front,{sortGroup:1,sortY:200,zIndex:0});
+ b.updateNode(rear,{sortGroup:2,sortY:100,zIndex:99});
+ b.updateNode(detail,{sortGroup:1,sortY:200,zIndex:10});
+ assert.equal(front.parent,detail.parent);assert.notEqual(front.parent,rear.parent);
+ assert.ok(front.parent.zIndex>rear.parent.zIndex,'late rear effect stays behind front effect');
+ assert.equal(detail.zIndex,10);assert.equal(rear.zIndex,99);
+ const old=front.parent;b.updateNode(front,{sortGroup:1,sortY:50,zIndex:0});assert.equal(old.zIndex,50);
+ b.updateNode(front,{visible:false});assert.equal(old.children.length,1);
+ b.updateNode(detail,{visible:false});assert.equal(old.destroyed,true);
+ b.updateNode(front,{sortGroup:3,sortY:300,zIndex:0});assert.equal(front.parent.zIndex,300);
+ b.destroyNode(front);b.destroyNode(rear);b.destroyNode(detail);b.destroy();
+});
 test('WATER async profile strips preserve frames, anchors, tint and shared texture lifetime',async()=>{
  const P=fakePixi();const b=pixiBackend.createBackend({PIXI:P,container:new P.Container()});
  const spec={kind:'profiled',assetUrl:'/water.png',blendMode:'normal',sheet:{columns:2,rows:1},profileScales:Array(64).fill(1.5)};

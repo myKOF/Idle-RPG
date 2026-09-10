@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜特效場景深度排序（VFX-DEPTH-20260910）
+
+- 完成：Preset 以 effect handle 建立排序容器，容器依 origin.y，內層沿用 zIndex；sprite／程序層／粒子一致，節點回收時解除群組並釋放空容器。Runtime fx／zone 開啟，Editor 預設仍維持圖層編輯語意。Legacy zone／fx 依節點 Y，世界座標光束與落雷使用目標 Y。既有 zone／entity／fx／HUD 及 legacy／preset 掛載層級保留，不跨層混排。
+- 驗證：237 項相關測試通過、331 檔 build 通過；瀏覽器確認晚生成的後排火柱位於先生成的前排後方。仍需實戰多技能壓測；臨時驗證頁不提交。
+
+- In Progress，使用者授權全體特效排序檢查：修正 Preset 跨實例圖層穿插，場景 Y 越大越靠前，保留特效內部 zIndex 與地面／角色／HUD 分層。範圍 Core、Pixi backend、Runtime、必要的 legacy renderer、測試及文件。驗收晚生成的後排、移動交錯、粒子及回收。
+
 ## Codex｜火系特效整合提交（VFX-COMMIT-20260910-FIRE）
 
 - 完成：火球／殞石接線、斜向與速度調整；火龍捲圖集效能優化、100% 柱身與亮度／轉速 +30%；三柱火牆核准偏紅配色。保留使用者普攻受擊、物理受擊、敵方子彈、落點標記設定。

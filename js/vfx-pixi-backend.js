@@ -50,6 +50,25 @@ var VFXPixiBackend = (function () {
     var container = opts.container;
     if (!container) throw new Error('VFXPixiBackend 需要一個 PIXI.Container 當作掛載點');
     container.sortableChildren = true;
+    var depthGroups = new Map();
+    function detachDepth(node) {
+      var group = node.__depthGroup;
+      if (!group) return;
+      group.removeChild(node); node.__depthGroup = null;
+      if (!group.children.length) { depthGroups.delete(group.__effectId); container.removeChild(group); group.destroy(); }
+    }
+    function assignDepth(node, t) {
+      if (!opts.depthSort || t.sortGroup === undefined) return;
+      var group = depthGroups.get(t.sortGroup);
+      if (node.__depthGroup !== group || !group) {
+        detachDepth(node);
+        group = depthGroups.get(t.sortGroup);
+        if (!group) { group = new PixiLib.Container(); group.sortableChildren = true; group.__effectId = t.sortGroup; depthGroups.set(t.sortGroup, group); container.addChild(group); }
+        if (node.parent) node.parent.removeChild(node);
+        group.addChild(node); node.__depthGroup = group;
+      }
+      group.zIndex = t.sortY;
+    }
 
     /* url -> { state: 'loading' | 'ready' | 'failed', texture, promise }
 
@@ -258,8 +277,9 @@ var VFXPixiBackend = (function () {
 
     function updateNode(node, t) {
       if (!t) return;
-      if (t.visible === false) { node.visible = false; return; }
+      if (t.visible === false) { node.visible = false; detachDepth(node); return; }
       node.visible = true;
+      assignDepth(node, t);
       if (node.__generated) bindGenerated(node, t.generated);
       if (t.frame !== undefined) {
         node.__frameWanted = t.frame;
@@ -291,6 +311,7 @@ var VFXPixiBackend = (function () {
     }
 
     function destroyNode(node) {
+      detachDepth(node);
       releaseGenerated(node);
       if (node.parent) node.parent.removeChild(node);
       /* 切好的 Texture 是整個 backend 共用的（sheetCache），不能跟著單一節點
@@ -331,6 +352,7 @@ var VFXPixiBackend = (function () {
       destroy: function () {
         if (destroyed) return;
         destroyed = true;
+        depthGroups.forEach(function (group) { group.removeChildren(); group.destroy(); }); depthGroups.clear();
         container.removeChildren();
         unloadTextures();
       }

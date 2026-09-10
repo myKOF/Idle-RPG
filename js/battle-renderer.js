@@ -1451,6 +1451,7 @@ var BattleRenderer = (function () {
       }
     }
     S.fx.push(fx);
+    if (fx.node) fx.node.zIndex = Number.isFinite(fx.node.__sortY) ? fx.node.__sortY : fx.node.y;
     return fx;
   }
   function killFx(fx) {
@@ -2329,6 +2330,7 @@ var BattleRenderer = (function () {
         var k = Math.min(1, t / dur);
         var to = posOf(targetId);
         var alpha = k < 0.2 ? k / 0.2 : (1 - (k - 0.2) / 0.8);
+        g.__sortY = to.y;
         var w = 10 * (1 - k * 0.5);
         g.clear();
         g.moveTo(from.x, from.y).lineTo(to.x, to.y)
@@ -2417,6 +2419,7 @@ var BattleRenderer = (function () {
         t += dt;
         if (t < 0) return true;
         var to = resolvePos(targetPtOrId);
+        g.__sortY = to.y;
         var from = fromPtOrId ? resolvePos(fromPtOrId) : { x: to.x + (Math.random() * 40 - 20), y: to.y - S.H * 0.65 };
         redraws += dt;
         if (redraws > 0.03 || g._empty !== false) {
@@ -5649,6 +5652,7 @@ var BattleRenderer = (function () {
         var alive = false;
         if (!fx.dead) {
           try { alive = fx.update(dt); } catch (err) { alive = false; }
+          if (alive && fx.node) fx.node.zIndex = Number.isFinite(fx.node.__sortY) ? fx.node.__sortY : fx.node.y;
         }
         if (!alive) {
           killFx(fx);
@@ -5737,9 +5741,11 @@ var BattleRenderer = (function () {
 
     var world = new PIXI.Container();
     var zone = new PIXI.Container();
+    zone.sortableChildren = true;
     var entity = new PIXI.Container();
     entity.sortableChildren = true;
     var fx = new PIXI.Container();
+    fx.sortableChildren = true;
     var floatLayer = new PIXI.Container();
     /* Preset 化 VFX 的兩個掛載點（見 docs/vfx/VFX_RUNTIME_ADAPTER.md）。
        ⚠️ 一定要獨立成層，不能掛進 zone／fx：sweepOrphanFxNodes 會把那兩層裡
