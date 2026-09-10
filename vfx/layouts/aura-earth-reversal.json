@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "presetId": "aura-rockarmor-stone",
+  "presetId": "aura-earth-reversal",
   "groups": [
     {
-      "id": "aura-rockarmor-stone",
-      "name": "aura-rockarmor-stone",
+      "id": "aura-earth-reversal",
+      "name": "aura-earth-reversal",
       "layerIds": [
         "earth-shadow",
         "amber-underlight",
@@ -15,6 +15,6 @@
     }
   ],
   "order": [
-    "group:aura-rockarmor-stone"
+    "group:aura-earth-reversal"
   ]
 }

@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "id": "bolt-chain-bluewhite",
+  "duration": 0.28,
+  "loop": false,
+  "layers": [
+    {
+      "id": "blue-corona",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.2148
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.8,
+      "tint": "#268dff",
+      "blendMode": "add",
+      "duration": 0.28,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.22,
+          0.7
+        ],
+        [
+          0.34,
+          1
+        ],
+        [
+          0.55,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "white-hot-zigzag",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.1758
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#eaf8ff",
+      "blendMode": "add",
+      "duration": 0.28,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.22,
+          0.7
+        ],
+        [
+          0.34,
+          1
+        ],
+        [
+          0.55,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "blue-flicker-filaments",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.0938
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.5,
+      "tint": "#74caff",
+      "blendMode": "add",
+      "delay": 0.025,
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.25,
+          0.1
+        ],
+        [
+          0.42,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 40,
+      "width": 200
+    },
+    "heightM": 4,
+    "shape": "custom",
+    "widthM": 20
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "bolt-chain-bluewhite",
+  "groups": [
+    {
+      "id": "bolt-chain-bluewhite",
+      "name": "bolt-chain-bluewhite",
+      "layerIds": [
+        "blue-corona",
+        "white-hot-zigzag",
+        "blue-flicker-filaments"
+      ]
+    }
+  ],
+  "order": [
+    "group:bolt-chain-bluewhite"
+  ]
+}

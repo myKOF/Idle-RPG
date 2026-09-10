@@ -4,8 +4,22 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 111,
+  "assetCount": 120,
   "assets": [
+    {
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
+      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
+      "fileSize": 9028764
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
+      "fileSize": 20395025
+    },
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
       "relativePath": "codex-authored/impact/crimson-fragment-0.svg",
@@ -21,11 +35,39 @@
       "fileSize": 592
     },
     {
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "relativePath": "codex-authored/lightning/chain-travel.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
+      "fileSize": 86462
+    },
+    {
       "assetId": "codex-authored/meteor/meteor-stylized.png",
       "relativePath": "codex-authored/meteor/meteor-stylized.png",
       "package": "codex-authored",
       "contentHash": "sha256:e0a785ea31dcbf251e0b2d1c4cf0a2247a577313f98dc0966fb8da21fe485ed6",
       "fileSize": 1119237
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-magma.png",
+      "relativePath": "codex-authored/mire/mud-flow-magma.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:ffd551c15804f16ea82580ffeddcf0bd3b8bab37f3c1353c2581754f9fe373b3",
+      "fileSize": 3707583
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-venom.png",
+      "relativePath": "codex-authored/mire/mud-flow-venom.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:3e74027d56dcb18ee54663887763106c8efbe9ffc7bf617c9a10d88ee56b3632",
+      "fileSize": 2967515
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow.png",
+      "relativePath": "codex-authored/mire/mud-flow.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
+      "fileSize": 2617834
     },
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
@@ -49,11 +91,32 @@
       "fileSize": 28122
     },
     {
-      "assetId": "codex-authored/rockarmor/stone-guard.png",
-      "relativePath": "codex-authored/rockarmor/stone-guard.png",
+      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-back.png",
       "package": "codex-authored",
-      "contentHash": "sha256:8a519412780ef24ef2126606c6775c5d904d17435c2db04a19d66a2b80aed5ab",
-      "fileSize": 1070933
+      "contentHash": "sha256:b509ee9d357dfd55b8b8bc7024711dec1c37c87d8b9a40a9524d5f3066a40886",
+      "fileSize": 588808
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:d6f1582e35641dd19b09e9a7457fa9c52147f691e136da7700b80ba5af94b0c4",
+      "fileSize": 599639
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:10d51a27002fc6f1e6c09d77dbd86429a2e9a11cff5a146e2f1d96852422b058",
+      "fileSize": 663733
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-front.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:44f5691fdc4b34c4b8e3b896116c8fb7fc205247b08f4d513fb174e900a22ab4",
+      "fileSize": 652175
     },
     {
       "assetId": "codex-authored/tornado/fire-flow.png",

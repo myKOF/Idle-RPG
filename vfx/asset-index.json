@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2412,
+  "assetCount": 2422,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109476,6 +109476,156 @@
         "dimensions": {
           "width": 1536,
           "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-back.png",
+      "format": "png",
+      "fileSize": 588808,
+      "contentHash": "sha256:b509ee9d357dfd55b8b8bc7024711dec1c37c87d8b9a40a9524d5f3066a40886",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-front.png",
+      "format": "png",
+      "fileSize": 652175,
+      "contentHash": "sha256:44f5691fdc4b34c4b8e3b896116c8fb7fc205247b08f4d513fb174e900a22ab4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "format": "png",
+      "fileSize": 599639,
+      "contentHash": "sha256:d6f1582e35641dd19b09e9a7457fa9c52147f691e136da7700b80ba5af94b0c4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "format": "png",
+      "fileSize": 663733,
+      "contentHash": "sha256:10d51a27002fc6f1e6c09d77dbd86429a2e9a11cff5a146e2f1d96852422b058",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/mire/mud-flow.png",
+      "format": "png",
+      "fileSize": 2617834,
+      "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-venom.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/mire/mud-flow-venom.png",
+      "format": "png",
+      "fileSize": 2967515,
+      "contentHash": "sha256:3e74027d56dcb18ee54663887763106c8efbe9ffc7bf617c9a10d88ee56b3632",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-magma.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/mire/mud-flow-magma.png",
+      "format": "png",
+      "fileSize": 3707583,
+      "contentHash": "sha256:ffd551c15804f16ea82580ffeddcf0bd3b8bab37f3c1353c2581754f9fe373b3",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
+      "format": "png",
+      "fileSize": 9028764,
+      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 3840
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "format": "png",
+      "fileSize": 20395025,
+      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 7680
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "relativePath": "codex-authored/lightning/chain-travel.png",
+      "package": "codex-authored",
+      "format": "png",
+      "fileSize": 86462,
+      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 384
         },
         "hasAlpha": true
       }

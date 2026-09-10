@@ -21,16 +21,50 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
-test('ROCKARMOR 保持預览尺寸、跟隨腳底並收回', () => {
+test('ROCKARMOR 前後半圈跨人物分層、共同中心與時鐘，放大移動續命後仍同步回收', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-rockarmor-stone.json'),'utf8'));
- const {adapter,log}=makeAdapter([p]);
- const spec={fxKind:'aura',variant:'rock-armor',targets:['mv-float-2'],dur:1,vfx:{ground:p.id}};
- assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
- const body=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard.png'));
- const t=body.transforms.at(-1);
- assert.ok(Math.abs(t.scaleX-.27)<1e-6);assert.ok(Math.abs(t.scaleY-.27)<1e-6);
- assert.equal(t.x,300);assert.equal(t.y,36.5);
- adapter.update(4);assert.equal(adapter.stats().grounds,0);
+ for(const scale of [1,2]) {
+  let point={x:300,y:150};
+  const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
+  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
+  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
+  const back=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-back.png'));
+  const front=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-front.png'));
+  assert.equal(back.tag,'zone');assert.equal(front.tag,'fx');
+  for(let i=0;i<12;i++) {
+   point={x:300+i*7,y:150-i*2};adapter.tryPlay(spec);adapter.update(.11);
+   const bt=back.transforms.at(-1),ft=front.transforms.at(-1);
+   assert.deepEqual(bt,ft,'前後圈必須使用相同中心、尺寸與動畫格');
+   assert.equal(ft.x,point.x);assert.equal(ft.y,point.y-32*scale);
+   assert.ok(Math.abs(ft.scaleX-.8724*scale)<1e-6);
+  }
+  assert.equal(log.nodes.filter(n=>n.spec.assetUrl?.includes('stone-guard-')).length,2,'續命不重播');
+  adapter.update(4);assert.equal(adapter.stats().grounds,0);
+  assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);
+ }
+});
+
+test('EARTH-REVERSAL 前後半圈跨人物分層、共同中心與時鐘，放大移動續命後仍同步回收', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-earth-reversal.json'),'utf8'));
+ for(const scale of [1,2]) {
+  let point={x:300,y:150};
+  const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
+  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
+  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
+  const back=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-blue-runes-back.png'));
+  const front=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-blue-runes-front.png'));
+  assert.equal(back.tag,'zone');assert.equal(front.tag,'fx');
+  for(let i=0;i<12;i++) {
+   point={x:300+i*7,y:150-i*2};adapter.tryPlay(spec);adapter.update(.11);
+   const bt=back.transforms.at(-1),ft=front.transforms.at(-1);
+   assert.deepEqual(bt,ft,'前後圈必須使用相同中心、尺寸與動畫格');
+   assert.equal(ft.x,point.x);assert.equal(ft.y,point.y-32*scale);
+   assert.ok(Math.abs(ft.scaleX-.8724*scale)<1e-6);
+  }
+  assert.equal(log.nodes.filter(n=>n.spec.assetUrl?.includes('stone-guard-')).length,2,'續命不重播');
+  adapter.update(4);assert.equal(adapter.stats().grounds,0);
+  assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);
+ }
 });
 
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
@@ -220,7 +254,7 @@ function recordingBackend(log, tag) {
     createNode(spec) { const n = { tag, spec, transforms: [] }; log.nodes.push(n); return n; },
     updateNode(node, t) {
       if (!t || t.visible === false) return;
-      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha });
+      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame });
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
     destroyNode() {},
@@ -1147,4 +1181,98 @@ test('CLEAVE 四方向從中心飛行，保持本體尺寸、不預播命中，�
   assert.ok(log.nodes.every(n=>n.transforms.at(-1).scaleX===2));
   adapter.tryPlay({...spec,delayMs:90});adapter.clear();adapter.update(1);
   assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
+test('MIRE 泥流依權威長寬縮放、保持地板層、續命不重播並回收',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-mire-earth.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);const s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-test',x:100,y:200,w:120,h:180},vfx:{ground:p.id}};
+ assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
+ const n=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow.png')),t=n.transforms.at(-1);
+ assert.equal(n.tag,'zone');assert.equal(t.x,100);assert.equal(t.y,200);
+ assert.ok(Math.abs(t.scaleX-120/256)<.0001);assert.ok(Math.abs(t.scaleY-180/256)<.0001);
+ adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);
+ adapter.update(5);assert.equal(adapter.stats().grounds,0);
+});
+
+test('MIRE 進化維持三成強度、權威矩形與續命，熔岩粒子同比降低',()=>{
+ for(const id of ['ground-mire-venom','ground-mire-magma']){
+  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));assert.equal(p.layers[0].alpha,.3);
+  if(id.endsWith('magma')){assert.ok(Math.abs(p.layers[1].alpha-.216)<1e-8);assert.equal(p.layers[2].alpha,.24);}
+  const {adapter,log}=makeAdapter([p]),s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-evo',x:120,y:160,w:180,h:240},vfx:{ground:id}};
+  assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
+  const body=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow-')),t=body.transforms.at(-1);
+  assert.equal(body.tag,'zone');assert.equal(t.alpha,.3);assert.equal(t.x,120);assert.equal(t.y,160);assert.ok(Math.abs(t.scaleX-180/256)<.0001);assert.ok(Math.abs(t.scaleY-240/256)<.0001);
+  adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);adapter.update(5);assert.equal(adapter.stats().grounds,0);
+ }
+});
+
+test('EARTHGUARD 法陣固定腳底、八米半徑且續命不重播',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/aura-earthguard-hexagram.json'),'utf8'));
+ let foot={x:24,y:35};const {adapter,log}=makeAdapter([p],{ctx:{playerPos:()=>foot,posOf:()=>foot,footOf:()=>foot}});
+ const spec={fxKind:'aura',targets:['pv-float'],vfx:{ground:p.id},dur:.25,area:{id:'sg-earthguard-aura',r:80,follow:true}};
+ assert.equal(adapter.tryPlay(spec),true);adapter.update(.1);
+ let n=log.nodes.find(n=>n.tag==='zone');assert.ok(n);assert.equal(log.nodes.filter(n=>n.tag==='fx').length,0);
+ let t=n.transforms.at(-1);assert.equal(t.x,24);assert.equal(t.y,35);assert.ok(Math.abs(t.scaleX-80/140)<1e-6);
+ foot={x:55,y:72};adapter.tryPlay(spec);adapter.update(.1);t=n.transforms.at(-1);assert.equal(t.x,55);assert.equal(t.y,72);assert.equal(adapter.stats().grounds,1);assert.ok(t.frame>0);
+ adapter.update(2);assert.equal(adapter.stats().grounds,0);
+});
+
+test('EARTHGUARD 變色替換同一場域，第七階只放大四分之一',()=>{
+ const presets=['hexagram','life','mana','symbiosis'].map(v=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/aura-earthguard-'+v+'.json'),'utf8')));
+ const {adapter,log}=makeAdapter(presets);
+ for(const p of presets){
+  const radius=p.id.endsWith('symbiosis')?100:80;
+  assert.equal(adapter.tryPlay({fxKind:'aura',targets:['pv-float'],vfx:{ground:p.id},dur:.25,area:{id:'sg-earthguard-aura',r:radius,follow:true}}),true);adapter.update(.1);
+  assert.equal(adapter.stats().grounds,1);const t=log.nodes.at(-1).transforms.at(-1);assert.ok(Math.abs(t.scaleX-radius/140)<1e-6);
+ }
+});
+
+test('CHAIN 藍白連線走 beam 並保持兩端距離，延遲段不當作飛行物回收',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-bluewhite.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const s={fxKind:'chain',targets:['mv-float-1','mv-float-2'],vfx:{attack:p.id}};
+ adapter.tryPlay(s);adapter.tryPlay({...s,delayMs:200});adapter.update(.1);
+ assert.equal(adapter.stats().played,1);assert.equal(adapter.stats().projectiles,0);
+ const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,100);assert.equal(t.y,50);assert.equal(t.rotation,0);assert.ok(Math.abs(t.scaleX-200/512)<.001);
+ adapter.update(.11);assert.equal(adapter.stats().played,2);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
+test('CHAIN 快速彈射圖集依時間推進並準時回收',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);adapter.tryPlay({fxKind:'chain',targets:['mv-float-1','mv-float-2'],vfx:{attack:p.id}});
+ adapter.update(.05);const n=log.nodes[0],early=n.transforms.at(-1).frame;
+ adapter.update(.1);const late=n.transforms.at(-1).frame;assert.ok(late>early);
+ const {decodePng}=require('../tools/vfx/vfx-raster.cjs');const tex=decodePng(fs.readFileSync(path.join(__dirname,'../images/vfx/assets/codex-authored/lightning/chain-travel.png')));
+ function centre(frame){let sum=0,mass=0;for(let y=0;y<128;y++)for(let x=0;x<256;x++){let a=tex.rgba[((Math.floor(frame/6)*128+y)*tex.width+(frame%6*256+x))*4+3];sum+=x*a;mass+=a;}return sum/mass;}
+ assert.ok(centre(late)>centre(early)+60,'發亮電弧從起點向終點推進');
+ adapter.update(.2);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
+test('CHAIN 移動與反向目標逐幀追蹤，延遲彈射於起飛時取得新位置',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const pos={a:{x:10,y:20},b:{x:210,y:20}};
+ const {adapter,log}=makeAdapter([p],{profile:{scale:.65},ctx:{posOf:id=>({...pos[id]}),playerPos:()=>({x:0,y:0})}});
+ const spec={fxKind:'chain',targets:['a','b'],vfx:{attack:p.id}};
+ adapter.tryPlay(spec);adapter.tryPlay({...spec,delayMs:200});adapter.update(.04);
+ function endpoints(t){const length=t.scaleX*256;return {x:t.x+Math.cos(t.rotation)*length,y:t.y+Math.sin(t.rotation)*length};}
+ for(const point of [{x:350,y:140},{x:-80,y:270},{x:40,y:-140}]){
+  pos.a={x:pos.a.x+5,y:pos.a.y+3};pos.b=point;adapter.update(.04);
+  const t=log.nodes[0].transforms.at(-1),end=endpoints(t);
+  assert.equal(t.x,pos.a.x);assert.equal(t.y,pos.a.y);
+  assert.ok(Math.abs(end.x-point.x)<.01,JSON.stringify({t,end,point}));assert.ok(Math.abs(end.y-point.y)<.01);
+ }
+ pos.b={x:480,y:90};adapter.update(.05);assert.equal(adapter.stats().played,2);
+ const delayed=log.nodes.at(-1).transforms.at(-1),end=endpoints(delayed);assert.ok(Math.abs(end.x-480)<.01);assert.ok(Math.abs(end.y-90)<.01);
+ adapter.clear();adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
+test('CHAIN 離場端點不使用 lastPos 或備用位置，取消延遲與飛行中電弧',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const visible={a:{x:10,y:20},b:{x:210,y:20}};
+ const {adapter}=makeAdapter([p],{ctx:{posOf:()=>({x:999,y:999}),playerPos:()=>({x:0,y:0}),chainPoint:id=>visible[id]||null}});
+ const s={fxKind:'chain',targets:['a','b'],vfx:{attack:p.id}};
+ adapter.tryPlay(s);adapter.tryPlay({...s,delayMs:200});adapter.update(.05);assert.equal(adapter.stats().fx.activeEffects,1);
+ delete visible.a;adapter.update(.05);assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.update(.15);assert.equal(adapter.stats().played,1);assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
+ visible.a={x:50,y:40};delete visible.b;assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
 });

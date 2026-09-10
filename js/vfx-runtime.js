@@ -282,8 +282,10 @@ var VFXRuntime = (function () {
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var presetSizes = Object.create(null);
     var presetDurations = Object.create(null);
+    var trackedBeamWidths = Object.create(null);
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
+    var trackingBeams = [];                  // 彈射電弧逐幀追蹤兩端的顯示位置
     var grounds = Object.create(null);      // area.id → 場域
     var arrivals = Object.create(null);     // targetId → 上一段飛行抵達時的航向
     var orbits = Object.create(null);       // 合併鍵 → 環繞場域（軌道環＋N 個環繞體）
@@ -302,6 +304,17 @@ var VFXRuntime = (function () {
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
+        if (p.id === 'bolt-chain-travel-bluewhite') {
+          var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
+          trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) : NOMINAL_BEAM;
+        }
+        if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
+          ['back', 'front'].forEach(function(half) {
+            var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
+            part.layers = part.layers.filter(function(l) { return (l.id === 'orbiting-stone-plates-front') === (half === 'front'); });
+            registerPresets([part]);
+          });
+        }
         // 火牆在編輯器是三柱合成；遊戲中各柱保持直立，只沿判定軸排列底部。
         if (p.id === 'ground-firewall' && p.layers.some(function (l) { return l.id.indexOf('column-0-') === 0; })) {
           for (var column = 0; column < 3; column++) {
@@ -353,6 +366,12 @@ var VFXRuntime = (function () {
        budgetDrops 就是給 tryPlay 分辨這兩者用的。 */
     var budgetDrops = 0;
     function play(rt, presetId, params, mult) {
+      if ((presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') && has(presetId + '-front')) {
+        var back = play(rtZone, presetId + '-back', params, mult);
+        var front = play(rtFx, presetId + '-front', params, mult);
+        if (!back || !front) { stopRef(back); stopRef(front); return null; }
+        return { parts: [back, front] };
+      }
       if (!has(presetId)) { counters.missing++; return null; }
       var handle = rt.play(presetId, sized(params || {}, mult));
       if (handle === null || handle === undefined) { budgetDrops++; return null; }
@@ -361,10 +380,12 @@ var VFXRuntime = (function () {
     }
     function stopRef(ref) {
       if (!ref) return;
+      if (ref.parts) { ref.parts.forEach(stopRef); return; }
       ref.rt.stop(ref.handle);
     }
     /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
     function moveRef(ref, params, mult) {
+      if (ref.parts) { var alive = ref.parts.map(function(part) { return moveRef(part, params, mult); }); return alive.every(Boolean); }
       return ref.rt.setTransform(ref.handle, sized(params, mult));
     }
 
@@ -498,15 +519,25 @@ var VFXRuntime = (function () {
       var toId = ids.length >= 2 ? ids[1] : ids[0];
       if (!toId) return false;
       var to = ctx.posOf(toId);
+      if (presetId === 'bolt-chain-travel-bluewhite' && ctx.chainPoint) {
+        from = ctx.chainPoint(ids.length >= 2 ? ids[0] : (spec.sourceId || 'pv-float'));
+        to = ctx.chainPoint(toId);
+        // 端點已離場時消費事件，不能退回 legacy 的備用位置。
+        if (!from || !to) return true;
+      }
       var dx = to.x - from.x, dy = to.y - from.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (!(dist > 0)) dist = 1;
-      return !!play(rt, presetId, {
+      var ref = play(rt, presetId, {
         position: from,
         rotation: Math.atan2(dy, dx),
-        scaleX: dist / NOMINAL_BEAM,
-        scaleY: 1
-      });
+        scaleX: dist / (trackedBeamWidths[presetId] || NOMINAL_BEAM),
+        scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
+      }, trackedBeamWidths[presetId] ? 1 : undefined);
+      if (ref && presetId === 'bolt-chain-travel-bluewhite') {
+        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM });
+      }
+      return !!ref;
     }
 
     /* 飛行物：逐幀 setTransform 從起點移到目標，朝飛行方向旋轉 */
@@ -597,7 +628,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, g.presetId === 'aura-rockarmor-stone' ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
+        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -726,7 +757,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
-        bornAt: clock, rise: presetId === 'aura-rockarmor-stone' || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
+        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
@@ -1108,6 +1139,25 @@ var VFXRuntime = (function () {
         }
       }
 
+      /* 使用每幀已插值的實體座標，電弧前端抵達時仍落在移動目標上。 */
+      for (var bi = trackingBeams.length - 1; bi >= 0; bi--) {
+        var beam = trackingBeams[bi];
+        var beamFrom = beam.fromId ? ctx.posOf(beam.fromId) : ctx.playerPos();
+        var beamTo = ctx.posOf(beam.toId);
+        if (ctx.chainPoint) {
+          beamFrom = ctx.chainPoint(beam.fromId || 'pv-float');
+          beamTo = ctx.chainPoint(beam.toId);
+          if (!beamFrom || !beamTo) {
+            stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
+          }
+        }
+        var bdx = beamTo.x - beamFrom.x, bdy = beamTo.y - beamFrom.y;
+        if (!moveRef(beam.ref, {
+          position: beamFrom, rotation: Math.atan2(bdy, bdx),
+          scaleX: Math.max(1, Math.sqrt(bdx * bdx + bdy * bdy)) / beam.width, scaleY: profile.scale
+        }, 1)) trackingBeams.splice(bi, 1);
+      }
+
       /* 跟隨玩家的施放特效 */
       for (var f = follows.length - 1; f >= 0; f--) {
         var fo = follows[f];
@@ -1137,6 +1187,7 @@ var VFXRuntime = (function () {
       moonSwingIndex = 0;
       projectiles.length = 0;
       follows.length = 0;
+      trackingBeams.length = 0;
       pending.length = 0;
       arrivals = Object.create(null);
       Object.keys(orbits).forEach(stopOrbit);
@@ -1215,7 +1266,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-firehunt-companion';
+  var DATA_VERSION = '20260910-chain-travel';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

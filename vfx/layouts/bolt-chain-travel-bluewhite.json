@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "bolt-chain-travel-bluewhite",
+  "groups": [
+    {
+      "id": "bolt-chain-travel-bluewhite",
+      "name": "bolt-chain-travel-bluewhite",
+      "layerIds": [
+        "travelling-electric-front"
+      ]
+    }
+  ],
+  "order": [
+    "group:bolt-chain-travel-bluewhite"
+  ]
+}

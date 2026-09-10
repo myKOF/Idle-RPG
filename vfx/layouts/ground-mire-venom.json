@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-mire-venom",
+  "groups": [
+    {
+      "id": "ground-mire-venom",
+      "name": "ground-mire-venom",
+      "layerIds": [
+        "flowing-earth-mud"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-mire-venom"
+  ]
+}

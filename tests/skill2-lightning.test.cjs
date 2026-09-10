@@ -204,7 +204,7 @@ test('連鎖閃電 T5：電殛擴散只在「彈射」時追加，且起手那�
   assert.equal(splash.length, 4, '擴散傷害＝閃電鏈傷害的 27.5%，且起手不算彈射');
 });
 
-test('連鎖閃電 T6：雷幻身讓單一敵人也吃滿整條鏈，且整道鏈 +55%', () => {
+test('連鎖閃電 T6：無下一個敵人即停止，雷幻身仍保留增傷', () => {
   const c = loadContext();
   const calls = stubHits(c);
   const p = playerEnt();
@@ -212,7 +212,7 @@ test('連鎖閃電 T6：雷幻身讓單一敵人也吃滿整條鏈，且整道�
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 1, 0]);
   forceRolls(c, 0.999);
   c.castSkill2(p, [only], 'chainlightning', 'mv-float');
-  assert.equal(calls.length, 10, '以自身當中繼點：5 段 ×（本體 + 雷鳴術）全落在唯一的敵人身上');
+  assert.equal(calls.length, 2, '依使用者新規則，只有起手與雷鳴術追加，不透過自身延續');
   calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.75) < 1e-9, '165% + 55% + 55% ＝ 275% 魔攻'));
 
   const c2 = loadContext();
@@ -613,4 +613,13 @@ test('無座標時三個技能都能施放並造成傷害（高塔退化）', ()
   run(c, p, [boss], 3);
   assert.ok(beforeTick > 0, '連鎖閃電在施放當下就結算');
   assert.ok(calls.length > beforeTick, '落雷與雷球在 tick 中結算');
+});
+
+test('CHAIN 藍白電弧每隔 200ms 連接下一目標，傷害顯示對齊抵達時刻',()=>{
+ const c=loadContext();stubHits(c);const p=playerEnt(),es=[enemy(1e9,50,0),enemy(1e9,80,0),enemy(1e9,110,0),enemy(1e9,140,0),enemy(1e9,170,0)];
+ const events=[],hits=[];c.playCombatVfx=s=>events.push(s);c.floatEnemyEvent=(ent,sel,text,cls,dmg,delay)=>{if(dmg>0)hits.push(delay||0)};
+ setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,es,'chainlightning','mv-float');
+ const chains=events.filter(s=>s.variant==='lightning-chain');assert.equal(chains.length,4);
+ assert.deepEqual(chains.map(s=>s.delayMs||0),[0,200,400,600]);assert.ok(chains.every(s=>s.vfx.attack==='bolt-chain-travel-bluewhite'&&!s.vfx.projectile));
+ assert.deepEqual(hits,[183,383,583,783]);
 });

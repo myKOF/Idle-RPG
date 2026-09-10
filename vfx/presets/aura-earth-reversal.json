@@ -1,13 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "aura-rockarmor-stone",
+  "id": "aura-earth-reversal",
   "duration": 4,
   "loop": true,
   "layers": [
     {
       "id": "earth-shadow",
       "type": "sprite",
-      "enabled": true,
       "assetId": "particle-pack/png-transparent/light_03.png",
       "position": {
         "x": 0,
@@ -56,8 +55,7 @@
     {
       "id": "orbiting-stone-plates-back",
       "type": "sprite",
-      "enabled": true,
-      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
       "zIndex": 2,
       "position": {
         "x": 0,
@@ -67,7 +65,7 @@
         "x": 0.8724,
         "y": 0.8724
       },
-      "alpha": 0.5,
+      "alpha": 1,
       "blendMode": "normal",
       "duration": 4,
       "sheet": {
@@ -82,8 +80,7 @@
     {
       "id": "orbiting-stone-plates-front",
       "type": "sprite",
-      "enabled": true,
-      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
       "zIndex": 2,
       "position": {
         "x": 0,
@@ -93,7 +90,7 @@
         "x": 0.8724,
         "y": 0.8724
       },
-      "alpha": 0.75,
+      "alpha": 1,
       "blendMode": "normal",
       "duration": 4,
       "sheet": {
@@ -108,7 +105,6 @@
     {
       "id": "settling-dust",
       "type": "particle",
-      "enabled": true,
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "position": {
         "x": 0,

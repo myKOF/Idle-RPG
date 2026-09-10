@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-earthguard-symbiosis",
+  "groups": [
+    {
+      "id": "aura-earthguard-symbiosis",
+      "name": "aura-earthguard-symbiosis",
+      "layerIds": [
+        "symbiosis-hexagram-ground"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-earthguard-symbiosis"
+  ]
+}

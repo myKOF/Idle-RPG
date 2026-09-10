@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-earthguard-hexagram",
+  "groups": [
+    {
+      "id": "aura-earthguard-hexagram",
+      "name": "aura-earthguard-hexagram",
+      "layerIds": [
+        "white-hexagram-ground"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-earthguard-hexagram"
+  ]
+}

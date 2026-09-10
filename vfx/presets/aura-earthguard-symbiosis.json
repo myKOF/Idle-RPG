@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "aura-earthguard-symbiosis",
+  "duration": 16,
+  "loop": true,
+  "layers": [
+    {
+      "id": "symbiosis-hexagram-ground",
+      "type": "sprite",
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "scale": {
+        "x": 0.7142857142857142,
+        "y": 0.7142857142857142
+      },
+      "alpha": 0.8,
+      "blendMode": "add",
+      "duration": 16,
+      "sheet": {
+        "columns": 8,
+        "count": 192,
+        "fps": 12,
+        "loop": true,
+        "mode": "fps",
+        "rows": 24
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "radiusM": 10,
+    "shape": "circle"
+  }
+}

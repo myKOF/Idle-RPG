@@ -551,3 +551,39 @@ test('岩甲與狂怒的執行期狀態一律不入存檔，且重置時把投�
   assert.equal(c.buffVal(p, 'sgRockAmp'), 0);
   assert.equal(c.G.player.skills2.levels.rockarmor !== undefined, true, '存檔只留等級，不留執行期狀態');
 });
+
+test('天地逆返只由第七階選用藍紋岩甲，護盾數量不改變特效選擇',()=>{
+ for(const tier7 of [0,1])for(const shield of [0,800]){
+  const c=loadContext(),p=playerEnt(),events=[];p.shield=shield;
+  c.playCombatVfx=spec=>events.push(spec);setLevels(c,'rockarmor',[1,1,1,1,1,1,tier7]);equip(c,'rockarmor');
+  c.castSkill2(p,[enemy(10000,20,0)],'rockarmor','mv-float');
+  const event=events.find(e=>e.variant==='rock-armor');assert.ok(event);
+  assert.equal(event.vfx.ground,tier7?'aura-earth-reversal':'aura-rockarmor-stone');
+ }
+});
+
+test('泥沼特效逐階使用核准的泥流、毒沼與熔岩沼',()=>{
+ for(const [levels,id] of [[[1,0,0,0,0,0,0],'ground-mire-earth'],[[1,1,1,0,0,0,0],'ground-mire-venom'],[[1,1,1,1,1,1,1],'ground-mire-magma']]){
+  const c=loadContext(),p=playerEnt(),events=[];c.playCombatVfx=s=>events.push(s);setLevels(c,'mire',levels);equip(c,'mire');const m=enemy(10000,20,0);c.castSkill2(p,[m],'mire','mv-float');run(c,p,[m],.6);assert.ok(events.some(e=>e.vfx&&e.vfx.ground===id));
+ }
+});
+
+test('EARTHGUARD 常駐法陣只在裝備且存活時續命，使用八米跟隨圓心',()=>{
+ const c=loadContext(),p=playerEnt(),events=[];
+ setLevels(c,'earthguard',[1,0,0,0,0,0,0]);equip(c,'earthguard');
+ c.playCombatVfx=s=>events.push(s);run(c,p,[],.6);
+ const a=events.filter(s=>s.variant==='earthguard');assert.ok(a.length>=2);
+ assert.ok(a.every(s=>s.vfx.ground==='aura-earthguard-hexagram' && s.area.r===80 && s.area.follow && s.area.id==='sg-earthguard-aura'));
+ events.length=0;c.G.player.loadout=[];run(c,p,[],.5);assert.equal(events.filter(s=>s.variant==='earthguard').length,0);
+ equip(c,'earthguard');p.hp=0;run(c,p,[],.5);assert.equal(events.filter(s=>s.variant==='earthguard').length,0);
+});
+
+test('EARTHGUARD 七階依最高變色階切換並維持復活光柱角色',()=>{
+ const c=loadContext(),p=playerEnt(),events=[];equip(c,'earthguard');c.playCombatVfx=s=>events.push(s);
+ const expected=['hexagram','hexagram','life','mana','mana','mana','symbiosis'];
+ for(let tier=1;tier<=7;tier++){
+  setLevels(c,'earthguard',Array.from({length:7},(_,i)=>i<tier?1:0));events.length=0;run(c,p,[],.3);
+  const s=events.find(s=>s.variant==='earthguard');assert.ok(s);assert.equal(s.vfx.ground,'aura-earthguard-'+expected[tier-1]);assert.equal(s.area.r,tier===7?100:80);
+ }
+ assert.equal(c.SKILLS2.earthguard.tiers[6].vfx.attack,'pillar-light');
+});

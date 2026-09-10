@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "aura-earthguard-mana",
+  "duration": 8,
+  "loop": true,
+  "layers": [
+    {
+      "id": "mana-hexagram-ground",
+      "type": "sprite",
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
+      "scale": {
+        "x": 0.5714285714285714,
+        "y": 0.5714285714285714
+      },
+      "alpha": 0.8,
+      "tint": "#62b6ff",
+      "blendMode": "add",
+      "duration": 8,
+      "sheet": {
+        "columns": 8,
+        "count": 96,
+        "fps": 12,
+        "loop": true,
+        "mode": "fps",
+        "rows": 12
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 80
+    },
+    "radiusM": 8,
+    "shape": "circle"
+  }
+}

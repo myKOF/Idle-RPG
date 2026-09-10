@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-mire-earth",
+  "groups": [
+    {
+      "id": "ground-mire-earth",
+      "name": "ground-mire-earth",
+      "layerIds": [
+        "flowing-earth-mud"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-mire-earth"
+  ]
+}

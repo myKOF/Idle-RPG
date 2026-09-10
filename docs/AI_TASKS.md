@@ -1,5 +1,31 @@
 # AI_TASKS.md
 
+## Codex｜毒沼與熔岩沼預覽（VFX-MIRE-EVOLUTIONS-20260910）
+
+- Done／接入：使用者核准並指定透明度 30%，兩個 preset 整體 alpha 乘 0.3（泥地 0.3，熔岩火焰 0.216、火星 0.24），生命曲線與前版相同。Skills2.xlsx AC124／AC128、CSV／JS／catalog 分別接第三階 venom 與第七階 magma，保留原減益與成長數值；Runtime 延用權威長寬、續命及進退場，主頁與 Worker 快取更新。202 項 Runtime／Core／layout 加 1 項三階技能接線測試通過；build 332 檔通過、Excel 僅上述兩格改變、config_tables dry-run 語意差異 0。地系全組另有先前已證實的 2 項舊 10 米斷言失敗（配置為 12 米），未改測試接受現況。使用者基礎泥沼 alpha 0.3 修改一起保留提交；預覽及暫存脚本清除。接手者為使用者遊戲驗收，未合併或推送。
+
+- Review／僅預覽：使用者要求第 3 階毒沼與第 7 階熔岩沼一起做。依最新文件 I183／J183 綠紫色及 I187 黃紅色＋火焰粒子，沿用核准泥沼的岸線、泥流時序與泡沫，製作 venom／magma 圖集、獨立 preset／layout／author 與 GIF。禁止先接入兩階，先給動態圖及檔名確認；不改數值、CSV／Excel 或 Runtime。
+- 驗證：136 項 Core／layout 測試及 332 檔 build 通過，兩張圖集共 48 格的 alpha 輪廓逐像素與原版完全相同；並排 GIF 120 格，已目視檢查綠紫泥流、黃紅岩漿與火焰。預覽同尺寸方便比較，正式接入時熔岩沼擴增沿用技能權威面積，不能把預覽同尺寸當作修改數值。原始 PNG 格已刪除，GIF 與渲染腳本待核准接入時清除；此預覽未提交，接手者為使用者外觀審閱。
+
+## Codex｜泥沼術預覽（VFX-MIRE-20260910）
+
+- Done／接入：使用者核准第一階，Skills2.xlsx AC122／CSV／JS／catalog 改用 ground-mire-earth，仍讀權威面積縮放並沿用同一場域身份續命；加入預覽的進退場，主頁及 Worker 快取同步更新。201 項 Runtime／Core／layout 全通過，build 332 檔通過；Excel 僅 AC122 變更，config_tables dry-run 語意差異 0。提交同時保留使用者火龍捲本體 alpha 0.9→0.6 與素材匯出清理（舊整圈岩甲圖集已由前後圈取代）；清除臨時預覽與渲染腳本。實戰視覺仍由使用者驗收，未推送。
+
+- Review／僅預覽：已讀最新技能文檔 I181 與 J181 參考圖，第一階為大致方形、不規則邊緣、土褐色流動泥漿。製作 ground-mire-earth author／preset／layout、48 格泥流圖集與 asset-index，固定岸線、內部緩慢流動並有少量泥泡。文檔為 10×10 米，現有程式基礎值為 120px；預覽先保留作者名目尺寸，正式接入再沿權威面積縮放，不修改技能數值。禁止本輪接線或覆蓋 ground-mire；動態預覽核准後才接入。
+- 驗證：136 項 Core／layout 測試與 332 檔 build 通過，diff --check 通過。圖集 2048×1536、48 格／12 FPS／4 秒循環、約 2.50 MiB；GIF 120 格，展示放大泥流與角色比例、進退場。已目視檢查不規則岸線、泥泡及表面構圖，實際 Pixi 戰場驗收在接入後進行。原始 PNG 預覽格已清除，僅暫留 GIF 與重建腳本至使用者核准；尚未提交。本輪期間出現使用者火龍捲預設及匯出素材索引更新，完整保留。
+
+## Codex｜天地逆返預覽（VFX-EARTH-REVERSAL-20260910）
+
+- Done／接入：使用者核准藍紋後接入第七階 ground，Skills2.xlsx AC118／CSV／JS／製作目錄同步，Runtime 藍紋仍分前後圈、沿用尺寸及進退場，主頁與 Worker 快取更新。未投資第七階維持暗金，投資後施放改藍紋，與護盾量無關。119 項地系／Runtime／傳奇測試中 117 通過，2 項泥沼舊尺寸斷言（100 對現有 120）已用 HEAD 版本確認同樣失敗；新增接線與分層測試通過。build 332 檔通過，Excel 僅 AC118 改變，config_tables dry-run 語意差異 0。預覽與暫存腳本已清除，接手者為使用者實戰驗收；不合併或推送。
+
+- Review／僅預覽：重新匯出線上最新文件，I175 明確寫「岩甲術的符文石碑上的紋理變為藍色」。使用者確認不隨護盾值變化，只在點選第七階後替換符文顏色。已撤銷先前依舊版文件製作的回流光圈提案；新版 aura-earth-reversal 完整沿用岩甲模型、尺寸、轉速及前後半圈，僅將甲片符文與其微光烘焙為藍色。不改遊戲接線、Runtime、護盾數值或表格；待使用者說「接入」才設定第七階替換。
+- 製作檔案：earth-reversal author／preset／layout、blue-runes back／front 圖集與 asset-index；rockarmor author 新增可選符文配色參數，默认輸出保持原暗金。逐欄比較確認 preset 僅 ID／圖集引用不同，136 項 Core／layout 測試通過；96 格動態 GIF 展示原版與藍紋對照，已目視檢查。預覽與渲染腳本暫留 scratch 供審閱，提交時清除；本輪尚未接入或提交。
+
+## Codex｜岩甲環繞遮擋修正（VFX-ROCKARMOR-DEPTH-20260910）
+
+- Done：使用者回報放大後前半圈甲片被人物遮住。根因為整圈共用單張圖集且全部位於 zone。保留使用者甲片縮放，離線依軌道深度烘焙 back／front 圖集，Runtime 共用生命週期、跟隨錨點與尺寸，分別置於 zone／fx；前後甲片共同腳底上方中心、地面與塵土置中。修改 author／preset／layout／圖集與索引、Runtime／主頁快取、回歸測試及本記錄；不改護盾數值。
+- 驗證：`node --test tests/vfx-runtime.test.cjs tests/vfx-core.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs` 共 222 項全通過；`npm run build` 332 檔通過、兩張 shipped 圖集 SHA-256 與 diff --check 通過。回歸測試涵蓋前後分層、共用逐格時鐘、兩倍縮放、移動／續命及完整回收。以真正 Runtime／Core 與遊戲角色素材離線繪製 64 格確認人物遮擋，臨時圖片不提交並清除。未改但檢查：battle-renderer 的角色／zone／fx 層級與 footOf、vfx-tower 錨點、Pixi sheet 後端。實際 Pixi 戰鬥及高塔外觀仍待使用者驗收；未推送，可交付使用者合併。
+
 ## Codex｜跨電腦編輯器素材備援（VFX-ASSET-FALLBACK-20260910）
 
 - In Progress：外部素材庫缺少已提交的岩甲貼圖時，Editor Server 由 shipped-assets 白名單查找專案素材，仍優先本機素材。範圍 server、HTTP 回歸測試與本文件；不修改使用者素材庫。驗證缺檔、優先序、未知素材與 libraryId 隔離；交由使用者更新另一台電腦後重啟編輯器。
@@ -6496,3 +6522,59 @@ Worker 存活且頁面正常完成載入。
 
 完成後交給：使用者／主整合工作區。
 
+
+## Codex｜大地守護原創六芒星特效預覽（2026-09-10）
+
+- 任務編號：VFX-EARTHGUARD-HEXAGRAM；負責 AI：Codex。
+- 狀態：Review，僅特效預覽，等待使用者確認接入。
+- 需求：依技能文檔製作白光、半徑 8 米、緩慢旋轉且跟隨角色的地面法陣。使用者授權現繪，不照抄圖庫實心六角星。
+- 設計：原創雙三角、雙外環、分岔符文及內圈菱形；每 8 秒轉 60 度，以六向對稱連續循環，地面投影保持固定。
+- 允許修改：earthguard-renew.cjs、aura-earthguard-hexagram preset/layout、hexagram-orbit.png、asset-index.json、本任務記錄與暫存預覽。
+- 禁止修改：技能數值、遊戲接線、其他現有特效及使用者修改。
+- 前置依賴：已讀取最新技能說明、完成圖庫盤點，使用者同意重新繪製。衝突預檢通過。
+- 驗證要求：Core／layout 測試、build、動態預覽檢查；接入與 Commit 等使用者確認。
+- 後續接手者：Codex 依使用者回饋調整，確認後接入遊戲。
+- 驗證結果：Core／layout 136 項測試全過；build 332 檔全過；以實際 Core 播放 preset 渲染 96 幀跟隨移動預覽，檢查地面投影及循環。尚未接入遊戲，未 Commit。
+- 2026-09-10 追加：使用者確認白光版本，開始接入 T1；另製作 T3 黃色、T4 藍色、T7 紅藍且放大 25% 的進化預覽。進化接線待預覽確認；T2、T5、T6 沿用前階顏色。允許追加修改 Skills2 Excel/CSV、skills2.js、vfx-catalog、shipped-assets、Worker/主頁快取與相關正式測試。
+- 追加驗證：大地守護模擬／顯示 2 項定向測試通過；VFX 203 項中 202 項通過，唯一失敗是開始本任務前使用者將泥沼透明度調成 0.5，但既有測試仍要求 0.3，保留使用者修改。build 332 檔通過；Skills2 重建語意差異 0；Excel 全表比較僅 AC132 新增白光法陣接線。黃／藍 96 幀、紅藍 192 幀實際 Core 預覽完成，紅藍循環使用 120 度色彩對稱避免交界跳色。進化尚未接入，等待確認後一併提交並清除預覽。
+- 2026-09-10 發光調整：使用者要求法陣有明顯對應色光；追加地面柔光、外環溢光及六個頂點光暈，以同一旋轉週期做輕微明暗起伏，保持紋樣和六向／三向色彩對稱。四版重新預覽，尚未確認進化接入。
+- 發光版驗證：Core／layout 136 項通過，build 332 檔通過；四版使用實際 Core 與更新後圖集渲染動態預覽。未建立 Commit。
+- 2026-09-10 最終接入：使用者批准全部接入。T1/T2 白光、T3 黃光、T4/T5/T6 藍光、T7 紅藍光；T7 半徑 10 米，其餘 8 米。常駐法陣穩定跟隨腳底並按階段替換，保留反射與復活光柱；Excel/CSV/JS/catalog、素材清單及快取同步。
+- 最終驗證：大地守護定向 4/4；VFX 204 項中 203 通過，唯一既有差異為使用者泥沼 alpha=0.5 與測試 0.3 不符；build 332/332；Skills2 語意差異 0；Excel 僅 AC132、AC134、AC135、AC138 變更。未另作瀏覽器實機驗證。
+- 提交包含使用者三種泥沼透明度調整。正式功能完成；預覽清理受工具政策阻擋（blocked by policy），scratch/earthguard-preview 保留未追蹤，不納入提交。未推送。
+
+## Codex｜連鎖閃電藍白折線預覽（2026-09-10）
+
+- 任務編號：VFX-CHAIN-BLUEWHITE；Owner：Codex；狀態：In Progress。
+- 使用者要求應用圖庫閃電折線。最新技能文檔 I205：不規則藍白色閃電折線，在敵人間彈射；H205：每次間隔 0.2 秒。
+- 素材已目視盤點：主電弧 spark_05_rotated.png，輔助電絲 spark_06_rotated.png。採新 preset，保留正式遊戲接線直到使用者確認。
+- 允許修改：author/chainlightning-renew.cjs、bolt-chain-bluewhite preset/layout、本任務記錄及 scratch/chainlightning-preview；禁止修改技能數值與遊戲接線。
+- 驗證：實際 VFXRuntime/Core 渲染四目標彈射 GIF、Core/layout 測試、build。衝突預檢乾淨。
+- 前置依賴：圖庫素材與最新技能文檔已核對；後續由 Codex 依使用者確認接入。
+- 預覽完成（Review）：使用 VFXRuntime 的 attack/chain 連線路徑播放新 preset；四段在第 12/18/24/30 幀起播（30fps，間隔 0.2 秒），白熱折線＋藍色電光，無缺失素材或丟棄效果；播放後全部回收。Core/layout 136/136，build 332/332 通過。
+- 接入注意：現有 chainlightning 掛 projectile，會走飛行物流程；本次新版本預覽改用 attack/chain 才能直接連接兩目標，使用者確認後須同步表格/catalog 與事件時序。此輪未改遊戲接線、未 Commit。
+- 使用者批准接入（2026-09-10）：允許並完成 Skills2 Excel/CSV/JS/catalog 接線、快取同步與正式測試。T1 改用 attack/chain 藍白連線，進化沿用；既有超神技能独立 projectile 配置保留。
+- 起手直接連接目標，後續每段固定 200ms，既有傷害飄字延遲同步；不更動既有立即結算傷害架構。修正次數耗盡後仍多發一段電弧的問題。無新素材匯出需求，所用圖庫素材已在 shipped-assets。
+- 驗證：連鎖閃電七階與新接線定向 12/12，傳奇回歸 22/22；VFX 205 項中 204 通過，唯一失敗為既有泥沼 alpha 設定差異。較廣雷系測試另有既有冷卻／雷球尺寸設定差異，未修改其斷言；build 332/332，Skills2 重建語意差異 0。未另作瀏覽器實機驗證。
+- 正式接入完成；清理預覽仍受既有工具刪除政策阻擋，chainlightning-preview 與 earthguard-preview 不納入 Commit，保留為未追蹤檔。後續由主整合工作區合併，未推送。
+- 使用者回饋：連線缺乏彈射感，改製作 bolt-chain-travel-bluewhite 預覽。保留圖庫折線形狀，電弧前端約 0.18 秒由起點推進到終點，尾部隨後淡出；不一次顯示整段。允許新增 author、圖集、asset-index、preset/layout 與預覽；尚未替換正式接線。
+- 快速彈射預覽已輸出：使用實際 Core/Runtime 圖集播放，四段逐次推進，結束後零存活特效；Core/layout 136 項通過。待使用者確認新移動表現；接入時需將命中飄字對齊每段約 0.18 秒抵達時刻。
+- 快速彈射版已獲使用者批准並接入（2026-09-10）：Excel/CSV/JS/catalog 改用 bolt-chain-travel-bluewhite；新增圖集加入 shipped-assets，主執行緒及 Worker 快取同步。每跳發射間隔 200ms，飄字在各段起飛後 183ms 顯示，對齊電弧前端抵達；既有立即傷害結算架構保持不變。
+- 驗證：連鎖閃電七階／接線 12 項通過，新增圖集測試確認電弧亮度重心向終點推進並回收；VFX 206 項中 205 通過，唯一既有失敗為泥沼透明度設定差異；Skills2 重建語意變更 0；build 332 檔通過。未另作瀏覽器實機驗證。
+- 功能完成待主整合工作區合併，未推送。預覽資料夾仍受先前工具刪除政策阻擋，未納入提交；保留正式圖集、製作工具和測試。
+
+## Codex｜連鎖閃電追蹤移動目標（2026-09-10）
+- 使用者要求：修正快速移動敵人離開閃電鎖定終點，必須追蹤至命中。
+- 允許修改：vfx-runtime、index 快取、runtime 正式回歸測試、本任務記錄；不改技能傷害與排程。
+- 實作：快速彈射電弧保存起終點實體 ID，每幀重新取渲染插值座標並更新位置、角度與長度；延遲段仍於真正起飛時取新座標；clear/destroy 清除追蹤引用。衝突預檢通過。
+- 追加修正：目前使用者將電弧縮放設為 2 倍，追蹤長度改以圖集實際單格寬與 layer.scale.x 換算；保留粗細，避免超出目標。高塔 profile 只作用於粗細，不能再次放大端點距離。
+- 完成驗證：CHAIN 定向 3/3，涵蓋快速移動、反向、延遲起飛與清場；VFX 207 項中 205 通過，另 2 項為使用者岩甲 alpha=0.75、泥沼 alpha=0.5 與既有斷言不同。build 332/332；未另作瀏覽器實機驗證。
+- 使用者修改的岩甲透明度、電弧粗細及素材清單排序一併保留並提交。預覽資料夾仍因先前刪除政策拒絕而未清除，不納入 Commit。功能完成，可供主整合工作區合併，未推送。
+
+## Codex｜連鎖閃電消失端點與無目標終止（2026-09-10）
+- 使用者回報空位彈射，並明確要求沒有可彈射目標時自動終止。
+- 根因：posOf 對離場實體使用 lastPos，過期後退回玩家前方，造成空位電弧。新增僅供電鏈使用的 chainPoint，端點已移除/隱藏時拒絕起飛；飛行中消失則回收，禁止退回 legacy。
+- 依最新規則，找不到下一個敵人即停止，不再經 T6 自身中繼重啟；T6 增傷保留。同步 Skills2 Excel/CSV/JS 說明及主執行緒/Worker 快取。
+- 修改範圍：battle-renderer、vfx-runtime、skills2、bridge、sim.worker、index、Skills2 表、相關正式測試；衝突預檢乾淨。
+- 驗證：連鎖閃電與 CHAIN 定向 15/15，覆蓋消失起點、消失終點、延遲播放、飛行中回收、移動追蹤及無下一敵人停止；config_tables 語意變更 0；build 332/332。未另作實機驗證。正式功能完成，可供合併，未推送。
+- 預覽仍受先前工具刪除拒絕而保留為未追蹤，不納入提交。

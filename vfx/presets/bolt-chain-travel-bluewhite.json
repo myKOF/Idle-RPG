@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "bolt-chain-travel-bluewhite",
+  "duration": 0.3,
+  "loop": false,
+  "layers": [
+    {
+      "id": "travelling-electric-front",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "scale": {
+        "x": 2,
+        "y": 2
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "blendMode": "add",
+      "duration": 0.3,
+      "sheet": {
+        "columns": 6,
+        "count": 18,
+        "fps": 60,
+        "loop": false,
+        "mode": "fps",
+        "rows": 3
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 40,
+      "width": 200
+    },
+    "heightM": 4,
+    "shape": "custom",
+    "widthM": 20
+  }
+}
