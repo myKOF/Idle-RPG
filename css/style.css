@@ -4829,6 +4829,7 @@ textarea:disabled,
   display: flex;
   align-items: center;
   justify-content: center;
+  contain: layout style;
 }
 
 .modal-box {

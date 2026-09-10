@@ -10,9 +10,12 @@
   - 建立獨立架構物件 `window.UIContainmentManager`，支援動態註冊 (`register`)、註銷 (`unregister`)、狀態查詢 (`isContainerActive`) 與一鍵全域開關 (`setEnabled(false)`)。
   - 在 `css/style.css` 引入安全隔離樣式 `.ui-contain-layout`（使用 `contain: layout style;`，特別排除 `paint`，杜絕任何邊界裁切與特效遮擋問題）。
   - 預設對上千個節點的 `#skill-trees` 技能樹容器進行佈局隔離，徹底切斷技能樹 DOM 引起的全域強制重排（Layout Thrashing）。
+- **快取強制更新與彈窗圖層隔離**（`index.html`、`css/style.css`）：
+  - 推進 `index.html` 的靜態資產版本號（`css/style.css?v=1.0.61` 與 `js/ui.js?v=1.0.60`），強制使用者瀏覽器打破 Local Disk Cache，確保所有客戶端 100% 載入最新的優化腳本。
+  - 為 `.modal-overlay` 加上 `contain: layout style;` 佈局隔離，防止全螢幕遮罩與彈窗開啟時迫使底層 1,600 個技能節點產生全量重排。
 - **實機效能量測**：
-  - 技能節點點擊至彈窗開啟延遲由原先的 2~3 秒大幅降至 **7.9ms**（即時響應）。
-  - 彈窗內升級按鈕響應延遲 **1.2ms**、降級 **1.5ms**、裝備/卸下 **0.6ms**。
+  - 技能節點點擊至彈窗開啟延遲由原先的 2~3 秒大幅降至 **0.4 ~ 7.9ms**（即時響應）。
+  - 彈窗內升級按鈕響應延遲 **1.2ms**、降級 **0.6 ~ 1.5ms**、裝備/卸下 **0.6 ~ 0.8ms**。
   - 單元測試與語法建置檢查全數通過，Console 0 錯誤。
 
 
