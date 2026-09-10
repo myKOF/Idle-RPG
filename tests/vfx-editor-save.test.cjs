@@ -1150,6 +1150,13 @@ test('C7 存檔失敗的原因同時顯示在工具列下方，不是只寫進�
   assert.ok(/flex:\s*0 0 auto/.test(rule),
     '橫幅只能吃自己的高度，不得參與 #layout 的伸縮');
 
+  /* 自己指定了 display 就必須自己把 hidden 補回來。
+     瀏覽器內建的 [hidden]{display:none} 是 UA 樣式，作者樣式一律蓋過它，
+     少了這條的話 hidden 完全失效——症狀是一條空的紅橫幅永遠掛在工具列下面，
+     2026-09-10 實測踩到。 */
+  assert.ok(/\.save-error\[hidden\]\s*\{[^}]*display:\s*none/.test(css),
+    '.save-error 指定了 display，就必須補 .save-error[hidden]{display:none}');
+
   /* showSaveError 是所有存檔失敗的唯一出口，兩個地方都要寫到。 */
   const fn = src.slice(src.indexOf('function showSaveError'),
     src.indexOf('function clearSaveError'));
