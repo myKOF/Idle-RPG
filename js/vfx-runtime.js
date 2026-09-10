@@ -1192,8 +1192,8 @@ var VFXRuntime = (function () {
         var resolver = VFXCore.createIndexResolver(index, index.baseUrl || 'images/vfx/assets');
         var adapter = create({
           resolver: resolver,
-          fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer }),
-          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer }),
+          fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true }),
+          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true }),
           ctx: opts.ctx
         });
         var ids = collectPresetIds();

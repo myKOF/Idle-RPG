@@ -12,6 +12,14 @@ const VFXCore = require('../js/vfx-core.js');
 
 const root = path.resolve(__dirname, '..');
 
+test('world-space tail particles retain birth position and orientation as emitter turns',()=>{
+ const nodes=[];const r=VFXCore.createRuntime({resolver:{resolve:id=>id},backend:{createNode(){const n={};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(){}}});
+ r.registerPreset({schemaVersion:1,id:'world-trail',duration:1,layers:[{id:'tail',type:'particle',assetId:'pack/star.png',worldSpace:true,emission:{mode:'burst',count:1},lifetime:[1,1],speed:[0,0]}]});
+ const h=r.play('world-trail',{position:{x:10,y:20}});r.update(.01);
+ const before={...nodes[0].t};r.setTransform(h,{position:{x:200,y:300},rotation:Math.PI});r.update(.01);
+ assert.equal(nodes[0].t.x,before.x);assert.equal(nodes[0].t.y,before.y);assert.equal(nodes[0].t.rotation,before.rotation);r.destroy();
+});
+
 const FAKE_INDEX = {
   libraryId: 'test-lib',
   assets: [
