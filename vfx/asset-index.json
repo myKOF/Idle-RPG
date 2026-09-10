@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2419,
+  "assetCount": 2421,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109581,6 +109581,36 @@
         "dimensions": {
           "width": 2048,
           "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
+      "format": "png",
+      "fileSize": 9028764,
+      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 3840
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "format": "png",
+      "fileSize": 20395025,
+      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 7680
         },
         "hasAlpha": true
       }

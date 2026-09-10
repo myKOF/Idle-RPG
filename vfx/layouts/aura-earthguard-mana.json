@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-earthguard-mana",
+  "groups": [
+    {
+      "id": "aura-earthguard-mana",
+      "name": "aura-earthguard-mana",
+      "layerIds": [
+        "mana-hexagram-ground"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-earthguard-mana"
+  ]
+}

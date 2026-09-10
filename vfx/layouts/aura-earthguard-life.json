@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-earthguard-life",
+  "groups": [
+    {
+      "id": "aura-earthguard-life",
+      "name": "aura-earthguard-life",
+      "layerIds": [
+        "life-hexagram-ground"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-earthguard-life"
+  ]
+}

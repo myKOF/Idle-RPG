@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 117,
+  "assetCount": 119,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -824,6 +824,20 @@
       "package": "spritemancer-vfx",
       "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
       "fileSize": 2834222
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
+      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
+      "fileSize": 9028764
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
+      "fileSize": 20395025
     }
   ]
 }

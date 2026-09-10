@@ -1230,7 +1230,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-mire-evolutions';
+  var DATA_VERSION = '20260910-earthguard-glow';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

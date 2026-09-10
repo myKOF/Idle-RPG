@@ -362,9 +362,9 @@ g('mire', [
   { ground: 'ground-mire-magma' }                      // T7 熔岩沼
 ], { abyssInferno: { ground: 'ground-tornado-fire', hit: 'hit-fire' } });
 g('earthguard', [
-  _, _, _, _, _,
+  { ground: 'aura-earthguard-hexagram' }, _, { ground: 'aura-earthguard-life' }, { ground: 'aura-earthguard-mana' }, _,
   { attack: 'beam-light', hit: 'hit-light' },         // T6 生命反射之盾（earth-reflect）
-  { attack: 'pillar-light', hit: 'hit-light' }        // T7 天地共生（rain/pillar，主要角色是 attack）
+  { attack: 'pillar-light', hit: 'hit-light', ground: 'aura-earthguard-symbiosis' }        // T7 天地共生（rain/pillar，主要角色是 attack）
 ], { worldRebirth: { attack: 'pillar-earth', hit: 'hit-earth' } });
 g('chainlightning', [
   { projectile: 'bolt-chain-lightning', hit: 'hit-lightning', cast: 'cast-magic' }, // T1 連鎖閃電

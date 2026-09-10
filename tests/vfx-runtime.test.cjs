@@ -1205,3 +1205,24 @@ test('MIRE 進化維持三成強度、權威矩形與續命，熔岩粒子同比
   adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);adapter.update(5);assert.equal(adapter.stats().grounds,0);
  }
 });
+
+test('EARTHGUARD 法陣固定腳底、八米半徑且續命不重播',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/aura-earthguard-hexagram.json'),'utf8'));
+ let foot={x:24,y:35};const {adapter,log}=makeAdapter([p],{ctx:{playerPos:()=>foot,posOf:()=>foot,footOf:()=>foot}});
+ const spec={fxKind:'aura',targets:['pv-float'],vfx:{ground:p.id},dur:.25,area:{id:'sg-earthguard-aura',r:80,follow:true}};
+ assert.equal(adapter.tryPlay(spec),true);adapter.update(.1);
+ let n=log.nodes.find(n=>n.tag==='zone');assert.ok(n);assert.equal(log.nodes.filter(n=>n.tag==='fx').length,0);
+ let t=n.transforms.at(-1);assert.equal(t.x,24);assert.equal(t.y,35);assert.ok(Math.abs(t.scaleX-80/140)<1e-6);
+ foot={x:55,y:72};adapter.tryPlay(spec);adapter.update(.1);t=n.transforms.at(-1);assert.equal(t.x,55);assert.equal(t.y,72);assert.equal(adapter.stats().grounds,1);assert.ok(t.frame>0);
+ adapter.update(2);assert.equal(adapter.stats().grounds,0);
+});
+
+test('EARTHGUARD 變色替換同一場域，第七階只放大四分之一',()=>{
+ const presets=['hexagram','life','mana','symbiosis'].map(v=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/aura-earthguard-'+v+'.json'),'utf8')));
+ const {adapter,log}=makeAdapter(presets);
+ for(const p of presets){
+  const radius=p.id.endsWith('symbiosis')?100:80;
+  assert.equal(adapter.tryPlay({fxKind:'aura',targets:['pv-float'],vfx:{ground:p.id},dur:.25,area:{id:'sg-earthguard-aura',r:radius,follow:true}}),true);adapter.update(.1);
+  assert.equal(adapter.stats().grounds,1);const t=log.nodes.at(-1).transforms.at(-1);assert.ok(Math.abs(t.scaleX-radius/140)<1e-6);
+ }
+});
