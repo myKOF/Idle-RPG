@@ -11,7 +11,7 @@ function bake(){
   c.translate(96,96);c.scale(1.65,1.65);
   const plates=Array.from({length:6},(_,i)=>{const a=t+i*Math.PI/3;return{i,a,z:Math.sin(a)};}).sort((a,b)=>a.z-b.z);
   for(const {i,a,z} of plates){
-   c.save();c.translate(Math.cos(a)*35,z*12+Math.sin(t*2+i)*2);c.scale(.64+.36*Math.abs(Math.cos(a)),.88+.12*z);c.rotate(Math.cos(a)*.16);
+   c.save();c.translate(Math.cos(a)*42,z*14.4+Math.sin(t*2+i)*2);c.scale(.64+.36*Math.abs(Math.cos(a)),.88+.12*z);c.rotate(Math.cos(a)*.16);
    const pts=[[-10,-12],[-5,-19],[7,-17],[13,-8],[11,10],[4,18],[-8,12],[-13,0]];
    const g=c.createLinearGradient(-12,-18,12,18);g.addColorStop(0,z<0?'#8b8270':'#c1ac86');g.addColorStop(.48,'#726855');g.addColorStop(1,'#363936');
    polygon(c,pts,g,'#282b29');
@@ -26,7 +26,7 @@ function bake(){
    c.restore();
   }
   // Small chips share the same orbit, with a slower vertical bob.
-  for(let i=0;i<7;i++){const a=-t+i*6.28/7;c.save();c.translate(Math.cos(a)*44,Math.sin(a)*17+12);c.rotate(a);polygon(c,[[-2,-3],[2,-2],[3,1],[-1,3]],i%2?'#a99b7e':'#6e6552');c.restore();}
+  for(let i=0;i<7;i++){const a=-t+i*6.28/7;c.save();c.translate(Math.cos(a)*52.8,Math.sin(a)*20.4+12);c.rotate(a);polygon(c,[[-2,-3],[2,-2],[3,1],[-1,3]],i%2?'#a99b7e':'#6e6552');c.restore();}
   out.drawImage(canvas,(f%8)*cell,Math.floor(f/8)*cell);
  }
  const id='codex-authored/rockarmor/stone-guard.png',buf=atlas.toBuffer('image/png');
