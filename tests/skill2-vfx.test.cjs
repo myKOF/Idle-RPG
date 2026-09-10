@@ -7,6 +7,20 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
+test('雙刀逐刀目標與傷害飄字共用 0.2 秒，不對每個目標重播全部刀數',()=>{
+ const c=loadSkills2(),events=[],hits=[];
+ c.GT=0;c.sgLegend=()=>({});c.sgUlt=()=>null;c.sgKaguraSpec=()=>null;
+ c.sgEmitVfx=(g,t,f,e)=>events.push({target:t[0],...e});
+ c.sgHitOne=(p,s,t,d,g,f,o,delay)=>{hits.push({target:t,delay});return {miss:true};};
+ for(const pool of [[{hp:10}],[{hp:10},{hp:10}]]){
+  events.length=0;hits.length=0;c.bfRandomOthers=()=>pool;
+  c.sgCastDualdance({}, {atk:10},c.SKILLS2.dualdance,[1,0,0,0,0,0,0],pool,pool[0],'',{},false);
+  assert.equal(events.length,2);assert.deepEqual(events.map(e=>e.delayMs),[0,200]);
+  assert.deepEqual(events.map(e=>e.angle),[0,1.5]);
+  events.forEach((e,i)=>{assert.equal(e.count,1);assert.equal(e.target,pool[i%pool.length]);assert.equal(e.delayMs,hits[i].delay);});
+ }
+});
+
 /* 只載入幾何與新版技能定義：施法距離是純函式，不需要完整戰鬥環境。 */
 function loadSkills2() {
   const context = { Math, console, isFinite, JSON };
@@ -993,11 +1007,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.77/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.113/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.32/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.105/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260909-basic-irregular-water-tornado'/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.33/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.106/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260910-dualdance'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260910-water-tornado/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260910-dualdance/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 

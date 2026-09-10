@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 107,
+  "assetCount": 108,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -670,6 +670,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:6443e90834abcae4c3848d7ebca99ff0d9fcad19a07f49f77ad64710a3e39b36",
       "fileSize": 86500
+    },
+    {
+      "assetId": "particle-pack/png-transparent/slash_02.png",
+      "relativePath": "particle-pack/PNG (Transparent)/slash_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:a79a9e297790e6126b78d41015a3045cda3f1863b421c88321d2442ed6f9032e",
+      "fileSize": 38224
     },
     {
       "assetId": "particle-pack/png-transparent/smoke_01.png",
