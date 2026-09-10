@@ -7,6 +7,29 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
+test('火殞石速度降三成後顯示與落地結算共用時間',()=>{
+ const c=loadSkills2(),old=c.sgMeteorFallTiming(),p=c.sgFireMeteorFallTiming();
+ assert.equal(p.travelMs,Math.round(old.travelMs/.7));assert.equal(p.fallMs,p.travelMs);
+});
+
+test('火球本體與分裂共用加速計畫，飛行時間同步縮短',()=>{
+ const c=loadSkills2();c.bfPos=()=>({x:300,y:0});c.bfPlayerPos=()=>({x:0,y:0});
+ c.bfTravelDistance=()=>300;c.bfTravelSeconds=()=>1.3;c.bfAngleTo=()=>0;
+ const p=c.sgFireballProjectilePlan({});assert.equal(p.travelMs,1000);assert.equal(p.speed,300);
+ assert.equal(c.SG_FIREBALL_SPEED_MULT,1.3);
+});
+
+test('火球抵達時才產生一次範圍爆破，配置使用核准特效',()=>{
+ const c=loadSkills2(),events=[];
+ c.sgEmitVfx=(g,t,f,e)=>events.push(e);c.sgAreaAround=(_,r)=>({x:10,y:20,r});
+ c.sgQueueFireballSplitProjectiles=()=>{};
+ c.sgFireballProjectileHit({out:{dmg:0},victims:[{hp:0}],blastRadius:60}, {hp:1}, {});
+ assert.equal(events.length,1);assert.equal(events[0].area.r,60);assert.equal(events[0].variant,'fire-explosion');
+ assert.equal(c.SKILLS2.fireball.tiers[0].vfx.projectile,'proj-fireball-ember');
+ assert.equal(c.SKILLS2.fireball.tiers[0].vfx.attack,'hit-fireball-rupture');
+ assert.equal(c.SKILLS2.fireball.tiers[6].vfx.projectile,'proj-meteor-inferno');
+});
+
 test('雙刀逐刀目標與傷害飄字共用 0.2 秒，不對每個目標重播全部刀數',()=>{
  const c=loadSkills2(),events=[],hits=[];
  c.GT=0;c.sgLegend=()=>({});c.sgUlt=()=>null;c.sgKaguraSpec=()=>null;
@@ -189,7 +212,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /hitFn: sgFireballProjectileHit/);
   assert.match(skills2, /firepillar: \{ name: '火龍捲'/);
   assert.match(skills2, /vfxId: 'sg-ground-' \+ \(\+\+SKILL2_RT\.groundSeq\)/);
-  assert.match(skills2, /sgEmitVfx\('fireball', victims, floatSel, \{[\s\S]*variant: 'fire-explosion'/);
+  assert.match(skills2, /function sgFireballProjectileHit[\s\S]*sgEmitVfx\('fireball', \[target\], projectile.floatSel, \{[\s\S]*variant: 'fire-explosion'/);
   assert.match(skills2, /var fireballPlan = meteor \? null : sgFireballProjectilePlan\(primary\)/);
   assert.match(skills, /id === 'fireball'[\s\S]*skills2FireballIsMeteor/);
   assert.match(skills2, /function skills2FireballIsMeteor\(/);
@@ -1007,11 +1030,11 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(index, /js\/status\.js\?v=1\.0\.22/);
   assert.match(index, /js\/vfx\.js\?v=1\.0\.77/);
   assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.113/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.33/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.106/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260910-dualdance'/);
+  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.37/);
+  assert.match(index, /js\/skills2\.js\?v=1\.0\.110/);
+  assert.match(bridge, /WORKER_ASSET_VERSION = '20260910-meteor-slope'/);
   assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260910-dualdance/);
+  assert.match(worker, /\.\.\/skills2\.js\?v=20260910-meteor-slope/);
   assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
 });
 

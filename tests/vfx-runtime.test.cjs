@@ -26,10 +26,10 @@ test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () 
  const {adapter,log}=makeAdapter([p]);
  const spec={fxKind:'impact',variant:'pillar',dur:.5,area:{id:'fire-1',x:100,y:50,r:60},vfx:{field:p.id}};
  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
- const body=log.nodes.find(n=>n.spec.assetUrl.includes('inferno-spiral.svg'));
+ const body=log.nodes.find(n=>n.spec.assetUrl?.includes('fire-flow.png'));
  assert.equal(body.tag,'fx');
- const authored=p.layers.find(l=>l.id==='spiral-column');
- const t=body.transforms.at(-1);assert.equal(t.x,100+(authored.position.x||0));assert.equal(t.y,50+authored.position.y);assert.equal(t.scaleX/authored.scale.x,t.scaleY/authored.scale.y);
+ const authored=p.layers.find(l=>l.id==='baked-fire-column');
+ const t=body.transforms.at(-1);assert.equal(t.x,100+(authored.position?.x||0));assert.equal(t.y,50+(authored.position?.y||0));assert.equal(t.scaleX/authored.scale.x,t.scaleY/authored.scale.y);
  adapter.tryPlay(spec);adapter.update(.3);assert.equal(adapter.stats().played,1);
  adapter.update(3);assert.equal(adapter.stats().grounds,0);
 });
@@ -40,14 +40,14 @@ test('FIREWALL 三柱沿火牆軸排列，直立等比、續命與回收', () =>
   const {adapter,log}=makeAdapter([p]);
   const spec={fxKind:'aura',variant:'firewall',dur:.5,area:{id:'wall',x:300,y:200,w:360,h:120,a:angle},vfx:{ground:p.id}};
   assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
-  const bodies=log.nodes.filter(n=>n.spec.assetUrl.includes('inferno-spiral.svg'));
+  const bodies=log.nodes.filter(n=>n.spec.assetUrl?.includes('fire-flow.png'));
   assert.equal(bodies.length,3);
   bodies.forEach((b,i)=>{
    const t=b.transforms.at(-1);
-   const authored=p.layers.find(l=>l.id==='column-'+i+'-spiral-column');
+   const authored=p.layers.find(l=>l.id==='column-'+i+'-baked-fire-column');
    assert.equal(b.tag,'fx');assert.equal(t.scaleX/authored.scale.x,t.scaleY/authored.scale.y);assert.equal(t.rotation,0);
-   assert.ok(Math.abs(t.x-(300+Math.cos(angle)*(i-1)*96+authored.position.x-(i-1)*96))<1e-6);
-   assert.ok(Math.abs(t.y-(200+Math.sin(angle)*(i-1)*96-112))<1e-6);
+   assert.ok(Math.abs(t.x-(300+Math.cos(angle)*(i-1)*96+(authored.position.x-(i-1)*p.sizing.authored.width*.8/3)*120/(p.sizing.authored.width/3)))<1e-6);
+   assert.ok(Math.abs(t.y-(200+Math.sin(angle)*(i-1)*96))<1e-6);
   });
   adapter.tryPlay(spec);adapter.update(.3);assert.equal(adapter.stats().played,3);
   adapter.update(3);assert.equal(adapter.stats().grounds,0);
@@ -59,17 +59,17 @@ test('TORNADO 0.3 秒升起與淡出，續命不重播進場', () => {
  const {adapter,log}=makeAdapter([p]);
  const spec={fxKind:'impact',variant:'pillar',dur:.5,area:{id:'rise',x:0,y:0,r:60},vfx:{field:p.id}};
  adapter.tryPlay(spec);adapter.update(.15);
- const body=log.nodes.find(n=>n.spec.assetUrl.includes('inferno-spiral.svg'));
- const authored=p.layers.find(l=>l.id==='spiral-column');
+ const body=log.nodes.find(n=>n.spec.assetUrl?.includes('fire-flow.png'));
+ const authored=p.layers.find(l=>l.id==='baked-fire-column');
  const alpha=authored.alpha===undefined?1:authored.alpha;
  assert.ok(Math.abs(body.transforms.at(-1).alpha/alpha-.5)<1e-6);
- assert.ok(Math.abs(body.transforms.at(-1).scaleX/authored.scale.x-.5)<1e-6);
- assert.ok(Math.abs(body.transforms.at(-1).scaleY/authored.scale.y-.5)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleX/authored.scale.x-.5*60/p.sizing.authored.radius)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleY/authored.scale.y-.5*60/p.sizing.authored.radius)<1e-6);
  adapter.update(.15);assert.equal(body.transforms.at(-1).alpha,alpha);
  adapter.tryPlay(spec);adapter.update(.15);assert.equal(body.transforms.at(-1).alpha,alpha);
  adapter.update(.95);assert.ok(Math.abs(body.transforms.at(-1).alpha/alpha-.5)<1e-6);
- assert.ok(Math.abs(body.transforms.at(-1).scaleX/authored.scale.x-.5)<1e-6);
- assert.ok(Math.abs(body.transforms.at(-1).scaleY/authored.scale.y-.5)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleX/authored.scale.x-.5*60/p.sizing.authored.radius)<1e-6);
+ assert.ok(Math.abs(body.transforms.at(-1).scaleY/authored.scale.y-.5*60/p.sizing.authored.radius)<1e-6);
  adapter.update(.151);assert.equal(adapter.stats().grounds,0);
 });
 
@@ -262,6 +262,15 @@ function makeAdapter(presets, over) {
   adapter.registerPresets(presets);
   return { adapter, log };
 }
+
+test('METEOR 新版落地爆破只由命中事件播放一次',()=>{
+ const {adapter}=makeAdapter([unitPreset('proj-meteor-inferno',2),unitPreset('burst-meteor-inferno')]);
+ const vfx={projectile:'proj-meteor-inferno',hit:'burst-meteor-inferno'};
+ adapter.tryPlay({fxKind:'rain',variant:'meteor',targets:['mv-float-2'],travelMs:[500],vfx});
+ adapter.update(.6);assert.equal(adapter.stats().played,1);
+ adapter.tryPlay({fxKind:'impact',targets:['mv-float-2','mv-float-3'],area:{x:100,y:100,r:150},vfx});
+ assert.equal(adapter.stats().played,2);
+});
 
 /* 取某一層 tag 的最後一筆 transform */
 function lastOf(log, tag) {

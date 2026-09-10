@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2408,
+  "assetCount": 2411,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109357,6 +109357,113 @@
         "red",
         "fragment"
       ]
+    },
+    {
+      "assetId": "codex-authored/meteor/meteor-cracked.png",
+      "relativePath": "codex-authored/meteor/meteor-cracked.png",
+      "package": "codex-authored",
+      "format": "png",
+      "fileSize": 1957399,
+      "contentHash": "sha256:43d68c994925ca8465d6de1af88cb67a3d3ffb13604814073c19ecf44973b35c",
+      "facts": {
+        "dimensions": {
+          "width": 1254,
+          "height": 1254
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.1043,
+          "max": 1,
+          "borderMean": 0.0006,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.417,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1254,
+          "height": 1254
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 0.9992,
+          "v": 0.9993
+        },
+        "backgroundVariant": "blackBackground"
+      }
+    },
+    {
+      "assetId": "codex-authored/meteor/meteor-stylized.png",
+      "relativePath": "codex-authored/meteor/meteor-stylized.png",
+      "package": "codex-authored",
+      "format": "png",
+      "fileSize": 1119237,
+      "contentHash": "sha256:e0a785ea31dcbf251e0b2d1c4cf0a2247a577313f98dc0966fb8da21fe485ed6",
+      "facts": {
+        "dimensions": {
+          "width": 1254,
+          "height": 1254
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.1089,
+          "max": 0.9242,
+          "borderMean": 0.0004,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3058,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1254,
+          "height": 1254
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 0.9993,
+          "v": 0.9995
+        },
+        "backgroundVariant": "blackBackground"
+      }
+    },
+    {
+      "assetId": "codex-authored/tornado/fire-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/tornado/fire-flow.png",
+      "format": "png",
+      "fileSize": 3421959,
+      "contentHash": "sha256:6dbae0a848ca3a10f647bc489b972b79874311870d74a05d9148449c390157f2",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 2048
+        },
+        "hasAlpha": true
+      }
     }
   ]
 }

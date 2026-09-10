@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-fireball-rupture",
+  "groups": [
+    {
+      "id": "hit-fireball-rupture",
+      "name": "hit-fireball-rupture",
+      "layerIds": [
+        "dark-smoke-puffs",
+        "orange-fire-lobes",
+        "brief-hot-core",
+        "flying-sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-fireball-rupture"
+  ]
+}

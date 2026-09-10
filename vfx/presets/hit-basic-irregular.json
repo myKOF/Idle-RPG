@@ -7,9 +7,10 @@
     {
       "id": "broken-gold-body",
       "type": "particle",
+      "enabled": true,
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
       "zIndex": 0,
-      "alpha": 0.95,
+      "alpha": 0.5,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 0.25,
@@ -80,9 +81,10 @@
     {
       "id": "ivory-fractures",
       "type": "particle",
+      "enabled": true,
       "assetId": "codex-authored/impact/crimson-fragment-1.svg",
       "zIndex": 1,
-      "alpha": 0.95,
+      "alpha": 0.75,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 0.25,
@@ -153,6 +155,7 @@
     {
       "id": "long-gold-splinters",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 2,
       "alpha": 0.65,
@@ -220,6 +223,7 @@
     {
       "id": "uneven-chips",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-transparent/star_04.png",
       "zIndex": 3,
       "alpha": 0.85,

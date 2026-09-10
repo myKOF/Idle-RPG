@@ -1,0 +1,1180 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-meteor-inferno",
+  "duration": 0.7,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ground-heat-wave",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.2441,
+        "y": 0.1211
+      },
+      "alpha": 0.7,
+      "tint": "#e97726",
+      "blendMode": "normal",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          1.4
+        ]
+      ]
+    },
+    {
+      "id": "dark-smoke-puffs",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 1,
+      "alpha": 0.48,
+      "tint": "#594543",
+      "blendMode": "normal",
+      "duration": 0.48,
+      "emission": {
+        "count": 7,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.48
+      ],
+      "spawn": {
+        "height": 18,
+        "shape": "box",
+        "width": 22
+      },
+      "speed": [
+        35,
+        85
+      ],
+      "direction": -90,
+      "spread": 240,
+      "startScale": [
+        0.0781,
+        0.1367
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "orange-fire-lobes",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 2,
+      "alpha": 0.65,
+      "tint": "#ff6c16",
+      "blendMode": "add",
+      "duration": 0.36,
+      "emission": {
+        "count": 8,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.2,
+        0.36
+      ],
+      "spawn": {
+        "height": 20,
+        "shape": "box",
+        "width": 24
+      },
+      "speed": [
+        55,
+        135
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0781,
+        0.1484
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -2,
+        2
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          0.85
+        ],
+        [
+          0.5,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "brief-hot-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1211,
+        "y": 0.1211
+      },
+      "alpha": 0.75,
+      "tint": "#ffd176",
+      "blendMode": "add",
+      "duration": 0.13,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "flying-sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 4,
+      "alpha": 0.85,
+      "tint": "#ffb840",
+      "blendMode": "add",
+      "duration": 0.4,
+      "emission": {
+        "count": 13,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.18,
+        0.4
+      ],
+      "spawn": {
+        "height": 14,
+        "shape": "box",
+        "width": 14
+      },
+      "speed": [
+        110,
+        250
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0195,
+        0.0488
+      ],
+      "alignToVelocity": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "ascending-impact-flames",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 5,
+      "alpha": 0.65,
+      "tint": "#ff8a25",
+      "blendMode": "add",
+      "duration": 0.5,
+      "emission": {
+        "count": 9,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.25,
+        0.5
+      ],
+      "spawn": {
+        "height": 15,
+        "shape": "box",
+        "width": 42
+      },
+      "speed": [
+        70,
+        145
+      ],
+      "direction": -90,
+      "spread": 75,
+      "startScale": [
+        0.0781,
+        0.1465
+      ],
+      "rotationStart": [
+        -0.6,
+        0.6
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-0",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 6,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        139.5,
+        155
+      ],
+      "direction": 0,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-1",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 7,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        125.4362387828972,
+        139.37359864766356
+      ],
+      "direction": 15.608398603079115,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-2",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 8,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        91.00686787270509,
+        101.11874208078343
+      ],
+      "direction": 39.966006475277965,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-3",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 9,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        67.5,
+        75
+      ],
+      "direction": 90,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-4",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 10,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        91.00686787270506,
+        101.11874208078339
+      ],
+      "direction": 140.03399352472204,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-5",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 11,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        125.4362387828972,
+        139.37359864766356
+      ],
+      "direction": 164.3916013969209,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-6",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 12,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        139.5,
+        155
+      ],
+      "direction": 180,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-7",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 13,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        125.4362387828972,
+        139.37359864766356
+      ],
+      "direction": -164.3916013969209,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-8",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 14,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        91.00686787270513,
+        101.11874208078348
+      ],
+      "direction": -140.03399352472206,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-9",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 15,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        67.5,
+        75
+      ],
+      "direction": -90.00000000000001,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-10",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 16,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        91.00686787270509,
+        101.11874208078343
+      ],
+      "direction": -39.966006475277965,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "expanding-fire-wave-11",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 17,
+      "alpha": 0.65,
+      "tint": "#ff931f",
+      "blendMode": "add",
+      "delay": 0.04,
+      "duration": 0.58,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.45,
+        0.58
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 4
+      },
+      "speed": [
+        125.43623878289718,
+        139.37359864766353
+      ],
+      "direction": -15.60839860307914,
+      "spread": 8,
+      "startScale": [
+        0.0488,
+        0.0742
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          0.9
+        ],
+        [
+          0.65,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 120,
+      "width": 120
+    },
+    "heightM": 30,
+    "shape": "custom",
+    "widthM": 30
+  }
+}

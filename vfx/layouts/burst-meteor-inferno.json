@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-meteor-inferno",
+  "groups": [
+    {
+      "id": "burst-meteor-inferno",
+      "name": "burst-meteor-inferno",
+      "layerIds": [
+        "ground-heat-wave",
+        "dark-smoke-puffs",
+        "orange-fire-lobes",
+        "brief-hot-core",
+        "flying-sparks",
+        "ascending-impact-flames",
+        "expanding-fire-wave-0",
+        "expanding-fire-wave-1",
+        "expanding-fire-wave-2",
+        "expanding-fire-wave-3",
+        "expanding-fire-wave-4",
+        "expanding-fire-wave-5",
+        "expanding-fire-wave-6",
+        "expanding-fire-wave-7",
+        "expanding-fire-wave-8",
+        "expanding-fire-wave-9",
+        "expanding-fire-wave-10",
+        "expanding-fire-wave-11"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-meteor-inferno"
+  ]
+}

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "presetId": "fire-tornado-inferno",
+  "presetId": "field-fire-tornado",
   "groups": [
     {
-      "id": "fire-tornado-inferno",
-      "name": "fire-tornado-inferno",
+      "id": "field-fire-tornado",
+      "name": "field-fire-tornado",
       "layerIds": [
         "halo",
         "dust",
@@ -16,6 +16,6 @@
     }
   ],
   "order": [
-    "group:fire-tornado-inferno"
+    "group:field-fire-tornado"
   ]
 }

@@ -8,6 +8,32 @@ const pixiBackend=require('../js/vfx-pixi-backend.js');
 const runtime=require('../js/vfx-runtime.js');
 const preset=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/field-water-tornado.json'),'utf8'));
 
+test('FIRE shipped effect uses one shared atlas and live particles, with no procedural CPU work',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/fire-tornado-inferno.json')));
+ assert.ok(p.layers.every(l=>l.type!=='procedural'));
+ const frames=p.layers.filter(l=>l.sheet);assert.equal(frames.length,1);
+ assert.equal(frames[0].sheet.count,80);assert.equal(frames[0].sheet.fps,20.8);
+ for(const id of ['crown-flame-jets','ground-flames','dust'])assert.equal(p.layers.find(l=>l.id===id).duration,p.duration);
+ assert.ok(fs.existsSync(path.join(__dirname,'../images/vfx/assets',frames[0].assetId)));
+});
+
+test('FIRE palette animates without mutating cached water geometry or pixels',()=>{
+ const gen=require('../js/vfx-water-tornado.js');
+ for(const part of ['body','front-sheets','bloom']) {
+  const water=gen.sample(part,.8);const before=structuredClone(water);
+  const fire=gen.sample(part,.8,1,'fire');
+  assert.notEqual(fire.key,water.key);
+  assert.deepEqual(water,before);
+  assert.notDeepEqual(fire,gen.sample(part,1.2,1,'fire'));
+ }
+ const p=structuredClone(preset);p.layers.filter(l=>l.water).forEach(l=>l.water.palette='fire');
+ assert.equal(core.validatePreset(p).ok,true);
+ const round=JSON.parse(core.serialisePreset(p));
+ assert.equal(round.layers.find(l=>l.water).water.palette,'fire');
+ round.layers.find(l=>l.water).water.palette='invalid';
+ assert.equal(core.validatePreset(round).ok,false);
+});
+
 test('WATER radius profile independently controls ends and center; default is an identity',()=>{
  const p=preset.layers.find(l=>l.id==='body').radiusProfile;
  for(let y=0;y<=1;y+=.01) assert.equal(core.radiusProfileScale(p,y),1);
@@ -112,6 +138,7 @@ test('WATER generated surfaces share equal phases, isolate different phases and 
  const b=pixiBackend.createBackend({PIXI:P,container:new P.Container(),canvasFactory});
  const spec={kind:'generated',generated:'spray',profileScales:Array(64).fill(1)};
  const a=b.createNode(spec),other=b.createNode(spec);
+ assert.equal(a.children.length,1,'uniform generated layer uses a single quad');
  b.updateNode(a,{generated:generator.sample('spray',0),anchorX:.5,anchorY:1});
  b.updateNode(other,{generated:generator.sample('spray',0)});
  assert.equal(a.__generatedEntry,other.__generatedEntry);
@@ -120,4 +147,14 @@ test('WATER generated surfaces share equal phases, isolate different phases and 
  for(let i=2;i<20;i++){b.updateNode(a,{generated:generator.sample('spray',i/20)});b.updateNode(other,{generated:generator.sample('spray',i/20)});}
  assert.ok(P.textures.length<200,'two reusable surfaces, no growing image sequence');
  const tex=a.children[0].texture;b.destroyNode(a);assert.ok(!tex.destroyed);b.destroyNode(other);b.destroy();assert.equal(tex.destroyed,true);
+});
+
+test('FIRE eight staggered casts share procedural samples without sharing lifetimes',()=>{
+ const p=structuredClone(preset);p.layers.filter(l=>l.water).forEach(l=>l.water.palette='fire');
+ const nodes=[];const r=core.createRuntime({resolver:{resolve:id=>id},backend:{createNode(s){const n={s};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(){}}});
+ r.registerPreset(p);
+ for(let i=0;i<8;i++){r.play(p.id);r.update(.037);}
+ const bodies=nodes.filter(n=>n.s.generated==='body');assert.equal(bodies.length,8);
+ assert.equal(new Set(bodies.map(n=>n.t.generated)).size,1);
+ r.destroy();
 });

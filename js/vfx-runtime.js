@@ -282,14 +282,15 @@ var VFXRuntime = (function () {
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
         // 火牆在編輯器是三柱合成；遊戲中各柱保持直立，只沿判定軸排列底部。
-        if (p.id === 'ground-firewall' && p.layers.some(function (l) { return l.id === 'column-0-spiral-column'; })) {
+        if (p.id === 'ground-firewall' && p.layers.some(function (l) { return l.id.indexOf('column-0-') === 0; })) {
           for (var column = 0; column < 3; column++) {
             var prefix = 'column-' + column + '-';
             var part = JSON.parse(JSON.stringify(p));
             part.id = p.id + '-column-' + column;
             part.layers = part.layers.filter(function (l) { return l.id.indexOf(prefix) === 0; });
-            part.layers.forEach(function (l) { l.position.x -= (column - 1) * 96; });
-            part.sizing = { shape: 'custom', widthM: 6, heightM: 12, authored: { width: 120, height: 240, radius: 60 } };
+            var columnWidth = p.sizing.authored.width / 3;
+            part.layers.forEach(function (l) { l.position.x -= (column - 1) * columnWidth * .8; });
+            part.sizing = { shape: 'custom', widthM: 6, heightM: 12, authored: { width: columnWidth, height: p.sizing.authored.height, radius: columnWidth / 2 } };
             registerPresets([part]);
           }
         }
@@ -519,6 +520,11 @@ var VFXRuntime = (function () {
            會變成「先看到一段空白才落下來」。 */
         var landing = spec.area ? areaCentre(spec.area) : ctx.posOf(toId);
         from = { x: landing.x, y: landing.y - 500 * profile.skyScale };
+        if (presetId === 'proj-meteor-inferno') {
+          var fallAngle = num(spec.angle, Math.PI / 3);
+          from = { x: landing.x - Math.cos(fallAngle) * 500 * profile.skyScale,
+            y: landing.y - Math.sin(fallAngle) * 500 * profile.skyScale };
+        }
       } else from = ctx.playerPos();
       var to = directed
         ? { x: from.x + Math.cos(spec.angle) * num(spec.lineLength, 0),
@@ -895,7 +901,9 @@ var VFXRuntime = (function () {
       var drops0 = budgetDrops;
       switch (role) {
         case 'hit':
-          ok = playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
+          ok = presetId === 'burst-meteor-inferno' && spec.area
+            ? playOnArea(rtFx, presetId, spec)
+            : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
           break;
         case 'projectile':
           ok = playProjectile(rtFx, presetId, spec);
@@ -966,7 +974,7 @@ var VFXRuntime = (function () {
       /* 受擊爆點：同一則事件的 hit 角色跟著主要角色走（飛行物則等它抵達）；
          主要角色本身就是 hit 時不重複播。
          spec.hit === false＝這一擊被閃避或被無敵擋下，舊畫法同樣不畫爆點。 */
-      if (role !== 'hit' && spec.hit !== false && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
+      if (role !== 'hit' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
         playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
           role === 'projectile' ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
@@ -1159,7 +1167,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-dualdance';
+  var DATA_VERSION = '20260910-meteor-slope';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
