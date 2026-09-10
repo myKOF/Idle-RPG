@@ -220,6 +220,7 @@
     if (isDirty() && !window.confirm('目前的修改尚未存檔，切換 Preset 會失去這些修改。要繼續嗎？')) {
       return;
     }
+    leavingOnPurpose = true;
     window.location.search = '?preset=' + encodeURIComponent(id);
   }
 
@@ -372,7 +373,6 @@
     clipboard: null,          // Editor 內部剪貼簿，不碰 OS clipboard
     dragKeys: null,           // 拖曳中的 key 陣列
     selectedLayerId: null,
-    selectedAssetId: null,
     playing: true,
     handle: null,
     runtime: null,
@@ -385,6 +385,10 @@
        zoom 刻意不記進 localStorage：留著 320% 隔天再打開，第一眼會以為
        素材被誰改大了；格線開關則是穩定的偏好，記得住比較省事。 */
     zoom: 1,
+    /* 鏡頭平移量（畫布像素）。與 zoom 一樣是檢視狀態，不進 preset、不進歷史，
+       也刻意不記進 localStorage——隔天打開發現特效不在畫面中央會以為它壞了。 */
+    panX: 0,
+    panY: 0,
     gridOn: true,
     /* 預覽循環＝播完自動重播，只影響編輯時的畫面。
        preset.loop 是出貨資料（決定遊戲裡這個特效會不會自己重複），
@@ -561,10 +565,12 @@
     });
   }
 
-  /* prefix 決定讀哪一組控制項：'f-' 是左側 Asset Browser，'pf-' 是 Asset Picker
-     對話框。兩邊欄位一模一樣，共用同一個 filterAssets()，不做第二套搜尋。 */
+  /* prefix 是控制項的 id 前綴。左欄原本還有一組 'f-' 的素材瀏覽器，2026-09-10
+     整區刪掉了——選材的實際流程一直是走素材選擇器（有預覽、有詳情、有篩選），
+     那份 300 列的清單只是把左欄佔滿。留下 prefix 參數是因為篩選邏輯本來就是
+     共用的，之後要再開第二個選擇器不必動這裡。 */
   function currentAssetFilters(prefix) {
-    var p = prefix || 'f-';
+    var p = prefix || 'pf-';
     return {
       text: $(p + 'text').value.trim().toLowerCase(),
       usage: $(p + 'usage').value,
@@ -612,41 +618,6 @@
     return out;
   }
 
-  function renderAssetBrowser() {
-    var rows = filterAssets('f-');
-    $('asset-count').textContent = '顯示 ' + rows.length + ' 筆' +
-      (rows.length >= 300 ? '（已截斷，請再加條件）' : '');
-    var host = $('asset-list');
-    host.innerHTML = '';
-    rows.forEach(function (rec) {
-      var div = document.createElement('div');
-      div.className = 'asset-row';
-      var img = document.createElement('img');
-      img.loading = 'lazy';
-      img.src = state.resolver.resolve(rec.assetId);
-      var meta = document.createElement('div');
-      meta.className = 'meta';
-      var name = document.createElement('span');
-      name.className = 'name';
-      name.textContent = rec.assetId.split('/').pop();
-      var sub = document.createElement('span');
-      sub.className = 'sub';
-      sub.textContent = rec.shape + ' · ' + (rec.usage || []).join(',') + ' · ' + rec.element;
-      meta.appendChild(name); meta.appendChild(sub);
-      div.appendChild(img); div.appendChild(meta);
-      div.title = rec.assetId;
-      div.onclick = function () {
-        state.selectedAssetId = rec.assetId;
-        var layer = selectedLayer();
-        if (layer) {
-          edit('更換素材', function () { layer.assetId = rec.assetId; onPresetChanged(); });
-        }
-        renderInspector();
-      };
-      host.appendChild(div);
-    });
-  }
-
   /* ---------------- Asset Picker ----------------
 
      選的是 Asset Library Index 裡的 assetId，不是檔案系統路徑。刻意不用作業
@@ -655,7 +626,10 @@
 
      搜尋與篩選直接重用 Asset Browser 的 filterAssets()，沒有第二套實作。 */
 
-  var picker = { layer: null, field: 'assetId', selected: null };
+  /* layer 為 null 而 createType 有值＝「挑一張素材，直接新增成一個圖層」。
+     兩種用法共用同一個對話框，因為挑素材這件事本身完全一樣——差別只在
+     選完之後把 assetId 寫到哪裡。 */
+  var picker = { layer: null, field: 'assetId', selected: null, createType: null };
 
   function wirePicker() {
     ['pf-text', 'pf-usage', 'pf-shape', 'pf-element', 'pf-tag', 'pf-background', 'pf-high']
@@ -673,8 +647,29 @@
   function openPicker(layer, field) {
     picker.layer = layer;
     picker.field = field;
+    picker.createType = null;
     picker.selected = layer[field] || null;
     $('picker-target').textContent = '圖層 ' + layer.id;
+    showPicker();
+  }
+
+  /* 「＋ 新增素材」：挑完直接長出一個新圖層，不必先新增空圖層再回頭選素材。
+     型別沿用 Layers 那個下拉——它本來就是「我要加哪一種圖層」的控制項，
+     這裡另外訂一個預設值只會讓兩顆按鈕的行為不一致。 */
+  function openPickerForNewLayer() {
+    if (!state.preset) return;
+    picker.layer = null;
+    picker.field = 'assetId';
+    picker.createType = $('new-layer-type').value || 'sprite';
+    picker.selected = null;
+    $('picker-target').textContent = '新增 ' + picker.createType + ' 圖層';
+    showPicker();
+  }
+
+  function showPicker() {
+    /* 按鈕文字跟著用途走：同一個對話框在「換掉這一層的素材」與「長出一個新
+       圖層」兩種情境下按下去的結果不一樣，標籤不能只寫一種。 */
+    $('picker-apply').textContent = picker.createType ? '新增為圖層' : '套用到目前圖層';
     $('picker').hidden = false;
     renderPickerList();
     renderPickerDetail();
@@ -684,12 +679,23 @@
   function closePicker() {
     $('picker').hidden = true;
     picker.layer = null;
+    picker.createType = null;
     picker.selected = null;
   }
 
   function applyPicker() {
-    if (!picker.layer || !picker.selected) return;
-    var target = picker.layer, field = picker.field, value = picker.selected;
+    if (!picker.selected) return;
+    var value = picker.selected;
+    if (picker.createType) {
+      var type = picker.createType;
+      /* 新增與設定素材是一步，不是兩步：分成兩筆歷史的話，Ctrl+Z 一次只會
+         把素材清掉、留下一個空圖層，看起來像沒還原乾淨。 */
+      edit('新增素材圖層', function () { addLayerInner(type, value); });
+      closePicker();
+      return;
+    }
+    if (!picker.layer) return;
+    var target = picker.layer, field = picker.field;
     edit('更換素材', function () { target[field] = value; onPresetChanged(); });
     closePicker();
     renderInspector();
@@ -966,9 +972,9 @@
 
   function onPreviewPointerDown(e) {
     if (!state.preset || !state.app) return;
-    /* 中鍵＝回到 100%。滾輪縮放的配套：手已經在滾輪上，不必再去找按鈕。
-       preventDefault 順便擋掉瀏覽器的中鍵自動捲動。 */
-    if (e.button === 1) { e.preventDefault(); applyZoom(1); return; }
+    /* 中鍵或右鍵＝拖曳平移鏡頭。preventDefault 同時擋掉瀏覽器的中鍵自動捲動
+       （右鍵選單另外由 contextmenu 擋，見 wirePreviewView）。 */
+    if (e.button === 1 || e.button === 2) { e.preventDefault(); beginPan(e); return; }
     if (e.button !== 0) return;
     var pt = clientToEffectLocal(e.clientX, e.clientY);
     var target = gizmoTarget();
@@ -1019,6 +1025,7 @@
   }
 
   function onPreviewPointerMove(e) {
+    if (pan) { updatePan(e); e.preventDefault(); return; }
     if (!gizmo.drag) {
       updateHoverCursor(e);
       return;
@@ -1067,6 +1074,7 @@
   }
 
   function onPreviewPointerUp() {
+    if (pan) { endPan(); return; }
     if (!gizmo.drag) return;
     var moved = gizmo.drag.moved;
     gizmo.drag = null;
@@ -1107,7 +1115,7 @@
     else setPreviewCursor(null);
   }
 
-  var CURSORS = { move: 'move', scale: 'nwse-resize', rotate: 'grab' };
+  var CURSORS = { move: 'move', scale: 'nwse-resize', rotate: 'grab', pan: 'grabbing' };
   function setPreviewCursor(mode) {
     if (!state.app) return;
     state.app.canvas.style.cursor = (mode && CURSORS[mode]) || 'default';
@@ -1206,6 +1214,53 @@
     g.stroke({ width: 1, color: colour, alpha: alpha });
   }
 
+  /* ---------------- 鏡頭平移 ----------------
+
+     鏡頭位置＝畫布中心 ＋ 平移量。平移量獨立存著而不是直接寫 root.x：
+     畫布尺寸一變（拉側欄、改視窗大小）就得重算中心，記絕對座標的話
+     鏡頭會跟著跳掉。
+
+     用中鍵或右鍵拖曳，把左鍵完整留給 Gizmo——左鍵在預覽區已經是「選取與變形」，
+     再兼一個平移就必須靠修飾鍵區分，而修飾鍵拖到一半放開就會變成在拖圖層。 */
+
+  var pan = null;          // { startClientX, startClientY, startPanX, startPanY }
+
+  function recentreStage() {
+    if (!state.app || !state.stageRoot) return;
+    state.stageRoot.x = state.app.renderer.width / 2 + state.panX;
+    state.stageRoot.y = state.app.renderer.height / 2 + state.panY;
+  }
+
+  function resetCamera() {
+    state.panX = 0;
+    state.panY = 0;
+    applyZoom(1);
+    recentreStage();
+  }
+
+  function beginPan(e) {
+    pan = {
+      startClientX: e.clientX, startClientY: e.clientY,
+      startPanX: state.panX, startPanY: state.panY
+    };
+    setPreviewCursor('pan');
+  }
+
+  function updatePan(e) {
+    /* client 座標換算成畫布像素：畫布可能被 CSS 縮放，也可能不是 1:1 DPR。
+       平移量本身是螢幕空間的，所以不必再除以 zoom——畫面跟著滑鼠 1:1 走。 */
+    var a = clientToPreview(pan.startClientX, pan.startClientY);
+    var b = clientToPreview(e.clientX, e.clientY);
+    state.panX = pan.startPanX + (b.x - a.x);
+    state.panY = pan.startPanY + (b.y - a.y);
+    recentreStage();
+  }
+
+  function endPan() {
+    pan = null;
+    setPreviewCursor(null);
+  }
+
   function applyZoom(z) {
     state.zoom = VFXViewModel.clampZoom(z);
     /* 縮放中心固定在特效原點（畫布正中央）。不做「以游標為中心」是因為那必須
@@ -1252,13 +1307,19 @@
       applyZoom(VFXViewModel.zoomByWheel(state.zoom, e.deltaY, e.deltaMode));
     }, { passive: false });
 
+    /* 右鍵要能拖曳平移，就不能讓瀏覽器的內容功能表跳出來。只擋畫布這一塊——
+       其他地方（素材清單、輸入框）的右鍵仍然是正常的。 */
+    state.app.canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
     var chk = $('chk-grid');
     if (chk) {
       chk.checked = state.gridOn;
       chk.onchange = function () { setGridOn(chk.checked); };
     }
+    /* 這顆現在連平移一起歸零：縮放與平移是同一個鏡頭的兩個自由度，
+       「回到預設視角」應該兩個都回，不然按完還要自己把特效拖回中間。 */
     var btn = $('zoom-reset');
-    if (btn) btn.onclick = function () { applyZoom(1); };
+    if (btn) btn.onclick = resetCamera;
     updateViewReadout();
   }
 
@@ -1930,6 +1991,10 @@
     return !!(el && el.closest && el.closest('.curve'));
   }
 
+  /* Ctrl／Cmd ＋ 這些字母交給編輯器吃掉，不讓瀏覽器接手。
+     's' 由上面的存檔分支自己處理，所以不在這一串裡。 */
+  var BROWSER_SHORTCUT_KEYS = 'opfgdu';
+
   function onKeyDown(e) {
     /* 已經按過關閉：伺服器沒了，任何快捷鍵都只會得到一個失敗的請求。 */
     if (quitting) return;
@@ -1955,6 +2020,24 @@
       if (state.preset) savePreset();
       return;
     }
+    /* 其餘會打斷編輯的瀏覽器快捷鍵一律吃掉。這是編輯器，不是文件檢視器：
+       Ctrl+P 跳列印、Ctrl+O 開系統的檔案對話框、Ctrl+F 叫出瀏覽器的尋找列並
+       偷走焦點、Ctrl+D 加書籤、Ctrl+U 開原始碼——每一個都會把人踢出正在做的事，
+       而且沒有一個在這裡有意義。
+
+       刻意**不**擋的三類，各有理由：
+         Ctrl+C／V／X／A／Z／Y  編輯器自己要用，或文字欄位需要
+         Ctrl+R／F5            重整有時候就是想要的；未存檔的保護改用
+                               beforeunload，那條連「直接關分頁」也一起顧到
+         Ctrl+W／T／N、F11…    瀏覽器層級的，preventDefault 根本攔不到。
+                               列進來只會給人「已經擋住了」的錯覺，更糟。 */
+    if ((e.ctrlKey || e.metaKey) && !e.altKey &&
+        BROWSER_SHORTCUT_KEYS.indexOf((e.key || '').toLowerCase()) >= 0) {
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'F3') { e.preventDefault(); return; }   // 尋找下一個
+
     if (!state.preset) return;
 
     /* Undo／Redo 排在文字輸入的守門**之前**：這是編輯器，不是文字編輯器，
@@ -2819,6 +2902,9 @@
      只能自己去 netstat 找 PID。有一條從頁面就停得掉的路，這個死結才拆得開。 */
 
   var quitting = false;
+  /* 自己主動離開這一頁（切換 preset、關閉編輯器）時要關掉 beforeunload：
+     那兩條路自己已經問過一次，再讓瀏覽器跳一次就是連問兩遍。 */
+  var leavingOnPurpose = false;
 
   function quitEditor() {
     if (quitting) return;
@@ -2827,6 +2913,7 @@
       : '關閉編輯器並停止伺服器？其他開著的編輯器分頁也會失去連線。';
     if (!window.confirm(msg)) return;
     quitting = true;
+    leavingOnPurpose = true;
     setSaveStatus('關閉中…', '');
     /* Content-Type 是防護的一部分，不是格式需求：跨來源要送 application/json
        會被迫先 preflight，而伺服器不回任何 CORS 標頭。見 checkWriteOrigin。 */
@@ -3180,8 +3267,8 @@
     edit('新增圖層', function () { addLayerInner(type); });
   }
 
-  function addLayerInner(type) {
-    var base = { id: uniqueLayerId(type), type: type, assetId: state.selectedAssetId || '' };
+  function addLayerInner(type, assetId) {
+    var base = { id: uniqueLayerId(type), type: type, assetId: assetId || '' };
     if (type === 'particle') {
       base.emission = { mode: 'burst', count: 16 };
       base.lifetime = [0.4, 0.8];
@@ -3195,7 +3282,21 @@
     }
     state.preset.layers.push(base);
     ensureLayout();
-    if (Array.isArray(state.layout.order)) state.layout.order.push(keyOf('layer', base.id));
+    /* 單一根群組（VFX_AGENT_WORKFLOW §9.11）：新圖層要進那個群組，不是掉到
+       根層級。掉到根層級的話存檔之後 LAYOUT-3 會紅，而且是編輯器自己造成的
+       違規——規則擋得住 preset-kit 產生的檔案，卻擋不住從編輯器加出來的層。
+
+       只有在「剛好一個群組、而且它收著其餘全部圖層」時才這樣做：那是根群組
+       的形狀。使用者自己分了好幾組時不要亂猜要放哪一組，維持原本的根層級。 */
+    var groups = state.layout.groups || [];
+    var rootGroup = null;
+    if (groups.length === 1) {
+      var held = groups[0].layerIds;
+      var others = state.preset.layers.filter(function (l) { return l.id !== base.id; });
+      if (others.every(function (l) { return held.indexOf(l.id) >= 0; })) rootGroup = groups[0];
+    }
+    if (rootGroup) rootGroup.layerIds.push(base.id);
+    else if (Array.isArray(state.layout.order)) state.layout.order.push(keyOf('layer', base.id));
     setSelection([keyOf("layer", base.id)], keyOf("layer", base.id));
     state.anchorKey = state.activeKey;
     renderLayerList(); renderInspector(); onPresetChanged();
@@ -3253,7 +3354,7 @@
       element: Object.keys(element).sort(), tag: Object.keys(tag).sort(),
       background: Object.keys(background).sort()
     };
-    ['f-', 'pf-'].forEach(function (p) {
+    ['pf-'].forEach(function (p) {
       fillSelect($(p + 'usage'), state.vocab.usage, 'usage');
       fillSelect($(p + 'shape'), state.vocab.shape, 'shape');
       fillSelect($(p + 'element'), state.vocab.element, 'element');
@@ -3379,12 +3480,8 @@
         var root = new PIXI.Container();
         app.stage.addChild(root);
         state.stageRoot = root;
-        var centre = function () {
-          root.x = app.renderer.width / 2;
-          root.y = app.renderer.height / 2;
-        };
-        centre();
-        app.renderer.on('resize', centre);
+        recentreStage();
+        app.renderer.on('resize', recentreStage);
 
         /* 畫布尺寸必須跟著「這個元素」，不是跟著視窗。
            Pixi 的 resizeTo 只掛在 window 的 resize 上，量的是啟動當下的 host 尺寸；
@@ -3403,7 +3500,7 @@
           var h = Math.max(1, Math.floor(host.clientHeight));
           if (w === app.renderer.width && h === app.renderer.height) return false;
           app.renderer.resize(w, h);
-          centre();
+          recentreStage();
           return true;
         };
         state.syncCanvasSize();
@@ -3464,7 +3561,7 @@
         buildBackgroundBar();
         collectVocab();
         wirePicker();
-        renderAssetBrowser();
+
       });
     }).catch(function (e) {
       document.getElementById('preview-msg').className = 'hint err';
@@ -3473,9 +3570,6 @@
         '\n請確認是用 node tools/vfx/editor-server.cjs 啟動，而不是直接開檔案。';
     });
 
-    ['f-text', 'f-usage', 'f-shape', 'f-element', 'f-tag', 'f-background', 'f-high'].forEach(function (id) {
-      $(id).addEventListener('input', renderAssetBrowser);
-    });
     $('btn-undo').onclick = doUndo;
     $('btn-redo').onclick = doRedo;
     $('btn-playpause').onclick = function () { setPlaying(!state.playing); };
@@ -3497,6 +3591,7 @@
       if (e.target.files[0]) loadPresetFromFile(e.target.files[0]);
     };
     $('btn-add-layer').onclick = function () { addLayer($('new-layer-type').value); };
+    $('btn-add-asset').onclick = openPickerForNewLayer;
     $('btn-group').onclick = groupSelection;
     $('btn-ungroup').onclick = ungroupSelection;
     $('sel-sort').onchange = function () {
@@ -3505,6 +3600,15 @@
       renderLayerList();
     };
     document.addEventListener('keydown', onKeyDown);
+    /* 未存檔時攔一下重整與關分頁。切換 preset 那條路自己有 confirm，但
+       F5、Ctrl+R、按上一頁、直接關分頁都沒有——那幾條一樣會把改到一半的
+       東西丟掉，而且不會有任何提示。這也是「不去擋 Ctrl+R」的前提：
+       擋快捷鍵只擋得住一種按法，這一條把所有離開路徑一起顧到。 */
+    window.addEventListener('beforeunload', function (e) {
+      if (leavingOnPurpose || !state.preset || !isDirty()) return;
+      e.preventDefault();
+      e.returnValue = '';          // 舊版瀏覽器要這個才會跳
+    });
     $('btn-del-layer').onclick = deleteSelection;
   }
 

@@ -239,6 +239,153 @@ test('VIEW-21 preset.loop 仍然編輯得到（移到 Inspector，不是被刪�
 });
 
 /* ============================================================
+   鏡頭平移
+   ============================================================ */
+
+test('VIEW-26 平移量存成「離中心多遠」，不是絕對座標', function () {
+  /* 畫布尺寸一變（拉側欄、改視窗大小）就得重算中心。記絕對座標的話，
+     每次 resize 鏡頭都會跳掉。 */
+  const src = stripped();
+  const fn = src.slice(src.indexOf('function recentreStage'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/renderer\.width \/ 2 \+ state\.panX/.test(body), '中心加平移量');
+  assert.ok(/renderer\.height \/ 2 \+ state\.panY/.test(body));
+  /* resize 之後要重算，否則鏡頭會停在舊中心 */
+  assert.ok(/app\.renderer\.on\('resize', recentreStage\)/.test(src));
+  assert.ok(/app\.renderer\.resize\(w, h\);\s*recentreStage\(\)/.test(src),
+    'syncCanvasSize 改完尺寸也要重算');
+});
+
+test('VIEW-27 平移用中鍵與右鍵，左鍵完整留給 Gizmo', function () {
+  /* 左鍵在預覽區已經是「選取與變形」。再兼一個平移就得靠修飾鍵區分，
+     而修飾鍵拖到一半放開會變成在拖圖層——那是會改到資料的誤操作。 */
+  const src = stripped();
+  const fn = src.slice(src.indexOf('function onPreviewPointerDown'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/e\.button === 1 \|\| e\.button === 2/.test(body), '中鍵與右鍵都要能平移');
+  assert.ok(/beginPan\(e\)/.test(body));
+  const panAt = body.indexOf('beginPan');
+  const leftAt = body.indexOf('e.button !== 0');
+  assert.ok(panAt < leftAt, '平移分支要排在左鍵守門之前');
+
+  /* 右鍵要能拖，就不能讓內容功能表跳出來——而且只擋畫布，別處的右鍵照常 */
+  const wire = src.slice(src.indexOf('function wirePreviewView'));
+  assert.ok(/canvas\.addEventListener\('contextmenu'/.test(wire.slice(0, 1600)),
+    '畫布要擋掉 contextmenu');
+});
+
+test('VIEW-28 「回到預設視角」把縮放與平移一起歸零', function () {
+  /* 只回縮放的話，按完還要自己把特效拖回中間——那不叫回到預設。 */
+  const src = stripped();
+  const fn = src.slice(src.indexOf('function resetCamera'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/state\.panX = 0/.test(body) && /state\.panY = 0/.test(body));
+  assert.ok(/applyZoom\(1\)/.test(body));
+  assert.ok(/btn\.onclick = resetCamera/.test(src), '按鈕要接到它');
+});
+
+test('VIEW-29 平移與縮放一樣不進 preset、不進歷史、不記 localStorage', function () {
+  const src = stripped();
+  const snap = src.slice(src.indexOf('function historySnapshot'));
+  const body = snap.slice(0, snap.indexOf('\n  }'));
+  ['panX', 'panY'].forEach(function (bad) {
+    assert.ok(body.indexOf(bad) < 0, '歷史快照不該包含 ' + bad);
+  });
+  /* 刻意不持久化：隔天打開發現特效不在畫面中央，會以為它壞了。 */
+  assert.ok(!/panX[\s\S]{0,80}localStorage/.test(src), '平移量不得寫進 localStorage');
+});
+
+/* ============================================================
+   瀏覽器快捷鍵與離開保護
+   ============================================================ */
+
+test('VIEW-30 會打斷編輯的瀏覽器快捷鍵要吃掉，攔不到的不要假裝攔得到', function () {
+  const src = stripped();
+  const keys = src.match(/var BROWSER_SHORTCUT_KEYS = '([^']+)'/);
+  assert.ok(keys, '要有一份明確的清單');
+  ['o', 'p', 'f', 'g', 'd', 'u'].forEach(function (k) {
+    assert.ok(keys[1].indexOf(k) >= 0, 'Ctrl+' + k + ' 應該擋（列印／開檔／尋找／書籤／原始碼）');
+  });
+  /* 編輯器自己要用的，或文字欄位需要的，不能被這條吃掉 */
+  ['c', 'v', 'x', 'a', 'z', 'y'].forEach(function (k) {
+    assert.ok(keys[1].indexOf(k) < 0, 'Ctrl+' + k + ' 不得被一律擋掉');
+  });
+  /* Ctrl+R 不擋：重整有時候就是想要的，未存檔的保護交給 beforeunload，
+     那條連「直接關分頁」也一起顧到，不是只擋一種按法。 */
+  assert.ok(keys[1].indexOf('r') < 0, 'Ctrl+R 不該擋');
+  assert.ok(/Ctrl\+W／T／N/.test(editorSrc()),
+    '要寫明哪些是攔不到的——列進清單只會給人「已經擋住了」的錯覺');
+});
+
+test('VIEW-31 未存檔時攔住重整與關分頁，主動離開時不重複問', function () {
+  const src = stripped();
+  const at = src.indexOf("addEventListener('beforeunload'");
+  assert.ok(at > 0, '要有 beforeunload 守門');
+  const body = src.slice(at, at + 400);
+  assert.ok(/isDirty\(\)/.test(body), '只有未存檔才攔');
+  assert.ok(/leavingOnPurpose/.test(body),
+    '切換 preset 與關閉編輯器自己問過了，不能再讓瀏覽器問第二次');
+  /* 那兩條路都要記得舉旗，否則使用者會被連問兩遍 */
+  const choose = src.slice(src.indexOf('function choosePreset'));
+  assert.ok(/leavingOnPurpose = true/.test(choose.slice(0, choose.indexOf('\n  }'))));
+  const quit = src.slice(src.indexOf('function quitEditor'));
+  assert.ok(/leavingOnPurpose = true/.test(quit.slice(0, quit.indexOf('\n  }'))));
+});
+
+/* ============================================================
+   ＋ 新增素材
+   ============================================================ */
+
+test('VIEW-32 左欄的素材瀏覽器整區刪乾淨，只留一顆「新增素材」', function () {
+  /* 選材的實際流程一直是走素材選擇器（有預覽、有詳情、有篩選），
+     左欄那份 300 列的清單只是把整欄佔滿，讓圖層多的 preset 展不開。 */
+  const html = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/index.html'), 'utf8');
+  ['asset-browser', 'asset-list', 'asset-count', 'asset-collapse', 'f-text', 'f-usage']
+    .forEach(function (id) {
+      assert.ok(html.indexOf('id="' + id + '"') < 0, id + ' 應該已經刪掉');
+    });
+  assert.ok(/id="btn-add-asset"/.test(html), '要有「新增素材」按鈕');
+  /* 死掉的樣式也要一起清掉，不然下一個人會以為那些元素還在 */
+  const css = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.css'), 'utf8');
+  ['#asset-list', '.asset-row', '.count-row', '.mini-toggle'].forEach(function (sel) {
+    assert.ok(css.indexOf(sel) < 0, sel + ' 的樣式應該一起刪掉');
+  });
+  const src = stripped();
+  assert.ok(src.indexOf('renderAssetBrowser') < 0, 'renderAssetBrowser 應該已經移除');
+});
+
+test('VIEW-33 「新增素材」與「更換素材」共用同一個選擇器，只差寫到哪裡', function () {
+  /* 挑素材這件事本身完全一樣，沒有理由做第二個對話框。 */
+  const src = stripped();
+  assert.equal((src.match(/function showPicker\(/g) || []).length, 1);
+  const open = src.slice(src.indexOf('function openPickerForNewLayer'));
+  const openBody = open.slice(0, open.indexOf('\n  }'));
+  assert.ok(/picker\.createType/.test(openBody), '用 createType 區分兩種用途');
+  assert.ok(/new-layer-type/.test(openBody),
+    '型別沿用 Layers 的下拉，不要另訂一個預設值讓兩顆按鈕行為不一致');
+
+  const apply = src.slice(src.indexOf('function applyPicker'));
+  const applyBody = apply.slice(0, apply.indexOf('\n  }'));
+  assert.ok(/addLayerInner\(type, value\)/.test(applyBody), '新增模式要直接長出圖層');
+  /* 新增與設定素材必須是同一筆歷史：分兩筆的話 Ctrl+Z 一次只會把素材清掉、
+     留下一個空圖層，看起來像沒還原乾淨。 */
+  assert.ok(/edit\('新增素材圖層', function \(\) \{ addLayerInner/.test(applyBody),
+    '兩件事要包在同一個 edit() 裡');
+});
+
+test('VIEW-34 新圖層要進單一根群組，不能掉到根層級', function () {
+  /* 掉到根層級的話，存檔之後 LAYOUT-3 會紅，而且是編輯器自己造成的違規
+     ——規則擋得住 preset-kit 產生的檔案，卻擋不住從編輯器加出來的層。 */
+  const src = stripped();
+  const fn = src.slice(src.indexOf('function addLayerInner'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/rootGroup\.layerIds\.push\(base\.id\)/.test(body), '要放進根群組');
+  assert.ok(/groups\.length === 1/.test(body),
+    '只有「剛好一個群組」才這樣做——使用者自己分好幾組時不要亂猜放哪一組');
+  assert.ok(/order\.push/.test(body), '沒有根群組時仍然要退回根層級');
+});
+
+/* ============================================================
    複製 Preset 名稱
    ============================================================ */
 

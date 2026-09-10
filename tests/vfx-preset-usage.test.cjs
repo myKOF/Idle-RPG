@@ -100,6 +100,41 @@ test('USAGE-7 每個有人用的 preset 都叫得出名字', function () {
   assert.deepEqual(nameless, [], '這幾個在表上被用到卻取不到名稱');
 });
 
+test('USAGE-7B 用的是階段名稱，不是群組名稱', function () {
+  /* Skills2 一列＝一個階段，特效填在階段上。標成群組名稱會指到一個根本沒用
+     這個特效的階段——水龍捲是水流彈的第 7 階，標「水流彈」就是錯的。
+
+     群組名稱只當前綴補上下文：「傷害強化」「擴散」這種階段名稱在很多群組裡
+     都有，單看認不出是誰的。 */
+  const skills2 = U.TABLES.filter(function (t) { return /Skills2/.test(t.file); })[0];
+  assert.ok(skills2, 'Skills2 必須在掃描清單裡');
+  assert.equal(skills2.nameColumn, '階段名稱', '名字要取階段，不是群組');
+  assert.equal(skills2.groupColumn, '群組名稱', '群組名稱只當前綴');
+
+  /* 用真資料驗一次：找一個「階段名稱與群組名稱不同」的 preset，
+     標籤必須兩個都出現且順序是 群組·階段。 */
+  const tables = U.scanTables(REPO);
+  const labels = U.usageLabels(REPO);
+  const differing = Object.keys(tables).filter(function (id) {
+    const f = tables[id][0];
+    return labels[id] && f && f.group && f.name && f.group !== f.name;
+  });
+  assert.ok(differing.length > 0, '應該找得到階段與群組不同名的例子');
+  const sample = differing[0];
+  const first = tables[sample][0];
+  assert.equal(labels[sample].label, first.group + '·' + first.name,
+    sample + ' 的標籤格式應該是 群組·階段');
+
+  /* 同名時不要重複成「突刺·突刺」 */
+  const same = Object.keys(tables).filter(function (id) {
+    const f = tables[id][0];
+    return labels[id] && f && f.group && f.group === f.name;
+  });
+  if (same.length) {
+    assert.equal(labels[same[0]].label, tables[same[0]][0].name, '同名就只寫一次');
+  }
+});
+
 test('USAGE-8 下拉的標註跟著 preset 清單一起送，不另開端點', function () {
   /* 下拉只請求一次，多一趟往返只是讓選單晚一點填好。 */
   const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor-server.cjs'), 'utf8');

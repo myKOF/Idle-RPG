@@ -28,9 +28,17 @@ const path = require('path');
 
 /* 掃描順序＝「第一個用到它的技能」的定義。一個 preset 被多處使用時只顯示第一個，
    所以順序必須是固定且寫得出來的，不能靠目錄列舉的偶然。 */
+/* nameColumn 是「真正用到這個特效的那一個東西」的名字。Skills2 一列＝一個
+   階段，而特效是填在階段上的，所以要取階段名稱而不是群組名稱：水龍捲是
+   水流彈的第 7 階，標成「水流彈」會指到一個根本沒用這個特效的階段。
+   groupColumn 只是拿來補上下文——「傷害強化」「擴散」這種階段名稱在很多
+   群組裡都有，單看它認不出是誰的。 */
 const TABLES = [
   { file: 'config/CSV/Skills.csv', nameColumn: '名稱', keyColumn: 'id', label: '技能' },
-  { file: 'config/CSV/Skills2.csv', nameColumn: '群組名稱', keyColumn: '群組ID', label: '技能群組' },
+  {
+    file: 'config/CSV/Skills2.csv', nameColumn: '階段名稱',
+    groupColumn: '群組名稱', keyColumn: '群組ID', label: '技能群組'
+  },
   { file: 'config/CSV/Status.csv', nameColumn: '狀態名稱', keyColumn: '狀態ID', label: '狀態' }
 ];
 /* 技能表六欄與狀態表三欄。兩張技能表欄位相同，所以只列一份，找不到的欄位跳過。 */
@@ -87,21 +95,26 @@ function scanTables(repoRoot) {
     const header = rows[0];
     const nameAt = headerIndex(header, t.nameColumn);
     const keyAt = headerIndex(header, t.keyColumn);
+    const groupAt = t.groupColumn ? headerIndex(header, t.groupColumn) : -1;
     const cols = VFX_COLUMNS
       .map(function (c) { return { at: headerIndex(header, c), column: c }; })
       .filter(function (c) { return c.at >= 0; });
 
-    /* 名稱只填在群組的第一列，後面的階段列與超神列是空的（Skills2 有 23 個
-       preset 只出現在這種列上）。先掃一次建 群組ID → 名稱，第二遍才補得回來——
+    /* 名字不一定填在用到特效的那一列上（Skills2 的群組名稱只填第一列，
+       後面的階段列是空的）。先掃一次建 主鍵 → 名字，第二遍才補得回來——
        否則那些 preset 會被當成「有人用但叫不出名字」而整個漏掉。 */
     const nameByKey = Object.create(null);
-    if (nameAt >= 0 && keyAt >= 0) {
+    const groupByKey = Object.create(null);
+    if (keyAt >= 0) {
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
         if (!row || !row.length) continue;
         const key = String(row[keyAt] || '').trim();
-        const nm = String(row[nameAt] || '').trim();
-        if (key && nm && !nameByKey[key]) nameByKey[key] = nm;
+        if (!key) continue;
+        const nm = nameAt >= 0 ? String(row[nameAt] || '').trim() : '';
+        if (nm && !nameByKey[key]) nameByKey[key] = nm;
+        const gp = groupAt >= 0 ? String(row[groupAt] || '').trim() : '';
+        if (gp && !groupByKey[key]) groupByKey[key] = gp;
       }
     }
 
@@ -111,9 +124,13 @@ function scanTables(repoRoot) {
       const key = keyAt >= 0 ? String(row[keyAt] || '').trim() : '';
       const name = (nameAt >= 0 ? String(row[nameAt] || '').trim() : '') ||
         (key ? (nameByKey[key] || '') : '');
+      const group = (groupAt >= 0 ? String(row[groupAt] || '').trim() : '') ||
+        (key ? (groupByKey[key] || '') : '');
       cols.forEach(function (c) {
         cellIds(row[c.at]).forEach(function (id) {
-          (out[id] = out[id] || []).push({ table: t.file, kind: t.label, name: name });
+          (out[id] = out[id] || []).push({
+            table: t.file, kind: t.label, name: name, group: group
+          });
         });
       });
     }
@@ -179,7 +196,13 @@ function usageLabels(repoRoot) {
     if (!known[id]) return;                    // 表上填了不存在的 preset，交給別的檢查報
     const first = tables[id][0];
     if (!first || !first.name) return;
-    out[id] = { label: first.name, source: 'table', count: tables[id].length };
+    /* 階段名稱與群組名稱不同時，兩個都顯示：「傷害強化」「擴散」這類階段名稱
+       在很多群組裡都有，單看認不出是誰的；而只寫群組名稱又會指到一個根本
+       沒用這個特效的階段（水龍捲是水流彈的第 7 階）。 */
+    const label = (first.group && first.group !== first.name)
+      ? first.group + '·' + first.name
+      : first.name;
+    out[id] = { label: label, source: 'table', count: tables[id].length };
   });
   outside.forEach(function (row) {
     if (!known[row.id] || out[row.id]) return;
