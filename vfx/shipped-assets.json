@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 110,
+  "assetCount": 111,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -47,6 +47,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:4c226fe5bcc428ad8859f49832c1a933e31450dc0bafca8ab33610d15d3ea876",
       "fileSize": 28122
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:4f1e91545292afd457a5898de44cd8f74358d47890e492694d9f94c37aed95d3",
+      "fileSize": 986800
     },
     {
       "assetId": "codex-authored/tornado/fire-flow.png",

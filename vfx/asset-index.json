@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2411,
+  "assetCount": 2412,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109461,6 +109461,21 @@
         "dimensions": {
           "width": 2560,
           "height": 2048
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard.png",
+      "format": "png",
+      "fileSize": 986800,
+      "contentHash": "sha256:4f1e91545292afd457a5898de44cd8f74358d47890e492694d9f94c37aed95d3",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
         },
         "hasAlpha": true
       }

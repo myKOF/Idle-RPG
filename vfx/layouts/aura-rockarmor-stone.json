@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-rockarmor-stone",
+  "groups": [
+    {
+      "id": "aura-rockarmor-stone",
+      "name": "aura-rockarmor-stone",
+      "layerIds": [
+        "earth-shadow",
+        "amber-underlight",
+        "orbiting-stone-plates",
+        "settling-dust"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-rockarmor-stone"
+  ]
+}
