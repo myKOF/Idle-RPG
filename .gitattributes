@@ -1,0 +1,43 @@
+# =============================================================
+#  行尾規則
+# =============================================================
+#
+#  存在的理由不是整齊，是正確性。
+#
+#  本專案有多支工具用「重新產生的 canonical 文字 === 磁碟上的文字」
+#  來判斷要不要重做工作。core.autocrlf=true 會在 checkout 時把 LF
+#  換成 CRLF，而工具產生的一律是 LF，於是那個等號永遠不成立——
+#  內容明明一模一樣，工具卻認定過期。
+#
+#  實際踩到的（2026-09-10）：
+#    vfx/shipped-assets.json 被簽出成 CRLF，tools/vfx/export-assets.cjs
+#    產生的是 LF，indexUpToDate 永遠 false。結果是 VFX 編輯器每存一次
+#    檔就整棵重新發佈 111 個素材、15.8 MB（複製 ＋ 兩輪 sha256 ＋ 目錄
+#    置換），而 export-assets.cjs --check 這道守門則永遠報過期。
+#
+#  同一個坑已經逼出過兩處局部繞道：
+#    tools/vfx/export-assets.cjs 的 checkMarkerFile（特例允許 CRLF）
+#    tests/vfx-asset-semantics.test.cjs 的行尾正規化
+#  兩處都是在症狀上打補丁。真正的修法是讓 repo 內只有一種行尾，
+#  工具兩邊看到的就是同一份 bytes，往後新增的工具不必再各自繞一次。
+#
+#  註：這裡宣告的是「repo 內的行尾」，不是「你的編輯器怎麼存」。
+#  設定與否無關個人偏好——core.autocrlf 是每台機器各自的設定，
+#  靠它就等於靠每個人的環境剛好一致。
+#
+# -------------------------------------------------------------
+
+# 文字檔一律以 LF 落地。text=auto 保留 git 的二進位偵測，
+# 所以 png／webp／ogg 這些不會被碰到。
+* text=auto eol=lf
+
+# 例外一：.bat 必須是 CRLF。
+# cmd.exe 是逐段解析的，LF 行尾會讓它在檔案中途失去同步，症狀是
+# 「雙擊就壞」而不是「格式不好看」。tests/vfx-editor-save.test.cjs
+# 的 W8 釘住這件事。寫成 eol=crlf 而不是繼續靠 core.autocrlf：
+# 換一台把 autocrlf 關掉的機器，靠設定的那條路會直接失效。
+*.bat text eol=crlf
+
+# 刻意不為 *.patch 開 -text 的例外：那會讓 git 把 patch 檔當二進位、
+# 照工作樹的 bytes 原封收進去，反而改動已提交的內容。整個 repo 都是
+# LF 之後，從這裡產生的 patch 本來就是 LF，沒有需要保護的差異。

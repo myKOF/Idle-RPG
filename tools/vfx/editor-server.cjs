@@ -432,7 +432,13 @@ function savePresetText(ctx, presetId, bodyText) {
   if (ctx.syncAssets) {
     try { ctx.syncAssets(); }
     catch (e) {
-      return { status: 500, error: '特效設定已保存，但遊戲素材同步失敗，請修正後再按儲存：' + (e && e.message || e) };
+      /* 這是唯一一條「失敗了但檔案確實已經寫進去」的路。written 就是為了它存在：
+         其餘每一條失敗路徑的檔案都原封不動，只有這裡不是。呼叫端不能靠猜——
+         Editor 以前寫死「repo 檔案未變動」，在這條路上就是明確的謊話。 */
+      return {
+        status: 500, written: true,
+        error: '特效設定已保存，但遊戲素材同步失敗，請修正後再按儲存：' + (e && e.message || e)
+      };
     }
   }
   return { status: 200, presetId: presetId, bytes: written.bytes };
@@ -567,8 +573,11 @@ function handleSaveRequest(ctx, req, res, presetId, kind) {
     if (result.status === 200) {
       return sendJson(res, 200, { ok: true, presetId: result.presetId, bytes: result.bytes });
     }
+    /* written 一律回報，不因為 false 就省略：Editor 要據此決定顯示
+       「repo 檔案未變動」還是「已寫入但後續失敗」，欄位缺席會讓它退回猜測。 */
     sendJson(res, result.status,
-      { ok: false, error: result.error, problems: result.problems || [] });
+      { ok: false, error: result.error, problems: result.problems || [],
+        written: result.written === true });
   });
 }
 

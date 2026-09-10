@@ -136,6 +136,21 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .err { color: #ff8080; }
 .ok { color: #7fd18a; }
 
+/* 工具列下方的存檔失敗橫幅。flex:0 0 auto 讓它只吃自己的高度，
+   #layout 仍然是 flex:1 1 auto，所以出現與消失都不會動到預覽區的尺寸邏輯。
+   max-height 是上限：驗證錯誤可以列出十幾條，沒有上限的話會把整個編輯區壓扁。 */
+.save-error {
+  flex: 0 0 auto; display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 12px; background: #3a1f1f; border-bottom: 1px solid #6a3a3a;
+  color: #ffc0c0; font-size: 12px; max-height: 22vh; overflow: auto;
+}
+.save-error-text { flex: 1 1 auto; white-space: pre-wrap; min-width: 0; }
+.save-error-close {
+  flex: 0 0 auto; padding: 0 6px; line-height: 1.6;
+  background: none; border: none; color: #ffc0c0;
+}
+.save-error-close:hover { background: #5a2a2a; }
+
 /* 存檔狀態：dirty 標記與 Saving/Saved/失敗 訊息 */
 .dirty { color: #e0b34a; font-size: 12px; min-width: 60px; }
 .save-status { color: #8a8a96; font-size: 12px; }

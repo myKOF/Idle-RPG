@@ -56,6 +56,17 @@
   <button id="btn-quit" class="quit-btn" title="關閉編輯器並停止伺服器">⏻ 關閉編輯器</button>
 </header>
 
+<!-- 存檔失敗的原因原本只寫進右側欄最底下的「驗證」面板。Inspector 一長，
+     那個面板就被推到捲軸外——按鈕在左上角、原因在看不見的右下角，等於沒說。
+     2026-09-10 實測就是這樣卡住的：只看得到紅色的「存檔失敗」三個字。
+     所以原因要出現在按下去的地方旁邊。隱藏時 hidden 讓它不佔任何高度，
+     不影響 body 的 flex 版面；內容過長時自己捲，不會把預覽區壓掉。 -->
+<div id="save-error" class="save-error" hidden>
+  <span id="save-error-text" class="save-error-text"></span>
+  <button id="save-error-close" class="save-error-close" type="button"
+          title="關閉這則訊息（原因仍留在右側「驗證」面板）">✕</button>
+</div>
+
 <main id="layout">
   <aside id="left">
     <section id="layer-panel">
