@@ -352,7 +352,7 @@ g('rockarmor', [
   { ground: 'aura-rockarmor-stone' },                  // T1 岩甲術
   _,
   { hit: 'hit-earth' },                               // T3 岩甲尖刺（rock-spike impact）
-  _, _, _, _
+  _, _, _, { ground: 'aura-earth-reversal' }
 ], { superRockArt: { ground: 'ground-domain-earth', attack: 'burst-rock-petrify', hit: 'hit-earth' }, gravityField: { ground: 'ground-domain-earth', attack: 'burst-gravity', hit: 'hit-earth' } });
 g('mire', [
   { ground: 'ground-mire' },                          // T1 泥沼術

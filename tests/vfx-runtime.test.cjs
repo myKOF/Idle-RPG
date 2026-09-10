@@ -44,6 +44,29 @@ test('ROCKARMOR 前後半圈跨人物分層、共同中心與時鐘，放大移�
  }
 });
 
+test('EARTH-REVERSAL 前後半圈跨人物分層、共同中心與時鐘，放大移動續命後仍同步回收', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-earth-reversal.json'),'utf8'));
+ for(const scale of [1,2]) {
+  let point={x:300,y:150};
+  const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
+  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
+  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
+  const back=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-blue-runes-back.png'));
+  const front=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-blue-runes-front.png'));
+  assert.equal(back.tag,'zone');assert.equal(front.tag,'fx');
+  for(let i=0;i<12;i++) {
+   point={x:300+i*7,y:150-i*2};adapter.tryPlay(spec);adapter.update(.11);
+   const bt=back.transforms.at(-1),ft=front.transforms.at(-1);
+   assert.deepEqual(bt,ft,'前後圈必須使用相同中心、尺寸與動畫格');
+   assert.equal(ft.x,point.x);assert.equal(ft.y,point.y-32*scale);
+   assert.ok(Math.abs(ft.scaleX-.8724*scale)<1e-6);
+  }
+  assert.equal(log.nodes.filter(n=>n.spec.assetUrl?.includes('stone-guard-')).length,2,'續命不重播');
+  adapter.update(4);assert.equal(adapter.stats().grounds,0);
+  assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);
+ }
+});
+
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/fire-tornado-inferno.json'),'utf8'));
  const {adapter,log}=makeAdapter([p]);

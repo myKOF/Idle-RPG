@@ -551,3 +551,13 @@ test('岩甲與狂怒的執行期狀態一律不入存檔，且重置時把投�
   assert.equal(c.buffVal(p, 'sgRockAmp'), 0);
   assert.equal(c.G.player.skills2.levels.rockarmor !== undefined, true, '存檔只留等級，不留執行期狀態');
 });
+
+test('天地逆返只由第七階選用藍紋岩甲，護盾數量不改變特效選擇',()=>{
+ for(const tier7 of [0,1])for(const shield of [0,800]){
+  const c=loadContext(),p=playerEnt(),events=[];p.shield=shield;
+  c.playCombatVfx=spec=>events.push(spec);setLevels(c,'rockarmor',[1,1,1,1,1,1,tier7]);equip(c,'rockarmor');
+  c.castSkill2(p,[enemy(10000,20,0)],'rockarmor','mv-float');
+  const event=events.find(e=>e.variant==='rock-armor');assert.ok(event);
+  assert.equal(event.vfx.ground,tier7?'aura-earth-reversal':'aura-rockarmor-stone');
+ }
+});

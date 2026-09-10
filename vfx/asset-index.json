@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2414,
+  "assetCount": 2416,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109502,6 +109502,36 @@
       "format": "png",
       "fileSize": 652175,
       "contentHash": "sha256:44f5691fdc4b34c4b8e3b896116c8fb7fc205247b08f4d513fb174e900a22ab4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "format": "png",
+      "fileSize": 599639,
+      "contentHash": "sha256:d6f1582e35641dd19b09e9a7457fa9c52147f691e136da7700b80ba5af94b0c4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "format": "png",
+      "fileSize": 663733,
+      "contentHash": "sha256:10d51a27002fc6f1e6c09d77dbd86429a2e9a11cff5a146e2f1d96852422b058",
       "facts": {
         "dimensions": {
           "width": 1536,

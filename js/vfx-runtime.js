@@ -302,7 +302,7 @@ var VFXRuntime = (function () {
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
-        if (p.id === 'aura-rockarmor-stone' && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
+        if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
           ['back', 'front'].forEach(function(half) {
             var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
             part.layers = part.layers.filter(function(l) { return (l.id === 'orbiting-stone-plates-front') === (half === 'front'); });
@@ -360,7 +360,7 @@ var VFXRuntime = (function () {
        budgetDrops 就是給 tryPlay 分辨這兩者用的。 */
     var budgetDrops = 0;
     function play(rt, presetId, params, mult) {
-      if (presetId === 'aura-rockarmor-stone' && has(presetId + '-front')) {
+      if ((presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') && has(presetId + '-front')) {
         var back = play(rtZone, presetId + '-back', params, mult);
         var front = play(rtFx, presetId + '-front', params, mult);
         if (!back || !front) { stopRef(back); stopRef(front); return null; }
@@ -612,7 +612,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, g.presetId === 'aura-rockarmor-stone' ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
+        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -741,7 +741,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
-        bornAt: clock, rise: presetId === 'aura-rockarmor-stone' || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
+        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
@@ -1230,7 +1230,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-rockarmor-depth';
+  var DATA_VERSION = '20260910-earth-reversal';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

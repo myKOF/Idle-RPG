@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-earth-reversal",
+  "groups": [
+    {
+      "id": "aura-earth-reversal",
+      "name": "aura-earth-reversal",
+      "layerIds": [
+        "earth-shadow",
+        "amber-underlight",
+        "orbiting-stone-plates-back",
+        "orbiting-stone-plates-front",
+        "settling-dust"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-earth-reversal"
+  ]
+}

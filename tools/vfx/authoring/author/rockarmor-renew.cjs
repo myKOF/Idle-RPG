@@ -2,7 +2,7 @@
 // Offline stone geometry: a shared atlas keeps the orbit inexpensive in battle.
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const root=path.resolve(__dirname,'../../../..');
-function bake(half){
+function bake(half, options = {}){
  const {createCanvas}=require(process.env.VFX_CANVAS_MODULE||'@napi-rs/canvas');
  const cell=192,count=64,atlas=createCanvas(cell*8,cell*8),out=atlas.getContext('2d');
  function polygon(c,pts,fill,stroke){c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=1.4;c.stroke();}}
@@ -20,7 +20,7 @@ function bake(half){
    polygon(c,[[7,-17],[13,-8],[11,10],[5,6],[2,-9]],'#514d43');
    polygon(c,[[-13,0],[-5,-6],[5,6],[4,18],[-8,12]],'#82775f');
    c.strokeStyle='#3b3930';c.lineWidth=1.3;c.beginPath();c.moveTo(-8,-10);c.lineTo(0,-5);c.lineTo(-2,2);c.lineTo(5,7);c.lineTo(4,14);c.stroke();
-   c.globalAlpha=.55+.22*Math.sin(t*2+i);c.strokeStyle='#edba58';c.lineWidth=1;c.shadowColor='#dfa847';c.shadowBlur=3;
+   c.globalAlpha=.55+.22*Math.sin(t*2+i);c.strokeStyle=options.runeColor||'#edba58';c.lineWidth=1;c.shadowColor=options.runeGlow||'#dfa847';c.shadowBlur=3;
    c.beginPath();c.moveTo(-5,-9);c.lineTo(2,-5);c.lineTo(-1,1);c.lineTo(5,6);c.stroke();
    c.shadowBlur=0;c.globalAlpha=1;
    for(let q=0;q<5;q++){c.fillStyle=q%2?'#aaa080':'#504c40';c.fillRect(Math.sin(i*7+q*3)*7,Math.cos(i*5+q*2)*11,1.3,1.6);}
@@ -30,7 +30,7 @@ function bake(half){
   for(let i=0;i<7;i++){const a=-t+i*6.28/7;if(half && (Math.sin(a)>=0)!==(half==='front'))continue;c.save();c.translate(Math.cos(a)*52.8,Math.sin(a)*20.4+12);c.rotate(a);polygon(c,[[-2,-3],[2,-2],[3,1],[-1,3]],i%2?'#a99b7e':'#6e6552');c.restore();}
   out.drawImage(canvas,(f%8)*cell,Math.floor(f/8)*cell);
  }
- const id='codex-authored/rockarmor/stone-guard'+(half?'-'+half:'')+'.png',buf=atlas.toBuffer('image/png');
+ const id='codex-authored/rockarmor/stone-guard'+(options.variant?'-'+options.variant:'')+(half?'-'+half:'')+'.png',buf=atlas.toBuffer('image/png');
  for(const dir of [root+'/images/vfx/assets',process.env.VFX_LIBRARY_ROOT||require('../../vfx-library-root.cjs').resolveLibraryRoot({}).root]){const dest=path.join(dir,id);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,buf);}
  const ip=root+'/vfx/asset-index.json',index=JSON.parse(fs.readFileSync(ip));
  const entry={assetId:id,package:'codex-authored',relativePath:id,format:'png',fileSize:buf.length,contentHash:'sha256:'+crypto.createHash('sha256').update(buf).digest('hex'),facts:{dimensions:{width:1536,height:1536},hasAlpha:true}};

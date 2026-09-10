@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜天地逆返預覽（VFX-EARTH-REVERSAL-20260910）
+
+- Done／接入：使用者核准藍紋後接入第七階 ground，Skills2.xlsx AC118／CSV／JS／製作目錄同步，Runtime 藍紋仍分前後圈、沿用尺寸及進退場，主頁與 Worker 快取更新。未投資第七階維持暗金，投資後施放改藍紋，與護盾量無關。119 項地系／Runtime／傳奇測試中 117 通過，2 項泥沼舊尺寸斷言（100 對現有 120）已用 HEAD 版本確認同樣失敗；新增接線與分層測試通過。build 332 檔通過，Excel 僅 AC118 改變，config_tables dry-run 語意差異 0。預覽與暫存腳本已清除，接手者為使用者實戰驗收；不合併或推送。
+
+- Review／僅預覽：重新匯出線上最新文件，I175 明確寫「岩甲術的符文石碑上的紋理變為藍色」。使用者確認不隨護盾值變化，只在點選第七階後替換符文顏色。已撤銷先前依舊版文件製作的回流光圈提案；新版 aura-earth-reversal 完整沿用岩甲模型、尺寸、轉速及前後半圈，僅將甲片符文與其微光烘焙為藍色。不改遊戲接線、Runtime、護盾數值或表格；待使用者說「接入」才設定第七階替換。
+- 製作檔案：earth-reversal author／preset／layout、blue-runes back／front 圖集與 asset-index；rockarmor author 新增可選符文配色參數，默认輸出保持原暗金。逐欄比較確認 preset 僅 ID／圖集引用不同，136 項 Core／layout 測試通過；96 格動態 GIF 展示原版與藍紋對照，已目視檢查。預覽與渲染腳本暫留 scratch 供審閱，提交時清除；本輪尚未接入或提交。
+
 ## Codex｜岩甲環繞遮擋修正（VFX-ROCKARMOR-DEPTH-20260910）
 
 - Done：使用者回報放大後前半圈甲片被人物遮住。根因為整圈共用單張圖集且全部位於 zone。保留使用者甲片縮放，離線依軌道深度烘焙 back／front 圖集，Runtime 共用生命週期、跟隨錨點與尺寸，分別置於 zone／fx；前後甲片共同腳底上方中心、地面與塵土置中。修改 author／preset／layout／圖集與索引、Runtime／主頁快取、回歸測試及本記錄；不改護盾數值。

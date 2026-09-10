@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 113,
+  "assetCount": 115,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -796,6 +796,20 @@
       "package": "codex-authored",
       "contentHash": "sha256:44f5691fdc4b34c4b8e3b896116c8fb7fc205247b08f4d513fb174e900a22ab4",
       "fileSize": 652175
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:d6f1582e35641dd19b09e9a7457fa9c52147f691e136da7700b80ba5af94b0c4",
+      "fileSize": 599639
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:10d51a27002fc6f1e6c09d77dbd86429a2e9a11cff5a146e2f1d96852422b058",
+      "fileSize": 663733
     }
   ]
 }
