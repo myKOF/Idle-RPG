@@ -12,6 +12,8 @@
 
 ## Codex｜嗜血狂怒試作（VFX-BLOODRAGE-20260910）
 
+- 使用者要求清理剩餘檔案：提交已確認的 aura-bloodrage-fury／hit-bloodrage-glow／proj-bloodrage-drain、layout 與 author；刪除淘汰的 hit-bloodrage-rend 及嗜血狂怒／雙刀亂舞臨時預覽 HTML。三份 Preset 格式、播放與停止回收通過。僅保存可用特效，嗜血狂怒尚未接入技能映射；下方未提交敘述為歷史記錄。
+
 - 紅光改版：新增 hit-bloodrage-glow，獨立製作緋紅光暈、縱向亮光與少量飄散光點，0.25 秒；預覽改用新命中，血珠仍是 proj-bloodrage-drain 飛行子彈。Schema／三次播放回收與 build 驗證；尚待外觀確認、未接入／未 commit。前版 rend 保留為被替換試作。
 
 - 依技能說明第一階：buff 身體變紅／體積 +25%／普攻紅色受擊放大；第七階擊殺後小型紅色子彈從敵人飛回角色。先製作同場預覽，角色 tint／scale 為預览示範，尚未改遊戲角色與技能映射。

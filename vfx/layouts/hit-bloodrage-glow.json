@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-bloodrage-glow",
+  "groups": [
+    {
+      "id": "hit-bloodrage-glow",
+      "name": "hit-bloodrage-glow",
+      "layerIds": [
+        "crimson-bloom",
+        "red-light-pillar",
+        "scarlet-flare",
+        "rose-core",
+        "floating-red-light"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-bloodrage-glow"
+  ]
+}

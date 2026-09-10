@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-bloodrage-glow",
+  "duration": 0.25,
+  "loop": false,
+  "layers": [
+    {
+      "id": "crimson-bloom",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1484,
+        "y": 0.127
+      },
+      "alpha": 0.65,
+      "tint": "#b80828",
+      "blendMode": "add",
+      "duration": 0.25,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.45,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "red-light-pillar",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 1,
+      "rotation": -0.2269,
+      "scale": {
+        "x": 0.043,
+        "y": 0.1582
+      },
+      "alpha": 0.85,
+      "tint": "#ff1537",
+      "blendMode": "add",
+      "duration": 0.23,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.5,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.22,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "scarlet-flare",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 2,
+      "rotation": 0.2094,
+      "scale": {
+        "x": 0.1113,
+        "y": 0.0254
+      },
+      "alpha": 0.7,
+      "tint": "#ff2944",
+      "blendMode": "add",
+      "duration": 0.18,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "rose-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.0352,
+        "y": 0.0352
+      },
+      "alpha": 0.7,
+      "tint": "#ff6675",
+      "blendMode": "add",
+      "duration": 0.13,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "floating-red-light",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 4,
+      "alpha": 0.65,
+      "tint": "#f91b40",
+      "blendMode": "add",
+      "duration": 0.25,
+      "emission": {
+        "count": 7,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.14,
+        0.25
+      ],
+      "spawn": {
+        "height": 30,
+        "shape": "box",
+        "width": 26
+      },
+      "speed": [
+        15,
+        45
+      ],
+      "direction": -90,
+      "spread": 65,
+      "startScale": [
+        0.0098,
+        0.0195
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0.25
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 70,
+      "width": 60
+    },
+    "heightM": 7,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

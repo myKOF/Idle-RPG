@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-bloodrage-drain",
+  "duration": 0.6,
+  "loop": true,
+  "layers": [
+    {
+      "id": "crimson-tail",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": -10,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0742,
+        "y": 0.0215
+      },
+      "alpha": 0.45,
+      "tint": "#bc1434",
+      "blendMode": "add"
+    },
+    {
+      "id": "blood-pearl",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0215,
+        "y": 0.0215
+      },
+      "alpha": 0.95,
+      "tint": "#e92248",
+      "blendMode": "normal"
+    },
+    {
+      "id": "pearl-glint",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 2,
+      "position": {
+        "x": 2,
+        "y": -1
+      },
+      "scale": {
+        "x": 0.0117,
+        "y": 0.0117
+      },
+      "alpha": 0.65,
+      "tint": "#ffb5bd",
+      "blendMode": "add"
+    },
+    {
+      "id": "drain-trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 3,
+      "position": {
+        "x": -5,
+        "y": 0
+      },
+      "alpha": 0.7,
+      "tint": "#e82a51",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 22
+      },
+      "lifetime": [
+        0.12,
+        0.25
+      ],
+      "spawn": {
+        "height": 5,
+        "shape": "box",
+        "width": 9
+      },
+      "speed": [
+        25,
+        60
+      ],
+      "direction": 180,
+      "spread": 18,
+      "startScale": [
+        0.0039,
+        0.0078
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.1
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 20,
+      "width": 30
+    },
+    "heightM": 2,
+    "shape": "custom",
+    "widthM": 3
+  }
+}

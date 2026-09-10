@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-bloodrage-drain",
+  "groups": [
+    {
+      "id": "proj-bloodrage-drain",
+      "name": "proj-bloodrage-drain",
+      "layerIds": [
+        "crimson-tail",
+        "blood-pearl",
+        "pearl-glint",
+        "drain-trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-bloodrage-drain"
+  ]
+}

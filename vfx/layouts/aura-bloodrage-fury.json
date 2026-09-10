@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "aura-bloodrage-fury",
+  "groups": [
+    {
+      "id": "aura-bloodrage-fury",
+      "name": "aura-bloodrage-fury",
+      "layerIds": [
+        "blood-mist",
+        "rising-fury",
+        "blood-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:aura-bloodrage-fury"
+  ]
+}
