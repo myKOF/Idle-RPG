@@ -41,3 +41,23 @@
 # 刻意不為 *.patch 開 -text 的例外：那會讓 git 把 patch 檔當二進位、
 # 照工作樹的 bytes 原封收進去，反而改動已提交的內容。整個 repo 都是
 # LF 之後，從這裡產生的 patch 本來就是 LF，沒有需要保護的差異。
+
+# =============================================================
+#  合併策略
+# =============================================================
+#
+#  AI_TASKS.md 是「每個 AI 各自在檔尾追加任務記錄」的流水帳。三個 AI
+#  分支同時工作時，兩邊都在同一個位置（檔尾）新增內容，行層級的三方
+#  合併必然判定為衝突——即使兩段文字彼此毫不相干。
+#
+#  ai-tasks 驅動程式改以 `## ` 標題為單位做區段層級的三方合併：改的不是
+#  同一區就自動合併，同一區兩邊都改才交回 git 標記衝突。實作與安全底線
+#  見 tools/merge-ai-tasks.cjs。
+#
+#  注意：merge driver 必須在本機 git config 註冊才會生效（git 不從 repo
+#  讀取要執行的指令，這是刻意的安全設計）。sync_ai_worktrees 每次執行都會
+#  自動補上；要手動註冊：
+#    git config merge.ai-tasks.name "AI_TASKS.md 區段層級合併"
+#    git config merge.ai-tasks.driver "node tools/merge-ai-tasks.cjs %O %A %B %L %P"
+#  沒註冊時 git 會退回預設的行層級合併，也就是現況，不會壞掉。
+docs/AI_TASKS.md merge=ai-tasks

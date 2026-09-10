@@ -204,6 +204,32 @@ function Sync-AssetLibrary {
     return 'synced'
 }
 
+# AI_TASKS.md 的區段層級合併驅動程式（見 .gitattributes 與
+# tools/merge-ai-tasks.cjs）。.gitattributes 只說「這個檔用 ai-tasks 合併」，
+# 真正要執行的指令必須在本機 git config 裡——git 刻意不從 repo 讀取要執行的
+# 命令，否則 clone 一份專案就等於讓對方在你機器上執行任意程式。
+#
+# 因此註冊這一步只能由本機動作完成，而這支腳本是唯一每次同步都會跑的地方。
+# 寫進 --local：worktree 之間共用同一份 .git/config，註冊一次全部生效。
+# 沒註冊時 git 會退回預設的行層級合併，也就是現況，不會壞掉。
+function Register-AiTasksMergeDriver {
+    param([string]$Repository)
+
+    $wanted = 'node tools/merge-ai-tasks.cjs %O %A %B %L %P'
+    $current = Get-GitTextSoft -Worktree $Repository -GitArguments @('config', '--local', '--get', 'merge.ai-tasks.driver')
+    if ($current -eq $wanted) { return }
+
+    if ([string]::IsNullOrWhiteSpace($current)) {
+        Write-Host '[設定] 註冊 AI_TASKS.md 的區段層級合併驅動程式。' -ForegroundColor DarkGray
+    } else {
+        Write-Host '[設定] 更新 AI_TASKS.md 合併驅動程式的指令。' -ForegroundColor DarkGray
+    }
+    $null = Invoke-GitSoft -Worktree $Repository -GitArguments @(
+        'config', '--local', 'merge.ai-tasks.name', 'AI_TASKS.md 區段層級合併')
+    $null = Invoke-GitSoft -Worktree $Repository -GitArguments @(
+        'config', '--local', 'merge.ai-tasks.driver', $wanted)
+}
+
 function Get-WorktreeMap {
     param([string]$AnyWorktree)
 
@@ -251,6 +277,9 @@ function Assert-CleanWorktree {
 
 try {
     $repository = (Resolve-Path -LiteralPath $RepositoryPath).Path
+
+    # 合併驅動程式要在任何 merge 之前就位，否則這一輪還是會撞上 AI_TASKS.md。
+    Register-AiTasksMergeDriver -Repository $repository
 
     # 素材庫先做。放在最前面而不是最後：程式碼那段是多 Worktree 的整合，任何一步
     # 失敗都會整個中止，擺在後面就等於「只要程式碼同步出事，素材庫永遠不會同步」。
