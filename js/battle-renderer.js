@@ -5989,6 +5989,11 @@ var BattleRenderer = (function () {
       zoneContainer: S.layers.presetZone,
       ctx: {
         posOf: posOf,
+        chainPoint: function (id) {
+          var ent = id === 'pv-float' ? S.player : S.entities[id];
+          if (!ent || !ent.root || ent.root.destroyed || ent.root.visible === false || ent.root.alpha === 0) return null;
+          return id === 'pv-float' ? playerMuzzle() : posOf(id);
+        },
         footOf: footOf,
         playerPos: playerMuzzle,
         projectileTargetPoint: projectileTargetPoint

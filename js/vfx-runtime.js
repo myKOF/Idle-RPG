@@ -519,6 +519,12 @@ var VFXRuntime = (function () {
       var toId = ids.length >= 2 ? ids[1] : ids[0];
       if (!toId) return false;
       var to = ctx.posOf(toId);
+      if (presetId === 'bolt-chain-travel-bluewhite' && ctx.chainPoint) {
+        from = ctx.chainPoint(ids.length >= 2 ? ids[0] : (spec.sourceId || 'pv-float'));
+        to = ctx.chainPoint(toId);
+        // 端點已離場時消費事件，不能退回 legacy 的備用位置。
+        if (!from || !to) return true;
+      }
       var dx = to.x - from.x, dy = to.y - from.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (!(dist > 0)) dist = 1;
@@ -1138,6 +1144,13 @@ var VFXRuntime = (function () {
         var beam = trackingBeams[bi];
         var beamFrom = beam.fromId ? ctx.posOf(beam.fromId) : ctx.playerPos();
         var beamTo = ctx.posOf(beam.toId);
+        if (ctx.chainPoint) {
+          beamFrom = ctx.chainPoint(beam.fromId || 'pv-float');
+          beamTo = ctx.chainPoint(beam.toId);
+          if (!beamFrom || !beamTo) {
+            stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
+          }
+        }
         var bdx = beamTo.x - beamFrom.x, bdy = beamTo.y - beamFrom.y;
         if (!moveRef(beam.ref, {
           position: beamFrom, rotation: Math.atan2(bdy, bdx),

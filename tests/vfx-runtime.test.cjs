@@ -1265,3 +1265,14 @@ test('CHAIN 移動與反向目標逐幀追蹤，延遲彈射於起飛時取得�
  const delayed=log.nodes.at(-1).transforms.at(-1),end=endpoints(delayed);assert.ok(Math.abs(end.x-480)<.01);assert.ok(Math.abs(end.y-90)<.01);
  adapter.clear();adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+test('CHAIN 離場端點不使用 lastPos 或備用位置，取消延遲與飛行中電弧',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const visible={a:{x:10,y:20},b:{x:210,y:20}};
+ const {adapter}=makeAdapter([p],{ctx:{posOf:()=>({x:999,y:999}),playerPos:()=>({x:0,y:0}),chainPoint:id=>visible[id]||null}});
+ const s={fxKind:'chain',targets:['a','b'],vfx:{attack:p.id}};
+ adapter.tryPlay(s);adapter.tryPlay({...s,delayMs:200});adapter.update(.05);assert.equal(adapter.stats().fx.activeEffects,1);
+ delete visible.a;adapter.update(.05);assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.update(.15);assert.equal(adapter.stats().played,1);assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
+ visible.a={x:50,y:40};delete visible.b;assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
+});
