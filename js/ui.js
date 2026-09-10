@@ -524,11 +524,27 @@ function flushWorkerVisualEvents() {
     return;
   }
 
-  var flushStart = uiNowMs();
+  /* 佇列積壓保護：極端密集戰鬥或大界面切換時，若視覺事件積壓過多，
+     丟棄老舊的過期浮字，保留最新事件與關鍵特效，防止無窮堆積凍結事件迴圈。 */
+  if (UI_WORKER_VISUAL_EVENT_QUEUE.length > 120) {
+    var keptEvents = [];
+    var dropThreshold = UI_WORKER_VISUAL_EVENT_QUEUE.length - 60;
+    for (var qi = 0; qi < UI_WORKER_VISUAL_EVENT_QUEUE.length; qi++) {
+      var queueItem = UI_WORKER_VISUAL_EVENT_QUEUE[qi];
+      if (qi >= dropThreshold || (queueItem && queueItem.kind !== 'float')) {
+        keptEvents.push(queueItem);
+      }
+    }
+    UI_WORKER_VISUAL_EVENT_QUEUE = keptEvents;
+  }
+
+  var flushStart = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   var processed = 0;
   while (UI_WORKER_VISUAL_EVENT_QUEUE.length && processed < UI_WORKER_VISUAL_FRAME_MAX) {
-    /* 時間檢查每 16 件做一次：逐件量時鐘在「一幀排掉上千件」時本身就是成本。 */
-    if (processed && (processed & 15) === 0 && uiNowMs() - flushStart >= UI_WORKER_VISUAL_FRAME_MS) break;
+    /* 嚴格時間預算防護（方案 A）：
+       每 2 件即測量一次時間，且單次事件若使耗時達標立即中斷，
+       確保主執行緒每幀在 4ms 內交還給使用者輸入與點擊事件，徹底避免長工作凍結。 */
+    if (processed && (processed & 1) === 0 && ((typeof uiNowMs === 'function' ? uiNowMs() : Date.now()) - flushStart >= UI_WORKER_VISUAL_FRAME_MS)) break;
     var event = UI_WORKER_VISUAL_EVENT_QUEUE.shift();
     if (!event) continue;
     if (event.kind === 'float') {
@@ -548,6 +564,7 @@ function flushWorkerVisualEvents() {
       }
     }
     processed++;
+    if ((typeof uiNowMs === 'function' ? uiNowMs() : Date.now()) - flushStart >= UI_WORKER_VISUAL_FRAME_MS) break;
   }
   if (UI_WORKER_VISUAL_EVENT_QUEUE.length) scheduleWorkerVisualEventFlush();
 }
@@ -7709,6 +7726,7 @@ function renderSkills() {
 
   renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
   renderFusionPanel(skillsSnapshot);
+  if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.apply();
 }
 
 /* ---- 技能升級彈窗 ---- */
@@ -9803,6 +9821,7 @@ function initBattleCanvasMode() {
 }
 
 function initUI() {
+  if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.init();
   bindWorkerUiState();
   updateTalentTabVisibility();
   if (!UI.performanceEventsBound) {
@@ -12487,3 +12506,78 @@ function renderCurrentSummary() {
   holder.innerHTML = html;
   list.insertBefore(holder.firstChild, list.firstChild);
 }
+
+/* ==========================================================================
+   UI 容器渲染隔離管理器 (UI Containment Manager - 方案 C 獨立模組)
+   說明：
+     1. 具備高擴充性：支援動態註冊/註銷容器（如 register/unregister）。
+     2. 支援按需縮小或增加容器量，互不干擾。
+     3. 具備單獨關閉能力：UIContainmentManager.setEnabled(false) 可一鍵拔除所有隔離樣式。
+     4. 預設登錄 #skill-trees 技能樹容器（contain: layout style），防止上千個節點引發全局 Reflow。
+   ========================================================================== */
+var UIContainmentManager = {
+  enabled: true,
+  registry: {
+    'skill-trees': { selector: '#skill-trees', className: 'ui-contain-layout', active: true }
+  },
+
+  register: function (id, options) {
+    if (!id || typeof id !== 'string') return;
+    this.registry[id] = Object.assign({
+      selector: '#' + id,
+      className: 'ui-contain-layout',
+      active: true
+    }, options || {});
+    this.apply();
+  },
+
+  unregister: function (id) {
+    if (!id || !this.registry[id]) return;
+    var cfg = this.registry[id];
+    if (typeof document !== 'undefined') {
+      var el = document.querySelector(cfg.selector);
+      if (el && cfg.className) {
+        el.classList.remove(cfg.className);
+      }
+    }
+    delete this.registry[id];
+  },
+
+  setEnabled: function (val) {
+    this.enabled = !!val;
+    this.apply();
+  },
+
+  isContainerActive: function (id) {
+    return this.enabled && !!(this.registry[id] && this.registry[id].active);
+  },
+
+  apply: function () {
+    if (typeof document === 'undefined') return;
+    for (var id in this.registry) {
+      if (!Object.prototype.hasOwnProperty.call(this.registry, id)) continue;
+      var item = this.registry[id];
+      var el = document.querySelector(item.selector);
+      if (!el) continue;
+      var shouldApply = this.enabled && item.active !== false;
+      if (shouldApply) {
+        if (!el.classList.contains(item.className)) {
+          el.classList.add(item.className);
+        }
+      } else {
+        if (el.classList.contains(item.className)) {
+          el.classList.remove(item.className);
+        }
+      }
+    }
+  },
+
+  init: function () {
+    this.apply();
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.UIContainmentManager = UIContainmentManager;
+}
+

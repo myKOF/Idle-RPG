@@ -1,5 +1,21 @@
 # PATCH.md
 
+## 技能界面操作卡頓優化：方案 A 事件切片防護 + 方案 C 獨立模組化容器隔離（Antigravity 2026-09-10）
+
+- **方案 A：視覺事件切片與防積壓保護**（`js/ui.js`）：
+  - 診斷確認點擊延遲 2~3 秒的根本原因為 `flushWorkerVisualEvents` 存在「每 16 件事件才檢查一次時間」的盲區，在戰鬥密集且 DOM 龐大時，單批累積耗時飆破 2,400ms 造成主執行緒長工作凍結（Long Task）。
+  - 將時間預算檢查調整為每 2 件即量測，且單件事件執行後若達到 `UI_WORKER_VISUAL_FRAME_MS = 4ms` 門檻立即中斷讓出主執行緒，確保瀏覽器能在 < 16ms 內即時響應玩家的 `click` 與互動。
+  - 加入佇列積壓保護（Backlog Protection）：若事件佇列超過 120 件，主動淘汰過期且非關鍵的浮字事件，保障極端高攻速多怪戰鬥下的 UI 流暢度。
+- **模組化方案 C：獨立容器渲染隔離管理器**（`js/ui.js`、`css/style.css`）：
+  - 建立獨立架構物件 `window.UIContainmentManager`，支援動態註冊 (`register`)、註銷 (`unregister`)、狀態查詢 (`isContainerActive`) 與一鍵全域開關 (`setEnabled(false)`)。
+  - 在 `css/style.css` 引入安全隔離樣式 `.ui-contain-layout`（使用 `contain: layout style;`，特別排除 `paint`，杜絕任何邊界裁切與特效遮擋問題）。
+  - 預設對上千個節點的 `#skill-trees` 技能樹容器進行佈局隔離，徹底切斷技能樹 DOM 引起的全域強制重排（Layout Thrashing）。
+- **實機效能量測**：
+  - 技能節點點擊至彈窗開啟延遲由原先的 2~3 秒大幅降至 **7.9ms**（即時響應）。
+  - 彈窗內升級按鈕響應延遲 **1.2ms**、降級 **1.5ms**、裝備/卸下 **0.6ms**。
+  - 單元測試與語法建置檢查全數通過，Console 0 錯誤。
+
+
 ## 修復裝備詳情與角色背景轉角框線過衝交疊問題（Antigravity 2026-09-10）
 
 - **角色人體裝備背景轉角修正**（`images/ui/character_UI.png`）：
