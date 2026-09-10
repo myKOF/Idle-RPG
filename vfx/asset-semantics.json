@@ -75,14 +75,63 @@
       "medium"
     ]
   },
-  "recordCount": 2399,
+  "recordCount": 2406,
   "confidenceCounts": {
     "high": 186,
-    "medium": 2213
+    "medium": 2220
   },
   "needsReviewCount": 97,
-  "unclassifiedCount": 0,
+  "unclassifiedCount": 16,
   "records": [
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-0.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-1.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-accents.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-body.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-edge.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/tornado/inferno-spiral.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
     {
       "assetId": "foliage-sprites/png/flat/sprite_0001.png",
       "kind": "nonVfx",
