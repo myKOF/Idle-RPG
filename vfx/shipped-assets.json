@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 112,
+  "assetCount": 110,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -56,13 +56,6 @@
       "fileSize": 3421959
     },
     {
-      "assetId": "codex-authored/tornado/inferno-spiral.svg",
-      "relativePath": "codex-authored/tornado/inferno-spiral.svg",
-      "package": "codex-authored",
-      "contentHash": "sha256:e149f833472030a6efccfc876d5c22de55c4ddb2c4854af9a62a74fe54da4b23",
-      "fileSize": 40280008
-    },
-    {
       "assetId": "light-masks-1.0/default/circle_a.png",
       "relativePath": "light-masks-1.0/Default/circle_a.png",
       "package": "light-masks-1.0",
@@ -103,6 +96,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:88a6fabfadd5727ea9e19b2ee7585cb7922def0383308c5847cf97c1f4b35299",
       "fileSize": 2796
+    },
+    {
+      "assetId": "light-masks-1.0/default/cone_a_blur.png",
+      "relativePath": "light-masks-1.0/Default/cone_a_blur.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:9770489d50ed82f6ca7afc24d6b2167063c76140944690eff34018f78c77e480",
+      "fileSize": 8682
     },
     {
       "assetId": "light-masks-1.0/default/cone_b.png",
@@ -189,13 +189,6 @@
       "fileSize": 43409
     },
     {
-      "assetId": "light-masks-1.0/transparent/shape_a.png",
-      "relativePath": "light-masks-1.0/Transparent/shape_a.png",
-      "package": "light-masks-1.0",
-      "contentHash": "sha256:2f4ee9e6f36472393d936afd9242e02f964f8cb0521cc2d69b1d113365753fc2",
-      "fileSize": 25104
-    },
-    {
       "assetId": "light-masks-1.0/transparent/window_h.png",
       "relativePath": "light-masks-1.0/Transparent/window_h.png",
       "package": "light-masks-1.0",
@@ -250,13 +243,6 @@
       "package": "new_materials",
       "contentHash": "sha256:47a84f74663020dfa973ebba1f2190a7c1479e4d3ea3188b638637fd953afbae",
       "fileSize": 127438
-    },
-    {
-      "assetId": "new_materials/fire/fire_37.png",
-      "relativePath": "new_materials/fire/fire_37.png",
-      "package": "new_materials",
-      "contentHash": "sha256:8979a965ddc3c2195f8fd2c9865d51caeb2ad854437f1911b2d83d07ce0decac",
-      "fileSize": 128835
     },
     {
       "assetId": "new_materials/flare/flare_14.png",

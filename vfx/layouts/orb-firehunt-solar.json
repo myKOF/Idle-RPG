@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "orb-firehunt-solar",
+  "groups": [
+    {
+      "id": "orb-firehunt-solar",
+      "name": "orb-firehunt-solar",
+      "layerIds": [
+        "arc-gold",
+        "arc-crimson",
+        "ember-shell",
+        "molten-heart",
+        "surface-flames",
+        "trailing-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:orb-firehunt-solar"
+  ]
+}

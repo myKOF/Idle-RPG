@@ -7,94 +7,26 @@
     {
       "id": "halo",
       "type": "sprite",
-      "assetId": "particle-pack/png-transparent/light_01.png",
+      "enabled": true,
+      "assetId": "light-masks-1.0/default/cone_a_blur.png",
       "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": -58
+        "x": 0.6801,
+        "y": -71.0533
       },
       "scale": {
-        "x": 0.18,
-        "y": 0.28
+        "x": 0.3582,
+        "y": 0.2742
       },
-      "alpha": 0.32,
+      "alpha": 0.4,
       "tint": "#ff831b",
       "blendMode": "add",
       "duration": 3.846153846153846
     },
     {
-      "id": "dust",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/smoke_01.png",
-      "zIndex": 9,
-      "position": {
-        "x": 0,
-        "y": 0
-      },
-      "alpha": 0.38,
-      "tint": "#937d6f",
-      "blendMode": "normal",
-      "duration": 3.846153846153846,
-      "emission": {
-        "mode": "rate",
-        "rate": 20
-      },
-      "maxParticles": 32,
-      "lifetime": [
-        0.7,
-        1.2
-      ],
-      "spawn": {
-        "height": 4,
-        "shape": "box",
-        "width": 66
-      },
-      "speed": [
-        8,
-        18
-      ],
-      "direction": -90,
-      "spread": 180,
-      "startScale": [
-        0.035,
-        0.07
-      ],
-      "rotationStart": [
-        0,
-        360
-      ],
-      "rotationSpeed": [
-        -23,
-        23
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.5
-        ],
-        [
-          1,
-          1.7
-        ]
-      ]
-    },
-    {
       "id": "spray",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-transparent/spark_01.png",
       "zIndex": 10,
       "position": {
@@ -107,9 +39,9 @@
       "duration": 3.846153846153846,
       "emission": {
         "mode": "rate",
-        "rate": 28
+        "rate": 100
       },
-      "maxParticles": 60,
+      "maxParticles": 100,
       "lifetime": [
         0.35,
         0.8
@@ -146,12 +78,16 @@
       ],
       "scaleOverLife": [
         [
-          0,
-          0.7
+          0.0093,
+          1.366739
         ],
         [
-          0.3,
-          1
+          0.0123,
+          0.949414
+        ],
+        [
+          0.2747,
+          1.783115
         ],
         [
           1,
@@ -162,6 +98,7 @@
     {
       "id": "ground-flames",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 8,
       "alpha": 0.65,
@@ -227,6 +164,7 @@
     {
       "id": "crown-flame-jets",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 7,
       "position": {
@@ -304,6 +242,7 @@
     {
       "id": "baked-fire-column",
       "type": "sprite",
+      "enabled": true,
       "assetId": "codex-authored/tornado/fire-flow.png",
       "zIndex": 1,
       "scale": {
@@ -314,7 +253,8 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.9,
+      "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 3.846153846153846,
       "sheet": {

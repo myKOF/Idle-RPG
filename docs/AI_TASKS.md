@@ -1,5 +1,9 @@
 # AI_TASKS.md
 
+## Codex｜火狩弧形拖尾接入（VFX-FIREHUNT-20260910）
+
+- Done：使用者確認後替換遊戲既有 orb-firehunt，保留技能配置 ID；加入 opt-in worldSpace 粒子出生座標，讓拖尾沿實際公轉路徑彎曲。保留 author、preset/layout 與回歸測試，移除臨時預覽頁。一併保留使用者火龍捲配置及素材修改。235 項相關測試通過；戰鬥大量特效下的實機 FPS 仍由使用者測試確認。本次不合併或推送。
+
 ## Codex｜特效場景深度排序（VFX-DEPTH-20260910）
 
 - 完成：Preset 以 effect handle 建立排序容器，容器依 origin.y，內層沿用 zIndex；sprite／程序層／粒子一致，節點回收時解除群組並釋放空容器。Runtime fx／zone 開啟，Editor 預設仍維持圖層編輯語意。Legacy zone／fx 依節點 Y，世界座標光束與落雷使用目標 Y。既有 zone／entity／fx／HUD 及 legacy／preset 掛載層級保留，不跨層混排。

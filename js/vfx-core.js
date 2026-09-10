@@ -523,6 +523,7 @@ var VFXCore = (function () {
     if (layer.alignToVelocity !== undefined && typeof layer.alignToVelocity !== 'boolean') {
       errors.push(where + '.alignToVelocity 必須是布林值');
     }
+    if (layer.worldSpace !== undefined && typeof layer.worldSpace !== 'boolean') errors.push(where + '.worldSpace 必須是布林值');
     /* 刻意不強制「有 velocityRotationOffset 就必須 alignToVelocity」：
        Editor 的勾選框關掉時 offset 仍留在資料裡，強制檢查會讓純粹的開關動作
        產生不合法的 preset。offset 單獨存在時沒有作用，這一點寫在 Schema 文件。 */
@@ -622,7 +623,7 @@ var VFXCore = (function () {
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
-      'alignToVelocity', 'velocityRotationOffset', 'subEmitter'],
+      'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter'],
     procedural: ['effect', 'size', 'scrollSpeed', 'water', 'radiusProfile'].concat(PER_AXIS_SCALE_FIELDS)
   };
 
@@ -798,7 +799,7 @@ var VFXCore = (function () {
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
     'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
     'startScale', 'rotationStart', 'rotationSpeed',
-    'alignToVelocity', 'velocityRotationOffset', 'subEmitter',
+    'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife', 'sheet', 'radiusProfile', 'water'];
 
@@ -886,6 +887,7 @@ var VFXCore = (function () {
       rotationStart: layer.rotationStart === undefined ? 0 : layer.rotationStart,
       rotationSpeed: layer.rotationSpeed === undefined ? 0 : layer.rotationSpeed,
       alignToVelocity: layer.alignToVelocity === true,
+      worldSpace: layer.worldSpace === true,
       subEmitter: layer.subEmitter ? {
         layer: layer.subEmitter.layer,
         on: layer.subEmitter.on || 'death',
@@ -1336,6 +1338,7 @@ var VFXCore = (function () {
       // 粒子狀態物件也重用（free-list），避免每次發射都配置新物件
       var p = particlePool.length ? particlePool.pop() : {};
       p.x = px; p.y = py;
+      p.spawnFrame = d.worldSpace ? { origin: { x: effect.origin.x, y: effect.origin.y }, rotation: effect.rotation, scaleX: effect.scaleX, scaleY: effect.scaleY } : null;
       p.vx = Math.cos(angle) * speed;
       p.vy = Math.sin(angle) * speed;
       /* 繼承母粒子的速度：煙要跟著碎片的去向飄一段，而不是原地冒出來。
@@ -1507,7 +1510,8 @@ var VFXCore = (function () {
           nx += valueNoise2(fx2 + ft, fy2, noiseSeed) * noise.strength;
           ny += valueNoise2(fx2, fy2 + ft + 31.4, noiseSeed) * noise.strength;
         }
-        var world = toWorld(effect, nx, ny);
+        var particleFrame = p.spawnFrame || effect;
+        var world = toWorld(particleFrame, nx, ny);
         var t = scratchTransform;
         t.visible = true;
         t.x = world.x;
@@ -1516,7 +1520,7 @@ var VFXCore = (function () {
            alignToVelocity 是「再加上去」的一項，不是取代：rotationStart 仍是初始
            偏移、rotationSpeed 仍是相對自轉、rotationOverLife 仍是疊加曲線。
            關閉時這一行與加入本功能之前完全相同。 */
-        t.rotation = effect.rotation + d.rotation + p.rotation + (rotK === null ? 0 : rotK);
+        t.rotation = particleFrame.rotation + d.rotation + p.rotation + (rotK === null ? 0 : rotK);
         t.skewX = 0;
         if (d.alignToVelocity && p.hasVelAngle) {
           t.rotation += p.velAngle + d.velocityRotationOffset;

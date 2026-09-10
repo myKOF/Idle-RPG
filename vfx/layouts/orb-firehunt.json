@@ -6,11 +6,12 @@
       "id": "orb-firehunt",
       "name": "orb-firehunt",
       "layerIds": [
-        "glow",
-        "tail",
-        "body",
-        "core",
-        "embers"
+        "arc-gold",
+        "arc-crimson",
+        "ember-shell",
+        "molten-heart",
+        "surface-flames",
+        "trailing-embers"
       ]
     }
   ],
