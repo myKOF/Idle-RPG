@@ -284,6 +284,35 @@ test('VIEW-28 「回到預設視角」把縮放與平移一起歸零', function 
   assert.ok(/btn\.onclick = resetCamera/.test(src), '按鈕要接到它');
 });
 
+test('VIEW-29B 檢視偏好放 cookie，因為 localStorage 是依連接埠分開的', function () {
+  /* 五份工作副本共用 28361~28370，啟動器抓到哪一個埠取決於當下誰先占著。
+     localStorage 依 origin 分隔而 origin 含連接埠，所以昨天在 28361 調好的
+     背景色，今天開在 28363 就整份不見——使用者看到的現象是「編輯器不記得
+     我的設定」。實測 28362 設好之後，28365 的 localStorage 是 null。
+     cookie 不分連接埠，同一台機器共用同一份。 */
+  const src = stripped();
+  assert.ok(/PREFS_COOKIE/.test(src), '要有一份共用的偏好 cookie');
+  ['background', 'grid', 'previewLoop'].forEach(function (key) {
+    assert.ok(new RegExp("writePref\\('" + key + "'").test(src), key + ' 要寫進偏好');
+    assert.ok(new RegExp("readPref\\('" + key + "'").test(src), key + ' 要從偏好讀');
+  });
+  /* 這三個不得再直接寫 localStorage，否則兩份儲存會分家 */
+  ['BG_STORAGE_KEY', 'GRID_STORAGE_KEY', 'PREVIEW_LOOP_KEY'].forEach(function (k) {
+    assert.ok(!new RegExp('localStorage\\.setItem\\(' + k).test(src),
+      k + ' 不該再直接寫 localStorage');
+  });
+  /* 舊值要搬過來一次，不然換儲存方式等於把使用者現有的設定重設掉 */
+  const fn = src.slice(src.indexOf('function readPref('));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/localStorage\.getItem\(legacyStorageKey\)/.test(body), '要讀得到舊值');
+  assert.ok(/writePref\(key, legacy\)/.test(body), '而且要搬進 cookie');
+
+  /* 圖層收合狀態刻意留在 localStorage：一份 preset 一筆，160 多份會撞上
+     cookie 的 4KB 上限，而且它是短期狀態不是長期偏好。 */
+  assert.ok(/localStorage\.setItem\(collapsedKey\(\)/.test(src),
+    '收合狀態仍然走 localStorage');
+});
+
 test('VIEW-29 平移與縮放一樣不進 preset、不進歷史、不記 localStorage', function () {
   const src = stripped();
   const snap = src.slice(src.indexOf('function historySnapshot'));
