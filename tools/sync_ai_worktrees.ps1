@@ -99,6 +99,16 @@ function Get-GitTextSoft {
 
 # 與 Invoke-Git 同形，但回傳結束碼而不是丟例外。stderr 不重導，讓 git 的
 # 進度訊息照常出現在畫面上——那正是使用者要看的同步紀錄。
+#
+# git 的 stdout 一定要用 Out-Host 送去畫面，不能就這樣讓它落在管線上：
+# PowerShell 會把函式內所有落在管線上的東西一起當成回傳值，於是這個函式
+# 回傳的就不是結束碼，而是「git 的輸出行 ＋ 結束碼」的陣列。呼叫端寫成
+# `if ((Invoke-GitSoft ...) -ne 0)`，而陣列 -ne 0 在 PowerShell 是「篩出
+# 不等於 0 的元素」，得到非空陣列即為真——成功會被判成失敗。
+#
+# 實際踩到（2026-09-11）：素材庫已經是最新時 `pull --rebase` 把
+# 「Already up to date.」印在 stdout，於是同步每次都回報素材庫失敗，
+# 而且連帶跳過後面的 push。fetch 沒事只是因為它把訊息寫在 stderr。
 function Invoke-GitSoft {
     param(
         [Parameter(Mandatory = $true)][string]$Worktree,
@@ -106,7 +116,7 @@ function Invoke-GitSoft {
     )
 
     Write-Host ('git -C "{0}" {1}' -f $Worktree, ($GitArguments -join ' ')) -ForegroundColor DarkGray
-    & git -C $Worktree @GitArguments
+    & git -C $Worktree @GitArguments | Out-Host
     return $LASTEXITCODE
 }
 

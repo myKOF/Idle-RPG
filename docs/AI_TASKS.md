@@ -6613,3 +6613,11 @@ Worker 存活且頁面正常完成載入。
 - 驗證：8 項測試全通過，全部走真正的 `git merge` 而非直接呼叫驅動程式，以涵蓋 `.gitattributes`、driver 註冊與參數傳遞。涵蓋兩邊各自新增、單邊修改、同區雙改衝突、刪除 vs 修改、標題重複退回、行尾混用不重複、以及實際 AI_TASKS.md 可解析且標題唯一。行尾那條做過突變測試：拿掉 CR 正規化後該測試確實會紅。
 - 真實回放：以本日實際衝突的三個版本（base 69120060、ours 673370fe、theirs 84ecfad5）直接餵給驅動程式，結束碼 0，自動產生 266 個區段，與人工解出的結果區段全同、零行遺失，僅新區段排序不同。也就是那次衝突本來不需要人介入。
 - 已於本機註冊並確認三個 worktree 都讀得到。未推送。
+
+## Claude｜同步腳本誤判素材庫失敗（SYNC-SOFTGIT-20260911）
+
+- 症狀：程式碼同步全部成功，但每次都在最後回報「VFX 素材庫同步失敗」，而素材庫其實是乾淨且已同步的。
+- 根因：`Invoke-GitSoft` 內 `& git ...` 的 stdout 落在管線上，PowerShell 會把函式內所有落在管線上的東西一起當成回傳值，於是回傳的是「git 的輸出行 ＋ 結束碼」的陣列。呼叫端 `if ((Invoke-GitSoft ...) -ne 0)`，而陣列 `-ne 0` 在 PowerShell 是「篩出不等於 0 的元素」，非空即為真——成功被判成失敗。`fetch` 沒事只是因為它把訊息寫在 stderr；素材庫已是最新時 `pull --rebase` 把「Already up to date.」印在 stdout 才觸發。
+- 影響不只誤報：判失敗後會直接 return，**連帶跳過後面的 push**，真的有東西要推時推不出去。
+- 修法：`& git ... | Out-Host`，輸出照樣顯示但不落在回傳值上。新增 `tests/sync-ai-worktrees.test.cjs` 釘住這條寫法，並做過突變測試（拿掉 Out-Host 該測試確實會紅）。同檔另釘三條：`Get-GitTextSoft` 必須用 finally 還原 ErrorActionPreference、素材庫同步排在程式碼之前且不得 throw、素材庫路徑與分支不得寫死。
+- 驗證：修正後實際執行，素材庫回報「[完成] 素材庫 master 目前指向 2d4ef8c」；4 項測試通過。
