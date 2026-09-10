@@ -337,7 +337,7 @@ test('落雷術 T5：雷電脈衝在落地後暈眩目標本身與 6 米內的 1
   const es = [enemy(1e9, 5 * M, 0), near, far];
   setLevels(c, 'thunderstrike', [1, 1, 1, 1, 1, 0, 0]);
   c.castSkill2(p, es, 'thunderstrike', 'mv-float');
-  run(c, p, es, 3);
+  run(c, p, es, .4);
   assert.ok(c.effectActive(es[0], 'stun'), '落點目標必暈');
   assert.ok(c.effectActive(near, 'stun'), '6 米內的鄰居也被震暈');
   assert.ok(!c.effectActive(far, 'stun'), '範圍外不受影響');
@@ -622,4 +622,11 @@ test('CHAIN 藍白電弧每隔 200ms 連接下一目標，傷害顯示對齊抵�
  const chains=events.filter(s=>s.variant==='lightning-chain');assert.equal(chains.length,4);
  assert.deepEqual(chains.map(s=>s.delayMs||0),[0,200,400,600]);assert.ok(chains.every(s=>s.vfx.attack==='bolt-chain-travel-bluewhite'&&!s.vfx.projectile));
  assert.deepEqual(hits,[183,383,583,783]);
+});
+
+test('THUNDER 加速三成後落地才命中，每道仍間隔 200ms',()=>{
+ const c=loadContext(),hits=stubHits(c),p=playerEnt(),es=[enemy(1e9,50,0),enemy(1e9,90,0)];const events=stubVfx(c);
+ setLevels(c,'thunderstrike',[1,0,0,0,0,0,0]);c.castSkill2(p,es,'thunderstrike','mv-float');
+ const bolts=events.filter(s=>s.variant==='thunder-strike');assert.deepEqual(bolts.map(s=>s.delayMs||0),[0,200]);assert.ok(bolts.every(s=>s.travelMs[0]===129&&s.vfx.attack==='bolt-thunderstrike-bluewhite'));
+ run(c,p,es,.12,.01);assert.equal(hits.length,0);run(c,p,es,.02,.01);assert.equal(hits.length,1);run(c,p,es,.18,.01);assert.equal(hits.length,1);run(c,p,es,.02,.01);assert.equal(hits.length,2);
 });
