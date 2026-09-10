@@ -3175,9 +3175,29 @@
       '請先修正檔案內的 preset.id。';
   }
 
+  /* 存檔失敗的原因寫兩個地方，理由不同：
+       #validation   右側「驗證」面板，是這一份 preset 目前的驗證結果，會留著。
+       #save-error   工具列下方的橫幅，是「你剛剛按的那一下失敗了」的當場回饋。
+     只寫前者的話，Inspector 一長就被捲到畫面外，使用者只看得到「存檔失敗」
+     四個字而看不到任何原因——這正是這個函式被拆成兩處的原因。 */
   function showSaveError(title, list) {
+    var text = title + (list && list.length ? '：\n- ' + list.join('\n- ') : '');
     $('validation').className = 'hint err';
-    $('validation').textContent = title + (list && list.length ? '：\n- ' + list.join('\n- ') : '');
+    $('validation').textContent = text;
+    var banner = $('save-error');
+    var body = $('save-error-text');
+    if (banner && body) {
+      body.textContent = text;
+      banner.hidden = false;
+      banner.scrollTop = 0;                   // 上一則捲到一半時，新的一則要從頭看
+    }
+  }
+
+  /* 橫幅只反映「最近一次存檔」。下一次按下去之前先收掉，
+     不然成功之後還掛著上一次的紅字，會讓人以為又失敗了。 */
+  function clearSaveError() {
+    var banner = $('save-error');
+    if (banner) banner.hidden = true;
   }
 
   /* Save：把目前的 Preset 回寫到 repo 的 vfx/presets/<preset.id>.json。
@@ -3185,6 +3205,7 @@
      之後要做 Save As 時只要能改 preset.id 就成立，不必動這條路徑。 */
   function savePreset() {
     if (state.saving) return;                 // 連按兩下不該送出兩次 PUT
+    clearSaveError();                         // 這一次的結果從乾淨的畫面開始講
     var targetProblem = saveTargetProblem();
     if (targetProblem) {
       showSaveError('無法存檔', [targetProblem]);
@@ -3216,10 +3237,16 @@
         throw new Error('伺服器回應不是 JSON（HTTP ' + r.status + '）');
       }).then(function (body) {
         if (!r.ok || !body.ok) {
-          var detail = (body.problems && body.problems.length)
-            ? body.error + '\n- ' + body.problems.join('\n- ')
-            : body.error || ('HTTP ' + r.status);
-          throw new Error(detail);
+          /* 一行一個原因，項目符號留給 showSaveError 加。這裡先加一次、
+             那邊再加一次的話，problems 會變成「- - 某某」。 */
+          var lines = [body.error || ('HTTP ' + r.status)]
+            .concat(body.problems || []);
+          var err = new Error(lines.join('\n'));
+          /* 伺服器說了檔案有沒有落地，就照它說的講。這個旗標只有素材同步失敗
+             那一條會是 true；連線層的錯誤（伺服器沒回應）拿不到 body，
+             留在 undefined，下面當成「未寫入」——那也是事實。 */
+          err.written = body.written === true;
+          throw err;
         }
         return body;
       });
@@ -3237,9 +3264,16 @@
       $('validation').textContent = '✓ 已寫入 vfx/presets/' + body.presetId + '.json';
       refreshDirty();
     }).catch(function (e) {
-      /* 失敗：Editor 狀態原封不動，dirty 維持 true，錯誤照伺服器講的原因顯示。 */
+      /* 失敗：Editor 狀態原封不動，dirty 維持 true，錯誤照伺服器講的原因顯示。
+         標題不能寫死。以前一律說「repo 檔案未變動」，但素材同步失敗那條路
+         檔案其實已經寫進去了，兩句話直接互相打臉，看到的人會以為要重做一次。
+         dirty 兩種情況都維持 true：再按一次存檔＝重寫同樣的 bytes 並重試同步，
+         這正是使用者該做的事。 */
       setSaveStatus('存檔失敗', 'err');
-      showSaveError('存檔失敗（repo 檔案未變動）', String(e && e.message || e).split('\n'));
+      showSaveError(e && e.written
+        ? '存檔失敗（preset 已寫入 repo，但後續步驟沒完成，請修正後再按一次儲存）'
+        : '存檔失敗（repo 檔案未變動）',
+        String(e && e.message || e).split('\n'));
       refreshDirty();
     }).then(function () {
       state.saving = false;
@@ -3636,6 +3670,9 @@
     $('btn-copy-preset').onclick = copyPresetName;
     $('btn-save').onclick = savePreset;
     $('btn-download').onclick = downloadPreset;
+    /* 橫幅擋在工具列下面，讀完要收得掉。收掉的只是橫幅，
+       右側「驗證」面板仍然留著同一段文字，回頭要查還找得到。 */
+    if ($('save-error-close')) $('save-error-close').onclick = clearSaveError;
     $('btn-load').onclick = function () { $('file-load').click(); };
     $('file-load').onchange = function (e) {
       if (e.target.files[0]) loadPresetFromFile(e.target.files[0]);

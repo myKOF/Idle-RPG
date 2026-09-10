@@ -189,12 +189,16 @@ test('儲存先完成素材同步才回成功；同步失敗回報錯誤並保�
     r=await put(h.port,savePath(p.id),JSON.stringify(p));
     assert.equal(r.status,500);assert.equal(r.json.ok,false);
     assert.match(r.json.error,/素材同步失敗.*missing source texture/);
+    /* 這是唯一一條「失敗但檔案已落地」的路。Editor 拿這個旗標決定要說
+       「repo 檔案未變動」還是「已寫入但後續沒完成」，說錯就是騙人。 */
+    assert.equal(r.json.written,true,'同步失敗時檔案已經寫進去了，必須誠實回報');
     assert.equal(readPreset(sb,p.id).layers[0].alpha,.42);
     fail=false;
     r=await put(h.port,savePath(p.id),JSON.stringify(p));
     assert.equal(r.status,200);assert.equal(count,3);
     r=await put(h.port,savePath(p.id),'invalid json');
     assert.equal(r.status,400);assert.equal(count,3,'非法設定不執行匯出');
+    assert.equal(r.json.written,false,'沒寫進去的失敗必須明講 written:false，不能省略欄位');
   } finally {await closeServer(h);cleanup(sb);}
 });
 
@@ -1114,4 +1118,78 @@ test('C6 Editor 在 preset.id 與載入來源不一致時停用存檔', function
     'savePreset 必須在送出 PUT 之前先過這道擋門');
   assert.ok(/state\.sourcePresetId = bootPresetId/.test(src),
     '開場載入時必須記下來源 id');
+});
+
+/* C7：失敗原因必須看得見。
+   原本原因只寫進右側欄最底下的 #validation，Inspector 一長就被推到捲軸外，
+   使用者只看得到工具列上「存檔失敗」四個字，沒有任何線索——2026-09-10 實測
+   就是這樣卡住的。原因必須同時出現在按鈕旁邊。 */
+test('C7 存檔失敗的原因同時顯示在工具列下方，不是只寫進右側驗證面板', function () {
+  const html = fs.readFileSync(
+    path.join(REPO, 'tools', 'vfx', 'editor', 'index.html'), 'utf8');
+  const css = fs.readFileSync(
+    path.join(REPO, 'tools', 'vfx', 'editor', 'editor.css'), 'utf8');
+  const src = fs.readFileSync(
+    path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8');
+
+  /* 橫幅在 </header> 之後、<main id="layout"> 之前：緊貼工具列，而且不在
+     任何一個會自己捲動的欄位裡面。位置錯了就等於沒修。 */
+  const afterHeader = html.indexOf('</header>');
+  const beforeMain = html.indexOf('<main id="layout"');
+  const bannerAt = html.indexOf('id="save-error"');
+  assert.ok(bannerAt > afterHeader && bannerAt < beforeMain,
+    '橫幅必須在 </header> 與 <main> 之間，才會緊貼工具列');
+  assert.ok(/id="save-error"[^>]*hidden/.test(html), '沒有錯誤時必須完全不佔版面');
+  assert.ok(/id="save-error-text"/.test(html) && /id="save-error-close"/.test(html),
+    '橫幅要有內容區與關閉鈕');
+
+  /* 不設高度上限的話，十幾條驗證錯誤會把預覽區壓扁。 */
+  const rule = css.slice(css.indexOf('.save-error {'), css.indexOf('.save-error-text'));
+  assert.ok(/max-height/.test(rule) && /overflow:\s*auto/.test(rule),
+    '橫幅必須有高度上限並自己捲');
+  assert.ok(/flex:\s*0 0 auto/.test(rule),
+    '橫幅只能吃自己的高度，不得參與 #layout 的伸縮');
+
+  /* showSaveError 是所有存檔失敗的唯一出口，兩個地方都要寫到。 */
+  const fn = src.slice(src.indexOf('function showSaveError'),
+    src.indexOf('function clearSaveError'));
+  assert.ok(/\$\('validation'\)/.test(fn), '右側驗證面板仍要留下紀錄');
+  assert.ok(/\$\('save-error-text'\)/.test(fn) && /hidden = false/.test(fn),
+    'showSaveError 必須同時把原因送上橫幅並顯示它');
+
+  /* 每次按下存檔都要從乾淨的畫面開始，否則成功之後還掛著上一次的紅字。 */
+  const saveFn = src.slice(src.indexOf('function savePreset'),
+    src.indexOf('function downloadPreset'));
+  assert.ok(saveFn.indexOf('clearSaveError()') >= 0 &&
+    saveFn.indexOf('clearSaveError()') < saveFn.indexOf('saveTargetProblem()'),
+    'savePreset 必須在任何擋門之前先收掉上一次的橫幅');
+  assert.ok(/save-error-close'\)\.onclick = clearSaveError/.test(src),
+    '關閉鈕必須接上 clearSaveError');
+});
+
+/* C8：檔案到底有沒有寫進去，只有伺服器知道，Editor 不准自己猜。 */
+test('C8 存檔失敗的標題依 written 決定，不寫死「repo 檔案未變動」', function () {
+  const src = fs.readFileSync(
+    path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8');
+  const serverSrc = fs.readFileSync(
+    path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
+
+  assert.ok(/written: result\.written === true/.test(serverSrc),
+    '伺服器的失敗回應必須一律帶上 written');
+  assert.ok(/written: true/.test(
+    serverSrc.slice(serverSrc.indexOf('function savePresetText'),
+      serverSrc.indexOf('function saveLayoutText'))),
+    '素材同步失敗那條路必須回報 written: true');
+
+  const saveFn = src.slice(src.indexOf('function savePreset'),
+    src.indexOf('function downloadPreset'));
+  assert.ok(/err\.written = body\.written === true/.test(saveFn),
+    'Editor 必須把伺服器講的 written 帶進 catch');
+  assert.ok(/e && e\.written[\s\S]*?已寫入 repo[\s\S]*?repo 檔案未變動/.test(saveFn),
+    '標題必須由 written 分岔，兩種說法都要在');
+
+  /* 項目符號只能加一次。這裡先加、showSaveError 再加一次的話，
+     problems 每一條都會變成「- - 某某」。 */
+  assert.ok(!/problems\.join\('\\n- '\)/.test(saveFn),
+    '不得在這裡先加項目符號，那是 showSaveError 的事');
 });
