@@ -97,16 +97,21 @@
         }
         combo.rows = ids.map(function (id) {
           var u = usage[id];
-          var label = u && u.label ? u.label : '';
+          /* labels 是收攏過的（一個群組用到多階時只寫群組名），
+             all 是逐階的完整清單——前者給列上顯示，後者給 tooltip 與搜尋。
+             搜尋要用完整的那一份，否則打「水龍捲」這種階段名會找不到。 */
+          var labels = (u && u.labels) || [];
+          var all = (u && u.all) || labels;
+          var label = labels.join('、');
           return {
             id: id,
             label: label,
+            all: all,
             count: (u && u.count) || 0,
             text: label ? id + '（' + label + '）' : id,
-            /* 關鍵字同時比對 id 與用途標籤，所以打「雷球」找得到
-               lightning-orb-field。id 一律小寫，中文沒有大小寫，
-               所以只要把輸入轉小寫就夠了。 */
-            search: (id + ' ' + label).toLowerCase()
+            /* 關鍵字同時比對 id 與用途，所以打「雷球」找得到 lightning-orb-field。
+               id 一律小寫，中文沒有大小寫，所以只要把輸入轉小寫就夠了。 */
+            search: (id + ' ' + all.join(' ')).toLowerCase()
           };
         });
         input.value = comboDisplayText();
@@ -164,9 +169,11 @@
         tag.textContent = row.label;
         el.appendChild(tag);
       }
-      el.title = row.count > 1
-        ? row.id + '：共 ' + row.count + ' 處使用，這裡顯示第一個'
-        : (row.label ? row.id + '：' + row.label : row.id + '：目前沒有任何技能或程式碼用到');
+      /* tooltip 給逐階的完整清單：列上為了長度把同群組的多個階段收攏成群組名，
+         真的要知道是哪幾階時，滑鼠停一下就有。 */
+      el.title = row.all && row.all.length
+        ? row.id + '\n共 ' + row.count + ' 處使用：\n· ' + row.all.join('\n· ')
+        : row.id + '：目前沒有任何技能或程式碼用到';
       /* mousedown 而不是 click：input 的 blur 會先關掉清單，click 就永遠打不中。 */
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();

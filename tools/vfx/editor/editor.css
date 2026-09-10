@@ -42,8 +42,9 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 .combo-arrow:hover { background: none; color: #d6d6dc; }
 .combo-list {
   position: absolute; top: 100%; left: 0; z-index: 40; margin-top: 3px;
-  /* 比輸入框寬：清單裡多一欄用途，而且長 id 不該被截斷——這裡正是要看全名的地方 */
-  min-width: 380px; max-height: 60vh; overflow: auto;
+  /* 比輸入框寬得多：右邊那一欄要放「有哪些技能在用」，而且長 id 不該被截斷
+     ——這裡正是要看全名的地方。max-width 讓它在窄視窗下不會撐出畫面外。 */
+  min-width: 620px; max-width: 92vw; max-height: 60vh; overflow: auto;
   background: #1e1e24; border: 1px solid #3a3a44; border-radius: 4px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, .55);
 }
@@ -54,9 +55,15 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 .combo-row:hover, .combo-row.active { background: #2e3f57; }
 /* 目前開著的那一份：用左緣色條而不是變底色，才不會和鍵盤高亮搞混 */
 .combo-row.current { box-shadow: inset 2px 0 0 0 #7fb2ff; }
-.combo-id { flex: 1 1 auto; }
-/* 用途獨立一欄並右對齊：整排對齊之後，掃視「哪幾份沒人用」比讀括號快 */
-.combo-use { flex: 0 0 auto; color: #7a9a7a; font-size: 11px; }
+/* id 永遠不收縮：用途那欄再長也不能把特效名稱擠掉或蓋住——
+   要找的東西是 id，那是這份清單的主體。 */
+.combo-id { flex: 0 0 auto; padding-right: 20px; }
+/* 用途獨立一欄、靠右、吃掉剩下的空間；真的放不下才截斷（完整清單在 tooltip）。 */
+.combo-use {
+  flex: 1 1 auto; min-width: 0; text-align: right;
+  overflow: hidden; text-overflow: ellipsis;
+  color: #7a9a7a; font-size: 11px;
+}
 .combo-empty { padding: 6px 8px; color: #8a8a96; font-size: 12px; }
 /* 伺服器版本對不上的提示。黏在清單頂端：捲到一半才看到警告等於沒看到。 */
 .combo-warn {

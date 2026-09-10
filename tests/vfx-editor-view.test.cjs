@@ -365,6 +365,29 @@ test('VIEW-31 未存檔時攔住重整與關分頁，主動離開時不重複問
    ＋ 新增素材
    ============================================================ */
 
+test('VIEW-35 用途那一欄再長，也不能把特效名稱擠掉或蓋住', function () {
+  /* 要找的東西是 id，那是這份清單的主體。用途是輔助資訊，放不下就截斷，
+     完整的逐階清單在 tooltip 裡。 */
+  const css = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.css'), 'utf8');
+  const idRule = css.slice(css.indexOf('.combo-id {'), css.indexOf('.combo-use'));
+  assert.ok(/flex:\s*0 0 auto/.test(idRule), 'id 那一欄不得收縮');
+  const useRule = css.slice(css.indexOf('.combo-use {'));
+  const useBody = useRule.slice(0, useRule.indexOf('}'));
+  assert.ok(/flex:\s*1 1 auto/.test(useBody), '用途那欄吃掉剩下的空間');
+  assert.ok(/min-width:\s*0/.test(useBody), '沒有 min-width:0 的話 flex 項目不會收縮');
+  assert.ok(/text-overflow:\s*ellipsis/.test(useBody), '放不下要截斷，不是撐開');
+
+  const src = stripped();
+  const fn = src.slice(src.indexOf('function renderComboList'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/row\.all/.test(body), 'tooltip 要給逐階的完整清單');
+  /* 搜尋要用完整的那一份，否則打「水龍捲」這種被收攏掉的階段名會找不到 */
+  const fill = src.slice(src.indexOf('function fillPresetPicker'));
+  const fillBody = fill.slice(0, fill.indexOf('\n  }'));
+  assert.ok(/search:\s*\(id \+ ' ' \+ all\.join/.test(fillBody),
+    '搜尋字串要用逐階的完整清單');
+});
+
 test('VIEW-32 左欄的素材瀏覽器整區刪乾淨，只留一顆「新增素材」', function () {
   /* 選材的實際流程一直是走素材選擇器（有預覽、有詳情、有篩選），
      左欄那份 300 列的清單只是把整欄佔滿，讓圖層多的 preset 展不開。 */
