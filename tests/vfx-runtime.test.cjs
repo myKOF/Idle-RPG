@@ -1236,3 +1236,14 @@ test('CHAIN 藍白連線走 beam 並保持兩端距離，延遲段不當作飛�
  const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,100);assert.equal(t.y,50);assert.equal(t.rotation,0);assert.ok(Math.abs(t.scaleX-200/512)<.001);
  adapter.update(.11);assert.equal(adapter.stats().played,2);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+test('CHAIN 快速彈射圖集依時間推進並準時回收',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);adapter.tryPlay({fxKind:'chain',targets:['mv-float-1','mv-float-2'],vfx:{attack:p.id}});
+ adapter.update(.05);const n=log.nodes[0],early=n.transforms.at(-1).frame;
+ adapter.update(.1);const late=n.transforms.at(-1).frame;assert.ok(late>early);
+ const {decodePng}=require('../tools/vfx/vfx-raster.cjs');const tex=decodePng(fs.readFileSync(path.join(__dirname,'../images/vfx/assets/codex-authored/lightning/chain-travel.png')));
+ function centre(frame){let sum=0,mass=0;for(let y=0;y<128;y++)for(let x=0;x<256;x++){let a=tex.rgba[((Math.floor(frame/6)*128+y)*tex.width+(frame%6*256+x))*4+3];sum+=x*a;mass+=a;}return sum/mass;}
+ assert.ok(centre(late)>centre(early)+60,'發亮電弧從起點向終點推進');
+ adapter.update(.2);assert.equal(adapter.stats().fx.activeEffects,0);
+});

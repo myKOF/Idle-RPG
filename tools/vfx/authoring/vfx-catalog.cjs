@@ -367,7 +367,7 @@ g('earthguard', [
   { attack: 'pillar-light', hit: 'hit-light', ground: 'aura-earthguard-symbiosis' }        // T7 天地共生（rain/pillar，主要角色是 attack）
 ], { worldRebirth: { attack: 'pillar-earth', hit: 'hit-earth' } });
 g('chainlightning', [
-  { attack: 'bolt-chain-bluewhite', hit: 'hit-lightning', cast: 'cast-magic' }, // T1 連鎖閃電
+  { attack: 'bolt-chain-travel-bluewhite', hit: 'hit-lightning', cast: 'cast-magic' }, // T1 連鎖閃電
   _, _, _,
   { hit: 'hit-lightning' },                           // T5 電殛擴散（thunder-burst）
   { ground: 'aura-lightning-relay' },                 // T6 雷幻身（lightning-relay）

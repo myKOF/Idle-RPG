@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 119,
+  "assetCount": 120,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -838,6 +838,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
       "fileSize": 20395025
+    },
+    {
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "relativePath": "codex-authored/lightning/chain-travel.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
+      "fileSize": 86462
     }
   ]
 }

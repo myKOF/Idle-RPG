@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2421,
+  "assetCount": 2422,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109611,6 +109611,21 @@
         "dimensions": {
           "width": 2560,
           "height": 7680
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "relativePath": "codex-authored/lightning/chain-travel.png",
+      "package": "codex-authored",
+      "format": "png",
+      "fileSize": 86462,
+      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 384
         },
         "hasAlpha": true
       }
