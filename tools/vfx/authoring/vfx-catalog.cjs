@@ -348,7 +348,7 @@ g('firehunt', [
   _, _, _, _, _, _
 ], { fireGodDescend: { ground: 'ground-domain-fire', projectile: 'proj-firehunt-ring', hit: 'hit-fire' } });
 g('rockarmor', [
-  { ground: 'aura-rock-armor' },                      // T1 岩甲術
+  { ground: 'aura-rockarmor-stone' },                  // T1 岩甲術
   _,
   { hit: 'hit-earth' },                               // T3 岩甲尖刺（rock-spike impact）
   _, _, _, _

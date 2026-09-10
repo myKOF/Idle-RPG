@@ -576,7 +576,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null);
+        var fallbackSize = sizeOf(g.presetId, g.presetId === 'aura-rockarmor-stone' ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -705,7 +705,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
-        bornAt: clock, rise: presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
+        bornAt: clock, rise: presetId === 'aura-rockarmor-stone' || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
