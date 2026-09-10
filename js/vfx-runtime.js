@@ -437,6 +437,16 @@ var VFXRuntime = (function () {
       return travelSecAt(spec, 0);
     }
 
+    function playThunderstrike(rt, presetId, spec) {
+      var ids = Array.isArray(spec.targets) ? spec.targets : [];
+      ids.forEach(function (id) {
+        if (ctx.chainPoint && !ctx.chainPoint(id)) return;
+        var ref = play(rt, presetId, Object.assign(defaultSize(presetId), { position: footOf(id) }));
+        if (ref) follows.push({ ref: ref, key: id, until: clock + presetDurations[presetId], requireVisible: true });
+      });
+      return true;
+    }
+
     /* 範圍中心（爆發、場域一次性） */
     function playOnArea(rt, presetId, spec) {
       if (!spec.area) return false;
@@ -980,7 +990,7 @@ var VFXRuntime = (function () {
       var drops0 = budgetDrops;
       switch (role) {
         case 'hit':
-          ok = presetId === 'burst-meteor-inferno' && spec.area
+          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : presetId === 'burst-meteor-inferno' && spec.area
             ? playOnArea(rtFx, presetId, spec)
             : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
           break;
@@ -994,7 +1004,9 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec, role);
           break;
         case 'attack':
-          if (spec.variant === 'dual-slash' || spec.variant === 'dual-storm') {
+          if (presetId === 'bolt-thunderstrike-bluewhite') {
+            ok = playThunderstrike(rtFx, presetId, spec);
+          } else if (spec.variant === 'dual-slash' || spec.variant === 'dual-storm') {
             var danceIds = spec.targets || [];
             var danceSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
             for (var di = 0; di < danceIds.length; di++) {
@@ -1053,7 +1065,7 @@ var VFXRuntime = (function () {
       /* 受擊爆點：同一則事件的 hit 角色跟著主要角色走（飛行物則等它抵達）；
          主要角色本身就是 hit 時不重複播。
          spec.hit === false＝這一擊被閃避或被無敵擋下，舊畫法同樣不畫爆點。 */
-      if (role !== 'hit' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
+      if (role !== 'hit' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && presetId !== 'bolt-thunderstrike-bluewhite' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
         playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
           role === 'projectile' ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
@@ -1161,6 +1173,7 @@ var VFXRuntime = (function () {
       /* 跟隨玩家的施放特效 */
       for (var f = follows.length - 1; f >= 0; f--) {
         var fo = follows[f];
+        if (fo.requireVisible && ctx.chainPoint && !ctx.chainPoint(fo.key)) { stopRef(fo.ref); follows.splice(f, 1); continue; }
         var live = moveRef(fo.ref, { position: footOf(fo.key) });
         if (!live || fo.until <= clock) {
           if (live && fo.until <= clock) stopRef(fo.ref);
@@ -1266,7 +1279,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-chain-travel';
+  var DATA_VERSION = '20260910-thunderstrike';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

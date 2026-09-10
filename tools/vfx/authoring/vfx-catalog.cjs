@@ -374,7 +374,7 @@ g('chainlightning', [
   _
 ], { eternalSuperconductor: { ground: 'aura-lightning-relay', projectile: 'bolt-chain-lightning', hit: 'hit-lightning' }, flyingThunderGod: { projectile: 'bolt-chain-lightning', hit: 'hit-lightning' } });
 g('thunderstrike', [
-  { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple', cast: 'cast-magic' }, // T1 落雷術（thunder-strike + thunder-impact）
+  { attack: 'bolt-thunderstrike-bluewhite', hit: 'hit-thunderstrike-bluewhite', cast: 'cast-magic' }, // T1 落雷術（thunder-strike + thunder-impact）
   _, _, _, _, _, _
 ], { thunderMatrix: { ground: 'ground-thunder-curtain', attack: 'bolt-curtain-lightning' }, heavenTribulation: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } });
 g('thunderorb', [
