@@ -287,17 +287,26 @@ select option { background: #1b2222; color: #ded9c8; }
 .equip-material-grid { gap: 4px; }
 .equip-material-icon { border-radius: 0; background: var(--af-raised); box-shadow: inset 0 0 0 1px #919c7833; }
 
-#inv-section-box, #forge-inv-box { position: relative; padding: 20px; border: 1px solid #56635f; margin-top: 12px; }
+#inv-section-box, #forge-inv-box {
+  position: relative;
+  padding: 16px 14px;
+  border: 4px ridge #777b72 !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px #0b1012, inset 0 0 0 3px #8b84962b, inset 0 0 24px #0008, 0 4px 12px #0009 !important;
+  margin-top: 12px;
+}
 #inv-section-box::after, #forge-inv-box::after { display: none; }
 .inv-head { background: linear-gradient(#3c46415e, #121719b3), var(--af-iron) center / 240px; margin: -6px -5px 10px; padding: 6px; border-bottom: 3px double #4c5a56; flex-wrap: wrap; row-gap: 6px; }
 .inv-head .sec-title { color: #d1cebd; font-size: 16px; }
 #inventory-grid, #forge-inventory-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
   scrollbar-color: #59665e #111618;
+  scrollbar-width: thin;
   background-color: #0b1013;
-  background-image: linear-gradient(90deg, #6b736233 1px, transparent 1px), linear-gradient(#6b736233 1px, transparent 1px), linear-gradient(#0b1013b3, #0b1013b3), var(--af-stone);
-  background-size: 64px 64px, 64px 64px, auto, 320px;
-  background-position: 3px 3px;
+  background-image: linear-gradient(#0b1013b3, #0b1013b3), var(--af-stone);
+  background-size: auto, 320px;
   box-shadow: inset 0 0 15px #0008;
+  padding: 3px !important;
 }
 #inventory-grid > .hint { grid-column: 1 / -1; padding: 12px; background: #111719dd; }
 .item-cell, .gem-inventory-cell, .gconv-slot, .forge-slot, .forge-center {
