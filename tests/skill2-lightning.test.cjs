@@ -627,6 +627,18 @@ test('CHAIN 藍白電弧每隔 200ms 連接下一目標，傷害顯示對齊抵�
 test('THUNDER 加速三成後落地才命中，每道仍間隔 200ms',()=>{
  const c=loadContext(),hits=stubHits(c),p=playerEnt(),es=[enemy(1e9,50,0),enemy(1e9,90,0)];const events=stubVfx(c);
  setLevels(c,'thunderstrike',[1,0,0,0,0,0,0]);c.castSkill2(p,es,'thunderstrike','mv-float');
- const bolts=events.filter(s=>s.variant==='thunder-strike');assert.deepEqual(bolts.map(s=>s.delayMs||0),[0,200]);assert.ok(bolts.every(s=>s.travelMs[0]===129&&s.vfx.attack==='bolt-thunderstrike-bluewhite'));
+ const bolts=events.filter(s=>s.variant==='thunder-strike');assert.equal(bolts.length,1);assert.ok(bolts.every(s=>s.travelMs[0]===129&&s.vfx.attack==='bolt-thunderstrike-bluewhite'));
  run(c,p,es,.12,.01);assert.equal(hits.length,0);run(c,p,es,.02,.01);assert.equal(hits.length,1);run(c,p,es,.18,.01);assert.equal(hits.length,1);run(c,p,es,.02,.01);assert.equal(hits.length,2);
+ assert.equal(events.filter(s=>s.variant==='thunder-strike').length,2);
+});
+
+test('THUNDER 每道發動時重新隨機選敵，排除死亡與出界並納入新敵人',()=>{
+ const c=loadContext(),p=playerEnt();stubHits(c);const events=stubVfx(c);
+ const a=enemy(1e9,50,0,'A'),b=enemy(1e9,80,0,'B'),outside=enemy(1e9,9999,0,'遠處');let pool=[a,b,outside];
+ setLevels(c,'thunderstrike',[1,0,1,0,0,0,0]);forceRolls(c,.999);c.castSkill2(p,pool,'thunderstrike','mv-float');
+ assert.equal(events.find(s=>s.variant==='thunder-strike').targets[0],'B','第一道也隨機，不固定主目標 A');
+ b.hp=0;a.pos.x=9999;const fresh=enemy(1e9,70,0,'新敵人');pool=[a,b,outside,fresh];
+ run(c,p,pool,.21,.01);const bolts=events.filter(s=>s.variant==='thunder-strike');assert.equal(bolts.length,2);assert.equal(bolts[1].targets[0],'新敵人');
+ fresh.hp=0;run(c,p,pool,.6,.01);assert.equal(events.filter(s=>s.variant==='thunder-strike').length,2,'沒有有效敵人時不發射');
+ assert.equal(c.SKILL2_RT.thunderLaunches.length,0);
 });

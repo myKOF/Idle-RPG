@@ -248,6 +248,7 @@ function resetSkill2RT() {
     storm: null, // 暴風之舞化身狀態：{ until, nextAt, gap, tgt }（tgt 為當前衝鋒目標實體）
     projectiles: [], // 飛出斬擊／貫穿突刺的執行期飛行物（不入存檔）
     galeStrikes: [], // 疾風斬逐段結算，換場時隨 Runtime 重建
+    thunderLaunches: [], // 每道落雷到發動時才選敵，換場隨 Runtime 清除
     meteors: [], // 殞石落地佇列：{ at, victims, burnSpec, ... }（不入存檔）
     grounds: [], // 地板場域（火龍捲／火牆）的執行期實例（不入存檔）
     groundSeq: 0, // 給顯示層辨識同一道持續場域；不入存檔
@@ -6403,40 +6404,43 @@ function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     hitsPer *= mult;
   }
   var gapMs = Math.max(0, Number(t[0].fx.gap) || 0.2) * 1000;
-  var targets = sgThunderTargets(primary, pool, lvs, targetCount, lg);
-  var boltIndex = 0;
-  for (var i = 0; i < targets.length; i++) {
-    for (var h = 0; h < hitsPer; h++) {
-      sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, targets[i], pool, floatSel, out, boltIndex * gapMs, 0);
-      boltIndex++;
+  for (var boltIndex = 0; boltIndex < targetCount * hitsPer; boltIndex++) {
+    if (boltIndex === 0) {
+      var first = sgThunderTargets(null, pool, lvs, 1, lg)[0];
+      if (first) sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, first, pool, floatSel, out, 0, 0);
+    } else {
+      SKILL2_RT.thunderLaunches.push({ at: GT + boltIndex * gapMs / 1000, pEnt: pEnt, st: st,
+        g: g, lvs: lvs.slice(), dmgVal: dmgVal, pool: pool, floatSel: floatSel, out: out });
+      out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
     }
   }
   // 超神【雷電矩陣】：與落雷同時橫掃全場的十字雷幕
   sgThunderMatrix(pEnt, st, g, pool, floatSel, out);
 }
 
-/* 落雷的目標清單：射程內隨機取 count 個；敵人不足時輪流重用
-   （表定是「對 castM 米內的 N 個目標降下落雷」，沒有指定最近＝射程內隨機；
-   敵人少於 N 時全落在同一批人身上）。第 1 道固定落在施放的主目標身上。
-   傳奇【引雷針】改寫這個順序：範圍內生命值最低的敵人優先，主目標不再固定第 1 順位
-  （「優先攻擊」的字面意思就是換掉選目標的規則）。範圍內沒有敵人時退回原本的隨機規則。 */
+/* 每道發動時重新取得射程內存活目標；引雷針保留低生命優先規則。 */
 function sgThunderTargets(primary, pool, lvs, count, lg) {
+  var live = (pool || []).filter(function (e) { return e && e.hp > 0 && skills2CanReach('thunderstrike', e, lvs); });
   var rod = sgThunderRodSpec(lg);
-  var inRange;
-  if (rod) {
-    inRange = sgThunderRodTargets(pool, rod);
-    if (!inRange.length) inRange = null;
+  var priority = rod ? sgThunderRodTargets(live, rod) : [];
+  var result = [];
+  for (var i = 0; i < count && live.length; i++) {
+    result.push(priority.length ? priority[i % priority.length] : live[Math.floor(Math.random() * live.length)]);
   }
-  if (!inRange) {
-    var rest = (typeof bfRandomOthers === 'function') ? bfRandomOthers(null, pool, pool.length, 0, null) : [];
-    inRange = [primary];
-    for (var i = 0; i < rest.length; i++) {
-      if (rest[i] !== primary && skills2CanReach('thunderstrike', rest[i], lvs)) inRange.push(rest[i]);
-    }
+  return result;
+}
+
+function sgTickThunderLaunches(ctx) {
+  var jobs = SKILL2_RT.thunderLaunches;
+  for (var i = 0; i < jobs.length;) {
+    var job = jobs[i];
+    if (job.at > GT) { i++; continue; }
+    jobs.splice(i, 1);
+    var pool = ctx.getEnemies ? ctx.getEnemies() : job.pool;
+    var target = job.pEnt.hp > 0 ? sgThunderTargets(null, pool, job.lvs, 1, sgLegend('thunderstrike'))[0] : null;
+    if (target) sgQueueThunderBolt(job.pEnt, job.st, job.g, job.lvs, job.dmgVal, target, pool, job.floatSel, job.out, 0, 0);
+    sgFinishSkillCastFloat(job.out);
   }
-  var out = [];
-  for (var k = 0; k < count; k++) out.push(inRange[k % inRange.length]);
-  return out;
 }
 
 /* 傳奇【引雷針】的規格（沒裝就是 null）。 */
@@ -6526,13 +6530,13 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
           for (var si = 0; si < extra.length; si++) stunned.push(extra[si]);
           for (var vi = 0; vi < stunned.length; vi++) sgTryStun(stunned[vi], stunSec);
         }
-        // 【迅雷重生】：這一道結束後再生一道；目標死了就改劈另一個還活著的敵人（隨機）
+        // 【迅雷重生】：每次再生也從當下射程內重新選敵。
         if (regenChance > 0 && regenDone < regenMax && chance(regenChance)) {
-          var next = (m.target && m.target.hp > 0) ? m.target
-            : ((typeof bfRandomOther === 'function') ? bfRandomOther(m.target, m.pool || [], 0, null) : null);
+          var nextPool = ctx.getEnemies ? ctx.getEnemies() : m.pool;
+          var next = sgThunderTargets(null, nextPool, skills2Levels('thunderstrike'), 1, sgLegend('thunderstrike'))[0];
           if (next) {
             sgQueueThunderBolt(m.pEnt, m.st, SKILLS2.thunderstrike, skills2Levels('thunderstrike'),
-              m.dmgVal, next, m.pool, m.floatSel, m.out, 0, regenDone + 1);
+              m.dmgVal, next, nextPool, m.floatSel, m.out, 0, regenDone + 1);
           }
         }
       }
@@ -9802,6 +9806,7 @@ function tickSkill2(dt, ctx) {
   }
   sgTickFlyingProjectiles(dt, ctx);
   sgTickGaleStrikes(ctx);
+  sgTickThunderLaunches(ctx);
   sgTickMeteors(ctx);
   sgTickGrounds(dt, ctx);
   sgTickOrbits(dt, ctx);
