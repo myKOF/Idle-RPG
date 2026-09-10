@@ -6578,3 +6578,13 @@ Worker 存活且頁面正常完成載入。
 - 修改範圍：battle-renderer、vfx-runtime、skills2、bridge、sim.worker、index、Skills2 表、相關正式測試；衝突預檢乾淨。
 - 驗證：連鎖閃電與 CHAIN 定向 15/15，覆蓋消失起點、消失終點、延遲播放、飛行中回收、移動追蹤及無下一敵人停止；config_tables 語意變更 0；build 332/332。未另作實機驗證。正式功能完成，可供合併，未推送。
 - 預覽仍受先前工具刪除拒絕而保留為未追蹤，不納入提交。
+
+## Claude｜同步腳本納入 VFX 素材庫（SYNC-ASSET-LIBRARY-20260910）
+
+- 使用者要求：執行 `sync_ai_worktrees.bat` 時，Effects-Materials 資料夾也要一起 fetch／pull／push。
+- 架構判斷：素材庫是另一個 Git 儲存庫（單一分支、無 Worktree、不參與 develop 合併），與既有的多 Worktree 整合是兩件事，因此獨立成一段流程，不混進 `$agentBranches`。`.bat` 維持單純啟動器，行為寫在 `tools/sync_ai_worktrees.ps1`。
+- 路徑不寫死：專案既有規定「素材庫絕對路徑只存在於本機設定，絕不進入 Git」。改為替 `tools/vfx/vfx-library-root.cjs` 加上 CLI（`node tools/vfx/vfx-library-root.cjs` 印出 Root），PowerShell 呼叫同一支模組，不在腳本裡重寫解析順序；預設 libraryId 取自 `vfx/asset-index.json`，與 export-assets、editor-server 一致。分支與 upstream 一律問 git，不寫死 master／origin。
+- 失敗不中斷程式碼同步：素材庫是持續丟新圖的地方，「有未提交變更」是常態。做成致命錯誤等於加一張圖就不能同步程式碼。因此素材庫排在最前面執行（避免程式碼同步中止時它永遠輪不到），失敗只警告，最後才反映到結束碼。
+- 行為：解析不到路徑／不是 Git repo／detached HEAD／沒有 upstream → 略過並說明；工作區髒 → 只 fetch，明列擋住的檔案；乾淨 → fetch → pull --rebase → push。新增 `-SkipAssetLibrary` 只同步程式碼。
+- 驗證：`-ValidateOnly` 正確解析 `D:\MyGames\Effects-Materials`、`master → origin/master` 且不動作；實際執行在素材庫髒的狀態下只做 fetch 並列出 7 筆未提交變更，程式碼同步照常往下走；`-SkipAssetLibrary` 正確跳過。CLI 四種情境（預設／指定 id／不存在的 id／仍可被 require）皆正確。`.bat` 維持 CRLF、無單獨 LF、純 ASCII 註解（避免 chcp 65001 後非 echo 行被當指令解析）。
+- 未推送，未合併。

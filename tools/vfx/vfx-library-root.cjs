@@ -150,6 +150,53 @@ function validateRoot(libraryId, root, source) {
   return { libraryId: libraryId, root: absolute, source: source };
 }
 
+/* ---------------- CLI ----------------
+
+   給非 Node 的呼叫端用（目前是 tools/sync_ai_worktrees.ps1）。存在的理由是
+   「不要有第二套」：解析順序有環境變數、VFX_ASSET_LIBRARY_ROOT、本機設定檔
+   三層，在 PowerShell 裡照抄一次，兩邊遲早會分家，而分家的症狀是同步到錯的
+   資料夾——那是不會有人立刻發現的那種錯。
+
+   只印路徑本身，不印任何裝飾，呼叫端可以直接吃進變數。解析失敗時訊息走
+   stderr 並以非零結束，呼叫端用結束碼判斷即可，不必比對字串。
+
+   預設的 libraryId 取自 vfx/asset-index.json，與 export-assets.cjs、
+   editor-server.cjs 一致：那才是「這個 repo 目前建置所依據的素材庫」。
+   讀不到索引就不指定，交給 resolveLibraryRoot 依本機設定推定。 */
+if (require.main === module) {
+  const argv = process.argv.slice(2);
+  let libraryId = null;
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--library-id') {
+      libraryId = argv[++i];
+      if (!libraryId) { console.error('--library-id 需要一個值'); process.exit(2); }
+    } else if (argv[i] === '--help' || argv[i] === '-h') {
+      console.log('用法：node tools/vfx/vfx-library-root.cjs [--library-id <id>]');
+      console.log('印出 Asset Library Root 的絕對路徑；解析不到時以結束碼 1 結束。');
+      process.exit(0);
+    } else {
+      console.error('未知參數：' + argv[i]);
+      process.exit(2);
+    }
+  }
+  if (!libraryId) {
+    try {
+      libraryId = JSON.parse(
+        fs.readFileSync(path.join(REPO_ROOT, 'vfx', 'asset-index.json'), 'utf8')).libraryId || null;
+    } catch (e) {
+      libraryId = null;                       // 沒有索引就讓下面依本機設定推定
+    }
+  }
+  try {
+    console.log(resolveLibraryRoot(libraryId ? { libraryId: libraryId } : {}).root);
+    process.exit(0);
+  } catch (e) {
+    console.error(e.message);
+    if (e.hint) console.error(e.hint);
+    process.exit(1);
+  }
+}
+
 module.exports = {
   resolveLibraryRoot: resolveLibraryRoot,
   envVarNameFor: envVarNameFor,
