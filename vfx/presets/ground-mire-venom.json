@@ -1,14 +1,13 @@
 {
   "schemaVersion": 1,
-  "id": "ground-mire-earth",
+  "id": "ground-mire-venom",
   "duration": 4,
   "loop": true,
   "layers": [
     {
       "id": "flowing-earth-mud",
       "type": "sprite",
-      "enabled": true,
-      "assetId": "codex-authored/mire/mud-flow.png",
+      "assetId": "codex-authored/mire/mud-flow-venom.png",
       "scale": {
         "x": 0.46875,
         "y": 0.46875

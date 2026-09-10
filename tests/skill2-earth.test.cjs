@@ -561,3 +561,9 @@ test('天地逆返只由第七階選用藍紋岩甲，護盾數量不改變特�
   assert.equal(event.vfx.ground,tier7?'aura-earth-reversal':'aura-rockarmor-stone');
  }
 });
+
+test('泥沼特效逐階使用核准的泥流、毒沼與熔岩沼',()=>{
+ for(const [levels,id] of [[[1,0,0,0,0,0,0],'ground-mire-earth'],[[1,1,1,0,0,0,0],'ground-mire-venom'],[[1,1,1,1,1,1,1],'ground-mire-magma']]){
+  const c=loadContext(),p=playerEnt(),events=[];c.playCombatVfx=s=>events.push(s);setLevels(c,'mire',levels);equip(c,'mire');const m=enemy(10000,20,0);c.castSkill2(p,[m],'mire','mv-float');run(c,p,[m],.6);assert.ok(events.some(e=>e.vfx&&e.vfx.ground===id));
+ }
+});

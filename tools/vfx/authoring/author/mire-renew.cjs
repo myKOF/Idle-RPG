@@ -2,7 +2,7 @@
 // 地板泥流：固定不規則方形岸線，週期性流場與泥泡只改變表面。
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const root=path.resolve(__dirname,'../../../..');
-function bake(){
+function bake(variant){
  const {createCanvas,ImageData}=require(process.env.VFX_CANVAS_MODULE||'@napi-rs/canvas');
  const size=256,count=48,atlas=createCanvas(size*8,size*6),out=atlas.getContext('2d');
  const clamp=x=>Math.max(0,Math.min(1,x));
@@ -21,17 +21,24 @@ function bake(){
    const bank=clamp((boundary-.77)/.13),wet=(1-bank)*(flow*24+ridges*14),shade=bank*(5+noise(u*26,v*26)*18);
    const i=(y*size+x)*4;
    buf[i]=86+wet+shade+grain*3;buf[i+1]=68+wet*.85+shade*.8+grain*3;buf[i+2]=43+wet*.55+shade*.5+grain*2;buf[i+3]=Math.round(a*244);
+   if(variant==='venom'){
+    const green=clamp(.5+flow*.8),edge=1-bank*.35;
+    buf[i]=(75-green*12+ridges*22)*edge;buf[i+1]=(32+green*108+ridges*20)*edge;buf[i+2]=(99-green*61)*edge;
+   }else if(variant==='magma'){
+    const heat=clamp(.38+flow*.35+ridges*.58),crust=noise(wx*.9+3,wy*.9)>.62?.48:1,edge=1-bank*.65;
+    buf[i]=(139+heat*116)*crust*edge;buf[i+1]=(17+Math.pow(heat,1.5)*174)*crust*edge;buf[i+2]=(5+heat*29)*crust*edge;
+   }
   }
   c.putImageData(new ImageData(buf,size,size),0,0);
   for(let b=0;b<7;b++){
    const life=(f/count*2+b*.173)%1;if(life>.72)continue;
    const x=128+Math.sin(b*8.3)*76,y=128+Math.cos(b*4.7)*76,r=1+Math.sin(life/.72*Math.PI)*4;
-   c.globalAlpha=Math.sin(life/.72*Math.PI)*.52;c.fillStyle='#403324';c.beginPath();c.ellipse(x,y,r,r*.58,0,0,Math.PI*2);c.fill();
-   c.strokeStyle='#b29a69';c.lineWidth=.8;c.beginPath();c.ellipse(x,y-1,r,r*.58,0,Math.PI,Math.PI*1.85);c.stroke();
+   c.globalAlpha=Math.sin(life/.72*Math.PI)*.52;c.fillStyle=variant==='venom'?'#482453':variant==='magma'?'#64170a':'#403324';c.beginPath();c.ellipse(x,y,r,r*.58,0,0,Math.PI*2);c.fill();
+   c.strokeStyle=variant==='venom'?'#b2cd70':variant==='magma'?'#ffe381':'#b29a69';c.lineWidth=.8;c.beginPath();c.ellipse(x,y-1,r,r*.58,0,Math.PI,Math.PI*1.85);c.stroke();
   }
   out.drawImage(frame,(f%8)*size,Math.floor(f/8)*size);
  }
- const id='codex-authored/mire/mud-flow.png',buf=atlas.toBuffer('image/png');
+ const id='codex-authored/mire/mud-flow'+(variant?'-'+variant:'')+'.png',buf=atlas.toBuffer('image/png');
  const library=require('../../vfx-library-root.cjs').resolveLibraryRoot({}).root;
  for(const base of [root+'/images/vfx/assets',library]){const dest=path.join(base,id);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,buf);}
  const p=root+'/vfx/asset-index.json',index=JSON.parse(fs.readFileSync(p));

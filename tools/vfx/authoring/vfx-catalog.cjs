@@ -357,9 +357,9 @@ g('rockarmor', [
 g('mire', [
   { ground: 'ground-mire-earth' },                          // T1 泥沼術
   _,
-  { ground: 'ground-mire-poison' },                   // T3 毒沼術
+  { ground: 'ground-mire-venom' },                   // T3 毒沼術
   _, _, _,
-  { ground: 'ground-mire-lava' }                      // T7 熔岩沼
+  { ground: 'ground-mire-magma' }                      // T7 熔岩沼
 ], { abyssInferno: { ground: 'ground-tornado-fire', hit: 'hit-fire' } });
 g('earthguard', [
   _, _, _, _, _,

@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜毒沼與熔岩沼預覽（VFX-MIRE-EVOLUTIONS-20260910）
+
+- Done／接入：使用者核准並指定透明度 30%，兩個 preset 整體 alpha 乘 0.3（泥地 0.3，熔岩火焰 0.216、火星 0.24），生命曲線與前版相同。Skills2.xlsx AC124／AC128、CSV／JS／catalog 分別接第三階 venom 與第七階 magma，保留原減益與成長數值；Runtime 延用權威長寬、續命及進退場，主頁與 Worker 快取更新。202 項 Runtime／Core／layout 加 1 項三階技能接線測試通過；build 332 檔通過、Excel 僅上述兩格改變、config_tables dry-run 語意差異 0。地系全組另有先前已證實的 2 項舊 10 米斷言失敗（配置為 12 米），未改測試接受現況。使用者基礎泥沼 alpha 0.3 修改一起保留提交；預覽及暫存脚本清除。接手者為使用者遊戲驗收，未合併或推送。
+
+- Review／僅預覽：使用者要求第 3 階毒沼與第 7 階熔岩沼一起做。依最新文件 I183／J183 綠紫色及 I187 黃紅色＋火焰粒子，沿用核准泥沼的岸線、泥流時序與泡沫，製作 venom／magma 圖集、獨立 preset／layout／author 與 GIF。禁止先接入兩階，先給動態圖及檔名確認；不改數值、CSV／Excel 或 Runtime。
+- 驗證：136 項 Core／layout 測試及 332 檔 build 通過，兩張圖集共 48 格的 alpha 輪廓逐像素與原版完全相同；並排 GIF 120 格，已目視檢查綠紫泥流、黃紅岩漿與火焰。預覽同尺寸方便比較，正式接入時熔岩沼擴增沿用技能權威面積，不能把預覽同尺寸當作修改數值。原始 PNG 格已刪除，GIF 與渲染腳本待核准接入時清除；此預覽未提交，接手者為使用者外觀審閱。
+
 ## Codex｜泥沼術預覽（VFX-MIRE-20260910）
 
 - Done／接入：使用者核准第一階，Skills2.xlsx AC122／CSV／JS／catalog 改用 ground-mire-earth，仍讀權威面積縮放並沿用同一場域身份續命；加入預覽的進退場，主頁及 Worker 快取同步更新。201 項 Runtime／Core／layout 全通過，build 332 檔通過；Excel 僅 AC122 變更，config_tables dry-run 語意差異 0。提交同時保留使用者火龍捲本體 alpha 0.9→0.6 與素材匯出清理（舊整圈岩甲圖集已由前後圈取代）；清除臨時預覽與渲染腳本。實戰視覺仍由使用者驗收，未推送。

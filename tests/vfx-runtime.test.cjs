@@ -1193,3 +1193,15 @@ test('MIRE 泥流依權威長寬縮放、保持地板層、續命不重播並回
  adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);
  adapter.update(5);assert.equal(adapter.stats().grounds,0);
 });
+
+test('MIRE 進化維持三成強度、權威矩形與續命，熔岩粒子同比降低',()=>{
+ for(const id of ['ground-mire-venom','ground-mire-magma']){
+  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));assert.equal(p.layers[0].alpha,.3);
+  if(id.endsWith('magma')){assert.ok(Math.abs(p.layers[1].alpha-.216)<1e-8);assert.equal(p.layers[2].alpha,.24);}
+  const {adapter,log}=makeAdapter([p]),s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-evo',x:120,y:160,w:180,h:240},vfx:{ground:id}};
+  assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
+  const body=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow-')),t=body.transforms.at(-1);
+  assert.equal(body.tag,'zone');assert.equal(t.alpha,.3);assert.equal(t.x,120);assert.equal(t.y,160);assert.ok(Math.abs(t.scaleX-180/256)<.0001);assert.ok(Math.abs(t.scaleY-240/256)<.0001);
+  adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);adapter.update(5);assert.equal(adapter.stats().grounds,0);
+ }
+});

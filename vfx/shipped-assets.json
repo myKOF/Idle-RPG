@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 115,
+  "assetCount": 117,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -26,6 +26,27 @@
       "package": "codex-authored",
       "contentHash": "sha256:e0a785ea31dcbf251e0b2d1c4cf0a2247a577313f98dc0966fb8da21fe485ed6",
       "fileSize": 1119237
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-magma.png",
+      "relativePath": "codex-authored/mire/mud-flow-magma.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:ffd551c15804f16ea82580ffeddcf0bd3b8bab37f3c1353c2581754f9fe373b3",
+      "fileSize": 3707583
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-venom.png",
+      "relativePath": "codex-authored/mire/mud-flow-venom.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:3e74027d56dcb18ee54663887763106c8efbe9ffc7bf617c9a10d88ee56b3632",
+      "fileSize": 2967515
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow.png",
+      "relativePath": "codex-authored/mire/mud-flow.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
+      "fileSize": 2617834
     },
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
@@ -803,13 +824,6 @@
       "package": "spritemancer-vfx",
       "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
       "fileSize": 2834222
-    },
-    {
-      "assetId": "codex-authored/mire/mud-flow.png",
-      "relativePath": "codex-authored/mire/mud-flow.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
-      "fileSize": 2617834
     }
   ]
 }
