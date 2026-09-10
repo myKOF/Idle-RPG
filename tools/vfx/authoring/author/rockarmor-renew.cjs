@@ -39,10 +39,10 @@ function bake(){
 function make(){
  const k=require('../preset-kit.cjs');
  return {id:'aura-rockarmor-stone',duration:4,loop:true,sizing:{shape:'circle',radiusM:5,authored:{radius:50}},layers:[
-  k.sprite({id:'earth-shadow',asset:k.alphaTwin(k.A.glowSoft),sizeX:100,sizeY:26,y:0,tint:'#281f13',alpha:.5,blend:'normal',duration:4}),
-  k.sprite({id:'amber-underlight',asset:k.A.glowSoft,sizeX:78,sizeY:24,y:-2,tint:'#ba873e',alpha:.22,blend:'add',duration:4,alphaOverLife:[[0,.7],[.5,1],[1,.7]]}),
-  {id:'orbiting-stone-plates',type:'sprite',assetId:'codex-authored/rockarmor/stone-guard.png',position:{x:0,y:-27},scale:{x:.6,y:.6},zIndex:2,alpha:1,blendMode:'normal',duration:4,sheet:{columns:8,rows:8,count:64,mode:'fps',fps:16,loop:true}},
-  k.particle({id:'settling-dust',asset:k.A.smokeT,rate:5,maxParticles:8,lifetime:[.6,1.1],spawnBox:[68,5],speed:[5,12],direction:-90,spread:60,startPx:[12,21],tint:'#a18d69',alpha:.24,blend:'normal',duration:4,alphaOverLife:[[0,0],[.3,.6],[1,0]],scaleOverLife:[[0,.5],[1,1.2]]})
+  k.sprite({id:'earth-shadow',asset:k.alphaTwin(k.A.glowSoft),sizeX:50,sizeY:13,y:0,tint:'#281f13',alpha:.5,blend:'normal',duration:4}),
+  k.sprite({id:'amber-underlight',asset:k.A.glowSoft,sizeX:39,sizeY:12,y:-2,tint:'#ba873e',alpha:.22,blend:'add',duration:4,alphaOverLife:[[0,.7],[.5,1],[1,.7]]}),
+  {id:'orbiting-stone-plates',type:'sprite',assetId:'codex-authored/rockarmor/stone-guard.png',position:{x:0,y:-13.5},scale:{x:.27,y:.27},zIndex:2,alpha:1,blendMode:'normal',duration:4,sheet:{columns:8,rows:8,count:64,mode:'fps',fps:16,loop:true}},
+  k.particle({id:'settling-dust',asset:k.A.smokeT,rate:5,maxParticles:8,lifetime:[.6,1.1],spawnBox:[34,3],speed:[5,12],direction:-90,spread:60,startPx:[6,10.5],tint:'#a18d69',alpha:.24,blend:'normal',duration:4,alphaOverLife:[[0,0],[.3,.6],[1,0]],scaleOverLife:[[0,.5],[1,1.2]]})
  ]};
 }
 if(require.main===module){bake();console.log(require('../preset-kit.cjs').write(make()));}
