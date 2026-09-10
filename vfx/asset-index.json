@@ -9,24 +9,410 @@
   "assetCount": 2422,
   "assets": [
     {
-      "assetId": "codex-authored/tornado/inferno-spiral.svg",
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
       "package": "codex-authored",
-      "relativePath": "codex-authored/tornado/inferno-spiral.svg",
+      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
+      "format": "png",
+      "fileSize": 9028764,
+      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 3840
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1402,
+          "visibleRatio": 0.548,
+          "borderMean": 0.0007
+        },
+        "luminance": {
+          "mean": 0.932,
+          "max": 1,
+          "borderMean": 0.0864,
+          "borderNearBlackRatio": 0.9133,
+          "borderNearWhiteRatio": 0.0796
+        },
+        "saturation": {
+          "mean": 0.1107,
+          "max": 0.251
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 51,
+          "width": 2560,
+          "height": 3741
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9569,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "format": "png",
+      "fileSize": 20395025,
+      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 7680
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1401,
+          "visibleRatio": 0.5773,
+          "borderMean": 0.0019
+        },
+        "luminance": {
+          "mean": 0.8571,
+          "max": 1,
+          "borderMean": 0.1405,
+          "borderNearBlackRatio": 0.8586,
+          "borderNearWhiteRatio": 0.1204
+        },
+        "saturation": {
+          "mean": 0.204,
+          "max": 0.6574
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 51,
+          "width": 2560,
+          "height": 7573
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9367,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-0.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/impact/crimson-fragment-0.svg",
       "format": "svg",
-      "fileSize": 40280008,
-      "contentHash": "sha256:e149f833472030a6efccfc876d5c22de55c4ddb2c4854af9a62a74fe54da4b23",
+      "fileSize": 595,
+      "contentHash": "sha256:8ac9cbb69da602a44fd64fb1e63174f8a9e46e9d5989751a9b5c9f92d43162e9",
+      "facts": {
+        "dimensions": {
+          "width": 128,
+          "height": 128
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-1.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/impact/crimson-fragment-1.svg",
+      "format": "svg",
+      "fileSize": 592,
+      "contentHash": "sha256:a8cdf4c18bc74f5a9ec01077afad43b4093e76ac63371de13e56e513cba8f996",
+      "facts": {
+        "dimensions": {
+          "width": 128,
+          "height": 128
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/lightning/chain-travel.png",
+      "format": "png",
+      "fileSize": 86462,
+      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
       "facts": {
         "dimensions": {
           "width": 1536,
-          "height": 2048
+          "height": 384
         },
-        "hasAlphaChannel": true
-      },
-      "tags": [
-        "fire",
-        "tornado",
-        "sequence"
-      ]
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0107,
+          "visibleRatio": 0.0946,
+          "borderMean": 0.0021
+        },
+        "luminance": {
+          "mean": 0.7446,
+          "max": 1,
+          "borderMean": 0.0127,
+          "borderNearBlackRatio": 0.9828,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.511,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 31,
+          "width": 1536,
+          "height": 308
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.8998,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/meteor/meteor-cracked.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/meteor/meteor-cracked.png",
+      "format": "png",
+      "fileSize": 1957399,
+      "contentHash": "sha256:43d68c994925ca8465d6de1af88cb67a3d3ffb13604814073c19ecf44973b35c",
+      "facts": {
+        "dimensions": {
+          "width": 1254,
+          "height": 1254
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.1043,
+          "max": 1,
+          "borderMean": 0.0006,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.417,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1254,
+          "height": 1254
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 0.9992,
+          "v": 0.9993
+        },
+        "backgroundVariant": "blackBackground"
+      }
+    },
+    {
+      "assetId": "codex-authored/meteor/meteor-stylized.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/meteor/meteor-stylized.png",
+      "format": "png",
+      "fileSize": 1119237,
+      "contentHash": "sha256:e0a785ea31dcbf251e0b2d1c4cf0a2247a577313f98dc0966fb8da21fe485ed6",
+      "facts": {
+        "dimensions": {
+          "width": 1254,
+          "height": 1254
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.1089,
+          "max": 0.9242,
+          "borderMean": 0.0004,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3058,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1254,
+          "height": 1254
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 0.9993,
+          "v": 0.9995
+        },
+        "backgroundVariant": "blackBackground"
+      }
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-magma.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/mire/mud-flow-magma.png",
+      "format": "png",
+      "fileSize": 3707583,
+      "contentHash": "sha256:ffd551c15804f16ea82580ffeddcf0bd3b8bab37f3c1353c2581754f9fe373b3",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.7112,
+          "visibleRatio": 0.7891,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2453,
+          "max": 0.804,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.9131,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 7,
+          "y": 5,
+          "width": 2036,
+          "height": 1526
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-venom.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/mire/mud-flow-venom.png",
+      "format": "png",
+      "fileSize": 2967515,
+      "contentHash": "sha256:3e74027d56dcb18ee54663887763106c8efbe9ffc7bf617c9a10d88ee56b3632",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.7112,
+          "visibleRatio": 0.7891,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2841,
+          "max": 0.6093,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5303,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 7,
+          "y": 5,
+          "width": 2036,
+          "height": 1526
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/mire/mud-flow.png",
+      "format": "png",
+      "fileSize": 2617834,
+      "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.7112,
+          "visibleRatio": 0.7891,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2845,
+          "max": 0.4703,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5023,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 7,
+          "y": 5,
+          "width": 2036,
+          "height": 1526
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
     },
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
@@ -59,7 +445,38 @@
           "width": 512,
           "height": 512
         },
-        "pixelsAnalyzed": false
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.0541,
+          "max": 0.8784,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "blackBackground"
       }
     },
     {
@@ -74,7 +491,38 @@
           "width": 512,
           "height": 512
         },
-        "pixelsAnalyzed": false
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.0735,
+          "max": 0.9098,
+          "borderMean": 0.0001,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 0.9997
+        },
+        "backgroundVariant": "blackBackground"
       }
     },
     {
@@ -82,8 +530,8 @@
       "package": "codex-authored",
       "relativePath": "codex-authored/moon/moon-polished-accents.svg",
       "format": "svg",
-      "fileSize": 1717,
-      "contentHash": "sha256:e9ecb02d0a3e6b61716b45376e3b4edac7b329289c1828347ceed6aaf16a6f9d",
+      "fileSize": 1724,
+      "contentHash": "sha256:9572afb9cf7a5da383271036957cbb1147601d77af67194d30e534bbb3416e8b",
       "facts": {
         "dimensions": {
           "width": 512,
@@ -101,8 +549,8 @@
       "package": "codex-authored",
       "relativePath": "codex-authored/moon/moon-polished-body.svg",
       "format": "svg",
-      "fileSize": 1275,
-      "contentHash": "sha256:434451456ef9c38f6b8b0e690501156165a780af63d320dde3706f5920520ed2",
+      "fileSize": 1276,
+      "contentHash": "sha256:b03fbb5003540bdeca1e2a6d3abe2ebca4228b13be914d9572897b73f4ff0656",
       "facts": {
         "dimensions": {
           "width": 512,
@@ -120,12 +568,307 @@
       "package": "codex-authored",
       "relativePath": "codex-authored/moon/moon-polished-edge.svg",
       "format": "svg",
-      "fileSize": 942,
-      "contentHash": "sha256:22ce17bfc33b34bb61e262b35abd6bf95bf7fc150bde42e443aae5d21ca832d7",
+      "fileSize": 943,
+      "contentHash": "sha256:e70c39baa7ef377febd11a1043a46882cfc74da52825faaa199b60eb86827990",
       "facts": {
         "dimensions": {
           "width": 512,
           "height": 512
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-back.png",
+      "format": "png",
+      "fileSize": 588808,
+      "contentHash": "sha256:b509ee9d357dfd55b8b8bc7024711dec1c37c87d8b9a40a9524d5f3066a40886",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1212,
+          "visibleRatio": 0.1284,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4153,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2283,
+          "max": 0.605
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 44,
+          "width": 1531,
+          "height": 1421
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "format": "png",
+      "fileSize": 599639,
+      "contentHash": "sha256:d6f1582e35641dd19b09e9a7457fa9c52147f691e136da7700b80ba5af94b0c4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1212,
+          "visibleRatio": 0.1284,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4113,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.1984,
+          "max": 0.6205
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 44,
+          "width": 1531,
+          "height": 1421
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "format": "png",
+      "fileSize": 663733,
+      "contentHash": "sha256:10d51a27002fc6f1e6c09d77dbd86429a2e9a11cff5a146e2f1d96852422b058",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.146,
+          "visibleRatio": 0.1547,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.415,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.203,
+          "max": 0.6182
+        },
+        "contentBounds": {
+          "x": 4,
+          "y": 66,
+          "width": 1529,
+          "height": 1433
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard-front.png",
+      "format": "png",
+      "fileSize": 652175,
+      "contentHash": "sha256:44f5691fdc4b34c4b8e3b896116c8fb7fc205247b08f4d513fb174e900a22ab4",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.146,
+          "visibleRatio": 0.1547,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.419,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2314,
+          "max": 0.6049
+        },
+        "contentBounds": {
+          "x": 4,
+          "y": 66,
+          "width": 1529,
+          "height": 1433
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor/stone-guard.png",
+      "format": "png",
+      "fileSize": 1070933,
+      "contentHash": "sha256:8a519412780ef24ef2126606c6775c5d904d17435c2db04a19d66a2b80aed5ab",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1536
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2387,
+          "visibleRatio": 0.251,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4234,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.2316,
+          "max": 0.605
+        },
+        "contentBounds": {
+          "x": 3,
+          "y": 44,
+          "width": 1531,
+          "height": 1455
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/tornado/fire-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/tornado/fire-flow.png",
+      "format": "png",
+      "fileSize": 3421959,
+      "contentHash": "sha256:6dbae0a848ca3a10f647bc489b972b79874311870d74a05d9148449c390157f2",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 2048
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2398,
+          "visibleRatio": 0.3395,
+          "borderMean": 0.0256
+        },
+        "luminance": {
+          "mean": 0.5443,
+          "max": 1,
+          "borderMean": 0.0451,
+          "borderNearBlackRatio": 0.8998,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8057,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 55,
+          "y": 2,
+          "width": 2481,
+          "height": 2046
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 0.879
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/tornado/inferno-spiral.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/tornado/inferno-spiral.svg",
+      "format": "svg",
+      "fileSize": 40280008,
+      "contentHash": "sha256:e149f833472030a6efccfc876d5c22de55c4ddb2c4854af9a62a74fe54da4b23",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 2048
         },
         "dimensionsSource": "attributes",
         "colorModel": null,
@@ -4831,8 +5574,8 @@
       "package": "foliage-sprites",
       "relativePath": "foliage-sprites/Vector/foliageSprites_flat.svg",
       "format": "svg",
-      "fileSize": 216069,
-      "contentHash": "sha256:9a5ca22e2a4196af567f5d5f14ac8db65ba8d4db2e73373350e81307212928f7",
+      "fileSize": 216141,
+      "contentHash": "sha256:72d473f7ec157d365ab2b1073942c968a8278056948a5fde3fd92deef0bda13c",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -4847,8 +5590,8 @@
       "package": "foliage-sprites",
       "relativePath": "foliage-sprites/Vector/foliageSprites_shaded.svg",
       "format": "svg",
-      "fileSize": 326363,
-      "contentHash": "sha256:0329cab717d19bc38b19ef48f160b4a6ff2d76a085c5fd30878105f1e5819cda",
+      "fileSize": 327631,
+      "contentHash": "sha256:e7cf84db4fad342bcb44a63d42d349bbd78d75afff4dbc6b79c5e67c4d32f909",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104683,8 +105426,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/overview.svg",
       "format": "svg",
-      "fileSize": 98513,
-      "contentHash": "sha256:6a737ecd5659912d7aeef106451a59728d991a414e2d87138930f17b06a08158",
+      "fileSize": 98553,
+      "contentHash": "sha256:a6857b79dc041d6bd2f7bd66553e776dc410ffee40dcdb8038ad042f61d6c9d0",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104699,8 +105442,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat00.svg",
       "format": "svg",
-      "fileSize": 1664,
-      "contentHash": "sha256:da55460e19fcb7c1348f0efc41e07fd71c23dfc06dcd5ec5d2932eb55ee53ce1",
+      "fileSize": 1669,
+      "contentHash": "sha256:17a88a88c4eab93288f2956b9b68e3be7e3ee6c78f9d5fceae704b0eb1957f29",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104715,8 +105458,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat01.svg",
       "format": "svg",
-      "fileSize": 2176,
-      "contentHash": "sha256:e697d5458fb0c803d1cd218ddcca6cd599db70fcd5c2ba11eb78d51b0a58908c",
+      "fileSize": 2181,
+      "contentHash": "sha256:e759b5425ceed7f7df848d4db277085a5e633376a54e3803b412192c18815304",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104731,8 +105474,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat02.svg",
       "format": "svg",
-      "fileSize": 3391,
-      "contentHash": "sha256:d0d4a62f4b9ebe59ff1f3e73a7465e7224d4519e15790db767fb71e86f0b84f3",
+      "fileSize": 3396,
+      "contentHash": "sha256:0db6ede1f3ae193778ee2e079cd42c34e5dbb32b704e463194d757533d38bae8",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104747,8 +105490,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat03.svg",
       "format": "svg",
-      "fileSize": 1961,
-      "contentHash": "sha256:078dcd18db0e4d1e6962834b6ec41661b17efe20934e8cd85b2143c28fd79729",
+      "fileSize": 1966,
+      "contentHash": "sha256:a7a8c4f5afae1b009a49fa46d12c69f62714eb4e3c45b8f2bf5eefcd5180754a",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104763,8 +105506,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat04.svg",
       "format": "svg",
-      "fileSize": 1980,
-      "contentHash": "sha256:b745e4ca03b300291361a39f42071e15fd639b019f2c52ccdb7b0208bad0d85d",
+      "fileSize": 1985,
+      "contentHash": "sha256:31ef044296fe8a8f9f1ecf50a8d7168620bfdb8e93c04149729c0d3c6dd9f23c",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104779,8 +105522,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat05.svg",
       "format": "svg",
-      "fileSize": 1608,
-      "contentHash": "sha256:80a9fc95527e9ab848c76030509a39741e9154126c8f9f1625810cb231134513",
+      "fileSize": 1613,
+      "contentHash": "sha256:439cd704627c7983bb3fed2d993e6135a9e300d9618bd6ed08921e6764a0fe94",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104795,8 +105538,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat06.svg",
       "format": "svg",
-      "fileSize": 1688,
-      "contentHash": "sha256:9101eeb2c27902a6f9967bd6b0337690453a0a28a5f9198e007f65c26036a28b",
+      "fileSize": 1693,
+      "contentHash": "sha256:d33af5dd59cb4a03d2e9c7f2e1eeb678ec2f5e5b2f1c98eeb5bc3ef8199cc2d0",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104811,8 +105554,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat07.svg",
       "format": "svg",
-      "fileSize": 2104,
-      "contentHash": "sha256:86f49c15e3f11bf2437b403f304c70fedea161ea073678d0b02ecacde1e015b7",
+      "fileSize": 2109,
+      "contentHash": "sha256:fc349ecfde6cf47d06ea150657b656faeb6731dfffa13ca0d165d695156122ef",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104827,8 +105570,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat08.svg",
       "format": "svg",
-      "fileSize": 1705,
-      "contentHash": "sha256:8f6ac1de7b1548bfe3121ece32dbde4826397c036faef4de5aada348e91f7af2",
+      "fileSize": 1710,
+      "contentHash": "sha256:83017b4bcd4c3061f7e65585a493b354e29226076a53c5398c99f4ebc12c31bf",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104843,8 +105586,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat09.svg",
       "format": "svg",
-      "fileSize": 1869,
-      "contentHash": "sha256:e8e2c79ffe60ddf784a34004008b56d26152b748d5c7c356bade0d90bee1f815",
+      "fileSize": 1874,
+      "contentHash": "sha256:1733abd1ca098173b3c78e053deaa051141432cd5524ae065270bdecba55c560",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104859,8 +105602,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat10.svg",
       "format": "svg",
-      "fileSize": 2723,
-      "contentHash": "sha256:db2ddd65daf22e6ecfdc8b38b5c0bf19d87dccbeceef2eddc00cf98e861df209",
+      "fileSize": 2728,
+      "contentHash": "sha256:2417dc99c7002ee7692d50f514eaa53298030f95f80966fed0d12b726c3d9d8d",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104875,8 +105618,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat11.svg",
       "format": "svg",
-      "fileSize": 2405,
-      "contentHash": "sha256:b3486b995ed918860776b183528ef736e37e04dc9f06d66fc3ae69d716712bd9",
+      "fileSize": 2410,
+      "contentHash": "sha256:3aafd42ab106aa539af1da33d4ecd666844f103af81a60a11da9c4c1e87deaf0",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104891,8 +105634,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat12.svg",
       "format": "svg",
-      "fileSize": 1445,
-      "contentHash": "sha256:d8c7c07741dd6721b56d748df0258370de14c69a580ccf8d05ffa263a5bffc45",
+      "fileSize": 1450,
+      "contentHash": "sha256:c93e54c619f28d5b296014e3c0186ab10e160a9fa73a423374fb91cf193a4c14",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104907,8 +105650,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat13.svg",
       "format": "svg",
-      "fileSize": 1746,
-      "contentHash": "sha256:20ceca1cdf41d75d5ed695d6c8a98d350b17e270225c1a8f96cef3aa4fa24f07",
+      "fileSize": 1751,
+      "contentHash": "sha256:5653f165720845491bbcf599ea3126d705df7f4b91767235b53fca02cdd7bca3",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104923,8 +105666,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat14.svg",
       "format": "svg",
-      "fileSize": 2394,
-      "contentHash": "sha256:1e2168fc193bae4f4a70762665da9b82d8a69096e0e69dc609806b8444bdc6fe",
+      "fileSize": 2399,
+      "contentHash": "sha256:6b5478a3047f6a88fe74249057b7a4715659edd9a9a9cf6a25715c118b0b9d6d",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104939,8 +105682,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat15.svg",
       "format": "svg",
-      "fileSize": 1403,
-      "contentHash": "sha256:246b1c3476f96bbd1f356f9847cfb20752d81bbe6fcf9b3a3866b914382be7da",
+      "fileSize": 1408,
+      "contentHash": "sha256:4dfa8a6dceab5cb6804a94cdd1e11da8709a065c600044358215c2e9a5c32917",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104955,8 +105698,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat16.svg",
       "format": "svg",
-      "fileSize": 2528,
-      "contentHash": "sha256:f3f491f0d4016a3cf1cd865e504bd7a3cbd7a87408857cd053514117a473b78f",
+      "fileSize": 2533,
+      "contentHash": "sha256:24b3f7bb3a8ea897d6d32fd55cff2fbb7bec4a2da5e787dd5a86b7dc9a771731",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104971,8 +105714,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat17.svg",
       "format": "svg",
-      "fileSize": 2020,
-      "contentHash": "sha256:f4f23197ebd0b1e271c20d2fc292350d17c29a8e26d4c89899357a0aafed651a",
+      "fileSize": 2025,
+      "contentHash": "sha256:0d624bade1497a5bffa0710c430b693de2d4906a221c898e305e6c03beaa00e3",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -104987,8 +105730,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat18.svg",
       "format": "svg",
-      "fileSize": 2047,
-      "contentHash": "sha256:f56d3fcd7b3e043df221754ae4c22ce692ccf8649f43be3924158c96c9fd4cf5",
+      "fileSize": 2052,
+      "contentHash": "sha256:5f4fa83c7e882db741e84a34df23729e5cfe197a4b65af71efbcd322e3ababbf",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105003,8 +105746,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat19.svg",
       "format": "svg",
-      "fileSize": 3309,
-      "contentHash": "sha256:62af6d46f59145d1660cab0821b38407314f379d29a98976501c8eab4b68e82c",
+      "fileSize": 3314,
+      "contentHash": "sha256:1e5bd814b1f305b5cd31438e4022631ba8eadb70821734ca58e2ad60f1d3aabb",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105019,8 +105762,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat20.svg",
       "format": "svg",
-      "fileSize": 2628,
-      "contentHash": "sha256:5f39e4075345c322e112663bf9cfb8e466f4da96dea4b77c4b67cbd273ea4fbc",
+      "fileSize": 2633,
+      "contentHash": "sha256:1f620e1729c33cda15c6c87b8feb6b8b5879b70d4beb7804a7be0c84c19c101d",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105035,8 +105778,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat21.svg",
       "format": "svg",
-      "fileSize": 2288,
-      "contentHash": "sha256:3535c17f39a98fc7d52216d769e150034d80ea3cd0f7744ec2370dbb731a8bbc",
+      "fileSize": 2293,
+      "contentHash": "sha256:4ea657d6b62339fb0a1ab7eb411360753261c292f8d8e51c4b4702e43302a72b",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105051,8 +105794,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat22.svg",
       "format": "svg",
-      "fileSize": 1600,
-      "contentHash": "sha256:50e15434bea846f17af5f619b29cd92450335e1a331b6bfaf0d3381695148a1e",
+      "fileSize": 1605,
+      "contentHash": "sha256:d2f560ed90b6b8782e2b08eaf14cff2fda567b6a033fca169e441c6530fef7a0",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105067,8 +105810,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat23.svg",
       "format": "svg",
-      "fileSize": 2395,
-      "contentHash": "sha256:b030095e4e13dd79119b4741b080e38a1d8f2b9fb5a4c6e5d8b7c546a590b2e0",
+      "fileSize": 2400,
+      "contentHash": "sha256:fd36e808a45efe619d14b39b1347debb89f84c708abb5ea08659a5e55dbe14eb",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105083,8 +105826,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat24.svg",
       "format": "svg",
-      "fileSize": 2558,
-      "contentHash": "sha256:e78c966803e5d9b8f672155c543fd9f1752440e1e5dc4ea0b8a4770f3f3a9bdb",
+      "fileSize": 2563,
+      "contentHash": "sha256:5c8b2c74f52d87d9f6dc21f34d324cd3b0476577993ff579febf1e7720b0fa8f",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105099,8 +105842,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat25.svg",
       "format": "svg",
-      "fileSize": 1645,
-      "contentHash": "sha256:a8ab4d3ee163863f2ad0fde5e73aa803ff27737df88a1d3617d8d89e8c1cd900",
+      "fileSize": 1650,
+      "contentHash": "sha256:3b8ddf65d578be52c39ea39a1232089ef55dbbd63aeeab8c48919d8c52a4307a",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105115,8 +105858,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat26.svg",
       "format": "svg",
-      "fileSize": 4481,
-      "contentHash": "sha256:8bb135429798035763e879d88c3a2f3758465e0508e7cb39520c313bf6f529de",
+      "fileSize": 4486,
+      "contentHash": "sha256:b2b4e1269df54dc457986a941146542a5da6764cb2afca6c1bfaf2803842d7d6",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105131,8 +105874,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat27.svg",
       "format": "svg",
-      "fileSize": 2235,
-      "contentHash": "sha256:d116e00957c809a4ed43290388ad47341b7725bc11e98fc519d046fc8b545dd3",
+      "fileSize": 2240,
+      "contentHash": "sha256:01d3f21ead0ef145e7b2fcd579241bc6c4a1a14f156d3bc4df8cb187cb046888",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105147,8 +105890,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat28.svg",
       "format": "svg",
-      "fileSize": 2853,
-      "contentHash": "sha256:e4f97d22fffe68f0b6f0d0548c3a37cae3b16296a81c9954f906a047643dfbc1",
+      "fileSize": 2858,
+      "contentHash": "sha256:99601c26d66b587c6c9d4ac3d83be8a8dc17741496b998d8d61409d5b9b8fb07",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105163,8 +105906,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat29.svg",
       "format": "svg",
-      "fileSize": 3047,
-      "contentHash": "sha256:f860e8420b49f7de5d49b7452f7314987dafa6262c0587ef41903683f1e81298",
+      "fileSize": 3052,
+      "contentHash": "sha256:ff7f6376b9aa58cce63bbf2f9f7e43466b1faf15b059482e4eac9257d5eed3cc",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105179,8 +105922,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat30.svg",
       "format": "svg",
-      "fileSize": 3625,
-      "contentHash": "sha256:8708f9dba10641afaca90c0a470c45825916515bab839ca8059eb2ff968c022a",
+      "fileSize": 3630,
+      "contentHash": "sha256:4ce8e366471740282cab521dd0b2841b1a9a658522e091836b69e739777d2aa8",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105195,8 +105938,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat31.svg",
       "format": "svg",
-      "fileSize": 3261,
-      "contentHash": "sha256:c3a1a70d8287303382ed49196bf49af05760d25f4a028a24123d3e4b1b0335d8",
+      "fileSize": 3266,
+      "contentHash": "sha256:8d8942c46ed7dfe664d161241c906788d6ae21a6694dd5ddf29d5f7d5a936537",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105211,8 +105954,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat32.svg",
       "format": "svg",
-      "fileSize": 3172,
-      "contentHash": "sha256:e7f33ba4c6811dacb0bdf3c676e412b0e784b5b1cf8edf531455e7b13754126a",
+      "fileSize": 3177,
+      "contentHash": "sha256:fac19b63d9deab056e5163bd6f89659bdcfb60ad7d6d9415d6d73033bb8c0c30",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105227,8 +105970,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat33.svg",
       "format": "svg",
-      "fileSize": 5313,
-      "contentHash": "sha256:be60fda0f424ca482d2ae4c82180163a1b4a97544a640bfffe5c397eb46c5113",
+      "fileSize": 5318,
+      "contentHash": "sha256:b54a70c4530da6df06e3dee6ff24fa7569818bfc46d3c606cbf37386678411d7",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105243,8 +105986,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat34.svg",
       "format": "svg",
-      "fileSize": 4681,
-      "contentHash": "sha256:eeea9b5d0cba6744a900480dfcd8571291f6bf6aa02c7fc1560ad04c8cb2a58d",
+      "fileSize": 4686,
+      "contentHash": "sha256:827d9493aaea54b504249c69f8fe580022b17fd265050ed4e9fe166435ea6814",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105259,8 +106002,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat35.svg",
       "format": "svg",
-      "fileSize": 4177,
-      "contentHash": "sha256:55fa77a100b679c3e80b5422a5eb9b58cc0c2e1f9ca9d74d38d0cfdfb96f5fab",
+      "fileSize": 4182,
+      "contentHash": "sha256:0c03d6a412ce98757825201f46fa50f2248ce7981c0238c6bbba995ffff5b53d",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -109316,318 +110059,6 @@
           "v": 1
         },
         "backgroundVariant": "transparent"
-      }
-    },
-    {
-      "assetId": "codex-authored/impact/crimson-fragment-0.svg",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/impact/crimson-fragment-0.svg",
-      "format": "svg",
-      "fileSize": 595,
-      "contentHash": "sha256:8ac9cbb69da602a44fd64fb1e63174f8a9e46e9d5989751a9b5c9f92d43162e9",
-      "facts": {
-        "dimensions": {
-          "width": 128,
-          "height": 128
-        },
-        "hasAlphaChannel": true
-      },
-      "tags": [
-        "impact",
-        "red",
-        "fragment"
-      ]
-    },
-    {
-      "assetId": "codex-authored/impact/crimson-fragment-1.svg",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/impact/crimson-fragment-1.svg",
-      "format": "svg",
-      "fileSize": 592,
-      "contentHash": "sha256:a8cdf4c18bc74f5a9ec01077afad43b4093e76ac63371de13e56e513cba8f996",
-      "facts": {
-        "dimensions": {
-          "width": 128,
-          "height": 128
-        },
-        "hasAlphaChannel": true
-      },
-      "tags": [
-        "impact",
-        "red",
-        "fragment"
-      ]
-    },
-    {
-      "assetId": "codex-authored/meteor/meteor-cracked.png",
-      "relativePath": "codex-authored/meteor/meteor-cracked.png",
-      "package": "codex-authored",
-      "format": "png",
-      "fileSize": 1957399,
-      "contentHash": "sha256:43d68c994925ca8465d6de1af88cb67a3d3ffb13604814073c19ecf44973b35c",
-      "facts": {
-        "dimensions": {
-          "width": 1254,
-          "height": 1254
-        },
-        "colorModel": "rgb",
-        "bitDepth": 8,
-        "hasAlphaChannel": false,
-        "pixelsAnalyzed": true,
-        "alpha": {
-          "mean": 1,
-          "visibleRatio": 1,
-          "borderMean": 1
-        },
-        "luminance": {
-          "mean": 0.1043,
-          "max": 1,
-          "borderMean": 0.0006,
-          "borderNearBlackRatio": 1,
-          "borderNearWhiteRatio": 0
-        },
-        "saturation": {
-          "mean": 0.417,
-          "max": 1
-        },
-        "contentBounds": {
-          "x": 0,
-          "y": 0,
-          "width": 1254,
-          "height": 1254
-        },
-        "trimmed": true,
-        "edgeContinuity": {
-          "u": 0.9992,
-          "v": 0.9993
-        },
-        "backgroundVariant": "blackBackground"
-      }
-    },
-    {
-      "assetId": "codex-authored/meteor/meteor-stylized.png",
-      "relativePath": "codex-authored/meteor/meteor-stylized.png",
-      "package": "codex-authored",
-      "format": "png",
-      "fileSize": 1119237,
-      "contentHash": "sha256:e0a785ea31dcbf251e0b2d1c4cf0a2247a577313f98dc0966fb8da21fe485ed6",
-      "facts": {
-        "dimensions": {
-          "width": 1254,
-          "height": 1254
-        },
-        "colorModel": "rgb",
-        "bitDepth": 8,
-        "hasAlphaChannel": false,
-        "pixelsAnalyzed": true,
-        "alpha": {
-          "mean": 1,
-          "visibleRatio": 1,
-          "borderMean": 1
-        },
-        "luminance": {
-          "mean": 0.1089,
-          "max": 0.9242,
-          "borderMean": 0.0004,
-          "borderNearBlackRatio": 1,
-          "borderNearWhiteRatio": 0
-        },
-        "saturation": {
-          "mean": 0.3058,
-          "max": 1
-        },
-        "contentBounds": {
-          "x": 0,
-          "y": 0,
-          "width": 1254,
-          "height": 1254
-        },
-        "trimmed": true,
-        "edgeContinuity": {
-          "u": 0.9993,
-          "v": 0.9995
-        },
-        "backgroundVariant": "blackBackground"
-      }
-    },
-    {
-      "assetId": "codex-authored/tornado/fire-flow.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/tornado/fire-flow.png",
-      "format": "png",
-      "fileSize": 3421959,
-      "contentHash": "sha256:6dbae0a848ca3a10f647bc489b972b79874311870d74a05d9148449c390157f2",
-      "facts": {
-        "dimensions": {
-          "width": 2560,
-          "height": 2048
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor/stone-guard.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/rockarmor/stone-guard.png",
-      "format": "png",
-      "fileSize": 1070933,
-      "contentHash": "sha256:8a519412780ef24ef2126606c6775c5d904d17435c2db04a19d66a2b80aed5ab",
-      "facts": {
-        "dimensions": {
-          "width": 1536,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/rockarmor/stone-guard-back.png",
-      "format": "png",
-      "fileSize": 588808,
-      "contentHash": "sha256:b509ee9d357dfd55b8b8bc7024711dec1c37c87d8b9a40a9524d5f3066a40886",
-      "facts": {
-        "dimensions": {
-          "width": 1536,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/rockarmor/stone-guard-front.png",
-      "format": "png",
-      "fileSize": 652175,
-      "contentHash": "sha256:44f5691fdc4b34c4b8e3b896116c8fb7fc205247b08f4d513fb174e900a22ab4",
-      "facts": {
-        "dimensions": {
-          "width": 1536,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
-      "format": "png",
-      "fileSize": 599639,
-      "contentHash": "sha256:d6f1582e35641dd19b09e9a7457fa9c52147f691e136da7700b80ba5af94b0c4",
-      "facts": {
-        "dimensions": {
-          "width": 1536,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
-      "format": "png",
-      "fileSize": 663733,
-      "contentHash": "sha256:10d51a27002fc6f1e6c09d77dbd86429a2e9a11cff5a146e2f1d96852422b058",
-      "facts": {
-        "dimensions": {
-          "width": 1536,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/mire/mud-flow.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/mire/mud-flow.png",
-      "format": "png",
-      "fileSize": 2617834,
-      "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
-      "facts": {
-        "dimensions": {
-          "width": 2048,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/mire/mud-flow-venom.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/mire/mud-flow-venom.png",
-      "format": "png",
-      "fileSize": 2967515,
-      "contentHash": "sha256:3e74027d56dcb18ee54663887763106c8efbe9ffc7bf617c9a10d88ee56b3632",
-      "facts": {
-        "dimensions": {
-          "width": 2048,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/mire/mud-flow-magma.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/mire/mud-flow-magma.png",
-      "format": "png",
-      "fileSize": 3707583,
-      "contentHash": "sha256:ffd551c15804f16ea82580ffeddcf0bd3b8bab37f3c1353c2581754f9fe373b3",
-      "facts": {
-        "dimensions": {
-          "width": 2048,
-          "height": 1536
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
-      "format": "png",
-      "fileSize": 9028764,
-      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
-      "facts": {
-        "dimensions": {
-          "width": 2560,
-          "height": 3840
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
-      "format": "png",
-      "fileSize": 20395025,
-      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
-      "facts": {
-        "dimensions": {
-          "width": 2560,
-          "height": 7680
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/lightning/chain-travel.png",
-      "relativePath": "codex-authored/lightning/chain-travel.png",
-      "package": "codex-authored",
-      "format": "png",
-      "fileSize": 86462,
-      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
-      "facts": {
-        "dimensions": {
-          "width": 1536,
-          "height": 384
-        },
-        "hasAlpha": true
       }
     }
   ]

@@ -6588,3 +6588,14 @@ Worker 存活且頁面正常完成載入。
 - 行為：解析不到路徑／不是 Git repo／detached HEAD／沒有 upstream → 略過並說明；工作區髒 → 只 fetch，明列擋住的檔案；乾淨 → fetch → pull --rebase → push。新增 `-SkipAssetLibrary` 只同步程式碼。
 - 驗證：`-ValidateOnly` 正確解析 `D:\MyGames\Effects-Materials`、`master → origin/master` 且不動作；實際執行在素材庫髒的狀態下只做 fetch 並列出 7 筆未提交變更，程式碼同步照常往下走；`-SkipAssetLibrary` 正確跳過。CLI 四種情境（預設／指定 id／不存在的 id／仍可被 require）皆正確。`.bat` 維持 CRLF、無單獨 LF、純 ASCII 註解（避免 chcp 65001 後非 echo 行被當指令解析）。
 - 未推送，未合併。
+
+## Claude｜codex-authored 素材納入語意層（VFX-SEMANTICS-CODEX-20260911）
+
+- 問題：16 個 codex-authored PNG 沒有任何規則涵蓋，語意層沒有它們的紀錄。而 `editor.js` 的 `filterAssets` 是走 `state.semantics.records` 並以 `kind === 'vfx'` 過濾，沒有紀錄＝在 Asset Browser 與 Asset Picker 裡完全不存在。其中 14 個已經被 20 份 preset 使用，等於這些特效只能手改 JSON 維護。
+- 判定方式：逐張看圖，不靠檔名猜。用 `tools/vfx/vfx-raster.cjs` 把 16 張（含圖集，依 preset 的 sheet 格線取代表格）縮成縮圖後人工判讀，因此 9 條規則全部列為 `evidence`，16 筆紀錄都是 `high` 信心，沒有一筆是 `family` 猜測。
+- 新增規則：`codex/rockarmor-plate`（角面石板／nature）、`codex/mire-earth`／`-venom`／`-magma`（同形地面沼澤，元素分別為 nature／poison／fire）、`codex/earthguard-hexagram`（地面法陣，紅藍雙色仍維持 neutral 以便跨階重用）、`codex/tornado-fire-column`（火柱／fire）、`codex/meteor-molten-rock`（熔岩隕石／fire）、`codex/moon-crescent`（灰階月牙，依不變式必須 neutral）、`codex/chain-lightning-bolt`（藍白閃電折線／lightning，語意比照既有 `scifi/sheet-lightning`）。
+- 連帶修正索引：專案有一條不變式「帶具體元素者必須有事實證明是預先上色，且需 `needsReview`」。這 16 個素材當初進索引時只有 `dimensions`／`hasAlpha`，`tintableFromFacts` 回 `null` 而非 `false`，因此重跑 `asset-scanner.cjs` 補齊事實（原本 60 筆事實不完整），並替 7 條非 neutral 規則加上 `needsReview`。補齊後的事實反過來印證判讀：兩張月牙確實 `tintable=true`（故必須 neutral），meteor 兩張確實是 `additive`（不透明黑底）。
+- 索引重掃另有 42 筆 SVG 的 contentHash 變動，差值剛好等於 CR 位元組數——素材庫 repo 沒有 `.gitattributes`，SVG 被簽出成 CRLF，舊索引是 LF 時建的。已確認這 42 筆都沒有被任何 preset 引用，真正被引用的 3 個 SVG 在索引／素材庫／已發布三處雜湊一致，`export-assets --check` 仍為「已是最新」。
+- 驗證：語意紀錄 2406/2422 未分類 16 → **2422/2422 未分類 0**；語意檔為純新增（新增 16 筆、既有 0 筆被改動、0 筆移除）；規則檔沿用原本 1 空格縮排，diff 為 251 行純新增。`asset-scanner --check`、`semantic-build --check`、`export-assets --check` 三道守門皆「已是最新」。VFX 全測試中僅餘合併帶進來的 5 個 Codex 既有失敗，數量與動手前完全相同。以實際編輯器開啟 Asset Picker 搜尋 `stone-guard`，5 筆全部出現並顯示縮圖。
+- 未解決：`hit-basic-irregular` 與 `slash-gale-moon` 引用的 3 個 SVG 仍選不到——它們被既有的 `any/vector-source` 標為 `nonVfx`（理由是「runtime 不能直接使用」），但 preset 事實上正在用。該規則的前提與現況矛盾，影響 49 筆素材，未擅自改動，交由使用者決定。
+- 未推送，未合併。
