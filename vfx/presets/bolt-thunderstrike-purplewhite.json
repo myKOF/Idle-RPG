@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "id": "bolt-thunderstrike-purplewhite",
+  "duration": 0.32307692307692304,
+  "loop": false,
+  "layers": [
+    {
+      "id": "blue-corona",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "position": {
+        "x": 0,
+        "y": -330
+      },
+      "scale": {
+        "x": 0.207,
+        "y": 0.6445
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alpha": 0.85,
+      "tint": "#a467ff",
+      "blendMode": "add",
+      "duration": 0.32307692307692304,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          0.52,
+          0.45
+        ],
+        [
+          0.62,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "white-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "position": {
+        "x": 0,
+        "y": -330
+      },
+      "scale": {
+        "x": 0.1602,
+        "y": 0.6445
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alpha": 1,
+      "tint": "#faf2ff",
+      "blendMode": "add",
+      "duration": 0.32307692307692304,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          0.52,
+          0.45
+        ],
+        [
+          0.62,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "side-fork",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "position": {
+        "x": 22,
+        "y": -140
+      },
+      "scale": {
+        "x": 0.2148,
+        "y": 0.2539
+      },
+      "alpha": 0.48,
+      "tint": "#c092ff",
+      "blendMode": "add",
+      "delay": 0.061538461538461535,
+      "duration": 0.17692307692307693,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ]
+}

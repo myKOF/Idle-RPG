@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-thunderstrike-purplewhite",
+  "groups": [
+    {
+      "id": "hit-thunderstrike-purplewhite",
+      "name": "hit-thunderstrike-purplewhite",
+      "layerIds": [
+        "blue-impact-glow",
+        "white-impact-core",
+        "electric-burst",
+        "violet-ground-arcs",
+        "shock-ring"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-thunderstrike-purplewhite"
+  ]
+}
