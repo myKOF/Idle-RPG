@@ -694,6 +694,20 @@ function createServer(ctx) {
       if (!root) return send(res, 404, '未設定的 libraryId：' + libraryId);
       const target = safeJoin(root, relative);
       if (!target) return send(res, 403, '路徑不合法');
+      // 新增的製作素材會隨 Git 發布，但另一台電腦的外部素材庫不會自動同步。
+      // 僅以 shipped manifest 白名單備援；本機素材存在時仍保留編輯者的版本。
+      if (!fs.existsSync(target)) {
+        try {
+          const shipped = JSON.parse(fs.readFileSync(path.join(ctx.repoRoot, 'vfx', 'shipped-assets.json'), 'utf8'));
+          const entry = shipped.libraryId === libraryId && Array.isArray(shipped.assets)
+            ? shipped.assets.find(function (a) { return a.relativePath === relative; }) : null;
+          const shippedRoot = path.join(ctx.repoRoot, 'images', 'vfx', 'assets');
+          const backup = entry && safeJoin(shippedRoot, entry.relativePath);
+          if (backup && !findLinkOnPath(ctx.repoRoot, backup) && fs.existsSync(backup)) {
+            return serveFile(res, backup, pathname);
+          }
+        } catch (e) { /* 沒有有效 manifest 時沿用明確的 404。 */ }
+      }
       return serveFile(res, target, pathname);
     }
 

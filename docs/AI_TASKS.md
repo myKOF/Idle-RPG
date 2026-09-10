@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜跨電腦編輯器素材備援（VFX-ASSET-FALLBACK-20260910）
+
+- In Progress：外部素材庫缺少已提交的岩甲貼圖時，Editor Server 由 shipped-assets 白名單查找專案素材，仍優先本機素材。範圍 server、HTTP 回歸測試與本文件；不修改使用者素材庫。驗證缺檔、優先序、未知素材與 libraryId 隔離；交由使用者更新另一台電腦後重啟編輯器。
+- Done：缺檔 fallback 已完成，限相同 libraryId／manifest 路徑，拒絕連結路徑；HTTP 定向測試 40 通過、1 個既有平台測試略過，332 檔 build 通過。岩甲圖集雜湊與使用者失敗 URL 相同。此修正處理讀取，不同步或回填外部素材庫；部署需重啟 Editor Server。
+
 ## Codex｜岩甲術預覽（VFX-ROCKARMOR-20260910）
 
 - Done／接入：經使用者核准，Skills2.xlsx AC112、CSV、JS 與製作目錄改用 aura-rockarmor-stone；不屈鬥魂仍使用 aura-rock-armor。新版保持預覽原尺寸，沿用 0.3 秒進退場與腳底跟隨；主頁及 Worker 快取同步更新。使用者同意修改與 Antigravity CSS/UI 版號不同位置的 index.html。89 項定向測試通過，Excel 僅替換指定 cell 且保留所有其他 ZIP 部件；未改護盾數值。接手者：使用者實機測試／合併。
