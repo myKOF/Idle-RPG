@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "orb-firehunt-companion",
+  "groups": [
+    {
+      "id": "orb-firehunt-companion",
+      "name": "orb-firehunt-companion",
+      "layerIds": [
+        "arc-gold",
+        "arc-crimson",
+        "ember-shell",
+        "molten-heart",
+        "surface-flames",
+        "trailing-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:orb-firehunt-companion"
+  ]
+}

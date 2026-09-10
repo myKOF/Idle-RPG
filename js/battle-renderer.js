@@ -2534,6 +2534,7 @@ var BattleRenderer = (function () {
   function spawnFireHunt(spec) {
     var a = spec && spec.area;
     if (!a || !isFinite(a.r)) return;
+    var detailed = Array.isArray(a.members) && typeof VFXRuntime !== 'undefined';
     var ringR = Math.max(6, Number(a.r) || 0);
     var orbR = Math.max(3, Number(a.orbR) || 0);
     var orbs = Math.max(1, Math.min(12, Math.floor(Number(a.orbs) || 1)));
@@ -2555,10 +2556,16 @@ var BattleRenderer = (function () {
        只用「半徑＋方向」當鍵會讓後來的那一道被誤認成同一道而整組不畫。 */
     var key = (spec.variant || 'firehunt') + ':' + (spec.elem || '') + ':' +
       Math.round(ringR) + ':' + (ccw ? 'ccw' : 'cw');
+    if (detailed && a.id) key = String(a.id);
     var ring = _fireHuntRings[key];
+    if (detailed && !a.members.length) {
+      if (ring) { ring.orbs = 0; ring.dur = ring.t; }
+      return;
+    }
     if (ring && !ring.done && ring.fx && !ring.fx.dead) {
-      ring.dur = Math.min(FX_ORBIT_MAX_SEC, Math.max(ring.dur, ring.t + dur));
-      ring.orbs = orbs;
+      ring.dur = detailed ? ring.t + dur : Math.min(FX_ORBIT_MAX_SEC, Math.max(ring.dur, ring.t + dur));
+      ring.orbs = detailed ? a.members.length : orbs;
+      ring.area = a;
       return;
     }
 
@@ -2570,7 +2577,8 @@ var BattleRenderer = (function () {
     S.layers.fx.addChild(node);
     var g = new PIXI.Graphics();
     node.addChild(g);
-    ring = { t: 0, dur: dur, orbs: orbs, done: false, fx: null };
+    var initialAge = detailed ? Math.max(0, Number(a.orbitAge) || 0) : 0;
+    ring = { t: initialAge, dur: initialAge + dur, orbs: detailed ? a.members.length : orbs, area: a, done: false, fx: null };
     _fireHuntRings[key] = ring;
     var partAcc = 0;
     var ringFx = addFx({
@@ -2600,10 +2608,13 @@ var BattleRenderer = (function () {
           var orbT = isSpiral ? Math.max(0, ring.t - i * spiralLag) : ring.t;
           var rNow = isSpiral ? Math.min(capR, ringRNow + growPx * orbT) : wholeR;
           var ang = base + Math.PI * 2 * i / ring.orbs;
+          var memberPose = detailed ? VFXRuntime.sampleOrbitMember(ring.area, ring.t, i) : null;
+          if (memberPose) { ang = memberPose.angle; rNow = memberPose.radius; curOrbR = memberPose.bodyR; }
+          var isCompanion = memberPose && memberPose.companion;
           var ox = Math.cos(ang) * rNow;
           var oy = Math.sin(ang) * rNow * 0.62;  // 俯視壓扁，與棋盤的透視一致
-          g.circle(ox, oy, curOrbR).fill({ color: theme.c2, alpha: 0.85 * fade });
-          g.circle(ox, oy, curOrbR * 0.55).fill({ color: theme.c1, alpha: 0.95 * fade });
+          g.circle(ox, oy, curOrbR).fill({ color: isCompanion ? 0xed2817 : theme.c2, alpha: 0.85 * fade });
+          g.circle(ox, oy, curOrbR * 0.55).fill({ color: isCompanion ? 0x63a6ff : theme.c1, alpha: 0.95 * fade });
           // 尾焰拖在行進方向的後方
           g.circle(ox - Math.cos(ang + spin * 0.08) * curOrbR * 0.8, oy - Math.sin(ang + spin * 0.08) * curOrbR * 0.5,
             curOrbR * 0.42).fill({ color: theme.glow || theme.c1, alpha: 0.4 * fade });

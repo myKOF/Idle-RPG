@@ -216,6 +216,8 @@ test('強化火狩：體積與環繞範圍同步擴大，原本掃不到的距�
 
 test('伴生火狩：命中才判定、每團只伴生一個，伴生體不再伴生', () => {
   const c = loadContext();
+  const events = [];
+  c.playCombatVfx = (spec) => events.push(spec);
   stubHits(c);
   c.chance = () => true; // 機率必成立
   setLevels(c, 'firehunt', [1, 1, 1, 0, 0, 0, 0]);
@@ -231,10 +233,54 @@ test('伴生火狩：命中才判定、每團只伴生一個，伴生體不再�
   const born = f.orbs[2];
   assert.equal(born.canSpawn, false, '伴生出的火狩不可再伴生');
   assert.equal(born.radius, f.orbs[0].radius, '伴生體在同一道上');
+  assert.ok(Math.abs((f.orbs[0].ang - born.ang) * born.radius - (f.bodyR * 2 + f.companionPx)) < 1e-6);
+  const packet = events.filter(e => e.variant === 'firehunt').at(-1);
+  assert.equal(packet.area.members.length, 3, '生成即補送逐團事件');
+  assert.equal(packet.area.companionPreset, 'orb-firehunt-companion');
+  assert.equal(packet.vfx.projectile, 'orb-firehunt', '母體仍讀第一階');
+  assert.equal(packet.area.members.filter(m => m.companion).length, 1);
 
   // 再讓兩團母體各掃過一輪：母體已伴生過，只有另一團還能伴生
   run(c, p, [m], turnSec(c, 1.2));
   assert.equal(f.orbs.length, 4, '每一團母體只伴生一個');
+});
+
+test('伴生逐團事件：反向外圈、體積成長與消耗與實際幾何一致', () => {
+  const c = loadContext(), events = [];
+  const { sampleOrbitMember } = require('../js/vfx-runtime.js');
+  c.playCombatVfx = spec => events.push(spec);
+  c.sgSpawnOrbitField(playerEnt(), {}, 'firehunt', {
+    rings: [{ r: 80, spin: 2 }, { r: 140, spin: -2 }], count: 1,
+    bodyR: 15, companionPx: 10, bornWithCompanion: true, lifeSec: 6,
+    ringGapPx: 60, bodyGrowTo: 2, bodyGrowSec: 4
+  });
+  const f = c.SKILL2_RT.orbits[0];
+  const initial = events.filter(e => e.variant === 'firehunt');
+  assert.notEqual(initial[0].area.id, initial[1].area.id);
+  assert.equal(f.orbs[3].ringIdx, 1);
+  for (let n = 1; n <= 20; n++) {
+    c.GT = n * .1;
+    c.sgOrbitStep(f, [], .1, {});
+    for (let ring = 0; ring < 2; ring++) {
+      const members = f.orbs.filter(o => o.ringIdx === ring);
+      members.forEach((orb, i) => {
+        const pose = sampleOrbitMember(initial[ring].area, c.GT, i);
+        assert.ok(Math.abs(pose.angle - orb.ang) < 1e-8, '逐幀角度一致');
+        assert.ok(Math.abs(pose.radius - orb.radius) < 1e-8, '外圈成長一致');
+        assert.ok(Math.abs(pose.bodyR - f.bodyR) < 1e-8);
+      });
+    }
+  }
+  c.sgOrbitEmitVfx(f);
+  const refreshed = events.at(-1);
+  assert.equal(refreshed.area.orbR, 15, '補送固定用出生體積，避免成長重複乘算');
+  assert.equal(refreshed.area.orbitAge, 2);
+  const motherIds = f.orbs.filter(o => !o.companion).map(o => o.vfxId);
+  c.sgFirehuntConsumeOrb(f.pEnt);
+  assert.deepEqual(f.orbs.filter(o => !o.companion).map(o => o.vfxId), motherIds);
+  assert.equal(events.slice(-2)[0].area.members.length, 1);
+  while (f.orbs.length) c.sgFirehuntConsumeOrb(f.pEnt);
+  assert.ok(events.slice(-2).every(e => e.area.members.length === 0), '最後一團消耗後立即清圈');
 });
 
 test('三重火狩：改為 3 團、傷害%改讀第 4 階', () => {

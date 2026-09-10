@@ -51,7 +51,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 28;
+var WORKER_PROTOCOL_VERSION = 29;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -160,6 +160,13 @@ var EVENT_KINDS = {
              spiralLag（相鄰兩團的出生間隔秒數，決定螺旋張多開）、
              orbGrowTo／orbGrowSec（環繞體體積在幾秒內長到幾倍）、
              rGrowTo／rGrowSec（v25：**這一道環**的半徑在幾秒內長到幾倍；最內圈恆為 1）。
+             v29 火狩可選 members＝[{ id, phase, radiusBase, companion, parentId }]：
+             id 為本次施放內穩定身份；phase＝當前角度－角速度×orbitAge，radiusBase 為螺旋
+             當前半徑－grow×orbitAge。orbitAge 為施放後秒數；companionGap 是兩團外緣間隙 px。
+             companionPreset 來自火狩第三階 projectile。伴生角度依母體相位落後
+             （當前體積直徑＋companionGap）／當前環半徑，正反轉共用同一幾何。
+             members=[] 表示立即清除該圈；null／缺省維持舊均分行為。orbR 在新事件固定送出生體積，
+             生成／消耗／再生補送不重播母體相位或尺寸成長。area.id 區分施放與圈索引。
              ⚠️ 環形事件的 r 送的是**出生半徑**而不是當下半徑——顯示層的節點合併鍵含半徑，
              送當下值會讓每次補送都被當成另一道環而多畫一圈。
              ⚠️ 這組數字就是模擬層實際判定的傷害範圍，顯示層不得再套第二組縮放。

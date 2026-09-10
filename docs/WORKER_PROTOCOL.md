@@ -1,6 +1,6 @@
-# Worker 協議 v28
+# Worker 協議 v29
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 28`　最後更新：2026-09-09
+> 協議版本：`WORKER_PROTOCOL_VERSION = 29`　最後更新：2026-09-10
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -302,6 +302,8 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 ---
 
 ## 8. 版本
+
+2026-09-10（v29）：火狩 `area.members` 逐團提供 `{id, phase, radiusBase, companion, parentId}`，搭配 `orbitAge`、`companionGap` 與 `companionPreset`；細節以 protocol.js 的 VFX 註解為準。母體／伴生不再以總數均分角度；伴生依當前體積直徑加外緣間隙跟隨，正反向、成長與螺旋共用權威幾何。生成與消耗立即補送，空陣列清除該圈；缺省／null 保留舊事件行為。理由：核准的紅藍伴生必須跟在黃紅母體後方，不能只換整圈顏色，或出現畫面與接觸判定分離。
 
 2026-09-09（v28）：VFX 角色表新增可選 `field`（持續場域特效）。雷球等持續本體可獨立於 `ground` 地面提示設定；不改模擬傷害、移動參數或存檔格式，舊 ground 仍相容。主頁與 Worker 共用新版協議及資源快取版本。
 

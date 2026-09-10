@@ -757,6 +757,52 @@ test('GROUND-2 事件停了之後場域會自己收掉（容忍一次遺失）',
 /* 環繞圓心＝玩家腳底往上 12px。替身的 ctx 沒有給 footOf，Adapter 會退回 posOf，
    而 posOf('pv-float') 是 (0,0)——順帶驗到「沒有 footOf 就退回 posOf」這條相容規則。 */
 const ORBIT_CENTRE = { x: 0, y: -12 };
+test('ORBIT 伴生沿母體後方公轉，新增／消耗保留母體身份與相位', () => {
+  const { adapter, log } = makeAdapter([unitPreset('orb-x', 1, true), unitPreset('child-x', 1, true)]);
+  const mother = { id: 1, phase: 0, radiusBase: 100, companion: false, parentId: null };
+  const child = { id: 2, phase: -.5, radiusBase: 100, companion: true, parentId: 1 };
+  const area = { id: 'pair-1', r: 100, orbR: 20, spinRate: Math.PI, orbitAge: 0,
+    members: [mother], companionGap: 10, companionPreset: 'child-x' };
+  const event = a => orbitEvent({ area: a, vfx: { projectile: 'orb-x' } });
+  assert.equal(adapter.tryPlay(event(area)), true);
+  adapter.update(.5);
+  const node = log.nodes.find(n => n.spec.assetUrl === '/orb-x.png');
+  const before = node.transforms.at(-1);
+  assert.equal(adapter.tryPlay(event({ ...area, orbitAge: .5, members: [mother, child] })), true);
+  adapter.update(0);
+  assert.equal(node.transforms.at(-1).x, before.x, '補送伴生不重排母體角度');
+  const childNode = log.nodes.find(n => n.spec.assetUrl === '/child-x.png');
+  const ct = childNode.transforms.at(-1);
+  assert.ok(Math.abs(ct.x - Math.cos(Math.PI * .5 - .5) * 100) < 1e-8);
+  assert.ok(Math.abs(ct.y - (Math.sin(Math.PI * .5 - .5) * 100 * .62 - 12)) < 1e-8);
+  assert.equal(adapter.stats().played, 2);
+  adapter.tryPlay(event({ ...area, orbitAge: .5, members: [mother] }));
+  adapter.update(.1);
+  assert.equal(adapter.stats().fx.activeEffects, 1);
+  assert.equal(adapter.stats().played, 2, '消耗不重播母體');
+  adapter.tryPlay(event({ ...area, members: [] }));
+  assert.equal(adapter.stats().orbits, 0);
+  assert.equal(adapter.stats().fx.activeEffects, 0);
+});
+
+test('ORBIT 逐團事件支援超過舊均分上限、晚加入及反向母子', () => {
+  const { adapter, log } = makeAdapter([unitPreset('orb-x', 1, true), unitPreset('child-x', 1, true)]);
+  const members = Array.from({ length: 16 }, (_, i) => ({ id: i + 1, phase: i * .3,
+    radiusBase: 60, companion: i % 2 === 1, parentId: i % 2 ? i : null }));
+  const area = { id: 'crowd', r: 100, orbR: 20, spinRate: -2, orbitAge: 3,
+    grow: 20, spiral: 1, growMax: 200, companionGap: 10, companionPreset: 'child-x', members };
+  adapter.tryPlay(orbitEvent({ area, vfx: { projectile: 'orb-x' } }));
+  adapter.update(0);
+  assert.equal(adapter.stats().fx.activeEffects, 16);
+  const actual = log.nodes.filter(n => n.spec.assetUrl === '/child-x.png')[0].transforms.at(-1);
+  const pose = VFXRuntime.sampleOrbitMember(area, 3, 1);
+  assert.equal(pose.radius, 120);
+  assert.ok(Math.abs(pose.angle - (-6 + 50 / 120)) < 1e-8);
+  assert.ok(Math.abs(actual.x - Math.cos(pose.angle) * pose.radius) < 1e-8);
+  adapter.update(4.1);
+  assert.equal(adapter.stats().orbits, 0);
+});
+
 function orbitRadius(t) {
   const rx = t.x - ORBIT_CENTRE.x;
   const ry = (t.y - ORBIT_CENTRE.y) / 0.62;

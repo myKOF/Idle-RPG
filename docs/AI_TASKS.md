@@ -5,6 +5,20 @@
 - In Progress：外部素材庫缺少已提交的岩甲貼圖時，Editor Server 由 shipped-assets 白名單查找專案素材，仍優先本機素材。範圍 server、HTTP 回歸測試與本文件；不修改使用者素材庫。驗證缺檔、優先序、未知素材與 libraryId 隔離；交由使用者更新另一台電腦後重啟編輯器。
 - Done：缺檔 fallback 已完成，限相同 libraryId／manifest 路徑，拒絕連結路徑；HTTP 定向測試 40 通過、1 個既有平台測試略過，332 檔 build 通過。岩甲圖集雜湊與使用者失敗 URL 相同。此修正處理讀取，不同步或回填外部素材庫；部署需重啟 Editor Server。
 
+## Codex｜伴生火狩預覽（VFX-FIREHUNT-COMPANION-20260910）
+
+- Done／接入：依使用者核准 v2 接入紅藍 orb-firehunt-companion，沿母體後方保持體積直徑＋1 米的沿軌中心距；正反圈、體積成長、螺旋、出生與消耗皆傳遞逐團身份及相位，避免母體重排。第三階 projectile 與 CSV／Excel／JS 同步，Worker 協議升 v29、主頁與 Worker 快取更新；傷害、機率與持續時間數值不變。
+- 接入驗證：`npm run build` 332 檔通過；`node --test` 火狩／傳奇／技能 VFX／Runtime／Core／Pixi sheet／preset coverage、layout、usage／tower／Worker protocol、crosscheck 共 325 項，318 通過、7 失敗。失敗為既有追蹤風刃靜態斷言、4 項其他技能 preset coverage、tower 舊版號斷言，以及本輪外部岩甲尺寸修改；以 HEAD 程式重跑失敗組核對，不調整測試接受現況。定向火狩／Runtime／傳奇／Worker 118 項中 117 通過，唯一失敗為岩甲。`config_tables --apply Skills2` dry-run 語意差異 0；Excel 僅 AA104／AH104／AI104 改變；`git diff --check` 通過。
+- 交付檔案：skills2、vfx-runtime、battle-renderer、Worker protocol／sim／bridge、index、Skills2 CSV／Excel、author／catalog、companion preset／layout、3 支回歸測試及本記錄／協議／Adapter 文件。未修改但檢查：母體 preset、Core／Pixi backend、config_tables、preset coverage／layout／usage／tower 測試。動態預覽與 scratch 驗證產物僅保留本機，不提交；本輪外部岩甲 preset／layout／素材索引修改不納入提交。未完成：實際存檔戰鬥與大量特效 FPS 由使用者驗收；可交付審查，合併仍由使用者決定，不自動合併或推送。
+
+- 接入 In Progress：使用者核准 v2 並要求 Commit。允許修改 Skills2 模擬／CSV／Excel 第三階飛行特效、VFX Runtime／legacy renderer、Worker Protocol 與快取、相關測試／文件／製作目錄。以逐團身份、相位及母子關係傳遞權威幾何，間距沿用核准的「體積直徑＋1 米」。禁止改傷害／機率／持續時間及其他技能；目標衝突預檢乾淨。完成回歸與 build 後提交，不合併或推送。
+- 第二版位置修訂：使用者指出伴生應在原火狩後方。前版中心距僅 1 米造成火團重疊；本版預覽採母體直徑＋1 米空隙的沿軌中心距（基礎體積下 4 米），黃紅母體在前、紅藍伴生在後。左側也改成成對放大展示。只改 HTML／GIF 預覽與 scratch 渲染腳本，不改 preset 配色或遊戲模擬。v2 GIF 共 138 格；預覽語法、正反轉後方幾何與 diff --check 通過，瀏覽器完成載入。這個間距是對使用者外觀要求的預覽詮釋，接入時仍須同步模擬，不得只改顯示。
+- Review／預覽完成：使用者指定沿用核准 orb-firehunt，依技能文檔 I159 製作紅藍色伴生火焰；母體後方 1 米同軌環繞、各母體僅伴生一次且共同消失。已讀技能頁特效文字與 31 張內嵌圖，火狩參考位於 J157／K157。
+- 範圍：新增 author/firehunt-companion.cjs、orb-firehunt-companion preset/layout、editor/firehunt-companion-review.html、scratch/firehunt-companion-preview 的渲染脚本及 GIF 與本記錄。禁止修改遊戲接線、共用 Runtime、技能數值、CSV／Excel。前置：現有火狩弧形拖尾已接入；目標衝突預檢乾淨。
+- 驗收：Preset／layout 驗證、動態 GIF 與 Pixi 瀏覽器目視、Console 及 build。接手者：使用者確認；說「接入」後才處理遊戲接線，本輪先不提交。
+- 結果：僅 ID 與 tint 不同，其餘幾何及粒子時序逐欄相等；169 項 core／editor-save 測試通過、1 項 Windows 符號連結權限測試略過；build 332 檔通過，diff --check 通過。GIF 138 格／25 FPS／5.52 秒，使用現有 Core 與軟體後端；Pixi 預覽亦已目視且 Console 無錯誤。生成物放大展示單顆、正常比例展示成對環繞。
+- 已檢查未修改：orb-firehunt preset／author、skills2 的 sgOrbitCompanion／sgOrbitEmitVfx、vfx-core、vfx-pixi-backend、preset-kit、preset-render、editor-server。接入注意：現有環繞事件只有總數，尚未逐顆傳出伴生身份與相位；正式接入需同步權威事件與顯示，不能只替換整圈配色。預覽固定示範成功生成，不代表改動機率或傷害。未合併、未 Commit；待使用者外觀核准。
+
 ## Codex｜岩甲術預覽（VFX-ROCKARMOR-20260910）
 
 - Done／接入：經使用者核准，Skills2.xlsx AC112、CSV、JS 與製作目錄改用 aura-rockarmor-stone；不屈鬥魂仍使用 aura-rock-armor。新版保持預覽原尺寸，沿用 0.3 秒進退場與腳底跟隨；主頁及 Worker 快取同步更新。使用者同意修改與 Antigravity CSS/UI 版號不同位置的 index.html。89 項定向測試通過，Excel 僅替換指定 cell 且保留所有其他 ZIP 部件；未改護盾數值。接手者：使用者實機測試／合併。
