@@ -97,16 +97,21 @@
         }
         combo.rows = ids.map(function (id) {
           var u = usage[id];
-          var label = u && u.label ? u.label : '';
+          /* labels 是收攏過的（一個群組用到多階時只寫群組名），
+             all 是逐階的完整清單——前者給列上顯示，後者給 tooltip 與搜尋。
+             搜尋要用完整的那一份，否則打「水龍捲」這種階段名會找不到。 */
+          var labels = (u && u.labels) || [];
+          var all = (u && u.all) || labels;
+          var label = labels.join('、');
           return {
             id: id,
             label: label,
+            all: all,
             count: (u && u.count) || 0,
             text: label ? id + '（' + label + '）' : id,
-            /* 關鍵字同時比對 id 與用途標籤，所以打「雷球」找得到
-               lightning-orb-field。id 一律小寫，中文沒有大小寫，
-               所以只要把輸入轉小寫就夠了。 */
-            search: (id + ' ' + label).toLowerCase()
+            /* 關鍵字同時比對 id 與用途，所以打「雷球」找得到 lightning-orb-field。
+               id 一律小寫，中文沒有大小寫，所以只要把輸入轉小寫就夠了。 */
+            search: (id + ' ' + all.join(' ')).toLowerCase()
           };
         });
         input.value = comboDisplayText();
@@ -164,9 +169,11 @@
         tag.textContent = row.label;
         el.appendChild(tag);
       }
-      el.title = row.count > 1
-        ? row.id + '：共 ' + row.count + ' 處使用，這裡顯示第一個'
-        : (row.label ? row.id + '：' + row.label : row.id + '：目前沒有任何技能或程式碼用到');
+      /* tooltip 給逐階的完整清單：列上為了長度把同群組的多個階段收攏成群組名，
+         真的要知道是哪幾階時，滑鼠停一下就有。 */
+      el.title = row.all && row.all.length
+        ? row.id + '\n共 ' + row.count + ' 處使用：\n· ' + row.all.join('\n· ')
+        : row.id + '：目前沒有任何技能或程式碼用到';
       /* mousedown 而不是 click：input 的 blur 會先關掉清單，click 就永遠打不中。 */
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
@@ -407,6 +414,51 @@
   };
 
   var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------------- 檢視偏好（背景色、格線、預覽循環）----------------
+
+     放 cookie 而不是 localStorage，理由只有一個：**localStorage 依 origin
+     分隔，而 origin 含連接埠**。五份工作副本共用 28361~28370，啟動器抓到哪一個
+     埠取決於當下誰先占著——昨天在 28361 調好的背景色，今天開在 28363 就整份
+     不見了，看起來就是「編輯器不記得我的設定」。cookie 不分連接埠，
+     同一台機器上的編輯器因此共用同一份偏好。
+
+     只放這三個「長期、少量、跨 preset」的偏好。圖層收合狀態仍然留在
+     localStorage：那是每一份 preset 各一筆，162 份塞進 cookie 會撞上 4KB 上限，
+     而且它本來就是跟著「現在在編哪一份」的短期狀態。 */
+
+  var PREFS_COOKIE = 'vfx-editor-prefs';
+  var PREFS_MAX_AGE = 60 * 60 * 24 * 365;
+
+  function readPrefs() {
+    try {
+      var m = new RegExp('(?:^|; )' + PREFS_COOKIE + '=([^;]*)').exec(document.cookie || '');
+      if (!m) return {};
+      var o = JSON.parse(decodeURIComponent(m[1]));
+      return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+    } catch (e) { return {}; }
+  }
+
+  function writePref(key, value) {
+    try {
+      var all = readPrefs();
+      all[key] = value;
+      document.cookie = PREFS_COOKIE + '=' + encodeURIComponent(JSON.stringify(all)) +
+        ';path=/;max-age=' + PREFS_MAX_AGE + ';samesite=lax';
+    } catch (e) { /* cookie 被關掉就是不記得，不該讓編輯器起不來 */ }
+  }
+
+  /* 讀取時順手把舊的 localStorage 值搬過來一次：使用者現有的設定不該因為
+     換了儲存方式就被重設成預設值。搬完就以 cookie 為準。 */
+  function readPref(key, legacyStorageKey) {
+    var prefs = readPrefs();
+    if (Object.prototype.hasOwnProperty.call(prefs, key)) return prefs[key];
+    var legacy = null;
+    try { legacy = window.localStorage.getItem(legacyStorageKey); } catch (e) { }
+    if (legacy === null) return undefined;
+    writePref(key, legacy);
+    return legacy;
+  }
 
   /* ---------------- Inspector 欄位描述（schema 驅動） ---------------- */
 
@@ -1277,8 +1329,8 @@
     state.gridOn = !!on;
     var chk = $('chk-grid');
     if (chk) chk.checked = state.gridOn;
-    /* 與背景色同一類的檢視偏好，所以同樣走 localStorage，不進 preset。 */
-    try { window.localStorage.setItem(GRID_STORAGE_KEY, state.gridOn ? '1' : '0'); } catch (e) { }
+    /* 與背景色同一類的檢視偏好，走同一份 cookie（見 readPrefs 的說明）。 */
+    writePref('grid', state.gridOn ? '1' : '0');
     updateViewReadout();
   }
 
@@ -1296,9 +1348,8 @@
   }
 
   function wirePreviewView() {
-    var saved = null;
-    try { saved = window.localStorage.getItem(GRID_STORAGE_KEY); } catch (e) { }
-    state.gridOn = saved === null ? true : saved === '1';
+    var saved = readPref('grid', GRID_STORAGE_KEY);
+    state.gridOn = saved === undefined ? true : saved === '1';
 
     /* passive:false 才 preventDefault 得了。少了它，滾輪會在縮放的同時
        把整頁一起捲走——而這一頁本來就會因為工具列換行而出現捲軸。 */
@@ -2845,15 +2896,14 @@
     state.previewLoop = !!on;
     var chk = $('chk-preview-loop');
     if (chk) chk.checked = state.previewLoop;
-    try { window.localStorage.setItem(PREVIEW_LOOP_KEY, state.previewLoop ? '1' : '0'); } catch (e) { }
+    writePref('previewLoop', state.previewLoop ? '1' : '0');
   }
 
   function loadPreviewLoopPreference() {
-    var saved = null;
-    try { saved = window.localStorage.getItem(PREVIEW_LOOP_KEY); } catch (e) { }
+    var saved = readPref('previewLoop', PREVIEW_LOOP_KEY);
     /* 沒存過就是開著：一次性的特效播完就消失，預設關閉的話新開一份 preset
        只會看到一瞬間的畫面，然後對著空白背景調參數。 */
-    state.previewLoop = saved === null ? true : saved === '1';
+    state.previewLoop = saved === undefined ? true : saved === '1';
     var chk = $('chk-preview-loop');
     if (chk) chk.checked = state.previewLoop;
   }
@@ -3016,9 +3066,9 @@
       });
     }
     if (!opts || opts.remember !== false) {
-      /* 背景是每個人自己的檢視偏好，不屬於 Preset，所以放 localStorage：
-         寫進 preset 只會讓「換個背景看看」變成一筆 git diff。 */
-      try { window.localStorage.setItem(BG_STORAGE_KEY, value); } catch (e) { }
+      /* 背景是每個人自己的檢視偏好，不屬於 Preset：寫進 preset 只會讓
+         「換個背景看看」變成一筆 git diff。存 cookie 的理由見 readPrefs。 */
+      writePref('background', value);
     }
   }
 
@@ -3044,8 +3094,7 @@
       picker.oninput = function () { applyBackground(picker.value); };
     }
 
-    var saved = null;
-    try { saved = window.localStorage.getItem(BG_STORAGE_KEY); } catch (e) { }
+    var saved = readPref('background', BG_STORAGE_KEY);
     var valid = saved === 'checker' || (typeof saved === 'string' && /^#[0-9a-f]{6}$/i.test(saved));
     applyBackground(valid ? saved : BG_PRESETS[0].value, { remember: false });
   }
@@ -3382,7 +3431,8 @@
       ['VFXGizmoModel', 'tools/vfx/editor/gizmo-model.js'],
       ['VFXHistory', 'tools/vfx/editor/history.js'],
       ['VFXSemanticVocab', 'tools/vfx/vfx-semantic-vocab.cjs'],
-      ['SpineRef', 'tools/vfx/editor/spine-ref.js']
+      ['SpineRef', 'tools/vfx/editor/spine-ref.js'],
+      ['VFXWaterTornado', 'js/vfx-water-tornado.js']
     ];
     var missing = need.filter(function (m) {
       return typeof window[m[0]] === 'undefined';

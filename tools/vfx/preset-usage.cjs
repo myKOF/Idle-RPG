@@ -192,21 +192,55 @@ function usageLabels(repoRoot) {
 
   const out = Object.create(null);
   /* 表優先：技能名稱比「普攻」這種泛稱具體，而且是設計師自己取的。 */
+  /* 階段名稱與群組名稱不同時，兩個都顯示：「傷害強化」「擴散」這類階段名稱
+     在很多群組裡都有，單看認不出是誰的；而只寫群組名稱又會指到一個根本
+     沒用這個特效的階段（水龍捲是水流彈的第 7 階）。 */
+  function rowLabel(r) {
+    return (r.group && r.group !== r.name) ? r.group + '·' + r.name : r.name;
+  }
+
   Object.keys(tables).forEach(function (id) {
     if (!known[id]) return;                    // 表上填了不存在的 preset，交給別的檢查報
-    const first = tables[id][0];
-    if (!first || !first.name) return;
-    /* 階段名稱與群組名稱不同時，兩個都顯示：「傷害強化」「擴散」這類階段名稱
-       在很多群組裡都有，單看認不出是誰的；而只寫群組名稱又會指到一個根本
-       沒用這個特效的階段（水龍捲是水流彈的第 7 階）。 */
-    const label = (first.group && first.group !== first.name)
-      ? first.group + '·' + first.name
-      : first.name;
-    out[id] = { label: label, source: 'table', count: tables[id].length };
+
+    /* 用到同一份 preset 的全部都要看得到，不是只看第一個：改一份共用的 preset
+       會同時動到那些技能，只顯示第一個的話那個影響範圍是隱形的。
+
+       但「全部逐階列出」撐不下——hit-wind 有 15 個階段，接起來 119 個字，
+       而且同一個群組名會重複六七次。所以按群組收攏，再按「這個群組用到幾階」
+       決定寫多細：
+
+         只用到一階，而且階段名與群組名不同 → 寫到階段（水龍捲是水流彈的第 7 階，
+                                              只寫「水流彈」會指到沒用這個特效的階段）
+         用到多階                          → 只寫群組名，逐階的細節留給 tooltip
+
+       精確度花在有差別的地方，不是每一列都攤開。 */
+    const order = [];
+    const stagesByGroup = Object.create(null);
+    const seenAll = Object.create(null);
+    const all = [];
+    tables[id].forEach(function (r) {
+      if (!r.name) return;
+      const full = rowLabel(r);
+      if (!seenAll[full]) { seenAll[full] = true; all.push(full); }
+      const key = r.group || r.name;
+      if (!stagesByGroup[key]) { stagesByGroup[key] = []; order.push(key); }
+      if (stagesByGroup[key].indexOf(r.name) < 0) stagesByGroup[key].push(r.name);
+    });
+    if (!all.length) return;
+
+    const labels = order.map(function (group) {
+      const stages = stagesByGroup[group];
+      return (stages.length === 1 && stages[0] !== group)
+        ? group + '·' + stages[0]
+        : group;
+    });
+    out[id] = { label: labels[0], labels: labels, all: all, source: 'table', count: all.length };
   });
   outside.forEach(function (row) {
     if (!known[row.id] || out[row.id]) return;
-    out[row.id] = { label: row.label, source: 'outside', count: 1 };
+    out[row.id] = {
+      label: row.label, labels: [row.label], all: [row.label], source: 'outside', count: 1
+    };
   });
   return out;
 }

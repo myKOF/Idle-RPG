@@ -111,28 +111,57 @@ test('USAGE-7B 用的是階段名稱，不是群組名稱', function () {
   assert.equal(skills2.nameColumn, '階段名稱', '名字要取階段，不是群組');
   assert.equal(skills2.groupColumn, '群組名稱', '群組名稱只當前綴');
 
-  /* 用真資料驗一次：找一個「階段名稱與群組名稱不同」的 preset，
-     標籤必須兩個都出現且順序是 群組·階段。 */
+  /* 逐階的完整清單（all）一律是 群組·階段，同名時不重複成「突刺·突刺」。 */
   const tables = U.scanTables(REPO);
   const labels = U.usageLabels(REPO);
-  const differing = Object.keys(tables).filter(function (id) {
-    const f = tables[id][0];
-    return labels[id] && f && f.group && f.name && f.group !== f.name;
+  Object.keys(labels).forEach(function (id) {
+    (labels[id].all || []).forEach(function (full) {
+      assert.ok(!/^(.+)·\1$/.test(full),
+        id + ' 的「' + full + '」把同名的群組與階段寫了兩次');
+    });
   });
-  assert.ok(differing.length > 0, '應該找得到階段與群組不同名的例子');
-  const sample = differing[0];
-  const first = tables[sample][0];
-  assert.equal(labels[sample].label, first.group + '·' + first.name,
-    sample + ' 的標籤格式應該是 群組·階段');
 
-  /* 同名時不要重複成「突刺·突刺」 */
-  const same = Object.keys(tables).filter(function (id) {
+  /* 一個群組只用到一個階段、而且階段名與群組名不同時，列上要寫到階段——
+     這正是使用者指出的那個問題（水龍捲是水流彈的第 7 階）。 */
+  const single = Object.keys(tables).filter(function (id) {
+    if (!labels[id] || labels[id].all.length !== 1) return false;
     const f = tables[id][0];
-    return labels[id] && f && f.group && f.group === f.name;
+    return f && f.group && f.name && f.group !== f.name;
   });
-  if (same.length) {
-    assert.equal(labels[same[0]].label, tables[same[0]][0].name, '同名就只寫一次');
-  }
+  assert.ok(single.length > 0, '應該找得到「只被一個階段使用、且不同名」的例子');
+  const f = tables[single[0]][0];
+  assert.equal(labels[single[0]].labels[0], f.group + '·' + f.name,
+    single[0] + ' 只被一階使用，列上就該寫到階段');
+});
+
+test('USAGE-7C 用到多階時列上收攏成群組名，逐階的細節留給 tooltip', function () {
+  /* 全部逐階攤開會撐爆：hit-wind 有 15 個階段，接起來 119 個字，而且同一個
+     群組名重複六七次。收攏之後最長剩三十幾個字，一列放得下。 */
+  const labels = U.usageLabels(REPO);
+
+  const multi = Object.keys(labels).filter(function (id) {
+    return labels[id].all.length > 3 && labels[id].labels.length < labels[id].all.length;
+  });
+  assert.ok(multi.length > 0, '應該找得到被多階共用而且有收攏的 preset');
+
+  multi.forEach(function (id) {
+    /* 收攏之後列上不該再出現同一個群組名兩次——那就是沒收攏 */
+    const seen = Object.create(null);
+    labels[id].labels.forEach(function (part) {
+      const group = part.split('·')[0];
+      assert.ok(!seen[group], id + ' 的列上「' + group + '」出現兩次，等於沒收攏');
+      seen[group] = true;
+    });
+    /* all 一定比 labels 詳細，tooltip 才有東西可補；count 是逐階的總數 */
+    assert.ok(labels[id].all.length >= labels[id].labels.length);
+    assert.equal(labels[id].count, labels[id].all.length, 'count 要是逐階的總數');
+  });
+
+  /* 列上放得下：收攏後最長的一列不該再是一百多個字 */
+  const longest = Object.keys(labels)
+    .map(function (id) { return labels[id].labels.join('、').length; })
+    .sort(function (a, b) { return b - a; })[0];
+  assert.ok(longest <= 60, '收攏後最長的一列是 ' + longest + ' 字，太長就塞不進下拉');
 });
 
 test('USAGE-8 下拉的標註跟著 preset 清單一起送，不另開端點', function () {

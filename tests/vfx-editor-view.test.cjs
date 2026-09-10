@@ -284,6 +284,35 @@ test('VIEW-28 「回到預設視角」把縮放與平移一起歸零', function 
   assert.ok(/btn\.onclick = resetCamera/.test(src), '按鈕要接到它');
 });
 
+test('VIEW-29B 檢視偏好放 cookie，因為 localStorage 是依連接埠分開的', function () {
+  /* 五份工作副本共用 28361~28370，啟動器抓到哪一個埠取決於當下誰先占著。
+     localStorage 依 origin 分隔而 origin 含連接埠，所以昨天在 28361 調好的
+     背景色，今天開在 28363 就整份不見——使用者看到的現象是「編輯器不記得
+     我的設定」。實測 28362 設好之後，28365 的 localStorage 是 null。
+     cookie 不分連接埠，同一台機器共用同一份。 */
+  const src = stripped();
+  assert.ok(/PREFS_COOKIE/.test(src), '要有一份共用的偏好 cookie');
+  ['background', 'grid', 'previewLoop'].forEach(function (key) {
+    assert.ok(new RegExp("writePref\\('" + key + "'").test(src), key + ' 要寫進偏好');
+    assert.ok(new RegExp("readPref\\('" + key + "'").test(src), key + ' 要從偏好讀');
+  });
+  /* 這三個不得再直接寫 localStorage，否則兩份儲存會分家 */
+  ['BG_STORAGE_KEY', 'GRID_STORAGE_KEY', 'PREVIEW_LOOP_KEY'].forEach(function (k) {
+    assert.ok(!new RegExp('localStorage\\.setItem\\(' + k).test(src),
+      k + ' 不該再直接寫 localStorage');
+  });
+  /* 舊值要搬過來一次，不然換儲存方式等於把使用者現有的設定重設掉 */
+  const fn = src.slice(src.indexOf('function readPref('));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/localStorage\.getItem\(legacyStorageKey\)/.test(body), '要讀得到舊值');
+  assert.ok(/writePref\(key, legacy\)/.test(body), '而且要搬進 cookie');
+
+  /* 圖層收合狀態刻意留在 localStorage：一份 preset 一筆，160 多份會撞上
+     cookie 的 4KB 上限，而且它是短期狀態不是長期偏好。 */
+  assert.ok(/localStorage\.setItem\(collapsedKey\(\)/.test(src),
+    '收合狀態仍然走 localStorage');
+});
+
 test('VIEW-29 平移與縮放一樣不進 preset、不進歷史、不記 localStorage', function () {
   const src = stripped();
   const snap = src.slice(src.indexOf('function historySnapshot'));
@@ -335,6 +364,29 @@ test('VIEW-31 未存檔時攔住重整與關分頁，主動離開時不重複問
 /* ============================================================
    ＋ 新增素材
    ============================================================ */
+
+test('VIEW-35 用途那一欄再長，也不能把特效名稱擠掉或蓋住', function () {
+  /* 要找的東西是 id，那是這份清單的主體。用途是輔助資訊，放不下就截斷，
+     完整的逐階清單在 tooltip 裡。 */
+  const css = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.css'), 'utf8');
+  const idRule = css.slice(css.indexOf('.combo-id {'), css.indexOf('.combo-use'));
+  assert.ok(/flex:\s*0 0 auto/.test(idRule), 'id 那一欄不得收縮');
+  const useRule = css.slice(css.indexOf('.combo-use {'));
+  const useBody = useRule.slice(0, useRule.indexOf('}'));
+  assert.ok(/flex:\s*1 1 auto/.test(useBody), '用途那欄吃掉剩下的空間');
+  assert.ok(/min-width:\s*0/.test(useBody), '沒有 min-width:0 的話 flex 項目不會收縮');
+  assert.ok(/text-overflow:\s*ellipsis/.test(useBody), '放不下要截斷，不是撐開');
+
+  const src = stripped();
+  const fn = src.slice(src.indexOf('function renderComboList'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/row\.all/.test(body), 'tooltip 要給逐階的完整清單');
+  /* 搜尋要用完整的那一份，否則打「水龍捲」這種被收攏掉的階段名會找不到 */
+  const fill = src.slice(src.indexOf('function fillPresetPicker'));
+  const fillBody = fill.slice(0, fill.indexOf('\n  }'));
+  assert.ok(/search:\s*\(id \+ ' ' \+ all\.join/.test(fillBody),
+    '搜尋字串要用逐階的完整清單');
+});
 
 test('VIEW-32 左欄的素材瀏覽器整區刪乾淨，只留一顆「新增素材」', function () {
   /* 選材的實際流程一直是走素材選擇器（有預覽、有詳情、有篩選），

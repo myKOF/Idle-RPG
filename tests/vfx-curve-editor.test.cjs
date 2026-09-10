@@ -731,8 +731,11 @@ test('BOOT-1 啟動前先點名所有相依模組，且清單與 index.html 一�
 
   /* 點名清單必須涵蓋頁面實際載入的每一支腳本，否則以後新增模組又會漏掉 */
   const html = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/index.html'), 'utf8');
+  /* 去掉 ?v= 再比：那是快取版號，不是模組身分。連版號一起比的話，
+     每次 bump 快取都要回頭改 checkModules 的字串，而漏改的懲罰是一條
+     看起來與快取無關的紅燈。 */
   const scripts = (html.match(/<script src="\/([^"]+)"/g) || [])
-    .map(function (t) { return t.match(/src="\/([^"]+)"/)[1]; })
+    .map(function (t) { return t.match(/src="\/([^"]+)"/)[1].split('?')[0]; })
     .filter(function (u) { return u.indexOf('editor/editor.js') < 0; });
   assert.ok(scripts.length >= 8, '應該找得到所有 script 標籤，實得 ' + scripts.length);
   scripts.forEach(function (u) {
