@@ -235,6 +235,17 @@ const ENT = {
   'pv-float': { x: 0, y: 0 }
 };
 
+test('DUALDANCE 延遲後播放第二刀並使用交替角差',()=>{
+ const {adapter,log}=makeAdapter([unitPreset('slash-dual')]);
+ const spec={fxKind:'slash',variant:'dual-slash',targets:['mv-float-2'],vfx:{attack:'slash-dual'},angle:0};
+ assert.equal(adapter.tryPlay(spec),true);adapter.update(.01);
+ const first=log.nodes[0].transforms.at(-1).rotation;
+ adapter.tryPlay({...spec,delayMs:200,angle:1.5});adapter.update(.19);
+ assert.equal(adapter.stats().played,1);adapter.update(.02);
+ assert.equal(adapter.stats().played,2);
+ assert.ok(Math.abs(log.nodes.at(-1).transforms.at(-1).rotation-first-1.5)<1e-6);
+});
+
 function makeAdapter(presets, over) {
   const log = { nodes: [], updates: [] };
   const adapter = VFXRuntime.create(Object.assign({

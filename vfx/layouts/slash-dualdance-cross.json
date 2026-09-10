@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "presetId": "slash-dual",
+  "presetId": "slash-dualdance-cross",
   "groups": [
     {
-      "id": "slash-dual",
-      "name": "slash-dual",
+      "id": "slash-dualdance-cross",
+      "name": "slash-dualdance-cross",
       "layerIds": [
         "gold-blade-body",
         "ivory-cutting-edge",
@@ -17,6 +17,6 @@
     }
   ],
   "order": [
-    "group:slash-dual"
+    "group:slash-dualdance-cross"
   ]
 }

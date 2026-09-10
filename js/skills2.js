@@ -2852,15 +2852,16 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   // 「對附近 N 個敵人各造成 1 次」沒有指定最近＝隨機（候選同原本＝整個戰場）
   var targets = bfRandomOthers(null, pool, strikes, 0, null);
   if (!targets.length) targets = [primary];
-  sgEmitVfx('dualdance', targets, floatSel, {
-    fxKind: 'slash', count: Math.min(5, strikes), variant: storm ? 'dual-storm' : 'dual-slash',
-    vfxTier: storm ? 7 : 1
-  });
   var kaguraSpec = sgKaguraSpec(sgUlt('dualdance', 'flameKagura'), dmgVal);
   var kills = 0;
   for (var s = 0; s < strikes; s++) {
     var tgt = targets[s % targets.length];
-    var res = sgHitOne(pEnt, st, tgt, dmgVal, 'dualdance', floatSel, out, sgStaggerMs(s), doomPct);
+    var danceDelayMs = Math.round(s * SG_MULTI_ATTACK_GAP_SEC * 1000);
+    sgEmitVfx('dualdance', [tgt], floatSel, {
+      fxKind: 'slash', count: 1, variant: storm ? 'dual-storm' : 'dual-slash',
+      vfxTier: storm ? 7 : 1, delayMs: danceDelayMs, angle: s % 2 ? 1.5 : 0
+    });
+    var res = sgHitOne(pEnt, st, tgt, dmgVal, 'dualdance', floatSel, out, danceDelayMs, doomPct);
     if (!res || res.miss) continue;
     if (res.killed) { kills++; continue; }
     // 超神進化【火之神樂】：每命中 1 次疊 1 層灼焰（疊層規則由狀態表的 stack 處理）

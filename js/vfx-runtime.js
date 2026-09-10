@@ -907,7 +907,17 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec, role);
           break;
         case 'attack':
-          if (spec.variant === 'gale-moon') {
+          if (spec.variant === 'dual-slash' || spec.variant === 'dual-storm') {
+            var danceIds = spec.targets || [];
+            var danceSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
+            for (var di = 0; di < danceIds.length; di++) {
+              var danceParams = defaultSize(presetId, 1);
+              danceParams.position = ctx.posOf(danceIds[di]);
+              danceParams.rotation = Math.atan2(danceParams.position.y - danceSource.y,
+                danceParams.position.x - danceSource.x) + num(spec.angle, 0);
+              if (play(rtFx, presetId, danceParams)) ok = true;
+            }
+          } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
             var moonSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
@@ -1149,7 +1159,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-water-material';
+  var DATA_VERSION = '20260910-dualdance';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
