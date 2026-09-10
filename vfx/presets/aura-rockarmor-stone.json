@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "id": "aura-rockarmor-stone",
+  "duration": 4,
+  "loop": true,
+  "layers": [
+    {
+      "id": "earth-shadow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/light_03.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0977,
+        "y": 0.0254
+      },
+      "alpha": 0.5,
+      "tint": "#281f13",
+      "blendMode": "normal",
+      "duration": 4
+    },
+    {
+      "id": "amber-underlight",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "position": {
+        "x": 0,
+        "y": -2
+      },
+      "scale": {
+        "x": 0.0762,
+        "y": 0.0234
+      },
+      "alpha": 0.22,
+      "tint": "#ba873e",
+      "blendMode": "add",
+      "duration": 4,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "orbiting-stone-plates",
+      "type": "sprite",
+      "assetId": "codex-authored/rockarmor/stone-guard.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -13.5
+      },
+      "scale": {
+        "x": 0.27,
+        "y": 0.27
+      },
+      "alpha": 1,
+      "blendMode": "normal",
+      "duration": 4,
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      }
+    },
+    {
+      "id": "settling-dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "alpha": 0.24,
+      "tint": "#a18d69",
+      "blendMode": "normal",
+      "duration": 4,
+      "emission": {
+        "mode": "rate",
+        "rate": 5
+      },
+      "maxParticles": 8,
+      "lifetime": [
+        0.6,
+        1.1
+      ],
+      "spawn": {
+        "height": 3,
+        "shape": "box",
+        "width": 34
+      },
+      "speed": [
+        5,
+        12
+      ],
+      "direction": -90,
+      "spread": 60,
+      "startScale": [
+        0.0117,
+        0.0205
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 50
+    },
+    "radiusM": 5,
+    "shape": "circle"
+  }
+}

@@ -21,6 +21,18 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('ROCKARMOR 保持預览尺寸、跟隨腳底並收回', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-rockarmor-stone.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const spec={fxKind:'aura',variant:'rock-armor',targets:['mv-float-2'],dur:1,vfx:{ground:p.id}};
+ assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
+ const body=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard.png'));
+ const t=body.transforms.at(-1);
+ assert.ok(Math.abs(t.scaleX-.27)<1e-6);assert.ok(Math.abs(t.scaleY-.27)<1e-6);
+ assert.equal(t.x,300);assert.equal(t.y,36.5);
+ adapter.update(4);assert.equal(adapter.stats().grounds,0);
+});
+
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/fire-tornado-inferno.json'),'utf8'));
  const {adapter,log}=makeAdapter([p]);
