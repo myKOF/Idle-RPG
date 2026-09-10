@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 111,
+  "assetCount": 113,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -782,6 +782,20 @@
       "package": "spritemancer-vfx",
       "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
       "fileSize": 2834222
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-back.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:b509ee9d357dfd55b8b8bc7024711dec1c37c87d8b9a40a9524d5f3066a40886",
+      "fileSize": 588808
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
+      "relativePath": "codex-authored/rockarmor/stone-guard-front.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:44f5691fdc4b34c4b8e3b896116c8fb7fc205247b08f4d513fb174e900a22ab4",
+      "fileSize": 652175
     }
   ]
 }

@@ -10,7 +10,7 @@
       "assetId": "particle-pack/png-transparent/light_03.png",
       "position": {
         "x": 0,
-        "y": 11.2726
+        "y": 0
       },
       "scale": {
         "x": 0.3156,
@@ -27,7 +27,7 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "position": {
         "x": 0,
-        "y": 4.8103
+        "y": -2
       },
       "scale": {
         "x": 0.2462,
@@ -53,13 +53,38 @@
       ]
     },
     {
-      "id": "orbiting-stone-plates",
+      "id": "orbiting-stone-plates-back",
       "type": "sprite",
-      "assetId": "codex-authored/rockarmor/stone-guard.png",
+      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": -32.3478
+        "y": -32
+      },
+      "scale": {
+        "x": 0.8724,
+        "y": 0.8724
+      },
+      "alpha": 1,
+      "blendMode": "normal",
+      "duration": 4,
+      "sheet": {
+        "columns": 8,
+        "count": 64,
+        "fps": 16,
+        "loop": true,
+        "mode": "fps",
+        "rows": 8
+      }
+    },
+    {
+      "id": "orbiting-stone-plates-front",
+      "type": "sprite",
+      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -32
       },
       "scale": {
         "x": 0.8724,
@@ -83,7 +108,7 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "position": {
         "x": 0,
-        "y": 11.2726
+        "y": 0
       },
       "alpha": 0.24,
       "tint": "#a18d69",

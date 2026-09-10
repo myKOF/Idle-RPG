@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜岩甲環繞遮擋修正（VFX-ROCKARMOR-DEPTH-20260910）
+
+- Done：使用者回報放大後前半圈甲片被人物遮住。根因為整圈共用單張圖集且全部位於 zone。保留使用者甲片縮放，離線依軌道深度烘焙 back／front 圖集，Runtime 共用生命週期、跟隨錨點與尺寸，分別置於 zone／fx；前後甲片共同腳底上方中心、地面與塵土置中。修改 author／preset／layout／圖集與索引、Runtime／主頁快取、回歸測試及本記錄；不改護盾數值。
+- 驗證：`node --test tests/vfx-runtime.test.cjs tests/vfx-core.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs` 共 222 項全通過；`npm run build` 332 檔通過、兩張 shipped 圖集 SHA-256 與 diff --check 通過。回歸測試涵蓋前後分層、共用逐格時鐘、兩倍縮放、移動／續命及完整回收。以真正 Runtime／Core 與遊戲角色素材離線繪製 64 格確認人物遮擋，臨時圖片不提交並清除。未改但檢查：battle-renderer 的角色／zone／fx 層級與 footOf、vfx-tower 錨點、Pixi sheet 後端。實際 Pixi 戰鬥及高塔外觀仍待使用者驗收；未推送，可交付使用者合併。
+
 ## Codex｜跨電腦編輯器素材備援（VFX-ASSET-FALLBACK-20260910）
 
 - In Progress：外部素材庫缺少已提交的岩甲貼圖時，Editor Server 由 shipped-assets 白名單查找專案素材，仍優先本機素材。範圍 server、HTTP 回歸測試與本文件；不修改使用者素材庫。驗證缺檔、優先序、未知素材與 libraryId 隔離；交由使用者更新另一台電腦後重啟編輯器。

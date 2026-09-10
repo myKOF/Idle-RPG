@@ -21,16 +21,27 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
-test('ROCKARMOR 保持預览尺寸、跟隨腳底並收回', () => {
+test('ROCKARMOR 前後半圈跨人物分層、共同中心與時鐘，放大移動續命後仍同步回收', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-rockarmor-stone.json'),'utf8'));
- const {adapter,log}=makeAdapter([p]);
- const spec={fxKind:'aura',variant:'rock-armor',targets:['mv-float-2'],dur:1,vfx:{ground:p.id}};
- assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
- const body=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard.png'));
- const t=body.transforms.at(-1);
- assert.ok(Math.abs(t.scaleX-.27)<1e-6);assert.ok(Math.abs(t.scaleY-.27)<1e-6);
- assert.equal(t.x,300);assert.equal(t.y,36.5);
- adapter.update(4);assert.equal(adapter.stats().grounds,0);
+ for(const scale of [1,2]) {
+  let point={x:300,y:150};
+  const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
+  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
+  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
+  const back=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-back.png'));
+  const front=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-front.png'));
+  assert.equal(back.tag,'zone');assert.equal(front.tag,'fx');
+  for(let i=0;i<12;i++) {
+   point={x:300+i*7,y:150-i*2};adapter.tryPlay(spec);adapter.update(.11);
+   const bt=back.transforms.at(-1),ft=front.transforms.at(-1);
+   assert.deepEqual(bt,ft,'前後圈必須使用相同中心、尺寸與動畫格');
+   assert.equal(ft.x,point.x);assert.equal(ft.y,point.y-32*scale);
+   assert.ok(Math.abs(ft.scaleX-.8724*scale)<1e-6);
+  }
+  assert.equal(log.nodes.filter(n=>n.spec.assetUrl?.includes('stone-guard-')).length,2,'續命不重播');
+  adapter.update(4);assert.equal(adapter.stats().grounds,0);
+  assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);
+ }
 });
 
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
@@ -220,7 +231,7 @@ function recordingBackend(log, tag) {
     createNode(spec) { const n = { tag, spec, transforms: [] }; log.nodes.push(n); return n; },
     updateNode(node, t) {
       if (!t || t.visible === false) return;
-      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha });
+      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame });
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
     destroyNode() {},

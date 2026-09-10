@@ -302,6 +302,13 @@ var VFXRuntime = (function () {
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
+        if (p.id === 'aura-rockarmor-stone' && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
+          ['back', 'front'].forEach(function(half) {
+            var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
+            part.layers = part.layers.filter(function(l) { return (l.id === 'orbiting-stone-plates-front') === (half === 'front'); });
+            registerPresets([part]);
+          });
+        }
         // 火牆在編輯器是三柱合成；遊戲中各柱保持直立，只沿判定軸排列底部。
         if (p.id === 'ground-firewall' && p.layers.some(function (l) { return l.id.indexOf('column-0-') === 0; })) {
           for (var column = 0; column < 3; column++) {
@@ -353,6 +360,12 @@ var VFXRuntime = (function () {
        budgetDrops 就是給 tryPlay 分辨這兩者用的。 */
     var budgetDrops = 0;
     function play(rt, presetId, params, mult) {
+      if (presetId === 'aura-rockarmor-stone' && has(presetId + '-front')) {
+        var back = play(rtZone, presetId + '-back', params, mult);
+        var front = play(rtFx, presetId + '-front', params, mult);
+        if (!back || !front) { stopRef(back); stopRef(front); return null; }
+        return { parts: [back, front] };
+      }
       if (!has(presetId)) { counters.missing++; return null; }
       var handle = rt.play(presetId, sized(params || {}, mult));
       if (handle === null || handle === undefined) { budgetDrops++; return null; }
@@ -361,10 +374,12 @@ var VFXRuntime = (function () {
     }
     function stopRef(ref) {
       if (!ref) return;
+      if (ref.parts) { ref.parts.forEach(stopRef); return; }
       ref.rt.stop(ref.handle);
     }
     /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
     function moveRef(ref, params, mult) {
+      if (ref.parts) { var alive = ref.parts.map(function(part) { return moveRef(part, params, mult); }); return alive.every(Boolean); }
       return ref.rt.setTransform(ref.handle, sized(params, mult));
     }
 
@@ -1215,7 +1230,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-firehunt-companion';
+  var DATA_VERSION = '20260910-rockarmor-depth';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
