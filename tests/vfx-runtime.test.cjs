@@ -1247,3 +1247,21 @@ test('CHAIN 快速彈射圖集依時間推進並準時回收',()=>{
  assert.ok(centre(late)>centre(early)+60,'發亮電弧從起點向終點推進');
  adapter.update(.2);assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+test('CHAIN 移動與反向目標逐幀追蹤，延遲彈射於起飛時取得新位置',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const pos={a:{x:10,y:20},b:{x:210,y:20}};
+ const {adapter,log}=makeAdapter([p],{profile:{scale:.65},ctx:{posOf:id=>({...pos[id]}),playerPos:()=>({x:0,y:0})}});
+ const spec={fxKind:'chain',targets:['a','b'],vfx:{attack:p.id}};
+ adapter.tryPlay(spec);adapter.tryPlay({...spec,delayMs:200});adapter.update(.04);
+ function endpoints(t){const length=t.scaleX*256;return {x:t.x+Math.cos(t.rotation)*length,y:t.y+Math.sin(t.rotation)*length};}
+ for(const point of [{x:350,y:140},{x:-80,y:270},{x:40,y:-140}]){
+  pos.a={x:pos.a.x+5,y:pos.a.y+3};pos.b=point;adapter.update(.04);
+  const t=log.nodes[0].transforms.at(-1),end=endpoints(t);
+  assert.equal(t.x,pos.a.x);assert.equal(t.y,pos.a.y);
+  assert.ok(Math.abs(end.x-point.x)<.01,JSON.stringify({t,end,point}));assert.ok(Math.abs(end.y-point.y)<.01);
+ }
+ pos.b={x:480,y:90};adapter.update(.05);assert.equal(adapter.stats().played,2);
+ const delayed=log.nodes.at(-1).transforms.at(-1),end=endpoints(delayed);assert.ok(Math.abs(end.x-480)<.01);assert.ok(Math.abs(end.y-90)<.01);
+ adapter.clear();adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
+});

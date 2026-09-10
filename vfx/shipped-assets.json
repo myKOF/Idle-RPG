@@ -7,6 +7,20 @@
   "assetCount": 120,
   "assets": [
     {
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
+      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
+      "fileSize": 9028764
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
+      "fileSize": 20395025
+    },
+    {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
       "relativePath": "codex-authored/impact/crimson-fragment-0.svg",
       "package": "codex-authored",
@@ -19,6 +33,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:a8cdf4c18bc74f5a9ec01077afad43b4093e76ac63371de13e56e513cba8f996",
       "fileSize": 592
+    },
+    {
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "relativePath": "codex-authored/lightning/chain-travel.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
+      "fileSize": 86462
     },
     {
       "assetId": "codex-authored/meteor/meteor-stylized.png",
@@ -824,27 +845,6 @@
       "package": "spritemancer-vfx",
       "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
       "fileSize": 2834222
-    },
-    {
-      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
-      "relativePath": "codex-authored/earthguard/hexagram-orbit.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:40486d47b48fed90d7fb71eaf525126ec981f4252bcd91a75ea30065153595fb",
-      "fileSize": 9028764
-    },
-    {
-      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
-      "relativePath": "codex-authored/earthguard/hexagram-symbiosis.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
-      "fileSize": 20395025
-    },
-    {
-      "assetId": "codex-authored/lightning/chain-travel.png",
-      "relativePath": "codex-authored/lightning/chain-travel.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:ed979f8a5ac8889bd6bbd49e400621be11fdb85bf0e1498fac35ce6dd8991838",
-      "fileSize": 86462
     }
   ]
 }

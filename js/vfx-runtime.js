@@ -282,8 +282,10 @@ var VFXRuntime = (function () {
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var presetSizes = Object.create(null);
     var presetDurations = Object.create(null);
+    var trackedBeamWidths = Object.create(null);
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
+    var trackingBeams = [];                  // 彈射電弧逐幀追蹤兩端的顯示位置
     var grounds = Object.create(null);      // area.id → 場域
     var arrivals = Object.create(null);     // targetId → 上一段飛行抵達時的航向
     var orbits = Object.create(null);       // 合併鍵 → 環繞場域（軌道環＋N 個環繞體）
@@ -302,6 +304,10 @@ var VFXRuntime = (function () {
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
+        if (p.id === 'bolt-chain-travel-bluewhite') {
+          var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
+          trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) : NOMINAL_BEAM;
+        }
         if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
           ['back', 'front'].forEach(function(half) {
             var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
@@ -516,12 +522,16 @@ var VFXRuntime = (function () {
       var dx = to.x - from.x, dy = to.y - from.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (!(dist > 0)) dist = 1;
-      return !!play(rt, presetId, {
+      var ref = play(rt, presetId, {
         position: from,
         rotation: Math.atan2(dy, dx),
-        scaleX: dist / NOMINAL_BEAM,
-        scaleY: 1
-      });
+        scaleX: dist / (trackedBeamWidths[presetId] || NOMINAL_BEAM),
+        scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
+      }, trackedBeamWidths[presetId] ? 1 : undefined);
+      if (ref && presetId === 'bolt-chain-travel-bluewhite') {
+        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM });
+      }
+      return !!ref;
     }
 
     /* 飛行物：逐幀 setTransform 從起點移到目標，朝飛行方向旋轉 */
@@ -1123,6 +1133,18 @@ var VFXRuntime = (function () {
         }
       }
 
+      /* 使用每幀已插值的實體座標，電弧前端抵達時仍落在移動目標上。 */
+      for (var bi = trackingBeams.length - 1; bi >= 0; bi--) {
+        var beam = trackingBeams[bi];
+        var beamFrom = beam.fromId ? ctx.posOf(beam.fromId) : ctx.playerPos();
+        var beamTo = ctx.posOf(beam.toId);
+        var bdx = beamTo.x - beamFrom.x, bdy = beamTo.y - beamFrom.y;
+        if (!moveRef(beam.ref, {
+          position: beamFrom, rotation: Math.atan2(bdy, bdx),
+          scaleX: Math.max(1, Math.sqrt(bdx * bdx + bdy * bdy)) / beam.width, scaleY: profile.scale
+        }, 1)) trackingBeams.splice(bi, 1);
+      }
+
       /* 跟隨玩家的施放特效 */
       for (var f = follows.length - 1; f >= 0; f--) {
         var fo = follows[f];
@@ -1152,6 +1174,7 @@ var VFXRuntime = (function () {
       moonSwingIndex = 0;
       projectiles.length = 0;
       follows.length = 0;
+      trackingBeams.length = 0;
       pending.length = 0;
       arrivals = Object.create(null);
       Object.keys(orbits).forEach(stopOrbit);

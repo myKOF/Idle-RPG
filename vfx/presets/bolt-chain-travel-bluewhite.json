@@ -7,10 +7,11 @@
     {
       "id": "travelling-electric-front",
       "type": "sprite",
+      "enabled": true,
       "assetId": "codex-authored/lightning/chain-travel.png",
       "scale": {
-        "x": 0.78125,
-        "y": 0.703125
+        "x": 2,
+        "y": 2
       },
       "anchor": {
         "x": 0,
