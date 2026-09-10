@@ -6592,17 +6592,6 @@ Worker 存活且頁面正常完成載入。
 - 未解決：`hit-basic-irregular` 與 `slash-gale-moon` 引用的 3 個 SVG 仍選不到——它們被既有的 `any/vector-source` 標為 `nonVfx`（理由是「runtime 不能直接使用」），但 preset 事實上正在用。該規則的前提與現況矛盾，影響 49 筆素材，未擅自改動，交由使用者決定。
 - 未推送，未合併。
 
-## Codex｜落雷術特效預覽（2026-09-10）
-- Owner：Codex；任務：VFX-THUNDERSTRIKE；狀態：In Progress。
-- 最新技能文檔 I217/H217 及 J/K/L217 三張參考圖已讀取：藍白雷柱、少量紫色、由上往下、落地電雷爆炸、每次落雷間隔 0.2 秒。T7 改紫白並放大 50%，本輪先製作 T1。
-- 允許修改：thunderstrike-renew author、bolt/hit-thunderstrike-bluewhite preset/layout、本文件及暫存預覽。不改 Excel、技能數值與遊戲接線，確認後才接入。
-- 驗證：Core 動態雙目標預覽、Core/layout 測試、Build；所有目標預檢無衝突。後續由 Codex 依使用者回饋接入。
-- 預覽完成（Review）：兩個目標錯開 0.2 秒，約 0.17 秒雷柱伸展落地後觸發獨立 hit 爆炸；以實際 Core 渲染 90 幀，無丟棄效果，播放後全部回收。Core/layout 136/136，build 332/332 通過。未接入、未 Commit，等待使用者確認。
-- 使用者確認並要求速度提高 30%：雷柱 duration 與支線 delay/duration 除以 1.3，落地時間 129ms，每道仍間隔 200ms。已接入 Excel/CSV/JS/catalog、素材清單與主執行緒/Worker 快取。
-- Runtime 新雷柱立即播放並跟隨腳底，落地傷害事件才播放獨立爆炸，取消原本附帶 hit 的提前爆點；目標離場即停止。T1 新外觀由各階沿用，T7 專屬紫白放大版尚未製作，不屬本輪要求。
-- 驗證：落雷/THUNDER 定向 10/10；VFX 209 項中 207 通過，其餘為既有岩甲/泥沼透明度設定差異；Build 332/332。Excel 以 XML 節點方式更新，保留樣式與命名空間，驗證全表儲存格順序及唯一性、Zip 完整性、全表值差異僅 Z152/AB152；Skills2 重建語意變更 0。未另作 Excel 桌面或遊戲實機驗證。
-- 接入完成，清除本輪預覽，保留正式 author/preset/layout；待主整合工作區合併，未推送。
-
 ## Claude｜AI_TASKS.md 自動合併（MERGE-DRIVER-20260911）
 
 - 使用者要求：AI_TASKS.md 太容易衝突，改成「只要修改的不是同一區就自動合併」。
