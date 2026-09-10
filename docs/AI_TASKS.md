@@ -6542,3 +6542,18 @@ Worker 存活且頁面正常完成載入。
 - 2026-09-10 最終接入：使用者批准全部接入。T1/T2 白光、T3 黃光、T4/T5/T6 藍光、T7 紅藍光；T7 半徑 10 米，其餘 8 米。常駐法陣穩定跟隨腳底並按階段替換，保留反射與復活光柱；Excel/CSV/JS/catalog、素材清單及快取同步。
 - 最終驗證：大地守護定向 4/4；VFX 204 項中 203 通過，唯一既有差異為使用者泥沼 alpha=0.5 與測試 0.3 不符；build 332/332；Skills2 語意差異 0；Excel 僅 AC132、AC134、AC135、AC138 變更。未另作瀏覽器實機驗證。
 - 提交包含使用者三種泥沼透明度調整。正式功能完成；預覽清理受工具政策阻擋（blocked by policy），scratch/earthguard-preview 保留未追蹤，不納入提交。未推送。
+
+## Codex｜連鎖閃電藍白折線預覽（2026-09-10）
+
+- 任務編號：VFX-CHAIN-BLUEWHITE；Owner：Codex；狀態：In Progress。
+- 使用者要求應用圖庫閃電折線。最新技能文檔 I205：不規則藍白色閃電折線，在敵人間彈射；H205：每次間隔 0.2 秒。
+- 素材已目視盤點：主電弧 spark_05_rotated.png，輔助電絲 spark_06_rotated.png。採新 preset，保留正式遊戲接線直到使用者確認。
+- 允許修改：author/chainlightning-renew.cjs、bolt-chain-bluewhite preset/layout、本任務記錄及 scratch/chainlightning-preview；禁止修改技能數值與遊戲接線。
+- 驗證：實際 VFXRuntime/Core 渲染四目標彈射 GIF、Core/layout 測試、build。衝突預檢乾淨。
+- 前置依賴：圖庫素材與最新技能文檔已核對；後續由 Codex 依使用者確認接入。
+- 預覽完成（Review）：使用 VFXRuntime 的 attack/chain 連線路徑播放新 preset；四段在第 12/18/24/30 幀起播（30fps，間隔 0.2 秒），白熱折線＋藍色電光，無缺失素材或丟棄效果；播放後全部回收。Core/layout 136/136，build 332/332 通過。
+- 接入注意：現有 chainlightning 掛 projectile，會走飛行物流程；本次新版本預覽改用 attack/chain 才能直接連接兩目標，使用者確認後須同步表格/catalog 與事件時序。此輪未改遊戲接線、未 Commit。
+- 使用者批准接入（2026-09-10）：允許並完成 Skills2 Excel/CSV/JS/catalog 接線、快取同步與正式測試。T1 改用 attack/chain 藍白連線，進化沿用；既有超神技能独立 projectile 配置保留。
+- 起手直接連接目標，後續每段固定 200ms，既有傷害飄字延遲同步；不更動既有立即結算傷害架構。修正次數耗盡後仍多發一段電弧的問題。無新素材匯出需求，所用圖庫素材已在 shipped-assets。
+- 驗證：連鎖閃電七階與新接線定向 12/12，傳奇回歸 22/22；VFX 205 項中 204 通過，唯一失敗為既有泥沼 alpha 設定差異。較廣雷系測試另有既有冷卻／雷球尺寸設定差異，未修改其斷言；build 332/332，Skills2 重建語意差異 0。未另作瀏覽器實機驗證。
+- 正式接入完成；清理預覽仍受既有工具刪除政策阻擋，chainlightning-preview 與 earthguard-preview 不納入 Commit，保留為未追蹤檔。後續由主整合工作區合併，未推送。

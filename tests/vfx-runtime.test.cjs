@@ -1226,3 +1226,13 @@ test('EARTHGUARD 變色替換同一場域，第七階只放大四分之一',()=>
   assert.equal(adapter.stats().grounds,1);const t=log.nodes.at(-1).transforms.at(-1);assert.ok(Math.abs(t.scaleX-radius/140)<1e-6);
  }
 });
+
+test('CHAIN 藍白連線走 beam 並保持兩端距離，延遲段不當作飛行物回收',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-bluewhite.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const s={fxKind:'chain',targets:['mv-float-1','mv-float-2'],vfx:{attack:p.id}};
+ adapter.tryPlay(s);adapter.tryPlay({...s,delayMs:200});adapter.update(.1);
+ assert.equal(adapter.stats().played,1);assert.equal(adapter.stats().projectiles,0);
+ const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,100);assert.equal(t.y,50);assert.equal(t.rotation,0);assert.ok(Math.abs(t.scaleX-200/512)<.001);
+ adapter.update(.11);assert.equal(adapter.stats().played,2);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
+});
