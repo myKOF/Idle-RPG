@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜泥沼術預覽（VFX-MIRE-20260910）
+
+- Done／接入：使用者核准第一階，Skills2.xlsx AC122／CSV／JS／catalog 改用 ground-mire-earth，仍讀權威面積縮放並沿用同一場域身份續命；加入預覽的進退場，主頁及 Worker 快取同步更新。201 項 Runtime／Core／layout 全通過，build 332 檔通過；Excel 僅 AC122 變更，config_tables dry-run 語意差異 0。提交同時保留使用者火龍捲本體 alpha 0.9→0.6 與素材匯出清理（舊整圈岩甲圖集已由前後圈取代）；清除臨時預覽與渲染腳本。實戰視覺仍由使用者驗收，未推送。
+
+- Review／僅預覽：已讀最新技能文檔 I181 與 J181 參考圖，第一階為大致方形、不規則邊緣、土褐色流動泥漿。製作 ground-mire-earth author／preset／layout、48 格泥流圖集與 asset-index，固定岸線、內部緩慢流動並有少量泥泡。文檔為 10×10 米，現有程式基礎值為 120px；預覽先保留作者名目尺寸，正式接入再沿權威面積縮放，不修改技能數值。禁止本輪接線或覆蓋 ground-mire；動態預覽核准後才接入。
+- 驗證：136 項 Core／layout 測試與 332 檔 build 通過，diff --check 通過。圖集 2048×1536、48 格／12 FPS／4 秒循環、約 2.50 MiB；GIF 120 格，展示放大泥流與角色比例、進退場。已目視檢查不規則岸線、泥泡及表面構圖，實際 Pixi 戰場驗收在接入後進行。原始 PNG 預覽格已清除，僅暫留 GIF 與重建腳本至使用者核准；尚未提交。本輪期間出現使用者火龍捲預設及匯出素材索引更新，完整保留。
+
 ## Codex｜天地逆返預覽（VFX-EARTH-REVERSAL-20260910）
 
 - Done／接入：使用者核准藍紋後接入第七階 ground，Skills2.xlsx AC118／CSV／JS／製作目錄同步，Runtime 藍紋仍分前後圈、沿用尺寸及進退場，主頁與 Worker 快取更新。未投資第七階維持暗金，投資後施放改藍紋，與護盾量無關。119 項地系／Runtime／傳奇測試中 117 通過，2 項泥沼舊尺寸斷言（100 對現有 120）已用 HEAD 版本確認同樣失敗；新增接線與分層測試通過。build 332 檔通過，Excel 僅 AC118 改變，config_tables dry-run 語意差異 0。預覽與暫存腳本已清除，接手者為使用者實戰驗收；不合併或推送。

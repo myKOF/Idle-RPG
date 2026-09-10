@@ -355,7 +355,7 @@ g('rockarmor', [
   _, _, _, { ground: 'aura-earth-reversal' }
 ], { superRockArt: { ground: 'ground-domain-earth', attack: 'burst-rock-petrify', hit: 'hit-earth' }, gravityField: { ground: 'ground-domain-earth', attack: 'burst-gravity', hit: 'hit-earth' } });
 g('mire', [
-  { ground: 'ground-mire' },                          // T1 泥沼術
+  { ground: 'ground-mire-earth' },                          // T1 泥沼術
   _,
   { ground: 'ground-mire-poison' },                   // T3 毒沼術
   _, _, _,

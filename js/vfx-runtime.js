@@ -741,7 +741,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
-        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
+        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'ground-mire-earth' || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
@@ -1230,7 +1230,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-earth-reversal';
+  var DATA_VERSION = '20260910-mire-earth';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-mire-earth",
+  "duration": 4,
+  "loop": true,
+  "layers": [
+    {
+      "id": "flowing-earth-mud",
+      "type": "sprite",
+      "assetId": "codex-authored/mire/mud-flow.png",
+      "scale": {
+        "x": 0.46875,
+        "y": 0.46875
+      },
+      "alpha": 1,
+      "blendMode": "normal",
+      "duration": 4,
+      "sheet": {
+        "columns": 8,
+        "count": 48,
+        "fps": 12,
+        "loop": true,
+        "mode": "fps",
+        "rows": 6
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 120,
+      "width": 120
+    },
+    "heightM": 10,
+    "shape": "rectangle",
+    "widthM": 10
+  }
+}

@@ -1182,3 +1182,14 @@ test('CLEAVE 四方向從中心飛行，保持本體尺寸、不預播命中，�
   adapter.tryPlay({...spec,delayMs:90});adapter.clear();adapter.update(1);
   assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+test('MIRE 泥流依權威長寬縮放、保持地板層、續命不重播並回收',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-mire-earth.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);const s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-test',x:100,y:200,w:120,h:180},vfx:{ground:p.id}};
+ assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
+ const n=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow.png')),t=n.transforms.at(-1);
+ assert.equal(n.tag,'zone');assert.equal(t.x,100);assert.equal(t.y,200);
+ assert.ok(Math.abs(t.scaleX-120/256)<.0001);assert.ok(Math.abs(t.scaleY-180/256)<.0001);
+ adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);
+ adapter.update(5);assert.equal(adapter.stats().grounds,0);
+});

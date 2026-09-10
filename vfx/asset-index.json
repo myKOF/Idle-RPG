@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2416,
+  "assetCount": 2417,
   "assets": [
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -109535,6 +109535,21 @@
       "facts": {
         "dimensions": {
           "width": 1536,
+          "height": 1536
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/mire/mud-flow.png",
+      "format": "png",
+      "fileSize": 2617834,
+      "contentHash": "sha256:b1a539104626873ba34d0f88daec44e5f30057d73ebb0226afe7038562a0f3b8",
+      "facts": {
+        "dimensions": {
+          "width": 2048,
           "height": 1536
         },
         "hasAlpha": true
