@@ -75,14 +75,347 @@
       "medium"
     ]
   },
-  "recordCount": 2399,
+  "recordCount": 2422,
   "confidenceCounts": {
-    "high": 186,
-    "medium": 2213
+    "high": 202,
+    "medium": 2220
   },
-  "needsReviewCount": 97,
+  "needsReviewCount": 109,
   "unclassifiedCount": 0,
   "records": [
+    {
+      "assetId": "codex-authored/earthguard/hexagram-orbit.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "glow",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "symmetric",
+        "hollow",
+        "sharp"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/earthguard-hexagram"
+    },
+    {
+      "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
+      "kind": "vfx",
+      "shape": "star",
+      "usage": [
+        "glow",
+        "core"
+      ],
+      "element": "neutral",
+      "tags": [
+        "symmetric",
+        "hollow",
+        "sharp"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/earthguard-hexagram"
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-0.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/impact/crimson-fragment-1.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/lightning/chain-travel.png",
+      "kind": "vfx",
+      "shape": "filament",
+      "usage": [
+        "core",
+        "spark"
+      ],
+      "element": "lightning",
+      "tags": [
+        "sharp",
+        "noisy",
+        "directional"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/chain-lightning-bolt",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/meteor/meteor-cracked.png",
+      "kind": "vfx",
+      "shape": "disc",
+      "usage": [
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "sharp",
+        "radial"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/meteor-molten-rock",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/meteor/meteor-stylized.png",
+      "kind": "vfx",
+      "shape": "disc",
+      "usage": [
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "sharp",
+        "radial"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/meteor-molten-rock",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-magma.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core",
+        "scorch"
+      ],
+      "element": "fire",
+      "tags": [
+        "noisy",
+        "swirl",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/mire-magma",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow-venom.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "poison",
+      "tags": [
+        "noisy",
+        "swirl",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/mire-venom",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/mire/mud-flow.png",
+      "kind": "vfx",
+      "shape": "irregular",
+      "usage": [
+        "core"
+      ],
+      "element": "nature",
+      "tags": [
+        "noisy",
+        "swirl",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/mire-earth",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "kind": "vfx",
+      "shape": "arc",
+      "usage": [
+        "core",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "soft",
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/moon-crescent"
+    },
+    {
+      "assetId": "codex-authored/moon-opaque/moon-original-02.png",
+      "kind": "vfx",
+      "shape": "arc",
+      "usage": [
+        "core",
+        "glow"
+      ],
+      "element": "neutral",
+      "tags": [
+        "soft",
+        "smooth"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/moon-crescent"
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-accents.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-body.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/moon/moon-polished-edge.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-back.png",
+      "kind": "vfx",
+      "shape": "polygon",
+      "usage": [
+        "core"
+      ],
+      "element": "nature",
+      "tags": [
+        "sharp",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/rockarmor-plate",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-back.png",
+      "kind": "vfx",
+      "shape": "polygon",
+      "usage": [
+        "core"
+      ],
+      "element": "nature",
+      "tags": [
+        "sharp",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/rockarmor-plate",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+      "kind": "vfx",
+      "shape": "polygon",
+      "usage": [
+        "core"
+      ],
+      "element": "nature",
+      "tags": [
+        "sharp",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/rockarmor-plate",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard-front.png",
+      "kind": "vfx",
+      "shape": "polygon",
+      "usage": [
+        "core"
+      ],
+      "element": "nature",
+      "tags": [
+        "sharp",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/rockarmor-plate",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/rockarmor/stone-guard.png",
+      "kind": "vfx",
+      "shape": "polygon",
+      "usage": [
+        "core"
+      ],
+      "element": "nature",
+      "tags": [
+        "sharp",
+        "dense"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/rockarmor-plate",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/tornado/fire-flow.png",
+      "kind": "vfx",
+      "shape": "cloud",
+      "usage": [
+        "core"
+      ],
+      "element": "fire",
+      "tags": [
+        "dense",
+        "swirl",
+        "directional",
+        "noisy"
+      ],
+      "confidence": "high",
+      "source": "evidence",
+      "ruleId": "codex/tornado-fire-column",
+      "needsReview": true
+    },
+    {
+      "assetId": "codex-authored/tornado/inferno-spiral.svg",
+      "kind": "nonVfx",
+      "confidence": "medium",
+      "source": "family",
+      "ruleId": "any/vector-source"
+    },
     {
       "assetId": "foliage-sprites/png/flat/sprite_0001.png",
       "kind": "nonVfx",

@@ -323,9 +323,23 @@ test('14. production resolver 能解析所有正式 preset 的 assetId', functio
       assert.ok(res.has(layer.assetId), file + ' 的 ' + layer.assetId + ' 不在 shipped index');
       const url = res.resolve(layer.assetId);
       assert.ok(url.indexOf(shipped.baseUrl + '/') === 0, 'URL 應以 baseUrl 起頭：' + url);
-      const relFromUrl = decodeURIComponent(url.slice(shipped.baseUrl.length + 1));
+
+      /* resolver 會在路徑後面接 ?v=<contentHash>。那是刻意的：素材換了內容
+         而 relativePath 不變時，沒有它瀏覽器會一直吃舊貼圖。
+         要落到檔案系統就必須先把 query 拆掉——把它當成檔名的一部分，
+         結果是「檔案不存在：…smoke_04.png?v=sha256:…」這種假警報。 */
+      const q = url.indexOf('?');
+      const urlPath = q < 0 ? url : url.slice(0, q);
+      const relFromUrl = decodeURIComponent(urlPath.slice(shipped.baseUrl.length + 1));
       const onDisk = path.join(repoRoot, exporter.EXPORT_DIR_REL, relFromUrl.split('/').join(path.sep));
       assert.ok(fs.existsSync(onDisk), '檔案不存在：' + onDisk);
+
+      /* 快取破壞子必須就是索引裡的那個 contentHash。對不上的話，素材更新後
+         瀏覽器仍然用舊貼圖，而畫面上看不出任何異狀——只有玩家會看到舊的。 */
+      const entry = shipped.assets.find(function (a) { return a.assetId === layer.assetId; });
+      assert.equal(q < 0 ? '' : url.slice(q + 1),
+        'v=' + encodeURIComponent(entry.contentHash),
+        layer.assetId + ' 的快取破壞子必須等於 shipped index 的 contentHash');
     });
   });
 });

@@ -1929,6 +1929,257 @@
     ]
    },
    "observation": "不規則潑濺團塊＋衛星液滴；適合地面殘留痕跡"
+  },
+  {
+   "ruleId": "codex/rockarmor-plate",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "pathPattern": "^codex-authored/rockarmor/"
+   },
+   "evidence": [
+    "codex-authored/rockarmor/stone-guard.png",
+    "codex-authored/rockarmor/stone-guard-front.png",
+    "codex-authored/rockarmor/stone-guard-back.png",
+    "codex-authored/rockarmor/stone-guard-blue-runes-front.png",
+    "codex-authored/rockarmor/stone-guard-blue-runes-back.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "polygon",
+    "usage": [
+     "core"
+    ],
+    "element": "nature",
+    "tags": [
+     "sharp",
+     "dense"
+    ]
+   },
+   "observation": "環繞人物的角面石板，土黃不透明本體＋裂縫發光（暗金或藍色符文兩種配色），周圍有碎石屑。stone-guard 為前後分圈之前的整圈舊圖集，同一視覺家族。element 由人工看圖判定，依專案慣例標 needsReview 待確認",
+   "needsReview": true
+  },
+  {
+   "ruleId": "codex/mire-earth",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "namePattern": "^mud-flow$"
+   },
+   "evidence": [
+    "codex-authored/mire/mud-flow.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "irregular",
+    "usage": [
+     "core"
+    ],
+    "element": "nature",
+    "tags": [
+     "noisy",
+     "swirl",
+     "dense"
+    ]
+   },
+   "observation": "地面泥沼：大致方形但邊緣不規則，土褐色泥漿在內部緩慢流動。element 由人工看圖判定，依專案慣例標 needsReview 待確認",
+   "needsReview": true
+  },
+  {
+   "ruleId": "codex/mire-venom",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "namePattern": "^mud-flow-venom$"
+   },
+   "evidence": [
+    "codex-authored/mire/mud-flow-venom.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "irregular",
+    "usage": [
+     "core"
+    ],
+    "element": "poison",
+    "tags": [
+     "noisy",
+     "swirl",
+     "dense"
+    ]
+   },
+   "observation": "毒沼：與泥沼同形，配色換成螢光綠與紫。element 由人工看圖判定，依專案慣例標 needsReview 待確認",
+   "needsReview": true
+  },
+  {
+   "ruleId": "codex/mire-magma",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "namePattern": "^mud-flow-magma$"
+   },
+   "evidence": [
+    "codex-authored/mire/mud-flow-magma.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "irregular",
+    "usage": [
+     "core",
+     "scorch"
+    ],
+    "element": "fire",
+    "tags": [
+     "noisy",
+     "swirl",
+     "dense"
+    ]
+   },
+   "observation": "熔岩沼：與泥沼同形，暗色岩殼＋橘紅熔流裂縫，兼具地面灼燒的外觀。element 由人工看圖判定，依專案慣例標 needsReview 待確認",
+   "needsReview": true
+  },
+  {
+   "ruleId": "codex/earthguard-hexagram",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "pathPattern": "^codex-authored/earthguard/"
+   },
+   "evidence": [
+    "codex-authored/earthguard/hexagram-orbit.png",
+    "codex-authored/earthguard/hexagram-symbiosis.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "star",
+    "usage": [
+     "glow",
+     "core"
+    ],
+    "element": "neutral",
+    "tags": [
+     "symmetric",
+     "hollow",
+     "sharp"
+    ]
+   },
+   "observation": "投影在地面的法陣：橢圓外環內含旋轉六芒星，細亮線條、中空。orbit 為白光，symbiosis 為紅藍雙色；兩者都不屬於單一元素，故 element 維持 neutral 以便跨階重用"
+  },
+  {
+   "ruleId": "codex/tornado-fire-column",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "pathPattern": "^codex-authored/tornado/"
+   },
+   "evidence": [
+    "codex-authored/tornado/fire-flow.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "cloud",
+    "usage": [
+     "core"
+    ],
+    "element": "fire",
+    "tags": [
+     "dense",
+     "swirl",
+     "directional",
+     "noisy"
+    ]
+   },
+   "observation": "直立扭轉的火柱，橘黃亮心外包深橘火舌，沿垂直方向流動。element 由人工看圖判定，依專案慣例標 needsReview 待確認",
+   "needsReview": true
+  },
+  {
+   "ruleId": "codex/meteor-molten-rock",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "pathPattern": "^codex-authored/meteor/"
+   },
+   "evidence": [
+    "codex-authored/meteor/meteor-stylized.png",
+    "codex-authored/meteor/meteor-cracked.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "disc",
+    "usage": [
+     "core"
+    ],
+    "element": "fire",
+    "tags": [
+     "dense",
+     "sharp",
+     "radial"
+    ]
+   },
+   "observation": "球狀熔岩隕石：深色角面岩塊＋橘紅發光裂縫。cracked 那張是不透明黑底，必須以 add／screen 混色使用，不能用 normal。element 由人工看圖判定，依專案慣例標 needsReview 待確認",
+   "needsReview": true
+  },
+  {
+   "ruleId": "codex/moon-crescent",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "pathPattern": "^codex-authored/moon-opaque/"
+   },
+   "evidence": [
+    "codex-authored/moon-opaque/moon-original-01.png",
+    "codex-authored/moon-opaque/moon-original-02.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "arc",
+    "usage": [
+     "core",
+     "glow"
+    ],
+    "element": "neutral",
+    "tags": [
+     "soft",
+     "smooth"
+    ]
+   },
+   "observation": "柔邊白色月牙，黑色不透明底（檔名的 opaque 即指此），須以 add 混色使用。灰階可染色，故 element 為 neutral"
+  },
+  {
+   "ruleId": "codex/chain-lightning-bolt",
+   "select": {
+    "package": "codex-authored",
+    "format": "png",
+    "pathPattern": "^codex-authored/lightning/"
+   },
+   "evidence": [
+    "codex-authored/lightning/chain-travel.png"
+   ],
+   "propagation": "family",
+   "semantics": {
+    "kind": "vfx",
+    "shape": "filament",
+    "usage": [
+     "core",
+     "spark"
+    ],
+    "element": "lightning",
+    "tags": [
+     "sharp",
+     "noisy",
+     "directional"
+    ]
+   },
+   "observation": "水平推進的藍白閃電折線，前端亮、尾端淡出；與 scifi/sheet-lightning 同類，語意比照。element 由人工看圖判定，依專案慣例標 needsReview 待確認",
+   "needsReview": true
   }
  ]
 }

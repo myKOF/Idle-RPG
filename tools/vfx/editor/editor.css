@@ -150,6 +150,11 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
   background: none; border: none; color: #ffc0c0;
 }
 .save-error-close:hover { background: #5a2a2a; }
+/* 這一行不是可有可無的：瀏覽器內建的 [hidden]{display:none} 屬於 UA 樣式，
+   作者樣式一律蓋過它，所以上面那個 display:flex 會讓 hidden 完全失效——
+   症狀是一條空的紅色橫幅永遠掛在工具列下面。2026-09-10 實測踩到。
+   凡是自己指定 display 的元素要靠 hidden 收起來，就必須補這條。 */
+.save-error[hidden] { display: none; }
 
 /* 存檔狀態：dirty 標記與 Saving/Saved/失敗 訊息 */
 .dirty { color: #e0b34a; font-size: 12px; min-width: 60px; }
