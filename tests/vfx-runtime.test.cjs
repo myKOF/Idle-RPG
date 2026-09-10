@@ -1276,3 +1276,12 @@ test('CHAIN 離場端點不使用 lastPos 或備用位置，取消延遲與飛�
  adapter.update(.15);assert.equal(adapter.stats().played,1);assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
  visible.a={x:50,y:40};delete visible.b;assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
 });
+
+test('THUNDER 雷柱即時起播跟隨腳底，爆炸只由落地事件觸發',()=>{
+ const ps=['bolt','hit'].map(k=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/'+k+'-thunderstrike-bluewhite.json'),'utf8')));
+ let foot={x:100,y:200};const {adapter,log}=makeAdapter(ps,{ctx:{posOf:()=>({x:100,y:160}),footOf:()=>foot,playerPos:()=>({x:0,y:0})}});
+ const vfx={attack:ps[0].id,hit:ps[1].id};adapter.tryPlay({fxKind:'rain',variant:'thunder-strike',targets:['mv-float-1'],travelMs:[129],vfx});adapter.update(.05);
+ assert.equal(adapter.stats().played,1);assert.ok(log.nodes.length);foot={x:160,y:220};adapter.update(.04);assert.equal(log.nodes[0].transforms.at(-1).x,160);
+ adapter.tryPlay({fxKind:'impact',variant:'thunder-impact',targets:['mv-float-1'],vfx});adapter.update(.01);assert.equal(adapter.stats().played,2);
+ adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
+});

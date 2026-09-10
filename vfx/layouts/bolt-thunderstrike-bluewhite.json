@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "bolt-thunderstrike-bluewhite",
+  "groups": [
+    {
+      "id": "bolt-thunderstrike-bluewhite",
+      "name": "bolt-thunderstrike-bluewhite",
+      "layerIds": [
+        "blue-corona",
+        "white-core",
+        "side-fork"
+      ]
+    }
+  ],
+  "order": [
+    "group:bolt-thunderstrike-bluewhite"
+  ]
+}
