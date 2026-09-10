@@ -172,6 +172,14 @@ Preset 是照**野外戰場**的名目尺寸畫的。換到別的版面就得整
 - **高塔疊層**（`js/vfx-tower.js`）：在 `#tower-fight .battle-scene` 上疊第二個 Pixi 表面，
   用同一個 Adapter，只換 `ctx`（DOM 卡片 → 座標）與 `profile`（尺寸規則）。見 §1.4。
 - **環繞場域**（火狩星環、環體電球、虛空鋸刃）：軌道環走 zone 層、N 個環繞體走 fx 層，
+  火狩自 v29 使用 `area.members` 的穩定 id 同步個體（生成／消耗不重建母體），
+  母體讀第一階 projectile，伴生讀第三階 projectile 並透過 `area.companionPreset` 傳遞；
+  Skills2.xlsx `AA104` 對應 `orb-firehunt-companion`，沿用表格收集器預載。
+  `sampleOrbitMember` 由 Preset 與 legacy 共用：相位加角速度乘施放經過時間，
+  伴生再依母體的當前體積直徑＋`companionGap` 換算落後弧度，反向外圈同理。
+  新事件 `orbR` 始終是出生體積；`orbitAge` 支援晚加入，補送不重播成長；
+  空 members 立即清圈。新火狩每次續命最多補 12 秒，施放總年齡不受此上限截斷。
+  無 members 的舊事件維持下述均分及總時長上限，只有舊事件仍存在固定相位差。
   依 `area.id` 合併與續命、團數多退少補、到期整組收掉（上限 12 秒，與舊畫法同一個值）。
   幾何與四條成長曲線（環半徑 `grow`／`growMax`、螺旋 `spiral`／`spiralLag`、
   體積 `orbGrowTo`／`orbGrowSec`、圈距 `rGrowTo`／`rGrowSec`）逐項對齊

@@ -10,11 +10,11 @@
       "assetId": "particle-pack/png-transparent/light_03.png",
       "position": {
         "x": 0,
-        "y": 0
+        "y": 11.2726
       },
       "scale": {
-        "x": 0.0977,
-        "y": 0.0254
+        "x": 0.3156,
+        "y": 0.082
       },
       "alpha": 0.5,
       "tint": "#281f13",
@@ -27,11 +27,11 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "position": {
         "x": 0,
-        "y": -2
+        "y": 4.8103
       },
       "scale": {
-        "x": 0.0762,
-        "y": 0.0234
+        "x": 0.2462,
+        "y": 0.0756
       },
       "alpha": 0.22,
       "tint": "#ba873e",
@@ -59,11 +59,11 @@
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": -13.5
+        "y": -32.3478
       },
       "scale": {
-        "x": 0.27,
-        "y": 0.27
+        "x": 0.8724,
+        "y": 0.8724
       },
       "alpha": 1,
       "blendMode": "normal",
@@ -81,6 +81,10 @@
       "id": "settling-dust",
       "type": "particle",
       "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "position": {
+        "x": 0,
+        "y": 11.2726
+      },
       "alpha": 0.24,
       "tint": "#a18d69",
       "blendMode": "normal",
@@ -95,19 +99,19 @@
         1.1
       ],
       "spawn": {
-        "height": 3,
+        "height": 9.6935,
         "shape": "box",
-        "width": 34
+        "width": 109.8589
       },
       "speed": [
-        5,
-        12
+        16.1557,
+        38.7737
       ],
       "direction": -90,
       "spread": 60,
       "startScale": [
-        0.0117,
-        0.0205
+        0.0378,
+        0.0662
       ],
       "alphaOverLife": [
         [

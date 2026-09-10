@@ -26,6 +26,26 @@ const VFXCore = require('../js/vfx-core.js');
 const REPO = path.resolve(__dirname, '..');
 const REAL_PRESETS = path.join(REPO, 'vfx', 'presets');
 
+test('外部素材庫缺檔時讀取 shipped 白名單，本機版本優先且隔離 libraryId', async () => {
+ const sb=makeSandbox();
+ const rel='codex-authored/rockarmor/stone-guard.png';
+ const dest=path.join(sb.repoRoot,'images/vfx/assets',rel);
+ fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,'SHIPPED');
+ fs.writeFileSync(path.join(path.dirname(dest),'private.png'),'UNLISTED');
+ fs.writeFileSync(path.join(sb.repoRoot,'vfx/shipped-assets.json'),JSON.stringify({libraryId:'effects-materials',assets:[{relativePath:rel}]}));
+ const server=editorServer.__testOnly.createServer({repoRoot:sb.repoRoot,assetRoots:{'effects-materials':sb.outside,other:sb.outside}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const port=server.address().port;
+ try {
+  let res=await request(port,{path:'/asset-library/effects-materials/'+rel+'?v=sha256%3Atest'});
+  assert.equal(res.status,200);assert.equal(res.text,'SHIPPED');
+  res=await request(port,{path:'/asset-library/other/'+rel});assert.equal(res.status,404);
+  res=await request(port,{path:'/asset-library/effects-materials/codex-authored/rockarmor/private.png'});assert.equal(res.status,404);
+  const local=path.join(sb.outside,rel);fs.mkdirSync(path.dirname(local),{recursive:true});fs.writeFileSync(local,'LOCAL');
+  res=await request(port,{path:'/asset-library/effects-materials/'+rel});assert.equal(res.text,'LOCAL');
+ } finally {await closeServer({server});cleanup(sb);}
+});
+
 /* ---------------- 沙箱 ---------------- */
 
 function makeSandbox(options) {

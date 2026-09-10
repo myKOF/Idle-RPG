@@ -221,6 +221,27 @@ var VFXRuntime = (function () {
     var n = Number(v);
     return isFinite(n) ? n : fallback;
   }
+  // Preset 與 legacy 共用權威逐團幾何；age 是整次施放的經過秒數。
+  function sampleOrbitMember(area, age, index) {
+    var members = area && area.members;
+    var member = Array.isArray(members) && members[index];
+    if (!member) return null;
+    var spin = num(area.spinRate, 0), dir = spin < 0 ? -1 : 1;
+    function growth(to, sec) { return 1 + Math.max(0, num(to, 1) - 1) * Math.min(1, age / Math.max(0.1, num(sec, 1))); }
+    var bodyR = num(area.orbR, 0) * growth(area.orbGrowTo, area.orbGrowSec);
+    var ringR = num(area.r, 0) * growth(area.rGrowTo, area.rGrowSec);
+    var cap = num(area.growMax, 0) > 0 ? area.growMax : Infinity;
+    function radius(m) { return Math.min(cap, (area.spiral ? num(m.radiusBase, ringR) : ringR) + Math.max(0, num(area.grow, 0)) * age); }
+    var r = radius(member), angle = num(member.phase, 0) + spin * age;
+    if (member.companion && member.parentId != null) {
+      var parent = members.find(function (m) { return m.id === member.parentId && !m.companion; });
+      if (parent) {
+        r = radius(parent);
+        angle = num(parent.phase, 0) + spin * age - dir * (bodyR * 2 + Math.max(0, num(area.companionGap, 0))) / Math.max(1, r);
+      }
+    }
+    return { angle: angle, radius: r, bodyR: bodyR, companion: !!member.companion };
+  }
   function travelSecAt(spec, i) {
     var arr = spec.travelMs;
     if (!Array.isArray(arr) || !arr.length) return 0;
@@ -734,6 +755,7 @@ var VFXRuntime = (function () {
     function orbitGeom(area) {
       var rate = num(area.spinRate, NaN);
       return {
+        area: area, members: Array.isArray(area.members) ? area.members : null,
         ringR: Math.max(6, num(area.r, 0)),
         orbR: Math.max(3, num(area.orbR, 0)),
         /* 起始角：模擬層算接觸時用的就是 startAng + 2π·k/count（sgOrbitStep），
@@ -768,6 +790,23 @@ var VFXRuntime = (function () {
     }
     /* 團數會變（火狩每投資一階多一團）：多退少補，不整組重建。 */
     function syncOrbCount(entry) {
+      if (entry.geo.members) {
+        var old = entry.orbs, next = [];
+        entry.geo.members.forEach(function (member, index) {
+          var presetId = member.companion ? entry.companionId : entry.orbId;
+          var ref = old.find(function (r) { return r.memberId === member.id && r.presetId === presetId; });
+          if (!ref) {
+            var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre();
+            ref = play(rtFx, presetId, Object.assign({
+              position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * ORBIT_FLAT }
+            }, sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), profile.areaScale);
+          }
+          if (ref) { ref.memberId = member.id; ref.presetId = presetId; next.push(ref); }
+        });
+        old.forEach(function (ref) { if (next.indexOf(ref) < 0) stopRef(ref); });
+        entry.orbs = next;
+        return;
+      }
       while (entry.orbs.length > entry.geo.orbs) stopRef(entry.orbs.pop());
       while (entry.orbs.length < entry.geo.orbs) {
         var ref = play(rtFx, entry.orbId, Object.assign({ position: orbitCentre() },
@@ -789,11 +828,15 @@ var VFXRuntime = (function () {
       if (!orbId || !has(orbId)) return false;
       var geo = orbitGeom(spec.area);
       var key = orbitKeyOf(spec, geo);
+      if (geo.members && !geo.members.length) { stopOrbit(key); return true; }
+      var companionId = spec.area.companionPreset || orbId;
+      if (geo.members && geo.members.some(function (m) { return m.companion; }) && !has(companionId)) return false;
       var dur = Math.min(ORBIT_MAX_SEC, Math.max(0.5, num(spec.dur, 4)));
       var live = orbits[key];
       if (live && live.orbId === orbId) {
-        live.dur = Math.min(ORBIT_MAX_SEC, Math.max(live.dur, live.t + dur));
+        live.dur = geo.members ? live.t + dur : Math.min(ORBIT_MAX_SEC, Math.max(live.dur, live.t + dur));
         live.geo = geo;
+        live.companionId = companionId;
         syncOrbCount(live);
         return true;
       }
@@ -801,7 +844,9 @@ var VFXRuntime = (function () {
       var ringId = (roles.ground && has(roles.ground)) ? roles.ground : '';
       var centre = orbitCentre();
       var entry = {
-        orbId: orbId, ringId: ringId, geo: geo, t: 0, dur: dur, orbs: [],
+        orbId: orbId, companionId: companionId, ringId: ringId, geo: geo,
+        t: geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0,
+        dur: dur + (geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0), orbs: [],
         ring: ringId ? play(rtZone, ringId, Object.assign({ position: centre },
           sizeOf(ringId, { r: geo.ringR }) || { scale: geo.ringR / NOMINAL_RADIUS }), profile.areaScale) : null
       };
@@ -858,13 +903,16 @@ var VFXRuntime = (function () {
           var orbT = g.spiral ? Math.max(0, o.t - i * g.spiralLag) : o.t;
           var rNow = g.spiral ? Math.min(capR, ringRNow + g.growPx * orbT) : wholeR;
           var ang = base + Math.PI * 2 * i / o.orbs.length;
+          var memberPose = g.members ? sampleOrbitMember(g.area, o.t, g.members.findIndex(function (m) { return m.id === o.orbs[i].memberId; })) : null;
+          if (memberPose) { ang = memberPose.angle; rNow = memberPose.radius; orbR = memberPose.bodyR; }
+          var presetId = o.orbs[i].presetId || o.orbId;
           /* 朝向取「螢幕上的切線方向」而不是 ang＋90°：橢圓被壓扁 0.62 之後，
              那兩者差得出來（Preset 一律朝 +X 繪製，拖尾會指錯邊）。 */
           var heading = Math.atan2(Math.cos(ang) * ORBIT_FLAT * dir, -Math.sin(ang) * dir);
           var alive = moveRef(o.orbs[i], Object.assign({
             position: { x: centre.x + Math.cos(ang) * rNow, y: centre.y + Math.sin(ang) * rNow * ORBIT_FLAT },
             rotation: heading
-          }, sizeOf(o.orbId, { r: orbR }) || { scale: orbR / NOMINAL_ORB }), profile.areaScale);
+          }, sizeOf(presetId, { r: orbR }) || { scale: orbR / NOMINAL_ORB }), profile.areaScale);
           if (!alive) o.orbs.splice(i, 1);
         }
         if (!o.orbs.length && !o.ring) stopOrbit(key);
@@ -880,7 +928,7 @@ var VFXRuntime = (function () {
       if (!roles || typeof roles !== 'object') return false;
       /* 環繞場域（火狩星環、環體電球、虛空鋸刃）：軌道環與環繞體是同一件事，
          必須一起接手，因此走自己的路徑而不是一般的角色分派。 */
-      if (spec.area && num(spec.area.orbs, 0) > 0) {
+      if (spec.area && (num(spec.area.orbs, 0) > 0 || Array.isArray(spec.area.members))) {
         var orbDrops = budgetDrops;
         if (playOrbit(spec, roles)) return true;
         /* 與下面同一條規則：超出 budget 就整則丟掉，不落回舊畫法。 */
@@ -1167,7 +1215,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-meteor-slope';
+  var DATA_VERSION = '20260910-firehunt-companion';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -1212,6 +1260,7 @@ var VFXRuntime = (function () {
     loadPresets: loadPresets,
     primaryRoleOf: primaryRoleOf,
     resolveSizing: resolveSizing,
+    sampleOrbitMember: sampleOrbitMember,
     SIZE_DEFAULTS: SIZE_DEFAULTS,
     NOMINAL: {
       radius: NOMINAL_RADIUS, rectW: NOMINAL_RECT_W, rectH: NOMINAL_RECT_H,
