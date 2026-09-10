@@ -65,9 +65,10 @@ var VFXWaterTornado = (function () {
     }
     return { points: points, gain: gain, seed: seed, fade: fade, depth: mean / 96 };
   }
-  function sheets(part, p) {
+  function sheets(part, p, fire) {
     var front = part !== 'rear-sheets', crest = part === 'white-crests', out = [];
-    var layers = SHEETS.map(function (spec) { return sheetGeometry(spec, p); });
+    // Fire uses 20 of 22 sheets (previously 15): roughly 30% denser.
+    var layers = SHEETS.filter(function (_, i) { return !fire || i % 11 !== 4; }).map(function (spec) { return sheetGeometry(spec, p); });
     if (front) layers.sort(function (a, b) { return a.depth - b.depth; });
     layers.forEach(function (layer) {
       for (var k = 0; k < 95; k++) {
@@ -85,9 +86,10 @@ var VFXWaterTornado = (function () {
     });
     return out;
   }
-  function ribbons(front, p) {
+  function ribbons(front, p, fire) {
     var out = [];
     for (var j = 0; j < 17; j++) {
+      if (fire && j % 2) continue;
       var h = mod(j / 17 - p / TAU) * 1.2 - .1, fade = clamp((h + .1) / .12) * clamp((1.1 - h) / .12), points = [];
       for (var k = 0; k < 130; k++) {
         var s = k / 129, a = -j * 2.39 - p * 2 + (s - .5) * (3.3 + j % 3 * .3), q = h + (s - .5) * .17, cr = shape(q, p);
@@ -133,20 +135,59 @@ var VFXWaterTornado = (function () {
     }
     return out;
   }
-  function sample(part, seconds, density) {
+  // Remap generated colors before rasterization; water samples remain independent.
+  function fireColor(c, y) {
+    var heat = clamp((c[1] * .75 + c[0] * .25) / 255);
+    var center = Math.pow(Math.sin(Math.PI * clamp(y / 620)), 1.4);
+    var gain = .42 + .68 * center;
+    return [(165 + heat * 90) * gain, (20 + 205 * Math.pow(heat, 1.35)) * gain, (3 + 46 * Math.pow(heat, 4)) * gain, c[3]];
+  }
+  function fireTopFade(x, y, p) {
+    var swirlX = x + 22 * Math.sin(y * .026 - p * 2);
+    var tip = 48 + 30 * Math.sin(swirlX * .037 + p * 2) + 16 * Math.sin(swirlX * .081 - p);
+    var fade = clamp((y - tip) / 75);
+    return fade * fade * (3 - 2 * fade);
+  }
+  function fireCommand(c, p) {
+    var y = c.points ? c.points.reduce(function (sum, v) { return sum + v[1]; }, 0) / c.points.length : c.ellipse[1];
+    var x = c.points ? c.points.reduce(function (sum, v) { return sum + v[0]; }, 0) / c.points.length : c.ellipse[0];
+    var color = fireColor(c.color, y);
+    color[3] *= fireTopFade(x, y, p);
+    return Object.assign({}, c, { color: color });
+  }
+  function sample(part, seconds, density, palette) {
     if (PARTS.indexOf(part) < 0) throw new Error('Unknown water part: ' + part);
     density = density === undefined ? 1 : density;
-    var tick = Math.floor(mod(seconds / 4) * 80 + 1e-7), key = part + ':' + tick + ':' + density;
+    var fire = palette === 'fire';
+    var tick = Math.floor(mod(seconds / 4) * 80 + 1e-7), key = part + ':' + tick + ':' + density + (fire ? ':fire' : '');
     if (cache.has(key)) return cache.get(key);
     var p = TAU * tick / 80, out = { key: key, width: SIZE, height: SIZE, commands: [] };
     if (part === 'body' || part === 'halo') out.pixels = pixels(part, p);
-    else if (part.indexOf('sheets') >= 0 || part === 'white-crests') out.commands = sheets(part, p);
-    else if (part.indexOf('ribbons') >= 0) { out.commands = ribbons(part === 'front-ribbons', p); out.blur = .45; }
+    else if (part.indexOf('sheets') >= 0 || part === 'white-crests') out.commands = sheets(part, p, fire);
+    else if (part.indexOf('ribbons') >= 0) { out.commands = ribbons(part === 'front-ribbons', p, fire); out.blur = .45; }
     else if (part === 'base') out.commands = base(p);
     else if (part === 'dust' || part === 'spray') { out.commands = particles(part, p, density); if (part === 'dust') out.blur = 5; }
     else if (part === 'bloom') {
-      var hot = sheets('white-crests', p).map(function (c) { return Object.assign({}, c, { color: [Math.max(0, c.color[0] - 90) * 1.6, Math.max(0, c.color[1] - 90) * 1.6, 255, c.color[3]] }); });
+      var hot = sheets('white-crests', p, fire).map(function (c) { return Object.assign({}, c, { color: [Math.max(0, c.color[0] - 90) * 1.6, Math.max(0, c.color[1] - 90) * 1.6, 255, c.color[3]] }); });
       out.groups = [{ commands: hot, blur: 5, alpha: .48 }, { commands: hot, blur: 17, alpha: .26 }];
+    }
+    if (fire) {
+      out.commands = out.commands.map(function (c) { return fireCommand(c, p); });
+      if (out.groups) out.groups.forEach(function (g) { g.commands = g.commands.map(function (c) { return fireCommand(c, p); }); });
+      if (out.pixels) for (var i = 0; i < out.pixels.length; i += 4) {
+        var y = Math.floor(i / 4 / SIZE) * 2, x = (i / 4 % SIZE) * 2;
+        var color = fireColor([out.pixels[i], out.pixels[i + 1], out.pixels[i + 2], out.pixels[i + 3]], y);
+        if (part === 'body') {
+          var cr = shape(clamp((y - 8) / 578), p);
+          var coreHeat = clamp(1.45 * Math.exp(-Math.pow((x - cr[0]) / (cr[1] * .8), 2)) * Math.exp(-Math.pow((y - 310) / 155, 2)));
+          color[0] += (255 - color[0]) * coreHeat;
+          color[1] += (238 - color[1]) * coreHeat;
+          color[2] += (110 - color[2]) * coreHeat;
+        }
+        out.pixels[i] = color[0]; out.pixels[i + 1] = color[1]; out.pixels[i + 2] = color[2];
+        // Uneven drifting flame tips, softly eroded before the texture boundary.
+        out.pixels[i + 3] *= fireTopFade(x, y, p);
+      }
     }
     cache.set(key, out);
     // Bounded recent samples, not a pre-rendered animation or an image atlas.

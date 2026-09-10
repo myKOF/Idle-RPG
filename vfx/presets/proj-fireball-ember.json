@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-fireball-ember",
+  "duration": 1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "rolling-flame-tail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": -16,
+        "y": 0
+      },
+      "alpha": 0.72,
+      "tint": "#ff6a13",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 36
+      },
+      "lifetime": [
+        0.18,
+        0.38
+      ],
+      "spawn": {
+        "height": 22,
+        "shape": "box",
+        "width": 20
+      },
+      "speed": [
+        110,
+        200
+      ],
+      "direction": 180,
+      "spread": 22,
+      "startScale": [
+        0.0879,
+        0.1406
+      ],
+      "rotationStart": [
+        -0.6,
+        0.6
+      ],
+      "rotationSpeed": [
+        -1.5,
+        1.5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.9
+        ],
+        [
+          0.55,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "ember-shell",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.1426,
+        "y": 0.1426
+      },
+      "alpha": 0.8,
+      "tint": "#ff651a",
+      "blendMode": "add"
+    },
+    {
+      "id": "molten-heart",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 0.95,
+      "tint": "#ffcf64",
+      "blendMode": "normal"
+    },
+    {
+      "id": "surface-flames",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 3,
+      "alpha": 0.6,
+      "tint": "#ffb82e",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 20
+      },
+      "lifetime": [
+        0.12,
+        0.25
+      ],
+      "spawn": {
+        "height": 24,
+        "shape": "box",
+        "width": 20
+      },
+      "speed": [
+        15,
+        40
+      ],
+      "direction": 180,
+      "spread": 90,
+      "startScale": [
+        0.0586,
+        0.0898
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "trailing-embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 4,
+      "position": {
+        "x": -20,
+        "y": 0
+      },
+      "alpha": 0.85,
+      "tint": "#ffa52b",
+      "blendMode": "normal",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 17
+      },
+      "lifetime": [
+        0.2,
+        0.4
+      ],
+      "spawn": {
+        "height": 26,
+        "shape": "box",
+        "width": 20
+      },
+      "speed": [
+        130,
+        230
+      ],
+      "direction": 180,
+      "spread": 34,
+      "startScale": [
+        0.0039,
+        0.0098
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

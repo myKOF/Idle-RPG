@@ -10,8 +10,8 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.066,
-        "y": 0.066
+        "x": 0.05,
+        "y": 0.05
       },
       "alpha": 0.5,
       "tint": "#ff3b3b",

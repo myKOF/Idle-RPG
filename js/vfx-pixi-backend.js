@@ -208,7 +208,7 @@ var VFXPixiBackend = (function () {
         }
         entry.key = sample.key; raster(entry, sample); generatedCache.set(sample.key, entry);
       }
-      entry.refs++; node.__generatedEntry = entry; node.__profileFrames = [entry.strips]; node.__frameWanted = 0;
+      entry.refs++; node.__generatedEntry = entry; node.__profileFrames = node.__flatGenerated ? [[entry.texture]] : [entry.strips]; node.__frameWanted = 0;
     }
 
     function createNode(spec) {
@@ -216,6 +216,8 @@ var VFXPixiBackend = (function () {
       if (spec.kind === 'profiled' || spec.kind === 'generated') {
         node = new PixiLib.Container();
         node.__profileScales = spec.profileScales ? spec.profileScales.slice() : Array(64).fill(1);
+        node.__flatGenerated = spec.kind === 'generated' && node.__profileScales.every(function (s) { return s === node.__profileScales[0]; });
+        if (node.__flatGenerated) node.__profileScales = [node.__profileScales[0]];
         node.__generated = spec.kind === 'generated';
         node.__anchorX = 0.5; node.__anchorY = 0.5;
         node.__profileTint = 0xffffff;

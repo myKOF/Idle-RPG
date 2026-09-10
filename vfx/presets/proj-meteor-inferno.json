@@ -1,0 +1,685 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-meteor-inferno",
+  "duration": 1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "smoke-wake",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": -30,
+        "y": 0
+      },
+      "alpha": 0.48,
+      "tint": "#554440",
+      "blendMode": "normal",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 12
+      },
+      "lifetime": [
+        0.7,
+        1.05
+      ],
+      "spawn": {
+        "height": 25,
+        "shape": "box",
+        "width": 15
+      },
+      "speed": [
+        140,
+        210
+      ],
+      "direction": 180,
+      "spread": 18,
+      "startScale": [
+        0.0938,
+        0.1602
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.3
+        ]
+      ]
+    },
+    {
+      "id": "rolling-flame-tail",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 1,
+      "position": {
+        "x": -20,
+        "y": 0
+      },
+      "alpha": 0.72,
+      "tint": "#ff6a13",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 36
+      },
+      "lifetime": [
+        0.35,
+        0.65
+      ],
+      "spawn": {
+        "height": 22,
+        "shape": "box",
+        "width": 20
+      },
+      "speed": [
+        180,
+        280
+      ],
+      "direction": 180,
+      "spread": 22,
+      "startScale": [
+        0.0879,
+        0.1406
+      ],
+      "rotationStart": [
+        -0.6,
+        0.6
+      ],
+      "rotationSpeed": [
+        -1.5,
+        1.5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.9
+        ],
+        [
+          0.55,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "trailing-embers",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 2,
+      "position": {
+        "x": -20,
+        "y": 0
+      },
+      "alpha": 0.85,
+      "tint": "#ffa52b",
+      "blendMode": "normal",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 17
+      },
+      "lifetime": [
+        0.2,
+        0.4
+      ],
+      "spawn": {
+        "height": 26,
+        "shape": "box",
+        "width": 20
+      },
+      "speed": [
+        130,
+        230
+      ],
+      "direction": 180,
+      "spread": 34,
+      "startScale": [
+        0.0039,
+        0.0098
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "meteor-flame-halo",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.2,
+        "y": 0.2
+      },
+      "alpha": 0.5,
+      "tint": "#ff6c0c",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          0.7,
+          0.85
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.5
+        ]
+      ]
+    },
+    {
+      "id": "meteor-halo-gold-rim",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "light-masks-1.0/default/circle_b_noise.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.1443,
+        "y": 0.1443
+      },
+      "alpha": 0.35,
+      "tint": "#ffb72c",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.85
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.85
+        ]
+      ]
+    },
+    {
+      "id": "cracked-meteor-core",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "codex-authored/meteor/meteor-stylized.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.0522,
+        "y": 0.0457
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "screen"
+    },
+    {
+      "id": "lava-flow-0",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 6,
+      "position": {
+        "x": -12,
+        "y": -15
+      },
+      "alpha": 0.25,
+      "tint": "#ff9d24",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 7
+      },
+      "lifetime": [
+        0.28,
+        0.5
+      ],
+      "spawn": {
+        "height": 4,
+        "shape": "box",
+        "width": 5
+      },
+      "speed": [
+        30,
+        50
+      ],
+      "direction": 180,
+      "spread": 10,
+      "startScale": [
+        0.0195,
+        0.0371
+      ],
+      "rotationStart": [
+        -0.7,
+        0.7
+      ],
+      "rotationSpeed": [
+        -0.5,
+        0.5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          0.65,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    },
+    {
+      "id": "lava-flow-1",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 7,
+      "position": {
+        "x": 8,
+        "y": -10
+      },
+      "alpha": 0.25,
+      "tint": "#ff9d24",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 7
+      },
+      "lifetime": [
+        0.28,
+        0.5
+      ],
+      "spawn": {
+        "height": 4,
+        "shape": "box",
+        "width": 5
+      },
+      "speed": [
+        30,
+        50
+      ],
+      "direction": 180,
+      "spread": 10,
+      "startScale": [
+        0.0195,
+        0.0371
+      ],
+      "rotationStart": [
+        -0.7,
+        0.7
+      ],
+      "rotationSpeed": [
+        -0.5,
+        0.5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          0.65,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    },
+    {
+      "id": "lava-flow-2",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 8,
+      "position": {
+        "x": -5,
+        "y": 7
+      },
+      "alpha": 0.25,
+      "tint": "#ff9d24",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 7
+      },
+      "lifetime": [
+        0.28,
+        0.5
+      ],
+      "spawn": {
+        "height": 4,
+        "shape": "box",
+        "width": 5
+      },
+      "speed": [
+        30,
+        50
+      ],
+      "direction": 180,
+      "spread": 10,
+      "startScale": [
+        0.0195,
+        0.0371
+      ],
+      "rotationStart": [
+        -0.7,
+        0.7
+      ],
+      "rotationSpeed": [
+        -0.5,
+        0.5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          0.65,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    },
+    {
+      "id": "lava-flow-3",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 9,
+      "position": {
+        "x": 14,
+        "y": 15
+      },
+      "alpha": 0.25,
+      "tint": "#ff9d24",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 7
+      },
+      "lifetime": [
+        0.28,
+        0.5
+      ],
+      "spawn": {
+        "height": 4,
+        "shape": "box",
+        "width": 5
+      },
+      "speed": [
+        30,
+        50
+      ],
+      "direction": 180,
+      "spread": 10,
+      "startScale": [
+        0.0195,
+        0.0371
+      ],
+      "rotationStart": [
+        -0.7,
+        0.7
+      ],
+      "rotationSpeed": [
+        -0.5,
+        0.5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          0.65,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    },
+    {
+      "id": "lava-flow-4",
+      "type": "particle",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 10,
+      "position": {
+        "x": -17,
+        "y": 15
+      },
+      "alpha": 0.25,
+      "tint": "#ff9d24",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 7
+      },
+      "lifetime": [
+        0.28,
+        0.5
+      ],
+      "spawn": {
+        "height": 4,
+        "shape": "box",
+        "width": 5
+      },
+      "speed": [
+        30,
+        50
+      ],
+      "direction": 180,
+      "spread": 10,
+      "startScale": [
+        0.0195,
+        0.0371
+      ],
+      "rotationStart": [
+        -0.7,
+        0.7
+      ],
+      "rotationSpeed": [
+        -0.5,
+        0.5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          0.65,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 14,
+    "shape": "custom",
+    "widthM": 14
+  }
+}

@@ -49,6 +49,7 @@
     {
       "id": "edge",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
       "scale": {
@@ -56,7 +57,7 @@
         "y": 0.2031
       },
       "alpha": 0.8,
-      "tint": "#f87171",
+      "tint": "#ff5900",
       "blendMode": "add",
       "duration": 1.14,
       "alphaOverLife": [

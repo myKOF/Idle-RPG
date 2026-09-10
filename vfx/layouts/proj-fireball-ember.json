@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-fireball-ember",
+  "groups": [
+    {
+      "id": "proj-fireball-ember",
+      "name": "proj-fireball-ember",
+      "layerIds": [
+        "rolling-flame-tail",
+        "ember-shell",
+        "molten-heart",
+        "surface-flames",
+        "trailing-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-fireball-ember"
+  ]
+}

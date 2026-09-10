@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-meteor-inferno",
+  "groups": [
+    {
+      "id": "proj-meteor-inferno",
+      "name": "proj-meteor-inferno",
+      "layerIds": [
+        "smoke-wake",
+        "rolling-flame-tail",
+        "trailing-embers",
+        "meteor-flame-halo",
+        "meteor-halo-gold-rim",
+        "cracked-meteor-core",
+        "lava-flow-0",
+        "lava-flow-1",
+        "lava-flow-2",
+        "lava-flow-3",
+        "lava-flow-4"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-meteor-inferno"
+  ]
+}

@@ -582,6 +582,7 @@ var VFXCore = (function () {
   function validateProceduralLayer(layer, where, errors) {
     if (layer.effect === 'waterTornado') {
       var w = layer.water;
+      if (w && w.palette !== undefined && ['water', 'fire'].indexOf(w.palette) < 0) errors.push(where + '.water.palette 必須為 water 或 fire');
       if (!w || !waterGenerator || waterGenerator.PARTS.indexOf(w.part) < 0) errors.push(where + '.water.part 非法');
       if (w) ['speed', 'density'].forEach(function (k) {
         if (w[k] !== undefined && (!isFiniteNumber(w[k]) || w[k] < 0 || w[k] > 4)) errors.push(where + '.water.' + k + ' 必須在 0..4');
@@ -642,7 +643,7 @@ var VFXCore = (function () {
     spawn: ['shape', 'radius', 'width', 'height'],
     noise: ['strength', 'frequency', 'scrollSpeed'],
     sheet: ['columns', 'rows', 'count', 'mode', 'fps', 'randomStart', 'loop'],
-    water: ['part', 'speed', 'density'],
+    water: ['part', 'speed', 'density', 'palette'],
     radiusProfile: ['centerScale', 'topRatio', 'bottomRatio', 'sourceTopRatio', 'sourceBottomRatio', 'topY', 'centerY', 'bottomY'],
     subEmitter: ['layer', 'on', 'count', 'inheritVelocity']
   };
@@ -975,6 +976,7 @@ var VFXCore = (function () {
 
     var presets = Object.create(null);
     var effects = [];
+    var proceduralClock = 0;
     var nextEffectId = 1;
     var totalParticles = 0;
     var droppedEffects = 0;
@@ -1270,7 +1272,8 @@ var VFXCore = (function () {
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
       if (d.effect === 'waterTornado') {
-        t.generated = waterGenerator.sample(d.water.part, life.elapsed * (d.water.speed === undefined ? 1 : d.water.speed), d.water.density);
+        var phaseTime = d.water.palette === 'fire' ? proceduralClock * effect.timeScale : life.elapsed;
+        t.generated = waterGenerator.sample(d.water.part, phaseTime * (d.water.speed === undefined ? 1 : d.water.speed), d.water.density, d.water.palette);
       } else if (d.type === 'procedural') {
         layer.scrollX += d.scrollSpeed.x * effect.lastDt;
         layer.scrollY += d.scrollSpeed.y * effect.lastDt;
@@ -1548,6 +1551,7 @@ var VFXCore = (function () {
     function update(dt) {
       assertLive('update');
       if (!isFiniteNumber(dt) || dt < 0) throw new Error('update(dt) 需要非負的有限數');
+      proceduralClock += dt;
       var keep = 0;                       // write-index：原地壓縮，不每幀配置新陣列
       for (var i = 0; i < effects.length; i++) {
         var effect = effects[i];
@@ -1680,9 +1684,10 @@ var VFXCore = (function () {
      Runtime 未來可換成打包後的 URL，Core 不需要知道差別，
      更不需要知道任何 Asset Library Root。 */
   function createIndexResolver(assetIndex, baseUrl) {
-    var byId = {};
+    var byId = {}, revisions = {};
     (assetIndex && assetIndex.assets ? assetIndex.assets : []).forEach(function (a) {
       byId[a.assetId] = a.relativePath;
+      revisions[a.assetId] = a.contentHash;
     });
     var prefix = String(baseUrl || '').replace(/\/+$/, '');
     return {
@@ -1690,7 +1695,8 @@ var VFXCore = (function () {
       resolve: function (assetId) {
         var rel = byId[assetId];
         if (!rel) throw new Error('未知的 assetId：' + assetId);
-        return prefix + '/' + rel.split('/').map(encodeURIComponent).join('/');
+        return prefix + '/' + rel.split('/').map(encodeURIComponent).join('/') +
+          (revisions[assetId] ? '?v=' + encodeURIComponent(revisions[assetId]) : '');
       }
     };
   }

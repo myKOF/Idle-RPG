@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 108,
+  "assetCount": 112,
   "assets": [
     {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
@@ -19,6 +19,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:a8cdf4c18bc74f5a9ec01077afad43b4093e76ac63371de13e56e513cba8f996",
       "fileSize": 592
+    },
+    {
+      "assetId": "codex-authored/meteor/meteor-stylized.png",
+      "relativePath": "codex-authored/meteor/meteor-stylized.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:e0a785ea31dcbf251e0b2d1c4cf0a2247a577313f98dc0966fb8da21fe485ed6",
+      "fileSize": 1119237
     },
     {
       "assetId": "codex-authored/moon-opaque/moon-opaque-02.svg",
@@ -40,6 +47,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:4c226fe5bcc428ad8859f49832c1a933e31450dc0bafca8ab33610d15d3ea876",
       "fileSize": 28122
+    },
+    {
+      "assetId": "codex-authored/tornado/fire-flow.png",
+      "relativePath": "codex-authored/tornado/fire-flow.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:6dbae0a848ca3a10f647bc489b972b79874311870d74a05d9148449c390157f2",
+      "fileSize": 3421959
     },
     {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
@@ -68,6 +82,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:5aecddcbfe6ad85375bed88824c198db060220c77643248348ea186407bd1e09",
       "fileSize": 40886
+    },
+    {
+      "assetId": "light-masks-1.0/default/circle_b_noise.png",
+      "relativePath": "light-masks-1.0/Default/circle_b_noise.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:2450b7e27800fbf015880e3057fff913ab5de38b567b186c2c6c614eedc8093a",
+      "fileSize": 52687
     },
     {
       "assetId": "light-masks-1.0/default/circle_rings_a.png",
@@ -238,6 +259,13 @@
       "fileSize": 128835
     },
     {
+      "assetId": "new_materials/flare/flare_14.png",
+      "relativePath": "new_materials/flare/flare_14.png",
+      "package": "new_materials",
+      "contentHash": "sha256:c02c8410afc068a25cb67c19578f0dd451d44ded0c752117ec6e242b6c328c0d",
+      "fileSize": 110361
+    },
+    {
       "assetId": "new_materials/flare/flare_16.png",
       "relativePath": "new_materials/flare/flare_16.png",
       "package": "new_materials",
@@ -320,13 +348,6 @@
       "package": "new_materials",
       "contentHash": "sha256:da24fd158d470946bed4fcf046f1ba7cd6968500c19d281225e345875b0c769a",
       "fileSize": 3153
-    },
-    {
-      "assetId": "new_materials/orb/energyball_1.png",
-      "relativePath": "new_materials/orb/energyball_1.png",
-      "package": "new_materials",
-      "contentHash": "sha256:86ed934dd836aa9fb8e870240f4e8354d2b4c89d945a5b2ef12fa0abe7feaddb",
-      "fileSize": 267342
     },
     {
       "assetId": "new_materials/orb/rounded_6.png",
@@ -635,6 +656,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:4b2d03683bf0fe4a946567adc3bd86b8ba045da84cee58dc2cf8aef63bbfaa06",
       "fileSize": 69755
+    },
+    {
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "relativePath": "particle-pack/PNG (Transparent)/circle_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:8a2112a6a5610c7cdcbfe8af0a5162b42dfb3431c63f494743945337b7981e51",
+      "fileSize": 43380
     },
     {
       "assetId": "particle-pack/png-transparent/circle_05.png",
