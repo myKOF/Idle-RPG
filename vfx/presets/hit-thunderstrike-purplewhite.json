@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-thunderstrike-purplewhite",
+  "duration": 0.48,
+  "loop": false,
+  "layers": [
+    {
+      "id": "blue-impact-glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "scale": {
+        "x": 0.2578,
+        "y": 0.1211
+      },
+      "alpha": 0.8,
+      "tint": "#9650ff",
+      "blendMode": "add",
+      "duration": 0.36,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "white-impact-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "position": {
+        "x": 0,
+        "y": -8
+      },
+      "scale": {
+        "x": 0.127,
+        "y": 0.1016
+      },
+      "alpha": 1,
+      "tint": "#fcf5ff",
+      "blendMode": "add",
+      "duration": 0.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "electric-burst",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "position": {
+        "x": 0,
+        "y": -22
+      },
+      "scale": {
+        "x": 0.2539,
+        "y": 0.1836
+      },
+      "alpha": 1,
+      "tint": "#d2a3ff",
+      "blendMode": "add",
+      "duration": 0.36,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.35
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "violet-ground-arcs",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "scale": {
+        "x": 0.2188,
+        "y": 0.0703
+      },
+      "alpha": 0.55,
+      "tint": "#b381ff",
+      "blendMode": "add",
+      "duration": 0.38,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          1.25
+        ]
+      ]
+    },
+    {
+      "id": "shock-ring",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "scale": {
+        "x": 0.2734,
+        "y": 0.0938
+      },
+      "alpha": 0.65,
+      "tint": "#d0a6ff",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.5,
+          0.8
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    }
+  ]
+}
