@@ -9794,11 +9794,9 @@ function initBattleCanvasMode() {
     }
     var btnRow = $id('battle-canvas-buttons');
     var pauseBtn = $id('btn-combat-pause');
-    var pipBtn = $id('btn-pip');
     var infoBtn = $id('btn-battle-info');
     if (btnRow) {
       if (pauseBtn) btnRow.insertBefore(pauseBtn, infoBtn || null);
-      if (pipBtn) btnRow.insertBefore(pipBtn, infoBtn || null);
     }
     var drawer = $id('battle-info-drawer');
     if (infoBtn && drawer) {
@@ -9820,10 +9818,51 @@ function initBattleCanvasMode() {
   });
 }
 
+function isInternalVersion() {
+  if (typeof isGMHost === 'function' && isGMHost()) return true;
+  var loc = (typeof window !== 'undefined' && window.location) ||
+    (typeof location !== 'undefined' && location);
+  if (loc) {
+    var host = loc.hostname || '';
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return true;
+    if (loc.protocol === 'file:') return true;
+    if (loc.search && /[?&](?:internal|dev|fps)\b/i.test(loc.search)) return true;
+  }
+  return false;
+}
+
+function initBattleFPS() {
+  var fpsEl = $id('battle-fps');
+  if (!fpsEl || !isInternalVersion()) return;
+  fpsEl.style.display = 'block';
+  fpsEl.removeAttribute('aria-hidden');
+
+  var lastTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  var frames = 0;
+  function updateFPS() {
+    frames++;
+    var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    var delta = now - lastTime;
+    if (delta >= 500) {
+      var fps = Math.round((frames * 1000) / delta);
+      fpsEl.textContent = 'FPS: ' + fps;
+      frames = 0;
+      lastTime = now;
+    }
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(updateFPS);
+    }
+  }
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(updateFPS);
+  }
+}
+
 function initUI() {
   if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.init();
   bindWorkerUiState();
   updateTalentTabVisibility();
+  initBattleFPS();
   if (!UI.performanceEventsBound) {
     window.addEventListener('resize', function () {
       UI.battleLayoutDirty = true;

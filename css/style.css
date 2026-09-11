@@ -988,24 +988,28 @@ textarea#save-io {
    ========================================================================== */
 #stage-bar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 12px;
+  width: 100%;
 }
 
-.stage-main-controls,
-.stage-tools {
+.stage-main-controls {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
   flex-wrap: wrap;
-  width: 100%;
 }
 
 .stage-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 6px;
+  margin-left: auto;
 }
 
 #stage-label {
@@ -5275,7 +5279,7 @@ textarea:disabled,
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
-  max-width: min(520px, 62%);
+  max-width: min(520px, calc(100% - 210px));
   overflow: hidden;
   text-overflow: ellipsis;
   background: rgba(16, 13, 10, 0.88);
@@ -11281,6 +11285,23 @@ body.battle-canvas-mode #combat-area .battle-scene-wrapper > #btn-toggle-damage 
   top: 8px;
   left: 36px;
   z-index: 30;
+}
+
+/* 內部版本戰鬥區 FPS 顯示：固定在左上角（敵情與傷害數字開關下方） */
+#battle-fps {
+  position: absolute;
+  top: 36px;
+  left: 8px;
+  z-index: 30;
+  font-family: Consolas, "Lucida Console", Monaco, monospace, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #f59e0b;
+  text-shadow: 0 1px 2px #000, 0 0 4px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
 }
 
 /* ---- 戰鬥區 BUFF 狀態列（顯示於技能快捷列上方）---- */
