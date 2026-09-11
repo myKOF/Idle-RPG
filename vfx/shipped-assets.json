@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 121,
+  "assetCount": 120,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -523,13 +523,6 @@
       "package": "particle-pack",
       "contentHash": "sha256:3c3dcda87c882027e268cc7dbae9aa121eb6af6ef24a51b140a794a7212d183a",
       "fileSize": 11404
-    },
-    {
-      "assetId": "particle-pack/png-black-background/light_01.png",
-      "relativePath": "particle-pack/PNG (Black background)/light_01.png",
-      "package": "particle-pack",
-      "contentHash": "sha256:c9e0e947892b87cb71e110e60d85798810142b11aed154542c50b17dc93033b0",
-      "fileSize": 60764
     },
     {
       "assetId": "particle-pack/png-black-background/light_03.png",
