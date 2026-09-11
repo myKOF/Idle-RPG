@@ -383,7 +383,7 @@ g('thunderorb', [
   { projectile: 'orb-thunder', ground: 'ground-orbit-ring-lightning', hit: 'hit-lightning' }, // T4 環體電球（thunder-orbit）
   _,
   { ground: 'ground-thunder-orb', hit: 'hit-lightning' }, // T6 伴生雷球
-  { projectile: 'proj-thunder-orb-fall', ground: 'mark-blue', hit: 'hit-lightning', attack: 'burst-fire-shockwave' } // T7 雷殞天落（thunder-fall）
+  { projectile: 'proj-thunderfall-sky', ground: 'mark-blue', hit: 'hit-thunderfall-impact', attack: 'hit-thunderfall-impact' } // T7 雷殞天落（thunder-fall）
 ], { thunderBurst: { hit: 'hit-lightning' } });
 g('icearrow', [
   { projectile: 'proj-ice-shard', hit: 'hit-ice', cast: 'cast-magic' }, // T1 寒冰箭（ice-arrow）

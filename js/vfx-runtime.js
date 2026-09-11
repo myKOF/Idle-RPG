@@ -582,7 +582,7 @@ var VFXRuntime = (function () {
            會變成「先看到一段空白才落下來」。 */
         var landing = spec.area ? areaCentre(spec.area) : ctx.posOf(toId);
         from = { x: landing.x, y: landing.y - 500 * profile.skyScale };
-        if (presetId === 'proj-meteor-inferno') {
+        if (presetId === 'proj-meteor-inferno' || presetId === 'proj-thunderfall-sky') {
           var fallAngle = num(spec.angle, Math.PI / 3);
           from = { x: landing.x - Math.cos(fallAngle) * 500 * profile.skyScale,
             y: landing.y - Math.sin(fallAngle) * 500 * profile.skyScale };
@@ -990,7 +990,7 @@ var VFXRuntime = (function () {
       var drops0 = budgetDrops;
       switch (role) {
         case 'hit':
-          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : presetId === 'burst-meteor-inferno' && spec.area
+          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact') && spec.area
             ? playOnArea(rtFx, presetId, spec)
             : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
           break;
@@ -1065,7 +1065,7 @@ var VFXRuntime = (function () {
       /* 受擊爆點：同一則事件的 hit 角色跟著主要角色走（飛行物則等它抵達）；
          主要角色本身就是 hit 時不重複播。
          spec.hit === false＝這一擊被閃避或被無敵擋下，舊畫法同樣不畫爆點。 */
-      if (role !== 'hit' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && presetId !== 'bolt-thunderstrike-bluewhite' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
+      if (role !== 'hit' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && presetId !== 'proj-thunderfall-sky' && presetId !== 'hit-thunderfall-impact' && presetId !== 'bolt-thunderstrike-bluewhite' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
         playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
           role === 'projectile' ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
