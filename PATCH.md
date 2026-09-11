@@ -1,5 +1,19 @@
 # PATCH.md
 
+## 迷你視窗按鈕移至關卡列上方與戰鬥區內部版本 FPS 顯示（Antigravity 2026-09-11）
+
+- **迷你視窗按鈕位置調整**（`index.html`、`js/ui.js`、`css/style.css`）：
+  - 將迷你視窗按鈕（`#btn-pip` 📺）從戰鬥畫布右上角（`#battle-canvas-buttons`）移至關卡列右側上方（`#stage-bar .stage-tools`），徹底解決原本 3 顆按鈕並排導致中央任務欄（`#quest-bar`）文字過長時被遮擋的問題。
+  - `#stage-bar` 調整為彈性橫列佈局（`display: flex; flex-direction: row; justify-content: space-between;`），左側維持關卡切換與自動推進控制項，右側對齊工具按鈕，排版整潔。
+  - `#quest-bar` 調整最大寬度安全防護為 `max-width: min(520px, calc(100% - 210px))`，確保任務膠囊永遠不會與兩側按鈕發生遮疊碰撞。
+- **戰鬥區內部版本 FPS 顯示**（`index.html`、`js/ui.js`、`css/style.css`）：
+  - 於戰鬥區左上角（敵情提示 `!` 與傷害數字開關按鈕正下方，`top: 36px; left: 8px`）新增 FPS 顯示節點（`#battle-fps`）。
+  - 內部版本環境防護：僅在內部版本（`isGMHost()`、`localhost`、`127.0.0.1`、`::1`、`file:` 協議或帶有 `?internal`/`?dev`/`?fps` 參數）下自動顯示與採樣更新，外部正式環境保持隱藏且不消耗效能。
+  - 採樣平滑度：使用 `requestAnimationFrame` 每 500ms 計算平均幀率更新顯示，字體採用琥珀金高辨識等寬樣式與文字陰影，清晰直觀。
+- **快取更新與單元測試同步**（`index.html`、`tests/combat-pause.test.cjs`、`tests/battle-skill-hover.test.cjs`）：
+  - `index.html` 推進 `js/ui.js?v=1.0.61` 快取版本號。
+  - 同步更新測試契約，確保全套單元測試與 `build_check.cjs` 語法編譯檢查 100% 通過。
+
 ## 技能界面操作卡頓優化：方案 A 事件切片防護 + 方案 C 獨立模組化容器隔離（Antigravity 2026-09-10）
 
 - **方案 A：視覺事件切片與防積壓保護**（`js/ui.js`）：
