@@ -434,11 +434,11 @@
       "fileSize": 175965
     },
     {
-      "assetId": "new_materials/orb/sphere_47.png",
-      "relativePath": "new_materials/orb/sphere_47.png",
+      "assetId": "new_materials/orb/sphere_45.png",
+      "relativePath": "new_materials/orb/sphere_45.png",
       "package": "new_materials",
-      "contentHash": "sha256:3139327765c3986333555f1bb2cdadad47bb9a47fc179225d5985a980ff251dc",
-      "fileSize": 121447
+      "contentHash": "sha256:df0a9b9491b5f8009d86a07c16390dda63a153c97df648135561a7e4675863fc",
+      "fileSize": 112496
     },
     {
       "assetId": "new_materials/orb/spiky_6.png",

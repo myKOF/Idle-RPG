@@ -576,14 +576,14 @@
       "id": "dense-core",
       "type": "sprite",
       "enabled": true,
-      "assetId": "new_materials/orb/sphere_47.png",
+      "assetId": "new_materials/orb/sphere_45.png",
       "zIndex": 14,
       "scale": {
         "x": 0.2148,
         "y": 0.2148
       },
-      "alpha": 1,
-      "tint": "#344c9d",
+      "alpha": 0.8,
+      "tint": "#007bff",
       "blendMode": "normal",
       "duration": 2,
       "rotationOverLife": [
