@@ -654,6 +654,7 @@ var VFXRuntime = (function () {
          沒帶＝這一拍是靜止的，推算自走那一段自然就不會走。 */
       g.speed = Math.max(0, num(area.speed, 0));
       g.moveA = num(area.moveA, NaN);
+      g.turnRate = g.presetId === 'ground-icearrow-frost' ? num(area.turnRate, 0) : 0;
       g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
@@ -669,7 +670,8 @@ var VFXRuntime = (function () {
         g.uniform = true;
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
-      g.trot = num(area.a, 0);
+      g.trot = g.presetId === 'ground-icearrow-frost' &&
+        typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(area.a, 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
       var prevX = g.bx + g.ox, prevY = g.by + g.oy;
@@ -688,6 +690,14 @@ var VFXRuntime = (function () {
     function groundDeadReckon(g, dt) {
       if (!(g.speed > 0) || !isFinite(g.moveA) || !(dt > 0)) return;
       var run = g.speed * dt;
+      if (g.presetId === 'ground-icearrow-frost' && Math.abs(g.turnRate || 0) > 1e-8) {
+        var angle = g.moveA + g.turnRate * dt;
+        var radius = g.speed / g.turnRate;
+        g.bx += radius * (Math.sin(angle) - Math.sin(g.moveA));
+        g.by += radius * (Math.cos(g.moveA) - Math.cos(angle));
+        g.moveA = angle;
+        return;
+      }
       if (g.hasDest) {
         var dx = g.destX - g.bx, dy = g.destY - g.by;
         var left = Math.sqrt(dx * dx + dy * dy);
@@ -904,6 +914,7 @@ var VFXRuntime = (function () {
       Object.keys(grounds).forEach(function (k) {
         var g = grounds[k];
         if (g.expireAt <= clock) { stopRef(g.ref); delete grounds[k]; return; }
+        var previousX = g.x, previousY = g.y;
         if (g.anchored) {
           var p = groundAnchorPoint(g);
           g.bx = p.x; g.by = p.y; g.ox = 0; g.oy = 0;
@@ -913,7 +924,14 @@ var VFXRuntime = (function () {
         }
         g.x = g.bx + g.ox;
         g.y = g.by + g.oy;
-        g.rot = approachAngle(g.rot, g.trot, step, GROUND_FOLLOW_TAU_SEC);
+        if (g.presetId === 'ground-icearrow-frost') {
+          // Face the rendered displacement, including snapshot correction; a separate
+          // rotation easing would make the arrow slide sideways while turning.
+          var dx = g.x - previousX, dy = g.y - previousY;
+          if (step > 0 && dx * dx + dy * dy > 1e-10) g.rot = Math.atan2(dy, dx);
+        } else {
+          g.rot = approachAngle(g.rot, g.trot, step, GROUND_FOLLOW_TAU_SEC);
+        }
         g.sx = approach(g.sx, g.tsx, step, GROUND_FOLLOW_TAU_SEC);
         g.sy = approach(g.sy, g.tsy, step, GROUND_FOLLOW_TAU_SEC);
         if (!moveRef(g.ref, groundParams(g), g.mult)) delete grounds[k];
@@ -1296,7 +1314,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260910-thunderstrike';
+  var DATA_VERSION = '20260911-icearrow-arc';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

@@ -1207,7 +1207,8 @@ const SKILLS2_GEOMETRY_COLUMNS = [
   ['每段或每跳間隔（秒）', 'gap'], ['間隔每級增減（秒）', 'gapPer'],
   ['矩形長度（米）', 'len'], ['矩形長度每級增加（米）', 'lenPer'],
   ['矩形寬度（米）', 'wid'], ['矩形寬度每級增加（米）', 'widPer'],
-  ['扇形角度（度）', 'deg'], ['角度每級增減（度）', 'degPer']
+  ['扇形角度（度）', 'deg'], ['角度每級增減（度）', 'degPer'],
+  ['飛行子彈速度（米／秒）', 'speed']
 ];
 function skills2OtherFx(fx) {
   const rest = Object.assign({}, fx);
@@ -1220,6 +1221,7 @@ function skills2GeometryCells(t) {
     .concat([t.desc || '']);
 }
 SKILLS2_GLOSSARY_ROWS.push(['獨立距離與間隔欄（優先於舊 JSON 同名鍵）'],
+  ['飛行子彈速度（米／秒）：對應 fx.speed，填於實際控制速度的階段；後續共用飛行物沿用該值。飛刀、水流彈、火球保留近遠距離的飛行時間上下限；環繞速度仍由 rps 控制，固定秒數動畫不填假定米速。正數有效，留白沿用原預設。'],
   ['只改有值的欄位；留白代表本階未設定此參數，不代表 0 米或 0 秒。未接線技能勿自行填入新參數。'],
   ['施放距離：玩家離主目標多遠可開始施放。高階明列時覆寫低階；一般技能未設時沿用近戰距離。'],
   ['作用距離：對應 m；可能是傷害半徑、彈射搜尋距離或額外延伸長度，請搭配右側「作用方式與距離用途」閱讀，不能一概視為半徑。'],
@@ -1307,6 +1309,9 @@ SCHEMAS.Skills2 = {
         delete fx[key];
         if (raw === '') return;
         const value = Number(raw);
+        if (key === 'speed' && !(value > 0)) {
+          throw new Error('Skills2 '+gid+' 第 '+tierIdx+' 階「'+label+'」必須大於零');
+        }
         if (!Number.isFinite(value) || (!key.endsWith('Per') && value < 0)) {
           throw new Error('Skills2 '+gid+' 第 '+tierIdx+' 階「'+label+'」必須是有效數字（底值不得小於零）');
         }

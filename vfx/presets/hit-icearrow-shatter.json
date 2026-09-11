@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-icearrow-shatter",
+  "duration": 0.48,
+  "loop": false,
+  "layers": [
+    {
+      "id": "cold-flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "scale": {
+        "x": 0.1406,
+        "y": 0.1406
+      },
+      "alpha": 0.65,
+      "tint": "#65caff",
+      "blendMode": "add",
+      "duration": 0.25,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "ice-fragments",
+      "type": "particle",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "alpha": 1,
+      "blendMode": "normal",
+      "emission": {
+        "count": 9,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.18,
+        0.4
+      ],
+      "spawn": {
+        "radius": 2,
+        "shape": "circle"
+      },
+      "speed": [
+        65,
+        145
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0234,
+        0.0488
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -5,
+        5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.45
+        ]
+      ]
+    },
+    {
+      "id": "impact-frost",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "alpha": 0.3,
+      "tint": "#a4dfff",
+      "blendMode": "add",
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.18,
+        0.42
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        22,
+        55
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0371,
+        0.0625
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          1,
+          1.5
+        ]
+      ]
+    }
+  ]
+}

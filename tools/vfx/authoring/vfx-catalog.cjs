@@ -386,14 +386,14 @@ g('thunderorb', [
   { projectile: 'proj-thunderfall-sky', ground: 'mark-blue', hit: 'hit-thunderfall-impact', attack: 'hit-thunderfall-impact' } // T7 雷殞天落（thunder-fall）
 ], { thunderBurst: { hit: 'hit-lightning' } });
 g('icearrow', [
-  { projectile: 'proj-ice-shard', hit: 'hit-ice', cast: 'cast-magic' }, // T1 寒冰箭（ice-arrow）
+  { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter', cast: 'cast-magic' }, // T1 寒冰箭（ice-arrow）
   { hit: 'st-tick-ice' },                                               // T2 寒霜箭（frost-tick）
   _,
-  { projectile: 'proj-ice-shard', hit: 'hit-ice' },                     // T4 貫穿冰箭（ice-arrow-pierce）
-  { ground: 'ground-homing-ice-shard' },                                // T5 冰箭散射（追蹤場域 ice-arrow-homing）
+  { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' },                     // T4 貫穿冰箭（ice-arrow-pierce）
+  { ground: 'ground-icearrow-frost' },                                // T5 冰箭散射（追蹤場域 ice-arrow-homing）
   _,
   { attack: 'burst-ice-blast', hit: 'hit-ice' }                         // T7 寒冰爆裂箭（ice-blast）
-], { tearsOfIce: { projectile: 'proj-ice-shard', hit: 'hit-ice' } });
+], { tearsOfIce: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } });
 g('waterball', [
   { projectile: 'proj-waterball', hit: 'hit-ice', cast: 'cast-magic' }, // T1 水流彈
   _, _,

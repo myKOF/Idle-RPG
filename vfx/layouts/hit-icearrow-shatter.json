@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-icearrow-shatter",
+  "groups": [
+    {
+      "id": "hit-icearrow-shatter",
+      "name": "hit-icearrow-shatter",
+      "layerIds": [
+        "cold-flash",
+        "ice-fragments",
+        "impact-frost"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-icearrow-shatter"
+  ]
+}

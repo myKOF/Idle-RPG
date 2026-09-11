@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-icearrow-frost",
+  "groups": [
+    {
+      "id": "proj-icearrow-frost",
+      "name": "proj-icearrow-frost",
+      "layerIds": [
+        "world-ice-mist",
+        "ice-grains",
+        "cold-halo",
+        "faceted-icicle"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-icearrow-frost"
+  ]
+}

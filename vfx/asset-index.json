@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2422,
+  "assetCount": 2423,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -110059,6 +110059,21 @@
           "v": 1
         },
         "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/icearrow/icicle.png",
+      "format": "png",
+      "fileSize": 17820,
+      "contentHash": "sha256:f1cb57f1513785b18f5de5e7f3ab60158ab87a9a33ecef98e6b019304a4dab04",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "hasAlpha": true
       }
     }
   ]
