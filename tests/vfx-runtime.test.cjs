@@ -937,6 +937,37 @@ test('ORBIT-4b startAng 決定起始角：虛空鋸刃的每一片才不會疊�
     '相差 180° 的兩片必須落在圓的兩側，實際 x 差 ' + Math.abs(last2[0].x - last2[1].x).toFixed(1));
 });
 
+/* 玩家倒地：模擬層在判死那一刻就把執行期狀態整批清掉，之後不會再有人續命，
+   顯示層必須自己把持續場域收乾淨（js/battle-renderer.js clearPlayerFields）。
+   飛行物不在此列——它們本來就是一次性的，會自己飛完。 */
+test('CLEAR-FIELDS 只收持續場域與環繞場域，飛行物照常飛完', function () {
+  const { adapter } = makeAdapter([
+    unitPreset('ring-x', 20, true), unitPreset('orb-x', 20, true),
+    unitPreset('aura-x', 20, true), unitPreset('proj-x', 20)
+  ]);
+  adapter.tryPlay(orbitEvent({ dur: 12 }));
+  adapter.tryPlay({ fxKind: 'aura', variant: 'rock-armor', targets: ['pv-float'], dur: 1, vfx: { ground: 'aura-x' } });
+  adapter.tryPlay({ fxKind: 'projectile', targets: ['mv-float-2'], travelMs: [4000], vfx: { projectile: 'proj-x' } });
+  adapter.update(0.1);
+  assert.equal(adapter.stats().orbits, 1);
+  assert.equal(adapter.stats().grounds, 1);
+  assert.equal(adapter.stats().projectiles, 1);
+
+  adapter.clearFields();
+  assert.equal(adapter.stats().orbits, 0, '環繞場域要一起收');
+  assert.equal(adapter.stats().grounds, 0, '持續場域要收乾淨');
+  assert.equal(adapter.stats().projectiles, 1, '飛行物不受影響');
+  adapter.update(0.1);
+  assert.equal(adapter.stats().zone.activeEffects, 0, '節點也要還給 Core，不能只是忘記追蹤');
+
+  /* 收完之後模擬層若又送同一則（死亡前押在顯示緩衝裡的事件），會重新建出節點，
+     所以倒地期間每張面板都要再收一次——這裡驗的是「收得掉」，不是「擋得住」。 */
+  adapter.tryPlay({ fxKind: 'aura', variant: 'rock-armor', targets: ['pv-float'], dur: 1, vfx: { ground: 'aura-x' } });
+  assert.equal(adapter.stats().grounds, 1);
+  adapter.clearFields();
+  assert.equal(adapter.stats().grounds, 0);
+});
+
 test('ORBIT-5 半徑成長與體積成長沿用模擬層的曲線', function () {
   /* preset 壽命要蓋過取樣時間，否則取樣那一幀圖層已經結束（visible:false，後端收不到 transform）。 */
   const { adapter, log } = makeAdapter([unitPreset('ring-x', 20, true), unitPreset('orb-x', 20, true)]);

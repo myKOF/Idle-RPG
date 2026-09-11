@@ -1400,6 +1400,9 @@ var BattleRenderer = (function () {
           playAnim(p, 'idle');
         }
       }
+      /* 倒地期間：模擬層已經把技能執行期狀態整批清掉，畫面上還在的持續場域
+         全是孤兒，每張面板收一次（見 clearPlayerFields）。 */
+      if (dead) clearPlayerFields();
       /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
       if (p.reviveText) {
@@ -2865,6 +2868,31 @@ var BattleRenderer = (function () {
     state.done = true;
     if (state.fx) killFx(state.fx);
     if (_followAuras[key] === state) delete _followAuras[key];
+  }
+
+  /* 倒地時收掉所有玩家錨定的持續場域（領域光環、環繞場域、Preset 端的場域）。
+
+     為什麼要由顯示層自己收：持續場域沒有「結束事件」，它們靠模擬層每個節拍
+     重送同一個 id 來續命，壽命是「事件 dur × 容錯倍數」，與技能的實際剩餘時間無關。
+     而玩家判死的那一刻，模擬層就把所有技能執行期狀態整批清掉了
+     （js/combat.js onPlayerFieldDeath → resetSkillRT），復活倒數期間 tickField
+     更是直接 return——沒有人會再續命，也不會再有任何事件。於是畫面上還在的
+     那些場域全是孤兒，只能等自己的顯示壽命走完：玩家看到的就是「人已經倒了，
+     岩甲的環繞石板還在繞」（使用者回報 2026-09-11）。
+     模擬層那一側叫不到這裡：模擬層跑在 Worker 內，BattleRenderer 不存在於該環境。
+
+     ⚠️ 不能只在「剛倒下」那一幀收一次：死亡前一刻送出的事件還押在 POS_BUFFER_MS
+     的顯示緩衝裡，會在倒下之後才落地並重新建出節點。倒數期間每張面板都收一次，
+     殘留因此最多只有一張面板的長度。 */
+  function clearPlayerFields() {
+    for (var auraKey in _followAuras) clearFollowAura(auraKey);
+    for (var ringKey in _fireHuntRings) {
+      var ring = _fireHuntRings[ringKey];
+      ring.done = true;
+      if (ring.fx) killFx(ring.fx);
+      delete _fireHuntRings[ringKey];
+    }
+    if (S.vfxrt) S.vfxrt.clearFields();
   }
 
   /* 火牆（新版技能【無限火牆】）：沿傷害矩形長軸排列的直立火焰柱。
@@ -6318,7 +6346,6 @@ var BattleRenderer = (function () {
     syncBattle: syncBattle,
     status: status,
     clearDamageFloats: clearDamageFloats,
-    clearFollowAura: clearFollowAura,
     clearAllFloats: clearAllFloats,
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
        與內部狀態快照。正式流程不得依賴。 */
