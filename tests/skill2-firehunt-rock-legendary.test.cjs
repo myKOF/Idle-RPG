@@ -695,6 +695,9 @@ test('【火神降臨】的領域走玩家錨定變體，星環走旋轉圓環�
   assert.ok(aura.length > 0, '領域要送 follow-aura');
   assert.ok(aura[0].area && aura[0].area.id === 'sg-firegod-aura', '帶穩定 id 才會重用同一個節點');
   assert.equal(aura[0].area.x, undefined, '不送座標＝位置由顯示層逐幀取玩家錨點');
+  /* 舊畫法（spawnFollowAura）根本不讀座標，所以「不送 x／y」就夠了；Preset 路徑卻是看
+     area.follow 決定要不要釘在玩家身上，沒帶就退回讀 area.x＝0，圈會畫在世界原點。 */
+  assert.equal(aura[0].area.follow, true, 'Preset 路徑要靠 area.follow 才會釘在玩家身上');
   assert.equal(specs.filter((s) => s.variant === 'mire-lava').length, 0, '不再沿用泥沼池畫法');
 
   specs.length = 0;

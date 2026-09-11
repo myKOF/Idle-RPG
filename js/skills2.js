@@ -4929,12 +4929,16 @@ function sgTickFireGod(ctx, dt) {
      所以玩家一移動，圈就會每秒「跳」一次到新位置，看起來是瞬移不是跟隨。
      改用 follow-aura：顯示層自己每一幀取玩家錨點（比照火狩環繞場域 spawnFireHunt），
      事件只負責「這個領域還在、半徑多少」，位置完全由顯示層逐幀決定。
-     仍以顯示節拍重送（帶同一個 id ＝ 續期同一個節點），效果被卸下時就自然到期消失。 */
+     仍以顯示節拍重送（帶同一個 id ＝ 續期同一個節點），效果被卸下時就自然到期消失。
+     ⚠️ `area.follow` 不能省（2026-09-11 實機）：舊畫法 spawnFollowAura 根本不讀座標，
+     所以「不帶 x／y」就夠了；但 Preset 路徑是看這個旗標決定要不要釘在玩家身上
+     （vfx-runtime groundAim），沒帶就退回讀 area.x／y ＝ 0，整個圈會畫在**世界原點**——
+     玩家走遠之後那是幾萬像素外的地方，畫面上就是一個不會跟著人跑的孤兒圈。 */
   if (radius > 0 && (SKILL2_RT.fireGodVfxAt || 0) <= GT) {
     SKILL2_RT.fireGodVfxAt = GT + SG_DOMAIN_VFX_SEC;
     sgEmitPlayerVfx('firehunt', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'fire', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2 },
+      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2, follow: true },
       vfxUlt: 'fireGodDescend'
     });
   }
@@ -5152,12 +5156,13 @@ function sgRockBurstVictims(pool, m) {
 }
 
 /* 岩甲領域的範圍提示：玩家錨定、逐幀跟隨（判定本來就是以玩家為圓心的 bfEntityDistance）。
-   ⚠️ 沒有這一圈的話，範圍內剛好沒有敵人時整個領域是看不見的。 */
+   ⚠️ 沒有這一圈的話，範圍內剛好沒有敵人時整個領域是看不見的。
+   ⚠️ area.follow 是 Preset 路徑的錨定旗標，不能省（理由見 sgTickFireGod 的說明）。 */
 function sgRockFieldAura(floatSel, radius) {
   if (!(radius > 0)) return;
   sgEmitPlayerVfx('rockarmor', floatSel, {
     fxKind: 'aura', variant: 'follow-aura', elem: 'earth', dur: SG_DOMAIN_VFX_SEC * 2,
-    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2 },
+    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2, follow: true },
     vfxUlt: (sgRockFieldUlt() || {}).id || ''
   });
 }
@@ -7903,10 +7908,11 @@ function sgTickWaterPrison(ctx, dt) {
   if (wp.radius > 0 && wp.vfxAt <= GT) {
     wp.vfxAt = GT + SG_DOMAIN_VFX_SEC;
     /* 範圍提示走玩家錨定的 follow-aura（顯示層每一幀自己取玩家錨點），
-       與【火神降臨】的領域同一支：水牢是「周圍 20 米」，跟著人走才對得上判定。 */
+       與【火神降臨】的領域同一支：水牢是「周圍 20 米」，跟著人走才對得上判定。
+       area.follow 是 Preset 路徑的錨定旗標，不能省（理由見 sgTickFireGod 的說明）。 */
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2 },
+      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2, follow: true },
       vfxUlt: 'waterPrisonFall'
     });
   }
@@ -7982,9 +7988,10 @@ function sgTickAbyssDomain(ctx, dt) {
   var radius = bfMeterPx(sgUltVal(u, 'm'));
   if (radius > 0 && (SKILL2_RT.abyssVfxAt || 0) <= GT) {
     SKILL2_RT.abyssVfxAt = GT + SG_DOMAIN_VFX_SEC;
+    // 同上：area.follow 是 Preset 路徑的錨定旗標，不能省（理由見 sgTickFireGod）。
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2 },
+      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2, follow: true },
       vfxUlt: 'abyssBurial'
     });
   }

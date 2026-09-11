@@ -578,6 +578,24 @@ test('倒地時由顯示層收掉玩家錨定的持續場域，模擬層不再�
   assert.doesNotMatch(skills2, /BattleRenderer\s*\./);
 });
 
+/* 玩家錨定的領域範圍提示（火神降臨／岩甲領域／水牢天瀑／海淵葬界）共用同一個變體。
+   舊畫法 spawnFollowAura 根本不讀座標，所以這些事件一律不送 x／y；但 Preset 路徑是看
+   area.follow 決定要不要釘在玩家身上，沒帶就退回讀 area.x＝0，整個圈會畫在**世界原點**
+   （2026-09-11 實機：玩家在 (29424,-7639)，領域圈的 sprite 全在 (0,0) 附近）。 */
+test('玩家錨定的領域一律帶 area.follow，否則 Preset 路徑會把圈畫在世界原點', () => {
+  const skills2 = read('js/skills2.js');
+  const runtime = read('js/vfx-runtime.js');
+  assert.match(runtime, /g\.anchored = !!area\.follow;/, 'Preset 路徑的錨定旗標就是 area.follow');
+
+  const sites = skills2.split("variant: 'follow-aura'").slice(1);
+  assert.ok(sites.length >= 4, '至少四處：火神降臨、岩甲領域、水牢天瀑、海淵葬界');
+  sites.forEach(function (tail, i) {
+    const area = /area: \{[^}]*\}/.exec(tail);
+    assert.ok(area, '第 ' + (i + 1) + ' 處 follow-aura 事件要帶 area');
+    assert.match(area[0], /follow: true/, '第 ' + (i + 1) + ' 處的 area 少了 follow: true');
+  });
+});
+
 test('雷系三技能的顯示層接線：鏈、天雷、球體場域在 Canvas 與 DOM 兩條路徑都接上', () => {
   const skills2 = read('js/skills2.js');
   const vfx = read('js/vfx.js');
