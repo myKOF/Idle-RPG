@@ -905,6 +905,7 @@ var VFXRuntime = (function () {
       Object.keys(grounds).forEach(function (k) {
         var g = grounds[k];
         if (g.expireAt <= clock) { stopRef(g.ref); delete grounds[k]; return; }
+        var previousX = g.x, previousY = g.y;
         if (g.anchored) {
           var p = groundAnchorPoint(g);
           g.bx = p.x; g.by = p.y; g.ox = 0; g.oy = 0;
@@ -914,7 +915,14 @@ var VFXRuntime = (function () {
         }
         g.x = g.bx + g.ox;
         g.y = g.by + g.oy;
-        g.rot = approachAngle(g.rot, g.trot, step, GROUND_FOLLOW_TAU_SEC);
+        if (g.presetId === 'ground-icearrow-frost') {
+          // Face the rendered displacement, including snapshot correction; a separate
+          // rotation easing would make the arrow slide sideways while turning.
+          var dx = g.x - previousX, dy = g.y - previousY;
+          if (step > 0 && dx * dx + dy * dy > 1e-10) g.rot = Math.atan2(dy, dx);
+        } else {
+          g.rot = approachAngle(g.rot, g.trot, step, GROUND_FOLLOW_TAU_SEC);
+        }
         g.sx = approach(g.sx, g.tsx, step, GROUND_FOLLOW_TAU_SEC);
         g.sy = approach(g.sy, g.tsy, step, GROUND_FOLLOW_TAU_SEC);
         if (!moveRef(g.ref, groundParams(g), g.mult)) delete grounds[k];
@@ -1297,7 +1305,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260911-icearrow-heading-size';
+  var DATA_VERSION = '20260911-icearrow-displacement-facing';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

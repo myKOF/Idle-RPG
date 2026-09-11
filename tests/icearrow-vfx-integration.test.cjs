@@ -27,3 +27,20 @@ test('production adapter renders moving icicles and maintains homing aspect rati
  }
  rt.update(5);assert.equal(rt.stats().grounds,0);rt.destroy();
 });
+test('homing arrow points along every rendered displacement during snapshot correction',()=>{
+ const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});rt.registerPresets(presets);
+ const send=(x,y,angle,speed=585)=>rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:3,area:{id:'turning',x,y,r:15,a:0,speed,moveA:angle},vfx:{ground:presets[2].id}});
+ send(0,0,0);rt.update(1/60);
+ const arrow=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(arrow);
+ for(const [x,y,a] of [[0,18,Math.PI/2],[-15,0,Math.PI],[20,-25,-Math.PI/2],[0,0,Math.PI-.01],[0,0,-Math.PI+.01]]){
+  send(x,y,a);
+  for(const dt of [1/120,1/60,1/30,.1]){
+   const prev={...arrow.t};rt.update(dt);const next=arrow.t,dx=next.x-prev.x,dy=next.y-prev.y;
+   assert.ok(Math.hypot(dx,dy)>0);
+   const error=Math.atan2(Math.sin(next.rotation-Math.atan2(dy,dx)),Math.cos(next.rotation-Math.atan2(dy,dx)));
+   assert.ok(Math.abs(error)<1e-8,'arrow must face frame displacement immediately, including correction');
+  }
+ }
+ const angle=arrow.t.rotation;rt.update(0);assert.equal(arrow.t.rotation,angle,'zero-time update preserves direction');rt.destroy();
+});
