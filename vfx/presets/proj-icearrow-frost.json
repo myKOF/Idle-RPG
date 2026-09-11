@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-icearrow-frost",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "world-ice-mist",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": -2,
+      "position": {
+        "x": -28,
+        "y": 0
+      },
+      "alpha": 0.3,
+      "tint": "#92d8ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 172
+      },
+      "maxParticles": 96,
+      "lifetime": [
+        0.2,
+        0.42
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        10,
+        28
+      ],
+      "direction": 180,
+      "spread": 35,
+      "startScale": [
+        0.0273,
+        0.0469
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -0.6,
+        0.6
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          0.6
+        ],
+        [
+          0.5,
+          0.35
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          1.4
+        ]
+      ]
+    },
+    {
+      "id": "ice-grains",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "zIndex": -1,
+      "position": {
+        "x": -20,
+        "y": 0
+      },
+      "alpha": 0.7,
+      "tint": "#c8f4ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 72
+      },
+      "maxParticles": 40,
+      "lifetime": [
+        0.15,
+        0.32
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        8,
+        30
+      ],
+      "direction": 180,
+      "spread": 55,
+      "startScale": [
+        0.0039,
+        0.0098
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "cold-halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "scale": {
+        "x": 0.1602,
+        "y": 0.0586
+      },
+      "alpha": 0.24,
+      "tint": "#369ddd",
+      "blendMode": "add",
+      "duration": 1.2
+    },
+    {
+      "id": "faceted-icicle",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.1523,
+        "y": 0.1523
+      },
+      "alpha": 1,
+      "blendMode": "normal",
+      "duration": 1.2
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 16,
+      "width": 68
+    },
+    "heightM": 2,
+    "shape": "custom",
+    "widthM": 6
+  }
+}
