@@ -6243,7 +6243,25 @@ var BattleRenderer = (function () {
       autoDensity: true,
       width: Math.max(64, host.clientWidth || 640),
       height: Math.max(64, host.clientHeight || 480),
-      preference: 'webgl'
+      preference: 'webgl',
+      /* 關掉 Pixi 的指標事件系統。戰場上沒有任何 display object 是互動的
+         （全專案沒有一處設 eventMode／hitArea／pointer 監聽），所以這一整套
+         只有成本、沒有用途——而成本不是理論值：
+
+         EventSystem 把 pointermove 掛在 **document** 上（捕獲階段），每一則都會走
+         mapPositionToPoint → canvas.getBoundingClientRect()，那是一次**整份文件**的
+         強制版面重算。滑鼠只要在頁面上移動就一直觸發，跟有沒有移到戰場上無關；
+         而這份文件很大（技能頁 180+ 個階段節點、屬性列、背包），一次重算並不便宜。
+
+         2026-09-12 使用者回報「點技能圖標約 1 秒才彈出升級面板」。卡頓探針
+         （js/lagprobe.js，?lag=1）量到的形狀正好對得上：互動延遲 600ms 之中
+         「等待」10ms、「處理」1ms、「呈現」590ms——我們的 handler 跑完了，
+         畫面卻生不出來；而強制版面重算排行榜第一名就是這支 mapPositionToPoint，
+         1263 次，第二名只有 21 次。
+
+         ⚠️ 之後若要做「點擊／滑過戰場上的敵人」，把對應旗標打開再做，
+         並且記得那一次要付的代價就是上面這段。 */
+      eventFeatures: { move: false, globalMove: false, click: false, wheel: false }
     }).then(function () {
       return Promise.all([
         loadSheet('player', 'images/sprites/player', { outline: true }),
