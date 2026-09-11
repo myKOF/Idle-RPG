@@ -8,19 +8,19 @@
       "id": "orb-a-glow",
       "type": "sprite",
       "enabled": true,
-      "assetId": "particle-pack/png-black-background/light_01.png",
+      "assetId": "particle-pack/png-transparent/light_03.png",
       "zIndex": 10,
       "position": {
         "x": 0,
         "y": 0
       },
       "scale": {
-        "x": 0.28,
-        "y": 0.28
+        "x": 0.2038,
+        "y": 0.2038
       },
-      "alpha": 1,
-      "tint": "#3d91ff",
-      "blendMode": "add",
+      "alpha": 0.8,
+      "tint": "#75b1ff",
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
@@ -141,11 +141,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.15,
-        "y": 0.15
+        "x": 0.0756,
+        "y": 0.0756
       },
       "alpha": 1,
-      "tint": "#205497",
+      "tint": "#80b7ff",
       "blendMode": "normal",
       "alphaOverLife": [
         [
@@ -268,8 +268,8 @@
         "y": 0
       },
       "scale": {
-        "x": 0.25,
-        "y": 0.25
+        "x": 0.1747,
+        "y": 0.1747
       },
       "anchor": {
         "x": 0.5,
@@ -409,17 +409,17 @@
         0.4
       ],
       "spawn": {
-        "radius": 21,
+        "radius": 14.6748,
         "shape": "circle"
       },
       "speed": [
         0,
-        4
+        2.7952
       ],
       "spread": 360,
       "startScale": [
-        0.169,
-        0.281
+        0.1181,
+        0.1964
       ],
       "rotationStart": [
         0,
