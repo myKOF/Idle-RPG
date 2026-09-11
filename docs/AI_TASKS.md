@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Claude｜技能頁點擊卡頓：卡頓探針補上互動延遲與技能彈窗路徑（LAG-SKILL-MODAL-20260912）
+
+- 回報：點技能圖標約 1 秒才彈出升級面板，面板內操作同樣延遲。已確認開窗路徑（openSkillModal → renderSkillModal）是同步的、不等 Worker，本機測試服（Lv.1000、23 群組全滿＋超神、冰原 227 階、演武場 24 隻千倍血）量到點擊→彈窗 <5ms，未能重現，因此改為補強診斷能力而非盲改程式。
+- 修改：js/lagprobe.js 兩處。(1) 新增 Event Timing 觀測，把「按下去→畫面更新」拆成等待／處理／呈現三截——原本的長工作表與函式耗時表都看不到「等待」那一段，正是這次回報的形狀。(2) TARGETS 補上技能彈窗與提示這條路徑（openSkillModal、renderSkillModal、renderSkill2Modal、renderSkill2UltModal、showSkillTooltip、describeSkill2Group、describeSkill2Tier），原本一支都不在名單裡，依本檔開頭的警告會被讀成「這條路徑沒問題」。
+- 驗證：本機 8331 以 ?lag=1 載入，八支包裝全部生效、lagReport() 無錯誤、__lagData.input 欄位存在、Event Timing 為瀏覽器支援；build 339 檔通過。
+- 待處理：需使用者在自己的存檔與機器上以 `?lag=1` 重現後回報 `copy(__lagData)`，才能判定是主執行緒壅塞（等待）還是渲染成本（呈現）。
+
 ## Claude｜死亡重生補滿生命與法力（DEATH-REVIVE-MP-20260911）
 
 - 使用者規則：死亡重生後生命與法力都要補滿。盤點四條復活路徑後，野外死亡復活（js/combat.js fieldTick 的 reviveCd 出口）本來就兩者都補；高塔戰敗（死亡）回野外的 finishTowerFight 只補生命，玩家一落地就沒法力放技能，本輪補上法力。經使用者決定，兩個技能復活（超神【不屈鬥魂】、傳奇【天地共生】）維持原設計不動——前者仍只補滿生命，後者仍照 {pct}% 生命復活。

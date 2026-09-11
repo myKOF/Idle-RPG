@@ -28,7 +28,7 @@
     /^172\.(1[6-9]|2\d|3[01])\./.test(host);
   if (!internal) return;
 
-  var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0 };
+  var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], input: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0 };
 
   /* ---- 成長追蹤 ----
      用來抓「一旦開始卡就回不去，只有 F5 會好」這類累積型問題。
@@ -134,6 +134,31 @@
     }).observe({ entryTypes: ['longtask'] });
   } catch (e) {}
 
+  /* ---- 使用者真正感受到的延遲：按下去 → 畫面更新 ----
+     長工作表與函式耗時表回答的是「CPU 花在哪」，但回報進來的話是「點了沒反應」。
+     等待的那一段不屬於任何一支函式，兩張表上都看不見它——2026-09-12 的技能頁
+     卡頓回報就是這種：彈窗渲染量到只有 0.4ms，使用者卻等了一秒。
+     Event Timing 直接量整段，並拆成三截，責任歸屬一眼就分得出來：
+       等待 ＝ 事件產生到 handler 開始（主執行緒被別的工作佔住）
+       處理 ＝ 我們自己的 handler（開彈窗、重繪）
+       呈現 ＝ handler 結束到畫面真的更新（版面重算與繪製太重）
+     durationThreshold 的規格下限是 16ms，填更小也只會拿到 16。 */
+  try {
+    new PerformanceObserver(function (list) {
+      list.getEntries().forEach(function (e) {
+        P.input.push({
+          name: e.name,
+          total: Math.round(e.duration),
+          wait: Math.round(e.processingStart - e.startTime),
+          run: Math.round(e.processingEnd - e.processingStart),
+          paint: Math.round(e.startTime + e.duration - e.processingEnd),
+          at: Math.round(e.startTime / 1000)
+        });
+      });
+      if (P.input.length > 300) P.input.splice(0, 150);
+    }).observe({ type: 'event', durationThreshold: 16, buffered: true });
+  } catch (e) {}
+
   /* ---- 各渲染函式耗時 ---- */
   /* 觀察名單。漏掉一支的代價是「那條路徑在報告裡完全不存在」，而讀報告的人會把
      「沒出現」誤讀成「很快」。實際發生過：回報寶石頁卡頓，但點寶石放進九宮格走的是
@@ -154,7 +179,13 @@
     'drawMiniCanvas', 'renderMiniWindow', 'syncUiScale', 'resize',
     // 寶石頁：整支與各子區塊分開量，才看得出是哪一塊慢
     'renderGems', 'renderGemConvert', 'renderGemFusion', 'renderGemShop', 'renderGemDismantle',
-    'renderFuseInfo', 'updateShopCountdown'];
+    'renderFuseInfo', 'updateShopCountdown',
+    /* 技能頁：點技能圖標 → 升級彈窗。2026-09-12 回報「點了約 1 秒才彈出，彈窗裡的
+       操作也一樣慢」，而這條路徑上原本一支都不在名單裡——正是本段開頭警告的那種
+       情況：報告會把它顯示成「完全沒問題」。彈窗是同步渲染、不等 Worker 的，
+       所以要嘛這幾支自己慢，要嘛主執行緒被別人佔住；兩者都得先量得到才分得出來。 */
+    'openSkillModal', 'renderSkillModal', 'renderSkill2Modal', 'renderSkill2UltModal',
+    'showSkillTooltip', 'describeSkill2Group', 'describeSkill2Tier'];
 
   function wrapAll() {
     TARGETS.forEach(function (name) {
@@ -199,6 +230,14 @@
       }
       return row;
     }).sort(function (a, b) { return (b['佔用ms'] || b['次數']) - (a['佔用ms'] || a['次數']); });
+  }
+
+  /* 互動延遲一律以「最慢的排前面」呈現：卡頓回報要看的是最差那幾次，平均會把它抹平。 */
+  function inputRows() {
+    return P.input.slice().sort(function (a, b) { return b.total - a.total; }).map(function (e) {
+      return { '事件': e.name, '總延遲ms': e.total, '等待ms': e.wait, '處理ms': e.run,
+               '呈現ms': e.paint, '發生秒數': e.at };
+    });
   }
 
   window.lagReport = function () {
@@ -257,6 +296,10 @@
     console.table(growRows);
     console.log('計時器峰值 ' + P.timersPeak + ' 個');
 
+    if (P.input.length) {
+      console.log('%c--- 互動延遲（按下→畫面更新；只記錄超過 16ms 的）---', 'color:#c00;font-weight:bold');
+      console.table(inputRows().slice(0, 10));
+    }
     if (Object.keys(P.cmd).length) { console.log('--- 按鈕延遲（按下→可再按）---'); console.table(rows(P.cmd, true)); }
     console.log('--- 誰在強制版面重算（次數）---'); console.table(rows(P.layout, false).slice(0, 15));
     console.log('--- 各函式耗時 ---'); console.table(rows(P.fn, true).slice(0, 15));
@@ -269,7 +312,7 @@
       cells: document.querySelectorAll('.item-cell').length,
       enemies: document.querySelectorAll('.enemy-card').length,
       worker: { catchup: st.catchupSec, ticks: st.ticks, errors: st.errors, restarts: st.restarts },
-      layoutTotal: P.layoutTotal, longTasks: P.long.slice(),
+      layoutTotal: P.layoutTotal, longTasks: P.long.slice(), input: inputRows().slice(0, 20),
       renderer: br, timers: P.timers, timersPeak: P.timersPeak, grow: growRows,
       cmd: rows(P.cmd, true), layout: rows(P.layout, false).slice(0, 20), fn: rows(P.fn, true).slice(0, 20)
     };
@@ -279,7 +322,7 @@
   /* 成長追蹤刻意**不**歸零：抓累積型問題要的就是一條夠長的基線，
      中途重設會把「起始值」洗成已經漲上去的數字，等於自廢武功。 */
   window.lagReset = function () {
-    P.fn = {}; P.layout = {}; P.layoutTotal = 0; P.long = []; P.cmd = {};
+    P.fn = {}; P.layout = {}; P.layoutTotal = 0; P.long = []; P.input = []; P.cmd = {};
     P.t0 = performance.now();
     return '已歸零，重新計時（成長追蹤的基線保留）';
   };
