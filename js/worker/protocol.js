@@ -11,7 +11,8 @@
    因此：只用 ES5 語法、只掛全域、不碰 DOM、不碰 localStorage。
    說明文件：docs/WORKER_PROTOCOL.md（與本檔同步，衝突時以本檔為準）。 */
 
-/* v28（2026-09-09 持續場域）：vfx 新增可選 field，與 ground 地面提示分離；舊 ground 相容。
+/* v30（2026-09-12 水彈拋物線）：vfx 新增可選 arcM（正有限數，單位米）；缺省維持既有直線/退化行為。
+   v28（2026-09-09 持續場域）：vfx 新增可選 field，與 ground 地面提示分離；舊 ground 相容。
    v27（2026-09-03 狀態每跳的 Preset 特效）：VFX 事件新增可選旗標 presetOnly。
    帶著它的事件只有 VFX Preset 端畫得出來（狀態表的「作用特效」），顯示層沒有接上
    Preset Runtime 時必須整則忽略，而不是退回泛用畫法——DoT 每秒跳兩次，
@@ -51,7 +52,7 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 29;
+var WORKER_PROTOCOL_VERSION = 30;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

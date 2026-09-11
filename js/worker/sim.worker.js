@@ -10,7 +10,7 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=30', 'shim.js?v=6');
+importScripts('protocol.js?v=31', 'shim.js?v=7');
 importScripts(
   '../util.js?v=20260814-skill-summary', '../data.js?v=20260909-basic-irregular', '../status.js?v=20260903-vfx-preset-fields', '../formula.js?v=20260825-mire-earthguard-legendary', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
   '../item.js?v=20260805-tasks',

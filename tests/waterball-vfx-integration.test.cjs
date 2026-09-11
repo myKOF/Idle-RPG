@@ -41,3 +41,14 @@ test('fixed ground projectile ignores target movement and does not emit early sp
  rt.update(.5);const glow=nodes.find(n=>n.spec.assetUrl===p.layers[0].assetId&&n.t?.visible);assert.ok(Math.abs(glow.t.x-160)<1e-6);assert.ok(Math.abs(glow.t.y+80)<1e-6);
  rt.update(.6);assert.equal(rt.stats().projectiles,0);assert.equal(rt.stats().pending,0);rt.destroy();
 });
+
+test('real Worker shim preserves arc height and rendered water body pitches up then down',()=>{
+ const shim={};shim.self=shim;vm.createContext(shim);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/worker/shim.js'),'utf8'),shim);
+ shim.playCombatVfx({fxKind:'projectile',variant:'waterball',targets:[],travelMs:[1000],arcM:8,area:{fixedLanding:true,sourceX:0,sourceY:0,x:320,y:0,r:60},vfx:{projectile:p.id,hit:hit.id}});
+ const event=JSON.parse(JSON.stringify(shim.shimDrainUrgentVisualEvents()[0]));assert.equal(event.arcM,8);
+ const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:999,y:999})}});rt.registerPresets([p,hit]);assert.equal(rt.tryPlay(event),true);
+ rt.update(.25);const body=nodes.filter(n=>n.spec.assetUrl==='new_materials/orb/sphere_28.png'&&n.t?.visible).at(-1);assert.ok(body);assert.ok(Math.abs(body.t.rotation-Math.atan2(-160,320))<1e-6,'nose points up while rising');
+ rt.update(.25);assert.ok(Math.abs(body.t.rotation)<1e-6,'level at apex');rt.update(.25);assert.ok(Math.abs(body.t.rotation-Math.atan2(160,320))<1e-6,'nose points down while falling');rt.destroy();
+ for(const arcM of [0,-1,Infinity,NaN]){shim.playCombatVfx({arcM});assert.equal(shim.shimDrainUrgentVisualEvents()[0].arcM,undefined);}
+});
