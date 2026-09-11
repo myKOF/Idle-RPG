@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-waterball-flow",
+  "groups": [
+    {
+      "id": "proj-waterball-flow",
+      "name": "proj-waterball-flow",
+      "layerIds": [
+        "soft-water-light",
+        "water-droplet-trail",
+        "tapered-water-tail",
+        "flowing-water-body",
+        "clear-water-surface"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-waterball-flow"
+  ]
+}

@@ -1,0 +1,12 @@
+# 水流彈特效預覽
+
+- 任務：VFX-WATERBALL-20260911；Owner：Codex；狀態：In Progress。
+- 已核對保存的技能文檔 253 列：水球拋物線、離地最高 8 米。250–263 列無特效說明與參考圖，已告知使用者。
+- 依水流主題設計透明藍色流動水球、水滴拖尾、命中濺水與波紋。已目視圖庫 sphere_28、sphere_38，採既有單張素材，不新增圖集。
+- 允許新增 waterball-renew author、proj-waterball-flow / hit-waterball-splash preset/layout 與本文件。先預覽，禁止改正式技能表、命中或飛行時序；使用者確認後接入。
+- 驗證：Core 動態拋物線展示、Core/layout 測試、Build。預覽只代表特效與建議軌跡，未改遊戲。
+- 預覽完成（Review）：Core 動態拋物線展示已檢視水球與命中畫面，水滴 worldSpace 拖尾；播放結束 activeEffects/activeParticles 均為 0，無丟棄。136 項 Core/layout 測試通過。預览在系統暫存目錄，等待使用者確認，未接入、未提交。
+- 使用者提供青色蛋形參考：改青綠水體、沿航向拉長並收窄尾端，拖尾 rate 65→160、較長壽命與較大水珠；受擊增為 50 水珠、18 泡沫亮點、16 水霧及雙層擴散水紋。預覽飛行時間 0.9/1.15 秒（速度 +15%），接入時需同步 Excel 現行水流彈 speed ×1.15 與遊戲實際飛行/傷害時序，不可只改預覽。136 項測試與 Build 通過，動態預覽無丟棄且全部回收；仍待確認，未接入。
+- 2026-09-12 使用者批准接入：T1/T4 projectile 與 hit 接上新版，初發/彈射 speed 50.4→57.96 米/秒；共用飛行時間同時驅動特效與飄字排程。Runtime 讀 arcM，拋物線中點離地 8 米且沿切線朝向。保留原本傷害結算模型與 T4 冰霜新星範圍效果。
+- Excel ZIP 完整且所有樣式不變，逐格差異僅 AA182、AB182、AJ182、AA185、AB185；CSV 重建語意差異 0。146 項相關測試、Build 340 檔通過；未作桌面 Excel 或遊戲實機操作。
+- 匯出既有 sphere_38、dingbats-489 素材與 shipped 索引；export-assets --check 已是最新，Effects-Materials 工作區乾淨，無素材庫新 Commit。清除本輪預覽與暫存 renderer；狀態 Done，可合併，未推送。

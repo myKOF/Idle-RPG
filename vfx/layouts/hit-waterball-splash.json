@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-waterball-splash",
+  "groups": [
+    {
+      "id": "hit-waterball-splash",
+      "name": "hit-waterball-splash",
+      "layerIds": [
+        "water-impact-glow",
+        "spreading-water-ring",
+        "splash-droplets",
+        "outer-pressure-ring",
+        "foam-sparks",
+        "water-spray"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-waterball-splash"
+  ]
+}

@@ -598,6 +598,8 @@ var VFXRuntime = (function () {
          而不是每個彈射點折一次角。第一段沒有上一段，enterAngle 留 NaN＝直線。 */
       var enterAngle = chained ? arrivalAngle(ids[0]) : NaN;
       var ctrl = curveControl(from, to, enterAngle);
+      var arcHeight = presetId === 'proj-waterball-flow' ? Math.max(0,num(spec.arcM,0)) * (typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10) : 0;
+      if (arcHeight > 0) ctrl = {x:(from.x+to.x)/2,y:(from.y+to.y)/2-2*arcHeight};
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
       var facing = curveHeading(from, ctrl, to, 0);
       var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
@@ -610,7 +612,7 @@ var VFXRuntime = (function () {
         /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
         ref: ref, from: from, targetId: toId, to: directed ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
-        mult: mult, enterAngle: enterAngle, facing: facing,
+        mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
         dimensions: dimensions
       });
       return true;
@@ -1151,6 +1153,7 @@ var VFXRuntime = (function () {
         var k = Math.min(1, pr.t / pr.dur);
         var to = pr.to || ctx.posOf(pr.targetId);
         var ctrl = curveControl(pr.from, to, pr.enterAngle);
+        if (pr.arcHeight > 0) ctrl = {x:(pr.from.x+to.x)/2,y:(pr.from.y+to.y)/2-2*pr.arcHeight};
         var at = curvePoint(pr.from, ctrl, to, k);
         var movingDimensions = pr.dimensions;
         if (pr.thrustBody) {
@@ -1159,7 +1162,7 @@ var VFXRuntime = (function () {
           at = {x:pr.from.x+Math.cos(pr.facing)*tailDistance,y:pr.from.y+Math.sin(pr.facing)*tailDistance};
           movingDimensions = {scaleX:pr.dimensions.scaleX*Math.min(1,distance/pr.thrustBody),scaleY:pr.dimensions.scaleY};
         }
-        pr.facing = approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
+        pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
           step, PROJECTILE_FACING_TAU_SEC);
         var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },
@@ -1317,7 +1320,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260911-iceburst-crystal';
+  var DATA_VERSION = '20260912-waterball-flow';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

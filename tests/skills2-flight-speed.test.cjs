@@ -46,7 +46,7 @@ test('migrated speed defaults preserve legacy travel and respond to edits',()=>{
  vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.c=loadContext();',ctx);const c=ctx.c;
  const target={hp:100,pos:{x:200,y:0}};
  for(const gid of ['knife','waterball']){
-  const expected=c.bfTravelSeconds(target);assert.ok(Math.abs(c.sgConfiguredTravelSeconds(gid,target)-expected)<1e-9);
+  const expected=c.bfTravelSeconds(target)/(gid==='waterball'?1.15:1);assert.ok(Math.abs(c.sgConfiguredTravelSeconds(gid,target)-expected)<1e-9);
   c.SKILLS2[gid].tiers[0].fx.speed*=2;
   assert.ok(Math.abs(c.sgConfiguredTravelSeconds(gid,target)-expected/2)<1e-9);
  }

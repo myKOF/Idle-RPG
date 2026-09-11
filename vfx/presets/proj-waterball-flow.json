@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-waterball-flow",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "soft-water-light",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "scale": {
+        "x": 0.166,
+        "y": 0.166
+      },
+      "alpha": 0.25,
+      "tint": "#00d9b5",
+      "blendMode": "add"
+    },
+    {
+      "id": "water-droplet-trail",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_38.png",
+      "position": {
+        "x": -27,
+        "y": 0
+      },
+      "alpha": 0.8,
+      "tint": "#38ffe0",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 160
+      },
+      "maxParticles": 120,
+      "lifetime": [
+        0.24,
+        0.55
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        15,
+        48
+      ],
+      "direction": 180,
+      "spread": 35,
+      "startScale": [
+        0.0137,
+        0.0313
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.25
+        ]
+      ]
+    },
+    {
+      "id": "tapered-water-tail",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "position": {
+        "x": -20,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1133,
+        "y": 0.0723
+      },
+      "alpha": 0.72,
+      "tint": "#0ecbad",
+      "blendMode": "normal"
+    },
+    {
+      "id": "flowing-water-body",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_28.png",
+      "position": {
+        "x": 8,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1641,
+        "y": 0.1055
+      },
+      "alpha": 0.9,
+      "tint": "#0ecbad",
+      "blendMode": "normal",
+      "scaleXOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.07
+        ],
+        [
+          0.5,
+          0.97
+        ],
+        [
+          0.75,
+          1.04
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          0.94
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          0.75,
+          0.97
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "clear-water-surface",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_38.png",
+      "position": {
+        "x": 10,
+        "y": 0
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 0.1563,
+        "y": 0.0977
+      },
+      "alpha": 0.5,
+      "tint": "#bcfff0",
+      "blendMode": "add"
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 58,
+      "width": 90
+    },
+    "heightM": 3.6,
+    "shape": "custom",
+    "widthM": 5.6
+  }
+}
