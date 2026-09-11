@@ -46,6 +46,26 @@
   /* 伺服器版本對不上時要顯示的那一行；正常時是 null。 */
   var comboNotice = null;
 
+  /* 上一次打的關鍵字。存 sessionStorage 而不是記在變數裡，是因為選一份
+     preset 就會整頁重載（見上面的說明），而「搜尋 → 開一個來看 → 回去看
+     下一個符合的」正是最常見的用法——只記在記憶體的話，最需要它的那一次
+     剛好沒有。
+
+     也刻意不是 localStorage：那是長期偏好（格線、背景色）的位置，而
+     「剛才在找什麼」是當下的工作方式，跟 zoom／平移同一類。隔天打開編輯器
+     還躺著昨天的關鍵字，只會讓人以為清單壞了。sessionStorage 的生命週期
+     正好是一個分頁，撐得過重載、關掉就沒了。 */
+  var SEARCH_STORAGE_KEY = 'vfx-editor.presetSearch';
+
+  function lastComboQuery() {
+    try { return window.sessionStorage.getItem(SEARCH_STORAGE_KEY) || ''; }
+    catch (e) { return ''; }
+  }
+
+  function rememberComboQuery(q) {
+    try { window.sessionStorage.setItem(SEARCH_STORAGE_KEY, q || ''); } catch (e) { }
+  }
+
   var combo = {
     rows: [],          // [{ id, label, text, search }]
     shown: [],         // 目前符合關鍵字的（rows 的子集）
@@ -246,15 +266,37 @@
     var input = $('preset-search');
     var toggle = $('preset-toggle');
 
-    input.addEventListener('focus', function () {
-      /* 取得焦點就清空成一個空的搜尋框，直接打就是搜尋。
-         不用「全選等它被覆蓋」：點進來的那一下 mouseup 會把選取取消掉，
-         於是變成在既有文字中間插字，打出來的關鍵字一個都對不上。
-         目前開著哪一份不會因此消失——清單裡那一列有左緣色條標著。 */
-      input.value = '';
-      openCombo('');
+    /* 點進搜尋框時，游標定位交給下面的 mousedown 擋掉，這裡才敢做全選。
+       歷史紀錄：這一段原本是「取得焦點就清空」，因為當時試過全選而失敗——
+       點進來的那一下 mouseup 會把 focus 時做的選取取消掉，於是變成在既有
+       文字中間插字，打出來的關鍵字一個都對不上。當時的結論是「不用全選」，
+       但真正的原因不是全選不可行，而是少擋一個事件。
+       現在由 mousedown 阻止瀏覽器依點擊位置放游標，選取就留得住。
+
+       目前開著哪一份不會因此消失——清單裡那一列有左緣色條標著，
+       而且失焦時會把顯示文字放回去。 */
+    /* 還原關鍵字→全選→依關鍵字開清單，是一組不可分的動作。抽出來讓
+       focus 與箭頭鈕走同一條路：兩邊各寫一次遲早會分家，而分家的症狀是
+       「點輸入框有篩選、點箭頭沒有」這種說不清楚的行為差異。 */
+    function openComboWithLastQuery() {
+      var q = lastComboQuery();
+      input.value = q;
+      input.select();                           // 直接打就整段取代，不必先清空
+      openCombo(q);
+    }
+
+    input.addEventListener('focus', openComboWithLastQuery);
+    /* 讓 focus 時的全選活下來。第一次點（還沒 focus）時阻止預設行為，
+       改成自己呼叫 focus()：瀏覽器就不會在 mouseup 依點擊位置重設選取。
+       已經 focus 的情況不攔，這樣第二次點仍然可以把游標放到想改的位置，
+       與網址列同一種手感。 */
+    input.addEventListener('mousedown', function (e) {
+      if (document.activeElement === input) return;
+      e.preventDefault();
+      input.focus();
     });
     input.addEventListener('input', function () {
+      rememberComboQuery(input.value);
       combo.shown = comboFilter(input.value);
       combo.active = 0;
       $('preset-list').hidden = false;
@@ -288,9 +330,12 @@
     toggle.addEventListener('mousedown', function (e) {
       e.preventDefault();                       // 不要讓 input 失焦
       if (combo.open) { closeCombo(); return; }
-      input.focus();
-      input.select();
-      openCombo('');
+      /* 未聚焦時交給 focus handler；已經聚焦時 focus() 不會再觸發事件，
+         必須自己呼叫，否則「按箭頭收起、再按一次」會收得起來卻打不開。
+         這裡刻意不補 openCombo('')：那會把剛篩好的清單換成未篩選的全部，
+         箭頭鈕與直接點輸入框就會有說不清楚的行為差異。 */
+      if (document.activeElement === input) openComboWithLastQuery();
+      else input.focus();
     });
   }
 

@@ -495,3 +495,68 @@ test('VIEW-23 群組 Inspector 的絕對值欄位由 groupBounds 即時算出來
   assert.ok(!/baselineScale|originalSize/.test(layout),
     'layout 不該為了顯示倍率而記一個會過期的基準值');
 });
+
+/* ============================================================
+   Preset 搜尋框：記住上一次的關鍵字
+   ============================================================ */
+
+/* 「搜尋 → 開一個來看 → 回去看下一個符合的」是這個下拉最常見的用法，
+   而選一份 preset 會整頁重載。關鍵字只記在記憶體的話，最需要它的那一次
+   剛好沒有——所以必須撐得過重載。 */
+test('VIEW-26 搜尋關鍵字存 sessionStorage，撐得過選 preset 的整頁重載', function () {
+  const src = stripped();
+  assert.ok(/vfx-editor\.presetSearch/.test(src), '要有一個專屬的 storage key');
+  assert.ok(/sessionStorage\.getItem\(SEARCH_STORAGE_KEY\)/.test(src) &&
+    /sessionStorage\.setItem\(SEARCH_STORAGE_KEY/.test(src),
+    '關鍵字要讀寫 sessionStorage');
+
+  /* 不能用 localStorage：那是長期偏好（格線、背景色）的位置。
+     「剛才在找什麼」是當下的工作方式，與 zoom／平移同一類——
+     隔天打開編輯器還躺著昨天的關鍵字，只會讓人以為清單壞了。 */
+  const read = src.slice(src.indexOf('function lastComboQuery'),
+    src.indexOf('var combo = {'));
+  assert.ok(!/localStorage/.test(read), '關鍵字不得存進 localStorage');
+
+  /* storage 被關掉（無痕視窗、企業原則）時要退成空字串，不能讓整個
+     下拉跟著壞掉。 */
+  assert.ok(/catch \(e\) \{ return ''; \}/.test(read), '讀取失敗要退成空字串');
+});
+
+/* 這一條記著一個已經踩過的坑。focus 時做全選、卻沒擋住 mousedown 的話，
+   點進來的那一下 mouseup 會把選取取消掉，變成在既有文字中間插字——
+   打出來的關鍵字一個都對不上。當年的結論是「不要全選」，但真正的原因
+   不是全選不可行，而是少擋一個事件。 */
+test('VIEW-27 全選要擋住 mousedown 才活得下來，且第二次點擊仍能放游標', function () {
+  const src = stripped();
+  const wire = src.slice(src.indexOf('function wirePresetCombo'),
+    src.indexOf('function copyPresetName'));
+
+  assert.ok(/input\.select\(\)/.test(wire), 'focus 時要全選，直接打才能整段取代');
+  const md = wire.slice(wire.indexOf("addEventListener('mousedown'"));
+  assert.ok(/document\.activeElement === input\) return;/.test(md),
+    '已經聚焦時不得攔截，否則第二次點擊就放不了游標');
+  assert.ok(/e\.preventDefault\(\);[\s\S]{0,40}input\.focus\(\);/.test(md),
+    '未聚焦時要擋掉預設行為並自己 focus，選取才不會被 mouseup 清掉');
+});
+
+/* 兩邊各寫一次遲早分家，而分家的症狀是「點輸入框有篩選、點箭頭沒有」
+   這種說不清楚的行為差異。 */
+test('VIEW-28 輸入框與箭頭鈕走同一條開啟路徑', function () {
+  const src = stripped();
+  const wire = src.slice(src.indexOf('function wirePresetCombo'),
+    src.indexOf('function copyPresetName'));
+
+  assert.ok(/function openComboWithLastQuery/.test(wire), '開啟動作要抽成一個函式');
+  assert.ok(/addEventListener\('focus', openComboWithLastQuery\)/.test(wire),
+    'focus 直接用那個函式');
+
+  const toggle = wire.slice(wire.indexOf('toggle.addEventListener'));
+  assert.ok(/openComboWithLastQuery\(\)/.test(toggle),
+    '箭頭鈕也要走同一條路');
+  /* 已經聚焦時 focus() 不會再觸發事件，必須自己呼叫，
+     否則「按箭頭收起、再按一次」會收得起來卻打不開。 */
+  assert.ok(/document\.activeElement === input\) openComboWithLastQuery\(\)/.test(toggle),
+    '已聚焦時要自己呼叫，不能只靠 focus()');
+  assert.ok(!/openCombo\(''\)/.test(toggle),
+    "箭頭鈕不得用 openCombo('')：那會把剛篩好的清單換成未篩選的全部");
+});
