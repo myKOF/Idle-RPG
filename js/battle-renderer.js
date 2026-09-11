@@ -2857,6 +2857,16 @@ var BattleRenderer = (function () {
     state.fx = auraFx;
   }
 
+  /* 由技能狀態結束時立即撤掉玩家錨定的領域，避免死亡或 Buff 提前移除後
+     仍等到原本的顯示壽命才淡出。 */
+  function clearFollowAura(key) {
+    var state = _followAuras[key];
+    if (!state) return;
+    state.done = true;
+    if (state.fx) killFx(state.fx);
+    if (_followAuras[key] === state) delete _followAuras[key];
+  }
+
   /* 火牆（新版技能【無限火牆】）：沿傷害矩形長軸排列的直立火焰柱。
      模擬層送來的 area 帶 w／h／a（長、寬、朝向弧度），顯示層必須沿用同一組數字——
      傷害範圍與畫面範圍對不起來，是這類地板技能最難查的一種回報。
@@ -6308,6 +6318,7 @@ var BattleRenderer = (function () {
     syncBattle: syncBattle,
     status: status,
     clearDamageFloats: clearDamageFloats,
+    clearFollowAura: clearFollowAura,
     clearAllFloats: clearAllFloats,
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
        與內部狀態快照。正式流程不得依賴。 */

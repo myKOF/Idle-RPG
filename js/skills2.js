@@ -9789,6 +9789,10 @@ function sgCounterSplashTargets(exclude, enemies, fx) {
    =========================================================================== */
 function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
+  if (ctx.pEnt.hp <= 0 && typeof BattleRenderer !== 'undefined' &&
+      typeof BattleRenderer.clearFollowAura === 'function') {
+    BattleRenderer.clearFollowAura('sg-rock-field');
+  }
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
   if (SKILL2_RT.rock && SKILL2_RT.rock.until <= GT) {
     /* 【金剛不壞】的生命上限倍率跟著岩甲走：到期不重算屬性的話，那 +55% 會一直留著。
@@ -9800,6 +9804,10 @@ function tickSkill2(dt, ctx) {
     var adamantU = (typeof markStatsDirty === 'function') ? sgUlt('rockarmor', 'adamantBody') : null;
     var adamantRatio = adamantU ? 1 + sgUltVal(adamantU, 'hp') / 100 : 1;
     SKILL2_RT.rock = null;                                                 // 岩甲到期回收
+    if (typeof BattleRenderer !== 'undefined' &&
+        typeof BattleRenderer.clearFollowAura === 'function') {
+      BattleRenderer.clearFollowAura('sg-rock-field');
+    }
     if (adamantRatio > 1) {
       markStatsDirty();
       var afterSt = (typeof getStats === 'function') ? getStats() : null;
