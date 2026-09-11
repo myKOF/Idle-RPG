@@ -1,0 +1,531 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-thunderfall-sky",
+  "duration": 2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "violet-ion-envelope",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 0,
+      "position": {
+        "x": -145,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.7422,
+        "y": 0.2246
+      },
+      "alpha": 0.4,
+      "tint": "#6555ed",
+      "blendMode": "add",
+      "duration": 2
+    },
+    {
+      "id": "fragmenting-electric-wake",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 1,
+      "position": {
+        "x": -55,
+        "y": 0
+      },
+      "alpha": 0.48,
+      "tint": "#a4c9ff",
+      "blendMode": "add",
+      "duration": 2,
+      "emission": {
+        "mode": "rate",
+        "rate": 16
+      },
+      "maxParticles": 12,
+      "lifetime": [
+        0.28,
+        0.5
+      ],
+      "spawn": {
+        "height": 48,
+        "shape": "box",
+        "width": 40
+      },
+      "speed": [
+        60,
+        125
+      ],
+      "direction": 180,
+      "spread": 18,
+      "startScale": [
+        0.1074,
+        0.2246
+      ],
+      "rotationStart": [
+        -0.3,
+        0.3
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          0.6,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
+    },
+    {
+      "id": "lightning-stream-4",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 2,
+      "position": {
+        "x": -169,
+        "y": 26
+      },
+      "scale": {
+        "x": 0.5527,
+        "y": 0.0352
+      },
+      "alpha": 0.55,
+      "tint": "#758aff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          0.75,
+          0.9
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "lightning-stream-3",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 3,
+      "position": {
+        "x": -143,
+        "y": 13
+      },
+      "scale": {
+        "x": 0.5098,
+        "y": 0.0449
+      },
+      "alpha": 0.55,
+      "tint": "#758aff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          0.75,
+          0.9
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "lightning-stream-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 4,
+      "position": {
+        "x": -117,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.4668,
+        "y": 0.0547
+      },
+      "alpha": 0.55,
+      "tint": "#758aff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          0.75,
+          0.9
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "lightning-stream-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 5,
+      "position": {
+        "x": -91,
+        "y": -13
+      },
+      "scale": {
+        "x": 0.4238,
+        "y": 0.0645
+      },
+      "alpha": 0.55,
+      "tint": "#d2e6ff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          0.75,
+          0.9
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "lightning-stream-0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 6,
+      "position": {
+        "x": -65,
+        "y": -26
+      },
+      "scale": {
+        "x": 0.3809,
+        "y": 0.0742
+      },
+      "alpha": 0.55,
+      "tint": "#758aff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          0.75,
+          0.9
+        ],
+        [
+          1,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "ion-wake",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 7,
+      "position": {
+        "x": -110,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.6445,
+        "y": 0.1953
+      },
+      "alpha": 0.7,
+      "tint": "#4773ed",
+      "blendMode": "add",
+      "duration": 2
+    },
+    {
+      "id": "blue-corona",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 8,
+      "scale": {
+        "x": 0.3809,
+        "y": 0.3809
+      },
+      "alpha": 0.8,
+      "tint": "#305aff",
+      "blendMode": "add",
+      "duration": 2,
+      "scaleOverLife": [
+        [
+          0,
+          0.9299999999999999
+        ],
+        [
+          0.5,
+          1.07
+        ],
+        [
+          1,
+          0.9299999999999999
+        ]
+      ]
+    },
+    {
+      "id": "dense-core",
+      "type": "sprite",
+      "assetId": "new_materials/orb/sphere_47.png",
+      "zIndex": 9,
+      "scale": {
+        "x": 0.2148,
+        "y": 0.2148
+      },
+      "alpha": 1,
+      "tint": "#344c9d",
+      "blendMode": "normal",
+      "duration": 2,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1.25664
+        ]
+      ]
+    },
+    {
+      "id": "charged-shell",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "zIndex": 10,
+      "scale": {
+        "x": 0.1992,
+        "y": 0.1992
+      },
+      "alpha": 0.8,
+      "tint": "#729dff",
+      "blendMode": "add",
+      "duration": 2,
+      "scaleOverLife": [
+        [
+          0,
+          0.95
+        ],
+        [
+          0.5,
+          1.05
+        ],
+        [
+          1,
+          0.95
+        ]
+      ]
+    },
+    {
+      "id": "plasma-heart",
+      "type": "sprite",
+      "assetId": "new_materials/flare/flare_30.png",
+      "zIndex": 11,
+      "scale": {
+        "x": 0.2246,
+        "y": 0.2246
+      },
+      "alpha": 0.58,
+      "tint": "#c9e3ff",
+      "blendMode": "add",
+      "duration": 2,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -1.06814
+        ]
+      ]
+    },
+    {
+      "id": "surface-forks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 12,
+      "alpha": 0.85,
+      "tint": "#d5eaff",
+      "blendMode": "add",
+      "duration": 2,
+      "emission": {
+        "mode": "rate",
+        "rate": 17
+      },
+      "maxParticles": 4,
+      "lifetime": [
+        0.16,
+        0.27
+      ],
+      "spawn": {
+        "radius": 24,
+        "shape": "circle"
+      },
+      "speed": [
+        0,
+        6
+      ],
+      "spread": 360,
+      "startScale": [
+        0.166,
+        0.2539
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "trailing-charge",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 13,
+      "position": {
+        "x": -24,
+        "y": 0
+      },
+      "alpha": 0.8,
+      "tint": "#7ebeff",
+      "blendMode": "add",
+      "duration": 2,
+      "emission": {
+        "mode": "rate",
+        "rate": 24
+      },
+      "maxParticles": 14,
+      "lifetime": [
+        0.25,
+        0.5
+      ],
+      "spawn": {
+        "height": 38,
+        "shape": "box",
+        "width": 16
+      },
+      "speed": [
+        140,
+        230
+      ],
+      "direction": 180,
+      "spread": 12,
+      "startScale": [
+        0.0039,
+        0.0098
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 55
+    },
+    "shape": "projectile-circle"
+  }
+}

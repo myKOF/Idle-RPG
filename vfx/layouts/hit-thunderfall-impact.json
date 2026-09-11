@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-thunderfall-impact",
+  "groups": [
+    {
+      "id": "hit-thunderfall-impact",
+      "name": "hit-thunderfall-impact",
+      "layerIds": [
+        "impact-core",
+        "pressure-wave",
+        "electric-debris",
+        "ground-fork-0",
+        "ground-fork-1",
+        "ground-fork-2",
+        "ground-fork-3",
+        "ground-fork-4",
+        "ground-fork-5",
+        "ground-fork-6"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-thunderfall-impact"
+  ]
+}
