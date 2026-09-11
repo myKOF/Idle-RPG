@@ -184,6 +184,15 @@ test('【感電核心】：伴生雷球的持續時間 ×2（作用拍數跟著�
   assert.equal(long[0], base[0] * 2, '持續時間 +100% ＝ 拍數 ×2');
 });
 
+test('雷殞降速一半，視覺飛行與傷害落地使用相同時間', () => {
+ const c=loadContext();stubVfx(c);stubHits(c);setLegendary(c,[]);c.chance=()=>false;maxLevels(c,'thunderorb');
+ const emitted=[];c.sgEmitVfx=(gid,targets,sel,spec)=>{if(spec.variant==='thunder-fall')emitted.push(spec);};
+ const start=c.GT,expected=c.sgMeteorFallTiming().travelMs*2;
+ c.castSkill2(playerEnt(),[enemy(1e9,40,0,'a')],'thunderorb','mv-float');
+ assert.ok(emitted.length);assert.equal(emitted[0].travelMs[0],expected);
+ assert.ok(Math.abs(c.SKILL2_RT.meteors[0].at-start-expected/1000)<1e-8);
+});
+
 test('【雷殞落】：雷殞天落降下的雷球數量 +1 顆', () => {
   function fallCount(keys) {
     const c = loadContext();

@@ -25,7 +25,7 @@ test('THUNDERFALL 60 度斜落且只在權威落地事件播放衝擊', () => {
  const ps=['proj-thunderfall-sky','hit-thunderfall-impact'].map(id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets',id+'.json'),'utf8')));
  const {adapter,log}=makeAdapter(ps);
  const vfx={projectile:ps[0].id,hit:ps[1].id,attack:ps[1].id};
- assert.equal(adapter.tryPlay({fxKind:'rain',variant:'thunder-fall',targets:['mv-float-2'],area:{x:300,y:50,r:150},travelMs:[700],vfx}),true);
+ assert.equal(adapter.tryPlay({fxKind:'rain',variant:'thunder-fall',angle:null,targets:['mv-float-2'],area:{x:300,y:50,r:150},travelMs:[700],vfx}),true);
  adapter.update(.01);
  const body=log.nodes.find(n=>n.spec.assetUrl?.includes('sphere_47.png'));
  assert.ok(body);assert.ok(Math.abs(body.transforms.at(-1).rotation-(Math.PI/3+Math.PI*2*.2*.01/2))<.001);

@@ -583,7 +583,8 @@ var VFXRuntime = (function () {
         var landing = spec.area ? areaCentre(spec.area) : ctx.posOf(toId);
         from = { x: landing.x, y: landing.y - 500 * profile.skyScale };
         if (presetId === 'proj-meteor-inferno' || presetId === 'proj-thunderfall-sky') {
-          var fallAngle = num(spec.angle, Math.PI / 3);
+          // 正規化後「未指定角度」是 null，Number(null) 會變成 0，不能用 num。
+          var fallAngle = typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle : Math.PI / 3;
           from = { x: landing.x - Math.cos(fallAngle) * 500 * profile.skyScale,
             y: landing.y - Math.sin(fallAngle) * 500 * profile.skyScale };
         }

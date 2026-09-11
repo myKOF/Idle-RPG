@@ -6805,7 +6805,9 @@ function sgThunderfallSpec(g, st, lvs, lg, ultShatter, ultMult, burst) {
 
 /* 降下 n 顆巨大雷球（施放時與【雷殞天地碎】的永久節拍共用同一支）。 */
 function sgDropThunderfall(pEnt, st, spec, n, pool, primary, floatSel, out) {
-  var timing = sgMeteorFallTiming();
+  // Preset 直接使用 travelMs；雷殞降速 50%，落地結算共用同一時間。
+  var thunderTravelMs = sgMeteorFallTiming().travelMs * 2;
+  var timing = { travelMs: thunderTravelMs, fallMs: thunderTravelMs };
   var nextTarget = sgMeteorTargetBag(primary, pool, spec.radius);
   for (var f = 0; f < n; f++) {
     var target = nextTarget();
