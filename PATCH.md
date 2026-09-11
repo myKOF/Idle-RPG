@@ -1,6 +1,25 @@
 # PATCH.md
 
-## 迷你視窗按鈕移至關卡列上方與戰鬥區內部版本 FPS 顯示（Antigravity 2026-09-11）
+## 寒冰箭與寒冰爆裂箭技能特效實作（Antigravity 2026-09-11）
+
+- **企劃需求與文檔對照**（Google 試算表第 248～258 列）：
+  - 1階 寒冰箭：射程 30 米、速度 30 米/秒，箭體為「冰錐造型」，後方跟隨「冰霧粒子拖尾」，藍白色系。
+  - 7階 寒冰爆裂箭：凍結狀態結束後產生冰爆，「由中心向外爆發出冰刺爆破」，藍白色系。
+- **高解析專屬冰系素材自繪與雙倉庫同步**：
+  - `antigravity-authored/ice/ice-arrow-spike.png`：512×256 立體晶棱刻面冰錐箭頭貼圖，具有深藍折射陰暗面、淺青光澤亮面與中心高光白脊線。
+  - `antigravity-authored/ice/ice-burst-spikes.png`：512×512 360 度放射狀冰刺星爆貼圖，16 根銳利長短交錯的水晶冰錐由中心極速爆裂衝出。
+  - `antigravity-authored/ice/ice-spike-single.png`：256×128 單體高速飛射冰晶尖刺粒子貼圖。
+  - 依據 `AI_RULES.md` 第 6 節雙倉庫規範，素材同時保存於本地素材庫（`D:\MyGame\effects-materials\antigravity-authored\ice\`）與遊戲專案（`images/vfx/assets/antigravity-authored/ice/`），並更新 `vfx/asset-index.json`。
+- **Preset 製作與單一根群組規範**：
+  - `vfx/presets/proj-ice-shard.json`：7 層複合架構（外光暈、尾流細線、冰錐本體、透亮光澤、箭尖星芒破空點、柔和向後飄散的冰霧拖尾 `smoke_04`、冰晶火花碎屑 `circle_05`）。
+  - `vfx/presets/burst-ice-blast.json`：8 層複合架構（冰霜衝擊波震環、外層雙重冰環、凍氣雲霧、放射狀冰刺星爆、冰刺外光暈、核心瞬時爆閃、四向噴射的 20 枚結晶尖刺粒子、冰霜星塵火花）。
+  - `vfx/presets/ground-homing-ice-shard.json`：追蹤冰箭同步升級為同款立體冰錐與脈動光暈。
+  - 產生並更新對應的 `vfx/layouts/*.json` 單一根群組設定。
+- **展示與審查頁面**：
+  - 新增 `tools/vfx/editor/icearrow-review.html`，展示 1 階扇形雙箭齊射（夾角 15°）、5 階三箭散射、以及 7 階冰爆星刺最大張力定格展示。
+- **隔離規範**：
+  - 本次修改僅限於 VFX 預設、素材與展示層，未接入遊戲戰鬥與技能邏輯檔案。
+
 
 - **迷你視窗按鈕位置調整**（`index.html`、`js/ui.js`、`css/style.css`）：
   - 將迷你視窗按鈕（`#btn-pip` 📺）從戰鬥畫布右上角（`#battle-canvas-buttons`）移至關卡列右側上方（`#stage-bar .stage-tools`），徹底解決原本 3 顆按鈕並排導致中央任務欄（`#quest-bar`）文字過長時被遮擋的問題。
