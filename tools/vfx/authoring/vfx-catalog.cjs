@@ -108,6 +108,7 @@ def('beam-ice', 'bolt', '寒冰槍光束：沿 +X 長 200px 的冰藍 #4da6ff �
 /* 範圍爆發 burst（attack 角色；名目半徑 100px） */
 def('burst-fire', 'burst', '火焰爆發：中心黃白閃光 + 橘紅 #e63924 火球膨脹（半徑 30→100px）+ 3 道扁橢圓震波環 #ffb21c/#7d1708 依序擴散 + 18 顆火舌向外飛並下墜；0.86s。', { nominal: 'R 100px', dur: 0.9 });
 def('burst-frost-nova', 'burst', '冰霜新星：從中心擴散到半徑 100px 的冰藍 #4da6ff 圓（填色 α0.24）+ 白色 #f2fbff 粗外環 + 淡藍 #79d8ff 內環（0.72 倍）+ 冰晶碎片四散；0.5s smoothstep。', { nominal: 'R 100px', dur: 0.55 });
+def('burst-icearrow-crystal', 'burst', '寒冰爆裂箭：藍白放射冰刺爆開後停留，再碎冰淡出。', { nominal: 'R 150px', dur: 1.05 });
 def('burst-ice-blast', 'burst', '寒冰爆裂：冰藍閃光 + 大量菱形冰晶碎片向外炸開（半徑到 100px）+ 白色冰霧擴散。', { nominal: 'R 100px', dur: 0.6 });
 def('burst-frost-freeze', 'burst', '凍結：目標身上瞬間長出淡藍冰塊（#f2fbff 高光、#4da6ff 底、多片 mask-shape 冰晶疊成 60px 高）並定格 0.4s 後碎裂成冰晶粒子。', { nominal: 'target 60px', dur: 0.8 });
 def('burst-wind', 'burst', '狂風碎裂：兩道扁橢圓（縱向 0.6）風環由 45%→105% 與 20%→70% 半徑擴散，淺綠 #86efac 外環寬 3px、白色 #ffffff 內環寬 1.5px；0.34s。', { nominal: 'R 100px', dur: 0.34 });
@@ -392,7 +393,7 @@ g('icearrow', [
   { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' },                     // T4 貫穿冰箭（ice-arrow-pierce）
   { ground: 'ground-icearrow-frost' },                                // T5 冰箭散射（追蹤場域 ice-arrow-homing）
   _,
-  { attack: 'burst-ice-blast', hit: 'hit-ice' }                         // T7 寒冰爆裂箭（ice-blast）
+  { attack: 'burst-icearrow-crystal', hit: 'hit-ice' }                         // T7 寒冰爆裂箭（ice-blast）
 ], { tearsOfIce: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } });
 g('waterball', [
   { projectile: 'proj-waterball', hit: 'hit-ice', cast: 'cast-magic' }, // T1 水流彈

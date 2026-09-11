@@ -1,0 +1,1304 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-icearrow-crystal",
+  "duration": 1.05,
+  "loop": false,
+  "layers": [
+    {
+      "id": "cold-pressure",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "scale": {
+        "x": 0.3418,
+        "y": 0.3418
+      },
+      "alpha": 0.5,
+      "tint": "#4cb8ff",
+      "blendMode": "add",
+      "duration": 0.36,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.2,
+          0.6
+        ],
+        [
+          1,
+          1.3
+        ]
+      ]
+    },
+    {
+      "id": "outward-frost",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "alpha": 0.27,
+      "tint": "#89ceee",
+      "blendMode": "normal",
+      "emission": {
+        "count": 14,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.65
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        80,
+        160
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0703,
+        0.127
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.7,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          1.5
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-0",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 0,
+      "rotation": -0.0873,
+      "scale": {
+        "x": 0.1875,
+        "y": 0.2148
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#e5faff",
+      "blendMode": "normal",
+      "delay": 0,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-1",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 1,
+      "rotation": 0.4488,
+      "scale": {
+        "x": 0.2207,
+        "y": 0.25
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#b1e7ff",
+      "blendMode": "normal",
+      "delay": 0.012,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-2",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 0,
+      "rotation": 0.9849,
+      "scale": {
+        "x": 0.2539,
+        "y": 0.2852
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#e5faff",
+      "blendMode": "normal",
+      "delay": 0.024,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-3",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 1,
+      "rotation": 1.2591,
+      "scale": {
+        "x": 0.2871,
+        "y": 0.2148
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#b1e7ff",
+      "blendMode": "normal",
+      "delay": 0,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-4",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 0,
+      "rotation": 1.7952,
+      "scale": {
+        "x": 0.1875,
+        "y": 0.25
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#e5faff",
+      "blendMode": "normal",
+      "delay": 0.012,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-5",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 1,
+      "rotation": 2.3313,
+      "scale": {
+        "x": 0.2207,
+        "y": 0.2852
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#b1e7ff",
+      "blendMode": "normal",
+      "delay": 0.024,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-6",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 0,
+      "rotation": 2.6055,
+      "scale": {
+        "x": 0.2539,
+        "y": 0.2148
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#e5faff",
+      "blendMode": "normal",
+      "delay": 0,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-7",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 1,
+      "rotation": 3.1416,
+      "scale": {
+        "x": 0.2871,
+        "y": 0.25
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#b1e7ff",
+      "blendMode": "normal",
+      "delay": 0.012,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-8",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 0,
+      "rotation": 3.6777,
+      "scale": {
+        "x": 0.1875,
+        "y": 0.2852
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#e5faff",
+      "blendMode": "normal",
+      "delay": 0.024,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-9",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 1,
+      "rotation": 3.9519,
+      "scale": {
+        "x": 0.2207,
+        "y": 0.2148
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#b1e7ff",
+      "blendMode": "normal",
+      "delay": 0,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-10",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 0,
+      "rotation": 4.488,
+      "scale": {
+        "x": 0.2539,
+        "y": 0.25
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#e5faff",
+      "blendMode": "normal",
+      "delay": 0.012,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-11",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 1,
+      "rotation": 5.0241,
+      "scale": {
+        "x": 0.2871,
+        "y": 0.2852
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#b1e7ff",
+      "blendMode": "normal",
+      "delay": 0.024,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-12",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 0,
+      "rotation": 5.2983,
+      "scale": {
+        "x": 0.1875,
+        "y": 0.2148
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#e5faff",
+      "blendMode": "normal",
+      "delay": 0,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "radial-crystal-13",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 1,
+      "rotation": 5.8344,
+      "scale": {
+        "x": 0.2207,
+        "y": 0.25
+      },
+      "anchor": {
+        "x": 0.1,
+        "y": 0.5
+      },
+      "alpha": 0.94,
+      "tint": "#b1e7ff",
+      "blendMode": "normal",
+      "delay": 0.012,
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0.05
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.62,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "flying-ice-splinters",
+      "type": "particle",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "alpha": 0.9,
+      "tint": "#bceeff",
+      "blendMode": "normal",
+      "emission": {
+        "count": 26,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.25,
+        0.65
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        130,
+        265
+      ],
+      "direction": 0,
+      "spread": 360,
+      "drag": 1.5,
+      "startScale": [
+        0.0293,
+        0.0605
+      ],
+      "alignToVelocity": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.45,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0.25
+        ]
+      ]
+    },
+    {
+      "id": "ice-glints",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_04.png",
+      "alpha": 0.7,
+      "tint": "#e1faff",
+      "blendMode": "add",
+      "emission": {
+        "count": 18,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.2,
+        0.55
+      ],
+      "spawn": {
+        "radius": 12,
+        "shape": "circle"
+      },
+      "speed": [
+        90,
+        210
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0117,
+        0.0254
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "white-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1406,
+        "y": 0.1406
+      },
+      "alpha": 0.75,
+      "tint": "#ecfcff",
+      "blendMode": "add",
+      "duration": 0.18,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.25
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0.1
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 150
+    },
+    "radiusM": 6,
+    "shape": "circle"
+  }
+}

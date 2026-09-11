@@ -63,3 +63,14 @@ test('simulation and renderer integrate the same continuous turning arc',()=>{
  assert.ok(Math.abs(arrow.t.x-f.pos.x)<1e-7);assert.ok(Math.abs(arrow.t.y-f.pos.y)<1e-7,'six rendered frames match one simulation arc');
  const prev={...arrow.t};rt.update(1/60);assert.ok(arrow.t.rotation>prev.rotation,'turn continues between snapshots');rt.destroy();
 });
+
+test('T7 ice burst uses approved crystal effect and holds its expanded shape for half a second',()=>{
+ const burst=require('../vfx/presets/burst-icearrow-crystal.json');
+ assert.match(fs.readFileSync(require.resolve('../js/skills2.js'),'utf8'),/attack: 'burst-icearrow-crystal'/);
+ const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:90,y:70})}});rt.registerPresets([burst]);
+ assert.equal(rt.tryPlay({fxKind:'burst',variant:'ice-blast',area:{x:90,y:70,r:60},vfx:{attack:burst.id}}),true);
+ rt.update(.14);const n=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(n);const initial={...n.t};
+ rt.update(.48);assert.equal(n.t.scaleX,initial.scaleX);assert.equal(n.t.scaleY,initial.scaleY);assert.equal(n.t.alpha,initial.alpha);
+ rt.update(.2);assert.ok(n.t.alpha<initial.alpha,'only fades after hold');rt.update(1);assert.ok(!nodes.some(n=>n.t?.visible),'all burst nodes are reclaimed');rt.destroy();
+});
