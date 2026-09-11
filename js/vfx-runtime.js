@@ -669,7 +669,8 @@ var VFXRuntime = (function () {
         g.uniform = true;
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
-      g.trot = num(area.a, 0);
+      g.trot = g.presetId === 'ground-icearrow-frost' &&
+        typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(area.a, 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
       var prevX = g.bx + g.ox, prevY = g.by + g.oy;
@@ -1296,7 +1297,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260911-icearrow-integrated';
+  var DATA_VERSION = '20260911-icearrow-heading-size';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

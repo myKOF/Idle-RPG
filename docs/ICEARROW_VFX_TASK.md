@@ -18,3 +18,5 @@
 - 接入完成：Excel/CSV/JS/catalog 的四條外觀引用同步、正式 shipped-assets 新增冰錐。新增 ground-icearrow-frost 與 layout，與已確認投射物共用圖層，保留追蹤尺寸與方向；普通/貫穿/冰之淚改用 proj-icearrow-frost 與 hit-icearrow-shatter。T7 冰爆仍保留原特效。
 - 驗證：接入與速度、Core/layout 共 141/141 通過；正式 Runtime Adapter 實測無目標的貫穿起飛、追蹤場域等比冰錐及回收；build 338/338、config_tables 語意差異 0、diff check 通過。Excel 全表比較僅 AA172/AB172/AA175/AB175/AC176/AA181/AB181 七格改動，ZIP 完整；未作 Excel 桌面及遊戲畫面實機驗證。
 - 提交前刪除一次性 Excel 接線腳本；正式回歸測試保留。分支 codex/icearrow-vfx-integration 可供合併，尚未推送；與 Claude 高塔快取更新整合時應保留双方改動。
+- 使用者回報追蹤冰箭始終朝右且太小：Runtime 原先以 area.a 決定朝向，但圓形追蹤場域實際航向在 area.moveA。僅對 ground-icearrow-frost 改用 moveA 並沿用連續轉角補間；未帶航向的舊事件退回 area.a。普通及追蹤冰箭的箭體、光暈、冰霧、冰屑、發射偏移與粒子擴散等比放大 2 倍，碰撞範圍、飛行速度、傷害及命中爆點不變。
+- 驗證：正式 Runtime 回歸覆蓋 area.a=0 而 moveA 不同、向上/向左/向下轉向、等比外觀尺寸精確為舊版 2 倍。接入/Core/layout 共 138/138 通過，build 338/338，diff check 通過；未另作遊戲畫面實機驗證。主頁與 preset 快取版號同步，無暫存產物。

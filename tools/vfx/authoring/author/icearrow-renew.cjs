@@ -27,16 +27,26 @@ function bake(){
  index.assetCount=index.assets.length;fs.writeFileSync(file,JSON.stringify(index,null,2)+'\n');
  console.log('icicle.png: '+buf.length+' bytes, single frame');
 }
+function doubleVisualSize(p){
+ for(const l of p.layers){
+  if(l.scale){l.scale.x*=2;l.scale.y*=2;}
+  if(l.position){l.position.x*=2;l.position.y*=2;}
+  if(l.startScale)l.startScale=Array.isArray(l.startScale)?l.startScale.map(v=>v*2):l.startScale*2;
+  if(l.spawn&&l.spawn.radius)l.spawn.radius*=2;
+  if(l.speed)l.speed=Array.isArray(l.speed)?l.speed.map(v=>v*2):l.speed*2;
+ }
+ return p;
+}
 function projectile(){
  const k=require('../preset-kit.cjs');
  const mist=k.particle({id:'world-ice-mist',asset:k.A.smokeT,x:-28,z:-2,rate:172,maxParticles:96,lifetime:[.2,.42],spawnRadius:4,speed:[10,28],direction:180,spread:35,startPx:[14,24],alpha:.3,tint:'#92d8ff',blend:'add',scaleOverLife:[[0,.4],[.5,1],[1,1.4]],alphaOverLife:[[0,0],[.15,.6],[.5,.35],[1,0]],rotationStart:[0,6.28],rotationSpeed:[-.6,.6]});
  mist.worldSpace=true;
  const grains=k.particle({id:'ice-grains',asset:k.A.star04,x:-20,z:-1,rate:72,maxParticles:40,lifetime:[.15,.32],spawnRadius:5,speed:[8,30],direction:180,spread:55,startPx:[2,5],alpha:.7,tint:'#c8f4ff',blend:'add',alphaOverLife:k.C.fadeOut,scaleOverLife:[[0,1],[1,.15]]});grains.worldSpace=true;
- return {id:'proj-icearrow-frost',duration:1.2,loop:true,sizing:{shape:'custom',widthM:6,heightM:2,authored:{width:68,height:16}},layers:[
+ return doubleVisualSize({id:'proj-icearrow-frost',duration:1.2,loop:true,sizing:{shape:'custom',widthM:6,heightM:2,authored:{width:68,height:16}},layers:[
  mist,grains,
  k.sprite({id:'cold-halo',asset:k.A.glowSoft,sizeX:82,sizeY:30,tint:'#369ddd',alpha:.24,blend:'add',duration:1.2}),
  k.sprite({id:'faceted-icicle',asset,size:78,alpha:1,blend:'normal',z:2,duration:1.2})
- ]};
+ ]});
 }
 function hit(){
  const k=require('../preset-kit.cjs');

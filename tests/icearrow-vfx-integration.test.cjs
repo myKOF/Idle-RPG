@@ -15,8 +15,15 @@ test('production adapter renders moving icicles and maintains homing aspect rati
  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:240,y:0})}});rt.registerPresets(presets);
  assert.equal(rt.tryPlay({fxKind:'projectile',variant:'ice-arrow-pierce',targets:[],angle:0,lineLength:240,travelMs:[410],vfx:{projectile:presets[0].id,hit:presets[1].id}}),true);rt.update(.1);
  const arrow=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(arrow);assert.ok(arrow.t.x>0&&arrow.t.x<240);
- assert.equal(rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:.1,area:{id:'homing',x:100,y:80,r:15,a:.7,speed:585,moveA:.7},vfx:{ground:presets[2].id}}),true);rt.update(.05);
+ assert.equal(rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:.1,area:{id:'homing',x:100,y:80,r:15,a:0,speed:585,moveA:.7},vfx:{ground:presets[2].id}}),true);rt.update(.05);
  const flying=nodes.filter(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(flying.length>=2);
  const homing=flying.at(-1);assert.ok(Math.abs(homing.t.scaleX-homing.t.scaleY)<1e-6,'uniform sizing preserves sharp icicle shape');
+ assert.ok(Math.abs(homing.t.rotation-.7)<1e-6,'arrow uses movement heading, not circular area angle');
+ assert.ok(Math.abs(homing.t.scaleX-(.1523*2*15/34))<1e-5,'homing arrow is twice the previous visual size');
+ for(const angle of [Math.PI/2,Math.PI,-Math.PI/2]){
+  rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:2,area:{id:'homing',x:100,y:80,r:15,a:0,speed:585,moveA:angle},vfx:{ground:presets[2].id}});
+  for(let j=0;j<30;j++)rt.update(1/60);
+  const delta=Math.atan2(Math.sin(homing.t.rotation-angle),Math.cos(homing.t.rotation-angle));assert.ok(Math.abs(delta)<.05,'turns to each new flight direction');
+ }
  rt.update(5);assert.equal(rt.stats().grounds,0);rt.destroy();
 });
