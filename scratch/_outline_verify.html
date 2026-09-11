@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>穿透式角色輪廓：程式化驗證</title>
+<!--
+  驗的是 js/battle-renderer.js 裡**現役的那份程式**：整支抓下來，用大括號配對把
+  buildOutlineFrames／syncOutline 挖出來執行（作法同 tests/field-motion-smoothness.test.cjs），
+  所以函式改名或改壞會直接紅掉，不會安靜跳過。
+
+  1. 輪廓貼圖：外框是否恰好比本體外擴 R、內部是否確實空心、有沒有跨格污染
+  2. 逐幀對齊：syncOutline 算出來的世界矩陣，是否與「把輪廓掛在 body 底下」完全相同
+     （拿 Pixi 自己算的 body.worldTransform 當標準答案，不是拿我自己的算式對自己）
+  用 http://127.0.0.1:8321/scratch/_outline_verify.html 開；結果同時寫進 window.__OUTLINE_RESULT。
+-->
+<style>
+  body { background:#14161c; color:#e8ecf4; font:13px/1.6 monospace; margin:16px; }
+  .ok { color:#7CFF9B; } .bad { color:#ff8080; }
+  canvas { image-rendering: pixelated; }
+  #log { white-space: pre-wrap; }
+</style>
+<div id="log">執行中…</div>
+<script src="../js/vendor/pixi.min.js"></script>
+<script>
+(function () {
+  var log = document.getElementById('log');
+  var lines = [], fails = 0;
+  function say(txt) { lines.push(txt); log.innerHTML = lines.join('\n'); }
+  function check(cond, txt) {
+    if (!cond) fails++;
+    say((cond ? '<span class="ok">PASS</span> ' : '<span class="bad">FAIL</span> ') + txt);
+    return cond;
+  }
+
+  /* 大括號配對：把某支函式的原始碼整段挖出來 */
+  function extract(src, header) {
+    var at = src.indexOf(header);
+    if (at < 0) throw new Error('找不到函式：' + header);
+    var i = src.indexOf('{', at), depth = 0;
+    for (var j = i; j < src.length; j++) {
+      var ch = src[j];
+      if (ch === '{') depth++;
+      else if (ch === '}') { depth--; if (depth === 0) return src.slice(at, j + 1); }
+    }
+    throw new Error('大括號沒有配對：' + header);
+  }
+
+  function loadImage(url) {
+    return new Promise(function (res, rej) {
+      var img = new Image();
+      img.onload = function () { res(img); };
+      img.onerror = function () { rej(new Error('載入失敗 ' + url)); };
+      img.src = url;
+    });
+  }
+
+  /* 讀一張 canvas／image 的 alpha，回傳 bbox 與 alpha 陣列 */
+  function alphaOf(source, sx, sy, w, h) {
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var g = c.getContext('2d');
+    g.drawImage(source, sx, sy, w, h, 0, 0, w, h);
+    var d = g.getImageData(0, 0, w, h).data;
+    var a = new Uint8Array(w * h);
+    var minX = w, minY = h, maxX = -1, maxY = -1, n = 0;
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var v = d[(y * w + x) * 4 + 3];
+        a[y * w + x] = v;
+        if (v > 8) {
+          n++;
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      }
+    }
+    return { a: a, w: w, h: h, count: n, minX: minX, minY: minY, maxX: maxX, maxY: maxY };
+  }
+
+  Promise.all([
+    fetch('../js/battle-renderer.js?t=' + Date.now()).then(function (r) { return r.text(); }),
+    fetch('../images/sprites/player.json?t=' + Date.now()).then(function (r) { return r.json(); }),
+    loadImage('../images/sprites/player.png?t=' + Date.now())
+  ]).then(function (got) {
+    var src = got[0], manifest = got[1], img = got[2];
+
+    /* ---- 取出現役程式 ---- */
+    var outlineSrc = extract(src, 'function buildOutlineFrames(sheet, tex)');
+    var syncSrc = extract(src, 'function syncOutline(ent)');
+    var rotSrc = extract(src, 'function rotateOutlinePt(pt, rad)');
+    var cfgLine = /var PLAYER_OUTLINE = \{[^}]*\};/.exec(src);
+    check(!!cfgLine, '抓到 PLAYER_OUTLINE 設定：' + (cfgLine ? cfgLine[0] : '—'));
+    var PLAYER_OUTLINE = (new Function(cfgLine[0] + '; return PLAYER_OUTLINE;'))();
+    var R = Math.max(1, Math.round(PLAYER_OUTLINE.radiusPx));
+
+    var buildOutlineFrames = (new Function('PIXI', 'PLAYER_OUTLINE', 'document', 'console',
+      outlineSrc + '; return buildOutlineFrames;'))(PIXI, PLAYER_OUTLINE, document, console);
+
+    /* ---- 照 loadSheet 的方式組一份 sheet ---- */
+    var fw = manifest.frameWidth, fh = manifest.frameHeight;
+    var texBase = PIXI.Texture.from(img);
+    texBase.source.scaleMode = 'nearest';
+    var anims = {};
+    for (var key in manifest.anims) {
+      var a = manifest.anims[key];
+      var hasDur = Array.isArray(a.durations) && a.durations.length === a.frames;
+      var frames = [];
+      for (var i = 0; i < a.frames; i++) {
+        var t = new PIXI.Texture({ source: texBase.source, frame: new PIXI.Rectangle(i * fw, a.row * fh, fw, fh) });
+        frames.push(hasDur ? { texture: t, time: a.durations[i] } : t);
+      }
+      anims[key] = frames;
+    }
+    var sheet = { manifest: manifest, anims: anims, speeds: {}, outline: null };
+    sheet.outline = buildOutlineFrames(sheet, { source: { resource: img } });
+    if (!check(!!sheet.outline, 'buildOutlineFrames 有回傳輪廓貼圖表')) return done();
+
+    var outCanvas = sheet.outline.source.resource;
+    check(outCanvas.width === img.width && outCanvas.height === img.height,
+      '輪廓圖與原圖同尺寸（' + outCanvas.width + '×' + outCanvas.height + '）');
+
+    /* ---- 1. 每一幀：外擴量、空心、不跨格 ---- */
+    var worstDilate = 0, minRing = 1e9, maxInside = 0, checked = 0, bledCells = 0;
+    for (var k in manifest.anims) {
+      var row = manifest.anims[k].row, cnt = manifest.anims[k].frames;
+      for (var f = 0; f < cnt; f++) {
+        var sx = f * fw, sy = row * fh;
+        var body = alphaOf(img, sx, sy, fw, fh);
+        var line = alphaOf(outCanvas, sx, sy, fw, fh);
+        if (body.count === 0) continue;
+        checked++;
+        /* 外框應該剛好外擴 R（角色沒有頂到格線，所以不會被裁掉） */
+        var dl = Math.abs((body.minX - line.minX) - R) + Math.abs((line.maxX - body.maxX) - R) +
+                 Math.abs((body.minY - line.minY) - R) + Math.abs((line.maxY - body.maxY) - R);
+        if (dl > worstDilate) worstDilate = dl;
+        if (line.count < minRing) minRing = line.count;
+        /* 空心：本體完全不透明的地方，輪廓必須是透明的 */
+        var inside = 0;
+        for (var p = 0; p < body.a.length; p++) if (body.a[p] === 255 && line.a[p] > 8) inside++;
+        if (inside > maxInside) maxInside = inside;
+        /* 不跨格：輪廓不得貼到格子邊界（貼到就代表被隔壁格污染或自己溢出） */
+        if (line.minX === 0 || line.minY === 0 || line.maxX === fw - 1 || line.maxY === fh - 1) bledCells++;
+      }
+    }
+    check(checked > 0, '有內容的幀數：' + checked);
+    check(worstDilate === 0, '每一幀的輪廓都恰好比本體外擴 ' + R + ' 像素（最大誤差 ' + worstDilate + '）');
+    check(maxInside === 0, '輪廓內部完全空心，不蓋住角色本體（最多殘留 ' + maxInside + ' 像素）');
+    check(minRing > 50, '最細的一幀仍有 ' + minRing + ' 個輪廓像素（沒有整幀空掉）');
+    check(bledCells === 0, '沒有任何一幀的輪廓碰到格線（跨格污染 ' + bledCells + ' 幀）');
+
+    /* ---- 2. syncOutline 的對齊：與 Pixi 自己算的 body 世界矩陣比對 ---- */
+    var app = new PIXI.Application();
+    return app.init({ width: 320, height: 240, preference: 'webgl', backgroundAlpha: 0 }).then(function () {
+      var world = new PIXI.Container();
+      world.x = -7321.5; world.y = 480.25;          // 鏡頭平移，兩邊都會吃到
+      app.stage.addChild(world);
+      var outlineLayer = new PIXI.Container();
+      var root = new PIXI.Container();
+      var wrap = new PIXI.Container();
+      var body = new PIXI.Sprite(anims.idle[0].texture || anims.idle[0]);
+      body.anchor.set(manifest.anchorX, manifest.anchorY);
+      body.scale.set(manifest.scale);
+      wrap.addChild(body); root.addChild(wrap);
+      world.addChild(root); world.addChild(outlineLayer);
+
+      var sp = new PIXI.Sprite();
+      sp.anchor.copyFrom(body.anchor);
+      outlineLayer.addChild(sp);
+
+      var S = { sheets: { player: sheet } };
+      var syncOutline = (new Function('PIXI', 'S', rotSrc + '; var _outlinePt = { x: 0, y: 0 };' +
+        syncSrc + '; return syncOutline;'))(PIXI, S);
+      var ent = { outline: sp, body: body, bodyWrap: wrap, root: root, sheetName: 'player' };
+
+      /* 幾種實際會出現的姿勢：走路翻面、受擊抖動、倒地旋轉、受擊彈跳縮放 */
+      var poses = [
+        { name: '站立', root: { x: 1200, y: -340 }, wrap: {} },
+        { name: '向左（翻面）', root: { x: 90210, y: 512 }, wrap: { scaleX: -1, x: -6.5, y: 1.5 } },
+        { name: '倒地旋轉', root: { x: -455.25, y: 88 }, wrap: { rotation: -Math.PI / 2 * 0.83, x: 3, y: -2 } },
+        { name: '受擊彈跳（root 縮放）', root: { x: 0, y: 0, scale: 1.11 }, wrap: { scaleX: -1, rotation: 0.21, x: 14, y: -3 } }
+      ];
+      var worstErr = 0, worstPose = '';
+      poses.forEach(function (pose) {
+        root.x = pose.root.x; root.y = pose.root.y;
+        root.scale.set(pose.root.scale || 1);
+        wrap.x = pose.wrap.x || 0; wrap.y = pose.wrap.y || 0;
+        wrap.rotation = pose.wrap.rotation || 0;
+        wrap.scale.set(pose.wrap.scaleX || 1, pose.wrap.scaleY || 1);
+        syncOutline(ent);
+        app.render();     // 讓 Pixi 把兩邊的世界矩陣都算好
+        var m1 = body.worldTransform, m2 = sp.worldTransform;
+        var err = Math.max(Math.abs(m1.a - m2.a), Math.abs(m1.b - m2.b), Math.abs(m1.c - m2.c),
+          Math.abs(m1.d - m2.d), Math.abs(m1.tx - m2.tx), Math.abs(m1.ty - m2.ty));
+        if (err > worstErr) { worstErr = err; worstPose = pose.name; }
+      });
+      check(worstErr < 0.002, '四種姿勢下輪廓與本體的世界矩陣一致（最大誤差 ' +
+        worstErr.toFixed(6) + (worstPose ? '，' + worstPose : '') + '）');
+      check(sp.texture && sp.texture.source === sheet.outline.source, 'syncOutline 有掛上對應幀的輪廓貼圖');
+      check(sp.visible === true, '取得貼圖後輪廓為可見');
+
+      /* ---- 3. 眼睛看的那一張：本體 → 蓋火焰 → 加輪廓 ---- */
+      var stage = new PIXI.Container();
+      var bg = new PIXI.Graphics();
+      bg.rect(0, 0, 320, 240).fill(0x14161c);
+      stage.addChild(bg);
+      [0, 1, 2].forEach(function (col) {
+        var b = new PIXI.Sprite(anims.idle[0].texture || anims.idle[0]);
+        b.anchor.set(manifest.anchorX, manifest.anchorY);
+        b.scale.set(manifest.scale);
+        b.x = 55 + col * 105; b.y = 200;
+        stage.addChild(b);
+        if (col >= 1) {
+          var fire = new PIXI.Graphics();
+          fire.ellipse(b.x, b.y - 55, 52, 62).fill({ color: 0xffb020, alpha: 0.88 });
+          stage.addChild(fire);
+        }
+        if (col === 2) {
+          var o = new PIXI.Sprite(sheet.outline.map.get(anims.idle[0].texture || anims.idle[0]));
+          o.anchor.copyFrom(b.anchor); o.scale.copyFrom(b.scale);
+          o.x = b.x; o.y = b.y;
+          o.tint = PLAYER_OUTLINE.color; o.alpha = PLAYER_OUTLINE.alpha;
+          stage.addChild(o);
+        }
+      });
+      return app.renderer.extract.base64({ target: stage, resolution: 2 }).then(function (data) {
+        window.__OUTLINE_PNG = data;
+        var el = new Image(); el.src = data; document.body.appendChild(el);
+        done();
+      });
+    });
+
+    function done() {
+      window.__OUTLINE_RESULT = { fails: fails, lines: lines.map(function (s) { return s.replace(/<[^>]+>/g, ''); }) };
+      say(fails === 0 ? '<span class="ok">全部通過</span>' : '<span class="bad">' + fails + ' 項失敗</span>');
+    }
+  }).catch(function (err) {
+    fails++;
+    window.__OUTLINE_RESULT = { fails: fails, error: String(err && err.stack || err) };
+    say('<span class="bad">EXCEPTION</span> ' + (err && err.stack || err));
+  });
+})();
+</script>

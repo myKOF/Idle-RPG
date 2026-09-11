@@ -28,6 +28,10 @@ var BattleRenderer = (function () {
   function legacyVfxByQuery() {
     return typeof location !== 'undefined' && /[?&]vfx=legacy(&|$)/.test(location.search || '');
   }
+  /* ?outline=0：關掉穿透式角色輪廓（見 PLAYER_OUTLINE），用來直接比對有無輪廓的畫面。 */
+  function outlineDisabledByQuery() {
+    return typeof location !== 'undefined' && /[?&]outline=0(&|$)/.test(location.search || '');
+  }
   var REDUCED_MOTION = (typeof matchMedia === 'function') &&
     matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -55,6 +59,18 @@ var BattleRenderer = (function () {
   var PLAYER_SKILL_FLOAT_DRIFT = 16;        // 起始後只再向外滑一小段，避免回到人物中心
   var PLAYER_SKILL_FLOAT_LIFE_SEC = 1.05;   // 一般技能名稱／傷害字的顯示時間
   var PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC = PLAYER_SKILL_FLOAT_LIFE_SEC * 2;
+
+  /* ---- 穿透式角色輪廓 ----
+     特效一多，角色整個被蓋住，玩家找不到自己在哪。這裡的作法不是把角色搬到
+     特效前面（那會失去「人在火焰中」的空間感），而是：本體維持原樣被特效遮擋，
+     另外把一圈**只有邊緣**的輪廓畫在所有特效之上。輪廓是空心的，中間仍然看得到
+     特效，所以只多出「人在哪裡」這個資訊，不改變其他任何表現。
+       color     亮綠。戰場上的火光、冰藍、雷黃都不在這個色相附近，最好認
+       alpha     輪廓本身的不透明度
+       radiusPx  輪廓寬度，單位是**素材像素**，畫到螢幕上還要乘 manifest 的 scale
+                 （player.json 是 3.154，所以 2 ≒ 螢幕上 6px）
+     ?outline=0 可以整個關掉，用來比對有無輪廓的畫面。 */
+  var PLAYER_OUTLINE = { color: 0x3dff6e, alpha: 0.92, radiusPx: 2 };
 
   /* 元素主題色：優先沿用 js/vfx.js 的 VFX_ELEM_THEME，載入順序異常時退回內建表。 */
   var FALLBACK_THEME = {
@@ -443,7 +459,7 @@ var BattleRenderer = (function () {
 
      多個動作可以指到同一個 row：普攻會在 attack1~3 之間隨機挑，
      但素材可能只有一段，指同一列即可，不必把同一段畫三份。 */
-  function loadSheet(name, base) {
+  function loadSheet(name, base, opts) {
     return fetch(base + '.json?v=' + Date.now()).then(function (r) {
       if (!r.ok) throw new Error('manifest http ' + r.status);
       return r.json();
@@ -470,9 +486,140 @@ var BattleRenderer = (function () {
              沒有的話它是幀率（PIXI 以 60fps 為基準）。 */
           speeds[key] = hasDur ? 1 : (a.fps || 8) / 60;
         }
-        S.sheets[name] = { manifest: manifest, anims: anims, speeds: speeds };
+        S.sheets[name] = { manifest: manifest, anims: anims, speeds: speeds, outline: null };
+        /* 輪廓貼圖是從這份序列幀推出來的，所以在同一個地方一起備好。 */
+        if (opts && opts.outline) S.sheets[name].outline = buildOutlineFrames(S.sheets[name], tex);
       });
     });
+  }
+
+  /* ---- 穿透式角色輪廓的貼圖 ----
+     從序列幀自己的 alpha 推出一圈「只有邊緣」的貼圖，不必另外要一份美術素材
+     （正式圖替換時也就不會漏掉輪廓那一份）：
+       1. 把整格往半徑內的每個位移各畫一次，疊出一個放大的剪影（dilate）
+       2. 用原圖 destination-out 挖掉本體，剩下的就是貼著角色外緣的一圈
+       3. source-in 填白——顏色交給 sprite.tint，換色或給別的角色用都不必重算
+     全程用 canvas 合成而不是逐像素讀 ImageData：getImageData 在 file:// 會因為
+     畫布被污染而整支拋例外，合成則不會。
+     逐格處理而不是整張一次做：位移會跨過格線，整張做會把隔壁格的角色糊進來。
+     代價是角色若頂到格線，輪廓會在那裡被切掉——96×64 的格子裡角色只佔中間
+     一小塊，實際不會發生。
+     任何一步失敗就回 null，畫面單純沒有輪廓，其餘流程不受影響。 */
+  function buildOutlineFrames(sheet, tex) {
+    var res = tex && tex.source ? tex.source.resource : null;
+    var iw = res ? (res.naturalWidth || res.width || 0) : 0;
+    var ih = res ? (res.naturalHeight || res.height || 0) : 0;
+    var manifest = sheet.manifest;
+    var fw = manifest.frameWidth, fh = manifest.frameHeight;
+    if (!iw || !ih || !fw || !fh) return null;
+    var R = Math.max(1, Math.round(PLAYER_OUTLINE.radiusPx));
+    /* 位移量表：半徑內的所有整數格點（不含原點）。用整個圓盤而不是八個方向，
+       武器、髮尾這種細長的部位才不會出現斷點。 */
+    var offs = [];
+    for (var oy = -R; oy <= R; oy++) {
+      for (var ox = -R; ox <= R; ox++) {
+        if ((ox || oy) && (ox * ox + oy * oy) <= R * R + 0.01) offs.push(ox, oy);
+      }
+    }
+    try {
+      var out = document.createElement('canvas');
+      out.width = iw; out.height = ih;
+      var octx = out.getContext('2d');
+      var cell = document.createElement('canvas');
+      cell.width = fw + R * 2; cell.height = fh + R * 2;
+      var cctx = cell.getContext('2d');
+      if (!octx || !cctx) return null;
+      var cols = Math.floor(iw / fw), rows = Math.floor(ih / fh);
+      for (var ry = 0; ry < rows; ry++) {
+        for (var cx = 0; cx < cols; cx++) {
+          var sx = cx * fw, sy = ry * fh;
+          cctx.globalCompositeOperation = 'source-over';
+          cctx.clearRect(0, 0, cell.width, cell.height);
+          for (var i = 0; i < offs.length; i += 2) {
+            cctx.drawImage(res, sx, sy, fw, fh, R + offs[i], R + offs[i + 1], fw, fh);
+          }
+          cctx.globalCompositeOperation = 'destination-out';
+          cctx.drawImage(res, sx, sy, fw, fh, R, R, fw, fh);
+          cctx.globalCompositeOperation = 'source-in';
+          cctx.fillStyle = '#ffffff';
+          cctx.fillRect(0, 0, cell.width, cell.height);
+          octx.drawImage(cell, R, R, fw, fh, sx, sy, fw, fh);
+        }
+      }
+      var base = PIXI.Texture.from(out);
+      base.source.scaleMode = 'nearest';    // 與本體同樣是像素風，放大不要糊
+      /* 對照表的鍵是本體那一幀的 Texture 物件：執行時直接拿 body.texture 去查，
+         不必自己追動畫狀態（curAnim／currentFrame 在動作切換的那一幀會對不上，
+         而對不上就是輪廓和本體擺出不同姿勢）。 */
+      var map = new Map();
+      for (var key in sheet.anims) {
+        if (!Object.prototype.hasOwnProperty.call(sheet.anims, key)) continue;
+        var row = manifest.anims[key].row;
+        var frames = sheet.anims[key];
+        for (var fi = 0; fi < frames.length; fi++) {
+          map.set(frames[fi].texture || frames[fi], new PIXI.Texture({
+            source: base.source,
+            frame: new PIXI.Rectangle(fi * fw, row * fh, fw, fh)
+          }));
+        }
+      }
+      return { map: map, source: base.source };
+    } catch (err) {
+      console.warn('[battle-renderer] 角色輪廓貼圖產生失敗，這場沒有輪廓：',
+        err && err.message ? err.message : err);
+      return null;
+    }
+  }
+
+  /* 建立輪廓精靈。掛在獨立的輪廓層而**不是**角色的 root 底下：掛進 root 就會
+     跟著本體一起被特效蓋住，那正是這個功能要解決的事。
+     沒有輪廓貼圖（產生失敗或 ?outline=0）就回 null，其餘流程照舊。 */
+  function makeOutlineSprite(sheetName, body) {
+    var sheet = S.sheets[sheetName];
+    if (!sheet || !sheet.outline || !body) return null;
+    if (!S.layers || !S.layers.outline || outlineDisabledByQuery()) return null;
+    var sp = new PIXI.Sprite();
+    sp.anchor.copyFrom(body.anchor);
+    sp.tint = PLAYER_OUTLINE.color;
+    sp.alpha = PLAYER_OUTLINE.alpha;
+    sp.visible = false;                  // 等第一次同步取到貼圖再顯示
+    S.layers.outline.addChild(sp);
+    return sp;
+  }
+
+  /* 輪廓與本體的逐幀對齊。
+     輪廓不在 root 底下，沒有人會替它跟著動，所以這裡把 root → bodyWrap → body
+     那條鏈自己算一次。只算到 root 為止：輪廓層與 root 同樣是 world 的直屬子層，
+     鏡頭平移對兩邊一視同仁，不必重算。 */
+  var _outlinePt = { x: 0, y: 0 };
+  function rotateOutlinePt(pt, rad) {
+    if (!rad) return;
+    var c = Math.cos(rad), s = Math.sin(rad), x = pt.x;
+    pt.x = x * c - pt.y * s;
+    pt.y = x * s + pt.y * c;
+  }
+  function syncOutline(ent) {
+    var sp = ent ? ent.outline : null;
+    if (!sp || sp.destroyed) return;
+    var body = ent.body, wrap = ent.bodyWrap, root = ent.root;
+    if (!body || body.destroyed || !wrap || !root || root.destroyed) { sp.visible = false; return; }
+    var sheet = S.sheets[ent.sheetName];
+    var tex = (sheet && sheet.outline) ? sheet.outline.map.get(body.texture) : null;
+    if (!tex) { sp.visible = false; return; }   // 查不到對應幀就寧可不畫，也不要畫錯姿勢
+    var pt = _outlinePt;
+    pt.x = body.x * wrap.scale.x;
+    pt.y = body.y * wrap.scale.y;
+    rotateOutlinePt(pt, wrap.rotation);
+    pt.x = (pt.x + wrap.x) * root.scale.x;
+    pt.y = (pt.y + wrap.y) * root.scale.y;
+    rotateOutlinePt(pt, root.rotation);
+    sp.texture = tex;
+    sp.x = root.x + pt.x;
+    sp.y = root.y + pt.y;
+    sp.rotation = root.rotation + wrap.rotation;
+    sp.scale.set(root.scale.x * wrap.scale.x * body.scale.x,
+      root.scale.y * wrap.scale.y * body.scale.y);
+    sp.visible = root.visible && wrap.visible && body.visible;
   }
 
   /* 建立一個序列幀動畫精靈。
@@ -1034,6 +1181,8 @@ var BattleRenderer = (function () {
     var body = makeAnimSprite('player', 'idle');
     bodyWrap.addChild(body);
     root.addChild(bodyWrap);
+    /* 穿透式角色輪廓（見 PLAYER_OUTLINE）：獨立掛在特效層之上，逐幀鏡像本體。 */
+    var outline = makeOutlineSprite('player', body);
 
     /* 生命／法力條：跟著角色走，畫在腳下（與敵人同一套視覺語言） */
     var vitals = new PIXI.Graphics();
@@ -1078,7 +1227,7 @@ var BattleRenderer = (function () {
     root.zIndex = 0;
     S.layers.entity.addChild(root);
     S.player = {
-      id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap,
+      id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap, outline: outline,
       vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
       hud: S.layers.playerHud,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
@@ -5550,6 +5699,9 @@ var BattleRenderer = (function () {
       updateFlashJolt(p, dt);
       drawPlayerVitals();
     }
+    /* 輪廓層在 dt === 0（暫停）也要對齊：它不是 root 的子節點，
+       暫停時若跳過這一步，輪廓會停在上一次的位置。 */
+    if (p) syncOutline(p);
 
     /* ---- 鏡頭：即時對準玩家 ----
        world 整層平移，玩家因此永遠在畫面正中央；地板是螢幕座標，
@@ -5766,10 +5918,15 @@ var BattleRenderer = (function () {
     /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，
        但仍跟著 world 一起移動，避免被任何戰鬥表現層蓋住。 */
     var playerHud = new PIXI.Container();
+    /* 穿透式角色輪廓：必須在所有特效之上（那正是它存在的理由），但仍在飄字與
+       玩家 HUD 之下。整層只有一個精靈，成本等同多畫一張貼圖。 */
+    var outlineLayer = new PIXI.Container();
     var overlay = new PIXI.Container();
     world.addChild(zone); world.addChild(presetZone);
     world.addChild(entity);
-    world.addChild(fx); world.addChild(presetFx); world.addChild(floatLayer);
+    world.addChild(fx); world.addChild(presetFx);
+    world.addChild(outlineLayer);
+    world.addChild(floatLayer);
     world.addChild(playerHud);
     app.stage.addChild(bg);
     app.stage.addChild(world);
@@ -5814,6 +5971,7 @@ var BattleRenderer = (function () {
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
       presetZone: presetZone, presetFx: presetFx,
+      outline: outlineLayer,
       playerHud: playerHud, overlay: overlay
     };
     drawDeathFog(0);
@@ -6050,7 +6208,7 @@ var BattleRenderer = (function () {
       preference: 'webgl'
     }).then(function () {
       return Promise.all([
-        loadSheet('player', 'images/sprites/player'),
+        loadSheet('player', 'images/sprites/player', { outline: true }),
         loadSheet('boss', 'images/sprites/boss_generic'),
         loadFireFlare(),
         PIXI.Assets.load('images/vfx/thrust_lance.png?v=20260815-narrow-rect').then(function (tex) {
@@ -6119,7 +6277,7 @@ var BattleRenderer = (function () {
          nodes.entity 只增不減則是屍體沒清掉。 */
       nodes: {
         fx: kids(L.fx), zone: kids(L.zone), entity: kids(L.entity),
-        float: kids(L.float), overlay: kids(L.overlay)
+        float: kids(L.float), overlay: kids(L.overlay), outline: kids(L.outline)
       }
     };
   }
