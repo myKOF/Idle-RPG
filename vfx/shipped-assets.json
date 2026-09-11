@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 121,
+  "assetCount": 122,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -852,6 +852,13 @@
       "package": "spritemancer-vfx",
       "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
       "fileSize": 2834222
+    },
+    {
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "relativePath": "codex-authored/icearrow/icicle.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:f1cb57f1513785b18f5de5e7f3ab60158ab87a9a33ecef98e6b019304a4dab04",
+      "fileSize": 17820
     }
   ]
 }

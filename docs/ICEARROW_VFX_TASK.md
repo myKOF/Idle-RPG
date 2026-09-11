@@ -14,3 +14,7 @@
 - 最終驗證：速度欄與火系/飛刀/水系 97/97、突刺/迴旋斬/雷幕定向 6/6、Core/layout 136/136；build 337/337；diff check 通過。SKILLS2 語意比較僅速度控制及等價 mps 改名。預覽 v2 使用 585px/s、冰霧 172/s、冰屑 72/s，補償較舊预覽的速度差後，每段路徑的粒子密度仍達兩倍；零丟棄、結束全部回收。
 - 速度欄與速度調整已寫入遊戲配置；新寒冰箭外觀仍未接入、未 commit，等待使用者確認預覽。
 - 使用者已要求 commit：提交全部必要的配置、速度控制、正式測試、特效與製作工具；刪除 scratch/icearrow-preview 全部暫存產物。新外觀維持尚未接入，未推送或合併。
+- 使用者回報遊戲仍為舊菱形冰箭並要求改正：接入 T1/T4/冰之淚的冰錐與命中、追蹤冰箭場域；場域使用同一圖層但以半徑等比縮放，避免橢圓碰撞範圍將細長冰錐拉成菱形。沿用已確認速度及拖尾。Claude 正在修改 tower 快取；依使用者既有獨立分支授權建立 codex/icearrow-vfx-integration，不動其工作副本。
+- 接入完成：Excel/CSV/JS/catalog 的四條外觀引用同步、正式 shipped-assets 新增冰錐。新增 ground-icearrow-frost 與 layout，與已確認投射物共用圖層，保留追蹤尺寸與方向；普通/貫穿/冰之淚改用 proj-icearrow-frost 與 hit-icearrow-shatter。T7 冰爆仍保留原特效。
+- 驗證：接入與速度、Core/layout 共 141/141 通過；正式 Runtime Adapter 實測無目標的貫穿起飛、追蹤場域等比冰錐及回收；build 338/338、config_tables 語意差異 0、diff check 通過。Excel 全表比較僅 AA172/AB172/AA175/AB175/AC176/AA181/AB181 七格改動，ZIP 完整；未作 Excel 桌面及遊戲畫面實機驗證。
+- 提交前刪除一次性 Excel 接線腳本；正式回歸測試保留。分支 codex/icearrow-vfx-integration 可供合併，尚未推送；與 Claude 高塔快取更新整合時應保留双方改動。
