@@ -643,6 +643,11 @@ Preset 的節點掛在 `S.layers.presetZone`／`presetFx` 兩個獨立容器，
 不能混進 `S.layers.zone`／`fx`——`sweepOrphanFxNodes()` 會把那兩層裡沒被 `S.fx` 追蹤的
 孩子全部 destroy，Core 的節點會被當成孤兒清掉。
 
+⚠️ `presetFx` **不是最上層**。它上面還有 `S.layers.outline`（穿透式角色輪廓，見
+`battle-renderer.js` 的 `PLAYER_OUTLINE`）、飄字層與玩家 HUD：玩家角色的一圈亮綠輪廓
+會壓在所有 Preset 特效之上，那是刻意的——特效一多時角色會整個被蓋住，
+輪廓是唯一還看得到「人在哪裡」的東西。Preset 本身不受影響：輪廓只有邊緣那一圈，中間是空的。
+
 盤點結果：
 
 | 既有能力 | 評估 |

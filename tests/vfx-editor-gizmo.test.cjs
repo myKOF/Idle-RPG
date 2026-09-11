@@ -714,9 +714,15 @@ test('ROW-4 改動勾選會把焦點移到該列', function () {
 test('ROW-5 群組改名是就地編輯，不用 window.prompt', function () {
   const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
   const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-  assert.ok(!/window\.prompt/.test(noComments),
-    'prompt 會擋住整個分頁，而且看不到自己在改哪一列');
   assert.ok(/function beginInlineRename/.test(noComments));
+  /* 禁止的是「用 prompt 改列上的名字」，不是整個編輯器不准有 prompt：
+     那條理由（看不到自己在改哪一列）只在清單列上成立。另存新檔要輸入的是
+     新檔名，畫面上沒有哪一列要對照，用 prompt 反而最直接。
+     所以範圍收在改名這條路上，而不是整個檔案。 */
+  const rowRename = noComments.slice(noComments.indexOf('function renderLayerList'),
+    noComments.indexOf('function beginInlineRename'));
+  assert.ok(!/window\.prompt/.test(rowRename),
+    '列上的改名不得用 prompt——會擋住整個分頁，而且看不到自己在改哪一列');
 
   const fn = noComments.slice(noComments.indexOf('function beginInlineRename'));
   const body = fn.slice(0, fn.indexOf('\n  }\n'));

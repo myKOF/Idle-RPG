@@ -745,6 +745,82 @@ test('W7 啟動器與伺服器對身分標記與埠範圍的認知一致', funct
     '啟動器掃描的埠範圍必須涵蓋伺服器會用到的 ' + base + '~' + (base + tries - 1));
 });
 
+/* ============================================================
+   另存新檔
+   ============================================================ */
+
+test('SA1 另存新檔就是換掉 preset.id 再走一次一般存檔', function () {
+  /* 存檔目的地本來就由 preset.id 決定，所以不需要第二條寫入路徑——
+     多一條就多一個會與伺服器契約分家的地方。sourcePresetId 也要跟著換，
+     否則 saveTargetProblem 會把它當成「手動改了 id」而擋下來；那道守門
+     正是為了防止誤覆蓋，這裡是唯一有權明確改掉它的地方。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function commitSaveAs'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/state\.preset\.id = newId/.test(body));
+  assert.ok(/state\.sourcePresetId = newId/.test(body));
+  assert.ok(/savePreset\(\)/.test(body), '要重用一般存檔，不要另寫一條寫入路徑');
+  assert.equal((src.match(/method: 'PUT'/g) || []).length, 1,
+    'preset 的寫入請求只能有一處');
+
+  const html = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/index.html'), 'utf8');
+  assert.ok(/id="btn-save-as"/.test(html), '要有「另存新檔」按鈕');
+});
+
+test('SA2 撞名一律拒絕，而且是在存之前重新抓一次清單', function () {
+  /* 手上那份清單是開啟編輯器當下抓的。另一個分頁、另一位 AI 在這段期間
+     新增的檔案不在裡面——那正是會被悄悄蓋掉的情況。清單抓不到就不存，
+     寧可失敗也不要賭：「不會改到舊特效」是這個功能存在的理由。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function saveAsPreset'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/fetch\(PRESET_LIST_URL\)/.test(body), '要重新抓清單');
+  const fetchAt = body.indexOf('fetch(PRESET_LIST_URL)');
+  const commitAt = body.indexOf('commitSaveAs');
+  assert.ok(fetchAt >= 0 && commitAt > fetchAt, '要先抓清單再存');
+  assert.ok(/indexOf\(newId\) >= 0/.test(body), '撞名要擋');
+  assert.ok(/catch\(/.test(body), '清單抓不到也要走失敗路徑，不能直接存下去');
+  /* 用 confirm 讓人「確定要覆寫嗎」是不行的：使用者按的是「另存新檔」，
+     覆寫不該是這顆按鈕的可能結果之一。 */
+  assert.ok(!/confirm\(/.test(body), '撞名要直接拒絕，不是問使用者要不要覆寫');
+});
+
+test('SA3 存檔失敗要把 preset.id 捲回去', function () {
+  /* id 是在送出前就改掉的。失敗卻不還原的話，使用者會停在一個指向不存在
+     檔案的編輯器上，下一次按存檔就真的把那個檔寫出來——「另存失敗」
+     反而多了一份半成品。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function commitSaveAs'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/if \(!ok\) \{/.test(body), '要處理失敗');
+  ['state.preset.id = prev.id', 'state.sourcePresetId = prev.source',
+    'state.savedText = prev.savedText'].forEach(function (line) {
+      assert.ok(body.indexOf(line) >= 0, '失敗時要還原：' + line);
+    });
+  /* savePreset 必須回報成敗，否則上面那段永遠不會執行 */
+  const save = src.slice(src.indexOf('function savePreset'));
+  const saveBody = save.slice(0, save.indexOf('\n  }\n'));
+  assert.ok(/return ok;/.test(saveBody), 'savePreset 要 resolve 成敗');
+  assert.ok(/return Promise\.resolve\(false\)/.test(saveBody),
+    '前置檢查擋下來時也要 resolve false，不能回 undefined');
+});
+
+test('SA4 另存之後根群組要改名，否則新檔一落地就違反單一根群組', function () {
+  /* 群組 id／name 取 preset id（VFX_AGENT_WORKFLOW §9.11）。不改的話
+     presetId 是新的、群組卻還叫舊名，LAYOUT-4 會紅——而且是編輯器
+     自己造成的違規。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function renameRootGroup'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/groups\.length !== 1/.test(body),
+    '只有「剛好一個群組」才動它——使用者自己分好幾組時不要亂猜改哪一個');
+  assert.ok(/g\.id = newId/.test(body));
+  assert.ok(/keyOf\('group', newId\)/.test(body), 'order 裡的 group: 也要跟著換');
+  /* 使用者手動取過的名字要留著，那是他想看到的標籤 */
+  assert.ok(/before\.name === before\.id/.test(body),
+    '只有「名稱本來就等於舊 id」時才改名');
+});
+
 test('W9 關閉端點的防護與存檔 API 同一套（不是任何網頁都殺得掉伺服器）',
   withSandbox(async function (sb, h) {
     /* 這是一個「任何人打得到就能停掉服務」的端點，所以它必須通過與寫入 API
