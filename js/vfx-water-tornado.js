@@ -59,14 +59,14 @@ var VFXWaterTornado = (function () {
   function sheetGeometry(spec, p) {
     var q0 = spec[0], off = spec[1], arc = spec[2], width = spec[3], gain = spec[4], seed = spec[5];
     var rise = mod(q0 - p / TAU) * 1.2 - .1, fade = clamp((rise + .1) / .12) * clamp((1.1 - rise) / .12), points = [], mean = 0;
-    for (var k = 0; k < 96; k++) {
-      var s = k / 95, angle = -q0 * 21 + off - p * 2 + (s - .5) * arc;
+    for (var k = 0; k < 24; k++) {
+      var s = k / 23, angle = -q0 * 21 + off - p * 2 + (s - .5) * arc;
       var q = rise + (s - .5) * arc * .057 + .003 * Math.sin(s * 16 + seed + p * 2), cr = shape(q, p);
       var flare = 1 + .065 * Math.pow(Math.sin(s * Math.PI), 2) + .06 * Math.pow(s, 5);
       var thick = 578 * width * Math.pow(Math.sin(Math.PI * s), 1.3) * (.79 + .19 * Math.sin(s * 23 + seed) + .12 * Math.sin(s * 61 + seed * 2)) * (.8 + .3 * Math.cos(angle)) * (1 + .35 * Math.sin(Math.PI * clamp(q)));
       points.push([cr[0] + cr[1] * flare * Math.cos(angle), 8 + q * 578 + cr[1] * .13 * Math.sin(angle), Math.sin(angle), thick, s]); mean += Math.sin(angle);
     }
-    return { points: points, gain: gain, seed: seed, fade: fade, depth: mean / 96 };
+    return { points: points, gain: gain, seed: seed, fade: fade, depth: mean / 24 };
   }
   var sheetPhase = NaN, sheetLayers = null;
   function sheets(part, p, fire) {
@@ -76,7 +76,7 @@ var VFXWaterTornado = (function () {
     var layers = sheetLayers.filter(function (_, i) { return !fire || i % 11 !== 4; });
     if (front) layers.sort(function (a, b) { return a.depth - b.depth; });
     layers.forEach(function (layer) {
-      for (var k = 0; k < 95; k++) {
+      for (var k = 0; k < 23; k++) {
         var v = layer.points[k], n = layer.points[k + 1], z = (v[2] + n[2]) * .5;
         if ((z > 0) !== front) continue;
         var vis = clamp((z + .16) / 1.16), face = (.35 + .65 * vis) * layer.gain;
@@ -96,12 +96,12 @@ var VFXWaterTornado = (function () {
     for (var j = 0; j < 17; j++) {
       if (fire && j % 2) continue;
       var h = mod(j / 17 - p / TAU) * 1.2 - .1, fade = clamp((h + .1) / .12) * clamp((1.1 - h) / .12), points = [];
-      for (var k = 0; k < 130; k++) {
-        var s = k / 129, a = -j * 2.39 - p * 2 + (s - .5) * (3.3 + j % 3 * .3), q = h + (s - .5) * .17, cr = shape(q, p);
+      for (var k = 0; k < 32; k++) {
+        var s = k / 31, a = -j * 2.39 - p * 2 + (s - .5) * (3.3 + j % 3 * .3), q = h + (s - .5) * .17, cr = shape(q, p);
         var rr = cr[1] * (1.21 + .23 * Math.pow(Math.sin(s * Math.PI), 2)) + 10 + Math.pow(s, 3) * (13 + j % 4 * 5);
         points.push([cr[0] + rr * Math.cos(a), 8 + q * 578 + rr * .15 * Math.sin(a), (4 + j % 3 * 2.5) * Math.pow(Math.sin(s * Math.PI), 1.5), a, s]);
       }
-      for (var k2 = 0; k2 < 129; k2++) {
+      for (var k2 = 0; k2 < 31; k2++) {
         var v = points[k2], n = points[k2 + 1], z = Math.sin((v[3] + n[3]) * .5);
         if ((z > 0) !== front) continue;
         var alpha = (60 + 76 * Math.max(0, z)) * fade * Math.pow(Math.sin(Math.PI * v[4]), .6) * (front ? 1 : .48);
@@ -115,13 +115,13 @@ var VFXWaterTornado = (function () {
     var out = [];
     for (var j = 0; j < 6; j++) {
       var upper = [], lower = [];
-      for (var k = 0; k < 110; k++) {
-        var s = k / 109, a = s * 3.9 - p * 2 + j * 1.31, r = (58 + j * 16) * (1 + .075 * Math.sin(a * 4 + p));
+      for (var k = 0; k < 32; k++) {
+        var s = k / 31, a = s * 3.9 - p * 2 + j * 1.31, r = (58 + j * 16) * (1 + .075 * Math.sin(a * 4 + p));
         var x = 320 + r * Math.cos(a), y = 599 + r * .145 * Math.sin(a), w = Math.pow(Math.sin(s * Math.PI), 1.5) * (11 + j * .8) * (1 + .3 * Math.sin(s * 17 + j));
         upper.push([x, y]); lower.push([x + w * .7, y + w]);
       }
       polygon(out, upper.concat(lower.reverse()), [4, 75 + j * 8, 170 + j * 7, 95 + j * 8]);
-      if (j % 3 === 0) line(out, upper.slice(25, 80), [90, 210, 255, 170], 2);
+      if (j % 3 === 0) line(out, upper.slice(7, 24), [90, 210, 255, 170], 2);
     }
     return out;
   }
@@ -171,11 +171,11 @@ var VFXWaterTornado = (function () {
         320 + Math.sin(angle) * radius * .32 - Math.sin(Math.PI * life) * lift,
         Math.sin(angle)];
     }
-    for (var i = 0, count = Math.round(1100 * density); i < count; i++) {
+    for (var i = 0, count = Math.round(350 * density); i < count; i++) {
       var phase = rnd(), seed = rnd() * TAU, r = 125 + rnd() * 45;
       var lift = 8 + Math.pow(rnd(), 2) * 68, turn = 2.4 + rnd() * 1.5;
       var life = mod(p / TAU * 3 + phase), pos = at(seed, life, r, lift, turn);
-      var size = .7 + rnd() * 2.2, fade = Math.pow(Math.sin(Math.PI * life), .7);
+      var size = 1.1 + rnd() * 2.6, fade = Math.pow(Math.sin(Math.PI * life), .7);
       var bright = rnd();
       if ((pos[2] >= 0) !== front) continue;
       if (i % 9 === 0) mist.push({ellipse:[pos[0],pos[1],9+size*4,3+size*2],color:[78,193,220,85*fade]});

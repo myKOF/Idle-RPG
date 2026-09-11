@@ -182,3 +182,19 @@ test('FIRE eight staggered casts share procedural samples without sharing lifeti
  assert.equal(new Set(bodies.map(n=>n.t.generated)).size,1);
  r.destroy();
 });
+
+
+test('WATER raster batches spray strokes and preserves sharp spray under soft mist',()=>{
+ const P=fakePixi();P.Texture.from=()=>{const tex=new P.Texture();tex.source.update=()=>{};return tex;};
+ const contexts=[];
+ const canvasFactory=()=>{const ctx={clears:0,strokes:0,resetTransform(){},clearRect(){this.clears++},save(){},restore(){},scale(){},beginPath(){},lineTo(){},moveTo(){},ellipse(){},closePath(){},fill(){},stroke(){this.strokes++},drawImage(){}};
+  Object.defineProperty(ctx,'filter',{set(){throw Error('per-frame native blur must not return')}});contexts.push(ctx);return {width:320,height:320,getContext:()=>ctx};};
+ const b=pixiBackend.createBackend({PIXI:P,container:new P.Container(),canvasFactory});
+ const n=b.createNode({kind:'generated',generated:'cyclone-front',profileScales:Array(64).fill(1)});
+ const commands=Array.from({length:1000},(_,i)=>({points:[[i%100,0],[i%100,2]],color:[100,220,255,180],line:1}));
+ b.updateNode(n,{generated:{key:'batch-test',commands,groups:[{commands:[{ellipse:[50,50,5,3],color:[80,190,220,100]}],blur:5,alpha:.7}]}});
+ assert.equal(contexts[0].strokes,1,'same-color spray is one draw, not one thousand');
+ assert.equal(contexts[0].clears,1,'mist overlay must not erase sharp water droplets');
+ assert(n.__generatedEntry.temp.width<320,'soft pass uses a smaller surface');
+ b.destroy();
+});

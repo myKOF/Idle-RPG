@@ -13,3 +13,11 @@
 
 - 已獲使用者核准接入：正式 field-water-tornado.json 使用核准氣旋，移除候選 preset/layout。原 author 透過共用 polish 函式重建，逐圖層 deepStrictEqual 與正式版本一致。快取版本更新。9項水龍捲相關＋136項 Core/layout、340檔 build 通過；實機 FPS 尚未量測。
 - 包含使用者水流彈 preset/layout/shipped-assets 與 cone_composed_c.png；素材庫工作區乾淨，該貼圖 SHA-256 與遊戲版本一致，無需空提交。
+
+## 水龍捲掉幀修正（2026-09-12）
+- 使用者回報施放後約50 FPS降到5；先前僅生成函式量測不足。此次檢查包含真實 Canvas 路徑：過密水帶分段、逐水花 path draw、每幀 Canvas filter，以及 mist group 清掉 sharp commands。
+- 後端將近似色階合併繪製、光霧小表面雙線性縮放，取消 native blur；overlay 不再清除水花。水帶96→24、細線130→32取樣、氣旋1100→350細節，保留原軌跡與20Hz動畫節奏。無新增圖檔或序列幀。
+- 使用 @napi-rs/canvas 實際 Canvas＋正式後端繪製，四座同步水龍捲40次更新（含生成，Pixi texture/GPU為替身）：原版平均76.12ms／最大129.47ms，修正23.39ms／最大39.12ms，平均下降約69%。此數字不能換算成遊戲 FPS。
+- 瀏覽器工具啟動／本機連線失敗，獨立 Chrome 程序啟動被自動審核以政策封鎖拒絕，未繞過；未完成真實戰鬥 GPU/FPS A/B，仍需使用者場景驗證。已檢視正式後端產生的修正圖像。
+- 驗證：10項水龍捲/相容測試（含千筆細水花合併、禁止 native filter、mist 不清除 sharp commands）＋136項 Core/layout 通過；build340檔通過。先前既有 FIRE shipped ground-flames 斷言不在本次相關子集內。
+- 素材庫無變更；測試產物清理，回到 ai/codex 提交，未推送。
