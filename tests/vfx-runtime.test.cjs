@@ -21,6 +21,20 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('THUNDERFALL 60 度斜落且只在權威落地事件播放衝擊', () => {
+ const ps=['proj-thunderfall-sky','hit-thunderfall-impact'].map(id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets',id+'.json'),'utf8')));
+ const {adapter,log}=makeAdapter(ps);
+ const vfx={projectile:ps[0].id,hit:ps[1].id,attack:ps[1].id};
+ assert.equal(adapter.tryPlay({fxKind:'rain',variant:'thunder-fall',angle:null,targets:['mv-float-2'],area:{x:300,y:50,r:150},travelMs:[700],vfx}),true);
+ adapter.update(.01);
+ const body=log.nodes.find(n=>n.spec.assetUrl?.includes('sphere_47.png'));
+ assert.ok(body);assert.ok(Math.abs(body.transforms.at(-1).rotation-(Math.PI/3+Math.PI*2*.2*.01/2))<.001);
+ assert.equal(adapter.stats().played,1);
+ adapter.update(2);assert.equal(adapter.stats().played,1,'抵達不預播額外命中');
+ assert.equal(adapter.tryPlay({fxKind:'impact',variant:'thunder-fall-impact',targets:['mv-float-2'],area:{x:300,y:50,r:150},vfx}),true);
+ assert.equal(adapter.stats().played,2,'權威落地事件只播放一次範圍衝擊');
+});
+
 test('ROCKARMOR 前後半圈跨人物分層、共同中心與時鐘，放大移動續命後仍同步回收', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-rockarmor-stone.json'),'utf8'));
  for(const scale of [1,2]) {

@@ -1,0 +1,20 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>雷殞天落 · 巨雷斜墜</title>
+<style>body{margin:0;background:#111b23;color:#d4e4f5;font:15px system-ui}main{max-width:1040px;margin:24px auto;padding:0 14px}h1{font-size:24px}p{color:#98acbf}nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0}button,a{padding:8px 14px;border:1px solid #455a79;border-radius:5px;background:#243449;color:#d9e8ff;text-decoration:none;cursor:pointer}canvas{width:100%;border:1px solid #394956;border-radius:8px}#status{font-size:13px;color:#87b6dc}</style>
+<main><h1>雷殞天落 · 巨雷斜墜</h1><p>厚重雷核／分岔電流拖尾／落地雷光衝擊波</p><nav><button id="pause">暫停</button><button id="restart">重新播放</button><button id="still">定格墜落</button><a href="/tools/vfx/editor/?preset=proj-thunderfall-sky" target="_blank">墜落雷球</a><a href="/tools/vfx/editor/?preset=hit-thunderfall-impact" target="_blank">落地衝擊</a><span id="status">載入中…</span></nav><div id="view"></div><p>左：單顆完整過程　／　右：兩顆連續墜落。斜角為相對水平地面 60°。</p></main>
+<script src="/js/vendor/pixi.min.js"></script><script src="/js/vfx-core.js?v=thunderfall1"></script><script src="/js/vfx-pixi-backend.js?v=thunderfall1"></script>
+<script>
+(async()=>{
+ const app=new PIXI.Application();await app.init({width:1040,height:600,background:0x1b2b38,antialias:true,preference:'webgl'});document.getElementById('view').appendChild(app.canvas);
+ const grid=new PIXI.Graphics();for(let x=0;x<1040;x+=32)grid.moveTo(x,0).lineTo(x,600);for(let y=0;y<600;y+=32)grid.moveTo(0,y).lineTo(1040,y);grid.stroke({color:0x486179,alpha:.18,width:1});app.stage.addChild(grid);
+ for(const p of [{x:280,y:470},{x:765,y:465}]){const g=new PIXI.Graphics();g.ellipse(0,0,15,5).fill({color:0x111d28,alpha:.6});g.roundRect(-7,-36,14,32,4).fill(0x638792);g.circle(0,-45,8).fill(0x9cc3ca);g.position.set(p.x,p.y);app.stage.addChild(g);}
+ const fx=new PIXI.Container();app.stage.addChild(fx);const backend=VFXPixiBackend.createBackend({PIXI,container:fx});
+ const [index,...presets]=await Promise.all(['/vfx/asset-index.json','/vfx/presets/proj-thunderfall-sky.json','/vfx/presets/hit-thunderfall-impact.json'].map(u=>fetch(u,{cache:'no-store'}).then(r=>r.json())));
+ const rt=VFXCore.createRuntime({backend,resolver:VFXCore.createIndexResolver(index,'/images/vfx/assets')});presets.forEach(p=>rt.registerPreset(p));
+ let freeze=false,paused=false,time=0,cycle=-1,shots=[];const angle=Math.PI/3,travel=2.1,dx=190,dy=dx*Math.tan(angle);
+ function reset(){paused=false;freeze=false;document.getElementById('pause').textContent='暫停';rt.stopAll();time=0;cycle=-1;shots=[];}
+ document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'繼續':'暫停';};document.getElementById('restart').onclick=reset;document.getElementById('still').onclick=()=>{reset();time=.85;freeze=true;};
+ app.ticker.add(t=>{if(!paused){const dt=Math.min(.05,t.deltaMS/1000);time+=dt;const c=Math.floor(time/5.2),age=time%5.2;if(c!==cycle){rt.stopAll();cycle=c;shots=[{x:315,y:465,start:.35},{x:758,y:430,start:.35},{x:866,y:482,start:.7}];}
+ for(const s of shots){const a=age-s.start;if(a<0)continue;if(a<travel){if(!s.handle)s.handle=rt.play('proj-thunderfall-sky',{position:{x:s.x-dx,y:s.y-dy},rotation:angle,seed:cycle*17+s.x});const u=a/travel;rt.setTransform(s.handle,{position:{x:s.x-dx*(1-u),y:s.y-dy*(1-u)},rotation:angle});}else if(!s.hit){if(s.handle)rt.stop(s.handle);s.hit=true;rt.play('hit-thunderfall-impact',{position:{x:s.x,y:s.y},seed:cycle*19+s.x});}}
+ rt.update(dt);if(freeze){freeze=false;paused=true;document.getElementById('pause').textContent='繼續';}}const errors=backend.takeErrors();document.getElementById('status').textContent=errors.length?JSON.stringify(errors):Math.round(app.ticker.FPS)+' FPS';});
+})().catch(e=>{document.getElementById('status').textContent=e.stack;console.error(e)});
+</script></html>
