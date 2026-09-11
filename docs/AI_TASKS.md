@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Claude｜技能頁點擊卡頓：關掉 Pixi 指標事件系統（LAG-PIXI-POINTER-20260912）
+
+- 病因：PixiJS EventSystem 把 pointermove 掛在 **document** 上（捕獲階段），每一則都走 mapPositionToPoint → canvas.getBoundingClientRect()＝一次整份文件的強制版面重算。滑鼠在頁面任何地方移動都會觸發，與有沒有移到戰場上無關。使用者回報的探針報告：互動延遲 600ms 之中「等待」10ms、「處理」1ms、「呈現」590ms，而強制版面重算第一名正是這支（1263 次，第二名 21 次）。
+- 修正：js/battle-renderer.js 的 app.init 加 `eventFeatures: { move:false, globalMove:false, click:false, wheel:false }`。戰場上沒有任何 display object 是互動的（全專案無 eventMode／hitArea／pointer 監聽），這套事件系統只有成本沒有用途。
+- A/B 實測（本機 8331，同一段情境各跑一次）：200 則 pointermove ×「大文件（8929 節點）＋版面持續變髒」＝修正前 995.5ms／200 次強制重算，修正後 0.5ms／0 次。小文件乾淨版面為 6.5ms，可見成本是「次數 × 文件大小 × 版面髒不髒」三者相乘——戰鬥進行中三個條件同時成立。
+- 驗證：console 無錯誤、渲染器正常啟動；build 339 檔通過；npm test 2604 項 33 項失敗，三個看似新增的失敗已在未修改的 HEAD 逐檔重跑並同樣失敗（屬既有／間歇性失敗），本次改動 0 新增失敗。快取版號 battle-renderer.js 1.6.120 → 1.6.121。
+- 待確認：請使用者在自己的機器重測技能圖標點擊手感；若仍有殘留延遲，再以 ?lag=1 取一份報告看「呈現」是否已下降。
+
+## Claude｜技能頁點擊卡頓：卡頓探針補上互動延遲與技能彈窗路徑（LAG-SKILL-MODAL-20260912）
+
+- 回報：點技能圖標約 1 秒才彈出升級面板，面板內操作同樣延遲。已確認開窗路徑（openSkillModal → renderSkillModal）是同步的、不等 Worker，本機測試服（Lv.1000、23 群組全滿＋超神、冰原 227 階、演武場 24 隻千倍血）量到點擊→彈窗 <5ms，未能重現，因此改為補強診斷能力而非盲改程式。
+- 修改：js/lagprobe.js 兩處。(1) 新增 Event Timing 觀測，把「按下去→畫面更新」拆成等待／處理／呈現三截——原本的長工作表與函式耗時表都看不到「等待」那一段，正是這次回報的形狀。(2) TARGETS 補上技能彈窗與提示這條路徑（openSkillModal、renderSkillModal、renderSkill2Modal、renderSkill2UltModal、showSkillTooltip、describeSkill2Group、describeSkill2Tier），原本一支都不在名單裡，依本檔開頭的警告會被讀成「這條路徑沒問題」。
+- 驗證：本機 8331 以 ?lag=1 載入，八支包裝全部生效、lagReport() 無錯誤、__lagData.input 欄位存在、Event Timing 為瀏覽器支援；build 339 檔通過。
+- 待處理：需使用者在自己的存檔與機器上以 `?lag=1` 重現後回報 `copy(__lagData)`，才能判定是主執行緒壅塞（等待）還是渲染成本（呈現）。
+
 ## Claude｜死亡重生補滿生命與法力（DEATH-REVIVE-MP-20260911）
 
 - 使用者規則：死亡重生後生命與法力都要補滿。盤點四條復活路徑後，野外死亡復活（js/combat.js fieldTick 的 reviveCd 出口）本來就兩者都補；高塔戰敗（死亡）回野外的 finishTowerFight 只補生命，玩家一落地就沒法力放技能，本輪補上法力。經使用者決定，兩個技能復活（超神【不屈鬥魂】、傳奇【天地共生】）維持原設計不動——前者仍只補滿生命，後者仍照 {pct}% 生命復活。
