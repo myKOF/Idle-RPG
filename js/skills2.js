@@ -3892,6 +3892,8 @@ function sgGroundTurnRadiusPx(f) {
    一步能轉的角度＝這一步的弧長 ÷ 轉彎半徑，因此貫穿敵人之後不會原地掉頭水平折返，
    而是畫一個半徑 4～8 米的迴轉弧再繞回來。位移每個 tick 都是完整的 speed × dt。 */
 function sgGroundChaseStep(f, step, enemies) {
+  var startAngle = f.moveAngle;
+  f.turnRate = 0;
   if (!f.dest) f.dest = sgGroundChaseDest(f, enemies);
   var turnR = sgGroundTurnRadiusPx(f);
   if (f.dest) {
@@ -3899,6 +3901,7 @@ function sgGroundChaseStep(f, step, enemies) {
     var dist = Math.sqrt(dx * dx + dy * dy);
     var want = Math.atan2(dy, dx);
     if (!isFinite(f.moveAngle)) f.moveAngle = want;
+    if (!isFinite(startAngle)) startAngle = f.moveAngle;
     var diff = Math.atan2(Math.sin(want - f.moveAngle), Math.cos(want - f.moveAngle));
     /* 正後方（差 180 度）時左轉右轉一樣近，交給場域出生時決定的慣用邊，
        同一批小風刃才不會整齊劃一地朝同一側轉。 */
@@ -3915,6 +3918,16 @@ function sgGroundChaseStep(f, step, enemies) {
      追擊場域是接觸判定，停下來就等於不再命中任何東西。
      下一個 tick 仍會重新找落點，途中有敵人進入範圍就會轉回去追。 */
   if (!isFinite(f.moveAngle)) return;
+  if (f.kind === 'icearrow' && isFinite(startAngle) && step > 0) {
+    var turn = f.moveAngle - startAngle;
+    f.turnRate = turn * f.speed / step;
+    if (Math.abs(turn) > 1e-8) {
+      var radius = step / turn;
+      f.pos.x += radius * (Math.sin(f.moveAngle) - Math.sin(startAngle));
+      f.pos.y += radius * (Math.cos(startAngle) - Math.cos(f.moveAngle));
+      return;
+    }
+  }
   f.pos.x += Math.cos(f.moveAngle) * step;
   f.pos.y += Math.sin(f.moveAngle) * step;
 }
@@ -4164,6 +4177,7 @@ function sgGroundMotionFields(f, out) {
   if (!sgGroundMoving(f)) return out;
   out.speed = f.speed;
   if (isFinite(f.moveAngle)) out.moveA = f.moveAngle;
+  if (f.kind === 'icearrow') out.turnRate = Number(f.turnRate) || 0;
   if (f.dest) {
     out.destX = f.dest.x;
     out.destY = f.dest.y;

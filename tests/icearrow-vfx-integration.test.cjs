@@ -44,3 +44,20 @@ test('homing arrow points along every rendered displacement during snapshot corr
  }
  const angle=arrow.t.rotation;rt.update(0);assert.equal(arrow.t.rotation,angle,'zero-time update preserves direction');rt.destroy();
 });
+test('simulation and renderer integrate the same continuous turning arc',()=>{
+ const path=require('path'),{createRequire}=require('module');
+ const file=path.join(__dirname,'skill2-ice.test.cjs'),src=fs.readFileSync(file,'utf8');
+ const ctx={require:createRequire(file),__dirname,console};vm.createContext(ctx);
+ vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.c=loadContext();',ctx);const c=ctx.c;
+ const f={kind:'icearrow',pos:{x:0,y:0},speed:100,radius:15,chaseM:30,moveAngle:0,dest:{x:0,y:1000},turnSide:1};
+ const r=c.sgGroundTurnRadiusPx(f),step=10;c.sgGroundChaseStep(f,step,[]);
+ assert.ok(Math.abs(f.pos.x-r*Math.sin(step/r))<1e-8);assert.ok(Math.abs(f.pos.y-r*(1-Math.cos(step/r)))<1e-8);
+ const motion=c.sgGroundMotionFields(f,{});assert.ok(Math.abs(motion.turnRate-100/r)<1e-8);
+ const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});rt.registerPresets(presets);
+ rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:3,area:{id:'arc',x:0,y:0,r:15,a:0,speed:100,moveA:0,turnRate:motion.turnRate},vfx:{ground:presets[2].id}});
+ for(let i=0;i<6;i++)rt.update(1/60);
+ const arrow=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);
+ assert.ok(Math.abs(arrow.t.x-f.pos.x)<1e-7);assert.ok(Math.abs(arrow.t.y-f.pos.y)<1e-7,'six rendered frames match one simulation arc');
+ const prev={...arrow.t};rt.update(1/60);assert.ok(arrow.t.rotation>prev.rotation,'turn continues between snapshots');rt.destroy();
+});
