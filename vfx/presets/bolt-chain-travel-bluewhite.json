@@ -20,10 +20,21 @@
       "alpha": 1,
       "blendMode": "add",
       "duration": 0.3,
+      "tintOverLife": [
+        [
+          1,
+          "#eeff00"
+        ],
+        [
+          1,
+          "#ffffff"
+        ]
+      ],
+      "scaleOverLife": 1.137447,
       "sheet": {
         "columns": 6,
         "count": 18,
-        "fps": 60,
+        "fps": 40,
         "loop": false,
         "mode": "fps",
         "rows": 3

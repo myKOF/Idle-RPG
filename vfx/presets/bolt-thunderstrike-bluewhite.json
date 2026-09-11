@@ -7,6 +7,7 @@
     {
       "id": "blue-corona",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
         "x": 0,
@@ -22,7 +23,7 @@
       },
       "alpha": 0.85,
       "tint": "#469fff",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 0.32307692307692304,
       "alphaOverLife": [
         [
@@ -68,6 +69,7 @@
     {
       "id": "white-core",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
         "x": 0,
@@ -83,7 +85,7 @@
       },
       "alpha": 1,
       "tint": "#effaff",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 0.32307692307692304,
       "alphaOverLife": [
         [
@@ -129,6 +131,7 @@
     {
       "id": "side-fork",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "position": {
         "x": 22,
@@ -140,7 +143,7 @@
       },
       "alpha": 0.48,
       "tint": "#9baaff",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0.061538461538461535,
       "duration": 0.17692307692307693,
       "alphaOverLife": [
