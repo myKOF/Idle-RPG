@@ -109,19 +109,26 @@ test('WATER four tier-7 fields use fx layer, retain phase between hits and expir
  const specs=Array.from({length:4},(_,i)=>({fxKind:'aura',variant:'water-tornado',dur:.35,
   area:{id:'water-'+i,x:i*100,y:80,r:50},vfx:{field:preset.id}}));
  specs.forEach(s=>assert.equal(a.tryPlay(s),true));a.update(.2);
- assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,32);assert.ok(nodes.every(n=>n.tag==='fx'));
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,48);assert.ok(nodes.every(n=>n.tag==='fx'));
  const column=nodes.find(n=>n.spec.generated==='body');
  assert.match(column.t.generated.key, /^body:4:/);assert.equal(column.t.x,0);assert.equal(column.t.y,80);
  assert.equal(column.t.scaleX,column.t.scaleY);
  specs.forEach(s=>a.tryPlay(s));a.update(.2);
- assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,32);assert.match(column.t.generated.key, /^body:8:/);assert.equal(a.stats().played,4);
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,48);assert.match(column.t.generated.key, /^body:8:/);assert.equal(a.stats().played,4);
  a.update(3);assert.equal(a.stats().grounds,0);a.clear();
 });
 
 const generator=require('../js/vfx-water-tornado.js');
 test('WATER independent procedural parts have no atlas and retain deterministic motion',()=>{
- assert.equal(preset.layers.length,11);
- assert.deepEqual(preset.layers.map(l=>l.id),generator.PARTS);
+ assert.equal(preset.layers.length,15);
+ const polished=preset;
+ const extraParts=polished.layers.filter(l=>l.water && l.water.part.startsWith('cyclone-')).map(l=>l.water.part);
+ assert.deepEqual([...new Set([...preset.layers.filter(l=>!l.id.includes('cyclone-')).map(l=>l.id),...extraParts])],generator.PARTS);
+ for(const part of new Set(extraParts)) {
+  const a=generator.sample(part,0.1),b=generator.sample(part,0.5);
+  assert(a.commands.length>100); assert.notDeepEqual(a.commands,b.commands);
+  assert.strictEqual(a,generator.sample(part,0.1));
+ }
  for(const l of preset.layers){assert.equal(l.sheet,undefined);if(l.effect==='waterTornado')assert.equal(l.assetId,undefined);else assert.ok(l.assetId);}
  assert.equal(preset.layers.find(l=>l.id==='halo').type,'sprite');
  for(const id of ['dust','spray']){const l=preset.layers.find(l=>l.id===id);assert.equal(l.type,'particle');assert.equal(l.direction,-90);assert.equal(l.spread,180);}

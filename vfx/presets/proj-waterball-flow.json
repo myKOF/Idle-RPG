@@ -8,12 +8,16 @@
       "id": "soft-water-light",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
+      "position": {
+        "x": 12.0795,
+        "y": 0.692
+      },
       "scale": {
-        "x": 0.166,
-        "y": 0.166
+        "x": 0.2285,
+        "y": 0.1544
       },
       "alpha": 0.25,
-      "tint": "#00d9b5",
+      "tint": "#00cddb",
       "blendMode": "add"
     },
     {
@@ -21,11 +25,11 @@
       "type": "particle",
       "assetId": "new_materials/orb/sphere_38.png",
       "position": {
-        "x": -27,
-        "y": 0
+        "x": -36.7306,
+        "y": -0.1034
       },
       "alpha": 0.8,
-      "tint": "#38ffe0",
+      "tint": "#00eeff",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",
@@ -34,21 +38,21 @@
       "maxParticles": 120,
       "lifetime": [
         0.24,
-        0.55
+        1.5
       ],
       "spawn": {
-        "radius": 8,
+        "radius": 10.8096,
         "shape": "circle"
       },
       "speed": [
-        15,
-        48
+        20.268,
+        64.8576
       ],
       "direction": 180,
       "spread": 35,
       "startScale": [
-        0.0137,
-        0.0313
+        0.0185,
+        0.0423
       ],
       "worldSpace": true,
       "alphaOverLife": [
@@ -77,15 +81,15 @@
       "type": "sprite",
       "assetId": "new_materials/orb/sphere_28.png",
       "position": {
-        "x": -20,
-        "y": 0
+        "x": -28.8628,
+        "y": 0.692
       },
       "scale": {
-        "x": 0.1133,
-        "y": 0.0723
+        "x": 0.1063,
+        "y": 0.0678
       },
       "alpha": 0.72,
-      "tint": "#0ecbad",
+      "tint": "#00f6fa",
       "blendMode": "normal"
     },
     {
@@ -93,15 +97,15 @@
       "type": "sprite",
       "assetId": "new_materials/orb/sphere_28.png",
       "position": {
-        "x": 8,
-        "y": 0
+        "x": 8.1755,
+        "y": 0.692
       },
       "scale": {
-        "x": 0.1641,
-        "y": 0.1055
+        "x": 0.1866,
+        "y": 0.12
       },
       "alpha": 0.9,
-      "tint": "#0ecbad",
+      "tint": "#00d5ff",
       "blendMode": "normal",
       "scaleXOverLife": [
         [
@@ -153,17 +157,32 @@
       "type": "sprite",
       "assetId": "new_materials/orb/sphere_38.png",
       "position": {
-        "x": 10,
-        "y": 0
+        "x": 13.2638,
+        "y": -0.1034
       },
       "rotation": 0,
       "scale": {
-        "x": 0.1563,
-        "y": 0.0977
+        "x": 0.1655,
+        "y": 0.1035
       },
       "alpha": 0.5,
       "tint": "#bcfff0",
       "blendMode": "add"
+    },
+    {
+      "id": "sprite-6",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "position": {
+        "x": -7.0083,
+        "y": 0.2943
+      },
+      "rotation": 4.712389,
+      "scale": {
+        "x": 0.1782,
+        "y": 0.1782
+      },
+      "tint": "#00e1ff"
     }
   ],
   "sizing": {
