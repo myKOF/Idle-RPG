@@ -1,5 +1,9 @@
 # AI_TASKS.md
 
+## Codex｜必要素材雙倉庫提交流程（ASSET-DUAL-COMMIT-20260911）
+
+- 完成：將所有 AI 的必要素材雙倉庫提交規則加入 AI_RULES，工作流程引用同一權威規則。補交素材庫中目前 10 張遊戲已使用的貼圖，逐檔對照 shipped-assets 雜湊全部相符；不推送、不切換分支。素材庫 Commit：`0f71558`；遊戲規範 Commit 見本紀錄所在提交。驗證：Node SHA-256 核對、兩倉庫 `git diff --check` 通過。本次未修改遊戲程式，無待處理項目。
+
 ## Codex｜雷殞橫飛修正（VFX-THUNDERFALL-ANGLE-20260911）
 
 - 使用者追加速度降低一半：雷殞 travelMs 加倍，權威傷害落地採同一個時間（消除舊隕石倍率與 Preset 直接讀時間的落差）；預覽同步放慢。5 項角度／速度／傷害時機／素材測試通過，主頁與 Worker 快取更新。

@@ -251,6 +251,8 @@ fix stuff
 
 # 7. Commit 前檢查
 
+涉及 AI 產生的必要素材時，必須先完成 `AI_RULES.md` 第 6 節「AI 產生素材的雙倉庫提交」，並於交接中提供素材庫與遊戲專案的 Commit 編號。
+
 建立 Commit 前必須執行：
 
 git status
