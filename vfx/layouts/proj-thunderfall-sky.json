@@ -6,6 +6,11 @@
       "id": "proj-thunderfall-sky",
       "name": "proj-thunderfall-sky",
       "layerIds": [
+        "white-current-spine",
+        "crown-fork-3",
+        "crown-fork-2",
+        "crown-fork-1",
+        "crown-fork-0",
         "violet-ion-envelope",
         "fragmenting-electric-wake",
         "lightning-stream-4",

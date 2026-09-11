@@ -1,14 +1,107 @@
 {
   "schemaVersion": 1,
   "id": "hit-thunderfall-impact",
-  "duration": 0.7,
+  "duration": 0.95,
   "loop": false,
   "layers": [
+    {
+      "id": "ground-plasma",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.5664,
+        "y": 0.2051
+      },
+      "alpha": 0.8,
+      "tint": "#496aff",
+      "blendMode": "add",
+      "duration": 0.7,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.5,
+          0.55
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.25
+        ]
+      ]
+    },
+    {
+      "id": "shockwave-outer",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.7227,
+        "y": 0.3027
+      },
+      "alpha": 0.8,
+      "tint": "#6977ff",
+      "blendMode": "add",
+      "delay": 0.09,
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.5,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.4,
+          0.8
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
     {
       "id": "impact-core",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/scorch_02.png",
-      "zIndex": 0,
+      "zIndex": 2,
       "scale": {
         "x": 0.2734,
         "y": 0.1855
@@ -50,15 +143,15 @@
       "id": "pressure-wave",
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_02.png",
-      "zIndex": 1,
+      "zIndex": 3,
       "scale": {
         "x": 0.5859,
         "y": 0.2441
       },
-      "alpha": 0.65,
+      "alpha": 0.95,
       "tint": "#87baff",
       "blendMode": "add",
-      "duration": 0.65,
+      "duration": 0.85,
       "alphaOverLife": [
         [
           0,
@@ -96,7 +189,7 @@
       "id": "electric-debris",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 2,
+      "zIndex": 4,
       "tint": "#abd7ff",
       "blendMode": "add",
       "duration": 0.65,
@@ -141,7 +234,7 @@
       "id": "ground-fork-0",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 3,
+      "zIndex": 5,
       "position": {
         "x": 62.29257790997066,
         "y": 4.034829576787179
@@ -193,7 +286,7 @@
       "id": "ground-fork-1",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 4,
+      "zIndex": 6,
       "position": {
         "x": 31.4781545494648,
         "y": 23.388088750839483
@@ -245,7 +338,7 @@
       "id": "ground-fork-2",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 5,
+      "zIndex": 7,
       "position": {
         "x": -23.039961224121864,
         "y": 25.129640065443596
@@ -297,7 +390,7 @@
       "id": "ground-fork-3",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 6,
+      "zIndex": 8,
       "position": {
         "x": -60.20851626638609,
         "y": 7.948059859529954
@@ -349,7 +442,7 @@
       "id": "ground-fork-4",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 7,
+      "zIndex": 9,
       "position": {
         "x": -52.038830530152936,
         "y": -15.218571531484226
@@ -401,7 +494,7 @@
       "id": "ground-fork-5",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 8,
+      "zIndex": 10,
       "position": {
         "x": -4.6828440060244185,
         "y": -26.925308157006082
@@ -453,7 +546,7 @@
       "id": "ground-fork-6",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
-      "zIndex": 9,
+      "zIndex": 11,
       "position": {
         "x": 46.199419567249876,
         "y": -18.35673856410989
@@ -498,6 +591,620 @@
         [
           1,
           1.2
+        ]
+      ]
+    },
+    {
+      "id": "upward-discharge",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 12,
+      "alpha": 0.7,
+      "tint": "#c7eaff",
+      "blendMode": "add",
+      "duration": 0.6,
+      "emission": {
+        "count": 7,
+        "mode": "burst"
+      },
+      "maxParticles": 7,
+      "lifetime": [
+        0.25,
+        0.48
+      ],
+      "spawn": {
+        "height": 10,
+        "shape": "box",
+        "width": 35
+      },
+      "speed": [
+        85,
+        180
+      ],
+      "direction": -90,
+      "spread": 70,
+      "startScale": [
+        0.127,
+        0.2246
+      ],
+      "rotationStart": [
+        -2,
+        -1
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-0",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 13,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        190,
+        190
+      ],
+      "direction": 0,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        -0.2,
+        0.2
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-1",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 14,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        145.7737973711325,
+        145.7737973711325
+      ],
+      "direction": 22.83365417791754,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        0.5853981633974483,
+        0.9853981633974482
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-2",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 15,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        80,
+        80
+      ],
+      "direction": 90,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        1.3707963267948966,
+        1.7707963267948965
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-3",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 16,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        145.77379737113247,
+        145.77379737113247
+      ],
+      "direction": 157.16634582208246,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        2.1561944901923447,
+        2.556194490192345
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-4",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 17,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        190,
+        190
+      ],
+      "direction": 180,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        2.941592653589793,
+        3.3415926535897933
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-5",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 18,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        145.77379737113253,
+        145.77379737113253
+      ],
+      "direction": -157.16634582208246,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        3.726990816987241,
+        4.126990816987242
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-6",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 19,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        80,
+        80
+      ],
+      "direction": -90.00000000000004,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        4.5123889803846895,
+        4.91238898038469
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "traveling-ground-arc-7",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
+      "zIndex": 20,
+      "alpha": 0.8,
+      "tint": "#94bcff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 2,
+        "mode": "burst"
+      },
+      "maxParticles": 2,
+      "lifetime": [
+        0.45,
+        0.7
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        145.77379737113247,
+        145.77379737113247
+      ],
+      "direction": -22.833654177917552,
+      "spread": 8,
+      "startScale": [
+        0.0879,
+        0.1563
+      ],
+      "rotationStart": [
+        5.297787143782138,
+        5.697787143782138
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.18,
+          1
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0.65
         ]
       ]
     }

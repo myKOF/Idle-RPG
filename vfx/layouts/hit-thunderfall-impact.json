@@ -6,6 +6,8 @@
       "id": "hit-thunderfall-impact",
       "name": "hit-thunderfall-impact",
       "layerIds": [
+        "ground-plasma",
+        "shockwave-outer",
         "impact-core",
         "pressure-wave",
         "electric-debris",
@@ -15,7 +17,16 @@
         "ground-fork-3",
         "ground-fork-4",
         "ground-fork-5",
-        "ground-fork-6"
+        "ground-fork-6",
+        "upward-discharge",
+        "traveling-ground-arc-0",
+        "traveling-ground-arc-1",
+        "traveling-ground-arc-2",
+        "traveling-ground-arc-3",
+        "traveling-ground-arc-4",
+        "traveling-ground-arc-5",
+        "traveling-ground-arc-6",
+        "traveling-ground-arc-7"
       ]
     }
   ],
