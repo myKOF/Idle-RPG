@@ -5,15 +5,14 @@
   "loop": false,
   "layers": [
     {
-      "id": "glow",
+      "id": "glow-outer",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
-      "zIndex": 0,
       "scale": {
-        "x": 0.0781,
-        "y": 0.0781
+        "x": 0.1641,
+        "y": 0.0898
       },
-      "alpha": 0.5,
+      "alpha": 0.6,
       "tint": "#79d8ff",
       "blendMode": "add",
       "duration": 1.2,
@@ -23,12 +22,12 @@
           0
         ],
         [
-          0.08,
-          0.9
+          0.06,
+          0.95
         ],
         [
           0.9,
-          0.85
+          0.9
         ],
         [
           1,
@@ -37,16 +36,54 @@
       ]
     },
     {
-      "id": "body",
+      "id": "streak-core",
       "type": "sprite",
-      "assetId": "new_materials/mask-shape/dingbats-366.png",
-      "zIndex": 1,
+      "assetId": "new_materials/streak/lines_1.png",
+      "position": {
+        "x": -24,
+        "y": 0
+      },
       "scale": {
-        "x": 0.043,
+        "x": 0.1055,
         "y": 0.0352
       },
+      "alpha": 0.65,
+      "tint": "#38bdf8",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          0.9
+        ],
+        [
+          0.9,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ice-spike-body",
+      "type": "sprite",
+      "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1289,
+        "y": 0.0645
+      },
       "alpha": 1,
-      "tint": "#4da6ff",
+      "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 1.2,
       "alphaOverLife": [
@@ -55,11 +92,11 @@
           0
         ],
         [
-          0.06,
+          0.05,
           1
         ],
         [
-          0.9,
+          0.92,
           1
         ],
         [
@@ -69,16 +106,19 @@
       ]
     },
     {
-      "id": "edge",
+      "id": "ice-spike-shine",
       "type": "sprite",
-      "assetId": "new_materials/mask-shape/dingbats-366.png",
-      "zIndex": 2,
-      "scale": {
-        "x": 0.0273,
-        "y": 0.0215
+      "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 1,
-      "tint": "#f2fbff",
+      "scale": {
+        "x": 0.125,
+        "y": 0.0625
+      },
+      "alpha": 0.7,
+      "tint": "#e0f7ff",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
@@ -87,12 +127,12 @@
           0
         ],
         [
-          0.06,
-          1
+          0.05,
+          0.9
         ],
         [
-          0.9,
-          1
+          0.92,
+          0.9
         ],
         [
           1,
@@ -101,43 +141,153 @@
       ]
     },
     {
-      "id": "trail",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 4,
+      "id": "tip-sparkle",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "position": {
+        "x": 30,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.0391,
+        "y": 0.0391
+      },
+      "alpha": 0.9,
       "tint": "#ffffff",
       "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.92,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mist-trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "tint": "#e0f2fe",
+      "blendMode": "normal",
       "emission": {
         "mode": "rate",
-        "rate": 20
+        "rate": 26
       },
       "lifetime": [
-        0.14,
-        0.26
+        0.2,
+        0.38
       ],
       "spawn": {
-        "radius": 3,
+        "radius": 5,
         "shape": "circle"
       },
       "speed": [
-        10,
-        40
+        25,
+        55
       ],
       "direction": 180,
-      "spread": 40,
-      "drag": 5,
+      "spread": 35,
+      "drag": 3,
       "startScale": [
-        0.0059,
-        0.0117
+        0.0547,
+        0.0938
       ],
       "alphaOverLife": [
         [
           0,
-          0.9
+          0
+        ],
+        [
+          0.2,
+          0.5
+        ],
+        [
+          0.6,
+          0.28
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#f0f9ff"
         ],
         [
           0.5,
-          0.7
+          "#bae6fd"
+        ],
+        [
+          1,
+          "#7dd3fc"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          1.5
+        ]
+      ]
+    },
+    {
+      "id": "crystal-dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "tint": "#7dd3fc",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 30
+      },
+      "lifetime": [
+        0.16,
+        0.32
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        35,
+        85
+      ],
+      "direction": 180,
+      "spread": 45,
+      "drag": 4,
+      "startScale": [
+        0.0098,
+        0.0195
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.95
+        ],
+        [
+          0.6,
+          0.75
         ],
         [
           1,
@@ -150,12 +300,12 @@
           "#ffffff"
         ],
         [
-          0.5,
-          "#ffffff"
+          0.4,
+          "#7dd3fc"
         ],
         [
           1,
-          "#2a2a30"
+          "#0284c7"
         ]
       ],
       "scaleOverLife": [
@@ -165,15 +315,15 @@
         ],
         [
           1,
-          0.35
+          0.25
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "height": 18,
-      "width": 22
+      "height": 24,
+      "width": 50
     },
     "heightM": 2,
     "shape": "custom",

@@ -6,11 +6,14 @@
       "id": "burst-ice-blast",
       "name": "burst-ice-blast",
       "layerIds": [
-        "mist",
-        "rim",
-        "flash",
-        "shards",
-        "glints"
+        "shockwave-ring",
+        "frost-wave-outer",
+        "frost-cloud-mist",
+        "radiating-spikes-body",
+        "radiating-spikes-glow",
+        "center-burst-flash",
+        "flying-ice-crystals",
+        "frost-sparkles"
       ]
     }
   ],

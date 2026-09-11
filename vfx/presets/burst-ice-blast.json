@@ -1,34 +1,262 @@
 {
   "schemaVersion": 1,
   "id": "burst-ice-blast",
-  "duration": 0.6,
+  "duration": 0.65,
   "loop": false,
   "layers": [
     {
-      "id": "mist",
+      "id": "shockwave-ring",
       "type": "sprite",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 0,
+      "assetId": "particle-pack/png-black-background/circle_02.png",
       "scale": {
-        "x": 0.3906,
-        "y": 0.2188
+        "x": 0.5078,
+        "y": 0.5078
       },
-      "alpha": 0.4,
-      "tint": "#f2fbff",
-      "blendMode": "normal",
-      "duration": 0.6,
+      "alpha": 0.95,
+      "tint": "#79d8ff",
+      "blendMode": "add",
+      "duration": 0.55,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.12,
+          0.08,
+          1
+        ],
+        [
+          0.5,
+          0.6
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.4,
+          0.88
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "frost-wave-outer",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_b.png",
+      "scale": {
+        "x": 0.4688,
+        "y": 0.4688
+      },
+      "alpha": 0.85,
+      "tint": "#e0f2fe",
+      "blendMode": "add",
+      "duration": 0.52,
+      "alphaOverLife": [
+        [
+          0,
           0.9
         ],
         [
-          0.65,
-          0.55
+          0.35,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.5,
+          0.9
+        ],
+        [
+          1,
+          1.04
+        ]
+      ]
+    },
+    {
+      "id": "frost-cloud-mist",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "scale": {
+        "x": 0.4883,
+        "y": 0.4883
+      },
+      "alpha": 0.55,
+      "tint": "#f0f9ff",
+      "blendMode": "normal",
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.65
+        ],
+        [
+          0.45,
+          0.35
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.25
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          1,
+          1.25
+        ]
+      ]
+    },
+    {
+      "id": "radiating-spikes-body",
+      "type": "sprite",
+      "assetId": "antigravity-authored/ice/ice-burst-spikes.png",
+      "scale": {
+        "x": 0.5176,
+        "y": 0.5176
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 0.62,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.07,
+          1
+        ],
+        [
+          0.55,
+          0.95
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.18,
+          0.96
+        ],
+        [
+          0.45,
+          1.02
+        ],
+        [
+          1,
+          1.05
+        ]
+      ]
+    },
+    {
+      "id": "radiating-spikes-glow",
+      "type": "sprite",
+      "assetId": "antigravity-authored/ice/ice-burst-spikes.png",
+      "scale": {
+        "x": 0.5078,
+        "y": 0.5078
+      },
+      "alpha": 0.8,
+      "tint": "#7dd3fc",
+      "blendMode": "add",
+      "duration": 0.55,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.4,
+          0.45
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.18,
+          0.96
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          1.03
+        ]
+      ]
+    },
+    {
+      "id": "center-burst-flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "scale": {
+        "x": 0.3223,
+        "y": 0.3223
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.35,
+          0.6
         ],
         [
           1,
@@ -41,82 +269,53 @@
           0.3
         ],
         [
-          1,
+          0.3,
           1.15
+        ],
+        [
+          1,
+          0.8
         ]
       ]
     },
     {
-      "id": "rim",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
-      "zIndex": 1,
-      "scale": {
-        "x": 0.3906,
-        "y": 0.2188
+      "id": "flying-ice-crystals",
+      "type": "particle",
+      "assetId": "antigravity-authored/ice/ice-spike-single.png",
+      "tint": "#f0f9ff",
+      "blendMode": "normal",
+      "emission": {
+        "count": 20,
+        "mode": "burst"
       },
-      "alpha": 0.9,
-      "tint": "#79d8ff",
-      "blendMode": "add",
-      "duration": 0.55,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.1,
-          0.95
-        ],
-        [
-          0.7,
-          0.5
-        ],
-        [
-          1,
-          0
-        ]
+      "lifetime": [
+        0.35,
+        0.55
       ],
-      "scaleOverLife": [
-        [
-          0,
-          0.15
-        ],
-        [
-          0.6,
-          0.9
-        ],
-        [
-          1,
-          1
-        ]
-      ]
-    },
-    {
-      "id": "flash",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/scorch_02.png",
-      "zIndex": 5,
-      "scale": {
-        "x": 0.1758,
-        "y": 0.1758
+      "spawn": {
+        "radius": 10,
+        "shape": "circle"
       },
-      "alpha": 1,
-      "tint": "#4da6ff",
-      "blendMode": "add",
-      "duration": 0.22,
+      "speed": [
+        190,
+        340
+      ],
+      "direction": 0,
+      "spread": 360,
+      "drag": 3.5,
+      "startScale": [
+        0.0352,
+        0.0586
+      ],
+      "alignToVelocity": true,
       "alphaOverLife": [
         [
           0,
-          0
-        ],
-        [
-          0.08,
           1
         ],
         [
-          0.4,
-          0.5
+          0.65,
+          0.85
         ],
         [
           1,
@@ -129,88 +328,7 @@
           0.4
         ],
         [
-          0.35,
-          1
-        ],
-        [
-          1,
-          1.2
-        ]
-      ]
-    },
-    {
-      "id": "shards",
-      "type": "particle",
-      "assetId": "new_materials/mask-shape/dingbats-366.png",
-      "zIndex": 6,
-      "tint": "#4da6ff",
-      "blendMode": "add",
-      "emission": {
-        "count": 22,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.3,
-        0.5
-      ],
-      "spawn": {
-        "radius": 12,
-        "shape": "circle"
-      },
-      "speed": [
-        200,
-        340
-      ],
-      "direction": 0,
-      "spread": 360,
-      "gravity": {
-        "x": 0,
-        "y": 260
-      },
-      "drag": 4,
-      "startScale": [
-        0.0156,
-        0.0313
-      ],
-      "rotationStart": [
-        0,
-        3.141592653589793
-      ],
-      "rotationSpeed": [
-        -8,
-        8
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.6,
-          0.9
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#ffffff"
-        ],
-        [
-          0.5,
-          "#ffffff"
-        ],
-        [
-          1,
-          "#2a2a30"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
+          0.2,
           1
         ],
         [
@@ -220,14 +338,13 @@
       ]
     },
     {
-      "id": "glints",
+      "id": "frost-sparkles",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_08.png",
-      "zIndex": 7,
-      "tint": "#f2fbff",
+      "tint": "#ffffff",
       "blendMode": "add",
       "emission": {
-        "count": 8,
+        "count": 24,
         "mode": "burst"
       },
       "lifetime": [
@@ -239,19 +356,15 @@
         "shape": "circle"
       },
       "speed": [
-        90,
-        190
+        120,
+        260
       ],
       "direction": 0,
       "spread": 360,
-      "gravity": {
-        "x": 0,
-        "y": 80
-      },
-      "drag": 4,
+      "drag": 3.2,
       "startScale": [
-        0.0195,
-        0.0352
+        0.0234,
+        0.043
       ],
       "alphaOverLife": [
         [
@@ -260,7 +373,7 @@
         ],
         [
           0.6,
-          0.9
+          0.8
         ],
         [
           1,
@@ -273,12 +386,12 @@
           "#ffffff"
         ],
         [
-          0.5,
-          "#ffffff"
+          0.4,
+          "#7dd3fc"
         ],
         [
           1,
-          "#2a2a30"
+          "#0284c7"
         ]
       ],
       "scaleOverLife": [
@@ -288,7 +401,7 @@
         ],
         [
           1,
-          0.5
+          0.3
         ]
       ]
     }
