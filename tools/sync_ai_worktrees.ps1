@@ -330,9 +330,26 @@ try {
         Write-Step '先 Fetch 所有遠端分支'
         Invoke-Git -Worktree $developWorktree -GitArguments @('fetch', '--all', '--prune')
 
-        Write-Step '先 Pull 所有必要分支（rebase）'
+        <# 用 merge --ff-only 對齊，不用 pull --rebase。
+
+           這裡每一個分支都會經過下面的整合流程，因此全都含有 merge commit：
+           develop 本身就是整合分支，而三個 AI 分支在流程最後又被 fast-forward
+           回 develop。rebase 不帶 --rebase-merges 會把那些 merge 壓平，於是
+           它得把各 AI 分支的原始 commit 一筆筆重放到新基底上——衝突就是這樣
+           憑空冒出來的，而且會改寫已經整合好的歷史。
+
+           2026-09-11 實測：develop 領先遠端 9 筆、落後 0 筆（根本沒有分歧），
+           pull --rebase 仍然開始重放 7 筆並在第 2 筆卡住（js/bridge.js 衝突）。
+           純領先的分支只要 push，不需要 rebase。
+
+           改用 ff-only 之後三種情況都合理：
+             遠端是祖先（本地領先）→ Already up to date，什麼都不做
+             本地沒有新東西       → 直接 fast-forward
+             真的分歧             → 停下來報錯，交給人看
+           第三種正是該讓人知道的事；靜靜地改寫共用歷史比停下來糟得多。 #>
+        Write-Step '先把所有必要分支對齊遠端（fast-forward）'
         foreach ($branch in $requiredBranches) {
-            Invoke-Git -Worktree $worktrees[$branch] -GitArguments @('pull', '--rebase', $Remote, $branch)
+            Invoke-Git -Worktree $worktrees[$branch] -GitArguments @('merge', '--ff-only', "$Remote/$branch")
         }
     }
 

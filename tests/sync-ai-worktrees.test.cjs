@@ -76,3 +76,24 @@ test('素材庫路徑與分支都不得寫死', function () {
   assert.ok(/branch', '--show-current/.test(body) && /@\{upstream\}/.test(body),
     '分支與 upstream 都要問 git');
 });
+
+/* develop 是整合分支，三個 AI 分支在流程最後又被 fast-forward 回 develop，
+   所以每一個分支都含有 merge commit。rebase 不帶 --rebase-merges 會把它們
+   壓平，於是得把各 AI 分支的原始 commit 一筆筆重放到新基底——衝突憑空冒出來，
+   而且改寫的是已經整合好、可能已推送的歷史。
+
+   2026-09-11 實測：develop 領先遠端 9 筆、落後 0 筆（根本沒有分歧），
+   pull --rebase 仍然開始重放 7 筆並在第 2 筆卡在 js/bridge.js。 */
+test('同步前的對齊用 merge --ff-only，不得用 pull --rebase', function () {
+  const start = PS1.indexOf('if ($SyncRemoteFirst)');
+  assert.ok(start >= 0, '找不到 SyncRemoteFirst 區塊');
+  const block = PS1.slice(start, PS1.indexOf("Write-Step \"更新遠端", start));
+
+  assert.ok(/'merge', '--ff-only', "\$Remote\/\$branch"/.test(block),
+    '對齊步驟要用 merge --ff-only');
+  assert.ok(!/'pull', '--rebase'/.test(block),
+    'rebase 會壓平 merge commit 並改寫已整合的歷史，不得用在這些分支上');
+  /* fetch 必須排在前面，否則 ff-only 比對的是過期的遠端追蹤參照 */
+  assert.ok(block.indexOf("'fetch'") < block.indexOf("'--ff-only'"),
+    'fetch 要排在對齊之前');
+});

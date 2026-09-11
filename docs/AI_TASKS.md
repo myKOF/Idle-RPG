@@ -6642,3 +6642,21 @@ Worker 存活且頁面正常完成載入。
 - 存哪裡：`sessionStorage`（key `vfx-editor.presetSearch`）。選一份 preset 會整頁重載，只記在記憶體的話，「搜尋 → 開一個來看 → 回去看下一個」這個最常見的用法剛好享受不到。刻意不用 localStorage——那是長期偏好（格線、背景色）的位置，而「剛才在找什麼」是當下的工作方式，與 zoom／平移同一類，隔天還躺著昨天的關鍵字只會讓人以為清單壞了。storage 被關掉時退成空字串，不影響下拉運作。
 - 一併修掉開啟路徑分歧：還原關鍵字→全選→依關鍵字開清單抽成 `openComboWithLastQuery()`，focus 與箭頭鈕共用。箭頭鈕原本補一次 `openCombo('')` 會把剛篩好的清單換成未篩選的全部；另外已聚焦時 `focus()` 不會再觸發事件，必須自行呼叫，否則「按箭頭收起、再按一次」會收得起來卻打不開。
 - 驗證：以真實滑鼠事件在實際編輯器操作——打 bolt 後失焦再點回，內容還原為 bolt 且選取範圍 0-4，接著打字整段被取代成 hit（證明 mouseup 問題已解）；第二次點擊選取為 3-3（游標插入點，未再全選）；`?preset=` 整頁重載後點開仍是 hit、全選、清單已篩到 26 筆；箭頭鈕收起再打開正常；Esc 與失焦仍把「目前開著哪一份」放回輸入框。新增 VIEW-26／27／28 三條測試並做過突變測試（拿掉 mousedown 攔截、改用 localStorage 皆會紅）。編輯器五個測試檔共 236 項通過。
+
+## Claude｜Inspector 欄位按 Enter 後無法復原（VFX-UNDO-ENTER-20260911）
+
+- 使用者回報：部分參數（startScale、rotationStart、rotationSpeed）改完之後按 Ctrl+Z 回不到上一步。
+- 根因：`wireFieldTransaction` 的交易收尾點寫在 keydown 的 Enter。Inspector 有兩種寫回 preset 的時機——數字／向量／角度用 `oninput`，打字時就寫回去；json、角度區間、assetId 用 `onchange`，要等到 change 才寫。瀏覽器的順序是 keydown 先、change 後，所以對後者而言 commit 早了一步：commit 當下 preset 還沒變，history 判定「前後沒有差別」而把整筆交易丟掉，緊接著 change 才把值寫進去，那次修改完全不在歷史裡。使用者看到的三個欄位剛好全是 onchange 型。
+- 實際傷害比「Ctrl+Z 沒反應」更嚴重：那一步不在歷史裡，之後的 undo 會跳過它直接回到更早的狀態，值永遠回不去。實測：Enter 改 startScale 後 dirty 亮著但 undo 是「沒有可復原的動作」；接著改另一個欄位再按 Ctrl+Z，rotationStart 正確回復而 startScale 停在新值且 undo 已用完。
+- 修法：收尾點改到 `change`——那才是「值真的寫回 preset」的那一刻，對兩種欄位都成立。Enter 的語意不變，因為瀏覽器會在 Enter 時派送 change。另外 change 收尾後若仍在焦點內就接著開下一筆交易，否則 Enter 之後繼續改會沒有交易可歸屬。
+- 驗證：在實際編輯器以完整事件序列（focus → 打字 → keydown(Enter) → change）重現與驗證。修正前：值變了、dirty 亮起、undo 為「沒有可復原的動作」。修正後：undo 顯示「修改 startScale」，按下去值回到 `[0.0469,0.0742]`。新增 HISTORY-40 並做過突變測試。編輯器六個測試檔 286 項通過。
+- 測試環境備註：瀏覽器窗格沒有 OS 焦點時，程式化 `.focus()` 只會改 activeElement 而不派送 focus 事件；自動化工具送的 `Return` 在頁面上是 `key=""`，要用 `Enter` 才是真的 Enter。這兩點都曾讓測試結果失真，記著以免下次再踩。
+
+## Claude｜同步腳本不該 rebase 整合分支（SYNC-FFONLY-20260911）
+
+- 症狀：`sync_ai_worktrees` 在 develop 上卡住，`js/bridge.js` 衝突，工作區停在 detached HEAD、rebase 進行到 7 步中的第 2 步。
+- 根因：`SyncRemoteFirst` 那段對每個分支都跑 `pull --rebase`，包含 develop。develop 是整合分支，而三個 AI 分支在流程最後又被 fast-forward 回 develop，所以每一個分支都含有 merge commit。rebase 不帶 `--rebase-merges` 會把它們壓平，於是得把各 AI 分支的原始 commit 一筆筆重放到新基底——衝突就是這樣憑空冒出來的，而且改寫的是已經整合好的歷史。
+- 實測當時 develop 領先遠端 9 筆、落後 0 筆，根本沒有分歧，純領先的分支只要 push；`pull --rebase` 仍然開始重放 7 筆並在第 2 筆卡住。先 `rebase --abort` 還原（9 筆一筆未掉），再修腳本。
+- 修法：對齊步驟改用 `merge --ff-only "$Remote/$branch"`。三種情況都合理——遠端是祖先就 Already up to date、本地沒新東西就 fast-forward、真的分歧就停下來報錯交給人看。第三種正是該讓人知道的事；靜靜地改寫共用歷史比停下來糟得多。
+- 這也解釋了先前 ai/claude 那次 rebase 為何會讓 AI_TASKS.md 出現重複區段：同樣是 merge 被壓平後重放造成的。
+- 驗證：新增測試釘住「對齊用 ff-only、不得用 pull --rebase、fetch 要排在前面」並做過突變測試；`-ValidateOnly` 仍可正常執行。sync-ai-worktrees 5 項通過。

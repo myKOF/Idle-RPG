@@ -2212,12 +2212,28 @@
         return;
       }
       el.addEventListener('focus', function () { editBegin('修改 ' + label); });
-      el.addEventListener('blur', function () { editCommit(); });
-      /* Enter 當場收尾：使用者按了 Enter 就是「我改完了」，
-         不該等到焦點離開才算數。 */
-      el.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') editCommit();
+      /* 收尾點放在 change，不放在 keydown。
+
+         change 才是「值真的寫回 preset」的那一刻：
+           oninput 欄位（數字、向量、角度）打字時就寫回去了，change 只是收尾；
+           onchange 欄位（json、角度區間、assetId）要等到 change 才寫。
+
+         原本 Enter 是在 keydown 收尾的，對後者早了一步——瀏覽器的順序是
+         keydown 先、change 後，所以 commit 當下 preset 還沒變，history 判定
+         「前後沒有差別」而把整筆交易丟掉；緊接著 change 才把值寫進去，於是
+         那次修改完全不在歷史裡。症狀不只是「按 Ctrl+Z 沒反應」：之後的 undo
+         會跳過它、直接回到更早的狀態，那個值永遠回不去。
+         2026-09-11 實測 startScale：Enter 之後 dirty 亮著、undo 卻是
+         「沒有可復原的動作」。
+
+         Enter 仍然當場收尾——瀏覽器會在 Enter 時派送 change，語意不變。 */
+      el.addEventListener('change', function () {
+        editCommit();
+        /* 按了 Enter 常常還會繼續改同一格，所以還在焦點裡就接著開下一筆，
+           不然 Enter 之後的修改會沒有交易可以歸屬。 */
+        if (document.activeElement === el) editBegin('修改 ' + label);
       });
+      el.addEventListener('blur', function () { editCommit(); });
     });
   }
 

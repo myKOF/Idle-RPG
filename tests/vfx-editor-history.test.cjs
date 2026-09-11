@@ -452,3 +452,34 @@ test('HISTORY-46 dirty 判斷靠內容比對，所以 Undo 回存檔狀態會自
   assert.ok(/currentPresetText\(\)/.test(snapFn.slice(0, 400)),
     '快照要用同一個 canonical 文字');
 });
+
+/* 交易的收尾點必須是 change，不是 keydown。
+
+   Inspector 有兩種寫回 preset 的時機：數字／向量／角度用 oninput，打字時就
+   寫回去；json、角度區間、assetId 用 onchange，要等到 change 才寫。
+   原本 Enter 是在 keydown 收尾的，對後者早了一步——瀏覽器的順序是 keydown
+   先、change 後，commit 當下 preset 還沒變，history 判定「前後沒有差別」而
+   把整筆交易丟掉；緊接著 change 才把值寫進去，於是那次修改完全不在歷史裡。
+
+   症狀不只是「Ctrl+Z 沒反應」：之後的 undo 會跳過它、直接回到更早的狀態，
+   那個值永遠回不去。2026-09-11 實測 startScale：Enter 之後 dirty 亮著、
+   undo 卻是「沒有可復原的動作」，再按 Ctrl+Z 也救不回來。 */
+test('HISTORY-40 欄位交易在 change 收尾，keydown 太早（onchange 欄位當時還沒寫回）', function () {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function wireFieldTransaction'),
+    src.indexOf('function round4'));
+  /* select／checkbox／color 那一段本來就走 change，先切掉只看文字輸入那半段 */
+  const textHalf = fn.slice(fn.indexOf("el.addEventListener('focus'"));
+
+  assert.ok(/addEventListener\('change', function \(\) \{[\s\S]*?editCommit\(\)/.test(textHalf),
+    '文字輸入欄位要在 change 收尾');
+  assert.ok(!/e\.key === 'Enter'[\s\S]{0,40}editCommit/.test(textHalf),
+    'Enter 不得在 keydown 收尾：那時候 onchange 欄位還沒把值寫回 preset');
+  assert.ok(/addEventListener\('blur', function \(\) \{ editCommit\(\); \}\)/.test(textHalf),
+    '失焦仍要收尾');
+
+  /* 按了 Enter 常常還會繼續改同一格；change 收掉之後不接著開新交易的話，
+     後續的修改會沒有交易可以歸屬。 */
+  assert.ok(/document\.activeElement === el\) editBegin/.test(textHalf),
+    'change 收尾後若仍在焦點內，要接著開下一筆交易');
+});
