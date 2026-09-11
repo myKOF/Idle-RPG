@@ -1,0 +1,50 @@
+<main><h1>殞石術 · 巨型火球墜落</h1><p>巨大火球體的殞石術落體主體＋落地爆裂</p><nav><button id="pause">暫停</button><button id="restart">重新播放</button><button id="still">定格墜落</button><a href="/tools/vfx/editor/?preset=proj-meteor-inferno" target="_blank">主體預覽</a><a href="/tools/vfx/editor/?preset=burst-meteor-inferno" target="_blank">落點爆裂</a><span id="status">載入中…</span></nav><div id="view"></div><p>左：單顆完整過程／右：雙顆連續墜落（60°斜向）。</p></main>
+<script src="/js/vendor/pixi.min.js"></script><script src="/js/vfx-core.js?v=meteor-review1"></script><script src="/js/vfx-pixi-backend.js?v=meteor-review1"></script>
+<script>
+const PI_3=Math.PI/3;
+const cycleSec=1.95;
+const travelSec=1.65;
+async function go(){
+ const [index,preset,hit]=await Promise.all(['/vfx/asset-index.json','/vfx/presets/proj-meteor-inferno.json','/vfx/presets/burst-meteor-inferno.json'].map(u=>fetch(u,{cache:'no-store'}).then(r=>r.json())));
+ const rt = new VFXRuntime({container:document.getElementById('view'), width:1040, height:600, assetIndex:index});
+ const [w,h]=[1040,600];
+ const ang=PI_3;
+ const dx=Math.cos(ang)*420;
+ const dy=Math.sin(ang)*420;
+ const shots=[{start:0},{x:620,y:250,start:1.1}];
+ const status=document.getElementById('status');
+ let last=0,cycle=0,handles=[];
+ const pause=document.getElementById('pause'),restart=document.getElementById('restart'),still=document.getElementById('still');
+ let paused=false,freeze=false,freezeA=0;
+ pause.onclick=()=>{paused=!paused;pause.textContent=paused?'繼續':'暫停'};
+ restart.onclick=()=>{cycle=0;handles.length=0;freeze=false;freezeA=0;status.textContent='載入中…';};
+ still.onclick=()=>{freeze=!freeze;freezeA=freeze?0:freezeA;freeze?still.textContent='釋放定格':still.textContent='定格墜落';};
+ rt.addPreset('proj-meteor-inferno',preset); rt.addPreset('burst-meteor-inferno',hit);
+ function frame(t){
+  if(paused){requestAnimationFrame(frame);return;}
+  if(last===0)last=t;
+  const now=(freeze?freezeA:(freezeA += (t-last)/1000));
+  last=t;
+  const age=(now - (cycle*cycleSec))%cycleSec;
+  if(age<0.015) status.textContent='播放中…';
+  if(!freeze && now>(cycle*cycleSec+cycleSec)) cycle++;
+  const x0=w-120,y0=120;
+  shots.forEach(s=>{
+    const a=age-s.start;
+    if(a<0)return;
+    if(a<travelSec){
+      let h=handles.find((x)=>x.sid===s.start && !x.done);
+      if(!h){const hnd=rt.play('proj-meteor-inferno');h={sid:s.start,id:hnd};handles.push(h);}
+      const u=a/travelSec;
+      rt.setTransform(h.id,{position:{x: x0-dx*(1-u), y: y0+dy*(1-u)}, rotation:ang, alpha:1});
+    }else{
+      const done=handles.find(v=>v.sid===s.start && v.done);
+      if(!done){const id=handles.find(v=>v.sid===s.start)?.id; if(id) rt.stop(id); rt.play('burst-meteor-inferno',{position:{x:x0-dx,y:y0+dy}}); handles.push({sid:s.start,done:true});}
+    }
+  });
+  requestAnimationFrame(frame);
+}
+ requestAnimationFrame(frame);
+}
+go().then(()=>status.textContent='播放中…');
+</script>

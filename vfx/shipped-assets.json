@@ -42,13 +42,6 @@
       "fileSize": 86462
     },
     {
-      "assetId": "codex-authored/meteor/meteor-stylized.png",
-      "relativePath": "codex-authored/meteor/meteor-stylized.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:e0a785ea31dcbf251e0b2d1c4cf0a2247a577313f98dc0966fb8da21fe485ed6",
-      "fileSize": 1119237
-    },
-    {
       "assetId": "codex-authored/mire/mud-flow-magma.png",
       "relativePath": "codex-authored/mire/mud-flow-magma.png",
       "package": "codex-authored",
@@ -257,6 +250,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:e9f809d833ed9cd59b8e3df3bcf93a9437d19d38b0495ba2650afbae4b4965c1",
       "fileSize": 43409
+    },
+    {
+      "assetId": "light-masks-1.0/transparent/circle_d_noise.png",
+      "relativePath": "light-masks-1.0/Transparent/circle_d_noise.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:5ad10f86046dc10c7dd9d03666cf1dbc3e2b5520a017a715badfcab94df8df94",
+      "fileSize": 45239
     },
     {
       "assetId": "light-masks-1.0/transparent/window_h.png",

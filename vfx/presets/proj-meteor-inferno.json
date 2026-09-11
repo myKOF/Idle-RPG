@@ -249,8 +249,8 @@
         "x": 0.1443,
         "y": 0.1443
       },
-      "alpha": 0.35,
-      "tint": "#ffb72c",
+      "alpha": 1,
+      "tint": "#ff2e2e",
       "blendMode": "add",
       "duration": 1,
       "alphaOverLife": [
@@ -272,15 +272,44 @@
       "id": "cracked-meteor-core",
       "type": "sprite",
       "enabled": true,
-      "assetId": "codex-authored/meteor/meteor-stylized.png",
+      "assetId": "new_materials/orb/sphere_23.png",
       "zIndex": 5,
       "scale": {
-        "x": 0.0522,
-        "y": 0.0457
+        "x": 0.127,
+        "y": 0.127
       },
-      "alpha": 1,
-      "tint": "#ffffff",
-      "blendMode": "screen"
+      "alpha": 0.95,
+      "tint": "#ff7a1a",
+      "blendMode": "add"
+    },
+    {
+      "id": "inferno-meteor-core-ring",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "light-masks-1.0/default/circle_b_noise.png",
+      "zIndex": 11,
+      "scale": {
+        "x": 0.1898,
+        "y": 0.1898
+      },
+      "alpha": 0.45,
+      "tint": "#ffb347",
+      "blendMode": "add",
+      "duration": 1,
+      "alphaOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          0.2,
+          0.6
+        ],
+        [
+          1,
+          0.2
+        ]
+      ]
     },
     {
       "id": "lava-flow-0",

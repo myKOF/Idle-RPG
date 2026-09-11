@@ -7,14 +7,15 @@
     {
       "id": "glow",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
         "x": 0.1172,
         "y": 0.1172
       },
-      "alpha": 0.55,
-      "tint": "#ffd23f",
+      "alpha": 0.8,
+      "tint": "#002aff",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -49,14 +50,15 @@
     {
       "id": "body",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.0781,
-        "y": 0.0781
+        "x": 0.108,
+        "y": 0.108
       },
       "alpha": 0.95,
-      "tint": "#f2b705",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -77,6 +79,7 @@
     {
       "id": "core",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
       "scale": {
@@ -119,14 +122,15 @@
     {
       "id": "web",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_03.png",
       "zIndex": 3,
       "scale": {
-        "x": 0.0898,
-        "y": 0.0898
+        "x": 0.0752,
+        "y": 0.0752
       },
       "alpha": 0.8,
-      "tint": "#fff8b0",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 0.5,
       "alphaOverLife": [
@@ -185,6 +189,18 @@
           5.02655
         ]
       ]
+    },
+    {
+      "id": "sprite-5",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "light-masks-1.0/transparent/circle_d_noise.png",
+      "scale": {
+        "x": 0.1229,
+        "y": 0.1229
+      },
+      "alpha": 0.8,
+      "tint": "#000000"
     }
   ],
   "sizing": {
