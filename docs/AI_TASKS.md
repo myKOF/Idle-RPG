@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Claude｜死亡重生補滿生命與法力（DEATH-REVIVE-MP-20260911）
+
+- 使用者規則：死亡重生後生命與法力都要補滿。盤點四條復活路徑後，野外死亡復活（js/combat.js fieldTick 的 reviveCd 出口）本來就兩者都補；高塔戰敗（死亡）回野外的 finishTowerFight 只補生命，玩家一落地就沒法力放技能，本輪補上法力。經使用者決定，兩個技能復活（超神【不屈鬥魂】、傳奇【天地共生】）維持原設計不動——前者仍只補滿生命，後者仍照 {pct}% 生命復活。
+- 驗證：新增 tests/death-revive-restore.test.cjs 同時釘住野外與高塔兩條路徑（2/2 通過）；build 337 檔通過；npm test 2595 項中 30 項失敗，與 HEAD 基準逐項比對為同一組既有失敗（VFX Preset／skill2 系列），本次改動 0 新增失敗。快取版號已同步（index.html tower.js 1.0.10、worker importScripts、bridge WORKER_ASSET_VERSION）。
+
 ## Codex｜必要素材雙倉庫提交流程（ASSET-DUAL-COMMIT-20260911）
 
 - 完成：將所有 AI 的必要素材雙倉庫提交規則加入 AI_RULES，工作流程引用同一權威規則。補交素材庫中目前 10 張遊戲已使用的貼圖，逐檔對照 shipped-assets 雜湊全部相符；不推送、不切換分支。素材庫 Commit：`0f71558`；遊戲規範 Commit 見本紀錄所在提交。驗證：Node SHA-256 核對、兩倉庫 `git diff --check` 通過。本次未修改遊戲程式，無待處理項目。

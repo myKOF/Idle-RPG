@@ -480,8 +480,13 @@ function finishTowerFight() {
   TOWER.player = null;
   // 45 新技能：塔戰結束回野外＝場景切換，清空技能執行期狀態（避免塔內殘留排程打進野外）
   if (typeof resetSkillRT === 'function') resetSkillRT();
-  // 野外重生
-  if (FIELD.player) FIELD.player.hp = getStats().hp;
+  /* 野外重生：生命與法力一起補滿——與野外死亡復活（js/combat.js fieldTick 的 reviveCd 出口）
+     同一條規則。塔戰失敗＝死亡，回到野外時只回血不回魔會讓玩家一落地就沒法力可放技能。 */
+  if (FIELD.player) {
+    var fieldSt = getStats();
+    FIELD.player.hp = fieldSt.hp;
+    FIELD.player.mp = fieldSt.mp;
+  }
   FIELD.monster = null; FIELD.monsters = []; FIELD._waveClearPending = false; FIELD.spawnCd = 0.5;
   UI.dirty.tower = true; UI.dirty.battle = true; UI.dirty.header = true; UI.dirty.factory = true;
 }

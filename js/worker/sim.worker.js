@@ -16,7 +16,7 @@ importScripts(
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260903-vfx-preset-fields', '../skills2.js?v=20260911-follow-aura-anchor', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
-  '../combat.js?v=20260908-basic-melee', '../legendary.js?v=20260903-vfx-runtime-adapter', '../potential.js?v=20260903-vfx-runtime-adapter', '../tower.js?v=20260903-vfx-runtime-adapter',
+  '../combat.js?v=20260908-basic-melee', '../legendary.js?v=20260903-vfx-runtime-adapter', '../potential.js?v=20260903-vfx-runtime-adapter', '../tower.js?v=20260911-tower-return-mp',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
   '../tasks.js'
 );
