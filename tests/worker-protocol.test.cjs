@@ -113,7 +113,7 @@ test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
   //      skills 面板的 skills2 新增 ult 欄位（各群組已選的選項索引與等級），92 → 93
   // v26：VFX 事件新增可選欄位 vfx（角色 → Preset id），值來自技能表／狀態表的特效欄
   // v27：VFX 事件新增可選旗標 presetOnly（只有 Preset 端畫得出來的事件）
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 29);
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 30);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   const names = Object.keys(protocol.COMMANDS);

@@ -16,7 +16,11 @@
         "base",
         "bloom",
         "dust",
-        "spray"
+        "spray",
+        "base-cyclone-rear",
+        "base-cyclone-front",
+        "top-cyclone-rear",
+        "top-cyclone-front"
       ]
     }
   ],

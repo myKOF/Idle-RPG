@@ -10,16 +10,16 @@ test('icearrow ordinary, piercing, homing and rain mappings ship all approved as
  const shipped=require('../vfx/shipped-assets.json').assets;
  for(const p of presets)for(const l of p.layers){const a=shipped.find(a=>a.assetId===l.assetId);assert.ok(a,l.assetId);assert.ok(fs.existsSync(require('path').join(__dirname,'../images/vfx/assets',a.relativePath)));}
 });
-test('production adapter renders moving icicles and maintains homing aspect ratio',()=>{
+test('production adapter preserves user-edited appearance and size across launch and homing',()=>{
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
- const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:240,y:0})}});rt.registerPresets(presets);
+ const rt=Runtime.create({profile:{scale:0.8,areaScale:0.4},core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:240,y:0})}});rt.registerPresets(presets);
  assert.equal(rt.tryPlay({fxKind:'projectile',variant:'ice-arrow-pierce',targets:[],angle:0,lineLength:240,travelMs:[410],vfx:{projectile:presets[0].id,hit:presets[1].id}}),true);rt.update(.1);
  const arrow=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(arrow);assert.ok(arrow.t.x>0&&arrow.t.x<240);
  assert.equal(rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:.1,area:{id:'homing',x:100,y:80,r:15,a:0,speed:585,moveA:.7},vfx:{ground:presets[2].id}}),true);rt.update(.05);
  const flying=nodes.filter(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(flying.length>=2);
- const homing=flying.at(-1);assert.ok(Math.abs(homing.t.scaleX-homing.t.scaleY)<1e-6,'uniform sizing preserves sharp icicle shape');
+ const homing=flying.at(-1);assert.equal(homing.t.scaleX,arrow.t.scaleX,'homing preserves launch width'); assert.equal(homing.t.scaleY,arrow.t.scaleY,'homing preserves launch height');
  assert.ok(Math.abs(homing.t.rotation-.7)<1e-6,'arrow uses movement heading, not circular area angle');
- assert.ok(Math.abs(homing.t.scaleX-(.1523*2*15/34))<1e-5,'homing arrow is twice the previous visual size');
+ assert.equal(homing.spec.assetUrl,arrow.spec.assetUrl,'both phases use the edited launch asset');
  for(const angle of [Math.PI/2,Math.PI,-Math.PI/2]){
   rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:2,area:{id:'homing',x:100,y:80,r:15,a:0,speed:585,moveA:angle},vfx:{ground:presets[2].id}});
   for(let j=0;j<30;j++)rt.update(1/60);
@@ -29,7 +29,8 @@ test('production adapter renders moving icicles and maintains homing aspect rati
 });
 test('homing arrow points along every rendered displacement during snapshot correction',()=>{
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
- const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});rt.registerPresets(presets);
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});// 運動驗證使用中心標記，排除使用者美術圖層偏移；外觀一致性由上方實際 preset 測試驗證。
+ rt.registerPresets(presets.map(p=>({...p,layers:p.layers.map(l=>l.id==='faceted-icicle'?{...l,position:{x:0,y:0}}:l)})));
  const send=(x,y,angle,speed=585)=>rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:3,area:{id:'turning',x,y,r:15,a:0,speed,moveA:angle},vfx:{ground:presets[2].id}});
  send(0,0,0);rt.update(1/60);
  const arrow=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(arrow);
@@ -54,10 +55,22 @@ test('simulation and renderer integrate the same continuous turning arc',()=>{
  assert.ok(Math.abs(f.pos.x-r*Math.sin(step/r))<1e-8);assert.ok(Math.abs(f.pos.y-r*(1-Math.cos(step/r)))<1e-8);
  const motion=c.sgGroundMotionFields(f,{});assert.ok(Math.abs(motion.turnRate-100/r)<1e-8);
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
- const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});rt.registerPresets(presets);
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});// 運動驗證使用中心標記，排除使用者美術圖層偏移；外觀一致性由上方實際 preset 測試驗證。
+ rt.registerPresets(presets.map(p=>({...p,layers:p.layers.map(l=>l.id==='faceted-icicle'?{...l,position:{x:0,y:0}}:l)})));
  rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:3,area:{id:'arc',x:0,y:0,r:15,a:0,speed:100,moveA:0,turnRate:motion.turnRate},vfx:{ground:presets[2].id}});
  for(let i=0;i<6;i++)rt.update(1/60);
  const arrow=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);
  assert.ok(Math.abs(arrow.t.x-f.pos.x)<1e-7);assert.ok(Math.abs(arrow.t.y-f.pos.y)<1e-7,'six rendered frames match one simulation arc');
  const prev={...arrow.t};rt.update(1/60);assert.ok(arrow.t.rotation>prev.rotation,'turn continues between snapshots');rt.destroy();
+});
+
+test('T7 ice burst uses approved crystal effect and holds its expanded shape for half a second',()=>{
+ const burst=require('../vfx/presets/burst-icearrow-crystal.json');
+ assert.match(fs.readFileSync(require.resolve('../js/skills2.js'),'utf8'),/attack: 'burst-icearrow-crystal'/);
+ const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:90,y:70})}});rt.registerPresets([burst]);
+ assert.equal(rt.tryPlay({fxKind:'burst',variant:'ice-blast',area:{x:90,y:70,r:60},vfx:{attack:burst.id}}),true);
+ rt.update(.14);const n=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(n);const initial={...n.t};
+ rt.update(.48);assert.equal(n.t.scaleX,initial.scaleX);assert.equal(n.t.scaleY,initial.scaleY);assert.equal(n.t.alpha,initial.alpha);
+ rt.update(.2);assert.ok(n.t.alpha<initial.alpha,'only fades after hold');rt.update(1);assert.ok(!nodes.some(n=>n.t?.visible),'all burst nodes are reclaimed');rt.destroy();
 });

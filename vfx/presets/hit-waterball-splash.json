@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-waterball-splash",
+  "duration": 0.85,
+  "loop": false,
+  "layers": [
+    {
+      "id": "water-impact-glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "scale": {
+        "x": 0.1953,
+        "y": 0.1953
+      },
+      "alpha": 0.45,
+      "tint": "#33ffdb",
+      "blendMode": "add",
+      "duration": 0.25,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          1,
+          1.3
+        ]
+      ]
+    },
+    {
+      "id": "spreading-water-ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "scale": {
+        "x": 0.9961,
+        "y": 0.5273
+      },
+      "alpha": 0.7,
+      "tint": "#a4ffec",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.08
+        ],
+        [
+          0.5,
+          0.8
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "splash-droplets",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_38.png",
+      "alpha": 0.85,
+      "tint": "#50efcb",
+      "blendMode": "normal",
+      "emission": {
+        "count": 50,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.25,
+        0.6
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        100,
+        200
+      ],
+      "direction": 0,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 140
+      },
+      "drag": 1.3,
+      "startScale": [
+        0.0137,
+        0.0332
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.65,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.25
+        ]
+      ]
+    },
+    {
+      "id": "outer-pressure-ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "scale": {
+        "x": 1.2891,
+        "y": 0.7617
+      },
+      "alpha": 0.65,
+      "tint": "#22eec7",
+      "blendMode": "add",
+      "delay": 0.07,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.1
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "foam-sparks",
+      "type": "particle",
+      "assetId": "new_materials/mask-shape/dingbats-489.png",
+      "alpha": 0.75,
+      "tint": "#d4fff4",
+      "blendMode": "add",
+      "emission": {
+        "count": 18,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.2,
+        0.55
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        100,
+        215
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0195,
+        0.0449
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "water-spray",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "alpha": 0.2,
+      "tint": "#60ddc3",
+      "blendMode": "normal",
+      "emission": {
+        "count": 16,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.25,
+        0.55
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        65,
+        125
+      ],
+      "direction": 0,
+      "spread": 360,
+      "startScale": [
+        0.0469,
+        0.082
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.3
+        ],
+        [
+          1,
+          1.4
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "radiusM": 3,
+    "shape": "circle"
+  }
+}

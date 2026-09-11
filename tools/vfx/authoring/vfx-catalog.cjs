@@ -87,6 +87,8 @@ def('proj-dark-orb', 'projectile', '暗影投射物：深紫 #1a0c2e 核心 + �
 def('proj-earth-rock', 'projectile', '土屬性投射物：棕 #ad7444 方形岩塊（16px、緩慢旋轉）+ 深棕 #5b3a27 陰影 + 土黃塵土拖尾。', { nominal: 'L 16px', dur: 1.2 });
 def('proj-wind-crescent', 'projectile', '風刃：淺綠 #86efac 新月刀刃（名目寬 40px、深 16px，尖端朝 +X）+ 白色 #ffffff 內芯與描邊 + 白色細拖尾；Runtime 以 scaleY = lineWidth/40、scaleX = bodyLength/16。', { nominal: 'W 40px', dur: 1.5 });
 def('proj-arcane-missile', 'projectile', '奧術飛彈：小型淡藍紫 #8ea2ff 光球（直徑 12px）+ 光暈 + 亮白拖尾條；奧術彈幕六發齊射、特殊／潛力技能的通用投射物。', { nominal: 'D 12px', dur: 1.2 });
+def('proj-waterball-flow', 'projectile', '青綠蛋形水彈與濃密水滴拖尾。', { nominal: '90×58px', dur: 1.2 });
+def('hit-waterball-splash', 'hit', '水珠飛濺、泡沫亮點及雙層擴散水紋。', { nominal: 'R 100px', dur: 0.85 });
 def('proj-waterball', 'projectile', '水流彈：藍色 #38bdf8 水球（直徑 18px）+ 白 #f0f9ff 高光 + 飛濺水珠拖尾。', { nominal: 'D 18px', dur: 1.2 });
 def('proj-firehunt-ring', 'projectile', '火神星環：半徑 11px 的火焰圓環（#ffd447 環 + #ff6a2a 外暈 + 白色高光弧），以 rotationYOverLife 做翻滾（每秒 2.6 翻）。', { nominal: 'R 11px', dur: 1.5 });
 def('proj-enemy-bolt', 'projectile', '敵方魔法彈：紅 #ff6b6b 光球（直徑 13px）+ 光暈 + 淡紅拖尾；無屬性敵人的遠程攻擊。', { nominal: 'D 13px', dur: 1.2 });
@@ -108,6 +110,7 @@ def('beam-ice', 'bolt', '寒冰槍光束：沿 +X 長 200px 的冰藍 #4da6ff �
 /* 範圍爆發 burst（attack 角色；名目半徑 100px） */
 def('burst-fire', 'burst', '火焰爆發：中心黃白閃光 + 橘紅 #e63924 火球膨脹（半徑 30→100px）+ 3 道扁橢圓震波環 #ffb21c/#7d1708 依序擴散 + 18 顆火舌向外飛並下墜；0.86s。', { nominal: 'R 100px', dur: 0.9 });
 def('burst-frost-nova', 'burst', '冰霜新星：從中心擴散到半徑 100px 的冰藍 #4da6ff 圓（填色 α0.24）+ 白色 #f2fbff 粗外環 + 淡藍 #79d8ff 內環（0.72 倍）+ 冰晶碎片四散；0.5s smoothstep。', { nominal: 'R 100px', dur: 0.55 });
+def('burst-icearrow-crystal', 'burst', '寒冰爆裂箭：藍白放射冰刺爆開後停留，再碎冰淡出。', { nominal: 'R 150px', dur: 1.05 });
 def('burst-ice-blast', 'burst', '寒冰爆裂：冰藍閃光 + 大量菱形冰晶碎片向外炸開（半徑到 100px）+ 白色冰霧擴散。', { nominal: 'R 100px', dur: 0.6 });
 def('burst-frost-freeze', 'burst', '凍結：目標身上瞬間長出淡藍冰塊（#f2fbff 高光、#4da6ff 底、多片 mask-shape 冰晶疊成 60px 高）並定格 0.4s 後碎裂成冰晶粒子。', { nominal: 'target 60px', dur: 0.8 });
 def('burst-wind', 'burst', '狂風碎裂：兩道扁橢圓（縱向 0.6）風環由 45%→105% 與 20%→70% 半徑擴散，淺綠 #86efac 外環寬 3px、白色 #ffffff 內環寬 1.5px；0.34s。', { nominal: 'R 100px', dur: 0.34 });
@@ -392,12 +395,12 @@ g('icearrow', [
   { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' },                     // T4 貫穿冰箭（ice-arrow-pierce）
   { ground: 'ground-icearrow-frost' },                                // T5 冰箭散射（追蹤場域 ice-arrow-homing）
   _,
-  { attack: 'burst-ice-blast', hit: 'hit-ice' }                         // T7 寒冰爆裂箭（ice-blast）
+  { attack: 'burst-icearrow-crystal', hit: 'hit-ice' }                         // T7 寒冰爆裂箭（ice-blast）
 ], { tearsOfIce: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } });
 g('waterball', [
-  { projectile: 'proj-waterball', hit: 'hit-ice', cast: 'cast-magic' }, // T1 水流彈
+  { projectile: 'proj-waterball-flow', hit: 'hit-waterball-splash', cast: 'cast-magic' }, // T1 水流彈
   _, _,
-  { attack: 'burst-frost-nova', hit: 'hit-ice', projectile: 'proj-waterball' }, // T4 寒流爆散（water-burst + water-bounce）
+  { attack: 'burst-frost-nova', hit: 'hit-waterball-splash', projectile: 'proj-waterball-flow' }, // T4 寒流爆散（water-burst + water-bounce）
   { projectile: 'proj-ice-shard', hit: 'hit-ice' },                     // T5 寒霜擴散（frost-spread）
   _,
   { field: 'field-water-tornado' }                                      // T7 水龍捲

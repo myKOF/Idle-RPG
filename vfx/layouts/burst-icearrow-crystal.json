@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-icearrow-crystal",
+  "groups": [
+    {
+      "id": "burst-icearrow-crystal",
+      "name": "burst-icearrow-crystal",
+      "layerIds": [
+        "cold-pressure",
+        "outward-frost",
+        "radial-crystal-0",
+        "radial-crystal-1",
+        "radial-crystal-2",
+        "radial-crystal-3",
+        "radial-crystal-4",
+        "radial-crystal-5",
+        "radial-crystal-6",
+        "radial-crystal-7",
+        "radial-crystal-8",
+        "radial-crystal-9",
+        "radial-crystal-10",
+        "radial-crystal-11",
+        "radial-crystal-12",
+        "radial-crystal-13",
+        "flying-ice-splinters",
+        "ice-glints",
+        "white-core"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-icearrow-crystal"
+  ]
+}

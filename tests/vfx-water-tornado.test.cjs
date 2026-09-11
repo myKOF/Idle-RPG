@@ -109,19 +109,26 @@ test('WATER four tier-7 fields use fx layer, retain phase between hits and expir
  const specs=Array.from({length:4},(_,i)=>({fxKind:'aura',variant:'water-tornado',dur:.35,
   area:{id:'water-'+i,x:i*100,y:80,r:50},vfx:{field:preset.id}}));
  specs.forEach(s=>assert.equal(a.tryPlay(s),true));a.update(.2);
- assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,32);assert.ok(nodes.every(n=>n.tag==='fx'));
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,48);assert.ok(nodes.every(n=>n.tag==='fx'));
  const column=nodes.find(n=>n.spec.generated==='body');
  assert.match(column.t.generated.key, /^body:4:/);assert.equal(column.t.x,0);assert.equal(column.t.y,80);
  assert.equal(column.t.scaleX,column.t.scaleY);
  specs.forEach(s=>a.tryPlay(s));a.update(.2);
- assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,32);assert.match(column.t.generated.key, /^body:8:/);assert.equal(a.stats().played,4);
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,48);assert.match(column.t.generated.key, /^body:8:/);assert.equal(a.stats().played,4);
  a.update(3);assert.equal(a.stats().grounds,0);a.clear();
 });
 
 const generator=require('../js/vfx-water-tornado.js');
 test('WATER independent procedural parts have no atlas and retain deterministic motion',()=>{
- assert.equal(preset.layers.length,11);
- assert.deepEqual(preset.layers.map(l=>l.id),generator.PARTS);
+ assert.equal(preset.layers.length,15);
+ const polished=preset;
+ const extraParts=polished.layers.filter(l=>l.water && l.water.part.startsWith('cyclone-')).map(l=>l.water.part);
+ assert.deepEqual([...new Set([...preset.layers.filter(l=>!l.id.includes('cyclone-')).map(l=>l.id),...extraParts])],generator.PARTS);
+ for(const part of new Set(extraParts)) {
+  const a=generator.sample(part,0.1),b=generator.sample(part,0.5);
+  assert(a.commands.length>100); assert.notDeepEqual(a.commands,b.commands);
+  assert.strictEqual(a,generator.sample(part,0.1));
+ }
  for(const l of preset.layers){assert.equal(l.sheet,undefined);if(l.effect==='waterTornado')assert.equal(l.assetId,undefined);else assert.ok(l.assetId);}
  assert.equal(preset.layers.find(l=>l.id==='halo').type,'sprite');
  for(const id of ['dust','spray']){const l=preset.layers.find(l=>l.id===id);assert.equal(l.type,'particle');assert.equal(l.direction,-90);assert.equal(l.spread,180);}
@@ -174,4 +181,20 @@ test('FIRE eight staggered casts share procedural samples without sharing lifeti
  const bodies=nodes.filter(n=>n.s.generated==='body');assert.equal(bodies.length,8);
  assert.equal(new Set(bodies.map(n=>n.t.generated)).size,1);
  r.destroy();
+});
+
+
+test('WATER raster batches spray strokes and preserves sharp spray under soft mist',()=>{
+ const P=fakePixi();P.Texture.from=()=>{const tex=new P.Texture();tex.source.update=()=>{};return tex;};
+ const contexts=[];
+ const canvasFactory=()=>{const ctx={clears:0,strokes:0,resetTransform(){},clearRect(){this.clears++},save(){},restore(){},scale(){},beginPath(){},lineTo(){},moveTo(){},ellipse(){},closePath(){},fill(){},stroke(){this.strokes++},drawImage(){}};
+  Object.defineProperty(ctx,'filter',{set(){throw Error('per-frame native blur must not return')}});contexts.push(ctx);return {width:320,height:320,getContext:()=>ctx};};
+ const b=pixiBackend.createBackend({PIXI:P,container:new P.Container(),canvasFactory});
+ const n=b.createNode({kind:'generated',generated:'cyclone-front',profileScales:Array(64).fill(1)});
+ const commands=Array.from({length:1000},(_,i)=>({points:[[i%100,0],[i%100,2]],color:[100,220,255,180],line:1}));
+ b.updateNode(n,{generated:{key:'batch-test',commands,groups:[{commands:[{ellipse:[50,50,5,3],color:[80,190,220,100]}],blur:5,alpha:.7}]}});
+ assert.equal(contexts[0].strokes,1,'same-color spray is one draw, not one thousand');
+ assert.equal(contexts[0].clears,1,'mist overlay must not erase sharp water droplets');
+ assert(n.__generatedEntry.temp.width<320,'soft pass uses a smaller surface');
+ b.destroy();
 });

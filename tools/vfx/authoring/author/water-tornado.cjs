@@ -1,10 +1,10 @@
 'use strict';
 // Runtime components reconstructed from the original v10 geometry, with no atlas.
 const kit = require('../preset-kit.cjs');
-const parts = require('../../../../js/vfx-water-tornado.js').PARTS;
+const parts = require('../../../../js/vfx-water-tornado.js').PARTS.filter(part => !part.startsWith('cyclone-'));
 const profile = { centerScale: 1, topRatio: 2, bottomRatio: 2, sourceTopRatio: 2,
   sourceBottomRatio: 2, topY: .0125, centerY: .4640625, bottomY: .915625 };
-kit.write({ schemaVersion: 1, id: 'field-water-tornado', duration: 4, loop: true,
+const preset = { schemaVersion: 1, id: 'field-water-tornado', duration: 4, loop: true,
   layers: parts.filter(part => !['halo', 'dust', 'spray'].includes(part)).map((part, i) => ({ id: part, enabled: true, type: 'procedural', effect: 'waterTornado',
     water: { part, speed: 1, ...(['dust', 'spray'].includes(part) ? { density: 1 } : {}) },
     zIndex: parts.indexOf(part), scale: { x: .4, y: .4 }, anchor: { x: .5, y: .9296875 },
@@ -27,4 +27,5 @@ kit.write({ schemaVersion: 1, id: 'field-water-tornado', duration: 4, loop: true
   ]).sort((a,b)=>a.zIndex-b.zIndex),
   sizing: { shape: 'custom', widthM: 10, heightM: 21,
     authored: { radius: 28, width: 56, height: 115.6 } }
-});
+};
+kit.write(require('./water-tornado-polish.cjs')(preset));

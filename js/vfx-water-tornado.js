@@ -4,7 +4,7 @@
    Components share the same water-volume equation, but remain separate editor layers. */
 var VFXWaterTornado = (function () {
   var TAU = Math.PI * 2, SIZE = 320;
-  var PARTS = ['halo', 'rear-ribbons', 'rear-sheets', 'body', 'front-sheets', 'white-crests', 'front-ribbons', 'base', 'bloom', 'dust', 'spray'];
+  var PARTS = ['halo', 'rear-ribbons', 'rear-sheets', 'body', 'front-sheets', 'white-crests', 'front-ribbons', 'base', 'bloom', 'dust', 'spray', 'cyclone-rear', 'cyclone-front'];
   var SHEETS = [[0.02365975443136804, -0.46519314773330445, 2.610106874012103, 0.056643926353784346, 0.9649827894583254, 4.054516154345219], [0.05729986863238355, 0.017429018526247786, 3.574378350993001, 0.03582454107640964, 0.6960557931624624, 0.06351078633081064], [0.10673609154349062, -0.4334274818816455, 2.365976212085835, 0.06688174264144432, 1.096345966494638, 0.5137108420696083], [0.1662438684500654, -0.1327824604756228, 2.747829979615223, 0.06152113172535501, 0.8599462544374519, 0.8649631891259818], [0.18345867305102723, -0.2877514670409795, 2.7823935327699854, 0.03235759595132496, 0.6502185095565658, 5.009016370368174], [0.2576391508408289, -0.504623366466615, 3.2182080492102134, 0.044149294796552045, 0.661214925953489, 3.0114143960633726], [0.265562517204271, 0.3588745929880609, 3.753164506238809, 0.03279421397084197, 0.6022373860815405, 5.1339268796443775], [0.310687043676363, 0.18995688557880663, 2.5444561653275097, 0.03581913998259008, 0.904274151763313, 2.673501123610644], [0.36895732028294603, 0.2718568367371833, 2.6504699043958366, 0.04400957899150848, 0.7807880556896403, 1.400724433074496], [0.40083934329640014, -0.020312144311402935, 3.660773596983897, 0.058850786886614756, 0.6875342931120388, 3.041486299970057], [0.475344306582549, -0.6084952623468958, 2.537948173717443, 0.05195854870546377, 0.6798256302411791, 5.208341162858979], [0.4919546781624438, 0.12277870885345477, 2.740681842385902, 0.040979508249361085, 0.783225730763679, 0.8553904507404643], [0.558673550015681, 0.3088201587459716, 3.540395717868086, 0.037063917513549295, 0.9199734017985013, 5.700664941264143], [0.5892411794034599, -0.01964930170134005, 3.2025500487288, 0.04842403796268724, 0.6796095986594459, 5.763740894959456], [0.6497220153736302, 0.5784334035737851, 3.618164415251657, 0.050848476417424855, 1.1811361971069299, 1.2741829076910438], [0.6800776226253816, 0.1284062161447337, 2.089864927317977, 0.03510890816535199, 0.8600302873131781, 3.3291909116546274], [0.7248687827860768, -0.4648101440619131, 3.420995716440387, 0.054457899585103026, 0.7074416926661898, 4.491977729924247], [0.7666100529131592, 0.1609924189119274, 3.7251371633360852, 0.06492445237214789, 0.6459727834439496, 0.0824491338897454], [0.8355708310496641, -0.4451758848861808, 3.77805071881187, 0.04363321888155225, 0.6938993841519127, 0.6964852561141285], [0.8793213521745237, -0.007430629779804576, 3.1053403310329237, 0.05481386511870555, 0.7553854501672307, 0.8081764812398148], [0.8978663361701084, 0.5899068206493238, 3.4250453224826947, 0.03467338089763731, 0.8402316752961185, 0.2148019187158543], [0.9721594445054466, -0.45292477092155625, 1.8921398661156144, 0.06529714626937061, 0.7976543529783151, 1.7290100092485483]];
   var cache = new Map();
   function clamp(v) { return Math.max(0, Math.min(1, v)); }
@@ -16,11 +16,12 @@ var VFXWaterTornado = (function () {
   function polygon(out, points, color) { out.push({ points: points, color: color }); }
   function line(out, points, color, width) { out.push({ points: points, color: color, line: width }); }
   function random(seed) { return function () { seed = (Math.imul(1664525, seed) + 1013904223) >>> 0; return seed / 4294967296; }; }
-  function pixels(part, p) {
+  function pixels(part, p, stride) {
+    stride = stride || 1;
     var data = new Uint8ClampedArray(SIZE * SIZE * 4);
-    for (var iy = 0; iy < SIZE; iy++) {
+    for (var iy = 0; iy < SIZE; iy+=stride) {
       var y = iy * 2 + .5, qg = (y - 8) / 578, q = clamp(qg), cr = shape(q, p), c = cr[0], r = cr[1];
-      for (var ix = 0; ix < SIZE; ix++) {
+      for (var ix = 0; ix < SIZE; ix+=stride) {
         var x = ix * 2 + .5, red, green, blue, alpha;
         if (part === 'halo') {
           var distance = Math.abs(x - c) - r * 1.01;
@@ -48,7 +49,9 @@ var VFXWaterTornado = (function () {
           alpha = Math.max(alpha, pm * .96);
         }
         var k = (iy * SIZE + ix) * 4;
-        if (alpha > 0) { data[k] = red / alpha; data[k + 1] = green / alpha; data[k + 2] = blue / alpha; data[k + 3] = alpha * 255; }
+        if (alpha > 0) { data[k] = red / alpha; data[k + 1] = green / alpha; data[k + 2] = blue / alpha; data[k + 3] = alpha * 255;
+          for(var sy=0;sy<stride;sy++)for(var sx=0;sx<stride;sx++){var dest=((iy+sy)*SIZE+ix+sx)*4;data[dest]=data[k];data[dest+1]=data[k+1];data[dest+2]=data[k+2];data[dest+3]=data[k+3];}
+        }
       }
     }
     return data;
@@ -56,22 +59,24 @@ var VFXWaterTornado = (function () {
   function sheetGeometry(spec, p) {
     var q0 = spec[0], off = spec[1], arc = spec[2], width = spec[3], gain = spec[4], seed = spec[5];
     var rise = mod(q0 - p / TAU) * 1.2 - .1, fade = clamp((rise + .1) / .12) * clamp((1.1 - rise) / .12), points = [], mean = 0;
-    for (var k = 0; k < 96; k++) {
-      var s = k / 95, angle = -q0 * 21 + off - p * 2 + (s - .5) * arc;
+    for (var k = 0; k < 24; k++) {
+      var s = k / 23, angle = -q0 * 21 + off - p * 2 + (s - .5) * arc;
       var q = rise + (s - .5) * arc * .057 + .003 * Math.sin(s * 16 + seed + p * 2), cr = shape(q, p);
       var flare = 1 + .065 * Math.pow(Math.sin(s * Math.PI), 2) + .06 * Math.pow(s, 5);
       var thick = 578 * width * Math.pow(Math.sin(Math.PI * s), 1.3) * (.79 + .19 * Math.sin(s * 23 + seed) + .12 * Math.sin(s * 61 + seed * 2)) * (.8 + .3 * Math.cos(angle)) * (1 + .35 * Math.sin(Math.PI * clamp(q)));
       points.push([cr[0] + cr[1] * flare * Math.cos(angle), 8 + q * 578 + cr[1] * .13 * Math.sin(angle), Math.sin(angle), thick, s]); mean += Math.sin(angle);
     }
-    return { points: points, gain: gain, seed: seed, fade: fade, depth: mean / 96 };
+    return { points: points, gain: gain, seed: seed, fade: fade, depth: mean / 24 };
   }
+  var sheetPhase = NaN, sheetLayers = null;
   function sheets(part, p, fire) {
     var front = part !== 'rear-sheets', crest = part === 'white-crests', out = [];
     // Fire uses 20 of 22 sheets (previously 15): roughly 30% denser.
-    var layers = SHEETS.filter(function (_, i) { return !fire || i % 11 !== 4; }).map(function (spec) { return sheetGeometry(spec, p); });
+    if(sheetPhase !== p){sheetPhase=p;sheetLayers=SHEETS.map(function(spec){return sheetGeometry(spec,p);});}
+    var layers = sheetLayers.filter(function (_, i) { return !fire || i % 11 !== 4; });
     if (front) layers.sort(function (a, b) { return a.depth - b.depth; });
     layers.forEach(function (layer) {
-      for (var k = 0; k < 95; k++) {
+      for (var k = 0; k < 23; k++) {
         var v = layer.points[k], n = layer.points[k + 1], z = (v[2] + n[2]) * .5;
         if ((z > 0) !== front) continue;
         var vis = clamp((z + .16) / 1.16), face = (.35 + .65 * vis) * layer.gain;
@@ -91,12 +96,12 @@ var VFXWaterTornado = (function () {
     for (var j = 0; j < 17; j++) {
       if (fire && j % 2) continue;
       var h = mod(j / 17 - p / TAU) * 1.2 - .1, fade = clamp((h + .1) / .12) * clamp((1.1 - h) / .12), points = [];
-      for (var k = 0; k < 130; k++) {
-        var s = k / 129, a = -j * 2.39 - p * 2 + (s - .5) * (3.3 + j % 3 * .3), q = h + (s - .5) * .17, cr = shape(q, p);
+      for (var k = 0; k < 32; k++) {
+        var s = k / 31, a = -j * 2.39 - p * 2 + (s - .5) * (3.3 + j % 3 * .3), q = h + (s - .5) * .17, cr = shape(q, p);
         var rr = cr[1] * (1.21 + .23 * Math.pow(Math.sin(s * Math.PI), 2)) + 10 + Math.pow(s, 3) * (13 + j % 4 * 5);
         points.push([cr[0] + rr * Math.cos(a), 8 + q * 578 + rr * .15 * Math.sin(a), (4 + j % 3 * 2.5) * Math.pow(Math.sin(s * Math.PI), 1.5), a, s]);
       }
-      for (var k2 = 0; k2 < 129; k2++) {
+      for (var k2 = 0; k2 < 31; k2++) {
         var v = points[k2], n = points[k2 + 1], z = Math.sin((v[3] + n[3]) * .5);
         if ((z > 0) !== front) continue;
         var alpha = (60 + 76 * Math.max(0, z)) * fade * Math.pow(Math.sin(Math.PI * v[4]), .6) * (front ? 1 : .48);
@@ -110,13 +115,13 @@ var VFXWaterTornado = (function () {
     var out = [];
     for (var j = 0; j < 6; j++) {
       var upper = [], lower = [];
-      for (var k = 0; k < 110; k++) {
-        var s = k / 109, a = s * 3.9 - p * 2 + j * 1.31, r = (58 + j * 16) * (1 + .075 * Math.sin(a * 4 + p));
+      for (var k = 0; k < 32; k++) {
+        var s = k / 31, a = s * 3.9 - p * 2 + j * 1.31, r = (58 + j * 16) * (1 + .075 * Math.sin(a * 4 + p));
         var x = 320 + r * Math.cos(a), y = 599 + r * .145 * Math.sin(a), w = Math.pow(Math.sin(s * Math.PI), 1.5) * (11 + j * .8) * (1 + .3 * Math.sin(s * 17 + j));
         upper.push([x, y]); lower.push([x + w * .7, y + w]);
       }
       polygon(out, upper.concat(lower.reverse()), [4, 75 + j * 8, 170 + j * 7, 95 + j * 8]);
-      if (j % 3 === 0) line(out, upper.slice(25, 80), [90, 210, 255, 170], 2);
+      if (j % 3 === 0) line(out, upper.slice(7, 24), [90, 210, 255, 170], 2);
     }
     return out;
   }
@@ -155,6 +160,42 @@ var VFXWaterTornado = (function () {
     color[3] *= fireTopFade(x, y, p);
     return Object.assign({}, c, { color: color });
   }
+  // Ring-born spray follows angular momentum while expanding and falling.
+  // The projected orbit is elliptical; height is independent of ground depth.
+  function cyclone(front, p, density) {
+    var out = [], mist = [], rnd = random(77123);
+    function at(seed, life, r, lift, turn) {
+      var angle = seed - life * turn;
+      var radius = r + life * life * 100;
+      return [320 + Math.cos(angle) * radius,
+        320 + Math.sin(angle) * radius * .32 - Math.sin(Math.PI * life) * lift,
+        Math.sin(angle)];
+    }
+    for (var i = 0, count = Math.round(350 * density); i < count; i++) {
+      var phase = rnd(), seed = rnd() * TAU, r = 125 + rnd() * 45;
+      var lift = 8 + Math.pow(rnd(), 2) * 68, turn = 2.4 + rnd() * 1.5;
+      var life = mod(p / TAU * 3 + phase), pos = at(seed, life, r, lift, turn);
+      var size = 1.1 + rnd() * 2.6, fade = Math.pow(Math.sin(Math.PI * life), .7);
+      var bright = rnd();
+      if ((pos[2] >= 0) !== front) continue;
+      if (i % 9 === 0) mist.push({ellipse:[pos[0],pos[1],9+size*4,3+size*2],color:[78,193,220,85*fade]});
+      var prev = at(seed, Math.max(0, life - .008 - bright * .015), r, lift, turn);
+      line(out, [[prev[0],prev[1]],[pos[0],pos[1]]],
+        bright > .7 ? [188,244,255,185*fade] : [46,175+bright*45,231,110*fade],size);
+    }
+    // Broken foam gathers into spiral wakes rather than uniform circles.
+    for(var arm=0;arm<5;arm++) for(var j=0;j<65;j++) {
+      var u=j/65, a=arm*TAU/5-p*3-u*1.65;
+      if((Math.sin(a)>=0)!==front) continue;
+      var rr=138+u*82+4*Math.sin(j*1.8+arm), rr2=rr+1.2;
+      var x=320+Math.cos(a)*rr,y=320+Math.sin(a)*rr*.32-5;
+      var strength=Math.sin(Math.PI*u)*(.5+.5*Math.sin(j*2.3+arm));
+      line(out,[[x,y],[320+Math.cos(a-.025)*rr2,320+Math.sin(a-.025)*rr2*.32-5]],
+        [110,222,243,95*strength],1.5);
+      if(j%3===0) mist.push({ellipse:[x,y,12,4],color:[54,167,201,30*strength]});
+    }
+    return {commands:out,groups:[{commands:mist,blur:5,alpha:.75}]};
+  }
   function sample(part, seconds, density, palette) {
     if (PARTS.indexOf(part) < 0) throw new Error('Unknown water part: ' + part);
     density = density === undefined ? 1 : density;
@@ -162,9 +203,10 @@ var VFXWaterTornado = (function () {
     var tick = Math.floor(mod(seconds / 4) * 80 + 1e-7), key = part + ':' + tick + ':' + density + (fire ? ':fire' : '');
     if (cache.has(key)) return cache.get(key);
     var p = TAU * tick / 80, out = { key: key, width: SIZE, height: SIZE, commands: [] };
-    if (part === 'body' || part === 'halo') out.pixels = pixels(part, p);
+    if (part === 'body' || part === 'halo') out.pixels = pixels(part, p, fire ? 1 : 2);
     else if (part.indexOf('sheets') >= 0 || part === 'white-crests') out.commands = sheets(part, p, fire);
     else if (part.indexOf('ribbons') >= 0) { out.commands = ribbons(part === 'front-ribbons', p, fire); out.blur = .45; }
+    else if (part.indexOf('cyclone-') === 0) { var flow = cyclone(part === 'cyclone-front', p, density); out.commands = flow.commands; out.groups = flow.groups; }
     else if (part === 'base') out.commands = base(p);
     else if (part === 'dust' || part === 'spray') { out.commands = particles(part, p, density); if (part === 'dust') out.blur = 5; }
     else if (part === 'bloom') {

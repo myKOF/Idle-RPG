@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 122,
+  "assetCount": 125,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -273,6 +273,13 @@
       "fileSize": 64290
     },
     {
+      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "relativePath": "light-masks-1.0/Transparent/cone_composed_c.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:fcf46ebe64c47df3d40537bd930b15c5cc66b94e3c744cf9fe6c356cada5d064",
+      "fileSize": 29528
+    },
+    {
       "assetId": "light-masks-1.0/transparent/window_h.png",
       "relativePath": "light-masks-1.0/Transparent/window_h.png",
       "package": "light-masks-1.0",
@@ -413,6 +420,13 @@
       "fileSize": 1169
     },
     {
+      "assetId": "new_materials/mask-shape/dingbats-489.png",
+      "relativePath": "new_materials/mask-shape/dingbats-489.png",
+      "package": "new_materials",
+      "contentHash": "sha256:ef9a518d04a5e6b266218985bb545f8e979872b18aa7c904f10a27a83580b438",
+      "fileSize": 2525
+    },
+    {
       "assetId": "new_materials/mask-shape/dingbats-493.png",
       "relativePath": "new_materials/mask-shape/dingbats-493.png",
       "package": "new_materials",
@@ -446,6 +460,13 @@
       "package": "new_materials",
       "contentHash": "sha256:9d6bd69b4ed950f277cf48b88dde9769d1796ef79757dad157ae108cd59b82a0",
       "fileSize": 175965
+    },
+    {
+      "assetId": "new_materials/orb/sphere_38.png",
+      "relativePath": "new_materials/orb/sphere_38.png",
+      "package": "new_materials",
+      "contentHash": "sha256:ec7d30029e290f27b35b372db0ab861e2e5163d133bcebf082c824e49a3a64ea",
+      "fileSize": 103212
     },
     {
       "assetId": "new_materials/orb/sphere_45.png",

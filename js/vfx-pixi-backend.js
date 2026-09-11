@@ -179,14 +179,29 @@ var VFXPixiBackend = (function () {
     var generatedCache = new Map(), surfacePool = [];
     function canvas() { var c = opts.canvasFactory ? opts.canvasFactory() : document.createElement('canvas'); c.width = 320; c.height = 320; return c; }
     function paintCommands(ctx, commands) {
+      // Group nearby water/foam tones into paths instead of thousands of tiny draws.
+      var batches = new Map();
       commands.forEach(function (c) {
-        var color = c.color; ctx.fillStyle = ctx.strokeStyle = 'rgba(' + color.slice(0, 3).map(function (v) { return Math.round(Math.max(0, Math.min(255, v))); }).join(',') + ',' + Math.max(0, Math.min(1, color[3] / 255)) + ')';
+        var color = c.color.map(function(v) { return Math.max(0,Math.min(255,Math.round(v / 32) * 32)); });
+        if (!color[3]) return;
+        var width = c.line ? Math.max(.5, Math.round(c.line * 2) / 2) : 0;
+        var key = color.join(',') + ':' + width, batch = batches.get(key);
+        if (!batch) { batch = {color:color,width:width,commands:[]}; batches.set(key,batch); }
+        batch.commands.push(c);
+      });
+      batches.forEach(function(batch) {
+        var color=batch.color;
+        ctx.fillStyle=ctx.strokeStyle='rgba('+color.slice(0,3).join(',')+','+color[3]/255+')';
         ctx.beginPath();
-        if (c.ellipse) ctx.ellipse(c.ellipse[0], c.ellipse[1], c.ellipse[2], c.ellipse[3], 0, 0, Math.PI * 2);
-        else { c.points.forEach(function (pt, i) { if (i) ctx.lineTo(pt[0], pt[1]); else ctx.moveTo(pt[0], pt[1]); }); }
-        if (c.line) { ctx.lineWidth = c.line; ctx.stroke(); } else { ctx.closePath(); ctx.fill(); }
+        batch.commands.forEach(function(c) {
+          if(c.ellipse) { ctx.moveTo(c.ellipse[0]+c.ellipse[2],c.ellipse[1]); ctx.ellipse(c.ellipse[0],c.ellipse[1],c.ellipse[2],c.ellipse[3],0,0,Math.PI*2); }
+          else c.points.forEach(function(pt,i) { if(i)ctx.lineTo(pt[0],pt[1]);else ctx.moveTo(pt[0],pt[1]); });
+          if(!batch.width)ctx.closePath();
+        });
+        if(batch.width){ctx.lineWidth=batch.width;ctx.stroke();}else ctx.fill();
       });
     }
+
     function raster(surface, sample) {
       var ctx = surface.canvas.getContext('2d'); ctx.resetTransform(); ctx.clearRect(0, 0, 320, 320);
       if (sample.pixels) { var img = ctx.createImageData(320, 320); img.data.set(sample.pixels); ctx.putImageData(img, 0, 0); }
@@ -198,12 +213,17 @@ var VFXPixiBackend = (function () {
       if (groups) {
         var temp = surface.temp, tc = temp.getContext('2d');
         groups.forEach(function (g, index) {
-          tc.resetTransform(); tc.clearRect(0, 0, 320, 320);
-          if (g.source) tc.drawImage(g.source, 0, 0);
-          else { tc.save(); tc.scale(.5, .5); paintCommands(tc, g.commands); tc.restore(); }
-          if (index === 0) ctx.clearRect(0, 0, 320, 320);
-          ctx.save(); ctx.filter = 'blur(' + g.blur / 2 + 'px)'; ctx.globalAlpha = g.alpha;
-          ctx.globalCompositeOperation = groups.length > 1 ? 'lighter' : 'source-over'; ctx.drawImage(temp, 0, 0); ctx.restore();
+          // Low-resolution light/mist avoids per-frame Canvas filter readbacks.
+          var side = Math.max(16, Math.min(160, Math.round(320 / (1 + g.blur))));
+          if (temp.width !== side) { temp.width = side; temp.height = side; }
+          tc.resetTransform(); tc.clearRect(0, 0, side, side);
+          if (g.source) tc.drawImage(g.source, 0, 0, side, side);
+          else { tc.save(); tc.scale(side / 640, side / 640); paintCommands(tc, g.commands); tc.restore(); }
+          // Only source-blur replaces sharp pixels; mist overlays retain the spray.
+          if (g.source && index === 0) ctx.clearRect(0, 0, 320, 320);
+          ctx.save(); ctx.globalAlpha = g.alpha; ctx.imageSmoothingEnabled = true;
+          ctx.globalCompositeOperation = groups.length > 1 ? 'lighter' : 'source-over';
+          ctx.drawImage(temp, 0, 0, 320, 320); ctx.restore();
         });
       }
       surface.texture.source.update();

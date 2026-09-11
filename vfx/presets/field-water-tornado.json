@@ -17,7 +17,7 @@
         "x": 0.18,
         "y": 0.28
       },
-      "alpha": 0.2,
+      "alpha": 0.14,
       "tint": "#219dff",
       "blendMode": "add",
       "duration": 4
@@ -36,7 +36,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 4,
@@ -69,7 +69,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 4,
@@ -102,7 +102,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 4,
@@ -135,7 +135,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 4,
@@ -168,7 +168,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 4,
@@ -201,7 +201,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 4,
@@ -234,7 +234,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 4,
@@ -267,7 +267,7 @@
         "x": 0.5,
         "y": 0.9296875
       },
-      "alpha": 1,
+      "alpha": 0.7,
       "tint": "#ffffff",
       "blendMode": "add",
       "duration": 4,
@@ -295,7 +295,7 @@
         "x": 0,
         "y": 0
       },
-      "alpha": 0.12,
+      "alpha": 0.084,
       "tint": "#6c869a",
       "blendMode": "normal",
       "duration": 4,
@@ -365,7 +365,7 @@
         "x": 0,
         "y": -58
       },
-      "alpha": 0.6,
+      "alpha": 0.42,
       "tint": "#69d2ff",
       "blendMode": "add",
       "duration": 4,
@@ -422,6 +422,114 @@
           0.2
         ]
       ]
+    },
+    {
+      "id": "base-cyclone-rear",
+      "type": "procedural",
+      "effect": "waterTornado",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.46,
+        "y": 0.46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 4,
+      "water": {
+        "density": 1,
+        "part": "cyclone-rear",
+        "speed": 1
+      }
+    },
+    {
+      "id": "base-cyclone-front",
+      "type": "procedural",
+      "effect": "waterTornado",
+      "zIndex": 12,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.46,
+        "y": 0.46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 4,
+      "water": {
+        "density": 1,
+        "part": "cyclone-front",
+        "speed": 1
+      }
+    },
+    {
+      "id": "top-cyclone-rear",
+      "type": "procedural",
+      "effect": "waterTornado",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -115
+      },
+      "scale": {
+        "x": 0.31,
+        "y": 0.31
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 4,
+      "water": {
+        "density": 0.55,
+        "part": "cyclone-rear",
+        "speed": 1
+      }
+    },
+    {
+      "id": "top-cyclone-front",
+      "type": "procedural",
+      "effect": "waterTornado",
+      "zIndex": 12,
+      "position": {
+        "x": 0,
+        "y": -115
+      },
+      "scale": {
+        "x": 0.31,
+        "y": 0.31
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 4,
+      "water": {
+        "density": 0.55,
+        "part": "cyclone-front",
+        "speed": 1
+      }
     }
   ],
   "sizing": {
