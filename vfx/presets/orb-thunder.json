@@ -14,7 +14,7 @@
         "x": 0.1172,
         "y": 0.1172
       },
-      "alpha": 0.8,
+      "alpha": 0.7,
       "tint": "#002aff",
       "blendMode": "add",
       "duration": 0.5,
@@ -57,9 +57,9 @@
         "x": 0.108,
         "y": 0.108
       },
-      "alpha": 0.95,
+      "alpha": 0.75,
       "tint": "#ffffff",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 0.5,
       "alphaOverLife": [
         [
@@ -86,9 +86,9 @@
         "x": 0.0352,
         "y": 0.0352
       },
-      "alpha": 1,
+      "alpha": 0.75,
       "tint": "#fff8b0",
-      "blendMode": "add",
+      "blendMode": "screen",
       "duration": 0.5,
       "alphaOverLife": [
         [
@@ -200,7 +200,8 @@
         "y": 0.1229
       },
       "alpha": 0.8,
-      "tint": "#000000"
+      "tint": "#000000",
+      "blendMode": "multiply"
     }
   ],
   "sizing": {

@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 120,
+  "assetCount": 121,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -257,6 +257,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:5ad10f86046dc10c7dd9d03666cf1dbc3e2b5520a017a715badfcab94df8df94",
       "fileSize": 45239
+    },
+    {
+      "assetId": "light-masks-1.0/transparent/circle_rings_c.png",
+      "relativePath": "light-masks-1.0/Transparent/circle_rings_c.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:98c23b658d52247edd255ea5fb3259e9ef097cf78c628d91f714567c78ab087f",
+      "fileSize": 64290
     },
     {
       "assetId": "light-masks-1.0/transparent/window_h.png",
