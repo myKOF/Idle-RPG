@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2425,
+  "assetCount": 2422,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -110059,51 +110059,6 @@
           "v": 1
         },
         "backgroundVariant": "transparent"
-      }
-    },
-    {
-      "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
-      "package": "antigravity-authored",
-      "relativePath": "antigravity-authored/ice/ice-arrow-spike.png",
-      "format": "png",
-      "fileSize": 11422,
-      "contentHash": "sha256:cf1d572daab0d88b4520b04e555411de4c7a80b65dce418b65796bef29c2b210",
-      "facts": {
-        "dimensions": {
-          "width": 512,
-          "height": 256
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "antigravity-authored/ice/ice-burst-spikes.png",
-      "package": "antigravity-authored",
-      "relativePath": "antigravity-authored/ice/ice-burst-spikes.png",
-      "format": "png",
-      "fileSize": 69325,
-      "contentHash": "sha256:def7403410853e11edd5704453d402559e35108af57a8277ebdf34e7107ff85d",
-      "facts": {
-        "dimensions": {
-          "width": 512,
-          "height": 512
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "antigravity-authored/ice/ice-spike-single.png",
-      "package": "antigravity-authored",
-      "relativePath": "antigravity-authored/ice/ice-spike-single.png",
-      "format": "png",
-      "fileSize": 2940,
-      "contentHash": "sha256:d8bfd694f1b9fef1430e2144a47680c93599e2d3865e4d87002cfef20dba93b5",
-      "facts": {
-        "dimensions": {
-          "width": 256,
-          "height": 128
-        },
-        "hasAlpha": true
       }
     }
   ]

@@ -7,11 +7,9 @@
       "name": "ground-homing-ice-shard",
       "layerIds": [
         "glow",
-        "streak",
-        "spike-body",
-        "spike-shine",
-        "tip-star",
-        "trail-particles"
+        "body",
+        "core",
+        "dust"
       ]
     }
   ],

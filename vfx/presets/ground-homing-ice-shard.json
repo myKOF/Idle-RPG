@@ -8,26 +8,27 @@
       "id": "glow",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
       "scale": {
-        "x": 0.1133,
-        "y": 0.0664
+        "x": 0.1523,
+        "y": 0.1523
       },
-      "alpha": 0.55,
+      "alpha": 0.45,
       "tint": "#79d8ff",
       "blendMode": "add",
       "duration": 0.55,
       "alphaOverLife": [
         [
           0,
-          0.45
+          0.4
         ],
         [
           0.5,
-          0.65
+          0.55
         ],
         [
           1,
-          0.45
+          0.4
         ]
       ],
       "scaleOverLife": [
@@ -46,46 +47,16 @@
       ]
     },
     {
-      "id": "streak",
+      "id": "body",
       "type": "sprite",
-      "assetId": "new_materials/streak/lines_1.png",
-      "position": {
-        "x": -14,
-        "y": 0
-      },
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 1,
       "scale": {
-        "x": 0.0703,
-        "y": 0.0273
-      },
-      "alpha": 0.55,
-      "tint": "#38bdf8",
-      "blendMode": "add",
-      "duration": 0.55,
-      "alphaOverLife": [
-        [
-          0,
-          0.5
-        ],
-        [
-          0.5,
-          0.7
-        ],
-        [
-          1,
-          0.5
-        ]
-      ]
-    },
-    {
-      "id": "spike-body",
-      "type": "sprite",
-      "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
-      "scale": {
-        "x": 0.0859,
-        "y": 0.043
+        "x": 0.1172,
+        "y": 0.0859
       },
       "alpha": 1,
-      "tint": "#ffffff",
+      "tint": "#4da6ff",
       "blendMode": "normal",
       "duration": 0.55,
       "alphaOverLife": [
@@ -104,56 +75,26 @@
       ]
     },
     {
-      "id": "spike-shine",
+      "id": "core",
       "type": "sprite",
-      "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
+      "assetId": "new_materials/mask-shape/dingbats-366.png",
+      "zIndex": 2,
       "scale": {
-        "x": 0.082,
-        "y": 0.041
+        "x": 0.0703,
+        "y": 0.0508
       },
-      "alpha": 0.6,
-      "tint": "#e0f7ff",
+      "alpha": 1,
+      "tint": "#f2fbff",
       "blendMode": "add",
       "duration": 0.55,
       "alphaOverLife": [
         [
           0,
-          0.55
-        ],
-        [
-          0.5,
-          0.8
-        ],
-        [
-          1,
-          0.55
-        ]
-      ]
-    },
-    {
-      "id": "tip-star",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/star_08.png",
-      "position": {
-        "x": 20,
-        "y": 0
-      },
-      "scale": {
-        "x": 0.0273,
-        "y": 0.0273
-      },
-      "alpha": 0.85,
-      "tint": "#ffffff",
-      "blendMode": "add",
-      "duration": 0.55,
-      "scaleOverLife": [
-        [
-          0,
           0.9
         ],
         [
           0.5,
-          1.15
+          1
         ],
         [
           1,
@@ -162,21 +103,22 @@
       ]
     },
     {
-      "id": "trail-particles",
+      "id": "dust",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 3,
       "tint": "#f2fbff",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 20
+        "rate": 16
       },
       "lifetime": [
-        0.18,
-        0.32
+        0.2,
+        0.35
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 8,
         "shape": "circle"
       },
       "speed": [
@@ -185,7 +127,6 @@
       ],
       "direction": 180,
       "spread": 50,
-      "drag": 3,
       "startScale": [
         0.0078,
         0.0156
@@ -200,20 +141,6 @@
           0
         ]
       ],
-      "tintOverLife": [
-        [
-          0,
-          "#ffffff"
-        ],
-        [
-          0.5,
-          "#7dd3fc"
-        ],
-        [
-          1,
-          "#0284c7"
-        ]
-      ],
       "scaleOverLife": [
         [
           0,
@@ -221,15 +148,15 @@
         ],
         [
           1,
-          0.3
+          0.4
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "height": 26,
-      "width": 40
+      "height": 30,
+      "width": 30
     },
     "heightM": 3,
     "shape": "custom",

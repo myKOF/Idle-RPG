@@ -6,13 +6,10 @@
       "id": "proj-ice-shard",
       "name": "proj-ice-shard",
       "layerIds": [
-        "glow-outer",
-        "streak-core",
-        "ice-spike-body",
-        "ice-spike-shine",
-        "tip-sparkle",
-        "mist-trail",
-        "crystal-dust"
+        "glow",
+        "body",
+        "edge",
+        "trail"
       ]
     }
   ],
