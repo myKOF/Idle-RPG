@@ -56,6 +56,6 @@ function hit(){
  k.particle({id:'impact-frost',asset:k.A.smokeT,burst:6,lifetime:[.18,.42],spawnRadius:4,speed:[22,55],direction:0,spread:360,startPx:[19,32],tint:'#a4dfff',alpha:.3,blend:'add',scaleOverLife:[[0,.4],[1,1.5]],alphaOverLife:k.C.fadeOut})
  ]};
 }
-function homing(){const p=projectile();p.id='ground-icearrow-frost';p.sizing={shape:'circle',radiusM:1.5,authored:{radius:34}};return p;}
+function homing(){const p=projectile();p.id='ground-icearrow-frost';return p;}
 if(require.main===module){bake();const k=require('../preset-kit.cjs');k.write(projectile());k.write(hit());k.write(homing());}
 module.exports={bake,projectile,hit,homing};

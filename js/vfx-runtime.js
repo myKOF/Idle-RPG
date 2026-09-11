@@ -639,7 +639,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
+        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal' || g.presetId === 'ground-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -658,7 +658,8 @@ var VFXRuntime = (function () {
       g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
-      var resolved = sizeOf(g.presetId, area);
+      // 追蹤冰箭沿用發射本體尺寸；area.r 僅控制碰撞，不能縮小箭體。
+      var resolved = sizeOf(g.presetId, g.presetId === 'ground-icearrow-frost' ? null : area);
       if (resolved) {
         g.uniform = false; g.tsx = resolved.scaleX; g.tsy = resolved.scaleY;
       } else if (w > 0 && h > 0) {
@@ -769,7 +770,7 @@ var VFXRuntime = (function () {
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
       key = (role === 'field' ? 'field:' : 'ground:') + key;
       var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
-      var mult = noArea ? profile.scale : profile.areaScale;
+      var mult = noArea || presetId === 'ground-icearrow-frost' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId) {
         live.expireAt = clock + keep;
@@ -1314,7 +1315,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260911-icearrow-arc';
+  var DATA_VERSION = '20260911-icearrow-matched';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
