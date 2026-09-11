@@ -19,7 +19,7 @@ test('production adapter preserves user-edited appearance and size across launch
  const flying=nodes.filter(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.ok(flying.length>=2);
  const homing=flying.at(-1);assert.equal(homing.t.scaleX,arrow.t.scaleX,'homing preserves launch width'); assert.equal(homing.t.scaleY,arrow.t.scaleY,'homing preserves launch height');
  assert.ok(Math.abs(homing.t.rotation-.7)<1e-6,'arrow uses movement heading, not circular area angle');
- assert.deepEqual(presets[2].layers,presets[0].layers,'homing preserves user-edited body, glow and trail'); assert.deepEqual(presets[2].sizing,presets[0].sizing);
+ assert.equal(homing.spec.assetUrl,arrow.spec.assetUrl,'both phases use the edited launch asset');
  for(const angle of [Math.PI/2,Math.PI,-Math.PI/2]){
   rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:2,area:{id:'homing',x:100,y:80,r:15,a:0,speed:585,moveA:angle},vfx:{ground:presets[2].id}});
   for(let j=0;j<30;j++)rt.update(1/60);

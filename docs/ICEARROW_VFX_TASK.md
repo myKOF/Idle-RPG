@@ -27,3 +27,6 @@
 
 - 2026-09-11：依使用者最新調整的 proj-icearrow-frost 完整同步追蹤 preset/layout，保留箭體比例、光暈及粒子。追蹤使用相同本體尺寸與場景縮放，不以碰撞半徑縮小箭體；碰撞與運動不變。正式回歸驗證兩階段實際渲染寬高一致。
 - 驗證完成：VFX 定向 140 項與 Build 339 檔通過；額外以不同 projectile/area 場景倍率驗證兩階段顯示尺寸一致。未作遊戲實機錄影。素材庫乾淨，本次只改既有 preset 與程式，無新圖檔需提交。
+
+- 2026-09-11：修正複製 preset 仍需分別維護的問題。舊 ground-icearrow-frost 技能表 ID 在播放入口轉為 proj-icearrow-frost；追蹤直接使用同一份已註冊特效，尺寸、粒子、光暈與編輯結果共用。舊 ID 僅保留資料相容，不再播放舊版圖層。保留並提交使用者最新縮小的 projectile 設定。
+- 驗證：實際 Runtime 使用兩份刻意不同的 preset，發射與追蹤仍輸出相同箭體尺寸；140 項 VFX 測試及 Build 339 檔通過。未作實機錄影；本次沒有新素材，Effects-Materials status 為乾淨。

@@ -10,8 +10,8 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": -2,
       "position": {
-        "x": -43.9635,
-        "y": 0
+        "x": -13.6361,
+        "y": -2.7773
       },
       "alpha": 0.3,
       "tint": "#92d8ff",
@@ -26,18 +26,18 @@
         1.5
       ],
       "spawn": {
-        "radius": 6.8138,
+        "radius": 3.6379,
         "shape": "circle"
       },
       "speed": [
-        17.0346,
-        47.6969
+        9.0947,
+        25.4652
       ],
       "direction": 180,
       "spread": 35,
       "startScale": [
-        0.0465,
-        0.0799
+        0.0248,
+        0.0427
       ],
       "rotationStart": [
         0,
@@ -87,8 +87,8 @@
       "assetId": "particle-pack/png-black-background/star_04.png",
       "zIndex": -1,
       "position": {
-        "x": -32.8367,
-        "y": 0
+        "x": -7.6954,
+        "y": -2.7773
       },
       "alpha": 0.7,
       "tint": "#c8f4ff",
@@ -103,18 +103,18 @@
         0.32
       ],
       "spawn": {
-        "radius": 8.5173,
+        "radius": 4.5473,
         "shape": "circle"
       },
       "speed": [
-        13.6277,
-        51.1039
+        7.2757,
+        27.2842
       ],
       "direction": 180,
       "spread": 55,
       "startScale": [
-        0.0067,
-        0.0167
+        0.0036,
+        0.0088
       ],
       "worldSpace": true,
       "alphaOverLife": [
@@ -143,13 +143,13 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/cone_composed_c.png",
       "position": {
-        "x": -24.4272,
-        "y": 0.5886
+        "x": -3.2056,
+        "y": -2.463
       },
       "rotation": 4.712389,
       "scale": {
-        "x": 0.1218,
-        "y": 0.2782
+        "x": 0.065,
+        "y": 0.1485
       },
       "alpha": 0.24,
       "tint": "#369ddd",
@@ -162,12 +162,12 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 2,
       "position": {
-        "x": -5.0197,
-        "y": 0.2943
+        "x": 7.1561,
+        "y": -2.6201
       },
       "scale": {
-        "x": 0.1833,
-        "y": 0.3046
+        "x": 0.0978,
+        "y": 0.1627
       },
       "alpha": 1,
       "blendMode": "normal",

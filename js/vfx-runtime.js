@@ -639,7 +639,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal' || g.presetId === 'ground-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
+        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal' || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -654,12 +654,12 @@ var VFXRuntime = (function () {
          沒帶＝這一拍是靜止的，推算自走那一段自然就不會走。 */
       g.speed = Math.max(0, num(area.speed, 0));
       g.moveA = num(area.moveA, NaN);
-      g.turnRate = g.presetId === 'ground-icearrow-frost' ? num(area.turnRate, 0) : 0;
+      g.turnRate = g.presetId === 'proj-icearrow-frost' ? num(area.turnRate, 0) : 0;
       g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
       // 追蹤冰箭沿用發射本體尺寸；area.r 僅控制碰撞，不能縮小箭體。
-      var resolved = sizeOf(g.presetId, g.presetId === 'ground-icearrow-frost' ? null : area);
+      var resolved = sizeOf(g.presetId, g.presetId === 'proj-icearrow-frost' ? null : area);
       if (resolved) {
         g.uniform = false; g.tsx = resolved.scaleX; g.tsy = resolved.scaleY;
       } else if (w > 0 && h > 0) {
@@ -671,7 +671,7 @@ var VFXRuntime = (function () {
         g.uniform = true;
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
-      g.trot = g.presetId === 'ground-icearrow-frost' &&
+      g.trot = g.presetId === 'proj-icearrow-frost' &&
         typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(area.a, 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
@@ -691,7 +691,7 @@ var VFXRuntime = (function () {
     function groundDeadReckon(g, dt) {
       if (!(g.speed > 0) || !isFinite(g.moveA) || !(dt > 0)) return;
       var run = g.speed * dt;
-      if (g.presetId === 'ground-icearrow-frost' && Math.abs(g.turnRate || 0) > 1e-8) {
+      if (g.presetId === 'proj-icearrow-frost' && Math.abs(g.turnRate || 0) > 1e-8) {
         var angle = g.moveA + g.turnRate * dt;
         var radius = g.speed / g.turnRate;
         g.bx += radius * (Math.sin(angle) - Math.sin(g.moveA));
@@ -738,6 +738,8 @@ var VFXRuntime = (function () {
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec, role) {
+      // 舊技能表的 ground ID 僅作相容入口；直接播放玩家編輯的同一份發射 preset。
+      if (presetId === 'ground-icearrow-frost') presetId = 'proj-icearrow-frost';
       if (presetId === 'ground-firewall' && has(presetId + '-column-0') && spec.area) {
         var wall = spec.area, axis = num(wall.a, 0), result = false;
         for (var column = 0; column < 3; column++) {
@@ -770,7 +772,7 @@ var VFXRuntime = (function () {
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
       key = (role === 'field' ? 'field:' : 'ground:') + key;
       var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
-      var mult = noArea || presetId === 'ground-icearrow-frost' ? profile.scale : profile.areaScale;
+      var mult = noArea || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId) {
         live.expireAt = clock + keep;
@@ -925,7 +927,7 @@ var VFXRuntime = (function () {
         }
         g.x = g.bx + g.ox;
         g.y = g.by + g.oy;
-        if (g.presetId === 'ground-icearrow-frost') {
+        if (g.presetId === 'proj-icearrow-frost') {
           // Face the rendered displacement, including snapshot correction; a separate
           // rotation easing would make the arrow slide sideways while turning.
           var dx = g.x - previousX, dy = g.y - previousY;
@@ -1315,7 +1317,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260911-icearrow-matched';
+  var DATA_VERSION = '20260911-icearrow-shared';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
