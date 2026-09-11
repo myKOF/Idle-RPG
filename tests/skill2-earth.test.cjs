@@ -552,6 +552,32 @@ test('岩甲與狂怒的執行期狀態一律不入存檔，且重置時把投�
   assert.equal(c.G.player.skills2.levels.rockarmor !== undefined, true, '存檔只留等級，不留執行期狀態');
 });
 
+/* 岩甲光殼（環繞石板）的壽命必須綁在 SKILL2_RT.rock 上：顯示層的場域壽命是
+   「事件 dur × 容錯倍數」，只在施放當下送一次的話，護盾結束（甚至玩家死亡、
+   RT 早已被 resetSkillRT 清空）之後石板還會繼續繞好幾秒。 */
+test('ROCKARMOR 環繞石板只在岩甲存續期間續命，到期與死亡後不再重送',()=>{
+ const c=loadContext(),p=playerEnt(),events=[];
+ setLevels(c,'rockarmor',[1,1,0,0,0,0,0]);equip(c,'rockarmor');
+ c.playCombatVfx=s=>events.push(s);
+ c.castSkill2(p,[enemy(10000,20,0)],'rockarmor','mv-float');
+ const shell=()=>events.filter(s=>s.variant==='rock-armor');
+ assert.equal(shell().length,1,'施放當下先畫一次，不必等節拍');
+ assert.ok(shell().every(s=>s.dur<=c.SG_DOMAIN_VFX_SEC+1e-9),'單則事件的壽命不得超過一個顯示節拍');
+ run(c,p,[],5);
+ assert.ok(shell().length>=5,'岩甲存續期間每個顯示節拍都要續命');
+ // 到期：RT 收掉之後就沒有人再續命，畫面自然到期
+ events.length=0;run(c,p,[],6);
+ assert.equal(c.SKILL2_RT.rock,null,'10 秒的岩甲此時已經到期');
+ const beforeExpiry=shell().length;
+ events.length=0;run(c,p,[],3);
+ assert.equal(shell().length,0,'岩甲到期後不得再送光殼事件');
+ assert.ok(beforeExpiry>0,'到期前那幾拍仍要續命');
+ // 死亡：resetSkillRT 會把 RT 整批清掉（js/combat.js onPlayerFieldDeath）
+ c.castSkill2(p,[enemy(10000,20,0)],'rockarmor','mv-float');
+ c.resetSkill2RT();events.length=0;run(c,p,[],3);
+ assert.equal(shell().length,0,'RT 被清掉後不得再送光殼事件');
+});
+
 test('天地逆返只由第七階選用藍紋岩甲，護盾數量不改變特效選擇',()=>{
  for(const tier7 of [0,1])for(const shield of [0,800]){
   const c=loadContext(),p=playerEnt(),events=[];p.shield=shield;

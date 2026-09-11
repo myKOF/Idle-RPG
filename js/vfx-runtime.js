@@ -1197,6 +1197,21 @@ var VFXRuntime = (function () {
       rtZone.update(step);
     }
 
+    /* 只收「持續場域」：場域與環繞場域的權威都在模擬層的執行期狀態
+       （SKILL_RT／SKILL2_RT），顯示層本身沒有「現在還在不在」的資訊，只能靠
+       模擬層不斷重送來續命。玩家倒地時那一批執行期狀態是被整批清掉的
+       （js/combat.js onPlayerFieldDeath → resetSkillRT），之後不會再有人續命——
+       留著只是等各自的顯示壽命自己走完，畫面上就是「人已經倒了，岩甲的石板還在繞」。
+       飛行物、受擊爆點與狀態光環不在此列：前兩者本來就是一次性的，
+       狀態光環另有 syncStatuses 逐張快照對帳。 */
+    function clearFields() {
+      Object.keys(orbits).forEach(stopOrbit);
+      Object.keys(grounds).forEach(function (k) {
+        stopRef(grounds[k].ref);
+        delete grounds[k];
+      });
+    }
+
     function clear() {
       moonSwingIndex = 0;
       projectiles.length = 0;
@@ -1223,6 +1238,7 @@ var VFXRuntime = (function () {
       tryPlay: tryPlay,
       syncStatuses: syncStatuses,
       update: update,
+      clearFields: clearFields,
       clear: clear,
       destroy: destroy,
       stats: function () {

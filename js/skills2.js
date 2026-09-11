@@ -4929,12 +4929,16 @@ function sgTickFireGod(ctx, dt) {
      所以玩家一移動，圈就會每秒「跳」一次到新位置，看起來是瞬移不是跟隨。
      改用 follow-aura：顯示層自己每一幀取玩家錨點（比照火狩環繞場域 spawnFireHunt），
      事件只負責「這個領域還在、半徑多少」，位置完全由顯示層逐幀決定。
-     仍以顯示節拍重送（帶同一個 id ＝ 續期同一個節點），效果被卸下時就自然到期消失。 */
+     仍以顯示節拍重送（帶同一個 id ＝ 續期同一個節點），效果被卸下時就自然到期消失。
+     ⚠️ `area.follow` 不能省（2026-09-11 實機）：舊畫法 spawnFollowAura 根本不讀座標，
+     所以「不帶 x／y」就夠了；但 Preset 路徑是看這個旗標決定要不要釘在玩家身上
+     （vfx-runtime groundAim），沒帶就退回讀 area.x／y ＝ 0，整個圈會畫在**世界原點**——
+     玩家走遠之後那是幾萬像素外的地方，畫面上就是一個不會跟著人跑的孤兒圈。 */
   if (radius > 0 && (SKILL2_RT.fireGodVfxAt || 0) <= GT) {
     SKILL2_RT.fireGodVfxAt = GT + SG_DOMAIN_VFX_SEC;
     sgEmitPlayerVfx('firehunt', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'fire', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2 },
+      area: { id: 'sg-firegod-aura', r: radius, w: radius * 2, h: radius * 2, follow: true },
       vfxUlt: 'fireGodDescend'
     });
   }
@@ -5070,7 +5074,7 @@ function sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out) {
      否則【金剛不壞】的 +生命上限會慢一拍，這一次的護盾（＝最大生命的 pct%）
      仍照舊上限計算，下一次施放才吃得到——玩家看到的是「第一次放沒效」。
      base 先給 1 佔位，等護盾真的塗上去之後再改寫成真值。 */
-  SKILL2_RT.rock = { until: GT + dur, pEnt: pEnt, base: 1, amp: 0, inside: null, vfxAt: 0 };
+  SKILL2_RT.rock = { until: GT + dur, pEnt: pEnt, base: 1, amp: 0, inside: null, vfxAt: 0, auraAt: 0 };
   if (ultAdamant && typeof markStatsDirty === 'function') {
     var hpMaxBefore = Math.max(1, Number(st && st.hp) || 0);
     markStatsDirty();
@@ -5086,7 +5090,7 @@ function sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   /* base 取「這次施放後的護盾總量」而不是增量：護盾是共用的一池（applyShield 取 max），
      分母用增量會在既有護盾較高時算出負數比例。 */
   SKILL2_RT.rock.base = Math.max(1, Math.max(before, pEnt.shield || 0));
-  sgEmitPlayerVfx('rockarmor', floatSel, { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: Math.min(6, dur), vfxTier: lvs[6] > 0 ? 7 : 1 });
+  sgRockArmorAura(floatSel);   // 光殼：施放當下先畫一次，之後由顯示節拍續命（見該函式）
   if (typeof floatPlayerEvent === 'function') {
     var pSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
     floatPlayerEvent(pSel, '🪨+' + fmt(Math.max(0, (pEnt.shield || 0) - before)), 'shield');
@@ -5094,6 +5098,32 @@ function sgCastRockarmor(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   /* 兩個領域型超神進化（三選一、互斥）：施放當下先對範圍內的敵人作用一次，
      之後由 sgTickRockField 接手「進入範圍就作用」。 */
   sgRockFieldCast(pEnt, st, pool, floatSel);
+}
+
+/* 岩甲光殼（環繞石板／【天地逆返】的藍紋石板）的重送。
+   ⚠️ 施放當下畫一次是不夠的：顯示層的場域壽命是「事件的 dur × 容錯倍數」，
+   與岩甲的實際剩餘時間無關——原本一發 dur 6 秒的事件會在畫面上活 15 秒，
+   護盾（10 秒）早就結束了石板還在繞，玩家死亡時更明顯（RT 在判死那一刻就被
+   resetSkillRT 清掉，畫面卻要等壽命走完）。
+   改成比照領域範圍提示的作法：每個顯示節拍重送一次（同一份 preset ＝ 續期同一個
+   節點，不會疊出第二層），dur 取「岩甲剩餘時間」與節拍的較小值，於是 RT 一消失
+   就沒有人再續命，畫面跟著收。倒地當下的立即回收由顯示層負責
+   （js/battle-renderer.js clearPlayerFields）——模擬層跑在 Worker 內，叫不到顯示層。 */
+function sgRockArmorAura(floatSel) {
+  var rt = SKILL2_RT && SKILL2_RT.rock;
+  if (!rt) return;
+  rt.auraAt = GT + SG_DOMAIN_VFX_SEC;
+  var lvs = skills2Levels('rockarmor');
+  var left = Math.max(0.1, Math.min(SG_DOMAIN_VFX_SEC, rt.until - GT));
+  sgEmitPlayerVfx('rockarmor', floatSel, { fxKind: 'aura', variant: 'rock-armor', elem: 'earth', dur: left, vfxTier: (lvs && lvs[6] > 0) ? 7 : 1 });
+}
+
+/* 岩甲光殼的每 tick 續命（節拍到了才送，與領域範圍提示同一個顯示節奏）。 */
+function sgTickRockArmorAura(ctx) {
+  var rt = SKILL2_RT && SKILL2_RT.rock;
+  if (!rt || rt.until <= GT || (rt.pEnt && rt.pEnt !== ctx.pEnt)) return;
+  if ((rt.auraAt || 0) > GT) return;
+  sgRockArmorAura(ctx.floatSel);
 }
 
 /* ---------------------------------------------------------------------------
@@ -5126,12 +5156,13 @@ function sgRockBurstVictims(pool, m) {
 }
 
 /* 岩甲領域的範圍提示：玩家錨定、逐幀跟隨（判定本來就是以玩家為圓心的 bfEntityDistance）。
-   ⚠️ 沒有這一圈的話，範圍內剛好沒有敵人時整個領域是看不見的。 */
+   ⚠️ 沒有這一圈的話，範圍內剛好沒有敵人時整個領域是看不見的。
+   ⚠️ area.follow 是 Preset 路徑的錨定旗標，不能省（理由見 sgTickFireGod 的說明）。 */
 function sgRockFieldAura(floatSel, radius) {
   if (!(radius > 0)) return;
   sgEmitPlayerVfx('rockarmor', floatSel, {
     fxKind: 'aura', variant: 'follow-aura', elem: 'earth', dur: SG_DOMAIN_VFX_SEC * 2,
-    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2 },
+    area: { id: 'sg-rock-field', r: radius, w: radius * 2, h: radius * 2, follow: true },
     vfxUlt: (sgRockFieldUlt() || {}).id || ''
   });
 }
@@ -7877,10 +7908,11 @@ function sgTickWaterPrison(ctx, dt) {
   if (wp.radius > 0 && wp.vfxAt <= GT) {
     wp.vfxAt = GT + SG_DOMAIN_VFX_SEC;
     /* 範圍提示走玩家錨定的 follow-aura（顯示層每一幀自己取玩家錨點），
-       與【火神降臨】的領域同一支：水牢是「周圍 20 米」，跟著人走才對得上判定。 */
+       與【火神降臨】的領域同一支：水牢是「周圍 20 米」，跟著人走才對得上判定。
+       area.follow 是 Preset 路徑的錨定旗標，不能省（理由見 sgTickFireGod 的說明）。 */
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2 },
+      area: { id: 'sg-water-prison', r: wp.radius, w: wp.radius * 2, h: wp.radius * 2, follow: true },
       vfxUlt: 'waterPrisonFall'
     });
   }
@@ -7956,9 +7988,10 @@ function sgTickAbyssDomain(ctx, dt) {
   var radius = bfMeterPx(sgUltVal(u, 'm'));
   if (radius > 0 && (SKILL2_RT.abyssVfxAt || 0) <= GT) {
     SKILL2_RT.abyssVfxAt = GT + SG_DOMAIN_VFX_SEC;
+    // 同上：area.follow 是 Preset 路徑的錨定旗標，不能省（理由見 sgTickFireGod）。
     sgEmitPlayerVfx('waterball', ctx.floatSel, {
       fxKind: 'aura', variant: 'follow-aura', elem: 'ice', dur: SG_DOMAIN_VFX_SEC * 2,
-      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2 },
+      area: { id: 'sg-abyss-domain', r: radius, w: radius * 2, h: radius * 2, follow: true },
       vfxUlt: 'abyssBurial'
     });
   }
@@ -9789,10 +9822,6 @@ function sgCounterSplashTargets(exclude, enemies, fx) {
    =========================================================================== */
 function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
-  if (ctx.pEnt.hp <= 0 && typeof BattleRenderer !== 'undefined' &&
-      typeof BattleRenderer.clearFollowAura === 'function') {
-    BattleRenderer.clearFollowAura('sg-rock-field');
-  }
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
   if (SKILL2_RT.rock && SKILL2_RT.rock.until <= GT) {
     /* 【金剛不壞】的生命上限倍率跟著岩甲走：到期不重算屬性的話，那 +55% 會一直留著。
@@ -9803,11 +9832,10 @@ function tickSkill2(dt, ctx) {
        到期這一刻它已經回 1 了。倍率要直接從超神進化的參數重算。 */
     var adamantU = (typeof markStatsDirty === 'function') ? sgUlt('rockarmor', 'adamantBody') : null;
     var adamantRatio = adamantU ? 1 + sgUltVal(adamantU, 'hp') / 100 : 1;
-    SKILL2_RT.rock = null;                                                 // 岩甲到期回收
-    if (typeof BattleRenderer !== 'undefined' &&
-        typeof BattleRenderer.clearFollowAura === 'function') {
-      BattleRenderer.clearFollowAura('sg-rock-field');
-    }
+    /* 岩甲到期回收。顯示層那一側不必也不能在這裡通知：模擬層跑在 Worker 內，
+       BattleRenderer 不存在於該環境（原本的 clearFollowAura 呼叫因此從未執行過）。
+       光殼與領域範圍提示都改由「RT 還在才續命」收斂——沒有人續命就自然到期。 */
+    SKILL2_RT.rock = null;
     if (adamantRatio > 1) {
       markStatsDirty();
       var afterSt = (typeof getStats === 'function') ? getStats() : null;
@@ -9836,6 +9864,7 @@ function tickSkill2(dt, ctx) {
   sgTickFirehuntLegend(ctx, dt);
   sgTickFireGod(ctx, dt);
   sgTickRockField(ctx, dt);
+  sgTickRockArmorAura(ctx);
   sgTickNetherMire(ctx);
   sgTickRebirthCharge(ctx.pEnt);
   sgTickEarthguardAura(ctx);
