@@ -40,6 +40,9 @@
   <button id="btn-copy-preset" class="copy-btn" title="複製目前的 Preset 名稱到剪貼簿">⧉ 複製</button>
   <button id="btn-load">載入 Preset</button>
   <button id="btn-save" title="儲存到 repo（Ctrl+S）">儲存到 repo</button>
+  <!-- 另存新檔：改完存成另一份，原本那份不動。實作上就是換掉 preset.id
+       再走一次一般存檔——存檔目的地本來就由 preset.id 決定。 -->
+  <button id="btn-save-as" title="存成另一份 Preset，不會動到目前這一份">另存新檔</button>
   <button id="btn-download">下載複本</button>
   <input type="file" id="file-load" accept="application/json" hidden>
   <span id="dirty-flag" class="dirty"></span>

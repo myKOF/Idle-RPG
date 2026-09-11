@@ -50,7 +50,12 @@
     rows: [],          // [{ id, label, text, search }]
     shown: [],         // 目前符合關鍵字的（rows 的子集）
     active: -1,        // shown 裡被高亮的索引
-    open: false
+    open: false,
+    /* 目前開著的是哪一份。放在這裡而不是用閉包帶著跑，是因為「另存新檔」
+       之後清單要重建、而目前這一份也換人了——閉包版本會讓舊的 id 留在
+       事件處理常式裡，於是切回自己會被當成「已經是這一份」而沒反應。 */
+    currentId: null,
+    wired: false       // 事件只註冊一次，重建清單不得重複掛
   };
 
   function comboDisplayText() {
@@ -114,8 +119,9 @@
             search: (id + ' ' + all.join(' ')).toLowerCase()
           };
         });
+        combo.currentId = currentId;
         input.value = comboDisplayText();
-        wirePresetCombo(currentId);
+        wirePresetCombo();
       })
       .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
   }
@@ -134,7 +140,8 @@
     });
   }
 
-  function renderComboList(currentId) {
+  function renderComboList() {
+    var currentId = combo.currentId;
     var host = $('preset-list');
     if (!host) return;
     host.textContent = '';
@@ -177,13 +184,14 @@
       /* mousedown 而不是 click：input 的 blur 會先關掉清單，click 就永遠打不中。 */
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
-        choosePreset(row.id, currentId);
+        choosePreset(row.id);
       });
       host.appendChild(el);
     });
   }
 
-  function openCombo(currentId, query) {
+  function openCombo(query) {
+    var currentId = combo.currentId;
     combo.open = true;
     combo.shown = comboFilter(query);
     /* 預設高亮目前這一份，找不到就第一筆——打開之後直接按 Enter
@@ -193,7 +201,7 @@
       if (combo.shown[i].id === currentId) { combo.active = i; break; }
     }
     $('preset-list').hidden = false;
-    renderComboList(currentId);
+    renderComboList();
     scrollComboActive();
   }
 
@@ -212,14 +220,15 @@
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
   }
 
-  function moveComboActive(delta, currentId) {
+  function moveComboActive(delta) {
     if (!combo.shown.length) return;
     combo.active = (combo.active + delta + combo.shown.length) % combo.shown.length;
-    renderComboList(currentId);
+    renderComboList();
     scrollComboActive();
   }
 
-  function choosePreset(id, currentId) {
+  function choosePreset(id) {
+    var currentId = combo.currentId;
     closeCombo();
     $('preset-search').value = comboDisplayText();
     if (!id || id === currentId) return;
@@ -231,7 +240,9 @@
     window.location.search = '?preset=' + encodeURIComponent(id);
   }
 
-  function wirePresetCombo(currentId) {
+  function wirePresetCombo() {
+    if (combo.wired) return;
+    combo.wired = true;
     var input = $('preset-search');
     var toggle = $('preset-toggle');
 
@@ -241,14 +252,14 @@
          於是變成在既有文字中間插字，打出來的關鍵字一個都對不上。
          目前開著哪一份不會因此消失——清單裡那一列有左緣色條標著。 */
       input.value = '';
-      openCombo(currentId, '');
+      openCombo('');
     });
     input.addEventListener('input', function () {
       combo.shown = comboFilter(input.value);
       combo.active = 0;
       $('preset-list').hidden = false;
       combo.open = true;
-      renderComboList(currentId);
+      renderComboList();
     });
     input.addEventListener('blur', function () {
       /* 沒選任何一份就離開＝取消，把顯示文字放回去。 */
@@ -256,11 +267,11 @@
       input.value = comboDisplayText();
     });
     input.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowDown') { if (!combo.open) openCombo(currentId, input.value); else moveComboActive(1, currentId); e.preventDefault(); return; }
-      if (e.key === 'ArrowUp') { moveComboActive(-1, currentId); e.preventDefault(); return; }
+      if (e.key === 'ArrowDown') { if (!combo.open) openCombo(input.value); else moveComboActive(1); e.preventDefault(); return; }
+      if (e.key === 'ArrowUp') { moveComboActive(-1); e.preventDefault(); return; }
       if (e.key === 'Enter') {
         var row = combo.shown[combo.active];
-        if (row) choosePreset(row.id, currentId);
+        if (row) choosePreset(row.id);
         e.preventDefault();
         return;
       }
@@ -279,7 +290,7 @@
       if (combo.open) { closeCombo(); return; }
       input.focus();
       input.select();
-      openCombo(currentId, '');
+      openCombo('');
     });
   }
 
@@ -3203,32 +3214,37 @@
   /* Save：把目前的 Preset 回寫到 repo 的 vfx/presets/<preset.id>.json。
      目的地由 preset.id 決定而不是由「開場的 ?preset= 」決定，
      之後要做 Save As 時只要能改 preset.id 就成立，不必動這條路徑。 */
+  /* 回傳一個 Promise，resolve true 代表真的寫進去了。呼叫端多半不理它
+     （按鈕與 Ctrl+S 都只要看畫面上的狀態），但「另存新檔」必須知道成敗——
+     失敗時它得把已經改掉的 preset.id 捲回去，否則使用者會停在一個
+     指向不存在檔案的編輯器上，下一次按存檔就真的寫出那個檔。 */
   function savePreset() {
-    if (state.saving) return;                 // 連按兩下不該送出兩次 PUT
+    if (state.saving) return Promise.resolve(false);   // 連按兩下不該送出兩次 PUT
     clearSaveError();                         // 這一次的結果從乾淨的畫面開始講
     var targetProblem = saveTargetProblem();
     if (targetProblem) {
       showSaveError('無法存檔', [targetProblem]);
       setSaveStatus('存檔失敗', 'err');
-      return;
+      return Promise.resolve(false);
     }
     var problems = presetSaveProblems();
     if (problems) {
       showSaveError('無法存檔，' + problems.title, problems.list);
       setSaveStatus('存檔失敗', 'err');
-      return;
+      return Promise.resolve(false);
     }
     var text = currentPresetText();
     if (text === null) {
       showSaveError('無法存檔，序列化失敗', []);
       setSaveStatus('存檔失敗', 'err');
-      return;
+      return Promise.resolve(false);
     }
 
     state.saving = true;
     $('btn-save').disabled = true;
     setSaveStatus('存檔中…', '');
-    fetch(presetUrl(state.preset.id), {
+    var ok = false;
+    return fetch(presetUrl(state.preset.id), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: text
@@ -3252,6 +3268,7 @@
       });
     }).then(function (body) {
       /* 成功：只更新「已存檔基準」。不重新載入、不動 selection、不動 preset.id。 */
+      ok = true;
       state.savedText = text;
       setSaveStatus('已存檔 · ' + body.bytes + ' bytes', 'ok');
       /* 分組另存一個檔。它失敗不影響 Preset 已經存好這件事——
@@ -3278,6 +3295,147 @@
     }).then(function () {
       state.saving = false;
       $('btn-save').disabled = false;
+      return ok;
+    });
+  }
+
+  /* ---------------- 另存新檔 ----------------
+
+     開一份舊的特效改一改，存成新的一份，原本那份一個 byte 都不動。
+
+     實作上就是「把 preset.id 換成新的，再走一次一般存檔」——存檔目的地本來
+     就是由 preset.id 決定的（見 savePreset 的說明），所以不需要第二條寫入路徑。
+     sourcePresetId 也要跟著換，否則 saveTargetProblem 會認為「id 與載入來源不一致」
+     而把存檔擋下來；那道守門正是為了防止手動改 id 之後誤覆蓋別人的檔案，
+     這裡是唯一有權明確地把它改掉的地方。
+
+     兩件事必須做對，否則「不會改到舊特效」就只是口號：
+
+       撞名一律拒絕，而且在存之前重新抓一次清單。手上這份是開啟當下抓的，
+       另一個分頁、另一位 AI 在這段期間新增的檔案不在裡面——那正是會被
+       悄悄蓋掉的情況。清單抓不到就不存，寧可失敗也不要賭。
+
+       失敗要能回捲。preset.id 是在送出前就改掉的，存檔失敗卻不還原的話，
+       使用者會停在一個指向不存在檔案的編輯器上，而下一次按存檔就真的
+       把那個檔寫出來了——結果是「另存失敗」卻多了一份半成品。 */
+
+  function saveAsPreset() {
+    if (state.saving || !state.preset) return;
+    clearSaveError();
+
+    var current = state.sourcePresetId || state.preset.id || '';
+    var input = window.prompt(
+      '另存成新的 Preset。\n新的 id（小寫英數與連字號，會寫成 vfx/presets/<id>.json）：',
+      current ? current + '-copy' : '');
+    if (input === null) return;                       // 使用者取消
+
+    var newId = String(input).trim().toLowerCase();
+    var idProblem = VFXPresetIdPolicy.presetIdProblem(newId);
+    if (idProblem) {
+      showSaveError('無法另存新檔', [idProblem]);
+      setSaveStatus('另存失敗', 'err');
+      return;
+    }
+    if (newId === current) {
+      showSaveError('無法另存新檔',
+        ['「' + newId + '」就是目前開著的這一份。另存新檔要換一個名字，' +
+         '要覆寫原本那份請直接按「儲存到 repo」。']);
+      setSaveStatus('另存失敗', 'err');
+      return;
+    }
+
+    setSaveStatus('檢查名稱…', '');
+    fetch(PRESET_LIST_URL).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (data) {
+      var ids = (data && data.presets) || [];
+      if (ids.indexOf(newId) >= 0) {
+        showSaveError('無法另存新檔',
+          ['已經有一份叫「' + newId + '」的 Preset。另存新檔不會覆寫既有檔案，' +
+           '請換一個名字。']);
+        setSaveStatus('另存失敗', 'err');
+        return;
+      }
+      return commitSaveAs(newId);
+    }).catch(function (e) {
+      /* 清單抓不到就不存：沒有那份清單就無法保證不會蓋到別人的檔案，
+         而「不會改到舊特效」正是這個功能存在的理由。 */
+      showSaveError('無法另存新檔（拿不到現有的 Preset 清單，無法確認會不會覆寫）',
+        [String(e && e.message || e)]);
+      setSaveStatus('另存失敗', 'err');
+    });
+  }
+
+  /* 根群組的 id 與名稱要跟著換成新的 preset id（VFX_AGENT_WORKFLOW §9.11）。
+     不換的話，另存出來的檔案一落地就違反規則：presetId 是新的、群組卻還叫舊名，
+     LAYOUT-4 會紅——而且是編輯器自己造成的。
+
+     只在「剛好一個群組」時動它，那是根群組的形狀；使用者自己分了好幾組時
+     不要亂猜要改哪一個。回傳還原用的快照。 */
+  function renameRootGroup(newId) {
+    var groups = state.layout && state.layout.groups;
+    if (!groups || groups.length !== 1) return null;
+    var g = groups[0];
+    var before = { id: g.id, name: g.name, order: (state.layout.order || []).slice() };
+    var oldKey = keyOf('group', g.id);
+    g.id = newId;
+    /* 名稱只有在「本來就等於舊 id」時才換：那代表它是自動取的。
+       使用者手動取過名字就留著，那是他想看到的標籤。 */
+    if (before.name === before.id) g.name = newId;
+    if (Array.isArray(state.layout.order)) {
+      state.layout.order = state.layout.order.map(function (k) {
+        return k === oldKey ? keyOf('group', newId) : k;
+      });
+    }
+    return before;
+  }
+
+  function commitSaveAs(newId) {
+    var prev = {
+      id: state.preset.id,
+      source: state.sourcePresetId,
+      savedText: state.savedText,
+      savedLayoutText: state.savedLayoutText,
+      layoutPresetId: state.layout ? state.layout.presetId : null
+    };
+    state.preset.id = newId;
+    state.sourcePresetId = newId;
+    var prevGroup = renameRootGroup(newId);
+    /* 基準線先歸零：新檔案還不存在，這份內容當然算未存檔。
+       成功的話 savePreset 會把它設成剛寫出去的文字。 */
+    state.savedText = null;
+
+    return savePreset().then(function (ok) {
+      if (!ok) {
+        state.preset.id = prev.id;
+        state.sourcePresetId = prev.source;
+        state.savedText = prev.savedText;
+        state.savedLayoutText = prev.savedLayoutText;
+        if (state.layout) {
+          state.layout.presetId = prev.layoutPresetId;
+          if (prevGroup) {
+            state.layout.groups[0].id = prevGroup.id;
+            state.layout.groups[0].name = prevGroup.name;
+            state.layout.order = prevGroup.order;
+          }
+        }
+        renderLayerList();
+        onPresetChanged();
+        return false;
+      }
+      /* 之後的存檔、重整、複製名稱都要指向新的這一份。
+         用 replaceState 而不是重新載入：重載會把剛才的編輯內容再跑一次
+         載入流程，而那份內容現在就在記憶體裡，沒有理由繞一圈。 */
+      try {
+        window.history.replaceState(null, '', '?preset=' + encodeURIComponent(newId));
+      } catch (e) { /* 不支援就算了，只影響重整之後開到哪一份 */ }
+      fillPresetPicker(newId);                 // 新的一份要出現在清單裡，且變成目前這份
+      renderLayerList();                       // 根群組改名了，樹上要跟著變
+      setSaveStatus('已另存為 ' + newId, 'ok');
+      $('validation').className = 'hint ok';
+      $('validation').textContent = '✓ 已另存為 vfx/presets/' + newId + '.json（原本那份未更動）';
+      return true;
     });
   }
 
@@ -3669,6 +3827,7 @@
        兩處都留的話，兩個控制項的顯示狀態會分家。 */
     $('btn-copy-preset').onclick = copyPresetName;
     $('btn-save').onclick = savePreset;
+    $('btn-save-as').onclick = saveAsPreset;
     $('btn-download').onclick = downloadPreset;
     /* 橫幅擋在工具列下面，讀完要收得掉。收掉的只是橫幅，
        右側「驗證」面板仍然留著同一段文字，回頭要查還找得到。 */
