@@ -6651,3 +6651,12 @@ Worker 存活且頁面正常完成載入。
 - 修法：收尾點改到 `change`——那才是「值真的寫回 preset」的那一刻，對兩種欄位都成立。Enter 的語意不變，因為瀏覽器會在 Enter 時派送 change。另外 change 收尾後若仍在焦點內就接著開下一筆交易，否則 Enter 之後繼續改會沒有交易可歸屬。
 - 驗證：在實際編輯器以完整事件序列（focus → 打字 → keydown(Enter) → change）重現與驗證。修正前：值變了、dirty 亮起、undo 為「沒有可復原的動作」。修正後：undo 顯示「修改 startScale」，按下去值回到 `[0.0469,0.0742]`。新增 HISTORY-40 並做過突變測試。編輯器六個測試檔 286 項通過。
 - 測試環境備註：瀏覽器窗格沒有 OS 焦點時，程式化 `.focus()` 只會改 activeElement 而不派送 focus 事件；自動化工具送的 `Return` 在頁面上是 `key=""`，要用 `Enter` 才是真的 Enter。這兩點都曾讓測試結果失真，記著以免下次再踩。
+
+## Claude｜同步腳本不該 rebase 整合分支（SYNC-FFONLY-20260911）
+
+- 症狀：`sync_ai_worktrees` 在 develop 上卡住，`js/bridge.js` 衝突，工作區停在 detached HEAD、rebase 進行到 7 步中的第 2 步。
+- 根因：`SyncRemoteFirst` 那段對每個分支都跑 `pull --rebase`，包含 develop。develop 是整合分支，而三個 AI 分支在流程最後又被 fast-forward 回 develop，所以每一個分支都含有 merge commit。rebase 不帶 `--rebase-merges` 會把它們壓平，於是得把各 AI 分支的原始 commit 一筆筆重放到新基底——衝突就是這樣憑空冒出來的，而且改寫的是已經整合好的歷史。
+- 實測當時 develop 領先遠端 9 筆、落後 0 筆，根本沒有分歧，純領先的分支只要 push；`pull --rebase` 仍然開始重放 7 筆並在第 2 筆卡住。先 `rebase --abort` 還原（9 筆一筆未掉），再修腳本。
+- 修法：對齊步驟改用 `merge --ff-only "$Remote/$branch"`。三種情況都合理——遠端是祖先就 Already up to date、本地沒新東西就 fast-forward、真的分歧就停下來報錯交給人看。第三種正是該讓人知道的事；靜靜地改寫共用歷史比停下來糟得多。
+- 這也解釋了先前 ai/claude 那次 rebase 為何會讓 AI_TASKS.md 出現重複區段：同樣是 merge 被壓平後重放造成的。
+- 驗證：新增測試釘住「對齊用 ff-only、不得用 pull --rebase、fetch 要排在前面」並做過突變測試；`-ValidateOnly` 仍可正常執行。sync-ai-worktrees 5 項通過。
