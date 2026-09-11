@@ -70,7 +70,7 @@ var BattleRenderer = (function () {
        radiusPx  輪廓寬度，單位是**素材像素**，畫到螢幕上還要乘 manifest 的 scale
                  （player.json 是 3.154，所以 2 ≒ 螢幕上 6px）
      ?outline=0 可以整個關掉，用來比對有無輪廓的畫面。 */
-  var PLAYER_OUTLINE = { color: 0x3dff6e, alpha: 0.92, radiusPx: 2 };
+  var PLAYER_OUTLINE = { color: 0x3dff6e, alpha: 0.92, radiusPx: 1 };
 
   /* 元素主題色：優先沿用 js/vfx.js 的 VFX_ELEM_THEME，載入順序異常時退回內建表。 */
   var FALLBACK_THEME = {
