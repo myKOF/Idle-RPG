@@ -7,6 +7,7 @@
     {
       "id": "white-current-spine",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 0,
       "position": {
@@ -25,6 +26,7 @@
     {
       "id": "crown-fork-3",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 1,
       "position": {
@@ -76,6 +78,7 @@
     {
       "id": "crown-fork-2",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 2,
       "position": {
@@ -229,6 +232,7 @@
     {
       "id": "violet-ion-envelope",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 5,
       "position": {
@@ -247,6 +251,7 @@
     {
       "id": "fragmenting-electric-wake",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 6,
       "position": {
@@ -318,6 +323,7 @@
     {
       "id": "lightning-stream-4",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 7,
       "position": {
@@ -358,6 +364,7 @@
     {
       "id": "lightning-stream-3",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 8,
       "position": {
@@ -398,6 +405,7 @@
     {
       "id": "lightning-stream-2",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 9,
       "position": {
@@ -438,6 +446,7 @@
     {
       "id": "lightning-stream-1",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 10,
       "position": {
@@ -518,6 +527,7 @@
     {
       "id": "ion-wake",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 12,
       "position": {
@@ -536,13 +546,14 @@
     {
       "id": "blue-corona",
       "type": "sprite",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 13,
       "scale": {
-        "x": 0.3809,
-        "y": 0.3809
+        "x": 0.32,
+        "y": 0.32
       },
-      "alpha": 0.8,
+      "alpha": 1,
       "tint": "#305aff",
       "blendMode": "add",
       "duration": 2,
@@ -564,6 +575,7 @@
     {
       "id": "dense-core",
       "type": "sprite",
+      "enabled": true,
       "assetId": "new_materials/orb/sphere_47.png",
       "zIndex": 14,
       "scale": {
@@ -640,6 +652,7 @@
     {
       "id": "surface-forks",
       "type": "particle",
+      "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 17,
       "alpha": 0.85,
