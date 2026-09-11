@@ -21,6 +21,13 @@
       "fileSize": 20395025
     },
     {
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "relativePath": "codex-authored/icearrow/icicle.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:f1cb57f1513785b18f5de5e7f3ab60158ab87a9a33ecef98e6b019304a4dab04",
+      "fileSize": 17820
+    },
+    {
       "assetId": "codex-authored/impact/crimson-fragment-0.svg",
       "relativePath": "codex-authored/impact/crimson-fragment-0.svg",
       "package": "codex-authored",
@@ -852,13 +859,6 @@
       "package": "spritemancer-vfx",
       "contentHash": "sha256:e9831382a16ad9d5d1c5da3d40a1a8b652b60d01a06a3ca0a4845de4ad30d454",
       "fileSize": 2834222
-    },
-    {
-      "assetId": "codex-authored/icearrow/icicle.png",
-      "relativePath": "codex-authored/icearrow/icicle.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:f1cb57f1513785b18f5de5e7f3ab60158ab87a9a33ecef98e6b019304a4dab04",
-      "fileSize": 17820
     }
   ]
 }
