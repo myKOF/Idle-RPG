@@ -569,7 +569,8 @@ var VFXRuntime = (function () {
          直接照用。連鎖段與敵方出手另有各自的起點規則，不套這條。 */
       var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
-      if (!toId && !directed) return false;
+      var fixedLanding = presetId === 'proj-waterball-flow' && spec.area && spec.area.fixedLanding === true;
+      if (!toId && !directed && !fixedLanding) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
       var from;
       /* 起點：連鎖段從前一個目標、敵方出手從攻擊者（sourceId）、天降從落點正上方，
@@ -589,13 +590,14 @@ var VFXRuntime = (function () {
             y: landing.y - Math.sin(fallAngle) * 500 * profile.skyScale };
         }
       } else from = ctx.playerPos();
-      var to = directed
+      var to = fixedLanding ? {x:spec.area.x,y:spec.area.y} : directed
         ? { x: from.x + Math.cos(spec.angle) * num(spec.lineLength, 0),
             y: from.y + Math.sin(spec.angle) * num(spec.lineLength, 0) }
         : ((travel > 0 && ctx.projectileTargetPoint)
           ? ctx.projectileTargetPoint(toId, travel) : ctx.posOf(toId));
       /* 連鎖段接上一段的航向：整條鏈因此是一條連續彎過去的線，
          而不是每個彈射點折一次角。第一段沒有上一段，enterAngle 留 NaN＝直線。 */
+      if (fixedLanding) {from={x:spec.area.sourceX,y:spec.area.sourceY};to={x:spec.area.x,y:spec.area.y};}
       var enterAngle = chained ? arrivalAngle(ids[0]) : NaN;
       var ctrl = curveControl(from, to, enterAngle);
       var arcHeight = presetId === 'proj-waterball-flow' ? Math.max(0,num(spec.arcM,0)) * (typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10) : 0;
@@ -610,7 +612,7 @@ var VFXRuntime = (function () {
       if (!ref) return false;
       projectiles.push({
         /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
-        ref: ref, from: from, targetId: toId, to: directed ? to : null, t: 0,
+        ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
         dimensions: dimensions
@@ -1014,7 +1016,7 @@ var VFXRuntime = (function () {
       var drops0 = budgetDrops;
       switch (role) {
         case 'hit':
-          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact') && spec.area
+          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash') && spec.area
             ? playOnArea(rtFx, presetId, spec)
             : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
           break;
@@ -1089,7 +1091,7 @@ var VFXRuntime = (function () {
       /* 受擊爆點：同一則事件的 hit 角色跟著主要角色走（飛行物則等它抵達）；
          主要角色本身就是 hit 時不重複播。
          spec.hit === false＝這一擊被閃避或被無敵擋下，舊畫法同樣不畫爆點。 */
-      if (role !== 'hit' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && presetId !== 'proj-thunderfall-sky' && presetId !== 'hit-thunderfall-impact' && presetId !== 'bolt-thunderstrike-bluewhite' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
+      if (role !== 'hit' && presetId !== 'proj-waterball-flow' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && presetId !== 'proj-thunderfall-sky' && presetId !== 'hit-thunderfall-impact' && presetId !== 'bolt-thunderstrike-bluewhite' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
         playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
           role === 'projectile' ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
@@ -1320,7 +1322,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260912-waterball-flow';
+  var DATA_VERSION = '20260912-water-fixed-landing';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
