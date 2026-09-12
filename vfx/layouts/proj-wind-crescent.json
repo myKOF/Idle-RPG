@@ -6,10 +6,11 @@
       "id": "proj-wind-crescent",
       "name": "proj-wind-crescent",
       "layerIds": [
-        "glow",
-        "body",
-        "core",
-        "trail"
+        "green-rim",
+        "green-body",
+        "green-body-copy",
+        "white-core",
+        "wind-motes"
       ]
     }
   ],

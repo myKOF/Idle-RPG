@@ -6,12 +6,20 @@
       "id": "ground-blizzard",
       "name": "ground-blizzard",
       "layerIds": [
-        "fill",
-        "edge",
-        "cloud-a",
-        "cloud-b",
-        "cloud-c",
-        "snow"
+        "irregular-frost-0",
+        "irregular-frost-1",
+        "irregular-frost-2",
+        "irregular-frost-3",
+        "irregular-frost-4",
+        "irregular-frost-7",
+        "irregular-frost-8",
+        "ground-ice-mist-0",
+        "ground-ice-mist-1",
+        "ground-ice-mist-2",
+        "driven-snow-0",
+        "driven-snow-1",
+        "driven-snow-2",
+        "tumbling-ice"
       ]
     }
   ],

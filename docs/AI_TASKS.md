@@ -1,5 +1,48 @@
 # AI_TASKS.md
 
+## Codex｜大小風刃顯示比例（2026-09-12）
+
+- 任務 WIND-SIZE；Owner Codex；Done。追蹤月牙用碰撞半徑除以 authored 半長，造成放大；改為半徑對應刃寬並以本體比例求長，與直射採相同 profile.scale。範圍 Runtime、快取、測試與本紀錄；不改數值及使用者 VFX。預檢乾淨；驗收正式大小風刃比例及 Build。
+- 使用者要求包含自行修改的全部檔案，納入冰霜新星、暴風雪、大小風刃 preset/layout。5 項風刃整合測試通過（同一倍率下小型根縮放為大型 75%），所有修改 preset 的 Core 驗證通過；Build 342 檔及 git diff --check 通過；素材匯出最新、素材庫乾淨，無素材庫新 Commit。未實機目視測試；本紀錄所在提交可供合併，未推送。
+
+## Codex｜追跡風刃抖動與停滯（2026-09-12）
+
+- 任務 WIND-MOTION-SMOOTH；Owner Codex；Done。使用者要求消除轉彎抖動，且小風刃速度與大型一致。大小本來共用 geom.speedPx；修正追跡場域被 dest 停駐限制、快照航向跳變及位置修正速度突變。範圍 Runtime、skills2 運動事件、快取、風刃回歸測試、本紀錄；保留使用者冰系修改。預檢乾淨，驗收：速度來源與實際位移、跨目標不停駐、含快照修正的朝向及角速度連續性、Build。
+- 完成：風刃不再送停駐終點，Runtime 相容舊事件亦不套用停止限制；快照航向殘差及位置修正速度共用收斂時間，旋轉仍取實際位移，正常無誤差圓弧保持精確積分。未更動傷害與速度數值。
+- 驗證：windblade-vfx-integration 4/4（同源速度、一秒位移、跨目標不停、含交替誤差的快照每幀角變化、朝向及圓弧）；vfx-runtime 的 WINDBLADE／GROUND 7/7；Build 342 檔通過，git diff --check 通過。未實機測試，使用者冰系 VFX 保留未提交，無素材變更。Commit 為本紀錄所在提交，可供合併，未推送。
+
+## Codex｜風刃朝向與圓弧轉彎（2026-09-12）
+
+- 任務 WIND-BLADE-FACING；Owner Codex；Done。使用者回報風刃固定朝右，要求參考寒冰箭。追跡場域漏用 moveA、漏傳 turnRate 且模擬轉彎未採圓弧積分；沿用冰箭機制修正。範圍：skills2、Runtime、主頁／Worker 快取、測試、本紀錄；不改使用者冰系 VFX。預檢乾淨，驗收包含四向直射、追跡轉彎與朝向／位移一致、Build。
+- 驗證：windblade-vfx-integration 2/2（快照修正、多方向、跨正負 π、零時間、模擬與六個顯示幀圓弧一致）；vfx-runtime 的 WINDBLADE 2/2（正式月牙四向旋轉、長距離壽命／回收）；icearrow-vfx-integration 的 homing arrow／continuous turning arc 2/2。Build 342 檔通過，git diff --check 通過。未實機目視測試。無素材變更；保留使用者冰霜新星／暴風雪修改未提交。本紀錄所在提交可供合併，未推送。
+
+## Codex｜風刃月牙接入（2026-09-12）
+
+- 任務 WIND-BLADE-VFX；Owner Codex；Done。使用者批准 moon-original-01 月牙、深綠外圈與中央白光。範圍：風刃／追跡風刃 preset/layout、Runtime 飛行壽命與快取、匯出、相關測試；不改技能數值及使用者冰系 VFX。預檢乾淨，前置預覽已確認。驗收：批准外觀、素材一致性、長距離飛行／回收、Build；使用者後續合併。
+- 完成：一般風刃與批准 JSON 除 id 外一致；追跡版使用同一月牙配色、維持 3×6 米，持續本體不反覆淡出。原共用追跡 preset 的萬象風劫亦沿用新外觀。一般飛行動畫以 timeScale 對齊事件 travelMs，避免 1.5 秒後先消失，未更改速度／傷害。
+- 驗證：node --test --test-name-pattern=WINDBLADE tests/vfx-runtime.test.cjs 1/1（1 秒與 5 秒飛行仍可見且抵達回收）；npm run build 341 檔通過；兩份 Core.validatePreset、批准 JSON 比對、素材雜湊及 export-assets --check 通過。素材庫乾淨無新 Commit；未實機測試。保留使用者冰霜新星／暴風雪修改未提交。本紀錄所在提交可供合併，未推送。
+
+## Codex｜暴風雪霜地與飄雪接入（2026-09-12）
+
+- 任務 BLIZZARD-VFX；Owner Codex；Done。使用者批准不規則藍色霜地、貼地冰霧、空中飄雪碎冰預覽，要求接入。
+- 範圍：ground-blizzard preset/layout、Runtime／主頁快取、素材匯出與本紀錄；不修改技能數值、跟隨邏輯與其他 VFX。前置預覽已確認、預檢乾淨。驗收：批准 JSON 一致、素材雜湊、場域跟隨／縮放／回收測試、Build；完成由使用者測試合併。
+- 完成：正式 JSON 除 id 外與批准 v2 預覽完全一致，沿用 T7 ground-blizzard 引用及權威矩形範圍；16 層、無即時程序生成。同步單一根群組與資料快取，新增正式 Runtime 回歸測試。
+- 驗證：node --test --test-name-pattern='BLIZZARD|GROUND-' tests/vfx-runtime.test.cjs 6/6，覆蓋範圍加倍、移動續命不重播、到期清除；npm run build 341 檔通過；Core.validatePreset、批准 JSON 比對、素材庫／遊戲 SHA256、export-assets --check、git diff --check 均通過。素材皆已匯出且素材庫乾淨，無需素材庫 Commit。未實機目視測試；本紀錄所在 Commit 可供合併，未推送。
+
+## Codex｜連鎖閃電彈射間隔（2026-09-12）
+
+- 任務 CHAIN-HOP-300；Owner Codex；Done。使用者指定每次彈射間隔由 0.2 改為 0.3 秒，沿用首擊抵達時間，電弧排程與傷害顯示共同延後。
+- 範圍：skills2、主頁／Worker 快取、既有 CHAIN 測試及本紀錄；不改使用者正在編輯的 VFX。前置依賴完整、預檢乾淨。驗收：逐跳視覺／命中延遲、Build；使用者後續合併。
+- 驗證：node --test --test-name-pattern=CHAIN tests/skill2-lightning.test.cjs 1/1 通過，四跳播放為 0/300/600/900ms，命中顯示為 183/483/783/1083ms；npm run build 341 檔通過；git diff --check 通過。未實機測試，無素材變更。使用者自行修改的水龍捲／冰霜 VFX 與匯出保留未提交；本次只提交彈射間隔，可供合併，未推送。
+
+## Codex｜冰霜新星冰錐震波接入（2026-09-12）
+
+- 任務 FROST-NOVA-VFX；Owner Codex；Done。使用者批准新版冰錐、雙層震波及貼地冰霧預覽並要求接入。
+- 範圍：burst-frost-nova／burst-frost-freeze preset/layout、素材匯出、Runtime 資料快取及 index、本紀錄。禁止修改傷害、範圍、Excel/CSV 及其他技能邏輯。前置預覽已批准，檔案衝突預檢乾淨。
+- 驗收：正式 preset 與批准預覽一致、素材引用可解析、Core/layout 與冰系測試、Build。完成後使用者測試／合併。
+- 完成：基本及第四階 attack 入口皆更新；維持既有共用 preset 引用（含水流彈的寒流爆散），不改數值與事件時序。32 層，新增震波素材由既有素材庫匯出；兩份正式 JSON 除 id 外與批准預覽完全一致，每個素材 SHA256 與素材庫一致。素材庫乾淨、無需新 Commit。
+- 驗證：node --test tests/vfx-core.test.cjs tests/vfx-preset-layout.test.cjs tests/skill2-ice.test.cjs 為 162/174；以 HEAD 檔案重跑同為 162/174，失敗名稱完全相同（11 項既有冰系斷言、1 項使用者無限火龍群組名稱）。npm run build 341 檔通過；export-assets --check 最新；git diff --check 通過。未進行遊戲實機測試；遊戲 Commit 為本紀錄所在提交，可供合併，未推送。
+
 ## Codex｜火龍捲持續時間參數（2026-09-12）
 
 - 任務 FIRE-DRAGON-DURATION；Owner Codex；Done。使用者指定本體 6 段／3 秒，T7 額外 6 段／6 秒，優先讀取 T7 sec，未填沿用 T1。同步 Excel/CSV、說明、快取與測試；不改 VFX 外觀與其他技能。預檢乾淨，完成後由使用者合併。

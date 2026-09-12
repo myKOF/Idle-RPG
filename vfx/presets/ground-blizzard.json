@@ -1,243 +1,269 @@
 {
   "schemaVersion": 1,
   "id": "ground-blizzard",
-  "duration": 2.6,
+  "duration": 3,
   "loop": true,
   "layers": [
     {
-      "id": "fill",
+      "id": "irregular-frost-0",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_b.png",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 0,
-      "scale": {
-        "x": 0.3906,
-        "y": 0.2031
+      "position": {
+        "x": -190.2765,
+        "y": -43.7918
       },
-      "alpha": 0.2,
-      "tint": "#7dd3fc",
+      "scale": {
+        "x": 0.5903,
+        "y": 0.2245
+      },
+      "alpha": 0.5,
+      "tint": "#3ba4ea",
       "blendMode": "add",
-      "duration": 2.6,
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          0.2
+          0.75
         ],
         [
           0.5,
-          0.28
+          1
         ],
         [
           1,
-          0.2
+          0.75
         ]
       ]
     },
     {
-      "id": "edge",
+      "id": "irregular-frost-1",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
-      "zIndex": 1,
-      "scale": {
-        "x": 0.3906,
-        "y": 0.2031
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": -2.4562,
+        "y": -47.7829
       },
-      "alpha": 0.55,
-      "tint": "#22d3ee",
+      "scale": {
+        "x": 1.0927,
+        "y": 0.3894
+      },
+      "alpha": 0.5,
+      "tint": "#258dd9",
       "blendMode": "add",
-      "duration": 2.6,
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          0.55
+          0.75
         ],
         [
           0.5,
-          0.4
+          1
         ],
         [
           1,
-          0.55
+          0.75
         ]
       ]
     },
     {
-      "id": "cloud-a",
+      "id": "irregular-frost-2",
       "type": "sprite",
-      "assetId": "new_materials/smoke/smoke3_11.png",
-      "zIndex": 2,
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": -26
+        "x": 189.3905,
+        "y": -38.23
       },
       "scale": {
-        "x": 0.332,
-        "y": 0.0664
+        "x": 0.6377,
+        "y": 0.2062
       },
-      "alpha": 0.3,
-      "tint": "#f0f9ff",
-      "blendMode": "normal",
-      "delay": 0,
-      "duration": 2.6,
+      "alpha": 0.5,
+      "tint": "#3ba4ea",
+      "blendMode": "add",
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          0.25
+          0.75
         ],
         [
           0.5,
-          0.4
+          1
         ],
         [
           1,
-          0.25
-        ]
-      ],
-      "scaleXOverLife": [
-        [
-          0,
-          0.95
-        ],
-        [
-          0.5,
-          1.08
-        ],
-        [
-          1,
-          0.95
+          0.75
         ]
       ]
     },
     {
-      "id": "cloud-b",
+      "id": "irregular-frost-3",
       "type": "sprite",
-      "assetId": "new_materials/smoke/smoke3_11.png",
-      "zIndex": 3,
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": -2
+        "x": -221.2147,
+        "y": 32.0289
       },
       "scale": {
-        "x": 0.332,
-        "y": 0.0664
+        "x": 0.7857,
+        "y": 0.3395
       },
-      "alpha": 0.3,
-      "tint": "#f0f9ff",
-      "blendMode": "normal",
-      "delay": 0.4,
-      "duration": 2.6,
+      "alpha": 0.5,
+      "tint": "#258dd9",
+      "blendMode": "add",
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          0.25
+          0.75
         ],
         [
           0.5,
-          0.4
+          1
         ],
         [
           1,
-          0.25
-        ]
-      ],
-      "scaleXOverLife": [
-        [
-          0,
-          0.95
-        ],
-        [
-          0.5,
-          1.08
-        ],
-        [
-          1,
-          0.95
+          0.75
         ]
       ]
     },
     {
-      "id": "cloud-c",
+      "id": "irregular-frost-4",
       "type": "sprite",
-      "assetId": "new_materials/smoke/smoke3_11.png",
-      "zIndex": 4,
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": 22
+        "x": 155.4363,
+        "y": 45.8162
       },
       "scale": {
-        "x": 0.332,
-        "y": 0.0664
+        "x": 1.051,
+        "y": 0.3735
       },
-      "alpha": 0.3,
-      "tint": "#f0f9ff",
-      "blendMode": "normal",
-      "delay": 0.8,
-      "duration": 2.6,
+      "alpha": 0.5,
+      "tint": "#3ba4ea",
+      "blendMode": "add",
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          0.25
+          0.75
         ],
         [
           0.5,
-          0.4
+          1
         ],
         [
           1,
-          0.25
-        ]
-      ],
-      "scaleXOverLife": [
-        [
-          0,
-          0.95
-        ],
-        [
-          0.5,
-          1.08
-        ],
-        [
-          1,
-          0.95
+          0.75
         ]
       ]
     },
     {
-      "id": "snow",
+      "id": "irregular-frost-7",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": -90.8752,
+        "y": 77.2333
+      },
+      "scale": {
+        "x": 1.1986,
+        "y": 0.3548
+      },
+      "alpha": 0.5,
+      "tint": "#258dd9",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ]
+    },
+    {
+      "id": "irregular-frost-8",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": 82.1831,
+        "y": 89.4499
+      },
+      "scale": {
+        "x": 0.8448,
+        "y": 0.2412
+      },
+      "alpha": 0.5,
+      "tint": "#3ba4ea",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "scaleOverLife": 1
+    },
+    {
+      "id": "ground-ice-mist-0",
       "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 5,
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 1,
       "position": {
-        "x": 0,
-        "y": -60
+        "x": 160.3714,
+        "y": -1.1521
       },
-      "tint": "#ffffff",
-      "blendMode": "add",
+      "alpha": 0.26,
+      "tint": "#b1ddf2",
+      "blendMode": "normal",
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 5
       },
       "lifetime": [
-        1.1,
-        1.7
+        0.7,
+        1.1
       ],
       "spawn": {
-        "height": 20,
+        "height": 25.6294,
         "shape": "box",
-        "width": 200
+        "width": 245.6157
       },
       "speed": [
-        30,
-        60
+        38.4442,
+        64.0736
       ],
-      "direction": 100,
-      "spread": 40,
-      "gravity": {
-        "x": -20,
-        "y": 30
-      },
+      "direction": 180,
+      "spread": 8,
+      "drag": 1,
       "startScale": [
-        0.0059,
-        0.0117
+        0.1,
+        0.1585
       ],
       "alphaOverLife": [
         [
@@ -245,12 +271,12 @@
           0
         ],
         [
-          0.2,
-          0.95
+          0.25,
+          0.7
         ],
         [
-          0.85,
-          0.8
+          0.7,
+          0.45
         ],
         [
           1,
@@ -260,22 +286,390 @@
       "scaleOverLife": [
         [
           0,
-          1
+          0.921543
         ],
         [
           1,
+          2.445908
+        ]
+      ]
+    },
+    {
+      "id": "ground-ice-mist-1",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 1,
+      "position": {
+        "x": 51.5497,
+        "y": 35.9257
+      },
+      "alpha": 0.26,
+      "tint": "#b1ddf2",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 5
+      },
+      "lifetime": [
+        0.7,
+        1.1
+      ],
+      "spawn": {
+        "height": 25.6294,
+        "shape": "box",
+        "width": 245.6157
+      },
+      "speed": [
+        38.4442,
+        64.0736
+      ],
+      "direction": 180,
+      "spread": 8,
+      "drag": 1,
+      "startScale": [
+        0.1,
+        0.1585
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
           0.7
+        ],
+        [
+          0.7,
+          0.45
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0.0031,
+          0.974202
+        ],
+        [
+          1,
+          1.89582
+        ]
+      ]
+    },
+    {
+      "id": "ground-ice-mist-2",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 1,
+      "position": {
+        "x": -57.2721,
+        "y": 73.0034
+      },
+      "alpha": 0.26,
+      "tint": "#b1ddf2",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 5
+      },
+      "lifetime": [
+        0.7,
+        1.1
+      ],
+      "spawn": {
+        "height": 25.6294,
+        "shape": "box",
+        "width": 245.6157
+      },
+      "speed": [
+        38.4442,
+        64.0736
+      ],
+      "direction": 180,
+      "spread": 8,
+      "drag": 1,
+      "startScale": [
+        0.1,
+        0.1585
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.7
+        ],
+        [
+          0.7,
+          0.45
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0.0031,
+          0.991755
+        ],
+        [
+          1,
+          2.386045
+        ]
+      ]
+    },
+    {
+      "id": "driven-snow-0",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 10,
+      "position": {
+        "x": 85.4312,
+        "y": -215.9232
+      },
+      "alpha": 0.8,
+      "tint": "#daf2ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 55
+      },
+      "lifetime": [
+        0.5,
+        0.85
+      ],
+      "spawn": {
+        "height": 192.2211,
+        "shape": "box",
+        "width": 448.5157
+      },
+      "speed": [
+        245.6157,
+        427.1577
+      ],
+      "direction": 125,
+      "spread": 18,
+      "startScale": [
+        0.0126,
+        0.0293
+      ],
+      "rotationSpeed": [
+        -2,
+        2
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.8,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": 1.465691
+    },
+    {
+      "id": "driven-snow-1",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 11,
+      "position": {
+        "x": -27.901,
+        "y": -145.9263
+      },
+      "alpha": 0.8,
+      "tint": "#daf2ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 55
+      },
+      "lifetime": [
+        0.5,
+        0.85
+      ],
+      "spawn": {
+        "height": 192.2211,
+        "shape": "box",
+        "width": 448.5157
+      },
+      "speed": [
+        245.6157,
+        427.1577
+      ],
+      "direction": 125,
+      "spread": 18,
+      "startScale": [
+        0.0126,
+        0.0293
+      ],
+      "rotationSpeed": [
+        -2,
+        2
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.8,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": 1.29016
+    },
+    {
+      "id": "driven-snow-2",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 12,
+      "position": {
+        "x": 196.097,
+        "y": -128.0591
+      },
+      "alpha": 0.8,
+      "tint": "#daf2ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 55
+      },
+      "lifetime": [
+        0.5,
+        0.85
+      ],
+      "spawn": {
+        "height": 192.2211,
+        "shape": "box",
+        "width": 448.5157
+      },
+      "speed": [
+        245.6157,
+        427.1577
+      ],
+      "direction": 125,
+      "spread": 18,
+      "startScale": [
+        0.0126,
+        0.0293
+      ],
+      "rotationSpeed": [
+        -2,
+        2
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.8,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0.0062,
+          1.465691
+        ]
+      ]
+    },
+    {
+      "id": "tumbling-ice",
+      "type": "particle",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "zIndex": 9,
+      "position": {
+        "x": 70.7647,
+        "y": -188.3251
+      },
+      "alpha": 0.75,
+      "tint": "#a4dfff",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 18
+      },
+      "lifetime": [
+        0.6,
+        1
+      ],
+      "spawn": {
+        "height": 170.8631,
+        "shape": "box",
+        "width": 427.1577
+      },
+      "speed": [
+        213.5789,
+        341.7261
+      ],
+      "direction": 120,
+      "spread": 25,
+      "startScale": [
+        0.0377,
+        0.0836
+      ],
+      "rotationSpeed": [
+        -4,
+        4
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.8
+        ],
+        [
+          0.75,
+          0.8
+        ],
+        [
+          1,
+          0
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "height": 100,
-      "width": 200
+      "height": 150,
+      "width": 300
     },
-    "heightM": 20,
-    "shape": "square",
-    "widthM": 20
+    "shape": "square"
   }
 }

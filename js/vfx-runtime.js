@@ -50,6 +50,7 @@ var VFXRuntime = (function () {
     return { scaleX: w / aw, scaleY: h / ah };
   }
 
+  var WIND_MOTION_CORRECTION_SEC = 0.12; // 位置與航向修正共用的收斂時間
   var NOMINAL_RADIUS = 100;     // 圓形場域／範圍爆發
   var NOMINAL_RECT_W = 200;     // 矩形場域
   var NOMINAL_RECT_H = 100;
@@ -608,6 +609,8 @@ var VFXRuntime = (function () {
         ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
       dimensions = dimensions || defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1);
       var params = Object.assign({ position: from, rotation: facing }, dimensions);
+      // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
+      if (presetId === 'proj-wind-crescent' && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
@@ -657,13 +660,23 @@ var VFXRuntime = (function () {
       /* 運動語意（模擬層 sgGroundArea 只在這一拍真的在動時才帶）：
          沒帶＝這一拍是靜止的，推算自走那一段自然就不會走。 */
       g.speed = Math.max(0, num(area.speed, 0));
-      g.moveA = num(area.moveA, NaN);
+      var incomingAngle = num(area.moveA, NaN);
+      if (g.presetId === 'ground-homing-wind-crescent' && isFinite(g.moveA) && isFinite(incomingAngle)) {
+        g.headingResidual = Math.atan2(Math.sin(g.moveA + (g.headingResidual || 0) - incomingAngle), Math.cos(g.moveA - incomingAngle));
+      }
+      g.moveA = incomingAngle;
       g.turnRate = num(area.turnRate, 0);
-      g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
+      g.hasDest = g.presetId !== 'ground-homing-wind-crescent' && isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
       // 追蹤冰箭沿用發射本體尺寸；area.r 僅控制碰撞，不能縮小箭體。
-      var resolved = sizeOf(g.presetId, g.presetId === 'proj-icearrow-frost' ? null : area);
+      var actualSize = area;
+      if (g.presetId === 'ground-homing-wind-crescent' && area.r > 0 && presetSizes[g.presetId]) {
+        var body = presetSizes[g.presetId];
+        // 碰撞半徑代表刃寬的一半，不能當作月牙半長。
+        actualSize = { w: area.r * 2 * body.widthM / body.heightM, h: area.r * 2 };
+      }
+      var resolved = sizeOf(g.presetId, g.presetId === 'proj-icearrow-frost' ? null : actualSize);
       if (resolved) {
         g.uniform = false; g.tsx = resolved.scaleX; g.tsy = resolved.scaleY;
       } else if (w > 0 && h > 0) {
@@ -675,7 +688,7 @@ var VFXRuntime = (function () {
         g.uniform = true;
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
-      g.trot = g.presetId === 'proj-icearrow-frost' &&
+      g.trot = (g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') &&
         typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(area.a, 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
@@ -695,6 +708,19 @@ var VFXRuntime = (function () {
     function groundDeadReckon(g, dt) {
       if (!(g.speed > 0) || !isFinite(g.moveA) || !(dt > 0)) return;
       var run = g.speed * dt;
+      if (g.presetId === 'ground-homing-wind-crescent' && Math.abs(g.headingResidual || 0) > 1e-6) {
+        var oldResidual = g.headingResidual;
+        g.headingResidual *= Math.exp(-dt / WIND_MOTION_CORRECTION_SEC);
+        var fromAngle = g.moveA + oldResidual;
+        var toAngle = g.moveA + (g.turnRate || 0) * dt + g.headingResidual;
+        var delta = Math.atan2(Math.sin(toAngle-fromAngle), Math.cos(toAngle-fromAngle));
+        if (Math.abs(delta)>1e-8) {
+          g.bx += run/delta*(Math.sin(toAngle)-Math.sin(fromAngle));
+          g.by += run/delta*(Math.cos(fromAngle)-Math.cos(toAngle));
+        } else { g.bx += run*Math.cos(fromAngle); g.by += run*Math.sin(fromAngle); }
+        g.moveA += (g.turnRate || 0) * dt;
+        return;
+      }
       if (Math.abs(g.turnRate || 0) > 1e-8) {
         var angle = g.moveA + g.turnRate * dt;
         var radius = g.speed / g.turnRate;
@@ -717,9 +743,18 @@ var VFXRuntime = (function () {
     function groundCorrect(g, dt) {
       if (!(dt > 0)) return;
       var mag = Math.sqrt(g.ox * g.ox + g.oy * g.oy);
-      if (!(mag > 1e-4)) { g.ox = 0; g.oy = 0; return; }
+      if (!(mag > 1e-4)) { g.ox = 0; g.oy = 0; g.correctVX = 0; g.correctVY = 0; return; }
       var want = mag / GROUND_FOLLOW_TAU_SEC;
       if (g.speed > 0) want = Math.min(want, g.speed * GROUND_CORRECT_MAX_RATIO);
+      if (g.presetId === 'ground-homing-wind-crescent' && g.speed > 0) {
+        var blend = 1 - Math.exp(-dt / WIND_MOTION_CORRECTION_SEC);
+        g.correctVX = num(g.correctVX, 0) + (g.ox/mag*want-num(g.correctVX,0))*blend;
+        g.correctVY = num(g.correctVY, 0) + (g.oy/mag*want-num(g.correctVY,0))*blend;
+        var cx=g.correctVX*dt, cy=g.correctVY*dt;
+        if (Math.hypot(cx,cy)>mag) { g.ox=0; g.oy=0; g.correctVX=0; g.correctVY=0; }
+        else { g.ox-=cx; g.oy-=cy; }
+        return;
+      }
       var fix = Math.min(mag, want * dt);
       g.ox -= g.ox / mag * fix;
       g.oy -= g.oy / mag * fix;
@@ -776,7 +811,7 @@ var VFXRuntime = (function () {
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
       key = (role === 'field' ? 'field:' : 'ground:') + key;
       var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
-      var mult = noArea || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
+      var mult = noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId) {
         live.expireAt = clock + keep;
@@ -931,7 +966,7 @@ var VFXRuntime = (function () {
         }
         g.x = g.bx + g.ox;
         g.y = g.by + g.oy;
-        if (g.presetId === 'proj-icearrow-frost') {
+        if (g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') {
           // Face the rendered displacement, including snapshot correction; a separate
           // rotation easing would make the arrow slide sideways while turning.
           var dx = g.x - previousX, dy = g.y - previousY;
@@ -1322,7 +1357,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260912-infinite-fire-dragon';
+  var DATA_VERSION = '20260912-windblade';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

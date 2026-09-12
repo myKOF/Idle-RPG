@@ -21,6 +21,48 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('WINDBLADE 四向直射月牙刃口朝飛行方向', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-wind-crescent.json'),'utf8'));
+ for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]) {
+  const {adapter,log}=makeAdapter([p]);
+  adapter.tryPlay({fxKind:'projectile',angle,lineLength:500,bodyLength:40,lineWidth:80,travelMs:[2000],vfx:{projectile:p.id}});adapter.update(.1);
+  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('moon-original-01.png'));
+  const rot=n.transforms.at(-1).rotation-p.layers[0].rotation;
+  assert.ok(Math.abs(Math.atan2(Math.sin(rot-angle),Math.cos(rot-angle)))<1e-6);
+ }
+});
+
+test('WINDBLADE 月牙隨權威飛行時間續播，長距離仍可見並在抵達回收', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-wind-crescent.json'),'utf8'));
+ for(const travel of [1,5]) {
+  const {adapter,log}=makeAdapter([p]);
+  assert.equal(adapter.tryPlay({fxKind:'projectile',variant:'wind-blade',angle:0,lineLength:900,bodyLength:40,lineWidth:80,travelMs:[travel*1000],vfx:{projectile:p.id}}),true);
+  for(let i=0;i<48;i++)adapter.update(travel*.8/48);
+  assert.equal(adapter.stats().projectiles,1);
+  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('moon-original-01.png'));
+  assert.ok(n);assert.ok(n.transforms.at(-1).alpha>.5);
+  adapter.update(travel*.3);assert.equal(adapter.stats().projectiles,0);
+ }
+});
+
+test('BLIZZARD 正式霜地依範圍縮放、移動續命不重播並到期回收', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-blizzard.json'),'utf8'));
+ const frames=[];
+ for(const width of [300,600]) {
+  const {adapter,log}=makeAdapter([p]);
+  const ev=x=>({fxKind:'aura',variant:'blizzard',dur:2,area:{id:'blizzard-test',x,y:200,w:width,h:150},vfx:{ground:p.id}});
+  assert.equal(adapter.tryPlay(ev(100)),true);adapter.update(.1);
+  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('smoke_04.png'));
+  assert.ok(n);assert.equal(n.tag,'zone');frames.push(n.transforms.at(-1).scaleX);
+  const start=n.transforms.at(-1).x;
+  adapter.tryPlay(ev(160));for(let i=0;i<60;i++)adapter.update(1/60);
+  assert.ok(Math.abs(n.transforms.at(-1).x-start-60)<.5);
+  assert.equal(adapter.stats().played,1);assert.equal(adapter.stats().grounds,1);
+  adapter.update(5);assert.equal(adapter.stats().grounds,0);
+ }
+ assert.ok(Math.abs(frames[1]/frames[0]-2)<.0001);
+});
+
 test('THUNDERFALL 60 度斜落且只在權威落地事件播放衝擊', () => {
  const ps=['proj-thunderfall-sky','hit-thunderfall-impact'].map(id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets',id+'.json'),'utf8')));
  const {adapter,log}=makeAdapter(ps);
