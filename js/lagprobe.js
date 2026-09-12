@@ -396,6 +396,57 @@
     return '把上面這一段截圖回報就夠了';
   };
 
+  /* ---- 繪製成本開關（診斷用，只改行內樣式，重新整理即復原）----
+     2026-09-12 回報：捲動技能頁時戰鬥區明顯卡頓甚至定格，完全不動就正常。
+
+     為什麼這個現象值得一個專用開關：整個 UI 外殼掛在 transform: scale() 底下
+     （js/ui-scale.js），捲動區與戰鬥 canvas 在同一棵被縮放的圖層樹裡。這種結構
+     走不了瀏覽器的 GPU 捲動快路徑，捲動等於在主執行緒重繪整個捲動區——而技能頁
+     一屏大約 80 個帶模糊陰影的格子（每個 .sg-stage-learned 有外光暈＋內陰影，
+     每列 .sg-group-row 另有漸層＋內陰影）。模糊半徑的繪製成本很高，而 Pixi 的
+     ticker 跟它搶同一個 frame，於是畫面就停住。
+
+     這是假設，不是結論。與其照著假設改程式，不如把三個嫌疑各自關掉再捲一次：
+     差別用眼睛就看得出來，一次就知道是不是、以及是哪一個。
+
+       lagPaint('shadow') 關掉所有陰影與濾鏡（繪製成本）
+       lagPaint('skip')   離開畫面的技能列整列跳過渲染（content-visibility）
+       lagPaint('layer')  把戰鬥 canvas 提升成獨立合成圖層
+       lagPaint('all')    三個一起開
+       lagPaint('reset')  全部復原 */
+  window.lagPaint = function (mode) {
+    mode = String(mode || 'all');
+    var nodes = document.querySelectorAll('.sg-stage-node, .sg-group-row, .skill-card, .talent-node');
+    var wraps = document.querySelectorAll('.sg-group-row-wrap');
+    var canvas = document.querySelector('canvas.battle-canvas');
+    var did = [];
+    var i;
+
+    if (mode === 'reset') {
+      for (i = 0; i < nodes.length; i++) { nodes[i].style.boxShadow = ''; nodes[i].style.filter = ''; }
+      for (i = 0; i < wraps.length; i++) { wraps[i].style.contentVisibility = ''; wraps[i].style.containIntrinsicSize = ''; }
+      if (canvas) canvas.style.willChange = '';
+      return '已全部復原（' + nodes.length + ' 個節點、' + wraps.length + ' 列）';
+    }
+    if (mode === 'shadow' || mode === 'all') {
+      for (i = 0; i < nodes.length; i++) { nodes[i].style.boxShadow = 'none'; nodes[i].style.filter = 'none'; }
+      did.push('關陰影與濾鏡 ' + nodes.length + ' 個');
+    }
+    if (mode === 'skip' || mode === 'all') {
+      for (i = 0; i < wraps.length; i++) {
+        wraps[i].style.contentVisibility = 'auto';
+        wraps[i].style.containIntrinsicSize = '0 70px';
+      }
+      did.push('離屏跳過渲染 ' + wraps.length + ' 列');
+    }
+    if (mode === 'layer' || mode === 'all') {
+      if (canvas) { canvas.style.willChange = 'transform'; did.push('canvas 獨立圖層'); }
+      else did.push('找不到 canvas.battle-canvas');
+    }
+    if (!did.length) return "用法：lagPaint('shadow' | 'skip' | 'layer' | 'all' | 'reset')";
+    return did.join('；') + '　→ 現在再捲一次技能頁，看戰鬥區還會不會定格';
+  };
+
   /* 成長追蹤刻意**不**歸零：抓累積型問題要的就是一條夠長的基線，
      中途重設會把「起始值」洗成已經漲上去的數字，等於自廢武功。 */
   window.lagReset = function () {
@@ -411,7 +462,8 @@
     wrapTimers();
     P.t0 = performance.now();
     console.log('%c[卡頓探針] 已啟用（?lag=1）。每 15 秒自動印一次；lagReport() 立即印，' +
-      'lagText() 印可直接截圖的純文字摘要，lagReset() 歸零。',
+      'lagText() 印可直接截圖的純文字摘要，lagReset() 歸零，' +
+      "lagPaint('all') 試關繪製成本。",
       'color:#0a0;font-weight:bold');
     setInterval(function () { window.lagReport(); }, 15000);
   }
