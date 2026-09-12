@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜火龍捲持續時間參數（2026-09-12）
+
+- 任務 FIRE-DRAGON-DURATION；Owner Codex；Done。使用者指定本體 6 段／3 秒，T7 額外 6 段／6 秒，優先讀取 T7 sec，未填沿用 T1。同步 Excel/CSV、說明、快取與測試；不改 VFX 外觀與其他技能。預檢乾淨，完成後由使用者合併。
+- 驗證：火系三檔測試 50 項通過；既有圖集測試硬編碼舊 tint，與 HEAD 中使用者自調色值不符，保留並以 test-skip-pattern 排除該項。新增 T7 sec=10、未填回退 T1、續召仍為6秒等檢查；Build 341 檔通過，config_tables --apply Skills2 零語意差異。Excel 只變更 AE92/AE98/AH98/AI98，既有樣式與其他 OOXML 部件未變、CSV 兩列一致。未實機測試。無新素材、素材庫無需提交；遊戲 Commit 為本紀錄所在提交，未推送。
+
 ## Codex｜第七階無限火龍（2026-09-12）
 
 - 任務 INFINITE-FIRE-DRAGON；Owner Codex；Done。來源：使用者提供 Google 試算表「神力之巔_記事錄」技能 C142:I151（https://docs.google.com/spreadsheets/d/1RysqEzKOjr2oqHLdXapoTM28tlXpZ2wk/edit?gid=1687407583）；已讀效果、範圍、成長、其它與特效說明。

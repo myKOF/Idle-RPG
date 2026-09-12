@@ -16,6 +16,6 @@
     }
   ],
   "order": [
-    "fire-tornado-infinite"
+    "group:fire-tornado-infinite"
   ]
 }

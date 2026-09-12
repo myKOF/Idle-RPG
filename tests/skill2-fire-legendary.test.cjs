@@ -500,8 +500,8 @@ test('【火焰爆衝】：火龍捲的傷害段數 +3（壽命不變＝節拍�
   }
   const base = shape([]);
   const boost = shape(['firepillarOutburst']);
-  assert.equal(base.hits, 5);
-  assert.equal(boost.hits, 8, '5 → 8 段');
+  assert.equal(base.hits, 6);
+  assert.equal(boost.hits, 9, '6 → 9 段');
   assert.equal(Math.round(base.hits * base.gap * 1000), Math.round(boost.hits * boost.gap * 1000),
     '總壽命不變');
 });
