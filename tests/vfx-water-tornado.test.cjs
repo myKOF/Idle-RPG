@@ -6,7 +6,19 @@ const path=require('node:path');
 const core=require('../js/vfx-core.js');
 const pixiBackend=require('../js/vfx-pixi-backend.js');
 const runtime=require('../js/vfx-runtime.js');
-const preset=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/field-water-tornado.json'),'utf8'));
+const preset=JSON.parse(fs.readFileSync(path.join(__dirname,'../tools/vfx/authoring/author/water-tornado-source.json'),'utf8'));
+
+test('WATER shipped animation has no procedural work for four concurrent tornadoes',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/field-water-tornado.json')));
+ assert.ok(p.layers.every(l=>l.type!=='procedural'));
+ const atlas=p.layers.find(l=>l.sheet);assert.equal(atlas.sheet.count,80);assert.equal(atlas.sheet.fps,20);
+ assert.deepEqual(p.sizing,preset.sizing);
+ const r=core.createRuntime({resolver:{resolve:id=>id},backend:{createNode(s){assert.notEqual(s.kind,'generated');return{}},updateNode(n,t){assert.equal(t.generated,undefined)},destroyNode(){}}});
+ r.registerPreset(p);for(let i=0;i<4;i++){r.play(p.id);r.update(.05);}
+ for(let i=0;i<240;i++)r.update(1/60);
+ r.destroy();
+ assert.ok(fs.existsSync(path.join(__dirname,'../images/vfx/assets',atlas.assetId)));
+});
 
 test('FIRE shipped effect uses one shared atlas and live particles, with no procedural CPU work',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/fire-tornado-inferno.json')));
@@ -102,6 +114,7 @@ test('WATER async profile strips preserve frames, anchors, tint and shared textu
 });
 
 test('WATER four tier-7 fields use fx layer, retain phase between hits and expire',()=>{
+ const preset=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/field-water-tornado.json')));
  const nodes=[];
  function backend(tag){return {createNode(spec){const n={spec,tag};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){},destroy(){}};}
  const a=runtime.create({core,resolver:{has:()=>true,resolve:id=>id},fxBackend:backend('fx'),zoneBackend:backend('zone'),ctx:{posOf:()=>({x:0,y:0}),playerPos:()=>({x:0,y:0})}});
@@ -109,12 +122,12 @@ test('WATER four tier-7 fields use fx layer, retain phase between hits and expir
  const specs=Array.from({length:4},(_,i)=>({fxKind:'aura',variant:'water-tornado',dur:.35,
   area:{id:'water-'+i,x:i*100,y:80,r:50},vfx:{field:preset.id}}));
  specs.forEach(s=>assert.equal(a.tryPlay(s),true));a.update(.2);
- assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,48);assert.ok(nodes.every(n=>n.tag==='fx'));
- const column=nodes.find(n=>n.spec.generated==='body');
- assert.match(column.t.generated.key, /^body:4:/);assert.equal(column.t.x,0);assert.equal(column.t.y,80);
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,0);assert.ok(nodes.every(n=>n.tag==='fx'));
+ const column=nodes.find(n=>n.spec.assetUrl?.includes('water-flow.png'));
+ assert.equal(column.t.frame,4);assert.equal(column.t.x,0);assert.equal(column.t.y,80);
  assert.equal(column.t.scaleX,column.t.scaleY);
  specs.forEach(s=>a.tryPlay(s));a.update(.2);
- assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,48);assert.match(column.t.generated.key, /^body:8:/);assert.equal(a.stats().played,4);
+ assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,0);assert.equal(column.t.frame,8);assert.equal(a.stats().played,4);
  a.update(3);assert.equal(a.stats().grounds,0);a.clear();
 });
 

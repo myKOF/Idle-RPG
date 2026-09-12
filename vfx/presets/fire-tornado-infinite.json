@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "fire-tornado-inferno",
+  "id": "fire-tornado-infinite",
   "duration": 3.846153846153846,
   "loop": true,
   "layers": [
@@ -20,7 +20,7 @@
         "y": 0.3657
       },
       "alpha": 0.7,
-      "tint": "#ff831b",
+      "tint": "#a92a16",
       "blendMode": "add",
       "duration": 3.846153846153846
     },
@@ -35,7 +35,7 @@
         "y": -57.7903
       },
       "alpha": 0.6,
-      "tint": "#fff356",
+      "tint": "#d94b25",
       "blendMode": "add",
       "duration": 3.846153846153846,
       "emission": {
@@ -107,7 +107,7 @@
         "y": 19.6919
       },
       "alpha": 0.65,
-      "tint": "#ffaa27",
+      "tint": "#d94b25",
       "blendMode": "add",
       "duration": 3.846153846153846,
       "emission": {
@@ -177,7 +177,7 @@
         "y": -106.9517
       },
       "alpha": 0.65,
-      "tint": "#a26701",
+      "tint": "#d94b25",
       "blendMode": "add",
       "duration": 3.846153846153846,
       "emission": {
@@ -273,7 +273,7 @@
         "y": 0.9296875
       },
       "alpha": 0.6,
-      "tint": "#ffffff",
+      "tint": "#e85a48",
       "blendMode": "normal",
       "duration": 3.846153846153846,
       "sheet": {
@@ -296,7 +296,7 @@
         "y": -95.8898
       },
       "alpha": 0.65,
-      "tint": "#a26701",
+      "tint": "#d94b25",
       "blendMode": "add",
       "duration": 3.846153846153846,
       "emission": {

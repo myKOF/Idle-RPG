@@ -522,6 +522,30 @@ test('【水龍捲】追加四道地板場域，對凍結中的敵人傷害為 2
 });
 
 /* ---- 冰霜新星 ---- */
+test('水龍捲等速逆時針向外移動，事件攜帶傷害位置與曲率', () => {
+  const c = loadContext(); stubHits(c); stubVfx(c);
+  setLevels(c, 'waterball', [1, 1, 1, 1, 1, 1, 1]); equip(c, 'waterball');
+  const p = playerEnt(); c.FIELD.player = p;
+  c.castSkill2(p, [enemy(1e9, 5 * M, 0)], 'waterball', 'mv-float');
+  const fields = c.SKILL2_RT.grounds.filter(f => f.kind === 'tornado');
+  assert.equal(fields.length, 4);
+  for (const f of fields) {
+    const centre = f.spiralCentre;
+    let prev = {...f.pos}; let distance = 0;
+    const r0 = Math.hypot(prev.x-centre.x, prev.y-centre.y);
+    for (let i=0; i<100; i++) {
+      c.sgGroundMove(f, .01, []);
+      distance += Math.hypot(f.pos.x-prev.x, f.pos.y-prev.y);
+      const cross = (prev.x-centre.x)*(f.pos.y-centre.y)-(prev.y-centre.y)*(f.pos.x-centre.x);
+      assert.ok(cross < 0, '畫面 Y 向下，負叉積為逆時針'); prev={...f.pos};
+    }
+    assert.ok(Math.abs(distance-3*M)<.01);
+    assert.ok(Math.hypot(f.pos.x-centre.x,f.pos.y-centre.y)>r0);
+    const area=c.sgGroundArea(f);
+    assert.equal(area.x,f.pos.x); assert.equal(area.y,f.pos.y);
+    assert.equal(area.speed,3*M); assert.ok(area.turnRate<0);
+  }
+});
 
 test('冰霜新星是自身範圍爆發：施放距離必須跟得上作用半徑', () => {
   const c = loadContext(); const calls = stubHits(c); stubVfx(c);

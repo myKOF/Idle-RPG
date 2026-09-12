@@ -1,5 +1,40 @@
 # AI_TASKS.md
 
+## Codex｜第七階無限火龍（2026-09-12）
+
+- 任務 INFINITE-FIRE-DRAGON；Owner Codex；Done。來源：使用者提供 Google 試算表「神力之巔_記事錄」技能 C142:I151（https://docs.google.com/spreadsheets/d/1RysqEzKOjr2oqHLdXapoTM28tlXpZ2wk/edit?gid=1687407583）；已讀效果、範圍、成長、其它與特效說明。
+- 第七階改為原段數 +5、每段 100%／每級 +10%、持續追敵 6m/s、單敵附近也移動、保證再召喚一次、暗紅火焰；保留第 2~6 階與傳奇／超神相容。表中其他階段舊有數值差異不擴大修改。
+- 範圍：skills2、Runtime／快取、Skills2 Excel/CSV、專用 VFX preset/layout、相關測試及本紀錄；不得改其他技能或使用者自調 VFX。前置依賴完整，主要檔案預檢乾淨。
+- 驗收：段數／傷害／數量／續召上限、移動與畫面同步、Excel/CSV/JS 一致性、VFX 驗證、Build；完成由使用者合併。
+- 完成：保留雙重龍捲數量，基礎 5+5 段；第 7 階自身 Lv.1 傷害為 110%（沿用底值＋每級增量），再疊第 3 階加成。再召喚後停止第 6／7 階連鎖，原階 6 仍保留機率重生；傳奇追蹤速度優先、額外段數及超神火池／數量／拉近仍生效。現有冷卻 15 秒未隨文件舊值 14 秒擴大修改。
+- 驗證：node --test tests/skill2-infinite-fire-dragon.test.cjs tests/skill2-magic-fire.test.cjs tests/skill2-fire-legendary.test.cjs 共 49/49；包含實際 Runtime 速度／續播／回收。npm run build 341 檔通過；config_tables --apply Skills2 零語意差異；export-assets --check 最新。Excel 僅 13 儲存格變更、其他 OOXML 部件位元組未變，與 CSV 三個關聯列一致。Artifact Tool 匯出會誤改無關空字串，因此僅移植其授權儲存格至原包，保留既有格式與其他工作表。
+- 暗紅 preset 使用共享圖集、未新增生成層。保留使用者同期自行儲存的 inferno preset/layout 與素材匯出。素材庫乾淨，必要素材已存在，無素材庫新 Commit。未實機測試；已渲染暗紅預覽。遊戲 Commit 為本紀錄所在提交，未推送，可供使用者合併與遊戲測試。
+
+## Codex｜火龍捲尖頂接入（2026-09-12）
+
+- 任務 FIRE-TORNADO-TIP；Owner Codex；Done。使用者批准尖頂預覽並要求接入，其他參數由使用者調整。
+- 修改 fire-tornado-inferno 的圖集與頂部噴焰位置／範圍／數量，新增 fire-tornado-tip.cjs 可重烘焙同版 80 幀圖集；同步素材索引、遊戲匯出及快取版本。衝突預檢乾淨。
+- 已檢查 skills2.js 的 firepillar.field 直接引用正式 preset；未修改技能邏輯、火牆或其他技能。圖集保持原幀數及尺寸，沒有新增即時程序生成。
+- 驗證：Node assert 比對正式 preset 與批准 candidate 完全一致（僅替換素材 ID）、正式 PNG 與批准 PNG 位元組一致、Core.validatePreset 通過；node tools/vfx/export-assets.cjs --check 通過；npm run build 340 檔通過。未進行遊戲實機目視驗證。
+- 素材庫 Commit：940f3b0；遊戲 Commit 為本紀錄所在提交；未推送。預覽暫存保留於 scratch/fire-taper-preview，未納入提交。可供使用者合併及遊戲驗收。
+
+## Codex｜水龍捲圖集效能優化（2026-09-12）
+
+- 任務 WATER-TORNADO-PERF；Owner Codex；Done。使用者回報四道水龍捲僅 10 FPS。
+- 原因：水龍捲 12 層程序生成反覆計算形狀及 raster/texture upload，火龍捲已使用共享圖集。改為離線烘焙 80 幀、20fps，遊戲共享單一圖集，保留 halo/dust/spray、尺寸、外旋移動及傷害。
+- 範圍：water-tornado-source/bake、preset/layout、素材索引／匯出、快取、測試、本紀錄；來源 JSON 保留於 author 目錄供重新製作。前置依賴具備、衝突預檢乾淨。驗收：四道實際 Core 無 generated 工作、前後 CPU 比較、圖集目視、Build／匯出一致性；使用者後續合併。
+- 驗證：WATER 9/9，含正式 Runtime 四道播放／續命／回收；Build 340 檔通過；export-assets --check 最新，素材庫與遊戲 PNG SHA256 一致。四道錯開播放 240 幀，Core CPU 舊版 4724ms、新版 37ms，generated 更新 11640→0（不含 GPU，並非實機 FPS）；80 幀圖集已目視檢查。全檔測試另有既有 FIRE 測試要求目前已刪除的 dust 圖層，未改動火龍捲。尚未量測使用者遊戲 FPS。
+- 編輯器可調圖集整體色調、亮度、縮放與播放速度；內部水流形狀從 water-tornado-source.json 修改後以 water-tornado-bake.cjs 重烘焙，再 export-assets.cjs。烘焙依賴 @napi-rs/canvas，可用 NODE_PATH 或 VFX_CANVAS_MODULE 指定。原始程序生成器及測試保留。
+- 素材庫 Commit：eb55096；遊戲 Commit 為本紀錄所在提交，未推送。
+
+## Codex｜水龍捲逆時針外旋（2026-09-12）
+
+- 任務：WATER-TORNADO-SPIRAL；Owner：Codex；狀態：Done。
+- 使用者指定水龍捲以每秒約 3 米緩慢逆時針向外移動。四道 T7 水龍捲從正方形頂點出發，以施放位置為固定中心，傷害與 VFX 共用位置、速度、航向及曲率。
+- 範圍：skills2、vfx-runtime、主頁與 Worker 快取、冰系及 Runtime 測試、本紀錄。沿用素材，不改傷害、段數及其他技能。
+- 前置依賴已具備，衝突預檢乾淨；驗收為路徑速度／逆時針／半徑遞增、事件與渲染、到期回收及 Build。後續由使用者合併。
+- 驗證：新增兩項定向測試通過，使用 HEAD 舊版模組回放時兩項均失敗；Build 340 檔通過。冰系與 Runtime 的既有失敗以 HEAD 模組回放確認（包含水龍捲舊測試混入水彈傷害，及雷殞／岩甲／泥沼／電鏈設定差異），未更改既有斷言。尚未作遊戲實機目視驗證；高塔無世界座標維持原退化行為，傳奇命中生成與超神巨大龍捲不屬本次四角水龍捲的移動範圍。無素材變更，無素材庫 Commit。
+
 ## Claude｜技能頁點擊卡頓：關掉 Pixi 指標事件系統（LAG-PIXI-POINTER-20260912）
 
 - 病因：PixiJS EventSystem 把 pointermove 掛在 **document** 上（捕獲階段），每一則都走 mapPositionToPoint → canvas.getBoundingClientRect()＝一次整份文件的強制版面重算。滑鼠在頁面任何地方移動都會觸發，與有沒有移到戰場上無關。使用者回報的探針報告：互動延遲 600ms 之中「等待」10ms、「處理」1ms、「呈現」590ms，而強制版面重算第一名正是這支（1263 次，第二名 21 次）。

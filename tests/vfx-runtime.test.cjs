@@ -338,6 +338,19 @@ function lastOf(log, tag) {
   return null;
 }
 
+test('水龍捲在事件之間按權威速度及曲率連續逆時針移動並回收', () => {
+  const {adapter,log}=makeAdapter([unitPreset('water-moving')]);
+  adapter.tryPlay({fxKind:'aura',variant:'water-tornado',dur:.35,
+    area:{id:'water-spiral',x:100,y:100,r:50,speed:30,moveA:0,turnRate:-.4},
+    vfx:{field:'water-moving'}});
+  adapter.update(.1);
+  const t=log.nodes[0].transforms.at(-1);
+  assert.ok(Math.abs(t.x-(100+30/-.4*Math.sin(-.04)))<.001);
+  assert.ok(t.y<100);
+  adapter.update(5);
+  assert.equal(adapter.stats().grounds,0);
+});
+
 /* ============================================================
    ROLE — 主要角色的選擇（§1.1）
    ============================================================ */

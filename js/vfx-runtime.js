@@ -658,7 +658,7 @@ var VFXRuntime = (function () {
          沒帶＝這一拍是靜止的，推算自走那一段自然就不會走。 */
       g.speed = Math.max(0, num(area.speed, 0));
       g.moveA = num(area.moveA, NaN);
-      g.turnRate = g.presetId === 'proj-icearrow-frost' ? num(area.turnRate, 0) : 0;
+      g.turnRate = num(area.turnRate, 0);
       g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
@@ -695,7 +695,7 @@ var VFXRuntime = (function () {
     function groundDeadReckon(g, dt) {
       if (!(g.speed > 0) || !isFinite(g.moveA) || !(dt > 0)) return;
       var run = g.speed * dt;
-      if (g.presetId === 'proj-icearrow-frost' && Math.abs(g.turnRate || 0) > 1e-8) {
+      if (Math.abs(g.turnRate || 0) > 1e-8) {
         var angle = g.moveA + g.turnRate * dt;
         var radius = g.speed / g.turnRate;
         g.bx += radius * (Math.sin(angle) - Math.sin(g.moveA));
@@ -785,7 +785,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
-        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId.indexOf('ground-firewall-column-') === 0,
+        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
@@ -1322,7 +1322,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260912-water-cyclone';
+  var DATA_VERSION = '20260912-infinite-fire-dragon';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

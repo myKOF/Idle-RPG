@@ -514,46 +514,23 @@ test('火柱·重生：消失後機率成立時在我方範圍內的敵人身上
   assert.ok(c.SKILL2_RT.grounds.some((f) => f.hitsLeft === 5), '重生的火柱段數重新計算');
 });
 
-test('火柱·無限火牆：3 道橫向 6×18 米火牆、每道 8 段，且每道只再召喚 1 次', () => {
-  const c = loadContext();
-  const calls = stubHits(c);
-  c.chance = () => false;
-  setLevels(c, 'firepillar', [1, 1, 1, 1, 1, 1, 1]);
-  const p = playerEnt();
-  const m = enemy(1e9, 200, 0);
-  // 只用主目標施放，三道火牆就都疊在他腳下；形狀探針稍後才進場，
-  // 才不會各自被分到一道自己的火牆而測不出「範圍」。
-  c.castSkill2(p, [m], 'firepillar', 'mv-float');
-  assert.equal(c.SKILL2_RT.grounds.length, 3);
-  assert.equal(c.SKILL2_RT.grounds[0].kind, 'wall');
-  assert.equal(c.SKILL2_RT.grounds[0].hitsLeft, 8);
-  // 第 2 階【強化火柱】的範圍擴大 12% 對火牆一樣生效（設計文檔：2~6 階效果仍然生效）
-  assert.equal(Math.round(c.SKILL2_RT.grounds[0].length), Math.round(c.bfMeterPx(18) * 1.12));
-  assert.equal(Math.round(c.SKILL2_RT.grounds[0].width), Math.round(c.bfMeterPx(6) * 1.12));
-  assert.equal(c.SKILL2_RT.grounds[0].respawnLeft, 1);
-
-  // 火牆橫向＝與我方視線垂直：與主目標同 x、y 相差 80（8 米）者落在 18 米長度內；
-  // 沿視線再往後 20 米者則超出 6 米寬度。
-  const side = enemy(1e9, 200, 80);
-  const behind = enemy(1e9, 400, 0);
-  c.GT = 0.5;
-  c.tickSkill2(0.5, tickCtx(c, p, [m, side, behind]));
-  const hit = calls.map((x) => x.ent);
-  assert.ok(hit.indexOf(side) >= 0, '橫向 18 米長度內的敵人應被火牆命中');
-  assert.equal(hit.indexOf(behind), -1, '視線方向 20 米外超出 6 米寬度，不該被命中');
-
-  // 每道火牆消失後只能再召喚 1 道，不可無限觸發
-  c.chance = () => false; // 關掉第 6 階【重生】，只留第 7 階的再召喚
-  for (let i = 1; i <= 20; i++) {
-    c.GT = i * 0.5;
-    c.tickSkill2(0.5, tickCtx(c, p, [m, side, behind]));
+test('火柱·無限火龍：兩道圓形龍捲，各十段，續召一次後結束', () => {
+  const c=loadContext(); stubHits(c); c.chance=()=>false;
+  setLevels(c,'firepillar',[1,1,1,1,1,1,1]);
+  const p=playerEnt(),m=enemy(1e9,200,0);
+  c.castSkill2(p,[m],'firepillar','mv-float');
+  assert.equal(c.SKILL2_RT.grounds.length,2);
+  for(const f of c.SKILL2_RT.grounds){
+    assert.equal(f.kind,'pillar');assert.equal(f.hitsLeft,10);
+    assert.equal(f.length,0);assert.equal(f.width,0);
+    assert.equal(f.radius,c.bfMeterPx(3)*1.12);
+    assert.equal(f.speed,c.bfMeterPx(6));assert.equal(f.respawnLeft,1);
   }
-  assert.equal(c.SKILL2_RT.grounds.filter((f) => f.respawnLeft > 0).length, 0);
-  assert.equal(c.SKILL2_RT.grounds.length, 0, '再召喚的火牆打完就結束，不會再生');
+  const original=c.SKILL2_RT.grounds.slice();
+  for(let i=1;i<=60;i++){c.GT=i*.1;c.tickSkill2(.1,tickCtx(c,p,[m]));}
+  assert.equal(c.SKILL2_RT.grounds.length,0);
+  assert.ok(original.every(f=>f.hitsLeft<=0));
 });
-
-/* ---- 5) 無座標（高塔）退化 ---- */
-
 test('高塔（無座標）：火球術與火柱都退化為單體語意，不會漏打也不會多打', () => {
   const c = loadContext();
   const calls = stubHits(c);
