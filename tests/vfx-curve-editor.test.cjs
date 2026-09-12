@@ -617,6 +617,114 @@ test('ROT-6 粒子層不接受 X／Y 翻轉（沒有分軸縮放可以承載）'
   assert.ok(VFXCore.validatePreset(preset).ok);
 });
 
+/* ============================================================
+   OFF — 位移曲線（offsetX／offsetYOverLife）
+
+   它與這個檔案裡其他每一條曲線的語意都不同：**加**在 position 上，不是乘。
+   乘沒有意義——position 常常是 0，乘多少都還是 0。這一組測試的重點就是
+   把「加」這件事釘住，不然哪天有人照著 alpha／scale 的樣子改成乘法，
+   畫面上只會看到「位移曲線沒有效果」，查不到原因。
+   ============================================================ */
+
+test('OFF-1 位移是加在 position 上，不是乘', function () {
+  /* position 非 0 才分得出加與乘：position 20 加上 0 應該還是 20，
+     乘 0 會變成 0。 */
+  const zeroCurve = lastVisible(record(
+    spritePreset({ position: { x: 20, y: 0 }, offsetXOverLife: 0 }), 4));
+  assert.equal(Number(zeroCurve[1]).toFixed(3), '20.000',
+    '位移 0 應該原地不動；變成 0 就是被當成乘法了');
+
+  const moved = lastVisible(record(
+    spritePreset({ position: { x: 20, y: 0 }, offsetXOverLife: 30 }), 4));
+  assert.equal(Number(moved[1]).toFixed(3), '50.000', '20 + 30');
+});
+
+test('OFF-2 位移可以是負的，而且沿著曲線走', function () {
+  const seen = record(spritePreset({ offsetYOverLife: [[0, 0], [1, -100]] }), 40);
+  const first = seen[0].split('|');
+  assert.ok(Number(first[2]) > -5, '起點應該接近 0，實得 ' + first[2]);
+  const end = lastVisible(seen);
+  assert.ok(Number(end[2]) < -90, '終點應該接近 -100，實得 ' + end[2]);
+});
+
+test('OFF-3 位移落在特效自己的座標系，跟著特效旋轉與縮放', function () {
+  /* 加在世界座標上的話，特效轉了 90 度之後「往上飄」會變成「往右飄」，
+     而那是錯的——position 本來就會跟著轉，位移是加在 position 上的。 */
+  const preset = spritePreset({ offsetYOverLife: [[0, 0], [1, -100]] });
+  const backend = {
+    createNode: () => ({}), updateNode: () => {}, destroyNode: () => {}, destroy: () => {}
+  };
+  const seen = [];
+  const rt = VFXCore.createRuntime({
+    backend: Object.assign({}, backend, {
+      updateNode: (n, t) => { if (t.visible !== false) seen.push([r6(t.x), r6(t.y)]); }
+    }),
+    resolver: RESOLVER
+  });
+  rt.registerPreset(preset);
+  rt.play('fx', { position: { x: 0, y: 0 }, rotation: Math.PI / 2, seed: 1 });
+  rt.update(0.5);
+  const last = seen[seen.length - 1];
+  assert.ok(last[0] > 40, '轉 90 度之後「往上」要變成沿著特效的軸走，實得 x=' + last[0]);
+  assert.ok(Math.abs(last[1]) < 1, '世界 y 不該有位移，實得 ' + last[1]);
+});
+
+test('OFF-4 沒給位移曲線時輸出逐位元不變（舊 preset 不受影響）', function () {
+  const before = fingerprint(spritePreset({ scaleOverLife: [[0, 1], [1, 2]] }), 20);
+  const after = fingerprint(spritePreset({
+    scaleOverLife: [[0, 1], [1, 2]], offsetXOverLife: undefined, offsetYOverLife: undefined
+  }), 20);
+  assert.equal(after, before, '欄位是 undefined 就等於沒有這個欄位');
+});
+
+test('OFF-5 粒子層不接受位移曲線（它的位置是整套運動算出來的）', function () {
+  /* 粒子的位置來自 speed／gravity／spawn，沒有一個「圖層位置」可以加。
+     收下來卻靜靜忽略正是規格禁止的 silent fallback。 */
+  const preset = {
+    schemaVersion: 1, id: 'fx', duration: 1, loop: false,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'x.png',
+      emission: { mode: 'rate', rate: 10 }, lifetime: 1,
+      offsetYOverLife: [[0, 0], [1, 10]]
+    }]
+  };
+  const check = VFXCore.validatePreset(preset);
+  assert.equal(check.ok, false);
+  assert.ok(check.errors.some(e => /offsetYOverLife/.test(e)), check.errors.join('; '));
+});
+
+test('OFF-6 procedural 支援位移（與 sprite 走同一條 updateSpriteLayer）', function () {
+  const preset = {
+    schemaVersion: 1, id: 'fx', duration: 1, loop: false,
+    layers: [{
+      id: 'g', type: 'procedural', effect: 'uvScroll', assetId: 'x.png',
+      size: { x: 64, y: 64 }, offsetYOverLife: [[0, 0], [1, -20]]
+    }]
+  };
+  assert.ok(VFXCore.validatePreset(preset).ok, VFXCore.validatePreset(preset).errors.join('; '));
+});
+
+test('OFF-7 Editor 的位移 policy 是加法語意：預設 0、不夾上下限', function () {
+  /* alpha／scale 的 defaultValue 是 1（乘法的單位元），位移是 0（加法的單位元）。
+     寫成 1 的話，「加一條曲線」會讓圖層瞬間往右下跳一格。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const at = src.indexOf('    offset: {');
+  assert.ok(at > 0, 'CURVE_POLICY 要有 offset');
+  const block = src.slice(at, src.indexOf('}', at));
+  assert.ok(/defaultValue:\s*0/.test(block), '預設值必須是 0');
+  assert.ok(/min:\s*null/.test(block) && /max:\s*null/.test(block),
+    '位移可以是負的，也沒有天然上界');
+  assert.ok(/unit:\s*'px'/.test(block), '單位是 px');
+
+  /* 區塊本身要掛在 OVER-LIFE 裡，而且粒子層要說明為什麼沒有 */
+  const fn = src.slice(src.indexOf('function renderOverLife'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/curveSection\(host, 'offset'/.test(body), '要有 Offset 區塊');
+  assert.ok(/offsetXOverLife/.test(body) && /offsetYOverLife/.test(body), '兩軸都要有');
+  assert.ok(/supportsPerAxisScale\(layer\)/.test(body),
+    '粒子層要走說明那一條，不是畫出兩張沒有作用的圖');
+});
+
 test('ROT-7 序列化鍵順序固定，往返逐位元相同', function () {
   const preset = spritePreset({
     rotationOverLife: [[0, 0], [1, 1]],

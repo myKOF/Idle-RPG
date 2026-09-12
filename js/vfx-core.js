@@ -454,6 +454,14 @@ var VFXCore = (function () {
        procedural 支援），因為它們最終就是套用在 scaleY／scaleX 上。 */
     validateCurve(layer.rotationXOverLife, where + '.rotationXOverLife', errors);
     validateCurve(layer.rotationYOverLife, where + '.rotationYOverLife', errors);
+    /* 位移曲線。與上面每一條都不同：它是**加**在 position 上的，不是乘。
+       乘沒有意義——position 常常是 0，乘多少都還是 0。
+
+       單位是 px，而且落在特效自己的座標系（與 position 同一組數字，所以會跟著
+       特效一起旋轉與縮放）。不夾上下限：位移本來就可以是負的，範圍也沒有
+       天然的上界。 */
+    validateCurve(layer.offsetXOverLife, where + '.offsetXOverLife', errors);
+    validateCurve(layer.offsetYOverLife, where + '.offsetYOverLife', errors);
   }
 
   /* 子發射器：這一層的粒子在出生或死亡時，往另一層丟幾顆。
@@ -618,13 +626,19 @@ var VFXCore = (function () {
      scaleY／scaleX 上——粒子層那邊沒有分軸縮放可以承載它們。 */
   var PER_AXIS_SCALE_FIELDS = ['scaleXOverLife', 'scaleYOverLife',
     'rotationXOverLife', 'rotationYOverLife'];
+  /* 位移曲線同樣只掛 sprite 與 procedural，理由與上面那一組一樣：它們在
+     updateSpriteLayer 裡加在 d.position 上，而粒子的位置是由 speed／gravity／
+     spawn 那一整套運動算出來的，沒有一個「圖層位置」可以加。
+     粒子要飄要偏，用的是那一套，不是這兩條曲線。 */
+  var OFFSET_FIELDS = ['offsetXOverLife', 'offsetYOverLife'];
   var TYPE_ONLY_FIELDS = {
-    sprite: PER_AXIS_SCALE_FIELDS.concat(['radiusProfile']),
+    sprite: PER_AXIS_SCALE_FIELDS.concat(OFFSET_FIELDS).concat(['radiusProfile']),
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
       'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter'],
-    procedural: ['effect', 'size', 'scrollSpeed', 'water', 'radiusProfile'].concat(PER_AXIS_SCALE_FIELDS)
+    procedural: ['effect', 'size', 'scrollSpeed', 'water', 'radiusProfile']
+      .concat(PER_AXIS_SCALE_FIELDS).concat(OFFSET_FIELDS)
   };
 
   /* 未知欄位必須報錯：拼錯的 alpah 若被靜靜忽略，使用者會看到「設定沒有效果」
@@ -801,7 +815,8 @@ var VFXCore = (function () {
     'startScale', 'rotationStart', 'rotationSpeed',
     'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
-    'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife', 'sheet', 'radiusProfile', 'water'];
+    'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife',
+    'offsetXOverLife', 'offsetYOverLife', 'sheet', 'radiusProfile', 'water'];
 
   // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
   function radiusProfileScale(profile, y) {
@@ -925,7 +940,9 @@ var VFXCore = (function () {
       scaleYOverLife: layer.scaleYOverLife,
       rotationOverLife: layer.rotationOverLife,
       rotationXOverLife: layer.rotationXOverLife,
-      rotationYOverLife: layer.rotationYOverLife
+      rotationYOverLife: layer.rotationYOverLife,
+      offsetXOverLife: layer.offsetXOverLife,
+      offsetYOverLife: layer.offsetYOverLife
     };
   }
 
@@ -1238,7 +1255,15 @@ var VFXCore = (function () {
         ? 1 : Math.cos(sampleCurve(d.rotationXOverLife, life.progress) || 0);
       var flipX = d.rotationYOverLife === undefined
         ? 1 : Math.cos(sampleCurve(d.rotationYOverLife, life.progress) || 0);
-      var world = toWorld(effect, d.position.x, d.position.y);
+      /* 位移曲線是**加**在 position 上的（見驗證處的說明），而且加在進入
+         toWorld 之前——也就是在特效自己的座標系裡。這樣它會跟著特效一起
+         旋轉與縮放，與 position 的行為一致；加在世界座標上的話，特效轉了
+         90 度之後「往上飄」會變成「往右飄」。 */
+      var offX = sampleCurve(d.offsetXOverLife, life.progress);
+      var offY = sampleCurve(d.offsetYOverLife, life.progress);
+      var world = toWorld(effect,
+        d.position.x + (offX === null ? 0 : offX),
+        d.position.y + (offY === null ? 0 : offY));
       var t = scratchTransform;
       t.visible = true;
       t.x = world.x;
