@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜追跡風刃抖動與停滯（2026-09-12）
+
+- 任務 WIND-MOTION-SMOOTH；Owner Codex；Done。使用者要求消除轉彎抖動，且小風刃速度與大型一致。大小本來共用 geom.speedPx；修正追跡場域被 dest 停駐限制、快照航向跳變及位置修正速度突變。範圍 Runtime、skills2 運動事件、快取、風刃回歸測試、本紀錄；保留使用者冰系修改。預檢乾淨，驗收：速度來源與實際位移、跨目標不停駐、含快照修正的朝向及角速度連續性、Build。
+- 完成：風刃不再送停駐終點，Runtime 相容舊事件亦不套用停止限制；快照航向殘差及位置修正速度共用收斂時間，旋轉仍取實際位移，正常無誤差圓弧保持精確積分。未更動傷害與速度數值。
+- 驗證：windblade-vfx-integration 4/4（同源速度、一秒位移、跨目標不停、含交替誤差的快照每幀角變化、朝向及圓弧）；vfx-runtime 的 WINDBLADE／GROUND 7/7；Build 342 檔通過，git diff --check 通過。未實機測試，使用者冰系 VFX 保留未提交，無素材變更。Commit 為本紀錄所在提交，可供合併，未推送。
+
 ## Codex｜風刃朝向與圓弧轉彎（2026-09-12）
 
 - 任務 WIND-BLADE-FACING；Owner Codex；Done。使用者回報風刃固定朝右，要求參考寒冰箭。追跡場域漏用 moveA、漏傳 turnRate 且模擬轉彎未採圓弧積分；沿用冰箭機制修正。範圍：skills2、Runtime、主頁／Worker 快取、測試、本紀錄；不改使用者冰系 VFX。預檢乾淨，驗收包含四向直射、追跡轉彎與朝向／位移一致、Build。

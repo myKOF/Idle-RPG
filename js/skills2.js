@@ -4229,7 +4229,7 @@ function sgGroundMotionFields(f, out) {
   out.speed = f.speed;
   if (isFinite(f.moveAngle)) out.moveA = f.moveAngle;
   if (f.fireHunt || f.kind === 'icearrow' || f.kind === 'windblade' || f.spiralCentre) out.turnRate = Number(f.turnRate) || 0;
-  if (f.dest && !f.fireHunt) {
+  if (f.dest && !f.fireHunt && f.kind !== 'windblade') {
     out.destX = f.dest.x;
     out.destY = f.dest.y;
   }
