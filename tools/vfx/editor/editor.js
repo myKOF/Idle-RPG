@@ -591,6 +591,14 @@
       min: -Math.PI * 2, max: Math.PI * 2, fixedRange: true,
       baseline: [-Math.PI * 2, Math.PI * 2], defaultValue: 0, decimals: 1,
       unit: '°', toDisplay: VFXCurveModel.radToDeg, fromDisplay: VFXCurveModel.degToRad
+    },
+    /* 位移與上面三條都不同：它是**加**在 position 上的，不是乘。
+       所以預設值是 0（不是 1），而且上下限都放開——位移本來就可以是負的，
+       也沒有天然的上界（一道 60 米的貫穿是 600px）。
+
+       基準線取 ±60px＝±6 米，剛好是預覽格線的一大格；資料超出時軸會自動放大。 */
+    offset: {
+      min: null, max: null, baseline: [-60, 60], defaultValue: 0, decimals: 1, unit: 'px'
     }
   };
 
@@ -2634,7 +2642,7 @@
      收合狀態存在 state 而不是 localStorage：它跟著「目前在編哪一層」，
      不是使用者的長期偏好。 */
 
-  var overLifeOpen = { opacity: true, color: false, scale: false, rotation: false };
+  var overLifeOpen = { opacity: true, color: false, scale: false, rotation: false, offset: false };
   var liveEditors = [];                      // 目前掛在畫面上的曲線元件，換層時要收掉
   /* 'sections' 分區收合（省空間）／'compare' 全部攤開對照（共用時間軸）。
      存在 state 而不是 localStorage：它是當下的工作方式，不是長期偏好。 */
@@ -2860,6 +2868,24 @@
         'Z＝平面旋轉。X／Y 是正交投影的翻轉：繞 X 轉會壓縮高度、繞 Y 轉會壓縮寬度，' +
         '180° 時變成鏡像（翻到背面）。沒有透視，背面看到的仍是同一張圖。');
       hintLine(body, '以度顯示、以弧度儲存。');
+    });
+
+    curveSection(host, 'offset', 'Offset', function (body) {
+      if (!supportsPerAxisScale(layer)) {
+        hintLine(body,
+          '位移曲線只有 sprite 與 procedural 支援。粒子的位置是由 speed／gravity／' +
+          'spawn 那一整套運動算出來的，沒有一個「圖層位置」可以加——要讓粒子飄或偏，' +
+          '用的是那幾個欄位。');
+        return;
+      }
+      curveBlock(body, layer, 'offsetXOverLife', CURVE_POLICY.offset, 'X', { height: 170 });
+      curveBlock(body, layer, 'offsetYOverLife', CURVE_POLICY.offset, 'Y', { height: 170 });
+      hintLine(body,
+        '**加**在 position 上的位移，不是乘（position 常常是 0，乘多少都還是 0）。' +
+        '單位 px，與遊戲同比例：60px ＝ 6 米 ＝ 預覽格線的一大格。');
+      hintLine(body,
+        '位移落在特效自己的座標系，會跟著特效一起旋轉縮放——' +
+        '所以「往上飄」在轉了 90 度的特效上仍然是相對它自己的上方。');
     });
   }
 
