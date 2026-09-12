@@ -28,7 +28,8 @@
     /^172\.(1[6-9]|2\d|3[01])\./.test(host);
   if (!internal) return;
 
-  var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], input: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0 };
+  var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], input: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0,
+    frames: 0, frameGaps: [], frameT0: 0 };
 
   /* ---- 成長追蹤 ----
      用來抓「一旦開始卡就回不去，只有 F5 會好」這類累積型問題。
@@ -210,6 +211,38 @@
     window.requestAnimationFrame = g;
   }
 
+  /* ---- 影格產出 ----
+     這一支回答的是「瀏覽器到底有沒有在出畫面」，而那是目前唯一分得出兩種病因的量測：
+
+       間隔長 ＋ rAF 回呼短 ＋ 沒有長工作  → 主執行緒是閒的，卡在合成／點陣化（GPU 那側）
+       間隔長 ＋ rAF 回呼長                → 渲染迴圈自己太貴（Pixi／VFX）
+       間隔長 ＋ 長工作多但 rAF 回呼短      → 被主執行緒上的別人佔走
+
+     兩種的修法完全相反（一個要減圖層與點陣化面積，一個要減渲染工作量），
+     而既有的報告全都只看主執行緒，分不出來——2026-09-13 連兩次改到錯的地方
+     就是因為少了這一條。
+
+     刻意用**未包裝**的原版 rAF 排程：包裝過的會把這支自己也算成一筆 rAF 回呼，
+     污染它要量的東西。 */
+  function trackFrames(rawRaf) {
+    if (typeof rawRaf !== 'function') return;
+    var last = performance.now();
+    P.frameT0 = last;
+    function tick(t) {
+      var gap = t - last;
+      last = t;
+      P.frames++;
+      /* 只留夠長的間隔：60fps 正常是 16.7ms，超過 50ms 才算「畫面停住」。
+         全部都留的話幾分鐘就是好幾萬筆，報告也讀不動。 */
+      if (gap > 50) {
+        P.frameGaps.push({ ms: Math.round(gap), at: Math.round(t / 1000) });
+        if (P.frameGaps.length > 300) P.frameGaps.splice(0, 150);
+      }
+      rawRaf.call(window, tick);
+    }
+    rawRaf.call(window, tick);
+  }
+
   function wrapAll() {
     TARGETS.forEach(function (name) {
       var f = window[name];
@@ -255,6 +288,11 @@
     }).sort(function (a, b) { return (b['佔用ms'] || b['次數']) - (a['佔用ms'] || a['次數']); });
   }
 
+  function worstGaps() {
+    return P.frameGaps.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 6)
+      .map(function (e) { return e.ms + 'ms@' + e.at + 's'; }).join(' ');
+  }
+
   /* 互動延遲一律以「最慢的排前面」呈現：卡頓回報要看的是最差那幾次，平均會把它抹平。 */
   function inputRows() {
     return P.input.slice().sort(function (a, b) { return b.total - a.total; }).map(function (e) {
@@ -279,6 +317,9 @@
       ' errors=' + st.errors + ' restarts=' + st.restarts + ' pending=' + st.pendingCommands);
     console.log('%c強制版面重算 ' + P.layoutTotal + ' 次（每秒 ' +
       (P.layoutTotal / sec).toFixed(0) + ' 次）', 'color:#c00;font-weight:bold');
+    console.log('%c影格產出 ' + P.frames + ' 次（每秒 ' + (P.frames / sec).toFixed(0) +
+      '）｜畫面停住(>50ms) ' + P.frameGaps.length + ' 次，最長：' + (worstGaps() || '無'),
+      'color:#06c;font-weight:bold');
     console.log('主執行緒長工作(>50ms)：' + P.long.length + ' 次 / 共 ' + busy +
       ' ms / 卡住 ' + (busy / (sec * 1000) * 100).toFixed(1) + '% 的時間　最大幾筆（時長@發生秒數）：' +
       P.long.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 8)
@@ -351,6 +392,7 @@
       enemies: document.querySelectorAll('.enemy-card').length,
       worker: { catchup: st.catchupSec, ticks: st.ticks, errors: st.errors, restarts: st.restarts },
       layoutTotal: P.layoutTotal, longTasks: P.long.slice(), input: inputRows().slice(0, 20),
+      frames: P.frames, frameGaps: P.frameGaps.slice(-40),
       renderer: br, timers: P.timers, timersPeak: P.timersPeak, grow: growRows,
       cmd: rows(P.cmd, true), layout: rows(P.layout, false).slice(0, 20), fn: rows(P.fn, true).slice(0, 20)
     };
@@ -389,6 +431,8 @@
       '強制重算 ' + P.layoutTotal + ' 次（每秒 ' + (P.layoutTotal / sec).toFixed(1) + '）：' + (lay || '無'),
       '長工作 ' + P.long.length + ' 次／共 ' + busy + 'ms（卡住 ' +
         (busy / (sec * 1000) * 100).toFixed(1) + '% 的時間）最大：' + (topLong || '無'),
+      '影格 ' + P.frames + ' 次（每秒 ' + (P.frames / sec).toFixed(0) + '）｜停住(>50ms) ' +
+        P.frameGaps.length + ' 次，最長：' + (worstGaps() || '無'),
       '互動最差：' + (inp || '無（沒有超過 16ms 的互動）'),
       '函式 TOP8：' + (fn || '無')
     ];
@@ -409,6 +453,7 @@
      這是假設，不是結論。與其照著假設改程式，不如把三個嫌疑各自關掉再捲一次：
      差別用眼睛就看得出來，一次就知道是不是、以及是哪一個。
 
+       lagPaint('nohover') 捲動區內不做命中判定與過場動畫（CSS :hover 重算成本）
        lagPaint('shadow') 關掉所有陰影與濾鏡（繪製成本）
        lagPaint('skip')   離開畫面的技能列整列跳過渲染（content-visibility）
        lagPaint('layer')  把戰鬥 canvas 提升成獨立合成圖層
@@ -421,12 +466,33 @@
     var canvas = document.querySelector('canvas.battle-canvas');
     var did = [];
     var i;
+    var NOHOVER_ID = '__lagNoHover';
 
     if (mode === 'reset') {
+      var oldStyle = document.getElementById(NOHOVER_ID);
+      if (oldStyle) oldStyle.remove();
       for (i = 0; i < nodes.length; i++) { nodes[i].style.boxShadow = ''; nodes[i].style.filter = ''; }
       for (i = 0; i < wraps.length; i++) { wraps[i].style.contentVisibility = ''; wraps[i].style.containIntrinsicSize = ''; }
       if (canvas) canvas.style.willChange = '';
       return '已全部復原（' + nodes.length + ' 個節點、' + wraps.length + ' 列）';
+    }
+    /* 捲動時游標不動、元素在游標底下移動，瀏覽器每一幀都要重新判定誰被 :hover，
+       再對命中的那一條做樣式重算；.sg-stage-node 每顆還掛著 transition，
+       hover 掃過去會一路啟動過場。這些全發生在 JS 之外——擋掉 JS 的 hover handler
+       （2026-09-13 已做）對它一點用都沒有，函式耗時表上也永遠看不到。
+       對捲動區的**子元素**關掉命中判定：捲動區本身仍收得到滾輪，捲動照常，
+       但裡面不再有任何元素會被 hover，整條重算就消失。
+       ⚠️ 生效期間捲動區內點不到東西（包括技能格子），reset 即復原。 */
+    if (mode === 'nohover' || mode === 'all') {
+      if (!document.getElementById(NOHOVER_ID)) {
+        var st = document.createElement('style');
+        st.id = NOHOVER_ID;
+        st.textContent = '#workspace-area main > * { pointer-events: none !important; }' +
+          '#workspace-area main *, #workspace-area main *::before, #workspace-area main *::after' +
+          ' { transition: none !important; animation: none !important; }';
+        document.head.appendChild(st);
+      }
+      did.push('捲動區內關閉命中判定與過場動畫');
     }
     if (mode === 'shadow' || mode === 'all') {
       for (i = 0; i < nodes.length; i++) { nodes[i].style.boxShadow = 'none'; nodes[i].style.filter = 'none'; }
@@ -443,7 +509,7 @@
       if (canvas) { canvas.style.willChange = 'transform'; did.push('canvas 獨立圖層'); }
       else did.push('找不到 canvas.battle-canvas');
     }
-    if (!did.length) return "用法：lagPaint('shadow' | 'skip' | 'layer' | 'all' | 'reset')";
+    if (!did.length) return "用法：lagPaint('nohover' | 'shadow' | 'skip' | 'layer' | 'all' | 'reset')";
     return did.join('；') + '　→ 現在再捲一次技能頁，看戰鬥區還會不會定格';
   };
 
@@ -451,12 +517,15 @@
      中途重設會把「起始值」洗成已經漲上去的數字，等於自廢武功。 */
   window.lagReset = function () {
     P.fn = {}; P.layout = {}; P.layoutTotal = 0; P.long = []; P.input = []; P.cmd = {};
+    P.frames = 0; P.frameGaps = [];
     P.t0 = performance.now();
     return '已歸零，重新計時（成長追蹤的基線保留）';
   };
 
   function start() {
+    var rawRaf = window.requestAnimationFrame;
     wrapRaf();
+    trackFrames(rawRaf);
     wrapAll();
     wrapCommands();
     wrapTimers();
