@@ -182,13 +182,6 @@
       "fileSize": 2796
     },
     {
-      "assetId": "light-masks-1.0/default/cone_a_blur.png",
-      "relativePath": "light-masks-1.0/Default/cone_a_blur.png",
-      "package": "light-masks-1.0",
-      "contentHash": "sha256:9770489d50ed82f6ca7afc24d6b2167063c76140944690eff34018f78c77e480",
-      "fileSize": 8682
-    },
-    {
       "assetId": "light-masks-1.0/default/cone_b.png",
       "relativePath": "light-masks-1.0/Default/cone_b.png",
       "package": "light-masks-1.0",
@@ -334,6 +327,13 @@
       "package": "new_materials",
       "contentHash": "sha256:88ef50749eb0455a762ef68b9a99cff2a623c510e3f8021bb0aa61912154743b",
       "fileSize": 109542
+    },
+    {
+      "assetId": "new_materials/beam/lightrays_8.png",
+      "relativePath": "new_materials/beam/lightrays_8.png",
+      "package": "new_materials",
+      "contentHash": "sha256:9178c967ff7b741e9a5fb0e44f732b711c2def82eb1b4f30aa1c9182ff1db7f7",
+      "fileSize": 148079
     },
     {
       "assetId": "new_materials/fan/turbine_1.png",

@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜第七階無限火龍（2026-09-12）
+
+- 任務 INFINITE-FIRE-DRAGON；Owner Codex；Done。來源：使用者提供 Google 試算表「神力之巔_記事錄」技能 C142:I151（https://docs.google.com/spreadsheets/d/1RysqEzKOjr2oqHLdXapoTM28tlXpZ2wk/edit?gid=1687407583）；已讀效果、範圍、成長、其它與特效說明。
+- 第七階改為原段數 +5、每段 100%／每級 +10%、持續追敵 6m/s、單敵附近也移動、保證再召喚一次、暗紅火焰；保留第 2~6 階與傳奇／超神相容。表中其他階段舊有數值差異不擴大修改。
+- 範圍：skills2、Runtime／快取、Skills2 Excel/CSV、專用 VFX preset/layout、相關測試及本紀錄；不得改其他技能或使用者自調 VFX。前置依賴完整，主要檔案預檢乾淨。
+- 驗收：段數／傷害／數量／續召上限、移動與畫面同步、Excel/CSV/JS 一致性、VFX 驗證、Build；完成由使用者合併。
+- 完成：保留雙重龍捲數量，基礎 5+5 段；第 7 階自身 Lv.1 傷害為 110%（沿用底值＋每級增量），再疊第 3 階加成。再召喚後停止第 6／7 階連鎖，原階 6 仍保留機率重生；傳奇追蹤速度優先、額外段數及超神火池／數量／拉近仍生效。現有冷卻 15 秒未隨文件舊值 14 秒擴大修改。
+- 驗證：node --test tests/skill2-infinite-fire-dragon.test.cjs tests/skill2-magic-fire.test.cjs tests/skill2-fire-legendary.test.cjs 共 49/49；包含實際 Runtime 速度／續播／回收。npm run build 341 檔通過；config_tables --apply Skills2 零語意差異；export-assets --check 最新。Excel 僅 13 儲存格變更、其他 OOXML 部件位元組未變，與 CSV 三個關聯列一致。Artifact Tool 匯出會誤改無關空字串，因此僅移植其授權儲存格至原包，保留既有格式與其他工作表。
+- 暗紅 preset 使用共享圖集、未新增生成層。保留使用者同期自行儲存的 inferno preset/layout 與素材匯出。素材庫乾淨，必要素材已存在，無素材庫新 Commit。未實機測試；已渲染暗紅預覽。遊戲 Commit 為本紀錄所在提交，未推送，可供使用者合併與遊戲測試。
+
 ## Codex｜火龍捲尖頂接入（2026-09-12）
 
 - 任務 FIRE-TORNADO-TIP；Owner Codex；Done。使用者批准尖頂預覽並要求接入，其他參數由使用者調整。

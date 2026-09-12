@@ -564,7 +564,7 @@ test('【烈焰暴風】：每次施放的火龍捲數量變為 N 倍', () => {
   c.chance = () => false;
   maxLevels(c, 'firepillar');
   c.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
-  assert.equal(c.SKILL2_RT.grounds.length, 3, '基準：無限火牆 3 道');
+  assert.equal(c.SKILL2_RT.grounds.length, 2, '基準：雙重龍捲 2 道');
 
   const c2 = loadContext();
   stubHits(c2);
@@ -572,7 +572,7 @@ test('【烈焰暴風】：每次施放的火龍捲數量變為 N 倍', () => {
   maxLevels(c2, 'firepillar');
   setUlt(c2, 'firepillar', 'infernoTempest', 1);   // Lv.1：1.2 ＋ 0.8 ＝ 2.0 倍
   c2.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
-  assert.equal(c2.SKILL2_RT.grounds.length, 6, '3 道 × 2.0 倍');
+  assert.equal(c2.SKILL2_RT.grounds.length, 4, '2 道 × 2.0 倍');
 });
 
 test('【永劫火獄】：火龍捲在附近游走，並在移動軌跡上留下火池', () => {
@@ -584,7 +584,7 @@ test('【永劫火獄】：火龍捲在附近游走，並在移動軌跡上留�
   const p = playerEnt();
   const m = enemy(1e9, 100, 0);
   c.castSkill2(p, [m], 'firepillar', 'mv-float');
-  const f = grounds(c, 'wall')[0];
+  const f = grounds(c, 'pillar')[0];
   assert.equal(f.wanderM, c.bfMeterPx(20), '游走半徑 20 米');
   assert.ok(f.speed > 0, '游走要有速度');
   assert.ok(f.trail, '帶著軌跡火池的規格');
