@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2424,
+  "assetCount": 2425,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -110083,6 +110083,21 @@
       "format": "png",
       "fileSize": 2132958,
       "contentHash": "sha256:e8f1a9aff36ca7e8c18153b2113d2757c552b42e92c79d1feb7f0d1402ba3482",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 2048
+        },
+        "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/tornado/fire-tip-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/tornado/fire-tip-flow.png",
+      "format": "png",
+      "fileSize": 2784045,
+      "contentHash": "sha256:149cfe8760ace8d3ea6f3f92e9216ed5b46ca34a3ac55d23fcc0a13ed0a48b5f",
       "facts": {
         "dimensions": {
           "width": 2560,

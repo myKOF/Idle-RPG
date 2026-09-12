@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜火龍捲尖頂接入（2026-09-12）
+
+- 任務 FIRE-TORNADO-TIP；Owner Codex；Done。使用者批准尖頂預覽並要求接入，其他參數由使用者調整。
+- 修改 fire-tornado-inferno 的圖集與頂部噴焰位置／範圍／數量，新增 fire-tornado-tip.cjs 可重烘焙同版 80 幀圖集；同步素材索引、遊戲匯出及快取版本。衝突預檢乾淨。
+- 已檢查 skills2.js 的 firepillar.field 直接引用正式 preset；未修改技能邏輯、火牆或其他技能。圖集保持原幀數及尺寸，沒有新增即時程序生成。
+- 驗證：Node assert 比對正式 preset 與批准 candidate 完全一致（僅替換素材 ID）、正式 PNG 與批准 PNG 位元組一致、Core.validatePreset 通過；node tools/vfx/export-assets.cjs --check 通過；npm run build 340 檔通過。未進行遊戲實機目視驗證。
+- 素材庫 Commit：940f3b0；遊戲 Commit 為本紀錄所在提交；未推送。預覽暫存保留於 scratch/fire-taper-preview，未納入提交。可供使用者合併及遊戲驗收。
+
 ## Codex｜水龍捲圖集效能優化（2026-09-12）
 
 - 任務 WATER-TORNADO-PERF；Owner Codex；Done。使用者回報四道水龍捲僅 10 FPS。

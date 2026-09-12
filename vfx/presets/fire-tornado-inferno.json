@@ -169,7 +169,7 @@
       "zIndex": 7,
       "position": {
         "x": 0,
-        "y": -99
+        "y": -115
       },
       "alpha": 0.65,
       "tint": "#ffb128",
@@ -177,23 +177,23 @@
       "duration": 3.846153846153846,
       "emission": {
         "mode": "rate",
-        "rate": 42
+        "rate": 24
       },
       "lifetime": [
         0.4,
         0.85
       ],
       "spawn": {
-        "height": 9,
+        "height": 3,
         "shape": "box",
-        "width": 42
+        "width": 5
       },
       "speed": [
         22,
         48
       ],
       "direction": -90,
-      "spread": 55,
+      "spread": 14,
       "startScale": [
         0.0293,
         0.0547
@@ -243,7 +243,7 @@
       "id": "baked-fire-column",
       "type": "sprite",
       "enabled": true,
-      "assetId": "codex-authored/tornado/fire-flow.png",
+      "assetId": "codex-authored/tornado/fire-tip-flow.png",
       "zIndex": 1,
       "scale": {
         "x": 0.5,
