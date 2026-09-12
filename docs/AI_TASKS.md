@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜暴風雪霜地與飄雪接入（2026-09-12）
+
+- 任務 BLIZZARD-VFX；Owner Codex；Done。使用者批准不規則藍色霜地、貼地冰霧、空中飄雪碎冰預覽，要求接入。
+- 範圍：ground-blizzard preset/layout、Runtime／主頁快取、素材匯出與本紀錄；不修改技能數值、跟隨邏輯與其他 VFX。前置預覽已確認、預檢乾淨。驗收：批准 JSON 一致、素材雜湊、場域跟隨／縮放／回收測試、Build；完成由使用者測試合併。
+- 完成：正式 JSON 除 id 外與批准 v2 預覽完全一致，沿用 T7 ground-blizzard 引用及權威矩形範圍；16 層、無即時程序生成。同步單一根群組與資料快取，新增正式 Runtime 回歸測試。
+- 驗證：node --test --test-name-pattern='BLIZZARD|GROUND-' tests/vfx-runtime.test.cjs 6/6，覆蓋範圍加倍、移動續命不重播、到期清除；npm run build 341 檔通過；Core.validatePreset、批准 JSON 比對、素材庫／遊戲 SHA256、export-assets --check、git diff --check 均通過。素材皆已匯出且素材庫乾淨，無需素材庫 Commit。未實機目視測試；本紀錄所在 Commit 可供合併，未推送。
+
 ## Codex｜連鎖閃電彈射間隔（2026-09-12）
 
 - 任務 CHAIN-HOP-300；Owner Codex；Done。使用者指定每次彈射間隔由 0.2 改為 0.3 秒，沿用首擊抵達時間，電弧排程與傷害顯示共同延後。

@@ -21,6 +21,24 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('BLIZZARD 正式霜地依範圍縮放、移動續命不重播並到期回收', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-blizzard.json'),'utf8'));
+ const frames=[];
+ for(const width of [300,600]) {
+  const {adapter,log}=makeAdapter([p]);
+  const ev=x=>({fxKind:'aura',variant:'blizzard',dur:2,area:{id:'blizzard-test',x,y:200,w:width,h:150},vfx:{ground:p.id}});
+  assert.equal(adapter.tryPlay(ev(100)),true);adapter.update(.1);
+  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('smoke_04.png'));
+  assert.ok(n);assert.equal(n.tag,'zone');frames.push(n.transforms.at(-1).scaleX);
+  const start=n.transforms.at(-1).x;
+  adapter.tryPlay(ev(160));for(let i=0;i<60;i++)adapter.update(1/60);
+  assert.ok(Math.abs(n.transforms.at(-1).x-start-60)<.5);
+  assert.equal(adapter.stats().played,1);assert.equal(adapter.stats().grounds,1);
+  adapter.update(5);assert.equal(adapter.stats().grounds,0);
+ }
+ assert.ok(Math.abs(frames[1]/frames[0]-2)<.0001);
+});
+
 test('THUNDERFALL 60 度斜落且只在權威落地事件播放衝擊', () => {
  const ps=['proj-thunderfall-sky','hit-thunderfall-impact'].map(id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets',id+'.json'),'utf8')));
  const {adapter,log}=makeAdapter(ps);
