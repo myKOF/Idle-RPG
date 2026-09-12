@@ -608,6 +608,8 @@ var VFXRuntime = (function () {
         ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
       dimensions = dimensions || defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1);
       var params = Object.assign({ position: from, rotation: facing }, dimensions);
+      // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
+      if (presetId === 'proj-wind-crescent' && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
@@ -1322,7 +1324,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260912-blizzard';
+  var DATA_VERSION = '20260912-windblade';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

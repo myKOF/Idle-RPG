@@ -6,10 +6,10 @@
       "id": "ground-homing-wind-crescent",
       "name": "ground-homing-wind-crescent",
       "layerIds": [
-        "glow",
-        "body",
-        "core",
-        "wisp"
+        "green-rim",
+        "green-body",
+        "white-core",
+        "wind-motes"
       ]
     }
   ],

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜風刃月牙接入（2026-09-12）
+
+- 任務 WIND-BLADE-VFX；Owner Codex；Done。使用者批准 moon-original-01 月牙、深綠外圈與中央白光。範圍：風刃／追跡風刃 preset/layout、Runtime 飛行壽命與快取、匯出、相關測試；不改技能數值及使用者冰系 VFX。預檢乾淨，前置預覽已確認。驗收：批准外觀、素材一致性、長距離飛行／回收、Build；使用者後續合併。
+- 完成：一般風刃與批准 JSON 除 id 外一致；追跡版使用同一月牙配色、維持 3×6 米，持續本體不反覆淡出。原共用追跡 preset 的萬象風劫亦沿用新外觀。一般飛行動畫以 timeScale 對齊事件 travelMs，避免 1.5 秒後先消失，未更改速度／傷害。
+- 驗證：node --test --test-name-pattern=WINDBLADE tests/vfx-runtime.test.cjs 1/1（1 秒與 5 秒飛行仍可見且抵達回收）；npm run build 341 檔通過；兩份 Core.validatePreset、批准 JSON 比對、素材雜湊及 export-assets --check 通過。素材庫乾淨無新 Commit；未實機測試。保留使用者冰霜新星／暴風雪修改未提交。本紀錄所在提交可供合併，未推送。
+
 ## Codex｜暴風雪霜地與飄雪接入（2026-09-12）
 
 - 任務 BLIZZARD-VFX；Owner Codex；Done。使用者批准不規則藍色霜地、貼地冰霧、空中飄雪碎冰預覽，要求接入。

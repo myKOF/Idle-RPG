@@ -5,50 +5,21 @@
   "loop": false,
   "layers": [
     {
-      "id": "glow",
+      "id": "green-rim",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.2539,
-        "y": 0.2305
+        "x": 0.2891,
+        "y": 0.2891
       },
-      "alpha": 0.3,
-      "tint": "#b9f6cf",
-      "blendMode": "add",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.08,
-          0.9
-        ],
-        [
-          0.9,
-          0.85
-        ],
-        [
-          1,
-          0
-        ]
-      ]
-    },
-    {
-      "id": "body",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_02.png",
-      "zIndex": 1,
-      "rotation": -1.5708,
-      "scale": {
-        "x": 0.2031,
-        "y": 0.1875
-      },
-      "alpha": 0.95,
-      "tint": "#86efac",
+      "alpha": 1,
+      "tint": "#087438",
       "blendMode": "add",
       "duration": 1.5,
       "alphaOverLife": [
@@ -61,7 +32,7 @@
           1
         ],
         [
-          0.9,
+          0.88,
           1
         ],
         [
@@ -71,14 +42,55 @@
       ]
     },
     {
-      "id": "core",
+      "id": "green-body",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
-      "zIndex": 2,
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "zIndex": 1,
+      "position": {
+        "x": 1,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.1523,
-        "y": 0.1406
+        "x": 0.2734,
+        "y": 0.2695
+      },
+      "alpha": 0.9,
+      "tint": "#168b48",
+      "blendMode": "add",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.06,
+          1
+        ],
+        [
+          0.88,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "white-core",
+      "type": "sprite",
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "zIndex": 4,
+      "position": {
+        "x": 10,
+        "y": 0
+      },
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.252,
+        "y": 0.1758
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -94,7 +106,7 @@
           1
         ],
         [
-          0.9,
+          0.88,
           1
         ],
         [
@@ -104,79 +116,60 @@
       ]
     },
     {
-      "id": "trail",
+      "id": "wind-motes",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 4,
-      "tint": "#ffffff",
+      "zIndex": 2,
+      "position": {
+        "x": -15,
+        "y": 0
+      },
+      "alpha": 0.6,
+      "tint": "#caffea",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
         "rate": 16
       },
       "lifetime": [
-        0.1,
-        0.2
+        0.12,
+        0.3
       ],
       "spawn": {
-        "radius": 3,
-        "shape": "circle"
+        "height": 56,
+        "shape": "box",
+        "width": 16
       },
       "speed": [
-        10,
-        40
+        50,
+        105
       ],
       "direction": 180,
-      "spread": 20,
-      "drag": 5,
+      "spread": 16,
       "startScale": [
-        0.0078,
-        0.0137
+        0.0039,
+        0.0059
       ],
       "alphaOverLife": [
         [
           0,
-          0.9
+          0
         ],
         [
-          0.5,
-          0.7
+          0.12,
+          0.8
         ],
         [
           1,
           0
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#ffffff"
-        ],
-        [
-          0.5,
-          "#ffffff"
-        ],
-        [
-          1,
-          "#2a2a30"
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0.35
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "height": 104,
-      "width": 96
+      "height": 80,
+      "width": 40
     },
     "heightM": 8,
     "shape": "custom",

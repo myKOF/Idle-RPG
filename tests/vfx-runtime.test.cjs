@@ -21,6 +21,19 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('WINDBLADE 月牙隨權威飛行時間續播，長距離仍可見並在抵達回收', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-wind-crescent.json'),'utf8'));
+ for(const travel of [1,5]) {
+  const {adapter,log}=makeAdapter([p]);
+  assert.equal(adapter.tryPlay({fxKind:'projectile',variant:'wind-blade',angle:0,lineLength:900,bodyLength:40,lineWidth:80,travelMs:[travel*1000],vfx:{projectile:p.id}}),true);
+  for(let i=0;i<48;i++)adapter.update(travel*.8/48);
+  assert.equal(adapter.stats().projectiles,1);
+  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('moon-original-01.png'));
+  assert.ok(n);assert.ok(n.transforms.at(-1).alpha>.5);
+  adapter.update(travel*.3);assert.equal(adapter.stats().projectiles,0);
+ }
+});
+
 test('BLIZZARD 正式霜地依範圍縮放、移動續命不重播並到期回收', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-blizzard.json'),'utf8'));
  const frames=[];
