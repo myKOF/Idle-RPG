@@ -187,6 +187,29 @@
     'openSkillModal', 'renderSkillModal', 'renderSkill2Modal', 'renderSkill2UltModal',
     'showSkillTooltip', 'describeSkill2Group', 'describeSkill2Tier'];
 
+  /* ---- rAF 回呼耗時 ----
+     2026-09-12 的回報：長工作 41 次共 9216ms（最大幾筆 550～680ms），但 TARGETS 名單上
+     每一支的**單次最大**都不到 17ms——兇手整個在名單外。名單只包得到掛在 window 上的
+     具名函式，而 PixiJS 的 ticker 與 VFX Runtime 都活在 IIFE 裡、由 rAF 驅動，包不到。
+     從 rAF 這一層攔就不必知道它叫什麼名字：先分出「長工作發生在 rAF 裡還是外面」，
+     那一刀就把嫌疑範圍從整個前端縮到渲染迴圈或其他地方，再往下查才有方向。
+     要在 Pixi 的 ticker 開始跑之前包（start() 在 DOMContentLoaded，app.init 是非同步的，
+     來得及）；晚了的話 Pixi 會拿到未包裝的原版，報告裡就永遠是 0。 */
+  function wrapRaf() {
+    var raf = window.requestAnimationFrame;
+    if (typeof raf !== 'function' || raf.__lagWrapped) return;
+    var g = function (cb) {
+      if (typeof cb !== 'function') return raf.call(window, cb);
+      return raf.call(window, function (t) {
+        var t0 = performance.now();
+        try { return cb(t); }
+        finally { bump(P.fn, 'rAF回呼:' + (cb.name || '匿名'), performance.now() - t0); }
+      });
+    };
+    g.__lagWrapped = true;
+    window.requestAnimationFrame = g;
+  }
+
   function wrapAll() {
     TARGETS.forEach(function (name) {
       var f = window[name];
@@ -269,6 +292,21 @@
       track('渲染器 殘留座標(lastPos)', br.lastPos);
       track('渲染器 飄字合併表', br.floatMerge);
       track('渲染器 貼圖快取(imgTex)', br.imgTex);
+      /* VFX Preset Runtime 的量體。舊的追蹤項目全是 DOM 時代留下來的集合，
+         Preset 接手戰鬥特效之後，真正會長到上萬的是這幾個——而它們的成本
+         落在 Pixi 的 rAF 迴圈裡，函式耗時表一個字都看不到。 */
+      var pr = br.preset;
+      if (pr) {
+        if (pr.fx) {
+          track('Preset 特效(fx)', pr.fx.activeEffects);
+          track('Preset 粒子(fx)', pr.fx.activeParticles);
+          track('Preset 節點池(fx)', pr.fx.pooledNodes);
+        }
+        if (pr.zone) {
+          track('Preset 場域特效', pr.zone.activeEffects);
+          track('Preset 場域粒子', pr.zone.activeParticles);
+        }
+      }
       if (br.nodes) {
         track('節點 特效層', br.nodes.fx);
         track('節點 實體層', br.nodes.entity);
@@ -319,6 +357,45 @@
     return '把上面整段截圖回報（或執行 copy(__lagData) 貼純文字）';
   };
 
+  /* ---- 一鍵純文字摘要 ----
+     為什麼要有這一支：console.table 會被 DevTools 摺疊成「Array(n)」，回報者截圖時
+     最關鍵的兩張表（長工作、各函式耗時）幾乎每次都收起來或被捲出畫面——
+     2026-09-12 的技能頁卡頓回報來回三次都沒拿到那兩塊，時間全花在要圖上。
+     這支把同樣的東西壓成六行純文字，一張截圖就涵蓋得完，不必展開也不必捲動。 */
+  window.lagText = function () {
+    var sec = Math.max(1, (performance.now() - P.t0) / 1000);
+    var st = (window.WorkerBridge && WorkerBridge.status) ? WorkerBridge.status() : {};
+    var inv = (window.UI_WORKER_STATE && UI_WORKER_STATE.panels.inv) || {};
+    var busy = P.long.reduce(function (a, b) { return a + b.ms; }, 0);
+    var topLong = P.long.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 6)
+      .map(function (e) { return e.ms + 'ms@' + e.at + 's'; }).join(' ');
+    var fn = rows(P.fn, true).slice(0, 8).map(function (r) {
+      return r['項目'] + ' ' + r['佔用ms'] + 'ms(' + r['次數'] + '次/最大' + r['最大ms'] + ')';
+    }).join('　｜　');
+    var lay = rows(P.layout, false).slice(0, 5).map(function (r) {
+      return r['項目'] + ' ' + r['次數'];
+    }).join('　｜　');
+    var inp = inputRows().slice(0, 3).map(function (r) {
+      return r['事件'] + ' ' + r['總延遲ms'] + 'ms(等' + r['等待ms'] + '/處' + r['處理ms'] +
+        '/呈' + r['呈現ms'] + ')@' + r['發生秒數'] + 's';
+    }).join('　｜　');
+    var out = [
+      '[卡頓探針] ' + sec.toFixed(0) + 's｜分頁 ' + (window.UI ? UI.tab : '?') +
+        '｜DOM ' + document.getElementsByTagName('*').length +
+        '｜背包 ' + inv.count + '/' + inv.cap +
+        '｜計時器 ' + P.timers + '（峰值 ' + P.timersPeak + '）',
+      'Worker：catchup=' + st.catchupSec + 's ticks=' + st.ticks + ' errors=' + st.errors +
+        ' restarts=' + st.restarts + ' pending=' + st.pendingCommands,
+      '強制重算 ' + P.layoutTotal + ' 次（每秒 ' + (P.layoutTotal / sec).toFixed(1) + '）：' + (lay || '無'),
+      '長工作 ' + P.long.length + ' 次／共 ' + busy + 'ms（卡住 ' +
+        (busy / (sec * 1000) * 100).toFixed(1) + '% 的時間）最大：' + (topLong || '無'),
+      '互動最差：' + (inp || '無（沒有超過 16ms 的互動）'),
+      '函式 TOP8：' + (fn || '無')
+    ];
+    console.log('%c' + out.join(String.fromCharCode(10)), 'color:#0a0;line-height:1.6');
+    return '把上面這一段截圖回報就夠了';
+  };
+
   /* 成長追蹤刻意**不**歸零：抓累積型問題要的就是一條夠長的基線，
      中途重設會把「起始值」洗成已經漲上去的數字，等於自廢武功。 */
   window.lagReset = function () {
@@ -328,11 +405,13 @@
   };
 
   function start() {
+    wrapRaf();
     wrapAll();
     wrapCommands();
     wrapTimers();
     P.t0 = performance.now();
-    console.log('%c[卡頓探針] 已啟用（?lag=1）。每 15 秒自動印一次；lagReport() 立即印，lagReset() 歸零。',
+    console.log('%c[卡頓探針] 已啟用（?lag=1）。每 15 秒自動印一次；lagReport() 立即印，' +
+      'lagText() 印可直接截圖的純文字摘要，lagReset() 歸零。',
       'color:#0a0;font-weight:bold');
     setInterval(function () { window.lagReport(); }, 15000);
   }
