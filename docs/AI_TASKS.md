@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Claude｜捲動技能頁時戰鬥區定格：捲動中不做懸停提示（LAG-SCROLL-HOVER-20260913）
+
+- 病因：捲動時游標不動，但格子在游標底下一路移過去，每經過一顆就送一次 mouseover／mouseout。每一則都走到 showSkillTooltip（使用者報告實測平均 6ms、最大 12.7ms），而 positionSkTooltip 為了定位要讀三次版面（getBoundingClientRect／offsetWidth／offsetHeight），每次都是一輪強制版面重算。整個 UI 外殼掛在 transform: scale() 底下（js/ui-scale.js:36），捲動本來就走主執行緒重繪，再疊這一串，Pixi 的 ticker 就搶不到 frame。使用者互動延遲表整排是 mouseout／mouseleave／mouseover／mouseenter，正是這個形狀。
+- 先排除的：lagPaint('all')（關陰影濾鏡／離屏跳過渲染／canvas 獨立圖層）由使用者實測無效，因此不是繪製成本，方向改為事件量。
+- 修正：js/ui.js 比照背包既有的 UI.inventoryScrolling，替主捲動區（#workspace-area main）加 UI.panelScrolling —— 捲動中掛旗標、最後一則捲動事件後 120ms 放掉、捲動開始時收起提示；mouseover 與 mouseout 在最前面就短路。抑制範圍以 workspaceScroller.contains(e.target) 限定在該捲動區內，戰鬥區與左側屬性列不受影響。
+- 驗證：本機 8331 實測三段——未捲動 hover 1 次→提示 1 次；捲動中 hover 20 次→0 次；停止 220ms 後→恢復 1 次；捲動區外的 hover 在捲動中仍正常顯示（未誤擋）。新增 tests/panel-scroll-hover-suppress.test.cjs 3 項通過，並對「限定捲動區內」那條做過突變測試（改成無條件抑制會紅）。build 342 檔通過；npm test 2651 項 61 項失敗，與未修改 HEAD 的失敗集合逐項比對完全相同，0 新增失敗。快取版號 ui.js 1.0.61 → 1.0.62。
+- 待確認：使用者實機快速捲動技能頁，確認戰鬥區不再定格。
+
 ## Codex｜大小風刃顯示比例（2026-09-12）
 
 - 任務 WIND-SIZE；Owner Codex；Done。追蹤月牙用碰撞半徑除以 authored 半長，造成放大；改為半徑對應刃寬並以本體比例求長，與直射採相同 profile.scale。範圍 Runtime、快取、測試與本紀錄；不改數值及使用者 VFX。預檢乾淨；驗收正式大小風刃比例及 Build。

@@ -19,6 +19,11 @@ var UI = {
   hoveredItemTooltip: null,
   inventoryScrolling: false,
   inventoryScrollTimer: null,
+  /* 分頁內容捲動中（#workspace-area main）。與 inventoryScrolling 同一個用途、
+     不同的捲動區：背包格子用的是自己那一個，這一個蓋的是技能／天賦／高塔等
+     所有走主捲動區的分頁。見 initUI 的繫結處說明。 */
+  panelScrolling: false,
+  panelScrollTimer: null,
   inventoryDetailRefreshPending: false,
   equipFlashSlots: Object.create(null),
   equipFlashTimer: null,
@@ -10382,6 +10387,39 @@ function initUI() {
     }, { passive: true });
   }
 
+  /* 主捲動區捲動期間不做懸停提示。
+     捲動時游標不動，但格子在游標底下一路移過去，於是每經過一顆就送一次
+     mouseover／mouseout——快速捲動技能頁時是每幀好幾則。每一則都會走到
+     showSkillTooltip（實測平均 6ms、最大 12.7ms），而 positionSkTooltip 為了
+     定位還要讀三次版面（getBoundingClientRect／offsetWidth／offsetHeight），
+     每一次都是一輪強制版面重算。整個 UI 外殼又掛在 transform: scale() 底下
+     （js/ui-scale.js），捲動本來就走主執行緒重繪，再加上這一串，Pixi 的 ticker
+     就搶不到 frame——2026-09-12 回報的「快速捲動技能頁時戰鬥區幾乎完全停止」
+     就是這個。
+
+     作法與背包完全一致（見上面 inventory-grid 的 UI.inventoryScrolling）：
+     捲動中掛旗標、最後一則捲動事件後 120ms 放掉，並在捲動開始時收起提示——
+     錨點正在移動，留著只會畫在錯的位置。旗標只擋這個捲動區裡的目標，
+     戰鬥區與左側屬性列的提示不受影響。 */
+  var workspaceScroller = document.querySelector('#workspace-area main');
+  if (workspaceScroller && !workspaceScroller.__panelScrollBound) {
+    workspaceScroller.__panelScrollBound = true;
+    workspaceScroller.addEventListener('scroll', function () {
+      if (!UI.panelScrolling) hideTooltip();
+      UI.panelScrolling = true;
+      if (UI.panelScrollTimer) clearTimeout(UI.panelScrollTimer);
+      UI.panelScrollTimer = setTimeout(function () {
+        UI.panelScrollTimer = null;
+        UI.panelScrolling = false;
+      }, 120);
+    }, { passive: true });
+  }
+  /* 捲動期間要略過的懸停事件：只認這個捲動區裡的目標。 */
+  function panelScrollHoverSuppressed(e) {
+    return !!(UI.panelScrolling && workspaceScroller && e && e.target &&
+      workspaceScroller.contains(e.target));
+  }
+
   // 技能彈窗：右上 X / 點擊遮罩關閉
   var skModal = $id('skill-modal');
   if (skModal) {
@@ -10529,6 +10567,8 @@ function initUI() {
 
   // 懸停提示（事件委派）
   document.addEventListener('mouseover', function (e) {
+    // 捲動中不建提示（見 initUI 的 workspaceScroller 繫結說明）
+    if (panelScrollHoverSuppressed(e)) return;
     var tipBtn = e.target.closest('[data-tip]');
     if (tipBtn) { showStatTooltip('', tipBtn.getAttribute('data-tip'), tipBtn); return; }
     var buffTipHover = e.target.closest('[data-buff-tip]');
@@ -10596,6 +10636,8 @@ function initUI() {
     if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
+    // 捲動中不收提示：捲動開始時已經收過一次，這裡再跑只是白做一串 closest
+    if (panelScrollHoverSuppressed(e)) return;
     var outCell = e.target.closest('.item-cell[data-id]') || e.target.closest('.eq-slot.filled[data-id]') || e.target.closest('.forge-slot.filled[data-forge-slot]');
     if (outCell) {
       if (UI.inventoryScrolling && outCell.classList.contains('item-cell')) return;
