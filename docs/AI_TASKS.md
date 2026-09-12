@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜風刃朝向與圓弧轉彎（2026-09-12）
+
+- 任務 WIND-BLADE-FACING；Owner Codex；Done。使用者回報風刃固定朝右，要求參考寒冰箭。追跡場域漏用 moveA、漏傳 turnRate 且模擬轉彎未採圓弧積分；沿用冰箭機制修正。範圍：skills2、Runtime、主頁／Worker 快取、測試、本紀錄；不改使用者冰系 VFX。預檢乾淨，驗收包含四向直射、追跡轉彎與朝向／位移一致、Build。
+- 驗證：windblade-vfx-integration 2/2（快照修正、多方向、跨正負 π、零時間、模擬與六個顯示幀圓弧一致）；vfx-runtime 的 WINDBLADE 2/2（正式月牙四向旋轉、長距離壽命／回收）；icearrow-vfx-integration 的 homing arrow／continuous turning arc 2/2。Build 342 檔通過，git diff --check 通過。未實機目視測試。無素材變更；保留使用者冰霜新星／暴風雪修改未提交。本紀錄所在提交可供合併，未推送。
+
 ## Codex｜風刃月牙接入（2026-09-12）
 
 - 任務 WIND-BLADE-VFX；Owner Codex；Done。使用者批准 moon-original-01 月牙、深綠外圈與中央白光。範圍：風刃／追跡風刃 preset/layout、Runtime 飛行壽命與快取、匯出、相關測試；不改技能數值及使用者冰系 VFX。預檢乾淨，前置預覽已確認。驗收：批准外觀、素材一致性、長距離飛行／回收、Build；使用者後續合併。

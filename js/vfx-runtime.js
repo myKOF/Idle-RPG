@@ -677,7 +677,7 @@ var VFXRuntime = (function () {
         g.uniform = true;
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
-      g.trot = g.presetId === 'proj-icearrow-frost' &&
+      g.trot = (g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') &&
         typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(area.a, 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
@@ -933,7 +933,7 @@ var VFXRuntime = (function () {
         }
         g.x = g.bx + g.ox;
         g.y = g.by + g.oy;
-        if (g.presetId === 'proj-icearrow-frost') {
+        if (g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') {
           // Face the rendered displacement, including snapshot correction; a separate
           // rotation easing would make the arrow slide sideways while turning.
           var dx = g.x - previousX, dy = g.y - previousY;

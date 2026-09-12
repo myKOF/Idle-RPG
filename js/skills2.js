@@ -3969,7 +3969,7 @@ function sgGroundChaseStep(f, step, enemies) {
      追擊場域是接觸判定，停下來就等於不再命中任何東西。
      下一個 tick 仍會重新找落點，途中有敵人進入範圍就會轉回去追。 */
   if (!isFinite(f.moveAngle)) return;
-  if (f.kind === 'icearrow' && isFinite(startAngle) && step > 0) {
+  if ((f.kind === 'icearrow' || f.kind === 'windblade') && isFinite(startAngle) && step > 0) {
     var turn = f.moveAngle - startAngle;
     f.turnRate = turn * f.speed / step;
     if (Math.abs(turn) > 1e-8) {
@@ -4228,7 +4228,7 @@ function sgGroundMotionFields(f, out) {
   if (!sgGroundMoving(f)) return out;
   out.speed = f.speed;
   if (isFinite(f.moveAngle)) out.moveA = f.moveAngle;
-  if (f.fireHunt || f.kind === 'icearrow' || f.spiralCentre) out.turnRate = Number(f.turnRate) || 0;
+  if (f.fireHunt || f.kind === 'icearrow' || f.kind === 'windblade' || f.spiralCentre) out.turnRate = Number(f.turnRate) || 0;
   if (f.dest && !f.fireHunt) {
     out.destX = f.dest.x;
     out.destY = f.dest.y;

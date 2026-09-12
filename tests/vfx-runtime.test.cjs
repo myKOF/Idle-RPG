@@ -21,6 +21,17 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('WINDBLADE 四向直射月牙刃口朝飛行方向', () => {
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-wind-crescent.json'),'utf8'));
+ for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]) {
+  const {adapter,log}=makeAdapter([p]);
+  adapter.tryPlay({fxKind:'projectile',angle,lineLength:500,bodyLength:40,lineWidth:80,travelMs:[2000],vfx:{projectile:p.id}});adapter.update(.1);
+  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('moon-original-01.png'));
+  const rot=n.transforms.at(-1).rotation-p.layers[0].rotation;
+  assert.ok(Math.abs(Math.atan2(Math.sin(rot-angle),Math.cos(rot-angle)))<1e-6);
+ }
+});
+
 test('WINDBLADE 月牙隨權威飛行時間續播，長距離仍可見並在抵達回收', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-wind-crescent.json'),'utf8'));
  for(const travel of [1,5]) {
