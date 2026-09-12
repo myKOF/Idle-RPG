@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜冰霜新星冰錐震波接入（2026-09-12）
+
+- 任務 FROST-NOVA-VFX；Owner Codex；Done。使用者批准新版冰錐、雙層震波及貼地冰霧預覽並要求接入。
+- 範圍：burst-frost-nova／burst-frost-freeze preset/layout、素材匯出、Runtime 資料快取及 index、本紀錄。禁止修改傷害、範圍、Excel/CSV 及其他技能邏輯。前置預覽已批准，檔案衝突預檢乾淨。
+- 驗收：正式 preset 與批准預覽一致、素材引用可解析、Core/layout 與冰系測試、Build。完成後使用者測試／合併。
+- 完成：基本及第四階 attack 入口皆更新；維持既有共用 preset 引用（含水流彈的寒流爆散），不改數值與事件時序。32 層，新增震波素材由既有素材庫匯出；兩份正式 JSON 除 id 外與批准預覽完全一致，每個素材 SHA256 與素材庫一致。素材庫乾淨、無需新 Commit。
+- 驗證：node --test tests/vfx-core.test.cjs tests/vfx-preset-layout.test.cjs tests/skill2-ice.test.cjs 為 162/174；以 HEAD 檔案重跑同為 162/174，失敗名稱完全相同（11 項既有冰系斷言、1 項使用者無限火龍群組名稱）。npm run build 341 檔通過；export-assets --check 最新；git diff --check 通過。未進行遊戲實機測試；遊戲 Commit 為本紀錄所在提交，可供合併，未推送。
+
 ## Codex｜火龍捲持續時間參數（2026-09-12）
 
 - 任務 FIRE-DRAGON-DURATION；Owner Codex；Done。使用者指定本體 6 段／3 秒，T7 額外 6 段／6 秒，優先讀取 T7 sec，未填沿用 T1。同步 Excel/CSV、說明、快取與測試；不改 VFX 外觀與其他技能。預檢乾淨，完成後由使用者合併。

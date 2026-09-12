@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 127,
+  "assetCount": 128,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -390,6 +390,13 @@
       "package": "new_materials",
       "contentHash": "sha256:a4ee688c893d04134aa993d2f29cdba9f78026c44b63946db0efe259fccd1ed8",
       "fileSize": 19949
+    },
+    {
+      "assetId": "new_materials/impact-ring/impact_14.png",
+      "relativePath": "new_materials/impact-ring/impact_14.png",
+      "package": "new_materials",
+      "contentHash": "sha256:28a18d56c78afca6d9a98dde8af3760b54e2c1e3669f3d2cb6229b5848b9f235",
+      "fileSize": 172423
     },
     {
       "assetId": "new_materials/mask-shape/dingbats-115.png",
