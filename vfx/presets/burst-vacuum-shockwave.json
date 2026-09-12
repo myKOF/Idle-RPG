@@ -14,6 +14,10 @@
         "y": 9.1876
       },
       "rotation": -0.2094,
+      "scale": {
+        "x": 0.6032,
+        "y": 0.567
+      },
       "anchor": {
         "x": 0.31076681064521183,
         "y": 0.510697036318065
@@ -37,7 +41,7 @@
       "speed": 270,
       "direction": 0,
       "spread": 0,
-      "startScale": 0.6032,
+      "startScale": 1,
       "alphaOverLife": [
         [
           0,
@@ -59,7 +63,7 @@
       "scaleOverLife": [
         [
           0,
-          0.85
+          1
         ],
         [
           0.5,
@@ -81,6 +85,10 @@
         "y": 9.1876
       },
       "rotation": 0,
+      "scale": {
+        "x": 0.5292,
+        "y": 0.4971
+      },
       "anchor": {
         "x": 0.19899222488038276,
         "y": 0.502380982688391
@@ -104,7 +112,7 @@
       "speed": 270,
       "direction": 0,
       "spread": 0,
-      "startScale": 0.5292,
+      "startScale": 1,
       "alphaOverLife": [
         [
           0,
@@ -126,7 +134,7 @@
       "scaleOverLife": [
         [
           0,
-          0.85
+          1
         ],
         [
           0.5,
@@ -148,6 +156,10 @@
         "y": 9.1876
       },
       "rotation": 0.2094,
+      "scale": {
+        "x": 0.4549,
+        "y": 0.4276
+      },
       "anchor": {
         "x": 0.0645384287665251,
         "y": 0.5133289187644369
@@ -171,7 +183,7 @@
       "speed": 270,
       "direction": 0,
       "spread": 0,
-      "startScale": 0.4549,
+      "startScale": 1,
       "alphaOverLife": [
         [
           0,
@@ -193,7 +205,7 @@
       "scaleOverLife": [
         [
           0,
-          0.85
+          1
         ],
         [
           0.5,
@@ -215,6 +227,10 @@
         "y": 9.1876
       },
       "rotation": 0.1745,
+      "scale": {
+        "x": 0.3807,
+        "y": 0.43
+      },
       "anchor": {
         "x": 0.0021711375461210825,
         "y": 0.5010698115164679
@@ -238,7 +254,7 @@
       "speed": 270,
       "direction": 0,
       "spread": 0,
-      "startScale": 0.3807,
+      "startScale": 1,
       "alphaOverLife": [
         [
           0,
@@ -260,7 +276,7 @@
       "scaleOverLife": [
         [
           0,
-          0.85
+          1
         ],
         [
           0.5,
@@ -275,9 +291,11 @@
   ],
   "sizing": {
     "authored": {
-      "radius": 150
+      "height": 110,
+      "width": 110
     },
-    "radiusM": 10,
-    "shape": "circle"
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
   }
 }

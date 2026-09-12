@@ -296,7 +296,24 @@ var VFXRuntime = (function () {
     var moonSwingIndex = 0;                 // 圓形判定內的刀光朝向差，避免連斬輪廓完全重合
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
+    var presetDefinitions = Object.create(null);
     function registerPresets(list) {
+      (list || []).forEach(function(p) { if(p && p.id) presetDefinitions[p.id]=p; });
+      list = (list || []).map(function(p) {
+        var source = presetDefinitions['slash-wind-crescent'];
+        if(!p || p.id!=='burst-vacuum-shockwave' || !source) return p;
+        var derived=JSON.parse(JSON.stringify(p));
+        derived.sizing=JSON.parse(JSON.stringify(source.sizing));
+        derived.layers.forEach(function(l) {
+          var src=source.layers.find(function(a){return 'shock-'+a.id===l.id;});
+          if(!src)return;
+          ['position','scale','anchor','rotation'].forEach(function(key){
+            if(src[key]!==undefined)l[key]=JSON.parse(JSON.stringify(src[key]));else delete l[key];
+          });
+          l.startScale=1;
+        });
+        return derived;
+      });
       (list || []).forEach(function (p) {
         if (!p || !p.id || known[p.id]) return;
         if (p.sizing) resolveSizing(p.sizing); // 載入即驗證，錯誤不可靜默變成 NaN
@@ -1066,7 +1083,7 @@ var VFXRuntime = (function () {
           break;
         case 'attack':
           if (presetId === 'burst-vacuum-shockwave') {
-            var shockParams = defaultSize(presetId, 1);
+            var shockParams = sizeOf('slash-wind-crescent', {r:num(spec.lineLength,0)}) || defaultSize(presetId, 1);
             shockParams.position = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
             shockParams.rotation = num(spec.angle, 0);
             ok = !!play(rtFx, presetId, shockParams);
@@ -1369,7 +1386,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260913-vacuumshock';
+  var DATA_VERSION = '20260913-vacuumshock-size';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

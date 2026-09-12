@@ -8994,7 +8994,7 @@ function sgCastVacuumslash(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     });
     if (lvs[1] > 0) sgEmitVfx('vacuumslash', victims, floatSel, {
       fxKind: 'slash', variant: 'vacuum-shock', elem: 'wind', vfxTier: 2,
-      angle: baseAngle, delayMs: delayMs, dur: 0.6
+      angle: baseAngle, delayMs: delayMs, dur: 0.6, lineLength: radiusPx
     });
     for (var i = 0; i < victims.length; i++) {
       var landed = false;

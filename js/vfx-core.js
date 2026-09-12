@@ -1582,8 +1582,8 @@ var VFXCore = (function () {
         if (d.alignToVelocity && p.hasVelAngle) {
           t.rotation += p.velAngle + d.velocityRotationOffset;
         }
-        t.scaleX = p.baseScale * effect.scale * (scaleK === null ? 1 : scaleK);
-        t.scaleY = t.scaleX;
+        t.scaleX = p.baseScale * effect.scale * d.scale.x * (scaleK === null ? 1 : scaleK);
+        t.scaleY = p.baseScale * effect.scale * d.scale.y * (scaleK === null ? 1 : scaleK);
         t.alpha = effect.opacity * d.alpha * (alphaK === null ? 1 : alphaK);
         t.tint = tintCurve === null ? tint : mulColorInt(tint, sampleColorCurve(tintCurve, k));
         t.frame = sheet ? sheetFrame(sheet, k, p.life, p.frameOffset) : undefined;

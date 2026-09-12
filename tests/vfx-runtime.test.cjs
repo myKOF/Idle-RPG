@@ -1407,5 +1407,19 @@ test('VACUUMSHOCK begins immediately and travels forward from actor',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/burst-vacuum-shockwave.json'),'utf8'));
  const {adapter,log}=makeAdapter([p]);assert(adapter.tryPlay({fxKind:'slash',variant:'vacuum-shock',angle:0,vfx:{attack:p.id}}));
  adapter.update(.02);const n=log.nodes.find(n=>n.spec.assetUrl?.includes('slash_03'));assert(n);const x=n.transforms.at(-1).x;
- adapter.update(.12);assert(n.transforms.at(-1).x>x);assert.equal(p.sizing.radiusM,10);assert(p.layers.every(l=>!l.delay));adapter.destroy();
+ adapter.update(.12);assert(n.transforms.at(-1).x>x);assert.deepEqual(p.sizing,JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-crescent.json'),'utf8')).sizing);assert(p.layers.every(l=>!l.delay));adapter.destroy();
 });
+
+ test('VACUUMSHOCK inherits edited slash geometry without mutating presets',()=>{
+ const read=id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
+ const source=read('slash-wind-crescent'),shock=read('burst-vacuum-shockwave');
+ source.layers=source.layers.filter(l=>l.type==='sprite');
+ source.layers.forEach(l=>{l.scale={x:.8,y:.35};l.position={x:17,y:-23};delete l.rotationOverLife;});
+ shock.layers.forEach(l=>{l.speed=0;l.scaleOverLife=[[0,1],[1,1]];});
+ const before=JSON.stringify([source,shock]);
+ const {adapter,log}=makeAdapter([shock,source]);
+ const play=id=>{const i=log.nodes.length;adapter.tryPlay({fxKind:'slash',variant:'wind-slash',angle:0,lineLength:120,vfx:{attack:id}});adapter.update(.01);return log.nodes.slice(i).filter(n=>n.spec.assetUrl?.includes('slash_03')).map(n=>n.transforms.at(-1));};
+ const a=play(source.id),b=play(shock.id);assert.equal(a.length,b.length);assert(a.length>0);
+ a.forEach((t,i)=>{for(const k of ['x','y','scaleX','scaleY','rotation'])assert(Math.abs(t[k]-b[i][k])<1e-6,k+': '+t[k]+' / '+b[i][k]);});
+ assert.equal(JSON.stringify([source,shock]),before);adapter.destroy();
+ });
