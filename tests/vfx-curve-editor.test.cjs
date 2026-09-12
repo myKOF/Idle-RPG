@@ -725,6 +725,136 @@ test('OFF-7 Editor 的位移 policy 是加法語意：預設 0、不夾上下限
     '粒子層要走說明那一條，不是畫出兩張沒有作用的圖');
 });
 
+/* ============================================================
+   OUTER — 外層縮放（outerScale）
+
+   在圖層旋轉**之後**才套用的縮放，等同把這一層放進一個不會跟著轉的外框。
+   用途：讓一個正圓環在固定的橢圓軌道上流動——環自己保持正圓並繞 Z 轉，
+   外框固定壓成 X=1／Y=0.3。用 scale 壓的話橢圓會跟著轉，長軸就不是水平的。
+
+   量法：不能量方形貼圖的外接框（方形轉 45 度本來就會變大，與環無關），
+   要量「貼圖上半徑 1 的那一圈被映射到哪裡」——那才是環的實際軌跡。
+   ============================================================ */
+
+/* 由 transform 還原 2×2 矩陣。Pixi 的慣例：a,b 用 rotation + skew.y，
+   c,d 用 rotation − skew.x（是減號）。Core 設 skewY=0、rotation=angleX、
+   skewX=angleX−angleY，所以 c,d 那一欄還原回來就是 angleY。
+   這個慣例寫錯會得到「看起來沒生效」的假結果，值得留在測試裡當文件。 */
+function matrixOf(t) {
+  const r = t.rotation, sx = t.scaleX, sy = t.scaleY, sk = t.skewX || 0;
+  return {
+    a: Math.cos(r) * sx, b: Math.sin(r) * sx,
+    c: -Math.sin(r - sk) * sy, d: Math.cos(r - sk) * sy
+  };
+}
+
+/* 把單位圓打過矩陣，回傳它在 x／y 上的半軸長度。 */
+function ringAxes(t) {
+  const m = matrixOf(t);
+  let maxX = 0, maxY = 0;
+  for (let i = 0; i < 720; i++) {
+    const u = i * Math.PI / 360, px = Math.cos(u), py = Math.sin(u);
+    maxX = Math.max(maxX, Math.abs(m.a * px + m.c * py));
+    maxY = Math.max(maxY, Math.abs(m.b * px + m.d * py));
+  }
+  return [Number(maxX.toFixed(4)), Number(maxY.toFixed(4))];
+}
+
+function lastTransform(preset, effectOpts) {
+  let last = null;
+  const rt = VFXCore.createRuntime({
+    backend: {
+      createNode: () => ({}),
+      updateNode: (n, t) => {
+        if (t.visible === false) return;
+        last = { rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, skewX: t.skewX };
+      },
+      destroyNode: () => {}, destroy: () => {}
+    },
+    resolver: RESOLVER
+  });
+  rt.registerPreset(preset);
+  rt.play(preset.id, Object.assign({ position: { x: 0, y: 0 }, seed: 1 }, effectOpts || {}));
+  rt.update(0.001);
+  return last;
+}
+
+test('OUTER-1 外框壓扁時，環的軌跡在每個旋轉角度都是同一個橢圓', function () {
+  [0, 30, 45, 90, 137, 180, 270, 359].forEach(function (deg) {
+    const t = lastTransform(spritePreset({
+      rotation: deg * Math.PI / 180, outerScale: { x: 1, y: 0.3 }
+    }));
+    assert.deepEqual(ringAxes(t), [1, 0.3],
+      '轉 ' + deg + ' 度時軌跡變了：' + ringAxes(t).join(' × '));
+  });
+});
+
+test('OUTER-2 用 scale 壓的話橢圓會跟著轉——這正是 outerScale 存在的理由', function () {
+  /* 這條不是在測 bug，是把「為什麼不能用 scale 解決」釘住。
+     哪天有人想把 outerScale 拿掉、叫大家改用 scale，這裡會告訴他差在哪。 */
+  const flat = lastTransform(spritePreset({ rotation: 0, scale: { x: 1, y: 0.3 } }));
+  assert.deepEqual(ringAxes(flat), [1, 0.3]);
+  const turned = lastTransform(spritePreset({
+    rotation: Math.PI / 2, scale: { x: 1, y: 0.3 }
+  }));
+  assert.deepEqual(ringAxes(turned), [0.3, 1], '轉 90 度之後長短軸應該互換（＝橢圓跟著轉了）');
+});
+
+test('OUTER-3 等比的 outerScale 不產生切變，等同直接乘進 scale', function () {
+  /* 等比縮放與旋轉可交換，所以不該走分解路徑，也不該有 skew。 */
+  const t = lastTransform(spritePreset({ rotation: 0.7, outerScale: { x: 2, y: 2 } }));
+  assert.equal(t.skewX || 0, 0, '等比不該產生 skew');
+  const same = lastTransform(spritePreset({ rotation: 0.7, scale: { x: 2, y: 2 } }));
+  assert.equal(r6(t.scaleX), r6(same.scaleX));
+  assert.equal(r6(t.scaleY), r6(same.scaleY));
+  assert.equal(r6(t.rotation), r6(same.rotation));
+});
+
+test('OUTER-4 沒給 outerScale 時輸出逐位元不變', function () {
+  const before = fingerprint(spritePreset({ rotationOverLife: [[0, 0], [1, 1]] }), 20);
+  const after = fingerprint(spritePreset({
+    rotationOverLife: [[0, 0], [1, 1]], outerScale: undefined
+  }), 20);
+  assert.equal(after, before);
+});
+
+test('OUTER-5 沒有 sizing 的 preset 被設成不等比時，畫面仍走原本那條路', function () {
+  /* 相容性守門：那些 preset 的外觀是照著「簡單路徑」調出來的。把它們一併
+     改成分解路徑會靜靜改掉既有畫面，所以觸發條件保留原本的 sizing 判斷，
+     只多加 outerScale 這一條。 */
+  const t = lastTransform(spritePreset({ rotation: 0.5 }), { scaleX: 2, scaleY: 0.5 });
+  assert.equal(t.skewX || 0, 0, '沒有 sizing 就不該進分解路徑');
+  assert.equal(r6(t.scaleX), r6(2), '簡單路徑：外層縮放直接乘進 scaleX');
+  assert.equal(r6(t.scaleY), r6(0.5));
+});
+
+test('OUTER-6 粒子層不接受 outerScale（每顆粒子各有位置，外框壓縮是父子層的事）', function () {
+  const preset = {
+    schemaVersion: 1, id: 'fx', duration: 1, loop: false,
+    layers: [{
+      id: 'p', type: 'particle', assetId: 'x.png',
+      emission: { mode: 'rate', rate: 10 }, lifetime: 1,
+      outerScale: { x: 1, y: 0.3 }
+    }]
+  };
+  const check = VFXCore.validatePreset(preset);
+  assert.equal(check.ok, false);
+  assert.ok(check.errors.some(e => /outerScale/.test(e)), check.errors.join('; '));
+});
+
+test('OUTER-7 Editor 把它掛在 sprite 與 procedural，且預設是 1／1', function () {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  assert.ok(/OUTER_SCALE_FIELD = vec\('outerScale'/.test(src), '要有這個欄位');
+  assert.ok(/outerScale: \{ x: 1, y: 1 \}/.test(src),
+    '預設值必須是 1／1——0 會讓圖層在加上欄位的瞬間消失');
+  const types = src.slice(src.indexOf('var TYPE_FIELDS = {'), src.indexOf('VEC_DEFAULTS'));
+  assert.ok(/sprite: \[OUTER_SCALE_FIELD\]/.test(src), 'sprite 要有');
+  const proc = src.slice(src.indexOf('procedural: ['), src.indexOf('procedural: [') + 400);
+  assert.ok(/OUTER_SCALE_FIELD/.test(proc), 'procedural 也要有');
+  assert.ok(!/particle:[\s\S]{0,600}OUTER_SCALE_FIELD/.test(types),
+    'particle 不得有——Core 會擋，UI 給了只會讓人填了沒反應');
+});
+
 test('ROT-7 序列化鍵順序固定，往返逐位元相同', function () {
   const preset = spritePreset({
     rotationOverLife: [[0, 0], [1, 1]],
