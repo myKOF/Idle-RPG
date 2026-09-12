@@ -6314,7 +6314,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       cfg.spawnQueue.push(next);
       cfg.chainCount++;
     }
-    var hopMs = 200;
+    var hopMs = 300;
     sgEmitVfx(gid, [cur, next], floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1,
       delayMs: delayMs + hopMs - arrivalMs, travelMs: [0, 0], preserveDeadTargets: true

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜連鎖閃電彈射間隔（2026-09-12）
+
+- 任務 CHAIN-HOP-300；Owner Codex；Done。使用者指定每次彈射間隔由 0.2 改為 0.3 秒，沿用首擊抵達時間，電弧排程與傷害顯示共同延後。
+- 範圍：skills2、主頁／Worker 快取、既有 CHAIN 測試及本紀錄；不改使用者正在編輯的 VFX。前置依賴完整、預檢乾淨。驗收：逐跳視覺／命中延遲、Build；使用者後續合併。
+- 驗證：node --test --test-name-pattern=CHAIN tests/skill2-lightning.test.cjs 1/1 通過，四跳播放為 0/300/600/900ms，命中顯示為 183/483/783/1083ms；npm run build 341 檔通過；git diff --check 通過。未實機測試，無素材變更。使用者自行修改的水龍捲／冰霜 VFX 與匯出保留未提交；本次只提交彈射間隔，可供合併，未推送。
+
 ## Codex｜冰霜新星冰錐震波接入（2026-09-12）
 
 - 任務 FROST-NOVA-VFX；Owner Codex；Done。使用者批准新版冰錐、雙層震波及貼地冰霧預覽並要求接入。
