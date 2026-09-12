@@ -9,9 +9,13 @@
       "type": "sprite",
       "assetId": "new_materials/impact-ring/impact_14.png",
       "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -2.7343
+      },
       "scale": {
-        "x": 0.4999,
-        "y": 0.2728
+        "x": 0.344,
+        "y": 0.1878
       },
       "alpha": 1,
       "tint": "#b4eaff",
@@ -59,9 +63,13 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/ring_b.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -2.7343
+      },
       "scale": {
-        "x": 0.6934,
-        "y": 0.3711
+        "x": 0.4772,
+        "y": 0.2554
       },
       "alpha": 0.75,
       "tint": "#6bcaff",
@@ -105,9 +113,13 @@
       "id": "frost-pressure",
       "type": "sprite",
       "assetId": "light-masks-1.0/default/circle_a_noise.png",
+      "position": {
+        "x": 0,
+        "y": -2.7343
+      },
       "scale": {
-        "x": 0.4492,
-        "y": 0.25
+        "x": 0.3091,
+        "y": 0.1721
       },
       "alpha": 0.24,
       "tint": "#529ed4",
@@ -146,6 +158,10 @@
       "id": "low-cold-mist",
       "type": "particle",
       "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "position": {
+        "x": 0,
+        "y": -2.7343
+      },
       "alpha": 0.18,
       "tint": "#a9d7e9",
       "blendMode": "normal",
@@ -158,19 +174,19 @@
         0.65
       ],
       "spawn": {
-        "radius": 9,
+        "radius": 6.1931,
         "shape": "circle"
       },
       "speed": [
-        50,
-        110
+        34.406,
+        75.6931
       ],
       "direction": 0,
       "spread": 360,
       "drag": 2,
       "startScale": [
-        0.0547,
-        0.0938
+        0.0376,
+        0.0645
       ],
       "alphaOverLife": [
         [
@@ -203,8 +219,8 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 1,
       "position": {
-        "x": 25,
-        "y": 0
+        "x": 17.2029,
+        "y": -2.7343
       },
       "alpha": 0.48,
       "tint": "#d6eff9",
@@ -219,19 +235,19 @@
         0.85
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 4.1287,
         "shape": "circle"
       },
       "speed": [
-        75,
-        130
+        51.6089,
+        89.4555
       ],
       "direction": 0,
       "spread": 25,
       "drag": 1.3,
       "startScale": [
-        0.0664,
-        0.1113
+        0.0457,
+        0.0766
       ],
       "rotationSpeed": [
         -0.5,
@@ -276,8 +292,8 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 90,
       "position": {
-        "x": 12.500000000000004,
-        "y": 10.392304845413262
+        "x": 8.6015,
+        "y": 4.4169
       },
       "alpha": 0.48,
       "tint": "#9cd9f2",
@@ -292,19 +308,19 @@
         0.85
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 4.1287,
         "shape": "circle"
       },
       "speed": [
-        48.767304621026575,
-        84.52999467644607
+        33.5577,
+        58.1667
       ],
       "direction": 39.73960643419185,
       "spread": 25,
       "drag": 1.3,
       "startScale": [
-        0.0664,
-        0.1113
+        0.0457,
+        0.0766
       ],
       "rotationSpeed": [
         -0.5,
@@ -349,8 +365,8 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 90,
       "position": {
-        "x": -12.499999999999995,
-        "y": 10.392304845413264
+        "x": -8.6015,
+        "y": 4.4169
       },
       "alpha": 0.48,
       "tint": "#d6eff9",
@@ -365,19 +381,19 @@
         0.85
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 4.1287,
         "shape": "circle"
       },
       "speed": [
-        48.76730462102656,
-        84.52999467644604
+        33.5577,
+        58.1667
       ],
       "direction": 140.26039356580813,
       "spread": 25,
       "drag": 1.3,
       "startScale": [
-        0.0664,
-        0.1113
+        0.0457,
+        0.0766
       ],
       "rotationSpeed": [
         -0.5,
@@ -422,8 +438,8 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 90,
       "position": {
-        "x": -25,
-        "y": 1.4695761589768238e-15
+        "x": -17.2029,
+        "y": -2.7343
       },
       "alpha": 0.48,
       "tint": "#9cd9f2",
@@ -438,19 +454,19 @@
         0.85
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 4.1287,
         "shape": "circle"
       },
       "speed": [
-        75,
-        130
+        51.6089,
+        89.4555
       ],
       "direction": 180,
       "spread": 25,
       "drag": 1.3,
       "startScale": [
-        0.0664,
-        0.1113
+        0.0457,
+        0.0766
       ],
       "rotationSpeed": [
         -0.5,
@@ -495,8 +511,8 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 1,
       "position": {
-        "x": -12.50000000000001,
-        "y": -10.39230484541326
+        "x": -8.6015,
+        "y": -9.8855
       },
       "alpha": 0.48,
       "tint": "#d6eff9",
@@ -511,19 +527,19 @@
         0.85
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 4.1287,
         "shape": "circle"
       },
       "speed": [
-        48.76730462102659,
-        84.5299946764461
+        33.5577,
+        58.1667
       ],
       "direction": -140.2603935658082,
       "spread": 25,
       "drag": 1.3,
       "startScale": [
-        0.0664,
-        0.1113
+        0.0457,
+        0.0766
       ],
       "rotationSpeed": [
         -0.5,
@@ -568,8 +584,8 @@
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 1,
       "position": {
-        "x": 12.500000000000004,
-        "y": -10.392304845413262
+        "x": 8.6015,
+        "y": -9.8855
       },
       "alpha": 0.48,
       "tint": "#9cd9f2",
@@ -584,19 +600,19 @@
         0.85
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 4.1287,
         "shape": "circle"
       },
       "speed": [
-        48.767304621026575,
-        84.52999467644607
+        33.5577,
+        58.1667
       ],
       "direction": -39.73960643419185,
       "spread": 25,
       "drag": 1.3,
       "startScale": [
-        0.0664,
-        0.1113
+        0.0457,
+        0.0766
       ],
       "rotationSpeed": [
         -0.5,
@@ -641,13 +657,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 60,
       "position": {
-        "x": 27.5,
-        "y": 0
+        "x": 18.9233,
+        "y": -2.7343
       },
       "rotation": -1.0123,
       "scale": {
-        "x": 0.0879,
-        "y": 0.1953
+        "x": 0.0605,
+        "y": 0.1344
       },
       "anchor": {
         "x": 0.1,
@@ -719,13 +735,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 73,
       "position": {
-        "x": 20.26341856040884,
-        "y": 13.212952053709703
+        "x": 13.9437,
+        "y": 6.3578
       },
       "rotation": -1.2226,
       "scale": {
-        "x": 0.1133,
-        "y": 0.2285
+        "x": 0.0779,
+        "y": 0.1573
       },
       "anchor": {
         "x": 0.1,
@@ -797,13 +813,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 79,
       "position": {
-        "x": -8.344535023361788,
-        "y": 19.011094287545564
+        "x": -5.742,
+        "y": 10.3476
       },
       "rotation": -1.6951,
       "scale": {
-        "x": 0.1387,
-        "y": 0.2617
+        "x": 0.0955,
+        "y": 0.1801
       },
       "anchor": {
         "x": 0.1,
@@ -875,13 +891,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 70,
       "position": {
-        "x": -38.291176885852806,
-        "y": 9.588830634498036
+        "x": -26.3488,
+        "y": 3.864
       },
       "rotation": -2.074,
       "scale": {
-        "x": 0.0879,
-        "y": 0.2949
+        "x": 0.0605,
+        "y": 0.203
       },
       "anchor": {
         "x": 0.1,
@@ -953,13 +969,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 54,
       "position": {
-        "x": -24.776643867316526,
-        "y": -6.20453746938108
+        "x": -17.0493,
+        "y": -7.0038
       },
       "rotation": -2.074,
       "scale": {
-        "x": 0.1133,
-        "y": 0.2207
+        "x": 0.0779,
+        "y": 0.1519
       },
       "anchor": {
         "x": 0.1,
@@ -1031,13 +1047,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 44,
       "position": {
-        "x": -7.231930353580224,
-        "y": -16.47628171587282
+        "x": -4.9764,
+        "y": -14.072
       },
       "rotation": -1.6951,
       "scale": {
-        "x": 0.1387,
-        "y": 0.2539
+        "x": 0.0955,
+        "y": 0.1747
       },
       "anchor": {
         "x": 0.1,
@@ -1109,13 +1125,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 45,
       "position": {
-        "x": 23.380867569702502,
-        "y": -15.245713908126584
+        "x": 16.0888,
+        "y": -13.2251
       },
       "rotation": -1.2226,
       "scale": {
-        "x": 0.0879,
-        "y": 0.2871
+        "x": 0.0605,
+        "y": 0.1975
       },
       "anchor": {
         "x": 0.1,
@@ -1187,13 +1203,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 69,
       "position": {
-        "x": 88.87138327811296,
-        "y": 8.887699597594118
+        "x": 61.1541,
+        "y": 3.3815
       },
       "rotation": -1.0223,
       "scale": {
-        "x": 0.1133,
-        "y": 0.2129
+        "x": 0.0779,
+        "y": 0.1465
       },
       "anchor": {
         "x": 0.1,
@@ -1265,13 +1281,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 84,
       "position": {
-        "x": 59.02246191568456,
-        "y": 24.482000872822617
+        "x": 40.6145,
+        "y": 14.1123
       },
       "rotation": -1.1342,
       "scale": {
-        "x": 0.1387,
-        "y": 0.2461
+        "x": 0.0955,
+        "y": 0.1693
       },
       "anchor": {
         "x": 0.1,
@@ -1343,13 +1359,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 98,
       "position": {
-        "x": 32.394340170979326,
-        "y": 38.321060246415556
+        "x": 22.2912,
+        "y": 23.6352
       },
       "rotation": -1.346,
       "scale": {
-        "x": 0.0879,
-        "y": 0.2793
+        "x": 0.0605,
+        "y": 0.1922
       },
       "anchor": {
         "x": 0.1,
@@ -1421,13 +1437,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 104,
       "position": {
-        "x": -5.909278677563697,
-        "y": 44.35368470666383
+        "x": -4.0662,
+        "y": 27.7863
       },
       "rotation": -1.6094,
       "scale": {
-        "x": 0.1133,
-        "y": 0.2051
+        "x": 0.0779,
+        "y": 0.1411
       },
       "anchor": {
         "x": 0.1,
@@ -1499,13 +1515,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 100,
       "position": {
-        "x": -47.49527198991669,
-        "y": 40.058395463104574
+        "x": -32.6824,
+        "y": 24.8307
       },
       "rotation": -1.8639,
       "scale": {
-        "x": 0.1387,
-        "y": 0.2383
+        "x": 0.0955,
+        "y": 0.164
       },
       "anchor": {
         "x": 0.1,
@@ -1577,13 +1593,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 80,
       "position": {
-        "x": -64.95093895890608,
-        "y": 20.01578234462959
+        "x": -44.6939,
+        "y": 11.039
       },
       "rotation": -2.0513,
       "scale": {
-        "x": 0.0879,
-        "y": 0.2715
+        "x": 0.0605,
+        "y": 0.1869
       },
       "anchor": {
         "x": 0.1,
@@ -1655,13 +1671,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 62,
       "position": {
-        "x": -80.392602428157,
-        "y": 2.1615665600595975
+        "x": -55.3197,
+        "y": -1.2468
       },
       "rotation": -2.1286,
       "scale": {
-        "x": 0.1133,
-        "y": 0.1973
+        "x": 0.0779,
+        "y": 0.1357
       },
       "anchor": {
         "x": 0.1,
@@ -1733,13 +1749,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 41,
       "position": {
-        "x": -77.65726325526728,
-        "y": -18.60117455928661
+        "x": -53.4374,
+        "y": -15.5341
       },
       "rotation": -2.0781,
       "scale": {
-        "x": 0.1387,
-        "y": 0.2305
+        "x": 0.0955,
+        "y": 0.1586
       },
       "anchor": {
         "x": 0.1,
@@ -1811,13 +1827,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 23,
       "position": {
-        "x": -55.18727216003511,
-        "y": -37.29750519419297
+        "x": -37.9753,
+        "y": -28.3993
       },
       "rotation": -1.9114,
       "scale": {
-        "x": 0.0879,
-        "y": 0.2637
+        "x": 0.0605,
+        "y": 0.1814
       },
       "anchor": {
         "x": 0.1,
@@ -1889,13 +1905,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 21,
       "position": {
-        "x": -12.95862117002552,
-        "y": -38.677389347593326
+        "x": -8.9171,
+        "y": -29.3489
       },
       "rotation": -1.6667,
       "scale": {
-        "x": 0.1133,
-        "y": 0.2969
+        "x": 0.0779,
+        "y": 0.2042
       },
       "anchor": {
         "x": 0.1,
@@ -1967,13 +1983,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 20,
       "position": {
-        "x": 24.620879235204896,
-        "y": -39.85406437814527
+        "x": 16.9421,
+        "y": -30.1586
       },
       "rotation": -1.4,
       "scale": {
-        "x": 0.1387,
-        "y": 0.2227
+        "x": 0.0955,
+        "y": 0.1533
       },
       "anchor": {
         "x": 0.1,
@@ -2045,13 +2061,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 29,
       "position": {
-        "x": 60.98456880689672,
-        "y": -31.16154989975519
+        "x": 41.9646,
+        "y": -24.1772
       },
       "rotation": -1.1724,
       "scale": {
-        "x": 0.0879,
-        "y": 0.2559
+        "x": 0.0605,
+        "y": 0.1761
       },
       "anchor": {
         "x": 0.1,
@@ -2123,13 +2139,13 @@
       "assetId": "codex-authored/icearrow/icicle.png",
       "zIndex": 46,
       "position": {
-        "x": 86.63462481090656,
-        "y": -13.60664023039419
+        "x": 59.6149,
+        "y": -12.0973
       },
       "rotation": -1.0361,
       "scale": {
-        "x": 0.1133,
-        "y": 0.2891
+        "x": 0.0779,
+        "y": 0.199
       },
       "anchor": {
         "x": 0.1,
@@ -2199,6 +2215,10 @@
       "id": "shattered-ice",
       "type": "particle",
       "assetId": "codex-authored/icearrow/icicle.png",
+      "position": {
+        "x": 0,
+        "y": -2.7343
+      },
       "alpha": 0.9,
       "tint": "#caedff",
       "blendMode": "normal",
@@ -2211,23 +2231,23 @@
         0.62
       ],
       "spawn": {
-        "radius": 18,
+        "radius": 12.3861,
         "shape": "circle"
       },
       "speed": [
-        110,
-        220
+        75.6931,
+        151.3861
       ],
       "direction": 0,
       "spread": 360,
       "gravity": {
         "x": 0,
-        "y": 95
+        "y": 65.3713
       },
       "drag": 2,
       "startScale": [
-        0.0176,
-        0.0449
+        0.0122,
+        0.0309
       ],
       "rotationSpeed": [
         -5,
@@ -2262,6 +2282,10 @@
       "id": "cold-glints",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_04.png",
+      "position": {
+        "x": 0,
+        "y": -2.7343
+      },
       "alpha": 0.65,
       "tint": "#e5f8ff",
       "blendMode": "add",
@@ -2274,18 +2298,18 @@
         0.4
       ],
       "spawn": {
-        "radius": 12,
+        "radius": 8.2574,
         "shape": "circle"
       },
       "speed": [
-        70,
-        180
+        48.1683,
+        123.8614
       ],
       "direction": 0,
       "spread": 360,
       "startScale": [
-        0.0098,
-        0.0195
+        0.0067,
+        0.0134
       ],
       "alphaOverLife": [
         [

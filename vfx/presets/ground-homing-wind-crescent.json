@@ -10,13 +10,13 @@
       "assetId": "codex-authored/moon-opaque/moon-original-01.png",
       "zIndex": 0,
       "position": {
-        "x": 0,
+        "x": -5.2491,
         "y": 0
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.2891,
-        "y": 0.2891
+        "x": 0.1246,
+        "y": 0.1902
       },
       "alpha": 1,
       "tint": "#087438",
@@ -39,13 +39,13 @@
       "assetId": "codex-authored/moon-opaque/moon-original-01.png",
       "zIndex": 1,
       "position": {
-        "x": 1,
-        "y": 0
+        "x": -1.0726,
+        "y": 0.2349
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.2734,
-        "y": 0.2695
+        "x": 0.0891,
+        "y": 0.1081
       },
       "alpha": 0.9,
       "tint": "#168b48",
@@ -68,13 +68,13 @@
       "assetId": "codex-authored/moon-opaque/moon-original-01.png",
       "zIndex": 4,
       "position": {
-        "x": 10,
+        "x": 2.4577,
         "y": 0
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.252,
-        "y": 0.1758
+        "x": 0.1054,
+        "y": 0.118
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -97,7 +97,7 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
       "position": {
-        "x": -15,
+        "x": -8.0013,
         "y": 0
       },
       "alpha": 0.6,
@@ -112,19 +112,19 @@
         0.3
       ],
       "spawn": {
-        "height": 56,
+        "height": 30.5077,
         "shape": "box",
-        "width": 16
+        "width": 8.7165
       },
       "speed": [
-        50,
-        105
+        27.239,
+        57.2018
       ],
       "direction": 180,
       "spread": 16,
       "startScale": [
-        0.0039,
-        0.0059
+        0.0021,
+        0.0032
       ],
       "alphaOverLife": [
         [
@@ -138,6 +138,35 @@
         [
           1,
           0
+        ]
+      ]
+    },
+    {
+      "id": "green-body-copy",
+      "type": "sprite",
+      "assetId": "codex-authored/moon-opaque/moon-original-01.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0.1017,
+        "y": -0.7047
+      },
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.0553,
+        "y": 0.0789
+      },
+      "alpha": 0.5,
+      "tint": "#168b48",
+      "blendMode": "screen",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
         ]
       ]
     }

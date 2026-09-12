@@ -4,6 +4,18 @@ const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
 // A centred marker isolates heading from the artwork's own rotation and offsets.
 const presets=[{schemaVersion:1,id:'ground-homing-wind-crescent',duration:3,loop:true,layers:[{id:'marker',type:'sprite',assetId:'marker'}]}];
 
+test('追跡小風刃的本體縮放為直射大型的四分之三，碰撞半徑對應刃寬',()=>{
+ const a=require('../vfx/presets/proj-wind-crescent.json'),b=require('../vfx/presets/ground-homing-wind-crescent.json');
+ const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,profile:{scale:.8,areaScale:.4},ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});
+ // 中心標記只量根縮放，使用者可自行調整個別圖層。
+ rt.registerPresets([a,b].map(p=>({...p,layers:[{type:'sprite',id:p.id,assetId:p.id}]})));
+ rt.tryPlay({fxKind:'projectile',angle:0,lineLength:900,bodyLength:40,lineWidth:80,travelMs:[5000],vfx:{projectile:a.id}});
+ rt.tryPlay({fxKind:'aura',dur:2,area:{id:'small-size',x:0,y:0,r:30,speed:180,moveA:0},vfx:{ground:b.id}});rt.update(.1);
+ const large=nodes.find(n=>n.spec.assetUrl===a.id).t,small=nodes.find(n=>n.spec.assetUrl===b.id).t;
+ assert.ok(Math.abs(small.scaleX/large.scaleX-.75)<1e-6);assert.ok(Math.abs(small.scaleY/large.scaleY-.75)<1e-6);rt.destroy();
+});
+
 test('小風刃使用大型速度且不將追擊目標當停駐終點',()=>{
  const path=require('path'),{createRequire}=require('module');
  const file=path.join(__dirname,'skill2-ice.test.cjs'),src=fs.readFileSync(file,'utf8');

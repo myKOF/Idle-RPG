@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜大小風刃顯示比例（2026-09-12）
+
+- 任務 WIND-SIZE；Owner Codex；Done。追蹤月牙用碰撞半徑除以 authored 半長，造成放大；改為半徑對應刃寬並以本體比例求長，與直射採相同 profile.scale。範圍 Runtime、快取、測試與本紀錄；不改數值及使用者 VFX。預檢乾淨；驗收正式大小風刃比例及 Build。
+- 使用者要求包含自行修改的全部檔案，納入冰霜新星、暴風雪、大小風刃 preset/layout。5 項風刃整合測試通過（同一倍率下小型根縮放為大型 75%），所有修改 preset 的 Core 驗證通過；Build 342 檔及 git diff --check 通過；素材匯出最新、素材庫乾淨，無素材庫新 Commit。未實機目視測試；本紀錄所在提交可供合併，未推送。
+
 ## Codex｜追跡風刃抖動與停滯（2026-09-12）
 
 - 任務 WIND-MOTION-SMOOTH；Owner Codex；Done。使用者要求消除轉彎抖動，且小風刃速度與大型一致。大小本來共用 geom.speedPx；修正追跡場域被 dest 停駐限制、快照航向跳變及位置修正速度突變。範圍 Runtime、skills2 運動事件、快取、風刃回歸測試、本紀錄；保留使用者冰系修改。預檢乾淨，驗收：速度來源與實際位移、跨目標不停駐、含快照修正的朝向及角速度連續性、Build。

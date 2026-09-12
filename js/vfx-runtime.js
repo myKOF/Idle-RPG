@@ -670,7 +670,13 @@ var VFXRuntime = (function () {
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
       // 追蹤冰箭沿用發射本體尺寸；area.r 僅控制碰撞，不能縮小箭體。
-      var resolved = sizeOf(g.presetId, g.presetId === 'proj-icearrow-frost' ? null : area);
+      var actualSize = area;
+      if (g.presetId === 'ground-homing-wind-crescent' && area.r > 0 && presetSizes[g.presetId]) {
+        var body = presetSizes[g.presetId];
+        // 碰撞半徑代表刃寬的一半，不能當作月牙半長。
+        actualSize = { w: area.r * 2 * body.widthM / body.heightM, h: area.r * 2 };
+      }
+      var resolved = sizeOf(g.presetId, g.presetId === 'proj-icearrow-frost' ? null : actualSize);
       if (resolved) {
         g.uniform = false; g.tsx = resolved.scaleX; g.tsy = resolved.scaleY;
       } else if (w > 0 && h > 0) {
@@ -805,7 +811,7 @@ var VFXRuntime = (function () {
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
       key = (role === 'field' ? 'field:' : 'ground:') + key;
       var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
-      var mult = noArea || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
+      var mult = noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId) {
         live.expireAt = clock + keep;
