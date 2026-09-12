@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-vacuum-shockwave",
+  "groups": [
+    {
+      "id": "burst-vacuum-shockwave",
+      "name": "burst-vacuum-shockwave",
+      "layerIds": [
+        "shock-crescent-blade-0",
+        "shock-crescent-blade-1",
+        "shock-crescent-blade-2",
+        "shock-fine-inner-edge"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-vacuum-shockwave"
+  ]
+}

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "slash-wind-crescent",
-  "duration": 0.42,
+  "id": "burst-vacuum-shockwave",
+  "duration": 0.6,
   "loop": false,
   "layers": [
     {
-      "id": "crescent-blade-0",
-      "type": "sprite",
+      "id": "shock-crescent-blade-0",
+      "type": "particle",
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 0,
       "position": {
@@ -14,30 +14,42 @@
         "y": 9.1876
       },
       "rotation": -0.2094,
-      "scale": {
-        "x": 0.6032,
-        "y": 0.567
-      },
       "anchor": {
         "x": 0.31076681064521183,
         "y": 0.510697036318065
       },
-      "alpha": 0.85,
+      "alpha": 0.4675,
       "tint": "#258fff",
       "blendMode": "add",
-      "duration": 0.36,
+      "delay": 0,
+      "duration": 0.55,
+      "emission": {
+        "count": 1,
+        "mode": "burst"
+      },
+      "maxParticles": 1,
+      "lifetime": 0.55,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 0
+      },
+      "speed": 270,
+      "direction": 0,
+      "spread": 0,
+      "startScale": 0.6032,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.12,
+          0.07,
           1
         ],
         [
-          0.55,
-          0.85
+          0.5,
+          0.6
         ],
         [
           1,
@@ -47,27 +59,21 @@
       "scaleOverLife": [
         [
           0,
-          1
+          0.85
+        ],
+        [
+          0.5,
+          1.12
         ],
         [
           1,
-          1
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          -0.65
-        ],
-        [
-          1,
-          0.65
+          1.4
         ]
       ]
     },
     {
-      "id": "crescent-blade-1",
-      "type": "sprite",
+      "id": "shock-crescent-blade-1",
+      "type": "particle",
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 1,
       "position": {
@@ -75,30 +81,42 @@
         "y": 9.1876
       },
       "rotation": 0,
-      "scale": {
-        "x": 0.5292,
-        "y": 0.4971
-      },
       "anchor": {
         "x": 0.19899222488038276,
         "y": 0.502380982688391
       },
-      "alpha": 0.7,
+      "alpha": 0.385,
       "tint": "#25d5e8",
       "blendMode": "add",
-      "duration": 0.36,
+      "delay": 0,
+      "duration": 0.55,
+      "emission": {
+        "count": 1,
+        "mode": "burst"
+      },
+      "maxParticles": 1,
+      "lifetime": 0.55,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 0
+      },
+      "speed": 270,
+      "direction": 0,
+      "spread": 0,
+      "startScale": 0.5292,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.12,
+          0.07,
           1
         ],
         [
-          0.55,
-          0.85
+          0.5,
+          0.6
         ],
         [
           1,
@@ -108,27 +126,21 @@
       "scaleOverLife": [
         [
           0,
-          1
+          0.85
+        ],
+        [
+          0.5,
+          1.12
         ],
         [
           1,
-          1
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          -0.65
-        ],
-        [
-          1,
-          0.65
+          1.4
         ]
       ]
     },
     {
-      "id": "crescent-blade-2",
-      "type": "sprite",
+      "id": "shock-crescent-blade-2",
+      "type": "particle",
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 2,
       "position": {
@@ -136,30 +148,42 @@
         "y": 9.1876
       },
       "rotation": 0.2094,
-      "scale": {
-        "x": 0.4549,
-        "y": 0.4276
-      },
       "anchor": {
         "x": 0.0645384287665251,
         "y": 0.5133289187644369
       },
-      "alpha": 0.7,
+      "alpha": 0.385,
       "tint": "#52f7a8",
       "blendMode": "add",
-      "duration": 0.36,
+      "delay": 0,
+      "duration": 0.55,
+      "emission": {
+        "count": 1,
+        "mode": "burst"
+      },
+      "maxParticles": 1,
+      "lifetime": 0.55,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 0
+      },
+      "speed": 270,
+      "direction": 0,
+      "spread": 0,
+      "startScale": 0.4549,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.12,
+          0.07,
           1
         ],
         [
-          0.55,
-          0.85
+          0.5,
+          0.6
         ],
         [
           1,
@@ -169,27 +193,21 @@
       "scaleOverLife": [
         [
           0,
-          1
+          0.85
+        ],
+        [
+          0.5,
+          1.12
         ],
         [
           1,
-          1
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          -0.65
-        ],
-        [
-          1,
-          0.65
+          1.4
         ]
       ]
     },
     {
-      "id": "fine-inner-edge",
-      "type": "sprite",
+      "id": "shock-fine-inner-edge",
+      "type": "particle",
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 3,
       "position": {
@@ -197,26 +215,42 @@
         "y": 9.1876
       },
       "rotation": 0.1745,
-      "scale": {
-        "x": 0.3807,
-        "y": 0.43
-      },
       "anchor": {
         "x": 0.0021711375461210825,
         "y": 0.5010698115164679
       },
-      "alpha": 0.3,
+      "alpha": 0.165,
       "tint": "#b8ffe0",
       "blendMode": "add",
-      "duration": 0.36,
+      "delay": 0,
+      "duration": 0.55,
+      "emission": {
+        "count": 1,
+        "mode": "burst"
+      },
+      "maxParticles": 1,
+      "lifetime": 0.55,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 0
+      },
+      "speed": 270,
+      "direction": 0,
+      "spread": 0,
+      "startScale": 0.3807,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.16,
+          0.07,
           1
+        ],
+        [
+          0.5,
+          0.6
         ],
         [
           1,
@@ -226,78 +260,24 @@
       "scaleOverLife": [
         [
           0,
-          1
+          0.85
+        ],
+        [
+          0.5,
+          1.12
         ],
         [
           1,
-          1
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          -0.65
-        ],
-        [
-          1,
-          0.65
-        ]
-      ]
-    },
-    {
-      "id": "wind-fragments",
-      "type": "particle",
-      "assetId": "particle-pack/png-transparent/spark_01.png",
-      "zIndex": 4,
-      "position": {
-        "x": 19.0455,
-        "y": 9.1876
-      },
-      "alpha": 0.5,
-      "tint": "#62edca",
-      "blendMode": "add",
-      "emission": {
-        "count": 16,
-        "mode": "burst"
-      },
-      "lifetime": [
-        0.16,
-        0.32
-      ],
-      "spawn": {
-        "height": 151.8862,
-        "shape": "box",
-        "width": 30.3772
-      },
-      "speed": [
-        63.286,
-        151.8862
-      ],
-      "direction": 175,
-      "spread": 35,
-      "startScale": [
-        0.0098,
-        0.0197
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          0
+          1.4
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "height": 110,
-      "width": 110
+      "radius": 150
     },
-    "heightM": 6,
-    "shape": "custom",
-    "widthM": 6
+    "radiusM": 10,
+    "shape": "circle"
   }
 }

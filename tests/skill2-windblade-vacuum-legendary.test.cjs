@@ -552,3 +552,14 @@ test('【時空崩解】：虛空斬不再外擴，改為固定在周圍 12 米�
   assert.equal(u.until - ult.c.GT, 6 * 1.55, '持續時間 +50%（Lv.1 ＝ 50＋5×1）');
   assert.equal(ult.c.SKILL2_RT.orbits.length, 4, '道數仍由第 7 階決定');
 });
+
+
+test('真空爆震二階學習後與每波揮斬同步，不改原傷害結算',()=>{
+ for(const learned of [0,1]){
+  const c=loadContext(),specs=stubVfx(c);stubHits(c);setLevels(c,'vacuumslash',[1,learned,0,0,0,0,0]);equip(c,'vacuumslash');
+  c.castSkill2(playerEnt(),[enemy(1e9,20,0,'a')],'vacuumslash','mv-float');
+  const slashes=specs.filter(s=>s.variant==='wind-slash'),waves=specs.filter(s=>s.variant==='vacuum-shock');
+  assert(slashes.length>0);assert.equal(waves.length,learned?slashes.length:0);
+  if(learned){assert.equal(waves[0].delayMs,slashes[0].delayMs);assert.equal(waves[0].vfx.attack,'burst-vacuum-shockwave');}
+ }
+});

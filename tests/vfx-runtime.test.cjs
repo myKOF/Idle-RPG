@@ -1393,9 +1393,19 @@ test('VACUUM actor-centred clockwise sweep follows target facing and simulation 
   const {adapter,log}=makeAdapter([p],{ctx:{playerPos:()=>({x:50,y:60}),posOf:()=>({x:50+Math.cos(angle)*100,y:60+Math.sin(angle)*100})}});
   assert.equal(adapter.tryPlay({fxKind:'slash',variant:'wind-slash',targets:['enemy'],lineLength:120,vfx:{attack:p.id}}),true);
   adapter.update(.04);const n=log.nodes.find(n=>n.spec.assetUrl?.includes('slash_03'));
-  const first=n.transforms.at(-1);assert.equal(first.x,50);assert.equal(first.y,60);
+  const first=n.transforms.at(-1),offset=p.layers[0].position||{x:0,y:0},sc=first.scaleX/p.layers[0].scale.x;
+  assert(Math.abs(first.x-(50+(offset.x*Math.cos(angle)-offset.y*Math.sin(angle))*sc))<1e-5);
+  assert(Math.abs(first.y-(60+(offset.x*Math.sin(angle)+offset.y*Math.cos(angle))*sc))<1e-5);
   adapter.update(.12);const second=n.transforms.at(-1);assert(second.rotation>first.rotation);
   assert(Math.abs(first.rotation-angle-p.layers[0].rotation+.65-1.3*(.04/.36))<1e-5);
   adapter.destroy();
  }
+});
+
+
+test('VACUUMSHOCK begins immediately and travels forward from actor',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/burst-vacuum-shockwave.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);assert(adapter.tryPlay({fxKind:'slash',variant:'vacuum-shock',angle:0,vfx:{attack:p.id}}));
+ adapter.update(.02);const n=log.nodes.find(n=>n.spec.assetUrl?.includes('slash_03'));assert(n);const x=n.transforms.at(-1).x;
+ adapter.update(.12);assert(n.transforms.at(-1).x>x);assert.equal(p.sizing.radiusM,10);assert(p.layers.every(l=>!l.delay));adapter.destroy();
 });
