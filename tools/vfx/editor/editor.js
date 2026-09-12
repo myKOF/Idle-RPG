@@ -558,6 +558,7 @@
   var VEC_DEFAULTS = {
     position: { x: 0, y: 0 },
     scale: { x: 1, y: 1 },
+    outerScale: { x: 1, y: 1 },
     anchor: { x: 0.5, y: 0.5 },
     gravity: { x: 0, y: 0 },
     size: { x: 256, y: 256 },
@@ -608,8 +609,15 @@
     return layer.type === 'sprite' || layer.type === 'procedural';
   }
 
+  /* 外層縮放：在圖層旋轉**之後**才套用，等同把這一層放進一個不會跟著轉的外框。
+     只掛 sprite 與 procedural，與 Core 的 TYPE_ONLY_FIELDS 對齊。
+
+     典型用途：讓一個正圓環在固定的橢圓軌道上流動——環自己保持正圓並繞 Z 轉，
+     外框固定壓成 X=1／Y=0.3。用 scale 壓的話橢圓會跟著一起轉，長軸就不是水平的了。 */
+  var OUTER_SCALE_FIELD = vec('outerScale', 'outerScale（旋轉後）');
+
   var TYPE_FIELDS = {
-    sprite: [],
+    sprite: [OUTER_SCALE_FIELD],
     particle: [
       json('emission', 'emission'),
       num('maxParticles', 'maxParticles', 1),
@@ -645,7 +653,8 @@
     procedural: [
       { key: 'effect', label: 'effect', kind: 'select', options: function () { return VFXCore.PROCEDURAL_EFFECTS; } },
       vec('size', 'size(px)'),
-      vec('scrollSpeed', 'scrollSpeed')
+      vec('scrollSpeed', 'scrollSpeed'),
+      OUTER_SCALE_FIELD
     ]
   };
 

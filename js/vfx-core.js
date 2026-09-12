@@ -462,6 +462,14 @@ var VFXCore = (function () {
        天然的上界。 */
     validateCurve(layer.offsetXOverLife, where + '.offsetXOverLife', errors);
     validateCurve(layer.offsetYOverLife, where + '.offsetYOverLife', errors);
+    /* 外層縮放：**在圖層旋轉之後**才套用，等同把這一層放進一個不會跟著轉的
+       外框再縮。scale 是旋轉之前的（局部座標），兩者不能互相取代。
+
+       為什麼需要它：一個圓環要「在固定的橢圓軌道上流動」，做法是圓環自己
+       保持正圓並繞 Z 轉，外框固定壓成 X=1／Y=0.3。用 scale 壓的話橢圓會
+       跟著一起轉，長軸就不是水平的了——那是旋轉與非等比縮放的順序問題，
+       換幾個數字都解不掉。 */
+    validateVec2(layer.outerScale, where + '.outerScale', errors);
   }
 
   /* 子發射器：這一層的粒子在出生或死亡時，往另一層丟幾顆。
@@ -631,14 +639,20 @@ var VFXCore = (function () {
      spawn 那一整套運動算出來的，沒有一個「圖層位置」可以加。
      粒子要飄要偏，用的是那一套，不是這兩條曲線。 */
   var OFFSET_FIELDS = ['offsetXOverLife', 'offsetYOverLife'];
+  /* outerScale 同樣只掛這兩型：它是靠 updateSpriteLayer 裡的矩陣分解實作的
+     （旋轉之後的非等比縮放會產生 skew，必須分解成 rotation／scale／skew 才畫得出來）。
+     粒子層沒有那一段，而且每顆粒子各有自己的位置，外層壓縮要連位置一起壓——
+     那是父子層級的問題，不是這個欄位能解的。 */
+  var OUTER_SCALE_FIELDS = ['outerScale'];
   var TYPE_ONLY_FIELDS = {
-    sprite: PER_AXIS_SCALE_FIELDS.concat(OFFSET_FIELDS).concat(['radiusProfile']),
+    sprite: PER_AXIS_SCALE_FIELDS.concat(OFFSET_FIELDS).concat(OUTER_SCALE_FIELDS)
+      .concat(['radiusProfile']),
     particle: ['emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction',
       'spread', 'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
       'startScale', 'rotationStart', 'rotationSpeed',
       'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter'],
     procedural: ['effect', 'size', 'scrollSpeed', 'water', 'radiusProfile']
-      .concat(PER_AXIS_SCALE_FIELDS).concat(OFFSET_FIELDS)
+      .concat(PER_AXIS_SCALE_FIELDS).concat(OFFSET_FIELDS).concat(OUTER_SCALE_FIELDS)
   };
 
   /* 未知欄位必須報錯：拼錯的 alpah 若被靜靜忽略，使用者會看到「設定沒有效果」
@@ -816,7 +830,8 @@ var VFXCore = (function () {
     'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife',
-    'offsetXOverLife', 'offsetYOverLife', 'sheet', 'radiusProfile', 'water'];
+    'offsetXOverLife', 'offsetYOverLife', 'outerScale',
+    'sheet', 'radiusProfile', 'water'];
 
   // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
   function radiusProfileScale(profile, y) {
@@ -942,7 +957,8 @@ var VFXCore = (function () {
       rotationXOverLife: layer.rotationXOverLife,
       rotationYOverLife: layer.rotationYOverLife,
       offsetXOverLife: layer.offsetXOverLife,
-      offsetYOverLife: layer.offsetYOverLife
+      offsetYOverLife: layer.offsetYOverLife,
+      outerScale: layer.outerScale
     };
   }
 
@@ -1269,18 +1285,34 @@ var VFXCore = (function () {
       t.x = world.x;
       t.y = world.y;
       t.rotation = effect.rotation + d.rotation + (rotK === null ? 0 : rotK);
+      /* 「外層」縮放＝在圖層旋轉**之後**才套用的那一層。有兩個來源，而且它們
+         是同一件事，所以乘在一起：
+           effect.scaleX/Y   特效尺寸，屬於整個特效的座標軸
+           d.outerScale      這一層自己的外框（見驗證處：讓正圓在固定橢圓裡轉）
+
+         等比的時候（兩軸相同）縮放與旋轉可交換，直接乘進 scaleX/scaleY 就對了。
+         不等比才需要下面的矩陣分解。 */
+      var outerX = effect.scaleX * (d.outerScale ? d.outerScale.x : 1);
+      var outerY = effect.scaleY * (d.outerScale ? d.outerScale.y : 1);
       /* 繞 Y 軸轉會壓縮水平方向，繞 X 軸轉會壓縮垂直方向——軸與被壓的方向是交叉的 */
-      t.scaleX = d.scale.x * effect.scaleX * (scaleKX === null ? 1 : scaleKX) * flipX;
-      t.scaleY = d.scale.y * effect.scaleY * (scaleKY === null ? 1 : scaleKY) * flipY;
+      t.scaleX = d.scale.x * outerX * (scaleKX === null ? 1 : scaleKX) * flipX;
+      t.scaleY = d.scale.y * outerY * (scaleKY === null ? 1 : scaleKY) * flipY;
       t.skewX = 0;
-      if (effect.preset.sizing && effect.scaleX !== effect.scaleY) {
-        // 尺寸屬於整個特效的座標軸，必須在圖層旋轉之後縮放。
+      /* 觸發條件刻意分成兩半，而不是直接寫 outerX !== outerY：
+         沒有 sizing 的 preset 也可能被 setTransform 設成不等比（舊畫法沿用下來的），
+         那些 preset 的外觀是照著「簡單路徑」調出來的。把它們一併改成分解路徑
+         會靜靜改掉既有畫面，所以維持原本的 sizing 條件不動，只多加 outerScale 這一條。 */
+      var outerSquash = !!d.outerScale && d.outerScale.x !== d.outerScale.y;
+      if ((effect.preset.sizing && effect.scaleX !== effect.scaleY) || outerSquash) {
+        /* M = S_outer · R(localAngle) · S_local。Pixi 的節點只吃
+           rotation／scale／skew，所以要把這個 2×2 矩陣分解回那三個值——
+           非等比縮放套在旋轉後會產生切變，少了 skew 就畫不出來。 */
         var localAngle = d.rotation + (rotK === null ? 0 : rotK);
         var ca = Math.cos(localAngle), sa = Math.sin(localAngle);
         var qx = d.scale.x * (scaleKX === null ? 1 : scaleKX) * flipX;
         var qy = d.scale.y * (scaleKY === null ? 1 : scaleKY) * flipY;
-        var ax = effect.scaleX * ca * qx, ay = effect.scaleY * sa * qx;
-        var bx = -effect.scaleX * sa * qy, by = effect.scaleY * ca * qy;
+        var ax = outerX * ca * qx, ay = outerY * sa * qx;
+        var bx = -outerX * sa * qy, by = outerY * ca * qy;
         var angleX = Math.atan2(ay, ax);
         var angleY = Math.atan2(-bx, by);
         t.rotation = effect.rotation + angleX;
