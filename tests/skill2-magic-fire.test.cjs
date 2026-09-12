@@ -388,7 +388,7 @@ test('火球術·火焰增幅：燃燒每作用 1 次疊 0.275% 火傷，且掛�
 
 /* ---- 4) 火柱（地板場域） ---- */
 
-test('火柱：地板場域連續 5 段、每段 66% 魔攻，打完就消失', () => {
+test('火柱：地板場域連續 6 段、每段 66% 魔攻，打完就消失', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -404,10 +404,10 @@ test('火柱：地板場域連續 5 段、每段 66% 魔攻，打完就消失', 
     c.GT = i * 0.5;
     c.tickSkill2(0.5, tickCtx(c, p, [m]));
   }
-  assert.equal(calls.length, 5, '2.5 秒內共 5 段');
+  assert.equal(calls.length, 6, '3 秒內共 6 段');
   assert.equal(Math.round(calls[0].aCfg.atk), 330); // 魔攻 500 × 66%
   assert.equal(calls[0].aCfg.skillElem, 'fire');
-  assert.equal(c.SKILL2_RT.grounds.length, 0, '打完 5 段後場域消失');
+  assert.equal(c.SKILL2_RT.grounds.length, 0, '打完 6 段後場域消失');
 });
 
 test('火柱：傷害範圍是目標周圍 3 米，範圍外的敵人不受影響', () => {
@@ -474,12 +474,12 @@ test('火柱·烈焰衝擊：場域不再追擊，消失時對周圍 6 米造成
   c.tickSkill2(0.5, tickCtx(c, p, [m, near, out]));
   assert.equal(Math.round(field.pos.x), 100, '烈焰衝擊改制後，火龍捲不應追擊目標');
 
-  for (let i = 2; i <= 5; i++) {
+  for (let i = 2; i <= 6; i++) {
     c.GT = i * 0.5;
     c.tickSkill2(0.5, tickCtx(c, p, [m, near, out]));
   }
   const nearHitsBeforeExpire = calls.filter((x) => x.ent === near).length;
-  c.GT = 3.0;
+  c.GT = 3.5;
   c.tickSkill2(0.5, tickCtx(c, p, [m, near, out]));
   const impactHits = calls.filter((x) => x.ent === near);
   const newNearHits = impactHits.slice(nearHitsBeforeExpire);
@@ -506,28 +506,28 @@ test('火柱·重生：消失後機率成立時在我方範圍內的敵人身上
   const spawned = c.SKILL2_RT.grounds.length;
   assert.equal(spawned, 2);
   c.chance = () => true; // 重生必定成立
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     c.GT = i * 0.5;
     c.tickSkill2(0.5, tickCtx(c, p, [m, other]));
   }
   assert.equal(c.SKILL2_RT.grounds.length, spawned, '每根火柱消失後都應重生一根新的');
-  assert.ok(c.SKILL2_RT.grounds.some((f) => f.hitsLeft === 5), '重生的火柱段數重新計算');
+  assert.ok(c.SKILL2_RT.grounds.some((f) => f.hitsLeft === 6), '重生的火柱段數重新計算');
 });
 
-test('火柱·無限火龍：兩道圓形龍捲，各十段，續召一次後結束', () => {
+test('火柱·無限火龍：兩道圓形龍捲，各十二段，續召一次後結束', () => {
   const c=loadContext(); stubHits(c); c.chance=()=>false;
   setLevels(c,'firepillar',[1,1,1,1,1,1,1]);
   const p=playerEnt(),m=enemy(1e9,200,0);
   c.castSkill2(p,[m],'firepillar','mv-float');
   assert.equal(c.SKILL2_RT.grounds.length,2);
   for(const f of c.SKILL2_RT.grounds){
-    assert.equal(f.kind,'pillar');assert.equal(f.hitsLeft,10);
+    assert.equal(f.kind,'pillar');assert.equal(f.hitsLeft,12);
     assert.equal(f.length,0);assert.equal(f.width,0);
     assert.equal(f.radius,c.bfMeterPx(3)*1.12);
     assert.equal(f.speed,c.bfMeterPx(6));assert.equal(f.respawnLeft,1);
   }
   const original=c.SKILL2_RT.grounds.slice();
-  for(let i=1;i<=60;i++){c.GT=i*.1;c.tickSkill2(.1,tickCtx(c,p,[m]));}
+  for(let i=1;i<=130;i++){c.GT=i*.1;c.tickSkill2(.1,tickCtx(c,p,[m]));}
   assert.equal(c.SKILL2_RT.grounds.length,0);
   assert.ok(original.every(f=>f.hitsLeft<=0));
 });
@@ -555,7 +555,7 @@ test('高塔（無座標）：火球術與火柱都退化為單體語意，不�
     c2.GT = i * 0.5;
     c2.tickSkill2(0.5, tickCtx(c2, p2, [boss2]));
   }
-  assert.equal(calls2.length, 5, '無座標時仍應打滿 5 段');
+  assert.equal(calls2.length, 6, '無座標時仍應打滿 6 段');
 });
 
 /* ---- 6) 存檔與參數表 ---- */

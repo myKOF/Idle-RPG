@@ -24,8 +24,8 @@ function setup(level=1){
  c.sgCastFirepillar(p,st,c.SKILLS2.firepillar,[1,1,1,1,1,1,level],[m],m,'mv-float',{});
  return {c,p,m,f:c.SKILL2_RT.grounds[0]};
 }
-test('T7 keeps two circular columns, adds five hits, scales damage and uses dark red field',()=>{
- const {c,f}=setup();assert.equal(c.SKILL2_RT.grounds.length,2);assert.equal(f.kind,'pillar');assert.equal(f.hits,10);assert.equal(f.gap,.25);assert.equal(f.dmgVal,660);assert.equal(f.length,0);assert.equal(f.width,0);assert.equal(f.radius,c.bfMeterPx(3)*1.12);assert.equal(f.speed,c.bfMeterPx(6));assert.equal(f.vfxTier,7);
+test('T7 keeps two circular columns, adds six hits, scales damage and uses dark red field',()=>{
+ const {c,f}=setup();assert.equal(c.SKILL2_RT.grounds.length,2);assert.equal(f.kind,'pillar');assert.equal(f.hits,12);assert.equal(f.gap,.5);assert.equal(f.dmgVal,660);assert.equal(f.length,0);assert.equal(f.width,0);assert.equal(f.radius,c.bfMeterPx(3)*1.12);assert.equal(f.speed,c.bfMeterPx(6));assert.equal(f.vfxTier,7);
  assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.field,'fire-tornado-infinite');assert.equal(setup(10).f.dmgVal,1110);
 });
 test('single target never stops; motion event carries authoritative arc and no stopping destination',()=>{
@@ -37,17 +37,28 @@ test('single target never stops; motion event carries authoritative arc and no s
 test('T7 respawns once, even if rebirth always succeeds; descendants retain movement',()=>{
  const {c,m,f}=setup();c.G.player.skills2.levels.firepillar[4]=0;c.chance=()=>true;c.SKILL2_RT.grounds=[];
  c.sgGroundExpire(f,[m],{});assert.equal(c.SKILL2_RT.grounds.length,1);
- const child=c.SKILL2_RT.grounds[0];assert.equal(child.respawnLeft,0);assert.equal(child.fireHunt,true);assert.equal(child.speed,60);assert.equal(child.hits,10);
+ const child=c.SKILL2_RT.grounds[0];assert.equal(child.respawnLeft,0);assert.equal(child.fireHunt,true);assert.equal(child.speed,60);assert.equal(child.hits,12);
  c.SKILL2_RT.grounds=[];c.sgGroundExpire(child,[m],{});assert.equal(c.SKILL2_RT.grounds.length,0);
 });
-test('lower tiers stay stationary and keep five hits; legend speed and hits remain additive',()=>{
- const {c,f}=setup(0);assert.equal(f.hits,5);assert.equal(f.fireHunt,false);assert.equal(f.speed,0);
+test('lower tiers stay stationary and keep six hits; legend speed and hits remain additive',()=>{
+ const {c,f}=setup(0);assert.equal(f.hits,6);assert.equal(f.fireHunt,false);assert.equal(f.speed,0);
  const x=setup();x.c.sgLegend=()=>({firepillarHitsAdd:{hits:3},firepillarChase:{mps:12,m:30}});x.c.SKILL2_RT.grounds=[];
  x.c.sgCastFirepillar(x.p,{matk:500},x.c.SKILLS2.firepillar,[1,1,1,1,1,1,1],[x.m],x.m,'mv-float',{});
- assert.equal(x.c.SKILL2_RT.grounds[0].hits,13);assert.equal(x.c.SKILL2_RT.grounds[0].speed,120);
+ assert.equal(x.c.SKILL2_RT.grounds[0].hits,15);assert.equal(x.c.SKILL2_RT.grounds[0].speed,120);
 });
 test('infinite preset uses shared atlas without procedural generation',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/fire-tornado-infinite.json')));
  assert.ok(require('../js/vfx-core.js').validatePreset(p).ok);
  assert.ok(!p.layers.some(l=>l.water));assert.equal(p.layers.find(l=>l.id==='baked-fire-column').tint,'#e85a48');
+});
+test('T7 sec is independently configurable and missing sec falls back to T1',()=>{
+ const {c,p,m}=setup();
+ const spawn=()=>{c.SKILL2_RT.grounds=[];c.sgCastFirepillar(p,{matk:500},c.SKILLS2.firepillar,[1,1,1,1,1,1,1],[m],m,'mv-float',{});return c.SKILL2_RT.grounds[0];};
+ c.SKILLS2.firepillar.tiers[6].fx.sec=10;let f=spawn();assert.equal(f.hits*f.gap,10);
+ delete c.SKILLS2.firepillar.tiers[6].fx.sec;f=spawn();assert.equal(f.hits*f.gap,3);
+});
+test('T1 and T7 durations and respawn duration are 3/6/6 seconds',()=>{
+ const base=setup(0).f;assert.equal(base.hits*base.gap,3);
+ const {c,m,f}=setup();assert.equal(f.hits*f.gap,6);c.G.player.skills2.levels.firepillar[4]=0;c.SKILL2_RT.grounds=[];
+ c.sgGroundExpire(f,[m],{});const child=c.SKILL2_RT.grounds[0];assert.equal(child.hits*child.gap,6);
 });
