@@ -1385,3 +1385,41 @@ test('THUNDER 雷柱即時起播跟隨腳底，爆炸只由落地事件觸發',(
  adapter.tryPlay({fxKind:'impact',variant:'thunder-impact',targets:['mv-float-1'],vfx});adapter.update(.01);assert.equal(adapter.stats().played,2);
  adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+
+test('VACUUM actor-centred clockwise sweep follows target facing and simulation range',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-crescent.json'),'utf8'));
+ for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
+  const {adapter,log}=makeAdapter([p],{ctx:{playerPos:()=>({x:50,y:60}),posOf:()=>({x:50+Math.cos(angle)*100,y:60+Math.sin(angle)*100})}});
+  assert.equal(adapter.tryPlay({fxKind:'slash',variant:'wind-slash',targets:['enemy'],lineLength:120,vfx:{attack:p.id}}),true);
+  adapter.update(.04);const n=log.nodes.find(n=>n.spec.assetUrl?.includes('slash_03'));
+  const first=n.transforms.at(-1),offset=p.layers[0].position||{x:0,y:0},sc=first.scaleX/p.layers[0].scale.x;
+  assert(Math.abs(first.x-(50+(offset.x*Math.cos(angle)-offset.y*Math.sin(angle))*sc))<1e-5);
+  assert(Math.abs(first.y-(60+(offset.x*Math.sin(angle)+offset.y*Math.cos(angle))*sc))<1e-5);
+  adapter.update(.12);const second=n.transforms.at(-1);assert(second.rotation>first.rotation);
+  assert(Math.abs(first.rotation-angle-p.layers[0].rotation+.65-1.3*(.04/.36))<1e-5);
+  adapter.destroy();
+ }
+});
+
+
+test('VACUUMSHOCK begins immediately and travels forward from actor',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/burst-vacuum-shockwave.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);assert(adapter.tryPlay({fxKind:'slash',variant:'vacuum-shock',angle:0,vfx:{attack:p.id}}));
+ adapter.update(.02);const n=log.nodes.find(n=>n.spec.assetUrl?.includes('slash_03'));assert(n);const x=n.transforms.at(-1).x;
+ adapter.update(.12);assert(n.transforms.at(-1).x>x);assert.deepEqual(p.sizing,JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-crescent.json'),'utf8')).sizing);assert(p.layers.every(l=>!l.delay));adapter.destroy();
+});
+
+ test('VACUUMSHOCK inherits edited slash geometry without mutating presets',()=>{
+ const read=id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
+ const source=read('slash-wind-crescent'),shock=read('burst-vacuum-shockwave');
+ source.layers=source.layers.filter(l=>l.type==='sprite');
+ source.layers.forEach(l=>{l.scale={x:.8,y:.35};l.position={x:17,y:-23};delete l.rotationOverLife;});
+ shock.layers.forEach(l=>{l.speed=0;l.scaleOverLife=[[0,1],[1,1]];});
+ const before=JSON.stringify([source,shock]);
+ const {adapter,log}=makeAdapter([shock,source]);
+ const play=id=>{const i=log.nodes.length;adapter.tryPlay({fxKind:'slash',variant:'wind-slash',angle:0,lineLength:120,vfx:{attack:id}});adapter.update(.01);return log.nodes.slice(i).filter(n=>n.spec.assetUrl?.includes('slash_03')).map(n=>n.transforms.at(-1));};
+ const a=play(source.id),b=play(shock.id);assert.equal(a.length,b.length);assert(a.length>0);
+ a.forEach((t,i)=>{for(const k of ['x','y','scaleX','scaleY','rotation'])assert(Math.abs(t[k]-b[i][k])<1e-6,k+': '+t[k]+' / '+b[i][k]);});
+ assert.equal(JSON.stringify([source,shock]),before);adapter.destroy();
+ });
