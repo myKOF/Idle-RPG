@@ -7,20 +7,9 @@
       "name": "field-water-tornado",
       "layerIds": [
         "halo",
-        "rear-ribbons",
-        "rear-sheets",
-        "body",
-        "front-sheets",
-        "white-crests",
-        "front-ribbons",
-        "base",
-        "bloom",
+        "baked-water-column",
         "dust",
-        "spray",
-        "base-cyclone-rear",
-        "base-cyclone-front",
-        "top-cyclone-rear",
-        "top-cyclone-front"
+        "spray"
       ]
     }
   ],

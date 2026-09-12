@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜水龍捲圖集效能優化（2026-09-12）
+
+- 任務 WATER-TORNADO-PERF；Owner Codex；Done。使用者回報四道水龍捲僅 10 FPS。
+- 原因：水龍捲 12 層程序生成反覆計算形狀及 raster/texture upload，火龍捲已使用共享圖集。改為離線烘焙 80 幀、20fps，遊戲共享單一圖集，保留 halo/dust/spray、尺寸、外旋移動及傷害。
+- 範圍：water-tornado-source/bake、preset/layout、素材索引／匯出、快取、測試、本紀錄；來源 JSON 保留於 author 目錄供重新製作。前置依賴具備、衝突預檢乾淨。驗收：四道實際 Core 無 generated 工作、前後 CPU 比較、圖集目視、Build／匯出一致性；使用者後續合併。
+- 驗證：WATER 9/9，含正式 Runtime 四道播放／續命／回收；Build 340 檔通過；export-assets --check 最新，素材庫與遊戲 PNG SHA256 一致。四道錯開播放 240 幀，Core CPU 舊版 4724ms、新版 37ms，generated 更新 11640→0（不含 GPU，並非實機 FPS）；80 幀圖集已目視檢查。全檔測試另有既有 FIRE 測試要求目前已刪除的 dust 圖層，未改動火龍捲。尚未量測使用者遊戲 FPS。
+- 編輯器可調圖集整體色調、亮度、縮放與播放速度；內部水流形狀從 water-tornado-source.json 修改後以 water-tornado-bake.cjs 重烘焙，再 export-assets.cjs。烘焙依賴 @napi-rs/canvas，可用 NODE_PATH 或 VFX_CANVAS_MODULE 指定。原始程序生成器及測試保留。
+- 素材庫 Commit：eb55096；遊戲 Commit 為本紀錄所在提交，未推送。
+
 ## Codex｜水龍捲逆時針外旋（2026-09-12）
 
 - 任務：WATER-TORNADO-SPIRAL；Owner：Codex；狀態：Done。

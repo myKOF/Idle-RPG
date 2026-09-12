@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 125,
+  "assetCount": 126,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -124,6 +124,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:6dbae0a848ca3a10f647bc489b972b79874311870d74a05d9148449c390157f2",
       "fileSize": 3421959
+    },
+    {
+      "assetId": "codex-authored/tornado/water-flow.png",
+      "relativePath": "codex-authored/tornado/water-flow.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:e8f1a9aff36ca7e8c18153b2113d2757c552b42e92c79d1feb7f0d1402ba3482",
+      "fileSize": 2132958
     },
     {
       "assetId": "light-masks-1.0/default/circle_a.png",
