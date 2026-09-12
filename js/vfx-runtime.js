@@ -658,7 +658,7 @@ var VFXRuntime = (function () {
          沒帶＝這一拍是靜止的，推算自走那一段自然就不會走。 */
       g.speed = Math.max(0, num(area.speed, 0));
       g.moveA = num(area.moveA, NaN);
-      g.turnRate = g.presetId === 'proj-icearrow-frost' ? num(area.turnRate, 0) : 0;
+      g.turnRate = num(area.turnRate, 0);
       g.hasDest = isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
@@ -695,7 +695,7 @@ var VFXRuntime = (function () {
     function groundDeadReckon(g, dt) {
       if (!(g.speed > 0) || !isFinite(g.moveA) || !(dt > 0)) return;
       var run = g.speed * dt;
-      if (g.presetId === 'proj-icearrow-frost' && Math.abs(g.turnRate || 0) > 1e-8) {
+      if (Math.abs(g.turnRate || 0) > 1e-8) {
         var angle = g.moveA + g.turnRate * dt;
         var radius = g.speed / g.turnRate;
         g.bx += radius * (Math.sin(angle) - Math.sin(g.moveA));

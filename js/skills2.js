@@ -3781,6 +3781,7 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
     dest: (cfg.dest && isFinite(cfg.dest.x) && isFinite(cfg.dest.y))
       ? { x: Number(cfg.dest.x), y: Number(cfg.dest.y) } : null,
     speed: Math.max(0, Number(cfg.speed) || 0),
+    spiralCentre: cfg.spiralCentre || null,
     /* 目前的飛行方向（弧度）：追擊場域沒有落點可追時沿著它直線飛出去。
        留白＝出生時未定，第一次朝落點移動才寫入；由前一段飛行接手的場域
        （追蹤冰箭承接貫穿段）則直接帶入當時的航向，才不會一出生就瞬間轉向。
@@ -3871,6 +3872,18 @@ function sgGroundMove(f, dt, enemies) {
   }
   if (!f.pos || !(f.speed > 0) || !(dt > 0)) return;
   var step = f.speed * dt;
+  if (f.spiralCentre) {
+    var dx = f.pos.x - f.spiralCentre.x, dy = f.pos.y - f.spiralCentre.y;
+    var r = Math.max(1, Math.hypot(dx, dy));
+    var a = Math.atan2(dy, dx);
+    var nextR = r + step / 3;
+    var nextA = a - Math.sqrt(8) * Math.log(nextR / r);
+    f.pos.x = f.spiralCentre.x + nextR * Math.cos(nextA);
+    f.pos.y = f.spiralCentre.y + nextR * Math.sin(nextA);
+    f.moveAngle = nextA - Math.atan(Math.sqrt(8));
+    f.turnRate = -f.speed * Math.sqrt(8) / (3 * nextR);
+    return;
+  }
   if (f.chaseM > 0) sgGroundChaseStep(f, step, enemies);   // 追擊：有轉彎半徑的追蹤飛行
   else if (f.wanderM > 0) sgGroundWanderStep(f, step);     // 游走：抵達就在圓內重抽落點
   else sgGroundFlyStep(f, step);                            // 直線飛向落點後停駐（雷球）
@@ -4163,7 +4176,7 @@ function sgGroundVfxShape(f) {
    飛向落點與游走則是沒有落點＝已經停駐。 */
 function sgGroundMoving(f) {
   if (!f.pos || !(f.speed > 0)) return false;
-  if (f.chaseM > 0) return true;
+  if (f.chaseM > 0 || f.spiralCentre) return true;
   return !!f.dest;
 }
 
@@ -4178,7 +4191,7 @@ function sgGroundMotionFields(f, out) {
   if (!sgGroundMoving(f)) return out;
   out.speed = f.speed;
   if (isFinite(f.moveAngle)) out.moveA = f.moveAngle;
-  if (f.kind === 'icearrow') out.turnRate = Number(f.turnRate) || 0;
+  if (f.kind === 'icearrow' || f.spiralCentre) out.turnRate = Number(f.turnRate) || 0;
   if (f.dest) {
     out.destX = f.dest.x;
     out.destY = f.dest.y;
@@ -7750,7 +7763,7 @@ function sgCastWaterball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     });
   }
 
-  // 【水龍捲】：追加四道地板場域，位置固定在我方正方形的四個頂點
+  // 【水龍捲】：由我方正方形四個頂點出發，沿逆時針螺旋向外移動。
   if (lvs[6] > 0) sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel);
   // 超神【水牢天瀑】：在我方周圍圍起一圈水牢
   sgCastWaterPrison(pEnt, floatSel);
@@ -7872,8 +7885,8 @@ function sgWaterballHit(pEnt, st, target, cfg, floatSel, out, delayMs) {
   return res;
 }
 
-/* 【水龍捲】（水流彈 T7）：四道地板場域，位置是我方 side×side 米正方形的四個頂點。
-   釘在地板上（不跟隨我方）：文檔只說位置在我方範圍的四個頂點，沒有說會跟著跑。 */
+/* 【水龍捲】（水流彈 T7）：以施放位置為固定中心，從正方形四頂點逆時針向外螺旋。
+   徑向分量占速率三分之一，其餘為切向分量，總路徑速度保持等速。 */
 function sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel) {
   var fx = g.tiers[6].fx;
   var p = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
@@ -7889,6 +7902,9 @@ function sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel) {
     sgSpawnGround(pEnt, st, 'waterball', {
       kind: 'tornado', tgt: null, floatSel: floatSel,
       from: p ? { x: p.x + c[0] * half, y: p.y + c[1] * half } : null,
+      spiralCentre: p ? { x: p.x, y: p.y } : null,
+      speed: bfMeterPx(3),
+      moveAngle: Math.atan2(c[1], c[0]) - Math.atan(Math.sqrt(8)),
       radius: radius, dmgVal: dmgVal, hits: hits, gap: gap,
       frozenMult: Math.max(1, Number(fx.frozen) || 2),
       delaySec: i * gap * 0.15,
