@@ -1385,3 +1385,17 @@ test('THUNDER 雷柱即時起播跟隨腳底，爆炸只由落地事件觸發',(
  adapter.tryPlay({fxKind:'impact',variant:'thunder-impact',targets:['mv-float-1'],vfx});adapter.update(.01);assert.equal(adapter.stats().played,2);
  adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+
+test('VACUUM actor-centred clockwise sweep follows target facing and simulation range',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-crescent.json'),'utf8'));
+ for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
+  const {adapter,log}=makeAdapter([p],{ctx:{playerPos:()=>({x:50,y:60}),posOf:()=>({x:50+Math.cos(angle)*100,y:60+Math.sin(angle)*100})}});
+  assert.equal(adapter.tryPlay({fxKind:'slash',variant:'wind-slash',targets:['enemy'],lineLength:120,vfx:{attack:p.id}}),true);
+  adapter.update(.04);const n=log.nodes.find(n=>n.spec.assetUrl?.includes('slash_03'));
+  const first=n.transforms.at(-1);assert.equal(first.x,50);assert.equal(first.y,60);
+  adapter.update(.12);const second=n.transforms.at(-1);assert(second.rotation>first.rotation);
+  assert(Math.abs(first.rotation-angle-p.layers[0].rotation+.65-1.3*(.04/.36))<1e-5);
+  adapter.destroy();
+ }
+});
