@@ -530,11 +530,16 @@
     wrapCommands();
     wrapTimers();
     P.t0 = performance.now();
-    console.log('%c[卡頓探針] 已啟用（?lag=1）。每 15 秒自動印一次；lagReport() 立即印，' +
-      'lagText() 印可直接截圖的純文字摘要，lagReset() 歸零，' +
+    console.log('%c[卡頓探針] 已啟用（?lag=1）。每 15 秒自動印一份純文字摘要；lagReport() 印完整表格，' +
+      'lagText() 立即印摘要，lagReset() 歸零，' +
       "lagPaint('all') 試關繪製成本。",
       'color:#0a0;font-weight:bold');
-    setInterval(function () { window.lagReport(); }, 15000);
+    /* 自動報告改印純文字版。console.table 會被 DevTools 摺成「Array(n)」，
+       而回報者截到的幾乎都是這個自動報告——2026-09-12～13 為了拿其中兩張表
+       來回了六次，每次都是「捲錯位置」或「表收起來了」。
+       印一份隨手截就完整的，比要求對方去展開正確的那張表可靠得多。
+       完整的表仍在 lagReport()，需要細節時自己叫。 */
+    setInterval(function () { window.lagText(); }, 15000);
   }
 
   /* ui.js 的函式要等腳本載入完才存在；DOMContentLoaded 之後一定都在了。 */
