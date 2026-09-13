@@ -3003,7 +3003,7 @@ function battleBuffBadgeKey(e) {
 function battleBuffBadgeMarkup(st) {
   return '<div class="' + st.cls + '" data-buff-key="' + esc(st.key) + '" data-snap-dur="' + st.dur + '" data-snap-until="' + st.until + '" data-snap-gt="' + st.snapshotGt + '" data-tt-title="' + esc(st.ttTitle) + '" data-tt-desc="' + esc(st.ttDesc) + '">' +
     '<span class="bbb-icon">' + st.icon + '</span>' +
-    '<span class="bbb-cd-mask" style="--cd-deg: ' + st.cdDeg + ';"></span>' +
+    '<span class="bbb-cd-mask" style="--cd-deg:' + st.cdDeg + ';"></span>' +
     (st.stacks > 1 ? '<span class="bbb-stacks">' + st.stacks + '</span>' : '') +
     '</div>';
 }
@@ -3086,7 +3086,7 @@ function renderBattleBuffBar(pEnt, snapshotGt) {
     if (!dur || dur <= 0) dur = Math.max(remain, 1);
 
     var cdRatio = dur > 0 ? clamp(remain / dur, 0, 1) : 0;
-    var cdDeg = (cdRatio * 360).toFixed(1) + 'deg';
+    var cdDeg = cdDegString(cdRatio);
 
     var ttTitle = (e.icon || '✨') + ' ' + (e.name || e.sid) + (e.effect === 'stat' && e.val ? (e.kind === 'debuff' ? '↓' : '↑') : '') + stackText;
     var ttDesc = (def && def.desc ? def.desc + ' ' : '') +
@@ -3330,7 +3330,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var baseCd = rawCd * (1 - pCdr / 100);
     var totalCd = Math.max(0.1, Number(baseCd) || 5);
     var cdRatio = clamp(cd / totalCd, 0, 1);
-    var cdDeg = (cdRatio * 360).toFixed(1) + 'deg';
+    var cdDeg = cdDegString(cdRatio);
     var cdText = cd > 0 ? (cd >= 10 ? Math.ceil(cd) + 's' : fmt1(cd) + 's') : '';
 
     /* 個別階可以帶自己的內部冷卻（大地守護【天地共生】），冷卻中改用一般技能的
@@ -3399,6 +3399,38 @@ function startBattleSkillBarAnimation() {
   _battleSkillBarAnimFrame = requestAnimationFrame(step);
 }
 
+/* ---- 冷卻圈的更新成本 ----
+   冷卻遮罩是 conic-gradient（.bss-cd-mask／.bbb-cd-mask），而 conic-gradient
+   無法交給合成器：--cd-deg 每變一次，整個漸層就要重新產生、所在的圖塊要重新點陣化。
+   而這一支掛在 rAF 上（見上面的 step），等於**每一幀**替每個冷卻中的技能與每個
+   增益徽章各做一次。
+
+   2026-09-13 使用者機器的 Performance trace：bbb-cd-mask 在 14 秒內被繪製 2941 次
+  （每秒 210 次），bss-cd-mask／bss-cd-text 各約 1690 次；而每一筆超過 50ms 的
+   RasterTask 之前，最密集的繪製來源都是這三個。同一份 trace 裡 RasterTask 佔掉
+   14 秒中的 6 秒、單筆最大 224.7ms，Commit 在主執行緒上單筆最長 420ms。
+   使用者回報的「任何 UI 操作都會讓戰鬥區卡頓」就是這麼來的——點陣化管線本來就
+   滿載，任何額外工作都會溢位。
+
+   角度原本取到 0.1 度＝3600 個階，但冷卻圈直徑約 40px、周長約 126px，
+   一個像素才對應約 3 度：97% 的更新在畫面上根本看不出差別，卻每次都要重畫。
+   量化到 CD_DEG_STEP 度之後畫面一樣，重繪次數少一個數量級。
+
+   另外一律先比對再寫：把相同的值寫回去，該元素仍會進重繪佇列
+  （textContent 更明顯——指派會換掉子節點，必然失效）。 */
+var CD_DEG_STEP = 3;
+function cdDegString(ratio) {
+  return (Math.round(ratio * 360 / CD_DEG_STEP) * CD_DEG_STEP) + 'deg';
+}
+function setCdDeg(el, deg) {
+  if (!el || el.style.getPropertyValue('--cd-deg') === deg) return;
+  el.style.setProperty('--cd-deg', deg);
+}
+function setCdText(el, text) {
+  if (!el || el.textContent === text) return;
+  el.textContent = text;
+}
+
 function updateBattleSkillBarCds() {
   var bar = $id('battle-skill-bar');
   if (!bar) return false;
@@ -3420,10 +3452,10 @@ function updateBattleSkillBarCds() {
     if (cd > 0) {
       hasActive = true;
       var cdRatio = clamp(cd / totalCd, 0, 1);
-      var cdDeg = (cdRatio * 360).toFixed(1) + 'deg';
+      var cdDeg = cdDegString(cdRatio);
       var cdText = cd >= 10 ? Math.ceil(cd) + 's' : fmt1(cd) + 's';
-      if (mask) mask.style.setProperty('--cd-deg', cdDeg);
-      if (text) text.textContent = cdText;
+      setCdDeg(mask, cdDeg);
+      setCdText(text, cdText);
       if (!slot.classList.contains('on-cd')) {
         slot.classList.add('on-cd');
         slot.classList.remove('ready');
@@ -3431,8 +3463,8 @@ function updateBattleSkillBarCds() {
     } else {
       slot.removeAttribute('data-snap-cd');
       slot.removeAttribute('data-snap-gt');
-      if (mask) mask.style.setProperty('--cd-deg', '0deg');
-      if (text) text.textContent = '';
+      setCdDeg(mask, '0deg');
+      setCdText(text, '');
       if (slot.classList.contains('on-cd')) {
         slot.classList.remove('on-cd');
         slot.classList.add('ready');
@@ -3454,10 +3486,9 @@ function updateBattleSkillBarCds() {
         hasActive = true;
         if (bDur <= 0) bDur = Math.max(bRemain, 1);
         var bRatio = clamp(bRemain / bDur, 0, 1);
-        var bDeg = (bRatio * 360).toFixed(1) + 'deg';
-        if (bMask) bMask.style.setProperty('--cd-deg', bDeg);
-      } else if (bMask) {
-        bMask.style.setProperty('--cd-deg', '0deg');
+        setCdDeg(bMask, cdDegString(bRatio));
+      } else {
+        setCdDeg(bMask, '0deg');
       }
     }
   }
