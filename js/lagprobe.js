@@ -29,7 +29,8 @@
   if (!internal) return;
 
   var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], input: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0,
-    frames: 0, frameGaps: [], frameT0: 0, loaf: [] };
+    frames: 0, frameGaps: [], frameT0: 0, loaf: [],
+    rafInFrame: 0, rafMsInFrame: 0, rafPeak: { n: 0, ms: 0, at: 0 } };
 
   /* ---- 成長追蹤 ----
      用來抓「一旦開始卡就回不去，只有 F5 會好」這類累積型問題。
@@ -239,7 +240,15 @@
       return raf.call(window, function (t) {
         var t0 = performance.now();
         try { return cb(t); }
-        finally { bump(P.fn, 'rAF回呼:' + (cb.name || '匿名'), performance.now() - t0); }
+        finally {
+          var ms = performance.now() - t0;
+          bump(P.fn, 'rAF回呼:' + (cb.name || '匿名'), ms);
+          /* 單次耗時看不出「一幀排了幾十個回呼」這種形態：每一個都很便宜，
+             加起來卻吃掉整幀。2026-09-13 的拆解就是這樣——更新迴圈 717ms，
+             但單次最大只有 27.4ms。累計在這裡，由 trackFrames 每幀結算。 */
+          P.rafInFrame++;
+          P.rafMsInFrame += ms;
+        }
       });
     };
     g.__lagWrapped = true;
@@ -264,6 +273,13 @@
     var last = performance.now();
     P.frameT0 = last;
     function tick(t) {
+      /* 上一幀的 rAF 統計在這裡結算：本支用的是**未包裝**的原版 rAF 且在 start()
+         最早註冊，因此排在所有人前面，此刻累計到的就是上一幀的完整數字。 */
+      if (P.rafInFrame > P.rafPeak.n) {
+        P.rafPeak = { n: P.rafInFrame, ms: Math.round(P.rafMsInFrame), at: Math.round(t / 1000) };
+      }
+      P.rafInFrame = 0;
+      P.rafMsInFrame = 0;
       var gap = t - last;
       last = t;
       P.frames++;
@@ -324,8 +340,17 @@
   }
 
   /* 最慢的幾幀，連同「腳本／更新迴圈／樣式版面」三段拆解。 */
+  /* 開機那幾秒（載圖集、建整頁 DOM）本來就會有幾百毫秒的幀，而且每次都排第一，
+     結論就會一路指向開機、而不是回報者真正遇到的症狀。有開機之後的樣本時一律
+     只看那些；整段都在開機期才退回全部，並在判讀裡講明。 */
+  var BOOT_SEC = 10;
   function worstFrames(n) {
-    return P.loaf.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, n || 3);
+    var settled = P.loaf.filter(function (f) { return f.at >= BOOT_SEC; });
+    var pool = settled.length ? settled : P.loaf;
+    return pool.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, n || 3);
+  }
+  function onlyBootSamples() {
+    return P.loaf.length > 0 && !P.loaf.some(function (f) { return f.at >= BOOT_SEC; });
   }
   function frameBreakdownText() {
     var w = worstFrames(3);
@@ -402,6 +427,9 @@
       var wf = worstFrames(1)[0];
       if (!wf) {
         lines.push('　（這個瀏覽器不支援 long-animation-frame，無法再往下拆。）');
+      } else if (onlyBootSamples()) {
+        lines.push('　目前只有開機期（前 ' + BOOT_SEC + ' 秒）的樣本，那段本來就慢。' +
+          '請在遊戲跑順之後執行 lagReset()，再重現一次卡頓。');
       } else {
         var seg = [['腳本（事件與計時器）', wf.script], ['畫面更新迴圈（Pixi／VFX）', wf.render],
           ['瀏覽器的樣式重算與版面計算', wf.style]];
@@ -410,6 +438,13 @@
           wf.render + 'ms／樣式版面 ' + wf.style + 'ms。');
         lines.push('　→ 主要花在「' + seg[0][0] + '」' + seg[0][1] + 'ms' +
           (wf.top.length ? ('，其中最貴的是 ' + wf.top[0].name + ' ' + wf.top[0].ms + 'ms') : '') + '。');
+        /* 更新迴圈吃掉一幀有兩種長相，修法不同：一個很貴的回呼 → 那支自己慢；
+           幾十個便宜的回呼 → 是排程失控（同一幀被排了太多次）。 */
+        if (seg[0][0].indexOf('更新迴圈') >= 0 && P.rafPeak.n > 0) {
+          lines.push('　　（最忙的一幀排了 ' + P.rafPeak.n + ' 個 rAF 回呼、共 ' +
+            P.rafPeak.ms + 'ms @' + P.rafPeak.at + 's' +
+            (P.rafPeak.n >= 10 ? ' → 排程失控，不是單一支慢' : '') + '）');
+        }
       }
     }
     lines.push('　把這一整段截圖回報即可，不必自己判斷。');
@@ -515,7 +550,7 @@
       enemies: document.querySelectorAll('.enemy-card').length,
       worker: { catchup: st.catchupSec, ticks: st.ticks, errors: st.errors, restarts: st.restarts },
       layoutTotal: P.layoutTotal, longTasks: P.long.slice(), input: inputRows().slice(0, 20),
-      frames: P.frames, frameGaps: P.frameGaps.slice(-40), loaf: worstFrames(10),
+      frames: P.frames, frameGaps: P.frameGaps.slice(-40), loaf: worstFrames(10), rafPeak: P.rafPeak,
       renderer: br, timers: P.timers, timersPeak: P.timersPeak, grow: growRows,
       cmd: rows(P.cmd, true), layout: rows(P.layout, false).slice(0, 20), fn: rows(P.fn, true).slice(0, 20)
     };
@@ -558,7 +593,8 @@
         P.frameGaps.length + ' 次，最長：' + (worstGaps() || '無'),
       '互動最差：' + (inp || '無（沒有超過 16ms 的互動）'),
       '函式 TOP8：' + (fn || '無'),
-      '最慢的幀：' + (frameBreakdownText() || '無（瀏覽器不支援 long-animation-frame）')
+      '最慢的幀：' + (frameBreakdownText() || '無（瀏覽器不支援 long-animation-frame）'),
+      'rAF 最忙的一幀：' + P.rafPeak.n + ' 個回呼／' + P.rafPeak.ms + 'ms @' + P.rafPeak.at + 's'
     ].concat(diagnose());
     console.log('%c' + out.join(String.fromCharCode(10)), 'color:#0a0;line-height:1.6');
     return '把上面這一段截圖回報就夠了';
@@ -642,6 +678,7 @@
   window.lagReset = function () {
     P.fn = {}; P.layout = {}; P.layoutTotal = 0; P.long = []; P.input = []; P.cmd = {};
     P.frames = 0; P.frameGaps = []; P.loaf = [];
+    P.rafInFrame = 0; P.rafMsInFrame = 0; P.rafPeak = { n: 0, ms: 0, at: 0 };
     P.t0 = performance.now();
     return '已歸零，重新計時（成長追蹤的基線保留）';
   };

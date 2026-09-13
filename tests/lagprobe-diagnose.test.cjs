@@ -170,7 +170,7 @@ test('拆解顯示大部分在樣式版面 → 判讀要指名瀏覽器的樣式
   p.frame(800);
   p.longTask(650, 0);
   p.slowRafCallback(3, 'tickWorld');
-  p.loaf({ atSec: 0, ms: 700, script: 20, render: 30, scripts: [] });  // 樣式版面 650ms
+  p.loaf({ atSec: 16, ms: 700, script: 20, render: 30, scripts: [] });  // 樣式版面 650ms
   p.setNow(20000);
   const v = p.verdict();
   assert.match(v, /最慢的一幀 700ms 拆開來：腳本 20ms／更新迴圈 30ms／樣式版面 650ms/);
@@ -184,7 +184,7 @@ test('拆解顯示大部分在更新迴圈 → 判讀要指名 Pixi／VFX，並�
   p.longTask(650, 0);
   p.slowRafCallback(3, 'tickWorld');
   p.loaf({
-    atSec: 0, ms: 700, script: 10, render: 660,
+    atSec: 16, ms: 700, script: 10, render: 660,
     scripts: [{ sourceFunctionName: 'tickWorld', duration: 640 }],
   });
   p.setNow(20000);
@@ -202,4 +202,50 @@ test('瀏覽器不支援拆解時，判讀要直說拆不下去，不得硬給�
   p.setNow(20000);
   const v = p.verdict();
   assert.match(v, /不支援 long-animation-frame/);
+});
+
+/* ---- 開機期與排程失控 ----
+   兩者都直接影響結論指向哪裡，各釘一項。 */
+
+test('只有開機期樣本時，判讀要說是開機期並要求重取，不得指名兇手', () => {
+  const p = bootProbe();
+  p.frame(100);
+  p.frame(800);
+  p.longTask(650, 0);
+  p.slowRafCallback(3, 'tickWorld');
+  p.loaf({ atSec: 6, ms: 1600, script: 1598, render: 1, scripts: [] });  // 前 10 秒
+  p.setNow(20000);
+  const v = p.verdict();
+  assert.match(v, /只有開機期/);
+  assert.match(v, /lagReset\(\)/);
+  assert.doesNotMatch(v, /主要花在/);
+});
+
+test('有開機之後的樣本時，排行要略過開機期那幾幀', () => {
+  const p = bootProbe();
+  p.frame(100);
+  p.frame(800);
+  p.longTask(650, 0);
+  p.slowRafCallback(3, 'tickWorld');
+  p.loaf({ atSec: 6, ms: 1600, script: 1598, render: 1, scripts: [] });   // 開機期、最大，要被略過
+  p.loaf({ atSec: 16, ms: 720, script: 3, render: 716, scripts: [] });    // 穩定狀態，才是答案
+  p.setNow(20000);
+  const v = p.verdict();
+  assert.match(v, /最慢的一幀 720ms/);
+  assert.match(v, /主要花在「畫面更新迴圈（Pixi／VFX）」716ms/);
+});
+
+test('更新迴圈吃掉一幀時，要分辨「單一支慢」與「排了太多回呼」', () => {
+  const p = bootProbe();
+  p.frame(100);
+  p.frame(800);
+  p.longTask(650, 0);
+  // 同一幀塞 12 個便宜的回呼：每個都不貴，加起來才是問題
+  for (let i = 0; i < 12; i++) p.slowRafCallback(2, 'flush');
+  p.frame(1600);   // 結算上一幀的 rAF 統計
+  p.loaf({ atSec: 16, ms: 720, script: 3, render: 716, scripts: [] });
+  p.setNow(20000);
+  const v = p.verdict();
+  assert.match(v, /最忙的一幀排了 12 個 rAF 回呼/);
+  assert.match(v, /排程失控，不是單一支慢/);
 });
