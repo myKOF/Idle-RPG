@@ -29,7 +29,7 @@
   if (!internal) return;
 
   var P = { fn: {}, layout: {}, layoutTotal: 0, long: [], input: [], cmd: {}, t0: 0, grow: {}, timers: 0, timersPeak: 0,
-    frames: 0, frameGaps: [], frameT0: 0 };
+    frames: 0, frameGaps: [], frameT0: 0, loaf: [] };
 
   /* ---- 成長追蹤 ----
      用來抓「一旦開始卡就回不去，只有 F5 會好」這類累積型問題。
@@ -133,6 +133,41 @@
       });
       if (P.long.length > 500) P.long.splice(0, 250);
     }).observe({ entryTypes: ['longtask'] });
+  } catch (e) {}
+
+  /* ---- 一幀的內部拆解（Long Animation Frame）----
+     2026-09-13 的報告卡在這一步：長工作 26 秒、卡住 19.4% 的時間，但觀察名單上
+     最貴的一支只有 31.8ms。結論只能寫到「時間花在 JS 之外」，再往下就沒有工具了——
+     而「樣式重算太貴」與「版面計算太貴」要動的地方完全不同，猜錯就是再白跑一輪。
+
+     long-animation-frame 是唯一能把一幀切開的瀏覽器 API。它給的三段正好對應
+     三種責任：
+       腳本      startTime → renderStart     （事件處理、計時器；含不在名單上的）
+       更新迴圈  renderStart → styleAndLayoutStart（rAF 回呼，Pixi／VFX 在這裡）
+       樣式版面  styleAndLayoutStart → 結束   （瀏覽器自己的樣式重算與版面計算）
+     而且 scripts[] 會附上函式名與檔案，連沒被包裝的第三方程式碼都歸得了戶。
+     Chrome 123 起支援；不支援的瀏覽器整段 try 掉，報告少這一塊但其餘照常。 */
+  try {
+    new PerformanceObserver(function (list) {
+      list.getEntries().forEach(function (e) {
+        var end = e.startTime + e.duration;
+        var styleMs = e.styleAndLayoutStart ? Math.round(end - e.styleAndLayoutStart) : 0;
+        var renderMs = (e.renderStart && e.styleAndLayoutStart)
+          ? Math.round(e.styleAndLayoutStart - e.renderStart) : 0;
+        var scriptMs = e.renderStart ? Math.round(e.renderStart - e.startTime) : 0;
+        var top = (e.scripts || []).map(function (sc) {
+          return {
+            name: sc.sourceFunctionName || sc.invokerType || sc.invoker || '(匿名)',
+            ms: Math.round(sc.duration || 0)
+          };
+        }).sort(function (a, b) { return b.ms - a.ms; }).slice(0, 2);
+        P.loaf.push({
+          ms: Math.round(e.duration), at: Math.round(e.startTime / 1000),
+          script: scriptMs, render: renderMs, style: styleMs, top: top
+        });
+      });
+      if (P.loaf.length > 200) P.loaf.splice(0, 100);
+    }).observe({ type: 'long-animation-frame', buffered: true });
   } catch (e) {}
 
   /* ---- 使用者真正感受到的延遲：按下去 → 畫面更新 ----
@@ -288,6 +323,20 @@
     }).sort(function (a, b) { return (b['佔用ms'] || b['次數']) - (a['佔用ms'] || a['次數']); });
   }
 
+  /* 最慢的幾幀，連同「腳本／更新迴圈／樣式版面」三段拆解。 */
+  function worstFrames(n) {
+    return P.loaf.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, n || 3);
+  }
+  function frameBreakdownText() {
+    var w = worstFrames(3);
+    if (!w.length) return '';
+    return w.map(function (f) {
+      var who = f.top.length ? ('｜' + f.top.map(function (t) { return t.name + ' ' + t.ms + 'ms'; }).join('、')) : '';
+      return f.ms + 'ms@' + f.at + 's（腳本' + f.script + '／更新迴圈' + f.render +
+        '／樣式版面' + f.style + who + '）';
+    }).join('　｜　');
+  }
+
   function worstGaps() {
     return P.frameGaps.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 6)
       .map(function (e) { return e.ms + 'ms@' + e.at + 's'; }).join(' ');
@@ -347,8 +396,21 @@
         'ms → 兇手就是這一支。');
     } else {
       lines.push('　長工作最大 ' + longMax + 'ms，但名單上最貴的一支只有 ' +
-        (top ? top['最大ms'] + 'ms（' + top['項目'] + '）' : '0ms') +
-        ' → 兇手不在名單上，時間花在 JS 之外（瀏覽器自己的樣式重算／版面計算）。');
+        (top ? top['最大ms'] + 'ms（' + top['項目'] + '）' : '0ms') + ' → 兇手不在名單上。');
+      /* 有 long-animation-frame 就別停在「JS 之外」：那句話涵蓋的三件事要動的
+         地方完全不同，直接把最慢那一幀的三段攤開，讓結論落到其中一段上。 */
+      var wf = worstFrames(1)[0];
+      if (!wf) {
+        lines.push('　（這個瀏覽器不支援 long-animation-frame，無法再往下拆。）');
+      } else {
+        var seg = [['腳本（事件與計時器）', wf.script], ['畫面更新迴圈（Pixi／VFX）', wf.render],
+          ['瀏覽器的樣式重算與版面計算', wf.style]];
+        seg.sort(function (a, b) { return b[1] - a[1]; });
+        lines.push('　最慢的一幀 ' + wf.ms + 'ms 拆開來：腳本 ' + wf.script + 'ms／更新迴圈 ' +
+          wf.render + 'ms／樣式版面 ' + wf.style + 'ms。');
+        lines.push('　→ 主要花在「' + seg[0][0] + '」' + seg[0][1] + 'ms' +
+          (wf.top.length ? ('，其中最貴的是 ' + wf.top[0].name + ' ' + wf.top[0].ms + 'ms') : '') + '。');
+      }
     }
     lines.push('　把這一整段截圖回報即可，不必自己判斷。');
     return lines;
@@ -453,7 +515,7 @@
       enemies: document.querySelectorAll('.enemy-card').length,
       worker: { catchup: st.catchupSec, ticks: st.ticks, errors: st.errors, restarts: st.restarts },
       layoutTotal: P.layoutTotal, longTasks: P.long.slice(), input: inputRows().slice(0, 20),
-      frames: P.frames, frameGaps: P.frameGaps.slice(-40),
+      frames: P.frames, frameGaps: P.frameGaps.slice(-40), loaf: worstFrames(10),
       renderer: br, timers: P.timers, timersPeak: P.timersPeak, grow: growRows,
       cmd: rows(P.cmd, true), layout: rows(P.layout, false).slice(0, 20), fn: rows(P.fn, true).slice(0, 20)
     };
@@ -495,7 +557,8 @@
       '影格 ' + P.frames + ' 次（每秒 ' + (P.frames / sec).toFixed(0) + '）｜停住(>50ms) ' +
         P.frameGaps.length + ' 次，最長：' + (worstGaps() || '無'),
       '互動最差：' + (inp || '無（沒有超過 16ms 的互動）'),
-      '函式 TOP8：' + (fn || '無')
+      '函式 TOP8：' + (fn || '無'),
+      '最慢的幀：' + (frameBreakdownText() || '無（瀏覽器不支援 long-animation-frame）')
     ].concat(diagnose());
     console.log('%c' + out.join(String.fromCharCode(10)), 'color:#0a0;line-height:1.6');
     return '把上面這一段截圖回報就夠了';
@@ -578,7 +641,7 @@
      中途重設會把「起始值」洗成已經漲上去的數字，等於自廢武功。 */
   window.lagReset = function () {
     P.fn = {}; P.layout = {}; P.layoutTotal = 0; P.long = []; P.input = []; P.cmd = {};
-    P.frames = 0; P.frameGaps = [];
+    P.frames = 0; P.frameGaps = []; P.loaf = [];
     P.t0 = performance.now();
     return '已歸零，重新計時（成長追蹤的基線保留）';
   };

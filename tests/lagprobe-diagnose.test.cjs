@@ -18,6 +18,7 @@ function bootProbe() {
   let now = 0;
   const rafQueue = [];
   let longTaskCb = null;
+  let loafCb = null;
 
   const ctx = {
     console: { log: (...a) => logs.push(a.join(' ')), info() {}, warn() {}, error() {} },
@@ -38,6 +39,7 @@ function bootProbe() {
     PerformanceObserver: function (cb) {
       this.observe = (opts) => {
         if (opts && (opts.entryTypes || []).indexOf('longtask') >= 0) longTaskCb = cb;
+        if (opts && opts.type === 'long-animation-frame') loafCb = cb;
       };
     },
     Element: function () {},
@@ -77,6 +79,22 @@ function bootProbe() {
       /* 佇列裡還有 trackFrames 自己的 tick，shift() 會拿錯人；剛推進去的在最後面 */
       const wrapped = rafQueue.pop();
       if (wrapped) wrapped(now);
+    },
+    /* 餵一幀的拆解。三段用「時間點」表示，與瀏覽器給的欄位一致：
+       startTime → renderStart 是腳本，renderStart → styleAndLayoutStart 是更新迴圈，
+       styleAndLayoutStart → 結束是樣式與版面。 */
+    loaf({ atSec, ms, script, render, scripts }) {
+      if (!loafCb) throw new Error('long-animation-frame observer 未註冊');
+      const start = atSec * 1000;
+      loafCb({
+        getEntries: () => [{
+          startTime: start,
+          duration: ms,
+          renderStart: start + script,
+          styleAndLayoutStart: start + script + render,
+          scripts: scripts || [],
+        }],
+      });
     },
     longTask(ms, atSec) {
       if (!longTaskCb) throw new Error('longtask observer 未註冊');
@@ -141,5 +159,47 @@ test('停住時主執行緒在忙，但名單上每一支都很便宜 → 判為
   const v = p.verdict();
   assert.match(v, /主執行緒被擋住/);
   assert.match(v, /兇手不在名單上/);
-  assert.match(v, /JS 之外/);
+});
+
+/* ---- 一幀的三段拆解 ----
+   「時間花在 JS 之外」這句話涵蓋的三件事要動的地方完全不同，結論必須落到其中一段上。 */
+
+test('拆解顯示大部分在樣式版面 → 判讀要指名瀏覽器的樣式重算與版面計算', () => {
+  const p = bootProbe();
+  p.frame(100);
+  p.frame(800);
+  p.longTask(650, 0);
+  p.slowRafCallback(3, 'tickWorld');
+  p.loaf({ atSec: 0, ms: 700, script: 20, render: 30, scripts: [] });  // 樣式版面 650ms
+  p.setNow(20000);
+  const v = p.verdict();
+  assert.match(v, /最慢的一幀 700ms 拆開來：腳本 20ms／更新迴圈 30ms／樣式版面 650ms/);
+  assert.match(v, /主要花在「瀏覽器的樣式重算與版面計算」650ms/);
+});
+
+test('拆解顯示大部分在更新迴圈 → 判讀要指名 Pixi／VFX，並附上最貴的函式', () => {
+  const p = bootProbe();
+  p.frame(100);
+  p.frame(800);
+  p.longTask(650, 0);
+  p.slowRafCallback(3, 'tickWorld');
+  p.loaf({
+    atSec: 0, ms: 700, script: 10, render: 660,
+    scripts: [{ sourceFunctionName: 'tickWorld', duration: 640 }],
+  });
+  p.setNow(20000);
+  const v = p.verdict();
+  assert.match(v, /主要花在「畫面更新迴圈（Pixi／VFX）」660ms/);
+  assert.match(v, /最貴的是 tickWorld 640ms/);
+});
+
+test('瀏覽器不支援拆解時，判讀要直說拆不下去，不得硬給結論', () => {
+  const p = bootProbe();
+  p.frame(100);
+  p.frame(800);
+  p.longTask(650, 0);
+  p.slowRafCallback(3, 'tickWorld');
+  p.setNow(20000);
+  const v = p.verdict();
+  assert.match(v, /不支援 long-animation-frame/);
 });
