@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜UI 提示切換造成畫面提交停頓（UI-RASTER-20260913）
+
+- Owner：Codex；Done／待使用者原 Chrome 驗收。使用者授權分析 Trace-20260913T223548.json 並修復 UI 操作／裝備提示切換時戰鬥定格。
+- 前置：錄製約 14 秒，18 次 Commit >50ms，最長 197.351ms；同時 raster 執行緒忙於繪製，單層佔 RasterTask 69%。需以實際頁面對照測試定位，不能以縮短 tooltip handler 宣稱根治。
+- 允許範圍：UI CSS、ui-scale/ui/lagprobe 的必要修正、index 快取、本紀錄及獨立效能驗證工具／回歸測試。禁止改存檔、Worker 協議、戰鬥數值及素材；不合併／推送。
+- 預檢：目標檔無其他副本／分支修改，遠端已 fetch。驗收：逐項 UI 繪製對照、提示及定位功能、相關測試、Build、diff check；後續由使用者在原 Chrome 環境確認。
+- 根因與修正：使用者確認 cheap 模式使卡頓完全消失；實際滑鼠跨圖標 A/B 顯示裝備受 hover filter 影響、技能提示受繼承的模糊文字陰影與框體陰影影響。Ashen Forge 改為沿用背景／邊框提供懸停回饋，不濾鏡化整個互動元件；#sk-tooltip 取消文字與框體陰影，卡片保留材質／邊框。未移除子圖像、技能鎖定狀態或戰鬥 VFX 的濾鏡。快取 ashen-forge 1.0.3 → 1.0.4。
+- 驗證環境：Codex Chromium，遊戲 viewport 1362×869、DPR 1.25，獨立 8337 埠的新測試存檔。以實際指標拖移穿過圖標量測 mouseover/out；不是只用計時器換 tooltip HTML，後者無法重現。相同裝備路徑各 160 次圖標進出：原版 max 83.3ms、>50ms 9 次；候選 max 48.7ms、0 次。技能各 240 次：原版 max 701.4ms、23 次；候選 max 62.4ms、2 次。
+- 正式 CSS 暖機後再反向 A/B：原陰影技能 max 548.7ms／17 次 >50ms → 目前版本 max 13.9ms／0 次；圖標有效事件 210／189（各採相同 16 趟路徑，暖機一秒不計）。裝備正式重測 max 34.7ms／0 次。不同階段的載入／戰鬥工作仍有偶發尖峰（首次裝備量測曾見 1000ms、技能 159.6ms），不可宣稱所有環境永無卡頓；此結論是連續懸停引起的重複停頓已顯著改善。外殼／tooltip 分層並無穩定額外收益，不納入。
+- 工具：tools/ui-render-benchmark.html 保留目前版本／修正前的 CSS 對照、1 秒暖機、30 秒量測、影格／目標事件統計、背景分頁失效標記及停止時清理。只改測試頁呈現，不送遊戲命令；應在獨立測試埠使用。scratch 探索頁已刪除。
+- 驗證：清理後 npm run build 347 檔通過；node --test tests/tooltip-modal-close.test.cjs tests/panel-scroll-hover-suppress.test.cjs tests/attribute-tooltip.test.cjs tests/boss-tooltip.test.cjs tests/gem-tooltip.test.cjs 共 15/15。實機技能提示文字／鎖定說明／定位、裝備單卡／雙卡比較均正常，雙卡 584px 未越出畫面；最後重載無 Console error/warning。仍待原 Chrome 使用者驗收。不改素材、無素材庫 Commit；未合併／推送。Commit 為本紀錄所在提交。
+- 未改但檢查：js/ui.js 的顯示／定位、js/ui-scale.js、js/battle-renderer.js、js/lagprobe.js、css/style.css、相關測試與原始 Trace。交付僅 CSS／index／此任務紀錄與對照工具，可供使用者審查合併；完整測試套件未重跑，遊戲邏輯未修改。
+
 ## Claude｜捲動技能頁時戰鬥區定格：捲動中不做懸停提示（LAG-SCROLL-HOVER-20260913）
 
 - 病因：捲動時游標不動，但格子在游標底下一路移過去，每經過一顆就送一次 mouseover／mouseout。每一則都走到 showSkillTooltip（使用者報告實測平均 6ms、最大 12.7ms），而 positionSkTooltip 為了定位要讀三次版面（getBoundingClientRect／offsetWidth／offsetHeight），每次都是一輪強制版面重算。整個 UI 外殼掛在 transform: scale() 底下（js/ui-scale.js:36），捲動本來就走主執行緒重繪，再疊這一串，Pixi 的 ticker 就搶不到 frame。使用者互動延遲表整排是 mouseout／mouseleave／mouseover／mouseenter，正是這個形狀。
