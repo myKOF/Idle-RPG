@@ -331,6 +331,17 @@ select option { background: #1b2222; color: #ded9c8; }
 }
 #sk-tooltip .equip-detail-card { box-shadow: none !important; }
 
+/* Switching a whole panel rasterizes many blurred glyphs and card shadows at
+   once. Keep the textured surfaces, borders and selection outlines, but make
+   the frequently replaced workspace cheap to paint (UI-MODAL-20260914). */
+#workspace-area, #workspace-area * {
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+/* Sampling the animated battle through a full-screen backdrop filter stalls
+   both opening and closing this dialog. Its opaque dimming layer is enough. */
+#skill-modal { backdrop-filter: none; }
+
 .sidebar-avatar img { border-color: #738075; filter: saturate(.5); }
 .sidebar-avatar::before { border-color: #52655f; background: none; }
 .sidebar-title { font-family: var(--af-serif); color: #d0caba; letter-spacing: .15em; }

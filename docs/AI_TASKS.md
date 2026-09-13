@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex｜技能升級與功能頁籤點擊延遲（UI-MODAL-20260914）
+
+- Owner：Codex；Done／待使用者原 Chrome 驗收。使用者確認懸停問題已解決，另要求修正技能升級彈窗及功能頁籤點擊後 0.5–1 秒延遲與戰鬥卡頓。
+- 範圍：UI CSS、必要 UI 修正與快取、效能對照工具、相關回歸測試及本紀錄；不改遊戲規則、存檔、Worker 協議或素材。已 fetch／預檢乾淨。
+- 驗證：實際點擊處理／呈現時序，彈窗與功能頁籤 CSS 分項對照、功能回歸及 Build。後續由使用者原 Chrome 驗收，不自行合併／推送。
+- 原因：技能開啟 handler 約 0.6–1.8ms，但 Event Timing 點擊到呈現為 104–400ms；只取消文字陰影仍為 96–424ms，只取消 backdrop-filter 則首次 112ms、後續 16–24ms。全螢幕背景模糊取樣動態戰鬥是主要成本。頁籤原呈現 72–360ms；取消工作區繼承文字陰影降為 40–144ms，再移除卡片框體陰影有額外改善。未修改事件／遊戲邏輯。
+- 修改：css/ashen-forge.css 取消 #skill-modal 背景模糊及工作區文字／框體陰影；保留紋理、邊框、選取 outline、鎖定濾鏡與戰鬥效果。index.html 快取升為 1.0.5。tools/ui-render-benchmark.html 加入實際點擊 Event Timing 與原視窗模糊對照；不用 double-rAF 或 capture microtask 冒充呈現／handler 耗時。
+- 正式版實測：獨立 localhost:8337、Codex Chromium、遊戲 1362×869、DPR 約 1。5 次技能開關，首次 click 72ms、後續回報 16–24ms；rAF 最長 69.3ms／1 次 >50ms。10 次頁籤切換（裝備／寶石／熔爐／技能／高塔／設定）呈現 32–160ms，相較基準 72–360ms 明顯改善；整段 rAF 仍曾達 312.4ms／8 次 >50ms，包含非點擊的遊戲工作，不能宣稱所有尖峰消失。天賦／神鑄尚未解鎖，未實際點擊驗收。
+- 功能與風險：已確認各可用頁籤 active 狀態、技能已學習／未學習內容與關閉行為，截圖確認視窗／裝備工作區完整。工作區陰影變平是刻意視覺取捨。Console 僅有測試開始前既存的 MutationObserver observe 非 Node 錯誤（16:06:10.266Z），本輪重載／操作未新增；未擴大修正。原 Chrome 使用者驗收仍待進行。
+- 測試：npm run build（347 檔通過）；node --test tests/tooltip-modal-close.test.cjs tests/panel-scroll-hover-suppress.test.cjs tests/tab-lock.test.cjs tests/skill2-ui.test.cjs tests/skill-tree-layout.test.cjs tests/newforge-panel-performance.test.cjs（25/25 通過）；git diff --check 通過。
+- 未改但檢查：js/ui.js（switchTab／技能彈窗與點擊入口）、css/style.css、package.json 與上述測試。Commit 為本紀錄所在提交；無素材變動。可供審查合併，未自行合併／推送；下一步在使用者原 Chrome 重新整理後驗收這兩種操作。
+
 ## Codex｜UI 提示切換造成畫面提交停頓（UI-RASTER-20260913）
 
 - Owner：Codex；Done／待使用者原 Chrome 驗收。使用者授權分析 Trace-20260913T223548.json 並修復 UI 操作／裝備提示切換時戰鬥定格。

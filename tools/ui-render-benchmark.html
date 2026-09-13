@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <meta charset="utf-8">
-<title>UI 懸停效能對照</title>
+<title>UI 懸停與點擊效能對照</title>
 <style>
   body { margin: 0; background: #15191d; color: #eee; font: 14px system-ui; }
   header { height: 130px; overflow: auto; box-sizing: border-box; padding: 4px; }
@@ -12,7 +12,7 @@
 <header>
   <label>對照模式 <select id="mode"><option value="current">目前版本</option><option value="original">修正前陰影／懸停濾鏡（2026-09-13）</option></select></label>
   <button id="start" disabled>開始量測</button><button id="stop" disabled>結束量測</button>
-  <p>請用獨立 localhost 測試埠開啟，避免使用正式存檔。待遊戲載入後，連續移過裝備或技能本體，再結束量測。相同路徑重測兩種模式；僅移過間隔箭頭不算有效圖標樣本。</p>
+  <p>請用獨立 localhost 測試埠開啟，避免使用正式存檔。待遊戲載入後，連續移過圖標、開關技能視窗或切換頁籤，再結束量測。相同操作重測對照模式；僅移過間隔箭頭不算有效圖標樣本。</p>
   <pre id="results" aria-live="polite">等待遊戲載入…</pre>
 </header>
 <iframe id="game" title="測試遊戲" src="../index.html"></iframe>
@@ -34,6 +34,10 @@
   const game = document.getElementById('game');
   const start = document.getElementById('start'), stop = document.getElementById('stop');
   const mode = document.getElementById('mode'), results = document.getElementById('results');
+  const modalModes = {
+    originalModal: '#skill-modal{backdrop-filter:blur(3px) saturate(.72)}'
+  };
+  mode.add(new Option('修正前技能視窗背景模糊（2026-09-14）', 'originalModal'));
   let finish = null;
   game.addEventListener('load', () => {
     start.disabled = false;
@@ -47,10 +51,20 @@
     }
     const selectedMode = mode.value;
     const style = d.createElement('style');
-    style.textContent = selectedMode === 'original' ? original : '';
+    style.textContent = selectedMode === 'original' ? original : (modalModes[selectedMode] || '');
     d.head.appendChild(style);
     start.disabled = true; mode.disabled = true; stop.disabled = false;
-    const frames = [], targets = {};
+    const frames = [], targets = {}, clicks = [], eventTimings = [];
+    let eventObserver = null;
+    try {
+      eventObserver = new w.PerformanceObserver(list => {
+        for (const e of list.getEntries()) if (e.name === 'click') eventTimings.push({
+          start: e.startTime, duration: e.duration,
+          processingMs: e.processingEnd - e.processingStart, waitingMs: e.processingStart - e.startTime
+        });
+      });
+      eventObserver.observe({type: 'event', durationThreshold: 16});
+    } catch (_) { /* Older browsers can still report frame intervals. */ }
     let prev = 0, hover = 0, raf = 0, measured = false, hidden = d.hidden || document.hidden;
     const begin = performance.now();
     function onHover(e) {
@@ -61,17 +75,24 @@
       targets[key] = (targets[key] || 0) + 1;
     }
     function onVisibility() { hidden = hidden || d.hidden || document.hidden; }
+    function onClick(e) {
+      const target = e.target.closest('.sg-stage-node,[data-sk],.tab-btn,#skill-modal-close');
+      if (!measured || !target) return;
+      const sample = { label: target.textContent.trim(), eventStart: e.timeStamp };
+      clicks.push(sample);
+    }
     function tick(t) {
       // Exclude the mode switch's initial style/raster warm-up.
       if (performance.now() - begin >= 1000) {
         if (prev) frames.push(t - prev);
         prev = t;
-        if (!measured) { measured = true; results.textContent = '量測中：請連續移過圖標（30 秒後自動結束）。'; }
+        if (!measured) { measured = true; results.textContent = '量測中：請操作圖標、技能視窗或頁籤（30 秒後自動結束）。'; }
       }
       raf = w.requestAnimationFrame(tick);
     }
     d.addEventListener('mouseover', onHover);
     d.addEventListener('mouseout', onHover);
+    d.addEventListener('click', onClick, true);
     d.addEventListener('visibilitychange', onVisibility);
     document.addEventListener('visibilitychange', onVisibility);
     raf = w.requestAnimationFrame(tick);
@@ -79,6 +100,8 @@
     finish = () => {
       clearTimeout(timeout); w.cancelAnimationFrame(raf);
       d.removeEventListener('mouseover', onHover); d.removeEventListener('mouseout', onHover);
+      d.removeEventListener('click', onClick, true);
+      if (eventObserver) eventObserver.disconnect();
       d.removeEventListener('visibilitychange', onVisibility);
       document.removeEventListener('visibilitychange', onVisibility);
       style.remove(); finish = null;
@@ -90,9 +113,9 @@
         frames: sorted.length, p95Ms: round(sorted[Math.floor(sorted.length * .95)] || 0),
         maxMs: round(sorted.length ? sorted[sorted.length - 1] : 0),
         over50Ms: sorted.filter(value => value > 50).length, iconEnterLeaveEvents: hover,
-        valid: sorted.length > 0 && hover > 0 && !hidden,
-        note: hidden ? '背景分頁樣本無效，請保持測試頁可見重測。' : '影格間隔包含整頁工作；不是單一 handler 耗時，也不是 GPU 完成時間。',
-        targets
+        valid: sorted.length > 0 && (hover > 0 || clicks.length > 0) && !hidden,
+        note: hidden ? '背景分頁樣本無效，請保持測試頁可見重測。' : '影格間隔包含整頁工作。Event Timing duration 為瀏覽器回報的點擊至呈現延遲（8ms 取整，只收 >=16ms）；未出現的事件不能視為 0ms。以 start 對應 clicks.eventStart，processingMs 才是事件處理時間。',
+        targets, clicks, eventTimings
       }, null, 2);
     };
     results.textContent = '暖機 1 秒…';
