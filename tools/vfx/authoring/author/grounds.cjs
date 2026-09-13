@@ -306,10 +306,7 @@ function stormShield(o) {
   ].concat(o.extra || []);
 }
 
-P['ground-storm-barrier'] = () => ({
-  id: 'ground-storm-barrier', duration: 1.5, loop: true,
-  layers: stormShield({ dur: 1.5, rim: '#86efac', mid: '#ffffff', alpha: 0.6, spin: 4.2 })
-});
+P['ground-storm-barrier'] = require('./stormbarrier.cjs').make;
 
 P['ground-storm-god'] = () => ({
   id: 'ground-storm-god', duration: 0.9, loop: true,
