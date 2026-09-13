@@ -2679,17 +2679,25 @@ function renderAttrPanel(st, headerSnapshot) {
   STAT_GROUPS.forEach(function (g, gi) {
     g.rows.forEach(function (row, ri) {
       var el = panel.querySelector('[data-attr="' + gi + '-' + ri + '"]');
-      if (el) {
-        el.innerHTML = row[1](st);
-        if (typeof row[2] === 'function') {
-          var p = el.parentElement;
-          if (p) p.setAttribute('data-tt-desc', row[2](st));
+      if (!el) return;
+      /* 一律先比對再寫。innerHTML 的指派**一定**會換掉子節點，即使字串完全相同，
+         而換節點就是一次幾何失效、一次重繪。這一支每秒跑 4～5 次、面板有約 40 列，
+         但力量／敏捷／智力這些值只在升級或換裝時才變——原本的寫法等於每秒白白
+         製造上百個顯示項失效，全部落在同一塊被縮放的大圖層上。
+         （2026-09-13 使用者機器的 trace：失效來源前三名是 LayoutText #text、
+           stat-row 與其 SPAN／B，合計每秒數百次。） */
+      setHtmlIfChanged(el, row[1](st));
+      if (typeof row[2] === 'function') {
+        var pe = el.parentElement;
+        if (pe) {
+          var desc = String(row[2](st));
+          // 屬性也一樣：setAttribute 相同值不會失效，但仍要走一次樣式比對，能省則省
+          if (pe.getAttribute('data-tt-desc') !== desc) pe.setAttribute('data-tt-desc', desc);
         }
       }
     });
   });
-  var activeBuffsEl = $id('active-buffs');
-  if (activeBuffsEl) activeBuffsEl.innerHTML = activeBuffsHtml();
+  setHtmlIfChanged($id('active-buffs'), activeBuffsHtml());
 }
 
 /* 增益鍵 → 狀態圖標：唯一來源是狀態表（js/status.js STATUS，由 config/Excel/Status.xlsx 撥離），
