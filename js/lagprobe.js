@@ -663,6 +663,7 @@
      這是假設，不是結論。與其照著假設改程式，不如把三個嫌疑各自關掉再捲一次：
      差別用眼睛就看得出來，一次就知道是不是、以及是哪一個。
 
+       lagPaint('cheap')   全頁關掉所有「畫起來貴」的 CSS（模糊、陰影、濾鏡、邊框圖）
        lagPaint('noanim')  全頁停掉 CSS 動畫與轉場（每幀推進動畫的成本）
        lagPaint('nohover') 捲動區內不做命中判定與過場動畫（CSS :hover 重算成本）
        lagPaint('shadow') 關掉所有陰影與濾鏡（繪製成本）
@@ -680,16 +681,50 @@
     var i;
     var NOHOVER_ID = '__lagNoHover';
     var NOANIM_ID = '__lagNoAnim';
+    var CHEAP_ID = '__lagCheap';
 
     if (mode === 'reset') {
       var oldStyle = document.getElementById(NOHOVER_ID);
       if (oldStyle) oldStyle.remove();
       var oldAnim = document.getElementById(NOANIM_ID);
       if (oldAnim) oldAnim.remove();
+      var oldCheap = document.getElementById(CHEAP_ID);
+      if (oldCheap) oldCheap.remove();
       for (i = 0; i < nodes.length; i++) { nodes[i].style.boxShadow = ''; nodes[i].style.filter = ''; }
       for (i = 0; i < wraps.length; i++) { wraps[i].style.contentVisibility = ''; wraps[i].style.containIntrinsicSize = ''; }
       if (canvas) canvas.style.willChange = '';
       return '已全部復原（' + nodes.length + ' 個節點、' + wraps.length + ' 列）';
+    }
+    /* 全頁關掉「畫起來貴」的 CSS 特性。
+       2026-09-13 使用者機器的第三份 trace：點陣化 69% 集中在單一圖層，
+       該層平均 14.6ms／tile、最大 100.9ms，而同一台機器上其他圖層只要 1.2ms／tile。
+       同機器內部差 12 倍＝那一層的**內容**本身畫起來就貴，與失效次數無關
+      （失效已經砍掉 99%，Commit 只從 4325ms 降到 3692ms）。
+
+       Skia 畫起來最貴的就這幾類：backdrop-filter（要把背後讀回來再模糊，
+       而它背後是每幀都在變的戰鬥畫布）、大半徑 box-shadow、filter、border-image。
+       本專案 #battle-skill-bar 與 #quest-bar 都疊在戰鬥畫布上、全程可見，
+       兩者都掛著 backdrop-filter: blur(6px)。
+
+       這一刀是「一次全關」的粗測：有效就代表方向對，再往下二分是哪一類；
+       無效就代表不是繪製內容，我改查圖層數量與 GPU 記憶體。
+       ⚠️ 生效期間畫面會變得很樸素（沒有陰影與模糊），重新整理即復原。 */
+    if (mode === 'cheap' || mode === 'all') {
+      if (!document.getElementById(CHEAP_ID)) {
+        var sc = document.createElement('style');
+        sc.id = CHEAP_ID;
+        sc.textContent = '*, *::before, *::after {' +
+          ' backdrop-filter: none !important;' +
+          ' -webkit-backdrop-filter: none !important;' +
+          ' box-shadow: none !important;' +
+          ' text-shadow: none !important;' +
+          ' filter: none !important;' +
+          ' border-image: none !important;' +
+          ' mix-blend-mode: normal !important;' +
+          ' background-blend-mode: normal !important; }';
+        document.head.appendChild(sc);
+      }
+      did.push('關掉模糊／陰影／濾鏡／邊框圖');
     }
     /* 全頁停掉 CSS 動畫與轉場。
        2026-09-13 的拆解把兇手鎖在 renderStart → styleAndLayoutStart 之間
@@ -747,7 +782,7 @@
       if (canvas) { canvas.style.willChange = 'transform'; did.push('canvas 獨立圖層'); }
       else did.push('找不到 canvas.battle-canvas');
     }
-    if (!did.length) return "用法：lagPaint('noanim' | 'nohover' | 'shadow' | 'skip' | 'layer' | 'all' | 'reset')";
+    if (!did.length) return "用法：lagPaint('cheap' | 'noanim' | 'nohover' | 'shadow' | 'skip' | 'layer' | 'all' | 'reset')";
     return did.join('；') + '　→ 現在再捲一次技能頁，看戰鬥區還會不會定格';
   };
 
@@ -772,7 +807,7 @@
      每個 mode 都是冪等的（style 標籤看 id、行內樣式重設同值），重複套用沒有副作用。 */
   function applyUrlModes() {
     if (typeof window.lagPaint !== 'function') return;
-    ['noanim', 'nohover', 'shadow', 'skip', 'layer'].forEach(function (mode) {
+    ['cheap', 'noanim', 'nohover', 'shadow', 'skip', 'layer'].forEach(function (mode) {
       if (new RegExp('[?&]' + mode + '=1(&|$)').test(location.search || '')) {
         window.lagPaint(mode);
       }
