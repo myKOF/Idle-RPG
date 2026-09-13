@@ -77,49 +77,19 @@ test('THUNDERFALL 60 度斜落且只在權威落地事件播放衝擊', () => {
  assert.equal(adapter.stats().played,2,'權威落地事件只播放一次範圍衝擊');
 });
 
-test('ROCKARMOR 前後半圈跨人物分層、共同中心與時鐘，放大移動續命後仍同步回收', () => {
- const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-rockarmor-stone.json'),'utf8'));
- for(const scale of [1,2]) {
-  let point={x:300,y:150};
-  const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
-  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
-  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
-  const back=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-back.png'));
-  const front=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-front.png'));
-  assert.equal(back.tag,'zone');assert.equal(front.tag,'fx');
-  for(let i=0;i<12;i++) {
-   point={x:300+i*7,y:150-i*2};adapter.tryPlay(spec);adapter.update(.11);
-   const bt=back.transforms.at(-1),ft=front.transforms.at(-1);
-   assert.deepEqual(bt,ft,'前後圈必須使用相同中心、尺寸與動畫格');
-   assert.equal(ft.x,point.x);assert.equal(ft.y,point.y-32*scale);
-   assert.ok(Math.abs(ft.scaleX-.8724*scale)<1e-6);
-  }
-  assert.equal(log.nodes.filter(n=>n.spec.assetUrl?.includes('stone-guard-')).length,2,'續命不重播');
-  adapter.update(4);assert.equal(adapter.stats().grounds,0);
-  assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);
- }
-});
-
-test('EARTH-REVERSAL 前後半圈跨人物分層、共同中心與時鐘，放大移動續命後仍同步回收', () => {
- const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/aura-earth-reversal.json'),'utf8'));
- for(const scale of [1,2]) {
-  let point={x:300,y:150};
-  const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
-  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
-  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
-  const back=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-blue-runes-back.png'));
-  const front=log.nodes.find(n=>n.spec.assetUrl?.includes('stone-guard-blue-runes-front.png'));
-  assert.equal(back.tag,'zone');assert.equal(front.tag,'fx');
-  for(let i=0;i<12;i++) {
-   point={x:300+i*7,y:150-i*2};adapter.tryPlay(spec);adapter.update(.11);
-   const bt=back.transforms.at(-1),ft=front.transforms.at(-1);
-   assert.deepEqual(bt,ft,'前後圈必須使用相同中心、尺寸與動畫格');
-   assert.equal(ft.x,point.x);assert.equal(ft.y,point.y-32*scale);
-   assert.ok(Math.abs(ft.scaleX-.8724*scale)<1e-6);
-  }
-  assert.equal(log.nodes.filter(n=>n.spec.assetUrl?.includes('stone-guard-')).length,2,'續命不重播');
-  adapter.update(4);assert.equal(adapter.stats().grounds,0);
-  assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);
+test('ROCKARMOR and EARTH-REVERSAL share object textures and cross actor depth without restarting',()=>{
+ const read=id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
+ const normal=read('aura-rockarmor-stone'),blue=read('aura-earth-reversal');
+ assert.equal(normal.layers.length,18);assert.equal(new Set(normal.layers.map(l=>l.assetId)).size,3);
+ normal.layers.forEach((l,i)=>{assert(!l.sheet);assert.equal(l.assetId,blue.layers[i].assetId);assert.deepEqual(l.offsetYOverLife,blue.layers[i].offsetYOverLife);if(l.id.endsWith('-plate'))assert.equal(l.tint,blue.layers[i].tint);else assert.notEqual(l.tint,blue.layers[i].tint);});
+ for(const p of [normal,blue])for(const scale of [1,2]){
+ let point={x:300,y:150};const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
+ const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
+ const seen=new Set();for(let frame=0;frame<45;frame++){point={x:300+frame,y:150};assert(adapter.tryPlay(spec));adapter.update(.11);
+ const back=log.nodes.filter(n=>n.tag==='zone'),front=log.nodes.filter(n=>n.tag==='fx');assert.equal(back.length,18);assert.equal(front.length,18);
+ for(let i=0;i<18;i++){const a=back[i].transforms.at(-1),b=front[i].transforms.at(-1);for(const key of ['x','y','scaleX','scaleY','rotation'])assert.equal(a[key],b[key]);const enter=Math.min(1,(frame+1)*.11/.3),opacity=enter*enter*(3-2*enter);assert(Math.abs(a.alpha+b.alpha-p.layers[i].alpha*opacity)<1e-6);}
+ const t=front[0].transforms.at(-1);seen.add(t.alpha>.5);}
+ assert.equal(seen.size,2);adapter.update(4);assert.equal(adapter.stats().grounds,0);assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);adapter.destroy();
  }
 });
 

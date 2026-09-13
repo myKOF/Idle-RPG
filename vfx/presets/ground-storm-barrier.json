@@ -1,178 +1,31 @@
 {
   "schemaVersion": 1,
   "id": "ground-storm-barrier",
-  "duration": 1.5,
+  "duration": 2,
   "loop": true,
   "layers": [
     {
-      "id": "band-a",
+      "id": "floor-spiral-0",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": -6
+        "y": 0.1747
       },
+      "rotation": 0,
       "scale": {
-        "x": 0.1172,
-        "y": 0.0352
+        "x": 0.8926,
+        "y": 0.8926
       },
-      "alpha": 0.6,
-      "tint": "#86efac",
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#409eea",
       "blendMode": "add",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          0.5,
-          0.75
-        ],
-        [
-          1,
-          0.6
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.96
-        ],
-        [
-          0.5,
-          1.06
-        ],
-        [
-          1,
-          0.96
-        ]
-      ]
-    },
-    {
-      "id": "band-b",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
-      "zIndex": 1,
-      "position": {
-        "x": 0,
-        "y": 10
-      },
-      "scale": {
-        "x": 0.1172,
-        "y": 0.0352
-      },
-      "alpha": 0.6,
-      "tint": "#ffffff",
-      "blendMode": "add",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          0.5,
-          0.75
-        ],
-        [
-          1,
-          0.6
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.96
-        ],
-        [
-          0.5,
-          1.06
-        ],
-        [
-          1,
-          0.96
-        ]
-      ]
-    },
-    {
-      "id": "band-c",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
-      "zIndex": 2,
-      "position": {
-        "x": 0,
-        "y": 26
-      },
-      "scale": {
-        "x": 0.1172,
-        "y": 0.0352
-      },
-      "alpha": 0.6,
-      "tint": "#86efac",
-      "blendMode": "add",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          0.5,
-          0.75
-        ],
-        [
-          1,
-          0.6
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.96
-        ],
-        [
-          0.5,
-          1.06
-        ],
-        [
-          1,
-          0.96
-        ]
-      ]
-    },
-    {
-      "id": "dots",
-      "type": "sprite",
-      "assetId": "new_materials/orb/rounded_6.png",
-      "zIndex": 3,
-      "position": {
-        "x": 0,
-        "y": 10
-      },
-      "scale": {
-        "x": 0.1211,
-        "y": 0.0371
-      },
-      "alpha": 0.6,
-      "tint": "#ffffff",
-      "blendMode": "add",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0.6
-        ],
-        [
-          0.5,
-          0.78
-        ],
-        [
-          1,
-          0.6
-        ]
-      ],
+      "duration": 2,
       "rotationOverLife": [
         [
           0,
@@ -180,18 +33,1415 @@
         ],
         [
           1,
-          6.300000000000001
+          -6.283185307179586
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.38
+      }
+    },
+    {
+      "id": "floor-spiral-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0.1747
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.7651,
+        "y": 0.7651
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.65,
+      "tint": "#82ffdb",
+      "blendMode": "add",
+      "duration": 2,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -6.283185307179586
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.38
+      }
+    },
+    {
+      "id": "ascending-light-0",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 3,
+      "position": {
+        "x": 191.28,
+        "y": 10.3763
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.5483
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#599dff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.58
+        ],
+        [
+          0.125,
+          0.7899999999999999
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.375,
+          0.79
+        ],
+        [
+          0.5,
+          0.58
+        ],
+        [
+          0.625,
+          0.7899999999999999
+        ],
+        [
+          0.75,
+          1
+        ],
+        [
+          0.875,
+          0.79
+        ],
+        [
+          1,
+          0.58
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-7",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 10,
+      "position": {
+        "x": -165.6533,
+        "y": -26.6045
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6185
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.9718653347947321
+        ],
+        [
+          0.125,
+          0.6849999999999999
+        ],
+        [
+          0.25,
+          0.6081346652052679
+        ],
+        [
+          0.375,
+          0.895
+        ],
+        [
+          0.5,
+          0.971865334794732
+        ],
+        [
+          0.625,
+          0.6849999999999998
+        ],
+        [
+          0.75,
+          0.6081346652052679
+        ],
+        [
+          0.875,
+          0.895
+        ],
+        [
+          1,
+          0.9718653347947321
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-8",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 11,
+      "position": {
+        "x": -95.64,
+        "y": -53.6764
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6886
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.895
+        ],
+        [
+          0.125,
+          0.6081346652052679
+        ],
+        [
+          0.25,
+          0.6849999999999997
+        ],
+        [
+          0.375,
+          0.9718653347947319
+        ],
+        [
+          0.5,
+          0.8950000000000002
+        ],
+        [
+          0.625,
+          0.608134665205268
+        ],
+        [
+          0.75,
+          0.6849999999999996
+        ],
+        [
+          0.875,
+          0.9718653347947319
+        ],
+        [
+          1,
+          0.8950000000000002
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-9",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 12,
+      "position": {
+        "x": 0,
+        "y": -63.5853
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.5483
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#599dff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.79
+        ],
+        [
+          0.125,
+          0.58
+        ],
+        [
+          0.25,
+          0.7899999999999999
+        ],
+        [
+          0.375,
+          1
+        ],
+        [
+          0.5,
+          0.79
+        ],
+        [
+          0.625,
+          0.58
+        ],
+        [
+          0.75,
+          0.7899999999999998
+        ],
+        [
+          0.875,
+          1
+        ],
+        [
+          1,
+          0.7900000000000005
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-10",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 13,
+      "position": {
+        "x": 95.64,
+        "y": -53.6764
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6185
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.6849999999999999
+        ],
+        [
+          0.125,
+          0.6081346652052679
+        ],
+        [
+          0.25,
+          0.895
+        ],
+        [
+          0.375,
+          0.971865334794732
+        ],
+        [
+          0.5,
+          0.6849999999999998
+        ],
+        [
+          0.625,
+          0.6081346652052679
+        ],
+        [
+          0.75,
+          0.895
+        ],
+        [
+          0.875,
+          0.9718653347947321
+        ],
+        [
+          1,
+          0.6849999999999998
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-11",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 14,
+      "position": {
+        "x": 165.6533,
+        "y": -26.6045
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6886
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.6081346652052679
+        ],
+        [
+          0.125,
+          0.6849999999999997
+        ],
+        [
+          0.25,
+          0.9718653347947319
+        ],
+        [
+          0.375,
+          0.8950000000000002
+        ],
+        [
+          0.5,
+          0.608134665205268
+        ],
+        [
+          0.625,
+          0.6849999999999996
+        ],
+        [
+          0.75,
+          0.9718653347947319
+        ],
+        [
+          0.875,
+          0.8950000000000002
+        ],
+        [
+          1,
+          0.6081346652052678
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-1",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 101,
+      "position": {
+        "x": 165.6533,
+        "y": 47.3571
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6185
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.6081346652052678
+        ],
+        [
+          0.125,
+          0.8949999999999999
+        ],
+        [
+          0.25,
+          0.9718653347947321
+        ],
+        [
+          0.375,
+          0.6849999999999999
+        ],
+        [
+          0.5,
+          0.6081346652052677
+        ],
+        [
+          0.625,
+          0.8949999999999998
+        ],
+        [
+          0.75,
+          0.9718653347947321
+        ],
+        [
+          0.875,
+          0.6850000000000002
+        ],
+        [
+          1,
+          0.6081346652052679
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-2",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 102,
+      "position": {
+        "x": 95.64,
+        "y": 74.4289
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6886
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.6849999999999999
+        ],
+        [
+          0.125,
+          0.971865334794732
+        ],
+        [
+          0.25,
+          0.895
+        ],
+        [
+          0.375,
+          0.6081346652052679
+        ],
+        [
+          0.5,
+          0.685
+        ],
+        [
+          0.625,
+          0.9718653347947321
+        ],
+        [
+          0.75,
+          0.8949999999999999
+        ],
+        [
+          0.875,
+          0.6081346652052678
+        ],
+        [
+          1,
+          0.6849999999999996
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-3",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 103,
+      "position": {
+        "x": 0,
+        "y": 84.3379
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.5483
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#599dff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.7899999999999999
+        ],
+        [
+          0.125,
+          1
+        ],
+        [
+          0.25,
+          0.79
+        ],
+        [
+          0.375,
+          0.58
+        ],
+        [
+          0.5,
+          0.7899999999999999
+        ],
+        [
+          0.625,
+          1
+        ],
+        [
+          0.75,
+          0.79
+        ],
+        [
+          0.875,
+          0.58
+        ],
+        [
+          1,
+          0.7899999999999998
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-4",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 104,
+      "position": {
+        "x": -95.64,
+        "y": 74.4289
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6185
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.8949999999999999
+        ],
+        [
+          0.125,
+          0.9718653347947321
+        ],
+        [
+          0.25,
+          0.685
+        ],
+        [
+          0.375,
+          0.6081346652052677
+        ],
+        [
+          0.5,
+          0.8949999999999998
+        ],
+        [
+          0.625,
+          0.9718653347947321
+        ],
+        [
+          0.75,
+          0.6850000000000002
+        ],
+        [
+          0.875,
+          0.6081346652052679
+        ],
+        [
+          1,
+          0.895
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-5",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 105,
+      "position": {
+        "x": -165.6533,
+        "y": 47.3571
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.6886
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#41cadd",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.9718653347947321
+        ],
+        [
+          0.125,
+          0.8949999999999999
+        ],
+        [
+          0.25,
+          0.6081346652052678
+        ],
+        [
+          0.375,
+          0.685
+        ],
+        [
+          0.5,
+          0.9718653347947321
+        ],
+        [
+          0.625,
+          0.8949999999999999
+        ],
+        [
+          0.75,
+          0.6081346652052678
+        ],
+        [
+          0.875,
+          0.6849999999999996
+        ],
+        [
+          1,
+          0.9718653347947319
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ascending-light-6",
+      "type": "sprite",
+      "assetId": "codex-authored/stormbarrier/rising-light.png",
+      "zIndex": 106,
+      "position": {
+        "x": -191.28,
+        "y": 10.3763
+      },
+      "scale": {
+        "x": 0.5356,
+        "y": 0.5483
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.55,
+      "tint": "#599dff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.125,
+          0.79
+        ],
+        [
+          0.25,
+          0.58
+        ],
+        [
+          0.375,
+          0.7899999999999999
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          0.625,
+          0.79
+        ],
+        [
+          0.75,
+          0.58
+        ],
+        [
+          0.875,
+          0.7899999999999998
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          -7
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 130,
+      "position": {
+        "x": 184.904,
+        "y": -7.4765
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#89cfff",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 131,
+      "position": {
+        "x": -136.2221,
+        "y": 39.9494
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffed",
+      "blendMode": "add",
+      "delay": 0.09,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 132,
+      "position": {
+        "x": 15.8105,
+        "y": -77.3557
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#89cfff",
+      "blendMode": "add",
+      "delay": 0.18,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-3",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 133,
+      "position": {
+        "x": 112.9263,
+        "y": 48.0599
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffed",
+      "blendMode": "add",
+      "delay": 0.27,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-4",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 134,
+      "position": {
+        "x": -182.2002,
+        "y": -19.4268
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#89cfff",
+      "blendMode": "add",
+      "delay": 0.36,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-5",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 135,
+      "position": {
+        "x": 155.534,
+        "y": -45.4051
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffed",
+      "blendMode": "add",
+      "delay": 0.44999999999999996,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-6",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 136,
+      "position": {
+        "x": -46.9691,
+        "y": 60.359
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#89cfff",
+      "blendMode": "add",
+      "delay": 0.54,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-7",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 137,
+      "position": {
+        "x": -86.328,
+        "y": -69.4992
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffed",
+      "blendMode": "add",
+      "delay": 0.63,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-8",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 138,
+      "position": {
+        "x": 174.1679,
+        "y": 16.0745
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#89cfff",
+      "blendMode": "add",
+      "delay": 0.72,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
+        ]
+      ]
+    },
+    {
+      "id": "rising-mote-9",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 139,
+      "position": {
+        "x": -170.2972,
+        "y": 19.8453
+      },
+      "scale": {
+        "x": 0.0128,
+        "y": 0.0128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffed",
+      "blendMode": "add",
+      "delay": 0.8099999999999999,
+      "duration": 0.65,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -90
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "height": 60,
-      "width": 60
+      "radius": 180
     },
-    "heightM": 6,
-    "shape": "custom",
-    "widthM": 6
+    "radiusM": 6,
+    "shape": "circle"
   }
 }
