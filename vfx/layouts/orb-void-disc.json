@@ -6,13 +6,12 @@
       "id": "orb-void-disc",
       "name": "orb-void-disc",
       "layerIds": [
-        "ghost-d",
-        "ghost-c",
-        "ghost-b",
-        "ghost-a",
-        "disc",
-        "rim",
-        "hub"
+        "outer-green-flow",
+        "blue-edge-current",
+        "return-green-flow",
+        "white-cutting-current",
+        "inner-green-vortex",
+        "inner-white-current"
       ]
     }
   ],
