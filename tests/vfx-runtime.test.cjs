@@ -81,7 +81,7 @@ test('ROCKARMOR and EARTH-REVERSAL share object textures and cross actor depth w
  const read=id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
  const normal=read('aura-rockarmor-stone'),blue=read('aura-earth-reversal');
  assert.equal(normal.layers.length,20);assert.equal(new Set(normal.layers.slice(0,18).map(l=>l.assetId)).size,3);
- normal.layers.forEach((l,i)=>{assert(!l.sheet);assert.equal(l.assetId,blue.layers[i].assetId);assert.deepEqual(l.offsetYOverLife,blue.layers[i].offsetYOverLife);if(l.id.endsWith('-plate') || !l.id.startsWith('stone-'))assert.equal(l.tint,blue.layers[i].tint);else assert.notEqual(l.tint,blue.layers[i].tint);});
+ normal.layers.forEach((l,i)=>{assert(!l.sheet);assert.equal(l.assetId,blue.layers[i].assetId);if(l.id.startsWith('stone-') && !l.id.endsWith('-plate'))assert.notEqual(l.tint,blue.layers[i].tint);});
  for(const p of [normal,blue])for(const scale of [1,2]){
  let point={x:300,y:150};const {adapter,log}=makeAdapter([p],{profile:{scale},ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
@@ -91,6 +91,15 @@ test('ROCKARMOR and EARTH-REVERSAL share object textures and cross actor depth w
  const t=front[0].transforms.at(-1);seen.add(t.alpha>.5);}
  assert.equal(seen.size,2);adapter.update(4);assert.equal(adapter.stats().grounds,0);assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);adapter.destroy();
  }
+});
+
+test('ROCKARMOR edited geometry also drives blue evolution',()=>{
+ const read=id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
+ const normal=read('aura-rockarmor-stone'),blue=read('aura-earth-reversal');
+ const base=JSON.stringify(blue);normal.layers.forEach(l=>{l.scale.x*=2;l.scale.y*=3;l.position.x+=17;if(l.offsetXOverLife)l.offsetXOverLife.forEach(v=>v[1]*=2);});
+ const run=id=>{const {adapter,log}=makeAdapter([blue,normal]);adapter.tryPlay({fxKind:'aura',targets:['pv-float'],dur:5,vfx:{ground:id}});adapter.update(.5);return log.nodes.map(n=>({tag:n.tag,t:n.transforms.at(-1)}));};
+ const a=run(normal.id),b=run(blue.id);assert.equal(a.length,b.length);
+ a.forEach((n,i)=>{assert.equal(n.tag,b[i].tag);for(const k of ['x','y','scaleX','scaleY','rotation','alpha'])assert.equal(n.t[k],b[i].t[k]);});assert.equal(JSON.stringify(blue),base);
 });
 
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
