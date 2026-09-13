@@ -315,7 +315,32 @@ select option { background: #1b2222; color: #ded9c8; }
   box-shadow: inset 0 0 0 1px #d0d2bb20, inset 0 0 9px #000b;
 }
 .item-cell.selected, .eq-slot.selected { outline: 2px solid #ead5c5; outline-offset: 1px; box-shadow: 0 0 7px #a63129aa !important; }
-.item-cell:hover { filter: brightness(1.15); }
+/* Hover updates must not rerasterize a filtered copy of the entire textured
+   control. Keep the existing border/background/selection feedback instead.
+   Do not remove filters from child artwork, locked states or battle effects. */
+:is(.eq-slot.filled, .item-cell, .forge-slot.filled, .gem-inventory-cell,
+    .tab-btn, .zone-btn, .equip-material-icon, .btn):hover {
+  filter: none;
+}
+
+/* Rapid tooltip replacement made blurred text and frame shadows expensive to
+   rasterize (UI-RASTER-20260913). The card's texture and border remain intact. */
+#sk-tooltip {
+  text-shadow: none;
+  box-shadow: none;
+}
+#sk-tooltip .equip-detail-card { box-shadow: none !important; }
+
+/* Switching a whole panel rasterizes many blurred glyphs and card shadows at
+   once. Keep the textured surfaces, borders and selection outlines, but make
+   the frequently replaced workspace cheap to paint (UI-MODAL-20260914). */
+#workspace-area, #workspace-area * {
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+/* Sampling the animated battle through a full-screen backdrop filter stalls
+   both opening and closing this dialog. Its opaque dimming layer is enough. */
+#skill-modal { backdrop-filter: none; }
 
 .sidebar-avatar img { border-color: #738075; filter: saturate(.5); }
 .sidebar-avatar::before { border-color: #52655f; background: none; }

@@ -1,5 +1,30 @@
 # AI_TASKS.md
 
+## Codex｜技能升級與功能頁籤點擊延遲（UI-MODAL-20260914）
+
+- Owner：Codex；Done／待使用者原 Chrome 驗收。使用者確認懸停問題已解決，另要求修正技能升級彈窗及功能頁籤點擊後 0.5–1 秒延遲與戰鬥卡頓。
+- 範圍：UI CSS、必要 UI 修正與快取、效能對照工具、相關回歸測試及本紀錄；不改遊戲規則、存檔、Worker 協議或素材。已 fetch／預檢乾淨。
+- 驗證：實際點擊處理／呈現時序，彈窗與功能頁籤 CSS 分項對照、功能回歸及 Build。後續由使用者原 Chrome 驗收，不自行合併／推送。
+- 原因：技能開啟 handler 約 0.6–1.8ms，但 Event Timing 點擊到呈現為 104–400ms；只取消文字陰影仍為 96–424ms，只取消 backdrop-filter 則首次 112ms、後續 16–24ms。全螢幕背景模糊取樣動態戰鬥是主要成本。頁籤原呈現 72–360ms；取消工作區繼承文字陰影降為 40–144ms，再移除卡片框體陰影有額外改善。未修改事件／遊戲邏輯。
+- 修改：css/ashen-forge.css 取消 #skill-modal 背景模糊及工作區文字／框體陰影；保留紋理、邊框、選取 outline、鎖定濾鏡與戰鬥效果。index.html 快取升為 1.0.5。tools/ui-render-benchmark.html 加入實際點擊 Event Timing 與原視窗模糊對照；不用 double-rAF 或 capture microtask 冒充呈現／handler 耗時。
+- 正式版實測：獨立 localhost:8337、Codex Chromium、遊戲 1362×869、DPR 約 1。5 次技能開關，首次 click 72ms、後續回報 16–24ms；rAF 最長 69.3ms／1 次 >50ms。10 次頁籤切換（裝備／寶石／熔爐／技能／高塔／設定）呈現 32–160ms，相較基準 72–360ms 明顯改善；整段 rAF 仍曾達 312.4ms／8 次 >50ms，包含非點擊的遊戲工作，不能宣稱所有尖峰消失。天賦／神鑄尚未解鎖，未實際點擊驗收。
+- 功能與風險：已確認各可用頁籤 active 狀態、技能已學習／未學習內容與關閉行為，截圖確認視窗／裝備工作區完整。工作區陰影變平是刻意視覺取捨。Console 僅有測試開始前既存的 MutationObserver observe 非 Node 錯誤（16:06:10.266Z），本輪重載／操作未新增；未擴大修正。原 Chrome 使用者驗收仍待進行。
+- 測試：npm run build（347 檔通過）；node --test tests/tooltip-modal-close.test.cjs tests/panel-scroll-hover-suppress.test.cjs tests/tab-lock.test.cjs tests/skill2-ui.test.cjs tests/skill-tree-layout.test.cjs tests/newforge-panel-performance.test.cjs（25/25 通過）；git diff --check 通過。
+- 未改但檢查：js/ui.js（switchTab／技能彈窗與點擊入口）、css/style.css、package.json 與上述測試。Commit 為本紀錄所在提交；無素材變動。可供審查合併，未自行合併／推送；下一步在使用者原 Chrome 重新整理後驗收這兩種操作。
+
+## Codex｜UI 提示切換造成畫面提交停頓（UI-RASTER-20260913）
+
+- Owner：Codex；Done／待使用者原 Chrome 驗收。使用者授權分析 Trace-20260913T223548.json 並修復 UI 操作／裝備提示切換時戰鬥定格。
+- 前置：錄製約 14 秒，18 次 Commit >50ms，最長 197.351ms；同時 raster 執行緒忙於繪製，單層佔 RasterTask 69%。需以實際頁面對照測試定位，不能以縮短 tooltip handler 宣稱根治。
+- 允許範圍：UI CSS、ui-scale/ui/lagprobe 的必要修正、index 快取、本紀錄及獨立效能驗證工具／回歸測試。禁止改存檔、Worker 協議、戰鬥數值及素材；不合併／推送。
+- 預檢：目標檔無其他副本／分支修改，遠端已 fetch。驗收：逐項 UI 繪製對照、提示及定位功能、相關測試、Build、diff check；後續由使用者在原 Chrome 環境確認。
+- 根因與修正：使用者確認 cheap 模式使卡頓完全消失；實際滑鼠跨圖標 A/B 顯示裝備受 hover filter 影響、技能提示受繼承的模糊文字陰影與框體陰影影響。Ashen Forge 改為沿用背景／邊框提供懸停回饋，不濾鏡化整個互動元件；#sk-tooltip 取消文字與框體陰影，卡片保留材質／邊框。未移除子圖像、技能鎖定狀態或戰鬥 VFX 的濾鏡。快取 ashen-forge 1.0.3 → 1.0.4。
+- 驗證環境：Codex Chromium，遊戲 viewport 1362×869、DPR 1.25，獨立 8337 埠的新測試存檔。以實際指標拖移穿過圖標量測 mouseover/out；不是只用計時器換 tooltip HTML，後者無法重現。相同裝備路徑各 160 次圖標進出：原版 max 83.3ms、>50ms 9 次；候選 max 48.7ms、0 次。技能各 240 次：原版 max 701.4ms、23 次；候選 max 62.4ms、2 次。
+- 正式 CSS 暖機後再反向 A/B：原陰影技能 max 548.7ms／17 次 >50ms → 目前版本 max 13.9ms／0 次；圖標有效事件 210／189（各採相同 16 趟路徑，暖機一秒不計）。裝備正式重測 max 34.7ms／0 次。不同階段的載入／戰鬥工作仍有偶發尖峰（首次裝備量測曾見 1000ms、技能 159.6ms），不可宣稱所有環境永無卡頓；此結論是連續懸停引起的重複停頓已顯著改善。外殼／tooltip 分層並無穩定額外收益，不納入。
+- 工具：tools/ui-render-benchmark.html 保留目前版本／修正前的 CSS 對照、1 秒暖機、30 秒量測、影格／目標事件統計、背景分頁失效標記及停止時清理。只改測試頁呈現，不送遊戲命令；應在獨立測試埠使用。scratch 探索頁已刪除。
+- 驗證：清理後 npm run build 347 檔通過；node --test tests/tooltip-modal-close.test.cjs tests/panel-scroll-hover-suppress.test.cjs tests/attribute-tooltip.test.cjs tests/boss-tooltip.test.cjs tests/gem-tooltip.test.cjs 共 15/15。實機技能提示文字／鎖定說明／定位、裝備單卡／雙卡比較均正常，雙卡 584px 未越出畫面；最後重載無 Console error/warning。仍待原 Chrome 使用者驗收。不改素材、無素材庫 Commit；未合併／推送。Commit 為本紀錄所在提交。
+- 未改但檢查：js/ui.js 的顯示／定位、js/ui-scale.js、js/battle-renderer.js、js/lagprobe.js、css/style.css、相關測試與原始 Trace。交付僅 CSS／index／此任務紀錄與對照工具，可供使用者審查合併；完整測試套件未重跑，遊戲邏輯未修改。
+
 ## Claude｜捲動技能頁時戰鬥區定格：捲動中不做懸停提示（LAG-SCROLL-HOVER-20260913）
 
 - 病因：捲動時游標不動，但格子在游標底下一路移過去，每經過一顆就送一次 mouseover／mouseout。每一則都走到 showSkillTooltip（使用者報告實測平均 6ms、最大 12.7ms），而 positionSkTooltip 為了定位要讀三次版面（getBoundingClientRect／offsetWidth／offsetHeight），每次都是一輪強制版面重算。整個 UI 外殼掛在 transform: scale() 底下（js/ui-scale.js:36），捲動本來就走主執行緒重繪，再疊這一串，Pixi 的 ticker 就搶不到 frame。使用者互動延遲表整排是 mouseout／mouseleave／mouseover／mouseenter，正是這個形狀。
