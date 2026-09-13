@@ -294,6 +294,30 @@
     rawRaf.call(window, tick);
   }
 
+  /* ---- 更新區間裡的其他回呼 ----
+     2026-09-13 的拆解把兇手鎖進 renderStart → styleAndLayoutStart 這個區間
+    （腳本 0ms、樣式版面 1ms、這一段 611ms），而 rAF 回呼整幀只有 6 個共 1ms。
+     這個區間裡還會跑 ResizeObserver 與 IntersectionObserver 的回呼，兩者都不經過
+     rAF、也不在 TARGETS 名單上（battle-renderer 的 resize 活在 IIFE 裡，
+     名單上的 'resize' 包不到它）。先把這兩條包起來排除掉，剩下的才是引擎自己的工作。 */
+  function wrapObservers() {
+    ['ResizeObserver', 'IntersectionObserver'].forEach(function (name) {
+      var Orig = window[name];
+      if (typeof Orig !== 'function' || Orig.__lagWrapped) return;
+      var Wrapped = function (cb) {
+        var g = function () {
+          var t0 = performance.now();
+          try { return cb.apply(this, arguments); }
+          finally { bump(P.fn, name + '回呼', performance.now() - t0); }
+        };
+        return new Orig(g);
+      };
+      Wrapped.__lagWrapped = true;
+      Wrapped.prototype = Orig.prototype;
+      window[name] = Wrapped;
+    });
+  }
+
   function wrapAll() {
     TARGETS.forEach(function (name) {
       var f = window[name];
@@ -360,6 +384,13 @@
       return f.ms + 'ms@' + f.at + 's（腳本' + f.script + '／更新迴圈' + f.render +
         '／樣式版面' + f.style + who + '）';
     }).join('　｜　');
+  }
+
+  /* getAnimations 在節點多時本身就要花時間，只在印報告時取一次（15 秒一次）。 */
+  function animationCount() {
+    try {
+      return (document.getAnimations && document.getAnimations().length) || 0;
+    } catch (e) { return -1; }
   }
 
   function worstGaps() {
@@ -440,10 +471,16 @@
           (wf.top.length ? ('，其中最貴的是 ' + wf.top[0].name + ' ' + wf.top[0].ms + 'ms') : '') + '。');
         /* 更新迴圈吃掉一幀有兩種長相，修法不同：一個很貴的回呼 → 那支自己慢；
            幾十個便宜的回呼 → 是排程失控（同一幀被排了太多次）。 */
-        if (seg[0][0].indexOf('更新迴圈') >= 0 && P.rafPeak.n > 0) {
+        if (seg[0][0].indexOf('更新迴圈') >= 0) {
           lines.push('　　（最忙的一幀排了 ' + P.rafPeak.n + ' 個 rAF 回呼、共 ' +
             P.rafPeak.ms + 'ms @' + P.rafPeak.at + 's' +
             (P.rafPeak.n >= 10 ? ' → 排程失控，不是單一支慢' : '') + '）');
+          /* rAF 只佔零頭、而 LoAF 又沒列出任何腳本 → 這一段不是我們的程式碼在跑，
+             而是瀏覽器自己的更新工作，目前唯一會長到這種量級的是 CSS 動畫／轉場。 */
+          if (P.rafPeak.n < 10 && P.rafPeak.ms < wf.render * 0.25 && !wf.top.length) {
+            lines.push('　　rAF 只佔零頭且沒有任何腳本被列出 → 不是我們的程式碼，' +
+              '是瀏覽器每幀推進 CSS 動畫／轉場的成本（目前進行中 ' + animationCount() + ' 個）。');
+          }
         }
       }
     }
@@ -514,6 +551,10 @@
       }
     }
     track('DOM 節點總數', document.getElementsByTagName('*').length);
+    /* 進行中的 CSS 動畫與轉場。瀏覽器每一幀都要把它們全部推進一次，而那一步就在
+       renderStart → styleAndLayoutStart 之間、且**不是腳本**——LoAF 的 scripts[]
+       看不到它，函式耗時表也看不到。數量大到幾千就足以吃掉整幀。 */
+    track('CSS 動畫／轉場', animationCount());
     track('未結束計時器', P.timers);
     track('Worker 待處理指令', st.pendingCommands);
     track('Worker 落後秒數', st.catchupSec);
@@ -583,7 +624,8 @@
       '[卡頓探針] ' + sec.toFixed(0) + 's｜分頁 ' + (window.UI ? UI.tab : '?') +
         '｜DOM ' + document.getElementsByTagName('*').length +
         '｜背包 ' + inv.count + '/' + inv.cap +
-        '｜計時器 ' + P.timers + '（峰值 ' + P.timersPeak + '）',
+        '｜計時器 ' + P.timers + '（峰值 ' + P.timersPeak + '）' +
+        '｜CSS 動畫 ' + animationCount(),
       'Worker：catchup=' + st.catchupSec + 's ticks=' + st.ticks + ' errors=' + st.errors +
         ' restarts=' + st.restarts + ' pending=' + st.pendingCommands,
       '強制重算 ' + P.layoutTotal + ' 次（每秒 ' + (P.layoutTotal / sec).toFixed(1) + '）：' + (lay || '無'),
@@ -613,6 +655,7 @@
      這是假設，不是結論。與其照著假設改程式，不如把三個嫌疑各自關掉再捲一次：
      差別用眼睛就看得出來，一次就知道是不是、以及是哪一個。
 
+       lagPaint('noanim')  全頁停掉 CSS 動畫與轉場（每幀推進動畫的成本）
        lagPaint('nohover') 捲動區內不做命中判定與過場動畫（CSS :hover 重算成本）
        lagPaint('shadow') 關掉所有陰影與濾鏡（繪製成本）
        lagPaint('skip')   離開畫面的技能列整列跳過渲染（content-visibility）
@@ -627,14 +670,40 @@
     var did = [];
     var i;
     var NOHOVER_ID = '__lagNoHover';
+    var NOANIM_ID = '__lagNoAnim';
 
     if (mode === 'reset') {
       var oldStyle = document.getElementById(NOHOVER_ID);
       if (oldStyle) oldStyle.remove();
+      var oldAnim = document.getElementById(NOANIM_ID);
+      if (oldAnim) oldAnim.remove();
       for (i = 0; i < nodes.length; i++) { nodes[i].style.boxShadow = ''; nodes[i].style.filter = ''; }
       for (i = 0; i < wraps.length; i++) { wraps[i].style.contentVisibility = ''; wraps[i].style.containIntrinsicSize = ''; }
       if (canvas) canvas.style.willChange = '';
       return '已全部復原（' + nodes.length + ' 個節點、' + wraps.length + ' 列）';
+    }
+    /* 全頁停掉 CSS 動畫與轉場。
+       2026-09-13 的拆解把兇手鎖在 renderStart → styleAndLayoutStart 之間
+      （腳本 0ms、樣式版面 1ms、這一段 611ms），而 rAF 回呼整幀只有 6 個共 1ms，
+       LoAF 的 scripts[] 也是空的——那一段不是任何腳本，只剩「瀏覽器每幀推進
+       CSS 動畫與轉場」這一項會長到那個量級。
+
+       本專案有 143 條 transition／animation，其中不少是 conic-gradient 加 filter
+       的無限旋轉（神鑄創世裝備的 .eff-godforged、被動技能格的 bss-passive-spin…）。
+       那種動畫每一幀都要重新產生漸層並重新點陣化，合成器幫不上忙，而且**與有沒有
+       捲動無關**——正好對得上「60 秒停住 107 次」這種持續發生的形態。
+
+       這是目前最強的假設，但仍然是假設：停掉之後卡頓消失就成立，沒消失就換方向。
+       ⚠️ 生效期間畫面會少掉所有動態效果，reset 或重新整理即復原。 */
+    if (mode === 'noanim' || mode === 'all') {
+      if (!document.getElementById(NOANIM_ID)) {
+        var sa = document.createElement('style');
+        sa.id = NOANIM_ID;
+        sa.textContent = '*, *::before, *::after { animation: none !important;' +
+          ' transition: none !important; }';
+        document.head.appendChild(sa);
+      }
+      did.push('全頁停掉 CSS 動畫與轉場');
     }
     /* 捲動時游標不動、元素在游標底下移動，瀏覽器每一幀都要重新判定誰被 :hover，
        再對命中的那一條做樣式重算；.sg-stage-node 每顆還掛著 transition，
@@ -669,7 +738,7 @@
       if (canvas) { canvas.style.willChange = 'transform'; did.push('canvas 獨立圖層'); }
       else did.push('找不到 canvas.battle-canvas');
     }
-    if (!did.length) return "用法：lagPaint('nohover' | 'shadow' | 'skip' | 'layer' | 'all' | 'reset')";
+    if (!did.length) return "用法：lagPaint('noanim' | 'nohover' | 'shadow' | 'skip' | 'layer' | 'all' | 'reset')";
     return did.join('；') + '　→ 現在再捲一次技能頁，看戰鬥區還會不會定格';
   };
 
@@ -686,6 +755,7 @@
   function start() {
     var rawRaf = window.requestAnimationFrame;
     wrapRaf();
+    wrapObservers();
     trackFrames(rawRaf);
     wrapAll();
     wrapCommands();

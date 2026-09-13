@@ -249,3 +249,18 @@ test('更新迴圈吃掉一幀時，要分辨「單一支慢」與「排了太�
   assert.match(v, /最忙的一幀排了 12 個 rAF 回呼/);
   assert.match(v, /排程失控，不是單一支慢/);
 });
+
+test('更新迴圈是兇手但 rAF 只佔零頭且沒有腳本 → 判讀要指向 CSS 動畫／轉場', () => {
+  const p = bootProbe();
+  p.frame(100);
+  p.frame(800);
+  p.longTask(650, 0);
+  p.slowRafCallback(1, 'tickWorld');   // rAF 只有零頭
+  p.frame(1600);
+  p.loaf({ atSec: 16, ms: 620, script: 0, render: 619, scripts: [] });
+  p.setNow(20000);
+  const v = p.verdict();
+  assert.match(v, /主要花在「畫面更新迴圈（Pixi／VFX）」619ms/);
+  assert.match(v, /rAF 只佔零頭且沒有任何腳本被列出/);
+  assert.match(v, /CSS 動畫／轉場的成本/);
+});
