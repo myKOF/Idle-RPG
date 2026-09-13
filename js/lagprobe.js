@@ -273,9 +273,17 @@
     var last = performance.now();
     P.frameT0 = last;
     function tick(t) {
-      /* 上一幀的 rAF 統計在這裡結算：本支用的是**未包裝**的原版 rAF 且在 start()
-         最早註冊，因此排在所有人前面，此刻累計到的就是上一幀的完整數字。 */
-      if (P.rafInFrame > P.rafPeak.n) {
+      /* 上一幀的 rAF 統計在這裡結算（兩次 tick 之間跑掉的回呼＝一幀份）。
+
+         ⚠️ 這裡**不能**用「回呼數」挑最忙的一幀。第一版是 rafInFrame > rafPeak.n，
+         結果 2026-09-13 的報告印出「6 個回呼／1ms」，讓我以為更新迴圈很閒、
+         把懷疑導去 CSS 動畫（後來證實是錯的）——因為回呼最多的那一幀，
+         跟吃掉最多時間的那一幀根本不是同一幀。要找的是**耗時**最大的那一幀。
+
+         另註：本支雖然用未包裝的原版 rAF，但它在自己的回呼尾端才重新排程，
+         所以通常排在其他人後面，不是前面。對「兩次 tick 之間的累計」這個口徑
+         沒有影響，但別再照著舊註解以為它最先跑。 */
+      if (P.rafMsInFrame > P.rafPeak.ms) {
         P.rafPeak = { n: P.rafInFrame, ms: Math.round(P.rafMsInFrame), at: Math.round(t / 1000) };
       }
       P.rafInFrame = 0;
@@ -472,8 +480,8 @@
         /* 更新迴圈吃掉一幀有兩種長相，修法不同：一個很貴的回呼 → 那支自己慢；
            幾十個便宜的回呼 → 是排程失控（同一幀被排了太多次）。 */
         if (seg[0][0].indexOf('更新迴圈') >= 0) {
-          lines.push('　　（最忙的一幀排了 ' + P.rafPeak.n + ' 個 rAF 回呼、共 ' +
-            P.rafPeak.ms + 'ms @' + P.rafPeak.at + 's' +
+          lines.push('　　（rAF 最貴的一幀：' + P.rafPeak.ms + 'ms／' + P.rafPeak.n +
+            ' 個回呼 @' + P.rafPeak.at + 's' +
             (P.rafPeak.n >= 10 ? ' → 排程失控，不是單一支慢' : '') + '）');
           /* rAF 只佔零頭、而 LoAF 又沒列出任何腳本 → 這一段不是我們的程式碼在跑，
              而是瀏覽器自己的更新工作，目前唯一會長到這種量級的是 CSS 動畫／轉場。 */
@@ -636,7 +644,7 @@
       '互動最差：' + (inp || '無（沒有超過 16ms 的互動）'),
       '函式 TOP8：' + (fn || '無'),
       '最慢的幀：' + (frameBreakdownText() || '無（瀏覽器不支援 long-animation-frame）'),
-      'rAF 最忙的一幀：' + P.rafPeak.n + ' 個回呼／' + P.rafPeak.ms + 'ms @' + P.rafPeak.at + 's'
+      'rAF 最貴的一幀：' + P.rafPeak.ms + 'ms／' + P.rafPeak.n + ' 個回呼 @' + P.rafPeak.at + 's'
     ].concat(diagnose());
     console.log('%c' + out.join(String.fromCharCode(10)), 'color:#0a0;line-height:1.6');
     return '把上面這一段截圖回報就夠了';
@@ -661,7 +669,8 @@
        lagPaint('skip')   離開畫面的技能列整列跳過渲染（content-visibility）
        lagPaint('layer')  把戰鬥 canvas 提升成獨立合成圖層
        lagPaint('all')    三個一起開
-       lagPaint('reset')  全部復原 */
+       lagPaint('reset')  全部復原
+     每一個也都能用網址帶（不必碰 Console）：?lag=1&noanim=1、?lag=1&nohover=1 …… */
   window.lagPaint = function (mode) {
     mode = String(mode || 'all');
     var nodes = document.querySelectorAll('.sg-stage-node, .sg-group-row, .skill-card, .talent-node');
@@ -752,6 +761,24 @@
     return '已歸零，重新計時（成長追蹤的基線保留）';
   };
 
+  /* ---- 開關也走網址參數 ----
+     本檔開頭就寫著「回報卡頓只要換一次網址」，理由是 Chrome 對「貼程式碼進
+     Console」有防呆（要先手動輸入 allow pasting）。2026-09-13 回報者踩到了，
+     回覆只有「沒辦法輸入」——而我當時給的驗證方式正是叫他在 Console 打指令，
+     等於自己違反了本檔的設計前提。
+     ?lag=1&noanim=1 這種寫法讓所有開關都不必碰 Console。
+
+     開機時畫面還沒建好（Pixi 的 canvas 要等資產載完），所以每次自動報告時再套一次；
+     每個 mode 都是冪等的（style 標籤看 id、行內樣式重設同值），重複套用沒有副作用。 */
+  function applyUrlModes() {
+    if (typeof window.lagPaint !== 'function') return;
+    ['noanim', 'nohover', 'shadow', 'skip', 'layer'].forEach(function (mode) {
+      if (new RegExp('[?&]' + mode + '=1(&|$)').test(location.search || '')) {
+        window.lagPaint(mode);
+      }
+    });
+  }
+
   function start() {
     var rawRaf = window.requestAnimationFrame;
     wrapRaf();
@@ -770,7 +797,18 @@
        來回了六次，每次都是「捲錯位置」或「表收起來了」。
        印一份隨手截就完整的，比要求對方去展開正確的那張表可靠得多。
        完整的表仍在 lagReport()，需要細節時自己叫。 */
-    setInterval(function () { window.lagText(); }, 15000);
+    applyUrlModes();
+    /* 開機那十幾秒（載圖集、建整頁 DOM、第一次全頁渲染）本來就會有幾百毫秒的幀，
+       而且會一路霸佔統計，讓結論指向開機而不是回報者真正遇到的症狀。
+       判讀已經會略過前 10 秒的幀，但長工作、影格與函式耗時仍是從載入起算的累計。
+       自動歸零一次，回報者就不必記得去按 lagReset()——尤其在連 Console 都打不開的
+       環境裡，那本來就是做不到的要求。成長追蹤的基線照舊保留。 */
+    setTimeout(function () {
+      window.lagReset();
+      console.log('%c[卡頓探針] 已自動歸零（跳過開機期），以下為穩定狀態的數字。',
+        'color:#0a0;font-weight:bold');
+    }, 20000);
+    setInterval(function () { window.lagText(); applyUrlModes(); }, 15000);
   }
 
   /* ui.js 的函式要等腳本載入完才存在；DOMContentLoaded 之後一定都在了。 */
