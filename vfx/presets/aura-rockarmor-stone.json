@@ -6339,6 +6339,57 @@
           -23.382685902179833
         ]
       ]
+    },
+    {
+      "id": "earth-shadow",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-transparent/light_03.png",
+      "zIndex": -2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.3156,
+        "y": 0.082
+      },
+      "alpha": 0.5,
+      "tint": "#281f13",
+      "blendMode": "normal",
+      "duration": 4
+    },
+    {
+      "id": "amber-underlight",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": -1,
+      "position": {
+        "x": 0,
+        "y": -2
+      },
+      "scale": {
+        "x": 0.2462,
+        "y": 0.0756
+      },
+      "alpha": 0.22,
+      "tint": "#ba873e",
+      "blendMode": "add",
+      "duration": 4,
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
     }
   ],
   "sizing": {

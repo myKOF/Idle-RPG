@@ -330,8 +330,10 @@ var VFXRuntime = (function () {
         if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
           ['back','front'].forEach(function(half) {
             var part=JSON.parse(JSON.stringify(p));part.id+='-'+half;
+            if(half==='front')part.layers=part.layers.filter(function(l){return l.id!=='earth-shadow' && l.id!=='amber-underlight';});
             part.layers.forEach(function(l) {
               var curve=l.offsetYOverLife;
+              if(l.id==='earth-shadow' || l.id==='amber-underlight')return;
               if(!curve || curve.length<2){l.alpha=half==='front'?l.alpha:0;return;}
               var points=[0,1];
               for(var i=1;i<curve.length;i++){
@@ -1404,7 +1406,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260913-rockarmor-objects';
+  var DATA_VERSION = '20260913-rockarmor-ground';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
