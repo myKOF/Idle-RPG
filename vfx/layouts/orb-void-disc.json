@@ -8,10 +8,13 @@
       "layerIds": [
         "outer-green-flow",
         "blue-edge-current",
+        "blue-edge-current-copy-2",
         "return-green-flow",
         "white-cutting-current",
         "inner-green-vortex",
-        "inner-white-current"
+        "inner-white-current",
+        "outer-green-flow-copy",
+        "outer-green-flow-copy-2"
       ]
     }
   ],

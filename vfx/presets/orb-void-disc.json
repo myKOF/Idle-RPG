@@ -13,10 +13,10 @@
         "x": 0,
         "y": 0
       },
-      "rotation": 0,
+      "rotation": 4.712389,
       "scale": {
-        "x": 0.9984,
-        "y": 0.9311999999999999
+        "x": 1.0094,
+        "y": 0.9414
       },
       "anchor": {
         "x": 0.5,
@@ -46,10 +46,10 @@
         "x": 0,
         "y": 0
       },
-      "rotation": 1.7,
+      "rotation": 2.356194,
       "scale": {
-        "x": 1.0506,
-        "y": 0.9996
+        "x": 1.4552,
+        "y": 1.3844
       },
       "anchor": {
         "x": 0.5,
@@ -81,8 +81,8 @@
       },
       "rotation": 3.141592653589793,
       "scale": {
-        "x": 0.8245,
-        "y": 0.867
+        "x": 0.6637,
+        "y": 0.6979
       },
       "anchor": {
         "x": 0.5,
@@ -114,8 +114,8 @@
       },
       "rotation": 0.8,
       "scale": {
-        "x": 0.7752,
-        "y": 0.7448
+        "x": 0.624,
+        "y": 0.5996
       },
       "anchor": {
         "x": 0.5,
@@ -147,8 +147,8 @@
       },
       "rotation": 2.3,
       "scale": {
-        "x": 0.5665000000000001,
-        "y": 0.539
+        "x": 0.456,
+        "y": 0.4339
       },
       "anchor": {
         "x": 0.5,
@@ -180,8 +180,8 @@
       },
       "rotation": 4.5,
       "scale": {
-        "x": 0.44,
-        "y": 0.4356
+        "x": 0.3542,
+        "y": 0.3507
       },
       "anchor": {
         "x": 0.5,
@@ -199,6 +199,105 @@
         [
           1,
           -18.84955592153876
+        ]
+      ]
+    },
+    {
+      "id": "outer-green-flow-copy",
+      "type": "sprite",
+      "assetId": "new_materials/orb/spiky_15.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 4.712389,
+      "scale": {
+        "x": 0.8474,
+        "y": 0.8474
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.5,
+      "tint": "#2fcae9",
+      "blendMode": "add",
+      "duration": 1,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -12.566370614359172
+        ]
+      ]
+    },
+    {
+      "id": "outer-green-flow-copy-2",
+      "type": "sprite",
+      "assetId": "new_materials/orb/energyball_5.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 4.712389,
+      "scale": {
+        "x": 2.6859,
+        "y": 2.5051
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.3,
+      "tint": "#30e982",
+      "blendMode": "add",
+      "duration": 1,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -12.566370614359172
+        ]
+      ]
+    },
+    {
+      "id": "blue-edge-current-copy-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": -0.785398,
+      "scale": {
+        "x": 1.4552,
+        "y": 1.3844
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.28,
+      "tint": "#559fff",
+      "blendMode": "add",
+      "duration": 1,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -12.566370614359172
         ]
       ]
     }

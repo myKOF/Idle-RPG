@@ -10,13 +10,13 @@
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 2.4,
       "scale": {
-        "x": 2.07,
-        "y": 2.07
+        "x": 0.6972,
+        "y": 0.6972
       },
       "anchor": {
         "x": 0.5,
@@ -75,13 +75,13 @@
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 1,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 0,
       "scale": {
-        "x": 2.7,
-        "y": 2.7
+        "x": 0.7803,
+        "y": 0.7803
       },
       "anchor": {
         "x": 0.5,
@@ -140,13 +140,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 2,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": -0.2094,
       "scale": {
-        "x": 0.6032,
-        "y": 0.567
+        "x": 0.8205,
+        "y": 0.771
       },
       "anchor": {
         "x": 0.31076681064521183,
@@ -206,13 +206,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 3,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 0,
       "scale": {
-        "x": 0.5292,
-        "y": 0.4971
+        "x": 0.7198,
+        "y": 0.676
       },
       "anchor": {
         "x": 0.19899222488038276,
@@ -272,13 +272,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 4,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 0.2094,
       "scale": {
-        "x": 0.4549,
-        "y": 0.4276
+        "x": 0.6187,
+        "y": 0.5816
       },
       "anchor": {
         "x": 0.0645384287665251,
@@ -338,13 +338,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 5,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 0.1745,
       "scale": {
-        "x": 0.3807,
-        "y": 0.43
+        "x": 0.5177,
+        "y": 0.5848
       },
       "anchor": {
         "x": 0.0021711375461210825,
@@ -404,13 +404,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 6,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 1.8405999999999998,
       "scale": {
-        "x": 0.49462399999999995,
-        "y": 0.4649399999999999
+        "x": 0.6727,
+        "y": 0.6324
       },
       "anchor": {
         "x": 0.31076681064521183,
@@ -470,13 +470,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 7,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 2.05,
       "scale": {
-        "x": 0.433944,
-        "y": 0.407622
+        "x": 0.5901,
+        "y": 0.5543
       },
       "anchor": {
         "x": 0.19899222488038276,
@@ -536,13 +536,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 8,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 2.2594,
       "scale": {
-        "x": 0.373018,
-        "y": 0.35063199999999994
+        "x": 0.5072,
+        "y": 0.4768
       },
       "anchor": {
         "x": 0.0645384287665251,
@@ -602,13 +602,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 9,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 2.2245,
       "scale": {
-        "x": 0.31217399999999995,
-        "y": 0.35259999999999997
+        "x": 0.4246,
+        "y": 0.4796
       },
       "anchor": {
         "x": 0.0021711375461210825,
@@ -668,13 +668,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 10,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 4.2906,
       "scale": {
-        "x": 0.675584,
-        "y": 0.63504
+        "x": 0.9186,
+        "y": 0.8636
       },
       "anchor": {
         "x": 0.31076681064521183,
@@ -734,13 +734,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 11,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 4.5,
       "scale": {
-        "x": 0.592704,
-        "y": 0.556752
+        "x": 0.806,
+        "y": 0.7571
       },
       "anchor": {
         "x": 0.19899222488038276,
@@ -800,13 +800,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 12,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 4.7094,
       "scale": {
-        "x": 0.509488,
-        "y": 0.478912
+        "x": 0.6928,
+        "y": 0.6513
       },
       "anchor": {
         "x": 0.0645384287665251,
@@ -866,13 +866,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 13,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -4.7472,
+        "y": -0.3023
       },
       "rotation": 4.6745,
       "scale": {
-        "x": 0.42638400000000004,
-        "y": 0.48160000000000003
+        "x": 0.5798,
+        "y": 0.6549
       },
       "anchor": {
         "x": 0.0021711375461210825,
