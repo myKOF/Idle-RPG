@@ -1,33 +1,107 @@
 {
   "schemaVersion": 1,
   "id": "slash-wind-spin",
-  "duration": 0.42,
+  "duration": 0.48,
   "loop": false,
   "layers": [
     {
-      "id": "ring",
+      "id": "cyclone-flow-1",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/ring_b.png",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 2.4,
+      "scale": {
+        "x": 2.07,
+        "y": 2.07
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.48,
+      "tint": "#51efd1",
+      "blendMode": "add",
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.18
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          7.5
+        ]
+      ]
+    },
+    {
+      "id": "cyclone-flow-0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 1,
-      "scale": {
-        "x": 0.2344,
-        "y": 0.1445
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.9,
-      "tint": "#86efac",
+      "rotation": 0,
+      "scale": {
+        "x": 2.7,
+        "y": 2.7
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.6,
+      "tint": "#229ff5",
       "blendMode": "add",
-      "duration": 0.42,
+      "duration": 0.48,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.15,
+          0.12,
           1
         ],
         [
-          0.7,
+          0.6,
           0.8
         ],
         [
@@ -38,15 +112,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          0.55
         ],
         [
-          0.45,
+          0.3,
           1
         ],
         [
           1,
-          1.08
+          1.18
         ]
       ],
       "rotationOverLife": [
@@ -56,91 +130,45 @@
         ],
         [
           1,
-          3.14159
+          7.5
         ]
       ]
     },
     {
-      "id": "ring-inner",
+      "id": "orbit-0-crescent-blade-0",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 2,
-      "scale": {
-        "x": 0.1875,
-        "y": 0.1152
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.8,
-      "tint": "#ffffff",
+      "rotation": -0.2094,
+      "scale": {
+        "x": 0.6032,
+        "y": 0.567
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.595,
+      "tint": "#258fff",
       "blendMode": "add",
-      "duration": 0.42,
+      "delay": 0,
+      "duration": 0.48,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.2,
-          0.9
-        ],
-        [
-          0.7,
-          0.6
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.75
-        ],
-        [
-          0.5,
+          0.12,
           1
         ],
         [
-          1,
-          1.06
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          -3.14159
-        ]
-      ]
-    },
-    {
-      "id": "blades",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/twirl_02.png",
-      "zIndex": 3,
-      "scale": {
-        "x": 0.2344,
-        "y": 0.1445
-      },
-      "alpha": 0.7,
-      "tint": "#ffffff",
-      "blendMode": "add",
-      "duration": 0.42,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.18,
-          0.8
-        ],
-        [
-          0.7,
-          0.6
+          0.65,
+          0.85
         ],
         [
           1,
@@ -153,33 +181,757 @@
           0.65
         ],
         [
-          0.5,
+          0.28,
           1
         ],
         [
           1,
-          1.05
+          1.16
         ]
       ],
       "rotationOverLife": [
         [
           0,
-          0
+          -0.65
         ],
         [
           1,
-          6.28319
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-0-crescent-blade-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "scale": {
+        "x": 0.5292,
+        "y": 0.4971
+      },
+      "anchor": {
+        "x": 0.19899222488038276,
+        "y": 0.502380982688391
+      },
+      "alpha": 0.48999999999999994,
+      "tint": "#25d5e8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-0-crescent-blade-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0.2094,
+      "scale": {
+        "x": 0.4549,
+        "y": 0.4276
+      },
+      "anchor": {
+        "x": 0.0645384287665251,
+        "y": 0.5133289187644369
+      },
+      "alpha": 0.48999999999999994,
+      "tint": "#52f7a8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-0-fine-inner-edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0.1745,
+      "scale": {
+        "x": 0.3807,
+        "y": 0.43
+      },
+      "anchor": {
+        "x": 0.0021711375461210825,
+        "y": 0.5010698115164679
+      },
+      "alpha": 0.21,
+      "tint": "#b8ffe0",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-1-crescent-blade-0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 6,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 1.8405999999999998,
+      "scale": {
+        "x": 0.49462399999999995,
+        "y": 0.4649399999999999
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.595,
+      "tint": "#258fff",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-1-crescent-blade-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 7,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 2.05,
+      "scale": {
+        "x": 0.433944,
+        "y": 0.407622
+      },
+      "anchor": {
+        "x": 0.19899222488038276,
+        "y": 0.502380982688391
+      },
+      "alpha": 0.48999999999999994,
+      "tint": "#25d5e8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-1-crescent-blade-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 8,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 2.2594,
+      "scale": {
+        "x": 0.373018,
+        "y": 0.35063199999999994
+      },
+      "anchor": {
+        "x": 0.0645384287665251,
+        "y": 0.5133289187644369
+      },
+      "alpha": 0.48999999999999994,
+      "tint": "#52f7a8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-1-fine-inner-edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 9,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 2.2245,
+      "scale": {
+        "x": 0.31217399999999995,
+        "y": 0.35259999999999997
+      },
+      "anchor": {
+        "x": 0.0021711375461210825,
+        "y": 0.5010698115164679
+      },
+      "alpha": 0.21,
+      "tint": "#b8ffe0",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-2-crescent-blade-0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 10,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 4.2906,
+      "scale": {
+        "x": 0.675584,
+        "y": 0.63504
+      },
+      "anchor": {
+        "x": 0.31076681064521183,
+        "y": 0.510697036318065
+      },
+      "alpha": 0.595,
+      "tint": "#258fff",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-2-crescent-blade-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 11,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 4.5,
+      "scale": {
+        "x": 0.592704,
+        "y": 0.556752
+      },
+      "anchor": {
+        "x": 0.19899222488038276,
+        "y": 0.502380982688391
+      },
+      "alpha": 0.48999999999999994,
+      "tint": "#25d5e8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-2-crescent-blade-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 12,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 4.7094,
+      "scale": {
+        "x": 0.509488,
+        "y": 0.478912
+      },
+      "anchor": {
+        "x": 0.0645384287665251,
+        "y": 0.5133289187644369
+      },
+      "alpha": 0.48999999999999994,
+      "tint": "#52f7a8",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
+        ]
+      ]
+    },
+    {
+      "id": "orbit-2-fine-inner-edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_03.png",
+      "zIndex": 13,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 4.6745,
+      "scale": {
+        "x": 0.42638400000000004,
+        "y": 0.48160000000000003
+      },
+      "anchor": {
+        "x": 0.0021711375461210825,
+        "y": 0.5010698115164679
+      },
+      "alpha": 0.21,
+      "tint": "#b8ffe0",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.65,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.28,
+          1
+        ],
+        [
+          1,
+          1.16
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          -0.65
+        ],
+        [
+          1,
+          5.633185307179586
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "height": 120,
-      "width": 120
+      "radius": 272
     },
-    "heightM": 12,
-    "shape": "custom",
-    "widthM": 12
+    "radiusM": 6,
+    "shape": "circle"
   }
 }

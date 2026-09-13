@@ -563,3 +563,14 @@ test('真空爆震二階學習後與每波揮斬同步，不改原傷害結算',
   if(learned){assert.equal(waves[0].delayMs,slashes[0].delayMs);assert.equal(waves[0].vfx.attack,'burst-vacuum-shockwave');}
  }
 });
+
+test('真空迴旋取代前方斬擊與震波，爆震額外傷害保留',()=>{
+ let counts=[];
+ for(const spin of [0,1]){
+ const c=loadContext(),specs=stubVfx(c),hits=stubHits(c);setLevels(c,'vacuumslash',[1,1,1,spin,0,0,0]);equip(c,'vacuumslash');c.Math.random=()=>.99;
+ c.castSkill2(playerEnt(),[enemy(1e9,20,0,'a')],'vacuumslash','mv-float');
+ assert.equal(specs.filter(s=>s.variant==='wind-spin').length,spin);
+ assert.equal(specs.filter(s=>s.variant==='wind-slash'||s.variant==='vacuum-shock').length,spin?0:2);
+ if(spin)assert.equal(specs.find(s=>s.variant==='wind-spin').vfx.attack,'slash-wind-spin');counts.push(hits.length);
+ }assert(counts[0]>0);assert.equal(counts[1],counts[0]);
+});

@@ -6,9 +6,20 @@
       "id": "slash-wind-spin",
       "name": "slash-wind-spin",
       "layerIds": [
-        "ring",
-        "ring-inner",
-        "blades"
+        "cyclone-flow-1",
+        "cyclone-flow-0",
+        "orbit-0-crescent-blade-0",
+        "orbit-0-crescent-blade-1",
+        "orbit-0-crescent-blade-2",
+        "orbit-0-fine-inner-edge",
+        "orbit-1-crescent-blade-0",
+        "orbit-1-crescent-blade-1",
+        "orbit-1-crescent-blade-2",
+        "orbit-1-fine-inner-edge",
+        "orbit-2-crescent-blade-0",
+        "orbit-2-crescent-blade-1",
+        "orbit-2-crescent-blade-2",
+        "orbit-2-fine-inner-edge"
       ]
     }
   ],

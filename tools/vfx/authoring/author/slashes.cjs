@@ -174,28 +174,7 @@ P['slash-thrust-lance'] = () => require('./thrust.cjs').make('slash-thrust-lance
 P['slash-wind-crescent'] = () => require('./vacuumslash-renew.cjs').make();
 
 /* ---------- slash-wind-spin：真空迴旋（扁橢圓風環，縱向壓 0.62） ---------- */
-P['slash-wind-spin'] = () => ({
-  id: 'slash-wind-spin', duration: 0.42, layers: [
-    sprite({
-      id: 'ring', asset: A.ringB, z: 1, sizeX: 120, sizeY: 74, alpha: 0.9, tint: T.wind.c1,
-      blend: 'add', duration: 0.42,
-      alphaOverLife: [[0, 0], [0.15, 1], [0.7, 0.8], [1, 0]],
-      scaleOverLife: [[0, 0.7], [0.45, 1], [1, 1.08]], rotationOverLife: C.spin(0.5)
-    }),
-    sprite({
-      id: 'ring-inner', asset: A.ringThin, z: 2, sizeX: 96, sizeY: 59, alpha: 0.8, tint: '#ffffff',
-      blend: 'add', duration: 0.42,
-      alphaOverLife: [[0, 0], [0.2, 0.9], [0.7, 0.6], [1, 0]],
-      scaleOverLife: [[0, 0.75], [0.5, 1], [1, 1.06]], rotationOverLife: C.spin(-0.5)
-    }),
-    sprite({
-      id: 'blades', asset: A.twirl02, z: 3, sizeX: 120, sizeY: 74, alpha: 0.7, tint: '#ffffff',
-      blend: 'add', duration: 0.42,
-      alphaOverLife: [[0, 0], [0.18, 0.8], [0.7, 0.6], [1, 0]],
-      scaleOverLife: [[0, 0.65], [0.5, 1], [1, 1.05]], rotationOverLife: C.spin(1)
-    })
-  ]
-});
+P['slash-wind-spin'] = require('./vacuumspin.cjs').make;
 
 /* ---------- slash-enemy-melee：敵方近戰爪痕 ---------- */
 P['slash-enemy-melee'] = () => ({
