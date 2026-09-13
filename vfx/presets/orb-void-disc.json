@@ -5,33 +5,27 @@
   "loop": true,
   "layers": [
     {
-      "id": "ghost-d",
+      "id": "outer-green-flow",
       "type": "sprite",
-      "assetId": "new_materials/arcane-ring/spiral_25.png",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
-      "rotation": -0.6283,
-      "scale": {
-        "x": 0.0938,
-        "y": 0.0675
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.12,
-      "tint": "#86efac",
+      "rotation": 0,
+      "scale": {
+        "x": 0.9984,
+        "y": 0.9311999999999999
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.7,
+      "tint": "#30e982",
       "blendMode": "add",
       "duration": 1,
-      "alphaOverLife": [
-        [
-          0,
-          0.12
-        ],
-        [
-          0.5,
-          0.13799999999999998
-        ],
-        [
-          1,
-          0.12
-        ]
-      ],
       "rotationOverLife": [
         [
           0,
@@ -39,38 +33,32 @@
         ],
         [
           1,
-          18.84956
+          -12.566370614359172
         ]
       ]
     },
     {
-      "id": "ghost-c",
+      "id": "blue-edge-current",
       "type": "sprite",
-      "assetId": "new_materials/arcane-ring/spiral_25.png",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 1,
-      "rotation": -0.4712,
-      "scale": {
-        "x": 0.0938,
-        "y": 0.0675
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.2,
-      "tint": "#86efac",
+      "rotation": 1.7,
+      "scale": {
+        "x": 1.0506,
+        "y": 0.9996
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.28,
+      "tint": "#559fff",
       "blendMode": "add",
       "duration": 1,
-      "alphaOverLife": [
-        [
-          0,
-          0.2
-        ],
-        [
-          0.5,
-          0.22999999999999998
-        ],
-        [
-          1,
-          0.2
-        ]
-      ],
       "rotationOverLife": [
         [
           0,
@@ -78,38 +66,32 @@
         ],
         [
           1,
-          18.84956
+          -12.566370614359172
         ]
       ]
     },
     {
-      "id": "ghost-b",
+      "id": "return-green-flow",
       "type": "sprite",
-      "assetId": "new_materials/arcane-ring/spiral_25.png",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 2,
-      "rotation": -0.3142,
-      "scale": {
-        "x": 0.0938,
-        "y": 0.0675
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.3,
-      "tint": "#86efac",
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.8245,
+        "y": 0.867
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.6,
+      "tint": "#65ffc0",
       "blendMode": "add",
       "duration": 1,
-      "alphaOverLife": [
-        [
-          0,
-          0.3
-        ],
-        [
-          0.5,
-          0.345
-        ],
-        [
-          1,
-          0.3
-        ]
-      ],
       "rotationOverLife": [
         [
           0,
@@ -117,38 +99,32 @@
         ],
         [
           1,
-          18.84956
+          -12.566370614359172
         ]
       ]
     },
     {
-      "id": "ghost-a",
+      "id": "white-cutting-current",
       "type": "sprite",
-      "assetId": "new_materials/arcane-ring/spiral_25.png",
+      "assetId": "particle-pack/png-black-background/twirl_02.png",
       "zIndex": 3,
-      "rotation": -0.1571,
-      "scale": {
-        "x": 0.0938,
-        "y": 0.0675
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.45,
-      "tint": "#86efac",
+      "rotation": 0.8,
+      "scale": {
+        "x": 0.7752,
+        "y": 0.7448
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.88,
+      "tint": "#eaffee",
       "blendMode": "add",
       "duration": 1,
-      "alphaOverLife": [
-        [
-          0,
-          0.45
-        ],
-        [
-          0.5,
-          0.5175
-        ],
-        [
-          1,
-          0.45
-        ]
-      ],
       "rotationOverLife": [
         [
           0,
@@ -156,37 +132,32 @@
         ],
         [
           1,
-          18.84956
+          -12.566370614359172
         ]
       ]
     },
     {
-      "id": "disc",
+      "id": "inner-green-vortex",
       "type": "sprite",
-      "assetId": "new_materials/arcane-ring/spiral_25.png",
+      "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 4,
-      "scale": {
-        "x": 0.0938,
-        "y": 0.0675
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.95,
-      "tint": "#86efac",
+      "rotation": 2.3,
+      "scale": {
+        "x": 0.5665000000000001,
+        "y": 0.539
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.8,
+      "tint": "#5bff91",
       "blendMode": "add",
       "duration": 1,
-      "alphaOverLife": [
-        [
-          0,
-          0.9
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.9
-        ]
-      ],
       "rotationOverLife": [
         [
           0,
@@ -194,37 +165,32 @@
         ],
         [
           1,
-          18.84956
+          -18.84955592153876
         ]
       ]
     },
     {
-      "id": "rim",
+      "id": "inner-white-current",
       "type": "sprite",
-      "assetId": "new_materials/orb/spiky_6.png",
+      "assetId": "particle-pack/png-black-background/twirl_02.png",
       "zIndex": 5,
-      "scale": {
-        "x": 0.0938,
-        "y": 0.0675
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.85,
-      "tint": "#ffffff",
+      "rotation": 4.5,
+      "scale": {
+        "x": 0.44,
+        "y": 0.4356
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "alpha": 0.8,
+      "tint": "#f1fff4",
       "blendMode": "add",
       "duration": 1,
-      "alphaOverLife": [
-        [
-          0,
-          0.8
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.8
-        ]
-      ],
       "rotationOverLife": [
         [
           0,
@@ -232,42 +198,14 @@
         ],
         [
           1,
-          18.84956
-        ]
-      ]
-    },
-    {
-      "id": "hub",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 6,
-      "scale": {
-        "x": 0.0234,
-        "y": 0.0234
-      },
-      "alpha": 1,
-      "tint": "#ffffff",
-      "blendMode": "add",
-      "duration": 1,
-      "alphaOverLife": [
-        [
-          0,
-          0.9
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.9
+          -18.84955592153876
         ]
       ]
     }
   ],
   "sizing": {
     "authored": {
-      "radius": 24
+      "radius": 240
     },
     "radiusM": 3,
     "shape": "projectile-circle"

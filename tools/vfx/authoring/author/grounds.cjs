@@ -258,25 +258,7 @@ P['orb-thunder'] = () => ({
   ]
 });
 
-P['orb-void-disc'] = () => {
-  const SPIN = C.spin(3);                       // 3 圈／秒 × 1s
-  const ghost = (id, z, a, rot) => sprite({
-    id: id, asset: A.sawSmall, z: z, sizeX: 48, sizeY: 48 * 0.72, rotDeg: rot,
-    alpha: a, tint: T.wind.c1, blend: 'add', duration: 1,
-    alphaOverLife: LOOP_A(a, a * 1.15), rotationOverLife: SPIN
-  });
-  return {
-    id: 'orb-void-disc', duration: 1, loop: true, layers: [
-      ghost('ghost-d', 0, 0.12, -36),
-      ghost('ghost-c', 1, 0.2, -27),
-      ghost('ghost-b', 2, 0.3, -18),
-      ghost('ghost-a', 3, 0.45, -9),
-      sprite({ id: 'disc', asset: A.sawSmall, z: 4, sizeX: 48, sizeY: 48 * 0.72, alpha: 0.95, tint: T.wind.c1, blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.9, 1), rotationOverLife: SPIN }),
-      sprite({ id: 'rim', asset: A.serratedRing, z: 5, sizeX: 48, sizeY: 48 * 0.72, alpha: 0.85, tint: '#ffffff', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.8, 1), rotationOverLife: SPIN }),
-      sprite({ id: 'hub', asset: A.dot, z: 6, size: 12, alpha: 1, tint: '#ffffff', blend: 'add', duration: 1, alphaOverLife: LOOP_A(0.9, 1) })
-    ]
-  };
-};
+P['orb-void-disc'] = require('./voiddisc.cjs').make;
 
 /* =========================== 軌道環 =========================== */
 function orbitRing(o) {
