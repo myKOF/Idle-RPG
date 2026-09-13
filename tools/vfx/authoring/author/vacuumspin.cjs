@@ -11,7 +11,7 @@ for(let n=0;n<3;n++)for(const original of source.layers.filter(l=>l.type==='spri
  l.alphaOverLife=[[0,0],[.12,1],[.65,.85],[1,0]];
  p.layers.push(l);
 }
-for(let n=0;n<2;n++) p.layers.unshift({id:'cyclone-flow-'+n,type:'sprite',assetId:k.A.twirl03,position:{x:0,y:0},anchor:{x:.5,y:.5},scale:{x:n?.69:.9,y:n?.69:.9},rotation:n*2.4,alpha:n?.48:.6,tint:n?'#51efd1':'#229ff5',blendMode:'add',duration:.48,rotationOverLife:[[0,0],[1,7.5]],scaleOverLife:[[0,.55],[.3,1],[1,1.18]],alphaOverLife:[[0,0],[.12,1],[.6,.8],[1,0]]});
+for(let n=0;n<2;n++) p.layers.unshift({id:'cyclone-flow-'+n,type:'sprite',assetId:k.A.twirl03,position:{x:0,y:0},anchor:{x:.5,y:.5},scale:{x:(n?.69:.9)*3,y:(n?.69:.9)*3},rotation:n*2.4,alpha:n?.48:.6,tint:n?'#51efd1':'#229ff5',blendMode:'add',duration:.48,rotationOverLife:[[0,0],[1,7.5]],scaleOverLife:[[0,.55],[.3,1],[1,1.18]],alphaOverLife:[[0,0],[.12,1],[.6,.8],[1,0]]});
 p.layers.forEach((l,i)=>l.zIndex=i);
 return p;
 }
