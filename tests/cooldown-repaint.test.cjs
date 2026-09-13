@@ -65,3 +65,21 @@ test('內嵌樣板不得帶多餘空白，否則首次比對必定失敗', () =>
   assert.match(ui, /class="bbb-cd-mask" style="--cd-deg:' \+ st\.cdDeg/);
   assert.match(ui, /class="bss-cd-mask" style="--cd-deg:' \+ state\.cdDeg/);
 });
+
+/* 節流：每動一次就是一次 conic-gradient 重繪加整塊圖層重新點陣化，
+   而冷卻圈是直徑約 40px 的圓，20Hz 與 60Hz 視覺上分不出來。
+   本機 A/B（三組配對全部同向）：整頁重繪 338 → 287。 */
+test('冷卻更新要節流，且節流的是「多久算一次」而非跳拍', () => {
+  assert.match(ui, /var CD_UPDATE_HZ = \d+;/);
+  const hz = Number(/var CD_UPDATE_HZ = (\d+);/.exec(ui)[1]);
+  assert.ok(hz >= 10 && hz <= 30, '太低會看到跳格，太高就失去節流的意義');
+
+  const loop = ui.slice(ui.indexOf('function startBattleSkillBarAnimation()'),
+                        ui.indexOf('/* ---- 冷卻圈的更新成本'));
+  assert.match(loop, /var minGap = 1000 \/ CD_UPDATE_HZ;/);
+  // 還沒到下一拍就直接續排，這條路徑不得做任何 DOM 讀寫
+  assert.match(loop, /if \(_battleSkillBarLastAt && \(now - _battleSkillBarLastAt\) < minGap\) \{\s*_battleSkillBarAnimFrame = requestAnimationFrame\(step\);\s*return;/);
+  // 仍掛 rAF：換成 setInterval 會與畫面節奏打架
+  assert.match(loop, /requestAnimationFrame\(step\)/);
+  assert.doesNotMatch(loop, /setInterval/);
+});

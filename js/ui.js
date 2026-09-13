@@ -3380,19 +3380,39 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   startBattleSkillBarAnimation();
 }
 
-/* 戰鬥區技能欄 60fps 絲滑碼錶與圓形 CD 倒數動態器 */
+/* 戰鬥區技能欄的碼錶與圓形 CD 倒數動態器。
+
+   仍掛在 rAF 上（要跟著畫面節奏，不能用 setInterval 跟畫面打架），但**做事**的頻率
+   節流到 CD_UPDATE_HZ。理由與角度量化同一條（見 updateBattleSkillBarCds 上方）：
+   每動一次就是一次 conic-gradient 重繪加整塊圖層重新點陣化，而冷卻圈是個直徑約
+   40px 的圓，20Hz 與 60Hz 在視覺上分不出來。
+
+   2026-09-13 使用者機器的第二份 trace（角度量化之後）：bbb-cd-mask 仍是每秒 37 次
+   ——短時效的增益在 3 度階距下還是變得夠快。節流之後上限就是 CD_UPDATE_HZ。
+   ⚠️ 節流的是「多久算一次」，不是「跳過幾拍」：倒數值一律由 uiCountdownRemain
+   以絕對時刻推導，少算幾次不會讓倒數變慢或漂移。 */
+var CD_UPDATE_HZ = 20;
 var _battleSkillBarAnimFrame = null;
+var _battleSkillBarLastAt = 0;
 function startBattleSkillBarAnimation() {
   if (typeof requestAnimationFrame !== 'function') return;
   if (_battleSkillBarAnimFrame) {
     cancelAnimationFrame(_battleSkillBarAnimFrame);
     _battleSkillBarAnimFrame = null;
   }
+  _battleSkillBarLastAt = 0;
 
-  function step() {
+  var minGap = 1000 / CD_UPDATE_HZ;
+  function step(now) {
     _battleSkillBarAnimFrame = null;
-    var hasActiveCd = updateBattleSkillBarCds();
-    if (hasActiveCd) {
+    /* 還沒到下一拍就直接續排，不做任何 DOM 讀寫——這條路徑必須極便宜，
+       否則節流本身就變成新的每幀成本。 */
+    if (_battleSkillBarLastAt && (now - _battleSkillBarLastAt) < minGap) {
+      _battleSkillBarAnimFrame = requestAnimationFrame(step);
+      return;
+    }
+    _battleSkillBarLastAt = now;
+    if (updateBattleSkillBarCds()) {
       _battleSkillBarAnimFrame = requestAnimationFrame(step);
     }
   }
