@@ -989,13 +989,23 @@ var BattleRenderer = (function () {
 
   /* 敵人狀態列（buff/debuff 圖示）：借用 ui.js 的 entStatus() 產字串再剝掉標籤 */
   var _statusStrip = null;
+  /* 這支是「每個敵人 × 每次面板同步」跑一遍，而同一份狀態字串在連續幾拍之間
+     幾乎都一樣。暫存 div 沒有掛進文件，所以寫 innerHTML 不會造成重繪，
+     但每次仍要解析一次 HTML——記住上一次的輸入與輸出就能整段跳過。
+    （2026-09-13 的多餘寫入探針：10 秒內這裡有 164 次寫入相同的值。） */
+  var _statusStripIn = null;
+  var _statusStripOut = '';
   function statusTextOf(data) {
     if (typeof entStatus !== 'function') return '';
     if (!_statusStrip) _statusStrip = document.createElement('div');
     try {
-      _statusStrip.innerHTML = entStatus(data);
+      var html = entStatus(data);
+      if (html === _statusStripIn) return _statusStripOut;
+      _statusStripIn = html;
+      _statusStrip.innerHTML = html;
       var txt = _statusStrip.textContent || '';
-      return txt.length > 14 ? txt.slice(0, 14) : txt;
+      _statusStripOut = txt.length > 14 ? txt.slice(0, 14) : txt;
+      return _statusStripOut;
     } catch (e) { return ''; }
   }
 

@@ -1334,6 +1334,31 @@ function setHtmlIfChanged(el, value) {
   if (el.innerHTML !== value) el.innerHTML = value;
 }
 
+/* 屬性與 class 的「沒變就不寫」。
+   為什麼值得補：2026-09-13 在使用者機器的 trace 定位到主執行緒 34% 的時間耗在
+   Commit（單筆最長 230ms），而 Commit 會等合成器消化點陣化——失效越多就等越久。
+   之後用探針直接量，10 秒內全站 DOM 寫入 6345 次，其中 **5266 次寫的是相同的值**
+  （83%）。這些寫入不會改變畫面，卻每一次都讓元素進重繪佇列。 */
+/* 三支都要容忍「只有一半 DOM 介面」的物件：專案有不少測試在 vm 裡用最小假元素
+   （只給 textContent／setAttribute），讀不到 getAttribute 時照舊寫入即可——
+   省下的是重繪，不是正確性，拿不到舊值就不要省。 */
+function setAttrIfChanged(el, name, value) {
+  if (!el || typeof el.setAttribute !== 'function') return;
+  value = String(value);
+  if (typeof el.getAttribute === 'function' && el.getAttribute(name) === value) return;
+  el.setAttribute(name, value);
+}
+function removeAttrIfPresent(el, name) {
+  if (!el || typeof el.removeAttribute !== 'function') return;
+  if (typeof el.hasAttribute === 'function' && !el.hasAttribute(name)) return;
+  el.removeAttribute(name);
+}
+function setClassIfChanged(el, value) {
+  if (!el) return;
+  value = String(value);
+  if (el.className !== value) el.className = value;
+}
+
 function setStyleIfChanged(el, prop, value) {
   if (!el || !el.style) return;
   value = String(value);
@@ -2360,7 +2385,7 @@ function updateTalentTabVisibility() {
   if (!snapshot) return;
   var unlocked = talentViewReincarnations(snapshot) >= 1;
   btn.style.display = unlocked ? '' : 'none';
-  btn.setAttribute('aria-hidden', unlocked ? 'false' : 'true');
+  setAttrIfChanged(btn, 'aria-hidden', unlocked ? 'false' : 'true');
   if (!unlocked && UI.tab === 'talents') switchTab('equip');
 }
 
@@ -2504,9 +2529,10 @@ function renderHeader() {
   function updateResourceTip(id, title, desc) {
     var valueEl = $id(id);
     if (!valueEl || !valueEl.parentNode) return;
-    valueEl.parentNode.setAttribute('data-tt-title', title);
-    valueEl.parentNode.setAttribute('data-tt-desc', desc);
-    valueEl.parentNode.removeAttribute('title');
+    // 資源數字每拍都在算，但提示文字多半沒變（只有數量真的變動時才不同）
+    setAttrIfChanged(valueEl.parentNode, 'data-tt-title', title);
+    setAttrIfChanged(valueEl.parentNode, 'data-tt-desc', desc);
+    removeAttrIfPresent(valueEl.parentNode, 'title');
   }
   updateResourceTip('r-gold', '金幣', '目前持有：' + fmtFull(p.gold));
   updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmtFull(p.scrap));
@@ -2516,14 +2542,15 @@ function renderHeader() {
   updateResourceTip('r-ancient-essence', '太古精華', '太古機制改版：太古詞條於裝備產出時決定，洗煉不再消耗太古精華（此資源暫保留，用途待定）。｜目前持有：' + fmtFull(p.ancientEssence || 0));
   updateResourceTip('r-soul-origin', '魔魂本源', '用於本源覺醒的道具。｜目前持有：' + fmtFull(p.soulOrigin || 0));
   updateResourceTip('r-demon-seed', '魔種', '煉獄之塔 BOSS 額外掉落材料。煉獄之塔限定｜目前持有：' + fmtFull(p.demonSeed || 0));
-  $id('r-gold').textContent = fmt(p.gold);
-  $id('r-scrap').textContent = fmt(p.scrap);
-  $id('r-essence').textContent = fmt(p.essence);
-  if ($id('r-dust')) $id('r-dust').textContent = fmt(p.dust || 0);
-  if ($id('r-magic-scroll')) $id('r-magic-scroll').textContent = fmt(p.magicScroll || 0);
-  if ($id('r-ancient-essence')) $id('r-ancient-essence').textContent = fmt(p.ancientEssence || 0);
-  if ($id('r-soul-origin')) $id('r-soul-origin').textContent = fmt(p.soulOrigin || 0);
-  if ($id('r-demon-seed')) $id('r-demon-seed').textContent = fmt(p.demonSeed || 0);
+  // 每拍都會寫，但除了金幣以外多半整段時間都沒變；setTextIfChanged 讓沒變的不進重繪佇列
+  setTextIfChanged($id('r-gold'), fmt(p.gold));
+  setTextIfChanged($id('r-scrap'), fmt(p.scrap));
+  setTextIfChanged($id('r-essence'), fmt(p.essence));
+  setTextIfChanged($id('r-dust'), fmt(p.dust || 0));
+  setTextIfChanged($id('r-magic-scroll'), fmt(p.magicScroll || 0));
+  setTextIfChanged($id('r-ancient-essence'), fmt(p.ancientEssence || 0));
+  setTextIfChanged($id('r-soul-origin'), fmt(p.soulOrigin || 0));
+  setTextIfChanged($id('r-demon-seed'), fmt(p.demonSeed || 0));
   // 神鑄頁籤：達到開放等級才顯示
   var forgeTabBtn = document.querySelector('.tab-btn[data-tab="forge"]');
   var forgeSnapshot = peekUiPanelData('forge');
@@ -2539,14 +2566,14 @@ function renderHeader() {
     if (tn) gemTip.push(GEM_TYPES[gt].emoji + GEM_TYPES[gt].name + ' x' + tn);
   }
   var totalGems = headerViewTotalGems(p);
-  $id('r-gems').textContent = fmt(totalGems);
+  setTextIfChanged($id('r-gems'), fmt(totalGems));
   updateResourceTip('r-gems', '寶石', gemTip.join('、') || '尚無寶石');
   var bookTotal = 0, bookTip = [];
   for (var bk in p.books) {
     bookTotal += p.books[bk];
     if (p.books[bk]) bookTip.push(ENCHANTS[bk].name + ' x' + p.books[bk]);
   }
-  $id('r-books').textContent = fmt(bookTotal);
+  setTextIfChanged($id('r-books'), fmt(bookTotal));
   updateResourceTip('r-books', '附魔書', bookTip.join('、') || '尚無附魔書');
 
   // shownRes 由模擬層在資源首次取得時更新；渲染只讀快照。
@@ -2572,9 +2599,11 @@ function renderHeader() {
   $id('toggle-compare').checked = !!(headerSnapshot.settings && headerSnapshot.settings.compareEq);
   var autoEquipToggle = $id('toggle-autoequip');
   if (autoEquipToggle) autoEquipToggle.checked = !!headerSnapshot.autoEquip;
-  $id('p-level').textContent = 'Lv.' + p.level;
-  if ($id('pv-level')) $id('pv-level').textContent = 'Lv.' + p.level;
-  if ($id('tp-level')) $id('tp-level').textContent = 'Lv.' + p.level;
+  // 等級三處每拍重寫，但只有升級時才會變
+  var levelText = 'Lv.' + p.level;
+  setTextIfChanged($id('p-level'), levelText);
+  setTextIfChanged($id('pv-level'), levelText);
+  setTextIfChanged($id('tp-level'), levelText);
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
   var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
   var canReincarnate = canReincarnateAt(currentLevel, reinc);
@@ -2584,33 +2613,31 @@ function renderHeader() {
   }
   var rank = reincarnationRankName(reinc);
   var classEl = $id('p-class');
-  if (classEl) { classEl.textContent = rank; applyReincarnationTitleClass(classEl, reinc); }
-  if ($id('p-reincarnation')) {
-    $id('p-reincarnation').textContent = reinc >= 11
-      ? '神階 ' + (reinc - 10) + '/10'
-      : '轉生：' + reinc + '/10';
-  }
+  if (classEl) { setTextIfChanged(classEl, rank); applyReincarnationTitleClass(classEl, reinc); }
+  setTextIfChanged($id('p-reincarnation'), reinc >= 11
+    ? '神階 ' + (reinc - 10) + '/10'
+    : '轉生：' + reinc + '/10');
   var pvName = $id('pv-name');
   var tpName = $id('tp-name');
-  if (pvName) { pvName.textContent = rank + '（你）'; applyReincarnationTitleClass(pvName, reinc); }
-  if (tpName) { tpName.textContent = rank + '（你）'; applyReincarnationTitleClass(tpName, reinc); }
+  if (pvName) { setTextIfChanged(pvName, rank + '（你）'); applyReincarnationTitleClass(pvName, reinc); }
+  if (tpName) { setTextIfChanged(tpName, rank + '（你）'); applyReincarnationTitleClass(tpName, reinc); }
   var reincBtn = $id('btn-reincarnate');
   if (reincBtn) {
     var isGodStage = reinc >= 10;
     reincBtn.classList.toggle('reincarnate-ready', canReincarnate);
-    reincBtn.textContent = isGodStage ? '🔄 晉階' : '🔄 轉生';
-    reincBtn.setAttribute('data-tip', reinc >= REINCARNATION_MAX
+    setTextIfChanged(reincBtn, isGodStage ? '🔄 晉階' : '🔄 轉生');
+    setAttrIfChanged(reincBtn, 'data-tip', reinc >= REINCARNATION_MAX
       ? '已達最高 神階 10/10'
       : (canReincarnate ? (isGodStage ? '目前可進行神階晉升' : '目前可進行轉生') : '等級達到 ' + REINCARNATION_LEVEL + ' 級可使用'));
-    reincBtn.removeAttribute('title');
+    removeAttrIfPresent(reincBtn, 'title');
   }
   var need = uiHeaderXpMax(p);
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
-  $id('xp-fill').style.width = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
+  setStyleIfChanged($id('xp-fill'), 'width', isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%'));
   var xpBar = $id('xp-bar');
-  xpBar.setAttribute('data-tt-title', '角色經驗');
-  xpBar.setAttribute('data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
-  xpBar.removeAttribute('title');
+  setAttrIfChanged(xpBar, 'data-tt-title', '角色經驗');
+  setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
+  removeAttrIfPresent(xpBar, 'title');
 
   // 屬性面板顯示「檢視中」裝備套的預覽屬性（切頁即變，不需確定切換）；header 其他區塊維持穿著中數值
   renderAttrPanel(headerSnapshot.viewStats || st, headerSnapshot);
@@ -2627,8 +2654,7 @@ function renderHeader() {
     $id('s-loot').textContent = (st.loot * 100).toFixed(1) + '%';
   }
 
-  var dpsEl = $id('s-dps');
-  if (dpsEl) dpsEl.textContent = fmt(Number(headerSnapshot.dps) || 0);
+  setTextIfChanged($id('s-dps'), fmt(Number(headerSnapshot.dps) || 0));
 }
 
 
@@ -2679,17 +2705,25 @@ function renderAttrPanel(st, headerSnapshot) {
   STAT_GROUPS.forEach(function (g, gi) {
     g.rows.forEach(function (row, ri) {
       var el = panel.querySelector('[data-attr="' + gi + '-' + ri + '"]');
-      if (el) {
-        el.innerHTML = row[1](st);
-        if (typeof row[2] === 'function') {
-          var p = el.parentElement;
-          if (p) p.setAttribute('data-tt-desc', row[2](st));
+      if (!el) return;
+      /* 一律先比對再寫。innerHTML 的指派**一定**會換掉子節點，即使字串完全相同，
+         而換節點就是一次幾何失效、一次重繪。這一支每秒跑 4～5 次、面板有約 40 列，
+         但力量／敏捷／智力這些值只在升級或換裝時才變——原本的寫法等於每秒白白
+         製造上百個顯示項失效，全部落在同一塊被縮放的大圖層上。
+         （2026-09-13 使用者機器的 trace：失效來源前三名是 LayoutText #text、
+           stat-row 與其 SPAN／B，合計每秒數百次。） */
+      setHtmlIfChanged(el, row[1](st));
+      if (typeof row[2] === 'function') {
+        var pe = el.parentElement;
+        if (pe) {
+          var desc = String(row[2](st));
+          // 屬性也一樣：setAttribute 相同值不會失效，但仍要走一次樣式比對，能省則省
+          if (pe.getAttribute('data-tt-desc') !== desc) pe.setAttribute('data-tt-desc', desc);
         }
       }
     });
   });
-  var activeBuffsEl = $id('active-buffs');
-  if (activeBuffsEl) activeBuffsEl.innerHTML = activeBuffsHtml();
+  setHtmlIfChanged($id('active-buffs'), activeBuffsHtml());
 }
 
 /* 增益鍵 → 狀態圖標：唯一來源是狀態表（js/status.js STATUS，由 config/Excel/Status.xlsx 撥離），
@@ -3009,14 +3043,16 @@ function battleBuffBadgeMarkup(st) {
 }
 
 function syncBattleBuffBadge(badge, st) {
+  /* 與 syncBattleSkillSlot 同一件事：每次同步都重寫全部屬性，但 key、持續時間、
+     提示文字只有在增益換人時才會變。 */
   if (!badge) return;
-  badge.className = st.cls;
-  badge.setAttribute('data-buff-key', st.key);
-  badge.setAttribute('data-snap-dur', st.dur);
-  badge.setAttribute('data-snap-until', st.until);
-  badge.setAttribute('data-snap-gt', st.snapshotGt);
-  badge.setAttribute('data-tt-title', st.ttTitle);
-  badge.setAttribute('data-tt-desc', st.ttDesc);
+  setClassIfChanged(badge, st.cls);
+  setAttrIfChanged(badge, 'data-buff-key', st.key);
+  setAttrIfChanged(badge, 'data-snap-dur', st.dur);
+  setAttrIfChanged(badge, 'data-snap-until', st.until);
+  setAttrIfChanged(badge, 'data-snap-gt', st.snapshotGt);
+  setAttrIfChanged(badge, 'data-tt-title', st.ttTitle);
+  setAttrIfChanged(badge, 'data-tt-desc', st.ttDesc);
 
   var iconEl = badge.querySelector('.bbb-icon');
   if (iconEl) setTextIfChanged(iconEl, st.icon);
@@ -3027,7 +3063,7 @@ function syncBattleBuffBadge(badge, st) {
     maskEl.className = 'bbb-cd-mask';
     badge.appendChild(maskEl);
   }
-  maskEl.style.setProperty('--cd-deg', st.cdDeg);
+  setCdDeg(maskEl, st.cdDeg);
 
   var stacksEl = badge.querySelector('.bbb-stacks');
   if (st.stacks > 1) {
@@ -3170,43 +3206,46 @@ function battleSkillSlotMarkup(state) {
 }
 
 function syncBattleSkillSlot(slot, state) {
+  /* 這一支每次渲染都會替每個技能格重寫約 12 個屬性，而其中絕大多數（key、index、
+     tooltip 文字、draggable…）只有在技能或槽位種類改變時才會不同。
+     實測 10 秒內光這一支就有 2480 次「寫入相同的值」，是全站第一名。 */
   if (!slot) return;
-  slot.setAttribute('data-battle-skill-key', state.key);
-  slot.setAttribute('data-slot-index', state.index);
+  setAttrIfChanged(slot, 'data-battle-skill-key', state.key);
+  setAttrIfChanged(slot, 'data-slot-index', state.index);
 
   if (state.kind === 'locked') {
-    slot.className = 'battle-skill-slot locked';
-    slot.setAttribute('data-index', state.index);
-    slot.setAttribute('data-tt-title', '技能槽 #' + (state.index + 1) + '（未解鎖）');
-    slot.setAttribute('data-tt-desc', state.lockDesc);
-    slot.removeAttribute('draggable');
-    slot.removeAttribute('data-skill-slot-action');
+    setClassIfChanged(slot, 'battle-skill-slot locked');
+    setAttrIfChanged(slot, 'data-index', state.index);
+    setAttrIfChanged(slot, 'data-tt-title', '技能槽 #' + (state.index + 1) + '（未解鎖）');
+    setAttrIfChanged(slot, 'data-tt-desc', state.lockDesc);
+    removeAttrIfPresent(slot, 'draggable');
+    removeAttrIfPresent(slot, 'data-skill-slot-action');
     return;
   }
   if (state.kind === 'empty') {
-    slot.className = 'battle-skill-slot empty';
-    slot.setAttribute('data-index', state.index);
-    slot.setAttribute('data-skill-slot-action', 'goto-skills');
-    slot.setAttribute('data-tt-title', '技能槽 #' + (state.index + 1) + '（未裝備）');
-    slot.setAttribute('data-tt-desc', '點擊前往技能頁裝備技能');
-    slot.removeAttribute('draggable');
+    setClassIfChanged(slot, 'battle-skill-slot empty');
+    setAttrIfChanged(slot, 'data-index', state.index);
+    setAttrIfChanged(slot, 'data-skill-slot-action', 'goto-skills');
+    setAttrIfChanged(slot, 'data-tt-title', '技能槽 #' + (state.index + 1) + '（未裝備）');
+    setAttrIfChanged(slot, 'data-tt-desc', '點擊前往技能頁裝備技能');
+    removeAttrIfPresent(slot, 'draggable');
     return;
   }
 
-  slot.className = state.slotCls + ' loadout-slot filled';
-  slot.setAttribute('data-sk', state.entry);
-  slot.setAttribute('data-skill-id', state.entry);
-  slot.setAttribute('data-index', state.index);
-  slot.setAttribute('draggable', 'true');
-  slot.removeAttribute('data-skill-slot-action');
+  setClassIfChanged(slot, state.slotCls + ' loadout-slot filled');
+  setAttrIfChanged(slot, 'data-sk', state.entry);
+  setAttrIfChanged(slot, 'data-skill-id', state.entry);
+  setAttrIfChanged(slot, 'data-index', state.index);
+  setAttrIfChanged(slot, 'draggable', 'true');
+  removeAttrIfPresent(slot, 'data-skill-slot-action');
   if (state.isOnCd) {
-    slot.setAttribute('data-snap-cd', state.rawCdVal);
-    slot.setAttribute('data-snap-gt', state.snapshotGt || 0);
-    slot.setAttribute('data-total-cd', state.totalCd);
+    setAttrIfChanged(slot, 'data-snap-cd', state.rawCdVal);
+    setAttrIfChanged(slot, 'data-snap-gt', state.snapshotGt || 0);
+    setAttrIfChanged(slot, 'data-total-cd', state.totalCd);
   } else {
-    slot.removeAttribute('data-snap-cd');
-    slot.removeAttribute('data-snap-gt');
-    slot.removeAttribute('data-total-cd');
+    removeAttrIfPresent(slot, 'data-snap-cd');
+    removeAttrIfPresent(slot, 'data-snap-gt');
+    removeAttrIfPresent(slot, 'data-total-cd');
   }
 
   var emoji = slot.querySelector('.bss-emoji');
@@ -3380,19 +3419,39 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   startBattleSkillBarAnimation();
 }
 
-/* 戰鬥區技能欄 60fps 絲滑碼錶與圓形 CD 倒數動態器 */
+/* 戰鬥區技能欄的碼錶與圓形 CD 倒數動態器。
+
+   仍掛在 rAF 上（要跟著畫面節奏，不能用 setInterval 跟畫面打架），但**做事**的頻率
+   節流到 CD_UPDATE_HZ。理由與角度量化同一條（見 updateBattleSkillBarCds 上方）：
+   每動一次就是一次 conic-gradient 重繪加整塊圖層重新點陣化，而冷卻圈是個直徑約
+   40px 的圓，20Hz 與 60Hz 在視覺上分不出來。
+
+   2026-09-13 使用者機器的第二份 trace（角度量化之後）：bbb-cd-mask 仍是每秒 37 次
+   ——短時效的增益在 3 度階距下還是變得夠快。節流之後上限就是 CD_UPDATE_HZ。
+   ⚠️ 節流的是「多久算一次」，不是「跳過幾拍」：倒數值一律由 uiCountdownRemain
+   以絕對時刻推導，少算幾次不會讓倒數變慢或漂移。 */
+var CD_UPDATE_HZ = 20;
 var _battleSkillBarAnimFrame = null;
+var _battleSkillBarLastAt = 0;
 function startBattleSkillBarAnimation() {
   if (typeof requestAnimationFrame !== 'function') return;
   if (_battleSkillBarAnimFrame) {
     cancelAnimationFrame(_battleSkillBarAnimFrame);
     _battleSkillBarAnimFrame = null;
   }
+  _battleSkillBarLastAt = 0;
 
-  function step() {
+  var minGap = 1000 / CD_UPDATE_HZ;
+  function step(now) {
     _battleSkillBarAnimFrame = null;
-    var hasActiveCd = updateBattleSkillBarCds();
-    if (hasActiveCd) {
+    /* 還沒到下一拍就直接續排，不做任何 DOM 讀寫——這條路徑必須極便宜，
+       否則節流本身就變成新的每幀成本。 */
+    if (_battleSkillBarLastAt && (now - _battleSkillBarLastAt) < minGap) {
+      _battleSkillBarAnimFrame = requestAnimationFrame(step);
+      return;
+    }
+    _battleSkillBarLastAt = now;
+    if (updateBattleSkillBarCds()) {
       _battleSkillBarAnimFrame = requestAnimationFrame(step);
     }
   }
@@ -6421,10 +6480,10 @@ function updateDmgAbsorb() {
   var magicDmgVal = (st.matk || 0) * critMult * totalDmgMult * enemyDmgMult * vsElemMult * elemUpMult;
 
   if (physDmgEl) {
-    physDmgEl.textContent = fmt(physDmgVal);
+    setTextIfChanged(physDmgEl, fmt(physDmgVal));
     var physDmgParent = physDmgEl.parentNode;
     if (physDmgParent) {
-      physDmgParent.setAttribute('data-tt-title', '物理單次預期傷害 (物傷)');
+      setAttrIfChanged(physDmgParent, 'data-tt-title', '物理單次預期傷害 (物傷)');
       var physDmgDesc = '角色單次物理傷害輸出（綜合極限水準）。<br>' +
         '公式：基礎物攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵最大% × 屬性提升最大%<br><br>' +
         '<span style="color:#4ade80">基礎物理攻擊：</span>' + fmtFull(st.atk || 0) + '<br>' +
@@ -6434,15 +6493,15 @@ function updateDmgAbsorb() {
         '<span style="color:#ffd700">對屬性敵最大加成：</span>' + maxVsElem.toFixed(1) + '%<br>' +
         '<span style="color:#ffd700">屬性傷害最大提升：</span>' + maxElemUp.toFixed(1) + '%<br><br>' +
         '<span style="color:#ffd700">物理單次預期傷害：</span>' + fmtFull(physDmgVal);
-      physDmgParent.setAttribute('data-tt-desc', physDmgDesc);
+      setAttrIfChanged(physDmgParent, 'data-tt-desc', physDmgDesc);
       physDmgParent.removeAttribute('title');
     }
   }
   if (magicDmgEl) {
-    magicDmgEl.textContent = fmt(magicDmgVal);
+    setTextIfChanged(magicDmgEl, fmt(magicDmgVal));
     var magicDmgParent = magicDmgEl.parentNode;
     if (magicDmgParent) {
-      magicDmgParent.setAttribute('data-tt-title', '魔法單次預期傷害 (魔傷)');
+      setAttrIfChanged(magicDmgParent, 'data-tt-title', '魔法單次預期傷害 (魔傷)');
       var magicDmgDesc = '角色單次魔法傷害輸出（綜合極限水準）。<br>' +
         '公式：基礎魔攻 × 暴傷倍率 × 總傷% × 敵種加成% × 對屬性敵最大% × 屬性提升最大%<br><br>' +
         '<span style="color:#4ade80">基礎魔法攻擊：</span>' + fmtFull(st.matk || 0) + '<br>' +
@@ -6452,7 +6511,7 @@ function updateDmgAbsorb() {
         '<span style="color:#ffd700">對屬性敵最大加成：</span>' + maxVsElem.toFixed(1) + '%<br>' +
         '<span style="color:#ffd700">屬性傷害最大提升：</span>' + maxElemUp.toFixed(1) + '%<br><br>' +
         '<span style="color:#ffd700">魔法單次預期傷害：</span>' + fmtFull(magicDmgVal);
-      magicDmgParent.setAttribute('data-tt-desc', magicDmgDesc);
+      setAttrIfChanged(magicDmgParent, 'data-tt-desc', magicDmgDesc);
       magicDmgParent.removeAttribute('title');
     }
   }
@@ -6498,8 +6557,8 @@ function updateDmgAbsorb() {
   var magicAbsorb = magicMult > 0 ? (hp + shield) / magicMult : Infinity;
 
   // 更新 UI：只顯示簡寫
-  physEl.textContent = physAbsorb === Infinity ? '∞' : fmt(physAbsorb);
-  magicEl.textContent = magicAbsorb === Infinity ? '∞' : fmt(magicAbsorb);
+  setTextIfChanged(physEl, physAbsorb === Infinity ? '∞' : fmt(physAbsorb));
+  setTextIfChanged(magicEl, magicAbsorb === Infinity ? '∞' : fmt(magicAbsorb));
 
   var formatRed = function (v, startDec) {
     var dec = startDec || 4;
@@ -6518,7 +6577,7 @@ function updateDmgAbsorb() {
   var physParent = physEl.parentNode;
   var magicParent = magicEl.parentNode;
   if (physParent) {
-    physParent.setAttribute('data-tt-title', '物理總承傷');
+    setAttrIfChanged(physParent, 'data-tt-title', '物理總承傷');
     var physDesc = '角色能承受的一次性最大物理傷害值。<br>' +
       '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
       '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
@@ -6530,11 +6589,11 @@ function updateDmgAbsorb() {
       '<span style="color:#ffd700">元素抗性減傷：</span>' + formatRed(rElemAvg) + '<br>' +
       '<span style="color:#ffd700">敵種最大減傷：</span>' + formatRed(rTypeMax) + typeMaxLabel + '<br><br>' +
       '<span style="color:#ffd700">物理承傷總值：</span>' + (physAbsorb === Infinity ? '無窮大' : fmtFull(physAbsorb));
-    physParent.setAttribute('data-tt-desc', physDesc);
+    setAttrIfChanged(physParent, 'data-tt-desc', physDesc);
     physParent.removeAttribute('title');
   }
   if (magicParent) {
-    magicParent.setAttribute('data-tt-title', '魔法總承傷');
+    setAttrIfChanged(magicParent, 'data-tt-title', '魔法總承傷');
     var magicDesc = '角色能承受的一次性最大魔法傷害值。<br>' +
       '公式：(血量+護盾)/(1-各類減傷)<br><br>' +
       '<span style="color:#4ade80">當前血量：</span>' + fmtFull(hp) + '<br>' +
@@ -6546,7 +6605,7 @@ function updateDmgAbsorb() {
       '<span style="color:#ffd700">元素抗性減傷：</span>' + formatRed(rElemAvg) + '<br>' +
       '<span style="color:#ffd700">敵種最大減傷：</span>' + formatRed(rTypeMax) + typeMaxLabel + '<br><br>' +
       '<span style="color:#ffd700">魔法承傷總值：</span>' + (magicAbsorb === Infinity ? '無窮大' : fmtFull(magicAbsorb));
-    magicParent.setAttribute('data-tt-desc', magicDesc);
+    setAttrIfChanged(magicParent, 'data-tt-desc', magicDesc);
     magicParent.removeAttribute('title');
   }
 }

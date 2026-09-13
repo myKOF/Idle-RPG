@@ -16,7 +16,9 @@ function sectionBetween(source, startMarker, endMarker) {
 }
 
 test('戰鬥技能列以每格 key 保留既有 DOM，只在技能或槽位種類改變時替換', () => {
-  const render = sectionBetween(ui, 'function renderBattleSkillBar(', '/* 戰鬥區技能欄 60fps');
+  const render = // 區段結尾綁函式名，不綁註解文字：註解一改就斷，而斷掉時 sectionBetween 回空字串，
+  // 底下每一條斷言都會失敗，讀起來像是功能壞了——實際上只是動了一行註解。
+  sectionBetween(ui, 'function renderBattleSkillBar(', 'function startBattleSkillBarAnimation(');
   assert.match(render, /data-battle-skill-key/);
   assert.match(render, /slot\.getAttribute\('data-battle-skill-key'\) !== state\.key/);
   assert.match(render, /bar\.replaceChild\(replacement, slot\)/);
@@ -28,7 +30,7 @@ test('技能列的動態冷卻資料不會進入 DOM 身分 key', () => {
   const keyFn = sectionBetween(ui, 'function battleSkillSlotKey(', 'function battleSkillSlotMarkup');
   assert.match(keyFn, /state\.kind,\s*state\.index,\s*state\.entry/);
   assert.doesNotMatch(keyFn, /snapshotGt|rawCdVal|cdText|cdDeg/);
-  assert.match(ui, /slot\.setAttribute\('data-snap-gt', state\.snapshotGt \|\| 0\)/);
+  assert.match(ui, /setAttrIfChanged\(slot, 'data-snap-gt', state\.snapshotGt \|\| 0\)/);
 });
 
 test('同一技能 tooltip 不會因重複 hover 事件重建或重新定位', () => {
@@ -41,5 +43,5 @@ test('同一技能 tooltip 不會因重複 hover 事件重建或重新定位', (
 
 test('ui.js 快取版號已同步更新', () => {
   // 2026-09-11 迷你視窗按鈕移至關卡列上方並增加內部版戰鬥區FPS → 1.0.60 → 1.0.61
-  assert.match(html, /js\/ui\.js\?v=1\.0\.(?:4[89]|[56]\d+)/);
+  assert.match(html, /js\/ui\.js\?v=1\.0\.(?:[4-9]\d)/);
 });
