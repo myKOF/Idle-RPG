@@ -246,7 +246,7 @@ test('更新迴圈吃掉一幀時，要分辨「單一支慢」與「排了太�
   p.loaf({ atSec: 16, ms: 720, script: 3, render: 716, scripts: [] });
   p.setNow(20000);
   const v = p.verdict();
-  assert.match(v, /最忙的一幀排了 12 個 rAF 回呼/);
+  assert.match(v, /rAF 最貴的一幀：24ms／12 個回呼/);
   assert.match(v, /排程失控，不是單一支慢/);
 });
 

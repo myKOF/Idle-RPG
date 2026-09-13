@@ -24,6 +24,27 @@ var BattleRenderer = (function () {
   function disabledByQuery() {
     return typeof location !== 'undefined' && /[?&]canvas=0(&|$)/.test(location.search || '');
   }
+  /* 戰鬥畫面的更新上限。不設的話 Pixi 的 ticker 會跟著螢幕更新率跑——
+     2026-09-13 的卡頓探針在使用者機器上量到每秒 106 幀，而 rAF 回呼（幾乎就是這裡）
+     在 60 秒內吃掉 14938ms，等於**四分之一的主執行緒**。
+
+     這件事本身不是 bug，問題是它沒有留下餘裕：使用者回報「任何 UI 操作或觸發事件
+     都會讓戰鬥區的演出卡頓」——滑過技能列讓底框亮起、裝備提示彈出、捲動，
+     每一件都只是幾毫秒的工作，但 106Hz 的預算只有 9.4ms，任何一件都會把那一幀擠爆，
+     畫面就頓一下。降到 60 幀有兩個效果：每秒少畫掉四成多的畫面、而每幀的預算
+     從 9.4ms 變成 16.7ms，UI 的工作才塞得進去。
+
+     這個遊戲的戰鬥演出在 60 幀與 106 幀之間肉眼分不出差別，但穩定度差很多。
+     ?fps=N 可以現場改（0 ＝ 不設上限），用來 A／B 比較，不必重建。 */
+  var BATTLE_MAX_FPS = 60;
+  function battleMaxFps() {
+    var m = (typeof location !== 'undefined') && /[?&]fps=(\d+)(&|$)/.exec(location.search || '');
+    if (!m) return BATTLE_MAX_FPS;
+    var n = Number(m[1]) || 0;
+    if (n <= 0) return 0;                 // ?fps=0：不設上限（跟著螢幕跑）
+    return Math.max(15, Math.min(240, n));
+  }
+
   /* ?vfx=legacy：強制走舊的程式畫法，用來 A／B 比對 Preset 化前後的畫面。 */
   function legacyVfxByQuery() {
     return typeof location !== 'undefined' && /[?&]vfx=legacy(&|$)/.test(location.search || '');
@@ -6281,6 +6302,9 @@ var BattleRenderer = (function () {
       buildScene();
       makePlayer();
       subscribe();
+      /* 先設上限再掛 tickWorld：maxFPS 是 Pixi 內部把 rAF 節流的依據，
+         不是 tickWorld 自己判斷要不要跑。maxFPS = 0 代表不節流。 */
+      app.ticker.maxFPS = battleMaxFps();
       app.ticker.add(tickWorld);
       if (typeof ResizeObserver === 'function') {
         S.resizeObs = new ResizeObserver(function () { resize(); });
@@ -6297,7 +6321,9 @@ var BattleRenderer = (function () {
         if (panel) syncBattle(panel);
       }
       console.info('[battle-renderer] PixiJS 戰鬥渲染器已啟動（' +
-        app.renderer.name + '，' + S.W + '×' + S.H + '）。網址加 ?canvas=0 可退回 DOM 戰鬥畫面。');
+        app.renderer.name + '，' + S.W + '×' + S.H + '，上限 ' +
+        (app.ticker.maxFPS || '不設限') + ' 幀）。網址加 ?canvas=0 可退回 DOM 戰鬥畫面，' +
+        '?fps=N 可改更新上限。');
       return true;
     }).catch(function (err) {
       console.warn('[battle-renderer] 初始化失敗，退回 DOM 戰鬥畫面：', err && err.message ? err.message : err);

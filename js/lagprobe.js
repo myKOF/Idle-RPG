@@ -273,9 +273,17 @@
     var last = performance.now();
     P.frameT0 = last;
     function tick(t) {
-      /* 上一幀的 rAF 統計在這裡結算：本支用的是**未包裝**的原版 rAF 且在 start()
-         最早註冊，因此排在所有人前面，此刻累計到的就是上一幀的完整數字。 */
-      if (P.rafInFrame > P.rafPeak.n) {
+      /* 上一幀的 rAF 統計在這裡結算（兩次 tick 之間跑掉的回呼＝一幀份）。
+
+         ⚠️ 這裡**不能**用「回呼數」挑最忙的一幀。第一版是 rafInFrame > rafPeak.n，
+         結果 2026-09-13 的報告印出「6 個回呼／1ms」，讓我以為更新迴圈很閒、
+         把懷疑導去 CSS 動畫（後來證實是錯的）——因為回呼最多的那一幀，
+         跟吃掉最多時間的那一幀根本不是同一幀。要找的是**耗時**最大的那一幀。
+
+         另註：本支雖然用未包裝的原版 rAF，但它在自己的回呼尾端才重新排程，
+         所以通常排在其他人後面，不是前面。對「兩次 tick 之間的累計」這個口徑
+         沒有影響，但別再照著舊註解以為它最先跑。 */
+      if (P.rafMsInFrame > P.rafPeak.ms) {
         P.rafPeak = { n: P.rafInFrame, ms: Math.round(P.rafMsInFrame), at: Math.round(t / 1000) };
       }
       P.rafInFrame = 0;
@@ -472,8 +480,8 @@
         /* 更新迴圈吃掉一幀有兩種長相，修法不同：一個很貴的回呼 → 那支自己慢；
            幾十個便宜的回呼 → 是排程失控（同一幀被排了太多次）。 */
         if (seg[0][0].indexOf('更新迴圈') >= 0) {
-          lines.push('　　（最忙的一幀排了 ' + P.rafPeak.n + ' 個 rAF 回呼、共 ' +
-            P.rafPeak.ms + 'ms @' + P.rafPeak.at + 's' +
+          lines.push('　　（rAF 最貴的一幀：' + P.rafPeak.ms + 'ms／' + P.rafPeak.n +
+            ' 個回呼 @' + P.rafPeak.at + 's' +
             (P.rafPeak.n >= 10 ? ' → 排程失控，不是單一支慢' : '') + '）');
           /* rAF 只佔零頭、而 LoAF 又沒列出任何腳本 → 這一段不是我們的程式碼在跑，
              而是瀏覽器自己的更新工作，目前唯一會長到這種量級的是 CSS 動畫／轉場。 */
@@ -636,7 +644,7 @@
       '互動最差：' + (inp || '無（沒有超過 16ms 的互動）'),
       '函式 TOP8：' + (fn || '無'),
       '最慢的幀：' + (frameBreakdownText() || '無（瀏覽器不支援 long-animation-frame）'),
-      'rAF 最忙的一幀：' + P.rafPeak.n + ' 個回呼／' + P.rafPeak.ms + 'ms @' + P.rafPeak.at + 's'
+      'rAF 最貴的一幀：' + P.rafPeak.ms + 'ms／' + P.rafPeak.n + ' 個回呼 @' + P.rafPeak.at + 's'
     ].concat(diagnose());
     console.log('%c' + out.join(String.fromCharCode(10)), 'color:#0a0;line-height:1.6');
     return '把上面這一段截圖回報就夠了';
