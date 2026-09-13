@@ -1423,3 +1423,8 @@ test('VACUUMSHOCK begins immediately and travels forward from actor',()=>{
  a.forEach((t,i)=>{for(const k of ['x','y','scaleX','scaleY','rotation'])assert(Math.abs(t[k]-b[i][k])<1e-6,k+': '+t[k]+' / '+b[i][k]);});
  assert.equal(JSON.stringify([source,shock]),before);adapter.destroy();
  });
+
+test('VACUUMSPIN uses simulation centre and scales with radius',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-spin.json'),'utf8'));let scales=[];
+ for(const r of [60,120]){const {adapter,log}=makeAdapter([p]);assert(adapter.tryPlay({fxKind:'slash',variant:'wind-spin',area:{x:80,y:90,r},vfx:{attack:p.id}}));adapter.update(.08);assert.equal(log.nodes.length,14);const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,80);assert.equal(t.y,90);scales.push(t.scaleX);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);adapter.destroy();}assert(Math.abs(scales[1]/scales[0]-2)<1e-6);
+});
