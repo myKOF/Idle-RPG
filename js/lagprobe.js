@@ -293,6 +293,67 @@
       .map(function (e) { return e.ms + 'ms@' + e.at + 's'; }).join(' ');
   }
 
+  /* ---- 自動判讀 ----
+     2026-09-13 使用者反映「不知道那些資訊怎麼看」。這是對的：前幾輪我都在要原始
+     數字、再自己在對話裡推論，等於把分析外包給回報者，而且每漏截一行就推錯一次。
+     判讀規則本來就是固定的幾條，寫進程式才不會每次重講，也不會因為截圖少一段就失準。
+
+     三條分叉（對應三種完全不同的修法）：
+       停住時主執行緒也在忙 ＋ 最貴的是 rAF 回呼 → 畫面更新迴圈自己太貴
+       停住時主執行緒也在忙 ＋ 最貴的不在名單上 → 時間花在 JS 之外（樣式重算／版面計算）
+       停住時主執行緒是閒的                      → 卡在顯示卡合成／點陣化那一側 */
+  function diagnose() {
+    var sec = Math.max(1, (performance.now() - P.t0) / 1000);
+    if (!P.frames) return ['【判讀】這個分頁沒有在產生畫面（在背景或被別的視窗蓋住），量不到東西。'];
+    if (!P.frameGaps.length) {
+      return ['【判讀】這段期間沒有量到畫面停住（>50ms）。剛才若有卡，請在卡的當下再取一次。'];
+    }
+    var lines = [];
+    var worst = P.frameGaps.slice().sort(function (a, b) { return b.ms - a.ms; })[0];
+    lines.push('【判讀】' + sec.toFixed(0) + ' 秒內畫面停住 ' + P.frameGaps.length +
+      ' 次，最長 ' + worst.ms + 'ms。');
+
+    /* 停住的那一秒，主執行緒是不是也在長工作？長工作與影格的時間基準都是分頁載入，
+       可以直接比。容許 ±1 秒：兩者都是四捨五入到秒，邊界上會差一格。 */
+    var matched = 0;
+    for (var i = 0; i < P.frameGaps.length; i++) {
+      for (var j = 0; j < P.long.length; j++) {
+        if (Math.abs(P.long[j].at - P.frameGaps[i].at) <= 1) { matched++; break; }
+      }
+    }
+    if (matched / P.frameGaps.length < 0.5) {
+      lines.push('　其中只有 ' + matched + ' 次主執行緒同時在忙 → 主執行緒是閒的，' +
+        '卡在顯示卡合成／點陣化那一側。');
+      lines.push('　把這一整段截圖回報即可，不必自己判斷。');
+      return lines;
+    }
+    lines.push('　其中 ' + matched + ' 次主執行緒同時在忙 → 是主執行緒被擋住，不是顯示卡。');
+
+    var longMax = 0;
+    for (i = 0; i < P.long.length; i++) if (P.long[i].ms > longMax) longMax = P.long[i].ms;
+    var byMax = rows(P.fn, true).slice().sort(function (a, b) { return b['最大ms'] - a['最大ms']; });
+    var top = byMax[0];
+    var raf = null;
+    for (i = 0; i < byMax.length; i++) {
+      if (String(byMax[i]['項目']).indexOf('rAF回呼') === 0) { raf = byMax[i]; break; }
+    }
+    /* 門檻取長工作最大值的一半：要求完全相等太嚴（一次長工作裡通常不只跑一支），
+       但若名單上最貴的只有長工作的零頭，那就代表時間根本不在我們量得到的地方。 */
+    if (raf && raf['最大ms'] >= longMax * 0.5) {
+      lines.push('　最貴的是「' + raf['項目'] + '」單次最大 ' + raf['最大ms'] +
+        'ms → 兇手在畫面更新迴圈裡（Pixi／VFX 特效）。');
+    } else if (top && top['最大ms'] >= longMax * 0.5) {
+      lines.push('　最貴的是「' + top['項目'] + '」單次最大 ' + top['最大ms'] +
+        'ms → 兇手就是這一支。');
+    } else {
+      lines.push('　長工作最大 ' + longMax + 'ms，但名單上最貴的一支只有 ' +
+        (top ? top['最大ms'] + 'ms（' + top['項目'] + '）' : '0ms') +
+        ' → 兇手不在名單上，時間花在 JS 之外（瀏覽器自己的樣式重算／版面計算）。');
+    }
+    lines.push('　把這一整段截圖回報即可，不必自己判斷。');
+    return lines;
+  }
+
   /* 互動延遲一律以「最慢的排前面」呈現：卡頓回報要看的是最差那幾次，平均會把它抹平。 */
   function inputRows() {
     return P.input.slice().sort(function (a, b) { return b.total - a.total; }).map(function (e) {
@@ -435,7 +496,7 @@
         P.frameGaps.length + ' 次，最長：' + (worstGaps() || '無'),
       '互動最差：' + (inp || '無（沒有超過 16ms 的互動）'),
       '函式 TOP8：' + (fn || '無')
-    ];
+    ].concat(diagnose());
     console.log('%c' + out.join(String.fromCharCode(10)), 'color:#0a0;line-height:1.6');
     return '把上面這一段截圖回報就夠了';
   };
