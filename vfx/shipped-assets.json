@@ -308,13 +308,6 @@
       "fileSize": 6664
     },
     {
-      "assetId": "new_materials/arcane-ring/spiral_25.png",
-      "relativePath": "new_materials/arcane-ring/spiral_25.png",
-      "package": "new_materials",
-      "contentHash": "sha256:fe5252fc8867ea271a76108b673e8c853801f00a68dc8616342350d6b3096bba",
-      "fileSize": 37114
-    },
-    {
       "assetId": "new_materials/arcane-ring/spiral_6.png",
       "relativePath": "new_materials/arcane-ring/spiral_6.png",
       "package": "new_materials",
@@ -462,6 +455,13 @@
       "fileSize": 267342
     },
     {
+      "assetId": "new_materials/orb/energyball_5.png",
+      "relativePath": "new_materials/orb/energyball_5.png",
+      "package": "new_materials",
+      "contentHash": "sha256:b4c3db3e33ad522423a6a2eeabeea079b99e4332580c1800e364268d61849e7d",
+      "fileSize": 276821
+    },
+    {
       "assetId": "new_materials/orb/rounded_6.png",
       "relativePath": "new_materials/orb/rounded_6.png",
       "package": "new_materials",
@@ -504,11 +504,11 @@
       "fileSize": 112496
     },
     {
-      "assetId": "new_materials/orb/spiky_6.png",
-      "relativePath": "new_materials/orb/spiky_6.png",
+      "assetId": "new_materials/orb/spiky_15.png",
+      "relativePath": "new_materials/orb/spiky_15.png",
       "package": "new_materials",
-      "contentHash": "sha256:c7fa26d9cd767f1044efae475202967e4a701215085f7675621193ad1f01d392",
-      "fileSize": 84463
+      "contentHash": "sha256:53d6617e7d3a7360ee972edf9a940c688095200e44a0de52d9f338853a411d36",
+      "fileSize": 152220
     },
     {
       "assetId": "new_materials/smoke/smoke2_1.png",
