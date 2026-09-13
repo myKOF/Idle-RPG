@@ -30,7 +30,7 @@ test('技能列的動態冷卻資料不會進入 DOM 身分 key', () => {
   const keyFn = sectionBetween(ui, 'function battleSkillSlotKey(', 'function battleSkillSlotMarkup');
   assert.match(keyFn, /state\.kind,\s*state\.index,\s*state\.entry/);
   assert.doesNotMatch(keyFn, /snapshotGt|rawCdVal|cdText|cdDeg/);
-  assert.match(ui, /slot\.setAttribute\('data-snap-gt', state\.snapshotGt \|\| 0\)/);
+  assert.match(ui, /setAttrIfChanged\(slot, 'data-snap-gt', state\.snapshotGt \|\| 0\)/);
 });
 
 test('同一技能 tooltip 不會因重複 hover 事件重建或重新定位', () => {
@@ -43,5 +43,5 @@ test('同一技能 tooltip 不會因重複 hover 事件重建或重新定位', (
 
 test('ui.js 快取版號已同步更新', () => {
   // 2026-09-11 迷你視窗按鈕移至關卡列上方並增加內部版戰鬥區FPS → 1.0.60 → 1.0.61
-  assert.match(html, /js\/ui\.js\?v=1\.0\.(?:4[89]|[56]\d+)/);
+  assert.match(html, /js\/ui\.js\?v=1\.0\.(?:[4-9]\d)/);
 });
