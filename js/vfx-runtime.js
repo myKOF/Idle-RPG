@@ -300,6 +300,16 @@ var VFXRuntime = (function () {
     function registerPresets(list) {
       (list || []).forEach(function(p) { if(p && p.id) presetDefinitions[p.id]=p; });
       list = (list || []).map(function(p) {
+        // 天地逆返僅換符文顏色，幾何永遠取玩家編輯的岩甲術。
+        var rock = presetDefinitions['aura-rockarmor-stone'];
+        if(p && p.id==='aura-earth-reversal' && rock){
+          var blue=JSON.parse(JSON.stringify(rock));blue.id=p.id;
+          blue.layers.forEach(function(l){
+            if(/^stone-\d+-rune$/.test(l.id))l.tint='#a2ddff';
+            if(/^stone-\d+-glow$/.test(l.id))l.tint='#3c9cff';
+          });
+          return blue;
+        }
         var source = presetDefinitions['slash-wind-crescent'];
         if(!p || p.id!=='burst-vacuum-shockwave' || !source) return p;
         var derived=JSON.parse(JSON.stringify(p));
@@ -330,8 +340,10 @@ var VFXRuntime = (function () {
         if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
           ['back','front'].forEach(function(half) {
             var part=JSON.parse(JSON.stringify(p));part.id+='-'+half;
+            if(half==='front')part.layers=part.layers.filter(function(l){return l.id!=='earth-shadow' && l.id!=='amber-underlight';});
             part.layers.forEach(function(l) {
               var curve=l.offsetYOverLife;
+              if(l.id==='earth-shadow' || l.id==='amber-underlight')return;
               if(!curve || curve.length<2){l.alpha=half==='front'?l.alpha:0;return;}
               var points=[0,1];
               for(var i=1;i<curve.length;i++){
@@ -1404,7 +1416,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260913-rockarmor-objects';
+  var DATA_VERSION = '20260913-rockarmor-shared-size';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
