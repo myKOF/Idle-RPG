@@ -661,7 +661,8 @@
        lagPaint('skip')   離開畫面的技能列整列跳過渲染（content-visibility）
        lagPaint('layer')  把戰鬥 canvas 提升成獨立合成圖層
        lagPaint('all')    三個一起開
-       lagPaint('reset')  全部復原 */
+       lagPaint('reset')  全部復原
+     每一個也都能用網址帶（不必碰 Console）：?lag=1&noanim=1、?lag=1&nohover=1 …… */
   window.lagPaint = function (mode) {
     mode = String(mode || 'all');
     var nodes = document.querySelectorAll('.sg-stage-node, .sg-group-row, .skill-card, .talent-node');
@@ -752,6 +753,24 @@
     return '已歸零，重新計時（成長追蹤的基線保留）';
   };
 
+  /* ---- 開關也走網址參數 ----
+     本檔開頭就寫著「回報卡頓只要換一次網址」，理由是 Chrome 對「貼程式碼進
+     Console」有防呆（要先手動輸入 allow pasting）。2026-09-13 回報者踩到了，
+     回覆只有「沒辦法輸入」——而我當時給的驗證方式正是叫他在 Console 打指令，
+     等於自己違反了本檔的設計前提。
+     ?lag=1&noanim=1 這種寫法讓所有開關都不必碰 Console。
+
+     開機時畫面還沒建好（Pixi 的 canvas 要等資產載完），所以每次自動報告時再套一次；
+     每個 mode 都是冪等的（style 標籤看 id、行內樣式重設同值），重複套用沒有副作用。 */
+  function applyUrlModes() {
+    if (typeof window.lagPaint !== 'function') return;
+    ['noanim', 'nohover', 'shadow', 'skip', 'layer'].forEach(function (mode) {
+      if (new RegExp('[?&]' + mode + '=1(&|$)').test(location.search || '')) {
+        window.lagPaint(mode);
+      }
+    });
+  }
+
   function start() {
     var rawRaf = window.requestAnimationFrame;
     wrapRaf();
@@ -770,7 +789,18 @@
        來回了六次，每次都是「捲錯位置」或「表收起來了」。
        印一份隨手截就完整的，比要求對方去展開正確的那張表可靠得多。
        完整的表仍在 lagReport()，需要細節時自己叫。 */
-    setInterval(function () { window.lagText(); }, 15000);
+    applyUrlModes();
+    /* 開機那十幾秒（載圖集、建整頁 DOM、第一次全頁渲染）本來就會有幾百毫秒的幀，
+       而且會一路霸佔統計，讓結論指向開機而不是回報者真正遇到的症狀。
+       判讀已經會略過前 10 秒的幀，但長工作、影格與函式耗時仍是從載入起算的累計。
+       自動歸零一次，回報者就不必記得去按 lagReset()——尤其在連 Console 都打不開的
+       環境裡，那本來就是做不到的要求。成長追蹤的基線照舊保留。 */
+    setTimeout(function () {
+      window.lagReset();
+      console.log('%c[卡頓探針] 已自動歸零（跳過開機期），以下為穩定狀態的數字。',
+        'color:#0a0;font-weight:bold');
+    }, 20000);
+    setInterval(function () { window.lagText(); applyUrlModes(); }, 15000);
   }
 
   /* ui.js 的函式要等腳本載入完才存在；DOMContentLoaded 之後一定都在了。 */
