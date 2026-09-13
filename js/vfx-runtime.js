@@ -326,6 +326,24 @@ var VFXRuntime = (function () {
           var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
           trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) : NOMINAL_BEAM;
         }
+        // Two synchronized passes share textures; each stone switches sides at the orbit midline.
+        if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
+          ['back','front'].forEach(function(half) {
+            var part=JSON.parse(JSON.stringify(p));part.id+='-'+half;
+            part.layers.forEach(function(l) {
+              var curve=l.offsetYOverLife;
+              if(!curve || curve.length<2){l.alpha=half==='front'?l.alpha:0;return;}
+              var points=[0,1];
+              for(var i=1;i<curve.length;i++){
+                var a=curve[i-1],b=curve[i];
+                if(a[1]*b[1]<0){var t=a[0]+(b[0]-a[0])*(-a[1])/(b[1]-a[1]);points.push(Math.max(0,t-0.000001),Math.min(1,t+0.000001));}
+              }
+              // Include endpoint-adjacent samples when a stone starts on the midline.
+              points.push(.000001,.999999);points.sort(function(a,b){return a-b;});
+              l.alphaOverLife=points.map(function(t){var y=curve[curve.length-1][1];for(var j=1;j<curve.length;j++)if(t<=curve[j][0]){var a=curve[j-1],b=curve[j];y=a[1]+(b[1]-a[1])*(t-a[0])/(b[0]-a[0]);break;}return [t,((y>=0)===(half==='front'))?1:0];});
+            });registerPresets([part]);
+          });
+        }
         if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
           ['back', 'front'].forEach(function(half) {
             var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
@@ -1386,7 +1404,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260913-stormbarrier-loop';
+  var DATA_VERSION = '20260913-rockarmor-objects';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

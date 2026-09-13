@@ -11,12 +11,12 @@
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": 0
+        "y": 0.1747
       },
       "rotation": 0,
       "scale": {
-        "x": 0.7,
-        "y": 0.7
+        "x": 0.8926,
+        "y": 0.8926
       },
       "anchor": {
         "x": 0.5,
@@ -48,12 +48,12 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": 0
+        "y": 0.1747
       },
       "rotation": 3.141592653589793,
       "scale": {
-        "x": 0.6,
-        "y": 0.6
+        "x": 0.7651,
+        "y": 0.7651
       },
       "anchor": {
         "x": 0.5,
@@ -84,12 +84,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 3,
       "position": {
-        "x": 150,
-        "y": 8
+        "x": 191.28,
+        "y": 10.3763
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.43
+        "x": 0.5356,
+        "y": 0.5483
       },
       "anchor": {
         "x": 0.5,
@@ -158,12 +158,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 10,
       "position": {
-        "x": -129.90381056766583,
-        "y": -20.999999999999982
+        "x": -165.6533,
+        "y": -26.6045
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.485
+        "x": 0.5356,
+        "y": 0.6185
       },
       "anchor": {
         "x": 0.5,
@@ -232,12 +232,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 11,
       "position": {
-        "x": -75.00000000000007,
-        "y": -42.22947341949743
+        "x": -95.64,
+        "y": -53.6764
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.54
+        "x": 0.5356,
+        "y": 0.6886
       },
       "anchor": {
         "x": 0.5,
@@ -306,12 +306,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 12,
       "position": {
-        "x": -2.7554552980815446e-14,
-        "y": -50
+        "x": 0,
+        "y": -63.5853
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.43
+        "x": 0.5356,
+        "y": 0.5483
       },
       "anchor": {
         "x": 0.5,
@@ -380,12 +380,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 13,
       "position": {
-        "x": 75.00000000000001,
-        "y": -42.22947341949744
+        "x": 95.64,
+        "y": -53.6764
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.485
+        "x": 0.5356,
+        "y": 0.6185
       },
       "anchor": {
         "x": 0.5,
@@ -454,12 +454,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 14,
       "position": {
-        "x": 129.90381056766574,
-        "y": -21.000000000000025
+        "x": 165.6533,
+        "y": -26.6045
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.54
+        "x": 0.5356,
+        "y": 0.6886
       },
       "anchor": {
         "x": 0.5,
@@ -528,12 +528,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 101,
       "position": {
-        "x": 129.9038105676658,
-        "y": 37
+        "x": 165.6533,
+        "y": 47.3571
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.485
+        "x": 0.5356,
+        "y": 0.6185
       },
       "anchor": {
         "x": 0.5,
@@ -602,12 +602,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 102,
       "position": {
-        "x": 75.00000000000001,
-        "y": 58.22947341949744
+        "x": 95.64,
+        "y": 74.4289
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.54
+        "x": 0.5356,
+        "y": 0.6886
       },
       "anchor": {
         "x": 0.5,
@@ -676,12 +676,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 103,
       "position": {
-        "x": 9.184850993605149e-15,
-        "y": 66
+        "x": 0,
+        "y": 84.3379
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.43
+        "x": 0.5356,
+        "y": 0.5483
       },
       "anchor": {
         "x": 0.5,
@@ -750,12 +750,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 104,
       "position": {
-        "x": -74.99999999999997,
-        "y": 58.229473419497445
+        "x": -95.64,
+        "y": 74.4289
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.485
+        "x": 0.5356,
+        "y": 0.6185
       },
       "anchor": {
         "x": 0.5,
@@ -824,12 +824,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 105,
       "position": {
-        "x": -129.9038105676658,
-        "y": 37
+        "x": -165.6533,
+        "y": 47.3571
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.54
+        "x": 0.5356,
+        "y": 0.6886
       },
       "anchor": {
         "x": 0.5,
@@ -898,12 +898,12 @@
       "assetId": "codex-authored/stormbarrier/rising-light.png",
       "zIndex": 106,
       "position": {
-        "x": -150,
-        "y": 8.000000000000007
+        "x": -191.28,
+        "y": 10.3763
       },
       "scale": {
-        "x": 0.42,
-        "y": 0.43
+        "x": 0.5356,
+        "y": 0.5483
       },
       "anchor": {
         "x": 0.5,
@@ -972,12 +972,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 130,
       "position": {
-        "x": 145,
-        "y": -6
+        "x": 184.904,
+        "y": -7.4765
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1019,12 +1019,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 131,
       "position": {
-        "x": -106.82409314758446,
-        "y": 31.191013002672705
+        "x": -136.2221,
+        "y": 39.9494
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1066,12 +1066,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 132,
       "position": {
-        "x": 12.39843968005241,
-        "y": -60.79856878966254
+        "x": 15.8105,
+        "y": -77.3557
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1113,12 +1113,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 133,
       "position": {
-        "x": 88.55578866114824,
-        "y": 37.551158262723504
+        "x": 112.9263,
+        "y": 48.0599
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1160,12 +1160,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 134,
       "position": {
-        "x": -142.8797061172428,
-        "y": -15.37126551299081
+        "x": -182.2002,
+        "y": -19.4268
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1207,12 +1207,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 135,
       "position": {
-        "x": 121.96828078944267,
-        "y": -35.74320046864793
+        "x": 155.534,
+        "y": -45.4051
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1254,12 +1254,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 136,
       "position": {
-        "x": -36.832721304855866,
-        "y": 47.19596092499258
+        "x": -46.9691,
+        "y": 60.359
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1301,12 +1301,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 137,
       "position": {
-        "x": -67.69763180256076,
-        "y": -54.63763104758194
+        "x": -86.328,
+        "y": -69.4992
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1348,12 +1348,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 138,
       "position": {
-        "x": 136.5808333813747,
-        "y": 12.468464309555575
+        "x": 174.1679,
+        "y": 16.0745
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,
@@ -1395,12 +1395,12 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 139,
       "position": {
-        "x": -133.54545326373847,
-        "y": 15.425535162108762
+        "x": -170.2972,
+        "y": 19.8453
       },
       "scale": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.0128,
+        "y": 0.0128
       },
       "anchor": {
         "x": 0.5,

@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2426,
+  "assetCount": 2429,
   "assets": [
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -110150,6 +110150,144 @@
           "height": 2048
         },
         "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor-objects/plate.png",
+      "relativePath": "codex-authored/rockarmor-objects/plate.png",
+      "package": "codex-authored",
+      "format": "png",
+      "fileSize": 10163,
+      "contentHash": "sha256:456688e861cb04357baad4d4462b30c32c6eba0303e99181c117fc58018fa1b1",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3017,
+          "visibleRatio": 0.3064,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4646,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.0965,
+          "max": 0.3438
+        },
+        "contentBounds": {
+          "x": 63,
+          "y": 21,
+          "width": 124,
+          "height": 213
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor-objects/glow.png",
+      "relativePath": "codex-authored/rockarmor-objects/glow.png",
+      "package": "codex-authored",
+      "format": "png",
+      "fileSize": 5977,
+      "contentHash": "sha256:be957306addc45dba7ceba28f1a8dd2d9e72c75eba9073d05024b81a84fc968e",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.042,
+          "visibleRatio": 0.1506,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 79,
+          "y": 50,
+          "width": 94,
+          "height": 144
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor-objects/rune.png",
+      "relativePath": "codex-authored/rockarmor-objects/rune.png",
+      "package": "codex-authored",
+      "format": "png",
+      "fileSize": 1839,
+      "contentHash": "sha256:dcf767d66cc543fe86982405d8ae57ace4cd6c3d1eeedffcf0c96df8af535169",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.014,
+          "visibleRatio": 0.018,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 95,
+          "y": 71,
+          "width": 60,
+          "height": 105
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
       }
     }
   ]

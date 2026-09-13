@@ -6,11 +6,24 @@
       "id": "aura-rockarmor-stone",
       "name": "aura-rockarmor-stone",
       "layerIds": [
-        "earth-shadow",
-        "amber-underlight",
-        "orbiting-stone-plates-back",
-        "orbiting-stone-plates-front",
-        "settling-dust"
+        "stone-0-plate",
+        "stone-0-glow",
+        "stone-0-rune",
+        "stone-1-plate",
+        "stone-1-glow",
+        "stone-1-rune",
+        "stone-2-plate",
+        "stone-2-glow",
+        "stone-2-rune",
+        "stone-3-plate",
+        "stone-3-glow",
+        "stone-3-rune",
+        "stone-4-plate",
+        "stone-4-glow",
+        "stone-4-rune",
+        "stone-5-plate",
+        "stone-5-glow",
+        "stone-5-rune"
       ]
     }
   ],
