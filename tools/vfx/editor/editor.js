@@ -30,6 +30,8 @@
 
   function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
   var PRESET_LIST_URL = '/__presets';
+  /* 另存新檔的 Windows 存檔視窗由伺服器開（見 askSaveAsName） */
+  var SAVE_AS_DIALOG_URL = '/__save-as-dialog';
 
   /* ---------------- topbar 的 Preset 切換 ----------------
 
@@ -3971,51 +3973,97 @@
        使用者會停在一個指向不存在檔案的編輯器上，而下一次按存檔就真的
        把那個檔寫出來了——結果是「另存失敗」卻多了一份半成品。 */
 
+  /* 正在問名字時為 true：Windows 視窗可能被別的視窗蓋住，再按一次不能疊出第二個 */
+  var saveAsAsking = false;
+
+  /* 另存新檔的名字用 Windows 的存檔視窗問（2026-09-14 使用者要求：跟「載入 Preset」一樣）。
+     視窗由本機的編輯器伺服器開（tools/vfx/save-as-dialog.cjs），不用瀏覽器的存檔視窗 API：
+     那個 API 在使用者選到既有檔案時，交回檔案之前就先把它清空，而且拿不到路徑。
+     伺服器開的視窗只回傳路徑、不碰檔案；選到既有檔案或不對的資料夾，伺服器會說明原因並重開。
+     伺服器太舊（還沒有這條路由）、不是 Windows、或視窗開不起來時，退回輸入框。
+     回傳 Promise：null＝取消；{ id }；{ problem }（連續選到不能用的名字，伺服器放棄了）。 */
+  function askSaveAsName(current) {
+    var suggested = current ? current + '-copy' : '';
+    setSaveStatus('等待存檔視窗…', '',
+      '另存新檔的 Windows 視窗已經開啟；沒看到的話，可能被其他視窗蓋住了，看一下工作列。');
+    return fetch(SAVE_AS_DIALOG_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggested: suggested })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (body) {
+        if (r.ok && body.canceled) return null;
+        if (r.ok && body.id) return { id: body.id };
+        if (r.ok && body.problem) return { problem: body.problem };
+        if (r.status === 409) return { problem: body.error || '已經開著一個另存新檔的視窗' };
+        /* 舊伺服器對不認得的 POST 一律回 405 */
+        if (r.status === 405) throw new Error('編輯器伺服器是舊版，重新啟動伺服器之後才有 Windows 存檔視窗');
+        throw new Error(body.error || ('HTTP ' + r.status));
+      });
+    }).then(function (answer) {
+      setSaveStatus('', '');
+      return answer;
+    }, function (e) {
+      setSaveStatus('', '');
+      var input = window.prompt(
+        '（' + String(e && e.message || e) + '，改用輸入框）\n\n' +
+        '另存成新的 Preset。\n新的 id（小寫英數與連字號，會寫成 vfx/presets/<id>.json）：',
+        suggested);
+      return input === null ? null : { id: input };
+    });
+  }
+
   function saveAsPreset() {
-    if (state.saving || !state.preset) return;
+    if (state.saving || saveAsAsking || !state.preset) return;
     clearSaveError();
 
     var current = state.sourcePresetId || state.preset.id || '';
-    var input = window.prompt(
-      '另存成新的 Preset。\n新的 id（小寫英數與連字號，會寫成 vfx/presets/<id>.json）：',
-      current ? current + '-copy' : '');
-    if (input === null) return;                       // 使用者取消
-
-    var newId = String(input).trim().toLowerCase();
-    var idProblem = VFXPresetIdPolicy.presetIdProblem(newId);
-    if (idProblem) {
-      showSaveError('無法另存新檔', [idProblem]);
-      setSaveStatus('另存失敗', 'err');
-      return;
-    }
-    if (newId === current) {
-      showSaveError('無法另存新檔',
-        ['「' + newId + '」就是目前開著的這一份。另存新檔要換一個名字，' +
-         '要覆寫原本那份請直接按「儲存到 repo」。']);
-      setSaveStatus('另存失敗', 'err');
-      return;
-    }
-
-    setSaveStatus('檢查名稱…', '');
-    fetch(PRESET_LIST_URL).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function (data) {
-      var ids = (data && data.presets) || [];
-      if (ids.indexOf(newId) >= 0) {
-        showSaveError('無法另存新檔',
-          ['已經有一份叫「' + newId + '」的 Preset。另存新檔不會覆寫既有檔案，' +
-           '請換一個名字。']);
+    saveAsAsking = true;
+    askSaveAsName(current).then(function (answer) {
+      saveAsAsking = false;
+      if (!answer) return;                              // 使用者取消
+      if (answer.problem) {
+        showSaveError('無法另存新檔', [answer.problem]);
         setSaveStatus('另存失敗', 'err');
         return;
       }
-      return commitSaveAs(newId);
-    }).catch(function (e) {
-      /* 清單抓不到就不存：沒有那份清單就無法保證不會蓋到別人的檔案，
-         而「不會改到舊特效」正是這個功能存在的理由。 */
-      showSaveError('無法另存新檔（拿不到現有的 Preset 清單，無法確認會不會覆寫）',
-        [String(e && e.message || e)]);
-      setSaveStatus('另存失敗', 'err');
+
+      var newId = String(answer.id).trim().toLowerCase();
+      var idProblem = VFXPresetIdPolicy.presetIdProblem(newId);
+      if (idProblem) {
+        showSaveError('無法另存新檔', [idProblem]);
+        setSaveStatus('另存失敗', 'err');
+        return;
+      }
+      if (newId === current) {
+        showSaveError('無法另存新檔',
+          ['「' + newId + '」就是目前開著的這一份。另存新檔要換一個名字，' +
+           '要覆寫原本那份請直接按「儲存到 repo」。']);
+        setSaveStatus('另存失敗', 'err');
+        return;
+      }
+
+      setSaveStatus('檢查名稱…', '');
+      return fetch(PRESET_LIST_URL).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (data) {
+        var ids = (data && data.presets) || [];
+        if (ids.indexOf(newId) >= 0) {
+          showSaveError('無法另存新檔',
+            ['已經有一份叫「' + newId + '」的 Preset。另存新檔不會覆寫既有檔案，' +
+             '請換一個名字。']);
+          setSaveStatus('另存失敗', 'err');
+          return;
+        }
+        return commitSaveAs(newId);
+      }).catch(function (e) {
+        /* 清單抓不到就不存：沒有那份清單就無法保證不會蓋到別人的檔案，
+           而「不會改到舊特效」正是這個功能存在的理由。 */
+        showSaveError('無法另存新檔（拿不到現有的 Preset 清單，無法確認會不會覆寫）',
+          [String(e && e.message || e)]);
+        setSaveStatus('另存失敗', 'err');
+      });
     });
   }
 
