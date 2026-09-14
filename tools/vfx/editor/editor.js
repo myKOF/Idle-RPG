@@ -2305,6 +2305,19 @@
     ensureLayout();
     state.layout.presetId = state.preset.id;
     dropEmptyGroups();
+    /* 單一根群組（VFX_AGENT_WORKFLOW §9.11）：一個群組都沒有就把全部圖層收成
+       以 preset id 命名的根群組，與 preset-kit 的 writeRootGroupLayout 同一個形狀。
+       2026-09-14 使用者回報：另存新檔出來的特效沒有群組（當時是「載入 Preset」沒帶分組）。
+       這一道是保險：不管分組是從哪一條路弄丟的，存出去的都不會是散的。 */
+    if (!state.layout.groups.length && state.preset.layers.length) {
+      state.layout.groups = [{
+        id: state.preset.id, name: state.preset.id,
+        layerIds: state.preset.layers.map(function (l) { return l.id; })
+      }];
+      state.layout.order = [keyOf('group', state.preset.id)];
+      state.layoutRevision = (state.layoutRevision || 0) + 1;
+      renderLayerList();
+    }
     var check = VFXLayoutSchema.validateLayout(state.layout);
     if (!check.ok) return Promise.reject(new Error("分組資料不合法：\n- " + check.errors.join("\n- ")));
     /* 送出當下的版本號。使用者不會被擋著不能編輯——只是這次存檔不能
@@ -3790,11 +3803,13 @@
     if (dirty && st && st.className.indexOf('ok') >= 0) setSaveStatus('', '');
   }
 
-  function setSaveStatus(text, cls) {
+  /* title：滑鼠移上去看的完整說明。每一則都重設——換成下一則時，上一則的說明不能還掛著。 */
+  function setSaveStatus(text, cls, title) {
     var el = $('save-status');
     if (!el) return;
     el.textContent = text;
     el.className = 'save-status' + (cls ? ' ' + cls : '');
+    el.title = title || '';
   }
 
   /* 存檔（回寫與下載）共用的擋門條件。
@@ -4097,6 +4112,86 @@
     if (history) history.clear();
   }
 
+  /* 檔名優先於檔案內的 id（2026-09-14 使用者回報）。
+     在檔案總管把 x-copy.json 改名成 x-blue.json 之後，JSON 裡的 "id" 還是 x-copy。
+     以前編輯器照檔案內的 id 顯示與存檔：畫面上仍是 x-copy，一按存檔就另外寫出一份
+     x-copy.json，改好名的那份反而沒更新。檔名才是使用者看得到、實際在操作的名字，
+     所以以它為準。不能當 id 的檔名（例如「x - 複製.json」）就維持原本的 id 並說明。
+     回傳 { fileId, renamedFrom, problem }；renamedFrom 有值代表 preset.id 已經換成檔名。 */
+  function adoptFileName(preset, fileName) {
+    var fileId = String(fileName || '').replace(/\.json$/i, '');
+    var out = { fileId: fileId, renamedFrom: null, problem: null };
+    if (!fileId || fileId === preset.id) return out;
+    out.problem = VFXPresetIdPolicy.presetIdProblem(fileId);
+    if (out.problem) return out;
+    out.renamedFrom = preset.id;
+    preset.id = fileId;
+    return out;
+  }
+
+  function announceNaming(naming) {
+    if (naming.renamedFrom) {
+      /* 不用 ok 樣式：改了名字本來就是未存檔，refreshDirty 會把 ok 當成過期的「已存檔」清掉
+         （分組非同步載完就會呼叫它，提示一閃即逝——NAME-6）。 */
+      setSaveStatus('已改用檔名：' + state.preset.id, 'note',
+        '檔案內的 id 是「' + naming.renamedFrom + '」，檔名是「' + state.preset.id +
+        '」。已改用檔名，存檔會寫到 ' + state.preset.id + '.json，舊名字的檔案不會被動到。');
+      return;
+    }
+    if (naming.problem) {
+      showSaveError('檔名不能當成特效名稱', [
+        '「' + naming.fileId + '」：' + naming.problem,
+        '仍沿用檔案內的 id「' + state.preset.id + '」，存檔會寫到 ' + state.preset.id + '.json。' +
+        '要換名字，請把檔名改成小寫英數與連字號，或用「另存新檔」。'
+      ]);
+    }
+  }
+
+  function hasGroups(layout) {
+    return !!(layout && layout.groups && layout.groups.length);
+  }
+
+  /* 名稱、網址、下拉的「目前這份」都跟著畫面上的特效走（2026-09-14 使用者回報：
+     載入 Preset 之後下拉還寫著上一份的名字，預覽卻已經是別的特效）。
+     網址只在 repo 裡真的有這份檔案時才改：沒有的話，重新整理會開不起來。 */
+  function syncPresetIdentity() {
+    var id = state.preset ? state.preset.id : '';
+    combo.currentId = id;
+    $('preset-search').value = comboDisplayText();
+    var inRepo = combo.rows.some(function (r) { return r.id === id; });
+    if (!inRepo) return;
+    try {
+      window.history.replaceState(null, '', '?preset=' + encodeURIComponent(id));
+    } catch (e) { /* 不支援就算了，只影響重新整理後開到哪一份 */ }
+  }
+
+  /* 分組跟著載，否則一存檔群組就沒了。先找這個名字的分組檔；找不到而且是改過名的，
+     就拿舊名字那一份來改名——檔案總管改名不會連 vfx/layouts 裡的分組檔一起改。
+     非同步回來時使用者可能已經開始編輯：只有 preset 還是同一份、分組也還是空的才套用。 */
+  function adoptLayoutFor(preset, renamedFrom) {
+    loadLayout(preset.id).then(function (res) {
+      if (state.preset !== preset) return null;
+      if (hasGroups(res.layout)) return { layout: res.layout, saved: true };
+      if (!renamedFrom) return null;
+      return loadLayout(renamedFrom).then(function (old) {
+        return hasGroups(old.layout) ? { layout: old.layout, saved: false } : null;
+      });
+    }).then(function (found) {
+      if (!found || state.preset !== preset || hasGroups(state.layout)) return;
+      state.layout = found.layout;
+      if (!found.saved) {
+        state.layout.presetId = preset.id;
+        renameRootGroup(preset.id);          // 根群組的 id／名稱跟著換成新名字
+      }
+      state.layoutRevision = (state.layoutRevision || 0) + 1;
+      /* 這個名字底下本來就有的分組檔＝repo 裡的內容；從舊名字搬過來的還沒存。 */
+      state.savedLayoutText = found.saved ? VFXLayoutSchema.serialiseLayout(state.layout) : null;
+      loadCollapsed();
+      renderLayerList();
+      refreshDirty();
+    });
+  }
+
   function loadPresetFromFile(file) {
     var reader = new FileReader();
     reader.onload = function () {
@@ -4108,6 +4203,7 @@
           $('validation').textContent = '載入失敗：\n- ' + result.errors.join('\n- ');
           return;
         }
+        var naming = adoptFileName(parsed, file && file.name);
         state.preset = parsed;
         state.layout = VFXLayoutSchema.emptyLayout(parsed.id);
         state.savedLayoutText = null;        // 匯入的內容還沒進 repo
@@ -4123,6 +4219,9 @@
         clearHistoryForNewPreset();          // 上一份的 Undo 不適用於這一份
         markGizmoDirty();                    // preset.loop 由 renderInspector 一起帶出來
         renderLayerList(); renderInspector(); onPresetChanged();
+        syncPresetIdentity();
+        adoptLayoutFor(parsed, naming.renamedFrom);
+        announceNaming(naming);
       } catch (e) {
         $('validation').className = 'hint err';
         $('validation').textContent = 'JSON 解析失敗：' + e.message;
@@ -4301,6 +4400,10 @@
          用 canonical 文字而不是原始 bytes：檔案若還沒 canonical 化，
          每次一開啟就會顯示未存檔，那個提示很快就會被無視。 */
       state.savedText = VFXCore.serialisePreset(state.preset);
+      /* 檔名優先於檔案內的 id（見 adoptFileName）。基準線是換名字之前、磁碟上的內容，
+         所以換了之後會顯示未存檔，存一次就對齊。以前這裡直接「停用存檔」，
+         在檔案總管改過名的特效就只能卡在那裡。 */
+      var bootNaming = adoptFileName(state.preset, bootPresetId + '.json');
       state.sourcePresetId = bootPresetId;
       state.layout = res[3].layout;
       state.layoutRevision = 0;
@@ -4314,8 +4417,9 @@
       }
       loadCollapsed();
       fillPresetPicker(bootPresetId);
-      if (state.preset.id !== bootPresetId) {
-        setSaveStatus('preset.id 與檔名不一致，已停用存檔', 'err');
+      if (bootNaming.renamedFrom) {
+        announceNaming(bootNaming);
+        adoptLayoutFor(state.preset, bootNaming.renamedFrom);
       }
 
       // Editor 端的 resolver：assetId → 本機資產伺服器 URL。

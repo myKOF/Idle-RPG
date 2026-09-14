@@ -168,6 +168,8 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .save-status { color: #8a8a96; font-size: 12px; }
 .save-status.ok { color: #7fd18a; }
 .save-status.err { color: #ff8080; }
+/* 提醒（例如「已改用檔名」）：不是成功也不是失敗，未存檔時也要一直留著 */
+.save-status.note { color: #e0c07a; }
 
 /* ---- 預覽區上方的背景色列 ---- */
 #bg-bar {

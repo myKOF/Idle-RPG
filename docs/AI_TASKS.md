@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Claude｜VFX 編輯器瀏覽特效（縮圖）、檔名優先與名稱同步、存檔保底根群組（VFX-EDITOR-BROWSER-20260914）
+
+- Owner：Claude；Done（「另存新檔改用 Windows 存檔視窗」一項待使用者決定）。使用者需求：(1) 要複製一個特效來改，希望用縮圖找；(2) 在檔案總管改名後重新載入，仍顯示 -copy 的舊名；(3) 載入 Preset 後下拉名稱要與預覽的特效一致；(4) 另存新檔出來的特效沒有群組；(5) 另存新檔改用 Windows 存檔視窗。
+- 修改：瀏覽特效彈窗與伺服器縮圖路由 GET /__thumbs/<id>.png（tools/vfx/preset-thumbs.cjs，離線出圖先量外框再取景，記憶體＋系統暫存資料夾快取，f80a796）；載入時檔名優先於檔案內的 id、分組從舊名字搬來並改名、下拉名稱與網址同步、「已改用檔名」提示不被 refreshDirty 清掉、存檔時沒有群組就自動收成單一根群組（本紀錄所在提交）；bolt-chain-travel-bluewhite 登記進寫死清單（4d298af，Codex 38f2476 換掉表上的連鎖閃電特效後 USAGE-3 轉紅）；無限火龍根群組名稱改回 preset id（78dbbcc，合併後 LAYOUT-4 轉紅）。
+- 原因（群組消失）：當時「載入 Preset」只換 preset、不載分組，接著另存新檔就存出沒有群組的檔案。現在載入會帶分組，存檔另有保底。
+- 驗證：tests/vfx-*.test.cjs 共 743 項、20 項失敗——CAP-2、SAFETY-3、HISTORY-42 為編輯器既有基線；其餘 17 項（vfx-runtime、vfx-size、vfx-preset-coverage、vfx-tower、vfx-water-tornado、vfx-asset-semantics）以 git archive 抽出改動前的 cc24367 重跑同樣失敗，與本次無關。新增 THUMB-1～7、NAME-1～6 全過；f80a796 單獨抽出重跑，除基線與抽出副本缺根目錄 .bat 造成的 W7／W7B／W8 之外沒有其他失敗。瀏覽器實測（28362，claude 副本）：199 張卡片，縮圖捲到才載入（160×160），搜尋「冰」剩 12 份，框可拉大小，Esc 關閉；在目前這份點「複製成新特效」會叫出另存新檔（對話框已攔截，未寫檔）；用 slash-thrust-scatter 的內容、檔名 slash-thrust-scatter-blue.json 載入：下拉顯示新名、根群組從舊名字搬來並改名（22 層）、「已改用檔名」提示與未存檔同時顯示。別份卡片的「複製成新特效」（換頁後自動另存）只有 THUMB-7 接線測試，未實機點擊，避免真的寫出檔案。
+- 待確認：另存新檔改用 Windows 存檔視窗——Chrome 的 showSaveFilePicker 選到既有檔案時會先清空該檔，且拿不到實際路徑，建議改做編輯器內的另存對話框，等使用者決定；使用者需 merge ai/claude 並重啟編輯器伺服器才看得到（伺服器程式有改）。
+
 ## Claude｜VFX 編輯器多選編輯與多選框、特效用途標註、特效來源規則（VFX-EDITOR-MULTISEL-20260914）
 
 - Owner：Claude；Done。使用者需求：(1) Layers 多選後在 Inspector 一起改參數；(2) 預覽區多選時每個物件都要有框、一起縮放；(3) 下拉用途標註漏掉敵方冰片子彈等寫死在程式的特效；(4) 規則「特效只存在兩種來源：配置表填入的、程式碼寫死的（寫死的必須登記），不應存在第三種情況」寫入所有 AI 規範。
