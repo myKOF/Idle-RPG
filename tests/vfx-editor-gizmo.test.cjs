@@ -684,6 +684,141 @@ test('GROUP-11 群組能力四種都有，且 Editor 走同一套把手', functi
 });
 
 /* ============================================================
+   MULTISEL — 多選時每層一個框，一起變形（After Effects 式）
+
+   2026-09-14 使用者回報：左邊選了三個擴散圈，預覽區只有最後一個有框，
+   拖把手縮放也只有它變。多選時應該三個都有框，而且一起變形——
+   各自繞自己的中心：間距要維持，彼此的大小比例也要維持。
+   ============================================================ */
+
+/* 仿 slash-thrust-scatter 的三個擴散圈：沿 X 排開、橢圓、大小各不相同 */
+function rings() {
+  return [
+    sprite({ id: 'r0', position: { x: 24.6, y: 0 }, scale: { x: 0.025, y: 0.05 } }),
+    sprite({ id: 'r1', position: { x: 72.1, y: 0 }, scale: { x: 0.03, y: 0.06 } }),
+    sprite({ id: 'r2', position: { x: 119.6, y: 0 }, scale: { x: 0.02, y: 0.04 } })
+  ];
+}
+const capsOf = (ls) => ls.map((l) => G.capabilities(l));
+
+test('MULTISEL-1 縮放：每層乘上同一個倍率，位置不動、彼此的大小比例不變', function () {
+  const ls = rings();
+  const snaps = G.multiSnapshot(ls);
+  const b = G.baseBounds(ls[2], TEX);
+  const se = G.handles(b, G.capabilities(ls[2])).find(h => h.id === 'se');
+  const now = { x: b.pivot.x + (se.x - b.pivot.x) * 2, y: b.pivot.y + (se.y - b.pivot.y) * 2 };
+  const delta = G.multiDelta('scale', snaps[2], se, b.pivot, b.rotation, se, now, {});
+  assert.ok(Math.abs(delta.sx - 2) < 1e-9 && Math.abs(delta.sy - 2) < 1e-9,
+    '抓的那一層拖到兩倍距離＝倍率 2');
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), delta));
+  assert.deepEqual(ls.map(l => l.scale),
+    [{ x: 0.05, y: 0.1 }, { x: 0.06, y: 0.12 }, { x: 0.04, y: 0.08 }],
+    '三個都變兩倍，不是只有被抓的那一個');
+  assert.deepEqual(ls.map(l => l.position.x), [24.6, 72.1, 119.6],
+    '位置不動——這不是群組縮放，排好的間距要維持');
+});
+
+test('MULTISEL-2 邊中點：只有那一軸一起縮，另一軸各自保持', function () {
+  const ls = rings();
+  const snaps = G.multiSnapshot(ls);
+  const b = G.baseBounds(ls[0], TEX);
+  const east = G.handles(b, G.capabilities(ls[0])).find(h => h.id === 'e');
+  const now = { x: b.pivot.x + (east.x - b.pivot.x) * 3, y: east.y };
+  const delta = G.multiDelta('scale', snaps[0], east, b.pivot, b.rotation, east, now, {});
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), delta));
+  assert.deepEqual(ls.map(l => l.scale.y), [0.05, 0.06, 0.04], 'Y 一層都不動');
+  assert.deepEqual(ls.map(l => l.scale.x), [0.075, 0.09, 0.06]);
+});
+
+test('MULTISEL-3 移動：每層位移相同；Shift 只對齊被抓的那一層，間距不被格線改掉', function () {
+  const ls = rings();
+  const snaps = G.multiSnapshot(ls);
+  const free = G.multiDelta('move', snaps[1], null, null, 0, { x: 0, y: 0 }, { x: 13, y: -7 }, {});
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), free));
+  assert.deepEqual(ls.map(l => l.position),
+    [{ x: 37.6, y: -7 }, { x: 85.1, y: -7 }, { x: 132.6, y: -7 }]);
+
+  const snapped = G.multiDelta('move', snaps[1], null, null, 0,
+    { x: 0, y: 0 }, { x: 13, y: -7 }, { snap: true });
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), snapped));
+  assert.equal(ls[1].position.x, 90, '被抓的那一層對齊到 10');
+  assert.equal(Math.round((ls[2].position.x - ls[1].position.x) * 10) / 10, 47.5,
+    '間距維持原本的 47.5——每層各自對齊的話會被格線改成 50');
+});
+
+test('MULTISEL-4 旋轉：每層加上同樣的角度，各自繞自己的中心，位置不動', function () {
+  const ls = rings();
+  ls[0].rotation = 0.5;
+  const snaps = G.multiSnapshot(ls);
+  const delta = G.multiDelta('rotate', snaps[1], null, { x: 0, y: 0 }, 0,
+    { x: 0, y: -100 }, { x: 100, y: 0 }, {});
+  assert.ok(Math.abs(delta.rot - Math.PI / 2) < 1e-5);
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), delta));
+  assert.ok(Math.abs(ls[0].rotation - (0.5 + Math.PI / 2)) < 1e-5, '原本有角度的接著加');
+  assert.ok(Math.abs(ls[2].rotation - Math.PI / 2) < 1e-5);
+  assert.deepEqual(ls.map(l => l.position.x), [24.6, 72.1, 119.6]);
+});
+
+test('MULTISEL-5 混著粒子層：一起移動，但不寫粒子的 scale', function () {
+  const ls = [sprite({ id: 's', scale: { x: 1, y: 1 } }), particle({ id: 'p', position: { x: 10, y: 10 } })];
+  const snaps = G.multiSnapshot(ls);
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), { sx: 2, sy: 2 }));
+  assert.deepEqual(ls[0].scale, { x: 2, y: 2 });
+  assert.equal(ls[1].scale, undefined, '粒子不吃 layer.scale，不得多出這個欄位');
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), { dx: 5, dy: 0 }));
+  assert.deepEqual(ls[1].position, { x: 15, y: 10 });
+  assert.deepEqual(ls[0].scale, { x: 1, y: 1 }, '每次都從快照重算：上一步的縮放不能殘留');
+});
+
+test('MULTISEL-6 拖回原位就回到原狀；Escape 逐字還原', function () {
+  const ls = rings();
+  ls[1].rotation = 0.3;
+  const before = JSON.stringify(ls);
+  const snaps = G.multiSnapshot(ls);
+  const caps = capsOf(ls);
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, caps, { dx: 30, dy: 5 }));
+  assert.notEqual(JSON.stringify(ls), before, '先確認真的改到了');
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, caps, { dx: 0, dy: 0 }));
+  assert.equal(JSON.stringify(ls), before, '位移歸零的那一刻要真的回到原狀，不是停在上一步');
+
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, caps, { sx: 3, sy: 3, rot: 1 }));
+  G.restoreMulti(ls, snaps);
+  assert.equal(JSON.stringify(ls), before, 'Escape 之後逐字相同');
+});
+
+test('MULTISEL-7 被抓那一層的某一軸是 0 時，倍率當成不變，其他層不會變成 Infinity', function () {
+  const ls = [sprite({ id: 'z', scale: { x: 0, y: 1 } }), sprite({ id: 'n', scale: { x: 2, y: 2 } })];
+  const snaps = G.multiSnapshot(ls);
+  const b = G.baseBounds(ls[0], TEX);
+  const se = { id: 'se', kind: 'scale', axis: 'both' };
+  const delta = G.multiDelta('scale', snaps[0], se, b.pivot, 0,
+    { x: 10, y: 10 }, { x: 20, y: 20 }, {});
+  assert.equal(delta.sx, 1, '0 算不出倍率');
+  G.writeMultiTransform(ls, snaps, G.applyMultiTransform(snaps, capsOf(ls), delta));
+  ls.forEach(l => assert.ok(isFinite(l.scale.x) && isFinite(l.scale.y), l.id + ' 出現非有限值'));
+});
+
+test('MULTISEL-8 Editor：多選時每層一個框、拖曳走多選變形、點一下收斂成單選', function () {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const body = (name) => {
+    const fn = noComments.slice(noComments.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  assert.ok(/inspectorTargets\(\)/.test(body('gizmoTarget')),
+    '框與 Inspector 用同一個「選了哪些圖層」的判斷，不能各說各話');
+  assert.ok(/kind: 'multi'/.test(body('gizmoTarget')));
+  assert.ok(/gizmoItems\(target\)/.test(body('drawGizmo')) && /drawGizmoBox\(/.test(body('drawGizmo')),
+    '每一層各畫一個框');
+  assert.ok(/hitGizmoHandle\(items, pt\)/.test(body('onPreviewPointerDown')), '每個框的把手都要抓得到');
+  assert.ok(/dragMulti\(d, pt, shift\)/.test(body('onPreviewPointerMove')));
+  assert.ok(/G\.multiDelta\(/.test(body('dragMulti')) && /G\.writeMultiTransform\(/.test(body('dragMulti')));
+  assert.ok(/G\.restoreMulti\(/.test(body('cancelDrag')), 'Escape 也要還原每一層');
+  assert.ok(/selectLayerById\(collapseTo\)/.test(body('onPreviewPointerUp')),
+    '在多選的框裡點一下沒拖＝只選那一層，否則在預覽區點不出單獨一層');
+});
+
+/* ============================================================
    ROW — Layer List 的操作
    ============================================================ */
 
