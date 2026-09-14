@@ -163,7 +163,7 @@ test('WIRE-2 色標上限與 Core 的曲線點數硬上限一致', function () {
 test('WIRE-3 Inspector 有 Color 區塊，且走的是 gradientBlock', function () {
   const src = read('tools/vfx/editor/editor.js');
   assert.match(src, /curveSection\(host, 'color', 'Color'/);
-  assert.match(src, /gradientBlock\(body, layer, 'tintOverLife'\)/);
+  assert.match(src, /gradientBlock\(body, targets, 'tintOverLife'\)/);
   assert.match(src, /overLifeOpen = \{ opacity: true, color: false/);
   /* 三段式回呼要接上歷史與預覽，否則 undo 會跳過顏色的修改。 */
   const block = src.slice(src.indexOf('function gradientBlock'), src.indexOf('function writeCurve'));

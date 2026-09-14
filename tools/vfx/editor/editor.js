@@ -751,10 +751,10 @@
 
      搜尋與篩選直接重用 Asset Browser 的 filterAssets()，沒有第二套實作。 */
 
-  /* layer 為 null 而 createType 有值＝「挑一張素材，直接新增成一個圖層」。
+  /* layers 為 null 而 createType 有值＝「挑一張素材，直接新增成一個圖層」。
      兩種用法共用同一個對話框，因為挑素材這件事本身完全一樣——差別只在
      選完之後把 assetId 寫到哪裡。 */
-  var picker = { layer: null, field: 'assetId', selected: null, createType: null };
+  var picker = { layers: null, field: 'assetId', selected: null, createType: null };
 
   function wirePicker() {
     ['pf-text', 'pf-usage', 'pf-shape', 'pf-element', 'pf-tag', 'pf-background', 'pf-high']
@@ -769,12 +769,17 @@
     });
   }
 
-  function openPicker(layer, field) {
-    picker.layer = layer;
+  /* layers 是 Inspector 目前的編輯對象：單選時一層，多選時全部選到的圖層。
+     各層素材不同時不預選任何一個——預選第一層的，「直接按套用」就會把全部換成
+     第一層的素材，而使用者可能根本沒注意到它們原本不同。 */
+  function openPicker(layers, field) {
+    picker.layers = layers;
     picker.field = field;
     picker.createType = null;
-    picker.selected = layer[field] || null;
-    $('picker-target').textContent = '圖層 ' + layer.id;
+    var shared = MX.commonValue(layers, function (l) { return l[field] || null; });
+    picker.selected = shared.mixed ? null : shared.value;
+    $('picker-target').textContent = layers.length === 1
+      ? '圖層 ' + layers[0].id : layers.length + ' 個圖層';
     showPicker();
   }
 
@@ -783,7 +788,7 @@
      這裡另外訂一個預設值只會讓兩顆按鈕的行為不一致。 */
   function openPickerForNewLayer() {
     if (!state.preset) return;
-    picker.layer = null;
+    picker.layers = null;
     picker.field = 'assetId';
     picker.createType = $('new-layer-type').value || 'sprite';
     picker.selected = null;
@@ -794,7 +799,9 @@
   function showPicker() {
     /* 按鈕文字跟著用途走：同一個對話框在「換掉這一層的素材」與「長出一個新
        圖層」兩種情境下按下去的結果不一樣，標籤不能只寫一種。 */
-    $('picker-apply').textContent = picker.createType ? '新增為圖層' : '套用到目前圖層';
+    $('picker-apply').textContent = picker.createType ? '新增為圖層'
+      : (picker.layers && picker.layers.length > 1
+        ? '套用到 ' + picker.layers.length + ' 個圖層' : '套用到目前圖層');
     $('picker').hidden = false;
     renderPickerList();
     renderPickerDetail();
@@ -803,7 +810,7 @@
 
   function closePicker() {
     $('picker').hidden = true;
-    picker.layer = null;
+    picker.layers = null;
     picker.createType = null;
     picker.selected = null;
   }
@@ -819,9 +826,9 @@
       closePicker();
       return;
     }
-    if (!picker.layer) return;
-    var target = picker.layer, field = picker.field;
-    edit('更換素材', function () { target[field] = value; onPresetChanged(); });
+    if (!picker.layers || !picker.layers.length) return;
+    var targets = picker.layers, field = picker.field;
+    edit('更換素材', function () { MX.writeAll(targets, field, value); onPresetChanged(); });
     closePicker();
     renderInspector();
   }
@@ -1164,7 +1171,7 @@
 
     d.moved = true;
     markGizmoDirty();
-    if (d.target.kind === 'layer') syncTransformInputs(d.target.layer);
+    syncTransformInputs();
     previewSoon();                // rAF 合併，不重載素材
     e.preventDefault();
   }
@@ -1252,20 +1259,21 @@
      （那會把曲線元件整組換掉、也會讓輸入框失焦），只把這三個欄位的
      輸入值寫過去。反方向本來就成立：Inspector 改值 → onPresetChanged →
      markGizmoDirty → 框跟著移動。 */
-  function syncTransformInputs(layer) {
+  function syncTransformInputs() {
     var host = $('inspector');
     if (!host) return;
+    /* 看的是 Inspector 的全部目標，不只是被拖的那一層：多選時框拖的是作用中那一層，
+       其餘選到的圖層沒動，拖完之後那一格就不再是共同值，要跟著變成「多個值」。 */
+    var targets = inspectorTargets();
+    if (!targets.length) return;
     ['position', 'scale'].forEach(function (key) {
       ['x', 'y'].forEach(function (axis) {
         var el = host.querySelector('[data-tf="' + key + '.' + axis + '"]');
-        if (el && layer[key]) el.value = layer[key][axis];
+        if (el) showCommon(el, MX.commonValue(targets, vecAxisReader(key, axis)));
       });
     });
     var rotEl = host.querySelector('[data-tf="rotation"]');
-    if (rotEl) {
-      rotEl.value = layer.rotation === undefined
-        ? '' : round4(VFXCurveModel.radToDeg(layer.rotation));
-    }
+    if (rotEl) showCommon(rotEl, MX.commonValue(targets, function (l) { return l.rotation; }), toDegrees);
   }
 
   function wireGizmo() {
@@ -1551,16 +1559,41 @@
      而分家的症狀是「測試都過、實際點下去行為不一樣」。 */
   var M = VFXLayerModel;
   var G = VFXGizmoModel;
+  var MX = VFXMultiEditModel;
 
   function keyOf(kind, id) { return M.keyOf(kind, id); }
   function keyKind(key) { return M.keyKind(key); }
   function keyId(key) { return M.keyId(key); }
   function layerById(id) { return M.layerById(state.preset, id); }
 
-  /* Inspector 顯示的是 active，不是「選取的第一個」——多選時這兩者常常不同。 */
+  /* 作用中的那一層（清單上有外框的那列），不是「選取的第一個」——多選時這兩者常常不同。
+     Gizmo 的框看它；Inspector 看的是 inspectorTargets()。 */
   function selectedLayer() {
     if (keyKind(state.activeKey) !== "layer") return null;
     return layerById(keyId(state.activeKey));
+  }
+
+  /* Inspector 的編輯對象。
+
+     選了兩項以上、而且展開之後（群組 key 換成成員）至少兩層 → 全部選到的圖層。
+     其餘情況 → 作用中的那一層；沒有的話回傳空的，Inspector 改顯示群組區塊或提示。
+
+     單選與多選走的是同一份欄位程式，差別只在這裡回傳幾層。
+     只點一個群組列時仍然顯示群組區塊：那裡的中心、寬高、縮放 × 是把整組當成
+     一個物件來變形，與「每一層的參數一起改」是兩回事。 */
+  function inspectorTargets() {
+    if (state.selectedKeys.length >= 2) {
+      var ids = MX.targetLayerIds(state.preset, state.layout, state.selectedKeys);
+      if (ids.length >= 2) return ids.map(layerById).filter(Boolean);
+    }
+    var layer = selectedLayer();
+    return layer ? [layer] : [];
+  }
+
+  /* 多選時「以哪一層為準」：作用中的那一層；它不在選取裡（被 Ctrl 點掉了）就用第一層。 */
+  function referenceLayer(targets) {
+    var active = selectedLayer();
+    return active && targets.indexOf(active) >= 0 ? active : targets[0];
   }
 
   /* 選取群組。與 selectLayerById 走同一條路，只是 key 的種類不同。 */
@@ -2412,6 +2445,116 @@
     renderInspector();                 // 欄位要顯示變形後的新數值
   }
 
+  /* ---------------- 多選的顯示與寫入 ----------------
+
+     每一格欄位都要回答兩件事：「顯示什麼」與「改了寫到哪幾層」。
+     寫到哪幾層永遠是 inspectorTargets() 的全部；顯示什麼分兩種——各層相同就顯示
+     那個值，不同就留空並標上「多個值」（理由見 multi-edit-model.js 開頭）。 */
+
+  var MIXED_TEXT = '多個值';
+  var MIXED_TITLE = '選取的圖層這一欄數值不同。輸入新值會套用到全部；保持空白就不會改到任何一層。';
+
+  function markMixed(el, mixed) {
+    el.classList.toggle('mixed', !!mixed);
+    if (mixed) {
+      if (!el.hasAttribute('data-base-placeholder')) {
+        el.setAttribute('data-base-placeholder', el.placeholder || '');
+        el.setAttribute('data-base-title', el.title || '');
+      }
+      el.placeholder = MIXED_TEXT;
+      el.title = MIXED_TITLE;
+    } else if (el.hasAttribute('data-base-placeholder')) {
+      el.placeholder = el.getAttribute('data-base-placeholder');
+      el.title = el.getAttribute('data-base-title');
+      el.removeAttribute('data-base-placeholder');
+      el.removeAttribute('data-base-title');
+    }
+  }
+
+  /* commonValue 的結果放進輸入框。沒有這個欄位（undefined）顯示空白，與單選時相同。 */
+  function showCommon(input, shown, format) {
+    input.value = shown.mixed || shown.value === undefined
+      ? '' : (format ? format(shown.value) : shown.value);
+    markMixed(input, shown.mixed);
+  }
+
+  function toDegrees(radians) { return round4(VFXCurveModel.radToDeg(radians)); }
+
+  /* vec2 某一軸的讀法。缺省值與 Core 的 layerDefaults 一致：沒寫 scale 的圖層是 1 不是 0，
+     否則「全部 scale.x 都是 1」會因為其中一層沒寫而被判成多個值。 */
+  function vecAxisReader(key, axis) {
+    var fallback = VEC_DEFAULTS[key] || { x: 0, y: 0 };
+    return function (l) {
+      return (l[key] && l[key][axis] !== undefined) ? l[key][axis] : fallback[axis];
+    };
+  }
+
+  /* 逐字寫回的數值欄位（oninput）：多選時把一格「多個值」清空，意思是「我不改了」，
+     不是「全部刪掉」或「全部歸零」。所以聚焦當下若是混合值，就先記下每一層的原值，
+     清空時照原樣放回去。單選時永遠不是混合值，這條路不會觸發，行為與原本相同。
+
+     回傳的函式放在 oninput 的開頭：回 true 代表已經還原，這次輸入不必再寫。 */
+  function clearRestorer(input, targets, key, isMixed) {
+    var saved = null;
+    input.addEventListener('focus', function () {
+      saved = isMixed() ? MX.captureField(targets, key) : null;
+    });
+    return function () {
+      if (input.value !== '' || !saved) return false;
+      MX.restoreField(targets, key, saved);
+      onPresetChanged();
+      return true;
+    };
+  }
+
+  /* 水龍捲是程序生成圖層：沒有序列圖集、平鋪尺寸或 procedural effect 可調 */
+  var WATER_TORNADO_HIDDEN_FIELDS = ['sheet', 'size', 'scrollSpeed', 'effect'];
+
+  function fieldsOf(layer, list) {
+    if (layer.effect !== 'waterTornado') return list;
+    return list.filter(function (f) { return WATER_TORNADO_HIDDEN_FIELDS.indexOf(f.key) < 0; });
+  }
+
+  /* 要顯示哪些欄位。單選就是該型別的完整清單；多選時取交集，另外拿掉兩格：
+       id       每一層必須不同，批次寫同一個值只會撞名
+       assetId  混有水龍捲時——那種圖層沒有素材可換 */
+  function inspectorFields(targets) {
+    var multi = targets.length > 1;
+    var common = MX.sharedFields(targets.map(function (l) { return fieldsOf(l, COMMON_FIELDS); }));
+    var typed = MX.sharedFields(targets.map(function (l) { return fieldsOf(l, TYPE_FIELDS[l.type] || []); }));
+    if (multi) {
+      var hasWater = targets.some(function (l) { return l.effect === 'waterTornado'; });
+      common = common.filter(function (f) {
+        return f.key !== 'id' && !(f.kind === 'asset' && hasWater);
+      });
+    }
+    var types = [];
+    targets.forEach(function (l) { if (types.indexOf(l.type) < 0) types.push(l.type); });
+    var title = { kind: 'title', label: types.join('／') + (types.length > 1 ? ' 共通' : ' 專屬') };
+    return common.concat(multi && !typed.length ? [] : [title], typed);
+  }
+
+  /* 多選的標題：幾層、什麼型別；滑鼠停在標題上會列出全部 id。 */
+  function renderMultiHeader(host, targets) {
+    var counts = {};
+    var types = [];
+    targets.forEach(function (l) {
+      if (!counts[l.type]) { counts[l.type] = 0; types.push(l.type); }
+      counts[l.type]++;
+    });
+    var title = document.createElement('div');
+    title.className = 'group-title keep-case';
+    title.textContent = '多選：' + targets.length + ' 個圖層（' + (types.length === 1
+      ? types[0] : types.map(function (t) { return t + ' ' + counts[t]; }).join('、')) + '）';
+    title.title = targets.map(function (l) { return l.id; }).join('\n');
+    host.appendChild(title);
+    var hint = document.createElement('div');
+    hint.className = 'hint';
+    hint.textContent = '改任何一欄都會套用到全部選取的圖層，Ctrl+Z 一次全部復原。\n' +
+      '顯示「多個值」的欄位＝各層不同，不去動它就不會被改到。';
+    host.appendChild(hint);
+  }
+
   function renderInspector() {
     var host = $('inspector');
     /* 舊的曲線元件在 window 上掛了 mousemove／mouseup，不收掉會越積越多，
@@ -2420,8 +2563,8 @@
     host.innerHTML = '';
     /* Preset 級欄位不隨選取變動，所以永遠在最上面——包括沒選任何圖層的時候。 */
     renderPresetSection(host);
-    var layer = selectedLayer();
-    if (!layer) {
+    var targets = inspectorTargets();
+    if (!targets.length) {
       var g = activeGroup();
       if (g) { renderGroupSection(host, g); return; }
       var hint = document.createElement('div');
@@ -2430,13 +2573,12 @@
       host.appendChild(hint);
       return;
     }
+    if (targets.length > 1) renderMultiHeader(host, targets);
+    /* lead 只拿來讀「單選時才會出現」的東西（id 欄位、水龍捲的來源標示）；
+       欄位的寫入一律是 targets 的全部。 */
+    var lead = targets[0];
 
-    var fields = COMMON_FIELDS
-      .concat([{ kind: 'title', label: layer.type + ' 專屬' }])
-      .concat(TYPE_FIELDS[layer.type] || []);
-    if (layer.effect === 'waterTornado') fields = fields.filter(function (f) { return ['sheet', 'size', 'scrollSpeed', 'effect'].indexOf(f.key) < 0; });
-
-    fields.forEach(function (f) {
+    inspectorFields(targets).forEach(function (f) {
       if (f.kind === 'title') {
         var t = document.createElement('div');
         t.className = 'group-title';
@@ -2445,11 +2587,11 @@
         return;
       }
       var control;
-      if (f.kind === 'asset' && layer.effect === 'waterTornado') {
+      if (f.kind === 'asset' && lead.effect === 'waterTornado') {
         control = document.createElement('div'); control.className = 'asset-field';
         var source = document.createElement('input'); source.type = 'text'; source.readOnly = true;
-        source.value = 'waterTornado/' + layer.water.part; source.title = '內建程序組件識別，不是素材路徑';
-        source.setAttribute('data-generated-source', layer.water.part);
+        source.value = 'waterTornado/' + lead.water.part; source.title = '內建程序組件識別，不是素材路徑';
+        source.setAttribute('data-generated-source', lead.water.part);
         var badge = document.createElement('span'); badge.textContent = '程序生成'; badge.style.whiteSpace = 'nowrap'; badge.style.alignSelf = 'center';
         control.appendChild(source); control.appendChild(badge);
       } else if (f.kind === 'bool') {
@@ -2458,22 +2600,59 @@
         /* 每個布林欄位的預設值不同：enabled 沒寫就是開，alignToVelocity 沒寫就是關。
            一律用「!== false」會讓沒設定的 alignToVelocity 顯示成已勾選。 */
         var boolDefault = f.default !== false;
-        control.checked = layer[f.key] === undefined ? boolDefault : layer[f.key] !== false;
-        control.onchange = function () { layer[f.key] = control.checked; onPresetChanged(); };
+        var flag = MX.commonValue(targets, function (l) {
+          return l[f.key] === undefined ? boolDefault : l[f.key] !== false;
+        });
+        control.checked = !flag.mixed && flag.value;
+        /* 各層不同：顯示半勾。點一下就把全部設成同一個值。 */
+        control.indeterminate = flag.mixed;
+        if (flag.mixed) control.title = '選取的圖層有的開、有的關。點一下會把全部設成同一個值。';
+        control.onchange = function () { MX.writeAll(targets, f.key, control.checked); onPresetChanged(); };
       } else if (f.kind === 'select') {
         control = document.createElement('select');
+        var choice = MX.commonValue(targets, function (l) { return l[f.key] || f.options()[0]; });
+        if (choice.mixed) {
+          /* 佔位選項：選不回來，只是讓下拉顯示「多個值」而不是冒充第一個選項 */
+          var mixedOption = document.createElement('option');
+          mixedOption.value = '';
+          mixedOption.textContent = '（' + MIXED_TEXT + '）';
+          mixedOption.disabled = true;
+          mixedOption.selected = true;
+          control.appendChild(mixedOption);
+        }
         f.options().forEach(function (v) {
           var o = document.createElement('option');
           o.value = v; o.textContent = v;
           control.appendChild(o);
         });
-        control.value = layer[f.key] || f.options()[0];
-        control.onchange = function () { layer[f.key] = control.value; onPresetChanged(); };
+        if (!choice.mixed) control.value = choice.value;
+        control.onchange = function () { MX.writeAll(targets, f.key, control.value); onPresetChanged(); };
       } else if (f.kind === 'color') {
-        control = document.createElement('input');
-        control.type = 'color';
-        control.value = layer[f.key] || '#ffffff';
-        control.oninput = function () { layer[f.key] = control.value; onPresetChanged(); };
+        /* 色票沒有「空白」可以顯示：混合時先放第一層的顏色，旁邊明寫「多個值」；
+           改了顏色之後全部一致，說明也跟著收掉。 */
+        var colour = MX.commonValue(targets, function (l) {
+          return String(l[f.key] || '#ffffff').toLowerCase();
+        });
+        var swatch = document.createElement('input');
+        swatch.type = 'color';
+        swatch.value = colour.mixed ? (lead[f.key] || '#ffffff') : colour.value;
+        var colourNote = null;
+        swatch.oninput = function () {
+          MX.writeAll(targets, f.key, swatch.value);
+          if (colourNote) colourNote.hidden = true;
+          onPresetChanged();
+        };
+        control = swatch;
+        if (colour.mixed) {
+          control = document.createElement('div');
+          control.className = 'mixed-color';
+          control.title = MIXED_TITLE;
+          colourNote = document.createElement('span');
+          colourNote.className = 'mixed-note';
+          colourNote.textContent = MIXED_TEXT;
+          control.appendChild(swatch);
+          control.appendChild(colourNote);
+        }
       } else if (f.kind === 'vec2') {
         control = document.createElement('div');
         control.style.display = 'flex';
@@ -2488,11 +2667,19 @@
           /* 給 Gizmo 拖曳時定位用。整個 Inspector 重繪會把曲線元件也換掉，
              拖曳期間只更新這幾格就好。 */
           input.setAttribute('data-tf', f.key + '.' + axis);
-          input.value = (layer[f.key] && layer[f.key][axis] !== undefined)
-            ? layer[f.key][axis] : fallback[axis];
+          /* 一軸一格：多選時只改 X，各層的 Y 保持各自的值 */
+          var readAxis = vecAxisReader(f.key, axis);
+          showCommon(input, MX.commonValue(targets, readAxis));
+          var restoreAxis = clearRestorer(input, targets, f.key, function () {
+            return MX.commonValue(targets, readAxis).mixed;
+          });
           input.oninput = function () {
-            if (!layer[f.key]) layer[f.key] = { x: fallback.x, y: fallback.y };
-            layer[f.key][axis] = Number(input.value);
+            if (restoreAxis()) return;
+            var v = Number(input.value);
+            targets.forEach(function (l) {
+              if (!l[f.key]) l[f.key] = { x: fallback.x, y: fallback.y };
+              l[f.key][axis] = v;
+            });
             onPresetChanged();
           };
           control.appendChild(input);
@@ -2500,17 +2687,30 @@
       } else if (f.kind === 'json') {
         control = document.createElement('input');
         control.type = 'text';
-        control.value = layer[f.key] === undefined ? '' : JSON.stringify(layer[f.key]);
+        var jsonShown = MX.commonValue(targets, function (l) { return l[f.key]; });
+        control.value = jsonShown.mixed || jsonShown.value === undefined
+          ? '' : JSON.stringify(jsonShown.value);
+        markMixed(control, jsonShown.mixed);
+        /* onchange 欄位沒有逐字的中間狀態，不必記原值：「多個值」留空送出就是不改；
+           送出過一個值之後它就是共同值了，之後留空才是移除欄位。 */
+        var jsonMixed = jsonShown.mixed;
         control.onchange = function () {
           var raw = control.value.trim();
-          if (!raw) { delete layer[f.key]; onPresetChanged(); return; }
+          if (!raw) {
+            if (jsonMixed) return;
+            MX.writeAll(targets, f.key, undefined); onPresetChanged(); return;
+          }
+          var parsed;
           try {
-            layer[f.key] = JSON.parse(raw);
+            parsed = JSON.parse(raw);
             control.classList.remove('err');
           } catch (e) {
             control.classList.add('err');
             return;                              // JSON 壞掉就不套用，不 silent 吃掉
           }
+          MX.writeAll(targets, f.key, parsed);
+          jsonMixed = false;
+          markMixed(control, false);
           onPresetChanged();
         };
       } else if (f.kind === 'asset') {
@@ -2520,23 +2720,35 @@
         control.className = 'asset-field';
         var textIn = document.createElement('input');
         textIn.type = 'text';
-        textIn.value = layer[f.key] || '';
-        textIn.title = layer[f.key] || '';
+        var assetShown = MX.commonValue(targets, function (l) { return l[f.key] || ''; });
+        textIn.value = assetShown.mixed ? '' : assetShown.value;
+        textIn.title = assetShown.mixed ? '' : assetShown.value;
         textIn.placeholder = '按「選擇素材」';
-        textIn.onchange = function () { layer[f.key] = textIn.value; onPresetChanged(); };
+        markMixed(textIn, assetShown.mixed);
+        var assetMixed = assetShown.mixed;         // 同 json：留空送出＝不改
+        textIn.onchange = function () {
+          if (assetMixed && !textIn.value) return;
+          MX.writeAll(targets, f.key, textIn.value);
+          assetMixed = false;
+          markMixed(textIn, false);
+          textIn.title = textIn.value;
+          onPresetChanged();
+        };
         var pickBtn = document.createElement('button');
         pickBtn.type = 'button';
         pickBtn.className = 'pick-btn';
         pickBtn.textContent = '選擇素材';
-        pickBtn.onclick = function () { openPicker(layer, f.key); };
+        pickBtn.onclick = function () { openPicker(targets, f.key); };
         control.appendChild(textIn);
         control.appendChild(pickBtn);
       } else if (f.kind === 'text') {
+        /* 目前只有 id 是文字欄位，而 id 只在單選時出現（見 inspectorFields），
+           所以這裡的 lead 就是那唯一的一層。 */
         control = document.createElement('input');
         control.type = 'text';
-        control.value = layer[f.key] || '';
+        control.value = lead[f.key] || '';
         control.onchange = function () {
-          var old = layer[f.key];
+          var old = lead[f.key];
           if (f.key === 'id') {
             /* 改 id 必須連 layout 裡的參照一起改，否則那一層會從群組裡
                「消失」變成 root——實測過，Orb A 會從 4 層掉到 3 層。 */
@@ -2560,7 +2772,7 @@
             onPresetChanged(); renderLayerList(); renderInspector();
             return;
           }
-          layer[f.key] = control.value;
+          MX.writeAll(targets, f.key, control.value);
           onPresetChanged(); renderLayerList();
         };
       } else if (f.kind === 'angle') {
@@ -2568,34 +2780,47 @@
         control.type = 'number';
         control.step = String(f.step);
         control.setAttribute('data-tf', f.key);
-        control.value = layer[f.key] === undefined
-          ? '' : round4(VFXCurveModel.radToDeg(layer[f.key]));
+        var readAngle = function (l) { return l[f.key]; };
+        showCommon(control, MX.commonValue(targets, readAngle), toDegrees);
+        var restoreAngle = clearRestorer(control, targets, f.key, function () {
+          return MX.commonValue(targets, readAngle).mixed;
+        });
         control.oninput = function () {
-          if (control.value === '') delete layer[f.key];
-          else layer[f.key] = VFXCurveModel.degToRad(Number(control.value));
+          if (restoreAngle()) return;
+          MX.writeAll(targets, f.key, control.value === ''
+            ? undefined : VFXCurveModel.degToRad(Number(control.value)));
           onPresetChanged();
         };
       } else if (f.kind === 'angleRange') {
         control = document.createElement('input');
         control.type = 'text';
         control.placeholder = '30 或 [0, 360]';
-        control.value = angleRangeToText(layer[f.key]);
+        var rangeShown = MX.commonValue(targets, function (l) { return l[f.key]; });
+        control.value = rangeShown.mixed ? '' : angleRangeToText(rangeShown.value);
+        markMixed(control, rangeShown.mixed);
+        var rangeMixed = rangeShown.mixed;         // 同 json：留空送出＝不改
         control.onchange = function () {
           var next = angleRangeFromText(control.value);
           if (next === INVALID) { control.classList.add('err'); return; }
           control.classList.remove('err');
-          if (next === undefined) delete layer[f.key];
-          else layer[f.key] = next;
+          if (next === undefined && rangeMixed) return;
+          MX.writeAll(targets, f.key, next);
+          rangeMixed = false;
+          markMixed(control, false);
           onPresetChanged();
         };
       } else {
         control = document.createElement('input');
         control.type = 'number';
         control.step = String(f.step);
-        control.value = layer[f.key] === undefined ? '' : layer[f.key];
+        var readNumber = function (l) { return l[f.key]; };
+        showCommon(control, MX.commonValue(targets, readNumber));
+        var restoreNumber = clearRestorer(control, targets, f.key, function () {
+          return MX.commonValue(targets, readNumber).mixed;
+        });
         control.oninput = function () {
-          if (control.value === '') delete layer[f.key];
-          else layer[f.key] = Number(control.value);
+          if (restoreNumber()) return;
+          MX.writeAll(targets, f.key, control.value === '' ? undefined : Number(control.value));
           onPresetChanged();
         };
       }
@@ -2603,7 +2828,10 @@
       host.appendChild(makeField(f.label, control));
     });
 
-    if ((layer.type === 'sprite' || layer.effect === 'waterTornado') && layer.radiusProfile) {
+    /* 下面兩段是水龍捲專屬。多選時要「全部選到的圖層都有」才顯示，寫入同樣是全部。 */
+    if (targets.every(function (l) {
+      return (l.type === 'sprite' || l.effect === 'waterTornado') && l.radiusProfile;
+    })) {
       var title = document.createElement('div');
       title.className = 'group-title'; title.textContent = '水柱半徑輪廓'; host.appendChild(title);
       [['centerScale', '中央半徑倍率', 1], ['topRatio', '上端／中央半徑比例', 2],
@@ -2611,11 +2839,18 @@
         var input = document.createElement('input');
         input.type = 'number'; input.min = '0.1'; input.max = '8'; input.step = '0.1';
         input.setAttribute('data-radius-profile', f[0]);
-        input.value = layer.radiusProfile[f[0]] === undefined ? f[2] : layer.radiusProfile[f[0]];
+        var readProfile = function (l) {
+          return l.radiusProfile[f[0]] === undefined ? f[2] : l.radiusProfile[f[0]];
+        };
+        showCommon(input, MX.commonValue(targets, readProfile));
+        var restoreProfile = clearRestorer(input, targets, 'radiusProfile', function () {
+          return MX.commonValue(targets, readProfile).mixed;
+        });
         input.oninput = function () {
+          if (restoreProfile()) return;
           var value = Number(input.value);
           if (!input.value || !Number.isFinite(value) || value < 0.1 || value > 8) return;
-          layer.radiusProfile[f[0]] = value; onPresetChanged();
+          targets.forEach(function (l) { l.radiusProfile[f[0]] = value; }); onPresetChanged();
         };
         wireFieldTransaction(input, f[1]); host.appendChild(makeField(f[1], input));
       });
@@ -2624,18 +2859,30 @@
       host.appendChild(hint);
     }
 
-    if (layer.effect === 'waterTornado') {
+    if (targets.every(function (l) { return l.effect === 'waterTornado'; })) {
+      var parts = [];
+      targets.forEach(function (l) { if (parts.indexOf(l.water.part) < 0) parts.push(l.water.part); });
       [['speed', '氣流速度倍率'], ['density', '粒子數量倍率']].forEach(function (field) {
-        if (field[0] === 'density' && ['dust', 'spray'].indexOf(layer.water.part) < 0) return;
+        if (field[0] === 'density' && parts.some(function (p) { return ['dust', 'spray'].indexOf(p) < 0; })) return;
         var input = document.createElement('input'); input.type = 'number'; input.min = 0; input.max = 4; input.step = .1;
-        input.value = layer.water[field[0]] === undefined ? 1 : layer.water[field[0]];
+        var readWater = function (l) { return l.water[field[0]] === undefined ? 1 : l.water[field[0]]; };
+        showCommon(input, MX.commonValue(targets, readWater));
         input.setAttribute('data-water-param', field[0]);
-        input.oninput = function () { var v = Number(input.value); if (input.value && Number.isFinite(v) && v >= 0 && v <= 4) { layer.water[field[0]] = v; onPresetChanged(); } };
+        var restoreWater = clearRestorer(input, targets, 'water', function () {
+          return MX.commonValue(targets, readWater).mixed;
+        });
+        input.oninput = function () {
+          if (restoreWater()) return;
+          var v = Number(input.value);
+          if (input.value && Number.isFinite(v) && v >= 0 && v <= 4) {
+            targets.forEach(function (l) { l.water[field[0]] = v; }); onPresetChanged();
+          }
+        };
         wireFieldTransaction(input, field[1]); host.appendChild(makeField(field[1], input));
       });
-      var note = document.createElement('div'); note.className = 'hint'; note.textContent = '即時計算圖層：' + layer.water.part + '。可分別調整色彩、透明度、位置、縮放與氣流速度；沒有序列圖集。'; host.appendChild(note);
+      var note = document.createElement('div'); note.className = 'hint'; note.textContent = '即時計算圖層：' + parts.join('、') + '。可分別調整色彩、透明度、位置、縮放與氣流速度；沒有序列圖集。'; host.appendChild(note);
     }
-    renderOverLife(host, layer);
+    renderOverLife(host, targets);
     /* Canvas 要量得到自己的寬高才畫得對，而元素剛 append 時版面還沒定案。
        等下一幀再統一重繪一次——這比依賴 ResizeObserver 可靠，
        它在某些嵌入式瀏覽器裡根本不會觸發。 */
@@ -2693,7 +2940,7 @@
 
   /* 一張圖 ＋ 它的兩顆按鈕。curve-editor 只管畫與拖，
      「寫回哪個欄位」「什麼時候算改過」留在這裡。 */
-  function curveBlock(host, layer, field, policy, label, opts) {
+  function curveBlock(host, targets, field, policy, label, opts) {
     /* 歷史標籤要看得懂。label 是圖上的軸標（X／Y／Z／XY），
        透明度那一格沒有軸，所以另外給名字。 */
     var what = (opts && opts.name) || (label ? label + ' 軸' : '') || '曲線';
@@ -2705,8 +2952,11 @@
       tag.textContent = label;
       row.appendChild(tag);
     }
+    /* 多選時各層這條曲線完全相同才畫得出來一起改；不同就走說明列 */
+    var shared = MX.commonValue(targets, function (l) { return l[field]; });
+    if (shared.mixed) { mixedCurveRow(host, row, targets, field, what); return; }
     var editor = VFXCurveEditor.create({
-      curve: layer[field],
+      curve: shared.value,
       policy: policy,
       height: opts && opts.height,
       /* onLive 在拖曳途中一直呼叫：只更新預覽，不重畫 Inspector
@@ -2714,8 +2964,8 @@
       /* 曲線的一次操作＝一筆歷史。onBegin 在 pointerdown／按下 Delete 時觸發，
          onChange 是收尾點；中間的 onLive 只更新畫面。 */
       onBegin: function (action) { editBegin(action + what); },
-      onLive: function (curve) { writeCurve(layer, field, curve); previewSoon(); },
-      onChange: function (curve) { writeCurve(layer, field, curve); onPresetChanged(); editCommit(); },
+      onLive: function (curve) { writeCurve(targets, field, curve); previewSoon(); },
+      onChange: function (curve) { writeCurve(targets, field, curve); onPresetChanged(); editCommit(); },
       onCursor: broadcastCursor
     });
     liveEditors.push(editor);
@@ -2732,10 +2982,10 @@
     };
     var off = document.createElement('button');
     off.type = 'button';
-    off.textContent = layer[field] === undefined ? '啟用' : '停用';
+    off.textContent = shared.value === undefined ? '啟用' : '停用';
     off.title = '停用＝移除這條曲線，該屬性整段生命週期維持基礎值';
     off.onclick = function () {
-      var on = layer[field] === undefined;
+      var on = targets[0][field] === undefined;
       edit((on ? '啟用 ' : '停用 ') + what, function () {
         if (on) editor.reset(); else editor.clear();
       });
@@ -2749,15 +2999,17 @@
   /* 顏色曲線用另一個元件（色帶＋色標），但外框、歷史、停用按鈕與數值曲線共用。
      沒有把兩者合進 curveBlock：分支條件會從「哪個欄位」變成「哪一種曲線」，
      而兩邊的 policy、readout、鍵盤行為其實沒有共同點。 */
-  function gradientBlock(host, layer, field, opts) {
+  function gradientBlock(host, targets, field, opts) {
     var what = (opts && opts.name) || '顏色';
     var row = document.createElement('div');
     row.className = 'ol-row';
+    var shared = MX.commonValue(targets, function (l) { return l[field]; });
+    if (shared.mixed) { mixedCurveRow(host, row, targets, field, what); return; }
     var editor = VFXGradientEditor.create({
-      curve: layer[field],
+      curve: shared.value,
       onBegin: function (action) { editBegin(action + what); },
-      onLive: function (curve) { writeCurve(layer, field, curve); previewSoon(); },
-      onChange: function (curve) { writeCurve(layer, field, curve); onPresetChanged(); editCommit(); },
+      onLive: function (curve) { writeCurve(targets, field, curve); previewSoon(); },
+      onChange: function (curve) { writeCurve(targets, field, curve); onPresetChanged(); editCommit(); },
       onCursor: broadcastCursor
     });
     liveEditors.push(editor);
@@ -2774,10 +3026,10 @@
     };
     var off = document.createElement('button');
     off.type = 'button';
-    off.textContent = layer[field] === undefined ? '啟用' : '停用';
+    off.textContent = shared.value === undefined ? '啟用' : '停用';
     off.title = '停用＝移除這條曲線，整段生命維持圖層的 tint';
     off.onclick = function () {
-      var on = layer[field] === undefined;
+      var on = targets[0][field] === undefined;
       edit((on ? '啟用 ' : '停用 ') + what, function () {
         if (on) editor.reset(); else editor.clear();
       });
@@ -2791,12 +3043,48 @@
   /* undefined 代表「沒有這條曲線」，要 delete 而不是寫 undefined 進去——
      JSON.stringify 會把 undefined 的鍵丟掉，但 canonical 比對與未知欄位
      檢查是看實際的鍵，留著會讓兩邊看到的東西不一樣。 */
-  function writeCurve(layer, field, curve) {
-    if (curve === undefined) delete layer[field];
-    else layer[field] = curve;
+  function writeCurve(targets, field, curve) {
+    MX.writeAll(targets, field, curve);
   }
 
-  function renderOverLife(host, layer) {
+  /* 選取的圖層這條曲線各不相同。不挑一層畫出來——拖一下就會把那一層的形狀蓋到
+     其他每一層上，而畫面完全不會預告這件事（例如環繞軌跡：每一顆的相位不同，
+     統一之後會疊在同一個位置）。改成明講「各層不同」；要統一就按按鈕，
+     以哪一層為準直接寫在按鈕上。 */
+  function mixedCurveRow(host, row, targets, field, what) {
+    var ref = referenceLayer(targets);
+    var box = document.createElement('div');
+    box.className = 'ol-mixed';
+    box.textContent = '各層的「' + what + '」曲線不同，這裡不顯示任何一層的曲線。';
+    row.appendChild(box);
+
+    var tools = document.createElement('div');
+    tools.className = 'ol-tools';
+    if (ref[field] !== undefined) {
+      var unify = document.createElement('button');
+      unify.type = 'button';
+      unify.textContent = '以「' + ref.id + '」為準';
+      unify.title = '把「' + ref.id + '」的這條曲線複製到全部 ' + targets.length + ' 層';
+      unify.onclick = function () {
+        edit('統一 ' + what, function () { writeCurve(targets, field, ref[field]); onPresetChanged(); });
+        renderInspector();
+      };
+      tools.appendChild(unify);
+    }
+    var off = document.createElement('button');
+    off.type = 'button';
+    off.textContent = '全部停用';
+    off.title = '移除全部 ' + targets.length + ' 層的這條曲線，整段生命維持基礎值';
+    off.onclick = function () {
+      edit('停用 ' + what, function () { writeCurve(targets, field, undefined); onPresetChanged(); });
+      renderInspector();
+    };
+    tools.appendChild(off);
+    row.appendChild(tools);
+    host.appendChild(row);
+  }
+
+  function renderOverLife(host, targets) {
     var title = document.createElement('div');
     title.className = 'group-title ol-title';
     title.textContent = 'OVER-LIFE 曲線';
@@ -2824,13 +3112,19 @@
       host.appendChild(tip);
     }
 
+    /* 分軸（sprite／procedural）與粒子的曲線欄位不同。混著選的時候那幾段只顯示說明——
+       畫出一張只有一部分圖層吃得到的圖，拖了之後另一部分沒反應。 */
+    var perAxis = MX.allOrNone(targets, supportsPerAxisScale);
+    var mixedTypesHint = '選取的圖層混有 particle 與 sprite／procedural，這一段兩邊的欄位不同。' +
+      '要調這一段請分開選取。';
+
     curveSection(host, 'opacity', 'Opacity', function (body) {
-      curveBlock(body, layer, 'alphaOverLife', CURVE_POLICY.alpha, null, { name: '透明度' });
+      curveBlock(body, targets, 'alphaOverLife', CURVE_POLICY.alpha, null, { name: '透明度' });
       hintLine(body, 'alphaOverLife 是乘在 alpha 上的係數，可以大於 1（過曝）。');
     });
 
     curveSection(host, 'color', 'Color', function (body) {
-      gradientBlock(body, layer, 'tintOverLife');
+      gradientBlock(body, targets, 'tintOverLife');
       hintLine(body, 'tintOverLife 是**乘在 tint 上**的顏色，不是取代它——' +
         '所以 tint 留白（#ffffff）時，色帶上是什麼顏色就播什麼顏色。');
       hintLine(body, '點色帶空白處新增色標（顏色取當下漸層值，新增當下畫面不變），' +
@@ -2838,41 +3132,51 @@
     });
 
     curveSection(host, 'scale', 'Scale', function (body) {
-      if (!supportsPerAxisScale(layer)) {
-        curveBlock(body, layer, 'scaleOverLife', CURVE_POLICY.scale, 'XY');
+      if (perAxis === null) { hintLine(body, mixedTypesHint); return; }
+      if (!perAxis) {
+        curveBlock(body, targets, 'scaleOverLife', CURVE_POLICY.scale, 'XY');
         hintLine(body, 'particle 的兩軸永遠等比，沒有分軸縮放。');
         return;
       }
-      var linked = !(layer.scaleXOverLife !== undefined || layer.scaleYOverLife !== undefined);
+      var linked = MX.commonValue(targets, function (l) {
+        return !(l.scaleXOverLife !== undefined || l.scaleYOverLife !== undefined);
+      });
       var link = document.createElement('label');
       link.className = 'ol-link';
       var cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.checked = linked;
+      cb.type = 'checkbox'; cb.checked = !linked.mixed && linked.value;
+      cb.indeterminate = linked.mixed;
       cb.onchange = function () {
         edit(cb.checked ? '連動 X/Y' : '解除 X/Y 連動',
-          function () { setScaleLink(layer, cb.checked); });
+          function () { setScaleLink(targets, cb.checked); });
         renderInspector();
       };
       link.appendChild(cb);
       link.appendChild(document.createTextNode(' Link X/Y'));
       body.appendChild(link);
 
-      if (linked) {
-        curveBlock(body, layer, 'scaleOverLife', CURVE_POLICY.scale, 'XY');
+      if (linked.mixed) {
+        hintLine(body, '選取的圖層有的 X/Y 連動、有的分開。先用上面的 Link X/Y 統一，再一起調曲線。');
+      } else if (linked.value) {
+        curveBlock(body, targets, 'scaleOverLife', CURVE_POLICY.scale, 'XY');
       } else {
-        curveBlock(body, layer, 'scaleXOverLife', CURVE_POLICY.scale, 'X');
-        curveBlock(body, layer, 'scaleYOverLife', CURVE_POLICY.scale, 'Y');
+        curveBlock(body, targets, 'scaleXOverLife', CURVE_POLICY.scale, 'X');
+        curveBlock(body, targets, 'scaleYOverLife', CURVE_POLICY.scale, 'Y');
       }
     });
 
     curveSection(host, 'rotation', 'Rotation', function (body) {
-      curveBlock(body, layer, 'rotationOverLife', CURVE_POLICY.rotation, 'Z', { height: 170 });
-      if (!supportsPerAxisScale(layer)) {
+      curveBlock(body, targets, 'rotationOverLife', CURVE_POLICY.rotation, 'Z', { height: 170 });
+      if (perAxis === null) {
+        hintLine(body, 'X／Y 翻轉只有 sprite 與 procedural 有；選取中混有 particle，要調 X／Y 請分開選取。');
+        return;
+      }
+      if (!perAxis) {
         hintLine(body, '以度顯示、以弧度儲存。particle 只有平面旋轉。');
         return;
       }
-      curveBlock(body, layer, 'rotationXOverLife', CURVE_POLICY.rotation, 'X', { height: 170 });
-      curveBlock(body, layer, 'rotationYOverLife', CURVE_POLICY.rotation, 'Y', { height: 170 });
+      curveBlock(body, targets, 'rotationXOverLife', CURVE_POLICY.rotation, 'X', { height: 170 });
+      curveBlock(body, targets, 'rotationYOverLife', CURVE_POLICY.rotation, 'Y', { height: 170 });
       hintLine(body,
         'Z＝平面旋轉。X／Y 是正交投影的翻轉：繞 X 轉會壓縮高度、繞 Y 轉會壓縮寬度，' +
         '180° 時變成鏡像（翻到背面）。沒有透視，背面看到的仍是同一張圖。');
@@ -2880,15 +3184,16 @@
     });
 
     curveSection(host, 'offset', 'Offset', function (body) {
-      if (!supportsPerAxisScale(layer)) {
+      if (perAxis === null) { hintLine(body, mixedTypesHint); return; }
+      if (!perAxis) {
         hintLine(body,
           '位移曲線只有 sprite 與 procedural 支援。粒子的位置是由 speed／gravity／' +
           'spawn 那一整套運動算出來的，沒有一個「圖層位置」可以加——要讓粒子飄或偏，' +
           '用的是那幾個欄位。');
         return;
       }
-      curveBlock(body, layer, 'offsetXOverLife', CURVE_POLICY.offset, 'X', { height: 170 });
-      curveBlock(body, layer, 'offsetYOverLife', CURVE_POLICY.offset, 'Y', { height: 170 });
+      curveBlock(body, targets, 'offsetXOverLife', CURVE_POLICY.offset, 'X', { height: 170 });
+      curveBlock(body, targets, 'offsetYOverLife', CURVE_POLICY.offset, 'Y', { height: 170 });
       hintLine(body,
         '**加**在 position 上的位移，不是乘（position 常常是 0，乘多少都還是 0）。' +
         '單位 px，與遊戲同比例：60px ＝ 6 米 ＝ 預覽格線的一大格。');
@@ -2908,29 +3213,38 @@
   /* Link 開↔關的資料轉換。關鍵是不能在切換的當下改變畫面：
      解除連動時把目前的等比曲線複製到兩軸，接回去時把 X 的曲線收回等比欄位。
      使用者只是想「分開調」，不是想讓特效在按下核取方塊的瞬間變樣。 */
-  function setScaleLink(layer, linked) {
+  function setScaleLink(layers, linked) {
     if (linked) {
       /* 收回等比：以 X 為準（畫面上 X 在上面，是使用者主要在調的那一條）。
-         Y 與 X 不同時會遺失 Y——這是解除連動的必然代價，所以先問。 */
-      var x = layer.scaleXOverLife, y = layer.scaleYOverLife;
-      var differs = JSON.stringify(x) !== JSON.stringify(y);
-      if (differs && !window.confirm('X 與 Y 目前不同，接回等比會以 X 為準並捨棄 Y。要繼續嗎？')) {
-        return;
-      }
-      if (x !== undefined) layer.scaleOverLife = x;
-      delete layer.scaleXOverLife;
-      delete layer.scaleYOverLife;
+         Y 與 X 不同時會遺失 Y——這是解除連動的必然代價，所以先問。
+         多選時只問一次：任何一層會遺失 Y 就問，不是每一層跳一次對話框。 */
+      var lossy = layers.filter(function (layer) {
+        return JSON.stringify(layer.scaleXOverLife) !== JSON.stringify(layer.scaleYOverLife);
+      });
+      var question = layers.length === 1
+        ? 'X 與 Y 目前不同，接回等比會以 X 為準並捨棄 Y。要繼續嗎？'
+        : '其中 ' + lossy.length + ' 層的 X 與 Y 不同，接回等比會以 X 為準並捨棄 Y。要繼續嗎？';
+      if (lossy.length && !window.confirm(question)) return;
+      layers.forEach(function (layer) {
+        if (layer.scaleXOverLife !== undefined) layer.scaleOverLife = layer.scaleXOverLife;
+        delete layer.scaleXOverLife;
+        delete layer.scaleYOverLife;
+      });
     } else {
-      var base = layer.scaleOverLife;
-      if (base !== undefined) {
-        layer.scaleXOverLife = JSON.parse(JSON.stringify(base));
-        layer.scaleYOverLife = JSON.parse(JSON.stringify(base));
-      } else {
-        /* 沒有等比曲線可複製時，兩軸都給常數 1：那與「沒有曲線」等價，
-           畫面同樣不變，但使用者拿到兩個可以直接拖的點。 */
-        layer.scaleXOverLife = 1;
-        layer.scaleYOverLife = 1;
-      }
+      layers.forEach(function (layer) {
+        /* 已經分開的不要蓋掉：多選時 Link 狀態可能混著，這裡是最後一道防線 */
+        if (layer.scaleXOverLife !== undefined || layer.scaleYOverLife !== undefined) return;
+        var base = layer.scaleOverLife;
+        if (base !== undefined) {
+          layer.scaleXOverLife = JSON.parse(JSON.stringify(base));
+          layer.scaleYOverLife = JSON.parse(JSON.stringify(base));
+        } else {
+          /* 沒有等比曲線可複製時，兩軸都給常數 1：那與「沒有曲線」等價，
+             畫面同樣不變，但使用者拿到兩個可以直接拖的點。 */
+          layer.scaleXOverLife = 1;
+          layer.scaleYOverLife = 1;
+        }
+      });
     }
     onPresetChanged();
   }
@@ -3712,6 +4026,7 @@
       ['VFXViewModel', 'tools/vfx/editor/view-model.js'],
       ['VFXLayoutSchema', 'tools/vfx/editor/layout-schema.js'],
       ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
+      ['VFXMultiEditModel', 'tools/vfx/editor/multi-edit-model.js'],
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
       ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],
       ['VFXGradientModel', 'tools/vfx/editor/gradient-model.js'],
