@@ -6,7 +6,8 @@ test('icearrow ordinary, piercing, homing and rain mappings ship all approved as
  const src=fs.readFileSync(require.resolve('../js/skills2.js'),'utf8'),start=src.indexOf('var SKILLS2 ='),c={};vm.createContext(c);vm.runInContext(src.slice(start,start+src.slice(start).indexOf('\n};')+3),c);
  const g=c.SKILLS2.icearrow;
  for(const row of [g.tiers[0],g.tiers[3],g.ult[2]]){assert.equal(row.vfx.projectile,presets[0].id);assert.equal(row.vfx.hit,presets[1].id);}
- assert.equal(g.tiers[4].vfx.ground,presets[2].id);assert.equal(g.tiers[0].fx.speed,58.5);
+ assert.ok(!g.tiers[4].vfx?.ground);assert.equal(g.tiers[6].vfx.ground,presets[2].id);
+ const context={Math,bfMeterPx:n=>n*10,sgIcearrowSpeed:()=>585,sgSpawnGround:(_p,_st,_gid,spec)=>{context.spawned=spec;}};vm.createContext(context);const a=src.indexOf('function sgSpawnIcearrowHoming('),b=src.indexOf('\n}',a)+2;vm.runInContext(src.slice(a,b),context);context.sgSpawnIcearrowHoming({}, {}, g.tiers[6].fx, {}, 1, null, 'pv-float', {});assert.equal(context.spawned.vfxTier,7);assert.equal(g.tiers[context.spawned.vfxTier-1].vfx.ground,presets[2].id);assert.equal(g.tiers[0].fx.speed,58.5);
  const shipped=require('../vfx/shipped-assets.json').assets;
  for(const p of presets)for(const l of p.layers){const a=shipped.find(a=>a.assetId===l.assetId);assert.ok(a,l.assetId);assert.ok(fs.existsSync(require('path').join(__dirname,'../images/vfx/assets',a.relativePath)));}
 });
