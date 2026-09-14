@@ -38,6 +38,8 @@
   <!-- <select> 的文字在任何瀏覽器裡都框不起來，所以「把這份特效的名稱複製走」
        只能靠一顆按鈕。用途是貼進文件、prompt 或檔名。 -->
   <button id="btn-copy-preset" class="copy-btn" title="複製目前的 Preset 名稱到剪貼簿">⧉ 複製</button>
+  <!-- 用縮圖找特效：找到直接開，或「複製成新特效」以它為底另存一份 -->
+  <button id="btn-browse" title="用縮圖瀏覽全部特效，可以直接開啟或複製成新特效">🗂 瀏覽特效</button>
   <button id="btn-load">載入 Preset</button>
   <button id="btn-save" title="儲存到 repo（Ctrl+S）">儲存到 repo</button>
   <!-- 另存新檔：改完存成另一份，原本那份不動。實作上就是換掉 preset.id
@@ -169,6 +171,26 @@
   </div>
 </div>
 
+<!-- 瀏覽特效：縮圖＋用途，找「長得像的那一份」來開或複製。
+     縮圖由伺服器即時畫（tools/vfx/preset-thumbs.cjs），卡片捲進畫面才載入。
+     框的右下角可以拉大小。 -->
+<div id="preset-browser" hidden>
+  <div class="browser-box">
+    <header class="picker-head">
+      <strong>瀏覽特效</strong>
+      <span class="sep"></span>
+      <input type="search" id="pb-search" placeholder="搜尋特效…（id 或技能名）"
+             autocomplete="off" spellcheck="false">
+      <span id="pb-count" class="hint"></span>
+      <button id="pb-close" title="Esc">✕</button>
+    </header>
+    <div id="pb-grid"></div>
+    <footer class="picker-foot">
+      <span class="hint">點縮圖開啟　「複製成新特效」＝以這份為底另存一份，原本那份不動　右下角可拉大小　Esc 關閉</span>
+    </footer>
+  </div>
+</div>
+
 <!-- Spine 參考面板：把買來的 Spine 特效播出來看，作為自己用 preset 重做的參照。
      刻意沒有任何編輯功能——它不是第二套特效系統，是一張會動的參考圖。
      Spine runtime 不在下面的 script 清單裡，是這個面板按下按鈕才動態載入的，
@@ -240,6 +262,6 @@
 <script src="/tools/vfx/editor/gizmo-model.js?v=20260914-multi-gizmo"></script>
 <script src="/tools/vfx/editor/history.js"></script>
 <script src="/tools/vfx/editor/spine-ref.js"></script>
-<script src="/tools/vfx/editor/editor.js?v=20260914-multi-gizmo"></script>
+<script src="/tools/vfx/editor/editor.js?v=20260914-preset-browser"></script>
 </body>
 </html>

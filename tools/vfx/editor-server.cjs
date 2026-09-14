@@ -55,6 +55,9 @@ const layoutSchema = require('./editor/layout-schema.js');
    config/ 不在對外開放的白名單裡，而且開放整個設定目錄只為了填一行括號
    不划算。也不預先產生一份 JSON——那會過期。 */
 const presetUsage = require('./preset-usage.cjs');
+/* 「瀏覽特效」的縮圖。在伺服器畫而不是在頁面裡畫：頁面只有一個 Pixi 畫布，
+   兩百份特效要輪流佔用它；離線出圖在 Node 裡跑，還能跨重整、跨重啟快取。 */
+const presetThumbs = require('./preset-thumbs.cjs');
 
 /* ---- 「這個伺服器行程是不是已經比磁碟上的程式舊了」 ----
 
@@ -72,6 +75,11 @@ const presetUsage = require('./preset-usage.cjs');
 const RESTART_REQUIRED_FILES = [
   __filename,
   path.join(__dirname, 'preset-usage.cjs'),
+  /* 縮圖：preset-thumbs 與它帶進來的離線出圖三支 */
+  path.join(__dirname, 'preset-thumbs.cjs'),
+  path.join(__dirname, 'preset-render.cjs'),
+  path.join(__dirname, 'vfx-raster.cjs'),
+  path.join(__dirname, 'contact-sheet.cjs'),
   path.join(__dirname, 'vfx-library-root.cjs'),
   path.join(__dirname, 'editor', 'preset-id-policy.js'),
   path.join(__dirname, 'editor', 'layout-schema.js'),
@@ -134,6 +142,9 @@ const WHOAMI_FRESH_MARK = 'idle-rpg-vfx-editor-ok';
 const PRESET_LIST_PATH = '/__presets';
 /* 頁面上的「關閉編輯器」按鈕打這裡。理由見 handleShutdown。 */
 const SHUTDOWN_PATH = '/__shutdown';
+/* 「瀏覽特效」的縮圖：GET /__thumbs/<presetId>.png。見 handleThumbnail。 */
+const THUMB_PREFIX = '/__thumbs/';
+const THUMB_SUFFIX = '.png';
 
 /* ---- Preset 存檔 API 的常數（全部是常數，沒有一個來自請求） ---- */
 const PRESETS_DIR_REL = 'vfx/presets';
@@ -612,6 +623,47 @@ function handleShutdown(ctx, req, res, server) {
   });
 }
 
+/* 縮圖的 presetId 一律取自未解碼的 pathname，規則與存檔路由同一條
+   （presetIdPolicy）：[a-z0-9-] 以外全部擋掉，所以 / \ . % 都到不了讀檔那一步。 */
+function thumbIdFromRawPath(rawPathname) {
+  if (typeof rawPathname !== 'string' || rawPathname.indexOf(THUMB_PREFIX) !== 0) return null;
+  const rest = rawPathname.slice(THUMB_PREFIX.length);
+  if (rest.length <= THUMB_SUFFIX.length || rest.slice(-THUMB_SUFFIX.length) !== THUMB_SUFFIX) {
+    return null;
+  }
+  const id = rest.slice(0, rest.length - THUMB_SUFFIX.length);
+  return presetIdPolicy.isWritablePresetId(id) ? id : null;
+}
+
+/* 畫一張縮圖回給「瀏覽特效」。畫不出來回 500 並附原因，頁面那張卡片就留白——
+   一份壞掉的 preset 不該讓整個瀏覽器打不開。 */
+function handleThumbnail(ctx, res, rawPathname) {
+  const id = thumbIdFromRawPath(rawPathname);
+  if (!id) {
+    return send(res, 400, '縮圖只接受 GET ' + THUMB_PREFIX + '<presetId>' + THUMB_SUFFIX +
+      '，id 僅限小寫英數與連字號');
+  }
+  let text;
+  try {
+    text = fs.readFileSync(path.join(ctx.repoRoot, PRESETS_DIR_REL, id + SAVE_SUFFIX), 'utf8');
+  } catch (e) {
+    return send(res, 404, '沒有這份 preset：' + id);
+  }
+  try {
+    const png = presetThumbs.renderThumbnail({
+      repoRoot: ctx.repoRoot, assetRoots: ctx.assetRoots || {},
+      presetText: text, cacheDir: ctx.thumbCacheDir
+    });
+    res.writeHead(200, {
+      'Content-Type': 'image/png', 'Content-Length': png.length, 'Cache-Control': 'no-cache'
+    });
+    res.end(png);
+  } catch (e) {
+    console.error('[WARN] 縮圖畫不出來：' + id + '：' + (e && e.message || e));
+    send(res, 500, '縮圖畫不出來：' + (e && e.message || e));
+  }
+}
+
 function createServer(ctx) {
   const server = http.createServer(function (req, res) {
     const rawPathname = rawPathnameOf(req.url);
@@ -638,6 +690,11 @@ function createServer(ctx) {
     }
     if (req.method !== 'GET') {
       return send(res, 405, '不支援的方法：' + req.method);
+    }
+
+    /* 縮圖在 decodeURIComponent 之前分支：id 取自未解碼的 pathname，理由同存檔路由。 */
+    if (rawPathname.indexOf(THUMB_PREFIX) === 0) {
+      return handleThumbnail(ctx, res, rawPathname);
     }
 
     let pathname;

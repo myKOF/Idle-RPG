@@ -142,6 +142,8 @@
         combo.currentId = currentId;
         input.value = comboDisplayText();
         wirePresetCombo();
+        /* 清單比頁面晚一步到：瀏覽特效已經開著的話要跟著補上 */
+        if ($('preset-browser') && !$('preset-browser').hidden) renderPresetBrowser();
       })
       .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
   }
@@ -258,6 +260,146 @@
     }
     leavingOnPurpose = true;
     window.location.search = '?preset=' + encodeURIComponent(id);
+  }
+
+  /* ---------------- 瀏覽特效（縮圖） ----------------
+
+     下拉適合「已經知道名字」。要「找一份長得像的來改」得看得到樣子——使用者原本
+     是開作業系統的檔案視窗一個一個找 JSON（2026-09-14）。那個視窗看不到畫面，
+     而且用它複製檔案再開，JSON 裡的 id 還是原本那份，一按存檔就蓋掉原檔。
+
+     縮圖由伺服器即時畫（tools/vfx/preset-thumbs.cjs，有快取），卡片捲進畫面才要圖：
+     一次要兩百張的話，伺服器得一張一張畫上好一陣子。清單與搜尋沿用下拉那一份
+     （combo.rows／comboFilter），不另外抓、也不另寫一套比對規則。 */
+  var browser = { wired: false, observer: null };
+
+  function openPresetBrowser() {
+    wirePresetBrowser();
+    $('preset-browser').hidden = false;
+    renderPresetBrowser();
+    $('pb-search').focus();
+  }
+
+  function closePresetBrowser() {
+    $('preset-browser').hidden = true;
+    if (browser.observer) { browser.observer.disconnect(); browser.observer = null; }
+  }
+
+  function wirePresetBrowser() {
+    if (browser.wired) return;
+    browser.wired = true;
+    $('pb-search').addEventListener('input', renderPresetBrowser);
+    $('pb-close').onclick = closePresetBrowser;
+    $('preset-browser').addEventListener('mousedown', function (e) {
+      if (e.target === $('preset-browser')) closePresetBrowser();       // 點外框關閉
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('preset-browser').hidden) {
+        closePresetBrowser();
+        e.preventDefault();
+      }
+    });
+  }
+
+  function renderPresetBrowser() {
+    var grid = $('pb-grid');
+    if (!grid) return;
+    grid.textContent = '';
+    if (browser.observer) browser.observer.disconnect();
+    browser.observer = typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          var img = entry.target;
+          img.src = img.getAttribute('data-src');
+          browser.observer.unobserve(img);
+        });
+      }, { root: grid, rootMargin: '240px' })
+      : null;
+    var rows = comboFilter($('pb-search').value);
+    $('pb-count').textContent = combo.rows.length
+      ? rows.length + ' / ' + combo.rows.length + ' 份' : '清單載入中…';
+    rows.forEach(function (row) { grid.appendChild(presetCard(row)); });
+  }
+
+  function presetCard(row) {
+    var isCurrent = row.id === combo.currentId;
+    var card = document.createElement('div');
+    card.className = 'pb-card' + (isCurrent ? ' current' : '');
+    card.title = row.all && row.all.length
+      ? row.id + '\n共 ' + row.count + ' 處使用：\n· ' + row.all.join('\n· ')
+      : row.id;
+
+    var img = document.createElement('img');
+    img.alt = row.id;
+    img.setAttribute('data-src', '/__thumbs/' + encodeURIComponent(row.id) + '.png');
+    img.onerror = function () { card.classList.add('no-thumb'); };
+    img.onclick = function () { openFromBrowser(row.id); };
+    if (browser.observer) browser.observer.observe(img);
+    else img.src = img.getAttribute('data-src');
+    card.appendChild(img);
+
+    var name = document.createElement('div');
+    name.className = 'pb-id';
+    name.textContent = row.id;
+    card.appendChild(name);
+
+    /* 沒有人用就留白：下拉上也是這樣，空白本身就代表沒有被任何地方使用。 */
+    var use = document.createElement('div');
+    use.className = 'pb-use';
+    use.textContent = row.label || '';
+    card.appendChild(use);
+
+    var actions = document.createElement('div');
+    actions.className = 'pb-actions';
+    var open = document.createElement('button');
+    open.type = 'button';
+    open.textContent = isCurrent ? '目前這份' : '開啟';
+    open.disabled = isCurrent;
+    open.onclick = function () { openFromBrowser(row.id); };
+    var dup = document.createElement('button');
+    dup.type = 'button';
+    dup.textContent = '複製成新特效';
+    dup.title = '以這份為底另存成新的特效，原本那份不會被改到';
+    dup.onclick = function () { duplicatePreset(row.id); };
+    actions.appendChild(open);
+    actions.appendChild(dup);
+    card.appendChild(actions);
+    return card;
+  }
+
+  function openFromBrowser(id) {
+    if (id === combo.currentId) { closePresetBrowser(); return; }
+    choosePreset(id);                  // 未存檔先問、整頁重載，都在那裡
+  }
+
+  /* 複製成新特效＝以那一份為底「另存新檔」，原本那份不動。
+     不另寫一套複製檔案的邏輯：名稱檢查、根群組改名、存檔驗證只有 saveAsPreset 一份。
+     目前開著的就是那一份時直接另存（含尚未存檔的修改）；別份就先開啟它，
+     載入完成後自動接著另存（網址帶 saveAs=1，見 boot）。 */
+  function duplicatePreset(id) {
+    if (id === combo.currentId) {
+      closePresetBrowser();
+      saveAsPreset();
+      return;
+    }
+    if (isDirty() && !window.confirm('目前的修改尚未存檔，開啟另一份會失去這些修改。要繼續嗎？')) {
+      return;
+    }
+    leavingOnPurpose = true;
+    window.location.search = '?preset=' + encodeURIComponent(id) + '&saveAs=1';
+  }
+
+  function saveAsRequested() {
+    try { return new URLSearchParams(window.location.search).get('saveAs') === '1'; }
+    catch (e) { return false; }
+  }
+
+  /* 用完就把旗標從網址拿掉：留著的話，按重新整理會再跳一次「另存成新的 Preset」。 */
+  function clearSaveAsRequest(presetId) {
+    try {
+      window.history.replaceState(null, '', '?preset=' + encodeURIComponent(presetId));
+    } catch (e) { /* 不支援就算了，只影響重新整理後會不會再問一次 */ }
   }
 
   function wirePresetCombo() {
@@ -2293,6 +2435,7 @@
       if (uk === 'y' || (uk === 'z' && e.shiftKey)) { doRedo(); e.preventDefault(); return; }
     }
     if (!$('picker').hidden) return;                      // Picker 開著時鍵盤歸它
+    if (!$('preset-browser').hidden) return;              // 瀏覽特效開著時也是
     /* 焦點在任何可輸入的欄位裡就完全不攔截：在 JSON 參數框或搜尋框按 Delete
        要刪字元，不是刪圖層；按 Ctrl+C 要複製文字，不是複製圖層。 */
     if (isTextEntry(document.activeElement)) return;
@@ -4298,6 +4441,11 @@
         buildBackgroundBar();
         collectVocab();
         wirePicker();
+        /* 「瀏覽特效」的複製成新特效：那一份開好之後接著另存 */
+        if (saveAsRequested()) {
+          clearSaveAsRequest(bootPresetId);
+          window.setTimeout(saveAsPreset, 0);
+        }
 
       });
     }).catch(function (e) {
@@ -4327,6 +4475,7 @@
     /* 橫幅擋在工具列下面，讀完要收得掉。收掉的只是橫幅，
        右側「驗證」面板仍然留著同一段文字，回頭要查還找得到。 */
     if ($('save-error-close')) $('save-error-close').onclick = clearSaveError;
+    $('btn-browse').onclick = openPresetBrowser;
     $('btn-load').onclick = function () { $('file-load').click(); };
     $('file-load').onchange = function (e) {
       if (e.target.files[0]) loadPresetFromFile(e.target.files[0]);
