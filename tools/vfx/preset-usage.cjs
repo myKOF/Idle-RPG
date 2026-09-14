@@ -17,10 +17,15 @@
         普攻、天罰、敵方出手這類不屬於任何一列技能的固定對應，寫死在
         js/data.js 的 VFX_COMBAT_DEFAULTS，沒有表格欄位可填。
 
+   **兩個來源都有時兩邊一起顯示。** 原本是「表優先」：表上有人用就不看人工清單，
+   結果冰片子彈 proj-ice-shard 只標出水流彈與冰霜新星的階段，冰屬性敵人的遠程攻擊
+   整個隱形——遊戲裡明明到處都是（2026-09-14 使用者回報）。
+
    為什麼第二項不用 grep js/ 自動產生：「程式碼裡出現這個字串」不等於「遊戲裡
-   真的用到」——id 也會出現在註解、測試、除錯開關裡。要判斷一個 preset 是不是
-   孤兒，需要的是人確認過的語意。人工清單會過期，所以由
-   tests/vfx-preset-usage.test.cjs 三面夾住（見那份文件的說明）。
+   真的用到」——id 也會出現在註解、測試、Runtime 的特殊處理裡（例如已經沒有技能
+   在用的火牆，播放處理還留在 vfx-runtime.js）。要判斷一個 preset 是不是孤兒，
+   需要的是人確認過的語意。人工清單會過期，所以由 tests/vfx-preset-usage.test.cjs
+   夾住；「有引用但不算用途」的登記在同一份文件的另一段，理由寫在旁邊。
    ============================================================ */
 
 const fs = require('fs');
@@ -139,19 +144,42 @@ function scanTables(repoRoot) {
 }
 
 /* 人工清單。解析的是 Markdown 表格——文件本身就是那份資料，另外再擺一份 JSON
-   只會兩邊分家。格式規定寫在那份文件裡，這裡的解析要跟著它。 */
-const OUTSIDE_ROW_RE = /^\|\s*`([a-z0-9][a-z0-9-]*)`\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*$/;
+   只會兩邊分家。格式規定寫在那份文件裡，這裡的解析要跟著它。
 
-function readOutsideTables(repoRoot) {
+   同一份文件有兩張表，靠所在的「## 標題」分辨：
+     ## 清單                     用途（會顯示在下拉上）
+     ## 程式有引用、但不算用途     js/ 裡找得到、但遊戲實際上不會播的（附理由）
+   兩張表的格式相同，所以不能只看列長什麼樣子——那樣放錯段落的列，用途就會
+   變成豁免、豁免變成用途。 */
+const OUTSIDE_ROW_RE = /^\|\s*`([a-z0-9][a-z0-9-]*)`\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*$/;
+const USAGE_SECTION = '清單';
+const EXEMPT_SECTION = '程式有引用、但不算用途';
+
+function readOutsideDoc(repoRoot) {
+  const out = { usage: [], exempt: [] };
   const file = path.join(repoRoot, OUTSIDE_DOC_REL);
-  if (!fs.existsSync(file)) return [];
-  const out = [];
-  fs.readFileSync(file, 'utf8').split('\n').forEach(function (line) {
-    const m = OUTSIDE_ROW_RE.exec(line.trim());
-    if (m) out.push({ id: m[1], label: m[2].trim(), where: m[3].trim() });
+  if (!fs.existsSync(file)) return out;
+  let section = '';
+  fs.readFileSync(file, 'utf8').split('\n').forEach(function (raw) {
+    const line = raw.trim();
+    const heading = /^##\s+(.+)$/.exec(line);
+    if (heading) { section = heading[1].trim(); return; }
+    const m = OUTSIDE_ROW_RE.exec(line);
+    if (!m) return;
+    if (section === USAGE_SECTION) {
+      out.usage.push({ id: m[1], label: m[2].trim(), where: m[3].trim() });
+    } else if (section === EXEMPT_SECTION) {
+      out.exempt.push({ id: m[1], reason: m[2].trim(), where: m[3].trim() });
+    }
   });
   return out;
 }
+
+/* 用途列。同一個 id 可以有多列：hit-lightning 同時是天罰的爆點與雷屬性敵人的爆點。 */
+function readOutsideTables(repoRoot) { return readOutsideDoc(repoRoot).usage; }
+
+/* 豁免列：js/ 裡有引用、但確認過遊戲不會播放的 preset。 */
+function readJsExemptions(repoRoot) { return readOutsideDoc(repoRoot).exempt; }
 
 function presetIds(repoRoot) {
   const dir = path.join(repoRoot, PRESETS_DIR_REL);
@@ -191,7 +219,7 @@ function usageLabels(repoRoot) {
   presetIds(repoRoot).forEach(function (id) { known[id] = true; });
 
   const out = Object.create(null);
-  /* 表優先：技能名稱比「普攻」這種泛稱具體，而且是設計師自己取的。 */
+  /* 表的用途排在前面：技能名稱比「普攻」這種泛稱具體，而且是設計師自己取的。 */
   /* 階段名稱與群組名稱不同時，兩個都顯示：「傷害強化」「擴散」這類階段名稱
      在很多群組裡都有，單看認不出是誰的；而只寫群組名稱又會指到一個根本
      沒用這個特效的階段（水龍捲是水流彈的第 7 階）。 */
@@ -236,11 +264,22 @@ function usageLabels(repoRoot) {
     });
     out[id] = { label: labels[0], labels: labels, all: all, source: 'table', count: all.length };
   });
+  /* 人工清單接在表的後面，**不是**表上有了就略過。一份 preset 常常同時被技能與
+     寫死的對應使用（proj-ice-shard 是水流彈的階段，也是冰屬性敵人的遠程攻擊）；
+     只顯示表的那一邊，另一邊在下拉上就是隱形的——而改那份 preset 一樣會動到它。 */
   outside.forEach(function (row) {
-    if (!known[row.id] || out[row.id]) return;
-    out[row.id] = {
-      label: row.label, labels: [row.label], all: [row.label], source: 'outside', count: 1
-    };
+    if (!known[row.id]) return;
+    const entry = out[row.id];
+    if (!entry) {
+      out[row.id] = {
+        label: row.label, labels: [row.label], all: [row.label], source: 'outside', count: 1
+      };
+      return;
+    }
+    if (entry.labels.indexOf(row.label) < 0) entry.labels.push(row.label);
+    if (entry.all.indexOf(row.label) < 0) entry.all.push(row.label);
+    entry.count = entry.all.length;
+    if (entry.source === 'table') entry.source = 'both';
   });
   return out;
 }
@@ -249,9 +288,12 @@ module.exports = {
   TABLES: TABLES,
   VFX_COLUMNS: VFX_COLUMNS,
   OUTSIDE_DOC_REL: OUTSIDE_DOC_REL,
+  USAGE_SECTION: USAGE_SECTION,
+  EXEMPT_SECTION: EXEMPT_SECTION,
   csvParse: csvParse,
   scanTables: scanTables,
   readOutsideTables: readOutsideTables,
+  readJsExemptions: readJsExemptions,
   presetIds: presetIds,
   presetIdsInJs: presetIdsInJs,
   usageLabels: usageLabels
