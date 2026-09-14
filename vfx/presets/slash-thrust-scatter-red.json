@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "slash-thrust-scatter-blue",
+  "id": "slash-thrust-scatter-red",
   "duration": 0.48,
   "loop": true,
   "layers": [
@@ -18,7 +18,7 @@
         "y": 0.1328
       },
       "alpha": 0.3,
-      "tint": "#006af5",
+      "tint": "#ff0033",
       "blendMode": "add",
       "duration": 0.48,
       "alphaOverLife": [
@@ -58,7 +58,7 @@
         "y": 0.0742
       },
       "alpha": 1,
-      "tint": "#338bff",
+      "tint": "#ff00ea",
       "blendMode": "add",
       "duration": 0.48,
       "alphaOverLife": [
@@ -139,7 +139,7 @@
         "y": 0.1348
       },
       "alpha": 0.95,
-      "tint": "#7033ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.015,
       "duration": 0.48,
@@ -172,13 +172,13 @@
       "assetId": "light-masks-1.0/default/cone_composed_c.png",
       "zIndex": 4,
       "position": {
-        "x": 119.5552,
+        "x": 88.9459,
         "y": 0
       },
       "rotation": -1.5708,
       "scale": {
         "x": 0.0331,
-        "y": 0.0996
+        "y": 0.2207
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -263,7 +263,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.48,
@@ -305,7 +305,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0.012,
       "duration": 0.48,
@@ -347,7 +347,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0.024,
       "duration": 0.48,
@@ -389,7 +389,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0.036000000000000004,
       "duration": 0.48,
@@ -431,7 +431,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.48,
@@ -473,7 +473,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0.012,
       "duration": 0.48,
@@ -515,7 +515,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0.024,
       "duration": 0.48,
@@ -557,7 +557,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#9933ff",
+      "tint": "#ff0040",
       "blendMode": "add",
       "delay": 0.036000000000000004,
       "duration": 0.48,
@@ -599,7 +599,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#c800ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -641,7 +641,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#c800ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -683,7 +683,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#c800ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -725,7 +725,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#c800ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -830,7 +830,7 @@
         "y": 0.218
       },
       "alpha": 1,
-      "tint": "#ae00ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.025,
       "duration": 0.4,
@@ -885,7 +885,7 @@
         "y": 0.1669
       },
       "alpha": 1,
-      "tint": "#ae00ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.05,
       "duration": 0.4,
@@ -940,7 +940,7 @@
         "y": 0.1222
       },
       "alpha": 1,
-      "tint": "#ae00ff",
+      "tint": "#ff0000",
       "blendMode": "add",
       "delay": 0.07500000000000001,
       "duration": 0.4,
@@ -978,6 +978,48 @@
         [
           1,
           1.45
+        ]
+      ]
+    },
+    {
+      "id": "spearhead-copy",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 3,
+      "position": {
+        "x": 70.287,
+        "y": 0.7558
+      },
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.1415,
+        "y": 0.2506
+      },
+      "alpha": 0.95,
+      "tint": "#ff0000",
+      "blendMode": "add",
+      "delay": 0.015,
+      "duration": 0.48,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.04,
+          1
+        ],
+        [
+          0.72,
+          0.95
+        ],
+        [
+          0.92,
+          0.55
+        ],
+        [
+          1,
+          0
         ]
       ]
     }
