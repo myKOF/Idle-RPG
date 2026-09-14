@@ -113,6 +113,21 @@ function castAndCollect(gid, ultIdx, legendKey) {
   return specs;
 }
 
+test('INHERIT-CAST 幻影八方陣實際施放的每波使用超神配置，其他選項不借用藍色特效', () => {
+  const g = loadSim().SKILLS2.thrust;
+  const idx = g.ult.findIndex(u => u.id === 'phantomOcta');
+  for (const pick of [-1, idx]) {
+    const waves = castAndCollect('thrust', pick).filter(s => s.fxKind === 'slash' && /^thrust/.test(s.variant));
+    assert(waves.length > 0, '必須真的施放出突刺');
+    const expected = pick < 0 ? g.tiers[6].vfx.attack : g.ult[idx].vfx.attack;
+    waves.forEach(s => assert.equal(s.vfx.attack, expected));
+    assert(waves.some(s => s.delayMs > 0), '保留多波間隔');
+    const adapter = makeAdapter();
+    waves.forEach(s => { assert.equal(adapter.tryPlay(s), true); adapter.update(.05); });
+    assert(adapter.stats().played > 0, '必須實際建立特效，不只回傳接手');
+  }
+});
+
 test('COVER-1 每個群組七階全滿時，所有 VFX 事件都由 Preset 接手', function () {
   const gids = Object.keys(loadSim().SKILLS2);
   assert.ok(gids.length >= 20, '技能群組數量不對，載入可能失敗');

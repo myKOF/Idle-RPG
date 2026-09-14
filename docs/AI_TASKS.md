@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex｜技能特效逐欄繼承（SKILL-VFX-INHERIT-20260914）
+
+- Owner：Codex；Done。使用者要求所有技能特效有值必用，空欄逐階向前繼承；已確認超神從一般第七階繼承，不跨互斥超神選項。
+- 範圍：skills2/skills 特效事件、vfx-runtime、主執行緒與 Worker 快取、正式回歸測試、VFX Runtime 文件與本紀錄；保留使用者既有配置與素材修改，不改傷害、技能條件、存檔或素材內容。
+- 前置依賴已滿足；fetch 後衝突預檢乾淨。驗收逐欄覆寫／跨空階／超神分支、實際事件與 Runtime 播放、命中時序、無特效不退回舊畫法、Build；完成後由使用者審查合併。
+- 完成：六欄獨立繼承，空白不清除前階值；超神從第七階继承且不跨選項。突刺改讀實際最高階與已選超神；火狩母體／伴生體保留各自來源階級。Runtime 分別派送已配置角色，移除寒冰箭地板名稱被替換成另一份 preset 的處理；空表也經 Worker 傳遞，禁止回補舊畫法。主執行緒、Worker 與 Preset 資料快取同步。
+- 修改檔案：js/skills2.js、js/skills.js、js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、index.html、tests/skill-vfx-inheritance.test.cjs、tests/vfx-runtime.test.cjs、tests/vfx-preset-coverage.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄。使用者既有 Skills2 Excel/CSV/JS 的幻影八方陣藍色接線、藍色 preset/layout 及原突刺擴散圈縮放一併保留提交，未修改素材內容。
+- 未修改但檢查：js/worker/shim.js（空角色表傳遞）、js/worker/protocol.js（沿用既有欄位，無協議變更）、tools/config_tables.cjs、VFX 素材索引與匯出工具、技能回歸測試。
+- 驗證：node --test tests/skill-vfx-inheritance.test.cjs；Runtime TABLE/FALLBACK/ORBIT-1/RAIN-4/PROFILE-4、CATALOG 與 INHERIT-CAST 定向 14/14；幻影八方陣實際施放每波讀取藍色配置且 Adapter 建立特效。node --test tests/skill2-magic-firehunt.test.cjs 全通過。全 skill2 測試 527 項 485 通過／42 失敗，與 HEAD 程式注入同一測試環境逐項比對一致；Runtime 86 項 80 通過／6 失敗，與原 HEAD 的 83 項 77 通過／6 失敗名稱相同。全技能／超神／傳奇／舊技能 Preset 接手覆蓋與 worker-protocol 測試通過。既有失敗均未放寬斷言；僅依本次明確新規則更新「缺欄回舊畫法／地板填了不播」的舊測試。
+- node tools/config_tables.cjs --apply：19 個字面值語意變更 0；node tools/vfx/export-assets.cjs --check：最新；node --test tests/vfx-preset-usage.test.cjs：18/18。素材庫乾淨、無新增或修改素材，無需素材庫 Commit。npm run build 通過，git diff --check 通過。
+- 狀態：Done；Commit 為本紀錄所在提交。未實機目視驗證；無全套測試皆綠的宣稱，既有失敗如上述。無其他未完成實作，可供使用者審查合併；未合併／未推送。
+
 ## Claude｜VFX 編輯器瀏覽特效（縮圖）、檔名優先與名稱同步、存檔保底根群組、另存新檔 Windows 視窗（VFX-EDITOR-BROWSER-20260914）
 
 - Owner：Claude；Done。使用者需求：(1) 要複製一個特效來改，希望用縮圖找；(2) 在檔案總管改名後重新載入，仍顯示 -copy 的舊名；(3) 載入 Preset 後下拉名稱要與預覽的特效一致；(4) 另存新檔出來的特效沒有群組；(5) 另存新檔不要用網頁輸入框，要跟「載入 Preset」一樣叫 Windows 視窗。

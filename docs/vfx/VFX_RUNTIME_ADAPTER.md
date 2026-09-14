@@ -1,5 +1,9 @@
 # VFX_RUNTIME_ADAPTER.md
 
+> 2026-09-14 技能讀表規則：`cast / attack / projectile / hit / ground / field` 各欄獨立處理。本階有名稱就用本階；空白逐階向前找，直到初階仍空就不播。超神從第七階往前繼承，不跨互斥超神選項；已選超神的非空欄優先。獨立階級效果讀取事件指定階級，未指定則讀取目前生效最高階。配置名稱不得被 Runtime 換成另一份 Preset。
+>
+> 角色分派不再因主要欄缺值而整則略過：施放、攻擊、飛行物、持續本體與地板的非空欄分別播放；受擊仍在命中時播放，純命中事件不重新發射子彈。環繞事件由同一軌道機制播放 projectile / ground。空角色表也隨 Worker 事件傳遞，禁止補舊畫法；名稱載入失敗記入 skipped，不以其他特效替代。
+
 # VFX Preset 化：設計定案與交接（2026-09-03，進行中）
 
 > 2026-09-08：正式技能 Preset 已增加 `sizing` 米制本體契約。下文 §1.2 的舊名目像素只適用於未宣告 sizing 的相容檔；新尺寸權威與突刺規格見 [VFX_SIZE_STANDARD.md](VFX_SIZE_STANDARD.md)。
@@ -29,11 +33,11 @@
 模擬層（Worker）                         主執行緒
 skillVfxSpec / sgEmitVfx ──vfx 事件──▶ ui.js ──▶ BattleRenderer.onVfx
   spec.fxKind/variant/travelMs/area           │
-  spec.vfx = { cast, attack, projectile,      ├─ 有 spec.vfx 且主要角色有 preset → VFXRuntime（新，js/vfx-runtime.js）
+  spec.vfx = { cast, attack, projectile,      ├─ 有 spec.vfx（含空表）→ VFXRuntime（js/vfx-runtime.js）
                hit, ground }                  │      VFXCore + VFXPixiBackend，掛在 S.layers.zone（ground）與 S.layers.fx（其餘）
-   ↑ 值來自表格：                              └─ 否則 → 既有的程式畫法（js/battle-renderer.js 各 spawn*；不刪，作為退回）
+   ↑ 值來自表格：                              └─ 舊事件缺少 vfx → 既有程式畫法（相容舊事件）
    Skills.csv 五欄 → sk.vfx
-   Skills2.csv 每列五欄 → tiers[i].vfx / ult[i].vfx
+   Skills2.csv 每列六欄 → tiers[i].vfx / ult[i].vfx → 逐欄繼承
    Status.csv 三欄 → st.vfx
 ```
 
@@ -50,7 +54,7 @@ skillVfxSpec / sgEmitVfx ──vfx 事件──▶ ui.js ──▶ BattleRendere
 | 持續特效 | `aura` | 狀態存在期間循環（狀態表） | 由 5Hz 快照 reconcile，跟隨實體 |
 | 作用特效 | `tick` | 持續傷害每跳（狀態表） | 事件 `{ vfx: { hit } }`，同一拍合併 |
 
-各 fxKind 的**主要角色**（沒有就整則退回舊畫法）：projectile→projectile、slash／strike→attack、burst→attack、
+各 fxKind 的**主要角色**（只決定事件時序語意，不再阻止其他已配置欄播放）：projectile→projectile、slash／strike→attack、burst→attack、
 beam→attack、rain→projectile 否則 attack、aura→ground、selfBuff→cast、curse→attack、chain→projectile 否則 attack（拉長成段）、
 impact→hit、enemy-attack→attack（近戰）／projectile（遠程）。
 變體特例：impact/`pillar` 視為 ground 場域；impact 或 burst/`wind-burst` 用 attack 於 area；impact/`smite` 用 attack（天雷）於目標；`starfall-impact` 只做受擊回饋。
@@ -77,7 +81,7 @@ Preset 是照**野外戰場**的名目尺寸畫的。換到別的版面就得整
 | `scale` | 角色身上（受擊／施放／狀態光環／目標身上的攻擊本體） | 身高 60px | 1（卡片人像 72px、BOSS 84px，本來就接近） |
 | `areaScale` | 帶 `area` 的（範圍爆發、場域、環繞場域） | 半徑 100px（直徑 200） | 0.55（一張卡片只有 202px 寬） |
 | `skyScale` | 天降（`fxKind: 'rain'`），同時縮體積與出生高度 | 從 y=-500 落到原點 | 0.28（卡片可用高度約 140px） |
-| `groundR` | **沒有 `area`** 時場域改用的名目半徑 | — | 70（0＝維持退回舊畫法） |
+| `groundR` | **沒有 `area`** 時場域改用的名目半徑 | — | 70（0＝不畫，亦不補舊畫法） |
 
 野外全部是預設值（1／1／1／0），因此加入 profile 之前之後行為完全相同。
 

@@ -2528,8 +2528,8 @@ function skillVfxSpec(sk, fx, shape, targetIds, area, extra) {
   if (extra) for (var k2 in extra) spec[k2] = extra[k2];
   /* 特效欄位（2026-09-03 VFX Preset 化）：技能表的 施放／攻擊／飛行子彈／受擊／地板 五欄
      （sk.vfx = { cast, attack, projectile, hit, ground }，唯一來源 config/CSV/Skills.csv）。
-     有填就隨事件送出，顯示層據此播 Preset；沒填（融合技、潛力技、留白）就不帶欄位，退回舊畫法。 */
-  if (sk && sk.vfx && typeof sk.vfx === 'object') spec.vfx = sk.vfx;
+     空表代表沒有配置特效；不得讓顯示層自行補舊畫法。 */
+  spec.vfx = (sk && sk.vfx && typeof sk.vfx === 'object') ? sk.vfx : {};
   if (spec.fxKind === 'rain') spec.dur = 0.75;
   if (spec.fxKind === 'aura') spec.count = 1;
   // 隕石類：一顆大隕石砸向本次技能的實際落點——所有目標共用同一個落地時刻（取最遠者），
