@@ -21,11 +21,13 @@
    結果冰片子彈 proj-ice-shard 只標出水流彈與冰霜新星的階段，冰屬性敵人的遠程攻擊
    整個隱形——遊戲裡明明到處都是（2026-09-14 使用者回報）。
 
-   為什麼第二項不用 grep js/ 自動產生：「程式碼裡出現這個字串」不等於「遊戲裡
-   真的用到」——id 也會出現在註解、測試、Runtime 的特殊處理裡（例如已經沒有技能
-   在用的火牆，播放處理還留在 vfx-runtime.js）。要判斷一個 preset 是不是孤兒，
-   需要的是人確認過的語意。人工清單會過期，所以由 tests/vfx-preset-usage.test.cjs
-   夾住；「有引用但不算用途」的登記在同一份文件的另一段，理由寫在旁邊。
+   為什麼第二項不用 grep js/ 自動產生：grep 找得到「哪裡寫死了這個 id」，寫不出
+   「是誰在用」——下拉上要顯示的是「天罰」「冰屬性敵人的遠程攻擊」這種人看得懂的
+   用途，只有人寫得出來。
+
+   規則（AI_RULES.md）：特效只存在兩種情況——配置表填入的、程式裡寫死的；寫死的
+   一律登記在人工清單。不另外標註「沒有被使用」：下拉上沒有任何顯示就代表沒人用。
+   人工清單會過期，所以由 tests/vfx-preset-usage.test.cjs 夾住。
    ============================================================ */
 
 const fs = require('fs');
@@ -145,41 +147,19 @@ function scanTables(repoRoot) {
 
 /* 人工清單。解析的是 Markdown 表格——文件本身就是那份資料，另外再擺一份 JSON
    只會兩邊分家。格式規定寫在那份文件裡，這裡的解析要跟著它。
-
-   同一份文件有兩張表，靠所在的「## 標題」分辨：
-     ## 清單                     用途（會顯示在下拉上）
-     ## 程式有引用、但不算用途     js/ 裡找得到、但遊戲實際上不會播的（附理由）
-   兩張表的格式相同，所以不能只看列長什麼樣子——那樣放錯段落的列，用途就會
-   變成豁免、豁免變成用途。 */
+   同一個 id 可以有多列：hit-lightning 同時是天罰的爆點與雷屬性敵人的爆點。 */
 const OUTSIDE_ROW_RE = /^\|\s*`([a-z0-9][a-z0-9-]*)`\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*$/;
-const USAGE_SECTION = '清單';
-const EXEMPT_SECTION = '程式有引用、但不算用途';
 
-function readOutsideDoc(repoRoot) {
-  const out = { usage: [], exempt: [] };
+function readOutsideTables(repoRoot) {
   const file = path.join(repoRoot, OUTSIDE_DOC_REL);
-  if (!fs.existsSync(file)) return out;
-  let section = '';
-  fs.readFileSync(file, 'utf8').split('\n').forEach(function (raw) {
-    const line = raw.trim();
-    const heading = /^##\s+(.+)$/.exec(line);
-    if (heading) { section = heading[1].trim(); return; }
-    const m = OUTSIDE_ROW_RE.exec(line);
-    if (!m) return;
-    if (section === USAGE_SECTION) {
-      out.usage.push({ id: m[1], label: m[2].trim(), where: m[3].trim() });
-    } else if (section === EXEMPT_SECTION) {
-      out.exempt.push({ id: m[1], reason: m[2].trim(), where: m[3].trim() });
-    }
+  if (!fs.existsSync(file)) return [];
+  const out = [];
+  fs.readFileSync(file, 'utf8').split('\n').forEach(function (line) {
+    const m = OUTSIDE_ROW_RE.exec(line.trim());
+    if (m) out.push({ id: m[1], label: m[2].trim(), where: m[3].trim() });
   });
   return out;
 }
-
-/* 用途列。同一個 id 可以有多列：hit-lightning 同時是天罰的爆點與雷屬性敵人的爆點。 */
-function readOutsideTables(repoRoot) { return readOutsideDoc(repoRoot).usage; }
-
-/* 豁免列：js/ 裡有引用、但確認過遊戲不會播放的 preset。 */
-function readJsExemptions(repoRoot) { return readOutsideDoc(repoRoot).exempt; }
 
 function presetIds(repoRoot) {
   const dir = path.join(repoRoot, PRESETS_DIR_REL);
@@ -288,12 +268,9 @@ module.exports = {
   TABLES: TABLES,
   VFX_COLUMNS: VFX_COLUMNS,
   OUTSIDE_DOC_REL: OUTSIDE_DOC_REL,
-  USAGE_SECTION: USAGE_SECTION,
-  EXEMPT_SECTION: EXEMPT_SECTION,
   csvParse: csvParse,
   scanTables: scanTables,
   readOutsideTables: readOutsideTables,
-  readJsExemptions: readJsExemptions,
   presetIds: presetIds,
   presetIdsInJs: presetIdsInJs,
   usageLabels: usageLabels

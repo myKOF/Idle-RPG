@@ -56,15 +56,16 @@ test('USAGE-3 js/ 裡寫死、而表上沒有的 preset，都要登記在人工�
      修法是去填表，不是往清單裡加一行（文件裡有寫）。 */
   const tables = U.scanTables(REPO);
   const listed = new Set(U.readOutsideTables(REPO).map(function (r) { return r.id; }));
-  const exempt = new Set(U.readJsExemptions(REPO).map(function (r) { return r.id; }));
   const inJs = U.presetIdsInJs(REPO);
   const unlisted = Object.keys(inJs)
-    .filter(function (id) { return !tables[id] && !listed.has(id) && !exempt.has(id); })
+    .filter(function (id) { return !tables[id] && !listed.has(id); })
     .sort();
+  /* 沒有例外。2026-09-14 一度開了「程式有引用、但不算用途」讓火牆不必登記，
+     使用者指正：特效只存在兩種情況——配置表填入的、程式裡寫死的；寫死的都要登記，
+     一眼看得出是誰在用。 */
   assert.deepEqual(unlisted, [],
-    '這幾個在 js/ 裡被引用、表上卻沒有，請登記到 ' + U.OUTSIDE_DOC_REL +
-    '（遊戲其實不會播的，登記到「' + U.EXEMPT_SECTION + '」並寫明理由；' +
-    '若它其實該填在技能表上，就去填表）');
+    '這幾個在 js/ 裡寫死、表上卻沒有，請登記到 ' + U.OUTSIDE_DOC_REL +
+    '並標出是誰在用（若它其實該填在技能表上，就去填表）');
 });
 
 /* VFX_COMBAT_DEFAULTS 裡實際的 preset id。用 vm 把 data.js 跑起來取物件本身，
@@ -98,20 +99,6 @@ test('USAGE-3B VFX_COMBAT_DEFAULTS 的每一份都要登記，即使表上也有
   assert.deepEqual(missing, [],
     '這幾個寫死在 VFX_COMBAT_DEFAULTS，卻沒登記到 ' + U.OUTSIDE_DOC_REL +
     '——表上有人用也要登記，否則那一邊的用途在下拉上是隱形的');
-});
-
-test('USAGE-3C 「程式有引用、但不算用途」的每一列都站得住', function () {
-  const known = new Set(U.presetIds(REPO));
-  const inJs = U.presetIdsInJs(REPO);
-  const tables = U.scanTables(REPO);
-  const listed = new Set(U.readOutsideTables(REPO).map(function (r) { return r.id; }));
-  U.readJsExemptions(REPO).forEach(function (r) {
-    assert.ok(known.has(r.id), r.id + ' 不存在，豁免那一列可以刪掉');
-    assert.ok(inJs[r.id], r.id + ' 已經不在 js/ 裡了，豁免那一列可以刪掉');
-    assert.ok(!tables[r.id] && !listed.has(r.id),
-      r.id + ' 明明有用途（表上或清單上），不能同時列成「不算用途」');
-    assert.ok(r.reason.length >= 8, r.id + ' 要寫清楚為什麼不算用途');
-  });
 });
 
 test('USAGE-4 顯示標籤不得含括號或逗號，否則塞進「id（標籤）」會變成一團', function () {
