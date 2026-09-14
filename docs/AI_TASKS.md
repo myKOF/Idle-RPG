@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Claude｜VFX 編輯器多選編輯與多選框、特效用途標註、特效來源規則（VFX-EDITOR-MULTISEL-20260914）
+
+- Owner：Claude；Done。使用者需求：(1) Layers 多選後在 Inspector 一起改參數；(2) 預覽區多選時每個物件都要有框、一起縮放；(3) 下拉用途標註漏掉敵方冰片子彈等寫死在程式的特效；(4) 規則「特效只存在兩種來源：配置表填入的、程式碼寫死的（寫死的必須登記），不應存在第三種情況」寫入所有 AI 規範。
+- 修改：Inspector 多選批次編輯（multi-edit-model.js，fcfccba）；預覽區多選每層一框、抓任一個一起做相對變形（gizmo-model 多選變形，aa46b2a）；用途標註改為配置表與寫死清單兩邊一起顯示並補登記 12 份（a1da952）；火牆改回清單、拿掉「不算用途」例外段落（0a44bab）；規則寫入 AI_RULES.md §8.4、AGENTS.md、.agents/AGENTS.md、CLAUDE.md §14、.cursorrules、prompts/codex.md、prompts/antigravity.md、docs/AI_WORKFLOW.md、docs/vfx/VFX_AGENT_WORKFLOW.md §9.12（本紀錄所在提交）。
+- 驗證：編輯器相關測試失敗僅 CAP-2、SAFETY-3、HISTORY-42 三項，與修改前基線相同；新增 MULTI-1~14、MULTISEL-1~8、USAGE-3B／15 全過。瀏覽器實測（28362，claude 副本）：岩甲術選 6 層改 scale X＝0.8 只動那 6 層且為一筆歷史；混合值欄位清空還原各層原值；slash-thrust-scatter 三個擴散圈拖角把手一起變兩倍、位置不動、Ctrl+Z 全部復原；在多選的框（含把手）上點一下收斂成單選；下拉搜「敵」由 9 筆變 19 筆。
+- 待確認：使用者需 merge ai/claude 並重啟編輯器伺服器才看得到（實測 28361 是 codex 副本的伺服器，尚未包含這些修改）；寒冰箭 ground-icearrow-frost 在 Runtime 被轉接為 proj-icearrow-frost（使用者自行確認）；火牆在 js/vfx-runtime.js 的舊處理是否刪除由使用者決定。
+
 ## Codex｜岩甲群組縮放同步軌跡（2026-09-14）
 
 - 任務 ROCKARMOR-SCALE；Owner Codex；Done。群組縮放遺漏 Offset 曲線，造成岩石尺寸變了、環繞半徑不變。修改 gizmo-model 群組快照與縮放、編輯器快取及測試；不更動使用者素材與原特效。預檢乾淨。驗收等比／非等比、原快照不變、取消還原、既有 Gizmo 測試及 Build。

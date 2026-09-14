@@ -773,3 +773,16 @@ layout schema 沒有巢狀群組，所以就是**扁平一層**，不要自作�
 `tests/vfx-preset-layout.test.cjs` 會走過 `vfx/presets/` 的每一份檔案，
 確認它有對應的 layout、只有一個群組、而且該群組收滿全部圖層。
 新增 Preset 時不必另外寫測試，這一條自動涵蓋。
+
+## 9.12 特效只允許兩種來源：配置表填入，或程式寫死並登記（必要）
+
+一份 Preset 在遊戲裡被使用，只能是：
+
+1. **配置表填入的**（技能表、狀態表的特效欄位），或
+2. **程式碼寫死的**（`VFX_COMBAT_DEFAULTS`、Runtime 特殊處理等），而且**必須登記**在
+   `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md`，寫明是誰在用；配置表上也有人用的一樣要登記。
+
+不應存在第三種情況：寫死了卻不登記、動態組出查不到來源的 id、另開「有引用但不算用途」的例外。
+
+Editor 的 Preset 下拉依這兩個來源標出每份特效被誰使用；**沒有任何顯示就代表沒有被任何地方使用**，
+不另外標註。完整規則見 `AI_RULES.md` 第 8.4 節；清單過期由 `tests/vfx-preset-usage.test.cjs` 擋下。

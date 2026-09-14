@@ -1,1 +1,3 @@
 Read and strictly adhere to the guidelines specified in `AI_RULES.md`. Do not bypass these architectural rules.
+
+VFX 特效來源規則（必要，詳見 `AI_RULES.md` 第 8.4 節）：`vfx/presets/` 的特效只允許兩種來源——配置表填入的，或程式碼寫死並登記在 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 的；不應存在第三種情況。
