@@ -402,6 +402,15 @@ var VFXGizmoModel = (function () {
 
       if (rot) out.rotation = round6((snap.rotation || 0) + rot);
 
+      // Offset 曲線是像素位移；群組縮放必須連同動畫軌跡一起縮放。
+      ['offsetXOverLife', 'offsetYOverLife'].forEach(function (key, axis) {
+        var factor = axis === 0 ? sx : sy;
+        if (snap[key] === undefined || factor === 1) return;
+        out[key] = Array.isArray(snap[key]) ? snap[key].map(function (point) {
+          return [point[0], point[1] * factor];
+        }) : snap[key] * factor;
+      });
+
       if (snap.type === 'particle') {
         /* 粒子不吃 layer.scale，要縮的是這幾個長度欄位 */
         if (sx !== 1 || sy !== 1) {
@@ -443,7 +452,7 @@ var VFXGizmoModel = (function () {
   }
 
   var GROUP_FIELDS = ['position', 'scale', 'rotation', 'startScale', 'speed',
-    'direction', 'spawn', 'gravity'];
+    'direction', 'spawn', 'gravity', 'offsetXOverLife', 'offsetYOverLife'];
 
   /* 群組拖曳的快照。比單層多存幾個欄位，因為縮放與旋轉會動到它們。 */
   function groupSnapshot(layers) {
