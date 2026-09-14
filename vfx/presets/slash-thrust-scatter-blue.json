@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "slash-thrust-scatter",
+  "id": "slash-thrust-scatter-blue",
   "duration": 0.48,
   "loop": true,
   "layers": [
@@ -18,7 +18,7 @@
         "y": 0.1328
       },
       "alpha": 0.3,
-      "tint": "#ff5935",
+      "tint": "#006af5",
       "blendMode": "add",
       "duration": 0.48,
       "alphaOverLife": [
@@ -58,7 +58,7 @@
         "y": 0.0742
       },
       "alpha": 1,
-      "tint": "#ff5935",
+      "tint": "#338bff",
       "blendMode": "add",
       "duration": 0.48,
       "alphaOverLife": [
@@ -139,7 +139,7 @@
         "y": 0.1348
       },
       "alpha": 0.95,
-      "tint": "#ff5935",
+      "tint": "#7033ff",
       "blendMode": "add",
       "delay": 0.015,
       "duration": 0.48,
@@ -263,7 +263,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.48,
@@ -305,7 +305,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0.012,
       "duration": 0.48,
@@ -347,7 +347,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0.024,
       "duration": 0.48,
@@ -389,7 +389,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0.036000000000000004,
       "duration": 0.48,
@@ -431,7 +431,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.48,
@@ -473,7 +473,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0.012,
       "duration": 0.48,
@@ -515,7 +515,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0.024,
       "duration": 0.48,
@@ -557,7 +557,7 @@
         "y": 0.0156
       },
       "alpha": 0.8,
-      "tint": "#ff5935",
+      "tint": "#9933ff",
       "blendMode": "add",
       "delay": 0.036000000000000004,
       "duration": 0.48,
@@ -599,7 +599,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#ff5935",
+      "tint": "#c800ff",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -641,7 +641,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#ff5935",
+      "tint": "#c800ff",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -683,7 +683,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#ff5935",
+      "tint": "#c800ff",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -725,7 +725,7 @@
         "y": 0.01
       },
       "alpha": 0.65,
-      "tint": "#ff5935",
+      "tint": "#c800ff",
       "blendMode": "add",
       "delay": 0.018,
       "duration": 0.26,
@@ -826,11 +826,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.0638,
-        "y": 0.134
+        "x": 0.1038,
+        "y": 0.218
       },
-      "alpha": 0.72,
-      "tint": "#ffb45c",
+      "alpha": 1,
+      "tint": "#ae00ff",
       "blendMode": "add",
       "delay": 0.025,
       "duration": 0.4,
@@ -881,11 +881,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.0461,
-        "y": 0.0972
+        "x": 0.0792,
+        "y": 0.1669
       },
-      "alpha": 0.72,
-      "tint": "#ffb45c",
+      "alpha": 1,
+      "tint": "#ae00ff",
       "blendMode": "add",
       "delay": 0.05,
       "duration": 0.4,
@@ -936,11 +936,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.0297,
-        "y": 0.0627
+        "x": 0.0579,
+        "y": 0.1222
       },
-      "alpha": 0.72,
-      "tint": "#ffb45c",
+      "alpha": 1,
+      "tint": "#ae00ff",
       "blendMode": "add",
       "delay": 0.07500000000000001,
       "duration": 0.4,

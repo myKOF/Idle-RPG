@@ -21,6 +21,38 @@ const VFXRuntime = require('../js/vfx-runtime.js');
 
 const REPO = path.resolve(__dirname, '..');
 
+test('TABLE-ROLES 所有配置角色都播放，缺主要欄不阻止其他欄，命中不重射子彈', () => {
+  const roles = Object.fromEntries(['cast','attack','projectile','hit','ground','field'].map(k => [k, 'table-' + k]));
+  const {adapter,log} = makeAdapter(Object.values(roles).map(id => unitPreset(id)));
+  const spec = {fxKind:'slash', targets:['mv-float-1'], area:{x:100,y:50,r:40}, travelMs:[200], vfx:roles};
+  assert.equal(adapter.tryPlay(spec),true);
+  adapter.update(.01);
+  adapter.update(.20);
+  for(const id of Object.values(roles)) assert(log.nodes.some(n => n.spec.assetUrl.includes(id + '.png')),id);
+  const before = adapter.stats().played;
+  adapter.tryPlay({...spec,fxKind:'impact'});
+  assert.equal(adapter.stats().played,before+1);
+  adapter.clear();
+  assert.equal(adapter.tryPlay({...spec,vfx:{cast:roles.cast}}),true);
+  assert.equal(adapter.stats().fx.activeEffects,1);
+});
+
+test('TABLE-EMPTY 空表不補舊畫法，指定不存在的名稱不被其他特效替代', () => {
+  const {adapter,log}=makeAdapter([unitPreset('available')]);
+  assert.equal(adapter.tryPlay({fxKind:'slash',vfx:{}}),true);
+  assert.equal(adapter.tryPlay({fxKind:'slash',vfx:{attack:'missing'}}),true);
+  assert.equal(log.nodes.length,0);
+  assert.equal(adapter.tryPlay({fxKind:'slash'}),false);
+});
+
+test('TABLE-GROUND 配置的寒冰箭地板名稱原樣播放，不轉成另一份飛行物', () => {
+  const {adapter,log}=makeAdapter([unitPreset('ground-icearrow-frost'),unitPreset('proj-icearrow-frost')]);
+  adapter.tryPlay({fxKind:'aura',targets:['mv-float-1'],area:{id:'ice',x:100,y:50,r:30},vfx:{ground:'ground-icearrow-frost'}});
+  adapter.update(.01);
+  assert(log.nodes.some(n=>n.spec.assetUrl.includes('ground-icearrow-frost.png')));
+  assert(!log.nodes.some(n=>n.spec.assetUrl.includes('proj-icearrow-frost.png')));
+});
+
 test('WINDBLADE 四向直射月牙刃口朝飛行方向', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-wind-crescent.json'),'utf8'));
  for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]) {
@@ -429,19 +461,20 @@ test('ROLE-4 敵方攻擊：遠程走飛行物、近戰走攻擊本體', functio
    FALLBACK — 缺主要角色一律退回舊畫法
    ============================================================ */
 
-test('FALLBACK-1 沒有 spec.vfx／缺主要角色／preset 沒註冊，都回 false', function () {
+test('FALLBACK-1 只有舊事件缺 vfx 才退回，配置缺欄／無法載入不得替換', function () {
   const { adapter } = makeAdapter([unitPreset('hit-x')]);
   assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-1'] }), false, '沒有 vfx 欄位');
-  assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-1'], vfx: { ground: 'hit-x' } }), false,
+  assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-1'], vfx: { ground: 'hit-x' } }), true,
     'impact 的主要角色是 hit，只填 ground 不算');
-  assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-1'], vfx: { hit: 'not-loaded' } }), false,
-    'preset 沒有載入時不能假裝播了');
+  assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-1'], vfx: { hit: 'not-loaded' } }), true,
+    'preset 沒載入也不得換舊畫法');
   assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: ['mv-float-1'], vfx: { hit: 'hit-x' } }), true);
 });
 
-test('FALLBACK-2 受擊沒有任何目標時回 false（不能炸在原點）', function () {
+test('FALLBACK-2 受擊沒有目標時不產生畫面也不退回', function () {
   const { adapter } = makeAdapter([unitPreset('hit-x')]);
-  assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: [], vfx: { hit: 'hit-x' } }), false);
+  assert.equal(adapter.tryPlay({ fxKind: 'impact', targets: [], vfx: { hit: 'hit-x' } }), true);
+  assert.equal(adapter.stats().played, 0);
 });
 
 /* 這一組共用：把 budget 縮到極小，才驗得到「超預算時怎麼辦」。
@@ -469,16 +502,16 @@ test('FALLBACK-3 超出 budget 時整則丟掉，不落回舊畫法', function (
   assert.equal(s.dropped, s.fx.droppedEffects, '丟掉幾則要對得上 Core 丟掉幾個特效');
 });
 
-test('FALLBACK-4 超預算被吃掉，缺 preset 仍然退回舊畫法', function () {
-  /* 上一條的反面：不能為了不混畫風就把「這份 preset 根本不存在」也吞掉，
-     那會變成該有的特效整個不見。 */
+test('FALLBACK-4 超預算或缺 preset 都不替換成舊畫法', function () {
+  // 缺 preset 記為 skipped，可診斷但不能自行換特效。
   const { adapter } = tinyBudgetAdapter();
   for (let i = 0; i < 20; i++) adapter.tryPlay(Object.assign({}, SHOT));
   assert.ok(adapter.stats().fx.droppedEffects > 0, '預算已經滿了');
   assert.equal(adapter.tryPlay({
     fxKind: 'projectile', targets: [], angle: 0, lineLength: 300, travelMs: [400],
     vfx: { projectile: 'not-loaded' }
-  }), false, '沒有這份 preset 就該退回舊畫法，與預算滿不滿無關');
+  }), true, '沒有這份 preset 也不可退回舊畫法');
+  assert.equal(adapter.stats().skipped, 1);
 });
 
 test('BUDGET-1 正式設定不節流：畫面上同時幾百個特效也不丟', function () {
@@ -899,12 +932,12 @@ function orbitEvent(over) {
   }, over || {});
 }
 
-test('ORBIT-1 沒有環繞體 preset 就整則交還舊畫法（只畫軌道環會弄丟環繞體）', function () {
+test('ORBIT-1 沒有環繞體仍播放已配置地板，不補舊畫法', function () {
   const { adapter } = makeAdapter([unitPreset('ring-x', 1, true)]);
   const ok = adapter.tryPlay(orbitEvent({ vfx: { ground: 'ring-x' } }));
-  assert.equal(ok, false);
+  assert.equal(ok, true);
   assert.equal(adapter.stats().orbits, 0);
-  assert.equal(adapter.stats().grounds, 0, '不能只留下軌道環');
+  assert.equal(adapter.stats().grounds, 1, '有填地板就必須播放');
 });
 
 test('ORBIT-2 軌道環進 zone 層、N 個環繞體進 fx 層，並沿橢圓公轉', function () {
@@ -1062,15 +1095,14 @@ test('RAIN-3 沒有 area 的天降照樣放下落點影子', function () {
   assert.equal(adapter.stats().grounds, 1, '沒有 area 也要有落點影子');
 });
 
-test('RAIN-4 一般飛行物不會因為表格填了地板特效就多畫一個場域', function () {
-  /* RAIN-3 放寬的條件只針對天降。焚世領域那種「飛行物 + 地板場域」的組合
-     仍然要由 area 決定，否則每一發火球都會在敵人腳下留一塊場域。 */
+test('RAIN-4 一般飛行物的地板欄有填就播放', function () {
+  // 所有已配置欄位均生效。
   const { adapter } = makeAdapter([unitPreset('proj-x', 2), unitPreset('field-x', 5, true)]);
   adapter.tryPlay({
     fxKind: 'projectile', targets: ['mv-float-1'], travelMs: [400],
     vfx: { projectile: 'proj-x', ground: 'field-x' }
   });
-  assert.equal(adapter.stats().grounds, 0, '沒有 area 的一般飛行物不該自己長出場域');
+  assert.equal(adapter.stats().grounds, 1, '地板欄已填，依目標定位播放');
 });
 
 /* ============================================================
@@ -1131,7 +1163,8 @@ test('PROFILE-4 沒有 area 的場域：畫在目標腳底，大小由 groundR �
 
   /* 0 仍然是「不畫」：留給還沒決定尺寸規則的新版面。 */
   const off = makeAdapter([unitPreset('ground-x', 1, true)], { profile: { groundR: 0 } });
-  assert.equal(off.adapter.tryPlay(noArea), false, 'groundR 0 維持退回舊畫法');
+  assert.equal(off.adapter.tryPlay(noArea), true, 'groundR 0 不畫且不退回舊畫法');
+  assert.equal(off.adapter.stats().grounds, 0);
 });
 
 /* ============================================================

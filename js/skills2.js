@@ -188,7 +188,7 @@ function skills2PassiveActive(gid) {
    底值本身不是任何一個實際等級會出現的數字。
    desc 內的 {鍵} 於顯示時代入目前等級的計算值。 */
 var SKILLS2 = {
-  thrust: { name: '突刺', emoji: '🗡️', range: '12*3', cd: 15, cost: 25, tiers: [{ name: '突刺', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 2, speed: 48 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方敵人造成 {count} 次 {pct}% 物理傷害', vfx: { attack: 'slash-thrust-lance', hit: 'hit-phys' } }, { name: '連刺', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { chance: 25, chancePer: 2.5, count: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率再次進行 {count} 次突刺' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 20, pctPer: 3 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '超連刺', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { count: 3, range: 20, rangePer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '每次能進行 {count} 道平行貫穿突刺，且突刺範圍提升 {range}%', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '擴散', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { pct: 20, pctPer: 2, count: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '貫穿突刺', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 5, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺會造成一直線的傷害，貫穿路徑上所有敵人，貫穿長度在原本長度上再增加 {m} 米', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '八方連刺', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 20, pctPer: 2, count: 3, directions: 8 }, goldBase: 5000000, goldGrow: 1.5, desc: '向八個方向同時進行 {count} 次突刺，且造成傷害額外 +{pct}%', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }], ult: [{ id: 'phantomOcta', name: '幻影八方陣', cost: 300, fx: { dodge: 30, sec: 2, m: 6, mPer: 0.6 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時，傷害同時擴散至該敵人周圍 {m} 米內的所有敵人；施放突刺後 {sec} 秒內，你有 {dodge}% 機率絕對閃避敵方攻擊' }, { id: 'shadowExecutioner', name: '暗影絕殺者', cost: 300, fx: { perStack: 1, perStackPer: 0.2, maxStacks: 100, pct: 100, pctPer: 20, dur: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時堆疊【靈魂撕裂】：每層使該敵人受到的傷害提高 {perStack}%，最多 {maxStacks} 層（疊滿＝+{pct}%）' }, { id: 'oneStrikeKill', name: '一擊必殺', cost: 300, fx: { mult: 4, multPer: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '【八方連刺】改為朝前方的 1 道突刺，但傷害改為 {mult} 倍，且可以立即殺死普通敵人' }] },
+  thrust: { name: '突刺', emoji: '🗡️', range: '12*3', cd: 15, cost: 25, tiers: [{ name: '突刺', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 2, speed: 48 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方敵人造成 {count} 次 {pct}% 物理傷害', vfx: { attack: 'slash-thrust-lance', hit: 'hit-phys' } }, { name: '連刺', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { chance: 25, chancePer: 2.5, count: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率再次進行 {count} 次突刺' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 20, pctPer: 3 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '超連刺', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { count: 3, range: 20, rangePer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '每次能進行 {count} 道平行貫穿突刺，且突刺範圍提升 {range}%', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '擴散', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { pct: 20, pctPer: 2, count: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '貫穿突刺', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 5, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺會造成一直線的傷害，貫穿路徑上所有敵人，貫穿長度在原本長度上再增加 {m} 米', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '八方連刺', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 20, pctPer: 2, count: 3, directions: 8 }, goldBase: 5000000, goldGrow: 1.5, desc: '向八個方向同時進行 {count} 次突刺，且造成傷害額外 +{pct}%', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }], ult: [{ id: 'phantomOcta', name: '幻影八方陣', cost: 300, fx: { dodge: 30, sec: 2, m: 6, mPer: 0.6 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時，傷害同時擴散至該敵人周圍 {m} 米內的所有敵人；施放突刺後 {sec} 秒內，你有 {dodge}% 機率絕對閃避敵方攻擊', vfx: { attack: 'slash-thrust-scatter-blue', hit: 'hit-phys' } }, { id: 'shadowExecutioner', name: '暗影絕殺者', cost: 300, fx: { perStack: 1, perStackPer: 0.2, maxStacks: 100, pct: 100, pctPer: 20, dur: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時堆疊【靈魂撕裂】：每層使該敵人受到的傷害提高 {perStack}%，最多 {maxStacks} 層（疊滿＝+{pct}%）', vfx: { attack: 'slash-thrust-scatter-red', hit: 'hit-phys' } }, { id: 'oneStrikeKill', name: '一擊必殺', cost: 300, fx: { mult: 4, multPer: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '【八方連刺】改為朝前方的 1 道突刺，但傷害改為 {mult} 倍，且可以立即殺死普通敵人', vfx: { attack: 'slash-thrust-scatter-super', hit: 'hit-phys' } }] },
   cleave: { name: '迴旋斬', emoji: '🪓', range: '', cd: 15, cost: 25, tiers: [{ name: '迴旋斬', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 200, pctPer: 20, speed: 24 }, goldBase: 100000, goldGrow: 1.5, desc: '對範圍內的所有敵人造成 1 次 {pct}% 物理傷害', vfx: { attack: 'slash-cleave-arc', hit: 'hit-phys' } }, { name: '強化斬', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { range: 15, rangePer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊範圍擴大 {range}%（每級 +1.5% 範圍）' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 50, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '連斬', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { chance: 25, chancePer: 2.5, times: 2, timesPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率連續劈出共 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒', vfx: { attack: 'slash-cleave-stun' } }, { name: '震碎斬', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 12, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '斬擊會向前飛出 {m} 米距離，命中路徑上的敵人', vfx: { attack: 'slash-cleave-stun', hit: 'hit-phys' } }, { name: '迴身四方斬', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 50, pctPer: 5, times: 3, timesPer: 0 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時朝前後左右四個方向各使出 {times} 次斬擊，且傷害額外 +{pct}%（每級 +5% 傷害；與原有傷害乘法計算）', vfx: { attack: 'slash-cleave-stun', hit: 'hit-phys' } }], ult: [{ id: 'voidShatter', name: '虛空碎裂斬', cost: 300, fx: { times: 1, timesPer: 0.2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【迴身四方斬】的攻擊次數 +{times} 次，且物理傷害再額外 +{pct}%' }, { id: 'windChaser', name: '逐風者', cost: 300, fx: { hits: 4, hitsPer: 0.4, pct: 100, pctPer: 10, m: 4, gap: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬每命中 1 次，就在該敵人所在位置生成一道龍捲風：對半徑 {m} 米內的敵人造成 {hits} 段、每段 {pct}% 風系傷害', vfx: { ground: 'ground-tornado-wind' } }, { id: 'stormGodSlash', name: '天霸風神斬', cost: 300, fx: { sec: 8, secPer: -0.5, range: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬範圍擴大 {range}%，並改為被動技能：不再主動施放，改為每 {sec} 秒自動施放 1 次（每級施放間隔 -0.5 秒，仍需裝配在技能列才生效）' }] },
   knife: { name: '飛刀', emoji: '🔪', range: '', cd: 15, cost: 25, tiers: [{ name: '飛刀', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, deg: 60, speed: 50.4 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化飛刀', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 30, pctPer: 5, count: 1, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在範圍20米內的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化彈射', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 4, countPer: 0.2 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', unlock: { reinc: 0, lv: 350 }, cost: 240, fx: { sec: 0.05, secPer: 0.01 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使飛刀技能冷卻時間 -{sec} 秒' }], ult: [{ id: 'petalStorm', name: '暴雨梨花', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）都會對飛行路徑上的所有敵人造成 {pct}% 技能傷害' }, { id: 'deathReaper', name: '死亡收割者', cost: 300, fx: { pct: 25, pctPer: 2.5, maxStacks: 20, dur: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '飛刀殺死敵人時堆疊【死亡收割】：每層使你造成的傷害提高 {pct}%，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'soulhunterBlade', name: '無限追魂刃', cost: 300, fx: { pct: 50, pctPer: 5, m: 45 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放飛刀時額外射出 1 支無限飛刀，追擊周圍 {m} 米內的任意敵人：傷害提高 {pct}%，彈射次數不受限制；只有一個目標時會貫穿後繞回再次攻擊，不會停留原地重複傷害', vfx: { projectile: 'proj-knife-gold', hit: 'hit-lightning' } }] },
   gale: { name: '疾風斬', emoji: '💨', range: '', cd: 15, cost: 25, tiers: [{ name: '疾風斬', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 250, pctPer: 20, hits: 3, castM: 5, gap: 0.2 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）', vfx: { attack: 'hit-gale-burst', hit: 'hit-phys' } }, { name: '疾風連斬', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', unlock: { reinc: 0, lv: 200 }, cost: 60, fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', unlock: { reinc: 0, lv: 250 }, cost: 80, fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', unlock: { reinc: 0, lv: 300 }, cost: 100, fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', unlock: { reinc: 0, lv: 350 }, cost: 140, fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '月牙斬', unlock: { reinc: 0, lv: 400 }, cost: 240, fx: { pct: 500, pctPer: 50, castM: 10, m: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%', vfx: { attack: 'slash-gale-moon' } }], ult: [{ id: 'thunderFlash', name: '霹靂一閃', cost: 300, fx: { mult: 5, multPer: 0.5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬的最後一斬會對你周圍 {m} 米內的敵人造成「單段傷害 × 連擊數 × {mult}」的傷害', vfx: { hit: 'hit-lightning' } }, { id: 'thunderGodSlash', name: '雷神斬', cost: 300, fx: { pct: 200, pctPer: 20, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬附加雷電：每次斬擊命中時降下 1 道落雷，對命中處周圍 {m} 米內的敵人造成 {pct}% 閃電傷害', vfx: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { id: 'chidori', name: '千鳥', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【月牙斬】不再由範圍內的敵人均分傷害，改為每個敵人都受到完整傷害，且傷害再額外 +{pct}%' }] },
@@ -607,29 +607,50 @@ function sgVfxCat(g) { return sgIsMagic(g) ? 'magic' : 'phys'; }
      { cast 施放, attack 攻擊本體, projectile 飛行物, hit 受擊, ground 地板, field 持續場域 }
    （唯一來源：config/CSV/Skills2.csv 的六個特效欄，由 config_tables.cjs 回寫）。
    發送端以 extra 標明「這一發屬於表上的哪一列」：
-     vfxTier  1..7   第幾階引入的畫面（留白＝第 1 階＝技能本體）
+     vfxTier  1..7   第幾階引入的獨立效果（留白＝目前生效的最高階）
      vfxUlt   超神 id 超神選項那一列
      vfxGid   借用另一個群組的列（例：迴旋斬的傳奇【旋風劍舞】借真空斬第 4 階的真空迴旋畫面）
      vfxRoles 直接指定角色表（狀態每跳的作用特效由狀態表提供，見 statusVfxRoles）
-   回傳 null＝那一列沒填任何特效，顯示層會退回舊版程式畫法（不會沒有畫面）。 */
+   每個角色獨立向前繼承；超神空欄從第七階找，不跨互斥選項。
+   空物件代表整條鏈沒有特效，禁止退回舊版程式畫法。 */
 function sgVfxRoles(gid, extra) {
   if (extra && extra.vfxRoles) return extra.vfxRoles;
-  var g = SKILLS2[(extra && extra.vfxGid) || gid];
-  if (!g) return null;
-  var roles = null;
+  var sourceGid = (extra && extra.vfxGid) || gid;
+  var g = SKILLS2[sourceGid];
+  if (!g) return {};
+  var tiers = g.tiers || [], roles = {}, selected = null;
+  var tier = (extra && extra.vfxTier > 0) ? Math.floor(extra.vfxTier) : 0;
   if (extra && extra.vfxUlt) {
     var ult = g.ult || [];
     for (var i = 0; i < ult.length; i++) {
-      if (ult[i] && ult[i].id === extra.vfxUlt) { roles = ult[i].vfx; break; }
+      if (ult[i] && ult[i].id === extra.vfxUlt) { selected = ult[i]; break; }
     }
+    if (!selected) return roles;
+    tier = tiers.length;
   } else {
-    var tier = (extra && extra.vfxTier > 0) ? Math.floor(extra.vfxTier) : 1;
-    var t = g.tiers && g.tiers[tier - 1];
-    roles = t ? t.vfx : null;
+    // 借用技能的獨立效果只讀指定階；不可套用被借用技能的玩家超神選擇。
+    var active = sourceGid === gid ? skills2Ult(gid) : null;
+    if (active) selected = active.def;
+    if (!tier) {
+      var levels = skills2Levels(sourceGid);
+      tier = 1;
+      for (var li = 0; levels && li < tiers.length; li++) if (levels[li] > 0) tier = li + 1;
+    }
   }
-  if (!roles || typeof roles !== 'object') return null;
-  for (var k in roles) if (roles[k]) return roles;
-  return null;
+  var keys = ['cast', 'attack', 'projectile', 'hit', 'ground', 'field'];
+  function overlay(row) {
+    var vfx = row && row.vfx;
+    if (!vfx || typeof vfx !== 'object') return;
+    for (var k = 0; k < keys.length; k++) {
+      var value = vfx[keys[k]];
+      if (typeof value === 'string' && value.trim()) roles[keys[k]] = value.trim();
+    }
+  }
+  // 已選超神的空欄必須由第七階繼承，即使呼叫端仍帶一般階級標記。
+  if (selected) tier = tiers.length;
+  for (var ti = 0; ti < Math.min(tier, tiers.length); ti++) overlay(tiers[ti]);
+  overlay(selected);
+  return roles;
 }
 
 /* 群組目前的施法距離（像素）：由各階 fx.castM（米）決定——
@@ -1480,7 +1501,7 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
   /* 拋物線投射物的離地最高點（米，水流彈）：弧高是模擬層的表定值，
      顯示層不得自己另外挑一個固定值（AI_RULES 8.3：計算層與表現層共用同一個語意參數）。 */
   if (extra && extra.arcM > 0) spec.arcM = Number(extra.arcM);
-  /* 特效欄位：表上那一列的角色 → preset id；null 時不帶欄位，顯示層退回舊畫法。 */
+  /* 空角色表也必須送出，表示繼承鏈沒有特效，禁止顯示層自行補舊畫法。 */
   var roles = sgVfxRoles(gid, extra);
   if (roles) spec.vfx = roles;
   playCombatVfx(spec);
@@ -1973,7 +1994,8 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       (lvs[5] > 0 ? 'thrust-pierce' : 'thrust')));
   // 每波一則事件；出手延遲和執行期飛行物共用，平行／八方向在同一波同步。
   var thrustWaveGap = SG_MULTI_ATTACK_GAP_SEC;
-  var thrustVisualTier = lvs[4] > 0 ? 5 : (lvs[2] > 0 ? 3 : 1);
+  var thrustVisualTier = 1;
+  for (var vi = 0; vi < lvs.length; vi++) if (lvs[vi] > 0) thrustVisualTier = vi + 1;
   for (var wave = 0; wave < thrustCount; wave++) {
     sgEmitVfx('thrust', planned, floatSel, {
       fxKind: 'slash', variant: thrustVariant, count: 1, projectile: isPiercing,
@@ -3710,7 +3732,7 @@ function sgSpawnFirePool(pEnt, st, gid, spec, floatSel, tgt, from) {
     vfxUlt: spec.vfxUlt || '',
     /* 特效欄位跟著「畫法的擁有者」走：超神【永劫火獄】那一列自己有地板特效，
        傳奇【火池】沒有——它掛在火球術／殞石術底下，而那些列的地板欄是空的。
-       空的話 sgVfxRoles 回 null，這一灘火就會退回舊畫法（同一場戰鬥裡新舊並存）。
+       傳奇火池明確借用熔岩沼配置，不依賴空欄時補舊畫法。
        借的是熔岩沼那一列，與上面「顯示層沿用熔岩沼」的決定同一個來源。 */
     vfxGid: spec.vfxUlt ? '' : 'mire', vfxTier: spec.vfxUlt ? 0 : 7
   });
@@ -4438,6 +4460,8 @@ function sgCastFirehunt(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
   var cfg = {
     tgt: primary, floatSel: floatSel, rings: rings, count: count, ringGapPx: ringGapPx,
+    // 母體屬於第一階；第三階的伴生體由 companionPreset 獨立讀表。
+    vfxTier: 1,
     dmgVal: dmgVal, lifeSec: lifeSec, bodyR: bodyR,
     hitElem: 'fire',
     companionChance: lvs[2] > 0 ? sgVal(t[2].fx, 'chance', lvs[2]) : 0,

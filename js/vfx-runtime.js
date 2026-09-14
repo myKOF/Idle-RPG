@@ -3,14 +3,14 @@
    vfx-runtime.js — VFX Preset 的遊戲端轉接層（Runtime Adapter）
 
    它是「模擬層送出的 VFX 事件」與「VFX Core」之間唯一的橋：
-     spec（含 spec.vfx = 角色 → preset id） → 挑出主要角色 → 決定放在哪、多大、怎麼動
+     spec（含 spec.vfx = 角色 → preset id） → 逐欄派送 → 決定放在哪、多大、怎麼動
    規格與角色語意見 docs/vfx/VFX_RUNTIME_ADAPTER.md §1。
 
    三條不可動搖的界線：
      1. **只做表現，不做判定。** 位置、半徑、飛行時間全部來自事件本身
         （AI_RULES 8.3：計算層與表現層共用同一個語意參數），這裡不自己編路徑。
-     2. **缺主要角色就整則退回舊畫法**（tryPlay 回 false）。半套的畫面比舊畫面更糟，
-        而且會讓「哪些技能已經 Preset 化」變得看不出來。
+     2. **配置有值就用該值，空表不補舊畫法。** 只有缺少 vfx 欄位的舊事件
+        才以 tryPlay 回 false 交給相容畫法；載入失敗記入統計。
      3. **Core 不認得遊戲概念。** 目標、玩家、場域合併都在這一層；Core 只提供
         play／setTransform／stop 三個旋鈕。
 
@@ -824,8 +824,6 @@ var VFXRuntime = (function () {
 
     /* 持續場域：以 area.id 合併，重複事件只續命與更新「權威目標」 */
     function playGround(presetId, spec, role) {
-      // 舊技能表的 ground ID 僅作相容入口；直接播放玩家編輯的同一份發射 preset。
-      if (presetId === 'ground-icearrow-frost') presetId = 'proj-icearrow-frost';
       if (presetId === 'ground-firewall' && has(presetId + '-column-0') && spec.area) {
         var wall = spec.area, axis = num(wall.a, 0), result = false;
         for (var column = 0; column < 3; column++) {
@@ -1075,25 +1073,43 @@ var VFXRuntime = (function () {
       if (!spec) return false;
       var roles = spec.vfx;
       if (!roles || typeof roles !== 'object') return false;
-      /* 環繞場域（火狩星環、環體電球、虛空鋸刃）：軌道環與環繞體是同一件事，
-         必須一起接手，因此走自己的路徑而不是一般的角色分派。 */
-      if (spec.area && (num(spec.area.orbs, 0) > 0 || Array.isArray(spec.area.members))) {
-        var orbDrops = budgetDrops;
-        if (playOrbit(spec, roles)) return true;
-        /* 與下面同一條規則：超出 budget 就整則丟掉，不落回舊畫法。 */
-        if (budgetDrops > orbDrops) { counters.dropped++; return true; }
-        return false;
-      }
-      var role = primaryRoleOf(spec, roles);
-      var presetId = role ? roles[role] : '';
-      if (!presetId || !has(presetId)) { counters.skipped++; return false; }
-      /* 野外渲染器已消耗 delayMs；高塔直接呼叫 Adapter，仍須保留波次間隔。
-         使用更新時鐘排程，clear() 會一起取消，不留下換頁後的計時器。 */
+      // 表格事件即使全空或名稱無法載入，也不能換成另一份特效／舊畫法。
       if (num(spec.delayMs, 0) > 0) {
         pending.push({ at: clock + spec.delayMs / 1000, spec: Object.assign({}, spec, { delayMs: 0 }) });
         return true;
       }
+      var primary = primaryRoleOf(spec, roles);
+      // 純命中事件不可再次施法或發射；這些角色已由起飛事件播放。
+      if (primary === 'hit') {
+        if (spec.hit !== false) playRole(spec, 'hit');
+        return true;
+      }
+      var orbit = spec.area && (num(spec.area.orbs, 0) > 0 || Array.isArray(spec.area.members));
+      var orbitPlayed = orbit && playOrbit(spec, roles);
+      var order = ['cast', 'attack', 'projectile', 'field', 'ground'];
+      for (var ri = 0; ri < order.length; ri++) {
+        var role = order[ri];
+        if (!roles[role] || (orbit && (role === 'projectile' || (orbitPlayed && role === 'ground')))) continue;
+        playRole(spec, role);
+      }
+      /* 已有獨立命中事件的飛行技能，不在起飛時提前補爆點。 */
+      var presetId = roles[primary];
+      if (!orbit && spec.hit !== false && roles.hit && has(roles.hit) &&
+          presetId !== 'proj-waterball-flow' && presetId !== 'proj-meteor-inferno' &&
+          presetId !== 'proj-thunderfall-sky' && presetId !== 'hit-thunderfall-impact' &&
+          presetId !== 'bolt-thunderstrike-bluewhite' &&
+          !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || ''))) {
+        playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
+          roles.projectile ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
+      }
+      return true;
+    }
 
+    // 各欄獨立派送，主要欄缺值不能阻止其他有填值的角色。
+    function playRole(spec, role) {
+      var roles = spec.vfx;
+      var presetId = role ? roles[role] : '';
+      if (!presetId || !has(presetId)) { counters.skipped++; return false; }
       var ok = false;
       var drops0 = budgetDrops;
       switch (role) {
@@ -1170,25 +1186,6 @@ var VFXRuntime = (function () {
         counters.skipped++; return false;
       }
 
-      /* 天降類的落點預警：飛行物在天上飛的同時，地上要有那一圈紅／藍標記。
-         舊畫法本來就兩個都畫，只接手飛行物會讓預警圈消失。
-
-         沒有 area 的天降也要畫。地爆天星打的是全場、不掛在任何敵人身上，
-         模擬層因此不給 area；原本的條件把它整個濾掉，落地影子就永遠不出現。
-         playGround 本來就處理得了無 area 的情形（畫在 targets[0] 腳底、
-         大小由 profile.groundR 決定），這裡只是別提前擋掉它。 */
-      if ((role === 'projectile' || role === 'field') && roles.ground && has(roles.ground) &&
-          (role === 'field' || spec.area || spec.fxKind === 'rain')) {
-        playGround(roles.ground, spec);
-      }
-
-      /* 受擊爆點：同一則事件的 hit 角色跟著主要角色走（飛行物則等它抵達）；
-         主要角色本身就是 hit 時不重複播。
-         spec.hit === false＝這一擊被閃避或被無敵擋下，舊畫法同樣不畫爆點。 */
-      if (role !== 'hit' && presetId !== 'proj-waterball-flow' && spec.hit !== false && presetId !== 'proj-meteor-inferno' && presetId !== 'proj-thunderfall-sky' && presetId !== 'hit-thunderfall-impact' && presetId !== 'bolt-thunderstrike-bluewhite' && !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || '')) && roles.hit && has(roles.hit)) {
-        playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
-          role === 'projectile' ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
-      }
       return true;
     }
 
@@ -1416,7 +1413,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260913-rockarmor-shared-size';
+  var DATA_VERSION = '20260914-skill-vfx-inherit';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
