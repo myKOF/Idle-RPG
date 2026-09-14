@@ -184,6 +184,9 @@ function renderPreset(opts) {
      都很正常，疊起來才爆掉，所以非得真的疊起來量不可。
      位置用固定的偽亂數，讓同一次比較的前後兩張圖疊法完全一樣。 */
   const n = Math.max(1, opts.stack || 1);
+  /* offset：把特效原點從畫面中心挪開多少 px。縮圖取景用（preset-thumbs.cjs）——
+     內容不在原點附近的特效，要先移到畫面中間才放得大。沒給就是不挪，行為不變。 */
+  const off = opts.offset || { x: 0, y: 0 };
   const rng = VFXCore.makeRng((opts.seed || 12345) ^ 0x5f3a7);
   for (let i = 0; i < n; i++) {
     const handle = rt.play(preset.id, { seed: (opts.seed || 12345) + i * 977 });
@@ -193,8 +196,8 @@ function renderPreset(opts) {
        因為特效常常要跟著移動中的目標走（投射物）。 */
     rt.setTransform(handle, {
       position: {
-        x: W / 2 + (n > 1 ? (rng() - 0.5) * 2 * spread : 0),
-        y: cy + (n > 1 ? (rng() - 0.5) * 2 * spread * 0.55 : 0)
+        x: W / 2 + off.x + (n > 1 ? (rng() - 0.5) * 2 * spread : 0),
+        y: cy + off.y + (n > 1 ? (rng() - 0.5) * 2 * spread * 0.55 : 0)
       },
       scale: opts.scale || 1
     });

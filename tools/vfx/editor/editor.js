@@ -30,6 +30,8 @@
 
   function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
   var PRESET_LIST_URL = '/__presets';
+  /* 另存新檔的 Windows 存檔視窗由伺服器開（見 askSaveAsName） */
+  var SAVE_AS_DIALOG_URL = '/__save-as-dialog';
 
   /* ---------------- topbar 的 Preset 切換 ----------------
 
@@ -142,6 +144,8 @@
         combo.currentId = currentId;
         input.value = comboDisplayText();
         wirePresetCombo();
+        /* 清單比頁面晚一步到：瀏覽特效已經開著的話要跟著補上 */
+        if ($('preset-browser') && !$('preset-browser').hidden) renderPresetBrowser();
       })
       .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
   }
@@ -258,6 +262,146 @@
     }
     leavingOnPurpose = true;
     window.location.search = '?preset=' + encodeURIComponent(id);
+  }
+
+  /* ---------------- 瀏覽特效（縮圖） ----------------
+
+     下拉適合「已經知道名字」。要「找一份長得像的來改」得看得到樣子——使用者原本
+     是開作業系統的檔案視窗一個一個找 JSON（2026-09-14）。那個視窗看不到畫面，
+     而且用它複製檔案再開，JSON 裡的 id 還是原本那份，一按存檔就蓋掉原檔。
+
+     縮圖由伺服器即時畫（tools/vfx/preset-thumbs.cjs，有快取），卡片捲進畫面才要圖：
+     一次要兩百張的話，伺服器得一張一張畫上好一陣子。清單與搜尋沿用下拉那一份
+     （combo.rows／comboFilter），不另外抓、也不另寫一套比對規則。 */
+  var browser = { wired: false, observer: null };
+
+  function openPresetBrowser() {
+    wirePresetBrowser();
+    $('preset-browser').hidden = false;
+    renderPresetBrowser();
+    $('pb-search').focus();
+  }
+
+  function closePresetBrowser() {
+    $('preset-browser').hidden = true;
+    if (browser.observer) { browser.observer.disconnect(); browser.observer = null; }
+  }
+
+  function wirePresetBrowser() {
+    if (browser.wired) return;
+    browser.wired = true;
+    $('pb-search').addEventListener('input', renderPresetBrowser);
+    $('pb-close').onclick = closePresetBrowser;
+    $('preset-browser').addEventListener('mousedown', function (e) {
+      if (e.target === $('preset-browser')) closePresetBrowser();       // 點外框關閉
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('preset-browser').hidden) {
+        closePresetBrowser();
+        e.preventDefault();
+      }
+    });
+  }
+
+  function renderPresetBrowser() {
+    var grid = $('pb-grid');
+    if (!grid) return;
+    grid.textContent = '';
+    if (browser.observer) browser.observer.disconnect();
+    browser.observer = typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          var img = entry.target;
+          img.src = img.getAttribute('data-src');
+          browser.observer.unobserve(img);
+        });
+      }, { root: grid, rootMargin: '240px' })
+      : null;
+    var rows = comboFilter($('pb-search').value);
+    $('pb-count').textContent = combo.rows.length
+      ? rows.length + ' / ' + combo.rows.length + ' 份' : '清單載入中…';
+    rows.forEach(function (row) { grid.appendChild(presetCard(row)); });
+  }
+
+  function presetCard(row) {
+    var isCurrent = row.id === combo.currentId;
+    var card = document.createElement('div');
+    card.className = 'pb-card' + (isCurrent ? ' current' : '');
+    card.title = row.all && row.all.length
+      ? row.id + '\n共 ' + row.count + ' 處使用：\n· ' + row.all.join('\n· ')
+      : row.id;
+
+    var img = document.createElement('img');
+    img.alt = row.id;
+    img.setAttribute('data-src', '/__thumbs/' + encodeURIComponent(row.id) + '.png');
+    img.onerror = function () { card.classList.add('no-thumb'); };
+    img.onclick = function () { openFromBrowser(row.id); };
+    if (browser.observer) browser.observer.observe(img);
+    else img.src = img.getAttribute('data-src');
+    card.appendChild(img);
+
+    var name = document.createElement('div');
+    name.className = 'pb-id';
+    name.textContent = row.id;
+    card.appendChild(name);
+
+    /* 沒有人用就留白：下拉上也是這樣，空白本身就代表沒有被任何地方使用。 */
+    var use = document.createElement('div');
+    use.className = 'pb-use';
+    use.textContent = row.label || '';
+    card.appendChild(use);
+
+    var actions = document.createElement('div');
+    actions.className = 'pb-actions';
+    var open = document.createElement('button');
+    open.type = 'button';
+    open.textContent = isCurrent ? '目前這份' : '開啟';
+    open.disabled = isCurrent;
+    open.onclick = function () { openFromBrowser(row.id); };
+    var dup = document.createElement('button');
+    dup.type = 'button';
+    dup.textContent = '複製成新特效';
+    dup.title = '以這份為底另存成新的特效，原本那份不會被改到';
+    dup.onclick = function () { duplicatePreset(row.id); };
+    actions.appendChild(open);
+    actions.appendChild(dup);
+    card.appendChild(actions);
+    return card;
+  }
+
+  function openFromBrowser(id) {
+    if (id === combo.currentId) { closePresetBrowser(); return; }
+    choosePreset(id);                  // 未存檔先問、整頁重載，都在那裡
+  }
+
+  /* 複製成新特效＝以那一份為底「另存新檔」，原本那份不動。
+     不另寫一套複製檔案的邏輯：名稱檢查、根群組改名、存檔驗證只有 saveAsPreset 一份。
+     目前開著的就是那一份時直接另存（含尚未存檔的修改）；別份就先開啟它，
+     載入完成後自動接著另存（網址帶 saveAs=1，見 boot）。 */
+  function duplicatePreset(id) {
+    if (id === combo.currentId) {
+      closePresetBrowser();
+      saveAsPreset();
+      return;
+    }
+    if (isDirty() && !window.confirm('目前的修改尚未存檔，開啟另一份會失去這些修改。要繼續嗎？')) {
+      return;
+    }
+    leavingOnPurpose = true;
+    window.location.search = '?preset=' + encodeURIComponent(id) + '&saveAs=1';
+  }
+
+  function saveAsRequested() {
+    try { return new URLSearchParams(window.location.search).get('saveAs') === '1'; }
+    catch (e) { return false; }
+  }
+
+  /* 用完就把旗標從網址拿掉：留著的話，按重新整理會再跳一次「另存成新的 Preset」。 */
+  function clearSaveAsRequest(presetId) {
+    try {
+      window.history.replaceState(null, '', '?preset=' + encodeURIComponent(presetId));
+    } catch (e) { /* 不支援就算了，只影響重新整理後會不會再問一次 */ }
   }
 
   function wirePresetCombo() {
@@ -2163,6 +2307,19 @@
     ensureLayout();
     state.layout.presetId = state.preset.id;
     dropEmptyGroups();
+    /* 單一根群組（VFX_AGENT_WORKFLOW §9.11）：一個群組都沒有就把全部圖層收成
+       以 preset id 命名的根群組，與 preset-kit 的 writeRootGroupLayout 同一個形狀。
+       2026-09-14 使用者回報：另存新檔出來的特效沒有群組（當時是「載入 Preset」沒帶分組）。
+       這一道是保險：不管分組是從哪一條路弄丟的，存出去的都不會是散的。 */
+    if (!state.layout.groups.length && state.preset.layers.length) {
+      state.layout.groups = [{
+        id: state.preset.id, name: state.preset.id,
+        layerIds: state.preset.layers.map(function (l) { return l.id; })
+      }];
+      state.layout.order = [keyOf('group', state.preset.id)];
+      state.layoutRevision = (state.layoutRevision || 0) + 1;
+      renderLayerList();
+    }
     var check = VFXLayoutSchema.validateLayout(state.layout);
     if (!check.ok) return Promise.reject(new Error("分組資料不合法：\n- " + check.errors.join("\n- ")));
     /* 送出當下的版本號。使用者不會被擋著不能編輯——只是這次存檔不能
@@ -2293,6 +2450,7 @@
       if (uk === 'y' || (uk === 'z' && e.shiftKey)) { doRedo(); e.preventDefault(); return; }
     }
     if (!$('picker').hidden) return;                      // Picker 開著時鍵盤歸它
+    if (!$('preset-browser').hidden) return;              // 瀏覽特效開著時也是
     /* 焦點在任何可輸入的欄位裡就完全不攔截：在 JSON 參數框或搜尋框按 Delete
        要刪字元，不是刪圖層；按 Ctrl+C 要複製文字，不是複製圖層。 */
     if (isTextEntry(document.activeElement)) return;
@@ -3647,11 +3805,13 @@
     if (dirty && st && st.className.indexOf('ok') >= 0) setSaveStatus('', '');
   }
 
-  function setSaveStatus(text, cls) {
+  /* title：滑鼠移上去看的完整說明。每一則都重設——換成下一則時，上一則的說明不能還掛著。 */
+  function setSaveStatus(text, cls, title) {
     var el = $('save-status');
     if (!el) return;
     el.textContent = text;
     el.className = 'save-status' + (cls ? ' ' + cls : '');
+    el.title = title || '';
   }
 
   /* 存檔（回寫與下載）共用的擋門條件。
@@ -3813,51 +3973,97 @@
        使用者會停在一個指向不存在檔案的編輯器上，而下一次按存檔就真的
        把那個檔寫出來了——結果是「另存失敗」卻多了一份半成品。 */
 
+  /* 正在問名字時為 true：Windows 視窗可能被別的視窗蓋住，再按一次不能疊出第二個 */
+  var saveAsAsking = false;
+
+  /* 另存新檔的名字用 Windows 的存檔視窗問（2026-09-14 使用者要求：跟「載入 Preset」一樣）。
+     視窗由本機的編輯器伺服器開（tools/vfx/save-as-dialog.cjs），不用瀏覽器的存檔視窗 API：
+     那個 API 在使用者選到既有檔案時，交回檔案之前就先把它清空，而且拿不到路徑。
+     伺服器開的視窗只回傳路徑、不碰檔案；選到既有檔案或不對的資料夾，伺服器會說明原因並重開。
+     伺服器太舊（還沒有這條路由）、不是 Windows、或視窗開不起來時，退回輸入框。
+     回傳 Promise：null＝取消；{ id }；{ problem }（連續選到不能用的名字，伺服器放棄了）。 */
+  function askSaveAsName(current) {
+    var suggested = current ? current + '-copy' : '';
+    setSaveStatus('等待存檔視窗…', '',
+      '另存新檔的 Windows 視窗已經開啟；沒看到的話，可能被其他視窗蓋住了，看一下工作列。');
+    return fetch(SAVE_AS_DIALOG_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggested: suggested })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (body) {
+        if (r.ok && body.canceled) return null;
+        if (r.ok && body.id) return { id: body.id };
+        if (r.ok && body.problem) return { problem: body.problem };
+        if (r.status === 409) return { problem: body.error || '已經開著一個另存新檔的視窗' };
+        /* 舊伺服器對不認得的 POST 一律回 405 */
+        if (r.status === 405) throw new Error('編輯器伺服器是舊版，重新啟動伺服器之後才有 Windows 存檔視窗');
+        throw new Error(body.error || ('HTTP ' + r.status));
+      });
+    }).then(function (answer) {
+      setSaveStatus('', '');
+      return answer;
+    }, function (e) {
+      setSaveStatus('', '');
+      var input = window.prompt(
+        '（' + String(e && e.message || e) + '，改用輸入框）\n\n' +
+        '另存成新的 Preset。\n新的 id（小寫英數與連字號，會寫成 vfx/presets/<id>.json）：',
+        suggested);
+      return input === null ? null : { id: input };
+    });
+  }
+
   function saveAsPreset() {
-    if (state.saving || !state.preset) return;
+    if (state.saving || saveAsAsking || !state.preset) return;
     clearSaveError();
 
     var current = state.sourcePresetId || state.preset.id || '';
-    var input = window.prompt(
-      '另存成新的 Preset。\n新的 id（小寫英數與連字號，會寫成 vfx/presets/<id>.json）：',
-      current ? current + '-copy' : '');
-    if (input === null) return;                       // 使用者取消
-
-    var newId = String(input).trim().toLowerCase();
-    var idProblem = VFXPresetIdPolicy.presetIdProblem(newId);
-    if (idProblem) {
-      showSaveError('無法另存新檔', [idProblem]);
-      setSaveStatus('另存失敗', 'err');
-      return;
-    }
-    if (newId === current) {
-      showSaveError('無法另存新檔',
-        ['「' + newId + '」就是目前開著的這一份。另存新檔要換一個名字，' +
-         '要覆寫原本那份請直接按「儲存到 repo」。']);
-      setSaveStatus('另存失敗', 'err');
-      return;
-    }
-
-    setSaveStatus('檢查名稱…', '');
-    fetch(PRESET_LIST_URL).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function (data) {
-      var ids = (data && data.presets) || [];
-      if (ids.indexOf(newId) >= 0) {
-        showSaveError('無法另存新檔',
-          ['已經有一份叫「' + newId + '」的 Preset。另存新檔不會覆寫既有檔案，' +
-           '請換一個名字。']);
+    saveAsAsking = true;
+    askSaveAsName(current).then(function (answer) {
+      saveAsAsking = false;
+      if (!answer) return;                              // 使用者取消
+      if (answer.problem) {
+        showSaveError('無法另存新檔', [answer.problem]);
         setSaveStatus('另存失敗', 'err');
         return;
       }
-      return commitSaveAs(newId);
-    }).catch(function (e) {
-      /* 清單抓不到就不存：沒有那份清單就無法保證不會蓋到別人的檔案，
-         而「不會改到舊特效」正是這個功能存在的理由。 */
-      showSaveError('無法另存新檔（拿不到現有的 Preset 清單，無法確認會不會覆寫）',
-        [String(e && e.message || e)]);
-      setSaveStatus('另存失敗', 'err');
+
+      var newId = String(answer.id).trim().toLowerCase();
+      var idProblem = VFXPresetIdPolicy.presetIdProblem(newId);
+      if (idProblem) {
+        showSaveError('無法另存新檔', [idProblem]);
+        setSaveStatus('另存失敗', 'err');
+        return;
+      }
+      if (newId === current) {
+        showSaveError('無法另存新檔',
+          ['「' + newId + '」就是目前開著的這一份。另存新檔要換一個名字，' +
+           '要覆寫原本那份請直接按「儲存到 repo」。']);
+        setSaveStatus('另存失敗', 'err');
+        return;
+      }
+
+      setSaveStatus('檢查名稱…', '');
+      return fetch(PRESET_LIST_URL).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (data) {
+        var ids = (data && data.presets) || [];
+        if (ids.indexOf(newId) >= 0) {
+          showSaveError('無法另存新檔',
+            ['已經有一份叫「' + newId + '」的 Preset。另存新檔不會覆寫既有檔案，' +
+             '請換一個名字。']);
+          setSaveStatus('另存失敗', 'err');
+          return;
+        }
+        return commitSaveAs(newId);
+      }).catch(function (e) {
+        /* 清單抓不到就不存：沒有那份清單就無法保證不會蓋到別人的檔案，
+           而「不會改到舊特效」正是這個功能存在的理由。 */
+        showSaveError('無法另存新檔（拿不到現有的 Preset 清單，無法確認會不會覆寫）',
+          [String(e && e.message || e)]);
+        setSaveStatus('另存失敗', 'err');
+      });
     });
   }
 
@@ -3954,6 +4160,86 @@
     if (history) history.clear();
   }
 
+  /* 檔名優先於檔案內的 id（2026-09-14 使用者回報）。
+     在檔案總管把 x-copy.json 改名成 x-blue.json 之後，JSON 裡的 "id" 還是 x-copy。
+     以前編輯器照檔案內的 id 顯示與存檔：畫面上仍是 x-copy，一按存檔就另外寫出一份
+     x-copy.json，改好名的那份反而沒更新。檔名才是使用者看得到、實際在操作的名字，
+     所以以它為準。不能當 id 的檔名（例如「x - 複製.json」）就維持原本的 id 並說明。
+     回傳 { fileId, renamedFrom, problem }；renamedFrom 有值代表 preset.id 已經換成檔名。 */
+  function adoptFileName(preset, fileName) {
+    var fileId = String(fileName || '').replace(/\.json$/i, '');
+    var out = { fileId: fileId, renamedFrom: null, problem: null };
+    if (!fileId || fileId === preset.id) return out;
+    out.problem = VFXPresetIdPolicy.presetIdProblem(fileId);
+    if (out.problem) return out;
+    out.renamedFrom = preset.id;
+    preset.id = fileId;
+    return out;
+  }
+
+  function announceNaming(naming) {
+    if (naming.renamedFrom) {
+      /* 不用 ok 樣式：改了名字本來就是未存檔，refreshDirty 會把 ok 當成過期的「已存檔」清掉
+         （分組非同步載完就會呼叫它，提示一閃即逝——NAME-6）。 */
+      setSaveStatus('已改用檔名：' + state.preset.id, 'note',
+        '檔案內的 id 是「' + naming.renamedFrom + '」，檔名是「' + state.preset.id +
+        '」。已改用檔名，存檔會寫到 ' + state.preset.id + '.json，舊名字的檔案不會被動到。');
+      return;
+    }
+    if (naming.problem) {
+      showSaveError('檔名不能當成特效名稱', [
+        '「' + naming.fileId + '」：' + naming.problem,
+        '仍沿用檔案內的 id「' + state.preset.id + '」，存檔會寫到 ' + state.preset.id + '.json。' +
+        '要換名字，請把檔名改成小寫英數與連字號，或用「另存新檔」。'
+      ]);
+    }
+  }
+
+  function hasGroups(layout) {
+    return !!(layout && layout.groups && layout.groups.length);
+  }
+
+  /* 名稱、網址、下拉的「目前這份」都跟著畫面上的特效走（2026-09-14 使用者回報：
+     載入 Preset 之後下拉還寫著上一份的名字，預覽卻已經是別的特效）。
+     網址只在 repo 裡真的有這份檔案時才改：沒有的話，重新整理會開不起來。 */
+  function syncPresetIdentity() {
+    var id = state.preset ? state.preset.id : '';
+    combo.currentId = id;
+    $('preset-search').value = comboDisplayText();
+    var inRepo = combo.rows.some(function (r) { return r.id === id; });
+    if (!inRepo) return;
+    try {
+      window.history.replaceState(null, '', '?preset=' + encodeURIComponent(id));
+    } catch (e) { /* 不支援就算了，只影響重新整理後開到哪一份 */ }
+  }
+
+  /* 分組跟著載，否則一存檔群組就沒了。先找這個名字的分組檔；找不到而且是改過名的，
+     就拿舊名字那一份來改名——檔案總管改名不會連 vfx/layouts 裡的分組檔一起改。
+     非同步回來時使用者可能已經開始編輯：只有 preset 還是同一份、分組也還是空的才套用。 */
+  function adoptLayoutFor(preset, renamedFrom) {
+    loadLayout(preset.id).then(function (res) {
+      if (state.preset !== preset) return null;
+      if (hasGroups(res.layout)) return { layout: res.layout, saved: true };
+      if (!renamedFrom) return null;
+      return loadLayout(renamedFrom).then(function (old) {
+        return hasGroups(old.layout) ? { layout: old.layout, saved: false } : null;
+      });
+    }).then(function (found) {
+      if (!found || state.preset !== preset || hasGroups(state.layout)) return;
+      state.layout = found.layout;
+      if (!found.saved) {
+        state.layout.presetId = preset.id;
+        renameRootGroup(preset.id);          // 根群組的 id／名稱跟著換成新名字
+      }
+      state.layoutRevision = (state.layoutRevision || 0) + 1;
+      /* 這個名字底下本來就有的分組檔＝repo 裡的內容；從舊名字搬過來的還沒存。 */
+      state.savedLayoutText = found.saved ? VFXLayoutSchema.serialiseLayout(state.layout) : null;
+      loadCollapsed();
+      renderLayerList();
+      refreshDirty();
+    });
+  }
+
   function loadPresetFromFile(file) {
     var reader = new FileReader();
     reader.onload = function () {
@@ -3965,6 +4251,7 @@
           $('validation').textContent = '載入失敗：\n- ' + result.errors.join('\n- ');
           return;
         }
+        var naming = adoptFileName(parsed, file && file.name);
         state.preset = parsed;
         state.layout = VFXLayoutSchema.emptyLayout(parsed.id);
         state.savedLayoutText = null;        // 匯入的內容還沒進 repo
@@ -3980,6 +4267,9 @@
         clearHistoryForNewPreset();          // 上一份的 Undo 不適用於這一份
         markGizmoDirty();                    // preset.loop 由 renderInspector 一起帶出來
         renderLayerList(); renderInspector(); onPresetChanged();
+        syncPresetIdentity();
+        adoptLayoutFor(parsed, naming.renamedFrom);
+        announceNaming(naming);
       } catch (e) {
         $('validation').className = 'hint err';
         $('validation').textContent = 'JSON 解析失敗：' + e.message;
@@ -4158,6 +4448,10 @@
          用 canonical 文字而不是原始 bytes：檔案若還沒 canonical 化，
          每次一開啟就會顯示未存檔，那個提示很快就會被無視。 */
       state.savedText = VFXCore.serialisePreset(state.preset);
+      /* 檔名優先於檔案內的 id（見 adoptFileName）。基準線是換名字之前、磁碟上的內容，
+         所以換了之後會顯示未存檔，存一次就對齊。以前這裡直接「停用存檔」，
+         在檔案總管改過名的特效就只能卡在那裡。 */
+      var bootNaming = adoptFileName(state.preset, bootPresetId + '.json');
       state.sourcePresetId = bootPresetId;
       state.layout = res[3].layout;
       state.layoutRevision = 0;
@@ -4171,8 +4465,9 @@
       }
       loadCollapsed();
       fillPresetPicker(bootPresetId);
-      if (state.preset.id !== bootPresetId) {
-        setSaveStatus('preset.id 與檔名不一致，已停用存檔', 'err');
+      if (bootNaming.renamedFrom) {
+        announceNaming(bootNaming);
+        adoptLayoutFor(state.preset, bootNaming.renamedFrom);
       }
 
       // Editor 端的 resolver：assetId → 本機資產伺服器 URL。
@@ -4298,6 +4593,11 @@
         buildBackgroundBar();
         collectVocab();
         wirePicker();
+        /* 「瀏覽特效」的複製成新特效：那一份開好之後接著另存 */
+        if (saveAsRequested()) {
+          clearSaveAsRequest(bootPresetId);
+          window.setTimeout(saveAsPreset, 0);
+        }
 
       });
     }).catch(function (e) {
@@ -4327,6 +4627,7 @@
     /* 橫幅擋在工具列下面，讀完要收得掉。收掉的只是橫幅，
        右側「驗證」面板仍然留著同一段文字，回頭要查還找得到。 */
     if ($('save-error-close')) $('save-error-close').onclick = clearSaveError;
+    $('btn-browse').onclick = openPresetBrowser;
     $('btn-load').onclick = function () { $('file-load').click(); };
     $('file-load').onchange = function (e) {
       if (e.target.files[0]) loadPresetFromFile(e.target.files[0]);

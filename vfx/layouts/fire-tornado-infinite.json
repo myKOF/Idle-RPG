@@ -4,7 +4,7 @@
   "groups": [
     {
       "id": "fire-tornado-infinite",
-      "name": "無限火龍",
+      "name": "fire-tornado-infinite",
       "layerIds": [
         "halo",
         "spray",

@@ -168,6 +168,8 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .save-status { color: #8a8a96; font-size: 12px; }
 .save-status.ok { color: #7fd18a; }
 .save-status.err { color: #ff8080; }
+/* 提醒（例如「已改用檔名」）：不是成功也不是失敗，未存檔時也要一直留著 */
+.save-status.note { color: #e0c07a; }
 
 /* ---- 預覽區上方的背景色列 ---- */
 #bg-bar {
@@ -264,6 +266,36 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .picker-foot { display: flex; align-items: center; gap: 10px; padding: 8px 10px;
                background: #23232b; border-top: 1px solid #2c2c34; }
 .picker-foot button { margin-left: auto; }
+
+/* ---- 瀏覽特效 ---- */
+#preset-browser { position: fixed; inset: 0; background: rgba(0,0,0,.6);
+                  display: flex; align-items: center; justify-content: center; z-index: 50; }
+#preset-browser[hidden] { display: none; }
+/* 右下角可以自己拉大小：看縮圖時常常想一次多看幾排 */
+.browser-box { width: min(1180px, 94vw); height: min(760px, 90vh);
+               min-width: 420px; min-height: 320px; max-width: 98vw; max-height: 96vh;
+               resize: both; overflow: hidden;
+               background: #1a1a20; border: 1px solid #3a3a44; border-radius: 8px;
+               display: flex; flex-direction: column; }
+#pb-search { width: 280px; }
+#pb-close { margin-left: auto; }
+#pb-grid { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px; display: grid;
+           grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 10px;
+           align-content: start; }
+.pb-card { border: 1px solid #2c2c34; border-radius: 6px; background: #15151a; padding: 6px;
+           display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pb-card:hover { border-color: #6a6a7a; }
+.pb-card.current { border-color: #7fb2ff; box-shadow: 0 0 0 1px #7fb2ff inset; }
+.pb-card img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block;
+               cursor: pointer; background: #121216; border-radius: 4px; }
+/* 畫不出縮圖（壞掉的 preset）就留一塊空底，卡片其餘照常能開、能複製 */
+.pb-card.no-thumb img { visibility: hidden; }
+.pb-id { font-size: 12px; color: #d6d6dc; overflow: hidden; text-overflow: ellipsis;
+         white-space: nowrap; user-select: text; }
+.pb-use { font-size: 11px; color: #7fd18a; overflow: hidden; text-overflow: ellipsis;
+          white-space: nowrap; min-height: 1.3em; }
+.pb-actions { display: flex; gap: 4px; }
+.pb-actions button { flex: 1 1 auto; font-size: 11px; padding: 2px 4px; }
 
 /* assetId 欄位：文字框 + 開啟 Picker 的按鈕 */
 .asset-field { display: flex; gap: 4px; min-width: 0; }

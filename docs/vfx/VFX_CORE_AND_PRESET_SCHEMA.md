@@ -101,6 +101,15 @@ Core 的 `validatePreset` 仍是 preset 合法性的單一來源；
 但 Editor 會記住「這份是以哪個 id 載進來的」，兩者不一致時**停用存檔**——
 否則開著 `fire-tornado` 按存檔卻改掉 `black-hole.json`，而且畫面上看不出來。
 
+載入時以**檔名**為準（2026-09-14）：檔案內的 `id` 與檔名不同（例如在檔案總管改過名）時，
+Editor 把 `preset.id` 換成檔名，存檔寫回的就是開啟的那個檔；檔名不能當 id 時維持檔案內的 id 並說明原因。
+分組檔在新名字底下找不到時，拿舊名字那一份並把根群組改名。
+
+Save As 的名字由 Windows 存檔視窗問：`POST /__save-as-dialog` 請編輯器伺服器開視窗
+（`tools/vfx/save-as-dialog.cjs`），只回傳檢查過的 id、不寫任何檔案，寫入仍走上面的 PUT。
+不用瀏覽器的存檔視窗 API：它在使用者選到既有檔案時會先把檔案清空，而且拿不到路徑。
+選到既有檔案、不在 `vfx/presets` 這一層、或檔名不能當 id，都會跳訊息框說明並重開視窗。
+
 存檔**不會**觸發 `tools/vfx/export-assets.cjs`。
 把素材發佈綁進編輯動作，等於每按一次存檔就重寫一次 `images/vfx/assets/`；
 正式匯出仍然是獨立的一步。
