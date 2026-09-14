@@ -133,6 +133,13 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 /* 標題裡含有使用者自己取的名字時要保留大小寫：群組 id 一律小寫，
    被 uppercase 改寫之後看起來像是另一個名字。 */
 .group-title.keep-case { text-transform: none; letter-spacing: 0; }
+/* 多選時各層數值不同的欄位：留空＋「多個值」。虛線框讓它看起來不是「沒有填」，
+   而是「這裡有好幾個值，不去動它就不會改到」。 */
+.field input.mixed { border-style: dashed; border-color: #56647a; }
+.field input.mixed::placeholder { color: #8fa3c0; font-style: italic; }
+.mixed-color { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.field .mixed-color input[type="color"] { flex: 1 1 auto; width: auto; min-width: 0; }
+.mixed-note { flex: 0 0 auto; color: #8fa3c0; font-size: 11px; font-style: italic; }
 .err { color: #ff8080; }
 .ok { color: #7fd18a; }
 
@@ -277,6 +284,9 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .ol-hint { font-size: 10px; color: #70707c; line-height: 1.5; }
 .ol-tools { display: flex; gap: 4px; margin-top: 3px; }
 .ol-tools button { font-size: 10px; padding: 1px 6px; }
+/* 多選時各層的曲線不同：不畫任何一層的曲線，改成說明＋統一按鈕 */
+.ol-row .ol-mixed { grid-column: 2; font-size: 11px; color: #8fa3c0; padding: 8px;
+                    border: 1px dashed #3a3a46; border-radius: 3px; }
 
 .curve { position: relative; outline: none; }
 /* 焦點框不是裝飾：Delete 的去向由焦點決定，看不出焦點在哪就會刪錯東西 */

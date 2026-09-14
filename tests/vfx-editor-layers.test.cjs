@@ -1184,7 +1184,8 @@ test('D5 Delete 後焦點落在鄰近一列，而不是整個清空', function (
 test('K1 Inspector 的 assetId 欄位提供 Asset Picker 按鈕', function () {
   const src = fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8');
-  assert.ok(/openPicker\(layer, f\.key\)/.test(src), 'assetId 欄位要能開啟 Picker');
+  /* 2026-09-14 起多選時一次換掉全部選取圖層的素材，所以傳的是目標清單 */
+  assert.ok(/openPicker\(targets, f\.key\)/.test(src), 'assetId 欄位要能開啟 Picker');
   const html = fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'index.html'), 'utf8');
   ['picker', 'picker-list', 'picker-preview', 'picker-meta', 'picker-apply', 'picker-close']
@@ -1276,7 +1277,8 @@ test('K3 Picker 寫回的是 index 裡的 assetId，不是檔案系統路徑', f
   const applyFn = src.slice(src.indexOf('function applyPicker'));
   const applyBody = applyFn.slice(0, applyFn.indexOf('\n  }'));
   assert.ok(/picker\.selected/.test(applyBody), '套用的值必須來自 Picker 的選取');
-  assert.ok(/\[field\] = value|picker\.layer\[picker\.field\] = picker\.selected/.test(applyBody),
+  /* 2026-09-14 起多選時一次寫進全部選取的圖層，寫法是 MX.writeAll(targets, field, value) */
+  assert.ok(/\[field\] = value|MX\.writeAll\(targets, field, value\)/.test(applyBody),
     'applyPicker 要把選中的 assetId 寫進圖層欄位');
   const index = JSON.parse(fs.readFileSync(
     path.join(REPO, 'vfx', 'asset-index.json'), 'utf8'));

@@ -721,7 +721,8 @@ test('OFF-7 Editor 的位移 policy 是加法語意：預設 0、不夾上下限
   const body = fn.slice(0, fn.indexOf('\n  }'));
   assert.ok(/curveSection\(host, 'offset'/.test(body), '要有 Offset 區塊');
   assert.ok(/offsetXOverLife/.test(body) && /offsetYOverLife/.test(body), '兩軸都要有');
-  assert.ok(/supportsPerAxisScale\(layer\)/.test(body),
+  /* 2026-09-14 Inspector 支援多選後，判斷對象從一層變成「全部選到的圖層」 */
+  assert.ok(/supportsPerAxisScale\b/.test(body),
     '粒子層要走說明那一條，不是畫出兩張沒有作用的圖');
 });
 
