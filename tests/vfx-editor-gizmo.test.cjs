@@ -11,7 +11,7 @@
    重疊時誰在上面。這些在畫面上都「看起來差不多」。
 
    全檔反覆驗證的兩條不變量：
-     **Gizmo 只改 base transform，不碰 over-life 曲線。**
+     **單層 Gizmo 只改 base transform；群組縮放同步像素 Offset 曲線。**
      **Gizmo 的任何狀態都不得進入 preset。**
    ============================================================ */
 
@@ -20,6 +20,25 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+
+test('岩甲群組縮放同步環繞曲線，非等比及取消還原不破壞原資料',()=>{
+ const G=require('../tools/vfx/editor/gizmo-model.js');
+ const source=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/aura-rockarmor-stone.json'),'utf8'));
+ for(const [sx,sy] of [[2,2],[.5,.5],[2,.5]]) {
+  const layers=JSON.parse(JSON.stringify(source.layers));
+  const snapshots=G.groupSnapshot(layers),before=JSON.stringify(snapshots);
+  G.writeGroupTransform(layers,G.applyGroupTransform(snapshots,{x:0,y:0},{sx,sy}));
+  let count=0;
+  layers.forEach((l,i)=>{
+   for(const [key,factor] of [['offsetXOverLife',sx],['offsetYOverLife',sy]]){
+    if(source.layers[i][key]===undefined)continue;count++;
+    assert.deepStrictEqual(l[key],source.layers[i][key].map(p=>[p[0],p[1]*factor]));
+   }
+  });
+  assert.ok(count>=12,'必須檢查真實岩石環繞軌跡');assert.equal(JSON.stringify(snapshots),before);
+  G.restoreGroup(layers,snapshots);assert.deepStrictEqual(layers,source.layers);
+ }
+});
 
 const G = require('../tools/vfx/editor/gizmo-model.js');
 const C = require('../tools/vfx/editor/curve-model.js');
