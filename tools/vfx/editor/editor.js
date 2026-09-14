@@ -959,6 +959,18 @@
      變形會當場攤到子圖層的 base transform 上，存出去仍是一張平的表。
      細節見 gizmo-model.js 的「群組變形」段落。 */
   function gizmoTarget() {
+    /* 多選：每一層各有自己的框，拖其中任何一層都帶著其他選到的一起動
+       （見 gizmo-model.js 的「多選變形」）。判斷條件與 Inspector 共用 inspectorTargets——
+       左邊選了幾層，框就畫幾個、Inspector 就寫幾層，不會各說各話。 */
+    var many = inspectorTargets();
+    if (many.length > 1) {
+      return {
+        kind: 'multi', layers: many,
+        items: many.map(function (l) {
+          return { layer: l, bounds: boundsOf(l), caps: G.capabilities(l) };
+        })
+      };
+    }
     var layer = selectedLayer();
     if (layer) {
       return {
@@ -974,6 +986,38 @@
       kind: 'group', group: g, layers: members,
       bounds: G.groupBounds(members, sizeOf), caps: G.groupCapabilities(members)
     };
+  }
+
+  /* 目標拆成「一個一個框」：單層與群組各一個，多選時每層一個。
+     畫框、命中把手、游標形狀都走這一份，不必各自分三種情況。 */
+  function gizmoItems(target) {
+    if (!target) return [];
+    if (target.kind === 'multi') return target.items;
+    return target.bounds
+      ? [{ layer: target.layer || null, bounds: target.bounds, caps: target.caps }] : [];
+  }
+
+  /* 滑鼠底下的把手。多選時所有框的把手一起比、取最近的那個；
+     回傳的把手帶著 item（第幾個框）——拖曳要知道以哪一層為基準。 */
+  function hitGizmoHandle(items, pt) {
+    var list = [];
+    items.forEach(function (it, i) {
+      G.handles(it.bounds, it.caps).forEach(function (h) { h.item = i; list.push(h); });
+    });
+    return G.hitHandle(pt, list, screenRadiusToLocal(9));
+  }
+
+  /* 滑鼠底下是第幾個框的內部（-1＝都不是）。多選時重疊的框照繪製順序取最上面那層，
+     與點選圖層的規則一致。 */
+  function hitGizmoBody(target, items, pt) {
+    if (target.kind === 'multi') {
+      var hit = G.hitLayer(pt, target.layers, boundsOf);
+      for (var i = 0; hit && i < items.length; i++) {
+        if (items[i].layer === hit && items[i].caps.move) return i;
+      }
+      return -1;
+    }
+    return items[0].caps.move && G.insideBounds(pt, items[0].bounds) ? 0 : -1;
   }
 
   /* ---------------- 座標換算 ----------------
@@ -1055,13 +1099,22 @@
     var g = gizmo.gfx;
     g.clear();
     var target = gizmoTarget();
-    if (!target || !target.bounds) return;
-    var b = target.bounds;
-    var caps = target.caps;
-    var hs = G.handles(b, caps);
-    /* 群組用虛線區分，一眼看得出動的是一整批而不是單層 */
+    var items = gizmoItems(target);
+    if (!items.length) return;
+    /* 群組用綠色粗線區分，一眼看得出動的是一整批而不是單層 */
     var isGroup = target.kind === 'group';
+    /* 多選時每一層都有框與把手，抓哪一個都帶著全部一起動。作用中的那一層
+       （清單上有外框的那列）畫得最亮，其餘淡一點——看得出 Inspector 以誰為準。 */
+    var active = selectedLayer();
+    items.forEach(function (it) {
+      var dim = target.kind === 'multi' && it.layer !== active;
+      drawGizmoBox(g, it.bounds, it.caps, isGroup, dim ? 0.5 : 1);
+    });
+  }
 
+  /* 一個框：外框、旋轉把手的連線、pivot 十字、把手。emphasis 1＝正常，越小越淡。 */
+  function drawGizmoBox(g, b, caps, isGroup, emphasis) {
+    var hs = G.handles(b, caps);
     var corners = [
       { x: b.x, y: b.y }, { x: b.x + b.w, y: b.y },
       { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }
@@ -1071,31 +1124,31 @@
     g.moveTo(corners[0].x, corners[0].y);
     corners.slice(1).forEach(function (p) { g.lineTo(p.x, p.y); });
     g.lineTo(corners[0].x, corners[0].y);
-    g.stroke({ width: isGroup ? 2 : 1, color: isGroup ? 0x9be08a : 0xffffff, alpha: 0.85 });
+    g.stroke({ width: isGroup ? 2 : 1, color: isGroup ? 0x9be08a : 0xffffff, alpha: 0.85 * emphasis });
 
     /* 旋轉把手到框上緣的連線 */
     var rot = hs.filter(function (h) { return h.kind === 'rotate'; })[0];
     if (rot) {
       var top = G.rotateAround({ x: b.x + b.w / 2, y: b.y }, b.pivot, b.rotation);
       g.moveTo(top.x, top.y); g.lineTo(rot.x, rot.y);
-      g.stroke({ width: 1, color: 0xffffff, alpha: 0.5 });
+      g.stroke({ width: 1, color: 0xffffff, alpha: 0.5 * emphasis });
     }
 
     /* pivot：十字，標出 position 實際落在哪裡（受 anchor 影響） */
     var pv = b.pivot, r = screenRadiusToLocal(6);
     g.moveTo(pv.x - r, pv.y); g.lineTo(pv.x + r, pv.y);
     g.moveTo(pv.x, pv.y - r); g.lineTo(pv.x, pv.y + r);
-    g.stroke({ width: 1, color: 0xffb454, alpha: 0.95 });
+    g.stroke({ width: 1, color: 0xffb454, alpha: 0.95 * emphasis });
 
     var hr = screenRadiusToLocal(4);
     hs.forEach(function (h) {
       if (h.kind === 'rotate') {
         g.circle(h.x, h.y, hr);
-        g.fill({ color: 0x7fb2ff });
-        g.stroke({ width: 1, color: 0xffffff, alpha: 0.9 });
+        g.fill({ color: 0x7fb2ff, alpha: emphasis });
+        g.stroke({ width: 1, color: 0xffffff, alpha: 0.9 * emphasis });
       } else {
         g.rect(h.x - hr, h.y - hr, hr * 2, hr * 2);
-        g.fill({ color: 0xffffff });
+        g.fill({ color: 0xffffff, alpha: emphasis });
       }
     });
   }
@@ -1110,16 +1163,27 @@
     if (e.button !== 0) return;
     var pt = clientToEffectLocal(e.clientX, e.clientY);
     var target = gizmoTarget();
+    var items = gizmoItems(target);
 
     /* 先問把手，再問框內，最後才重新選取：
-       已經選好的目標上有把手時，把手優先，否則永遠拖不到角落。 */
-    if (target && target.bounds) {
-      var b = target.bounds;
-      var caps = target.caps;
-      var h = G.hitHandle(pt, G.handles(b, caps), screenRadiusToLocal(9));
-      if (h) { beginDrag(target, h.kind, h, pt, b); e.preventDefault(); return; }
-      if (caps.move && G.insideBounds(pt, b)) {
-        beginDrag(target, 'move', null, pt, b); e.preventDefault(); return;
+       已經選好的目標上有把手時，把手優先，否則永遠拖不到角落。
+       多選時每一層的框都算，抓到哪一層，那一層就是這次拖曳的基準。 */
+    if (items.length) {
+      /* 多選時在框上點一下（沒有拖）＝只選這一層。不這樣做的話，選好一批之後
+         在預覽區就再也點不出單獨一層，只能回左邊清單。
+         把手也算：小物件的框只有十幾 px，把手的命中範圍會蓋滿整個框，
+         只認框內的話那種物件永遠點不出來（2026-09-14 實測擴散圈）。 */
+      var h = hitGizmoHandle(items, pt);
+      if (h) {
+        beginDrag(target, h.kind, h, pt, items[h.item].bounds, h.item);
+        if (target.kind === 'multi') gizmo.drag.collapseTo = items[h.item].layer.id;
+        e.preventDefault(); return;
+      }
+      var inside = hitGizmoBody(target, items, pt);
+      if (inside >= 0) {
+        beginDrag(target, 'move', null, pt, items[inside].bounds, inside);
+        if (target.kind === 'multi') gizmo.drag.collapseTo = items[inside].layer.id;
+        e.preventDefault(); return;
       }
     }
 
@@ -1134,10 +1198,13 @@
   }
 
   var DRAG_LABEL = { move: '移動', scale: '縮放', rotate: '旋轉' };
+  var DRAG_WHAT = { layer: '圖層', group: '群組', multi: '多個圖層' };
 
-  function beginDrag(target, mode, handle, startPoint, bounds) {
+  /* itemIndex：多選時被抓的是第幾層——它的 pivot 與角度是這次拖曳的基準 */
+  function beginDrag(target, mode, handle, startPoint, bounds, itemIndex) {
     /* 一次拖曳＝一筆歷史。pointermove 期間只更新畫面，不記錄。 */
-    editBegin((DRAG_LABEL[mode] || '變形') + (target.kind === 'group' ? '群組' : '圖層'));
+    editBegin((DRAG_LABEL[mode] || '變形') + (DRAG_WHAT[target.kind] || '圖層'));
+    var multi = target.kind === 'multi';
     gizmo.drag = {
       target: target,
       mode: mode,
@@ -1146,11 +1213,14 @@
       pivot: { x: bounds.pivot.x, y: bounds.pivot.y },
       rotation: bounds.rotation,
       /* 群組要多存幾個欄位：縮放會動到粒子的 speed／spawn／startScale，
-         旋轉會動到 direction 與 gravity。 */
-      snap: target.kind === 'group'
-        ? G.groupSnapshot(target.layers) : G.snapshot(target.layer),
-      startScale: target.kind === 'group'
+         旋轉會動到 direction 與 gravity。多選是每層各存一份。 */
+      snap: target.kind === 'group' ? G.groupSnapshot(target.layers)
+        : multi ? G.multiSnapshot(target.layers) : G.snapshot(target.layer),
+      ref: multi ? (itemIndex || 0) : 0,
+      caps: multi ? target.items.map(function (it) { return it.caps; }) : null,
+      startScale: target.kind !== 'layer'
         ? null : (target.layer.scale ? { x: target.layer.scale.x, y: target.layer.scale.y } : { x: 1, y: 1 }),
+      collapseTo: null,
       moved: false
     };
     setPreviewCursor(mode);
@@ -1167,6 +1237,7 @@
     var shift = e.shiftKey;
 
     if (d.target.kind === 'group') dragGroup(d, pt, shift);
+    else if (d.target.kind === 'multi') dragMulti(d, pt, shift);
     else dragLayer(d, pt, shift);
 
     d.moved = true;
@@ -1205,13 +1276,26 @@
       G.applyGroupTransform(d.snap, d.pivot, delta));
   }
 
+  /* 多選：由被抓的那一層算出相對量（位移、倍率、角度），每一層各自繞自己的 pivot 套用。
+     每次都從快照重算，不累加。 */
+  function dragMulti(d, pt, shift) {
+    var delta = G.multiDelta(d.mode, d.snap[d.ref], d.handle, d.pivot, d.rotation,
+      d.startPoint, pt, { snap: shift });
+    G.writeMultiTransform(d.target.layers, d.snap, G.applyMultiTransform(d.snap, d.caps, delta));
+  }
+
   function onPreviewPointerUp() {
     if (pan) { endPan(); return; }
     if (!gizmo.drag) return;
     var moved = gizmo.drag.moved;
+    var collapseTo = gizmo.drag.collapseTo;
     gizmo.drag = null;
     setPreviewCursor(null);
-    if (!moved) { editCancel(); return; }   // 只是點一下選取，不算修改
+    if (!moved) {                            // 只是點一下選取，不算修改
+      editCancel();
+      if (collapseTo) selectLayerById(collapseTo);
+      return;
+    }
     markGizmoDirty();
     onPresetChanged();            // 這一刻才寫進 dirty 狀態並重建預覽
     renderInspector();
@@ -1224,6 +1308,7 @@
     if (!gizmo.drag) return false;
     var d = gizmo.drag;
     if (d.target.kind === 'group') G.restoreGroup(d.target.layers, d.snap);
+    else if (d.target.kind === 'multi') G.restoreMulti(d.target.layers, d.snap);
     else G.restore(d.target.layer, d.snap);
     editCancel();                 // 取消的拖曳不進歷史
     gizmo.drag = null;
@@ -1237,13 +1322,12 @@
   function updateHoverCursor(e) {
     if (!state.app) return;
     var target = gizmoTarget();
-    if (!target || !target.bounds) { setPreviewCursor(null); return; }
+    var items = gizmoItems(target);
+    if (!items.length) { setPreviewCursor(null); return; }
     var pt = clientToEffectLocal(e.clientX, e.clientY);
-    var b = target.bounds;
-    var caps = target.caps;
-    var h = G.hitHandle(pt, G.handles(b, caps), screenRadiusToLocal(9));
+    var h = hitGizmoHandle(items, pt);
     if (h) setPreviewCursor(h.kind === 'rotate' ? 'rotate' : 'scale');
-    else if (caps.move && G.insideBounds(pt, b)) setPreviewCursor('move');
+    else if (hitGizmoBody(target, items, pt) >= 0) setPreviewCursor('move');
     else setPreviewCursor(null);
   }
 

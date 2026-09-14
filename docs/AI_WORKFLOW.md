@@ -77,6 +77,7 @@ ai/antigravity
 - 不得自行推送 develop
 - 不得修改其他 AI 正在處理的檔案
 - 不得覆蓋來源不明的修改
+- 特效只允許兩種來源：配置表填入的，或程式碼寫死並登記在 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 的；不得存在第三種情況（見 `AI_RULES.md` 第 8.4 節）
 
 主工作區只用於：
 

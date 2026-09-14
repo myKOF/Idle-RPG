@@ -16,12 +16,16 @@
 
    所以這裡三面夾住那份清單：列了不存在的、列了已經不用的、用了卻沒列的，
    三種都轉紅。
+
+   2026-09-14 補上第四面：寫死的對應**表上也有人用**時同樣要登記（USAGE-3B）。
+   舊規則是「表上有就不必登記」，於是冰片子彈只標出技能、冰屬性敵人那一邊隱形。
    ============================================================ */
 
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const U = require('../tools/vfx/preset-usage.cjs');
 const REPO = path.resolve(__dirname, '..');
@@ -56,9 +60,45 @@ test('USAGE-3 js/ 裡寫死、而表上沒有的 preset，都要登記在人工�
   const unlisted = Object.keys(inJs)
     .filter(function (id) { return !tables[id] && !listed.has(id); })
     .sort();
+  /* 沒有例外。2026-09-14 一度開了「程式有引用、但不算用途」讓火牆不必登記，
+     使用者指正：特效只存在兩種情況——配置表填入的、程式裡寫死的；寫死的都要登記，
+     一眼看得出是誰在用。 */
   assert.deepEqual(unlisted, [],
-    '這幾個在 js/ 裡被引用、表上卻沒有，請登記到 ' + U.OUTSIDE_DOC_REL +
-    '（若它其實該填在技能表上，就去填表）');
+    '這幾個在 js/ 裡寫死、表上卻沒有，請登記到 ' + U.OUTSIDE_DOC_REL +
+    '並標出是誰在用（若它其實該填在技能表上，就去填表）');
+});
+
+/* VFX_COMBAT_DEFAULTS 裡實際的 preset id。用 vm 把 data.js 跑起來取物件本身，
+   不用正則切原始碼——那樣排版一改就靜靜地讀不到東西。 */
+function combatDefaultPresetIds() {
+  const context = { console: console, Math: Object.create(Math), UI: { dirty: {} } };
+  context.window = context;
+  vm.createContext(context);
+  ['js/util.js', 'js/data.js'].forEach(function (file) {
+    vm.runInContext(fs.readFileSync(path.join(REPO, file), 'utf8'), context, { filename: file });
+  });
+  const defaults = context.VFX_COMBAT_DEFAULTS;
+  assert.ok(defaults && typeof defaults === 'object', 'js/data.js 找不到 VFX_COMBAT_DEFAULTS');
+  const known = new Set(U.presetIds(REPO));
+  const ids = new Set();
+  (function walk(v) {
+    if (typeof v === 'string') { if (known.has(v)) ids.add(v); return; }
+    if (v && typeof v === 'object') Object.keys(v).forEach(function (k) { walk(v[k]); });
+  })(defaults);
+  return Array.from(ids).sort();
+}
+
+test('USAGE-3B VFX_COMBAT_DEFAULTS 的每一份都要登記，即使表上也有人用', function () {
+  /* 2026-09-14 使用者回報：敵方的冰片子彈在遊戲裡到處都是，下拉上卻沒標。
+     proj-ice-shard 也被水流彈與冰霜新星的階段用到，舊規則「表上有就不必登記」
+     讓冰屬性敵人那一邊整個隱形——USAGE-3 只看表上沒有的，所以抓不到。 */
+  const ids = combatDefaultPresetIds();
+  assert.ok(ids.length >= 10, '只讀到 ' + ids.length + ' 份，讀法可能壞了');
+  const listed = new Set(U.readOutsideTables(REPO).map(function (r) { return r.id; }));
+  const missing = ids.filter(function (id) { return !listed.has(id); });
+  assert.deepEqual(missing, [],
+    '這幾個寫死在 VFX_COMBAT_DEFAULTS，卻沒登記到 ' + U.OUTSIDE_DOC_REL +
+    '——表上有人用也要登記，否則那一邊的用途在下拉上是隱形的');
 });
 
 test('USAGE-4 顯示標籤不得含括號或逗號，否則塞進「id（標籤）」會變成一團', function () {
@@ -162,6 +202,26 @@ test('USAGE-7C 用到多階時列上收攏成群組名，逐階的細節留給 t
     .map(function (id) { return labels[id].labels.join('、').length; })
     .sort(function (a, b) { return b - a; })[0];
   assert.ok(longest <= 60, '收攏後最長的一列是 ' + longest + ' 字，太長就塞不進下拉');
+});
+
+test('USAGE-15 表上與人工清單都有的 preset，兩邊的用途都要顯示', function () {
+  /* 舊規則是「表上有就不看人工清單」，冰片子彈因此只標出技能。
+     這裡不指定是哪幾份 preset（清單會變），只驗規則本身。 */
+  const labels = U.usageLabels(REPO);
+  const tables = U.scanTables(REPO);
+  const shared = U.readOutsideTables(REPO)
+    .filter(function (r) { return tables[r.id] && labels[r.id]; });
+  assert.ok(shared.length > 0, '應該找得到同時被表與寫死對應使用的 preset');
+  shared.forEach(function (r) {
+    assert.ok(labels[r.id].labels.indexOf(r.label) >= 0, r.id + ' 的列上少了「' + r.label + '」');
+    assert.ok(labels[r.id].all.indexOf(r.label) >= 0, r.id + ' 的完整清單少了「' + r.label + '」');
+    assert.equal(labels[r.id].source, 'both', r.id + ' 兩邊都有，來源要標成 both');
+  });
+  Object.keys(labels).forEach(function (id) {
+    const l = labels[id];
+    assert.equal(new Set(l.labels).size, l.labels.length, id + ' 的列上有重複的用途');
+    assert.equal(l.count, l.all.length, id + ' 的 count 要等於完整清單的長度');
+  });
 });
 
 test('USAGE-8 下拉的標註跟著 preset 清單一起送，不另開端點', function () {

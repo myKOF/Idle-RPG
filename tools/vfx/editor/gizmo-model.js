@@ -495,6 +495,98 @@ var VFXGizmoModel = (function () {
     });
   }
 
+  /* ============================================================
+     多選變形（After Effects 式）
+
+     選了好幾層時每一層都有自己的框。抓住其中任何一層的把手，其餘選到的圖層跟著做
+     **同樣的相對變形，而且各自繞自己的 pivot**：
+
+       移動  每一層加上同樣的位移
+       縮放  每一層的 scale 乘上同樣的倍率（倍率＝被抓那一層的「新 ÷ 舊」）
+       旋轉  每一層的 rotation 加上同樣的角度
+
+     與群組變形刻意不同。群組是「整組當一個物件」，縮放會連位置一起繞共同中心推開；
+     多選是「這幾個東西一起調」：沿著突刺排好的三個擴散圈一起放大，間距要維持原樣，
+     彼此的大小比例也要維持（它們本來就一個比一個大）。
+
+     Shift 對齊只算在被抓的那一層，再換成相對量套到其他層——每一層各自對齊的話，
+     彼此的間距與比例就被格線改掉了。
+     ============================================================ */
+
+  function multiSnapshot(layers) {
+    return layers.map(snapshot);
+  }
+
+  /* 由被抓的那一層算出這次拖曳的相對量。ref 是那一層的快照（snapshot 的形狀）；
+     pivot 與 rotation 是那一層的框，縮放要沿著它自己的軸算。 */
+  function multiDelta(mode, ref, handle, pivot, rotation, startPoint, point, opts) {
+    if (mode === 'move') {
+      var p0 = ref.position || { x: 0, y: 0 };
+      var p1 = applyMove(p0, startPoint, point, opts);
+      return { dx: p1.x - p0.x, dy: p1.y - p0.y };
+    }
+    if (mode === 'scale') {
+      var s0 = ref.scale || { x: 1, y: 1 };
+      var s1 = applyScale(s0, handle, pivot, rotation, startPoint, point, opts);
+      return { sx: ratioOf(s1.x, s0.x), sy: ratioOf(s1.y, s0.y) };
+    }
+    if (mode === 'rotate') {
+      var r0 = ref.rotation || 0;
+      return { rot: applyRotate(r0, pivot, startPoint, point, opts) - r0 };
+    }
+    return {};
+  }
+
+  /* 原本是 0 的軸算不出倍率，當成不變——除以 0 會把其他層全部變成 Infinity。 */
+  function ratioOf(next, prev) {
+    return Math.abs(prev) > 1e-9 ? next / prev : 1;
+  }
+
+  /* 把相對量套到每一層，回傳每層要覆寫的欄位（不就地修改）。capsList 與 snaps 同順序：
+     粒子沒有縮放能力，就不寫它的 scale——Core 根本不看，寫了只是在 preset 裡留垃圾。 */
+  function applyMultiTransform(snaps, capsList, delta) {
+    var dx = delta.dx || 0, dy = delta.dy || 0;
+    var sx = delta.sx === undefined ? 1 : delta.sx;
+    var sy = delta.sy === undefined ? 1 : delta.sy;
+    var rot = delta.rot || 0;
+    return snaps.map(function (snap, i) {
+      var caps = capsList[i] || {};
+      var out = {};
+      if ((dx || dy) && caps.move) {
+        var p = snap.position || { x: 0, y: 0 };
+        out.position = { x: round4(p.x + dx), y: round4(p.y + dy) };
+      }
+      var scaleX = caps.scaleX && sx !== 1, scaleY = caps.scaleY && sy !== 1;
+      if (scaleX || scaleY) {
+        var s = snap.scale || { x: 1, y: 1 };
+        out.scale = {
+          x: scaleX ? round4(clampScale(s.x * sx)) : s.x,
+          y: scaleY ? round4(clampScale(s.y * sy)) : s.y
+        };
+      }
+      if (rot && caps.rotate) out.rotation = round6((snap.rotation || 0) + rot);
+      return out;
+    });
+  }
+
+  /* 寫回前先把快照放回去：每次 pointermove 都從起點重算，拖回原位時就真的回到原狀。
+     只寫「有變的欄位」而不先還原的話，位移歸零的那一刻什麼都不寫，圖層會停在上一步。 */
+  function writeMultiTransform(layers, snaps, patches) {
+    layers.forEach(function (l, i) {
+      if (!snaps[i]) return;
+      restore(l, snaps[i]);
+      var p = patches[i];
+      if (!p) return;
+      if (p.position) l.position = p.position;
+      if (p.scale) l.scale = p.scale;
+      if (p.rotation !== undefined) l.rotation = p.rotation;
+    });
+  }
+
+  function restoreMulti(layers, snaps) {
+    layers.forEach(function (l, i) { if (snaps[i]) restore(l, snaps[i]); });
+  }
+
   return {
     MIN_BOX: MIN_BOX, MIN_SCALE: MIN_SCALE, SNAP: SNAP, ROTATE_OFFSET: ROTATE_OFFSET,
     capabilities: capabilities,
@@ -506,7 +598,10 @@ var VFXGizmoModel = (function () {
     snapshot: snapshot, restore: restore,
     groupBounds: groupBounds, groupCapabilities: groupCapabilities,
     applyGroupTransform: applyGroupTransform, writeGroupTransform: writeGroupTransform,
-    groupSnapshot: groupSnapshot, restoreGroup: restoreGroup
+    groupSnapshot: groupSnapshot, restoreGroup: restoreGroup,
+    multiSnapshot: multiSnapshot, multiDelta: multiDelta,
+    applyMultiTransform: applyMultiTransform, writeMultiTransform: writeMultiTransform,
+    restoreMulti: restoreMulti
   };
 })();
 
