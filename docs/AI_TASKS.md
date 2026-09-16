@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜震碎斬外移刀波與連斬間隔（CLEAVE-WAVEFRONT-20260916）
+
+- Owner：Codex；Done。使用者以兩張遊戲截圖指出「向外飛出」不能把整張刀光放大填滿，並指定各道間隔 0.3 秒。改用既有 slash_03 刀弧分段，位置隨表定半徑曲線向外走；成形後徑向厚度固定，中央留空。藍色與三色飛行 Preset 同步，保持原技能引用。
+- 修改：tools/vfx/authoring/author/cleave-renew.cjs；vfx/presets 與 vfx/layouts 的 proj-cleave-ring-blue.json、proj-cleave-ring-tricolor.json；js/skills2.js（迴旋斬專用間隔，傷害／視覺共用）；js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、index.html 快取；tests/cleave-rework.test.cjs、tests/skill2-system.test.cjs；docs/vfx/VFX_RUNTIME_ADAPTER.md 與本紀錄。衝突預檢乾淨。
+- 未修改但檢查：Skills2 CSV 與生成配置、近戰暖色／藍色 Preset、Core 位移與分軸曲線、Pixi backend、preset-render、素材索引、素材庫。沿用既有素材，素材庫乾淨；沒有新圖檔或素材 Commit。未改技能傷害、距離或單道命中次數。Worker 事件格式不變，僅更新快取。
+- 驗證：node --test tests/cleave-rework.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs 32/32；技能／超神定向測試 15/15（新增中央無殘留傷害案例另於前述套件通過）；node tools/build_check.cjs 353 檔通過；node tools/vfx/export-assets.cjs --check 最新；git diff --check 通過。檢查正式 Runtime 在飛行中點的前緣位置對齊模擬曲線、後半段厚度不再長大、0.3 秒起飛排程與無座標高塔結算。
+- Core 動態預覽已檢視：藍／三色並排、每 0.3 秒一波；交付 GIF 保留於 Codex visualizations，原始中間 RGBA 已清除。這是 Core 渲染合成預覽，非遊戲實錄；本輪未做 Pixi 遊戲實機驗證。無其他未完成實作，可供使用者審查合併；Commit 為本紀錄所在提交，未合併／未推送。
+
 ## Codex｜三色刀波套用藍色刀波形狀（CLEAVE-TRICOLOR-SHAPE-20260916）
 
 - Owner：Codex；Done。依使用者要求直接覆蓋 proj-cleave-ring-tricolor，保留原本逐層配色，形狀、尺寸、旋轉、擴張與時序完整採用使用者目前修改後的 slash-cleave-ring-blue。12 層逐一比對，除 tint／colorOverLife 外與來源一致；特效 ID 與技能引用不變。
