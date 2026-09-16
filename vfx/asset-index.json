@@ -6,8 +6,54 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2429,
+  "assetCount": 2430,
   "assets": [
+    {
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/cleave/sharp-cyclone.png",
+      "format": "png",
+      "fileSize": 538579,
+      "contentHash": "sha256:1877cb744b4d05c9792376b9d8c08cc8f87aaae09dad88675031f85ac3e747b3",
+      "facts": {
+        "dimensions": {
+          "width": 1254,
+          "height": 1254
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.0613,
+          "max": 1,
+          "borderMean": 0.0004,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.0932,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1254,
+          "height": 1254
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 0.9995,
+          "v": 0.9996
+        },
+        "backgroundVariant": "blackBackground"
+      }
+    },
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
       "package": "codex-authored",

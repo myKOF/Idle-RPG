@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜核准硬邊氣旋刀光（CLEAVE-SHARP-CYCLONE-20260916）
+
+- Owner：Codex；Done。使用者看過三份完成圖後授權「接入並 commit」。使用者核准加厚約三倍、帶不規則尖端與分離刀痕的單色素材；依先前要求，同步暖色、藍色、三色三份 Preset。保留三組原始旋轉、尺寸與延遲曲線，減低光暈；不更動技能規則與 0.3 秒間隔。
+- 修改：三份 Preset、cleave-renew（保留已核准編輯結果，不在重跑時覆寫素材／亮度）、asset-index、shipped-assets、正式匯出 PNG、Runtime 快取、cleave-rework 測試、本紀錄。素材庫 codex-authored/cleave/sharp-cyclone.png 與 SOURCE.md 已提交 fa413a4；原始與匯出 SHA256 均為 1877cb744b4d05c9792376b9d8c08cc8f87aaae09dad88675031f85ac3e747b3。
+- 驗證：cleave-rework、vfx-preset-layout、vfx-preset-usage 共 34/34；Build 353 檔通過。三份 Core 六幀預覽已檢查；素材經正式 export-assets 匯出。未遊戲內目視驗證。未修改但檢查：Skills2 Excel／CSV／JS 引用、layout、素材解析器、掃描器、匯出工具及 Antigravity 提交。
+- 衝突確認：Antigravity b59de4f 修改 index.html 115–142 行裝備面板；本次只修改第 860 行 vfx-runtime.js 版本 1.0.91 → 1.0.92，內容不重疊。已告知使用者並取得接入與提交授權，其餘檔案預檢乾淨。遊戲 Commit 為本紀錄所在提交；素材庫 Commit fa413a4。無未完成實作，可供審查合併；建議重新整理遊戲確認戰場觀感，未合併／未推送。
+
 ## Codex｜旋斬修正版正式引用確認（CLEAVE-SPIN-LIVE-20260916）
 
 - Owner：Codex；Done。使用者確認旋轉刀光預覽後要求接入。核對實際配置，發現第六階目前引用 slash-cleave-ring-blue，而非 proj-cleave-ring-blue；將相同尺寸基準與疊加光暈修正套到正式引用檔，第七階既有 tricolor 引用保持生效。保留原本旋轉整圈造型及 0.3 秒間隔。

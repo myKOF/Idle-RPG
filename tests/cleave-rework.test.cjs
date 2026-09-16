@@ -2,6 +2,18 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const Core=require('../js/vfx-core.js'), Runtime=require('../js/vfx-runtime.js');
+test('CLEAVE 三色系使用核准的硬邊氣旋素材，保留原本旋轉構圖',()=>{
+ const ids=['slash-cleave-ring-warm','slash-cleave-ring-blue','proj-cleave-ring-tricolor'];
+ const asset='codex-authored/cleave/sharp-cyclone.png';
+ for(const id of ids){
+  const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets',id+'.json'),'utf8'));
+  assert.equal(preset.layers.length,12);
+  assert(preset.layers.filter(l=>!l.id.startsWith('blade-glow-')).every(l=>l.assetId===asset));
+  assert(preset.layers.every(l=>l.rotationOverLife[1][1]===Math.PI*2));
+ }
+ const shipped=JSON.parse(fs.readFileSync(path.join(root,'vfx/shipped-assets.json'),'utf8'));
+ assert(shipped.assets.some(a=>a.assetId===asset),'核准素材必須匯出供正式遊戲使用');
+});
 function setup(levels=[1,0,0,0,0,0,0],legend={}) {
  const c={console,Math:Object.create(Math),setTimeout(){},clearTimeout(){},document:{addEventListener(){},getElementById(){return null;},querySelectorAll(){return[];}},UI:{dirty:{}},floatText(){},blog(){}};
  c.window=c;vm.createContext(c);

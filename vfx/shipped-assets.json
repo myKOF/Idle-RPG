@@ -4,8 +4,15 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 130,
+  "assetCount": 131,
   "assets": [
+    {
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
+      "relativePath": "codex-authored/cleave/sharp-cyclone.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:1877cb744b4d05c9792376b9d8c08cc8f87aaae09dad88675031f85ac3e747b3",
+      "fileSize": 538579
+    },
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
       "relativePath": "codex-authored/earthguard/hexagram-orbit.png",

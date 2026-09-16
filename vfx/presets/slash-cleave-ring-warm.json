@@ -18,7 +18,7 @@
         "x": 0.5176,
         "y": 0.5174
       },
-      "alpha": 0.38,
+      "alpha": 0.025,
       "tint": "#ff5426",
       "blendMode": "add",
       "delay": 0,
@@ -77,7 +77,7 @@
     {
       "id": "blade-body-0",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 4,
       "position": {
         "x": 0,
@@ -85,10 +85,10 @@
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4992,
-        "y": 0.4989
+        "x": 0.2038200956937799,
+        "y": 0.2036976076555024
       },
-      "alpha": 0.95,
+      "alpha": 0.9,
       "tint": "#ff5426",
       "blendMode": "add",
       "delay": 0,
@@ -147,7 +147,7 @@
     {
       "id": "blade-edge-0",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 8,
       "position": {
         "x": 0,
@@ -155,11 +155,11 @@
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4738,
-        "y": 0.4736
+        "x": 0.1934494417862839,
+        "y": 0.19336778309409888
       },
-      "alpha": 0.68,
-      "tint": "#fff7dc",
+      "alpha": 0.8,
+      "tint": "#fff2bd",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.42,
@@ -217,7 +217,7 @@
     {
       "id": "blade-trail-0",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 12,
       "position": {
         "x": 0,
@@ -225,10 +225,10 @@
       },
       "rotation": -2.1293,
       "scale": {
-        "x": 0.4142,
-        "y": 0.414
+        "x": 0.16911515151515152,
+        "y": 0.1690334928229665
       },
-      "alpha": 0.25,
+      "alpha": 0.28,
       "tint": "#ffc62e",
       "blendMode": "add",
       "delay": 0,
@@ -298,7 +298,7 @@
         "x": 0.5199,
         "y": 0.5197
       },
-      "alpha": 0.38,
+      "alpha": 0.025,
       "tint": "#ffc62e",
       "blendMode": "add",
       "delay": 0.035,
@@ -357,7 +357,7 @@
     {
       "id": "blade-body-1",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 5,
       "position": {
         "x": 0,
@@ -365,10 +365,10 @@
       },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4992,
-        "y": 0.4989
+        "x": 0.2038200956937799,
+        "y": 0.2036976076555024
       },
-      "alpha": 0.95,
+      "alpha": 0.9,
       "tint": "#ffc62e",
       "blendMode": "add",
       "delay": 0.035,
@@ -427,7 +427,7 @@
     {
       "id": "blade-edge-1",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 9,
       "position": {
         "x": 0,
@@ -435,11 +435,11 @@
       },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4738,
-        "y": 0.4736
+        "x": 0.1934494417862839,
+        "y": 0.19336778309409888
       },
-      "alpha": 0.68,
-      "tint": "#fff7dc",
+      "alpha": 0.8,
+      "tint": "#fff2bd",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
@@ -497,7 +497,7 @@
     {
       "id": "blade-trail-1",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 13,
       "position": {
         "x": 0,
@@ -505,10 +505,10 @@
       },
       "rotation": -3.2638,
       "scale": {
-        "x": 0.4142,
-        "y": 0.414
+        "x": 0.16911515151515152,
+        "y": 0.1690334928229665
       },
-      "alpha": 0.25,
+      "alpha": 0.28,
       "tint": "#ff8e24",
       "blendMode": "add",
       "delay": 0.035,
@@ -578,7 +578,7 @@
         "x": 0.5199,
         "y": 0.5197
       },
-      "alpha": 0.38,
+      "alpha": 0.025,
       "tint": "#ff8e24",
       "blendMode": "add",
       "delay": 0.07,
@@ -637,7 +637,7 @@
     {
       "id": "blade-body-2",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 6,
       "position": {
         "x": 0,
@@ -645,10 +645,10 @@
       },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4992,
-        "y": 0.4989
+        "x": 0.2038200956937799,
+        "y": 0.2036976076555024
       },
-      "alpha": 0.95,
+      "alpha": 0.9,
       "tint": "#ff8e24",
       "blendMode": "add",
       "delay": 0.07,
@@ -707,7 +707,7 @@
     {
       "id": "blade-edge-2",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 10,
       "position": {
         "x": 0,
@@ -715,11 +715,11 @@
       },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4738,
-        "y": 0.4736
+        "x": 0.1934494417862839,
+        "y": 0.19336778309409888
       },
-      "alpha": 0.68,
-      "tint": "#fff7dc",
+      "alpha": 0.8,
+      "tint": "#fff2bd",
       "blendMode": "add",
       "delay": 0.07,
       "duration": 0.35,
@@ -777,7 +777,7 @@
     {
       "id": "blade-trail-2",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "zIndex": 14,
       "position": {
         "x": 0,
@@ -785,10 +785,10 @@
       },
       "rotation": -4.3982,
       "scale": {
-        "x": 0.4142,
-        "y": 0.414
+        "x": 0.16911515151515152,
+        "y": 0.1690334928229665
       },
-      "alpha": 0.25,
+      "alpha": 0.28,
       "tint": "#ff5426",
       "blendMode": "add",
       "delay": 0.07,
