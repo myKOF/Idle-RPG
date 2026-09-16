@@ -31,7 +31,9 @@ test('裝備強化階級增加動效驗證', async (t) => {
   await t.test('3. ui.js 在 renderDetail 與 detailAction 中追蹤強化等級變化並觸發動效', () => {
     assert.match(uiJs, /UI\._upgradingItemId/, '需在 UI 狀態中追蹤正在強化的裝備 ID');
     assert.match(uiJs, /UI\._upgradingItemPrevLevel/, '需追蹤強化前的等級以判斷是否有升級');
+    assert.match(uiJs, /UI\._upgradePopUntil/, '需具備時間戳視窗避免 DOM 重建沖掉動畫');
+    assert.match(uiJs, /ensureUpgradePopStyle/, '需具備動態注入樣式以防快取');
+    assert.match(uiJs, /triggerUpgradeNumberAnimation/, '需具備獨立的動畫觸發函式');
     assert.match(uiJs, /justUpgraded:\s*justUpgraded/, 'renderDetail 應將 justUpgraded 傳給 itemDetailHTML');
-    assert.match(uiJs, /upEl\.classList\.add\('upgrade-pop'\)/, 'detailAction 強化成功時應為 DOM 元素附加 upgrade-pop');
   });
 });

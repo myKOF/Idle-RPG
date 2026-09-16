@@ -4735,6 +4735,42 @@ function findSelItem() {
   return findItemById(UI.sel.id, UI.sel.source === 'inv');
 }
 
+function ensureUpgradePopStyle() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('upgrade-pop-inline-style')) return;
+  var st = document.createElement('style');
+  st.id = 'upgrade-pop-inline-style';
+  st.textContent =
+    '.it-up { display: inline-block; vertical-align: baseline; margin-left: 4px; transform-origin: center center; will-change: transform, color, filter, text-shadow; }\n' +
+    '.it-up.upgrade-pop, .ic-up.upgrade-pop { animation: upgradeNumberPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards !important; position: relative; z-index: 50; }\n' +
+    '@keyframes upgradeNumberPop {\n' +
+    '  0% { transform: scale(2.8) translateY(-2px); color: #ffffff !important; text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 35px rgba(250, 204, 21, 0.95), 0 0 50px rgba(251, 191, 36, 0.9); filter: brightness(2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }\n' +
+    '  30% { transform: scale(1.85) translateY(-1px); color: #ffffff !important; text-shadow: 0 0 8px #ffffff, 0 0 16px rgba(255, 255, 255, 0.9), 0 0 25px rgba(250, 204, 21, 0.85); filter: brightness(1.7); }\n' +
+    '  60% { transform: scale(0.88); color: #fef08a; text-shadow: 0 0 6px rgba(255, 255, 255, 0.7), 0 0 15px rgba(250, 204, 21, 0.7); filter: brightness(1.3); }\n' +
+    '  80% { transform: scale(1.15); color: #facc15; text-shadow: 0 0 5px rgba(250, 204, 21, 0.6); filter: brightness(1.1); }\n' +
+    '  100% { transform: scale(1); color: var(--accent, #facc15); text-shadow: none; filter: none; }\n' +
+    '}';
+  (document.head || document.documentElement).appendChild(st);
+}
+
+function triggerUpgradeNumberAnimation(itemId) {
+  ensureUpgradePopStyle();
+  UI._upgradePopUntil = Date.now() + 850;
+  UI._upgradePopItemId = itemId;
+  var upEl = document.querySelector('#detail-pane .it-up');
+  if (upEl) {
+    upEl.classList.remove('upgrade-pop');
+    void upEl.offsetWidth;
+    upEl.classList.add('upgrade-pop');
+  }
+  var escId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(String(itemId)) : String(itemId);
+  var cellUps = document.querySelectorAll('.eq-slot[data-id="' + escId + '"] .ic-up, .item-cell[data-id="' + escId + '"] .ic-up');
+  cellUps.forEach(function (c) {
+    c.classList.remove('upgrade-pop');
+    void c.offsetWidth;
+    c.classList.add('upgrade-pop');
+  });
+}
 
 function renderDetail() {
   var pane = $id('detail-pane');
@@ -4774,10 +4810,14 @@ function renderDetail() {
   }
   var cost = upgradeCost(it);
   var justUpgraded = false;
-  if (it && UI._upgradingItemId === it.id) {
-    if ((it.upgrade || 0) > (UI._upgradingItemPrevLevel || 0)) {
+  if (it) {
+    if (UI._upgradingItemId === it.id && (it.upgrade || 0) > (UI._upgradingItemPrevLevel || 0)) {
       justUpgraded = true;
+      UI._upgradePopUntil = Date.now() + 850;
+      UI._upgradePopItemId = it.id;
       UI._upgradingItemId = null;
+    } else if (UI._upgradePopItemId === it.id && Date.now() < (UI._upgradePopUntil || 0)) {
+      justUpgraded = true;
     }
   }
   var h = itemDetailHTML(it, null, {
@@ -5095,19 +5135,7 @@ function detailAction(act, actBtn) {
       var upgradeResult = result && hasOwnUiState(result, 'result') ? result.result : result;
       if (upgradeResult === 'ok') {
         showFloatingText(actBtn, '升級成功', '#7dd3fc');
-        var upEl = document.querySelector('#detail-pane .it-up');
-        if (upEl) {
-          upEl.classList.remove('upgrade-pop');
-          void upEl.offsetWidth;
-          upEl.classList.add('upgrade-pop');
-        }
-        var escId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(String(it.id)) : String(it.id);
-        var cellUp = document.querySelector('.eq-slot[data-id="' + escId + '"] .ic-up, .item-cell[data-id="' + escId + '"] .ic-up');
-        if (cellUp) {
-          cellUp.classList.remove('upgrade-pop');
-          void cellUp.offsetWidth;
-          cellUp.classList.add('upgrade-pop');
-        }
+        triggerUpgradeNumberAnimation(it.id);
       }
       else if (upgradeResult === 'fail') showFloatingText(actBtn, '升級失敗', '#fca5a5');
       else if (upgradeResult === 'poor') showFloatingText(actBtn, '材料不足', '#fca5a5');
@@ -10116,6 +10144,7 @@ if (typeof window !== 'undefined') {
 }
 
 function initUI() {
+  ensureUpgradePopStyle();
   if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.init();
   bindWorkerUiState();
   updateTalentTabVisibility();
