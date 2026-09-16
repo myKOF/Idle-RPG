@@ -4331,6 +4331,12 @@ function renderEquip() {
         (blocked2h ? '<span class="th-occupied-mark">⛓️</span>' : '') + '</div>';
     }
   });
+  h += '<button type="button" id="btn-equip-sets" class="btn-equip-sets" aria-label="切換裝備套裝" title="切換裝備方案">' +
+    '<svg viewBox="0 0 24 24" class="eq-search-icon" aria-hidden="true">' +
+    '<circle cx="10" cy="10" r="6.5" fill="none" stroke="#facc15" stroke-width="2.5"></circle>' +
+    '<line x1="15" y1="15" x2="21" y2="21" stroke="#facc15" stroke-width="2.8" stroke-linecap="round"></line>' +
+    '</svg>' +
+    '</button>';
   box.innerHTML = h;
   renderEquipSetTabs(equipSnapshot, headerSnapshot);
   renderDetail();
@@ -4381,7 +4387,11 @@ function renderEquipSetTabs(equipSnapshot, headerSnapshot) {
       ? equipmentSetUnlockedAtLevel(index, playerLevel, playerReincarnations)
       : index < equipSnapshot.sets.length;
   }
-  var h = '<div class="eqset-tabrow">';
+  var h = '<div class="eqset-popup-header">' +
+    '<span class="eqset-popup-title">✦ 裝備方案切換</span>' +
+    '<button type="button" class="eqset-popup-close" title="關閉方案面板">✕</button>' +
+    '</div>' +
+    '<div class="eqset-tabrow">';
   for (var i = 0; i < equipSnapshot.sets.length; i++) {
     if (!unlocked(i)) continue;
     var cls = 'eqset-tab' + (i === view ? ' viewing' : '') + (i === active ? ' active' : '');
@@ -4750,8 +4760,12 @@ function renderDetail() {
     pane.classList.remove('has-detail');
     var actionBar = $id('equip-action-bar');
     if (actionBar) {
-      // 保留按鈕列高度（min-height），避免選取/取消選取時背包區上下跳動
-      actionBar.innerHTML = '';
+      actionBar.innerHTML =
+        '<button class="btn" disabled>卸下</button>' +
+        '<button class="btn" disabled>強化</button>' +
+        '<button class="btn" disabled>洗煉</button>' +
+        '<button class="btn" disabled>鑲嵌</button>' +
+        '<button class="btn" disabled>附魔</button>';
       actionBar.style.display = 'flex';
     }
     var matPanelEmpty = $id('equip-material-panel');
@@ -4767,8 +4781,6 @@ function renderDetail() {
   var pendingKey = itemPendingKey(it.id);
   if (UI.sel.source === 'inv') {
     actionsHtml += '<button class="btn" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
-    actionsHtml += '<button class="btn warn" data-act="salvage"' + pendingUiButtonAttributes(pendingKey) + '>分解</button>';
-    if (SYNTHESIS_ENABLED) actionsHtml += '<button class="btn" data-act="tosynth">送合成區</button>';
   } else {
     actionsHtml += '<button class="btn" data-act="unequip"' + pendingUiButtonAttributes(pendingKey) + '>卸下</button>';
   }
@@ -4780,7 +4792,9 @@ function renderDetail() {
   actionsHtml += '<button class="btn act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '"' +
     pendingUiButtonAttributes(pendingKey) + '>強化</button>';
 
-  actionsHtml += '<button class="btn" data-act="lock"' + pendingUiButtonAttributes(pendingKey) + '>' + (it.locked ? '解鎖' : '鎖定') + '</button>';
+  actionsHtml += '<button class="btn" data-act="placeholder-reroll">洗煉</button>';
+  actionsHtml += '<button class="btn" data-act="placeholder-socket">鑲嵌</button>';
+  actionsHtml += '<button class="btn" data-act="placeholder-enchant">附魔</button>';
   // 右側素材面板：可用寶石／附魔書改為小圖示，完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
   if (it.sockets.indexOf(null) >= 0) {
@@ -10129,6 +10143,25 @@ function initUI() {
       runTalentUiAction('talent.delete', talentDeleteBtn.getAttribute('data-talent-delete'), talentDelete);
       return;
     }
+    // 裝備套裝浮層開關與關閉
+    var btnEquipSets = e.target.closest('#btn-equip-sets');
+    if (btnEquipSets) {
+      var setBox = $id('equip-set-tabs');
+      if (setBox) setBox.classList.toggle('open');
+      return;
+    }
+    var eqPopupClose = e.target.closest('.eqset-popup-close');
+    if (eqPopupClose) {
+      var setBox = $id('equip-set-tabs');
+      if (setBox) setBox.classList.remove('open');
+      return;
+    }
+    if (!e.target.closest('#equip-set-tabs') && !e.target.closest('.game-modal-overlay')) {
+      var setBox = $id('equip-set-tabs');
+      if (setBox && setBox.classList.contains('open')) {
+        setBox.classList.remove('open');
+      }
+    }
     // 裝備三套切頁：改名按鈕須在切頁判斷之前處理（避免同時觸發切換檢視）
     var eqRename = e.target.closest('[data-eqset-rename]');
     if (eqRename) {
@@ -10150,6 +10183,8 @@ function initUI() {
     var eqConfirm = e.target.closest('#eqset-confirm');
     if (eqConfirm) {
       if (!eqConfirm.disabled) {
+        var setBox = $id('equip-set-tabs');
+        if (setBox) setBox.classList.remove('open');
         var equipConfirmSnapshot = uiEquipPanelSnapshot();
         var equipConfirmIndex = equipConfirmSnapshot && typeof equipConfirmSnapshot.equipView === 'number'
           ? equipConfirmSnapshot.equipView
@@ -11401,7 +11436,15 @@ function initUI() {
       return;
     }
     var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
-    if (actBtn) { detailAction(actBtn.getAttribute('data-act'), actBtn); return; }
+    if (actBtn) {
+      var act = actBtn.getAttribute('data-act');
+      if (act && act.indexOf('placeholder-') === 0) {
+        if (typeof showFloatingText === 'function') showFloatingText(actBtn, '功能未訂', '#fcd34d');
+        return;
+      }
+      detailAction(act, actBtn);
+      return;
+    }
     // 寶石鑲嵌 / 取下
     var gs = e.target.closest('[data-gem-socket]');
     if (gs) {

@@ -230,8 +230,10 @@ select option { background: #1b2222; color: #ded9c8; }
 /* Character portrait and item sockets are separate, so every original slot remains interactive. */
 #ui-shell .equip-top-layout { grid-template-columns: minmax(0, 1fr) 164px !important; gap: 10px; }
 #ui-shell .equip-top-layout:has(#equip-material-panel:empty) { grid-template-columns: minmax(0, 1fr) !important; }
-#ui-shell .equip-layout { grid-template-columns: 270px minmax(264px, 1fr) !important; gap: 22px; }
+#ui-shell .equip-layout { grid-template-columns: 326px minmax(240px, 1fr) !important; gap: 16px; }
+.equip-layout > div:first-child { position: relative; }
 #equip-grid {
+  position: relative;
   width: 100%;
   max-width: 400px;
   aspect-ratio: 1096 / 1440;
@@ -242,6 +244,37 @@ select option { background: #1b2222; color: #ded9c8; }
 }
 #equip-grid::after {
   display: none;
+}
+
+/* 放大鏡按鈕：位於裝備欄右上角 */
+.btn-equip-sets {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 22, 25, 0.72);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+.btn-equip-sets:hover {
+  background: rgba(250, 204, 21, 0.2);
+  border-color: #facc15;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.6);
+  transform: scale(1.08);
+}
+.eq-search-icon {
+  width: 17px;
+  height: 17px;
+  display: block;
 }
 
 /* The restored character sheet has its own metal frames.  Slot geometry uses
@@ -260,13 +293,64 @@ select option { background: #1b2222; color: #ded9c8; }
 #equip-grid .slot-ring2    { left: 82.44%; top: 58.44%; width: 10.13%; height: 7.01%; }
 #equip-grid .slot-weapon2  { left: 82.62%; top: 79.38%; width: 17.43%; height: 26.67%; }
 
-#equip-set-tabs { margin-top: 8px; }
+/* 裝備方案切換浮層（點擊放大鏡展開） */
+#equip-set-tabs {
+  display: none;
+  position: absolute;
+  top: 42px;
+  right: 10px;
+  width: 290px;
+  z-index: 70;
+  margin-top: 0;
+  padding: 10px 12px 12px;
+  background: linear-gradient(165deg, #1d2226, #0e1214 80%), var(--af-stone);
+  border: 2px solid #777b72;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.92), inset 0 0 0 1px #3a403d;
+}
+#equip-set-tabs.open {
+  display: block;
+  animation: af-fade-scale 0.15s ease-out;
+}
+@keyframes af-fade-scale {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.eqset-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #4a544f;
+}
+.eqset-popup-title {
+  font-family: var(--af-serif);
+  font-size: 13px;
+  font-weight: bold;
+  color: #e5d5b8;
+  letter-spacing: 0.05em;
+}
+.eqset-popup-close {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+.eqset-popup-close:hover {
+  color: #fca5a5;
+  background: rgba(255, 255, 255, 0.08);
+}
 .eqset-tab { padding: 3px 4px; border-radius: 0; border: 2px ridge #5e6761; background: var(--af-raised); color: #c6c6b7; }
 .eqset-tab.viewing { background: linear-gradient(#7e2118b3, #200e10e6), var(--af-iron); border-color: #a4775c; box-shadow: inset 0 0 8px #160708; }
 .eqset-tab.active { color: #d9c498; }
-.eqset-confirm { padding: 2px 4px; font-size: 12px; }
+.eqset-confirm { padding: 4px 6px; font-size: 12px; margin-top: 8px; width: 100%; }
 .eqset-confirm:disabled { display: none; }
 .eqset-badge { color: #a8b69c; }
+
 .equip-detail-head { min-height: 32px; margin-bottom: 8px; }
 #detail-pane, #detail-pane.has-detail, .equip-detail-card {
   border: 2px solid #777b72 !important;
@@ -276,13 +360,97 @@ select option { background: #1b2222; color: #ded9c8; }
   background-blend-mode: normal !important;
   padding: 17px !important;
 }
-#detail-pane { height: 326px !important; }
+#detail-pane { height: 344px !important; }
 #detail-pane:not(.has-detail) { display: flex; flex-direction: column; justify-content: center; align-items: center; }
 #detail-pane:not(.has-detail)::before { content: '✧'; font: 72px / 1.2 var(--af-serif); color: #69647a; text-shadow: 0 2px #000; margin-bottom: 16px; }
 #detail-pane:not(.has-detail) .hint { font-family: var(--af-serif); font-size: 15px; letter-spacing: .12em; }
-.it-name { font-family: var(--af-serif); text-shadow: 0 2px 2px #000; }
+
+/* 裝備詳情標題右上角控制區：小鎖頭與可能詞條驚嘆號 */
+.it-head-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 5;
+}
+.it-head-actions .btn-it-pool {
+  position: static !important;
+}
+.btn-it-lock {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid #4b5563;
+  color: #9ca3af;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+.btn-it-lock:hover {
+  border-color: #9ca3af;
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.08);
+}
+.btn-it-lock.locked {
+  border-color: #d97706;
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.15);
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.35);
+}
+.btn-it-lock.locked:hover {
+  border-color: #facc15;
+  color: #fef08a;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.6);
+}
+.it-lock-svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+.btn-it-lock.locked .it-lock-svg {
+  fill: rgba(250, 204, 21, 0.25);
+}
+.it-name {
+  font-family: var(--af-serif);
+  text-shadow: 0 2px 2px #000;
+  padding-right: 56px !important;
+}
 .it-sub, .it-score { border-color: #79708066; }
 .it-affix-row { border-bottom-color: #77778326; }
+
+/* 下方五個固定按鈕：卸下、強化、洗煉、鑲嵌、附魔 */
+#equip-action-bar {
+  display: flex !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+  width: 100% !important;
+}
+#equip-action-bar .btn {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  padding: 6px 2px !important;
+  font-size: 13px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.04em !important;
+}
+#equip-action-bar .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
 .equip-material-panel { margin-top: 40px; height: 326px; max-height: 326px; padding: 9px; border: 3px ridge #5c6762; }
 .equip-material-grid { gap: 4px; }
 .equip-material-icon { border-radius: 0; background: var(--af-raised); box-shadow: inset 0 0 0 1px #919c7833; }
