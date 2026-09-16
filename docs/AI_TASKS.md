@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜提交使用者飛刀特效調整（KNIFE-VFX-COMMIT-20260916）
+
+- Owner：Codex；Done。依使用者要求提交普通／金色飛刀 Preset 與 layout 的現有調整，包含刀身尺寸、配色、光暈、金色拖尾壽命／密度／阻力與額外光暈層。普通刀 layout 經 git add 正規化後若無內容差異則不產生提交差異。
+- 修改：vfx/presets/proj-knife.json、vfx/presets/proj-knife-gold.json、vfx/layouts/proj-knife-gold.json；js/vfx-runtime.js 的資料快取版本與 index.html 載入版本同步更新；本紀錄。未修改但檢查：普通刀 layout、素材庫狀態、引用的既有素材。
+- 驗證：node --test tests/soulhunter.test.cjs tests/knife-flight.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs，41/41 通過；node tools/vfx/export-assets.cjs --check 已是最新；git diff --check 通過。素材庫乾淨且無素材內容變更，無需建立空素材提交。
+- Commit：本紀錄所在提交，未合併／推送，可供使用者接著合併 Claude 分支；無未完成項目。使用者已自行調整外觀，本次保留其數值，未另做遊戲內目視驗收。
+
 ## Codex｜全域世界座標粒子（WORLD-PARTICLES-20260916）
 
 - Owner：Codex；Done。使用者要求所有粒子保留經過位置，飛行轉彎形成歷史拖尾，並要求提早回報效能影響。盤點正式 Preset 共 290 粒子層，12 層明確 worldSpace:true，無 false；Core 預設改 true，因此現有與新建粒子層均生效，無需改寫素材庫／Preset。
