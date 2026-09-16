@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "presetId": "slash-cleave-ring-warm-09-hit",
+  "groups": [
+    {
+      "id": "slash-cleave-ring-warm-09-hit",
+      "name": "slash-cleave-ring-warm-09-hit",
+      "layerIds": [
+        "blade-glow-0",
+        "blade-body-0",
+        "blade-edge-0",
+        "blade-trail-0",
+        "blade-glow-1",
+        "blade-body-1",
+        "blade-edge-1",
+        "blade-trail-1",
+        "blade-glow-2",
+        "blade-body-2",
+        "blade-edge-2",
+        "blade-trail-2"
+      ]
+    }
+  ],
+  "order": [
+    "group:slash-cleave-ring-warm-09-hit"
+  ]
+}

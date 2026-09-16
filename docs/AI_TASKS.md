@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜新增特效用途特效欄位（VFX-USAGE-20260916）
+
+- Owner：Codex；Done。使用者要求新增用途欄並指定名稱「特效用途特效」，置頂中文說明須交代用途。Skills2 AK 欄以「技能本體／附加效果」下拉區分特效歸屬，留白相容技能本體；附加效果由明確指定該列的事件播放，空角色不繼承本體。
+- 範圍：Skills2 Excel／CSV／JS、config_tables、角色解析、主執行緒／Worker 快取、正式測試與 Runtime 文件、本紀錄。逐風者標為附加效果，移除先前兩處技能特判；不改傷害、觸發條件、存檔與 Worker 協議。使用者目前新 Preset／layout 及配置一併保留納入交付。
+- 前置依賴完成，衝突預檢乾淨。驗證：表格讀寫往返、錯字拒絕、繼承與獨立事件、迴旋斬／超神回歸、Excel 前後渲染與內容比對、Build；完成後供使用者審查合併。
+- 完成驗證：`node --test tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/cleave-rework.test.cjs tests/skill2-ult-evolution.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs` 101/101；後續說明文字調整再跑表格測試 2/2。`node tools/build_check.cjs` 359 檔通過；`node tools/config_tables.cjs --apply Skills2` 語意差異 0；`node tools/vfx/export-assets.cjs --check` 最新；新 Preset Core 驗證通過。
+- Excel 以 artifact-tool 編輯／渲染，將新欄與說明定點併回原封裝保留既有格式、共享字串及其他 ZIP 項。逐格比對既有 Skills2 值全數不變，只新增 AK1／AK20；「欄位定義」最上方新增七條中文說明與空行，修正兩條舊的留白／退回畫法說明。凍結窗格保留，篩選涵蓋新欄。
+- 未修改但檢查：Runtime 場域角色派送、既有素材引用與素材庫。沒有新貼圖，素材庫乾淨無需空提交。使用者同時調整的 aura-rockarmor-stone.json 保留不提交；其餘本次相關表格與新 Preset／layout 納入。Commit 為本紀錄所在提交，未合併／推送，可供合併。無未完成實作；未遊戲內目視驗證，建議刷新後確認逐風者效果。
+
 ## Codex｜逐風者場域不在迴旋斬起手播放（WINDCHASER-CAST-VFX-20260916）
 
 - Owner：Codex；Done。使用者更換地板 Preset 後發現玩家中心先出現放大的相同特效。根因為迴旋斬起手套用超神欄位，帶入命中後場域。
