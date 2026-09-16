@@ -1720,10 +1720,10 @@ function sgTickFlyingProjectiles(dt, ctx) {
       continue;
     }
     if (projectile.beginAt > now) continue;   // 尚未發射（延遲發射的後續幾道）
+    if (!projectile.started && projectile.onStart) projectile.onStart(projectile, ctx);
     var distance = projectile.origin
       ? Math.min(projectile.length, Math.max(0, (now - projectile.startAt) * projectile.speed))
       : projectile.length;
-    if (!projectile.started && projectile.onStart) projectile.onStart();
     if (projectile.radialCurve) {
       distance = projectile.length * sgCleaveRadiusAt(projectile.radialCurve,
         (now - projectile.startAt) / (projectile.endAt - projectile.startAt));
@@ -2204,22 +2204,40 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     gap:Math.max(0.1,Number(ultWind.def.fx.gap)||0.4)
   } : null };
   var onHit = function(target,res,ctx) { sgCleaveOnHit(hookCfg,target,res,ctx); };
-  for (var wave = 0; wave < slashes; wave++) {
-    var delay = wave * SG_CLEAVE_WAVE_GAP_SEC;
+  var hasGeometry = typeof bfPos === 'function' && !!bfPos(primary);
+  function emitWave(at) {
     sgEmitVfx('cleave', [], floatSel, {
       fxKind:flying ? 'projectile' : 'slash', variant:'cleave-ring', projectile:true,
-      delayMs:Math.round(delay*1000), travelMs:[travel*1000], dur:travel,
-      area:{x:origin ? origin.x : 0,y:origin ? origin.y : 0,r:radius},
+      travelMs:[travel*1000], dur:travel,
+      area:{x:at ? at.x : 0,y:at ? at.y : 0,r:radius},
       lineLength:radius, vfxRoles:roles, hit:false
     });
-    var simulationOrigin = typeof bfPos === 'function' && bfPos(primary) ? origin : null;
-    sgQueueFlyingProjectile(pEnt,st,'cleave',dmgVal,simulationOrigin,0,radius,floatSel,targets,{
-      radialCurve:curve, travelMs:travel*1000, singleHit:true, beginSec:delay,
-      stunChance:lvs[4]>0 ? sgVal(t[4].fx,'chance',lvs[4]) : 0,
-      stunSec:lvs[4]>0 ? sgVal(t[4].fx,'sec',lvs[4]) : 0,
-      onHit:onHit, bonusPctFn:bonusFor,
-      onStart:lg.cleaveWhirl ? function() { sgCleaveWhirlwind(pEnt,st,lg.cleaveWhirl,pool,floatSel,out,0); } : null
-    },out);
+  }
+  for (var wave = 0; wave < slashes; wave++) {
+    var delay = wave * SG_CLEAVE_WAVE_GAP_SEC;
+    if (wave === 0) emitWave(origin);
+    (function(delayed) {
+      sgQueueFlyingProjectile(pEnt,st,'cleave',dmgVal,hasGeometry ? origin : null,0,radius,floatSel,targets,{
+        radialCurve:curve, travelMs:travel*1000, singleHit:true, beginSec:delay,
+        stunChance:lvs[4]>0 ? sgVal(t[4].fx,'chance',lvs[4]) : 0,
+        stunSec:lvs[4]>0 ? sgVal(t[4].fx,'sec',lvs[4]) : 0,
+        onHit:onHit, bonusPctFn:bonusFor,
+        onStart:function(projectile,ctx) {
+          var livePool = ctx.getEnemies ? ctx.getEnemies() : pool;
+          if (delayed) {
+            // 每一道在真正起飛時取玩家位置；已飛出的刀波保留自己的發射中心。
+            var at = typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
+            projectile.origin = hasGeometry && at ? {x:at.x,y:at.y} : null;
+            projectile.fallbackTargets = livePool.filter(function(e) {return e && e.hp>0;});
+            // 模擬跨過預定起飛點時，畫面與傷害仍從同一個實際起點開始。
+            projectile.startAt = sgProjectileNow();
+            projectile.endAt = projectile.startAt + travel;
+            emitWave(at);
+          }
+          if(lg.cleaveWhirl)sgCleaveWhirlwind(pEnt,st,lg.cleaveWhirl,livePool,floatSel,out,0);
+        }
+      },out);
+    })(wave > 0);
   }
 }
 
