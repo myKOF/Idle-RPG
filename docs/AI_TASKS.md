@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜逐風者龍捲風排除繼承刀光（WINDCHASER-VFX-20260916）
+
+- Owner：Codex；Done。使用者要求修正逐風者地面額外出現迴旋斬刀光。龍捲風事件只派送配置解析出的 ground 角色，不變更全域繼承規則與迴旋斬本體。
+- 允許修改：js/skills2.js、主執行緒／Worker 快取、tests/skill-vfx-inheritance.test.cjs、本紀錄；禁止修改技能數值、配置表與素材。前置依賴已完成，衝突預檢乾淨。
+- 驗證：`node --test tests/skill-vfx-inheritance.test.cjs tests/cleave-rework.test.cjs tests/skill2-ult-evolution.test.cjs` 73/73 通過；涵蓋實際場域事件、風系傷害參數、空場景／空配置與傳奇借用。`node tools/build_check.cjs` 358 檔通過；`git diff --check` 通過。
+- 未修改但檢查：js/vfx-runtime.js、ground-tornado-wind／迴旋斬 Preset、Skills2 CSV。無素材變更，不需素材庫提交。Commit 為本紀錄所在提交；未合併／推送，可供合併。無未完成程式項目；尚未遊戲內目視驗證，建議重新整理後確認地面刀光已消除。
+
 ## Codex｜彈射換段保留尾跡（KNIFE-TAIL-LIFETIME-20260916）
 
 - Owner：Codex；Done。使用者要求刀身換段後舊粒子自然消退並注意效能。Core 新增 finish／clearTails：移除刀身、停發射與子粒子，保留既有粒子及出生座標；最多剩餘 3 個實際秒，額外淡出乘區避免使用者 alpha 尾端非零造成硬切。重複 finish 不續命。普通飛刀到達、追魂刃飛行／環繞切換與自然到期沿用此路徑；換場 reset／clear 與死亡 clearFields 清空尾跡。無傷害／判定變更。

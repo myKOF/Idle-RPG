@@ -14,6 +14,38 @@ function load() {
   return c;
 }
 const plain = x => JSON.parse(JSON.stringify(x));
+test('逐風者實際場域只播放表定龍捲風，保留風系傷害與本體繼承', () => {
+  const c = load(), events = [], hits = [];
+  c.playCombatVfx = spec => events.push(plain(spec));
+  c.enemyEventFloatTarget = () => 'enemy';
+  c.sgHitOne = (...args) => { hits.push(args); return { miss: true }; };
+  const enemy = { hp: 1000 };
+  const f = { gid: 'cleave', kind: 'windtornado', vfxUlt: 'windChaser',
+    tgt: enemy, pos: null, radius: 40, gap: 0.4, dmgVal: 110,
+    hitElem: 'wind', pEnt: {}, st: {}, floatSel: '' };
+  c.sgGroundTick(f, [enemy], {});
+  assert.deepEqual(events[0].vfx, { ground: 'ground-tornado-wind' });
+  assert.equal(events[0].variant, 'wind-tornado');
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0][3], 110);
+  assert.equal(hits[0][9], 'wind');
+  assert.equal(c.sgVfxRoles('cleave', { vfxUlt: 'windChaser' }).attack, 'slash-cleave-ring-warm');
+  assert.equal(c.sgVfxRoles('cleave', { vfxUlt: 'windChaser' }).projectile, 'proj-cleave-ring-tricolor');
+  // 傳奇借用逐風者時同樣只派送場域；無敵人仍顯示原判定範圍。
+  c.sgGroundVictims = () => [];
+  f.gid = 'thrust'; f.vfxGid = 'cleave'; f.pos = { x: 123, y: 456 }; f.vfxId = 'wind-test';
+  c.sgGroundTick(f, [], {});
+  assert.deepEqual(events[1].vfx, { ground: 'ground-tornado-wind' });
+  assert.deepEqual(events[1].area, { id: 'wind-test', x: 123, y: 456, r: 40 });
+  assert.equal(hits.length, 1);
+  // 仍以配置為來源，空欄不能偷偷補回其他角色或寫死的 Preset。
+  c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').vfx.ground = 'test-ground';
+  c.sgGroundTick(f, [], {});
+  assert.deepEqual(events[2].vfx, { ground: 'test-ground' });
+  c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').vfx = {};
+  c.sgGroundTick(f, [], {});
+  assert.deepEqual(events[3].vfx, {});
+});
 test('未指定階級只讀目前生效最高階；獨立事件讀指定階，不讀未來階', () => {
   const c = load();
   c.SKILLS2.probe = { tiers: [{vfx:{attack:'first'}},{},{vfx:{attack:'third'}},{vfx:{attack:'future'}}] };

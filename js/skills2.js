@@ -4201,6 +4201,11 @@ function sgGroundVfxSpec(f) {
   spec.vfxTier = f.vfxTier || 0;
   spec.vfxUlt = f.vfxUlt || '';
   spec.vfxGid = f.vfxGid || '';
+  // 逐風者（含借用此場域的傳奇）只播放龍捲風，不重播繼承的迴旋斬本體。
+  if (f.kind === 'windtornado' && f.vfxUlt === 'windChaser') {
+    var roles = sgVfxRoles(f.gid, spec);
+    spec.vfxRoles = roles.ground ? { ground: roles.ground } : {};
+  }
   return spec;
 }
 function sgGroundVfxShape(f) {
