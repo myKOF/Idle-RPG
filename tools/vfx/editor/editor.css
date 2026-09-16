@@ -13,12 +13,25 @@ body {
      結果就是畫布比欄位寬 15px，直接蓋在右側 Inspector 的文字上。 */
   overflow: hidden;
 }
+/* 工具列不換行：存檔訊息一出現，換行就把「關閉編輯器」擠到第二行，工具列變高、
+   底下的預覽區跟著跳一下（2026-09-16 使用者回報）。寬度不夠時由兩個可伸縮的欄位
+   吸收——搜尋框與存檔訊息；真的擠不下才讓工具列自己橫向捲，按鈕不會跑掉。 */
 #topbar {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; background: #1e1e24; border-bottom: 1px solid #2c2c34;
-  flex: 0 0 auto; flex-wrap: wrap;
+  flex: 0 0 auto; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+  /* 捲軸自己會佔掉 15px 高，工具列高度跟著變——那正是這次要修掉的跳動。
+     藏起來不影響捲動（Shift＋滾輪照樣捲），而「關閉編輯器」是 sticky 永遠在，
+     所以藏掉捲軸不會讓人找不到東西。 */
+  scrollbar-width: none;
 }
+#topbar::-webkit-scrollbar { display: none; }
+/* 按鈕與標籤一律不縮、不斷字：縮到一半的按鈕比橫向捲更難用 */
+#topbar > button, #topbar > label, #topbar > strong,
+#topbar > .sep, #topbar > .dirty { flex: 0 0 auto; white-space: nowrap; }
 #topbar .sep { width: 1px; height: 18px; background: #34343e; }
+/* 吃掉剩下的空間，右邊只留「關閉編輯器」 */
+#topbar .push-right { margin-left: auto; }
 button, select, input[type="search"], input[type="text"], input[type="number"] {
   background: #26262e; color: #d6d6dc; border: 1px solid #3a3a44;
   border-radius: 4px; padding: 4px 8px; font: inherit;
@@ -29,9 +42,11 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 /* ---- Preset 切換：搜尋框 ＋ 自繪清單 ----
    原生 <select> 沒有辦法在打開的狀態下篩選，157 份用捲的找不到東西。 */
 .combo { position: relative; display: flex; align-items: center; }
+/* 工具列不換行（見 #topbar），所以空間不夠時由搜尋框先讓步 */
+#topbar .combo { flex: 0 1 auto; min-width: 150px; }
 /* 寬度寫死：清單是絕對定位的，不受這個寬度限制，所以輸入框只要放得下
    常見長度的 id 就好，不必為了最長的那一個把整條工具列推到換行。 */
-.combo-input { width: 300px; padding-right: 24px; }
+.combo-input { width: 300px; max-width: 100%; min-width: 0; padding-right: 24px; }
 /* 藏掉 type=search 內建的 ✕：它會和右邊的 ▾ 疊在一起，而清空這件事
    Esc 與失焦本來就會做（把顯示文字放回去）。 */
 .combo-input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
@@ -81,10 +96,12 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 .playpause.paused { background: #3d5a80; border-color: #4d7ab0; }
 /* 關閉是不可逆的（伺服器停掉就要重跑 .bat），所以給它一個和別人不一樣的顏色，
    但不用刺眼的紅——它是正常的收工動作，不是危險操作。 */
-.quit-btn { border-color: #5a3a3a; color: #e0a0a0; }
+/* 視窗窄到工具列要橫向捲時也要看得到：黏在右緣，其他按鈕從它後面捲過去。 */
+.quit-btn { border-color: #5a3a3a; color: #e0a0a0;
+            position: sticky; right: 0; background: #26262e;
+            box-shadow: -10px 0 10px -6px rgba(20, 20, 24, .95); }
 .quit-btn:hover { background: #4a2a2a; border-color: #8a5a5a; color: #ffd0d0; }
 .copy-btn.err { color: #ff8080; border-color: #6a3a3a; }
-.stats { margin-left: auto; color: #8a8a96; font-variant-numeric: tabular-nums; }
 
 /* minmax(0, 1fr) 而不是 1fr：grid item 的自動最小尺寸預設是 auto，
    中央欄的內容（畫布）就能把軌道推得比 1fr 還寬。寫死下限為 0 才是真的可縮。 */
@@ -165,7 +182,11 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 
 /* 存檔狀態：dirty 標記與 Saving/Saved/失敗 訊息 */
 .dirty { color: #e0b34a; font-size: 12px; min-width: 60px; }
-.save-status { color: #8a8a96; font-size: 12px; }
+/* 存檔訊息長度會變（「已存檔 · 13261 bytes」）。它是工具列裡少數可以縮的東西，
+   縮不下就切尾，不可以把後面的按鈕頂到第二行。 */
+.save-status { color: #8a8a96; font-size: 12px;
+               flex: 0 1 auto; min-width: 0; white-space: nowrap;
+               overflow: hidden; text-overflow: ellipsis; }
 .save-status.ok { color: #7fd18a; }
 .save-status.err { color: #ff8080; }
 /* 提醒（例如「已改用檔名」）：不是成功也不是失敗，未存檔時也要一直留著 */
