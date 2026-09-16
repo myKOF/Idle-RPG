@@ -53,17 +53,50 @@ test('CLEAVE 圓形刀波向四周擴張、到達才命中且每道只打一次'
 test('CLEAVE 連斬與七階相加、每波延遲及範圍一致，無四方重複',()=>{
  const h=setup([1,1,1,1,1,1,1]);h.cast();
  assert.equal(h.c.SKILL2_RT.projectiles.length,5);
- assert.deepEqual(h.events.map(e=>e.delayMs||0),[0,300,600,900,1200]);
- assert(h.events.every(e=>e.vfx.projectile==='proj-cleave-ring-tricolor'&&!e.vfx.attack&&Math.abs(e.area.r-145.625)<1e-6));
+ assert.deepEqual(Array.from(h.c.SKILL2_RT.projectiles,p=>Math.round(p.beginAt*1000)),[0,300,600,900,1200]);
+ assert.equal(h.events.length,1,'後續刀波要到起飛時才送出事件');
  h.tick(.19);assert.equal(h.hits.length,3);
  for(let i=20;i<=200;i++)h.tick(i/100);
+ assert.equal(h.events.length,5);
+ assert(h.events.every(e=>!e.delayMs&&e.vfx.projectile==='proj-cleave-ring-tricolor'&&!e.vfx.attack&&Math.abs(e.area.r-145.625)<1e-6));
  assert.equal(h.hits.length,15);assert(h.hits.every(x=>Math.abs(x.dmg-3844)<1e-6));
  assert.equal(h.c.SKILL2_RT.projectiles.length,0);
 });
 test('CLEAVE 小數次數只決定額外一刀，不再有前置觸發機率',()=>{
  for(const [trigger,count] of [[false,2],[true,3]]) {
-  const h=setup([1,0,0,6,0,0,0]);h.c.chance=()=>trigger;h.cast();assert.equal(h.events.length,count);
+  const h=setup([1,0,0,6,0,0,0]);h.c.chance=()=>trigger;h.cast();assert.equal(h.c.SKILL2_RT.projectiles.length,count);
  }
+});
+
+test('CLEAVE 超神七連斬各取斬出當下位置，已發射刀波不追隨玩家',()=>{
+ const h=setup([1,1,1,1,1,1,1]);let player={x:0,y:0};h.c.bfPlayerPos=()=>player;
+ h.c.sgUlt=(gid,id)=>id==='voidShatter'?{def:h.c.SKILLS2.cleave.ult[0],lv:5}:null;
+ h.cast();const waves=Array.from(h.c.SKILL2_RT.projectiles);assert.equal(waves.length,7);
+ for(let wave=0;wave<7;wave++){
+  player={x:wave*300,y:wave*20};h.tick(wave*.3+1e-8);
+  assert.equal(h.events.length,wave+1);
+  assert.equal(h.events[wave].area.x,player.x);assert.equal(h.events[wave].area.y,player.y);
+  assert.equal(waves[wave].origin.x,player.x);assert.equal(waves[wave].origin.y,player.y);
+  assert.equal(waves[0].origin.x,0,'第一刀仍從原位擴散');
+ }
+ const event=h.events[6],frames=[];
+ const backend={createNode:()=>({}),updateNode:(node,t)=>frames.push({...t}),destroyNode(){}};
+ const rt=Runtime.create({core:Core,resolver:{has:()=>true,resolve:x=>x},fxBackend:backend,zoneBackend:backend,
+  ctx:{playerPos:()=>player,posOf:()=>player}});
+ rt.registerPresets([JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/proj-cleave-ring-tricolor.json'),'utf8'))]);
+ rt.tryPlay(event);player={x:9999,y:9999};rt.update(.1);
+ assert(frames.length>0);assert(frames.every(p=>p.x===1800&&p.y===120),'發射後的畫面不跟隨玩家');
+ h.tick(4);assert.equal(h.c.SKILL2_RT.projectiles.length,0);
+});
+
+test('CLEAVE 移動後追加斬擊只命中新位置附近的敵人',()=>{
+ const h=setup([1,0,0,1,0,0,0]);let player={x:0,y:0};h.c.bfPlayerPos=()=>player;
+ h.cast();h.tick(.2);player={x:400,y:0};h.tick(.3);
+ const newcomer={name:'new-centre',hp:1e9,pos:{x:470,y:0}};h.enemies.push(newcomer);
+ for(let i=31;i<=80;i++)h.tick(i/100);
+ assert.equal(h.hits.filter(hit=>hit.e.name==='front').length,1,'舊位置只被第一刀命中');
+ assert.equal(h.hits.filter(hit=>hit.e===newcomer).length,1,'第二刀命中移動後新位置');
+ assert.equal(h.events[1].area.x,400);
 });
 test('CLEAVE 刀波掃過後中央不保留傷害場域',()=>{
  const h=setup([1,0,0,0,0,1,0]);h.cast();h.tick(.25);
@@ -79,8 +112,9 @@ test('CLEAVE 傳奇飛行距離／連斬／旋風／暈眩／命中掛鉤保留'
  const whirl=[],stun=[],hooks=[];h.c.sgCleaveWhirlwind=()=>whirl.push(h.c.GT);h.c.sgTryStun=e=>stun.push(e);
  h.c.sgCleaveOnHit=(cfg,e)=>hooks.push(e);h.c.sgIsStunned=()=>true;h.c.chance=()=>true;h.cast();
  assert.equal(h.events[0].area.r,600);assert.equal(h.events[0].travelMs[0],2500);
- assert.equal(h.events[0].vfx.projectile,'slash-cleave-ring-warm');assert.equal(h.events.length,3);
+ assert.equal(h.events[0].vfx.projectile,'slash-cleave-ring-warm');assert.equal(h.events.length,1);
  for(let i=0;i<=320;i++)h.tick(i/100);
+ assert.equal(h.events.length,3);
  assert.equal(whirl.length,3);assert.equal(h.hits.length,12);assert.equal(stun.length,12);assert.equal(hooks.length,12);assert(h.hits.every(x=>x.bonus===50));
 });
 test('CLEAVE 無座標高塔仍逐道結算且完成後回收',()=>{

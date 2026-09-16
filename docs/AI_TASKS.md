@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜迴旋斬逐刀取當前發射位置（CLEAVE-LAUNCH-ORIGIN-20260916）
+
+- Owner：Codex；Done。依使用者補充：不是持續跟隨玩家，而是每次斬出時從玩家當下位置發射，發射後保持該刀自己的擴散中心。原本一次施放就固定所有追加刀波的圓心與延遲特效，導致玩家移動後仍在原地連斬。
+- 完成：追加刀波在模擬佇列實際起飛時取 bfPlayerPos，同時設定傷害原點並發送無額外延遲的特效事件；動畫與傷害共用同一中心、完整擴散時長。首刀維持施放位置，已發射刀波不跟隨玩家；逐刀間隔維持 0.3 秒。傳奇旋風與無座標高塔在每刀開始時查詢當前敵群。沿用既有事件欄位，無協議變更。
+- 修改：js/skills2.js、js/worker/sim.worker.js／js/bridge.js／index.html 快取、tests/cleave-rework.test.cjs、本紀錄。預檢乾淨。未修改但檢查：js/vfx-runtime.js（沿事件 area 固定中心）、技能配置、正式三色 Preset 與傳奇／超神測試。無素材與配置數值變更，不需 Excel／CSV 或素材庫提交。
+- 驗證：node --test tests/cleave-rework.test.cjs tests/knife-flight.test.cjs，22/22；skill2-system 與 skill2-ult-evolution 的迴旋斬／虛空碎裂／逐風者／天霸風神定向測試 6/6；node tools/build_check.cjs 356 檔通過；git diff --check 通過。新增超神七連斬逐刀改變玩家座標、舊刀圓心固定、正式 Runtime 發射後不追蹤，以及新舊位置命中範圍的驗證。
+- Commit 為本紀錄所在提交，未合併／未推送；無未完成實作，可供合併。尚未遊戲內目視驗證，建議重新整理後確認移動連斬觀感。
+
 ## Codex｜飛刀逐段到達命中與死亡目標續飛（KNIFE-FLIGHT-20260916）
 
 - Owner：Codex；Done。使用者回報只見受擊、不見彈射，並要求目標途中死亡仍飛到最後座標再找下一跳，無目標才消失。根因為即時結算傷害、死亡起點被 sgEmitVfx 過濾使 travelMs 索引錯位，以及彈射時間錯用玩家到目標距離。
