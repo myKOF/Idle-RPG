@@ -917,7 +917,7 @@ var VFXCore = (function () {
       rotationStart: layer.rotationStart === undefined ? 0 : layer.rotationStart,
       rotationSpeed: layer.rotationSpeed === undefined ? 0 : layer.rotationSpeed,
       alignToVelocity: layer.alignToVelocity === true,
-      worldSpace: layer.worldSpace === true,
+      worldSpace: layer.worldSpace !== false,
       subEmitter: layer.subEmitter ? {
         layer: layer.subEmitter.layer,
         on: layer.subEmitter.on || 'death',
@@ -1367,6 +1367,7 @@ var VFXCore = (function () {
       subOrigin.y = parent.y;
       subOrigin.vx = parent.vx * se.inheritVelocity;
       subOrigin.vy = parent.vy * se.inheritVelocity;
+      subOrigin.frame = parent.spawnFrame || effect;
       for (var i = 0; i < se.count; i++) spawnParticle(effect, target, subOrigin);
     }
 
@@ -1395,7 +1396,16 @@ var VFXCore = (function () {
       // 粒子狀態物件也重用（free-list），避免每次發射都配置新物件
       var p = particlePool.length ? particlePool.pop() : {};
       p.x = px; p.y = py;
-      p.spawnFrame = d.worldSpace ? { origin: { x: effect.origin.x, y: effect.origin.y }, rotation: effect.rotation, scaleX: effect.scaleX, scaleY: effect.scaleY } : null;
+      // 出生座標隨粒子池重用；轉彎只影響新粒子，不搬動已留下的軌跡。
+      p.spawnFrame = null;
+      if (d.worldSpace) {
+        var frame = p.birthFrame || (p.birthFrame = { origin: { x: 0, y: 0 } });
+        var sourceFrame = at && at.frame ? at.frame : effect;
+        frame.origin.x = sourceFrame.origin.x; frame.origin.y = sourceFrame.origin.y;
+        frame.rotation = sourceFrame.rotation;
+        frame.scaleX = sourceFrame.scaleX; frame.scaleY = sourceFrame.scaleY;
+        p.spawnFrame = frame;
+      }
       p.vx = Math.cos(angle) * speed;
       p.vy = Math.sin(angle) * speed;
       /* 繼承母粒子的速度：煙要跟著碎片的去向飄一段，而不是原地冒出來。

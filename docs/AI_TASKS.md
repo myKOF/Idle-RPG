@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜全域世界座標粒子（WORLD-PARTICLES-20260916）
+
+- Owner：Codex；Done。使用者要求所有粒子保留經過位置，飛行轉彎形成歷史拖尾，並要求提早回報效能影響。盤點正式 Preset 共 290 粒子層，12 層明確 worldSpace:true，無 false；Core 預設改 true，因此現有與新建粒子層均生效，無需改寫素材庫／Preset。
+- 修改：js/vfx-core.js、index.html、tests/vfx-core.test.cjs、docs/vfx/VFX_CORE_AND_PRESET_SCHEMA.md、本紀錄；tools/vfx/editor/index.html 第 249 行 Core 快取。預檢發現 ai/claude 的 e883077 改同檔第 264 行 editor.js 快取，使用者已確認允許，只修改 Core 快取，不碰對方 editor.js 的載入版本。
+- 行為：粒子保留出生座標與朝向；子發射器沿用母粒子的出生座標，避免父特效移動後煙霧跳位。出生座標物件隨既有粒子池重用，降低 GC 配置；粒子數、壽命、發射率與預算均不增加。保留 API 的明確 worldSpace:false 相容選項，目前正式 Preset 無使用者。
+- 驗證：node --test tests/vfx-core.test.cjs tests/soulhunter.test.cjs tests/knife-flight.test.cjs，150/150；涵蓋移動、旋轉、速度與尾長、子粒子出生位置、粒子池重用與局部模式。node --test tests/vfx-performance.test.cjs tests/vfx-runtime.test.cjs，95 項中 89 通過／6 既有 Runtime 失敗（雷落、龍捲兩項、泥沼、連鎖、虛空斬），與前次已知基線相同。
+- 效能量測：Node 無繪圖後端，10 個移動發射器、1,180 顆活躍粒子、暖機 300 幀後計時 1,200 幀、交錯 7 輪中位數：局部 0.136 ms／幀、世界 0.152 ms／幀，增量約 0.016 ms。停止後 activeParticles=0。上限維持 1,200，粒子池上限維持 512；數字不代表 GPU／實機 FPS，尚需遊戲內目視與幀率觀察。
+- 未修改但檢查：js/vfx-runtime.js、正式 Preset、tools/vfx/editor/editor.js（共用 Core）。使用者持續編輯的普通／金刀 Preset 與金刀 layout 保留，不納入本次提交，本次無素材變更。
+- Build：node tools/build_check.cjs，357 檔通過；git diff --check 通過。Commit 為本紀錄所在提交，可供審查合併；未合併／推送。未完成：無程式待辦，實機 GPU 與畫面觀感尚未驗收，建議刷新遊戲與編輯器後觀察大量特效場景。
+
 ## Codex｜追魂刃待機環繞半徑（SOULHUNTER-ORBIT-20260916）
 
 - Owner：Codex；Done。依使用者要求將待機環繞半徑由 3 米調為 12 米；沿用 SG_SOULHUNTER_ORBIT_M 與事件 orbitR，返回位置、再出發點及 Runtime 畫面共用半徑。前置追魂刃改造已完成，預檢無衝突。
