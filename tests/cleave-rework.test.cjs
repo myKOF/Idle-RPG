@@ -80,17 +80,16 @@ test('CLEAVE 正式 Preset 曲線同源，Runtime 採事件半徑、圓心、時
   adapter.tryPlay({fxKind:role==='attack'?'slash':'projectile',variant:'cleave-ring',projectile:true,hit:false,area:{x:30,y:40,r:160},travelMs:[1000],vfx:{[role]:id}});
   for(let i=0;i<30;i++)adapter.update(1/60);
   assert(frames.length>0);const last=frames.at(-1);
+  assert.equal(last.x,30);assert.equal(last.y,40);
+  const size=160/preset.sizing.authored.radius;
+  const expected=preset.layers[0].scale.x*size*h.c.sgCleaveRadiusAt(h.c.SKILLS2.cleave.tiers[0].fx.radiusCurve,.5);
+  assert(Math.abs(last.scaleX-expected)<1e-5,[last.scaleX,expected]);
   if (role==='projectile') {
-   const expectedRadius=160*h.c.sgCleaveRadiusAt(h.c.SKILLS2.cleave.tiers[0].fx.radiusCurve,.5);
-   assert(Math.abs(Math.hypot(last.x-30,last.y-40)-expectedRadius)<.2,'刀弧位置跟隨命中前緣');
-   assert(Math.abs(last.scaleX-preset.layers[0].scale.x*2)<1e-5,'徑向厚度不隨飛行進度放大');
-   adapter.update(.25);const later=frames.at(-1);
-   assert(Math.hypot(later.x-30,later.y-40)>expectedRadius,'刀弧繼續向外移動');
-   assert.equal(later.scaleX,last.scaleX,'外移時厚度保持不變');
-  } else {
-   assert.equal(last.x,30);assert.equal(last.y,40);
-   const expected=preset.layers[0].scale.x*2*h.c.sgCleaveRadiusAt(h.c.SKILLS2.cleave.tiers[0].fx.radiusCurve,.5);
-   assert(Math.abs(last.scaleX-expected)<1e-5,[last.scaleX,expected]);
+   assert.equal(preset.layers.length,12,'保留三組旋轉刀光，不得改成分段小刀弧');
+   assert(preset.layers.every(l=>l.rotationOverLife[1][1]===Math.PI*2),'保留快速旋轉整圈');
+   assert(preset.layers.every(l=>!l.offsetXOverLife&&!l.offsetYOverLife),'刀光保持原本旋轉構圖');
+   const extent=Math.max(...preset.layers.map(l=>Math.max(l.scale.x,l.scale.y)))*512*.38;
+   assert(Math.abs(extent*size-160)<1e-6,'修正實際作者尺寸，不能重複放大造型');
   }
   assert.equal(adapter.stats().projectiles,0);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
  }

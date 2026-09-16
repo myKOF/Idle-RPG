@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜還原原本旋轉刀光並校正尺寸（CLEAVE-SPIN-FIT-20260916）
+
+- Owner：Codex；Done。使用者否定上一版小刀弧拼環，要求保留原本快速旋轉一圈的特效。還原藍色／三色各 12 層刀弧與旋轉、延遲曲線；校正 authored.radius 以反映造型尺寸，降低疊加光暈，避免造型放大後又被距離倍率放大。維持已確認的 0.3 秒逐道間隔。
+- 修改：兩份 proj-cleave-ring Preset／layout、cleave-renew 製作工具、Runtime 與 index 快取、cleave-rework 測試、本紀錄及 VFX_RUNTIME_ADAPTER。未修改但檢查：skills2 排程、原本旋斬資料、Core 尺寸處理、素材庫。衝突預檢乾淨，無素材變動。
+- 驗證：cleave-rework、vfx-preset-layout、vfx-preset-usage 共 32/32；Core 動態預覽已目視檢查（非遊戲實錄）。驗證原始旋轉整圈、12 層結構、半徑尺寸換算、0.3 秒排程與既有命中行為。未做遊戲內目視驗證。Commit 為本紀錄所在提交，未合併／未推送，可供使用者審查；動態預覽 cleave-spin-fit.gif 保留於 Codex visualizations，原始中間檔已移除。
+
 ## Codex｜震碎斬外移刀波與連斬間隔（CLEAVE-WAVEFRONT-20260916）
 
 - Owner：Codex；Done。使用者以兩張遊戲截圖指出「向外飛出」不能把整張刀光放大填滿，並指定各道間隔 0.3 秒。改用既有 slash_03 刀弧分段，位置隨表定半徑曲線向外走；成形後徑向厚度固定，中央留空。藍色與三色飛行 Preset 同步，保持原技能引用。
