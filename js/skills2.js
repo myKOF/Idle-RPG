@@ -191,7 +191,7 @@ function skills2PassiveActive(gid) {
 var SKILLS2 = {
   thrust: { name: '突刺', emoji: '🗡️', range: '12*3', cd: 15, cost: 25, tiers: [{ name: '突刺', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 2, speed: 48 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方敵人造成 {count} 次 {pct}% 物理傷害', vfx: { attack: 'slash-thrust-lance', hit: 'hit-phys' } }, { name: '連刺', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { chance: 25, chancePer: 2.5, count: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率再次進行 {count} 次突刺' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 20, pctPer: 3 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '超連刺', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { count: 3, range: 20, rangePer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '每次能進行 {count} 道平行貫穿突刺，且突刺範圍提升 {range}%', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '擴散', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { pct: 20, pctPer: 2, count: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '貫穿突刺', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 5, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺會造成一直線的傷害，貫穿路徑上所有敵人，貫穿長度在原本長度上再增加 {m} 米', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '八方連刺', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 20, pctPer: 2, count: 3, directions: 8 }, goldBase: 5000000, goldGrow: 1.5, desc: '向八個方向同時進行 {count} 次突刺，且造成傷害額外 +{pct}%', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }], ult: [{ id: 'phantomOcta', name: '幻影八方陣', cost: 300, fx: { dodge: 30, sec: 2, m: 6, mPer: 0.6 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時，傷害同時擴散至該敵人周圍 {m} 米內的所有敵人；施放突刺後 {sec} 秒內，你有 {dodge}% 機率絕對閃避敵方攻擊', vfx: { attack: 'slash-thrust-scatter-blue', hit: 'hit-phys' } }, { id: 'shadowExecutioner', name: '暗影絕殺者', cost: 300, fx: { perStack: 1, perStackPer: 0.2, maxStacks: 100, pct: 100, pctPer: 20, dur: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時堆疊【靈魂撕裂】：每層使該敵人受到的傷害提高 {perStack}%，最多 {maxStacks} 層（疊滿＝+{pct}%）', vfx: { attack: 'slash-thrust-scatter-red', hit: 'hit-phys' } }, { id: 'oneStrikeKill', name: '一擊必殺', cost: 300, fx: { mult: 4, multPer: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '【八方連刺】改為朝前方的 1 道突刺，但傷害改為 {mult} 倍，且可以立即殺死普通敵人', vfx: { attack: 'slash-thrust-scatter-super', hit: 'hit-phys' } }] },
   cleave: { name: '迴旋斬', emoji: '🪓', range: '', cd: 20, cost: 25, tiers: [{ name: '迴旋斬', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 200, pctPer: 20, radiusCurve: [[0, 0.12], [0.25, 0.48], [0.65, 0.86], [1, 1]], castM: 8, m: 8, speed: 24 }, goldBase: 100000, goldGrow: 1.5, desc: '對自身周圍 {m} 米內的所有敵人造成 1 次 {pct}% 物理傷害', vfx: { attack: 'slash-cleave-ring-warm', hit: 'hit-phys' } }, { name: '擴增', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { range: 15, rangePer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊範圍擴大 {range}%' }, { name: '強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 20, pctPer: 8 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '連斬', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { times: 1, timesPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '額外劈出 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒' }, { name: '震碎斬', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 12, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '圓形刀波向外擴張至 {m} 米，對擴張路徑上的所有敵人造成傷害', vfx: { projectile: 'slash-cleave-ring-blue', hit: 'hit-phys' } }, { name: '迴身四方斬', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 50, pctPer: 5, times: 3, timesPer: 0 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外使出 {times} 次圓形斬擊，且傷害額外 +{pct}%（與原有傷害乘法計算）', vfx: { projectile: 'proj-cleave-ring-tricolor', hit: 'hit-phys' } }], ult: [{ id: 'voidShatter', name: '虛空碎裂斬', cost: 300, fx: { times: 1, timesPer: 0.2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【迴身四方斬】的攻擊次數 +{times} 次，且物理傷害再額外 +{pct}%' }, { id: 'windChaser', name: '逐風者', cost: 300, fx: { hits: 4, hitsPer: 0.4, pct: 100, pctPer: 10, m: 4, gap: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬每命中 1 次，就在該敵人所在位置生成一道龍捲風：對半徑 {m} 米內的敵人造成 {hits} 段、每段 {pct}% 風系傷害', vfx: { ground: 'ground-tornado-wind' } }, { id: 'stormGodSlash', name: '天霸風神斬', cost: 300, fx: { sec: 8, secPer: -0.5, range: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬範圍擴大 {range}%，並改為被動技能：不再主動施放，改為每 {sec} 秒自動施放 1 次（每級施放間隔 -0.5 秒，仍需裝配在技能列才生效）' }] },
-  knife: { name: '飛刀', emoji: '🔪', range: '', cd: 15, cost: 25, tiers: [{ name: '飛刀', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, deg: 60, speed: 50.4 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化飛刀', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 30, pctPer: 5, count: 1, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在範圍20米內的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化彈射', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 4, countPer: 0.2 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', unlock: { reinc: 0, lv: 350 }, cost: 240, fx: { sec: 0.05, secPer: 0.01 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使飛刀技能冷卻時間 -{sec} 秒' }], ult: [{ id: 'petalStorm', name: '暴雨梨花', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）都會對飛行路徑上的所有敵人造成 {pct}% 技能傷害' }, { id: 'deathReaper', name: '死亡收割者', cost: 300, fx: { pct: 25, pctPer: 2.5, maxStacks: 20, dur: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '飛刀殺死敵人時堆疊【死亡收割】：每層使你造成的傷害提高 {pct}%，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'soulhunterBlade', name: '無限追魂刃', cost: 300, fx: { pct: 50, pctPer: 5, m: 45 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放飛刀時額外射出 1 支無限飛刀，追擊周圍 {m} 米內的任意敵人：傷害提高 {pct}%，彈射次數不受限制；只有一個目標時會貫穿後繞回再次攻擊，不會停留原地重複傷害', vfx: { projectile: 'proj-knife-gold', hit: 'hit-lightning' } }] },
+  knife: { name: '飛刀', emoji: '🔪', range: '', cd: 15, cost: 25, tiers: [{ name: '飛刀', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, deg: 60, speed: 50.4 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化飛刀', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 30, pctPer: 5, count: 1, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在範圍20米內的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化彈射', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 4, countPer: 0.2 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', unlock: { reinc: 0, lv: 350 }, cost: 240, fx: { sec: 0.05, secPer: 0.01 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使飛刀技能冷卻時間 -{sec} 秒' }], ult: [{ id: 'petalStorm', name: '暴雨梨花', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）都會對飛行路徑上的所有敵人造成 {pct}% 技能傷害' }, { id: 'deathReaper', name: '死亡收割者', cost: 300, fx: { pct: 25, pctPer: 2.5, maxStacks: 20, dur: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '飛刀殺死敵人時堆疊【死亡收割】：每層使你造成的傷害提高 {pct}%，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'soulhunterBlade', name: '無限追魂刃', cost: 300, fx: { pct: 4, pctPer: 0.4, sec: 10, m: 40 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放飛刀時額外射出 1 支無限飛刀，追擊自身周圍 {m} 米內的任意敵人。每次彈射使該支飛刀傷害額外提高 {pct}%（累加），最多存在 {sec} 秒。無敵人時在自身周圍環繞待機，單一敵人時飛離後折返攻擊', vfx: { projectile: 'proj-knife-gold', hit: 'hit-lightning' } }] },
   gale: { name: '疾風斬', emoji: '💨', range: '', cd: 15, cost: 25, tiers: [{ name: '疾風斬', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 250, pctPer: 20, hits: 3, castM: 5, gap: 0.2 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）', vfx: { attack: 'hit-gale-burst', hit: 'hit-phys' } }, { name: '疾風連斬', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', unlock: { reinc: 0, lv: 200 }, cost: 60, fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', unlock: { reinc: 0, lv: 250 }, cost: 80, fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', unlock: { reinc: 0, lv: 300 }, cost: 100, fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', unlock: { reinc: 0, lv: 350 }, cost: 140, fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '月牙斬', unlock: { reinc: 0, lv: 400 }, cost: 240, fx: { pct: 500, pctPer: 50, castM: 10, m: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%', vfx: { attack: 'slash-gale-moon' } }], ult: [{ id: 'thunderFlash', name: '霹靂一閃', cost: 300, fx: { mult: 5, multPer: 0.5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬的最後一斬會對你周圍 {m} 米內的敵人造成「單段傷害 × 連擊數 × {mult}」的傷害', vfx: { hit: 'hit-lightning' } }, { id: 'thunderGodSlash', name: '雷神斬', cost: 300, fx: { pct: 200, pctPer: 20, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬附加雷電：每次斬擊命中時降下 1 道落雷，對命中處周圍 {m} 米內的敵人造成 {pct}% 閃電傷害', vfx: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { id: 'chidori', name: '千鳥', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【月牙斬】不再由範圍內的敵人均分傷害，改為每個敵人都受到完整傷害，且傷害再額外 +{pct}%' }] },
   bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 15, cost: 25, tiers: [{ name: '血刃斬', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒', vfx: { attack: 'hit-bloodblade-burst', hit: 'hit-bleed' } }, { name: '強化流血', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）', vfx: { attack: 'curse-bleed', hit: 'hit-bleed' } }, { name: '虛弱', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', unlock: { reinc: 0, lv: 350 }, cost: 80, fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒', vfx: { attack: 'curse-poison', hit: 'hit-poison' } }, { name: '毒霧感染', unlock: { reinc: 0, lv: 400 }, cost: 100, fx: { chance: 30, chancePer: 2, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人', vfx: { projectile: 'proj-poison-drop', hit: 'hit-poison' } }, { name: '死亡屍爆', unlock: { reinc: 0, lv: 450 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }, { name: '零日感染', unlock: { reinc: 0, lv: 500 }, cost: 240, fx: { chance: 20, chancePer: 2, pct: 40, pctPer: 4, count: 1, m: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%', vfx: { attack: 'burst-zero-infection', hit: 'hit-poison' } }], ult: [{ id: 'slayerDomain', name: '殺神領域', cost: 300, fx: { pct: 2, pctPer: 0.2, healPct: 2, healPctPer: 0.2, dur: 6, maxStacks: 100, m: 24 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的殺神領域：領域內的敵人死亡時堆疊【殺神】，每層使你造成的傷害 +{pct}%，同時回復 {healPct}% 最大生命；最多 {maxStacks} 層，持續 {dur} 秒', vfx: { ground: 'ground-mire' } }, { id: 'venomDomain', name: '萬毒血霧', cost: 300, fx: { pct: 100, pctPer: 10, dur: 6, maxStacks: 10, m: 24, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的萬毒領域：領域內的敵人每 {gap} 秒受到 {pct}% 中毒傷害，該中毒持續 {dur} 秒且可堆疊至 {maxStacks} 層', vfx: { attack: 'curse-poison', hit: 'hit-poison', ground: 'ground-mire-poison' } }, { id: 'disintegrate', name: '崩解', cost: 300, fx: { pct: 50, pctPer: 5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '中毒與流血不再有持續時間，塗上的當下就結算完整傷害；結算後爆炸，對周圍 {m} 米內的敵人造成該效果 {pct}% 的傷害', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }] },
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', range: '', cd: 15, cost: 25, tiers: [{ name: '雙刀亂舞', unlock: { reinc: 0, lv: 250 }, cost: 25, fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '對附近 {count} 個敵人各造成 1 次 {pct}% 物理傷害（只有 1 個敵人時全部打向同一目標）', vfx: { attack: 'slash-dual', hit: 'hit-phys' } }, { name: '疾風亂舞', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外攻擊附近 {add} 個敵人（不足 1 個的部分以機率觸發）' }, { name: '強化雙刀', unlock: { reinc: 0, lv: 350 }, cost: 60, fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', unlock: { reinc: 0, lv: 400 }, cost: 80, fx: { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '讓你的暴擊率 +{cr}%、連擊數 +{add}，持續 {sec} 秒' }, { name: '鐵血之舞', unlock: { reinc: 0, lv: 450 }, cost: 100, fx: { pct: 3.5, pctPer: 0.35, sec: 3, m: 5, gap: 0.35 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放雙刀亂舞時使你以及附近 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命值 {pct}% 傷害，持續 {sec} 秒' }, { name: '嗜血狂化', unlock: { reinc: 0, lv: 500 }, cost: 140, fx: { pct: 0.25, pctPer: 0.025, sec: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放雙刀亂舞後 {sec} 秒內，生命值或護盾每減少 1%，獲得 {pct}% 技能傷害提升' }, { name: '暴風亂舞', unlock: { reinc: 0, lv: 550 }, cost: 240, fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間無法普攻但可施放技能', vfx: { attack: 'slash-dual', hit: 'hit-phys', ground: 'ground-cyclone-avatar' } }], ult: [{ id: 'doomDance', name: '毀滅之舞', cost: 300, fx: { hpPct: 10, hpPctPer: -0.5, pct: 200, pctPer: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '每施放 1 次雙刀亂舞就失去當下 {hpPct}% 生命值（不會致死），但雙刀亂舞的傷害提高 {pct}%' }, { id: 'flameKagura', name: '火之神樂', cost: 300, fx: { pct: 10, pctPer: 1, dur: 6, maxStacks: 20, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '雙刀亂舞附加火焰：每次命中堆疊 1 層【神樂灼焰】，每層每 {gap} 秒造成 {pct}% 火屬性傷害，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'asuraDance', name: '修羅亂舞', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '讓你可以同時裝備兩把雙手武器（主手與副手各一把），且雙手武器的詞條效果提升 {pct}%' }] },
@@ -630,7 +630,7 @@ function sgVfxRoles(gid, extra) {
     tier = tiers.length;
   } else {
     // 借用技能的獨立效果只讀指定階；不可套用被借用技能的玩家超神選擇。
-    var active = sourceGid === gid ? skills2Ult(gid) : null;
+    var active = sourceGid === gid && !(extra && extra.vfxBase) ? skills2Ult(gid) : null;
     if (active) selected = active.def;
     if (!tier) {
       var levels = skills2Levels(sourceGid);
@@ -1712,6 +1712,13 @@ function sgTickFlyingProjectiles(dt, ctx) {
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   for (var pi = list.length - 1; pi >= 0; pi--) {
     var projectile = list[pi];
+    if (projectile.soulController) {
+      if (sgTickSoulhunter(projectile, now, ctx)) {
+        list.splice(pi, 1);
+        sgFinishSkillCastFloat(projectile.out);
+      }
+      continue;
+    }
     if (projectile.knifeFlight) {
       if (sgTickKnifeFlight(projectile, now, ctx)) {
         list.splice(pi, 1);
@@ -2306,7 +2313,7 @@ function sgKnifeNextBounce(cfg, cur, visited, maxGapPx, poolOverride) {
 
 /* 每一段在既有飛行物佇列執行；死亡的目標仍保留實體最後座標。
    area 帶發射點與曲線控制點，Worker 與顯示層共用同一條路徑。 */
-function sgQueueKnifeFlight(cfg, from, target, dmg, bonus, derived, variant, arrival, enterAngle, loopReturn) {
+function sgQueueKnifeFlight(cfg, from, target, dmg, bonus, derived, variant, arrival, enterAngle, loopReturn, soul) {
   if (!target) return;
   var a = from ? bfPos(from) : bfPlayerPos(), b = bfPos(target);
   a = a ? {x:a.x,y:a.y} : null;
@@ -2335,17 +2342,25 @@ function sgQueueKnifeFlight(cfg, from, target, dmg, bonus, derived, variant, arr
     : Math.max(0.05,sgConfiguredTravelSeconds('knife',target));
   var area=a && b ? {knifeFlight:true,sourceX:a.x,sourceY:a.y,x:b.x,y:b.y,
     controlX:ctrl?ctrl.x:null,controlY:ctrl?ctrl.y:null} : null;
-  var soul=variant==='knife-soulhunter';
-  var roles=sgVfxRoles('knife',{vfxTier:from?3:0,vfxUlt:soul?'soulhunterBlade':''});
-  sgEmitVfx('knife',from&&!loopReturn?[from,target]:[target],cfg.floatSel,{
+  var isSoul=variant==='knife-soulhunter';
+  var roles=sgVfxRoles('knife',{vfxTier:from?3:0,vfxUlt:isSoul?'soulhunterBlade':'',
+    vfxBase:!isSoul&&!!sgUlt('knife','soulhunterBlade')});
+  if (soul) {
+    area=area||{};
+    area.soulId=soul.id;area.soulMode='flight';area.soulLife=Math.max(0,soul.until-sgProjectileNow());
+    if(target._soulAnchor){area.soulReturn=true;area.orbitAngle=target.orbitAngle;area.orbitR=soul.orbitR;}
+  }
+  var eventTargets=target._soulAnchor?[]:from&&!loopReturn&&!from._soulAnchor?[from,target]:[target];
+  sgEmitVfx('knife',eventTargets,cfg.floatSel,{
     fxKind:from?'chain':'projectile',variant:variant||'knife',count:1,
-    travelMs:from&&!loopReturn?[0,travel*1000]:[travel*1000],area:area,loopReturn:!!loopReturn,
+    travelMs:eventTargets.length>=2?[0,travel*1000]:[travel*1000],area:area,loopReturn:!!loopReturn,
     preserveDeadTargets:true,hit:false,vfxRoles:roles
   });
   cfg.out._pendingProjectiles=(cfg.out._pendingProjectiles||0)+1;
   SKILL2_RT.projectiles.push({knifeFlight:true,cfg:cfg,out:cfg.out,target:target,from:from,
     origin:a,lastPoint:a,to:b,control:ctrl,startAt:sgProjectileNow(),endAt:sgProjectileNow()+travel,
-    dmg:dmg,bonus:bonus,derived:derived,variant:variant,roles:roles,arrival:arrival,seen:[],lastK:0});
+    dmg:dmg,bonus:bonus,derived:derived,variant:variant,roles:roles,arrival:arrival,seen:[],lastK:0,
+    soul:soul||null});
 }
 function sgKnifeFlightPoint(p,to,k) {
   if (!p.control) return {x:p.origin.x+(to.x-p.origin.x)*k,y:p.origin.y+(to.y-p.origin.y)*k};
@@ -2363,7 +2378,11 @@ function sgKnifeFlightHit(p,target,damage,derived,ctx,bonus) {
   return res;
 }
 function sgTickKnifeFlight(p,now,ctx) {
-  if (!(p.cfg.pEnt.hp>0)) return true;
+  if (!(p.cfg.pEnt.hp>0) || (p.soul && now>=p.soul.until)) return true;
+  if(p.target._soulAnchor) {
+    var centre=bfPlayerPos();
+    p.target.pos={x:centre.x+Math.cos(p.target.orbitAngle)*p.soul.orbitR,y:centre.y+Math.sin(p.target.orbitAngle)*p.soul.orbitR};
+  }
   var k=Math.max(0,Math.min(1,(now-p.startAt)/(p.endAt-p.startAt)));
   var to=bfPos(p.target)||p.to, killed=false;
   var pool=ctx.getEnemies?ctx.getEnemies():p.cfg.pool;
@@ -2449,45 +2468,72 @@ function sgKnifeWaltz(pEnt, st, cfg, waltz) {
   });
 }
 
-/* 超神【無限追魂刃】：額外射出 1 支追擊範圍內任意敵人的飛刀，傷害提高、彈射次數不受限制。
-   多目標時每個敵人各命中一次；只有一個有效目標時，改由目標出發繞行後返回再命中一次，
-   避免把相同目標當成原地 A→A 彈射而停留重複傷害。 */
-function sgKnifeSoulhunter(cfg, ult) {
-  var live = (typeof bfLiveList === 'function') ? bfLiveList(cfg.pool)
-    : (cfg.pool || []).filter(function (e) { return e && e.hp > 0; });
-  if (!live.length) return;
-  var rPx = bfMeterPx(sgUltVal(ult, 'm'));
-  var inRange = live;
-  if (rPx > 0 && typeof bfEntityDistance === 'function') {
-    var near = [];
-    for (var i = 0; i < live.length; i++) {
-      var d = bfEntityDistance(live[i]);
-      // 無座標（高塔）的敵人距離為 null／NaN：一律視為在範圍內，退化為純單體追擊
-      if (!(d > 0) || d <= rPx) near.push(live[i]);
-    }
-    if (near.length) inRange = near;
+/* 每次施放只有一個追魂刃控制器；飛行、回返、環繞共用同一身份與到期時間。 */
+var SG_SOULHUNTER_SERIAL = 0;
+var SG_SOULHUNTER_ORBIT_M = 3;
+var SG_SOULHUNTER_ORBIT_RPS = 1;
+function sgSoulPoint(s,now) {
+  var centre=bfPlayerPos(),angle=s.orbitAngle+(now-s.orbitAt)*Math.PI*2*SG_SOULHUNTER_ORBIT_RPS;
+  return {x:centre.x+Math.cos(angle)*s.orbitR,y:centre.y+Math.sin(angle)*s.orbitR};
+}
+function sgSoulEmit(s,mode) {
+  var centre=bfPlayerPos();
+  sgEmitVfx('knife',[],s.cfg.floatSel,{fxKind:'projectile',variant:'knife-soulhunter',hit:false,
+    dur:Math.max(.001,s.until-sgProjectileNow()),vfxRoles:s.roles,
+    area:{soulId:s.id,soulMode:mode,x:centre.x,y:centre.y,orbitR:s.orbitR,
+      orbitAngle:s.orbitAngle,orbitSpin:Math.PI*2*SG_SOULHUNTER_ORBIT_RPS}});
+}
+function sgSoulIdle(s,from,angle) {
+  var now=sgProjectileNow();
+  if(now>=s.until)return;
+  if(!from || !bfPos(from)) {
+    s.mode='orbit';s.orbitAt=now;s.orbitAngle=0;sgSoulEmit(s,'orbit');return;
   }
-  var first = inRange[Math.floor(Math.random() * inRange.length)];
-  if (!first || first.hp <= 0) return;
-  var dmg = cfg.dmgVal * (1 + sgUltVal(ult, 'pct') / 100);
-  function remainingPool() {
-    return cfg.pool.filter(function(e){
-      return e && e.hp>0 && !(bfEntityDistance(e)>rPx);
-    });
-  }
-  sgQueueKnifeFlight(cfg,null,first,dmg,cfg.execPct,false,'knife-soulhunter',function(res,angle){
-    var remaining=remainingPool().filter(function(e){return e!==first;});
-    if(remaining.length) {
-      sgKnifeBounceChain(cfg,first,dmg,0,remaining.length,0,0,false,
-        'knife-soulhunter',0,remainingPool,angle);
-    } else if(first.hp>0 && remainingPool().indexOf(first)>=0) {
-      sgQueueKnifeFlight(cfg,first,first,dmg,cfg.execPct,false,'knife-soulhunter',function(res,heading){
-        var next=remainingPool().filter(function(e){return e!==first;});
-        if(next.length)sgKnifeBounceChain(cfg,first,dmg,0,next.length,0,0,false,
-          'knife-soulhunter',0,remainingPool,heading);
-      },angle,true);
+  var centre=bfPlayerPos(),pos=bfPos(from);
+  s.orbitAngle=Math.atan2(pos.y-centre.y,pos.x-centre.x);
+  var anchor={hp:0,_soulAnchor:true,orbitAngle:s.orbitAngle,
+    pos:{x:centre.x+Math.cos(s.orbitAngle)*s.orbitR,y:centre.y+Math.sin(s.orbitAngle)*s.orbitR}};
+  s.mode='flight';
+  sgQueueKnifeFlight(s.cfg,from,anchor,0,0,true,'knife-soulhunter',function(){
+    s.mode='orbit';s.orbitAt=sgProjectileNow();sgSoulEmit(s,'orbit');
+  },angle,false,s);
+}
+function sgSoulLaunch(s,from,angle) {
+  if(sgProjectileNow()>=s.until)return;
+  // 範圍中心永遠是玩家；沒有範圍內目標時不得退回整個戰場。
+  var candidates=s.cfg.pool.filter(function(e){return e&&e.hp>0&&!(bfEntityDistance(e)>s.range);});
+  var others=candidates.filter(function(e){return e!==from;});
+  var pool=others.length?others:candidates;
+  if(!pool.length){sgSoulIdle(s,from,angle);return;}
+  var next=pool[Math.floor(Math.random()*pool.length)];
+  if(s.attacks>0)s.bounces++;
+  s.attacks++;s.mode='flight';
+  var damage=s.cfg.dmgVal*(1+s.gain*s.bounces/100);
+  sgQueueKnifeFlight(s.cfg,from,next,damage,s.cfg.execPct,false,'knife-soulhunter',function(res,heading){
+    sgSoulLaunch(s,next,heading);
+  },angle,next===from,s);
+}
+function sgTickSoulhunter(s,now,ctx) {
+  if(now>=s.until || !(s.cfg.pEnt.hp>0)) {sgSoulEmit(s,'stop');return true;}
+  s.cfg.pool=ctx.getEnemies?ctx.getEnemies():s.cfg.pool;
+  if(s.mode==='orbit') {
+    var any=s.cfg.pool.some(function(e){return e&&e.hp>0&&!(bfEntityDistance(e)>s.range);});
+    if(any) {
+      var angle=s.orbitAngle+(now-s.orbitAt)*Math.PI*2*SG_SOULHUNTER_ORBIT_RPS;
+      sgSoulLaunch(s,{hp:1,_soulAnchor:true,pos:sgSoulPoint(s,now)},angle+Math.PI/2);
     }
-  });
+  }
+  return false;
+}
+function sgKnifeSoulhunter(cfg,ult) {
+  var now=sgProjectileNow();
+  var s={soulController:true,id:'soulhunter-'+(++SG_SOULHUNTER_SERIAL),cfg:cfg,out:cfg.out,
+    until:now+sgUltVal(ult,'sec'),range:bfMeterPx(sgUltVal(ult,'m')),gain:sgUltVal(ult,'pct'),
+    attacks:0,bounces:0,mode:'flight',orbitAt:now,orbitAngle:0,orbitR:bfMeterPx(SG_SOULHUNTER_ORBIT_M),
+    roles:sgVfxRoles('knife',{vfxUlt:'soulhunterBlade'})};
+  cfg.out._pendingProjectiles=(cfg.out._pendingProjectiles||0)+1;
+  SKILL2_RT.projectiles.push(s);
+  sgSoulLaunch(s,null,NaN);
 }
 
 function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {

@@ -921,7 +921,7 @@ test('【死亡收割者】：擊殺疊層，且層數直接進入「造成的�
   assert.match(s2, /function skills2AllDamageUpPct[\s\S]{0,320}sgDeathReaper/, '加總入口要含死亡收割');
 });
 
-test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場上每個敵人', () => {
+test('【無限追魂刃】：額外射出 1 支飛刀，40 米內持續彈射並累加增傷', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
@@ -944,8 +944,8 @@ test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場�
   assert.ok(specs.some((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain'),
     'Soulhunter bounce chain should keep its dedicated VFX variant');
   const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
-  assert.equal(c.SKILLS2.knife.ult[2].fx.m, 45,
-    'Soulhunter追擊範圍應為45米');
+  assert.equal(c.SKILLS2.knife.ult[2].fx.m, 40,
+    'Soulhunter追擊範圍應為40米');
   assert.ok(calls.some((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6),
     '追魂刃的傷害要比本體高 ' + boostPct + '%');
   assert.ok(calls.length > baseHits, '追魂刃是額外多出來的一支');
@@ -968,7 +968,8 @@ test('Soulhunter returns to the only in-range target through straight segments i
   castKnifeAndFinish(c,p,[only]);
   const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
   const soulHits = calls.filter((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6);
-  assert.equal(soulHits.length, 2, 'only target should be hit once on arrival and once after the return loop');
+  assert.equal(soulHits.length, 1, 'first bounce applies one increment');
+  assert.ok(calls.some(k=>Math.abs(k.atk-body*(1+2*boostPct/100))<1e-6), 'next return adds a second increment');
   const loop = specs.find((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain');
   assert.ok(loop, 'Soulhunter should emit a return chain event');
   assert.equal(loop.targets.length, 1, 'return path should use one target instead of an A-to-A chain');
@@ -1002,21 +1003,23 @@ test('Soulhunter continues from a killed target while in-range enemies remain', 
   specs.length = 0;
   c.resolveHit = function (attacker, defender, aCfg) {
     calls.push({ ent: defender, aCfg: aCfg, atk: aCfg.atk, elem: aCfg.skillElem, total: aCfg.totalDmgPct });
-    const boosted = aCfg.atk > body * 1.01;
+    const boosted = aCfg.atk >= body;
     const dmg = boosted ? defender.hp : 100;
     defender.hp = Math.max(0, defender.hp - dmg);
     return { dmg, crit: false, miss: false, blocked: false, killed: defender.hp <= 0 };
   };
 
   setUlt(c, 'knife', 'soulhunterBlade');
-  castKnifeAndFinish(c,p,[dead, alive1, alive2, far]);
+  const pool=[dead,alive1,alive2,far];
+  c.sgKnifeSoulhunter({pEnt:p,st:c.getStats(),pool,floatSel:'mv-float',out:{dmg:0},dmgVal:body,onCrit(){},pathPct:0,execPct:0},c.sgUlt('knife','soulhunterBlade'));
+  finishKnifeFlights(c,pool);
 
   const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
-  const soulHits = calls.filter((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6);
+  const soulHits = calls.filter((k) => k.atk >= body);
   assert.ok(soulHits.some((k) => k.ent === dead), 'Soulhunter must hit the first target');
   assert.ok(soulHits.some((k) => k.ent === alive1), 'Soulhunter must continue to another live target');
   assert.ok(soulHits.some((k) => k.ent === alive2), 'Soulhunter must keep chaining while targets remain');
-  assert.ok(!soulHits.some((k) => k.ent === far), 'Soulhunter must not leave its 45-meter target pool');
+  assert.ok(!soulHits.some((k) => k.ent === far), 'Soulhunter must not leave its 40-meter target pool');
 
   const chains = specs.filter((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain');
   assert.ok(chains.some((s) => s.targets[0] === 'dead' && s.targets.length === 2),

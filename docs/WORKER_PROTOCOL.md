@@ -1,6 +1,6 @@
-# Worker 協議 v32
+# Worker 協議 v33
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 32`　最後更新：2026-09-16
+> 協議版本：`WORKER_PROTOCOL_VERSION = 33`　最後更新：2026-09-16
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -417,3 +417,7 @@ VFX 事件新增可選 `arcM`，為大於零的有限數，單位米，表示弧
 ### v32：飛刀逐段飛行與到達命中
 
 飛刀起飛事件 hit=false，不提前排受擊；到達才送 impact。area.knifeFlight=true 時，sourceX/sourceY 是不受起點死亡影響的發射座標，x/y 是目標初始座標備援；controlX/controlY 是二次貝茲控制點（null 表示直線）。目標存活時追蹤位置，消失後保留最後位置，抵達後才尋找下一跳。area.knifeImpact=true 表示 x/y 為實際命中位置，即使擊殺目標亦可播放。travelMs 為每段權威時長；舊事件缺少旗標時維持原行為。v31 的 cleave-ring 圓心／半徑與擴張時長語意維持不變。
+
+### v33：無限追魂刃生命週期
+
+`vfx.area` 新增 `soulId`（每次施放唯一）、`soulMode`（flight/orbit/stop）、`soulLife`（本段剩餘期限）、`soulReturn`、`orbitR`、`orbitAngle`、`orbitSpin`。同身份的飛行與環繞互相替換；Worker 控制 10 秒期限與命中，主執行緒只呈現位置與待機，避免殘影、多刀與提前命中。

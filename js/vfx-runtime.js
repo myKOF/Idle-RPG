@@ -289,6 +289,7 @@ var VFXRuntime = (function () {
     var trackingBeams = [];                  // 彈射電弧逐幀追蹤兩端的顯示位置
     var grounds = Object.create(null);      // area.id → 場域
     var arrivals = Object.create(null);     // targetId → 上一段飛行抵達時的航向
+    var soulOrbits = Object.create(null);
     var orbits = Object.create(null);       // 合併鍵 → 環繞場域（軌道環＋N 個環繞體）
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
@@ -625,7 +626,7 @@ var VFXRuntime = (function () {
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
       var knifeFlight = spec.area && spec.area.knifeFlight === true;
       var fixedLanding = presetId === 'proj-waterball-flow' && spec.area && spec.area.fixedLanding === true;
-      if (!toId && !directed && !fixedLanding) return false;
+      if (!toId && !directed && !fixedLanding && !knifeFlight) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
       var from;
       /* 起點：連鎖段從前一個目標、敵方出手從攻擊者（sourceId）、天降從落點正上方，
@@ -678,7 +679,9 @@ var VFXRuntime = (function () {
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions, knifeFlight: knifeFlight, control: knifeControl, lastTo: to
+        dimensions: dimensions, knifeFlight: knifeFlight, control: knifeControl, lastTo: to,
+        soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
+        soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
       return true;
     }
@@ -1082,6 +1085,22 @@ var VFXRuntime = (function () {
     /* ---------------------------------------------------------------
        tryPlay：整則事件的入口。回 false＝這一則交還給舊畫法。
        --------------------------------------------------------------- */
+    function stopSoul(id) {
+      for(var i=projectiles.length-1;i>=0;i--)if(projectiles[i].soulId===id) {
+        stopRef(projectiles[i].ref);projectiles.splice(i,1);
+      }
+      if(soulOrbits[id]){stopRef(soulOrbits[id].ref);delete soulOrbits[id];}
+    }
+    function playSoulOrbit(spec,roles) {
+      var a=spec.area,id=roles.projectile,dur=Math.max(.001,num(spec.dur,0));
+      if(!id||!has(id))return true;
+      var centre=footOf('pv-float'),angle=num(a.orbitAngle,0),r=num(a.orbitR,30);
+      var dimensions=defaultSize(id,1);
+      var ref=play(rtFx,id,Object.assign({position:{x:centre.x+Math.cos(angle)*r,y:centre.y+Math.sin(angle)*r},
+        rotation:angle+Math.PI/2,timeScale:presetDurations[id]/dur},dimensions),profile.scale);
+      if(ref)soulOrbits[a.soulId]={ref:ref,t:0,dur:dur,angle:angle,r:r,spin:num(a.orbitSpin,Math.PI*2),dimensions:dimensions};
+      return true;
+    }
     function tryPlay(spec) {
       if (!spec) return false;
       var roles = spec.vfx;
@@ -1090,6 +1109,11 @@ var VFXRuntime = (function () {
       if (num(spec.delayMs, 0) > 0) {
         pending.push({ at: clock + spec.delayMs / 1000, spec: Object.assign({}, spec, { delayMs: 0 }) });
         return true;
+      }
+      if(spec.area && spec.area.soulId) {
+        stopSoul(spec.area.soulId);
+        if(spec.area.soulMode==='stop')return true;
+        if(spec.area.soulMode==='orbit')return playSoulOrbit(spec,roles);
       }
       var primary = primaryRoleOf(spec, roles);
       // 純命中事件不可再次施法或發射；這些角色已由起飛事件播放。
@@ -1265,6 +1289,10 @@ var VFXRuntime = (function () {
         if(pr.knifeFlight) {
           var livePoint=ctx.chainPoint?ctx.chainPoint(pr.targetId):ctx.posOf(pr.targetId);
           to=livePoint?(ctx.footOf?ctx.footOf(pr.targetId):livePoint):pr.lastTo;
+          if(pr.soulReturn) {
+            var centre=footOf('pv-float');
+            to={x:centre.x+Math.cos(pr.orbitAngle)*pr.orbitR,y:centre.y+Math.sin(pr.orbitAngle)*pr.orbitR};
+          }
           pr.lastTo=to;
         }
         var ctrl = pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle);
@@ -1283,13 +1311,21 @@ var VFXRuntime = (function () {
           position: { x: at.x, y: at.y },
           rotation: pr.facing
         }, movingDimensions), pr.mult);
-        if (!alive || k >= 1) {
+        if (!alive || k >= 1 || (pr.soulId && pr.t>=pr.soulLife)) {
           /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
           if (k >= 1 && pr.targetId) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
           if (alive) stopRef(pr.ref);
           projectiles.splice(i, 1);
         }
       }
+
+      Object.keys(soulOrbits).forEach(function(id) {
+        var o=soulOrbits[id];o.t+=step;
+        if(o.t>=o.dur){stopSoul(id);return;}
+        var centre=footOf('pv-float'),angle=o.angle+o.spin*o.t;
+        moveRef(o.ref,Object.assign({position:{x:centre.x+Math.cos(angle)*o.r,y:centre.y+Math.sin(angle)*o.r},
+          rotation:angle+Math.PI/2},o.dimensions),profile.scale);
+      });
 
       /* 使用每幀已插值的實體座標，電弧前端抵達時仍落在移動目標上。 */
       for (var bi = trackingBeams.length - 1; bi >= 0; bi--) {
@@ -1344,6 +1380,8 @@ var VFXRuntime = (function () {
        飛行物、受擊爆點與狀態光環不在此列：前兩者本來就是一次性的，
        狀態光環另有 syncStatuses 逐張快照對帳。 */
     function clearFields() {
+      Object.keys(soulOrbits).forEach(stopSoul);
+      projectiles.filter(function(p){return p.soulId;}).forEach(function(p){stopSoul(p.soulId);});
       Object.keys(orbits).forEach(stopOrbit);
       Object.keys(grounds).forEach(function (k) {
         stopRef(grounds[k].ref);
@@ -1353,6 +1391,7 @@ var VFXRuntime = (function () {
 
     function clear() {
       moonSwingIndex = 0;
+      soulOrbits=Object.create(null);
       projectiles.length = 0;
       follows.length = 0;
       trackingBeams.length = 0;
@@ -1386,6 +1425,7 @@ var VFXRuntime = (function () {
           projectiles: projectiles.length,
           grounds: Object.keys(grounds).length,
           orbits: Object.keys(orbits).length,
+          soulOrbits: Object.keys(soulOrbits).length,
           auras: Object.keys(auras).length,
           pending: pending.length,
           played: counters.played, skipped: counters.skipped, missing: counters.missing,

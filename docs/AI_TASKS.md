@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜無限追魂刃持續追擊與環繞（SOULHUNTER-20260916）
+
+- Owner：Codex；Done。使用者確認無敵人環繞待機、單敵飛離折返。每次施放額外一支金刀，追擊玩家周圍 40 米敵人，生成後最多 10 秒；每次彈射傷害累加，配置基值 4%、每級 +0.4%（沿用全專案 base + per × level 公式）。首擊不吃彈射增傷；返回／環繞不造成命中；途中敵人死亡仍先抵達再尋敵。
+- 修正金刀數量假象：普通刀及其彈射不再套用追魂刃金色特效，仍讀普通階級配置；其他超神繼承不變。每支追魂刃共用唯一身份與到期時間，飛行／返回／環繞互相替換，無目標時跟隨玩家環繞，出現敵人再追擊；單敵反覆折返。死亡與換場清除，命中仍由 Worker 到達時判定。
+- 修改：config/Excel/Skills2.xlsx（K31、AE31、AH31、AI31）、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、js/worker/protocol.js、js/worker/sim.worker.js、js/bridge.js、index.html、tests/soulhunter.test.cjs、tests/skill2-ult-evolution.test.cjs、tests/worker-protocol.test.cjs、docs/WORKER_PROTOCOL.md、本紀錄。協議升 v33 並同步載入快取。未修改但檢查：js/worker/shim.js、js/battlefield.js、普通／金色刀 Preset、特效繼承與迴旋斬測試。沒有新增素材／Preset 或表外特效來源。
+- 表格：artifact-tool 匯入、修改、渲染前後預覽後，保留原 XLSX 封裝內容僅替換四個儲存格。Excel 關閉前曾鎖定，待使用者關閉後成功同步；對 HEAD 比對只有四格值改動，其餘 Excel 儲存時的封裝／繪圖資訊保留。四格與 CSV、artifact 輸出逐值一致，config_tables --apply Skills2 dry-run 為 0 語意差異。
+- 驗證：node --test tests/soulhunter.test.cjs tests/knife-flight.test.cjs tests/worker-protocol.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skill2-knife-range.test.cjs，32/32；node --test tests/cleave-rework.test.cjs，12/12；skill2-ult-evolution 全 55 項通過。涵蓋實際多刀施放只有一支金刀、逐跳累加傷害、單敵持續折返、返回待機再出發、40 米排除、各次施放獨立期限、到期途中不命中、玩家死亡清理、Runtime 同身份替換與空目標返回。
+- 廣域回歸：node --test tests/skill2-ult-evolution.test.cjs tests/vfx-runtime.test.cjs tests/skill2-vfx.test.cjs，共 180 項，165 通過／15 既有失敗。沿用前次基線注入再跑 VFX 125 項，仍為 110 通過／相同 15 失敗，無新增失敗。node tools/build_check.cjs：357 檔通過；git diff --check 通過。
+- Commit：本紀錄所在提交；未合併、未推送。已完成程式／資料與自動化驗證，未做遊戲內目視驗收；可供審查合併。建議重新整理遊戲確認追魂刃折返與待機觀感。既有 VFX 測試失敗不在本次範圍。
+
 ## Codex｜迴旋斬逐刀取當前發射位置（CLEAVE-LAUNCH-ORIGIN-20260916）
 
 - Owner：Codex；Done。依使用者補充：不是持續跟隨玩家，而是每次斬出時從玩家當下位置發射，發射後保持該刀自己的擴散中心。原本一次施放就固定所有追加刀波的圓心與延遲特效，導致玩家移動後仍在原地連斬。
