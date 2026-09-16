@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜修復 Skills2 Excel 開啟空白（SKILLS2-REPAIR-20260916）
+
+- Owner：Codex；Done。使用者要求修復 Skills2.xlsx，來源為前次手工 XML 合併造成的 Excel 修復／空白問題。修改 Skills2.xlsx 與本紀錄；保留 CSV／JS／Preset 既有設定。
+- 以受支援試算表 API 匯入並完整重新匯出，不直接修改封裝 XML；保存原始損壞版本。驗證全表值、用途下拉與中文說明、實際 Microsoft Excel 開啟；衝突預檢乾淨。
+- 使用 artifact-tool 整本匯出，再由 Microsoft Excel COM 正常模式開啟、逐格比對、SaveAs 成全新 xlsx，覆回正式路徑後再次正常開啟。未使用 Excel repair／extract 模式。匯入工具把原本三個空共享字串誤讀為「946」，已依既有 CSV 透過試算表 API 還原 AB82／AC92／AA142 空值，不修改 CSV 或 JS。
+- 驗證：Excel 正常開啟及逐格比對 Skills2 231 列（含表頭）×37 欄、欄位定義 97 列；AK20 值與用途下拉均正常。`node --test tests/skills2-vfx-usage.test.cjs` 2/2 通過，Excel／CSV／JS 完整語意一致；`git diff --check` 通過。資料檔修復無程式變更，無需 Build。
+- 未修改但檢查：config/CSV/Skills2.csv、js/skills2.js、讀表工具與正式回歸測試。原始損壞檔保存在忽略目錄 tmp/skills2-repair/damaged.xlsx，僅作診斷備份；其餘臨時輸出清除。岩甲修改保留未提交。Commit 為本紀錄所在提交，可合併，未合併／推送；無未完成修復項目。
+
 ## Codex｜禁止手工修改 Excel XML（EXCEL-NO-XML-20260916）
 
 - Owner：Codex；Done。使用者回報 Skills2.xlsx 再次出現 Excel 修復提示，要求寫入規範。AI_RULES.md 新增第 8.5 節，禁止手工 XML 拼接、節點修改、ZIP 重打包與工具輸出 XML 搬回原檔，禁止以「保留格式」作例外。
