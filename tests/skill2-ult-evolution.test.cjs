@@ -545,8 +545,8 @@ test('【天霸風神斬】：範圍 +30%、變成被動，且每級將自動施
   assert.equal(ult.def.fx.sec, 8, '天霸風神斬基礎間隔應為 8 秒');
   assert.equal(ult.def.fx.secPer, -0.5, '天霸風神斬每級間隔應減少 0.5 秒');
   assert.equal(c.sgUltVal(ult, 'sec'), 3, 'Lv.10 應為 8 − 0.5×10 ＝ 3 秒');
-  assert.equal(c.skills2CastRangePx('cleave', c.skills2Levels('cleave')), c.bfMeterPx(8),
-    '滿級強化斬 +30% 與天霸風神斬 +30% 應將迴旋斬施放距離由 5 米提高至 8 米');
+  assert.equal(c.skills2CastRangePx('cleave', c.skills2Levels('cleave')), c.bfMeterPx(27.2),
+    '满級震碎斬 17 米乘範圍加成 1.6，施放距離為 27.2 米');
   assert.equal(c.skills2ActsPassive('cleave'), true, '選了天霸風神斬就視為被動群組');
   assert.equal(c.skills2ActsPassive('thrust'), false);
 
@@ -657,10 +657,12 @@ test('迴旋斬的五個傳奇特效：斬擊次數、旋風、飛出距離、�
   // 連環迴旋：斬擊次數 +2
   const e = enemy(1e12, 2 * M, 0);
   c.castSkill2(p, [e], 'cleave', 'mv-float');
+  run(c,p,[e],1);
   const baseHits = calls.length;
   setLegendary(c, ['chainSpin']);
   calls.length = 0;
   c.castSkill2(p, [e], 'cleave', 'mv-float');
+  run(c,p,[e],1);
   assert.equal(calls.length, baseHits + 2 * baseHits / 1, '每一次斬擊都多打 2 輪');
 
   // 旋風劍舞：每次斬擊對周圍造成風系傷害
@@ -668,6 +670,7 @@ test('迴旋斬的五個傳奇特效：斬擊次數、旋風、飛出距離、�
   calls.length = 0; specs.length = 0;
   const near = enemy(1e12, 5 * M, 0, '近');
   c.castSkill2(p, [near], 'cleave', 'mv-float');
+  run(c,p,[near],1);
   assert.ok(calls.some((x) => x.elem === 'wind'), '旋風是風系段');
   assert.ok(specs.some((s) => s.variant === 'wind-spin' && s.fxKind === 'slash'),
     '旋風沿用 wind-spin（掛在 slash 分派下，寫成 aura 會被風系守衛擋掉）');
@@ -677,16 +680,19 @@ test('迴旋斬的五個傳奇特效：斬擊次數、旋風、飛出距離、�
   c.SKILL2_RT.projectiles.length = 0;
   specs.length = 0;
   c.castSkill2(p, [e], 'cleave', 'mv-float');
+  run(c,p,[e],1);
   assert.ok(c.SKILL2_RT.projectiles.length > 0, '應改由飛行物命中');
   assert.ok(c.SKILL2_RT.projectiles[0].length >= c.bfMeterPx(60) - 1e-6, '飛出 60 米');
 
   // 乘虛之斬：對暈眩中的敵人增傷
+  c.SKILL2_RT.projectiles.length = 0;
   setLegendary(c, ['exploitWeakness']);
   const stunned = enemy(1e12, 2 * M, 0, '暈');
   c.applyStatus(stunned, 'stun', { dur: 5 });
   assert.equal(c.sgIsStunned(stunned), true);
   calls.length = 0;
   c.castSkill2(p, [stunned], 'cleave', 'mv-float');
+  run(c,p,[stunned],1);
   assert.ok(Math.abs(calls[0].total - 50) < 1e-9, '暈眩中的敵人吃到 +50% 總傷');
 
   /* 聚敵旋渦：拉近 60 米內的敵人。

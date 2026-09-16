@@ -547,6 +547,12 @@ var VFXRuntime = (function () {
 
     // 迴旋斬：同一半月本體，近戰原地掃過；飛行版本只改位置。
     function playCleave(rt, presetId, spec) {
+      if (spec.variant === 'cleave-ring' && spec.area) {
+        var ringSize = sizeOf(presetId, {r:spec.area.r}) || defaultSize(presetId,1);
+        var duration = Math.max(0.05,travelSecAt(spec,0) || num(spec.dur,0.42));
+        return !!play(rt,presetId,Object.assign({position:areaCentre(spec.area),
+          timeScale:presetDurations[presetId]/duration},ringSize));
+      }
       var origin = ctx.playerPos();
       var target = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : origin;
       var angle = typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle : Math.atan2(target.y-origin.y,target.x-origin.x);
@@ -1119,7 +1125,7 @@ var VFXRuntime = (function () {
             : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
           break;
         case 'projectile':
-          ok = playProjectile(rtFx, presetId, spec);
+          ok = spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
           break;
         case 'cast':
           ok = playOnPlayer(rtFx, presetId, spec);
@@ -1413,7 +1419,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260914-skill-vfx-inherit';
+  var DATA_VERSION = '20260916-cleave-ring';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
