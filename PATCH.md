@@ -1,6 +1,27 @@
 # PATCH.md
 
-## 裝備詳情下方五操作按鈕維持全寬版面優化（Antigravity 2026-09-16）
+## 新增 Esc 快捷鍵關閉彈窗與浮層界面（Antigravity 2026-09-16）
+
+- **全域 Esc 快捷鍵監聽與層級關閉**（`js/ui.js`）：
+  - 新增 `closeTopmostModalOrOverlay()` 函式，於全域 `keydown` 事件中監聽 `Escape`（或 `keyCode === 27`）鍵。
+  - 按 Z 軸與模態層級由高至低依序判斷並關閉目前開啟的頂層界面：
+    1. 通用確認對話框（`#confirm-modal`）
+    2. 通用自訂模態對話框（`.game-modal-overlay`）
+    3. BOSS 高塔結算彈窗（`#tower-result-modal`）
+    4. 熔爐洗煉／重塑彈窗（`#forge-rebuild-modal`）
+    5. 離線收益彈窗（`#offline-modal`）
+    6. 詞條池浮動視窗（`#affix-pool-overlay`）
+    7. 裝備套裝方案切換面板（`#equip-set-tabs.open`）
+    8. 背包分解設定面板（`#salvage-settings-panel`）
+    9. 技能升級彈窗（`#skill-modal`）
+    10. 天賦／潛力升級彈窗（`#talent-modal`）
+    11. 任務總覽彈窗（`#quest-modal`）
+    12. 戰鬥結算與統計面板（`#summary-modal`）
+    13. 戰鬥詳細日誌（`#detail-log-modal`）與熔爐詳細日誌（`#newforge-detail-log-modal`）
+    14. 其它自訂可見的 `.modal-overlay` 彈窗。
+  - 若有多個彈窗或浮層疊加，按一次 Esc 僅關閉最頂層界面，再次按下則依序關閉下一層；若無任何彈窗開啟則不攔截按鍵，確保不干擾正常遊戲操作。
+- **單元測試與自動化覆蓋**（`tests/esc-shortcut.test.cjs`）：
+  - 建立專屬單元測試套件，針對技能升級彈窗、天賦彈窗、任務彈窗、統計彈窗、裝備方案浮層、詞條池與確認對話框的關閉行為與優先級判定進行 100% 覆蓋測試。
 
 - **五操作按鈕寬度固定維持滿寬**（`index.html`、`css/ashen-forge.css`）：
   - 重組裝備區右欄容器結構：建立 `.equip-right-col` 與中間並列層 `.equip-middle-row`，將裝備詳情（`#detail-pane`）與材料面板（`#equip-material-panel`）收納於同一橫列。
