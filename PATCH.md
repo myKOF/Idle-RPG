@@ -2,16 +2,16 @@
 
 ## 裝備強化階級增加動效優化：數字快速縮放彈出與白色高光提示（Antigravity 2026-09-16）
 
-- **強化階級數字動效視覺設計**（`css/ashen-forge.css`）：
+- **強化階級數字動效視覺設計**（`css/ashen-forge.css`、`css/style.css`、`js/ui.js`）：
   - 為裝備詳情標題中的強化數字（`.it-up`）與格子強化角標（`.ic-up`）新增 `.upgrade-pop` 動畫與 `@keyframes upgradeNumberPop`。
-  - **由大快速變小**：動畫初始瞬間以 `scale(2.4)` 超大尺寸彈出，隨後在 0.28 秒內快速收縮至 `scale(1.75)`，0.58 秒收至 `scale(0.92)` 產生極具彈性質感的輕微回彈，最終在 0.55 秒平穩回歸 `scale(1.0)` 標準尺寸。
-  - **白色高光光暈提示**：初始階段附帶純白文字（`#ffffff`）、多層白色光暈（`text-shadow: 0 0 8px #ffffff, 0 0 16px #ffffff...`）與高亮濾鏡（`brightness(1.7)`），隨縮小過程漸變為柔和暖黃並過渡回裝備強化代表色 `var(--accent, #facc15)`。
-  - 加上 `will-change: transform, color, filter, text-shadow;` 與 GPU 渲染最佳化，並設定 `transform-origin: center center;` 避免文字縮放跑版。
-- **資料與渲染雙重觸發防護**（`js/item.js`、`js/ui.js`）：
-  - `itemDetailHTML(it, cmp, opts)` 支援 `opts.justUpgraded`，當新產出之詳情帶有升級標記時直接附帶 `upgrade-pop` class。
-  - `renderDetail()` 與 `detailAction('upgrade')` 自動追蹤強化前後階級，若成功升階立即觸發詳情面板及對應格線角標的動畫重繪與重置，連續點擊強化每次成功皆能即時、強烈反饋。
+  - **由大快速變小**：動畫初始瞬間以 `scale(2.8)` 超大尺寸強力彈出，隨後在 0.3 秒內收縮至 `scale(1.85)`，0.6 秒收至 `scale(0.88)` 產生極具張力的壓縮彈性感，並在 0.65 秒平穩回彈歸於 `scale(1.0)` 標準尺寸。
+  - **白色高光光暈提示**：初始階段附帶純白文字（`#ffffff`）、多層白色爆發光暈（`text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 35px #facc15...`）與高亮濾鏡（`brightness(2) drop-shadow(...)`），隨縮小過程漸變為柔和暖黃並過渡回裝備強化代表色 `var(--accent, #facc15)`。
+  - **動態樣式注入防快取**（`ensureUpgradePopStyle()`）：於 `js/ui.js` 啟動時自動檢查並注入獨立 `<style id="upgrade-pop-inline-style">`，即便瀏覽器存在外部 CSS 快取，亦可百分之百立即套用高優先級動效。
+- **時間戳時間窗與渲染防沖刷機制**（`js/item.js`、`js/ui.js`）：
+  - 建立 `UI._upgradePopUntil` 850ms 時間窗與 `triggerUpgradeNumberAnimation()` 函式：徹底解決點擊強化時 Worker 先後推送 `inv`、`equip`、`header` 多個 panel 時引發多次 `renderDetail()` 重繪把剛播出的動畫 DOM 立即沖刷掉的時序問題。
+  - 在時間窗內任何重新渲染皆維持輸出 `upgrade-pop` 類名，且在升級成功回調時主動執行強制 reflow（`void offsetWidth`）重新啟動動畫，連續點擊每次成功皆能即時重觸發強烈視覺反饋。
 - **單元測試與自動化覆蓋**（`tests/upgrade-animation.test.cjs`）：
-  - 新增 `tests/upgrade-animation.test.cjs` 單元測試套件，100% 覆蓋 CSS 動畫規則、HTML 屬性支援與 UI 升階追蹤邏輯。
+  - 100% 覆蓋 CSS 動畫規則、HTML 屬性支援、動態內嵌樣式與 UI 升階時間窗追蹤邏輯。
 
 
 ## 新增 Esc 快捷鍵關閉彈窗與浮層界面（Antigravity 2026-09-16）
