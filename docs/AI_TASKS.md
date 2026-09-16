@@ -1,5 +1,26 @@
 # AI_TASKS.md
 
+## Codex｜疾風破固定落點範圍連擊（GALE-AREA-20260917）
+
+- Owner：Codex；Done。取代死亡轉移：死亡後留在原座標完成剩餘段數；第一階每段依 Excel 作用範圍（半徑 10 米）傷害全部敵人，各自完整傷害。範圍為 Skills2 配置同步、技能／測試、快取與本紀錄；前置依賴完成，衝突預檢乾淨。
+- Excel 以原生 Excel COM 更新兩個技能說明欄，保留工作簿格式與驗證功能，正常儲存並重新開啟；無 XML 改寫。既有同步器將 Excel 設定（含使用者修改）同步 CSV／JS；同步器會讀取所有表，但其他表無語意差異。傷害與 VFX 共用固定座標／半徑；月牙保留原本均分及千鳥規則。
+- 測試：疾風逐段／死亡固定落點／空場播放／後續進入範圍 2/2；超神、VFX 繼承、Excel／CSV／JS 一致性 64/64；build_check 359 檔通過；diff --check 通過。未遊戲目視驗證，既有其他技能 system 測試失敗見前任務。
+- 檢查未修改：battlefield 範圍判定、vfx-runtime 區域播放。素材無本次變更，使用者 Preset／layout 保留未提交。Commit 為本紀錄所在提交，未合併／推送；可供 Review，建議重新整理後在多敵場景確認。候選敵群仍為本次施放時的敵群。
+
+## Codex｜疾風破死亡轉移連擊（GALE-RETARGET-20260917）
+
+- Owner：Codex；Done。使用者要求目標死亡後剩餘連擊轉向下一個敵人；沿用施法射程與連擊間隔，傷害／特效共同切換目標。前置依賴完成，衝突預檢乾淨。
+- 範圍：js/skills2.js、主執行緒／Worker 快取、tests/skill2-system.test.cjs、本紀錄。保留使用者既有配置與素材修改；驗證存活不換目標、死亡接續、無有效目標與射程限制。
+- 驗證：疾風定向測試 2/2、超神與特效繼承 62/62 通過；build_check 359 檔通過，diff --check 通過。既有逐段測試改讀表定間隔／月牙數值，避免鎖死舊配置。完整 system 測試另有突刺／迴身四方斬／飛刀既有失敗，移除本次轉移邏輯的記憶體基線仍重現，未改動這些技能。
+- 未修改但檢查：選敵／射程 helper、配置表、Preset。無新素材，既有使用者表格及素材修改保留未提交。Commit 為本紀錄所在提交，未合併／推送。限制：候選為本次施放的敵群；尚未遊戲目視驗證。建議以連續擊殺弱敵確認換目標，可供 Review。
+
+## Codex｜純演出特效尺寸所見即所得規則（VFX-VISUAL-SIZE-RULE-20260916）
+
+- Owner：Codex；Done（規範更新）。使用者要求文檔、編輯器與遊戲的尺寸一致，並明確限定不牽涉實際傷害計算的純演出。新增 AI_RULES.md 8.3.2，更新 VFX_SIZE_STANDARD.md，保留涉及傷害／碰撞／彈體／場域範圍的權威尺寸換算。
+- 修改：AI_RULES.md、docs/vfx/VFX_SIZE_STANDARD.md、本紀錄。未修改但檢查：vfx-runtime／core／tower、編輯器預覽與群組縮放、尺寸標準化工具、hit-gale-burst、疾風斬事件與 Runtime 測試。
+- 區分純演出尺寸與「技能本體／附加效果」歸屬，不以檔名前綴自動分類。212% 編輯器縮放屬檢視倍率，驗收須同世界尺度比較。
+- 衝突預檢乾淨，git diff --check 通過；純文件變更無需 Build／程式測試。Commit 為本紀錄所在提交，規範可合併，未合併／推送。尚未完成：既有 Runtime／Preset 的尺寸行為遷移，本次不宣稱已修正實際播放大小；後續須按用途盤點並驗證三端尺寸。
+
 ## Codex｜修復 Skills2 Excel 開啟空白（SKILLS2-REPAIR-20260916）
 
 - Owner：Codex；Done。使用者要求修復 Skills2.xlsx，來源為前次手工 XML 合併造成的 Excel 修復／空白問題。修改 Skills2.xlsx 與本紀錄；保留 CSV／JS／Preset 既有設定。
