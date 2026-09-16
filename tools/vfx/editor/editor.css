@@ -15,20 +15,24 @@ body {
 }
 /* 工具列不換行：存檔訊息一出現，換行就把「關閉編輯器」擠到第二行，工具列變高、
    底下的預覽區跟著跳一下（2026-09-16 使用者回報）。寬度不夠時由兩個可伸縮的欄位
-   吸收——搜尋框與存檔訊息；真的擠不下才讓工具列自己橫向捲，按鈕不會跑掉。 */
+   吸收——搜尋框與存檔訊息。
+   這裡**不能**設 overflow：Preset 下拉是絕對定位、掛在工具列底下的，工具列一旦
+   變成捲動容器，下拉就會被裁掉；而且選取時瀏覽器會捲動容器，整條工具列跟著被捲走
+   （2026-09-16 實測，使用者回報「點了特效菜單後整個置頂區都壞了」）。
+   視窗窄到真的放不下時，寧可讓最右邊被切掉，也不要動到下拉。 */
 #topbar {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; background: #1e1e24; border-bottom: 1px solid #2c2c34;
-  flex: 0 0 auto; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
-  /* 捲軸自己會佔掉 15px 高，工具列高度跟著變——那正是這次要修掉的跳動。
-     藏起來不影響捲動（Shift＋滾輪照樣捲），而「關閉編輯器」是 sticky 永遠在，
-     所以藏掉捲軸不會讓人找不到東西。 */
-  scrollbar-width: none;
+  flex: 0 0 auto; flex-wrap: nowrap;
 }
-#topbar::-webkit-scrollbar { display: none; }
-/* 按鈕與標籤一律不縮、不斷字：縮到一半的按鈕比橫向捲更難用 */
-#topbar > button, #topbar > label, #topbar > strong,
-#topbar > .sep, #topbar > .dirty { flex: 0 0 auto; white-space: nowrap; }
+/* 放不下時才讓按鈕讓步：標籤被切一點，也好過換行或把按鈕推出畫面外。
+   min-width: 0 是必要的——flex item 預設的最小尺寸是內容寬度，不寫就縮不動。
+   分隔線不縮（1px 再縮就沒了）。 */
+#topbar > button, #topbar > label, #topbar > strong, #topbar > .dirty {
+  flex: 0 1 auto; min-width: 0; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+#topbar > .sep { flex: 0 0 auto; }
 #topbar .sep { width: 1px; height: 18px; background: #34343e; }
 /* 吃掉剩下的空間，右邊只留「關閉編輯器」 */
 #topbar .push-right { margin-left: auto; }
@@ -96,10 +100,7 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
 .playpause.paused { background: #3d5a80; border-color: #4d7ab0; }
 /* 關閉是不可逆的（伺服器停掉就要重跑 .bat），所以給它一個和別人不一樣的顏色，
    但不用刺眼的紅——它是正常的收工動作，不是危險操作。 */
-/* 視窗窄到工具列要橫向捲時也要看得到：黏在右緣，其他按鈕從它後面捲過去。 */
-.quit-btn { border-color: #5a3a3a; color: #e0a0a0;
-            position: sticky; right: 0; background: #26262e;
-            box-shadow: -10px 0 10px -6px rgba(20, 20, 24, .95); }
+.quit-btn { border-color: #5a3a3a; color: #e0a0a0; }
 .quit-btn:hover { background: #4a2a2a; border-color: #8a5a5a; color: #ffd0d0; }
 .copy-btn.err { color: #ff8080; border-color: #6a3a3a; }
 
