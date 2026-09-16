@@ -737,6 +737,20 @@ test('讀檔正規化：越界／非法的超神進化紀錄一律刪除，合�
 
 /* ---- 6) 飛刀的五個傳奇特效 ---- */
 
+function finishKnifeFlights(c,enemies) {
+  let guard=0;
+  while(c.SKILL2_RT.projectiles.length && guard++<4000) {
+    c.GT+=0.025;
+    c.sgTickFlyingProjectiles(0.025,{getEnemies:()=>enemies});
+  }
+  assert.equal(c.SKILL2_RT.projectiles.length,0,'飛刀佇列應在有限彈射結束後清空');
+}
+function castKnifeAndFinish(c,p,enemies) {
+  const result=c.castSkill2(p,enemies,'knife','mv-float');
+  finishKnifeFlights(c,enemies);
+  return result;
+}
+
 test('飛刀的五個傳奇特效：彈射數、擊殺分裂、優先高血量、飛刀數、刀環', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); const specs = stubVfx(c);
@@ -747,14 +761,14 @@ test('飛刀的五個傳奇特效：彈射數、擊殺分裂、優先高血量�
 
   function cast(enemies) {
     calls.length = 0; specs.length = 0;
-    c.castSkill2(p, enemies, 'knife', 'mv-float');
+    castKnifeAndFinish(c,p,enemies);
     return { calls: calls.slice(), specs: specs.slice() };
   }
   const knifeSpec = (list) => list.find((s) => s.fxKind === 'projectile' && s.variant === 'knife');
 
   // 基準：3 把飛刀（第 1 階 count），每把彈射 1 次
   const base = cast([enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)]);
-  assert.equal(knifeSpec(base.specs).targets.length, 3, '第 1 階 count＝3 把飛刀，每把一個特效目標');
+  assert.equal(base.specs.filter(s=>s.fxKind==='projectile'&&s.variant==='knife').length, 3, '第 1 階 count＝3 把飛刀，每把一個特效目標');
   const baseHits = base.calls.length;
 
   // 影刃：射出的飛刀數量 +2 把 → 命中次數必定增加
@@ -792,7 +806,7 @@ test('飛刀的五個傳奇特效：彈射數、擊殺分裂、優先高血量�
   assert.equal(c.SKILL2_RT.orbits.length, 1, '應生成一組刀環');
   assert.equal(c.SKILL2_RT.orbits[0].rings[0].r, 10 * M, '刀環半徑 10 米');
   assert.ok(c.SKILL2_RT.orbits[0].until > c.GT, '刀環要有存續時間');
-  assert.equal(knifeSpec(waltz.specs).targets.length, 2, '第 1 把改成刀環，其餘 2 把照常射出');
+  assert.equal(waltz.specs.filter(s=>s.fxKind==='projectile'&&s.variant==='knife').length, 2, '第 1 把改成刀環，其餘 2 把照常射出');
 });
 
 /* ---- 7) 疾風斬的五個傳奇特效 ---- */
@@ -866,7 +880,7 @@ test('【暴雨梨花】：飛行路徑上的敵人各吃一段（占本體技�
   // 近的擋在遠的前面：飛向遠處那隻的路徑一定會穿過近處那隻
   const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 6 * M, 0)];
 
-  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,mk());
   const body = Math.max.apply(null, calls.map((k) => k.atk));
   const pathPct = c.sgVal(c.SKILLS2.knife.ult[0].fx, 'pct', c.SG_TIER_MAX_LV);
   assert.ok(!calls.some((k) => Math.abs(k.atk - body * pathPct / 100) < 1e-6),
@@ -874,7 +888,7 @@ test('【暴雨梨花】：飛行路徑上的敵人各吃一段（占本體技�
 
   setUlt(c, 'knife', 'petalStorm');
   calls.length = 0;
-  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,mk());
   assert.ok(calls.some((k) => Math.abs(k.atk - body * pathPct / 100) < 1e-6),
     '路徑上的敵人應吃到 ' + pathPct + '% 技能傷害');
 });
@@ -887,12 +901,12 @@ test('【死亡收割者】：擊殺疊層，且層數直接進入「造成的�
   const p = playerEnt(); c.FIELD = { player: p };
 
   const alive = enemy(1e12, 3 * M, 0);
-  c.castSkill2(p, [alive], 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,[alive]);
   assert.equal(p.buffs.sgDeathReaper, undefined, '沒選超神進化時不得疊層');
 
   setUlt(c, 'knife', 'deathReaper');
   const dying = enemy(100, 3 * M, 0);              // stubHits 每段 100 → 首擊必死
-  c.castSkill2(p, [dying], 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,[dying]);
   const buff = p.buffs.sgDeathReaper;
   assert.ok(buff, '擊殺應疊上死亡收割');
   assert.ok(buff.stacks >= 1);
@@ -917,14 +931,14 @@ test('【無限追魂刃】：額外射出 1 支高傷飛刀，且彈射到場�
   const specs = [];
   c.playCombatVfx = (spec) => specs.push(spec);
 
-  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,mk());
   const body = Math.max.apply(null, calls.map((k) => k.atk));
   const baseHits = calls.length;
 
   setUlt(c, 'knife', 'soulhunterBlade');
   calls.length = 0;
   specs.length = 0;
-  c.castSkill2(p, mk(), 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,mk());
   assert.ok(specs.some((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'projectile'),
     'Soulhunter opening knife should use its dedicated VFX variant');
   assert.ok(specs.some((s) => s.variant === 'knife-soulhunter' && s.fxKind === 'chain'),
@@ -946,12 +960,12 @@ test('Soulhunter returns to the only in-range target through straight segments i
   const p = playerEnt(); c.FIELD = { player: p };
   const only = enemy(1e12, 3 * M, 0, 'only');
 
-  c.castSkill2(p, [only], 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,[only]);
   const body = Math.max.apply(null, calls.map((k) => k.atk));
   setUlt(c, 'knife', 'soulhunterBlade');
   calls.length = 0;
   specs.length = 0;
-  c.castSkill2(p, [only], 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,[only]);
   const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
   const soulHits = calls.filter((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6);
   assert.equal(soulHits.length, 2, 'only target should be hit once on arrival and once after the return loop');
@@ -977,7 +991,7 @@ test('Soulhunter continues from a killed target while in-range enemies remain', 
     enemy(1e12, 5 * M, 0, 'alive-2'),
     enemy(1e12, 50 * M, 0, 'out-of-range')
   ];
-  c.castSkill2(p, baseline, 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,baseline);
   const body = Math.max.apply(null, calls.map((k) => k.atk));
 
   const dead = enemy(1000, 3 * M, 0, 'dead');
@@ -995,7 +1009,7 @@ test('Soulhunter continues from a killed target while in-range enemies remain', 
   };
 
   setUlt(c, 'knife', 'soulhunterBlade');
-  c.castSkill2(p, [dead, alive1, alive2, far], 'knife', 'mv-float');
+  castKnifeAndFinish(c,p,[dead, alive1, alive2, far]);
 
   const boostPct = c.sgVal(c.SKILLS2.knife.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
   const soulHits = calls.filter((k) => Math.abs(k.atk - body * (1 + boostPct / 100)) < 1e-6);
@@ -1038,6 +1052,7 @@ test('Soulhunter knife remains auto-castable after its CDR reaches zero', () => 
   for (let i = 0; i < 160; i++) {
     c.GT += 0.1;
     c.tickSkillCds(p, 0.1);
+    c.sgTickFlyingProjectiles(0.1,{getEnemies:()=>enemies});
     const cast = c.tickSkillCast(p, 0.1);
     if (!(cast && cast.casting)) c.pickAndCastSkill(p, enemies, 'mv-float');
   }
@@ -1070,6 +1085,7 @@ test('爆擊把飛刀冷卻扣到零時，技能仍會回到 ready queue', () =>
 
   assert.ok(c.pickAndCastSkill(p, enemies, 'mv-float'));
   c.tickSkillCast(p, c.SKILL_CAST_LOCK);
+  finishKnifeFlights(c,enemies);
 
   assert.equal(p.skillCds['sg:knife'], 0, '爆擊縮減應能在同一次施放中把冷卻扣到零');
   assert.equal(p._skillReadyQueued['sg:knife'], true,

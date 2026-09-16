@@ -1487,6 +1487,7 @@ function sgEmitVfx(gid, targets, floatSel, extra) {
     dur: (extra && extra.dur) || 0.5,
     count: Math.max(1, Math.min(5, (extra && extra.count) || 1))
   };
+  if (extra && typeof extra.hit === 'boolean') spec.hit = extra.hit;
   if (extra && extra.variant) spec.variant = extra.variant;
   if (extra && extra.travelMs) spec.travelMs = extra.travelMs;
   if (extra && extra.delayMs > 0) spec.delayMs = Number(extra.delayMs);
@@ -1711,6 +1712,13 @@ function sgTickFlyingProjectiles(dt, ctx) {
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   for (var pi = list.length - 1; pi >= 0; pi--) {
     var projectile = list[pi];
+    if (projectile.knifeFlight) {
+      if (sgTickKnifeFlight(projectile, now, ctx)) {
+        list.splice(pi, 1);
+        sgFinishSkillCastFloat(projectile.out);
+      }
+      continue;
+    }
     if (projectile.beginAt > now) continue;   // 尚未發射（延遲發射的後續幾道）
     var distance = projectile.origin
       ? Math.min(projectile.length, Math.max(0, (now - projectile.startAt) * projectile.speed))
@@ -2224,25 +2232,6 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 var SG_KNIFE_PATH_HALF_M = 1;   // 超神【暴雨梨花】判定飛行路徑的半寬（米）
 var SG_KNIFE_WALTZ_RPS = 1;     // 傳奇【輪舞刃】刀環每秒轉幾圈
 
-/* 超神【暴雨梨花】：兩點之間的飛行路徑上，所有敵人各吃一段。
-   起點與終點由呼叫端自己結算（終點吃的是完整傷害），這裡排除掉避免重複計算。
-   無座標（高塔）時整段退化為不作用，與本系統其他幾何查詢的退化規則一致。 */
-function sgKnifePathHit(cfg, fromEnt, toEnt, delayMs) {
-  if (!(cfg.pathPct > 0) || typeof bfLineTargets !== 'function' || typeof bfPos !== 'function') return;
-  var a = fromEnt ? bfPos(fromEnt) : ((typeof bfPlayerPos === 'function') ? bfPlayerPos() : null);
-  var b = toEnt ? bfPos(toEnt) : null;
-  if (!a || !b) return;
-  var dx = b.x - a.x, dy = b.y - a.y;
-  var len = Math.sqrt(dx * dx + dy * dy);
-  if (!(len > 0)) return;
-  var line = bfLineTargets(Math.atan2(dy, dx), len, cfg.pool, bfMeterPx(SG_KNIFE_PATH_HALF_M), a);
-  var dmg = cfg.dmgVal * cfg.pathPct / 100;
-  for (var i = 0; i < line.length; i++) {
-    if (line[i] === toEnt || line[i] === fromEnt) continue;
-    sgKnifeHit(cfg, line[i], dmg, delayMs, 0, true);
-  }
-}
-
 /* 飛刀的一次命中（含命中後的所有觸發）。
    derived＝路徑貫穿／分裂刃造成的命中：仍計入死亡收割的擊殺，但不再往下分裂，
    否則「分裂刃殺人再分裂」會無限展開。 */
@@ -2297,65 +2286,131 @@ function sgKnifeNextBounce(cfg, cur, visited, maxGapPx, poolOverride) {
   return (typeof bfRandomOther === 'function') ? bfRandomOther(cur, pool, maxGapPx, null) : null;
 }
 
-/* 彈射鏈：從 cur 出發連續彈射 bounces 次，所有飛刀來源共用這一支。
-   chainMax／chainChance＝第 6 階【連鎖彈射】的機率追加（其餘來源傳 0）。 */
-/* 命中型冷卻縮減可能在 tickSkillCds 之外把冷卻直接扣到 0。
-   這時必須同步通知技能排程器，否則 UI 會顯示「無冷卻」，但 ready queue 仍沒有該技能。 */
-function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, chainChance, derived, vfxVariant, maxGapPx, poolOverride) {
-  if (!(dmgVal > 0) || !(bounces > 0)) return;
-  var visited = [cur];
-  var delay = startDelay;
-  var chained = 0;
-  var b = 0;
-  var preserveDeadOrigin = vfxVariant === 'knife-soulhunter';
-  while (b < bounces) {
-    b++;
-    var next = sgKnifeNextBounce(cfg, cur, visited,
-      maxGapPx === undefined ? cfg.bounceRangePx : maxGapPx, poolOverride);
-    // 允許 A→B→A，但任何自我彈射 A→A 都必須停止。
-    if (!next || next === cur || next.hp <= 0) break;
-    visited.push(next);
-    var travel = (typeof bfTravelSeconds === 'function') ? Math.round(sgConfiguredTravelSeconds('knife', next) * 1000) : 0;
-    sgEmitVfx('knife', [cur, next], cfg.floatSel, {
-      fxKind: 'chain', variant: vfxVariant || 'knife-bounce', count: 1,
-      delayMs: delay, travelMs: [0, travel],
-      preserveDeadTargets: preserveDeadOrigin,
-      vfxUlt: preserveDeadOrigin ? 'soulhunterBlade' : '', vfxTier: 3
-    });
-    sgKnifePathHit(cfg, cur, next, delay);
-    var res = sgKnifeHit(cfg, next, dmgVal, delay + travel, cfg.execPct, derived);
-    cur = next;
-    delay += travel;
-    // 連鎖彈射：本次彈射後有機率再彈一次（最多連續 chainMax 次）
-    if (res && !res.miss && chained < chainMax && chainChance > 0 && chance(chainChance)) {
-      bounces++;
-      chained++;
+/* 每一段在既有飛行物佇列執行；死亡的目標仍保留實體最後座標。
+   area 帶發射點與曲線控制點，Worker 與顯示層共用同一條路徑。 */
+function sgQueueKnifeFlight(cfg, from, target, dmg, bonus, derived, variant, arrival, enterAngle, loopReturn) {
+  if (!target) return;
+  var a = from ? bfPos(from) : bfPlayerPos(), b = bfPos(target);
+  a = a ? {x:a.x,y:a.y} : null;
+  b = b ? {x:b.x,y:b.y} : null;
+  var ctrl = null, distance = a && b ? Math.hypot(b.x-a.x,b.y-a.y) : 0;
+  if (a && b && isFinite(enterAngle) && distance > 0) {
+    var heading=Math.atan2(b.y-a.y,b.x-a.x);
+    var delta=Math.atan2(Math.sin(enterAngle-heading),Math.cos(enterAngle-heading));
+    var tangent=heading+Math.max(-Math.PI*2/3,Math.min(Math.PI*2/3,delta));
+    ctrl={x:a.x+Math.cos(tangent)*distance*0.55,y:a.y+Math.sin(tangent)*distance*0.55};
+  }
+  if (loopReturn && a && b) {
+    var angle=isFinite(enterAngle)?enterAngle:0;
+    ctrl={x:a.x+Math.cos(angle)*bfMeterPx(4),y:a.y+Math.sin(angle)*bfMeterPx(4)};
+    distance=bfMeterPx(4);
+  }
+  if(ctrl && a && b) {
+    var prior=a,plan={origin:a,control:ctrl};
+    distance=0;
+    for(var sample=1;sample<=16;sample++) {
+      var point=sgKnifeFlightPoint(plan,b,sample/16);
+      distance+=Math.hypot(point.x-prior.x,point.y-prior.y);prior=point;
     }
   }
+  var travel = a && b ? Math.max(0.05,distance/sgConfiguredFlightSpeed('knife',1,SG_FLYING_PROJECTILE_SPEED))
+    : Math.max(0.05,sgConfiguredTravelSeconds('knife',target));
+  var area=a && b ? {knifeFlight:true,sourceX:a.x,sourceY:a.y,x:b.x,y:b.y,
+    controlX:ctrl?ctrl.x:null,controlY:ctrl?ctrl.y:null} : null;
+  var soul=variant==='knife-soulhunter';
+  var roles=sgVfxRoles('knife',{vfxTier:from?3:0,vfxUlt:soul?'soulhunterBlade':''});
+  sgEmitVfx('knife',from&&!loopReturn?[from,target]:[target],cfg.floatSel,{
+    fxKind:from?'chain':'projectile',variant:variant||'knife',count:1,
+    travelMs:from&&!loopReturn?[0,travel*1000]:[travel*1000],area:area,loopReturn:!!loopReturn,
+    preserveDeadTargets:true,hit:false,vfxRoles:roles
+  });
+  cfg.out._pendingProjectiles=(cfg.out._pendingProjectiles||0)+1;
+  SKILL2_RT.projectiles.push({knifeFlight:true,cfg:cfg,out:cfg.out,target:target,from:from,
+    origin:a,lastPoint:a,to:b,control:ctrl,startAt:sgProjectileNow(),endAt:sgProjectileNow()+travel,
+    dmg:dmg,bonus:bonus,derived:derived,variant:variant,roles:roles,arrival:arrival,seen:[],lastK:0});
+}
+function sgKnifeFlightPoint(p,to,k) {
+  if (!p.control) return {x:p.origin.x+(to.x-p.origin.x)*k,y:p.origin.y+(to.y-p.origin.y)*k};
+  var u=1-k,c=p.control;
+  return {x:u*u*p.origin.x+2*u*k*c.x+k*k*to.x,y:u*u*p.origin.y+2*u*k*c.y+k*k*to.y};
+}
+function sgKnifeFlightHit(p,target,damage,derived,ctx,bonus) {
+  var res=sgKnifeHit(p.cfg,target,damage,0,bonus===undefined?p.bonus:bonus,derived);
+  if (res && !res.miss) {
+    var pos=bfPos(target);
+    sgEmitVfx('knife',[target],p.cfg.floatSel,{fxKind:'impact',variant:'knife-strike',
+      preserveDeadTargets:true,vfxRoles:p.roles,area:pos?{x:pos.x,y:pos.y,knifeImpact:true}:null});
+    if (ctx.onDamage) ctx.onDamage(res.dmg);
+  }
+  return res;
+}
+function sgTickKnifeFlight(p,now,ctx) {
+  if (!(p.cfg.pEnt.hp>0)) return true;
+  var k=Math.max(0,Math.min(1,(now-p.startAt)/(p.endAt-p.startAt)));
+  var to=bfPos(p.target)||p.to, killed=false;
+  var pool=ctx.getEnemies?ctx.getEnemies():p.cfg.pool;
+  p.cfg.pool=pool;
+  if (p.origin && to && p.cfg.pathPct>0) {
+    // 小段掃描同一條貝茲曲線，沿途敵人到刀刃經過時才受傷，每段每敵一次。
+    for (var step=1;step<=4;step++) {
+      var t=p.lastK+(k-p.lastK)*step/4, point=sgKnifeFlightPoint(p,to,t);
+      var dx=point.x-p.lastPoint.x,dy=point.y-p.lastPoint.y;
+      var targets=bfSegmentTargets(p.lastPoint,Math.atan2(dy,dx),0,Math.hypot(dx,dy),pool,bfMeterPx(SG_KNIFE_PATH_HALF_M));
+      for(var i=0;i<targets.length;i++) {
+        var e=targets[i];
+        if(e===p.target||e===p.from||p.seen.indexOf(e)>=0)continue;
+        p.seen.push(e);
+        var hit=sgKnifeFlightHit(p,e,p.cfg.dmgVal*p.cfg.pathPct/100,true,ctx,0);
+        if(hit&&hit.killed)killed=true;
+      }
+      p.lastPoint=point;
+    }
+  }
+  p.lastK=k;
+  if(k>=1) {
+    var res=sgKnifeFlightHit(p,p.target,p.dmg,p.derived,ctx);
+    if(res&&res.killed)killed=true;
+    var tail=p.control||p.origin;
+    var angle=tail&&to?Math.atan2(to.y-tail.y,to.x-tail.x):NaN;
+    // 即使目標在途中被別人殺死，仍抵達其最後位置，再決定下一跳。
+    if(p.arrival)p.arrival(res,angle);
+  }
+  if(killed&&ctx.onDeaths)ctx.onDeaths();
+  return k>=1;
+}
+/* 只有上一段到達才選下一跳；startDelay 保留呼叫介面，不再預排整條鏈。
+   chainMax／chainChance 是第六階的額外彈射機率與上限。 */
+function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, chainChance, derived, vfxVariant, maxGapPx, poolOverride, enterAngle) {
+  if (!(dmgVal>0)||!(bounces>0))return;
+  var visited=[cur],chained=0;
+  function nextHop(origin,remaining,angle) {
+    if(!(remaining>0))return;
+    var next=sgKnifeNextBounce(cfg,origin,visited,maxGapPx===undefined?cfg.bounceRangePx:maxGapPx,
+      typeof poolOverride==='function'?poolOverride():poolOverride);
+    if(!next||next===origin||next.hp<=0)return;
+    visited.push(next);
+    sgQueueKnifeFlight(cfg,origin,next,dmgVal,cfg.execPct,derived,vfxVariant||'knife-bounce',function(res,heading){
+      var left=remaining-1;
+      if(res&&!res.miss&&chained<chainMax&&chainChance>0&&chance(chainChance)){left++;chained++;}
+      nextHop(next,left,heading);
+    },angle);
+  }
+  nextHop(cur,bounces,enterAngle);
 }
 
-/* 傳奇【分裂者】：擊殺處分裂出 N 把小型飛刀，各自再彈射固定次數。
-   分裂刃一律以 derived 命中，因此不會再觸發分裂。 */
+/* 分裂刃同樣在擊殺位置出發、到達後才命中；衍生傷害不再分裂。 */
 function sgKnifeSplit(cfg, from, delayMs) {
-  var count = Math.max(1, Math.floor(Number(cfg.split.count) || 0));
-  var dmg = cfg.dmgVal * (Number(cfg.split.pct) || 0) / 100;
-  if (!(dmg > 0)) return;
-  var bounces = Math.max(0, Math.floor(Number(cfg.split.bounces) || 0));
-  // 【分裂者】的敘述沒有指定目標規則＝比照彈射，在整個戰場隨機挑（不是最近的 N 個）
-  var near = bfRandomOthers(from, cfg.pool, count, 0, null);
-  if (!near.length) return;
-  for (var i = 0; i < count; i++) {
-    var tgt = near[i % near.length];
-    if (!tgt || tgt.hp <= 0) continue;
-    var travel = (typeof bfTravelSeconds === 'function') ? Math.round(sgConfiguredTravelSeconds('knife', tgt) * 1000) : 0;
-    sgEmitVfx('knife', [from, tgt], cfg.floatSel, {
-      fxKind: 'chain', variant: 'knife-bounce', count: 1, delayMs: delayMs, travelMs: [0, travel],
-      vfxTier: 3
+  var count=Math.max(1,Math.floor(Number(cfg.split.count)||0));
+  var dmg=cfg.dmgVal*(Number(cfg.split.pct)||0)/100;
+  if(!(dmg>0))return;
+  var bounces=Math.max(0,Math.floor(Number(cfg.split.bounces)||0));
+  var near=bfRandomOthers(from,cfg.pool,count,0,null);
+  if(!near.length)return;
+  for(var i=0;i<count;i++)(function(target){
+    sgQueueKnifeFlight(cfg,from,target,dmg,cfg.execPct,true,'knife-bounce',function(res,angle){
+      sgKnifeBounceChain(cfg,target,dmg,0,bounces,0,0,true,undefined,undefined,undefined,angle);
     });
-    sgKnifePathHit(cfg, from, tgt, delayMs);
-    sgKnifeHit(cfg, tgt, dmg, delayMs + travel, cfg.execPct, true);
-    sgKnifeBounceChain(cfg, tgt, dmg, delayMs + travel, bounces, 0, 0, true);
-  }
+  })(near[i%near.length]);
 }
 
 /* 傳奇【輪舞刃】：第 1 把飛刀不再射出，改為圍繞自身旋轉的刀環。
@@ -2397,29 +2452,24 @@ function sgKnifeSoulhunter(cfg, ult) {
   var first = inRange[Math.floor(Math.random() * inRange.length)];
   if (!first || first.hp <= 0) return;
   var dmg = cfg.dmgVal * (1 + sgUltVal(ult, 'pct') / 100);
-  var travel = (typeof bfTravelSeconds === 'function') ? Math.round(sgConfiguredTravelSeconds('knife', first) * 1000) : 0;
-  sgEmitVfx('knife', [first], cfg.floatSel, {
-    fxKind: 'projectile', variant: 'knife-soulhunter', count: 1, travelMs: [travel],
-    vfxUlt: 'soulhunterBlade'
-  });
-  sgKnifePathHit(cfg, null, first, 0);
-  sgKnifeHit(cfg, first, dmg, travel, cfg.execPct, false);
-   /* 有效追擊範圍內只剩一個目標時，不讓彈射鏈停在 A→A：
-      飛刀先沿直線貫穿目標，再沿直線返回，回到目標時才結算第二次傷害。 */
-  if (inRange.length === 1) {
-    /* 首擊已殺死唯一目標時，範圍內沒有可供彈射的敵人，直接停止。 */
-    if (first.hp <= 0) return;
-    var returnTravel = Math.max(120, travel || 0);
-    sgEmitVfx('knife', [first], cfg.floatSel, {
-      fxKind: 'chain', variant: 'knife-soulhunter', count: 1,
-      delayMs: travel, travelMs: [returnTravel], loopReturn: true,
-      vfxUlt: 'soulhunterBlade'
+  function remainingPool() {
+    return cfg.pool.filter(function(e){
+      return e && e.hp>0 && !(bfEntityDistance(e)>rPx);
     });
-    sgKnifeHit(cfg, first, dmg, travel + returnTravel, cfg.execPct, false);
-    return;
   }
-  sgKnifeBounceChain(cfg, first, dmg, travel, Math.max(0, inRange.length - 1), 0, 0, false,
-    'knife-soulhunter', 0, inRange);
+  sgQueueKnifeFlight(cfg,null,first,dmg,cfg.execPct,false,'knife-soulhunter',function(res,angle){
+    var remaining=remainingPool().filter(function(e){return e!==first;});
+    if(remaining.length) {
+      sgKnifeBounceChain(cfg,first,dmg,0,remaining.length,0,0,false,
+        'knife-soulhunter',0,remainingPool,angle);
+    } else if(first.hp>0 && remainingPool().indexOf(first)>=0) {
+      sgQueueKnifeFlight(cfg,first,first,dmg,cfg.execPct,false,'knife-soulhunter',function(res,heading){
+        var next=remainingPool().filter(function(e){return e!==first;});
+        if(next.length)sgKnifeBounceChain(cfg,first,dmg,0,next.length,0,0,false,
+          'knife-soulhunter',0,remainingPool,heading);
+      },angle,true);
+    }
+  });
 }
 
 function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
@@ -2463,10 +2513,6 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   // 每把飛刀的實際目標（目標不足時輪流分配，比照雙刀亂舞「都打同一敵人」語意）
   var knives = [];
   for (var k = 0; k < kCount; k++) knives.push(targets[k % targets.length]);
-  var travelMs = (typeof bfTravelSeconds === 'function')
-    ? knives.map(function (e) { return Math.round(sgConfiguredTravelSeconds('knife', e) * 1000); })
-    : null;
-
   var bouncePct = lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0;
   var bounceRangePx = lvs[2] > 0 ? bfMeterPx(Number(t[2].fx.m) || 20) : 0;
   var cdrSec = lvs[6] > 0 ? sgVal(t[6].fx, 'sec', lvs[6]) : 0;
@@ -2495,29 +2541,17 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var waltz = lg.knifeOrbit || null;
   if (waltz) sgKnifeWaltz(pEnt, st, cfg, waltz);
 
-  /* targets 一個代表一把刀；count 必須固定為 1，否則顯示層會把每把刀再複製 kCount 次。 */
-  var flying = waltz ? knives.slice(1) : knives;
-  if (flying.length) {
-    sgEmitVfx('knife', flying, floatSel, {
-      fxKind: 'projectile', variant: 'knife', count: 1,
-      travelMs: travelMs ? travelMs.slice(waltz ? 1 : 0) : null
+  for(var ki=waltz?1:0;ki<knives.length;ki++)(function(target){
+    sgQueueKnifeFlight(cfg,null,target,dmgVal,0,false,'knife',function(res,angle){
+      if((res&&res.miss)||bouncePct<=0)return;
+      var bounces=Math.max(1,Math.floor(Number(t[2].fx.count)||1))+
+        (lvs[3]>0?sgRollCount(sgVal(t[3].fx,'add',lvs[3])):0)+Math.max(0,Math.floor(Number(lg.knifeBounceAdd)||0));
+      var chainMax=lvs[5]>0?Math.max(0,Math.floor(Number(t[5].fx.max)||4)):0;
+      var chainChance=lvs[5]>0?sgVal(t[5].fx,'chance',lvs[5]):0;
+      sgKnifeBounceChain(cfg,target,dmgVal*bouncePct/100,0,bounces,chainMax,chainChance,false,
+        undefined,undefined,undefined,angle);
     });
-  }
-
-  for (var ki = waltz ? 1 : 0; ki < knives.length; ki++) {
-    var delay = (travelMs && travelMs[ki]) || 0;
-    sgKnifePathHit(cfg, null, knives[ki], 0);
-    var res = sgKnifeHit(cfg, knives[ki], dmgVal, delay, 0, false);
-    if (!res || res.miss || bouncePct <= 0) continue;
-    // 彈射：基礎彈射數（第 3 階）＋強化彈射（第 4 階）＋傳奇【連鎖】；連鎖彈射（第 6 階）機率追加
-    var bounces = Math.max(1, Math.floor(Number(t[2].fx.count) || 1)) +
-      (lvs[3] > 0 ? sgRollCount(sgVal(t[3].fx, 'add', lvs[3])) : 0) +
-      Math.max(0, Math.floor(Number(lg.knifeBounceAdd) || 0));
-    var chainMax = lvs[5] > 0 ? Math.max(0, Math.floor(Number(t[5].fx.max) || 4)) : 0;
-    var chainChance = lvs[5] > 0 ? sgVal(t[5].fx, 'chance', lvs[5]) : 0;
-    // 首發飛到第一個目標的時間也是彈射鏈的起點；後續每段再接續前一段飛行時間。
-    sgKnifeBounceChain(cfg, knives[ki], dmgVal * bouncePct / 100, delay, bounces, chainMax, chainChance, false);
-  }
+  })(knives[ki]);
 
   if (ultSoul) sgKnifeSoulhunter(cfg, ultSoul);
 }

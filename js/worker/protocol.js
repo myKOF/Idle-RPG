@@ -53,7 +53,8 @@
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
 // v31：cleave-ring 以 area 圓心／半徑及 travelMs 表示原地向外擴張的一道刀波。
-var WORKER_PROTOCOL_VERSION = 31;
+// v32：飛刀 area.knifeFlight 攜帶 sourceX/Y、x/y 及可空 controlX/Y；knifeImpact 為權威命中位置。
+var WORKER_PROTOCOL_VERSION = 32;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

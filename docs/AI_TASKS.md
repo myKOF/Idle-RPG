@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜飛刀逐段到達命中與死亡目標續飛（KNIFE-FLIGHT-20260916）
+
+- Owner：Codex；Done。使用者回報只見受擊、不見彈射，並要求目標途中死亡仍飛到最後座標再找下一跳，無目標才消失。根因為即時結算傷害、死亡起點被 sgEmitVfx 過濾使 travelMs 索引錯位，以及彈射時間錯用玩家到目標距離。
+- 完成：普通刀、彈射、分裂刃與追魂刃共用既有飛行物佇列；每段到達才命中並選下一跳，起飛不預排受擊。死亡起點以座標保留；飛行途中目標死亡不取消飛行、不補傷害。按每段路徑長度／表定速度算時間，曲線控制點經 Worker 傳遞；動畫壽命同步延長。暴雨梨花沿飛行曲線掃描、每段每敵一次；保留彈射範圍、次數、分裂、收割、爆擊冷卻與高塔退化。死亡／換場沿既有佇列回收。
+- 修改：js/skills2.js、js/vfx-runtime.js、js/worker/protocol.js（v32）、js/worker/sim.worker.js、js/bridge.js、index.html；tests/knife-flight.test.cjs、skill2-knife-range、skill2-ult-evolution、skill2-vfx、worker-protocol；docs/WORKER_PROTOCOL.md 與本紀錄。預檢乾淨。未修改但檢查：battlefield、formula、battle-renderer、vfx、Worker shim、正式飛刀 Preset、素材庫與技能配置。配置數值與素材不變，無 Excel／CSV 差異，素材庫乾淨無需新 Commit。使用者暖色刀波未提交修改保留、不納入本次提交。
+- 驗證：node --test tests/knife-flight.test.cjs tests/skill2-knife-range.test.cjs tests/cleave-rework.test.cjs tests/worker-protocol.test.cjs tests/skills2-flight-speed.test.cjs tests/vfx-preset-usage.test.cjs：51/51。skill2-ult-evolution 的飛刀／暴雨梨花／死亡收割者／無限追魂刃／Soulhunter 定向測試 8/8。新增測試直接驅動模擬、Worker shim 與正式 Runtime，驗證死亡續飛、無目標停止、到達才傷害、路徑傷害、中點幾何與長時間刀身存活。
+- 擴大回歸：skill2-vfx 與 vfx-runtime 共 125 項，110 通過、15 失敗；將 HEAD 原始程式與原測試注入後同樣 15 項失敗，涵蓋火球／火龍捲／迴旋斬／冰系舊斷言及既有 Runtime 問題，無新增失敗。飛刀舊即時排程字串斷言改由實際逐段模擬測試覆蓋，沒有放寬其他技能斷言。Build 354 檔與 git diff --check 通過。
+- Commit：本紀錄所在提交；未合併／未推送。未做遊戲內目視驗證；無未完成實作，可供審查合併，建議重新整理遊戲確認實際彈射觀感。基線驗證暫存留在忽略目錄 tmp/knife-validation，不納入提交。
+
 ## Codex｜藍色與三色刀波沿用暖色圓環外形（CLEAVE-WARM-SHAPE-20260916）
 
 - Owner：Codex；Done。依使用者圖 2 的目前暖色 Preset，套用 12 層 scale 比例並以原外框尺寸等比正規化至 slash-cleave-ring-blue 與 proj-cleave-ring-tricolor，消除非等比拉伸。逐欄比對確認只有 scale 改變，顏色、透明度、旋轉、時序、sizing 與飛行規則全部保留。

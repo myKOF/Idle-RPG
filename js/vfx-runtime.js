@@ -623,6 +623,7 @@ var VFXRuntime = (function () {
          直接照用。連鎖段與敵方出手另有各自的起點規則，不套這條。 */
       var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
+      var knifeFlight = spec.area && spec.area.knifeFlight === true;
       var fixedLanding = presetId === 'proj-waterball-flow' && spec.area && spec.area.fixedLanding === true;
       if (!toId && !directed && !fixedLanding) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
@@ -652,8 +653,14 @@ var VFXRuntime = (function () {
       /* 連鎖段接上一段的航向：整條鏈因此是一條連續彎過去的線，
          而不是每個彈射點折一次角。第一段沒有上一段，enterAngle 留 NaN＝直線。 */
       if (fixedLanding) {from={x:spec.area.sourceX,y:spec.area.sourceY};to={x:spec.area.x,y:spec.area.y};}
-      var enterAngle = chained ? arrivalAngle(ids[0]) : NaN;
-      var ctrl = curveControl(from, to, enterAngle);
+      if (knifeFlight) {
+        from={x:spec.area.sourceX,y:spec.area.sourceY};
+        to={x:spec.area.x,y:spec.area.y};
+      }
+      var knifeControl=knifeFlight && typeof spec.area.controlX==='number' && typeof spec.area.controlY==='number'
+        ? {x:spec.area.controlX,y:spec.area.controlY} : null;
+      var enterAngle = !knifeFlight && chained ? arrivalAngle(ids[0]) : NaN;
+      var ctrl = knifeFlight ? knifeControl : curveControl(from, to, enterAngle);
       var arcHeight = presetId === 'proj-waterball-flow' ? Math.max(0,num(spec.arcM,0)) * (typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10) : 0;
       if (arcHeight > 0) ctrl = {x:(from.x+to.x)/2,y:(from.y+to.y)/2-2*arcHeight};
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
@@ -663,7 +670,7 @@ var VFXRuntime = (function () {
       dimensions = dimensions || defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1);
       var params = Object.assign({ position: from, rotation: facing }, dimensions);
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
-      if (presetId === 'proj-wind-crescent' && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      if ((presetId === 'proj-wind-crescent' || knifeFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
@@ -671,7 +678,7 @@ var VFXRuntime = (function () {
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions
+        dimensions: dimensions, knifeFlight: knifeFlight, control: knifeControl, lastTo: to
       });
       return true;
     }
@@ -1120,6 +1127,10 @@ var VFXRuntime = (function () {
       var drops0 = budgetDrops;
       switch (role) {
         case 'hit':
+          if(spec.area && spec.area.knifeImpact) {
+            ok=!!play(rtFx,presetId,Object.assign(defaultSize(presetId,hitScaleOf(spec)),{position:areaCentre(spec.area)}));
+            break;
+          }
           ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash') && spec.area
             ? playOnArea(rtFx, presetId, spec)
             : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
@@ -1251,7 +1262,12 @@ var VFXRuntime = (function () {
         pr.t += step;
         var k = Math.min(1, pr.t / pr.dur);
         var to = pr.to || ctx.posOf(pr.targetId);
-        var ctrl = curveControl(pr.from, to, pr.enterAngle);
+        if(pr.knifeFlight) {
+          var livePoint=ctx.chainPoint?ctx.chainPoint(pr.targetId):ctx.posOf(pr.targetId);
+          to=livePoint?(ctx.footOf?ctx.footOf(pr.targetId):livePoint):pr.lastTo;
+          pr.lastTo=to;
+        }
+        var ctrl = pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle);
         if (pr.arcHeight > 0) ctrl = {x:(pr.from.x+to.x)/2,y:(pr.from.y+to.y)/2-2*pr.arcHeight};
         var at = curvePoint(pr.from, ctrl, to, k);
         var movingDimensions = pr.dimensions;
