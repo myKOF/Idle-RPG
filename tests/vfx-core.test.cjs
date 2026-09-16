@@ -2275,3 +2275,30 @@ test('明確指定局部座標仍可跟隨；池重用後世界粒子使用新�
  h=r.play('local');r.update(.01);r.setTransform(h,{position:{x:200,y:300}});r.update(.01);assert.equal(nodes[0].t.x,200);r.stop(h);
  h=r.play('world',{position:{x:30,y:40}});r.update(.01);r.setTransform(h,{position:{x:400,y:500}});r.update(.01);assert.equal(nodes[0].t.x,30);assert.equal(nodes[0].t.y,40);r.destroy();
 });
+
+test('finish 停止發射並移除刀身，已生成粒子自然淡出，重複呼叫不續命',()=>{
+ const nodes=[];const r=VFXCore.createRuntime({resolver:resolver(),backend:{createNode(spec){const n={asset:spec.assetUrl};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){}}});
+ r.registerPreset({schemaVersion:1,id:'tail-finish',duration:1,loop:true,layers:[{id:'body',type:'sprite',assetId:'pack/ring.png'},{id:'tail',type:'particle',assetId:'pack/star.png',emission:{mode:'rate',rate:100},lifetime:1,speed:0}]});
+ const h=r.play('tail-finish');r.update(.1);const count=r.stats().activeParticles;assert.equal(count,10);r.finish(h);
+ assert.equal(nodes.find(n=>n.asset.includes('ring')).t.visible,false);
+ r.update(.2);assert.equal(r.stats().activeParticles,count);assert.ok(nodes.find(n=>n.asset.includes('star')).t.alpha<1);
+ r.finish(h);r.update(.8);assert.equal(r.stats().activeParticles,0);assert.equal(r.stats().activeEffects,0);r.destroy();
+});
+test('finish 的尾跡不受慢速播放拖長，不再生子粒子，clearTails 立即清空',()=>{
+ const r=subRuntime(subPreset({shard:{lifetime:4},puff:{lifetime:4}}));const h=r.play('sub-case',{timeScale:.01});r.update(.1);assert.equal(r.stats().activeParticles,4);
+ r.finish(h);r.update(3);assert.equal(r.stats().activeParticles,0);assert.equal(r.stats().activeEffects,0);
+ const next=r.play('sub-case');r.update(.1);r.finish(next);r.clearTails();assert.equal(r.stats().activeParticles,0);r.destroy();
+});
+test('大量換段尾跡至多保留 64 段，停止後清空，粒子總預算仍生效',()=>{
+ const r=VFXCore.createRuntime({backend:VFXCore.createNullBackend(),resolver:resolver(),budget:{maxActiveEffects:1000,maxParticles:1000,perEffectParticleLimit:10}});
+ r.registerPreset({schemaVersion:1,id:'tail-cap',duration:5,layers:[{id:'p',type:'particle',assetId:'pack/star.png',emission:{mode:'burst',count:1},lifetime:4,speed:0}]});
+ for(let i=0;i<200;i++){const h=r.play('tail-cap');r.update(.001);r.finish(h);assert.ok(r.stats().activeEffects<=64);assert.ok(r.stats().activeParticles<=1000);}
+ r.stopAll();assert.equal(r.stats().activeParticles,0);assert.equal(r.stats().activeEffects,0);r.destroy();
+});
+test('殘留粒子獨立上限，不排擠正在飛行的特效，死亡清理可立即回收',()=>{
+ const r=VFXCore.createRuntime({backend:VFXCore.createNullBackend(),resolver:resolver(),budget:{maxActiveEffects:1000,maxParticles:64000,perEffectParticleLimit:2000}});
+ r.registerPreset({schemaVersion:1,id:'dense-tail',duration:5,layers:[{id:'p',type:'particle',assetId:'pack/star.png',emission:{mode:'burst',count:100},lifetime:4,speed:0}]});
+ const live=r.play('dense-tail');r.update(.001);
+ for(let i=0;i<20;i++){const h=r.play('dense-tail');r.update(.001);r.finish(h);assert.ok(r.stats().activeParticles<=1300);assert.notEqual(r.timeOf(live),null);}
+ r.clearTails();assert.equal(r.stats().activeParticles,100);assert.equal(r.stats().activeEffects,1);r.destroy();
+});
