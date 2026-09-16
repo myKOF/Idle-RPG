@@ -67,6 +67,8 @@ test('飛刀彈射：每段只會跳向 20 米內的敵人', () => {
   c.playCombatVfx = (spec) => vfx.push(spec);
 
   c.castSkill2(p, [a, b, far], 'knife', 'mv-float');
+  assert.equal(calls.length,0,'飛行前不應先結算彈射傷害');
+  for(let i=0;i<200;i++){c.GT+=0.05;c.sgTickFlyingProjectiles(0.05,{getEnemies:()=>[a,b,far]});}
 
   const chain = vfx.filter((spec) => spec.variant === 'knife-bounce');
   assert.ok(chain.some((spec) => spec.targets[0] === 'A' && spec.targets[1] === 'B'),

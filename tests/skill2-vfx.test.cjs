@@ -91,19 +91,10 @@ test('火龍捲實際施法只產生圓形範圍，第七階才產生矩形', ()
  }
 });
 
-test('飛刀彈射必須在上一段抵達後才開始下一段', () => {
-  const skills2 = read('js/skills2.js');
+test('舊版連鎖顯示層依每段飛行時間接續播放', () => {
+  // 飛刀的到達才傷害、死亡起點與逐段發射，由 knife-flight.test.cjs 驅動實際模擬驗證。
   const vfx = read('js/vfx.js');
   const renderer = read('js/battle-renderer.js');
-
-  assert.match(skills2, /if \(extra && extra\.delayMs > 0\) spec\.delayMs = Number\(extra\.delayMs\);/);
-  assert.match(skills2, /delayMs: delay, travelMs: \[0, travel\]/);
-  assert.match(skills2, /sgKnifeHit\(cfg, next, dmgVal, delay \+ travel/);
-  assert.match(skills2, /delay \+= travel;/);
-  assert.match(skills2, /if \(!next \|\| next === cur \|\| next\.hp <= 0\) break;/);
-  assert.match(skills2, /loopReturn: true/);
-  assert.match(skills2, /preserveDeadTargets: preserveDeadOrigin/);
-  assert.match(skills2, /extra\.preserveDeadTargets\) spec\.preserveDeadTargets = true/);
 
   const domChainStart = vfx.indexOf('function vfxChain');
   const domChainEnd = vfx.indexOf('/* ---- 時間安全', domChainStart);

@@ -1,6 +1,6 @@
-# Worker 協議 v30
+# Worker 協議 v32
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 30`　最後更新：2026-09-12
+> 協議版本：`WORKER_PROTOCOL_VERSION = 32`　最後更新：2026-09-16
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -413,3 +413,7 @@ npm test 2>&1 | grep -E "^ℹ (tests|pass|fail)"
 ## v30：水流彈拋物線高度
 
 VFX 事件新增可選 `arcM`，為大於零的有限數，單位米，表示弧線相對起終點連線的最高高度。Worker shim 必須保留此欄位；省略時沿用接收端既有退化行為。水流彈的本體朝向依該曲線切線計算，上升朝上、下降朝下。
+
+### v32：飛刀逐段飛行與到達命中
+
+飛刀起飛事件 hit=false，不提前排受擊；到達才送 impact。area.knifeFlight=true 時，sourceX/sourceY 是不受起點死亡影響的發射座標，x/y 是目標初始座標備援；controlX/controlY 是二次貝茲控制點（null 表示直線）。目標存活時追蹤位置，消失後保留最後位置，抵達後才尋找下一跳。area.knifeImpact=true 表示 x/y 為實際命中位置，即使擊殺目標亦可播放。travelMs 為每段權威時長；舊事件缺少旗標時維持原行為。v31 的 cleave-ring 圓心／半徑與擴張時長語意維持不變。
