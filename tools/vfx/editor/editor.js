@@ -3526,6 +3526,11 @@
       return;
     }
     playPreview(resumeAt);
+    /* 暫停中也要畫得出來：play() 只建立狀態，畫面上的物件要等第一次 update 才生出來，
+       而 ticker 暫停時不呼叫 update——少了這一步，暫停中改任何參數，預覽就整個消失
+       （2026-09-16 使用者回報）。update(0) 不前進時間，只把播放頭這一格畫出來；
+       播放中不必補，下一幀的 update 自然會畫。 */
+    if (!state.playing) state.runtime.update(0);
   }
 
   var PREVIEW_SEED = 12345;                      // 固定 seed：編輯時每次重播畫面一致
