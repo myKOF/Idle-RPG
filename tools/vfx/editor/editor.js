@@ -4554,11 +4554,8 @@
           if (!state.playing) return;
           state.runtime.update(Math.min(ticker.deltaMS, 100) / 1000);
           tickPreviewLoop();                   // 播完就重來（純預覽，不碰 preset.loop）
-          var s = state.runtime.stats();
-          $('stats').textContent = 'effects ' + s.activeEffects +
-            ' · particles ' + s.activeParticles +
-            ' · pooled ' + s.pooledNodes +
-            ' · dropped ' + (s.droppedEffects + s.droppedParticles);
+          /* 工具列不再顯示 effects／particles／pooled／dropped 的計數（2026-09-16 使用者要求：
+             那一串把「關閉編輯器」擠到第二行）。要看數字時，主控台打 __vfxEditor.runtime.stats()。 */
           var errs = state.backend.takeErrors();
           if (errs.length) {
             $('preview-msg').className = 'hint err';

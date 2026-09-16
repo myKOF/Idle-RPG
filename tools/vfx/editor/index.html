@@ -52,9 +52,8 @@
   <span class="sep"></span>
   <!-- Spine 參考：只看不改。runtime 是按下去才載的，見 spine-ref.js -->
   <button id="spine-open" title="播放 Spine 特效當作重做時的參考（唯讀）">🦴 Spine 參考</button>
-  <span class="sep"></span>
-  <span id="stats" class="stats"></span>
-  <span class="sep"></span>
+  <!-- 關閉編輯器固定靠右：這條分隔線把剩下的空間吃掉，右邊只留關閉鈕 -->
+  <span class="sep push-right"></span>
   <!-- 關閉編輯器＝連伺服器一起停。存在的理由是那個 console 視窗會不見
        （關掉時 node 不一定跟著死），行程卻還活著佔著埠，啟動器每次掃到它
        就沿用，於是永遠等不到那個「要你關掉」的視窗。 -->
@@ -262,6 +261,6 @@
 <script src="/tools/vfx/editor/gizmo-model.js?v=20260914-multi-gizmo"></script>
 <script src="/tools/vfx/editor/history.js"></script>
 <script src="/tools/vfx/editor/spine-ref.js"></script>
-<script src="/tools/vfx/editor/editor.js?v=20260914-save-as-dialog"></script>
+<script src="/tools/vfx/editor/editor.js?v=20260916-topbar-nowrap"></script>
 </body>
 </html>
