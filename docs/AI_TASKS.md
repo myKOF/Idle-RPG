@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜三色刀波套用藍色刀波形狀（CLEAVE-TRICOLOR-SHAPE-20260916）
+
+- Owner：Codex；Done。依使用者要求直接覆蓋 proj-cleave-ring-tricolor，保留原本逐層配色，形狀、尺寸、旋轉、擴張與時序完整採用使用者目前修改後的 slash-cleave-ring-blue。12 層逐一比對，除 tint／colorOverLife 外與來源一致；特效 ID 與技能引用不變。
+- 修改：vfx/presets/proj-cleave-ring-tricolor.json、tools/vfx/authoring/author/cleave-renew.cjs（重新製作優先保留編輯器調整，三色版依來源合成）、js/vfx-runtime.js 與 index.html 快取、本紀錄。預檢乾淨。未修改但檢查：來源藍色 Preset、既有 layout、Core 驗證器、技能回歸測試與素材庫。
+- 驗證：12 層幾何／動態／原配色比對通過；Core validatePreset 通過；node --test tests/cleave-rework.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs 全 31 項通過；Core 六幀渲染已目視檢查。遊戲傷害時長仍由事件控制。未做 Pixi 遊戲內目視驗證；無新素材，素材庫無需提交。
+- Commit 為本紀錄所在提交；未合併／未推送，可供審查合併。使用者原有 Excel、藍色及黃紅刀波未提交修改保留，不混入本次提交。預覽作為交付附件保留於 Codex visualizations。
+
 ## Codex｜迴旋斬技能與圓形刀波改造（CLEAVE-REWORK-20260916）
 
 - Owner：Codex；Done。使用者確認動態預覽後指示「正式接入」。來源為 Google 技能文檔 2026-09-16 更新版；初階自身周圍半徑 8 米完整圓形，快速劃一圈再向外擴張，六七階已移除四方向描述。

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "proj-cleave-ring-tricolor",
-  "duration": 0.5,
+  "duration": 0.42,
   "loop": false,
   "layers": [
     {
@@ -9,16 +9,19 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4414,
-        "y": 0.4414
+        "x": 0.7629,
+        "y": 0.5859
       },
       "alpha": 0.38,
-      "tint": "#319eff",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.5,
+      "duration": 0.42,
       "alphaOverLife": [
         [
           0,
@@ -68,23 +71,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#319eff"
     },
     {
       "id": "blade-body-0",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4238,
-        "y": 0.4238
+        "x": 0.6072,
+        "y": 0.4663
       },
       "alpha": 0.95,
-      "tint": "#319eff",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.5,
+      "duration": 0.42,
       "alphaOverLife": [
         [
           0,
@@ -134,23 +141,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#319eff"
     },
     {
       "id": "blade-edge-0",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 8,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4023,
-        "y": 0.4023
+        "x": 0.5763,
+        "y": 0.4426
       },
       "alpha": 0.68,
-      "tint": "#fff7dc",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.5,
+      "duration": 0.42,
       "alphaOverLife": [
         [
           0,
@@ -200,23 +211,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#fff7dc"
     },
     {
       "id": "blade-trail-0",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 12,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.1293,
       "scale": {
-        "x": 0.3516,
-        "y": 0.3516
+        "x": 0.5036,
+        "y": 0.3868
       },
       "alpha": 0.25,
-      "tint": "#ffd34d",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.5,
+      "duration": 0.42,
       "alphaOverLife": [
         [
           0,
@@ -266,23 +281,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#ffd34d"
     },
     {
       "id": "blade-glow-1",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4414,
-        "y": 0.4414
+        "x": 0.6324,
+        "y": 0.4856
       },
       "alpha": 0.38,
-      "tint": "#ffd34d",
       "blendMode": "add",
       "delay": 0.035,
-      "duration": 0.46499999999999997,
+      "duration": 0.385,
       "alphaOverLife": [
         [
           0,
@@ -332,23 +351,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#ffd34d"
     },
     {
       "id": "blade-body-1",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4238,
-        "y": 0.4238
+        "x": 0.6072,
+        "y": 0.4663
       },
       "alpha": 0.95,
-      "tint": "#ffd34d",
       "blendMode": "add",
       "delay": 0.035,
-      "duration": 0.46499999999999997,
+      "duration": 0.385,
       "alphaOverLife": [
         [
           0,
@@ -398,23 +421,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#ffd34d"
     },
     {
       "id": "blade-edge-1",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 9,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4023,
-        "y": 0.4023
+        "x": 0.5763,
+        "y": 0.4426
       },
       "alpha": 0.68,
-      "tint": "#fff7dc",
       "blendMode": "add",
       "delay": 0.035,
-      "duration": 0.46499999999999997,
+      "duration": 0.385,
       "alphaOverLife": [
         [
           0,
@@ -464,23 +491,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#fff7dc"
     },
     {
       "id": "blade-trail-1",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 13,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.2638,
       "scale": {
-        "x": 0.3516,
-        "y": 0.3516
+        "x": 0.5036,
+        "y": 0.3868
       },
       "alpha": 0.25,
-      "tint": "#bb60ff",
       "blendMode": "add",
       "delay": 0.035,
-      "duration": 0.46499999999999997,
+      "duration": 0.385,
       "alphaOverLife": [
         [
           0,
@@ -530,23 +561,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#bb60ff"
     },
     {
       "id": "blade-glow-2",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4414,
-        "y": 0.4414
+        "x": 0.6324,
+        "y": 0.4856
       },
       "alpha": 0.38,
-      "tint": "#bb60ff",
       "blendMode": "add",
       "delay": 0.07,
-      "duration": 0.43,
+      "duration": 0.35,
       "alphaOverLife": [
         [
           0,
@@ -596,23 +631,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#bb60ff"
     },
     {
       "id": "blade-body-2",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 6,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4238,
-        "y": 0.4238
+        "x": 0.6072,
+        "y": 0.4663
       },
       "alpha": 0.95,
-      "tint": "#bb60ff",
       "blendMode": "add",
       "delay": 0.07,
-      "duration": 0.43,
+      "duration": 0.35,
       "alphaOverLife": [
         [
           0,
@@ -662,23 +701,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#bb60ff"
     },
     {
       "id": "blade-edge-2",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 10,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4023,
-        "y": 0.4023
+        "x": 0.5763,
+        "y": 0.4426
       },
       "alpha": 0.68,
-      "tint": "#fff7dc",
       "blendMode": "add",
       "delay": 0.07,
-      "duration": 0.43,
+      "duration": 0.35,
       "alphaOverLife": [
         [
           0,
@@ -728,23 +771,27 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#fff7dc"
     },
     {
       "id": "blade-trail-2",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 14,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -4.3982,
       "scale": {
-        "x": 0.3516,
-        "y": 0.3516
+        "x": 0.5036,
+        "y": 0.3868
       },
       "alpha": 0.25,
-      "tint": "#319eff",
       "blendMode": "add",
       "delay": 0.07,
-      "duration": 0.43,
+      "duration": 0.35,
       "alphaOverLife": [
         [
           0,
@@ -794,7 +841,8 @@
           1,
           8.168140899333462
         ]
-      ]
+      ],
+      "tint": "#319eff"
     }
   ],
   "sizing": {
