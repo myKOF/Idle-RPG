@@ -1,5 +1,19 @@
 # PATCH.md
 
+## 裝備強化階級增加動效優化：數字快速縮放彈出與白色高光提示（Antigravity 2026-09-16）
+
+- **強化階級數字動效視覺設計**（`css/ashen-forge.css`）：
+  - 為裝備詳情標題中的強化數字（`.it-up`）與格子強化角標（`.ic-up`）新增 `.upgrade-pop` 動畫與 `@keyframes upgradeNumberPop`。
+  - **由大快速變小**：動畫初始瞬間以 `scale(2.4)` 超大尺寸彈出，隨後在 0.28 秒內快速收縮至 `scale(1.75)`，0.58 秒收至 `scale(0.92)` 產生極具彈性質感的輕微回彈，最終在 0.55 秒平穩回歸 `scale(1.0)` 標準尺寸。
+  - **白色高光光暈提示**：初始階段附帶純白文字（`#ffffff`）、多層白色光暈（`text-shadow: 0 0 8px #ffffff, 0 0 16px #ffffff...`）與高亮濾鏡（`brightness(1.7)`），隨縮小過程漸變為柔和暖黃並過渡回裝備強化代表色 `var(--accent, #facc15)`。
+  - 加上 `will-change: transform, color, filter, text-shadow;` 與 GPU 渲染最佳化，並設定 `transform-origin: center center;` 避免文字縮放跑版。
+- **資料與渲染雙重觸發防護**（`js/item.js`、`js/ui.js`）：
+  - `itemDetailHTML(it, cmp, opts)` 支援 `opts.justUpgraded`，當新產出之詳情帶有升級標記時直接附帶 `upgrade-pop` class。
+  - `renderDetail()` 與 `detailAction('upgrade')` 自動追蹤強化前後階級，若成功升階立即觸發詳情面板及對應格線角標的動畫重繪與重置，連續點擊強化每次成功皆能即時、強烈反饋。
+- **單元測試與自動化覆蓋**（`tests/upgrade-animation.test.cjs`）：
+  - 新增 `tests/upgrade-animation.test.cjs` 單元測試套件，100% 覆蓋 CSS 動畫規則、HTML 屬性支援與 UI 升階追蹤邏輯。
+
+
 ## 新增 Esc 快捷鍵關閉彈窗與浮層界面（Antigravity 2026-09-16）
 
 - **全域 Esc 快捷鍵監聽與層級關閉**（`js/ui.js`）：

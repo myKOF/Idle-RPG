@@ -4773,9 +4773,17 @@ function renderDetail() {
     return;
   }
   var cost = upgradeCost(it);
+  var justUpgraded = false;
+  if (it && UI._upgradingItemId === it.id) {
+    if ((it.upgrade || 0) > (UI._upgradingItemPrevLevel || 0)) {
+      justUpgraded = true;
+      UI._upgradingItemId = null;
+    }
+  }
   var h = itemDetailHTML(it, null, {
     gold: player && player.gold,
-    essence: player && player.essence
+    essence: player && player.essence,
+    justUpgraded: justUpgraded
   });
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
@@ -5049,6 +5057,8 @@ function detailAction(act, actBtn) {
     panels = ['inv', 'equip', 'header', 'gems'];
   } else if (act === 'upgrade') {
     commandName = 'item.upgrade';
+    UI._upgradingItemId = it.id;
+    UI._upgradingItemPrevLevel = it.upgrade || 0;
   } else if (act === 'reroll-affix') {
     commandName = 'item.rerollAffix';
     args.affixKey = actBtn && actBtn.getAttribute('data-affix');
@@ -5066,6 +5076,7 @@ function detailAction(act, actBtn) {
   }).then(function (result) {
     var resultError = typeof uiCommandResultError === 'function' ? uiCommandResultError(result, commandName) : null;
     if (resultError) {
+      if (act === 'upgrade') UI._upgradingItemId = null;
       if (actBtn && (String(resultError).indexOf('資源不足') >= 0 || String(resultError).indexOf('不足') >= 0 || resultError === 'poor')) {
         showFloatingText(actBtn, '材料不足', '#fca5a5');
       } else {
@@ -5082,11 +5093,28 @@ function detailAction(act, actBtn) {
     if (act === 'salvage') UI.sel = null;
     if (act === 'upgrade' && actBtn) {
       var upgradeResult = result && hasOwnUiState(result, 'result') ? result.result : result;
-      if (upgradeResult === 'ok') showFloatingText(actBtn, '升級成功', '#7dd3fc');
+      if (upgradeResult === 'ok') {
+        showFloatingText(actBtn, '升級成功', '#7dd3fc');
+        var upEl = document.querySelector('#detail-pane .it-up');
+        if (upEl) {
+          upEl.classList.remove('upgrade-pop');
+          void upEl.offsetWidth;
+          upEl.classList.add('upgrade-pop');
+        }
+        var escId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(String(it.id)) : String(it.id);
+        var cellUp = document.querySelector('.eq-slot[data-id="' + escId + '"] .ic-up, .item-cell[data-id="' + escId + '"] .ic-up');
+        if (cellUp) {
+          cellUp.classList.remove('upgrade-pop');
+          void cellUp.offsetWidth;
+          cellUp.classList.add('upgrade-pop');
+        }
+      }
       else if (upgradeResult === 'fail') showFloatingText(actBtn, '升級失敗', '#fca5a5');
       else if (upgradeResult === 'poor') showFloatingText(actBtn, '材料不足', '#fca5a5');
+      UI._upgradingItemId = null;
     }
   }).catch(function (error) {
+    if (act === 'upgrade') UI._upgradingItemId = null;
     if (actBtn && error && (String(error).indexOf('資源不足') >= 0 || String(error).indexOf('不足') >= 0)) {
       showFloatingText(actBtn, '材料不足', '#fca5a5');
     } else {
