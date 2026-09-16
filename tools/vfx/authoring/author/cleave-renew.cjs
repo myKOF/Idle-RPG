@@ -64,7 +64,7 @@ function presets() {
     }
   }
   current[3] = combined;
-  for (const p of current.slice(2)) {
+  for (const p of current.slice(1)) {
     // 作者座標必須反映刀弧實際外框，不能讓使用者放大過的造型再次被距離倍率放大。
     const radius = Math.max(...p.layers.map(l => Math.max(l.scale.x,l.scale.y))) * 512 * 0.38;
     p.sizing = {shape:'circle',radiusM:8,authored:{radius}};

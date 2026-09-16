@@ -22,6 +22,15 @@ test('CLEAVE 配置名稱、冷卻、強化及固定追加次數',()=>{
  assert.equal(c.skills2CastRangePx('cleave',[1,0,0,0,0,0,0]),80);
  assert.equal(c.skills2CastRangePx('cleave',[1,1,0,0,0,0,0]),93.2);
 });
+test('CLEAVE 第六階實際引用的藍色刀光已套用尺寸修正',()=>{
+ const h=setup([1,1,1,1,1,1,0]);h.cast();
+ const id=h.events[0].vfx.projectile;
+ const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets',id+'.json'),'utf8'));
+ assert.equal(preset.layers.length,12);
+ assert(preset.layers.every(l=>l.rotationOverLife[1][1]===Math.PI*2));
+ assert(preset.sizing.authored.radius>140,'使用放大造型的尺寸基準，避免再被距離倍率放大');
+ assert(preset.layers.filter(l=>l.id.startsWith('blade-glow-')).every(l=>l.alpha<=.08));
+});
 test('CLEAVE 圓形刀波向四周擴張、到達才命中且每道只打一次',()=>{
  const h=setup();h.cast();assert.equal(h.hits.length,0);h.tick(.1);assert.equal(h.hits.length,0);
  for(let i=11;i<=80;i++)h.tick(i/100);

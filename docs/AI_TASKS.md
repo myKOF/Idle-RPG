@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜旋斬修正版正式引用確認（CLEAVE-SPIN-LIVE-20260916）
+
+- Owner：Codex；Done。使用者確認旋轉刀光預覽後要求接入。核對實際配置，發現第六階目前引用 slash-cleave-ring-blue，而非 proj-cleave-ring-blue；將相同尺寸基準與疊加光暈修正套到正式引用檔，第七階既有 tricolor 引用保持生效。保留原本旋轉整圈造型及 0.3 秒間隔。
+- 修改：vfx/presets/slash-cleave-ring-blue.json、cleave-renew 製作工具、Runtime／index 快取、cleave-rework 測試、本紀錄。未修改但檢查：Skills2 CSV／JS 實際引用、第七階 Preset、Worker 間隔、layout。預檢乾淨，不變更配置表與技能規則，無素材變動。
+- 驗證：cleave-rework、vfx-preset-layout、vfx-preset-usage 共 33/33；新增從第六階實際施放事件追到 Preset 的驗證，避免只測未使用的飛行檔。未遊戲內目視驗證；Commit 為本紀錄所在提交，未合併／未推送，可供審查合併。
+
 ## Codex｜還原原本旋轉刀光並校正尺寸（CLEAVE-SPIN-FIT-20260916）
 
 - Owner：Codex；Done。使用者否定上一版小刀弧拼環，要求保留原本快速旋轉一圈的特效。還原藍色／三色各 12 層刀弧與旋轉、延遲曲線；校正 authored.radius 以反映造型尺寸，降低疊加光暈，避免造型放大後又被距離倍率放大。維持已確認的 0.3 秒逐道間隔。
