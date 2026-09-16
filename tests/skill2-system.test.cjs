@@ -120,21 +120,22 @@ test('cleave 迴旋斬改為近戰範圍內不限人數，強化斬同步放大�
   const front = enemy(1e9, 20, 0, '前');
   const side = enemy(1e9, 0, 30, '側');
   const back = enemy(1e9, -40, 0, '後');
-  const outside = enemy(1e9, 80, 0, '外');
+  const outside = enemy(1e9, 150, 0, '外');
 
   c.castSkill2(p, [front, side, back, outside], 'cleave', 'mv-float');
-  assert.equal(calls.length, 3, '未投資強化斬時，範圍內三名敵人都應命中');
+  c.GT = 0.5; c.tickSkill2(0.5, {pEnt:p,getEnemies:()=>[front,side,back,outside],floatSel:'mv-float'});
+  assert.equal(calls.length, 3, '刀波擴張後命中範圍內三名敵人');
   assert.ok(calls.includes(front) && calls.includes(side) && calls.includes(back));
   assert.ok(!calls.includes(outside), '範圍外敵人不應被命中');
   assert.equal(c.SKILLS2.cleave.tiers[0].fx.count, undefined, '迴旋斬不再有目標人數上限');
   assert.equal(c.SKILLS2.cleave.tiers[1].fx.range, 15);
   assert.equal(c.SKILLS2.cleave.tiers[1].fx.rangePer, 1.5);
-  assert.equal(c.skills2CastRangePx('cleave', [1, 0, 0, 0, 0, 0, 0]), c.bfMeterPx(5));
-  assert.equal(c.skills2CastRangePx('cleave', [1, 1, 0, 0, 0, 0, 0]), c.bfMeterPx(5 * 1.165));
-  assert.equal(c.skills2CastRangePx('cleave', [1, 10, 0, 0, 0, 0, 0]), c.bfMeterPx(5 * 1.3));
+  assert.equal(c.skills2CastRangePx('cleave', [1, 0, 0, 0, 0, 0, 0]), c.bfMeterPx(8));
+  assert.equal(c.skills2CastRangePx('cleave', [1, 1, 0, 0, 0, 0, 0]), c.bfMeterPx(8 * 1.165));
+  assert.equal(c.skills2CastRangePx('cleave', [1, 10, 0, 0, 0, 0, 0]), c.bfMeterPx(8 * 1.3));
 });
 
-test('迴身四方斬四道 60 度扇形共用最大半徑，且半徑逐步向外擴張', () => {
+test('迴身四方斬五道完整刀環逐波擴張，每道只命中一次', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
@@ -154,7 +155,7 @@ test('迴身四方斬四道 60 度扇形共用最大半徑，且半徑逐步向�
   c.castSkill2(p, targets, 'cleave', 'mv-float');
   assert.equal(calls.length, 0, '四方斬應先建立向外飛行的傷害判定');
   const starts = c.SKILL2_RT.projectiles.filter(x=>x.gid==='cleave').map(x=>x.beginAt);
-  assert.deepEqual(Array.from(starts), [0,0,0,0,0.2,0.2,0.2,0.2,0.4,0.4,0.4,0.4]);
+  assert.deepEqual(Array.from(starts, x=>Math.round(x*1000)), [0,200,400,600,800]);
   c.GT = 0.05;
   c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
   assert.equal(calls.length, 1, '第二波尚未起飛，僅第一波命中中心附近的基準目標');
@@ -163,10 +164,10 @@ test('迴身四方斬四道 60 度扇形共用最大半徑，且半徑逐步向�
     c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
   }
 
-  assert.equal(calls.length, targets.length * 6, '三波於 0／0.2／0.4 秒起飛，完整結束後各波保留一次既有二次命中');
+  assert.equal(calls.length, targets.length * 5, '基礎一波、連斬一波與七階三波相加');
   for (const target of targets) {
-    assert.equal(calls.filter((hit) => hit === target).length, 6,
-      target.name + ' 每波僅歸屬一個方向，保留既有二次命中');
+    assert.equal(calls.filter((hit) => hit === target).length, 5,
+      target.name + ' 每一道只命中一次');
   }
 });
 
@@ -518,7 +519,7 @@ test('八方突刺：八個方向連續 5 次（2＋3），所有方向目標都
   assert.ok(calls.length > beforeRepeat, '每個飛行物應在 0.5 秒後追加命中一次');
 });
 
-test('迴身四方斬：四向各斬 3 次，且額外傷害採乘法計算', () => {
+test('迴身四方斬：額外三道與連斬累加，傷害採乘法計算', () => {
   const c = loadContext();
   const cfgs = [];
   const hits = new Map();
@@ -541,22 +542,22 @@ test('迴身四方斬：四向各斬 3 次，且額外傷害採乘法計算', ()
   assert.equal(c.SKILLS2.cleave.tiers[6].fx.pct, 50);
   assert.equal(c.SKILLS2.cleave.tiers[6].name, '迴身四方斬');
   assert.equal(cfgs.length, 0, '震碎斬飛行物應在施放時先不命中');
-  c.GT = 0.5;
-  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(cfgs.length, 12, '前後左右四個方向各 3 次，應產生 12 次命中');
+  c.GT = 1.5;
+  c.tickSkill2(1.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
+  assert.equal(cfgs.length, 20, '五道刀波各命中四名敵人');
   for (const target of [front, back, right, left]) {
-    assert.equal(hits.get(target), 3, '十字四方向的每個目標都應命中 3 次');
+    assert.equal(hits.get(target), 5, '每個目標都應命中五次');
   }
-  assert.ok(cfgs.every((cfg) => cfg.atk === 4262.5),
-    '基礎 220%＋傷害強化 55% 為 275%，再乘迴身四方斬 55% 應為 426.25%');
+  assert.ok(cfgs.every((cfg) => Math.abs(cfg.atk - 3844) < 1e-6),
+    '基礎 220% 加強化 28%，再乘七階 1.55 倍為 384.4%');
 
-  c.GT = 1.0;
+  c.GT = 2.0;
   c.tickSkill2(0.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
-  assert.equal(cfgs.length, 24, '每條飛行物路徑應在 0.5 秒後再命中一次');
+  assert.equal(cfgs.length, 20, '刀波結束後不可再次補打');
 
   const csv = fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8');
   // 階數與階段名稱之間還有「解鎖轉生/等級」欄，用 regex 跳過它
-  const row = csv.split(/\r?\n/).find((line) => /,7,[^,]*,迴身四方斬,/.test(line));
+  const row = csv.split(/\r?\n/).find((line) => /^cleave,迴旋斬,迴身四方斬,/.test(line));
   assert.ok(row && row.includes('""times"":3'), 'Skills2 CSV 應同步迴身四方斬 3 次');
 });
 

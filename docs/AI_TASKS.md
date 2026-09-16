@@ -1,5 +1,24 @@
 # AI_TASKS.md
 
+## Codex｜三色刀波套用藍色刀波形狀（CLEAVE-TRICOLOR-SHAPE-20260916）
+
+- Owner：Codex；Done。依使用者要求直接覆蓋 proj-cleave-ring-tricolor，保留原本逐層配色，形狀、尺寸、旋轉、擴張與時序完整採用使用者目前修改後的 slash-cleave-ring-blue。12 層逐一比對，除 tint／colorOverLife 外與來源一致；特效 ID 與技能引用不變。
+- 修改：vfx/presets/proj-cleave-ring-tricolor.json、tools/vfx/authoring/author/cleave-renew.cjs（重新製作優先保留編輯器調整，三色版依來源合成）、js/vfx-runtime.js 與 index.html 快取、本紀錄。預檢乾淨。未修改但檢查：來源藍色 Preset、既有 layout、Core 驗證器、技能回歸測試與素材庫。
+- 驗證：12 層幾何／動態／原配色比對通過；Core validatePreset 通過；node --test tests/cleave-rework.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs 全 31 項通過；Core 六幀渲染已目視檢查。遊戲傷害時長仍由事件控制。未做 Pixi 遊戲內目視驗證；無新素材，素材庫無需提交。
+- Commit 為本紀錄所在提交；未合併／未推送，可供審查合併。使用者原有 Excel、藍色及黃紅刀波未提交修改保留，不混入本次提交。預覽作為交付附件保留於 Codex visualizations。
+
+## Codex｜迴旋斬技能與圓形刀波改造（CLEAVE-REWORK-20260916）
+
+- Owner：Codex；Done。使用者確認動態預覽後指示「正式接入」。來源為 Google 技能文檔 2026-09-16 更新版；初階自身周圍半徑 8 米完整圓形，快速劃一圈再向外擴張，六七階已移除四方向描述。
+- 完成：名稱「擴增／強化」、20 秒冷卻、傷害與成長、固定額外連斬及小數機率、六階徑向飛行、七階追加三刀與乘法傷害。黃紅／藍／藍黃紫 Preset 正式讀表接線；刀波半徑、時間與傷害判定共用配置曲線，每道每敵只命中一次。保留傳奇與超神掛鉤，無座標高塔逐道結算。
+- Excel → CSV → JS 同步；Excel 僅修改 31 個目標儲存格，其餘 ZIP 內容及格式保留。CSV 非本技能的浮點表示保留原文，生成工具確認語意差異 0。沿用專案 base + per × lv 計算慣例。
+- 修改檔案：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、js/worker/protocol.js、js/worker/sim.worker.js、js/bridge.js、index.html；tests/cleave-rework.test.cjs、tests/skill2-system.test.cjs、tests/skill2-ult-evolution.test.cjs、tests/skill2-vfx.test.cjs、tests/worker-protocol.test.cjs；tools/vfx/authoring/author/cleave-renew.cjs；vfx/presets 與 vfx/layouts 各四份 cleave-ring 檔案；docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄。
+- 未修改但檢查：js/battlefield.js、js/vfx-core.js、js/worker/shim.js、tools/config_tables.cjs、tools/xlsx_to_csv.cjs、tools/vfx/export-assets.cjs、素材索引及素材庫。素材判定 SUFFICIENT，沿用既有刀弧貼圖；素材庫乾淨，無新增素材與素材 Commit。修改前衝突預檢乾淨。
+- 驗證指令：node --test tests/cleave-rework.test.cjs（7/7）；cleave／迴旋斬／超神／Worker 定向執行上述技能與協議測試（23/23）；node --test tests/vfx-preset-usage.test.cjs（18/18）；node --test tests/vfx-preset-layout.test.cjs（6/6）；node tools/build_check.cjs（353 檔）；node tools/config_tables.cjs --apply Skills2（語意差異 0）；node tools/vfx/export-assets.cjs --check（最新）；git diff --check 通過。
+- 擴大回歸：上述技能測試加 skill2-review-fixes、vfx-runtime 共 234 項，218 通過／16 失敗；16 項均在 HEAD 基線重現，涉及疾風斬、突刺、火球、火龍捲、冰系、舊連續座標斷言及既有 Runtime 雷擊／龍捲／熔岩／連鎖／真空旋回。未為其他技能放寬斷言；本技能的舊四向規格測試依使用者新規格更新。
+- 視覺驗證：使用者已看過並核准 Core 實際渲染的動態 GIF；正式 Runtime 以真實 Preset 驗證圓心、半徑、時長及回收。本輪未另做遊戲內實機目視驗證，亦不宣稱全套測試全綠。無未完成實作；可供使用者審查合併，建議進遊戲確認實際戰場觀感。
+- Commit：本紀錄所在提交。未合併／未推送。保留已交付 GIF 供使用者回看；提交前清除 tmp/cleave-integration 與預覽中間檔的操作被自動政策審核拒絕，暫存產物留在忽略目錄、不納入提交。
+
 ## Codex｜技能特效逐欄繼承（SKILL-VFX-INHERIT-20260914）
 
 - Owner：Codex；Done。使用者要求所有技能特效有值必用，空欄逐階向前繼承；已確認超神從一般第七階繼承，不跨互斥超神選項。

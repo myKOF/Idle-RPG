@@ -52,7 +52,8 @@
    v16：新增 newforge.upgradePart（熔爐零件升級），86 → 87
    v15（2026-08-02 詞條規則外送）：equip 面板新增 affixRules（每種詞條的可用部位與
    品質門檻，取自 AFFIX_POOL）。任何「想洗出某條詞條」的一方不必再自己抄一份部位清單。 */
-var WORKER_PROTOCOL_VERSION = 30;
+// v31：cleave-ring 以 area 圓心／半徑及 travelMs 表示原地向外擴張的一道刀波。
+var WORKER_PROTOCOL_VERSION = 31;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -148,7 +149,10 @@ var EVENT_KINDS = {
              「接在前一段動作之後」的特效用它錯開時刻。
      projectile（可選）：飛行物命中事件不預先補命中爆點。
      lineLength／lineWidth／laneOffsets／directionCount／angle（可選）：突刺光槍／冰箭的長寬、平行道、方向數與世界方位。
-     rangeScale／directionRanges（可選）：迴旋斬的顯示範圍倍率，以及迴身四方斬四道扇形各自的實際半徑；只供主執行緒繪圖，不參與傷害結算。
+     rangeScale／directionRanges（可選）：舊版迴旋斬事件的範圍倍率及四道扇形半徑，保留歷史事件相容。
+     variant=cleave-ring（v31）：area.x/y 為固定發射圓心、area.r 為最終半徑，travelMs[0] 為完整擴張時長；
+       delayMs 為逐道起飛延遲。第六階起使用 projectile 欄取代 attack 本體；命中由獨立 impact 事件播放。
+       擴張曲線由 Skills2 第一階 radiusCurve 同步生成 Preset，模擬沿同一曲線掃過環帶且每道僅命中一次。
      area（可選）：打在地上的那塊區域，世界座標。圓形＝{ x, y, r }；
              矩形（火牆等地板場域）＝{ x, y, w, h, a }（長、寬、朝向弧度）並附帶 r＝
              外接圓半徑，讓只認得圓的既有畫法仍能退化出合理尺寸。

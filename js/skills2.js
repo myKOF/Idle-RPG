@@ -189,7 +189,7 @@ function skills2PassiveActive(gid) {
    desc 內的 {鍵} 於顯示時代入目前等級的計算值。 */
 var SKILLS2 = {
   thrust: { name: '突刺', emoji: '🗡️', range: '12*3', cd: 15, cost: 25, tiers: [{ name: '突刺', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 2, speed: 48 }, goldBase: 100000, goldGrow: 1.5, desc: '對前方敵人造成 {count} 次 {pct}% 物理傷害', vfx: { attack: 'slash-thrust-lance', hit: 'hit-phys' } }, { name: '連刺', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { chance: 25, chancePer: 2.5, count: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '有 {chance}% 的機率再次進行 {count} 次突刺' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 20, pctPer: 3 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化突刺傷害，額外 +{pct}% 物理傷害（與第 1 階累加）', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '超連刺', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { count: 3, range: 20, rangePer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '每次能進行 {count} 道平行貫穿突刺，且突刺範圍提升 {range}%', vfx: { attack: 'slash-thrust-empowered', hit: 'hit-phys' } }, { name: '擴散', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { pct: 20, pctPer: 2, count: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '突刺造成的傷害有 {pct}% 會擴散至周圍的 {count} 個敵人', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '貫穿突刺', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 5, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '突刺會造成一直線的傷害，貫穿路徑上所有敵人，貫穿長度在原本長度上再增加 {m} 米', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }, { name: '八方連刺', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 20, pctPer: 2, count: 3, directions: 8 }, goldBase: 5000000, goldGrow: 1.5, desc: '向八個方向同時進行 {count} 次突刺，且造成傷害額外 +{pct}%', vfx: { attack: 'slash-thrust-scatter', hit: 'hit-phys' } }], ult: [{ id: 'phantomOcta', name: '幻影八方陣', cost: 300, fx: { dodge: 30, sec: 2, m: 6, mPer: 0.6 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時，傷害同時擴散至該敵人周圍 {m} 米內的所有敵人；施放突刺後 {sec} 秒內，你有 {dodge}% 機率絕對閃避敵方攻擊', vfx: { attack: 'slash-thrust-scatter-blue', hit: 'hit-phys' } }, { id: 'shadowExecutioner', name: '暗影絕殺者', cost: 300, fx: { perStack: 1, perStackPer: 0.2, maxStacks: 100, pct: 100, pctPer: 20, dur: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '突刺命中時堆疊【靈魂撕裂】：每層使該敵人受到的傷害提高 {perStack}%，最多 {maxStacks} 層（疊滿＝+{pct}%）', vfx: { attack: 'slash-thrust-scatter-red', hit: 'hit-phys' } }, { id: 'oneStrikeKill', name: '一擊必殺', cost: 300, fx: { mult: 4, multPer: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '【八方連刺】改為朝前方的 1 道突刺，但傷害改為 {mult} 倍，且可以立即殺死普通敵人', vfx: { attack: 'slash-thrust-scatter-super', hit: 'hit-phys' } }] },
-  cleave: { name: '迴旋斬', emoji: '🪓', range: '', cd: 15, cost: 25, tiers: [{ name: '迴旋斬', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 200, pctPer: 20, speed: 24 }, goldBase: 100000, goldGrow: 1.5, desc: '對範圍內的所有敵人造成 1 次 {pct}% 物理傷害', vfx: { attack: 'slash-cleave-arc', hit: 'hit-phys' } }, { name: '強化斬', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { range: 15, rangePer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊範圍擴大 {range}%（每級 +1.5% 範圍）' }, { name: '傷害強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 50, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '連斬', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { chance: 25, chancePer: 2.5, times: 2, timesPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率連續劈出共 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒', vfx: { attack: 'slash-cleave-stun' } }, { name: '震碎斬', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 12, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '斬擊會向前飛出 {m} 米距離，命中路徑上的敵人', vfx: { attack: 'slash-cleave-stun', hit: 'hit-phys' } }, { name: '迴身四方斬', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 50, pctPer: 5, times: 3, timesPer: 0 }, goldBase: 5000000, goldGrow: 1.5, desc: '同時朝前後左右四個方向各使出 {times} 次斬擊，且傷害額外 +{pct}%（每級 +5% 傷害；與原有傷害乘法計算）', vfx: { attack: 'slash-cleave-stun', hit: 'hit-phys' } }], ult: [{ id: 'voidShatter', name: '虛空碎裂斬', cost: 300, fx: { times: 1, timesPer: 0.2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【迴身四方斬】的攻擊次數 +{times} 次，且物理傷害再額外 +{pct}%' }, { id: 'windChaser', name: '逐風者', cost: 300, fx: { hits: 4, hitsPer: 0.4, pct: 100, pctPer: 10, m: 4, gap: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬每命中 1 次，就在該敵人所在位置生成一道龍捲風：對半徑 {m} 米內的敵人造成 {hits} 段、每段 {pct}% 風系傷害', vfx: { ground: 'ground-tornado-wind' } }, { id: 'stormGodSlash', name: '天霸風神斬', cost: 300, fx: { sec: 8, secPer: -0.5, range: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬範圍擴大 {range}%，並改為被動技能：不再主動施放，改為每 {sec} 秒自動施放 1 次（每級施放間隔 -0.5 秒，仍需裝配在技能列才生效）' }] },
+  cleave: { name: '迴旋斬', emoji: '🪓', range: '', cd: 20, cost: 25, tiers: [{ name: '迴旋斬', unlock: { reinc: 0, lv: 1 }, cost: 25, fx: { pct: 200, pctPer: 20, radiusCurve: [[0, 0.12], [0.25, 0.48], [0.65, 0.86], [1, 1]], castM: 8, m: 8, speed: 24 }, goldBase: 100000, goldGrow: 1.5, desc: '對自身周圍 {m} 米內的所有敵人造成 1 次 {pct}% 物理傷害', vfx: { attack: 'slash-cleave-ring-warm', hit: 'hit-phys' } }, { name: '擴增', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { range: 15, rangePer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊範圍擴大 {range}%' }, { name: '強化', unlock: { reinc: 0, lv: 50 }, cost: 60, fx: { pct: 20, pctPer: 8 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害', vfx: { attack: 'slash-cleave-ring-blue' } }, { name: '連斬', unlock: { reinc: 0, lv: 100 }, cost: 80, fx: { times: 1, timesPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '額外劈出 {times} 次斬擊（不足 1 次的部分以機率觸發）' }, { name: '暈眩擊', unlock: { reinc: 0, lv: 150 }, cost: 100, fx: { chance: 25, chancePer: 1, sec: 1, secPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '斬擊時有 {chance}% 機率擊暈敵人 {sec} 秒' }, { name: '震碎斬', unlock: { reinc: 0, lv: 200 }, cost: 140, fx: { m: 12, mPer: 0.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '圓形刀波向外擴張至 {m} 米，對擴張路徑上的所有敵人造成傷害', vfx: { projectile: 'proj-cleave-ring-blue', hit: 'hit-phys' } }, { name: '迴身四方斬', unlock: { reinc: 0, lv: 250 }, cost: 240, fx: { pct: 50, pctPer: 5, times: 3, timesPer: 0 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外使出 {times} 次圓形斬擊，且傷害額外 +{pct}%（與原有傷害乘法計算）', vfx: { projectile: 'proj-cleave-ring-tricolor', hit: 'hit-phys' } }], ult: [{ id: 'voidShatter', name: '虛空碎裂斬', cost: 300, fx: { times: 1, timesPer: 0.2, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【迴身四方斬】的攻擊次數 +{times} 次，且物理傷害再額外 +{pct}%' }, { id: 'windChaser', name: '逐風者', cost: 300, fx: { hits: 4, hitsPer: 0.4, pct: 100, pctPer: 10, m: 4, gap: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬每命中 1 次，就在該敵人所在位置生成一道龍捲風：對半徑 {m} 米內的敵人造成 {hits} 段、每段 {pct}% 風系傷害', vfx: { ground: 'ground-tornado-wind' } }, { id: 'stormGodSlash', name: '天霸風神斬', cost: 300, fx: { sec: 8, secPer: -0.5, range: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '迴旋斬範圍擴大 {range}%，並改為被動技能：不再主動施放，改為每 {sec} 秒自動施放 1 次（每級施放間隔 -0.5 秒，仍需裝配在技能列才生效）' }] },
   knife: { name: '飛刀', emoji: '🔪', range: '', cd: 15, cost: 25, tiers: [{ name: '飛刀', unlock: { reinc: 0, lv: 50 }, cost: 25, fx: { pct: 150, pctPer: 15, count: 3, deg: 60, speed: 50.4 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {deg} 度扇形內丟出 {count} 把飛刀，每把造成 {pct}% 物理傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化飛刀', unlock: { reinc: 0, lv: 100 }, cost: 40, fx: { pct: 20, pctPer: 10 }, goldBase: 200000, goldGrow: 1.5, desc: '飛刀傷害進一步提升，額外 +{pct}% 物理傷害' }, { name: '彈射飛刀', unlock: { reinc: 0, lv: 150 }, cost: 60, fx: { pct: 30, pctPer: 5, count: 1, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '每把飛刀會在範圍20米內的 {count} 個敵人間彈跳，每次彈射造成 {pct}% 技能傷害', vfx: { projectile: 'proj-knife', hit: 'hit-phys' } }, { name: '強化彈射', unlock: { reinc: 0, lv: 200 }, cost: 80, fx: { add: 1, addPer: 0.25 }, goldBase: 800000, goldGrow: 1.5, desc: '飛刀彈射的敵人數量額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '迴旋飛刀', unlock: { reinc: 0, lv: 250 }, cost: 100, fx: { count: 4, countPer: 0.2 }, goldBase: 1500000, goldGrow: 1.5, desc: '改為向周圍的 {count} 個敵人丟出飛刀（全圓形範圍鎖敵；不足 1 個的部分以機率觸發）' }, { name: '連鎖彈射', unlock: { reinc: 0, lv: 300 }, cost: 140, fx: { chance: 20, chancePer: 2, max: 4 }, goldBase: 3000000, goldGrow: 1.5, desc: '飛刀彈射後有 {chance}% 機率再次彈射，最多連續 {max} 次' }, { name: '神速飛刀', unlock: { reinc: 0, lv: 350 }, cost: 240, fx: { sec: 0.05, secPer: 0.01 }, goldBase: 5000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）爆擊時，使飛刀技能冷卻時間 -{sec} 秒' }], ult: [{ id: 'petalStorm', name: '暴雨梨花', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每把飛刀（含彈射）都會對飛行路徑上的所有敵人造成 {pct}% 技能傷害' }, { id: 'deathReaper', name: '死亡收割者', cost: 300, fx: { pct: 25, pctPer: 2.5, maxStacks: 20, dur: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '飛刀殺死敵人時堆疊【死亡收割】：每層使你造成的傷害提高 {pct}%，最多 {maxStacks} 層，持續 {dur} 秒' }, { id: 'soulhunterBlade', name: '無限追魂刃', cost: 300, fx: { pct: 50, pctPer: 5, m: 45 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放飛刀時額外射出 1 支無限飛刀，追擊周圍 {m} 米內的任意敵人：傷害提高 {pct}%，彈射次數不受限制；只有一個目標時會貫穿後繞回再次攻擊，不會停留原地重複傷害', vfx: { projectile: 'proj-knife-gold', hit: 'hit-lightning' } }] },
   gale: { name: '疾風斬', emoji: '💨', range: '', cd: 15, cost: 25, tiers: [{ name: '疾風斬', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 250, pctPer: 20, hits: 3, castM: 5, gap: 0.2 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成連續 {hits} 次 {pct}% 物理傷害（同一目標）', vfx: { attack: 'hit-gale-burst', hit: 'hit-phys' } }, { name: '疾風連斬', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '斬擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化斬擊', unlock: { reinc: 0, lv: 200 }, cost: 60, fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化斬擊傷害，額外 +{pct}% 物理傷害' }, { name: '擴散', unlock: { reinc: 0, lv: 250 }, cost: 80, fx: { pct: 50, pctPer: 5, m: 10 }, goldBase: 800000, goldGrow: 1.5, desc: '每次斬擊額外對 {m} 米內最近的 1 個敵人造成 {pct}% 技能傷害；附近沒有敵人時改對原目標造成' }, { name: '狂風斬', unlock: { reinc: 0, lv: 300 }, cost: 100, fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風斬使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）' }, { name: '極速斬', unlock: { reinc: 0, lv: 350 }, cost: 140, fx: { sec: 1, secPer: 0.3 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風斬的冷卻時間 -{sec} 秒' }, { name: '月牙斬', unlock: { reinc: 0, lv: 400 }, cost: 240, fx: { pct: 500, pctPer: 50, castM: 10, m: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風斬的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%', vfx: { attack: 'slash-gale-moon' } }], ult: [{ id: 'thunderFlash', name: '霹靂一閃', cost: 300, fx: { mult: 5, multPer: 0.5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬的最後一斬會對你周圍 {m} 米內的敵人造成「單段傷害 × 連擊數 × {mult}」的傷害', vfx: { hit: 'hit-lightning' } }, { id: 'thunderGodSlash', name: '雷神斬', cost: 300, fx: { pct: 200, pctPer: 20, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風斬附加雷電：每次斬擊命中時降下 1 道落雷，對命中處周圍 {m} 米內的敵人造成 {pct}% 閃電傷害', vfx: { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' } }, { id: 'chidori', name: '千鳥', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【月牙斬】不再由範圍內的敵人均分傷害，改為每個敵人都受到完整傷害，且傷害再額外 +{pct}%' }] },
   bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 15, cost: 25, tiers: [{ name: '血刃斬', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒', vfx: { attack: 'hit-bloodblade-burst', hit: 'hit-bleed' } }, { name: '強化流血', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）', vfx: { attack: 'curse-bleed', hit: 'hit-bleed' } }, { name: '虛弱', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', unlock: { reinc: 0, lv: 350 }, cost: 80, fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒', vfx: { attack: 'curse-poison', hit: 'hit-poison' } }, { name: '毒霧感染', unlock: { reinc: 0, lv: 400 }, cost: 100, fx: { chance: 30, chancePer: 2, count: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人', vfx: { projectile: 'proj-poison-drop', hit: 'hit-poison' } }, { name: '死亡屍爆', unlock: { reinc: 0, lv: 450 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }, { name: '零日感染', unlock: { reinc: 0, lv: 500 }, cost: 240, fx: { chance: 20, chancePer: 2, pct: 40, pctPer: 4, count: 1, m: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%', vfx: { attack: 'burst-zero-infection', hit: 'hit-poison' } }], ult: [{ id: 'slayerDomain', name: '殺神領域', cost: 300, fx: { pct: 2, pctPer: 0.2, healPct: 2, healPctPer: 0.2, dur: 6, maxStacks: 100, m: 24 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的殺神領域：領域內的敵人死亡時堆疊【殺神】，每層使你造成的傷害 +{pct}%，同時回復 {healPct}% 最大生命；最多 {maxStacks} 層，持續 {dur} 秒', vfx: { ground: 'ground-mire' } }, { id: 'venomDomain', name: '萬毒血霧', cost: 300, fx: { pct: 100, pctPer: 10, dur: 6, maxStacks: 10, m: 24, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的萬毒領域：領域內的敵人每 {gap} 秒受到 {pct}% 中毒傷害，該中毒持續 {dur} 秒且可堆疊至 {maxStacks} 層', vfx: { attack: 'curse-poison', hit: 'hit-poison', ground: 'ground-mire-poison' } }, { id: 'disintegrate', name: '崩解', cost: 300, fx: { pct: 50, pctPer: 5, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '中毒與流血不再有持續時間，塗上的當下就結算完整傷害；結算後爆炸，對周圍 {m} 米內的敵人造成該效果 {pct}% 的傷害', vfx: { attack: 'burst-blood', hit: 'hit-bleed' } }] },
@@ -670,6 +670,12 @@ function skills2CastRangePx(gid, lvs) {
        既有群組都沒有定義 castMPer，sgVal 對它們的回傳值與改造前完全相同。 */
     var v = sgVal(fx, 'castM', lvs ? lvs[i] : 1);
     if (isFinite(v) && v > 0) m = v;
+  }
+  if (gid === 'cleave') {
+    var levels = lvs || skills2Levels(gid);
+    var legend = sgLegend('cleave');
+    m = Math.max(m, levels[5] > 0 ? sgVal(g.tiers[5].fx,'m',levels[5]) : 0, Number(legend.cleaveFlyM) || 0);
+    return bfMeterPx(m) * skills2CleaveRangeScale(levels);
   }
   if (!(m > 0)) {
     var melee = (typeof bfMeleeRange === 'function') ? bfMeleeRange() : 0;
@@ -1537,6 +1543,8 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     fallbackTargets: fallbackTargets || [], floatSel: floatSel,
     out: out, states: [], started: false,
     hitFn: extra && typeof extra.hitFn === 'function' ? extra.hitFn : null,
+    radialCurve: extra && extra.radialCurve || null,
+    onStart: extra && extra.onStart || null,
     rehit: !(extra && extra.singleHit),
     waitForEnd: !!(extra && extra.waitForEnd),
     targetOnly: !!(extra && extra.targetOnly),
@@ -1706,8 +1714,23 @@ function sgTickFlyingProjectiles(dt, ctx) {
     var distance = projectile.origin
       ? Math.min(projectile.length, Math.max(0, (now - projectile.startAt) * projectile.speed))
       : projectile.length;
+    if (!projectile.started && projectile.onStart) projectile.onStart();
+    if (projectile.radialCurve) {
+      distance = projectile.length * sgCleaveRadiusAt(projectile.radialCurve,
+        (now - projectile.startAt) / (projectile.endAt - projectile.startAt));
+    }
     var crossed;
-    if (projectile.origin && projectile.coneDeg > 0 && typeof bfConeTargets === 'function') {
+    if (projectile.radialCurve && projectile.origin && typeof bfEnemiesInArea === 'function') {
+      crossed = bfEnemiesInArea({x:projectile.origin.x,y:projectile.origin.y,r:distance}, enemies);
+      // 只掃過本 Tick 新擴張的環帶，已留在刀波內的敵人不會被補打。
+      crossed = crossed.filter(function(e) {
+        var pos = typeof bfPos === 'function' ? bfPos(e) : null;
+        if (!pos || !projectile.started) return true;
+        var dx=pos.x-projectile.origin.x, dy=pos.y-projectile.origin.y;
+        var bodyR = typeof bfEntityRadius === 'function' ? bfEntityRadius(e) : 0;
+        return Math.sqrt(dx*dx+dy*dy) + bodyR >= projectile.lastDistance;
+      });
+    } else if (projectile.origin && projectile.coneDeg > 0 && typeof bfConeTargets === 'function') {
       crossed = bfConeTargets(projectile.angle, projectile.coneDeg, distance, enemies);
       crossed = sgFilterCleaveSectorTargets(crossed, projectile.coneBaseAngle,
         projectile.coneIndex, projectile.coneCount);
@@ -2120,182 +2143,74 @@ function sgCleaveOnHit(cfg, target, res, ctx) {
   if (cfg.tornado) sgCleaveTornado(cfg.pEnt, cfg.st, cfg.tornado, target, cfg.floatSel);
 }
 
-function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
-  var t = g.tiers;
-  var lg = sgLegend('cleave');
-  var ultVoid = sgUlt('cleave', 'voidShatter');
-  var ultWind = sgUlt('cleave', 'windChaser');
+// 刀波與製作工具共用配置曲線；進度以權威起飛／抵達時間正規化。
+function sgCleaveRadiusAt(curve, progress) {
+  var p = Math.max(0, Math.min(1, progress));
+  for (var i = 1; i < curve.length; i++) {
+    if (p <= curve[i][0]) {
+      var a = curve[i - 1], b = curve[i];
+      return a[1] + (b[1] - a[1]) * (p - a[0]) / (b[0] - a[0]);
+    }
+  }
+  return curve[curve.length - 1][1];
+}
 
-  /* 傳奇【聚敵旋渦】：先把範圍內的敵人拉到身邊，之後的目標挑選與飛出路徑
-     才會看到拉近後的站位（座標改寫收斂在 js/battlefield.js）。 */
+function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
+  var t = g.tiers, lg = sgLegend('cleave');
+  var ultVoid = sgUlt('cleave', 'voidShatter'), ultWind = sgUlt('cleave', 'windChaser');
   if (lg.cleavePull && typeof bfPullEnemies === 'function') {
     bfPullEnemies(pool, bfMeterPx(Number(lg.cleavePull.m) || 0), bfMeterPx(Number(lg.cleavePull.toM) || 0));
   }
-
   var pct = sgVal(t[0].fx, 'pct', lvs[0]);
   if (lvs[2] > 0) pct += sgVal(t[2].fx, 'pct', lvs[2]);
-  // 超神【虛空碎裂斬】：迴身四方斬的傷害再額外提高（沒投資第 7 階時不生效）
   if (ultVoid && lvs[6] > 0) pct += sgUltVal(ultVoid, 'pct');
   pct += Number(lg.skillDamagePct) || 0;
   var dmgVal = st.atk * pct / 100;
-  // 迴身四方斬的額外傷害與原有傷害採乘法計算。
   if (lvs[6] > 0) dmgVal *= 1 + sgVal(t[6].fx, 'pct', lvs[6]) / 100;
-  var targetCap = Math.floor(Number(t[0].fx.count) || 0);
-  if (targetCap > 0 && lvs[1] > 0) {
-    targetCap += sgRollCount(sgVal(t[1].fx, 'add', lvs[1]));
-  }
   var slashes = 1;
-  if (lvs[3] > 0 && chance(sgVal(t[3].fx, 'chance', lvs[3]))) {
-    slashes = Math.max(1, sgRollCount(sgVal(t[3].fx, 'times', lvs[3])));
-  }
-  // 迴身四方斬：四個方向各至少完整斬出表定次數；若連斬同時觸發，保留較高次數。
+  if (lvs[3] > 0) slashes += sgRollCount(sgVal(t[3].fx, 'times', lvs[3]));
   if (lvs[6] > 0) {
-    var crossTimes = sgVal(t[6].fx, 'times', lvs[6]);
-    // 超神【虛空碎裂斬】：迴身四方斬的攻擊次數 +N（小數部分依慣例以機率補一次）
-    if (ultVoid) crossTimes += sgUltVal(ultVoid, 'times');
-    slashes = Math.max(slashes, Math.max(1, sgRollCount(crossTimes)));
+    slashes += sgRollCount(sgVal(t[6].fx, 'times', lvs[6]) + (ultVoid ? sgUltVal(ultVoid, 'times') : 0));
   }
-  // 傳奇【連環迴旋】：斬擊次數直接 +N（與連斬、迴身四方斬相加，不是取高）
   slashes += Math.max(0, Math.floor(Number(lg.cleaveSlashAdd) || 0));
-  var geomOk = (typeof bfPos === 'function') && !!bfPos(primary);
-  var baseAngle = geomOk ? bfAngleTo(primary) : null;
-
-  /* 飛出距離：第 6 階【震碎斬】只讓前方刀光飛出去；傳奇【裂空飛斬】是「向外飛出」，
-     因此迴身四方斬的其餘三個方向也一起飛。兩者同時存在時各方向取較遠的那一個。 */
-  var cleaveRangeScale = skills2CleaveRangeScale(lvs);
-  var tierFlyPx = lvs[5] > 0 ? bfMeterPx(sgVal(t[5].fx, 'm', lvs[5])) * cleaveRangeScale : 0;
-  var legendFlyPx = bfMeterPx(Number(lg.cleaveFlyM) || 0) * cleaveRangeScale;
-  var frontFlyPx = Math.max(tierFlyPx, legendFlyPx);
-  var sideFlyPx = legendFlyPx;
-  // 迴身四方斬本身就是向外擴張的四道扇形；其他階段沒有飛出距離時仍須走飛行物時間軸。
-  var isFlying = frontFlyPx > 0 || lvs[6] > 0;
-  var meleeRangePx = ((typeof bfMeleeRange === 'function') ? bfMeleeRange() : bfMeterPx(5)) * cleaveRangeScale;
-  // 第 7 階四個方向必須共用同一個最大半徑，不能讓第 6 階只把前方一道拉長。
-  var crossRangePx = Math.max(frontFlyPx, sideFlyPx, meleeRangePx);
-
-  var targets = [];
-  var directionTargets = [];
-  var directions = lvs[6] > 0 ? [0, Math.PI / 2, Math.PI, Math.PI * 1.5] : [0];
-  if (lvs[6] > 0) {
-    // 迴身四方斬：以玩家朝向為基準，四個方向各取 60 度扇形，中心仍相隔 90 度。
-    for (var di = 0; di < directions.length; di++) {
-      var dirFly = lvs[6] > 0 ? crossRangePx : ((di === 0) ? frontFlyPx : sideFlyPx);
-      var dirRange = dirFly > 0
-        ? dirFly
-        : meleeRangePx;
-      var dirTargets = geomOk && typeof bfConeTargets === 'function'
-        ? bfConeTargets(baseAngle + directions[di], 60, dirRange, pool) : [primary];
-      dirTargets = sgFilterCleaveSectorTargets(dirTargets, baseAngle, di, directions.length);
-      if (targetCap > 0) dirTargets = dirTargets.slice(0, targetCap);
-      if (di === 0 && geomOk && primary.hp > 0 && dirTargets.indexOf(primary) < 0) {
-        dirTargets.unshift(primary);
-        if (targetCap > 0 && dirTargets.length > targetCap) dirTargets.pop();
-      }
-      // 四個扇形首尾相接；同一敵人只保留在第一個分配到的方向，避免邊界重複傷害。
-      var uniqueDirTargets = [];
-      for (var dui = 0; dui < dirTargets.length; dui++) {
-        if (targets.indexOf(dirTargets[dui]) < 0) uniqueDirTargets.push(dirTargets[dui]);
-      }
-      dirTargets = uniqueDirTargets;
-      directionTargets.push(dirTargets);
-      for (var dti = 0; dti < dirTargets.length; dti++) {
-        if (targets.indexOf(dirTargets[dti]) < 0) targets.push(dirTargets[dti]);
-      }
-    }
-  } else {
-    if (targetCap <= 0 && geomOk && typeof bfEnemiesInArea === 'function' &&
-        typeof bfPlayerPos === 'function' && typeof bfLiveList === 'function') {
-      var cleaveCenter = bfPlayerPos();
-      targets = bfEnemiesInArea({ x: cleaveCenter.x, y: cleaveCenter.y, r: meleeRangePx }, bfLiveList(pool));
-      if (primary && primary.hp > 0 && targets.indexOf(primary) < 0) targets.unshift(primary);
-    } else {
-      // 有目標上限時：主目標＋其餘隨機（沒有任何敘述指定要挑最近的）。
-      targets = [primary].concat(bfRandomOthers(primary, pool, Math.max(0, targetCap - 1), 0, null));
-    }
-    // 震碎斬／裂空飛斬：斬擊向前飛出，聯集路徑上的敵人
-    if (frontFlyPx > 0 && geomOk) {
-      var line = bfLineTargets(baseAngle, frontFlyPx, pool);
-      for (var li = 0; li < line.length; li++) if (targets.indexOf(line[li]) < 0) targets.push(line[li]);
-    }
-    directionTargets.push(targets);
-  }
-  var cleaveVariant = lvs[6] > 0 ? (isFlying ? 'cleave-cross-shockwave' : 'cleave-cross')
-    : (isFlying ? 'cleave-shockwave' : 'cleave');
-  var directionRanges = [];
-  for (var dri = 0; dri < directions.length; dri++) {
-    var rangeFly = lvs[6] > 0 ? crossRangePx : ((dri === 0) ? frontFlyPx : sideFlyPx);
-    directionRanges.push(rangeFly > 0 ? rangeFly : meleeRangePx);
-  }
-  var cleaveVfxRange = lvs[6] > 0 ? Math.max.apply(Math, directionRanges) : frontFlyPx;
-  /* lineLength＝弧光實際要飛多遠（像素）。不帶的話兩個渲染器都會退回寫死的 120px，
-     傳奇【裂空飛斬】的 60 米就只會飛出 1/5 的距離。 */
-  for (var cw = 0; cw < slashes; cw++) {
-    sgEmitVfx('cleave', targets, floatSel, {
-      fxKind: 'slash', variant: cleaveVariant, count: 1, projectile: isFlying,
-      delayMs: Math.round(cw * SG_MULTI_ATTACK_GAP_SEC * 1000), angle: geomOk ? baseAngle : undefined,
-      lineLength: cleaveVfxRange, directionRanges: lvs[6] > 0 ? directionRanges : null,
-      directionCount: directions.length, rangeScale: cleaveRangeScale,
-      travelMs: [Math.max(50, cleaveVfxRange / sgConfiguredFlightSpeed('cleave', 1, SG_FLYING_PROJECTILE_SPEED) * 1000)],
-      color: lvs[4] > 0 ? '#ff4825' : '#ff962d',
-      vfxTier: lvs[4] > 0 ? 5 : 1
-    });
-  }
-  var stunChance = lvs[4] > 0 ? sgVal(t[4].fx, 'chance', lvs[4]) : 0;
-  var stunSec = lvs[4] > 0 ? sgVal(t[4].fx, 'sec', lvs[4]) : 0;
-
-  /* 傳奇【乘虛之斬】：對暈眩中的敵人額外增傷。走 sgHitOne 的總傷加成參數，
-     因此仍完整經過防禦、抗性與爆擊（比照水龍捲對凍結目標的作法）。 */
+  var rangeScale = skills2CleaveRangeScale(lvs);
+  var baseM = sgVal(t[0].fx, 'm', lvs[0]);
+  var tierM = lvs[5] > 0 ? sgVal(t[5].fx, 'm', lvs[5]) : 0;
+  var flyM = Math.max(tierM, Number(lg.cleaveFlyM) || 0);
+  var flying = flyM > 0;
+  var radius = bfMeterPx(flying ? flyM : baseM) * rangeScale;
+  var travel = flying ? Math.max(0.05, radius / sgConfiguredFlightSpeed('cleave', 1, SG_FLYING_PROJECTILE_SPEED)) : 0.42;
+  var origin = typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
+  var curve = t[0].fx.radiusCurve;
+  var targets = pool.filter(function(e) { return e && e.hp > 0; });
+  var roles = Object.assign({}, sgVfxRoles('cleave'));
+  // 六階起本體轉為飛行角色；攻擊欄仍保留供非飛行形態繼承。
+  // 裂空飛斬若在六階前啟用，沿用該階攻擊刀波作為飛行本體。
+  if (flying) { roles.projectile = roles.projectile || roles.attack; delete roles.attack; }
+  else delete roles.projectile;
   var stunnedBonusPct = Math.max(0, Number(lg.cleaveStunnedDmgPct) || 0);
-  var bonusFor = function (target) {
-    return (stunnedBonusPct > 0 && sgIsStunned(target)) ? stunnedBonusPct : 0;
-  };
-  var hookCfg = {
-    pEnt: pEnt, st: st, floatSel: floatSel,
-    tornado: ultWind ? {
-      m: sgUltVal(ultWind, 'm'), pct: sgUltVal(ultWind, 'pct'),
-      hits: Math.max(1, sgRollCount(sgUltVal(ultWind, 'hits'))),
-      gap: Math.max(0.1, Number(ultWind.def.fx.gap) || 0.4)
-    } : null
-  };
-  var onCleaveHit = function (target, res, ctx) { sgCleaveOnHit(hookCfg, target, res, ctx); };
-  var whirl = lg.cleaveWhirl || null;
-
-  if (isFlying) {
-    for (var ps = 0; ps < slashes; ps++) {
-      if (whirl) sgCleaveWhirlwind(pEnt, st, whirl, pool, floatSel, out, ps);
-      for (var pdi2 = 0; pdi2 < directions.length; pdi2++) {
-        var dirFly2 = lvs[6] > 0 ? crossRangePx : ((pdi2 === 0) ? frontFlyPx : sideFlyPx);
-        var projectileLen = dirFly2 > 0
-          ? dirFly2
-          : meleeRangePx;
-        sgQueueFlyingProjectile(pEnt, st, 'cleave', dmgVal,
-          (typeof bfPlayerPos === 'function' && geomOk) ? bfPlayerPos() : null,
-          geomOk ? baseAngle + directions[pdi2] : 0, projectileLen, floatSel,
-          directionTargets[pdi2],
-          { stunChance: stunChance, stunSec: stunSec, onHit: onCleaveHit, bonusPctFn: bonusFor,
-            beginSec: ps * SG_MULTI_ATTACK_GAP_SEC,
-            coneDeg: lvs[6] > 0 ? 60 : 0, coneBaseAngle: baseAngle,
-            coneIndex: lvs[6] > 0 ? pdi2 : -1, coneCount: lvs[6] > 0 ? directions.length : 0 }, out);
-      }
-    }
-    return;
-  }
-  for (var s = 0; s < slashes; s++) {
-    if (whirl) sgCleaveWhirlwind(pEnt, st, whirl, pool, floatSel, out, s);
-    for (var di2 = 0; di2 < directionTargets.length; di2++) {
-      for (var ti = 0; ti < directionTargets[di2].length; ti++) {
-        var victim = directionTargets[di2][ti];
-        var res = sgHitOne(pEnt, st, victim, dmgVal, 'cleave', floatSel, out, Math.round(s * SG_MULTI_ATTACK_GAP_SEC * 1000), bonusFor(victim));
-      // 暈眩擊：每次命中獨立判定（BOSS 免疫與控場遞減由低階寫入器負責）
-        if (res && !res.miss && stunChance > 0 && chance(stunChance)) {
-          if (!(typeof isBossControlImmune === 'function' && isBossControlImmune(victim)) &&
-              !(typeof resistCtrl === 'function' && resistCtrl(monsterDefCfg(victim)))) {
-            applyStatus(victim, 'stun', { dur: stunSec });
-          }
-        }
-        onCleaveHit(victim, res, null);
-      }
-    }
+  var bonusFor = function(target) { return stunnedBonusPct > 0 && sgIsStunned(target) ? stunnedBonusPct : 0; };
+  var hookCfg = { pEnt:pEnt, st:st, floatSel:floatSel, tornado:ultWind ? {
+    m:sgUltVal(ultWind,'m'), pct:sgUltVal(ultWind,'pct'), hits:Math.max(1,sgRollCount(sgUltVal(ultWind,'hits'))),
+    gap:Math.max(0.1,Number(ultWind.def.fx.gap)||0.4)
+  } : null };
+  var onHit = function(target,res,ctx) { sgCleaveOnHit(hookCfg,target,res,ctx); };
+  for (var wave = 0; wave < slashes; wave++) {
+    var delay = wave * SG_MULTI_ATTACK_GAP_SEC;
+    sgEmitVfx('cleave', [], floatSel, {
+      fxKind:flying ? 'projectile' : 'slash', variant:'cleave-ring', projectile:true,
+      delayMs:Math.round(delay*1000), travelMs:[travel*1000], dur:travel,
+      area:{x:origin ? origin.x : 0,y:origin ? origin.y : 0,r:radius},
+      lineLength:radius, vfxRoles:roles, hit:false
+    });
+    var simulationOrigin = typeof bfPos === 'function' && bfPos(primary) ? origin : null;
+    sgQueueFlyingProjectile(pEnt,st,'cleave',dmgVal,simulationOrigin,0,radius,floatSel,targets,{
+      radialCurve:curve, travelMs:travel*1000, singleHit:true, beginSec:delay,
+      stunChance:lvs[4]>0 ? sgVal(t[4].fx,'chance',lvs[4]) : 0,
+      stunSec:lvs[4]>0 ? sgVal(t[4].fx,'sec',lvs[4]) : 0,
+      onHit:onHit, bonusPctFn:bonusFor,
+      onStart:lg.cleaveWhirl ? function() { sgCleaveWhirlwind(pEnt,st,lg.cleaveWhirl,pool,floatSel,out,0); } : null
+    },out);
   }
 }
 

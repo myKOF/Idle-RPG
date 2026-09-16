@@ -182,7 +182,7 @@ test('施法距離判定收斂在 skills2CanReach，武技仍是近戰、魔法�
   assert.doesNotMatch(skills2.slice(knifeStart, galeStart), /bfRangedRange/);
 
   const c = loadSkills2();
-  ['thrust', 'cleave', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage'].forEach((gid) => {
+  ['thrust', 'knife', 'gale', 'bloodblade', 'dualdance', 'counter', 'bloodrage'].forEach((gid) => {
     assert.equal(c.skills2CastRangePx(gid, c.sgEffectiveLevels(null, gid)), c.bfMeleeRange(), gid + ' 應維持近戰距離');
   });
   // 火球術射程 30 米；投資到第 7 階【殞石術】後由該階改寫為 20 米
@@ -218,7 +218,7 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /function skills2FireballIsMeteor\(/);
 
   for (const variant of [
-    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-shockwave', 'cleave-cross', 'cleave-cross-shockwave', 'knife', 'knife-bounce', 'knife-soulhunter',
+    'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-ring', 'knife', 'knife-bounce', 'knife-soulhunter',
     'gale-burst', 'gale-moon', 'bleed-tick', 'poison-tick', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
@@ -327,18 +327,10 @@ test('火狩長駐特效在混合技能容量洪峰中保留，拒收後可重�
   assert.match(vfx, /if \(evictIndex >= 0\) _vfxEventQueue\.splice\(evictIndex, 1\);[\s\S]*else return;/);
 });
 
-test('震碎斬與迴身四方斬共用迴旋斬的方向事件', () => {
-  const skills2 = read('js/skills2.js');
-  const cleaveStart = skills2.indexOf('function sgCastCleave');
-  const cleaveEnd = skills2.indexOf('\n}\n\n/* ---- 匕首投擲', cleaveStart);
-  const cleaveBlock = skills2.slice(cleaveStart, cleaveEnd);
-
-  /* 2026-08-19：飛出距離改由 isFlying 決定（第 6 階【震碎斬】∪ 傳奇【裂空飛斬】），
-     變體選擇的結構不變——仍是「十字 × 是否飛出」四種組合共用同一組弧光。 */
-  assert.match(cleaveBlock, /lvs\[6\] > 0 \? \(isFlying \? 'cleave-cross-shockwave' : 'cleave-cross'\)/);
-  assert.match(cleaveBlock, /isFlying \? 'cleave-shockwave'/);
-  assert.match(read('css/style.css'), /\.vfx-cleave-arc-back/);
-  assert.doesNotMatch(read('css/style.css'), /\.vfx-cleave-wave/);
+test('迴旋斬新版使用圓心、半徑與時長事件',()=>{
+ const code=read('js/skills2.js');const block=code.slice(code.indexOf('function sgCastCleave'),code.indexOf('/* ---- 飛刀 ----'));
+ assert.match(block,/variant:'cleave-ring'/);assert.match(block,/travelMs:\[travel\*1000\]/);assert.match(block,/r:radius/);
+ assert.doesNotMatch(block,/bfConeTargets|directionRanges/);
 });
 
 test('疾風斬使用玩家中心的單一道前方 180 度弧形掃擊', () => {
@@ -362,34 +354,9 @@ test('疾風斬使用玩家中心的單一道前方 180 度弧形掃擊', () => 
   assert.match(css, /\.vfx-gale-sweep[\s\S]*?clip-path: polygon\(50% 50%, 50% 0%,[\s\S]*?50% 100%\)/);
 });
 
-test('迴身四方斬使用四個 60 度扇形，四向共用範圍並旋轉放大', () => {
-  const skills2 = read('js/skills2.js');
-  const vfx = read('js/vfx.js');
-  const renderer = read('js/battle-renderer.js');
-  const css = read('css/style.css');
-  const shim = read('js/worker/shim.js');
-  const protocol = read('js/worker/protocol.js');
-  assert.match(skills2, /var crossRangePx = Math\.max\(frontFlyPx, sideFlyPx, meleeRangePx\)/);
-  assert.match(skills2, /var dirFly = lvs\[6\] > 0 \? crossRangePx/);
-  assert.match(skills2, /bfConeTargets\(baseAngle \+ directions\[di\], 60, dirRange, pool\)/);
-  assert.match(skills2, /coneDeg: lvs\[6\] > 0 \? 60 : 0/);
-  assert.match(skills2, /sgFilterCleaveSectorTargets\(crossed, projectile\.coneBaseAngle/);
-  assert.match(skills2, /directionRanges: lvs\[6\] > 0 \? directionRanges : null/);
-  assert.match(vfx, /function vfxCleaveSector\(/);
-  assert.match(vfx, /vfxCleaveSector\(s, layer, from, cleaveDelay/);
-  assert.match(vfx, /var rotationSpeedDeg = 45/);
-  assert.match(vfx, /rotation = angle \+ rotationSpeedDeg \* \(elapsed \/ 1000\)/);
-  assert.match(vfx, /targetRange = Array\.isArray\(s\.directionRanges\)/);
-  assert.match(renderer, /function spawnCleaveSector\(/);
-  assert.match(renderer, /spawnCleaveSector\(cleaveFrom\.x, cleaveFrom\.y, spec/);
-  assert.match(renderer, /var rotationSpeed = Math\.PI \/ 4/);
-  assert.match(renderer, /g\.rotation = baseRotation \+ rotationSpeed \* t/);
-  assert.match(renderer, /Math\.PI \/ 6/);
-  assert.match(renderer, /targetRange = Array\.isArray\(spec\.directionRanges\)/);
-  assert.match(css, /\.vfx-cleave-sector[\s\S]*?clip-path: polygon\(50% 50%, 100% 21\.13%, 100% 78\.87%\)/);
-  assert.match(shim, /rangeScale: Number\(spec\.rangeScale\) > 0 \? Number\(spec\.rangeScale\) : 1/);
-  assert.match(shim, /directionRanges: Array\.isArray\(spec\.directionRanges\)/);
-  assert.match(protocol, /rangeScale／directionRanges/);
+test('迴旋斬 Worker 保留圓形幾何、逐道延遲與飛行時間',()=>{
+ const shim=read('js/worker/shim.js');assert.match(shim,/area: spec.area/);assert.match(shim,/travelMs: spec.travelMs/);
+ assert.match(read('js/worker/protocol.js'),/variant=cleave-ring/);
 });
 
 test('迴旋斬大型弧光半徑在 DOM 與 Canvas 都縮為三分之一', () => {
@@ -404,15 +371,10 @@ test('迴旋斬大型弧光半徑在 DOM 與 Canvas 都縮為三分之一', () =
   assert.match(renderer, /theme\.c2, width: 5\.2 \/ 3 \* rangeScale \* fade/);
 });
 
-test('迴旋斬主斬擊特效採藍色，且尺寸跟隨範圍倍率', () => {
-  const skills2 = read('js/skills2.js');
-  const vfx = read('js/vfx.js');
-  const renderer = read('js/battle-renderer.js');
-  assert.match(skills2, /lineLength: cleaveVfxRange, directionRanges: lvs\[6\] > 0 \? directionRanges : null,/);
-  assert.match(skills2, /targetCap <= 0 && geomOk && typeof bfEnemiesInArea === 'function'/);
-  assert.match(vfx, /var rangeScale = Number\(spec && spec\.rangeScale\) > 0 \? Number\(spec\.rangeScale\) : 1;/);
-  assert.match(vfx, /var arcSize = 52 \* rangeScale/);
-  assert.match(renderer, /R = 86 \/ 3 \* rangeScale/);
+test('迴旋斬分階使用核准的圓形刀波',()=>{
+ const c=loadSkills2(),g=c.SKILLS2.cleave;
+ assert.equal(g.tiers[0].vfx.attack,'slash-cleave-ring-warm');assert.equal(g.tiers[2].vfx.attack,'slash-cleave-ring-blue');
+ assert.equal(g.tiers[5].vfx.projectile,'proj-cleave-ring-blue');assert.equal(g.tiers[6].vfx.projectile,'proj-cleave-ring-tricolor');
 });
 
 test('震碎斬距離使用 12 米（120 系統距離單位）', () => {
@@ -438,7 +400,7 @@ test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受
   assert.match(skills2, /for \(var wave = 0; wave < thrustCount; wave\+\+\)/);
   assert.match(skills2, /variant: thrustVariant, count: 1, projectile: isPiercing/);
   assert.match(skills2, /beginSec: pr \* thrustWaveGap/);
-  assert.match(skills2, /variant: cleaveVariant, count: 1, projectile: isFlying/);
+  assert.match(skills2, /variant:'cleave-ring', projectile:true/);
   const thrustVfx = vfx.slice(vfx.indexOf("s.variant === 'thrust-pierce'"), vfx.indexOf("s.variant === 'cleave'"));
   const thrustRenderer = renderer.slice(renderer.indexOf("spec.variant === 'thrust-pierce'"), renderer.indexOf("spec.variant === 'cleave'"));
   assert.match(thrustVfx, /if \(!s\.projectile\)/);
