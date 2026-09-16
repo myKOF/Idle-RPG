@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜禁止手工修改 Excel XML（EXCEL-NO-XML-20260916）
+
+- Owner：Codex；Done。使用者回報 Skills2.xlsx 再次出現 Excel 修復提示，要求寫入規範。AI_RULES.md 新增第 8.5 節，禁止手工 XML 拼接、節點修改、ZIP 重打包與工具輸出 XML 搬回原檔，禁止以「保留格式」作例外。
+- 修改：AI_RULES.md、本紀錄。未修改但檢查：Skills2.xlsx 工作表封裝、先前交付紀錄、Git 狀態。衝突預檢乾淨；文件檢查與 git diff --check 通過。純文件修改，無需程式測試／Build。
+- 明確更正：VFX-USAGE-20260916 的自動化測試結果仍成立，但 Excel 開啟相容性已由使用者實測判定失敗；先前「可供合併」結論不適用於該 Excel 檔。XML 可解析並不代表 Excel 可正常開啟。
+- 本次依要求只新增規範，尚未修復 Skills2.xlsx，需另以受支援試算表工具重新輸出並實際 Excel 驗收。岩甲修改保留不提交。Commit 為本紀錄所在提交，規範變更可合併，未合併／推送。
+
 ## Codex｜新增特效用途特效欄位（VFX-USAGE-20260916）
 
 - Owner：Codex；Done。使用者要求新增用途欄並指定名稱「特效用途特效」，置頂中文說明須交代用途。Skills2 AK 欄以「技能本體／附加效果」下拉區分特效歸屬，留白相容技能本體；附加效果由明確指定該列的事件播放，空角色不繼承本體。
