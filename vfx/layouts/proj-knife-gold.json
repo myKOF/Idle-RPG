@@ -7,6 +7,7 @@
       "name": "proj-knife-gold",
       "layerIds": [
         "glow",
+        "glow-copy",
         "blade",
         "trail"
       ]

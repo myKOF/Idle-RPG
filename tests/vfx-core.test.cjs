@@ -2218,11 +2218,9 @@ test('setTransform 在播放中途移動特效：精靈下一幀就在新位置�
   assert.ok(Math.abs(sprite.y - 60) < 1e-9, 'y = 50 + 5×2');
   assert.equal(sprite.scaleX, 2);
   assert.ok(Math.abs(sprite.rotation - Math.PI / 2) < 1e-9, '整個特效的旋轉套到精靈上');
-  /* 粒子的位置是出生時就固定在區域座標 (0,0)，toWorld 會跟著新原點走——
-     這代表「出生點 + 原點位移」：粒子本身沒有動，是原點動了。
-     速度為 0 的粒子因此落在新原點上；拖尾效果來自「新粒子在新原點出生、舊粒子留在舊區域座標」。 */
-  assert.ok(Math.abs(particle.x - 100) < 1e-9);
-  assert.ok(Math.abs(particle.y - 50) < 1e-9);
+  assert.ok(Math.abs(particle.x) < 1e-9, '舊粒子保持出生位置');
+  assert.ok(Math.abs(particle.y) < 1e-9);
+  assert.equal(particle.rotation, 0, '不隨父物件轉彎');
 });
 
 test('setTransform 只更新有給的欄位；未知 handle 回 false；非有限數直接報錯', function () {
@@ -2248,4 +2246,32 @@ test('setTransform 只更新有給的欄位；未知 handle 回 false；非有�
   assert.equal(c.rt.setTransform(h, { rotation: 1 }), false, '停掉之後也回 false');
   c.rt.destroy();
   assert.throws(function () { c.rt.setTransform(h, {}); }, /destroy/);
+});
+
+test('預設世界粒子：速度越快尾跡越長，轉彎後保留歷史軌跡',()=>{
+ function trace(speed){const nodes=[];const r=VFXCore.createRuntime({resolver:resolver(),backend:{createNode(){const n={};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){}}});
+ r.registerPreset({schemaVersion:1,id:'trail-default',duration:3,layers:[{id:'p',type:'particle',assetId:'pack/star.png',emission:{mode:'rate',rate:10},lifetime:2,speed:0}]});
+ const h=r.play('trail-default');for(let i=0;i<5;i++){r.setTransform(h,{position:{x:i*speed,y:0}});r.update(.1);}
+ const first={...nodes[0].t};r.setTransform(h,{position:{x:4*speed,y:speed},rotation:Math.PI/2});r.update(.1);
+ assert.equal(nodes[0].t.x,first.x);assert.equal(nodes[0].t.y,first.y);assert.equal(nodes[0].t.rotation,first.rotation);
+ assert.equal(nodes.at(-1).t.y,speed);assert.equal(nodes.at(-1).t.rotation,Math.PI/2);
+ const length=4*speed-nodes[0].t.x;r.destroy();return length;}
+ assert.equal(trace(20),trace(10)*2);
+});
+test('世界座標子粒子從母粒子位置產生，不跳回已移動的發射器',()=>{
+ const nodes=[];const r=VFXCore.createRuntime({resolver:resolver(),backend:{createNode(spec){const n={asset:spec.assetUrl};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){}}});
+ r.registerPreset(subPreset({shard:{emission:{mode:'burst',count:1},speed:0,lifetime:.15},puff:{speed:0}}));
+ const h=r.play('sub-case',{position:{x:10,y:20}});r.update(.1);
+ r.setTransform(h,{position:{x:500,y:600},rotation:Math.PI/2});r.update(.1);
+ const smoke=nodes.filter(n=>n.asset.includes('smoke'));
+ assert.equal(smoke.length,2);for(const n of smoke){assert.equal(n.t.x,10);assert.equal(n.t.y,20);}
+ r.destroy();
+});
+test('明確指定局部座標仍可跟隨；池重用後世界粒子使用新的出生座標',()=>{
+ const nodes=[];const r=VFXCore.createRuntime({resolver:resolver(),backend:{createNode(){const n={};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){}}});
+ const layer={id:'p',type:'particle',assetId:'pack/star.png',emission:{mode:'burst',count:1},lifetime:1,speed:0};
+ r.registerPreset({schemaVersion:1,id:'world',duration:1,layers:[layer]});r.registerPreset({schemaVersion:1,id:'local',duration:1,layers:[{...layer,worldSpace:false}]});
+ let h=r.play('world',{position:{x:10,y:20}});r.update(.01);r.stop(h);
+ h=r.play('local');r.update(.01);r.setTransform(h,{position:{x:200,y:300}});r.update(.01);assert.equal(nodes[0].t.x,200);r.stop(h);
+ h=r.play('world',{position:{x:30,y:40}});r.update(.01);r.setTransform(h,{position:{x:400,y:500}});r.update(.01);assert.equal(nodes[0].t.x,30);assert.equal(nodes[0].t.y,40);r.destroy();
 });

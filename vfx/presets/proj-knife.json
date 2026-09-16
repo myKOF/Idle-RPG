@@ -10,11 +10,11 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.0664,
-        "y": 0.0664
+        "x": 0.0593,
+        "y": 0.0593
       },
-      "alpha": 0.25,
-      "tint": "#ff3850",
+      "alpha": 0.3,
+      "tint": "#fea971",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
@@ -42,11 +42,11 @@
       "assetId": "new_materials/mask-shape/dingbats-389.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.0547,
-        "y": 0.0195
+        "x": 0.0674,
+        "y": 0.024
       },
       "alpha": 1,
-      "tint": "#e8eef5",
+      "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 1.2,
       "alphaOverLife": [

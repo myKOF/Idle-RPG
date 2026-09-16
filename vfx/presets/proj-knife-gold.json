@@ -10,10 +10,10 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.0781,
-        "y": 0.0781
+        "x": 0.0617,
+        "y": 0.0617
       },
-      "alpha": 0.9,
+      "alpha": 0.35,
       "tint": "#ffd23f",
       "blendMode": "add",
       "duration": 1.2,
@@ -64,8 +64,8 @@
       "assetId": "new_materials/mask-shape/dingbats-389.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.0547,
-        "y": 0.0195
+        "x": 0.0826,
+        "y": 0.0295
       },
       "alpha": 1,
       "tint": "#f2b705",
@@ -109,14 +109,14 @@
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 24
+        "rate": 50
       },
       "lifetime": [
         0.18,
-        0.32
+        3
       ],
       "spawn": {
-        "radius": 3,
+        "radius": 5,
         "shape": "circle"
       },
       "speed": [
@@ -124,8 +124,8 @@
         40
       ],
       "direction": 180,
-      "spread": 40,
-      "drag": 5,
+      "spread": 20,
+      "drag": 0,
       "startScale": [
         0.0098,
         0.0195
@@ -136,12 +136,12 @@
           0.9
         ],
         [
-          0.5,
-          0.7
+          0.5062,
+          0.789894
         ],
         [
           1,
-          0
+          0.684574
         ]
       ],
       "tintOverLife": [
@@ -166,6 +166,60 @@
         [
           1,
           0.35
+        ]
+      ]
+    },
+    {
+      "id": "glow-copy",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.03,
+        "y": 0.03
+      },
+      "alpha": 0.6,
+      "tint": "#feffb8",
+      "blendMode": "add",
+      "duration": 1.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          0.9
+        ],
+        [
+          0.9,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.25,
+          1.12
+        ],
+        [
+          0.5,
+          0.95
+        ],
+        [
+          0.75,
+          1.1
+        ],
+        [
+          1,
+          1
         ]
       ]
     }

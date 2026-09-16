@@ -1,5 +1,40 @@
 # AI_TASKS.md
 
+## Codex｜提交使用者飛刀特效調整（KNIFE-VFX-COMMIT-20260916）
+
+- Owner：Codex；Done。依使用者要求提交普通／金色飛刀 Preset 與 layout 的現有調整，包含刀身尺寸、配色、光暈、金色拖尾壽命／密度／阻力與額外光暈層。普通刀 layout 經 git add 正規化後若無內容差異則不產生提交差異。
+- 修改：vfx/presets/proj-knife.json、vfx/presets/proj-knife-gold.json、vfx/layouts/proj-knife-gold.json；js/vfx-runtime.js 的資料快取版本與 index.html 載入版本同步更新；本紀錄。未修改但檢查：普通刀 layout、素材庫狀態、引用的既有素材。
+- 驗證：node --test tests/soulhunter.test.cjs tests/knife-flight.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs，41/41 通過；node tools/vfx/export-assets.cjs --check 已是最新；git diff --check 通過。素材庫乾淨且無素材內容變更，無需建立空素材提交。
+- Commit：本紀錄所在提交，未合併／推送，可供使用者接著合併 Claude 分支；無未完成項目。使用者已自行調整外觀，本次保留其數值，未另做遊戲內目視驗收。
+
+## Codex｜全域世界座標粒子（WORLD-PARTICLES-20260916）
+
+- Owner：Codex；Done。使用者要求所有粒子保留經過位置，飛行轉彎形成歷史拖尾，並要求提早回報效能影響。盤點正式 Preset 共 290 粒子層，12 層明確 worldSpace:true，無 false；Core 預設改 true，因此現有與新建粒子層均生效，無需改寫素材庫／Preset。
+- 修改：js/vfx-core.js、index.html、tests/vfx-core.test.cjs、docs/vfx/VFX_CORE_AND_PRESET_SCHEMA.md、本紀錄；tools/vfx/editor/index.html 第 249 行 Core 快取。預檢發現 ai/claude 的 e883077 改同檔第 264 行 editor.js 快取，使用者已確認允許，只修改 Core 快取，不碰對方 editor.js 的載入版本。
+- 行為：粒子保留出生座標與朝向；子發射器沿用母粒子的出生座標，避免父特效移動後煙霧跳位。出生座標物件隨既有粒子池重用，降低 GC 配置；粒子數、壽命、發射率與預算均不增加。保留 API 的明確 worldSpace:false 相容選項，目前正式 Preset 無使用者。
+- 驗證：node --test tests/vfx-core.test.cjs tests/soulhunter.test.cjs tests/knife-flight.test.cjs，150/150；涵蓋移動、旋轉、速度與尾長、子粒子出生位置、粒子池重用與局部模式。node --test tests/vfx-performance.test.cjs tests/vfx-runtime.test.cjs，95 項中 89 通過／6 既有 Runtime 失敗（雷落、龍捲兩項、泥沼、連鎖、虛空斬），與前次已知基線相同。
+- 效能量測：Node 無繪圖後端，10 個移動發射器、1,180 顆活躍粒子、暖機 300 幀後計時 1,200 幀、交錯 7 輪中位數：局部 0.136 ms／幀、世界 0.152 ms／幀，增量約 0.016 ms。停止後 activeParticles=0。上限維持 1,200，粒子池上限維持 512；數字不代表 GPU／實機 FPS，尚需遊戲內目視與幀率觀察。
+- 未修改但檢查：js/vfx-runtime.js、正式 Preset、tools/vfx/editor/editor.js（共用 Core）。使用者持續編輯的普通／金刀 Preset 與金刀 layout 保留，不納入本次提交，本次無素材變更。
+- Build：node tools/build_check.cjs，357 檔通過；git diff --check 通過。Commit 為本紀錄所在提交，可供審查合併；未合併／推送。未完成：無程式待辦，實機 GPU 與畫面觀感尚未驗收，建議刷新遊戲與編輯器後觀察大量特效場景。
+
+## Codex｜追魂刃待機環繞半徑（SOULHUNTER-ORBIT-20260916）
+
+- Owner：Codex；Done。依使用者要求將待機環繞半徑由 3 米調為 12 米；沿用 SG_SOULHUNTER_ORBIT_M 與事件 orbitR，返回位置、再出發點及 Runtime 畫面共用半徑。前置追魂刃改造已完成，預檢無衝突。
+- 範圍：js/skills2.js、js/worker/sim.worker.js、js/bridge.js、index.html、tests/soulhunter.test.cjs、本紀錄。既有金刀 Preset／layout 工作區修改保留，不納入本次提交。
+- 未修改但檢查：js/vfx-runtime.js，已直接使用事件 orbitR；Excel／CSV 沒有待機半徑配置，沿用既有程式常數，無需改表或素材。快取版本已同步。
+- 驗證：node --test tests/soulhunter.test.cjs tests/knife-flight.test.cjs，17/17 通過；node tools/build_check.cjs 通過；git diff --check 通過。既有測試改為驗證 120 單位半徑，並依實際到達時間檢查重新追擊傷害。
+- Commit：本紀錄所在提交；無未完成實作，可供合併，未合併／推送。尚未遊戲內目視驗證，建議重新整理確認環繞距離。
+
+## Codex｜無限追魂刃持續追擊與環繞（SOULHUNTER-20260916）
+
+- Owner：Codex；Done。使用者確認無敵人環繞待機、單敵飛離折返。每次施放額外一支金刀，追擊玩家周圍 40 米敵人，生成後最多 10 秒；每次彈射傷害累加，配置基值 4%、每級 +0.4%（沿用全專案 base + per × level 公式）。首擊不吃彈射增傷；返回／環繞不造成命中；途中敵人死亡仍先抵達再尋敵。
+- 修正金刀數量假象：普通刀及其彈射不再套用追魂刃金色特效，仍讀普通階級配置；其他超神繼承不變。每支追魂刃共用唯一身份與到期時間，飛行／返回／環繞互相替換，無目標時跟隨玩家環繞，出現敵人再追擊；單敵反覆折返。死亡與換場清除，命中仍由 Worker 到達時判定。
+- 修改：config/Excel/Skills2.xlsx（K31、AE31、AH31、AI31）、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、js/worker/protocol.js、js/worker/sim.worker.js、js/bridge.js、index.html、tests/soulhunter.test.cjs、tests/skill2-ult-evolution.test.cjs、tests/worker-protocol.test.cjs、docs/WORKER_PROTOCOL.md、本紀錄。協議升 v33 並同步載入快取。未修改但檢查：js/worker/shim.js、js/battlefield.js、普通／金色刀 Preset、特效繼承與迴旋斬測試。沒有新增素材／Preset 或表外特效來源。
+- 表格：artifact-tool 匯入、修改、渲染前後預覽後，保留原 XLSX 封裝內容僅替換四個儲存格。Excel 關閉前曾鎖定，待使用者關閉後成功同步；對 HEAD 比對只有四格值改動，其餘 Excel 儲存時的封裝／繪圖資訊保留。四格與 CSV、artifact 輸出逐值一致，config_tables --apply Skills2 dry-run 為 0 語意差異。
+- 驗證：node --test tests/soulhunter.test.cjs tests/knife-flight.test.cjs tests/worker-protocol.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skill2-knife-range.test.cjs，32/32；node --test tests/cleave-rework.test.cjs，12/12；skill2-ult-evolution 全 55 項通過。涵蓋實際多刀施放只有一支金刀、逐跳累加傷害、單敵持續折返、返回待機再出發、40 米排除、各次施放獨立期限、到期途中不命中、玩家死亡清理、Runtime 同身份替換與空目標返回。
+- 廣域回歸：node --test tests/skill2-ult-evolution.test.cjs tests/vfx-runtime.test.cjs tests/skill2-vfx.test.cjs，共 180 項，165 通過／15 既有失敗。沿用前次基線注入再跑 VFX 125 項，仍為 110 通過／相同 15 失敗，無新增失敗。node tools/build_check.cjs：357 檔通過；git diff --check 通過。
+- Commit：本紀錄所在提交；未合併、未推送。已完成程式／資料與自動化驗證，未做遊戲內目視驗收；可供審查合併。建議重新整理遊戲確認追魂刃折返與待機觀感。既有 VFX 測試失敗不在本次範圍。
+
 ## Codex｜迴旋斬逐刀取當前發射位置（CLEAVE-LAUNCH-ORIGIN-20260916）
 
 - Owner：Codex；Done。依使用者補充：不是持續跟隨玩家，而是每次斬出時從玩家當下位置發射，發射後保持該刀自己的擴散中心。原本一次施放就固定所有追加刀波的圓心與延遲特效，導致玩家移動後仍在原地連斬。
