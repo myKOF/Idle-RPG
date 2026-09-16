@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜純演出特效尺寸所見即所得規則（VFX-VISUAL-SIZE-RULE-20260916）
+
+- Owner：Codex；Done（規範更新）。使用者要求文檔、編輯器與遊戲的尺寸一致，並明確限定不牽涉實際傷害計算的純演出。新增 AI_RULES.md 8.3.2，更新 VFX_SIZE_STANDARD.md，保留涉及傷害／碰撞／彈體／場域範圍的權威尺寸換算。
+- 修改：AI_RULES.md、docs/vfx/VFX_SIZE_STANDARD.md、本紀錄。未修改但檢查：vfx-runtime／core／tower、編輯器預覽與群組縮放、尺寸標準化工具、hit-gale-burst、疾風斬事件與 Runtime 測試。
+- 區分純演出尺寸與「技能本體／附加效果」歸屬，不以檔名前綴自動分類。212% 編輯器縮放屬檢視倍率，驗收須同世界尺度比較。
+- 衝突預檢乾淨，git diff --check 通過；純文件變更無需 Build／程式測試。Commit 為本紀錄所在提交，規範可合併，未合併／推送。尚未完成：既有 Runtime／Preset 的尺寸行為遷移，本次不宣稱已修正實際播放大小；後續須按用途盤點並驗證三端尺寸。
+
 ## Codex｜修復 Skills2 Excel 開啟空白（SKILLS2-REPAIR-20260916）
 
 - Owner：Codex；Done。使用者要求修復 Skills2.xlsx，來源為前次手工 XML 合併造成的 Excel 修復／空白問題。修改 Skills2.xlsx 與本紀錄；保留 CSV／JS／Preset 既有設定。
