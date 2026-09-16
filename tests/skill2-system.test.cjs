@@ -69,7 +69,7 @@ test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且�
       assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,0]), 90);
       assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,1]), 110);
     }
-    const gap = adjusted ? .35 : .2;
+    const gap = c.SKILLS2.gale.tiers[0].fx.gap || c.SG_MULTI_ATTACK_GAP_SEC;
     c.sgLegend = () => ({});
     c.sgUlt = () => null;
     const events = [], stamps = [];
@@ -87,15 +87,42 @@ test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且�
     assert.equal(events.length, 1);
     assert.equal(events[0].vfx.attack, moon ? 'slash-gale-moon' : 'hit-gale-burst');
     assert.deepEqual(events[0].targets, ['a']);
-    if (moon) assert.equal(events[0].area.r, adjusted ? 80 : 50);
+    if (moon) assert.equal(events[0].area.r, c.bfMeterPx(c.sgVal(c.SKILLS2.gale.tiers[6].fx, 'm', 1)));
     c.GT = gap - .01; c.sgTickGaleStrikes({}); assert.equal(events.length, 1);
     c.GT = gap; c.sgTickGaleStrikes({}); assert.equal(events.length, 2);
     c.GT = gap * 2; c.sgTickGaleStrikes({}); assert.equal(events.length, 3);
     assert.deepEqual([...new Set(stamps.map(s => s.at))], [0,gap,gap*2]);
     assert.ok(stamps.every(s => s.delay === 0));
     assert.equal(stamps.length, moon ? 6 : 3);
-    assert.equal(out.dmg, moon ? 34830 : 8100);
+    assert.equal(out.dmg, 8100 * (moon ? 1 + c.sgVal(c.SKILLS2.gale.tiers[6].fx, 'pct', 1) / 100 : 1));
     c.resetSkill2RT(); assert.equal(c.SKILL2_RT.galeStrikes.length, 0);
+  }
+});
+test('疾風破死亡後剩餘連擊轉移，傷害與特效同目標且不超出射程', () => {
+  for (const killEach of [false, true]) {
+    const c = loadContext();
+    c.resetSkill2RT(); c.GT = 0;
+    c.sgLegend = () => ({}); c.sgUlt = () => null; c.sgGaleOnHit = () => {};
+    const events = [], hits = [];
+    c.playCombatVfx = s => events.push({ at: c.GT, target: s.targets[0] });
+    c.enemyEventFloatTarget = e => e.name;
+    c.sgHitOne = (p, st, target, dmg, gid, sel, out) => {
+      hits.push({ at: c.GT, target: target.name }); out.dmg += dmg;
+      if (killEach) target.hp = 0;
+      return { dmg, miss: false };
+    };
+    const a = enemy(10000, 10, 0, 'a'), b = enemy(10000, 20, 0, 'b');
+    const far = enemy(10000, 10000, 0, 'far'), dead = enemy(0, 0, 0, 'dead');
+    const p = playerEnt(), out = { dmg: 0, killed: false };
+    const gap = c.SKILLS2.gale.tiers[0].fx.gap || c.SG_MULTI_ATTACK_GAP_SEC;
+    c.sgCastGale(p, { atk: 1000 }, c.SKILLS2.gale, [10,0,0,0,0,0,0],
+      [a, dead, far, b], a, 'mv-float', out);
+    c.GT = gap; c.sgTickGaleStrikes({});
+    c.GT = gap * 2; c.sgTickGaleStrikes({});
+    assert.deepEqual(events, hits);
+    assert.deepEqual(hits.map(h => h.target), killEach ? ['a','b'] : ['a','a','a']);
+    assert.deepEqual(hits.map(h => h.at), killEach ? [0,gap] : [0,gap,gap*2]);
+    assert.equal(c.SKILL2_RT.galeStrikes.length, 0);
   }
 });
 /* 傷害管線替身：固定 100 傷、可指定爆擊——測「機制」不測「公式」（公式由既有測試守）。 */

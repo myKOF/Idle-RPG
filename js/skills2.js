@@ -2741,6 +2741,13 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   };
 
   function strike() {
+    // 目標死亡時，剩餘段數沿用原節拍，依正常施法選敵規則接續。
+    if (!primary || primary.hp <= 0) {
+      var reachable = pool.filter(function (e) { return skills2CanReach('gale', e, lvs); });
+      primary = typeof bfPickPrimary === 'function'
+        ? bfPickPrimary(reachable, pEnt._lockTarget) : reachable[0];
+      geomOk = (typeof bfPos === 'function') && !!bfPos(primary);
+    }
     if (!primary || primary.hp <= 0) return;
     var radius = shareMode ? bfMeterPx(sgVal(t[6].fx, 'm', lvs[6])) : 0;
     if (shareMode) shareTargets = geomOk ? bfTargetsAround(primary, pool, radius) : [primary];
