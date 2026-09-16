@@ -714,13 +714,23 @@ function itemDetailHTML(it, cmp, opts) {
   poolHtml += '</div>';
 
   var wdet = (typeof weaponDef === 'function') ? weaponDef(it) : null; // 武器類型（非武器＝null）
+  var lockBtnHtml = '<button type="button" class="btn btn-it-lock' + (it.locked ? ' locked' : '') + '" data-act="lock" title="' + (it.locked ? '已鎖定（點擊解鎖）' : '未鎖定（點擊鎖定）') + '" aria-label="' + (it.locked ? '解鎖' : '鎖定') + '">' +
+    '<svg viewBox="0 0 24 24" class="it-lock-svg" aria-hidden="true">' +
+    '<rect x="4" y="10" width="16" height="12" rx="2" ry="2"></rect>' +
+    '<path d="' + (it.locked ? 'M7 10V7a5 5 0 0 1 10 0v3' : 'M7 10V7a5 5 0 0 1 9.5-2.2') + '"></path>' +
+    '</svg>' +
+    '</button>';
+  var headActionsHtml = '<span class="it-head-actions">' +
+    lockBtnHtml +
+    (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
+    '</span>';
+
   var h = '<div class="it-name" style="position:relative; color:' + r.color + '">' +
     (wdet ? wdet.emoji : SLOT_INFO[it.slot].emoji) + ' ' + esc(it.name) +
     (it.upgrade ? ' <span class="it-up">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
-    (it.locked ? ' 🔒' : '') +
-    (showAffixReroll ? '<button type="button" class="btn-it-pool" data-affix-pool-toggle aria-label="查看可能詞條">!</button>' + poolHtml : '') +
-    ((opts && opts.isEquipped) ? '<span class="equipped-tag" style="position: absolute; right: 10px; top: 2px; color: #4ade80; font-size: 13px; font-weight: bold;">(現有裝備)</span>' : '') +
+    headActionsHtml +
+    ((opts && opts.isEquipped) ? '<span class="equipped-tag" style="position: absolute; right: 52px; top: 2px; color: #4ade80; font-size: 12px; font-weight: bold;">(現有裝備)</span>' : '') +
     '</div>';
 
   h += '<div class="it-sub"><span>' + r.name + '・' +
