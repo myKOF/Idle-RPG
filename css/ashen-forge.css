@@ -228,10 +228,30 @@ input:focus-visible, textarea:focus-visible { outline: 2px solid #d9c9a7; outlin
 select option { background: #1b2222; color: #ded9c8; }
 
 /* Character portrait and item sockets are separate, so every original slot remains interactive. */
-#ui-shell .equip-top-layout { grid-template-columns: minmax(0, 1fr) 164px !important; gap: 10px; }
-#ui-shell .equip-top-layout:has(#equip-material-panel:empty) { grid-template-columns: minmax(0, 1fr) !important; }
-#ui-shell .equip-layout { grid-template-columns: 326px minmax(240px, 1fr) !important; gap: 16px; }
+#ui-shell .equip-top-layout { display: block !important; width: 100% !important; }
+#ui-shell .equip-layout {
+  display: grid !important;
+  grid-template-columns: 326px minmax(0, 1fr) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
 .equip-layout > div:first-child { position: relative; }
+.equip-right-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+.equip-middle-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 164px;
+  gap: 10px;
+  align-items: stretch;
+  min-height: 344px;
+}
+.equip-middle-row:has(#equip-material-panel:empty) {
+  grid-template-columns: minmax(0, 1fr);
+}
 #equip-grid {
   position: relative;
   width: 100%;
@@ -451,7 +471,18 @@ select option { background: #1b2222; color: #ded9c8; }
   cursor: not-allowed;
   filter: grayscale(0.8);
 }
-.equip-material-panel { margin-top: 40px; height: 326px; max-height: 326px; padding: 9px; border: 3px ridge #5c6762; }
+.equip-material-panel {
+  margin-top: 0 !important;
+  height: 344px !important;
+  max-height: 344px !important;
+  padding: 9px;
+  border: 3px ridge #5c6762;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.equip-material-panel:empty {
+  display: none !important;
+}
 .equip-material-grid { gap: 4px; }
 .equip-material-icon { border-radius: 0; background: var(--af-raised); box-shadow: inset 0 0 0 1px #919c7833; }
 
