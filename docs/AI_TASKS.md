@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜彈射換段保留尾跡（KNIFE-TAIL-LIFETIME-20260916）
+
+- Owner：Codex；Done。使用者要求刀身換段後舊粒子自然消退並注意效能。Core 新增 finish／clearTails：移除刀身、停發射與子粒子，保留既有粒子及出生座標；最多剩餘 3 個實際秒，額外淡出乘區避免使用者 alpha 尾端非零造成硬切。重複 finish 不續命。普通飛刀到達、追魂刃飛行／環繞切換與自然到期沿用此路徑；換場 reset／clear 與死亡 clearFields 清空尾跡。無傷害／判定變更。
+- 效能：不複製粒子，不新增 ticker／timer；尾跡沿既有更新／回收池執行。獨立上限 64 段／1,200 顆殘留粒子，超量先回收最舊段，不影響飛行中的刀。先行壓測 10 支金刀每 0.2 秒換段，無獨立粒子上限時 0.175→1.872 ms／幀、峰值 3,011 粒子，已向使用者提早回報後加上保護。最後同場景交錯 5 輪、暖機 300 幀、計時 600 幀：立即清除中位 0.180 ms／幀，保留尾跡 0.764 ms／幀，峰值 1,578 顆（含飛行中）；停止後 3 秒 activeParticles／activeEffects 均 0。Node 無繪圖後端數字不代表 GPU／實機 FPS。
+- 修改：js/vfx-core.js、js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、tests/vfx-core.test.cjs、tests/knife-flight.test.cjs、docs/vfx/VFX_CORE_AND_PRESET_SCHEMA.md、本紀錄。預檢無衝突，遊戲與編輯器 Core 快取同步。未修改但檢查：js/skills2.js、飛刀 Preset、追魂刃測試；無素材或表格變更。
+- 驗證：node --test tests/vfx-core.test.cjs tests/knife-flight.test.cjs tests/soulhunter.test.cjs，155 項通過；驗證換段保留、刀身立即隱藏、不再生成粒子、子發射抑制、自然消退、慢速動畫期限、重複結束、粒子／段數上限、既有飛刀傷害時序與重置清理。Build 與 git diff --check 通過。
+- Commit 為本紀錄所在提交，無未完成程式項目，可供審查合併；未合併／推送。尚未遊戲內 GPU／目視驗收，建議大量彈射情境觀察 FPS；極端超量時允許最舊尾跡提早消失，以限制成本。
+
 ## Codex｜提交使用者飛刀特效調整（KNIFE-VFX-COMMIT-20260916）
 
 - Owner：Codex；Done。依使用者要求提交普通／金色飛刀 Preset 與 layout 的現有調整，包含刀身尺寸、配色、光暈、金色拖尾壽命／密度／阻力與額外光暈層。普通刀 layout 經 git add 正規化後若無內容差異則不產生提交差異。

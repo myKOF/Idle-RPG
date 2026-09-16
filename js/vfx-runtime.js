@@ -432,6 +432,11 @@ var VFXRuntime = (function () {
       if (ref.parts) { ref.parts.forEach(stopRef); return; }
       ref.rt.stop(ref.handle);
     }
+    function finishRef(ref) {
+      if (!ref) return;
+      if (ref.parts) { ref.parts.forEach(finishRef); return; }
+      if (ref.rt.finish) ref.rt.finish(ref.handle); else ref.rt.stop(ref.handle);
+    }
     /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
     function moveRef(ref, params, mult) {
       if (ref.parts) { var alive = ref.parts.map(function(part) { return moveRef(part, params, mult); }); return alive.every(Boolean); }
@@ -679,7 +684,7 @@ var VFXRuntime = (function () {
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions, knifeFlight: knifeFlight, control: knifeControl, lastTo: to,
+        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || ''), control: knifeControl, lastTo: to,
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
@@ -1085,11 +1090,11 @@ var VFXRuntime = (function () {
     /* ---------------------------------------------------------------
        tryPlay：整則事件的入口。回 false＝這一則交還給舊畫法。
        --------------------------------------------------------------- */
-    function stopSoul(id) {
+    function stopSoul(id, preserveTail) {
       for(var i=projectiles.length-1;i>=0;i--)if(projectiles[i].soulId===id) {
-        stopRef(projectiles[i].ref);projectiles.splice(i,1);
+        (preserveTail ? finishRef : stopRef)(projectiles[i].ref);projectiles.splice(i,1);
       }
-      if(soulOrbits[id]){stopRef(soulOrbits[id].ref);delete soulOrbits[id];}
+      if(soulOrbits[id]){(preserveTail ? finishRef : stopRef)(soulOrbits[id].ref);delete soulOrbits[id];}
     }
     function playSoulOrbit(spec,roles) {
       var a=spec.area,id=roles.projectile,dur=Math.max(.001,num(spec.dur,0));
@@ -1111,7 +1116,7 @@ var VFXRuntime = (function () {
         return true;
       }
       if(spec.area && spec.area.soulId) {
-        stopSoul(spec.area.soulId);
+        stopSoul(spec.area.soulId, true);
         if(spec.area.soulMode==='stop')return true;
         if(spec.area.soulMode==='orbit')return playSoulOrbit(spec,roles);
       }
@@ -1314,14 +1319,14 @@ var VFXRuntime = (function () {
         if (!alive || k >= 1 || (pr.soulId && pr.t>=pr.soulLife)) {
           /* 抵達時的航向留給連鎖的下一段接手（見 playProjectile 的 enterAngle）。 */
           if (k >= 1 && pr.targetId) arrivals[pr.targetId] = { angle: pr.facing, at: clock };
-          if (alive) stopRef(pr.ref);
+          if (alive) (pr.knifeTail ? finishRef : stopRef)(pr.ref);
           projectiles.splice(i, 1);
         }
       }
 
       Object.keys(soulOrbits).forEach(function(id) {
         var o=soulOrbits[id];o.t+=step;
-        if(o.t>=o.dur){stopSoul(id);return;}
+        if(o.t>=o.dur){stopSoul(id,true);return;}
         var centre=footOf('pv-float'),angle=o.angle+o.spin*o.t;
         moveRef(o.ref,Object.assign({position:{x:centre.x+Math.cos(angle)*o.r,y:centre.y+Math.sin(angle)*o.r},
           rotation:angle+Math.PI/2},o.dimensions),profile.scale);
@@ -1380,7 +1385,8 @@ var VFXRuntime = (function () {
        飛行物、受擊爆點與狀態光環不在此列：前兩者本來就是一次性的，
        狀態光環另有 syncStatuses 逐張快照對帳。 */
     function clearFields() {
-      Object.keys(soulOrbits).forEach(stopSoul);
+      Object.keys(soulOrbits).forEach(function(id){stopSoul(id,false);});
+      if (rtFx.clearTails) rtFx.clearTails();
       projectiles.filter(function(p){return p.soulId;}).forEach(function(p){stopSoul(p.soulId);});
       Object.keys(orbits).forEach(stopOrbit);
       Object.keys(grounds).forEach(function (k) {

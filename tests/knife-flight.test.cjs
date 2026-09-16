@@ -100,3 +100,15 @@ test('彈射曲線的模擬中點與 Runtime 畫面一致，長距離仍顯示�
  assert.ok(frames.some(f=>Math.abs(f.x-expected.x)<1e-6&&Math.abs(f.y-expected.y)<1e-6));
  assert.equal(rt.stats().projectiles,1);assert.ok(rt.stats().fx.activeEffects>0);
 });
+
+test('Runtime 飛刀到達與追魂刃換段保留尾粒子，換場立即清空',()=>{
+ const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
+ const backend={createNode:()=>({}),updateNode(){},destroyNode(){}};
+ const rt=Runtime.create({core:Core,resolver:{has:()=>true,resolve:x=>x},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:100,y:0}),chainPoint:()=>({x:100,y:0})}});
+ rt.registerPresets([{schemaVersion:1,id:'test-knife-tail',duration:1,layers:[{id:'body',type:'sprite',assetId:'p.png'},{id:'tail',type:'particle',assetId:'p.png',emission:{mode:'rate',rate:30},lifetime:2,speed:0}]}]);
+ const spec={fxKind:'projectile',variant:'knife',hit:false,targets:['E'],travelMs:[200],vfx:{projectile:'test-knife-tail'},area:{knifeFlight:true,sourceX:0,sourceY:0,x:100,y:0}};
+ rt.tryPlay(spec);rt.update(.1);rt.update(.1);assert.equal(rt.stats().projectiles,0);assert.ok(rt.stats().fx.activeParticles>0);
+ const soul={...spec,variant:'knife-soulhunter',area:{...spec.area,soulId:'one',soulMode:'flight',soulLife:10}};
+ rt.tryPlay(soul);rt.update(.05);const before=rt.stats().fx.activeParticles;rt.tryPlay(soul);assert.equal(rt.stats().projectiles,1);assert.ok(rt.stats().fx.activeParticles>=before);
+ rt.clear();assert.equal(rt.stats().fx.activeParticles,0);assert.equal(rt.stats().fx.activeEffects,0);
+});

@@ -1361,6 +1361,7 @@ var VFXCore = (function () {
        為了少一幀而重排圖層順序，代價是 zIndex 與更新順序糾纏在一起，不划算。 */
     var subOrigin = { x: 0, y: 0, vx: 0, vy: 0 };
     function emitSub(effect, se, parent) {
+      if (effect.draining) return;
       var target = effect.byId[se.layer];
       if (!target) return;                       // 被 enabled:false 關掉的層
       subOrigin.x = parent.x;
@@ -1436,7 +1437,7 @@ var VFXCore = (function () {
       var d = layer.def;
       var life = layerLife(effect, layer);
       /* sub 模式完全不自發射：這一層的粒子只由別人的子發射器丟進來。 */
-      if (life.active && d.emission.mode !== 'sub') {
+      if (!effect.draining && life.active && d.emission.mode !== 'sub') {
         if (d.emission.mode === 'burst') {
           if (!layer.burstDone) {
             var cap = layerParticleCap(d);
@@ -1485,7 +1486,7 @@ var VFXCore = (function () {
       for (var j = 0; j < layer.particles.length; j++) {
         var p = layer.particles[j];
         p.life += dt;
-        if (p.life >= p.maxLife) {
+        if (p.life >= p.maxLife || (effect.draining && effect.drainAge >= p.drainLife)) {
           /* 先觸發子發射再回收：p.x／p.vx 要在還沒被清掉之前讀。 */
           if (subOn === 'death') emitSub(effect, d.subEmitter, p);
           releaseNode(layer.nodeSpec, p.node);
@@ -1594,7 +1595,8 @@ var VFXCore = (function () {
         }
         t.scaleX = p.baseScale * effect.scale * d.scale.x * (scaleK === null ? 1 : scaleK);
         t.scaleY = p.baseScale * effect.scale * d.scale.y * (scaleK === null ? 1 : scaleK);
-        t.alpha = effect.opacity * d.alpha * (alphaK === null ? 1 : alphaK);
+        t.alpha = effect.opacity * d.alpha * (alphaK === null ? 1 : alphaK) *
+          (effect.draining ? Math.max(0, 1 - effect.drainAge / p.drainLife) : 1);
         t.tint = tintCurve === null ? tint : mulColorInt(tint, sampleColorCurve(tintCurve, k));
         t.frame = sheet ? sheetFrame(sheet, k, p.life, p.frameOffset) : undefined;
         t.anchorX = d.anchor.x;
@@ -1628,19 +1630,20 @@ var VFXCore = (function () {
       var keep = 0;                       // write-index：原地壓縮，不每幀配置新陣列
       for (var i = 0; i < effects.length; i++) {
         var effect = effects[i];
-        effect.lastDt = dt * effect.timeScale;
+        effect.lastDt = effect.draining ? dt : dt * effect.timeScale;
+        if (effect.draining) effect.drainAge += dt;
         effect.time += effect.lastDt;
         var preset = effect.preset;
-        if (preset.loop && effect.time > preset.duration) {
+        if (!effect.draining && preset.loop && effect.time > preset.duration) {
           effect.time = effect.time % preset.duration;
           effect.layers.forEach(function (l) { l.burstDone = false; });
         }
         for (var j = 0; j < effect.layers.length; j++) {
           var layer = effect.layers[j];
           if (layer.def.type === 'particle') updateParticleLayer(effect, layer, effect.lastDt);
-          else updateSpriteLayer(effect, layer);
+          else if (!effect.draining) updateSpriteLayer(effect, layer);
         }
-        var over = !preset.loop && effect.time >= preset.duration;
+        var over = effect.draining || (!preset.loop && effect.time >= preset.duration);
         var particlesLeft = effect.layers.some(function (l) { return l.particles.length > 0; });
         if (over && !particlesLeft) {
           releaseEffect(effect);
@@ -1661,6 +1664,42 @@ var VFXCore = (function () {
         }
       }
       return false;
+    }
+
+    // 結束發射但保留已存在的粒子；不複製節點，沿用既有預算與回收池。
+    function finish(handle) {
+      var effect = findEffect(handle);
+      if (!effect) return false;
+      if (effect.draining) return true;
+      effect.draining = true; effect.drainAge = 0;
+      var count = 0, tailParticles = 0;
+      for (var i = 0; i < effects.length; i++) if (effects[i].draining) {
+        count++;
+        for (var j = 0; j < effects[i].layers.length; j++) tailParticles += effects[i].layers[j].particles.length;
+      }
+      // 尾跡有獨立預算，不佔滿高上限的戰鬥粒子池；超量先回收最舊段。
+      for (var k = 0; k < effects.length && (count > 64 || tailParticles > 1200);) {
+        var oldest = effects[k];
+        if (!oldest.draining) { k++; continue; }
+        for (var n = 0; n < oldest.layers.length; n++) tailParticles -= oldest.layers[n].particles.length;
+        count--; stop(oldest.handle);
+        if (oldest === effect) return true;
+      }
+      var remaining = 0;
+      effect.layers.forEach(function (layer) {
+        if (layer.node) { releaseNode(layer.nodeSpec, layer.node); layer.node = null; }
+        layer.particles.forEach(function (p) {
+          // 尾跡使用實際秒數，避免飛行動畫的慢速 timeScale 令粒子長時間滯留。
+          p.drainLife = Math.max(0.001, Math.min(3, p.maxLife - p.life));
+          remaining++;
+        });
+      });
+      if (!remaining) stop(handle);
+      return true;
+    }
+
+    function clearTails() {
+      for (var i = effects.length - 1; i >= 0; i--) if (effects[i].draining) stop(effects[i].handle);
     }
 
     function stopAll() {
@@ -1695,6 +1734,8 @@ var VFXCore = (function () {
       update: update,
       stop: stop,
       stopAll: stopAll,
+      finish: finish,
+      clearTails: clearTails,
       /* 播放頭查詢。與 play(startTime) 成對：Editor 重建預覽時先讀出目前時間，
          再用它重播，畫面就不會每改一個參數就跳回開頭。
          回傳 null 代表這個 handle 已經結束或不存在。 */
