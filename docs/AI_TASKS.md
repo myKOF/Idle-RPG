@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜追魂刃待機環繞半徑（SOULHUNTER-ORBIT-20260916）
+
+- Owner：Codex；Done。依使用者要求將待機環繞半徑由 3 米調為 12 米；沿用 SG_SOULHUNTER_ORBIT_M 與事件 orbitR，返回位置、再出發點及 Runtime 畫面共用半徑。前置追魂刃改造已完成，預檢無衝突。
+- 範圍：js/skills2.js、js/worker/sim.worker.js、js/bridge.js、index.html、tests/soulhunter.test.cjs、本紀錄。既有金刀 Preset／layout 工作區修改保留，不納入本次提交。
+- 未修改但檢查：js/vfx-runtime.js，已直接使用事件 orbitR；Excel／CSV 沒有待機半徑配置，沿用既有程式常數，無需改表或素材。快取版本已同步。
+- 驗證：node --test tests/soulhunter.test.cjs tests/knife-flight.test.cjs，17/17 通過；node tools/build_check.cjs 通過；git diff --check 通過。既有測試改為驗證 120 單位半徑，並依實際到達時間檢查重新追擊傷害。
+- Commit：本紀錄所在提交；無未完成實作，可供合併，未合併／推送。尚未遊戲內目視驗證，建議重新整理確認環繞距離。
+
 ## Codex｜無限追魂刃持續追擊與環繞（SOULHUNTER-20260916）
 
 - Owner：Codex；Done。使用者確認無敵人環繞待機、單敵飛離折返。每次施放額外一支金刀，追擊玩家周圍 40 米敵人，生成後最多 10 秒；每次彈射傷害累加，配置基值 4%、每級 +0.4%（沿用全專案 base + per × level 公式）。首擊不吃彈射增傷；返回／環繞不造成命中；途中敵人死亡仍先抵達再尋敵。

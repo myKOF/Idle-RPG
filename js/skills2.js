@@ -2470,7 +2470,7 @@ function sgKnifeWaltz(pEnt, st, cfg, waltz) {
 
 /* 每次施放只有一個追魂刃控制器；飛行、回返、環繞共用同一身份與到期時間。 */
 var SG_SOULHUNTER_SERIAL = 0;
-var SG_SOULHUNTER_ORBIT_M = 3;
+var SG_SOULHUNTER_ORBIT_M = 12;
 var SG_SOULHUNTER_ORBIT_RPS = 1;
 function sgSoulPoint(s,now) {
   var centre=bfPlayerPos(),angle=s.orbitAngle+(now-s.orbitAt)*Math.PI*2*SG_SOULHUNTER_ORBIT_RPS;

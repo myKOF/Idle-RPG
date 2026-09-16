@@ -37,12 +37,14 @@ test('殺敵後返回並環繞，新敵進入 40 米才重新追擊，期限不�
  const h=setup(),a=h.enemy(50,100),far=h.enemy(1000,1000,'far');h.cfg.pool=[a,far];const s=soul(h);
  advance(h,2);assert.equal(a.hp,0);assert.equal(s.mode,'orbit');assert.equal(far.hp,1000);
  const b=h.enemy(100,1000,'new');h.cfg.pool=[b,far];h.tick(3);assert.equal(s.mode,'flight');assert.equal(s.until,10);
- advance(h,4.5);assert.ok(b.hp<1000);assert.equal(far.hp,1000);
+ const flight=h.c.SKILL2_RT.projectiles.find(p=>p.knifeFlight&&p.target===b);
+ advance(h,flight.endAt-.001);assert.equal(b.hp,1000);
+ h.tick(flight.endAt);assert.ok(b.hp<1000);assert.equal(far.hp,1000);
 });
 test('沒有範圍內敵人立即待機，隨玩家位置發出；各次施放獨立到期',()=>{
  const h=setup();const a=soul(h);assert.equal(a.mode,'orbit');h.tick(2);const b=soul(h);assert.notEqual(a.id,b.id);assert.equal(b.until,12);
  h.c.bfPlayerPos=()=>({x:500,y:100});h.cfg.pool=[h.enemy(550,1000,'new')];h.tick(3);
- const event=h.events.findLast(e=>e.area?.soulMode==='flight');assert.ok(event.area.sourceX>=470);assert.ok(event.area.sourceY>=70);
+ const event=h.events.findLast(e=>e.area?.soulMode==='flight');assert.ok(Math.abs(Math.hypot(event.area.sourceX-500,event.area.sourceY-100)-120)<1e-6);
  h.tick(10);assert.ok(!h.c.SKILL2_RT.projectiles.includes(a));assert.ok(h.c.SKILL2_RT.projectiles.includes(b));
  h.p.hp=0;h.tick(10.1);assert.equal(h.c.SKILL2_RT.projectiles.length,0);
 });
@@ -53,7 +55,7 @@ test('Runtime 同身份僅保留一支，環繞隨玩家移動，到期及死亡
  const rt=Runtime.create({core:Core,resolver:{has:()=>true,resolve:x=>x},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>centre,posOf:()=>centre,footOf:()=>centre}});
  rt.registerPresets([JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/proj-knife-gold.json')))]);
  assert.equal(rt.tryPlay(event),true);assert.equal(rt.stats().soulOrbits,1);rt.tryPlay(event);assert.equal(rt.stats().soulOrbits,1);
- centre={x:500,y:100};rt.update(.1);assert.ok(frames.some(f=>Math.abs(f.x-500)<=30&&Math.abs(f.y-100)<=30));
+ centre={x:500,y:100};rt.update(.1);assert.equal(event.area.orbitR,120);assert.ok(frames.some(f=>Math.abs(Math.hypot(f.x-500,f.y-100)-120)<1e-6));
  rt.update(10);assert.equal(rt.stats().soulOrbits,0);rt.tryPlay(event);rt.clearFields();assert.equal(rt.stats().soulOrbits,0);
 });
 test('完整施放多把普通刀時只有一支金刀，普通彈射與受擊不繼承金色',()=>{
