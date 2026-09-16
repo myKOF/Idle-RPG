@@ -9,10 +9,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4414,
-        "y": 0.4414
+        "x": 0.5176,
+        "y": 0.5174
       },
       "alpha": 0.38,
       "tint": "#ff5426",
@@ -75,10 +79,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4238,
-        "y": 0.4238
+        "x": 0.4992,
+        "y": 0.4989
       },
       "alpha": 0.95,
       "tint": "#ff5426",
@@ -141,10 +149,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 8,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4023,
-        "y": 0.4023
+        "x": 0.4738,
+        "y": 0.4736
       },
       "alpha": 0.68,
       "tint": "#fff7dc",
@@ -207,10 +219,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 12,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.1293,
       "scale": {
-        "x": 0.3516,
-        "y": 0.3516
+        "x": 0.4142,
+        "y": 0.414
       },
       "alpha": 0.25,
       "tint": "#ffc62e",
@@ -273,10 +289,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4414,
-        "y": 0.4414
+        "x": 0.5199,
+        "y": 0.5197
       },
       "alpha": 0.38,
       "tint": "#ffc62e",
@@ -339,10 +359,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4238,
-        "y": 0.4238
+        "x": 0.4992,
+        "y": 0.4989
       },
       "alpha": 0.95,
       "tint": "#ffc62e",
@@ -405,10 +429,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 9,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -2.7053,
       "scale": {
-        "x": 0.4023,
-        "y": 0.4023
+        "x": 0.4738,
+        "y": 0.4736
       },
       "alpha": 0.68,
       "tint": "#fff7dc",
@@ -471,10 +499,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 13,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.2638,
       "scale": {
-        "x": 0.3516,
-        "y": 0.3516
+        "x": 0.4142,
+        "y": 0.414
       },
       "alpha": 0.25,
       "tint": "#ff8e24",
@@ -537,10 +569,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4414,
-        "y": 0.4414
+        "x": 0.5199,
+        "y": 0.5197
       },
       "alpha": 0.38,
       "tint": "#ff8e24",
@@ -603,10 +639,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 6,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4238,
-        "y": 0.4238
+        "x": 0.4992,
+        "y": 0.4989
       },
       "alpha": 0.95,
       "tint": "#ff8e24",
@@ -669,10 +709,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_01.png",
       "zIndex": 10,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -3.8397,
       "scale": {
-        "x": 0.4023,
-        "y": 0.4023
+        "x": 0.4738,
+        "y": 0.4736
       },
       "alpha": 0.68,
       "tint": "#fff7dc",
@@ -735,10 +779,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 14,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -4.3982,
       "scale": {
-        "x": 0.3516,
-        "y": 0.3516
+        "x": 0.4142,
+        "y": 0.414
       },
       "alpha": 0.25,
       "tint": "#ff5426",
