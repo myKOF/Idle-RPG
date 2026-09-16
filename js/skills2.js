@@ -2199,7 +2199,8 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   var origin = typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
   var curve = t[0].fx.radiusCurve;
   var targets = pool.filter(function(e) { return e && e.hp > 0; });
-  var roles = Object.assign({}, sgVfxRoles('cleave'));
+  // 逐風者的特效屬於命中後場域，不可在每刀起手套用整個斬擊半徑播放。
+  var roles = Object.assign({}, sgVfxRoles('cleave', ultWind ? { vfxBase: true } : null));
   // 六階起本體轉為飛行角色；攻擊欄仍保留供非飛行形態繼承。
   // 裂空飛斬若在六階前啟用，沿用該階攻擊刀波作為飛行本體。
   if (flying) { roles.projectile = roles.projectile || roles.attack; delete roles.attack; }

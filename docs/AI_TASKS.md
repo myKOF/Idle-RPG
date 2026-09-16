@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜逐風者場域不在迴旋斬起手播放（WINDCHASER-CAST-VFX-20260916）
+
+- Owner：Codex；Done。使用者更換地板 Preset 後發現玩家中心先出現放大的相同特效。根因為迴旋斬起手套用超神欄位，帶入命中後場域。
+- 範圍：skills2 起手角色選取、快取、迴旋斬與繼承測試、本紀錄。逐風者啟用時，本體只讀一般階級特效，命中場域仍讀逐風者配置。無傷害與配置變更；使用者既有 Excel／CSV／JS 配置和新 Preset／layout 保留不納入本次程式提交。
+- 前置依賴已完成，衝突預檢乾淨；驗證真實起手與命中場域事件、連斬、超神、Build；完成後供使用者合併。
+- 驗證：`node --test tests/cleave-rework.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skill2-ult-evolution.test.cjs` 74/74；`node tools/build_check.cjs` 358 檔通過；`git diff --check` 通過。新增近戰／飛行兩路真實起手、追加波與命中場域位置／半徑驗證；既有逐風者測試固定測試配置，避免使用者換 Preset 造成無關失敗。
+- 未修改但檢查：使用者 CSV／Preset、Runtime 場域派送；無素材變更。Commit 為本紀錄所在提交，可合併，未合併／推送。使用者原有五個檔案變更留在工作區；未遊戲內目視驗證。使用者另提出觸發用途配置設計，已說明它與 ground／field 圖層分類不同，本次未擴充資料格式。
+
 ## Codex｜逐風者龍捲風排除繼承刀光（WINDCHASER-VFX-20260916）
 
 - Owner：Codex；Done。使用者要求修正逐風者地面額外出現迴旋斬刀光。龍捲風事件只派送配置解析出的 ground 角色，不變更全域繼承規則與迴旋斬本體。

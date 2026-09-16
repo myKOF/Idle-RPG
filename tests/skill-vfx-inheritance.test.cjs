@@ -16,6 +16,7 @@ function load() {
 const plain = x => JSON.parse(JSON.stringify(x));
 test('逐風者實際場域只播放表定龍捲風，保留風系傷害與本體繼承', () => {
   const c = load(), events = [], hits = [];
+  c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').vfx = { ground: 'ground-tornado-wind' };
   c.playCombatVfx = spec => events.push(plain(spec));
   c.enemyEventFloatTarget = () => 'enemy';
   c.sgHitOne = (...args) => { hits.push(args); return { miss: true }; };
