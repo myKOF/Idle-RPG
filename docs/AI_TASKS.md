@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜藍色與三色刀波沿用暖色圓環外形（CLEAVE-WARM-SHAPE-20260916）
+
+- Owner：Codex；Done。依使用者圖 2 的目前暖色 Preset，套用 12 層 scale 比例並以原外框尺寸等比正規化至 slash-cleave-ring-blue 與 proj-cleave-ring-tricolor，消除非等比拉伸。逐欄比對確認只有 scale 改變，顏色、透明度、旋轉、時序、sizing 與飛行規則全部保留。
+- 修改：上述兩份 Preset、js/vfx-runtime.js 資料快取、index.html 快取及本紀錄；預檢乾淨。未修改但檢查：暖色 Preset、製作工具與渲染器。使用者原有暖色 scale 修改保留在工作區，不混入提交。既有素材不變，素材庫無需新 Commit。
+- 驗證：非 scale 欄位深度比對；cleave-rework、vfx-preset-layout、vfx-preset-usage 測試及 Build；Core 預覽目視確認。未遊戲內目視驗證。Commit 為本紀錄所在提交；可供合併，未合併／未推送。
+
+
 ## Codex｜核准硬邊氣旋刀光（CLEAVE-SHARP-CYCLONE-20260916）
 
 - Owner：Codex；Done。使用者看過三份完成圖後授權「接入並 commit」。使用者核准加厚約三倍、帶不規則尖端與分離刀痕的單色素材；依先前要求，同步暖色、藍色、三色三份 Preset。保留三組原始旋轉、尺寸與延遲曲線，減低光暈；不更動技能規則與 0.3 秒間隔。
