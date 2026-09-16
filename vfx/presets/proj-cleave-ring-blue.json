@@ -14,7 +14,7 @@
         "x": 0.4414,
         "y": 0.4414
       },
-      "alpha": 0.38,
+      "alpha": 0.08,
       "tint": "#278dff",
       "blendMode": "add",
       "delay": 0,
@@ -80,7 +80,7 @@
         "x": 0.4238,
         "y": 0.4238
       },
-      "alpha": 0.95,
+      "alpha": 0.7,
       "tint": "#278dff",
       "blendMode": "add",
       "delay": 0,
@@ -146,7 +146,7 @@
         "x": 0.4023,
         "y": 0.4023
       },
-      "alpha": 0.68,
+      "alpha": 0.3,
       "tint": "#fff7dc",
       "blendMode": "add",
       "delay": 0,
@@ -212,7 +212,7 @@
         "x": 0.3516,
         "y": 0.3516
       },
-      "alpha": 0.25,
+      "alpha": 0.1,
       "tint": "#53c8ff",
       "blendMode": "add",
       "delay": 0,
@@ -278,7 +278,7 @@
         "x": 0.4414,
         "y": 0.4414
       },
-      "alpha": 0.38,
+      "alpha": 0.08,
       "tint": "#53c8ff",
       "blendMode": "add",
       "delay": 0.035,
@@ -344,7 +344,7 @@
         "x": 0.4238,
         "y": 0.4238
       },
-      "alpha": 0.95,
+      "alpha": 0.7,
       "tint": "#53c8ff",
       "blendMode": "add",
       "delay": 0.035,
@@ -410,7 +410,7 @@
         "x": 0.4023,
         "y": 0.4023
       },
-      "alpha": 0.68,
+      "alpha": 0.3,
       "tint": "#fff7dc",
       "blendMode": "add",
       "delay": 0.035,
@@ -476,7 +476,7 @@
         "x": 0.3516,
         "y": 0.3516
       },
-      "alpha": 0.25,
+      "alpha": 0.1,
       "tint": "#607aff",
       "blendMode": "add",
       "delay": 0.035,
@@ -542,7 +542,7 @@
         "x": 0.4414,
         "y": 0.4414
       },
-      "alpha": 0.38,
+      "alpha": 0.08,
       "tint": "#607aff",
       "blendMode": "add",
       "delay": 0.07,
@@ -608,7 +608,7 @@
         "x": 0.4238,
         "y": 0.4238
       },
-      "alpha": 0.95,
+      "alpha": 0.7,
       "tint": "#607aff",
       "blendMode": "add",
       "delay": 0.07,
@@ -674,7 +674,7 @@
         "x": 0.4023,
         "y": 0.4023
       },
-      "alpha": 0.68,
+      "alpha": 0.3,
       "tint": "#fff7dc",
       "blendMode": "add",
       "delay": 0.07,
@@ -740,7 +740,7 @@
         "x": 0.3516,
         "y": 0.3516
       },
-      "alpha": 0.25,
+      "alpha": 0.1,
       "tint": "#278dff",
       "blendMode": "add",
       "delay": 0.07,
@@ -799,7 +799,7 @@
   ],
   "sizing": {
     "authored": {
-      "radius": 80
+      "radius": 85.87878400000001
     },
     "radiusM": 8,
     "shape": "circle"

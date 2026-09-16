@@ -2,6 +2,8 @@
 
 ## 迴旋斬圓形刀波（2026-09-16）
 
+使用者確認保留原本三組刀弧快速旋轉整圈的表現，不採用分段小刀弧。飛行 Preset 校正 authored.radius，避免已放大的造型再次被飛行距離倍率放大；降低 glow／edge／trail 的疊加亮度以保留內圈。保留原始旋轉、延遲與擴張曲線。迴旋斬專用 SG_CLEAVE_WAVE_GAP_SEC 同時控制傷害與事件 delayMs，維持 0.3 秒。
+
 `cleave-ring` 使用事件 `area.x/y/r` 與 `travelMs[0]`，固定圓心向外擴張。
 攻擊形態用 `attack`；第六階或裂空飛斬啟用時以 `projectile` 取代攻擊本體，避免繼承兩欄而重畫。
 刀波曲線來源為 Skills2 第一階 `fx.radiusCurve`，製作工具從生成的技能表讀取，與模擬共用；測試釘住正式 Preset 與配置一致。

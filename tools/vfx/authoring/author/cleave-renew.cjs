@@ -58,12 +58,23 @@ function presets() {
   for (const layer of combined.layers) {
     const color = colors.get(layer.id);
     if (!color) throw new Error('三色刀波缺少對應圖層：' + layer.id);
-    for (const key of ['tint', 'colorOverLife']) {
+    for (const key of ['tint', 'tintOverLife']) {
       delete layer[key];
       if (color[key] !== undefined) layer[key] = color[key];
     }
   }
   current[3] = combined;
+  for (const p of current.slice(1)) {
+    // 作者座標必須反映刀弧實際外框，不能讓使用者放大過的造型再次被距離倍率放大。
+    const radius = Math.max(...p.layers.map(l => Math.max(l.scale.x,l.scale.y))) * 512 * 0.38;
+    p.sizing = {shape:'circle',radiusM:8,authored:{radius}};
+    for (const l of p.layers) {
+      // 收斂疊加光暈，保留原本刀弧與整圈旋轉，避免內緣被白光填滿。
+      l.alpha = l.id.startsWith('blade-glow-') ? 0.08
+        : l.id.startsWith('blade-edge-') ? 0.3
+        : l.id.startsWith('blade-trail-') ? 0.1 : 0.7;
+    }
+  }
   return current;
 }
 if (require.main === module) presets().forEach(p => console.log(kit.write(p)));

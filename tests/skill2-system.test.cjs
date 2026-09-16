@@ -155,7 +155,7 @@ test('迴身四方斬五道完整刀環逐波擴張，每道只命中一次', ()
   c.castSkill2(p, targets, 'cleave', 'mv-float');
   assert.equal(calls.length, 0, '四方斬應先建立向外飛行的傷害判定');
   const starts = c.SKILL2_RT.projectiles.filter(x=>x.gid==='cleave').map(x=>x.beginAt);
-  assert.deepEqual(Array.from(starts, x=>Math.round(x*1000)), [0,200,400,600,800]);
+  assert.deepEqual(Array.from(starts, x=>Math.round(x*1000)), [0,300,600,900,1200]);
   c.GT = 0.05;
   c.tickSkill2(0.05, { pEnt: p, getEnemies: () => targets, floatSel: 'mv-float', onDeaths() {} });
   assert.equal(calls.length, 1, '第二波尚未起飛，僅第一波命中中心附近的基準目標');
@@ -542,7 +542,7 @@ test('迴身四方斬：額外三道與連斬累加，傷害採乘法計算', ()
   assert.equal(c.SKILLS2.cleave.tiers[6].fx.pct, 50);
   assert.equal(c.SKILLS2.cleave.tiers[6].name, '迴身四方斬');
   assert.equal(cfgs.length, 0, '震碎斬飛行物應在施放時先不命中');
-  c.GT = 1.5;
+  c.GT = 2;
   c.tickSkill2(1.5, { pEnt: p, getEnemies: () => [front, back, right, left], floatSel: 'mv-float', onDeaths() {} });
   assert.equal(cfgs.length, 20, '五道刀波各命中四名敵人');
   for (const target of [front, back, right, left]) {

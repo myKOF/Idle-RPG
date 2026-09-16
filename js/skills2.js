@@ -96,6 +96,7 @@ var SG_ULT_SLOT = SG_TIER_COUNT;   // 超神進化在技能面板的格位索引
 var SG_ULT_OPTION_COUNT = 3;       // 三選一
 var SG_FLYING_PROJECTILE_SPEED = 240;
 var SG_MULTI_ATTACK_GAP_SEC = 0.2; // 未另訂節奏的多段／多次攻擊預設間隔
+var SG_CLEAVE_WAVE_GAP_SEC = 0.3; // 迴旋斬各道刀波共用的傷害與特效間隔
 var SG_THRUST_PROJECTILE_SPEED = SG_FLYING_PROJECTILE_SPEED * 2;
 /* 寒冰箭表定速度：30 米／秒；戰場座標固定為 10 單位／米。 */
 var SG_ICEARROW_SPEED = 300;
@@ -2196,7 +2197,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   } : null };
   var onHit = function(target,res,ctx) { sgCleaveOnHit(hookCfg,target,res,ctx); };
   for (var wave = 0; wave < slashes; wave++) {
-    var delay = wave * SG_MULTI_ATTACK_GAP_SEC;
+    var delay = wave * SG_CLEAVE_WAVE_GAP_SEC;
     sgEmitVfx('cleave', [], floatSel, {
       fxKind:flying ? 'projectile' : 'slash', variant:'cleave-ring', projectile:true,
       delayMs:Math.round(delay*1000), travelMs:[travel*1000], dur:travel,
