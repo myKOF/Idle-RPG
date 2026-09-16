@@ -4773,9 +4773,17 @@ function renderDetail() {
     return;
   }
   var cost = upgradeCost(it);
+  var justUpgraded = false;
+  if (it && UI._upgradingItemId === it.id) {
+    if ((it.upgrade || 0) > (UI._upgradingItemPrevLevel || 0)) {
+      justUpgraded = true;
+      UI._upgradingItemId = null;
+    }
+  }
   var h = itemDetailHTML(it, null, {
     gold: player && player.gold,
-    essence: player && player.essence
+    essence: player && player.essence,
+    justUpgraded: justUpgraded
   });
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
@@ -5049,6 +5057,8 @@ function detailAction(act, actBtn) {
     panels = ['inv', 'equip', 'header', 'gems'];
   } else if (act === 'upgrade') {
     commandName = 'item.upgrade';
+    UI._upgradingItemId = it.id;
+    UI._upgradingItemPrevLevel = it.upgrade || 0;
   } else if (act === 'reroll-affix') {
     commandName = 'item.rerollAffix';
     args.affixKey = actBtn && actBtn.getAttribute('data-affix');
@@ -5066,6 +5076,7 @@ function detailAction(act, actBtn) {
   }).then(function (result) {
     var resultError = typeof uiCommandResultError === 'function' ? uiCommandResultError(result, commandName) : null;
     if (resultError) {
+      if (act === 'upgrade') UI._upgradingItemId = null;
       if (actBtn && (String(resultError).indexOf('資源不足') >= 0 || String(resultError).indexOf('不足') >= 0 || resultError === 'poor')) {
         showFloatingText(actBtn, '材料不足', '#fca5a5');
       } else {
@@ -5082,11 +5093,28 @@ function detailAction(act, actBtn) {
     if (act === 'salvage') UI.sel = null;
     if (act === 'upgrade' && actBtn) {
       var upgradeResult = result && hasOwnUiState(result, 'result') ? result.result : result;
-      if (upgradeResult === 'ok') showFloatingText(actBtn, '升級成功', '#7dd3fc');
+      if (upgradeResult === 'ok') {
+        showFloatingText(actBtn, '升級成功', '#7dd3fc');
+        var upEl = document.querySelector('#detail-pane .it-up');
+        if (upEl) {
+          upEl.classList.remove('upgrade-pop');
+          void upEl.offsetWidth;
+          upEl.classList.add('upgrade-pop');
+        }
+        var escId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(String(it.id)) : String(it.id);
+        var cellUp = document.querySelector('.eq-slot[data-id="' + escId + '"] .ic-up, .item-cell[data-id="' + escId + '"] .ic-up');
+        if (cellUp) {
+          cellUp.classList.remove('upgrade-pop');
+          void cellUp.offsetWidth;
+          cellUp.classList.add('upgrade-pop');
+        }
+      }
       else if (upgradeResult === 'fail') showFloatingText(actBtn, '升級失敗', '#fca5a5');
       else if (upgradeResult === 'poor') showFloatingText(actBtn, '材料不足', '#fca5a5');
+      UI._upgradingItemId = null;
     }
   }).catch(function (error) {
+    if (act === 'upgrade') UI._upgradingItemId = null;
     if (actBtn && error && (String(error).indexOf('資源不足') >= 0 || String(error).indexOf('不足') >= 0)) {
       showFloatingText(actBtn, '材料不足', '#fca5a5');
     } else {
@@ -9967,6 +9995,126 @@ function initBattleFPS() {
   }
 }
 
+/* ---- 全域 Esc 快捷鍵關閉頂層彈窗／浮層界面 ---- */
+function closeTopmostModalOrOverlay() {
+  // 1. 確認/輸入彈窗 (#confirm-modal)
+  var confirmModal = $id('confirm-modal');
+  if (confirmModal && confirmModal.style.display !== 'none') {
+    var cancelBtn = $id('confirm-cancel');
+    if (cancelBtn) cancelBtn.click();
+    else confirmModal.style.display = 'none';
+    return true;
+  }
+
+  // 2. 動態通用確認彈窗 (.game-modal-overlay)
+  var gameModal = document.querySelector('.game-modal-overlay');
+  if (gameModal && window.getComputedStyle(gameModal).display !== 'none') {
+    var cancel = gameModal.querySelector('.btn, button');
+    if (cancel) cancel.click();
+    else gameModal.remove();
+    return true;
+  }
+
+  // 3. 高塔結算彈窗 (#tower-result-modal)
+  var towerModal = $id('tower-result-modal');
+  if (towerModal && towerModal.style.display !== 'none') {
+    if (typeof confirmTowerResultModal === 'function') confirmTowerResultModal();
+    else towerModal.style.display = 'none';
+    return true;
+  }
+
+  // 4. 熔爐改版公告彈窗 (#forge-rebuild-modal)
+  var forgeRebuildModal = $id('forge-rebuild-modal');
+  if (forgeRebuildModal && forgeRebuildModal.style.display !== 'none') {
+    var frbOk = $id('forge-rebuild-ok');
+    if (frbOk) frbOk.click();
+    else forgeRebuildModal.style.display = 'none';
+    return true;
+  }
+
+  // 5. 離線收益彈窗 (#offline-modal)
+  var offlineModal = $id('offline-modal');
+  if (offlineModal && offlineModal.style.display !== 'none') {
+    if (typeof closeOfflineSummary === 'function') closeOfflineSummary();
+    else offlineModal.style.display = 'none';
+    return true;
+  }
+
+  // 6. 裝備可能詞條獨立浮層 (#affix-pool-overlay)
+  var affixOverlay = $id('affix-pool-overlay');
+  if (affixOverlay && affixOverlay.style.display !== 'none') {
+    affixOverlay.style.display = 'none';
+    UI.affixPoolItemId = null;
+    return true;
+  }
+
+  // 7. 裝備方案切換浮層 (#equip-set-tabs.open)
+  var equipSetTabs = $id('equip-set-tabs');
+  if (equipSetTabs && equipSetTabs.classList.contains('open')) {
+    equipSetTabs.classList.remove('open');
+    return true;
+  }
+
+  // 8. 分解設定面板 (#salvage-settings-panel)
+  var salvagePanel = $id('salvage-settings-panel');
+  if (salvagePanel && salvagePanel.style.display !== 'none') {
+    salvagePanel.style.display = 'none';
+    return true;
+  }
+
+  // 9. 技能升級彈窗 (#skill-modal)
+  var skillModal = $id('skill-modal');
+  if (skillModal && skillModal.style.display !== 'none') {
+    if (typeof closeSkillModal === 'function') closeSkillModal();
+    else skillModal.style.display = 'none';
+    return true;
+  }
+
+  // 10. 天賦／潛力升級彈窗 (#talent-modal)
+  var talentModal = $id('talent-modal');
+  if (talentModal && talentModal.style.display !== 'none') {
+    if (typeof closeTalentModal === 'function') closeTalentModal();
+    else talentModal.style.display = 'none';
+    return true;
+  }
+
+  // 11. 任務總覽彈窗 (#quest-modal)
+  var questModal = $id('quest-modal');
+  if (questModal && questModal.style.display !== 'none') {
+    if (typeof closeQuestModal === 'function') closeQuestModal();
+    else questModal.style.display = 'none';
+    return true;
+  }
+
+  // 12. 戰鬥統計日誌面板 (#summary-modal)
+  var summaryModal = $id('summary-modal');
+  if (summaryModal && summaryModal.style.display !== 'none') {
+    if (typeof closeStatsPanel === 'function') closeStatsPanel();
+    else summaryModal.style.display = 'none';
+    return true;
+  }
+
+  // 13. 通用可見 .modal-overlay 備用檢查
+  var allModals = document.querySelectorAll('.modal-overlay');
+  for (var i = 0; i < allModals.length; i++) {
+    var m = allModals[i];
+    if (m.style.display !== 'none' && window.getComputedStyle(m).display !== 'none') {
+      var closeBtn = m.querySelector('.modal-x, .btn-close, [data-modal-close]');
+      if (closeBtn) {
+        closeBtn.click();
+        return true;
+      }
+      m.style.display = 'none';
+      return true;
+    }
+  }
+
+  return false;
+}
+if (typeof window !== 'undefined') {
+  window.closeTopmostModalOrOverlay = closeTopmostModalOrOverlay;
+}
+
 function initUI() {
   if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.init();
   bindWorkerUiState();
@@ -9991,6 +10139,17 @@ function initUI() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('pointerdown', noteUiInteraction, true);
     document.addEventListener('keydown', noteUiInteraction, true);
+
+    // Esc 快捷鍵關閉界面
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        if (closeTopmostModalOrOverlay()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    });
+
     UI.performanceEventsBound = true;
   }
   syncVfxQualityForTab();

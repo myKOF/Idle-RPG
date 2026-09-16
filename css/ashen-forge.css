@@ -450,6 +450,53 @@ select option { background: #1b2222; color: #ded9c8; }
 .it-sub, .it-score { border-color: #79708066; }
 .it-affix-row { border-bottom-color: #77778326; }
 
+/* 強化等級標記與數字增加動效：由大快速變小，搭配白色高亮光暈提示 */
+.it-up {
+  display: inline-block;
+  vertical-align: baseline;
+  margin-left: 4px;
+  transform-origin: center center;
+  will-change: transform, color, filter, text-shadow;
+}
+
+.it-up.upgrade-pop,
+.ic-up.upgrade-pop {
+  animation: upgradeNumberPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  position: relative;
+  z-index: 5;
+}
+
+@keyframes upgradeNumberPop {
+  0% {
+    transform: scale(2.4) translateY(-1px);
+    color: #ffffff !important;
+    text-shadow: 0 0 8px #ffffff, 0 0 16px #ffffff, 0 0 26px rgba(250, 204, 21, 0.95);
+    filter: brightness(1.7);
+  }
+  28% {
+    transform: scale(1.75);
+    color: #ffffff !important;
+    text-shadow: 0 0 6px #ffffff, 0 0 13px rgba(255, 255, 255, 0.9), 0 0 20px rgba(250, 204, 21, 0.85);
+  }
+  58% {
+    transform: scale(0.92);
+    color: #fef08a;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.7), 0 0 12px rgba(250, 204, 21, 0.6);
+    filter: brightness(1.2);
+  }
+  78% {
+    transform: scale(1.08);
+    color: #facc15;
+    text-shadow: 0 0 4px rgba(250, 204, 21, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--accent, #facc15);
+    text-shadow: none;
+    filter: none;
+  }
+}
+
 /* 下方五個固定按鈕：卸下、強化、洗煉、鑲嵌、附魔 */
 #equip-action-bar {
   display: flex !important;

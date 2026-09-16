@@ -727,7 +727,7 @@ function itemDetailHTML(it, cmp, opts) {
 
   var h = '<div class="it-name" style="position:relative; color:' + r.color + '">' +
     (wdet ? wdet.emoji : SLOT_INFO[it.slot].emoji) + ' ' + esc(it.name) +
-    (it.upgrade ? ' <span class="it-up">+' + it.upgrade + '</span>' : '') +
+    (it.upgrade ? ' <span class="it-up' + ((opts && opts.justUpgraded) ? ' upgrade-pop' : '') + '">+' + it.upgrade + '</span>' : '') +
     (it.synthesized ? ' <span class="it-syn">✦合成</span>' : '') +
     headActionsHtml +
     ((opts && opts.isEquipped) ? '<span class="equipped-tag" style="position: absolute; right: 52px; top: 2px; color: #4ade80; font-size: 12px; font-weight: bold;">(現有裝備)</span>' : '') +
