@@ -1158,10 +1158,10 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['每一格填 VFX 編輯器存出來的 Preset 檔名（vfx/presets/<檔名>.json，不含 .json；含 .json 也接受）；'],
   ['每一列＝該階（或該超神選項）「引入」的特效：第 1 階那一列是技能本體，後面各階只填那一階新增的畫面'],
   ['　　（例：火球術第 1 階＝火球＋受擊、第 3 階火球爆裂＝小火球＋大爆炸、第 7 階殞石術＝隕石＋落點預警）；'],
-  ['程式在送出特效時會標明「這一發屬於第幾階」，然後讀那一列的格子；同一階沒填的角色就沒有那一段畫面；'],
+  ['程式依事件指定的來源列取用特效；技能本體逐欄繼承，附加效果只讀本列，詳見置頂「特效用途特效」說明。'],
   ['施放特效＝角色身上；攻擊特效＝攻擊本體（斬弧／爆發／光束／雷柱／護罩）；飛行子彈＝會移動的東西（含環繞體）；'],
   ['受擊特效＝命中爆點；地板特效＝地面法陣、痕跡、軌道環及落點預警（舊場域設定仍相容）；持續場域特效＝雷球、龍捲風、毒霧等持續作用的本體，可固定、移動或跟隨角色，依技能範圍縮放；填 Preset 檔名，速度、持續時間、傷害間隔仍由技能參數決定。'],
-  ['整列留白＝該階沿用舊版程式畫法（退回機制）；想換特效就在 VFX 編輯器另存新檔名再填進來，不必改程式。']
+  ['整列留白：技能本體沿前階繼承；附加效果不播放。整條來源都無特效時不退回舊版畫法；換外觀可在 VFX 編輯器另存新檔名再填入。']
 ];
 /* 「冷卻時間」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
    因此編表者可以在後續列寫自己的註記（例如各階原本設想的冷卻曲線）。
@@ -1231,6 +1231,28 @@ SKILLS2_GLOSSARY_ROWS.push(['獨立距離與間隔欄（優先於舊 JSON 同名
   ['獨立欄位會回寫原 fx 鍵；效果參數(JSON)不再重複存這些鍵。舊版沒有新欄的 CSV 仍可讀取。'],
   ...SKILLS2_GEOMETRY_COLUMNS.map(([label,key])=>[label+' → fx.'+key]));
 
+const SKILLS2_VFX_USAGE_COLUMN = '特效用途特效';
+const SKILLS2_VFX_USAGE_HELP = [
+  ['特效用途特效：決定這一列特效屬於技能本體，或獨立的附加效果。'],
+  ['填「技能本體」或留白：參與原有逐欄繼承，可供技能本體使用。此設定只屬於本列，不向後繼承。'],
+  ['填「附加效果」：只在技能邏輯明確觸發這一列效果時使用；不混入本體，也不被後續階段繼承。'],
+  ['附加效果只播放本列填寫的特效；空欄不繼承本體，也不自動補其他特效。'],
+  ['本欄填用途，不填 Preset 檔名。特效名稱仍填施放、攻擊、飛行子彈、受擊、地板或持續場域欄。'],
+  ['地板／持續場域決定顯示層；用途決定歸屬。觸發時間、位置、數量、傷害與間隔仍由技能邏輯決定，填用途不會新增觸發能力。'],
+  ['例：逐風者填「附加效果」，地板填所需特效。迴旋斬起手不播放它，命中後才在敵人位置生成。'],
+  ['']
+];
+SKILLS2_GLOSSARY_ROWS.unshift(...SKILLS2_VFX_USAGE_HELP);
+function skills2VfxUsageCell(row) {
+  return row.vfxUsage === 'effect' ? '附加效果' : row.vfxUsage === 'base' ? '技能本體' : '';
+}
+function skills2VfxUsageFromCell(value) {
+  const label = String(value || '').trim();
+  if (!label) return null;
+  if (label === '技能本體') return { vfxUsage: 'base' };
+  if (label === '附加效果') return { vfxUsage: 'effect' };
+  throw new Error('「特效用途特效」只能填「技能本體」、「附加效果」或留白，目前為「' + label + '」');
+}
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
@@ -1241,7 +1263,7 @@ SCHEMAS.Skills2 = {
     '解鎖轉生/等級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
-    .concat(SKILLS2_GEOMETRY_COLUMNS.map(c => c[0])).concat(['作用方式與距離用途（唯讀說明）']),
+    .concat(SKILLS2_GEOMETRY_COLUMNS.map(c => c[0])).concat(['作用方式與距離用途（唯讀說明）', SKILLS2_VFX_USAGE_COLUMN]),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1256,7 +1278,7 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
-          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(t)));
+          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(t)).concat([skills2VfxUsageCell(t)]));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
       (g.ult || []).forEach((o, i) => {
@@ -1266,7 +1288,7 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
           '', o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
-          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(o)));
+          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(o)).concat([skills2VfxUsageCell(o)]));
       });
     });
     return rows;
@@ -1334,6 +1356,7 @@ SCHEMAS.Skills2 = {
       const tierCost = toNum(get(r, '施法消耗'));
       /* 特效欄位（五欄）：這一階／這一個超神選項引入的特效；整列留白就不寫 vfx。 */
       const tierVfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
+      const vfxUsage = skills2VfxUsageFromCell(get(r, SKILLS2_VFX_USAGE_COLUMN));
       /* 階數 >= 8：超神進化的三選一選項（不是第 8~10 階）。
          欄位順序須與手寫字面值一致：id／name／cost／fx／goldBase／goldGrow／desc（／vfx）。 */
       if (tierIdx >= SKILLS2_ULT_ROW_BASE) {
@@ -1346,7 +1369,7 @@ SCHEMAS.Skills2 = {
           id: ultId, name: get(r, '階段名稱'), cost: tierCost, fx: fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
-        }, tierVfx ? { vfx: tierVfx } : null);
+        }, tierVfx ? { vfx: tierVfx } : null, vfxUsage);
         return;
       }
       groups[gid].tiers[tierIdx - 1] = Object.assign(
@@ -1358,7 +1381,7 @@ SCHEMAS.Skills2 = {
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
         },
-        tierVfx ? { vfx: tierVfx } : null);
+        tierVfx ? { vfx: tierVfx } : null, vfxUsage);
     });
     order.forEach(gid => {
       const g = groups[gid];

@@ -26,6 +26,32 @@ function setup(levels=[1,0,0,0,0,0,0],legend={}) {
  const p={hp:1000,mp:1000,buffs:{},effects:{},skillCds:{}};
  return {c,hits,events,enemies,cast(){c.sgCastCleave(p,{atk:1000},c.SKILLS2.cleave,levels,enemies,enemies[0],'pv-float',{dmg:0});},tick(t){c.GT=t;c.sgTickFlyingProjectiles(.01,{getEnemies:()=>enemies});}};
 }
+test('CLEAVE 逐風者地板只在命中位置播放，起手與追加刀波不帶超神場域',()=>{
+ for(const levels of [[1,0,0,1,0,0,0],[1,1,1,1,1,1,1]]) {
+  const h=setup(levels),c=h.c;
+  const ult={def:c.SKILLS2.cleave.ult.find(u=>u.id==='windChaser'),lv:1};
+  ult.def.vfx={ground:'slash-cleave-ring-warm-09-hit'};
+  c.skills2Ult=()=>ult;c.sgUlt=(gid,id)=>id==='windChaser'?ult:null;
+  c.bfPlayerPos=()=>({x:0,y:0});
+  h.cast();
+  assert.equal(h.events.length,1);
+  assert.equal(h.events[0].vfx.ground,undefined,'尚未命中時不可在玩家中心播放超神地板');
+  for(let i=0;i<=200;i++) {
+   h.tick(i/100);
+   c.sgTickGrounds(.01,{getEnemies:()=>h.enemies});
+  }
+  const waves=h.events.filter(e=>e.variant==='cleave-ring');
+  const fields=h.events.filter(e=>e.variant==='wind-tornado');
+  assert(waves.length>1,'涵蓋追加刀波');assert(fields.length>0,'命中仍生成逐風者');
+  assert(waves.every(e=>!e.vfx.ground&&!e.vfx.field));
+  assert(waves.every(e=>levels[5]>0?e.vfx.projectile==='proj-cleave-ring-tricolor':e.vfx.attack==='slash-cleave-ring-warm'));
+  for(const e of fields) {
+   assert.deepEqual(e.vfx,{ground:'slash-cleave-ring-warm-09-hit'});
+   assert.equal(e.area.r,40);
+   assert(h.enemies.some(enemy=>enemy.pos.x===e.area.x&&enemy.pos.y===e.area.y),'場域位於命中敵人處');
+  }
+ }
+});
 test('CLEAVE 配置名稱、冷卻、強化及固定追加次數',()=>{
  const {c}=setup();const g=c.SKILLS2.cleave;
  assert.equal(g.cd,20);assert.equal(g.tiers[1].name,'擴增');assert.equal(g.tiers[2].name,'強化');

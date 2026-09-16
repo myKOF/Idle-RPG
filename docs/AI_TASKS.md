@@ -1,5 +1,44 @@
 # AI_TASKS.md
 
+## Codex｜修復 Skills2 Excel 開啟空白（SKILLS2-REPAIR-20260916）
+
+- Owner：Codex；Done。使用者要求修復 Skills2.xlsx，來源為前次手工 XML 合併造成的 Excel 修復／空白問題。修改 Skills2.xlsx 與本紀錄；保留 CSV／JS／Preset 既有設定。
+- 以受支援試算表 API 匯入並完整重新匯出，不直接修改封裝 XML；保存原始損壞版本。驗證全表值、用途下拉與中文說明、實際 Microsoft Excel 開啟；衝突預檢乾淨。
+- 使用 artifact-tool 整本匯出，再由 Microsoft Excel COM 正常模式開啟、逐格比對、SaveAs 成全新 xlsx，覆回正式路徑後再次正常開啟。未使用 Excel repair／extract 模式。匯入工具把原本三個空共享字串誤讀為「946」，已依既有 CSV 透過試算表 API 還原 AB82／AC92／AA142 空值，不修改 CSV 或 JS。
+- 驗證：Excel 正常開啟及逐格比對 Skills2 231 列（含表頭）×37 欄、欄位定義 97 列；AK20 值與用途下拉均正常。`node --test tests/skills2-vfx-usage.test.cjs` 2/2 通過，Excel／CSV／JS 完整語意一致；`git diff --check` 通過。資料檔修復無程式變更，無需 Build。
+- 未修改但檢查：config/CSV/Skills2.csv、js/skills2.js、讀表工具與正式回歸測試。原始損壞檔保存在忽略目錄 tmp/skills2-repair/damaged.xlsx，僅作診斷備份；其餘臨時輸出清除。岩甲修改保留未提交。Commit 為本紀錄所在提交，可合併，未合併／推送；無未完成修復項目。
+
+## Codex｜禁止手工修改 Excel XML（EXCEL-NO-XML-20260916）
+
+- Owner：Codex；Done。使用者回報 Skills2.xlsx 再次出現 Excel 修復提示，要求寫入規範。AI_RULES.md 新增第 8.5 節，禁止手工 XML 拼接、節點修改、ZIP 重打包與工具輸出 XML 搬回原檔，禁止以「保留格式」作例外。
+- 修改：AI_RULES.md、本紀錄。未修改但檢查：Skills2.xlsx 工作表封裝、先前交付紀錄、Git 狀態。衝突預檢乾淨；文件檢查與 git diff --check 通過。純文件修改，無需程式測試／Build。
+- 明確更正：VFX-USAGE-20260916 的自動化測試結果仍成立，但 Excel 開啟相容性已由使用者實測判定失敗；先前「可供合併」結論不適用於該 Excel 檔。XML 可解析並不代表 Excel 可正常開啟。
+- 本次依要求只新增規範，尚未修復 Skills2.xlsx，需另以受支援試算表工具重新輸出並實際 Excel 驗收。岩甲修改保留不提交。Commit 為本紀錄所在提交，規範變更可合併，未合併／推送。
+
+## Codex｜新增特效用途特效欄位（VFX-USAGE-20260916）
+
+- Owner：Codex；Done。使用者要求新增用途欄並指定名稱「特效用途特效」，置頂中文說明須交代用途。Skills2 AK 欄以「技能本體／附加效果」下拉區分特效歸屬，留白相容技能本體；附加效果由明確指定該列的事件播放，空角色不繼承本體。
+- 範圍：Skills2 Excel／CSV／JS、config_tables、角色解析、主執行緒／Worker 快取、正式測試與 Runtime 文件、本紀錄。逐風者標為附加效果，移除先前兩處技能特判；不改傷害、觸發條件、存檔與 Worker 協議。使用者目前新 Preset／layout 及配置一併保留納入交付。
+- 前置依賴完成，衝突預檢乾淨。驗證：表格讀寫往返、錯字拒絕、繼承與獨立事件、迴旋斬／超神回歸、Excel 前後渲染與內容比對、Build；完成後供使用者審查合併。
+- 完成驗證：`node --test tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/cleave-rework.test.cjs tests/skill2-ult-evolution.test.cjs tests/vfx-preset-layout.test.cjs tests/vfx-preset-usage.test.cjs` 101/101；後續說明文字調整再跑表格測試 2/2。`node tools/build_check.cjs` 359 檔通過；`node tools/config_tables.cjs --apply Skills2` 語意差異 0；`node tools/vfx/export-assets.cjs --check` 最新；新 Preset Core 驗證通過。
+- Excel 以 artifact-tool 編輯／渲染，將新欄與說明定點併回原封裝保留既有格式、共享字串及其他 ZIP 項。逐格比對既有 Skills2 值全數不變，只新增 AK1／AK20；「欄位定義」最上方新增七條中文說明與空行，修正兩條舊的留白／退回畫法說明。凍結窗格保留，篩選涵蓋新欄。
+- 未修改但檢查：Runtime 場域角色派送、既有素材引用與素材庫。沒有新貼圖，素材庫乾淨無需空提交。使用者同時調整的 aura-rockarmor-stone.json 保留不提交；其餘本次相關表格與新 Preset／layout 納入。Commit 為本紀錄所在提交，未合併／推送，可供合併。無未完成實作；未遊戲內目視驗證，建議刷新後確認逐風者效果。
+
+## Codex｜逐風者場域不在迴旋斬起手播放（WINDCHASER-CAST-VFX-20260916）
+
+- Owner：Codex；Done。使用者更換地板 Preset 後發現玩家中心先出現放大的相同特效。根因為迴旋斬起手套用超神欄位，帶入命中後場域。
+- 範圍：skills2 起手角色選取、快取、迴旋斬與繼承測試、本紀錄。逐風者啟用時，本體只讀一般階級特效，命中場域仍讀逐風者配置。無傷害與配置變更；使用者既有 Excel／CSV／JS 配置和新 Preset／layout 保留不納入本次程式提交。
+- 前置依賴已完成，衝突預檢乾淨；驗證真實起手與命中場域事件、連斬、超神、Build；完成後供使用者合併。
+- 驗證：`node --test tests/cleave-rework.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skill2-ult-evolution.test.cjs` 74/74；`node tools/build_check.cjs` 358 檔通過；`git diff --check` 通過。新增近戰／飛行兩路真實起手、追加波與命中場域位置／半徑驗證；既有逐風者測試固定測試配置，避免使用者換 Preset 造成無關失敗。
+- 未修改但檢查：使用者 CSV／Preset、Runtime 場域派送；無素材變更。Commit 為本紀錄所在提交，可合併，未合併／推送。使用者原有五個檔案變更留在工作區；未遊戲內目視驗證。使用者另提出觸發用途配置設計，已說明它與 ground／field 圖層分類不同，本次未擴充資料格式。
+
+## Codex｜逐風者龍捲風排除繼承刀光（WINDCHASER-VFX-20260916）
+
+- Owner：Codex；Done。使用者要求修正逐風者地面額外出現迴旋斬刀光。龍捲風事件只派送配置解析出的 ground 角色，不變更全域繼承規則與迴旋斬本體。
+- 允許修改：js/skills2.js、主執行緒／Worker 快取、tests/skill-vfx-inheritance.test.cjs、本紀錄；禁止修改技能數值、配置表與素材。前置依賴已完成，衝突預檢乾淨。
+- 驗證：`node --test tests/skill-vfx-inheritance.test.cjs tests/cleave-rework.test.cjs tests/skill2-ult-evolution.test.cjs` 73/73 通過；涵蓋實際場域事件、風系傷害參數、空場景／空配置與傳奇借用。`node tools/build_check.cjs` 358 檔通過；`git diff --check` 通過。
+- 未修改但檢查：js/vfx-runtime.js、ground-tornado-wind／迴旋斬 Preset、Skills2 CSV。無素材變更，不需素材庫提交。Commit 為本紀錄所在提交；未合併／推送，可供合併。無未完成程式項目；尚未遊戲內目視驗證，建議重新整理後確認地面刀光已消除。
+
 ## Codex｜彈射換段保留尾跡（KNIFE-TAIL-LIFETIME-20260916）
 
 - Owner：Codex；Done。使用者要求刀身換段後舊粒子自然消退並注意效能。Core 新增 finish／clearTails：移除刀身、停發射與子粒子，保留既有粒子及出生座標；最多剩餘 3 個實際秒，額外淡出乘區避免使用者 alpha 尾端非零造成硬切。重複 finish 不續命。普通飛刀到達、追魂刃飛行／環繞切換與自然到期沿用此路徑；換場 reset／clear 與死亡 clearFields 清空尾跡。無傷害／判定變更。

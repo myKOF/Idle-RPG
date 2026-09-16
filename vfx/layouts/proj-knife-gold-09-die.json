@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-knife-gold-09-die",
+  "groups": [
+    {
+      "id": "proj-knife-gold-09-die",
+      "name": "proj-knife-gold-09-die",
+      "layerIds": [
+        "glow",
+        "glow-copy",
+        "blade",
+        "trail"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-knife-gold-09-die"
+  ]
+}

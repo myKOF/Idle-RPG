@@ -14,6 +14,40 @@ function load() {
   return c;
 }
 const plain = x => JSON.parse(JSON.stringify(x));
+test('逐風者實際場域只播放表定龍捲風，保留風系傷害與本體繼承', () => {
+  const c = load(), events = [], hits = [];
+  c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').vfx = { ground: 'ground-tornado-wind' };
+  c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').vfxUsage = 'effect';
+  c.playCombatVfx = spec => events.push(plain(spec));
+  c.enemyEventFloatTarget = () => 'enemy';
+  c.sgHitOne = (...args) => { hits.push(args); return { miss: true }; };
+  const enemy = { hp: 1000 };
+  const f = { gid: 'cleave', kind: 'windtornado', vfxUlt: 'windChaser',
+    tgt: enemy, pos: null, radius: 40, gap: 0.4, dmgVal: 110,
+    hitElem: 'wind', pEnt: {}, st: {}, floatSel: '' };
+  c.sgGroundTick(f, [enemy], {});
+  assert.deepEqual(events[0].vfx, { ground: 'ground-tornado-wind' });
+  assert.equal(events[0].variant, 'wind-tornado');
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0][3], 110);
+  assert.equal(hits[0][9], 'wind');
+  assert.equal(c.sgVfxRoles('cleave').attack, 'slash-cleave-ring-warm');
+  assert.equal(c.sgVfxRoles('cleave').projectile, 'proj-cleave-ring-tricolor');
+  // 傳奇借用逐風者時同樣只派送場域；無敵人仍顯示原判定範圍。
+  c.sgGroundVictims = () => [];
+  f.gid = 'thrust'; f.vfxGid = 'cleave'; f.pos = { x: 123, y: 456 }; f.vfxId = 'wind-test';
+  c.sgGroundTick(f, [], {});
+  assert.deepEqual(events[1].vfx, { ground: 'ground-tornado-wind' });
+  assert.deepEqual(events[1].area, { id: 'wind-test', x: 123, y: 456, r: 40 });
+  assert.equal(hits.length, 1);
+  // 仍以配置為來源，空欄不能偷偷補回其他角色或寫死的 Preset。
+  c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').vfx.ground = 'test-ground';
+  c.sgGroundTick(f, [], {});
+  assert.deepEqual(events[2].vfx, { ground: 'test-ground' });
+  c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').vfx = {};
+  c.sgGroundTick(f, [], {});
+  assert.deepEqual(events[3].vfx, {});
+});
 test('未指定階級只讀目前生效最高階；獨立事件讀指定階，不讀未來階', () => {
   const c = load();
   c.SKILLS2.probe = { tiers: [{vfx:{attack:'first'}},{},{vfx:{attack:'third'}},{vfx:{attack:'future'}}] };
@@ -46,15 +80,36 @@ test('所有正式技能、所有階級與超神的非空欄位都原值優先�
   for (const [gid, g] of Object.entries(c.SKILLS2)) {
     let inherited = {};
     g.tiers.forEach((row, i) => {
-      for (const k of keys) if (row.vfx?.[k]?.trim()) inherited[k] = row.vfx[k].trim();
-      assert.deepEqual(plain(c.sgVfxRoles(gid, { vfxTier: i + 1 })), inherited, gid + ':' + (i + 1));
+      if (row.vfxUsage !== 'effect') for (const k of keys) if (row.vfx?.[k]?.trim()) inherited[k] = row.vfx[k].trim();
+      assert.deepEqual(plain(c.sgVfxRoles(gid, { vfxTier: i + 1 })), row.vfxUsage === 'effect' ? row.vfx || {} : inherited, gid + ':' + (i + 1));
     });
     for (const row of g.ult || []) {
-      const expected = { ...inherited };
+      const expected = row.vfxUsage === 'effect' ? {} : { ...inherited };
       for (const k of keys) if (row.vfx?.[k]?.trim()) expected[k] = row.vfx[k].trim();
       assert.deepEqual(plain(c.sgVfxRoles(gid, { vfxUlt: row.id })), expected, gid + ':' + row.id);
     }
   }
+});
+test('用途獨立於角色：附加列不混入本體、空欄不繼承，明確事件支援六角色及跨群組借用', () => {
+  const c = load();
+  const effect = Object.fromEntries(keys.map(k => [k, 'extra-' + k]));
+  c.SKILLS2.probe = { tiers: [{vfx:{attack:'base',hit:'base-hit'}},
+    {vfxUsage:'effect',vfx:effect},{vfx:{attack:'later'}}],
+    ult:[{id:'extra',vfxUsage:'effect',vfx:{field:'extra-field'}},
+      {id:'main',vfxUsage:'base',vfx:{attack:'ult-main'}}] };
+  c.skills2Levels = () => [1,1,1];
+  c.skills2Ult = () => ({def:c.SKILLS2.probe.ult[0]});
+  assert.deepEqual(plain(c.sgVfxRoles('probe')), {attack:'later',hit:'base-hit'});
+  assert.deepEqual(plain(c.sgVfxRoles('probe',{vfxTier:2})),effect);
+  assert.deepEqual(plain(c.sgVfxRoles('probe',{vfxUlt:'extra'})),{field:'extra-field'});
+  assert.deepEqual(plain(c.sgVfxRoles('other',{vfxGid:'probe',vfxTier:2})),effect);
+  assert.deepEqual(plain(c.sgVfxRoles('other',{vfxGid:'probe',vfxUlt:'extra'})),{field:'extra-field'});
+  c.SKILLS2.probe.ult[0].vfx={};
+  assert.deepEqual(plain(c.sgVfxRoles('probe',{vfxUlt:'extra'})),{});
+  c.skills2Ult = () => ({def:c.SKILLS2.probe.ult[1]});
+  assert.deepEqual(plain(c.sgVfxRoles('probe')), {attack:'ult-main',hit:'base-hit'});
+  assert.deepEqual(plain(c.sgVfxRoles('probe',{vfxTier:2})),effect);
+  assert.deepEqual(plain(c.sgVfxRoles('probe',{vfxBase:true})),{attack:'later',hit:'base-hit'});
 });
 test('幻影八方陣的實際特效事件使用配置的超神攻擊，敵方／自身事件都保留空表', () => {
   const c = load(), events = [];
