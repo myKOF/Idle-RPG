@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜明確化傷害範圍尺寸規則（DAMAGE-SIZE-RULE-20260917）
+
+- Owner Codex；使用者再次確認：有指定傷害範圍，無論原尺寸均縮放至該範圍；無傷害範圍的單體攻擊維持原尺寸。
+- 範圍僅 VFX_SIZE_STANDARD、VFX_RUNTIME_ADAPTER 與本紀錄；無程式或素材變更、無前置依賴。衝突預檢與 diff check 通過，文件交叉核對完成；Done，可合併，未推送。
+
 ## Codex｜單體攻擊保持製作尺寸（SINGLE-ATTACK-SIZE-20260917）
 
 - Owner Codex；In Progress；使用者指定單體攻擊原尺寸、指定範圍才縮放。範圍：vfx-runtime、runtime 測試、index 快取與本紀錄；不改技能配置、素材或判定。
