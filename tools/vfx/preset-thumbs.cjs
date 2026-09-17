@@ -51,7 +51,8 @@ const MIN_EXTENT = 8;
 const MIN_SCALE = 0.04;
 const MAX_SCALE = 4;
 /* 取景或快取鍵的規則改了就加一：舊的暫存檔會因為鍵不同而自然不再被用到。 */
-const RENDER_VERSION = 2;
+/* 3：離線出圖開始畫斜切（父子層級、outerScale 非等比）。舊的暫存圖在那些情況下形狀是錯的。 */
+const RENDER_VERSION = 3;
 /* preset-render 的 'dark' 底色；與它相差超過門檻的像素算「有內容」。 */
 const BG_RGB = [18, 18, 22];
 const CONTENT_THRESHOLD = 30;

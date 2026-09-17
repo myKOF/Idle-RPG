@@ -67,7 +67,16 @@ function frameRect(tex, sheet, n) {
 function drawSprite(canvas, W, H, tex, src, t, blend) {
   const cw = src.w * t.scaleX, ch = src.h * t.scaleY;
   if (!isFinite(cw) || !isFinite(ch) || cw === 0 || ch === 0) return;
-  const cos = Math.cos(t.rotation), sin = Math.sin(t.rotation);
+  /* 節點的兩個軸與 Pixi 同一個定義（skewY 恆為 0），縮放已經算進 cw／ch：
+       第一軸 (cos r, sin r)　　第二軸 (−sin(r − skewX), cos(r − skewX))
+     斜切來自父子層級：父物件非等比縮放、子物件又旋轉時，Core 會送出 skewX。
+     skewX 為 0 時每一步的浮點運算都與加入斜切之前相同——行列式直接取 cos(skewX)
+     （數學上等於 ma·md − mc·mb），不用乘出來的 cos²+sin²：那在浮點下不一定剛好是 1。 */
+  const skew = t.skewX || 0;
+  const ma = Math.cos(t.rotation), mb = Math.sin(t.rotation);
+  const mc = -Math.sin(t.rotation - skew), md = Math.cos(t.rotation - skew);
+  const det = Math.cos(skew);
+  if (!isFinite(det) || Math.abs(det) < 1e-9) return;       // 兩軸重合：面積是 0，畫不出東西
   /* 錨點：t.anchorX 0.5 表示 t.x 是中心。左上角在物件座標中的位置。 */
   const ax = -t.anchorX * cw, ay = -t.anchorY * ch;
 
@@ -75,7 +84,7 @@ function drawSprite(canvas, W, H, tex, src, t, blend) {
   const corners = [[ax, ay], [ax + cw, ay], [ax, ay + ch], [ax + cw, ay + ch]];
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   corners.forEach(function (c) {
-    const wx = t.x + c[0] * cos - c[1] * sin, wy = t.y + c[0] * sin + c[1] * cos;
+    const wx = t.x + c[0] * ma + c[1] * mc, wy = t.y + c[0] * mb + c[1] * md;
     x0 = Math.min(x0, wx); x1 = Math.max(x1, wx);
     y0 = Math.min(y0, wy); y1 = Math.max(y1, wy);
   });
@@ -89,9 +98,9 @@ function drawSprite(canvas, W, H, tex, src, t, blend) {
 
   for (let py = y0; py < y1; py++) {
     for (let px = x0; px < x1; px++) {
-      /* 世界 → 物件（反轉旋轉），再 → 來源像素 */
+      /* 世界 → 物件（兩軸矩陣的反矩陣），再 → 來源像素 */
       const dx = px + 0.5 - t.x, dy = py + 0.5 - t.y;
-      const ox = dx * cos + dy * sin, oy = -dx * sin + dy * cos;
+      const ox = (dx * md - dy * mc) / det, oy = (dy * ma - dx * mb) / det;
       const u = (ox - ax) / cw, v = (oy - ay) / ch;
       if (u < 0 || u >= 1 || v < 0 || v >= 1) continue;
       const sxf = src.x + u * src.w - 0.5, syf = src.y + v * src.h - 0.5;
@@ -151,7 +160,7 @@ function makeBackend(state) {
       if (!t.visible) return;
       state.draws.push({
         spec: node.spec, x: t.x, y: t.y, rotation: t.rotation,
-        scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, tint: t.tint,
+        scaleX: t.scaleX, scaleY: t.scaleY, skewX: t.skewX, alpha: t.alpha, tint: t.tint,
         frame: t.frame, anchorX: t.anchorX, anchorY: t.anchorY, z: t.zIndex
       });
     },
