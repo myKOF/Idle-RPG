@@ -2145,6 +2145,8 @@ var VFXCore = (function () {
     /* 父子層級：Editor 掛上父物件時換算數值、gizmo 算框，都要與 Runtime 同一套矩陣。
        layerMatrix 收的是 preset 裡的原始圖層（缺的欄位補預設值）；progress 省略時不取樣曲線。 */
     MAX_PARENT_DEPTH: MAX_PARENT_DEPTH,
+    /* 空物件收哪些欄位。Editor 的 Inspector 照這份過濾，不另抄一份（給複本，改了不影響驗證）。 */
+    EMPTY_LAYER_FIELDS: EMPTY_LAYER_FIELDS.slice(),
     identityMatrix: identityMatrix,
     multiplyMatrix: multiplyMatrix,
     invertMatrix: invertMatrix,

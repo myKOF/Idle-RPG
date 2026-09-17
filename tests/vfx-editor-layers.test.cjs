@@ -25,6 +25,7 @@ const path = require('node:path');
 const http = require('node:http');
 
 const M = require('../tools/vfx/editor/layer-model.js');
+const H = require('../tools/vfx/editor/hierarchy-model.js');
 const LS = require('../tools/vfx/editor/layout-schema.js');
 const editorServer = require('../tools/vfx/editor-server.cjs');
 const VFXCore = require('../js/vfx-core.js');
@@ -63,6 +64,11 @@ function rowsOf(preset, layout, sortMode) {
   return M.sortRows(rec.rows, sortMode || 'creation');
 }
 
+/* 畫面上看得到的列，與 editor.js 的 visibleKeys() 同一條路徑（父子層級上線後改由 hierarchy-model 產生） */
+function visibleOf(preset, layout, collapsed) {
+  return H.visibleKeys(H.treeRows(preset, rowsOf(preset, layout), collapsed || {}));
+}
+
 function zSnapshot(preset) {
   return preset.layers.map(l => l.id + '=' + l.zIndex).sort().join(',');
 }
@@ -75,7 +81,7 @@ function orderOf(preset) { return preset.layers.map(l => l.id).join(','); }
 
 test('L1 普通點擊只選一項，selected 與 active 一致', function () {
   const { preset, layout } = fixture();
-  const vis = M.visibleKeys(rowsOf(preset, layout), {});
+  const vis = visibleOf(preset, layout, {});
   const r = M.applyClick({ selected: [], active: null, anchor: null }, vis, 'layer:bg', {});
   assert.deepEqual(r.selected, ['layer:bg']);
   assert.equal(r.active, 'layer:bg');
@@ -84,7 +90,7 @@ test('L1 普通點擊只選一項，selected 與 active 一致', function () {
 
 test('L2 Ctrl 點擊是 toggle：加選、再點取消', function () {
   const { preset, layout } = fixture();
-  const vis = M.visibleKeys(rowsOf(preset, layout), {});
+  const vis = visibleOf(preset, layout, {});
   let s = M.applyClick({ selected: [], active: null, anchor: null }, vis, 'layer:bg', {});
   s = M.applyClick(s, vis, 'layer:orb-a-core', { ctrl: true });
   s = M.applyClick(s, vis, 'layer:sparks', { ctrl: true });
@@ -98,7 +104,7 @@ test('L2 Ctrl 點擊是 toggle：加選、再點取消', function () {
 
 test('L3 Shift 範圍以目前可見列表為準，且 anchor 不會被移動', function () {
   const { preset, layout } = fixture();
-  const vis = M.visibleKeys(rowsOf(preset, layout), {});
+  const vis = visibleOf(preset, layout, {});
   let s = M.applyClick({ selected: [], active: null, anchor: null }, vis, 'group:orb-a', {});
   s = M.applyClick(s, vis, 'layer:orb-b-glow', { shift: true });
   assert.deepEqual(s.selected,
@@ -115,7 +121,7 @@ test('L3 Shift 範圍以目前可見列表為準，且 anchor 不會被移動', 
 test('L4 群組收合時，Shift 範圍不得選到看不見的子項', function () {
   const { preset, layout } = fixture();
   const collapsed = { 'orb-a': true };
-  const vis = M.visibleKeys(rowsOf(preset, layout), collapsed);
+  const vis = visibleOf(preset, layout, collapsed);
   assert.deepEqual(vis,
     ['layer:bg', 'group:orb-a', 'group:orb-b', 'layer:orb-b-glow', 'layer:orb-b-core',
       'layer:sparks'],
@@ -129,7 +135,7 @@ test('L4 群組收合時，Shift 範圍不得選到看不見的子項', function
 
 test('L5 selected 與 active 是兩件事', function () {
   const { preset, layout } = fixture();
-  const vis = M.visibleKeys(rowsOf(preset, layout), {});
+  const vis = visibleOf(preset, layout, {});
   let s = M.applyClick({ selected: [], active: null, anchor: null }, vis, 'layer:bg', {});
   s = M.applyClick(s, vis, 'layer:sparks', { ctrl: true });
   assert.equal(s.selected.length, 2);
@@ -697,11 +703,21 @@ test('L41 editor.js 不得自己再寫一份 layer 運算（只能委派給 laye
   const src = fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8');
   assert.ok(/var M = VFXLayerModel;/.test(src), 'editor.js 必須載入共用模組');
-  ['applyClick', 'applyDrop', 'pasteClipboard', 'copySelection', 'deleteSelection',
-    'groupLayers', 'sortRows', 'visibleKeys', 'isTextEntry'].forEach(function (fn) {
+  ['applyClick', 'pasteClipboard', 'copySelection', 'deleteSelection',
+    'groupLayers', 'sortRows', 'isTextEntry'].forEach(function (fn) {
     assert.ok(new RegExp('M\\.' + fn + '\\(').test(src),
       'editor.js 必須呼叫 M.' + fn + '，而不是自己實作一份');
   });
+  /* 2026-09-17 父子層級：拖曳與「看得見哪些列」要連父子關係一起算，改由 hierarchy-model 負責；
+     拖曳的分組與順序仍然往下交給 layer-model 的 applyDrop。 */
+  ['applyDrop', 'visibleKeys', 'treeRows'].forEach(function (fn) {
+    assert.ok(new RegExp('H\\.' + fn + '\\(').test(src),
+      'editor.js 必須呼叫 H.' + fn + '，而不是自己實作一份');
+  });
+  const hier = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor', 'hierarchy-model.js'), 'utf8');
+  const applyAt = hier.indexOf('function applyDrop(');
+  assert.ok(/M\.applyDrop\(/.test(hier.slice(applyAt, hier.indexOf('\n  }', applyAt))),
+    'hierarchy-model 的 applyDrop 要委派給 layer-model 的 applyDrop，不能自己另搬一份');
   const html = fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'index.html'), 'utf8');
   assert.ok(/layer-model\.js/.test(html) && /layout-schema\.js/.test(html),
@@ -833,7 +849,7 @@ test('R4 群組／收合／選取都不改 preset', function () {
   M.groupLayers(layout, [ids[0], ids[1]], '雜項');
   M.ungroup(layout, [layout.groups[0].id]);
   M.sortRows(LS.reconcile(preset.layers, layout).rows, 'name');
-  M.visibleKeys(LS.reconcile(preset.layers, layout).rows, { 'orb-b': true });
+  H.visibleKeys(H.treeRows(preset, LS.reconcile(preset.layers, layout).rows, { 'orb-b': true }));
   assert.equal(JSON.stringify(preset), before, 'preset 不得被任何 authoring 操作改到');
 });
 
@@ -922,12 +938,24 @@ test('R10 UI 顯示的落點模式與 model 實際行為一致', function () {
   assert.equal(M.applyDrop(preset, layout, ['group:orb-a'], 'group:orb-b', 'into'), false);
   assert.equal(JSON.stringify({ preset, layout }), snapshot, '被拒絕的操作不得有副作用');
 
-  /* editor.js 的指示線必須呼叫同一個判斷函式 */
+  /* editor.js 的指示線必須呼叫同一個判斷函式。
+     2026-09-17 起拖曳多了父子層級的意義（拖到圖層列中段＝掛上），判斷改由 hierarchy-model 的
+     dropProblem 負責：真的搬的 applyDrop 走的是同一份 planDrop，群組能不能放進去仍然交給
+     這裡的 dropModeAllowed。三段各自斷言，鏈子斷在哪一段都會紅。 */
   const src = fs.readFileSync(
     path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8');
   const fn = src.slice(src.indexOf('function dropModeFor('), src.indexOf('function performDrop('));
-  assert.ok(/M\.dropModeAllowed\(/.test(fn),
-    'dropModeFor 必須用 model 的 dropModeAllowed 判斷，不能自己另有一套');
+  assert.ok(/H\.dropProblem\(/.test(fn),
+    'dropModeFor 必須用 model 的判斷，不能自己另有一套');
+  const hier = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor', 'hierarchy-model.js'), 'utf8');
+  const plan = hier.slice(hier.indexOf('function planDrop('), hier.indexOf('function dropProblem('));
+  assert.ok(/M\.dropModeAllowed\(/.test(plan), 'planDrop 要沿用 layer-model 的 dropModeAllowed');
+  const bodyOf = (name) => {
+    const at = hier.indexOf('function ' + name + '(');
+    return hier.slice(at, hier.indexOf('\n  }', at));
+  };
+  assert.ok(/planDrop\(/.test(bodyOf('dropProblem')) && /planDrop\(/.test(bodyOf('applyDrop')),
+    '指示線（dropProblem）與實際搬動（applyDrop）要走同一份 planDrop');
 });
 
 /* ---- MINOR 2：純 authoring 不重建 runtime ---- */
@@ -942,8 +970,13 @@ test('R11 拖曳不觸發 preview runtime 重建', function () {
   const fn = stripComments(src.slice(src.indexOf('function performDrop('),
     src.indexOf('function dropEmptyGroups(')));
   assert.ok(fn.length > 100, '切片要真的涵蓋 performDrop');
-  assert.ok(!/onPresetChanged\s*\(/.test(fn),
-    'performDrop 不得呼叫 onPresetChanged——那會停掉並重建整個 preview runtime');
+  /* 2026-09-17 起拖曳可以換父物件，那是真的改到 preset，必須重建預覽。
+     規則因此變成：只有「換了父物件」那個分支可以重建，只換順序或分組的一律不行。 */
+  const parentBranch = /if \(result\.parentChanged\) \{[\s\S]*?\n    \}/;
+  assert.ok(parentBranch.test(fn) && /onPresetChanged\s*\(/.test(fn.match(parentBranch)[0]),
+    '換了父物件要重建預覽');
+  assert.ok(!/onPresetChanged\s*\(/.test(fn.replace(parentBranch, '')),
+    'performDrop 只在換了父物件時才能呼叫 onPresetChanged——其餘情況那會停掉並重建整個 preview runtime');
   assert.ok(/renderLayerList\s*\(/.test(fn), '但仍要重畫圖層列表');
 
   ['function groupSelection(', 'function ungroupSelection('].forEach(function (marker) {

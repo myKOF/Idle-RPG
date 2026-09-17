@@ -695,6 +695,8 @@
 
   var COMMON_FIELDS = [
     { key: 'id', label: 'id', kind: 'text' },
+    /* 父子層級（2026-09-17）。選了就換算數值讓畫面不動，見 parentSelect。 */
+    { key: 'parent', label: '父物件', kind: 'parent' },
     { key: 'enabled', label: 'enabled', kind: 'bool', default: true },
     { key: 'assetId', label: 'assetId', kind: 'asset' },
     num('zIndex', 'zIndex', 1),
@@ -764,10 +766,11 @@
     }
   };
 
-  /* 哪些型別支援分軸縮放。與 Core 的 TYPE_ONLY_FIELDS 對齊：
-     這兩型走 updateSpriteLayer（兩軸各自取樣），粒子層的兩軸永遠相等。 */
+  /* 哪些型別支援分軸縮放。與 Core 的 TYPE_ONLY_FIELDS／EMPTY_LAYER_FIELDS 對齊：
+     sprite 與 procedural 走 updateSpriteLayer（兩軸各自取樣）；空物件的曲線整組傳給子物件；
+     粒子層的兩軸永遠相等。 */
   function supportsPerAxisScale(layer) {
-    return layer.type === 'sprite' || layer.type === 'procedural';
+    return layer.type === 'sprite' || layer.type === 'procedural' || layer.type === 'empty';
   }
 
   /* 外層縮放：在圖層旋轉**之後**才套用，等同把這一層放進一個不會跟著轉的外框。
@@ -779,6 +782,8 @@
 
   var TYPE_FIELDS = {
     sprite: [OUTER_SCALE_FIELD],
+    /* 空物件不畫東西，只收會被子物件繼承的欄位；共通欄位裡不適用的由 fieldsOf 濾掉 */
+    empty: [OUTER_SCALE_FIELD],
     particle: [
       json('emission', 'emission'),
       num('maxParticles', 'maxParticles', 1),
@@ -951,7 +956,9 @@
     if (!state.preset) return;
     picker.layers = null;
     picker.field = 'assetId';
-    picker.createType = $('new-layer-type').value || 'sprite';
+    /* 空物件不畫東西、沒有素材欄位：挑了素材就是要一張圖，改成 sprite */
+    var wanted = $('new-layer-type').value;
+    picker.createType = wanted && wanted !== 'empty' ? wanted : 'sprite';
     picker.selected = null;
     $('picker-target').textContent = '新增 ' + picker.createType + ' 圖層';
     showPicker();
@@ -1805,6 +1812,8 @@
   var M = VFXLayerModel;
   var G = VFXGizmoModel;
   var MX = VFXMultiEditModel;
+  /* 父子層級：掛上時的數值換算、面板的樹、拖曳落點。同樣一份給畫面、一份給測試。 */
+  var H = VFXHierarchyModel;
 
   function keyOf(kind, id) { return M.keyOf(kind, id); }
   function keyKind(key) { return M.keyKind(key); }
@@ -1931,9 +1940,12 @@
     return M.sortRows(rows, state.sortMode);
   }
 
-  /* 目前「畫面上看得到的列」，收合的群組不展開子項。
-     Shift 範圍選取必須以這個為準——選到看不見的東西是最經典的多選 bug。 */
-  function visibleKeys() { return M.visibleKeys(buildRows(), state.collapsed); }
+  /* 面板上實際畫出來的列：群組展開成成員，子物件縮排在父物件底下，收合的群組與父物件不展開。
+     畫面、Shift 範圍選取、刪除後的焦點都照這一份，順序才不會各說各話。 */
+  function layerTree() { return H.treeRows(state.preset, buildRows(), state.collapsed); }
+
+  /* 目前「畫面上看得到的列」。Shift 範圍選取必須以這個為準——選到看不見的東西是最經典的多選 bug。 */
+  function visibleKeys() { return H.visibleKeys(layerTree()); }
 
   /* ---------------- 選取 ---------------- */
 
@@ -1963,20 +1975,13 @@
   function renderLayerList() {
     var host = $("layer-list");
     host.textContent = "";
-    var rows = buildRows();
-
-    rows.forEach(function (r) {
-      if (r.kind === "group") {
-        host.appendChild(groupRow(r));
-        if (state.collapsed[r.id]) return;
-        r.layerIds.forEach(function (id) {
-          var l = layerById(id);
-          if (l) host.appendChild(layerRow(l, true));
-        });
-        return;
-      }
+    /* 有任何父子關係時，每一列都留一格收合鈕的位置，同一層的勾選框才對得齊；
+       沒有的 preset 維持原本的樣子。 */
+    var treeMode = state.preset.layers.some(function (l) { return !!H.parentIdOf(l); });
+    layerTree().forEach(function (r) {
+      if (r.kind === "group") { host.appendChild(groupRow(r)); return; }
       var layer = layerById(r.id);
-      if (layer) host.appendChild(layerRow(layer, false));
+      if (layer) host.appendChild(layerRow(layer, r, treeMode));
     });
 
     updateLayerPanelStatus();
@@ -2047,12 +2052,37 @@
     return div;
   }
 
-  function layerRow(layer, inGroup) {
+  /* row：H.treeRows 的一列（depth、hasChildren、collapsed、parentElsewhere、parentOff） */
+  function layerRow(layer, row, treeMode) {
     var div = document.createElement("div");
     var key = keyOf("layer", layer.id);
-    div.className = "layer-row" + (inGroup ? " child" : "") +
+    div.className = "layer-row" + (row.groupId ? " child" : "") + (row.parentOff ? " parent-off" : "") +
       (isSelected(key) ? " sel" : "") + (state.activeKey === key ? " active" : "");
     div.dataset.key = key;
+    /* 縮排用 CSS 變數算 padding：整列仍然都是拖放的落點 */
+    div.style.setProperty("--depth", String(row.depth || 0));
+    /* dropModeFor 要知道這一列底下有沒有展開的子物件 */
+    div._treeRow = row;
+
+    var tw = null;
+    if (row.hasChildren) {
+      tw = document.createElement("button");
+      tw.className = "twisty";
+      tw.type = "button";
+      tw.textContent = row.collapsed ? "\u25B6" : "\u25BC";
+      tw.title = row.collapsed ? "展開子物件" : "收合子物件";
+      tw.onmousedown = function (e) { e.stopPropagation(); };
+      tw.onclick = function (e) {
+        e.stopPropagation();
+        var ck = H.collapsedKeyOf(layer.id);
+        if (state.collapsed[ck]) delete state.collapsed[ck]; else state.collapsed[ck] = true;
+        saveCollapsed();
+        renderLayerList();
+      };
+    } else if (treeMode) {
+      tw = document.createElement("span");
+      tw.className = "twisty twisty-blank";
+    }
 
     var cb = document.createElement("input");
     cb.type = "checkbox";
@@ -2073,10 +2103,18 @@
     var waterNames = { halo: '外層光暈', 'rear-ribbons': '後方飄帶', 'rear-sheets': '後方水片', body: '水柱本體', 'front-sheets': '前方水片', 'white-crests': '白色浪尖', 'front-ribbons': '前方飄帶', base: '底部旋流水環', bloom: '浪尖泛光', dust: '底部煙塵', spray: '藍色水花粒子' };
     name.textContent = (layer.effect === 'waterTornado' || (state.preset.id === 'field-water-tornado' && waterNames[layer.id])) ? (waterNames[layer.water ? layer.water.part : layer.id] || layer.id) + ' · ' + layer.id : layer.id;
 
+    if (row.parentElsewhere) {
+      /* 父物件在別的群組：列留在自己的位置，但要看得出它掛在誰底下 */
+      name.textContent += " \u2191" + row.parentElsewhere;
+      name.title = "父物件是 " + row.parentElsewhere + "（在別的群組）";
+    }
+    if (row.parentOff) div.title = "上層的父物件停用中：這一層也不會出現";
+
     var type = document.createElement("span");
     type.className = "type";
     type.textContent = layer.type;
 
+    if (tw) div.appendChild(tw);
     div.appendChild(cb); div.appendChild(name); div.appendChild(type);
     wireRow(div, key);
     return div;
@@ -2109,10 +2147,12 @@
     };
     div.ondragover = function (e) {
       if (!state.dragKeys) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
       clearDropMarks();
       var mode = dropModeFor(div, key, e);
+      /* 放不下的位置不 preventDefault：游標顯示禁止，也不畫任何指示 */
+      if (!mode) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
       div.classList.add(mode === "into" ? "drop-into" :
         (mode === "before" ? "drop-before" : "drop-after"));
     };
@@ -2121,7 +2161,8 @@
       if (!state.dragKeys) return;
       e.preventDefault();
       e.stopPropagation();
-      performDrop(key, dropModeFor(div, key, e));
+      var mode = dropModeFor(div, key, e);
+      if (mode) performDrop(key, mode);
       state.dragKeys = null;
       clearDropMarks();
     };
@@ -2134,23 +2175,30 @@
     });
   }
 
-  /* 群組列的中間三分之一 = 丟進群組；上下緣 = 排在群組前／後。
-     圖層列只有前／後。 */
+  /* 落點：
+       群組列  上緣＝排在群組前、下緣＝排在群組後、中段＝丟進群組（圖層回到根層級）
+       圖層列  上緣＝排在它前面、下緣＝排在它後面（兩者都是成為它的兄弟）、中段＝成為它的子物件
+
+     展開中的父物件，下緣緊貼著它的第一個子物件：線畫在那裡看起來是「插在父子之間」，
+     所以那一段也當成「成為子物件」，不做成排到整棵子樹後面。
+     中段不允許 into 時（例如拖的是群組）改成依落點就近取前／後——但展開中的父物件下半部
+     沒有誠實的畫法，直接不給放。
+     指示線是操作契約不是裝飾：顯示 into 卻做成 before 等於騙使用者。所以判斷一律交給
+     H.dropProblem——H.applyDrop 真的搬之前用的是同一支（它再往下用 layer-model 的
+     dropModeAllowed 判斷群組能不能放進去）。放不下就回傳 null。 */
   function dropModeFor(div, key, e) {
     var r = div.getBoundingClientRect();
     var y = e.clientY - r.top;
-    if (keyKind(key) === "group") {
-      if (y < r.height * 0.28) return "before";
-      if (y > r.height * 0.72) return "after";
-      /* 中段本來是 into，但目標不允許 into 時（例如拖的是群組，而這一版
-         不支援巢狀群組）就不能顯示 into——指示線是操作契約不是裝飾，
-         顯示 into 卻做成 before 等於騙使用者。改成依落點就近取前／後。 */
-      if (!M.dropModeAllowed(state.dragKeys || [], key, "into")) {
-        return y < r.height / 2 ? "before" : "after";
-      }
-      return "into";
+    var moving = state.dragKeys || [];
+    var row = div._treeRow;
+    var openParent = keyKind(key) === "layer" && row && row.hasChildren && !row.collapsed;
+    var mode = y < r.height * 0.28 ? "before" : (y > r.height * 0.72 ? "after" : "into");
+    if (mode === "after" && openParent) mode = "into";
+    if (mode === "into" && H.dropProblem(state.preset, state.layout, moving, key, "into")) {
+      if (openParent && y >= r.height / 2) return null;
+      mode = y < r.height / 2 ? "before" : "after";
     }
-    return y < r.height / 2 ? "before" : "after";
+    return H.dropProblem(state.preset, state.layout, moving, key, mode) ? null : mode;
   }
 
   function performDrop(targetKey, mode) {
@@ -2159,11 +2207,21 @@
 
   function performDropInner(targetKey, mode) {
     ensureLayout();
-    if (!M.applyDrop(state.preset, state.layout, state.dragKeys.slice(), targetKey, mode)) return;
-    /* 這裡刻意**不呼叫** onPresetChanged()：拖曳只改 layout，preset 一個 byte
-       都沒動，重建 runtime 等於白白丟掉目前的粒子狀態、重抓貼圖、製造 GC 壓力，
-       而且畫面會突然重播。只有真正改到 VFX 資料時才需要重建預覽。 */
+    var result = H.applyDrop(state.preset, state.layout, state.dragKeys.slice(), targetKey, mode);
+    if (!result.ok) {
+      if (result.error) showSaveError('無法放在這裡', [result.error]);
+      return;
+    }
     markLayoutDirty();
+    /* 只換了順序或分組時刻意**不呼叫** onPresetChanged()：那只改 layout，preset 一個 byte
+       都沒動，重建 runtime 等於白白丟掉目前的粒子狀態、重抓貼圖、製造 GC 壓力，
+       而且畫面會突然重播。換了父物件才是真的改到 VFX 資料，那時才重建預覽。 */
+    if (result.parentChanged) {
+      announceHierarchyNotes(result.notes);
+      markGizmoDirty();
+      onPresetChanged();
+      renderInspector();
+    }
     renderLayerList();
   }
 
@@ -2181,7 +2239,9 @@
 
   function copySelection() {
     if (!state.selectedKeys.length) return;
-    state.clipboard = M.copySelection(state.preset, state.layout, state.selectedKeys);
+    /* 選到父物件就連子孫一起，跟群組帶著成員一樣：面板上縮排在它底下的就是它的一部分 */
+    state.clipboard = M.copySelection(state.preset, state.layout,
+      H.withDescendants(state.preset, state.layout, state.selectedKeys));
     updateClipboardStatus();
   }
 
@@ -2770,6 +2830,11 @@
   var WATER_TORNADO_HIDDEN_FIELDS = ['sheet', 'size', 'scrollSpeed', 'effect'];
 
   function fieldsOf(layer, list) {
+    /* 空物件：Core 會把 assetId、blendMode、anchor、zIndex、sheet 當成不支援的欄位擋下，
+       顯示出來只會讓人填了之後存不了檔。清單以 Core 為準，不另抄一份。 */
+    if (layer.type === 'empty') {
+      return list.filter(function (f) { return VFXCore.EMPTY_LAYER_FIELDS.indexOf(f.key) >= 0; });
+    }
     if (layer.effect !== 'waterTornado') return list;
     return list.filter(function (f) { return WATER_TORNADO_HIDDEN_FIELDS.indexOf(f.key) < 0; });
   }
@@ -2791,6 +2856,62 @@
     targets.forEach(function (l) { if (types.indexOf(l.type) < 0) types.push(l.type); });
     var title = { kind: 'title', label: types.join('／') + (types.length > 1 ? ' 共通' : ' 專屬') };
     return common.concat(multi && !typed.length ? [] : [title], typed);
+  }
+
+  /* 「父物件」下拉。選項是掛得上去的圖層（排除自己與自己的子孫、會超過深度上限的），
+     照面板的樹狀順序、依深度縮排，看得出誰在誰底下。
+     選了就換算數值讓畫面不動（H.attach）；多選時每一層都掛到同一個父物件——這是欄位寫入的語意，
+     父子一起被選時會一起變成兄弟。擋下時講原因，下拉重畫回原本的值。 */
+  function parentSelect(targets) {
+    var select = document.createElement('select');
+    var ids = targets.map(function (l) { return l.id; });
+    var current = MX.commonValue(targets, function (l) { return H.parentIdOf(l); });
+    var eligible = H.eligibleParents(state.preset, ids);
+    if (current.mixed) {
+      var mixedOption = document.createElement('option');
+      mixedOption.value = '';
+      mixedOption.textContent = '（' + MIXED_TEXT + '）';
+      mixedOption.disabled = true;
+      mixedOption.selected = true;
+      select.appendChild(mixedOption);
+    }
+    var none = document.createElement('option');
+    none.value = '';
+    none.textContent = '（無，根層級）';
+    select.appendChild(none);
+    H.treeRows(state.preset, buildRows(), {}).forEach(function (r) {
+      if (r.kind !== 'layer') return;
+      if (eligible.indexOf(r.id) < 0 && current.value !== r.id) return;
+      var l = layerById(r.id);
+      var o = document.createElement('option');
+      o.value = r.id;
+      o.textContent = new Array(r.depth + 1).join('\u00a0\u00a0\u00a0') + r.id + '（' + l.type + '）';
+      select.appendChild(o);
+    });
+    if (!current.mixed) select.value = current.value || '';
+    select.onchange = function () {
+      var result = H.attach(state.preset, ids, select.value || null);
+      if (!result.ok) {
+        showSaveError('無法設定父物件', [result.error]);
+        renderInspector();
+        return;
+      }
+      announceHierarchyNotes(result.notes);
+      markGizmoDirty();
+      onPresetChanged();
+      renderLayerList();
+      renderInspector();
+    };
+    return select;
+  }
+
+  /* 掛上／卸下之後沒辦法完全保持原樣的地方，寫在頂端狀態列（與「已改用檔名」同一個位置與樣式），
+     滑鼠移上去看每一層的原因。完全保持原樣時不出聲——面板上的縮排就是結果。 */
+  function announceHierarchyNotes(notes) {
+    var lines = H.describeNotes(notes);
+    if (!lines.length) return;
+    setSaveStatus(lines.length === 1 ? lines[0] : '父子層級：' + lines.length + ' 項沒辦法完全保持原樣',
+      'note', lines.join('\n'));
   }
 
   /* 多選的標題：幾層、什麼型別；滑鼠停在標題上會列出全部 id。 */
@@ -2853,6 +2974,8 @@
         source.setAttribute('data-generated-source', lead.water.part);
         var badge = document.createElement('span'); badge.textContent = '程序生成'; badge.style.whiteSpace = 'nowrap'; badge.style.alignSelf = 'center';
         control.appendChild(source); control.appendChild(badge);
+      } else if (f.kind === 'parent') {
+        control = parentSelect(targets);
       } else if (f.kind === 'bool') {
         control = document.createElement('input');
         control.type = 'checkbox';
@@ -3020,6 +3143,11 @@
             }
             ensureLayout();
             M.renameLayer(state.preset, state.layout, old, next);
+            if (state.collapsed[H.collapsedKeyOf(old)]) {
+              delete state.collapsed[H.collapsedKeyOf(old)];
+              state.collapsed[H.collapsedKeyOf(next)] = true;
+              saveCollapsed();
+            }
             var oldKey = keyOf('layer', old), newKey = keyOf('layer', next);
             state.selectedKeys = state.selectedKeys.map(function (k) {
               return k === oldKey ? newKey : k;
@@ -3371,10 +3499,10 @@
       host.appendChild(tip);
     }
 
-    /* 分軸（sprite／procedural）與粒子的曲線欄位不同。混著選的時候那幾段只顯示說明——
+    /* 分軸（sprite／procedural／empty）與粒子的曲線欄位不同。混著選的時候那幾段只顯示說明——
        畫出一張只有一部分圖層吃得到的圖，拖了之後另一部分沒反應。 */
     var perAxis = MX.allOrNone(targets, supportsPerAxisScale);
-    var mixedTypesHint = '選取的圖層混有 particle 與 sprite／procedural，這一段兩邊的欄位不同。' +
+    var mixedTypesHint = '選取的圖層混有 particle 與 sprite／procedural／empty，這一段兩邊的欄位不同。' +
       '要調這一段請分開選取。';
 
     curveSection(host, 'opacity', 'Opacity', function (body) {
@@ -3427,7 +3555,7 @@
     curveSection(host, 'rotation', 'Rotation', function (body) {
       curveBlock(body, targets, 'rotationOverLife', CURVE_POLICY.rotation, 'Z', { height: 170 });
       if (perAxis === null) {
-        hintLine(body, 'X／Y 翻轉只有 sprite 與 procedural 有；選取中混有 particle，要調 X／Y 請分開選取。');
+        hintLine(body, 'X／Y 翻轉只有 sprite、procedural 與 empty 有；選取中混有 particle，要調 X／Y 請分開選取。');
         return;
       }
       if (!perAxis) {
@@ -3446,7 +3574,7 @@
       if (perAxis === null) { hintLine(body, mixedTypesHint); return; }
       if (!perAxis) {
         hintLine(body,
-          '位移曲線只有 sprite 與 procedural 支援。粒子的位置是由 speed／gravity／' +
+          '位移曲線只有 sprite、procedural 與 empty 支援。粒子的位置是由 speed／gravity／' +
           'spawn 那一整套運動算出來的，沒有一個「圖層位置」可以加——要讓粒子飄或偏，' +
           '用的是那幾個欄位。');
         return;
@@ -4384,15 +4512,17 @@
     /* 先算出「刪完之後焦點該落在哪」：整個清空會讓人失去位置感，連按兩次
        Delete 還得重新找位置。取被刪範圍在可見列表中的前一列。 */
     var vis = visibleKeys();
+    /* 選到父物件就連子孫一起刪（跟群組連成員一起刪同一個道理），不留下指向不存在圖層的 parent */
+    var keys = H.withDescendants(state.preset, state.layout, state.selectedKeys);
     var doomed = {};
-    state.selectedKeys.forEach(function (k) { doomed[k] = true; });
+    keys.forEach(function (k) { doomed[k] = true; });
     var firstAt = vis.length;
     vis.forEach(function (k, i) { if (doomed[k] && i < firstAt) firstAt = i; });
     var survivor = null;
     for (var i = firstAt - 1; i >= 0 && !survivor; i--) { if (!doomed[vis[i]]) survivor = vis[i]; }
     for (var j = firstAt; j < vis.length && !survivor; j++) { if (!doomed[vis[j]]) survivor = vis[j]; }
 
-    M.deleteSelection(state.preset, state.layout, state.selectedKeys);
+    M.deleteSelection(state.preset, state.layout, keys);
 
     /* survivor 有可能自己就是被刪群組的成員，確認它還在才選它 */
     var alive = survivor && (M.keyKind(survivor) === 'group'
@@ -4446,6 +4576,7 @@
       ['VFXViewModel', 'tools/vfx/editor/view-model.js'],
       ['VFXLayoutSchema', 'tools/vfx/editor/layout-schema.js'],
       ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
+      ['VFXHierarchyModel', 'tools/vfx/editor/hierarchy-model.js'],
       ['VFXMultiEditModel', 'tools/vfx/editor/multi-edit-model.js'],
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
       ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],

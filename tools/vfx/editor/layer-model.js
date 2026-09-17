@@ -88,21 +88,8 @@
     return out;
   }
 
-  /* ---------------- 目前看得見的列 ----------------
-     Shift 範圍選取必須以這個為準：選到收合起來、看不見的東西，
-     是多選功能最典型也最讓人不信任的 bug。 */
-
-  function visibleKeys(rows, collapsed) {
-    var out = [];
-    var c = collapsed || {};
-    rows.forEach(function (r) {
-      if (r.kind === 'layer') { out.push(keyOf('layer', r.id)); return; }
-      out.push(keyOf('group', r.id));
-      if (c[r.id]) return;
-      r.layerIds.forEach(function (id) { out.push(keyOf('layer', id)); });
-    });
-    return out;
-  }
+  /* 目前看得見的列（Shift 範圍選取的基準）在 hierarchy-model.js 的 treeRows／visibleKeys：
+     子物件縮排在父物件底下之後，「看得見哪些列、順序如何」要連父子關係一起算，只留那一份。 */
 
   /* ---------------- 選取 ---------------- */
 
@@ -246,6 +233,11 @@
     });
 
     var newKeys = [];
+    /* 這次貼上的原 id → 副本 id，貼完之後用來改圖層之間的參照 */
+    var copyOf = Object.create(null);
+    var pasted = [];
+    var existed = Object.create(null);
+    preset.layers.forEach(function (l) { existed[l.id] = true; });
     /* anchor 若是群組內的某一層，圖層副本就貼在同一個群組裡；
        否則貼在頂層 anchor 之後。 */
     var anchorGroup = (anchorKey && keyKind(anchorKey) === 'layer')
@@ -259,7 +251,10 @@
     clipboard.items.forEach(function (item) {
       if (item.kind === 'layer') {
         var l = deepClone(item.layer);
+        var from = l.id;
         l.id = uniqueIdFrom(l.id, takenLayer);
+        if (!copyOf[from]) copyOf[from] = l.id;
+        pasted.push(l);
         preset.layers.push(l);
         if (anchorGroup) {
           anchorGroup.layerIds.splice(groupAt, 0, l.id);
@@ -278,7 +273,10 @@
       var ids = [];
       item.layers.forEach(function (raw) {
         var l2 = deepClone(raw);
+        var from2 = l2.id;
         l2.id = uniqueIdFrom(l2.id, takenLayer);
+        if (!copyOf[from2]) copyOf[from2] = l2.id;
+        pasted.push(l2);
         preset.layers.push(l2);
         ids.push(l2.id);
       });
@@ -289,7 +287,26 @@
       else layout.order.push(keyOf('group', gid));
       newKeys.push(keyOf('group', gid));
     });
+    remapPastedRefs(pasted, copyOf, existed);
     return newKeys;
+  }
+
+  /* 副本之間的參照（父子層級、子發射器）：
+       一起複製的   → 改指向副本。複製一個父物件連同子物件，副本的子物件掛在副本底下，
+                      而不是掛回原本那一個
+       沒一起複製的 → parent 仍在就維持（貼出來的是原子物件的兄弟，數值本來就相對同一個
+                      父物件，位置不會跑掉）；已經不在了就拿掉，否則存不了檔
+     子發射器只改一起複製的：只複製來源層時，副本照舊打到原本的目標層。 */
+  function remapPastedRefs(pasted, copyOf, existed) {
+    pasted.forEach(function (l) {
+      if (typeof l.parent === 'string') {
+        if (copyOf[l.parent]) l.parent = copyOf[l.parent];
+        else if (!existed[l.parent]) delete l.parent;
+      }
+      if (l.subEmitter && typeof l.subEmitter.layer === 'string' && copyOf[l.subEmitter.layer]) {
+        l.subEmitter.layer = copyOf[l.subEmitter.layer];
+      }
+    });
   }
 
   /* anchor 在頂層 order 裡的「插入位置」（也就是它的下一格）。
@@ -486,12 +503,18 @@
     return true;
   }
 
-  /* 改 layer 的 id 時，layout 裡所有指向它的參照都要跟著改，
-     否則那一層會從群組裡「消失」變成 root——實測過，Orb A 會從 4 層掉到 3 層。 */
+  /* 改 layer 的 id 時，所有指向它的參照都要跟著改：
+       layout 的群組與順序  否則那一層會從群組裡「消失」變成 root——實測過，Orb A 會從 4 層掉到 3 層
+       子物件的 parent       否則子物件全部指向不存在的圖層，整份存不了檔
+       子發射器的目標        同上 */
   function renameLayer(preset, layout, oldId, newId) {
     var l = layerById(preset, oldId);
     if (!l) return false;
     l.id = newId;
+    preset.layers.forEach(function (other) {
+      if (other.parent === oldId) other.parent = newId;
+      if (other.subEmitter && other.subEmitter.layer === oldId) other.subEmitter.layer = newId;
+    });
     if (layout && Array.isArray(layout.groups)) {
       layout.groups.forEach(function (g) {
         g.layerIds = g.layerIds.map(function (id) { return id === oldId ? newId : id; });
@@ -525,7 +548,7 @@
   return {
     keyOf: keyOf, keyKind: keyKind, keyId: keyId,
     layerById: layerById, groupById: groupById, groupOfLayer: groupOfLayer,
-    sortRows: sortRows, visibleKeys: visibleKeys, applyClick: applyClick,
+    sortRows: sortRows, applyClick: applyClick,
     uniqueIdFrom: uniqueIdFrom, uniqueId: uniqueId, slugify: slugify, deepClone: deepClone,
     copySelection: copySelection, pasteClipboard: pasteClipboard,
     groupLayers: groupLayers, ungroup: ungroup, dropEmptyGroups: dropEmptyGroups,

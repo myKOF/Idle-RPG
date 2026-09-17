@@ -233,7 +233,11 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 /* ---- Layer 樹狀面板 ---- */
 .layer-row.active { outline: 1px solid #6f9fe0; outline-offset: -1px; }
 /* 子項縮排。用 padding 而不是 margin，整列才都還是 drop target */
-.layer-row.child { padding-left: 24px; }
+/* 父子層級：每深一層再多退 16px（--depth 由 editor.js 設在列上，沒設就是 0，版面與原本相同） */
+.layer-row { padding-left: calc(6px + var(--depth, 0) * 16px); }
+.layer-row.child { padding-left: calc(24px + var(--depth, 0) * 16px); }
+/* 上層的父物件停用中：Runtime 不會畫它。勾選框保持原樣，看得出它自己其實是開著的 */
+.layer-row.parent-off > span:not(.twisty) { opacity: .45; }
 .group-row { background: #23232b; font-weight: 600; }
 .group-row.sel { background: #33465f; }
 .group-row .gname { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis;
@@ -241,6 +245,9 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
 .twisty { background: none; border: none; color: #9a9aa6; padding: 0 2px;
           font-size: 10px; line-height: 1; cursor: pointer; }
 .twisty:hover { color: #d6d6dc; background: none; }
+/* 固定寬度：有子物件的列是按鈕、沒有的列是同寬的空位，同一層的勾選框才對得齊 */
+.layer-row .twisty { flex: 0 0 14px; width: 14px; padding: 0; text-align: center; }
+.twisty-blank { display: inline-block; cursor: default; }
 .layer-row.dragging { opacity: .45; }
 /* 插入位置指示線：用 box-shadow 畫在列的上／下緣，不改變版面高度，
    否則拖曳過程中每一列都會跳動。 */
