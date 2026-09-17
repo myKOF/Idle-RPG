@@ -66,12 +66,15 @@ test('每段使用最新敵群及玩家位置，月牙模式主範圍清空仍�
  const h=setup(1,true);h.cast();h.primary.hp=0;const fresh=h.enemy(500,'fresh');h.move(500);h.setPool([fresh]);h.tick(.35);
  assert.ok(h.hits.some(x=>x.e===fresh&&x.d===1485));assert.equal(h.events.filter(e=>e.targets[0]==='fresh').length,1);
 });
-test('爆散特效逐欄讀第四階配置，不被本體、月牙或超神覆寫',()=>{
- for(const moon of [false,true])for(const ult of [false,true]){
+test('追加攻擊與主打擊共用當前進化特效，後階空白才繼承爆散',()=>{
+ for(const moon of [false,true])for(const ult of [false,true])for(const blank of [false,true]){
   const h=setup(10,moon);h.c.SKILLS2.gale.tiers[3].vfx={attack:'scatter-configured',hit:'scatter-hit'};
-  if(ult)h.c.G.player.skills2.ult={gale:{pick:h.c.sgUltIndexOfId('gale','thunderGodSlash'),lv:1}};
+  h.c.skills2Levels=()=>[1,1,1,1,1,1,moon?1:0];
+  h.c.SKILLS2.gale.tiers[6].vfx={attack:blank?'':'moon-configured'};
+  if(ult)h.c.skills2Ult=()=>({def:{vfx:{attack:blank?'':'ult-configured'}},lv:1});
   h.cast();h.tick(.2);const extras=h.events.filter(e=>e.targets.length===1);assert.equal(extras.length,2);
-  for(const e of extras){assert.equal(e.vfx.attack,'scatter-configured');assert.equal(e.vfx.hit,'scatter-hit');}
+  const expected=blank?'scatter-configured':ult?'ult-configured':moon?'moon-configured':'scatter-configured';
+  for(const e of h.events){assert.equal(e.vfx.attack,expected);assert.equal(e.vfx.hit,'scatter-hit');}
  }
 });
 

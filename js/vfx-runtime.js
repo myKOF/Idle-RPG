@@ -294,7 +294,6 @@ var VFXRuntime = (function () {
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
-    var moonSwingIndex = 0;                 // 圓形判定內的刀光朝向差，避免連斬輪廓完全重合
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     var presetDefinitions = Object.create(null);
@@ -1202,12 +1201,7 @@ var VFXRuntime = (function () {
           } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
-            var moonSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
-            var moonDx = moonParams.position.x - moonSource.x;
-            var moonDy = moonParams.position.y - moonSource.y;
-            // 素材刃口朝 +X；連斬角差必須疊在施法者到目標的方向上。
-            var moonFacing = moonDx || moonDy ? Math.atan2(moonDy, moonDx) : num(spec.angle, 0);
-            moonParams.rotation = moonFacing + [-0.15, 0, 0.15][moonSwingIndex++ % 3];
+            // 保留 Preset 製作方向及圖層旋轉動畫，不依施法者位置追加旋轉。
             ok = !!play(rtFx, presetId, moonParams);
           } else if (/^cleave(?:-|$)/.test(spec.variant || '')) {
             ok = playCleave(rtFx, presetId, spec);
@@ -1398,7 +1392,6 @@ var VFXRuntime = (function () {
     }
 
     function clear() {
-      moonSwingIndex = 0;
       soulOrbits=Object.create(null);
       projectiles.length = 0;
       follows.length = 0;

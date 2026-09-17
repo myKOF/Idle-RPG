@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜疾風月牙閃保留製作方向（GALE-MOON-DIRECTION-20260917）
+
+- Owner Codex；In Progress。使用者回報垂直落下特效被轉向，原因是 Runtime 舊月牙邏輯依施法者方向加交替角差。
+- 範圍：vfx-runtime、runtime 測試、index 快取與本紀錄；移除額外旋轉，保留 Preset 圖層方向／動畫及傷害範圍縮放；不改素材、表格、技能判定。驗收八方向、重複施放、原點与範圍尺寸；無前置依賴，完成供使用者合併。
+- 使用者追加：隨機追加目標仍固定讀第四階，改為同主打擊逐欄讀當前進化配置。範圍增加 skills2、gale 測試與 bridge/sim.worker 快取；覆蓋本紀錄中舊 GALE-SCATTER-VFX 的固定第四階決策。單體尺寸、0.2 秒間隔及傷害不變。
+- 驗證：GALE/SINGLE-SIZE 定向 3/3；gale-rework 與 skill-vfx-inheritance 16/16；主執行緒／Worker 快取同步。未作實機驗證，使用者編輯中的表格、生成配置與素材保留未提交；無本輪素材修改。
+- build 361/361、diff check 通過；Done，可合併，未推送。
+
 ## Codex｜爆散每 0.2 秒逐下選敵（GALE-SCATTER-GAP-20260917）
 
 - Owner Codex；In Progress。使用者確認爆散追加攻擊每隔 0.2 秒才重新選一個目標、結算傷害並播放特效；疾風破本體維持原節奏。

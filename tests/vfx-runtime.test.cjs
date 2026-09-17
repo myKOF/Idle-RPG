@@ -245,38 +245,39 @@ test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複
   const t=log.nodes[0].transforms.at(-1);
   assert.equal(t.x,100); assert.equal(t.y,50);
   assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
-  assert.equal(t.rotation,Math.atan2(50,100)-.15);
-  for (const angle of [0,.15]) {
+  assert.equal(t.rotation,0);
+  for (let repeat=0;repeat<2;repeat++) {
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
       area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,Math.atan2(50,100)+angle);
+    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,0);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
     area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,Math.atan2(50,100)-.15);
+  assert.equal(log.updates.at(-1).rotation,0);
 });
 
-test('GALE 刃口隨施法者到目標的八方向旋轉，同座標保持有限角度', () => {
-  const {adapter,log}=makeAdapter([unitPreset('moon')]);
+test('GALE 八方向、連續施放與同座標均保留 Preset 製作方向', () => {
+  const preset=unitPreset('moon');preset.layers[0].rotation=.4;
+  const {adapter,log}=makeAdapter([preset]);
   for (let i=0;i<8;i++) {
     adapter.clear();
     const a=i*Math.PI/4;
     const x=Math.cos(a)*100,y=Math.sin(a)*100;
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x,y,r:50},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.updates.at(-1).rotation,Math.atan2(y,x)-.15);
+    assert.equal(log.updates.at(-1).rotation,.4);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',sourceId:'mv-float-2',targets:['mv-float-1'],vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,Math.PI-.15);
+  assert.equal(log.updates.at(-1).rotation,.4);
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x:0,y:0,r:50},vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,-.15);
+  assert.equal(log.updates.at(-1).rotation,.4);
 });
 
 test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行物不預播命中', () => {
