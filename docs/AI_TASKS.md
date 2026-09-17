@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## Claude｜VFX 父子層級與空物件（VFX-HIERARCHY-20260917）
+
+- Owner：Claude；Done。使用者需求：可將多個子物件掛在父物件底下，子物件繼承父物件的參數。使用者決定：繼承變換＋透明度＋顏色；時間軸跟著父物件（子物件的 delay 從父物件出現起算，父物件還沒出現、已結束或停用時子物件也不出現）；任何圖層都能當父物件，另加不畫東西的空物件；掛上時畫面位置不動。
+- 範圍：js/vfx-core.js、tools/vfx/editor（新增 hierarchy-model.js；editor.js、layer-model.js、gizmo-model.js、editor.css、index.html）、tools/vfx/preset-render.cjs 與 preset-thumbs.cjs、根目錄 index.html 版號、VFX 文件與測試。不改任何 preset、表格、Runtime Adapter。無前置依賴。
+- 修改：
+  - Core（a8f1716）：圖層可填 `parent`，新增 `empty` 型別；世界矩陣＝特效·祖先…·自己（非等比父物件＋子物件旋轉會送出 skewX）；透明度、顏色相乘；驗證父物件存在、不是自己、不成環、最多 8 層、子發射器來源與目標同一個父物件；公開矩陣工具與 EMPTY_LAYER_FIELDS。粒子層當子物件／父物件的規則見 VFX_CORE_AND_PRESET_SCHEMA §2.5。沒有 parent 的圖層完全走原本的算式。
+  - 離線出圖畫斜切（bd27d7f，縮圖快取版本升到 3）。
+  - Editor（a890d22）：掛上／卸下時把位置、角度、縮放、外層縮放換算成父物件底下的區域值、delay 換算成從父物件出現起算（非等比父物件用外層縮放吸收；存不下的斜切取最接近的一組並在狀態列告知）；Inspector「父物件」下拉（可多選）；圖層面板樹狀縮排與收合；拖到圖層列中段＝掛上、上下緣＝成為兄弟、群組列＝回到根層級；複製／刪除父物件連子物件一起；改 id、貼上時父子與子發射器參照跟著改；空物件只列 Core 允許的欄位。
+  - 預覽框（2de784d）：框、把手、點選、拖曳、多選、群組在父物件座標計算；父子同時被選或同在群組時只動最上層；預覽區點選不選空物件。
+  - 文件（1744e1c）：VFX_CORE_AND_PRESET_SCHEMA §2.5.1、VFX_AGENT_WORKFLOW §9.11.1。
+  - 合併 ai/codex 之後補上（本紀錄所在提交）：根目錄 index.html 的 vfx-core 版號（當時 ai/codex 對 index.html 有未合併修改，先不動）；重掃 Runtime Adapter，HIER-16 補上當初漏掉的 bolt-chain-travel-bluewhite（讀 travelling-electric-front 的 scale 推光束寬度）；CATALOG-2 放行空物件（原本會把沒有 assetId 的空物件報成「用到未匯出的素材：undefined」）。
+  - 合併後相容性探測：以 git archive 匯出合併後的 HEAD，加一份測試用 preset（hit-fire 的圖層），分「平的」與「掛了空物件（attach 換算）」兩版，各跑 40 支會讀 preset 的測試（921 項）。平的版本與不加檔的基準失敗完全相同；掛了空物件的版本只多出 CATALOG-2，修正後在同一個複本重跑通過。原本就紅的 31 條在兩版的錯誤內容逐字相同，而且都只讀指定的 preset、沒有逐份掃資料夾，不會遮住新問題。遊戲與編輯器共用的 Pixi 後端本來就會套 skewX。
+- 決策：刪除父物件時連子物件一起刪，與群組連成員一起刪一致（原規劃是把子物件交給祖父；要保留子物件先卸下）。
+- 驗證：Core 修改前後以 209 份 preset × 3 種播放情境比對送到後端的每一個值，逐位元相同；HIER-1～16、SKEW-1～2、PARENT-1～34 全過；Editor 與 gizmo 共 28 個突變全部被抓到；VFX 全套 823 項，16 項失敗與基線清單逐條相同。瀏覽器實測（未存檔）：掛上前後三個時間點的 Runtime 輸出一致；子物件掛在轉 30°、放大 2 倍的空物件底下，預覽上拖框 20px，畫面上剛好移動 (20, 0)；父子一起拖、整組拖時子物件只移動一次；收合、拖曳、複製貼上、刪除、復原正常。
+- 待確認：Runtime Adapter 有特殊處理的 6 份 preset 暫不得使用（HIER-16 守著）；粒子層掛上時只換算發射點位置；遊戲裡還沒有任何 preset 實際用到父子層級。
+
+## Claude｜VFX 編輯器三個回報修正：工具列不換行、暫停中編輯預覽不消失、另存新檔後重新載入（VFX-EDITOR-FIXES-20260917）
+
+- Owner：Claude；Done。使用者回報：(1) 按存檔後出現存檔訊息，「關閉編輯器」被擠到第二行，並要求拿掉 effects／particles 計數；(2) 暫停時改特效參數，預覽整個消失、只剩框；(3) 另存新檔後特效停止播放，要求改成清掉選單的篩選字、換成新名字、重新載入。
+- 範圍：tools/vfx/editor 的 editor.js、editor.css 與對應測試；不動 Core、Runtime、preset。無前置依賴。
+- 修改：(1) 3cf4ee0 拿掉計數、工具列改成不換行。該版為了不換行把工具列做成橫向捲動容器、關閉鈕 sticky，使用者接著回報「點了特效菜單後整個置頂區都壞了」——Preset 下拉掛在工具列裡被裁掉，選取時的 scrollIntoView 又把整條工具列捲走；d3ebfd3 拿掉捲動與 sticky，改成放不下時按鈕自己縮短（切尾），一行內全部留在畫面上。(2) e883077：改參數會重建預覽，Core 的 play() 只建立狀態、畫面物件要等 update 才生出來，而暫停時 ticker 不呼叫 update；重建後暫停中補一次 update(0)（不前進時間）。(3) b410f60：另存時 Core 裡註冊的仍是舊名字，預覽循環用新名字重播每幀丟錯；送出前先註冊新名字，另存成功後換掉選單篩選字串、等分組存完再以 ?preset=新名字 重新載入（分組沒存成就不重新載入並顯示原因）。
+- 驗證：PAUSE-1／2（換回修改前的 editor.js 兩條都紅）、SA5。瀏覽器實測：1600／1280px 工具列固定 47px、存檔訊息出現前後不變、Preset 下拉 206 列完整展開、連按 ↓ 不捲動工具列；暫停後改 position.x，不經 ticker 就有 12 個節點可見；另存成暫時的 zz-saveas-probe（驗完已刪除），重新載入後根群組跟著改名、12 層都在，101 幀 0 個錯誤。
+- 待確認：無。
+
 ## Codex｜霹靂一閃全場貫穿（GALE-THUNDER-FULLFIELD-20260917）
 
 - Owner Codex；Done。以當前玩家為中心，沿玩家與目標連線貫穿長100米、寬10米（前後各50米）；傷害與特效共用矩形。基礎次數表定count=3，再加角色連擊數；維持0.2秒重選20米內敵人、無敵即停與0.08秒伸滿。

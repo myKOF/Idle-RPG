@@ -786,9 +786,9 @@ layout schema 沒有巢狀群組，所以就是**扁平一層**，不要自作�
 
 - 只是整理 Layers 面板——那是群組（§9.11）的事，父子層級會改變畫面的算法。
 - 各層本來就各做各的動畫——掛上去不會省任何東西，反而多一層要理解的座標系。
-- `js/vfx-runtime.js` 有特殊拆解的那幾份 preset（`aura-rockarmor-stone`、`aura-earth-reversal`、
-  `ground-firewall`、`burst-vacuum-shockwave`、`slash-wind-crescent`）——HIER-16 會擋；
-  要用得先改 Runtime Adapter。
+- `js/vfx-runtime.js` 有特殊處理的那幾份 preset（`aura-rockarmor-stone`、`aura-earth-reversal`、
+  `ground-firewall`、`burst-vacuum-shockwave`、`slash-wind-crescent`、`bolt-chain-travel-bluewhite`）——
+  HIER-16 會擋；要用得先改 Runtime Adapter。
 
 **寫法**：
 
