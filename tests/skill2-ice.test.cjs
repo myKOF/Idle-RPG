@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 /* 新版主動技能第七批：冰系三群組（2026-08-17，js/skills2.js）
    守住設計文檔「技能」頁籤〈魔法〉區塊新增的三個群組與其註記：
      寒冰箭   icearrow   ─ 扇形單體 → 貫穿 → 追蹤，三形態共用同一支命中結算
@@ -105,9 +106,7 @@ test('三個冰系群組都在表上，且為魔法傷害／寒冰屬性', () =>
     assert.equal(g.tiers.length, c.SG_TIER_COUNT, gid + ' 應有 7 階');
     assert.equal(g.cost, 40, gid + ' 施法消耗與其他魔法群組一致');
   });
-  assert.equal(c.SKILLS2.icearrow.cd, 18);
-  assert.equal(c.SKILLS2.waterball.cd, 14);
-  assert.equal(c.SKILLS2.frostnova.cd, 20);
+  for(const gid of ['icearrow','waterball','frostnova']) assert.equal(c.SKILLS2[gid].cd,table.number(gid,1,'冷卻時間'));
 });
 
 test('每階的說明模板都能代入 fx（沒有缺欄位的佔位符）', () => {
@@ -123,12 +122,12 @@ test('每階的說明模板都能代入 fx（沒有缺欄位的佔位符）', ()
   });
 });
 
-test('寒冰箭參數：箭道間隔 15 度、速度 30 米／秒，爆裂箭連射三波且間隔 0.3 秒', () => {
+test('寒冰箭速度與箭道依表格，爆裂箭連射三波且間隔 0.3 秒', () => {
   const c = loadContext();
   const base = c.SKILLS2.icearrow.tiers[0].fx;
   const burst = c.SKILLS2.icearrow.tiers[6].fx;
   assert.equal(base.deg, 15);
-  assert.equal(base.speed, 30);
+  assert.equal(base.speed, table.number('icearrow',1,'飛行子彈速度（米／秒）'));
   assert.equal(burst.waves, 3);
   assert.equal(burst.waveGap, 0.3);
   assert.equal(burst.sec, 6);
@@ -284,8 +283,8 @@ test('寒冰箭第 1 階：前方扇形內的單體攻擊，一支箭一個敵�
   const fired = shots.map((s) => s.angle).sort((a, b) => a - b);
   fired.forEach((ang, i) => assert.ok(Math.abs(ang - aimed[i]) < 1e-9,
     '每支箭的方位就是它自己那個目標的方位'));
-  assert.equal(shots[0].travelMs[0], Math.round(5 * M / c.SG_ICEARROW_SPEED * 1000),
-    '箭速為 30 米／秒');
+  assert.equal(shots[0].travelMs[0], Math.round(5 / table.number('icearrow',1,'飛行子彈速度（米／秒）',1) * 1000),
+    '事件飛行時間依表定速度計算');
 });
 
 test('【冰系強化】與第 1 階累加（文檔明寫累加效果）', () => {
@@ -412,7 +411,7 @@ test('【寒冰爆裂箭】轉為追擊場域，並採接觸判定', () => {
   homing.forEach((f) => {
     assert.equal(f.contact, true, '接觸判定：進入才算一次命中，不是每個節拍全額命中');
     assert.equal(f.chaseM, 30, '追擊範圍沿用表定 30 米');
-    assert.equal(f.speed, c.SG_ICEARROW_SPEED, '追蹤冰箭速度為 30 米／秒');
+    assert.equal(f.speed, table.number('icearrow',1,'飛行子彈速度（米／秒）',1)*M, '追蹤冰箭依表定速度');
   });
 });
 
@@ -638,7 +637,8 @@ test('【暴風雪】追加一道跟隨我方的地板場域', () => {
   const bl = c.SKILL2_RT.grounds.filter((f) => f.kind === 'blizzard');
   assert.equal(bl.length, 1, '追加（而非取代）一道暴風雪');
   assert.equal(bl[0].follow, true, '跟隨我方：圓心恆等於玩家當下座標');
-  assert.ok(Math.abs(bl[0].length - c.bfMeterPx(20)) < 1e-6, '20×20 米方形範圍');
+  const [length,width]=table.geometry('frostnova',7,'傷害範圍（米）',1);
+  assert.equal(bl[0].length,length*M);assert.equal(bl[0].width,width*M);
   const before = calls.length;
   run(c, p, [e], 1);
   assert.ok(calls.length > before, '逐拍造成傷害');
@@ -694,7 +694,7 @@ test('skills2CastRangePx 改吃 sgVal 之後，既有群組的射程完全不變
   const c = loadContext();
   /* 既有群組都沒有定義 castMPer，因此不論等級多高，射程都應等於表定底值。
      只投資第 1 階（其餘階為 0）才測得到「底值」——高階的 castM 改寫（殞石術）另外驗。 */
-  const expect = { fireball: 30, firepillar: 30, firehunt: 8, mire: 20, chainlightning: 30, thunderstrike: 30, thunderorb: 30 };
+  const expect = Object.fromEntries(['fireball','firepillar','firehunt','mire','chainlightning','thunderstrike','thunderorb'].map(gid=>[gid,table.number(gid,1,'施放距離（米）')]));
   Object.keys(expect).forEach((gid) => {
     for (const lv of [1, 5, 10]) {
       const at = c.SKILLS2[gid].tiers.map((t, i) => (i === 0 ? lv : 0));

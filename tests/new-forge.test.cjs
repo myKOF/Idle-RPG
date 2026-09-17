@@ -610,7 +610,10 @@ test('V3 淨化：qualities 補長度且神鑄創世恆 false、partSlots 夾 3~
 
 test('index.html/ui.js/main.js/factory.js/gm.js 接線（合併版）', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /data-tab="newforge">🏭 熔爐/, '熔爐頁籤應由新熔爐取代且不再隱藏');
+  const forgeTab=html.match(/<button\b[^>]*data-tab="newforge"[^>]*>[\s\S]*?<\/button>/)?.[0];
+  assert.ok(forgeTab,'應有新熔爐頁籤');
+  assert.match(forgeTab.replace(/<[^>]+>/g,''),/熔爐/,'圖示包在span中仍有正確標籤');
+  assert.doesNotMatch(forgeTab.slice(0,forgeTab.indexOf('>')),/\bhidden\b|display:\s*none/,'熔爐頁籤不應隱藏');
   assert.ok(!/data-tab="factory"/.test(html), '舊熔爐頁籤應移除');
   assert.ok(!/id="tab-factory"/.test(html), '舊熔爐分頁區段應移除');
   assert.match(html, /<section id="tab-newforge" class="tab">/);

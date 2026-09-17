@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {createRequire}=require('node:module');
 const helperFile=path.join(__dirname,'skill2-knife-range.test.cjs');
@@ -106,7 +107,9 @@ test('千鳥同時提高爆散目標數與係數，額外傷害只乘一次，�
   const enemies=[h.primary,...Array.from({length:5},(_,i)=>h.enemy(20+i*12,'extra'+i))];
   h.setPool(enemies);h.cast();
   for(let i=1;i<=25;i++)h.tick(i*.2);
-  const factor=1+(50+5*lv)/100,main=2700*6.5*factor,scatter=2700*factor*factor;
+  const factor=1+table.fx('gale','chidori','scatterPct',lv)/100;
+  const damage=1+table.fx('gale','chidori','pct',lv)/100;
+  const main=2700*6.5*damage,scatter=2700*damage*factor;
   const near=(a,b)=>Math.abs(a-b)<1e-7;
   const mainHits=h.hits.filter(x=>near(x.d,main)),extraHits=h.hits.filter(x=>near(x.d,scatter));
   assert.equal(mainHits.length,3*enemies.length);

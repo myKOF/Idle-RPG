@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex｜過時技能與特效測試更新（TEST-CONTRACT-REFRESH-20260917）
+
+- Owner Codex；Done。依使用者要求全局檢查舊數值、舊特效／程式文字／快取版本斷言、Skills2舊欄位測試。僅更新已確認過時的測試契約，不修改正式技能數值或掩蓋行為差異。
+- 範圍：tests相關案例與測試輔助、任務紀錄。前置依賴：Skills2範圍欄位遷移已完成。禁止順帶修改遊戲程式、Excel、CSV及使用者VFX。
+- 驗證：全套修改前基線、相關測試、全套修改後差異、具代表性的錯誤注入、build。剩餘非本次範圍失敗另列；完成後提交，交使用者決定合併。
+- 修改：21份測試與 tests/helpers/skill-table.cjs；從原始CSV獨立取得配置期望值、驗證完整編譯結果及新幾何欄位；距離／速度使用合併成長格式。固定版本改驗證有效快取參數；純幾何測試使用明確素材夾具，正式素材合法性／繼承檢查保留。未增加跳過案例。
+- 基線：`node --test --test-reporter=spec "tests/*.test.cjs"` 得2874項、2788通過、84失敗、2跳過，其中2項是卡住後終止的測試檔。最終全套排除確認卡住的 equip-no-duplicate.test.cjs、sim-evaluator.test.cjs，使用 `node --test --test-concurrency=4 --test-reporter=spec` 加其餘全部 tests/*.test.cjs，得2872項、2841通過、29失敗、2跳過；修復53項失敗，另2個卡住檔未完成，不能視為通過。
+- 技能組：`node --test --test-reporter=spec "tests/skill2*.test.cjs" "tests/gale*.test.cjs"` 得546項、529通過、17失敗；加上已通過的 skills2-geometry.test.cjs 6項，對應前次552項為535通過、17失敗（原50項減少33項）。更正前次「50既有失敗」說法：包含本次已修的遷移漏更新測試；以最新表格跑舊邏輯的基線不能證明全部均為遷移前既有問題。
+- 剩餘29項（保留原斷言，尚待獨立診斷，並非全部已證實是遊戲Bug）：skill2-ice 6、skill2-system 3、skill2-vfx 1、skill2-waterball-frostnova-legendary 5、skill2-wind 2、icearrow-vfx-integration 3；ui-worker-panels、vfx-asset-semantics、vfx-editor-gizmo、vfx-editor-history、vfx-editor-save、vfx-gradient-editor、vfx-preset-layout、vfx-preset-usage、vfx-runtime 各1。涉及命中時序／移動、缺少測試環境常數、UI環境、生成資料、粒子縮放契約、歷史快照記憶體、Preset正規化／群組與登記；未放寬檢查以消除紅燈。
+- 錯誤注入7/7被抓到：錯誤冷卻、沼澤尺寸、雷電傷害、迴旋斬特效、震碎斬距離成長、水流彈弧高、缺少快取版本。僅記憶體注入，正式資料未修改。`node tools/build_check.cjs`：370檔通過；`git diff --check`通過。
+- 檢查但未修改：正式技能程式、配置編譯器、Skills2.csv、index及Worker入口、VFX Core／Runtime與相關Preset。使用者4份bolt Preset/layout變更留在工作區不提交。可獨立合併本次測試更新，但整個專案仍非全綠；未推送或合併。
+
 ## Codex｜Skills2 範圍用途拆分與成長欄合併（SKILLS2-GEOMETRY-V2-20260917）
 
 - Owner Codex；Done。使用者授權230列範圍重構：施放／搜敵／傷害／控制／偵測／碰撞／環繞／飛行等獨立用途，基值與增量以逗號同欄，矩形長寬以星號表示。

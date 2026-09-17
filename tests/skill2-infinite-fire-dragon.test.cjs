@@ -49,7 +49,10 @@ test('lower tiers stay stationary and keep six hits; legend speed and hits remai
 test('infinite preset uses shared atlas without procedural generation',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/fire-tornado-infinite.json')));
  assert.ok(require('../js/vfx-core.js').validatePreset(p).ok);
- assert.ok(!p.layers.some(l=>l.water));assert.equal(p.layers.find(l=>l.id==='baked-fire-column').tint,'#e85a48');
+ assert.ok(!p.layers.some(l=>l.water));
+ const body=p.layers.find(l=>l.id==='baked-fire-column');assert.ok(body);
+ assert.equal(body.type,'sprite');assert.ok(body.assetId.endsWith('.png'));
+ assert.ok(fs.existsSync(path.join(__dirname,'../images/vfx/assets',body.assetId)), '正式圖集必須已匯出');
 });
 test('T7 sec is independently configurable and missing sec falls back to T1',()=>{
  const {c,p,m}=setup();

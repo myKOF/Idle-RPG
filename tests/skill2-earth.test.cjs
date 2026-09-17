@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 /* 新版主動技能第五批：地系三群組（2026-08-17，js/skills2.js）
    守住設計文檔「技能」頁籤〈魔法〉區塊新增的三個群組與其註記：
      岩甲術  rockarmor  ─ 護盾爆發；第 4 階＝主動型被動（裝配即生效），
@@ -244,8 +245,9 @@ test('泥沼術：召喚一片方形沼澤，本體不造成任何傷害', () =>
   assert.equal(c.SKILL2_RT.grounds.length, 1);
   const f = c.SKILL2_RT.grounds[0];
   assert.equal(f.kind, 'mire');
-  assert.equal(f.length, 10 * M, '10 米見方');
-  assert.equal(f.width, 10 * M);
+  const [length,width]=table.geometry('mire',1,'傷害範圍（米）',1);
+  assert.equal(f.length, length * M, '長度依表定傷害範圍');
+  assert.equal(f.width, width * M);
   assert.equal(f.hits, 9, 'Lv.1＝4.4 秒 ÷ 0.5 秒節拍 ≒ 9 跳');
 
   run(c, p, [m], 1);
@@ -342,11 +344,12 @@ test('沼澤漫延（T5）／熔岩沼（T7）：持續時間取地板值、範�
   assert.equal(f.hits, 16, '熔岩沼把持續時間拉到 8 秒 ÷ 0.5 ＝ 16 跳');
   assert.ok(Math.abs(f.growTo - 1.66) < 1e-9, '44%（第 5 階）＋22%（第 7 階）累加');
   assert.equal(f.growSec, 4);
-  assert.equal(f.length, 10 * M, '剛出生時是原始大小');
+  const baseLength=table.geometry('mire',1,'傷害範圍（米）',1)[0]*M;
+  assert.equal(f.length, baseLength, '剛出生時是原始大小');
 
   c.GT += 4;
   c.sgGroundApplyGrowth(f);
-  assert.ok(Math.abs(f.length - 16.6 * M) < 1e-9, '4 秒後長到 1.66 倍');
+  assert.ok(Math.abs(f.length - baseLength * 1.66) < 1e-9, '4 秒後長到 1.66 倍');
 });
 
 test('第 1 階滿級的持續時間不會被第 5 階的 6 秒「降級」', () => {
@@ -599,17 +602,16 @@ test('EARTHGUARD 常駐法陣只在裝備且存活時續命，使用八米跟隨
  setLevels(c,'earthguard',[1,0,0,0,0,0,0]);equip(c,'earthguard');
  c.playCombatVfx=s=>events.push(s);run(c,p,[],.6);
  const a=events.filter(s=>s.variant==='earthguard');assert.ok(a.length>=2);
- assert.ok(a.every(s=>s.vfx.ground==='aura-earthguard-hexagram' && s.area.r===80 && s.area.follow && s.area.id==='sg-earthguard-aura'));
+ assert.ok(a.every(s=>s.vfx.ground===table.vfx('earthguard',1,'地板特效') && s.area.r===80 && s.area.follow && s.area.id==='sg-earthguard-aura'));
  events.length=0;c.G.player.loadout=[];run(c,p,[],.5);assert.equal(events.filter(s=>s.variant==='earthguard').length,0);
  equip(c,'earthguard');p.hp=0;run(c,p,[],.5);assert.equal(events.filter(s=>s.variant==='earthguard').length,0);
 });
 
-test('EARTHGUARD 七階依最高變色階切換並維持復活光柱角色',()=>{
+test('EARTHGUARD 七階依配置繼承特效，空白不憑空產生法陣，保留復活光柱',()=>{
  const c=loadContext(),p=playerEnt(),events=[];equip(c,'earthguard');c.playCombatVfx=s=>events.push(s);
- const expected=['hexagram','hexagram','life','mana','mana','mana','symbiosis'];
  for(let tier=1;tier<=7;tier++){
   setLevels(c,'earthguard',Array.from({length:7},(_,i)=>i<tier?1:0));events.length=0;run(c,p,[],.3);
-  const s=events.find(s=>s.variant==='earthguard');assert.ok(s);assert.equal(s.vfx.ground,'aura-earthguard-'+expected[tier-1]);assert.equal(s.area.r,tier===7?100:80);
+  const s=events.find(s=>s.variant==='earthguard');assert.ok(s);assert.equal(s.vfx.ground,table.vfx('earthguard',tier,'地板特效'));assert.equal(s.area.r,tier===7?100:80);
  }
  assert.equal(c.SKILLS2.earthguard.tiers[6].vfx.attack,'pillar-light');
 });

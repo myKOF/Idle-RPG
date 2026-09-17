@@ -408,7 +408,7 @@ test('SAFETY-2 沒有做任何變形時，既有 preset 的輸出逐位元不變
 
 test('SAFETY-3 Core 與 Backend 完全不知道 gizmo 的存在', function () {
   ['js/vfx-core.js', 'js/vfx-pixi-backend.js'].forEach(function (rel) {
-    const src = fs.readFileSync(path.join(REPO, rel), 'utf8');
+    const src = fs.readFileSync(path.join(REPO, rel), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,'');
     /* handle 不列入：Core 的 play() 本來就回傳 effect handle，那與 gizmo 無關。
        擋的是「選取／覆蓋層／框」這些純粹屬於編輯器的概念。 */
     ['gizmo', 'Gizmo', 'selected', 'hovered', 'boundingBox', 'overlay']

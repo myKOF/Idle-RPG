@@ -8,21 +8,23 @@ function schema(){
  vm.runInContext(fs.readFileSync(file,'utf8').split('/* ---- 進入點 ---- */')[0]+'\nthis.api={schema:SCHEMAS.Skills2,parse:csvParse,extractLiteral,evalLiteral};',ctx);
  return ctx.api;
 }
-test('flight speed column round-trips and overrides legacy JSON without losing other fields',()=>{
+test('flight speed uses the merged column, rejects duplicate JSON and incomplete schemas',()=>{
  const a=schema(),rows=a.parse(fs.readFileSync(root+'/config/CSV/Skills2.csv','utf8')),header=rows[0];
  const i=header.indexOf('飛行子彈速度（米／秒）'),fi=header.indexOf('效果參數(JSON)');assert.ok(i>=0);
  const row=rows.slice(1).find(r=>r[0]==='icearrow'&&r[header.indexOf('階數')]==='1');
  assert.equal(Number(row[i]),58.5);assert.equal(JSON.parse(row[fi]).speed,undefined);
- row[i]='72';row[fi]=JSON.stringify({...JSON.parse(row[fi]),speed:1});
+ const originalFx=row[fi];
+ row[i]='72,2';row[fi]=JSON.stringify({...JSON.parse(originalFx),speed:1});
+ assert.throws(()=>a.schema.rebuild(rows.slice(1),header),/不可重複填JSON.*speed/);
+ row[fi]=originalFx;
  const block=a.schema.rebuild(rows.slice(1),header).SKILLS2;
  const groups=a.evalLiteral(a.extractLiteral(block,'SKILLS2').literal);
- assert.equal(groups.icearrow.tiers[0].fx.speed,72);assert.equal(groups.icearrow.tiers[0].fx.pct,250);
+ assert.equal(groups.icearrow.tiers[0].fx.speed,72);assert.equal(groups.icearrow.tiers[0].fx.speedPer,2);assert.equal(groups.icearrow.tiers[0].fx.pct,250);
  assert.equal(groups.thunderorb.tiers[0].fx.speed,6);assert.equal(groups.windblade.tiers[0].fx.speed,18);
  row[i]='0';assert.throws(()=>a.schema.rebuild(rows.slice(1),header),/必須大於零/);
- row[i]='Infinity';assert.throws(()=>a.schema.rebuild(rows.slice(1),header),/有效數字/);
+ row[i]='Infinity';assert.throws(()=>a.schema.rebuild(rows.slice(1),header),/格式錯誤/);
  const oldHeader=header.filter((_,n)=>n!==i),oldRows=rows.slice(1).map(r=>r.filter((_,n)=>n!==i));
- const legacy=a.evalLiteral(a.extractLiteral(a.schema.rebuild(oldRows,oldHeader).SKILLS2,'SKILLS2').literal);
- assert.equal(legacy.icearrow.tiers[0].fx.speed,1);
+ assert.throws(()=>a.schema.rebuild(oldRows,oldHeader),/缺少.*飛行子彈速度/,'新版欄位不可與舊格式混用');
 });
 test('edited flight speed drives projectile visuals and hit display delay together',()=>{
  const file=path.join(__dirname,'skill2-ice.test.cjs'),src=fs.readFileSync(file,'utf8');

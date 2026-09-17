@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 /* 傳奇進化第九批（2026-08-27）：雷球（水晶球）／寒冰箭（魔法書）
    設計來源：使用者提供的 Google 試算表〈傳奇進化〉頁籤的雷球、寒冰箭兩段。
    守住的事：
@@ -124,7 +125,7 @@ test('【雷核】：雷球的體積 +30%（與第 2 階【擴增雷球】相乘
   }
   const solo = [1, 0, 0, 0, 0, 0, 0];
   const base = radius([], solo);
-  assert.equal(base, 3 * M, '表定半徑 3 米');
+  assert.equal(base,table.number('thunderorb',1,'傷害範圍（米）',1)*M,'依表定傷害半徑');
   assert.equal(radius(['thunderorbCore'], solo), base * 1.3, '體積 ×1.3');
   // 與第 2 階相乘而不是相加：兩者都是「體積 +N%」
   const tier2 = radius([], [1, 1, 0, 0, 0, 0, 0]);
@@ -572,7 +573,7 @@ test('六個新超神進化：id 與參數表一致，說明模板的參數鍵�
         assert.ok(o.fx[key] !== undefined, gid + '/' + o.id + ' 說明引用了不存在的參數 {' + key + '}');
         return m;
       });
-      assert.ok(csv.includes(',' + o.id + '\n') || csv.includes(',' + o.id + '\r\n'), o.id + ' 沒落到參數表');
+      assert.equal(table.row(gid,o.id)['超神ID'],o.id,'依欄名讀取超神ID，不假定它在CSV最後一欄');
     });
   });
 });

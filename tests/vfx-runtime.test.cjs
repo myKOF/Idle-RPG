@@ -98,11 +98,13 @@ test('BLIZZARD 正式霜地依範圍縮放、移動續命不重播並到期回�
 test('THUNDERFALL 60 度斜落且只在權威落地事件播放衝擊', () => {
  const ps=['proj-thunderfall-sky','hit-thunderfall-impact'].map(id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets',id+'.json'),'utf8')));
  const {adapter,log}=makeAdapter(ps);
- const vfx={projectile:ps[0].id,hit:ps[1].id,attack:ps[1].id};
+ // 此案例只測飛行物與受擊時序。若同時填 attack，依多角色規則本來就會立即播放。
+ const vfx={projectile:ps[0].id,hit:ps[1].id};
  assert.equal(adapter.tryPlay({fxKind:'rain',variant:'thunder-fall',angle:null,targets:['mv-float-2'],area:{x:300,y:50,r:150},travelMs:[700],vfx}),true);
  adapter.update(.01);
- const body=log.nodes.find(n=>n.spec.assetUrl?.includes('sphere_47.png'));
- assert.ok(body);assert.ok(Math.abs(body.transforms.at(-1).rotation-(Math.PI/3+Math.PI*2*.2*.01/2))<.001);
+ const body=log.nodes.find(n=>n.spec.assetUrl?.endsWith(ps[0].layers.find(l=>l.id==='dense-core').assetId));
+ assert.ok(body);const authored=ps[0].layers.find(l=>l.id==='dense-core');
+ assert.ok(Math.abs(body.transforms.at(-1).rotation-(Math.PI/3+(authored.rotation||0)+authored.rotationOverLife.at(-1)[1]*.01/ps[0].duration))<.001);
  assert.equal(adapter.stats().played,1);
  adapter.update(2);assert.equal(adapter.stats().played,1,'抵達不預播額外命中');
  assert.equal(adapter.tryPlay({fxKind:'impact',variant:'thunder-fall-impact',targets:['mv-float-2'],area:{x:300,y:50,r:150},vfx}),true);
@@ -139,10 +141,10 @@ test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () 
  const {adapter,log}=makeAdapter([p]);
  const spec={fxKind:'impact',variant:'pillar',dur:.5,area:{id:'fire-1',x:100,y:50,r:60},vfx:{field:p.id}};
  assert.equal(adapter.tryPlay(spec),true);adapter.update(.3);
- const body=log.nodes.find(n=>n.spec.assetUrl?.includes('fire-flow.png'));
+ const body=log.nodes.find(n=>n.spec.assetUrl?.endsWith(p.layers.find(l=>l.id==='baked-fire-column').assetId));
  assert.equal(body.tag,'fx');
  const authored=p.layers.find(l=>l.id==='baked-fire-column');
- const t=body.transforms.at(-1);assert.equal(t.x,100+(authored.position?.x||0));assert.equal(t.y,50+(authored.position?.y||0));assert.equal(t.scaleX/authored.scale.x,t.scaleY/authored.scale.y);
+ const t=body.transforms.at(-1);assert.equal(t.x,100+(authored.position?.x||0)*60/p.sizing.authored.radius);assert.equal(t.y,50+(authored.position?.y||0)*60/p.sizing.authored.radius);assert.equal(t.scaleX/authored.scale.x,t.scaleY/authored.scale.y);
  adapter.tryPlay(spec);adapter.update(.3);assert.equal(adapter.stats().played,1);
  adapter.update(3);assert.equal(adapter.stats().grounds,0);
 });
@@ -172,7 +174,7 @@ test('TORNADO 0.3 秒升起與淡出，續命不重播進場', () => {
  const {adapter,log}=makeAdapter([p]);
  const spec={fxKind:'impact',variant:'pillar',dur:.5,area:{id:'rise',x:0,y:0,r:60},vfx:{field:p.id}};
  adapter.tryPlay(spec);adapter.update(.15);
- const body=log.nodes.find(n=>n.spec.assetUrl?.includes('fire-flow.png'));
+ const body=log.nodes.find(n=>n.spec.assetUrl?.endsWith(p.layers.find(l=>l.id==='baked-fire-column').assetId));
  const authored=p.layers.find(l=>l.id==='baked-fire-column');
  const alpha=authored.alpha===undefined?1:authored.alpha;
  assert.ok(Math.abs(body.transforms.at(-1).alpha/alpha-.5)<1e-6);
@@ -1342,14 +1344,14 @@ test('MIRE 泥流依權威長寬縮放、保持地板層、續命不重播並回
  adapter.update(5);assert.equal(adapter.stats().grounds,0);
 });
 
-test('MIRE 進化維持三成強度、權威矩形與續命，熔岩粒子同比降低',()=>{
+test('MIRE 進化保留Preset透明度、權威矩形與續命',()=>{
  for(const id of ['ground-mire-venom','ground-mire-magma']){
-  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));assert.equal(p.layers[0].alpha,.3);
-  if(id.endsWith('magma')){assert.ok(Math.abs(p.layers[1].alpha-.216)<1e-8);assert.equal(p.layers[2].alpha,.24);}
+  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
+  assert.ok(VFXCore.validatePreset(p).ok);
   const {adapter,log}=makeAdapter([p]),s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-evo',x:120,y:160,w:180,h:240},vfx:{ground:id}};
   assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
   const body=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow-')),t=body.transforms.at(-1);
-  assert.equal(body.tag,'zone');assert.equal(t.alpha,.3);assert.equal(t.x,120);assert.equal(t.y,160);assert.ok(Math.abs(t.scaleX-180/256)<.0001);assert.ok(Math.abs(t.scaleY-240/256)<.0001);
+  assert.equal(body.tag,'zone');assert.equal(t.alpha,p.layers[0].alpha);assert.equal(t.x,120);assert.equal(t.y,160);assert.ok(Math.abs(t.scaleX-180/256)<.0001);assert.ok(Math.abs(t.scaleY-240/256)<.0001);
   adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);adapter.update(5);assert.equal(adapter.stats().grounds,0);
  }
 });
@@ -1397,7 +1399,8 @@ test('CHAIN 快速彈射圖集依時間推進並準時回收',()=>{
 });
 
 test('CHAIN 移動與反向目標逐幀追蹤，延遲彈射於起飛時取得新位置',()=>{
- const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ // 兩端幾何用固定256單位標記，不將可編輯美術的拉伸／變形當成端點。
+ const p=unitPreset('bolt-chain-travel-bluewhite',.3);p.layers[0].id='travelling-electric-front';p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
  const pos={a:{x:10,y:20},b:{x:210,y:20}};
  const {adapter,log}=makeAdapter([p],{profile:{scale:.65},ctx:{posOf:id=>({...pos[id]}),playerPos:()=>({x:0,y:0})}});
  const spec={fxKind:'chain',targets:['a','b'],vfx:{attack:p.id}};
@@ -1426,7 +1429,8 @@ test('CHAIN 離場端點不使用 lastPos 或備用位置，取消延遲與飛�
 });
 
 test('THUNDER 雷柱即時起播跟隨腳底，爆炸只由落地事件觸發',()=>{
- const ps=['bolt','hit'].map(k=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/'+k+'-thunderstrike-bluewhite.json'),'utf8')));
+ // 中心標記隔離美術偏移與每次隨機變形，專測落雷事件的附著與命中時序。
+ const ps=['bolt','hit'].map(k=>unitPreset(k+'-thunderstrike-bluewhite',.5));
  let foot={x:100,y:200};const {adapter,log}=makeAdapter(ps,{ctx:{posOf:()=>({x:100,y:160}),footOf:()=>foot,playerPos:()=>({x:0,y:0})}});
  const vfx={attack:ps[0].id,hit:ps[1].id};adapter.tryPlay({fxKind:'rain',variant:'thunder-strike',targets:['mv-float-1'],travelMs:[129],vfx});adapter.update(.05);
  assert.equal(adapter.stats().played,1);assert.ok(log.nodes.length);foot={x:160,y:220};adapter.update(.04);assert.equal(log.nodes[0].transforms.at(-1).x,160);
@@ -1473,6 +1477,6 @@ test('VACUUMSHOCK begins immediately and travels forward from actor',()=>{
  });
 
 test('VACUUMSPIN uses simulation centre and scales with radius',()=>{
- const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-spin.json'),'utf8'));let scales=[];
- for(const r of [60,120]){const {adapter,log}=makeAdapter([p]);assert(adapter.tryPlay({fxKind:'slash',variant:'wind-spin',area:{x:80,y:90,r},vfx:{attack:p.id}}));adapter.update(.08);assert.equal(log.nodes.length,14);const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,80);assert.equal(t.y,90);scales.push(t.scaleX);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);adapter.destroy();}assert(Math.abs(scales[1]/scales[0]-2)<1e-6);
+ const p=unitPreset('slash-wind-spin',.4);p.sizing={shape:'circle',authored:{radius:60}};let scales=[];
+ for(const r of [60,120]){const {adapter,log}=makeAdapter([p]);assert(adapter.tryPlay({fxKind:'slash',variant:'wind-spin',area:{x:80,y:90,r},vfx:{attack:p.id}}));adapter.update(.08);assert.equal(log.nodes.length,1);const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,80);assert.equal(t.y,90);scales.push(t.scaleX);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);adapter.destroy();}assert(Math.abs(scales[1]/scales[0]-2)<1e-6);
 });

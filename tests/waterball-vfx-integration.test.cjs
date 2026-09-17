@@ -2,6 +2,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),path=require('path');
 const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
 const p=require('../vfx/presets/proj-waterball-flow.json'),hit=require('../vfx/presets/hit-waterball-splash.json');
+// 運動座標用中心標記，正式圖層可包含偏移／隨機變形；下方實際Preset案例另驗證外觀。
+function motionPreset(){return {schemaVersion:1,id:p.id,duration:1,loop:true,layers:[{id:'centre',type:'sprite',assetId:'test-centre.png'}]};}
+
 test('waterball and bounce use approved effects and 15% faster shared travel timing',()=>{
  const file=path.join(__dirname,'skill2-ice.test.cjs'),src=fs.readFileSync(file,'utf8'),c={require:require('module').createRequire(file),__dirname,console};vm.createContext(c);vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.c=loadContext();',c);const game=c.c;
  assert.equal(game.SKILLS2.waterball.tiers[0].fx.speed,57.96);
@@ -10,6 +13,7 @@ test('waterball and bounce use approved effects and 15% faster shared travel tim
  assert.ok(Math.abs(game.sgConfiguredTravelSeconds('waterball',target)-game.bfTravelSeconds(target)/1.15)<1e-9);
 });
 test('waterball follows table-driven arc and tangent, including bounce origin, then releases nodes',()=>{
+ const p=motionPreset();
  for(const bounce of [false,true]){
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:id=>id==='from'?{x:0,y:0}:{x:320,y:0}}});rt.registerPresets([p,hit]);
@@ -35,6 +39,7 @@ test('fixed landing damages current occupants only and bounces from the ground i
  assert.equal(c.SKILL2_RT.waterballs.length,0);assert.equal(out._pendingProjectiles,0);
 });
 test('fixed ground projectile ignores target movement and does not emit early splash',()=>{
+ const p=motionPreset();
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:999,y:999}),posOf:()=>({x:999,y:999})}});rt.registerPresets([p,hit]);
  assert.equal(rt.tryPlay({fxKind:'projectile',variant:'waterball',targets:[],travelMs:[1000],arcM:8,area:{fixedLanding:true,sourceX:0,sourceY:0,x:320,y:0,r:60},vfx:{projectile:p.id,hit:hit.id}}),true);

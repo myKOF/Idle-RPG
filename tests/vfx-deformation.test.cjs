@@ -41,8 +41,9 @@ test('DEFORM 回收重用後換seed，不殘留上一道形狀',()=>{
  const a=run(12),old=a.nodes[0].t.deformation.variation;a.rt.stop(a.h);a.rt.play('joined',{seed:99});a.rt.update(.1);
  const active=a.nodes.filter(n=>n.t.visible);assert.equal(active.length,2);assert.notDeepEqual(active[0].t.deformation.variation,old);
 });
-test('DEFORM 正式Preset全數合法，已拒絕的受擊預覽不接入',()=>{
+test('DEFORM 正式Preset全數合法且可往返，落雷受擊沿用已核准的雷電變形',()=>{
  const dir=path.join(__dirname,'../vfx/presets');let count=0;
  for(const f of fs.readdirSync(dir).filter(f=>f.endsWith('.json'))){const p=JSON.parse(fs.readFileSync(path.join(dir,f)));if(!p.deformation)continue;count++;assert.deepEqual(Core.validatePreset(p).errors,[],f);assert.equal(Core.serialisePreset(JSON.parse(Core.serialisePreset(p))),Core.serialisePreset(p));}
- assert.ok(count>=22);assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'hit-thunderstrike-bluewhite.json'))).deformation,undefined);
+ assert.ok(count>=22);const hit=JSON.parse(fs.readFileSync(path.join(dir,'hit-thunderstrike-bluewhite.json')));
+ assert.ok(hit.deformation);assert.ok(hit.layers.some(l=>l.type==='particle'),'已核准的藍白粒子飛濺保留');
 });

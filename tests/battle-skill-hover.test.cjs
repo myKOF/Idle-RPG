@@ -1,4 +1,5 @@
 'use strict';
+const table = require('./helpers/skill-table.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -43,5 +44,5 @@ test('同一技能 tooltip 不會因重複 hover 事件重建或重新定位', (
 
 test('ui.js 快取版號已同步更新', () => {
   // 2026-09-11 迷你視窗按鈕移至關卡列上方並增加內部版戰鬥區FPS → 1.0.60 → 1.0.61
-  assert.match(html, /js\/ui\.js\?v=1\.0\.(?:[4-9]\d)/);
+  table.versioned(html,'js/ui.js');
 });

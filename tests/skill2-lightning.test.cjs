@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 /* 新版主動技能第六批：雷系三群組（2026-08-17，js/skills2.js）
    守住設計文檔「技能」頁籤〈魔法〉區塊新增的三個群組與其註記：
      連鎖閃電 chainlightning ─ 逐跳彈射的閃電鏈；第 6 階【雷幻身】以自身當中繼點
@@ -94,7 +95,7 @@ const M = 10; // 1 米 = 10 個系統距離單位（bfMeterPx）
 
 test('三個新群組都在表上：雷屬性、魔法傷害、七階、皆為主動技', () => {
   const c = loadContext();
-  const cds = { chainlightning: 18, thunderstrike: 14, thunderorb: 20 };
+  const cds = Object.fromEntries(['chainlightning','thunderstrike','thunderorb'].map(gid=>[gid,table.number(gid,1,'冷卻時間')]));
   Object.keys(cds).forEach((gid) => {
     const g = c.SKILLS2[gid];
     assert.ok(g, gid + ' 不在 SKILLS2');
@@ -258,8 +259,10 @@ test('連鎖閃電：彈射範圍外的敵人不會被跳到', () => {
   const c = loadContext();
   const calls = stubHits(c);
   const p = playerEnt();
-  // 第二個敵人距第一個 40 米，超出表定的 30 米彈射範圍
-  const es = [enemy(1e9, 5 * M, 0), enemy(1e9, 45 * M, 0)];
+  // 以表定搜敵半徑放置界外目標，不把舊版30米寫死。
+  c.bfEntityRadius=()=>0; // 純粹驗證表定半徑，排除雙方體積的邊緣距離。
+  const radius=table.number('chainlightning',1,'搜敵範圍（米）',1);
+  const es = [enemy(1e9, 5 * M, 0), enemy(1e9, (5+radius+1) * M, 0)];
   setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
   assert.equal(calls.length, 1, '跳不到就結束，不會硬跳');
@@ -451,7 +454,7 @@ test('雷球 T2／T3：體積擴大與數量追加', () => {
   forceRolls(c, 0.999);
   c.castSkill2(p, es, 'thunderorb', 'mv-float');
   assert.equal(c.SKILL2_RT.grounds.length, 3, '2 + 1 顆');
-  assert.ok(Math.abs(c.SKILL2_RT.grounds[0].radius - 3 * M * 1.165) < 1e-6, '半徑擴大 16.5%');
+  assert.ok(Math.abs(c.SKILL2_RT.grounds[0].radius - table.number('thunderorb',1,'傷害範圍（米）',1) * M * 1.165) < 1e-6, '半徑擴大 16.5%');
 });
 
 test('雷球 T4：環體電球是環繞場域，並掛上自己的剩餘時間狀態', () => {
@@ -620,7 +623,7 @@ test('CHAIN 藍白電弧每隔 300ms 連接下一目標，傷害顯示對齊抵�
  const events=[],hits=[];c.playCombatVfx=s=>events.push(s);c.floatEnemyEvent=(ent,sel,text,cls,dmg,delay)=>{if(dmg>0)hits.push(delay||0)};
  setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,es,'chainlightning','mv-float');
  const chains=events.filter(s=>s.variant==='lightning-chain');assert.equal(chains.length,4);
- assert.deepEqual(chains.map(s=>s.delayMs||0),[0,300,600,900]);assert.ok(chains.every(s=>s.vfx.attack==='bolt-chain-travel-bluewhite'&&!s.vfx.projectile));
+ assert.deepEqual(chains.map(s=>s.delayMs||0),[0,300,600,900]);assert.ok(chains.every(s=>s.vfx.attack===table.vfx('chainlightning',1,'攻擊特效')&&s.vfx.projectile===table.vfx('chainlightning',1,'飛行子彈')));
  assert.deepEqual(hits,[183,483,783,1083]);
 });
 
