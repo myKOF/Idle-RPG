@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜爆散讀取第四階攻擊特效（GALE-SCATTER-VFX-20260917）
+
+- Owner：Codex；Done。使用者已填 hit-gale-burst-diffusion，但事件仍指定 vfxTier:1，錯讀本體特效。本次改成 vfxTier:4、vfxBase:true，依第四階逐欄讀取配置，避免月牙／超神覆寫爆散獨立特效；不寫死 Preset 名稱。
+- 修改：js/skills2.js 的爆散事件、js/bridge.js、js/worker/sim.worker.js、index.html 快取、tests/gale-rework.test.cjs、本紀錄。未修改但檢查：Excel／CSV 已套用的生成資料、特效繼承。使用者尚未提交的表格、生成資料與特效素材保留，js/skills2.js 僅提交本次事件修正，不混入使用者生成資料。
+- 驗證：node --test tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs，12/12 通過；涵蓋一般、月牙、超神與回打原目標事件讀第四階 attack／hit。git diff --check 通過。
+- Commit 為本紀錄所在提交，可供合併；未合併／推送，無未完成程式項目，尚未遊戲內目視驗收。重新整理後使用目前工作區的第四階配置。
+
 ## Codex｜疾風破爆散逐段隨機目標（GALE-SCATTER-20260917）
 
 - Owner：Codex；Done。爆散配置改為自身周圍 12 米隨機其他敵人，目標數基值 1／每級 +0.1，技能傷害基值 50%／每級 +5%；沿用 base + per × level 與小數機率取整。每段打擊重新抽樣，同段不重複候選；沒有其他候選時按本段追加次數回打原目標，死亡原目標不補打。有其他候選但不足數量時只打可用候選。

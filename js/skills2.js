@@ -2788,7 +2788,7 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         var extra = extras[ei];
         if (extra.hp <= 0) continue;
         sgEmitVfx('gale', [extra], floatSel, {
-          fxKind: 'slash', variant: 'gale-burst', count: 1, vfxTier: 1
+          fxKind: 'slash', variant: 'gale-burst', count: 1, vfxTier: 4, vfxBase: true
         });
         var eres = sgHitOne(pEnt, st, extra, dmgVal * sgVal(t[3].fx, 'pct', lvs[3]) / 100, 'gale', floatSel, out, 0);
         sgGaleOnHit(cfg, extra, eres);
