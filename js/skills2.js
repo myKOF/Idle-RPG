@@ -2776,29 +2776,43 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         sgGaleOnHit(cfg, shareTargets[bi], pres);
       }
     }
-    // 爆散每一段重新隨機選取，範圍以玩家當下位置為中心。
-    if (lvs[3] > 0) {
-      var extraCount = sgRollCount(sgVal(t[3].fx, 'count', lvs[3]));
-      var extras = bfRandomOthers(null, pool.filter(function (e) { return e !== primary; }),
-        extraCount, bfMeterPx(sgVal(t[3].fx, 'm', lvs[3])));
-      if (!extras.length && primary.hp > 0) {
-        for (var fallback = 0; fallback < extraCount; fallback++) extras.push(primary);
-      }
-      for (var ei = 0; ei < extras.length; ei++) {
-        var extra = extras[ei];
-        if (extra.hp <= 0) continue;
-        sgEmitVfx('gale', [extra], floatSel, {
-          fxKind: 'slash', variant: 'gale-burst', count: 1, vfxTier: 4, vfxBase: true
-        });
-        var eres = sgHitOne(pEnt, st, extra, dmgVal * sgVal(t[3].fx, 'pct', lvs[3]) / 100, 'gale', floatSel, out, 0);
-        sgGaleOnHit(cfg, extra, eres);
-      }
-    }
     if (primary.hp <= 0) impactFrozen = true;
   }
   for (var h = 0; h < hits; h++) {
     if (h === 0) strike();
     else SKILL2_RT.galeStrikes.push({ at: sgProjectileNow() + h * waveGap, run: strike, out: out });
+  }
+  // 爆散獨立於本體節拍：保留每段的追加次數，逐下以 0.2 秒選敵及命中。
+  // 同段已命中的其他目標不重複；沒有其他活目標時才回打原目標。
+  if (lvs[3] > 0) {
+    var scatterIndex = 0, scatterStart = sgProjectileNow();
+    function scatterStrike(used, ctx) {
+      if (ctx && ctx.getEnemies) { pool = ctx.getEnemies(); cfg.pool = pool; }
+      var others = pool.filter(function (e) { return e !== primary; });
+      var candidates = bfRandomOthers(null, others,
+        others.length, bfMeterPx(sgVal(t[3].fx, 'm', lvs[3])));
+      var extra = candidates.find(function (e) { return used.indexOf(e) < 0; });
+      if (!candidates.length && primary.hp > 0) extra = primary;
+      if (!extra || extra.hp <= 0) return;
+      used.push(extra);
+      sgEmitVfx('gale', [extra], floatSel, {
+        fxKind: 'slash', variant: 'gale-burst', count: 1, vfxTier: 4, vfxBase: true
+      });
+      var eres = sgHitOne(pEnt, st, extra, dmgVal * sgVal(t[3].fx, 'pct', lvs[3]) / 100, 'gale', floatSel, out, 0);
+      sgGaleOnHit(cfg, extra, eres);
+    }
+    for (var sh = 0; sh < hits; sh++) {
+      var used = [];
+      var extraCount = sgRollCount(sgVal(t[3].fx, 'count', lvs[3]));
+      for (var ei = 0; ei < extraCount; ei++) {
+        var runScatter = scatterStrike.bind(null, used);
+        if (scatterIndex === 0) runScatter();
+        else SKILL2_RT.galeStrikes.push({
+          at: scatterStart + scatterIndex * SG_MULTI_ATTACK_GAP_SEC, run: runScatter, out: out
+        });
+        scatterIndex++;
+      }
+    }
   }
   // 狂風斬：攻速增益（突破上限、與自身攻速相乘——掛點在戰鬥迴圈的乘算區）
   if (lvs[4] > 0) {
@@ -2808,6 +2822,8 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
      只在所有斬擊結算完之後打一次，因此不受 hits 迴圈影響。 */
   if (ultFlash) SKILL2_RT.galeStrikes.push({ at: sgProjectileNow() + (hits - 1) * waveGap,
     run: function () { sgGaleThunderFlash(cfg, ultFlash, hits); }, out: out });
+  // 只在新增排程時排序，避免每個模擬 Tick 重排；補跑時仍按原命中時間結算。
+  SKILL2_RT.galeStrikes.sort(function (a, b) { return a.at - b.at; });
 }
 
 function sgTickGaleStrikes(ctx) {
