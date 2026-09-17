@@ -730,20 +730,7 @@ test('W6 /__whoami 回報服務中的目錄，供啟動器辨識工作副本',
     }
   }));
 
-test('W7 啟動器與伺服器對身分標記與埠範圍的認知一致', function () {
-  const serverSrc = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
-  const launcher = fs.readFileSync(path.join(REPO, '啟動VFX編輯器.bat'), 'utf8');
-
-  const markMatch = serverSrc.match(/const WHOAMI_MARK = '([^']+)'/);
-  assert.ok(markMatch, '伺服器必須定義 WHOAMI_MARK');
-  assert.ok(launcher.indexOf('set MARK=' + markMatch[1] + ' %CD%') >= 0,
-    '啟動器的 MARK 必須等於伺服器的標記加上工作目錄');
-
-  const base = Number(serverSrc.match(/const PORT_BASE = (\d+)/)[1]);
-  const tries = Number(serverSrc.match(/const PORT_TRIES = (\d+)/)[1]);
-  assert.ok(launcher.indexOf('for /l %%p in (' + base + ',1,' + (base + tries - 1) + ')') >= 0,
-    '啟動器掃描的埠範圍必須涵蓋伺服器會用到的 ' + base + '~' + (base + tries - 1));
-});
+/* W7（啟動器與伺服器的身分標記、埠範圍）已搬到 vfx-editor-launcher.test.cjs。 */
 
 /* ============================================================
    另存新檔
@@ -878,91 +865,8 @@ test('W9B 關閉是先回應再收攤，而且用結束代碼 0 告訴 .bat 這�
   assert.ok(exitAt < pauseAt, '結束代碼判斷必須排在 pause 之前');
 });
 
-test('W7B 啟動器不得沿用一個程式已經過期的伺服器', function () {
-  /* 伺服器是常駐行程：editor-server.cjs 與它 require 的檔在啟動當下就載進
-     記憶體，之後 merge 不會生效；但它服務的 editor.js／css／html 是每次請求
-     才讀磁碟。於是「新頁面 ＋ 舊後端」會同時成立，看起來就是功能少一半，
-     而畫面上沒有任何線索。
-
-     2026-09-09 實測：使用者 merge 完重跑啟動器，啟動器掃到一個三個半小時前
-     起的行程、直接沿用、開完頁面就關掉視窗——使用者只看到黑窗閃一下，
-     以為自己已經重啟過了。所以這條要釘住三件事都在。 */
-  const serverSrc = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor-server.cjs'), 'utf8');
-  const launcher = fs.readFileSync(path.join(REPO, '啟動VFX編輯器.bat'), 'utf8');
-
-  const freshMatch = serverSrc.match(/const WHOAMI_FRESH_MARK = '([^']+)'/);
-  assert.ok(freshMatch, '伺服器必須定義 WHOAMI_FRESH_MARK');
-  assert.ok(launcher.indexOf('set FRESH_MARK=' + freshMatch[1]) >= 0,
-    '啟動器的 FRESH_MARK 必須等於伺服器的標記');
-
-  /* **判定要用白名單，不是黑名單。** 第一版寫成「看到 -stale 才擋」，
-     結果擋不到真正出事的那種：舊到還沒有這套標記的伺服器什麼都不回報，
-     於是照樣被沿用——使用者遇到的正是這一種。改成「看到 -ok 才沿用」，
-     沒有回報就一律當成過期。舊程式沒辦法回報自己舊，不能等它自首。 */
-  assert.ok(/staleServerFiles\(\)\.length \? WHOAMI_STALE_MARK : WHOAMI_FRESH_MARK/.test(serverSrc),
-    '兩個標記必須二選一、一定要有一個，否則「沒有回報」分不出是舊還是壞');
-  assert.ok(/if not defined FRESH goto :stale/.test(launcher),
-    '啟動器必須是「沒有 FRESH 就當過期」，不是「有 STALE 才當過期」');
-
-  /* 標記必須自成一行，否則會破壞啟動器用第一行比對身分的邏輯 */
-  const mark = serverSrc.match(/const WHOAMI_MARK = '([^']+)'/)[1];
-  [freshMatch[1], serverSrc.match(/const WHOAMI_STALE_MARK = '([^']+)'/)[1]]
-    .forEach(function (m) {
-      assert.ok(m.indexOf(mark + ' ') !== 0,
-        m + ' 不得以「MARK 空白」開頭，否則 :scan 會把它誤認成身分行');
-    });
-
-  /* 沿用之前一定要先問過 */
-  const adopt = launcher.slice(launcher.indexOf('call :scan'));
-  const check = adopt.indexOf('call :checkfresh');
-  const reuse = adopt.indexOf('直接開啟頁面');
-  assert.ok(check >= 0 && reuse >= 0, '啟動器要有沿用路徑與新舊檢查');
-  assert.ok(check < reuse, '檢查必須排在「直接開啟頁面」之前');
-  /* cmd 的括號區塊 ＋ call ＋ if defined 是會出事的組合，而這裡不需要區塊 */
-  assert.ok(!/if defined PORT \(/.test(launcher),
-    '沿用判斷不要放在括號區塊裡，攤平寫');
-  /* 擋下來之後要停在畫面上，不然使用者一樣只看到黑窗閃一下 */
-  const stale = launcher.slice(launcher.indexOf('\n:stale'));
-  assert.ok(/pause/.test(stale.slice(0, 1200)), '過期的說明要 pause，不能閃一下就關掉');
-  assert.ok(/taskkill/.test(stale.slice(0, 1200)), '要告訴使用者怎麼強制結束那個行程');
-});
-
-test('W8 兩支 .bat 必須是 CRLF，且非 echo 行不得含多位元組字元', function () {
-  /* cmd 是逐段解析的，chcp 切換編碼後，rem／指令位置上的多位元組字元會被
-     打散成指令執行；LF 行尾則會讓 cmd 在檔案中途失去同步。
-     這兩件事都只在實際雙擊時才會炸，測試裡釘住比較實在。 */
-  [path.join(REPO, '啟動VFX編輯器.bat'),
-    path.join(REPO, 'tools', 'vfx', 'editor_server_window.bat')].forEach(function (file) {
-    const raw = fs.readFileSync(file);
-    const name = path.basename(file);
-    assert.ok(raw.includes(Buffer.from('\r\n')), name + ' 必須是 CRLF');
-    assert.equal((raw.toString('latin1').match(/[^\r]\n/g) || []).length, 0,
-      name + ' 不得有單獨的 LF 行尾');
-    /* 0x0B 之類的控制字元代表路徑字面量在產生過程被轉義吃掉了（tools\vfx → tools+VT+fx） */
-    assert.equal((raw.toString('latin1').match(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g) || []).length, 0,
-      name + ' 含異常控制字元，路徑字面量可能被轉義破壞');
-
-    raw.toString('utf8').split('\r\n').forEach(function (line, i) {
-      const isEcho = /^\s*echo(\s|\.|$)/i.test(line);
-      if (isEcho) {
-        /* 中文與 %VAR% 同行時，實測 echo 前綴會在 chcp 之後遺失，
-           cmd 會把中文當成指令執行。標籤與值必須拆行。 */
-        const hasCJK = /[一-鿿＀-￯]/.test(line);
-        const hasVar = /%[A-Za-z_][A-Za-z0-9_]*%/.test(line);
-        assert.ok(!(hasCJK && hasVar),
-          name + ':' + (i + 1) + ' 中文與變數不得同行：' + line);
-        return;
-      }
-      /* 非 echo 行：只有「被雙引號包住的參數」可以是多位元組。
-         真正的危險是 rem／指令位置上的裸中文——編碼錯位後它會被當成指令執行；
-         引號內的字串最壞只是顯示錯字（既有的 啟動數值模擬器.bat 也是這樣寫
-         start 的視窗標題，實測沒問題），所以不必連那個也禁掉。 */
-      const outsideQuotes = line.replace(/"[^"]*"/g, '""');
-      assert.ok(!/[^\x00-\x7f]/.test(outsideQuotes),
-        name + ':' + (i + 1) + ' 非 echo 行的引號外必須是純 ASCII：' + line);
-    });
-  });
-});
+/* W7B、W8（啟動器認伺服器的規則、.bat 的編碼規則）已搬到 vfx-editor-launcher.test.cjs：
+   2026-09-17 啟動器改成 Node、一律先關掉本副本的舊伺服器再重開時一起改寫。 */
 
 /* ============================================================
    測試縫隙不得被正式路徑使用

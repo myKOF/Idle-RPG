@@ -893,7 +893,45 @@ function start(assetRoots, port) {
   return server;
 }
 
+/* 伺服器視窗（editor_server_window.bat 設定 VFX_EDITOR_WINDOW=1）開頭的說明，
+   以及異常結束時的提示。原本寫在 .bat 的 echo 裡，但 cmd 在 chcp 65001 下會把長串中文
+   讀錯位、把碎片當成指令執行（2026-09-17 實測），所以中文一律由 Node 印。 */
+function printWindowBanner() {
+  if (process.env.VFX_EDITOR_WINDOW !== '1') return;
+  const line = '========================================================';
+  console.log([
+    line,
+    '  VFX 編輯器伺服器執行中',
+    line,
+    '',
+    '  這個視窗就是伺服器本體，不是殘留的命令列。',
+    '  關掉它 = 停止伺服器，編輯器頁面會失去連線。',
+    '',
+    '  服務的目錄',
+    '    ' + REPO_ROOT,
+    '',
+    '  要結束：關掉這個視窗，或在這裡按 Ctrl+C。',
+    '  再雙擊一次「啟動VFX編輯器.bat」也會先把這一台關掉、換一台新的。',
+    line,
+    ''
+  ].join('\n'));
+  process.on('exit', function (code) {
+    if (code === 0) return;                    // 0＝頁面或啟動器要求關閉，視窗會自己關
+    console.error([
+      '',
+      line,
+      '  伺服器已結束，結束代碼：' + code,
+      '',
+      '  原因印在上面。最常見的是這台電腦還沒設定素材庫位置：',
+      '  把 vfx\\library.local.example.json 複製成 vfx\\library.local.json，',
+      '  再把裡面的路徑改成這台電腦上 effects-materials 的實際位置。',
+      line
+    ].join('\n'));
+  });
+}
+
 function main() {
+  printWindowBanner();
   const argv = process.argv.slice(2);
   let port = PORT_BASE;
   for (let i = 0; i < argv.length; i++) {
@@ -924,6 +962,12 @@ function main() {
 if (require.main === module) main();
 else module.exports = {
   start: start,
+  /* 啟動器（launch-editor.cjs）要與伺服器對身分標記、埠範圍、關閉端點的認知一致：
+     它直接讀這裡，不另外寫一份（W7）。 */
+  launcher: {
+    WHOAMI_PATH: WHOAMI_PATH, WHOAMI_MARK: WHOAMI_MARK, WHOAMI_FRESH_MARK: WHOAMI_FRESH_MARK,
+    SHUTDOWN_PATH: SHUTDOWN_PATH, PORT_BASE: PORT_BASE, PORT_TRIES: PORT_TRIES
+  },
   safeJoin: safeJoin,
   ASSET_PREFIX: ASSET_PREFIX,
   SAVE_PREFIX: SAVE_PREFIX,
