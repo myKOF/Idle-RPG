@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜疾風破爆散逐段隨機目標（GALE-SCATTER-20260917）
+
+- Owner：Codex；Done。爆散配置改為自身周圍 12 米隨機其他敵人，目標數基值 1／每級 +0.1，技能傷害基值 50%／每級 +5%；沿用 base + per × level 與小數機率取整。每段打擊重新抽樣，同段不重複候選；沒有其他候選時按本段追加次數回打原目標，死亡原目標不補打。有其他候選但不足數量時只打可用候選。
+- 計算與特效：每段查最新敵群與玩家位置；每次追加攻擊各送一則特效，包含回打原目標及月牙模式。月牙主範圍已清空時仍可對玩家附近候選爆散。保留本體連擊節拍與傳奇／超神掛鉤，無新增特效來源。
+- 修改：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/bridge.js、js/worker/sim.worker.js、index.html、tests/gale-rework.test.cjs、本紀錄。表格以 artifact-tool 修改 K35、AE35、AH35、AI35 並渲染檢查；Excel 曾鎖定，使用者關閉後已同步。另保留使用者關閉 Excel 時保存的 AH33／AH34／AI34「斬擊→打擊」文字修改並同步 CSV／JS。其餘儲存格值未改。
+- 未修改但檢查：js/battlefield.js（隨機不重複取樣及玩家距離）、skills2 系統與超神測試、VFX 事件路徑。使用者正在調整的 hit-gale-burst Preset／layout／shipped-assets／素材保留未提交，不混入這次技能效果變更。無本次新增素材。
+- 驗證：node --test tests/gale-rework.test.cjs tests/skill2-system.test.cjs tests/skill2-ult-evolution.test.cjs，共 95 項，91 通過／4 既有失敗；將 HEAD skills2.js 注入同一 system 測試確認仍有相同 4 項（突刺規格、迴身四方斬、神速飛刀、飛刀回跳），無新增失敗。疾風相關定向測試 12/12 通過。Excel／CSV 目標格逐值一致，config_tables --apply Skills2 無語意差異；Build、git diff --check 通過。
+- Commit：本紀錄所在提交。無未完成實作，可供審查合併，未合併／推送。未遊戲內目視驗收，建議觀察每段爆散重新選敵及對應特效次數。
+
 ## Claude｜VFX 啟動器改成 Node：一律先關掉本副本的舊伺服器再重開，.bat 只留 ASCII（VFX-LAUNCHER-20260917）
 
 - Owner：Claude；Done。使用者回報：(1) 啟動器判定伺服器過期那一段，說明文字被 cmd 拆碎當成指令執行（「'面上看不出原因。' is not recognized」），其中 `echo     taskkill /F /PID 那個PID` 的 echo 被吃掉、taskkill 真的跑了；(2) 叫使用者去關舊伺服器的視窗，但那台沒有視窗或已經當掉關不了。使用者提議：開新的時候自動關掉舊的再重開。
