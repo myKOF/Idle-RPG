@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜疾風破主打擊特效繼承（GALE-MAIN-VFX-20260917）
+
+- Owner：Codex；狀態：In Progress；依賴：使用者確認有填用本階、空白繼承前階。
+- 範圍：skills2 主打擊特效來源、gale 回歸測試、index/bridge/sim.worker 快取與本紀錄。不改表格、素材、傷害或選敵。
+- 驗收：爆散主目標與追加目標使用第四階配置；未取得、空欄、後續階級與超神繼承測試。完成後供使用者合併。
+- 完成：移除主打擊固定階級，沿用 sgVfxRoles；傷害、選敵、事件數量與範圍不變。主執行緒及 Worker 快取同步。
+- 驗證：`node --test tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs` 14/14；`node tools/build_check.cjs` 361/361；diff check 通過。未另作遊戲實機驗證。狀態 Done，可合併，未推送；使用者編輯中的表格／特效素材保留未提交，本輪無新增素材。
+
 ## Codex｜用途欄改名特殊效果（VFX-USAGE-LABEL-20260917）
 
 - Owner：Codex；Done。使用者決定名稱為「特殊效果」，Excel／CSV 由使用者修改；本次不寫表格。config_tables 的輸出欄名、說明與錯誤訊息改用新名稱；讀入相容「特效用途特效」與「特殊用途特效」，有新欄時優先使用新欄，保留「技能本體／附加效果／留白」語意。

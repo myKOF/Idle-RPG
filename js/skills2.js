@@ -2756,8 +2756,8 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     sgEmitVfx('gale', geomOk ? [] : [primary], floatSel, {
       fxKind: 'slash', count: 1, variant: shareMode ? 'gale-moon' : 'gale-burst',
       area: geomOk ? sgAreaAround(impact, radius) : null,
-      preserveDeadTargets: true,
-      vfxTier: shareMode ? 7 : 1
+      // 主打擊沿用目前進化的逐欄繼承；不可固定讀第一階而略過爆散配置。
+      preserveDeadTargets: true
     });
     if (shareMode) {
       // 超神【千鳥】：月牙斬不再均分，改為每個敵人都吃完整傷害，且傷害再額外提高

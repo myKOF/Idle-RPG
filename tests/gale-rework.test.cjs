@@ -12,6 +12,36 @@ function setup(lv=1,moon=false){
  const lvs=[1,0,0,lv,0,0,moon?1:0];c.G.player.skills2.levels.gale=lvs;
  return {c,p,hits,events,primary,setPool(a){pool=a;},move(x){centre={x,y:0};},enemy(x,name){return scope.h.enemy(1e9,x,0,name);},cast(){c.sgCastGale(p,{atk:1000},c.SKILLS2.gale,lvs,pool,primary,'mv-float',{dmg:0});},tick(t){c.GT=t;c.sgTickGaleStrikes({getEnemies:()=>pool});}};
 }
+
+test('主打擊依當前階逐欄繼承，爆散主目標與追加目標使用同一攻擊特效',()=>{
+ for(const lv of [0,1])for(const blank of [false,true]){
+  const h=setup(lv),tiers=h.c.SKILLS2.gale.tiers;
+  h.c.skills2Levels=()=>[1,1,1,lv,0,0,0];
+  tiers[0].vfx={attack:'base-configured',hit:'base-hit'};
+  tiers[3].vfx={attack:blank?'':'scatter-configured'};
+  h.cast();h.tick(.35);h.tick(.7);
+  const expected=lv&&!blank?'scatter-configured':'base-configured';
+  assert.equal(h.events.length,lv?6:3);
+  for(const e of h.events){assert.equal(e.vfx.attack,expected);assert.equal(e.vfx.hit,'base-hit');}
+ }
+});
+
+test('主打擊保留後續進化與超神覆寫，空欄繼承爆散',()=>{
+ for(const moon of [false,true])for(const ult of [false,true])for(const filled of [false,true]){
+  const h=setup(1,moon),g=h.c.SKILLS2.gale;
+  h.c.skills2Levels=()=>[1,1,1,1,1,1,moon?1:0];
+  g.tiers[3].vfx={attack:'scatter-configured'};
+  g.tiers[6].vfx={attack:filled?'moon-configured':''};
+  if(ult){
+   const idx=h.c.sgUltIndexOfId('gale','thunderGodSlash');
+   g.ult[idx].vfx={attack:filled?'ult-configured':''};
+   h.c.G.player.skills2.ult={gale:{pick:idx,lv:1}};
+   h.c.skills2Ult=()=>({def:g.ult[idx],lv:1});
+  }
+  h.cast();
+  assert.equal(h.events[0].vfx.attack,filled?(ult?'ult-configured':moon?'moon-configured':'scatter-configured'):'scatter-configured');
+ }
+});
 test('爆散逐段重新隨機，範圍以玩家為中心；每次追加命中各播一次特效',()=>{
  const h=setup(),a=h.enemy(-80,'a'),b=h.enemy(60,'b'),outside=h.enemy(250,'outside');h.setPool([h.primary,a,b,outside]);
  h.c.Math.random=()=>.9;h.cast();h.c.Math.random=()=>.1;h.tick(.35);
