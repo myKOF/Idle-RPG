@@ -2413,7 +2413,14 @@
 
   /* ---------------- Copy / Paste ----------------
      Editor 內部剪貼簿，不碰 OS clipboard——那需要權限提示，而這裡只需要
-     在同一個 Editor 內複製圖層。 */
+     在同一個 Editor 內複製圖層。
+
+     多視窗（2026-09-17）：剪貼簿全部視窗共用，A 視窗複製、B 視窗貼上。複製當下備好兩份內容：
+       items     貼回同一份特效用：副本的父物件、子發射器目標就在旁邊
+       portable  貼到另一份特效用（pane-model.js 的 portableClipboard）：父物件沒一起複製就卸下成
+                 根層級、子發射器目標沒一起複製就拿掉、群組攤成圖層
+     在複製當下算好，之後原本那一份再怎麼改都不影響剪貼簿。「是不是同一份」看的是編輯狀態
+     物件本身：另存新檔或重新開啟之後就是新的一份，走 portable 也不會錯。 */
 
   function deepClone(v) { return JSON.parse(JSON.stringify(v)); }
 
@@ -2422,8 +2429,14 @@
   function copySelection() {
     if (!state.selectedKeys.length) return;
     /* 選到父物件就連子孫一起，跟群組帶著成員一樣：面板上縮排在它底下的就是它的一部分 */
-    state.clipboard = M.copySelection(state.preset, state.layout,
+    var clip = M.copySelection(state.preset, state.layout,
       H.withDescendants(state.preset, state.layout, state.selectedKeys));
+    if (clip) {
+      clip.doc = ctxDoc;
+      clip.from = state.preset.id;
+      clip.portable = VFXPaneModel.portableClipboard(state.preset, state.layout, state.selectedKeys);
+    }
+    state.clipboard = clip;
     updateClipboardStatus();
   }
 
@@ -2435,22 +2448,40 @@
 
   function pasteClipboardInner() {
     ensureLayout();
-    /* 以目前 active 當插入錨點，貼在它後面，而不是丟到整個列表最下面 */
-    var newKeys = M.pasteClipboard(state.preset, state.layout, state.clipboard, state.activeKey);
+    var clip = state.clipboard;
+    var foreign = clip.doc !== ctxDoc;
+    /* 以目前 active 當插入錨點，貼在它後面，而不是丟到整個列表最下面。
+       貼到另一份特效時沿用原本的圖層 id（撞名才加序號），插入點照那一份的根群組找 */
+    var newKeys = foreign
+      ? M.pasteClipboard(state.preset, state.layout, clip.portable,
+        VFXPaneModel.foreignPasteAnchor(state.preset, state.layout, state.activeKey), { keepIds: true })
+      : M.pasteClipboard(state.preset, state.layout, clip, state.activeKey);
     setSelection(newKeys, newKeys[newKeys.length - 1]);
     state.anchorKey = state.activeKey;
     markLayoutDirty();
     onPresetChanged();
     renderLayerList();
     renderInspector();
+    if (foreign) announcePasteNotes(clip);
   }
 
+  /* 從另一份特效貼過來時說一聲是從哪裡來的；沒辦法完全照原樣的地方（父物件卸下、
+     子發射器拿掉、斜切近似）滑鼠移上去看每一層的原因。與父子層級的提示同一個位置與樣式。 */
+  function announcePasteNotes(clip) {
+    var lines = VFXPaneModel.describeNotes(clip.portable.notes);
+    var head = '已從 ' + clip.from + ' 貼上 ' + clip.portable.items.length + ' 層';
+    setSaveStatus(lines.length
+      ? head + '；' + (lines.length === 1 ? lines[0] : lines.length + ' 項沒辦法完全照原樣（滑鼠移上來看）')
+      : head, 'note', lines.join('\n'));
+  }
 
   function updateClipboardStatus() {
     var el = $("clipboard-status");
     if (!el) return;
     var c = state.clipboard;
-    el.textContent = c ? ("剪貼簿：" + c.items.length + " 項") : "";
+    /* 多個視窗時標出是從哪一份複製的：切到別的視窗貼上之前看得出剪貼簿裡是什麼 */
+    el.textContent = c ? ("剪貼簿：" + c.items.length + " 項" +
+      (panes.length > 1 ? "（" + c.from + "）" : "")) : "";
   }
 
   /* ---------------- 群組操作 ---------------- */

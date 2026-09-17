@@ -596,6 +596,20 @@ test('PANE-27 同一份特效只開在一個視窗；網址記住每個視窗的
   assert.ok(/activatePane\(panes\[query\.focus\], \{\}\)/.test(boot), '焦點回到重新整理前的視窗');
 });
 
+test('PANE-28 跨視窗貼上：來源是別份特效就用 portable、沿用 id、插在根群組裡，並說明換算', function () {
+  const copy = bodyOf('copySelection');
+  assert.ok(/M\.copySelection\(/.test(copy), '同一份特效裡貼上的內容照舊');
+  assert.ok(/clip\.doc = ctxDoc;/.test(copy));
+  assert.ok(/clip\.portable = VFXPaneModel\.portableClipboard\(state\.preset, state\.layout, state\.selectedKeys\)/.test(copy),
+    '複製當下就算好，之後原本那份怎麼改都不影響剪貼簿');
+  const paste = bodyOf('pasteClipboardInner');
+  assert.ok(/var foreign = clip\.doc !== ctxDoc;/.test(paste));
+  assert.ok(/M\.pasteClipboard\(state\.preset, state\.layout, clip\.portable,\s*VFXPaneModel\.foreignPasteAnchor\(state\.preset, state\.layout, state\.activeKey\), \{ keepIds: true \}\)/.test(paste));
+  assert.ok(/: M\.pasteClipboard\(state\.preset, state\.layout, clip, state\.activeKey\)/.test(paste), '同一份照原本的規則');
+  assert.ok(/if \(foreign\) announcePasteNotes\(clip\)/.test(paste));
+  assert.ok(/VFXPaneModel\.describeNotes\(clip\.portable\.notes\)/.test(bodyOf('announcePasteNotes')));
+});
+
 test('PANE-29 頁面：「新增視窗」在背景色列、pane-model 先於 editor.js 載入；只有一個視窗時畫面與以前相同', function () {
   const html = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/index.html'), 'utf8');
   const bar = html.slice(html.indexOf('<div id="bg-bar">'), html.indexOf('<div id="preview-host">'));
