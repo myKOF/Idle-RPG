@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜落雷藍白飛濺與死亡粒子移除（VFX-THUNDER-SPLASH-20260917）
+
+- Owner Codex。移除battle-renderer死亡時額外生成圓點的呼叫，保留死亡動畫。hit-thunderstrike-bluewhite以既有VFX粒子重製：7藍5白圓點向上噴發、重力260、壽命0.45～0.75秒，搭配5道曲折雷電及短暫核心閃光，取代霧狀光環。沿用整組連續雷電變形。
+- 僅使用既有素材與Core；8個圖層、每次最多12顆粒子，沒有持續發射／新Timer。WebGL實播無pageerror／backend錯誤，動態預覽直接擷取實際Pixi畫布。尚未量測完整遊戲GPU效能。
+- 素材庫無修改；正式匯出索引移除不再使用的circle_rings_c，素材库原檔保留。使用者正在修改的技能表、雷神之怒及千鳥Preset不納入此任務。
+- Done；node --test tests/vfx-core.test.cjs tests/vfx-preset-coverage.test.cjs tests/projectile-impact-size.test.cjs：144/144通過；battle-renderer語法、Preset schema及diff check通過。未推送或合併。
+
 ## Codex｜千鳥強化爆散（SKILL-CHIDORI-20260917）
 
 - Owner Codex；Done。月牙閃每敵完整傷害；千鳥爆散加成同時乘上爆散傷害係數與目標數，再對小數目標數擲骰。額外傷害加成套用月牙閃與爆散各一次。兩項加成均配置基值50、每級5，沿用既有 base＋per×lv 計算。
