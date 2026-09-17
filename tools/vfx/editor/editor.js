@@ -4336,7 +4336,10 @@
   }
 
   function addLayerInner(type, assetId) {
-    var base = { id: uniqueLayerId(type), type: type, assetId: assetId || '' };
+    /* 空物件不畫東西，沒有素材欄位（Core 會把 assetId 當成不支援的欄位擋下） */
+    var base = type === 'empty'
+      ? { id: uniqueLayerId(type), type: type }
+      : { id: uniqueLayerId(type), type: type, assetId: assetId || '' };
     if (type === 'particle') {
       base.emission = { mode: 'burst', count: 16 };
       base.lifetime = [0.4, 0.8];

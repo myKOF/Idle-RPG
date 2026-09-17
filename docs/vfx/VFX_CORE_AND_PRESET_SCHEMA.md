@@ -446,7 +446,7 @@ runtime.setTransform(handle, { position, rotation, scale, scaleX, scaleY });  //
 飛行物的拖尾因此自然形成。未知或已結束的 handle 回 `false`；縮放、旋轉與位置一旦有給就必須是有限數，
 NaN 會讓整個特效消失卻查不到原因，屬規格禁止的 silent fallback，直接報錯。
 
-# 2. 圖層型別（只有三種是真正不同的繪圖原語）
+# 2. 圖層型別（三種繪圖原語，加上不畫東西的空物件）
 
 需求裡列了 Sprite / Mask / Particle / Ring / Glow / Procedural 六項，
 實際評估後**只保留三種 layer type**，其餘是 sprite 的參數組合而非新的 renderer：
@@ -468,7 +468,8 @@ NaN 會讓整個特效消失卻查不到原因，屬規格禁止的 silent fallb
 `id`（同一 preset 內唯一）、`type`、`enabled`、`assetId`、`zIndex`、
 `position{x,y}`、`rotation`（弧度）、`scale{x,y}`、`anchor{x,y}`、
 `alpha`(0..1)、`tint`(`#rrggbb`)、`blendMode`(`normal|add|multiply|screen`)、
-`delay`、`duration`（省略時吃 preset 的 duration）。
+`delay`、`duration`（省略時吃 preset 的 duration）、
+`parent`（父物件的圖層 id，見 §2.5）。
 
 動畫：`alphaOverLife`、`scaleOverLife`、`rotationOverLife`，
 格式一律 `[[t, value], …]`，`t` 為 0..1 的生命進度，線性內插，最多 16 點。
@@ -548,6 +549,58 @@ trail 不需要新素材，扭曲要先有可平鋪的噪聲貼圖（見 §7 Mat
 不需要自訂 shader 就能可靠完成，而且只有**可平鋪**的素材才有意義（見 §7 Material Gap）。
 未來要加 `distortion`／`dissolve`／`noise` 時，在 backend 的 `kind` 上擴充即可，
 不必動 Core 的模擬迴圈。**本階段不建立 Shader Graph。**
+
+## 2.4 empty：空物件（2026-09-17）
+
+`type: "empty"`：自己不畫任何東西、不建立任何繪圖節點，只帶會被子物件繼承的東西——
+變換、透明度、顏色、時間軸。用途是當父物件（像 After Effects 的 Null Object）：
+一組圖層要一起繞圈、一起淡出、一起延遲出現時，掛在同一個空物件底下，只調空物件一處。
+
+可用欄位：`id`、`type`、`parent`、`enabled`、`position`、`rotation`、`scale`、
+`alpha`、`tint`、`delay`、`duration`、`alphaOverLife`、`tintOverLife`、`scaleOverLife`、
+`scaleXOverLife`、`scaleYOverLife`、`rotationOverLife`、`rotationXOverLife`、`rotationYOverLife`、
+`offsetXOverLife`、`offsetYOverLife`、`outerScale`。
+`assetId`、`blendMode`、`anchor`、`zIndex`、`sheet` 在空物件上沒有效果，寫了會被驗證擋下
+（不 silent fallback）。
+
+## 2.5 父子層級：`parent`（2026-09-17）
+
+任何圖層都可以填 `parent`（同一份 preset 裡另一個圖層的 `id`），掛在它底下。
+子物件繼承父物件的：
+
+| 繼承什麼 | 怎麼繼承 |
+|---|---|
+| 位置／旋轉／縮放 | 子物件的 `position`、`rotation`、`scale`（含所有曲線）都是**相對父物件**的數值。世界矩陣 ＝ 特效變換 · 祖先的區域矩陣 · … · 自己的區域矩陣 |
+| 透明度 | 相乘：`alpha × alphaOverLife × 父物件的有效透明度` |
+| 顏色 | 相乘：自己的 `tint × tintOverLife`，再乘父物件的有效顏色 |
+| 時間軸 | 子物件的 `delay` 從**父物件出現那一刻**算起；父物件還沒出現、已經結束或 `enabled: false` 時，子物件也不出現 |
+
+區域矩陣 L ＝ T(`position` ＋ 位移曲線) · S(`outerScale`) · R(`rotation` ＋ 曲線) · S(`scale` ＋ 曲線 ＋ 翻轉)。
+父物件非等比縮放、子物件又旋轉時會產生斜切（skew）。矩陣運算由 Core 匯出
+（`layerMatrix`、`multiplyMatrix`、`invertMatrix`、`decomposeMatrix`），Editor 與 Runtime 用同一套。
+
+粒子層：
+
+- **當子物件**：發射點、發射方向、繞圈中心都落在父物件的座標系裡。
+  `worldSpace: true`（預設）的粒子出生後留在出生時的座標系，父物件之後怎麼動都不跟著走；
+  `worldSpace: false` 的粒子跟著父物件走。粒子圖套用父物件的旋轉與縮放（非等比時只取兩軸長度，不斜切），
+  透明度與顏色乘上父物件**現在**的值——父物件淡出，已經發射的粒子一起淡出。
+  父物件沒出現時的「不出現」＝停止發射，已經發射的粒子照自己的壽命演完。
+- **當父物件**：子物件只跟著發射點的**位置**。粒子層的 `rotation`／`scale` 轉的是每一顆粒子的圖，
+  不是發射器，所以不傳下去；透明度與顏色也只傳圖層本身的 `alpha`／`tint`
+  （`alphaOverLife`／`tintOverLife` 是每一顆粒子自己的生命曲線）。
+
+驗證（§4）：`parent` 必須指向存在的圖層、不能是自己、不能成環、最多 8 層；
+子發射器的來源層與目標層必須掛在同一個父物件底下（子發射器用來源粒子的座標當出生點，座標系要一致）。
+
+**沒有 `parent` 的圖層完全走原本的算式。** 加入本功能時，以全部 209 份既有 preset × 3 種播放情境
+（原點；位置＋旋轉＋等比縮放；非等比縮放＋中途移動＋收尾）比對修改前後送到後端的每一個值，逐位元相同。
+
+⚠️ Runtime Adapter（`js/vfx-runtime.js` 的 `registerPresets`）對少數 preset 做了依圖層 id 的特殊處理：
+岩甲術拆前後半、火牆拆三柱並逐層平移、真空衝擊波從風之月牙複製變換欄位。這些都假設每一層的數值
+「相對特效」；掛上父物件後父子兩邊都平移會移兩次，父物件被濾掉則整份註冊失敗。
+所以這幾份 preset 目前不得使用父子層級（`tests/vfx-core-hierarchy.test.cjs` HIER-16 守著），
+要用得先讓那一段拆解認得父子關係。
 
 ---
 
