@@ -818,17 +818,19 @@ test('SA5 另存成功後用新名字重新開啟；送出前就先把新名字�
   const reg = body.indexOf('state.runtime.registerPreset(state.preset)');
   assert.ok(reg >= 0 && reg < body.indexOf('savePreset()'), '存檔請求送出之前，新名字就要先註冊進預覽');
   assert.ok(/rememberComboQuery\(newId\)/.test(body), '選單的篩選字串要換成新名字');
+  /* 2026-09-17 多視窗：整頁重載會把其他視窗一起關掉，改成就地用新名字重開這個視窗 */
   const wait = body.indexOf('state.layoutSave');
-  const reload = body.indexOf("window.location.search = '?preset=' + encodeURIComponent(newId)");
-  assert.ok(wait >= 0 && reload > wait, '要等分組存完才重新載入，否則重載會砍掉分組的請求');
-  assert.ok(/layoutOk === false/.test(body.slice(wait, reload)), '分組沒存成功時不能重新載入');
-  assert.ok(/flashAfterReload\(/.test(body), '重新載入之後要看得到「已另存為」');
+  const reload = body.indexOf('openPresetInPane(ctx, newId');
+  assert.ok(wait >= 0 && reload > wait, '要等分組存完才重新開啟，否則讀到的是還沒寫進去的分組檔');
+  assert.ok(/layoutOk === false/.test(body.slice(wait, reload)), '分組沒存成功時不能重新開啟');
+  assert.ok(/status: '已另存為 '/.test(body.slice(reload)), '重新開啟之後要看得到「已另存為」');
+  assert.ok(body.indexOf('window.location') < 0, '不得整頁重載');
 
   const save = src.slice(src.indexOf('function savePreset'));
   const saveBody = save.slice(0, save.indexOf('\n  }\n'));
   assert.ok(/state\.layoutSave = saveLayout\(\)/.test(saveBody), 'savePreset 要把分組的 Promise 留給另存新檔等');
-  const boot = src.slice(src.indexOf('function boot('));
-  assert.ok(/showFlashFromReload\(\)/.test(boot.slice(0, boot.indexOf('\n  }'))), '開好之後要顯示重載前留下的訊息');
+  const open = src.slice(src.indexOf('function openPresetInPane('));
+  assert.ok(/setSaveStatus\(o\.status/.test(open.slice(0, open.indexOf('\n  }'))), '開好之後要顯示帶進來的訊息');
 });
 
 test('W9 關閉端點的防護與存檔 API 同一套（不是任何網頁都殺得掉伺服器）',
@@ -1119,8 +1121,8 @@ test('C6 Editor 在 preset.id 與載入來源不一致時停用存檔', function
   assert.ok(saveFn.indexOf('saveTargetProblem()') >= 0 &&
     saveFn.indexOf('saveTargetProblem()') < saveFn.indexOf("method: 'PUT'"),
     'savePreset 必須在送出 PUT 之前先過這道擋門');
-  assert.ok(/state\.sourcePresetId = bootPresetId/.test(src),
-    '開場載入時必須記下來源 id');
+  assert.ok(/state\.sourcePresetId = id;/.test(src.slice(src.indexOf('function openPresetInPane('))),
+    '開啟 repo 裡的特效時必須記下來源 id');
 });
 
 /* C7：失敗原因必須看得見。

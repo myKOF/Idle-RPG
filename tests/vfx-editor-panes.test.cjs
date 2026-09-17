@@ -354,3 +354,259 @@ test('PANE-17 父物件非等比縮放造成的斜切：卸下時照樣換算並
   assert.equal(M.layerById(b, 'orb').parent, undefined);
   assert.equal(errorsOf(b), '');
 });
+
+/* ============================================================
+   畫面接線（tools/vfx/editor/editor.js、index.html、editor.css）
+
+   最容易出錯的是「非同步回呼寫到誰身上」：存檔回應回來時焦點可能已經換到別的視窗，
+   這個視窗也可能換成了別份特效。withPane／bindPane 與 Restart 從原始碼挖出來在 vm 裡
+   實際跑，驗的是行為；其餘接線照專案慣例檢查原始碼。
+   ============================================================ */
+
+const vm = require('node:vm');
+const EDITOR = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+const EDITOR_NC = EDITOR.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+/* 從 function 關鍵字開始數大括號，挖出整個函式。改名時這裡會直接失敗，不會靜靜跳過。 */
+function extractFunction(src, name) {
+  const at = src.indexOf('function ' + name + '(');
+  assert.ok(at >= 0, '找不到 function ' + name);
+  let depth = 0;
+  for (let i = src.indexOf('{', at); i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(at, i + 1);
+  }
+  throw new Error(name + ' 的大括號沒有配對');
+}
+function bodyOf(name) { return extractFunction(EDITOR_NC, name); }
+
+test('PANE-18 withPane／bindPane：回呼寫回發出請求的那一份；在裡面換了一份特效，出來之後跟著新的', function () {
+  const c = vm.createContext({});
+  vm.runInContext('var ctx = null, ctxDoc = null;\n' + extractFunction(EDITOR, 'withPane') + '\n' +
+    extractFunction(EDITOR, 'bindPane') + '\nthis.withPane = withPane; this.bindPane = bindPane;' +
+    'this.cur = function () { return { pane: ctx, doc: ctxDoc }; };' +
+    'this.focus = function (p) { ctx = p; ctxDoc = p ? p.doc : null; };', c);
+  const docA1 = { n: 'a1' }, docB = { n: 'b' };
+  const A = { doc: docA1 }, B = { doc: docB };
+  c.focus(A);
+
+  c.withPane(B, function () {
+    assert.equal(c.cur().pane, B, '裡面操作的是背景視窗');
+    assert.equal(c.cur().doc, docB);
+  });
+  assert.deepEqual(c.cur(), { pane: A, doc: docA1 }, '出來回到焦點視窗');
+
+  const late = c.bindPane(function () { return c.cur(); });
+  c.focus(B);
+  assert.deepEqual(late(), { pane: A, doc: docA1 }, '焦點換到 B 之後回應才到，仍寫 A');
+  assert.deepEqual(c.cur(), { pane: B, doc: docB }, '回呼跑完焦點還是 B');
+
+  c.focus(A);
+  const stale = c.bindPane(function () { return c.cur().doc; });
+  const docA2 = { n: 'a2' };
+  A.doc = docA2;
+  c.focus(A);
+  assert.equal(stale(), docA1, 'A 在等回應時換成別份特效：回呼拿到的是舊的那一份，不會寫進新的');
+
+  const docA3 = { n: 'a3' };
+  c.withPane(A, function () { A.doc = docA3; });
+  assert.equal(c.cur().doc, docA3, '在裡面換了一份特效（beginDoc），出來不能退回換掉之前的那一份');
+
+  const pinned = c.bindPane(function () {
+    c.withPane(A, function () {});
+    return c.cur().doc;
+  });
+  A.doc = { n: 'a4' };
+  assert.equal(pinned(), docA3, '外層本來綁著舊的那一份時，巢狀之後照原樣還原');
+
+  c.focus(A);
+  assert.throws(function () { c.withPane(B, function () { throw new Error('boom'); }); });
+  assert.equal(c.cur().pane, A, '丟例外也要還原');
+});
+
+test('PANE-19 每個視窗各一份的欄位轉到 ctx 上；剪貼簿、排序、格線全部視窗共用', function () {
+  const docKeys = Object.keys(vm.runInNewContext('(' + extractFunction(EDITOR, 'newDoc') + ')()'));
+  ['preset', 'layout', 'history', 'selectedKeys', 'activeKey', 'savedText', 'savedLayoutText',
+    'sourcePresetId', 'isNew', 'collapsed'].forEach(function (k) {
+    assert.ok(docKeys.indexOf(k) >= 0, k + ' 是一份特效自己的');
+  });
+  const paneFields = /var PANE_FIELDS = \[([\s\S]*?)\];/.exec(EDITOR_NC)[1];
+  ['app', 'runtime', 'backend', 'handle', 'playing', 'previewLoop', 'zoom', 'panX', 'panY', 'pan',
+    'saveStatus', 'validation'].forEach(function (k) {
+    assert.ok(paneFields.indexOf("'" + k + "'") >= 0, k + ' 是每個視窗自己的');
+  });
+  const shared = /var state = \{([\s\S]*?)\};/.exec(EDITOR_NC)[1];
+  ['clipboard', 'sortMode', 'gridOn', 'resolver', 'index'].forEach(function (k) {
+    assert.ok(new RegExp('\\b' + k + ':').test(shared), k + ' 全部視窗共用');
+    assert.ok(docKeys.indexOf(k) < 0 && paneFields.indexOf("'" + k + "'") < 0, k + ' 不能每個視窗各一份');
+  });
+  assert.ok(/get: function \(\) \{ return ctxDoc \? ctxDoc\[key\] : undefined; \}/.test(EDITOR_NC));
+  assert.ok(/get: function \(\) \{ return ctx \? ctx\[key\] : undefined; \}/.test(EDITOR_NC));
+  /* gizmo 與格線的畫筆、拖曳狀態也是每個視窗各一份 */
+  assert.ok(/\['overlay', 'gfx', 'dirty', 'drag'\]\.forEach/.test(EDITOR_NC));
+  assert.ok(/\['gfx', 'last'\]\.forEach/.test(EDITOR_NC));
+  assert.ok(!/var history = null;/.test(EDITOR_NC) && !/var pan = null;/.test(EDITOR_NC),
+    '模組層級的單一歷史、平移狀態不能再留著');
+});
+
+test('PANE-20 非同步回呼都綁在發出請求的那一份上', function () {
+  ['savePreset', 'saveLayout', 'saveAsPreset', 'commitSaveAs', 'adoptLayoutFor', 'loadPresetFromFile',
+    'previewSoon'].forEach(function (name) {
+    assert.ok(/bindPane\(/.test(bodyOf(name)), name + ' 的回呼要用 bindPane 包起來');
+  });
+  const save = bodyOf('savePreset');
+  assert.ok(/\.then\(bindPane\(function \(body\) \{\s*ok = true;\s*state\.savedText = text;/.test(save),
+    '存檔成功的基準線寫回發出請求的那一份');
+  assert.ok(/\.then\(bindPane\(function \(\) \{\s*state\.saving = false;/.test(save));
+  const open = bodyOf('openPresetInPane');
+  assert.ok(/\]\)\.then\(function \(res\) \{\s*if \(pane\.closed \|\| token !== pane\.loadToken\) return false;/.test(open),
+    '回應回來時視窗已經關了、或又換成別份：作廢（成功的那一條）');
+  assert.ok(/\}, function \(e\) \{\s*if \(pane\.closed \|\| token !== pane\.loadToken\) return false;/.test(open),
+    '失敗的那一條也一樣，不能把舊請求的錯誤訊息掛到新的一份上');
+  assert.ok(/state\.staleDoc/.test(bodyOf('rebuildPreview')), '已經換掉的那一份不能把自己註冊進預覽');
+});
+
+test('PANE-21 面板、工具列只顯示焦點視窗：背景視窗的回呼不得畫上去', function () {
+  ['renderLayerList', 'renderInspector', 'refreshHistoryButtons', 'setSaveStatus', 'setValidation',
+    'syncSaveButton', 'updateViewReadout', 'syncTransformInputs'].forEach(function (name) {
+    const body = bodyOf(name);
+    const guard = body.indexOf('state.inBackground');
+    assert.ok(guard >= 0, name + ' 要先看是不是背景視窗');
+    assert.ok(body.indexOf('$(') < 0 || guard < body.indexOf('$(') ||
+      /var \w+ = \$\([^)]*\)(, \w+ = \$\([^)]*\))?;/.test(body.slice(0, guard)),
+      name + ' 的守門要在寫 DOM 之前');
+  });
+  /* 狀態列與驗證面板每個視窗各記一份，焦點換過來時整組重畫 */
+  assert.ok(/state\.saveStatus = \{/.test(bodyOf('setSaveStatus')));
+  assert.ok(/state\.validation = \{/.test(bodyOf('setValidation')));
+  const render = bodyOf('renderPanels');
+  assert.ok(/state\.inBackground/.test(render));
+  ['renderLayerList()', 'renderInspector()', 'refreshHistoryButtons()', 'refreshDirty()', 'syncPlayPause()',
+    'syncPreviewLoop()', 'updateViewReadout()', 'syncPresetIdentity()'].forEach(function (call) {
+    assert.ok(render.indexOf(call) >= 0, '切換焦點時要重畫：' + call);
+  });
+  assert.ok(/renderPanels\(\)/.test(bodyOf('focusPane')));
+  /* 只有焦點視窗畫 gizmo 的框，判斷在 clear 之前 */
+  const gz = bodyOf('drawGizmo');
+  assert.ok(gz.indexOf('state.inBackground') >= 0 && gz.indexOf('state.inBackground') < gz.indexOf('g.clear()'));
+});
+
+test('PANE-22 播放／暫停、Restart、預覽循環作用在多選的全部視窗', function () {
+  assert.ok(/selectedPanes\.forEach\(function \(p\) \{ p\.playing = !!on; \}\)/.test(bodyOf('setPlaying')));
+  assert.ok(/selectedPanes\.forEach\(function \(p\) \{ p\.previewLoop = !!on; \}\)/.test(bodyOf('setPreviewLoop')));
+  assert.ok(/selectedPanes\.forEach/.test(bodyOf('restart')));
+  assert.ok(/playbackState\(selectedPanes\)\.playing/.test(bodyOf('syncPlayPause')));
+  assert.ok(/indeterminate = s\.loopMixed/.test(bodyOf('syncPreviewLoop')), '循環設定不一致時打「－」');
+  assert.ok(/setPlaying\(!VFXPaneModel\.playbackState\(selectedPanes\)\.playing\)/.test(bodyOf('boot')));
+  assert.ok(/state\.previewLoop/.test(bodyOf('tickPreviewLoop')), '播完要不要重來看的是那個視窗自己的設定');
+});
+
+test('PANE-23 Restart 從頭播（2026-09-02 加入續播之後它一直只是原地重建）', function () {
+  const backend = {
+    createNode: (spec) => ({ spec: spec }),
+    updateNode: () => {}, destroyNode: () => {}, destroy: () => {}
+  };
+  const runtime = VFXCore.createRuntime({ backend: backend, resolver: RESOLVER });
+  const c = {
+    state: { runtime: runtime, preset: preset('fx', [sprite('a')], { duration: 3 }), playing: true, handle: null, staleDoc: false },
+    selectedPanes: [{}],
+    withPane: (p, fn) => fn(),
+    setValidation: () => { throw new Error('合法的 preset 不該報錯'); },
+    PREVIEW_SEED: 12345
+  };
+  vm.createContext(c);
+  vm.runInContext(['playPreview', 'rebuildPreview', 'restart'].map((n) => extractFunction(EDITOR, n)).join('\n') +
+    '\nfunction onPresetChanged() { rebuildPreview(); }\nthis.rebuildPreview = rebuildPreview; this.restart = restart;', c);
+  c.rebuildPreview();
+  runtime.update(0.5);
+  runtime.update(0.5);
+  c.rebuildPreview();
+  assert.ok(Math.abs(runtime.timeOf(c.state.handle) - 1) < 1e-6, '調參數時的重建接著目前的播放頭（不跳回開頭）');
+  c.restart();
+  assert.equal(runtime.timeOf(c.state.handle), 0, 'Restart 要從 0 開始');
+});
+
+test('PANE-24 點視窗換焦點（捕獲階段、在選取與拖曳之前）；Ctrl+點擊只管多選', function () {
+  const create = bodyOf('createPane');
+  assert.ok(/addEventListener\('pointerdown', function \(e\) \{[\s\S]*?activatePane\(pane, \{ ctrl: e\.ctrlKey \|\| e\.metaKey \}\);[\s\S]*?\}, true\)/.test(create),
+    '.pane 的捕獲階段先換焦點，畫布自己的處理拿到的才是這個視窗');
+  assert.ok(/closest\('\.pane-close'\)/.test(create), '按關閉鈕不算點視窗');
+  const down = bodyOf('onPanePointerDown');
+  assert.ok(/if \(e\.ctrlKey \|\| e\.metaKey\) \{ e\.preventDefault\(\); return; \}/.test(down) &&
+    down.indexOf('onPreviewPointerDown(e)') > down.indexOf('ctrlKey'), 'Ctrl+點擊不動圖層');
+  assert.ok(/VFXPaneModel\.clickPane\(/.test(bodyOf('activatePane')), '規則在 pane-model');
+  /* 拖曳的後半段整頁只接一次，不是每個視窗各接一次 */
+  assert.ok(!/addEventListener\('pointermove'/.test(bodyOf('wireGizmo')));
+  assert.ok(/window\.addEventListener\('pointermove', onPreviewPointerMove\)/.test(bodyOf('boot')));
+  /* 輸入框打到一半就點別的視窗：先收尾，那一步記進原本視窗的歷史 */
+  const focus = bodyOf('focusPane');
+  assert.ok(focus.indexOf('active.blur()') >= 0 && focus.indexOf('ctx = pane') >= 0 &&
+    focus.indexOf('active.blur()') < focus.indexOf('ctx = pane') &&
+    focus.indexOf('active.blur()') < focus.indexOf('focusedPane = pane'), 'blur 要在換 ctx 與焦點之前');
+  /* 滾輪縮放滑鼠底下那個視窗，不換焦點 */
+  assert.ok(/withPane\(pane, function \(\) \{\s*applyZoom\(/.test(bodyOf('wirePreviewView')));
+});
+
+test('PANE-25 新增與關閉視窗：最多四個、最後一個關不掉、未存檔先問、畫布與 runtime 一起收掉', function () {
+  const add = bodyOf('addPane');
+  assert.ok(/panes\.length >= VFXPaneModel\.MAX_PANES/.test(add));
+  assert.ok(/activatePane\(pane, \{\}\)/.test(add), '新的一格取得焦點');
+  const close = bodyOf('closePane');
+  assert.ok(/panes\.length <= 1/.test(close), '最後一個視窗關不掉');
+  assert.ok(/withPane\(pane, isDirty\) && !window\.confirm\(/.test(close), '未存檔先問');
+  assert.ok(/VFXPaneModel\.afterClose\(/.test(close));
+  assert.ok(/state\.runtime\.destroy\(\)/.test(close) && /pane\.app\.destroy\(/.test(close) &&
+    /resizeObserver\.disconnect\(\)/.test(close), '畫布（WebGL context）、runtime、ResizeObserver 都要收掉');
+  const layout = bodyOf('layoutPanes');
+  assert.ok(/VFXPaneModel\.gridLayout\(panes\.length\)/.test(layout));
+  assert.ok(/classList\.toggle\('multi', panes\.length > 1\)/.test(layout));
+  /* 空白特效：加第一層之前不算修改，關掉不必問；第一次存檔要問名字 */
+  assert.ok(/if \(state\.isNew && !state\.preset\.layers\.length\) return false;/.test(bodyOf('isDirty')));
+  assert.ok(/if \(state\.isNew\) \{ saveAsPreset\(\); return Promise\.resolve\(false\); \}/.test(bodyOf('savePreset')));
+  assert.ok(/state\.isNew = false;/.test(bodyOf('commitSaveAs')), '另存成功後就有名字了');
+  assert.ok(/dirtyPanes\(\)/.test(bodyOf('quitEditor')), '關閉編輯器看的是全部視窗');
+});
+
+test('PANE-26 換一份特效就換一組 runtime：各自掛一個容器，新的先畫出第一格再收舊的', function () {
+  const install = bodyOf('installRuntime');
+  assert.ok(/var root = new PIXI\.Container\(\);\s*state\.stageRoot\.addChild\(root\);/.test(install),
+    'backend 收攤時會清空整個容器，不能和新的共用');
+  assert.ok(/oldRuntime\.destroy\(\)/.test(install));
+  const finish = bodyOf('finishDoc');
+  assert.ok(finish.indexOf('state.runtime.update(0)') >= 0 &&
+    finish.indexOf('retire()') > finish.indexOf('state.runtime.update(0)'),
+    '新的先建出節點（持有貼圖）再收舊的，共用的貼圖才不會先被卸載');
+  const begin = bodyOf('beginDoc');
+  assert.ok(/keepRuntime \? null : installRuntime\(\)/.test(begin), '另存後重開同一份內容時沿用 runtime');
+  assert.ok(/gizmo\.drag = null/.test(begin), '拖到一半的框屬於上一份');
+});
+
+test('PANE-27 同一份特效只開在一個視窗；網址記住每個視窗的特效', function () {
+  const focusOpen = bodyOf('openPresetInFocus');
+  assert.ok(/var holder = paneHolding\(id\);\s*if \(holder\) \{/.test(focusOpen) &&
+    focusOpen.indexOf('paneHolding(id)') < focusOpen.indexOf('isDirty()'), '已經開著就切過去，不必問未存檔');
+  assert.ok(/paneHolding\(parsed\.id\)/.test(bodyOf('loadPresetFromFile')), '從本機載入也一樣');
+  assert.ok(/paneHolding\(id\)/.test(bodyOf('duplicatePreset')), '複製成新特效：開著的那個視窗直接另存');
+  const sync = bodyOf('syncPresetIdentity');
+  assert.ok(/VFXPaneModel\.searchFor\(ids, panes\.indexOf\(focusedPane\)\)/.test(sync));
+  assert.ok(/if \(!combo\.rows\.length\) return;/.test(sync), '清單還沒到時分不出誰在 repo 裡，先不動網址');
+  const boot = bodyOf('boot');
+  assert.ok(/var query = presetsFromQuery\(\);/.test(boot));
+  assert.ok(/query\.ids\.slice\(1\)\.reduce\(/.test(boot), '網址上的每一份都開成一個視窗');
+  assert.ok(/activatePane\(panes\[query\.focus\], \{\}\)/.test(boot), '焦點回到重新整理前的視窗');
+});
+
+test('PANE-29 頁面：「新增視窗」在背景色列、pane-model 先於 editor.js 載入；只有一個視窗時畫面與以前相同', function () {
+  const html = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/index.html'), 'utf8');
+  const bar = html.slice(html.indexOf('<div id="bg-bar">'), html.indexOf('<div id="preview-host">'));
+  assert.ok(bar.indexOf('id="btn-add-pane"') > bar.indexOf('class="bg-custom"'), '按鈕在「自訂」後面（使用者標的位置）');
+  const pm = html.indexOf('/tools/vfx/editor/pane-model.js');
+  assert.ok(pm > html.indexOf('/tools/vfx/editor/hierarchy-model.js') && pm < html.indexOf('/tools/vfx/editor/editor.js'),
+    'pane-model 依賴 hierarchy-model，editor.js 依賴 pane-model');
+  assert.ok(/\['VFXPaneModel', 'tools\/vfx\/editor\/pane-model\.js'\]/.test(EDITOR), '啟動時點名檢查');
+  const css = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.css'), 'utf8');
+  assert.ok(/\.pane-head \{ display: none; \}/.test(css), '只有一個視窗時不顯示標籤');
+  assert.ok(/#preview-host\.multi \.pane-head \{[^}]*display: flex/.test(css));
+  assert.ok(/\.pane \{[^}]*min-width: 0;[^}]*min-height: 0;/.test(css), '畫布不能把格子撐得比 1fr 大');
+  assert.ok(/#preview-host\.multi \.pane\.focused::after \{ box-shadow: inset/.test(css), '焦點框畫在格子裡面，不佔版面');
+});

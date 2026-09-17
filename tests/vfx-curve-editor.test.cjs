@@ -987,11 +987,21 @@ test('BOOT-2 圖層樹先於素材相關的初始化', function () {
      使用者會以為群組被刪了。順序本身就是保護。
 
      2026-09-10：左欄的素材瀏覽器整區刪掉了（選材一直是走素材選擇器，那份
-     300 列的清單只是把左欄佔滿），所以改成比對 collectVocab 與 wirePicker。 */
+     300 列的清單只是把左欄佔滿），所以改成比對 collectVocab 與 wirePicker。
+
+     2026-09-17 多視窗：圖層樹由開好特效的那一步畫出來（openPresetInPane → finishDoc →
+     renderPanels → renderLayerList），所以比對 openPresetInPane 與素材那一組的先後。 */
   const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
   const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const bodyOf = function (name) {
+    const fn = noComments.slice(noComments.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  assert.ok(/finishDoc\(/.test(bodyOf('openPresetInPane')), '開好特效要走 finishDoc');
+  assert.ok(/renderPanels\(\)/.test(bodyOf('finishDoc')), 'finishDoc 要把面板畫出來');
+  assert.ok(/renderLayerList\(\)/.test(bodyOf('renderPanels')), '面板包含圖層樹');
   const boot = noComments.slice(noComments.indexOf('function boot()'));
-  const layers = boot.indexOf('renderLayerList();');
+  const layers = boot.indexOf('openPresetInPane(');
   const vocab = boot.indexOf('collectVocab();');
   const picker = boot.indexOf('wirePicker();');
   assert.ok(layers >= 0 && vocab >= 0 && picker >= 0);

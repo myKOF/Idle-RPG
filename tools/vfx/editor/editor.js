@@ -16,16 +16,15 @@
   var ASSET_SEMANTICS_URL = '/vfx/asset-semantics.json';
   var DEFAULT_PRESET_ID = 'demo-basic';
 
-  /* ?preset=<id> 決定開場載入哪一份 preset。
+  /* ?preset=<id> 決定開場載入哪一份 preset；多視窗時一個視窗一個（?preset=a&preset=b&focus=2，
+     格式見 pane-model.js 的 presetsFromSearch）。
      原本只寫死 demo-basic，要看別的 preset 只能走檔案挑選對話框，
      開發時每次重整都要重挑一次。id 限制成 preset id 的合法字元
      （見 Core 的 preset.id 規則），順便擋掉 ../ 之類的路徑穿越。 */
-  function presetIdFromQuery() {
-    try {
-      var q = new URLSearchParams(window.location.search).get('preset');
-      if (q && VFXPresetIdPolicy.isWritablePresetId(q)) return q;
-    } catch (e) { /* 不支援 URLSearchParams 就用預設值 */ }
-    return DEFAULT_PRESET_ID;
+  function presetsFromQuery() {
+    var q = VFXPaneModel.presetsFromSearch(window.location.search, VFXPresetIdPolicy.isWritablePresetId);
+    if (!q.ids.length) q.ids = [DEFAULT_PRESET_ID];
+    return q;
   }
 
   function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
@@ -38,8 +37,10 @@
      搜尋框 ＋ 自繪清單，不是原生 <select>。原生下拉沒有辦法在打開的狀態下篩選，
      而 157 份 preset 用捲的已經找不到東西——那正是它被換掉的原因。
 
-     選了就整頁重載成 ?preset=<id>。刻意不就地換內容：preset、layout、歷史、
-     選取、gizmo 全部要換成另一份，重載是唯一能保證不會混到上一份殘留的做法。
+     選了就把那一份開進焦點視窗。原本是整頁重載成 ?preset=<id>：preset、layout、歷史、
+     選取、gizmo 全部要換成另一份，重載能保證不會混到上一份殘留。多視窗之後重載會把
+     其他視窗一起關掉，所以改成換上一份全新的編輯狀態物件（newDoc）——整份換掉而不是
+     逐欄清空，是同一個保證（見 openPresetInPane）。
 
      「目前是哪一份」的真相是 state.sourcePresetId（載入來源），不是這個輸入框的
      文字——輸入框裡放的是使用者正在打的關鍵字。兩者混在一起的話，打到一半
@@ -48,10 +49,10 @@
   /* 伺服器版本對不上時要顯示的那一行；正常時是 null。 */
   var comboNotice = null;
 
-  /* 上一次打的關鍵字。存 sessionStorage 而不是記在變數裡，是因為選一份
-     preset 就會整頁重載（見上面的說明），而「搜尋 → 開一個來看 → 回去看
+  /* 上一次打的關鍵字。存 sessionStorage 而不是記在變數裡：當初選一份
+     preset 就會整頁重載，而「搜尋 → 開一個來看 → 回去看
      下一個符合的」正是最常見的用法——只記在記憶體的話，最需要它的那一次
-     剛好沒有。
+     剛好沒有。現在改成就地載入了，但重新整理頁面時仍然要留著。
 
      也刻意不是 localStorage：那是長期偏好（格線、背景色）的位置，而
      「剛才在找什麼」是當下的工作方式，跟 zoom／平移同一類。隔天打開編輯器
@@ -66,23 +67,6 @@
 
   function rememberComboQuery(q) {
     try { window.sessionStorage.setItem(SEARCH_STORAGE_KEY, q || ''); } catch (e) { }
-  }
-
-  /* 重新載入之後要讓使用者看到的一行狀態（例如「已另存為 xxx」）。
-     重載會把畫面上的訊息清掉，所以先存進 sessionStorage，開好之後顯示一次就刪掉。 */
-  var FLASH_STORAGE_KEY = 'vfx-editor.flashStatus';
-
-  function flashAfterReload(text) {
-    try { window.sessionStorage.setItem(FLASH_STORAGE_KEY, text); } catch (e) { }
-  }
-
-  function showFlashFromReload() {
-    var text = null;
-    try {
-      text = window.sessionStorage.getItem(FLASH_STORAGE_KEY);
-      window.sessionStorage.removeItem(FLASH_STORAGE_KEY);
-    } catch (e) { }
-    if (text) setSaveStatus(text, 'ok');
   }
 
   var combo = {
@@ -106,7 +90,9 @@
     return row ? row.text : id;
   }
 
-  function fillPresetPicker(currentId) {
+  /* 抓 repo 裡的 preset 清單（含用途標註）。「目前這份」不在這裡決定：清單晚一步到，
+     那時焦點視窗可能已經換人或換了一份，所以回來時才照焦點視窗現況同步（syncPresetIdentity）。 */
+  function fillPresetPicker() {
     var input = $('preset-search');
     if (!input) return;
     fetch(PRESET_LIST_URL).then(function (r) { return r.ok ? r.json() : null; })
@@ -158,8 +144,8 @@
             search: (id + ' ' + all.join(' ')).toLowerCase()
           };
         });
-        combo.currentId = currentId;
-        input.value = comboDisplayText();
+        /* 有清單才知道哪些視窗開的是 repo 裡的特效，網址這時才寫得完整 */
+        if (focusedPane) withPane(focusedPane, syncPresetIdentity);
         wirePresetCombo();
         /* 清單比頁面晚一步到：瀏覽特效已經開著的話要跟著補上 */
         if ($('preset-browser') && !$('preset-browser').hidden) renderPresetBrowser();
@@ -273,12 +259,29 @@
     closeCombo();
     $('preset-search').value = comboDisplayText();
     if (!id || id === currentId) return;
+    openPresetInFocus(id);
+  }
+
+  /* 選單、瀏覽特效共用的「開這一份」：開進焦點視窗。回傳 Promise<boolean>（true＝開好了）。
+
+     同一份特效只能開在一個視窗：兩邊各改各的，誰後存檔誰就把另一邊的修改蓋掉，
+     而且畫面上完全看不出來。已經開在別的視窗就直接把焦點切過去。 */
+  function openPresetInFocus(id) {
+    var holder = paneHolding(id);
+    if (holder) {
+      if (holder !== focusedPane) {
+        activatePane(holder, {});
+        /* 只是說明「為什麼跳到這一格」：離開這一格時就收掉（見 focusPane），不留在它的狀態列上 */
+        setSaveStatus('「' + id + '」已經開在' + paneLabel(holder) + '，已切換過來', 'note');
+        state.saveStatus.transient = true;
+      }
+      return Promise.resolve(true);
+    }
     /* 未存檔的內容換過去就沒了，先問一聲。 */
     if (isDirty() && !window.confirm('目前的修改尚未存檔，切換 Preset 會失去這些修改。要繼續嗎？')) {
-      return;
+      return Promise.resolve(false);
     }
-    leavingOnPurpose = true;
-    window.location.search = '?preset=' + encodeURIComponent(id);
+    return openPresetInPane(focusedPane, id);
   }
 
   /* ---------------- 瀏覽特效（縮圖） ----------------
@@ -389,36 +392,34 @@
 
   function openFromBrowser(id) {
     if (id === combo.currentId) { closePresetBrowser(); return; }
-    choosePreset(id);                  // 未存檔先問、整頁重載，都在那裡
+    /* 未存檔先問、已開在別的視窗就切過去，都在那裡。取消的話瀏覽特效留著，可以挑別份 */
+    openPresetInFocus(id).then(function (opened) { if (opened) closePresetBrowser(); });
   }
 
   /* 複製成新特效＝以那一份為底「另存新檔」，原本那份不動。
      不另寫一套複製檔案的邏輯：名稱檢查、根群組改名、存檔驗證只有 saveAsPreset 一份。
-     目前開著的就是那一份時直接另存（含尚未存檔的修改）；別份就先開啟它，
-     載入完成後自動接著另存（網址帶 saveAs=1，見 boot）。 */
+     已經開著那一份（焦點視窗或別的視窗）時就在那個視窗直接另存（含尚未存檔的修改）；
+     沒開著就先開進焦點視窗，載入完成後接著另存。 */
   function duplicatePreset(id) {
-    if (id === combo.currentId) {
+    var holder = paneHolding(id);
+    if (holder) {
       closePresetBrowser();
+      if (holder !== focusedPane) activatePane(holder, {});
       saveAsPreset();
       return;
     }
     if (isDirty() && !window.confirm('目前的修改尚未存檔，開啟另一份會失去這些修改。要繼續嗎？')) {
       return;
     }
-    leavingOnPurpose = true;
-    window.location.search = '?preset=' + encodeURIComponent(id) + '&saveAs=1';
-  }
-
-  function saveAsRequested() {
-    try { return new URLSearchParams(window.location.search).get('saveAs') === '1'; }
-    catch (e) { return false; }
-  }
-
-  /* 用完就把旗標從網址拿掉：留著的話，按重新整理會再跳一次「另存成新的 Preset」。 */
-  function clearSaveAsRequest(presetId) {
-    try {
-      window.history.replaceState(null, '', '?preset=' + encodeURIComponent(presetId));
-    } catch (e) { /* 不支援就算了，只影響重新整理後會不會再問一次 */ }
+    closePresetBrowser();
+    var pane = focusedPane;
+    openPresetInPane(pane, id).then(function (opened) {
+      if (!opened || pane.closed) return;
+      /* 載入途中焦點可能被點走了：另存的對象是剛開好的這一份，焦點要跟著回來，
+         否則存檔視窗問的名字會套到眼前另一份特效上 */
+      if (pane !== focusedPane) activatePane(pane, {});
+      saveAsPreset();
+    });
   }
 
   function wirePresetCombo() {
@@ -575,6 +576,18 @@
     }, 1400);
   }
 
+  /* ---------------- 編輯器狀態 ----------------
+
+     多視窗（2026-09-17）：預覽區可以切成最多四個視窗，每個視窗各開一份特效。
+     state 上的欄位分成兩種：
+
+       全部視窗共用    素材索引、剪貼簿、顯示排序、格線、背景色——直接寫在下面這個物件上
+       每個視窗各一份  preset、歷史、選取、預覽 runtime、鏡頭……（DOC_FIELDS／PANE_FIELDS）
+                       由 defineProperty 轉到「目前在操作的視窗」（ctx）身上
+
+     既有程式照舊寫 state.preset，拿到的就是那個視窗的 preset。平常 ctx 就是焦點視窗；
+     非同步回來的回呼（存檔、載入）與每個視窗自己的繪製迴圈會先用 withPane 換成
+     自己的視窗再執行，不會寫到當下剛好有焦點的那一個（見「視窗」段落）。 */
   var state = {
     index: null,
     semantics: null,
@@ -583,52 +596,126 @@
        篩選要逐筆問，現查太慢，所以攤成一張表。 */
     backgroundById: {},
     vocab: null,             // 篩選下拉的字彙，Asset Browser 與 Picker 共用
-    preset: null,
-    /* ---- Layer 面板的狀態 ----
-       selectedKeys 是「被選取的」，activeKey 是「有焦點的那一個」。
-       兩者必須分開：多選時 Inspector 只能顯示一個，顯示哪一個由 activeKey 決定。
-       key 的形式是 'layer:<id>' 或 'group:<id>'，讓兩種列可以放在同一個集合裡。 */
-    selectedKeys: [],
-    activeKey: null,
-    anchorKey: null,          // Shift 範圍選取的起點
     sortMode: 'creation',     // 'creation' | 'name'，純顯示排序
-    layout: null,             // vfx/layouts/<id>.json 的內容（Editor 專用）
-    collapsed: {},            // groupId -> true，只存 localStorage
-    clipboard: null,          // Editor 內部剪貼簿，不碰 OS clipboard
-    dragKeys: null,           // 拖曳中的 key 陣列
-    selectedLayerId: null,
-    playing: true,
-    handle: null,
-    runtime: null,
-    backend: null,
+    /* Editor 內部剪貼簿，不碰 OS clipboard。所有視窗共用：A 視窗複製、B 視窗貼上。 */
+    clipboard: null,
     resolver: null,
-    app: null,
-    stageRoot: null,
-    /* ---- 檢視狀態（「怎麼看」，不是 Preset 內容）----
-       和背景色同一類，所以一樣不進 preset、不進 Undo 歷史。
-       zoom 刻意不記進 localStorage：留著 320% 隔天再打開，第一眼會以為
-       素材被誰改大了；格線開關則是穩定的偏好，記得住比較省事。 */
-    zoom: 1,
-    /* 鏡頭平移量（畫布像素）。與 zoom 一樣是檢視狀態，不進 preset、不進歷史，
-       也刻意不記進 localStorage——隔天打開發現特效不在畫面中央會以為它壞了。 */
-    panX: 0,
-    panY: 0,
-    gridOn: true,
-    /* 預覽循環＝播完自動重播，只影響編輯時的畫面。
-       preset.loop 是出貨資料（決定遊戲裡這個特效會不會自己重複），
-       兩者共用一個勾選框的話，想重看一次爆點就會把它改成永不結束。 */
-    previewLoop: true,
-    /* 上次「與 repo 檔案一致」的 canonical 文字。
-       null 代表這份 preset 從來沒有存回 repo 過（例如從本機檔案匯入的），
-       此時一律視為 dirty——比起假裝乾淨，寧可讓人多按一次存檔。 */
-    savedText: null,
-    saving: false,
-    /* 這份內容是「以哪個 id 載進來的」。存檔目標是 preset.id，兩者不一致時
-       按下存檔會寫到另一個檔案上——開著 fire-tornado 卻改掉 black-hole.json。
-       所以不一致就直接擋住存檔，而不是只顯示一行警告。
-       之後做 Save As 時，就是由 Save As 明確地把這個值改成新 id。 */
-    sourcePresetId: null
+    gridOn: true
   };
+
+  /* 一份特效的編輯狀態。開另一份特效＝換上一個全新的物件，不是逐欄清空：
+     preset、layout、歷史、選取全部要換成另一份，整份換掉才能保證不會混到上一份的殘留。 */
+  function newDoc() {
+    return {
+      preset: null,
+      /* ---- Layer 面板的狀態 ----
+         selectedKeys 是「被選取的」，activeKey 是「有焦點的那一個」。
+         兩者必須分開：多選時 Inspector 只能顯示一個，顯示哪一個由 activeKey 決定。
+         key 的形式是 'layer:<id>' 或 'group:<id>'，讓兩種列可以放在同一個集合裡。 */
+      selectedKeys: [],
+      activeKey: null,
+      anchorKey: null,          // Shift 範圍選取的起點
+      layout: null,             // vfx/layouts/<id>.json 的內容（Editor 專用）
+      layoutRevision: 0,
+      collapsed: {},            // groupId -> true，只存 localStorage
+      dragKeys: null,           // 拖曳中的 key 陣列
+      selectedLayerId: null,
+      history: null,            // 這一份特效自己的 Undo／Redo（見 initHistory）
+      /* 上次「與 repo 檔案一致」的 canonical 文字。
+         null 代表這份 preset 從來沒有存回 repo 過（例如從本機檔案匯入的），
+         此時一律視為 dirty——比起假裝乾淨，寧可讓人多按一次存檔。 */
+      savedText: null,
+      savedLayoutText: undefined,   // undefined＝分組還沒載完（見 layoutDirty）
+      saving: false,
+      layoutSave: null,
+      /* 這份內容是「以哪個 id 載進來的」。存檔目標是 preset.id，兩者不一致時
+         按下存檔會寫到另一個檔案上——開著 fire-tornado 卻改掉 black-hole.json。
+         所以不一致就直接擋住存檔，而不是只顯示一行警告。
+         之後做 Save As 時，就是由 Save As 明確地把這個值改成新 id。 */
+      sourcePresetId: null,
+      /* 新視窗的空白特效：還沒存過檔，名字是暫時的。第一次按儲存要走另存新檔問名字。 */
+      isNew: false
+    };
+  }
+
+  var DOC_FIELDS = Object.keys(newDoc());
+  /* 視窗本身（不隨換一份特效而重來）：畫布、預覽 runtime、播放狀態、鏡頭、狀態列訊息。 */
+  var PANE_FIELDS = ['app', 'stageRoot', 'bgSolid', 'checker', 'syncCanvasSize', 'effectRoot',
+    'backend', 'runtime', 'handle', 'playing', 'previewLoop', 'zoom', 'panX', 'panY', 'pan',
+    'previewPending', 'saveStatus', 'validation', 'dirtyFlag'];
+
+  DOC_FIELDS.forEach(function (key) {
+    Object.defineProperty(state, key, {
+      enumerable: true,
+      get: function () { return ctxDoc ? ctxDoc[key] : undefined; },
+      set: function (v) { ctxDoc[key] = v; }
+    });
+  });
+  PANE_FIELDS.forEach(function (key) {
+    Object.defineProperty(state, key, {
+      enumerable: true,
+      get: function () { return ctx ? ctx[key] : undefined; },
+      set: function (v) { ctx[key] = v; }
+    });
+  });
+  /* 目前操作的不是畫面上的那一份：背景視窗（非同步回呼、逐幀繪製），或這個視窗在等回應的
+     這段時間已經換成別份特效了（staleDoc）。面板與工具列顯示的是焦點視窗的現況，
+     這時候不能把自己的內容畫上去——資料照寫，切換焦點時 renderPanels 會整組重畫。 */
+  Object.defineProperty(state, 'inBackground', {
+    get: function () { return !!ctx && (ctx !== focusedPane || ctxDoc !== ctx.doc); }
+  });
+  Object.defineProperty(state, 'staleDoc', {
+    get: function () { return !!ctx && ctxDoc !== ctx.doc; }
+  });
+
+  /* ---------------- 視窗：目前在操作哪一個 ----------------
+
+     panes        畫面上的視窗，照閱讀順序（最多 VFXPaneModel.MAX_PANES 個）
+     focusedPane  焦點視窗：Layers、Inspector、工具列顯示它，鍵盤與編輯作用在它身上
+     selectedPanes  Ctrl+點擊多選的視窗（一定含焦點視窗）：播放、暫停、Restart、預覽循環一起作用
+     ctx／ctxDoc  state 的 per-pane／per-doc 欄位此刻指向的視窗與那一份特效。
+                  平常就是焦點視窗與它開著的那一份。
+
+     非同步回呼一律用 bindPane 包起來：回應回來時焦點可能已經換到別的視窗，
+     這個視窗也可能換成了別份特效——包起來的回呼寫的仍是發出請求的那一份。 */
+  var panes = [];
+  var focusedPane = null;
+  var selectedPanes = [];
+  var ctx = null;
+  var ctxDoc = null;
+
+  function withPane(pane, fn, doc) {
+    var prevPane = ctx, prevDoc = ctxDoc;
+    /* 外層原本跟著視窗「現在開著的那一份」：裡面換了一份特效（beginDoc）的話，出來之後要跟到新的，
+       不能退回換掉之前的那一份——否則整個編輯器會一直對著已經丟掉的舊文件操作。
+       外層本來就綁著某一份（bindPane 帶進來的舊文件）時才照原樣還原。 */
+    var followDoc = !!prevPane && prevDoc === prevPane.doc;
+    ctx = pane;
+    ctxDoc = doc || (pane ? pane.doc : null);
+    try { return fn(); }
+    finally { ctx = prevPane; ctxDoc = followDoc ? prevPane.doc : prevDoc; }
+  }
+
+  function bindPane(fn) {
+    var pane = ctx, doc = ctxDoc;
+    return function () {
+      var self = this, args = arguments;
+      return withPane(pane, function () { return fn.apply(self, args); }, doc);
+    };
+  }
+
+  function paneLabel(pane) { return '視窗 ' + (panes.indexOf(pane) + 1); }
+
+  /* 開著這一份 repo 特效的視窗（沒有就 null）。從本機匯入的也算：兩邊存檔寫的是同一個檔。
+     空白特效的名字是暫時的，不算。 */
+  function paneHolding(id) {
+    for (var i = 0; i < panes.length; i++) {
+      var d = panes[i].doc;
+      if (!d.preset || d.isNew) continue;
+      if (d.sourcePresetId === id || (d.sourcePresetId === null && d.preset.id === id)) return panes[i];
+    }
+    return null;
+  }
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -1092,12 +1179,16 @@
         換 DPI 一定壞。 */
 
   var gizmo = {
-    overlay: null,          // PIXI.Container，掛在 stageRoot 之後
-    gfx: null,              // PIXI.Graphics
-    dirty: true,
-    drag: null,             // { mode, handle, snapshot, startPoint, pivot, ... }
-    assetSize: null         // assetId → { width, height }
+    assetSize: null         // assetId → { width, height }（全部視窗共用）
   };
+  /* 框的圖層、畫筆、重畫旗標與拖曳狀態每個視窗各一份（newPane 的 gizmo），
+     這裡轉到目前操作的視窗上，程式照舊寫 gizmo.drag。 */
+  ['overlay', 'gfx', 'dirty', 'drag'].forEach(function (key) {
+    Object.defineProperty(gizmo, key, {
+      get: function () { return ctx ? ctx.gizmo[key] : null; },
+      set: function (v) { if (ctx) ctx.gizmo[key] = v; }
+    });
+  });
 
   /* 素材尺寸取自 asset-index 的事實層。不問 renderer：貼圖可能還沒載完，
      而且那會讓框的大小取決於載入時序。 */
@@ -1285,6 +1376,10 @@
   function drawGizmo() {
     if (!gizmo.gfx) return;
     var c = gizmo.overlay;
+    /* 只有焦點視窗畫框：其他視窗是拿來看的，框留在那裡會讓人以為拖下去改的是它 */
+    var shown = !state.inBackground;
+    if (c.visible !== shown) { c.visible = shown; gizmo.dirty = true; }
+    if (!shown) return;
     /* 框畫的是 effect-local 座標，所以這一層要與 stageRoot 保持同一個變換：
        畫布尺寸變了要跟著移動，縮放變了要跟著縮。少同步 scale 的話，
        放大之後框會停在 100% 的大小，看起來像框跑掉了。
@@ -1441,7 +1536,8 @@
   }
 
   function onPreviewPointerMove(e) {
-    if (pan) { updatePan(e); e.preventDefault(); return; }
+    if (!ctx) return;
+    if (state.pan) { updatePan(e); e.preventDefault(); return; }
     if (!gizmo.drag) {
       updateHoverCursor(e);
       return;
@@ -1513,7 +1609,8 @@
   }
 
   function onPreviewPointerUp() {
-    if (pan) { endPan(); return; }
+    if (!ctx) return;
+    if (state.pan) { endPan(); return; }
     if (!gizmo.drag) return;
     var moved = gizmo.drag.moved;
     var collapseTo = gizmo.drag.collapseTo;
@@ -1573,7 +1670,7 @@
      markGizmoDirty → 框跟著移動。 */
   function syncTransformInputs() {
     var host = $('inspector');
-    if (!host) return;
+    if (!host || state.inBackground) return;
     /* 看的是 Inspector 的全部目標，不只是被拖的那一層：多選時框拖的是作用中那一層，
        其餘選到的圖層沒動，拖完之後那一格就不再是共同值，要跟著變成「多個值」。 */
     var targets = inspectorTargets();
@@ -1588,13 +1685,19 @@
     if (rotEl) showCommon(rotEl, MX.commonValue(targets, function (l) { return l.rotation; }), toDegrees);
   }
 
+  /* 每個視窗的畫布各接一次。按下去先交給 onPanePointerDown 換焦點，再走原本的選取與拖曳。
+     window 上的 pointermove／pointerup 整頁只接一次（見 boot）：拖曳一定是在焦點視窗
+     按下去的，所以它們作用在焦點視窗上就對了。 */
   function wireGizmo() {
     ensureOverlay();
-    buildAssetSizeMap();
-    var canvas = state.app.canvas;
-    canvas.addEventListener('pointerdown', onPreviewPointerDown);
-    window.addEventListener('pointermove', onPreviewPointerMove);
-    window.addEventListener('pointerup', onPreviewPointerUp);
+    state.app.canvas.addEventListener('pointerdown', onPanePointerDown);
+  }
+
+  /* 畫布上按下去。焦點已經在 .pane 的捕獲階段換好（見 createPane），這裡的 state 就是這個視窗。
+     Ctrl+點擊只管多選（加入或移出視窗），不動圖層——那一下是在挑視窗，不是在編輯。 */
+  function onPanePointerDown(e) {
+    if (e.ctrlKey || e.metaKey) { e.preventDefault(); return; }
+    onPreviewPointerDown(e);
   }
 
   /* ---------------- 座標格線與縮放 ----------------
@@ -1612,7 +1715,14 @@
         （與 drawGizmo 同一條理由）。這裡比對「上次是用什麼條件畫的」，
         條件沒變就整個跳過——用欄位逐一比較而不是組字串，避免每幀產生垃圾。 */
 
-  var grid = { gfx: null, last: null };
+  /* 畫筆與「上次用什麼條件畫的」每個視窗各一份（newPane 的 grid） */
+  var grid = {};
+  ['gfx', 'last'].forEach(function (key) {
+    Object.defineProperty(grid, key, {
+      get: function () { return ctx ? ctx.grid[key] : null; },
+      set: function (v) { ctx.grid[key] = v; }
+    });
+  });
 
   function drawGrid() {
     var g = grid.gfx;
@@ -1668,8 +1778,6 @@
      用中鍵或右鍵拖曳，把左鍵完整留給 Gizmo——左鍵在預覽區已經是「選取與變形」，
      再兼一個平移就必須靠修飾鍵區分，而修飾鍵拖到一半放開就會變成在拖圖層。 */
 
-  var pan = null;          // { startClientX, startClientY, startPanX, startPanY }
-
   function recentreStage() {
     if (!state.app || !state.stageRoot) return;
     state.stageRoot.x = state.app.renderer.width / 2 + state.panX;
@@ -1683,8 +1791,9 @@
     recentreStage();
   }
 
+  /* 拖曳平移中的狀態（state.pan）：{ startClientX, startClientY, startPanX, startPanY }，每個視窗各一份 */
   function beginPan(e) {
-    pan = {
+    state.pan = {
       startClientX: e.clientX, startClientY: e.clientY,
       startPanX: state.panX, startPanY: state.panY
     };
@@ -1694,6 +1803,7 @@
   function updatePan(e) {
     /* client 座標換算成畫布像素：畫布可能被 CSS 縮放，也可能不是 1:1 DPR。
        平移量本身是螢幕空間的，所以不必再除以 zoom——畫面跟著滑鼠 1:1 走。 */
+    var pan = state.pan;
     var a = clientToPreview(pan.startClientX, pan.startClientY);
     var b = clientToPreview(e.clientX, e.clientY);
     state.panX = pan.startPanX + (b.x - a.x);
@@ -1702,10 +1812,11 @@
   }
 
   function endPan() {
-    pan = null;
+    state.pan = null;
     setPreviewCursor(null);
   }
 
+  /* 縮放與平移是每個視窗各自的鏡頭：兩份大小差很多的特效並排時，各看各的倍率。 */
   function applyZoom(z) {
     state.zoom = VFXViewModel.clampZoom(z);
     /* 縮放中心固定在特效原點（畫布正中央）。不做「以游標為中心」是因為那必須
@@ -1728,6 +1839,7 @@
   }
 
   function updateViewReadout() {
+    if (!ctx || state.inBackground) return;   // 讀數是焦點視窗的鏡頭
     var btn = $('zoom-reset');
     if (btn) btn.textContent = '縮放 ' + Math.round(state.zoom * 100) + '%';
     var note = $('grid-scale');
@@ -1740,20 +1852,28 @@
       : '';
   }
 
-  function wirePreviewView() {
-    var saved = readPref('grid', GRID_STORAGE_KEY);
-    state.gridOn = saved === undefined ? true : saved === '1';
-
+  /* 每個視窗的畫布各接一次。 */
+  function wirePreviewView(pane) {
     /* passive:false 才 preventDefault 得了。少了它，滾輪會在縮放的同時
-       把整頁一起捲走——而這一頁本來就會因為工具列換行而出現捲軸。 */
+       把整頁一起捲走——而這一頁本來就會因為工具列換行而出現捲軸。
+       縮放的是滑鼠底下那個視窗，不必先點它（不換焦點，面板不會跟著跳）。 */
     state.app.canvas.addEventListener('wheel', function (e) {
       e.preventDefault();
-      applyZoom(VFXViewModel.zoomByWheel(state.zoom, e.deltaY, e.deltaMode));
+      withPane(pane, function () {
+        applyZoom(VFXViewModel.zoomByWheel(state.zoom, e.deltaY, e.deltaMode));
+      });
     }, { passive: false });
 
     /* 右鍵要能拖曳平移，就不能讓瀏覽器的內容功能表跳出來。只擋畫布這一塊——
        其他地方（素材清單、輸入框）的右鍵仍然是正常的。 */
     state.app.canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
+  /* 格線開關與「回到預設視角」：預覽區上方各一個，整頁接一次。
+     格線是全部視窗共用的偏好；回到預設視角作用在焦點視窗。 */
+  function wireViewControls() {
+    var saved = readPref('grid', GRID_STORAGE_KEY);
+    state.gridOn = saved === undefined ? true : saved === '1';
 
     var chk = $('chk-grid');
     if (chk) {
@@ -1769,14 +1889,13 @@
 
   /* ---------------- Undo / Redo ----------------
 
-     整個 Editor 只有這一份歷史。快照記的是 authoring 資料，
+     一份特效只有一份歷史（state.history，跟著那份特效走）。多視窗時每個視窗各一份：
+     在 B 視窗按 Ctrl+Z 不該把 A 視窗剛才的修改復原。快照記的是 authoring 資料，
      不記播放狀態、搜尋字串、收合狀態、hover、粒子、貼圖快取那些。
 
      快照用 canonical 文字：比較是否相同就是字串比較（免費），
      而且與 dirty 判斷用的是同一種表示法，「Undo 回到存檔時的狀態」
      會自動變回乾淨，不需要另外處理。 */
-
-  var history = null;
 
   function historySnapshot() {
     return {
@@ -1824,7 +1943,7 @@
   }
 
   function initHistory() {
-    history = VFXHistory.create({
+    state.history = VFXHistory.create({
       capture: historySnapshot,
       apply: historyApply,
       equal: snapshotEqual,
@@ -1835,7 +1954,8 @@
 
   function refreshHistoryButtons() {
     var u = $('btn-undo'), r = $('btn-redo');
-    if (!u || !r || !history) return;
+    var history = state.history;
+    if (!u || !r || !history || state.inBackground) return;
     u.disabled = !history.canUndo();
     r.disabled = !history.canRedo();
     u.title = history.canUndo() ? ('復原：' + history.undoLabel() + '（Ctrl+Z）') : '沒有可復原的動作';
@@ -1845,12 +1965,13 @@
   /* 給呼叫端用的三個入口。history 還沒建好時（啟動途中）直接執行，
      不要因為歷史沒準備好就讓編輯功能壞掉。 */
   function edit(label, fn) {
+    var history = state.history;
     if (!history) { fn(); return; }
     history.execute(label, fn);
   }
-  function editBegin(label) { if (history) history.begin(label); }
-  function editCommit() { if (history) history.commit(); }
-  function editCancel() { if (history) history.cancel(); }
+  function editBegin(label) { if (state.history) state.history.begin(label); }
+  function editCommit() { if (state.history) state.history.commit(); }
+  function editCancel() { if (state.history) state.history.cancel(); }
 
   /* ---------------- Layer list ---------------- */
 
@@ -2033,6 +2154,7 @@
   /* ---------------- 畫面 ---------------- */
 
   function renderLayerList() {
+    if (state.inBackground) return;           // 面板顯示的是焦點視窗那一份
     var host = $("layer-list");
     host.textContent = "";
     /* 有任何父子關係時，每一列都留一格收合鈕的位置，同一層的勾選框才對得齊；
@@ -2466,8 +2588,8 @@
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: VFXLayoutSchema.serialiseLayout(state.layout)
-    }).then(function (r) {
-      return r.json().then(function (body) {
+    }).then(bindPane(function (r) {
+      return r.json().then(bindPane(function (body) {
         if (!r.ok || !body.ok) throw new Error(body.error || ("HTTP " + r.status));
         /* 只有在送出之後沒有再改過時，才把基準線推到這次存的內容上。
            中途又改了的話，那些改動仍然算未存檔。 */
@@ -2476,8 +2598,8 @@
         }
         refreshDirty();
         return body;
-      });
-    });
+      }));
+    }));
   }
 
   /* ---------------- 收合狀態（只存 localStorage） ---------------- */
@@ -2512,10 +2634,12 @@
   }
 
   function doUndo() {
+    var history = state.history;
     if (!history || !history.canUndo()) return;
     history.undo();
   }
   function doRedo() {
+    var history = state.history;
     if (!history || !history.canRedo()) return;
     history.redo();
   }
@@ -2995,6 +3119,7 @@
   }
 
   function renderInspector() {
+    if (state.inBackground) return;           // Inspector 顯示的是焦點視窗那一份
     var host = $('inspector');
     /* 舊的曲線元件在 window 上掛了 mousemove／mouseup，不收掉會越積越多，
        而且已被移除的 canvas 仍會在每次滑鼠移動時做命中測試。 */
@@ -3702,31 +3827,46 @@
        這時候把它顯示成乾淨反而最危險。 */
     refreshDirty();
     markGizmoDirty();                          // Inspector 改數值 → 框跟著移動
+    /* 還沒有任何圖層（新視窗的空白特效，或圖層刪光了）：沒有東西可以播，
+       與其拿 Core 的「layers 不得為空」嚇人，不如說下一步能做什麼。存檔仍然會擋。 */
+    if (state.preset && !state.preset.layers.length) {
+      setValidation('hint', '還沒有任何圖層：用上方的搜尋框或「瀏覽特效」載入一份特效，' +
+        '或按左邊的「＋ 新增」開始做。（沒有圖層的特效存不了檔）');
+      if (state.runtime && !state.staleDoc) { state.runtime.stopAll(); state.handle = null; }
+      return;
+    }
     var result = VFXCore.validatePreset(state.preset);
-    var box = $('validation');
     if (!result.ok) {
-      box.className = 'hint err';
-      box.textContent = '✗ ' + result.errors.length + ' 個問題：\n- ' + result.errors.join('\n- ');
+      setValidation('hint err', '✗ ' + result.errors.length + ' 個問題：\n- ' + result.errors.join('\n- '));
       return;                                    // 不合法就不重建預覽，也不 silent fallback
     }
-    box.className = 'hint ok';
-    box.textContent = '✓ Preset 合法（schemaVersion ' + state.preset.schemaVersion + '）';
+    setValidation('hint ok', '✓ Preset 合法（schemaVersion ' + state.preset.schemaVersion + '）');
     rebuildPreview();
+  }
+
+  /* 右側「驗證」面板。每個視窗各記一份，切換焦點時換成那個視窗自己的（見 renderPanels）。 */
+  function setValidation(cls, text) {
+    state.validation = { cls: cls, text: text };
+    if (state.inBackground) return;
+    var box = $('validation');
+    if (!box) return;
+    box.className = cls;
+    box.textContent = text;
   }
 
   /* 改任何參數都要重建預覽（註冊過的 preset 是凍結深拷貝，不能就地改）。
      重建會重播，所以先把播放頭記下來再帶回去——否則調一條 50% 位置的曲線時，
      畫面永遠停在第 0 秒，等於看不到自己改的那一段。 */
   function rebuildPreview() {
-    if (!state.runtime) return;
+    /* staleDoc：這個視窗已經換成別份特效，回呼晚到的那一份不能把自己註冊進預覽 */
+    if (!state.runtime || state.staleDoc) return;
     var resumeAt = state.handle === null || state.handle === undefined
       ? 0 : (state.runtime.timeOf(state.handle) || 0);
     state.runtime.stopAll();
     try {
       state.runtime.registerPreset(state.preset);
     } catch (e) {
-      $('validation').className = 'hint err';
-      $('validation').textContent = String(e.message || e);
+      setValidation('hint err', String(e.message || e));
       return;
     }
     playPreview(resumeAt);
@@ -3763,57 +3903,85 @@
   }
 
   var PREVIEW_LOOP_KEY = 'vfx-editor.previewLoop';
+  /* 新開的視窗要不要預覽循環：沿用上一次在工具列勾的值 */
+  var previewLoopDefault = true;
 
+  /* 預覽循環是每個視窗各自的：勾選框作用在多選的全部視窗（沒有多選就是焦點視窗）。 */
   function setPreviewLoop(on) {
-    state.previewLoop = !!on;
-    var chk = $('chk-preview-loop');
-    if (chk) chk.checked = state.previewLoop;
-    writePref('previewLoop', state.previewLoop ? '1' : '0');
+    selectedPanes.forEach(function (p) { p.previewLoop = !!on; });
+    previewLoopDefault = !!on;
+    syncPreviewLoop();
+    writePref('previewLoop', on ? '1' : '0');
   }
 
   function loadPreviewLoopPreference() {
     var saved = readPref('previewLoop', PREVIEW_LOOP_KEY);
     /* 沒存過就是開著：一次性的特效播完就消失，預設關閉的話新開一份 preset
        只會看到一瞬間的畫面，然後對著空白背景調參數。 */
-    state.previewLoop = saved === undefined ? true : saved === '1';
+    previewLoopDefault = saved === undefined ? true : saved === '1';
+  }
+
+  /* 多選的視窗循環設定不一致時打一個「－」（indeterminate），點下去全部設成同一個值。 */
+  function syncPreviewLoop() {
     var chk = $('chk-preview-loop');
-    if (chk) chk.checked = state.previewLoop;
+    if (!chk) return;
+    var s = VFXPaneModel.playbackState(selectedPanes);
+    chk.checked = s.loop;
+    chk.indeterminate = s.loopMixed;
   }
 
   /* 拖曳曲線時每次 mousemove 都要更新預覽，但一幀之內做兩次沒有意義
      （畫面只畫一次），所以用 rAF 合併。註冊素材走的是 resolver 的雜湊查表，
-     貼圖由後端依 URL 快取，重建不會重新載圖。 */
-  var previewPending = false;
+     貼圖由後端依 URL 快取，重建不會重新載圖。旗標與回呼都跟著發出的那個視窗。 */
   function previewSoon() {
-    if (previewPending) return;
-    previewPending = true;
-    requestAnimationFrame(function () {
-      previewPending = false;
+    if (state.previewPending) return;
+    state.previewPending = true;
+    requestAnimationFrame(bindPane(function () {
+      state.previewPending = false;
       refreshDirty();
       var result = VFXCore.validatePreset(state.preset);
       if (!result.ok) return;                    // 中途不合法就先不重建，放開滑鼠時會報錯
       rebuildPreview();
-    });
+    }));
   }
 
-  function restart() { rebuildPreview(); }
+  /* ⟲ Restart：從頭播，多選的視窗一起（並排比對兩份特效的節奏時，同一刻從 0 開始）。
+     rebuildPreview 會接著目前的播放頭重建——調參數時畫面才不會跳回開頭；Restart 要的剛好相反，
+     所以先把播放頭拿掉。2026-09-02 加入續播之後這顆一直只是原地重建，
+     做多視窗同步重播時才發現（2026-09-17）。 */
+  function restart() {
+    selectedPanes.forEach(function (p) {
+      withPane(p, function () {
+        if (!state.runtime) return;
+        state.runtime.stopAll();
+        state.handle = null;
+        onPresetChanged();
+      });
+    });
+  }
 
   /* ---------------- 播放／暫停 ----------------
 
      一顆按鈕的兩個狀態，不是兩個動作。兩顆並排時，「現在是在播還是停著」
      只能靠猜哪一顆被按下去；一顆按鈕的標籤直接就是答案（顯示的是**按下去
-     會發生什麼**：正在播就顯示「暫停」）。 */
+     會發生什麼**：正在播就顯示「暫停」）。
+
+     作用在多選的全部視窗（沒有多選就是焦點視窗）。多選裡有的在播、有的停著時，
+     只要有一個在播就顯示「暫停」：按一下先讓大家一起停，再按一下一起播。 */
   function setPlaying(on) {
-    state.playing = !!on;
+    selectedPanes.forEach(function (p) { p.playing = !!on; });
     syncPlayPause();
+    renderPaneHeads();
   }
 
   function syncPlayPause() {
     var btn = $('btn-playpause');
     if (!btn) return;
-    btn.textContent = state.playing ? '⏸ 暫停' : '▶ 播放';
-    btn.classList.toggle('paused', !state.playing);
-    btn.title = state.playing ? '暫停預覽' : '繼續播放預覽';
+    var playing = VFXPaneModel.playbackState(selectedPanes).playing;
+    btn.textContent = playing ? '⏸ 暫停' : '▶ 播放';
+    btn.classList.toggle('paused', !playing);
+    btn.title = (playing ? '暫停預覽' : '繼續播放預覽') +
+      (selectedPanes.length > 1 ? '（選取的 ' + selectedPanes.length + ' 個視窗一起）' : '');
   }
 
   /* ---------------- 關閉編輯器 ----------------
@@ -3830,8 +3998,10 @@
 
   function quitEditor() {
     if (quitting) return;
-    var msg = isDirty()
-      ? '目前的修改尚未存檔，關閉之後就沒了。仍要關閉編輯器與伺服器嗎？'
+    var dirty = dirtyPanes();
+    var msg = dirty.length
+      ? (panes.length > 1 ? dirty.map(paneLabel).join('、') + ' ' : '') +
+        '目前的修改尚未存檔，關閉之後就沒了。仍要關閉編輯器與伺服器嗎？'
       : '關閉編輯器並停止伺服器？其他開著的編輯器分頁也會失去連線。';
     if (!window.confirm(msg)) return;
     quitting = true;
@@ -3862,8 +4032,10 @@
 
   function finishQuit() {
     /* 畫面停下來：蓋一張說明之後還讓 Pixi 繼續跑，只是白燒 CPU。 */
-    state.playing = false;
-    if (state.app && state.app.ticker) state.app.ticker.stop();
+    panes.forEach(function (p) {
+      p.playing = false;
+      if (p.app && p.app.ticker) p.app.ticker.stop();
+    });
 
     /* window.close() 只關得掉「由腳本開啟的」視窗，而編輯器是啟動器用
        start "" <url> 開的一般分頁，所以這一行多半會被瀏覽器擋下。擋下來也
@@ -3891,12 +4063,17 @@
      alpha 也一起相加，而黑底素材的 RGB 是 0、alpha 是 1，結果就是
      「顏色沒加上去、透明度卻加滿」→ 合成到頁面上變成一塊不透明黑方塊。
      畫布不透明時目標 alpha 已經是 1，就不會有這個假象。 */
+  /* 背景色是全部視窗共用的檢視偏好：同一片背景前並排比對才公平。 */
   function setBackground(value) {
-    if (!state.app) return;
-    var checker = value === 'checker';
-    state.checker.visible = checker;
-    state.bgSolid.visible = !checker;
-    if (!checker) state.bgSolid.tint = parseInt(value.slice(1), 16);
+    panes.forEach(function (p) {
+      withPane(p, function () {
+        if (!state.app) return;
+        var checker = value === 'checker';
+        state.checker.visible = checker;
+        state.bgSolid.visible = !checker;
+        if (!checker) state.bgSolid.tint = parseInt(value.slice(1), 16);
+      });
+    });
   }
 
   /* ---------------- 背景色列 ----------------
@@ -3997,25 +4174,38 @@
   }
 
   function isDirty() {
+    /* 新視窗的空白特效在加入第一層之前不算修改：什麼都沒做就關掉它，不必問 */
+    if (state.isNew && !state.preset.layers.length) return false;
     if (layoutDirty()) return true;
     if (state.savedText === null) return true;
     return currentPresetText() !== state.savedText;
   }
 
-  function refreshDirty() {
-    var el = $('dirty-flag');
-    if (!el) return;
-    var dirty = isDirty();
-    el.textContent = dirty ? '● 未存檔' : '';
-    el.className = dirty ? 'dirty on' : 'dirty';
-    /* 一旦又動過，上一次的「已存檔」就不再成立，讓它繼續掛在旁邊會變成
-       「已存檔」與「未存檔」同時亮著。失敗訊息則留著——那是還沒解決的問題。 */
-    var st = $('save-status');
-    if (dirty && st && st.className.indexOf('ok') >= 0) setSaveStatus('', '');
+  /* 有未存檔修改的視窗（關閉編輯器、重新整理時要問） */
+  function dirtyPanes() {
+    return panes.filter(function (p) { return withPane(p, isDirty); });
   }
 
-  /* title：滑鼠移上去看的完整說明。每一則都重設——換成下一則時，上一則的說明不能還掛著。 */
+  function refreshDirty() {
+    var dirty = isDirty();
+    /* 一旦又動過，上一次的「已存檔」就不再成立，讓它繼續掛在旁邊會變成
+       「已存檔」與「未存檔」同時亮著。失敗訊息則留著——那是還沒解決的問題。 */
+    var st = state.saveStatus;
+    if (dirty && st && st.cls === 'ok') setSaveStatus('', '');
+    state.dirtyFlag = dirty;                  // 視窗標籤上的 ●
+    renderPaneHeads();
+    if (state.inBackground) return;
+    var el = $('dirty-flag');
+    if (!el) return;
+    el.textContent = dirty ? '● 未存檔' : '';
+    el.className = dirty ? 'dirty on' : 'dirty';
+  }
+
+  /* title：滑鼠移上去看的完整說明。每一則都重設——換成下一則時，上一則的說明不能還掛著。
+     每個視窗各記一份，切換焦點時工具列換成那個視窗自己的（見 renderPanels）。 */
   function setSaveStatus(text, cls, title) {
+    state.saveStatus = { text: text, cls: cls || '', title: title || '' };
+    if (state.inBackground) return;
     var el = $('save-status');
     if (!el) return;
     el.textContent = text;
@@ -4056,12 +4246,13 @@
      四個字而看不到任何原因——這正是這個函式被拆成兩處的原因。 */
   function showSaveError(title, list) {
     var text = title + (list && list.length ? '：\n- ' + list.join('\n- ') : '');
-    $('validation').className = 'hint err';
-    $('validation').textContent = text;
+    setValidation('hint err', text);          // 右側驗證面板（$('validation')）留下紀錄
     var banner = $('save-error');
     var body = $('save-error-text');
     if (banner && body) {
-      body.textContent = text;
+      /* 橫幅是「剛才那一下失敗了」的當場回饋，背景視窗的也要講（存檔回應晚到時焦點
+         可能已經換走）——標出是哪個視窗，免得看起來像是眼前這一份出錯 */
+      body.textContent = (state.inBackground && panes.length > 1 ? paneLabel(ctx) + '：' : '') + text;
       banner.hidden = false;
       banner.scrollTop = 0;                   // 上一則捲到一半時，新的一則要從頭看
     }
@@ -4083,6 +4274,9 @@
      指向不存在檔案的編輯器上，下一次按存檔就真的寫出那個檔。 */
   function savePreset() {
     if (state.saving) return Promise.resolve(false);   // 連按兩下不該送出兩次 PUT
+    /* 新視窗的空白特效還沒有名字（new-effect 是暫時的）：第一次存檔要問名字，
+       與另存新檔走同一條路——撞名檢查、根群組改名都在那裡 */
+    if (state.isNew) { saveAsPreset(); return Promise.resolve(false); }
     clearSaveError();                         // 這一次的結果從乾淨的畫面開始講
     var targetProblem = saveTargetProblem();
     if (targetProblem) {
@@ -4104,17 +4298,17 @@
     }
 
     state.saving = true;
-    $('btn-save').disabled = true;
+    syncSaveButton();
     setSaveStatus('存檔中…', '');
     var ok = false;
     return fetch(presetUrl(state.preset.id), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: text
-    }).then(function (r) {
+    }).then(bindPane(function (r) {
       return r.json().catch(function () {
         throw new Error('伺服器回應不是 JSON（HTTP ' + r.status + '）');
-      }).then(function (body) {
+      }).then(bindPane(function (body) {
         if (!r.ok || !body.ok) {
           /* 一行一個原因，項目符號留給 showSaveError 加。這裡先加一次、
              那邊再加一次的話，problems 會變成「- - 某某」。 */
@@ -4128,25 +4322,24 @@
           throw err;
         }
         return body;
-      });
-    }).then(function (body) {
+      }));
+    })).then(bindPane(function (body) {
       /* 成功：只更新「已存檔基準」。不重新載入、不動 selection、不動 preset.id。 */
       ok = true;
       state.savedText = text;
       setSaveStatus('已存檔 · ' + body.bytes + ' bytes', 'ok');
       /* 分組另存一個檔。它失敗不影響 Preset 已經存好這件事——
          layout 是可有可無的附加資料，見 layout-schema.js 的自癒設計。 */
-      /* 留下這個 Promise：「另存新檔」成功後會重新載入頁面，得等分組真的寫完，
-         否則重載會把還在路上的請求砍掉，新特效就沒有群組。 */
-      state.layoutSave = saveLayout().then(function () { return true; }, function (e) {
+      /* 留下這個 Promise：「另存新檔」成功後會用新名字重新開啟，得等分組真的寫完，
+         否則重開時讀到的是還沒寫進去的分組檔，新特效就沒有群組。 */
+      state.layoutSave = saveLayout().then(function () { return true; }, bindPane(function (e) {
         setSaveStatus('Preset 已存檔，但分組沒存成功', 'err');
         showSaveError('分組儲存失敗（Preset 本身已存好）', [String(e && e.message || e)]);
         return false;
-      });
-      $('validation').className = 'hint ok';
-      $('validation').textContent = '✓ 已寫入 vfx/presets/' + body.presetId + '.json';
+      }));
+      setValidation('hint ok', '✓ 已寫入 vfx/presets/' + body.presetId + '.json');
       refreshDirty();
-    }).catch(function (e) {
+    })).catch(bindPane(function (e) {
       /* 失敗：Editor 狀態原封不動，dirty 維持 true，錯誤照伺服器講的原因顯示。
          標題不能寫死。以前一律說「repo 檔案未變動」，但素材同步失敗那條路
          檔案其實已經寫進去了，兩句話直接互相打臉，看到的人會以為要重做一次。
@@ -4158,11 +4351,18 @@
         : '存檔失敗（repo 檔案未變動）',
         String(e && e.message || e).split('\n'));
       refreshDirty();
-    }).then(function () {
+    })).then(bindPane(function () {
       state.saving = false;
-      $('btn-save').disabled = false;
+      syncSaveButton();
       return ok;
-    });
+    }));
+  }
+
+  /* 存檔中停用「儲存到 repo」。按鈕只有一顆，顯示的是焦點視窗的狀態。 */
+  function syncSaveButton() {
+    if (state.inBackground) return;
+    var btn = $('btn-save');
+    if (btn) btn.disabled = !!state.saving;
   }
 
   /* ---------------- 另存新檔 ----------------
@@ -4229,9 +4429,11 @@
     if (state.saving || saveAsAsking || !state.preset) return;
     clearSaveError();
 
-    var current = state.sourcePresetId || state.preset.id || '';
+    /* 空白特效的暫時名字不拿來當建議名稱的底：new-effect-copy 沒有意義 */
+    var current = state.isNew ? '' : (state.sourcePresetId || state.preset.id || '');
     saveAsAsking = true;
-    askSaveAsName(current).then(function (answer) {
+    /* 問名字的視窗可能開很久，這段時間焦點可能換到別的視窗：之後的每一步都綁在按下另存的那一份上 */
+    askSaveAsName(current).then(bindPane(function (answer) {
       saveAsAsking = false;
       if (!answer) return;                              // 使用者取消
       if (answer.problem) {
@@ -4259,7 +4461,7 @@
       return fetch(PRESET_LIST_URL).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
-      }).then(function (data) {
+      }).then(bindPane(function (data) {
         var ids = (data && data.presets) || [];
         if (ids.indexOf(newId) >= 0) {
           showSaveError('無法另存新檔',
@@ -4269,14 +4471,14 @@
           return;
         }
         return commitSaveAs(newId);
-      }).catch(function (e) {
+      })).catch(bindPane(function (e) {
         /* 清單抓不到就不存：沒有那份清單就無法保證不會蓋到別人的檔案，
            而「不會改到舊特效」正是這個功能存在的理由。 */
         showSaveError('無法另存新檔（拿不到現有的 Preset 清單，無法確認會不會覆寫）',
           [String(e && e.message || e)]);
         setSaveStatus('另存失敗', 'err');
-      });
-    });
+      }));
+    }));
   }
 
   /* 根群組的 id 與名稱要跟著換成新的 preset id（VFX_AGENT_WORKFLOW §9.11）。
@@ -4309,10 +4511,12 @@
       source: state.sourcePresetId,
       savedText: state.savedText,
       savedLayoutText: state.savedLayoutText,
-      layoutPresetId: state.layout ? state.layout.presetId : null
+      layoutPresetId: state.layout ? state.layout.presetId : null,
+      isNew: state.isNew
     };
     state.preset.id = newId;
     state.sourcePresetId = newId;
+    state.isNew = false;                   // 有名字了；否則 savePreset 又會轉回來問名字
     /* 預覽也要換成新名字：Core 裡註冊的還是舊 id。不先註冊的話，這一輪播完、預覽循環
        用新 id 重播時 Core 會回「未註冊的 preset」，每一幀都丟錯，畫面就停了
        （2026-09-17 使用者回報）。存檔請求還在路上的這段時間也會碰到，所以送出之前就註冊。 */
@@ -4324,12 +4528,13 @@
        成功的話 savePreset 會把它設成剛寫出去的文字。 */
     state.savedText = null;
 
-    return savePreset().then(function (ok) {
+    return savePreset().then(bindPane(function (ok) {
       if (!ok) {
         state.preset.id = prev.id;
         state.sourcePresetId = prev.source;
         state.savedText = prev.savedText;
         state.savedLayoutText = prev.savedLayoutText;
+        state.isNew = prev.isNew;
         if (state.layout) {
           state.layout.presetId = prev.layoutPresetId;
           if (prevGroup) {
@@ -4345,28 +4550,26 @@
       /* 選單的篩選字串存在 sessionStorage，重新整理也會留著——換成新名字，
          否則一打開選單還是用舊名字在篩（2026-09-17 使用者要求）。 */
       rememberComboQuery(newId);
-      return Promise.resolve(state.layoutSave).then(function (layoutOk) {
+      /* 清單多了一份：重抓之後網址與下拉的「目前這份」才對得上新名字 */
+      fillPresetPicker();
+      return Promise.resolve(state.layoutSave).then(bindPane(function (layoutOk) {
         if (layoutOk === false) {
-          /* 分組沒存成功：不重新載入——重載會把還沒存進去的分組丟掉，錯誤原因也會
+          /* 分組沒存成功：不重新開啟——重開會把還沒存進去的分組丟掉，錯誤原因也會
              跟著消失。留在原地（預覽已經用新名字註冊過，照常播放），讓使用者看得到
              原因、再按一次存檔。 */
-          try {
-            window.history.replaceState(null, '', '?preset=' + encodeURIComponent(newId));
-          } catch (e) { /* 不支援就算了，只影響重整之後開到哪一份 */ }
-          fillPresetPicker(newId);
           renderLayerList();
           return true;
         }
-        /* 另存完就用新名字重新開啟，和從選單挑一份一樣走 ?preset= 的載入流程
-           （2026-09-17 使用者要求）。以前用 replaceState 留在原地，結果 Core 裡註冊的
-           還是舊名字，預覽循環一重播就停了；復原紀錄、清單、分組也都還掛著舊狀態。
-           從磁碟上剛寫好的那一份重來，就不會留下任何舊名字。 */
-        flashAfterReload('已另存為 ' + newId + '（原本那份未更動）');
-        leavingOnPurpose = true;
-        window.location.search = '?preset=' + encodeURIComponent(newId);
-        return true;
-      });
-    });
+        /* 另存完就用新名字重新開啟這個視窗（2026-09-17 使用者要求）：從磁碟上剛寫好的那一份
+           建一份全新的編輯狀態，復原紀錄、分組、Core 裡註冊的名字都不會留下舊的。
+           以前是整頁重載成 ?preset=<新名字>；多視窗之後重載會把其他視窗一起關掉，所以改成就地重開。
+           內容與剛才一模一樣，沿用 runtime，貼圖不必重載。 */
+        return openPresetInPane(ctx, newId, {
+          keepRuntime: true,
+          status: '已另存為 ' + newId + '（原本那份未更動）'
+        });
+      }));
+    }));
   }
 
   /* 下載一份複本。回寫上線之後這條路仍然留著：要把 Preset 交給別人、
@@ -4382,12 +4585,6 @@
     a.download = state.preset.id + '.json';
     a.click();
     URL.revokeObjectURL(a.href);
-  }
-
-  /* 換一份 preset 就要清空歷史：把上一份的 Undo 套到這一份會產生
-     完全不相干的內容，而且圖層 id 多半對不上。 */
-  function clearHistoryForNewPreset() {
-    if (history) history.clear();
   }
 
   /* 檔名優先於檔案內的 id（2026-09-14 使用者回報）。
@@ -4433,13 +4630,23 @@
      載入 Preset 之後下拉還寫著上一份的名字，預覽卻已經是別的特效）。
      網址只在 repo 裡真的有這份檔案時才改：沒有的話，重新整理會開不起來。 */
   function syncPresetIdentity() {
-    var id = state.preset ? state.preset.id : '';
-    combo.currentId = id;
-    $('preset-search').value = comboDisplayText();
-    var inRepo = combo.rows.some(function (r) { return r.id === id; });
-    if (!inRepo) return;
+    if (!state.inBackground) {
+      var id = state.preset ? state.preset.id : '';
+      combo.currentId = id;
+      $('preset-search').value = comboDisplayText();
+    }
+    /* 網址記住每個視窗開的特效（格式見 pane-model.js 的 searchFor）。
+       清單還沒到的時候分不出誰在 repo 裡，先不動網址——開場的網址本來就是對的。 */
+    if (!combo.rows.length) return;
+    var ids = panes.map(function (p) {
+      var d = p.doc;
+      var pid = d.preset && !d.isNew ? d.preset.id : null;
+      var inRepo = !!pid && combo.rows.some(function (r) { return r.id === pid; });
+      return inRepo ? pid : null;
+    });
     try {
-      window.history.replaceState(null, '', '?preset=' + encodeURIComponent(id));
+      window.history.replaceState(null, '',
+        VFXPaneModel.searchFor(ids, panes.indexOf(focusedPane)) || window.location.pathname);
     } catch (e) { /* 不支援就算了，只影響重新整理後開到哪一份 */ }
   }
 
@@ -4447,14 +4654,14 @@
      就拿舊名字那一份來改名——檔案總管改名不會連 vfx/layouts 裡的分組檔一起改。
      非同步回來時使用者可能已經開始編輯：只有 preset 還是同一份、分組也還是空的才套用。 */
   function adoptLayoutFor(preset, renamedFrom) {
-    loadLayout(preset.id).then(function (res) {
+    loadLayout(preset.id).then(bindPane(function (res) {
       if (state.preset !== preset) return null;
       if (hasGroups(res.layout)) return { layout: res.layout, saved: true };
       if (!renamedFrom) return null;
       return loadLayout(renamedFrom).then(function (old) {
         return hasGroups(old.layout) ? { layout: old.layout, saved: false } : null;
       });
-    }).then(function (found) {
+    })).then(bindPane(function (found) {
       if (!found || state.preset !== preset || hasGroups(state.layout)) return;
       state.layout = found.layout;
       if (!found.saved) {
@@ -4467,44 +4674,45 @@
       loadCollapsed();
       renderLayerList();
       refreshDirty();
-    });
+    }));
   }
 
   function loadPresetFromFile(file) {
     var reader = new FileReader();
-    reader.onload = function () {
+    /* 讀檔是非同步的：結果開進按下「載入 Preset」時的那個視窗 */
+    reader.onload = bindPane(function () {
       try {
         var parsed = JSON.parse(String(reader.result));
         var result = VFXCore.validatePreset(parsed);
         if (!result.ok) {
-          $('validation').className = 'hint err';
-          $('validation').textContent = '載入失敗：\n- ' + result.errors.join('\n- ');
+          setValidation('hint err', '載入失敗：\n- ' + result.errors.join('\n- '));
           return;
         }
         var naming = adoptFileName(parsed, file && file.name);
-        state.preset = parsed;
+        var holder = paneHolding(parsed.id);
+        if (holder && holder !== ctx) {
+          showSaveError('無法載入', ['「' + parsed.id + '」已經開在' + paneLabel(holder) +
+            '。同一份特效只能開在一個視窗，否則兩邊存檔會互相覆寫。']);
+          return;
+        }
+        /* 全新的編輯狀態（beginDoc）：上一份的 Undo、選取、分組都不適用於這一份 */
+        var retire = beginDoc(parsed);
         state.layout = VFXLayoutSchema.emptyLayout(parsed.id);
         state.savedLayoutText = null;        // 匯入的內容還沒進 repo
-        var first = parsed.layers[0] ? keyOf('layer', parsed.layers[0].id) : null;
-        setSelection(first ? [first] : [], first);
-        state.anchorKey = first;
         /* 從本機檔案匯入的內容還沒進 repo，一律當成未存檔。
            匯入等於「這份就是它自己宣告的那個 preset」，所以來源 id 交給它自己，
            存檔會寫到 <preset.id>.json——這也是把外部改好的 preset 收回 repo 的路。 */
         state.savedText = null;
         state.sourcePresetId = null;
         setSaveStatus('', '');
-        clearHistoryForNewPreset();          // 上一份的 Undo 不適用於這一份
-        markGizmoDirty();                    // preset.loop 由 renderInspector 一起帶出來
-        renderLayerList(); renderInspector(); onPresetChanged();
+        finishDoc(retire);                   // preset.loop 由 renderInspector 一起帶出來
         syncPresetIdentity();
         adoptLayoutFor(parsed, naming.renamedFrom);
         announceNaming(naming);
       } catch (e) {
-        $('validation').className = 'hint err';
-        $('validation').textContent = 'JSON 解析失敗：' + e.message;
+        setValidation('hint err', 'JSON 解析失敗：' + e.message);
       }
-    };
+    });
     reader.readAsText(file);
   }
 
@@ -4594,6 +4802,500 @@
   }
 
 
+  /* ---------------- 視窗 ----------------
+
+     預覽區可以切成最多四個視窗（2026-09-17 使用者要求），每個視窗各開一份特效：
+     各有自己的 Pixi 畫布、預覽 runtime、鏡頭、播放狀態與一份編輯狀態（newDoc）。
+     Layers、Inspector、工具列只有一組，顯示焦點視窗的內容；誰是焦點、哪些被多選，
+     規則在 pane-model.js。
+
+     為什麼一個視窗一張畫布（各一個 PIXI.Application），而不是一張大畫布切四塊：
+     座標換算、格線、gizmo、鏡頭全都是「一張畫布＝一個預覽」寫的，各一張就能原封不動地重用。
+     貼圖由 Pixi 的 Assets 全域共用，backend 的參照計數本來就放在模組層級
+     （多個 backend 共用同一張貼圖是設計過的情況，見 vfx-pixi-backend.js 的 textureRefs）。 */
+
+  function newPane() {
+    return {
+      id: 0,
+      doc: newDoc(),
+      el: null,                 // 這一格（.pane）
+      host: null,               // 畫布的容器
+      head: null,               // 左上角的標籤：編號、特效名稱、未存檔、暫停、關閉鈕
+      app: null,
+      stageRoot: null,          // 鏡頭：平移到畫布中心並縮放，特效掛在它底下
+      effectRoot: null,         // 目前這組預覽 runtime 的掛載點（換一份特效就換一個）
+      bgSolid: null,
+      checker: null,
+      syncCanvasSize: null,
+      resizeObserver: null,
+      backend: null,
+      runtime: null,
+      handle: null,
+      playing: true,
+      /* 預覽循環＝播完自動重播，只影響編輯時的畫面。
+         preset.loop 是出貨資料（決定遊戲裡這個特效會不會自己重複），
+         兩者共用一個勾選框的話，想重看一次爆點就會把它改成永不結束。 */
+      previewLoop: previewLoopDefault,
+      /* ---- 檢視狀態（「怎麼看」，不是 Preset 內容）----
+         和背景色同一類，所以一樣不進 preset、不進 Undo 歷史。
+         zoom 刻意不記進 localStorage：留著 320% 隔天再打開，第一眼會以為
+         素材被誰改大了；格線開關則是穩定的偏好，記得住比較省事。 */
+      zoom: 1,
+      /* 鏡頭平移量（畫布像素）。與 zoom 一樣是檢視狀態，不進 preset、不進歷史，
+         也刻意不記進 localStorage——隔天打開發現特效不在畫面中央會以為它壞了。 */
+      panX: 0,
+      panY: 0,
+      pan: null,
+      gizmo: {
+        overlay: null,          // PIXI.Container，掛在 stageRoot 之後
+        gfx: null,              // PIXI.Graphics
+        dirty: true,
+        drag: null              // { mode, handle, snapshot, startPoint, pivot, ... }
+      },
+      grid: { gfx: null, last: null },
+      previewPending: false,
+      saveStatus: { text: '', cls: '', title: '' },
+      validation: { cls: 'hint', text: '' },
+      dirtyFlag: false,         // 上一次 refreshDirty 的結果，標籤上的 ● 看它（不必每次重新序列化）
+      loadToken: 0,             // 每開一份特效 +1；回應回來時對不上＝已經換成別份，作廢
+      closed: false
+    };
+  }
+
+  var paneSeq = 0;
+  var addingPane = false;
+
+  function paneById(id) {
+    for (var i = 0; i < panes.length; i++) { if (panes[i].id === id) return panes[i]; }
+    return null;
+  }
+
+  /* 建一個視窗：DOM、Pixi 畫布、背景、格線、鏡頭、框的覆蓋層，內容是空白特效。
+     回傳 Promise<pane>；要開哪一份由呼叫端接著 openPresetInPane。 */
+  function createPane() {
+    var pane = newPane();
+    pane.id = ++paneSeq;
+    var el = document.createElement('div');
+    el.className = 'pane';
+    var host = document.createElement('div');
+    host.className = 'pane-canvas';
+    el.appendChild(host);
+    el.appendChild(buildPaneHead(pane));
+    /* 捕獲階段：焦點要在畫布自己的 pointerdown（選取、拖曳）之前換好，
+       那些處理拿到的 state 才是這個視窗的 */
+    el.addEventListener('pointerdown', function (e) {
+      if (e.target.closest && e.target.closest('.pane-close')) return;
+      activatePane(pane, { ctrl: e.ctrlKey || e.metaKey });
+    }, true);
+    pane.el = el;
+    pane.host = host;
+    $('preview-host').appendChild(el);
+    panes.push(pane);
+    layoutPanes();
+
+    var app = new PIXI.Application();
+    return app.init({
+      background: '#101014',
+      backgroundAlpha: 1,          // 不透明：加法混合才不會在透明畫布上疊出黑方塊
+      antialias: true,
+      // DPR 設上限：高 DPR 裝置上畫布像素成本會平方成長，預覽不值得付這個代價
+      resolution: Math.min(window.devicePixelRatio || 1, 2),
+      autoDensity: true,
+      resizeTo: host
+    }).then(function () {
+      withPane(pane, function () {
+        setupPaneStage(pane, app, host);
+        openBlankDoc();
+      });
+      return pane;
+    }, function (e) {
+      pane.closed = true;
+      panes.splice(panes.indexOf(pane), 1);
+      el.remove();
+      layoutPanes();
+      throw e;
+    });
+  }
+
+  /* 一個視窗的舞台。在 withPane(pane) 裡執行，state.app、grid.gfx 都是這個視窗的。 */
+  function setupPaneStage(pane, app, host) {
+    state.app = app;
+    host.appendChild(app.canvas);
+    /* 背景一律畫在 Pixi 內（純色與棋盤格各一張），不倚賴 renderer.background，
+       畫布保持不透明，加法混合才不會疊出黑方塊。 */
+    var bgSolid = new PIXI.TilingSprite({
+      texture: PIXI.Texture.WHITE, width: 8192, height: 8192
+    });
+    bgSolid.position.set(-4096, -4096);
+    bgSolid.tint = 0x101014;
+    app.stage.addChild(bgSolid);
+    state.bgSolid = bgSolid;
+
+    var checker = new PIXI.TilingSprite({
+      texture: makeCheckerTexture(), width: 8192, height: 8192
+    });
+    checker.position.set(-4096, -4096);
+    checker.visible = false;
+    app.stage.addChild(checker);
+    state.checker = checker;
+    /* 格線夾在背景與特效之間：畫在特效上面的話，一條條線會橫過火焰，
+       看起來像素材裂了。順序就是唯一的保證，所以在這裡就位。 */
+    grid.gfx = new PIXI.Graphics();
+    app.stage.addChild(grid.gfx);
+    var root = new PIXI.Container();
+    app.stage.addChild(root);
+    state.stageRoot = root;
+    recentreStage();
+    /* resize 事件可能在別的視窗的回合裡發生（Pixi 的 resizeTo 掛在 window 上）：
+       綁回這個視窗，否則會去重算焦點視窗的鏡頭中心 */
+    app.renderer.on('resize', function () { withPane(pane, recentreStage); });
+
+    /* 畫布尺寸必須跟著「這個元素」，不是跟著視窗。
+       Pixi 的 resizeTo 只掛在 window 的 resize 上，量的是啟動當下的 host 尺寸；
+       但這一欄會在「視窗沒變、版面自己重算」時改變寬度（整頁捲軸出現、
+       頂端工具列換行、側欄收縮、新增或關閉視窗），那時畫布就停在舊尺寸。
+       CSS 的 overflow:hidden 已經保證它畫不出欄位外，但畫布本身仍然是錯的，
+       預覽會被裁掉一塊。
+
+       兩條路都走，因為它們各自會在不同情況下失效：
+         ResizeObserver — 真實瀏覽器裡反應最即時，但實測在某些嵌入式
+                          瀏覽器面板裡完全不觸發（連初次觀察都沒有）。
+         ticker 檢查    — 每幀兩次整數比較，rAF 有在跑就一定會校正。
+       兩者都呼叫同一個函式，不會互相打架。 */
+    state.syncCanvasSize = function () {
+      var w = Math.max(1, Math.floor(host.clientWidth));
+      var h = Math.max(1, Math.floor(host.clientHeight));
+      if (w === app.renderer.width && h === app.renderer.height) return false;
+      app.renderer.resize(w, h);
+      recentreStage();
+      return true;
+    };
+    state.syncCanvasSize();
+    if (typeof ResizeObserver === 'function') {
+      pane.resizeObserver = new ResizeObserver(function () {
+        withPane(pane, function () { state.syncCanvasSize(); });
+      });
+      pane.resizeObserver.observe(host);
+    }
+
+    app.ticker.add(function (ticker) {
+      withPane(pane, function () { tickPane(ticker); });
+    });
+    wireGizmo();
+    wirePreviewView(pane);
+    if (state.background) setBackground(state.background);
+  }
+
+  /* 每個視窗每一幀（在 withPane(pane) 裡）。 */
+  function tickPane(ticker) {
+    /* 在 playing 判斷之前：暫停時改變視窗大小，畫布一樣要跟上 */
+    state.syncCanvasSize();
+    drawGrid();                          // 兩者都只在條件變了才真的重畫
+    drawGizmo();
+    if (!state.playing || !state.runtime) return;
+    state.runtime.update(Math.min(ticker.deltaMS, 100) / 1000);
+    tickPreviewLoop();                   // 播完就重來（純預覽，不碰 preset.loop）
+    /* 工具列不再顯示 effects／particles／pooled／dropped 的計數（2026-09-16 使用者要求：
+       那一串把「關閉編輯器」擠到第二行）。要看數字時，主控台打 __vfxEditor.runtime.stats()。 */
+    var errs = state.backend.takeErrors();
+    if (errs.length) {
+      $('preview-msg').className = 'hint err';
+      $('preview-msg').textContent = (panes.length > 1 ? paneLabel(ctx) + '：' : '') +
+        '貼圖載入失敗：' + errs[0].url;
+    }
+  }
+
+  /* 換一份特效就換一組預覽 runtime＋backend，舊的連同它載過的貼圖一起收掉：
+     同一個視窗開過幾十份特效，貼圖也不會越積越多（以前一份特效一次整頁重載，自然會清掉）。
+     每組各掛一個容器——backend 收攤時會清空整個容器，不能和新的共用。
+     回傳「收掉舊的那一組」的函式，要等新的畫出第一格再呼叫（見 finishDoc）。 */
+  function installRuntime() {
+    var oldRuntime = state.runtime, oldRoot = state.effectRoot;
+    var root = new PIXI.Container();
+    state.stageRoot.addChild(root);
+    state.effectRoot = root;
+    state.backend = VFXPixiBackend.createBackend({ PIXI: PIXI, container: root });
+    state.runtime = VFXCore.createRuntime({
+      backend: state.backend,
+      resolver: state.resolver
+    });
+    state.handle = null;
+    return function () {
+      if (oldRuntime) oldRuntime.destroy();
+      if (oldRoot) {
+        if (oldRoot.parent) oldRoot.parent.removeChild(oldRoot);
+        oldRoot.destroy({ children: true });
+      }
+    };
+  }
+
+  /* 在 withPane(pane) 裡把視窗換成一份全新的編輯狀態（newDoc），preset 就是傳進來的這一份。
+     keepRuntime：內容與原本相同（另存新檔之後重開），沿用預覽 runtime，貼圖不必重載。
+     回傳交給 finishDoc 的「收掉舊 runtime」函式（沿用時是 null）。 */
+  function beginDoc(preset, keepRuntime) {
+    var retire = keepRuntime ? null : installRuntime();
+    ctx.doc = newDoc();
+    ctxDoc = ctx.doc;
+    gizmo.drag = null;                   // 拖到一半的框屬於上一份
+    state.preset = preset;
+    var first = preset.layers[0] ? keyOf('layer', preset.layers[0].id) : null;
+    setSelection(first ? [first] : [], first);
+    state.anchorKey = first;
+    initHistory();                       // 上一份的 Undo 不適用於這一份
+    return retire;
+  }
+
+  /* 新的一份裝好之後：鏡頭歸零（另存新檔後重開同一份時不動）、面板整組重畫、預覽重建，
+     最後才收掉舊的 runtime——新的先畫出第一格，兩份用到同一張貼圖時參照計數才不會
+     先歸零而被卸載重載。 */
+  function finishDoc(retire, keepCamera) {
+    if (!keepCamera) resetCamera();
+    markGizmoDirty();
+    renderPanels();
+    onPresetChanged();
+    if (retire) {
+      if (state.handle !== null && state.handle !== undefined) state.runtime.update(0);
+      retire();
+    }
+  }
+
+  /* 新視窗的空白特效。暫時的名字避開 repo 裡已有的與其他視窗開著的；第一次存檔會問名字。 */
+  function openBlankDoc() {
+    ctx.loadToken++;                     // 還在路上的載入作廢
+    var taken = combo.rows.map(function (r) { return r.id; });
+    panes.forEach(function (p) { if (p.doc.preset) taken.push(p.doc.preset.id); });
+    var id = VFXPaneModel.blankPresetId(taken);
+    var retire = beginDoc(VFXPaneModel.blankPreset(id));
+    state.isNew = true;
+    state.layout = VFXLayoutSchema.emptyLayout(id);
+    state.savedLayoutText = VFXLayoutSchema.serialiseLayout(state.layout);
+    setSaveStatus('', '');
+    finishDoc(retire);
+    syncPresetIdentity();
+  }
+
+  /* 把 repo 裡的一份特效開進視窗。回傳 Promise<boolean>（true＝開好了）。
+     opts.keepRuntime  另存新檔之後重開同一份內容：沿用預覽 runtime 與鏡頭
+     opts.status       開好之後狀態列顯示的一行（例如「已另存為 xxx」） */
+  function openPresetInPane(pane, id, opts) {
+    var o = opts || {};
+    var token = ++pane.loadToken;
+    withPane(pane, function () { setSaveStatus('載入 ' + id + '…', ''); });
+    return Promise.all([
+      fetchJson(presetUrl(id)),
+      /* 分組是 Editor 專用的附加資料，載不到就當作沒有分組——
+         它絕不能擋住 Preset 本身的編輯。 */
+      loadLayout(id)
+    ]).then(function (res) {
+      /* 等回應的這段時間視窗被關掉、或又換成別份了：這次的結果作廢 */
+      if (pane.closed || token !== pane.loadToken) return false;
+      return withPane(pane, function () {
+        var retire = beginDoc(res[0], o.keepRuntime);
+        /* 剛載入的內容就是 repo 上的內容 → 基準線，dirty = false。
+           用 canonical 文字而不是原始 bytes：檔案若還沒 canonical 化，
+           每次一開啟就會顯示未存檔，那個提示很快就會被無視。 */
+        state.savedText = VFXCore.serialisePreset(state.preset);
+        /* 檔名優先於檔案內的 id（見 adoptFileName）。基準線是換名字之前、磁碟上的內容，
+           所以換了之後會顯示未存檔，存一次就對齊。以前這裡直接「停用存檔」，
+           在檔案總管改過名的特效就只能卡在那裡。 */
+        var naming = adoptFileName(state.preset, id + '.json');
+        state.sourcePresetId = id;
+        state.layout = res[1].layout;
+        state.layoutRevision = 0;
+        /* 分組的「已存檔基準」。載不到分組檔時基準就是空分組，
+           所以一份沒有分組的 preset 打開來不會顯示未存檔。 */
+        state.savedLayoutText = VFXLayoutSchema.serialiseLayout(res[1].layout);
+        loadCollapsed();
+        setSaveStatus(o.status || '', o.status ? 'ok' : '');
+        finishDoc(retire, o.keepRuntime);
+        if (res[1].error) {
+          /* 明確告訴使用者「分組沒載進來」，而不是讓他以為群組被刪光了 */
+          setSaveStatus('分組載入失敗', 'err');
+          showSaveError('分組未套用', [res[1].error]);
+        }
+        if (naming.renamedFrom) {
+          announceNaming(naming);
+          adoptLayoutFor(state.preset, naming.renamedFrom);
+        }
+        syncPresetIdentity();
+        return true;
+      });
+    }, function (e) {
+      if (pane.closed || token !== pane.loadToken) return false;
+      withPane(pane, function () {
+        setSaveStatus('載入失敗', 'err');
+        showSaveError('無法開啟「' + id + '」', [String(e && e.message || e)]);
+      });
+      return false;
+    });
+  }
+
+  /* 面板與工具列換成焦點視窗的內容：焦點換人，或焦點視窗換了一份特效時。 */
+  function renderPanels() {
+    if (!ctx || state.inBackground) return;
+    renderLayerList();
+    renderInspector();
+    refreshHistoryButtons();
+    refreshDirty();
+    var st = state.saveStatus;
+    setSaveStatus(st.text, st.cls, st.title);
+    var v = state.validation;
+    setValidation(v.cls, v.text);
+    syncSaveButton();
+    syncPlayPause();
+    syncPreviewLoop();
+    updateViewReadout();
+    syncPresetIdentity();
+    renderPaneHeads();
+  }
+
+  /* 點擊視窗：焦點與多選照 pane-model 的規則換（opts.ctrl＝Ctrl+點擊）。 */
+  function activatePane(pane, opts) {
+    var next = VFXPaneModel.clickPane({
+      focused: focusedPane ? focusedPane.id : null,
+      selected: selectedPanes.map(function (p) { return p.id; })
+    }, pane.id, opts || {});
+    selectedPanes = next.selected.map(paneById).filter(Boolean);
+    focusPane(paneById(next.focused));
+    syncPlayPause();
+    syncPreviewLoop();
+    renderPaneHeads();
+  }
+
+  function focusPane(pane) {
+    if (!pane || pane === focusedPane) return;
+    /* 輸入框還開著交易（數值打到一半）就先收尾：blur 會同步觸發 change 與 editCommit，
+       這時 ctx 還是原本的視窗，那一步才會記進它自己的歷史（與 Ctrl+S 同一招，見 onKeyDown） */
+    var active = document.activeElement;
+    if (active && active !== document.body && isTextEntry(active) && typeof active.blur === 'function') {
+      active.blur();
+    }
+    var prev = focusedPane;
+    if (prev && prev.saveStatus.transient) prev.saveStatus = { text: '', cls: '', title: '' };
+    focusedPane = pane;
+    ctx = pane;
+    ctxDoc = pane.doc;
+    if (prev && !prev.closed) withPane(prev, markGizmoDirty);   // 舊的收起框
+    markGizmoDirty();
+    renderPanels();
+  }
+
+  /* 左上角的標籤。只有一個視窗時整條藏起來（CSS），畫面與以前一樣。 */
+  function buildPaneHead(pane) {
+    var head = document.createElement('div');
+    head.className = 'pane-head';
+    var no = document.createElement('span');
+    no.className = 'pane-no';
+    var name = document.createElement('span');
+    name.className = 'pane-name';
+    var flags = document.createElement('span');
+    flags.className = 'pane-flags';
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'pane-close';
+    close.textContent = '✕';
+    close.title = '關閉這個視窗';
+    close.onclick = function (e) { e.stopPropagation(); closePane(pane); };
+    head.appendChild(no);
+    head.appendChild(name);
+    head.appendChild(flags);
+    head.appendChild(close);
+    pane.head = head;
+    return head;
+  }
+
+  /* 拖曳時每一幀都會走到這裡（refreshDirty）：值沒變就不寫 DOM */
+  function renderPaneHead(pane) {
+    if (!pane.head) return;
+    var d = pane.doc;
+    var parts = pane.head.children;
+    setText(parts[0], String(panes.indexOf(pane) + 1));
+    setText(parts[1], d.preset ? d.preset.id : '');
+    parts[1].title = d.isNew ? '還沒存檔的新特效（名字是暫時的，第一次存檔會問）' : '';
+    setText(parts[2], (pane.dirtyFlag ? '●' : '') + (pane.playing ? '' : '⏸'));
+    parts[2].title = [pane.dirtyFlag ? '未存檔' : '', pane.playing ? '' : '暫停中'].filter(Boolean).join('、');
+    pane.el.classList.toggle('focused', pane === focusedPane);
+    pane.el.classList.toggle('selected', selectedPanes.indexOf(pane) >= 0);
+  }
+
+  function setText(el, text) { if (el.textContent !== text) el.textContent = text; }
+
+  function renderPaneHeads() { panes.forEach(renderPaneHead); }
+
+  /* 視窗的排列（pane-model 的 gridLayout）與「新增視窗」能不能按。 */
+  function layoutPanes() {
+    var host = $('preview-host');
+    var g = VFXPaneModel.gridLayout(panes.length);
+    host.style.gridTemplateColumns = 'repeat(' + g.cols + ', minmax(0, 1fr))';
+    host.style.gridTemplateRows = 'repeat(' + g.rows + ', minmax(0, 1fr))';
+    host.classList.toggle('multi', panes.length > 1);
+    panes.forEach(function (p, i) { p.el.style.gridColumn = g.spans[i] > 1 ? 'span ' + g.spans[i] : ''; });
+    var add = $('btn-add-pane');
+    if (add) {
+      add.disabled = addingPane || panes.length >= VFXPaneModel.MAX_PANES;
+      add.title = panes.length >= VFXPaneModel.MAX_PANES
+        ? '最多 ' + VFXPaneModel.MAX_PANES + ' 個視窗'
+        : '把預覽區再分出一個視窗（最多 ' + VFXPaneModel.MAX_PANES + ' 個），可以同時開另一份特效';
+    }
+    renderPaneHeads();
+  }
+
+  /* 「新增視窗」：預覽區再切出一格，新的一格是空白特效並取得焦點。 */
+  function addPane() {
+    if (addingPane || panes.length >= VFXPaneModel.MAX_PANES) return;
+    addingPane = true;
+    layoutPanes();
+    createPane().then(function (pane) {
+      addingPane = false;
+      activatePane(pane, {});
+      layoutPanes();
+    }, function (e) {
+      addingPane = false;
+      layoutPanes();
+      showSaveError('無法新增視窗', [String(e && e.message || e)]);
+    });
+  }
+
+  /* 關閉視窗。未存檔先問；最後一個關不掉（預覽區不能是空的）。 */
+  function closePane(pane) {
+    if (panes.length <= 1 || pane.closed) return;
+    if (withPane(pane, isDirty) && !window.confirm(paneLabel(pane) + '（' + pane.doc.preset.id +
+        '）的修改尚未存檔，關閉之後就沒了。要關閉嗎？')) {
+      return;
+    }
+    if (pane === focusedPane) {
+      var active = document.activeElement;
+      if (active && active !== document.body && isTextEntry(active) && typeof active.blur === 'function') {
+        active.blur();
+      }
+    }
+    var next = VFXPaneModel.afterClose({
+      focused: focusedPane.id,
+      selected: selectedPanes.map(function (p) { return p.id; })
+    }, pane.id, panes.map(function (p) { return p.id; }));
+    pane.closed = true;
+    pane.loadToken++;
+    panes.splice(panes.indexOf(pane), 1);
+    selectedPanes = next.selected.map(paneById).filter(Boolean);
+    focusPane(paneById(next.focused));
+
+    withPane(pane, function () {
+      gizmo.drag = null;
+      if (state.runtime) state.runtime.destroy();
+    });
+    if (pane.resizeObserver) pane.resizeObserver.disconnect();
+    var checkerTexture = pane.checker && pane.checker.texture;
+    /* 畫布與它的 WebGL context 一起收掉（Pixi 會 loseContext）：瀏覽器同時能開的 context 有上限，
+       開開關關不能越積越多。只收子物件，不動共用的貼圖（Texture.WHITE、Assets 載的素材）。 */
+    pane.app.destroy({ removeView: true }, { children: true });
+    if (checkerTexture) checkerTexture.destroy(true);
+    pane.el.remove();
+    layoutPanes();
+    syncPlayPause();
+    syncPreviewLoop();
+    syncPresetIdentity();
+  }
+
   /* ---------------- 啟動 ---------------- */
 
   function collectVocab() {
@@ -4636,6 +5338,7 @@
       ['VFXLayoutSchema', 'tools/vfx/editor/layout-schema.js'],
       ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
       ['VFXHierarchyModel', 'tools/vfx/editor/hierarchy-model.js'],
+      ['VFXPaneModel', 'tools/vfx/editor/pane-model.js'],
       ['VFXMultiEditModel', 'tools/vfx/editor/multi-edit-model.js'],
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
       ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],
@@ -4665,175 +5368,58 @@
       document.getElementById('preview-msg').textContent = '啟動失敗\n' + moduleError;
       return;
     }
-    var bootPresetId = presetIdFromQuery();
+    var query = presetsFromQuery();
     Promise.all([
       fetchJson(ASSET_INDEX_URL),
-      fetchJson(ASSET_SEMANTICS_URL),
-      fetchJson(presetUrl(bootPresetId)),
-      /* 分組是 Editor 專用的附加資料，載不到就當作沒有分組——
-         它絕不能擋住 Preset 本身的編輯。 */
-      loadLayout(bootPresetId)
+      fetchJson(ASSET_SEMANTICS_URL)
     ]).then(function (res) {
       state.index = res[0];
       state.semantics = res[1];
-      state.preset = res[2];
-      setSelection([keyOf('layer', state.preset.layers[0].id)],
-        keyOf('layer', state.preset.layers[0].id));
-      state.anchorKey = state.activeKey;
-      /* 剛載入的內容就是 repo 上的內容 → 基準線，dirty = false。
-         用 canonical 文字而不是原始 bytes：檔案若還沒 canonical 化，
-         每次一開啟就會顯示未存檔，那個提示很快就會被無視。 */
-      state.savedText = VFXCore.serialisePreset(state.preset);
-      /* 檔名優先於檔案內的 id（見 adoptFileName）。基準線是換名字之前、磁碟上的內容，
-         所以換了之後會顯示未存檔，存一次就對齊。以前這裡直接「停用存檔」，
-         在檔案總管改過名的特效就只能卡在那裡。 */
-      var bootNaming = adoptFileName(state.preset, bootPresetId + '.json');
-      state.sourcePresetId = bootPresetId;
-      state.layout = res[3].layout;
-      state.layoutRevision = 0;
-      /* 分組的「已存檔基準」。載不到分組檔時基準就是空分組，
-         所以一份沒有分組的 preset 打開來不會顯示未存檔。 */
-      state.savedLayoutText = VFXLayoutSchema.serialiseLayout(res[3].layout);
-      if (res[3].error) {
-        /* 明確告訴使用者「分組沒載進來」，而不是讓他以為群組被刪光了 */
-        setSaveStatus('分組載入失敗', 'err');
-        window.setTimeout(function () { showSaveError('分組未套用', [res[3].error]); }, 0);
-      }
-      loadCollapsed();
-      fillPresetPicker(bootPresetId);
-      if (bootNaming.renamedFrom) {
-        announceNaming(bootNaming);
-        adoptLayoutFor(state.preset, bootNaming.renamedFrom);
-      }
-      showFlashFromReload();                   // 例如另存新檔重新載入之後的「已另存為 xxx」
-
       // Editor 端的 resolver：assetId → 本機資產伺服器 URL。
       // Runtime 之後換成打包後的 URL，Core 不需要任何改動。
       state.resolver = VFXCore.createIndexResolver(
         state.index, '/asset-library/' + state.index.libraryId);
+      buildAssetSizeMap();
+      loadPreviewLoopPreference();
+      wireViewControls();
+      /* 背景色要在建視窗之前決定：每個視窗建好舞台時照 state.background 套用 */
+      buildBackgroundBar();
+      fillSelect($('new-layer-type'), VFXCore.LAYER_TYPES, '型別');
+      $('new-layer-type').value = 'sprite';
 
-      var app = new PIXI.Application();
-      var host = $('preview-host');
-      return app.init({
-        background: '#101014',
-        backgroundAlpha: 1,          // 不透明：加法混合才不會在透明畫布上疊出黑方塊
-        antialias: true,
-        // DPR 設上限：高 DPR 裝置上畫布像素成本會平方成長，預覽不值得付這個代價
-        resolution: Math.min(window.devicePixelRatio || 1, 2),
-        autoDensity: true,
-        resizeTo: host
+      // 除錯用把手：Editor 是開發工具，讓瀏覽器主控台與人工 QA 能查看實際場景。
+      // state 的每個視窗欄位指向焦點視窗；全部視窗在 __vfxEditorPanes。
+      window.__vfxEditor = state;
+      window.__vfxEditorPanes = panes;
+      /* 存檔／dirty 這條路只有在真的瀏覽器裡才跑得起來（fetch ＋ DOM），
+         把入口露出來，QA 與端對端驗證才能斷言結果而不是用看的。 */
+      window.__vfxEditorApi = {
+        isDirty: isDirty,
+        savePreset: savePreset,
+        currentPresetText: currentPresetText
+      };
+
+      /* 網址上的特效一個視窗一個，照順序開。第一個先開好並取得焦點，
+         其餘的一個接一個建——同時建四個 WebGL context 沒有好處，還會讓失敗的原因難追。 */
+      return createPane().then(function (first) {
+        activatePane(first, {});
+        return openPresetInPane(first, query.ids[0]);
       }).then(function () {
-        state.app = app;
-        host.appendChild(app.canvas);
-        /* 背景一律畫在 Pixi 內（純色與棋盤格各一張），不倚賴 renderer.background，
-           畫布保持不透明，加法混合才不會疊出黑方塊。 */
-        var bgSolid = new PIXI.TilingSprite({
-          texture: PIXI.Texture.WHITE, width: 8192, height: 8192
-        });
-        bgSolid.position.set(-4096, -4096);
-        bgSolid.tint = 0x101014;
-        app.stage.addChild(bgSolid);
-        state.bgSolid = bgSolid;
-
-        var checker = new PIXI.TilingSprite({
-          texture: makeCheckerTexture(), width: 8192, height: 8192
-        });
-        checker.position.set(-4096, -4096);
-        checker.visible = false;
-        app.stage.addChild(checker);
-        state.checker = checker;
-        /* 格線夾在背景與特效之間：畫在特效上面的話，一條條線會橫過火焰，
-           看起來像素材裂了。順序就是唯一的保證，所以在這裡就位。 */
-        grid.gfx = new PIXI.Graphics();
-        app.stage.addChild(grid.gfx);
-        var root = new PIXI.Container();
-        app.stage.addChild(root);
-        state.stageRoot = root;
-        recentreStage();
-        app.renderer.on('resize', recentreStage);
-
-        /* 畫布尺寸必須跟著「這個元素」，不是跟著視窗。
-           Pixi 的 resizeTo 只掛在 window 的 resize 上，量的是啟動當下的 host 尺寸；
-           但這一欄會在「視窗沒變、版面自己重算」時改變寬度（整頁捲軸出現、
-           頂端工具列換行、側欄收縮），那時畫布就停在舊尺寸。
-           CSS 的 overflow:hidden 已經保證它畫不出欄位外，但畫布本身仍然是錯的，
-           預覽會被裁掉一塊。
-
-           兩條路都走，因為它們各自會在不同情況下失效：
-             ResizeObserver — 真實瀏覽器裡反應最即時，但實測在某些嵌入式
-                              瀏覽器面板裡完全不觸發（連初次觀察都沒有）。
-             ticker 檢查    — 每幀兩次整數比較，rAF 有在跑就一定會校正。
-           兩者都呼叫同一個函式，不會互相打架。 */
-        state.syncCanvasSize = function () {
-          var w = Math.max(1, Math.floor(host.clientWidth));
-          var h = Math.max(1, Math.floor(host.clientHeight));
-          if (w === app.renderer.width && h === app.renderer.height) return false;
-          app.renderer.resize(w, h);
-          recentreStage();
-          return true;
-        };
-        state.syncCanvasSize();
-        if (typeof ResizeObserver === 'function') {
-          new ResizeObserver(function () { state.syncCanvasSize(); }).observe(host);
-        }
-
-        state.backend = VFXPixiBackend.createBackend({ PIXI: PIXI, container: root });
-        state.runtime = VFXCore.createRuntime({
-          backend: state.backend,
-          resolver: state.resolver
-        });
-
-        app.ticker.add(function (ticker) {
-          /* 在 playing 判斷之前：暫停時改變視窗大小，畫布一樣要跟上 */
-          state.syncCanvasSize();
-          drawGrid();                          // 兩者都只在條件變了才真的重畫
-          drawGizmo();
-          if (!state.playing) return;
-          state.runtime.update(Math.min(ticker.deltaMS, 100) / 1000);
-          tickPreviewLoop();                   // 播完就重來（純預覽，不碰 preset.loop）
-          /* 工具列不再顯示 effects／particles／pooled／dropped 的計數（2026-09-16 使用者要求：
-             那一串把「關閉編輯器」擠到第二行）。要看數字時，主控台打 __vfxEditor.runtime.stats()。 */
-          var errs = state.backend.takeErrors();
-          if (errs.length) {
-            $('preview-msg').className = 'hint err';
-            $('preview-msg').textContent = '貼圖載入失敗：' + errs[0].url;
-          }
-        });
-
-        // 除錯用把手：Editor 是開發工具，讓瀏覽器主控台與人工 QA 能查看實際場景
-        window.__vfxEditor = state;
-        /* 存檔／dirty 這條路只有在真的瀏覽器裡才跑得起來（fetch ＋ DOM），
-           把入口露出來，QA 與端對端驗證才能斷言結果而不是用看的。 */
-        window.__vfxEditorApi = {
-          isDirty: isDirty,
-          savePreset: savePreset,
-          currentPresetText: currentPresetText
-        };
-
-        /* 順序有意義：先把圖層樹與 Inspector 畫出來，再處理素材瀏覽器。
-           左邊那一組要用到素材詞彙表，一旦它出問題，至少不會連圖層分組
-           一起消失——那會讓人以為群組被刪掉了，實際上只是沒渲染。 */
-        wireGizmo();
-        wirePreviewView();
-        loadPreviewLoopPreference();
-        initHistory();
-        renderLayerList();
-        renderInspector();
-        onPresetChanged();
-
-        fillSelect($('new-layer-type'), VFXCore.LAYER_TYPES, '型別');
-        $('new-layer-type').value = 'sprite';
-        /* 必須在 app／bgSolid／checker 都建好之後才能套用背景 */
-        buildBackgroundBar();
-        collectVocab();
-        wirePicker();
-        /* 「瀏覽特效」的複製成新特效：那一份開好之後接著另存 */
-        if (saveAsRequested()) {
-          clearSaveAsRequest(bootPresetId);
-          window.setTimeout(saveAsPreset, 0);
-        }
-
+        return query.ids.slice(1).reduce(function (chain, id) {
+          return chain.then(function () {
+            return createPane().then(function (pane) { return openPresetInPane(pane, id); });
+          });
+        }, Promise.resolve());
+      }).then(function () {
+        if (panes[query.focus]) activatePane(panes[query.focus], {});
       });
+    }).then(function () {
+      /* 順序有意義：先把圖層樹與 Inspector 畫出來，再處理素材瀏覽器。
+         左邊那一組要用到素材詞彙表，一旦它出問題，至少不會連圖層分組
+         一起消失——那會讓人以為群組被刪掉了，實際上只是沒渲染。 */
+      collectVocab();
+      wirePicker();
+      fillPresetPicker();
     }).catch(function (e) {
       document.getElementById('preview-msg').className = 'hint err';
       document.getElementById('preview-msg').textContent =
@@ -4843,7 +5429,10 @@
 
     $('btn-undo').onclick = doUndo;
     $('btn-redo').onclick = doRedo;
-    $('btn-playpause').onclick = function () { setPlaying(!state.playing); };
+    /* 播放／暫停、Restart、預覽循環作用在多選的全部視窗（沒有多選就是焦點視窗） */
+    $('btn-playpause').onclick = function () {
+      setPlaying(!VFXPaneModel.playbackState(selectedPanes).playing);
+    };
     syncPlayPause();
     $('btn-quit').onclick = quitEditor;
     $('btn-restart').onclick = restart;
@@ -4866,6 +5455,7 @@
     $('file-load').onchange = function (e) {
       if (e.target.files[0]) loadPresetFromFile(e.target.files[0]);
     };
+    $('btn-add-pane').onclick = addPane;
     $('btn-add-layer').onclick = function () { addLayer($('new-layer-type').value); };
     $('btn-add-asset').onclick = openPickerForNewLayer;
     $('btn-group').onclick = groupSelection;
@@ -4876,12 +5466,17 @@
       renderLayerList();
     };
     document.addEventListener('keydown', onKeyDown);
+    /* 拖曳與平移的後半段接在 window 上（滑鼠拖出畫布也要跟得上），整頁接一次：
+       它們作用在焦點視窗，而拖曳一定是在焦點視窗按下去的。 */
+    window.addEventListener('pointermove', onPreviewPointerMove);
+    window.addEventListener('pointerup', onPreviewPointerUp);
     /* 未存檔時攔一下重整與關分頁。切換 preset 那條路自己有 confirm，但
        F5、Ctrl+R、按上一頁、直接關分頁都沒有——那幾條一樣會把改到一半的
        東西丟掉，而且不會有任何提示。這也是「不去擋 Ctrl+R」的前提：
-       擋快捷鍵只擋得住一種按法，這一條把所有離開路徑一起顧到。 */
+       擋快捷鍵只擋得住一種按法，這一條把所有離開路徑一起顧到。
+       任何一個視窗有未存檔的修改都算。 */
     window.addEventListener('beforeunload', function (e) {
-      if (leavingOnPurpose || !state.preset || !isDirty()) return;
+      if (leavingOnPurpose || !dirtyPanes().length) return;
       e.preventDefault();
       e.returnValue = '';          // 舊版瀏覽器要這個才會跳
     });

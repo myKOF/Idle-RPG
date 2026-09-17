@@ -260,14 +260,21 @@ test('USAGE-10 搜尋同時比對 id 與用途，否則打技能名等於找不�
     '空白分隔的多個關鍵字要全部命中，否則「ground fire」會被 fire 的一大堆結果淹掉');
 });
 
-test('USAGE-11 切換 Preset 走整頁重載，未存檔要先問', function () {
-  /* preset、layout、歷史、選取、gizmo 全部要換成另一份，
-     重載是唯一能保證不會混到上一份殘留的做法。 */
+test('USAGE-11 切換 Preset 換上全新的編輯狀態，未存檔要先問', function () {
+  /* preset、layout、歷史、選取、gizmo 全部要換成另一份，不能混到上一份的殘留。
+     原本靠整頁重載保證；2026-09-17 多視窗之後重載會把其他視窗一起關掉，
+     改成把整份編輯狀態換成新的物件（newDoc），同一個保證。 */
   const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
-  const fn = editor.slice(editor.indexOf('function choosePreset'));
-  const body = fn.slice(0, fn.indexOf('\n  }'));
-  assert.ok(/encodeURIComponent\(id\)/.test(body), '要整頁重載，而且 id 要編碼');
-  assert.ok(/isDirty\(\)/.test(body), '未存檔要先問一聲');
+  const bodyOf = function (name) {
+    const fn = editor.slice(editor.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  assert.ok(/openPresetInFocus\(id\)/.test(bodyOf('choosePreset')), '選單走「開進焦點視窗」');
+  const open = bodyOf('openPresetInFocus');
+  assert.ok(/isDirty\(\)/.test(open), '未存檔要先問一聲');
+  assert.ok(/paneHolding\(id\)/.test(open), '已經開在別的視窗就切過去，同一份不開兩次');
+  assert.ok(/presetUrl\(id\)/.test(bodyOf('openPresetInPane')), '從 repo 讀那一份');
+  assert.ok(/ctx\.doc = newDoc\(\)/.test(bodyOf('beginDoc')), '整份編輯狀態換新的，不是逐欄清空');
 });
 
 test('USAGE-13 伺服器行程比磁碟舊的時候，畫面要說出來', function () {

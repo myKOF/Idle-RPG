@@ -334,13 +334,22 @@ test('HISTORY-26~30 鍵盤路由：Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z 與搜尋框�
   assert.ok(/'search'/.test(isSearch.slice(0, 300)));
 });
 
-test('HISTORY-31/32 換 preset 要清空歷史', function () {
+test('HISTORY-31/32 換 preset 要換一份新的歷史', function () {
+  /* 2026-09-17 多視窗：一份特效一份歷史（跟著 newDoc 走）。換特效＝換上全新的編輯狀態，
+     歷史也是新建的，不會把上一份的 Undo 套到這一份。 */
   const src = stripped();
-  assert.ok(/function clearHistoryForNewPreset/.test(src));
+  const fnBody = function (name) {
+    const fn = src.slice(src.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  const begin = fnBody('beginDoc');
+  assert.ok(/ctx\.doc = newDoc\(\)/.test(begin), '換上全新的編輯狀態');
+  assert.ok(/initHistory\(\)/.test(begin), '歷史跟著新建');
+  assert.ok(/state\.history = VFXHistory\.create/.test(fnBody('initHistory')), '歷史存在這一份特效上');
   const load = src.slice(src.indexOf('function loadPresetFromFile'));
   const body = load.slice(0, load.indexOf('reader.readAsText'));
-  assert.ok(/clearHistoryForNewPreset\(\)/.test(body),
-    '匯入新 preset 時必須清空，否則會把上一份的 Undo 套到這一份');
+  assert.ok(/beginDoc\(parsed\)/.test(body), '匯入新 preset 時必須換新的，否則會把上一份的 Undo 套到這一份');
+  assert.ok(/beginDoc\(/.test(fnBody('openPresetInPane')), '從 repo 開啟也一樣');
 });
 
 test('HISTORY-33~35 Undo/Redo 之後畫面三邊都要同步', function () {
