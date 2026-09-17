@@ -90,6 +90,7 @@ function drawSprite(canvas, W, H, tex, src, t, blend) {
   });
   x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0));
   x1 = Math.min(W, Math.ceil(x1)); y1 = Math.min(H, Math.ceil(y1));
+  if(t.deformation){x0=0;y0=0;x1=W;y1=H;}
   if (x1 <= x0 || y1 <= y0) return;
 
   const tr = ((t.tint >> 16) & 255) / 255, tg = ((t.tint >> 8) & 255) / 255, tb = (t.tint & 255) / 255;
@@ -99,7 +100,17 @@ function drawSprite(canvas, W, H, tex, src, t, blend) {
   for (let py = y0; py < y1; py++) {
     for (let px = x0; px < x1; px++) {
       /* 世界 → 物件（兩軸矩陣的反矩陣），再 → 來源像素 */
-      const dx = px + 0.5 - t.x, dy = py + 0.5 - t.y;
+      let wx=px+.5,wy=py+.5;
+      if(t.deformation){
+        const w=t.deformation,v=w.variation,c=v.config,co=Math.cos(w.rotation),si=Math.sin(w.rotation);
+        const dx=wx-w.originX,dy=wy-w.originY;
+        let lx=(co*dx+si*dy)/w.scaleX,ly=(-si*dx+co*dy)/w.scaleY;
+        const along=c.axis==='x'?lx:ly,q=Math.max(0,Math.min(1,(along-c.start)/(c.end-c.start)));
+        const offset=Math.sin(Math.PI*q)*c.amplitude*(Math.sin(q*9+v.phase)*.7+Math.sin(q*19+v.phase*.7)*.3);
+        if(c.axis==='x')ly=(ly-offset)/(v.mirror*v.width);else lx=(lx-offset)/(v.mirror*v.width);
+        wx=w.originX+co*lx*w.scaleX-si*ly*w.scaleY;wy=w.originY+si*lx*w.scaleX+co*ly*w.scaleY;
+      }
+      const dx = wx - t.x, dy = wy - t.y;
       const ox = (dx * md - dy * mc) / det, oy = (dy * ma - dx * mb) / det;
       const u = (ox - ax) / cw, v = (oy - ay) / ch;
       if (u < 0 || u >= 1 || v < 0 || v >= 1) continue;
@@ -160,6 +171,7 @@ function makeBackend(state) {
       if (!t.visible) return;
       state.draws.push({
         spec: node.spec, x: t.x, y: t.y, rotation: t.rotation,
+        deformation: t.deformation ? Object.assign({},t.deformation) : null,
         scaleX: t.scaleX, scaleY: t.scaleY, skewX: t.skewX, alpha: t.alpha, tint: t.tint,
         frame: t.frame, anchorX: t.anchorX, anchorY: t.anchorY, z: t.zIndex
       });

@@ -3,6 +3,17 @@
   "id": "hit-lightning",
   "duration": 0.14,
   "loop": false,
+  "deformation": {
+    "amplitude": 1.973,
+    "axis": "x",
+    "end": 28.186,
+    "layers": [
+      "arcweb"
+    ],
+    "mirror": true,
+    "start": -28.186,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "halo",

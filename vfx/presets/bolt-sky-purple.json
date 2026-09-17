@@ -3,6 +3,25 @@
   "id": "bolt-sky-purple",
   "duration": 0.65,
   "loop": false,
+  "deformation": {
+    "amplitude": 13,
+    "axis": "y",
+    "end": 0,
+    "layers": [
+      "glow",
+      "seg-a",
+      "seg-b",
+      "seg-c",
+      "branch",
+      "flash",
+      "seg-a-copy",
+      "seg-a-copy-2",
+      "flash-copy"
+    ],
+    "mirror": true,
+    "start": -500,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "glow",

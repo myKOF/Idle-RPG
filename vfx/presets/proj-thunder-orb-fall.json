@@ -3,6 +3,19 @@
   "id": "proj-thunder-orb-fall",
   "duration": 1.5,
   "loop": false,
+  "deformation": {
+    "amplitude": 2.03,
+    "axis": "x",
+    "end": 29.005,
+    "layers": [
+      "chord-a",
+      "chord-b",
+      "chord-c"
+    ],
+    "mirror": true,
+    "start": -29.005,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "outer",

@@ -3,6 +3,21 @@
   "id": "hit-gale-burst-diffusion",
   "duration": 0.27,
   "loop": false,
+  "deformation": {
+    "amplitude": 2.403,
+    "axis": "x",
+    "end": 36.64,
+    "layers": [
+      "fracture-0",
+      "fracture-1",
+      "fracture-2",
+      "fracture-3",
+      "fracture-4"
+    ],
+    "mirror": true,
+    "start": -32.026,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "amber-halo",

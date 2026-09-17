@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜雷電整組連續變形（VFX-LIGHTNING-DEFORMATION-20260918）
+
+- Owner Codex；Done。使用者核准落雷鏡像、局部連續扭曲及輕微缩放，擴展22份適用Preset。Core統一種子／區域座標函數，Pixi85頂點網格；端點及拼接共用座標，不動傷害與飛行路徑。
+- 修改Core、Pixi backend、Editor種子與快取、離線renderer、22份Preset、變形測試／瀏覽器驗證工具及規格文件。未接入使用者拒絕的hit-thunderstrike-bluewhite候選；未改素材。
+- 303項回歸：296通過、1跳過、6既有失敗；獨立HEAD快照確認相同6項Runtime失敗。實際WebGL覆蓋22份／79網格無錯誤，40道密集施放平均多約1.36ms CPU更新及渲染提交；尚未實機遊戲GPU量測。詳見 docs/vfx/LIGHTNING_DEFORMATION.md。
+- 保留使用者並行修改的技能表、skills2.js及bolt-sky-purple圖層/layout，留在工作區不混入本次提交。素材庫乾淨，無新素材提交。後續Editor定向22項全數通過；build367/367與diff check通過。可合併，未推送。
+
+
 ## Claude｜VFX 編輯器：預設空場景、點空白取消選取、方向鍵移動、Alpha 標題（VFX-EDITOR-NUDGE-20260917）
 
 - Owner：Claude；Done。使用者需求：(1) 首次開啟編輯器預設打開雷球特效，應該是空場景；(2) 點擊預覽視窗空白處取消目前的圖層選取；(3) 方向鍵移動圖層，每次 1px；(4) 途中追加：Over-Life 的 Opacity 改成 Alpha（透明度）比較直覺。

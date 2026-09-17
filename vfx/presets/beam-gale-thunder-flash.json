@@ -3,6 +3,20 @@
   "id": "beam-gale-thunder-flash",
   "duration": 0.28,
   "loop": false,
+  "deformation": {
+    "amplitude": 10.5,
+    "axis": "x",
+    "end": 300,
+    "layers": [
+      "jagged-upper",
+      "jagged-white",
+      "coil-front",
+      "coil-back"
+    ],
+    "mirror": true,
+    "start": 0,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "violet-envelope",

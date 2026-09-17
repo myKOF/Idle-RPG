@@ -47,6 +47,7 @@ var VFXPixiBackend = (function () {
     var opts = options || {};
     var PixiLib = opts.PIXI || (typeof PIXI !== 'undefined' ? PIXI : null);
     if (!PixiLib) throw new Error('VFXPixiBackend 需要 PIXI（請先載入 js/vendor/pixi.min.js）');
+    var Core = opts.Core || (typeof VFXCore !== 'undefined' ? VFXCore : require('./vfx-core.js'));
     var container = opts.container;
     if (!container) throw new Error('VFXPixiBackend 需要一個 PIXI.Container 當作掛載點');
     container.sortableChildren = true;
@@ -250,9 +251,51 @@ var VFXPixiBackend = (function () {
       entry.refs++; node.__generatedEntry = entry; node.__profileFrames = node.__flatGenerated ? [[entry.texture]] : [entry.strips]; node.__frameWanted = 0;
     }
 
+    // 每層85個頂點，可走Pixi的小網格批次；不使用全屏Filter或額外RenderTexture。
+    function createWarpMesh(spec) {
+      var cols=spec.warpAxis==='x'?17:5,rows=spec.warpAxis==='x'?5:17;
+      var positions=new Float32Array(cols*rows*2),uvs=new Float32Array(positions.length);
+      var indices=new Uint32Array((cols-1)*(rows-1)*6),n=0;
+      for(var y=0;y<rows;y++)for(var x=0;x<cols;x++){
+        var i=y*cols+x;uvs[i*2]=x/(cols-1);uvs[i*2+1]=y/(rows-1);
+        if(x<cols-1&&y<rows-1){indices.set([i,i+1,i+cols,i+1,i+cols+1,i+cols],n);n+=6;}
+      }
+      var geometry=new PixiLib.MeshGeometry({positions:positions,uvs:uvs,indices:indices});
+      var node=new PixiLib.Mesh({geometry:geometry,texture:PixiLib.Texture.EMPTY});
+      node.__warp={uvs:uvs,positions:positions,cache:{},point:{},geometry:geometry};
+      return node;
+    }
+    var warpMatrixKeys=['a','b','c','d','x','y'];
+    function updateWarp(node,t) {
+      var w=t.deformation,m=node.__warp;
+      if(!w){node.visible=false;return;}
+      var tex=node.texture,tw=tex.orig ? tex.orig.width : tex.width,th=tex.orig ? tex.orig.height : tex.height;
+      if(!(tw>1&&th>1))return;
+      var v=w.variation,c=m.cache;
+      var changed=c.tw!==tw||c.th!==th||c.ax!==t.anchorX||c.ay!==t.anchorY||c.variation!==v;
+      for(var k=0;k<warpMatrixKeys.length;k++){
+        var key=warpMatrixKeys[k];
+        if(c[key]===undefined||Math.abs(c[key]-w[key])>1e-10)changed=true;
+      }
+      if(changed){
+        c.tw=tw;c.th=th;c.ax=t.anchorX;c.ay=t.anchorY;c.variation=v;
+        for(var k=0;k<warpMatrixKeys.length;k++)c[warpMatrixKeys[k]]=w[warpMatrixKeys[k]];
+        for(var i=0;i<m.uvs.length;i+=2){
+          var x=(m.uvs[i]-t.anchorX)*tw,y=(m.uvs[i+1]-t.anchorY)*th;
+          Core.deformPoint(v,w.a*x+w.c*y+w.x,w.b*x+w.d*y+w.y,m.point);
+          m.positions[i]=m.point.x;m.positions[i+1]=m.point.y;
+        }
+        m.geometry.getBuffer('aPosition').update();
+      }
+      node.position.set(w.originX,w.originY);node.rotation=w.rotation;
+      node.scale.set(w.scaleX,w.scaleY);node.skew.set(0,0);
+    }
+
     function createNode(spec) {
       var node;
-      if (spec.kind === 'profiled' || spec.kind === 'generated') {
+      if (spec.kind === 'deformed') {
+        node=createWarpMesh(spec);
+      } else if (spec.kind === 'profiled' || spec.kind === 'generated') {
         node = new PixiLib.Container();
         node.__profileScales = spec.profileScales ? spec.profileScales.slice() : Array(64).fill(1);
         node.__flatGenerated = spec.kind === 'generated' && node.__profileScales.every(function (s) { return s === node.__profileScales[0]; });
@@ -323,6 +366,7 @@ var VFXPixiBackend = (function () {
         if (t.tint !== undefined) node.__profileTint = t.tint;
         updateProfile(node);
       }
+      if (node.__warp) updateWarp(node,t);
       if (t.width !== undefined) node.width = t.width;
       if (t.height !== undefined) node.height = t.height;
       if (t.tileX !== undefined && node.tilePosition) {
@@ -338,6 +382,7 @@ var VFXPixiBackend = (function () {
          被銷毀——只把節點對它的指向拿掉。實際釋放在 destroy() 一次做完。 */
       node.__frames = null;
       node.__profileFrames = null;
+      if(node.__warp)node.__warp.geometry.destroy();
       node.destroy({ children: true });
     }
 
