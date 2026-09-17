@@ -221,9 +221,14 @@
 
      preset.layers 一律 push 到尾端——那是「新增」不是「重排」，
      不會位移既有索引，所以粒子種子與繪製順序都不受影響。
-     看得見的位置由 layout.order 與 groups[].layerIds 決定。 */
-  function pasteClipboard(preset, layout, clipboard, anchorKey) {
+     看得見的位置由 layout.order 與 groups[].layerIds 決定。
+
+     opts.keepIds：貼到另一份特效（多視窗之間）時為 true。副本 id 一律帶 -copy 是為了在
+     同一份特效裡分得出「哪一層是複製出來的」；搬到另一份特效時那裡沒有原本那一層，
+     a1-copy 反而像是在說那份特效裡有 a1。所以沿用原本的 id，撞名才加序號。 */
+  function pasteClipboard(preset, layout, clipboard, anchorKey, opts) {
     if (!clipboard || !clipboard.items || !clipboard.items.length) return [];
+    var layerIdFrom = opts && opts.keepIds ? uniqueId : uniqueIdFrom;
     var takenLayer = Object.create(null);
     preset.layers.forEach(function (l) { takenLayer[l.id] = true; });
     var takenGroup = Object.create(null);
@@ -252,7 +257,7 @@
       if (item.kind === 'layer') {
         var l = deepClone(item.layer);
         var from = l.id;
-        l.id = uniqueIdFrom(l.id, takenLayer);
+        l.id = layerIdFrom(l.id, takenLayer);
         if (!copyOf[from]) copyOf[from] = l.id;
         pasted.push(l);
         preset.layers.push(l);
@@ -274,7 +279,7 @@
       item.layers.forEach(function (raw) {
         var l2 = deepClone(raw);
         var from2 = l2.id;
-        l2.id = uniqueIdFrom(l2.id, takenLayer);
+        l2.id = layerIdFrom(l2.id, takenLayer);
         if (!copyOf[from2]) copyOf[from2] = l2.id;
         pasted.push(l2);
         preset.layers.push(l2);
