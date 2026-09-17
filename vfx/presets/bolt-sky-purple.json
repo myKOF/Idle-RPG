@@ -7,11 +7,15 @@
     {
       "id": "glow",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_a.png",
+      "assetId": "light-masks-1.0/default/cone_e_blur.png",
       "zIndex": 0,
+      "position": {
+        "x": 2.9631,
+        "y": -6.9366
+      },
       "scale": {
-        "x": 0.2539,
-        "y": 1.0938
+        "x": 0.2215,
+        "y": 0.912
       },
       "anchor": {
         "x": 0.5,
@@ -46,12 +50,12 @@
       "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 1,
       "position": {
-        "x": 0,
-        "y": -405
+        "x": 5.7003,
+        "y": -334.5711
       },
       "scale": {
-        "x": 0.2031,
-        "y": 0.3711
+        "x": 0.0872,
+        "y": 0.3094
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -108,12 +112,12 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": 12,
-        "y": -250
+        "x": 7.5584,
+        "y": -194.433
       },
       "scale": {
-        "x": 0.1828,
-        "y": 0.3711
+        "x": 0.1524,
+        "y": 0.2379
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -170,12 +174,12 @@
       "assetId": "particle-pack/png-black-background/spark_06.png",
       "zIndex": 3,
       "position": {
-        "x": -9,
-        "y": -95
+        "x": 5.0467,
+        "y": -70.1402
       },
       "scale": {
-        "x": 0.1523,
-        "y": 0.3711
+        "x": 0.0761,
+        "y": 0.248
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -232,13 +236,13 @@
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "zIndex": 4,
       "position": {
-        "x": 43.68,
-        "y": -300
+        "x": 33.2898,
+        "y": -254.3007
       },
       "rotation": 0.5934,
       "scale": {
-        "x": 0.1259,
-        "y": 0.1259
+        "x": 0.105,
+        "y": 0.105
       },
       "alpha": 0.85,
       "tint": "#ffffff",
@@ -290,69 +294,20 @@
       ]
     },
     {
-      "id": "sigil",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_rings_a.png",
-      "zIndex": 5,
-      "scale": {
-        "x": 0.1094,
-        "y": 0.0508
-      },
-      "alpha": 0.9,
-      "tint": "#c084fc",
-      "blendMode": "add",
-      "delay": 0.04,
-      "duration": 0.61,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          0.95
-        ],
-        [
-          0.7,
-          0.7
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.3
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          3.9
-        ]
-      ]
-    },
-    {
       "id": "flash",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/scorch_02.png",
       "zIndex": 6,
+      "position": {
+        "x": 5.8547,
+        "y": -4.6771
+      },
       "scale": {
-        "x": 0.1016,
-        "y": 0.1016
+        "x": 0.175,
+        "y": 0.069
       },
       "alpha": 1,
-      "tint": "#fdf4ff",
+      "tint": "#da75f0",
       "blendMode": "add",
       "delay": 0.03,
       "duration": 0.2,
@@ -368,6 +323,177 @@
         [
           0.25,
           0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          1.25
+        ]
+      ]
+    },
+    {
+      "id": "seg-a-copy",
+      "type": "sprite",
+      "assetId": "new_materials/orb/energyball_1.png",
+      "zIndex": 1,
+      "position": {
+        "x": 4.4568,
+        "y": -411.4235
+      },
+      "scale": {
+        "x": 0.0507,
+        "y": 0.0382
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          0.32,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.08,
+          "#f5e8ff"
+        ],
+        [
+          0.35,
+          "#c084fc"
+        ],
+        [
+          1,
+          "#3b1060"
+        ]
+      ]
+    },
+    {
+      "id": "seg-a-copy-2",
+      "type": "sprite",
+      "assetId": "new_materials/orb/energyball_1.png",
+      "zIndex": 1,
+      "position": {
+        "x": 4.4568,
+        "y": -411.4235
+      },
+      "scale": {
+        "x": 0.0507,
+        "y": 0.0382
+      },
+      "alpha": 1,
+      "tint": "#cf70ff",
+      "blendMode": "add",
+      "duration": 0.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.05,
+          1
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          0.32,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.08,
+          "#f5e8ff"
+        ],
+        [
+          0.35,
+          "#c084fc"
+        ],
+        [
+          1,
+          "#3b1060"
+        ]
+      ]
+    },
+    {
+      "id": "flash-copy",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 6,
+      "position": {
+        "x": 5.1548,
+        "y": -5.3769
+      },
+      "scale": {
+        "x": 0.0667,
+        "y": 0.069
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0.03,
+      "duration": 0.2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1.126012
+        ],
+        [
+          0.5494,
+          1.012773
         ],
         [
           1,

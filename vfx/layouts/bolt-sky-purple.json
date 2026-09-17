@@ -8,11 +8,13 @@
       "layerIds": [
         "glow",
         "seg-a",
+        "seg-a-copy",
+        "seg-a-copy-2",
         "seg-b",
         "seg-c",
         "branch",
-        "sigil",
-        "flash"
+        "flash",
+        "flash-copy"
       ]
     }
   ],
