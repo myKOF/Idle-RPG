@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Claude｜VFX 啟動器改成 Node：一律先關掉本副本的舊伺服器再重開，.bat 只留 ASCII（VFX-LAUNCHER-20260917）
+
+- Owner：Claude；Done。使用者回報：(1) 啟動器判定伺服器過期那一段，說明文字被 cmd 拆碎當成指令執行（「'面上看不出原因。' is not recognized」），其中 `echo     taskkill /F /PID 那個PID` 的 echo 被吃掉、taskkill 真的跑了；(2) 叫使用者去關舊伺服器的視窗，但那台沒有視窗或已經當掉關不了。使用者提議：開新的時候自動關掉舊的再重開。
+- 修改：新增 tools/vfx/launch-editor.cjs——找出本副本所有編輯器伺服器（有回應的看 /__whoami，當掉的看 node 命令列），有回應的走 POST /__shutdown，沒回應或關不掉的強制結束（連同伺服器視窗；強制結束前重新確認 PID，避免 PID 被重用時誤殺），再開新的伺服器視窗、等就緒、開頁面。啟動VFX編輯器.bat 與 tools/vfx/editor_server_window.bat 改成整個檔案純 ASCII（中文訊息由 Node 印；參數以 "%~1" 轉交；伺服器改用絕對路徑啟動，當掉的那台才認得出來）。editor-server.cjs 匯出啟動器要讀的常數，並在 VFX_EDITOR_WINDOW=1 時自己印視窗說明。W7／W7B／W8 改寫並從 vfx-editor-save.test.cjs 搬到新的 tests/vfx-editor-launcher.test.cjs，另加 LAUNCH-1～7。
+- 驗證：launcher 測試 10 項全過；編輯器相關 386 項，失敗僅 CAP-2、SAFETY-3、HISTORY-42 三項既有基線。Windows 實機四個情境：沒有伺服器→直接開；已有伺服器→正常關閉後換新 PID；另有一台卡死（/__whoami 不回應）的伺服器→靠命令列認出並強制結束；直接執行 .bat（--no-browser）→沒有任何「is not recognized」。事後確認沒有殘留行程或視窗。
+- 待確認：使用者需 merge ai/claude 才會在自己的副本生效（伺服器程式有改，但新啟動器會自動重開，不必手動重啟）。其餘含中文 echo 的 .bat（啟動數值模擬器.bat、tools/sim_server_window.bat、啟動測試服.bat、套用參數.bat）有同樣風險，已開獨立任務。
+
 ## Codex｜疾風破固定落點範圍連擊（GALE-AREA-20260917）
 
 - Owner：Codex；Done。取代死亡轉移：死亡後留在原座標完成剩餘段數；第一階每段依 Excel 作用範圍（半徑 10 米）傷害全部敵人，各自完整傷害。範圍為 Skills2 配置同步、技能／測試、快取與本紀錄；前置依賴完成，衝突預檢乾淨。

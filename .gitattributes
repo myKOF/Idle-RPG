@@ -33,8 +33,8 @@
 
 # 例外一：.bat 必須是 CRLF。
 # cmd.exe 是逐段解析的，LF 行尾會讓它在檔案中途失去同步，症狀是
-# 「雙擊就壞」而不是「格式不好看」。tests/vfx-editor-save.test.cjs
-# 的 W8 釘住這件事。寫成 eol=crlf 而不是繼續靠 core.autocrlf：
+# 「雙擊就壞」而不是「格式不好看」。tests/vfx-editor-launcher.test.cjs
+# 的 W8 釘住這件事（同一條也要求 .bat 整個檔案只能是 ASCII）。寫成 eol=crlf 而不是繼續靠 core.autocrlf：
 # 換一台把 autocrlf 關掉的機器，靠設定的那條路會直接失效。
 *.bat text eol=crlf
 
