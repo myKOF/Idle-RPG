@@ -519,3 +519,150 @@ test('PARENT-26 index.html 載入順序：layer-model → hierarchy-model → ed
   const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
   assert.ok(/\['VFXHierarchyModel', 'tools\/vfx\/editor\/hierarchy-model\.js'\]/.test(editor));
 });
+
+/* ---------------- 預覽上的框（gizmo） ----------------
+   子物件的數值相對父物件，所以框、把手與拖曳的數學在父物件座標裡算，
+   滑鼠座標進來、框畫出去時換算（gizmo-model.js「父子層級的座標空間」）。
+   以下模擬 editor.js 拖曳時的那幾步，再拿 Runtime 的輸出確認畫面真的照滑鼠動。 */
+
+const G = require('../tools/vfx/editor/gizmo-model.js');
+const TEX = { width: 64, height: 64 };
+
+function pivotFixture() {
+  return preset([
+    empty('pivot', { position: { x: 100, y: 50 }, rotation: Math.PI / 2, scale: { x: 2, y: 2 } }),
+    sprite('orb', { parent: 'pivot', position: { x: 0, y: -15 }, rotation: -Math.PI / 2, scale: { x: 0.5, y: 0.5 } })
+  ]);
+}
+function spaceOfIn(p) {
+  return (l) => (H.parentIdOf(l) ? H.parentMatrixOf(p, H.parentIdOf(l)) : undefined);
+}
+function nodeOf(p, url, t) {
+  return framesAt(p, [t || 0.2])[0].find((n) => n.url === '/' + url + '.png');
+}
+function screenAngle(n) { return Math.atan2(n.b, n.a); }
+function angleDiff(a, b) { return Math.atan2(Math.sin(a - b), Math.cos(a - b)); }
+
+test('PARENT-27 座標換算：正反映射互逆；父物件縮放是 0 時回傳 null；根層級原樣複製', function () {
+  const space = H.parentMatrixOf(pivotFixture(), 'pivot');
+  const world = G.mapPoint(space, { x: 0, y: -15 });
+  assert.ok(Math.abs(world.x - 130) < 1e-9 && Math.abs(world.y - 50) < 1e-9, JSON.stringify(world));
+  const back = G.unmapPoint(space, world);
+  assert.ok(Math.abs(back.x) < 1e-9 && Math.abs(back.y + 15) < 1e-9, JSON.stringify(back));
+  assert.equal(G.unmapPoint({ a: 0, b: 0, c: 0, d: 0, tx: 5, ty: 5 }, { x: 1, y: 1 }), null);
+  const p = { x: 3, y: 4 };
+  const copy = G.mapPoint(undefined, p);
+  assert.deepEqual(copy, p);
+  assert.notEqual(copy, p, '回傳複本，呼叫端改了不會動到原本的點');
+});
+
+test('PARENT-28 拖子物件的框：滑鼠在畫面上往右 10px，子物件在畫面上就往右 10px', function () {
+  const p = pivotFixture();
+  const orb = p.layers[1];
+  const before = nodeOf(clone(p), 'orb');
+  const space = H.parentMatrixOf(p, 'pivot');
+  const start = G.unmapPoint(space, { x: 130, y: 50 });
+  const now = G.unmapPoint(space, { x: 140, y: 50 });
+  orb.position = G.applyMove(G.snapshot(orb).position, start, now, {});
+  const after = nodeOf(p, 'orb');
+  assert.ok(Math.abs(after.x - before.x - 10) < 1e-3 && Math.abs(after.y - before.y) < 1e-3,
+    '(' + before.x + ',' + before.y + ') → (' + after.x + ',' + after.y + ')');
+  /* 父物件轉了 90 度、放大 2 倍：畫面往右 10px 在它底下是往上 5 */
+  assert.deepEqual(orb.position, { x: 0, y: -20 });
+});
+
+test('PARENT-29 在預覽區點選：子物件的框在它畫面上的位置，不在數值寫的那個位置', function () {
+  const p = pivotFixture();
+  const boundsOf = (l) => G.baseBounds(l, TEX);
+  const onScreen = G.hitLayer({ x: 130, y: 50 }, [p.layers[1]], boundsOf, spaceOfIn(p));
+  assert.equal(onScreen && onScreen.id, 'orb');
+  assert.equal(G.hitLayer({ x: 0, y: -15 }, [p.layers[1]], boundsOf, spaceOfIn(p)), null,
+    '數值上的位置在畫面上是空的，點那裡不該選到它');
+});
+
+test('PARENT-30 群組框包住子物件在畫面上的範圍', function () {
+  const p = pivotFixture();
+  const b = G.groupBounds(p.layers, () => TEX, spaceOfIn(p));
+  /* 空物件 48×2＝96 的框在 (100,50)：x 52～148、y 2～98。
+     子物件 64×0.5×2＝64 的框在畫面上的 (130,50)：x 98～162、y 18～82。聯集 x 52～162、y 2～98 */
+  assert.deepEqual({ x: b.x, y: b.y, w: b.w, h: b.h, pivot: b.pivot },
+    { x: 52, y: 2, w: 110, h: 96, pivot: { x: 107, y: 50 } });
+});
+
+test('PARENT-31 多選一起拖：掛在不同父物件底下的圖層，畫面上的位移一樣、旋轉方向一樣', function () {
+  const p = preset([
+    empty('pivot', { position: { x: 100, y: 50 }, rotation: Math.PI / 2, scale: { x: 2, y: 2 } }),
+    empty('mirror', { position: { x: -60, y: 0 }, scale: { x: -1, y: 1 } }),
+    sprite('root', { position: { x: 20, y: 20 } }),
+    sprite('orb', { parent: 'pivot', position: { x: 0, y: -15 } }),
+    sprite('flip', { parent: 'mirror', position: { x: 10, y: 0 } })
+  ]);
+  const movers = [p.layers[2], p.layers[3], p.layers[4]];
+  const spaces = movers.map(spaceOfIn(p));
+  const caps = movers.map((l) => G.capabilities(l));
+  const before = framesAt(clone(p), [0.2])[0];
+
+  let snaps = G.multiSnapshot(movers);
+  G.writeMultiTransform(movers, snaps, G.applyMultiTransform(snaps, caps,
+    spaces.map((s) => G.deltaToSpace({ dx: 10, dy: -4 }, undefined, s))));
+  const moved = framesAt(clone(p), [0.2])[0];
+  before.forEach(function (n, i) {
+    assert.ok(Math.abs(moved[i].x - n.x - 10) < 1e-3 && Math.abs(moved[i].y - n.y + 4) < 1e-3,
+      n.url + '：(' + n.x + ',' + n.y + ') → (' + moved[i].x + ',' + moved[i].y + ')');
+  });
+
+  snaps = G.multiSnapshot(movers);
+  G.writeMultiTransform(movers, snaps, G.applyMultiTransform(snaps, caps,
+    spaces.map((s) => G.deltaToSpace({ rot: 0.3 }, undefined, s))));
+  const turned = framesAt(p, [0.2])[0];
+  /* 畫面上的角度＝atan2(b, a)。鏡像父物件底下若沒有反向，那一層會往另一個方向轉 */
+  moved.forEach(function (n, i) {
+    const d = angleDiff(screenAngle(turned[i]), screenAngle(n));
+    assert.ok(Math.abs(d - 0.3) < 1e-4, n.url + ' 在畫面上轉了 ' + d);
+  });
+});
+
+test('PARENT-32 群組變形套到父物件在群組外的成員：換進它的父物件座標，畫面上照群組中心轉', function () {
+  const p = preset([
+    empty('outside', { position: { x: 50, y: 0 }, scale: { x: 2, y: 2 } }),
+    sprite('orb', { parent: 'outside', position: { x: 10, y: 0 } })
+  ]);
+  const orb = p.layers[1];
+  const before = nodeOf(clone(p), 'orb');
+  assert.ok(Math.abs(before.x - 70) < 1e-6 && Math.abs(before.y) < 1e-6, '前提：orb 在畫面上的 (70,0)');
+  const local = G.groupDeltaInSpace({ x: 0, y: 0 }, { rot: Math.PI / 2 }, H.parentMatrixOf(p, 'outside'));
+  G.writeGroupTransform([orb], G.applyGroupTransform(G.groupSnapshot([orb]), local.pivot, local.delta));
+  const after = nodeOf(p, 'orb');
+  /* 繞 (0,0) 轉 90 度：(70,0) → (0,70)，圖本身也轉 90 度 */
+  assert.ok(Math.abs(after.x) < 1e-3 && Math.abs(after.y - 70) < 1e-3, '(' + after.x + ',' + after.y + ')');
+  assert.ok(Math.abs(angleDiff(screenAngle(after), Math.PI / 2)) < 1e-4);
+});
+
+test('PARENT-33 空物件的框：48 px 乘上它的 scale，中心就是 position', function () {
+  const b = G.baseBounds(empty('n', { position: { x: 10, y: 20 }, scale: { x: 2, y: 0.5 } }), null);
+  assert.deepEqual({ x: b.x, y: b.y, w: b.w, h: b.h, pivot: b.pivot },
+    { x: -38, y: 8, w: 96, h: 24, pivot: { x: 10, y: 20 } });
+  const caps = G.capabilities(empty('n'));
+  assert.ok(caps.move && caps.scaleX && caps.scaleY && caps.rotate);
+});
+
+test('PARENT-34 editor.js 的框走父物件座標：取得、命中、拖曳、群組與多選都有接上', function () {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const body = (name) => {
+    const fn = src.slice(src.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  assert.ok(/space: spaceOf\(l\)/.test(body('gizmoTarget')) && /space: spaceOf\(layer\)/.test(body('gizmoTarget')));
+  assert.ok(/transformRoots\(/.test(body('gizmoTarget')), '父子同時選到時只動最上層');
+  assert.ok(/G\.groupBounds\(members, sizeOf, spaceOf\)/.test(body('gizmoTarget')));
+  assert.ok(/G\.mapPoint\(it\.space/.test(body('hitGizmoHandle')));
+  assert.ok(/G\.hitLayer\(pt, target\.layers, boundsOf, spaceOf\)/.test(body('hitGizmoBody')));
+  assert.ok(/G\.unmapPoint\(items\[0\]\.space, pt\)/.test(body('hitGizmoBody')));
+  assert.ok(/G\.hitLayer\(pt, pickableLayers\(\), boundsOf, spaceOf\)/.test(body('onPreviewPointerDown')));
+  assert.ok(/G\.unmapPoint\(space, startPoint\)/.test(body('beginDrag')));
+  assert.ok(/G\.unmapPoint\(d\.space, pt\)/.test(body('dragLayer')) && /G\.unmapPoint\(d\.space, pt\)/.test(body('dragMulti')));
+  assert.ok(/G\.deltaToSpace\(/.test(body('dragMulti')));
+  assert.ok(/writeGroupDelta\(/.test(body('dragGroup')) && /writeGroupDelta\(/.test(body('applyGroupDelta')));
+  assert.ok(/G\.groupDeltaInSpace\(/.test(body('writeGroupDelta')));
+});

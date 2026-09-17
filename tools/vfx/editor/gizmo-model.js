@@ -92,6 +92,11 @@ var VFXGizmoModel = (function () {
       else { w = h = 0; }
       w = Math.max(w, MIN_BOX); h = Math.max(h, MIN_BOX);
       ax = 0.5; ay = 0.5;                    // 兩種形狀都以 position 為中心
+    } else if (layer.type === 'empty') {
+      /* 空物件不畫東西，給一個固定大小的框讓它抓得到。框跟著 scale 縮放：
+         它的 scale 會傳給子物件，看框就知道現在是幾倍。 */
+      w = MIN_BOX * scale.x; h = MIN_BOX * scale.y;
+      ax = 0.5; ay = 0.5;
     } else if (layer.type === 'procedural') {
       var size = layer.size || { x: 256, y: 256 };
       w = size.x * scale.x; h = size.y * scale.y;
@@ -161,6 +166,65 @@ var VFXGizmoModel = (function () {
     return out;
   }
 
+  /* ---------------- 父子層級的座標空間 ----------------
+
+     子物件的 position／rotation／scale 是相對父物件的，所以框、把手與拖曳的數學
+     全部照舊在「父物件座標」裡算——那裡的公式與根層級完全相同，一行都不必改。
+     只有兩個邊界要換算：滑鼠座標進來時（特效座標 → 父物件座標），
+     框與把手畫出去時（父物件座標 → 特效座標）。
+
+     space 是父物件的世界矩陣 { a, b, c, d, tx, ty }（與 VFXCore 同一個慣例：
+     點 (x, y) 變成 (a·x + c·y + tx, b·x + d·y + ty)）。根層級的圖層沒有 space
+     （undefined）：直接回傳複本，原本的路徑連浮點運算都不多做一次。 */
+
+  function mapPoint(space, p) {
+    if (!space) return { x: p.x, y: p.y };
+    return { x: space.a * p.x + space.c * p.y + space.tx, y: space.b * p.x + space.d * p.y + space.ty };
+  }
+
+  /* 反過來。父物件縮放是 0（行列式 0）時回傳 null：那一層在畫面上根本不存在，點不到也拖不動。 */
+  function unmapPoint(space, p) {
+    if (!space) return { x: p.x, y: p.y };
+    return unmapVector(space, p.x - space.tx, p.y - space.ty);
+  }
+
+  function unmapVector(space, x, y) {
+    var det = space.a * space.d - space.b * space.c;
+    if (!isFinite(det) || Math.abs(det) < 1e-12) return null;
+    return { x: (space.d * x - space.c * y) / det, y: (space.a * y - space.b * x) / det };
+  }
+
+  /* 鏡像（行列式為負）的座標裡，畫面上的逆時針是區域座標的順時針 */
+  function handedness(space) {
+    return space && space.a * space.d - space.b * space.c < 0 ? -1 : 1;
+  }
+
+  /* 一次變形量從 fromSpace 換到 toSpace：位移是向量（不加平移），旋轉在鏡像時反向，
+     縮放倍率沿著圖層自己的軸、與座標系無關，照原樣。
+     父物件等比縮放時完全精確；非等比又轉過角度時角度會被拉歪，取同樣的量當近似。 */
+  function deltaToSpace(delta, fromSpace, toSpace) {
+    var out = {};
+    Object.keys(delta).forEach(function (k) { out[k] = delta[k]; });
+    if (delta.dx !== undefined || delta.dy !== undefined) {
+      var dx = delta.dx || 0, dy = delta.dy || 0;
+      var wx = fromSpace ? fromSpace.a * dx + fromSpace.c * dy : dx;
+      var wy = fromSpace ? fromSpace.b * dx + fromSpace.d * dy : dy;
+      var v = toSpace ? unmapVector(toSpace, wx, wy) : { x: wx, y: wy };
+      out.dx = v ? v.x : 0;
+      out.dy = v ? v.y : 0;
+    }
+    if (delta.rot) out.rot = delta.rot * handedness(fromSpace) * handedness(toSpace);
+    return out;
+  }
+
+  /* 群組變形套到「父物件不在群組裡」的成員：群組框與變形量都在特效座標，
+     把 pivot 與變形量換進那個成員的父物件座標再套。換不過去（父物件縮放是 0）回傳 null。 */
+  function groupDeltaInSpace(pivot, delta, space) {
+    if (!space) return { pivot: pivot, delta: delta };
+    var p = unmapPoint(space, pivot);
+    return p ? { pivot: p, delta: deltaToSpace(delta, null, space) } : null;
+  }
+
   /* 命中把手。半徑由呼叫端給，因為它要換算成 effect 單位
      （螢幕上想要固定 8px，縮放之後的 effect 距離就不是 8）。 */
   function hitHandle(point, handleList, radius) {
@@ -188,12 +252,14 @@ var VFXGizmoModel = (function () {
      照實際繪製順序，**最上面的優先**。後端是 sortableChildren + zIndex，
      zIndex 相同時由加入順序決定，也就是 preset.layers 的陣列順序。
      這裡用同一套規則排序，選取結果才會和眼睛看到的一致。 */
-  function hitLayer(point, layers, boundsOf) {
+  /* spaceOf(layer)：那一層的父物件座標（見上面「父子層級的座標空間」），省略＝全部在根層級 */
+  function hitLayer(point, layers, boundsOf, spaceOf) {
     var candidates = [];
     layers.forEach(function (l, i) {
       if (l.enabled === false) return;
       var b = boundsOf(l);
-      if (b && insideBounds(point, b)) {
+      var p = spaceOf ? unmapPoint(spaceOf(l), point) : point;
+      if (b && p && insideBounds(p, b)) {
         candidates.push({ layer: l, z: l.zIndex || 0, i: i });
       }
     });
@@ -335,15 +401,17 @@ var VFXGizmoModel = (function () {
 
   /* 群組的框＝所有子圖層基準框的聯集。pivot 取框的中心，
      這樣縮放與旋轉都以視覺重心為準，符合直覺。 */
-  function groupBounds(layers, sizeOf) {
+  /* spaceOf 同 hitLayer：掛在父物件底下的成員，四角要換到特效座標才能跟別人取聯集 */
+  function groupBounds(layers, sizeOf, spaceOf) {
     var pts = [];
     layers.forEach(function (l) {
       var b = baseBounds(l, sizeOf(l));
       if (!b) return;
+      var space = spaceOf ? spaceOf(l) : undefined;
       /* 子圖層自己可能已經轉過，取它四角轉完之後的軸對齊外框 */
       [{ x: b.x, y: b.y }, { x: b.x + b.w, y: b.y },
         { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }]
-        .forEach(function (p) { pts.push(rotateAround(p, b.pivot, b.rotation)); });
+        .forEach(function (p) { pts.push(mapPoint(space, rotateAround(p, b.pivot, b.rotation))); });
     });
     if (!pts.length) return null;
     var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -543,13 +611,16 @@ var VFXGizmoModel = (function () {
   }
 
   /* 把相對量套到每一層，回傳每層要覆寫的欄位（不就地修改）。capsList 與 snaps 同順序：
-     粒子沒有縮放能力，就不寫它的 scale——Core 根本不看，寫了只是在 preset 裡留垃圾。 */
+     粒子沒有縮放能力，就不寫它的 scale——Core 根本不看，寫了只是在 preset 裡留垃圾。
+     delta 也可以是與 snaps 同順序的陣列：各層掛在不同的父物件底下時，同一個畫面上的位移
+     換到各自的父物件座標是不同的數字（見 deltaToSpace）。 */
   function applyMultiTransform(snaps, capsList, delta) {
-    var dx = delta.dx || 0, dy = delta.dy || 0;
-    var sx = delta.sx === undefined ? 1 : delta.sx;
-    var sy = delta.sy === undefined ? 1 : delta.sy;
-    var rot = delta.rot || 0;
     return snaps.map(function (snap, i) {
+      var dl = Array.isArray(delta) ? (delta[i] || {}) : delta;
+      var dx = dl.dx || 0, dy = dl.dy || 0;
+      var sx = dl.sx === undefined ? 1 : dl.sx;
+      var sy = dl.sy === undefined ? 1 : dl.sy;
+      var rot = dl.rot || 0;
       var caps = capsList[i] || {};
       var out = {};
       if ((dx || dy) && caps.move) {
@@ -594,6 +665,8 @@ var VFXGizmoModel = (function () {
     handles: handles, hitHandle: hitHandle,
     insideBounds: insideBounds, hitLayer: hitLayer,
     rotateAround: rotateAround, toLocal: toLocal,
+    mapPoint: mapPoint, unmapPoint: unmapPoint,
+    deltaToSpace: deltaToSpace, groupDeltaInSpace: groupDeltaInSpace,
     applyMove: applyMove, applyScale: applyScale, applyRotate: applyRotate,
     snapshot: snapshot, restore: restore,
     groupBounds: groupBounds, groupCapabilities: groupCapabilities,

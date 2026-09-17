@@ -475,11 +475,19 @@ test('VIEW-22 群組的數值變形走與拖曳同一條路', function () {
   /* 自己另外寫一套「用數字縮放」的話，粒子的 startScale／speed／spawn／gravity
      這些只有群組變形才會動到的欄位一定會漏掉，於是用拖的和用打的結果不一樣。 */
   const src = stripped();
-  const fn = src.slice(src.indexOf('function applyGroupDelta'));
-  const body = fn.slice(0, fn.indexOf('\n  }'));
+  const bodyOf = (name) => {
+    const fn = src.slice(src.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  const body = bodyOf('applyGroupDelta');
   assert.ok(/G\.groupSnapshot/.test(body));
-  assert.ok(/G\.applyGroupTransform/.test(body));
-  assert.ok(/G\.writeGroupTransform/.test(body));
+  /* 2026-09-17 父子層級：成員的父物件不在群組裡時要把變形量換進它的父物件座標，
+     那一段收在 writeGroupDelta，拖曳（dragGroup）與數值輸入都呼叫它——兩條路仍是同一條。 */
+  assert.ok(/writeGroupDelta\(/.test(body) && /writeGroupDelta\(/.test(bodyOf('dragGroup')),
+    '數值輸入與拖曳要呼叫同一支 writeGroupDelta');
+  const shared = bodyOf('writeGroupDelta');
+  assert.ok(/G\.applyGroupTransform/.test(shared));
+  assert.ok(/G\.writeGroupTransform/.test(shared));
 });
 
 test('VIEW-23 群組 Inspector 的絕對值欄位由 groupBounds 即時算出來', function () {
