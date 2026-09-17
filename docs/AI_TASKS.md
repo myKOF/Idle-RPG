@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜霹靂一閃全場貫穿（GALE-THUNDER-FULLFIELD-20260917）
+
+- Owner Codex；Done。以當前玩家為中心，沿玩家與目標連線貫穿長100米、寬10米（前後各50米）；傷害與特效共用矩形。基礎次數表定count=3，再加角色連擊數；維持0.2秒重選20米內敵人、無敵即停與0.08秒伸滿。
+- 修改 skills2、Skills2.xlsx/CSV、三份測試、index/bridge/worker快取與本紀錄。Excel僅O39/AF39/AI39/AJ39四格改動，artifact-tool匯出且比對所有儲存格；移除back參數。沿用既有Preset依事件伸長，無素材修改。
+- 驗證：gale-thunder-flash/gale-rework/skill-vfx-inheritance共22項、霹靂一閃/雷神斬/千鳥3項、Runtime THUNDER-FLASH 1項通過；build及diff check通過。原製作30米Preset正確拉長至100米，寬度不變。
+- 效能：單道粒子數不增加，每次施放較前版多2道；未實機量測GPU負載。無未完成實作，可合併，未推送。
+
+
 ## Codex｜霹靂一閃角色連擊數修正（GALE-THUNDER-COMBO-20260917）
 
 - Owner Codex；Done。修正誤以疾風破自身打擊次數增加雷電數量，改讀施放時角色 comboHits，加上狂化連殺／狂暴之舞期間加成；小數沿用 sgRollCount 機率。0 連擊只出 1 道，3 連擊出 4 道；本體追加打擊只影響最後一擊的觸發時間。

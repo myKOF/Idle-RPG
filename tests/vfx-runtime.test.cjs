@@ -349,16 +349,16 @@ const ENT = {
   'pv-float': { x: 0, y: 0 }
 };
 
-test('THUNDER-FLASH 光束原點、30×10米矩形與方向取自事件，伸展時間同步且不受場景倍率改變',()=>{
+test('THUNDER-FLASH 光束原點、100×10米矩形與方向取自事件，伸展時間同步且不受場景倍率改變',()=>{
  const p=unitPreset('configured-flash',.28);
  p.sizing={shape:'custom',widthM:30,heightM:10,authored:{width:300,height:100}};
  p.layers[0].anchor={x:0,y:.5};p.layers[0].scaleXOverLife=[[0,0],[2/7,1],[1,1]];
  for(const a of [0,Math.PI/2,Math.PI]){
   const {adapter,log}=makeAdapter([p],{profile:{scale:.3,areaScale:.5}});
-  adapter.tryPlay({fxKind:'slash',variant:'gale-thunder-flash',area:{x:-60,y:10,w:300,h:100,a},travelMs:[80],vfx:{attack:p.id}});
+  adapter.tryPlay({fxKind:'slash',variant:'gale-thunder-flash',area:{x:-500,y:10,w:1000,h:100,a},travelMs:[80],vfx:{attack:p.id}});
   adapter.update(.04);let t=log.nodes[0].transforms.at(-1);
-  assert.ok(Math.abs(t.scaleX-.5)<1e-5);assert.equal(t.scaleY,1);assert.equal(t.x,-60);assert.equal(t.y,10);assert.equal(t.rotation,a);
-  adapter.update(.04);t=log.nodes[0].transforms.at(-1);assert.ok(Math.abs(t.scaleX-1)<1e-5);
+  assert.ok(Math.abs(t.scaleX-5/3)<1e-5);assert.equal(t.scaleY,1);assert.equal(t.x,-500);assert.equal(t.y,10);assert.equal(t.rotation,a);
+  adapter.update(.04);t=log.nodes[0].transforms.at(-1);assert.ok(Math.abs(t.scaleX-10/3)<1e-5);
  }
 });
 

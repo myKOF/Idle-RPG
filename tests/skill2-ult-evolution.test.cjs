@@ -1116,7 +1116,7 @@ test('【霹靂一閃】：最後一擊觸發多道貫穿雷電，每道逐目�
   run(c,p,enemies,end,.02);
   const beams=specs.filter(s=>s.variant==='gale-thunder-flash');
   const bolts=calls.filter(k=>k.elem==='lightning');
-  assert.equal(beams.length,4);assert.equal(bolts.length,beams.length*2);
+  assert.equal(beams.length,6);assert.equal(bolts.length,beams.length*2);
   assert.ok(bolts.every(k=>k.atk===c.getStats().atk*c.sgUltVal(c.sgUlt('gale','thunderFlash'),'pct')/100));
 });
 
