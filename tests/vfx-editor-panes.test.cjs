@@ -533,7 +533,7 @@ test('PANE-24 點視窗換焦點（捕獲階段、在選取與拖曳之前）；
   assert.ok(/closest\('\.pane-close'\)/.test(create), '按關閉鈕不算點視窗');
   const down = bodyOf('onPanePointerDown');
   assert.ok(/if \(e\.ctrlKey \|\| e\.metaKey\) \{ e\.preventDefault\(\); return; \}/.test(down) &&
-    down.indexOf('onPreviewPointerDown(e)') > down.indexOf('ctrlKey'), 'Ctrl+點擊不動圖層');
+    down.indexOf('onPreviewPointerDown(e,') > down.indexOf('ctrlKey'), 'Ctrl+點擊不動圖層');
   assert.ok(/VFXPaneModel\.clickPane\(/.test(bodyOf('activatePane')), '規則在 pane-model');
   /* 拖曳的後半段整頁只接一次，不是每個視窗各接一次 */
   assert.ok(!/addEventListener\('pointermove'/.test(bodyOf('wireGizmo')));

@@ -1458,7 +1458,8 @@
 
   /* ---------------- 指標操作 ---------------- */
 
-  function onPreviewPointerDown(e) {
+  /* keepSelection：這一下同時把焦點切到這個視窗（見 onPanePointerDown），點到空白處也不取消選取 */
+  function onPreviewPointerDown(e, keepSelection) {
     if (!state.preset || !state.app) return;
     /* 中鍵或右鍵＝拖曳平移鏡頭。preventDefault 同時擋掉瀏覽器的中鍵自動捲動
        （右鍵選單另外由 contextmenu 擋，見 wirePreviewView）。 */
@@ -1492,7 +1493,12 @@
 
     /* 沒打中就當作重新選取。命中規則與繪製順序一致：最上面的優先。 */
     var hit = G.hitLayer(pt, pickableLayers(), boundsOf, spaceOf);
-    if (!hit) return;
+    if (!hit) {
+      /* 點到空白處＝取消選取（2026-09-17 使用者要求）。keepSelection：這一下是用來把焦點
+         切到這個視窗的，只換焦點、保留它原本的選取——切過去多半是要接著調那一層 */
+      if (!keepSelection) clearSelection();
+      return;
+    }
     selectLayerById(hit.id);
     /* 選到就直接可以拖，不必先放開再按一次 */
     var nt = gizmoTarget();
@@ -1645,6 +1651,58 @@
     return true;
   }
 
+  /* ---------------- 方向鍵移動 ----------------
+
+     選取的圖層（單選、多選、群組）每按一下方向鍵移動 1px，按住 Shift 一次 10px
+     （與拖曳時按 Shift 對齊的 10px 同一個單位）。2026-09-17 使用者要求。
+
+     方向是畫面上的方向、距離是特效座標的 px，與拖曳框同一個語意（G.nudgePositions）：
+     掛在轉過角度的父物件底下也往畫面右邊走；多選時父子一起被選只動最上層（transformRoots）。
+
+     按住不放會連續移動，**一次按住到放開算一步歷史**：每一下各記一步的話，按住一秒就是
+     幾十步，Ctrl+Z 要按到手痠，還會把 100 步的歷史擠掉。交易開著的這段時間別的操作可能插進來
+     （點輸入框、拖曳），收尾時用交易代號只收自己那一筆，不會替別人提早收掉。 */
+  var NUDGE_KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  var NUDGE_SHIFT_STEP = VFXGizmoModel.SNAP.move;   // 拖曳時 Shift 對齊的格距，同一個數字只寫一處
+  var nudge = null;                // 按住中：{ pane, doc, history, token }
+
+  function nudgeSelection(dx, dy) {
+    var target = gizmoTarget();
+    if (!target) return false;
+    var layers = target.kind === 'group'
+      ? (target.caps.move ? target.layers : [])
+      : target.layers.filter(function (l) { return G.capabilities(l).move; });
+    if (!layers.length) return false;
+    var history = state.history;
+    if (!nudge || nudge.history !== history) {
+      finishNudge();
+      nudge = {
+        pane: ctx, doc: ctxDoc, history: history,
+        token: history ? history.begin('方向鍵移動' + (DRAG_WHAT[target.kind] || '圖層')) : 0
+      };
+    }
+    var next = G.nudgePositions(layers, layers.map(spaceOf), dx, dy);
+    layers.forEach(function (l, i) { if (next[i]) l.position = next[i]; });
+    markGizmoDirty();
+    syncTransformInputs();
+    previewSoon();                 // rAF 合併：按住時每秒幾十下，一幀只重建一次
+    return true;
+  }
+
+  /* 放開方向鍵、按下滑鼠、切換視窗、瀏覽器失焦時收尾：這一段移動變成一步歷史，Inspector 重畫。 */
+  function finishNudge() {
+    if (!nudge) return;
+    var n = nudge;
+    nudge = null;
+    if (n.pane.closed) return;
+    withPane(n.pane, function () {
+      if (n.history) n.history.commit(n.token);
+      markGizmoDirty();
+      onPresetChanged();
+      renderInspector();
+    }, n.doc);
+  }
+
   function updateHoverCursor(e) {
     if (!state.app) return;
     var target = gizmoTarget();
@@ -1698,8 +1756,12 @@
      Ctrl+點擊只管多選（加入或移出視窗），不動圖層——那一下是在挑視窗，不是在編輯。 */
   function onPanePointerDown(e) {
     if (e.ctrlKey || e.metaKey) { e.preventDefault(); return; }
-    onPreviewPointerDown(e);
+    onPreviewPointerDown(e, focusClickEvent === e);
   }
+
+  /* 最近一次「按下去同時換了焦點」的 pointerdown（由 .pane 的捕獲階段記下，見 createPane）。
+     畫布自己的處理拿它判斷：點另一格的空白處是為了切過去，不是要取消那一格的選取。 */
+  var focusClickEvent = null;
 
   /* ---------------- 座標格線與縮放 ----------------
 
@@ -2093,6 +2155,17 @@
     if (state.activeKey === key && state.selectedKeys.length === 1) return;
     setSelection([key], key);
     state.anchorKey = key;
+    markGizmoDirty();
+    renderLayerList();
+    renderInspector();
+  }
+
+  /* 預覽區點空白處：什麼都不選。與圖層面板「再點一次唯一選取的那一列」同一個結果，
+     一樣不進歷史（選取不是 authoring 資料的修改，見 snapshotEqual）。 */
+  function clearSelection() {
+    if (!state.selectedKeys.length && !state.activeKey) return;
+    setSelection([], null);
+    state.anchorKey = null;
     markGizmoDirty();
     renderLayerList();
     renderInspector();
@@ -2744,6 +2817,7 @@
     }
     if (!$('picker').hidden) return;                      // Picker 開著時鍵盤歸它
     if (!$('preset-browser').hidden) return;              // 瀏覽特效開著時也是
+    if (!$('spine-ref').hidden) return;                   // Spine 參考面板也是（它有滑桿吃方向鍵）
     /* 焦點在任何可輸入的欄位裡就完全不攔截：在 JSON 參數框或搜尋框按 Delete
        要刪字元，不是刪圖層；按 Ctrl+C 要複製文字，不是複製圖層。 */
     if (isTextEntry(document.activeElement)) return;
@@ -2751,6 +2825,16 @@
        曲線元件自己會 stopPropagation，這裡是第二道防線：即使事件因為
        某個路徑繞過了它，也不能把整個圖層刪掉——刪錯的代價差太多。 */
     if (inCurveEditor(document.activeElement)) return;
+
+    /* 方向鍵移動選取的圖層（見 nudgeSelection）。Alt＋方向鍵是瀏覽器的上一頁／下一頁、
+       Ctrl＋方向鍵留給以後，都不攔；拖曳框或平移鏡頭到一半時也不動。 */
+    var dir = NUDGE_KEYS[e.key];
+    if (dir) {
+      if (e.ctrlKey || e.metaKey || e.altKey || gizmo.drag || state.pan) return;
+      var step = e.shiftKey ? NUDGE_SHIFT_STEP : 1;
+      if (nudgeSelection(dir[0] * step, dir[1] * step)) e.preventDefault();
+      return;
+    }
 
     var k = (e.key || '').toLowerCase();
     if (k === 'delete') {
@@ -4917,7 +5001,10 @@
        那些處理拿到的 state 才是這個視窗的 */
     el.addEventListener('pointerdown', function (e) {
       if (e.target.closest && e.target.closest('.pane-close')) return;
+      finishNudge();                       // 方向鍵按住移動到一半就去點畫面：先把那一段收成一步
+      var before = focusedPane;
       activatePane(pane, { ctrl: e.ctrlKey || e.metaKey });
+      focusClickEvent = focusedPane !== before ? e : null;
     }, true);
     pane.el = el;
     pane.host = host;
@@ -5196,6 +5283,7 @@
 
   function focusPane(pane) {
     if (!pane || pane === focusedPane) return;
+    finishNudge();                         // 方向鍵按住移動的那一段記在原本的視窗
     /* 輸入框還開著交易（數值打到一半）就先收尾：blur 會同步觸發 change 與 editCommit，
        這時 ctx 還是原本的視窗，那一步才會記進它自己的歷史（與 Ctrl+S 同一招，見 onKeyDown） */
     var active = document.activeElement;
@@ -5291,6 +5379,7 @@
   /* 關閉視窗。未存檔先問；最後一個關不掉（預覽區不能是空的）。 */
   function closePane(pane) {
     if (panes.length <= 1 || pane.closed) return;
+    finishNudge();
     if (withPane(pane, isDirty) && !window.confirm(paneLabel(pane) + '（' + pane.doc.preset.id +
         '）的修改尚未存檔，關閉之後就沒了。要關閉嗎？')) {
       return;
@@ -5499,6 +5588,9 @@
       renderLayerList();
     };
     document.addEventListener('keydown', onKeyDown);
+    /* 方向鍵放開時把按住的那一段收成一步歷史；按住時切到別的程式（收不到 keyup）也要收 */
+    document.addEventListener('keyup', function (e) { if (NUDGE_KEYS[e.key]) finishNudge(); });
+    window.addEventListener('blur', finishNudge);
     /* 拖曳與平移的後半段接在 window 上（滑鼠拖出畫布也要跟得上），整頁接一次：
        它們作用在焦點視窗，而拖曳一定是在焦點視窗按下去的。 */
     window.addEventListener('pointermove', onPreviewPointerMove);

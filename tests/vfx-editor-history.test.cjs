@@ -492,3 +492,38 @@ test('HISTORY-40 欄位交易在 change 收尾，keydown 太早（onchange 欄�
   assert.ok(/document\.activeElement === el\) editBegin/.test(textHalf),
     'change 收尾後若仍在焦點內，要接著開下一筆交易');
 });
+
+/* ============================================================
+   交易代號（2026-09-17）
+
+   按住方向鍵連續移動圖層時，交易從第一下一直開到放開。這段時間別的操作一 begin
+   就會把它收成一步並開自己的交易；放開方向鍵時若照舊 commit()，收掉的是別人那一筆
+   （例如打到一半的輸入框），那一步就不在歷史裡了。所以 begin 回傳代號，commit(代號)
+   只收自己那一筆。
+   ============================================================ */
+
+test('HISTORY-47 交易代號：開很久的交易收尾時只收自己那一筆，不替別人提早收掉', function () {
+  const b = harness();
+  const nudge = b.history.begin('方向鍵移動');
+  assert.ok(nudge > 0, 'begin 要回傳代號');
+  b.value = 'B';
+  /* 按住方向鍵的途中去點輸入框：欄位的交易一 begin，就把移動收成一步 */
+  const field = b.history.begin('修改 alpha');
+  assert.ok(field > 0 && field !== nudge, '每一筆交易的代號不同');
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動']);
+  b.value = 'C';
+  /* 放開方向鍵：開著的是欄位那一筆，代號對不上就不動 */
+  assert.equal(b.history.commit(nudge), false);
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動'], '欄位那一筆還開著，沒有被提早收掉');
+  assert.equal(b.history.commit(field), true, '欄位自己收尾時才記成一步');
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動', '修改 alpha']);
+  assert.equal(b.history.commit(field), false, '已經收掉的代號再收一次什麼都不做');
+
+  /* 不帶代號＝收掉目前開著的那一筆，與原本完全相同 */
+  b.history.begin('其他');
+  b.value = 'D';
+  assert.equal(b.history.commit(), true);
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動', '修改 alpha', '其他']);
+  b.history.undo();
+  assert.equal(b.value, 'C');
+});

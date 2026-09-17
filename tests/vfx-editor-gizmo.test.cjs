@@ -905,3 +905,151 @@ test('ROW-6 就地改名要寫到 layout 裡的群組，不是顯示用的列物
   row.name = '改到副本';
   assert.equal(layout.groups[0].name, '原名', 'reconcile 的列確實是副本');
 });
+
+/* ============================================================
+   NUDGE — 方向鍵移動、點空白處取消選取（2026-09-17 使用者要求）
+
+   方向鍵：選取的圖層每按一下移動 1px（Shift 一次 10px）。方向是畫面上的方向，
+   與拖曳框同一個語意；按住不放算一步歷史。
+   點預覽區空白處：取消選取；那一下若是把焦點切到另一個視窗的，保留那個視窗的選取。
+   ============================================================ */
+
+const vmNudge = require('node:vm');
+const HistoryNudge = require('../tools/vfx/editor/history.js');
+const EDITOR_SRC = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+const EDITOR_NC = EDITOR_SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+/* 從 function 關鍵字開始數大括號，挖出整個函式。改名時這裡會直接失敗，不會靜靜跳過。 */
+function extractFn(src, name) {
+  const at = src.indexOf('function ' + name + '(');
+  assert.ok(at >= 0, '找不到 function ' + name);
+  let depth = 0;
+  for (let i = src.indexOf('{', at); i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(at, i + 1);
+  }
+  throw new Error(name + ' 的大括號沒有配對');
+}
+
+test('NUDGE-1 方向鍵移動：根層級每按一下 1px；掛在轉過、放大的父物件底下也是畫面上的 1px', function () {
+  const root = { id: 'a', type: 'sprite', position: { x: 10, y: -5 } };
+  const bare = { id: 'b', type: 'sprite' };
+  const child = { id: 'c', type: 'sprite', parent: 'p', position: { x: 3, y: 4 } };
+  /* 父物件的世界矩陣：轉 90 度、放大 2 倍。點 (x, y) → (a·x + c·y + tx, b·x + d·y + ty) */
+  const space = { a: 0, b: 2, c: -2, d: 0, tx: 100, ty: 50 };
+  const out = G.nudgePositions([root, bare, child], [undefined, undefined, space], 1, 0);
+  assert.deepEqual(out[0], { x: 11, y: -5 });
+  assert.deepEqual(out[1], { x: 1, y: 0 }, '沒寫 position 的從 0 開始');
+  assert.deepEqual(out[2], { x: 3, y: 3.5 }, '區域座標只動 0.5（父物件放大 2 倍），方向跟著轉');
+  const world = (p) => ({ x: space.a * p.x + space.c * p.y + space.tx, y: space.b * p.x + space.d * p.y + space.ty });
+  const before = world(child.position), after = world(out[2]);
+  assert.ok(Math.abs(after.x - before.x - 1) < 1e-9 && Math.abs(after.y - before.y) < 1e-9,
+    '換回畫面座標剛好往右 1px，不是往父物件自己的 x 軸');
+  assert.deepEqual(root.position, { x: 10, y: -5 }, '不就地修改');
+});
+
+test('NUDGE-2 父物件縮放是 0 的圖層動不了（null，不寫東西）；小數不留浮點尾巴', function () {
+  const zero = { a: 0, b: 0, c: 0, d: 0, tx: 5, ty: 5 };
+  /* 用 deepStrictEqual：寬鬆的 deepEqual 會把 [{x:0,y:0}] 當成等於 [null] */
+  assert.deepStrictEqual(G.nudgePositions([{ id: 'z', type: 'sprite' }], [zero], 0, 1), [null],
+    '換不過去就不動，也不替沒寫 position 的圖層寫一個 {0,0}');
+  const r = G.nudgePositions([{ id: 'r', type: 'sprite', position: { x: 0.1, y: 0 } }], null, 0.2, 0);
+  assert.deepEqual(r[0], { x: 0.3, y: 0 }, '0.1 + 0.2 不能寫成 0.30000000000000004');
+});
+
+test('NUDGE-3 按住方向鍵：每一下都移動，放開才記成一步歷史；中途別的操作插進來也不會被提早收掉', function () {
+  const layers = [
+    { id: 'a', type: 'sprite', position: { x: 0, y: 0 } },
+    { id: 'b', type: 'particle', position: { x: 5, y: 5 } }
+  ];
+  const state = {};
+  state.history = HistoryNudge.create({
+    capture: () => JSON.stringify(layers),
+    apply: (s) => { JSON.parse(s).forEach((l, i) => { layers[i] = l; }); }
+  });
+  let rebuilt = 0;
+  const c = {
+    state: state, ctx: { closed: false }, ctxDoc: {}, G: G,
+    DRAG_WHAT: { layer: '圖層', group: '群組', multi: '多個圖層' },
+    gizmoTarget: () => ({ kind: 'multi', layers: layers.slice() }),
+    spaceOf: () => undefined,
+    withPane: (p, fn) => fn(),
+    markGizmoDirty: () => {}, syncTransformInputs: () => {}, previewSoon: () => {},
+    onPresetChanged: () => { rebuilt++; }, renderInspector: () => {}
+  };
+  vmNudge.createContext(c);
+  vmNudge.runInContext('var nudge = null;\n' + extractFn(EDITOR_SRC, 'nudgeSelection') + '\n' +
+    extractFn(EDITOR_SRC, 'finishNudge') +
+    '\nthis.nudgeSelection = nudgeSelection; this.finishNudge = finishNudge;', c);
+
+  assert.equal(c.nudgeSelection(1, 0), true);
+  c.nudgeSelection(1, 0);
+  c.nudgeSelection(0, -1);
+  assert.deepEqual(layers.map((l) => l.position), [{ x: 2, y: -1 }, { x: 7, y: 4 }], '多選的每一層都動（粒子層也有移動能力）');
+  assert.deepEqual(state.history.debug().labels, [], '按住的途中還沒有記成一步');
+  c.finishNudge();
+  assert.deepEqual(state.history.debug().labels, ['方向鍵移動多個圖層'], '放開：整段只記一步');
+  assert.equal(rebuilt, 1, '放開時才重建預覽與驗證');
+  c.finishNudge();
+  assert.equal(state.history.debug().labels.length, 1, '重複收尾不會多記');
+
+  c.nudgeSelection(0, 1);
+  const field = state.history.begin('修改 alpha');         // 按住的途中去點輸入框
+  layers[0].alpha = 0.5;
+  c.finishNudge();                                         // 放開方向鍵
+  assert.deepEqual(state.history.debug().labels, ['方向鍵移動多個圖層', '方向鍵移動多個圖層'],
+    '輸入框 begin 時已經把這一段移動收成一步');
+  assert.equal(state.history.commit(field), true, '欄位那一筆沒有被方向鍵的收尾提早收掉');
+
+  state.history.undo();
+  state.history.undo();
+  assert.deepEqual(layers[0].position, { x: 2, y: -1 }, 'Undo 一次回到按住之前');
+
+  c.gizmoTarget = () => null;
+  assert.equal(c.nudgeSelection(1, 0), false, '沒有選取就不攔方向鍵');
+});
+
+test('NUDGE-4 Editor 接線：方向鍵排在文字輸入與曲線編輯器的守門之後，拖曳中不動，放開與失焦時收尾', function () {
+  const key = extractFn(EDITOR_NC, 'onKeyDown');
+  const dirAt = key.indexOf('NUDGE_KEYS[e.key]');
+  assert.ok(dirAt > 0);
+  assert.ok(key.indexOf('isTextEntry(document.activeElement)') < dirAt, '在輸入框裡按方向鍵是移動游標，不是移動圖層');
+  assert.ok(key.indexOf('inCurveEditor(document.activeElement)') < dirAt, '曲線編輯器的方向鍵歸它');
+  assert.ok(key.indexOf("$('spine-ref').hidden") < dirAt, 'Spine 參考面板開著時不攔（它有滑桿）');
+  const branch = key.slice(dirAt, key.indexOf("var k = (e.key || '')"));
+  assert.ok(/e\.ctrlKey \|\| e\.metaKey \|\| e\.altKey \|\| gizmo\.drag \|\| state\.pan/.test(branch),
+    'Alt＋方向鍵是瀏覽器的上一頁；拖曳框或平移鏡頭到一半不動');
+  assert.ok(/e\.shiftKey \? NUDGE_SHIFT_STEP : 1/.test(branch), '每按一下 1px，Shift 一次 10px');
+  assert.ok(/if \(nudgeSelection\(/.test(branch) && /e\.preventDefault\(\)/.test(branch),
+    '真的動了才擋掉預設行為');
+  assert.ok(/ArrowLeft: \[-1, 0\], ArrowRight: \[1, 0\], ArrowUp: \[0, -1\], ArrowDown: \[0, 1\]/.test(EDITOR_NC),
+    '上＝畫面上方（y 軸朝下）');
+  assert.ok(/var NUDGE_SHIFT_STEP = VFXGizmoModel\.SNAP\.move;/.test(EDITOR_NC), 'Shift 的距離與拖曳對齊同一個數字');
+  const boot = extractFn(EDITOR_NC, 'boot');
+  assert.ok(/addEventListener\('keyup', function \(e\) \{ if \(NUDGE_KEYS\[e\.key\]\) finishNudge\(\); \}\)/.test(boot));
+  assert.ok(/window\.addEventListener\('blur', finishNudge\)/.test(boot), '按住時切到別的程式收不到 keyup');
+  ['focusPane', 'closePane'].forEach(function (name) {
+    assert.ok(/finishNudge\(\)/.test(extractFn(EDITOR_NC, name)), name + ' 之前要先收尾');
+  });
+  assert.ok(/finishNudge\(\);\s*var before = focusedPane;\s*activatePane\(pane/.test(extractFn(EDITOR_NC, 'createPane')),
+    '按下滑鼠（可能開始拖曳）之前先收尾');
+  assert.ok(/n\.history\.commit\(n\.token\)/.test(extractFn(EDITOR_NC, 'finishNudge')), '只收自己那一筆');
+  assert.ok(/G\.nudgePositions\(layers, layers\.map\(spaceOf\), dx, dy\)/.test(extractFn(EDITOR_NC, 'nudgeSelection')));
+});
+
+test('NUDGE-5 點預覽區空白處取消選取；把焦點切到別的視窗的那一下保留它的選取', function () {
+  const down = extractFn(EDITOR_NC, 'onPreviewPointerDown');
+  assert.ok(/function onPreviewPointerDown\(e, keepSelection\)/.test(down));
+  assert.ok(/if \(!hit\) \{\s*if \(!keepSelection\) clearSelection\(\);\s*return;\s*\}/.test(down),
+    '沒打中任何圖層（也不在框或把手上）＝取消選取');
+  assert.ok(down.indexOf('hitGizmoHandle(items, pt)') < down.indexOf('clearSelection()') &&
+    down.indexOf('hitGizmoBody(target, items, pt)') < down.indexOf('clearSelection()'),
+    '先問框與把手：在群組框裡的空白處按下去是拖整組，不是取消選取');
+  assert.ok(down.indexOf('beginPan(e)') < down.indexOf('clearSelection()'), '中鍵／右鍵平移不取消選取');
+  const clear = extractFn(EDITOR_NC, 'clearSelection');
+  assert.ok(/setSelection\(\[\], null\)/.test(clear) && /renderLayerList\(\)/.test(clear) && /renderInspector\(\)/.test(clear));
+  assert.ok(!/edit\(/.test(clear), '選取不進歷史');
+  assert.ok(/onPreviewPointerDown\(e, focusClickEvent === e\)/.test(extractFn(EDITOR_NC, 'onPanePointerDown')));
+  assert.ok(/var before = focusedPane;\s*activatePane\(pane, \{ ctrl: e\.ctrlKey \|\| e\.metaKey \}\);\s*focusClickEvent = focusedPane !== before \? e : null;/
+    .test(extractFn(EDITOR_NC, 'createPane')), '記下這一下有沒有換焦點');
+});
