@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜用途欄改名特殊效果（VFX-USAGE-LABEL-20260917）
+
+- Owner：Codex；Done。使用者決定名稱為「特殊效果」，Excel／CSV 由使用者修改；本次不寫表格。config_tables 的輸出欄名、說明與錯誤訊息改用新名稱；讀入相容「特效用途特效」與「特殊用途特效」，有新欄時優先使用新欄，保留「技能本體／附加效果／留白」語意。
+- 修改：tools/config_tables.cjs、tests/skills2-vfx-usage.test.cjs、本紀錄；未改但檢查 Excel／CSV。測試期間發現使用者以舊工具套用改名表格後 JS 遺失用途，已用新工具 --apply Skills2 --write 重新生成以恢復；工作區其他生成資料／素材調整保留未提交。
+- 驗證：node --test tests/skills2-vfx-usage.test.cjs，2/2 通過，包含新舊三名稱往返、錯字拒絕及 Excel／CSV／JS 一致性；git diff --check 通過。Commit 為本紀錄所在提交；可合併，未合併／推送，無未完成項目。
+
 ## Codex｜爆散讀取第四階攻擊特效（GALE-SCATTER-VFX-20260917）
 
 - Owner：Codex；Done。使用者已填 hit-gale-burst-diffusion，但事件仍指定 vfxTier:1，錯讀本體特效。本次改成 vfxTier:4、vfxBase:true，依第四階逐欄讀取配置，避免月牙／超神覆寫爆散獨立特效；不寫死 Preset 名稱。

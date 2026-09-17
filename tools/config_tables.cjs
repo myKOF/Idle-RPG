@@ -1158,7 +1158,7 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['每一格填 VFX 編輯器存出來的 Preset 檔名（vfx/presets/<檔名>.json，不含 .json；含 .json 也接受）；'],
   ['每一列＝該階（或該超神選項）「引入」的特效：第 1 階那一列是技能本體，後面各階只填那一階新增的畫面'],
   ['　　（例：火球術第 1 階＝火球＋受擊、第 3 階火球爆裂＝小火球＋大爆炸、第 7 階殞石術＝隕石＋落點預警）；'],
-  ['程式依事件指定的來源列取用特效；技能本體逐欄繼承，附加效果只讀本列，詳見置頂「特效用途特效」說明。'],
+  ['程式依事件指定的來源列取用特效；技能本體逐欄繼承，附加效果只讀本列，詳見置頂「特殊效果」說明。'],
   ['施放特效＝角色身上；攻擊特效＝攻擊本體（斬弧／爆發／光束／雷柱／護罩）；飛行子彈＝會移動的東西（含環繞體）；'],
   ['受擊特效＝命中爆點；地板特效＝地面法陣、痕跡、軌道環及落點預警（舊場域設定仍相容）；持續場域特效＝雷球、龍捲風、毒霧等持續作用的本體，可固定、移動或跟隨角色，依技能範圍縮放；填 Preset 檔名，速度、持續時間、傷害間隔仍由技能參數決定。'],
   ['整列留白：技能本體沿前階繼承；附加效果不播放。整條來源都無特效時不退回舊版畫法；換外觀可在 VFX 編輯器另存新檔名再填入。']
@@ -1231,9 +1231,9 @@ SKILLS2_GLOSSARY_ROWS.push(['獨立距離與間隔欄（優先於舊 JSON 同名
   ['獨立欄位會回寫原 fx 鍵；效果參數(JSON)不再重複存這些鍵。舊版沒有新欄的 CSV 仍可讀取。'],
   ...SKILLS2_GEOMETRY_COLUMNS.map(([label,key])=>[label+' → fx.'+key]));
 
-const SKILLS2_VFX_USAGE_COLUMN = '特效用途特效';
+const SKILLS2_VFX_USAGE_COLUMN = '特殊效果';
 const SKILLS2_VFX_USAGE_HELP = [
-  ['特效用途特效：決定這一列特效屬於技能本體，或獨立的附加效果。'],
+  ['特殊效果：決定這一列特效屬於技能本體，或獨立的附加效果。'],
   ['填「技能本體」或留白：參與原有逐欄繼承，可供技能本體使用。此設定只屬於本列，不向後繼承。'],
   ['填「附加效果」：只在技能邏輯明確觸發這一列效果時使用；不混入本體，也不被後續階段繼承。'],
   ['附加效果只播放本列填寫的特效；空欄不繼承本體，也不自動補其他特效。'],
@@ -1251,7 +1251,7 @@ function skills2VfxUsageFromCell(value) {
   if (!label) return null;
   if (label === '技能本體') return { vfxUsage: 'base' };
   if (label === '附加效果') return { vfxUsage: 'effect' };
-  throw new Error('「特效用途特效」只能填「技能本體」、「附加效果」或留白，目前為「' + label + '」');
+  throw new Error('「特殊效果」只能填「技能本體」、「附加效果」或留白，目前為「' + label + '」');
 }
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
@@ -1356,7 +1356,8 @@ SCHEMAS.Skills2 = {
       const tierCost = toNum(get(r, '施法消耗'));
       /* 特效欄位（五欄）：這一階／這一個超神選項引入的特效；整列留白就不寫 vfx。 */
       const tierVfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
-      const vfxUsage = skills2VfxUsageFromCell(get(r, SKILLS2_VFX_USAGE_COLUMN));
+      const usageColumn = [SKILLS2_VFX_USAGE_COLUMN, '特效用途特效', '特殊用途特效'].find(name => header.includes(name));
+      const vfxUsage = skills2VfxUsageFromCell(usageColumn ? get(r, usageColumn) : '');
       /* 階數 >= 8：超神進化的三選一選項（不是第 8~10 階）。
          欄位順序須與手寫字面值一致：id／name／cost／fx／goldBase／goldGrow／desc（／vfx）。 */
       if (tierIdx >= SKILLS2_ULT_ROW_BASE) {
