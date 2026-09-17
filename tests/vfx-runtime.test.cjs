@@ -348,6 +348,23 @@ const ENT = {
   'pv-float': { x: 0, y: 0 }
 };
 
+test('SINGLE-SIZE 單體攻擊保留製作尺寸，立即與延遲一致，範圍仍依半徑縮放',()=>{
+ for(const delay of [0,200])for(const profileScale of [1,.35]){
+  const p=unitPreset('configured-attack');
+  p.sizing={shape:'custom',widthM:6,heightM:6,authored:{width:120,height:120}};
+  const {adapter,log}=makeAdapter([p],{profile:{scale:profileScale,areaScale:1}});
+  adapter.tryPlay({fxKind:'slash',targets:['mv-float-1'],travelMs:[delay],vfx:{attack:p.id}});
+  adapter.update(.25);
+  const t=log.nodes[0].transforms.at(-1);
+  assert.equal(t.scaleX,1);assert.equal(t.scaleY,1);assert.equal(t.x,100);assert.equal(t.y,50);
+ }
+ const p=unitPreset('configured-area');
+ p.sizing={shape:'custom',widthM:6,heightM:6,authored:{width:120,height:120}};
+ const {adapter,log}=makeAdapter([p]);
+ adapter.tryPlay({fxKind:'slash',area:{x:100,y:50,r:120},vfx:{attack:p.id}});adapter.update(.01);
+ const t=log.nodes[0].transforms.at(-1);assert.equal(t.scaleX,2);assert.equal(t.scaleY,2);
+});
+
 test('DUALDANCE 延遲後播放第二刀並使用交替角差',()=>{
  const {adapter,log}=makeAdapter([unitPreset('slash-dual')]);
  const spec={fxKind:'slash',variant:'dual-slash',targets:['mv-float-2'],vfx:{attack:'slash-dual'},angle:0};

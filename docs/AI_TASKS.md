@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜單體攻擊保持製作尺寸（SINGLE-ATTACK-SIZE-20260917）
+
+- Owner Codex；In Progress；使用者指定單體攻擊原尺寸、指定範圍才縮放。範圍：vfx-runtime、runtime 測試、index 快取與本紀錄；不改技能配置、素材或判定。
+- 驗收：同一 Preset 單體立即／延遲播放保持原尺寸，不受 sizing 正規化及場景特效倍率影響；範圍仍按事件半徑。無前置依賴，完成供使用者合併。
+- 使用者追加：檢查並補充尺寸規範；已在 VFX_SIZE_STANDARD 與 VFX_RUNTIME_ADAPTER 明訂單體原尺寸、判定範圍縮放、選敵半徑不可縮放。
+- 狀態 Done；build 361/361，diff check 通過；可合併、未推送，素材库無本輪新增或修改。
+- 完成：一般單體 attack 立即／延遲路徑均改用原尺寸；不增加實例或粒子。定向 SINGLE-SIZE/GALE 3/3；Runtime 87 項 81 通過、6 項既有失敗，以 HEAD Runtime 重跑確認相同六項失敗，另新增尺寸測試在舊碼失敗、新碼通過。未實機驗證；使用者既有表格及素材保留未提交。
+
 ## Codex｜疾風破主打擊特效繼承（GALE-MAIN-VFX-20260917）
 
 - Owner：Codex；狀態：In Progress；依賴：使用者確認有填用本階、空白繼承前階。

@@ -464,24 +464,25 @@ var VFXRuntime = (function () {
 
     /* 目標身上（受擊、詛咒、單體攻擊本體）。
        帶 sourceId 時（敵方近戰）把畫面轉向「攻擊者 → 目標」，爪痕才會朝著被打的人。 */
-    function playOnTargets(rt, presetId, spec, scale, delaySec) {
+    function playOnTargets(rt, presetId, spec, scale, delaySec, authoredSize) {
       var ids = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
       if (!ids.length) return false;
       var any = false;
       for (var i = 0; i < ids.length; i++) {
         if (delaySec > 0) {
-          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale });
+          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale, authoredSize: authoredSize });
           any = true;
           continue;
         }
         var p = ctx.posOf(ids[i]);
-        var params = defaultSize(presetId, scale);
+        // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
+        var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
         params.position = p;
         if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
         }
-        if (play(rt, presetId, params)) any = true;
+        if (play(rt, presetId, params, authoredSize ? 1 : undefined)) any = true;
       }
       return any;
     }
@@ -1221,7 +1222,7 @@ var VFXRuntime = (function () {
           } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
-          else ok = playOnTargets(rtFx, presetId, spec, 1, hitDelayFor(spec));
+          else ok = playOnTargets(rtFx, presetId, spec, 1, hitDelayFor(spec), true);
           break;
         default:
           ok = false;
@@ -1280,7 +1281,8 @@ var VFXRuntime = (function () {
         var job = pending[q];
         pending.splice(q, 1);
         if (job.spec) { tryPlay(job.spec); continue; }
-        play(job.rt, job.presetId, Object.assign(defaultSize(job.presetId, job.scale), { position: ctx.posOf(job.targetId) }));
+        play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
+          { position: ctx.posOf(job.targetId) }), job.authoredSize ? 1 : undefined);
       }
 
       /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
