@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜Skills2 範圍用途拆分與成長欄合併（SKILLS2-GEOMETRY-V2-20260917）
+
+- Owner Codex；Done。使用者授權230列範圍重構：施放／搜敵／傷害／控制／偵測／碰撞／環繞／飛行等獨立用途，基值與增量以逗號同欄，矩形長寬以星號表示。
+- 範圍：Skills2.xlsx／CSV、config_tables、用途接線模組／遷移工具／原生Excel保存工具、skills2.js幾何成長、頁面及Worker快取、新格式測試與說明文件。保留使用者正在編輯的技能表值與VFX素材。
+- 原始230列與轉換後資料比對值相同；新增6項格式／幾何測試通過。Excel原檔殘留無法索引的hidden textbox，原生Excel只儲存就新增空白AutoShape；依使用者回報以Excel API複製儲存格至乾淨工作簿、排除舊繪圖物件，連續正常重開／儲存確認0個圖形且逐格一致。已正式同步Excel、CSV與JS；未手工修改工作簿XML。
+- 全技能回歸552項：502通過、50既有失敗；隔離修改前邏輯＋相同最新Excel資料的基線為完全相同50項失敗，無新增失敗。保留使用者自行調整的倍率、搜敵距離及特效引用，未為迎合舊測試改回數值。build370檔通過；再次apply為0差異。新版表格引用的使用者千鳥Preset及layout作為資料依賴隨附，其餘使用者bolt修改不納入提交。未推送、未合併。
+
 ## Codex｜落雷藍白飛濺與死亡粒子移除（VFX-THUNDER-SPLASH-20260917）
 
 - Owner Codex。移除battle-renderer死亡時額外生成圓點的呼叫，保留死亡動畫。hit-thunderstrike-bluewhite以既有VFX粒子重製：7藍5白圓點向上噴發、重力260、壽命0.45～0.75秒，搭配5道曲折雷電及短暫核心閃光，取代霧狀光環。沿用整組連續雷電變形。

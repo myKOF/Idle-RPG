@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-gale-burst-10-bird",
+  "groups": [
+    {
+      "id": "hit-gale-burst-10-bird",
+      "name": "hit-gale-burst-10-bird",
+      "layerIds": [
+        "amber-halo",
+        "amber-halo-copy",
+        "amber-halo-copy-2",
+        "amber-halo-copy-3",
+        "burst-spikes",
+        "cross-spikes",
+        "white-impact",
+        "hot-core",
+        "hot-core-copy",
+        "fracture-0",
+        "fracture-1",
+        "fracture-2",
+        "fracture-3",
+        "fracture-4",
+        "sparks",
+        "sprite-12",
+        "sprite-12-copy",
+        "sprite-12-copy-2",
+        "sprite-13"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-gale-burst-10-bird"
+  ]
+}
