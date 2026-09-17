@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜霹靂一閃角色連擊數修正（GALE-THUNDER-COMBO-20260917）
+
+- Owner Codex；Done。修正誤以疾風破自身打擊次數增加雷電數量，改讀施放時角色 comboHits，加上狂化連殺／狂暴之舞期間加成；小數沿用 sgRollCount 機率。0 連擊只出 1 道，3 連擊出 4 道；本體追加打擊只影響最後一擊的觸發時間。
+- 修改 skills2、兩份測試、index／bridge／worker 快取及本紀錄；檢查 formula 的連擊口徑，無需修改表格或特效。
+- 驗證：node --test tests/gale-thunder-flash.test.cjs tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs 共22項通過；node --test --test-name-pattern="霹靂一閃|雷神斬|千鳥" tests/skill2-ult-evolution.test.cjs 共3項通過。diff check通過。
+- 無新增 Timer 或粒子；未進行遊戲實機驗證，無未完成實作，可合併，未推送。
+
+
 ## Codex｜霹靂一閃貫穿雷電改造（GALE-THUNDER-FLASH-20260917）
 
 - Owner Codex；In Progress。最後一擊觸發 1＋連擊數道紫白雷電，每道間隔 0.2 秒重新選擇玩家 12 米內敵人；從玩家後方 6 米伸出，總長 20 米、寬 5 米，每道 200% 雷電傷害。

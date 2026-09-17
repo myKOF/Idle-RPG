@@ -1101,6 +1101,7 @@ test('爆擊把飛刀冷卻扣到零時，技能仍會回到 ready queue', () =>
 
 test('【霹靂一閃】：最後一擊觸發多道貫穿雷電，每道逐目標命中', () => {
   const c = loadContext(['js/legendary.js']);
+  const stats=c.getStats;c.getStats=()=>({...stats(),comboHits:3});
   const calls = stubHits(c); const specs = stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'gale'); equip(c, 'gale');
@@ -1115,7 +1116,7 @@ test('【霹靂一閃】：最後一擊觸發多道貫穿雷電，每道逐目�
   run(c,p,enemies,end,.02);
   const beams=specs.filter(s=>s.variant==='gale-thunder-flash');
   const bolts=calls.filter(k=>k.elem==='lightning');
-  assert.ok(beams.length>=4);assert.equal(bolts.length,beams.length*2);
+  assert.equal(beams.length,4);assert.equal(bolts.length,beams.length*2);
   assert.ok(bolts.every(k=>k.atk===c.getStats().atk*c.sgUltVal(c.sgUlt('gale','thunderFlash'),'pct')/100));
 });
 

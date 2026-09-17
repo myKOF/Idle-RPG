@@ -2831,10 +2831,14 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[4] > 0) {
     applyStatus(pEnt, 'sgGale', { val: sgVal(t[4].fx, 'pct', lvs[4]), dur: sgVal(t[4].fx, 'sec', lvs[4]) });
   }
-  // 最後一擊觸發 1＋本次連擊數道雷電；每道到點才選敵，無敵人即終止本序列。
+  // 最後一擊觸發 1＋角色連擊數道雷電；技能自身打擊次數只決定開始時間。
   if (ultFlash) {
+    var flashCombo = Math.max(0, Number(st.comboHits) || 0);
+    flashCombo += Math.max(0, Number(skill2ComboBonus()) || 0);
+    flashCombo += Math.max(0, Number(skill2FrenzyComboBonus()) || 0);
+    var flashCount = 1 + sgRollCount(flashCombo);
     var flashSequence = { stopped: false, primary: primary, first: true };
-    for (var fi = 0; fi < 1 + hits; fi++) SKILL2_RT.galeStrikes.push({
+    for (var fi = 0; fi < flashCount; fi++) SKILL2_RT.galeStrikes.push({
       at: sgProjectileNow() + (hits - 1) * waveGap + fi * sgUltVal(ultFlash, 'gap'),
       run: function (ctx) { sgGaleThunderFlash(cfg, ultFlash, flashSequence, ctx); }, out: out
     });
