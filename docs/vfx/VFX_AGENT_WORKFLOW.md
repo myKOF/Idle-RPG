@@ -774,6 +774,33 @@ layout schema 沒有巢狀群組，所以就是**扁平一層**，不要自作�
 確認它有對應的 layout、只有一個群組、而且該群組收滿全部圖層。
 新增 Preset 時不必另外寫測試，這一條自動涵蓋。
 
+## 9.11.1 父子層級（`parent`）與空物件（`empty`）的使用時機
+
+規格見 `VFX_CORE_AND_PRESET_SCHEMA.md` §2.4、§2.5（含 §2.5.1 Editor 操作）。
+
+**用**：一組圖層要「一起」做同一件事——一起繞中心轉、一起放大、一起淡出、一起延遲出現。
+加一個 `empty` 當父物件，把那組圖層掛上去，動畫只寫在空物件上一處。
+以前得把同一條 `rotationOverLife`／`alphaOverLife` 抄到每一層、還要各自算繞圈的位置，改一次要改 N 處。
+
+**不用**：
+
+- 只是整理 Layers 面板——那是群組（§9.11）的事，父子層級會改變畫面的算法。
+- 各層本來就各做各的動畫——掛上去不會省任何東西，反而多一層要理解的座標系。
+- `js/vfx-runtime.js` 有特殊拆解的那幾份 preset（`aura-rockarmor-stone`、`aura-earth-reversal`、
+  `ground-firewall`、`burst-vacuum-shockwave`、`slash-wind-crescent`）——HIER-16 會擋；
+  要用得先改 Runtime Adapter。
+
+**寫法**：
+
+- 子物件的 `position`／`rotation`／`scale` 是**相對父物件**的。已經擺好的圖層要掛上去，
+  用 `hierarchy-model.js` 的 `attach()` 換算（畫面不動），不要直接填 `parent`。
+- 子物件的 `delay` 從父物件出現起算；父物件結束或停用，子物件也跟著不見。
+- 子發射器的來源與目標要掛在同一個父物件底下。
+- 粒子層當子物件：發射點跟著父物件；`worldSpace: true`（預設）的粒子出生後不再跟著父物件走。
+
+**驗收**：與其他 preset 相同（離線出圖、瀏覽器預覽）。離線出圖已支援父子層級產生的斜切
+（`tools/vfx/preset-render.cjs`）。
+
 ## 9.12 特效只允許兩種來源：配置表填入，或程式寫死並登記（必要）
 
 一份 Preset 在遊戲裡被使用，只能是：

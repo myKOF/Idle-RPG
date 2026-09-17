@@ -36,7 +36,11 @@ var VFXCore = (function () {
 
   /* ---------- 常數與硬限制 ---------- */
 
-  var LAYER_TYPES = ['sprite', 'particle', 'procedural'];
+  /* empty＝空物件：自己不畫任何東西，只帶變換、透明度、顏色與時間軸，
+     專門給別的圖層當父物件（像 After Effects 的 Null Object）。 */
+  var LAYER_TYPES = ['sprite', 'particle', 'procedural', 'empty'];
+  /* 父子層級最多幾層。32 層的上限下這已經夠深；再深通常是資料寫錯。 */
+  var MAX_PARENT_DEPTH = 8;
   var BLEND_MODES = ['normal', 'add', 'multiply', 'screen'];
   var SPAWN_SHAPES = ['point', 'circle', 'box'];
   /* burst：一次噴完　rate：每秒 N 顆　sub：自己完全不發射，只由子發射器觸發
@@ -389,6 +393,9 @@ var VFXCore = (function () {
   }
 
   function validateCommonLayer(layer, where, errors) {
+    if (layer.parent !== undefined && (typeof layer.parent !== 'string' || !layer.parent)) {
+      errors.push(where + '.parent 必須是父物件的圖層 id（非空字串）');
+    }
     if (layer.enabled !== undefined && typeof layer.enabled !== 'boolean') {
       errors.push(where + '.enabled 必須是布林值');
     }
@@ -622,7 +629,7 @@ var VFXCore = (function () {
   }
 
   var PRESET_FIELDS = ['schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
-  var COMMON_LAYER_FIELDS = ['id', 'type', 'enabled', 'assetId', 'zIndex', 'position',
+  var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
@@ -654,6 +661,13 @@ var VFXCore = (function () {
     procedural: ['effect', 'size', 'scrollSpeed', 'water', 'radiusProfile']
       .concat(PER_AXIS_SCALE_FIELDS).concat(OFFSET_FIELDS).concat(OUTER_SCALE_FIELDS)
   };
+  /* 空物件只收「會被子物件繼承」的欄位：變換（含曲線）、透明度、顏色、時間軸。
+     assetId、blendMode、anchor、zIndex、sheet 在空物件上不會有任何效果，
+     收下來再靜靜忽略就是 silent fallback，所以直接報「不支援的欄位」。 */
+  var EMPTY_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'position', 'rotation', 'scale',
+    'alpha', 'tint', 'delay', 'duration',
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife']
+    .concat(PER_AXIS_SCALE_FIELDS).concat(OFFSET_FIELDS).concat(OUTER_SCALE_FIELDS);
 
   /* 未知欄位必須報錯：拼錯的 alpah 若被靜靜忽略，使用者會看到「設定沒有效果」
      卻查不出原因，這正是規格禁止的 silent fallback。 */
@@ -728,16 +742,17 @@ var VFXCore = (function () {
           '（支援 ' + LAYER_TYPES.join('、') + '）');
         return;
       }
-      checkUnknownFields(layer, COMMON_LAYER_FIELDS.concat(TYPE_ONLY_FIELDS[layer.type]),
-        where, errors);
+      checkUnknownFields(layer, layer.type === 'empty' ? EMPTY_LAYER_FIELDS
+        : COMMON_LAYER_FIELDS.concat(TYPE_ONLY_FIELDS[layer.type]), where, errors);
       checkNestedFields(layer, where, errors);
       validateCommonLayer(layer, where, errors);
       if (layer.type === 'particle') validateParticleLayer(layer, where, errors);
       else if (layer.type === 'procedural') validateProceduralLayer(layer, where, errors);
-      else if (!layer.assetId) errors.push(where + '.assetId 必填');
+      else if (layer.type === 'sprite' && !layer.assetId) errors.push(where + '.assetId 必填');
     });
 
     validateSubEmitterGraph(preset, errors);
+    validateHierarchy(preset, errors);
 
     return { ok: errors.length === 0, errors: errors };
   }
@@ -799,6 +814,66 @@ var VFXCore = (function () {
     if (cycle) errors.push('子發射器形成環：' + cycle + ' 會間接觸發自己（粒子數會每一輪翻倍）');
   }
 
+  /* 父子層級（parent）要跨圖層看才驗得出來：
+       - 父物件必須是同一份 preset 裡存在的圖層，而且不能是自己
+       - 不能繞成一圈（A 掛在 B 底下、B 又掛在 A 底下：兩邊的位置互相依賴，算不出來）
+       - 深度上限 MAX_PARENT_DEPTH
+       - 子發射器的來源層與目標層必須掛在同一個父物件底下：子發射器拿來源粒子的座標
+         當出生點，兩層的座標系不同，新粒子就會出現在錯的地方
+     父物件被 enabled:false 關掉不算錯——那等於父物件沒有出現，子物件跟著不出現。 */
+  function validateHierarchy(preset, errors) {
+    var byId = Object.create(null);
+    preset.layers.forEach(function (l) { if (l && typeof l.id === 'string') byId[l.id] = l; });
+
+    var broken = false;
+    preset.layers.forEach(function (l, i) {
+      if (!l || typeof l.parent !== 'string' || !l.parent) return;
+      var where = 'layers[' + i + '].parent';
+      if (l.parent === l.id) {
+        errors.push(where + ' 不能掛在自己底下：' + l.id);
+        broken = true;
+      } else if (!byId[l.parent]) {
+        errors.push(where + ' 指向不存在的圖層：' + l.parent);
+        broken = true;
+      }
+    });
+    if (broken) return;
+
+    var inCycle = Object.create(null);
+    preset.layers.forEach(function (l) {
+      if (!l || typeof l.parent !== 'string' || !l.parent) return;
+      var seen = Object.create(null);
+      var depth = 0;
+      var cur = l;
+      while (cur && typeof cur.parent === 'string' && cur.parent) {
+        if (seen[cur.id]) {
+          if (!inCycle[cur.id]) {
+            inCycle[cur.id] = true;
+            errors.push('父子關係形成環：' + cur.id + ' 會變成自己的祖先');
+          }
+          return;
+        }
+        seen[cur.id] = true;
+        if (++depth > MAX_PARENT_DEPTH) {
+          errors.push('圖層 ' + l.id + ' 的父子層級超過 ' + MAX_PARENT_DEPTH + ' 層');
+          return;
+        }
+        cur = byId[cur.parent];
+      }
+    });
+
+    preset.layers.forEach(function (l, i) {
+      var se = l && l.subEmitter;
+      if (!se || typeof se !== 'object' || typeof se.layer !== 'string') return;
+      var target = byId[se.layer];
+      if (!target) return;                        // 由 validateSubEmitterGraph 報
+      if ((l.parent || null) !== (target.parent || null)) {
+        errors.push('layers[' + i + '].subEmitter 的來源層與目標層 ' + se.layer +
+          ' 必須掛在同一個父物件底下（子發射器用來源粒子的座標當出生點，兩層的座標系要一致）');
+      }
+    });
+  }
+
   /* 決定性序列化：欄位順序固定，Editor 存檔→載入→再存檔必須位元相同。 */
   function validateSizing(s, errors) {
     if (!s || typeof s !== 'object' || Array.isArray(s)) { errors.push('sizing 必須是物件'); return; }
@@ -821,7 +896,7 @@ var VFXCore = (function () {
     }
   }
   var PRESET_KEY_ORDER = ['schemaVersion', 'id', 'duration', 'loop', 'layers'];
-  var LAYER_KEY_ORDER = ['id', 'type', 'enabled', 'assetId', 'effect', 'zIndex',
+  var LAYER_KEY_ORDER = ['id', 'type', 'parent', 'enabled', 'assetId', 'effect', 'zIndex',
     'position', 'rotation', 'scale', 'anchor', 'size', 'alpha', 'tint', 'blendMode',
     'delay', 'duration', 'scrollSpeed',
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
@@ -877,6 +952,7 @@ var VFXCore = (function () {
     return {
       id: layer.id,
       type: layer.type,
+      parent: layer.parent || null,
       enabled: layer.enabled !== false,
       assetId: layer.assetId,
       effect: layer.effect,
@@ -960,6 +1036,95 @@ var VFXCore = (function () {
       offsetYOverLife: layer.offsetYOverLife,
       outerScale: layer.outerScale
     };
+  }
+
+  /* ---------- 父子層級的矩陣 ----------
+     2D 仿射矩陣 { a, b, c, d, tx, ty }：點 (x, y) 變成 (a·x + c·y + tx, b·x + d·y + ty)，
+     與 Pixi 的 Matrix 同一個慣例（a、b 是第一行，c、d 是第二行）。
+
+     圖層的區域矩陣 L ＝ T(位置＋位移曲線) · S(外層縮放) · R(旋轉＋曲線) · S(縮放＋曲線＋翻轉)，
+     與 updateSpriteLayer「非等比縮放要分解」那一段是同一條算式——只是那裡把特效本身的
+     縮放併進外層縮放，這裡不含特效（特效的變換一律最後才套）。
+     Runtime、Editor 掛上父物件時的數值換算、gizmo 算框都用這幾支，兩邊不會各算各的。 */
+
+  function identityMatrix(out) {
+    var m = out || {};
+    m.a = 1; m.b = 0; m.c = 0; m.d = 1; m.tx = 0; m.ty = 0;
+    return m;
+  }
+
+  /* p · l：先套 l 再套 p（子物件的區域矩陣接在父物件後面就是 parent · child） */
+  function multiplyMatrix(p, l, out) {
+    var a = p.a * l.a + p.c * l.b;
+    var b = p.b * l.a + p.d * l.b;
+    var c = p.a * l.c + p.c * l.d;
+    var d = p.b * l.c + p.d * l.d;
+    var tx = p.a * l.tx + p.c * l.ty + p.tx;
+    var ty = p.b * l.tx + p.d * l.ty + p.ty;
+    var m = out || {};
+    m.a = a; m.b = b; m.c = c; m.d = d; m.tx = tx; m.ty = ty;
+    return m;
+  }
+
+  /* 反矩陣。退化（行列式為 0，例如縮放是 0）時回傳 null，由呼叫端決定怎麼辦。 */
+  function invertMatrix(m, out) {
+    var det = m.a * m.d - m.b * m.c;
+    if (!isFiniteNumber(det) || Math.abs(det) < 1e-12) return null;
+    var a = m.d / det, b = -m.b / det, c = -m.c / det, d = m.a / det;
+    var r = out || {};
+    r.tx = -(a * m.tx + c * m.ty);
+    r.ty = -(b * m.tx + d * m.ty);
+    r.a = a; r.b = b; r.c = c; r.d = d;
+    return r;
+  }
+
+  /* 拆回 Pixi 節點吃的 x／y／rotation／scaleX／scaleY／skewX（skewY 恆為 0）。
+     與 updateSpriteLayer 的分解同一套：rotation 取第一行的角度，skewX 是兩行的角度差。 */
+  function decomposeMatrix(m, out) {
+    var r = out || {};
+    r.x = m.tx;
+    r.y = m.ty;
+    r.rotation = Math.atan2(m.b, m.a);
+    r.scaleX = Math.sqrt(m.a * m.a + m.b * m.b);
+    r.scaleY = Math.sqrt(m.c * m.c + m.d * m.d);
+    r.skewX = r.rotation - Math.atan2(-m.c, m.d);
+    return r;
+  }
+
+  /* 圖層在 progress（0..1）時的區域矩陣。def 是 layerDefaults 的結果。
+     粒子層只取發射點位置：粒子層的 rotation／scale 轉的是每一顆粒子的圖，不是發射器。
+     progress 為 null 時不取樣任何曲線（Editor 換算基本數值時用）。 */
+  function layerMatrix(def, progress, out) {
+    var m = out || {};
+    if (def.type === 'particle') {
+      m.a = 1; m.b = 0; m.c = 0; m.d = 1;
+      m.tx = def.position.x; m.ty = def.position.y;
+      return m;
+    }
+    var curves = progress !== null && progress !== undefined;
+    var scaleK = curves ? sampleCurve(def.scaleOverLife, progress) : null;
+    var scaleKX = curves && def.scaleXOverLife !== undefined ? sampleCurve(def.scaleXOverLife, progress) : scaleK;
+    var scaleKY = curves && def.scaleYOverLife !== undefined ? sampleCurve(def.scaleYOverLife, progress) : scaleK;
+    var rotK = curves ? sampleCurve(def.rotationOverLife, progress) : null;
+    var flipY = curves && def.rotationXOverLife !== undefined
+      ? Math.cos(sampleCurve(def.rotationXOverLife, progress) || 0) : 1;
+    var flipX = curves && def.rotationYOverLife !== undefined
+      ? Math.cos(sampleCurve(def.rotationYOverLife, progress) || 0) : 1;
+    var offX = curves ? sampleCurve(def.offsetXOverLife, progress) : null;
+    var offY = curves ? sampleCurve(def.offsetYOverLife, progress) : null;
+    var angle = def.rotation + (rotK === null ? 0 : rotK);
+    var qx = def.scale.x * (scaleKX === null ? 1 : scaleKX) * flipX;
+    var qy = def.scale.y * (scaleKY === null ? 1 : scaleKY) * flipY;
+    var ox = def.outerScale ? def.outerScale.x : 1;
+    var oy = def.outerScale ? def.outerScale.y : 1;
+    var ca = Math.cos(angle), sa = Math.sin(angle);
+    m.a = ox * ca * qx;
+    m.b = oy * sa * qx;
+    m.c = -ox * sa * qy;
+    m.d = oy * ca * qy;
+    m.tx = def.position.x + (offX === null ? 0 : offX);
+    m.ty = def.position.y + (offY === null ? 0 : offY);
+    return m;
   }
 
   /* ---------- Runtime ---------- */
@@ -1086,6 +1251,7 @@ var VFXCore = (function () {
         time: startTime,
         timeScale: isFiniteNumber(p.timeScale) && p.timeScale > 0 ? p.timeScale : 1,
         done: false,
+        frameNo: 0,
         origin: { x: 0, y: 0 },
         rotation: 0,
         scale: 1, scaleX: 1, scaleY: 1, opacity: 1,
@@ -1108,6 +1274,7 @@ var VFXCore = (function () {
           emitAccumulator: 0,
           burstDone: false,
           noiseSeed: (effect.seed + i * 0x85EBCA6B) | 0,
+          hier: null,
 
           scrollX: 0,
           scrollY: 0
@@ -1235,7 +1402,60 @@ var VFXCore = (function () {
       width: undefined, height: undefined, tileX: undefined, tileY: undefined
     };
 
+    /* ---- 父子層級 ----
+       子物件繼承父物件的變換（位置／旋轉／縮放，含曲線動畫）、透明度、顏色與時間軸：
+       子物件的 delay 從父物件出現那一刻算起；父物件還沒出現、已經結束或被停用時，
+       子物件也不出現（粒子層是停止發射，已經發射出去的照自己的壽命演完）。
+       沒有 parent 的圖層完全不經過這裡，輸出與加入本功能之前逐位元相同。
+
+       回傳的矩陣相對於「特效座標」——特效本身的位置／旋轉／縮放最後才套。
+       每一幀只算一次（effect.frameNo），子物件再多、層級再深也不會重算。 */
+    function hierarchyState(effect, layer) {
+      var h = layer.hier;
+      if (!h) {
+        h = layer.hier = { stamp: -1, active: false, time: 0, progress: 0,
+          a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0, alpha: 1, tint: 0xffffff, local: {} };
+      }
+      if (h.stamp === effect.frameNo) return h;
+      h.stamp = effect.frameNo;
+      var d = layer.def;
+      var ph = null;
+      if (d.parent) {
+        var parent = effect.byId[d.parent];
+        if (!parent) {                           // 父物件被 enabled:false 關掉＝沒有出現
+          h.active = false; h.time = -1; h.progress = 0;
+          identityMatrix(h);
+          h.alpha = 0; h.tint = 0xffffff;
+          return h;
+        }
+        ph = hierarchyState(effect, parent);
+      }
+      var duration = d.duration === undefined ? effect.preset.duration : d.duration;
+      var t = (ph ? ph.time : effect.time) - d.delay;
+      h.time = t;
+      h.active = (!ph || ph.active) && t >= 0 && duration > 0 && t < duration;
+      h.progress = duration <= 0 ? 1 : (t <= 0 ? 0 : (t >= duration ? 1 : t / duration));
+      var local = layerMatrix(d, d.type === 'particle' ? null : h.progress, h.local);
+      if (ph) {
+        multiplyMatrix(ph, local, h);
+      } else {
+        h.a = local.a; h.b = local.b; h.c = local.c; h.d = local.d; h.tx = local.tx; h.ty = local.ty;
+      }
+      /* 粒子層的 alphaOverLife／tintOverLife 是每一顆粒子自己的生命曲線，不是圖層的，
+         所以粒子層傳給子物件的只有圖層本身的 alpha 與 tint。 */
+      var alphaK = d.type === 'particle' ? null : sampleCurve(d.alphaOverLife, h.progress);
+      h.alpha = d.alpha * (alphaK === null ? 1 : alphaK) * (ph ? ph.alpha : 1);
+      var tint = colorToInt(d.tint);
+      if (d.type !== 'particle') {
+        var tintK = sampleColorCurve(d.tintCurve, h.progress);
+        if (tintK !== null) tint = mulColorInt(tint, tintK);
+      }
+      h.tint = ph ? mulColorInt(tint, ph.tint) : tint;
+      return h;
+    }
+
     function updateSpriteLayer(effect, layer) {
+      if (layer.def.parent) return updateChildSpriteLayer(effect, layer);
       var life = layerLife(effect, layer);
       if (!life.active) {
         if (layer.node) { releaseNode(layer.nodeSpec, layer.node); layer.node = null; }
@@ -1323,8 +1543,15 @@ var VFXCore = (function () {
       t.alpha = effect.opacity * d.alpha * (alphaK === null ? 1 : alphaK);
       var tintK = sampleColorCurve(d.tintCurve, life.progress);
       t.tint = tintK === null ? colorToInt(d.tint) : mulColorInt(colorToInt(d.tint), tintK);
+      finishSpriteNode(effect, layer, t, life.progress, life.elapsed);
+    }
+
+    /* sprite／procedural 節點共用的收尾：序列幀、錨點、排序、程序圖層的捲動與水龍捲。
+       根圖層與子物件都走這裡，兩者只差在變換、透明度、顏色怎麼算。 */
+    function finishSpriteNode(effect, layer, t, progress, elapsed) {
+      var d = layer.def;
       /* 序列幀：sprite 的年紀就是它自己這一段的經過時間。 */
-      t.frame = d.sheet ? sheetFrame(d.sheet, life.progress, life.elapsed, 0) : undefined;
+      t.frame = d.sheet ? sheetFrame(d.sheet, progress, elapsed, 0) : undefined;
       t.anchorX = d.anchor.x;
       t.anchorY = d.anchor.y;
       t.zIndex = d.zIndex;
@@ -1332,7 +1559,7 @@ var VFXCore = (function () {
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
       if (d.effect === 'waterTornado') {
-        var phaseTime = d.water.palette === 'fire' ? proceduralClock * effect.timeScale : life.elapsed;
+        var phaseTime = d.water.palette === 'fire' ? proceduralClock * effect.timeScale : elapsed;
         t.generated = waterGenerator.sample(d.water.part, phaseTime * (d.water.speed === undefined ? 1 : d.water.speed), d.water.density, d.water.palette);
       } else if (d.type === 'procedural') {
         layer.scrollX += d.scrollSpeed.x * effect.lastDt;
@@ -1343,6 +1570,43 @@ var VFXCore = (function () {
         t.tileY = layer.scrollY;
       }
       backend.updateNode(layer.node, t);
+    }
+
+    /* 子物件：區域矩陣接在父物件後面（hierarchyState），再套特效本身的變換，最後拆回
+       rotation／scale／skew。一律走矩陣分解：父物件一有非等比縮放、子物件一轉就會產生斜切。 */
+    var scratchWorldMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    var scratchParts = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, skewX: 0 };
+    function updateChildSpriteLayer(effect, layer) {
+      var h = hierarchyState(effect, layer);
+      if (!h.active) {
+        if (layer.node) { releaseNode(layer.nodeSpec, layer.node); layer.node = null; }
+        return;
+      }
+      if (!layer.node) {
+        layer.nodeSpec = nodeSpecFor(layer);
+        layer.node = acquireNode(layer.nodeSpec);
+      }
+      var t = scratchTransform;
+      var world = toWorld(effect, h.tx, h.ty);
+      t.visible = true;
+      t.x = world.x;
+      t.y = world.y;
+      /* 特效本身：先在特效座標系分軸縮放，再旋轉——與 toWorld 同一個順序 */
+      var sx = effect.scaleX, sy = effect.scaleY;
+      var ce = Math.cos(effect.rotation), se = Math.sin(effect.rotation);
+      var m = scratchWorldMatrix;
+      m.a = ce * sx * h.a - se * sy * h.b;
+      m.b = se * sx * h.a + ce * sy * h.b;
+      m.c = ce * sx * h.c - se * sy * h.d;
+      m.d = se * sx * h.c + ce * sy * h.d;
+      var parts = decomposeMatrix(m, scratchParts);
+      t.rotation = parts.rotation;
+      t.scaleX = parts.scaleX;
+      t.scaleY = parts.scaleY;
+      t.skewX = parts.skewX;
+      t.alpha = effect.opacity * h.alpha;
+      t.tint = h.tint;
+      finishSpriteNode(effect, layer, t, h.progress, h.time);
     }
 
     /* 單層上限只能比每特效上限更嚴格，不能拿來繞過它——
@@ -1369,6 +1633,7 @@ var VFXCore = (function () {
       subOrigin.vx = parent.vx * se.inheritVelocity;
       subOrigin.vy = parent.vy * se.inheritVelocity;
       subOrigin.frame = parent.spawnFrame || effect;
+      subOrigin.parentMatrix = parent.parentMatrix || null;
       for (var i = 0; i < se.count; i++) spawnParticle(effect, target, subOrigin);
     }
 
@@ -1407,6 +1672,16 @@ var VFXCore = (function () {
         frame.scaleX = sourceFrame.scaleX; frame.scaleY = sourceFrame.scaleY;
         p.spawnFrame = frame;
       }
+      /* 掛在父物件底下的世界座標粒子：出生當下父物件在哪，這顆粒子就留在那個座標系裡，
+         父物件之後怎麼動都不跟著走（與特效本身移動時世界座標粒子留在原地是同一件事）。 */
+      p.parentMatrix = null;
+      if (d.worldSpace && d.parent && effect.byId[d.parent]) {
+        var src = at && at.parentMatrix ? at.parentMatrix : hierarchyState(effect, effect.byId[d.parent]);
+        var birth = p.parentBirth || (p.parentBirth = {});
+        birth.a = src.a; birth.b = src.b; birth.c = src.c; birth.d = src.d;
+        birth.tx = src.tx; birth.ty = src.ty;
+        p.parentMatrix = birth;
+      }
       p.vx = Math.cos(angle) * speed;
       p.vy = Math.sin(angle) * speed;
       /* 繼承母粒子的速度：煙要跟著碎片的去向飄一段，而不是原地冒出來。
@@ -1435,7 +1710,11 @@ var VFXCore = (function () {
 
     function updateParticleLayer(effect, layer, dt) {
       var d = layer.def;
-      var life = layerLife(effect, layer);
+      /* 掛在父物件底下的粒子層：發射時段跟著父物件（父物件沒出現就不發射），
+         粒子的座標落在父物件的座標系裡（發射點、方向、繞圈中心都是），畫的時候才套父物件的矩陣。 */
+      var parentLayer = d.parent ? effect.byId[d.parent] : null;
+      var pa = parentLayer ? hierarchyState(effect, parentLayer) : null;
+      var life = d.parent ? hierarchyState(effect, layer) : layerLife(effect, layer);
       /* sub 模式完全不自發射：這一層的粒子只由別人的子發射器丟進來。 */
       if (!effect.draining && life.active && d.emission.mode !== 'sub') {
         if (d.emission.mode === 'burst') {
@@ -1579,7 +1858,15 @@ var VFXCore = (function () {
           ny += valueNoise2(fx2, fy2 + ft + 31.4, noiseSeed) * noise.strength;
         }
         var particleFrame = p.spawnFrame || effect;
-        var world = toWorld(particleFrame, nx, ny);
+        var pm = null;
+        var world;
+        if (pa) {
+          /* 先過父物件的矩陣（世界座標粒子用出生當下的那一份），再過特效本身的變換 */
+          pm = (d.worldSpace && p.parentMatrix) ? p.parentMatrix : pa;
+          world = toWorld(particleFrame, pm.a * nx + pm.c * ny + pm.tx, pm.b * nx + pm.d * ny + pm.ty);
+        } else {
+          world = toWorld(particleFrame, nx, ny);
+        }
         var t = scratchTransform;
         t.visible = true;
         t.x = world.x;
@@ -1598,6 +1885,15 @@ var VFXCore = (function () {
         t.alpha = effect.opacity * d.alpha * (alphaK === null ? 1 : alphaK) *
           (effect.draining ? Math.max(0, 1 - effect.drainAge / p.drainLife) : 1);
         t.tint = tintCurve === null ? tint : mulColorInt(tint, sampleColorCurve(tintCurve, k));
+        if (pm) {
+          /* 父物件的旋轉與縮放也套到每一顆粒子的圖上；透明度與顏色用父物件「現在」的值——
+             父物件淡出時，已經發射出去的粒子一起淡出。父物件非等比縮放時粒子圖只取兩軸長度（不斜切）。 */
+          t.rotation += Math.atan2(pm.b, pm.a);
+          t.scaleX *= Math.sqrt(pm.a * pm.a + pm.b * pm.b);
+          t.scaleY *= Math.sqrt(pm.c * pm.c + pm.d * pm.d);
+          t.alpha *= pa.alpha;
+          t.tint = mulColorInt(t.tint, pa.tint);
+        }
         t.frame = sheet ? sheetFrame(sheet, k, p.life, p.frameOffset) : undefined;
         t.anchorX = d.anchor.x;
         t.anchorY = d.anchor.y;
@@ -1638,9 +1934,11 @@ var VFXCore = (function () {
           effect.time = effect.time % preset.duration;
           effect.layers.forEach(function (l) { l.burstDone = false; });
         }
+        effect.frameNo++;                        // 父子層級的狀態每一幀只算一次（hierarchyState）
         for (var j = 0; j < effect.layers.length; j++) {
           var layer = effect.layers[j];
           if (layer.def.type === 'particle') updateParticleLayer(effect, layer, effect.lastDt);
+          else if (layer.def.type === 'empty') continue;   // 空物件不畫東西，子物件需要時才算它
           else if (!effect.draining) updateSpriteLayer(effect, layer);
         }
         var over = effect.draining || (!preset.loop && effect.time >= preset.duration);
@@ -1843,7 +2141,19 @@ var VFXCore = (function () {
        播出來的顏色逐位元相同，唯一可靠的保證方式是兩邊呼叫同一支函式，
        而不是各寫一份再用測試比對。 */
     toColorCurve: toColorCurve,
-    sampleColorCurve: sampleColorCurve
+    sampleColorCurve: sampleColorCurve,
+    /* 父子層級：Editor 掛上父物件時換算數值、gizmo 算框，都要與 Runtime 同一套矩陣。
+       layerMatrix 收的是 preset 裡的原始圖層（缺的欄位補預設值）；progress 省略時不取樣曲線。 */
+    MAX_PARENT_DEPTH: MAX_PARENT_DEPTH,
+    /* 空物件收哪些欄位。Editor 的 Inspector 照這份過濾，不另抄一份（給複本，改了不影響驗證）。 */
+    EMPTY_LAYER_FIELDS: EMPTY_LAYER_FIELDS.slice(),
+    identityMatrix: identityMatrix,
+    multiplyMatrix: multiplyMatrix,
+    invertMatrix: invertMatrix,
+    decomposeMatrix: decomposeMatrix,
+    layerMatrix: function (layer, progress) {
+      return layerMatrix(layerDefaults(layer), progress === undefined ? null : progress);
+    }
   };
 })();
 

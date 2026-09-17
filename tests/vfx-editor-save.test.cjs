@@ -808,6 +808,29 @@ test('SA4 另存之後根群組要改名，否則新檔一落地就違反單一�
     '只有「名稱本來就等於舊 id」時才改名');
 });
 
+test('SA5 另存成功後用新名字重新開啟；送出前就先把新名字註冊進預覽', function () {
+  /* 2026-09-17 使用者回報：另存新檔後特效停止播放。commitSaveAs 只換了 preset.id，
+     Core 裡註冊的還是舊名字，預覽循環一重播就回「未註冊的 preset」，每一幀都丟錯。
+     使用者要求：另存後把選單的篩選換成新名字，重新載入這份特效。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function commitSaveAs'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  const reg = body.indexOf('state.runtime.registerPreset(state.preset)');
+  assert.ok(reg >= 0 && reg < body.indexOf('savePreset()'), '存檔請求送出之前，新名字就要先註冊進預覽');
+  assert.ok(/rememberComboQuery\(newId\)/.test(body), '選單的篩選字串要換成新名字');
+  const wait = body.indexOf('state.layoutSave');
+  const reload = body.indexOf("window.location.search = '?preset=' + encodeURIComponent(newId)");
+  assert.ok(wait >= 0 && reload > wait, '要等分組存完才重新載入，否則重載會砍掉分組的請求');
+  assert.ok(/layoutOk === false/.test(body.slice(wait, reload)), '分組沒存成功時不能重新載入');
+  assert.ok(/flashAfterReload\(/.test(body), '重新載入之後要看得到「已另存為」');
+
+  const save = src.slice(src.indexOf('function savePreset'));
+  const saveBody = save.slice(0, save.indexOf('\n  }\n'));
+  assert.ok(/state\.layoutSave = saveLayout\(\)/.test(saveBody), 'savePreset 要把分組的 Promise 留給另存新檔等');
+  const boot = src.slice(src.indexOf('function boot('));
+  assert.ok(/showFlashFromReload\(\)/.test(boot.slice(0, boot.indexOf('\n  }'))), '開好之後要顯示重載前留下的訊息');
+});
+
 test('W9 關閉端點的防護與存檔 API 同一套（不是任何網頁都殺得掉伺服器）',
   withSandbox(async function (sb, h) {
     /* 這是一個「任何人打得到就能停掉服務」的端點，所以它必須通過與寫入 API

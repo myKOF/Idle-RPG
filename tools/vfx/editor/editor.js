@@ -68,6 +68,23 @@
     try { window.sessionStorage.setItem(SEARCH_STORAGE_KEY, q || ''); } catch (e) { }
   }
 
+  /* 重新載入之後要讓使用者看到的一行狀態（例如「已另存為 xxx」）。
+     重載會把畫面上的訊息清掉，所以先存進 sessionStorage，開好之後顯示一次就刪掉。 */
+  var FLASH_STORAGE_KEY = 'vfx-editor.flashStatus';
+
+  function flashAfterReload(text) {
+    try { window.sessionStorage.setItem(FLASH_STORAGE_KEY, text); } catch (e) { }
+  }
+
+  function showFlashFromReload() {
+    var text = null;
+    try {
+      text = window.sessionStorage.getItem(FLASH_STORAGE_KEY);
+      window.sessionStorage.removeItem(FLASH_STORAGE_KEY);
+    } catch (e) { }
+    if (text) setSaveStatus(text, 'ok');
+  }
+
   var combo = {
     rows: [],          // [{ id, label, text, search }]
     shown: [],         // 目前符合關鍵字的（rows 的子集）
@@ -678,6 +695,8 @@
 
   var COMMON_FIELDS = [
     { key: 'id', label: 'id', kind: 'text' },
+    /* 父子層級（2026-09-17）。選了就換算數值讓畫面不動，見 parentSelect。 */
+    { key: 'parent', label: '父物件', kind: 'parent' },
     { key: 'enabled', label: 'enabled', kind: 'bool', default: true },
     { key: 'assetId', label: 'assetId', kind: 'asset' },
     num('zIndex', 'zIndex', 1),
@@ -747,10 +766,11 @@
     }
   };
 
-  /* 哪些型別支援分軸縮放。與 Core 的 TYPE_ONLY_FIELDS 對齊：
-     這兩型走 updateSpriteLayer（兩軸各自取樣），粒子層的兩軸永遠相等。 */
+  /* 哪些型別支援分軸縮放。與 Core 的 TYPE_ONLY_FIELDS／EMPTY_LAYER_FIELDS 對齊：
+     sprite 與 procedural 走 updateSpriteLayer（兩軸各自取樣）；空物件的曲線整組傳給子物件；
+     粒子層的兩軸永遠相等。 */
   function supportsPerAxisScale(layer) {
-    return layer.type === 'sprite' || layer.type === 'procedural';
+    return layer.type === 'sprite' || layer.type === 'procedural' || layer.type === 'empty';
   }
 
   /* 外層縮放：在圖層旋轉**之後**才套用，等同把這一層放進一個不會跟著轉的外框。
@@ -762,6 +782,8 @@
 
   var TYPE_FIELDS = {
     sprite: [OUTER_SCALE_FIELD],
+    /* 空物件不畫東西，只收會被子物件繼承的欄位；共通欄位裡不適用的由 fieldsOf 濾掉 */
+    empty: [OUTER_SCALE_FIELD],
     particle: [
       json('emission', 'emission'),
       num('maxParticles', 'maxParticles', 1),
@@ -934,7 +956,9 @@
     if (!state.preset) return;
     picker.layers = null;
     picker.field = 'assetId';
-    picker.createType = $('new-layer-type').value || 'sprite';
+    /* 空物件不畫東西、沒有素材欄位：挑了素材就是要一張圖，改成 sprite */
+    var wanted = $('new-layer-type').value;
+    picker.createType = wanted && wanted !== 'empty' ? wanted : 'sprite';
     picker.selected = null;
     $('picker-target').textContent = '新增 ' + picker.createType + ' 圖層';
     showPicker();
@@ -1096,6 +1120,33 @@
 
   function boundsOf(layer) { return G.baseBounds(layer.effect === 'waterTornado' ? Object.assign({}, layer, { type: 'sprite' }) : layer, sizeOf(layer)); }
 
+  /* 父子層級：圖層的 position／rotation／scale 所在的座標＝父物件的世界矩陣（基本數值）。
+     框、把手與拖曳的數學都在這個座標裡算（見 gizmo-model.js「父子層級的座標空間」）。
+     根層級回傳 undefined：原本的路徑一個位元都不差。 */
+  function spaceOf(layer) {
+    var pid = H.parentIdOf(layer);
+    return pid ? H.parentMatrixOf(state.preset, pid) : undefined;
+  }
+
+  /* 一起變形時只動最上層：父物件與它的子物件同時在裡面時，子物件跟著父物件走，
+     自己再動一次就是動兩次。 */
+  function transformRoots(layers) {
+    var inSet = {};
+    layers.forEach(function (l) { inSet[l.id] = true; });
+    return layers.filter(function (l) {
+      return !H.ancestorIds(state.preset, l.id).some(function (a) { return inSet[a]; });
+    });
+  }
+
+  /* 在預覽區點選時認得到的圖層。空物件不畫東西，點到它等於點穿到看不見的框，
+     會搶走底下真正看得到的圖層（空物件從圖層面板選）；父物件停用的子物件在遊戲裡不會出現。 */
+  function pickableLayers() {
+    return state.preset.layers.filter(function (l) {
+      if (l.type === 'empty') return false;
+      return !H.ancestorIds(state.preset, l.id).some(function (a) { return layerById(a).enabled === false; });
+    });
+  }
+
   /* 目前的變形目標。圖層與群組共用同一套框、把手與拖曳邏輯，
      差別只在「動的是一層還是一批」。
 
@@ -1108,10 +1159,11 @@
        左邊選了幾層，框就畫幾個、Inspector 就寫幾層，不會各說各話。 */
     var many = inspectorTargets();
     if (many.length > 1) {
+      var movers = transformRoots(many);
       return {
-        kind: 'multi', layers: many,
-        items: many.map(function (l) {
-          return { layer: l, bounds: boundsOf(l), caps: G.capabilities(l) };
+        kind: 'multi', layers: movers,
+        items: movers.map(function (l) {
+          return { layer: l, bounds: boundsOf(l), caps: G.capabilities(l), space: spaceOf(l) };
         })
       };
     }
@@ -1119,16 +1171,17 @@
     if (layer) {
       return {
         kind: 'layer', layer: layer, layers: [layer],
-        bounds: boundsOf(layer), caps: G.capabilities(layer)
+        bounds: boundsOf(layer), caps: G.capabilities(layer), space: spaceOf(layer)
       };
     }
     var g = activeGroup();
     if (!g) return null;
     var members = g.layerIds.map(layerById).filter(Boolean);
     if (!members.length) return null;
+    /* 框包住全部成員（子物件也在畫面上）；變形只寫最上層，子物件跟著父物件走 */
     return {
-      kind: 'group', group: g, layers: members,
-      bounds: G.groupBounds(members, sizeOf), caps: G.groupCapabilities(members)
+      kind: 'group', group: g, layers: transformRoots(members),
+      bounds: G.groupBounds(members, sizeOf, spaceOf), caps: G.groupCapabilities(members)
     };
   }
 
@@ -1138,7 +1191,7 @@
     if (!target) return [];
     if (target.kind === 'multi') return target.items;
     return target.bounds
-      ? [{ layer: target.layer || null, bounds: target.bounds, caps: target.caps }] : [];
+      ? [{ layer: target.layer || null, bounds: target.bounds, caps: target.caps, space: target.space }] : [];
   }
 
   /* 滑鼠底下的把手。多選時所有框的把手一起比、取最近的那個；
@@ -1146,7 +1199,11 @@
   function hitGizmoHandle(items, pt) {
     var list = [];
     items.forEach(function (it, i) {
-      G.handles(it.bounds, it.caps).forEach(function (h) { h.item = i; list.push(h); });
+      /* 把手的位置換到特效座標再比：命中半徑是螢幕上的固定像素，在父物件座標裡比會被它的縮放拉歪 */
+      G.handles(it.bounds, it.caps).forEach(function (h) {
+        var p = G.mapPoint(it.space, h);
+        list.push({ id: h.id, kind: h.kind, axis: h.axis, x: p.x, y: p.y, item: i });
+      });
     });
     return G.hitHandle(pt, list, screenRadiusToLocal(9));
   }
@@ -1155,13 +1212,14 @@
      與點選圖層的規則一致。 */
   function hitGizmoBody(target, items, pt) {
     if (target.kind === 'multi') {
-      var hit = G.hitLayer(pt, target.layers, boundsOf);
+      var hit = G.hitLayer(pt, target.layers, boundsOf, spaceOf);
       for (var i = 0; hit && i < items.length; i++) {
         if (items[i].layer === hit && items[i].caps.move) return i;
       }
       return -1;
     }
-    return items[0].caps.move && G.insideBounds(pt, items[0].bounds) ? 0 : -1;
+    var local = G.unmapPoint(items[0].space, pt);
+    return items[0].caps.move && local && G.insideBounds(local, items[0].bounds) ? 0 : -1;
   }
 
   /* ---------------- 座標換算 ----------------
@@ -1252,17 +1310,22 @@
     var active = selectedLayer();
     items.forEach(function (it) {
       var dim = target.kind === 'multi' && it.layer !== active;
-      drawGizmoBox(g, it.bounds, it.caps, isGroup, dim ? 0.5 : 1);
+      drawGizmoBox(g, it.bounds, it.caps, isGroup, dim ? 0.5 : 1, it.space);
     });
   }
 
-  /* 一個框：外框、旋轉把手的連線、pivot 十字、把手。emphasis 1＝正常，越小越淡。 */
-  function drawGizmoBox(g, b, caps, isGroup, emphasis) {
-    var hs = G.handles(b, caps);
+  /* 一個框：外框、旋轉把手的連線、pivot 十字、把手。emphasis 1＝正常，越小越淡。
+     space：框所在的父物件座標。每個點換到特效座標再畫——父物件非等比縮放時框是平行四邊形，
+     與畫面上的圖一致；十字與把手的大小仍是螢幕上的固定像素。 */
+  function drawGizmoBox(g, b, caps, isGroup, emphasis, space) {
+    var hs = G.handles(b, caps).map(function (h) {
+      var p = G.mapPoint(space, h);
+      return { kind: h.kind, x: p.x, y: p.y };
+    });
     var corners = [
       { x: b.x, y: b.y }, { x: b.x + b.w, y: b.y },
       { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }
-    ].map(function (p) { return G.rotateAround(p, b.pivot, b.rotation); });
+    ].map(function (p) { return G.mapPoint(space, G.rotateAround(p, b.pivot, b.rotation)); });
 
     /* 框。白色細線在任何背景上都看得見，而且不會被誤認為特效的一部分。 */
     g.moveTo(corners[0].x, corners[0].y);
@@ -1273,13 +1336,13 @@
     /* 旋轉把手到框上緣的連線 */
     var rot = hs.filter(function (h) { return h.kind === 'rotate'; })[0];
     if (rot) {
-      var top = G.rotateAround({ x: b.x + b.w / 2, y: b.y }, b.pivot, b.rotation);
+      var top = G.mapPoint(space, G.rotateAround({ x: b.x + b.w / 2, y: b.y }, b.pivot, b.rotation));
       g.moveTo(top.x, top.y); g.lineTo(rot.x, rot.y);
       g.stroke({ width: 1, color: 0xffffff, alpha: 0.5 * emphasis });
     }
 
     /* pivot：十字，標出 position 實際落在哪裡（受 anchor 影響） */
-    var pv = b.pivot, r = screenRadiusToLocal(6);
+    var pv = G.mapPoint(space, b.pivot), r = screenRadiusToLocal(6);
     g.moveTo(pv.x - r, pv.y); g.lineTo(pv.x + r, pv.y);
     g.moveTo(pv.x, pv.y - r); g.lineTo(pv.x, pv.y + r);
     g.stroke({ width: 1, color: 0xffb454, alpha: 0.95 * emphasis });
@@ -1332,7 +1395,7 @@
     }
 
     /* 沒打中就當作重新選取。命中規則與繪製順序一致：最上面的優先。 */
-    var hit = G.hitLayer(pt, state.preset.layers, boundsOf);
+    var hit = G.hitLayer(pt, pickableLayers(), boundsOf, spaceOf);
     if (!hit) return;
     selectLayerById(hit.id);
     /* 選到就直接可以拖，不必先放開再按一次 */
@@ -1349,11 +1412,18 @@
     /* 一次拖曳＝一筆歷史。pointermove 期間只更新畫面，不記錄。 */
     editBegin((DRAG_LABEL[mode] || '變形') + (DRAG_WHAT[target.kind] || '圖層'));
     var multi = target.kind === 'multi';
+    /* 被抓的那個框所在的父物件座標。起點與之後每一個滑鼠位置都換進這裡，
+       pivot 與角度本來就是框在這個座標裡的值，拖曳的數學與根層級相同。
+       換不過去（父物件縮放是 0）就留在特效座標——那種圖層畫面上看不到，框也抓不到。 */
+    var space = multi ? target.items[itemIndex || 0].space : target.space;
     gizmo.drag = {
       target: target,
       mode: mode,
       handle: handle,
-      startPoint: startPoint,
+      space: space,
+      /* 多選時每一層各自的父物件座標：同一個畫面位移換到各層是不同的數字 */
+      spaces: multi ? target.items.map(function (it) { return it.space; }) : null,
+      startPoint: G.unmapPoint(space, startPoint) || startPoint,
       pivot: { x: bounds.pivot.x, y: bounds.pivot.y },
       rotation: bounds.rotation,
       /* 群組要多存幾個欄位：縮放會動到粒子的 speed／spawn／startScale，
@@ -1392,6 +1462,8 @@
   }
 
   function dragLayer(d, pt, shift) {
+    pt = G.unmapPoint(d.space, pt);
+    if (!pt) return;
     var layer = d.target.layer;
     if (d.mode === 'move') {
       layer.position = G.applyMove(d.snap.position || { x: 0, y: 0 }, d.startPoint, pt, { snap: shift });
@@ -1416,16 +1488,28 @@
     } else if (d.mode === 'rotate') {
       delta.rot = G.applyRotate(0, d.pivot, d.startPoint, pt, { snap: shift });
     }
-    G.writeGroupTransform(d.target.layers,
-      G.applyGroupTransform(d.snap, d.pivot, delta));
+    writeGroupDelta(d.target.layers, d.snap, d.pivot, delta);
+  }
+
+  /* 群組變形寫回成員。框與變形量都在特效座標；成員的父物件不在群組裡時（它的數值相對那個
+     父物件），把 pivot 與變形量換進那個父物件的座標再套。根層級的成員原樣，與加入父子層級之前相同。 */
+  function writeGroupDelta(layers, snaps, pivot, delta) {
+    G.writeGroupTransform(layers, snaps.map(function (snap, i) {
+      var local = G.groupDeltaInSpace(pivot, delta, spaceOf(layers[i]));
+      return local ? G.applyGroupTransform([snap], local.pivot, local.delta)[0] : { id: snap.id };
+    }));
   }
 
   /* 多選：由被抓的那一層算出相對量（位移、倍率、角度），每一層各自繞自己的 pivot 套用。
      每次都從快照重算，不累加。 */
   function dragMulti(d, pt, shift) {
+    pt = G.unmapPoint(d.space, pt);
+    if (!pt) return;
     var delta = G.multiDelta(d.mode, d.snap[d.ref], d.handle, d.pivot, d.rotation,
       d.startPoint, pt, { snap: shift });
-    G.writeMultiTransform(d.target.layers, d.snap, G.applyMultiTransform(d.snap, d.caps, delta));
+    /* 由被抓那一層的座標換到每一層自己的父物件座標 */
+    var deltas = d.spaces.map(function (s) { return G.deltaToSpace(delta, d.space, s); });
+    G.writeMultiTransform(d.target.layers, d.snap, G.applyMultiTransform(d.snap, d.caps, deltas));
   }
 
   function onPreviewPointerUp() {
@@ -1788,6 +1872,8 @@
   var M = VFXLayerModel;
   var G = VFXGizmoModel;
   var MX = VFXMultiEditModel;
+  /* 父子層級：掛上時的數值換算、面板的樹、拖曳落點。同樣一份給畫面、一份給測試。 */
+  var H = VFXHierarchyModel;
 
   function keyOf(kind, id) { return M.keyOf(kind, id); }
   function keyKind(key) { return M.keyKind(key); }
@@ -1914,9 +2000,12 @@
     return M.sortRows(rows, state.sortMode);
   }
 
-  /* 目前「畫面上看得到的列」，收合的群組不展開子項。
-     Shift 範圍選取必須以這個為準——選到看不見的東西是最經典的多選 bug。 */
-  function visibleKeys() { return M.visibleKeys(buildRows(), state.collapsed); }
+  /* 面板上實際畫出來的列：群組展開成成員，子物件縮排在父物件底下，收合的群組與父物件不展開。
+     畫面、Shift 範圍選取、刪除後的焦點都照這一份，順序才不會各說各話。 */
+  function layerTree() { return H.treeRows(state.preset, buildRows(), state.collapsed); }
+
+  /* 目前「畫面上看得到的列」。Shift 範圍選取必須以這個為準——選到看不見的東西是最經典的多選 bug。 */
+  function visibleKeys() { return H.visibleKeys(layerTree()); }
 
   /* ---------------- 選取 ---------------- */
 
@@ -1946,20 +2035,13 @@
   function renderLayerList() {
     var host = $("layer-list");
     host.textContent = "";
-    var rows = buildRows();
-
-    rows.forEach(function (r) {
-      if (r.kind === "group") {
-        host.appendChild(groupRow(r));
-        if (state.collapsed[r.id]) return;
-        r.layerIds.forEach(function (id) {
-          var l = layerById(id);
-          if (l) host.appendChild(layerRow(l, true));
-        });
-        return;
-      }
+    /* 有任何父子關係時，每一列都留一格收合鈕的位置，同一層的勾選框才對得齊；
+       沒有的 preset 維持原本的樣子。 */
+    var treeMode = state.preset.layers.some(function (l) { return !!H.parentIdOf(l); });
+    layerTree().forEach(function (r) {
+      if (r.kind === "group") { host.appendChild(groupRow(r)); return; }
       var layer = layerById(r.id);
-      if (layer) host.appendChild(layerRow(layer, false));
+      if (layer) host.appendChild(layerRow(layer, r, treeMode));
     });
 
     updateLayerPanelStatus();
@@ -2030,12 +2112,37 @@
     return div;
   }
 
-  function layerRow(layer, inGroup) {
+  /* row：H.treeRows 的一列（depth、hasChildren、collapsed、parentElsewhere、parentOff） */
+  function layerRow(layer, row, treeMode) {
     var div = document.createElement("div");
     var key = keyOf("layer", layer.id);
-    div.className = "layer-row" + (inGroup ? " child" : "") +
+    div.className = "layer-row" + (row.groupId ? " child" : "") + (row.parentOff ? " parent-off" : "") +
       (isSelected(key) ? " sel" : "") + (state.activeKey === key ? " active" : "");
     div.dataset.key = key;
+    /* 縮排用 CSS 變數算 padding：整列仍然都是拖放的落點 */
+    div.style.setProperty("--depth", String(row.depth || 0));
+    /* dropModeFor 要知道這一列底下有沒有展開的子物件 */
+    div._treeRow = row;
+
+    var tw = null;
+    if (row.hasChildren) {
+      tw = document.createElement("button");
+      tw.className = "twisty";
+      tw.type = "button";
+      tw.textContent = row.collapsed ? "\u25B6" : "\u25BC";
+      tw.title = row.collapsed ? "展開子物件" : "收合子物件";
+      tw.onmousedown = function (e) { e.stopPropagation(); };
+      tw.onclick = function (e) {
+        e.stopPropagation();
+        var ck = H.collapsedKeyOf(layer.id);
+        if (state.collapsed[ck]) delete state.collapsed[ck]; else state.collapsed[ck] = true;
+        saveCollapsed();
+        renderLayerList();
+      };
+    } else if (treeMode) {
+      tw = document.createElement("span");
+      tw.className = "twisty twisty-blank";
+    }
 
     var cb = document.createElement("input");
     cb.type = "checkbox";
@@ -2056,10 +2163,18 @@
     var waterNames = { halo: '外層光暈', 'rear-ribbons': '後方飄帶', 'rear-sheets': '後方水片', body: '水柱本體', 'front-sheets': '前方水片', 'white-crests': '白色浪尖', 'front-ribbons': '前方飄帶', base: '底部旋流水環', bloom: '浪尖泛光', dust: '底部煙塵', spray: '藍色水花粒子' };
     name.textContent = (layer.effect === 'waterTornado' || (state.preset.id === 'field-water-tornado' && waterNames[layer.id])) ? (waterNames[layer.water ? layer.water.part : layer.id] || layer.id) + ' · ' + layer.id : layer.id;
 
+    if (row.parentElsewhere) {
+      /* 父物件在別的群組：列留在自己的位置，但要看得出它掛在誰底下 */
+      name.textContent += " \u2191" + row.parentElsewhere;
+      name.title = "父物件是 " + row.parentElsewhere + "（在別的群組）";
+    }
+    if (row.parentOff) div.title = "上層的父物件停用中：這一層也不會出現";
+
     var type = document.createElement("span");
     type.className = "type";
     type.textContent = layer.type;
 
+    if (tw) div.appendChild(tw);
     div.appendChild(cb); div.appendChild(name); div.appendChild(type);
     wireRow(div, key);
     return div;
@@ -2092,10 +2207,12 @@
     };
     div.ondragover = function (e) {
       if (!state.dragKeys) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
       clearDropMarks();
       var mode = dropModeFor(div, key, e);
+      /* 放不下的位置不 preventDefault：游標顯示禁止，也不畫任何指示 */
+      if (!mode) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
       div.classList.add(mode === "into" ? "drop-into" :
         (mode === "before" ? "drop-before" : "drop-after"));
     };
@@ -2104,7 +2221,8 @@
       if (!state.dragKeys) return;
       e.preventDefault();
       e.stopPropagation();
-      performDrop(key, dropModeFor(div, key, e));
+      var mode = dropModeFor(div, key, e);
+      if (mode) performDrop(key, mode);
       state.dragKeys = null;
       clearDropMarks();
     };
@@ -2117,23 +2235,30 @@
     });
   }
 
-  /* 群組列的中間三分之一 = 丟進群組；上下緣 = 排在群組前／後。
-     圖層列只有前／後。 */
+  /* 落點：
+       群組列  上緣＝排在群組前、下緣＝排在群組後、中段＝丟進群組（圖層回到根層級）
+       圖層列  上緣＝排在它前面、下緣＝排在它後面（兩者都是成為它的兄弟）、中段＝成為它的子物件
+
+     展開中的父物件，下緣緊貼著它的第一個子物件：線畫在那裡看起來是「插在父子之間」，
+     所以那一段也當成「成為子物件」，不做成排到整棵子樹後面。
+     中段不允許 into 時（例如拖的是群組）改成依落點就近取前／後——但展開中的父物件下半部
+     沒有誠實的畫法，直接不給放。
+     指示線是操作契約不是裝飾：顯示 into 卻做成 before 等於騙使用者。所以判斷一律交給
+     H.dropProblem——H.applyDrop 真的搬之前用的是同一支（它再往下用 layer-model 的
+     dropModeAllowed 判斷群組能不能放進去）。放不下就回傳 null。 */
   function dropModeFor(div, key, e) {
     var r = div.getBoundingClientRect();
     var y = e.clientY - r.top;
-    if (keyKind(key) === "group") {
-      if (y < r.height * 0.28) return "before";
-      if (y > r.height * 0.72) return "after";
-      /* 中段本來是 into，但目標不允許 into 時（例如拖的是群組，而這一版
-         不支援巢狀群組）就不能顯示 into——指示線是操作契約不是裝飾，
-         顯示 into 卻做成 before 等於騙使用者。改成依落點就近取前／後。 */
-      if (!M.dropModeAllowed(state.dragKeys || [], key, "into")) {
-        return y < r.height / 2 ? "before" : "after";
-      }
-      return "into";
+    var moving = state.dragKeys || [];
+    var row = div._treeRow;
+    var openParent = keyKind(key) === "layer" && row && row.hasChildren && !row.collapsed;
+    var mode = y < r.height * 0.28 ? "before" : (y > r.height * 0.72 ? "after" : "into");
+    if (mode === "after" && openParent) mode = "into";
+    if (mode === "into" && H.dropProblem(state.preset, state.layout, moving, key, "into")) {
+      if (openParent && y >= r.height / 2) return null;
+      mode = y < r.height / 2 ? "before" : "after";
     }
-    return y < r.height / 2 ? "before" : "after";
+    return H.dropProblem(state.preset, state.layout, moving, key, mode) ? null : mode;
   }
 
   function performDrop(targetKey, mode) {
@@ -2142,11 +2267,21 @@
 
   function performDropInner(targetKey, mode) {
     ensureLayout();
-    if (!M.applyDrop(state.preset, state.layout, state.dragKeys.slice(), targetKey, mode)) return;
-    /* 這裡刻意**不呼叫** onPresetChanged()：拖曳只改 layout，preset 一個 byte
-       都沒動，重建 runtime 等於白白丟掉目前的粒子狀態、重抓貼圖、製造 GC 壓力，
-       而且畫面會突然重播。只有真正改到 VFX 資料時才需要重建預覽。 */
+    var result = H.applyDrop(state.preset, state.layout, state.dragKeys.slice(), targetKey, mode);
+    if (!result.ok) {
+      if (result.error) showSaveError('無法放在這裡', [result.error]);
+      return;
+    }
     markLayoutDirty();
+    /* 只換了順序或分組時刻意**不呼叫** onPresetChanged()：那只改 layout，preset 一個 byte
+       都沒動，重建 runtime 等於白白丟掉目前的粒子狀態、重抓貼圖、製造 GC 壓力，
+       而且畫面會突然重播。換了父物件才是真的改到 VFX 資料，那時才重建預覽。 */
+    if (result.parentChanged) {
+      announceHierarchyNotes(result.notes);
+      markGizmoDirty();
+      onPresetChanged();
+      renderInspector();
+    }
     renderLayerList();
   }
 
@@ -2164,7 +2299,9 @@
 
   function copySelection() {
     if (!state.selectedKeys.length) return;
-    state.clipboard = M.copySelection(state.preset, state.layout, state.selectedKeys);
+    /* 選到父物件就連子孫一起，跟群組帶著成員一樣：面板上縮排在它底下的就是它的一部分 */
+    state.clipboard = M.copySelection(state.preset, state.layout,
+      H.withDescendants(state.preset, state.layout, state.selectedKeys));
     updateClipboardStatus();
   }
 
@@ -2613,7 +2750,7 @@
     title.textContent = '群組「' + group.name + '」（' + members.length + ' 層）';
     host.appendChild(title);
 
-    var b = members.length ? G.groupBounds(members, sizeOf) : null;
+    var b = members.length ? G.groupBounds(members, sizeOf, spaceOf) : null;
     if (!b) {
       var hint = document.createElement('div');
       hint.className = 'hint';
@@ -2679,8 +2816,7 @@
     var t = gizmoTarget();
     if (!t || t.kind !== 'group' || !t.bounds) return;
     edit(label, function () {
-      G.writeGroupTransform(t.layers,
-        G.applyGroupTransform(G.groupSnapshot(t.layers), t.bounds.pivot, delta));
+      writeGroupDelta(t.layers, G.groupSnapshot(t.layers), t.bounds.pivot, delta);
     });
     markGizmoDirty();
     onPresetChanged();
@@ -2753,6 +2889,11 @@
   var WATER_TORNADO_HIDDEN_FIELDS = ['sheet', 'size', 'scrollSpeed', 'effect'];
 
   function fieldsOf(layer, list) {
+    /* 空物件：Core 會把 assetId、blendMode、anchor、zIndex、sheet 當成不支援的欄位擋下，
+       顯示出來只會讓人填了之後存不了檔。清單以 Core 為準，不另抄一份。 */
+    if (layer.type === 'empty') {
+      return list.filter(function (f) { return VFXCore.EMPTY_LAYER_FIELDS.indexOf(f.key) >= 0; });
+    }
     if (layer.effect !== 'waterTornado') return list;
     return list.filter(function (f) { return WATER_TORNADO_HIDDEN_FIELDS.indexOf(f.key) < 0; });
   }
@@ -2774,6 +2915,62 @@
     targets.forEach(function (l) { if (types.indexOf(l.type) < 0) types.push(l.type); });
     var title = { kind: 'title', label: types.join('／') + (types.length > 1 ? ' 共通' : ' 專屬') };
     return common.concat(multi && !typed.length ? [] : [title], typed);
+  }
+
+  /* 「父物件」下拉。選項是掛得上去的圖層（排除自己與自己的子孫、會超過深度上限的），
+     照面板的樹狀順序、依深度縮排，看得出誰在誰底下。
+     選了就換算數值讓畫面不動（H.attach）；多選時每一層都掛到同一個父物件——這是欄位寫入的語意，
+     父子一起被選時會一起變成兄弟。擋下時講原因，下拉重畫回原本的值。 */
+  function parentSelect(targets) {
+    var select = document.createElement('select');
+    var ids = targets.map(function (l) { return l.id; });
+    var current = MX.commonValue(targets, function (l) { return H.parentIdOf(l); });
+    var eligible = H.eligibleParents(state.preset, ids);
+    if (current.mixed) {
+      var mixedOption = document.createElement('option');
+      mixedOption.value = '';
+      mixedOption.textContent = '（' + MIXED_TEXT + '）';
+      mixedOption.disabled = true;
+      mixedOption.selected = true;
+      select.appendChild(mixedOption);
+    }
+    var none = document.createElement('option');
+    none.value = '';
+    none.textContent = '（無，根層級）';
+    select.appendChild(none);
+    H.treeRows(state.preset, buildRows(), {}).forEach(function (r) {
+      if (r.kind !== 'layer') return;
+      if (eligible.indexOf(r.id) < 0 && current.value !== r.id) return;
+      var l = layerById(r.id);
+      var o = document.createElement('option');
+      o.value = r.id;
+      o.textContent = new Array(r.depth + 1).join('\u00a0\u00a0\u00a0') + r.id + '（' + l.type + '）';
+      select.appendChild(o);
+    });
+    if (!current.mixed) select.value = current.value || '';
+    select.onchange = function () {
+      var result = H.attach(state.preset, ids, select.value || null);
+      if (!result.ok) {
+        showSaveError('無法設定父物件', [result.error]);
+        renderInspector();
+        return;
+      }
+      announceHierarchyNotes(result.notes);
+      markGizmoDirty();
+      onPresetChanged();
+      renderLayerList();
+      renderInspector();
+    };
+    return select;
+  }
+
+  /* 掛上／卸下之後沒辦法完全保持原樣的地方，寫在頂端狀態列（與「已改用檔名」同一個位置與樣式），
+     滑鼠移上去看每一層的原因。完全保持原樣時不出聲——面板上的縮排就是結果。 */
+  function announceHierarchyNotes(notes) {
+    var lines = H.describeNotes(notes);
+    if (!lines.length) return;
+    setSaveStatus(lines.length === 1 ? lines[0] : '父子層級：' + lines.length + ' 項沒辦法完全保持原樣',
+      'note', lines.join('\n'));
   }
 
   /* 多選的標題：幾層、什麼型別；滑鼠停在標題上會列出全部 id。 */
@@ -2836,6 +3033,8 @@
         source.setAttribute('data-generated-source', lead.water.part);
         var badge = document.createElement('span'); badge.textContent = '程序生成'; badge.style.whiteSpace = 'nowrap'; badge.style.alignSelf = 'center';
         control.appendChild(source); control.appendChild(badge);
+      } else if (f.kind === 'parent') {
+        control = parentSelect(targets);
       } else if (f.kind === 'bool') {
         control = document.createElement('input');
         control.type = 'checkbox';
@@ -3003,6 +3202,11 @@
             }
             ensureLayout();
             M.renameLayer(state.preset, state.layout, old, next);
+            if (state.collapsed[H.collapsedKeyOf(old)]) {
+              delete state.collapsed[H.collapsedKeyOf(old)];
+              state.collapsed[H.collapsedKeyOf(next)] = true;
+              saveCollapsed();
+            }
             var oldKey = keyOf('layer', old), newKey = keyOf('layer', next);
             state.selectedKeys = state.selectedKeys.map(function (k) {
               return k === oldKey ? newKey : k;
@@ -3354,10 +3558,10 @@
       host.appendChild(tip);
     }
 
-    /* 分軸（sprite／procedural）與粒子的曲線欄位不同。混著選的時候那幾段只顯示說明——
+    /* 分軸（sprite／procedural／empty）與粒子的曲線欄位不同。混著選的時候那幾段只顯示說明——
        畫出一張只有一部分圖層吃得到的圖，拖了之後另一部分沒反應。 */
     var perAxis = MX.allOrNone(targets, supportsPerAxisScale);
-    var mixedTypesHint = '選取的圖層混有 particle 與 sprite／procedural，這一段兩邊的欄位不同。' +
+    var mixedTypesHint = '選取的圖層混有 particle 與 sprite／procedural／empty，這一段兩邊的欄位不同。' +
       '要調這一段請分開選取。';
 
     curveSection(host, 'opacity', 'Opacity', function (body) {
@@ -3410,7 +3614,7 @@
     curveSection(host, 'rotation', 'Rotation', function (body) {
       curveBlock(body, targets, 'rotationOverLife', CURVE_POLICY.rotation, 'Z', { height: 170 });
       if (perAxis === null) {
-        hintLine(body, 'X／Y 翻轉只有 sprite 與 procedural 有；選取中混有 particle，要調 X／Y 請分開選取。');
+        hintLine(body, 'X／Y 翻轉只有 sprite、procedural 與 empty 有；選取中混有 particle，要調 X／Y 請分開選取。');
         return;
       }
       if (!perAxis) {
@@ -3429,7 +3633,7 @@
       if (perAxis === null) { hintLine(body, mixedTypesHint); return; }
       if (!perAxis) {
         hintLine(body,
-          '位移曲線只有 sprite 與 procedural 支援。粒子的位置是由 speed／gravity／' +
+          '位移曲線只有 sprite、procedural 與 empty 支援。粒子的位置是由 speed／gravity／' +
           'spawn 那一整套運動算出來的，沒有一個「圖層位置」可以加——要讓粒子飄或偏，' +
           '用的是那幾個欄位。');
         return;
@@ -3932,9 +4136,12 @@
       setSaveStatus('已存檔 · ' + body.bytes + ' bytes', 'ok');
       /* 分組另存一個檔。它失敗不影響 Preset 已經存好這件事——
          layout 是可有可無的附加資料，見 layout-schema.js 的自癒設計。 */
-      saveLayout().catch(function (e) {
+      /* 留下這個 Promise：「另存新檔」成功後會重新載入頁面，得等分組真的寫完，
+         否則重載會把還在路上的請求砍掉，新特效就沒有群組。 */
+      state.layoutSave = saveLayout().then(function () { return true; }, function (e) {
         setSaveStatus('Preset 已存檔，但分組沒存成功', 'err');
         showSaveError('分組儲存失敗（Preset 本身已存好）', [String(e && e.message || e)]);
+        return false;
       });
       $('validation').className = 'hint ok';
       $('validation').textContent = '✓ 已寫入 vfx/presets/' + body.presetId + '.json';
@@ -4106,6 +4313,12 @@
     };
     state.preset.id = newId;
     state.sourcePresetId = newId;
+    /* 預覽也要換成新名字：Core 裡註冊的還是舊 id。不先註冊的話，這一輪播完、預覽循環
+       用新 id 重播時 Core 會回「未註冊的 preset」，每一幀都丟錯，畫面就停了
+       （2026-09-17 使用者回報）。存檔請求還在路上的這段時間也會碰到，所以送出之前就註冊。 */
+    try {
+      if (state.runtime) state.runtime.registerPreset(state.preset);
+    } catch (e) { /* 不合法的話 savePreset 會擋下並說明原因 */ }
     var prevGroup = renameRootGroup(newId);
     /* 基準線先歸零：新檔案還不存在，這份內容當然算未存檔。
        成功的話 savePreset 會把它設成剛寫出去的文字。 */
@@ -4129,18 +4342,30 @@
         onPresetChanged();
         return false;
       }
-      /* 之後的存檔、重整、複製名稱都要指向新的這一份。
-         用 replaceState 而不是重新載入：重載會把剛才的編輯內容再跑一次
-         載入流程，而那份內容現在就在記憶體裡，沒有理由繞一圈。 */
-      try {
-        window.history.replaceState(null, '', '?preset=' + encodeURIComponent(newId));
-      } catch (e) { /* 不支援就算了，只影響重整之後開到哪一份 */ }
-      fillPresetPicker(newId);                 // 新的一份要出現在清單裡，且變成目前這份
-      renderLayerList();                       // 根群組改名了，樹上要跟著變
-      setSaveStatus('已另存為 ' + newId, 'ok');
-      $('validation').className = 'hint ok';
-      $('validation').textContent = '✓ 已另存為 vfx/presets/' + newId + '.json（原本那份未更動）';
-      return true;
+      /* 選單的篩選字串存在 sessionStorage，重新整理也會留著——換成新名字，
+         否則一打開選單還是用舊名字在篩（2026-09-17 使用者要求）。 */
+      rememberComboQuery(newId);
+      return Promise.resolve(state.layoutSave).then(function (layoutOk) {
+        if (layoutOk === false) {
+          /* 分組沒存成功：不重新載入——重載會把還沒存進去的分組丟掉，錯誤原因也會
+             跟著消失。留在原地（預覽已經用新名字註冊過，照常播放），讓使用者看得到
+             原因、再按一次存檔。 */
+          try {
+            window.history.replaceState(null, '', '?preset=' + encodeURIComponent(newId));
+          } catch (e) { /* 不支援就算了，只影響重整之後開到哪一份 */ }
+          fillPresetPicker(newId);
+          renderLayerList();
+          return true;
+        }
+        /* 另存完就用新名字重新開啟，和從選單挑一份一樣走 ?preset= 的載入流程
+           （2026-09-17 使用者要求）。以前用 replaceState 留在原地，結果 Core 裡註冊的
+           還是舊名字，預覽循環一重播就停了；復原紀錄、清單、分組也都還掛著舊狀態。
+           從磁碟上剛寫好的那一份重來，就不會留下任何舊名字。 */
+        flashAfterReload('已另存為 ' + newId + '（原本那份未更動）');
+        leavingOnPurpose = true;
+        window.location.search = '?preset=' + encodeURIComponent(newId);
+        return true;
+      });
     });
   }
 
@@ -4298,7 +4523,10 @@
   }
 
   function addLayerInner(type, assetId) {
-    var base = { id: uniqueLayerId(type), type: type, assetId: assetId || '' };
+    /* 空物件不畫東西，沒有素材欄位（Core 會把 assetId 當成不支援的欄位擋下） */
+    var base = type === 'empty'
+      ? { id: uniqueLayerId(type), type: type }
+      : { id: uniqueLayerId(type), type: type, assetId: assetId || '' };
     if (type === 'particle') {
       base.emission = { mode: 'burst', count: 16 };
       base.lifetime = [0.4, 0.8];
@@ -4343,15 +4571,17 @@
     /* 先算出「刪完之後焦點該落在哪」：整個清空會讓人失去位置感，連按兩次
        Delete 還得重新找位置。取被刪範圍在可見列表中的前一列。 */
     var vis = visibleKeys();
+    /* 選到父物件就連子孫一起刪（跟群組連成員一起刪同一個道理），不留下指向不存在圖層的 parent */
+    var keys = H.withDescendants(state.preset, state.layout, state.selectedKeys);
     var doomed = {};
-    state.selectedKeys.forEach(function (k) { doomed[k] = true; });
+    keys.forEach(function (k) { doomed[k] = true; });
     var firstAt = vis.length;
     vis.forEach(function (k, i) { if (doomed[k] && i < firstAt) firstAt = i; });
     var survivor = null;
     for (var i = firstAt - 1; i >= 0 && !survivor; i--) { if (!doomed[vis[i]]) survivor = vis[i]; }
     for (var j = firstAt; j < vis.length && !survivor; j++) { if (!doomed[vis[j]]) survivor = vis[j]; }
 
-    M.deleteSelection(state.preset, state.layout, state.selectedKeys);
+    M.deleteSelection(state.preset, state.layout, keys);
 
     /* survivor 有可能自己就是被刪群組的成員，確認它還在才選它 */
     var alive = survivor && (M.keyKind(survivor) === 'group'
@@ -4405,6 +4635,7 @@
       ['VFXViewModel', 'tools/vfx/editor/view-model.js'],
       ['VFXLayoutSchema', 'tools/vfx/editor/layout-schema.js'],
       ['VFXLayerModel', 'tools/vfx/editor/layer-model.js'],
+      ['VFXHierarchyModel', 'tools/vfx/editor/hierarchy-model.js'],
       ['VFXMultiEditModel', 'tools/vfx/editor/multi-edit-model.js'],
       ['VFXCurveModel', 'tools/vfx/editor/curve-model.js'],
       ['VFXCurveEditor', 'tools/vfx/editor/curve-editor.js'],
@@ -4474,6 +4705,7 @@
         announceNaming(bootNaming);
         adoptLayoutFor(state.preset, bootNaming.renamedFrom);
       }
+      showFlashFromReload();                   // 例如另存新檔重新載入之後的「已另存為 xxx」
 
       // Editor 端的 resolver：assetId → 本機資產伺服器 URL。
       // Runtime 之後換成打包後的 URL，Core 不需要任何改動。
