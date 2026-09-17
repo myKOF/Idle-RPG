@@ -1,24 +1,24 @@
 {
   "schemaVersion": 1,
-  "id": "hit-gale-burst",
+  "id": "hit-gale-burst-07-moon",
   "duration": 0.27,
   "loop": false,
   "layers": [
     {
       "id": "amber-halo",
       "type": "sprite",
-      "assetId": "sci-fi-effects/rotators/rotator2.png",
+      "assetId": "new_materials/orb/spiky_11.png",
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": -2.4854
+        "y": -2.5729
       },
       "scale": {
-        "x": 0.3634,
-        "y": 0.3634
+        "x": 0.1798,
+        "y": 0.1798
       },
-      "alpha": 0.8,
-      "tint": "#fff700",
+      "alpha": 1,
+      "tint": "#6600ff",
       "blendMode": "add",
       "duration": 0.24,
       "alphaOverLife": [
@@ -57,6 +57,16 @@
           1.105851
         ]
       ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.9753,
+          6.283185
+        ]
+      ],
       "offsetXOverLife": 0
     },
     {
@@ -66,15 +76,15 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": -2.4854
+        "y": -2.5729
       },
       "rotation": 0.3142,
       "scale": {
-        "x": 0.2257,
-        "y": 0.2257
+        "x": 0.2223,
+        "y": 0.2223
       },
       "alpha": 1,
-      "tint": "#ffb844",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 0.24,
       "alphaOverLife": [
@@ -122,15 +132,15 @@
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": -2.4854
+        "y": -2.5729
       },
       "rotation": -0.2269,
       "scale": {
-        "x": 0.1593,
-        "y": 0.1593
+        "x": 0.1568,
+        "y": 0.1568
       },
       "alpha": 0.9,
-      "tint": "#fff0a3",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 0.24,
       "alphaOverLife": [
@@ -178,11 +188,11 @@
       "zIndex": 3,
       "position": {
         "x": 0,
-        "y": -2.4854
+        "y": -2.5729
       },
       "scale": {
-        "x": 0.1195,
-        "y": 0.1195
+        "x": 0.1177,
+        "y": 0.1177
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -233,14 +243,14 @@
       "zIndex": 4,
       "position": {
         "x": 0,
-        "y": -2.4854
+        "y": -2.5729
       },
       "scale": {
-        "x": 0.0531,
-        "y": 0.0531
+        "x": 0.0522,
+        "y": 0.0522
       },
       "alpha": 1,
-      "tint": "#fffdf0",
+      "tint": "#f5a700",
       "blendMode": "add",
       "duration": 0.24,
       "alphaOverLife": [
@@ -287,13 +297,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 5,
       "position": {
-        "x": 20.3881,
-        "y": -2.4854
+        "x": 20.0832,
+        "y": -2.5729
       },
       "rotation": 0,
       "scale": {
-        "x": 0.0797,
-        "y": 0.0149
+        "x": 0.0785,
+        "y": 0.0147
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -326,13 +336,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 6,
       "position": {
-        "x": 6.4288,
-        "y": 16.8627
+        "x": 6.3326,
+        "y": 16.4858
       },
       "rotation": 1.25,
       "scale": {
-        "x": 0.0797,
-        "y": 0.0149
+        "x": 0.0785,
+        "y": 0.0147
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -365,13 +375,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 7,
       "position": {
-        "x": -16.3338,
-        "y": 9.7163
+        "x": -16.0895,
+        "y": 9.4464
       },
       "rotation": 2.5,
       "scale": {
-        "x": 0.0797,
-        "y": 0.0149
+        "x": 0.0785,
+        "y": 0.0147
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -404,13 +414,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 8,
       "position": {
-        "x": -16.7297,
-        "y": -14.1384
+        "x": -16.4795,
+        "y": -14.0516
       },
       "rotation": 3.75,
       "scale": {
-        "x": 0.0797,
-        "y": 0.0149
+        "x": 0.0785,
+        "y": 0.0147
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -443,13 +453,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
       "zIndex": 9,
       "position": {
-        "x": 5.7833,
-        "y": -22.036
+        "x": 5.6968,
+        "y": -21.8311
       },
       "rotation": 5,
       "scale": {
-        "x": 0.0797,
-        "y": 0.0149
+        "x": 0.0785,
+        "y": 0.0147
       },
       "alpha": 0.55,
       "tint": "#ffe2a0",
@@ -483,7 +493,7 @@
       "zIndex": 10,
       "position": {
         "x": 0,
-        "y": -2.4854
+        "y": -2.5729
       },
       "tint": "#ffd475",
       "blendMode": "add",
@@ -497,19 +507,19 @@
         0.2
       ],
       "spawn": {
-        "radius": 6.7961,
+        "radius": 6.6944,
         "shape": "circle"
       },
       "speed": [
-        59.4654,
-        135.9209
+        58.5759,
+        133.8878
       ],
       "direction": 0,
       "spread": 360,
       "drag": 4,
       "startScale": [
-        0.005,
-        0.0116
+        0.0049,
+        0.0115
       ],
       "alignToVelocity": true,
       "alphaOverLife": [
@@ -538,15 +548,15 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/transparent/cone_composed_e.png",
       "position": {
-        "x": 0.7351,
-        "y": -55.4126
+        "x": 0.7241,
+        "y": -72.513
       },
       "scale": {
-        "x": 0.1901,
-        "y": 0.1315
+        "x": 0.1872,
+        "y": 0.1295
       },
       "alpha": 0.8,
-      "tint": "#fffcd6",
+      "tint": "#e634fe",
       "blendMode": "screen",
       "alphaOverLife": [
         [
@@ -579,11 +589,11 @@
       "offsetYOverLife": [
         [
           0.0031,
-          -22.42055
+          -22.085196742088534
         ],
         [
           1,
-          22.7881
+          22.447249147696542
         ]
       ]
     },
@@ -593,21 +603,21 @@
       "assetId": "light-masks-1.0/transparent/shape_a.png",
       "position": {
         "x": 0,
-        "y": -32.6245
+        "y": -32.2612
       },
       "scale": {
-        "x": 0.0881,
-        "y": 0.0881
+        "x": 0.0868,
+        "y": 0.0868
       },
-      "tint": "#fefee1",
+      "tint": "#fd0dc9",
       "offsetYOverLife": [
         [
           0,
-          -21.317899999999998
+          -20.999039525264507
         ],
         [
           0.9938,
-          30.1391
+          29.68829725985671
         ]
       ]
     },
@@ -618,14 +628,14 @@
       "zIndex": 4,
       "position": {
         "x": 0,
-        "y": -2.4854
+        "y": -2.5729
       },
       "scale": {
-        "x": 0.1784,
-        "y": 0.1784
+        "x": 0.1605,
+        "y": 0.1605
       },
       "alpha": 1,
-      "tint": "#fffdf0",
+      "tint": "#ffe53d",
       "blendMode": "add",
       "duration": 0.24,
       "alphaOverLife": [
@@ -665,6 +675,169 @@
         ]
       ],
       "offsetXOverLife": 0
+    },
+    {
+      "id": "sprite-12-copy",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "position": {
+        "x": 0.7241,
+        "y": -30.9691
+      },
+      "scale": {
+        "x": 0.1872,
+        "y": 0.1295
+      },
+      "alpha": 0.8,
+      "tint": "#e634fe",
+      "blendMode": "screen",
+      "alphaOverLife": [
+        [
+          0,
+          0.345213
+        ],
+        [
+          0.2747,
+          0.98883
+        ],
+        [
+          0.7253,
+          0.49734
+        ],
+        [
+          1,
+          0.134574
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.561702
+        ],
+        [
+          0.9815,
+          1.404255
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0.0031,
+          -22.085196742088534
+        ],
+        [
+          1,
+          22.447249147696542
+        ]
+      ]
+    },
+    {
+      "id": "amber-halo-copy",
+      "type": "sprite",
+      "assetId": "new_materials/orb/rounded_12.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": -2.5729
+      },
+      "scale": {
+        "x": 0.1431,
+        "y": 0.1431
+      },
+      "alpha": 0.8,
+      "tint": "#2b00ff",
+      "blendMode": "screen",
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.09,
+          1
+        ],
+        [
+          0.28,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0.0185,
+          0.035106
+        ],
+        [
+          0.2593,
+          0.035106
+        ],
+        [
+          0.5031,
+          1.053191
+        ],
+        [
+          1,
+          1.105851
+        ]
+      ],
+      "offsetXOverLife": 0
+    },
+    {
+      "id": "sprite-12-copy-2",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
+      "position": {
+        "x": -0.1237,
+        "y": -55.5563
+      },
+      "scale": {
+        "x": 0.1872,
+        "y": 0.1295
+      },
+      "alpha": 0.8,
+      "tint": "#e634fe",
+      "blendMode": "screen",
+      "alphaOverLife": [
+        [
+          0,
+          0.345213
+        ],
+        [
+          0.2747,
+          0.98883
+        ],
+        [
+          0.7253,
+          0.49734
+        ],
+        [
+          1,
+          0.134574
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.561702
+        ],
+        [
+          0.9815,
+          1.404255
+        ]
+      ],
+      "offsetYOverLife": [
+        [
+          0.0031,
+          -22.085196742088534
+        ],
+        [
+          1,
+          22.447249147696542
+        ]
+      ]
     }
   ],
   "sizing": {

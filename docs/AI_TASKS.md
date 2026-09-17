@@ -1,5 +1,96 @@
 # AI_TASKS.md
 
+## Codex｜霹靂一閃全場貫穿（GALE-THUNDER-FULLFIELD-20260917）
+
+- Owner Codex；Done。以當前玩家為中心，沿玩家與目標連線貫穿長100米、寬10米（前後各50米）；傷害與特效共用矩形。基礎次數表定count=3，再加角色連擊數；維持0.2秒重選20米內敵人、無敵即停與0.08秒伸滿。
+- 修改 skills2、Skills2.xlsx/CSV、三份測試、index/bridge/worker快取與本紀錄。Excel僅O39/AF39/AI39/AJ39四格改動，artifact-tool匯出且比對所有儲存格；移除back參數。沿用既有Preset依事件伸長，無素材修改。
+- 驗證：gale-thunder-flash/gale-rework/skill-vfx-inheritance共22項、霹靂一閃/雷神斬/千鳥3項、Runtime THUNDER-FLASH 1項通過；build及diff check通過。原製作30米Preset正確拉長至100米，寬度不變。
+- 效能：單道粒子數不增加，每次施放較前版多2道；未實機量測GPU負載。無未完成實作，可合併，未推送。
+
+
+## Codex｜霹靂一閃角色連擊數修正（GALE-THUNDER-COMBO-20260917）
+
+- Owner Codex；Done。修正誤以疾風破自身打擊次數增加雷電數量，改讀施放時角色 comboHits，加上狂化連殺／狂暴之舞期間加成；小數沿用 sgRollCount 機率。0 連擊只出 1 道，3 連擊出 4 道；本體追加打擊只影響最後一擊的觸發時間。
+- 修改 skills2、兩份測試、index／bridge／worker 快取及本紀錄；檢查 formula 的連擊口徑，無需修改表格或特效。
+- 驗證：node --test tests/gale-thunder-flash.test.cjs tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs 共22項通過；node --test --test-name-pattern="霹靂一閃|雷神斬|千鳥" tests/skill2-ult-evolution.test.cjs 共3項通過。diff check通過。
+- 無新增 Timer 或粒子；未進行遊戲實機驗證，無未完成實作，可合併，未推送。
+
+
+## Codex｜霹靂一閃貫穿雷電改造（GALE-THUNDER-FLASH-20260917）
+
+- Owner Codex；In Progress。最後一擊觸發 1＋連擊數道紫白雷電，每道間隔 0.2 秒重新選擇玩家 12 米內敵人；從玩家後方 6 米伸出，總長 20 米、寬 5 米，每道 200% 雷電傷害。
+- 先製作 thunder-flash author、beam-gale-thunder-flash preset/layout 與動態預覽；依既有新特效預覽流程，確認後接入程式及 Excel/CSV。升級成長與無敵人行為已向使用者詢問，尚待回覆。不改使用者正在編輯的其他素材。
+- 使用者已答覆：每級 +20% 雷電傷害；選敵改為玩家周圍 20 米，無敵人即停止。再次明確要求先看動態預覽，確認後接入。
+- 預覽完成：4 道方向不同的雷電、0.2 秒間隔、每道約 0.08 秒伸至全長，綠色中心標記為玩家；重用既有素材，8 層／每道最多 18 粒子。Core／Editor save 測試 181 項，180 通過、1 項因 Windows 檔案 symlink 權限跳過；未進行遊戲效能量測。狀態 Review，未接入、未改表格、未提交，等候外觀確認。
+- 第二版依使用者回饋：寬度加倍（製作 200×100，尺寸標示 20×10 米），纏繞電弧由 2 層增為 4 層並改用分岔電弧素材；粒子由 18 增為 36。10 層，仍維持 0.2 秒四連發；已看過實際 Core 渲染幀並輸出 v2 GIF。仍為預覽待確認，未接入／未提交，正式傷害寬度待依本版核准尺寸同步。
+- 第三版：使用者認可第二版外觀並要求長度 +50%；改為長 30 米、寬 10 米，起點仍在玩家後方 6 米。只延長光束及粒子沿線分布，保留寬度、粒子數、單顆粒子大小及節奏；更新 v3 動態預覽，尚未接入／提交。
+- 使用者核准正式接入：最後一擊後發射 1＋本次連擊數道，0.2 秒間隔；首道優先原目標、失效時改選候選，後續逐道隨機重選玩家20米內敵人，無敵人即終止。每道從當前玩家後方6米開始，沿目標方向伸至30米、寬10米；0.08秒伸滿，矩形碰撞隨伸展推進，單道只命中同敵一次。傷害用攻擊力×表定 pct（基值200、每級20，沿專案 base+per×lv 公式）。
+- 接線：沿既有飛行物排程增加矩形伸展碰撞分支，無獨立 Timer；事件直接傳起點、長寬、方向和伸展時間，Runtime 不套場景特效倍率。霹靂一閃表記為附加效果，光束僅由該序列觸發，不覆寫本體打擊。主執行緒／Worker 快取同步，協議無新增欄位。
+- 表格：artifact-tool 匯入、渲染前後、修改並匯出；全工作簿值差異核對仅 Skills2 第39列10格。Excel→CSV→JS 重建語意變更0，保留使用者其他數值及三份疾風破特效修改；必要 Preset/Layout/匯出素材同批保存，136份匯出素材與素材庫雜湊一致，素材庫乾淨無需空 Commit。
+- 驗證：gale-thunder-flash/gale-rework/skill-vfx-inheritance 20/20；Runtime 定向4/4；三種疾風破超神3/3；cleave/knife/usage16/16，合計43項通過；build362/362、diff check通過。10組並行連發Core更新平均0.154ms，無丟棄（不含GPU）；尚未遊戲實機驗證。
+- 狀態 Done，可合併，未推送；已授權效果與表格接入完成。
+- 暫存 outputs/gale-thunder-flash 清理遭自動審核以 blocked by policy 拒絕，資料夾保留未提交，不影響正式檔案。
+
+## Codex｜疾風月牙閃保留製作方向（GALE-MOON-DIRECTION-20260917）
+
+- Owner Codex；In Progress。使用者回報垂直落下特效被轉向，原因是 Runtime 舊月牙邏輯依施法者方向加交替角差。
+- 範圍：vfx-runtime、runtime 測試、index 快取與本紀錄；移除額外旋轉，保留 Preset 圖層方向／動畫及傷害範圍縮放；不改素材、表格、技能判定。驗收八方向、重複施放、原點与範圍尺寸；無前置依賴，完成供使用者合併。
+- 使用者追加：隨機追加目標仍固定讀第四階，改為同主打擊逐欄讀當前進化配置。範圍增加 skills2、gale 測試與 bridge/sim.worker 快取；覆蓋本紀錄中舊 GALE-SCATTER-VFX 的固定第四階決策。單體尺寸、0.2 秒間隔及傷害不變。
+- 驗證：GALE/SINGLE-SIZE 定向 3/3；gale-rework 與 skill-vfx-inheritance 16/16；主執行緒／Worker 快取同步。未作實機驗證，使用者編輯中的表格、生成配置與素材保留未提交；無本輪素材修改。
+- build 361/361、diff check 通過；Done，可合併，未推送。
+
+## Codex｜爆散每 0.2 秒逐下選敵（GALE-SCATTER-GAP-20260917）
+
+- Owner Codex；In Progress。使用者確認爆散追加攻擊每隔 0.2 秒才重新選一個目標、結算傷害並播放特效；疾風破本體維持原節奏。
+- 範圍：skills2、gale 測試、index/bridge/sim.worker 快取及本紀錄；不改使用者編輯中的表格及素材。採用既有多段攻擊 0.2 秒常數及 gale 模擬排程，不新增 Timer。
+- 驗收：時間邊界、動態敵群／玩家位置、原目標回打、每下獨立特效、本體節奏與傷害次數。無前置依賴；完成後供使用者合併。
+- 完成：本次施放各段的追加次數展開為獨立序列（0、0.2、0.4…秒），每次執行才查最新敵群／玩家位置並隨機選敵；本體保留 0.35 秒。原有每段其他目標不重複、無其他目標回打原目標的规则保留。命中與特效同時執行。
+- 效能：沿用模擬排程，不新增實時計時器；只在施放新增排程時排序，非每 Tick 排序。未做額外效能量測。
+- 驗證：`node --test tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs` 16/16；`node tools/build_check.cjs` 361/361；diff check 通過。未另做遊戲實機驗證；Done，可合併，未推送。使用者數值／特效修改保留未提交，無本輪新增素材。
+
+## Codex｜明確化傷害範圍尺寸規則（DAMAGE-SIZE-RULE-20260917）
+
+- Owner Codex；使用者再次確認：有指定傷害範圍，無論原尺寸均縮放至該範圍；無傷害範圍的單體攻擊維持原尺寸。
+- 範圍僅 VFX_SIZE_STANDARD、VFX_RUNTIME_ADAPTER 與本紀錄；無程式或素材變更、無前置依賴。衝突預檢與 diff check 通過，文件交叉核對完成；Done，可合併，未推送。
+
+## Codex｜單體攻擊保持製作尺寸（SINGLE-ATTACK-SIZE-20260917）
+
+- Owner Codex；In Progress；使用者指定單體攻擊原尺寸、指定範圍才縮放。範圍：vfx-runtime、runtime 測試、index 快取與本紀錄；不改技能配置、素材或判定。
+- 驗收：同一 Preset 單體立即／延遲播放保持原尺寸，不受 sizing 正規化及場景特效倍率影響；範圍仍按事件半徑。無前置依賴，完成供使用者合併。
+- 使用者追加：檢查並補充尺寸規範；已在 VFX_SIZE_STANDARD 與 VFX_RUNTIME_ADAPTER 明訂單體原尺寸、判定範圍縮放、選敵半徑不可縮放。
+- 狀態 Done；build 361/361，diff check 通過；可合併、未推送，素材库無本輪新增或修改。
+- 完成：一般單體 attack 立即／延遲路徑均改用原尺寸；不增加實例或粒子。定向 SINGLE-SIZE/GALE 3/3；Runtime 87 項 81 通過、6 項既有失敗，以 HEAD Runtime 重跑確認相同六項失敗，另新增尺寸測試在舊碼失敗、新碼通過。未實機驗證；使用者既有表格及素材保留未提交。
+
+## Codex｜疾風破主打擊特效繼承（GALE-MAIN-VFX-20260917）
+
+- Owner：Codex；狀態：In Progress；依賴：使用者確認有填用本階、空白繼承前階。
+- 範圍：skills2 主打擊特效來源、gale 回歸測試、index/bridge/sim.worker 快取與本紀錄。不改表格、素材、傷害或選敵。
+- 驗收：爆散主目標與追加目標使用第四階配置；未取得、空欄、後續階級與超神繼承測試。完成後供使用者合併。
+- 完成：移除主打擊固定階級，沿用 sgVfxRoles；傷害、選敵、事件數量與範圍不變。主執行緒及 Worker 快取同步。
+- 驗證：`node --test tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs` 14/14；`node tools/build_check.cjs` 361/361；diff check 通過。未另作遊戲實機驗證。狀態 Done，可合併，未推送；使用者編輯中的表格／特效素材保留未提交，本輪無新增素材。
+
+## Codex｜用途欄改名特殊效果（VFX-USAGE-LABEL-20260917）
+
+- Owner：Codex；Done。使用者決定名稱為「特殊效果」，Excel／CSV 由使用者修改；本次不寫表格。config_tables 的輸出欄名、說明與錯誤訊息改用新名稱；讀入相容「特效用途特效」與「特殊用途特效」，有新欄時優先使用新欄，保留「技能本體／附加效果／留白」語意。
+- 修改：tools/config_tables.cjs、tests/skills2-vfx-usage.test.cjs、本紀錄；未改但檢查 Excel／CSV。測試期間發現使用者以舊工具套用改名表格後 JS 遺失用途，已用新工具 --apply Skills2 --write 重新生成以恢復；工作區其他生成資料／素材調整保留未提交。
+- 驗證：node --test tests/skills2-vfx-usage.test.cjs，2/2 通過，包含新舊三名稱往返、錯字拒絕及 Excel／CSV／JS 一致性；git diff --check 通過。Commit 為本紀錄所在提交；可合併，未合併／推送，無未完成項目。
+
+## Codex｜爆散讀取第四階攻擊特效（GALE-SCATTER-VFX-20260917）
+
+- Owner：Codex；Done。使用者已填 hit-gale-burst-diffusion，但事件仍指定 vfxTier:1，錯讀本體特效。本次改成 vfxTier:4、vfxBase:true，依第四階逐欄讀取配置，避免月牙／超神覆寫爆散獨立特效；不寫死 Preset 名稱。
+- 修改：js/skills2.js 的爆散事件、js/bridge.js、js/worker/sim.worker.js、index.html 快取、tests/gale-rework.test.cjs、本紀錄。未修改但檢查：Excel／CSV 已套用的生成資料、特效繼承。使用者尚未提交的表格、生成資料與特效素材保留，js/skills2.js 僅提交本次事件修正，不混入使用者生成資料。
+- 驗證：node --test tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs，12/12 通過；涵蓋一般、月牙、超神與回打原目標事件讀第四階 attack／hit。git diff --check 通過。
+- Commit 為本紀錄所在提交，可供合併；未合併／推送，無未完成程式項目，尚未遊戲內目視驗收。重新整理後使用目前工作區的第四階配置。
+
+## Codex｜疾風破爆散逐段隨機目標（GALE-SCATTER-20260917）
+
+- Owner：Codex；Done。爆散配置改為自身周圍 12 米隨機其他敵人，目標數基值 1／每級 +0.1，技能傷害基值 50%／每級 +5%；沿用 base + per × level 與小數機率取整。每段打擊重新抽樣，同段不重複候選；沒有其他候選時按本段追加次數回打原目標，死亡原目標不補打。有其他候選但不足數量時只打可用候選。
+- 計算與特效：每段查最新敵群與玩家位置；每次追加攻擊各送一則特效，包含回打原目標及月牙模式。月牙主範圍已清空時仍可對玩家附近候選爆散。保留本體連擊節拍與傳奇／超神掛鉤，無新增特效來源。
+- 修改：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/bridge.js、js/worker/sim.worker.js、index.html、tests/gale-rework.test.cjs、本紀錄。表格以 artifact-tool 修改 K35、AE35、AH35、AI35 並渲染檢查；Excel 曾鎖定，使用者關閉後已同步。另保留使用者關閉 Excel 時保存的 AH33／AH34／AI34「斬擊→打擊」文字修改並同步 CSV／JS。其餘儲存格值未改。
+- 未修改但檢查：js/battlefield.js（隨機不重複取樣及玩家距離）、skills2 系統與超神測試、VFX 事件路徑。使用者正在調整的 hit-gale-burst Preset／layout／shipped-assets／素材保留未提交，不混入這次技能效果變更。無本次新增素材。
+- 驗證：node --test tests/gale-rework.test.cjs tests/skill2-system.test.cjs tests/skill2-ult-evolution.test.cjs，共 95 項，91 通過／4 既有失敗；將 HEAD skills2.js 注入同一 system 測試確認仍有相同 4 項（突刺規格、迴身四方斬、神速飛刀、飛刀回跳），無新增失敗。疾風相關定向測試 12/12 通過。Excel／CSV 目標格逐值一致，config_tables --apply Skills2 無語意差異；Build、git diff --check 通過。
+- Commit：本紀錄所在提交。無未完成實作，可供審查合併，未合併／推送。未遊戲內目視驗收，建議觀察每段爆散重新選敵及對應特效次數。
+
 ## Claude｜VFX 啟動器改成 Node：一律先關掉本副本的舊伺服器再重開，.bat 只留 ASCII（VFX-LAUNCHER-20260917）
 
 - Owner：Claude；Done。使用者回報：(1) 啟動器判定伺服器過期那一段，說明文字被 cmd 拆碎當成指令執行（「'面上看不出原因。' is not recognized」），其中 `echo     taskkill /F /PID 那個PID` 的 echo 被吃掉、taskkill 真的跑了；(2) 叫使用者去關舊伺服器的視窗，但那台沒有視窗或已經當掉關不了。使用者提議：開新的時候自動關掉舊的再重開。

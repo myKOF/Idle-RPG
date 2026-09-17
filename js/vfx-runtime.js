@@ -294,7 +294,6 @@ var VFXRuntime = (function () {
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
-    var moonSwingIndex = 0;                 // 圓形判定內的刀光朝向差，避免連斬輪廓完全重合
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     var presetDefinitions = Object.create(null);
@@ -464,24 +463,25 @@ var VFXRuntime = (function () {
 
     /* 目標身上（受擊、詛咒、單體攻擊本體）。
        帶 sourceId 時（敵方近戰）把畫面轉向「攻擊者 → 目標」，爪痕才會朝著被打的人。 */
-    function playOnTargets(rt, presetId, spec, scale, delaySec) {
+    function playOnTargets(rt, presetId, spec, scale, delaySec, authoredSize) {
       var ids = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
       if (!ids.length) return false;
       var any = false;
       for (var i = 0; i < ids.length; i++) {
         if (delaySec > 0) {
-          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale });
+          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale, authoredSize: authoredSize });
           any = true;
           continue;
         }
         var p = ctx.posOf(ids[i]);
-        var params = defaultSize(presetId, scale);
+        // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
+        var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
         params.position = p;
         if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
         }
-        if (play(rt, presetId, params)) any = true;
+        if (play(rt, presetId, params, authoredSize ? 1 : undefined)) any = true;
       }
       return any;
     }
@@ -1198,15 +1198,16 @@ var VFXRuntime = (function () {
                 danceParams.position.x - danceSource.x) + num(spec.angle, 0);
               if (play(rtFx, presetId, danceParams)) ok = true;
             }
+          } else if (spec.variant === 'gale-thunder-flash') {
+            var flashParams = areaScaleParams(spec.area, presetId);
+            flashParams.position = areaCentre(spec.area); // 事件原點就是玩家後方的光束起點。
+            // 核准 Preset 在生命週期 2/7 處伸滿；伸展時間由模擬事件決定。
+            flashParams.timeScale = presetDurations[presetId] * (2 / 7) / Math.max(.001, travelSecAt(spec, 0));
+            ok = !!play(rtFx, presetId, flashParams, 1);
           } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
-            var moonSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
-            var moonDx = moonParams.position.x - moonSource.x;
-            var moonDy = moonParams.position.y - moonSource.y;
-            // 素材刃口朝 +X；連斬角差必須疊在施法者到目標的方向上。
-            var moonFacing = moonDx || moonDy ? Math.atan2(moonDy, moonDx) : num(spec.angle, 0);
-            moonParams.rotation = moonFacing + [-0.15, 0, 0.15][moonSwingIndex++ % 3];
+            // 保留 Preset 製作方向及圖層旋轉動畫，不依施法者位置追加旋轉。
             ok = !!play(rtFx, presetId, moonParams);
           } else if (/^cleave(?:-|$)/.test(spec.variant || '')) {
             ok = playCleave(rtFx, presetId, spec);
@@ -1221,7 +1222,7 @@ var VFXRuntime = (function () {
           } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
-          else ok = playOnTargets(rtFx, presetId, spec, 1, hitDelayFor(spec));
+          else ok = playOnTargets(rtFx, presetId, spec, 1, hitDelayFor(spec), true);
           break;
         default:
           ok = false;
@@ -1280,7 +1281,8 @@ var VFXRuntime = (function () {
         var job = pending[q];
         pending.splice(q, 1);
         if (job.spec) { tryPlay(job.spec); continue; }
-        play(job.rt, job.presetId, Object.assign(defaultSize(job.presetId, job.scale), { position: ctx.posOf(job.targetId) }));
+        play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
+          { position: ctx.posOf(job.targetId) }), job.authoredSize ? 1 : undefined);
       }
 
       /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
@@ -1396,7 +1398,6 @@ var VFXRuntime = (function () {
     }
 
     function clear() {
-      moonSwingIndex = 0;
       soulOrbits=Object.create(null);
       projectiles.length = 0;
       follows.length = 0;

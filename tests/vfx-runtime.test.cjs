@@ -245,38 +245,39 @@ test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複
   const t=log.nodes[0].transforms.at(-1);
   assert.equal(t.x,100); assert.equal(t.y,50);
   assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
-  assert.equal(t.rotation,Math.atan2(50,100)-.15);
-  for (const angle of [0,.15]) {
+  assert.equal(t.rotation,0);
+  for (let repeat=0;repeat<2;repeat++) {
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
       area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,Math.atan2(50,100)+angle);
+    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,0);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
     area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,Math.atan2(50,100)-.15);
+  assert.equal(log.updates.at(-1).rotation,0);
 });
 
-test('GALE 刃口隨施法者到目標的八方向旋轉，同座標保持有限角度', () => {
-  const {adapter,log}=makeAdapter([unitPreset('moon')]);
+test('GALE 八方向、連續施放與同座標均保留 Preset 製作方向', () => {
+  const preset=unitPreset('moon');preset.layers[0].rotation=.4;
+  const {adapter,log}=makeAdapter([preset]);
   for (let i=0;i<8;i++) {
     adapter.clear();
     const a=i*Math.PI/4;
     const x=Math.cos(a)*100,y=Math.sin(a)*100;
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x,y,r:50},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.updates.at(-1).rotation,Math.atan2(y,x)-.15);
+    assert.equal(log.updates.at(-1).rotation,.4);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',sourceId:'mv-float-2',targets:['mv-float-1'],vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,Math.PI-.15);
+  assert.equal(log.updates.at(-1).rotation,.4);
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x:0,y:0,r:50},vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,-.15);
+  assert.equal(log.updates.at(-1).rotation,.4);
 });
 
 test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行物不預播命中', () => {
@@ -347,6 +348,36 @@ const ENT = {
   'mv-float-2': { x: 300, y: 50 },
   'pv-float': { x: 0, y: 0 }
 };
+
+test('THUNDER-FLASH 光束原點、100×10米矩形與方向取自事件，伸展時間同步且不受場景倍率改變',()=>{
+ const p=unitPreset('configured-flash',.28);
+ p.sizing={shape:'custom',widthM:30,heightM:10,authored:{width:300,height:100}};
+ p.layers[0].anchor={x:0,y:.5};p.layers[0].scaleXOverLife=[[0,0],[2/7,1],[1,1]];
+ for(const a of [0,Math.PI/2,Math.PI]){
+  const {adapter,log}=makeAdapter([p],{profile:{scale:.3,areaScale:.5}});
+  adapter.tryPlay({fxKind:'slash',variant:'gale-thunder-flash',area:{x:-500,y:10,w:1000,h:100,a},travelMs:[80],vfx:{attack:p.id}});
+  adapter.update(.04);let t=log.nodes[0].transforms.at(-1);
+  assert.ok(Math.abs(t.scaleX-5/3)<1e-5);assert.equal(t.scaleY,1);assert.equal(t.x,-500);assert.equal(t.y,10);assert.equal(t.rotation,a);
+  adapter.update(.04);t=log.nodes[0].transforms.at(-1);assert.ok(Math.abs(t.scaleX-10/3)<1e-5);
+ }
+});
+
+test('SINGLE-SIZE 單體攻擊保留製作尺寸，立即與延遲一致，範圍仍依半徑縮放',()=>{
+ for(const delay of [0,200])for(const profileScale of [1,.35]){
+  const p=unitPreset('configured-attack');
+  p.sizing={shape:'custom',widthM:6,heightM:6,authored:{width:120,height:120}};
+  const {adapter,log}=makeAdapter([p],{profile:{scale:profileScale,areaScale:1}});
+  adapter.tryPlay({fxKind:'slash',targets:['mv-float-1'],travelMs:[delay],vfx:{attack:p.id}});
+  adapter.update(.25);
+  const t=log.nodes[0].transforms.at(-1);
+  assert.equal(t.scaleX,1);assert.equal(t.scaleY,1);assert.equal(t.x,100);assert.equal(t.y,50);
+ }
+ const p=unitPreset('configured-area');
+ p.sizing={shape:'custom',widthM:6,heightM:6,authored:{width:120,height:120}};
+ const {adapter,log}=makeAdapter([p]);
+ adapter.tryPlay({fxKind:'slash',area:{x:100,y:50,r:120},vfx:{attack:p.id}});adapter.update(.01);
+ const t=log.nodes[0].transforms.at(-1);assert.equal(t.scaleX,2);assert.equal(t.scaleY,2);
+});
 
 test('DUALDANCE 延遲後播放第二刀並使用交替角差',()=>{
  const {adapter,log}=makeAdapter([unitPreset('slash-dual')]);

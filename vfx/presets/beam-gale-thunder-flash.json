@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 1,
+  "id": "beam-gale-thunder-flash",
+  "duration": 0.28,
+  "loop": false,
+  "layers": [
+    {
+      "id": "violet-envelope",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.5859,
+        "y": 0.9766
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.75,
+      "tint": "#7940ff",
+      "blendMode": "add",
+      "duration": 0.28,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.38,
+          1
+        ],
+        [
+          0.62,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2857142857142857,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "lavender-beam",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.5859,
+        "y": 0.1094
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.8,
+      "tint": "#c4a0ff",
+      "blendMode": "add",
+      "duration": 0.28,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.38,
+          1
+        ],
+        [
+          0.62,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2857142857142857,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "white-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.5859,
+        "y": 0.0352
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.28,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.38,
+          1
+        ],
+        [
+          0.62,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2857142857142857,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "jagged-upper",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": -12
+      },
+      "scale": {
+        "x": 0.5859,
+        "y": 0.1953
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#ac77ff",
+      "blendMode": "add",
+      "duration": 0.28,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.38,
+          1
+        ],
+        [
+          0.62,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2857142857142857,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "jagged-white",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 12
+      },
+      "scale": {
+        "x": 0.5859,
+        "y": 0.1563
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#f1ddff",
+      "blendMode": "add",
+      "duration": 0.28,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          0.3,
+          0.35
+        ],
+        [
+          0.42,
+          1
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          0.7,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2857142857142857,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "coil-front",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "zIndex": 5,
+      "position": {
+        "x": 112.5,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.3516,
+        "y": 0.1758
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 1,
+      "tint": "#c59aff",
+      "blendMode": "add",
+      "delay": 0.03,
+      "duration": 0.23,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.38,
+          1
+        ],
+        [
+          0.62,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2857142857142857,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "coil-back",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "zIndex": 6,
+      "position": {
+        "x": 12,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.30765,
+        "y": 0.1465
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0.5
+      },
+      "alpha": 0.8,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0.015,
+      "duration": 0.23,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.38,
+          1
+        ],
+        [
+          0.62,
+          0.65
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleXOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2857142857142857,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "electric-motes-0",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
+      "zIndex": 7,
+      "position": {
+        "x": 45,
+        "y": 0
+      },
+      "alpha": 0.95,
+      "tint": "#b998ff",
+      "blendMode": "add",
+      "delay": 0.012,
+      "duration": 0.14,
+      "emission": {
+        "count": 12,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.055,
+        0.12
+      ],
+      "spawn": {
+        "height": 60,
+        "shape": "box",
+        "width": 67.5
+      },
+      "speed": [
+        18,
+        45
+      ],
+      "direction": 90,
+      "spread": 180,
+      "startScale": [
+        0.0195,
+        0.043
+      ],
+      "rotationStart": [
+        -0.8,
+        0.8
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "electric-motes-1",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
+      "zIndex": 8,
+      "position": {
+        "x": 145.5,
+        "y": 0
+      },
+      "alpha": 0.95,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0.0388,
+      "duration": 0.14,
+      "emission": {
+        "count": 12,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.055,
+        0.12
+      ],
+      "spawn": {
+        "height": 60,
+        "shape": "box",
+        "width": 67.5
+      },
+      "speed": [
+        18,
+        45
+      ],
+      "direction": 90,
+      "spread": 180,
+      "startScale": [
+        0.0195,
+        0.043
+      ],
+      "rotationStart": [
+        -0.8,
+        0.8
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "electric-motes-2",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/spark_06_rotated.png",
+      "zIndex": 9,
+      "position": {
+        "x": 246,
+        "y": 0
+      },
+      "alpha": 0.95,
+      "tint": "#b998ff",
+      "blendMode": "add",
+      "delay": 0.0656,
+      "duration": 0.14,
+      "emission": {
+        "count": 12,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.055,
+        0.12
+      ],
+      "spawn": {
+        "height": 60,
+        "shape": "box",
+        "width": 67.5
+      },
+      "speed": [
+        18,
+        45
+      ],
+      "direction": 90,
+      "spread": 180,
+      "startScale": [
+        0.0195,
+        0.043
+      ],
+      "rotationStart": [
+        -0.8,
+        0.8
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.55,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 100,
+      "width": 300
+    },
+    "heightM": 10,
+    "shape": "custom",
+    "widthM": 30
+  }
+}

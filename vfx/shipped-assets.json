@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 131,
+  "assetCount": 136,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -294,6 +294,20 @@
       "fileSize": 29528
     },
     {
+      "assetId": "light-masks-1.0/transparent/cone_composed_e.png",
+      "relativePath": "light-masks-1.0/Transparent/cone_composed_e.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:1b72203819071dadf8eb5d5d119bac990e09b64da81558e0a16b04c5f5fb259b",
+      "fileSize": 21491
+    },
+    {
+      "assetId": "light-masks-1.0/transparent/shape_a.png",
+      "relativePath": "light-masks-1.0/Transparent/shape_a.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:2f4ee9e6f36472393d936afd9242e02f964f8cb0521cc2d69b1d113365753fc2",
+      "fileSize": 25104
+    },
+    {
       "assetId": "light-masks-1.0/transparent/window_h.png",
       "relativePath": "light-masks-1.0/Transparent/window_h.png",
       "package": "light-masks-1.0",
@@ -469,6 +483,13 @@
       "fileSize": 276821
     },
     {
+      "assetId": "new_materials/orb/rounded_12.png",
+      "relativePath": "new_materials/orb/rounded_12.png",
+      "package": "new_materials",
+      "contentHash": "sha256:d40d030c253bd1a655fc8235a4e75671a1a009d9cef535a353761eef2cd4970e",
+      "fileSize": 154263
+    },
+    {
       "assetId": "new_materials/orb/rounded_6.png",
       "relativePath": "new_materials/orb/rounded_6.png",
       "package": "new_materials",
@@ -509,6 +530,13 @@
       "package": "new_materials",
       "contentHash": "sha256:df0a9b9491b5f8009d86a07c16390dda63a153c97df648135561a7e4675863fc",
       "fileSize": 112496
+    },
+    {
+      "assetId": "new_materials/orb/spiky_11.png",
+      "relativePath": "new_materials/orb/spiky_11.png",
+      "package": "new_materials",
+      "contentHash": "sha256:a87110c1d7ead64528a127f041c2ad2c8f1a7a98271e2a450071684ca4fc159a",
+      "fileSize": 131319
     },
     {
       "assetId": "new_materials/orb/spiky_15.png",
@@ -880,6 +908,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:3963633f6b2395a3fa95b9f4f65f22a4d38a2c561d9312dfff4646b71c7aa6e2",
       "fileSize": 76886
+    },
+    {
+      "assetId": "sci-fi-effects/rotators/rotator2.png",
+      "relativePath": "sci-fi-effects/rotators/rotator2.png",
+      "package": "sci-fi-effects",
+      "contentHash": "sha256:994440b153cb59ba5547dedeb5ec201d7f0ae646ac1c02beeb69a8a80d16a0f7",
+      "fileSize": 131779
     },
     {
       "assetId": "splat-pack/png/double-512px/splat05.png",
