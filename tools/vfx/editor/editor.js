@@ -68,6 +68,23 @@
     try { window.sessionStorage.setItem(SEARCH_STORAGE_KEY, q || ''); } catch (e) { }
   }
 
+  /* 重新載入之後要讓使用者看到的一行狀態（例如「已另存為 xxx」）。
+     重載會把畫面上的訊息清掉，所以先存進 sessionStorage，開好之後顯示一次就刪掉。 */
+  var FLASH_STORAGE_KEY = 'vfx-editor.flashStatus';
+
+  function flashAfterReload(text) {
+    try { window.sessionStorage.setItem(FLASH_STORAGE_KEY, text); } catch (e) { }
+  }
+
+  function showFlashFromReload() {
+    var text = null;
+    try {
+      text = window.sessionStorage.getItem(FLASH_STORAGE_KEY);
+      window.sessionStorage.removeItem(FLASH_STORAGE_KEY);
+    } catch (e) { }
+    if (text) setSaveStatus(text, 'ok');
+  }
+
   var combo = {
     rows: [],          // [{ id, label, text, search }]
     shown: [],         // 目前符合關鍵字的（rows 的子集）
@@ -3932,9 +3949,12 @@
       setSaveStatus('已存檔 · ' + body.bytes + ' bytes', 'ok');
       /* 分組另存一個檔。它失敗不影響 Preset 已經存好這件事——
          layout 是可有可無的附加資料，見 layout-schema.js 的自癒設計。 */
-      saveLayout().catch(function (e) {
+      /* 留下這個 Promise：「另存新檔」成功後會重新載入頁面，得等分組真的寫完，
+         否則重載會把還在路上的請求砍掉，新特效就沒有群組。 */
+      state.layoutSave = saveLayout().then(function () { return true; }, function (e) {
         setSaveStatus('Preset 已存檔，但分組沒存成功', 'err');
         showSaveError('分組儲存失敗（Preset 本身已存好）', [String(e && e.message || e)]);
+        return false;
       });
       $('validation').className = 'hint ok';
       $('validation').textContent = '✓ 已寫入 vfx/presets/' + body.presetId + '.json';
@@ -4106,6 +4126,12 @@
     };
     state.preset.id = newId;
     state.sourcePresetId = newId;
+    /* 預覽也要換成新名字：Core 裡註冊的還是舊 id。不先註冊的話，這一輪播完、預覽循環
+       用新 id 重播時 Core 會回「未註冊的 preset」，每一幀都丟錯，畫面就停了
+       （2026-09-17 使用者回報）。存檔請求還在路上的這段時間也會碰到，所以送出之前就註冊。 */
+    try {
+      if (state.runtime) state.runtime.registerPreset(state.preset);
+    } catch (e) { /* 不合法的話 savePreset 會擋下並說明原因 */ }
     var prevGroup = renameRootGroup(newId);
     /* 基準線先歸零：新檔案還不存在，這份內容當然算未存檔。
        成功的話 savePreset 會把它設成剛寫出去的文字。 */
@@ -4129,18 +4155,30 @@
         onPresetChanged();
         return false;
       }
-      /* 之後的存檔、重整、複製名稱都要指向新的這一份。
-         用 replaceState 而不是重新載入：重載會把剛才的編輯內容再跑一次
-         載入流程，而那份內容現在就在記憶體裡，沒有理由繞一圈。 */
-      try {
-        window.history.replaceState(null, '', '?preset=' + encodeURIComponent(newId));
-      } catch (e) { /* 不支援就算了，只影響重整之後開到哪一份 */ }
-      fillPresetPicker(newId);                 // 新的一份要出現在清單裡，且變成目前這份
-      renderLayerList();                       // 根群組改名了，樹上要跟著變
-      setSaveStatus('已另存為 ' + newId, 'ok');
-      $('validation').className = 'hint ok';
-      $('validation').textContent = '✓ 已另存為 vfx/presets/' + newId + '.json（原本那份未更動）';
-      return true;
+      /* 選單的篩選字串存在 sessionStorage，重新整理也會留著——換成新名字，
+         否則一打開選單還是用舊名字在篩（2026-09-17 使用者要求）。 */
+      rememberComboQuery(newId);
+      return Promise.resolve(state.layoutSave).then(function (layoutOk) {
+        if (layoutOk === false) {
+          /* 分組沒存成功：不重新載入——重載會把還沒存進去的分組丟掉，錯誤原因也會
+             跟著消失。留在原地（預覽已經用新名字註冊過，照常播放），讓使用者看得到
+             原因、再按一次存檔。 */
+          try {
+            window.history.replaceState(null, '', '?preset=' + encodeURIComponent(newId));
+          } catch (e) { /* 不支援就算了，只影響重整之後開到哪一份 */ }
+          fillPresetPicker(newId);
+          renderLayerList();
+          return true;
+        }
+        /* 另存完就用新名字重新開啟，和從選單挑一份一樣走 ?preset= 的載入流程
+           （2026-09-17 使用者要求）。以前用 replaceState 留在原地，結果 Core 裡註冊的
+           還是舊名字，預覽循環一重播就停了；復原紀錄、清單、分組也都還掛著舊狀態。
+           從磁碟上剛寫好的那一份重來，就不會留下任何舊名字。 */
+        flashAfterReload('已另存為 ' + newId + '（原本那份未更動）');
+        leavingOnPurpose = true;
+        window.location.search = '?preset=' + encodeURIComponent(newId);
+        return true;
+      });
     });
   }
 
@@ -4474,6 +4512,7 @@
         announceNaming(bootNaming);
         adoptLayoutFor(state.preset, bootNaming.renamedFrom);
       }
+      showFlashFromReload();                   // 例如另存新檔重新載入之後的「已另存為 xxx」
 
       // Editor 端的 resolver：assetId → 本機資產伺服器 URL。
       // Runtime 之後換成打包後的 URL，Core 不需要任何改動。
