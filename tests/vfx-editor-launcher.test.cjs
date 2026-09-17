@@ -169,8 +169,11 @@ test('LAUNCH-2 沒有舊伺服器：不去關任何東西，直接開新的', as
   const f = fakeDeps();
   assert.equal(await launcher.main([''], f.d), 0);
   assert.deepEqual(f.calls.map((c) => c[0]), ['start', 'waitReady', 'open']);
-  assert.equal(f.calls[2][1], 'http://127.0.0.1:28361/tools/vfx/editor/index.html?preset=' + launcher.DEFAULT_PRESET,
-    '沒給參數就開預設的 preset');
+  /* 2026-09-17 使用者要求：沒給參數就開空場景，不再預設開 lightning-orb-field */
+  assert.equal(f.calls[2][1], 'http://127.0.0.1:28361/tools/vfx/editor/index.html',
+    '沒給參數就不帶 ?preset=（編輯器看到沒有 preset 會開空場景）');
+  assert.ok(!('DEFAULT_PRESET' in launcher), '不能再有預設要開的特效');
+  assert.ok(f.logs.some((l) => /空場景/.test(l)), '畫面上要說開的是空場景');
 });
 
 test('LAUNCH-3 有伺服器關不掉：不啟動新的，列出真正的 PID，結束代碼 1（.bat 會 pause）', async function () {
@@ -198,16 +201,21 @@ test('LAUNCH-4 新的伺服器沒有就緒：不開瀏覽器、結束代碼 1，
   assert.ok(/LISTENING/.test(text), '附上這段埠目前被誰佔著');
 });
 
-test('LAUNCH-5 參數不能當成特效名稱：改開預設的並說明；--no-browser 不開瀏覽器', async function () {
+test('LAUNCH-5 參數不能當成特效名稱：改開空場景並說明；--no-browser 不開瀏覽器', async function () {
   const f = fakeDeps();
   assert.equal(await launcher.main(['x & calc', '--no-browser'], f.d), 0);
   assert.ok(!f.calls.some((c) => c[0] === 'open'), '--no-browser 不開瀏覽器');
   assert.ok(f.logs.some((l) => /不能當成特效名稱/.test(l)));
-  assert.ok(f.logs.some((l) => l.indexOf('preset=' + launcher.DEFAULT_PRESET) >= 0),
-    '網址裡只能出現通過 id 規則的名字——它會交給 cmd 的 start');
+  assert.ok(f.logs.some((l) => /改開空場景/.test(l)), '要說明改開了什麼');
+  const url = f.logs.find((l) => /index\.html/.test(l)).trim();
+  assert.equal(url, 'http://127.0.0.1:28361/tools/vfx/editor/index.html',
+    '網址裡只能出現通過 id 規則的名字——它會交給 cmd 的 start；不合法的就整個不帶');
   assert.deepEqual(launcher.parseArgs(['hit-fire']), {
     preset: 'hit-fire', rawPreset: 'hit-fire', presetProblem: null, noBrowser: false
   });
+  assert.deepEqual(launcher.parseArgs([]), { preset: '', rawPreset: '', presetProblem: null, noBrowser: false });
+  assert.equal(launcher.editorUrl(28362, 'hit-fire'), 'http://127.0.0.1:28362/tools/vfx/editor/index.html?preset=hit-fire');
+  assert.equal(launcher.editorUrl(28362, ''), 'http://127.0.0.1:28362/tools/vfx/editor/index.html');
 });
 
 /* ---------------- 關伺服器（真的網路、真的行程） ---------------- */

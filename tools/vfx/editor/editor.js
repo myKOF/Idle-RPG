@@ -14,17 +14,16 @@
 
   var ASSET_INDEX_URL = '/vfx/asset-index.json';
   var ASSET_SEMANTICS_URL = '/vfx/asset-semantics.json';
-  var DEFAULT_PRESET_ID = 'demo-basic';
 
   /* ?preset=<id> 決定開場載入哪一份 preset；多視窗時一個視窗一個（?preset=a&preset=b&focus=2，
-     格式見 pane-model.js 的 presetsFromSearch）。
-     原本只寫死 demo-basic，要看別的 preset 只能走檔案挑選對話框，
-     開發時每次重整都要重挑一次。id 限制成 preset id 的合法字元
-     （見 Core 的 preset.id 規則），順便擋掉 ../ 之類的路徑穿越。 */
+     格式見 pane-model.js 的 presetsFromSearch）。id 限制成 preset id 的合法字元
+     （見 Core 的 preset.id 規則），順便擋掉 ../ 之類的路徑穿越。
+
+     網址沒帶 preset＝空場景，一份特效都不開（2026-09-17 使用者要求）。以前會開一份預設的
+     （這裡是 demo-basic、啟動器是 lightning-orb-field），打開編輯器第一眼看到的是別人的特效，
+     還得先分辨它是不是自己要改的那一份。 */
   function presetsFromQuery() {
-    var q = VFXPaneModel.presetsFromSearch(window.location.search, VFXPresetIdPolicy.isWritablePresetId);
-    if (!q.ids.length) q.ids = [DEFAULT_PRESET_ID];
-    return q;
+    return VFXPaneModel.presetsFromSearch(window.location.search, VFXPresetIdPolicy.isWritablePresetId);
   }
 
   function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
@@ -82,6 +81,8 @@
   };
 
   function comboDisplayText() {
+    /* 空白特效的名字（new-effect）是暫時的，不是 repo 裡的哪一份：搜尋框留空，顯示提示字 */
+    if (state.isNew) return '';
     var id = state.sourcePresetId || (state.preset && state.preset.id) || '';
     var row = null;
     for (var i = 0; i < combo.rows.length; i++) {
@@ -516,7 +517,7 @@
     /* 用載入來源而不是搜尋框裡的文字：那個框裡放的是使用者正在打的關鍵字，
        而且顯示時是「id（用途）」，不是可以直接貼去用的檔名。 */
     var id = state.sourcePresetId || (state.preset && state.preset.id) || '';
-    if (!id) return;
+    if (!id || state.isNew) return;          // 空白特效還沒有名字可以複製
     writeClipboard(id).then(flashCopyResult);
   }
 
@@ -5241,7 +5242,7 @@
     var d = pane.doc;
     var parts = pane.head.children;
     setText(parts[0], String(panes.indexOf(pane) + 1));
-    setText(parts[1], d.preset ? d.preset.id : '');
+    setText(parts[1], !d.preset ? '' : (d.isNew ? '未命名特效' : d.preset.id));
     parts[1].title = d.isNew ? '還沒存檔的新特效（名字是暫時的，第一次存檔會問）' : '';
     setText(parts[2], (pane.dirtyFlag ? '●' : '') + (pane.playing ? '' : '⏸'));
     parts[2].title = [pane.dirtyFlag ? '未存檔' : '', pane.playing ? '' : '暫停中'].filter(Boolean).join('、');
@@ -5434,7 +5435,8 @@
          其餘的一個接一個建——同時建四個 WebGL context 沒有好處，還會讓失敗的原因難追。 */
       return createPane().then(function (first) {
         activatePane(first, {});
-        return openPresetInPane(first, query.ids[0]);
+        /* 網址沒帶 preset＝空場景：第一個視窗就留著空白特效 */
+        return query.ids.length ? openPresetInPane(first, query.ids[0]) : true;
       }).then(function () {
         return query.ids.slice(1).reduce(function (chain, id) {
           return chain.then(function () {

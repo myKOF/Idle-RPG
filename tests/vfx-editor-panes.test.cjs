@@ -624,3 +624,20 @@ test('PANE-29 頁面：「新增視窗」在背景色列、pane-model 先於 edi
   assert.ok(/\.pane \{[^}]*min-width: 0;[^}]*min-height: 0;/.test(css), '畫布不能把格子撐得比 1fr 大');
   assert.ok(/#preview-host\.multi \.pane\.focused::after \{ box-shadow: inset/.test(css), '焦點框畫在格子裡面，不佔版面');
 });
+
+test('PANE-30 沒帶 preset 的網址＝空場景：不開任何預設特效', function () {
+  /* 2026-09-17 使用者要求：首次開啟編輯器應該是空場景。以前編輯器預設開 demo-basic、
+     啟動器預設開 lightning-orb-field，一打開看到的是別人的特效。 */
+  assert.ok(!/DEFAULT_PRESET_ID/.test(EDITOR_NC), '編輯器不能再有預設要開的特效');
+  assert.ok(!/q\.ids = \[/.test(bodyOf('presetsFromQuery')), '網址沒帶 preset 就是空的清單');
+  assert.ok(/return query\.ids\.length \? openPresetInPane\(first, query\.ids\[0\]\) : true;/.test(bodyOf('boot')),
+    '第一個視窗只有在網址帶了 preset 時才開特效，否則留著空白特效');
+  assert.deepEqual(P.presetsFromSearch('', () => true), { ids: [], focus: 0 });
+  /* 空白特效的暫時名字不當成「目前開著的特效」顯示 */
+  assert.ok(/if \(state\.isNew\) return '';/.test(bodyOf('comboDisplayText')), '搜尋框留空，顯示提示字');
+  assert.ok(/!id \|\| state\.isNew/.test(bodyOf('copyPresetName')), '沒有名字可以複製');
+  assert.ok(/d\.isNew \? '未命名特效'/.test(bodyOf('renderPaneHead')), '視窗標籤寫未命名，不寫暫時的 new-effect');
+  const launcher = fs.readFileSync(path.join(REPO, 'tools/vfx/launch-editor.cjs'), 'utf8');
+  const launcherCode = launcher.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  assert.ok(!/DEFAULT_PRESET|'lightning-orb-field'/.test(launcherCode), '啟動器也不能再帶預設的特效');
+});
