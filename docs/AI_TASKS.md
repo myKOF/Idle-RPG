@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜千鳥強化爆散（SKILL-CHIDORI-20260917）
+
+- Owner Codex；Done。月牙閃每敵完整傷害；千鳥爆散加成同時乘上爆散傷害係數與目標數，再對小數目標數擲骰。額外傷害加成套用月牙閃與爆散各一次。兩項加成均配置基值50、每級5，沿用既有 base＋per×lv 計算。
+- 修改 skills2.js、Skills2.xlsx／CSV、遊戲及Worker快取、gale-rework測試。本次Excel只替換AF41、AI41、AJ41儲存格，ZIP其餘項目完全保留，避免繪圖物件變形。使用者其他表格、bolt-sky-purple配置與布局修改保留。
+- 驗證：gale-rework／gale-thunder-flash／skill-vfx-inheritance共25項通過；skill2-ult-evolution指定千鳥／霹靂一閃／雷神3項通過；配置apply dry-run零語意差異。覆蓋不同等級、獨立倍率、完整傷害、小數目標數、回打原目標及傷害／特效逐下同步。
+- 無新增逐幀運算；實際追加命中與特效數依強化後目標數增加。未進行實機遊戲效能量測；未推送或合併。
+
 ## Codex｜雷電整組連續變形（VFX-LIGHTNING-DEFORMATION-20260918）
 
 - Owner Codex；Done。使用者核准落雷鏡像、局部連續扭曲及輕微缩放，擴展22份適用Preset。Core統一種子／區域座標函數，Pixi85頂點網格；端點及拼接共用座標，不動傷害與飛行路徑。
