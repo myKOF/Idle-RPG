@@ -3581,11 +3581,11 @@
   /* ---------------- Over-Life 區塊 ----------------
 
      Inspector 很窄，七張圖同時展開會變成幾千像素的長條。所以分成三個
-     可收合群組，預設只開 Opacity——多數調整從它開始。
+     可收合群組，預設只開 Alpha——多數調整從它開始。
      收合狀態存在 state 而不是 localStorage：它跟著「目前在編哪一層」，
      不是使用者的長期偏好。 */
 
-  var overLifeOpen = { opacity: true, color: false, scale: false, rotation: false, offset: false };
+  var overLifeOpen = { alpha: true, color: false, scale: false, rotation: false, offset: false };
   var liveEditors = [];                      // 目前掛在畫面上的曲線元件，換層時要收掉
   /* 'sections' 分區收合（省空間）／'compare' 全部攤開對照（共用時間軸）。
      存在 state 而不是 localStorage：它是當下的工作方式，不是長期偏好。 */
@@ -3805,7 +3805,9 @@
     var mixedTypesHint = '選取的圖層混有 particle 與 sprite／procedural／empty，這一段兩邊的欄位不同。' +
       '要調這一段請分開選取。';
 
-    curveSection(host, 'opacity', 'Opacity', function (body) {
+    /* 標題原本是 Opacity。改成 Alpha（2026-09-17 使用者要求）：與上方的 alpha 欄位同一個名字，
+       一眼看得出這條曲線乘的就是它（透明度） */
+    curveSection(host, 'alpha', 'Alpha', function (body) {
       curveBlock(body, targets, 'alphaOverLife', CURVE_POLICY.alpha, null, { name: '透明度' });
       hintLine(body, 'alphaOverLife 是乘在 alpha 上的係數，可以大於 1（過曝）。');
     });

@@ -1074,3 +1074,16 @@ test('DEG-5 角度欄位的換算來回不失真，格式錯誤要被擋下', fu
     assert.ok(Math.abs(C.radToDeg(C.degToRad(d)) - d) < 1e-9, d + '° 來回失真');
   });
 });
+
+test('OL-ALPHA 透明度曲線區段叫 Alpha（與 alpha 欄位同名），資料欄位不變', function () {
+  /* 2026-09-17 使用者要求：Opacity 改成 Alpha 比較直覺——上方欄位就叫 alpha，
+     這條曲線乘的就是它。只改標題：alphaOverLife 的數值與意義（0＝完全透明、1＝alpha 本身、
+     大於 1 過曝）完全不變，既有 preset 的曲線不必也不能反轉。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function renderOverLife'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/curveSection\(host, 'alpha', 'Alpha', function \(body\) \{\s*curveBlock\(body, targets, 'alphaOverLife', CURVE_POLICY\.alpha/.test(body),
+    'Alpha 區段編輯的仍是 alphaOverLife，policy 不變');
+  assert.ok(!/'Opacity'/.test(src), '畫面上不再出現 Opacity');
+  assert.ok(/var overLifeOpen = \{ alpha: true,/.test(src), '預設展開的仍是這一段');
+});
