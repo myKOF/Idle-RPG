@@ -27,9 +27,10 @@
    連續拖曳會產生上百次 pointermove。若每次都記一步，Ctrl+Z 要按兩百次才
    回得去。所以拖曳是一筆交易：
 
-     begin(label)   記下 before
+     begin(label)   記下 before，回傳這筆交易的代號
      …live 更新…    不進歷史
      commit()       記下 after，如果和 before 相同就整筆丟掉
+     commit(token)  同上，但只在開著的還是 token 那一筆時才收（按住方向鍵這種開很久的交易用）
      cancel()       什麼都不記（呼叫端自己還原）
    ============================================================ */
 
@@ -63,16 +64,25 @@ var VFXHistory = (function () {
     function undoLabel() { return canUndo() ? entries[pointer - 1].label : null; }
     function redoLabel() { return canRedo() ? entries[pointer].label : null; }
 
+    /* 回傳這筆交易的代號。呼叫端不在乎的話不必理它（原本的用法完全不變）。 */
+    var nextToken = 1;
+
     function begin(label) {
-      if (applying) return;
+      if (applying) return 0;
       /* 還有交易開著就先收掉。會走到這裡通常是使用者在輸入框還沒失焦時
          直接去點了別的東西——那一筆該算完整的一步，不該被丟掉或和下一步併在一起。 */
       if (open) commit();
-      open = { label: label, before: capture() };
+      open = { label: label, before: capture(), token: nextToken++ };
+      return open.token;
     }
 
-    function commit() {
+    /* token：只收「自己開的那一筆」。交易開著很久的呼叫端（按住方向鍵連續移動，放開才收尾）
+       用得到——這段時間裡別的操作一 begin 就會把它收掉並開新的一筆，放開時若照樣 commit，
+       收掉的會是別人那一筆（例如打到一半的輸入框），那一步就不在歷史裡了。
+       不帶 token＝收掉目前開著的那一筆，與原本相同。 */
+    function commit(token) {
       if (applying || !open) return false;
+      if (token !== undefined && token !== open.token) return false;
       var t = open;
       open = null;
       var after = capture();

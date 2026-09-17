@@ -1,6 +1,7 @@
 @echo off
 rem One-click launcher for the VFX editor.  Optional argument: a preset id to
-rem open instead of the default, e.g. a shortcut with hit-fire baked in.
+rem open, e.g. a shortcut with hit-fire baked in.  Without it the editor opens
+rem an empty scene.
 rem
 rem Everything happens in tools\vfx\launch-editor.cjs: it closes every editor
 rem server of THIS worktree (current, outdated or hung), starts a fresh one in

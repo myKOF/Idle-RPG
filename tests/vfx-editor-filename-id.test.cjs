@@ -76,11 +76,13 @@ test('NAME-4 兩個入口都走 adoptFileName；不再「停用存檔」，改�
     '載入 Preset 也要帶分組，否則一存檔群組就沒了');
   assert.ok(/announceNaming\(naming\)/.test(load), '換了名字要讓使用者知道');
 
-  const boot = body('boot');
-  assert.ok(/adoptFileName\(state\.preset, bootPresetId \+ '\.json'\)/.test(boot),
-    '從網址開啟時，檔名就是 ?preset= 的值');
-  assert.ok(boot.indexOf('adoptFileName') > boot.indexOf('state.savedText = VFXCore.serialisePreset'),
+  /* 從網址開啟、從選單或瀏覽特效開啟，都走 openPresetInPane（2026-09-17 多視窗之後不再整頁重載） */
+  const open = body('openPresetInPane');
+  assert.ok(/adoptFileName\(state\.preset, id \+ '\.json'\)/.test(open),
+    '開啟 repo 裡的特效時，檔名就是那份的 id');
+  assert.ok(open.indexOf('adoptFileName') > open.indexOf('state.savedText = VFXCore.serialisePreset'),
     '基準線要是換名字之前的內容，換完才會顯示未存檔');
+  assert.ok(/openPresetInPane\(first, query\.ids\[0\]\)/.test(body('boot')), '開場也走這一條');
   assert.ok(!/已停用存檔/.test(SRC), '以前的「preset.id 與檔名不一致，已停用存檔」要拿掉');
 
   const adopt = body('adoptLayoutFor');
@@ -117,6 +119,7 @@ test('NAME-6 「已改用檔名」要留在畫面上，不能被 refreshDirty �
     $: (id) => els[id] || null,
     isDirty: () => true,
     state: { preset: { id: 'slash-thrust-scatter-blue' } },
+    renderPaneHeads: () => {},
     showSaveError: () => { throw new Error('改名成功不該走到錯誤訊息'); }
   };
   vm.createContext(ctx);

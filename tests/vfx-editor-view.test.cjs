@@ -251,7 +251,8 @@ test('VIEW-26 平移量存成「離中心多遠」，不是絕對座標', functi
   assert.ok(/renderer\.width \/ 2 \+ state\.panX/.test(body), '中心加平移量');
   assert.ok(/renderer\.height \/ 2 \+ state\.panY/.test(body));
   /* resize 之後要重算，否則鏡頭會停在舊中心 */
-  assert.ok(/app\.renderer\.on\('resize', recentreStage\)/.test(src));
+  /* 多視窗：resize 可能在別的視窗的回合裡發生，要綁回自己的視窗再重算 */
+  assert.ok(/app\.renderer\.on\('resize', function \(\) \{ withPane\(pane, recentreStage\); \}\)/.test(src));
   assert.ok(/app\.renderer\.resize\(w, h\);\s*recentreStage\(\)/.test(src),
     'syncCanvasSize 改完尺寸也要重算');
 });
@@ -351,12 +352,16 @@ test('VIEW-31 未存檔時攔住重整與關分頁，主動離開時不重複問
   const at = src.indexOf("addEventListener('beforeunload'");
   assert.ok(at > 0, '要有 beforeunload 守門');
   const body = src.slice(at, at + 400);
-  assert.ok(/isDirty\(\)/.test(body), '只有未存檔才攔');
+  /* 多視窗：任何一個視窗有未存檔的修改都要攔，判斷仍是每個視窗各自的 isDirty */
+  assert.ok(/dirtyPanes\(\)/.test(body), '只有未存檔才攔');
+  const dirtyPanes = src.slice(src.indexOf('function dirtyPanes'));
+  assert.ok(/isDirty/.test(dirtyPanes.slice(0, dirtyPanes.indexOf('\n  }'))), '每個視窗照 isDirty 判斷');
   assert.ok(/leavingOnPurpose/.test(body),
-    '切換 preset 與關閉編輯器自己問過了，不能再讓瀏覽器問第二次');
-  /* 那兩條路都要記得舉旗，否則使用者會被連問兩遍 */
-  const choose = src.slice(src.indexOf('function choosePreset'));
-  assert.ok(/leavingOnPurpose = true/.test(choose.slice(0, choose.indexOf('\n  }'))));
+    '關閉編輯器自己問過了，不能再讓瀏覽器問第二次');
+  /* 切換 preset 在 2026-09-17 改成就地載入（多視窗），不再離開頁面，所以不舉旗；
+     未存檔的提問仍在（見 openPresetInFocus）。關閉編輯器那條要記得舉旗，否則會被連問兩遍 */
+  const choose = src.slice(src.indexOf('function openPresetInFocus'));
+  assert.ok(/isDirty\(\)/.test(choose.slice(0, choose.indexOf('\n  }'))));
   const quit = src.slice(src.indexOf('function quitEditor'));
   assert.ok(/leavingOnPurpose = true/.test(quit.slice(0, quit.indexOf('\n  }'))));
 });

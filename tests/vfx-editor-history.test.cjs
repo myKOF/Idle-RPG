@@ -334,13 +334,22 @@ test('HISTORY-26~30 鍵盤路由：Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z 與搜尋框�
   assert.ok(/'search'/.test(isSearch.slice(0, 300)));
 });
 
-test('HISTORY-31/32 換 preset 要清空歷史', function () {
+test('HISTORY-31/32 換 preset 要換一份新的歷史', function () {
+  /* 2026-09-17 多視窗：一份特效一份歷史（跟著 newDoc 走）。換特效＝換上全新的編輯狀態，
+     歷史也是新建的，不會把上一份的 Undo 套到這一份。 */
   const src = stripped();
-  assert.ok(/function clearHistoryForNewPreset/.test(src));
+  const fnBody = function (name) {
+    const fn = src.slice(src.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  const begin = fnBody('beginDoc');
+  assert.ok(/ctx\.doc = newDoc\(\)/.test(begin), '換上全新的編輯狀態');
+  assert.ok(/initHistory\(\)/.test(begin), '歷史跟著新建');
+  assert.ok(/state\.history = VFXHistory\.create/.test(fnBody('initHistory')), '歷史存在這一份特效上');
   const load = src.slice(src.indexOf('function loadPresetFromFile'));
   const body = load.slice(0, load.indexOf('reader.readAsText'));
-  assert.ok(/clearHistoryForNewPreset\(\)/.test(body),
-    '匯入新 preset 時必須清空，否則會把上一份的 Undo 套到這一份');
+  assert.ok(/beginDoc\(parsed\)/.test(body), '匯入新 preset 時必須換新的，否則會把上一份的 Undo 套到這一份');
+  assert.ok(/beginDoc\(/.test(fnBody('openPresetInPane')), '從 repo 開啟也一樣');
 });
 
 test('HISTORY-33~35 Undo/Redo 之後畫面三邊都要同步', function () {
@@ -482,4 +491,39 @@ test('HISTORY-40 欄位交易在 change 收尾，keydown 太早（onchange 欄�
      後續的修改會沒有交易可以歸屬。 */
   assert.ok(/document\.activeElement === el\) editBegin/.test(textHalf),
     'change 收尾後若仍在焦點內，要接著開下一筆交易');
+});
+
+/* ============================================================
+   交易代號（2026-09-17）
+
+   按住方向鍵連續移動圖層時，交易從第一下一直開到放開。這段時間別的操作一 begin
+   就會把它收成一步並開自己的交易；放開方向鍵時若照舊 commit()，收掉的是別人那一筆
+   （例如打到一半的輸入框），那一步就不在歷史裡了。所以 begin 回傳代號，commit(代號)
+   只收自己那一筆。
+   ============================================================ */
+
+test('HISTORY-47 交易代號：開很久的交易收尾時只收自己那一筆，不替別人提早收掉', function () {
+  const b = harness();
+  const nudge = b.history.begin('方向鍵移動');
+  assert.ok(nudge > 0, 'begin 要回傳代號');
+  b.value = 'B';
+  /* 按住方向鍵的途中去點輸入框：欄位的交易一 begin，就把移動收成一步 */
+  const field = b.history.begin('修改 alpha');
+  assert.ok(field > 0 && field !== nudge, '每一筆交易的代號不同');
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動']);
+  b.value = 'C';
+  /* 放開方向鍵：開著的是欄位那一筆，代號對不上就不動 */
+  assert.equal(b.history.commit(nudge), false);
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動'], '欄位那一筆還開著，沒有被提早收掉');
+  assert.equal(b.history.commit(field), true, '欄位自己收尾時才記成一步');
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動', '修改 alpha']);
+  assert.equal(b.history.commit(field), false, '已經收掉的代號再收一次什麼都不做');
+
+  /* 不帶代號＝收掉目前開著的那一筆，與原本完全相同 */
+  b.history.begin('其他');
+  b.value = 'D';
+  assert.equal(b.history.commit(), true);
+  assert.deepEqual(b.history.debug().labels, ['方向鍵移動', '修改 alpha', '其他']);
+  b.history.undo();
+  assert.equal(b.value, 'C');
 });

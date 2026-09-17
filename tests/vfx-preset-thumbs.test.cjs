@@ -190,13 +190,13 @@ test('THUMB-7 Editor：瀏覽特效的按鈕與彈窗、捲到才載入縮圖、
   assert.ok(/IntersectionObserver/.test(body('renderPresetBrowser')), '縮圖要捲到才載入');
   assert.ok(/comboFilter\(/.test(body('renderPresetBrowser')), '搜尋沿用下拉那一套，不另寫比對規則');
   assert.ok(/\/__thumbs\//.test(body('presetCard')));
-  assert.ok(/saveAsPreset\(\)/.test(body('duplicatePreset')) && /saveAs=1/.test(body('duplicatePreset')),
+  assert.ok(/saveAsPreset\(\)/.test(body('duplicatePreset')),
     '複製成新特效要走另存新檔，不另寫一套複製檔案的邏輯');
   assert.ok(/isDirty\(\)/.test(body('duplicatePreset')), '未存檔要先問');
-  assert.ok(/replaceState/.test(body('clearSaveAsRequest')), '用完要把 saveAs 旗標從網址拿掉');
-  const boot = body('boot');
-  assert.ok(/saveAsRequested\(\)/.test(boot) && /clearSaveAsRequest\(/.test(boot),
-    '開好那一份之後要接著另存');
+  /* 2026-09-17 多視窗：不再整頁重載成 ?saveAs=1，改成開進焦點視窗、開好之後接著另存 */
+  const dup = body('duplicatePreset');
+  assert.ok(/openPresetInPane\(pane, id\)\.then/.test(dup), '開好那一份之後要接著另存');
+  assert.ok(dup.indexOf('window.location') < 0 && src.indexOf('saveAs=1') < 0, '不得再走整頁重載');
 
   const server = read('tools/vfx/editor-server.cjs');
   ['preset-thumbs.cjs', 'preset-render.cjs', 'vfx-raster.cjs', 'contact-sheet.cjs'].forEach(function (f) {

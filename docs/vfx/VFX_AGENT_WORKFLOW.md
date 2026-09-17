@@ -703,6 +703,8 @@ blend mode、velocity、curve control point 這類欄位。
 
 Preview 的提供方式：啟動既有 Editor Server，給出
 `?preset=<id>` 網址讓使用者實際觀看與操作。
+要讓使用者並排比較兩個方向（§9.7）時，網址可以帶多個 preset：
+`?preset=<a>&preset=<b>`（最多四個），每一份開成一個視窗，Ctrl+點擊多選後按 Restart 會同時從頭播。
 
 ## 9.9 新素材匯入與自動分類
 
@@ -750,8 +752,9 @@ procedural / data-driven composition 建立。
 
 ### 為什麼
 
-Editor 之後要能**同時打開多份特效一起編輯**。到那個時候「Layers 面板上一列
-＝一個特效」才分得開；散在根層級的圖層會和別份特效的圖層混成一鍋，
+Editor 可以**同時打開多份特效一起編輯**（2026-09-17 起預覽區可切成最多四個視窗，
+一個視窗一份特效，視窗之間可以複製貼上圖層）。「Layers 面板上一列＝一個特效」才分得開；
+從別的視窗貼過來的圖層會收進這一份的根群組，散在根層級的圖層會和別份特效的圖層混成一鍋，
 而且沒有任何線索指出哪一層屬於誰。
 
 分組是 authoring metadata：它存在 `vfx/layouts/`，不進 Preset、不進 Runtime、
@@ -786,9 +789,9 @@ layout schema 沒有巢狀群組，所以就是**扁平一層**，不要自作�
 
 - 只是整理 Layers 面板——那是群組（§9.11）的事，父子層級會改變畫面的算法。
 - 各層本來就各做各的動畫——掛上去不會省任何東西，反而多一層要理解的座標系。
-- `js/vfx-runtime.js` 有特殊拆解的那幾份 preset（`aura-rockarmor-stone`、`aura-earth-reversal`、
-  `ground-firewall`、`burst-vacuum-shockwave`、`slash-wind-crescent`）——HIER-16 會擋；
-  要用得先改 Runtime Adapter。
+- `js/vfx-runtime.js` 有特殊處理的那幾份 preset（`aura-rockarmor-stone`、`aura-earth-reversal`、
+  `ground-firewall`、`burst-vacuum-shockwave`、`slash-wind-crescent`、`bolt-chain-travel-bluewhite`）——
+  HIER-16 會擋；要用得先改 Runtime Adapter。
 
 **寫法**：
 

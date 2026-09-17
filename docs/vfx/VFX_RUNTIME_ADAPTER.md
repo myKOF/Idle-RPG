@@ -79,7 +79,7 @@ orb（環繞體）：半徑 20px（scale＝area.orbR/20）；status aura：腳�
 ## 1.2.1 單一根群組（使用者規則 2026-09-03）
 
 每份 Preset 的所有圖層一律收進**一個**群組，寫在 `vfx/layouts/<presetId>.json`（群組 id／name 都取 preset id）。
-理由是 Editor 之後要能同時打開多份特效一起編輯，「一列＝一個特效」才分得開。
+理由是 Editor 可以同時打開多份特效一起編輯（多視窗，2026-09-17），「一列＝一個特效」才分得開。
 分組是 authoring metadata，不進 Preset／Runtime／shipped build，因此對畫面零影響。
 `tools/vfx/authoring/preset-kit.cjs` 的 `kit.write()` 已自動產生；既有檔案用 `kit.writeRootGroupLayout()` 補。
 

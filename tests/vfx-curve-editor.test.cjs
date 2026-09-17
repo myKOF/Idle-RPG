@@ -987,11 +987,21 @@ test('BOOT-2 圖層樹先於素材相關的初始化', function () {
      使用者會以為群組被刪了。順序本身就是保護。
 
      2026-09-10：左欄的素材瀏覽器整區刪掉了（選材一直是走素材選擇器，那份
-     300 列的清單只是把左欄佔滿），所以改成比對 collectVocab 與 wirePicker。 */
+     300 列的清單只是把左欄佔滿），所以改成比對 collectVocab 與 wirePicker。
+
+     2026-09-17 多視窗：圖層樹由開好特效的那一步畫出來（openPresetInPane → finishDoc →
+     renderPanels → renderLayerList），所以比對 openPresetInPane 與素材那一組的先後。 */
   const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
   const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const bodyOf = function (name) {
+    const fn = noComments.slice(noComments.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+  assert.ok(/finishDoc\(/.test(bodyOf('openPresetInPane')), '開好特效要走 finishDoc');
+  assert.ok(/renderPanels\(\)/.test(bodyOf('finishDoc')), 'finishDoc 要把面板畫出來');
+  assert.ok(/renderLayerList\(\)/.test(bodyOf('renderPanels')), '面板包含圖層樹');
   const boot = noComments.slice(noComments.indexOf('function boot()'));
-  const layers = boot.indexOf('renderLayerList();');
+  const layers = boot.indexOf('openPresetInPane(');
   const vocab = boot.indexOf('collectVocab();');
   const picker = boot.indexOf('wirePicker();');
   assert.ok(layers >= 0 && vocab >= 0 && picker >= 0);
@@ -1063,4 +1073,17 @@ test('DEG-5 角度欄位的換算來回不失真，格式錯誤要被擋下', fu
   [0, 30, 90, 180, 360, -360].forEach(function (d) {
     assert.ok(Math.abs(C.radToDeg(C.degToRad(d)) - d) < 1e-9, d + '° 來回失真');
   });
+});
+
+test('OL-ALPHA 透明度曲線區段叫 Alpha（與 alpha 欄位同名），資料欄位不變', function () {
+  /* 2026-09-17 使用者要求：Opacity 改成 Alpha 比較直覺——上方欄位就叫 alpha，
+     這條曲線乘的就是它。只改標題：alphaOverLife 的數值與意義（0＝完全透明、1＝alpha 本身、
+     大於 1 過曝）完全不變，既有 preset 的曲線不必也不能反轉。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function renderOverLife'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(/curveSection\(host, 'alpha', 'Alpha', function \(body\) \{\s*curveBlock\(body, targets, 'alphaOverLife', CURVE_POLICY\.alpha/.test(body),
+    'Alpha 區段編輯的仍是 alphaOverLife，policy 不變');
+  assert.ok(!/'Opacity'/.test(src), '畫面上不再出現 Opacity');
+  assert.ok(/var overLifeOpen = \{ alpha: true,/.test(src), '預設展開的仍是這一段');
 });

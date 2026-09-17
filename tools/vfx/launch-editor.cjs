@@ -40,7 +40,6 @@ const presetIdPolicy = require('./editor/preset-id-policy.js');
 const identity = require('./editor-server.cjs').launcher;
 
 const REPO_ROOT = libraryRoot.REPO_ROOT;
-const DEFAULT_PRESET = 'lightning-orb-field';
 const WINDOW_TITLE = 'VFX 編輯器伺服器 - 關閉此視窗即停止';
 /* 冷啟動要載入 Core 與縮圖模組，慢的電腦要好幾秒；原本 .bat 等 10 秒偶爾不夠 */
 const READY_TIMEOUT_MS = 20000;
@@ -65,22 +64,24 @@ function normalPath(p) {
 
 /* ---------------- 參數 ---------------- */
 
-/* 第一個參數是要開的 preset（.bat 原樣轉交）。不合法就改開預設的，並說明原因——
-   這個值會進網址與 start 指令，不能照單全收。--no-browser 給驗證用：不開瀏覽器。 */
+/* 第一個參數是要開的 preset（.bat 原樣轉交）。沒給就開空場景——以前預設開 lightning-orb-field，
+   一打開編輯器看到的是別人的特效（2026-09-17 使用者要求改成空場景）。
+   不合法就不帶進網址（同樣開空場景）並說明原因：這個值會進網址與 start 指令，不能照單全收。
+   --no-browser 給驗證用：不開瀏覽器。 */
 function parseArgs(argv) {
   const list = (argv || []).map(String);
   const noBrowser = list.indexOf('--no-browser') >= 0;
   const raw = (list.filter(function (a) { return a !== '--no-browser'; })[0] || '').trim();
-  if (!raw) return { preset: DEFAULT_PRESET, rawPreset: '', presetProblem: null, noBrowser: noBrowser };
+  if (!raw) return { preset: '', rawPreset: '', presetProblem: null, noBrowser: noBrowser };
   const problem = presetIdPolicy.presetIdProblem(raw);
   return {
-    preset: problem ? DEFAULT_PRESET : raw, rawPreset: raw,
+    preset: problem ? '' : raw, rawPreset: raw,
     presetProblem: problem || null, noBrowser: noBrowser
   };
 }
 
 function editorUrl(port, preset) {
-  return 'http://127.0.0.1:' + port + '/tools/vfx/editor/index.html?preset=' + preset;
+  return 'http://127.0.0.1:' + port + '/tools/vfx/editor/index.html' + (preset ? '?preset=' + preset : '');
 }
 
 /* ---------------- 認伺服器 ---------------- */
@@ -379,12 +380,12 @@ function main(argv, deps) {
   log('  工作副本');
   log('    ' + REPO_ROOT);
   log('  Preset');
-  log('    ' + args.preset);
+  log('    ' + (args.preset || '（不指定，開空場景）'));
   log(LINE);
   if (args.presetProblem) {
     log('');
     log('  參數「' + args.rawPreset + '」不能當成特效名稱：' + args.presetProblem);
-    log('  改開預設的 ' + args.preset);
+    log('  改開空場景');
   }
   if (d.platform !== 'win32') {
     log('');
@@ -454,8 +455,8 @@ if (require.main === module) {
 }
 
 module.exports = {
-  DEFAULT_PRESET: DEFAULT_PRESET,
   parseArgs: parseArgs,
+  editorUrl: editorUrl,
   parseWhoami: parseWhoami,
   ourServers: ourServers,
   scan: scan,

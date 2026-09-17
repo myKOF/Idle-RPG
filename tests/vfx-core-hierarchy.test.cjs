@@ -323,12 +323,15 @@ test('HIER-15 矩陣工具：乘反矩陣回到恆等、分解後能還原、lay
 
 test('HIER-16 Runtime Adapter 依圖層 id 拆解／改寫的 preset，暫時不得使用父子層級', function () {
   /* js/vfx-runtime.js 的 registerPresets 對這幾份 preset 做了特殊處理：依圖層 id 過濾成兩半或三柱、
-     逐層平移 position、逐層改寫 alpha／alphaOverLife、從另一份 preset 複製變換欄位。
+     逐層平移 position、逐層改寫 alpha／alphaOverLife、從另一份 preset 複製變換欄位、
+     讀某一層的 scale 推算光束寬度（bolt-chain-travel-bluewhite 的 travelling-electric-front）。
      這些都假設每一層的數值是「相對特效」的。一旦圖層掛在父物件底下，數值變成相對父物件：
-     父子兩邊都被平移就會移兩次；父物件被濾掉，子物件的 parent 指向不存在的圖層，整份註冊失敗。
-     要在這幾份用 parent，得先讓那一段拆解認得父子關係，再把 id 從這份清單拿掉。 */
+     父子兩邊都被平移就會移兩次；父物件被濾掉，子物件的 parent 指向不存在的圖層，整份註冊失敗；
+     讀到的 scale 少乘了父物件的縮放，推出來的寬度就錯了。
+     要在這幾份用 parent，得先讓那一段認得父子關係，再把 id 從這份清單拿掉。
+     2026-09-17 合併 ai/codex 之後重新掃過 registerPresets，補上當初漏掉的 bolt-chain-travel-bluewhite。 */
   const special = ['aura-rockarmor-stone', 'aura-earth-reversal', 'ground-firewall',
-    'burst-vacuum-shockwave', 'slash-wind-crescent'];
+    'burst-vacuum-shockwave', 'slash-wind-crescent', 'bolt-chain-travel-bluewhite'];
   const runtimeSrc = fs.readFileSync(path.join(REPO, 'js/vfx-runtime.js'), 'utf8');
   special.forEach(function (id) {
     assert.ok(runtimeSrc.indexOf("'" + id + "'") >= 0,

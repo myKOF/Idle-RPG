@@ -658,6 +658,27 @@ var VFXGizmoModel = (function () {
     layers.forEach(function (l, i) { if (snaps[i]) restore(l, snaps[i]); });
   }
 
+  /* ============================================================
+     方向鍵微調（2026-09-17 使用者要求：每按一下移動 1px）
+
+     移動的方向是**畫面上**的方向（特效座標），與拖曳框同一個語意：掛在轉了 90 度的父物件底下
+     的圖層，按 → 一樣往畫面右邊走；父物件放大 2 倍時，區域座標只加 0.5，畫面上仍是 1px。
+     每一層換到自己的父物件座標再加（spaces 與 layers 同順序，根層級是 undefined），
+     父物件縮放是 0 的換不過去，原地不動（那一層畫面上本來就看不到）。
+
+     群組也走這一條：純平移的群組變形就是每個成員各自平移，不必另外算群組框的 pivot。
+     回傳每一層新的 position（不就地修改）；動不了的那一層是 null，呼叫端不要寫——
+     原本沒寫 position 的圖層，寫一個 {0,0} 進去只是在 preset 裡留一筆沒意義的差異。
+     ============================================================ */
+  function nudgePositions(layers, spaces, dx, dy) {
+    return layers.map(function (l, i) {
+      var d = deltaToSpace({ dx: dx, dy: dy }, null, spaces ? spaces[i] : undefined);
+      if (!d.dx && !d.dy) return null;
+      var p = l.position || { x: 0, y: 0 };
+      return { x: round4(p.x + d.dx), y: round4(p.y + d.dy) };
+    });
+  }
+
   return {
     MIN_BOX: MIN_BOX, MIN_SCALE: MIN_SCALE, SNAP: SNAP, ROTATE_OFFSET: ROTATE_OFFSET,
     capabilities: capabilities,
@@ -674,7 +695,8 @@ var VFXGizmoModel = (function () {
     groupSnapshot: groupSnapshot, restoreGroup: restoreGroup,
     multiSnapshot: multiSnapshot, multiDelta: multiDelta,
     applyMultiTransform: applyMultiTransform, writeMultiTransform: writeMultiTransform,
-    restoreMulti: restoreMulti
+    restoreMulti: restoreMulti,
+    nudgePositions: nudgePositions
   };
 })();
 

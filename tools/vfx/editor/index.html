@@ -115,6 +115,9 @@
         <input type="color" id="bg-picker" value="#101014">
         <span>自訂</span>
       </label>
+      <!-- 新增視窗：預覽區再切出一格（最多四格，十字切開），每格各開一份特效同時編輯。
+           點哪一格焦點就到哪裡，Ctrl+點擊可以多選，播放／暫停與預覽循環一起套用。 -->
+      <button id="btn-add-pane" class="add-pane" type="button">＋ 新增視窗</button>
       <span id="bg-current" class="bg-current"></span>
       <span class="sep"></span>
       <!-- 格線與縮放同屬「怎麼看」，所以跟背景色放同一列，離預覽區最近。 -->
@@ -125,6 +128,7 @@
               title="滾輪縮放、中鍵或右鍵拖曳平移；點這裡回到預設視角">縮放 100%</button>
       <span id="grid-scale" class="scale-note"></span>
     </div>
+    <!-- 視窗（.pane）由 editor.js 建立，排法見 pane-model.js 的 gridLayout -->
     <div id="preview-host"></div>
     <div id="preview-msg" class="hint"></div>
   </section>
@@ -255,6 +259,7 @@
 <script src="/tools/vfx/editor/layer-model.js"></script>
 <script src="/tools/vfx/editor/multi-edit-model.js"></script>
 <script src="/tools/vfx/editor/hierarchy-model.js"></script>
+<script src="/tools/vfx/editor/pane-model.js"></script>
 <script src="/tools/vfx/editor/curve-model.js"></script>
 <script src="/tools/vfx/editor/curve-editor.js"></script>
 <script src="/tools/vfx/editor/gradient-model.js"></script>
@@ -262,6 +267,6 @@
 <script src="/tools/vfx/editor/gizmo-model.js?v=20260914-multi-gizmo"></script>
 <script src="/tools/vfx/editor/history.js"></script>
 <script src="/tools/vfx/editor/spine-ref.js"></script>
-<script src="/tools/vfx/editor/editor.js?v=20260917-hierarchy-editor"></script>
+<script src="/tools/vfx/editor/editor.js?v=20260917-multi-pane"></script>
 </body>
 </html>

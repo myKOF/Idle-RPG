@@ -164,7 +164,8 @@ test('WIRE-3 Inspector 有 Color 區塊，且走的是 gradientBlock', function 
   const src = read('tools/vfx/editor/editor.js');
   assert.match(src, /curveSection\(host, 'color', 'Color'/);
   assert.match(src, /gradientBlock\(body, targets, 'tintOverLife'\)/);
-  assert.match(src, /overLifeOpen = \{ opacity: true, color: false/);
+  /* 透明度那一段 2026-09-17 從 Opacity 改名成 Alpha（與 alpha 欄位同名）；Color 仍預設收合 */
+  assert.match(src, /overLifeOpen = \{ alpha: true, color: false/);
   /* 三段式回呼要接上歷史與預覽，否則 undo 會跳過顏色的修改。 */
   const block = src.slice(src.indexOf('function gradientBlock'), src.indexOf('function writeCurve'));
   ['editBegin(', 'previewSoon()', 'onPresetChanged()', 'editCommit()', 'liveEditors.push']

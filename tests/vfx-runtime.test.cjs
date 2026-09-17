@@ -1269,6 +1269,11 @@ test('CATALOG-2 shipped-assets 涵蓋所有 preset 用到的素材', function ()
         assert.equal(l.assetId, undefined);
         return;
       }
+      /* 空物件（父子層級的父物件）不畫東西、沒有素材；Core 驗證也不准它寫 assetId */
+      if (l.type === 'empty') {
+        assert.equal(l.assetId, undefined, f + ' 的空物件 ' + l.id + ' 不該有 assetId');
+        return;
+      }
       assert.ok(shipped.has(l.assetId),
         f + ' 用到未匯出的素材：' + l.assetId + '（跑 node tools/vfx/export-assets.cjs）');
     });
