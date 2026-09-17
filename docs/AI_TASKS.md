@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude｜VFX 編輯器：預設空場景、點空白取消選取、方向鍵移動、Alpha 標題（VFX-EDITOR-NUDGE-20260917）
+
+- Owner：Claude；Done。使用者需求：(1) 首次開啟編輯器預設打開雷球特效，應該是空場景；(2) 點擊預覽視窗空白處取消目前的圖層選取；(3) 方向鍵移動圖層，每次 1px；(4) 途中追加：Over-Life 的 Opacity 改成 Alpha（透明度）比較直覺。
+- 範圍：tools/vfx/launch-editor.cjs、啟動VFX編輯器.bat（說明文字）、tools/vfx/editor 的 editor.js、gizmo-model.js、history.js，對應測試與 Antigravity QA 指示書。不動 Core、Runtime、preset。依賴 VFX-EDITOR-MULTI-PANE-20260917。
+- 修改：
+  - 預設空場景（a561e820）：啟動器原本寫死 DEFAULT_PRESET＝lightning-orb-field 並帶進網址，編輯器網址沒帶 preset 時開 demo-basic；兩邊都改成空場景（參數不合法也開空場景並說明）。空白特效的暫時名字不當成目前特效顯示（搜尋框留空、複製按鈕不動作、視窗標籤寫未命名特效）。
+  - 點空白取消選取、方向鍵移動（aca0129f）：沒打中框、把手或圖層就取消選取；把焦點切到另一個視窗的那一下保留它的選取。方向鍵每按一下 1px、Shift 10px，方向是畫面上的方向（掛在轉過、放大的父物件底下也是畫面上的 1px），單選／多選／群組都能移；按住到放開算一步歷史。歷史模組加交易代號（begin 回傳代號、commit(代號) 只收自己那一筆），避免按住途中點了輸入框、放開時把輸入框的交易提早收掉；不帶代號的既有用法不變。
+  - Alpha 標題（abdefc75）：只改區段標題與內部收合代號，資料仍是 alphaOverLife，數值與意義不變（0＝完全透明、1＝alpha 本身、大於 1 過曝）。
+- 決策（使用者沒有指定、依慣例決定）：Shift＋方向鍵一次 10px（與拖曳時 Shift 對齊的格距相同）；Alt／Ctrl＋方向鍵不攔；方向鍵在輸入框、下拉、曲線編輯器、Spine 參考面板裡照原本的行為；點另一個視窗的空白處只換焦點不取消選取。
+- 驗證：LAUNCH-2／5、PANE-30、NUDGE-1～5（NUDGE-3 在 vm 裡跑按住／放開與插入別的交易）、HISTORY-47、OL-ALPHA；WIRE-3 原本釘住收合代號 opacity，改成 alpha。13 個突變全部被抓到（原本漏抓一個：寬鬆的 assert.deepEqual 把 {x:0,y:0} 當成等於 null，改用 deepStrictEqual）。三個 commit 各自以 git checkout-index 匯出暫存區跑編輯器測試，都只有 3 條既有失敗。VFX 全套 862 項，失敗與基線清單相同。瀏覽器實測：無參數網址是空場景；→ 1px、Shift+↑ 10px、按住 ← 十下只記一步、Undo 回原位、Alt+→ 不攔；點空白取消選取、點另一格空白保留選取、群組整組移動；Alpha 標題。
+- 待確認：無。
+
 ## Claude｜VFX 編輯器多視窗同時預覽與調整（VFX-EDITOR-MULTI-PANE-20260917）
 
 - Owner：Claude；Done。使用者需求：預覽區上方「新增視窗」把預覽分割成多格（原本的在左、新的在右，最多四格十字切開）；點擊視窗焦點就移過去，可在那一格載入特效或新增圖層，同時操作多份特效；視窗之間的圖層可以互相複製貼上。開發途中追加：Ctrl+點擊多選視窗，開始／暫停與預覽循環同時套用到多選的全部視窗。
