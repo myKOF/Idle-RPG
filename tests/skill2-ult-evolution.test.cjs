@@ -1099,28 +1099,24 @@ test('爆擊把飛刀冷卻扣到零時，技能仍會回到 ready queue', () =>
 
 /* ---- 9) 疾風斬的三個超神進化 ---- */
 
-test('【霹靂一閃】：最後一斬對周圍打出「單段 × 連擊數 × 倍率」的閃電傷害', () => {
+test('【霹靂一閃】：最後一擊觸發多道貫穿雷電，每道逐目標命中', () => {
   const c = loadContext(['js/legendary.js']);
-  const calls = stubHits(c); stubVfx(c);
+  const calls = stubHits(c); const specs = stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'gale'); equip(c, 'gale');
   const p = playerEnt(); c.FIELD = { player: p };
-  const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)];
-
-  c.castSkill2(p, mk(), 'gale', 'mv-float');
-  assert.ok(!calls.some((k) => k.elem === 'lightning'), '沒選超神進化時不得有閃電段');
-  const body = Math.max.apply(null, calls.map((k) => k.atk));
-
-  setUlt(c, 'gale', 'thunderFlash');
-  c.resetSkill2RT();
-  calls.length = 0;
-  c.castSkill2(p, mk(), 'gale', 'mv-float');
-  assert.ok(!calls.some((k) => k.elem === 'lightning'), '閃電段需等待最後一斬');
-  c.GT = Math.max(...c.SKILL2_RT.galeStrikes.map(wave => wave.at));
-  c.sgTickGaleStrikes({});
-  const bolts = calls.filter((k) => k.elem === 'lightning');
-  assert.ok(bolts.length >= 2, '周圍範圍內的敵人都要吃到');
-  assert.ok(bolts[0].atk > body, '倍率必須明顯高於單段傷害');
+  const enemies = [enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M)];
+  c.castSkill2(p, enemies, 'gale', 'mv-float');
+  assert.ok(!calls.some(k => k.elem === 'lightning'));
+  setUlt(c, 'gale', 'thunderFlash');c.resetSkill2RT();calls.length=0;specs.length=0;
+  c.castSkill2(p, enemies, 'gale', 'mv-float');
+  assert.ok(!calls.some(k => k.elem === 'lightning'), '等待最後一擊才開始');
+  const end=Math.max(...c.SKILL2_RT.galeStrikes.map(w=>w.at))+.2;
+  run(c,p,enemies,end,.02);
+  const beams=specs.filter(s=>s.variant==='gale-thunder-flash');
+  const bolts=calls.filter(k=>k.elem==='lightning');
+  assert.ok(beams.length>=4);assert.equal(bolts.length,beams.length*2);
+  assert.ok(bolts.every(k=>k.atk===c.getStats().atk*c.sgUltVal(c.sgUlt('gale','thunderFlash'),'pct')/100));
 });
 
 test('【雷神斬】：每次斬擊命中都附加一道落雷（閃電傷害）', () => {

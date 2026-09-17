@@ -1198,6 +1198,12 @@ var VFXRuntime = (function () {
                 danceParams.position.x - danceSource.x) + num(spec.angle, 0);
               if (play(rtFx, presetId, danceParams)) ok = true;
             }
+          } else if (spec.variant === 'gale-thunder-flash') {
+            var flashParams = areaScaleParams(spec.area, presetId);
+            flashParams.position = areaCentre(spec.area); // 事件原點就是玩家後方的光束起點。
+            // 核准 Preset 在生命週期 2/7 處伸滿；伸展時間由模擬事件決定。
+            flashParams.timeScale = presetDurations[presetId] * (2 / 7) / Math.max(.001, travelSecAt(spec, 0));
+            ok = !!play(rtFx, presetId, flashParams, 1);
           } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);

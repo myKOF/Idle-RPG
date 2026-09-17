@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "presetId": "hit-gale-burst",
+  "presetId": "hit-gale-burst-diffusion",
   "groups": [
     {
-      "id": "hit-gale-burst",
-      "name": "hit-gale-burst",
+      "id": "hit-gale-burst-diffusion",
+      "name": "hit-gale-burst-diffusion",
       "layerIds": [
         "amber-halo",
+        "amber-halo-copy",
         "burst-spikes",
         "cross-spikes",
         "white-impact",
@@ -19,11 +20,13 @@
         "fracture-4",
         "sparks",
         "sprite-12",
+        "sprite-12-copy",
+        "sprite-12-copy-2",
         "sprite-13"
       ]
     }
   ],
   "order": [
-    "group:hit-gale-burst"
+    "group:hit-gale-burst-diffusion"
   ]
 }

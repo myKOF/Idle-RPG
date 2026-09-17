@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "presetId": "beam-gale-thunder-flash",
+  "groups": [
+    {
+      "id": "beam-gale-thunder-flash",
+      "name": "beam-gale-thunder-flash",
+      "layerIds": [
+        "violet-envelope",
+        "lavender-beam",
+        "white-core",
+        "jagged-upper",
+        "jagged-white",
+        "coil-front",
+        "coil-back",
+        "electric-motes-0",
+        "electric-motes-1",
+        "electric-motes-2"
+      ]
+    }
+  ],
+  "order": [
+    "group:beam-gale-thunder-flash"
+  ]
+}
