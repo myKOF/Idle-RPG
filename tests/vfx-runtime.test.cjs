@@ -409,6 +409,65 @@ function makeAdapter(presets, over) {
   return { adapter, log };
 }
 
+test('BLOOD-FLIGHT 毒彈使用事件來源與飛行時間，不從玩家發射或瞬間消失',()=>{
+ const p=unitPreset('configured-poison-flight',.2);
+ const {adapter,log}=makeAdapter([p]);
+ adapter.tryPlay({fxKind:'projectile',variant:'blood-flight',targets:['mv-float-2'],hit:false,
+   vfx:{projectile:p.id},travelMs:[1000],area:{bloodFlight:true,sourceX:100,sourceY:50,x:300,y:50}});
+ adapter.update(.5);
+ assert.equal(adapter.stats().projectiles,1);
+ const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,200);assert.equal(t.y,50);
+ adapter.update(.51);assert.equal(adapter.stats().projectiles,0);
+});
+
+test('BLOOD-DOMAIN 領域事件接上每幀玩家跟隨，不必等下一次續命', () => {
+  const vm=require('node:vm'), c={};vm.createContext(c);
+  vm.runInContext(fs.readFileSync(path.join(REPO,'js/skills2.js'),'utf8'),c);
+  for(const poison of [false,true]) {
+    let pos={x:30,y:40},spec;
+    c.bfPlayerPos=()=>pos;
+    c.sgEmitPlayerVfx=(gid,sel,event)=>{spec=event;};
+    c.sgEmitBloodDomainAura({floatSel:'mv-float'},120,poison);
+    assert.equal(spec.area.follow,true);assert.equal(spec.area.r,120);
+    const p=unitPreset('configured-blood-domain');
+    const {adapter,log}=makeAdapter([p],{ctx:{posOf:()=>pos,playerPos:()=>pos}});
+    adapter.tryPlay({...spec,vfx:{ground:p.id}});adapter.update(.01);
+    pos={x:180,y:90};adapter.update(.016);
+    const t=log.nodes[0].transforms.at(-1);
+    assert.equal(t.x,pos.x);assert.equal(t.y,pos.y);
+    assert.equal(adapter.stats().played,1);
+    adapter.clear();
+  }
+});
+
+test('POISON-SPREAD 傳染毒咒保持原尺寸方向，子彈仍沿兩敵連線飛行', () => {
+  for (const target of [{x:300,y:50},{x:100,y:350},{x:-100,y:-150}]) {
+    const attack = unitPreset('configured-poison-curse');
+    attack.layers[0].rotation = .3;
+    const projectile = unitPreset('configured-poison-flight');
+    const {adapter,log} = makeAdapter([attack,projectile], {
+      profile:{scale:.35},
+      ctx:{posOf:id=>id==='to'?target:{x:100,y:50},playerPos:()=>({x:0,y:0})}
+    });
+    adapter.tryPlay({fxKind:'chain',variant:'poison-spread',targets:['from','to'],
+      travelMs:[1000],vfx:{attack:attack.id,projectile:projectile.id}});
+    adapter.update(.1);
+    const curses = log.nodes.filter(n=>n.spec.assetUrl.includes(attack.id+'.png'));
+    assert.equal(curses.length,2);
+    for(const [i,node] of curses.entries()) {
+      const t=node.transforms.at(-1), pos=i?target:{x:100,y:50};
+      assert.equal(t.x,pos.x);assert.equal(t.y,pos.y);
+      assert.equal(t.scaleX,1);assert.equal(t.scaleY,1);assert.equal(t.rotation,.3);
+    }
+    assert.equal(adapter.stats().projectiles,1);
+    const flight=log.nodes.find(n=>n.spec.assetUrl.includes(projectile.id+'.png'));
+    const t=flight.transforms.at(-1);
+    assert.ok(Math.hypot(t.x-100,t.y-50)>0);
+    assert.ok(Math.hypot(t.x-target.x,t.y-target.y)>0);
+    adapter.clear();
+  }
+});
+
 test('METEOR 新版落地爆破只由命中事件播放一次',()=>{
  const {adapter}=makeAdapter([unitPreset('proj-meteor-inferno',2),unitPreset('burst-meteor-inferno')]);
  const vfx={projectile:'proj-meteor-inferno',hit:'burst-meteor-inferno'};

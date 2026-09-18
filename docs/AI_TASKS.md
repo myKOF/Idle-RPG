@@ -1,5 +1,39 @@
 # AI_TASKS.md
 
+## Codex｜血刃飛行速度欄位匯入（BLOOD-FLIGHT-SPEED-20260918）
+
+- Owner Codex；Done。前次新增毒彈執行期接線後漏登記嚴格表格契約，導致使用者填速度時匯入被拒。新增bloodblade/5與bloodblade/disintegrate的speed／speedPer接線；維持其他未實作欄位拒絕匯入。
+- 修改tools/skills2-geometry.cjs、tests/skills2-flight-speed.test.cjs、index.html／bridge.js快取及本紀錄。執行Skills2 apply成功，將使用者目前兩列100米／秒同步至本機skills2.js；使用者表格、生成資料與特效仍留在工作區，不混入工具修正提交。
+- `node --test tests/skills2-flight-speed.test.cjs`4/4通過，直接從CSV重建配置後驗證毒霧感染與崩解20,2在Lv10為40米／秒，40米飛行及命中排程均1秒。apply後再dry-run零語意差異。檢查未修改Excel、CSV、飛行佇列與Preset。未推送或合併。
+
+## Codex｜毒霧感染與崩解飛行結算（BLOOD-FLIGHT-20260918）
+
+- Owner Codex；Done。毒霧感染未傳travelMs，Runtime以0.001秒播完；感染立即套用。崩解原本只在中心發出子彈事件並立即傷害周邊，沒有逐目標飛行。兩者改走共用血刃飛行佇列，填有子彈才延後至抵達結算，沒子彈保留即時路徑。
+- 明確傳起點／終點與權威travelMs，速度取對應列配置，空值沿用現有通用飛行速度；不新增硬編碼Preset。崩解中心爆炸立即播放，各受影響目標分別收到子彈及抵達命中。毒霧感染抵達後才塗毒／播命中，同一目標已有在途感染則暫不重複選取。來源死亡保留發射座標、目標死亡或離場取消結算；使用現有逐幀佇列，沒有新增Timer。
+- 修改skills2.js、vfx-runtime.js、index.html／bridge.js快取、skill2-system／skill2-ult-evolution／vfx-runtime測試及本紀錄。檢查CSV目前的子彈填值與proj-poison-drop Preset，未修改表格或素材。使用者原有表格／生成資料／VFX修改留在工作區，本次提交只包含程式修正。
+- 驗證：技能超神＋Runtime共149項，148通過、1項既有CATALOG-3群組配置失敗；毒霧感染數量定向測試1/1通過；其餘定向飛行／崩解／連鎖10項通過。完整skill2-system另有3項既有迴旋斬／飛刀失敗，未放寬。Build370檔通過。覆蓋抵達前不扣血／塗毒、每跳多彈、來源座標、飛行中間位置、死亡目標取消、感染數量與真正雷電連線。
+- 尚未遊戲實機驗證或密集子彈效能量測；崩解多目標多跳會增加在途子彈數，沿用既有VFX預算。未推送或合併。
+
+## Codex｜崩解改為加速持續傷害及逐次爆炸（DISINTEGRATE-20260918）
+
+- Owner Codex；Done。依使用者確認，爆炸基準是該狀態完整持續期間總傷害，不是單跳或剩餘傷害。保留中毒／流血狀態，間隔縮短40%＋每級4%，爆炸係數50%＋每級5%；沿用base＋per×lv及最低0.1秒。半徑保留表格6米，爆炸不重打來源目標。
+- 正式DOT規格只縮短一次，維持每跳傷害與持續時間，因此加速增加總傷；傳染複製既有間隔，不再加速。tickStatuses在實際結算後觸發，每次作用各自爆炸；致死跳、到期餘額結算、零日感染提前結算也能爆炸。場上爆炸死亡走既有死亡結算，無敵不觸發。特效使用表格崩解角色與同一判定半徑，保留屍體位置事件。
+- 修改 skills2.js、combat.js、Skills2.xlsx／CSV、index.html／bridge.js快取、skill2-ult-evolution測試及本紀錄。檢查status結算、Runtime範圍顯示、表格編譯器，未修改它們。Excel透過原生API只改崩解3格，正常模式重開、逐格比對、繪圖物件0→0；保留使用者其餘表格值並同步生成資料。使用者正在編輯的VFX與素材不納入本次提交。
+- 驗證：`node --test tests/skill2-ult-evolution.test.cjs` 57/57；`node --test tests/combat-dot-log.test.cjs tests/status-system.test.cjs tests/skill2-counter-bloodrage.test.cjs` 49/49；`node tools/config_tables.cjs --apply Skills2`零語意差異；`node tools/build_check.cjs`370檔通過。覆盖持續狀態、間隔成長、總傷爆炸、多跳次數、傳染、致死跳、範圍、特效、無敵與非血毒狀態。
+- 風險／未完成：未實機驗證密集戰鬥效能；加速且每跳爆炸會增加周邊判定及特效數，沿用現有特效預算。可合併；未推送或合併。
+
+## Codex｜殺神領域跟隨玩家（BLOOD-DOMAIN-FOLLOW-20260918）
+
+- Owner Codex；Done。使用者更正名稱為殺神領域。共用領域事件補上 area.follow，Runtime每幀取玩家顯示位置，不再停留在每秒續命事件的舊座標；萬毒血霧共用修正。傷害／死亡判定原本即採當前玩家位置，未改數值或判定。
+- 修改 skills2.js領域事件、index.html與bridge.js快取、vfx-runtime回歸測試及本紀錄。測試直接取得正式領域事件，覆蓋兩種領域，確認無新事件時移動仍更新且不重建特效。定向1/1通過；使用既有跟隨機制，無新增Timer或事件頻率。尚未實機畫面驗證。
+- 檢查未修改Runtime跟隨實作與技能表；使用者原有Excel／CSV、skills2生成資料、ground-mire Preset/layout變更保留不納入本次提交。未推送或合併。
+
+## Codex｜毒霧感染毒咒朝向（POISON-FACING-20260918）
+
+- Owner Codex；Done。毒霧感染繼承的攻擊角色原先因 chain 事件被拉成光束；改在傳染兩端的敵人位置保留作者尺寸與方向播放。子彈仍使用原本連鎖飛行路徑；技能傷害、表格、Preset與真正雷電連線不變。
+- 修改 js/vfx-runtime.js、index.html快取、tests/vfx-runtime.test.cjs及本紀錄；檢查 skills2.js傳染事件／角色繼承、curse-poison與proj-poison-drop Preset、battle-renderer與Worker事件，未修改這些檔案。
+- 定向回歸6/6通過：三種目標方位、原圖層旋轉／尺寸、子彈移動、單體尺寸、雷電連鎖及端點離場。完整Runtime／特效繼承測試另有既有CATALOG-3群組數失敗，與本次派送修改無關。未做遊戲實機畫面驗證。無新素材、無逐幀新增工作；未推送或合併。
+
 ## Codex｜過時技能與特效測試更新（TEST-CONTRACT-REFRESH-20260917）
 
 - Owner Codex；Done。依使用者要求全局檢查舊數值、舊特效／程式文字／快取版本斷言、Skills2舊欄位測試。僅更新已確認過時的測試契約，不修改正式技能數值或掩蓋行為差異。

@@ -7,14 +7,14 @@
     {
       "id": "fill",
       "type": "sprite",
-      "assetId": "splat-pack/png/double-512px/splat05.png",
+      "assetId": "new_materials/spiro/color_spirowires_1.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.3906,
-        "y": 0.2031
+        "x": 0.3463,
+        "y": 0.1801
       },
-      "alpha": 0.5,
-      "tint": "#4a3020",
+      "alpha": 0.3,
+      "tint": "#ff4c38",
       "blendMode": "normal",
       "duration": 2.1,
       "alphaOverLife": [
@@ -30,7 +30,40 @@
           1,
           0.5
         ]
-      ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#fdc9c9"
+        ],
+        [
+          0.5027,
+          "#ff0066"
+        ],
+        [
+          0.9918,
+          "#f8c9c9"
+        ],
+        [
+          1,
+          "#ffffff"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.4938,
+          1.158511
+        ],
+        [
+          0.9907,
+          1.000532
+        ]
+      ],
+      "rotationOverLife": 0
     },
     {
       "id": "edge",
@@ -38,8 +71,8 @@
       "assetId": "particle-pack/png-black-background/circle_01.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.3906,
-        "y": 0.2031
+        "x": 0.3382,
+        "y": 0.1759
       },
       "alpha": 0.55,
       "tint": "#5b2b72",

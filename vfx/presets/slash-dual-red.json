@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "id": "slash-dual-red",
+  "duration": 0.36,
+  "loop": false,
+  "layers": [
+    {
+      "id": "gold-blade-body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/slash_02.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": -0.6632,
+      "scale": {
+        "x": 0.3348,
+        "y": 0.2378
+      },
+      "alpha": 1,
+      "tint": "#f05c5c",
+      "blendMode": "normal",
+      "duration": 0.36,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          1.06
+        ]
+      ]
+    },
+    {
+      "id": "ivory-cutting-edge",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/slash_02.png",
+      "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": -0.6632,
+      "scale": {
+        "x": 0.3238,
+        "y": 0.1498
+      },
+      "alpha": 0.92,
+      "tint": "#fe9876",
+      "blendMode": "normal",
+      "duration": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.23,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "fine-gold-echo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/slash_02.png",
+      "zIndex": 2,
+      "position": {
+        "x": -5.6385,
+        "y": 7.8939
+      },
+      "rotation": -0.6632,
+      "scale": {
+        "x": 0.37,
+        "y": 0.0837
+      },
+      "alpha": 0.7,
+      "tint": "#e9642b",
+      "blendMode": "normal",
+      "delay": 0.025,
+      "duration": 0.25,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "hot-gold-blade",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/slash_02.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": -0.6632,
+      "scale": {
+        "x": 0.3282,
+        "y": 0.1278
+      },
+      "alpha": 0.52,
+      "tint": "#ff8f33",
+      "blendMode": "add",
+      "duration": 0.24,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "contact-flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/star_04.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0.3142,
+      "scale": {
+        "x": 0.0749,
+        "y": 0.0506
+      },
+      "alpha": 0.9,
+      "tint": "#fff2b0",
+      "blendMode": "normal",
+      "duration": 0.12,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "short-gold-sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
+      "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "alpha": 0.7,
+      "tint": "#ffd265",
+      "blendMode": "add",
+      "duration": 0.24,
+      "emission": {
+        "count": 16,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.12,
+        0.24
+      ],
+      "spawn": {
+        "height": 15.7878,
+        "shape": "box",
+        "width": 20.2986
+      },
+      "speed": [
+        157.878,
+        327.033
+      ],
+      "direction": -35,
+      "spread": 150,
+      "startScale": [
+        0.0308,
+        0.0661
+      ],
+      "alignToVelocity": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.45,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "gold-dust",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 6,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "alpha": 0.8,
+      "tint": "#eab643",
+      "blendMode": "normal",
+      "duration": 0.28,
+      "emission": {
+        "count": 10,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.17,
+        0.28
+      ],
+      "spawn": {
+        "height": 13.5324,
+        "shape": "box",
+        "width": 24.8094
+      },
+      "speed": [
+        28.1925,
+        73.3005
+      ],
+      "direction": 140,
+      "spread": 110,
+      "startScale": [
+        0.0067,
+        0.0132
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 130,
+      "width": 130
+    },
+    "heightM": 13,
+    "shape": "custom",
+    "widthM": 13
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-poison-drop-10",
+  "groups": [
+    {
+      "id": "proj-poison-drop-10",
+      "name": "proj-poison-drop-10",
+      "layerIds": [
+        "glow",
+        "glow-copy",
+        "gloss",
+        "trail",
+        "particle-5"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-poison-drop-10"
+  ]
+}

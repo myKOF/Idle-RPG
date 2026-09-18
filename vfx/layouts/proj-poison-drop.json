@@ -7,7 +7,7 @@
       "name": "proj-poison-drop",
       "layerIds": [
         "glow",
-        "body",
+        "glow-copy",
         "gloss",
         "trail"
       ]

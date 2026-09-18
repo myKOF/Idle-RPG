@@ -684,7 +684,7 @@ test('毒霧感染：傳染數量由 count 參數控制', () => {
 
   const spreadEvents = [];
   c.sgEmitVfx = (gid, targets, floatSel, spec) => {
-    if (spec && spec.variant === 'poison-spread') spreadEvents.push({ from: targets[0], to: targets[1] });
+    if (spec && spec.variant === 'blood-flight') spreadEvents.push({ to: targets[0], spec });
   };
   c.SKILLS2.bloodblade.tiers[4].fx.count = 2;
   c.chance = (pct) => pct > 0;
@@ -694,7 +694,11 @@ test('毒霧感染：傳染數量由 count 參數控制', () => {
     floatSel: 'mv-float',
     onDeaths() {}
   });
-  assert.equal(spreadEvents.filter((event) => event.from === source).length, 2);
+  assert.equal(spreadEvents.length, 2);
+  assert.ok(spreadEvents.every(e=>e.spec.area.sourceX===40 && e.spec.travelMs[0]>0));
+  assert.equal([near1,near2,near3].filter(e=>e.dots.some(d=>d.sid==='sgPoison')).length,0,'飛行途中不可感染');
+  c.GT=Math.max(...c.SKILL2_RT.projectiles.filter(p=>p.bloodFlight).map(p=>p.endAt))+.001;
+  c.sgTickFlyingProjectiles(.1,{getEnemies:()=>[source,near1,near2,near3]});
   const infected = [near1, near2, near3].filter((e) => e.dots.some((d) => d.sid === 'sgPoison'));
   assert.equal(infected.length, 2, '毒霧感染應傳染給 2 個附近敵人');
 });

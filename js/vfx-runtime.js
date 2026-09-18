@@ -629,7 +629,8 @@ var VFXRuntime = (function () {
          直接照用。連鎖段與敵方出手另有各自的起點規則，不套這條。 */
       var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
-      var knifeFlight = spec.area && spec.area.knifeFlight === true;
+      // 共用明確起點／終點的飛行定位，來源死亡也不回退成由玩家發射。
+      var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true);
       var fixedLanding = presetId === 'proj-waterball-flow' && spec.area && spec.area.fixedLanding === true;
       if (!toId && !directed && !fixedLanding && !knifeFlight) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
@@ -1219,6 +1220,11 @@ var VFXRuntime = (function () {
               aimed.angle = Math.atan2(target.y - origin.y, target.x - origin.x);
             }
             ok = playDirectional(rtFx, presetId, aimed);
+          } else if (spec.variant === 'poison-spread') {
+            // 傳染的 chain 描述子彈路徑；繼承的毒咒仍在敵人身上原尺寸播放，不能拉成光束。
+            var poisonSpec = Object.assign({}, spec);
+            delete poisonSpec.sourceId;
+            ok = playOnTargets(rtFx, presetId, poisonSpec, 1, 0, true);
           } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);

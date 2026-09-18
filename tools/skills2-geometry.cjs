@@ -40,7 +40,7 @@ const spatialKeys=['castM','m','len','wid','r','side','sideWidth','flyM','chaseM
 const commonRoutes={
  gap:new Set(`cleave/windChaser gale/1 gale/thunderFlash bloodblade/venomDomain dualdance/5 dualdance/7 dualdance/flameKagura bloodrage/asuraFist fireball/4 fireball/starfallCataclysm firepillar/eternalInferno firehunt/fireGodDescend mire/plagueMire mire/abyssInferno chainlightning/skyThunderArray chainlightning/flyingThunderGod thunderstrike/1 thunderstrike/heavenTribulation thunderstrike/eternalThunderPrison thunderorb/1 thunderorb/thunderfallShatter icearrow/7 icearrow/tearsOfIce waterball/7 waterball/abyssBurial frostnova/7 frostnova/infiniteNova frostnova/crystalResonance frostnova/iceKingDomain windblade/5 windblade/6 windblade/7 vacuumslash/3 vacuumslash/vacuumOmen vacuumslash/voidAnnihilation stormbarrier/1 stormbarrier/skyfallStars`.split(' ')),
  deg:new Set('knife/1 icearrow/1 windblade/4'.split(' ')),
- speed:new Set('thrust/1 cleave/1 knife/1 fireball/1 fireball/7 firepillar/7 firehunt/fireGodDescend thunderstrike/thunderMatrix thunderorb/1 icearrow/1 waterball/1 windblade/1'.split(' ')),
+ speed:new Set('thrust/1 cleave/1 knife/1 bloodblade/5 bloodblade/disintegrate fireball/1 fireball/7 firepillar/7 firehunt/fireGodDescend thunderstrike/thunderMatrix thunderorb/1 icearrow/1 waterball/1 windblade/1'.split(' ')),
  rangePct:new Set('thrust/4 cleave/2 cleave/stormGodSlash'.split(' '))
 };
 function bindings(gid,stage){
