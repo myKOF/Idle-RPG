@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜Skills2同列特效用途與觸發欄位（SKILLS2-VFX-EVENTS-20260918）
+
+- Owner Codex；Done。使用者授權將 Claude 已提交分支合併到 ai/codex，再修改 Excel／CSV。已合併 fea2ce3c 及其狀態表格化前置提交，保留我方／敵方狀態與 Status 畫面權威；沒有修改 develop 或推送。
+- 移除模糊特殊效果欄，增加五個觸發角色及同列唯讀作用說明。本次遷移逐風者、霹靂一閃、雷神之怒、毒霧感染、屍爆、零日感染、兩領域與崩解共九種事件。其他事件維持既有本體角色派送並於說明明示，未接線的觸發欄拒絕填寫。
+- 範圍：Excel／CSV、skills2.js 解析與生成資料、vfx-runtime.js 預載、config_tables.cjs、preset-usage.cjs、原生 Excel 更新工具、新增遷移／契約模組、相關測試、快取及說明。禁止變更傷害、節奏與狀態機制；未新增素材。
+- 230 列非特效資料與所有原有引用逐列核對一致；Excel 原生 API 寫入 260 格並插欄，兩次正常重開逐格驗證，圖形 0→0。CSV／JS dry-run 零語意差異。96 項契約／繼承／狀態／飛行／超神／範圍測試通過；node tools/build_check.cjs 374 檔通過。測試指令：node --test tests/skills2-vfx-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skill2-status-slots.test.cjs tests/skills2-flight-speed.test.cjs tests/skill2-ult-evolution.test.cjs tests/skills2-geometry.test.cjs。
+- Runtime 全檔 99 項有 1 項既有 CATALOG-3（bolt-sky-purple 頂層兩群組）；引用掃描有既有 hit-thunderstrike-bluewhite Runtime 特殊處理未登記問題，非本次新增，未改素材或放寬測試。另 skill2-vfx 的火球測試缺 VFX_PROJECTILE_SPEED_CELLS 初始化；本次未修改火球計畫或其測試。尚未實機畫面驗證；可交使用者檢查新欄位後合併。檢查未修改 Status Excel／CSV、combat.js、status.js、飛行佇列與素材；沒有素材庫變更。
+
+
+
 ## Codex｜血刃飛行速度欄位匯入（BLOOD-FLIGHT-SPEED-20260918）
 
 - Owner Codex；Done。前次新增毒彈執行期接線後漏登記嚴格表格契約，導致使用者填速度時匯入被拒。新增bloodblade/5與bloodblade/disintegrate的speed／speedPer接線；維持其他未實作欄位拒絕匯入。
@@ -74,7 +84,6 @@
 - 303項回歸：296通過、1跳過、6既有失敗；獨立HEAD快照確認相同6項Runtime失敗。實際WebGL覆蓋22份／79網格無錯誤，40道密集施放平均多約1.36ms CPU更新及渲染提交；尚未實機遊戲GPU量測。詳見 docs/vfx/LIGHTNING_DEFORMATION.md。
 - 保留使用者並行修改的技能表、skills2.js及bolt-sky-purple圖層/layout，留在工作區不混入本次提交。素材庫乾淨，無新素材提交。後續Editor定向22項全數通過；build367/367與diff check通過。可合併，未推送。
 
-
 ## Claude｜VFX 編輯器：預設空場景、點空白取消選取、方向鍵移動、Alpha 標題（VFX-EDITOR-NUDGE-20260917）
 
 - Owner：Claude；Done。使用者需求：(1) 首次開啟編輯器預設打開雷球特效，應該是空場景；(2) 點擊預覽視窗空白處取消目前的圖層選取；(3) 方向鍵移動圖層，每次 1px；(4) 途中追加：Over-Life 的 Opacity 改成 Alpha（透明度）比較直覺。
@@ -131,14 +140,12 @@
 - 驗證：gale-thunder-flash/gale-rework/skill-vfx-inheritance共22項、霹靂一閃/雷神斬/千鳥3項、Runtime THUNDER-FLASH 1項通過；build及diff check通過。原製作30米Preset正確拉長至100米，寬度不變。
 - 效能：單道粒子數不增加，每次施放較前版多2道；未實機量測GPU負載。無未完成實作，可合併，未推送。
 
-
 ## Codex｜霹靂一閃角色連擊數修正（GALE-THUNDER-COMBO-20260917）
 
 - Owner Codex；Done。修正誤以疾風破自身打擊次數增加雷電數量，改讀施放時角色 comboHits，加上狂化連殺／狂暴之舞期間加成；小數沿用 sgRollCount 機率。0 連擊只出 1 道，3 連擊出 4 道；本體追加打擊只影響最後一擊的觸發時間。
 - 修改 skills2、兩份測試、index／bridge／worker 快取及本紀錄；檢查 formula 的連擊口徑，無需修改表格或特效。
 - 驗證：node --test tests/gale-thunder-flash.test.cjs tests/gale-rework.test.cjs tests/skill-vfx-inheritance.test.cjs 共22項通過；node --test --test-name-pattern="霹靂一閃|雷神斬|千鳥" tests/skill2-ult-evolution.test.cjs 共3項通過。diff check通過。
 - 無新增 Timer 或粒子；未進行遊戲實機驗證，無未完成實作，可合併，未推送。
-
 
 ## Codex｜霹靂一閃貫穿雷電改造（GALE-THUNDER-FLASH-20260917）
 
@@ -347,7 +354,6 @@
 - Owner：Codex；Done。依使用者圖 2 的目前暖色 Preset，套用 12 層 scale 比例並以原外框尺寸等比正規化至 slash-cleave-ring-blue 與 proj-cleave-ring-tricolor，消除非等比拉伸。逐欄比對確認只有 scale 改變，顏色、透明度、旋轉、時序、sizing 與飛行規則全部保留。
 - 修改：上述兩份 Preset、js/vfx-runtime.js 資料快取、index.html 快取及本紀錄；預檢乾淨。未修改但檢查：暖色 Preset、製作工具與渲染器。使用者原有暖色 scale 修改保留在工作區，不混入提交。既有素材不變，素材庫無需新 Commit。
 - 驗證：非 scale 欄位深度比對；cleave-rework、vfx-preset-layout、vfx-preset-usage 測試及 Build；Core 預覽目視確認。未遊戲內目視驗證。Commit 為本紀錄所在提交；可供合併，未合併／未推送。
-
 
 ## Codex｜核准硬邊氣旋刀光（CLEAVE-SHARP-CYCLONE-20260916）
 

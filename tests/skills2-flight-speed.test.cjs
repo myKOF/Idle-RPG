@@ -22,7 +22,7 @@ test('bloodblade poison spread and disintegrate speed columns compile and drive 
  for(const extra of [{vfxTier:5},{vfxUlt:'disintegrate'}]){
   if(extra.vfxUlt)ctx.h.setUlt(c,'bloodblade','disintegrate',10);
   const fx=extra.vfxUlt?c.SKILLS2.bloodblade.ult[2]:c.SKILLS2.bloodblade.tiers[4];
-  fx.vfx={projectile:'configured-blood-projectile'};
+  fx.triggerVfx={projectile:'configured-blood-projectile'};
   assert.equal(fx.fx.speed,20);assert.equal(fx.fx.speedPer,2);
   c.sgQueueBloodFlight({hp:1,pos:{x:0,y:0}},{hp:1,pos:{x:400,y:0}},extra,{damage:1},{});
   assert.equal(c.SKILL2_RT.projectiles.at(-1).endAt,1,'(20+2×10)米/秒，40米需1秒');
