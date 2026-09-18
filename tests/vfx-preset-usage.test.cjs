@@ -345,3 +345,37 @@ test('USAGE-9 現況記錄：有用途的與孤兒的數量', function () {
   console.log('    · preset ' + ids.length + ' 份：有用途 ' + used.length +
     '、孤兒 ' + orphans.length);
 });
+
+test('USAGE-16 重新命名前的檢查：配置表、人工清單、程式碼、覆蓋規格有寫到舊名字就擋下', function () {
+  /* VFX Editor 的「重新命名」只改 vfx/presets 與 vfx/layouts 兩個檔；其他寫著舊名字的地方改名後會找不到它。
+     用沙箱 repo 逐一放進引用，確認每一種都擋得住，沒人用的才放行。 */
+  const os = require('node:os');
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'vfx-rename-blockers-'));
+  const w = (rel, text) => { fs.mkdirSync(path.dirname(path.join(base, rel)), { recursive: true }); fs.writeFileSync(path.join(base, rel), text); };
+  try {
+    ['free', 'in-table', 'in-doc', 'in-js', 'in-test', 'in-tool', 'in-spec', 'hit-fire', 'in-vendor']
+      .forEach((id) => w('vfx/presets/' + id + '.json', '{}'));
+    w('config/CSV/Status.csv', '狀態ID,狀態名稱,持續特效\nsgBurn,燃燒,in-table\n');
+    w('docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md', '| `in-doc` | 普攻 | js/data.js |\n');
+    w('js/data.js', "var X = { hit: 'in-js' };\n");
+    w('tests/a.test.cjs', "play('in-test');\n");
+    w('tools/vfx/authoring/author/x.cjs', 'make("in-tool");\n');
+    w('vfx/coverage-specs/in-spec.json', '{}');
+    /* 第三方程式不算：vendor 底下剛好出現同名字串不該擋住改名 */
+    w('tools/spine/vendor/lib.js', "'in-vendor'");
+    /* 前後要有引號：'hit-fire-explosion' 不算引用 'hit-fire' */
+    w('js/vfx.js', "var y = 'hit-fire-explosion';\n");
+
+    assert.deepStrictEqual(U.renameBlockers(base, 'free'), [], '沒人用的可以改名');
+    assert.deepStrictEqual(U.renameBlockers(base, 'hit-fire'), [], '只是別人名字的前綴不算');
+    assert.deepStrictEqual(U.renameBlockers(base, 'in-vendor'), []);
+    assert.match(U.renameBlockers(base, 'in-table').join(), /config\/CSV\/Status\.csv.*燃燒/);
+    assert.match(U.renameBlockers(base, 'in-doc').join(), /普攻/);
+    assert.deepStrictEqual(U.renameBlockers(base, 'in-js'), ['程式碼 js/data.js']);
+    assert.deepStrictEqual(U.renameBlockers(base, 'in-test'), ['程式碼 tests/a.test.cjs']);
+    assert.deepStrictEqual(U.renameBlockers(base, 'in-tool'), ['程式碼 tools/vfx/authoring/author/x.cjs']);
+    assert.deepStrictEqual(U.renameBlockers(base, 'in-spec'), ['覆蓋規格 vfx/coverage-specs/in-spec.json']);
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
+});

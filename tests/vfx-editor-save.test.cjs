@@ -795,17 +795,35 @@ test('SA3 存檔失敗要把 preset.id 捲回去', function () {
 test('SA4 另存之後根群組要改名，否則新檔一落地就違反單一根群組', function () {
   /* 群組 id／name 取 preset id（VFX_AGENT_WORKFLOW §9.11）。不改的話
      presetId 是新的、群組卻還叫舊名，LAYOUT-4 會紅——而且是編輯器
-     自己造成的違規。 */
+     自己造成的違規。規則只有一份在 layout-schema（重新命名的伺服器端也用它），
+     這裡直接呼叫它驗行為，不比對原始碼字串。 */
+  const LS = require('../tools/vfx/editor/layout-schema.js');
+
+  const auto = { schemaVersion: 1, presetId: 'old', order: ['group:old'],
+    groups: [{ id: 'old', name: 'old', layerIds: ['a'] }] };
+  const before = LS.renameRootGroup(auto, 'new-one');
+  assert.deepStrictEqual(auto.groups[0], { id: 'new-one', name: 'new-one', layerIds: ['a'] });
+  assert.deepStrictEqual(auto.order, ['group:new-one'], 'order 裡的 group: 也要跟著換');
+  assert.deepStrictEqual(before, { id: 'old', name: 'old', order: ['group:old'] }, '回傳還原用的快照');
+
+  /* 使用者手動取過的名字要留著，那是他想看到的標籤 */
+  const named = { schemaVersion: 1, presetId: 'old', groups: [{ id: 'old', name: '刀環', layerIds: ['a'] }] };
+  LS.renameRootGroup(named, 'new-one');
+  assert.equal(named.groups[0].id, 'new-one');
+  assert.equal(named.groups[0].name, '刀環', '只有「名稱本來就等於舊 id」時才改名');
+
+  /* 只有「剛好一個群組」才動它——使用者自己分好幾組時不要亂猜改哪一個 */
+  const many = { schemaVersion: 1, presetId: 'old', groups: [
+    { id: 'old', name: 'old', layerIds: ['a'] }, { id: 'b', name: 'b', layerIds: ['c'] }] };
+  assert.equal(LS.renameRootGroup(many, 'new-one'), null);
+  assert.equal(many.groups[0].id, 'old');
+  assert.equal(LS.renameRootGroup(null, 'x'), null);
+
+  /* Editor 的另存新檔走的就是這一份，不另寫一套 */
   const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
   const fn = src.slice(src.indexOf('function renameRootGroup'));
   const body = fn.slice(0, fn.indexOf('\n  }'));
-  assert.ok(/groups\.length !== 1/.test(body),
-    '只有「剛好一個群組」才動它——使用者自己分好幾組時不要亂猜改哪一個');
-  assert.ok(/g\.id = newId/.test(body));
-  assert.ok(/keyOf\('group', newId\)/.test(body), 'order 裡的 group: 也要跟著換');
-  /* 使用者手動取過的名字要留著，那是他想看到的標籤 */
-  assert.ok(/before\.name === before\.id/.test(body),
-    '只有「名稱本來就等於舊 id」時才改名');
+  assert.ok(/VFXLayoutSchema\.renameRootGroup\(state\.layout, newId\)/.test(body));
 });
 
 test('SA5 另存成功後用新名字重新開啟；送出前就先把新名字註冊進預覽', function () {

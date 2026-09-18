@@ -4635,25 +4635,9 @@
   /* 根群組的 id 與名稱要跟著換成新的 preset id（VFX_AGENT_WORKFLOW §9.11）。
      不換的話，另存出來的檔案一落地就違反規則：presetId 是新的、群組卻還叫舊名，
      LAYOUT-4 會紅——而且是編輯器自己造成的。
-
-     只在「剛好一個群組」時動它，那是根群組的形狀；使用者自己分了好幾組時
-     不要亂猜要改哪一個。回傳還原用的快照。 */
+     規則只有一份在 layout-schema（伺服器「重新命名」改分組檔時用的是同一支）。回傳還原用的快照。 */
   function renameRootGroup(newId) {
-    var groups = state.layout && state.layout.groups;
-    if (!groups || groups.length !== 1) return null;
-    var g = groups[0];
-    var before = { id: g.id, name: g.name, order: (state.layout.order || []).slice() };
-    var oldKey = keyOf('group', g.id);
-    g.id = newId;
-    /* 名稱只有在「本來就等於舊 id」時才換：那代表它是自動取的。
-       使用者手動取過名字就留著，那是他想看到的標籤。 */
-    if (before.name === before.id) g.name = newId;
-    if (Array.isArray(state.layout.order)) {
-      state.layout.order = state.layout.order.map(function (k) {
-        return k === oldKey ? keyOf('group', newId) : k;
-      });
-    }
-    return before;
+    return VFXLayoutSchema.renameRootGroup(state.layout, newId);
   }
 
   function commitSaveAs(newId) {

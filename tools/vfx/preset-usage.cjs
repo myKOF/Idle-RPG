@@ -265,6 +265,59 @@ function usageLabels(repoRoot) {
   return out;
 }
 
+/* ---------------- 重新命名前的檢查 ----------------
+   VFX Editor 的「重新命名」只改 vfx/presets 與 vfx/layouts 兩個檔。其他地方寫著舊名字的話，
+   改名之後它們就找不到這份特效，而那些地方編輯器改不動（配置表的來源是 Excel、程式碼要人改）。
+   所以有任何引用就不改名，列出在哪裡；沒人用的（自己複製出來、新做的）才放行。
+
+   範圍：
+     配置表與人工清單   遊戲實際會用到的（與下拉的用途標註同一份來源）
+     js/                遊戲程式寫死的（人工清單應該涵蓋，但清單會過期，這裡再掃一次）
+     tests/ 與 tools/   測試與產生特效的腳本（tools/vfx/authoring 會用名字重新產生 preset）
+   比對一律要求前後有引號，理由同 presetIdsInJs：'hit-fire' 不能被 'hit-fire-explosion' 誤判。
+   回傳人看得懂的字串陣列，空陣列＝可以改名。 */
+const RENAME_SCAN_DIRS = ['js', 'tests', 'tools'];
+const RENAME_SCAN_EXT = /\.(c?js|json)$/;
+
+function codeFilesUnder(repoRoot, rel) {
+  const out = [];
+  (function walk(dirAbs, dirRel) {
+    let items;
+    try { items = fs.readdirSync(dirAbs, { withFileTypes: true }); } catch (e) { return; }
+    items.forEach(function (item) {
+      /* 第三方與暫存不算：vendor 是別人的程式、node_modules 不是專案的一部分 */
+      if (item.name.charAt(0) === '.' || item.name === 'node_modules' || item.name === 'vendor') return;
+      const abs = path.join(dirAbs, item.name);
+      const r = dirRel + '/' + item.name;
+      if (item.isDirectory()) walk(abs, r);
+      else if (item.isFile() && RENAME_SCAN_EXT.test(item.name)) out.push({ abs: abs, rel: r });
+    });
+  })(path.join(repoRoot, rel), rel);
+  return out;
+}
+
+function renameBlockers(repoRoot, id) {
+  const out = [];
+  (scanTables(repoRoot)[id] || []).forEach(function (r) {
+    const who = (r.group && r.group !== r.name) ? r.group + '·' + r.name : r.name;
+    const line = '配置表 ' + r.table + '：' + r.kind + '「' + (who || '(沒有名稱的列)') + '」';
+    if (out.indexOf(line) < 0) out.push(line);
+  });
+  readOutsideTables(repoRoot).forEach(function (row) {
+    if (row.id === id) out.push('程式寫死的用途「' + row.label + '」（登記在 ' + OUTSIDE_DOC_REL + '）');
+  });
+  /* 覆蓋規格是用特效名字當檔名配對的，改名後那份規格就對不到人 */
+  const spec = 'vfx/coverage-specs/' + id + '.json';
+  if (fs.existsSync(path.join(repoRoot, spec))) out.push('覆蓋規格 ' + spec);
+  const re = new RegExp('[\'"`]' + id.replace(/[-]/g, '\\-') + '[\'"`]');
+  RENAME_SCAN_DIRS.forEach(function (dir) {
+    codeFilesUnder(repoRoot, dir).forEach(function (f) {
+      if (re.test(fs.readFileSync(f.abs, 'utf8'))) out.push('程式碼 ' + f.rel);
+    });
+  });
+  return out;
+}
+
 module.exports = {
   TABLES: TABLES,
   VFX_COLUMNS: VFX_COLUMNS,
@@ -274,5 +327,6 @@ module.exports = {
   readOutsideTables: readOutsideTables,
   presetIds: presetIds,
   presetIdsInJs: presetIdsInJs,
-  usageLabels: usageLabels
+  usageLabels: usageLabels,
+  renameBlockers: renameBlockers
 };

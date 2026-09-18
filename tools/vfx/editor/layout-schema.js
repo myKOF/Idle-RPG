@@ -258,6 +258,27 @@
     return { rows: rows, groups: groups, claimed: claimed };
   }
 
+  /* 特效換名字時，根群組的 id 與名稱跟著換（VFX_AGENT_WORKFLOW §9.11：群組 id／name 取 preset id）。
+     不換的話，presetId 是新的、群組卻還叫舊名，一落地就違反單一根群組。
+     另存新檔、檔案總管改過名、重新命名三條路共用這一份——Editor 在頁面裡改、伺服器改名時改檔案。
+
+     只在「剛好一個群組」時動它，那是根群組的形狀；使用者自己分了好幾組時不要亂猜要改哪一個。
+     名稱只有在「本來就等於舊 id」時才換：那代表它是自動取的，手動取過的名字留著。
+     就地修改 layout，回傳還原用的快照（沒動就回 null）。 */
+  function renameRootGroup(layout, newId) {
+    var groups = layout && layout.groups;
+    if (!groups || groups.length !== 1) return null;
+    var g = groups[0];
+    var before = { id: g.id, name: g.name, order: Array.isArray(layout.order) ? layout.order.slice() : layout.order };
+    var oldKey = 'group:' + g.id;
+    g.id = newId;
+    if (before.name === before.id) g.name = newId;
+    if (Array.isArray(layout.order)) {
+      layout.order = layout.order.map(function (k) { return k === oldKey ? 'group:' + newId : k; });
+    }
+    return before;
+  }
+
   /* 把目前的 rows 收斂回一份可存檔的 order。
      Editor 每次改動 hierarchy 後呼叫，確保存檔內容與畫面一致。 */
   function orderFromRows(rows) {
@@ -272,6 +293,7 @@
     serialiseLayout: serialiseLayout,
     emptyLayout: emptyLayout,
     reconcile: reconcile,
-    orderFromRows: orderFromRows
+    orderFromRows: orderFromRows,
+    renameRootGroup: renameRootGroup
   };
 });
