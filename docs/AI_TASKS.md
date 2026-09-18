@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜毒霧感染毒咒朝向（POISON-FACING-20260918）
+
+- Owner Codex；Done。毒霧感染繼承的攻擊角色原先因 chain 事件被拉成光束；改在傳染兩端的敵人位置保留作者尺寸與方向播放。子彈仍使用原本連鎖飛行路徑；技能傷害、表格、Preset與真正雷電連線不變。
+- 修改 js/vfx-runtime.js、index.html快取、tests/vfx-runtime.test.cjs及本紀錄；檢查 skills2.js傳染事件／角色繼承、curse-poison與proj-poison-drop Preset、battle-renderer與Worker事件，未修改這些檔案。
+- 定向回歸6/6通過：三種目標方位、原圖層旋轉／尺寸、子彈移動、單體尺寸、雷電連鎖及端點離場。完整Runtime／特效繼承測試另有既有CATALOG-3群組數失敗，與本次派送修改無關。未做遊戲實機畫面驗證。無新素材、無逐幀新增工作；未推送或合併。
+
 ## Codex｜過時技能與特效測試更新（TEST-CONTRACT-REFRESH-20260917）
 
 - Owner Codex；Done。依使用者要求全局檢查舊數值、舊特效／程式文字／快取版本斷言、Skills2舊欄位測試。僅更新已確認過時的測試契約，不修改正式技能數值或掩蓋行為差異。

@@ -409,6 +409,34 @@ function makeAdapter(presets, over) {
   return { adapter, log };
 }
 
+test('POISON-SPREAD 傳染毒咒保持原尺寸方向，子彈仍沿兩敵連線飛行', () => {
+  for (const target of [{x:300,y:50},{x:100,y:350},{x:-100,y:-150}]) {
+    const attack = unitPreset('configured-poison-curse');
+    attack.layers[0].rotation = .3;
+    const projectile = unitPreset('configured-poison-flight');
+    const {adapter,log} = makeAdapter([attack,projectile], {
+      profile:{scale:.35},
+      ctx:{posOf:id=>id==='to'?target:{x:100,y:50},playerPos:()=>({x:0,y:0})}
+    });
+    adapter.tryPlay({fxKind:'chain',variant:'poison-spread',targets:['from','to'],
+      travelMs:[1000],vfx:{attack:attack.id,projectile:projectile.id}});
+    adapter.update(.1);
+    const curses = log.nodes.filter(n=>n.spec.assetUrl.includes(attack.id+'.png'));
+    assert.equal(curses.length,2);
+    for(const [i,node] of curses.entries()) {
+      const t=node.transforms.at(-1), pos=i?target:{x:100,y:50};
+      assert.equal(t.x,pos.x);assert.equal(t.y,pos.y);
+      assert.equal(t.scaleX,1);assert.equal(t.scaleY,1);assert.equal(t.rotation,.3);
+    }
+    assert.equal(adapter.stats().projectiles,1);
+    const flight=log.nodes.find(n=>n.spec.assetUrl.includes(projectile.id+'.png'));
+    const t=flight.transforms.at(-1);
+    assert.ok(Math.hypot(t.x-100,t.y-50)>0);
+    assert.ok(Math.hypot(t.x-target.x,t.y-target.y)>0);
+    adapter.clear();
+  }
+});
+
 test('METEOR 新版落地爆破只由命中事件播放一次',()=>{
  const {adapter}=makeAdapter([unitPreset('proj-meteor-inferno',2),unitPreset('burst-meteor-inferno')]);
  const vfx={projectile:'proj-meteor-inferno',hit:'burst-meteor-inferno'};
