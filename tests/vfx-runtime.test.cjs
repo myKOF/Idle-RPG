@@ -409,6 +409,17 @@ function makeAdapter(presets, over) {
   return { adapter, log };
 }
 
+test('BLOOD-FLIGHT 毒彈使用事件來源與飛行時間，不從玩家發射或瞬間消失',()=>{
+ const p=unitPreset('configured-poison-flight',.2);
+ const {adapter,log}=makeAdapter([p]);
+ adapter.tryPlay({fxKind:'projectile',variant:'blood-flight',targets:['mv-float-2'],hit:false,
+   vfx:{projectile:p.id},travelMs:[1000],area:{bloodFlight:true,sourceX:100,sourceY:50,x:300,y:50}});
+ adapter.update(.5);
+ assert.equal(adapter.stats().projectiles,1);
+ const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,200);assert.equal(t.y,50);
+ adapter.update(.51);assert.equal(adapter.stats().projectiles,0);
+});
+
 test('BLOOD-DOMAIN 領域事件接上每幀玩家跟隨，不必等下一次續命', () => {
   const vm=require('node:vm'), c={};vm.createContext(c);
   vm.runInContext(fs.readFileSync(path.join(REPO,'js/skills2.js'),'utf8'),c);

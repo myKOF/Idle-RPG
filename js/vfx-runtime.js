@@ -629,7 +629,8 @@ var VFXRuntime = (function () {
          直接照用。連鎖段與敵方出手另有各自的起點規則，不套這條。 */
       var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
-      var knifeFlight = spec.area && spec.area.knifeFlight === true;
+      // 共用明確起點／終點的飛行定位，來源死亡也不回退成由玩家發射。
+      var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true);
       var fixedLanding = presetId === 'proj-waterball-flow' && spec.area && spec.area.fixedLanding === true;
       if (!toId && !directed && !fixedLanding && !knifeFlight) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);

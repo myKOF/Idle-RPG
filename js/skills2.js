@@ -1344,6 +1344,40 @@ function sgBloodVenomRiteCost(sid) {
 
 /* 崩解：每次實際跳傷後爆炸，基準為該狀態完整持續時間的總傷，不取剩餘時間。
    主目標可以剛被跳傷打死，仍從其位置爆炸；不再次扣主目標的持續傷害。 */
+function sgQueueBloodFlight(from, target, extra, payload, ctx) {
+  var roles = sgVfxRoles('bloodblade', extra);
+  if (!roles.projectile) return false;
+  var a = bfPos(from), b = bfPos(target);
+  var speed = extra.vfxUlt ? sgUltVal(sgUlt('bloodblade', extra.vfxUlt), 'speed') : 0;
+  speed = speed > 0 ? bfMeterPx(speed) : sgConfiguredFlightSpeed('bloodblade', extra.vfxTier || 1, SG_FLYING_PROJECTILE_SPEED);
+  var travel = a && b ? Math.max(.05, Math.hypot(b.x-a.x,b.y-a.y)/speed) : Math.max(.05,sgConfiguredTravelSeconds('bloodblade',target));
+  var area = a && b ? {bloodFlight:true,sourceX:a.x,sourceY:a.y,x:b.x,y:b.y} : null;
+  sgEmitVfx('bloodblade',[target],ctx && ctx.floatSel || 'mv-float',{
+    fxKind:'projectile',variant:'blood-flight',area:area,travelMs:[travel*1000],hit:false,
+    vfxRoles:{projectile:roles.projectile}
+  });
+  SKILL2_RT.projectiles.push({bloodFlight:true,target:target,endAt:sgProjectileNow()+travel,
+    payload:payload,roles:roles,floatSel:ctx && ctx.floatSel || 'mv-float'});
+  if(payload.poison)target._sgPoisonFlightUntil=sgProjectileNow()+travel;
+  return true;
+}
+
+function sgResolveBloodFlight(p, ctx) {
+  var target=p.target;
+  if (!target || target.hp<=0) return;
+  if (ctx.getEnemies && ctx.getEnemies().indexOf(target)<0) return;
+  var out={killed:false,dmg:0,crit:false};
+  if(p.payload.damage>0) sgDerivedHit(target,p.payload.damage,'bloodblade',p.floatSel,out,'💥',0);
+  if(target.hp>0 && p.payload.poison) {
+    sgApplyBloodbladeDot(target,'sgPoison',p.payload.poison,p.payload.poison.dur);
+    target._sgDotSkipAt=GT;
+  }
+  sgEmitVfx('bloodblade',[target],p.floatSel,{fxKind:'burst',variant:'blood-arrival',preserveDeadTargets:true,
+    vfxRoles:p.payload.poison ? {attack:p.roles.attack,hit:p.roles.hit} : {hit:p.roles.hit}});
+  if(out.dmg && ctx.onDamage)ctx.onDamage(out.dmg);
+  if(out.killed && ctx.onDeaths)ctx.onDeaths();
+}
+
 function sgDisintegrate(ent, sid, spec, dur, ult, ctx) {
   if (!ent) return;
   var total = Math.max(0, spec.dps * dur);
@@ -1354,15 +1388,18 @@ function sgDisintegrate(ent, sid, spec, dur, ult, ctx) {
   var out = (ctx && ctx.out) || { killed: false, dmg: 0, crit: false };
   var poison = sid === 'sgPoison';
   var radius = bfMeterPx(sgUltVal(ult, 'm'));
+  var roles = Object.assign({},sgVfxRoles('bloodblade',{vfxUlt:'disintegrate'}));
+  delete roles.projectile;delete roles.hit;
   sgEmitVfx('bloodblade', [ent], floatSel, {
     fxKind: 'burst', variant: 'blood-explosion', elem: poison ? 'poison' : null,
-    vfxUlt: 'disintegrate', preserveDeadTargets: true, area: sgAreaAround(ent, radius)
+    vfxRoles: roles, preserveDeadTargets: true, area: sgAreaAround(ent, radius)
   });
   var boom = total * sgUltVal(ult, 'pct') / 100;
   var enemies = (ctx && ctx.enemies) || null;
   if (!(boom > 0) || !enemies || !enemies.length) return;
   var victims = bfNearestOthers(ent, enemies, enemies.length, radius);
   for (var i = 0; i < victims.length; i++) {
+    if(sgQueueBloodFlight(ent,victims[i],{vfxUlt:'disintegrate'},{damage:boom},ctx))continue;
     sgDerivedHit(victims[i], boom, 'bloodblade', floatSel, out, '💥', sgStaggerMs(i));
   }
 }
@@ -1744,6 +1781,10 @@ function sgTickFlyingProjectiles(dt, ctx) {
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   for (var pi = list.length - 1; pi >= 0; pi--) {
     var projectile = list[pi];
+    if (projectile.bloodFlight) {
+      if(now>=projectile.endAt){list.splice(pi,1);sgResolveBloodFlight(projectile,ctx);}
+      continue;
+    }
     if (projectile.soulController) {
       if (sgTickSoulhunter(projectile, now, ctx)) {
         list.splice(pi, 1);
@@ -10326,7 +10367,13 @@ function sgTickBloodDots(dt, ctx) {
           var near = bfRandomOthers(e, enemies, enemies.length, 0, null);
           var spreaded = 0;
           for (var ni = 0; ni < near.length; ni++) {
-            if (near[ni].hp > 0 && !sgHasDot(near[ni], 'sgPoison')) {
+            if (near[ni].hp > 0 && !sgHasDot(near[ni], 'sgPoison') && !(near[ni]._sgPoisonFlightUntil>GT)) {
+              var poisonCopy={dps:d.dps,dur:Math.max(.2,d.until-GT),interval:gap};
+              if(sgQueueBloodFlight(e,near[ni],{vfxTier:5},{poison:poisonCopy},ctx)) {
+                spreaded++;
+                if(spreaded>=spreadCount)break;
+                continue;
+              }
               sgEmitVfx('bloodblade', [e, near[ni]], ctx.floatSel, {
                 fxKind: 'chain', variant: 'poison-spread', elem: 'poison', count: 1,
                 vfxTier: 5
