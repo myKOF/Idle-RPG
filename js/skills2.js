@@ -10426,7 +10426,7 @@ function sgEmitBloodDomainAura(ctx, radius, poison) {
   sgEmitPlayerVfx('bloodblade', ctx.floatSel, {
     fxKind: 'aura', variant: poison ? 'mire-poison' : 'mire',
     elem: poison ? 'poison' : 'dark', dur: SG_DOMAIN_VFX_SEC, vfxUlt: poison ? 'venomDomain' : 'slayerDomain',
-    area: { id: SG_BLOOD_DOMAIN_VFX_ID, x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2 }
+    area: { id: SG_BLOOD_DOMAIN_VFX_ID, x: pp.x, y: pp.y, r: radius, w: radius * 2, h: radius * 2, follow: true }
   });
 }
 

@@ -409,6 +409,26 @@ function makeAdapter(presets, over) {
   return { adapter, log };
 }
 
+test('BLOOD-DOMAIN 領域事件接上每幀玩家跟隨，不必等下一次續命', () => {
+  const vm=require('node:vm'), c={};vm.createContext(c);
+  vm.runInContext(fs.readFileSync(path.join(REPO,'js/skills2.js'),'utf8'),c);
+  for(const poison of [false,true]) {
+    let pos={x:30,y:40},spec;
+    c.bfPlayerPos=()=>pos;
+    c.sgEmitPlayerVfx=(gid,sel,event)=>{spec=event;};
+    c.sgEmitBloodDomainAura({floatSel:'mv-float'},120,poison);
+    assert.equal(spec.area.follow,true);assert.equal(spec.area.r,120);
+    const p=unitPreset('configured-blood-domain');
+    const {adapter,log}=makeAdapter([p],{ctx:{posOf:()=>pos,playerPos:()=>pos}});
+    adapter.tryPlay({...spec,vfx:{ground:p.id}});adapter.update(.01);
+    pos={x:180,y:90};adapter.update(.016);
+    const t=log.nodes[0].transforms.at(-1);
+    assert.equal(t.x,pos.x);assert.equal(t.y,pos.y);
+    assert.equal(adapter.stats().played,1);
+    adapter.clear();
+  }
+});
+
 test('POISON-SPREAD 傳染毒咒保持原尺寸方向，子彈仍沿兩敵連線飛行', () => {
   for (const target of [{x:300,y:50},{x:100,y:350},{x:-100,y:-150}]) {
     const attack = unitPreset('configured-poison-curse');

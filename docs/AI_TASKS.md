@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜殺神領域跟隨玩家（BLOOD-DOMAIN-FOLLOW-20260918）
+
+- Owner Codex；Done。使用者更正名稱為殺神領域。共用領域事件補上 area.follow，Runtime每幀取玩家顯示位置，不再停留在每秒續命事件的舊座標；萬毒血霧共用修正。傷害／死亡判定原本即採當前玩家位置，未改數值或判定。
+- 修改 skills2.js領域事件、index.html與bridge.js快取、vfx-runtime回歸測試及本紀錄。測試直接取得正式領域事件，覆蓋兩種領域，確認無新事件時移動仍更新且不重建特效。定向1/1通過；使用既有跟隨機制，無新增Timer或事件頻率。尚未實機畫面驗證。
+- 檢查未修改Runtime跟隨實作與技能表；使用者原有Excel／CSV、skills2生成資料、ground-mire Preset/layout變更保留不納入本次提交。未推送或合併。
+
 ## Codex｜毒霧感染毒咒朝向（POISON-FACING-20260918）
 
 - Owner Codex；Done。毒霧感染繼承的攻擊角色原先因 chain 事件被拉成光束；改在傳染兩端的敵人位置保留作者尺寸與方向播放。子彈仍使用原本連鎖飛行路徑；技能傷害、表格、Preset與真正雷電連線不變。
