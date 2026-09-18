@@ -275,3 +275,70 @@ test('STATUS-VFX-4 狂怒、暴風屏障、暴風神體不再自己畫光殼（�
   const auras = events.filter(e => ['bloodrage-aura', 'storm-barrier', 'storm-god', 'cyclone'].includes(e.variant));
   assert.equal(auras.length, 0);
 });
+
+/* ---- 6) 以玩家為中心的領域＝玩家身上的狀態（2026-09-18 領域類光環） ---- */
+
+function pickUlt(c, gid, id) {
+  c.G.player.skills2.levels[gid] = [10, 10, 10, 10, 10, 10, 10];
+  const idx = c.SKILLS2[gid].ult.findIndex(u => u.id === id);
+  c.G.player.skills2.ult = Object.assign(c.G.player.skills2.ult || {}, { [gid]: { pick: idx, lv: 1 } });
+  if (c.G.player.loadout.indexOf('sg:' + gid) < 0) c.G.player.loadout.push('sg:' + gid);
+}
+function domainCtx(p) { return { pEnt: p, getEnemies: () => [], floatSel: 'mv-float', onDeaths() {}, onDamage() {} }; }
+
+test('DOMAIN-1 永久領域掛在玩家身上並帶領域半徑；換超神撤掉另一個、卸下就撤掉', () => {
+  const c = loadContext();
+  const p = playerEnt(), ctx = domainCtx(p);
+  pickUlt(c, 'bloodblade', 'slayerDomain');
+  c.sgTickBloodDomains(ctx);
+  const slayer = p.buffs[c.statusDef('sgSlayerDomain').key];
+  assert.ok(slayer && slayer.until - c.GT > 3600, '持續時間永久（UI 顯示 ∞）');
+  assert.equal(slayer.vfxR, c.bfMeterPx(c.sgUltVal(c.sgUlt('bloodblade', 'slayerDomain'), 'm')), '半徑＝領域半徑');
+  const entry = c.statusEntries(p).find(e => e.sid === 'sgSlayerDomain');
+  assert.equal(entry && entry.vfxR, slayer.vfxR, '面板列舉帶出半徑，顯示層據此縮放持續特效');
+
+  pickUlt(c, 'bloodblade', 'venomDomain');
+  c.sgTickBloodDomains(ctx);
+  assert.ok(!p.buffs[c.statusDef('sgSlayerDomain').key], '換超神：殺神領域撤掉');
+  assert.ok(p.buffs[c.statusDef('sgVenomDomain').key], '萬毒血霧掛上');
+
+  c.G.player.loadout = [];
+  c.sgTickBloodDomains(ctx);
+  assert.ok(!p.buffs[c.statusDef('sgVenomDomain').key], '卸下技能：領域撤掉');
+});
+
+test('DOMAIN-2 領域格子換成通用增益時，只撤自己掛上的；別的來源在領域沒選時不受影響', () => {
+  const c = loadContext();
+  setStatus(c, 'waterball', 'abyssBurial', 'self', [{ id: 'atkUp' }]);
+  const p = playerEnt(), ctx = domainCtx(p);
+  c.applyStatus(p, 'atkUp', { val: 15, dur: 6 });
+  c.sgTickAbyssDomain(ctx, 0.1);
+  assert.ok(p.buffs.atkUp, '沒選海淵葬界：別的來源的 atkUp 不動');
+  pickUlt(c, 'waterball', 'abyssBurial');
+  c.sgTickAbyssDomain(ctx, 0.1);
+  assert.ok(p.buffs.atkUp.vfxR > 0, '領域以表上填的 atkUp 掛上（帶半徑）');
+  c.G.player.loadout = [];
+  c.sgTickAbyssDomain(ctx, 0.1);
+  assert.ok(!p.buffs.atkUp, '領域消失：撤掉自己掛上的那一份');
+});
+
+test('DOMAIN-3 水牢的狀態跟著水牢的持續時間走，水牢結束就撤掉', () => {
+  const c = loadContext();
+  const p = playerEnt(), ctx = domainCtx(p);
+  pickUlt(c, 'waterball', 'waterPrisonFall');
+  c.sgCastWaterPrison(p, 'mv-float');
+  c.sgTickWaterPrison(ctx, 0.05);
+  const wp = c.SKILL2_RT.waterPrison;
+  const inst = p.buffs[c.statusDef('sgWaterPrisonDomain').key];
+  assert.ok(inst && Math.abs(inst.until - wp.until) < 1e-6, '到期時刻＝水牢到期時刻');
+  assert.equal(inst.vfxR, wp.radius);
+  // 倒地：水牢整段往後推，代表它的狀態也要跟著推（不然倒地時畫面先消失、水牢其實還在）
+  c.skill2DownedActive = () => true;
+  for (let i = 0; i < 20; i++) { c.GT += 0.05; c.sgTickWaterPrison(ctx, 0.05); }
+  const held = p.buffs[c.statusDef('sgWaterPrisonDomain').key];
+  assert.ok(held && Math.abs(held.until - wp.until) < 0.06, '倒地期間到期時刻跟著水牢走');
+  c.skill2DownedActive = () => false;
+  c.GT = wp.until + 0.01;
+  c.sgTickWaterPrison(ctx, 0.05);
+  assert.ok(!p.buffs[c.statusDef('sgWaterPrisonDomain').key], '水牢結束，狀態撤掉');
+});

@@ -7240,3 +7240,16 @@ Worker 存活且頁面正常完成載入。
 - 從 Skills2 搬到 Status 的畫面：火球 T2 st-tick-fire → sgBurn 作用；寒冰箭 T2 st-tick-ice → sgFrostBite 作用；血刃斬 T4 curse-poison → sgPoison 施加（另補 sgPoison 作用＝hit-poison）；狂怒 T1 與阿修羅 aura-bloodrage → sgBloodrage／sgAsuraFist 持續；雙刀 T7 ground-cyclone-avatar → sgStorm 與傳奇【不屈之誓】sgDeathDefer 持續；暴風屏障 T1 ground-storm-barrier／T7 ground-storm-god → sgStormBarrier／sgStormGod 持續。
 - 刻意留在 Skills2 的：岩甲光殼（第 7 階會換外觀，狀態表無法表達「練到第幾階換樣子」）、雷幻身、不屈鬥魂倒地光殼（掛在共用的 invuln 上會讓所有無敵都長這樣）、各技能的場域與領域脈衝。
 - 驗證：受影響測試 1603 項，失敗 25 項皆在 HEAD 基線內（以 git archive 抽出的乾淨副本對照）；新增 13 項（tests/skill2-status-slots.test.cjs、vfx-runtime STATUS-3）。實機確認狀態光環隨狀態出現／消失、console 無錯誤。可見差異：狂怒／暴風化身／暴風屏障／暴風神體的光殼由約 200px 改為 Preset 製作尺寸。Commit：1191100f、57708e93。
+
+## Claude｜以玩家為中心的領域改成玩家身上的狀態（DOMAIN-STATUS-20260918）
+
+- 需求：延續 STATUS-TABLE-20260918 的使用者原則（除了飛行子彈，有持續時間的效果都是狀態；永久領域＝持續時間永久的狀態）。把以玩家為中心的領域改成玩家身上的狀態，畫面由 Status 表的持續特效負責，依領域半徑縮放、跟著玩家。
+- 範圍：血刃斬【殺神領域】【萬毒血霧】、火狩【火神降臨】、岩甲術【超重岩之術】【超重力場】、水流彈【水牢天瀑】【海淵葬界】共 7 個超神。Status 表新增 sgSlayerDomain／sgVenomDomain／sgFireGodBody／sgPetrifyDomain／sgGravityDomain／sgWaterPrisonDomain／sgAbyssDomain（buff／stat，效果鍵＝ID，本身不改任何數值）；Skills2 對應超神列的「我方狀態」填上這些狀態，原本畫領域範圍的地板／觸發地板特效清空（Preset 搬到狀態的持續特效）。
+- 施加：`SKILL2_STATUS_SLOTS` 登記 7 個格子（角色 slayerDomain 等），技能端以 `sgSyncDomainStatus`／`sgEndDomainStatus` 跟著領域的權威（超神進化＋裝配、水牢與岩甲護盾的存續）掛上與撤掉；只撤自己掛上的那一份（`SKILL2_RT.domains`），格子換成通用增益時不會誤刪其他來源。永久領域的持續時間填 99999（UI 超過 3600 秒顯示 ∞）；水牢與岩甲領域的持續時間跟著水牢／護盾實際剩餘秒數。
+- 顯示：狀態實例帶 `vfxR`（世界像素半徑，`applyStatus` 的 ctx.vfxR）→ `statusEntries` → 兩個顯示層的 `syncStatuses` 帶 `radii` → 光環比照地板事件以 `sizeOf(preset,{r, w:2r, h:2r})` 撐滿判定圓的外框（ground-mire 這類 200×100 的長方形素材只給半徑會只畫出一半高度）、每幀釘在實體腳下、半徑改變時以 τ=0.15 秒補間。水牢在玩家倒地時整段往後推，狀態的到期時刻也跟著推。技能不再每秒送 follow-aura 地板事件；`fireGodVfxAt`、`abyssVfxAt`、水牢／岩甲的 `vfxAt`、`sgEmitBloodDomainAura`、`sgRockFieldAura` 移除。
+- 萬毒血霧在 Codex 觸發特效表（tools/skills2-vfx.cjs）保留 attack／hit 兩個觸發角色（毒霧脈衝與受擊），領域本身的畫面改由狀態負責；殺神領域的觸發地板特效角色移除。
+- 合併檢查（Codex 觸發特效細分 × 施放時狀態）：兩邊的欄位與讀取路徑不衝突；修了 Codex 的逐風者測試夾具（`cleave-rework.test.cjs` 仍把觸發地板特效放在 def.vfx）；補登記 `hit-thunderstrike-bluewhite` 到 VFX_PRESET_USAGE_OUTSIDE_TABLES（USAGE-3）。
+- 刻意沒動：岩甲光殼、雷幻身、不屈鬥魂倒地光殼、大地守護常駐法陣（都會隨階數換外觀）；暴風雪、冰之淚、火龍捲、雷球等場域物件。
+- 可見差異：7 個領域的範圍圈改成狀態光環（依半徑縮放、半徑變化時平滑過渡，不再每秒重畫一次）；legacy 渲染模式沒有狀態光環，這 7 個領域在 legacy 下不再畫範圍圈；狀態列會多出這些領域的圖示。
+- 後續清理：渲染器裡 follow-aura、bleed-tick、storm-barrier 等舊畫法分支已無發送端，屬於 dead code，另開任務移除。
+- 驗證：受影響測試 686 項，失敗 20 項皆在 HEAD 基線內（git archive 抽出的乾淨副本對照，同一組檔案）；新增 DOMAIN-1..3（tests/skill2-status-slots.test.cjs，含倒地時水牢到期時刻，已做突變確認會紅）、BLOOD-DOMAIN-RECT（tests/vfx-runtime.test.cjs）。實機（GM 擺情境）：殺神領域／萬毒血霧／火神降臨掛上且帶半徑（240／240／60px）、換超神只剩一個、卸下就消失；水牢天瀑施放時掛上（200px）約 6 秒倒數後撤掉；光環外框約 545×567（直徑 480 的判定圓加素材外光）；console 無錯誤。

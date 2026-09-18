@@ -681,7 +681,7 @@ test('環形特效事件送的是出生半徑，成長交給 rGrowTo／rGrowSec�
   assert.equal(auras[1].area.rGrowSec, f.bodyGrowSec);
 });
 
-test('【火神降臨】的領域走玩家錨定變體，星環走旋轉圓環變體（不是泥沼池與小火球）', () => {
+test('【火神降臨】的領域是玩家身上的狀態（帶半徑），星環走旋轉圓環變體（不是泥沼池與小火球）', () => {
   const c = loadContext();
   stubHits(c);
   const specs = stubVfx(c);
@@ -691,13 +691,14 @@ test('【火神降臨】的領域走玩家錨定變體，星環走旋轉圓環�
   const p = playerEnt();
   const m = enemy(1e9, 30, 0);
   advance(c, p, [m], 0.6);
-  const aura = specs.filter((s) => s.fxKind === 'aura' && s.variant === 'follow-aura');
-  assert.ok(aura.length > 0, '領域要送 follow-aura');
-  assert.ok(aura[0].area && aura[0].area.id === 'sg-firegod-aura', '帶穩定 id 才會重用同一個節點');
-  assert.equal(aura[0].area.x, undefined, '不送座標＝位置由顯示層逐幀取玩家錨點');
-  /* 舊畫法（spawnFollowAura）根本不讀座標，所以「不送 x／y」就夠了；Preset 路徑卻是看
-     area.follow 決定要不要釘在玩家身上，沒帶就退回讀 area.x＝0，圈會畫在世界原點。 */
-  assert.equal(aura[0].area.follow, true, 'Preset 路徑要靠 area.follow 才會釘在玩家身上');
+  /* 2026-09-18 領域類光環：範圍的畫面是狀態表「火神降臨」的持續特效，由狀態實例的半徑縮放、
+     顯示層逐幀跟著玩家（js/vfx-runtime.js syncStatuses）；技能不再每秒重送 follow-aura 地板事件。 */
+  const sid = c.sgSlotSid('firehunt', 'fireGodDescend', 'self', 0);
+  const inst = p.buffs[c.statusDef(sid).key];
+  assert.ok(inst && inst.until > c.GT, '領域在身上');
+  assert.equal(inst.vfxR, c.bfMeterPx(c.sgGeometryNumber(c.sgUlt('firehunt', 'fireGodDescend').def.fx, 'm') || 6),
+    '持續特效的半徑＝作用半徑');
+  assert.equal(specs.filter((s) => s.variant === 'follow-aura').length, 0, '不再送 follow-aura');
   assert.equal(specs.filter((s) => s.variant === 'mire-lava').length, 0, '不再沿用泥沼池畫法');
 
   specs.length = 0;

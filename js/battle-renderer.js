@@ -6239,12 +6239,17 @@ var BattleRenderer = (function () {
     var out = [];
     function push(key, ent) {
       if (!key || !ent) return;
-      var sids = [];
+      var sids = [], radii = null;
       if (typeof statusEntries === 'function') {
         var list = statusEntries(ent);
-        for (var i = 0; i < list.length; i++) if (list[i] && list[i].sid) sids.push(list[i].sid);
+        for (var i = 0; i < list.length; i++) {
+          if (!list[i] || !list[i].sid) continue;
+          sids.push(list[i].sid);
+          // 代表範圍的狀態（以玩家為中心的領域）帶半徑，持續特效依它縮放
+          if (list[i].vfxR > 0) (radii || (radii = {}))[list[i].sid] = list[i].vfxR;
+        }
       }
-      out.push({ key: key, sids: sids });
+      out.push({ key: key, sids: sids, radii: radii });
     }
     push('pv-float', field.player);
     for (var m = 0; m < monsters.length; m++) {

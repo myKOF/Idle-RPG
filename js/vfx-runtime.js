@@ -71,6 +71,7 @@ var VFXRuntime = (function () {
   var GROUND_MIN_KEEP_SEC = 0.35;
   /* 狀態光環的快照頻率是 5Hz，同樣要容忍一次遺失。 */
   var AURA_KEEP_SEC = 0.6;
+  var AURA_SCALE_TAU_SEC = 0.15;   // 狀態光環的半徑補間時間常數（與領域升級、成長同步但不跳格）
 
   /* ---- 移動場域的畫面位置／尺寸：推算自走 ＋ 連續修正（AI_RULES 8.3.1）----
      一則場域事件＝模擬層的一個節拍快照，但事件的到達節奏本身不平均：Worker 是
@@ -1244,7 +1245,11 @@ var VFXRuntime = (function () {
 
     /* ---------------------------------------------------------------
        狀態光環：由 5Hz 面板快照 reconcile（事件驅動做不到「還在不在」）
-       entries：[{ key, sids: [statusId...] }]，key 即 posOf 認得的 elId
+       entries：[{ key, sids: [statusId...], radii?: { statusId: 半徑 } }]，key 即 posOf 認得的 elId
+       尺寸：狀態實例帶半徑（以玩家為中心的領域，js/status.js statusSetVfxR）＝代表一個範圍，
+       依權威半徑縮放（AI_RULES 8.3），半徑改變時逐幀補間（8.3.1）；
+       沒帶＝純演出，照 Preset 的世界尺寸畫（編輯器看到多大、遊戲就多大，8.3.2）。
+       一律畫在地板層：腳底光環要在角色下面，與技能表地板特效的層級一致。
        --------------------------------------------------------------- */
     function syncStatuses(entries) {
       var wanted = Object.create(null);
@@ -1254,13 +1259,20 @@ var VFXRuntime = (function () {
           var presetId = statusAuraPreset(sid);
           if (!presetId || !has(presetId)) return;
           var k = e.key + '|' + sid;
+          var r = e.radii ? Math.max(0, num(e.radii[sid], 0)) : 0;
           wanted[k] = true;
           var live = auras[k];
-          if (live) { live.expireAt = clock + AURA_KEEP_SEC; return; }
-          /* 純演出：照 Preset 的世界尺寸畫（編輯器看到多大、遊戲就多大，AI_RULES 8.3.2），
-             畫在地板層——腳底光環要在角色下面，與技能表地板特效的層級一致。 */
-          var ref = play(rtZone, presetId, Object.assign(defaultSize(presetId), { position: footOf(e.key) }));
-          if (ref) auras[k] = { ref: ref, key: e.key, expireAt: clock + AURA_KEEP_SEC };
+          if (live) {
+            live.expireAt = clock + AURA_KEEP_SEC;
+            if (r !== live.r) auraTarget(live, r);
+            return;
+          }
+          var a = { key: e.key, presetId: presetId, expireAt: clock + AURA_KEEP_SEC,
+            mult: r > 0 ? profile.areaScale : profile.scale };
+          auraTarget(a, r);
+          a.sx = a.tsx; a.sy = a.tsy;
+          a.ref = play(rtZone, presetId, { position: footOf(e.key), scaleX: a.sx, scaleY: a.sy }, a.mult);
+          if (a.ref) auras[k] = a;
         });
       });
       /* 沒出現在這次快照裡的立刻收掉：狀態消失時光環必須跟著消失，
@@ -1274,6 +1286,13 @@ var VFXRuntime = (function () {
     function statusAuraPreset(sid) {
       if (typeof statusVfxPreset !== 'function') return '';
       return statusVfxPreset(sid, 'aura') || '';
+    }
+    /* 範圍＝世界座標的正圓（bfEntityDistance），比照地板事件的 area 帶外框 w／h：
+       長方形素材（例 ground-mire 200×100）撐滿判定圓的外框，不然只會畫出一半高度。 */
+    function auraTarget(a, r) {
+      var p = r > 0 ? (sizeOf(a.presetId, { r: r, w: r * 2, h: r * 2 }) || { scaleX: r / NOMINAL_RADIUS, scaleY: r / NOMINAL_RADIUS })
+        : (sizeOf(a.presetId) || { scaleX: 1, scaleY: 1 });
+      a.r = r; a.tsx = p.scaleX; a.tsy = p.scaleY;
     }
 
     /* ---------------------------------------------------------------
@@ -1372,11 +1391,14 @@ var VFXRuntime = (function () {
         }
       }
 
-      /* 狀態光環跟著實體走 */
+      /* 狀態光環跟著實體走；範圍半徑改變時尺寸以時間常數補間，不一格一格跳 */
+      var auraK = step > 0 ? 1 - Math.exp(-step / AURA_SCALE_TAU_SEC) : 0;
       Object.keys(auras).forEach(function (k) {
         var a = auras[k];
         if (a.expireAt <= clock) { stopRef(a.ref); delete auras[k]; return; }
-        if (!moveRef(a.ref, { position: footOf(a.key) })) delete auras[k];
+        a.sx += (a.tsx - a.sx) * auraK;
+        a.sy += (a.tsy - a.sy) * auraK;
+        if (!moveRef(a.ref, { position: footOf(a.key), scaleX: a.sx, scaleY: a.sy }, a.mult)) delete auras[k];
       });
 
       updateOrbits(step);

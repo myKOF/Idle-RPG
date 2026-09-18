@@ -9,8 +9,7 @@ const events = {
   'bloodblade.5': {roles:['projectile','hit'], note:'中毒每次作用時機率感染；由中毒敵人向每個受感染者發射，抵達後感染並播放命中特效；單體維持原尺寸。'},
   'bloodblade.6': {roles:['attack'], note:'流血或中毒敵人死亡時，在死亡位置播放屍爆；選取周邊受害者的距離不是特效縮放範圍。'},
   'bloodblade.7': {roles:['attack'], note:'每次持續傷害機率提前結算剩餘傷害時，在該敵人位置播放；傳染搜尋距離不是傷害範圍，維持原尺寸。'},
-  'bloodblade.slayerDomain': {roles:['ground','field'], note:'裝配且啟用後永久展開領域，中心即時跟隨玩家；按領域半徑顯示，敵人在其中死亡時疊層。'},
-  'bloodblade.venomDomain': {roles:['ground','field','attack','hit'], note:'裝配且啟用後永久展開領域，中心即時跟隨玩家；按領域半徑顯示，每拍對領域內敵人播放觸發／命中特效；狀態持續畫面另由 Status 表決定。'},
+  'bloodblade.venomDomain': {roles:['attack','hit'], note:'領域每拍對範圍內的敵人播放觸發／命中特效；領域本身（跟著玩家、依半徑縮放）的畫面是狀態表「萬毒血霧」的持續特效。'},
   'bloodblade.disintegrate': {roles:['attack','projectile','hit'], note:'每次中毒／流血結算後，在原敵人位置播放範圍爆炸；觸發子彈由此飛向各受害者，抵達後結算並播放命中特效。中心匹配爆炸半徑，單體抵達特效維持原尺寸。'}
 };
 function event(gid,stage){return events[gid+'.'+stage];}
