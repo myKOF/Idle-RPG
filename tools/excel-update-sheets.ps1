@@ -69,6 +69,12 @@ try {
     if($ins.width){$col.ColumnWidth=[double]$ins.width}
    }
   }
+  foreach($label in @($sheet.clearValidationColumns)){
+   if(-not $label){continue}
+   $idx=[Array]::IndexOf([object[]]$rows[0],[string]$label)
+   if($idx -lt 0){throw "找不到清除舊驗證的欄位「$label」"}
+   $ws.Columns.Item($idx+1).Validation.Delete()
+  }
   $got=$ws.Range($ws.Cells.Item(1,1),$ws.Cells.Item($rowCount,$colCount)).Value2
   for($r=0;$r -lt $rowCount;$r++){for($c=0;$c -lt $colCount;$c++){
    $want=Want $rows $r $c

@@ -1349,7 +1349,7 @@ test('【崩解】：保留狀態、加速作用，每跳以完整期間總傷�
   const plainBleed = bleedOf(plain);
 
   setUlt(c, 'bloodblade', 'disintegrate');
-  c.SKILLS2.bloodblade.ult[2].vfx.projectile='configured-poison-flight';
+  c.SKILLS2.bloodblade.ult[2].triggerVfx.projectile='configured-poison-flight';
   hits.length = 0; p.mp = 200;
   const main = enemy(1e12, 3 * M, 0);
   const bystander = enemy(1e12, 3 * M, 2 * M);      // 距離 2 米 < 6 米
@@ -1381,7 +1381,7 @@ test('【崩解】：中毒成長、傳染不重複加速、致死跳與半徑�
  const c=loadContext();const events=stubVfx(c);const hits=stubDerived(c);
  maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
  setUlt(c,'bloodblade','disintegrate',1);
- c.SKILLS2.bloodblade.ult[2].vfx.projectile='configured-poison-flight';
+ c.SKILLS2.bloodblade.ult[2].triggerVfx.projectile='configured-poison-flight';
  const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'poison');
  assert.ok(Math.abs(spec.interval-.28)<1e-8);
  const main=enemy(1,30,0),near=enemy(1e12,30,20),far=enemy(1e12,3000,0);

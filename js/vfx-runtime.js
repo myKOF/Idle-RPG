@@ -1475,8 +1475,8 @@ var VFXRuntime = (function () {
       for (var g in SKILLS2) {
         var grp = SKILLS2[g];
         if (!grp) continue;
-        (grp.tiers || []).forEach(function (t) { take(t && t.vfx); });
-        (grp.ult || []).forEach(function (u) { take(u && u.vfx); });
+        (grp.tiers || []).forEach(function (t) { take(t && t.vfx); take(t && t.triggerVfx); });
+        (grp.ult || []).forEach(function (u) { take(u && u.vfx); take(u && u.triggerVfx); });
       }
     }
     if (typeof STATUS !== 'undefined' && STATUS) {

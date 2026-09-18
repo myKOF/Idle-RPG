@@ -1214,28 +1214,9 @@ for (let i=SKILLS2_GLOSSARY_ROWS.length-1;i>=0;i--) {
 }
 SKILLS2_GLOSSARY_ROWS.unshift(...skills2Geometry.help);
 
-const SKILLS2_VFX_USAGE_COLUMN = '特殊效果';
-const SKILLS2_VFX_USAGE_HELP = [
-  ['特殊效果：決定這一列特效屬於技能本體，或獨立的附加效果。'],
-  ['填「技能本體」或留白：參與原有逐欄繼承，可供技能本體使用。此設定只屬於本列，不向後繼承。'],
-  ['填「附加效果」：只在技能邏輯明確觸發這一列效果時使用；不混入本體，也不被後續階段繼承。'],
-  ['附加效果只播放本列填寫的特效；空欄不繼承本體，也不自動補其他特效。'],
-  ['本欄填用途，不填 Preset 檔名。特效名稱仍填施放、攻擊、飛行子彈、受擊、地板或持續場域欄。'],
-  ['地板／持續場域決定顯示層；用途決定歸屬。觸發時間、位置、數量、傷害與間隔仍由技能邏輯決定，填用途不會新增觸發能力。'],
-  ['例：逐風者填「附加效果」，地板填所需特效。迴旋斬起手不播放它，命中後才在敵人位置生成。'],
-  ['']
-];
+const skills2Vfx = require('./skills2-vfx.cjs');
+const SKILLS2_VFX_USAGE_HELP = skills2Vfx.help;
 SKILLS2_GLOSSARY_ROWS.unshift(...SKILLS2_VFX_USAGE_HELP);
-function skills2VfxUsageCell(row) {
-  return row.vfxUsage === 'effect' ? '附加效果' : row.vfxUsage === 'base' ? '技能本體' : '';
-}
-function skills2VfxUsageFromCell(value) {
-  const label = String(value || '').trim();
-  if (!label) return null;
-  if (label === '技能本體') return { vfxUsage: 'base' };
-  if (label === '附加效果') return { vfxUsage: 'effect' };
-  throw new Error('「特殊效果」只能填「技能本體」、「附加效果」或留白，目前為「' + label + '」');
-}
 
 /* ---- 我方狀態／敵方狀態（2026-09-18 狀態表格化）----
    每一列可填施放時對自己、命中時對敵人附加的狀態（js/skills2.js row.status = { self, enemy }）。
@@ -1338,7 +1319,7 @@ SCHEMAS.Skills2 = {
     '解鎖轉生/等級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
-    .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）', SKILLS2_VFX_USAGE_COLUMN])
+    .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）']).concat(skills2Vfx.columns.map(c=>c[0])).concat([skills2Vfx.noteColumn])
     .concat(SKILLS2_STATUS_COLUMNS.map(c => c[0])),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
@@ -1354,7 +1335,7 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
-          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat([skills2VfxUsageCell(t)])
+          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat(vfxCells(t.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,String(i+1))])
           .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
@@ -1365,7 +1346,7 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
           '', o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
-          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat([skills2VfxUsageCell(o)])
+          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat(vfxCells(o.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,o.id)])
           .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))));
       });
     });
@@ -1373,6 +1354,8 @@ SCHEMAS.Skills2 = {
   },
   rebuild(dataRows, header) {
     const get = rowGetter(header);
+    for(const [label] of skills2Vfx.columns) if(!header.includes(label)) throw Error('Skills2 缺少新版觸發欄「'+label+'」，請先遷移 Excel');
+    for(const label of ['特殊效果','特殊用途特效','特效用途特效']) if(header.includes(label)) throw Error('Skills2 舊用途欄尚未遷移：'+label);
     const groups = {};
     const order = [];
     /* 狀態欄是必要欄：舊格式的表沒有這兩欄，照舊套用會把所有技能附加的狀態清空（流血、燃燒…全部失效），
@@ -1454,10 +1437,11 @@ SCHEMAS.Skills2 = {
       const tierCost = toNum(get(r, '施法消耗'));
       /* 特效欄位（五欄）：這一階／這一個超神選項引入的特效；整列留白就不寫 vfx。 */
       const tierVfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
-      const usageColumn = [SKILLS2_VFX_USAGE_COLUMN, '特效用途特效', '特殊用途特效'].find(name => header.includes(name));
-      const vfxUsage = skills2VfxUsageFromCell(usageColumn ? get(r, usageColumn) : '');
       /* 我方狀態／敵方狀態：整列都空就不寫 status。 */
       const stageKey = tierIdx >= SKILLS2_ULT_ROW_BASE ? get(r, '超神ID').trim() : String(tierIdx);
+      const triggerVfx = vfxFromRow(get,r,skills2Vfx.columns);
+      skills2Vfx.validate(gid,stageKey,triggerVfx);
+      const triggerData = skills2Vfx.event(gid,stageKey) ? {triggerVfx:triggerVfx || {}} : null;
       const status = {};
       SKILLS2_STATUS_COLUMNS.forEach(([label, side]) => {
         const where = 'Skills2 ' + gid + ' ' + (tierIdx >= SKILLS2_ULT_ROW_BASE ? '超神 ' + stageKey : '第 ' + tierIdx + ' 階') + '「' + label + '」';
@@ -1478,7 +1462,7 @@ SCHEMAS.Skills2 = {
           id: ultId, name: get(r, '階段名稱'), cost: tierCost, fx: fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
-        }, tierVfx ? { vfx: tierVfx } : null, vfxUsage, tierStatus);
+        }, tierVfx ? { vfx: tierVfx } : null, triggerData, tierStatus);
         return;
       }
       groups[gid].tiers[tierIdx - 1] = Object.assign(
@@ -1490,7 +1474,7 @@ SCHEMAS.Skills2 = {
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
         },
-        tierVfx ? { vfx: tierVfx } : null, vfxUsage, tierStatus);
+        tierVfx ? { vfx: tierVfx } : null, triggerData, tierStatus);
     });
     // 登記表（js/skills2.js SKILL2_STATUS_SLOTS）指到的列必須存在：打錯鍵的位置會永遠讀不到狀態
     Object.keys(statusSlots).forEach(key => {

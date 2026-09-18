@@ -1,0 +1,39 @@
+'use strict';
+// 額外事件已由技能邏輯接線的角色；編表者在同一列看說明並填 Preset。
+const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
+const noteColumn = '特效作用說明';
+const events = {
+  'cleave.windChaser': {roles:['ground','field'], note:'每次迴旋斬命中，在敵人位置產生龍捲風；固定命中位置，依龍捲風傷害半徑縮放。'},
+  'gale.thunderFlash': {roles:['attack'], note:'本體最後一擊後，按次數與間隔重新選敵並播放貫穿雷電；沿玩家與目標連線，匹配雷電長度及寬度。'},
+  'gale.thunderGodSlash': {roles:['attack','hit'], note:'本體及爆散每次命中，在該敵人位置落雷；依落雷傷害範圍縮放。'},
+  'bloodblade.5': {roles:['projectile','hit'], note:'中毒每次作用時機率感染；由中毒敵人向每個受感染者發射，抵達後感染並播放命中特效；單體維持原尺寸。'},
+  'bloodblade.6': {roles:['attack'], note:'流血或中毒敵人死亡時，在死亡位置播放屍爆；選取周邊受害者的距離不是特效縮放範圍。'},
+  'bloodblade.7': {roles:['attack'], note:'每次持續傷害機率提前結算剩餘傷害時，在該敵人位置播放；傳染搜尋距離不是傷害範圍，維持原尺寸。'},
+  'bloodblade.slayerDomain': {roles:['ground','field'], note:'裝配且啟用後永久展開領域，中心即時跟隨玩家；按領域半徑顯示，敵人在其中死亡時疊層。'},
+  'bloodblade.venomDomain': {roles:['ground','field','attack','hit'], note:'裝配且啟用後永久展開領域，中心即時跟隨玩家；按領域半徑顯示，每拍對領域內敵人播放觸發／命中特效；狀態持續畫面另由 Status 表決定。'},
+  'bloodblade.disintegrate': {roles:['attack','projectile','hit'], note:'每次中毒／流血結算後，在原敵人位置播放範圍爆炸；觸發子彈由此飛向各受害者，抵達後結算並播放命中特效。中心匹配爆炸半徑，單體抵達特效維持原尺寸。'}
+};
+function event(gid,stage){return events[gid+'.'+stage];}
+function note(gid,stage){
+  const e=event(gid,stage);
+  return '本體欄：非空覆寫同角色，留白沿前階繼承；狀態畫面由 Status 表決定。'+
+    (e ? '觸發欄：'+e.note+' 本列觸發欄留白不播放、不繼承本體或其他事件。可填：'+columns.filter(c=>e.roles.includes(c[1])).map(c=>c[0]).join('、')+'。'
+    : '本列未接獨立觸發欄；特效沿用本體事件派送（包括使用本體外觀的追加攻擊）。')+
+    ' 有傷害範圍時匹配傷害範圍；單體維持原尺寸，不以搜敵距離縮放。';
+}
+function validate(gid,stage,vfx){
+  const e=event(gid,stage);
+  for(const [label,key] of columns){
+    if(!vfx||!vfx[key])continue;
+    if(!e||!e.roles.includes(key))throw Error('Skills2 '+gid+'/'+stage+' 未接線「'+label+'」，不可填入而不生效');
+    if(!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(vfx[key]))throw Error('Skills2 '+gid+'/'+stage+'「'+label+'」須填 Preset 名稱，不是用途標籤');
+  }
+}
+const help=[
+ ['本體特效與觸發特效在同一技能列分開填寫；「特效作用說明」為程式產生的唯讀說明。'],
+ ['本體六欄留白沿前階同角色繼承；觸發五欄僅供同列已接線事件，留白不播放、不繼承。'],
+ ['觸發特效填 Preset 名稱，不填「附加效果」。未支援的觸發角色填值會拒絕匯入。'],
+ ['有傷害範圍的特效依實際傷害範圍縮放；單體維持原尺寸。搜尋／施放距離不能充當傷害範圍。'],
+ ['狀態的施加、持續及作用特效只由 Status 表決定；Skills2 觸發特效不取代狀態畫面。']
+];
+module.exports={columns,noteColumn,events,event,note,validate,help};
