@@ -888,6 +888,32 @@ test('ROW-5 群組改名是就地編輯，不用 window.prompt', function () {
   assert.ok(/maxNameLength/.test(body), '長度上限要沿用 layout schema 的定義');
 });
 
+test('ROW-5b 雙擊群組名稱在第二下的 mousedown 接手，不靠 dblclick', function () {
+  /* 2026-09-18 使用者回報「寫著雙擊重新命名，實際上無法」。整列的 mousedown 會處理選取並
+     重畫整個列表，第一下按住的元素在放開前就被換掉：實測雙擊只收到 mousedown／mouseup，
+     連 click 都沒有，dblclick 永遠不會發生；第二下還會被整列當成「再點一次＝取消選取」。
+     這條只守結構；實際互動（真實雙擊 → 輸入框取得焦點並全選、Enter 寫入、Escape 取消、
+     單擊行為不變、Ctrl+Z 還原）在 VFX Editor 實機驗過。 */
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const groupFn = noComments.slice(noComments.indexOf('function groupRow'));
+  const groupBody = groupFn.slice(0, groupFn.indexOf('\n  }'));
+  assert.ok(!/name\.ondblclick/.test(groupBody), '列表在 mousedown 就重畫，名稱上的 dblclick 永遠收不到');
+  const md = groupBody.slice(groupBody.indexOf('name.onmousedown'));
+  assert.ok(md.length > 0, '群組名稱要在 mousedown 判斷連點');
+  const handler = md.slice(0, md.indexOf('};'));
+  assert.ok(/e\.detail\s*<\s*2/.test(handler), '以 e.detail（作業系統算的連點次數）判斷雙擊，第一下交給整列選取');
+  assert.ok(/stopPropagation\(\)/.test(handler), '第二下不得冒泡到整列（否則會取消選取）');
+  assert.ok(/preventDefault\(\)/.test(handler), '要擋掉預設的焦點轉移，否則輸入框一出現就失焦套用');
+  assert.ok(/renameGroupRow\(r\)/.test(handler));
+
+  const fn = noComments.slice(noComments.indexOf('function renameGroupRow'));
+  const body = fn.slice(0, fn.indexOf('\n  }'));
+  assert.ok(body.indexOf('selectGroupById(') < body.indexOf('querySelector('),
+    '選取會重畫列表，要在重畫**之後**才找名稱元素');
+  assert.ok(/beginInlineRename\(span, row\)/.test(body));
+});
+
 test('ROW-6 就地改名要寫到 layout 裡的群組，不是顯示用的列物件', function () {
   /* reconcile 產生的列是副本（layout-schema.js 的 rows.push({ name: g.name })）。
      寫到列上不會有任何效果，而且下一次重繪就消失——畫面看起來像是「改了又跳回去」。 */
