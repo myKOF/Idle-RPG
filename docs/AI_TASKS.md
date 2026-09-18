@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜暴風光壁緩慢旋轉（STORM-WALL-ROTATE-20260918）
+
+- Owner Codex；Done。保留使用者編輯器存檔的透明度、尺寸與位置，錐形光束沿地板橢圓24秒繞行一圈，底圈固定俯視投影。修改 `vfx/presets/ground-storm-dance.json`、`tools/vfx/authoring/author/storm-dance.cjs`、`tests/storm-dance.test.cjs` 與本紀錄；衝突預檢通過。沿用位移曲線，無Runtime或技能改動；author改為基於現有編輯器存檔更新，避免重製覆蓋手調外觀。
+- 驗證：`node --test tests/storm-dance.test.cjs` 4/4；`node --test --test-name-pattern="STORM-DANCE|STATUS-" tests/vfx-runtime.test.cjs` 4/4；`node tools/build_check.cjs` 379檔通過。與修改前備份逐欄比較，僅8道光錐位移曲線和Preset週期不同。測試尺寸斷言改為使用者手調後的半徑／高度比例，保留名目20米寬與預算檢查。瀏覽器兩個時間點確認光錐位置變化、保持直立與俯視底圈，Console無error/warn。
+- 檢查未修改 `js/vfx-core.js`、`tests/vfx-runtime.test.cjs`、layout。素材庫 `0d95504`，Preset逐位元一致；遊戲Commit見本紀錄所在提交。未重跑完整實機戰鬥；無未完成實作，可合併，未推送或合併。下一步使用者檢查旋轉速度。
+
 ## Codex｜暴風光壁俯視透明度（STORM-WALL-VIEW-20260918）
 
 - Owner Codex；Done。使用者回報像仰視。將底圈與壁面拆成前後半圈，遠側更透明、近側加強；白光降亮避免底圈過曝像浮在上方。保持半徑10米／高3米與圓錐，僅改 `tools/vfx/authoring/author/storm-dance.cjs`、`vfx/presets/ground-storm-dance.json`、`vfx/layouts/ground-storm-dance.json`、`tests/storm-dance.test.cjs` 與本紀錄；衝突預檢通過。
