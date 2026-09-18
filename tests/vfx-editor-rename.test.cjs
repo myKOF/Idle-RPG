@@ -6,7 +6,9 @@
 
    受測對象：
      tools/vfx/editor-server.cjs   POST /__rename-preset：特效檔與分組檔一起換名字、
-                                   檔案裡的名字跟著換、有人用的不改、途中失敗就還原
+                                   檔案裡的名字跟著換、有人用也照改（列出用到的地方）、
+                                   寫新名字途中失敗就還原、舊檔被佔用就延後刪除
+     tools/vfx/editor/history.js   rewrite：改名後復原紀錄整批換成新名字（復原不包含改名）
      tools/vfx/editor/editor.js    「重新命名」按鈕的流程接線
 
    伺服器一律打真的 HTTP，每個案例在自己的沙箱 repo 裡跑。「沒有動到別的檔」一律拿整棵樹
@@ -138,7 +140,12 @@ test('RENAME-1 改名：特效檔與分組檔一起換名字、檔案裡的名�
 
   const res = await post(port, { from: 'demo-basic', to: 'demo-basic-renamed' });
   assert.equal(res.status, 200, res.text);
-  assert.deepStrictEqual(res.json, { ok: true, from: 'demo-basic', to: 'demo-basic-renamed', layout: true });
+  assert.deepStrictEqual(res.json, {
+    ok: true, from: 'demo-basic', to: 'demo-basic-renamed', layout: true,
+    presetText: fs.readFileSync(path.join(sb.presets, 'demo-basic-renamed.json'), 'utf8'),
+    layoutText: fs.readFileSync(path.join(sb.layouts, 'demo-basic-renamed.json'), 'utf8'),
+    references: [], pendingDelete: [], warnings: []
+  }, '回傳寫出去的內容（頁面拿它當已存檔的基準線）與提醒');
 
   assert.equal(fs.readFileSync(path.join(sb.presets, 'demo-basic-renamed.json'), 'utf8'),
     VFXCore.serialisePreset(Object.assign({}, original, { id: 'demo-basic-renamed' })),
@@ -188,56 +195,54 @@ test('RENAME-3 開頭有 BOM 的檔照樣能改（瀏覽器打得開的，改名
 }));
 
 /* ============================================================
-   有人用的不改
+   有人用也照改（2026-09-18 使用者：想改就改，用到的技能會失去特效，他自己調）
    ============================================================ */
 
-test('RENAME-4 有人用的特效不改名：列出用在哪裡；dryRun 只檢查；問名字之後才加的引用也擋得住', withRepo(async function (sb, port) {
+test('RENAME-4 有技能或程式用到也照改名：回應列出用到舊名字的地方，不擋', withRepo(async function (sb, port) {
+  fs.mkdirSync(path.join(sb.repoRoot, 'config', 'CSV'), { recursive: true });
+  fs.writeFileSync(path.join(sb.repoRoot, 'config', 'CSV', 'Status.csv'),
+    '狀態ID,狀態名稱,持續特效\nsgBurn,燃燒,demo-basic\n');
   fs.writeFileSync(path.join(sb.repoRoot, 'js', 'data.js'), "var X = { hit: 'demo-basic' };\n");
   fs.mkdirSync(path.join(sb.repoRoot, 'vfx', 'coverage-specs'));
   fs.writeFileSync(path.join(sb.repoRoot, 'vfx', 'coverage-specs', 'demo-basic.json'), '{}');
-  const before = snapshotMap(sb.base);
-  const blockers = ['覆蓋規格 vfx/coverage-specs/demo-basic.json', '程式碼 js/data.js'];
 
-  let res = await post(port, { from: 'demo-basic', dryRun: true });
+  const res = await post(port, { from: 'demo-basic', to: 'demo-x' });
   assert.equal(res.status, 200, res.text);
-  assert.deepStrictEqual(res.json, { ok: true, dryRun: true, from: 'demo-basic', blockers: blockers });
+  assert.deepStrictEqual(res.json.references, ['燃燒'], '與下拉的用途標註同一份來源：配置表與人工清單');
+  assert.ok(fs.existsSync(path.join(sb.presets, 'demo-x.json')));
+  assert.ok(!fs.existsSync(path.join(sb.presets, 'demo-basic.json')));
+  /* 配置表與程式碼是使用者自己要改的東西，改名不碰它們 */
+  assert.equal(fs.readFileSync(path.join(sb.repoRoot, 'js', 'data.js'), 'utf8'), "var X = { hit: 'demo-basic' };\n");
 
-  res = await post(port, { from: 'demo-basic', to: 'demo-x' });
-  assert.equal(res.status, 409, res.text);
-  assert.deepStrictEqual(res.json.blockers, blockers);
-  assert.deepStrictEqual(changedPaths(before, snapshotMap(sb.base)), [], 'dryRun 與被擋下的改名都不動任何檔');
-
-  /* 頁面先 dryRun（沒人用）→ 使用者慢慢取名字 → 這段時間有人把它寫進程式 → 真正改名時要再擋一次 */
-  res = await post(port, { from: 'burst-explosion-sheet', dryRun: true });
-  assert.deepStrictEqual(res.json.blockers, []);
-  fs.writeFileSync(path.join(sb.repoRoot, 'js', 'later.js'), "play('burst-explosion-sheet');\n");
-  res = await post(port, { from: 'burst-explosion-sheet', to: 'burst-x' });
-  assert.equal(res.status, 409, '改名時要重新檢查，不能只信頁面先前的 dryRun');
-  assert.deepStrictEqual(res.json.blockers, ['程式碼 js/later.js']);
+  /* 以前的「先檢查」請求已經沒有了：沒有新名字就是不合法的請求 */
+  const dry = await post(port, { from: 'burst-explosion-sheet', dryRun: true });
+  assert.equal(dry.status, 400, dry.text);
   assert.ok(fs.existsSync(path.join(sb.presets, 'burst-explosion-sheet.json')));
-
-  res = await post(port, { from: 'no-such-preset', dryRun: true });
-  assert.equal(res.status, 404);
 }));
 
 /* ============================================================
-   不蓋掉任何檔、不收不合法的輸入
+   不蓋掉別的特效、不收不合法的輸入
    ============================================================ */
 
-test('RENAME-5 新名字已經有特效、或有殘留的分組檔：擋下，一個檔都不動', withRepo(async function (sb, port) {
+test('RENAME-5 新名字已經有特效：擋下，一個檔都不動；只有殘留的分組檔：換掉它照樣改名', withRepo(async function (sb, port) {
   const before = snapshotMap(sb.base);
   let res = await post(port, { from: 'demo-basic', to: 'burst-explosion-sheet' });
   assert.equal(res.status, 409, res.text);
   assert.match(res.json.error, /已經有一份叫「burst-explosion-sheet」/);
   assert.deepStrictEqual(changedPaths(before, snapshotMap(sb.base)), []);
 
-  /* 只有分組檔、沒有特效：接收下來的話，改名後的特效會套上別人的分組 */
+  /* 只有分組檔、沒有特效：不屬於任何特效。這份有分組就覆寫它，改名後不會套上別人的分組 */
   fs.writeFileSync(path.join(sb.layouts, 'leftover.json'), '{"x":1}');
-  const before2 = snapshotMap(sb.base);
   res = await post(port, { from: 'demo-basic', to: 'leftover' });
-  assert.equal(res.status, 409, res.text);
-  assert.match(res.json.error, /殘留的分組檔/);
-  assert.deepStrictEqual(changedPaths(before2, snapshotMap(sb.base)), []);
+  assert.equal(res.status, 200, res.text);
+  assert.equal(readJson(sb.layouts, 'leftover').presetId, 'leftover', '殘留的分組檔被這份的分組換掉');
+
+  /* 這份沒有分組：殘留的分組檔直接刪掉 */
+  fs.unlinkSync(path.join(sb.layouts, 'burst-explosion-sheet.json'));
+  fs.writeFileSync(path.join(sb.layouts, 'stray.json'), '{"x":1}');
+  res = await post(port, { from: 'burst-explosion-sheet', to: 'stray' });
+  assert.equal(res.status, 200, res.text);
+  assert.ok(!fs.existsSync(path.join(sb.layouts, 'stray.json')));
 }));
 
 test('RENAME-6 名字不合法、不存在、或與原本相同：擋下，一個檔都不動', withRepo(async function (sb, port) {
@@ -304,18 +309,10 @@ test('RENAME-8 內容不合法（特效、分組、不是 JSON）就不改名：
    途中失敗
    ============================================================ */
 
-const STEPS = ['write-preset', 'write-layout', 'remove-old-layout', 'remove-old-preset'];
-
-test('RENAME-9 動檔的每一步失敗都倒回去：整棵樹與改名前一模一樣', async function () {
-  for (const failAt of STEPS) {
+test('RENAME-9 寫新名字的任一步失敗都倒回去（整棵樹不變）；刪舊檔失敗不倒回，舊檔留著請使用者手動刪', async function () {
+  for (const failAt of ['write-preset', 'write-layout']) {
     await withRepo(async function (sb, port, ctx) {
-      const seen = [];
-      ctx.hooks = {
-        renameStep: function (name) {
-          seen.push(name);
-          if (name === failAt) throw new Error('注入：' + name + ' 失敗');
-        }
-      };
+      ctx.hooks = { renameStep: function (name) { if (name === failAt) throw new Error('注入：' + name + ' 失敗'); } };
       const before = snapshotMap(sb.base);
       const res = await post(port, { from: 'demo-basic', to: 'demo-x' });
       assert.equal(res.status, 500, failAt + '：' + res.text);
@@ -323,9 +320,21 @@ test('RENAME-9 動檔的每一步失敗都倒回去：整棵樹與改名前一�
       assert.equal(res.json.incomplete, false);
       assert.deepStrictEqual(changedPaths(before, snapshotMap(sb.base)), [], failAt + ' 失敗後要完全還原');
       assert.deepStrictEqual(leftovers(sb), []);
-      /* 先寫新的、再刪舊的：途中當掉最多是新舊並存，不會兩份都沒有 */
-      assert.deepStrictEqual(seen.filter(function (s) { return s.indexOf('undo:') < 0; }),
-        STEPS.slice(0, STEPS.indexOf(failAt) + 1));
+    })();
+  }
+  /* 新名字已經完整寫好之後才刪舊的：刪不掉（不是被佔用）也不退回改名，舊檔留著並說明 */
+  for (const failAt of ['remove-old-layout', 'remove-old-preset']) {
+    await withRepo(async function (sb, port, ctx) {
+      ctx.hooks = { renameStep: function (name) { if (name === failAt) throw new Error('注入：' + name + ' 失敗'); } };
+      const res = await post(port, { from: 'demo-basic', to: 'demo-x' });
+      assert.equal(res.status, 200, failAt + '：' + res.text);
+      assert.equal(readJson(sb.presets, 'demo-x').id, 'demo-x');
+      assert.equal(readJson(sb.layouts, 'demo-x').presetId, 'demo-x');
+      const dir = failAt === 'remove-old-layout' ? 'vfx/layouts' : 'vfx/presets';
+      assert.ok(fs.existsSync(path.join(sb.repoRoot, dir, 'demo-basic.json')), '刪不掉的舊檔留著');
+      assert.equal(res.json.warnings.length, 1);
+      assert.match(res.json.warnings[0], new RegExp(dir + '/demo-basic\\.json 沒刪掉，請手動刪除'));
+      assert.deepStrictEqual(res.json.pendingDelete, [], '不是被佔用：不排進自動刪除');
     })();
   }
 });
@@ -346,27 +355,24 @@ test('RENAME-10 落檔本身失敗（暫存檔換上去的那一步）也一樣�
   assert.deepStrictEqual(leftovers(sb), []);
 }));
 
-test('RENAME-11 還原也失敗時停在那一步，照磁碟上現在的樣子回報，不把僅存的一份刪掉', withRepo(async function (sb, port, ctx) {
-  const layoutBefore = readJson(sb.layouts, 'demo-basic');
+test('RENAME-11 還原也失敗時停在那一步，照磁碟上現在的樣子回報', withRepo(async function (sb, port, ctx) {
   ctx.hooks = {
     renameStep: function (name) {
-      if (name === 'remove-old-preset') throw new Error('注入：舊特效刪不掉');
-      if (name === 'undo:restore-old-layout') throw new Error('注入：舊分組寫不回去');
+      if (name === 'write-layout') throw new Error('注入：新分組寫不出去');
+      if (name === 'undo:remove-new-preset') throw new Error('注入：新特效刪不掉');
     }
   };
   const res = await post(port, { from: 'demo-basic', to: 'demo-x' });
   assert.equal(res.status, 500, res.text);
   assert.equal(res.json.incomplete, true);
-  assert.match(res.json.error, /沒能完全還原.*注入：舊特效刪不掉/);
+  assert.match(res.json.error, /沒能完全還原.*注入：新分組寫不出去/);
   assert.deepStrictEqual(res.json.problems, [
-    '還原停在 restore-old-layout：注入：舊分組寫不回去（後面的還原沒有做，新名字的檔案留著，免得把僅存的一份也刪掉）',
+    '還原停在 remove-new-preset：注入：新特效刪不掉',
     'vfx/presets/demo-basic.json：在',
     'vfx/presets/demo-x.json：在',
-    'vfx/layouts/demo-basic.json：不在',
-    'vfx/layouts/demo-x.json：在'
+    'vfx/layouts/demo-basic.json：在',
+    'vfx/layouts/demo-x.json：不在'
   ]);
-  /* 舊分組已經刪了、又寫不回去：新名字那一份是僅存的分組，不能跟著刪 */
-  assert.deepStrictEqual(readJson(sb.layouts, 'demo-x').groups[0].layerIds, layoutBefore.groups[0].layerIds);
 }));
 
 test('RENAME-13 目錄被換成指到 repo 外面的 junction：動檔之前就擋下，外面的檔一個都不碰', withRepo(async function (sb, port) {
@@ -383,6 +389,95 @@ test('RENAME-13 目錄被換成指到 repo 外面的 junction：動檔之前就�
 }));
 
 /* ============================================================
+   檔案被佔用（2026-09-18 使用者：鎖住也照改，他之後重啟遊戲）
+   ============================================================ */
+
+function busy(code) { const e = new Error('注入：被佔用'); e.code = code || 'EBUSY'; return e; }
+
+test('RENAME-14 舊檔被佔用：照樣改名，舊檔排進延後刪除；清單不列舊名字；佔用解除後自動刪掉', withRepo(async function (sb, port, ctx) {
+  ctx.pendingRetryMs = 60 * 60 * 1000;      // 由測試自己呼叫重試，不靠計時器
+  let locked = true;
+  ctx.hooks = {
+    renameStep: function (name) {
+      if (locked && (name === 'remove-old-preset' || name === 'retry-delete')) throw busy('EPERM');
+    }
+  };
+  try {
+    const res = await post(port, { from: 'demo-basic', to: 'demo-x' });
+    assert.equal(res.status, 200, res.text);
+    assert.deepStrictEqual(res.json.pendingDelete, ['vfx/presets/demo-basic.json']);
+    assert.ok(fs.existsSync(path.join(sb.presets, 'demo-x.json')), '新名字已經在了');
+    assert.ok(fs.existsSync(path.join(sb.presets, 'demo-basic.json')), '舊檔被佔用，暫時還在');
+    assert.ok(!fs.existsSync(path.join(sb.layouts, 'demo-basic.json')), '沒被佔用的舊分組照常刪掉');
+
+    let list = await request(port, { path: '/__presets' });
+    assert.ok(list.json.presets.indexOf('demo-basic') < 0, '等待刪除的舊名字不列在清單上');
+    assert.ok(list.json.presets.indexOf('demo-x') >= 0);
+
+    editorServer.__testOnly.retryPendingDeletes(ctx);
+    assert.ok(fs.existsSync(path.join(sb.presets, 'demo-basic.json')), '還被佔用就繼續等');
+    locked = false;                          // 使用者重啟了遊戲
+    editorServer.__testOnly.retryPendingDeletes(ctx);
+    assert.ok(!fs.existsSync(path.join(sb.presets, 'demo-basic.json')), '佔用解除後自動刪掉');
+    assert.deepStrictEqual(ctx.pendingDeletes, []);
+  } finally {
+    clearInterval(ctx.pendingTimer);
+  }
+}));
+
+test('RENAME-15 延後刪除只刪「還是改名當下那一份」的舊檔；改回等待刪除中的名字也可以', withRepo(async function (sb, port, ctx) {
+  ctx.pendingRetryMs = 60 * 60 * 1000;
+  ctx.hooks = { renameStep: function (name) { if (name === 'remove-old-preset') throw busy(); } };
+  try {
+    /* 等待刪除期間，有人用舊名字存了一份新的：那不是舊檔，不能刪 */
+    let res = await post(port, { from: 'demo-basic', to: 'demo-x' });
+    assert.equal(res.status, 200, res.text);
+    fs.writeFileSync(path.join(sb.presets, 'demo-basic.json'), JSON.stringify(readJson(sb.presets, 'demo-x')));
+    ctx.hooks = null;
+    editorServer.__testOnly.retryPendingDeletes(ctx);
+    assert.ok(fs.existsSync(path.join(sb.presets, 'demo-basic.json')), '內容變了就不是我們的舊檔');
+    assert.deepStrictEqual(ctx.pendingDeletes, [], '也不再追著它刪');
+
+    /* A→B 時 A 被佔用，接著又 B→A：A 是要丟掉的舊檔，不算撞名 */
+    ctx.hooks = { renameStep: function (name) { if (name === 'remove-old-preset') throw busy(); } };
+    res = await post(port, { from: 'burst-explosion-sheet', to: 'burst-b' });
+    assert.deepStrictEqual(res.json.pendingDelete, ['vfx/presets/burst-explosion-sheet.json']);
+    ctx.hooks = null;
+    res = await post(port, { from: 'burst-b', to: 'burst-explosion-sheet' });
+    assert.equal(res.status, 200, res.text);
+    assert.equal(readJson(sb.presets, 'burst-explosion-sheet').id, 'burst-explosion-sheet');
+    assert.ok(!fs.existsSync(path.join(sb.presets, 'burst-b.json')));
+    assert.deepStrictEqual(ctx.pendingDeletes, [], '改回來之後不能再把它當舊檔刪掉');
+  } finally {
+    clearInterval(ctx.pendingTimer);
+  }
+}));
+
+/* ============================================================
+   復原不包含改名
+   ============================================================ */
+
+test('RENAME-16 復原紀錄可以整批改寫：步數、指標、標籤不變，復原套回來的是改寫後的樣子', function () {
+  const VFXHistory = require('../tools/vfx/editor/history.js');
+  let cur = { preset: 'old:1', layout: null };
+  const h = VFXHistory.create({
+    capture: function () { return Object.assign({}, cur); },
+    apply: function (s) { cur = Object.assign({}, s); },
+    equal: function (a, b) { return a.preset === b.preset; }
+  });
+  h.execute('第一步', function () { cur.preset = 'old:2'; });
+  h.execute('第二步', function () { cur.preset = 'old:3'; });
+  h.undo();
+  const before = h.debug();
+  h.rewrite(function (s) { return Object.assign({}, s, { preset: s.preset.replace('old:', 'new:') }); });
+  assert.deepStrictEqual(h.debug(), before, '步數、指標、標籤都不動');
+  h.undo();
+  assert.equal(cur.preset, 'new:1', '復原回去的是改寫後的樣子：名字不會被退回');
+  h.redo(); h.redo();
+  assert.equal(cur.preset, 'new:3');
+});
+
+/* ============================================================
    Editor 接線
    ============================================================ */
 
@@ -393,7 +488,7 @@ function fnBody(src, name) {
   return rest.slice(0, rest.indexOf('\n  }\n'));
 }
 
-test('RENAME-12 Editor：按鈕在另存新檔旁邊；先檢查有沒有人用、再問名字；未存檔先問；改完用新名字重開', function () {
+test('RENAME-12 Editor：按鈕在另存新檔旁邊；直接問名字；不先存檔、不重新開啟，就地換名字；用到的地方用提醒列出', function () {
   const html = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/index.html'), 'utf8');
   const saveAsAt = html.indexOf('id="btn-save-as"');
   const renameAt = html.indexOf('id="btn-rename"');
@@ -407,23 +502,26 @@ test('RENAME-12 Editor：按鈕在另存新檔旁邊；先檢查有沒有人用�
   const rename = fnBody(src, 'renamePreset');
   assert.ok(/state\.isNew \|\| state\.sourcePresetId === null/.test(rename),
     '還沒存進 repo 的（新特效、從本機匯入的）沒有檔案可以改名');
-  const checkAt = rename.indexOf('dryRun: true');
-  const askAt = rename.indexOf("askPresetName(from, 'rename')");
-  assert.ok(checkAt > 0 && askAt > checkAt, '先問伺服器有沒有人用，被擋下的就不必讓人白取一個名字');
+  assert.ok(rename.indexOf('dryRun') < 0, '不先檢查有沒有人用：想改就改');
+  assert.ok(rename.indexOf("askPresetName(from, 'rename')") >= 0);
 
   const commit = fnBody(src, 'commitRename');
-  assert.ok(/ctx\.closed \|\| state\.staleDoc/.test(commit), '問名字時視窗換了別份特效，就不能在這個視窗重開');
-  const dirtyAt = commit.indexOf('if (isDirty())');
-  /* 比對整個條件句，不是只比「有沒有 window.confirm」：寫成 if (false && !window.confirm(…)) 也有那幾個字 */
-  const confirmAt = commit.indexOf('if (!window.confirm(');
-  const saveAt = commit.indexOf('savePreset()');
-  const layoutAt = commit.indexOf('state.layoutSave');
+  assert.ok(/ctx\.closed \|\| state\.staleDoc/.test(commit), '問名字時視窗換了別份特效，就不改');
+  assert.ok(commit.indexOf('window.confirm') < 0 && commit.indexOf('savePreset()') < 0,
+    '不先問、不先存檔：改名只換名字，沒存的修改改完仍然沒存');
+  assert.ok(commit.indexOf('openPresetInPane') < 0, '不重新開啟：那會丟掉沒存的修改與復原紀錄');
+  const waitAt = commit.indexOf('state.layoutSave');
   const requestAt = commit.indexOf('renameRequest({ from: from, to: to })');
-  const reopenAt = commit.indexOf('openPresetInPane(ctx, to,');
-  assert.ok(dirtyAt > 0 && confirmAt > dirtyAt && saveAt > confirmAt && layoutAt > saveAt && requestAt > layoutAt,
-    '有未存檔的修改：先問 → 存特效 → 等分組也存好 → 才請伺服器改名（伺服器搬的是磁碟上的檔）');
-  assert.ok(reopenAt > requestAt, '改完用新名字重新開啟：復原紀錄裡每一步都還帶著舊名字');
-  assert.ok(/keepRuntime: true/.test(commit.slice(reopenAt)));
+  const adoptAt = commit.indexOf('adoptRename(from, to, body)');
+  assert.ok(waitAt > 0 && requestAt > waitAt && adoptAt > requestAt, '等分組存完 → 請伺服器改名 → 就地換名字');
+  assert.ok(/body\.references/.test(commit) && /body\.pendingDelete/.test(commit) && /showSaveNotice\(/.test(commit),
+    '用到舊名字的地方、被佔用的舊檔用提醒列出來');
+
+  const adopt = fnBody(src, 'adoptRename');
+  assert.ok(/state\.history\.rewrite\(/.test(adopt), '復原紀錄整批換成新名字：Ctrl+Z 不會把名字退回去');
+  assert.ok(/state\.savedText = body\.presetText/.test(adopt), '已存檔的基準線＝伺服器寫出去的內容');
+  assert.ok(/renameRootGroup\(to\)/.test(adopt), '根群組跟著換名字');
+  assert.ok(/registerPreset\(state\.preset\)/.test(adopt), '預覽要用新名字註冊');
 
   const ask = fnBody(src, 'askPresetName');
   assert.ok(/purpose: purpose/.test(ask), '問名字的視窗要知道是重新命名（標題與說明不同）');

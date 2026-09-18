@@ -4406,6 +4406,7 @@
       /* 橫幅是「剛才那一下失敗了」的當場回饋，背景視窗的也要講（存檔回應晚到時焦點
          可能已經換走）——標出是哪個視窗，免得看起來像是眼前這一份出錯 */
       body.textContent = (state.inBackground && panes.length > 1 ? paneLabel(ctx) + '：' : '') + text;
+      banner.classList.remove('note');        // 前一則若是提醒（黃色），錯誤要換回紅色
       banner.hidden = false;
       banner.scrollTop = 0;                   // 上一則捲到一半時，新的一則要從頭看
     }
@@ -4416,6 +4417,17 @@
   function clearSaveError() {
     var banner = $('save-error');
     if (banner) banner.hidden = true;
+  }
+  /* 同一條橫幅的提醒版（黃色）：事情做完了，但有使用者該知道的後續（例如改名後還寫著舊名字的技能）。
+     不寫進右側驗證面板——那裡講的是這份特效合不合法，提醒不是錯誤。 */
+  function showSaveNotice(title, list) {
+    var banner = $('save-error');
+    var body = $('save-error-text');
+    if (!banner || !body) return;
+    body.textContent = title + (list && list.length ? '：\n- ' + list.join('\n- ') : '');
+    banner.classList.add('note');
+    banner.hidden = false;
+    banner.scrollTop = 0;
   }
 
   /* Save：把目前的 Preset 回寫到 repo 的 vfx/presets/<preset.id>.json。
@@ -4719,23 +4731,21 @@
   /* ---------------- 重新命名 ----------------
 
      幫目前這份特效換名字（2026-09-18 使用者要求：除了另存新檔，也要能直接改名）。
-     搬檔在伺服器做（POST /__rename-preset）：特效檔與分組檔一起換名字、檔案裡的名字跟著換，
-     途中失敗就還原（見 editor-server.cjs 的 renamePresetFiles）。頁面負責問名字、
-     先存未存的修改、改完用新名字重新開啟。
+     搬檔在伺服器做（POST /__rename-preset）：特效檔與分組檔一起換名字、檔案裡的名字跟著換
+     （見 editor-server.cjs 的 renamePresetFiles）。頁面負責問名字，改完就地換成新名字。
 
-     遊戲、程式、測試有用到的特效不能改：那些地方寫著舊名字，改了就找不到它，而編輯器改不動
-     它們（配置表的來源是 Excel）。所以問名字之前先請伺服器檢查一次，被擋下的直接列出用在哪裡，
-     不必讓人白取一個名字；真正改名時伺服器會再檢查一次。
+     使用者定的規則（2026-09-18）：
+       - 想改就改：配置表或程式用到舊名字的，改完那些地方會失去特效，由使用者自己調整。
+         不擋，改完用提醒橫幅列出用到的地方。
+       - 檔案被遊戲或其他程式鎖住也照改：舊檔刪不掉的由伺服器延後刪除，改完照樣提醒。
+       - 復原不包含改名：改名不是復原紀錄裡的一步，Ctrl+Z 不會把名字退回去；
+         改名前的編輯照樣可以復原（復原紀錄裡每一步都換成新名字，見 adoptRename）。
+     所以改名只換名字，不動內容：沒存的修改改完仍然是沒存的，不先存檔、也不重新開啟。 */
 
-     有未存檔的修改時先問：確定＝先存檔再改名（修改一起帶到新名字）；取消＝不改名，修改留在
-     畫面上。沒有「不存就改名」：改完會從磁碟用新名字重新開啟，沒存的修改會跟著消失。
-     一定要重新開啟，也是因為復原紀錄：裡面每一步都還帶著舊名字，留著的話一按復原名字就改回去，
-     下一次存檔又寫出一份舊名字的檔。 */
-
-  /* 整段流程（檢查、問名字、存檔、改名、重開）進行中為 true：連按兩下不能跑出兩個 */
+  /* 整段流程（問名字、改名）進行中為 true：連按兩下不能跑出兩個 */
   var renaming = false;
 
-  /* 回傳 Promise<伺服器回應>；失敗時丟出的錯誤帶著伺服器給的 blockers／problems／incomplete。
+  /* 回傳 Promise<伺服器回應>；失敗時丟出的錯誤帶著伺服器給的 problems／incomplete。
      fromServer：有收到伺服器的回應。沒有的話（連線斷了）不知道伺服器做到哪一步，不能說「沒變動」。 */
   function renameRequest(payload) {
     return fetch(RENAME_URL, {
@@ -4750,7 +4760,6 @@
           ? '編輯器伺服器是舊版，還沒有重新命名。關掉「VFX 編輯器伺服器」視窗，再執行一次 啟動VFX編輯器.bat。'
           : (body.error || ('HTTP ' + r.status)));
         err.fromServer = true;
-        err.blockers = body.blockers || [];
         err.problems = body.problems || [];
         err.incomplete = body.incomplete === true;
         throw err;
@@ -4760,9 +4769,7 @@
 
   function showRenameError(from, e) {
     var lines = [String(e && e.message || e)].concat((e && e.problems) || []);
-    if (e && e.blockers && e.blockers.length) {
-      showSaveError('無法重新命名「' + from + '」：下面這些地方用到它，改名後會找不到它', e.blockers);
-    } else if (e && e.incomplete) {
+    if (e && e.incomplete) {
       showSaveError('重新命名失敗，而且沒能完全還原，請照下面的清單檢查檔案', lines);
     } else if (e && e.fromServer) {
       showSaveError('重新命名失敗，特效還是原本的名字「' + from + '」', lines);
@@ -4785,20 +4792,9 @@
     }
     var from = state.sourcePresetId;
     renaming = true;
-    setSaveStatus('檢查有沒有被用到…', '');
     /* 每一步都綁在按下按鈕的那個視窗與那一份特效上（視窗可能開很久，焦點可能換走） */
-    renameRequest({ from: from, dryRun: true }).then(bindPane(function (check) {
-      setSaveStatus('', '');
-      if (check.blockers && check.blockers.length) {
-        showSaveError('無法重新命名「' + from + '」：下面這些地方用到它，改名後會找不到它。' +
-          '真的要換名字，得先把這些地方改掉（配置表請改 Excel），或用「另存新檔」存一份新名字的再換過去',
-          check.blockers);
-        setSaveStatus('無法重新命名', 'err');
-        return null;
-      }
-      return askPresetName(from, 'rename').then(bindPane(function (answer) {
-        return answer ? commitRename(from, answer) : null;
-      }));
+    askPresetName(from, 'rename').then(bindPane(function (answer) {
+      return answer ? commitRename(from, answer) : null;
     })).catch(bindPane(function (e) {
       showRenameError(from, e);
     })).then(function () {
@@ -4820,56 +4816,129 @@
       return null;
     }
     /* 問名字的這段時間，這個視窗可能被關掉、或換成了別份特效。那就不改：
-       改完要在這個視窗用新名字重新開啟，會把現在開著的那一份換掉。 */
-    if (ctx.closed || state.staleDoc) {
+       改名要換的是按下按鈕時的那一份，不能換到眼前另一份身上。 */
+    if (ctx.closed || state.staleDoc || state.sourcePresetId !== from) {
       showSaveError('沒有重新命名「' + from + '」',
         ['問名字的這段時間，這個視窗已經關掉或換成別份特效了，所以沒有改名。']);
       return null;
     }
-
-    var saved = Promise.resolve(null);
-    if (isDirty()) {
-      if (!window.confirm('「' + from + '」有未存檔的修改。\n\n' +
-          '確定：先存檔，再改名為「' + to + '」（修改一起帶過去）\n' +
-          '取消：不改名，修改留在畫面上')) {
-        setSaveStatus('已取消重新命名', '');
-        return null;
+    setSaveStatus('重新命名中…', '');
+    /* 分組檔還在寫的話先等它：伺服器搬的是磁碟上的分組檔，晚到的舊名字寫入會在改名後
+       再長出一份舊名字的分組檔 */
+    return Promise.resolve(state.layoutSave).then(bindPane(function () {
+      return renameRequest({ from: from, to: to });
+    })).then(bindPane(function (body) {
+      adoptRename(from, to, body);
+      var notes = [];
+      if (body.references && body.references.length) {
+        notes.push('這些地方還寫著舊名字「' + from + '」，會失去特效，要自己改成「' + to + '」：' +
+          body.references.join('、'));
       }
-      /* 回傳 null＝存好了；字串＝沒存成的原因（savePreset 已經把細節顯示出來了） */
-      saved = savePreset().then(bindPane(function (ok) {
-        if (!ok) return '存檔失敗，未改名';
-        /* 分組是另一個檔，要等它也寫完：伺服器搬的是磁碟上的分組檔 */
-        return Promise.resolve(state.layoutSave).then(function (layoutOk) {
-          return layoutOk === false ? '分組沒存成功，未改名' : null;
-        });
-      }));
-    }
-    return saved.then(bindPane(function (notSaved) {
-      if (notSaved) {
-        setSaveStatus(notSaved, 'err');
-        return null;
+      if (body.pendingDelete && body.pendingDelete.length) {
+        notes.push('舊檔被其他程式佔用，暫時刪不掉：' + body.pendingDelete.join('、') +
+          '。伺服器會在佔用解除後自動刪掉（例如重啟遊戲之後），清單上已經看不到舊名字。');
       }
-      setSaveStatus('重新命名中…', '');
-      return renameRequest({ from: from, to: to }).then(bindPane(function () {
-        /* 選單的篩選字串換成新名字（與另存新檔同一個理由：舊名字已經篩不到任何東西），
-           清單重抓——舊名字要消失、新名字要出現，網址也要等清單有新名字才寫得進去 */
-        rememberComboQuery(to);
-        fillPresetPicker();
-        return openPresetInPane(ctx, to, {
-          keepRuntime: true,                     // 內容一樣，貼圖不必重載
-          /* 狀態列在工具列裡，放長句會把整排按鈕擠到被截斷（兩個長 id 就超過 500px），補充說明放滑鼠提示 */
-          status: '已重新命名為 ' + to,
-          statusTitle: '原本的「' + from + '」已不存在：特效檔與分組檔都換成了新名字'
-        }).then(bindPane(function (opened) {
-          if (opened) return;
-          /* 檔案已經改名，這個視窗卻還是改名前的那一份：在這裡存檔會用舊名字再寫出一份 */
-          showSaveError('已重新命名為「' + to + '」，但沒能用新名字重新開啟', [
-            '檔案已經改名（' + from + ' 已不存在）。這個視窗顯示的還是改名前的內容，' +
-            '請從上方的清單開啟「' + to + '」；在這裡按存檔會用舊名字再寫出一份。']);
-          setSaveStatus('已改名，重新開啟失敗', 'err');
-        }));
-      }));
+      (body.warnings || []).forEach(function (w) { notes.push(w); });
+      /* 狀態列在工具列裡，放長句會把整排按鈕擠到被截斷，補充說明放滑鼠提示與橫幅 */
+      setSaveStatus('已重新命名為 ' + to, 'note',
+        '原本的「' + from + '」已經換成「' + to + '」：特效檔與分組檔一起改名。' +
+        (isDirty() ? '改名前沒存的修改仍然沒存。' : ''));
+      if (notes.length) showSaveNotice('已重新命名為「' + to + '」', notes);
     }));
+  }
+
+  /* 把這個視窗的編輯狀態就地換成新名字。伺服器已經把磁碟上的兩個檔換好了
+     （body.presetText／layoutText 是寫出去的內容），這裡要讓頁面上的每一份資料都跟上：
+       - 目前的特效與分組（根群組跟著改名，規則與伺服器同一支 renameRootGroup）
+       - 已存檔的基準線＝伺服器寫出去的內容：沒存的修改仍然算沒存，其餘不會變成「未存檔」
+       - 復原紀錄裡的每一個快照（復原不包含改名：Ctrl+Z 不能把名字退回去）
+       - 選取與收合狀態裡的根群組 key、預覽裡註冊的名字、清單、網址 */
+  function adoptRename(from, to, body) {
+    /* 一份分組文字 → 改名後的文字，以及根群組 key 怎麼換（每個快照的分組可能不同，各算各的） */
+    var layoutMemo = Object.create(null);
+    function renameLayout(text) {
+      if (text === null || text === undefined) return { text: text, keys: null };
+      if (layoutMemo[text]) return layoutMemo[text];
+      var out = { text: text, keys: null };
+      try {
+        var l = JSON.parse(text);
+        l.presetId = to;
+        var before = VFXLayoutSchema.renameRootGroup(l, to);
+        out = { text: VFXLayoutSchema.serialiseLayout(l), keys: groupKeyMap(before) };
+      } catch (e) { /* 解析不了的快照照舊留著：套回去時由 historyApply 自己處理 */ }
+      layoutMemo[text] = out;
+      return out;
+    }
+    function groupKeyMap(before) {
+      if (!before || before.id === to) return null;
+      var m = {};
+      m[keyOf('group', before.id)] = keyOf('group', to);
+      return m;
+    }
+    function mapKey(keys, k) { return keys && keys[k] ? keys[k] : k; }
+    var presetMemo = Object.create(null);
+    function renamePresetText(text) {
+      if (text === null || text === undefined) return text;
+      if (presetMemo[text] !== undefined) return presetMemo[text];
+      var out = text;
+      try {
+        var p = JSON.parse(text);
+        p.id = to;
+        out = VFXCore.serialisePreset(p);
+      } catch (e) { /* 序列化不出來的快照本來就不會被套回去（historyApply 看到 null 才略過） */ }
+      presetMemo[text] = out;
+      return out;
+    }
+
+    if (state.history) {
+      state.history.rewrite(function (snap) {
+        if (!snap) return snap;
+        var l = renameLayout(snap.layout);
+        return {
+          preset: renamePresetText(snap.preset),
+          layout: l.text,
+          selected: (snap.selected || []).map(function (k) { return mapKey(l.keys, k); }),
+          active: mapKey(l.keys, snap.active),
+          anchor: mapKey(l.keys, snap.anchor)
+        };
+      });
+    }
+
+    state.preset.id = to;
+    state.sourcePresetId = to;
+    var keys = null;
+    if (state.layout) {
+      state.layout.presetId = to;
+      var before = renameRootGroup(to);
+      keys = groupKeyMap(before);
+      /* 收合狀態記的是群組 id：根群組換了 id，收合與否要跟過去 */
+      if (keys && state.collapsed && Object.prototype.hasOwnProperty.call(state.collapsed, before.id)) {
+        state.collapsed[to] = state.collapsed[before.id];
+        delete state.collapsed[before.id];
+      }
+    }
+    setSelection(state.selectedKeys.map(function (k) { return mapKey(keys, k); }), mapKey(keys, state.activeKey));
+    state.anchorKey = mapKey(keys, state.anchorKey);
+    /* 收合狀態存在以特效名字為鍵的 localStorage：搬到新名字底下，舊的收掉 */
+    try { window.localStorage.removeItem('vfx-editor.collapsed.' + from); } catch (e) { }
+    saveCollapsed();
+
+    state.savedText = body.presetText;
+    state.savedLayoutText = body.layoutText !== null && body.layoutText !== undefined
+      ? body.layoutText
+      : VFXLayoutSchema.serialiseLayout(VFXLayoutSchema.emptyLayout(to));
+    state.layoutRevision = (state.layoutRevision || 0) + 1;   // 飛在半空的分組存檔不能替改名後的內容背書
+
+    /* 預覽：Core 裡註冊的還是舊名字，預覽循環用新名字重播前要先註冊（另存新檔踩過，見 commitSaveAs） */
+    try { if (state.runtime) state.runtime.registerPreset(state.preset); } catch (e) { }
+
+    rememberComboQuery(to);
+    fillPresetPicker();                        // 清單重抓：舊名字消失、新名字出現，網址也跟著換
+    renderLayerList();
+    renderInspector();
+    onPresetChanged();
+    syncPresetIdentity();
+    renderPaneHeads();
   }
 
   /* 下載一份複本。回寫上線之後這條路仍然留著：要把 Preset 交給別人、
@@ -5390,8 +5459,7 @@
 
   /* 把 repo 裡的一份特效開進視窗。回傳 Promise<boolean>（true＝開好了）。
      opts.keepRuntime  另存新檔之後重開同一份內容：沿用預覽 runtime 與鏡頭
-     opts.status       開好之後狀態列顯示的一行（例如「已另存為 xxx」）
-     opts.statusTitle  那一行的滑鼠提示（放不進工具列的補充說明） */
+     opts.status       開好之後狀態列顯示的一行（例如「已另存為 xxx」） */
   function openPresetInPane(pane, id, opts) {
     var o = opts || {};
     var token = ++pane.loadToken;
@@ -5421,7 +5489,7 @@
            所以一份沒有分組的 preset 打開來不會顯示未存檔。 */
         state.savedLayoutText = VFXLayoutSchema.serialiseLayout(res[1].layout);
         loadCollapsed();
-        setSaveStatus(o.status || '', o.status ? 'ok' : '', o.statusTitle);
+        setSaveStatus(o.status || '', o.status ? 'ok' : '');
         finishDoc(retire, o.keepRuntime);
         if (res[1].error) {
           /* 明確告訴使用者「分組沒載進來」，而不是讓他以為群組被刪光了 */
