@@ -202,3 +202,76 @@ test('STATUS-SLOT-9 參數表：格子語法可往返，錯誤要擋在同步時
   const oldRows = rows.map(r => r.filter((_, i) => i !== iSelf && i !== iEnemy));
   assert.throws(() => table.SCHEMAS.Skills2.rebuild(oldRows, oldHeader), /缺少「我方狀態」「敵方狀態」欄/);
 });
+
+/* ---- 5) 狀態的畫面只由狀態表決定（2026-09-18） ---- */
+
+function captureVfx(c) {
+  const events = [];
+  c.playCombatVfx = (spec) => events.push(spec);
+  return events;
+}
+
+test('STATUS-VFX-1 施加特效只在第一次上身時播，還在身上時重新塗抹不重播', () => {
+  const c = loadContext();
+  const events = captureVfx(c);
+  const m = enemy(1e9);
+  c.applyStatus(m, 'sgPoison', { dps: 10, dur: 5, interval: 0.5 });
+  c.statusTickVfxFlush();
+  const apply = events.filter(e => e.variant === 'status-apply');
+  assert.equal(apply.length, 1);
+  assert.equal(apply[0].vfx.hit, c.statusVfxPreset('sgPoison', 'apply'));
+  assert.equal(apply[0].presetOnly, true, '沒接上 Preset 的顯示層整則忽略');
+  events.length = 0;
+  c.applyStatus(m, 'sgPoison', { dps: 10, dur: 5, interval: 0.5 });
+  c.statusTickVfxFlush();
+  assert.equal(events.filter(e => e.variant === 'status-apply').length, 0);
+});
+
+test('STATUS-VFX-2 每跳特效由 tickStatuses 依狀態表送出，燃燒節拍器不另外畫', () => {
+  const c = loadContext();
+  const events = captureVfx(c);
+  setLevels(c, 'fireball', [1, 1, 1, 1, 1, 1, 0]);
+  const m = enemy(1e9);
+  c.applyStatus(m, 'sgBurn', { dps: 10, dur: 5, interval: 0.5 });
+  c.tickStatuses(m, 0.5);
+  c.sgTickBurn(0.5, { getEnemies: () => [m], pEnt: playerEnt(), floatSel: 'mv-float' });
+  c.statusTickVfxFlush();
+  const ticks = events.filter(e => e.variant === 'status-tick');
+  assert.equal(ticks.length, 1);
+  assert.equal(ticks[0].vfx.hit, c.statusVfxPreset('sgBurn', 'tick'));
+  assert.equal(events.filter(e => e.variant === 'burn-tick').length, 0, '技能節拍器不再送自己的跳傷畫面');
+});
+
+test('STATUS-VFX-3 搬到狀態表的畫面不再留在技能列', () => {
+  const c = loadContext();
+  const moved = [
+    ['fireball', '2', 'hit', 'sgBurn', 'tick'],
+    ['icearrow', '2', 'hit', 'sgFrostBite', 'tick'],
+    ['bloodblade', '4', 'attack', 'sgPoison', 'apply'],
+    ['bloodrage', '1', 'ground', 'sgBloodrage', 'aura'],
+    ['bloodrage', 'asuraFist', 'ground', 'sgAsuraFist', 'aura'],
+    ['dualdance', '7', 'ground', 'sgStorm', 'aura'],
+    ['stormbarrier', '1', 'ground', 'sgStormBarrier', 'aura'],
+    ['stormbarrier', '7', 'ground', 'sgStormGod', 'aura']
+  ];
+  for (const [gid, tier, role, sid, statusRole] of moved) {
+    const row = c.sgStatusRow(gid, tier);
+    assert.ok(!(row.vfx && row.vfx[role]), gid + '.' + tier + ' 的 ' + role + ' 已移到狀態表');
+    assert.ok(c.statusVfxPreset(sid, statusRole), sid + ' 的 ' + statusRole + ' 有填');
+  }
+});
+
+test('STATUS-VFX-4 狂怒、暴風屏障、暴風神體不再自己畫光殼（交給狀態的持續特效）', () => {
+  const c = loadContext();
+  const events = captureVfx(c);
+  setLevels(c, 'bloodrage', [1, 0, 0, 0, 0, 0, 0]);
+  const p = playerEnt();
+  c.castSkill2(p, [enemy(1e9)], 'bloodrage', 'mv-float');
+  assert.ok(p.buffs.sgBloodrage, '狀態照樣上身');
+  setLevels(c, 'stormbarrier', [1, 1, 1, 1, 1, 1, 1]);
+  const p2 = playerEnt();
+  c.castSkill2(p2, [enemy(1e9)], 'stormbarrier', 'mv-float');
+  assert.ok(p2.buffs.sgStormBarrier && p2.buffs.sgStormGod);
+  const auras = events.filter(e => ['bloodrage-aura', 'storm-barrier', 'storm-god', 'cyclone'].includes(e.variant));
+  assert.equal(auras.length, 0);
+});

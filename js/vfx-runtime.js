@@ -1257,7 +1257,9 @@ var VFXRuntime = (function () {
           wanted[k] = true;
           var live = auras[k];
           if (live) { live.expireAt = clock + AURA_KEEP_SEC; return; }
-          var ref = play(rtFx, presetId, { position: footOf(e.key) });
+          /* 純演出：照 Preset 的世界尺寸畫（編輯器看到多大、遊戲就多大，AI_RULES 8.3.2），
+             畫在地板層——腳底光環要在角色下面，與技能表地板特效的層級一致。 */
+          var ref = play(rtZone, presetId, Object.assign(defaultSize(presetId), { position: footOf(e.key) }));
           if (ref) auras[k] = { ref: ref, key: e.key, expireAt: clock + AURA_KEEP_SEC };
         });
       });

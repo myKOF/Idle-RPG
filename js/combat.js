@@ -686,42 +686,59 @@ function hasDots(ent) {
 /* 持續傷害結算：依各狀態的「作用間隔」分段跳傷；回傳是否致死。
    間隔 0＝連續結算。到期時把不足一次間隔的餘額補跳，總傷害維持 dps×持續時間
    （＝改造前的總量，只是改成一跳一跳給），本次改造對數值平衡因此是中性的。 */
-/* ---- 狀態每跳的 Preset 特效（2026-09-03 VFX Preset 化）----
+/* ---- 狀態的 Preset 特效：每跳（作用特效）與第一次上身（施加特效）----
+   （2026-09-03 VFX Preset 化；2026-09-18 狀態的畫面一律只由狀態表決定）
    同一個模擬步驟裡，同一個狀態打在多個敵人身上只送一則事件（最多 8 個目標）；
    逐個敵人各送一則會讓事件量被敵人數放大，那正是 2026-08-18 卡頓那一輪的成因。
-   只有狀態表填了「作用特效」的狀態才送，而且標成 presetOnly——
+   只有狀態表填了該特效的狀態才送，而且標成 presetOnly——
    沒有接上 Preset Runtime 的顯示層必須整則忽略，退回泛用受擊爆點會讓
    每秒兩跳的 DoT 變成滿畫面的火花。
-   ⚠️ skills2 自己已經送過畫面的三種（燃燒／寒霜／流血毒）走的是它們自己的
-   sgTickBurn／sgTickFrost／sgTickBloodDots，那些在 js/skills2.js 帶 vfxRoles；
-   這裡收的是「狀態表驅動、skills2 沒有另外畫」的那些，兩邊不重複。 */
+   每跳的特效只在這裡送：燃燒／寒霜凍傷／流血／中毒不再由 js/skills2.js 的節拍器另外畫
+   （以前那三支會退回技能表的受擊特效，換了階數畫面就跟著變）。
+   施加特效由 js/status.js applyStatus 在「施加前不在、施加後在」時收集。 */
 var STATUS_TICK_VFX = null;
+var STATUS_APPLY_VFX = null;
 var STATUS_TICK_VFX_MAX_TARGETS = 8;
+function statusVfxPush(buffer, ent, sid) {
+    var id = (ent && ent.maxHp) ? enemyEventFloatTarget(ent, null) : 'pv-float';
+    var list = buffer[sid] || (buffer[sid] = []);
+    if (list.length < STATUS_TICK_VFX_MAX_TARGETS && list.indexOf(id) < 0) list.push(id);
+}
 function statusTickVfxCollect(ent, sid) {
     if (!sid || typeof statusVfxRoles !== 'function') return;
     if (!statusVfxRoles(sid, 'tick')) return;
-    var id = (ent && ent.maxHp) ? enemyEventFloatTarget(ent, null) : 'pv-float';
     if (!STATUS_TICK_VFX) STATUS_TICK_VFX = {};
-    var list = STATUS_TICK_VFX[sid] || (STATUS_TICK_VFX[sid] = []);
-    if (list.length < STATUS_TICK_VFX_MAX_TARGETS && list.indexOf(id) < 0) list.push(id);
+    statusVfxPush(STATUS_TICK_VFX, ent, sid);
 }
-function statusTickVfxFlush() {
-    if (!STATUS_TICK_VFX) return;
-    var buffer = STATUS_TICK_VFX;
-    STATUS_TICK_VFX = null;
-    if (typeof playCombatVfx !== 'function') return;
+function statusApplyVfxCollect(ent, sid) {
+    if (!sid || typeof statusVfxRoles !== 'function') return;
+    if (!statusVfxRoles(sid, 'apply')) return;
+    if (!STATUS_APPLY_VFX) STATUS_APPLY_VFX = {};
+    statusVfxPush(STATUS_APPLY_VFX, ent, sid);
+}
+function statusVfxEmit(buffer, role, variant, dur) {
+    if (!buffer) return;
     for (var sid in buffer) {
         if (!Object.prototype.hasOwnProperty.call(buffer, sid)) continue;
         var def = (typeof statusDef === 'function') ? statusDef(sid) : null;
         playCombatVfx({
-            fxKind: 'impact', variant: 'status-tick',
+            fxKind: 'impact', variant: variant,
             elem: (def && def.elem) || null, cat: 'magic',
             glyph: (def && def.icon) || '✨', color: '#c9c9c9',
-            targets: buffer[sid], dur: 0.45, count: 1,
+            targets: buffer[sid], dur: dur, count: 1,
             presetOnly: true,
-            vfx: statusVfxRoles(sid, 'tick')
+            vfx: statusVfxRoles(sid, role)
         });
     }
+}
+/* 兩種都在每個模擬步驟的尾端送出（名稱沿用既有呼叫點）：先上身、再跳傷。 */
+function statusTickVfxFlush() {
+    var apply = STATUS_APPLY_VFX, tick = STATUS_TICK_VFX;
+    STATUS_APPLY_VFX = null;
+    STATUS_TICK_VFX = null;
+    if (typeof playCombatVfx !== 'function') return;
+    statusVfxEmit(apply, 'apply', 'status-apply', 0.6);
+    statusVfxEmit(tick, 'tick', 'status-tick', 0.45);
 }
 
 function tickStatuses(ent, dt, dotContext) {
