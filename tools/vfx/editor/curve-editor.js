@@ -40,6 +40,11 @@ var VFXCurveEditor = (function () {
        這樣一眼就能讀出「生命週期 42% 時，透明度多少、縮放多少、轉了幾度」。
        null 代表沒有游標。 */
     var cursorT = null;
+    /* 拖曳期間凍結的 Y 軸。軸會隨資料放大，拖曳中若每幀重算，點一拉到頂軸就長高、
+       點又落回框內，值會一路暴衝（見 curve-model valueRange 的說明）。
+       凍結之後，拖出框外就照同一個比例繼續換算——想拉多遠就拉多遠，
+       放開時軸重新框住全部的點，再拖一次可以繼續往外。 */
+    var frozenRange = null;
 
     var el = document.createElement('div');
     el.className = 'curve';
@@ -66,7 +71,7 @@ var VFXCurveEditor = (function () {
         h: Math.max(1, boxHeight() - PAD.t - PAD.b)
       };
     }
-    function range() { return M.valueRange(points, policy); }
+    function range() { return frozenRange || M.valueRange(points, policy); }
 
     function toPx(t, v) {
       var b = plotBox(), r = range();
@@ -113,17 +118,16 @@ var VFXCurveEditor = (function () {
         ctx.fillText((i * 25) + '%', x, cssH - 4);
       }
 
-      /* 橫向格線＝值刻度。挑一個「好看的」間距，不要出現 0.3333 這種刻度 */
-      var step = niceStep(r.hi - r.lo);
+      /* 橫向格線＝值刻度。間距在顯示單位裡挑（旋轉是整數角度），見 curve-model tickValues */
       ctx.textAlign = 'right';
-      for (var v = Math.ceil(r.lo / step) * step; v <= r.hi + 1e-9; v += step) {
+      M.tickValues(r, policy).forEach(function (v) {
         var y = Math.round(toPx(0, v).y) + 0.5;
-        if (y < b.y - 1 || y > b.y + b.h + 1) continue;
+        if (y < b.y - 1 || y > b.y + b.h + 1) return;
         ctx.strokeStyle = Math.abs(v) < 1e-9 ? '#3a3a46' : '#22222a';
         ctx.beginPath(); ctx.moveTo(b.x, y); ctx.lineTo(b.x + b.w, y); ctx.stroke();
         ctx.fillStyle = '#6a6a78';
         ctx.fillText(M.formatValue(v, policy), b.x - 4, y + 3);
-      }
+      });
 
       if (!points || !points.length) {
         ctx.fillStyle = '#55555f';
@@ -135,6 +139,8 @@ var VFXCurveEditor = (function () {
       /* 曲線本體。第一點之前與最後一點之後是水平延伸——
          那不是畫面上的裝飾，而是 Core sampleCurve 的實際行為（超出範圍取端點值），
          畫出來才不會讓人以為端點一定要落在 0 與 1。 */
+      ctx.save();
+      ctx.beginPath(); ctx.rect(b.x, b.y, b.w, b.h); ctx.clip();   // 拖出框外時不要畫到刻度文字上
       ctx.strokeStyle = '#7fb2ff';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -147,6 +153,7 @@ var VFXCurveEditor = (function () {
       var lastP = points[points.length - 1];
       ctx.lineTo(b.x + b.w, toPx(1, lastP[1]).y);
       ctx.stroke();
+      ctx.restore();
 
       /* 共用時間游標畫在曲線底下、控制點上面：它是輔助線，不該蓋住要拖的點 */
       if (cursorT !== null) {
@@ -164,6 +171,19 @@ var VFXCurveEditor = (function () {
 
       points.forEach(function (p, i) {
         var q = toPx(p[0], p[1]);
+        /* 拖出框外的點（只會發生在拖曳中，放開後軸會重新框住它）：
+           在框的邊緣畫一個指向它的箭頭，才知道點還在、往哪邊去了 */
+        if (q.y < b.y || q.y > b.y + b.h) {
+          var up = q.y < b.y, ey = up ? b.y : b.y + b.h;
+          ctx.beginPath();
+          ctx.moveTo(q.x, up ? ey - 1 : ey + 1);
+          ctx.lineTo(q.x - 5, up ? ey + 7 : ey - 7);
+          ctx.lineTo(q.x + 5, up ? ey + 7 : ey - 7);
+          ctx.closePath();
+          ctx.fillStyle = i === selected ? '#ffffff' : '#7fb2ff';
+          ctx.fill();
+          return;
+        }
         ctx.beginPath();
         ctx.arc(q.x, q.y, i === selected ? 5 : (i === hover ? 4.5 : 3.5), 0, Math.PI * 2);
         ctx.fillStyle = i === selected ? '#ffffff' : '#7fb2ff';
@@ -172,15 +192,6 @@ var VFXCurveEditor = (function () {
           ctx.strokeStyle = '#7fb2ff'; ctx.lineWidth = 1.5; ctx.stroke();
         }
       });
-    }
-
-    /* 1／2／2.5／5 × 10^n 裡挑一個，讓刻度落在 4~8 條之間 */
-    function niceStep(span) {
-      var raw = span / 5;
-      var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
-      var norm = raw / mag;
-      var mult = norm < 1.5 ? 1 : (norm < 3 ? 2 : (norm < 7 ? 5 : 10));
-      return mult * mag;
     }
 
     /* ---------------- 命中測試 ---------------- */
@@ -208,15 +219,6 @@ var VFXCurveEditor = (function () {
     }
 
     function updateReadout() {
-      /* 固定範圍的屬性可能載到界外的舊值。不自動改寫檔案，但要講出來——
-         畫面上看不到的點，使用者只會覺得「這條曲線怎麼怪怪的」。 */
-      var out = M.outOfRangeCount(points, policy);
-      if (out) {
-        readout.textContent = '有 ' + out + ' 個點超出上下限，拖動它就會落回範圍內';
-        readout.classList.add('warn');
-        readout.classList.remove('cursor');
-        return;
-      }
       readout.classList.remove('warn');
       /* 游標優先：對照模式下，使用者想看的是「這個時間點各屬性各是多少」，
          不是「我剛剛選了哪個控制點」。 */
@@ -242,6 +244,7 @@ var VFXCurveEditor = (function () {
       var pos = localPos(e);
       el.focus({ preventScroll: true });
       var at = hitTest(pos.x, pos.y);
+      frozenRange = M.valueRange(points, policy);   // 這一次拖曳都用按下當時的軸
       /* 一次拖曳（含「點空白處新增再拖到位」）算一筆歷史，
          中間的每一次 onLive 都不記錄。 */
       if (opts.onBegin) opts.onBegin(at < 0 ? '新增控制點於 ' : '調整 ');
@@ -250,7 +253,7 @@ var VFXCurveEditor = (function () {
            「點一下再拖到位」比「點一下、放開、再按住拖」少一次操作。 */
         var c = fromPx(pos.x, pos.y);
         var r = M.addPoint(points || [], c.t, c.v, policy);
-        if (r.index < 0) { flashLimit(); return; }
+        if (r.index < 0) { frozenRange = null; flashLimit(); return; }
         points = r.points; selected = r.index;
       } else {
         selected = at;
@@ -292,6 +295,8 @@ var VFXCurveEditor = (function () {
     function onUp() {
       if (!dragging) return;
       dragging = false;
+      frozenRange = null;                      // 軸重新框住全部的點（拖出框外的也拉回畫面）
+      draw();
       commit();                                // 放開才算一次正式修改
     }
 
@@ -333,7 +338,7 @@ var VFXCurveEditor = (function () {
 
     /* 首次繪製要等元素進 DOM 才量得到寬度。呼叫端在整個 Inspector 組完之後
        還會再要求一次重繪——rAF 這一發有可能落在版面定案之前。 */
-    updateReadout();               // 界外提示要一載入就看得到，不必先去點它
+    updateReadout();
     requestAnimationFrame(draw);
 
     return {

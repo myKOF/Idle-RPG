@@ -1010,43 +1010,159 @@ test('BOOT-2 圖層樹先於素材相關的初始化', function () {
 });
 
 /* ============================================================
-   DEG — 整個編輯器以角度為單位、旋轉上下限固定 ±360°
+   DEG — 整個編輯器以角度為單位；旋轉不設上下限，Y 軸至少一整圈、隨資料放大
+   （2026-09-18 以前是固定 ±360°：刀環 468°、黑洞 1440° 等 109 條既有曲線
+    畫到框外抓不回來，新做的特效也轉不過一圈）
    ============================================================ */
 
-const ROT360 = {
-  min: -Math.PI * 2, max: Math.PI * 2, fixedRange: true,
-  baseline: [-Math.PI * 2, Math.PI * 2], defaultValue: 0, decimals: 1, unit: '°',
-  toDisplay: C.radToDeg, fromDisplay: C.degToRad
-};
+/* Editor 實際使用的旋轉 policy：直接從 editor.js 挖出來求值，不另抄一份 */
+function editorRotationPolicy() {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const at = src.indexOf('    rotation: {');
+  assert.ok(at > 0, 'CURVE_POLICY 要有 rotation');
+  const end = src.indexOf('\n    },', at);
+  const body = src.slice(at, end + 6).replace(/^\s*rotation:\s*/, '').replace(/,\s*$/, '');
+  return new Function('VFXCurveModel', 'return (' + body + ');')(C);
+}
+const ROT_EDITOR = editorRotationPolicy();
 
-test('DEG-1 旋轉的 Y 軸固定在 ±360°，不隨資料放大', function () {
-  const small = C.valueRange([[0, 0], [1, 0.05]], ROT360);
-  const big = C.valueRange([[0, 0], [1, 25.13]], ROT360);
-  assert.deepEqual(small, big, '不論曲線大小，軸都必須一樣');
-  assert.equal(Math.round(C.radToDeg(small.lo)), -360);
-  assert.equal(Math.round(C.radToDeg(small.hi)), 360);
-
-  /* 對照組：沒有 fixedRange 的屬性仍然要自動放大，否則 4 倍的縮放會被切掉 */
-  const scale = C.valueRange([[0, 1], [1, 4]], SCALE);
-  assert.ok(scale.hi >= 4);
+test('DEG-1 旋轉的 Y 軸至少顯示 ±360°，資料超出就跟著放大', function () {
+  const small = C.valueRange([[0, 0], [1, 0.05]], ROT_EDITOR);
+  assert.ok(C.radToDeg(small.lo) <= -360 && C.radToDeg(small.hi) >= 360, '小角度也至少顯示一整圈');
+  /* 使用者回報的那條（proj-cleave-ring-blue）與幾條多圈旋轉：每個點都要在框內 */
+  [
+    [[0, 0], [0.4, 6.283185307179586], [1, 8.168140899333462]],   // 468°
+    [[0, 0], [1, 25.13274]],                                     // 1440°
+    [[0, 0], [1, -18.84956]]                                     // -1080°
+  ].forEach(function (curve) {
+    const r = C.valueRange(curve, ROT_EDITOR);
+    curve.forEach(function (q) {
+      assert.ok(q[1] > r.lo && q[1] < r.hi, C.formatValue(q[1], ROT_EDITOR) + ' 必須在軸內');
+    });
+  });
 });
 
-test('DEG-2 拖曳夾在 ±360°，不能無限往上拉', function () {
-  assert.equal(Math.round(C.radToDeg(C.clampValue(C.degToRad(1000), ROT360))), 360);
-  assert.equal(Math.round(C.radToDeg(C.clampValue(C.degToRad(-5000), ROT360))), -360);
-  assert.equal(Math.round(C.radToDeg(C.clampValue(C.degToRad(180), ROT360))), 180);
-
-  const moved = C.movePoint([[0, 0], [1, 0]], 1, 1, C.degToRad(9999), ROT360);
-  assert.equal(Math.round(C.radToDeg(moved.points[1][1])), 360, '拖到天上也只能停在 360°');
+test('DEG-2 旋轉不夾上下限：拖到幾度就是幾度', function () {
+  assert.equal(Math.round(C.radToDeg(C.clampValue(C.degToRad(1000), ROT_EDITOR))), 1000);
+  assert.equal(Math.round(C.radToDeg(C.clampValue(C.degToRad(-5000), ROT_EDITOR))), -5000);
+  const moved = C.movePoint([[0, 0], [1, 0]], 1, 1, C.degToRad(1080), ROT_EDITOR);
+  assert.equal(Math.round(C.radToDeg(moved.points[1][1])), 1080);
+  /* 對照組：縮放仍然不得為負 */
+  assert.equal(C.clampValue(-1, SCALE), 0);
 });
 
-test('DEG-3 載入的界外舊值不會被靜靜改寫，但會被指出來', function () {
-  const legacy = [[0, 0], [1, 25.13]];                 // 1440°
-  assert.equal(C.outOfRangeCount(legacy, ROT360), 1);
-  /* 只是回報，不是自動修正——存檔前不動使用者的檔案 */
-  assert.deepEqual(C.toCurve(legacy), legacy);
-  /* 沒有 fixedRange 的屬性不適用這個概念 */
-  assert.equal(C.outOfRangeCount([[0, 99]], SCALE), 0);
+test('DEG-3 刻度在顯示單位裡挑：旋轉是整數角度，不是 114.6° 這種弧度取整', function () {
+  const cases = [
+    [[0, 0], [1, 0]],
+    [[0, 0], [0.4, 6.283185307179586], [1, 8.168140899333462]],
+    [[0, 0], [1, 25.13274]]
+  ];
+  cases.forEach(function (curve) {
+    const ticks = C.tickValues(C.valueRange(curve, ROT_EDITOR), ROT_EDITOR).map(C.radToDeg);
+    assert.ok(ticks.length >= 3 && ticks.length <= 9, '刻度數量 ' + ticks.length);
+    ticks.forEach(function (d) {
+      assert.ok(Math.abs(d / 15 - Math.round(d / 15)) < 1e-9, d + '° 不是 15° 的倍數');
+    });
+    assert.ok(ticks.some(function (d) { return d === 0; }), '0° 那一條要剛好是 0（不能累加出 1e-15）');
+  });
+  /* 一整圈的軸：-360、-180、0、180、360 */
+  assert.deepEqual(C.tickValues(C.valueRange([[0, 0]], ROT_EDITOR), ROT_EDITOR).map(function (v) {
+    return Math.round(C.radToDeg(v));
+  }), [-360, -180, 0, 180, 360]);
+  /* 沒給 tickSteps 的屬性維持 1／2／5×10^n */
+  assert.deepEqual(C.tickValues({ lo: 0, hi: 1.65 }, SCALE), [0, 0.5, 1, 1.5]);
+});
+
+/* ---------------- 實際拖曳：用最小的假 DOM 驅動 curve-editor ----------------
+   這兩條要驗的是「滑鼠事件 → 值」的整條路，只測 curve-model 驗不出來：
+   暴衝發生在 curve-editor 每幀重算 Y 軸，抓不回來發生在點畫到畫布外面。 */
+function mountCurveEditor(curve, policy) {
+  const vm = require('node:vm');
+  const winListeners = {};
+  function fakeEl() {
+    const ls = {};
+    return {
+      style: {}, children: [], width: 0, height: 0, clientWidth: 208, clientHeight: 170,
+      classList: { add() {}, remove() {} },
+      appendChild(c) { this.children.push(c); },
+      addEventListener(t, f) { ls[t] = f; },
+      fire(t, e) { if (ls[t]) ls[t](e); },
+      focus() {}, contains() { return false; },
+      getBoundingClientRect() { return { left: 0, top: 0 }; },
+      getContext() {
+        return new Proxy({}, { get: (o, k) => (k in o ? o[k] : () => {}), set: (o, k, v) => { o[k] = v; return true; } });
+      }
+    };
+  }
+  const ctx = {
+    VFXCurveModel: C,
+    document: { createElement: fakeEl, activeElement: null },
+    window: { devicePixelRatio: 1, addEventListener(t, f) { winListeners[t] = f; }, removeEventListener() {} },
+    requestAnimationFrame() { return 0; }
+  };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(REPO, 'tools/vfx/editor/curve-editor.js'), 'utf8'), ctx);
+  const log = { begins: [], changes: [] };
+  const ed = ctx.VFXCurveEditor.create({
+    curve: curve, policy: policy, height: 170,
+    onBegin: (w) => log.begins.push(w), onChange: (c) => log.changes.push(c)
+  });
+  const canvas = ed.el.children[0];
+  /* 與 curve-editor 的 PAD 對齊：l 34、r 8、t 8、b 16 */
+  const box = { x: 34, y: 8, w: 208 - 34 - 8, h: 170 - 8 - 16 };
+  function pxOf(t, v) {
+    const r = C.valueRange(C.toPoints(ed.getCurve()), policy);
+    return { x: box.x + t * box.w, y: box.y + box.h - ((v - r.lo) / (r.hi - r.lo)) * box.h };
+  }
+  return {
+    ed, log, pxOf, box,
+    down(x, y) { canvas.fire('mousedown', { clientX: x, clientY: y, preventDefault() {} }); },
+    move(x, y) { winListeners.mousemove({ clientX: x, clientY: y }); },
+    up() { winListeners.mouseup({}); }
+  };
+}
+
+test('DEG-4a 回報的那條（468°）載入後每個點都抓得到，拖得回來', function () {
+  const curve = [[0, 0], [0.4, 6.283185307179586], [1, 8.168140899333462]];
+  const h = mountCurveEditor(curve, ROT_EDITOR);
+  const q = h.pxOf(1, curve[2][1]);
+  assert.ok(q.y >= h.box.y && q.y <= h.box.y + h.box.h, '468° 的點要畫在框內，實得 y=' + q.y);
+  h.down(q.x, q.y);
+  assert.equal(h.log.begins[0], '調整 ', '按在點上要抓到它，而不是在空白處新增一個點');
+  h.move(q.x, h.pxOf(1, C.degToRad(90)).y);
+  h.up();
+  const out = h.log.changes.at(-1);
+  assert.equal(out.length, 3, '沒有多出點');
+  assert.ok(Math.abs(C.radToDeg(out[2][1]) - 90) < 1, '拖回 90°，實得 ' + C.radToDeg(out[2][1]));
+});
+
+test('DEG-4b 拖出框外可以無限往上拉：值跟著游標線性走，不會暴衝；放開後軸重新框住', function () {
+  const h = mountCurveEditor([[0, 0], [1, 0]], ROT_EDITOR);
+  const q = h.pxOf(1, 0);
+  h.down(q.x, q.y);
+  const r0 = C.valueRange([[0, 0], [1, 0]], ROT_EDITOR);
+  const perPx = (r0.hi - r0.lo) / h.box.h;
+  /* 游標停在畫布上方 200px，連續收到好幾次 mousemove（真實滑鼠會這樣）：
+     軸若每幀重算，每一次都會更大，值就一路暴衝 */
+  const values = [];
+  for (let i = 0; i < 4; i++) {
+    h.move(q.x, -200);
+    values.push(h.ed.getCurve()[1][1]);
+  }
+  assert.ok(values.every((v) => v === values[0]), '同一個游標位置必須是同一個值：' + values.map(C.radToDeg).join(', '));
+  const expect = (q.y + 200) * perPx;
+  assert.ok(Math.abs(values[0] - expect) < 1e-3, '值＝按下時的比例 × 游標距離');
+  assert.ok(C.radToDeg(values[0]) > 360, '可以超過一整圈，實得 ' + C.radToDeg(values[0]));
+  h.up();
+  const v = h.log.changes.at(-1)[1][1];
+  /* 放開後軸重新框住：同一個點回到畫面裡，而且再抓一次可以繼續往上 */
+  const q2 = h.pxOf(1, v);
+  assert.ok(q2.y >= h.box.y && q2.y <= h.box.y + h.box.h, '放開後點要回到框內，實得 y=' + q2.y);
+  h.down(q2.x, q2.y);
+  assert.equal(h.log.begins.at(-1), '調整 ');
+  h.move(q2.x, -200);
+  h.up();
+  assert.ok(h.log.changes.at(-1)[1][1] > v, '第二次拖曳可以再往上');
 });
 
 test('DEG-4 編輯器裡不再有以弧度呈現的欄位', function () {
