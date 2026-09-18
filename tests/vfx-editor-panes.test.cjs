@@ -540,9 +540,10 @@ test('PANE-24 點視窗換焦點（捕獲階段、在選取與拖曳之前）；
   assert.ok(/window\.addEventListener\('pointermove', onPreviewPointerMove\)/.test(bodyOf('boot')));
   /* 輸入框打到一半就點別的視窗：先收尾，那一步記進原本視窗的歷史 */
   const focus = bodyOf('focusPane');
-  assert.ok(focus.indexOf('active.blur()') >= 0 && focus.indexOf('ctx = pane') >= 0 &&
-    focus.indexOf('active.blur()') < focus.indexOf('ctx = pane') &&
-    focus.indexOf('active.blur()') < focus.indexOf('focusedPane = pane'), 'blur 要在換 ctx 與焦點之前');
+  assert.ok(focus.indexOf('commitTextEntry()') >= 0 && focus.indexOf('ctx = pane') >= 0 &&
+    focus.indexOf('commitTextEntry()') < focus.indexOf('ctx = pane') &&
+    focus.indexOf('commitTextEntry()') < focus.indexOf('focusedPane = pane'), 'blur 要在換 ctx 與焦點之前');
+  assert.ok(/isTextEntry\(active\)[\s\S]*active\.blur\(\)/.test(bodyOf('commitTextEntry')), '收尾就是讓輸入框失焦');
   /* 滾輪縮放滑鼠底下那個視窗，不換焦點 */
   assert.ok(/withPane\(pane, function \(\) \{\s*applyZoom\(/.test(bodyOf('wirePreviewView')));
 });

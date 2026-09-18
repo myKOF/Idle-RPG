@@ -767,7 +767,15 @@
 
   /* ---------------- Inspector 欄位描述（schema 驅動） ---------------- */
 
-  function num(key, label, step) { return { key: key, label: label, kind: 'number', step: step || 0.01 }; }
+  /* range：{ min, max }，與 Core 的驗證同一個範圍。數字框用方向鍵或滾輪調的時候停在邊界上：
+     超出範圍的 preset 整份都不能註冊，預覽會停在上一次合法的樣子，縮放、拖曳全都像是失效了
+     （2026-09-18 使用者回報：alpha 被方向鍵一路加過 1，「整體縮放沒反應」）。打字仍然打得進去，
+     那是明確的輸入，驗證面板會說出原因。 */
+  function num(key, label, step, range) {
+    var f = { key: key, label: label, kind: 'number', step: step || 0.01 };
+    if (range) { f.min = range.min; f.max = range.max; }
+    return f;
+  }
   /* 角度欄位：畫面上是度，檔案裡是弧度。
      Schema 不動——Core 把 rotation 直接交給 Pixi 的 node.rotation，那就是弧度。
      但整個編輯器（以及遊戲的其他參數表）都以度為單位，Inspector 裡混著
@@ -792,11 +800,11 @@
     deg('rotation', 'rotation(°)'),
     vec('scale', 'scale'),
     vec('anchor', 'anchor'),
-    num('alpha', 'alpha'),
+    num('alpha', 'alpha', 0.01, { min: 0, max: 1 }),
     { key: 'tint', label: 'tint', kind: 'color' },
     { key: 'blendMode', label: 'blendMode', kind: 'select', options: function () { return VFXCore.BLEND_MODES; } },
-    num('delay', 'delay(s)'),
-    num('duration', 'duration(s)'),
+    num('delay', 'delay(s)', 0.01, { min: 0 }),
+    num('duration', 'duration(s)', 0.01, { min: 0 }),
     /* 序列幀（2026-09-06）。掛在共通欄位而不是型別專屬：三種圖層都真的吃得到
        ——procedural 走 TilingSprite，換格等於換它平鋪的那一小塊，
        與 uvScroll 疊起來就是「會播動畫的平鋪紋理」，是有意義的組合。
@@ -3500,6 +3508,8 @@
         control = document.createElement('input');
         control.type = 'number';
         control.step = String(f.step);
+        if (f.min !== undefined) control.min = String(f.min);
+        if (f.max !== undefined) control.max = String(f.max);
         var readNumber = function (l) { return l[f.key]; };
         showCommon(control, MX.commonValue(targets, readNumber));
         var restoreNumber = clearRestorer(control, targets, f.key, function () {
@@ -5011,6 +5021,11 @@
     el.addEventListener('pointerdown', function (e) {
       if (e.target.closest && e.target.closest('.pane-close')) return;
       finishNudge();                       // 方向鍵按住移動到一半就去點畫面：先把那一段收成一步
+      /* 在預覽上按下去＝接下來在預覽區工作：輸入框交出焦點。畫布的 pointerdown 會 preventDefault
+         （拖曳時不選到文字），瀏覽器因此不會自己把焦點移走——之前點過的 Inspector 欄位一直留著焦點，
+         接著按方向鍵改到的是那一格的數值（2026-09-18：alpha 被加過 1，整份特效不合法、預覽停住），
+         Delete、Ctrl+C 也一樣進了輸入框。 */
+      commitTextEntry();
       var before = focusedPane;
       activatePane(pane, { ctrl: e.ctrlKey || e.metaKey });
       focusClickEvent = focusedPane !== before ? e : null;
@@ -5290,15 +5305,19 @@
     renderPaneHeads();
   }
 
-  function focusPane(pane) {
-    if (!pane || pane === focusedPane) return;
-    finishNudge();                         // 方向鍵按住移動的那一段記在原本的視窗
-    /* 輸入框還開著交易（數值打到一半）就先收尾：blur 會同步觸發 change 與 editCommit，
-       這時 ctx 還是原本的視窗，那一步才會記進它自己的歷史（與 Ctrl+S 同一招，見 onKeyDown） */
+  /* 輸入框還開著交易（數值打到一半）就先收尾：blur 會同步觸發 change 與 editCommit，
+     那一步記進目前這個視窗自己的歷史（與 Ctrl+S 同一招，見 onKeyDown）。 */
+  function commitTextEntry() {
     var active = document.activeElement;
     if (active && active !== document.body && isTextEntry(active) && typeof active.blur === 'function') {
       active.blur();
     }
+  }
+
+  function focusPane(pane) {
+    if (!pane || pane === focusedPane) return;
+    finishNudge();                         // 方向鍵按住移動的那一段記在原本的視窗
+    commitTextEntry();                     // 這時 ctx 還是原本的視窗
     var prev = focusedPane;
     if (prev && prev.saveStatus.transient) prev.saveStatus = { text: '', cls: '', title: '' };
     focusedPane = pane;
@@ -5393,12 +5412,7 @@
         '）的修改尚未存檔，關閉之後就沒了。要關閉嗎？')) {
       return;
     }
-    if (pane === focusedPane) {
-      var active = document.activeElement;
-      if (active && active !== document.body && isTextEntry(active) && typeof active.blur === 'function') {
-        active.blur();
-      }
-    }
+    if (pane === focusedPane) commitTextEntry();
     var next = VFXPaneModel.afterClose({
       focused: focusedPane.id,
       selected: selectedPanes.map(function (p) { return p.id; })

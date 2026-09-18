@@ -1031,7 +1031,7 @@ test('NUDGE-4 Editor 接線：方向鍵排在文字輸入與曲線編輯器的�
   ['focusPane', 'closePane'].forEach(function (name) {
     assert.ok(/finishNudge\(\)/.test(extractFn(EDITOR_NC, name)), name + ' 之前要先收尾');
   });
-  assert.ok(/finishNudge\(\);\s*var before = focusedPane;\s*activatePane\(pane/.test(extractFn(EDITOR_NC, 'createPane')),
+  assert.ok(/finishNudge\(\);\s*commitTextEntry\(\);\s*var before = focusedPane;\s*activatePane\(pane/.test(extractFn(EDITOR_NC, 'createPane')),
     '按下滑鼠（可能開始拖曳）之前先收尾');
   assert.ok(/n\.history\.commit\(n\.token\)/.test(extractFn(EDITOR_NC, 'finishNudge')), '只收自己那一筆');
   assert.ok(/G\.nudgePositions\(layers, layers\.map\(spaceOf\), dx, dy\)/.test(extractFn(EDITOR_NC, 'nudgeSelection')));
@@ -1052,4 +1052,36 @@ test('NUDGE-5 點預覽區空白處取消選取；把焦點切到別的視窗的
   assert.ok(/onPreviewPointerDown\(e, focusClickEvent === e\)/.test(extractFn(EDITOR_NC, 'onPanePointerDown')));
   assert.ok(/var before = focusedPane;\s*activatePane\(pane, \{ ctrl: e\.ctrlKey \|\| e\.metaKey \}\);\s*focusClickEvent = focusedPane !== before \? e : null;/
     .test(extractFn(EDITOR_NC, 'createPane')), '記下這一下有沒有換焦點');
+});
+
+test('NUDGE-6 在預覽上按下去時輸入框交出焦點；alpha／delay／duration 的數字框有與 Core 相同的範圍', function () {
+  /* 2026-09-18 使用者回報「左邊那份沒辦法整體縮放」：畫布的 pointerdown 會 preventDefault，
+     瀏覽器因此不會把焦點從之前點過的 Inspector 欄位移走；接著按方向鍵改到的是 alpha，
+     一路加過 1，整份特效不合法，預覽停在上一次合法的樣子，縮放看起來完全沒反應。 */
+  const create = extractFn(EDITOR_NC, 'createPane');
+  const capture = create.slice(create.indexOf("el.addEventListener('pointerdown'"));
+  assert.ok(capture.indexOf('commitTextEntry()') >= 0 &&
+    capture.indexOf('commitTextEntry()') < capture.indexOf('activatePane(pane'),
+    '.pane 的捕獲階段先讓輸入框失焦（交易也在這時收尾），再換焦點、再交給畫布處理');
+  assert.ok(/e\.preventDefault\(\)/.test(extractFn(EDITOR_NC, 'onPreviewPointerDown')),
+    '畫布確實會 preventDefault——這正是焦點不會自己移走的原因，拿掉那個 preventDefault 這條就不必存在');
+
+  /* 數字框的範圍：方向鍵、滾輪調到邊界就停；範圍與 Core 的 validateCommonLayer 相同 */
+  assert.ok(/num\('alpha', 'alpha', 0\.01, \{ min: 0, max: 1 \}\)/.test(EDITOR_NC));
+  assert.ok(/num\('delay', 'delay\(s\)', 0\.01, \{ min: 0 \}\)/.test(EDITOR_NC));
+  assert.ok(/num\('duration', 'duration\(s\)', 0\.01, \{ min: 0 \}\)/.test(EDITOR_NC));
+  const render = extractFn(EDITOR_NC, 'renderInspector');
+  assert.ok(/if \(f\.min !== undefined\) control\.min = String\(f\.min\);/.test(render) &&
+    /if \(f\.max !== undefined\) control\.max = String\(f\.max\);/.test(render), '數字框要套上範圍');
+  const Core = require('../js/vfx-core.js');
+  const base = { schemaVersion: 1, id: 'fx', duration: 1, loop: false,
+    layers: [{ id: 'a', type: 'sprite', assetId: 'a.png' }] };
+  const bad = (patch) => {
+    const p = JSON.parse(JSON.stringify(base));
+    Object.assign(p.layers[0], patch);
+    return !Core.validatePreset(p).ok;
+  };
+  assert.ok(bad({ alpha: 1.01 }) && bad({ alpha: -0.01 }) && !bad({ alpha: 1 }) && !bad({ alpha: 0 }),
+    'Core 的 alpha 範圍就是 0..1（範圍改了這裡要跟著改）');
+  assert.ok(bad({ delay: -0.01 }) && bad({ duration: -0.01 }) && !bad({ delay: 0 }), 'delay／duration 不得為負');
 });
