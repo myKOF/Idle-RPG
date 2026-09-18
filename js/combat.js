@@ -715,7 +715,7 @@ function statusTickVfxFlush() {
     }
 }
 
-function tickStatuses(ent, dt) {
+function tickStatuses(ent, dt, dotContext) {
     tickShieldExpiry(ent);
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!ent.dots || !ent.dots.length) return false;
@@ -737,17 +737,19 @@ function tickStatuses(ent, dt) {
     for (var i = 0; i < ent.dots.length; i++) {
         var d = ent.dots[i];
         var expired = !(d.until > GT);
-        var seconds = 0; // 本幀實際結算的秒數
+        var seconds = 0, tickCount = 0; // 本幀實際結算的秒數與作用次數
         if (expired) {
             // 到期：只補「存續期間已累積、還沒跳出來」的餘額，不多算本幀
             seconds = d.acc || 0;
+            tickCount = seconds > 0 ? 1 : 0;
             d.acc = 0;
         } else if (!(d.interval > 0)) {
             seconds = dtEff;                            // 不分段：連續結算
+            tickCount = 1;
             d.acc = 0;
         } else {
             var elapsed = (d.acc || 0) + dtEff;
-            while (elapsed >= d.interval) { seconds += d.interval; elapsed -= d.interval; }
+            while (elapsed >= d.interval) { seconds += d.interval; elapsed -= d.interval; tickCount++; }
             d.acc = elapsed;
         }
         if (seconds > 0 && d.dps > 0) {
@@ -759,7 +761,7 @@ function tickStatuses(ent, dt) {
             var dDmg = d.dps * seconds * dElemMult;
             statusTickVfxCollect(ent, d.sid);
             total += dDmg;
-            dotDamageItems.push({ d: d, baseDamage: dDmg });
+            dotDamageItems.push({ d: d, baseDamage: dDmg, tickCount: tickCount });
             if (d.name && dotNames.indexOf(d.name) < 0) dotNames.push(d.name);
         }
         if (!expired) live.push(d);
@@ -800,6 +802,17 @@ function tickStatuses(ent, dt) {
         // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」含你的 DoT 跳動——
         // 僅敵方實體計入（玩家所受 DoT 非玩家輸出，不計）
         if (ent.maxHp && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(dotDealt);
+        // 只從權威跳傷結算觸發崩解，無敵／未到節拍不會產生空爆炸。
+        var disintegrate = ent.maxHp && typeof sgUlt === 'function' && sgUlt('bloodblade', 'disintegrate');
+        if (disintegrate && typeof sgDisintegrate === 'function') {
+            for (var bi = 0; bi < dotDamageItems.length; bi++) {
+                var bloodItem = dotDamageItems[bi], bloodDot = bloodItem.d;
+                if (bloodDot.sid !== 'sgBleed' && bloodDot.sid !== 'sgPoison') continue;
+                for (var bt = 0; bt < bloodItem.tickCount; bt++) {
+                    sgDisintegrate(ent, bloodDot.sid, bloodDot, bloodDot.dur, disintegrate, dotContext);
+                }
+            }
+        }
         if (ent.hp <= 0) { ent.hp = 0; return true; }
     }
     return false;
@@ -1514,9 +1527,13 @@ function fieldTick(dt) {
     }
 
     // 持續傷害（怪物：中毒 / 流血 / 燃燒 / 詛咒）
+    var dotOut = { killed: false, dmg: 0, crit: false };
+    var dotContext = { enemies: enemies, floatSel: 'mv-float', out: dotOut };
     for (var di = 0; di < enemies.length; di++) {
-        if (tickStatuses(enemies[di], dt)) onFieldKill(enemies[di]);
+        if (enemies[di].hp <= 0) continue;
+        if (tickStatuses(enemies[di], dt, dotContext)) onFieldKill(enemies[di]);
     }
+    if (dotOut.killed) onFieldDeaths();
     statusTickVfxFlush();
     combatDebugAuditFieldDeaths(debugFieldTick, 'poison/dots');
     enemies = combatFieldEnemies();

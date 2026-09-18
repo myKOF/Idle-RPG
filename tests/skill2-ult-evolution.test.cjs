@@ -1336,7 +1336,7 @@ test('【萬毒血霧】：領域內每 0.5 秒疊一層萬毒侵蝕，且只作
   assert.equal(far.dots.length, 0, '領域外不受影響');
 });
 
-test('【崩解】：中毒與流血當場結清、不留狀態，並對周圍爆炸', () => {
+test('【崩解】：保留狀態、加速作用，每跳以完整期間總傷爆炸', () => {
   const c = loadContext(['js/legendary.js']);
   stubHits(c); stubVfx(c);
   const hits = stubDerived(c);
@@ -1346,7 +1346,7 @@ test('【崩解】：中毒與流血當場結清、不留狀態，並對周圍�
 
   const plain = enemy(1e12, 3 * M, 0);
   c.castSkill2(p, [plain], 'bloodblade', 'mv-float');
-  const bleedTotal = bleedOf(plain).dps * bleedOf(plain).dur;
+  const plainBleed = bleedOf(plain);
 
   setUlt(c, 'bloodblade', 'disintegrate');
   hits.length = 0; p.mp = 200;
@@ -1354,15 +1354,53 @@ test('【崩解】：中毒與流血當場結清、不留狀態，並對周圍�
   const bystander = enemy(1e12, 3 * M, 2 * M);      // 距離 2 米 < 6 米
   c.castSkill2(p, [main, bystander], 'bloodblade', 'mv-float');
 
-  assert.equal(main.dots.length, 0, '崩解之後不得留下持續狀態');
-  const onMain = hits.filter((h) => h.ent === main).map((h) => h.amount);
-  assert.ok(onMain.some((a) => Math.abs(a - Math.round(bleedTotal)) <= 1),
-    '主目標要一次吃掉整段流血傷害（' + Math.round(bleedTotal) + '），實得 ' + onMain.join('/'));
+  assert.equal(main.dots.length, 2);
+  assert.equal(hits.length, 0, '塗抹不應當場結清或爆炸');
+  const d=bleedOf(main);
+  assert.ok(Math.abs(d.interval-Math.max(.1,plainBleed.interval*.2))<1e-9);
+  assert.ok(Math.abs(d.dps*d.interval-plainBleed.dps*plainBleed.interval)<1e-6,'每跳傷害不變');
+  assert.equal(d.dur,plainBleed.dur);
+  main.dots=[d]; // 分開驗證單種狀態的每次結算
+  c.GT=d.interval/2;c.tickStatuses(main,d.interval/2,{enemies:[main,bystander]});assert.equal(hits.length,0);
+  c.GT=d.interval;c.tickStatuses(main,d.interval/2,{enemies:[main,bystander]});
   const pct = c.sgVal(c.SKILLS2.bloodblade.ult[2].fx, 'pct', c.SG_TIER_MAX_LV);
   const onBystander = hits.filter((h) => h.ent === bystander).map((h) => h.amount);
   assert.ok(onBystander.length >= 1, '周圍的敵人要被爆炸波及');
-  assert.ok(onBystander.some((a) => Math.abs(a - Math.round(bleedTotal * pct / 100)) <= 1),
-    '爆炸傷害＝該效果的 ' + pct + '%，實得 ' + onBystander.join('/'));
+  assert.equal(onBystander[0],Math.round(d.dps*d.dur*pct/100));
+  hits.length=0;c.GT+=d.interval*3+.001;c.tickStatuses(main,d.interval*3+.001,{enemies:[main,bystander]});
+  assert.equal(hits.filter(h=>h.ent===bystander).length,3,'三跳須爆炸三次');
+});
+
+test('【崩解】：中毒成長、傳染不重複加速、致死跳與半徑／特效一致',()=>{
+ const c=loadContext();const events=stubVfx(c);const hits=stubDerived(c);
+ maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
+ setUlt(c,'bloodblade','disintegrate',1);
+ const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'sgPoison');
+ assert.ok(Math.abs(spec.interval-.28)<1e-8);
+ const main=enemy(1,30,0),near=enemy(1e12,30,20),far=enemy(1e12,3000,0);
+ c.sgApplyBloodbladeDot(main,'sgPoison',spec);
+ c.sgApplyBloodbladeDot(near,'sgPoison',main.dots[0],main.dots[0].dur);
+ assert.equal(near.dots[0].interval,main.dots[0].interval);
+ const dot=main.dots[0];c.GT=.28;
+ assert.equal(c.tickStatuses(main,.28,{enemies:[main,near,far]}),true);
+ assert.equal(hits.filter(h=>h.ent===near)[0].amount,Math.round(dot.dps*dot.dur*.55));
+ assert.equal(hits.filter(h=>h.ent===far).length,0);
+ const boom=events.find(e=>e.variant==='blood-explosion');assert.ok(boom);
+ assert.equal(boom.area.r,60);assert.equal(boom.preserveDeadTargets,true);
+});
+
+test('【崩解】：間隔保底且無敵不觸發爆炸，非血毒狀態不觸發',()=>{
+ const c=loadContext();const events=stubVfx(c);stubDerived(c);
+ maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
+ setUlt(c,'bloodblade','disintegrate',10);
+ c.SKILLS2.bloodblade.ult[2].fx.gapPct=120;
+ const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'sgPoison');
+ assert.equal(spec.interval,.1);assert.ok(Number.isFinite(spec.dps));
+ const e=enemy(1e12,0,0);c.sgApplyBloodbladeDot(e,'sgPoison',spec);
+ const effectActive=c.effectActive;c.effectActive=(ent,key)=>key==='invuln';
+ c.tickStatuses(e,1,{enemies:[e]});assert.equal(events.length,0);
+ c.effectActive=effectActive;e.dots[0].sid='sgBurn';
+ c.tickStatuses(e,.1,{enemies:[e]});assert.equal(events.filter(x=>x.variant==='blood-explosion').length,0);
 });
 
 /* ---- 13) 雙刀亂舞的五個傳奇特效 ---- */

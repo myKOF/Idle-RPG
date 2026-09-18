@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜崩解改為加速持續傷害及逐次爆炸（DISINTEGRATE-20260918）
+
+- Owner Codex；Done。依使用者確認，爆炸基準是該狀態完整持續期間總傷害，不是單跳或剩餘傷害。保留中毒／流血狀態，間隔縮短40%＋每級4%，爆炸係數50%＋每級5%；沿用base＋per×lv及最低0.1秒。半徑保留表格6米，爆炸不重打來源目標。
+- 正式DOT規格只縮短一次，維持每跳傷害與持續時間，因此加速增加總傷；傳染複製既有間隔，不再加速。tickStatuses在實際結算後觸發，每次作用各自爆炸；致死跳、到期餘額結算、零日感染提前結算也能爆炸。場上爆炸死亡走既有死亡結算，無敵不觸發。特效使用表格崩解角色與同一判定半徑，保留屍體位置事件。
+- 修改 skills2.js、combat.js、Skills2.xlsx／CSV、index.html／bridge.js快取、skill2-ult-evolution測試及本紀錄。檢查status結算、Runtime範圍顯示、表格編譯器，未修改它們。Excel透過原生API只改崩解3格，正常模式重開、逐格比對、繪圖物件0→0；保留使用者其餘表格值並同步生成資料。使用者正在編輯的VFX與素材不納入本次提交。
+- 驗證：`node --test tests/skill2-ult-evolution.test.cjs` 57/57；`node --test tests/combat-dot-log.test.cjs tests/status-system.test.cjs tests/skill2-counter-bloodrage.test.cjs` 49/49；`node tools/config_tables.cjs --apply Skills2`零語意差異；`node tools/build_check.cjs`370檔通過。覆盖持續狀態、間隔成長、總傷爆炸、多跳次數、傳染、致死跳、範圍、特效、無敵與非血毒狀態。
+- 風險／未完成：未實機驗證密集戰鬥效能；加速且每跳爆炸會增加周邊判定及特效數，沿用現有特效預算。可合併；未推送或合併。
+
 ## Codex｜殺神領域跟隨玩家（BLOOD-DOMAIN-FOLLOW-20260918）
 
 - Owner Codex；Done。使用者更正名稱為殺神領域。共用領域事件補上 area.follow，Runtime每幀取玩家顯示位置，不再停留在每秒續命事件的舊座標；萬毒血霧共用修正。傷害／死亡判定原本即採當前玩家位置，未改數值或判定。
