@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-storm-dance",
+  "groups": [
+    {
+      "id": "ground-storm-dance",
+      "name": "ground-storm-dance",
+      "layerIds": [
+        "wall-band-0",
+        "wall-band-1",
+        "wall-band-2",
+        "wall-band-3",
+        "wall-band-4",
+        "wall-band-5",
+        "wall-band-6",
+        "rising-light-0",
+        "rising-light-1",
+        "rising-light-2",
+        "rising-light-3",
+        "rising-light-4",
+        "rising-light-5",
+        "rising-light-6",
+        "rising-light-7",
+        "rising-light-8",
+        "rising-light-9",
+        "rising-light-10",
+        "rising-light-11",
+        "rising-light-12",
+        "rising-light-13",
+        "rising-light-14",
+        "rising-light-15",
+        "rising-light-16",
+        "rising-light-17",
+        "rising-light-18",
+        "rising-light-19",
+        "rising-light-20",
+        "rising-light-21",
+        "rising-light-22",
+        "rising-light-23"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-storm-dance"
+  ]
+}

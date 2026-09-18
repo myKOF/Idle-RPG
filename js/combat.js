@@ -1596,7 +1596,7 @@ function fieldTick(dt) {
     // 玩家行動（受減速時依減速比例放慢；時間扭曲等攻速增益加速）
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
     /* 新版技能超神【不屈鬥魂】倒地期間：普攻與技能一起停，這是「死了 5 秒」的代價。
-       擋在同一個閘門而不是只擋普攻（暴風之舞那種），因為那 5 秒的設定是人倒下了。 */
+       倒地時普攻與技能共用同一個行動閘門。 */
     if (!playerActionControlBlocked(p, true) &&
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
         // 技能優先（依裝載順序；含裝載的潛力技能）
@@ -1608,9 +1608,7 @@ function fieldTick(dt) {
             if (!enemies.length) return;
         }
         if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
-        // 新版技能【暴風之舞】化身中：無法普攻（可施放技能）
-        var stormLock = (typeof skill2StormActive === 'function') && skill2StormActive();
-        if (targetSwitchReady && p.atkCd <= 0 && !stormLock) {
+        if (targetSwitchReady && p.atkCd <= 0) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
             var primary = bfPickPrimary(combatFieldEnemies(), p._lockTarget);
             /* 普攻是近戰：目標還沒走到面前就不出手，也不進入冷卻——

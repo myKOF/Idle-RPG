@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜暴風亂舞普攻與綠白光圈（STORM-DANCE-20260918）
+
+- Owner Codex；Done。使用者要求持續期間可普攻，新增隨身地板光圈：半徑10米、高3米、綠白粒子；後續要求取消祭壇式星芒，改成連續光壁。移除野外／高塔普攻閘門與化身計時器重置；保留自動施放節拍與傷害。
+- 允許修改 combat.js、tower.js、skills2.js、Skills2／Status Excel與CSV、status.js生成資料、快取、獨立Preset／layout／author、相關測試及本紀錄。禁止變更傷害、持續時間、存檔與共用特效。無前置依賴；衝突預檢通過。
+- 驗收：正式戰鬥迴圈普攻／自動施放共存、暈眩與到期、Excel原生重開與資料同步、Preset尺寸／狀態接線／動態預覽、build。完成後提交，交使用者檢查外觀；不合併或推送。
+- 光壁：ground-storm-dance.json，地板半徑100世界單位，地板縱深投影0.38，壁高30世界單位；7層柔光帶＋24局部粒子發射器，上限312顆。沿用既有貼圖與狀態光環Runtime，未新增Timer或修改Runtime。Status的sgStorm持續特效接線，隨角色移動、快照移除即回收。素材庫保存Preset/layout，與遊戲檔逐位元相同，素材庫Commit `8431004`。
+- Excel：Skills2／Status各改2格，Excel原生API更新、兩次正常重開逐格驗證，繪圖0→0。僅同步本次CSV列；Skills2原Excel第20列既有proj-cleave-ring-tricolor-09與CSV不同，保留原Excel、不將該無關差異帶進本次CSV／JS。兩張CSV apply dry-run均零語意變更。
+- 測試：`node --test tests/storm-dance.test.cjs tests/skill2-review-fixes.test.cjs tests/basic-melee.test.cjs tests/skill2-status-slots.test.cjs tests/skills2-mana-cost.test.cjs` 29/29；`node --test --test-name-pattern="STORM-DANCE|STATUS-" tests/vfx-runtime.test.cjs` 4/4；`node tools/build_check.cjs` 379檔通過；diff check通過。舊審查測試補足新版耗魔所需MP，保留暈眩／DOT行為断言。
+- 已在VFX Editor實播並截圖，schema合法、Console無error/warn。檢查未修改vfx-runtime.js、vfx-core.js、battlefield.js、原ground-cyclone-avatar及素材貼圖。未完整遊戲實機或GPU壓測；新增普攻按需求增加總輸出。可合併，未推送；下一步使用者檢查光壁外觀。
+
 ## Codex｜超神升級標籤高度（ULT-TAG-LAYOUT-20260918）
 
 - Owner Codex；Done。修正主動超神耗魔獨占一列，使固定五列 Grid 的技能標籤被拉高、說明區縮小。依使用者正常畫面參考，耗魔移入標頭，標籤維持第二列，保留原有內容與操作。
