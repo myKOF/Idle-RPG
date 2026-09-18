@@ -408,12 +408,12 @@ test('嗜血狂怒：施放進入狂怒（RT＋增益＋冷卻＋扣魔），各
   stubHits(c);
   c.GT = 0;
   c.G.player.skills2.levels.bloodrage = [10, 10, 10, 10, 10, 10, 10];
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   const res = c.castSkill2(p, [m], 'bloodrage', 'mv-float');
   assert.ok(res, '應可施放');
-  // 施法消耗以參數表為準（群組層 cost），不在測試裡寫死數字
-  assert.equal(p.mp, 100 - c.SKILLS2.bloodrage.cost, '扣掉群組的施法消耗');
+  // 施法消耗以參數表為準（最高生效階 cost），不在測試裡寫死數字
+  assert.equal(p.mp, AMPLE_MP - c.SKILLS2.bloodrage.tiers[6].cost, '扣掉第七階的施法消耗');
   assert.ok(p.skillCds['sg:bloodrage'] > 0, '寫入冷卻');
   assert.ok(c.skill2RageActive(), '進入狂怒');
   // Lv.10 攻速 20+2×10＝40% → 乘算因子 1.40
@@ -445,7 +445,7 @@ test('狂怒擊殺：狂化連殺疊連擊（+0.1/殺）、狂血盛宴延長持
   stubHits(c);
   c.GT = 0;
   c.G.player.skills2.levels.bloodrage = [1, 1, 1, 1, 1, 1, 1];
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.castSkill2(p, [m], 'bloodrage', 'mv-float');
   const until0 = c.SKILL2_RT.rage.until;
@@ -473,7 +473,7 @@ test('狂血盛宴：主目標不變，依連擊數對附近額外敵人造成�
   const nearby2 = enemy(1e9, 60, 0);
   const far = enemy(1e9, 200, 0);
   const enemies = [primary, nearby1, nearby2, far];
-  c.castSkill2(playerEnt(), enemies, 'bloodrage', 'mv-float');
+  c.castSkill2(playerEnt(AMPLE_MP), enemies, 'bloodrage', 'mv-float');
   c.getStats = () => ({ comboHits: 3 });
   const targets = c.skill2RageBasicAttackTargets(primary, enemies);
   assert.equal(targets[0], primary, '主目標應維持普攻鎖定');
@@ -499,7 +499,7 @@ test('血飲術：狂怒期間敵人受傷→自身扣血（穿護盾）；GM �
   stubHits(c);
   c.GT = 0;
   c.G.player.skills2.levels.bloodrage = [1, 1, 1, 1, 1, 1, 0];
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.castSkill2(p, [m], 'bloodrage', 'mv-float');
   p.shield = 500;
@@ -521,7 +521,7 @@ test('血飲術：狂怒期間敵人受傷→自身扣血（穿護盾）；GM �
   stubHits(c2);
   c2.GT = 0;
   c2.G.player.skills2.levels.bloodrage = [1, 0, 0, 0, 0, 0, 0];
-  const p2 = playerEnt();
+  const p2 = playerEnt(AMPLE_MP);
   const m2 = enemy(1e9, 40, 0);
   c2.castSkill2(p2, [m2], 'bloodrage', 'mv-float');
   c2.skills2OnEnemyDamaged(m2, 100);
@@ -554,7 +554,7 @@ test('狂化連殺 killCombo 仍依自身參數限額、狂血盛宴延時不設
   stubHits(c);
   c.GT = 0;
   c.G.player.skills2.levels.bloodrage = [1, 1, 1, 1, 1, 1, 1];
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.castSkill2(p, [m], 'bloodrage', 'mv-float');
   const t = c.SKILLS2.bloodrage.tiers;
@@ -574,7 +574,7 @@ test('狂怒 RT 為權威：resetSkill2RT 撤掉殘留增益，且攻速因子�
   stubHits(c);
   c.GT = 0;
   c.G.player.skills2.levels.bloodrage = [10, 0, 0, 0, 0, 0, 0];
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.castSkill2(p, [m], 'bloodrage', 'mv-float');
   assert.ok(c.skill2AspdFactor(p) > 1, '狂怒中攻速乘算生效');
@@ -601,7 +601,7 @@ test('血飲術通知掛鉤：resolveHit（玩家攻擊端）與 applyEnemyHpDam
   c.GT = 0;
   const hits = [];
   c.skills2OnEnemyDamaged = (ent, amount) => hits.push([ent, amount]);
-  const p = playerEnt();
+  const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   // 真 resolveHit：玩家攻擊敵人（命中固定：巨量 hit）
   const res = c.resolveHit(p, m, { atk: 1000, dmgType: 'phys', level: 10, critRate: 0, critDmg: 150, hit: 999, isPlayer: true }, c.monsterDefCfg(m));

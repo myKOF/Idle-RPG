@@ -3140,7 +3140,7 @@ function pickAndCastSkill(pEnt, target, floatSel) {
         ? target.some(function (ent) { return ent && ent.hp > 0 && sgCanReach(ent); })
         : sgCanReach(target);
       if (!sgReachable) continue;
-      if (pEnt.mp < (Number(sgDef.cost) || 0) &&
+      if (pEnt.mp < skills2ManaCost(sgId) &&
           !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) continue;
       return beginSkillCast({
         kind: 'skill2', pEnt: pEnt, target: target, skillId: sgId,

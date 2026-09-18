@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜進化階級耗魔（SKILLS2-MANA-20260918）
+
+- Done。統一最高生效階／超神耗魔，非累加；階級預覽顯示該列成本，技能列以快照計算目前成本。同步 skills2.js 實際扣魔與自動迴旋斬、skills.js 起手門檻、ui.js 階級／超神提示與技能列及快取。免費追加施放及被動逐次觸發保持原規則；未修改 Excel／CSV。
+- 新增 tests/skills2-mana-cost.test.cjs，覆蓋全部主動群組逐階／超神成本、超神失效回退、主執行緒快照、實際扣魔、不足魔力、GM 鎖魔、免費施放及正式自動施放佇列。嗜血狂怒舊測試提供足夠魔力並改驗第七階成本，保留全部技能行為斷言。
+- 驗證：node --test tests/skills2-mana-cost.test.cjs tests/skill2-counter-bloodrage.test.cjs，28/28 通過；node tools/build_check.cjs，375 檔通過；git diff --check 通過。未實機檢查畫面；高階實際耗魔會依原設定提高。檢查未改 formula.js、combat.js 及魔法盾；沒有素材變更。可合併，未推送。
+
+
 ## Codex｜Skills2同列特效用途與觸發欄位（SKILLS2-VFX-EVENTS-20260918）
 
 - Owner Codex；Done。使用者授權將 Claude 已提交分支合併到 ai/codex，再修改 Excel／CSV。已合併 fea2ce3c 及其狀態表格化前置提交，保留我方／敵方狀態與 Status 畫面權威；沒有修改 develop 或推送。
