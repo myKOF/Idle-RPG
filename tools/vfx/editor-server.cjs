@@ -722,10 +722,14 @@ function handleSaveAsDialog(ctx, req, res) {
     /* 「重新命名」也用這個視窗問新名字，只差標題與說明（見 save-as-dialog.cjs 的 purpose）。
        這條路由仍然只問名字：改名本身走 POST /__rename-preset。 */
     const purpose = body && body.purpose === 'rename' ? 'rename' : 'save-as';
+    /* 編輯器目前開著的那一份：視窗的檔案清單會選到它（2026-09-18）。同樣走 id 規則，不合法就不選。 */
+    const current = body && typeof body.current === 'string' &&
+      presetIdPolicy.isWritablePresetId(body.current) ? body.current : '';
     ctx.saveAsDialogOpen = true;
     saveAsDialog.askPresetId({
       presetsDir: path.join(ctx.repoRoot, PRESETS_DIR_REL),
       suggested: suggested,
+      current: current,
       purpose: purpose,
       policy: presetIdPolicy,
       runDialog: ctx.runSaveDialog

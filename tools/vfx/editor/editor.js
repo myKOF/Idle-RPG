@@ -4560,18 +4560,21 @@
      伺服器開的視窗只回傳路徑、不碰檔案；選到既有檔案或不對的資料夾，伺服器會說明原因並重開。
      伺服器太舊（還沒有這條路由）、不是 Windows、或視窗開不起來時，退回輸入框。
      回傳 Promise：null＝取消；{ id }；{ problem }（連續選到不能用的名字，伺服器放棄了）。 */
-  function askPresetName(suggested, purpose) {
+  /* current：編輯器目前開著的那一份——視窗的檔案清單會直接選到它（2026-09-18 使用者要求：特效太多，
+     要在清單裡找到目前這份很麻煩）。回傳 { id }，另存新檔選到既有的特效時是 { id, overwrite: true }
+     （Windows 已經問過要不要取代）。 */
+  function askPresetName(suggested, purpose, current) {
     var forRename = purpose === 'rename';
     setSaveStatus('等待存檔視窗…', '', (forRename ? '重新命名' : '另存新檔') +
       '的 Windows 視窗已經開啟；沒看到的話，可能被其他視窗蓋住了，看一下工作列。');
     return fetch(SAVE_AS_DIALOG_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ suggested: suggested, purpose: purpose })
+      body: JSON.stringify({ suggested: suggested, purpose: purpose, current: current || '' })
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (body) {
         if (r.ok && body.canceled) return null;
-        if (r.ok && body.id) return { id: body.id };
+        if (r.ok && body.id) return { id: body.id, overwrite: body.overwrite === true };
         if (r.ok && body.problem) return { problem: body.problem };
         if (r.status === 409) return { problem: body.error || '已經開著一個問名字的視窗' };
         /* 舊伺服器對不認得的 POST 一律回 405 */
@@ -4594,7 +4597,7 @@
   }
 
   function askSaveAsName(current) {
-    return askPresetName(current ? current + '-copy' : '', 'save-as');
+    return askPresetName(current ? current + '-copy' : '', 'save-as', current);
   }
 
   function saveAsPreset() {
@@ -4621,13 +4624,8 @@
         setSaveStatus('另存失敗', 'err');
         return;
       }
-      if (newId === current) {
-        showSaveError('無法另存新檔',
-          ['「' + newId + '」就是目前開著的這一份。另存新檔要換一個名字，' +
-           '要覆寫原本那份請直接按「儲存到 repo」。']);
-        setSaveStatus('另存失敗', 'err');
-        return;
-      }
+      /* 選到目前這份自己＝覆寫原本那份，就是一般存檔（Windows 視窗已經問過要不要取代） */
+      if (newId === current) return savePreset();
 
       setSaveStatus('檢查名稱…', '');
       return fetch(PRESET_LIST_URL).then(function (r) {
@@ -4635,12 +4633,23 @@
         return r.json();
       }).then(bindPane(function (data) {
         var ids = (data && data.presets) || [];
+        /* 另存新檔可以覆寫既有的特效（2026-09-18 使用者：常常是直接蓋掉舊的那份）。
+           Windows 視窗選到既有檔案時已經問過「要取代嗎？」；沒經過那一問的（視窗開不起來、
+           退回輸入框；或問名字的這段時間才有人新增了這個名字）在這裡補問，不能靜靜蓋掉。 */
         if (ids.indexOf(newId) >= 0) {
-          showSaveError('無法另存新檔',
-            ['已經有一份叫「' + newId + '」的 Preset。另存新檔不會覆寫既有檔案，' +
-             '請換一個名字。']);
-          setSaveStatus('另存失敗', 'err');
-          return;
+          if (!answer.overwrite && !window.confirm('已經有一份叫「' + newId + '」的特效。\n\n' +
+              '確定：用目前的內容覆寫它\n取消：不存，回去換一個名字')) {
+            setSaveStatus('已取消另存新檔', '');
+            return;
+          }
+          /* 那一份正開在另一個視窗：覆寫之後那個視窗顯示的是舊內容，在那裡按存檔會再蓋回去 */
+          var holder = paneHolding(newId);
+          if (holder && holder !== ctx) {
+            showSaveError('沒有覆寫「' + newId + '」',
+              ['它正開在' + paneLabel(holder) + '。先關掉那個視窗再覆寫，否則在那裡按存檔會把舊內容再蓋回去。']);
+            setSaveStatus('另存失敗', 'err');
+            return;
+          }
         }
         return commitSaveAs(newId);
       })).catch(bindPane(function (e) {
@@ -4793,7 +4802,7 @@
     var from = state.sourcePresetId;
     renaming = true;
     /* 每一步都綁在按下按鈕的那個視窗與那一份特效上（視窗可能開很久，焦點可能換走） */
-    askPresetName(from, 'rename').then(bindPane(function (answer) {
+    askPresetName(from, 'rename', from).then(bindPane(function (answer) {
       return answer ? commitRename(from, answer) : null;
     })).catch(bindPane(function (e) {
       showRenameError(from, e);

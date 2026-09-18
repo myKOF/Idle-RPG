@@ -503,7 +503,7 @@ test('RENAME-12 Editor：按鈕在另存新檔旁邊；直接問名字；不先�
   assert.ok(/state\.isNew \|\| state\.sourcePresetId === null/.test(rename),
     '還沒存進 repo 的（新特效、從本機匯入的）沒有檔案可以改名');
   assert.ok(rename.indexOf('dryRun') < 0, '不先檢查有沒有人用：想改就改');
-  assert.ok(rename.indexOf("askPresetName(from, 'rename')") >= 0);
+  assert.ok(rename.indexOf("askPresetName(from, 'rename', from)") >= 0, '問名字的視窗清單選到目前這份');
 
   const commit = fnBody(src, 'commitRename');
   assert.ok(/ctx\.closed \|\| state\.staleDoc/.test(commit), '問名字時視窗換了別份特效，就不改');

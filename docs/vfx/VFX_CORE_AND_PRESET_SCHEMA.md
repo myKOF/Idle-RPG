@@ -108,7 +108,9 @@ Editor 把 `preset.id` 換成檔名，存檔寫回的就是開啟的那個檔；
 Save As 的名字由 Windows 存檔視窗問：`POST /__save-as-dialog` 請編輯器伺服器開視窗
 （`tools/vfx/save-as-dialog.cjs`），只回傳檢查過的 id、不寫任何檔案，寫入仍走上面的 PUT。
 不用瀏覽器的存檔視窗 API：它在使用者選到既有檔案時會先把檔案清空，而且拿不到路徑。
-選到既有檔案、不在 `vfx/presets` 這一層、或檔名不能當 id，都會跳訊息框說明並重開視窗。
+不在 `vfx/presets` 這一層、或檔名不能當 id，會跳訊息框說明並重開視窗。
+視窗一打開，檔案清單就選到編輯器目前開著的那一份並捲到看得見的位置（2026-09-18；原生 IFileDialog，C# 在 `tools/vfx/native-save-dialog.cs`，編不起來就退回 WinForms `SaveFileDialog`）；選取時 Windows 會把它的名字放進檔名框。
+另存新檔可以覆寫既有的特效（2026-09-18 使用者：常常是直接蓋掉舊的那份）：選到既有檔案由 Windows 問「要取代嗎？」，回 `{ id, overwrite: true }`；Editor 選到目前這份自己＝一般存檔，要覆寫的那份開在別的視窗就不蓋，沒經過 Windows 問過的撞名（退回輸入框、或問名字期間才有人新增）用確認框補問。重新命名不會蓋掉別的特效。
 
 重新命名（2026-09-18）：`POST /__rename-preset`（body `{ from, to }`）把 `vfx/presets/<from>.json`
 與 `vfx/layouts/<from>.json` 換成 `<to>`，檔案裡的 `preset.id`、`layout.presetId`、根群組 id／名稱跟著換

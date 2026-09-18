@@ -754,10 +754,10 @@ test('SA1 另存新檔就是換掉 preset.id 再走一次一般存檔', function
   assert.ok(/id="btn-save-as"/.test(html), '要有「另存新檔」按鈕');
 });
 
-test('SA2 撞名一律拒絕，而且是在存之前重新抓一次清單', function () {
-  /* 手上那份清單是開啟編輯器當下抓的。另一個分頁、另一位 AI 在這段期間
-     新增的檔案不在裡面——那正是會被悄悄蓋掉的情況。清單抓不到就不存，
-     寧可失敗也不要賭：「不會改到舊特效」是這個功能存在的理由。 */
+test('SA2 另存新檔可以覆寫既有的特效：存之前重新抓清單；沒經過 Windows 問過的要補問；開在別的視窗的不蓋', function () {
+  /* 2026-09-18 使用者：另存新檔常常是直接蓋掉舊的那份，所以不再一律拒絕撞名。
+     但仍要在存之前重新抓一次清單：手上的清單是開啟編輯器當下的，問名字的這段時間可能有人新增了同名的，
+     那種沒經過 Windows「要取代嗎？」的一律補問，不能靜靜蓋掉。 */
   const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
   const fn = src.slice(src.indexOf('function saveAsPreset'));
   const body = fn.slice(0, fn.indexOf('\n  }'));
@@ -765,11 +765,10 @@ test('SA2 撞名一律拒絕，而且是在存之前重新抓一次清單', func
   const fetchAt = body.indexOf('fetch(PRESET_LIST_URL)');
   const commitAt = body.indexOf('commitSaveAs');
   assert.ok(fetchAt >= 0 && commitAt > fetchAt, '要先抓清單再存');
-  assert.ok(/indexOf\(newId\) >= 0/.test(body), '撞名要擋');
+  assert.ok(/if \(!answer\.overwrite && !window\.confirm\(/.test(body), '沒經過 Windows 問過的撞名要補問');
+  assert.ok(/paneHolding\(newId\)/.test(body), '要覆寫的那份開在別的視窗就不蓋（那邊存檔會再蓋回去）');
+  assert.ok(/if \(newId === current\) return savePreset\(\);/.test(body), '選到目前這份自己＝一般存檔');
   assert.ok(/catch\(/.test(body), '清單抓不到也要走失敗路徑，不能直接存下去');
-  /* 用 confirm 讓人「確定要覆寫嗎」是不行的：使用者按的是「另存新檔」，
-     覆寫不該是這顆按鈕的可能結果之一。 */
-  assert.ok(!/confirm\(/.test(body), '撞名要直接拒絕，不是問使用者要不要覆寫');
 });
 
 test('SA3 存檔失敗要把 preset.id 捲回去', function () {
