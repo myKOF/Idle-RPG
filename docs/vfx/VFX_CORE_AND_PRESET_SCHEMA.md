@@ -110,6 +110,23 @@ Save As 的名字由 Windows 存檔視窗問：`POST /__save-as-dialog` 請編�
 不用瀏覽器的存檔視窗 API：它在使用者選到既有檔案時會先把檔案清空，而且拿不到路徑。
 選到既有檔案、不在 `vfx/presets` 這一層、或檔名不能當 id，都會跳訊息框說明並重開視窗。
 
+重新命名（2026-09-18）：`POST /__rename-preset`（body `{ from, to }`）把 `vfx/presets/<from>.json`
+與 `vfx/layouts/<from>.json` 換成 `<to>`，檔案裡的 `preset.id`、`layout.presetId`、根群組 id／名稱跟著換
+（`layout-schema.js` 的 `renameRootGroup`，與 Save As 共用）。內容照樣走 `validatePreset → serialisePreset`
+與 `validateLayout → serialiseLayout`，不合法的不改。
+
+| 項目 | 內容 |
+| --- | --- |
+| 只動兩個檔 | 配置表、人工清單、`js/`／`tests/`／`tools/` 寫著舊名字，或有同名的 `vfx/coverage-specs/<id>.json`，就不改名並列出在哪裡（`tools/vfx/preset-usage.cjs` 的 `renameBlockers`）。`{ from, dryRun: true }` 只做這個檢查 |
+| 不覆寫 | `<to>` 的特效檔已存在、或只有殘留的 `<to>` 分組檔，一律拒絕 |
+| 順序 | 寫新特效 → 寫新分組 → 刪舊分組 → 刪舊特效。途中當掉最壞是新舊並存，不會兩份都沒有 |
+| 失敗 | 任何一步失敗倒著還原（已刪的舊分組用原始 bytes 寫回）；還原也失敗時停在那一步、不刪僅存的一份，回報四個檔的現況（`incomplete: true`） |
+| 素材同步 | 不觸發：內容與用到的素材都沒變，`shipped-assets.json` 也不記 preset id |
+| 來源 | 與存檔 API 同一套 `checkWriteOrigin` |
+
+新名字同樣用 Windows 存檔視窗問（`POST /__save-as-dialog` 帶 `purpose: 'rename'`，只換標題與說明）。
+Editor 有未存檔的修改時先問要不要一起存，改完用新名字就地重新開啟（復原紀錄裡每一步都帶著舊名字，不能留）。
+
 存檔**不會**觸發 `tools/vfx/export-assets.cjs`。
 把素材發佈綁進編輯動作，等於每按一次存檔就重寫一次 `images/vfx/assets/`；
 正式匯出仍然是獨立的一步。

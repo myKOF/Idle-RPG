@@ -947,9 +947,11 @@ test('S2 目的地目錄只能是模組常數，落檔一定走 temp → rename'
      呼叫端只能傳那兩個模組常數，其餘一律拒絕。 */
   const dirs = editorServer.__testOnly.WRITABLE_DIRS;
   assert.deepEqual(dirs, ['vfx/presets', 'vfx/layouts']);
-  /* 只看呼叫端（結果會被指派出去），不要把函式定義那一行也算進來 */
-  const calls = src.match(/=\s*writeJsonFile\(ctx, ([A-Za-z_]+),/g) || [];
-  assert.equal(calls.length, 2, '應該剛好有 preset 與 layout 兩個呼叫端');
+  /* 只看呼叫端，不要把函式定義那一行也算進來。以前只數「結果被指派出去」的呼叫，
+     重新命名的呼叫是包在 mustWrite(...) 裡的，那樣數會整批漏掉——所以改成每一個呼叫都算。
+     存檔兩個（preset、layout）＋重新命名三個（新特效、新分組、失敗時寫回舊分組）。 */
+  const calls = src.match(/(?<!function )writeJsonFile\(ctx, ([A-Za-z_]+),/g) || [];
+  assert.equal(calls.length, 5, '呼叫端應該剛好是存檔兩個、重新命名三個；多了一個就要看它的目錄參數');
   calls.forEach(function (c) {
     assert.ok(/PRESETS_DIR_REL|LAYOUTS_DIR_REL/.test(c),
       'writeJsonFile 的目錄參數必須是模組常數，收到：' + c);

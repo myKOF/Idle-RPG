@@ -45,6 +45,9 @@
   <!-- 另存新檔：改完存成另一份，原本那份不動。實作上就是換掉 preset.id
        再走一次一般存檔——存檔目的地本來就由 preset.id 決定。 -->
   <button id="btn-save-as" title="存成另一份 Preset，不會動到目前這一份">另存新檔</button>
+  <!-- 重新命名：特效檔與分組檔一起換名字，由伺服器搬檔（見 editor.js 的 renamePreset）。
+       遊戲、程式、測試有用到的特效不能改，按下去會列出用在哪裡。 -->
+  <button id="btn-rename" title="幫目前這份特效換名字（特效檔與分組檔一起改）。遊戲或程式有用到的特效不能改">重新命名</button>
   <button id="btn-download">下載複本</button>
   <input type="file" id="file-load" accept="application/json" hidden>
   <span id="dirty-flag" class="dirty"></span>
@@ -267,6 +270,6 @@
 <script src="/tools/vfx/editor/gizmo-model.js?v=20260914-multi-gizmo"></script>
 <script src="/tools/vfx/editor/history.js"></script>
 <script src="/tools/vfx/editor/spine-ref.js"></script>
-<script src="/tools/vfx/editor/editor.js?v=20260918-group-rename-dblclick"></script>
+<script src="/tools/vfx/editor/editor.js?v=20260918-rename-preset"></script>
 </body>
 </html>

@@ -244,17 +244,70 @@ test('SAVEAS-6 Editor：另存新檔先請伺服器開視窗，開不起來才�
     const rest = src.slice(at);
     return rest.slice(0, rest.indexOf('\n  }'));
   };
-  const ask = body('askSaveAsName');
+  /* 問名字的本體是 askPresetName，另存新檔與重新命名共用（2026-09-18 加上重新命名時抽出來） */
+  const ask = body('askPresetName');
   assert.ok(/fetch\(SAVE_AS_DIALOG_URL/.test(ask) && /method: 'POST'/.test(ask));
   assert.ok(/'Content-Type': 'application\/json'/.test(ask), '伺服器的寫入防護要求 JSON，少了會被 403');
   assert.ok(/window\.prompt\(/.test(ask), '伺服器太舊或不是 Windows 時要退回輸入框，另存新檔不能整個不能用');
+  assert.ok(/askPresetName\(current \? current \+ '-copy' : '', 'save-as'\)/.test(body('askSaveAsName')),
+    '另存新檔預填「目前的名字-copy」');
   const save = body('saveAsPreset');
   assert.ok(/askSaveAsName\(current\)/.test(save));
   assert.ok(!/window\.prompt\(/.test(save), '名字只從 askSaveAsName 來');
+  assert.ok(!/window\.prompt\(/.test(body('renamePreset')) && !/window\.prompt\(/.test(body('commitRename')),
+    '重新命名的名字也只從 askPresetName 來');
   assert.ok(!/showSaveFilePicker\s*\(/.test(src), '瀏覽器的存檔視窗選到既有檔案會先把它清空（見 save-as-dialog.cjs）');
   assert.ok(/var SAVE_AS_DIALOG_URL = '\/__save-as-dialog'/.test(src));
 
   const server = fs.readFileSync(path.join(REPO, 'tools/vfx/editor-server.cjs'), 'utf8');
   assert.ok(/SAVE_AS_DIALOG_PATH = '\/__save-as-dialog'/.test(server), '頁面與伺服器的路徑要一致');
   assert.ok(server.indexOf("'save-as-dialog.cjs'") >= 0, 'save-as-dialog.cjs 要列進 RESTART_REQUIRED_FILES');
+});
+
+test('SAVEAS-7 重新命名也用這個視窗問新名字：標題不同；選到目前的名字與選到別人的名字各有說明', async function () {
+  /* 需求（2026-09-18）：特效要能直接改名。新名字一樣要看得到資料夾裡已經有哪些、一樣不能蓋掉別人。 */
+  const sb = sandboxPresets();
+  const calls = [];
+  function answers(list) {
+    return function (opts) { calls.push(opts); return Promise.resolve(list.shift()); };
+  }
+  const r = await dialog.askPresetId({
+    presetsDir: sb.presets, suggested: 'beam-light', purpose: 'rename', policy: policy,
+    runDialog: answers([
+      { path: path.join(sb.presets, 'beam-light.json') },
+      { path: path.join(sb.presets, 'beam-light.json') },
+      { path: path.join(sb.presets, 'beam-light-blue.json') }
+    ])
+  });
+  assert.deepEqual(r, { id: 'beam-light-blue' });
+  assert.equal(calls[0].title, dialog.RENAME_TITLE);
+  assert.equal(calls[0].fileName, 'beam-light.json', '重新命名預填的就是目前的名字');
+  assert.match(calls[1].message, /就是目前的名字/, '沒改就按下去最常見：不要讓人以為那個名字被別人占了');
+  assert.notEqual(dialog.RENAME_TITLE, dialog.TITLE);
+
+  fs.writeFileSync(path.join(sb.presets, 'other.json'), '{}');
+  calls.length = 0;
+  await dialog.askPresetId({
+    presetsDir: sb.presets, suggested: 'beam-light', purpose: 'rename', policy: policy,
+    runDialog: answers([{ path: path.join(sb.presets, 'other.json') }, { canceled: true }])
+  });
+  assert.match(calls[1].message, /已經有一份「other」了。重新命名不會蓋掉別的特效/);
+
+  /* 伺服器把 purpose 帶進視窗；沒帶或亂帶一律當成另存新檔 */
+  const seen = [];
+  const server = editorServer.__testOnly.createServer({
+    repoRoot: sb.repoRoot, assetRoots: {},
+    runSaveDialog: function (opts) { seen.push(opts.title); return Promise.resolve({ canceled: true }); }
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const port = server.address().port;
+    await post(port, '/__save-as-dialog', { suggested: 'beam-light', purpose: 'rename' });
+    await post(port, '/__save-as-dialog', { suggested: 'beam-light' });
+    await post(port, '/__save-as-dialog', { suggested: 'beam-light', purpose: 'delete-everything' });
+    assert.deepEqual(seen, [dialog.RENAME_TITLE, dialog.TITLE, dialog.TITLE]);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(sb.base, { recursive: true, force: true });
+  }
 });

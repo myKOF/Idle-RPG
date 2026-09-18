@@ -1,6 +1,7 @@
 'use strict';
 /* ============================================================
    save-as-dialog.cjs — VFX Editor「另存新檔」的 Windows 存檔視窗
+   （「重新命名」問新名字也用它，見 askPresetId 的 purpose）
 
    2026-09-14 使用者要求：另存新檔不要用網頁的輸入框，要跟「載入 Preset」一樣
    叫 Windows 的視窗。
@@ -29,6 +30,9 @@ const fs = require('fs');
 const path = require('path');
 
 const TITLE = '另存新檔（存到 vfx\\presets）';
+/* 「重新命名」也用這個視窗問新名字（2026-09-18）：一樣要看得到資料夾裡已經有哪些名字，
+   一樣不收既有的檔案。差別只有標題與選到既有檔案時的說明。 */
+const RENAME_TITLE = '重新命名（輸入新名字，存在 vfx\\presets）';
 /* 連續幾次選到不能用的名字就放棄，回報原因給頁面。不設上限的話，
    使用者關不掉的其實是一個一直重開的視窗。 */
 const MAX_ROUNDS = 5;
@@ -195,21 +199,30 @@ function chosenPresetId(chosen, presetsDir, policy, platform) {
 
 /* 問出一個可以另存的 preset id。
    opts：presetsDir、suggested（建議名稱，不含副檔名）、policy（preset-id-policy）、
+   purpose（'rename'＝重新命名，此時 suggested 就是目前的名字；其餘＝另存新檔）、
    runDialog（預設 runWindowsDialog）、maxRounds、platform。
    回傳 Promise：{ canceled: true }、{ id }，或連續 maxRounds 次都不能用時 { problem }。
-   既有檔案一律不收：另存新檔不會覆寫，覆寫請用「儲存到 repo」。 */
+   既有檔案一律不收：另存新檔不會覆寫，覆寫請用「儲存到 repo」；重新命名也不會蓋掉別的特效。 */
 function askPresetId(opts) {
   const run = opts.runDialog || runWindowsDialog;
   const maxRounds = opts.maxRounds || MAX_ROUNDS;
+  const renaming = opts.purpose === 'rename';
+  function existsProblem(id) {
+    if (!renaming) return '已經有一份「' + id + '」了。另存新檔不會覆寫既有的特效，請換一個名字。';
+    /* 視窗預填的就是目前的名字，沒改就按下去最常見：說清楚，不要讓人以為那個名字被別人占了 */
+    if (id === opts.suggested) return '「' + id + '」就是目前的名字。請輸入新的名字。';
+    return '已經有一份「' + id + '」了。重新命名不會蓋掉別的特效，請換一個名字。';
+  }
   function round(n, fileName, message) {
     return Promise.resolve(run({
-      initialDir: opts.presetsDir, fileName: fileName, title: TITLE, message: message
+      initialDir: opts.presetsDir, fileName: fileName, title: renaming ? RENAME_TITLE : TITLE,
+      message: message
     })).then(function (picked) {
       if (!picked || picked.canceled) return { canceled: true };
       const r = chosenPresetId(picked.path, opts.presetsDir, opts.policy, opts.platform);
       let problem = r.problem;
       if (!problem && fs.existsSync(path.join(opts.presetsDir, r.id + '.json'))) {
-        problem = '已經有一份「' + r.id + '」了。另存新檔不會覆寫既有的特效，請換一個名字。';
+        problem = existsProblem(r.id);
       }
       if (!problem) return { id: r.id };
       if (n + 1 >= maxRounds) return { problem: problem };
@@ -221,6 +234,7 @@ function askPresetId(opts) {
 
 module.exports = {
   TITLE: TITLE,
+  RENAME_TITLE: RENAME_TITLE,
   DIALOG_SCRIPT: DIALOG_SCRIPT,
   powershellArgs: powershellArgs,
   parseDialogOutput: parseDialogOutput,
