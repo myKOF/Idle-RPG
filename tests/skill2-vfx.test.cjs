@@ -211,10 +211,14 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
 
   for (const variant of [
     'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-ring', 'knife', 'knife-bounce', 'knife-soulhunter',
-    'gale-burst', 'gale-moon', 'bleed-tick', 'poison-tick', 'blood-explosion',
+    'gale-burst', 'gale-moon', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
     assert.ok(skills2.includes("'" + variant + "'") || skills2.includes('"' + variant + '"'), variant);
+  }
+  // 狀態每跳的畫面只由 js/combat.js tickStatuses 依狀態表送出（2026-09-18），技能節拍器不再另外畫
+  for (const variant of ['bleed-tick', 'poison-tick', 'burn-tick']) {
+    assert.ok(!skills2.includes("'" + variant + "'"), variant + ' 不再由 skills2 送出');
   }
 
   for (const variant of [

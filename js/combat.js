@@ -571,27 +571,36 @@ function applyShield(ent, pctOfMaxHp, dur, sid, stats, stackCfg) {
     return dur;
 }
 
+/* 持續傷害的歸屬（DPS 統計與戰鬥日誌）。新版技能的狀態以 Skills2「敵方狀態／我方狀態」欄的角色反查
+   （skills2StatusRoleOf），表格換掉狀態時歸屬跟著走；角色 → 歸屬的對照維持改造前的分組。 */
+var DOT_SOURCE_BY_SKILL2_ROLE = {
+    mireSlow: 'mire', mirePoison: 'mire', mireLava: 'mire', burn: 'fireball',
+    bleed: 'bloodblade', poison: 'bloodblade', ironBleed: 'bloodblade', ironBleedSelf: 'bloodblade',
+    frostBite: ':frostbite', windCut: ':windcut'
+};
 function resolveDotSource(sid) {
     if (!sid) return null;
-    if (sid === 'sgMirePoison' || sid === 'sgMireLava' || sid === 'sgMire') {
+    var sRole = (typeof skills2StatusRoleOf === 'function') ? skills2StatusRoleOf(sid) : null;
+    var sGroup = sRole ? DOT_SOURCE_BY_SKILL2_ROLE[sRole.role] : '';
+    if (sGroup === 'mire') {
         var mlv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
             ? sgTotalLevel(skills2Levels('mire')) : undefined;
         return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.mire) ? SKILLS2.mire.name : '泥沼術', key: 'skill2:mire', level: mlv };
     }
-    if (sid === 'sgBurn') {
+    if (sGroup === 'fireball') {
         var flv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
             ? sgTotalLevel(skills2Levels('fireball')) : undefined;
         return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.fireball) ? SKILLS2.fireball.name : '火球術', key: 'skill2:fireball', level: flv };
     }
-    if (sid === 'sgBleed' || sid === 'sgPoison' || sid === 'sgIronBleed') {
+    if (sGroup === 'bloodblade') {
         var blv = (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
             ? sgTotalLevel(skills2Levels('bloodblade')) : undefined;
         return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.bloodblade) ? SKILLS2.bloodblade.name : '血刃斬', key: 'skill2:bloodblade', level: blv };
     }
-    if (sid === 'sgFrostBite') {
+    if (sGroup === ':frostbite') {
         return { name: '寒霜凍傷', key: 'skill2:frostbite' };
     }
-    if (sid === 'sgWindCut') {
+    if (sGroup === ':windcut') {
         return { name: '風切割裂', key: 'skill2:windcut' };
     }
     var sdef = (typeof statusDef === 'function') ? statusDef(sid) : (typeof STATUS !== 'undefined' ? STATUS[sid] : null);
@@ -807,7 +816,8 @@ function tickStatuses(ent, dt, dotContext) {
         if (disintegrate && typeof sgDisintegrate === 'function') {
             for (var bi = 0; bi < dotDamageItems.length; bi++) {
                 var bloodItem = dotDamageItems[bi], bloodDot = bloodItem.d;
-                if (bloodDot.sid !== 'sgBleed' && bloodDot.sid !== 'sgPoison') continue;
+                // 血刃斬的流血／中毒以角色判定：Skills2 第 1／4 階「敵方狀態」換成別的狀態時跟著換
+                if (!skills2StatusRoleHas('bleed', bloodDot.sid) && !skills2StatusRoleHas('poison', bloodDot.sid)) continue;
                 for (var bt = 0; bt < bloodItem.tickCount; bt++) {
                     sgDisintegrate(ent, bloodDot.sid, bloodDot, bloodDot.dur, disintegrate, dotContext);
                 }

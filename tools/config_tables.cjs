@@ -1235,6 +1235,98 @@ function skills2VfxUsageFromCell(value) {
   if (label === '附加效果') return { vfxUsage: 'effect' };
   throw new Error('「特殊效果」只能填「技能本體」、「附加效果」或留白，目前為「' + label + '」');
 }
+
+/* ---- 我方狀態／敵方狀態（2026-09-18 狀態表格化）----
+   每一列可填施放時對自己、命中時對敵人附加的狀態（js/skills2.js row.status = { self, enemy }）。
+   格子語法：條目以「;」（或換行、全形「；」）分隔，每個條目＝狀態ID，可帶參數：
+     sgGale(val=pct, dur=sec)   參數值為數字，或本列「效果參數」的鍵名（隨等級成長）
+   參數：val 效果數值／dmg 狀態傷害／dur 持續秒數／gap 作用間隔／max 層數上限／chance 機率%／stacks 一次疊幾層。
+   登記在 js/skills2.js SKILL2_STATUS_SLOTS 的列，前幾格是技能原有的施加點（觸發時機與數值公式由技能決定），
+   其後的條目才是「附加條目」（我方＝施放時、敵方＝本技能每次命中）。本段負責解析、驗證與往返。 */
+const SKILLS2_STATUS_COLUMNS = [['我方狀態', 'self'], ['敵方狀態', 'enemy']];
+const SKILLS2_STATUS_PARAMS = ['val', 'dmg', 'dur', 'gap', 'max', 'chance', 'stacks'];
+const SKILLS2_STATUS_SIDE_LABEL = { self: '我方', enemy: '敵方' };
+const STATUS_EFFECT_LABEL = { dot: '持續傷害', hot: '持續回復', stat: '屬性增減', ctrl: '行動限制', shield: '吸收護盾' };
+function skills2StatusSlots() {
+  return evalLiteral(extractLiteral(readUtf8(JS.skills2), 'SKILL2_STATUS_SLOTS').literal);
+}
+/* 狀態表目錄（ID → 狀態效果）。--apply 時以 CSV 為準：同一次套用若新增了狀態，Skills2 可以直接引用。 */
+function statusCatalog() {
+  const rows = csvParse(readUtf8(csvPathOf('Status')));
+  const get = rowGetter(rows[0]);
+  const out = {};
+  rows.slice(1).forEach(r => { const id = get(r, '狀態ID').trim(); if (id) out[id] = get(r, '狀態效果').trim(); });
+  return out;
+}
+function skills2StatusCell(list) {
+  return (list || []).map(e => {
+    const params = SKILLS2_STATUS_PARAMS.filter(k => e[k] !== undefined).map(k => k + '=' + e[k]);
+    return e.id + (params.length ? '(' + params.join(', ') + ')' : '');
+  }).join('; ');
+}
+/* 解析一格。where＝錯誤訊息的位置描述；fx＝本列效果參數（驗證鍵名）；slots＝本格的登記位置。 */
+function skills2StatusFromCell(value, where, fx, slots, catalog) {
+  const text = String(value || '').trim();
+  if (!text) return [];
+  return text.split(/[;；\n]/).map(s => s.trim()).filter(Boolean).map((part, idx) => {
+    const m = /^([A-Za-z_][A-Za-z0-9_]*)\s*(?:[(（]([^)）]*)[)）])?$/.exec(part);
+    if (!m) throw new Error(where + '：看不懂「' + part + '」，格式是 狀態ID 或 狀態ID(參數=值, …)');
+    const id = m[1];
+    if (!catalog[id]) throw new Error(where + '：狀態表沒有「' + id + '」');
+    const slot = slots[idx];
+    if (slot && slot.effect && catalog[id] !== slot.effect) {
+      throw new Error(where + '：第 ' + (idx + 1) + ' 格是「' + slot.label + '」，必須填' +
+        STATUS_EFFECT_LABEL[slot.effect] + '（' + slot.effect + '）類的狀態，「' + id + '」是 ' + catalog[id]);
+    }
+    const entry = { id: id };
+    (m[2] || '').split(/[,，]/).map(s => s.trim()).filter(Boolean).forEach(kv => {
+      const p = /^([A-Za-z]+)\s*[=＝]\s*(\S+)$/.exec(kv);
+      if (!p) throw new Error(where + '：「' + id + '」的參數「' + kv + '」要寫成 鍵=值');
+      const key = p[1], raw = p[2];
+      if (SKILLS2_STATUS_PARAMS.indexOf(key) < 0) {
+        throw new Error(where + '：「' + id + '」沒有參數「' + key + '」，可用 ' + SKILLS2_STATUS_PARAMS.join('／'));
+      }
+      if (key === 'dmg' && slot) {
+        throw new Error(where + '：第 ' + (idx + 1) + ' 格「' + slot.label + '」的傷害由技能公式計算，不能用 dmg 覆寫；請改「效果參數」');
+      }
+      if (/^-?\d+(?:\.\d+)?$/.test(raw)) { entry[key] = Number(raw); return; }
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(raw)) throw new Error(where + '：「' + id + '」的 ' + key + ' 要填數字或效果參數的鍵名，目前是「' + raw + '」');
+      if (!fx || (fx[raw] === undefined && fx[raw + 'Per'] === undefined)) {
+        throw new Error(where + '：「' + id + '」的 ' + key + '=' + raw + '，但本列效果參數沒有「' + raw + '」');
+      }
+      entry[key] = raw;
+    });
+    return entry;
+  });
+}
+/* 說明頁：自動列出每個登記位置（改表的人要知道哪幾格是技能原有的施加點、該填什麼類型）。 */
+function skills2StatusHelpRows() {
+  let slots = {};
+  try { slots = skills2StatusSlots(); } catch (e) { /* 首次 bootstrap 還沒有登記表 */ }
+  const rows = [
+    ['我方狀態 / 敵方狀態（2026-09-18 狀態表格化）'],
+    ['我方狀態＝施放時套在自己身上（被動技能以觸發當作施放）；敵方狀態＝這個技能命中敵人時附加。每列只在該階有等級（超神＝選中）時生效。'],
+    ['格式：狀態ID，多個以「;」分隔；可帶參數：狀態ID(參數=值, …)，例：atkDown(val=10, dur=3); stun(chance=25, dur=sec)'],
+    ['參數：val 效果數值／dmg 狀態傷害／dur 持續秒數／gap 作用間隔／max 層數上限／chance 機率%／stacks 一次疊幾層；沒填的吃狀態表。'],
+    ['參數值填數字＝固定值；填本列「效果參數」的鍵名（例 sec、pct）＝隨該階等級成長。'],
+    ['狀態長什麼樣子（上身特效、身上的持續特效、每跳特效）一律填在 Status 表，不填在這裡。'],
+    ['下列是技能原有的施加點：前幾格的觸發時機與數值由技能公式決定，格子只決定施加哪一個狀態；'],
+    ['　換成別的狀態，技能後續各階（例：燃燒結束的爆燃、流血中的虛弱增傷）會跟著作用在新狀態上；'],
+    ['　格子留空＝不施加；超出下列格數的條目，依上面的通用規則附加。'],
+  ];
+  Object.keys(slots).forEach(key => {
+    const parts = key.split('.');
+    const stage = /^\d+$/.test(parts[1]) ? '第 ' + parts[1] + ' 階' : '超神 ' + parts[1];
+    const list = slots[key].map((s, i) => '第 ' + (i + 1) + ' 格 ' + s.label +
+      (s.effect ? '〔限' + STATUS_EFFECT_LABEL[s.effect] + '〕' : '')).join('；');
+    rows.push(['　' + parts[0] + ' ' + stage + '（' + SKILLS2_STATUS_SIDE_LABEL[parts[2]] + '）：' + list]);
+  });
+  rows.push(['']);
+  return rows;
+}
+// 排在「特殊效果」說明之後：置頂那一段是既有的閱讀順序（tests/skills2-vfx-usage.test.cjs 守著）
+SKILLS2_GLOSSARY_ROWS.splice(SKILLS2_VFX_USAGE_HELP.length, 0, ...skills2StatusHelpRows());
+
 SCHEMAS.Skills2 = {
   name: 'Skills2', jsFile: 'skills2', sheet: 'Skills2', vars: ['SKILLS2'],
   extraSheets: [{ name: '欄位定義', rows: SKILLS2_GLOSSARY_ROWS }],
@@ -1245,7 +1337,8 @@ SCHEMAS.Skills2 = {
     '解鎖轉生/等級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
-    .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）', SKILLS2_VFX_USAGE_COLUMN]),
+    .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）', SKILLS2_VFX_USAGE_COLUMN])
+    .concat(SKILLS2_STATUS_COLUMNS.map(c => c[0])),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1260,7 +1353,8 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
-          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat([skills2VfxUsageCell(t)]));
+          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat([skills2VfxUsageCell(t)])
+          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
       (g.ult || []).forEach((o, i) => {
@@ -1270,7 +1364,8 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
           '', o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
-          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat([skills2VfxUsageCell(o)]));
+          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat([skills2VfxUsageCell(o)])
+          .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))));
       });
     });
     return rows;
@@ -1279,6 +1374,13 @@ SCHEMAS.Skills2 = {
     const get = rowGetter(header);
     const groups = {};
     const order = [];
+    /* 狀態欄是必要欄：舊格式的表沒有這兩欄，照舊套用會把所有技能附加的狀態清空（流血、燃燒…全部失效），
+       所以缺欄就整批拒絕，請先換成新版 Excel。 */
+    const missingStatus = SKILLS2_STATUS_COLUMNS.map(c => c[0]).filter(c => !header.map(h => String(h).split('\n')[0].trim()).includes(c));
+    if (missingStatus.length) throw new Error('Skills2 表缺少「' + missingStatus.join('」「') + '」欄（舊格式），請先換成新版 Skills2.xlsx');
+    const statusSlots = skills2StatusSlots();
+    const catalog = statusCatalog();
+    const seenSlotRows = {};
     dataRows.filter(r => get(r, '群組ID').trim() !== '').forEach(r => {
       const gid = get(r, '群組ID').trim();
       const tierIdx = Math.floor(toNum(get(r, '階數')));
@@ -1353,6 +1455,16 @@ SCHEMAS.Skills2 = {
       const tierVfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
       const usageColumn = [SKILLS2_VFX_USAGE_COLUMN, '特效用途特效', '特殊用途特效'].find(name => header.includes(name));
       const vfxUsage = skills2VfxUsageFromCell(usageColumn ? get(r, usageColumn) : '');
+      /* 我方狀態／敵方狀態：整列都空就不寫 status。 */
+      const stageKey = tierIdx >= SKILLS2_ULT_ROW_BASE ? get(r, '超神ID').trim() : String(tierIdx);
+      const status = {};
+      SKILLS2_STATUS_COLUMNS.forEach(([label, side]) => {
+        const where = 'Skills2 ' + gid + ' ' + (tierIdx >= SKILLS2_ULT_ROW_BASE ? '超神 ' + stageKey : '第 ' + tierIdx + ' 階') + '「' + label + '」';
+        seenSlotRows[gid + '.' + stageKey + '.' + side] = true;
+        const list = skills2StatusFromCell(get(r, label), where, fx, statusSlots[gid + '.' + stageKey + '.' + side] || [], catalog);
+        if (list.length) status[side] = list;
+      });
+      const tierStatus = Object.keys(status).length ? { status: status } : null;
       /* 階數 >= 8：超神進化的三選一選項（不是第 8~10 階）。
          欄位順序須與手寫字面值一致：id／name／cost／fx／goldBase／goldGrow／desc（／vfx）。 */
       if (tierIdx >= SKILLS2_ULT_ROW_BASE) {
@@ -1365,7 +1477,7 @@ SCHEMAS.Skills2 = {
           id: ultId, name: get(r, '階段名稱'), cost: tierCost, fx: fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
-        }, tierVfx ? { vfx: tierVfx } : null, vfxUsage);
+        }, tierVfx ? { vfx: tierVfx } : null, vfxUsage, tierStatus);
         return;
       }
       groups[gid].tiers[tierIdx - 1] = Object.assign(
@@ -1377,7 +1489,11 @@ SCHEMAS.Skills2 = {
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
         },
-        tierVfx ? { vfx: tierVfx } : null, vfxUsage);
+        tierVfx ? { vfx: tierVfx } : null, vfxUsage, tierStatus);
+    });
+    // 登記表（js/skills2.js SKILL2_STATUS_SLOTS）指到的列必須存在：打錯鍵的位置會永遠讀不到狀態
+    Object.keys(statusSlots).forEach(key => {
+      if (!seenSlotRows[key]) throw new Error('SKILL2_STATUS_SLOTS 的「' + key + '」在 Skills2 表找不到對應的列');
     });
     order.forEach(gid => {
       const g = groups[gid];
