@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "proj-cleave-ring-tricolor-08",
+  "id": "proj-cleave-ring-tricolor-09-copy",
   "duration": 0.42,
   "loop": false,
   "layers": [
@@ -19,7 +19,7 @@
         "y": 0.7592364629905614
       },
       "alpha": 0.025,
-      "tint": "#319eff",
+      "tint": "#33ff5c",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.42,
@@ -89,7 +89,7 @@
         "y": 0.29889408842523596
       },
       "alpha": 0.9,
-      "tint": "#319eff",
+      "tint": "#1e7000",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.42,
@@ -159,7 +159,7 @@
         "y": 0.28373462493790363
       },
       "alpha": 0.8,
-      "tint": "#0049f5",
+      "tint": "#ffffff",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.42,
@@ -299,7 +299,7 @@
         "y": 0.7626473422752111
       },
       "alpha": 0.025,
-      "tint": "#ffd34d",
+      "tint": "#33ff5c",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
@@ -369,7 +369,7 @@
         "y": 0.29889408842523596
       },
       "alpha": 0.9,
-      "tint": "#ffd34d",
+      "tint": "#1e7000",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
@@ -439,7 +439,7 @@
         "y": 0.28373462493790363
       },
       "alpha": 0.8,
-      "tint": "#0049f5",
+      "tint": "#ffffff",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
@@ -579,7 +579,7 @@
         "y": 0.7626473422752111
       },
       "alpha": 0.025,
-      "tint": "#bb60ff",
+      "tint": "#33ff5c",
       "blendMode": "add",
       "delay": 0.07,
       "duration": 0.35,
@@ -649,7 +649,7 @@
         "y": 0.29889408842523596
       },
       "alpha": 0.9,
-      "tint": "#bb60ff",
+      "tint": "#1e7000",
       "blendMode": "add",
       "delay": 0.07,
       "duration": 0.35,
@@ -719,7 +719,7 @@
         "y": 0.28373462493790363
       },
       "alpha": 0.8,
-      "tint": "#0049f5",
+      "tint": "#ffffff",
       "blendMode": "add",
       "delay": 0.07,
       "duration": 0.35,
@@ -847,7 +847,7 @@
     {
       "id": "blade-body-0-copy",
       "type": "sprite",
-      "assetId": "new_materials/orb/rounded_10.png",
+      "assetId": "new_materials/arcane-ring/spiral_2.png",
       "zIndex": 4,
       "position": {
         "x": 0,
@@ -855,11 +855,11 @@
       },
       "rotation": -1.5708,
       "scale": {
-        "x": 0.4836,
-        "y": 0.4832
+        "x": 0.4131,
+        "y": 0.4128
       },
       "alpha": 0.9,
-      "tint": "#319eff",
+      "tint": "#11fa00",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.42,
@@ -880,19 +880,77 @@
       "scaleOverLife": [
         [
           0,
-          0.12
+          0
         ],
         [
-          0.25,
-          0.48
+          0.5031,
+          0
         ],
         [
-          0.65,
-          0.86
+          0.9938,
+          1.456915
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.7346,
+          6.283185
         ],
         [
           1,
-          1
+          8.168140899333462
+        ]
+      ]
+    },
+    {
+      "id": "blade-body-0-copy-2",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/spiral_2.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": -1.5708,
+      "scale": {
+        "x": 0.4131,
+        "y": 0.4128
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.42,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.8549,
+          0.752176
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5031,
+          0
+        ],
+        [
+          0.9938,
+          1.456915
         ]
       ],
       "rotationOverLife": [

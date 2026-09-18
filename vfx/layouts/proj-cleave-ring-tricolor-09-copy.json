@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-cleave-ring-tricolor-09-copy",
+  "groups": [
+    {
+      "id": "proj-cleave-ring-tricolor-09-copy",
+      "name": "proj-cleave-ring-tricolor-09-copy",
+      "layerIds": [
+        "blade-glow-0",
+        "blade-body-0",
+        "blade-edge-0",
+        "blade-trail-0",
+        "blade-glow-1",
+        "blade-body-1",
+        "blade-edge-1",
+        "blade-trail-1",
+        "blade-glow-2",
+        "blade-body-2",
+        "blade-edge-2",
+        "blade-trail-2",
+        "blade-body-0-copy",
+        "blade-body-0-copy-2"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-cleave-ring-tricolor-09-copy"
+  ]
+}
