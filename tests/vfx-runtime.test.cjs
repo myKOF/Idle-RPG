@@ -1329,6 +1329,28 @@ test('STATUS-3 狀態光環照 Preset 的世界尺寸畫在地板層，並跟著
   delete global.statusVfxPreset;
 });
 
+test('STORM-DANCE 正式光圈按製作尺寸跟隨腳下，快照移除立即回收', function () {
+  const p = JSON.parse(fs.readFileSync(path.join(REPO, 'vfx/presets/ground-storm-dance.json'), 'utf8'));
+  global.statusVfxPreset = (sid, role) => sid === 'sgStorm' && role === 'aura' ? p.id : '';
+  try {
+    const pos = { x: 100, y: 50 };
+    const { adapter, log } = makeAdapter([p], { ctx: { posOf: () => ({ ...pos }), playerPos: () => ({ ...pos }) } });
+    adapter.syncStatuses([{ key: 'mv-float-1', sids: ['sgStorm'] }]);
+    adapter.update(0.25);
+    const floor = log.nodes[0];
+    assert.equal(floor.tag, 'zone');
+    assert.equal(floor.transforms.at(-1).scaleX, p.layers[0].scale.x);
+    const oldX = floor.transforms.at(-1).x;
+    pos.x += 75;
+    adapter.update(0.1);
+    assert.equal(floor.transforms.at(-1).x - oldX, 75);
+    assert.equal(adapter.stats().auras, 1);
+    adapter.syncStatuses([{ key: 'mv-float-1', sids: [] }]);
+    assert.equal(adapter.stats().auras, 0);
+    assert.equal(adapter.stats().zone.activeEffects, 0);
+  } finally { delete global.statusVfxPreset; }
+});
+
 test('STATUS-2 狀態表沒填持續特效時不播', function () {
   global.statusVfxPreset = () => '';
   const { adapter } = makeAdapter([unitPreset('st-burn', 1, true)]);

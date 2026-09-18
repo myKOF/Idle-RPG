@@ -1,5 +1,5 @@
 /* 新版技能系統審查修正（2026-08-14）回歸測試：
-     1. 暴風之舞化身期間普攻計時器不得累積欠帳（化身結束後不得連發補償攻擊）
+     1. 暴風亂舞化身期間保留普攻計時器，由戰鬥迴圈正常出手
      2. 化身期間玩家被暈眩時，自動施放暫停（節拍照走、不補發）
      3. 零日感染的剩餘持續傷害包含已累積未跳出的殘額（d.acc）
    （放獨立檔案：tests/skill2-system.test.cjs 當前由 Codex 的施法鎖任務佔用中。） */
@@ -26,7 +26,7 @@ function loadContext() {
     .forEach((file) => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file }));
   context.G = { player: { gold: 0, skills2: { levels: {} }, loadout: [] }, stage: { current: 1 } };
   context.getStats = () => ({
-    atk: 1000, matk: 0, hp: 1000, mp: 100, level: 10, aspd: 2, cdr: 0,
+    atk: 1000, matk: 0, hp: 1000, mp: 10000, level: 10, aspd: 2, cdr: 0,
     critRate: 0, critDmg: 150, hit: 100, tenacity: 0,
     passives: {}, elemAtk: null, elemDmgPct: 0, elemDmgUp: 0,
     eliteDmg: 0, bossDmg: 0, normalDmg: 0, totalDmgPct: 0, dmgVsElem: null,
@@ -44,14 +44,14 @@ function enemy(hp, x, y) {
     effects: {}, buffs: {}, dots: [], resist: {}, ctrlRes: 0, pos: { x, y } };
 }
 function playerEnt() {
-  return { hp: 1000, mp: 100, shield: 0, shieldMax: 0, atkCd: 0.5, skillCds: {}, skillGcd: 0,
+  return { hp: 1000, mp: 10000, shield: 0, shieldMax: 0, atkCd: 0.5, skillCds: {}, skillGcd: 0,
     buffs: {}, dots: [], effects: {}, _lockTarget: null };
 }
 function ctxOf(c, p, list) {
   return { pEnt: p, getEnemies: () => list, floatSel: 'mv-float', onDeaths() {} };
 }
 
-test('暴風之舞：化身期間普攻計時器夾回 0，不累積欠帳', () => {
+test('暴風亂舞：化身不重置普攻計時器', () => {
   const c = loadContext();
   c.chance = () => false;
   c.G.player.skills2.levels.dualdance = [1, 1, 1, 1, 1, 1, 1];
@@ -60,11 +60,11 @@ test('暴風之舞：化身期間普攻計時器夾回 0，不累積欠帳', () 
   c.GT = 0;
   c.castSkill2(p, [m], 'dualdance', 'mv-float');
   assert.ok(c.skill2StormActive());
-  // 模擬戰鬥迴圈在化身期間持續倒數普攻計時器（閘門只擋出手、不擋倒數）
+  // 化身只管理技能節拍，普攻計時保留給戰鬥迴圈處理。
   p.atkCd = -6;
   c.GT = 0.5;
   c.tickSkill2(0.1, ctxOf(c, p, [m]));
-  assert.equal(p.atkCd, 0, '化身 tick 應把負值計時器夾回 0（普攻是取消、不是延後）');
+  assert.equal(p.atkCd, -6, '化身 tick 不得重置普攻計時器');
 });
 
 test('暴風之舞：暈眩中自動施放暫停，節拍照走不補發', () => {
