@@ -1,5 +1,46 @@
 # AI_TASKS.md
 
+## Codex｜過時技能與特效測試更新（TEST-CONTRACT-REFRESH-20260917）
+
+- Owner Codex；Done。依使用者要求全局檢查舊數值、舊特效／程式文字／快取版本斷言、Skills2舊欄位測試。僅更新已確認過時的測試契約，不修改正式技能數值或掩蓋行為差異。
+- 範圍：tests相關案例與測試輔助、任務紀錄。前置依賴：Skills2範圍欄位遷移已完成。禁止順帶修改遊戲程式、Excel、CSV及使用者VFX。
+- 驗證：全套修改前基線、相關測試、全套修改後差異、具代表性的錯誤注入、build。剩餘非本次範圍失敗另列；完成後提交，交使用者決定合併。
+- 修改：21份測試與 tests/helpers/skill-table.cjs；從原始CSV獨立取得配置期望值、驗證完整編譯結果及新幾何欄位；距離／速度使用合併成長格式。固定版本改驗證有效快取參數；純幾何測試使用明確素材夾具，正式素材合法性／繼承檢查保留。未增加跳過案例。
+- 基線：`node --test --test-reporter=spec "tests/*.test.cjs"` 得2874項、2788通過、84失敗、2跳過，其中2項是卡住後終止的測試檔。最終全套排除確認卡住的 equip-no-duplicate.test.cjs、sim-evaluator.test.cjs，使用 `node --test --test-concurrency=4 --test-reporter=spec` 加其餘全部 tests/*.test.cjs，得2872項、2841通過、29失敗、2跳過；修復53項失敗，另2個卡住檔未完成，不能視為通過。
+- 技能組：`node --test --test-reporter=spec "tests/skill2*.test.cjs" "tests/gale*.test.cjs"` 得546項、529通過、17失敗；加上已通過的 skills2-geometry.test.cjs 6項，對應前次552項為535通過、17失敗（原50項減少33項）。更正前次「50既有失敗」說法：包含本次已修的遷移漏更新測試；以最新表格跑舊邏輯的基線不能證明全部均為遷移前既有問題。
+- 剩餘29項（保留原斷言，尚待獨立診斷，並非全部已證實是遊戲Bug）：skill2-ice 6、skill2-system 3、skill2-vfx 1、skill2-waterball-frostnova-legendary 5、skill2-wind 2、icearrow-vfx-integration 3；ui-worker-panels、vfx-asset-semantics、vfx-editor-gizmo、vfx-editor-history、vfx-editor-save、vfx-gradient-editor、vfx-preset-layout、vfx-preset-usage、vfx-runtime 各1。涉及命中時序／移動、缺少測試環境常數、UI環境、生成資料、粒子縮放契約、歷史快照記憶體、Preset正規化／群組與登記；未放寬檢查以消除紅燈。
+- 錯誤注入7/7被抓到：錯誤冷卻、沼澤尺寸、雷電傷害、迴旋斬特效、震碎斬距離成長、水流彈弧高、缺少快取版本。僅記憶體注入，正式資料未修改。`node tools/build_check.cjs`：370檔通過；`git diff --check`通過。
+- 檢查但未修改：正式技能程式、配置編譯器、Skills2.csv、index及Worker入口、VFX Core／Runtime與相關Preset。使用者4份bolt Preset/layout變更留在工作區不提交。可獨立合併本次測試更新，但整個專案仍非全綠；未推送或合併。
+
+## Codex｜Skills2 範圍用途拆分與成長欄合併（SKILLS2-GEOMETRY-V2-20260917）
+
+- Owner Codex；Done。使用者授權230列範圍重構：施放／搜敵／傷害／控制／偵測／碰撞／環繞／飛行等獨立用途，基值與增量以逗號同欄，矩形長寬以星號表示。
+- 範圍：Skills2.xlsx／CSV、config_tables、用途接線模組／遷移工具／原生Excel保存工具、skills2.js幾何成長、頁面及Worker快取、新格式測試與說明文件。保留使用者正在編輯的技能表值與VFX素材。
+- 原始230列與轉換後資料比對值相同；新增6項格式／幾何測試通過。Excel原檔殘留無法索引的hidden textbox，原生Excel只儲存就新增空白AutoShape；依使用者回報以Excel API複製儲存格至乾淨工作簿、排除舊繪圖物件，連續正常重開／儲存確認0個圖形且逐格一致。已正式同步Excel、CSV與JS；未手工修改工作簿XML。
+- 全技能回歸552項：502通過、50既有失敗；隔離修改前邏輯＋相同最新Excel資料的基線為完全相同50項失敗，無新增失敗。保留使用者自行調整的倍率、搜敵距離及特效引用，未為迎合舊測試改回數值。build370檔通過；再次apply為0差異。新版表格引用的使用者千鳥Preset及layout作為資料依賴隨附，其餘使用者bolt修改不納入提交。未推送、未合併。
+
+## Codex｜落雷藍白飛濺與死亡粒子移除（VFX-THUNDER-SPLASH-20260917）
+
+- Owner Codex。移除battle-renderer死亡時額外生成圓點的呼叫，保留死亡動畫。hit-thunderstrike-bluewhite以既有VFX粒子重製：7藍5白圓點向上噴發、重力260、壽命0.45～0.75秒，搭配5道曲折雷電及短暫核心閃光，取代霧狀光環。沿用整組連續雷電變形。
+- 僅使用既有素材與Core；8個圖層、每次最多12顆粒子，沒有持續發射／新Timer。WebGL實播無pageerror／backend錯誤，動態預覽直接擷取實際Pixi畫布。尚未量測完整遊戲GPU效能。
+- 素材庫無修改；正式匯出索引移除不再使用的circle_rings_c，素材库原檔保留。使用者正在修改的技能表、雷神之怒及千鳥Preset不納入此任務。
+- Done；node --test tests/vfx-core.test.cjs tests/vfx-preset-coverage.test.cjs tests/projectile-impact-size.test.cjs：144/144通過；battle-renderer語法、Preset schema及diff check通過。未推送或合併。
+
+## Codex｜千鳥強化爆散（SKILL-CHIDORI-20260917）
+
+- Owner Codex；Done。月牙閃每敵完整傷害；千鳥爆散加成同時乘上爆散傷害係數與目標數，再對小數目標數擲骰。額外傷害加成套用月牙閃與爆散各一次。兩項加成均配置基值50、每級5，沿用既有 base＋per×lv 計算。
+- 修改 skills2.js、Skills2.xlsx／CSV、遊戲及Worker快取、gale-rework測試。本次Excel只替換AF41、AI41、AJ41儲存格，ZIP其餘項目完全保留，避免繪圖物件變形。使用者其他表格、bolt-sky-purple配置與布局修改保留。
+- 驗證：gale-rework／gale-thunder-flash／skill-vfx-inheritance共25項通過；skill2-ult-evolution指定千鳥／霹靂一閃／雷神3項通過；配置apply dry-run零語意差異。覆蓋不同等級、獨立倍率、完整傷害、小數目標數、回打原目標及傷害／特效逐下同步。
+- 無新增逐幀運算；實際追加命中與特效數依強化後目標數增加。未進行實機遊戲效能量測；未推送或合併。
+
+## Codex｜雷電整組連續變形（VFX-LIGHTNING-DEFORMATION-20260918）
+
+- Owner Codex；Done。使用者核准落雷鏡像、局部連續扭曲及輕微缩放，擴展22份適用Preset。Core統一種子／區域座標函數，Pixi85頂點網格；端點及拼接共用座標，不動傷害與飛行路徑。
+- 修改Core、Pixi backend、Editor種子與快取、離線renderer、22份Preset、變形測試／瀏覽器驗證工具及規格文件。未接入使用者拒絕的hit-thunderstrike-bluewhite候選；未改素材。
+- 303項回歸：296通過、1跳過、6既有失敗；獨立HEAD快照確認相同6項Runtime失敗。實際WebGL覆蓋22份／79網格無錯誤，40道密集施放平均多約1.36ms CPU更新及渲染提交；尚未實機遊戲GPU量測。詳見 docs/vfx/LIGHTNING_DEFORMATION.md。
+- 保留使用者並行修改的技能表、skills2.js及bolt-sky-purple圖層/layout，留在工作區不混入本次提交。素材庫乾淨，無新素材提交。後續Editor定向22項全數通過；build367/367與diff check通過。可合併，未推送。
+
+
 ## Claude｜VFX 編輯器：預設空場景、點空白取消選取、方向鍵移動、Alpha 標題（VFX-EDITOR-NUDGE-20260917）
 
 - Owner：Claude；Done。使用者需求：(1) 首次開啟編輯器預設打開雷球特效，應該是空場景；(2) 點擊預覽視窗空白處取消目前的圖層選取；(3) 方向鍵移動圖層，每次 1px；(4) 途中追加：Over-Life 的 Opacity 改成 Alpha（透明度）比較直覺。

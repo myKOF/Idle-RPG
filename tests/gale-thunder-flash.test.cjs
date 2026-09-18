@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {createRequire}=require('node:module');
 const file=path.join(__dirname,'skill2-knife-range.test.cjs'),src=fs.readFileSync(file,'utf8');
@@ -21,7 +22,7 @@ test('霹靂一閃最後一擊起發射 3+3 道，主打擊不繼承附加光束
  assert.equal(h.beams().length,0);h.tick(.69);assert.equal(h.beams().length,0);
  for(const t of [.7,.78,.9,.98,1.1,1.18,1.3,1.38,1.5,1.58,1.7,1.78,1.9])h.tick(t);
  assert.deepEqual(h.beams().map(e=>e.at),[.7,.9,1.1,1.3,1.5,1.7]);
- assert.equal(h.bolts().length,6);assert.ok(h.bolts().every(e=>e.d===2200));
+ assert.equal(h.bolts().length,6);assert.ok(h.bolts().every(e=>e.d===1000*table.fx('gale','thunderFlash','pct',1)/100));
  assert.ok(h.events.filter(e=>e.variant!=='gale-thunder-flash').every(e=>e.vfx.attack!=='beam-gale-thunder-flash'));
  assert.equal(h.c.SKILL2_RT.projectiles.length,0);
 });
@@ -35,12 +36,13 @@ test('100×10 米矩形以玩家為中心貫穿前後50米，命中所有範圍�
  h.tick(.75);assert.deepEqual(h.bolts().map(k=>k.e.name),['behind','target']);
  h.tick(.78);h.tick(.85);assert.deepEqual(h.bolts().map(k=>k.e.name),['behind','target','edge']);
 });
-test('逐道使用最新玩家位置並重新隨機選敵，20米無敵人即永久終止剩餘序列',()=>{
+test('逐道使用最新玩家位置並重新隨機選敵，表定搜敵半徑外即永久終止剩餘序列',()=>{
+ const radius=table.number('gale','thunderFlash','搜敵範圍（米）',2)*10;
  const h=setup(2,3),a=h.enemy(100,0,'a'),b=h.enemy(0,150,'b');h.setPool([a,b]);h.cast(a);h.tick(.7);h.tick(.78);
- h.move(300,300);const fresh=h.enemy(300,450,'fresh');h.setPool([fresh]);h.tick(.9);
+ h.move(300,300);const fresh=h.enemy(300,300+radius*.75,'fresh');h.setPool([fresh]);h.tick(.9);
  const beam=h.beams()[1];assert.ok(Math.abs(beam.area.a-Math.PI/2)<1e-9);assert.equal(Math.round(beam.area.x),300);assert.equal(beam.area.y,-200);
- h.tick(.98);assert.equal(h.bolts().at(-1).d,2400);
- h.setPool([h.enemy(501,300,'outside')]);h.tick(1.1);h.setPool([fresh]);h.tick(1.3);
+ h.tick(.98);assert.equal(h.bolts().at(-1).d,1000*table.fx('gale','thunderFlash','pct',2)/100);
+ h.setPool([h.enemy(300+radius+1,300,'outside')]);h.tick(1.1);h.setPool([fresh]);h.tick(1.3);
  assert.equal(h.beams().length,2);
 });
 test('同一候選仍可在後續雷電再次隨機選中，换場清空所有排程',()=>{

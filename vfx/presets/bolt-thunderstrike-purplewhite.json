@@ -3,6 +3,19 @@
   "id": "bolt-thunderstrike-purplewhite",
   "duration": 0.32307692307692304,
   "loop": false,
+  "deformation": {
+    "amplitude": 11.55,
+    "axis": "y",
+    "end": 0,
+    "layers": [
+      "blue-corona",
+      "white-core",
+      "side-fork"
+    ],
+    "mirror": true,
+    "start": -330,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "blue-corona",

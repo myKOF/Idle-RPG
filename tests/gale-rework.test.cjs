@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {createRequire}=require('node:module');
 const helperFile=path.join(__dirname,'skill2-knife-range.test.cjs');
@@ -37,6 +38,7 @@ test('主打擊保留後續進化與超神覆寫，空欄繼承爆散',()=>{
   if(ult){
    const idx=h.c.sgUltIndexOfId('gale','thunderGodSlash');
    g.ult[idx].vfx={attack:filled?'ult-configured':''};
+   g.ult[idx].vfxUsage=''; // 本案例驗證本體覆寫；不依賴表格把雷神之怒設為附加效果。
    h.c.G.player.skills2.ult={gale:{pick:idx,lv:1}};
    h.c.skills2Ult=()=>({def:g.ult[idx],lv:1});
   }
@@ -96,4 +98,42 @@ test('爆散不預選延遲目標，等待中死亡／移動後從最新敵群�
  h.tick(.199);assert.equal(h.events.filter(e=>e.targets[0]==='fresh').length,0);
  h.tick(.2);assert.equal(h.events.filter(e=>e.targets[0]==='fresh').length,1);
  assert.equal(h.hits.filter(x=>x.e===fresh).length,1);
+});
+
+test('千鳥同時提高爆散目標數與係數，額外傷害只乘一次，月牙每敵完整傷害',()=>{
+ for(const lv of [1,10]){
+  const h=setup(10,true),def=h.c.SKILLS2.gale.ult.find(u=>u.id==='chidori');
+  h.c.sgUlt=(gid,id)=>gid==='gale'&&id==='chidori'?{def,lv}:null;
+  const enemies=[h.primary,...Array.from({length:5},(_,i)=>h.enemy(20+i*12,'extra'+i))];
+  h.setPool(enemies);h.cast();
+  for(let i=1;i<=25;i++)h.tick(i*.2);
+  const factor=1+table.fx('gale','chidori','scatterPct',lv)/100;
+  const damage=1+table.fx('gale','chidori','pct',lv)/100;
+  const main=2700*6.5*damage,scatter=2700*damage*factor;
+  const near=(a,b)=>Math.abs(a-b)<1e-7;
+  const mainHits=h.hits.filter(x=>near(x.d,main)),extraHits=h.hits.filter(x=>near(x.d,scatter));
+  assert.equal(mainHits.length,3*enemies.length);
+  assert.equal(extraHits.length,3*Math.floor(2*factor));
+  assert.equal(h.events.filter(e=>e.targets.length===1).length,extraHits.length);
+  for(let i=1;i<extraHits.length;i++)assert.ok(Math.abs(extraHits[i].at-extraHits[i-1].at-.2)<1e-8);
+ }
+});
+test('千鳥目標數先乘倍率再擲骰；無其他目標仍按強化後次數回打原目標',()=>{
+ const h=setup(1,true),def=h.c.SKILLS2.gale.ult.find(u=>u.id==='chidori'),rolls=[];
+ h.c.sgUlt=(gid,id)=>id==='chidori'?{def,lv:1}:null;
+ h.c.chance=p=>{rolls.push(p);return p>50;};
+ h.cast();for(let i=1;i<=8;i++)h.tick(i*.2);
+ assert.equal(rolls.length,3);assert.ok(rolls.every(p=>Math.abs(p-70.5)<1e-7));
+ const extras=h.events.filter(e=>e.targets.length===1);assert.equal(extras.length,6);
+ assert.ok(extras.every(e=>e.targets[0]==='primary'));
+});
+
+test('千鳥爆散加成與額外傷害各自讀取表格，不互相代用',()=>{
+ const h=setup(10,true),def=h.c.SKILLS2.gale.ult.find(u=>u.id==='chidori');
+ def.fx={pct:20,pctPer:0,scatterPct:50,scatterPctPer:0};
+ h.c.sgUlt=(gid,id)=>id==='chidori'?{def,lv:1}:null;
+ h.setPool([h.primary,h.enemy(20,'a'),h.enemy(40,'b'),h.enemy(60,'c')]);
+ h.cast();for(let i=1;i<=12;i++)h.tick(i*.2);
+ assert.equal(h.hits.filter(x=>Math.abs(x.d-2700*6.5*1.2)<1e-7).length,12);
+ assert.equal(h.hits.filter(x=>Math.abs(x.d-2700*1.2*1.5)<1e-7).length,9);
 });

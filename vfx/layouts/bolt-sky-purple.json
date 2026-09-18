@@ -7,18 +7,33 @@
       "name": "bolt-sky-purple",
       "layerIds": [
         "glow",
-        "seg-a",
         "seg-a-copy",
         "seg-a-copy-2",
+        "seg-a",
         "seg-b",
         "seg-c",
         "branch",
         "flash",
         "flash-copy"
       ]
+    },
+    {
+      "id": "group",
+      "name": "新群組",
+      "layerIds": [
+        "blue-droplets",
+        "white-droplets",
+        "electric-fork-0",
+        "electric-fork-1",
+        "electric-fork-2",
+        "electric-fork-3",
+        "electric-fork-4",
+        "impact-core"
+      ]
     }
   ],
   "order": [
-    "group:bolt-sky-purple"
+    "group:bolt-sky-purple",
+    "group:group"
   ]
 }

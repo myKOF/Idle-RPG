@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -56,15 +57,15 @@ function loadSkills2() {
   return context;
 }
 
-test('火龍捲本體使用核准持續場域，火牆維持獨立地板設定', () => {
+test('火龍捲與無限火龍使用各階表定場域，不沿用已移除火牆', () => {
  const c=loadSkills2();
  assert.equal(c.SKILLS2.firepillar.tiers[0].vfx.field,'fire-tornado-inferno');
  assert.equal(c.SKILLS2.firepillar.tiers[0].vfx.ground,undefined);
- assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.ground,'ground-firewall');
- assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.field,undefined);
+ assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.ground,undefined);
+ assert.equal(c.SKILLS2.firepillar.tiers[6].vfx.field,table.vfx('firepillar',7,'持續場域特效'));
 });
 
-test('火龍捲實際施法只產生圓形範圍，第七階才產生矩形', () => {
+test('火龍捲與第七階無限火龍均維持表定圓形傷害範圍', () => {
  const c=loadSkills2(), spawned=[];
  c.sgLegend=()=>({});c.sgUlt=()=>null;c.sgGroupBaseStat=()=>100;
  c.sgFirepillarBurnSpec=()=>null;c.bfRandomOthers=()=>[];
@@ -74,7 +75,7 @@ test('火龍捲實際施法只產生圓形範圍，第七階才產生矩形', ()
   c.sgCastFirepillar({}, {}, c.SKILLS2.firepillar,[1,0,0,0,0,0,tier7],[],{hp:1},'',{});
   const f=Object.assign(spawned[0],{pos:{x:100,y:50},vfxId:'cast'});
   const area=c.sgGroundArea(f);
-  if(!tier7){
+  {
    assert.equal(area.w,undefined);assert.equal(area.h,undefined);
    assert.equal(area.r,f.radius);
    c.bfLiveList=x=>x;
@@ -85,9 +86,9 @@ test('火龍捲實際施法只產生圓形範圍，第七階才產生矩形', ()
    const preset=JSON.parse(read('vfx/presets/fire-tornado-inferno.json'));
    const size=runtime.resolveSizing(preset.sizing,area);
    assert.equal(size.scaleX,size.scaleY);
-  }else{
-   assert.equal(area.w,c.bfMeterPx(18));assert.equal(area.h,c.bfMeterPx(6));
   }
+  assert.equal(f.radius,c.bfMeterPx(table.number('firepillar',1,'傷害範圍（米）',1)));
+  assert.equal(f.fireHunt||false,!!tier7,'第七階轉為追擊場域');
  }
 });
 
@@ -364,23 +365,24 @@ test('迴旋斬大型弧光半徑在 DOM 與 Canvas 都縮為三分之一', () =
 
 test('迴旋斬分階使用核准的圓形刀波',()=>{
  const c=loadSkills2(),g=c.SKILLS2.cleave;
- assert.equal(g.tiers[0].vfx.attack,'slash-cleave-ring-warm');assert.equal(g.tiers[2].vfx.attack,'slash-cleave-ring-blue');
- assert.equal(g.tiers[5].vfx.projectile,'proj-cleave-ring-blue');assert.equal(g.tiers[6].vfx.projectile,'proj-cleave-ring-tricolor');
+ c.skills2Ult=()=>null;
+ for(let tier=1;tier<=7;tier++){
+  const roles=c.sgVfxRoles('cleave',{vfxTier:tier});
+  assert.equal(roles.attack,table.vfx('cleave',tier,'攻擊特效'));
+  assert.equal(roles.projectile,table.vfx('cleave',tier,'飛行子彈'));
+ }
+ assert.equal(g.tiers[2].vfx,undefined,'強化只增傷，特效沿用前階');
 });
 
-test('震碎斬距離使用 12 米（120 系統距離單位）', () => {
-  const skills2 = read('js/skills2.js');
-  const csv = read('config/CSV/Skills2.csv');
-  // 沿用正式 CSV parser，依中文欄名讀值，允許使用者調整欄位順序。
-  const tableTool = read('tools/config_tables.cjs');
-  const csvParse = vm.runInNewContext('(' + tableTool.slice(tableTool.indexOf('function csvParse('), tableTool.indexOf('function csvField(')).trim() + ')');
-  const [headers, ...rows] = csvParse(csv);
-  const cleaveRow = rows.find(row => row[headers.indexOf('階段名稱')] === '震碎斬');
-  // 階段名稱與 fx 之間可能還有「解鎖轉生/等級」欄位（unlock: { … }）
-  assert.match(skills2, /name: '震碎斬',.*?fx: \{ m: 12, mPer: 0\.5 \}/);
-  assert.ok(cleaveRow, 'Skills2 CSV 應有震碎斬');
-  assert.equal(Number(cleaveRow[headers.indexOf('作用距離（米；用途見說明）')]), 12, 'Skills2 CSV 應使用 12 米');
-  assert.match(read('js/battlefield.js'), /BF_SYSTEM_UNITS_PER_METER = 10/);
+test('震碎斬依獨立飛行距離欄及成長量換算系統單位', () => {
+  const c=loadSkills2(),fx=c.SKILLS2.cleave.tiers[5].fx;
+  assert.equal(table.row('cleave',6)['階段名稱'],'震碎斬');
+  for(const lv of [1,10]){
+   const meters=table.number('cleave',6,'飛行距離（米）',lv);
+   assert.equal(c.sgVal(fx,'m',lv),meters);
+   assert.equal(c.bfMeterPx(meters),meters*10);
+  }
+  assert.equal(table.row('cleave',6)['傷害範圍（米）'],'');
 });
 
 test('飛出斬擊與貫穿突刺由飛行物命中，不由 VFX 預先產生受擊爆點', () => {
@@ -625,10 +627,10 @@ test('殞石術與雷殞天落在落地前顯示對應顏色的目標提示圈',
   assert.match(css, /\.vfx-target-telegraph-fire\s*\{[\s\S]*?rgba\(220, 38, 38, 0\.18\)/);
   assert.match(css, /\.vfx-target-telegraph-lightning\s*\{[\s\S]*?rgba\(37, 99, 235, 0\.18\)/);
   assert.doesNotMatch(css, /\.vfx-target-telegraph-ring/);
-  assert.match(index, /css\/style\.css\?v=1\.0\.\d+/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.\d+/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.\d+/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.\d+/);
+  table.versioned(index,'css/style.css');
+  table.versioned(index,'js/vfx.js');
+  table.versioned(index,'js/battle-renderer.js');
+  table.versioned(index,'js/skills2.js');
 });
 
 /* 冰系三群組（2026-08-17 第七批）：三種新場域與拋物線水彈的兩條渲染路徑都要接上，
@@ -704,8 +706,12 @@ test('冰系特效：水流彈的拋物線弧高由模擬層的表定值決定',
 
   // 事件必須帶得出 arcM（表定 8 米），而不是讓顯示層自己挑固定弧高
   assert.match(skills2, /if \(extra && extra\.arcM > 0\) spec\.arcM = Number\(extra\.arcM\);/);
-  assert.match(skills2, /arcM: cfg\.arcM/);
-  assert.match(skills2, /arcM: 8/);
+  const c=loadSkills2(),events=[];c.GT=0;
+  c.sgConfiguredFlightSpeed=()=>100;c.sgEmitVfx=(g,t,s,e)=>events.push(e);
+  for(const arcM of [table.number('waterball',1,'拋物線高度（米）'),13.5]){
+   c.sgLaunchWaterball({pEnt:{pos:{x:0,y:0}},target:{pos:{x:100,y:0}},cfg:{arcM,burstR:0}});
+   assert.equal(events.at(-1).arcM,arcM,'發射事件保留設定弧高');
+  }
 
   // Canvas：弧高換算成世界單位後餵進拋物線
   assert.match(renderer, /function projectileArcPx\(spec\)/);
@@ -889,14 +895,9 @@ test('全技能移動與傷害範圍使用連續座標，不以棋盤格逐步�
   const renderer = read('js/battle-renderer.js');
 
   // 新版 23 個技能群組共用的飛行物、移動場域、傷害幾何與環繞場域路徑。
-  const projectileTick = skills2.slice(
-    skills2.indexOf('function sgTickFlyingProjectiles'),
-    skills2.indexOf('function ', skills2.indexOf('function sgTickFlyingProjectiles') + 1)
-  );
-  const groundMove = skills2.slice(
-    skills2.indexOf('function sgGroundMove'),
-    skills2.indexOf('function sgGroundChaseDest')
-  );
+  const projectileTick = loadSkills2().sgTickFlyingProjectiles.toString();
+  const c=loadSkills2();
+  const groundMove=[c.sgGroundMove,c.sgGroundChaseStep,c.sgGroundFlyStep,c.sgGroundWanderStep].map(f=>f.toString()).join('\n');
   const groundVictims = skills2.slice(
     skills2.indexOf('function sgGroundVictims'),
     skills2.indexOf('function ', skills2.indexOf('function sgGroundVictims') + 1)
@@ -1016,19 +1017,18 @@ test('追蹤風刃不建立綠色方框，且舊事件不會以座標重建跳�
   assert.match(renderer, /Math\.atan2\(Math\.sin\(target - cur\), Math\.cos\(target - cur\)\)/);
   assert.match(css, /\.vfx-wind-homing-blade[\s\S]*?transition: transform 120ms linear/);
 
-  /* 主頁與 Worker 必須換版本，否則瀏覽器會繼續執行舊的綠色方框／逐格路徑。
-     這幾條釘的是「目前的版號」——之後任何人再動這些檔、把版號往上推時，
-     連同這裡一起更新即可（釘住的用意是禁止「改了檔卻沒換版號」）。 */
-  assert.match(index, /css\/style\.css\?v=1\.0\.60/);
-  assert.match(index, /js\/status\.js\?v=1\.0\.22/);
-  assert.match(index, /js\/vfx\.js\?v=1\.0\.77/);
-  assert.match(index, /js\/battle-renderer\.js\?v=1\.6\.114/);
-  assert.match(index, /js\/vfx-runtime\.js\?v=1\.0\.38/);
-  assert.match(index, /js\/skills2\.js\?v=1\.0\.110/);
-  assert.match(bridge, /WORKER_ASSET_VERSION = '20260910-meteor-slope'/);
-  assert.match(worker, /\.\.\/skills\.js\?v=20260903-vfx-preset-fields/);   // 本輪未改 skills.js，版號不動
-  assert.match(worker, /\.\.\/skills2\.js\?v=20260910-meteor-slope/);
-  assert.match(worker, /\.\.\/legendary\.js\?v=20260903-vfx-runtime-adapter/);
+  /* 主頁與Worker必須帶非空快取版本；合法升版不應使測試失敗。 */
+  table.versioned(index,'css/style.css');
+  table.versioned(index,'js/status.js');
+  table.versioned(index,'js/vfx.js');
+  table.versioned(index,'js/battle-renderer.js');
+  table.versioned(index,'js/vfx-runtime.js');
+  table.versioned(index,'js/skills2.js');
+  assert.match(bridge, /WORKER_ASSET_VERSION\s*=\s*'[^']+'/);
+  assert.match(bridge, /workerQuery\s*=\s*\['v=' \+ WORKER_ASSET_VERSION\]/);
+  table.versioned(worker,'../skills.js');
+  table.versioned(worker,'../skills2.js');
+  table.versioned(worker,'../legendary.js');
 });
 
 /* 2026-08-19 回報三連：真空斬系的綠色落雷、風刃地板綠方塊、風刃一格一格移動。
@@ -1098,7 +1098,14 @@ test('移動場域的畫面位置沿模擬層的運動法則自走，再連續�
   /* 模擬層必須把運動語意送出來，否則顯示層只拿得到一串離散座標
      （AI_RULES 8.3.1 的最後一句）。 */
   assert.match(skills2, /function sgGroundMoving\(f\)/);
-  assert.match(skills2, /if \(f\.chaseM > 0\) return true;/);
+  const c=loadSkills2();
+  for(const shape of [{radius:9},{length:12,width:6}]){
+   const f={...shape,pos:{x:.25,y:.75},speed:14.5,chaseM:30,moveAngle:.37,kind:'icearrow',turnRate:.9};
+   assert.equal(c.sgGroundMoving(f),true);
+   const area=c.sgGroundArea(f);
+   assert.equal(area.speed,14.5);assert.equal(area.moveA,.37);assert.equal(area.turnRate,.9);
+   f.speed=0;assert.equal(c.sgGroundMoving(f),false);assert.equal(c.sgGroundArea(f).speed,undefined);
+  }
   assert.match(skills2, /return sgGroundMotionFields\(f, rect\);/);
   assert.match(skills2, /return sgGroundMotionFields\(f, circle\);/);
 });
@@ -1137,7 +1144,7 @@ test('地爆天星：黑影預警與超巨型殞石在 Canvas 與 DOM 兩套顯�
   const shim = read('js/worker/shim.js');
   assert.match(shim, /sizeMult: Number\(spec\.sizeMult\) > 0 \? Number\(spec\.sizeMult\) : 0/);
   assert.match(vfx, /sizeMult: Number\(spec\.sizeMult\) > 0 \? Number\(spec\.sizeMult\) : 0/);
-  assert.match(read('js/worker/sim.worker.js'), /shim\.js\?v=6/);
+  table.versioned(read('js/worker/sim.worker.js'),'shim.js');
 
   // DOM（高塔）：同樣兩支，且在 rect 解析之前就攔下來
   assert.match(vfx, /function vfxStarfallShadow\(spec, layer\)/);

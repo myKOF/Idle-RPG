@@ -3,6 +3,25 @@
   "id": "proj-thunderfall-sky",
   "duration": 2,
   "loop": true,
+  "deformation": {
+    "amplitude": 13,
+    "axis": "x",
+    "end": 48.537,
+    "layers": [
+      "crown-fork-3",
+      "crown-fork-2",
+      "crown-fork-1",
+      "crown-fork-0",
+      "lightning-stream-4",
+      "lightning-stream-3",
+      "lightning-stream-2",
+      "lightning-stream-1",
+      "lightning-stream-0"
+    ],
+    "mirror": true,
+    "start": -330.338,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "white-current-spine",

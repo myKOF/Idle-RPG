@@ -3,6 +3,18 @@
   "id": "hit-thunderstrike-purplewhite",
   "duration": 0.48,
   "loop": false,
+  "deformation": {
+    "amplitude": 4.55,
+    "axis": "x",
+    "end": 64.998,
+    "layers": [
+      "electric-burst",
+      "violet-ground-arcs"
+    ],
+    "mirror": true,
+    "start": -64.998,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "blue-impact-glow",

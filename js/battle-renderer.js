@@ -1532,10 +1532,6 @@ var BattleRenderer = (function () {
         playAnim(ent, 'hurt', 'hurt');
       }
     }
-    if (realDeath && !REDUCED_MOTION) {
-      spawnParticles(ent.root.x, ent.root.y - ent.hitHeight * 0.4,
-        ent.isBoss ? 16 : 7, themeOf({ elem: ent.data && ent.data.attr }), ent.isBoss ? 3.2 : 2.2);
-    }
   }
 
   function destroyEntity(id) {

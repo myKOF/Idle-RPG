@@ -643,7 +643,7 @@
   /* 視窗本身（不隨換一份特效而重來）：畫布、預覽 runtime、播放狀態、鏡頭、狀態列訊息。 */
   var PANE_FIELDS = ['app', 'stageRoot', 'bgSolid', 'checker', 'syncCanvasSize', 'effectRoot',
     'backend', 'runtime', 'handle', 'playing', 'previewLoop', 'zoom', 'panX', 'panY', 'pan',
-    'previewPending', 'saveStatus', 'validation', 'dirtyFlag'];
+    'previewPending', 'saveStatus', 'validation', 'dirtyFlag', 'deformationSeed'];
 
   DOC_FIELDS.forEach(function (key) {
     Object.defineProperty(state, key, {
@@ -3997,10 +3997,11 @@
 
   var PREVIEW_SEED = 12345;                      // 固定 seed：編輯時每次重播畫面一致
 
-  function playPreview(startTime) {
+  function playPreview(startTime, nextVariation) {
+    if(nextVariation && state.preset.deformation)state.deformationSeed=(state.deformationSeed||PREVIEW_SEED)+977;
     state.handle = state.runtime.play(state.preset.id, {
       position: { x: 0, y: 0 },
-      seed: PREVIEW_SEED,
+      seed: state.deformationSeed || PREVIEW_SEED,
       startTime: startTime || 0
     });
   }
@@ -4017,7 +4018,7 @@
     if (!state.previewLoop || !state.runtime) return;
     if (state.handle === null || state.handle === undefined) return;
     if (state.runtime.timeOf(state.handle) !== null) return;
-    playPreview(0);
+    playPreview(0, true);
   }
 
   var PREVIEW_LOOP_KEY = 'vfx-editor.previewLoop';
@@ -4908,6 +4909,12 @@
     for (var j = firstAt; j < vis.length && !survivor; j++) { if (!doomed[vis[j]]) survivor = vis[j]; }
 
     M.deleteSelection(state.preset, state.layout, keys);
+    if(state.preset.deformation){
+      state.preset.deformation.layers=state.preset.deformation.layers.filter(function(id){
+        return state.preset.layers.some(function(layer){return layer.id===id;});
+      });
+      if(!state.preset.deformation.layers.length)delete state.preset.deformation;
+    }
 
     /* survivor 有可能自己就是被刪群組的成員，確認它還在才選它 */
     var alive = survivor && (M.keyKind(survivor) === 'group'

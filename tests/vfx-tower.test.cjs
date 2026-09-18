@@ -1,4 +1,5 @@
 'use strict';
+const table = require('./helpers/skill-table.cjs');
 /* ============================================================
    vfx-tower.test.cjs — 高塔的 VFX Preset 疊層
 
@@ -67,8 +68,8 @@ test('TOWER-5 index.html 在 ui.js 之前載入疊層，且版號有跟著改', 
   const at = { tower: html.indexOf('js/vfx-tower.js'), ui: html.indexOf('js/ui.js') };
   assert.ok(at.tower > 0, 'index.html 要載入 js/vfx-tower.js');
   assert.ok(at.tower < at.ui, '疊層要在 ui.js 之前——ui.js 的分流會直接用到它');
-  /* 版號釘住：改了檔卻沒換版號，測試者會跑到快取舊檔。 */
-  assert.match(html, /js\/vfx-runtime\.js\?v=1\.0\.16/);
-  assert.match(html, /js\/vfx-tower\.js\?v=1\.0\.0/);
-  assert.match(html, /js\/ui\.js\?v=1\.0\.\d+/);
+  /* 驗證有快取版本，不把當年的版本寫死。 */
+  table.versioned(html,'js/vfx-runtime.js');
+  table.versioned(html,'js/vfx-tower.js');
+  table.versioned(html,'js/ui.js');
 });

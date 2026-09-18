@@ -3,6 +3,17 @@
   "id": "ground-thunder-orb",
   "duration": 1,
   "loop": true,
+  "deformation": {
+    "amplitude": 1.96,
+    "axis": "x",
+    "end": 28.006,
+    "layers": [
+      "web"
+    ],
+    "mirror": true,
+    "start": -28.006,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "outer",

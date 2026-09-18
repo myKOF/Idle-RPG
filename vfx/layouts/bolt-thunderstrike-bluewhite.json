@@ -10,9 +10,24 @@
         "white-core",
         "side-fork"
       ]
+    },
+    {
+      "id": "group",
+      "name": "新群組",
+      "layerIds": [
+        "blue-droplets",
+        "white-droplets",
+        "electric-fork-0",
+        "electric-fork-1",
+        "electric-fork-2",
+        "electric-fork-3",
+        "electric-fork-4",
+        "impact-core"
+      ]
     }
   ],
   "order": [
-    "group:bolt-thunderstrike-bluewhite"
+    "group:bolt-thunderstrike-bluewhite",
+    "group:group"
   ]
 }

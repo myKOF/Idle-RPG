@@ -3,6 +3,17 @@
   "id": "aura-lightning-relay",
   "duration": 0.35,
   "loop": false,
+  "deformation": {
+    "amplitude": 2.17,
+    "axis": "x",
+    "end": 31.002,
+    "layers": [
+      "web"
+    ],
+    "mirror": true,
+    "start": -31.002,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "flash",

@@ -762,3 +762,19 @@ sprite 與 waterTornado 圖層可選 radiusProfile。Editor 顯示中央半徑�
 來源校準 sourceTopRatio／sourceBottomRatio 預設 2；topY／centerY／bottomY 預設 0／0.5／1，滿足 0 ≤ topY < centerY < bottomY ≤ 1。此 Preset 依來源使用 0.0125／0.4640625／0.915625，通常毋須改動。Core 按上下二次曲線計算目標／來源半徑比，Pixi 使用 64 個水平截面，預設為恒等變換。節點池 key 包含組件與半徑輪廓，避免重新播放取到其他層的幾何。
 
 製作入口：tools/vfx/authoring/author/water-tornado.cjs。第七階 Skills2 的 field-water-tornado 映射、CSV／Excel 保持有效，本輪未改動遊戲判定。
+
+
+## 整組電弧變形（2026-09-18）
+
+Preset 可選的 `deformation` 物件：
+`{axis:"y", start:-330, end:0, amplitude:11.55, widthJitter:0.07, mirror:true, layers:["blue-corona","white-core","side-fork"]}`。
+
+- axis 為雷電長軸；start/end 是特效區域座標的起終點，end 必須大於 start。
+- amplitude 是中段橫向位移上限，不超過長度15%；widthJitter 為橫向縮放浮動比例（0～0.15）。
+- mirror 只鏡像橫向，不顛倒起終點。沿軸線的端點不偏移；原圖既有橫向偏離仍隨整組鏡像／縮放。
+- layers 必須明列存在的一般 sprite 圖層，不支援粒子或 radiusProfile 圖層；其餘圖層保持原行為。
+- 同一次施放共用 phase、mirror 與 width；使用 Core 種子產生，生命週期內不重抽。各層變換（含父層）先換回特效區域座標，再套同一連續函數，最後套特效整體變換。
+- Pixi 使用85頂點低解析網格，旋轉、非等比縮放與序列幀皆走原有管線。不增加粒子；不建立整屏 Filter／RenderTexture。網格依圖層矩陣、貼圖尺寸與種子快取；僅移動整份特效時不需重建。
+- Editor 自動循環每輪換種子，暫停／編輯曲線沿用當前種子；刪除圖層時同步移除其變形引用。
+- Authoring 工具重新產生 Preset 時，必須保留／重建 deformation 及正確 layers 清單；不得只依素材名稱在 Runtime 自動猜測變形。
+- 詳細盤點、驗證及效能結果見 [LIGHTNING_DEFORMATION.md](LIGHTNING_DEFORMATION.md)。

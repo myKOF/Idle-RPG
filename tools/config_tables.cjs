@@ -1200,36 +1200,18 @@ function skills2TierCostCell(tier, note, groupCost) {
   return numStr(groupCost);
 }
 
-// 表格獨立欄是這些 fx 鍵的唯一編輯入口，JSON 只保留其餘參數。
-const SKILLS2_GEOMETRY_COLUMNS = [
-  ['施放距離（米）', 'castM'], ['施放距離每級增加（米）', 'castMPer'],
-  ['作用距離（米；用途見說明）', 'm'], ['作用距離每級增加（米）', 'mPer'],
-  ['每段或每跳間隔（秒）', 'gap'], ['間隔每級增減（秒）', 'gapPer'],
-  ['矩形長度（米）', 'len'], ['矩形長度每級增加（米）', 'lenPer'],
-  ['矩形寬度（米）', 'wid'], ['矩形寬度每級增加（米）', 'widPer'],
-  ['扇形角度（度）', 'deg'], ['角度每級增減（度）', 'degPer'],
-  ['飛行子彈速度（米／秒）', 'speed']
-];
-function skills2OtherFx(fx) {
-  const rest = Object.assign({}, fx);
-  SKILLS2_GEOMETRY_COLUMNS.forEach(([, key]) => delete rest[key]);
-  return JSON.stringify(rest);
+const skills2Geometry = require('./skills2-geometry.cjs');
+const SKILLS2_GEOMETRY_COLUMNS = skills2Geometry.legacy;
+function skills2OtherFx(fx) { return JSON.stringify(skills2Geometry.strip(fx)); }
+function skills2GeometryCells(gid, stage, t, range) {
+ const cells=skills2Geometry.extract(gid,stage,t.fx||{},range);
+ return skills2Geometry.columns.map(c=>cells[c]).concat([t.desc||'']);
 }
-function skills2GeometryCells(t) {
-  return SKILLS2_GEOMETRY_COLUMNS.map(([, key]) =>
-    Object.prototype.hasOwnProperty.call(t.fx || {}, key) ? numStr(t.fx[key]) : '')
-    .concat([t.desc || '']);
+// 移除已被新格式取代的旧幾何說明；保留其餘技能／特效定義。
+for (let i=SKILLS2_GLOSSARY_ROWS.length-1;i>=0;i--) {
+ if (/range|castM|len\/wid|m＝距離|作用距離|每級增加（米）/.test(String(SKILLS2_GLOSSARY_ROWS[i][0]))) SKILLS2_GLOSSARY_ROWS.splice(i,1);
 }
-SKILLS2_GLOSSARY_ROWS.push(['獨立距離與間隔欄（優先於舊 JSON 同名鍵）'],
-  ['飛行子彈速度（米／秒）：對應 fx.speed，填於實際控制速度的階段；後續共用飛行物沿用該值。飛刀、水流彈、火球保留近遠距離的飛行時間上下限；環繞速度仍由 rps 控制，固定秒數動畫不填假定米速。正數有效，留白沿用原預設。'],
-  ['只改有值的欄位；留白代表本階未設定此參數，不代表 0 米或 0 秒。未接線技能勿自行填入新參數。'],
-  ['施放距離：玩家離主目標多遠可開始施放。高階明列時覆寫低階；一般技能未設時沿用近戰距離。'],
-  ['作用距離：對應 m；可能是傷害半徑、彈射搜尋距離或額外延伸長度，請搭配右側「作用方式與距離用途」閱讀，不能一概視為半徑。'],
-  ['疾風斬：第一階施放距離及間隔控制前六階；第四階作用距離是以主目標為中心的擴散搜尋半徑；第七階為月牙傷害半徑及獨立施放距離，仍共用第一階間隔。'],
-  ['每段或每跳間隔：對應 gap，具體是連斬、持續傷害或週期觸發，依本階作用說明；不是技能冷卻。'],
-  ['每級增減可填負數，例如間隔每級減少；所有數值為底值，實際值＝底值＋每級增量×等級。'],
-  ['獨立欄位會回寫原 fx 鍵；效果參數(JSON)不再重複存這些鍵。舊版沒有新欄的 CSV 仍可讀取。'],
-  ...SKILLS2_GEOMETRY_COLUMNS.map(([label,key])=>[label+' → fx.'+key]));
+SKILLS2_GLOSSARY_ROWS.unshift(...skills2Geometry.help);
 
 const SKILLS2_VFX_USAGE_COLUMN = '特殊效果';
 const SKILLS2_VFX_USAGE_HELP = [
@@ -1259,11 +1241,11 @@ SCHEMAS.Skills2 = {
   /* 「階數」8／9／10 ＝ 超神進化（第 8 階）的三選一選項 1／2／3（2026-08-19）。
      它不是 tiers 的第 8~10 個元素，回寫時進 g.ult[0..2]（見 rebuild）；
      「超神ID」欄只有這三列要填，是程式判定用的穩定鍵（存檔存索引、程式判 id）。 */
-  header: ['群組ID', '群組名稱', '群組圖標', 'range', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數',
+  header: ['群組ID', '群組名稱', '群組圖標', '傷害類型', '傷害屬性', '冷卻時間', '施法消耗', '階數',
     '解鎖轉生/等級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
-    .concat(SKILLS2_GEOMETRY_COLUMNS.map(c => c[0])).concat(['作用方式與距離用途（唯讀說明）', SKILLS2_VFX_USAGE_COLUMN]),
+    .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）', SKILLS2_VFX_USAGE_COLUMN]),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
     const notes = skills2TierNoteMap();
@@ -1273,22 +1255,22 @@ SCHEMAS.Skills2 = {
       (g.tiers || []).forEach((t, i) => {
         // 階數 1 是權威（回寫 JS 只讀這一列）；其餘列若表上原本就有註記值就保留
         const note = i > 0 ? notes[gid + '|' + String(i + 1)] : null;
-        rows.push([gid, g.name, g.emoji, g.range || '', g.dmgType || '', g.elem || '',
+        rows.push([gid, g.name, g.emoji, g.dmgType || '', g.elem || '',
           (note && note.cd !== '') ? note.cd : numStr(g.cd),
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           t.unlock ? (numStr(t.unlock.reinc || 0) + '|' + numStr(t.unlock.lv || 0)) : '', t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
-          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(t)).concat([skills2VfxUsageCell(t)]));
+          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat([skills2VfxUsageCell(t)]));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
       (g.ult || []).forEach((o, i) => {
         const note = notes[gid + '|' + String(SKILLS2_ULT_ROW_BASE + i)];
-        rows.push([gid, '', '', '', '', '',
+        rows.push([gid, '', '', '', '',
           (note && note.cd !== '') ? note.cd : '',
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
           '', o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
-          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(o)).concat([skills2VfxUsageCell(o)]));
+          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat([skills2VfxUsageCell(o)]));
       });
     });
     return rows;
@@ -1325,6 +1307,18 @@ SCHEMAS.Skills2 = {
       let fx;
       try { fx = fxRaw ? JSON.parse(fxRaw) : {}; }
       catch (e) { throw new Error('Skills2 群組「' + gid + '」第 ' + tierIdx + ' 階「效果參數(JSON)」解析失敗：' + e.message); }
+      if (header.includes(skills2Geometry.labels.damage)) {
+        const missing=skills2Geometry.columns.filter(c=>!header.includes(c));
+        if(missing.length)throw new Error('Skills2範圍v2缺少欄位：'+missing.join('、'));
+        const obsolete=['range',...SKILLS2_GEOMETRY_COLUMNS.map(c=>c[0])].filter(c=>!skills2Geometry.columns.includes(c)&&header.includes(c));
+        if(obsolete.length)throw new Error('Skills2不可混用新舊範圍欄：'+obsolete.join('、'));
+        const keys=[...skills2Geometry.spatialKeys,'gap','deg','speed'];
+        const duplicated=Object.keys(fx).filter(k=>keys.includes(k)||keys.some(base=>k===base+'Per'));
+        if(duplicated.length)throw new Error('Skills2幾何參數請填用途欄，不可重複填JSON：'+duplicated.join(','));
+        const geo=skills2Geometry.apply(gid,tierIdx>=8?get(r,'超神ID').trim():String(tierIdx),fx,label=>get(r,label));
+        fx=geo.fx;
+        if (tierIdx===1) groups[gid].range=geo.range||'';
+      } else {
       SKILLS2_GEOMETRY_COLUMNS.forEach(([label, key]) => {
         if (!header.includes(label)) return; // 舊格式相容
         const raw = get(r, label).trim();
@@ -1339,6 +1333,7 @@ SCHEMAS.Skills2 = {
         }
         fx[key] = value;
       });
+      }
       /* 解鎖門檻：「轉生次數|等級」，留白＝無門檻（不寫進字面值）。
          留白與 0|0 等價，但留白時不產生欄位，字面值才不會多出一堆 { reinc: 0, lv: 0 }。 */
       const unlockRaw = get(r, '解鎖轉生/等級').trim();
@@ -1517,6 +1512,7 @@ function pseudoStamp() {
 }
 
 /* ---- 進入點 ---- */
+if (require.main === module) {
 const mode = process.argv.includes('--gen') ? 'gen'
   : process.argv.includes('--sync') ? 'sync'
   : process.argv.includes('--apply') ? 'apply' : '';
@@ -1528,3 +1524,6 @@ else {
   console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task]');
   process.exit(1);
 }
+
+}
+module.exports={SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral};

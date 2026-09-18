@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 /* 新版主動技能系統（2026-08-13 技能改造第一批，js/skills2.js）
    守住六件事：
      1. SKILLS2 定義表形狀正確，且與 config/CSV/Skills2.csv 完整往返
@@ -69,6 +70,7 @@ test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且�
       assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,0]), 90);
       assert.equal(c.skills2CastRangePx('gale', [1,0,0,0,0,0,1]), 110);
     }
+    c.skills2Levels=()=>[1,0,0,0,0,0,moon?1:0]; // 本測試直接呼叫施法，等級替身與傳入值一致
     const gap = c.SKILLS2.gale.tiers[0].fx.gap || c.SG_MULTI_ATTACK_GAP_SEC;
     c.sgLegend = () => ({});
     c.sgUlt = () => null;
@@ -85,7 +87,7 @@ test('疾風斬逐段傷害與新版特效同拍，月牙以目標為中心且�
     const out = {dmg: 0, killed: false};
     c.sgCastGale(playerEnt(), {atk: 1000}, c.SKILLS2.gale, [1,0,0,0,0,0,moon?1:0], targets, targets[0], 'mv-float', out);
     assert.equal(events.length, 1);
-    assert.equal(events[0].vfx.attack, moon ? 'slash-gale-moon' : 'hit-gale-burst');
+    assert.equal(events[0].vfx.attack, table.vfx('gale',moon?7:1,'攻擊特效'));
     assert.deepEqual(events[0].targets, []);
     if (moon) assert.equal(events[0].area.r, c.bfMeterPx(c.sgVal(c.SKILLS2.gale.tiers[6].fx, 'm', 1)));
     c.GT = gap - .01; c.sgTickGaleStrikes({}); assert.equal(events.length, 1);
@@ -248,7 +250,13 @@ test('SKILLS2 與 config/CSV/Skills2.csv 完整往返（每階一列 ＋ 超神�
   });
   assert.equal(rows.length - 1, tierTotal, 'CSV 列數應為每階一列（含超神進化選項）');
   assert.match(rows[0], /群組ID/);
-  assert.match(rows[0], /range/);
+  for(const column of ['施放距離（米）','搜敵範圍（米）','傷害範圍（米）','飛行距離（米）']) assert.ok(table.headers.includes(column),column);
+  assert.ok(!table.headers.includes('range'));
+  assert.ok(!table.headers.includes('作用距離（米；用途見說明）'));
+  const tools=require('../tools/config_tables.cjs');
+  const [header,...cells]=tools.csvParse(csv);
+  const rebuilt=tools.evalLiteral(tools.extractLiteral(tools.SCHEMAS.Skills2.rebuild(cells,header).SKILLS2,'SKILLS2').literal);
+  assert.deepEqual(plain(rebuilt),plain(c.SKILLS2),'CSV與執行資料逐列完整一致');
   assert.match(rows[0], /效果參數\(JSON\)/);
   assert.match(rows[0], /超神ID/);
 });
@@ -259,7 +267,7 @@ test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技�
   assert.equal(c.SKILLS2.thrust.range, '12*3', '突刺初始範圍應由 range 欄位指定');
   assert.deepEqual(plain(c.sgRange(c.SKILLS2.thrust.range)), { length: 12, width: 3 });
   assert.deepEqual(plain(t.map((tier) => tier.fx)), [
-    { pct: 150, pctPer: 15, count: 2 },
+    { pct: 150, pctPer: 15, count: 2, speed: table.number('thrust',1,'飛行子彈速度（米／秒）') },
     { chance: 25, chancePer: 2.5, count: 2 },
     { pct: 20, pctPer: 3 },
     { count: 3, range: 20, rangePer: 2 },

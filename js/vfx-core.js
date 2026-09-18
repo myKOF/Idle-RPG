@@ -628,7 +628,7 @@ var VFXCore = (function () {
     validateVec2(layer.scrollSpeed, where + '.scrollSpeed', errors);
   }
 
-  var PRESET_FIELDS = ['schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
+  var PRESET_FIELDS = ['deformation', 'schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet'];
@@ -700,6 +700,33 @@ var VFXCore = (function () {
     });
   }
 
+  // 共用的特效區域座標變形：同一座標永遠得到相同位移，不拆散拼接圖層。
+  function deformPoint(w, x, y, out) {
+    var c=w.config, along=c.axis==='x'?x:y, across=c.axis==='x'?y:x;
+    var q=Math.max(0,Math.min(1,(along-c.start)/(c.end-c.start)));
+    var envelope=Math.sin(Math.PI*q);
+    var displacement=envelope*c.amplitude*(Math.sin(q*9+w.phase)*.7+Math.sin(q*19+w.phase*.7)*.3);
+    across=across*w.mirror*w.width+displacement;
+    out.x=c.axis==='x'?along:across;
+    out.y=c.axis==='x'?across:along;
+    return out;
+  }
+  function validateDeformation(preset, errors) {
+    var c=preset.deformation;
+    if(c===undefined)return;
+    if(!c||typeof c!=='object'){errors.push('deformation 必須是物件');return;}
+    checkUnknownFields(c,['axis','start','end','amplitude','widthJitter','mirror','layers'],'deformation',errors);
+    if(c.axis!=='x'&&c.axis!=='y')errors.push('deformation.axis 必須是 x 或 y');
+    if(!isFiniteNumber(c.start)||!isFiniteNumber(c.end)||c.end<=c.start)errors.push('deformation 範圍無效');
+    if(!isFiniteNumber(c.amplitude)||c.amplitude<0||c.amplitude>(c.end-c.start)*.15)errors.push('deformation.amplitude 超過長度15%');
+    if(!isFiniteNumber(c.widthJitter)||c.widthJitter<0||c.widthJitter>.15)errors.push('deformation.widthJitter 必須在0到0.15');
+    if(typeof c.mirror!=='boolean')errors.push('deformation.mirror 必須是布林值');
+    if(!Array.isArray(c.layers)||!c.layers.length||new Set(c.layers).size!==c.layers.length){errors.push('deformation.layers 必须是非空、不重複的圖層清單');return;}
+    c.layers.forEach(function(id){var l=preset.layers.find(function(l){return l&&l.id===id;});
+      if(!l||l.type!=='sprite'||l.radiusProfile)errors.push('deformation 只支援一般sprite圖層：'+id);
+    });
+  }
+
   function validatePreset(preset) {
     var errors = [];
     if (!preset || typeof preset !== 'object') return { ok: false, errors: ['preset 不是物件'] };
@@ -751,6 +778,7 @@ var VFXCore = (function () {
       else if (layer.type === 'sprite' && !layer.assetId) errors.push(where + '.assetId 必填');
     });
 
+    validateDeformation(preset, errors);
     validateSubEmitterGraph(preset, errors);
     validateHierarchy(preset, errors);
 
@@ -895,7 +923,7 @@ var VFXCore = (function () {
       errors.push('custom sizing 必須單獨定義米制尺寸');
     }
   }
-  var PRESET_KEY_ORDER = ['schemaVersion', 'id', 'duration', 'loop', 'layers'];
+  var PRESET_KEY_ORDER = ['schemaVersion', 'id', 'duration', 'loop', 'deformation', 'layers'];
   var LAYER_KEY_ORDER = ['id', 'type', 'parent', 'enabled', 'assetId', 'effect', 'zIndex',
     'position', 'rotation', 'scale', 'anchor', 'size', 'alpha', 'tint', 'blendMode',
     'delay', 'duration', 'scrollSpeed',
@@ -1190,7 +1218,7 @@ var VFXCore = (function () {
       return spec.kind + '|' + spec.assetUrl + '|' + spec.blendMode +
         (spec.sheet ? '|' + spec.sheet.columns + 'x' + spec.sheet.rows : '') +
         (spec.profileScales ? '|profile:' + spec.profileScales.join(',') : '') +
-        (spec.generated ? '|generated:' + spec.generated : '');
+        (spec.generated ? '|generated:' + spec.generated : '') + (spec.warpAxis ? '|warp:'+spec.warpAxis : '');
     }
     function acquireNode(spec) {
       var key = poolKey(spec);
@@ -1261,6 +1289,11 @@ var VFXCore = (function () {
            每次都線性搜尋的話，一顆粒子死掉就掃一次整個圖層陣列。 */
         byId: Object.create(null)
       };
+      if(preset.deformation){
+        var wr=makeRng(effect.seed ^ 0x6a09e667);
+        effect.deformation={config:preset.deformation,phase:wr()*Math.PI*2,
+          mirror:preset.deformation.mirror&&wr()<.5?-1:1,width:1+(wr()*2-1)*preset.deformation.widthJitter};
+      }
       applyTransformParams(effect, p);
       preset.layers.forEach(function (raw, i) {
         var layer = layerDefaults(raw);
@@ -1275,6 +1308,7 @@ var VFXCore = (function () {
           burstDone: false,
           noiseSeed: (effect.seed + i * 0x85EBCA6B) | 0,
           hier: null,
+          deformation: effect.deformation && preset.deformation.layers.indexOf(layer.id)>=0 ? effect.deformation : null,
 
           scrollX: 0,
           scrollY: 0
@@ -1371,6 +1405,7 @@ var VFXCore = (function () {
       /* 後端要靠這個把整張圖切成每一格的貼圖。同一張圖切成不同格線就是
          不同的節點規格，所以 poolKey 也要帶上——否則 8×8 的節點會被
          重用成 4×4 的，畫面上是「動畫突然變成別的東西」。 */
+      if (layer.deformation) { spec.kind = 'deformed'; spec.warpAxis=layer.deformation.config.axis; }
       if (layer.def.sheet) {
         spec.sheet = { columns: layer.def.sheet.columns, rows: layer.def.sheet.rows };
       }
@@ -1546,6 +1581,24 @@ var VFXCore = (function () {
       finishSpriteNode(effect, layer, t, life.progress, life.elapsed);
     }
 
+    function setDeformation(effect, layer, t) {
+      t.deformation=undefined;
+      if(!layer.deformation)return;
+      var sx=effect.scaleX,sy=effect.scaleY;
+      if(Math.abs(sx)<1e-9||Math.abs(sy)<1e-9){t.visible=false;return;}
+      var w=layer.warpTransform||(layer.warpTransform={});
+      var co=Math.cos(effect.rotation),si=Math.sin(effect.rotation);
+      var ca=Math.cos(t.rotation),sa=Math.sin(t.rotation);
+      var bx=-Math.sin(t.rotation-(t.skewX||0))*t.scaleY,by=Math.cos(t.rotation-(t.skewX||0))*t.scaleY;
+      w.a=(co*ca+si*sa)*t.scaleX/sx;w.b=(-si*ca+co*sa)*t.scaleX/sy;
+      w.c=(co*bx+si*by)/sx;w.d=(-si*bx+co*by)/sy;
+      var dx=t.x-effect.origin.x,dy=t.y-effect.origin.y;
+      w.x=(co*dx+si*dy)/sx;w.y=(-si*dx+co*dy)/sy;
+      w.variation=layer.deformation;
+      w.originX=effect.origin.x;w.originY=effect.origin.y;w.rotation=effect.rotation;w.scaleX=sx;w.scaleY=sy;
+      t.deformation=w;
+    }
+
     /* sprite／procedural 節點共用的收尾：序列幀、錨點、排序、程序圖層的捲動與水龍捲。
        根圖層與子物件都走這裡，兩者只差在變換、透明度、顏色怎麼算。 */
     function finishSpriteNode(effect, layer, t, progress, elapsed) {
@@ -1558,6 +1611,7 @@ var VFXCore = (function () {
       t.sortGroup = effect.handle; t.sortY = effect.origin.y;
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
+      setDeformation(effect, layer, t);
       if (d.effect === 'waterTornado') {
         var phaseTime = d.water.palette === 'fire' ? proceduralClock * effect.timeScale : elapsed;
         t.generated = waterGenerator.sample(d.water.part, phaseTime * (d.water.speed === undefined ? 1 : d.water.speed), d.water.density, d.water.palette);
@@ -1900,6 +1954,7 @@ var VFXCore = (function () {
         t.zIndex = d.zIndex;
         t.sortGroup = effect.handle; t.sortY = effect.origin.y;
         t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined; t.generated = undefined;
+        t.deformation = undefined;
         backend.updateNode(p.node, t);
         layer.particles[write++] = p;
       }
@@ -2129,6 +2184,7 @@ var VFXCore = (function () {
     HARD_LIMITS: HARD_LIMITS,
     DEFAULT_BUDGET: DEFAULT_BUDGET,
     VELOCITY_EPSILON: VELOCITY_EPSILON,
+    deformPoint: deformPoint,
     validatePreset: validatePreset,
     serialisePreset: serialisePreset,
     radiusProfileScale: radiusProfileScale,

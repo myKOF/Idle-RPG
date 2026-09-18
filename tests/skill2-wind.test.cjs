@@ -1,3 +1,4 @@
+const table = require('./helpers/skill-table.cjs');
 /* 新版主動技能第八批：風系三群組（2026-08-18，js/skills2.js）
    守住設計文檔「技能」頁籤〈魔法〉區塊新增的三個群組與其註記：
      風刃     windblade    ─ 貫穿全場的飛行風刃；小風刃可轉為追擊；四方向二連射
@@ -103,9 +104,9 @@ test('三個風系群組都在表上，且為魔法傷害／風系屬性', () =>
     assert.equal(g.tiers.length, c.SG_TIER_COUNT, gid + ' 應有 7 階');
     assert.equal(g.cost, 40, gid + ' 施法消耗與其他魔法群組一致');
   });
-  assert.equal(c.SKILLS2.windblade.cd, 18, '風刃冷卻 18 秒');
-  assert.equal(c.SKILLS2.vacuumslash.cd, 18, '真空斬冷卻 18 秒');
-  assert.equal(c.SKILLS2.stormbarrier.cd, 24, '暴風屏障冷卻 24 秒');
+  assert.equal(c.SKILLS2.windblade.cd, table.number('windblade',1,'冷卻時間'));
+  assert.equal(c.SKILLS2.vacuumslash.cd, table.number('vacuumslash',1,'冷卻時間'));
+  assert.equal(c.SKILLS2.stormbarrier.cd, table.number('stormbarrier',1,'冷卻時間'));
 });
 
 test('wind 是 ELEMENTS 的第八系，且有元素資訊', () => {

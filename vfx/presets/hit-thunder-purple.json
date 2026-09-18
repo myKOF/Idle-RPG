@@ -3,6 +3,18 @@
   "id": "hit-thunder-purple",
   "duration": 0.22,
   "loop": false,
+  "deformation": {
+    "amplitude": 2.829,
+    "axis": "x",
+    "end": 40.415,
+    "layers": [
+      "arcweb-a",
+      "arcweb-b"
+    ],
+    "mirror": true,
+    "start": -40.415,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "halo",

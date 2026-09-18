@@ -3,6 +3,25 @@
   "id": "bolt-sky-purple",
   "duration": 0.65,
   "loop": false,
+  "deformation": {
+    "amplitude": 13,
+    "axis": "y",
+    "end": 0,
+    "layers": [
+      "glow",
+      "seg-a",
+      "seg-b",
+      "seg-c",
+      "branch",
+      "flash",
+      "seg-a-copy",
+      "seg-a-copy-2",
+      "flash-copy"
+    ],
+    "mirror": true,
+    "start": -500,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "glow",
@@ -42,7 +61,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "rotationOverLife": 0
     },
     {
       "id": "seg-a",
@@ -104,7 +124,8 @@
           1,
           "#3b1060"
         ]
-      ]
+      ],
+      "rotationYOverLife": 0
     },
     {
       "id": "seg-b",
@@ -166,7 +187,8 @@
           1,
           "#3b1060"
         ]
-      ]
+      ],
+      "rotationYOverLife": 0
     },
     {
       "id": "seg-c",
@@ -228,7 +250,8 @@
           1,
           "#3b1060"
         ]
-      ]
+      ],
+      "rotationYOverLife": 0
     },
     {
       "id": "branch",
@@ -508,6 +531,451 @@
         [
           1,
           1.25
+        ]
+      ]
+    },
+    {
+      "id": "blue-droplets",
+      "type": "particle",
+      "assetId": "light-masks-1.0/default/circle_a.png",
+      "zIndex": 4,
+      "tint": "#c64dff",
+      "blendMode": "add",
+      "duration": 0.08,
+      "emission": {
+        "count": 7,
+        "mode": "burst"
+      },
+      "maxParticles": 7,
+      "lifetime": [
+        0.45,
+        0.75
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        105,
+        220
+      ],
+      "direction": -90,
+      "spread": 155,
+      "gravity": {
+        "x": 0,
+        "y": 260
+      },
+      "startScale": [
+        0.007,
+        0.015
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.35,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "white-droplets",
+      "type": "particle",
+      "assetId": "light-masks-1.0/default/circle_a.png",
+      "zIndex": 4,
+      "tint": "#f2fbff",
+      "blendMode": "add",
+      "duration": 0.08,
+      "emission": {
+        "count": 5,
+        "mode": "burst"
+      },
+      "maxParticles": 5,
+      "lifetime": [
+        0.45,
+        0.75
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        105,
+        220
+      ],
+      "direction": -90,
+      "spread": 155,
+      "gravity": {
+        "x": 0,
+        "y": 260
+      },
+      "startScale": [
+        0.007,
+        0.015
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.35,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "electric-fork-0",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 2,
+      "rotation": -1.06,
+      "scale": {
+        "x": 0.0301,
+        "y": 0.0482
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.9,
+      "tint": "#d270ff",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.3,
+          0.55
+        ],
+        [
+          0.42,
+          1
+        ],
+        [
+          0.65,
+          0.35
+        ],
+        [
+          0.74,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.16,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "electric-fork-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 2,
+      "rotation": -0.53,
+      "scale": {
+        "x": 0.0301,
+        "y": 0.0622
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.9,
+      "tint": "#d270ff",
+      "blendMode": "add",
+      "delay": 0.018,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.3,
+          0.55
+        ],
+        [
+          0.42,
+          1
+        ],
+        [
+          0.65,
+          0.35
+        ],
+        [
+          0.74,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.16,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "electric-fork-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 2,
+      "rotation": 0,
+      "scale": {
+        "x": 0.0301,
+        "y": 0.0762
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.9,
+      "tint": "#d270ff",
+      "blendMode": "add",
+      "delay": 0.036,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.3,
+          0.55
+        ],
+        [
+          0.42,
+          1
+        ],
+        [
+          0.65,
+          0.35
+        ],
+        [
+          0.74,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.16,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "electric-fork-3",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 2,
+      "rotation": 0.53,
+      "scale": {
+        "x": 0.0301,
+        "y": 0.0482
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.9,
+      "tint": "#d270ff",
+      "blendMode": "add",
+      "delay": 0.05399999999999999,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.3,
+          0.55
+        ],
+        [
+          0.42,
+          1
+        ],
+        [
+          0.65,
+          0.35
+        ],
+        [
+          0.74,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.16,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "electric-fork-4",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 2,
+      "rotation": 1.06,
+      "scale": {
+        "x": 0.0301,
+        "y": 0.0622
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "alpha": 0.9,
+      "tint": "#d270ff",
+      "blendMode": "add",
+      "delay": 0.072,
+      "duration": 0.26,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.08,
+          1
+        ],
+        [
+          0.3,
+          0.55
+        ],
+        [
+          0.42,
+          1
+        ],
+        [
+          0.65,
+          0.35
+        ],
+        [
+          0.74,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleYOverLife": [
+        [
+          0,
+          0.12
+        ],
+        [
+          0.16,
+          1
+        ],
+        [
+          1,
+          1.08
+        ]
+      ]
+    },
+    {
+      "id": "impact-core",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_a.png",
+      "zIndex": 5,
+      "scale": {
+        "x": 0.038,
+        "y": 0.023
+      },
+      "tint": "#d4f1ff",
+      "blendMode": "add",
+      "duration": 0.14,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
         ]
       ]
     }

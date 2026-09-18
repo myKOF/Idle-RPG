@@ -3,6 +3,23 @@
   "id": "bolt-sky-lightning",
   "duration": 0.4,
   "loop": false,
+  "deformation": {
+    "amplitude": 13,
+    "axis": "y",
+    "end": 0,
+    "layers": [
+      "glow",
+      "seg-a",
+      "seg-b",
+      "seg-c",
+      "branch",
+      "ground",
+      "flash"
+    ],
+    "mirror": true,
+    "start": -500,
+    "widthJitter": 0.07
+  },
   "layers": [
     {
       "id": "glow",

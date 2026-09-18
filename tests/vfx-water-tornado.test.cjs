@@ -25,7 +25,8 @@ test('FIRE shipped effect uses one shared atlas and live particles, with no proc
  assert.ok(p.layers.every(l=>l.type!=='procedural'));
  const frames=p.layers.filter(l=>l.sheet);assert.equal(frames.length,1);
  assert.equal(frames[0].sheet.count,80);assert.equal(frames[0].sheet.fps,20.8);
- for(const id of ['crown-flame-jets','ground-flames','dust'])assert.equal(p.layers.find(l=>l.id===id).duration,p.duration);
+ const particles=p.layers.filter(l=>l.type==='particle');assert.ok(particles.length>0);
+ for(const layer of particles)assert.equal(layer.duration,p.duration,layer.id);
  assert.ok(fs.existsSync(path.join(__dirname,'../images/vfx/assets',frames[0].assetId)));
 });
 
