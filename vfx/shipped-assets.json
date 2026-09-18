@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 140,
+  "assetCount": 141,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -488,6 +488,13 @@
       "package": "new_materials",
       "contentHash": "sha256:b4c3db3e33ad522423a6a2eeabeea079b99e4332580c1800e364268d61849e7d",
       "fileSize": 276821
+    },
+    {
+      "assetId": "new_materials/orb/rounded_10.png",
+      "relativePath": "new_materials/orb/rounded_10.png",
+      "package": "new_materials",
+      "contentHash": "sha256:0334575528af370c0c3c498176b08d91b5077790c53346778bd76a316552585c",
+      "fileSize": 152038
     },
     {
       "assetId": "new_materials/orb/rounded_12.png",
