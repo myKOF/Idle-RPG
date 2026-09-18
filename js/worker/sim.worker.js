@@ -743,8 +743,8 @@ function buildPanel(name, params) {
          dps 取自 FIELD.dpsWindow（最多 10 筆），成本可忽略。 */
       return {
         player: p, stage: G.stage,
-        stats: (typeof getStats === 'function') ? getStats() : null,
-        viewStats: (typeof getViewStats === 'function') ? getViewStats() : null,
+        stats: (typeof getStats === 'function') ? playerPanelStats(getStats()) : null,
+        viewStats: (typeof getViewStats === 'function') ? playerPanelStats(getViewStats()) : null,
         dps: (typeof currentDps === 'function') ? currentDps() : 0,
         settings: G.settings,
         autoEquip: !!(G.factory && G.factory.autoEquip),
@@ -810,8 +810,8 @@ function buildPanel(name, params) {
         equipment: G.equipment, sets: G.equipmentSets, equipSetNames: G.equipSetNames,
         equipActive: G.equipActive, equipView: G.equipView,
         settings: G.settings,
-        stats: (typeof getStats === 'function') ? getStats() : null,
-        viewStats: (typeof getViewStats === 'function') ? getViewStats() : null,
+        stats: (typeof getStats === 'function') ? playerPanelStats(getStats()) : null,
+        viewStats: (typeof getViewStats === 'function') ? playerPanelStats(getViewStats()) : null,
         /* 每種詞條能出現在哪些部位、要什麼品質才會出現。取自 AFFIX_POOL，
            是靜態的遊戲規則，不隨狀態改變。
 

@@ -436,6 +436,25 @@ function skills2Ult(gid) {
   var raw = (typeof G !== 'undefined' && G && G.player && G.player.skills2) ? G.player.skills2.ult : null;
   return sgEffectiveUlt(raw, gid, skills2Levels(gid));
 }
+/* 當階消耗不是累加；表格留白／0 代表免費。UI 傳入快照，模擬端省略參數讀 G。 */
+function skills2TierManaCost(gid, tierIdx, ultId) {
+  var g = SKILLS2[gid];
+  if (!g) return 0;
+  var row = ultId ? (g.ult || []).filter(function (u) { return u.id === ultId; })[0] : g.tiers[tierIdx];
+  return Math.max(0, Number(row && row.cost) || 0);
+}
+function skills2ManaCost(gid, lvs, ultRaw) {
+  var g = SKILLS2[gid];
+  if (!g || skills2IsPassive(gid)) return 0;
+  if (!lvs) {
+    lvs = skills2Levels(gid);
+    ultRaw = typeof G !== 'undefined' && G.player && G.player.skills2 ? G.player.skills2.ult : null;
+  }
+  var u = sgEffectiveUlt(ultRaw, gid, lvs);
+  if (u) return skills2TierManaCost(gid, 0, u.id);
+  for (var i = g.tiers.length - 1; i >= 0; i--) if (lvs[i] > 0) return skills2TierManaCost(gid, i);
+  return 0;
+}
 /* 施放端的判定入口：這個群組現在生效的超神進化是不是指定的那一個。 */
 function sgUlt(gid, id) {
   var u = skills2Ult(gid);
@@ -2284,9 +2303,11 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     ? bfPickPrimary(reachable, pEnt._lockTarget) : reachable[0];
   if (!primary) return null;
 
+  var manaCost = skills2ManaCost(gid);
+  if (!freeCast && pEnt.mp < manaCost && !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) return null;
   if (!freeCast) {
     if (!(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
-      pEnt.mp = Math.max(0, pEnt.mp - (Number(g.cost) || 0));
+      pEnt.mp = Math.max(0, pEnt.mp - manaCost);
     }
     if (!pEnt.skillCds) pEnt.skillCds = {};
     pEnt.skillCds[SG_PREFIX + gid] = skills2Cooldown(gid, lvs, pEnt);
@@ -6410,12 +6431,12 @@ function skill2EarthguardLevels() {
 /* 我方受到的傷害乘區（岩甲【天地逆返】×大地守護【傷害減免】）。
    刻意不併進 dCfg.dmgRed：那條是神鑄【聖佑】的加算池、還夾著 50% 上限，
    兩個不同來源的減免混在一起會互相吃掉對方的空間。 */
-function skill2DamageTakenMultiplier(pEnt) {
-  var mult = 1;
+function skill2PassiveDamageTakenMultiplier() {
   var eg = skill2EarthguardLevels();
-  if (eg && eg[0] > 0) {
-    mult *= 1 - Math.min(90, sgVal(SKILLS2.earthguard.tiers[0].fx, 'pct', eg[0])) / 100;
-  }
+  return eg && eg[0] > 0 ? 1 - Math.min(90, sgVal(SKILLS2.earthguard.tiers[0].fx, 'pct', eg[0])) / 100 : 1;
+}
+function skill2DamageTakenMultiplier(pEnt) {
+  var mult = skill2PassiveDamageTakenMultiplier();
   var rk = skill2RockLevels(pEnt);
   if (rk && rk[6] > 0) {
     var red = sgVal(SKILLS2.rockarmor.tiers[6].fx, 'pct', rk[6]) * (1 - skill2RockShieldRemain(pEnt));
@@ -10047,7 +10068,7 @@ function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
 var SG_TRIGGER_MP_TIERS = { counter: [1, 1, 0, 1, 1, 1, 1] };
 /* 某一階「觸發一次要付的法力」＝參數表「施法消耗」欄的該階列（tiers[i].cost）。
    這是扣魔與 UI 顯示的唯一來源，兩邊不得各算各的。
-   沒有觸發時機的階、以及主動群組一律回 0——主動群組在 castSkill2 付群組層的 g.cost。 */
+   沒有觸發時機的階、以及主動群組一律回 0——主動群組在 castSkill2 依最高生效進化階付費。 */
 function skills2TierTriggerMp(gid, tierIdx) {
   var g = SKILLS2[gid];
   var mask = SG_TRIGGER_MP_TIERS[gid];
@@ -10687,7 +10708,7 @@ function sgTickUltAutoCast(ctx, dt) {
   if (next > GT) return;
   SKILL2_RT.ultAuto.cleave = GT + gap;
   if (typeof effectActive === 'function' && effectActive(ctx.pEnt, 'stun')) return;
-  var cost = Number(SKILLS2.cleave.cost) || 0;
+  var cost = skills2ManaCost('cleave');
   if (ctx.pEnt.mp < cost && !(typeof gmMpLockActive === 'function' && gmMpLockActive(ctx.pEnt))) return;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   var res = castSkill2(ctx.pEnt, enemies, 'cleave', ctx.floatSel);

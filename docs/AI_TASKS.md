@@ -8,8 +8,6 @@
 - 230 列非特效資料與所有原有引用逐列核對一致；Excel 原生 API 寫入 260 格並插欄，兩次正常重開逐格驗證，圖形 0→0。CSV／JS dry-run 零語意差異。96 項契約／繼承／狀態／飛行／超神／範圍測試通過；node tools/build_check.cjs 374 檔通過。測試指令：node --test tests/skills2-vfx-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skill2-status-slots.test.cjs tests/skills2-flight-speed.test.cjs tests/skill2-ult-evolution.test.cjs tests/skills2-geometry.test.cjs。
 - Runtime 全檔 99 項有 1 項既有 CATALOG-3（bolt-sky-purple 頂層兩群組）；引用掃描有既有 hit-thunderstrike-bluewhite Runtime 特殊處理未登記問題，非本次新增，未改素材或放寬測試。另 skill2-vfx 的火球測試缺 VFX_PROJECTILE_SPEED_CELLS 初始化；本次未修改火球計畫或其測試。尚未實機畫面驗證；可交使用者檢查新欄位後合併。檢查未修改 Status Excel／CSV、combat.js、status.js、飛行佇列與素材；沒有素材庫變更。
 
-
-
 ## Codex｜血刃飛行速度欄位匯入（BLOOD-FLIGHT-SPEED-20260918）
 
 - Owner Codex；Done。前次新增毒彈執行期接線後漏登記嚴格表格契約，導致使用者填速度時匯入被拒。新增bloodblade/5與bloodblade/disintegrate的speed／speedPer接線；維持其他未實作欄位拒絕匯入。
@@ -7285,3 +7283,24 @@ Worker 存活且頁面正常完成載入。
 - 清單選取：WinForms 的 SaveFileDialog 做不到，改用同一個 Windows 存檔視窗的原生介面 IFileDialog（`tools/vfx/native-save-dialog.cs`，開視窗時 Add-Type 編譯；放不進 -EncodedCommand，命令列有長度上限）。視窗打開後以 IShellBrowser → IShellView.SelectItem 選取並捲到可見，清單是非同步填入，用計時器重試；編不起來或開不起來就退回 SaveFileDialog。選取時 Windows 會把該檔名放進檔名框；開視窗後寫回檔名框在 Windows 11 做不到（SetFileName 只在開啟前有效、檔名欄位不是傳統控制項），只做焦點不選取則清單不反白——採用反白選取，檔名框＝目前名稱。
 - 覆寫：另存新檔開 FOS_OVERWRITEPROMPT（Windows 問「要取代嗎？」），伺服器回 `{ id, overwrite: true }`；重新命名照舊不覆寫。Editor：選到目前這份＝一般存檔；覆寫前重抓清單，沒經過 Windows 問過的撞名用 confirm 補問；要覆寫的那份開在別的視窗就不蓋。伺服器 `/__save-as-dialog` 多收 `current`（照 id 規則驗證）。
 - 驗證：實機以探測模式（VFX_SAVE_PROBE，視窗選好自己關掉）跑正式路徑：約 1.9 秒選到 `proj-cleave-ring-tricolor-08.json`，截圖確認清單反白並捲到可見；Windows 上 unlink 被開著的檔回 EBUSY 另見上一筆。頁面（攔下問名字的請求）：覆寫既有特效成功（內容與分組都換成新名字、原本那份不動）、選到自己＝一般存檔、未經確認的撞名補問並可取消；console 無錯誤。測試：SAVEAS-2／3／4／5／6、SA2、RENAME-12 依新行為改寫，新增 SAVEAS-4B（Windows 上實際編譯 C#）；相關三支測試檔只剩既有的 16b。
+
+## Codex｜每次傷害觸發吸血吸魔（DAMAGE-DRAIN-20260918）
+
+- Owner Codex；Done。使用者要求新版技能接上屬性汲取，按每名敵人每次傷害觸發；移除舊版專用施放後吸取，技能本體留待正式廢除。
+- 範圍：formula.js 傷害掛點、combat.js 統一汲取與 DoT 合併跳數／反震、skills.js 移除重複路徑、data.js 說明、快取與回歸測試。基礎汲取量、大地守護乘區、資源溢出規則不變；沒有表格或素材變更。
+- DoT 仍合併扣血，依同幀實際跳數一次結算回復，沒有新增 Timer／逐擊粒子。普攻、Skills2、直接衍生傷害、同步／延後反震共用入口；預覽、零傷害、死亡玩家不觸發。
+- 驗證：node --test tests/damage-drain.test.cjs tests/attr-skill-rework-2026-07-30.test.cjs tests/combat-dot-log.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/combo-hits.test.cjs tests/skill2-earth.test.cjs tests/skill2-counter-bloodrage.test.cjs tests/passive-stat-panel.test.cjs，102/102 通過。node tools/build_check.cjs，377 檔通過；git diff --check 通過。新增6項行為測試；檢查未修改 skills2.js／Excel／CSV。
+- 風險：未實機畫面及大型戰場效能量測；逐目標逐傷害觸發會按設計提高群攻、多段與 DoT 的回復量。HP／MP 經既有實體快照顯示，屬性說明同步；不額外產生逐擊汲取浮字。可合併，未推送。
+
+## Codex｜裝配被動加成屬性面板（PASSIVE-PANEL-20260918）
+
+- Done。Worker 在 header／equip 快照提供 passivePanel：實際回復量、吸血／吸魔百分比與每次回復、元素增傷乘區、常駐技能減傷；不覆寫戰鬥基礎屬性。大地守護生命上限原已納入。面板透過快照顯示，無 G 亦可用；技能減傷獨立列，避免與全局減傷點數錯加。装卸技能協議刷新 header／equip，協議升至 v34。
+- 修改 formula.js、skills2.js、data.js、Worker 協議／快照、index.html／bridge.js 快取、WORKER_PROTOCOL 文件與測試。未修改 Excel／CSV、player.js 快取、combat.js 回復或素材，沒有新增 Timer。
+- 驗證：node --test tests/passive-stat-panel.test.cjs tests/stats-panel.test.cjs tests/equip-set-preview-stats.test.cjs tests/worker-protocol.test.cjs tests/ui-worker-panels.test.cjs，34 項中33通過；唯一既有失敗是 item.upgrade 測試未提供 UI（本次未改該函式）。大地守護／再生／回復／魔法盾定向7/7通過，涵蓋戰鬥結果不變；build 376 檔通過。新增5項回歸含正式裝卸函式、Worker header、序列化無G呈現、預覽與原物件不污染。
+- 風險：尚未實機畫面驗證；暫時／有條件的戰鬥觸發不當成永久屬性加入。可合併，未推送。
+
+## Codex｜進化階級耗魔（SKILLS2-MANA-20260918）
+
+- Done。統一最高生效階／超神耗魔，非累加；階級預覽顯示該列成本，技能列以快照計算目前成本。同步 skills2.js 實際扣魔與自動迴旋斬、skills.js 起手門檻、ui.js 階級／超神提示與技能列及快取。免費追加施放及被動逐次觸發保持原規則；未修改 Excel／CSV。
+- 新增 tests/skills2-mana-cost.test.cjs，覆蓋全部主動群組逐階／超神成本、超神失效回退、主執行緒快照、實際扣魔、不足魔力、GM 鎖魔、免費施放及正式自動施放佇列。嗜血狂怒舊測試提供足夠魔力並改驗第七階成本，保留全部技能行為斷言。
+- 驗證：node --test tests/skills2-mana-cost.test.cjs tests/skill2-counter-bloodrage.test.cjs，28/28 通過；node tools/build_check.cjs，375 檔通過；git diff --check 通過。未實機檢查畫面；高階實際耗魔會依原設定提高。檢查未改 formula.js、combat.js 及魔法盾；沒有素材變更。可合併，未推送。

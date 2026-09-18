@@ -55,7 +55,8 @@
 // v31：cleave-ring 以 area 圓心／半徑及 travelMs 表示原地向外擴張的一道刀波。
 // v32：飛刀 area.knifeFlight 攜帶 sourceX/Y、x/y 及可空 controlX/Y；knifeImpact 為權威命中位置。
 // v33：追魂刃 area.soulId/soulMode/soulLife 串接飛行、返回、環繞與消失；orbitR/Angle/Spin 描述待機。
-var WORKER_PROTOCOL_VERSION = 33;
+// v34：header／equip 的 passivePanel 提供裝配被動結算值；装卸技能同步刷新面板。
+var WORKER_PROTOCOL_VERSION = 34;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -307,8 +308,8 @@ var COMMANDS = {
   'skill.delete':          { fn: 'deleteSkill',         args: { id: 'str' },                      dirty: ['skills'] },
   'skill.fuse':            { fn: 'fuseSkills',          args: { ids: 'ids' },                     dirty: ['skills'] },
   'skill.deleteFusion':    { fn: 'deleteFusion',        args: { id: 'str' },                      dirty: ['skills'] },
-  'skill.equipLoadout':    { fn: 'equipSkillToLoadout', args: { id: 'str' },                      dirty: ['skills', 'battle'] },
-  'skill.unequipLoadout':  { fn: 'unequipSkillFromLoadout', args: { id: 'str' },                  dirty: ['skills', 'battle'] },
+  'skill.equipLoadout':    { fn: 'equipSkillToLoadout', args: { id: 'str' },                      dirty: ['skills', 'battle', 'header', 'equip'] },
+  'skill.unequipLoadout':  { fn: 'unequipSkillFromLoadout', args: { id: 'str' },                  dirty: ['skills', 'battle', 'header', 'equip'] },
   'skill.reorderLoadout':  { fn: null,                  args: { from: 'int', to: 'int' },         dirty: ['skills', 'battle'] },
 
   /* -- 新版技能群組（v19，js/skills2.js）--

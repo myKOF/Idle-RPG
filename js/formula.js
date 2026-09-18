@@ -743,7 +743,8 @@ function gmMpLockActive(ent) {
   return !!(ent && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.mpLock);
 }
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
-function applyEnemyHpDamage(ent, damage) {
+function applyEnemyHpDamage(ent, damage, drainHits) {
+  var wasAlive = ent && ent.hp > 0;
   var amount = towerBossHpDamage(ent, damage);
   if (ent) {
     if (gmHpLockActive(ent)) amount = 0;
@@ -758,6 +759,9 @@ function applyEnemyHpDamage(ent, damage) {
     ent.hp = Math.max(gmFloor, ent.hp - amount);
     // 新版技能【血飲術】反噬：持續傷害／衍生傷害等直接扣血也是「敵人受傷」
     //（僅敵方實體＝有 maxHp；玩家自身流血不通知，天然阻斷遞迴）
+    if (wasAlive && amount > 0 && ent.maxHp > 0 && typeof playerDrainOnDamage === 'function') {
+      playerDrainOnDamage(ent, amount, null, drainHits);
+    }
     if (amount > 0 && ent.maxHp > 0 && typeof skills2OnEnemyDamaged === 'function') {
       skills2OnEnemyDamaged(ent, amount);
     }
@@ -765,6 +769,7 @@ function applyEnemyHpDamage(ent, damage) {
   return amount;
 }
 function resolveHit(attacker, defender, aCfg, dCfg) {
+  var defenderWasAlive = defender.hp > 0;
   var out = { dmg: 0, crit: false, miss: false, blocked: false, killed: false, thorns: 0, heal: 0, shield: 0, absorbed: 0, manaShield: 0, procs: [] };
   // 命中率 = clamp(攻擊者命中 - 防守者閃避, 下限, 上限)；玩家命中已含基礎值。
   var attackerHit = Number(aCfg.hit);
@@ -988,6 +993,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       defender.hp = 0; out.killed = true;
     }
   }
+  // 所有普通／技能命中共用一次汲取；同一擊的物理與附加元素不重複計次。
+  if (aCfg.isPlayer && defenderWasAlive && typeof playerDrainOnDamage === 'function') {
+    playerDrainOnDamage(defender, out.dmg, attacker);
+  }
   // 新版技能【血飲術】反噬：玩家攻擊端的敵方受傷事件通知（js/skills2.js，未啟用時零成本）
   if (aCfg.isPlayer && out.dmg > 0 && typeof skills2OnEnemyDamaged === 'function') {
     skills2OnEnemyDamaged(defender, out.dmg);
@@ -997,12 +1006,16 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     out.thorns = Math.max(1, Math.round(dCfg.maxHp * dCfg.thornsPct / 100 * globalDamageMultiplier(aCfg.globalDmgRed)));
     /* 魔法投射物的反傷由 combat.js 排到投射物命中時結算；其他攻擊維持同步結算。 */
     if (!dCfg.deferThorns) {
+      var thornsTargetAlive = attacker.hp > 0;
       if (gmHpLockActive(attacker)) {
         out.thorns = 0;
       } else {
         attacker.hp = Math.max(0, attacker.hp - out.thorns);
       }
       // 反震也是「敵人受傷」：血飲術反噬同樣通知（防守方為玩家＝攻擊者為敵人）
+      if (dCfg.isPlayer && thornsTargetAlive && typeof playerDrainOnDamage === 'function') {
+        playerDrainOnDamage(attacker, out.thorns, defender);
+      }
       if (dCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
         skills2OnEnemyDamaged(attacker, out.thorns);
       }
@@ -2483,4 +2496,21 @@ function offlineUsesElite() { return !!Number(OFFLINE_ELITE); }
 function offlineKillCount(elapsed, potentialOfflinePct) {
   var interval = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
   return Math.max(0, Math.floor(elapsed / interval * (1 + (Number(potentialOfflinePct) || 0) / 100)));
+}
+
+/* 面板專用投影：只複製 stats，不覆寫戰鬥的基準回復與汲取倍率。
+   在 Worker 建快照時呼叫，主執行緒不依賴 G 或技能執行期狀態。 */
+function playerPanelStats(st) {
+  if (!st) return null;
+  var out = Object.assign({}, st);
+  out.passivePanel = {
+    hpRegen: playerHpRegenPerSec(st), mpRegen: playerMpRegenPerSec(st),
+    hpDrainBase: playerHpRegenBasePerSec(st), mpDrainBase: playerMpRegenBasePerSec(st),
+    lifesteal: (st.lifesteal || 0) * playerDrainSkillFactor('hp'),
+    manaSteal: (st.manaSteal || 0) * playerDrainSkillFactor('mp'),
+    hpDrain: lifestealHealAmount(st, st.lifesteal), mpDrain: manaStealAmount(st, st.manaSteal),
+    elemPct: typeof skill2ElemDamageUpPct === 'function' ? skill2ElemDamageUpPct() : 0,
+    damageRed: typeof skill2PassiveDamageTakenMultiplier === 'function' ? (1 - skill2PassiveDamageTakenMultiplier()) * 100 : 0
+  };
+  return out;
 }

@@ -2992,7 +2992,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
       var passiveMinMpE = (isPassiveE && typeof skills2PassiveMinMp === 'function')
         ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3))) : 0;
       var costE = isSgE
-        ? (isPassiveE ? passiveMinMpE : (Number(sk.cost) || 0))
+        ? (isPassiveE ? passiveMinMpE : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
         : (isPotE ? 0 : skillManaCost(sk, lv));
       arr.push({
         sk: sk, lv: lv, cd: cd, cost: costE,
@@ -3360,7 +3360,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var passiveMinMp = (isPassiveGroup && typeof skills2PassiveMinMp === 'function')
       ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3))) : 0;
     var cost = isSgE
-      ? (isPassiveGroup ? passiveMinMp : (Number(sk.cost) || 0))
+      ? (isPassiveGroup ? passiveMinMp : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
       : (isPotE ? 0 : (typeof skillManaCost === 'function' ? skillManaCost(sk, lv) : (Number(sk.cost) || 0)));
     var rawCd = Number(sk.cd) || 5;
     var eqSnapshot = uiEquipPanelSnapshot();
@@ -8084,6 +8084,7 @@ function renderSkill2UltModal(body, gid, skillsSnapshot, headerSnapshot) {
     (pick ? esc(pick.def.name) : '超神進化') + '</b> ' +
     '<span class="dim-text">第' + (g.tiers.length + 1) + '階｜Lv.' + (pick ? pick.lv : 0) + '/' + tierMax + '</span>' +
     '<span class="sk-meta">' + esc(g.emoji + ' ' + g.name) + '</span></div>';
+  if (pick && !skills2IsPassive(gid)) h += '<div class="sk-meta">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + ' MP／次施放</div>';
   h += '<div class="skill-tags"><span class="skill-tag skill-tag-ult">超神進化·三選一</span></div>';
 
   if (!unlocked) {
@@ -8189,7 +8190,7 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
     '<span class="dim-text">Lv.' + lv + '/' + tierMax + '｜' + typeStr + '</span>' +
     '<span class="sk-meta">' + (isPassiveGroup
       ? ('🌀 被動' + (tierMp > 0 ? '　🔵 ' + tierMp + ' MP／次觸發' : ''))
-      : '🔵 ' + (Number(g.cost) || 0) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
+      : '🔵 ' + skills2TierManaCost(gid, selectedTier) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
 
   var tags = [{ text: dmgTypeLabel, cls: 'skill-tag-category' }];
   if (elemInfo) {
@@ -8485,6 +8486,7 @@ function showSkillTooltip(ref, anchorEl) {
         (sgUltPick ? sgUltPick.lv : 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
       sgUltH += '<div class="skt-meta">' + esc(sgG.name) + '　三選一，選定後可再升 ' + SG_TIER_MAX_LV + ' 級</div>';
       if (sgUltPick) {
+        if (!skills2IsPassive(sgTipGid)) sgUltH += '<div class="skt-meta">🔵 ' + skills2TierManaCost(sgTipGid, 0, sgUltPick.id) + ' MP／次施放</div>';
         sgUltH += '<div class="skt-desc">' + describeSkill2Ult(sgTipGid, sgUltPick.idx, sgUltPick.lv) + '</div>';
         if (!sgUltOk) sgUltH += '<div class="skt-lock skill-unlock-hint">🔒 前 ' + sgG.tiers.length + ' 階未全滿，效果暫時失效</div>';
       } else {
@@ -8509,7 +8511,7 @@ function showSkillTooltip(ref, anchorEl) {
       sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
         ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
           ? ('🌀 主動型被動（需裝配技能列）' + (sgTipMp > 0 ? '　🔵 ' + sgTipMp + ' MP／次觸發' : ''))
-          : '🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
+          : '🔵 ' + skills2TierManaCost(sgTipGid, sgTipTier) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
       if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(sgStageLockReason(sgTipGid, sgTipTier, skillsSnapshot)) + '</div>';
       sgH += '<div class="skt-hint">點擊查看升級面板</div>';
@@ -8520,7 +8522,7 @@ function showSkillTooltip(ref, anchorEl) {
       ' <span class="dim-text">總 Lv.' + sgUiTotalLevel(sgLvs) + '｜新版技能</span></div>';
     sgH += '<div class="skt-meta">' +
       ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
-        ? '🌀 主動型被動（裝配到技能列才生效，不會主動施放）' : '🔵 ' + (Number(sgG.cost) || 0) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
+        ? '🌀 主動型被動（裝配到技能列才生效，不會主動施放）' : '🔵 ' + skills2ManaCost(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot)) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
     sgH += '<div class="skt-desc sg-tier-list">' + describeSkill2Group(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot)) + '</div>';
     sgH += '<div class="skt-hint">點擊開啟升級面板</div>';
     showSkillTooltipHTML(tip, sgH, anchorEl);
