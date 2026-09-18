@@ -2117,6 +2117,16 @@
     renderInspector();
   }
 
+  /* 雙擊群組名稱：選到它（第一下若是「再點一次＝取消選取」，這裡選回來），
+     再對**重畫後**那一列的名稱開輸入框——selectGroupById 會重建整個列表，
+     拿事件當下的元素來改，輸入框會插在已經不在畫面上的節點裡。 */
+  function renameGroupRow(row) {
+    var key = keyOf('group', row.id);
+    selectGroupById(row.id);
+    var span = $("layer-list").querySelector('.group-row[data-key="' + CSS.escape(key) + '"] .gname');
+    if (span) beginInlineRename(span, row);
+  }
+
   /* 就地改名。原本用 window.prompt——那會擋住整個分頁，而且看不到自己
      正在改的是哪一列。改成把文字換成輸入框，Enter 套用、Escape 取消、
      失焦視同套用（照使用者的直覺，離開就是寫下去）。 */
@@ -2306,9 +2316,17 @@
     name.className = "gname";
     name.textContent = r.name;
     name.title = "雙擊重新命名";
-    name.ondblclick = function (e) {
-      e.stopPropagation();
-      beginInlineRename(name, r);
+    /* 雙擊要在第二下的 mousedown 就接手，不能等 dblclick（2026-09-18 實測）：
+       整列的 mousedown 會處理選取並重畫整個列表，第一下按住的元素在放開前就被換掉，
+       瀏覽器湊不出「兩下點在同一個元素上」——實際只收到 mousedown／mouseup，
+       連 click 都沒有，dblclick 永遠不會發生；而且第二下落在唯一選取的群組上，
+       會被整列當成「再點一次＝取消選取」。
+       e.detail 是作業系統算的連點次數，不受 DOM 重建影響。 */
+    name.onmousedown = function (e) {
+      if (e.button !== 0 || e.detail < 2) return;   // 第一下照常交給整列處理選取
+      e.stopPropagation();                          // 不讓整列把它當成取消選取
+      e.preventDefault();                           // 不讓瀏覽器把焦點從輸入框搶走（失焦＝套用，改名會立刻結束）
+      renameGroupRow(r);
     };
 
     var count = document.createElement("span");
