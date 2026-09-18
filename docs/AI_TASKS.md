@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜循環旋轉終點閃幀（VFX-LOOP-SEAM-20260918）
+
+- Owner Codex；Done。使用者回報旋轉接縫跳幀。發現Core僅於時間大於週期時循環，但圖層於大於等於時隱藏；修正精確終點先循環。修改Core、Core測試、遊戲／編輯器快取與紀錄，預檢通過。使用者實際Preset未指定，另說明預覽重播與Preset loop差別。
+- 驗證：`node --test tests/vfx-core.test.cjs` 138/138；`node tools/build_check.cjs` 379檔通過；diff check通過。覆蓋精確終點連續兩圈可見、旋轉相位與大dt跨界餘量。唯讀檢查editor.js的預覽重播邏輯，未修改素材或使用者Preset；素材庫無需提交。Commit見本紀錄所在提交。限制：尚未確認使用者目前旋轉圖的曲線端點與loop設定，本修正不能排除其餘接縫來源。修正可合併，未合併／推送；下一步重載編輯器並確認Preset loop與線性整圈曲線。
+
 ## Codex｜暴風光壁緩慢旋轉（STORM-WALL-ROTATE-20260918）
 
 - Owner Codex；Done。保留使用者編輯器存檔的透明度、尺寸與位置，錐形光束沿地板橢圓24秒繞行一圈，底圈固定俯視投影。修改 `vfx/presets/ground-storm-dance.json`、`tools/vfx/authoring/author/storm-dance.cjs`、`tests/storm-dance.test.cjs` 與本紀錄；衝突預檢通過。沿用位移曲線，無Runtime或技能改動；author改為基於現有編輯器存檔更新，避免重製覆蓋手調外觀。

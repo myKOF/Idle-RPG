@@ -1985,7 +1985,7 @@ var VFXCore = (function () {
         if (effect.draining) effect.drainAge += dt;
         effect.time += effect.lastDt;
         var preset = effect.preset;
-        if (!effect.draining && preset.loop && effect.time > preset.duration) {
+        if (!effect.draining && preset.loop && effect.time >= preset.duration) {
           effect.time = effect.time % preset.duration;
           effect.layers.forEach(function (l) { l.burstDone = false; });
         }

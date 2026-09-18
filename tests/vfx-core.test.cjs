@@ -12,6 +12,28 @@ const VFXCore = require('../js/vfx-core.js');
 
 const root = path.resolve(__dirname, '..');
 
+test('循環旋轉在精確終點仍可見，跨界保留剩餘時間', () => {
+  const nodes = [];
+  const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {
+    createNode() { const n = {}; nodes.push(n); return n; },
+    updateNode(n, t) { n.t = { ...t }; }, destroyNode() {}
+  } });
+  rt.registerPreset({ schemaVersion: 1, id: 'seamless', duration: 1, loop: true,
+    layers: [{ id: 'ring', type: 'sprite', assetId: 'pack/ring.png',
+      rotationOverLife: [[0, 0], [1, -2 * Math.PI]] }] });
+  const h = rt.play('seamless');
+  for (let i = 0; i < 8; i++) {
+    rt.update(0.25);
+    assert.equal(nodes[0].t.visible, true, '整圈終點不得隱藏一幀');
+    assert.ok(Math.abs(nodes[0].t.rotation + ((i + 1) % 4) * Math.PI / 2) < 1e-8);
+  }
+  rt.update(1.125);
+  assert.equal(nodes[0].t.visible, true);
+  assert.equal(rt.timeOf(h), 0.125);
+  assert.ok(Math.abs(nodes[0].t.rotation + Math.PI / 4) < 1e-8);
+  rt.destroy();
+});
+
 test('world-space tail particles retain birth position and orientation as emitter turns',()=>{
  const nodes=[];const r=VFXCore.createRuntime({resolver:{resolve:id=>id},backend:{createNode(){const n={};nodes.push(n);return n},updateNode(n,t){n.t={...t}},destroyNode(){}}});
  r.registerPreset({schemaVersion:1,id:'world-trail',duration:1,layers:[{id:'tail',type:'particle',assetId:'pack/star.png',worldSpace:true,emission:{mode:'burst',count:1},lifetime:[1,1],speed:[0,0]}]});
