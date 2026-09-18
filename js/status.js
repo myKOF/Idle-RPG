@@ -139,7 +139,14 @@ var STATUS = {
   sgSuperconduct: { name: '超導電荷', icon: '🔋', kind: 'buff', effect: 'stat', key: 'sgSuperconduct', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 2, dur: 99999, interval: 0, stack: 'stack', maxStacks: 100, desc: '超神進化【永恒超導體】：閃電鏈每經過自身 1 次疊 1 層，每層使你的雷電傷害提高（效果值＝單層% × 層數）；設計未寫持續時間，比照【戰神屠錄】採「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。' },
   sgThunderQuake: { name: '震雷', icon: '⚡', kind: 'debuff', effect: 'stat', key: 'sgThunderQuake', elem: 'lightning', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 8, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效【震雷】：被落雷術擊中留下的雷痕（效果值＝該敵人「暈眩中」時受到的傷害提高%）。只有同時暈眩中才會吃到增傷，因此持續時間只要蓋得住一次落雷的暈眩即可。' },
   sgWaterPrison: { name: '水牢', icon: '🌊', kind: 'debuff', effect: 'stat', key: 'sgWaterPrison', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 100, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【水牢天瀑】：被關進水牢的敵人（效果值＝受到的傷害提高%）。攻擊力下降那一半沿用既有的【攻擊】減益 atkDown，不另建一筆。' },
-  sgWindErode: { name: '風蝕', icon: '🌬️', kind: 'debuff', effect: 'stat', key: 'sgWindErode', elem: 'wind', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效【風蝕】：被風刃擊中留下的風蝕（效果值＝受到的傷害提高%）。沒有附加條件，狀態在身上就算數，走 skill2VulnACfg 的同一個 totalDmgPct。' }
+  sgWindErode: { name: '風蝕', icon: '🌬️', kind: 'debuff', effect: 'stat', key: 'sgWindErode', elem: 'wind', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 25, dur: 4, interval: 0, stack: 'refresh', maxStacks: 1, desc: '傳奇特效【風蝕】：被風刃擊中留下的風蝕（效果值＝受到的傷害提高%）。沒有附加條件，狀態在身上就算數，走 skill2VulnACfg 的同一個 totalDmgPct。' },
+  sgSlayerDomain: { name: '殺神領域', icon: '⚰️', kind: 'buff', effect: 'stat', key: 'sgSlayerDomain', elem: 'dark', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 99999, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【殺神領域】：展開中的領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。', vfx: { aura: 'ground-mire' } },
+  sgVenomDomain: { name: '萬毒血霧', icon: '☣️', kind: 'buff', effect: 'stat', key: 'sgVenomDomain', elem: 'poison', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 99999, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【萬毒血霧】：展開中的毒霧領域，跟著你移動；持續特效依領域半徑縮放（領域內敵人身上的【萬毒侵蝕】另計）。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。', vfx: { aura: 'ground-mire-poison' } },
+  sgFireGodBody: { name: '火神降臨', icon: '🔥', kind: 'buff', effect: 'stat', key: 'sgFireGodBody', elem: 'fire', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 99999, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【火神降臨】：火焰纏身，定時灼燒周圍敵人；持續特效依作用半徑縮放、跟著你移動。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。', vfx: { aura: 'ground-domain-fire' } },
+  sgPetrifyDomain: { name: '超重岩領域', icon: '🗿', kind: 'buff', effect: 'stat', key: 'sgPetrifyDomain', elem: 'earth', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 10, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【超重岩之術】：岩甲護盾存在期間展開的領域，進入的敵人被石化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。', vfx: { aura: 'ground-domain-earth' } },
+  sgGravityDomain: { name: '超重力場', icon: '🌐', kind: 'buff', effect: 'stat', key: 'sgGravityDomain', elem: 'earth', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 10, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【超重力場】：岩甲護盾存在期間展開的重力場，進入的敵人僵化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。', vfx: { aura: 'ground-domain-earth' } },
+  sgWaterPrisonDomain: { name: '水牢天瀑', icon: '🫧', kind: 'buff', effect: 'stat', key: 'sgWaterPrisonDomain', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 6, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【水牢天瀑】：圍在你周圍的水牢，持續期間跟著你移動；持續特效依水牢半徑縮放（牢內敵人身上的【水牢】與攻擊下降另計）。', vfx: { aura: 'ground-domain-ice' } },
+  sgAbyssDomain: { name: '海淵葬界', icon: '🌊', kind: 'buff', effect: 'stat', key: 'sgAbyssDomain', elem: 'ice', dmgSource: '', dmg: 0, capStat: '', capMult: 0, val: 0, dur: 99999, interval: 0, stack: 'refresh', maxStacks: 1, desc: '超神進化【海淵葬界】：永久展開的水之領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。', vfx: { aura: 'ground-domain-ice' } }
 };
 
 /* ---- 反查索引 ----
@@ -230,7 +237,20 @@ function applyStatus(ent, sid, ctx) {
   var fresh = !!(def.vfx && def.vfx.apply) && !statusActive(ent, sid);
   var res = statusWrite(ent, sid, def, dur, ctx);
   if (fresh && typeof statusApplyVfxCollect === 'function' && statusActive(ent, sid)) statusApplyVfxCollect(ent, sid);
+  if (Number(ctx.vfxR) > 0) statusSetVfxR(ent, sid, def, Number(ctx.vfxR));
   return res;
+}
+/* 持續特效的顯示半徑（世界像素）：代表一個範圍的狀態（以玩家為中心的領域）把權威半徑記在實例上，
+   顯示層的持續特效依它縮放並跟著實體走（AI_RULES 8.3：範圍特效要跟判定同步）。
+   沒記＝照 Preset 的世界尺寸畫。控場類存在 effects（只有到期時刻）不帶半徑。 */
+function statusSetVfxR(ent, sid, def, r) {
+  var inst = null;
+  if (def.effect === 'dot') {
+    for (var i = 0; ent.dots && i < ent.dots.length; i++) if (ent.dots[i] && ent.dots[i].sid === sid) inst = ent.dots[i];
+  } else if (def.effect !== 'ctrl') {
+    inst = ent.buffs && ent.buffs[def.effect === 'shield' ? 'shield' : def.key];
+  }
+  if (inst) inst.vfxR = r;
 }
 function statusWrite(ent, sid, def, dur, ctx) {
   var mult = statusNum(ctx.mult, 1);
@@ -264,7 +284,7 @@ function statusEntries(ent) {
     def = statusDef('shield');
     out.push({ sid: 'shield', name: def.name, icon: def.icon, kind: def.kind, effect: 'shield',
       until: ent.buffs.shield.until, remain: ent.buffs.shield.until - GT, dur: ent.buffs.shield.dur || (def && def.dur) || 0,
-      val: Math.max(0, ent.shield || 0), dps: 0, stacks: 1 });
+      val: Math.max(0, ent.shield || 0), dps: 0, stacks: 1, vfxR: ent.buffs.shield.vfxR || 0 });
   }
   if (ent.effects) {
     for (k in ent.effects) {
@@ -284,7 +304,8 @@ function statusEntries(ent) {
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : (d.name || '持續傷害'), icon: def ? def.icon : '🩸',
         kind: def ? def.kind : 'debuff', effect: 'dot',
-        until: d.until, remain: d.until - GT, dur: d.dur || (def && def.dur) || (d.until - GT), val: 0, dps: d.dps || 0, stacks: d.stacks || 1 });
+        until: d.until, remain: d.until - GT, dur: d.dur || (def && def.dur) || (d.until - GT), val: 0, dps: d.dps || 0, stacks: d.stacks || 1,
+        vfxR: d.vfxR || 0 });
     }
   }
   if (ent.buffs) {
@@ -296,7 +317,8 @@ function statusEntries(ent) {
       def = statusDef(sid);
       out.push({ sid: sid, name: def ? def.name : k, icon: def ? def.icon : '💪',
         kind: def ? def.kind : 'buff', effect: def ? def.effect : 'stat',
-        until: b.until, remain: b.until - GT, dur: b.dur || (def && def.dur) || (b.until - GT), val: b.val || 0, dps: 0, stacks: b.stacks || 1 });
+        until: b.until, remain: b.until - GT, dur: b.dur || (def && def.dur) || (b.until - GT), val: b.val || 0, dps: 0, stacks: b.stacks || 1,
+        vfxR: b.vfxR || 0 });
     }
   }
   return out;

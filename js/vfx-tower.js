@@ -212,9 +212,14 @@ var VFXTower = (function () {
     function push(key, ent) {
       if (!key || !ent || typeof statusEntries !== 'function') return;
       var list = statusEntries(ent);
-      var sids = [];
-      for (var i = 0; i < list.length; i++) if (list[i] && list[i].sid) sids.push(list[i].sid);
-      out.push({ key: key, sids: sids });
+      var sids = [], radii = null;
+      for (var i = 0; i < list.length; i++) {
+        if (!list[i] || !list[i].sid) continue;
+        sids.push(list[i].sid);
+        // 代表範圍的狀態（領域）帶半徑，持續特效依它縮放
+        if (list[i].vfxR > 0) (radii || (radii = {}))[list[i].sid] = list[i].vfxR;
+      }
+      out.push({ key: key, sids: sids, radii: radii });
     }
     push(TOWER_IDS.player, player);
     push(TOWER_IDS.boss, boss);

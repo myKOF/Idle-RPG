@@ -420,24 +420,51 @@ test('BLOOD-FLIGHT 毒彈使用事件來源與飛行時間，不從玩家發射�
  adapter.update(.51);assert.equal(adapter.stats().projectiles,0);
 });
 
-test('BLOOD-DOMAIN 領域事件接上每幀玩家跟隨，不必等下一次續命', () => {
-  const vm=require('node:vm'), c={};vm.createContext(c);
-  vm.runInContext(fs.readFileSync(path.join(REPO,'js/skills2.js'),'utf8'),c);
-  for(const poison of [false,true]) {
-    let pos={x:30,y:40},spec;
-    c.bfPlayerPos=()=>pos;
-    c.sgEmitPlayerVfx=(gid,sel,event)=>{spec=event;};
-    c.sgEmitBloodDomainAura({floatSel:'mv-float'},120,poison);
-    assert.equal(spec.area.follow,true);assert.equal(spec.area.r,120);
-    const p=unitPreset('configured-blood-domain');
-    const {adapter,log}=makeAdapter([p],{ctx:{posOf:()=>pos,playerPos:()=>pos}});
-    adapter.tryPlay({...spec,vfx:{ground:p.id}});adapter.update(.01);
-    pos={x:180,y:90};adapter.update(.016);
-    const t=log.nodes[0].transforms.at(-1);
-    assert.equal(t.x,pos.x);assert.equal(t.y,pos.y);
-    assert.equal(adapter.stats().played,1);
-    adapter.clear();
+test('BLOOD-DOMAIN 領域狀態的光環依半徑縮放、每幀跟著玩家，半徑改變時平滑補間', () => {
+  /* 2026-09-18 領域類光環：領域是玩家身上的狀態，快照帶 radii（狀態實例的 vfxR）。 */
+  global.statusVfxPreset = (sid, role) => (role === 'aura' && sid === 'sgSlayerDomain' ? 'configured-blood-domain' : '');
+  const p = unitPreset('configured-blood-domain', 1, true);
+  p.sizing = { shape: 'circle', radiusM: 6, authored: { radius: 60 } };
+  let pos = { x: 30, y: 40 };
+  const { adapter, log } = makeAdapter([p], { ctx: { posOf: () => Object.assign({}, pos), playerPos: () => pos } });
+  adapter.syncStatuses([{ key: 'pv-float', sids: ['sgSlayerDomain'], radii: { sgSlayerDomain: 120 } }]);
+  adapter.update(.01);
+  let t = log.nodes[0].transforms.at(-1);
+  assert.equal(log.nodes[0].tag, 'zone');
+  assert.ok(Math.abs(t.scaleX - 2) < 1e-9, '半徑 120 ÷ 製作半徑 60');
+  pos = { x: 180, y: 90 }; adapter.update(.016);
+  t = log.nodes[0].transforms.at(-1);
+  assert.equal(t.x, pos.x); assert.equal(t.y, pos.y);
+  adapter.syncStatuses([{ key: 'pv-float', sids: ['sgSlayerDomain'], radii: { sgSlayerDomain: 180 } }]);
+  adapter.update(.016);
+  t = log.nodes[0].transforms.at(-1);
+  assert.ok(t.scaleX > 2 && t.scaleX < 3, '半徑變大時不跳格，逐幀補間（' + t.scaleX + '）');
+  for (let i = 0; i < 60; i++) {
+    // 正式遊戲每 0.2 秒一張面板快照替光環續命（AURA_KEEP_SEC 內沒續就收掉）
+    if (i % 10 === 0) adapter.syncStatuses([{ key: 'pv-float', sids: ['sgSlayerDomain'], radii: { sgSlayerDomain: 180 } }]);
+    adapter.update(.016);
   }
+  t = log.nodes[0].transforms.at(-1);
+  assert.ok(Math.abs(t.scaleX - 3) < 0.01, '最後收斂到新半徑（' + t.scaleX + '）');
+  assert.equal(adapter.stats().played, 1, '同一個狀態不重建');
+  adapter.clear();
+  delete global.statusVfxPreset;
+});
+
+test('BLOOD-DOMAIN-RECT 長方形素材的領域光環撐滿判定圓的外框（寬高都等於直徑），比照地板事件', () => {
+  /* 判定是世界座標的正圓（bfEntityDistance）。ground-mire 這類 200×100 的長方形素材
+     只給半徑會等比放大、只畫出一半高度；要跟地板事件的 area 一樣帶外框 w／h。 */
+  global.statusVfxPreset = (sid, role) => (role === 'aura' && sid === 'sgSlayerDomain' ? 'configured-rect-domain' : '');
+  const p = unitPreset('configured-rect-domain', 1, true);
+  p.sizing = { shape: 'rectangle', authored: { width: 200, height: 100 } };
+  const { adapter, log } = makeAdapter([p], { ctx: { posOf: () => ({ x: 0, y: 0 }), playerPos: () => ({ x: 0, y: 0 }) } });
+  adapter.syncStatuses([{ key: 'pv-float', sids: ['sgSlayerDomain'], radii: { sgSlayerDomain: 240 } }]);
+  adapter.update(.01);
+  const t = log.nodes[0].transforms.at(-1);
+  assert.ok(Math.abs(t.scaleX - 2.4) < 1e-9, '寬 480 ÷ 製作寬 200（' + t.scaleX + '）');
+  assert.ok(Math.abs(t.scaleY - 4.8) < 1e-9, '高 480 ÷ 製作高 100（' + t.scaleY + '）');
+  adapter.clear();
+  delete global.statusVfxPreset;
 });
 
 test('POISON-SPREAD 傳染毒咒保持原尺寸方向，子彈仍沿兩敵連線飛行', () => {
