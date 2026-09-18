@@ -30,7 +30,8 @@ test('CLEAVE 逐風者地板只在命中位置播放，起手與追加刀波不�
  for(const levels of [[1,0,0,1,0,0,0],[1,1,1,1,1,1,1]]) {
   const h=setup(levels),c=h.c;
   const ult={def:c.SKILLS2.cleave.ult.find(u=>u.id==='windChaser'),lv:1};
-  ult.def.vfx={ground:'slash-cleave-ring-warm-09-hit'};
+  // 逐風者的龍捲風地板是「觸發地板特效」（triggerVfx，2026-09-18 Codex 同列分離）；本體不帶地板
+  ult.def.vfx={};ult.def.triggerVfx={ground:'slash-cleave-ring-warm-09-hit'};
   c.skills2Ult=()=>ult;c.sgUlt=(gid,id)=>id==='windChaser'?ult:null;
   c.bfPlayerPos=()=>({x:0,y:0});
   h.cast();
