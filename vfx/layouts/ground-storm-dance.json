@@ -6,14 +6,16 @@
       "id": "ground-storm-dance",
       "name": "ground-storm-dance",
       "layerIds": [
-        "wall-band-0",
-        "wall-band-1",
-        "wall-band-2",
-        "wall-band-3",
-        "wall-band-4",
-        "wall-band-5",
-        "floor-green-rim",
-        "floor-white-core",
+        "wall-back-0",
+        "wall-back-1",
+        "wall-back-2",
+        "floor-green-rim-back",
+        "floor-white-core-back",
+        "wall-front-0",
+        "wall-front-1",
+        "wall-front-2",
+        "floor-green-rim-front",
+        "floor-white-core-front",
         "tapered-cone-0",
         "tapered-cone-1",
         "tapered-cone-2",
@@ -33,11 +35,7 @@
         "rising-light-8",
         "rising-light-9",
         "rising-light-10",
-        "rising-light-11",
-        "rising-light-12",
-        "rising-light-13",
-        "rising-light-14",
-        "rising-light-15"
+        "rising-light-11"
       ]
     }
   ],

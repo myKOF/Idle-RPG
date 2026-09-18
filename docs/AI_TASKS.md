@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜暴風光壁俯視透明度（STORM-WALL-VIEW-20260918）
+
+- Owner Codex；Done。使用者回報像仰視。將底圈與壁面拆成前後半圈，遠側更透明、近側加強；白光降亮避免底圈過曝像浮在上方。保持半徑10米／高3米與圓錐，僅改 `tools/vfx/authoring/author/storm-dance.cjs`、`vfx/presets/ground-storm-dance.json`、`vfx/layouts/ground-storm-dance.json`、`tests/storm-dance.test.cjs` 與本紀錄；衝突預檢通過。
+- 驗證：`node --test tests/storm-dance.test.cjs`（3/3）、`node --test --test-name-pattern="STORM-DANCE|STATUS-" tests/vfx-runtime.test.cjs`（4/4）、`node tools/build_check.cjs`（379檔）通過。`node tools/vfx/preset-render.cjs ground-storm-dance --frames 4 --size 320` 與瀏覽器預覽確認前後亮度、尖端向上；Console 無 error/warn。
+- 素材庫已同步且逐位元核對，Commit `47483b8`；遊戲提交見本紀錄所在 Commit。唯讀檢查 `tests/vfx-runtime.test.cjs` 與既有狀態接線。沒有新增特效來源或執行期 JS。已知限制：尚未重新跑完整實機戰鬥畫面；目前預覽與跟隨／回收自動測試通過。無未完成實作；可合併，未合併或推送。下一步由使用者確認遊戲中的視覺感受。
+
 ## Codex｜暴風光壁圓錐與底圈（STORM-WALL-CONES-20260918）
 
 - Owner Codex；Done。使用者要求向上收尖的圓錐造型，地板光圈更突出。僅改storm-dance author／Preset／layout、尺寸預算測試與本紀錄，保留普攻與技能效果。衝突預檢通過；沿用既有貼圖。
