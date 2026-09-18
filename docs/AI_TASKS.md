@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜裝配被動加成屬性面板（PASSIVE-PANEL-20260918）
+
+- Done。Worker 在 header／equip 快照提供 passivePanel：實際回復量、吸血／吸魔百分比與每次回復、元素增傷乘區、常駐技能減傷；不覆寫戰鬥基礎屬性。大地守護生命上限原已納入。面板透過快照顯示，無 G 亦可用；技能減傷獨立列，避免與全局減傷點數錯加。装卸技能協議刷新 header／equip，協議升至 v34。
+- 修改 formula.js、skills2.js、data.js、Worker 協議／快照、index.html／bridge.js 快取、WORKER_PROTOCOL 文件與測試。未修改 Excel／CSV、player.js 快取、combat.js 回復或素材，沒有新增 Timer。
+- 驗證：node --test tests/passive-stat-panel.test.cjs tests/stats-panel.test.cjs tests/equip-set-preview-stats.test.cjs tests/worker-protocol.test.cjs tests/ui-worker-panels.test.cjs，34 項中33通過；唯一既有失敗是 item.upgrade 測試未提供 UI（本次未改該函式）。大地守護／再生／回復／魔法盾定向7/7通過，涵蓋戰鬥結果不變；build 376 檔通過。新增5項回歸含正式裝卸函式、Worker header、序列化無G呈現、預覽與原物件不污染。
+- 風險：尚未實機畫面驗證；暫時／有條件的戰鬥觸發不當成永久屬性加入。可合併，未推送。
+
+
 ## Codex｜進化階級耗魔（SKILLS2-MANA-20260918）
 
 - Done。統一最高生效階／超神耗魔，非累加；階級預覽顯示該列成本，技能列以快照計算目前成本。同步 skills2.js 實際扣魔與自動迴旋斬、skills.js 起手門檻、ui.js 階級／超神提示與技能列及快取。免費追加施放及被動逐次觸發保持原規則；未修改 Excel／CSV。

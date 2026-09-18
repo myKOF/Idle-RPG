@@ -2598,20 +2598,27 @@ function penetrationDesc(st, key, label) {
 function drainDesc(st, key, label, resLabel, perSec, amount) {
   var isHp = key === 'lifesteal';
   return '攻擊命中時回復' + (isHp ? '生命' : '法力') + '。' +
-    '<br><br><span style="color:#aaa">每秒' + resLabel + '：<span style="color:#fff">' + fmt(perSec) + '</span>' +
+    '<br><br><span style="color:#aaa">汲取換算基準（未乘回復技能倍率）・每秒' + resLabel + '：<span style="color:#fff">' + fmt(perSec) + '</span>' +
     '<br>目前每次回復：<span style="color:#fff">' + fmt(amount) + '</span></span>';
 }
 
+/* 舊快照退回既有基準值；新版只讀 Worker 已結算的面板數值。 */
+function passivePanelValue(st, key, fallback) {
+  return st.passivePanel && typeof st.passivePanel[key] === 'number' ? st.passivePanel[key] : fallback;
+}
+function passivePanelElement(st, elem) {
+  return ((1 + (st.elemDmgUp[elem] || 0) / 100) * (1 + passivePanelValue(st, 'elemPct', 0) / 100) - 1) * 100;
+}
 var STAT_GROUPS = [
   {
     title: '基礎屬性', rows: [
       ['❤️ 生命值', function (st) { return statFmt(st.hp, null); }, function (st) { return statDesc(st, '承受傷害的能力，歸零時角色將會死亡。', '生命', 'hp', 'hpPct'); }],
       /* 說明寫成函式而不是固定字串：基礎回復是可調參數（BASE_HP_REGEN_PCT），
          寫死數字的話一調參就變成錯的說明——先前寫著 1.5%，實際值早已是 2%。 */
-      ['💗 生命恢復', function (st) { return statFmt(st.hpRegen + st.hp * BASE_HP_REGEN_PCT / 100, null, '/s'); },
+      ['💗 生命恢復', function (st) { return statFmt(passivePanelValue(st, 'hpRegen', st.hpRegen + st.hp * BASE_HP_REGEN_PCT / 100), null, '/s'); },
         function () { return '每秒自動回復的生命值（包含基礎 ' + BASE_HP_REGEN_PCT + '% 與額外加成）。'; }],
       ['🔵 法力值', function (st) { return statFmt(st.mp, null); }, function (st) { return statDesc(st, '施放多數技能所需的能量。', '法力', 'mp', null); }],
-      ['💧 法力恢復', function (st) { return statFmt(st.mpRegen, null, '/s'); }, '每秒自動回復的法力值。'],
+      ['💧 法力恢復', function (st) { return statFmt(passivePanelValue(st, 'mpRegen', st.mpRegen), null, '/s'); }, '每秒自動回復的法力值。'],
       ['💪 力量', function (st) { return statFmt(st.str, null); }, function () { return primaryStatDesc('str'); }],
       ['🏃 敏捷', function (st) { return statFmt(st.agi, null); }, function () { return primaryStatDesc('agi'); }],
       ['🧠 智力', function (st) { return statFmt(st.int, null); }, function () { return primaryStatDesc('int'); }],
@@ -2631,8 +2638,8 @@ var STAT_GROUPS = [
       ['⚡ 攻擊速度', function (st) { return statFmt(st.aspd, ASPD_CAP, '/s.1f'); }, function () { return '每秒進行普通攻擊的次數。' + capText(ASPD_CAP, '/秒'); }],
       ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%.1f'); }, '減少技能所需的冷卻時間。' + capText(STAT_CAPS.cdr, '%')],
       ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%.1f'); }, '縮短技能的施放延遲或詠唱時間。' + capText(STAT_CAPS.castSpeed, '%')],
-      ['🧛 吸血', function (st) { return statFmt(st.lifesteal, STAT_CAPS.lifesteal, '%.1f'); }, function (st) { return drainDesc(st, 'lifesteal', '吸血', '生命回復', playerHpRegenPerSec(st), lifestealHealAmount(st, st.lifesteal)); }],
-      ['🌊 吸魔', function (st) { return statFmt(st.manaSteal, STAT_CAPS.manaSteal, '%.1f'); }, function (st) { return drainDesc(st, 'manaSteal', '吸魔', '法力恢復', playerMpRegenPerSec(st), manaStealAmount(st, st.manaSteal)); }],
+      ['🧛 吸血', function (st) { return statFmt(passivePanelValue(st, 'lifesteal', st.lifesteal), STAT_CAPS.lifesteal, '%.1f'); }, function (st) { return drainDesc(st, 'lifesteal', '吸血', '生命回復', passivePanelValue(st, 'hpDrainBase', playerHpRegenBasePerSec(st)), passivePanelValue(st, 'hpDrain', playerHpRegenBasePerSec(st) * (st.lifesteal || 0) / 100)); }],
+      ['🌊 吸魔', function (st) { return statFmt(passivePanelValue(st, 'manaSteal', st.manaSteal), STAT_CAPS.manaSteal, '%.1f'); }, function (st) { return drainDesc(st, 'manaSteal', '吸魔', '法力恢復', passivePanelValue(st, 'mpDrainBase', playerMpRegenBasePerSec(st)), passivePanelValue(st, 'mpDrain', playerMpRegenBasePerSec(st) * (st.manaSteal || 0) / 100)); }],
       ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
       ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
       ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成。'],
@@ -2643,13 +2650,13 @@ var STAT_GROUPS = [
       ['✨ 對聖屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.light, null, '%', true); }, '對「帶聖屬性標籤」的敵人造成的傷害提高。'],
       ['🌑 對暗屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.dark, null, '%', true); }, '對「帶暗屬性標籤」的敵人造成的傷害提高。'],
       ['🪨 對地屬性敵人傷害', function (st) { return statFmt(st.dmgVsElem.earth, null, '%', true); }, '對「帶地屬性標籤」的敵人造成的傷害提高。'],
-      ['🔥 火屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.fire, null, '%', true); }, '自身造成的火屬性元素傷害提高。'],
-      ['❄️ 冰屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.ice, null, '%', true); }, '自身造成的冰屬性元素傷害提高。'],
-      ['⚡ 雷屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.lightning, null, '%', true); }, '自身造成的雷屬性元素傷害提高。'],
-      ['☠️ 毒屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.poison, null, '%', true); }, '自身造成的毒屬性元素傷害提高。'],
-      ['✨ 聖屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.light, null, '%', true); }, '自身造成的聖屬性元素傷害提高。'],
-      ['🌑 暗屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.dark, null, '%', true); }, '自身造成的暗屬性元素傷害提高。'],
-      ['🪨 地屬性傷害提升', function (st) { return statFmt(st.elemDmgUp.earth, null, '%', true); }, '自身造成的地屬性元素傷害提高。'],
+      ['🔥 火屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'fire'), null, '%', true); }, '自身造成的火屬性元素傷害提高。'],
+      ['❄️ 冰屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'ice'), null, '%', true); }, '自身造成的冰屬性元素傷害提高。'],
+      ['⚡ 雷屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'lightning'), null, '%', true); }, '自身造成的雷屬性元素傷害提高。'],
+      ['☠️ 毒屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'poison'), null, '%', true); }, '自身造成的毒屬性元素傷害提高。'],
+      ['✨ 聖屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'light'), null, '%', true); }, '自身造成的聖屬性元素傷害提高。'],
+      ['🌑 暗屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'dark'), null, '%', true); }, '自身造成的暗屬性元素傷害提高。'],
+      ['🪨 地屬性傷害提升', function (st) { return statFmt(passivePanelElement(st, 'earth'), null, '%', true); }, '自身造成的地屬性元素傷害提高。'],
       ['💫 範圍傷害', function (st) { return statFmt(st.aoeDmg, null, '%', true); }, '多目標或範圍技能的總體傷害加成。']
     ]
   },
@@ -2657,6 +2664,7 @@ var STAT_GROUPS = [
     title: '防禦屬性', rows: [
       ['🛡️ 物理防禦', function (st) { return statFmt(st.def, null); }, function (st) { return defenseStatDesc(st, '降低受到的物理傷害。由力量與耐力派生。', '物理防禦', 'def', 'defPct'); }],
       ['🔰 魔法防禦', function (st) { return statFmt(st.mdef, null); }, function (st) { return defenseStatDesc(st, '降低受到的魔法傷害。由智力與耐力派生。', '魔法防禦', 'mdef', 'mdefPct'); }],
+      ['🌍 常駐技能減傷', function (st) { return statFmt(passivePanelValue(st, 'damageRed', 0), null, '%.1f'); }, '裝配後持續生效的技能傷害減免，與其他減傷乘算；不是全局減傷屬性點數。'],
       ['🛡️ 全局減傷', function (st) { return statFmt(st.globalDmgRed, null); }, function (st) {
         var reduction = globalDamageReduction(st.globalDmgRed) * 100;
         var capNote = GLOBAL_DMG_RED_CAP > 0 ? '（減傷上限 ' + GLOBAL_DMG_RED_CAP + '%）' : '';

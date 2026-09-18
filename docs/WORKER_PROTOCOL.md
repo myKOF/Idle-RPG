@@ -1,6 +1,6 @@
-# Worker 協議 v33
+# Worker 協議 v34
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 33`　最後更新：2026-09-16
+> 協議版本：`WORKER_PROTOCOL_VERSION = 34`　最後更新：2026-09-18
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。
@@ -421,3 +421,7 @@ VFX 事件新增可選 `arcM`，為大於零的有限數，單位米，表示弧
 ### v33：無限追魂刃生命週期
 
 `vfx.area` 新增 `soulId`（每次施放唯一）、`soulMode`（flight/orbit/stop）、`soulLife`（本段剩餘期限）、`soulReturn`、`orbitR`、`orbitAngle`、`orbitSpin`。同身份的飛行與環繞互相替換；Worker 控制 10 秒期限與命中，主執行緒只呈現位置與待機，避免殘影、多刀與提前命中。
+
+### v34：裝配被動的面板結算值
+
+header／equip 的 stats 與 viewStats 新增 passivePanel：hpRegen、mpRegen 為實際每秒回復；lifesteal、manaSteal 為套用汲取倍率的百分比；hpDrainBase／mpDrainBase 是未乘回復技能倍率的汲取基準，hpDrain／mpDrain 為每次實際汲取量；elemPct 為常駐技能的獨立元素增傷乘區；damageRed 為常駐技能減傷百分比。原 stats 基礎值保持不變，投影不回流到戰鬥或存檔。主執行緒不讀 G 計算加成；舊快照缺欄時顯示基礎值。技能裝卸髒區新增 header／equip，使裝卸立即更新屬性。

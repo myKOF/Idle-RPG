@@ -2484,3 +2484,20 @@ function offlineKillCount(elapsed, potentialOfflinePct) {
   var interval = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
   return Math.max(0, Math.floor(elapsed / interval * (1 + (Number(potentialOfflinePct) || 0) / 100)));
 }
+
+/* 面板專用投影：只複製 stats，不覆寫戰鬥的基準回復與汲取倍率。
+   在 Worker 建快照時呼叫，主執行緒不依賴 G 或技能執行期狀態。 */
+function playerPanelStats(st) {
+  if (!st) return null;
+  var out = Object.assign({}, st);
+  out.passivePanel = {
+    hpRegen: playerHpRegenPerSec(st), mpRegen: playerMpRegenPerSec(st),
+    hpDrainBase: playerHpRegenBasePerSec(st), mpDrainBase: playerMpRegenBasePerSec(st),
+    lifesteal: (st.lifesteal || 0) * playerDrainSkillFactor('hp'),
+    manaSteal: (st.manaSteal || 0) * playerDrainSkillFactor('mp'),
+    hpDrain: lifestealHealAmount(st, st.lifesteal), mpDrain: manaStealAmount(st, st.manaSteal),
+    elemPct: typeof skill2ElemDamageUpPct === 'function' ? skill2ElemDamageUpPct() : 0,
+    damageRed: typeof skill2PassiveDamageTakenMultiplier === 'function' ? (1 - skill2PassiveDamageTakenMultiplier()) * 100 : 0
+  };
+  return out;
+}

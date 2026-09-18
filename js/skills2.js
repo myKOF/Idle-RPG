@@ -6431,12 +6431,12 @@ function skill2EarthguardLevels() {
 /* 我方受到的傷害乘區（岩甲【天地逆返】×大地守護【傷害減免】）。
    刻意不併進 dCfg.dmgRed：那條是神鑄【聖佑】的加算池、還夾著 50% 上限，
    兩個不同來源的減免混在一起會互相吃掉對方的空間。 */
-function skill2DamageTakenMultiplier(pEnt) {
-  var mult = 1;
+function skill2PassiveDamageTakenMultiplier() {
   var eg = skill2EarthguardLevels();
-  if (eg && eg[0] > 0) {
-    mult *= 1 - Math.min(90, sgVal(SKILLS2.earthguard.tiers[0].fx, 'pct', eg[0])) / 100;
-  }
+  return eg && eg[0] > 0 ? 1 - Math.min(90, sgVal(SKILLS2.earthguard.tiers[0].fx, 'pct', eg[0])) / 100 : 1;
+}
+function skill2DamageTakenMultiplier(pEnt) {
+  var mult = skill2PassiveDamageTakenMultiplier();
   var rk = skill2RockLevels(pEnt);
   if (rk && rk[6] > 0) {
     var red = sgVal(SKILLS2.rockarmor.tiers[6].fx, 'pct', rk[6]) * (1 - skill2RockShieldRemain(pEnt));
