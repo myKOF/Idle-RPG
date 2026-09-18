@@ -17,7 +17,7 @@
         "x": 0.5859,
         "y": 0.2227
       },
-      "alpha": 0.13,
+      "alpha": 0.11,
       "tint": "#62ffa0",
       "blendMode": "add",
       "alphaOverLife": [
@@ -42,13 +42,13 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": -5
+        "y": -6
       },
       "scale": {
-        "x": 0.5859,
-        "y": 0.2227
+        "x": 0.5713,
+        "y": 0.2171
       },
-      "alpha": 0.13,
+      "alpha": 0.11,
       "tint": "#62ffa0",
       "blendMode": "add",
       "alphaOverLife": [
@@ -73,13 +73,13 @@
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": -10
+        "y": -12
       },
       "scale": {
-        "x": 0.5859,
-        "y": 0.2227
+        "x": 0.5566,
+        "y": 0.2115
       },
-      "alpha": 0.13,
+      "alpha": 0.11,
       "tint": "#62ffa0",
       "blendMode": "add",
       "alphaOverLife": [
@@ -104,13 +104,13 @@
       "zIndex": 3,
       "position": {
         "x": 0,
-        "y": -15
+        "y": -18
       },
       "scale": {
-        "x": 0.5859,
-        "y": 0.2227
+        "x": 0.542,
+        "y": 0.206
       },
-      "alpha": 0.13,
+      "alpha": 0.11,
       "tint": "#62ffa0",
       "blendMode": "add",
       "alphaOverLife": [
@@ -135,13 +135,13 @@
       "zIndex": 4,
       "position": {
         "x": 0,
-        "y": -20
+        "y": -24
       },
       "scale": {
-        "x": 0.5859,
-        "y": 0.2227
+        "x": 0.5273,
+        "y": 0.2004
       },
-      "alpha": 0.13,
+      "alpha": 0.11,
       "tint": "#62ffa0",
       "blendMode": "add",
       "alphaOverLife": [
@@ -166,13 +166,13 @@
       "zIndex": 5,
       "position": {
         "x": 0,
-        "y": -25
+        "y": -30
       },
       "scale": {
-        "x": 0.5859,
-        "y": 0.2227
+        "x": 0.5127,
+        "y": 0.1948
       },
-      "alpha": 0.13,
+      "alpha": 0.11,
       "tint": "#62ffa0",
       "blendMode": "add",
       "alphaOverLife": [
@@ -191,33 +191,316 @@
       ]
     },
     {
-      "id": "wall-band-6",
+      "id": "floor-green-rim",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
-      "zIndex": 6,
-      "position": {
-        "x": 0,
-        "y": -30
-      },
+      "zIndex": 10,
       "scale": {
         "x": 0.5859,
         "y": 0.2227
       },
-      "alpha": 0.23,
-      "tint": "#e6fff0",
+      "alpha": 0.8,
+      "tint": "#66ffa0",
+      "blendMode": "add"
+    },
+    {
+      "id": "floor-white-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 11,
+      "scale": {
+        "x": 0.5723,
+        "y": 0.2175
+      },
+      "alpha": 0.65,
+      "tint": "#eefff3",
+      "blendMode": "add"
+    },
+    {
+      "id": "tapered-cone-0",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": 92.38795325112868,
+        "y": -0.4580295701265893
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#7dffae",
       "blendMode": "add",
       "alphaOverLife": [
         [
           0,
-          0.85
+          0.65
         ],
         [
-          0.5,
+          0.25,
           1
         ],
         [
+          0.7,
+          0.8
+        ],
+        [
           1,
-          0.85
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "tapered-cone-1",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": 38.26834323650898,
+        "y": 20.1074222354289
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffd4",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "tapered-cone-2",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": -38.268343236508976,
+        "y": 20.1074222354289
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#7dffae",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "tapered-cone-3",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": -92.38795325112868,
+        "y": -0.45802957012658396
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffd4",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "tapered-cone-4",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": -92.38795325112868,
+        "y": -29.54197042987341
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#7dffae",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "tapered-cone-5",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": -38.26834323650903,
+        "y": -50.107422235428885
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffd4",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "tapered-cone-6",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": 38.268343236509,
+        "y": -50.10742223542889
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#7dffae",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "tapered-cone-7",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/cone_composed_c.png",
+      "zIndex": 8,
+      "position": {
+        "x": 92.38795325112865,
+        "y": -29.541970429873437
+      },
+      "rotation": 3.141592653589793,
+      "scale": {
+        "x": 0.0469,
+        "y": 0.0586
+      },
+      "alpha": 0.75,
+      "tint": "#b6ffd4",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0.65
         ]
       ]
     },
@@ -236,9 +519,9 @@
       "delay": 0,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -274,15 +557,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
@@ -292,8 +575,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
       "position": {
-        "x": 96.59258262890683,
-        "y": 9.835123713895788
+        "x": 92.38795325112868,
+        "y": 14.54197042987341
       },
       "alpha": 0.65,
       "tint": "#6dffa1",
@@ -301,9 +584,9 @@
       "delay": 0.025,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -339,15 +622,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
@@ -357,8 +640,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
       "position": {
-        "x": 86.60254037844388,
-        "y": 18.999999999999996
+        "x": 70.71067811865476,
+        "y": 26.870057685088803
       },
       "alpha": 0.65,
       "tint": "#6dffa1",
@@ -366,9 +649,9 @@
       "delay": 0.05,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -404,15 +687,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
@@ -422,8 +705,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
       "position": {
-        "x": 70.71067811865476,
-        "y": 26.870057685088803
+        "x": 38.26834323650898,
+        "y": 35.1074222354289
       },
       "alpha": 0.65,
       "tint": "#f0fff6",
@@ -431,9 +714,9 @@
       "delay": 0.07500000000000001,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -469,15 +752,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
@@ -487,8 +770,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
       "position": {
-        "x": 50.000000000000014,
-        "y": 32.90896534380867
+        "x": 6.123233995736766e-15,
+        "y": 38
       },
       "alpha": 0.65,
       "tint": "#6dffa1",
@@ -496,9 +779,9 @@
       "delay": 0.1,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -534,15 +817,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
@@ -552,8 +835,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
       "position": {
-        "x": 25.881904510252074,
-        "y": 36.70518139898459
+        "x": -38.268343236508976,
+        "y": 35.1074222354289
       },
       "alpha": 0.65,
       "tint": "#6dffa1",
@@ -561,9 +844,9 @@
       "delay": 0,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -599,215 +882,20 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
     {
       "id": "rising-light-6",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": 6.123233995736766e-15,
-        "y": 38
-      },
-      "alpha": 0.65,
-      "tint": "#f0fff6",
-      "blendMode": "add",
-      "delay": 0.025,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-7",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -25.881904510252063,
-        "y": 36.70518139898459
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.05,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-8",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -49.99999999999998,
-        "y": 32.908965343808674
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.07500000000000001,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-9",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
@@ -818,12 +906,12 @@
       "alpha": 0.65,
       "tint": "#f0fff6",
       "blendMode": "add",
-      "delay": 0.1,
+      "delay": 0.025,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -859,15 +947,210 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
+        ]
+      ]
+    },
+    {
+      "id": "rising-light-7",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 7,
+      "position": {
+        "x": -92.38795325112868,
+        "y": 14.541970429873416
+      },
+      "alpha": 0.65,
+      "tint": "#6dffa1",
+      "blendMode": "add",
+      "delay": 0.05,
+      "emission": {
+        "mode": "rate",
+        "rate": 15
+      },
+      "maxParticles": 19,
+      "lifetime": 1.2,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 12
+      },
+      "speed": 25,
+      "direction": -90,
+      "spread": 0,
+      "startScale": [
+        0.0137,
+        0.0273
+      ],
+      "worldSpace": false,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.2
+        ],
+        [
+          0.25,
+          0.9
+        ],
+        [
+          1,
+          0.05
+        ]
+      ]
+    },
+    {
+      "id": "rising-light-8",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 7,
+      "position": {
+        "x": -100,
+        "y": 4.653657836759942e-15
+      },
+      "alpha": 0.65,
+      "tint": "#6dffa1",
+      "blendMode": "add",
+      "delay": 0.07500000000000001,
+      "emission": {
+        "mode": "rate",
+        "rate": 15
+      },
+      "maxParticles": 19,
+      "lifetime": 1.2,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 12
+      },
+      "speed": 25,
+      "direction": -90,
+      "spread": 0,
+      "startScale": [
+        0.0137,
+        0.0273
+      ],
+      "worldSpace": false,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.2
+        ],
+        [
+          0.25,
+          0.9
+        ],
+        [
+          1,
+          0.05
+        ]
+      ]
+    },
+    {
+      "id": "rising-light-9",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 7,
+      "position": {
+        "x": -92.38795325112868,
+        "y": -14.541970429873409
+      },
+      "alpha": 0.65,
+      "tint": "#f0fff6",
+      "blendMode": "add",
+      "delay": 0.1,
+      "emission": {
+        "mode": "rate",
+        "rate": 15
+      },
+      "maxParticles": 19,
+      "lifetime": 1.2,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 12
+      },
+      "speed": 25,
+      "direction": -90,
+      "spread": 0,
+      "startScale": [
+        0.0137,
+        0.0273
+      ],
+      "worldSpace": false,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.2
+        ],
+        [
+          0.25,
+          0.9
+        ],
+        [
+          1,
+          0.05
         ]
       ]
     },
@@ -877,8 +1160,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
       "position": {
-        "x": -86.60254037844388,
-        "y": 18.999999999999996
+        "x": -70.71067811865477,
+        "y": -26.870057685088803
       },
       "alpha": 0.65,
       "tint": "#6dffa1",
@@ -886,9 +1169,9 @@
       "delay": 0,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -924,15 +1207,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
@@ -942,8 +1225,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
       "position": {
-        "x": -96.59258262890683,
-        "y": 9.835123713895799
+        "x": -38.26834323650903,
+        "y": -35.107422235428885
       },
       "alpha": 0.65,
       "tint": "#6dffa1",
@@ -951,9 +1234,9 @@
       "delay": 0.025,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -989,410 +1272,20 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
     {
       "id": "rising-light-12",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -100,
-        "y": 4.653657836759942e-15
-      },
-      "alpha": 0.65,
-      "tint": "#f0fff6",
-      "blendMode": "add",
-      "delay": 0.05,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-13",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -96.59258262890683,
-        "y": -9.835123713895792
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.07500000000000001,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-14",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -86.60254037844388,
-        "y": -18.99999999999999
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.1,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-15",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -70.71067811865478,
-        "y": -26.870057685088792
-      },
-      "alpha": 0.65,
-      "tint": "#f0fff6",
-      "blendMode": "add",
-      "delay": 0,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-16",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -50.00000000000004,
-        "y": -32.90896534380866
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.025,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-17",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": -25.881904510252063,
-        "y": -36.70518139898459
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.05,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-18",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
@@ -1403,12 +1296,77 @@
       "alpha": 0.65,
       "tint": "#f0fff6",
       "blendMode": "add",
+      "delay": 0.05,
+      "emission": {
+        "mode": "rate",
+        "rate": 15
+      },
+      "maxParticles": 19,
+      "lifetime": 1.2,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 12
+      },
+      "speed": 25,
+      "direction": -90,
+      "spread": 0,
+      "startScale": [
+        0.0137,
+        0.0273
+      ],
+      "worldSpace": false,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.2
+        ],
+        [
+          0.25,
+          0.9
+        ],
+        [
+          1,
+          0.05
+        ]
+      ]
+    },
+    {
+      "id": "rising-light-13",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 7,
+      "position": {
+        "x": 38.268343236509,
+        "y": -35.10742223542889
+      },
+      "alpha": 0.65,
+      "tint": "#6dffa1",
+      "blendMode": "add",
       "delay": 0.07500000000000001,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -1444,150 +1402,20 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
+          0.05
         ]
       ]
     },
     {
-      "id": "rising-light-19",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": 25.881904510252028,
-        "y": -36.7051813989846
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.1,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-20",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": 50.000000000000014,
-        "y": -32.90896534380867
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-21",
+      "id": "rising-light-14",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 7,
@@ -1596,14 +1424,79 @@
         "y": -26.870057685088813
       },
       "alpha": 0.65,
+      "tint": "#6dffa1",
+      "blendMode": "add",
+      "delay": 0.1,
+      "emission": {
+        "mode": "rate",
+        "rate": 15
+      },
+      "maxParticles": 19,
+      "lifetime": 1.2,
+      "spawn": {
+        "height": 0,
+        "shape": "box",
+        "width": 12
+      },
+      "speed": 25,
+      "direction": -90,
+      "spread": 0,
+      "startScale": [
+        0.0137,
+        0.0273
+      ],
+      "worldSpace": false,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.2
+        ],
+        [
+          0.25,
+          0.9
+        ],
+        [
+          1,
+          0.05
+        ]
+      ]
+    },
+    {
+      "id": "rising-light-15",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 7,
+      "position": {
+        "x": 92.38795325112865,
+        "y": -14.541970429873436
+      },
+      "alpha": 0.65,
       "tint": "#f0fff6",
       "blendMode": "add",
-      "delay": 0.025,
+      "delay": 0,
       "emission": {
         "mode": "rate",
-        "rate": 10
+        "rate": 15
       },
-      "maxParticles": 13,
+      "maxParticles": 19,
       "lifetime": 1.2,
       "spawn": {
         "height": 0,
@@ -1639,145 +1532,15 @@
       "scaleOverLife": [
         [
           0,
-          0.7
+          1.2
         ],
         [
           0.25,
-          1
+          0.9
         ],
         [
           1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-22",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": 86.60254037844383,
-        "y": -19.000000000000018
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.05,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
-        ]
-      ]
-    },
-    {
-      "id": "rising-light-23",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
-      "zIndex": 7,
-      "position": {
-        "x": 96.59258262890681,
-        "y": -9.83512371389582
-      },
-      "alpha": 0.65,
-      "tint": "#6dffa1",
-      "blendMode": "add",
-      "delay": 0.07500000000000001,
-      "emission": {
-        "mode": "rate",
-        "rate": 10
-      },
-      "maxParticles": 13,
-      "lifetime": 1.2,
-      "spawn": {
-        "height": 0,
-        "shape": "box",
-        "width": 12
-      },
-      "speed": 25,
-      "direction": -90,
-      "spread": 0,
-      "startScale": [
-        0.0137,
-        0.0273
-      ],
-      "worldSpace": false,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.12,
-          1
-        ],
-        [
-          0.7,
-          0.8
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.7
-        ],
-        [
-          0.25,
-          1
-        ],
-        [
-          1,
-          0.25
+          0.05
         ]
       ]
     }

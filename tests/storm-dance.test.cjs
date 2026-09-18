@@ -64,11 +64,15 @@ test('暴風光圈由狀態表接線，圓周半徑10米、升高3米，粒子�
   assert.ok(require('../js/vfx-core.js').validatePreset(p).ok);
   assert.equal(p.loop, true);
   const particles = p.layers.filter(l => l.type === 'particle');
-  assert.equal(particles.length, 24);
+  assert.equal(particles.length, 16);
   for (const l of particles) {
     assert.ok(Math.abs(Math.hypot(l.position.x, l.position.y / 0.38) - 100) < 0.01);
     assert.equal(l.speed * l.lifetime, 30);
     assert.equal(l.worldSpace, false);
   }
-  assert.equal(particles.reduce((n,l) => n + l.maxParticles, 0), 312);
+  assert.equal(particles.reduce((n,l) => n + l.maxParticles, 0), 304);
+  const cones = p.layers.filter(l => l.id.startsWith('tapered-cone-'));
+  assert.equal(cones.length, 8);
+  assert.ok(cones.every(l => Math.abs(l.rotation - Math.PI) < 0.0001));
+  assert.ok(p.layers.find(l => l.id === 'floor-green-rim').alpha > p.layers[0].alpha);
 });

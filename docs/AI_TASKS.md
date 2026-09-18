@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜暴風光壁圓錐與底圈（STORM-WALL-CONES-20260918）
+
+- Owner Codex；Done。使用者要求向上收尖的圓錐造型，地板光圈更突出。僅改storm-dance author／Preset／layout、尺寸預算測試與本紀錄，保留普攻與技能效果。衝突預檢通過；沿用既有貼圖。
+- 8道寬底尖頂的綠白錐形光束，6層向上略收的光壁，新增高亮綠底圈／白色內圈；粒子隨上升縮小。半徑10米／高3米不變，32圖層、最多304顆粒子。檢查未修改Runtime、技能程式、Excel／CSV及貼圖，cone素材已出貨不需新增匯出。
+- 驗證：`node --test tests/storm-dance.test.cjs` 3/3，`node --test --test-name-pattern="STORM-DANCE|STATUS-" tests/vfx-runtime.test.cjs` 4/4，`node tools/build_check.cjs` 379檔通過，diff check通過。VFX Editor實播已截圖，Console無error/warn；未進行完整遊戲GPU壓測。素材庫Commit `34bf928`，Preset/layout與遊戲逐位元核對相同。可合併，未推送；下一步使用者檢查外觀。
+
 ## Codex｜暴風亂舞普攻與綠白光圈（STORM-DANCE-20260918）
 
 - Owner Codex；Done。使用者要求持續期間可普攻，新增隨身地板光圈：半徑10米、高3米、綠白粒子；後續要求取消祭壇式星芒，改成連續光壁。移除野外／高塔普攻閘門與化身計時器重置；保留自動施放節拍與傷害。
