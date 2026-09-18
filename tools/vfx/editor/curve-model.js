@@ -67,9 +67,9 @@ var VFXCurveModel = (function () {
        decimals      顯示小數位
        defaultValue  Reset 後的常數值
        maxPoints     點數上限
-       fixedRange    Y 軸固定成 [min, max]，不隨資料放大。
-                     旋轉用它把上下限釘在 ±360°：軸會跟著拖曳一直長高的話，
-                     永遠拉不到「盡頭」，也就看不出自己轉了幾分之幾圈。 */
+       tickSteps     Y 軸刻度可用的間距（**顯示單位**，由小到大）。省略＝1／2／5×10^n。
+                     旋轉用 15／30／45／90／180／360 度，刻度才會落在看得懂幾分之幾圈的整數角度，
+                     不會出現 114.6°、229.2° 這種以弧度取整的刻度。超過最後一個就逐次加倍。 */
   function policyDefaults(p) {
     var o = p || {};
     return {
@@ -82,7 +82,7 @@ var VFXCurveModel = (function () {
       decimals: o.decimals === undefined ? 3 : o.decimals,
       defaultValue: o.defaultValue === undefined ? 1 : o.defaultValue,
       maxPoints: o.maxPoints || DEFAULT_MAX_POINTS,
-      fixedRange: o.fixedRange === true
+      tickSteps: Array.isArray(o.tickSteps) && o.tickSteps.length ? o.tickSteps : null
     };
   }
 
@@ -182,15 +182,15 @@ var VFXCurveModel = (function () {
      不同屬性的合理範圍差很多：透明度多半落在 0..1 附近，
      縮放常常要到 2、4 甚至更高，旋轉可能是 ±1440 度。
      所以取「baseline 與實際資料的聯集」再留一點邊界，
-     既不會把 0..1 的曲線畫成一條貼著底的線，也不會把 4 倍的縮放切掉。 */
+     既不會把 0..1 的曲線畫成一條貼著底的線，也不會把 4 倍的縮放切掉。
+
+     軸隨資料放大會有一個陷阱：拖曳中若每一幀都重算，點一拉到頂，軸就跟著長高，
+     點又落回框內、再往上拉又長高——值會一路暴衝，永遠拉不到想要的位置。
+     所以**拖曳期間由 curve-editor 凍結軸**（放開才重算），這裡只管「資料要多大的軸」。
+     2026-09-18 以前旋轉用固定 ±360° 迴避這個陷阱，代價是多圈旋轉（黑洞 1440°、
+     刀環 468°…共 109 條既有曲線）畫到框外、抓不回來，而且新做的特效轉不過一圈。 */
   function valueRange(points, policy) {
     var p = policyDefaults(policy);
-    /* 固定範圍：軸就是允許的範圍本身，不看資料。
-       超出範圍的既有點會被畫到框外——那是刻意的，讓人看得出「這條曲線有東西
-       在界外」，而不是靜靜地把檔案改掉。一拖它就會落回範圍內。 */
-    if (p.fixedRange && p.min !== null && p.max !== null) {
-      return { lo: p.min, hi: p.max };
-    }
     var lo = p.baseline[0], hi = p.baseline[1];
     (points || []).forEach(function (q) {
       if (q[1] < lo) lo = q[1];
@@ -205,14 +205,40 @@ var VFXCurveModel = (function () {
     return { lo: lo, hi: hi };
   }
 
-  /* 有沒有點落在允許範圍之外。只在固定範圍的屬性上有意義——
-     其餘屬性的軸會自己放大，本來就不會有界外的東西。 */
-  function outOfRangeCount(points, policy) {
+  /* ---------------- Y 軸刻度 ----------------
+     刻度在**顯示單位**裡挑，再換回儲存值給畫面定位：旋轉存的是弧度，
+     在弧度裡挑「好看的」間距（2 弧度）換成度就是 114.6°，看不出轉了幾分之幾圈。
+     間距讓刻度大約落在 5 格；有 tickSteps 就從裡面挑對數距離最近的一個。 */
+  function tickStep(span, steps) {
+    var raw = span / 5;
+    if (!(raw > 0) || !isFinite(raw)) return 1;
+    if (steps) {
+      var list = steps.slice();
+      while (list[list.length - 1] < raw) list.push(list[list.length - 1] * 2);
+      var best = list[0];
+      list.forEach(function (s) {
+        if (Math.abs(Math.log(s / raw)) < Math.abs(Math.log(best / raw))) best = s;
+      });
+      return best;
+    }
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / mag;
+    var mult = norm < 1.5 ? 1 : (norm < 3 ? 2 : (norm < 7 ? 5 : 10));
+    return mult * mag;
+  }
+
+  /* 回傳落在範圍內的刻度（儲存值，由小到大）。 */
+  function tickValues(range, policy) {
     var p = policyDefaults(policy);
-    if (!points || !p.fixedRange) return 0;
-    return points.filter(function (q) {
-      return (p.min !== null && q[1] < p.min) || (p.max !== null && q[1] > p.max);
-    }).length;
+    var a = p.toDisplay(range.lo), b = p.toDisplay(range.hi);
+    var lo = Math.min(a, b), hi = Math.max(a, b);
+    var step = tickStep(hi - lo, p.tickSteps);
+    var out = [];
+    /* 用整數倍數算，不要一路累加 step——累加的浮點誤差會讓 0 變成 1e-15 */
+    for (var k = Math.ceil(lo / step - 1e-9); k * step <= hi + step * 1e-9; k++) {
+      out.push(p.fromDisplay(k * step));
+    }
+    return out;
   }
 
   /* ---------------- 顯示字串 ---------------- */
@@ -238,7 +264,7 @@ var VFXCurveModel = (function () {
     addPoint: addPoint, movePoint: movePoint, removePoint: removePoint,
     resetPoints: resetPoints,
     valueRange: valueRange, valueAt: valueAt,
-    outOfRangeCount: outOfRangeCount,
+    tickStep: tickStep, tickValues: tickValues,
     formatValue: formatValue, formatTime: formatTime
   };
 })();

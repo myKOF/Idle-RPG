@@ -842,15 +842,19 @@
       min: 0, max: null, baseline: [0, 1.5], defaultValue: 1, decimals: 3, unit: ''
     },
     /* 旋轉在檔案裡是弧度，在畫面上是度。
-       上下限釘死在 ±360°（＝一整圈），而且**軸不隨資料放大**：
-       會跟著拖曳一直長高的軸，永遠拉不到盡頭，也就看不出自己轉了幾分之幾圈。
+       不設上下限：多圈旋轉是常態（黑洞 1440°、虛空盤 1080°、刀環 468°）。
+       Y 軸至少顯示 ±360°（一整圈），資料超出就跟著放大；拖曳期間軸凍結，
+       拖出框外照同一比例繼續算，放開後軸重新框住全部的點（curve-editor frozenRange）。
+       刻度用整數角度，一眼看得出轉了幾分之幾圈。
 
        min／max／baseline 都是拿來跟**儲存值**比的，所以一律寫成弧度。
-       寫 [-360, 360] 會被當成 360 弧度（兩萬多度）——見測試 CURVE-20。 */
+       寫 [-360, 360] 會被當成 360 弧度（兩萬多度）——見測試 CURVE-20。
+       tickSteps 則是**顯示單位**（度）。 */
     rotation: {
-      min: -Math.PI * 2, max: Math.PI * 2, fixedRange: true,
+      min: null, max: null,
       baseline: [-Math.PI * 2, Math.PI * 2], defaultValue: 0, decimals: 1,
-      unit: '°', toDisplay: VFXCurveModel.radToDeg, fromDisplay: VFXCurveModel.degToRad
+      unit: '°', toDisplay: VFXCurveModel.radToDeg, fromDisplay: VFXCurveModel.degToRad,
+      tickSteps: [1, 5, 15, 30, 45, 90, 180, 360]
     },
     /* 位移與上面三條都不同：它是**加**在 position 上的，不是乘。
        所以預設值是 0（不是 1），而且上下限都放開——位移本來就可以是負的，
