@@ -46,8 +46,28 @@ const TABLES = [
     file: 'config/CSV/Skills2.csv', nameColumn: '階段名稱',
     groupColumn: '群組名稱', keyColumn: '群組ID', label: '技能群組'
   },
-  { file: 'config/CSV/Status.csv', nameColumn: '狀態名稱', keyColumn: '狀態ID', label: '狀態' }
+  {
+    file: 'config/CSV/Status.csv', nameColumn: '狀態名稱', keyColumn: '狀態ID', label: '狀態',
+    /* 狀態前面冠上施加它的技能，寫成「技能*狀態」。
+
+       只寫狀態名稱的話，下拉上看得到「暴風化身」，卻搜不到「暴風亂舞」——而使用者
+       找特效時想的是技能，不是那個技能掛上去的狀態叫什麼（2026-09-19 使用者要求）。
+
+       狀態表本身沒有指回技能的欄位，關聯是反向的：技能表的「我方狀態／敵方狀態」
+       填的是狀態 ID（可多個，以分號分隔）。技能那一段沿用 stageLabel，與其他技能
+       特效的標法一致；分隔用 * 而不是 ·，因為 · 已經是「群組·階段」的意思，
+       混用會讀成「狀態是某個技能的一階」。 */
+    ownerOf: { file: 'config/CSV/Skills2.csv', columns: ['我方狀態', '敵方狀態'] }
+  }
 ];
+
+/* 技能的顯示名稱：階段名稱與群組名稱不同時兩個都寫。「傷害強化」「燃燒」這類階段
+   名稱在很多群組裡都有——火球術與火龍捲各有一階叫「燃燒」——單看認不出是誰的；
+   而只寫群組名稱又會指到一個根本沒用這個特效的階段（水龍捲是水流彈的第 7 階）。
+   技能特效的標籤與狀態前面的技能名都用這一個，兩邊才不會各寫各的。 */
+function stageLabel(group, name) {
+  return (group && group !== name) ? group + '·' + name : name;
+}
 /* 技能表六欄與狀態表三欄。兩張技能表欄位相同，所以只列一份，找不到的欄位跳過。 */
 const VFX_COLUMNS = ['施放特效', '攻擊特效', '飛行子彈', '受擊特效', '地板特效',
   '觸發特效', '觸發子彈', '觸發命中特效', '觸發地板特效', '觸發持續場域特效',
@@ -92,56 +112,118 @@ function cellIds(value) {
     .split(';').map(function (s) { return s.trim(); }).filter(Boolean);
 }
 
+/* 讀一張表，每一列解析成 { row, key, name, group }。表不存在回傳 null。
+
+   名字不一定填在用到特效的那一列上（Skills2 的群組名稱只填第一列，
+   後面的階段列是空的）。先掃一次建 主鍵 → 名字，第二遍才補得回來——
+   否則那些 preset 會被當成「有人用但叫不出名字」而整個漏掉。
+
+   掃特效欄與找狀態的施加者都走這裡：回補規則只能有一份，兩邊各寫一次的話，
+   哪天一邊改了另一邊沒改，同一個技能在下拉上就會出現兩種名字。 */
+function readTable(repoRoot, t) {
+  const file = path.join(repoRoot, t.file);
+  if (!fs.existsSync(file)) return null;       // 表不存在＝這一類還沒建，不是錯誤
+  const rows = csvParse(fs.readFileSync(file, 'utf8'));
+  if (!rows.length) return null;
+  const header = rows[0];
+  const nameAt = headerIndex(header, t.nameColumn);
+  const keyAt = headerIndex(header, t.keyColumn);
+  const groupAt = t.groupColumn ? headerIndex(header, t.groupColumn) : -1;
+
+  const nameByKey = Object.create(null);
+  const groupByKey = Object.create(null);
+  if (keyAt >= 0) {
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || !row.length) continue;
+      const key = String(row[keyAt] || '').trim();
+      if (!key) continue;
+      const nm = nameAt >= 0 ? String(row[nameAt] || '').trim() : '';
+      if (nm && !nameByKey[key]) nameByKey[key] = nm;
+      const gp = groupAt >= 0 ? String(row[groupAt] || '').trim() : '';
+      if (gp && !groupByKey[key]) groupByKey[key] = gp;
+    }
+  }
+
+  const out = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || !row.length) continue;
+    const key = keyAt >= 0 ? String(row[keyAt] || '').trim() : '';
+    out.push({
+      row: row,
+      key: key,
+      name: (nameAt >= 0 ? String(row[nameAt] || '').trim() : '') ||
+        (key ? (nameByKey[key] || '') : ''),
+      group: (groupAt >= 0 ? String(row[groupAt] || '').trim() : '') ||
+        (key ? (groupByKey[key] || '') : '')
+    });
+  }
+  return { header: header, rows: out };
+}
+
+/* 狀態 ID → [{ label, stage }]：施加它的技能顯示名稱與階段名稱，依技能表由上而下、
+   以 label 去重。stage 另外帶出來，是為了判斷狀態是不是與施加它的那一階同名。
+   spec 是 TABLES 裡的 ownerOf：從哪張表、哪幾欄找。表的名稱欄與群組欄不另外
+   寫一次，直接取那張表在 TABLES 裡的定義——欄名只有一個地方可以改。 */
+function statusOwners(repoRoot, spec) {
+  const owners = Object.create(null);
+  const src = TABLES.find(function (t) { return t.file === spec.file; });
+  const table = src && readTable(repoRoot, src);
+  if (!table) return owners;
+  const cols = spec.columns
+    .map(function (c) { return headerIndex(table.header, c); })
+    .filter(function (at) { return at >= 0; });
+  table.rows.forEach(function (r) {
+    const who = stageLabel(r.group, r.name);
+    if (!who) return;
+    cols.forEach(function (at) {
+      cellIds(r.row[at]).forEach(function (id) {
+        const list = owners[id] = owners[id] || [];
+        if (!list.some(function (o) { return o.label === who; })) {
+          list.push({ label: who, stage: r.name });
+        }
+      });
+    });
+  });
+  return owners;
+}
+
 /* presetId → [{ table, kind, name }]，依 TABLES 的順序、每張表由上而下。 */
 function scanTables(repoRoot) {
   const out = Object.create(null);
   TABLES.forEach(function (t) {
-    const file = path.join(repoRoot, t.file);
-    if (!fs.existsSync(file)) return;          // 表不存在＝這一類還沒建，不是錯誤
-    const rows = csvParse(fs.readFileSync(file, 'utf8'));
-    if (!rows.length) return;
-    const header = rows[0];
-    const nameAt = headerIndex(header, t.nameColumn);
-    const keyAt = headerIndex(header, t.keyColumn);
-    const groupAt = t.groupColumn ? headerIndex(header, t.groupColumn) : -1;
+    const table = readTable(repoRoot, t);
+    if (!table) return;
     const cols = VFX_COLUMNS
-      .map(function (c) { return { at: headerIndex(header, c), column: c }; })
+      .map(function (c) { return { at: headerIndex(table.header, c), column: c }; })
       .filter(function (c) { return c.at >= 0; });
+    const owners = t.ownerOf ? statusOwners(repoRoot, t.ownerOf) : null;
 
-    /* 名字不一定填在用到特效的那一列上（Skills2 的群組名稱只填第一列，
-       後面的階段列是空的）。先掃一次建 主鍵 → 名字，第二遍才補得回來——
-       否則那些 preset 會被當成「有人用但叫不出名字」而整個漏掉。 */
-    const nameByKey = Object.create(null);
-    const groupByKey = Object.create(null);
-    if (keyAt >= 0) {
-      for (let r = 1; r < rows.length; r++) {
-        const row = rows[r];
-        if (!row || !row.length) continue;
-        const key = String(row[keyAt] || '').trim();
-        if (!key) continue;
-        const nm = nameAt >= 0 ? String(row[nameAt] || '').trim() : '';
-        if (nm && !nameByKey[key]) nameByKey[key] = nm;
-        const gp = groupAt >= 0 ? String(row[groupAt] || '').trim() : '';
-        if (gp && !groupByKey[key]) groupByKey[key] = gp;
-      }
-    }
-
-    for (let r = 1; r < rows.length; r++) {
-      const row = rows[r];
-      if (!row || !row.length) continue;
-      const key = keyAt >= 0 ? String(row[keyAt] || '').trim() : '';
-      const name = (nameAt >= 0 ? String(row[nameAt] || '').trim() : '') ||
-        (key ? (nameByKey[key] || '') : '');
-      const group = (groupAt >= 0 ? String(row[groupAt] || '').trim() : '') ||
-        (key ? (groupByKey[key] || '') : '');
+    table.rows.forEach(function (r) {
+      /* 有施加者的狀態，每個施加者各成一筆「技能*狀態」；沒有的照舊只寫狀態名。
+         各成一筆而不是把施加者接成一串：沿用下拉現有的多用途顯示，而且每一筆
+         單獨讀都完整——「寒冰箭·寒霜箭 / 水流彈·寒流彈*寒霜凍傷」會讓人以為
+         * 只綁著最後那一個。 */
+      /* 狀態與施加它的那一階同名時不再重複：「嗜血狂怒*嗜血狂怒」只是雜訊，
+         「血刃斬·殺神領域」已經把兩個名字都講完了。目前 13 份裡有 9 份是這種。 */
+      const who = owners && r.name ? (owners[r.key] || []) : [];
+      const names = who.length
+        ? who.map(function (w) { return w.stage === r.name ? w.label : w.label + '*' + r.name; })
+        : [r.name];
       cols.forEach(function (c) {
-        cellIds(row[c.at]).forEach(function (id) {
-          (out[id] = out[id] || []).push({
-            table: t.file, kind: t.label, name: name, group: group
+        cellIds(r.row[c.at]).forEach(function (id) {
+          names.forEach(function (name) {
+            (out[id] = out[id] || []).push({
+              table: t.file, kind: t.label, name: name,
+              /* 前綴已經帶了技能，group 留空，免得下面的收攏邏輯把它
+                 當成「群組」而把不同狀態併成一個技能名 */
+              group: who.length ? '' : r.group
+            });
           });
         });
       });
-    }
+    });
   });
   return out;
 }
@@ -204,9 +286,7 @@ function usageLabels(repoRoot) {
   /* 階段名稱與群組名稱不同時，兩個都顯示：「傷害強化」「擴散」這類階段名稱
      在很多群組裡都有，單看認不出是誰的；而只寫群組名稱又會指到一個根本
      沒用這個特效的階段（水龍捲是水流彈的第 7 階）。 */
-  function rowLabel(r) {
-    return (r.group && r.group !== r.name) ? r.group + '·' + r.name : r.name;
-  }
+  function rowLabel(r) { return stageLabel(r.group, r.name); }
 
   Object.keys(tables).forEach(function (id) {
     if (!known[id]) return;                    // 表上填了不存在的 preset，交給別的檢查報
@@ -271,6 +351,8 @@ module.exports = {
   OUTSIDE_DOC_REL: OUTSIDE_DOC_REL,
   csvParse: csvParse,
   scanTables: scanTables,
+  statusOwners: statusOwners,
+  stageLabel: stageLabel,
   readOutsideTables: readOutsideTables,
   presetIds: presetIds,
   presetIdsInJs: presetIdsInJs,

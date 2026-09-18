@@ -184,10 +184,23 @@ test('USAGE-7C 用到多階時列上收攏成群組名，逐階的細節留給 t
   });
   assert.ok(multi.length > 0, '應該找得到被多階共用而且有收攏的 preset');
 
+  /* 狀態來的用途要排除。狀態會冠上施加它的技能（USAGE-16），於是「血刃斬」與
+     「血刃斬·血毒刃*血刃劇毒」會同時出現在 hit-poison 的列上——那是兩條不同的
+     使用路徑（技能本身用、以及它施加的狀態用），不是收攏失敗。這一條防的是
+     「同一個群組的各階段逐一攤開」，只該拿技能階段來比。 */
+  const scanned = U.scanTables(REPO);
+  function fromStatus(id) {
+    return new Set((scanned[id] || [])
+      .filter(function (e) { return e.kind === '狀態'; })
+      .map(function (e) { return e.name; }));
+  }
+
   multi.forEach(function (id) {
     /* 收攏之後列上不該再出現同一個群組名兩次——那就是沒收攏 */
     const seen = Object.create(null);
+    const status = fromStatus(id);
     labels[id].labels.forEach(function (part) {
+      if (status.has(part)) return;
       const group = part.split('·')[0];
       assert.ok(!seen[group], id + ' 的列上「' + group + '」出現兩次，等於沒收攏');
       seen[group] = true;
@@ -344,4 +357,65 @@ test('USAGE-9 現況記錄：有用途的與孤兒的數量', function () {
   assert.ok(used.length > 0, '不可能一個都沒有人用——掃描壞了');
   console.log('    · preset ' + ids.length + ' 份：有用途 ' + used.length +
     '、孤兒 ' + orphans.length);
+});
+
+/* ============================================================
+   USAGE-16 狀態冠上施加它的技能
+
+   只寫狀態名稱的話，下拉上看得到「暴風化身」卻搜不到「暴風亂舞」——使用者找特效
+   時想的是技能，不是它掛上去的狀態叫什麼（2026-09-19 使用者要求）。
+   狀態表沒有指回技能的欄位；關聯是技能表的「我方狀態／敵方狀態」。
+   ============================================================ */
+test('USAGE-16a 使用者給的例子：暴風化身要搜得到暴風亂舞', function () {
+  const labels = U.usageLabels(REPO);
+  const row = labels['ground-storm-dance'];
+  assert.ok(row, 'ground-storm-dance 應該有用途標註');
+  const text = row.labels.join(' ');
+  ['暴風亂舞', '暴風化身'].forEach(function (word) {
+    assert.ok(text.indexOf(word) >= 0, '搜「' + word + '」要找得到，實際標註：' + text);
+  });
+  assert.ok(/暴風亂舞\*暴風化身/.test(text), '格式是「技能*狀態」，實際：' + text);
+});
+
+/* 「燃燒」是火球術與火龍捲各自的一階。技能那一段只寫階段名稱的話會變成
+   「燃燒*烈焰燃燒」，搜「火球」找不到——正好違背這項需求的目的。 */
+test('USAGE-16b 同名的階段靠群組分開，兩個施加者各成一筆', function () {
+  const labels = U.usageLabels(REPO);
+  const row = labels['st-tick-fire'];
+  assert.ok(row, 'st-tick-fire 應該有用途標註');
+  assert.ok(row.labels.indexOf('火球術·燃燒*烈焰燃燒') >= 0, JSON.stringify(row.labels));
+  assert.ok(row.labels.indexOf('火龍捲·燃燒*烈焰燃燒') >= 0, JSON.stringify(row.labels));
+});
+
+/* 同名時「嗜血狂怒*嗜血狂怒」只是雜訊——前面那段已經把名字講完了 */
+test('USAGE-16c 狀態與施加它的那一階同名時不重複寫', function () {
+  const labels = U.usageLabels(REPO);
+  Object.keys(labels).forEach(function (id) {
+    labels[id].labels.forEach(function (part) {
+      const m = /([^·*]+)\*(.+)$/.exec(part);
+      assert.ok(!(m && m[1] === m[2]), id + ' 出現重複的「' + part + '」');
+    });
+  });
+  assert.deepEqual(U.usageLabels(REPO)['ground-mire'].labels, ['血刃斬·殺神領域'],
+    '殺神領域是血刃斬「殺神領域」這一階施加的，寫一次就夠');
+});
+
+/* 儲存格可以是「sgSlayerMark; sgSlayerDomain」。拆開後要逐一完全比對：
+   用子字串比對的話，sgStorm 會連 sgStormBarrier、sgStormGod 一起算進去。 */
+test('USAGE-16d 狀態 ID 以分號拆開後完全比對，不做子字串比對', function () {
+  const table = U.TABLES.find(function (t) { return t.ownerOf; });
+  assert.ok(table, 'Status 表要宣告 ownerOf');
+  const owners = U.statusOwners(REPO, table.ownerOf);
+  const storm = (owners.sgStorm || []).map(function (o) { return o.label; });
+  assert.deepEqual(storm, ['雙刀亂舞·暴風亂舞'], 'sgStorm 只能由暴風亂舞施加，實際：' + storm.join('、'));
+  assert.ok((owners.sgSlayerDomain || []).length > 0, '分號後面的第二個 ID 也要拆得出來');
+});
+
+/* 技能標籤與狀態前的技能名共用同一個命名函式，兩邊才不會各寫各的 */
+test('USAGE-16e 技能的顯示名稱只有一份實作', function () {
+  const src = require('fs').readFileSync(require('path').join(REPO, 'tools/vfx/preset-usage.cjs'), 'utf8');
+  assert.ok(/function rowLabel\(r\) \{ return stageLabel\(r\.group, r\.name\); \}/.test(src),
+    'rowLabel 要直接用 stageLabel');
+  assert.equal((src.match(/group \+ '·' \+/g) || []).length, 2,
+    '「群組·階段」的組法只能出現在 stageLabel 與既有的收攏邏輯，不得再多一份');
 });
