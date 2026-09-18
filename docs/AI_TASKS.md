@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## Codex｜圖層循環與旋轉速度（LAYER-SPIN-20260918）
+
+- Owner Codex；Done。使用者要求圖層持續loop與Rotation內的可拖曳／輸入速度，取代手動整圈曲線。允許Core、Editor、Core測試、快取與本紀錄；衝突預檢通過。不修改使用者素材。sprite／procedural／empty支援圖層loop與每秒旋轉速度，既有particle速度語意保留。
+- 修改：js/vfx-core.js、tools/vfx/editor/editor.js、tests/vfx-core.test.cjs、index.html、tools/vfx/editor/index.html、本紀錄及docs/vfx/VFX_CORE_AND_PRESET_SCHEMA.md（同樣預檢通過）。累積時鐘獨立於Preset循環，圖層loop保活、父層控制子層、finish仍回收；outerScale與父子矩陣均納入旋轉速度。Editor的Rotation提供滑桿及數字輸入，可多選批改、復原。
+- 測試：node --test tests/vfx-core.test.cjs，140/140通過。node --test tests/vfx-core-hierarchy.test.cjs tests/vfx-editor-hierarchy.test.cjs tests/vfx-editor-history.test.cjs tests/vfx-editor-multi-edit.test.cjs，91/92通過；既有HISTORY-42因未修改的aura-rockarmor-stone.json 115.6KB推算100步45.1MB超過25MB失敗，未放寬。node tools/build_check.cjs，379檔通過。瀏覽器已驗證Rotation輸入-15、滑桿同步、復原回0、Schema合法、Console無error/warn；伺服器已重新啟動。
+- 唯讀檢查：既有Editor歷史／階層／多選模型、使用者Preset；素材未修改，素材庫无需提交。Commit見本紀錄所在提交。未進行完整遊戲GPU驗證；其他曲線首尾仍須銜接。無未完成實作，可合併，未合併或推送。下一步使用者勾選圖層持續循環並在Rotation設定速度。
+
+## Codex｜循環旋轉終點閃幀（VFX-LOOP-SEAM-20260918）
+
+- Owner Codex；Done。使用者回報旋轉接縫跳幀。發現Core僅於時間大於週期時循環，但圖層於大於等於時隱藏；修正精確終點先循環。修改Core、Core測試、遊戲／編輯器快取與紀錄，預檢通過。使用者實際Preset未指定，另說明預覽重播與Preset loop差別。
+- 驗證：`node --test tests/vfx-core.test.cjs` 138/138；`node tools/build_check.cjs` 379檔通過；diff check通過。覆蓋精確終點連續兩圈可見、旋轉相位與大dt跨界餘量。唯讀檢查editor.js的預覽重播邏輯，未修改素材或使用者Preset；素材庫無需提交。Commit見本紀錄所在提交。限制：尚未確認使用者目前旋轉圖的曲線端點與loop設定，本修正不能排除其餘接縫來源。修正可合併，未合併／推送；下一步重載編輯器並確認Preset loop與線性整圈曲線。
+
+## Codex｜暴風光壁緩慢旋轉（STORM-WALL-ROTATE-20260918）
+
+- Owner Codex；Done。保留使用者編輯器存檔的透明度、尺寸與位置，錐形光束沿地板橢圓24秒繞行一圈，底圈固定俯視投影。修改 `vfx/presets/ground-storm-dance.json`、`tools/vfx/authoring/author/storm-dance.cjs`、`tests/storm-dance.test.cjs` 與本紀錄；衝突預檢通過。沿用位移曲線，無Runtime或技能改動；author改為基於現有編輯器存檔更新，避免重製覆蓋手調外觀。
+- 驗證：`node --test tests/storm-dance.test.cjs` 4/4；`node --test --test-name-pattern="STORM-DANCE|STATUS-" tests/vfx-runtime.test.cjs` 4/4；`node tools/build_check.cjs` 379檔通過。與修改前備份逐欄比較，僅8道光錐位移曲線和Preset週期不同。測試尺寸斷言改為使用者手調後的半徑／高度比例，保留名目20米寬與預算檢查。瀏覽器兩個時間點確認光錐位置變化、保持直立與俯視底圈，Console無error/warn。
+- 檢查未修改 `js/vfx-core.js`、`tests/vfx-runtime.test.cjs`、layout。素材庫 `0d95504`，Preset逐位元一致；遊戲Commit見本紀錄所在提交。未重跑完整實機戰鬥；無未完成實作，可合併，未推送或合併。下一步使用者檢查旋轉速度。
+
+## Codex｜暴風光壁俯視透明度（STORM-WALL-VIEW-20260918）
+
+- Owner Codex；Done。使用者回報像仰視。將底圈與壁面拆成前後半圈，遠側更透明、近側加強；白光降亮避免底圈過曝像浮在上方。保持半徑10米／高3米與圓錐，僅改 `tools/vfx/authoring/author/storm-dance.cjs`、`vfx/presets/ground-storm-dance.json`、`vfx/layouts/ground-storm-dance.json`、`tests/storm-dance.test.cjs` 與本紀錄；衝突預檢通過。
+- 驗證：`node --test tests/storm-dance.test.cjs`（3/3）、`node --test --test-name-pattern="STORM-DANCE|STATUS-" tests/vfx-runtime.test.cjs`（4/4）、`node tools/build_check.cjs`（379檔）通過。`node tools/vfx/preset-render.cjs ground-storm-dance --frames 4 --size 320` 與瀏覽器預覽確認前後亮度、尖端向上；Console 無 error/warn。
+- 素材庫已同步且逐位元核對，Commit `47483b8`；遊戲提交見本紀錄所在 Commit。唯讀檢查 `tests/vfx-runtime.test.cjs` 與既有狀態接線。沒有新增特效來源或執行期 JS。已知限制：尚未重新跑完整實機戰鬥畫面；目前預覽與跟隨／回收自動測試通過。無未完成實作；可合併，未合併或推送。下一步由使用者確認遊戲中的視覺感受。
+
 ## Codex｜暴風光壁圓錐與底圈（STORM-WALL-CONES-20260918）
 
 - Owner Codex；Done。使用者要求向上收尖的圓錐造型，地板光圈更突出。僅改storm-dance author／Preset／layout、尺寸預算測試與本紀錄，保留普攻與技能效果。衝突預檢通過；沿用既有貼圖。

@@ -64,15 +64,43 @@ test('暴風光圈由狀態表接線，圓周半徑10米、升高3米，粒子�
   assert.ok(require('../js/vfx-core.js').validatePreset(p).ok);
   assert.equal(p.loop, true);
   const particles = p.layers.filter(l => l.type === 'particle');
-  assert.equal(particles.length, 16);
+  assert.equal(particles.length, 12);
+  const centerY = p.layers.find(l => l.id === 'floor-green-rim-front').position.y;
+  const radius = particles[0].position.x;
+  assert.equal(p.sizing.widthM, 20);
   for (const l of particles) {
-    assert.ok(Math.abs(Math.hypot(l.position.x, l.position.y / 0.38) - 100) < 0.01);
-    assert.equal(l.speed * l.lifetime, 30);
+    assert.ok(Math.abs(Math.hypot(l.position.x, (l.position.y - centerY) / 0.38) - radius) < 0.01);
+    assert.ok(Math.abs(l.speed * l.lifetime / radius - 0.3) < 0.001);
     assert.equal(l.worldSpace, false);
   }
-  assert.equal(particles.reduce((n,l) => n + l.maxParticles, 0), 304);
+  assert.equal(particles.reduce((n,l) => n + l.maxParticles, 0), 300);
   const cones = p.layers.filter(l => l.id.startsWith('tapered-cone-'));
   assert.equal(cones.length, 8);
   assert.ok(cones.every(l => Math.abs(l.rotation - Math.PI) < 0.0001));
-  assert.ok(p.layers.find(l => l.id === 'floor-green-rim').alpha > p.layers[0].alpha);
+  const front = p.layers.find(l => l.id === 'floor-green-rim-front');
+  const back = p.layers.find(l => l.id === 'floor-green-rim-back');
+  assert.ok(front.alpha > back.alpha);
+  assert.ok(front.scale.y < 0 && back.scale.y > 0);
+  assert.equal(front.sheet.count, 1);
+});
+
+test('光錐24秒沿地板繞行，首尾閉合且保持直立', () => {
+  const p = JSON.parse(fs.readFileSync('vfx/presets/ground-storm-dance.json', 'utf8'));
+  assert.equal(p.duration, 24);
+  const cones = p.layers.filter(l => l.id.startsWith('tapered-cone-'));
+  const cy = cones.reduce((sum, l) => sum + l.position.y, 0) / cones.length;
+  for (const l of cones) {
+    const radius = Math.hypot(l.position.x, (l.position.y - cy) / 0.38);
+    assert.equal(l.rotation, Math.PI);
+    for (const curve of [l.offsetXOverLife, l.offsetYOverLife]) {
+      assert.deepEqual(curve[0], [0, 0]);
+      assert.deepEqual(curve.at(-1), [1, 0]);
+      assert.ok(curve.some(pt => Math.abs(pt[1]) > 20));
+    }
+    for (let i = 0; i < l.offsetXOverLife.length; i++) {
+      const x = l.position.x + l.offsetXOverLife[i][1];
+      const y = l.position.y + l.offsetYOverLife[i][1];
+      assert.ok(Math.abs(Math.hypot(x, (y - cy) / 0.38) - radius) < 0.001);
+    }
+  }
 });

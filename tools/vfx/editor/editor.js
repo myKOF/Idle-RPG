@@ -882,10 +882,11 @@
      外框固定壓成 X=1／Y=0.3。用 scale 壓的話橢圓會跟著一起轉，長軸就不是水平的了。 */
   var OUTER_SCALE_FIELD = vec('outerScale', 'outerScale（旋轉後）');
 
+  var LOOP_FIELD = { key: 'loop', label: '持續循環', kind: 'bool', default: false };
   var TYPE_FIELDS = {
-    sprite: [OUTER_SCALE_FIELD],
+    sprite: [LOOP_FIELD, OUTER_SCALE_FIELD],
     /* 空物件不畫東西，只收會被子物件繼承的欄位；共通欄位裡不適用的由 fieldsOf 濾掉 */
-    empty: [OUTER_SCALE_FIELD],
+    empty: [LOOP_FIELD, OUTER_SCALE_FIELD],
     particle: [
       json('emission', 'emission'),
       num('maxParticles', 'maxParticles', 1),
@@ -918,7 +919,7 @@
       { key: 'alignToVelocity', label: 'alignToVelocity', kind: 'bool', default: false },
       deg('velocityRotationOffset', 'velocityRotationOffset(°)')
     ],
-    procedural: [
+    procedural: [LOOP_FIELD,
       { key: 'effect', label: 'effect', kind: 'select', options: function () { return VFXCore.PROCEDURAL_EFFECTS; } },
       vec('size', 'size(px)'),
       vec('scrollSpeed', 'scrollSpeed'),
@@ -3889,6 +3890,30 @@
     });
 
     curveSection(host, 'rotation', 'Rotation', function (body) {
+      if (perAxis) {
+        var speed = MX.commonValue(targets, function (l) { return l.rotationSpeed || 0; });
+        var controls = document.createElement('div');
+        var slider = document.createElement('input');
+        slider.type = 'range'; slider.min = -360; slider.max = 360; slider.step = 0.1;
+        slider.setAttribute('aria-label', '旋轉速度滑桿');
+        var input = document.createElement('input');
+        input.type = 'number'; input.step = 0.1;
+        input.setAttribute('aria-label', '旋轉速度（度／秒）');
+        input.value = speed.mixed ? '' : +(speed.value * 180 / Math.PI).toFixed(4);
+        input.placeholder = speed.mixed ? MIXED_TEXT : '0';
+        slider.value = speed.mixed ? 0 : input.value;
+        function setSpeed(value) {
+          if (value === '' || !Number.isFinite(Number(value))) return;
+          targets.forEach(function (l) { l.rotationSpeed = Number(value) * Math.PI / 180; });
+          onPresetChanged();
+        }
+        slider.oninput = function () { input.value = slider.value; setSpeed(slider.value); };
+        input.oninput = function () { slider.value = input.value; setSpeed(input.value); };
+        controls.appendChild(slider); controls.appendChild(input);
+        wireFieldTransaction(controls, '旋轉速度');
+        body.appendChild(makeField('旋轉速度（度／秒）', controls));
+        hintLine(body, '負值逆時針、正值順時針；勾選圖層「持續循環」可不停旋轉。速度會與下方旋轉曲線疊加；只要等速旋轉時停用曲線即可。');
+      }
       curveBlock(body, targets, 'rotationOverLife', CURVE_POLICY.rotation, 'Z', { height: 170 });
       if (perAxis === null) {
         hintLine(body, 'X／Y 翻轉只有 sprite、procedural 與 empty 有；選取中混有 particle，要調 X／Y 請分開選取。');
