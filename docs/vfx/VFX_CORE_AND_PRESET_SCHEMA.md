@@ -2,6 +2,12 @@
 
 # VFX Core 架構 ＋ VFX Preset Schema v1
 
+## 圖層持續循環與等速旋轉（2026-09-18）
+
+`sprite`、`procedural`、`empty` 圖層新增可選 `loop`（預設 false）及 `rotationSpeed`（有限數，弧度／秒，預設0）。Editor在圖層提供「持續循環」，Rotation區塊提供度／秒滑桿及數字輸入；負值逆時針，正值順時針。既有particle的rotationSpeed仍是每顆粒子的自轉速度與範圍值。
+
+圖層loop使delay後的圖層時間按duration循環（未填沿用Preset duration），並讓特效保持存活；父物件停止時子物件仍停止，finish／stop仍可回收。rotationSpeed使用不歸零的累積時間，與rotation及rotationOverLife相加，經outerScale投影，因此不要求週期剛好整圈。等速旋轉時停用rotationOverLife即可；其他曲線的首尾仍需自行銜接。既有Preset未填新欄位時行為不變。
+
 > 2026-09-08：v1 新增可選 `sizing` metadata（形狀、米制尺寸、製作座標本體）。Core 驗證合法性並原樣序列化，遊戲尺寸換算由 Adapter 處理；詳見 [VFX_SIZE_STANDARD.md](VFX_SIZE_STANDARD.md)。
 
 狀態：`schemaVersion 1`（Preset）。適用範圍見 `docs/vfx/VFX_AGENT_WORKFLOW.md` §1.1。

@@ -12,6 +12,56 @@ const VFXCore = require('../js/vfx-core.js');
 
 const root = path.resolve(__dirname, '..');
 
+test('圖層loop跨越Preset壽命、旋轉速度不歸零，outerScale保持地板投影', () => {
+  for (const presetLoop of [false, true]) {
+    const nodes = [];
+    const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {
+      createNode() { const n = {}; nodes.push(n); return n; },
+      updateNode(n, t) { n.t = { ...t }; }, destroyNode() {}
+    } });
+    const p = { schemaVersion: 1, id: 'spin', duration: 1, loop: presetLoop, layers: [
+      { id: 'ring', type: 'sprite', assetId: 'pack/ring.png', loop: true,
+        delay: 0.25, duration: 0.5, rotationSpeed: -Math.PI / 2, outerScale: { x: 1, y: 0.38 } }
+    ] };
+    assert.ok(VFXCore.validatePreset(p).ok);
+    assert.deepEqual(JSON.parse(VFXCore.serialisePreset(p)), p);
+    rt.registerPreset(p);
+    const h = rt.play('spin');
+    for (let i = 1; i <= 12; i++) {
+      rt.update(0.25);
+      const t = nodes[0].t, a = -(i * 0.25 - 0.25) * Math.PI / 2;
+      assert.equal(t.visible, true);
+      assert.ok(Math.abs(t.scaleX * Math.cos(t.rotation) - Math.cos(a)) < 1e-8);
+      assert.ok(Math.abs(t.scaleX * Math.sin(t.rotation) - 0.38 * Math.sin(a)) < 1e-8);
+      assert.notEqual(rt.timeOf(h), null);
+    }
+    rt.finish(h); rt.update(0);
+    assert.equal(rt.timeOf(h), null, 'loop不得妨礙停止與回收');
+    rt.destroy();
+  }
+});
+
+test('循環空父層持續旋轉，子圖層繼承；非法速度與loop拒絕', () => {
+  const nodes = [];
+  const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {
+    createNode() { const n = {}; nodes.push(n); return n; },
+    updateNode(n, t) { n.t = { ...t }; }, destroyNode() {}
+  } });
+  rt.registerPreset({ schemaVersion: 1, id: 'parent-spin', duration: 1, layers: [
+    { id: 'pivot', type: 'empty', loop: true, rotationSpeed: -Math.PI / 2 },
+    { id: 'ring', type: 'sprite', parent: 'pivot', assetId: 'pack/ring.png', position: { x: 10, y: 0 } }
+  ] });
+  rt.play('parent-spin'); rt.update(1.5);
+  assert.equal(nodes[0].t.visible, true);
+  assert.ok(Math.abs(nodes[0].t.x + Math.sqrt(50)) < 1e-8);
+  assert.ok(Math.abs(nodes[0].t.y + Math.sqrt(50)) < 1e-8);
+  rt.destroy();
+  for (const extra of [{ loop: 1 }, { rotationSpeed: [0, 1] }, { rotationSpeed: Infinity }]) {
+    assert.equal(VFXCore.validatePreset(basePreset({ layers: [Object.assign(
+      { id: 'a', type: 'sprite', assetId: 'pack/ring.png' }, extra)] })).ok, false);
+  }
+});
+
 test('循環旋轉在精確終點仍可見，跨界保留剩餘時間', () => {
   const nodes = [];
   const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {

@@ -399,6 +399,8 @@ var VFXCore = (function () {
     if (layer.enabled !== undefined && typeof layer.enabled !== 'boolean') {
       errors.push(where + '.enabled 必須是布林值');
     }
+    if (layer.loop !== undefined && typeof layer.loop !== 'boolean') errors.push(where + '.loop 必須是布林值');
+    if (layer.type !== 'particle' && layer.rotationSpeed !== undefined && !isFiniteNumber(layer.rotationSpeed)) errors.push(where + '.rotationSpeed 必須是有限數（弧度／秒）');
     ['delay', 'duration'].forEach(function (key) {
       if (layer[key] === undefined) return;
       if (!isFiniteNumber(layer[key])) errors.push(where + '.' + key + ' 必須是有限數');
@@ -639,7 +641,7 @@ var VFXCore = (function () {
 
      rotationX／rotationYOverLife 也在這一組，因為它們最終是乘在
      scaleY／scaleX 上——粒子層那邊沒有分軸縮放可以承載它們。 */
-  var PER_AXIS_SCALE_FIELDS = ['scaleXOverLife', 'scaleYOverLife',
+  var PER_AXIS_SCALE_FIELDS = ['loop', 'rotationSpeed', 'scaleXOverLife', 'scaleYOverLife',
     'rotationXOverLife', 'rotationYOverLife'];
   /* 位移曲線同樣只掛 sprite 與 procedural，理由與上面那一組一樣：它們在
      updateSpriteLayer 裡加在 d.position 上，而粒子的位置是由 speed／gravity／
@@ -926,7 +928,7 @@ var VFXCore = (function () {
   var PRESET_KEY_ORDER = ['schemaVersion', 'id', 'duration', 'loop', 'deformation', 'layers'];
   var LAYER_KEY_ORDER = ['id', 'type', 'parent', 'enabled', 'assetId', 'effect', 'zIndex',
     'position', 'rotation', 'scale', 'anchor', 'size', 'alpha', 'tint', 'blendMode',
-    'delay', 'duration', 'scrollSpeed',
+    'delay', 'duration', 'loop', 'scrollSpeed',
     'emission', 'maxParticles', 'lifetime', 'spawn', 'speed', 'direction', 'spread',
     'gravity', 'drag', 'radialSpeed', 'orbitalSpeed', 'noise',
     'startScale', 'rotationStart', 'rotationSpeed',
@@ -999,6 +1001,7 @@ var VFXCore = (function () {
       blendMode: layer.blendMode || 'normal',
       delay: layer.delay || 0,
       duration: layer.duration,
+      loop: layer.loop === true,
       scrollSpeed: layer.scrollSpeed || { x: 0, y: 0 },
       emission: layer.emission,
       maxParticles: layer.maxParticles,
@@ -1122,7 +1125,7 @@ var VFXCore = (function () {
   /* 圖層在 progress（0..1）時的區域矩陣。def 是 layerDefaults 的結果。
      粒子層只取發射點位置：粒子層的 rotation／scale 轉的是每一顆粒子的圖，不是發射器。
      progress 為 null 時不取樣任何曲線（Editor 換算基本數值時用）。 */
-  function layerMatrix(def, progress, out) {
+  function layerMatrix(def, progress, out, elapsed) {
     var m = out || {};
     if (def.type === 'particle') {
       m.a = 1; m.b = 0; m.c = 0; m.d = 1;
@@ -1140,7 +1143,7 @@ var VFXCore = (function () {
       ? Math.cos(sampleCurve(def.rotationYOverLife, progress) || 0) : 1;
     var offX = curves ? sampleCurve(def.offsetXOverLife, progress) : null;
     var offY = curves ? sampleCurve(def.offsetYOverLife, progress) : null;
-    var angle = def.rotation + (rotK === null ? 0 : rotK);
+    var angle = def.rotation + (rotK === null ? 0 : rotK) + def.rotationSpeed * (elapsed || 0);
     var qx = def.scale.x * (scaleKX === null ? 1 : scaleKX) * flipX;
     var qy = def.scale.y * (scaleKY === null ? 1 : scaleKY) * flipY;
     var ox = def.outerScale ? def.outerScale.x : 1;
@@ -1277,6 +1280,7 @@ var VFXCore = (function () {
         presetId: presetId,
         preset: preset,
         time: startTime,
+        totalTime: startTime,
         timeScale: isFiniteNumber(p.timeScale) && p.timeScale > 0 ? p.timeScale : 1,
         done: false,
         frameNo: 0,
@@ -1385,9 +1389,10 @@ var VFXCore = (function () {
     var lifeResult = { active: false, progress: 0, elapsed: 0 };
     function layerLife(effect, layer) {
       var duration = layer.def.duration === undefined ? effect.preset.duration : layer.def.duration;
-      var t = effect.time - layer.def.delay;
+      var t = (layer.def.loop ? effect.totalTime : effect.time) - layer.def.delay;
       if (t < 0) { lifeResult.active = false; lifeResult.progress = 0; return lifeResult; }
       if (duration <= 0) { lifeResult.active = false; lifeResult.progress = 1; return lifeResult; }
+      if (layer.def.loop) t %= duration;
       if (t >= duration) { lifeResult.active = false; lifeResult.progress = 1; return lifeResult; }
       lifeResult.active = true;
       lifeResult.progress = t / duration;
@@ -1466,11 +1471,13 @@ var VFXCore = (function () {
         ph = hierarchyState(effect, parent);
       }
       var duration = d.duration === undefined ? effect.preset.duration : d.duration;
-      var t = (ph ? ph.time : effect.time) - d.delay;
+      var t = (ph ? ph.time : (d.loop ? effect.totalTime : effect.time)) - d.delay;
+      h.spinTime = (ph ? ph.spinTime : effect.totalTime) - d.delay;
+      if (d.loop && t >= 0 && duration > 0) t %= duration;
       h.time = t;
       h.active = (!ph || ph.active) && t >= 0 && duration > 0 && t < duration;
       h.progress = duration <= 0 ? 1 : (t <= 0 ? 0 : (t >= duration ? 1 : t / duration));
-      var local = layerMatrix(d, d.type === 'particle' ? null : h.progress, h.local);
+      var local = layerMatrix(d, d.type === 'particle' ? null : h.progress, h.local, Math.max(0, h.spinTime));
       if (ph) {
         multiplyMatrix(ph, local, h);
       } else {
@@ -1539,7 +1546,7 @@ var VFXCore = (function () {
       t.visible = true;
       t.x = world.x;
       t.y = world.y;
-      t.rotation = effect.rotation + d.rotation + (rotK === null ? 0 : rotK);
+      t.rotation = effect.rotation + d.rotation + (rotK === null ? 0 : rotK) + d.rotationSpeed * Math.max(0, effect.totalTime - d.delay);
       /* 「外層」縮放＝在圖層旋轉**之後**才套用的那一層。有兩個來源，而且它們
          是同一件事，所以乘在一起：
            effect.scaleX/Y   特效尺寸，屬於整個特效的座標軸
@@ -1562,7 +1569,7 @@ var VFXCore = (function () {
         /* M = S_outer · R(localAngle) · S_local。Pixi 的節點只吃
            rotation／scale／skew，所以要把這個 2×2 矩陣分解回那三個值——
            非等比縮放套在旋轉後會產生切變，少了 skew 就畫不出來。 */
-        var localAngle = d.rotation + (rotK === null ? 0 : rotK);
+        var localAngle = d.rotation + (rotK === null ? 0 : rotK) + d.rotationSpeed * Math.max(0, effect.totalTime - d.delay);
         var ca = Math.cos(localAngle), sa = Math.sin(localAngle);
         var qx = d.scale.x * (scaleKX === null ? 1 : scaleKX) * flipX;
         var qy = d.scale.y * (scaleKY === null ? 1 : scaleKY) * flipY;
@@ -1984,6 +1991,7 @@ var VFXCore = (function () {
         effect.lastDt = effect.draining ? dt : dt * effect.timeScale;
         if (effect.draining) effect.drainAge += dt;
         effect.time += effect.lastDt;
+        effect.totalTime += effect.lastDt;
         var preset = effect.preset;
         if (!effect.draining && preset.loop && effect.time >= preset.duration) {
           effect.time = effect.time % preset.duration;
@@ -1996,7 +2004,11 @@ var VFXCore = (function () {
           else if (layer.def.type === 'empty') continue;   // 空物件不畫東西，子物件需要時才算它
           else if (!effect.draining) updateSpriteLayer(effect, layer);
         }
-        var over = effect.draining || (!preset.loop && effect.time >= preset.duration);
+        var layerLoop = effect.layers.some(function (l) {
+          return l.def.loop && (l.def.duration === undefined || l.def.duration > 0) &&
+            (!l.def.parent || hierarchyState(effect, l).active);
+        });
+        var over = effect.draining || (!preset.loop && !layerLoop && effect.time >= preset.duration);
         var particlesLeft = effect.layers.some(function (l) { return l.particles.length > 0; });
         if (over && !particlesLeft) {
           releaseEffect(effect);

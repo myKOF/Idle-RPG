@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜圖層循環與旋轉速度（LAYER-SPIN-20260918）
+
+- Owner Codex；Done。使用者要求圖層持續loop與Rotation內的可拖曳／輸入速度，取代手動整圈曲線。允許Core、Editor、Core測試、快取與本紀錄；衝突預檢通過。不修改使用者素材。sprite／procedural／empty支援圖層loop與每秒旋轉速度，既有particle速度語意保留。
+- 修改：js/vfx-core.js、tools/vfx/editor/editor.js、tests/vfx-core.test.cjs、index.html、tools/vfx/editor/index.html、本紀錄及docs/vfx/VFX_CORE_AND_PRESET_SCHEMA.md（同樣預檢通過）。累積時鐘獨立於Preset循環，圖層loop保活、父層控制子層、finish仍回收；outerScale與父子矩陣均納入旋轉速度。Editor的Rotation提供滑桿及數字輸入，可多選批改、復原。
+- 測試：node --test tests/vfx-core.test.cjs，140/140通過。node --test tests/vfx-core-hierarchy.test.cjs tests/vfx-editor-hierarchy.test.cjs tests/vfx-editor-history.test.cjs tests/vfx-editor-multi-edit.test.cjs，91/92通過；既有HISTORY-42因未修改的aura-rockarmor-stone.json 115.6KB推算100步45.1MB超過25MB失敗，未放寬。node tools/build_check.cjs，379檔通過。瀏覽器已驗證Rotation輸入-15、滑桿同步、復原回0、Schema合法、Console無error/warn；伺服器已重新啟動。
+- 唯讀檢查：既有Editor歷史／階層／多選模型、使用者Preset；素材未修改，素材庫无需提交。Commit見本紀錄所在提交。未進行完整遊戲GPU驗證；其他曲線首尾仍須銜接。無未完成實作，可合併，未合併或推送。下一步使用者勾選圖層持續循環並在Rotation設定速度。
+
 ## Codex｜循環旋轉終點閃幀（VFX-LOOP-SEAM-20260918）
 
 - Owner Codex；Done。使用者回報旋轉接縫跳幀。發現Core僅於時間大於週期時循環，但圖層於大於等於時隱藏；修正精確終點先循環。修改Core、Core測試、遊戲／編輯器快取與紀錄，預檢通過。使用者實際Preset未指定，另說明預覽重播與Preset loop差別。
