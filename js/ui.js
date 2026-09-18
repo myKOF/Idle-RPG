@@ -8083,8 +8083,10 @@ function renderSkill2UltModal(body, gid, skillsSnapshot, headerSnapshot) {
   var h = '<div class="skd-head"><span class="skd-emoji">🌟</span><b>' +
     (pick ? esc(pick.def.name) : '超神進化') + '</b> ' +
     '<span class="dim-text">第' + (g.tiers.length + 1) + '階｜Lv.' + (pick ? pick.lv : 0) + '/' + tierMax + '</span>' +
-    '<span class="sk-meta">' + esc(g.emoji + ' ' + g.name) + '</span></div>';
-  if (pick && !skills2IsPassive(gid)) h += '<div class="sk-meta">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + ' MP／次施放</div>';
+    '<span class="sk-meta">' + esc(g.emoji + ' ' + g.name) + '</span>';
+  // 耗魔留在標頭，維持升級彈窗的五列 Grid，避免標籤落入說明列。
+  if (pick && !skills2IsPassive(gid)) h += '<span class="sk-meta">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + ' MP／次施放</span>';
+  h += '</div>';
   h += '<div class="skill-tags"><span class="skill-tag skill-tag-ult">超神進化·三選一</span></div>';
 
   if (!unlocked) {

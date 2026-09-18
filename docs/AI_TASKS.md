@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜超神升級標籤高度（ULT-TAG-LAYOUT-20260918）
+
+- Owner Codex；Done。修正主動超神耗魔獨占一列，使固定五列 Grid 的技能標籤被拉高、說明區縮小。依使用者正常畫面參考，耗魔移入標頭，標籤維持第二列，保留原有內容與操作。
+- 允許修改 js/ui.js、index.html 與本紀錄；禁止修改技能數值、表格、存檔及特效。前置依賴無，衝突預檢通過。驗證技能耗魔／UI 相關測試、build 與 diff；完成提交後交使用者檢查畫面。
+- 驗證：`node --test tests/skills2-mana-cost.test.cjs` 4/4 通過；`node tools/build_check.cjs` 378 檔通過；`git diff --check` 通過。檢查但未修改 css/style.css，無素材變更。未實機驗證畫面及 Console；建議重新整理後檢查千鳥升級彈窗，可合併程式修正，未合併或推送。
+
 ## Codex｜Skills2同列特效用途與觸發欄位（SKILLS2-VFX-EVENTS-20260918）
 
 - Owner Codex；Done。使用者授權將 Claude 已提交分支合併到 ai/codex，再修改 Excel／CSV。已合併 fea2ce3c 及其狀態表格化前置提交，保留我方／敵方狀態與 Status 畫面權威；沒有修改 develop 或推送。
