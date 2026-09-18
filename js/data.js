@@ -2597,7 +2597,7 @@ function penetrationDesc(st, key, label) {
 /* 吸血／吸魔 tips */
 function drainDesc(st, key, label, resLabel, perSec, amount) {
   var isHp = key === 'lifesteal';
-  return '攻擊命中時回復' + (isHp ? '生命' : '法力') + '。' +
+  return '每對一名敵人造成一次傷害時回復' + (isHp ? '生命' : '法力') + '；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。' +
     '<br><br><span style="color:#aaa">汲取換算基準（未乘回復技能倍率）・每秒' + resLabel + '：<span style="color:#fff">' + fmt(perSec) + '</span>' +
     '<br>目前每次回復：<span style="color:#fff">' + fmt(amount) + '</span></span>';
 }

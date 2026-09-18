@@ -741,6 +741,23 @@ function statusTickVfxFlush() {
     statusVfxEmit(tick, 'tick', 'status-tick', 0.45);
 }
 
+/* 傷害事件的屬性汲取。DoT 同幀合併扣血時帶入實際跳數，O(1) 回復，
+   不新增 Timer／浮字；技能自帶治療仍由技能自行處理。 */
+function playerDrainOnDamage(target, damage, player, hits) {
+    if (!(damage > 0) || !target || target._sgPreview) return;
+    player = player || (typeof sgCurrentPlayerEnt === 'function' ? sgCurrentPlayerEnt() : null);
+    if (!player || !(player.hp > 0) || player === target || player._sgPreview) return;
+    if (typeof getStats !== 'function') return;
+    var st = getStats();
+    var omni = (st.passives && st.passives.omniDrain) || 0;
+    var hpPct = (st.lifesteal || 0) + omni, mpPct = (st.manaSteal || 0) + omni;
+    if (!(hpPct > 0 || mpPct > 0)) return;
+    var count = hits === undefined ? 1 : Math.max(0, Math.floor(Number(hits) || 0));
+    if (!(count > 0)) return;
+    if (hpPct > 0) healPlayer(player, lifestealHealAmount(st, hpPct) * count, st, { noShield: true });
+    if (mpPct > 0) gainPlayerMana(player, manaStealAmount(st, mpPct) * count, st);
+}
+
 function tickStatuses(ent, dt, dotContext) {
     tickShieldExpiry(ent);
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
@@ -756,7 +773,7 @@ function tickStatuses(ent, dt, dotContext) {
             dtEff *= _dotTrig.passiveDotHaste.mult;
         }
     }
-    var total = 0;
+    var total = 0, drainHits = 0;
     var dotNames = [];
     var dotDamageItems = [];
     var live = [];
@@ -785,6 +802,7 @@ function tickStatuses(ent, dt, dotContext) {
             var dElemMult = (ent.maxHp && typeof skill2DotElemFactor === 'function')
                 ? skill2DotElemFactor(ent, d.sid) : 1;
             var dDmg = d.dps * seconds * dElemMult;
+            if (dDmg > 0) drainHits += tickCount;
             statusTickVfxCollect(ent, d.sid);
             total += dDmg;
             dotDamageItems.push({ d: d, baseDamage: dDmg, tickCount: tickCount });
@@ -797,7 +815,7 @@ function tickStatuses(ent, dt, dotContext) {
         var legendaryDotMult = (ent.maxHp && typeof legendaryDotDamageMultiplier === 'function')
             ? legendaryDotDamageMultiplier(ent) : 1;
         var dotScale = globalDamageMultiplierForEntity(ent) * legendaryDotMult;
-        var dotDealt = applyEnemyHpDamage(ent, total * dotScale);
+        var dotDealt = applyEnemyHpDamage(ent, total * dotScale, drainHits);
         if (dotDealt > 0 && typeof recordRunDamage === 'function' && ent.maxHp) {
             for (var k = 0; k < dotDamageItems.length; k++) {
                 var item = dotDamageItems[k];
@@ -1045,25 +1063,17 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         if (res.blocked) logMsg += '<span class="log-hl-bad">（被格擋）</span>';
         if (res.procs.length) logMsg += '<span class="log-hl-good">［' + res.procs.join('・') + '］</span>';
         if (res.thorns) logMsg += '<span class="log-hl-bad">遭到反震 ' + fmt(res.thorns) + ' 傷害。</span>';
-        // 吸血 / 暗影汲取 / 吸魔（神鑄特效【萬象汲取】同時加成生命與法力回復）
-        // 吸血/吸魔改由「每秒生命回復／法力恢復 × %」決定（formula.js §3），與造成的傷害無關；
-        // 三者皆非技能效果，溢出不轉護盾（noShield）。
-        var omni = st.passives.omniDrain || 0;
-        var healAmt = lifestealHealAmount(st, st.lifesteal + omni) + (res.heal || 0);
+        // 屬性汲取已在 resolveHit 統一結算，這裡只處理暗影等自帶治療。
+        var healAmt = res.heal || 0;
         if (healAmt > 0) {
             healPlayer(pEnt, healAmt, st, { noShield: true });
             floatText(playerFloatSel, '+' + fmt(Math.round(healAmt)), 'heal', Math.round(healAmt));
-            if (st.lifesteal > 0 || omni > 0 || res.heal) logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
+            logMsg += '<span class="log-hl-good">汲取回復 ' + fmt(healAmt) + '。</span>';
         }
         // 大地元素特效【岩甲】：附加的地屬性傷害有機率轉為護盾（resolveHit 只回報數值，實際給盾在這裡）
         if (res.shield > 0) {
             var shieldGain = grantShield(pEnt, res.shield, st);
             if (shieldGain > 0) floatText(playerFloatSel, '🛡️+' + fmt(Math.round(shieldGain)), 'shield');
-        }
-        if (st.manaSteal + omni > 0) {
-            var mpGain = manaStealAmount(st, st.manaSteal + omni);
-            gainPlayerMana(pEnt, mpGain, st);   // 溢出交給 formula.js 的唯一收斂點
-            floatText(playerFloatSel, '+' + fmt(Math.round(mpGain)) + ' MP', 'mp', Math.round(mpGain));
         }
         // 被動：暈眩 / 減速
         if (!res.killed) {
@@ -1193,8 +1203,12 @@ function settleEnemyAttackRetaliation(event) {
     /* resolveHit 已先算好反震數值；只有延後事件才在這裡真正扣敵人生命，
        並補上原本由 resolveHit 觸發的「敵人受傷」掛點。 */
     if (!event.thornsApplied && result.thorns > 0) {
+        var drainThorns = attacker.hp > 0 && !(typeof gmHpLockActive === 'function' && gmHpLockActive(attacker));
         if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(attacker))) {
             attacker.hp = Math.max(0, attacker.hp - result.thorns);
+        }
+        if (drainThorns && event.defCfg && event.defCfg.isPlayer) {
+            playerDrainOnDamage(attacker, result.thorns, event.target);
         }
         if (event.defCfg && event.defCfg.isPlayer && typeof skills2OnEnemyDamaged === 'function') {
             skills2OnEnemyDamaged(attacker, result.thorns);

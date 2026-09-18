@@ -2831,10 +2831,7 @@ function castSkill(pEnt, target, id, lv, floatSel, statSlot, opts) {
         }
       }
       applySkillDebuffs(targets, fx, lv, parts, fxMult);
-      // 吸血／吸魔：以「每秒生命回復／法力恢復 × %」計（formula.js §3），與技能傷害無關；
-      // 屬性吸血非技能本身的效果，溢出不轉護盾。
-      if (st.manaSteal > 0) gainPlayerMana(pEnt, manaStealAmount(st, st.manaSteal), st);
-      if (st.lifesteal > 0) healPlayer(pEnt, lifestealHealAmount(st, st.lifesteal), st, { noShield: true });
+      // 屬性吸血／吸魔已隨每次實際傷害結算，不在整次施放結束時重複回復。
       // 45 新技能（resourceConvert 族）：傷害段後結算（hpSacrifice M8——本次傷害部分轉護盾）
       skillRtAfterDamage(pEnt, fx, lv, st, totalDmg, floatSel, parts);
     }

@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜每次傷害觸發吸血吸魔（DAMAGE-DRAIN-20260918）
+
+- Owner Codex；Done。使用者要求新版技能接上屬性汲取，按每名敵人每次傷害觸發；移除舊版專用施放後吸取，技能本體留待正式廢除。
+- 範圍：formula.js 傷害掛點、combat.js 統一汲取與 DoT 合併跳數／反震、skills.js 移除重複路徑、data.js 說明、快取與回歸測試。基礎汲取量、大地守護乘區、資源溢出規則不變；沒有表格或素材變更。
+- DoT 仍合併扣血，依同幀實際跳數一次結算回復，沒有新增 Timer／逐擊粒子。普攻、Skills2、直接衍生傷害、同步／延後反震共用入口；預覽、零傷害、死亡玩家不觸發。
+- 驗證：node --test tests/damage-drain.test.cjs tests/attr-skill-rework-2026-07-30.test.cjs tests/combat-dot-log.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/combo-hits.test.cjs tests/skill2-earth.test.cjs tests/skill2-counter-bloodrage.test.cjs tests/passive-stat-panel.test.cjs，102/102 通過。node tools/build_check.cjs，377 檔通過；git diff --check 通過。新增6項行為測試；檢查未修改 skills2.js／Excel／CSV。
+- 風險：未實機畫面及大型戰場效能量測；逐目標逐傷害觸發會按設計提高群攻、多段與 DoT 的回復量。HP／MP 經既有實體快照顯示，屬性說明同步；不額外產生逐擊汲取浮字。可合併，未推送。
+
 ## Codex｜裝配被動加成屬性面板（PASSIVE-PANEL-20260918）
 
 - Done。Worker 在 header／equip 快照提供 passivePanel：實際回復量、吸血／吸魔百分比與每次回復、元素增傷乘區、常駐技能減傷；不覆寫戰鬥基礎屬性。大地守護生命上限原已納入。面板透過快照顯示，無 G 亦可用；技能減傷獨立列，避免與全局減傷點數錯加。装卸技能協議刷新 header／equip，協議升至 v34。

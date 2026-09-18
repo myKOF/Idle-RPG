@@ -50,7 +50,8 @@ test('戰鬥端與技能端的吸血／汲取／過關回復皆以 noShield 呼�
      onFieldKill 移到 completeFieldWave，回復性質不變——仍是非技能來源、溢出不轉護盾。 */
   assert.match(combat, /healPlayer\(FIELD\.player, st\.hp \* WAVE_CLEAR_HEAL_PCT \/ 100, st, \{ noShield: true \}\)/);
   assert.match(combat, /st\.passives\.soulEater \/ 100, st, \{ noShield: true \}\)/);   // 吸魂
-  assert.match(skills, /healPlayer\(pEnt, lifestealHealAmount\(st, st\.lifesteal\), st, \{ noShield: true \}\)/);
+  assert.match(combat, /healPlayer\(player, lifestealHealAmount\(st, hpPct\) \* count, st, \{ noShield: true \}\)/);
+  assert.doesNotMatch(skills, /healPlayer\(pEnt, lifestealHealAmount\(st, st\.lifesteal\)/);
   // 技能自身的治療（healPctMax／healPctOfDmg）不得帶 noShield
   assert.match(skills, /healPlayer\(pEnt, totalDmg \* fx\.healPctOfDmg \/ 100, st\);/);
   assert.match(skills, /healPlayer\(pEnt, hv, st\);/);
