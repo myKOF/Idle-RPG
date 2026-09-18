@@ -7220,3 +7220,17 @@ Worker 存活且頁面正常完成載入。
 - 修法：對齊步驟改用 `merge --ff-only "$Remote/$branch"`。三種情況都合理——遠端是祖先就 Already up to date、本地沒新東西就 fast-forward、真的分歧就停下來報錯交給人看。第三種正是該讓人知道的事；靜靜地改寫共用歷史比停下來糟得多。
 - 這也解釋了先前 ai/claude 那次 rebase 為何會讓 AI_TASKS.md 出現重複區段：同樣是 merge 被壓平後重放造成的。
 - 驗證：新增測試釘住「對齊用 ff-only、不得用 pull --rebase、fetch 要排在前面」並做過突變測試；`-ValidateOnly` 仍可正常執行。sync-ai-worktrees 5 項通過。
+
+## Claude｜Skills2 我方／敵方狀態表格化與狀態畫面歸狀態表（STATUS-TABLE-20260918）
+
+- 需求：施放技能時要能同時對我方與敵方施加狀態，且附加哪個狀態要由表格決定，不寫死在程式；中了狀態之後的畫面（上身、身上的持續特效、每跳）歸 Status 表，不填在 Skills2。
+- Skills2 新增「我方狀態」「敵方狀態」兩欄（位於特殊效果與效果參數(JSON)之間）。格子語法：`狀態ID` 或 `狀態ID(參數=值, …)`，多個以 `;` 分隔；參數 val／dmg／dur／gap／max／chance／stacks，值可填數字或本列效果參數的鍵名（隨等級成長）。沒填的吃技能公式或狀態表。
+- 技能原有的 50 個施加點登記在 `js/skills2.js` 的 `SKILL2_STATUS_SLOTS`（鍵＝群組.階或超神ID.方向，值＝各格的角色與型別限制）。施加點仍由技能決定觸發時機與數值公式，表格決定施加哪個狀態；後續各階與傳奇「對帶著某狀態的敵人」的判斷一律以角色查詢（`sgRoleSids`），換掉格子裡的狀態後續各階跟著換。超出登記格數的條目是通用附加：我方＝施放時（被動＝觸發），敵方＝本技能每次命中（`sgHitOne`；反擊另外接）。
+- 狀態自己的效果（泥沼緩速的攻速／移速、寒冰逆轉的屬性改寫、寒霜的緩速）仍以效果鍵讀取，跟著狀態走；傳奇特效施加的狀態由裝備決定，不在 Skills2 上。
+- 使用者原則（2026-09-18）：除了飛行子彈，有持續時間的效果都是狀態。火狩／環體電球／虛空斬／暴風化身／地爆天星／倒地無敵等計時狀態因此也在表上；火龍捲、雷球、泥沼這類在場上自己存在的場域物件維持原樣（使用者同意）。以玩家為中心的永久領域改成狀態是下一階段。
+- 參數表：`tools/config_tables.cjs` 解析、驗證（狀態存在、參數名、鍵名存在、登記格型別、登記格不得用 dmg 覆寫）與往返；缺這兩欄的舊表整批拒絕。說明頁自動列出每個登記位置。
+- Excel：`--gen` 仍是手寫 XML，違反 AI_RULES 8.5，因此新增 `tools/excel-update-sheets.ps1`（Excel COM：插入整欄、只寫與目標不同的格子、正常模式重開逐格驗證兩次、來源 hash 改變就停止）。Skills2.xlsx 與 Status.xlsx 都用它寫入；`--sync` 後 `--apply` 語意變更 0。
+- 狀態畫面：Status 表的施加特效正式接上（`applyStatus` 在「施加前不在、施加後在」時收集，`statusTickVfxFlush` 一併送出）；每跳特效只由 `tickStatuses` 依狀態表送出，skills2 的燃燒／寒霜／流血毒節拍器不再自己畫（以前會退回技能列的受擊特效，換階畫面就跟著變）。狀態光環改用 Preset 世界尺寸、畫在地板層。
+- 從 Skills2 搬到 Status 的畫面：火球 T2 st-tick-fire → sgBurn 作用；寒冰箭 T2 st-tick-ice → sgFrostBite 作用；血刃斬 T4 curse-poison → sgPoison 施加（另補 sgPoison 作用＝hit-poison）；狂怒 T1 與阿修羅 aura-bloodrage → sgBloodrage／sgAsuraFist 持續；雙刀 T7 ground-cyclone-avatar → sgStorm 與傳奇【不屈之誓】sgDeathDefer 持續；暴風屏障 T1 ground-storm-barrier／T7 ground-storm-god → sgStormBarrier／sgStormGod 持續。
+- 刻意留在 Skills2 的：岩甲光殼（第 7 階會換外觀，狀態表無法表達「練到第幾階換樣子」）、雷幻身、不屈鬥魂倒地光殼（掛在共用的 invuln 上會讓所有無敵都長這樣）、各技能的場域與領域脈衝。
+- 驗證：受影響測試 1603 項，失敗 25 項皆在 HEAD 基線內（以 git archive 抽出的乾淨副本對照）；新增 13 項（tests/skill2-status-slots.test.cjs、vfx-runtime STATUS-3）。實機確認狀態光環隨狀態出現／消失、console 無錯誤。可見差異：狂怒／暴風化身／暴風屏障／暴風神體的光殼由約 200px 改為 Preset 製作尺寸。Commit：1191100f、57708e93。

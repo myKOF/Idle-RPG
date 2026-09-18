@@ -1281,6 +1281,27 @@ test('STATUS-1 狀態出現時建立、消失時立刻收掉，重複快照不�
   delete global.statusVfxPreset;
 });
 
+test('STATUS-3 狀態光環照 Preset 的世界尺寸畫在地板層，並跟著實體走', function () {
+  /* 純演出所見即所得（AI_RULES 8.3.2）：6 米寬的光環在戰場上就是 6 米，不吃場域的名目半徑。 */
+  global.statusVfxPreset = (sid, role) => (role === 'aura' && sid === 'sgBloodrage' ? 'st-rage' : '');
+  const p = unitPreset('st-rage', 1, true);
+  p.sizing = { shape: 'custom', widthM: 6, heightM: 6, authored: { width: 120, height: 120 } };
+  const pos = { x: 100, y: 50 };
+  const { adapter, log } = makeAdapter([p], { ctx: { posOf: () => Object.assign({}, pos), playerPos: () => ({ x: 0, y: 0 }) } });
+  adapter.syncStatuses([{ key: 'mv-float-1', sids: ['sgBloodrage'] }]);
+  adapter.update(0.05);
+  assert.equal(log.nodes.length, 1);
+  assert.equal(log.nodes[0].tag, 'zone', '腳底光環畫在地板層（角色下面）');
+  let t = log.nodes[0].transforms.at(-1);
+  assert.ok(Math.abs(t.scaleX - 0.5) < 1e-9 && Math.abs(t.scaleY - 0.5) < 1e-9, '6 米 ×10 單位／米 ÷ 製作寬 120');
+  pos.x = 180;
+  adapter.update(0.05);
+  t = log.nodes[0].transforms.at(-1);
+  assert.equal(t.x, 180, '跟著實體移動');
+  assert.ok(Math.abs(t.scaleX - 0.5) < 1e-9, '移動時不會把尺寸洗掉');
+  delete global.statusVfxPreset;
+});
+
 test('STATUS-2 狀態表沒填持續特效時不播', function () {
   global.statusVfxPreset = () => '';
   const { adapter } = makeAdapter([unitPreset('st-burn', 1, true)]);

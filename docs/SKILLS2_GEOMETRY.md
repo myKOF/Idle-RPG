@@ -53,7 +53,7 @@
 ## Excel 保存
 
 遷移由 `tools/migrate-skills2-geometry.cjs` 讀取官方Excel，產生資料JSON，再由 `tools/write-skills2-excel.ps1` 使用Excel COM API寫入副本並正常重開逐格驗證。驗證前不替換原檔，來源hash改變則停止，避免覆盖使用者新存檔。
-Skills2 的 `--gen` 也使用此原生Excel流程，禁止手工拼接／替換工作簿XML。CSV↔JS沿用 `tools/config_tables.cjs --sync`／`--apply Skills2 --write`。
+⚠️ 更正（2026-09-18）：`config_tables.cjs --gen` 仍是自己拼 xlsx XML，不可用於改正式 Excel；改欄位或填格子一律用 `tools/excel-update-sheets.ps1`（Excel COM：插入整欄、只寫差異格、正常重開逐格驗證），禁止手工拼接／替換工作簿XML。CSV↔JS沿用 `tools/config_tables.cjs --sync`／`--apply Skills2 --write`。
 
 舊空白繪圖物件另由 `-RemoveBlankArtifacts` 清理：確認可見物件皆為空白後，以Excel API複製儲存格至乾淨工作簿且禁止複製繪圖物件，再連續儲存／正常重開確認物件數為零。一般寫入不自動啟用清理。
 

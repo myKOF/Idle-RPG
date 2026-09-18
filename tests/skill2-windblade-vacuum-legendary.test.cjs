@@ -306,7 +306,10 @@ test('【暴風萬刃】：大型風刃改為全場追擊、每方向多 1 道�
   bigChasers.forEach((f) => {
     assert.equal(f.chaseM, 60, '追擊半徑取超神自己的表定值');
     assert.ok(f.pulseDmg > 0, '第 6 階【狂風碎裂】的沿途脈衝要跟著換到這條路上');
-    assert.equal(f.slowStatus, 'sgWindSlow', '緩速也一起帶過來');
+    // 緩速也一起帶過來：施加哪個狀態讀第 6 階的敵方狀態（物件來自 vm context，逐欄比對）
+    assert.equal(f.slowSlot && f.slowSlot.gid, 'windblade');
+    assert.equal(f.slowSlot && f.slowSlot.tier, '6');
+    assert.equal(ult.c.sgSlotSid('windblade', '6', 'enemy', 0), 'sgWindSlow');
   });
   assert.equal(ult.c.SKILL2_RT.projectiles.length, 0, '不再有直線飛行的大型風刃');
   // 傷害：本體 ×(1＋55%)（Lv.1 ＝ 50＋5×1），獨立乘區
