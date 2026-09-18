@@ -8,6 +8,26 @@ function schema(){
  vm.runInContext(fs.readFileSync(file,'utf8').split('/* ---- 進入點 ---- */')[0]+'\nthis.api={schema:SCHEMAS.Skills2,parse:csvParse,extractLiteral,evalLiteral};',ctx);
  return ctx.api;
 }
+
+test('bloodblade poison spread and disintegrate speed columns compile and drive flight timing',()=>{
+ const a=schema(),rows=a.parse(fs.readFileSync(root+'/config/CSV/Skills2.csv','utf8')),h=rows[0];
+ const col=h.indexOf('飛行子彈速度（米／秒）');
+ for(const stage of ['5','10'])rows.find(r=>r[0]==='bloodblade'&&r[h.indexOf('階數')]===stage)[col]='20,2';
+ const block=a.schema.rebuild(rows.slice(1),h).SKILLS2;
+ const file=path.join(__dirname,'skill2-ult-evolution.test.cjs'),src=fs.readFileSync(file,'utf8');
+ const ctx={require:createRequire(file),__dirname,console};vm.createContext(ctx);
+ vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.h={loadContext,maxLevels,equip,setUlt,stubVfx};',ctx);
+ const c=ctx.h.loadContext();vm.runInContext(block,c);
+ ctx.h.maxLevels(c,'bloodblade');ctx.h.equip(c,'bloodblade');ctx.h.stubVfx(c);
+ for(const extra of [{vfxTier:5},{vfxUlt:'disintegrate'}]){
+  if(extra.vfxUlt)ctx.h.setUlt(c,'bloodblade','disintegrate',10);
+  const fx=extra.vfxUlt?c.SKILLS2.bloodblade.ult[2]:c.SKILLS2.bloodblade.tiers[4];
+  fx.vfx={projectile:'configured-blood-projectile'};
+  assert.equal(fx.fx.speed,20);assert.equal(fx.fx.speedPer,2);
+  c.sgQueueBloodFlight({hp:1,pos:{x:0,y:0}},{hp:1,pos:{x:400,y:0}},extra,{damage:1},{});
+  assert.equal(c.SKILL2_RT.projectiles.at(-1).endAt,1,'(20+2×10)米/秒，40米需1秒');
+ }
+});
 test('flight speed uses the merged column, rejects duplicate JSON and incomplete schemas',()=>{
  const a=schema(),rows=a.parse(fs.readFileSync(root+'/config/CSV/Skills2.csv','utf8')),header=rows[0];
  const i=header.indexOf('飛行子彈速度（米／秒）'),fi=header.indexOf('效果參數(JSON)');assert.ok(i>=0);

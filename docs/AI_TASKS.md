@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜血刃飛行速度欄位匯入（BLOOD-FLIGHT-SPEED-20260918）
+
+- Owner Codex；Done。前次新增毒彈執行期接線後漏登記嚴格表格契約，導致使用者填速度時匯入被拒。新增bloodblade/5與bloodblade/disintegrate的speed／speedPer接線；維持其他未實作欄位拒絕匯入。
+- 修改tools/skills2-geometry.cjs、tests/skills2-flight-speed.test.cjs、index.html／bridge.js快取及本紀錄。執行Skills2 apply成功，將使用者目前兩列100米／秒同步至本機skills2.js；使用者表格、生成資料與特效仍留在工作區，不混入工具修正提交。
+- `node --test tests/skills2-flight-speed.test.cjs`4/4通過，直接從CSV重建配置後驗證毒霧感染與崩解20,2在Lv10為40米／秒，40米飛行及命中排程均1秒。apply後再dry-run零語意差異。檢查未修改Excel、CSV、飛行佇列與Preset。未推送或合併。
+
 ## Codex｜毒霧感染與崩解飛行結算（BLOOD-FLIGHT-20260918）
 
 - Owner Codex；Done。毒霧感染未傳travelMs，Runtime以0.001秒播完；感染立即套用。崩解原本只在中心發出子彈事件並立即傷害周邊，沒有逐目標飛行。兩者改走共用血刃飛行佇列，填有子彈才延後至抵達結算，沒子彈保留即時路徑。
