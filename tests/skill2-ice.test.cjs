@@ -716,13 +716,16 @@ test('skills2CastRangePx 改吃 sgVal 之後，既有群組的射程完全不變
 
 test('sgTryStun 回傳實際秒數，且既有呼叫端的真假判定不受影響', () => {
   const c = loadContext();
+  // 施加哪一個狀態由 Skills2「敵方狀態」的格子決定（2026-09-18）：寒霜凍結的行動限制那一格
+  const slot = { gid: 'icearrow', tier: '2', idx: 3 };
   const e = enemy(1e9, 3 * M, 0);
-  const sec = c.sgTryStun(e, 2.5);
+  const sec = c.sgTryStun(e, 2.5, slot);
   assert.ok(Math.abs(sec - 2.5) < 1e-9, '沒有遞減時回傳表定秒數');
   assert.ok(sec, '數值 > 0 在既有呼叫端仍為真');
   const boss = enemy(1e9, 3 * M, 0); boss.isBoss = true;
-  assert.equal(c.sgTryStun(boss, 2.5), 0, 'BOSS 免疫回傳 0');
-  assert.ok(!c.sgTryStun(boss, 2.5), '0 在既有呼叫端仍為假');
+  assert.equal(c.sgTryStun(boss, 2.5, slot), 0, 'BOSS 免疫回傳 0');
+  assert.ok(!c.sgTryStun(boss, 2.5, slot), '0 在既有呼叫端仍為假');
+  assert.equal(c.sgTryStun(enemy(1e9, 3 * M, 0), 2.5), 0, '沒指定表格位置就不施加（不再寫死 stun）');
 });
 
 test('沒有投資冰系群組時，寒霜的節拍器與冰爆完全不作用', () => {

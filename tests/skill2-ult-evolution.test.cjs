@@ -1382,11 +1382,11 @@ test('【崩解】：中毒成長、傳染不重複加速、致死跳與半徑�
  maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
  setUlt(c,'bloodblade','disintegrate',1);
  c.SKILLS2.bloodblade.ult[2].vfx.projectile='configured-poison-flight';
- const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'sgPoison');
+ const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'poison');
  assert.ok(Math.abs(spec.interval-.28)<1e-8);
  const main=enemy(1,30,0),near=enemy(1e12,30,20),far=enemy(1e12,3000,0);
- c.sgApplyBloodbladeDot(main,'sgPoison',spec);
- c.sgApplyBloodbladeDot(near,'sgPoison',main.dots[0],main.dots[0].dur);
+ c.sgApplyBloodbladeDot(main,'poison',spec);
+ c.sgApplyBloodbladeDot(near,'poison',main.dots[0],main.dots[0].dur);
  assert.equal(near.dots[0].interval,main.dots[0].interval);
  const dot=main.dots[0];c.GT=.28;
   assert.equal(c.tickStatuses(main,.28,{enemies:[main,near,far]}),true);
@@ -1424,9 +1424,9 @@ test('【崩解】：間隔保底且無敵不觸發爆炸，非血毒狀態不�
  maxLevels(c,'bloodblade');equip(c,'bloodblade');c.FIELD={player:playerEnt()};
  setUlt(c,'bloodblade','disintegrate',10);
  c.SKILLS2.bloodblade.ult[2].fx.gapPct=120;
- const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'sgPoison');
+ const spec=c.sgBloodbladeDotSpec(c.getStats(),[10,10,10,10,10,10,10],c.SKILLS2.bloodblade.tiers,'poison');
  assert.equal(spec.interval,.1);assert.ok(Number.isFinite(spec.dps));
- const e=enemy(1e12,0,0);c.sgApplyBloodbladeDot(e,'sgPoison',spec);
+ const e=enemy(1e12,0,0);c.sgApplyBloodbladeDot(e,'poison',spec);
  const effectActive=c.effectActive;c.effectActive=(ent,key)=>key==='invuln';
  c.tickStatuses(e,1,{enemies:[e]});assert.equal(events.length,0);
  c.effectActive=effectActive;e.dots[0].sid='sgBurn';

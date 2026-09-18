@@ -211,10 +211,14 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
 
   for (const variant of [
     'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-ring', 'knife', 'knife-bounce', 'knife-soulhunter',
-    'gale-burst', 'gale-moon', 'bleed-tick', 'poison-tick', 'blood-explosion',
+    'gale-burst', 'gale-moon', 'blood-explosion',
     'zero-infection', 'dual-storm'
   ]) {
     assert.ok(skills2.includes("'" + variant + "'") || skills2.includes('"' + variant + '"'), variant);
+  }
+  // 狀態每跳的畫面只由 js/combat.js tickStatuses 依狀態表送出（2026-09-18），技能節拍器不再另外畫
+  for (const variant of ['bleed-tick', 'poison-tick', 'burn-tick']) {
+    assert.ok(!skills2.includes("'" + variant + "'"), variant + ' 不再由 skills2 送出');
   }
 
   for (const variant of [
@@ -819,8 +823,10 @@ test('風系特效：風刃／真空斬／迴旋斬／虛空斬／暴風屏障�
 
   // 模擬層：各變體名稱，以及「方位與刀身尺寸必須送到顯示層」的兩個欄位
   ['wind-blade', 'wind-blade-small', 'wind-blade-homing', 'wind-burst',
-    'wind-slash', 'wind-spin', 'void-disc', 'storm-barrier', 'storm-god', 'storm-rip']
+    'wind-slash', 'wind-spin', 'void-disc', 'storm-rip']
     .forEach((v) => assert.match(skills2, new RegExp("'" + v + "'"), `模擬層缺少變體 ${v}`));
+  // 暴風屏障與暴風神體的光殼改由狀態表的「持續特效」畫（2026-09-18），技能不再送這兩個 aura 事件
+  ['storm-barrier', 'storm-god'].forEach((v) => assert.doesNotMatch(skills2, new RegExp("variant: '" + v + "'"), `${v} 不再由技能送出`));
   assert.match(skills2, /if \(extra && isFinite\(extra\.angle\)\) spec\.angle = Number\(extra\.angle\);/);
   assert.match(skills2, /if \(extra && extra\.bodyLength > 0\) spec\.bodyLength = Number\(extra\.bodyLength\);/);
 
