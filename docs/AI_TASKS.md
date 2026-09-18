@@ -7350,3 +7350,14 @@ Worker 存活且頁面正常完成載入。
 - Done。統一最高生效階／超神耗魔，非累加；階級預覽顯示該列成本，技能列以快照計算目前成本。同步 skills2.js 實際扣魔與自動迴旋斬、skills.js 起手門檻、ui.js 階級／超神提示與技能列及快取。免費追加施放及被動逐次觸發保持原規則；未修改 Excel／CSV。
 - 新增 tests/skills2-mana-cost.test.cjs，覆蓋全部主動群組逐階／超神成本、超神失效回退、主執行緒快照、實際扣魔、不足魔力、GM 鎖魔、免費施放及正式自動施放佇列。嗜血狂怒舊測試提供足夠魔力並改驗第七階成本，保留全部技能行為斷言。
 - 驗證：node --test tests/skills2-mana-cost.test.cjs tests/skill2-counter-bloodrage.test.cjs，28/28 通過；node tools/build_check.cjs，375 檔通過；git diff --check 通過。未實機檢查畫面；高階實際耗魔會依原設定提高。檢查未改 formula.js、combat.js 及魔法盾；沒有素材變更。可合併，未推送。
+
+## Claude｜翻轉的圖層在預覽區點不到也拖不動（VFX-GIZMO-FLIP-20260918）
+
+- 使用者回報：ground-storm-dance 的 floor-green-rim-front 無法用左鍵拖曳移動。
+- 共同根因：`baseBounds` 的框寬高是有號的（素材尺寸 × scale），scale 為負（翻轉）時 w 或 h 就是負的，框的 x／y 也不再是左上角。gizmo 有兩處把正負號當成了大小關係：
+  1. `insideBounds` 用 `y <= p.y <= y + h`，h 為負時等於要求「在下緣之下、又在上緣之上」，任何點都不成立。框看得到，但框內拖曳（`hitGizmoBody`）與點擊選取（`hitLayer`）都永遠落空。
+  2. 旋轉把手放在 `bounds.y - ROTATE_OFFSET`，隱含 bounds.y 是上緣；翻轉時它其實是下緣，把手被放進框裡。這個框很扁，把手正好在中間，而命中順序是「先問把手、再問框內」——修好第 1 點之後實測從框中心往下拖，得到的是 -43° 的旋轉。使用者截圖中框中間的藍點就是它。
+- 受影響範圍：目前正式 preset 中只有 ground-storm-dance 的五個 front 半圈（wall-front-0/1/2、floor-green-rim-front、floor-white-core-front），都是垂直翻轉的副本，好畫在角色前面。在預覽區這五層全部選不到也拖不動。
+- 修法：`insideBounds` 改用兩個角圍出的範圍判定；旋轉把手改放在「畫面上的上緣」之外。刻意不在 `baseBounds` 把寬高轉成正值——縮放把手靠有號值知道圖層是翻過來的，轉正之後拖一下把手就會把翻轉拖正。把手位置只影響畫在哪、點不點得到，旋轉角度是用抓下去的點相對 pivot 算的，行為不變。
+- 驗證：以實際資料確定性重現（框中心點被判定不在自己的框內）後修正，五個翻轉圖層全部點得到、遠處的點仍判定在框外。實際編輯器中從框中心拖曳：position 由 (0, -0.5405) 移到 (80, 59.46)、rotation 維持 0、scale 維持 (0.5505, -0.2092)，歷史記為「移動圖層」。新增 FLIP-1～7，其中 1/2/4/5/7 在原版會紅（突變驗證），3 與 6 是防止「修過頭」的守門（不得什麼都算框內、不得抹掉有號寬高）。
+- 既有失敗（與本次無關，以原版 gizmo-model.js 跑同樣失敗）：vfx-editor-gizmo 的 CAP-2、vfx-editor-history 的 HISTORY-42、vfx-editor-save 的 16b、vfx-curve-editor 的 OUTER-7。

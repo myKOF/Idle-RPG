@@ -1111,3 +1111,93 @@ test('NUDGE-6 在預覽上按下去時輸入框交出焦點；alpha／delay／du
     'Core 的 alpha 範圍就是 0..1（範圍改了這裡要跟著改）');
   assert.ok(bad({ delay: -0.01 }) && bad({ duration: -0.01 }) && !bad({ delay: 0 }), 'delay／duration 不得為負');
 });
+
+/* ============================================================
+   FLIP — 翻轉（scale 為負）的圖層
+
+   baseBounds 的寬高是有號的：素材尺寸 × scale，scale 為負時 w 或 h 就是負的，
+   x／y 也就不是左上角。insideBounds 原本假設 x ≤ x + w，h 為負時等於要求
+   「點在下緣之下、又在上緣之上」——任何點都不成立。症狀是看得到框、卻永遠
+   點不到也拖不動。2026-09-18 實測 ground-storm-dance 的五個 front 半圈
+   （垂直翻轉的副本）在預覽區全部選不到。
+   ============================================================ */
+
+function flipCase(scale, rotation) {
+  const G = require('../tools/vfx/editor/gizmo-model.js');
+  const layer = { id: 'l', type: 'sprite', position: { x: 10, y: 20 },
+    scale: scale, anchor: { x: 0.5, y: 1 }, rotation: rotation || 0 };
+  const b = G.baseBounds(layer, { width: 512, height: 512 });
+  /* 框的幾何中心：不論正負號都一定在框內 */
+  const c = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  return { G: G, layer: layer, b: b, c: G.rotateAround ? c : c };
+}
+
+test('FLIP-1 垂直翻轉（scale.y < 0）的圖層，點框內要判定在框內', function () {
+  const t = flipCase({ x: 0.55, y: -0.21 });
+  assert.ok(t.b.h < 0, '前提：這個情境的框高度是負的');
+  assert.equal(t.G.insideBounds(t.c, t.b), true, '框的中心必須判定在框內');
+});
+
+test('FLIP-2 水平翻轉、兩軸都翻也一樣', function () {
+  const x = flipCase({ x: -0.55, y: 0.21 });
+  assert.ok(x.b.w < 0);
+  assert.equal(x.G.insideBounds(x.c, x.b), true, '水平翻轉');
+  const both = flipCase({ x: -0.55, y: -0.21 });
+  assert.equal(both.G.insideBounds(both.c, both.b), true, '兩軸都翻');
+});
+
+test('FLIP-3 修正不得變成「什麼都算框內」：框外的點仍然在框外', function () {
+  ['y', 'x', 'both'].forEach(function (k) {
+    const t = flipCase(k === 'y' ? { x: 0.5, y: -0.2 } : k === 'x' ? { x: -0.5, y: 0.2 } : { x: -0.5, y: -0.2 });
+    const far = Math.abs(t.b.w) + Math.abs(t.b.h) + 100;
+    [[far, 0], [-far, 0], [0, far], [0, -far]].forEach(function (d) {
+      assert.equal(t.G.insideBounds({ x: t.c.x + d[0], y: t.c.y + d[1] }, t.b), false,
+        k + ' 翻轉時，遠在框外的點不得判定在框內');
+    });
+  });
+});
+
+test('FLIP-4 翻轉加旋轉：中心仍在框內', function () {
+  const t = flipCase({ x: 0.55, y: -0.21 }, 0.7);
+  /* 旋轉是繞 pivot 轉的，中心也要跟著轉到畫面上的位置再去問 */
+  const G = t.G;
+  const c = G.handles ? t.c : t.c;
+  const cos = Math.cos(0.7), sin = Math.sin(0.7);
+  const dx = c.x - t.b.pivot.x, dy = c.y - t.b.pivot.y;
+  const onScreen = { x: t.b.pivot.x + dx * cos - dy * sin, y: t.b.pivot.y + dx * sin + dy * cos };
+  assert.equal(G.insideBounds(onScreen, t.b), true);
+});
+
+test('FLIP-5 點擊選取（hitLayer）選得到翻轉的圖層', function () {
+  const t = flipCase({ x: 0.55, y: -0.21 });
+  const hit = t.G.hitLayer(t.c, [t.layer], function () { return t.b; });
+  assert.equal(hit, t.layer, '點在翻轉圖層的框內必須選到它，否則會落到下面那一層');
+});
+
+/* 修在 insideBounds 而不是 baseBounds，是刻意的。把框的寬高轉成正值看起來更
+   「乾淨」，但縮放把手靠有號值知道圖層是翻過來的——轉正之後，拖一下把手就會
+   把翻轉拖正。這一條把那個取捨釘住。 */
+test('FLIP-6 baseBounds 保留有號寬高（翻轉資訊不能在框裡被抹掉）', function () {
+  const t = flipCase({ x: 0.55, y: -0.21 });
+  assert.ok(t.b.h < 0, 'scale.y 為負時框的高度必須維持負值');
+  const x = flipCase({ x: -0.55, y: 0.21 });
+  assert.ok(x.b.w < 0, 'scale.x 為負時框的寬度必須維持負值');
+});
+
+/* 旋轉把手放在 bounds.y - ROTATE_OFFSET，隱含「bounds.y 是上緣」。垂直翻轉時
+   bounds.y 是下緣，把手就被放進框裡——框扁的話正好在中間。命中順序是先問把手
+   再問框內，於是點框中間想拖曳，抓到的卻是旋轉把手。2026-09-18 實測：從
+   floor-green-rim-front 的框中心往下拖，結果是 -43° 的旋轉而不是移動。 */
+test('FLIP-7 旋轉把手一律在畫面上的上緣之外，翻轉時不得落進框裡', function () {
+  const G = require('../tools/vfx/editor/gizmo-model.js');
+  const caps = { move: true, scaleX: true, scaleY: true, rotate: true };
+  [{ x: 0.55, y: 0.21 }, { x: 0.55, y: -0.21 }, { x: -0.55, y: -0.21 }].forEach(function (scale) {
+    const b = G.baseBounds({ id: 'l', type: 'sprite', position: { x: 0, y: 0 },
+      scale: scale, anchor: { x: 0.5, y: 1 } }, { width: 512, height: 512 });
+    const rot = G.handles(b, caps).find(function (h) { return h.id === 'rotate'; });
+    const top = Math.min(b.y, b.y + b.h), bottom = Math.max(b.y, b.y + b.h);
+    assert.ok(rot.y < top, 'scale ' + JSON.stringify(scale) + '：旋轉把手要在上緣之外，實際在 ' +
+      rot.y.toFixed(1) + '，框是 ' + top.toFixed(1) + '~' + bottom.toFixed(1));
+    assert.ok(Math.abs(top - rot.y - G.ROTATE_OFFSET) < 1e-9, '與上緣的距離要是 ROTATE_OFFSET');
+  });
+});

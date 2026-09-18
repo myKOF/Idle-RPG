@@ -159,7 +159,15 @@ var VFXGizmoModel = (function () {
       add(e.id, e.fx, e.fy, 'scale', e.axis);
     });
     if (caps.rotate) {
-      var raw = { x: bounds.x + bounds.w / 2, y: bounds.y - ROTATE_OFFSET };
+      /* 放在「畫面上的上緣」之上，不是 bounds.y 之上。圖層垂直翻轉時 h 為負，
+         bounds.y 其實是下緣，減掉 ROTATE_OFFSET 會把把手放進框裡面——框扁的話
+         正好落在中間。而命中順序是先問把手、再問框內，於是點框中間想拖曳，
+         抓到的卻是旋轉把手，一拖就轉掉（2026-09-18 實測 floor-green-rim-front：
+         從框中心往下拖，得到的是 -43° 的旋轉）。
+         旋轉角度是用「抓下去的點」相對 pivot 算的，不依賴把手在哪，
+         所以這裡只影響把手畫在哪、點不點得到。 */
+      var top = Math.min(bounds.y, bounds.y + bounds.h);
+      var raw = { x: bounds.x + bounds.w / 2, y: top - ROTATE_OFFSET };
       var p = rotateAround(raw, bounds.pivot, bounds.rotation);
       out.push({ id: 'rotate', kind: 'rotate', x: p.x, y: p.y });
     }
@@ -239,11 +247,23 @@ var VFXGizmoModel = (function () {
 
   /* 點是否落在（可能已旋轉的）框內。先把點轉回框的未旋轉座標再比，
      不需要多邊形測試。 */
+  /* 框的寬高是有號的：baseBounds 直接拿「素材尺寸 × scale」，scale 為負（翻轉）
+     時 w 或 h 就是負的，x／y 也就不是左上角。這個有號值要保留——縮放把手靠它
+     知道圖層是翻過來的，轉成正值的話，拖一下把手就會把翻轉「拖正」。
+
+     所以判定要用「兩個角圍出來的範圍」，不能假設 x ≤ x + w。原本的寫法在 h 為
+     負時等於要求「點在下緣之下、又在上緣之上」，任何點都不成立：看得到框、
+     卻永遠點不到也拖不動。2026-09-18 實測 ground-storm-dance 的五個 front 半圈
+     （都是垂直翻轉的副本）在預覽區全部選不到。
+
+     其他用到 w／h 的地方（把手位置、群組外框）都是拿四個角算，本來就不在乎方向，
+     只有這裡把正負號當成了大小關係。 */
   function insideBounds(point, bounds) {
     if (!bounds) return false;
     var p = rotateAround(point, bounds.pivot, -bounds.rotation);
-    return p.x >= bounds.x && p.x <= bounds.x + bounds.w &&
-      p.y >= bounds.y && p.y <= bounds.y + bounds.h;
+    var x0 = Math.min(bounds.x, bounds.x + bounds.w), x1 = Math.max(bounds.x, bounds.x + bounds.w);
+    var y0 = Math.min(bounds.y, bounds.y + bounds.h), y1 = Math.max(bounds.y, bounds.y + bounds.h);
+    return p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1;
   }
 
   /* ---------------- 命中圖層 ----------------
