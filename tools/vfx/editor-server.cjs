@@ -20,6 +20,10 @@
    目的地目錄是模組常數，呼叫端唯一能決定的是一段 [a-z0-9-] 的 id，
    所以「寫到哪裡」不是輸入的函數，路徑穿越沒有可以下手的地方。
 
+   之後加上的寫入路由沿用同一套（目的地常數、白名單 id、checkWriteOrigin）：
+       PUT  /vfx/layouts/<presetId>.json   Layer 分組
+       POST /__rename-preset               重新命名：特效檔與分組檔一起換名字，見 handleRenamePreset
+
    已知且接受的限制：符號連結檢查是 TOCTOU-racy。
    findLinkOnPath() 檢查完之後，落檔仍然是用路徑呼叫 openSync/renameSync，
    中間有一段窗口可以把 vfx/presets 換成 junction。要真正關掉這個窗口需要
@@ -154,6 +158,10 @@ const THUMB_SUFFIX = '.png';
 const SAVE_AS_DIALOG_PATH = '/__save-as-dialog';
 /* 請求內容只有一個建議名稱，給很小的上限就好 */
 const MAX_DIALOG_BODY_BYTES = 4096;
+/* 「重新命名」：POST /__rename-preset，body { from, to }。見 handleRenamePreset。
+   請求內容只有兩個名字，上限同上。 */
+const RENAME_PATH = '/__rename-preset';
+const MAX_RENAME_BODY_BYTES = 4096;
 
 /* ---- Preset 存檔 API 的常數（全部是常數，沒有一個來自請求） ---- */
 const PRESETS_DIR_REL = 'vfx/presets';
@@ -361,7 +369,9 @@ function writeJsonFile(ctx, dirRel, fileId, text) {
     }
   }
 
-  const buf = Buffer.from(text, 'utf8');
+  /* 也收 Buffer：重新命名失敗時要把已經刪掉的舊檔寫回去，用的是當初讀進來的原始 bytes——
+     轉成字串再轉回來的話，萬一原檔有不合法的 UTF-8，「還原」出來的就不是同一個檔。 */
+  const buf = Buffer.isBuffer(text) ? text : Buffer.from(text, 'utf8');
   let tempAbs = null;
   let fd = null;
   try {
@@ -702,16 +712,25 @@ function handleSaveAsDialog(ctx, req, res) {
     }
     if (ctx.saveAsDialogOpen) {
       return sendJson(res, 409, {
-        ok: false, error: '已經開著一個另存新檔的視窗（可能被其他視窗蓋住了，看一下工作列）'
+        ok: false,
+        error: '已經開著一個問名字的視窗（另存新檔或重新命名；可能被其他視窗蓋住了，看一下工作列）'
       });
     }
     /* 建議名稱只是視窗裡預填的檔名，照樣走 id 規則：不合法就留空，不帶進視窗。 */
     const suggested = body && typeof body.suggested === 'string' &&
       presetIdPolicy.isWritablePresetId(body.suggested) ? body.suggested : '';
+    /* 「重新命名」也用這個視窗問新名字，只差標題與說明（見 save-as-dialog.cjs 的 purpose）。
+       這條路由仍然只問名字：改名本身走 POST /__rename-preset。 */
+    const purpose = body && body.purpose === 'rename' ? 'rename' : 'save-as';
+    /* 編輯器目前開著的那一份：視窗的檔案清單會選到它（2026-09-18）。同樣走 id 規則，不合法就不選。 */
+    const current = body && typeof body.current === 'string' &&
+      presetIdPolicy.isWritablePresetId(body.current) ? body.current : '';
     ctx.saveAsDialogOpen = true;
     saveAsDialog.askPresetId({
       presetsDir: path.join(ctx.repoRoot, PRESETS_DIR_REL),
       suggested: suggested,
+      current: current,
+      purpose: purpose,
       policy: presetIdPolicy,
       runDialog: ctx.runSaveDialog
     }).then(function (answer) {
@@ -728,17 +747,361 @@ function handleSaveAsDialog(ctx, req, res) {
   });
 }
 
+/* ============================================================
+   重新命名
+   ============================================================ */
+
+/* 2026-09-18 使用者要求：特效除了另存新檔，也要能直接改名。
+   改名＝vfx/presets/<from>.json 與 vfx/layouts/<from>.json 換成 <to>，檔案裡的名字跟著換
+   （preset.id、layout.presetId、根群組的 id／名稱——最後一項的規則在 layoutSchema.renameRootGroup，
+   另存新檔用的是同一支）。
+
+   使用者定的規則（2026-09-18）：
+     - 想改就改。配置表或程式用到舊名字的，改完那些地方會失去特效，由使用者自己調整——
+       不擋，只在回應裡列出用到的地方（references，與下拉的用途標註同一份來源）提醒他。
+     - 檔案被遊戲或其他程式鎖住也照改。新名字的檔寫好之後，舊檔刪不掉就延後刪除
+       （見下面的 pendingDeletes），使用者重啟遊戲、佔用解除之後自動刪掉；不因此把改名退回。
+   唯一會拒絕的是新名字已經有另一份特效：那是覆寫別人，不是改名。
+
+   不跑素材同步（ctx.syncAssets）：改名不改內容，用到的素材一張也沒變，shipped-assets.json
+   也不記 preset id。 */
+
+const BUSY_CODES = ['EBUSY', 'EPERM', 'EACCES'];
+/* 延後刪除的重試間隔與放棄時限。行程結束前沒刪成的會留在磁碟上，改名當下的回應已經告訴使用者檔名。 */
+const PENDING_RETRY_MS = 2000;
+const PENDING_GIVE_UP_MS = 6 * 60 * 60 * 1000;
+
+function existsNoFollow(abs) {
+  try { fs.lstatSync(abs); return true; }
+  catch (e) {
+    if (e.code === 'ENOENT') return false;
+    throw e;
+  }
+}
+
+/* 讀要搬走的檔（原始 bytes；不存在回 bytes: null）。連結與非一般檔案一律拒絕：
+   改名最後會刪掉它，刪一條連結動到的是 repo 外面的東西，那不是這個功能該碰的。 */
+function readRenameSource(abs) {
+  let st;
+  try { st = fs.lstatSync(abs); } catch (e) {
+    if (e.code === 'ENOENT') return { bytes: null };
+    return { status: 500, error: '無法檢查檔案（' + e.code + '），未改名：' + abs };
+  }
+  if (st.isSymbolicLink() || !st.isFile()) {
+    return { status: 403, error: '不是一般檔案（符號連結或目錄），拒絕改名：' + abs };
+  }
+  return { bytes: fs.readFileSync(abs) };
+}
+
+function parseJsonBytes(bytes) {
+  /* 瀏覽器讀檔會吃掉開頭的 BOM，這裡也要：編輯器打得開的檔，改名不能說它壞了 */
+  return JSON.parse(bytes.toString('utf8').replace(/^\uFEFF/, ''));
+}
+
+function sha256(buf) { return crypto.createHash('sha256').update(buf).digest('hex'); }
+
+/* 還原不完整時照磁碟上現在的樣子講，不猜 */
+function renameFileStates(ctx, from, to) {
+  return [PRESETS_DIR_REL + '/' + from, PRESETS_DIR_REL + '/' + to,
+    LAYOUTS_DIR_REL + '/' + from, LAYOUTS_DIR_REL + '/' + to].map(function (rel) {
+    const abs = path.join(path.resolve(ctx.repoRoot), (rel + SAVE_SUFFIX).split('/').join(path.sep));
+    let state;
+    try { state = existsNoFollow(abs) ? '在' : '不在'; } catch (e) { state = '無法檢查（' + e.code + '）'; }
+    return rel + SAVE_SUFFIX + '：' + state;
+  });
+}
+
+/* 刪掉 <dirRel>/<id>.json（改名後的舊檔、被換掉的殘留分組檔）。
+   expectSha：有給就先比對內容，不同就不刪（回 changed）——延後刪除時，那個名字可能已經被
+   使用者重新存了一份新的，不能把它當成舊檔刪掉。
+   回傳 { ok } / { ok:false, busy } / { ok:false, changed } / { ok:false, error }。
+   busy＝被其他程式佔用（Windows 上開著的檔案刪不掉：EBUSY／EPERM／EACCES）。
+   stepName 給測試注入失敗用（hooks.renameStep），注入的錯誤帶 code 就照 code 分類。 */
+function removeRenamed(ctx, dirRel, id, expectSha, stepName) {
+  if (WRITABLE_DIRS.indexOf(dirRel) < 0) return { ok: false, error: '不是允許的寫入目錄：' + dirRel };
+  const repoRootAbs = path.resolve(ctx.repoRoot);
+  const dirAbs = path.join(repoRootAbs, dirRel.split('/').join(path.sep));
+  const linkProblem = findLinkOnPath(repoRootAbs, dirAbs);
+  if (linkProblem) return { ok: false, error: dirRel + ' 目錄不可用：' + linkProblem };
+  const abs = path.join(dirAbs, id + SAVE_SUFFIX);
+  try {
+    let st;
+    try { st = fs.lstatSync(abs); } catch (e) {
+      if (e.code === 'ENOENT') return { ok: true };        // 已經不在了＝目的達成
+      throw e;
+    }
+    if (st.isSymbolicLink() || !st.isFile()) return { ok: false, error: '不是一般檔案，不刪：' + abs };
+    if (expectSha && sha256(fs.readFileSync(abs)) !== expectSha) return { ok: false, changed: true };
+    if (stepName && ctx.hooks && ctx.hooks.renameStep) ctx.hooks.renameStep(stepName);
+    fs.unlinkSync(abs);
+    return { ok: true };
+  } catch (e) {
+    if (e && e.code === 'ENOENT') return { ok: true };
+    if (e && BUSY_CODES.indexOf(e.code) >= 0) return { ok: false, busy: true, error: e.code };
+    return { ok: false, error: String(e && e.message || e) };
+  }
+}
+
+/* ---- 被佔用而延後刪除的舊檔 ----
+   每隔一段時間重試，佔用一解除（例如遊戲重啟）就刪掉。只刪「內容還是改名當下那一份」的檔案；
+   內容變了（有人用那個名字存了新的）就不再管它。清單（/__presets）不列出等待刪除的名字。 */
+function pendingList(ctx) {
+  if (!ctx.pendingDeletes) ctx.pendingDeletes = [];
+  return ctx.pendingDeletes;
+}
+
+function isPendingDelete(ctx, dirRel, id) {
+  return pendingList(ctx).some(function (p) { return p.dirRel === dirRel && p.id === id; });
+}
+
+function retryPendingDeletes(ctx) {
+  const now = Date.now();
+  ctx.pendingDeletes = pendingList(ctx).filter(function (p) {
+    const r = removeRenamed(ctx, p.dirRel, p.id, p.sha, 'retry-delete');
+    const rel = p.dirRel + '/' + p.id + SAVE_SUFFIX;
+    if (r.ok) { console.log('已刪除改名後被佔用的舊檔：' + rel); return false; }
+    if (r.changed) return false;
+    if (!r.busy || now - p.since > PENDING_GIVE_UP_MS) {
+      console.error('[WARN] 放棄自動刪除改名後的舊檔，請手動刪除：' + rel + (r.error ? '（' + r.error + '）' : ''));
+      return false;
+    }
+    return true;
+  });
+  if (!ctx.pendingDeletes.length && ctx.pendingTimer) {
+    clearInterval(ctx.pendingTimer);
+    ctx.pendingTimer = null;
+  }
+}
+
+function deferDelete(ctx, dirRel, id, sha) {
+  pendingList(ctx).push({ dirRel: dirRel, id: id, sha: sha, since: Date.now() });
+  if (!ctx.pendingTimer) {
+    ctx.pendingTimer = setInterval(function () { retryPendingDeletes(ctx); }, ctx.pendingRetryMs || PENDING_RETRY_MS);
+    if (ctx.pendingTimer.unref) ctx.pendingTimer.unref();
+  }
+}
+
+/* 改名的本體，回傳 { status, … }（與 savePresetText 同一種形狀）。
+   所有檢查都在動任何檔案之前做完；動檔分兩段：
+     1. 寫新特效 → 寫新分組。任何一步失敗倒著還原（刪掉剛寫的），就像沒按過。
+     2. 刪舊分組、刪舊特效。這時新名字已經完整在磁碟上了，所以這一段**不還原**：
+        被佔用的延後刪除、其他原因刪不掉的列出來請使用者手動刪。最壞是新舊並存，不會少東西。
+   整段都是同步呼叫，這台伺服器上不會有別的請求插進來。 */
+function renamePresetFiles(ctx, from, to) {
+  const hooks = ctx.hooks || {};
+  const repoRootAbs = path.resolve(ctx.repoRoot);
+  const presetsDirAbs = path.join(repoRootAbs, PRESETS_DIR_REL.split('/').join(path.sep));
+  const layoutsDirAbs = path.join(repoRootAbs, LAYOUTS_DIR_REL.split('/').join(path.sep));
+  const file = {
+    oldPreset: path.join(presetsDirAbs, from + SAVE_SUFFIX),
+    oldLayout: path.join(layoutsDirAbs, from + SAVE_SUFFIX),
+    newPreset: path.join(presetsDirAbs, to + SAVE_SUFFIX),
+    newLayout: path.join(layoutsDirAbs, to + SAVE_SUFFIX)
+  };
+
+  /* 讀之前就查連結：後面會刪這兩個目錄裡的檔，目錄本身是連結的話刪到的是 repo 外面的東西 */
+  for (const dirAbs of [presetsDirAbs, layoutsDirAbs]) {
+    const linkProblem = findLinkOnPath(repoRootAbs, dirAbs);
+    if (linkProblem) return { status: 403, error: '目錄不可用，未改名：' + linkProblem };
+  }
+
+  const oldPreset = readRenameSource(file.oldPreset);
+  if (oldPreset.status) return oldPreset;
+  if (oldPreset.bytes === null) return { status: 404, error: '沒有這份 preset：' + from };
+  const oldLayout = readRenameSource(file.oldLayout);
+  if (oldLayout.status) return oldLayout;
+
+  /* 新名字的特效已經存在＝撞名，不蓋掉別的特效。
+     例外：那是剛改掉、舊檔還在等刪除的名字（A→B 時 A 被佔用，接著又 B→A）——那份是要丟掉的舊檔，
+     不算別的特效：直接覆寫，寫成功之後再取消等待中的刪除。 */
+  const reclaim = isPendingDelete(ctx, PRESETS_DIR_REL, to) || isPendingDelete(ctx, LAYOUTS_DIR_REL, to);
+  if (!reclaim && existsNoFollow(file.newPreset)) {
+    return {
+      status: 409,
+      error: '已經有一份叫「' + to + '」的 Preset。重新命名不會蓋掉別的特效，請換一個名字。'
+    };
+  }
+  /* 只有分組檔、沒有同名特效的是殘留的分組檔：不屬於任何特效，改名時換掉它
+     （這份有分組就覆寫，沒有就刪掉），免得改名後的特效套上別人的分組。 */
+  const strayLayout = existsNoFollow(file.newLayout) ? readRenameSource(file.newLayout) : { bytes: null };
+  if (strayLayout.status) return strayLayout;
+
+  /* 用到舊名字的地方：只列出來，不擋（使用者的決定）。算不出來也照改，只是少了提醒。 */
+  let references = [];
+  try {
+    const usage = presetUsage.usageLabels(ctx.repoRoot)[from];
+    references = usage ? usage.all.slice() : [];
+  } catch (e) {
+    console.error('[WARN] 改名時算不出用途：' + (e && e.message || e));
+  }
+
+  /* 內容走與存檔同一條管線：驗證 → canonical 序列化。不合法的不改：
+     寫出去的每一個檔都要是 Core 載得起來的，改名不能是例外。 */
+  let preset;
+  try { preset = parseJsonBytes(oldPreset.bytes); } catch (e) {
+    return { status: 400, error: from + SAVE_SUFFIX + ' 不是合法的 JSON，未改名：' + (e && e.message || e) };
+  }
+  let check = VFXCore.validatePreset(preset);
+  if (!check.ok) {
+    return {
+      status: 400, problems: check.errors,
+      error: 'Preset 目前不合法，未改名（先在編輯器裡修好、存檔，再改名）'
+    };
+  }
+  preset.id = to;
+  check = VFXCore.validatePreset(preset);
+  if (!check.ok) return { status: 400, problems: check.errors, error: '換成新名字之後 Preset 不合法，未改名' };
+  const newPresetText = VFXCore.serialisePreset(preset);
+
+  let newLayoutText = null;
+  if (oldLayout.bytes !== null) {
+    let layout;
+    try { layout = parseJsonBytes(oldLayout.bytes); } catch (e) {
+      return {
+        status: 400,
+        error: LAYOUTS_DIR_REL + '/' + from + SAVE_SUFFIX + ' 不是合法的 JSON，未改名：' + (e && e.message || e)
+      };
+    }
+    let lcheck = layoutSchema.validateLayout(layout);
+    if (!lcheck.ok) {
+      return {
+        status: 400, problems: lcheck.errors,
+        error: '分組檔 ' + LAYOUTS_DIR_REL + '/' + from + SAVE_SUFFIX + ' 不合法，未改名'
+      };
+    }
+    layout.presetId = to;
+    layoutSchema.renameRootGroup(layout, to);
+    lcheck = layoutSchema.validateLayout(layout);
+    if (!lcheck.ok) return { status: 500, problems: lcheck.errors, error: '換成新名字之後分組不合法，未改名' };
+    newLayoutText = layoutSchema.serialiseLayout(layout);
+  }
+
+  /* ---- 動檔 1：寫新名字（失敗就倒回去） ---- */
+  const undo = [];
+  /* 測試用：hooks.renameStep(名稱) 丟錯＝那一步失敗。還原的每一步叫 'undo:<名稱>'。 */
+  function step(name) { if (hooks.renameStep) hooks.renameStep(name); }
+  function mustWrite(result) { if (result.status !== 200) throw new Error(result.error); }
+  try {
+    step('write-preset');
+    mustWrite(writeJsonFile(ctx, PRESETS_DIR_REL, to, newPresetText));
+    undo.push(['remove-new-preset', function () { fs.unlinkSync(file.newPreset); }]);
+    if (newLayoutText !== null) {
+      step('write-layout');
+      mustWrite(writeJsonFile(ctx, LAYOUTS_DIR_REL, to, newLayoutText));
+    }
+  } catch (e) {
+    const reason = String(e && e.message || e);
+    while (undo.length) {
+      const u = undo.pop();
+      try {
+        step('undo:' + u[0]);
+        u[1]();
+      } catch (e2) {
+        return {
+          status: 500, incomplete: true,
+          error: '改名失敗，而且沒能完全還原，請手動檢查下面這幾個檔：' + reason,
+          problems: ['還原停在 ' + u[0] + '：' + (e2 && e2.message || e2)].concat(renameFileStates(ctx, from, to))
+        };
+      }
+    }
+    return { status: 500, error: '改名失敗，檔案都已還原成改名前的樣子：' + reason };
+  }
+
+  if (reclaim) ctx.pendingDeletes = pendingList(ctx).filter(function (p) { return p.id !== to; });
+
+  /* ---- 動檔 2：刪舊名字（不還原，見上面的說明） ---- */
+  const pendingDelete = [];
+  const warnings = [];
+  function dropOld(dirRel, bytes, stepName) {
+    const sha = sha256(bytes);
+    const r = removeRenamed(ctx, dirRel, from, sha, stepName);
+    if (r.ok || r.changed) return;
+    const rel = dirRel + '/' + from + SAVE_SUFFIX;
+    if (r.busy) { deferDelete(ctx, dirRel, from, sha); pendingDelete.push(rel); return; }
+    warnings.push('舊檔 ' + rel + ' 沒刪掉，請手動刪除：' + r.error);
+  }
+  if (newLayoutText === null && strayLayout.bytes !== null) {
+    /* 殘留的分組檔：新名字沒有要寫的分組，就把它刪掉（有要寫的已經在上面覆寫了） */
+    const r = removeRenamed(ctx, LAYOUTS_DIR_REL, to, sha256(strayLayout.bytes), 'remove-stray-layout');
+    if (!r.ok && !r.changed) warnings.push('殘留的分組檔 ' + LAYOUTS_DIR_REL + '/' + to + SAVE_SUFFIX + ' 沒刪掉：' + r.error);
+  }
+  if (oldLayout.bytes !== null) dropOld(LAYOUTS_DIR_REL, oldLayout.bytes, 'remove-old-layout');
+  dropOld(PRESETS_DIR_REL, oldPreset.bytes, 'remove-old-preset');
+
+  return {
+    status: 200, from: from, to: to, layout: newLayoutText !== null,
+    presetText: newPresetText, layoutText: newLayoutText,
+    references: references, pendingDelete: pendingDelete, warnings: warnings
+  };
+}
+
+/* POST /__rename-preset。防護與存檔 API 同一套（checkWriteOrigin）：這條路由會刪檔。
+   body { from, to }。 */
+function handleRenamePreset(ctx, req, res) {
+  const originProblem = checkWriteOrigin(req);
+  if (originProblem) return sendJson(res, 403, { ok: false, error: originProblem });
+
+  const chunks = [];
+  let size = 0;
+  req.on('data', function (chunk) {
+    size += chunk.length;
+    if (size <= MAX_RENAME_BODY_BYTES) chunks.push(chunk);
+  });
+  req.on('error', function () { /* 連線中斷：沒有人在等回應了 */ });
+  req.on('end', function () {
+    if (size > MAX_RENAME_BODY_BYTES) {
+      return sendJson(res, 413, { ok: false, error: '請求內容超過上限 ' + MAX_RENAME_BODY_BYTES + ' bytes' });
+    }
+    let body;
+    try {
+      body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: '請求內容不是 JSON' });
+    }
+    const from = body && body.from;
+    if (!presetIdPolicy.isWritablePresetId(from)) {
+      return sendJson(res, 400, { ok: false, error: '要改名的特效名稱不合法：' + String(from) });
+    }
+    const to = body.to;
+    const toProblem = typeof to === 'string' ? presetIdPolicy.presetIdProblem(to) : '缺少新名字';
+
+    let result;
+    if (toProblem) result = { status: 400, error: '新名字不能用：' + toProblem };
+    else if (to === from) result = { status: 400, error: '新名字與目前的名字相同，沒有要改的' };
+    else {
+      try { result = renamePresetFiles(ctx, from, to); } catch (e) {
+        /* 會丟到這裡的只有動檔之前的檢查（動檔那段自己接住），所以檔案確實沒變 */
+        result = { status: 500, error: '改名前的檢查發生未預期錯誤，未改名：' + (e && e.message || e) };
+      }
+    }
+
+    if (result.status === 200) {
+      /* 會刪檔的操作在伺服器視窗留一行紀錄，事後查得到是什麼時候改的 */
+      console.log('重新命名：' + result.from + ' → ' + result.to + (result.layout ? '（含分組檔）' : '') +
+        (result.pendingDelete.length ? '，舊檔被佔用、稍後自動刪除：' + result.pendingDelete.join('、') : ''));
+      delete result.status;
+      return sendJson(res, 200, Object.assign({ ok: true }, result));
+    }
+    sendJson(res, result.status, {
+      ok: false, error: result.error, problems: result.problems || [], incomplete: result.incomplete === true
+    });
+  });
+}
+
 function createServer(ctx) {
   const server = http.createServer(function (req, res) {
     const rawPathname = rawPathnameOf(req.url);
 
-    /* POST 路由只有這兩條。其餘 POST 交給下面那條「非 GET 一律 405」，
+    /* POST 路由只有這三條。其餘 POST 交給下面那條「非 GET 一律 405」，
        維持既有契約：對不收 POST 的路徑回 405 才是對的，不是 404。 */
     if (req.method === 'POST' && rawPathname === SHUTDOWN_PATH) {
       return handleShutdown(ctx, req, res, server);
     }
     if (req.method === 'POST' && rawPathname === SAVE_AS_DIALOG_PATH) {
       return handleSaveAsDialog(ctx, req, res);
+    }
+    if (req.method === 'POST' && rawPathname === RENAME_PATH) {
+      return handleRenamePreset(ctx, req, res);
     }
 
     /* 寫入路由必須在 decodeURIComponent 之前分支，理由見 presetIdFromRawPath。 */
@@ -796,6 +1159,8 @@ function createServer(ctx) {
           .filter(function (f) { return f.slice(-SAVE_SUFFIX.length) === SAVE_SUFFIX; })
           .map(function (f) { return f.slice(0, f.length - SAVE_SUFFIX.length); })
           .filter(function (id) { return presetIdPolicy.isWritablePresetId(id); })
+          /* 改名後被佔用、正在等刪除的舊名字不列出來：那份已經不是一份特效了 */
+          .filter(function (id) { return !isPendingDelete(ctx, PRESETS_DIR_REL, id); })
           .sort();
       } catch (e) { /* 目錄不存在＝沒有 preset，回空陣列 */ }
       /* 順便附上「這個 preset 被用在哪裡」。跟著清單一起回，不另開端點：
@@ -972,6 +1337,7 @@ else module.exports = {
   ASSET_PREFIX: ASSET_PREFIX,
   SAVE_PREFIX: SAVE_PREFIX,
   TEMP_PREFIX: TEMP_PREFIX,
+  RENAME_PATH: RENAME_PATH,
   presetIdFromRawPath: presetIdFromRawPath,
   /* 測試專用縫隙：唯一能換掉 repoRoot、唯一能注入失敗 hook 的入口。
      正式路徑（main → start）不經過這裡，也沒有任何 CLI 參數能到達。 */
@@ -981,6 +1347,7 @@ else module.exports = {
     savePresetText: savePresetText,
     saveLayoutText: saveLayoutText,
     idFromRawPath: idFromRawPath,
+    retryPendingDeletes: retryPendingDeletes,
     WRITABLE_DIRS: WRITABLE_DIRS
   }
 };

@@ -208,6 +208,10 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
   background: none; border: none; color: #ffc0c0;
 }
 .save-error-close:hover { background: #5a2a2a; }
+/* 提醒版（showSaveNotice）：做完了、但有後續要知道的事，例如改名後還寫著舊名字的技能 */
+.save-error.note { background: #3a331f; border-bottom-color: #6a5a2a; color: #f0dca0; }
+.save-error.note .save-error-close { color: #f0dca0; }
+.save-error.note .save-error-close:hover { background: #5a4a2a; }
 /* 這一行不是可有可無的：瀏覽器內建的 [hidden]{display:none} 屬於 UA 樣式，
    作者樣式一律蓋過它，所以上面那個 display:flex 會讓 hidden 完全失效——
    症狀是一條空的紅色橫幅永遠掛在工具列下面。2026-09-10 實測踩到。

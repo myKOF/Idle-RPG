@@ -7267,3 +7267,21 @@ Worker 存活且頁面正常完成載入。
 - 原因（實機記錄事件確認）：整列的 mousedown 會處理選取並重畫整個圖層列表，第一下按住的名稱元素在放開前就被換掉，瀏覽器湊不出「兩下點在同一個元素上」——雙擊只收到 mousedown／mouseup，連 click 都沒有，dblclick 永遠不會發生；第二下還會被整列當成「再點一次＝取消選取」，所以雙擊的結果是群組被取消選取。
 - 修正：`groupRow` 的名稱改在 mousedown 以 `e.detail >= 2`（作業系統算的連點次數，不受 DOM 重建影響）接手，擋掉冒泡與預設焦點轉移；新增 `renameGroupRow` 先選到群組、再對重畫後的名稱元素開輸入框。
 - 驗證：新增 ROW-5b（結構守門）。實機真實雙擊：輸入框出現且取得焦點、原名全選；Enter 寫入 layout、Escape 取消；群組已選取時雙擊一樣可改；單擊行為不變；Ctrl+Z 可還原改名。未存檔。
+
+## Claude｜VFX Editor 特效重新命名：照使用者的三條規則改（PRESET-RENAME-RULES-20260918）
+
+- 需求：特效要能直接改名。第一版（81ef55e2，另一個工作階段）採「有人用的不改、未存檔先問並存檔、改完重新開啟清空復原紀錄、途中任何失敗就還原」。使用者隨後定了三條規則，由我接手改（另一個工作階段已停）：
+  1. 想改就改：配置表或程式用到舊名字的，改完那些地方會失去特效，使用者自己調整——不擋，改完用黃色提醒橫幅列出用到的地方（與下拉用途標註同一份來源 usageLabels）。
+  2. 檔案被遊戲或其他程式鎖住也照改：新名字的檔寫好之後，舊檔刪不掉（EBUSY／EPERM／EACCES）就延後刪除，伺服器每 2 秒重試、佔用解除（例如重啟遊戲）後刪掉；只刪內容還是改名當下那一份的檔（sha 比對）；清單不列等待刪除的名字；改回那個名字也可以。
+  3. 復原不包含改名：改名只換名字，不先存檔、不重新開啟；已存檔基準線換成伺服器寫出去的內容，沒存的修改仍然沒存；`history.js` 新增 `rewrite`，復原紀錄每一步都換成新名字，Ctrl+Z 能復原改名前的編輯但名字不會退回。
+- 伺服器（`renamePresetFiles`）：寫新特效 → 寫新分組失敗才倒回；刪舊檔這一段不還原（其他原因刪不掉的列進 warnings 請使用者手動刪）。新名字只剩殘留分組檔時換掉它（有分組就覆寫、沒有就刪），不再擋下。移除 dryRun 與 `renameBlockers`（沒有呼叫端了）。唯一拒絕：新名字已經有另一份特效。
+- 編輯器：`adoptRename` 就地換名字（根群組、選取與收合的 key、localStorage 收合狀態、預覽註冊、清單、網址）；新增 `showSaveNotice`（黃色橫幅），錯誤橫幅會清掉提醒樣式。
+- 驗證：vfx-editor-rename 16 項（新增 RENAME-14 佔用延後刪除、RENAME-15 sha 保護與改回舊名、RENAME-16 history.rewrite；RENAME-15 已做突變確認會紅）；編輯器相關 473 項，4 項失敗（16b、CAP-2、HISTORY-42、WIRE-5）皆為既有基線。實機（claude 副本 28362，測試特效用完已刪）：改 alpha → 改名後仍未存檔、Ctrl+Z 退回 alpha 但名字不變、Ctrl+Y＋Ctrl+S 寫到新名字；PowerShell 鎖住舊檔時改名成功、黃色提醒列出舊檔、清單已不見舊名字，鎖解除後約 2 秒自動刪除；console 無錯誤。Windows 上被開著的檔案 unlink 回 EBUSY（實測）。
+- 文件：VFX_CORE_AND_PRESET_SCHEMA 改名契約、ANTIGRAVITY_VFX_EDITOR_RENAME_TEST_CASES 依新規則改寫（新增 AG-VFXRN-008 佔用）。
+
+## Claude｜VFX Editor 另存新檔：清單選到目前這份、可以覆寫既有特效（SAVEAS-SELECT-OVERWRITE-20260918）
+
+- 需求：按另存新檔時，Windows 視窗的檔案清單要直接選到目前這份特效（兩百多份，找起來麻煩）；另存新檔時使用者常常直接蓋掉舊檔，要能覆寫。
+- 清單選取：WinForms 的 SaveFileDialog 做不到，改用同一個 Windows 存檔視窗的原生介面 IFileDialog（`tools/vfx/native-save-dialog.cs`，開視窗時 Add-Type 編譯；放不進 -EncodedCommand，命令列有長度上限）。視窗打開後以 IShellBrowser → IShellView.SelectItem 選取並捲到可見，清單是非同步填入，用計時器重試；編不起來或開不起來就退回 SaveFileDialog。選取時 Windows 會把該檔名放進檔名框；開視窗後寫回檔名框在 Windows 11 做不到（SetFileName 只在開啟前有效、檔名欄位不是傳統控制項），只做焦點不選取則清單不反白——採用反白選取，檔名框＝目前名稱。
+- 覆寫：另存新檔開 FOS_OVERWRITEPROMPT（Windows 問「要取代嗎？」），伺服器回 `{ id, overwrite: true }`；重新命名照舊不覆寫。Editor：選到目前這份＝一般存檔；覆寫前重抓清單，沒經過 Windows 問過的撞名用 confirm 補問；要覆寫的那份開在別的視窗就不蓋。伺服器 `/__save-as-dialog` 多收 `current`（照 id 規則驗證）。
+- 驗證：實機以探測模式（VFX_SAVE_PROBE，視窗選好自己關掉）跑正式路徑：約 1.9 秒選到 `proj-cleave-ring-tricolor-08.json`，截圖確認清單反白並捲到可見；Windows 上 unlink 被開著的檔回 EBUSY 另見上一筆。頁面（攔下問名字的請求）：覆寫既有特效成功（內容與分組都換成新名字、原本那份不動）、選到自己＝一般存檔、未經確認的撞名補問並可取消；console 無錯誤。測試：SAVEAS-2／3／4／5／6、SA2、RENAME-12 依新行為改寫，新增 SAVEAS-4B（Windows 上實際編譯 C#）；相關三支測試檔只剩既有的 16b。

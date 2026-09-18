@@ -166,9 +166,22 @@ var VFXHistory = (function () {
       onChange();
     }
 
+    /* 把歷史裡每一個快照換成 fn(快照)，步數、指標、標籤都不動。
+       給「不屬於任何一步、但要追溯套用到每一步」的改變用：重新命名特效之後，
+       Ctrl+Z 仍然能復原之前的編輯，但不會把名字退回去（2026-09-18 使用者：復原不包含改名）。
+       開著的交易先收掉，否則它的 before 會帶著改變之前的樣子留下來。 */
+    function rewrite(fn) {
+      if (open) commit();
+      entries.forEach(function (e) {
+        e.before = fn(e.before);
+        e.after = fn(e.after);
+      });
+      onChange();
+    }
+
     return {
       begin: begin, commit: commit, cancel: cancel, execute: execute,
-      undo: undo, redo: redo, clear: clear,
+      undo: undo, redo: redo, clear: clear, rewrite: rewrite,
       canUndo: canUndo, canRedo: canRedo,
       undoLabel: undoLabel, redoLabel: redoLabel,
       isApplying: function () { return applying; },

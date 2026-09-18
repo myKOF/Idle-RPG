@@ -1,6 +1,7 @@
 'use strict';
 /* ============================================================
    save-as-dialog.cjs — VFX Editor「另存新檔」的 Windows 存檔視窗
+   （「重新命名」問新名字也用它，見 askPresetId 的 purpose）
 
    2026-09-14 使用者要求：另存新檔不要用網頁的輸入框，要跟「載入 Preset」一樣
    叫 Windows 的視窗。
@@ -20,6 +21,17 @@
    有問題就先跳訊息框說明原因、再重開視窗；沒問題回 { id }。
    id 規則沿用 preset-id-policy（由呼叫端傳入），這裡不另寫一份。
 
+   ---- 視窗一打開就選到目前這份（2026-09-18 使用者要求）----
+   特效有兩百多份，要在清單裡找到目前這份很麻煩。視窗的檔案清單會直接選到編輯器開著的那一份、
+   捲到看得見的位置；檔名框仍是建議的名字（另存新檔＝<目前>-copy，重新命名＝目前的名字）。
+   WinForms 的 SaveFileDialog 做不到，所以改用同一個 Windows 存檔視窗的原生介面（IFileDialog），
+   C# 放在 native-save-dialog.cs、開視窗時編譯（放不進 -EncodedCommand：命令列有長度上限）。
+   編不起來或開不起來就退回 SaveFileDialog，視窗照樣開得出來，只是不會選到目前這份。
+
+   ---- 另存新檔可以覆寫既有的特效（2026-09-18 使用者要求）----
+   使用者常常是直接蓋掉舊的那份。選到既有檔案時由 Windows 問「要取代嗎？」，確定就回
+   { id, overwrite: true }。重新命名不會蓋掉別的特效，選到既有檔案照樣說明後重開視窗。
+
    ---- 與 PowerShell 的介面 ----
    腳本是常數，輸入一律走環境變數、不拼進腳本文字：檔名裡有引號或 $ 也不會變成程式碼。
    輸出是 UTF-8 文字的 base64，stdout 上只有 ASCII，不必管主控台的字碼頁。
@@ -29,6 +41,9 @@ const fs = require('fs');
 const path = require('path');
 
 const TITLE = '另存新檔（存到 vfx\\presets）';
+/* 「重新命名」也用這個視窗問新名字（2026-09-18）：一樣要看得到資料夾裡已經有哪些名字，
+   一樣不收既有的檔案。差別只有標題與選到既有檔案時的說明。 */
+const RENAME_TITLE = '重新命名（輸入新名字，存在 vfx\\presets）';
 /* 連續幾次選到不能用的名字就放棄，回報原因給頁面。不設上限的話，
    使用者關不掉的其實是一個一直重開的視窗。 */
 const MAX_ROUNDS = 5;
@@ -36,11 +51,13 @@ const MAX_ROUNDS = 5;
 /* 只放 ASCII；標題、資料夾、預設檔名、提示訊息全部從環境變數讀。
    VFX_SAVE_DRYRUN=1 時不開視窗，把收到的設定原樣回傳——給測試實際跑一次用。
 
-   腳本裡的兩個眉角（說明寫在這裡，腳本本身維持純 ASCII）：
+   腳本裡的眉角（說明寫在這裡，腳本本身維持純 ASCII）：
      - SetProcessDPIAware：PowerShell 沒有宣告 DPI 感知，高解析度螢幕上視窗會被放大成
        一片模糊。這一步要編譯一小段 C#，失敗就略過，不影響開視窗。
      - 看不見的 TopMost 表單當擁有者：伺服器不是前景程式，沒有它的話視窗常常開在
-       瀏覽器後面。 */
+       瀏覽器後面。
+     - VFX_SAVE_PROBE=1 是人工驗證用：原生視窗選好之後自己關掉，回報選到哪個檔、檔名框寫什麼
+       （會真的在桌面上閃一下視窗，所以不放進自動測試）。 */
 const DIALOG_SCRIPT = `$ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 function Out-Result([string]$text) {
@@ -62,12 +79,26 @@ $dlg.FileName = $env:VFX_SAVE_NAME
 $dlg.Filter = 'VFX Preset (*.json)|*.json'
 $dlg.DefaultExt = 'json'
 $dlg.AddExtension = $true
-$dlg.OverwritePrompt = $false
+$dlg.OverwritePrompt = ($env:VFX_SAVE_OVERWRITE -eq '1')
 $dlg.CheckPathExists = $true
 $dlg.RestoreDirectory = $true
 
 if ($env:VFX_SAVE_DRYRUN -eq '1') {
-  Out-Result ('DRYRUN' + $nl + $dlg.Title + $nl + $dlg.InitialDirectory + $nl + $dlg.FileName + $nl + $env:VFX_SAVE_MESSAGE)
+  Out-Result ('DRYRUN' + $nl + $dlg.Title + $nl + $dlg.InitialDirectory + $nl + $dlg.FileName + $nl + $env:VFX_SAVE_SELECT + $nl + [string]$dlg.OverwritePrompt + $nl + $env:VFX_SAVE_MESSAGE)
+  exit 0
+}
+
+# Native Save dialog (tools/vfx/native-save-dialog.cs): same dialog as SaveFileDialog, but it selects the
+# current preset in the file list and scrolls it into view. Falls back to SaveFileDialog on any failure.
+$native = $false
+if ($env:VFX_SAVE_CS -and (Test-Path -LiteralPath $env:VFX_SAVE_CS)) {
+  try {
+    Add-Type -ReferencedAssemblies System.Windows.Forms -Path $env:VFX_SAVE_CS
+    $native = $true
+  } catch { $native = $false; $nativeError = $_.Exception.Message }
+}
+if ($env:VFX_SAVE_PROBE -eq '1' -and -not $native) {
+  Out-Result ('PROBE-FAILED' + $nl + $nativeError)
   exit 0
 }
 
@@ -80,21 +111,30 @@ $owner.Size = New-Object System.Drawing.Size(1, 1)
 $owner.Opacity = 0
 $owner.Show()
 $owner.Activate()
+$out = $null
 try {
   if ($env:VFX_SAVE_MESSAGE) {
     [void][System.Windows.Forms.MessageBox]::Show($owner, $env:VFX_SAVE_MESSAGE, $env:VFX_SAVE_TITLE,
       [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
   }
-  $result = $dlg.ShowDialog($owner)
+  if ($native) {
+    try {
+      $out = [VfxEditor.NativeSaveDialog]::Run($owner.Handle, $env:VFX_SAVE_TITLE, $env:VFX_SAVE_DIR,
+        $env:VFX_SAVE_NAME, $env:VFX_SAVE_SELECT, ($env:VFX_SAVE_OVERWRITE -eq '1'), ($env:VFX_SAVE_PROBE -eq '1'))
+    } catch { $out = $null }
+  }
+  if ($out -eq $null) {
+    $result = $dlg.ShowDialog($owner)
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) { $out = 'OK' + $nl + $dlg.FileName } else { $out = 'CANCEL' }
+  }
 } finally {
   $owner.Close()
 }
-if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-  Out-Result ('OK' + $nl + $dlg.FileName)
-} else {
-  Out-Result 'CANCEL'
-}
+Out-Result $out
 `;
+
+/* 原生存檔視窗的 C#（見檔頭）。路徑是模組常數，照樣走環境變數交給腳本。 */
+const NATIVE_DIALOG_CS = path.join(__dirname, 'native-save-dialog.cs');
 
 function powershellPath() {
   const root = process.env.SystemRoot || process.env.windir || 'C:\\Windows';
@@ -120,9 +160,14 @@ function parseDialogOutput(stdout) {
     const parts = rest.split('\n');
     return {
       dryRun: true, title: parts[0], initialDir: parts[1], fileName: parts[2],
-      message: parts.slice(3).join('\n')
+      selectName: parts[3], overwrite: parts[4] === 'True', message: parts.slice(5).join('\n')
     };
   }
+  if (kind === 'PROBE') {
+    const parts = rest.split('\n');
+    return { probe: true, selected: parts[0], fileName: parts[1], trace: parts.slice(2).join('\n') };
+  }
+  if (kind === 'PROBE-FAILED') throw new Error('原生存檔視窗編不起來：' + rest);
   throw new Error('存檔視窗回傳了無法解讀的結果：' + JSON.stringify(text.slice(0, 80)));
 }
 
@@ -138,7 +183,9 @@ function readableError(stderr) {
 }
 
 /* opts：initialDir、fileName、title、message（選填：先跳訊息框再開視窗）、
-   dryRun（測試用：不開視窗，把收到的設定原樣回傳）。
+   selectName（清單裡要選到的檔名，含 .json；不存在就不選）、overwrite（另存新檔：選到既有檔案時
+   由 Windows 問要不要取代）、dryRun（測試用：不開視窗，把收到的設定原樣回傳）、
+   probe（人工驗證用，見 DIALOG_SCRIPT 的說明）。
    deps：platform、execFile（測試注入）。
    回傳 Promise：{ canceled: true } 或 { path }；不是 Windows 時以 code 'UNSUPPORTED' 拒絕。 */
 function runWindowsDialog(opts, deps) {
@@ -155,6 +202,10 @@ function runWindowsDialog(opts, deps) {
     VFX_SAVE_NAME: opts.fileName || '',
     VFX_SAVE_TITLE: opts.title || TITLE,
     VFX_SAVE_MESSAGE: opts.message || '',
+    VFX_SAVE_SELECT: opts.selectName || '',
+    VFX_SAVE_OVERWRITE: opts.overwrite ? '1' : '',
+    VFX_SAVE_PROBE: opts.probe ? '1' : '',
+    VFX_SAVE_CS: NATIVE_DIALOG_CS,
     VFX_SAVE_DRYRUN: opts.dryRun ? '1' : ''
   });
   return new Promise(function (resolve, reject) {
@@ -194,22 +245,35 @@ function chosenPresetId(chosen, presetsDir, policy, platform) {
 }
 
 /* 問出一個可以另存的 preset id。
-   opts：presetsDir、suggested（建議名稱，不含副檔名）、policy（preset-id-policy）、
+   opts：presetsDir、suggested（建議名稱，不含副檔名）、current（編輯器目前開著的那一份，
+   清單會選到它；沒有就不選）、policy（preset-id-policy）、
+   purpose（'rename'＝重新命名，此時 suggested 就是目前的名字；其餘＝另存新檔）、
    runDialog（預設 runWindowsDialog）、maxRounds、platform。
-   回傳 Promise：{ canceled: true }、{ id }，或連續 maxRounds 次都不能用時 { problem }。
-   既有檔案一律不收：另存新檔不會覆寫，覆寫請用「儲存到 repo」。 */
+   回傳 Promise：{ canceled: true }、{ id }、{ id, overwrite: true }（另存新檔選到既有的特效，
+   Windows 已經問過要不要取代），或連續 maxRounds 次都不能用時 { problem }。
+   重新命名不會蓋掉別的特效：選到既有檔案一律說明後重開視窗。 */
 function askPresetId(opts) {
   const run = opts.runDialog || runWindowsDialog;
   const maxRounds = opts.maxRounds || MAX_ROUNDS;
+  const renaming = opts.purpose === 'rename';
+  const selectName = opts.current ? opts.current + '.json' : '';
+  function existsProblem(id) {
+    /* 視窗預填的就是目前的名字，沒改就按下去最常見：說清楚，不要讓人以為那個名字被別人占了 */
+    if (id === opts.suggested) return '「' + id + '」就是目前的名字。請輸入新的名字。';
+    return '已經有一份「' + id + '」了。重新命名不會蓋掉別的特效，請換一個名字。';
+  }
   function round(n, fileName, message) {
     return Promise.resolve(run({
-      initialDir: opts.presetsDir, fileName: fileName, title: TITLE, message: message
+      initialDir: opts.presetsDir, fileName: fileName, title: renaming ? RENAME_TITLE : TITLE,
+      message: message, selectName: selectName, overwrite: !renaming
     })).then(function (picked) {
       if (!picked || picked.canceled) return { canceled: true };
       const r = chosenPresetId(picked.path, opts.presetsDir, opts.policy, opts.platform);
       let problem = r.problem;
       if (!problem && fs.existsSync(path.join(opts.presetsDir, r.id + '.json'))) {
-        problem = '已經有一份「' + r.id + '」了。另存新檔不會覆寫既有的特效，請換一個名字。';
+        /* 另存新檔：視窗已經問過「要取代嗎？」，按了確定才會走到這裡 */
+        if (!renaming) return { id: r.id, overwrite: true };
+        problem = existsProblem(r.id);
       }
       if (!problem) return { id: r.id };
       if (n + 1 >= maxRounds) return { problem: problem };
@@ -220,7 +284,9 @@ function askPresetId(opts) {
 }
 
 module.exports = {
+  NATIVE_DIALOG_CS: NATIVE_DIALOG_CS,
   TITLE: TITLE,
+  RENAME_TITLE: RENAME_TITLE,
   DIALOG_SCRIPT: DIALOG_SCRIPT,
   powershellArgs: powershellArgs,
   parseDialogOutput: parseDialogOutput,

@@ -62,29 +62,36 @@ test('SAVEAS-1 選到的路徑：只收 vfx/presets 這一層、.json、合法�
   }
 });
 
-test('SAVEAS-2 不能用就帶著原因重開視窗；取消就停；既有檔案一律不收', async function () {
+test('SAVEAS-2 不能用就帶著原因重開視窗；取消就停；另存新檔選到既有的特效＝覆寫（Windows 已經問過）', async function () {
   const sb = sandboxPresets();
   const calls = [];
   function answers(list) {
     return function (opts) { calls.push(opts); return Promise.resolve(list.shift()); };
   }
 
+  /* 2026-09-18 使用者：另存新檔常常是直接蓋掉舊的那份。選到既有的特效時由 Windows 問「要取代嗎？」
+     （overwrite: true 交給視窗），按了確定才會回來，這裡不再擋。 */
   let r = await dialog.askPresetId({
-    presetsDir: sb.presets, suggested: 'beam-light-copy', policy: policy,
-    runDialog: answers([
-      { path: path.join(sb.presets, 'beam-light.json') },
-      { path: path.join(sb.presets, 'beam-light-blue.json') }
-    ])
+    presetsDir: sb.presets, suggested: 'beam-light-copy', current: 'beam-light', policy: policy,
+    runDialog: answers([{ path: path.join(sb.presets, 'beam-light.json') }])
   });
-  assert.deepEqual(r, { id: 'beam-light-blue' });
-  assert.equal(calls.length, 2);
+  assert.deepEqual(r, { id: 'beam-light', overwrite: true });
+  assert.equal(calls.length, 1, '不重開視窗');
   assert.equal(calls[0].initialDir, sb.presets, '要從 vfx/presets 開始');
   assert.equal(calls[0].fileName, 'beam-light-copy.json', '預設檔名是另存的建議名稱');
+  assert.equal(calls[0].selectName, 'beam-light.json', '清單選到目前開著的那一份（特效太多，找起來麻煩）');
+  assert.equal(calls[0].overwrite, true, '另存新檔：選到既有檔案由 Windows 問要不要取代');
   assert.equal(calls[0].message, '', '第一次不必跳訊息');
-  assert.match(calls[1].message, /已經有一份「beam-light」/, '選到既有的特效要說明並重問，不能覆寫');
-  assert.equal(calls[1].fileName, 'beam-light.json', '重問時保留剛才輸入的名字，方便改');
   assert.equal(fs.readFileSync(path.join(sb.presets, 'beam-light.json'), 'utf8'), '{}',
-    '既有檔案一個位元組都不能動');
+    '這裡只問名字，檔案一個位元組都不動（覆寫由存檔 API 做）');
+
+  calls.length = 0;
+  r = await dialog.askPresetId({
+    presetsDir: sb.presets, suggested: 'x-copy', policy: policy,
+    runDialog: answers([{ path: path.join(sb.presets, 'beam-light-blue.json') }])
+  });
+  assert.deepEqual(r, { id: 'beam-light-blue' }, '新名字不帶 overwrite');
+  assert.equal(calls[0].selectName, '', '沒有目前這份（新特效）就不選');
 
   calls.length = 0;
   r = await dialog.askPresetId({
@@ -93,6 +100,7 @@ test('SAVEAS-2 不能用就帶著原因重開視窗；取消就停；既有檔�
   });
   assert.deepEqual(r, { canceled: true });
   assert.match(calls[1].message, /vfx\\presets/);
+  assert.equal(calls[1].fileName, 'x.json', '重問時保留剛才輸入的名字，方便改');
 
   calls.length = 0;
   r = await dialog.askPresetId({
@@ -108,8 +116,12 @@ test('SAVEAS-3 PowerShell 介面：腳本是常數、輸入只走環境變數；
   const script = Buffer.from(args[args.length - 1], 'base64').toString('utf16le');
   assert.equal(script, dialog.DIALOG_SCRIPT);
   assert.ok(/SaveFileDialog/.test(script));
-  assert.ok(/OverwritePrompt = \$false/.test(script), '覆寫由伺服器擋，不讓 Windows 問「要取代嗎」');
-  ['VFX_SAVE_DIR', 'VFX_SAVE_NAME', 'VFX_SAVE_TITLE', 'VFX_SAVE_MESSAGE'].forEach(function (v) {
+  assert.ok(/OverwritePrompt = \(\$env:VFX_SAVE_OVERWRITE -eq '1'\)/.test(script),
+    '要不要問「取代嗎」由呼叫端決定：另存新檔問、重新命名不問');
+  assert.ok(/Add-Type -ReferencedAssemblies System\.Windows\.Forms -Path \$env:VFX_SAVE_CS/.test(script),
+    '原生視窗的 C# 放在檔案裡（放進 -EncodedCommand 會超過命令列長度上限）');
+  ['VFX_SAVE_DIR', 'VFX_SAVE_NAME', 'VFX_SAVE_TITLE', 'VFX_SAVE_MESSAGE', 'VFX_SAVE_SELECT',
+    'VFX_SAVE_OVERWRITE', 'VFX_SAVE_CS'].forEach(function (v) {
     assert.ok(script.indexOf('$env:' + v) >= 0, '要從環境變數讀 ' + v);
   });
   assert.ok(/^[\x00-\x7f]*$/.test(script), '腳本只放 ASCII，中文一律走環境變數');
@@ -128,6 +140,10 @@ test('SAVEAS-3 PowerShell 介面：腳本是常數、輸入只走環境變數；
     });
   assert.deepEqual(picked, { path: 'D:\\repo\\vfx\\presets\\冰晶-x.json' });
   assert.equal(seen.env.VFX_SAVE_NAME, "it's $(x).json", '檔名原樣放進環境變數');
+  assert.equal(seen.env.VFX_SAVE_CS, dialog.NATIVE_DIALOG_CS);
+  assert.ok(args.join(' ').length < 30000, 'Windows 命令列有長度上限（32767 字元），腳本不能再長');
+  const cs = fs.readFileSync(dialog.NATIVE_DIALOG_CS, 'utf8');
+  assert.ok(/^[\x00-\x7f]*$/.test(cs), 'C# 只放 ASCII：Windows PowerShell 5.1 用 ANSI 字碼頁讀它');
   assert.deepEqual(seen.argv, args, '命令列與輸入無關：檔名不會變成程式碼');
 
   const cancel = await dialog.runWindowsDialog({ initialDir: 'x' }, {
@@ -148,12 +164,27 @@ test('SAVEAS-4 Windows 上實際跑一次 PowerShell（dryRun：不開視窗）'
   { skip: process.platform !== 'win32' && '只有 Windows 有這個視窗' }, async function () {
     const r = await dialog.runWindowsDialog({
       initialDir: 'D:\\某個資料夾\\vfx\\presets', fileName: 'slash-冰-copy.json', title: dialog.TITLE,
-      message: '已經有一份了。\n請換一個名字。', dryRun: true
+      message: '已經有一份了。\n請換一個名字。', selectName: 'slash-冰.json', overwrite: true, dryRun: true
     });
     assert.deepEqual(r, {
       dryRun: true, title: dialog.TITLE, initialDir: 'D:\\某個資料夾\\vfx\\presets',
-      fileName: 'slash-冰-copy.json', message: '已經有一份了。\n請換一個名字。'
+      fileName: 'slash-冰-copy.json', selectName: 'slash-冰.json', overwrite: true,
+      message: '已經有一份了。\n請換一個名字。'
     });
+  });
+
+test('SAVEAS-4B 原生存檔視窗的 C# 在 Windows 上編得起來（不開視窗）',
+  { skip: process.platform !== 'win32' && '只有 Windows 有這個視窗' }, async function () {
+    /* 編不起來的話視窗會靜靜退回 SaveFileDialog：功能還在，但清單不會選到目前這份，而且沒有人會發現 */
+    const { execFile } = require('child_process');
+    const out = await new Promise(function (resolve) {
+      execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+        "try { Add-Type -ReferencedAssemblies System.Windows.Forms -Path $env:CS; 'OK ' + " +
+        "([VfxEditor.NativeSaveDialog].GetMethod('Run').GetParameters().Count) } catch { 'FAIL ' + $_.Exception.Message }"],
+      { env: Object.assign({}, process.env, { CS: dialog.NATIVE_DIALOG_CS }) },
+      function (err, stdout) { resolve(String(stdout).trim()); });
+    });
+    assert.equal(out, 'OK 7', '編譯結果：' + out);
   });
 
 function post(port, urlPath, body, headers) {
@@ -197,13 +228,14 @@ test('SAVEAS-5 伺服器：POST /__save-as-dialog 只問名字；同時只開一
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const port = server.address().port;
   try {
-    const first = post(port, '/__save-as-dialog', { suggested: 'beam-light-copy' });
+    const first = post(port, '/__save-as-dialog', { suggested: 'beam-light-copy', current: 'beam-light' });
     await waitFor(() => pending);
     const second = await post(port, '/__save-as-dialog', { suggested: 'beam-light-copy' });
     assert.equal(second.status, 409, '視窗開著的時候再按一次，要說已經開著，不能疊出第二個');
     assert.equal(calls.length, 1);
     assert.equal(calls[0].initialDir, sb.presets);
     assert.equal(calls[0].fileName, 'beam-light-copy.json');
+    assert.equal(calls[0].selectName, 'beam-light.json', '清單選到編輯器開著的那一份');
     pending({ path: path.join(sb.presets, 'beam-light-copy.json') });
     const done = await first;
     assert.equal(done.status, 200, done.text);
@@ -211,9 +243,10 @@ test('SAVEAS-5 伺服器：POST /__save-as-dialog 只問名字；同時只開一
     assert.ok(!fs.existsSync(path.join(sb.presets, 'beam-light-copy.json')), '這條路由只問名字，不寫檔');
 
     pending = null;
-    const cancel = post(port, '/__save-as-dialog', { suggested: '../../evil' });
+    const cancel = post(port, '/__save-as-dialog', { suggested: '../../evil', current: '..\\evil' });
     await waitFor(() => pending);
     assert.equal(calls[calls.length - 1].fileName, '', '不合法的建議名稱不帶進視窗');
+    assert.equal(calls[calls.length - 1].selectName, '', '不合法的目前名稱也不帶進視窗');
     pending({ canceled: true });
     assert.deepEqual((await cancel).json, { ok: true, canceled: true });
 
@@ -244,17 +277,71 @@ test('SAVEAS-6 Editor：另存新檔先請伺服器開視窗，開不起來才�
     const rest = src.slice(at);
     return rest.slice(0, rest.indexOf('\n  }'));
   };
-  const ask = body('askSaveAsName');
+  /* 問名字的本體是 askPresetName，另存新檔與重新命名共用（2026-09-18 加上重新命名時抽出來） */
+  const ask = body('askPresetName');
   assert.ok(/fetch\(SAVE_AS_DIALOG_URL/.test(ask) && /method: 'POST'/.test(ask));
   assert.ok(/'Content-Type': 'application\/json'/.test(ask), '伺服器的寫入防護要求 JSON，少了會被 403');
   assert.ok(/window\.prompt\(/.test(ask), '伺服器太舊或不是 Windows 時要退回輸入框，另存新檔不能整個不能用');
+  assert.ok(/askPresetName\(current \? current \+ '-copy' : '', 'save-as', current\)/.test(body('askSaveAsName')),
+    '另存新檔預填「目前的名字-copy」，清單選到目前這份');
+  assert.ok(/current: current \|\| ''/.test(ask), '目前這份要交給伺服器，視窗才選得到它');
   const save = body('saveAsPreset');
   assert.ok(/askSaveAsName\(current\)/.test(save));
   assert.ok(!/window\.prompt\(/.test(save), '名字只從 askSaveAsName 來');
+  assert.ok(!/window\.prompt\(/.test(body('renamePreset')) && !/window\.prompt\(/.test(body('commitRename')),
+    '重新命名的名字也只從 askPresetName 來');
   assert.ok(!/showSaveFilePicker\s*\(/.test(src), '瀏覽器的存檔視窗選到既有檔案會先把它清空（見 save-as-dialog.cjs）');
   assert.ok(/var SAVE_AS_DIALOG_URL = '\/__save-as-dialog'/.test(src));
 
   const server = fs.readFileSync(path.join(REPO, 'tools/vfx/editor-server.cjs'), 'utf8');
   assert.ok(/SAVE_AS_DIALOG_PATH = '\/__save-as-dialog'/.test(server), '頁面與伺服器的路徑要一致');
   assert.ok(server.indexOf("'save-as-dialog.cjs'") >= 0, 'save-as-dialog.cjs 要列進 RESTART_REQUIRED_FILES');
+});
+
+test('SAVEAS-7 重新命名也用這個視窗問新名字：標題不同；選到目前的名字與選到別人的名字各有說明', async function () {
+  /* 需求（2026-09-18）：特效要能直接改名。新名字一樣要看得到資料夾裡已經有哪些、一樣不能蓋掉別人。 */
+  const sb = sandboxPresets();
+  const calls = [];
+  function answers(list) {
+    return function (opts) { calls.push(opts); return Promise.resolve(list.shift()); };
+  }
+  const r = await dialog.askPresetId({
+    presetsDir: sb.presets, suggested: 'beam-light', purpose: 'rename', policy: policy,
+    runDialog: answers([
+      { path: path.join(sb.presets, 'beam-light.json') },
+      { path: path.join(sb.presets, 'beam-light.json') },
+      { path: path.join(sb.presets, 'beam-light-blue.json') }
+    ])
+  });
+  assert.deepEqual(r, { id: 'beam-light-blue' });
+  assert.equal(calls[0].title, dialog.RENAME_TITLE);
+  assert.equal(calls[0].fileName, 'beam-light.json', '重新命名預填的就是目前的名字');
+  assert.match(calls[1].message, /就是目前的名字/, '沒改就按下去最常見：不要讓人以為那個名字被別人占了');
+  assert.notEqual(dialog.RENAME_TITLE, dialog.TITLE);
+
+  fs.writeFileSync(path.join(sb.presets, 'other.json'), '{}');
+  calls.length = 0;
+  await dialog.askPresetId({
+    presetsDir: sb.presets, suggested: 'beam-light', purpose: 'rename', policy: policy,
+    runDialog: answers([{ path: path.join(sb.presets, 'other.json') }, { canceled: true }])
+  });
+  assert.match(calls[1].message, /已經有一份「other」了。重新命名不會蓋掉別的特效/);
+
+  /* 伺服器把 purpose 帶進視窗；沒帶或亂帶一律當成另存新檔 */
+  const seen = [];
+  const server = editorServer.__testOnly.createServer({
+    repoRoot: sb.repoRoot, assetRoots: {},
+    runSaveDialog: function (opts) { seen.push(opts.title); return Promise.resolve({ canceled: true }); }
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const port = server.address().port;
+    await post(port, '/__save-as-dialog', { suggested: 'beam-light', purpose: 'rename' });
+    await post(port, '/__save-as-dialog', { suggested: 'beam-light' });
+    await post(port, '/__save-as-dialog', { suggested: 'beam-light', purpose: 'delete-everything' });
+    assert.deepEqual(seen, [dialog.RENAME_TITLE, dialog.TITLE, dialog.TITLE]);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(sb.base, { recursive: true, force: true });
+  }
 });
