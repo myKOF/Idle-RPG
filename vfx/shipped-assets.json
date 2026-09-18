@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 136,
+  "assetCount": 140,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -413,6 +413,13 @@
       "fileSize": 172423
     },
     {
+      "assetId": "new_materials/impact-ring/impact_7.png",
+      "relativePath": "new_materials/impact-ring/impact_7.png",
+      "package": "new_materials",
+      "contentHash": "sha256:c8ba36a61efd7ba8c66c6d07336a547b0efc7dd6c922ab832bff0016dc0f531b",
+      "fileSize": 114917
+    },
+    {
       "assetId": "new_materials/mask-shape/dingbats-115.png",
       "relativePath": "new_materials/mask-shape/dingbats-115.png",
       "package": "new_materials",
@@ -504,6 +511,13 @@
       "fileSize": 344829
     },
     {
+      "assetId": "new_materials/orb/sphere_26.png",
+      "relativePath": "new_materials/orb/sphere_26.png",
+      "package": "new_materials",
+      "contentHash": "sha256:c2ee06309a92fbc101bca888a88fe539741c41410447c260c1a6a3e438c9dcc4",
+      "fileSize": 120034
+    },
+    {
       "assetId": "new_materials/orb/sphere_28.png",
       "relativePath": "new_materials/orb/sphere_28.png",
       "package": "new_materials",
@@ -523,6 +537,13 @@
       "package": "new_materials",
       "contentHash": "sha256:ec7d30029e290f27b35b372db0ab861e2e5163d133bcebf082c824e49a3a64ea",
       "fileSize": 103212
+    },
+    {
+      "assetId": "new_materials/orb/sphere_39.png",
+      "relativePath": "new_materials/orb/sphere_39.png",
+      "package": "new_materials",
+      "contentHash": "sha256:bf75c3baa114086d6943592a0f6a8c0ed2f225a76fb65bc33ca62d547839f20a",
+      "fileSize": 101969
     },
     {
       "assetId": "new_materials/orb/sphere_45.png",
@@ -558,6 +579,13 @@
       "package": "new_materials",
       "contentHash": "sha256:0ba98cbe862f1fc30201dffc6b4c56492e0b96caa1c209d0a47f22a59174d1e4",
       "fileSize": 169585
+    },
+    {
+      "assetId": "new_materials/spiro/color_spirowires_1.png",
+      "relativePath": "new_materials/spiro/color_spirowires_1.png",
+      "package": "new_materials",
+      "contentHash": "sha256:b2bbaf1830875e84ea92d5181171fdead1ccec4fb0123ebc48b2d58024ad0c6f",
+      "fileSize": 309330
     },
     {
       "assetId": "new_materials/streak/lines_1.png",

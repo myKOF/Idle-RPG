@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "proj-poison-drop",
+  "id": "proj-poison-drop-10",
   "duration": 1.2,
   "loop": false,
   "layers": [
@@ -14,11 +14,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.1095,
-        "y": 0.1095
+        "x": 0.11,
+        "y": 0.11
       },
       "alpha": 0.8,
-      "tint": "#76d83b",
+      "tint": "#fd6bff",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
@@ -46,15 +46,15 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
       "position": {
-        "x": -3.1162,
-        "y": -4.6743
+        "x": -3.1359,
+        "y": -4.7039
       },
       "scale": {
-        "x": 0.0213,
-        "y": 0.0213
+        "x": 0.0215,
+        "y": 0.0215
       },
       "alpha": 0.9,
-      "tint": "#d8ff8a",
+      "tint": "#742bb1",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
@@ -85,7 +85,7 @@
         "x": 0,
         "y": 0
       },
-      "tint": "#4caf2b",
+      "tint": "#742bb1",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -96,23 +96,23 @@
         0.4
       ],
       "spawn": {
-        "radius": 4.6743,
+        "radius": 4.7039,
         "shape": "circle"
       },
       "speed": [
-        15.581,
-        46.743
+        15.6797,
+        47.039
       ],
       "direction": 180,
       "spread": 90,
       "gravity": {
         "x": 0,
-        "y": -62.324
+        "y": -62.7187
       },
       "drag": 5,
       "startScale": [
         0.0153,
-        0.0274
+        0.0276
       ],
       "alphaOverLife": [
         [
@@ -156,18 +156,18 @@
     {
       "id": "glow-copy",
       "type": "sprite",
-      "assetId": "new_materials/impact-ring/impact_7.png",
+      "assetId": "new_materials/orb/sphere_26.png",
       "zIndex": 0,
       "position": {
         "x": 0,
         "y": 0
       },
       "scale": {
-        "x": 0.0564,
-        "y": 0.0564
+        "x": 0.0679,
+        "y": 0.0679
       },
       "alpha": 0.85,
-      "tint": "#76d83b",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 1.2,
       "alphaOverLife": [
@@ -186,6 +186,59 @@
         [
           1,
           0.520745
+        ]
+      ]
+    },
+    {
+      "id": "particle-5",
+      "type": "particle",
+      "assetId": "new_materials/orb/sphere_39.png",
+      "scale": {
+        "x": 0.08,
+        "y": 0.08
+      },
+      "tint": "#e252ff",
+      "blendMode": "screen",
+      "emission": {
+        "count": 16,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.2,
+        2
+      ],
+      "speed": [
+        40,
+        90
+      ],
+      "spread": 20,
+      "startScale": 0.3,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6327,
+          1.003729
+        ],
+        [
+          1,
+          0.415426
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.518351
+        ],
+        [
+          0.6173,
+          0.950585
+        ],
+        [
+          1,
+          0.02633
         ]
       ]
     }
