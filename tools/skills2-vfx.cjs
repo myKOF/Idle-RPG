@@ -4,6 +4,7 @@ const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸�
 const noteColumn = '特效作用說明';
 const events = {
   'counter.holyBody': {roles:['attack','projectile'], note:'反擊滿計數後發射一顆光彈；觸發子彈飛到本次鎖定的目標位置，抵達時結算範圍傷害並在落點播放一次觸發特效。爆炸匹配傷害半徑，不在每個受害者身上重播。'},
+  'counter.indomitable': {roles:['ground'], note:'復甦開始時於玩家位置播放天降光束，持續至復甦結束，不在每個敵人身上播放。'},
   'cleave.windChaser': {roles:['ground','field'], note:'每次迴旋斬命中，在敵人位置產生龍捲風；固定命中位置，依龍捲風傷害半徑縮放。'},
   'gale.thunderFlash': {roles:['attack'], note:'本體最後一擊後，按次數與間隔重新選敵並播放貫穿雷電；沿玩家與目標連線，匹配雷電長度及寬度。'},
   'gale.thunderGodSlash': {roles:['attack','hit'], note:'本體及爆散每次命中，在該敵人位置落雷；依落雷傷害範圍縮放。'},

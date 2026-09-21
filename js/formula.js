@@ -747,7 +747,7 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
   var wasAlive = ent && ent.hp > 0;
   var amount = towerBossHpDamage(ent, damage);
   if (ent) {
-    if (gmHpLockActive(ent)) amount = 0;
+    if (gmHpLockActive(ent) || ent._sgRevival) amount = 0;
     /* GM 鎖血（僅本機 GM 指令 god → js/gm_exec.js）：我方生命最低鎖 1。
        只對玩家戰鬥實體生效——實體判別沿用 tickStatuses 慣例（敵人才有 maxHp）。 */
     var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && !(ent.maxHp > 0)) ? 1 : 0;
@@ -1066,6 +1066,7 @@ function refreshShieldMaxAfterGain(ent, beforeShield) {
   ent.shieldMaxVersion = SHIELD_MAX_VERSION;
 }
 function healPlayer(pEnt, amount, st, opts) {
+  if (pEnt && pEnt._sgRevival) return; // 復甦血量由進度唯一控制
   if (amount <= 0) return;
   var space = st.hp - pEnt.hp;
   if (amount <= space) { pEnt.hp += amount; return; }

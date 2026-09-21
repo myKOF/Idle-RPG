@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜不屈鬥魂升空復甦（COUNTER-REVIVAL-20260921）
+
+- Owner Codex；Done（使用者已確認特效並要求提交）。致死時保留戰場，站姿升空及天降光束，5 秒生命由 0 回滿；物攻＋魔攻為基礎，4000% 總地系傷害分 10 次（每 0.5 秒）結算。
+- 允許：skills2／combat／formula／battle-renderer、Worker 協議與文件、Skills2 表、獨立光束素材、相關測試與快取、本紀錄。保留使用者 Excel 其他修改，不修改其他技能數值。衝突預檢通過，無依賴。
+- 驗收：10 段總量、時序、HP 線性恢復與免死、無退關／敵群清除、冷卻、站姿升空、素材接線及建置；完成後提交，使用者合併。
+- 實作：FIELD 玩家投影 _sgRevival 起迄 GT；Worker 協議 v35。復甦中攔截重複判死、傷害與外部治療，不走 reviveCd；每跳重新選取 30 米內存活敵人，最後一跳後回滿並解除保護。站姿上移 60 世界單位，保持原戰場位置與水平血條。原行動閘門保留；冷卻 60 秒，既有其他超神不變。
+- 修改補充：tools/skills2-geometry.cjs／skills2-vfx.cjs 先預檢後登記 indomitable 的 gap 與觸發地板角色；tests/worker-protocol.test.cjs 同步協議。Skills2 Excel 僅更新 Z70／AQ70／AV70／AW70／AX70；保留使用者已清空 AL70 的本體地板特效，CSV／JS 同步該權威值。原工具誤讀空白，沿前輪已確認的 ZIP/XML 精準編輯方式保留其他內容。
+- 驗證：node --test tests/indomitable-revival.test.cjs tests/skill2-counter-bloodrage.test.cjs tests/death-revive-restore.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-geometry.test.cjs tests/field-motion-smoothness.test.cjs（58/58）；node --test --test-name-pattern="不屈鬥魂|自動施放閘門" tests/skill2-ult-evolution.test.cjs（2/2）。包含正式 Worker 20 菁英戰鬥、零血、半程回血、10 跳總量、敵群身份保留、範圍、冷卻、重置、暫停升空位置與素材接線。Excel／CSV 逐格一致；config_tables apply 語意變更 0；build 380 檔通過，diff check 通過。
+- 素材 pillar-indomitable.json：獨立 5 秒天降光束，沿用已出貨貼圖，渲染預覽已檢視，export-assets --check 通過。素材庫 Commit 922eb09，檔案 SHA256 一致；沒有額外素材匯出更新。
+- 唯讀檢查：tower.js、既有復活／特效 Runtime 與素材解析、Worker 面板序列化。限制：本次沿既有不屈鬥魂野外入口，高塔原先未接該超神、不在本次範圍；未完整瀏覽器 GPU 實機驗證，渲染運動以原碼執行測試及光束離線預覽驗證。使用者已確認特效並授權提交；無未完成項目，可合併。遊戲 Commit 見本紀錄所在提交，素材 Commit 922eb09；未合併或推送，下一步由使用者整合。
+
 ## Codex｜不屈鬥魂反擊地屬性（COUNTER-EARTH-20260921）
 
 - Owner Codex；Done。使用者要求保留不屈鬥魂原有效果，將反擊系列傷害轉為地屬性，包含本體、招架、二次反擊、狂化反殺與傳奇衍生段；死亡爆發原有地屬性保留。

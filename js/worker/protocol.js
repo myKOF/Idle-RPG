@@ -56,7 +56,8 @@
 // v32：飛刀 area.knifeFlight 攜帶 sourceX/Y、x/y 及可空 controlX/Y；knifeImpact 為權威命中位置。
 // v33：追魂刃 area.soulId/soulMode/soulLife 串接飛行、返回、環繞與消失；orbitR/Angle/Spin 描述待機。
 // v34：header／equip 的 passivePanel 提供裝配被動結算值；装卸技能同步刷新面板。
-var WORKER_PROTOCOL_VERSION = 34;
+/* v35：battle.field.player._sgRevival 可選 {startAt,endAt}，GT 秒；非死亡、站姿升空復甦。 */
+var WORKER_PROTOCOL_VERSION = 35;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
