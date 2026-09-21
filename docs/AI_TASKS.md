@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜反擊最高階耗魔（COUNTER-MANA-20260921）
+
+- Done。使用者確認：每次基礎／招架反擊扣最高已學習階段的消耗（超神優先），不是累加；二次反擊、狂化反殺實際觸發時另扣各階消耗。強化、反擊盾、破甲包含在基本消耗內，不另收費。反擊衍生斬擊不重收基本消耗。
+- 範圍：skills2.js、ui.js、反擊／耗魔測試、index.html／bridge.js／sim.worker.js 快取、本紀錄。預檢發現 Claude 39b21fb3 在 index.html 更新 battle-renderer 快取；使用者明確允許不同列且可正常合併時繼續。本次只改技能／UI／bridge 列，不覆蓋該渲染列。其他檔案預檢無衝突，保留使用者 Excel 與素材改名。
+- 驗收：全七階與三超神、非累加、觸發／未觸發、MP 不足與恰好足夠、雙來源反擊、額外觸發消耗、空目標、GM 鎖魔、UI 快照耗魔一致。
+- 完成模擬扣費與 UI 門檻／彈窗／提示同步，表中數值不變；工具產生的說明與 SKILL_TEST_SPEC 已更新，無新素材或 Worker 協議。index.html 以 merge-base／工作區版本／ai/claude 三方合併乾跑成功，保留双方快取版本，未實際合併。
+- 測試：node --test tests/skill2-counter-bloodrage.test.cjs tests/skills2-mana-cost.test.cjs tests/skill2-ui.test.cjs：35/35。node --test --test-name-pattern="神聖|戰神體|反擊|不屈鬥魂" tests/skill2-ult-evolution.test.cjs：使用者工作區 Excel 重排列造成 1 項舊固定欄索引失敗，讀取 HEAD 工作簿重跑 10/10 通過，未修改使用者檔案。node tools/build_check.cjs：379 檔通過；Skills2 apply dry-run 零語意差異；diff check 通過。完整範圍報告見 docs/skill-tests/20260921-counter-codex.md。
+- 唯讀檢查反擊超神／傳奇、吸魔與 UI 快照路徑，未修改 formula.js、Excel／CSV 或使用者素材。未實機畫面／Console 驗證；使用者的 Excel 與素材改名保留未提交。無未完成實作，可合併；Commit 見本紀錄所在提交，未合併或推送。下一步整合後觀察反擊耗魔與吸魔收支。
+
 ## Codex｜施法消耗數值驗證（SKILLS2-COST-VALIDATION-20260921）
 
 - Done。修正 Skills2 工作簿殘留的「技能本體／附加效果」清單驗證，依「施法消耗」表頭定位，改為允許空白的非負數值驗證。預檢通過，保留使用者目前欄位排序及數值；僅修改工作表驗證 XML，不重建工作簿。

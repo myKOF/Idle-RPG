@@ -50,7 +50,7 @@ function enemy(hp, x, y, name) {
     pos: (x === undefined) ? undefined : { x, y }
   };
 }
-/* mp 預設 100（＝ getStats().mp 上限）；反擊自 2026-08-19 起每階觸發各自扣魔，
+/* mp 預設 100（＝ getStats().mp 上限）；反擊按最高階收基本費，T6／T7 觸發另收追加費，
    驗證「機制」的案例一律給足法力，法力門檻本身由 §3.5 專門的案例負責。 */
 function playerEnt(mp) {
   return {
@@ -229,7 +229,8 @@ test('二次反擊 T6：機率追加 2 次同傷害反擊（不再判定）', ()
   c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 0];
   c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
   // T1（35）與 T6（50 + 每級 5 ＝ 55）都擲中；T5 破甲（35）也會中，無妨
-  c.chance = (p) => p === 35 || p === 55;
+  c.SKILLS2.counter.tiers[5].fx.count = 2; // 此案例明確驗證追加多刀
+  c.chance = () => true;
   const p = playerEnt(AMPLE_MP);
   const m = enemy(1e9, 40, 0);
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
@@ -239,6 +240,7 @@ test('二次反擊 T6：機率追加 2 次同傷害反擊（不再判定）', ()
 
 test('狂化反殺 T7：每次反擊額外反擊範圍內隨機 2 個其他敵人', () => {
   const c = loadContext();
+  c.SKILLS2.counter.tiers[6].fx.count = 2; // 明確驗證多目標，不依目前平衡預設數量
   const calls = stubHits(c);
   c.GT = 0;
   c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
@@ -258,147 +260,101 @@ test('狂化反殺 T7：每次反擊額外反擊範圍內隨機 2 個其他敵�
   assert.equal(calls[1].aCfg.atk, 900);
 });
 
-/* ---- 3.5) 反擊的法力消耗（2026-08-19：每階觸發時各自扣自己那一階的施法消耗） ---- */
-
-test('反擊法力：每階的觸發消耗＝參數表該階的施法消耗（T3 恆時加成不扣魔）', () => {
-  const c = loadContext();
-  const tiers = c.SKILLS2.counter.tiers;
-  [0, 1, 3, 4, 5, 6].forEach((i) => {
-    assert.ok(tiers[i].cost > 0, '第' + (i + 1) + '階參數表要有施法消耗');
-    assert.equal(c.skills2TierTriggerMp('counter', i), tiers[i].cost, '第' + (i + 1) + '階');
-  });
-  assert.equal(c.skills2TierTriggerMp('counter', 2), 0, 'T3 強化反擊是恆時加成，不扣魔');
-  // 主動群組在 castSkill2 付群組層的 cost，不走這條；恆時被動（大地守護）也沒有觸發消耗
-  assert.equal(c.skills2TierTriggerMp('thrust', 0), 0);
-  assert.equal(c.skills2TierTriggerMp('earthguard', 4), 0);
-  // UI 的法力門檻＝已投資的階裡最便宜的觸發消耗
-  assert.equal(c.skills2PassiveMinMp('counter', [1, 1, 1, 1, 1, 1, 1]), tiers[0].cost);
-  assert.equal(c.skills2PassiveMinMp('counter', [0, 0, 1, 0, 0, 0, 1]), tiers[6].cost, 'T3 不計入門檻');
-  assert.equal(c.skills2PassiveMinMp('earthguard', [1, 1, 1, 1, 1, 1, 1]), 0);
+/* ---- 3.5) 最高階基本費＋T6／T7 追加費 ---- */
+function setupCounter(c, levels, mp) {
+  c.GT=0; c.G.player.skills2.levels.counter=levels; c.G.player.loadout=['sg:counter'];
+  c.chance=x=>x===35; const p=playerEnt(mp),m=enemy(1e9,40,0);
+  c.FIELD={player:p,dpsWindow:[]}; c.combatFieldEnemies=()=>[m];
+  return {p,m};
+}
+test('反擊法力：七階都取最高已學習階，包含強化反擊，不累加也不取最大數值',()=>{
+  for(let tier=0;tier<7;tier++){
+    const c=loadContext(),calls=stubHits(c),levels=Array.from({length:7},(_,i)=>i<=tier?1:0);
+    const cost=c.SKILLS2.counter.tiers[tier].cost,{p,m}=setupCounter(c,levels,cost);
+    assert.equal(c.skills2PassiveMinMp('counter',levels,{}),cost);
+    assert.equal(c.skills2TierTriggerMp('counter',tier),cost);
+    c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');
+    assert.equal(calls.length,1,'每階都能用恰好基本費反擊'); assert.equal(p.mp,0);
+    if(tier>=3)assert.equal(p.shield,11,'護盾包含於基本費');
+    c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float'); assert.equal(calls.length,1);
+  }
+  const c=loadContext();c.SKILLS2.counter.tiers[6].cost=0;
+  assert.equal(c.skills2PassiveMinMp('counter',Array(7).fill(1),{}),0,'最高階免費不回退前階');
+  assert.equal(c.skills2PassiveMinMp('earthguard',Array(7).fill(10),{}),0);
+});
+test('反擊法力：三個超神各取本列消耗，未觸發超神效果也扣，失效時退回七階',()=>{
+  for(let pick=0;pick<3;pick++){
+    const c=loadContext(),calls=stubHits(c),{p,m}=setupCounter(c,Array(7).fill(10),1000);
+    c.G.player.skills2.ult={counter:{pick,lv:1}};
+    const cost=c.SKILLS2.counter.ult[pick].cost;
+    assert.equal(c.skills2PassiveMinMp('counter'),cost);
+    assert.equal(c.skills2PassiveMinMp('counter',Array(7).fill(10),{}),100,'UI 空超神快照不能偷讀 G');
+    assert.equal(c.skills2PassiveMinMp('counter',Array(7).fill(10),{counter:{pick,lv:1}}),cost);
+    c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');
+    assert.equal(calls.length,1); assert.equal(p.mp,1000-cost);
+    p.mp=cost-1;c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');
+    assert.equal(calls.length,1);assert.equal(p.mp,cost-1);
+    c.G.player.skills2.levels.counter[0]=9;assert.equal(c.skills2PassiveMinMp('counter'),100);
+  }
+});
+test('反擊法力：受擊與招架各付基本費，破甲及反擊盾不額外扣；不足不可退回低階',()=>{
+  const c=loadContext(),calls=stubHits(c),{p,m}=setupCounter(c,[1,1,1,1,1,0,0],120);
+  c.chance=()=>true;
+  c.skills2OnPlayerDamaged(m,p,30,true,hitRes(),'pv-float');
+  assert.equal(calls.length,2);assert.equal(p.mp,0);assert.equal(p.shield,11);assert.equal(c.buffVal(m,'sgDefBrk'),15);
+  const low=playerEnt(59),other=enemy(1e9,40,0);
+  c.skills2OnPlayerDamaged(other,low,30,true,hitRes(),'pv-float');
+  assert.equal(calls.length,2);assert.equal(low.mp,59);assert.equal(low.shield,0);assert.equal(c.buffVal(other,'sgDefBrk'),0);
+  const exact=playerEnt(60);c.skills2OnPlayerDamaged(other,exact,30,true,hitRes(),'pv-float');
+  assert.equal(calls.length,3,'只夠付一次時，另一來源不能免費反擊');assert.equal(exact.mp,0);
+});
+test('反擊法力：基本 300 加二次反擊 80 加狂化反殺 100，追加斬擊不重收基本費',()=>{
+  const c=loadContext(),calls=stubHits(c),{p,m}=setupCounter(c,Array(7).fill(10),480);
+  c.G.player.skills2.ult={counter:{pick:2,lv:1}}; c.chance=()=>true;
+  c.SKILLS2.counter.tiers[5].fx.count=2;c.SKILLS2.counter.tiers[6].fx.count=2;
+  const others=[enemy(1e9,50,0),enemy(1e9,60,0)]; c.combatFieldEnemies=()=>[m,...others];
+  c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');
+  assert.equal(calls.length,5,'本體＋二次反擊兩刀＋一次反殺兩個目標');assert.equal(p.mp,0);
+  assert.equal(calls.filter(x=>x.defender===m).length,3);assert.equal(p.shield,20);
+});
+test('反擊法力：T6／T7 只在成功追加時額外付費，不足保留本體；反殺每次觸發各扣一次',()=>{
+  for(const mp of [179,180,280,380]){
+    const c=loadContext(),calls=stubHits(c),{p,m}=setupCounter(c,Array(7).fill(1),mp);
+    c.chance=()=>true;c.SKILLS2.counter.tiers[5].fx.count=1;
+    const other=enemy(1e9,50,0);c.combatFieldEnemies=()=>[m,other];
+    c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');
+    const extra=mp>=180?1:0, splash=mp>=380?2:mp>=280?1:0;
+    assert.equal(calls.length,1+extra+splash);assert.equal(p.mp,mp-100-extra*80-splash*100);
+  }
+  const c=loadContext(),calls=stubHits(c),{p,m}=setupCounter(c,Array(7).fill(1),500);
+  c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');
+  assert.equal(calls.length,1);assert.equal(p.mp,400,'T6 未擲中且 T7 無其他目標，僅扣基本 100');
+});
+test('反擊法力：未觸發、死亡目標、卸下不扣費；GM 鎖魔仍可反擊',()=>{
+  const c=loadContext(),calls=stubHits(c),{p,m}=setupCounter(c,[1,1,1,0,0,0,0],20);
+  c.chance=()=>false;c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');assert.equal(p.mp,20);
+  c.chance=()=>true;m.hp=0;c.skills2OnPlayerDamaged(m,p,50,true,hitRes(),'pv-float');assert.equal(p.mp,20);
+  m.hp=1e9;c.G.player.loadout=[];c.skills2OnPlayerDamaged(m,p,50,true,hitRes(),'pv-float');assert.equal(calls.length,0);
+  c.G.player.loadout=['sg:counter'];p.mp=0;c.gmMpLockActive=()=>true;
+  c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');assert.equal(calls.length,1);assert.equal(p.mp,0);
 });
 
-test('反擊法力：觸發才扣魔、法力不足則不觸發（機率沒中不扣）', () => {
-  const c = loadContext();
-  const calls = stubHits(c);
-  c.GT = 0;
-  c.G.player.skills2.levels.counter = [1, 0, 0, 0, 0, 0, 0];
-  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  const cost = c.SKILLS2.counter.tiers[0].cost; // 5
-  const m = enemy(1e9, 40, 0);
-
-  c.chance = () => false;
-  const pMiss = playerEnt(50);
-  c.skills2OnPlayerDamaged(m, pMiss, 50, false, hitRes(), 'pv-float');
-  assert.equal(calls.length, 0, '機率沒中不反擊');
-  assert.equal(pMiss.mp, 50, '沒觸發就不扣魔');
-
-  c.chance = () => true;
-  c.skills2OnPlayerDamaged(m, pMiss, 50, false, hitRes(), 'pv-float');
-  assert.equal(calls.length, 1, '機率命中應反擊');
-  assert.equal(pMiss.mp, 50 - cost, '觸發扣掉該階的施法消耗');
-
-  const pPoor = playerEnt(cost - 1);
-  c.skills2OnPlayerDamaged(m, pPoor, 50, false, hitRes(), 'pv-float');
-  assert.equal(calls.length, 1, '法力不足不得反擊');
-  assert.equal(pPoor.mp, cost - 1, '法力不足時不扣魔');
-
-  const pExact = playerEnt(cost);
-  c.skills2OnPlayerDamaged(m, pExact, 50, false, hitRes(), 'pv-float');
-  assert.equal(calls.length, 2, '剛好付得起就照常反擊');
-  assert.equal(pExact.mp, 0);
-});
-
-test('反擊法力：各階各自判定——付不起的那一階不觸發，其餘照常', () => {
-  const c = loadContext();
-  const calls = stubHits(c);
-  c.GT = 0;
-  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 0, 0];
-  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  c.chance = () => true;
-  const m = enemy(1e9, 40, 0);
-  // 結算順序＝扣魔順序：T5 破甲 60 → T1 5 → T2 招架 10 → T4 反擊盾 40
-  const p = playerEnt(60 + 5 + 10); // 反擊盾付不起
-  c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
-  assert.equal(c.buffVal(m, 'sgDefBrk'), 15, '破甲照上');
-  assert.equal(calls.length, 2, '受傷反擊＋招架都成立');
-  assert.equal(p.shield, 0, '反擊盾付不起→只有這一階不觸發');
-  assert.equal(p.mp, 0);
-
-  // 破甲（60）付不起時，反擊本身仍照常
-  const calls2Start = calls.length;
-  const pLow = playerEnt(20);
-  c.GT = 1;
-  const m2 = enemy(1e9, 40, 0);
-  c.skills2OnPlayerDamaged(m2, pLow, 30, true, hitRes(), 'pv-float');
-  assert.equal(c.buffVal(m2, 'sgDefBrk'), 0, '破甲付不起→不破甲');
-  assert.equal(calls.length - calls2Start, 2, '反擊與招架照常');
-  assert.equal(pLow.mp, 20 - 5 - 10, '只扣得起的兩階被扣');
-});
-
-test('反擊法力：強化反擊（T3）不扣魔，傷害加成照吃', () => {
-  const c = loadContext();
-  const calls = stubHits(c);
-  c.GT = 0;
-  c.G.player.skills2.levels.counter = [1, 1, 1, 0, 0, 0, 0]; // 階梯解鎖：T3 要 T2 先有 1 級
-  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  c.chance = () => true;
-  const p = playerEnt(5); // 只夠付 T1；未格擋所以 T2 招架不觸發
-  const m = enemy(1e9, 40, 0);
-  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].aCfg.atk, 900, 'T1 Lv.1 55% ＋ T3 Lv.1 35% ＝ 90% 普攻傷害');
-  assert.equal(p.mp, 0, 'T3 不另外扣魔');
-});
-
-test('反擊法力：二次反擊（80）與狂化反殺（100）各自付費，付不起就只少那一段', () => {
-  const c = loadContext();
-  const calls = stubHits(c);
-  c.GT = 0;
-  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
-  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  c.chance = () => true; // T1 與 T6 都擲中（未格擋：T2 招架與 T5 破甲不進場）
-  const p = playerEnt(5 + 80); // 追加反擊付得起、狂化反殺（100）與反擊盾（40）付不起
-  const m = enemy(1e9, 40, 0);
-  const m2 = enemy(1e9, 60, 30, '反殺目標A');
-  c.FIELD = { player: p, dpsWindow: [] };
-  c.combatFieldEnemies = () => [m, m2];
-  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
-  assert.equal(calls.length, 3, '本體 1 次＋追加 2 次；反殺付不起不觸發');
-  assert.ok(calls.every((x) => x.defender === m), '反殺沒發生，打擊全落在攻擊者身上');
-  assert.equal(p.shield, 0, '反擊盾也付不起');
-  assert.equal(p.mp, 0);
-});
-
-test('反擊法力：狂化反殺範圍內沒有其他敵人時不扣魔', () => {
-  const c = loadContext();
-  const calls = stubHits(c);
-  c.GT = 0;
-  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
-  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  c.chance = (x) => x === 35; // 只讓 T1 擲中（T6 Lv.1＝55 不追加）
-  const p = playerEnt(200);
-  const m = enemy(1e9, 40, 0);
-  c.FIELD = { player: p, dpsWindow: [] };
-  c.combatFieldEnemies = () => [m]; // 只有攻擊者，反殺無目標
-  c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
-  assert.equal(calls.length, 1, '只有本體反擊');
-  assert.equal(p.mp, 200 - 5 - 40, '只扣 T1 的 5 與反擊盾的 40，反殺沒有目標不扣魔');
-});
-
-test('反擊法力：法力歸零後被動整個停擺（不會扣成負數）', () => {
-  const c = loadContext();
-  const calls = stubHits(c);
-  c.GT = 0;
-  c.G.player.skills2.levels.counter = [1, 1, 1, 1, 1, 1, 1];
-  c.G.player.loadout = ['sg:counter']; // 主動型被動：裝配技能列才生效
-  c.chance = () => true;
-  const p = playerEnt(0);
-  const m = enemy(1e9, 40, 0);
-  c.skills2OnPlayerDamaged(m, p, 30, true, hitRes(), 'pv-float');
-  assert.equal(calls.length, 0, '沒魔就不反擊');
-  assert.equal(p.shield, 0, '沒魔就沒有反擊盾');
-  assert.equal(c.buffVal(m, 'sgDefBrk'), 0, '沒魔就不破甲');
-  assert.equal(p.mp, 0, '不得扣成負數');
+test('反擊法力 UI：超神彈窗顯示每次反擊 300 MP，前階與追加費用正確',()=>{
+  const c=loadContext();
+  vm.runInContext(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),c);
+  const body={innerHTML:'',classList:{add(){},remove(){}}};
+  c.pendingUiButtonAttributes=()=>''; c.nodePendingKey=()=>'';
+  const snapshot={skills2:{levels:{counter:Array(7).fill(10)},ult:{counter:{pick:2,lv:1}}},loadout:['sg:counter']};
+  c.renderSkill2UltModal(body,'counter',snapshot,{player:{gold:0}});
+  assert.match(body.innerHTML,/300 MP／次反擊/);
+  assert.doesNotMatch(body.innerHTML,/300 MP／次施放/);
+  c.UI.selSkill='sg:counter:2';
+  c.renderSkill2Modal(body,'counter',snapshot,{player:{gold:0}});
+  assert.match(body.innerHTML,/20 MP／次反擊（此階生效時）/);
+  c.UI.selSkill='sg:counter:5';
+  c.renderSkill2Modal(body,'counter',snapshot,{player:{gold:0}});
+  assert.match(body.innerHTML,/80 MP／次反擊（此階生效時）/);
+  assert.match(body.innerHTML,/追加效果觸發另扣 80 MP/);
 });
 
 /* ---- 4) 嗜血狂怒 ---- */

@@ -10069,14 +10069,9 @@ function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
   sgSkyCollapseOnPlayerDamaged(mEnt, pEnt, floatSel);                    // 風刃超神【天穹崩裂】
 }
 
-/* 哪些階會「觸發時扣魔」（1＝扣、0＝不扣）。這張表是程式端的接線：有沒有獨立的
-   觸發時機是寫在程式裡的事實，不能靠參數表某一格有沒有填值去猜——
-   例如大地守護全是恆時被動（沒有觸發時機），表上那幾格 25 只是舊的預設值。
-   反擊 T3【強化反擊】是恆時傷害加成，依使用者決策（2026-08-19）不扣魔。 */
-var SG_TRIGGER_MP_TIERS = { counter: [1, 1, 0, 1, 1, 1, 1] };
-/* 某一階「觸發一次要付的法力」＝參數表「施法消耗」欄的該階列（tiers[i].cost）。
-   這是扣魔與 UI 顯示的唯一來源，兩邊不得各算各的。
-   沒有觸發時機的階、以及主動群組一律回 0——主動群組在 castSkill2 依最高生效進化階付費。 */
+/* 反擊每階都提供升到該階後的基本耗魔；大地守護維持恆時被動，不收觸發費。 */
+var SG_TRIGGER_MP_TIERS = { counter: [1, 1, 1, 1, 1, 1, 1] };
+/* 階段消耗預覽與追加費用共用參數表；基本反擊由 skills2PassiveMinMp 選最高階。 */
 function skills2TierTriggerMp(gid, tierIdx) {
   var g = SKILLS2[gid];
   var mask = SG_TRIGGER_MP_TIERS[gid];
@@ -10088,26 +10083,30 @@ function skills2TierTriggerMp(gid, tierIdx) {
 /* 付一階的觸發消耗：付得起就扣魔回 true，付不起回 false（＝該階這一次不觸發）。
    只在「效果確定要發生」的當下呼叫——機率沒中、沒有可打的目標都不該先扣魔。 */
 function sgCounterPayMp(pEnt, tierIdx) {
-  var cost = skills2TierTriggerMp('counter', tierIdx);
+  // 無階段索引＝本體反擊；追加效果才指定自身階段（T6／T7）。
+  var cost = tierIdx === undefined ? skills2PassiveMinMp('counter') : skills2TierTriggerMp('counter', tierIdx);
   if (cost <= 0) return true;
   if (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) return true;
   if (!pEnt || !((pEnt.mp || 0) >= cost)) return false;
   pEnt.mp -= cost;
   return true;
 }
-/* 已投資的階裡最便宜的觸發消耗：法力低於這個值就整個被動都動不了，
-   供 UI 把技能格畫成「無魔」（ui.js 快捷列與戰鬥技能列共用）。 */
-function skills2PassiveMinMp(gid, levels) {
+/* 基本反擊的最低起手法力：最高已學習階段，超神生效時優先；各階不累加。
+   UI 傳入完整快照；模擬端省略參數時讀 G。 */
+function skills2PassiveMinMp(gid, levels, ultRaw) {
   var g = SKILLS2[gid];
   if (!g || !SG_TRIGGER_MP_TIERS[gid]) return 0;
-  var lvs = levels || [];
-  var min = 0;
-  for (var i = 0; i < g.tiers.length; i++) {
-    if (!(lvs[i] > 0)) continue;
-    var c = skills2TierTriggerMp(gid, i);
-    if (c > 0 && (min === 0 || c < min)) min = c;
+  var lvs = levels;
+  if (!lvs) {
+    lvs = skills2Levels(gid);
+    ultRaw = typeof G !== 'undefined' && G.player && G.player.skills2 ? G.player.skills2.ult : null;
   }
-  return min;
+  var u = sgEffectiveUlt(ultRaw, gid, lvs);
+  if (u) return skills2TierManaCost(gid, 0, u.id);
+  for (var i = g.tiers.length - 1; i >= 0; i--) {
+    if (lvs[i] > 0) return skills2TierManaCost(gid, i);
+  }
+  return 0;
 }
 
 function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
@@ -10118,12 +10117,6 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   var st = getStats();
   var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
 
-  // 破甲擊（T5）：格擋時機率上破甲（敵方 defDown 減益、疊層重置時間；與反擊傷害判定各自獨立）
-  if (blocked && lvs[4] > 0 && mEnt.hp > 0 && chance(sgSlotChance('counter', '5', 'enemy', 0, Number(t[4].fx.chance) || 0)) &&
-      sgCounterPayMp(pEnt, 4)) {
-    sgApplySlot(mEnt, 'counter', '5', 'enemy', 0, { val: Number(t[4].fx.def) || 0, dur: sgVal(t[4].fx, 'sec', lvs[4]), noChance: true });
-    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break', vfxTier: 5 });
-  }
   /* 攻擊者已死就沒有反擊可打——必須在扣魔之前先擋掉，否則會為了不會發生的
      反擊付魔（破甲那段自己有 hp>0 判定，不受影響）。 */
   if (mEnt.hp <= 0) return;
@@ -10132,15 +10125,20 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   var bonus = lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0;
   var strikes = [];
   var tookDamage = (hpDamage > 0) || !!(res && res.absorbed > 0);
-  if (tookDamage && chance(Number(t[0].fx.chance) || 0) && sgCounterPayMp(pEnt, 0)) {
+  if (tookDamage && chance(Number(t[0].fx.chance) || 0) && sgCounterPayMp(pEnt)) {
     strikes.push(sgVal(t[0].fx, 'pct', lvs[0]) + bonus);
   }
   if (blocked && lvs[1] > 0) {
     var blockRed = (typeof blockDmgReduction === 'function') ? blockDmgReduction(st.blockDmgRed || 0) : 0;
     var parryPct = blockRed * sgVal(t[1].fx, 'mult', lvs[1]) / 100;
-    if (parryPct > 0 && sgCounterPayMp(pEnt, 1)) strikes.push(parryPct + bonus);
+    if (parryPct > 0 && sgCounterPayMp(pEnt)) strikes.push(parryPct + bonus);
   }
   if (!strikes.length) return;
+  // 破甲與反擊盾已包含在本體費用中，成功反擊才套用，不再額外扣魔。
+  if (blocked && lvs[4] > 0 && chance(sgSlotChance('counter', '5', 'enemy', 0, Number(t[4].fx.chance) || 0))) {
+    sgApplySlot(mEnt, 'counter', '5', 'enemy', 0, { val: Number(t[4].fx.def) || 0, dur: sgVal(t[4].fx, 'sec', lvs[4]), noChance: true });
+    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break', vfxTier: 5 });
+  }
   // Skills2「我方狀態」的附加條目：被動技能以「觸發一次反擊」當作施放
   if (sgHasExtraStatuses('counter', 'self')) {
     sgApplyExtraStatuses(pEnt, 'counter', 'self', { stats: st, source: sgStatusSource('counter') });
@@ -10183,10 +10181,8 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   }
 
 
-  /* 反擊盾（T4）：每次反擊事件回復一次（吃護盾效率與技能護盾上限 → formula.js grantShield）。
-     扣魔在 grantShield 之前——護盾已經滿到上限時 gained 會是 0，但那是「觸發了但沒得回」，
-     仍然算一次觸發。 */
-  if (lvs[3] > 0 && typeof grantShield === 'function' && sgCounterPayMp(pEnt, 3)) {
+  /* 反擊盾（T4）：每次反擊事件回復一次，費用已包含於本體反擊。 */
+  if (lvs[3] > 0 && typeof grantShield === 'function') {
     var gained = grantShield(pEnt, st.hp * sgVal(t[3].fx, 'pct', lvs[3]) / 100, st);
     if (gained > 0 && typeof floatPlayerEvent === 'function') {
       var pSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
