@@ -28,7 +28,7 @@ test('玩家事件浮字使用頭像區專用位置，不和傷害數字共用�
   assert.doesNotMatch(ui, /if \(layer\.children\.length > 50\) layer\.removeChild\(layer\.firstChild\)/);
 });
 
-test('怪物攻擊玩家時，閃避、格擋、護盾吸收與附加效果會顯示玩家事件浮字', () => {
+test('怪物攻擊玩家時，閃避、格擋與附加效果會顯示玩家事件浮字', () => {
   const monsterAttackStart = combat.indexOf('function doMonsterAttack(');
   const monsterAttackEnd = combat.indexOf('function trackDps', monsterAttackStart);
   assert.ok(monsterAttackStart >= 0 && monsterAttackEnd > monsterAttackStart, '找不到 doMonsterAttack 區塊');
@@ -40,8 +40,34 @@ test('怪物攻擊玩家時，閃避、格擋、護盾吸收與附加效果會�
   assert.match(monsterAttack, /floatText\(playerFloatSel,\s*dmgStr,\s*isCrit \? 'crit' : 'mdmg'\)/);
   assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'閃避!',\s*'dodge defend'\)/);
   assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'格擋!'/);
-  assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'🛡️吸收 ' \+ fmt\(res\.absorbed\)/);
   assert.match(combat, /res\.procs\.forEach\(function \(proc\)/);
+});
+
+test('護盾吸收不飄字，只寫進戰鬥紀錄', () => {
+  /* 2026-09-21 使用者要求「護盾吸收」這個數字不再顯示。實際跑一次被護盾吸收的
+     怪物攻擊，看送出了哪些飄字——字面比對證明不了「沒有別條路徑送出同樣的字」。 */
+  const floats = [];
+  const logs = [];
+  const context = { console, setTimeout() {}, Math, SHIELD_MAX_VERSION: 1, ELEMENTS: [] };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(util, context);
+  vm.runInContext(combat, context);
+  Object.assign(context, {
+    floatText(id, text, cls) { floats.push({ id, text, cls }); },
+    fmt(v) { return String(v); },
+    blog(msg) { logs.push(msg); }
+  });
+  vm.runInContext(`
+    playerDefCfg = function () { return {}; };
+    monsterAtkCfg = function () { return {}; };
+    resolveHit = function () { return { dmg: 100, absorbed: 60, procs: [], thorns: 0 }; };
+  `, context);
+
+  context.doMonsterAttack({ name: 'BOSS' }, {}, 'tp-float', 1);
+  assert.deepEqual(floats.map((f) => f.text), ['-100'], '只剩扣血數字');
+  assert.ok(floats.every((f) => !/吸收/.test(f.text)), '不得出現護盾吸收飄字');
+  assert.ok(logs.some((msg) => /護盾吸收 60/.test(msg)), '戰鬥紀錄仍要寫出吸收量');
 });
 
 test('我方受到的傷害帶負號，回復類飄字不得用紅色', () => {
