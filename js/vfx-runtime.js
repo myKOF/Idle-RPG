@@ -675,7 +675,12 @@ var VFXRuntime = (function () {
       var facing = curveHeading(from, ctrl, to, 0);
       var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
         ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
-      dimensions = dimensions || defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1);
+      // 敵方普攻飛彈只表現飛行，不表達碰撞範圍；與編輯器共用製作尺寸。
+      // 有權威彈體尺寸的事件仍沿用上面的幾何換算。
+      var authoredEnemyProjectile = !dimensions && spec.fxKind === 'enemy-attack' && spec.variant === 'enemy-projectile';
+      if (authoredEnemyProjectile) mult = 1;
+      dimensions = dimensions || (authoredEnemyProjectile ? { scaleX: 1, scaleY: 1 }
+        : defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1));
       var params = Object.assign({ position: from, rotation: facing }, dimensions);
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
       if ((presetId === 'proj-wind-crescent' || knifeFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
