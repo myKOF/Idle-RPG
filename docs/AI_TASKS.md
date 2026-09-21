@@ -1,5 +1,58 @@
 # AI_TASKS.md
 
+## Codex｜永劫火獄火池分離（ETERNAL-POOL-20260921）
+
+- Owner Codex；Done。永劫火獄 ground 改觸發 ground，火池明確事件只讀觸發角色，本體繼承正常龍捲。允許配置工具、Skills2 表／程式、專項測試、快取與本紀錄；預檢乾淨，保留使用者素材及其他配置。
+- Excel AL100 清空、AQ100=ground-mire-lava、AV100 說明更新；沿先前 artifact 匯入問題使用 ZIP/XML 精準編輯，CSV／JS 同步。未改數值／傷害程式及素材，無素材庫變更。唯讀檢查 sgSpawnFirePool、sgGroundVfxSpec、vfx-runtime 地板與場域圖層。
+- 驗證 node --test tests/firepillar-expire-vfx.test.cjs tests/skills2-vfx-schema.test.cjs（11/11，火池只含地板、正常龍捲保留、火池傷害／半徑／壽命）；config_tables apply 語意變更 0；build_check 387 檔與 diff check 通過。未瀏覽器實機驗證；無未完成實作，可合併，未合併／推送。使用者素材留未提交，Commit 見本紀錄所在提交。
+
+## Codex｜烈焰衝擊特效分離（FIREPILLAR-EXPIRE-20260921）
+
+- Owner Codex；Done。使用者授權修正常態黃圈與消失時巨型龍捲。第五階爆炸移至觸發 attack／hit，正常場域只繼承本體；允許配置工具、Skills2 表與程式、專項測試、快取與本紀錄。預檢乾淨，保留使用者其他數值與素材修改。
+- Excel AI96 清空、AN96／AP96 分別為 burst-fire-shockwave／hit-fire，更新 AV96；沿既有 artifact 匯入問題使用 ZIP/XML 精準編輯，CSV／JS 同步當前活頁簿（包含使用者已調整火鳳／烈焰暴風值）。既有 sgGroundExpire 的第五階事件透過角色登記只讀觸發欄，不再帶 field；普通 tick 不繼承 trigger。未修改傷害流程。
+- 驗證 node --test tests/firepillar-expire-vfx.test.cjs tests/skills2-vfx-schema.test.cjs（10/10，含三超神、平時與消失事件、爆炸範圍和傷害）；config_tables --apply Skills2 語意變更 0；build_check 387 檔及 diff check 通過。唯讀檢查 skills2 場域流程與 vfx-runtime 角色派送；未瀏覽器實機驗證。無新增／修改素材、無素材庫變更；使用者素材留未提交。無未完成實作，可合併，未合併或推送，Commit 見本紀錄所在提交。
+
+## Codex｜火鳳遼原主殞石特效（PHOENIX-METEOR-20260921）
+
+- Owner Codex；Done。修正伴生火球的超神外觀覆蓋主殞石；主殞石起飛與落地讀第七階本體，伴生火球保留超神配置。允許 skills2、時序測試、快取與本紀錄；預檢乾淨，不修改使用者素材或數值表。
+- 驗證：node --test tests/meteor-impact-timing.test.cjs tests/starfall-vfx.test.cjs（7/7）；node tools/build_check.cjs（386 檔通過）；git diff --check 通過。驗證四顆主殞石、每顆六個伴生火球、各自彈體／落地受擊及傷害時序；唯讀檢查特效選取與配置。無素材庫變更，使用者正在編輯素材保留未提交；未瀏覽器實機驗證。無未完成實作，可合併，未合併或推送；Commit 見本紀錄所在提交。
+
+## Codex｜地爆天星爆炸與受擊分離（STARFALL-ROLES-20260921）
+
+- Done。使用者指定大型 burst-fire-shockwave 改觸發 attack，小型本體 hit 改 burst-fire；維持預警與子彈讀本體，不受觸發欄干擾。允許 skills2、角色工具、表、測試、快取與本紀錄；預檢乾淨，保留使用者既有修改。
+- Excel AI90 清空、AK90=burst-fire、AN90=burst-fire-shockwave、AV90 更新作用說明，CSV／JS 同步當前活頁簿；沿已確認的 artifact 匯入問題用 ZIP/XML 精準編輯。巨型落地觸發與各敵人受擊事件使用不同角色來源，不強制共用持續時間。
+- 驗證 starfall-vfx／skills2-vfx-schema 11/11；config_tables apply 語意變更 0；build_check 386 檔、diff check 通過。唯讀檢查既有素材／狀態與配置讀取。沒有修改素材，使用者素材留未提交；未瀏覽器實機驗證。無未完成實作，可合併，未合併／推送，Commit 見本紀錄所在提交。
+
+## Codex｜地爆天星火星拖尾（STARFALL-TAIL-20260921）
+
+- Done。將大片橫向火焰改為短命細碎火星，粒子朝速度方向排列，從殞石後方逸出；保留使用者本體亮度。僅素材、專項測試、本紀錄；預檢乾淨，不修改使用者其他配置／素材。
+- 尾焰改用已出貨 light_03，後方 -45 世界單位發射；0.45～0.85 秒壽命、窄角度、細長小粒子、alignToVelocity。既有 worldSpace 保留運動軌跡。未改傷害／飛行速度／數量。
+- 測試：vfx-runtime 以 STARFALL-TAIL 篩選 1/1（真正下墜事件的粒子旋轉長軸近垂直、位於後方）；starfall-vfx 4/4；preset-render 已渲染並展示、export-assets --check 最新、diff check 通過。未做瀏覽器實機驗證；無未完成實作，可合併。素材庫 codex-authored/starfall 同步並位元組驗證，素材 Commit 見本次交付；未合併／推送。其他使用者 Excel、JS 與素材修改保留未提交。
+
+## Codex｜地爆天星跟隨角色（STARFALL-FOLLOW-20260921）
+
+- 完成實作。預警黑圈逐幀跟隨角色，落地依當下角色座標；保留既有全場敵人傷害結算及單顆節拍。允許 skills2、測試、快取、本紀錄，預檢乾淨；不修改使用者素材與 Excel。
+- 沿既有 area.follow 與渲染場域跟隨，不重播／重置黑圈擴大曲線。殞石原有 player target 追蹤保留，爆點當下重讀玩家座標。唯讀檢查 vfx-runtime，無新增參數／素材。
+- 驗證 starfall-vfx 4/4、vfx-runtime 以 STARFALL-FOLLOW 篩選 1/1：移動後黑圈立即貼齊且尺寸繼續增加、只建一個特效，落地爆點及全場傷害正確。diff check 通過。未完整瀏覽器實機驗證；使用者素材及 Excel 持續編輯保留未提交，無素材庫變更。可供使用者合併，未合併／推送。
+
+## Codex｜地爆天星預警與落地（STARFALL-FEEDBACK-20260921）
+
+- Done。補回缺失的落地 attack 爆炸，預警明確傳遞戰場半徑；受擊逐敵播放不受八目標上限。允許 skills2、測試、快取及本紀錄，預檢乾淨；不修改使用者 Excel／素材。
+- 完成：黑圈與落地爆炸以玩家為中心，半徑至少涵蓋出怪距離並擴至存活敵人；玩家實體無 pos 時使用 battlefield 玩家座標。一次 attack 爆炸與逐目標 hit 分開派送，不帶 projectile。既有黑圈 Preset 曲線負責漸大，未新增素材。
+- 驗證：starfall-vfx／meteor-impact-timing 4/4；vfx-runtime 以 STARFALL-FEEDBACK 篩選 1/1，實際 NullBackend 驗證黑圈尺寸隨時間增大、保持可見與爆炸獨立派送。build_check 386 檔通過，最後座標回退修改由專項測試驗證；diff check 通過。唯讀檢查 vfx-runtime／battlefield／素材及配置。未完整瀏覽器實機驗證，無未完成實作，可合併；無素材庫變更，使用者 Excel／素材保留未提交，未合併或推送。
+
+## Codex｜地爆天星單顆與朝向（STARFALL-VFX-20260921）
+
+- Done。修正普通多顆殞石誤繼承巨型特效、預警誤播彈體及素材前端方向。保留普通殞石傷害及地爆天星單顆週期。允許 skills2、proj-starfall 素材、測試、快取、本紀錄；預檢乾淨。
+- 普通殞石起飛與落地明確讀第七階本體；地爆天星預警只播 ground、下墜只播 projectile。素材 bow 原在 +Y 改為 +X 並交換長短軸，與朝 -X 尾焰一致；保留使用者 rim 透明度修改與 layout。未修改其他特效／Excel。
+- 驗證：`node --test tests/starfall-vfx.test.cjs tests/meteor-impact-timing.test.cjs` 3/3；build_check 386 檔通過；diff check 通過。素材時間序列已渲染、檢視與展示；未做瀏覽器 GPU 實機驗證。唯讀檢查 vfx-runtime、既有地爆天星傷害與排程。素材複製至素材庫 codex-authored/starfall 並核對位元組一致，素材提交見對應紀錄；其他使用者素材及 Excel 保留未提交。無未完成實作，可供使用者合併，未合併／推送。
+
+## Codex｜殞石爆點時序（METEOR-IMPACT-TIMING-20260921）
+
+- Owner Codex；Done。使用者回報未落地先播受擊。第七階 attack／hit 同填爆炸，起飛事件立即派送 attack；傷害原本落地才算。允許 skills2、時序測試、快取及本紀錄；預檢乾淨，保留使用者素材及 Excel 修改。
+- 完成：殞石起飛事件僅派送 cast／projectile／ground／field 並禁止自動受擊；落地佇列播放 hit，擊殺仍保留目標。未修改素材或配置、傷害及飛行秒數。唯讀檢查 vfx-runtime、Skills2 配置及共用落地佇列。
+- 驗證：meteor-impact-timing 專項通過；連同 vfx-runtime 測試僅 CATALOG-3 失敗（既有 bolt-sky-purple layout 有兩個根群組，該檔與 HEAD 無差異，本次未修改）。build_check 385 檔通過；diff check 通過。未做瀏覽器實機驗證；無本次未完成實作，可合併。無素材庫變更，使用者素材與 Excel 持續編輯保留未提交，下一步由使用者整合。
+
 ## Codex｜狂怒全系列特效接線（RAGE-SERIES-VFX-20260921）
 
 - Owner Codex；Done。使用者授權全系列觸發攻擊／受擊特效；階級空白繼承同角色、超神覆寫；保留傷害選敵。戰神屠錄錯名已由使用者改為現有 dark-09，保留其設定。允許 skills2、觸發角色工具、Skills2 表、測試、快取、本紀錄與使用者必要素材雙倉庫提交。預檢僅 index 已知不同區段，依既有合併授權繼續。

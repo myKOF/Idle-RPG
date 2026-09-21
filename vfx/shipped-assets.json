@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 143,
+  "assetCount": 144,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -278,6 +278,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:e9f809d833ed9cd59b8e3df3bcf93a9437d19d38b0495ba2650afbae4b4965c1",
       "fileSize": 43409
+    },
+    {
+      "assetId": "light-masks-1.0/transparent/circle_c_noise.png",
+      "relativePath": "light-masks-1.0/Transparent/circle_c_noise.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:3bb3444732a666203998f29da615ac3bbc1a39211f5a9a2fc2478bc17bb96c6c",
+      "fileSize": 47404
     },
     {
       "assetId": "light-masks-1.0/transparent/circle_d_noise.png",

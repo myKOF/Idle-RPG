@@ -9,10 +9,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": 0.809621,
       "scale": {
-        "x": 0.1541,
-        "y": 0.0863
+        "x": 0.4268,
+        "y": 0.2389
       },
       "alpha": 0.9,
       "tint": "#a92da5",
@@ -70,9 +74,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1172,
-        "y": 0.1172
+        "x": 0.3246,
+        "y": 0.3246
       },
       "alpha": 1,
       "tint": "#000a0a",
@@ -120,9 +128,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.2775,
-        "y": 0.1555
+        "x": 0.7684,
+        "y": 0.4306
       },
       "alpha": 0.9,
       "tint": "#a63ecc",
@@ -167,9 +179,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/scorch_02.png",
       "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1758,
-        "y": 0.1758
+        "x": 0.4869,
+        "y": 0.4869
       },
       "alpha": 1,
       "tint": "#963dd1",
@@ -214,10 +230,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": 3.951214,
       "scale": {
-        "x": 0.1541,
-        "y": 0.0863
+        "x": 0.4268,
+        "y": 0.2389
       },
       "alpha": 0.9,
       "tint": "#a92da5",

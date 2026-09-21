@@ -10,7 +10,10 @@
         "ember-shell",
         "molten-heart",
         "surface-flames",
-        "trailing-embers"
+        "trailing-embers",
+        "sprite-6",
+        "sprite-6-copy",
+        "tail"
       ]
     }
   ],

@@ -372,6 +372,158 @@
           0.15
         ]
       ]
+    },
+    {
+      "id": "wave-a",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 15.5572
+      },
+      "scale": {
+        "x": 0.2253,
+        "y": 0.0849
+      },
+      "alpha": 0.4,
+      "tint": "#ffb21c",
+      "blendMode": "add",
+      "duration": 1.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "wave-b",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 15.5572
+      },
+      "scale": {
+        "x": 0.2253,
+        "y": 0.0849
+      },
+      "alpha": 0.4,
+      "tint": "#7d1708",
+      "blendMode": "add",
+      "delay": 0.12,
+      "duration": 1.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "wave-c",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 15.5572
+      },
+      "scale": {
+        "x": 0.2253,
+        "y": 0.0849
+      },
+      "alpha": 0.4,
+      "tint": "#ffb21c",
+      "blendMode": "add",
+      "delay": 0.26,
+      "duration": 1.8,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
     }
   ],
   "sizing": {
