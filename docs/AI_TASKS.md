@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜狂血盛宴範圍特效（BLOODFEAST-VFX-20260921）
+
+- Owner Codex；Done。使用者指定普攻範圍爆炸及逐目標小型受擊；保留傷害與選敵。允許 combat／skills2、Skills2 Excel／CSV、觸發角色工具、測試、快取及本紀錄。預檢只有 index.html 他分支不同版本行，依使用者既有正常合併授權繼續。
+- 驗收：一次範圍爆炸、實際命中才播放小型受擊、死亡目標保留、停用後恢復普攻、範圍及時序符合計算；預覽後交付。
+- 完成：狂血盛宴觸發特效 burst-detonate-phys、命中特效 hit-bleed，Excel AN78／AP78／AV78 與 CSV／JS 同步。沿本對話已確認 artifact 匯入空白誤讀問題，以 ZIP/XML 精準修改三格，其他元件保留。追加目標移除原本 130ms 逐個視覺延遲，對齊原有同拍傷害；主目標連擊仍沿原本節奏。
+- 測試：`node --test tests/bloodfeast-vfx.test.cjs tests/skill2-counter-bloodrage.test.cjs tests/skills2-vfx-schema.test.cjs` 34/34；`node tools/config_tables.cjs --apply Skills2` 語意變更 0；`node tools/build_check.cjs` 382 檔通過；diff check 通過。涵蓋超過八目標、閃避、擊殺、技能失效及表格一致。
+- 唯讀檢查 vfx-runtime.js、既有 Preset、原多目標選敵；兩份素材時間序列已渲染並展示，沒有新增／修改素材，因此無素材庫提交。限制：未做瀏覽器 GPU 實機驗證。無未完成實作，可供使用者合併；未合併或推送，Commit 見本紀錄所在提交。
+
 ## Codex｜防禦技能提早施放（DEFENSE-PRECAST-20260921）
 
 - Owner Codex；Done。使用者要求岩甲術等防禦技能在敵人出現時起手，不等敵方首擊。允許 skills／skills2／combat、專項測試與快取、本紀錄；禁止修改傷害數值、冷卻、耗魔及素材。衝突預檢通過，無前置依賴。

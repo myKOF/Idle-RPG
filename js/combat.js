@@ -1034,16 +1034,25 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     var atkWaveDelayMs = (opts && opts.vfxDelayMs > 0) ? opts.vfxDelayMs : 0;
     var atkHitDelayMs = atkWaveDelayMs;
     var atkDuration = 1 / Math.max(0.01, st.aspd * playerBasicAttackRate(pEnt, st));
-    if (typeof playCombatVfx === 'function') {
+    var feastVfx = opts && opts.feastVfx;
+    if (feastVfx && !depth) {
+        sgEmitVfx('bloodrage', [mEnt], floatSel, { fxKind: 'burst', variant: 'bloodfeast',
+            area: feastVfx.area, vfxRoles: { attack: feastVfx.roles.attack }, travelMs: [0] });
+    }
+    if (typeof playCombatVfx === 'function' && (!feastVfx || !depth)) {
         playCombatVfx({
             fxKind: 'slash', variant: depth ? 'melee-extra' : 'melee', cat: 'basic', elem: null,
             glyph: '⚔️', color: '#e6ddc8',
             targets: [enemyEventFloatTarget(mEnt, floatSel)],
             travelMs: [0], delayMs: atkWaveDelayMs, dur: atkDuration, count: 1,
-            vfx: vfxCombatRoles(depth ? 'basicAttackExtra' : 'basicAttack')
+            vfx: feastVfx ? { attack: vfxCombatRoles('basicAttack').attack } : vfxCombatRoles(depth ? 'basicAttackExtra' : 'basicAttack')
         });
     }
     var res = resolveHit(pEnt, mEnt, aCfg, monsterDefCfg(mEnt));
+    if (feastVfx && !res.miss && res.dmg > 0) {
+        sgEmitVfx('bloodrage', [mEnt], floatSel, { fxKind: 'impact', variant: 'bloodfeast-hit',
+            vfxRoles: { hit: feastVfx.roles.hit }, preserveDeadTargets: true, travelMs: [0], delayMs: atkHitDelayMs });
+    }
     var mName = mEnt.name || '怪物';
     var logMsg = (depth ? '' : '你攻擊 ' + mName + '，');
     var playerFloatSel = playerEventFloatTarget(floatSel);
@@ -1112,7 +1121,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     var atkWaveStepMs = 130;
     if (!res.killed && !depth && !(opts && opts.noProc) && (st.passives.doubleHit || 0) > 0 && chance(st.passives.doubleHit)) {
         var res2 = doPlayerAttack(pEnt, mEnt, floatSel, 1, {
-            vfxDelayMs: atkWaveDelayMs + atkWaveStepMs, damageGroupId: damageGroupId
+            vfxDelayMs: atkWaveDelayMs + atkWaveStepMs, damageGroupId: damageGroupId, feastVfx: feastVfx
         });
         logMsg += ' <span class="log-hl-good">觸發連擊！</span>追加' + res2.logText;
         if (res2 && res2.killed) { res.killed = true; res.dmg += res2.dmg; }
@@ -1124,7 +1133,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         var comboN = rollComboHits(comboBonus > 0 ? { comboHits: (st.comboHits || 0) + comboBonus } : st);
         for (var cbi = 0; cbi < comboN && !res.killed; cbi++) {
             var resc = doPlayerAttack(pEnt, mEnt, floatSel, 1, {
-                vfxDelayMs: atkWaveDelayMs + atkWaveStepMs * (cbi + 1), damageGroupId: damageGroupId
+                vfxDelayMs: atkWaveDelayMs + atkWaveStepMs * (cbi + 1), damageGroupId: damageGroupId, feastVfx: feastVfx
             });
             if (resc) { res.dmg += resc.dmg; if (resc.killed) res.killed = true; }
         }
@@ -1631,7 +1640,8 @@ function fieldTick(dt) {
                 // 狂血盛宴：每 1 連擊數讓同一次普攻多攻擊 1 個敵人；追加目標不再遞迴觸發普攻特效。
                 var basicTargets = (typeof skill2RageBasicAttackTargets === 'function')
                     ? skill2RageBasicAttackTargets(primary, combatFieldEnemies()) : [primary];
-                var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float');
+                var feastVfx = (typeof skill2BloodfeastVfx === 'function') ? skill2BloodfeastVfx(primary) : null;
+                var res = doPlayerAttack(p, primary, primary.floatSel || 'mv-float', 0, { feastVfx: feastVfx });
                 combatDebugAuditFieldDeaths(debugFieldTick, 'basic attack');
                 if (res.killed) {
                     applyBasicAttackKillGap(p, playerAttackRate);
@@ -1646,7 +1656,7 @@ function fieldTick(dt) {
                     var extraTarget = basicTargets[bti];
                     if (!extraTarget || extraTarget.hp <= 0) continue;
                     var extraRes = doPlayerAttack(p, extraTarget, extraTarget.floatSel || 'mv-float', 1, {
-                        noProc: true, vfxDelayMs: 130 * bti
+                        noProc: true, vfxDelayMs: feastVfx ? 0 : 130 * bti, feastVfx: feastVfx
                     });
                     if (extraRes) {
                         res.dmg += extraRes.dmg || 0;

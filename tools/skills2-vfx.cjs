@@ -3,6 +3,7 @@
 const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
 const noteColumn = '特效作用說明';
 const events = {
+  'bloodrage.7': {roles:['attack','hit'], note:'狂怒期間每次普攻在主目標位置播放一次範圍爆炸，匹配多目標普攻半徑；實際命中的敵人各播放原尺寸小型命中特效，追加目標同時結算與播放。'},
   'counter.holyBody': {roles:['attack','projectile'], note:'反擊滿計數後發射一顆光彈；觸發子彈飛到本次鎖定的目標位置，抵達時結算範圍傷害並在落點播放一次觸發特效。爆炸匹配傷害半徑，不在每個受害者身上重播。'},
   'counter.indomitable': {roles:['ground'], note:'復甦開始時於玩家位置播放天降光束，持續至復甦結束，不在每個敵人身上播放。'},
   'cleave.windChaser': {roles:['ground','field'], note:'每次迴旋斬命中，在敵人位置產生龍捲風；固定命中位置，依龍捲風傷害半徑縮放。'},
