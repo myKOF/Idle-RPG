@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜神聖之體獨立光彈與爆炸（COUNTER-HOLY-FLIGHT-20260921）
+
+- Owner Codex；Done。使用者要求黃光改為獨立觸發特效，滿計數時發射一顆觸發光彈，抵達後爆炸一次。反擊計數方式、門檻及傷害數值不調整。
+- 範圍：skills2.js、vfx-runtime.js、Skills2.xlsx／CSV、tools/skills2-vfx.cjs、對應技能／Runtime 測試、index.html／bridge.js 快取、本紀錄。既有觸發子彈欄可沿用，無新協議欄位；衝突預檢通過。
+- 驗收：未滿門檻無神聖黃光、每滿門檻一顆光彈／一次爆炸、抵達時才結算範圍傷害、飛行與爆炸幾何同步、空觸發欄不繼承本體、死亡與高塔退化、既有計數與傷害數值不變。保留使用者配置及素材編輯。
+- 實作：神聖之體改為獨立 triggerVfx（觸發子彈 proj-light-orb、觸發特效 burst-holy），移除本體 attack／hit 黃光。沿既有飛彈佇列飛往發射時的目標位置，抵達才結算並播放一次爆炸；保留原邊緣距離判定，光彈採素材製作尺寸。快取同步，無新素材或 Worker 協議欄位。
+- 配置：Excel 僅改 AI69、AK69、AN69、AO69、AV69，原生 Excel 重開驗證內容與物件數；Artifact 匯出相容性問題沿用前次原生儲存方式，未覆蓋其他欄。Excel→CSV→JS apply 零語意差異。提交資料由 HEAD 加本次修改製作，使用者其餘配置與素材保留在工作區。
+- 測試：node --test --test-name-pattern="神聖|HOLY-FLIGHT" tests/skill2-ult-evolution.test.cjs tests/vfx-runtime.test.cjs：5/5；提交資料以 staged-read.cjs 預載重跑並加入 CATALOG-1：6/6。node --test tests/skill2-counter-bloodrage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-schema.test.cjs tests/waterball-vfx-integration.test.cjs tests/vfx-runtime.test.cjs：137/139，兩項失敗為工作區既有缺少 proj-cleave-ring-tricolor-09（提交資料 CATALOG-1 通過）及前次已確認的 bolt-sky-purple layout 頂層列數。node tools/build_check.cjs：379 檔通過；diff check 通過。
+- 唯讀檢查：battlefield.js、既有飛彈／觸發欄解析、config_tables.cjs、proj-light-orb／burst-holy 素材與其他反擊測試。未實機畫面與 Console 驗證；飛行期間敵人移動可能離開落點，符合抵達後結算。無未完成實作，可合併；未合併或推送。Commit 見本紀錄所在提交，下一步由使用者整合並調整平衡數值。
+
 ## Codex｜雙刀亂舞隨機選敵與毀滅之舞追加（DUALDANCE-TARGETS-20260921）
 
 - Owner Codex；Done。使用者授權全系列每刀從當前範圍內隨機選敵、允許重複；只有毀滅之舞追加 3 次攻擊，其餘階段／超神數量不變。

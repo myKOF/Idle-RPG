@@ -855,6 +855,27 @@ test('ENEMY-SIZE 權威彈體幾何仍決定尺寸，玩家飛彈不受敵方修
   }
 });
 
+test('HOLY-FLIGHT 小光彈沿鎖定落點飛行，抵達前不爆光，範圍爆炸只播放一次', () => {
+  const ps = ['proj-light-orb', 'burst-holy'].map(id => JSON.parse(fs.readFileSync(path.join(REPO, 'vfx/presets', id + '.json'), 'utf8')));
+  const { adapter, log } = makeAdapter(ps, { profile: { scale: .35, areaScale: 1 } });
+  adapter.tryPlay({ fxKind: 'projectile', variant: 'counter-holy-flight', targets: [], hit: false,
+    area: { fixedLanding: true, sourceX: 10, sourceY: 20, x: 210, y: 20 }, travelMs: [1000],
+    vfx: { projectile: ps[0].id } });
+  adapter.update(.5);
+  assert.equal(adapter.stats().played, 1); assert.equal(adapter.stats().projectiles, 1);
+  const first = ps[0].layers.find(l => l.type === 'sprite');
+  const node = log.nodes.find(n => n.spec.assetUrl.includes(first.assetId));
+  assert.ok(Math.abs(node.transforms.at(-1).x - 110) < .001);
+  // 素材曲線可以改變各層大小；整組不可額外套米制正規化或場景倍率。
+  assert.equal(adapter.stats().pending, 0);
+  const body = ps[0].layers.find(l => l.id === 'body');
+  const bodyNode = log.nodes.find(n => n.spec.assetUrl.includes(body.assetId));
+  assert.equal(bodyNode.transforms.at(-1).scaleX, body.scale.x);
+  adapter.update(.51); assert.equal(adapter.stats().projectiles, 0);
+  adapter.tryPlay({ fxKind: 'burst', variant: 'counter-holy-impact', targets: [], area: { x: 210, y: 20, r: 80 }, vfx: { attack: ps[1].id } });
+  assert.equal(adapter.stats().played, 2);
+});
+
 test('MOVE-3b 被閃避／無敵擋下的攻擊不畫受擊爆點', function () {
   const { adapter } = makeAdapter([unitPreset('proj-x', 2), unitPreset('hit-x')]);
   adapter.tryPlay({

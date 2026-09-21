@@ -1777,7 +1777,7 @@ test('反擊的五個傳奇特效：完美姿態、以血還血、風之體、�
 
 test('【神聖之體】：每 N 次反擊射出一顆光彈，對目標周圍打出神聖傷害', () => {
   const c = loadContext(['js/legendary.js']);
-  const calls = stubHits(c); stubVfx(c);
+  const calls = stubHits(c), specs = stubVfx(c);
   const p = counterMaxSingleStrike(c);
   const m = enemy(1e12, 3 * M, 0);
   const near = enemy(1e12, 5 * M, 0);      // 與目標間距 0 米：在 8 米內
@@ -1793,14 +1793,94 @@ test('【神聖之體】：每 N 次反擊射出一顆光彈，對目標周圍�
   }
   assert.equal(c.SKILL2_RT.counter.hits, n - 1, '前提：一次受擊剛好累積一次斬擊');
   assert.equal(calls.filter((x) => x.elem === 'light').length, 0, '沒到門檻不得發動');
+  assert.ok(specs.every(s => !Object.values(s.vfx).includes('burst-holy') && !Object.values(s.vfx).includes('hit-light')));
 
   c.combatFieldEnemies = () => [m, near, far];
   c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
+  assert.equal(calls.filter(x => x.elem === 'light').length, 0, '飛行前不得先扣神聖傷害');
+  const flight = specs.filter(s => s.variant === 'counter-holy-flight');
+  assert.equal(flight.length, 1);
+  assert.deepEqual(Object.keys(flight[0].vfx), ['projectile']);
+  assert.equal(flight[0].vfx.projectile, 'proj-light-orb');
+  const queued = c.SKILL2_RT.projectiles.find(p => p.counterHolyFlight);
+  const counterBeforeImpact = c.SKILL2_RT.counter.holy;
+  assert.equal(queued.endAt * 1000, flight[0].travelMs[0]);
+  c.GT = queued.endAt - .001;
+  c.sgTickFlyingProjectiles(.01, tickCtx(c, p, [m, near, far]));
+  assert.equal(calls.filter(x => x.elem === 'light').length, 0);
+  c.GT = queued.endAt;
+  c.sgTickFlyingProjectiles(.01, tickCtx(c, p, [m, near, far]));
   const holy = calls.filter((x) => x.elem === 'light');
   assert.equal(holy.length, 2, '光彈要打到目標本身與 8 米內的鄰居，遠處的不算');
   assert.ok(holy.every((x) => x.ent !== far));
   const expect = c.getStats().atk * c.sgUltVal(ult, 'pct') / 100;
   assert.ok(Math.abs(holy[0].atk - expect) < 1e-6, '光彈傷害＝普攻攻擊力 × pct%');
+  const impact = specs.filter(s => s.variant === 'counter-holy-impact');
+  assert.equal(impact.length, 1);
+  assert.deepEqual(Object.keys(impact[0].vfx), ['attack']);
+  assert.equal(impact[0].vfx.attack, 'burst-holy');
+  assert.equal(impact[0].targets.length, 0, '範圍事件只畫一次，不逐目標爆光');
+  assert.equal(impact[0].area.r, 80 + c.bfEntityRadius(m));
+  assert.equal(c.SKILL2_RT.counter.holy, counterBeforeImpact, '神聖範圍傷害不得計成新的反擊');
+});
+
+test('神聖光彈：死亡後仍在鎖定落點爆炸、延遲與範圍同步且只結算一次', () => {
+  const c = loadContext(), hits = stubHits(c), specs = stubVfx(c), p = counterMaxSingleStrike(c);
+  setUlt(c, 'counter', 'holyBody');
+  const target = enemy(1000, 100, 0, 'target'), near = enemy(1000, 130, 0, 'near'), far = enemy(1000, 1000, 0, 'far');
+  const cfg = c.sgCounterLegendCfg([target, near, far]);
+  c.sgCounterHolyOrb(p, c.getStats(), target, cfg, 'mv-float', {}, 600);
+  const shot = c.SKILL2_RT.projectiles[0];
+  assert.ok(Math.abs(shot.endAt - .6 - specs[0].travelMs[0] / 1000) < 1e-9);
+  assert.equal(specs[0].delayMs, 600);
+  assert.equal(specs[0].area.fixedLanding, true);
+  target.hp = 0; target.pos.x = 1000;
+  let total = 0, deaths = 0;
+  const ctx = { ...tickCtx(c, p, [near, far]), onDamage: d => total += d, onDeaths: () => deaths++ };
+  c.GT = shot.endAt; c.sgTickFlyingProjectiles(.1, ctx); c.sgTickFlyingProjectiles(.1, ctx);
+  assert.deepEqual(hits.map(h => h.ent.name), ['near']);
+  assert.equal(specs.filter(s => s.variant === 'counter-holy-impact').length, 1);
+  assert.equal(specs.at(-1).area.x, 100);
+  assert.equal(total, 100); assert.equal(deaths, 0);
+  assert.equal(c.SKILL2_RT.projectiles.length, 0);
+});
+
+test('神聖光彈：高塔單體、擊殺通知、空觸發欄與戰鬥重置', () => {
+  for (const empty of [false, true]) {
+    const c = loadContext(), hits = stubHits(c), specs = stubVfx(c), p = counterMaxSingleStrike(c);
+    setUlt(c, 'counter', 'holyBody');
+    if (empty) c.SKILLS2.counter.ult[0].triggerVfx = {};
+    const target = enemy(100);
+    c.sgCounterHolyOrb(p, c.getStats(), target, c.sgCounterLegendCfg([target]), 'tower', {}, 0);
+    let deaths = 0;
+    c.GT = c.SKILL2_RT.projectiles[0].endAt;
+    c.sgTickFlyingProjectiles(.1, { ...tickCtx(c, p, [target]), onDeaths: () => deaths++ });
+    assert.equal(hits.length, 1); assert.equal(deaths, 1);
+    assert.equal(specs.length, 2);
+    if (empty) assert.ok(specs.every(s => Object.values(s.vfx).every(v => !v)));
+    target.hp = 100;
+    c.sgCounterHolyOrb(p, c.getStats(), target, c.sgCounterLegendCfg([target]), 'tower', {}, 0);
+    c.resetSkill2RT(); c.GT += 10;
+    c.sgTickFlyingProjectiles(10, tickCtx(c, p, [target]));
+    assert.equal(hits.length, 1, '換場後不得繼續結算舊光彈');
+    assert.equal(specs.filter(s => s.variant === 'counter-holy-impact').length, 1);
+  }
+});
+
+test('神聖光彈：保持原本邊緣距離的命中範圍，不變更數值平衡', () => {
+  const c = loadContext(), hits = stubHits(c); stubVfx(c);
+  const p = counterMaxSingleStrike(c); setUlt(c, 'counter', 'holyBody');
+  const target = enemy(1e12, 100, 0), edge = enemy(1e12, 0, 0), outside = enemy(1e12, 0, 0);
+  edge.pos.x = target.pos.x + 80 + c.bfEntityRadius(target) + c.bfEntityRadius(edge);
+  outside.pos.x = edge.pos.x + .01;
+  const pool = [target, edge, outside];
+  const before = c.bfNearestOthers(target, pool, pool.length, 80);
+  c.sgCounterHolyOrb(p, c.getStats(), target, c.sgCounterLegendCfg(pool), 'mv-float', {}, 0);
+  c.GT = c.SKILL2_RT.projectiles[0].endAt;
+  c.sgTickFlyingProjectiles(.1, tickCtx(c, p, pool));
+  assert.equal(hits.length, 2);
+  assert.equal(before.length, 1);
+  assert.equal(hits[1].ent, before[0]);
 });
 
 test('【戰神體】：視窗內損失的生命百分比會加成到之後的反擊，過期就消失', () => {

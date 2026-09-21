@@ -632,7 +632,7 @@ var VFXRuntime = (function () {
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
       // 共用明確起點／終點的飛行定位，來源死亡也不回退成由玩家發射。
       var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true);
-      var fixedLanding = presetId === 'proj-waterball-flow' && spec.area && spec.area.fixedLanding === true;
+      var fixedLanding = spec.area && spec.area.fixedLanding === true;
       if (!toId && !directed && !fixedLanding && !knifeFlight) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
       var from;
@@ -675,15 +675,16 @@ var VFXRuntime = (function () {
       var facing = curveHeading(from, ctrl, to, 0);
       var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
         ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
-      // 敵方普攻飛彈只表現飛行，不表達碰撞範圍；與編輯器共用製作尺寸。
+      // 敵方普攻與神聖光彈只表現飛行，不表達碰撞範圍；與編輯器共用製作尺寸。
       // 有權威彈體尺寸的事件仍沿用上面的幾何換算。
-      var authoredEnemyProjectile = !dimensions && spec.fxKind === 'enemy-attack' && spec.variant === 'enemy-projectile';
-      if (authoredEnemyProjectile) mult = 1;
-      dimensions = dimensions || (authoredEnemyProjectile ? { scaleX: 1, scaleY: 1 }
+      var holyFlight = spec.variant === 'counter-holy-flight';
+      var authoredProjectile = !dimensions && ((spec.fxKind === 'enemy-attack' && spec.variant === 'enemy-projectile') || holyFlight);
+      if (authoredProjectile) mult = 1;
+      dimensions = dimensions || (authoredProjectile ? { scaleX: 1, scaleY: 1 }
         : defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1));
       var params = Object.assign({ position: from, rotation: facing }, dimensions);
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
-      if ((presetId === 'proj-wind-crescent' || knifeFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      if ((presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
