@@ -13,7 +13,7 @@
         "x": 0.6797,
         "y": 0.6797
       },
-      "alpha": 0.5,
+      "alpha": 0.8,
       "tint": "#e0451a",
       "blendMode": "add",
       "duration": 3,
@@ -289,46 +289,50 @@
     {
       "id": "tail",
       "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 6,
       "tint": "#e0451a",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 18
+        "rate": 55
       },
       "lifetime": [
-        1.6,
-        2.4
+        0.45,
+        0.85
       ],
       "spawn": {
-        "radius": 56,
+        "radius": 20,
         "shape": "circle"
       },
       "speed": [
-        112,
-        186
+        100,
+        170
       ],
       "direction": 180,
-      "spread": 26,
-      "drag": 1,
+      "spread": 16,
+      "drag": 1.5,
       "noise": {
         "frequency": 0.012,
         "scrollSpeed": 1.2,
-        "strength": 16
+        "strength": 3
       },
       "startScale": [
-        0.1328,
-        0.2305
+        0.008,
+        0.018
       ],
       "alphaOverLife": [
         [
           0,
-          0.9
+          0
         ],
         [
-          0.4,
-          0.6
+          0.08,
+          0.75
+        ],
+        [
+          0.5,
+          0.45
         ],
         [
           1,
@@ -360,13 +364,29 @@
       "scaleOverLife": [
         [
           0,
+          0.8
+        ],
+        [
+          0.15,
           1
         ],
         [
           1,
-          0.4
+          0.15
         ]
-      ]
+      ],
+      "position": {
+        "x": -45,
+        "y": 0
+      },
+      "maxParticles": 80,
+      "scale": {
+        "x": 2.5,
+        "y": 0.65
+      },
+      "alignToVelocity": true,
+      "velocityRotationOffset": 0,
+      "worldSpace": true
     }
   ],
   "sizing": {

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜地爆天星火星拖尾（STARFALL-TAIL-20260921）
+
+- Done。將大片橫向火焰改為短命細碎火星，粒子朝速度方向排列，從殞石後方逸出；保留使用者本體亮度。僅素材、專項測試、本紀錄；預檢乾淨，不修改使用者其他配置／素材。
+- 尾焰改用已出貨 light_03，後方 -45 世界單位發射；0.45～0.85 秒壽命、窄角度、細長小粒子、alignToVelocity。既有 worldSpace 保留運動軌跡。未改傷害／飛行速度／數量。
+- 測試：vfx-runtime 以 STARFALL-TAIL 篩選 1/1（真正下墜事件的粒子旋轉長軸近垂直、位於後方）；starfall-vfx 4/4；preset-render 已渲染並展示、export-assets --check 最新、diff check 通過。未做瀏覽器實機驗證；無未完成實作，可合併。素材庫 codex-authored/starfall 同步並位元組驗證，素材 Commit 見本次交付；未合併／推送。其他使用者 Excel、JS 與素材修改保留未提交。
+
 ## Codex｜地爆天星跟隨角色（STARFALL-FOLLOW-20260921）
 
 - 完成實作。預警黑圈逐幀跟隨角色，落地依當下角色座標；保留既有全場敵人傷害結算及單顆節拍。允許 skills2、測試、快取、本紀錄，預檢乾淨；不修改使用者素材與 Excel。
