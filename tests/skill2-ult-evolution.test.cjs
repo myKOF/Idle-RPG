@@ -1440,14 +1440,14 @@ test('【雙生刃】：擊中目標數量 +2', () => {
   const calls = stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'dualdance'); equip(c, 'dualdance');
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
   const mk = () => [enemy(1e12, 3 * M, 0), enemy(1e12, 3 * M, 1 * M), enemy(1e12, 3 * M, 2 * M)];
 
   c.castSkill2(p, mk(), 'dualdance', 'mv-float');
   const base = calls.length;
 
   setLegendary(c, ['danceTwinBlades']);
-  calls.length = 0; p.mp = 200;
+  calls.length = 0; p.mp = 10000;
   c.castSkill2(p, mk(), 'dualdance', 'mv-float');
   assert.equal(calls.length, base + c.PASSIVE_POOL.danceTwinBlades.fx.danceTargetAdd.count);
 });
@@ -1457,7 +1457,7 @@ test('【狂戰士】：鐵血之舞的生命損失與敵人流血同步放大',
   stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'dualdance'); equip(c, 'dualdance');
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
 
   const e1 = enemy(1e12, 3 * M, 0);
   c.castSkill2(p, [e1], 'dualdance', 'mv-float');
@@ -1467,7 +1467,7 @@ test('【狂戰士】：鐵血之舞的生命損失與敵人流血同步放大',
   setLegendary(c, ['danceBerserker']);
   const k = 1 + c.PASSIVE_POOL.danceBerserker.fx.danceIronAmp.pct / 100;
   const e2 = enemy(1e12, 3 * M, 0);
-  p.dots.length = 0; p.mp = 200;
+  p.dots.length = 0; p.mp = 10000;
   c.castSkill2(p, [e2], 'dualdance', 'mv-float');
   assert.ok(Math.abs(e2.dots.filter((d) => d.sid === 'sgIronBleed')[0].dps - baseEnemy * k) < 1e-6,
     '敵人流血要 ×' + k);
@@ -1481,7 +1481,7 @@ test('【狂舞】與【殺千刀】：只在暴風之舞持續期間作用，�
   forceRolls(c, 0.999);
   maxLevels(c, 'dualdance'); equip(c, 'dualdance');
   setLegendary(c, ['danceFrenzy', 'danceThousandCuts']);
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
 
   // 第一次施放會「開起」化身；依設計那一拍不算在持續期間內
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
@@ -1496,7 +1496,7 @@ test('【狂舞】與【殺千刀】：只在暴風之舞持續期間作用，�
   const gap0 = stm.gap, until0 = stm.until;
 
   // 化身期間的自動施放：節拍縮短
-  p.mp = 200;
+  p.mp = 10000;
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float', { storm: true });
   const shrink = 1 - c.PASSIVE_POOL.danceFrenzy.fx.danceStormGap.pct / 100;
   assert.ok(Math.abs(c.SKILL2_RT.storm.gap - gap0 * shrink) < 1e-9,
@@ -1504,7 +1504,7 @@ test('【狂舞】與【殺千刀】：只在暴風之舞持續期間作用，�
   assert.ok(Math.abs(c.SKILL2_RT.storm.until - until0) < 1e-9, '沒殺人就不延長');
 
   // 化身期間殺人：延長化身
-  p.mp = 200;
+  p.mp = 10000;
   const dying = [enemy(100, 3 * M, 0), enemy(100, 3 * M, 1 * M)];
   c.castSkill2(p, dying, 'dualdance', 'mv-float', { storm: true });
   const per = c.PASSIVE_POOL.danceThousandCuts.fx.danceStormKill.sec;
@@ -1517,7 +1517,7 @@ test('【不屈之誓】：暴風之舞期間的死亡延後生效，期間傷�
   stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'dualdance'); equip(c, 'dualdance');
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
 
   assert.equal(c.skills2TryDeathDefer(p), false, '沒進化身就不攔死亡');
 
@@ -1544,12 +1544,108 @@ test('【不屈之誓】：暴風之舞期間的死亡延後生效，期間傷�
 
 /* ---- 14) 雙刀亂舞的三個超神進化 ---- */
 
+test('雙刀選敵：全七階與三超神逐刀範圍內隨機，可重複命中，只有毀滅之舞加三刀', () => {
+  const forms = [1, 2, 3, 4, 5, 6, 7, 'doomDance', 'flameKagura', 'asuraDance'];
+  for (const form of forms) for (const single of [true, false]) {
+    const c = loadContext();
+    const calls = stubHits(c), specs = stubVfx(c), floats = [];
+    c.floatEnemyEvent = (ent, sel, text, cls, dmg, delay) => floats.push({ ent, delay });
+    forceRolls(c, .999);
+    const tier = typeof form === 'number' ? form : 7;
+    setLevels(c, 'dualdance', Array.from({ length: 7 }, (_, i) => i < tier ? 10 : 0));
+    if (typeof form === 'string') setUlt(c, 'dualdance', form);
+    equip(c, 'dualdance');
+    const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
+    const radius = c.skills2CastRangePx('dualdance');
+    const a = enemy(1e12, radius / 2, 0, 'a');
+    const b = enemy(1e12, radius, 0, 'b');
+    b.pos.x += c.bfEntityRadius(b);
+    const far = enemy(1e12, radius + 1, 0, 'far');
+    far.pos.x += c.bfEntityRadius(far);
+    const dead = enemy(0, 1, 0, 'dead');
+    const pool = single ? [a, far, dead] : [a, b, far, dead];
+    c.castSkill2(p, pool, 'dualdance', 'mv-float');
+    const expected = (tier === 1 ? 2 : 5) + (form === 'doomDance' ? 3 : 0);
+    assert.equal(calls.length, expected, String(form));
+    const chosen = single ? a : b;
+    assert.ok(calls.every(h => h.ent === chosen), String(form) + ': each draw may repeat');
+    const slashes = specs.filter(s => /^dual-/.test(s.variant));
+    assert.equal(slashes.length, expected);
+    slashes.forEach((s, i) => {
+      assert.deepEqual(Array.from(s.targets), [chosen.name]);
+      assert.equal(s.delayMs || 0, i * 200);
+      assert.equal(floats[i].ent, chosen);
+      assert.equal(floats[i].delay, i * 200);
+    });
+    assert.equal(far.hp, 1e12);
+  }
+});
+
+test('雙刀選敵：逐刀重抽，擊殺或離開範圍後改選存活可及目標，無候選就停止', () => {
+  for (const leave of [false, true]) {
+    const c = loadContext();
+    const calls = stubHits(c), specs = stubVfx(c);
+    forceRolls(c, .999); maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+    const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
+    const a = enemy(1e12, 10, 0, 'a'), b = enemy(leave ? 1e12 : 100, 20, 0, 'b');
+    const hit = c.resolveHit;
+    c.resolveHit = (...args) => { const r = hit(...args); if (leave) b.pos.x = 10000; return r; };
+    c.castSkill2(p, [a, b], 'dualdance', 'mv-float');
+    assert.equal(calls.length, 5);
+    assert.equal(calls[0].ent, b);
+    assert.ok(calls.slice(1).every(h => h.ent === a));
+    assert.equal(specs.filter(s => /^dual-/.test(s.variant)).length, 5);
+  }
+  const c = loadContext(); const calls = stubHits(c), specs = stubVfx(c);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+  const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
+  c.castSkill2(p, [enemy(100, 10, 0)], 'dualdance', 'mv-float');
+  assert.equal(calls.length, 1);
+  assert.equal(specs.filter(s => /^dual-/.test(s.variant)).length, 1);
+});
+
+test('雙刀選敵：毀滅追加固定三刀、可與雙生刃相加，自動暴風施放沿用同一規則', () => {
+  for (const ult of ['', 'doomDance', 'flameKagura', 'asuraDance']) {
+    const c = loadContext(['js/legendary.js']); const calls = stubHits(c); stubVfx(c);
+    forceRolls(c, .999); maxLevels(c, 'dualdance'); equip(c, 'dualdance');
+    if (ult) setUlt(c, 'dualdance', ult, 1);
+    setLegendary(c, ['danceTwinBlades']);
+    const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
+    const a = enemy(1e12, 10, 0), far = enemy(1e12, 10000, 0);
+    c.SKILL2_RT.storm = { until: 10, nextAt: 0, gap: .35, tgt: null };
+    c.sgTickStorm(tickCtx(c, p, [a, far]), .05);
+    assert.equal(calls.length, ult === 'doomDance' ? 10 : 7, ult);
+    assert.ok(calls.every(h => h.ent === a));
+    if (ult === 'doomDance') assert.ok(p.hp < 1000);
+  }
+});
+
+test('雙刀選敵：配置來源同步且只有毀滅之舞新增固定追加值，無座標單體也承受全部斬擊', () => {
+  const tables = require('../tools/config_tables.cjs');
+  const rows = tables.readXlsxRows(path.join(root, 'config/Excel/Skills2.xlsx'));
+  const csv = tables.csvParse(fs.readFileSync(path.join(root, 'config/CSV/Skills2.csv'), 'utf8'));
+  for (const stage of ['雙刀亂舞', '疾風亂舞', '毀滅之舞']) {
+    assert.deepEqual(rows.find(r => r[2] === stage), csv.find(r => r[2] === stage));
+  }
+  const c = loadContext(), calls = stubHits(c); stubVfx(c);
+  const ult = c.SKILLS2.dualdance.ult;
+  assert.equal(ult.find(u => u.id === 'doomDance').fx.add, 3);
+  assert.equal(ult.find(u => u.id === 'doomDance').fx.addPer, undefined);
+  for (const id of ['flameKagura', 'asuraDance']) assert.equal(ult.find(u => u.id === id).fx.add, undefined);
+  maxLevels(c, 'dualdance'); equip(c, 'dualdance'); setUlt(c, 'dualdance', 'doomDance');
+  const p = playerEnt(); p.mp = 10000;
+  const e = enemy(1e12); forceRolls(c, .999);
+  c.castSkill2(p, [e], 'dualdance', 'tower-float');
+  assert.equal(calls.length, 8);
+  assert.ok(calls.every(h => h.ent === e));
+});
+
 test('【毀滅之舞】：每次施放付出當下生命（不致死），換來本次施放的總傷加成', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'dualdance'); equip(c, 'dualdance');
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
 
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
   const baseTotal = calls[0].total;
@@ -1557,13 +1653,13 @@ test('【毀滅之舞】：每次施放付出當下生命（不致死），換�
 
   setUlt(c, 'dualdance', 'doomDance');
   const ult = c.SKILLS2.dualdance.ult[0];
-  calls.length = 0; p.mp = 200;
+  calls.length = 0; p.mp = 10000;
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
   assert.ok(p.hp < hpAfterPlain, '施放要付出生命');
   const bonus = c.sgVal(ult.fx, 'pct', c.SG_TIER_MAX_LV);
   assert.ok(Math.abs(calls[0].total - (baseTotal + bonus)) < 1e-9, '本次施放要 +' + bonus + '%');
 
-  p.hp = 1; p.mp = 200;
+  p.hp = 1; p.mp = 10000;
   c.castSkill2(p, [enemy(1e12, 3 * M, 0)], 'dualdance', 'mv-float');
   assert.equal(p.hp, 1, '生命見底時不得把自己扣死');
 });
@@ -1573,7 +1669,7 @@ test('【火之神樂】：每命中 1 次疊 1 層灼焰，每跳量＝單層 �
   stubHits(c); stubVfx(c);
   forceRolls(c, 0.999);
   maxLevels(c, 'dualdance'); equip(c, 'dualdance');
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 10000; c.FIELD = { player: p };
 
   const plain = enemy(1e12, 3 * M, 0);
   c.castSkill2(p, [plain], 'dualdance', 'mv-float');
@@ -1581,7 +1677,7 @@ test('【火之神樂】：每命中 1 次疊 1 層灼焰，每跳量＝單層 �
 
   setUlt(c, 'dualdance', 'flameKagura');
   const ult = c.SKILLS2.dualdance.ult[1];
-  p.mp = 200;
+  p.mp = 10000;
   const target = enemy(1e12, 3 * M, 0);          // 只有 1 個敵人 → 所有斬擊都打它
   c.castSkill2(p, [target], 'dualdance', 'mv-float');
   const dot = target.dots.filter((d) => d.sid === 'sgKagura')[0];

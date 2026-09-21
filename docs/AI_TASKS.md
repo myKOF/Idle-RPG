@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜雙刀亂舞隨機選敵與毀滅之舞追加（DUALDANCE-TARGETS-20260921）
+
+- Owner Codex；Done。使用者授權全系列每刀從當前範圍內隨機選敵、允許重複；只有毀滅之舞追加 3 次攻擊，其餘階段／超神數量不變。
+- 範圍：skills2.js、Skills2.xlsx／CSV、相關技能測試、index.html／bridge.js 快取、本紀錄。衝突預檢通過，無前置依賴；保留現有使用者配置／素材變更，不修改其他技能或傷害公式。
+- 驗收：各階與三種超神、單目標／多目標／範圍外／死亡重新選敵、毀滅獨有 +3、傷害與 VFX 選敵／延遲一致、Excel／CSV／JS 同步。完成後提交並交使用者整合。
+- 實作：每刀以 skills2CanReach 重新篩選存活目標後獨立抽取；無目標則停止。毀滅 fx.add=3，不隨等級成長，與既有疾風亂舞／雙生刃相加。保留原生命代價、增傷、神樂疊層與暴風自動施放，傷害及特效共用同一目標與浮字延遲。主頁與 Worker 快取同步。
+- 配置：Excel 僅改 7 格（AU59、AW52:AX53、AW59:AX59），原生 Excel 正常重開逐值及物件數驗證；Artifact 匯出與既有讀表器／批註格式不相容，因此未用其完整匯出覆蓋來源。工作區 Excel→CSV→JS apply 後零語意差異。提交中的資料以 HEAD 加本次變更製作，使用者其他配置／特效引用與素材仍留在工作區；HEAD 既有 Excel AJ20 與 CSV 的差異未納入本次修正。
+- 測試：node --test --test-name-pattern="雙刀選敵|雙生刃|狂戰士|狂舞|不屈之誓|毀滅之舞|火之神樂|修羅亂舞" tests/skill2-ult-evolution.test.cjs tests/skill2-asura-dualwield.test.cjs：13/13 通過，工作區與實際提交資料各驗一次。新增 4 案覆蓋 20 種階段／目標組合、界線、死亡／移出範圍、無座標高塔、毀滅低高等級及自動施放；替換回舊雙刀函式後 4 案均失敗。原雙刀測試夾具補足施法魔力，未放寬傷害斷言。
+- 廣域回歸：node --test tests/skill2-ult-evolution.test.cjs tests/skill2-system.test.cjs tests/skill2-asura-dualwield.test.cjs tests/skills2-mana-cost.test.cjs tests/skills2-geometry.test.cjs：114 項、76 通過、38 失敗；同配置／測試替換回 HEAD 雙刀函式得到同樣 38 失敗外加上述 4 案，無新增回歸。node tools/build_check.cjs：379 檔通過；diff check 通過。
+- 唯讀檢查：battlefield.js 距離／體型判定、combat.js、config_tables.cjs、其他雙刀系統／耗魔／裝備測試與素材。無素材修改或素材庫提交。風險／限制：未實機畫面與 Console 驗證；本次按需求讓多刀可集中同一敵人，範圍外不再被斬擊選中。可合併，未合併或推送；下一步由使用者整合後實機確認。
+
 ## Codex｜敵方飛彈原始尺寸（ENEMY-PROJECTILE-SIZE-20260921）
 
 - Owner Codex；Done。使用者授權修正敵方飛彈在遊戲中被預設米制尺寸放大的問題。
