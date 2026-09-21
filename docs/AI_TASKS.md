@@ -1,5 +1,42 @@
 # AI_TASKS.md
 
+## Codex｜提交使用者雙刀配置與素材（USER-SNAPSHOT-20260921）
+
+- Done。使用者要求先提交現有修改供合併，再繼續戰神體；戰神體尚未修改，等待使用者合併與返還公式確認。
+- 提交 Skills2 Excel／CSV／JS 現有配置、slash-dual 與三種超神 Preset／layout，含火之神樂使用者調整值。Status.csv 僅換行差異，git add 後無內容變更。沒有新增臨時產物，沒有修改其他副本的 index.html。
+- 素材庫 Commit 686ad91，8 份素材存於 codex-authored/dualdance，複製後逐檔雜湊一致；素材庫乾淨。node tools/vfx/export-assets.cjs --check 通過，匯出索引與貼圖無須變更。
+- node tools/config_tables.cjs --apply Skills2：語意變更 0；雙刀針對性測試（skill2-ult-evolution／skill2-asura-dualwield，沿前次名稱篩選）13/13 通過；diff check 通過。唯讀檢查素材來源解析器、匯出工具、配置差異與既有引用。
+- 已知限制：配置原已引用不存在的 proj-cleave-ring-tricolor-09，本次按使用者要求保存現況，未擅改引用；上一輪 build 379 檔通過，本次無新增程式邏輯，未實機驗證。交使用者合併，建議整合時處理缺失引用及統一快取版本；未合併或推送。遊戲 Commit 見本紀錄所在提交。
+
+## Codex｜神聖之體獨立光彈與爆炸（COUNTER-HOLY-FLIGHT-20260921）
+
+- Owner Codex；Done。使用者要求黃光改為獨立觸發特效，滿計數時發射一顆觸發光彈，抵達後爆炸一次。反擊計數方式、門檻及傷害數值不調整。
+- 範圍：skills2.js、vfx-runtime.js、Skills2.xlsx／CSV、tools/skills2-vfx.cjs、對應技能／Runtime 測試、index.html／bridge.js 快取、本紀錄。既有觸發子彈欄可沿用，無新協議欄位；衝突預檢通過。
+- 驗收：未滿門檻無神聖黃光、每滿門檻一顆光彈／一次爆炸、抵達時才結算範圍傷害、飛行與爆炸幾何同步、空觸發欄不繼承本體、死亡與高塔退化、既有計數與傷害數值不變。保留使用者配置及素材編輯。
+- 實作：神聖之體改為獨立 triggerVfx（觸發子彈 proj-light-orb、觸發特效 burst-holy），移除本體 attack／hit 黃光。沿既有飛彈佇列飛往發射時的目標位置，抵達才結算並播放一次爆炸；保留原邊緣距離判定，光彈採素材製作尺寸。快取同步，無新素材或 Worker 協議欄位。
+- 配置：Excel 僅改 AI69、AK69、AN69、AO69、AV69，原生 Excel 重開驗證內容與物件數；Artifact 匯出相容性問題沿用前次原生儲存方式，未覆蓋其他欄。Excel→CSV→JS apply 零語意差異。提交資料由 HEAD 加本次修改製作，使用者其餘配置與素材保留在工作區。
+- 測試：node --test --test-name-pattern="神聖|HOLY-FLIGHT" tests/skill2-ult-evolution.test.cjs tests/vfx-runtime.test.cjs：5/5；提交資料以 staged-read.cjs 預載重跑並加入 CATALOG-1：6/6。node --test tests/skill2-counter-bloodrage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-schema.test.cjs tests/waterball-vfx-integration.test.cjs tests/vfx-runtime.test.cjs：137/139，兩項失敗為工作區既有缺少 proj-cleave-ring-tricolor-09（提交資料 CATALOG-1 通過）及前次已確認的 bolt-sky-purple layout 頂層列數。node tools/build_check.cjs：379 檔通過；diff check 通過。
+- 唯讀檢查：battlefield.js、既有飛彈／觸發欄解析、config_tables.cjs、proj-light-orb／burst-holy 素材與其他反擊測試。未實機畫面與 Console 驗證；飛行期間敵人移動可能離開落點，符合抵達後結算。無未完成實作，可合併；未合併或推送。Commit 見本紀錄所在提交，下一步由使用者整合並調整平衡數值。
+
+## Codex｜雙刀亂舞隨機選敵與毀滅之舞追加（DUALDANCE-TARGETS-20260921）
+
+- Owner Codex；Done。使用者授權全系列每刀從當前範圍內隨機選敵、允許重複；只有毀滅之舞追加 3 次攻擊，其餘階段／超神數量不變。
+- 範圍：skills2.js、Skills2.xlsx／CSV、相關技能測試、index.html／bridge.js 快取、本紀錄。衝突預檢通過，無前置依賴；保留現有使用者配置／素材變更，不修改其他技能或傷害公式。
+- 驗收：各階與三種超神、單目標／多目標／範圍外／死亡重新選敵、毀滅獨有 +3、傷害與 VFX 選敵／延遲一致、Excel／CSV／JS 同步。完成後提交並交使用者整合。
+- 實作：每刀以 skills2CanReach 重新篩選存活目標後獨立抽取；無目標則停止。毀滅 fx.add=3，不隨等級成長，與既有疾風亂舞／雙生刃相加。保留原生命代價、增傷、神樂疊層與暴風自動施放，傷害及特效共用同一目標與浮字延遲。主頁與 Worker 快取同步。
+- 配置：Excel 僅改 7 格（AU59、AW52:AX53、AW59:AX59），原生 Excel 正常重開逐值及物件數驗證；Artifact 匯出與既有讀表器／批註格式不相容，因此未用其完整匯出覆蓋來源。工作區 Excel→CSV→JS apply 後零語意差異。提交中的資料以 HEAD 加本次變更製作，使用者其他配置／特效引用與素材仍留在工作區；HEAD 既有 Excel AJ20 與 CSV 的差異未納入本次修正。
+- 測試：node --test --test-name-pattern="雙刀選敵|雙生刃|狂戰士|狂舞|不屈之誓|毀滅之舞|火之神樂|修羅亂舞" tests/skill2-ult-evolution.test.cjs tests/skill2-asura-dualwield.test.cjs：13/13 通過，工作區與實際提交資料各驗一次。新增 4 案覆蓋 20 種階段／目標組合、界線、死亡／移出範圍、無座標高塔、毀滅低高等級及自動施放；替換回舊雙刀函式後 4 案均失敗。原雙刀測試夾具補足施法魔力，未放寬傷害斷言。
+- 廣域回歸：node --test tests/skill2-ult-evolution.test.cjs tests/skill2-system.test.cjs tests/skill2-asura-dualwield.test.cjs tests/skills2-mana-cost.test.cjs tests/skills2-geometry.test.cjs：114 項、76 通過、38 失敗；同配置／測試替換回 HEAD 雙刀函式得到同樣 38 失敗外加上述 4 案，無新增回歸。node tools/build_check.cjs：379 檔通過；diff check 通過。
+- 唯讀檢查：battlefield.js 距離／體型判定、combat.js、config_tables.cjs、其他雙刀系統／耗魔／裝備測試與素材。無素材修改或素材庫提交。風險／限制：未實機畫面與 Console 驗證；本次按需求讓多刀可集中同一敵人，範圍外不再被斬擊選中。可合併，未合併或推送；下一步由使用者整合後實機確認。
+
+## Codex｜敵方飛彈原始尺寸（ENEMY-PROJECTILE-SIZE-20260921）
+
+- Owner Codex；Done。使用者授權修正敵方飛彈在遊戲中被預設米制尺寸放大的問題。
+- 範圍：js/vfx-runtime.js、tests/vfx-runtime.test.cjs、index.html、本紀錄。無前置依賴；衝突預檢通過。不修改素材、配置、傷害與命中邏輯；保留使用者 slash-dual preset/layout 修改。
+- 未帶權威彈體尺寸的敵方遠程攻擊依製作尺寸播放；帶 bodyLength／lineWidth 的事件仍依判定尺寸。驗證正式暗影素材、各場景倍率、飛行時序與敵方傷害回歸。
+- 驗證：node --test tests/vfx-runtime.test.cjs tests/enemy-projectile-retaliation.test.cjs，98 項中 97 通過；唯一 CATALOG-3（bolt-sky-purple 頂層兩列）以 HEAD Runtime 在記憶體執行確認同樣失敗。新增尺寸案例在舊 Runtime 會失敗，修正後通過。node tools/build_check.cjs：379 檔通過；git diff --check 通過。
+- 唯讀檢查：combat.js、data.js、battlefield.js、Editor 播放、proj-dark-orb 與 asset-index。沒有素材修改／素材庫提交。未進行實機畫面與 Console 驗證；後續由使用者在整合後確認畫面。可合併本次修正；未合併或推送，使用者既有素材修改留在工作區。
+
 ## Codex｜圖層循環與旋轉速度（LAYER-SPIN-20260918）
 
 - Owner Codex；Done。使用者要求圖層持續loop與Rotation內的可拖曳／輸入速度，取代手動整圈曲線。允許Core、Editor、Core測試、快取與本紀錄；衝突預檢通過。不修改使用者素材。sprite／procedural／empty支援圖層loop與每秒旋轉速度，既有particle速度語意保留。

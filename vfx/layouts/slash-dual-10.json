@@ -1,15 +1,16 @@
 {
   "schemaVersion": 1,
-  "presetId": "slash-dual",
+  "presetId": "slash-dual-10",
   "groups": [
     {
-      "id": "slash-dual",
-      "name": "slash-dual",
+      "id": "slash-dual-10",
+      "name": "slash-dual-10",
       "layerIds": [
         "gold-blade-body",
         "ivory-cutting-edge",
         "fine-gold-echo",
         "fine-gold-echo-copy",
+        "fine-gold-echo-copy-2",
         "hot-gold-blade",
         "contact-flash",
         "short-gold-sparks",
@@ -18,6 +19,6 @@
     }
   ],
   "order": [
-    "group:slash-dual"
+    "group:slash-dual-10"
   ]
 }

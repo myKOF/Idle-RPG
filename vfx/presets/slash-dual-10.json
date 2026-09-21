@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "slash-dual",
+  "id": "slash-dual-10",
   "duration": 0.36,
   "loop": false,
   "layers": [
@@ -10,8 +10,8 @@
       "assetId": "particle-pack/png-transparent/slash_02.png",
       "zIndex": 0,
       "position": {
-        "x": -2.1952,
-        "y": -4.9393
+        "x": -6.021,
+        "y": -7.4898
       },
       "rotation": -0.6632,
       "scale": {
@@ -19,7 +19,7 @@
         "y": 0.2825
       },
       "alpha": 1,
-      "tint": "#fefba9",
+      "tint": "#58b6fe",
       "blendMode": "normal",
       "duration": 0.36,
       "alphaOverLife": [
@@ -62,11 +62,11 @@
       "zIndex": 1,
       "rotation": -0.6632,
       "scale": {
-        "x": 0.2871,
+        "x": 0.3691,
         "y": 0.1328
       },
       "alpha": 0.92,
-      "tint": "#fff0a4",
+      "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 0.3,
       "alphaOverLife": [
@@ -108,8 +108,8 @@
       "assetId": "particle-pack/png-transparent/slash_02.png",
       "zIndex": 2,
       "position": {
-        "x": 2.1346,
-        "y": 3.7071
+        "x": -1.0535,
+        "y": -5.8573
       },
       "rotation": -0.6632,
       "scale": {
@@ -117,7 +117,7 @@
         "y": 0.1625
       },
       "alpha": 0.7,
-      "tint": "#ffcc14",
+      "tint": "#0084ff",
       "blendMode": "normal",
       "delay": 0.025,
       "duration": 0.25,
@@ -222,7 +222,7 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 5,
       "alpha": 0.7,
-      "tint": "#ffd265",
+      "tint": "#ff6666",
       "blendMode": "add",
       "duration": 0.24,
       "emission": {
@@ -231,7 +231,7 @@
       },
       "lifetime": [
         0.12,
-        0.24
+        0.4
       ],
       "spawn": {
         "height": 14,
@@ -280,7 +280,7 @@
       "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 6,
       "alpha": 0.8,
-      "tint": "#eab643",
+      "tint": "#ff6666",
       "blendMode": "normal",
       "duration": 0.28,
       "emission": {
@@ -323,16 +323,54 @@
       "assetId": "particle-pack/png-transparent/slash_02.png",
       "zIndex": 2,
       "position": {
-        "x": 4.8787,
-        "y": 3.7071
+        "x": -9.6175,
+        "y": -9.5245
       },
-      "rotation": -0.6632,
+      "rotation": -0.612311,
       "scale": {
-        "x": 0.4097,
-        "y": 0.1625
+        "x": 0.2704,
+        "y": 0.1533
       },
       "alpha": 0.7,
-      "tint": "#ffffff",
+      "tint": "#1fbcff",
+      "blendMode": "normal",
+      "delay": 0.025,
+      "duration": 0.25,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "fine-gold-echo-copy-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/slash_02.png",
+      "zIndex": 2,
+      "position": {
+        "x": -9.3002,
+        "y": -11.8685
+      },
+      "rotation": -0.612311,
+      "scale": {
+        "x": 0.2132,
+        "y": 0.0935
+      },
+      "alpha": 0.7,
+      "tint": "#86d6fd",
       "blendMode": "normal",
       "delay": 0.025,
       "duration": 0.25,

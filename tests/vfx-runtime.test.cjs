@@ -822,6 +822,60 @@ test('MOVE-2b 敵方出手的投射物從攻擊者身上出發，不是從玩家
   assert.ok(t.x > 200, '起點應該在攻擊者（x=300）附近而不是玩家（x=0），收到：' + t.x);
 });
 
+test('ENEMY-SIZE 暗影飛彈保持編輯器尺寸與權威飛行時序，不套場景倍率', () => {
+  const p = JSON.parse(fs.readFileSync(path.join(REPO, 'vfx/presets/proj-dark-orb.json'), 'utf8'));
+  for (const scale of [1, .35]) {
+    const { adapter, log } = makeAdapter([p], { profile: { scale } });
+    adapter.tryPlay({ fxKind: 'enemy-attack', variant: 'enemy-projectile', sourceId: 'mv-float-2',
+      targets: ['pv-float'], travelMs: [260], vfx: { projectile: p.id } });
+    adapter.update(.13);
+    const core = log.nodes.find(n => n.spec.assetUrl.includes('circle_05.png'));
+    const t = core.transforms.at(-1);
+    assert.equal(t.scaleX, p.layers.find(l => l.id === 'core').scale.x);
+    assert.equal(t.scaleY, p.layers.find(l => l.id === 'core').scale.y);
+    assert.ok(Math.abs(t.x - 150) < .001);
+    assert.equal(adapter.stats().projectiles, 1);
+    adapter.update(.14);
+    assert.equal(adapter.stats().projectiles, 0);
+  }
+});
+
+test('ENEMY-SIZE 權威彈體幾何仍決定尺寸，玩家飛彈不受敵方修正影響', () => {
+  const p = unitPreset('geometry-projectile', 2);
+  p.sizing = { shape: 'projectile-circle', authored: { radius: 9 } };
+  for (const enemy of [true, false]) {
+    const { adapter, log } = makeAdapter([p]);
+    adapter.tryPlay({ fxKind: enemy ? 'enemy-attack' : 'projectile', variant: enemy ? 'enemy-projectile' : '',
+      sourceId: 'mv-float-2', targets: ['pv-float'], travelMs: [260],
+      ...(enemy ? { bodyLength: 36, lineWidth: 54 } : {}), vfx: { projectile: p.id } });
+    adapter.update(.1);
+    const t = lastOf(log, 'fx');
+    assert.equal(t.scaleX, enemy ? 2 : 120 / 18);
+    assert.equal(t.scaleY, enemy ? 3 : 120 / 18);
+  }
+});
+
+test('HOLY-FLIGHT 小光彈沿鎖定落點飛行，抵達前不爆光，範圍爆炸只播放一次', () => {
+  const ps = ['proj-light-orb', 'burst-holy'].map(id => JSON.parse(fs.readFileSync(path.join(REPO, 'vfx/presets', id + '.json'), 'utf8')));
+  const { adapter, log } = makeAdapter(ps, { profile: { scale: .35, areaScale: 1 } });
+  adapter.tryPlay({ fxKind: 'projectile', variant: 'counter-holy-flight', targets: [], hit: false,
+    area: { fixedLanding: true, sourceX: 10, sourceY: 20, x: 210, y: 20 }, travelMs: [1000],
+    vfx: { projectile: ps[0].id } });
+  adapter.update(.5);
+  assert.equal(adapter.stats().played, 1); assert.equal(adapter.stats().projectiles, 1);
+  const first = ps[0].layers.find(l => l.type === 'sprite');
+  const node = log.nodes.find(n => n.spec.assetUrl.includes(first.assetId));
+  assert.ok(Math.abs(node.transforms.at(-1).x - 110) < .001);
+  // 素材曲線可以改變各層大小；整組不可額外套米制正規化或場景倍率。
+  assert.equal(adapter.stats().pending, 0);
+  const body = ps[0].layers.find(l => l.id === 'body');
+  const bodyNode = log.nodes.find(n => n.spec.assetUrl.includes(body.assetId));
+  assert.equal(bodyNode.transforms.at(-1).scaleX, body.scale.x);
+  adapter.update(.51); assert.equal(adapter.stats().projectiles, 0);
+  adapter.tryPlay({ fxKind: 'burst', variant: 'counter-holy-impact', targets: [], area: { x: 210, y: 20, r: 80 }, vfx: { attack: ps[1].id } });
+  assert.equal(adapter.stats().played, 2);
+});
+
 test('MOVE-3b 被閃避／無敵擋下的攻擊不畫受擊爆點', function () {
   const { adapter } = makeAdapter([unitPreset('proj-x', 2), unitPreset('hit-x')]);
   adapter.tryPlay({
