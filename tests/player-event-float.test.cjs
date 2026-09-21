@@ -288,8 +288,8 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) :[\s\S]*?Math\.random\(\) \* 30 - 15/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*0\.36s[\s\S]*?--enemy-hit-lifetime-base:\s*0\.34s/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?--enemy-hit-font-size:\s*15px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.37s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.36s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*20px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.4s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*14px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.36s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*18px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.4s/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.dmg\s*\{/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{/);
 });
@@ -299,11 +299,24 @@ test('傷害數字消失速度提高一倍：Canvas 壽命減半，MISS／回復
      不比對字面——倍率之後再調，這裡只要改期望值。 */
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   const src = renderer.slice(renderer.indexOf('function floatStyle('), renderer.indexOf('function floatDamageGroupId('));
-  const consts = ['PLAYER_SKILL_FLOAT_LIFE_SEC', 'PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC', 'DAMAGE_FLOAT_SPEEDUP']
+  const consts = ['PLAYER_SKILL_FLOAT_LIFE_SEC', 'PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC', 'DAMAGE_FLOAT_SPEEDUP', 'CRIT_FLOAT_SHRINK_PX']
     .map((name) => renderer.match(new RegExp('var ' + name + ' = [^;]+;'))[0]).join('\n');
   const floatStyle = new Function(consts + '\n' + src + '\nreturn floatStyle;')();
   const life = (elId, cls, text) => floatStyle(elId, cls, text || '123').life;
+  const size = (elId, cls, text) => floatStyle(elId, cls, text || '123').size;
   const near = (actual, expected, label) => assert.ok(Math.abs(actual - expected) < 1e-9, label + '：' + actual + ' ≠ ' + expected);
+
+  /* 2026-09-21：爆擊數字縮小 2 個字號（2px）；一般數字不動 */
+  assert.equal(size('mv-float-0', 'crit enemy-attack'), 19, '普攻暴擊 21 → 19');
+  assert.equal(size('mv-float-0', 'crit enemy-skill'), 19, '技能暴擊 21 → 19');
+  assert.equal(size('mv-float-0', 'crit enemy-skill crit-high-roll'), 24, '高倍率暴擊 26 → 24');
+  assert.equal(size('pv-float', 'crit', '-123'), 18, '我方被暴擊 20 → 18');
+  assert.equal(size('mv-float-0', 'dmg enemy-attack'), 15, '一般普攻不變');
+  assert.equal(size('mv-float-0', 'dmg enemy-skill'), 17, '一般技能不變');
+  assert.equal(size('pv-float', 'mdmg', '-123'), 16, '我方一般扣血不變');
+  // DOM 路徑（高塔、?canvas=0）同樣各小 2px；高倍率暴擊是「各自基準 + 2px」，跟著縮
+  assert.match(css, /\.float-txt\.crit:not\(\.enemy-hit-float\)\s*\{[\s\S]*?font-size:\s*18px/);
+  assert.match(css, /\.float-txt\.player-damage\.crit\s*\{[\s\S]*?font-size:\s*18px/);
 
   near(life('mv-float-0', 'dmg enemy-attack'), 0.34, '普攻');
   near(life('mv-float-0', 'dmg enemy-skill'), 0.37, '技能');
@@ -412,7 +425,7 @@ test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源�
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?color:\s*#ffffff/);
   assert.match(css, /\.enemy-combatant\s*\{[\s\S]*?overflow:\s*visible/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*14px/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?color:\s*#ffd700/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?color:\s*#ffd700/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?z-index:\s*10\s*!important/);

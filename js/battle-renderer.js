@@ -84,6 +84,9 @@ var BattleRenderer = (function () {
      整段「彈出→上浮→淡出」等比加速。DOM 路徑（高塔、?canvas=0）在 css/style.css 的
      --enemy-hit-lifetime-base 等處以同一個倍率寫死。MISS、回復、技能名稱不算傷害數字。 */
   var DAMAGE_FLOAT_SPEEDUP = 2;
+  /* 爆擊數字（敵人身上的暴擊、高倍率暴擊、我方被暴擊）比原本的字級小幾 px（2026-09-21 使用者：縮小 2 個字號）。
+     DOM 路徑在 css/style.css 的暴擊分類以同一個差值寫死。 */
+  var CRIT_FLOAT_SHRINK_PX = 2;
 
   /* ---- 穿透式角色輪廓 ----
      特效一多，角色整個被蓋住，玩家找不到自己在哪。這裡的作法不是把角色搬到
@@ -5502,7 +5505,7 @@ var BattleRenderer = (function () {
       var isDamageToUs = cls.indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(text);
       if (isDamageToUs) {
         s.fill = '#ff6b6b'; s.size = 16;
-        if (isCrit) { s.size += 4; s.fill = '#ff3b3b'; }
+        if (isCrit) { s.size += 4 - CRIT_FLOAT_SHRINK_PX; s.fill = '#ff3b3b'; }
         s.life /= DAMAGE_FLOAT_SPEEDUP;
         return s;
       }
@@ -5526,7 +5529,7 @@ var BattleRenderer = (function () {
     var isAttackDamage = cls.indexOf('enemy-attack') >= 0;
     if (isSkillDamage) { s.fill = '#ffd75e'; s.size = 17; }
     if (isCrit) {
-      s.fill = '#ffb347'; s.size = isHigh ? 26 : 21; s.rise = 44; s.life = 0.76;
+      s.fill = '#ffb347'; s.size = (isHigh ? 26 : 21) - CRIT_FLOAT_SHRINK_PX; s.rise = 44; s.life = 0.76;
       if (isHigh) s.fill = '#ff7b3c';
     }
     if (isSkillDamage || isAttackDamage) {
