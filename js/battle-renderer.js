@@ -80,6 +80,10 @@ var BattleRenderer = (function () {
   var PLAYER_SKILL_FLOAT_DRIFT = 16;        // 起始後只再向外滑一小段，避免回到人物中心
   var PLAYER_SKILL_FLOAT_LIFE_SEC = 1.05;   // 一般技能名稱／傷害字的顯示時間
   var PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC = PLAYER_SKILL_FLOAT_LIFE_SEC * 2;
+  /* 傷害數字（敵人身上的所有數字、我方扣血）的播放倍速：顯示時間除以它，上浮距離不變，
+     整段「彈出→上浮→淡出」等比加速。DOM 路徑（高塔、?canvas=0）在 css/style.css 的
+     --enemy-hit-lifetime-base 等處以同一個倍率寫死。MISS、回復、技能名稱不算傷害數字。 */
+  var DAMAGE_FLOAT_SPEEDUP = 2;
 
   /* ---- 穿透式角色輪廓 ----
      特效一多，角色整個被蓋住，玩家找不到自己在哪。這裡的作法不是把角色搬到
@@ -5493,6 +5497,7 @@ var BattleRenderer = (function () {
       if (isDamageToUs) {
         s.fill = '#ff6b6b'; s.size = 16;
         if (isCrit) { s.size += 4; s.fill = '#ff3b3b'; }
+        s.life /= DAMAGE_FLOAT_SPEEDUP;
         return s;
       }
       if (cls.indexOf('heal') >= 0) { s.fill = '#6dfb8f'; return s; }              // 回血：綠
@@ -5523,6 +5528,7 @@ var BattleRenderer = (function () {
       s.life = isSkillDamage ? (isCrit ? 0.8 : 0.74) : (isCrit ? 0.72 : 0.68);
       if (isHigh && isCrit) s.life *= 2;
     }
+    s.life /= DAMAGE_FLOAT_SPEEDUP;
     return s;
   }
   function floatDamageGroupId(cls) {
@@ -5672,8 +5678,9 @@ var BattleRenderer = (function () {
       bornAt: nowMs(), hits: 1, total: isFinite(val) ? val : 0,
       prefix: prefixMatch ? prefixMatch[1] : '',
       /* 傷害數字沿用 DOM 的快速回彈：一般字從 0.72 倍起，
-         0.12 秒內放大到約 1.1 倍，再回到 1 倍；暴擊只稍微放大峰值。 */
-      pop: isEnemyDamageFloat ? 0.12 : (isCritFloat ? 0.18 : 0),
+         0.12 秒內放大到約 1.1 倍，再回到 1 倍；暴擊只稍微放大峰值。
+         會回彈的都是傷害數字，回彈時間跟壽命一起除以 DAMAGE_FLOAT_SPEEDUP。 */
+      pop: (isEnemyDamageFloat ? 0.12 : (isCritFloat ? 0.18 : 0)) / DAMAGE_FLOAT_SPEEDUP,
       popStart: isEnemyDamageFloat ? 0.72 : 0.6,
       popPeak: isEnemyDamageFloat ? (isCritFloat ? 1.16 : 1.14) : 1.1,
       fadeTail: isEnemyDamageFloat,
