@@ -3930,7 +3930,7 @@ function sgTickMeteors(ctx) {
     if (victims.length) {
       sgEmitVfx(m.gid, victims, m.floatSel, {
         fxKind: 'impact', variant: m.variant, elem: m.elem, area: sgAreaAround(m.target, m.radius),
-        vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid
+        vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, preserveDeadTargets: true
       });
     }
     if (m.onImpact) m.onImpact(m, victims, ctx);
@@ -4178,10 +4178,14 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     var area = targetGeomOk ? sgAreaAround(meteorTarget, radius) : null;
 
     if (meteor) {
+      // 攻擊欄也可能填落地爆炸；起飛只派送施法、彈體與落點標記。
+      var meteorRoles = sgVfxRoles('fireball', { vfxTier: 7 });
       sgEmitVfx('fireball', [meteorTarget], floatSel, {
         fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1,
         area: area, delayMs: castDelay, travelMs: [travelMs], angle: Math.PI / 3,
-        vfxTier: 7
+        vfxTier: 7, hit: false,
+        vfxRoles: { cast: meteorRoles.cast, projectile: meteorRoles.projectile,
+          ground: meteorRoles.ground, field: meteorRoles.field }
       });
     } else {
       sgEmitVfx('fireball', [primary], floatSel, {

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜殞石爆點時序（METEOR-IMPACT-TIMING-20260921）
+
+- Owner Codex；Done。使用者回報未落地先播受擊。第七階 attack／hit 同填爆炸，起飛事件立即派送 attack；傷害原本落地才算。允許 skills2、時序測試、快取及本紀錄；預檢乾淨，保留使用者素材及 Excel 修改。
+- 完成：殞石起飛事件僅派送 cast／projectile／ground／field 並禁止自動受擊；落地佇列播放 hit，擊殺仍保留目標。未修改素材或配置、傷害及飛行秒數。唯讀檢查 vfx-runtime、Skills2 配置及共用落地佇列。
+- 驗證：meteor-impact-timing 專項通過；連同 vfx-runtime 測試僅 CATALOG-3 失敗（既有 bolt-sky-purple layout 有兩個根群組，該檔與 HEAD 無差異，本次未修改）。build_check 385 檔通過；diff check 通過。未做瀏覽器實機驗證；無本次未完成實作，可合併。無素材庫變更，使用者素材與 Excel 持續編輯保留未提交，下一步由使用者整合。
+
 ## Codex｜狂怒全系列特效接線（RAGE-SERIES-VFX-20260921）
 
 - Owner Codex；Done。使用者授權全系列觸發攻擊／受擊特效；階級空白繼承同角色、超神覆寫；保留傷害選敵。戰神屠錄錯名已由使用者改為現有 dark-09，保留其設定。允許 skills2、觸發角色工具、Skills2 表、測試、快取、本紀錄與使用者必要素材雙倉庫提交。預檢僅 index 已知不同區段，依既有合併授權繼續。
