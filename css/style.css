@@ -1353,9 +1353,11 @@ textarea#save-io {
 }
 
 .float-txt.crit:not(.enemy-hit-float) {
-  /* 非敵人飄字的爆擊／重擊預設顏色與字級。 */
+  /* 非敵人飄字的爆擊／重擊預設顏色與字級。
+     2026-09-21 爆擊數字全部縮小 2 個字號（2px）：這裡、兩個暴擊分類、我方被暴擊，
+     以及 js/battle-renderer.js floatStyle 的 Canvas 字級一起改。 */
   color: #ffd700;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .float-txt.mdmg:not(.enemy-hit-float) {
@@ -1403,7 +1405,7 @@ textarea#save-io {
 .float-txt.enemy-hit-float.enemy-hit-attack-crit {
   /* 玩家普攻暴擊：與普通普攻完全獨立。 */
   color: #ffffff;
-  --enemy-hit-font-size: 16px;
+  --enemy-hit-font-size: 14px;
   font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 0.38s;
   --enemy-hit-lifetime-base: 0.36s;
@@ -1414,7 +1416,7 @@ textarea#save-io {
 .float-txt.enemy-hit-float.enemy-hit-skill-crit {
   /* 玩家技能暴擊：與普通技能及普攻暴擊完全獨立。 */
   color: #ffd700;
-  --enemy-hit-font-size: 20px;
+  --enemy-hit-font-size: 18px;
   font-size: var(--enemy-hit-font-size);
   --enemy-hit-rise-duration: 0.42s;
   --enemy-hit-lifetime-base: 0.4s;
@@ -1528,7 +1530,7 @@ textarea#save-io {
 
 .float-txt.player-damage.crit {
   color: #dc2626;
-  font-size: 20px;
+  font-size: 18px;
   text-shadow: 0 1px 3px #000, 0 0 8px rgba(220, 38, 38, 0.9);
 }
 
