@@ -9,14 +9,18 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_01.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3906,
-        "y": 0.2188
+        "x": 0.2203,
+        "y": 0.157
       },
       "alpha": 0.9,
       "tint": "#c48a55",
       "blendMode": "add",
-      "duration": 0.6,
+      "duration": 0.15,
       "alphaOverLife": [
         [
           0,
@@ -55,9 +59,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3906,
-        "y": 0.2188
+        "x": 0.2203,
+        "y": 0.157
       },
       "alpha": 0.5,
       "tint": "#c9a06a",
@@ -97,9 +105,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/scorch_02.png",
       "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1367,
-        "y": 0.1367
+        "x": 0.0771,
+        "y": 0.0981
       },
       "alpha": 1,
       "tint": "#c48a55",
@@ -143,6 +155,10 @@
       "type": "particle",
       "assetId": "new_materials/mask-shape/dingbats-366.png",
       "zIndex": 6,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "tint": "#ad7444",
       "blendMode": "normal",
       "emission": {
@@ -154,23 +170,23 @@
         0.65
       ],
       "spawn": {
-        "radius": 12,
+        "radius": 7.6896,
         "shape": "circle"
       },
       "speed": [
-        120,
-        210
+        76.8958,
+        134.5677
       ],
       "direction": -90,
       "spread": 200,
       "gravity": {
         "x": 0,
-        "y": 520
+        "y": 373.204
       },
       "drag": 4,
       "startScale": [
-        0.0195,
-        0.0391
+        0.0125,
+        0.025
       ],
       "rotationStart": [
         0,
