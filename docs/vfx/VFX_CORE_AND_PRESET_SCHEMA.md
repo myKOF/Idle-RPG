@@ -116,9 +116,9 @@ Save As 的名字由 Windows 存檔視窗問：`POST /__save-as-dialog` 請編�
 不用瀏覽器的存檔視窗 API：它在使用者選到既有檔案時會先把檔案清空，而且拿不到路徑。
 不在 `vfx/presets` 這一層、或檔名不能當 id，會跳訊息框說明並重開視窗。
 視窗一打開，檔案清單就選到編輯器目前開著的那一份並捲到看得見的位置（2026-09-18；原生 IFileDialog，C# 在 `tools/vfx/native-save-dialog.cs`，編不起來就退回 WinForms `SaveFileDialog`）；選取時 Windows 會把它的名字放進檔名框。
-另存新檔可以覆寫既有的特效（2026-09-18 使用者：常常是直接蓋掉舊的那份）：選到既有檔案由 Windows 問「要取代嗎？」，回 `{ id, overwrite: true }`；Editor 選到目前這份自己＝一般存檔，要覆寫的那份開在別的視窗就不蓋，沒經過 Windows 問過的撞名（退回輸入框、或問名字期間才有人新增）用確認框補問。重新命名不會蓋掉別的特效。
+另存新檔可以覆寫既有的特效（2026-09-18 使用者：常常是直接蓋掉舊的那份）：選到既有檔案由 Windows 問「要取代嗎？」，回 `{ id, overwrite: true }`；Editor 選到目前這份自己＝一般存檔，要覆寫的那份開在別的視窗就不蓋，沒經過 Windows 問過的撞名（退回輸入框、或問名字期間才有人新增）用確認框補問。這個視窗只給 Save As 用（重新命名見下）。
 
-重新命名（2026-09-18）：`POST /__rename-preset`（body `{ from, to }`）把 `vfx/presets/<from>.json`
+重新命名（2026-09-18）：`POST /__rename-preset`（body `{ from, to, overwrite }`）把 `vfx/presets/<from>.json`
 與 `vfx/layouts/<from>.json` 換成 `<to>`，檔案裡的 `preset.id`、`layout.presetId`、根群組 id／名稱跟著換
 （`layout-schema.js` 的 `renameRootGroup`，與 Save As 共用）。內容照樣走 `validatePreset → serialisePreset`
 與 `validateLayout → serialiseLayout`，不合法的不改。
@@ -126,14 +126,17 @@ Save As 的名字由 Windows 存檔視窗問：`POST /__save-as-dialog` 請編�
 | 項目 | 內容 |
 | --- | --- |
 | 有人用也照改 | 使用者的決定（2026-09-18）：配置表或程式用到舊名字的，改完那些地方會失去特效，由使用者自己調整。只動這兩個檔，不碰配置表與程式；成功回應的 `references` 列出用到舊名字的地方（與下拉的用途標註同一份來源），Editor 用提醒橫幅顯示 |
-| 不覆寫 | `<to>` 的特效檔已存在就拒絕。只有殘留的 `<to>` 分組檔（沒有同名特效）不算撞名：這份有分組就覆寫它，沒有就刪掉 |
+| 撞名與取代 | `<to>` 的特效檔已存在時，沒帶 `overwrite: true`（必須正好是布林 true）就拒絕：409、`exists: true`。帶了就取代它（2026-09-21 使用者：把 x-09 改名成 x，就是要 x 變成 x-09 那份、x-09 消失）：`<to>` 的特效換成這份的內容，`<to>` 原本的分組檔同殘留分組檔處理，成功回應 `replaced: true`。只有殘留的 `<to>` 分組檔（沒有同名特效）不算撞名：這份有分組就覆寫它，沒有就刪掉 |
 | 順序 | 寫新特效 → 寫新分組 → 刪舊分組 → 刪舊特效。途中當掉最壞是新舊並存，不會兩份都沒有 |
-| 寫新名字失敗 | 倒著還原（刪掉剛寫的），就像沒按過；還原也失敗時停在那一步，回報四個檔的現況（`incomplete: true`） |
+| 寫新名字失敗 | 倒著還原，就像沒按過：`<to>` 原本不存在就刪掉剛寫的，存在（取代）就把它的原始 bytes 寫回去；還原也失敗時停在那一步，回報四個檔的現況（`incomplete: true`） |
 | 刪舊檔失敗 | 不還原：新名字已經完整在磁碟上。被其他程式佔用（EBUSY／EPERM／EACCES，例如遊戲開著）的排進延後刪除（`pendingDelete`），伺服器每 2 秒重試、佔用解除後刪掉，只刪內容還是改名當下那一份的檔；清單不列等待刪除的名字，改回那個名字也可以。其他原因刪不掉的列在 `warnings` 請使用者手動刪 |
 | 素材同步 | 不觸發：內容與用到的素材都沒變，`shipped-assets.json` 也不記 preset id |
 | 來源 | 與存檔 API 同一套 `checkWriteOrigin` |
 
-新名字同樣用 Windows 存檔視窗問（`POST /__save-as-dialog` 帶 `purpose: 'rename'`，只換標題與說明）。
+新名字在編輯器頁面上的小視窗直接輸入（2026-09-21 使用者：開 Windows 存檔視窗讓改名看起來像另存新檔）：
+預填目前的名字並全選，邊打字邊說明能不能用（名字規則、與目前相同、撞名）；撞名時說明會蓋掉誰、確定鈕換成「取代」，
+按下去才帶 `overwrite: true`；要取代的那份開在別的視窗就不給按。視窗開著時全域快捷鍵不作用，改名進行中不存檔
+（存檔請求用的是舊名字，落地比改名晚就會把舊檔寫回來）。
 Editor 改完就地換名字，不先存檔、不重新開啟：已存檔基準線換成伺服器寫出去的內容（回應的 `presetText`／`layoutText`），
 沒存的修改仍然算沒存；復原不包含改名——復原紀錄裡每一步都換成新名字（`history.js` 的 `rewrite`），
 Ctrl+Z 能復原改名前的編輯，但不會把名字退回去。

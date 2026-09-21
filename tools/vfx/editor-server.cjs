@@ -158,7 +158,7 @@ const THUMB_SUFFIX = '.png';
 const SAVE_AS_DIALOG_PATH = '/__save-as-dialog';
 /* 請求內容只有一個建議名稱，給很小的上限就好 */
 const MAX_DIALOG_BODY_BYTES = 4096;
-/* 「重新命名」：POST /__rename-preset，body { from, to }。見 handleRenamePreset。
+/* 「重新命名」：POST /__rename-preset，body { from, to, overwrite }。見 handleRenamePreset。
    請求內容只有兩個名字，上限同上。 */
 const RENAME_PATH = '/__rename-preset';
 const MAX_RENAME_BODY_BYTES = 4096;
@@ -713,16 +713,14 @@ function handleSaveAsDialog(ctx, req, res) {
     if (ctx.saveAsDialogOpen) {
       return sendJson(res, 409, {
         ok: false,
-        error: '已經開著一個問名字的視窗（另存新檔或重新命名；可能被其他視窗蓋住了，看一下工作列）'
+        error: '已經開著一個另存新檔的視窗（可能被其他視窗蓋住了，看一下工作列）'
       });
     }
     /* 建議名稱只是視窗裡預填的檔名，照樣走 id 規則：不合法就留空，不帶進視窗。 */
     const suggested = body && typeof body.suggested === 'string' &&
       presetIdPolicy.isWritablePresetId(body.suggested) ? body.suggested : '';
-    /* 「重新命名」也用這個視窗問新名字，只差標題與說明（見 save-as-dialog.cjs 的 purpose）。
-       這條路由仍然只問名字：改名本身走 POST /__rename-preset。 */
-    const purpose = body && body.purpose === 'rename' ? 'rename' : 'save-as';
-    /* 編輯器目前開著的那一份：視窗的檔案清單會選到它（2026-09-18）。同樣走 id 規則，不合法就不選。 */
+    /* 只給另存新檔用。「重新命名」改成在頁面上直接輸入新名字（2026-09-21 使用者要求），不開這個視窗。
+       編輯器目前開著的那一份：視窗的檔案清單會選到它（2026-09-18）。同樣走 id 規則，不合法就不選。 */
     const current = body && typeof body.current === 'string' &&
       presetIdPolicy.isWritablePresetId(body.current) ? body.current : '';
     ctx.saveAsDialogOpen = true;
@@ -730,7 +728,6 @@ function handleSaveAsDialog(ctx, req, res) {
       presetsDir: path.join(ctx.repoRoot, PRESETS_DIR_REL),
       suggested: suggested,
       current: current,
-      purpose: purpose,
       policy: presetIdPolicy,
       runDialog: ctx.runSaveDialog
     }).then(function (answer) {
@@ -761,7 +758,9 @@ function handleSaveAsDialog(ctx, req, res) {
        不擋，只在回應裡列出用到的地方（references，與下拉的用途標註同一份來源）提醒他。
      - 檔案被遊戲或其他程式鎖住也照改。新名字的檔寫好之後，舊檔刪不掉就延後刪除
        （見下面的 pendingDeletes），使用者重啟遊戲、佔用解除之後自動刪掉；不因此把改名退回。
-   唯一會拒絕的是新名字已經有另一份特效：那是覆寫別人，不是改名。
+   新名字已經有另一份特效時，預設拒絕（409，帶 exists: true）；頁面讓使用者確認要取代之後
+   帶 overwrite: true 再送一次，才用這份蓋掉它（2026-09-21 使用者：把 x-09 改名成 x，
+   就是要讓 x 變成 x-09 那份、x-09 消失）。被取代那份的原始 bytes 留著：寫新名字途中失敗時寫回去。
 
    不跑素材同步（ctx.syncAssets）：改名不改內容，用到的素材一張也沒變，shipped-assets.json
    也不記 preset id。 */
@@ -887,7 +886,8 @@ function deferDelete(ctx, dirRel, id, sha) {
      2. 刪舊分組、刪舊特效。這時新名字已經完整在磁碟上了，所以這一段**不還原**：
         被佔用的延後刪除、其他原因刪不掉的列出來請使用者手動刪。最壞是新舊並存，不會少東西。
    整段都是同步呼叫，這台伺服器上不會有別的請求插進來。 */
-function renamePresetFiles(ctx, from, to) {
+function renamePresetFiles(ctx, from, to, opts) {
+  const overwrite = !!(opts && opts.overwrite);
   const hooks = ctx.hooks || {};
   const repoRootAbs = path.resolve(ctx.repoRoot);
   const presetsDirAbs = path.join(repoRootAbs, PRESETS_DIR_REL.split('/').join(path.sep));
@@ -911,18 +911,23 @@ function renamePresetFiles(ctx, from, to) {
   const oldLayout = readRenameSource(file.oldLayout);
   if (oldLayout.status) return oldLayout;
 
-  /* 新名字的特效已經存在＝撞名，不蓋掉別的特效。
+  /* 新名字的特效已經存在＝撞名：沒有 overwrite 就不蓋掉別的特效（頁面收到 exists 會問要不要取代）。
      例外：那是剛改掉、舊檔還在等刪除的名字（A→B 時 A 被佔用，接著又 B→A）——那份是要丟掉的舊檔，
      不算別的特效：直接覆寫，寫成功之後再取消等待中的刪除。 */
   const reclaim = isPendingDelete(ctx, PRESETS_DIR_REL, to) || isPendingDelete(ctx, LAYOUTS_DIR_REL, to);
-  if (!reclaim && existsNoFollow(file.newPreset)) {
+  const targetExists = existsNoFollow(file.newPreset);
+  if (!reclaim && targetExists && !overwrite) {
     return {
-      status: 409,
-      error: '已經有一份叫「' + to + '」的 Preset。重新命名不會蓋掉別的特效，請換一個名字。'
+      status: 409, exists: true,
+      error: '已經有一份叫「' + to + '」的 Preset。要取代它的話，請在改名視窗確認取代。'
     };
   }
-  /* 只有分組檔、沒有同名特效的是殘留的分組檔：不屬於任何特效，改名時換掉它
-     （這份有分組就覆寫，沒有就刪掉），免得改名後的特效套上別人的分組。 */
+  /* 要被蓋掉的那份（取代，或等待刪除的舊檔）：原始 bytes 留著，寫新名字途中失敗時原封寫回。
+     連結與非一般檔案照樣拒絕——蓋過去等於改到連結指向的 repo 外面的檔。 */
+  const oldTarget = targetExists ? readRenameSource(file.newPreset) : { bytes: null };
+  if (oldTarget.status) return oldTarget;
+  /* 新名字原本的分組檔：殘留的（只有分組檔、沒有同名特效），或被取代那份的。都不屬於改名後的特效，
+     改名時換掉它（這份有分組就覆寫，沒有就刪掉），免得改名後的特效套上別人的分組。 */
   const strayLayout = existsNoFollow(file.newLayout) ? readRenameSource(file.newLayout) : { bytes: null };
   if (strayLayout.status) return strayLayout;
 
@@ -984,7 +989,10 @@ function renamePresetFiles(ctx, from, to) {
   try {
     step('write-preset');
     mustWrite(writeJsonFile(ctx, PRESETS_DIR_REL, to, newPresetText));
-    undo.push(['remove-new-preset', function () { fs.unlinkSync(file.newPreset); }]);
+    /* 原本沒有這個名字就刪掉剛寫的；原本有（被取代的那份）就把它的原始 bytes 寫回去 */
+    undo.push(oldTarget.bytes === null
+      ? ['remove-new-preset', function () { fs.unlinkSync(file.newPreset); }]
+      : ['restore-old-target', function () { mustWrite(writeJsonFile(ctx, PRESETS_DIR_REL, to, oldTarget.bytes)); }]);
     if (newLayoutText !== null) {
       step('write-layout');
       mustWrite(writeJsonFile(ctx, LAYOUTS_DIR_REL, to, newLayoutText));
@@ -1030,13 +1038,15 @@ function renamePresetFiles(ctx, from, to) {
 
   return {
     status: 200, from: from, to: to, layout: newLayoutText !== null,
+    /* 真的蓋掉了另一份特效（等待刪除的舊檔不算） */
+    replaced: targetExists && !reclaim,
     presetText: newPresetText, layoutText: newLayoutText,
     references: references, pendingDelete: pendingDelete, warnings: warnings
   };
 }
 
 /* POST /__rename-preset。防護與存檔 API 同一套（checkWriteOrigin）：這條路由會刪檔。
-   body { from, to }。 */
+   body { from, to, overwrite }。overwrite 必須正好是 true 才會蓋掉既有的特效。 */
 function handleRenamePreset(ctx, req, res) {
   const originProblem = checkWriteOrigin(req);
   if (originProblem) return sendJson(res, 403, { ok: false, error: originProblem });
@@ -1069,7 +1079,7 @@ function handleRenamePreset(ctx, req, res) {
     if (toProblem) result = { status: 400, error: '新名字不能用：' + toProblem };
     else if (to === from) result = { status: 400, error: '新名字與目前的名字相同，沒有要改的' };
     else {
-      try { result = renamePresetFiles(ctx, from, to); } catch (e) {
+      try { result = renamePresetFiles(ctx, from, to, { overwrite: body.overwrite === true }); } catch (e) {
         /* 會丟到這裡的只有動檔之前的檢查（動檔那段自己接住），所以檔案確實沒變 */
         result = { status: 500, error: '改名前的檢查發生未預期錯誤，未改名：' + (e && e.message || e) };
       }
@@ -1078,12 +1088,14 @@ function handleRenamePreset(ctx, req, res) {
     if (result.status === 200) {
       /* 會刪檔的操作在伺服器視窗留一行紀錄，事後查得到是什麼時候改的 */
       console.log('重新命名：' + result.from + ' → ' + result.to + (result.layout ? '（含分組檔）' : '') +
+        (result.replaced ? '，取代了原本的「' + result.to + '」' : '') +
         (result.pendingDelete.length ? '，舊檔被佔用、稍後自動刪除：' + result.pendingDelete.join('、') : ''));
       delete result.status;
       return sendJson(res, 200, Object.assign({ ok: true }, result));
     }
     sendJson(res, result.status, {
-      ok: false, error: result.error, problems: result.problems || [], incomplete: result.incomplete === true
+      ok: false, error: result.error, problems: result.problems || [], incomplete: result.incomplete === true,
+      exists: result.exists === true
     });
   });
 }

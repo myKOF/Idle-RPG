@@ -141,7 +141,7 @@ test('RENAME-1 改名：特效檔與分組檔一起換名字、檔案裡的名�
   const res = await post(port, { from: 'demo-basic', to: 'demo-basic-renamed' });
   assert.equal(res.status, 200, res.text);
   assert.deepStrictEqual(res.json, {
-    ok: true, from: 'demo-basic', to: 'demo-basic-renamed', layout: true,
+    ok: true, from: 'demo-basic', to: 'demo-basic-renamed', layout: true, replaced: false,
     presetText: fs.readFileSync(path.join(sb.presets, 'demo-basic-renamed.json'), 'utf8'),
     layoutText: fs.readFileSync(path.join(sb.layouts, 'demo-basic-renamed.json'), 'utf8'),
     references: [], pendingDelete: [], warnings: []
@@ -224,11 +224,17 @@ test('RENAME-4 有技能或程式用到也照改名：回應列出用到舊名�
    不蓋掉別的特效、不收不合法的輸入
    ============================================================ */
 
-test('RENAME-5 新名字已經有特效：擋下，一個檔都不動；只有殘留的分組檔：換掉它照樣改名', withRepo(async function (sb, port) {
+test('RENAME-5 新名字已經有特效、又沒說要取代：擋下（exists），一個檔都不動；只有殘留的分組檔：換掉它照樣改名', withRepo(async function (sb, port) {
   const before = snapshotMap(sb.base);
   let res = await post(port, { from: 'demo-basic', to: 'burst-explosion-sheet' });
   assert.equal(res.status, 409, res.text);
   assert.match(res.json.error, /已經有一份叫「burst-explosion-sheet」/);
+  assert.strictEqual(res.json.exists, true, '頁面據此知道是撞名，可以問要不要取代');
+  /* overwrite 必須正好是 true：字串、1 都不算同意取代 */
+  for (const overwrite of ['true', 1, 'yes', {}]) {
+    res = await post(port, { from: 'demo-basic', to: 'burst-explosion-sheet', overwrite: overwrite });
+    assert.equal(res.status, 409, 'overwrite=' + JSON.stringify(overwrite) + ' 不能當成同意：' + res.text);
+  }
   assert.deepStrictEqual(changedPaths(before, snapshotMap(sb.base)), []);
 
   /* 只有分組檔、沒有特效：不屬於任何特效。這份有分組就覆寫它，改名後不會套上別人的分組 */
@@ -244,6 +250,67 @@ test('RENAME-5 新名字已經有特效：擋下，一個檔都不動；只有�
   assert.equal(res.status, 200, res.text);
   assert.ok(!fs.existsSync(path.join(sb.layouts, 'stray.json')));
 }));
+
+test('RENAME-17 取代既有的特效（overwrite: true）：新名字變成這份的內容、舊名字消失，其他檔一個 byte 都沒動', withRepo(async function (sb, port) {
+  /* 2026-09-21 使用者：把 proj-cleave-ring-tricolor-09 改名成 proj-cleave-ring-tricolor，
+     就是要 tricolor 變成 -09 那份、-09 消失 */
+  const src = readJson(sb.presets, 'demo-basic');
+  const before = snapshotMap(sb.base);
+  let res = await post(port, { from: 'demo-basic', to: 'burst-explosion-sheet', overwrite: true });
+  assert.equal(res.status, 200, res.text);
+  assert.strictEqual(res.json.replaced, true);
+  assert.deepStrictEqual(changedPaths(before, snapshotMap(sb.base)), [
+    'repo/vfx/layouts/burst-explosion-sheet.json', 'repo/vfx/layouts/demo-basic.json',
+    'repo/vfx/presets/burst-explosion-sheet.json', 'repo/vfx/presets/demo-basic.json'
+  ]);
+  assert.ok(!fs.existsSync(path.join(sb.presets, 'demo-basic.json')), '舊名字消失，不是另存一份');
+  assert.ok(!fs.existsSync(path.join(sb.layouts, 'demo-basic.json')));
+  const got = readJson(sb.presets, 'burst-explosion-sheet');
+  assert.equal(got.id, 'burst-explosion-sheet');
+  assert.deepStrictEqual(got.layers, src.layers, '內容是改名那份的，不是原本的 burst');
+  assert.equal(readJson(sb.layouts, 'burst-explosion-sheet').presetId, 'burst-explosion-sheet');
+  assert.equal(res.json.presetText, fs.readFileSync(path.join(sb.presets, 'burst-explosion-sheet.json'), 'utf8'));
+  assert.deepStrictEqual(leftovers(sb), []);
+
+  /* 改名那份沒有分組檔：被取代那份的分組檔也不能留著（它描述的是舊內容的圖層） */
+  fs.unlinkSync(path.join(sb.layouts, 'ground-mire-venom.json'));
+  res = await post(port, { from: 'ground-mire-venom', to: 'burst-explosion-sheet', overwrite: true });
+  assert.equal(res.status, 200, res.text);
+  assert.ok(!fs.existsSync(path.join(sb.layouts, 'burst-explosion-sheet.json')), '舊內容的分組檔一起清掉');
+  assert.equal(readJson(sb.presets, 'burst-explosion-sheet').id, 'burst-explosion-sheet');
+
+  /* 沒撞名時帶 overwrite 也只是一般改名，不算取代 */
+  res = await post(port, { from: 'burst-explosion-sheet', to: 'brand-new', overwrite: true });
+  assert.equal(res.status, 200, res.text);
+  assert.strictEqual(res.json.replaced, false);
+}));
+
+test('RENAME-18 取代途中失敗：被取代那份原封寫回（整棵樹 byte 對 byte 不變）', async function () {
+  for (const failAt of ['write-preset', 'write-layout']) {
+    await withRepo(async function (sb, port, ctx) {
+      ctx.hooks = { renameStep: function (name) { if (name === failAt) throw new Error('注入：' + name + ' 失敗'); } };
+      const before = snapshotMap(sb.base);
+      const res = await post(port, { from: 'demo-basic', to: 'burst-explosion-sheet', overwrite: true });
+      assert.equal(res.status, 500, failAt + '：' + res.text);
+      assert.match(res.json.error, /已還原/);
+      assert.deepStrictEqual(changedPaths(before, snapshotMap(sb.base)), [], failAt + ' 失敗後被取代那份要一模一樣');
+      assert.deepStrictEqual(leftovers(sb), []);
+    })();
+  }
+  /* 寫回也失敗：照實回報停在哪一步 */
+  await withRepo(async function (sb, port, ctx) {
+    ctx.hooks = {
+      renameStep: function (name) {
+        if (name === 'write-layout') throw new Error('注入：新分組寫不出去');
+        if (name === 'undo:restore-old-target') throw new Error('注入：寫不回去');
+      }
+    };
+    const res = await post(port, { from: 'demo-basic', to: 'burst-explosion-sheet', overwrite: true });
+    assert.equal(res.status, 500, res.text);
+    assert.equal(res.json.incomplete, true);
+    assert.equal(res.json.problems[0], '還原停在 restore-old-target：注入：寫不回去');
+  })();
+});
 
 test('RENAME-6 名字不合法、不存在、或與原本相同：擋下，一個檔都不動', withRepo(async function (sb, port) {
   const before = snapshotMap(sb.base);
@@ -503,15 +570,26 @@ test('RENAME-12 Editor：按鈕在另存新檔旁邊；直接問名字；不先�
   assert.ok(/state\.isNew \|\| state\.sourcePresetId === null/.test(rename),
     '還沒存進 repo 的（新特效、從本機匯入的）沒有檔案可以改名');
   assert.ok(rename.indexOf('dryRun') < 0, '不先檢查有沒有人用：想改就改');
-  assert.ok(rename.indexOf("askPresetName(from, 'rename', from)") >= 0, '問名字的視窗清單選到目前這份');
+  /* 2026-09-21 使用者：改名直接輸入新名字，不開 Windows 存檔視窗（那看起來像另存新檔） */
+  assert.ok(rename.indexOf('askRenameName(from)') >= 0, '名字從頁面上的改名視窗問');
+  assert.ok(rename.indexOf('askPresetName(') < 0, '不開 Windows 存檔視窗');
+  assert.ok(/<div id="rename-dialog" hidden>/.test(html) && /id="rename-input"/.test(html) &&
+    /<button type="submit" id="rename-ok">/.test(html), '頁面上要有改名視窗：輸入框＋確定鈕（Enter 送出）');
+  const ask = fnBody(src, 'askRenameName');
+  assert.ok(/input\.value = from;/.test(ask) && /input\.select\(\)/.test(ask), '預填目前的名字並全選，直接打字就能改');
+  assert.ok(/e\.key === 'Escape'/.test(ask), 'Esc 取消');
+  assert.ok(/fetch\(PRESET_LIST_URL\)/.test(ask), '清單現抓，才知道新名字有沒有人用');
+  assert.ok(/overwrite: c\.kind === 'exists'/.test(ask), '只有看過「會取代」的說明、按下去的才帶 overwrite');
+  assert.ok(/paneHolding\(c\.id\)/.test(ask), '要取代的那份開在別的視窗就不給按（同另存新檔）');
 
   const commit = fnBody(src, 'commitRename');
   assert.ok(/ctx\.closed \|\| state\.staleDoc/.test(commit), '問名字時視窗換了別份特效，就不改');
   assert.ok(commit.indexOf('window.confirm') < 0 && commit.indexOf('savePreset()') < 0,
     '不先問、不先存檔：改名只換名字，沒存的修改改完仍然沒存');
   assert.ok(commit.indexOf('openPresetInPane') < 0, '不重新開啟：那會丟掉沒存的修改與復原紀錄');
+  assert.ok(/paneHolding\(to\)/.test(commit), '送出前再查一次：要取代的那份這段時間被別的視窗打開了就不蓋');
   const waitAt = commit.indexOf('state.layoutSave');
-  const requestAt = commit.indexOf('renameRequest({ from: from, to: to })');
+  const requestAt = commit.indexOf('renameRequest({ from: from, to: to, overwrite: overwrite })');
   const adoptAt = commit.indexOf('adoptRename(from, to, body)');
   assert.ok(waitAt > 0 && requestAt > waitAt && adoptAt > requestAt, '等分組存完 → 請伺服器改名 → 就地換名字');
   assert.ok(/body\.references/.test(commit) && /body\.pendingDelete/.test(commit) && /showSaveNotice\(/.test(commit),
@@ -523,6 +601,35 @@ test('RENAME-12 Editor：按鈕在另存新檔旁邊；直接問名字；不先�
   assert.ok(/renameRootGroup\(to\)/.test(adopt), '根群組跟著換名字');
   assert.ok(/registerPreset\(state\.preset\)/.test(adopt), '預覽要用新名字註冊');
 
-  const ask = fnBody(src, 'askPresetName');
-  assert.ok(/purpose: purpose/.test(ask), '問名字的視窗要知道是重新命名（標題與說明不同）');
+  /* 改名視窗開著時，全域快捷鍵不能動到特效：Ctrl+Z 會回滾整份、Delete 會刪圖層、Ctrl+S 的存檔請求
+     用舊名字，落地比改名晚就把舊檔寫回來 */
+  const keys = fnBody(src, 'onKeyDown');
+  const guardAt = keys.indexOf('if (renameDialogOpen()) {');
+  assert.ok(guardAt > 0 && guardAt < keys.indexOf("=== 's'") && guardAt < keys.indexOf('doUndo()'),
+    '改名視窗的守門要排在 Ctrl+S 與 Ctrl+Z 之前');
+  assert.ok(/if \(renaming\) \{/.test(fnBody(src, 'savePreset')), '改名進行中不存檔');
+});
+
+test('RENAME-19 改名視窗的名字檢查：空白、沒改、不合法不能送；撞名＝取代；大寫轉小寫', function () {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const VFXPresetIdPolicy = require('../tools/vfx/editor/preset-id-policy.js');
+  const check = new Function('VFXPresetIdPolicy',
+    fnBody(src, 'renameTargetCheck') + '\n  }\n  return renameTargetCheck;')(VFXPresetIdPolicy);
+  const ids = ['proj-cleave-ring-tricolor', 'proj-cleave-ring-tricolor-09', 'other'];
+  const from = 'proj-cleave-ring-tricolor-09';
+  const kind = (raw, list) => check(from, raw, list === undefined ? ids : list).kind;
+
+  assert.equal(kind(''), 'empty');
+  assert.equal(kind('   '), 'empty');
+  assert.equal(kind(from), 'same', '預填的就是目前的名字，沒改就按下去最常見');
+  assert.equal(kind('  PROJ-CLEAVE-RING-TRICOLOR-09 '), 'same', '大小寫與前後空白不算改名');
+  assert.equal(kind('a b'), 'bad');
+  assert.equal(kind('x.json'), 'bad');
+  assert.equal(kind('con'), 'bad');
+  assert.equal(kind('proj-cleave-ring-tricolor'), 'exists', '使用者這次的情境：改成已經有的名字＝取代');
+  assert.match(check(from, 'proj-cleave-ring-tricolor', ids).message,
+    /原本的「proj-cleave-ring-tricolor」就沒有了，「proj-cleave-ring-tricolor-09」這個名字也會消失/);
+  assert.equal(kind('brand-new'), 'ok');
+  assert.equal(check(from, ' Brand-New ', ids).id, 'brand-new');
+  assert.equal(kind('proj-cleave-ring-tricolor', null), 'ok', '拿不到清單：不猜，撞名交給伺服器擋');
 });
