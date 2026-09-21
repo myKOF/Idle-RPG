@@ -1,5 +1,35 @@
 # AI_TASKS.md
 
+## Codex｜狂怒全系列特效接線（RAGE-SERIES-VFX-20260921）
+
+- Owner Codex；Done。使用者授權全系列觸發攻擊／受擊特效；階級空白繼承同角色、超神覆寫；保留傷害選敵。戰神屠錄錯名已由使用者改為現有 dark-09，保留其設定。允許 skills2、觸發角色工具、Skills2 表、測試、快取、本紀錄與使用者必要素材雙倉庫提交。預檢僅 index 已知不同區段，依既有合併授權繼續。
+- 完成：1～7 階與三超神支援 trigger attack／hit；空白角色逐階繼承。低階單體與非狂怒的阿修羅普攻維持原尺寸，多目標仍用實際半徑。使用者清空的受擊欄保留；狀態光殼仍由 Status 表處理。Excel 只更新十列作用說明，CSV／JS 同步使用者特效設定。
+- 驗證：`node --test tests/bloodfeast-vfx.test.cjs tests/skills2-vfx-schema.test.cjs` 9/9（逐階、三超神、繼承、低階／多目標半徑、阿修羅独立生效、死亡目標、表格一致）；config_tables apply 語意變更 0；build_check 384 檔通過；export-assets --check 最新。唯讀檢查 combat／vfx-runtime、素材來源解析與貼圖。未做瀏覽器實機驗證，無未完成實作，可合併。
+- 素材：使用者必要的五份 Preset 與 layout 保存至素材庫 codex-authored/bloodrage，逐檔位元組一致；新貼圖本來就在素材庫，正式 shipped 索引與匯出檢查通過。素材庫 Commit 30f5af3；遊戲 Commit 見本紀錄所在提交。未合併／推送，下一步使用者整合。
+
+## Codex｜阿修羅霸王拳延長（ASURA-DURATION-20260921）
+
+- Owner Codex；Done。依使用者最新指定：持續 1.5 秒＋等級×0.15 秒，生效期間每殺一敵延長 0.2 秒。允許 skills2、Skills2 表、測試、快取、本紀錄；index.html 既知不同快取行依正常合併授權繼續，其餘預檢乾淨。保留使用者爆炸素材。
+- 完成：擊殺延時不依賴狂怒是否生效，僅延長仍有效的霸王拳狀態；跨週期重發動保留既有更長的剩餘時間。狀態持續特效與圖示共用更新後到期時間。Excel AU81／AW81／AX81、CSV／JS 同步；沿已確認 artifact 匯入問題使用 ZIP/XML 精準修改。
+- 驗證：`node --test tests/asura-duration.test.cjs` 3/3，`node --test tests/skills2-vfx-schema.test.cjs` 6/6；超神進化測試以「嗜血狂怒的三個超神進化」篩選 1/1；build_check 384 檔通過，最後數值修改由 config_tables 語法檢查及上述測試驗證，apply 語意變更 0。唯讀檢查既有狀態及擊殺管線。無新增素材，無素材庫提交；未實機瀏覽器驗證。
+- 無未完成實作，可供使用者合併；Commit 見本紀錄所在提交。保留使用者 burst-detonate-phys Preset／layout 未提交修改，未合併或推送。
+
+## Codex｜戰神屠錄數值與吸血（WAR-GOD-ROLL-20260921）
+
+- Owner Codex；Done。基礎擊殺增傷 2%、每級 +0.2%，固定最多 200 層；新增吸血效果基礎提升 100%、每級 +10%，乘算並持續到死亡。使用者確認 40% × (1+200%) =120%。允許 skills2、Skills2 表、測試、快取、本紀錄；保留使用者正在修改的爆炸素材。
+- 預檢 index.html 僅既知 Claude 字體快取不同區段，沿既有正常合併授權；其他乾淨。驗證擊殺上限、升級、狂怒結束／死亡、吸血實值與面板及吸魔不變。
+- 完成：施放狂怒建立持續吸血倍率，擊殺不累乘吸血，重施不倍增；透過既有 skill2DrainFactor 同步吸血計算與面板。沿既有 resetSkill2RT 死亡／戰鬥重置回收。Excel AU80／AW80／AX80 精準更新，CSV／JS 同步；沿本對話已確認 artifact 匯入錯讀，使用 ZIP/XML 保留其他元件。
+- 測試：`node --test tests/war-god-roll.test.cjs tests/skill2-counter-bloodrage.test.cjs tests/skills2-vfx-schema.test.cjs` 34/34；`node --test --test-name-pattern="嗜血狂怒的三個超神進化" tests/skill2-ult-evolution.test.cjs` 1/1；build_check 383 檔通過，Excel／CSV 一致、config_tables 語意變更 0。唯讀檢查 formula.js、combat.js、status.js，沿既有技能列覆寫狀態層數及效果值。
+- 無未完成實作，可合併。無新增素材；使用者的 burst-detonate-phys Preset／layout 修改留在工作區，不納入本次技能數值提交。未合併或推送，下一步由使用者整合；Commit 見本紀錄所在提交。
+
+## Codex｜狂血盛宴範圍特效（BLOODFEAST-VFX-20260921）
+
+- Owner Codex；Done。使用者指定普攻範圍爆炸及逐目標小型受擊；保留傷害與選敵。允許 combat／skills2、Skills2 Excel／CSV、觸發角色工具、測試、快取及本紀錄。預檢只有 index.html 他分支不同版本行，依使用者既有正常合併授權繼續。
+- 驗收：一次範圍爆炸、實際命中才播放小型受擊、死亡目標保留、停用後恢復普攻、範圍及時序符合計算；預覽後交付。
+- 完成：狂血盛宴觸發特效 burst-detonate-phys、命中特效 hit-bleed，Excel AN78／AP78／AV78 與 CSV／JS 同步。沿本對話已確認 artifact 匯入空白誤讀問題，以 ZIP/XML 精準修改三格，其他元件保留。追加目標移除原本 130ms 逐個視覺延遲，對齊原有同拍傷害；主目標連擊仍沿原本節奏。
+- 測試：`node --test tests/bloodfeast-vfx.test.cjs tests/skill2-counter-bloodrage.test.cjs tests/skills2-vfx-schema.test.cjs` 34/34；`node tools/config_tables.cjs --apply Skills2` 語意變更 0；`node tools/build_check.cjs` 382 檔通過；diff check 通過。涵蓋超過八目標、閃避、擊殺、技能失效及表格一致。
+- 唯讀檢查 vfx-runtime.js、既有 Preset、原多目標選敵；兩份素材時間序列已渲染並展示，沒有新增／修改素材，因此無素材庫提交。限制：未做瀏覽器 GPU 實機驗證。無未完成實作，可供使用者合併；未合併或推送，Commit 見本紀錄所在提交。
+
 ## Codex｜防禦技能提早施放（DEFENSE-PRECAST-20260921）
 
 - Owner Codex；Done。使用者要求岩甲術等防禦技能在敵人出現時起手，不等敵方首擊。允許 skills／skills2／combat、專項測試與快取、本紀錄；禁止修改傷害數值、冷卻、耗魔及素材。衝突預檢通過，無前置依賴。

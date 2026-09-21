@@ -3,6 +3,7 @@
 const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
 const noteColumn = '特效作用說明';
 const events = {
+  'bloodrage.7': {roles:['attack','hit'], note:'狂怒期間每次普攻在主目標位置播放一次範圍爆炸，匹配多目標普攻半徑；實際命中的敵人各播放原尺寸小型命中特效，追加目標同時結算與播放。'},
   'counter.holyBody': {roles:['attack','projectile'], note:'反擊滿計數後發射一顆光彈；觸發子彈飛到本次鎖定的目標位置，抵達時結算範圍傷害並在落點播放一次觸發特效。爆炸匹配傷害半徑，不在每個受害者身上重播。'},
   'counter.indomitable': {roles:['ground'], note:'復甦開始時於玩家位置播放天降光束，持續至復甦結束，不在每個敵人身上播放。'},
   'cleave.windChaser': {roles:['ground','field'], note:'每次迴旋斬命中，在敵人位置產生龍捲風；固定命中位置，依龍捲風傷害半徑縮放。'},
@@ -14,9 +15,13 @@ const events = {
   'bloodblade.venomDomain': {roles:['attack','hit'], note:'領域每拍對範圍內的敵人播放觸發／命中特效；領域本身（跟著玩家、依半徑縮放）的畫面是狀態表「萬毒血霧」的持續特效。'},
   'bloodblade.disintegrate': {roles:['attack','projectile','hit'], note:'每次中毒／流血結算後，在原敵人位置播放範圍爆炸；觸發子彈由此飛向各受害者，抵達後結算並播放命中特效。中心匹配爆炸半徑，單體抵達特效維持原尺寸。'}
 };
+for (const stage of ['1','2','3','4','5','6','7','slayerAdvent','warGodRoll','asuraFist']) {
+  events['bloodrage.'+stage]={roles:['attack','hit'],note:'狂怒系列普攻事件：攻擊特效於主目標播放一次，命中特效於每個實際受傷敵人播放；第七階前單體維持原尺寸，多目標普攻依實際半徑縮放。阿修羅效果生效期間亦可播放。'};
+}
 function event(gid,stage){return events[gid+'.'+stage];}
 function note(gid,stage){
   const e=event(gid,stage);
+  if(gid==='bloodrage'&&e)return '本體欄與觸發欄獨立。觸發欄：'+e.note+' 觸發攻擊／命中特效逐階同角色繼承，超神非空欄覆寫；其他觸發角色未接線。狀態光殼仍由 Status 表決定。';
   return '本體欄：非空覆寫同角色，留白沿前階繼承；狀態畫面由 Status 表決定。'+
     (e ? '觸發欄：'+e.note+' 本列觸發欄留白不播放、不繼承本體或其他事件。可填：'+columns.filter(c=>e.roles.includes(c[1])).map(c=>c[0]).join('、')+'。'
     : '本列未接獨立觸發欄；特效沿用本體事件派送（包括使用本體外觀的追加攻擊）。')+

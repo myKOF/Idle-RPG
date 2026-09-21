@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "burst-detonate-dark",
+  "id": "burst-detonate-dark-09",
   "duration": 0.7,
   "loop": false,
   "layers": [
@@ -15,7 +15,7 @@
         "y": 0.0863
       },
       "alpha": 0.9,
-      "tint": "#a92da5",
+      "tint": "#2da984",
       "blendMode": "add",
       "duration": 0.7,
       "alphaOverLife": [
@@ -75,7 +75,7 @@
         "y": 0.1172
       },
       "alpha": 1,
-      "tint": "#000a0a",
+      "tint": "#145756",
       "blendMode": "normal",
       "duration": 0.7,
       "alphaOverLife": [
@@ -121,11 +121,11 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 2,
       "scale": {
-        "x": 0.2775,
-        "y": 0.1555
+        "x": 0.3263,
+        "y": 0.1828
       },
       "alpha": 0.9,
-      "tint": "#a63ecc",
+      "tint": "#3ea8cc",
       "blendMode": "add",
       "delay": 0.24,
       "duration": 0.46,
@@ -172,7 +172,7 @@
         "y": 0.1758
       },
       "alpha": 1,
-      "tint": "#963dd1",
+      "tint": "#3d4ed1",
       "blendMode": "add",
       "delay": 0.24,
       "duration": 0.24,
@@ -220,7 +220,7 @@
         "y": 0.0863
       },
       "alpha": 0.9,
-      "tint": "#a92da5",
+      "tint": "#2da984",
       "blendMode": "add",
       "duration": 0.7,
       "alphaOverLife": [
@@ -267,6 +267,100 @@
         [
           1,
           10.472
+        ]
+      ]
+    },
+    {
+      "id": "rim-copy",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.2326,
+        "y": 0.1303
+      },
+      "alpha": 0.9,
+      "tint": "#3e74cc",
+      "blendMode": "add",
+      "delay": 0.24,
+      "duration": 0.46,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "rim-copy-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.1429,
+        "y": 0.0801
+      },
+      "alpha": 0.9,
+      "tint": "#b8d3ff",
+      "blendMode": "add",
+      "delay": 0.24,
+      "duration": 0.46,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.6,
+          0.9
+        ],
+        [
+          1,
+          1
         ]
       ]
     }
