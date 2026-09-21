@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜狂怒全系列特效接線（RAGE-SERIES-VFX-20260921）
+
+- Owner Codex；Done。使用者授權全系列觸發攻擊／受擊特效；階級空白繼承同角色、超神覆寫；保留傷害選敵。戰神屠錄錯名已由使用者改為現有 dark-09，保留其設定。允許 skills2、觸發角色工具、Skills2 表、測試、快取、本紀錄與使用者必要素材雙倉庫提交。預檢僅 index 已知不同區段，依既有合併授權繼續。
+- 完成：1～7 階與三超神支援 trigger attack／hit；空白角色逐階繼承。低階單體與非狂怒的阿修羅普攻維持原尺寸，多目標仍用實際半徑。使用者清空的受擊欄保留；狀態光殼仍由 Status 表處理。Excel 只更新十列作用說明，CSV／JS 同步使用者特效設定。
+- 驗證：`node --test tests/bloodfeast-vfx.test.cjs tests/skills2-vfx-schema.test.cjs` 9/9（逐階、三超神、繼承、低階／多目標半徑、阿修羅独立生效、死亡目標、表格一致）；config_tables apply 語意變更 0；build_check 384 檔通過；export-assets --check 最新。唯讀檢查 combat／vfx-runtime、素材來源解析與貼圖。未做瀏覽器實機驗證，無未完成實作，可合併。
+- 素材：使用者必要的五份 Preset 與 layout 保存至素材庫 codex-authored/bloodrage，逐檔位元組一致；新貼圖本來就在素材庫，正式 shipped 索引與匯出檢查通過。素材庫 Commit 30f5af3；遊戲 Commit 見本紀錄所在提交。未合併／推送，下一步使用者整合。
+
 ## Codex｜阿修羅霸王拳延長（ASURA-DURATION-20260921）
 
 - Owner Codex；Done。依使用者最新指定：持續 1.5 秒＋等級×0.15 秒，生效期間每殺一敵延長 0.2 秒。允許 skills2、Skills2 表、測試、快取、本紀錄；index.html 既知不同快取行依正常合併授權繼續，其餘預檢乾淨。保留使用者爆炸素材。

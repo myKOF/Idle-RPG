@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "burst-detonate-dark-09",
+  "groups": [
+    {
+      "id": "burst-detonate-dark-09",
+      "name": "burst-detonate-dark-09",
+      "layerIds": [
+        "swirl",
+        "swirl-copy",
+        "core",
+        "rim",
+        "rim-copy",
+        "rim-copy-2",
+        "flash"
+      ]
+    }
+  ],
+  "order": [
+    "group:burst-detonate-dark-09"
+  ]
+}
