@@ -4167,7 +4167,7 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   } : null;
   /* 殞石＝第 7 階那一列的畫面，落地爆點要讀同一列的受擊特效，因此列標記一律帶上。 */
   var meteorExtra = { bonusPctFn: bonusFn, onImpact: onMeteorImpact, vfxTier: 7,
-    vfxBase: !!sgUlt('fireball', 'starfallCataclysm') };
+    vfxBase: !!(ultPhoenix || sgUlt('fireball', 'starfallCataclysm')) };
 
   for (var v = 0; v < volleys; v++) {
     var meteorTarget = meteor ? nextMeteorTarget() : primary;

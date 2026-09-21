@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜火鳳遼原主殞石特效（PHOENIX-METEOR-20260921）
+
+- Owner Codex；Done。修正伴生火球的超神外觀覆蓋主殞石；主殞石起飛與落地讀第七階本體，伴生火球保留超神配置。允許 skills2、時序測試、快取與本紀錄；預檢乾淨，不修改使用者素材或數值表。
+- 驗證：node --test tests/meteor-impact-timing.test.cjs tests/starfall-vfx.test.cjs（7/7）；node tools/build_check.cjs（386 檔通過）；git diff --check 通過。驗證四顆主殞石、每顆六個伴生火球、各自彈體／落地受擊及傷害時序；唯讀檢查特效選取與配置。無素材庫變更，使用者正在編輯素材保留未提交；未瀏覽器實機驗證。無未完成實作，可合併，未合併或推送；Commit 見本紀錄所在提交。
+
 ## Codex｜地爆天星爆炸與受擊分離（STARFALL-ROLES-20260921）
 
 - Done。使用者指定大型 burst-fire-shockwave 改觸發 attack，小型本體 hit 改 burst-fire；維持預警與子彈讀本體，不受觸發欄干擾。允許 skills2、角色工具、表、測試、快取與本紀錄；預檢乾淨，保留使用者既有修改。

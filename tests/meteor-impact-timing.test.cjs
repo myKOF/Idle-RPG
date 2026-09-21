@@ -1,2 +1,25 @@
 const test=require('node:test'),assert=require('node:assert/strict');const {createEngine}=require('../scripts/sim/engine');
+test('火鳳遼原主殞石保留殞石外觀與落地爆點，伴生火球獨立讀超神外觀',()=>{
+  const c=createEngine({seed:42}).boot(null).ctx;
+  c.G.player.level=1000;c.G.player.loadout=['sg:fireball'];
+  c.G.player.skills2.levels.fireball=Array(7).fill(10);
+  c.G.player.skills2.ult={fireball:{pick:c.sgUltIndexOfId('fireball','phoenixPrairie'),lv:10}};
+  c.initFieldPlayer();c.gmArenaSpawn(1,'elite',1000000);
+  const p=c.FIELD.player,m=c.FIELD.monsters[0];m.pos={x:10,y:0};m._enterCd=0;p.mp=1e9;
+  const events=[];c.playCombatVfx=s=>events.push(s);const hp=m.hp;
+  c.castSkill2(p,[m],'fireball','mv-float');
+  const launches=events.filter(s=>s.variant==='meteor');
+  assert.equal(launches.length,4);
+  assert.ok(launches.every(s=>s.vfx.projectile==='proj-meteor-inferno'&&s.hit===false));
+  assert.equal(m.hp,hp);
+  c.GT=c.SKILL2_RT.meteors[0].at;c.sgTickMeteors({});
+  assert.equal(events.find(s=>s.variant==='meteor-impact').vfx.hit,'burst-meteor-inferno');
+  const balls=events.filter(s=>s.variant==='fireball-small');
+  assert.equal(balls.length,6);assert.ok(balls.every(s=>s.vfx.projectile==='proj-fireball'));
+  assert.ok(m.hp<hp);
+  const queued=c.SKILL2_RT.meteors.filter(s=>s.vfxUlt==='phoenixPrairie');
+  assert.equal(queued.length,6);
+  c.GT=queued[0].at;c.sgTickMeteors({});
+  assert.equal(events.find(s=>s.variant==='fire-explosion').vfx.hit,'hit-fire-explosion');
+});
 test('殞石起飛不播攻擊爆炸或受擊，落地才傷害與爆點；擊殺保留特效目標',()=>{const c=createEngine({seed:42}).boot(null).ctx;c.G.player.level=1000;c.G.player.loadout=['sg:fireball'];c.G.player.skills2.levels.fireball=Array(7).fill(10);c.initFieldPlayer();c.gmArenaSpawn(1,'elite',1000000);const p=c.FIELD.player,m=c.FIELD.monsters[0];m.pos={x:10,y:0};m._enterCd=0;p.mp=1e9;const events=[];c.playCombatVfx=s=>events.push(s);const hp=m.hp;c.castSkill2(p,[m],'fireball','mv-float');const launches=events.filter(s=>s.variant==='meteor');assert.ok(launches.length);assert.ok(launches.every(s=>s.hit===false&&!s.vfx.attack&&!s.vfx.hit&&s.vfx.projectile));assert.equal(m.hp,hp);const at=c.SKILL2_RT.meteors[0].at;c.GT=at-0.001;c.sgTickMeteors({});assert.equal(m.hp,hp);assert.equal(events.filter(s=>s.variant==='meteor-impact').length,0);m.hp=1;c.chance=x=>x>0;c.GT=at;c.sgTickMeteors({});assert.equal(m.hp,0);const impact=events.find(s=>s.variant==='meteor-impact');assert.ok(impact);assert.equal(impact.vfx.hit,'burst-meteor-inferno');assert.ok(impact.targets.length&&impact.preserveDeadTargets);});
