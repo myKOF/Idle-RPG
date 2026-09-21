@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜地爆天星爆炸與受擊分離（STARFALL-ROLES-20260921）
+
+- Done。使用者指定大型 burst-fire-shockwave 改觸發 attack，小型本體 hit 改 burst-fire；維持預警與子彈讀本體，不受觸發欄干擾。允許 skills2、角色工具、表、測試、快取與本紀錄；預檢乾淨，保留使用者既有修改。
+- Excel AI90 清空、AK90=burst-fire、AN90=burst-fire-shockwave、AV90 更新作用說明，CSV／JS 同步當前活頁簿；沿已確認的 artifact 匯入問題用 ZIP/XML 精準編輯。巨型落地觸發與各敵人受擊事件使用不同角色來源，不強制共用持續時間。
+- 驗證 starfall-vfx／skills2-vfx-schema 11/11；config_tables apply 語意變更 0；build_check 386 檔、diff check 通過。唯讀檢查既有素材／狀態與配置讀取。沒有修改素材，使用者素材留未提交；未瀏覽器實機驗證。無未完成實作，可合併，未合併／推送，Commit 見本紀錄所在提交。
+
 ## Codex｜地爆天星火星拖尾（STARFALL-TAIL-20260921）
 
 - Done。將大片橫向火焰改為短命細碎火星，粒子朝速度方向排列，從殞石後方逸出；保留使用者本體亮度。僅素材、專項測試、本紀錄；預檢乾淨，不修改使用者其他配置／素材。
