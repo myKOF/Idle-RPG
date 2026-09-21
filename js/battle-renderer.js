@@ -1204,6 +1204,9 @@ var BattleRenderer = (function () {
 
   /* ---- 玩家 ---- */
   var PLAYER_BAR_W = 88;
+  /* 腳下狀態條（護盾／生命／法力三條與兩行數字）離角色原點的垂直距離；
+     三條與文字都以它為基準，整組上下移動只改這一個數。 */
+  var PLAYER_VITALS_Y = 11;
 
   function makePlayer() {
     var root = new PIXI.Container();
@@ -1221,7 +1224,7 @@ var BattleRenderer = (function () {
 
     /* 生命／法力條：跟著角色走，畫在腳下（與敵人同一套視覺語言） */
     var vitals = new PIXI.Graphics();
-    vitals.y = 8;
+    vitals.y = PLAYER_VITALS_Y;
     S.layers.playerHud.addChild(vitals);
     var hpText = new PIXI.Text({
       text: '',
@@ -1231,7 +1234,7 @@ var BattleRenderer = (function () {
       }
     });
     hpText.anchor.set(0.5, 0.5);
-    hpText.y = 8 + 5;
+    hpText.y = PLAYER_VITALS_Y + 5;
     S.layers.playerHud.addChild(hpText);
     var mpText = new PIXI.Text({
       text: '',
@@ -1241,7 +1244,7 @@ var BattleRenderer = (function () {
       }
     });
     mpText.anchor.set(0.5, 0.5);
-    mpText.y = 8 + 16;
+    mpText.y = PLAYER_VITALS_Y + 16;
     S.layers.playerHud.addChild(mpText);
 
     /* 復活倒數：技能與狀態列都收進彈出面板後，倒地資訊只剩畫面上這一條 */

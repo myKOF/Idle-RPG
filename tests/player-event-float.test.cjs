@@ -141,9 +141,11 @@ test('血條與死亡倒數的畫面間距及字級符合死亡 UI 規格', () =
   assert.ok(reviveStart >= 0 && reviveEnd > reviveStart, '找不到死亡倒數 HUD 建立區塊');
   const reviveHud = renderer.slice(reviveStart, reviveEnd);
 
-  assert.match(renderer, /vitals\.y\s*=\s*8/);
-  assert.match(renderer, /hpText\.y\s*=\s*8\s*\+\s*5/);
-  assert.match(renderer, /mpText\.y\s*=\s*8\s*\+\s*16/);
+  // 2026-09-21 使用者要求三條整組下移約 3px：8 → 11，條與數字的相對間距不變
+  assert.match(renderer, /var PLAYER_VITALS_Y = 11;/);
+  assert.match(renderer, /vitals\.y\s*=\s*PLAYER_VITALS_Y;/);
+  assert.match(renderer, /hpText\.y\s*=\s*PLAYER_VITALS_Y\s*\+\s*5/);
+  assert.match(renderer, /mpText\.y\s*=\s*PLAYER_VITALS_Y\s*\+\s*16/);
   assert.match(reviveHud, /fontSize:\s*24/);
   assert.match(reviveHud, /reviveText\.y\s*=\s*-104/);
   assert.match(renderer, /p\.reviveText\.y\s*=\s*world\.y\s*\+\s*p\.root\.y\s*-\s*104/);
