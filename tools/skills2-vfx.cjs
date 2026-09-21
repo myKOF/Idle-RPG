@@ -4,6 +4,7 @@ const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸�
 const noteColumn = '特效作用說明';
 const events = {
   'fireball.starfallCataclysm': {roles:['attack'],note:'超巨型殞石落地時，在角色當下中心播放一次全場爆炸；小型受擊另讀本列本體命中特效，各自依 Preset 持續時間播放。'},
+  'firepillar.5': {roles:['attack','hit'],note:'每道火龍捲消失時播放一次範圍爆炸及受擊；不隨平時傷害跳動播放，不重播龍捲場域。'},
   'bloodrage.7': {roles:['attack','hit'], note:'狂怒期間每次普攻在主目標位置播放一次範圍爆炸，匹配多目標普攻半徑；實際命中的敵人各播放原尺寸小型命中特效，追加目標同時結算與播放。'},
   'counter.holyBody': {roles:['attack','projectile'], note:'反擊滿計數後發射一顆光彈；觸發子彈飛到本次鎖定的目標位置，抵達時結算範圍傷害並在落點播放一次觸發特效。爆炸匹配傷害半徑，不在每個受害者身上重播。'},
   'counter.indomitable': {roles:['ground'], note:'復甦開始時於玩家位置播放天降光束，持續至復甦結束，不在每個敵人身上播放。'},

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜烈焰衝擊特效分離（FIREPILLAR-EXPIRE-20260921）
+
+- Owner Codex；Done。使用者授權修正常態黃圈與消失時巨型龍捲。第五階爆炸移至觸發 attack／hit，正常場域只繼承本體；允許配置工具、Skills2 表與程式、專項測試、快取與本紀錄。預檢乾淨，保留使用者其他數值與素材修改。
+- Excel AI96 清空、AN96／AP96 分別為 burst-fire-shockwave／hit-fire，更新 AV96；沿既有 artifact 匯入問題使用 ZIP/XML 精準編輯，CSV／JS 同步當前活頁簿（包含使用者已調整火鳳／烈焰暴風值）。既有 sgGroundExpire 的第五階事件透過角色登記只讀觸發欄，不再帶 field；普通 tick 不繼承 trigger。未修改傷害流程。
+- 驗證 node --test tests/firepillar-expire-vfx.test.cjs tests/skills2-vfx-schema.test.cjs（10/10，含三超神、平時與消失事件、爆炸範圍和傷害）；config_tables --apply Skills2 語意變更 0；build_check 387 檔及 diff check 通過。唯讀檢查 skills2 場域流程與 vfx-runtime 角色派送；未瀏覽器實機驗證。無新增／修改素材、無素材庫變更；使用者素材留未提交。無未完成實作，可合併，未合併或推送，Commit 見本紀錄所在提交。
+
 ## Codex｜火鳳遼原主殞石特效（PHOENIX-METEOR-20260921）
 
 - Owner Codex；Done。修正伴生火球的超神外觀覆蓋主殞石；主殞石起飛與落地讀第七階本體，伴生火球保留超神配置。允許 skills2、時序測試、快取與本紀錄；預檢乾淨，不修改使用者素材或數值表。
