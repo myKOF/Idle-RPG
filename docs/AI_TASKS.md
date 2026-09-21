@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜防禦技能提早施放（DEFENSE-PRECAST-20260921）
+
+- Owner Codex；Done。使用者要求岩甲術等防禦技能在敵人出現時起手，不等敵方首擊。允許 skills／skills2／combat、專項測試與快取、本紀錄；禁止修改傷害數值、冷卻、耗魔及素材。衝突預檢通過，無前置依賴。
+- 驗收：岩甲／暴風屏障與舊護盾技能在遠處敵人生成時起手、先於敵方首擊、攻擊技能仍受射程限制、MP／冷卻／死亡／復甦／施法鎖正常；完成後提交供使用者合併。
+- 完成：敵方首擊前新增防禦優先選技；自身防禦不受敵方距離阻擋，附帶攻擊仍排除進場敵人。保留耗魔、冷卻、施法時間及行動限制；更新主頁與 Worker 快取。
+- 測試：`node --test tests/defensive-precast.test.cjs tests/skills2-mana-cost.test.cjs tests/skill-mana-cost.test.cjs tests/indomitable-revival.test.cjs tests/enemy-projectile-retaliation.test.cjs`，14/14 通過；`node tools/build_check.cjs`。唯讀檢查 scripts/sim/engine.js、上述既有測試。限制：已在施法中或冷卻未到不會強行插入防禦，保留吟唱時間；未做瀏覽器人工驗證。無未完成實作，可供合併。
+
 ## Codex｜不屈鬥魂升空復甦（COUNTER-REVIVAL-20260921）
 
 - Owner Codex；Done（使用者已確認特效並要求提交）。致死時保留戰場，站姿升空及天降光束，5 秒生命由 0 回滿；物攻＋魔攻為基礎，4000% 總地系傷害分 10 次（每 0.5 秒）結算。

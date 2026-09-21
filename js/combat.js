@@ -1547,6 +1547,12 @@ function fieldTick(dt) {
             if (added && added.length) spawnedEnemies = added;
         }
     }
+    // 自身防禦在敵人生成時便可起手；不等進場、射程或敵方首擊。
+    var defensiveTargets = fieldEnemyList().filter(function (m) { return m && m.hp > 0; });
+    if (p.hp > 0 && defensiveTargets.length && !playerActionControlBlocked(p, true) &&
+        (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
+        pickAndCastSkill(p, defensiveTargets, 'mv-float', { defensiveOnly: true });
+    }
     /* 以下所有戰鬥行為都只認「已經走進畫面」的敵人（→ fieldCombatReady）：
        選目標、範圍展開、持續傷害、敵人出手全部排除進場中的那些。
        新怪不再於生成當輪先出手——牠這時還在螢幕外；改成走到定位當下把

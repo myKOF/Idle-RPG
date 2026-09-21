@@ -2288,6 +2288,9 @@ function sgTickFlyingProjectiles(dt, ctx) {
    opts.repeat＝超神進化的重複施放（【天地雷鎖陣】【永恒雷獄】）：同樣不扣魔、不進冷卻，
    且不再重新起算重複節拍——否則第一次施放就會把自己續成無限迴圈。
    回傳 { killed, dmg, crit } 或 null（無法施放）。 */
+function skills2DefensivePrecast(gid) {
+  return gid === 'rockarmor' || gid === 'stormbarrier';
+}
 function castSkill2(pEnt, target, gid, floatSel, opts) {
   var g = SKILLS2[gid];
   if (!g || !skills2Castable(gid)) return null;
@@ -2301,14 +2304,16 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
   var rawPool = Array.isArray(target)
     ? target.filter(function (e) { return e && e.hp > 0; })
     : ((target && target.hp > 0) ? [target] : []);
-  /* 起手主目標必須在群組的施法距離內（武技＝普攻近戰距離、魔法＝表定射程）；
+  /* 自身防禦只需敵人已生成；攻擊起手主目標必須在群組施法距離內（武技＝普攻近戰距離、魔法＝表定射程）；
      但 pool 必須保留完整敵群，讓貫穿、範圍擴散與周圍敵人等階段仍能命中射程外的目標。 */
   if (!rawPool.length) return null;
-  var reachable = rawPool.filter(function (e) { return skills2CanReach(gid, e, lvs); });
+  var defensive = skills2DefensivePrecast(gid);
+  var reachable = defensive ? rawPool : rawPool.filter(function (e) { return skills2CanReach(gid, e, lvs); });
   if (!reachable.length) return null;
-  /* 後續幾何與範圍技能仍需看到完整存活敵群；只有起手主目標用 reachable。 */
-  var pool = rawPool;
-  var primary = (typeof bfPickPrimary === 'function')
+  /* 防禦附帶攻擊仍排除進場中的敵人；其他技能保留完整存活敵群供後續幾何選取。 */
+  var pool = defensive && typeof fieldCombatReady === 'function'
+    ? rawPool.filter(fieldCombatReady) : rawPool;
+  var primary = defensive ? reachable[0] : (typeof bfPickPrimary === 'function')
     ? bfPickPrimary(reachable, pEnt._lockTarget) : reachable[0];
   if (!primary) return null;
 
