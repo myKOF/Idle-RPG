@@ -1986,36 +1986,35 @@ test('戰神體：排程補拍、死亡／卸下／重置與 GM 鎖血', () => {
   assert.equal(p.hp,1); assert.equal(c.sgCounterRT().warBody.collected,.4);
 });
 
-test('【不屈鬥魂】：死亡時地系爆發、倒地期間無法行動，時間到原地滿血復活且進入冷卻', () => {
+test('【不屈鬥魂】：五秒漸進回復，物攻加魔攻分十段地系傷害，保留戰場與冷卻', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   maxLevels(c, 'counter'); equip(c, 'counter');
   const p = playerEnt(); p.mp = 1e9; p.hp = 0;
   c.FIELD = { player: p };
-  const near = enemy(1e12, 3 * M, 0);
-  const far = enemy(1e12, 100 * M, 0);   // 超過 30 米
+  const near = enemy(1e12, 3 * M, 0), far = enemy(1e12, 100 * M, 0);
   c.combatFieldEnemies = () => [near, far];
-
-  assert.equal(c.skills2TryLastStand(p), false, '沒選超神進化時不攔截死亡');
+  assert.equal(c.skills2TryLastStand(p), false);
   setUlt(c, 'counter', 'indomitable');
-  assert.equal(c.skills2TryLastStand(p), true, '選了就要攔截');
-  const quake = calls.filter((x) => x.elem === 'earth');
-  assert.equal(quake.length, 1, '只有 30 米內的敵人吃得到地系爆發');
-  assert.equal(quake[0].ent, near);
+  assert.equal(c.skills2TryLastStand(p), true);
   const ult = c.sgUlt('counter', 'indomitable');
-  assert.ok(Math.abs(quake[0].atk - c.getStats().atk * c.sgUltVal(ult, 'pct') / 100) < 1e-6);
-
-  assert.equal(p.hp, 1, '倒地期間生命鎖在 1，不是 0——0 會被下一次判死再抓一次');
-  assert.ok(c.effectActive(p, 'invuln'), '倒地期間無敵');
-  assert.ok(c.skill2DownedActive(), '倒地期間不能行動');
-  assert.equal(c.skills2TryLastStand(p), false, '倒地期間再被判死不得重複攔截');
-
-  run(c, p, [near, far], c.sgUltVal(ult, 'sec') + 1);
-  assert.equal(p.hp, c.getStats().hp, '時間到要原地滿血復活');
-  assert.equal(c.skill2DownedActive(), false, '復活後恢復行動');
-  assert.ok(p.skillCds[c.SG_PREFIX + 'counter'] > 0, '要進入冷卻');
-  p.hp = 0;
-  assert.equal(c.skills2TryLastStand(p), false, '冷卻中不得再發動');
+  assert.equal(calls.length, 0, '開始時不立刻爆發');
+  assert.equal(p.hp, 0);
+  assert.ok(c.skill2DownedActive());
+  assert.equal(c.skills2TryLastStand(p), true, '復甦期間重複判死必須攔截，不能退關');
+  c.healPlayer(p, 1e9, c.getStats()); assert.equal(p.hp, 0, '外部治療不能提前補滿');
+  run(c, p, [near, far], 2.5);
+  assert.equal(calls.length, 5);
+  assert.ok(Math.abs(p.hp / c.getStats().hp - 0.5) < 1e-8);
+  run(c, p, [near, far], 2.5);
+  assert.equal(calls.length, 10);
+  const total = (c.getStats().atk + c.getStats().matk) * c.sgUltVal(ult, 'pct') / 100;
+  assert.ok(Math.abs(calls.reduce((n,x)=>n+x.atk,0)-total)<1e-6);
+  assert.ok(calls.every(x=>x.elem==='earth' && x.ent===near));
+  assert.equal(p.hp, c.getStats().hp);
+  assert.equal(p._sgRevival, undefined);
+  assert.equal(c.skill2DownedActive(), false);
+  p.hp = 0; assert.equal(c.skills2TryLastStand(p), false, '冷卻不能重觸發');
 });
 
 /* ---- 15) 自動施放的共同閘門（2026-08-24 使用者決策）----

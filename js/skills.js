@@ -3096,7 +3096,7 @@ function tickSkillCast(pEnt, dt) {
   };
 }
 
-function pickAndCastSkill(pEnt, target, floatSel) {
+function pickAndCastSkill(pEnt, target, floatSel, opts) {
   var st = getStats();
   if (!pEnt.skillCds) pEnt.skillCds = {};
   if (skillCastInProgress(pEnt)) return null;
@@ -3105,6 +3105,13 @@ function pickAndCastSkill(pEnt, target, floatSel) {
   var readyQueue = pEnt._skillReadyQueue || [];
   for (var qi = 0; qi < readyQueue.length; qi++) {
     var id = readyQueue[qi];
+    if (opts && opts.defensiveOnly) {
+      var defensiveGroup = typeof id === 'string' && id.indexOf('sg:') === 0;
+      var defensiveDef = !defensiveGroup ? skillDef(id) : null;
+      if (defensiveGroup
+        ? !(typeof skills2DefensivePrecast === 'function' && skills2DefensivePrecast(id.slice(3)))
+        : !(defensiveDef && defensiveDef.cat === 'def' && defensiveDef.ai === 'shield')) continue;
+    }
     if (!pEnt._skillReadyQueued[id] || (pEnt.skillCds[id] || 0) > 0 || lo.indexOf(id) < 0) {
       dequeueSkillReady(pEnt, id);
       qi--;
@@ -3137,7 +3144,7 @@ function pickAndCastSkill(pEnt, target, floatSel) {
       var sgReachable = Array.isArray(target)
         ? target.some(function (ent) { return ent && ent.hp > 0 && sgCanReach(ent); })
         : sgCanReach(target);
-      if (!sgReachable) continue;
+      if (!sgReachable && !(typeof skills2DefensivePrecast === 'function' && skills2DefensivePrecast(sgId))) continue;
       if (pEnt.mp < skills2ManaCost(sgId) &&
           !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) continue;
       return beginSkillCast({

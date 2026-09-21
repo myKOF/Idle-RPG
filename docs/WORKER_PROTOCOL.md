@@ -1,6 +1,8 @@
-# Worker 協議 v34
+# Worker 協議 v35
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 34`　最後更新：2026-09-18
+> 協議版本：`WORKER_PROTOCOL_VERSION = 35`　最後更新：2026-09-21
+
+v35 新增可選 `battle.field.player._sgRevival = {startAt, endAt}`（GT 秒）。表示不屈鬥魂的復甦過程：玩家保留站姿向上飄起，HP 為模擬端提供的逐漸回復值，不代表真正死亡。缺省表示未復甦；完成或重置時移除。不設 reviveCd、不觸發敵群死亡清場。
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
 >
 > 遷移（P0～P5）已於 2026-07-28 完成，Worker 是模擬與存檔的唯一權威，舊單執行緒路徑已移除。

@@ -937,7 +937,7 @@ function playerDefCfg(pEnt) {
         dmgRed: (st.passives.sanctuary || 0) + buffVal(pEnt, 'legendaryGuardRed') +
             buffVal(pEnt, 'legendaryLightShieldRed'),
         globalDmgRed: st.globalDmgRed, undying: st.passives.undying || 0,
-        invuln: !!effectActive(pEnt, 'invuln'), // 潛力【絕對領域】／【不屈意志】無敵
+        invuln: !!pEnt._sgRevival || !!effectActive(pEnt, 'invuln'), // 復甦期間由獨立狀態保護
         /* 超神進化【幻影八方陣】的絕對閃避：與命中率無關的獨立擲骰（formula.js resolveHit
            在命中判定之前先擲一次）。這裡是它唯一的出口，因此野外與高塔一體生效。 */
         absDodge: (typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgPhantomDodge')) : 0,
@@ -1449,6 +1449,9 @@ function fieldTick(dt) {
        兩者都走 formula.js 的入帳收斂點（healPlayer／gainPlayerMana）：夾在上限的行為與
        改版前完全相同（noShield ＝ 溢出不轉護盾），差別只在**溢出量**現在有地方可以接——
        大地守護的傳奇【生命滋養】【魔力滋養】與超神【光耀之堂】就吃這一份。 */
+    if (p._sgRevival && typeof sgTickLastStand === 'function') {
+        sgTickLastStand({ pEnt: p, getEnemies: combatFieldEnemies, floatSel: 'mv-float', onDeaths: onFieldDeaths });
+    }
     var hot = buffVal(p, 'hot');
     healPlayer(p, (playerHpRegenPerSec(st) + st.hp * hot / 100) * dt, st, { noShield: true });
     gainPlayerMana(p, playerMpRegenPerSec(st) * dt, st);
@@ -1495,7 +1498,7 @@ function fieldTick(dt) {
         if (p.hp <= 0) { onPlayerFieldDeath(); return; }
         playerMoveDt = skillCastTick.remainingDt;
     }
-    if (targetSwitchReady && typeof bfTickPlayer === 'function') {
+    if (!p._sgRevival && targetSwitchReady && typeof bfTickPlayer === 'function') {
         bfTickPlayer(fieldEnemyList(), playerMoveDt, p._lockTarget, p);
     }
     /* 逼近與推擠：敵人朝我方走、走到接觸距離就停，同伴之間互相推開。
@@ -1543,6 +1546,12 @@ function fieldTick(dt) {
             FIELD.spawnCd = fieldWaveIntervalFor(G.stage.current, G.stage.zone);
             if (added && added.length) spawnedEnemies = added;
         }
+    }
+    // 自身防禦在敵人生成時便可起手；不等進場、射程或敵方首擊。
+    var defensiveTargets = fieldEnemyList().filter(function (m) { return m && m.hp > 0; });
+    if (p.hp > 0 && defensiveTargets.length && !playerActionControlBlocked(p, true) &&
+        (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
+        pickAndCastSkill(p, defensiveTargets, 'mv-float', { defensiveOnly: true });
     }
     /* 以下所有戰鬥行為都只認「已經走進畫面」的敵人（→ fieldCombatReady）：
        選目標、範圍展開、持續傷害、敵人出手全部排除進場中的那些。

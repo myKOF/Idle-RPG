@@ -1316,7 +1316,7 @@ var BattleRenderer = (function () {
      （見 tickWorld 的追擊移動），出手時只播揮擊動作與一點前傾。 */
   function playerAttackAnim(kind, targetId, duration) {
     var p = S.player;
-    if (!p || p.dead) return;
+    if (!p || p.dead || p.revival) return;
     var melee = kind !== 'cast';
     var name = melee ? ('attack' + (1 + Math.floor(Math.random() * 3))) : 'attack2';
     p.baseAnim = p.walking ? 'walk' : 'idle';
@@ -1421,6 +1421,9 @@ var BattleRenderer = (function () {
          不在玩家實體上。舊版讀 field.player.reviveCd，那個欄位根本不存在，
          於是 dead 永遠是 false——倒地動作與倒數都不會出現。 */
       var reviveLeft = Number(field.reviveCd) || 0;
+      p.revival = field.player && field.player._sgRevival || null;
+      p.revivalGt = panel.gt;
+      if (p.revival && p.curAnim !== 'idle') playAnim(p, 'idle');
       var dead = reviveLeft > 0;
       if (dead !== p.dead) {
         /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
@@ -5762,6 +5765,15 @@ var BattleRenderer = (function () {
       }
       p.bodyWrap.x += p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltX || HIT_JOLT_X) : 0;
       p.bodyWrap.y = p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltY || HIT_JOLT_Y) : 0;
+      if (p.revival) {
+        var revivalLeft = typeof uiCountdownRemain === 'function'
+          ? uiCountdownRemain(p.revival.endAt - p.revivalGt, p.revivalGt)
+          : p.revival.endAt - p.revivalGt;
+        var revivalProgress = Math.max(0, Math.min(1, 1 - revivalLeft / (p.revival.endAt - p.revival.startAt)));
+        p.bodyWrap.y = -60 * revivalProgress;
+        p.bodyWrap.rotation = 0;
+        p.bodyWrap.x = 0;
+      }
       p.root.x = p.wx;
       p.root.y = p.wy;
       p.root.zIndex = p.wy;
