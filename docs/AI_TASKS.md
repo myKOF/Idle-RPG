@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜永劫火獄火池分離（ETERNAL-POOL-20260921）
+
+- Owner Codex；Done。永劫火獄 ground 改觸發 ground，火池明確事件只讀觸發角色，本體繼承正常龍捲。允許配置工具、Skills2 表／程式、專項測試、快取與本紀錄；預檢乾淨，保留使用者素材及其他配置。
+- Excel AL100 清空、AQ100=ground-mire-lava、AV100 說明更新；沿先前 artifact 匯入問題使用 ZIP/XML 精準編輯，CSV／JS 同步。未改數值／傷害程式及素材，無素材庫變更。唯讀檢查 sgSpawnFirePool、sgGroundVfxSpec、vfx-runtime 地板與場域圖層。
+- 驗證 node --test tests/firepillar-expire-vfx.test.cjs tests/skills2-vfx-schema.test.cjs（11/11，火池只含地板、正常龍捲保留、火池傷害／半徑／壽命）；config_tables apply 語意變更 0；build_check 387 檔與 diff check 通過。未瀏覽器實機驗證；無未完成實作，可合併，未合併／推送。使用者素材留未提交，Commit 見本紀錄所在提交。
+
 ## Codex｜烈焰衝擊特效分離（FIREPILLAR-EXPIRE-20260921）
 
 - Owner Codex；Done。使用者授權修正常態黃圈與消失時巨型龍捲。第五階爆炸移至觸發 attack／hit，正常場域只繼承本體；允許配置工具、Skills2 表與程式、專項測試、快取與本紀錄。預檢乾淨，保留使用者其他數值與素材修改。

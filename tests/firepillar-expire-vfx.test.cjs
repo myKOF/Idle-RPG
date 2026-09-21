@@ -1,5 +1,28 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {createEngine}=require('../scripts/sim/engine');
+test('永劫火獄火池只有地板，主龍捲不帶火池，火池範圍壽命與傷害保持一致',()=>{
+  const c=createEngine({seed:42}).boot(null).ctx;
+  c.G.player.level=1000;c.G.player.loadout=['sg:firepillar'];
+  c.G.player.skills2.levels.firepillar=Array(7).fill(10);
+  c.G.player.skills2.ult={firepillar:{pick:c.sgUltIndexOfId('firepillar','eternalInferno'),lv:10}};
+  c.initFieldPlayer();c.gmArenaSpawn(1,'elite',1000000);
+  const p=c.FIELD.player,m=c.FIELD.monsters[0];m.pos={x:10,y:0};m._enterCd=0;p.mp=1e9;
+  const events=[];c.playCombatVfx=s=>events.push(s);
+  c.castSkill2(p,[m],'firepillar','mv-float');
+  const f=c.SKILL2_RT.grounds.find(f=>f.kind==='pillar');
+  c.sgGroundTick(f,[m],{});
+  assert.ok(events.some(s=>s.vfx.field==='fire-tornado-infinite'));
+  assert.ok(events.every(s=>!s.vfx.ground));
+  c.sgSpawnFirePool(p,f.st,'firepillar',f.trail,f.floatSel,m,null);
+  const pool=c.SKILL2_RT.grounds.find(f=>f.kind==='firepool');assert.ok(pool);
+  assert.equal(pool.hits*pool.gap,f.trail.sec);
+  events.length=0;const hp=m.hp;c.sgGroundTick(pool,[m],{});
+  assert.equal(events.length,1);
+  assert.deepEqual(Object.keys(events[0].vfx),['ground']);
+  assert.equal(events[0].vfx.ground,'ground-mire-lava');
+  assert.equal(events[0].area.r,pool.radius);
+  assert.ok(m.hp<hp);
+});
 for(const ult of [null,'infernoTempest','eternalInferno','dragonDevour']) {
   test('烈焰衝擊只在消失播放，無龍捲場域繼承：'+ult,()=>{
     const c=createEngine({seed:42}).boot(null).ctx;

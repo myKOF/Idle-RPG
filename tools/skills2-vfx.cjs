@@ -3,6 +3,7 @@
 const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
 const noteColumn = '特效作用說明';
 const events = {
+  'firepillar.eternalInferno': {roles:['ground'],note:'沿龍捲移動軌跡產生的火池只播放本列觸發地板特效，範圍與存續時間依火池判定，不繼承龍捲本體。'},
   'fireball.starfallCataclysm': {roles:['attack'],note:'超巨型殞石落地時，在角色當下中心播放一次全場爆炸；小型受擊另讀本列本體命中特效，各自依 Preset 持續時間播放。'},
   'firepillar.5': {roles:['attack','hit'],note:'每道火龍捲消失時播放一次範圍爆炸及受擊；不隨平時傷害跳動播放，不重播龍捲場域。'},
   'bloodrage.7': {roles:['attack','hit'], note:'狂怒期間每次普攻在主目標位置播放一次範圍爆炸，匹配多目標普攻半徑；實際命中的敵人各播放原尺寸小型命中特效，追加目標同時結算與播放。'},
