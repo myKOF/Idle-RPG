@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜戰神屠錄數值與吸血（WAR-GOD-ROLL-20260921）
+
+- Owner Codex；Done。基礎擊殺增傷 2%、每級 +0.2%，固定最多 200 層；新增吸血效果基礎提升 100%、每級 +10%，乘算並持續到死亡。使用者確認 40% × (1+200%) =120%。允許 skills2、Skills2 表、測試、快取、本紀錄；保留使用者正在修改的爆炸素材。
+- 預檢 index.html 僅既知 Claude 字體快取不同區段，沿既有正常合併授權；其他乾淨。驗證擊殺上限、升級、狂怒結束／死亡、吸血實值與面板及吸魔不變。
+- 完成：施放狂怒建立持續吸血倍率，擊殺不累乘吸血，重施不倍增；透過既有 skill2DrainFactor 同步吸血計算與面板。沿既有 resetSkill2RT 死亡／戰鬥重置回收。Excel AU80／AW80／AX80 精準更新，CSV／JS 同步；沿本對話已確認 artifact 匯入錯讀，使用 ZIP/XML 保留其他元件。
+- 測試：`node --test tests/war-god-roll.test.cjs tests/skill2-counter-bloodrage.test.cjs tests/skills2-vfx-schema.test.cjs` 34/34；`node --test --test-name-pattern="嗜血狂怒的三個超神進化" tests/skill2-ult-evolution.test.cjs` 1/1；build_check 383 檔通過，Excel／CSV 一致、config_tables 語意變更 0。唯讀檢查 formula.js、combat.js、status.js，沿既有技能列覆寫狀態層數及效果值。
+- 無未完成實作，可合併。無新增素材；使用者的 burst-detonate-phys Preset／layout 修改留在工作區，不納入本次技能數值提交。未合併或推送，下一步由使用者整合；Commit 見本紀錄所在提交。
+
 ## Codex｜狂血盛宴範圍特效（BLOODFEAST-VFX-20260921）
 
 - Owner Codex；Done。使用者指定普攻範圍爆炸及逐目標小型受擊；保留傷害與選敵。允許 combat／skills2、Skills2 Excel／CSV、觸發角色工具、測試、快取及本紀錄。預檢只有 index.html 他分支不同版本行，依使用者既有正常合併授權繼續。
