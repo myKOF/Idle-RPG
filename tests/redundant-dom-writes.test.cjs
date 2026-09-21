@@ -113,7 +113,7 @@ test('頂欄資源與角色欄不得無條件重寫', () => {
 });
 
 test('屬性面板每一列都要先比對再寫', () => {
-  const fn = sectionOf('var el = panel.querySelector', 'setHtmlIfChanged($id(' + String.fromCharCode(39) + 'active-buffs' + String.fromCharCode(39) + ')');
+  const fn = sectionOf('var el = panel.querySelector', 'function buffTipEmoji(');
   assert.doesNotMatch(fn, /el\.innerHTML = /);
   assert.match(fn, /setHtmlIfChanged\(el, row\[1\]\(st\)\)/);
 });

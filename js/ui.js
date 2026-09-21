@@ -2653,8 +2653,6 @@ function renderHeader() {
     $id('s-hit').textContent = (st.hit * 100).toFixed(1) + '%';
     $id('s-loot').textContent = (st.loot * 100).toFixed(1) + '%';
   }
-
-  setTextIfChanged($id('s-dps'), fmt(Number(headerSnapshot.dps) || 0));
 }
 
 
@@ -2676,9 +2674,6 @@ function renderAttrPanel(st, headerSnapshot) {
       });
       h += '</details>';
     });
-    h += '<div class="stat-divider"></div>' +
-      '<div class="stat-row" data-tt-title="實時 DPS" data-tt-desc="近 10 秒的平均每秒傷害"><span>📈 實時 DPS</span><b id="s-dps">0</b></div>' +
-      '<div id="active-buffs" class="active-buffs"></div>';
     panel.innerHTML = h;
     _attrPanelBuilt = true;
   }
@@ -2723,7 +2718,6 @@ function renderAttrPanel(st, headerSnapshot) {
       }
     });
   });
-  setHtmlIfChanged($id('active-buffs'), activeBuffsHtml());
 }
 
 /* 增益鍵 → 狀態圖標：唯一來源是狀態表（js/status.js STATUS，由 config/Excel/Status.xlsx 撥離），
@@ -2757,20 +2751,6 @@ var BUFF_REMAIN_INFINITE_SEC = 3600;
 function buffRemainHtml(remain) {
   if (remain > BUFF_REMAIN_INFINITE_SEC) return '<span class="buff-remain">∞</span>';
   return '<span class="buff-remain">' + Math.max(0, Math.ceil(remain || 0)) + 's</span>';
-}
-
-function activeBuffsHtml() {
-  var buffs = activePlayerBuffs(currentCombatPlayerEntity());
-  var h = '<div class="active-buffs-title">目前技能增益</div>';
-  if (!buffs.length) return h + '<div class="active-buffs-empty">無</div>';
-  for (var i = 0; i < buffs.length; i++) {
-    var b = buffs[i];
-    var label = buffLabel(b.key);
-    h += '<div class="active-buff-row"><span class="active-buff-main">' +
-      buffTipEmoji(b.key) + ' ' + esc(label) + '</span><span class="active-buff-side">' +
-      (b.noVal ? '' : buffSignedValueHtml(b.val) + ' ') + buffRemainHtml(b.remain) + '</span></div>';
-  }
-  return h;
 }
 
 function buffTooltipDesc() {

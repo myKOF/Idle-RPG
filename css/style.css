@@ -537,14 +537,6 @@ body {
   text-shadow: 0 0 5px rgba(251, 146, 60, 0.8);
 }
 
-.stat-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 6px 0;
-  border: none;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
-}
-
 /* ==========================================================================
    ?�主?�籤?��??��??�Main Tab Navigation
    說�?：控?��??�中主�??�能?�籤（�??�、�??��??��?塔、設定�??��??��??��?觀?��??��?
@@ -1178,35 +1170,6 @@ textarea#save-io {
   color: var(--dim);
   font-size: 0.9em;
 }
-
-.active-buffs {
-  border-bottom: 1px dashed var(--border);
-  padding: 2px 0 5px 12px;
-  font-size: 12px;
-}
-
-.active-buffs-title {
-  color: var(--accent);
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-
-.active-buffs-empty {
-  color: var(--dim);
-}
-
-.active-buff-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.active-buff-main,
-.active-buff-side {
-  min-width: max-content;
-}
-
 
 .vs {
   align-self: center;
