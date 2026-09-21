@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜戰神體定期失血與分段返還（WAR-GOD-BODY-20260921）
+
+- Done。使用者合併後授權繼續：每 0.5 秒流失最大生命 1%，每 2 秒累計實際失血百分比，兩倍作為下一個 2 秒的反擊傷害加成；各段持續交替結算，固定參數不隨等級增加。護盾不計失血，回復不抵銷已記錄損失。
+- 範圍：Skills2 Excel／CSV、skills2.js、formula.js、skills.js、legendary.js 的生命損失通知、combat.js／tower.js 排程後判死、skills2-geometry.cjs 間隔欄接線、技能測試、index.html／bridge.js／sim.worker.js 快取、本紀錄。各檔预檢無衝突，保留合併後其他配置。無新素材／協議。
+- 驗收：半秒扣血、兩秒邊界、兩倍加成、受擊／DoT／自傷計數且不重複、GM 鎖血、失效與死亡重置、Excel／CSV／JS 與技能說明同步。
+- 實作：第一段只收集，之後收集本段同時使用上段加成；段尾定期自傷歸入剛結束的段。每次實際生命損失按當時生命上限換算百分比；自傷繞過護盾且可致死，沿既有野外／高塔死亡流程。定期扣血及返還排程使用 GT，不新增 Timer 或畫面特效，HP 依既有快照呈現。
+- 配置：Excel 原生儲存並重開驗證，與來源逐格比較只改 Z71、AU71、AW71、AX71，保留物件數。沿用已確認 Artifact 匯出不相容時的原生 Excel 流程。CSV／JS apply dry-run 零語意變更。Lv.1／Lv.10 說明相同，明示每 0.5 秒流失 1% 最大生命與兩倍返還，無未替換佔位符。
+- 測試：node --test --test-name-pattern="戰神體" tests/skill2-ult-evolution.test.cjs：4/4，含野外／高塔排程、補拍、半秒與兩秒邊界、治療後再受傷、護盾、以血還血、鎖血與重置。node --test tests/death-revive-restore.test.cjs tests/field-death-retreat.test.cjs tests/skill-cooldown-death.test.cjs：5/5。
+- 廣域：node --test tests/skill2-counter-bloodrage.test.cjs tests/skills2-geometry.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/skill2-ult-evolution.test.cjs：當時 99 項 73 通過 26 失敗；以 HEAD 原程式／測試／配置預載重跑為 97 項 71 通過、相同 26 項失敗，無新增失敗（之後新增的野外／高塔戰神體案例另已通過）。node tools/build_check.cjs：379 檔通過；diff check 通過。
+- 唯讀檢查 player.js／potential.js 生命變化、既有扣血與復活流程、配置工具及說明產生器。限制：未實機畫面與 Console 驗證，既有廣域失敗未在本次擴大修正；无未完成實作。Commit 見本紀錄所在提交，可合併，未合併或推送；下一步使用者整合後確認戰神體技能說明及自傷節拍。
+
 ## Codex｜提交使用者雙刀配置與素材（USER-SNAPSHOT-20260921）
 
 - Done。使用者要求先提交現有修改供合併，再繼續戰神體；戰神體尚未修改，等待使用者合併與返還公式確認。

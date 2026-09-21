@@ -183,6 +183,7 @@ function towerTick(dt) {
       onDamage: function (d) { TOWER.dmgDealt += Math.max(0, d || 0); } // 45 新技能：排程結算傷害（回響/領域/聖痕）計入輸出統計
     });
     if (!G.tower.active || TOWER.showingResult) return; // 排程結算若擊殺 BOSS（後棒填入）即結束本場
+    if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
   }
   if (typeof tickLegendaryEffects === 'function') {
     var legendaryTick = tickLegendaryEffects(dt, {

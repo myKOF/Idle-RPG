@@ -615,6 +615,7 @@ function skillRtApplyDamageAmps(pEnt, sk, fx, id, lv, st, targets, pre, parts, f
     sac = Math.min(sac, Math.max(0, pEnt.hp - 1));
     if (sac > 0) {
       pEnt.hp -= sac;
+      if (typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(sac, pEnt);
       if (typeof legendaryOnHealthLost === 'function') legendaryOnHealthLost(pEnt, sac, floatSel);
       var sacAmp = fxVal(hs.ampPct, lv) || 0;
       if (sacAmp > 0) res.mult *= 1 + sacAmp / 100;

@@ -756,7 +756,9 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
     if (amount > 0 && !(ent.maxHp > 0) && typeof skills2ManaShieldAbsorb === 'function') {
       amount = Math.max(0, amount - skills2ManaShieldAbsorb(ent, amount));
     }
+    var hpBeforeDirect = ent.hp;
     ent.hp = Math.max(gmFloor, ent.hp - amount);
+    if (!(ent.maxHp > 0) && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(hpBeforeDirect - ent.hp, ent);
     // 新版技能【血飲術】反噬：持續傷害／衍生傷害等直接扣血也是「敵人受傷」
     //（僅敵方實體＝有 maxHp；玩家自身流血不通知，天然阻斷遞迴）
     if (wasAlive && amount > 0 && ent.maxHp > 0 && typeof playerDrainOnDamage === 'function') {
@@ -972,9 +974,11 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   if (dCfg.isPlayer && gmHpLockActive(defender)) dmg = 0;
   out.hpDamage = dmg;
+  var hpBeforeHit = defender.hp;
   defender.hp -= dmg;
   // GM 鎖血（僅本機 GM 指令 god）：我方生命最低鎖 1，不進入下方致死分支；HP_lock 直接不扣血
   if (dCfg.isPlayer && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && defender.hp < 1) defender.hp = 1;
+  var actualHpLoss = Math.max(0, hpBeforeHit - Math.max(0, defender.hp));
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
   if (defender.hp <= 0) {
     // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復一定比例最大生命（有內部冷卻）
@@ -993,6 +997,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       defender.hp = 0; out.killed = true;
     }
   }
+  if (dCfg.isPlayer && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(actualHpLoss, defender);
   // 所有普通／技能命中共用一次汲取；同一擊的物理與附加元素不重複計次。
   if (aCfg.isPlayer && defenderWasAlive && typeof playerDrainOnDamage === 'function') {
     playerDrainOnDamage(defender, out.dmg, attacker);
@@ -1010,7 +1015,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       if (gmHpLockActive(attacker)) {
         out.thorns = 0;
       } else {
+        var hpBeforeThorns = attacker.hp;
         attacker.hp = Math.max(0, attacker.hp - out.thorns);
+        if (aCfg.isPlayer && typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(hpBeforeThorns - attacker.hp, attacker);
       }
       // 反震也是「敵人受傷」：血飲術反噬同樣通知（防守方為玩家＝攻擊者為敵人）
       if (dCfg.isPlayer && thornsTargetAlive && typeof playerDrainOnDamage === 'function') {

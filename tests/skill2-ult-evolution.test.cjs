@@ -1883,7 +1883,7 @@ test('神聖光彈：保持原本邊緣距離的命中範圍，不變更數值�
   assert.equal(hits[1].ent, before[0]);
 });
 
-test('【戰神體】：視窗內損失的生命百分比會加成到之後的反擊，過期就消失', () => {
+test('【戰神體】：半秒失血，前兩秒的生命損失以兩倍加成到後兩秒反擊', () => {
   const c = loadContext(['js/legendary.js']);
   const calls = stubHits(c); stubVfx(c);
   const p = counterMaxSingleStrike(c);
@@ -1895,18 +1895,95 @@ test('【戰神體】：視窗內損失的生命百分比會加成到之後的�
   const base = calls[0].atk;
 
   setUlt(c, 'counter', 'warGodBody');
+  c.sgWarGodBodyState(p);
   calls.length = 0;
-  // 這一下就損失了最大生命的 20%，同一次的反擊就要吃到（設計文檔：「一併附加」）
+  c.GT = 0.49;
+  c.sgWarGodBodyState(p);
+  assert.equal(p.hp, 1000);
+  c.GT = 0.5;
+  c.sgWarGodBodyState(p);
+  assert.equal(p.hp, 990);
+  c.applyEnemyHpDamage(p, 200);
   c.skills2OnPlayerDamaged(m, p, 200, false, hitRes(), 'pv-float');
-  assert.ok(Math.abs(calls[0].atk - base * 1.2) < 1e-6, '失血 20% → 反擊傷害 ×1.2，實得 ' + (calls[0].atk / base));
-  calls.length = 0;
-  c.skills2OnPlayerDamaged(m, p, 200, false, hitRes(), 'pv-float');
-  assert.ok(Math.abs(calls[0].atk - base * 1.4) < 1e-6, '視窗內的失血要累加');
-
-  c.GT += c.sgUltVal(c.sgUlt('counter', 'warGodBody'), 'sec') + 1;
+  assert.equal(calls[0].atk, base, '本段失血不能立即返還');
+  p.hp += 100; // 治療不抵銷損失
+  c.applyEnemyHpDamage(p, 100);
+  c.GT = 1.999;
+  assert.equal(c.sgWarGodBodyPct(), 0);
+  c.GT = 2;
+  assert.equal(c.sgWarGodBodyPct(), 68, '30% 實際受傷 + 4% 自傷，兩倍為 68%');
+  assert.equal(p.hp, 760);
   calls.length = 0;
   c.skills2OnPlayerDamaged(m, p, 0, false, hitRes({ absorbed: 1 }), 'pv-float');
-  assert.ok(Math.abs(calls[0].atk - base) < 1e-6, '過了視窗就回到基準');
+  assert.ok(Math.abs(calls[0].atk - base * 1.68) < 1e-6);
+  c.GT = 3.999;
+  assert.equal(c.sgWarGodBodyPct(), 68);
+  c.GT = 4;
+  assert.equal(c.sgWarGodBodyPct(), 8, '新段替換舊加成，只剩第二段 4% 自傷的兩倍');
+  calls.length = 0;
+  c.skills2OnPlayerDamaged(m, p, 0, false, hitRes({ absorbed: 1 }), 'pv-float');
+  assert.ok(Math.abs(calls[0].atk - base * 1.08) < 1e-6);
+});
+
+test('戰神體：一般受擊只記一次、護盾不計、配置及等級一致', () => {
+  const c=loadContext(); const p=counterMaxSingleStrike(c); setUlt(c,'counter','warGodBody');
+  c.sgWarGodBodyState(p);
+  const m=enemy(1e9,0,0); p.shield=100; c.chance=pct=>pct>=100;
+  const result=c.resolveHit(m,p,{atk:200,hit:100,critRate:0,level:1},{isPlayer:true,maxHp:1000,def:0,mdef:0});
+  const actual=1000-p.hp;
+  assert.ok(actual>0 && actual<200);
+  const before=c.sgCounterRT().warBody.collected;
+  c.sgCounterOnPlayerDamaged=()=>{};
+  c.skills2OnPlayerDamaged(m,p,result.hpDamage,false,result,'pv-float');
+  assert.equal(c.sgCounterRT().warBody.collected,before,'受擊通知不重複計數');
+  c.GT=2;
+  assert.ok(Math.abs(c.sgWarGodBodyPct()-(actual/10+4)*2)<1e-8);
+  const t=require('../tools/config_tables.cjs'), rows=t.readXlsxRows(path.join(root,'config/Excel/Skills2.xlsx'));
+  const row=rows.find(r=>r[8]==='warGodBody');
+  assert.equal(row[25],'0.5');
+  assert.deepEqual(JSON.parse(row[46]),{sec:2,hpPct:1,mult:2});
+  const def=c.SKILLS2.counter.ult.find(u=>u.id==='warGodBody');
+  assert.equal(def.fx.gap,.5); assert.equal(def.fx.sec,2); assert.equal(def.fx.secPer,undefined);
+  assert.match(def.desc,/每 \{gap\} 秒流失最大生命/);
+  const low=c.describeSkill2Ult('counter',2,1), high=c.describeSkill2Ult('counter',2,10);
+  assert.equal(low,high,'固定節拍與倍率不隨等級變化');
+  assert.match(high,/每 0.5 秒流失最大生命的 1%/);
+  assert.match(high,/2 倍/);
+  assert.doesNotMatch(high,/\{\w+\}/,'玩家說明沒有未替換參數');
+});
+
+test('戰神體：野外／高塔共用排程扣血，持續傷害與以血還血都累計實際損失', () => {
+  for(const tower of [false,true]) {
+    const c=loadContext(); const p=counterMaxSingleStrike(c); setUlt(c,'counter','warGodBody');
+    if(tower){c.G.tower={active:true};c.TOWER={player:p};c.FIELD.player=playerEnt();}
+    const ctx={pEnt:p,getEnemies:()=>[],floatSel:'pv-float'};
+    c.GT=.5; c.tickSkill2(.5,ctx);
+    assert.equal(p.hp,990);
+    if(tower)assert.equal(c.FIELD.player.hp,1000,'高塔扣血不影響野外待命實體');
+    c.sgCounterApplyLegends(p,c.getStats(),100,{bloodPay:{pct:0,hpPct:5}});
+    assert.equal(p.hp,940);
+    c.applyEnemyHpDamage(p,40); // tickStatuses 的共用直接扣血路徑
+    c.GT=2; c.tickSkill2(1.5,ctx);
+    assert.equal(p.hp,870);
+    assert.equal(c.sgWarGodBodyPct(),26,'4% 定期自傷 + 5% 反擊代價 + 4% 直接傷害');
+    p.hp=5; c.GT=2.5; c.tickSkill2(.5,ctx);
+    assert.equal(p.hp,0,'自傷可以致死，交由野外／高塔判死路徑接手');
+  }
+});
+
+test('戰神體：排程補拍、死亡／卸下／重置與 GM 鎖血', () => {
+  const c=loadContext(); const p=counterMaxSingleStrike(c); setUlt(c,'counter','warGodBody');
+  c.sgWarGodBodyState(p); c.GT=4;
+  c.sgWarGodBodyState(p); assert.equal(p.hp,920); assert.equal(c.sgWarGodBodyPct(),8);
+  c.G.player.loadout=[]; c.GT=5;
+  c.sgWarGodBodyState(p); assert.equal(p.hp,920); assert.equal(c.sgWarGodBodyPct(),0);
+  equip(c,'counter'); c.sgWarGodBodyState(p); c.GT=5.5;
+  c.gmHpLockActive=()=>true; c.sgWarGodBodyState(p); assert.equal(p.hp,920);
+  c.gmHpLockActive=()=>false; p.hp=5; c.GT=6;
+  c.sgWarGodBodyState(p); assert.equal(p.hp,0); assert.equal(c.sgCounterRT().warBody,null);
+  p.hp=1000; c.resetSkill2RT(); c.sgWarGodBodyState(p); assert.equal(c.sgWarGodBodyPct(),0);
+  c.GM_TEST={god:true}; p.hp=5; c.GT=6.5; c.sgWarGodBodyState(p);
+  assert.equal(p.hp,1); assert.equal(c.sgCounterRT().warBody.collected,.4);
 });
 
 test('【不屈鬥魂】：死亡時地系爆發、倒地期間無法行動，時間到原地滿血復活且進入冷卻', () => {
