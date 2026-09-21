@@ -7419,3 +7419,29 @@ Worker 存活且頁面正常完成載入。
 - 重構：把「讀表＋回補群組名稱」抽成 `readTable`，掃特效欄與找施加者共用；`rowLabel` 改用 `stageLabel`。回補規則與命名規則各只有一份。
 - 驗證：改前改後完整比對 132 份 preset 的標註——120 份一字未動、12 份變動全是被狀態使用的特效、0 份新增或消失。實際編輯器下拉搜「暴風亂舞」「雙刀」皆找到 ground-storm-dance，「火球 燃燒」「火龍捲 燃燒」皆找到 st-tick-fire。新增 USAGE-16a～e 並做過突變測試（關掉冠名時 16a/16b/16c 轉紅）；USAGE-7C 的前提隨之調整（狀態來的用途是另一條使用路徑，不算收攏失敗）。vfx-preset-usage 23 項通過。
 - 部署：preset-usage.cjs 在伺服器的 RESTART_REQUIRED_FILES 內，需重開編輯器才會看到新標註（伺服器會自動提示）。
+
+## Codex｜反擊最高階耗魔（COUNTER-MANA-20260921）
+
+- Done。使用者確認：每次基礎／招架反擊扣最高已學習階段的消耗（超神優先），不是累加；二次反擊、狂化反殺實際觸發時另扣各階消耗。強化、反擊盾、破甲包含在基本消耗內，不另收費。反擊衍生斬擊不重收基本消耗。
+- 範圍：skills2.js、ui.js、反擊／耗魔測試、index.html／bridge.js／sim.worker.js 快取、本紀錄。預檢發現 Claude 39b21fb3 在 index.html 更新 battle-renderer 快取；使用者明確允許不同列且可正常合併時繼續。本次只改技能／UI／bridge 列，不覆蓋該渲染列。其他檔案預檢無衝突，保留使用者 Excel 與素材改名。
+- 驗收：全七階與三超神、非累加、觸發／未觸發、MP 不足與恰好足夠、雙來源反擊、額外觸發消耗、空目標、GM 鎖魔、UI 快照耗魔一致。
+- 完成模擬扣費與 UI 門檻／彈窗／提示同步，表中數值不變；工具產生的說明與 SKILL_TEST_SPEC 已更新，無新素材或 Worker 協議。index.html 以 merge-base／工作區版本／ai/claude 三方合併乾跑成功，保留双方快取版本，未實際合併。
+- 測試：node --test tests/skill2-counter-bloodrage.test.cjs tests/skills2-mana-cost.test.cjs tests/skill2-ui.test.cjs：35/35。node --test --test-name-pattern="神聖|戰神體|反擊|不屈鬥魂" tests/skill2-ult-evolution.test.cjs：使用者工作區 Excel 重排列造成 1 項舊固定欄索引失敗，讀取 HEAD 工作簿重跑 10/10 通過，未修改使用者檔案。node tools/build_check.cjs：379 檔通過；Skills2 apply dry-run 零語意差異；diff check 通過。完整範圍報告見 docs/skill-tests/20260921-counter-codex.md。
+- 唯讀檢查反擊超神／傳奇、吸魔與 UI 快照路徑，未修改 formula.js、Excel／CSV 或使用者素材。未實機畫面／Console 驗證；使用者的 Excel 與素材改名保留未提交。無未完成實作，可合併；Commit 見本紀錄所在提交，未合併或推送。下一步整合後觀察反擊耗魔與吸魔收支。
+
+## Codex｜施法消耗數值驗證（SKILLS2-COST-VALIDATION-20260921）
+
+- Done。修正 Skills2 工作簿殘留的「技能本體／附加效果」清單驗證，依「施法消耗」表頭定位，改為允許空白的非負數值驗證。預檢通過，保留使用者目前欄位排序及數值；僅修改工作表驗證 XML，不重建工作簿。
+- 工作區目前為 J2:J231；提交以 HEAD 工作簿建立同一驗證修正，施法消耗位於 AG2:AG231，使用者既有重排及其他工作簿編輯留在工作區。所有儲存格內容與修改前逐格一致；Excel 原生重開正常，40／0／0.5／空白通過驗證，負數與文字不通過。git diff --check 通過；無程式／CSV／素材更動，無需 build。唯讀檢查 config_tables.cjs 與工作簿 XML。
+- Commit 見本紀錄所在提交，可合併，未合併／推送。無未完成項目；使用者若已開啟舊版 Excel，須關閉且不覆蓋磁碟修正後再開啟。下一步以修正版工作簿繼續填寫數值。
+
+## Codex｜戰神體定期失血與分段返還（WAR-GOD-BODY-20260921）
+
+- Done。使用者合併後授權繼續：每 0.5 秒流失最大生命 1%，每 2 秒累計實際失血百分比，兩倍作為下一個 2 秒的反擊傷害加成；各段持續交替結算，固定參數不隨等級增加。護盾不計失血，回復不抵銷已記錄損失。
+- 範圍：Skills2 Excel／CSV、skills2.js、formula.js、skills.js、legendary.js 的生命損失通知、combat.js／tower.js 排程後判死、skills2-geometry.cjs 間隔欄接線、技能測試、index.html／bridge.js／sim.worker.js 快取、本紀錄。各檔预檢無衝突，保留合併後其他配置。無新素材／協議。
+- 驗收：半秒扣血、兩秒邊界、兩倍加成、受擊／DoT／自傷計數且不重複、GM 鎖血、失效與死亡重置、Excel／CSV／JS 與技能說明同步。
+- 實作：第一段只收集，之後收集本段同時使用上段加成；段尾定期自傷歸入剛結束的段。每次實際生命損失按當時生命上限換算百分比；自傷繞過護盾且可致死，沿既有野外／高塔死亡流程。定期扣血及返還排程使用 GT，不新增 Timer 或畫面特效，HP 依既有快照呈現。
+- 配置：Excel 原生儲存並重開驗證，與來源逐格比較只改 Z71、AU71、AW71、AX71，保留物件數。沿用已確認 Artifact 匯出不相容時的原生 Excel 流程。CSV／JS apply dry-run 零語意變更。Lv.1／Lv.10 說明相同，明示每 0.5 秒流失 1% 最大生命與兩倍返還，無未替換佔位符。
+- 測試：node --test --test-name-pattern="戰神體" tests/skill2-ult-evolution.test.cjs：4/4，含野外／高塔排程、補拍、半秒與兩秒邊界、治療後再受傷、護盾、以血還血、鎖血與重置。node --test tests/death-revive-restore.test.cjs tests/field-death-retreat.test.cjs tests/skill-cooldown-death.test.cjs：5/5。
+- 廣域：node --test tests/skill2-counter-bloodrage.test.cjs tests/skills2-geometry.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/skill2-ult-evolution.test.cjs：當時 99 項 73 通過 26 失敗；以 HEAD 原程式／測試／配置預載重跑為 97 項 71 通過、相同 26 項失敗，無新增失敗（之後新增的野外／高塔戰神體案例另已通過）。node tools/build_check.cjs：379 檔通過；diff check 通過。
+- 唯讀檢查 player.js／potential.js 生命變化、既有扣血與復活流程、配置工具及說明產生器。限制：未實機畫面與 Console 驗證，既有廣域失敗未在本次擴大修正；无未完成實作。Commit 見本紀錄所在提交，可合併，未合併或推送；下一步使用者整合後確認戰神體技能說明及自傷節拍。

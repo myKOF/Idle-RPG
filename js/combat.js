@@ -1512,6 +1512,7 @@ function fieldTick(dt) {
     if (typeof tickSkillSchedulers === 'function') {
         tickSkillSchedulers(dt, { pEnt: p, getEnemies: combatFieldEnemies, floatSel: 'mv-float', onDeaths: onFieldDeaths });
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill scheduler');
+        if (p.hp <= 0) { onPlayerFieldDeath(); return; }
     }
     if (typeof tickLegendaryEffects === 'function') {
         var legendaryTick = tickLegendaryEffects(dt, {

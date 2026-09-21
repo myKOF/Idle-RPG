@@ -195,7 +195,7 @@ var SKILLS2 = {
   gale: { name: '疾風迅雷', emoji: '💨', range: '', cd: 15, cost: 25, tiers: [{ name: '疾風迅雷', unlock: { reinc: 0, lv: 100 }, cost: 25, fx: { pct: 250, pctPer: 20, hits: 3, castM: 5, gap: 0.35, m: 10 }, goldBase: 100000, goldGrow: 1.5, desc: '對目標周圍 {m} 米內的敵人造成連續 {hits} 次 {pct}% 物理傷害；目標死亡後仍在原座標完成剩餘段數', vfx: { attack: 'hit-gale-burst', hit: 'hit-phys' } }, { name: '連擊', unlock: { reinc: 0, lv: 150 }, cost: 40, fx: { add: 2, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '打擊次數額外 +{add}（不足 1 次的部分以機率觸發）' }, { name: '強化重擊', unlock: { reinc: 0, lv: 200 }, cost: 60, fx: { pct: 15, pctPer: 4 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化打擊傷害，額外 +{pct}% 物理傷害' }, { name: '爆散', unlock: { reinc: 0, lv: 250 }, cost: 80, fx: { pct: 50, pctPer: 5, count: 2, countPer: 0.2, m: 12 }, goldBase: 800000, goldGrow: 1.5, desc: '每次打擊額外對自身周圍 {m} 米內隨機 {count} 個其他敵人造成 {pct}% 技能傷害；附近沒有其他敵人時改為攻擊原目標（目標數不足 1 個的部分以機率觸發）', vfx: { attack: 'hit-gale-burst-diffusion', hit: 'hit-phys' } }, { name: '狂風破', unlock: { reinc: 0, lv: 300 }, cost: 100, fx: { pct: 20, pctPer: 5, sec: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放疾風迅雷使你的攻速額外提高 {pct}%，持續 {sec} 秒（突破攻速上限，與自身攻速相乘）', status: { self: [{ id: 'sgGale' }] } }, { name: '縮地', unlock: { reinc: 0, lv: 350 }, cost: 140, fx: { sec: 2, secPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '疾風迅雷的冷卻時間 -{sec} 秒' }, { name: '疾風月牙閃', unlock: { reinc: 0, lv: 400 }, cost: 240, fx: { pct: 500, pctPer: 50, castM: 10, m: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '疾風迅雷的傷害由目標周圍 {m} 米內的所有敵人均分，且傷害額外 +{pct}%', vfx: { attack: 'hit-gale-burst-07-moon' } }], ult: [{ id: 'thunderFlash', name: '霹靂一閃', cost: 300, fx: { pct: 300, pctPer: 30, count: 3, rise: 0.08, gap: 0.2, m: 12, len: 100, wid: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風迅雷最後一擊觸發 {count}＋角色連擊數道貫穿雷電，每道造成 {pct}% 雷電傷害；每隔 {gap} 秒重新選擇自身周圍 {m} 米內敵人，無敵人即停止；沿自身與目標連線，以自身為中心貫穿長 {len} 米、寬 {wid} 米的範圍', triggerVfx: { attack: 'beam-gale-thunder-flash' } }, { id: 'thunderGodSlash', name: '雷神之怒', cost: 300, fx: { pct: 100, pctPer: 10, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風迅雷附加雷電：每次命中時降下 1 道落雷，對命中處周圍 {m} 米內的敵人造成 {pct}% 閃電傷害', triggerVfx: { attack: 'bolt-sky-purple' } }, { id: 'chidori', name: '千鳥', cost: 300, fx: { pct: 100, pctPer: 10, scatterPct: 50, scatterPctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '疾風月牙閃不再由範圍內的敵人均分傷害，改為每個敵人都受到完整傷害；爆散效果提高 {scatterPct}%（技能傷害係數與隨機目標數同時提高），且本體與爆散傷害再額外 +{pct}%', vfx: { attack: 'hit-gale-burst-10-bird' } }] },
   bloodblade: { name: '血刃斬', emoji: '🩸', range: '', cd: 15, cost: 25, tiers: [{ name: '血刃斬', unlock: { reinc: 0, lv: 200 }, cost: 25, fx: { pct: 200, pctPer: 15, dotPct: 30, dotSec: 5, dotGap: 1 }, goldBase: 100000, goldGrow: 1.5, desc: '對敵人造成 1 次 {pct}% 物理傷害，並附加流血：每 {dotGap} 秒造成技能傷害 {dotPct}% 的傷害，持續 {dotSec} 秒', vfx: { attack: 'hit-bloodblade-burst' }, status: { enemy: [{ id: 'sgBleed' }] } }, { name: '強化流血', unlock: { reinc: 0, lv: 250 }, cost: 40, fx: { sec: 0.5, secPer: 0.1, gapPct: 10, gapPctPer: 1.5 }, goldBase: 200000, goldGrow: 1.5, desc: '流血持續時間 +{sec} 秒，且流血作用間隔縮短 {gapPct}%（跳得更快、總傷更高）' }, { name: '虛弱', unlock: { reinc: 0, lv: 300 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '流血中的敵人受到的傷害提高 {pct}%' }, { name: '血毒刃', unlock: { reinc: 0, lv: 350 }, cost: 80, fx: { dotPct: 25, dotPctPer: 3, dotSec: 6, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '敵人流血的同時也會中毒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的毒屬性傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgPoison' }] } }, { name: '毒霧感染', unlock: { reinc: 0, lv: 400 }, cost: 100, fx: { chance: 30, chancePer: 2, count: 2, speed: 50 }, goldBase: 1500000, goldGrow: 1.5, desc: '血毒刃的毒在每次作用時，有 {chance}% 機率傳染給附近的 {count} 個敵人', triggerVfx: { projectile: 'proj-poison-drop', hit: 'hit-poison' } }, { name: '死亡屍爆', unlock: { reinc: 0, lv: 450 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2 }, goldBase: 3000000, goldGrow: 1.5, desc: '流血或中毒狀態的敵人死亡時爆炸，對附近 {count} 個敵人造成 {pct}% 技能傷害並傳染中毒', triggerVfx: { attack: 'burst-blood' } }, { name: '零日感染', unlock: { reinc: 0, lv: 500 }, cost: 240, fx: { chance: 20, chancePer: 2, pct: 40, pctPer: 4, count: 1, m: 20 }, goldBase: 5000000, goldGrow: 1.5, desc: '流血或中毒狀態在每次作用時有 {chance}% 機率立即造成剩餘的持續傷害；作用結束後將流血及中毒傳染給 {m} 米內的隨機 {count} 個敵人，且流血與中毒傷害 +{pct}%', triggerVfx: { attack: 'burst-zero-infection' } }], ult: [{ id: 'slayerDomain', name: '殺神領域', cost: 300, fx: { pct: 2, pctPer: 0.2, healPct: 2, healPctPer: 0.2, dur: 6, maxStacks: 100, m: 24 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的殺神領域：領域內的敵人死亡時堆疊【殺神】，每層使你造成的傷害 +{pct}%，同時回復 {healPct}% 最大生命；最多 {maxStacks} 層，持續 {dur} 秒', status: { self: [{ id: 'sgSlayerMark' }, { id: 'sgSlayerDomain' }] } }, { id: 'venomDomain', name: '萬毒血霧', cost: 300, fx: { pct: 100, pctPer: 10, dur: 6, maxStacks: 10, gap: 0.5, m: 24 }, goldBase: 10000000, goldGrow: 1.5, desc: '永久展開 {m} 米的萬毒領域：領域內的敵人每 {gap} 秒受到 {pct}% 中毒傷害，該中毒持續 {dur} 秒且可堆疊至 {maxStacks} 層', triggerVfx: { hit: 'hit-poison' }, status: { self: [{ id: 'sgVenomDomain' }], enemy: [{ id: 'sgVenomField' }] } }, { id: 'disintegrate', name: '崩解', cost: 300, fx: { pct: 50, pctPer: 5, gapPct: 40, gapPctPer: 4, speed: 50, m: 6 }, goldBase: 10000000, goldGrow: 1.5, desc: '中毒與流血作用間隔時間縮短 {gapPct}%，每次結算後爆炸，對周圍 {m} 米內的敵人造成該效果完整持續時間總傷害 {pct}% 的技能傷害', triggerVfx: { attack: 'burst-blood', projectile: 'proj-poison-drop-10' } }] },
   dualdance: { name: '雙刀亂舞', emoji: '⚔️', range: '', cd: 15, cost: 25, tiers: [{ name: '雙刀亂舞', unlock: { reinc: 0, lv: 250 }, cost: 25, fx: { pct: 300, pctPer: 25, count: 2 }, goldBase: 100000, goldGrow: 1.5, desc: '在當前攻擊範圍內隨機選敵斬擊 {count} 次，每次造成 {pct}% 物理傷害；可重複選中同一目標，只有 1 個敵人時全部斬擊打向它', vfx: { attack: 'slash-dual' } }, { name: '疾風亂舞', unlock: { reinc: 0, lv: 300 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 200000, goldGrow: 1.5, desc: '額外增加 {add} 次斬擊，每次從當前攻擊範圍內隨機選敵，可重複選中同一目標（不足 1 次的部分以機率觸發）' }, { name: '強化雙刀', unlock: { reinc: 0, lv: 350 }, cost: 60, fx: { pct: 25, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化雙刀傷害，額外 +{pct}% 物理傷害' }, { name: '狂暴之舞', unlock: { reinc: 0, lv: 400 }, cost: 80, fx: { cr: 100, crPer: 10, add: 1, addPer: 0.1, sec: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '讓你的暴擊率 +{cr}%、連擊數 +{add}，持續 {sec} 秒', status: { self: [{ id: 'sgFrenzyCr' }] } }, { name: '鐵血之舞', unlock: { reinc: 0, lv: 450 }, cost: 100, fx: { pct: 1, pctPer: 0.1, sec: 3, gap: 0.35, m: 5 }, goldBase: 1500000, goldGrow: 1.5, desc: '施放雙刀亂舞時使你以及附近 {m} 米內的所有敵人流血：每 {gap} 秒造成最大生命值 {pct}% 傷害，持續 {sec} 秒', vfx: { attack: 'slash-dual-red' }, status: { self: [{ id: 'sgIronBleed' }], enemy: [{ id: 'sgIronBleed' }] } }, { name: '嗜血狂化', unlock: { reinc: 0, lv: 500 }, cost: 140, fx: { pct: 0.25, pctPer: 0.025, sec: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '施放雙刀亂舞後 {sec} 秒內，生命值或護盾每減少 1%，獲得 {pct}% 技能傷害提升' }, { name: '暴風亂舞', unlock: { reinc: 0, lv: 550 }, cost: 240, fx: { sec: 3, secPer: 0.3, gap: 0.35 }, goldBase: 5000000, goldGrow: 1.5, desc: '化身暴風在敵人間穿梭 {sec} 秒：每 {gap} 秒自動施放 1 次雙刀亂舞；期間可以普攻及施放技能', vfx: { attack: 'slash-dual' }, status: { self: [{ id: 'sgStorm' }] } }], ult: [{ id: 'doomDance', name: '毀滅之舞', cost: 300, fx: { hpPct: 10, hpPctPer: -0.5, pct: 200, pctPer: 20, add: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '每施放 1 次雙刀亂舞就失去當下 {hpPct}% 生命值（不會致死），但雙刀亂舞的傷害提高 {pct}%，且額外 +{add} 個攻擊目標（每刀在當前攻擊範圍內隨機選敵，可重複命中同一目標）', vfx: { attack: 'slash-dual-08' } }, { id: 'flameKagura', name: '火之神樂', cost: 300, fx: { pct: 20, pctPer: 2, dur: 10, maxStacks: 20, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '雙刀亂舞附加火焰：每次命中堆疊 1 層【神樂灼焰】，每層每 {gap} 秒造成 {pct}% 火屬性傷害，最多 {maxStacks} 層，持續 {dur} 秒', vfx: { attack: 'slash-dual-fire-09' }, status: { enemy: [{ id: 'sgKagura' }] } }, { id: 'asuraDance', name: '修羅亂舞', cost: 300, fx: { pct: 20, pctPer: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '讓你可以同時裝備兩把雙手武器（主手與副手各一把），且雙手武器的詞條效果提升 {pct}%', vfx: { attack: 'slash-dual-10' } }] },
-  counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 5, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, cost: 5, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害', vfx: { projectile: 'proj-counter-ripple', hit: 'hit-phys' } }, { name: '招架', unlock: { reinc: 0, lv: 350 }, cost: 10, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, cost: 20, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）', vfx: { hit: 'hit-earth' }, status: { enemy: [{ id: 'sgArmorBrk' }] } }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { chance: 25, chancePer: 2.5, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 50, pctPer: 5, count: 1, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }], ult: [{ id: 'holyBody', name: '神聖之體', cost: 300, fx: { count: 10, pct: 300, pctPer: 30, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {count} 次反擊後朝目標射出一顆光彈，對其周圍 {m} 米內的敵人造成 {pct}% 神聖傷害', triggerVfx: { attack: 'burst-holy', projectile: 'proj-light-orb' } }, { id: 'indomitable', name: '不屈鬥魂', cost: 300, fx: { pct: 2000, pctPer: 200, sec: 5, cd: 60, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '死亡時對 {m} 米內的所有敵人造成 {pct}% 地系傷害，並在 {sec} 秒後原地復活繼續戰鬥（不算戰鬥失敗）；冷卻 {cd} 秒', vfx: { attack: 'burst-earth', hit: 'hit-earth', ground: 'aura-rock-armor' }, status: { self: [{ id: 'invuln' }] } }, { id: 'warGodBody', name: '戰神體', cost: 300, fx: { sec: 1, secPer: 0.1 }, goldBase: 10000000, goldGrow: 1.5, desc: '你在 {sec} 秒內損失的生命百分比，會在接下來 {sec} 秒內的反擊中一併附加到敵人身上' }] },
+  counter: { name: '反擊', emoji: '🛡️', range: '', cd: 0, cost: 5, tiers: [{ name: '反擊', unlock: { reinc: 0, lv: 300 }, cost: 5, fx: { chance: 35, pct: 50, pctPer: 5 }, goldBase: 100000, goldGrow: 1.5, desc: '被動：受到傷害時有 {chance}% 機率對攻擊者反擊，造成 {pct}% 普攻傷害', vfx: { projectile: 'proj-counter-ripple', hit: 'hit-phys' } }, { name: '招架', unlock: { reinc: 0, lv: 350 }, cost: 10, fx: { mult: 300, multPer: 30 }, goldBase: 200000, goldGrow: 1.5, desc: '格擋時必定對敵人反擊，造成「格擋減傷值 × {mult}%」的普攻傷害' }, { name: '強化反擊', unlock: { reinc: 0, lv: 400 }, cost: 20, fx: { pct: 30, pctPer: 5 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步提升反擊傷害，額外 +{pct}% 反擊普攻傷害' }, { name: '反擊盾', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 1, pctPer: 0.1 }, goldBase: 800000, goldGrow: 1.5, desc: '觸發反擊時，回復自身最大生命 {pct}% 的護盾' }, { name: '破甲擊', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { chance: 35, def: 15, sec: 4, secPer: 0.4, max: 4 }, goldBase: 1500000, goldGrow: 1.5, desc: '格擋時有 {chance}% 機率造成破甲：防禦 -{def}%，持續 {sec} 秒，最多疊 {max} 層（疊層時重置時間）', vfx: { hit: 'hit-earth' }, status: { enemy: [{ id: 'sgArmorBrk' }] } }, { name: '二次反擊', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { chance: 25, chancePer: 2.5, count: 1 }, goldBase: 3000000, goldGrow: 1.5, desc: '反擊時有 {chance}% 機率再追加 {count} 次反擊（追加反擊不會再觸發反擊）' }, { name: '狂化反殺', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 50, pctPer: 5, count: 1, m: 80 }, goldBase: 5000000, goldGrow: 1.5, desc: '每次反擊時，額外對 {m} 米內隨機 {count} 個敵人反擊，造成 {pct}% 普攻傷害（不會再觸發反擊）' }], ult: [{ id: 'holyBody', name: '神聖之體', cost: 300, fx: { count: 10, pct: 300, pctPer: 30, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {count} 次反擊後朝目標射出一顆光彈，對其周圍 {m} 米內的敵人造成 {pct}% 神聖傷害', triggerVfx: { attack: 'burst-holy', projectile: 'proj-light-orb' } }, { id: 'indomitable', name: '不屈鬥魂', cost: 300, fx: { pct: 2000, pctPer: 200, sec: 5, cd: 60, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '死亡時對 {m} 米內的所有敵人造成 {pct}% 地系傷害，並在 {sec} 秒後原地復活繼續戰鬥（不算戰鬥失敗）；冷卻 {cd} 秒', vfx: { attack: 'burst-earth', hit: 'hit-earth', ground: 'aura-rock-armor' }, status: { self: [{ id: 'invuln' }] } }, { id: 'warGodBody', name: '戰神體', cost: 300, fx: { sec: 2, hpPct: 1, mult: 2, gap: 0.5 }, goldBase: 10000000, goldGrow: 1.5, desc: '你每 {gap} 秒流失最大生命的 {hpPct}%；每 {sec} 秒累計損失的生命百分比，以 {mult} 倍加成套用至接下來 {sec} 秒內的反擊傷害' }] },
   bloodrage: { name: '嗜血狂怒', emoji: '💢', range: '', cd: 60, cost: 25, tiers: [{ name: '嗜血狂怒', unlock: { reinc: 0, lv: 400 }, cost: 25, fx: { pct: 20, pctPer: 2, sec: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '攻速額外 +{pct}%（乘算，不受攻速上限限制），持續 {sec} 秒', status: { self: [{ id: 'sgBloodrage' }] } }, { name: '狂暴', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 20, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '狂怒期間爆擊傷害額外 +{pct}%（乘算）' }, { name: '狂怒', unlock: { reinc: 0, lv: 500 }, cost: 60, fx: { pct: 20, pctPer: 2 }, goldBase: 400000, goldGrow: 1.5, desc: '狂怒期間總傷害額外 +{pct}%（乘算）' }, { name: '狂化連殺', unlock: { reinc: 0, lv: 550 }, cost: 80, fx: { add: 0.5, addPer: 0.1, kill: 0.1, killMax: 5 }, goldBase: 800000, goldGrow: 1.5, desc: '狂怒期間基礎連擊數 +{add}，且每擊殺 1 個敵人再 +{kill}（累計上限 +{killMax}；不足 1 次的部分以機率觸發）' }, { name: '嗜血反震', unlock: { reinc: 0, lv: 600 }, cost: 100, fx: { pct: 20, pctPer: 2 }, goldBase: 1500000, goldGrow: 1.5, desc: '狂怒期間反震傷害提高 {pct}%（乘算，可與其它反震加成疊加）' }, { name: '血飲術', unlock: { reinc: 0, lv: 650 }, cost: 140, fx: { pct: 30, pctPer: 3, self: 1, m: 80 }, goldBase: 3000000, goldGrow: 1.5, desc: '狂怒期間傷害額外提高 {pct}%（乘算），但 {m} 米內的敵人每次受傷都會使你損失最大生命 {self}%（直接扣血，無法被護盾吸收）' }, { name: '狂血盛宴', unlock: { reinc: 0, lv: 700 }, cost: 240, fx: { sec: 0.5, pct: 1, pctPer: 0.1, count: 1 }, goldBase: 5000000, goldGrow: 1.5, desc: '狂怒期間每擊殺 1 個敵人，持續時間延長 {sec} 秒；且生命值每減少 1%，傷害額外 +{pct}%（乘算，無限疊加），每 1 連擊數使普攻可同時攻擊 1 個敵人（無限疊加）' }], ult: [{ id: 'slayerAdvent', name: '殺神降臨', cost: 300, fx: { pct: 100, pctPer: 10, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間普攻傷害 +{pct}%，且同時對目標周圍 {m} 米內的所有敵人造成傷害' }, { id: 'warGodRoll', name: '戰神屠錄', cost: 300, fx: { pct: 4, maxStacks: 100, maxStacksPer: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '狂怒期間你無法獲得護盾，但每殺死 1 個敵人使你造成的所有傷害 +{pct}%，最多 {maxStacks} 層，持續到你死亡為止', status: { self: [{ id: 'sgWarGodKill' }] } }, { id: 'asuraFist', name: '阿修羅霸王拳', cost: 300, fx: { pct: 500, pctPer: 50, sec: 1, secPer: 0.1, gap: 10 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，你造成的所有傷害 +{pct}%，持續 {sec} 秒', status: { self: [{ id: 'sgAsuraFist' }] } }] },
   fireball: { name: '火球術', emoji: '🔥', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火球術', unlock: { reinc: 0, lv: 1 }, cost: 40, fx: { pct: 150, pctPer: 15, castM: 30, speed: 65.52, m: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '射出一顆火球（射程 {castM} 米），命中時爆炸，對目標及 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { cast: 'cast-magic', attack: 'hit-fireball-rupture', projectile: 'proj-fireball-ember' } }, { name: '燃燒', unlock: { reinc: 0, lv: 1 }, cost: 60, fx: { dotPct: 20, dotPctPer: 2, dotSec: 5, dotGap: 0.5 }, goldBase: 200000, goldGrow: 1.5, desc: '被火球擊中的敵人陷入燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgBurn' }] } }, { name: '火球爆裂', unlock: { reinc: 0, lv: 50 }, cost: 80, fx: { pct: 30, pctPer: 3, count: 3, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '火球爆炸後分裂出 {count} 個小火球，射向目標 {m} 米內的敵人，每個造成原始火球 {pct}% 的傷害', vfx: { attack: 'hit-fireball-rupture', projectile: 'proj-fireball-ember', hit: 'hit-fireball-rupture' } }, { name: '強化燃燒', unlock: { reinc: 0, lv: 100 }, cost: 100, fx: { gap: 0.4, gapPer: -0.015 }, goldBase: 800000, goldGrow: 1.5, desc: '燃燒的作用間隔縮短至 {gap} 秒（跳得更快＝總傷更高）' }, { name: '爆燃', unlock: { reinc: 0, lv: 150 }, cost: 140, fx: { pct: 50, pctPer: 5, count: 2, m: 12 }, goldBase: 1500000, goldGrow: 1.5, desc: '燃燒結束或敵人死亡時爆炸，對我方 {m} 米內的 {count} 個敵人造成該敵人整段燃燒累積傷害 {pct}% 的傷害', vfx: { attack: 'burst-fire', hit: 'hit-fire' } }, { name: '火焰增幅', unlock: { reinc: 0, lv: 200 }, cost: 200, fx: { pct: 0.25, pctPer: 0.025, sec: 4, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '我方 {m} 米內每有 1 次燃燒作用，你的火焰傷害 +{pct}%，持續 {sec} 秒（無限疊加，每次疊加時重置時間）', status: { self: [{ id: 'sgFireAmp' }] } }, { name: '殞石術', unlock: { reinc: 0, lv: 250 }, cost: 320, fx: { pct: 250, pctPer: 25, count: 3, castM: 20, speed: 36, m: 15 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為召喚 {count} 顆巨大火殞石從天而降（射程 {castM} 米），每顆對目標 {m} 米內的敵人造成 {pct}% 火焰傷害，且殞石造成的燃燒傷害為 2 倍（第 2~6 階效果仍然生效）', vfx: { attack: 'burst-meteor-inferno', projectile: 'proj-meteor-inferno', hit: 'burst-meteor-inferno', ground: 'mark-red' } }], ult: [{ id: 'meteorFall', name: '火殞天落', cost: 300, fx: { count: 8, size: 30, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石的體積 +{size}%、造成的傷害 +{pct}%，且每次施放額外連續落下 {count} 顆巨大殞石' }, { id: 'starfallCataclysm', name: '地爆天星', cost: 300, fx: { normal: 90, elite: 40, boss: 20, gap: 60, gapPer: -3 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒，天空落下一顆超巨型殞石：普通敵人 -{normal}% 生命、菁英 -{elite}% 生命、BOSS -{boss}% 生命', vfx: { attack: 'burst-fire-shockwave', projectile: 'proj-starfall', hit: 'hit-fire', ground: 'ground-starfall-shadow' }, status: { self: [{ id: 'sgStarfall' }] } }, { id: 'phoenixPrairie', name: '火鳳遼原', cost: 300, fx: { count: 1, balls: 3, ballsPer: 0.3, pct: 30, pctPer: 3 }, goldBase: 10000000, goldGrow: 1.5, desc: '殞石數量 +{count} 顆，且每顆殞石落下時伴隨 {balls} 顆火球一同落下；火球與殞石造成的傷害 +{pct}%', vfx: { projectile: 'proj-fireball', hit: 'hit-fire-explosion' } }] },
   firepillar: { name: '火龍捲', emoji: '🌋', range: '', dmgType: 'magic', elem: 'fire', cd: 15, cost: 40, tiers: [{ name: '火龍捲', unlock: { reinc: 0, lv: 50 }, cost: 40, fx: { pct: 60, pctPer: 6, hits: 6, sec: 3, castM: 30, m: 3 }, goldBase: 100000, goldGrow: 1.5, desc: '在敵人腳下召喚一道火柱（射程 {castM} 米），對目標 {m} 米內的敵人連續造成 {hits} 段傷害，每段 {pct}% 火焰傷害（全程約 {sec} 秒）', vfx: { hit: 'hit-fire', field: 'fire-tornado-inferno' } }, { name: '龍捲噴發', unlock: { reinc: 0, lv: 100 }, cost: 60, fx: { pct: 10, pctPer: 2 }, goldBase: 200000, goldGrow: 1.5, desc: '火柱的傷害範圍擴大 {pct}%' }, { name: '雙重龍捲', unlock: { reinc: 0, lv: 150 }, cost: 80, fx: { count: 2, pct: 20, pctPer: 2, m: 20 }, goldBase: 400000, goldGrow: 1.5, desc: '可同時對 {m} 米內的 {count} 個目標施放火柱，且火焰傷害額外 +{pct}%' }, { name: '燃燒', unlock: { reinc: 0, lv: 200 }, cost: 100, fx: { chance: 20, chancePer: 2, dotPct: 20, dotSec: 4, dotGap: 0.5 }, goldBase: 800000, goldGrow: 1.5, desc: '火柱每次作用時有 {chance}% 機率使敵人燃燒：每 {dotGap} 秒造成技能傷害 {dotPct}% 的火焰傷害，持續 {dotSec} 秒', status: { enemy: [{ id: 'sgBurn' }] } }, { name: '烈焰衝擊', unlock: { reinc: 0, lv: 250 }, cost: 140, fx: { pct: 100, pctPer: 10, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '火龍捲消失時，對周圍 {m} 米內的敵人造成 {pct}% 火焰傷害', vfx: { attack: 'burst-fire-shockwave', hit: 'hit-fire' } }, { name: '重生', unlock: { reinc: 0, lv: 300 }, cost: 200, fx: { chance: 25, chancePer: 2.5, m: 20 }, goldBase: 3000000, goldGrow: 1.5, desc: '火柱消失後有 {chance}% 機率在我方 {m} 米內的敵人身上重生' }, { name: '無限火龍', unlock: { reinc: 0, lv: 350 }, cost: 320, fx: { hitsAdd: 6, pct: 100, pctPer: 10, respawn: 1, sec: 6, speed: 6 }, goldBase: 5000000, goldGrow: 1.5, desc: '火龍捲持續 {sec} 秒，傷害段數 +{hitsAdd} 段，每段 {pct}% 火焰傷害；以每秒 {speed} 米持續隨機追敵，單一敵人時在其附近移動；消散後再召喚 {respawn} 次（再召喚不可連鎖），火焰轉為暗紅色', vfx: { hit: 'hit-fire', field: 'fire-tornado-infinite' } }], ult: [{ id: 'infernoTempest', name: '烈焰暴風', cost: 300, fx: { mult: 1.2, multPer: 0.8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每次施放的火龍捲數量變為 {mult} 倍（小數部分依機率補 1 道）' }, { id: 'eternalInferno', name: '永劫火獄', cost: 300, fx: { pct: 200, pctPer: 20, sec: 6, gap: 0.5, m: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '火龍捲會在附近 {m} 米內隨機游走，並在移動軌跡上留下火池：每 {gap} 秒造成 {pct}% 火焰傷害，持續 {sec} 秒', vfx: { ground: 'ground-mire-lava' } }, { id: 'dragonDevour', name: '火龍之吞噬', cost: 300, fx: { hits: 3, hitsPer: 0.3, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '所有火龍捲改為聚攏在你身邊，並持續將 {m} 米內的敵人拉向你，且火龍捲的傷害段數 +{hits} 段' }] },
@@ -269,7 +269,7 @@ function resetSkill2RT() {
     domains: {},     // 領域狀態的持有者：{ 角色: pEnt }——掛上去的才由我們撤掉（見 sgSyncDomainStatus）
     deathDefer: null, // 傳奇【不屈之誓】的延後死亡：{ until }（不入存檔）
     counter: null,   // 反擊的累計器：{ hits, oath, wrath, holy, loss[] }
-                     // loss＝超神【戰神體】的失血滑動視窗 [{ at, pct }]（不入存檔）
+                     // warBody＝超神【戰神體】的分段失血與返還狀態（不入存檔）
     lastStand: null, // 超神【不屈鬥魂】的倒地期：{ reviveAt, pEnt, done }（不入存檔）
     warGod: null,    // 超神【戰神屠錄】疊層增益的持有者：{ pEnt }
                      // ——那個增益「持續到死亡為止」，狂怒本身早就回收了也還在，
@@ -1609,7 +1609,9 @@ function sgBloodrageBackfire(ent) {
   selfDmg = Math.max(1, Math.round(selfDmg));
   if (typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt)) return;
   var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god) ? 1 : 0;
+  var hpBeforeRage = pEnt.hp;
   pEnt.hp = Math.max(gmFloor, pEnt.hp - selfDmg);
+  sgWarGodBodyOnDamaged(hpBeforeRage - pEnt.hp, pEnt);
   /* 傳奇【燃血】：每一次生命損失疊 1 層。掛在扣血之後而不是之前，
      語意才是「造成了生命損失」——距離判定沒過的那些不算。 */
   if (lg.rageBurnBlood && typeof applyStatus === 'function') {
@@ -1732,7 +1734,9 @@ function sgBloodVenomRiteCost(role) {
   var pEnt = sgCurrentPlayerEnt();
   if (!pEnt || !(pEnt.hp > 1)) return;
   if (typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt)) return;
+  var hpBeforeRite = pEnt.hp;
   pEnt.hp = Math.max(1, pEnt.hp - Math.max(1, Math.round(pEnt.hp * pct / 100)));
+  sgWarGodBodyOnDamaged(hpBeforeRite - pEnt.hp, pEnt);
 }
 
 /* 崩解：每次實際跳傷後爆炸，基準為該狀態完整持續時間的總傷，不取剩餘時間。
@@ -3452,7 +3456,9 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
     var cost = Math.max(0, sgUltVal(doom, 'hpPct'));
     if (cost > 0 && pEnt.hp > 1 &&
         !(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
+      var hpBeforeDoom = pEnt.hp;
       pEnt.hp = Math.max(1, pEnt.hp - Math.max(1, Math.round(pEnt.hp * cost / 100)));
+      sgWarGodBodyOnDamaged(hpBeforeDoom - pEnt.hp, pEnt);
     }
   }
 
@@ -10056,23 +10062,16 @@ function skills2OnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
   /* 受擊收斂點現在服務四個群組；各自獨立判定，彼此不得互相短路。 */
   sgRockOnPlayerDamaged(mEnt, pEnt, hpDamage, res, floatSel);            // 岩甲術 T3／T5／T6
   sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel);              // 大地守護 T6
-  /* 順序有意義：【戰神體】要把「這一下」也算進失血視窗，緊接著的反擊才吃得到，
-     設計文檔寫的是「1 秒內所損失的生命…在接下來的反擊中一併附加」。 */
-  sgWarGodBodyOnDamaged(hpDamage);                                       // 反擊超神【戰神體】
+  // 戰神體失血在實際扣血點記錄，避免受擊通知重複計數。
   sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel); // 反擊
   sgFrostbodyOnPlayerDamaged(mEnt, pEnt, floatSel);                      // 冰霜新星 T3【寒冰體】
   sgStormbladeOnPlayerDamaged(mEnt, pEnt, floatSel);                     // 暴風屏障 T4【暴風之刃】
   sgSkyCollapseOnPlayerDamaged(mEnt, pEnt, floatSel);                    // 風刃超神【天穹崩裂】
 }
 
-/* 哪些階會「觸發時扣魔」（1＝扣、0＝不扣）。這張表是程式端的接線：有沒有獨立的
-   觸發時機是寫在程式裡的事實，不能靠參數表某一格有沒有填值去猜——
-   例如大地守護全是恆時被動（沒有觸發時機），表上那幾格 25 只是舊的預設值。
-   反擊 T3【強化反擊】是恆時傷害加成，依使用者決策（2026-08-19）不扣魔。 */
-var SG_TRIGGER_MP_TIERS = { counter: [1, 1, 0, 1, 1, 1, 1] };
-/* 某一階「觸發一次要付的法力」＝參數表「施法消耗」欄的該階列（tiers[i].cost）。
-   這是扣魔與 UI 顯示的唯一來源，兩邊不得各算各的。
-   沒有觸發時機的階、以及主動群組一律回 0——主動群組在 castSkill2 依最高生效進化階付費。 */
+/* 反擊每階都提供升到該階後的基本耗魔；大地守護維持恆時被動，不收觸發費。 */
+var SG_TRIGGER_MP_TIERS = { counter: [1, 1, 1, 1, 1, 1, 1] };
+/* 階段消耗預覽與追加費用共用參數表；基本反擊由 skills2PassiveMinMp 選最高階。 */
 function skills2TierTriggerMp(gid, tierIdx) {
   var g = SKILLS2[gid];
   var mask = SG_TRIGGER_MP_TIERS[gid];
@@ -10084,26 +10083,30 @@ function skills2TierTriggerMp(gid, tierIdx) {
 /* 付一階的觸發消耗：付得起就扣魔回 true，付不起回 false（＝該階這一次不觸發）。
    只在「效果確定要發生」的當下呼叫——機率沒中、沒有可打的目標都不該先扣魔。 */
 function sgCounterPayMp(pEnt, tierIdx) {
-  var cost = skills2TierTriggerMp('counter', tierIdx);
+  // 無階段索引＝本體反擊；追加效果才指定自身階段（T6／T7）。
+  var cost = tierIdx === undefined ? skills2PassiveMinMp('counter') : skills2TierTriggerMp('counter', tierIdx);
   if (cost <= 0) return true;
   if (typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt)) return true;
   if (!pEnt || !((pEnt.mp || 0) >= cost)) return false;
   pEnt.mp -= cost;
   return true;
 }
-/* 已投資的階裡最便宜的觸發消耗：法力低於這個值就整個被動都動不了，
-   供 UI 把技能格畫成「無魔」（ui.js 快捷列與戰鬥技能列共用）。 */
-function skills2PassiveMinMp(gid, levels) {
+/* 基本反擊的最低起手法力：最高已學習階段，超神生效時優先；各階不累加。
+   UI 傳入完整快照；模擬端省略參數時讀 G。 */
+function skills2PassiveMinMp(gid, levels, ultRaw) {
   var g = SKILLS2[gid];
   if (!g || !SG_TRIGGER_MP_TIERS[gid]) return 0;
-  var lvs = levels || [];
-  var min = 0;
-  for (var i = 0; i < g.tiers.length; i++) {
-    if (!(lvs[i] > 0)) continue;
-    var c = skills2TierTriggerMp(gid, i);
-    if (c > 0 && (min === 0 || c < min)) min = c;
+  var lvs = levels;
+  if (!lvs) {
+    lvs = skills2Levels(gid);
+    ultRaw = typeof G !== 'undefined' && G.player && G.player.skills2 ? G.player.skills2.ult : null;
   }
-  return min;
+  var u = sgEffectiveUlt(ultRaw, gid, lvs);
+  if (u) return skills2TierManaCost(gid, 0, u.id);
+  for (var i = g.tiers.length - 1; i >= 0; i--) {
+    if (lvs[i] > 0) return skills2TierManaCost(gid, i);
+  }
+  return 0;
 }
 
 function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) {
@@ -10114,12 +10117,6 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   var st = getStats();
   var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
 
-  // 破甲擊（T5）：格擋時機率上破甲（敵方 defDown 減益、疊層重置時間；與反擊傷害判定各自獨立）
-  if (blocked && lvs[4] > 0 && mEnt.hp > 0 && chance(sgSlotChance('counter', '5', 'enemy', 0, Number(t[4].fx.chance) || 0)) &&
-      sgCounterPayMp(pEnt, 4)) {
-    sgApplySlot(mEnt, 'counter', '5', 'enemy', 0, { val: Number(t[4].fx.def) || 0, dur: sgVal(t[4].fx, 'sec', lvs[4]), noChance: true });
-    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break', vfxTier: 5 });
-  }
   /* 攻擊者已死就沒有反擊可打——必須在扣魔之前先擋掉，否則會為了不會發生的
      反擊付魔（破甲那段自己有 hp>0 判定，不受影響）。 */
   if (mEnt.hp <= 0) return;
@@ -10128,15 +10125,20 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   var bonus = lvs[2] > 0 ? sgVal(t[2].fx, 'pct', lvs[2]) : 0;
   var strikes = [];
   var tookDamage = (hpDamage > 0) || !!(res && res.absorbed > 0);
-  if (tookDamage && chance(Number(t[0].fx.chance) || 0) && sgCounterPayMp(pEnt, 0)) {
+  if (tookDamage && chance(Number(t[0].fx.chance) || 0) && sgCounterPayMp(pEnt)) {
     strikes.push(sgVal(t[0].fx, 'pct', lvs[0]) + bonus);
   }
   if (blocked && lvs[1] > 0) {
     var blockRed = (typeof blockDmgReduction === 'function') ? blockDmgReduction(st.blockDmgRed || 0) : 0;
     var parryPct = blockRed * sgVal(t[1].fx, 'mult', lvs[1]) / 100;
-    if (parryPct > 0 && sgCounterPayMp(pEnt, 1)) strikes.push(parryPct + bonus);
+    if (parryPct > 0 && sgCounterPayMp(pEnt)) strikes.push(parryPct + bonus);
   }
   if (!strikes.length) return;
+  // 破甲與反擊盾已包含在本體費用中，成功反擊才套用，不再額外扣魔。
+  if (blocked && lvs[4] > 0 && chance(sgSlotChance('counter', '5', 'enemy', 0, Number(t[4].fx.chance) || 0))) {
+    sgApplySlot(mEnt, 'counter', '5', 'enemy', 0, { val: Number(t[4].fx.def) || 0, dur: sgVal(t[4].fx, 'sec', lvs[4]), noChance: true });
+    sgEmitVfx('counter', [mEnt], eSel, { fxKind: 'impact', variant: 'armor-break', vfxTier: 5 });
+  }
   // Skills2「我方狀態」的附加條目：被動技能以「觸發一次反擊」當作施放
   if (sgHasExtraStatuses('counter', 'self')) {
     sgApplyExtraStatuses(pEnt, 'counter', 'self', { stats: st, source: sgStatusSource('counter') });
@@ -10179,10 +10181,8 @@ function sgCounterOnPlayerDamaged(mEnt, pEnt, hpDamage, blocked, res, floatSel) 
   }
 
 
-  /* 反擊盾（T4）：每次反擊事件回復一次（吃護盾效率與技能護盾上限 → formula.js grantShield）。
-     扣魔在 grantShield 之前——護盾已經滿到上限時 gained 會是 0，但那是「觸發了但沒得回」，
-     仍然算一次觸發。 */
-  if (lvs[3] > 0 && typeof grantShield === 'function' && sgCounterPayMp(pEnt, 3)) {
+  /* 反擊盾（T4）：每次反擊事件回復一次，費用已包含於本體反擊。 */
+  if (lvs[3] > 0 && typeof grantShield === 'function') {
     var gained = grantShield(pEnt, st.hp * sgVal(t[3].fx, 'pct', lvs[3]) / 100, st);
     if (gained > 0 && typeof floatPlayerEvent === 'function') {
       var pSel = (typeof playerEventFloatTarget === 'function') ? playerEventFloatTarget(floatSel) : floatSel;
@@ -10243,40 +10243,56 @@ function sgCounterStrike(pEnt, st, target, pct, floatSel, out, delayMs, cfg) {
 /* 反擊的累計器。分開記每個效果的計數而不是共用一個總數，是因為門檻各自獨立
   （堅韌誓言／怒火 100 次、神聖之體 10 次），共用總數的話換裝之後會互相踩到。 */
 function sgCounterRT() {
-  if (!SKILL2_RT.counter) SKILL2_RT.counter = { hits: 0, oath: 0, wrath: 0, holy: 0, loss: [] };
+  if (!SKILL2_RT.counter) SKILL2_RT.counter = { hits: 0, oath: 0, wrath: 0, holy: 0, warBody: null };
   return SKILL2_RT.counter;
 }
 
-/* 超神【戰神體】：把最近 sec 秒內損失的生命（占最大生命的百分比）加到反擊傷害上。
-   設計文檔給的升級效果只有「持續時間 +0.1 秒」，沒有任何傷害係數——
-   這反過來證明效果的量級本來就等於失血百分比本身，因此直接當成 +lostPct% 的乘區
-  （與【狂血盛宴】用失血百分比當乘區是同一套算法）。 */
-function sgWarGodBodyPct() {
+/* 戰神體：本段收集失血、下一段返還。只記錄實際扣除的生命，不計護盾與治療。 */
+function sgWarGodBodyState(pEnt, startAt) {
   var u = sgUlt('counter', 'warGodBody');
-  if (!u) return 0;
+  if (!SKILL2_RT) return null;
   var rt = sgCounterRT();
-  var sec = Math.max(0.1, sgUltVal(u, 'sec'));
-  var total = 0;
-  for (var i = rt.loss.length - 1; i >= 0; i--) {
-    // 依時間遞增排列，往回掃到第一筆過期的就代表 0..i 全部過期，一次砍掉
-    if (rt.loss[i].at < GT - sec) { rt.loss.splice(0, i + 1); break; }
-    total += rt.loss[i].pct;
+  pEnt = pEnt || sgCurrentPlayerEnt();
+  if (!u || !skills2PassiveActive('counter') || !pEnt || !(pEnt.hp > 0)) {
+    rt.warBody = null;
+    return null;
   }
-  return total;
+  var sec = Math.max(0.1, sgUltVal(u, 'sec')), gap = Math.max(0.05, sgUltVal(u, 'gap'));
+  var body = rt.warBody;
+  if (!body || body.pEnt !== pEnt || body.sec !== sec || body.gap !== gap) {
+    var at = Number.isFinite(startAt) ? startAt : GT;
+    body = rt.warBody = { pEnt: pEnt, sec: sec, gap: gap, nextDrain: at + gap,
+      nextWindow: at + sec, collected: 0, bonus: 0 };
+  }
+  // 依事件時間補足節拍；恰好落在段尾的定期扣血歸入剛結束的段。
+  while (Math.min(body.nextDrain, body.nextWindow) <= GT + 1e-9) {
+    if (body.nextDrain <= body.nextWindow + 1e-9) {
+      var st = getStats(), before = pEnt.hp;
+      if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
+        var floor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god) ? 1 : 0;
+        pEnt.hp = Math.max(floor, before - st.hp * Math.max(0, sgUltVal(u, 'hpPct')) / 100);
+      }
+      if (st.hp > 0) body.collected += Math.max(0, before - pEnt.hp) / st.hp * 100;
+      body.nextDrain += gap;
+      if (!(pEnt.hp > 0)) { rt.warBody = null; return null; }
+    } else {
+      body.bonus = body.collected * Math.max(0, sgUltVal(u, 'mult'));
+      body.collected = 0;
+      body.nextWindow += sec;
+    }
+  }
+  return body;
 }
 
-/* 失血視窗的唯一寫入點。只計「敵方造成的受擊傷害」——持續傷害與自傷技能
-   不經過 skills2OnPlayerDamaged，這是刻意的範圍（與【反擊】本體的觸發條件一致：
-   反擊反的就是攻擊者，沒有攻擊者的失血本來就沒有反擊可以附加）。 */
-function sgWarGodBodyOnDamaged(hpDamage) {
-  if (!(hpDamage > 0) || !SKILL2_RT || !skills2PassiveActive('counter')) return;
-  if (!sgUlt('counter', 'warGodBody') || typeof getStats !== 'function') return;
-  var st = getStats();
-  if (!(st.hp > 0)) return;
-  var rt = sgCounterRT();
-  rt.loss.push({ at: GT, pct: Math.min(100, hpDamage / st.hp * 100) });
-  // 護欄：多段傷害的極端情況下不得無限成長（視窗最長 2 秒，遠遠夠用）
-  if (rt.loss.length > 400) rt.loss.splice(0, rt.loss.length - 400);
+function sgWarGodBodyPct() {
+  var body = sgWarGodBodyState();
+  return body ? body.bonus : 0;
+}
+
+function sgWarGodBodyOnDamaged(hpDamage, pEnt) {
+  if (!(hpDamage > 0) || !SKILL2_RT || typeof getStats !== 'function') return;
+  var body = sgWarGodBodyState(pEnt), st = getStats();
+  if (body && st.hp > 0) body.collected += hpDamage / st.hp * 100;
 }
 
 /* 一個反擊事件的傳奇／超神參數包。 */
@@ -10308,7 +10324,9 @@ function sgCounterApplyLegends(pEnt, st, pct, cfg) {
     var cost = Math.max(1, Math.round(st.hp * (Number(cfg.bloodPay.hpPct) || 0) / 100));
     var gmFloor = (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god) ? 1 : 0;
     if (pEnt && !(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
+      var hpBeforeCounter = pEnt.hp;
       pEnt.hp = Math.max(gmFloor, pEnt.hp - cost);
+      sgWarGodBodyOnDamaged(hpBeforeCounter - pEnt.hp, pEnt);
     }
   }
   if (cfg.warGodPct > 0) pct *= 1 + cfg.warGodPct / 100;  // 超神【戰神體】
@@ -10556,6 +10574,8 @@ function sgCounterSplashTargets(exclude, enemies, fx) {
    =========================================================================== */
 function tickSkill2(dt, ctx) {
   if (!SKILL2_RT || !ctx || !ctx.pEnt) return;
+  sgWarGodBodyState(ctx.pEnt, GT - Math.max(0, Number(dt) || 0));
+  if (!(ctx.pEnt.hp > 0)) return;
   if (SKILL2_RT.rage && SKILL2_RT.rage.until <= GT) SKILL2_RT.rage = null; // 狂怒到期回收
   if (SKILL2_RT.rock && SKILL2_RT.rock.until <= GT) {
     /* 【金剛不壞】的生命上限倍率跟著岩甲走：到期不重算屬性的話，那 +55% 會一直留著。

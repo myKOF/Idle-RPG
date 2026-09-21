@@ -549,6 +549,7 @@ function legendaryStartVoidFate(pEnt, floatSel) {
       var hpLoss = Math.min(Math.max(0, pEnt.hp), st.hp * hpPct / 100);
       if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
         pEnt.hp = Math.max(0, pEnt.hp - hpLoss);
+        if (typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(hpLoss, pEnt);
         legendaryOnHealthLost(pEnt, hpLoss, floatSel);
       }
       var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
@@ -956,6 +957,7 @@ function legendaryTickFireSpirit(pEnt, st, dt) {
     var loss = Math.min(Math.max(0, pEnt.hp), st.hp * spec.selfHpDrainPctPerSec / 100);
     if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
       pEnt.hp = Math.max(0, pEnt.hp - loss);
+      if (typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(loss, pEnt);
       legendaryOnHealthLost(pEnt, loss, 'pv-float');
     }
     rt.nextFireDrainAt += 1;

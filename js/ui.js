@@ -2966,11 +2966,11 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
         : (isPotE
           ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
           : skillViewLevel(skillsSnapshot, entry));
-      /* 主動型被動的法力門檻＝已投資各階裡最便宜的觸發消耗（反擊每階觸發各自扣魔）；
+      /* 反擊法力門檻＝最高生效階段（含超神）的消耗，不逐階累加；
          恆時生效的被動（大地守護）沒有觸發消耗，門檻為 0。 */
       var isPassiveE = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
       var passiveMinMpE = (isPassiveE && typeof skills2PassiveMinMp === 'function')
-        ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3))) : 0;
+        ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)) : 0;
       var costE = isSgE
         ? (isPassiveE ? passiveMinMpE : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
         : (isPotE ? 0 : skillManaCost(sk, lv));
@@ -3334,11 +3334,10 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
         ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
         : skillViewLevel(skillsSnapshot, entry));
     /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即生效、不主動施放，
-       在快捷列以旋轉流動外框和其他技能區分。反擊自 2026-08-19 起每階觸發要扣魔，
-       所以它的「法力門檻」＝已投資各階裡最便宜的那一階（低於此值整個被動都動不了）。 */
+       在快捷列以旋轉流動外框和其他技能區分。反擊的法力門檻使用最高生效階段（含超神）的消耗。 */
     var isPassiveGroup = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
     var passiveMinMp = (isPassiveGroup && typeof skills2PassiveMinMp === 'function')
-      ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3))) : 0;
+      ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)) : 0;
     var cost = isSgE
       ? (isPassiveGroup ? passiveMinMp : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
       : (isPotE ? 0 : (typeof skillManaCost === 'function' ? skillManaCost(sk, lv) : (Number(sk.cost) || 0)));
@@ -8065,7 +8064,7 @@ function renderSkill2UltModal(body, gid, skillsSnapshot, headerSnapshot) {
     '<span class="dim-text">第' + (g.tiers.length + 1) + '階｜Lv.' + (pick ? pick.lv : 0) + '/' + tierMax + '</span>' +
     '<span class="sk-meta">' + esc(g.emoji + ' ' + g.name) + '</span>';
   // 耗魔留在標頭，維持升級彈窗的五列 Grid，避免標籤落入說明列。
-  if (pick && !skills2IsPassive(gid)) h += '<span class="sk-meta">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + ' MP／次施放</span>';
+  if (pick && (!skills2IsPassive(gid) || gid === 'counter')) h += '<span class="sk-meta">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + (gid === 'counter' ? ' MP／次反擊' : ' MP／次施放') + '</span>';
   h += '</div>';
   h += '<div class="skill-tags"><span class="skill-tag skill-tag-ult">超神進化·三選一</span></div>';
 
@@ -8160,18 +8159,18 @@ function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
   var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
   var atCap = lv >= tierMax;
   var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(gid, selectedTier, lv) : 0;
-  // 主動型被動（反擊）：無冷卻無耗魔、不主動施放，但要裝配技能列才生效
+  // 主動型被動（反擊）：無冷卻、不主動施放，但要裝配技能列才生效
   var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
   var dmgTypeLabel = (g.dmgType === 'magic') ? '魔法' : '物理';
   var elemInfo = (g.elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[g.elem]) ? ELEM_INFO[g.elem] : null;
   var typeStr = dmgTypeLabel + (elemInfo ? '·' + (elemInfo.short || elemInfo.name) : '');
 
-  /* 被動群組的法力寫在「階」上（反擊每階觸發各自扣魔）；沒有觸發消耗的階只標被動。 */
+  /* 顯示該階成為最高階時的反擊基本耗魔；T6／T7 另標追加費用。 */
   var tierMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(gid, selectedTier) : 0;
   var h = '<div class="skd-head"><span class="skd-emoji">' + g.emoji + '</span><b>' + esc(tier.name) + '</b> ' +
     '<span class="dim-text">Lv.' + lv + '/' + tierMax + '｜' + typeStr + '</span>' +
     '<span class="sk-meta">' + (isPassiveGroup
-      ? ('🌀 被動' + (tierMp > 0 ? '　🔵 ' + tierMp + ' MP／次觸發' : ''))
+      ? ('🌀 被動' + (tierMp > 0 ? '　🔵 ' + tierMp + ' MP／次反擊（此階生效時）' + (selectedTier >= 5 ? '；本階追加效果觸發另扣 ' + tierMp + ' MP' : '') : ''))
       : '🔵 ' + skills2TierManaCost(gid, selectedTier) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
 
   var tags = [{ text: dmgTypeLabel, cls: 'skill-tag-category' }];
@@ -8468,7 +8467,7 @@ function showSkillTooltip(ref, anchorEl) {
         (sgUltPick ? sgUltPick.lv : 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
       sgUltH += '<div class="skt-meta">' + esc(sgG.name) + '　三選一，選定後可再升 ' + SG_TIER_MAX_LV + ' 級</div>';
       if (sgUltPick) {
-        if (!skills2IsPassive(sgTipGid)) sgUltH += '<div class="skt-meta">🔵 ' + skills2TierManaCost(sgTipGid, 0, sgUltPick.id) + ' MP／次施放</div>';
+        if (!skills2IsPassive(sgTipGid) || sgTipGid === 'counter') sgUltH += '<div class="skt-meta">🔵 ' + skills2TierManaCost(sgTipGid, 0, sgUltPick.id) + (sgTipGid === 'counter' ? ' MP／次反擊' : ' MP／次施放') + '</div>';
         sgUltH += '<div class="skt-desc">' + describeSkill2Ult(sgTipGid, sgUltPick.idx, sgUltPick.lv) + '</div>';
         if (!sgUltOk) sgUltH += '<div class="skt-lock skill-unlock-hint">🔒 前 ' + sgG.tiers.length + ' 階未全滿，效果暫時失效</div>';
       } else {
@@ -8492,7 +8491,7 @@ function showSkillTooltip(ref, anchorEl) {
       var sgTipMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(sgTipGid, sgTipTier) : 0;
       sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
         ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
-          ? ('🌀 主動型被動（需裝配技能列）' + (sgTipMp > 0 ? '　🔵 ' + sgTipMp + ' MP／次觸發' : ''))
+          ? ('🌀 主動型被動（需裝配技能列）' + (sgTipMp > 0 ? '　🔵 ' + sgTipMp + ' MP／次反擊（此階生效時）' + (sgTipTier >= 5 ? '；本階追加效果觸發另扣 ' + sgTipMp + ' MP' : '') : ''))
           : '🔵 ' + skills2TierManaCost(sgTipGid, sgTipTier) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
       sgH += '<div class="skt-desc">' + describeSkill2Tier(sgTipGid, sgTipTier, sgLvs[sgTipTier] || 0) + '</div>';
       if (sgLocked) sgH += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(sgStageLockReason(sgTipGid, sgTipTier, skillsSnapshot)) + '</div>';

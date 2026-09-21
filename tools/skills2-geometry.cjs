@@ -45,6 +45,7 @@ const commonRoutes={
 };
 function bindings(gid,stage){
  const id=gid+'/'+stage, b=[];
+ if(id==='counter/warGodBody')b.push(['gap',['gap']]);
  if(/^[1-7]$/.test(stage))b.push(['cast',['castM']]);
  for(const kind of Object.keys(commonRoutes))if(commonRoutes[kind].has(id))b.push([kind,[kind==='rangePct'?'range':kind]]);
  if(routes[id])b.push([routes[id],['m']]);
