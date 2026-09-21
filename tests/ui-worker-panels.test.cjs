@@ -206,7 +206,7 @@ test('熔爐零件格金幣不足時在按鈕上方顯示浮字', async () => {
   assert.equal(calls[0].options.silentResultError, true);
 });
 
-test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
+test('頂欄只讀 Worker header Snapshot 的資源與屬性', () => {
   const renderHeader = functionBody('renderHeader');
   const renderAttrPanel = functionBody('renderAttrPanel');
 
@@ -214,7 +214,9 @@ test('頂欄只讀 Worker header Snapshot 的資源、屬性與 DPS', () => {
   assert.match(renderHeader, /uiHeaderPanelSnapshot\(\)/);
   assert.match(renderHeader, /headerSnapshot\.stats/);
   assert.match(renderHeader, /headerSnapshot\.viewStats \|\| st/);
-  assert.match(renderHeader, /headerSnapshot\.dps/);
+  /* 屬性面板的「實時 DPS」列已移除（2026-09-21）；DPS 只剩小視窗的資訊列在讀。 */
+  assert.doesNotMatch(renderHeader, /s-dps/);
+  assert.match(ui, /'📈 DPS ' \+ fmt\(header\.dps \|\| 0\)/);
   assert.match(renderHeader, /headerSnapshot\.settings/);
   assert.match(renderHeader, /headerSnapshot\.autoEquip/);
   assert.match(renderHeader, /uiHeaderXpMax\(p\)/);

@@ -39,13 +39,18 @@ test('activePlayerBuffs：無實體/無增益回傳空陣列', () => {
   assert.equal(c.activePlayerBuffs({ buffs: {} }).length, 0);
 });
 
-test('ui.js 屬性面板接上「目前技能增益」清單', () => {
+test('屬性面板不再顯示實時 DPS 與目前技能增益；增益改由戰鬥區狀態列與 tooltip 查看', () => {
+  /* 2026-09-21 使用者要求刪除屬性面板最下方這兩塊。增益資訊仍在戰鬥區的
+     BUFF 狀態列與 [data-buff-tip] tooltip，那條路徑不能跟著被拆掉。 */
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
-  assert.match(ui, /id="active-buffs"/);
-  assert.match(ui, /目前技能增益/);
-  assert.match(ui, /activePlayerBuffs\(currentCombatPlayerEntity\(\)\)/);
-  assert.ok(ui.indexOf('id="s-dps"') < ui.indexOf('id="active-buffs"'), '目前技能增益應顯示在實時 DPS 下方');
-  // Worker battle Snapshot 提供玩家實體。
+  const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+  assert.doesNotMatch(ui, /id="s-dps"/);
+  assert.doesNotMatch(ui, /id="active-buffs"/);
+  assert.doesNotMatch(ui, /function activeBuffsHtml\(/);
+  assert.doesNotMatch(ui, /\$id\('s-dps'\)/);
+  assert.doesNotMatch(css, /\.active-buffs?\b/);
+  // tooltip 仍讀 Worker battle Snapshot 的玩家實體。
+  assert.match(ui, /function buffTooltipDesc\(\)[\s\S]*?activePlayerBuffs\(currentCombatPlayerEntity\(\)\)/);
   assert.match(ui, /function currentCombatPlayerEntity\(\)[\s\S]*?peekUiPanelData\('battle'\)/);
 });
 
@@ -74,14 +79,14 @@ test('戰鬥區技能快捷上方 BUFF 狀態列與增益提示', () => {
   assert.match(ui, /updateBattleSkillBarCds[\s\S]*?skt-remain/);
 });
 
-test('增益 tooltip 每 tick 即時刷新；面板數值用綠色', () => {
+test('增益 tooltip 每 tick 即時刷新；數值用綠色', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   // 抽出共用內容 + tooltip 開啟中每 tick 刷新
   assert.match(ui, /function buffTooltipDesc\(\)/);
   assert.match(ui, /function refreshBuffTooltip\(\)/);
   assert.match(ui, /renderBattle\(\);[\s\S]*?refreshBuffTooltip\(\)/); // uiTick 內接上
   assert.match(ui, /\[data-buff-tip\]'\)[\s\S]*?descEl\.innerHTML = buffTooltipDesc\(\)/);
-  // 面板「目前技能增益」數值內嵌綠色（與 tooltip 相同 var(--good)），不再倚賴被移除的 CSS
+  // 增益數值內嵌綠色 var(--good)，不倚賴容易被移除的 CSS
   assert.match(ui, /buff-val" style="color:var\(--good\)"/);
 });
 

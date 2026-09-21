@@ -1327,8 +1327,8 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
         hpDamage = Math.max(0, res.dmg - (res.absorbed || 0));
         logMsg += (res.crit ? '<span class="log-hl-bad">爆擊</span> ' : '造成 ') + fmt(res.dmg) + (mEnt.magic ? ' 魔法' : '') + ' 傷害。';
         if (res.blocked) logMsg += '<span class="log-hl-good">你格擋了部分傷害！</span>';
+        /* 護盾吸收量只寫進戰鬥紀錄，不再飄字（2026-09-21 使用者要求）。 */
         if (res.absorbed) {
-            floatPlayerEvent(playerFloatSel, '🛡️吸收 ' + fmt(res.absorbed), 'shield');
             logMsg += '<span class="log-hl-good">生命減少 ' + fmt(hpDamage) + '，護盾吸收 ' + fmt(res.absorbed) + '。</span>';
         }
         // 新版技能【魔法盾】（大地守護 T5）：改由法力承擔的那一段（→ formula.js resolveHit）

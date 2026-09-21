@@ -537,14 +537,6 @@ body {
   text-shadow: 0 0 5px rgba(251, 146, 60, 0.8);
 }
 
-.stat-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 6px 0;
-  border: none;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.8);
-}
-
 /* ==========================================================================
    ?�主?�籤?��??��??�Main Tab Navigation
    說�?：控?��??�中主�??�能?�籤（�??�、�??��??��?塔、設定�??��??��??��?觀?��??��?
@@ -1179,35 +1171,6 @@ textarea#save-io {
   font-size: 0.9em;
 }
 
-.active-buffs {
-  border-bottom: 1px dashed var(--border);
-  padding: 2px 0 5px 12px;
-  font-size: 12px;
-}
-
-.active-buffs-title {
-  color: var(--accent);
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-
-.active-buffs-empty {
-  color: var(--dim);
-}
-
-.active-buff-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.active-buff-main,
-.active-buff-side {
-  min-width: max-content;
-}
-
-
 .vs {
   align-self: center;
   color: var(--dim);
@@ -1415,10 +1378,13 @@ textarea#save-io {
   color: #ffffff;
   --enemy-hit-font-size: 12px;
   font-size: var(--enemy-hit-font-size);
-  /* 上浮動畫完成時間；時間越短，視覺上浮速度越快。 */
-  --enemy-hit-rise-duration: 0.72s;
+  /* 上浮動畫完成時間；時間越短，視覺上浮速度越快。
+     2026-09-21 傷害數字消失速度提高一倍：四個分類的上浮與存在時間一起減半
+     （整段動畫等比加速、上浮距離不變）；js/battle-renderer.js 的
+     DAMAGE_FLOAT_SPEEDUP 是 Canvas 路徑的同一個倍率。 */
+  --enemy-hit-rise-duration: 0.36s;
   /* 數字存在時間；以原本存活時間除以需求的消失速度倍率。 */
-  --enemy-hit-lifetime-base: 0.68s;
+  --enemy-hit-lifetime-base: 0.34s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
@@ -1428,8 +1394,8 @@ textarea#save-io {
   color: #ffd700;
   --enemy-hit-font-size: 15px;
   font-size: var(--enemy-hit-font-size);
-  --enemy-hit-rise-duration: 0.78s;
-  --enemy-hit-lifetime-base: 0.74s;
+  --enemy-hit-rise-duration: 0.39s;
+  --enemy-hit-lifetime-base: 0.37s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
@@ -1439,8 +1405,8 @@ textarea#save-io {
   color: #ffffff;
   --enemy-hit-font-size: 16px;
   font-size: var(--enemy-hit-font-size);
-  --enemy-hit-rise-duration: 0.76s;
-  --enemy-hit-lifetime-base: 0.72s;
+  --enemy-hit-rise-duration: 0.38s;
+  --enemy-hit-lifetime-base: 0.36s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 10 !important;
 }
@@ -1450,8 +1416,8 @@ textarea#save-io {
   color: #ffd700;
   --enemy-hit-font-size: 20px;
   font-size: var(--enemy-hit-font-size);
-  --enemy-hit-rise-duration: 0.84s;
-  --enemy-hit-lifetime-base: 0.8s;
+  --enemy-hit-rise-duration: 0.42s;
+  --enemy-hit-lifetime-base: 0.4s;
   --enemy-hit-lifetime: var(--enemy-hit-lifetime-base);
   z-index: 20 !important;
 }
@@ -1564,6 +1530,14 @@ textarea#save-io {
   color: #dc2626;
   font-size: 20px;
   text-shadow: 0 1px 3px #000, 0 0 8px rgba(220, 38, 38, 0.9);
+}
+
+/* 我方受傷與敵人身上的反傷也是傷害數字，跟四個敵人傷害分類一樣以一半時間
+   播完一般飄字動畫（原本 .80s）。反傷的 class 是單獨的 defend（js/combat.js）；
+   格擋／無敵等我方事件也帶 defend，但一定同時帶 player-event，排除掉。 */
+.float-txt.player-damage,
+.float-txt.defend:not(.player-event) {
+  animation-duration: .40s;
 }
 
 .float-txt.player-benefit {

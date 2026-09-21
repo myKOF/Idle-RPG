@@ -28,7 +28,7 @@ test('玩家事件浮字使用頭像區專用位置，不和傷害數字共用�
   assert.doesNotMatch(ui, /if \(layer\.children\.length > 50\) layer\.removeChild\(layer\.firstChild\)/);
 });
 
-test('怪物攻擊玩家時，閃避、格擋、護盾吸收與附加效果會顯示玩家事件浮字', () => {
+test('怪物攻擊玩家時，閃避、格擋與附加效果會顯示玩家事件浮字', () => {
   const monsterAttackStart = combat.indexOf('function doMonsterAttack(');
   const monsterAttackEnd = combat.indexOf('function trackDps', monsterAttackStart);
   assert.ok(monsterAttackStart >= 0 && monsterAttackEnd > monsterAttackStart, '找不到 doMonsterAttack 區塊');
@@ -40,8 +40,34 @@ test('怪物攻擊玩家時，閃避、格擋、護盾吸收與附加效果會�
   assert.match(monsterAttack, /floatText\(playerFloatSel,\s*dmgStr,\s*isCrit \? 'crit' : 'mdmg'\)/);
   assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'閃避!',\s*'dodge defend'\)/);
   assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'格擋!'/);
-  assert.match(combat, /floatPlayerEvent\(playerFloatSel,\s*'🛡️吸收 ' \+ fmt\(res\.absorbed\)/);
   assert.match(combat, /res\.procs\.forEach\(function \(proc\)/);
+});
+
+test('護盾吸收不飄字，只寫進戰鬥紀錄', () => {
+  /* 2026-09-21 使用者要求「護盾吸收」這個數字不再顯示。實際跑一次被護盾吸收的
+     怪物攻擊，看送出了哪些飄字——字面比對證明不了「沒有別條路徑送出同樣的字」。 */
+  const floats = [];
+  const logs = [];
+  const context = { console, setTimeout() {}, Math, SHIELD_MAX_VERSION: 1, ELEMENTS: [] };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(util, context);
+  vm.runInContext(combat, context);
+  Object.assign(context, {
+    floatText(id, text, cls) { floats.push({ id, text, cls }); },
+    fmt(v) { return String(v); },
+    blog(msg) { logs.push(msg); }
+  });
+  vm.runInContext(`
+    playerDefCfg = function () { return {}; };
+    monsterAtkCfg = function () { return {}; };
+    resolveHit = function () { return { dmg: 100, absorbed: 60, procs: [], thorns: 0 }; };
+  `, context);
+
+  context.doMonsterAttack({ name: 'BOSS' }, {}, 'tp-float', 1);
+  assert.deepEqual(floats.map((f) => f.text), ['-100'], '只剩扣血數字');
+  assert.ok(floats.every((f) => !/吸收/.test(f.text)), '不得出現護盾吸收飄字');
+  assert.ok(logs.some((msg) => /護盾吸收 60/.test(msg)), '戰鬥紀錄仍要寫出吸收量');
 });
 
 test('我方受到的傷害帶負號，回復類飄字不得用紅色', () => {
@@ -258,12 +284,42 @@ test('敵人傷害浮字維持可讀字號且出現範圍更分散', () => {
   assert.match(ui, /var pct = enemyHitFloat \? 8 \+ Math\.random\(\) \* 84 :[\s\S]*?15 \+ Math\.random\(\) \* 70/);
   assert.match(ui, /sp\.style\.top = \(28 \+ Math\.random\(\) \* 44\) \+ '%'/);
   assert.match(ui, /sp\.style\.marginTop = \(enemyHitFloat \? \(Math\.random\(\) \* 24 - 12\) :[\s\S]*?Math\.random\(\) \* 30 - 15/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*0\.72s[\s\S]*?--enemy-hit-lifetime-base:\s*0\.68s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?--enemy-hit-font-size:\s*15px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.74s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.72s/);
-  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*20px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.8s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?--enemy-hit-font-size:\s*12px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-rise-duration:\s*0\.36s[\s\S]*?--enemy-hit-lifetime-base:\s*0\.34s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill\s*\{[\s\S]*?--enemy-hit-font-size:\s*15px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.37s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*16px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.36s/);
+  assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-skill-crit\s*\{[\s\S]*?--enemy-hit-font-size:\s*20px[\s\S]*?font-size:\s*var\(--enemy-hit-font-size\)[\s\S]*?--enemy-hit-lifetime-base:\s*0\.4s/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.dmg\s*\{/);
   assert.doesNotMatch(css, /\.float-txt\.enemy-hit-float\.enemy-attack\s*\{/);
+});
+
+test('傷害數字消失速度提高一倍：Canvas 壽命減半，MISS／回復／技能名稱不變', () => {
+  /* 2026-09-21：所有戰鬥區域的傷害數字消失速度 ×2。直接跑 floatStyle 算出壽命，
+     不比對字面——倍率之後再調，這裡只要改期望值。 */
+  const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
+  const src = renderer.slice(renderer.indexOf('function floatStyle('), renderer.indexOf('function floatDamageGroupId('));
+  const consts = ['PLAYER_SKILL_FLOAT_LIFE_SEC', 'PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC', 'DAMAGE_FLOAT_SPEEDUP']
+    .map((name) => renderer.match(new RegExp('var ' + name + ' = [^;]+;'))[0]).join('\n');
+  const floatStyle = new Function(consts + '\n' + src + '\nreturn floatStyle;')();
+  const life = (elId, cls, text) => floatStyle(elId, cls, text || '123').life;
+  const near = (actual, expected, label) => assert.ok(Math.abs(actual - expected) < 1e-9, label + '：' + actual + ' ≠ ' + expected);
+
+  near(life('mv-float-0', 'dmg enemy-attack'), 0.34, '普攻');
+  near(life('mv-float-0', 'dmg enemy-skill'), 0.37, '技能');
+  near(life('mv-float-0', 'crit enemy-attack'), 0.36, '普攻暴擊');
+  near(life('mv-float-0', 'crit enemy-skill'), 0.4, '技能暴擊');
+  near(life('mv-float-0', 'crit enemy-skill crit-high-roll'), 0.8, '高倍率暴擊仍是一般暴擊的兩倍');
+  near(life('mv-float-0', 'defend', '反傷 123'), 0.45, '反傷');
+  near(life('pv-float', 'mdmg', '-123'), 0.45, '我方扣血');
+  near(life('pv-float', 'crit', '-123'), 0.45, '我方被暴擊');
+
+  near(life('mv-float-0', 'miss enemy-dodge', 'MISS'), 0.62, 'MISS 不是傷害數字');
+  near(life('pv-float', 'heal', '+123'), 0.9, '回血不是傷害數字');
+  near(life('pv-float', 'player-event skill-cast skill-cast-total skill-cast-left', '✨技能 123'), 2.1, '技能名稱不變');
+
+  // 回彈時間跟著壽命等比縮短
+  assert.match(renderer, /pop: \(isEnemyDamageFloat \? 0\.12 : \(isCritFloat \? 0\.18 : 0\)\) \/ DAMAGE_FLOAT_SPEEDUP/);
+  // DOM 路徑（高塔、?canvas=0）：我方扣血與反傷用一般飄字動畫的一半時間
+  assert.match(css, /\.float-txt\.player-damage,\s*\.float-txt\.defend:not\(\.player-event\)\s*\{\s*animation-duration:\s*\.40s;/);
 });
 
 test('傷害浮字合併上限依連擊數與攻速計算', () => {
