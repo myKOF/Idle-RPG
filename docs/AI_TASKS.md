@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜提交使用者雙刀配置與素材（USER-SNAPSHOT-20260921）
+
+- Done。使用者要求先提交現有修改供合併，再繼續戰神體；戰神體尚未修改，等待使用者合併與返還公式確認。
+- 提交 Skills2 Excel／CSV／JS 現有配置、slash-dual 與三種超神 Preset／layout，含火之神樂使用者調整值。Status.csv 僅換行差異，git add 後無內容變更。沒有新增臨時產物，沒有修改其他副本的 index.html。
+- 素材庫 Commit 686ad91，8 份素材存於 codex-authored/dualdance，複製後逐檔雜湊一致；素材庫乾淨。node tools/vfx/export-assets.cjs --check 通過，匯出索引與貼圖無須變更。
+- node tools/config_tables.cjs --apply Skills2：語意變更 0；雙刀針對性測試（skill2-ult-evolution／skill2-asura-dualwield，沿前次名稱篩選）13/13 通過；diff check 通過。唯讀檢查素材來源解析器、匯出工具、配置差異與既有引用。
+- 已知限制：配置原已引用不存在的 proj-cleave-ring-tricolor-09，本次按使用者要求保存現況，未擅改引用；上一輪 build 379 檔通過，本次無新增程式邏輯，未實機驗證。交使用者合併，建議整合時處理缺失引用及統一快取版本；未合併或推送。遊戲 Commit 見本紀錄所在提交。
+
 ## Codex｜神聖之體獨立光彈與爆炸（COUNTER-HOLY-FLIGHT-20260921）
 
 - Owner Codex；Done。使用者要求黃光改為獨立觸發特效，滿計數時發射一顆觸發光彈，抵達後爆炸一次。反擊計數方式、門檻及傷害數值不調整。
