@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜地爆天星預警與落地（STARFALL-FEEDBACK-20260921）
+
+- Done。補回缺失的落地 attack 爆炸，預警明確傳遞戰場半徑；受擊逐敵播放不受八目標上限。允許 skills2、測試、快取及本紀錄，預檢乾淨；不修改使用者 Excel／素材。
+- 完成：黑圈與落地爆炸以玩家為中心，半徑至少涵蓋出怪距離並擴至存活敵人；玩家實體無 pos 時使用 battlefield 玩家座標。一次 attack 爆炸與逐目標 hit 分開派送，不帶 projectile。既有黑圈 Preset 曲線負責漸大，未新增素材。
+- 驗證：starfall-vfx／meteor-impact-timing 4/4；vfx-runtime 以 STARFALL-FEEDBACK 篩選 1/1，實際 NullBackend 驗證黑圈尺寸隨時間增大、保持可見與爆炸獨立派送。build_check 386 檔通過，最後座標回退修改由專項測試驗證；diff check 通過。唯讀檢查 vfx-runtime／battlefield／素材及配置。未完整瀏覽器實機驗證，無未完成實作，可合併；無素材庫變更，使用者 Excel／素材保留未提交，未合併或推送。
+
 ## Codex｜地爆天星單顆與朝向（STARFALL-VFX-20260921）
 
 - Done。修正普通多顆殞石誤繼承巨型特效、預警誤播彈體及素材前端方向。保留普通殞石傷害及地爆天星單顆週期。允許 skills2、proj-starfall 素材、測試、快取、本紀錄；預檢乾淨。

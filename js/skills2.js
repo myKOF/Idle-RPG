@@ -10686,6 +10686,16 @@ function tickSkill2(dt, ctx) {
      ・不扣魔、不進冷卻——這不是一次施放，是超神進化的常駐節拍
    扣血走 sgDerivedHit：這是「直接扣掉 N% 生命」而不是一次攻擊，因此不過防禦與爆擊；
    高塔 BOSS 的單次扣血上限由 applyEnemyHpDamage 自動接手（設計的 BOSS -20% 正好同值）。 */
+function sgStarfallArea(ctx) {
+  var centre = bfPos(ctx.pEnt) || bfPlayerPos();
+  var area = { x: centre.x, y: centre.y, r: bfSpawnDist() };
+  var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
+  for (var i=0; area && i<enemies.length; i++) {
+    var pos = bfPos(enemies[i]);
+    if (pos && enemies[i].hp>0) area.r = Math.max(area.r, Math.hypot(pos.x-area.x,pos.y-area.y)+bfBodyRadius());
+  }
+  return area;
+}
 function sgTickStarfall(ctx, dt) {
   var u = sgUlt('fireball', 'starfallCataclysm');
   if (!u || !skills2Equipped('fireball')) {
@@ -10720,6 +10730,7 @@ function sgTickStarfall(ctx, dt) {
     sgEmitPlayerVfx('fireball', ctx.floatSel, {
       fxKind: 'aura', variant: 'starfall-shadow', elem: 'fire',
       dur: Math.max(0.1, st.at - GT),
+      area: sgStarfallArea(ctx),
       vfxUlt: 'starfallCataclysm',
       vfxRoles: { ground: sgVfxRoles('fireball', { vfxUlt: 'starfallCataclysm' }).ground }
     });
@@ -10768,13 +10779,18 @@ function sgStarfallImpact(ctx, u) {
   var normalPct = sgUltVal(u, 'normal');
   var elitePct = sgUltVal(u, 'elite');
   var bossPct = sgUltVal(u, 'boss');
-  sgEmitVfx('fireball', victims, ctx.floatSel, {
-    fxKind: 'impact', variant: 'starfall-impact', elem: 'fire',
-    vfxUlt: 'starfallCataclysm'
+  var roles = sgVfxRoles('fireball', { vfxUlt: 'starfallCataclysm' });
+  sgEmitPlayerVfx('fireball', ctx.floatSel, {
+    fxKind: 'burst', variant: 'starfall-burst', elem: 'fire',
+    area: sgStarfallArea(ctx), vfxRoles: { attack: roles.attack }
   });
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
     var e = victims[v];
+    sgEmitVfx('fireball', [e], ctx.floatSel, {
+      fxKind: 'impact', variant: 'starfall-impact', elem: 'fire',
+      vfxRoles: { hit: roles.hit }, preserveDeadTargets: true
+    });
     // 敵種旗標沿用 monsterDefCfg 的同一組欄位（比照 sgIsNormalEnemy），不另建分類
     var pct = (e.isBoss || e.towerBoss) ? bossPct : (e.elite ? elitePct : normalPct);
     var amount = Math.max(0, Number(e.maxHp) || 0) * pct / 100;
