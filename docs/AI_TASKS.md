@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜阿修羅霸王拳延長（ASURA-DURATION-20260921）
+
+- Owner Codex；Done。依使用者最新指定：持續 1.5 秒＋等級×0.15 秒，生效期間每殺一敵延長 0.2 秒。允許 skills2、Skills2 表、測試、快取、本紀錄；index.html 既知不同快取行依正常合併授權繼續，其餘預檢乾淨。保留使用者爆炸素材。
+- 完成：擊殺延時不依賴狂怒是否生效，僅延長仍有效的霸王拳狀態；跨週期重發動保留既有更長的剩餘時間。狀態持續特效與圖示共用更新後到期時間。Excel AU81／AW81／AX81、CSV／JS 同步；沿已確認 artifact 匯入問題使用 ZIP/XML 精準修改。
+- 驗證：`node --test tests/asura-duration.test.cjs` 3/3，`node --test tests/skills2-vfx-schema.test.cjs` 6/6；超神進化測試以「嗜血狂怒的三個超神進化」篩選 1/1；build_check 384 檔通過，最後數值修改由 config_tables 語法檢查及上述測試驗證，apply 語意變更 0。唯讀檢查既有狀態及擊殺管線。無新增素材，無素材庫提交；未實機瀏覽器驗證。
+- 無未完成實作，可供使用者合併；Commit 見本紀錄所在提交。保留使用者 burst-detonate-phys Preset／layout 未提交修改，未合併或推送。
+
 ## Codex｜戰神屠錄數值與吸血（WAR-GOD-ROLL-20260921）
 
 - Owner Codex；Done。基礎擊殺增傷 2%、每級 +0.2%，固定最多 200 層；新增吸血效果基礎提升 100%、每級 +10%，乘算並持續到死亡。使用者確認 40% × (1+200%) =120%。允許 skills2、Skills2 表、測試、快取、本紀錄；保留使用者正在修改的爆炸素材。
