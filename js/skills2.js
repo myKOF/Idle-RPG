@@ -10686,9 +10686,10 @@ function tickSkill2(dt, ctx) {
      ・不扣魔、不進冷卻——這不是一次施放，是超神進化的常駐節拍
    扣血走 sgDerivedHit：這是「直接扣掉 N% 生命」而不是一次攻擊，因此不過防禦與爆擊；
    高塔 BOSS 的單次扣血上限由 applyEnemyHpDamage 自動接手（設計的 BOSS -20% 正好同值）。 */
-function sgStarfallArea(ctx) {
+function sgStarfallArea(ctx, follow) {
   var centre = bfPos(ctx.pEnt) || bfPlayerPos();
   var area = { x: centre.x, y: centre.y, r: bfSpawnDist() };
+  if (follow) area.follow = true;
   var enemies = ctx.getEnemies ? ctx.getEnemies() : [];
   for (var i=0; area && i<enemies.length; i++) {
     var pos = bfPos(enemies[i]);
@@ -10730,7 +10731,7 @@ function sgTickStarfall(ctx, dt) {
     sgEmitPlayerVfx('fireball', ctx.floatSel, {
       fxKind: 'aura', variant: 'starfall-shadow', elem: 'fire',
       dur: Math.max(0.1, st.at - GT),
-      area: sgStarfallArea(ctx),
+      area: sgStarfallArea(ctx, true),
       vfxUlt: 'starfallCataclysm',
       vfxRoles: { ground: sgVfxRoles('fireball', { vfxUlt: 'starfallCataclysm' }).ground }
     });

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜地爆天星跟隨角色（STARFALL-FOLLOW-20260921）
+
+- 完成實作。預警黑圈逐幀跟隨角色，落地依當下角色座標；保留既有全場敵人傷害結算及單顆節拍。允許 skills2、測試、快取、本紀錄，預檢乾淨；不修改使用者素材與 Excel。
+- 沿既有 area.follow 與渲染場域跟隨，不重播／重置黑圈擴大曲線。殞石原有 player target 追蹤保留，爆點當下重讀玩家座標。唯讀檢查 vfx-runtime，無新增參數／素材。
+- 驗證 starfall-vfx 4/4、vfx-runtime 以 STARFALL-FOLLOW 篩選 1/1：移動後黑圈立即貼齊且尺寸繼續增加、只建一個特效，落地爆點及全場傷害正確。diff check 通過。未完整瀏覽器實機驗證；使用者素材及 Excel 持續編輯保留未提交，無素材庫變更。可供使用者合併，未合併／推送。
+
 ## Codex｜地爆天星預警與落地（STARFALL-FEEDBACK-20260921）
 
 - Done。補回缺失的落地 attack 爆炸，預警明確傳遞戰場半徑；受擊逐敵播放不受八目標上限。允許 skills2、測試、快取及本紀錄，預檢乾淨；不修改使用者 Excel／素材。
