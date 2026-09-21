@@ -9,10 +9,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": 0.809621,
       "scale": {
-        "x": 0.1541,
-        "y": 0.0863
+        "x": 0.3313,
+        "y": 0.1856
       },
       "alpha": 0.9,
       "tint": "#2da984",
@@ -70,9 +74,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1172,
-        "y": 0.1172
+        "x": 0.252,
+        "y": 0.252
       },
       "alpha": 1,
       "tint": "#145756",
@@ -120,9 +128,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3263,
-        "y": 0.1828
+        "x": 0.7016,
+        "y": 0.393
       },
       "alpha": 0.9,
       "tint": "#3ea8cc",
@@ -167,9 +179,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/scorch_02.png",
       "zIndex": 5,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1758,
-        "y": 0.1758
+        "x": 0.378,
+        "y": 0.378
       },
       "alpha": 1,
       "tint": "#3d4ed1",
@@ -214,10 +230,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": 3.951214,
       "scale": {
-        "x": 0.1541,
-        "y": 0.0863
+        "x": 0.3313,
+        "y": 0.1856
       },
       "alpha": 0.9,
       "tint": "#2da984",
@@ -275,9 +295,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.2326,
-        "y": 0.1303
+        "x": 0.5001,
+        "y": 0.2802
       },
       "alpha": 0.9,
       "tint": "#3e74cc",
@@ -322,9 +346,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.1429,
-        "y": 0.0801
+        "x": 0.3072,
+        "y": 0.1722
       },
       "alpha": 0.9,
       "tint": "#b8d3ff",

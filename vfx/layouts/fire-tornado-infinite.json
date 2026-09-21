@@ -7,6 +7,9 @@
       "name": "fire-tornado-infinite",
       "layerIds": [
         "halo",
+        "wave-a",
+        "wave-b",
+        "wave-c",
         "spray",
         "ground-flames",
         "crown-flame-jets",

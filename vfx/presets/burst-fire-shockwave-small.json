@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "burst-fire-shockwave",
+  "id": "burst-fire-shockwave-small",
   "duration": 0.9,
   "loop": false,
   "layers": [
@@ -20,7 +20,7 @@
       "alpha": 0.6,
       "tint": "#ff6a2a",
       "blendMode": "add",
-      "duration": 2,
+      "duration": 0.6,
       "alphaOverLife": [
         [
           0,
@@ -70,7 +70,7 @@
       "alpha": 1,
       "tint": "#c51e0d",
       "blendMode": "add",
-      "duration": 2,
+      "duration": 0.6,
       "alphaOverLife": [
         [
           0,
@@ -130,7 +130,7 @@
       "alpha": 0.9,
       "tint": "#ffb21c",
       "blendMode": "add",
-      "duration": 1.8,
+      "duration": 0.45,
       "alphaOverLife": [
         [
           0,
@@ -181,7 +181,7 @@
       "tint": "#7d1708",
       "blendMode": "add",
       "delay": 0.12,
-      "duration": 1.8,
+      "duration": 0.45,
       "alphaOverLife": [
         [
           0,
@@ -232,7 +232,7 @@
       "tint": "#ffb21c",
       "blendMode": "add",
       "delay": 0.26,
-      "duration": 1.8,
+      "duration": 0.45,
       "alphaOverLife": [
         [
           0,
@@ -282,7 +282,7 @@
       "alpha": 1,
       "tint": "#ffd447",
       "blendMode": "add",
-      "duration": 1,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,
