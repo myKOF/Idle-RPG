@@ -333,6 +333,25 @@ section { border-bottom: 1px solid #26262c; padding-bottom: 10px; }
                background: #23232b; border-top: 1px solid #2c2c34; }
 .picker-foot button { margin-left: auto; }
 
+/* ---- 重新命名（askRenameName）---- */
+#rename-dialog { position: fixed; inset: 0; background: rgba(0,0,0,.5);
+                 display: flex; align-items: flex-start; justify-content: center;
+                 padding-top: 14vh; z-index: 60; }
+/* 自己指定了 display，hidden 要補這條才收得起來（見 .save-error[hidden] 的說明） */
+#rename-dialog[hidden] { display: none; }
+.rename-box { width: min(480px, 92vw); background: #1a1a20; border: 1px solid #3a3a44;
+              border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.rename-from { color: #8a8a96; font-size: 12px; word-break: break-all; }
+#rename-input { width: 100%; padding: 5px 8px; font: inherit; }
+/* 說明文字的高度會變（撞名時多一行用途）：min-height 讓按鈕列不要在打字時上下跳 */
+.rename-hint { font-size: 12px; color: #8a8a96; min-height: 3em; white-space: pre-wrap; }
+.rename-hint.warn { color: #e0c07a; }
+.rename-hint.err { color: #ff8080; }
+.rename-foot { display: flex; align-items: center; gap: 8px; }
+.rename-foot .hint { margin-right: auto; }
+#rename-ok.danger { background: #5a2a2a; border-color: #8a4a4a; color: #ffd0d0; }
+#rename-ok:disabled { opacity: .45; cursor: default; }
+
 /* ---- 瀏覽特效 ---- */
 #preset-browser { position: fixed; inset: 0; background: rgba(0,0,0,.6);
                   display: flex; align-items: center; justify-content: center; z-index: 50; }

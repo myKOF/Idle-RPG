@@ -1,7 +1,8 @@
 'use strict';
 /* ============================================================
    save-as-dialog.cjs — VFX Editor「另存新檔」的 Windows 存檔視窗
-   （「重新命名」問新名字也用它，見 askPresetId 的 purpose）
+   （「重新命名」以前也借用它問新名字；2026-09-21 使用者要求改成在頁面上直接輸入，
+     開存檔視窗會讓改名看起來像另存新檔。見 editor.js 的 askRenameName）
 
    2026-09-14 使用者要求：另存新檔不要用網頁的輸入框，要跟「載入 Preset」一樣
    叫 Windows 的視窗。
@@ -23,14 +24,14 @@
 
    ---- 視窗一打開就選到目前這份（2026-09-18 使用者要求）----
    特效有兩百多份，要在清單裡找到目前這份很麻煩。視窗的檔案清單會直接選到編輯器開著的那一份、
-   捲到看得見的位置；檔名框仍是建議的名字（另存新檔＝<目前>-copy，重新命名＝目前的名字）。
+   捲到看得見的位置；檔名框仍是建議的名字（<目前>-copy）。
    WinForms 的 SaveFileDialog 做不到，所以改用同一個 Windows 存檔視窗的原生介面（IFileDialog），
    C# 放在 native-save-dialog.cs、開視窗時編譯（放不進 -EncodedCommand：命令列有長度上限）。
    編不起來或開不起來就退回 SaveFileDialog，視窗照樣開得出來，只是不會選到目前這份。
 
    ---- 另存新檔可以覆寫既有的特效（2026-09-18 使用者要求）----
    使用者常常是直接蓋掉舊的那份。選到既有檔案時由 Windows 問「要取代嗎？」，確定就回
-   { id, overwrite: true }。重新命名不會蓋掉別的特效，選到既有檔案照樣說明後重開視窗。
+   { id, overwrite: true }。
 
    ---- 與 PowerShell 的介面 ----
    腳本是常數，輸入一律走環境變數、不拼進腳本文字：檔名裡有引號或 $ 也不會變成程式碼。
@@ -41,9 +42,6 @@ const fs = require('fs');
 const path = require('path');
 
 const TITLE = '另存新檔（存到 vfx\\presets）';
-/* 「重新命名」也用這個視窗問新名字（2026-09-18）：一樣要看得到資料夾裡已經有哪些名字，
-   一樣不收既有的檔案。差別只有標題與選到既有檔案時的說明。 */
-const RENAME_TITLE = '重新命名（輸入新名字，存在 vfx\\presets）';
 /* 連續幾次選到不能用的名字就放棄，回報原因給頁面。不設上限的話，
    使用者關不掉的其實是一個一直重開的視窗。 */
 const MAX_ROUNDS = 5;
@@ -247,37 +245,27 @@ function chosenPresetId(chosen, presetsDir, policy, platform) {
 /* 問出一個可以另存的 preset id。
    opts：presetsDir、suggested（建議名稱，不含副檔名）、current（編輯器目前開著的那一份，
    清單會選到它；沒有就不選）、policy（preset-id-policy）、
-   purpose（'rename'＝重新命名，此時 suggested 就是目前的名字；其餘＝另存新檔）、
    runDialog（預設 runWindowsDialog）、maxRounds、platform。
-   回傳 Promise：{ canceled: true }、{ id }、{ id, overwrite: true }（另存新檔選到既有的特效，
-   Windows 已經問過要不要取代），或連續 maxRounds 次都不能用時 { problem }。
-   重新命名不會蓋掉別的特效：選到既有檔案一律說明後重開視窗。 */
+   回傳 Promise：{ canceled: true }、{ id }、{ id, overwrite: true }（選到既有的特效，
+   Windows 已經問過要不要取代），或連續 maxRounds 次都不能用時 { problem }。 */
 function askPresetId(opts) {
   const run = opts.runDialog || runWindowsDialog;
   const maxRounds = opts.maxRounds || MAX_ROUNDS;
-  const renaming = opts.purpose === 'rename';
   const selectName = opts.current ? opts.current + '.json' : '';
-  function existsProblem(id) {
-    /* 視窗預填的就是目前的名字，沒改就按下去最常見：說清楚，不要讓人以為那個名字被別人占了 */
-    if (id === opts.suggested) return '「' + id + '」就是目前的名字。請輸入新的名字。';
-    return '已經有一份「' + id + '」了。重新命名不會蓋掉別的特效，請換一個名字。';
-  }
   function round(n, fileName, message) {
     return Promise.resolve(run({
-      initialDir: opts.presetsDir, fileName: fileName, title: renaming ? RENAME_TITLE : TITLE,
-      message: message, selectName: selectName, overwrite: !renaming
+      initialDir: opts.presetsDir, fileName: fileName, title: TITLE,
+      message: message, selectName: selectName, overwrite: true
     })).then(function (picked) {
       if (!picked || picked.canceled) return { canceled: true };
       const r = chosenPresetId(picked.path, opts.presetsDir, opts.policy, opts.platform);
-      let problem = r.problem;
-      if (!problem && fs.existsSync(path.join(opts.presetsDir, r.id + '.json'))) {
-        /* 另存新檔：視窗已經問過「要取代嗎？」，按了確定才會走到這裡 */
-        if (!renaming) return { id: r.id, overwrite: true };
-        problem = existsProblem(r.id);
+      if (r.problem) {
+        if (n + 1 >= maxRounds) return { problem: r.problem };
+        return round(n + 1, path.basename(String(picked.path)), r.problem);
       }
-      if (!problem) return { id: r.id };
-      if (n + 1 >= maxRounds) return { problem: problem };
-      return round(n + 1, path.basename(String(picked.path)), problem);
+      /* 視窗已經問過「要取代嗎？」，按了確定才會走到這裡 */
+      if (fs.existsSync(path.join(opts.presetsDir, r.id + '.json'))) return { id: r.id, overwrite: true };
+      return { id: r.id };
     });
   }
   return round(0, opts.suggested ? opts.suggested + '.json' : '', '');
@@ -286,7 +274,6 @@ function askPresetId(opts) {
 module.exports = {
   NATIVE_DIALOG_CS: NATIVE_DIALOG_CS,
   TITLE: TITLE,
-  RENAME_TITLE: RENAME_TITLE,
   DIALOG_SCRIPT: DIALOG_SCRIPT,
   powershellArgs: powershellArgs,
   parseDialogOutput: parseDialogOutput,

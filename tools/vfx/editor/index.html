@@ -46,8 +46,9 @@
        再走一次一般存檔——存檔目的地本來就由 preset.id 決定。 -->
   <button id="btn-save-as" title="存成另一份 Preset，不會動到目前這一份">另存新檔</button>
   <!-- 重新命名：特效檔與分組檔一起換名字，由伺服器搬檔（見 editor.js 的 renamePreset）。
+       新名字在頁面上的小視窗直接輸入（#rename-dialog），不開 Windows 存檔視窗。
        有技能在用也照改（改完列出哪些地方還寫著舊名字）；改名不進復原紀錄，沒存的修改維持沒存。 -->
-  <button id="btn-rename" title="幫目前這份特效換名字（特效檔與分組檔一起改）。用到舊名字的技能會失去特效，改完會列出來">重新命名</button>
+  <button id="btn-rename" title="幫目前這份特效換名字（特效檔與分組檔一起改，舊名字會消失）。用到舊名字的技能會失去特效，改完會列出來">重新命名</button>
   <button id="btn-download">下載複本</button>
   <input type="file" id="file-load" accept="application/json" hidden>
   <span id="dirty-flag" class="dirty"></span>
@@ -195,6 +196,23 @@
       <span class="hint">點縮圖開啟　「複製成新特效」＝以這份為底另存一份，原本那份不動　右下角可拉大小　Esc 關閉</span>
     </footer>
   </div>
+</div>
+
+<!-- 重新命名：直接輸入新名字（2026-09-21 使用者要求：不開 Windows 存檔視窗，那會像另存新檔）。
+     名字已經有特效時當場說明會蓋掉誰，確定鈕換成「取代」。流程見 editor.js 的 askRenameName。 -->
+<div id="rename-dialog" hidden>
+  <form id="rename-form" class="rename-box" autocomplete="off">
+    <strong>重新命名</strong>
+    <div class="rename-from">目前的名字：<span id="rename-from"></span></div>
+    <input type="text" id="rename-input" spellcheck="false" aria-describedby="rename-hint"
+           title="小寫英數與連字號；特效檔與分組檔會一起改名">
+    <div id="rename-hint" class="rename-hint"></div>
+    <div class="rename-foot">
+      <span class="hint">Enter 確定　Esc 取消</span>
+      <button type="button" id="rename-cancel">取消</button>
+      <button type="submit" id="rename-ok">重新命名</button>
+    </div>
+  </form>
 </div>
 
 <!-- Spine 參考面板：把買來的 Spine 特效播出來看，作為自己用 preset 重做的參照。

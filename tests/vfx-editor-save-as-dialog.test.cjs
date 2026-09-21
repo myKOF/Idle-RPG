@@ -277,19 +277,20 @@ test('SAVEAS-6 Editor：另存新檔先請伺服器開視窗，開不起來才�
     const rest = src.slice(at);
     return rest.slice(0, rest.indexOf('\n  }'));
   };
-  /* 問名字的本體是 askPresetName，另存新檔與重新命名共用（2026-09-18 加上重新命名時抽出來） */
+  /* 問名字的本體是 askPresetName，只給另存新檔用（重新命名 2026-09-21 起改在頁面上輸入，見 askRenameName） */
   const ask = body('askPresetName');
   assert.ok(/fetch\(SAVE_AS_DIALOG_URL/.test(ask) && /method: 'POST'/.test(ask));
   assert.ok(/'Content-Type': 'application\/json'/.test(ask), '伺服器的寫入防護要求 JSON，少了會被 403');
   assert.ok(/window\.prompt\(/.test(ask), '伺服器太舊或不是 Windows 時要退回輸入框，另存新檔不能整個不能用');
-  assert.ok(/askPresetName\(current \? current \+ '-copy' : '', 'save-as', current\)/.test(body('askSaveAsName')),
+  assert.ok(/askPresetName\(current \? current \+ '-copy' : '', current\)/.test(body('askSaveAsName')),
     '另存新檔預填「目前的名字-copy」，清單選到目前這份');
   assert.ok(/current: current \|\| ''/.test(ask), '目前這份要交給伺服器，視窗才選得到它');
   const save = body('saveAsPreset');
   assert.ok(/askSaveAsName\(current\)/.test(save));
   assert.ok(!/window\.prompt\(/.test(save), '名字只從 askSaveAsName 來');
   assert.ok(!/window\.prompt\(/.test(body('renamePreset')) && !/window\.prompt\(/.test(body('commitRename')),
-    '重新命名的名字也只從 askPresetName 來');
+    '重新命名的名字只從頁面上的改名視窗來');
+  assert.ok(!/askPresetName\(/.test(body('renamePreset')), '重新命名不開 Windows 存檔視窗（2026-09-21 使用者：那像另存新檔）');
   assert.ok(!/showSaveFilePicker\s*\(/.test(src), '瀏覽器的存檔視窗選到既有檔案會先把它清空（見 save-as-dialog.cjs）');
   assert.ok(/var SAVE_AS_DIALOG_URL = '\/__save-as-dialog'/.test(src));
 
@@ -298,48 +299,22 @@ test('SAVEAS-6 Editor：另存新檔先請伺服器開視窗，開不起來才�
   assert.ok(server.indexOf("'save-as-dialog.cjs'") >= 0, 'save-as-dialog.cjs 要列進 RESTART_REQUIRED_FILES');
 });
 
-test('SAVEAS-7 重新命名也用這個視窗問新名字：標題不同；選到目前的名字與選到別人的名字各有說明', async function () {
-  /* 需求（2026-09-18）：特效要能直接改名。新名字一樣要看得到資料夾裡已經有哪些、一樣不能蓋掉別人。 */
+test('SAVEAS-7 存檔視窗只給另存新檔：舊頁面帶 purpose 也一樣是另存新檔的標題與「要取代嗎？」', async function () {
+  /* 2026-09-21 使用者：重新命名用存檔視窗問名字，看起來就是另存新檔。改名改在頁面上輸入之後，
+     這個視窗不再有「重新命名」模式——伺服器不認 purpose，舊頁面帶來也照另存新檔處理。 */
   const sb = sandboxPresets();
-  const calls = [];
-  function answers(list) {
-    return function (opts) { calls.push(opts); return Promise.resolve(list.shift()); };
-  }
-  const r = await dialog.askPresetId({
-    presetsDir: sb.presets, suggested: 'beam-light', purpose: 'rename', policy: policy,
-    runDialog: answers([
-      { path: path.join(sb.presets, 'beam-light.json') },
-      { path: path.join(sb.presets, 'beam-light.json') },
-      { path: path.join(sb.presets, 'beam-light-blue.json') }
-    ])
-  });
-  assert.deepEqual(r, { id: 'beam-light-blue' });
-  assert.equal(calls[0].title, dialog.RENAME_TITLE);
-  assert.equal(calls[0].fileName, 'beam-light.json', '重新命名預填的就是目前的名字');
-  assert.match(calls[1].message, /就是目前的名字/, '沒改就按下去最常見：不要讓人以為那個名字被別人占了');
-  assert.notEqual(dialog.RENAME_TITLE, dialog.TITLE);
-
-  fs.writeFileSync(path.join(sb.presets, 'other.json'), '{}');
-  calls.length = 0;
-  await dialog.askPresetId({
-    presetsDir: sb.presets, suggested: 'beam-light', purpose: 'rename', policy: policy,
-    runDialog: answers([{ path: path.join(sb.presets, 'other.json') }, { canceled: true }])
-  });
-  assert.match(calls[1].message, /已經有一份「other」了。重新命名不會蓋掉別的特效/);
-
-  /* 伺服器把 purpose 帶進視窗；沒帶或亂帶一律當成另存新檔 */
+  assert.equal(dialog.RENAME_TITLE, undefined, '重新命名模式整個拿掉，不留死碼');
   const seen = [];
   const server = editorServer.__testOnly.createServer({
     repoRoot: sb.repoRoot, assetRoots: {},
-    runSaveDialog: function (opts) { seen.push(opts.title); return Promise.resolve({ canceled: true }); }
+    runSaveDialog: function (opts) { seen.push([opts.title, opts.overwrite]); return Promise.resolve({ canceled: true }); }
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   try {
     const port = server.address().port;
     await post(port, '/__save-as-dialog', { suggested: 'beam-light', purpose: 'rename' });
     await post(port, '/__save-as-dialog', { suggested: 'beam-light' });
-    await post(port, '/__save-as-dialog', { suggested: 'beam-light', purpose: 'delete-everything' });
-    assert.deepEqual(seen, [dialog.RENAME_TITLE, dialog.TITLE, dialog.TITLE]);
+    assert.deepEqual(seen, [[dialog.TITLE, true], [dialog.TITLE, true]]);
   } finally {
     await new Promise((resolve) => server.close(resolve));
     fs.rmSync(sb.base, { recursive: true, force: true });

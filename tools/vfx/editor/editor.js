@@ -28,9 +28,9 @@
 
   function presetUrl(id) { return '/vfx/presets/' + id + '.json'; }
   var PRESET_LIST_URL = '/__presets';
-  /* 另存新檔、重新命名問名字用的 Windows 存檔視窗由伺服器開（見 askPresetName） */
+  /* 另存新檔問名字用的 Windows 存檔視窗由伺服器開（見 askPresetName） */
   var SAVE_AS_DIALOG_URL = '/__save-as-dialog';
-  /* 重新命名由伺服器搬檔（見 renamePreset） */
+  /* 重新命名：名字在頁面上直接輸入（見 askRenameName），搬檔由伺服器做（見 renamePreset） */
   var RENAME_URL = '/__rename-preset';
 
   /* ---------------- topbar 的 Preset 切換 ----------------
@@ -2798,6 +2798,16 @@
     /* Escape 仍然排第一：拖曳中不論焦點在哪都要取消得掉，而且它不會誤刪東西。
        沒有拖曳時 cancelDrag() 回 false，所以擺在 state.preset 的守門之前也安全。 */
     if (e.key === 'Escape' && cancelDrag()) { e.preventDefault(); return; }
+    /* 改名視窗開著：鍵盤全部歸它（Enter／Esc 由視窗自己處理）。排在 Ctrl+S 與 Ctrl+Z 之前：
+       輸入框裡按 Ctrl+Z 不能回滾整份特效；Ctrl+S 只擋掉瀏覽器的「另存網頁」、不存檔——
+       存檔請求用的是舊名字，改名之後落地會把舊檔寫回來。 */
+    if (renameDialogOpen()) {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey &&
+          ((e.key || '').toLowerCase() === 's' || BROWSER_SHORTCUT_KEYS.indexOf((e.key || '').toLowerCase()) >= 0)) {
+        e.preventDefault();
+      }
+      return;
+    }
 
     /* Ctrl+S 排在其餘所有守門之前，連 state.preset 都還沒判斷。
 
@@ -4464,6 +4474,11 @@
      指向不存在檔案的編輯器上，下一次按存檔就真的寫出那個檔。 */
   function savePreset() {
     if (state.saving) return Promise.resolve(false);   // 連按兩下不該送出兩次 PUT
+    /* 改名進行中不存：這個 PUT 用的是舊名字，比改名晚落地的話會在改名之後把舊檔寫回來 */
+    if (renaming) {
+      setSaveStatus('重新命名中，完成後再存檔', 'note');
+      return Promise.resolve(false);
+    }
     /* 新視窗的空白特效還沒有名字（new-effect 是暫時的）：第一次存檔要問名字，
        與另存新檔走同一條路——撞名檢查、根群組改名都在那裡 */
     if (state.isNew) { saveAsPreset(); return Promise.resolve(false); }
@@ -4578,8 +4593,8 @@
   /* 正在問名字時為 true：Windows 視窗可能被別的視窗蓋住，再按一次不能疊出第二個 */
   var saveAsAsking = false;
 
-  /* 特效的名字用 Windows 的存檔視窗問（2026-09-14 使用者要求：跟「載入 Preset」一樣）。
-     另存新檔與重新命名共用，purpose（'save-as'｜'rename'）只換視窗標題與說明；suggested 是預填的名字。
+  /* 另存新檔的名字用 Windows 的存檔視窗問（2026-09-14 使用者要求：跟「載入 Preset」一樣）。
+     suggested 是預填的名字。重新命名不走這裡（見 askRenameName）。
      視窗由本機的編輯器伺服器開（tools/vfx/save-as-dialog.cjs），不用瀏覽器的存檔視窗 API：
      那個 API 在使用者選到既有檔案時，交回檔案之前就先把它清空，而且拿不到路徑。
      伺服器開的視窗只回傳路徑、不碰檔案；選到既有檔案或不對的資料夾，伺服器會說明原因並重開。
@@ -4588,20 +4603,19 @@
   /* current：編輯器目前開著的那一份——視窗的檔案清單會直接選到它（2026-09-18 使用者要求：特效太多，
      要在清單裡找到目前這份很麻煩）。回傳 { id }，另存新檔選到既有的特效時是 { id, overwrite: true }
      （Windows 已經問過要不要取代）。 */
-  function askPresetName(suggested, purpose, current) {
-    var forRename = purpose === 'rename';
-    setSaveStatus('等待存檔視窗…', '', (forRename ? '重新命名' : '另存新檔') +
-      '的 Windows 視窗已經開啟；沒看到的話，可能被其他視窗蓋住了，看一下工作列。');
+  function askPresetName(suggested, current) {
+    setSaveStatus('等待存檔視窗…', '',
+      '另存新檔的 Windows 視窗已經開啟；沒看到的話，可能被其他視窗蓋住了，看一下工作列。');
     return fetch(SAVE_AS_DIALOG_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ suggested: suggested, purpose: purpose, current: current || '' })
+      body: JSON.stringify({ suggested: suggested, current: current || '' })
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (body) {
         if (r.ok && body.canceled) return null;
         if (r.ok && body.id) return { id: body.id, overwrite: body.overwrite === true };
         if (r.ok && body.problem) return { problem: body.problem };
-        if (r.status === 409) return { problem: body.error || '已經開著一個問名字的視窗' };
+        if (r.status === 409) return { problem: body.error || '已經開著一個另存新檔的視窗' };
         /* 舊伺服器對不認得的 POST 一律回 405 */
         if (r.status === 405) throw new Error('編輯器伺服器是舊版，重新啟動伺服器之後才有 Windows 存檔視窗');
         throw new Error(body.error || ('HTTP ' + r.status));
@@ -4614,15 +4628,14 @@
       setSaveStatus('', '');
       var input = window.prompt(
         '（' + String(e && e.message || e) + '，改用輸入框）\n\n' +
-        (forRename ? '把「' + suggested + '」重新命名。\n新的名字' : '另存成新的 Preset。\n新的 id') +
-        '（小寫英數與連字號，會寫成 vfx/presets/<id>.json）：',
+        '另存成新的 Preset。\n新的 id（小寫英數與連字號，會寫成 vfx/presets/<id>.json）：',
         suggested);
       return input === null ? null : { id: input };
     }));
   }
 
   function askSaveAsName(current) {
-    return askPresetName(current ? current + '-copy' : '', 'save-as', current);
+    return askPresetName(current ? current + '-copy' : '', current);
   }
 
   function saveAsPreset() {
@@ -4774,10 +4787,130 @@
        - 檔案被遊戲或其他程式鎖住也照改：舊檔刪不掉的由伺服器延後刪除，改完照樣提醒。
        - 復原不包含改名：改名不是復原紀錄裡的一步，Ctrl+Z 不會把名字退回去；
          改名前的編輯照樣可以復原（復原紀錄裡每一步都換成新名字，見 adoptRename）。
-     所以改名只換名字，不動內容：沒存的修改改完仍然是沒存的，不先存檔、也不重新開啟。 */
+     所以改名只換名字，不動內容：沒存的修改改完仍然是沒存的，不先存檔、也不重新開啟。
 
-  /* 整段流程（問名字、改名）進行中為 true：連按兩下不能跑出兩個 */
+     2026-09-21 使用者：
+       - 新名字直接在頁面上輸入（askRenameName），不開 Windows 存檔視窗——那個視窗讓改名看起來像另存新檔。
+       - 新名字已經有特效時可以取代它：把 x-09 改名成 x，就是要 x 變成 x-09 那份、x-09 消失。
+         視窗裡當場說明會蓋掉誰，按鈕換成「取代」，按下去才帶 overwrite 給伺服器。 */
+
+  /* 整段流程（問名字、改名）進行中為 true：連按兩下不能跑出兩個；
+     這段期間也不能存檔（見 savePreset）——存檔請求用的是舊名字，改名之後落地會把舊檔寫回來。 */
   var renaming = false;
+
+  /* 改名視窗裡輸入的名字能不能用。純函式（測試直接挖出來跑）。
+     ids＝現有特效的清單；拿不到清單時是 null，撞名交給伺服器擋（它會回 exists）。
+     回傳 { id, kind, message }，kind：
+       'empty'｜'same'｜'bad'  不能送出
+       'exists'               可以送出，但會取代那一份（按鈕換成「取代」）
+       'ok'                   可以送出 */
+  function renameTargetCheck(from, raw, ids) {
+    /* 轉小寫：以前的輸入框與 Windows 視窗都這樣處理，檔名本來就不分大小寫 */
+    var id = String(raw === null || raw === undefined ? '' : raw).trim().toLowerCase();
+    if (!id) return { id: id, kind: 'empty', message: '輸入新的名字' };
+    if (id === from) return { id: id, kind: 'same', message: '這就是目前的名字，改成別的名字才能重新命名' };
+    var problem = VFXPresetIdPolicy.presetIdProblem(id);
+    if (problem) return { id: id, kind: 'bad', message: problem };
+    if (ids && ids.indexOf(id) >= 0) {
+      return {
+        id: id, kind: 'exists',
+        message: '已經有一份「' + id + '」。按「取代」會用目前這份蓋掉它：原本的「' + id +
+          '」就沒有了，「' + from + '」這個名字也會消失。'
+      };
+    }
+    return { id: id, kind: 'ok', message: '會改成 vfx/presets/' + id + '.json（分組檔一起改名）' };
+  }
+
+  /* 問新名字：頁面上的小視窗，預填目前的名字。Enter 確定、Esc 或點外面取消。
+     回傳 Promise：null＝取消；{ id, overwrite }（overwrite＝使用者看過說明、按了「取代」）。 */
+  function askRenameName(from) {
+    var box = $('rename-dialog');
+    var input = $('rename-input');
+    var hint = $('rename-hint');
+    var okBtn = $('rename-ok');
+    var owner = ctx;
+    var ids = null;
+    var usage = {};
+    var listLoaded = false;
+
+    $('rename-from').textContent = from;
+    input.value = from;
+    box.hidden = false;
+    input.focus();
+    input.select();
+
+    return new Promise(function (resolve) {
+      function check() {
+        var c = renameTargetCheck(from, input.value, ids);
+        var text = c.message;
+        var cls = 'rename-hint';
+        var allowed = c.kind === 'ok' || c.kind === 'exists';
+        if (c.kind === 'bad') cls += ' err';
+        if (c.kind === 'exists') {
+          var u = usage[c.id];
+          var labels = (u && u.labels) || [];
+          if (labels.length) text += '\n它目前用在：' + labels.join('、');
+          cls += ' warn';
+          /* 那一份正開在另一個視窗：蓋掉之後那個視窗顯示的是舊內容，在那裡按存檔會再蓋回去（另存新檔同一條規則） */
+          var holder = paneHolding(c.id);
+          if (holder && holder !== owner) {
+            text = '「' + c.id + '」正開在' + paneLabel(holder) + '。先關掉那個視窗再取代，' +
+              '否則在那裡按存檔會把舊內容再蓋回去。';
+            cls = 'rename-hint err';
+            allowed = false;
+          }
+        }
+        if (c.kind === 'ok' && !listLoaded) {
+          text += '\n（還拿不到特效清單，無法先確認這個名字有沒有人用；撞名的話不會改，會再告訴你）';
+        }
+        hint.className = cls;
+        hint.textContent = text;
+        okBtn.textContent = c.kind === 'exists' ? '取代' : '重新命名';
+        okBtn.classList.toggle('danger', c.kind === 'exists');
+        okBtn.disabled = !allowed;
+        return allowed ? c : null;
+      }
+      function close(answer) {
+        box.hidden = true;
+        $('rename-form').onsubmit = null;
+        input.oninput = null;
+        box.onkeydown = null;
+        box.onmousedown = null;
+        $('rename-cancel').onclick = null;
+        resolve(answer);
+      }
+      function submit() {
+        var c = check();
+        if (c) close({ id: c.id, overwrite: c.kind === 'exists' });
+      }
+      input.oninput = check;
+      $('rename-form').onsubmit = function (e) { e.preventDefault(); submit(); };
+      $('rename-cancel').onclick = function () { close(null); };
+      box.onkeydown = function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); close(null); }
+        /* Enter 明確接手，不靠表單的「Enter 自動送出」：那條規則要看瀏覽器怎麼合成按鍵，
+           自動化測試送的 Enter 就觸發不了（2026-09-21 實測）。輸入法組字中的 Enter 是選字，不送出。 */
+        if (e.key === 'Enter' && e.target === input && !e.isComposing) { e.preventDefault(); submit(); }
+      };
+      box.onmousedown = function (e) {
+        if (e.target === box) close(null);                 // 點外框取消
+      };
+      check();
+      /* 清單現抓：開視窗之前別的視窗、別的 AI 可能剛存了新的名字 */
+      fetch(PRESET_LIST_URL).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
+        if (!data || !Array.isArray(data.presets) || box.hidden) return;
+        ids = data.presets;
+        usage = data.usage || {};
+        listLoaded = true;
+        check();
+      }).catch(function () { /* 拿不到清單：照樣能改，撞名由伺服器擋 */ });
+    });
+  }
+
+  function renameDialogOpen() {
+    var box = $('rename-dialog');
+    return !!(box && !box.hidden);
+  }
 
   /* 回傳 Promise<伺服器回應>；失敗時丟出的錯誤帶著伺服器給的 problems／incomplete。
      fromServer：有收到伺服器的回應。沒有的話（連線斷了）不知道伺服器做到哪一步，不能說「沒變動」。 */
@@ -4796,6 +4929,7 @@
         err.fromServer = true;
         err.problems = body.problems || [];
         err.incomplete = body.incomplete === true;
+        err.exists = body.exists === true;
         throw err;
       });
     });
@@ -4805,6 +4939,10 @@
     var lines = [String(e && e.message || e)].concat((e && e.problems) || []);
     if (e && e.incomplete) {
       showSaveError('重新命名失敗，而且沒能完全還原，請照下面的清單檢查檔案', lines);
+    } else if (e && e.exists) {
+      /* 開視窗時清單裡還沒有這個名字（清單拿不到，或這段時間才有人存了這個名字）：沒有問過要不要取代，不蓋 */
+      showSaveError('沒有重新命名，特效還是原本的名字「' + from + '」',
+        [String(e.message || e), '要取代它的話，再按一次「重新命名」、輸入同一個名字，視窗會說明並讓你按「取代」。']);
     } else if (e && e.fromServer) {
       showSaveError('重新命名失敗，特效還是原本的名字「' + from + '」', lines);
     } else {
@@ -4827,7 +4965,7 @@
     var from = state.sourcePresetId;
     renaming = true;
     /* 每一步都綁在按下按鈕的那個視窗與那一份特效上（視窗可能開很久，焦點可能換走） */
-    askPresetName(from, 'rename', from).then(bindPane(function (answer) {
+    askRenameName(from).then(bindPane(function (answer) {
       return answer ? commitRename(from, answer) : null;
     })).catch(bindPane(function (e) {
       showRenameError(from, e);
@@ -4837,18 +4975,15 @@
   }
 
   function commitRename(from, answer) {
-    if (answer.problem) {
-      showSaveError('無法重新命名', [answer.problem]);
+    /* 視窗已經擋過一次；這裡是最後一道（名字規則、與原本相同） */
+    var check = renameTargetCheck(from, answer.id, null);
+    if (check.kind !== 'ok') {
+      showSaveError('無法重新命名', [check.message]);
       setSaveStatus('重新命名失敗', 'err');
       return null;
     }
-    var to = String(answer.id).trim().toLowerCase();
-    var idProblem = VFXPresetIdPolicy.presetIdProblem(to);
-    if (idProblem || to === from) {
-      showSaveError('無法重新命名', [idProblem || '「' + to + '」就是目前的名字，沒有要改的。']);
-      setSaveStatus('重新命名失敗', 'err');
-      return null;
-    }
+    var to = check.id;
+    var overwrite = answer.overwrite === true;
     /* 問名字的這段時間，這個視窗可能被關掉、或換成了別份特效。那就不改：
        改名要換的是按下按鈕時的那一份，不能換到眼前另一份身上。 */
     if (ctx.closed || state.staleDoc || state.sourcePresetId !== from) {
@@ -4856,14 +4991,23 @@
         ['問名字的這段時間，這個視窗已經關掉或換成別份特效了，所以沒有改名。']);
       return null;
     }
+    /* 要取代的那一份在這段時間被別的視窗打開了：同另存新檔，不蓋 */
+    var holder = overwrite ? paneHolding(to) : null;
+    if (holder && holder !== ctx) {
+      showSaveError('沒有取代「' + to + '」',
+        ['它正開在' + paneLabel(holder) + '。先關掉那個視窗再取代，否則在那裡按存檔會把舊內容再蓋回去。']);
+      setSaveStatus('重新命名失敗', 'err');
+      return null;
+    }
     setSaveStatus('重新命名中…', '');
     /* 分組檔還在寫的話先等它：伺服器搬的是磁碟上的分組檔，晚到的舊名字寫入會在改名後
        再長出一份舊名字的分組檔 */
     return Promise.resolve(state.layoutSave).then(bindPane(function () {
-      return renameRequest({ from: from, to: to });
+      return renameRequest({ from: from, to: to, overwrite: overwrite });
     })).then(bindPane(function (body) {
       adoptRename(from, to, body);
       var notes = [];
+      if (body.replaced) notes.push('原本的「' + to + '」已經被這份取代。');
       if (body.references && body.references.length) {
         notes.push('這些地方還寫著舊名字「' + from + '」，會失去特效，要自己改成「' + to + '」：' +
           body.references.join('、'));

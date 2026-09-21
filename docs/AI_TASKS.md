@@ -7349,6 +7349,16 @@ Worker 存活且頁面正常完成載入。
 - 修正：`groupRow` 的名稱改在 mousedown 以 `e.detail >= 2`（作業系統算的連點次數，不受 DOM 重建影響）接手，擋掉冒泡與預設焦點轉移；新增 `renameGroupRow` 先選到群組、再對重畫後的名稱元素開輸入框。
 - 驗證：新增 ROW-5b（結構守門）。實機真實雙擊：輸入框出現且取得焦點、原名全選；Enter 寫入 layout、Escape 取消；群組已選取時雙擊一樣可改；單擊行為不變；Ctrl+Z 可還原改名。未存檔。
 
+## Claude｜VFX Editor 重新命名：直接輸入新名字、可以取代既有特效（PRESET-RENAME-INLINE-20260921）
+
+- 需求：使用者把 `proj-cleave-ring-tricolor-09` 改名成 `proj-cleave-ring-tricolor` 之後 `-09` 還在；問名字開的是 Windows 存檔視窗，看起來就是另存新檔。要求改名直接輸入新名字。
+- 原因：`proj-cleave-ring-tricolor` 已經存在，而改名規則是「不蓋掉別的特效」——伺服器跳訊息框並重開存檔視窗，實際上什麼都沒改（codex 副本的檔案時間可證：tricolor 仍是 9/16 的原檔）。
+- 編輯器：新增頁面上的改名視窗（`askRenameName`，`#rename-dialog`）：預填目前名字並全選、Enter 確定（明確接手，組字中不送出）、Esc／點外面取消；`renameTargetCheck` 邊打字邊說明（空白、與目前相同、名字規則、撞名）。撞名時說明會蓋掉誰與它的用途、確定鈕換成紅色「取代」，按下去才帶 `overwrite`；要取代的那份開在別的視窗就不給按，送出前再查一次。視窗開著時全域快捷鍵不作用（Ctrl+Z 會回滾整份、Ctrl+S 的存檔請求用舊名字）；改名進行中 `savePreset` 不送（落地比改名晚會把舊檔寫回來，原本就有的風險）。
+- 伺服器：`/__rename-preset` 收 `overwrite`（必須正好是 true）。撞名沒帶就 409＋`exists: true`；帶了就取代：寫新名字途中失敗時把被取代那份的原始 bytes 寫回（`restore-old-target`），`<to>` 原本的分組檔同殘留分組檔處理；成功回 `replaced`。
+- 死碼：存檔視窗的 rename 模式（`RENAME_TITLE`、`purpose`）整個拿掉，`/__save-as-dialog` 只給另存新檔。
+- 驗證：vfx-editor-rename 19 項（新增 RENAME-17 取代、RENAME-18 取代途中失敗還原——拿掉還原會紅、RENAME-19 名字檢查；RENAME-5／12 改寫）、SAVEAS-6／7 改寫、S2 呼叫數 4→5。編輯器相關 18 支測試與 HEAD 比對無新增失敗。實機（HEAD 抽出的沙箱＋本次修改，埠 28366，不動 repo 的特效）：改成既有名字→黃色說明＋「取代」→ Enter 後舊名字兩個檔都消失、新名字換成來源內容與分組、黃色橫幅「已經被這份取代」；Esc 取消不改；大寫轉小寫；視窗開著時 Delete／Ctrl+Z／Ctrl+S 不動特效；console 無錯誤。
+- 文件：VFX_CORE_AND_PRESET_SCHEMA 改名契約、ANTIGRAVITY_VFX_EDITOR_RENAME_TEST_CASES 依新流程改寫（新增 AG-VFXRN-009 取代）。
+
 ## Claude｜VFX Editor 特效重新命名：照使用者的三條規則改（PRESET-RENAME-RULES-20260918）
 
 - 需求：特效要能直接改名。第一版（81ef55e2，另一個工作階段）採「有人用的不改、未存檔先問並存檔、改完重新開啟清空復原紀錄、途中任何失敗就還原」。使用者隨後定了三條規則，由我接手改（另一個工作階段已停）：
