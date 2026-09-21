@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜不屈鬥魂反擊地屬性（COUNTER-EARTH-20260921）
+
+- Owner Codex；Done。使用者要求保留不屈鬥魂原有效果，將反擊系列傷害轉為地屬性，包含本體、招架、二次反擊、狂化反殺與傳奇衍生段；死亡爆發原有地屬性保留。
+- 允許：skills2.js、Skills2 Excel／CSV、反擊測試、index.html／bridge.js／Worker 快取、本紀錄。禁止修改其他技能數值及使用者素材。無前置依賴，衝突預檢通過。
+- 驗收：地屬性增傷／抗性、全部追加反擊、其他超神與失效條件、原死亡爆發／復活回歸、配置同步與 build；完成後提交供使用者合併。
+- 實作：反擊共用斬擊及群組衍生傷害入口使用既有 skillElem 轉換；保留攻擊基礎、倍率、耗魔、死亡爆發與復活。Excel／CSV／JS 同步說明，主頁與 Worker 更新快取。Artifact 讀取 Excel 將空白誤判為 948，改以 ZIP/XML 精準替換說明並逐元件驗證其餘內容完全不變。
+- 測試：node --test tests/skill2-counter-bloodrage.test.cjs（26/26）；node --test --test-name-pattern="不屈鬥魂" tests/skill2-ult-evolution.test.cjs（1/1）；node tools/config_tables.cjs --apply Skills2（語意變更 0）；node tools/build_check.cjs（379 檔通過）；git diff --check 通過。
+- 唯讀檢查：formula.js、combat.js、既有超神測試與配置工具。未修改素材，無素材庫提交；使用者另編輯的配置與素材留在工作區。本次提交僅包含任務變更。未實機畫面驗證，無未完成實作；可合併，未合併或推送。Commit 見本紀錄所在提交；下一步由使用者整合。
+
 ## Codex｜提交使用者雙刀配置與素材（USER-SNAPSHOT-20260921）
 
 - Done。使用者要求先提交現有修改供合併，再繼續戰神體；戰神體尚未修改，等待使用者合併與返還公式確認。

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "presetId": "proj-cleave-ring-tricolor-09-copy",
+  "presetId": "proj-cleave-ring-tricolor-09",
   "groups": [
     {
-      "id": "proj-cleave-ring-tricolor-09-copy",
-      "name": "proj-cleave-ring-tricolor-09-copy",
+      "id": "proj-cleave-ring-tricolor-09",
+      "name": "proj-cleave-ring-tricolor-09",
       "layerIds": [
         "blade-glow-0",
         "blade-body-0",
@@ -24,6 +24,6 @@
     }
   ],
   "order": [
-    "group:proj-cleave-ring-tricolor-09-copy"
+    "group:proj-cleave-ring-tricolor-09"
   ]
 }
