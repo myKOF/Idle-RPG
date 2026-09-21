@@ -3898,6 +3898,7 @@ function sgQueueMeteor(pEnt, st, dmgVal, target, pool, radius, burnSpec, floatSe
     onImpact: (extra && extra.onImpact) || null,
     /* 特效欄位的列標記（見 sgVfxRoles）：落地爆點要讀「發出這一顆的那一階」的受擊特效。 */
     vfxTier: (extra && extra.vfxTier) || 0,
+    vfxBase: !!(extra && extra.vfxBase),
     vfxUlt: (extra && extra.vfxUlt) || '',
     vfxGid: (extra && extra.vfxGid) || ''
   });
@@ -3930,7 +3931,7 @@ function sgTickMeteors(ctx) {
     if (victims.length) {
       sgEmitVfx(m.gid, victims, m.floatSel, {
         fxKind: 'impact', variant: m.variant, elem: m.elem, area: sgAreaAround(m.target, m.radius),
-        vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, preserveDeadTargets: true
+        vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, vfxBase: m.vfxBase, preserveDeadTargets: true
       });
     }
     if (m.onImpact) m.onImpact(m, victims, ctx);
@@ -4165,7 +4166,8 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (phoenixSpec) sgFireballPhoenixBalls(m, phoenixSpec, poolSpec);
   } : null;
   /* 殞石＝第 7 階那一列的畫面，落地爆點要讀同一列的受擊特效，因此列標記一律帶上。 */
-  var meteorExtra = { bonusPctFn: bonusFn, onImpact: onMeteorImpact, vfxTier: 7 };
+  var meteorExtra = { bonusPctFn: bonusFn, onImpact: onMeteorImpact, vfxTier: 7,
+    vfxBase: !!sgUlt('fireball', 'starfallCataclysm') };
 
   for (var v = 0; v < volleys; v++) {
     var meteorTarget = meteor ? nextMeteorTarget() : primary;
@@ -4179,7 +4181,7 @@ function sgCastFireball(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
     if (meteor) {
       // 攻擊欄也可能填落地爆炸；起飛只派送施法、彈體與落點標記。
-      var meteorRoles = sgVfxRoles('fireball', { vfxTier: 7 });
+      var meteorRoles = sgVfxRoles('fireball', { vfxTier: 7, vfxBase: meteorExtra.vfxBase });
       sgEmitVfx('fireball', [meteorTarget], floatSel, {
         fxKind: 'rain', variant: 'meteor', elem: 'fire', count: 1,
         area: area, delayMs: castDelay, travelMs: [travelMs], angle: Math.PI / 3,
@@ -10718,7 +10720,8 @@ function sgTickStarfall(ctx, dt) {
     sgEmitPlayerVfx('fireball', ctx.floatSel, {
       fxKind: 'aura', variant: 'starfall-shadow', elem: 'fire',
       dur: Math.max(0.1, st.at - GT),
-      vfxUlt: 'starfallCataclysm'
+      vfxUlt: 'starfallCataclysm',
+      vfxRoles: { ground: sgVfxRoles('fireball', { vfxUlt: 'starfallCataclysm' }).ground }
     });
     if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '地爆天星!', 'buff');
   }
@@ -10730,7 +10733,8 @@ function sgTickStarfall(ctx, dt) {
       fxKind: 'rain', variant: 'meteor-starfall', elem: 'fire',
       dur: Math.max(0.1, st.at - GT), travelMs: Math.max(1, Math.round((st.at - GT) * 1000)),
       sizeMult: SG_STARFALL_SIZE_MULT,
-      vfxUlt: 'starfallCataclysm'
+      vfxUlt: 'starfallCataclysm',
+      vfxRoles: { projectile: sgVfxRoles('fireball', { vfxUlt: 'starfallCataclysm' }).projectile }
     });
   }
   if (GT < st.at) return;

@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜地爆天星單顆與朝向（STARFALL-VFX-20260921）
+
+- Done。修正普通多顆殞石誤繼承巨型特效、預警誤播彈體及素材前端方向。保留普通殞石傷害及地爆天星單顆週期。允許 skills2、proj-starfall 素材、測試、快取、本紀錄；預檢乾淨。
+- 普通殞石起飛與落地明確讀第七階本體；地爆天星預警只播 ground、下墜只播 projectile。素材 bow 原在 +Y 改為 +X 並交換長短軸，與朝 -X 尾焰一致；保留使用者 rim 透明度修改與 layout。未修改其他特效／Excel。
+- 驗證：`node --test tests/starfall-vfx.test.cjs tests/meteor-impact-timing.test.cjs` 3/3；build_check 386 檔通過；diff check 通過。素材時間序列已渲染、檢視與展示；未做瀏覽器 GPU 實機驗證。唯讀檢查 vfx-runtime、既有地爆天星傷害與排程。素材複製至素材庫 codex-authored/starfall 並核對位元組一致，素材提交見對應紀錄；其他使用者素材及 Excel 保留未提交。無未完成實作，可供使用者合併，未合併／推送。
+
 ## Codex｜殞石爆點時序（METEOR-IMPACT-TIMING-20260921）
 
 - Owner Codex；Done。使用者回報未落地先播受擊。第七階 attack／hit 同填爆炸，起飛事件立即派送 attack；傷害原本落地才算。允許 skills2、時序測試、快取及本紀錄；預檢乾淨，保留使用者素材及 Excel 修改。
