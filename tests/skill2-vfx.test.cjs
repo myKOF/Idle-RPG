@@ -416,14 +416,19 @@ test('突刺光槍 VFX 使用確認的 PNG 素材並保留 DOM／Canvas 退化�
   const thrustCss = css.slice(css.indexOf('.vfx-thrust-line {'), css.indexOf('@keyframes vfxThrustLine'));
   const thrustRenderer = renderer.slice(renderer.indexOf('function spawnThrustLine'), renderer.indexOf('/* 光束 */'));
 
-  assert.match(thrustCss, /images\/vfx\/thrust_lance\.png/);
+  const lanceRel = 'codex-authored/thrust/thrust_lance.png';
+  assert.match(thrustCss, /images\/vfx\/assets\/codex-authored\/thrust\/thrust_lance\.png/);
   assert.match(thrustCss, /var\(--vfx-length/);
   assert.match(thrustCss, /mask-image: linear-gradient/);
   assert.match(css, /@keyframes vfxThrustFlight/);
   assert.match(css, /@property --vfx-reveal-end/);
   assert.match(thrustCss, /rotate\(calc\(var\(--vfx-angle/);
-  assert.ok(fs.statSync(path.join(root, 'images/vfx/thrust_lance.png')).size > 1000, '突刺 PNG 素材應存在');
-  assert.match(renderer, /PIXI\.Assets\.load\('images\/vfx\/thrust_lance\.png\?v=20260815-narrow-rect'\)/);
+  assert.ok(fs.statSync(path.join(root, 'images/vfx/assets', lanceRel)).size > 1000, '突刺 PNG 素材應存在');
+  assert.match(renderer, /PIXI\.Assets\.load\('images\/vfx\/assets\/codex-authored\/thrust\/thrust_lance\.png\?v=20260815-narrow-rect'\)/);
+  /* 2026-09-22 素材移進 images/vfx/assets。那個目錄由 tools/vfx/export-assets.cjs 整棵換新、只留被引用的素材，
+     程式直接引用的沒登記在 vfx/runtime-assets.json 就會在下次匯出時被刪掉。 */
+  assert.ok(JSON.parse(read('vfx/runtime-assets.json')).assets.some((a) => a.assetId === lanceRel), '要登記為程式引用的素材');
+  assert.ok(JSON.parse(read('vfx/shipped-assets.json')).assets.some((a) => a.assetId === lanceRel), '要在出貨清單裡');
   assert.match(thrustRenderer, /if \(S\.thrustLanceTex\)/);
   assert.match(thrustRenderer, /g\.poly\(/);
   assert.match(thrustRenderer, /revealMask\.rect/);

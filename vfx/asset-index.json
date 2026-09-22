@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2432,
+  "assetCount": 2433,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -965,6 +965,52 @@
         "edgeContinuity": {
           "u": 1,
           "v": 0.3418
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/thrust/thrust_lance.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/thrust/thrust_lance.png",
+      "format": "png",
+      "fileSize": 276517,
+      "contentHash": "sha256:276c441dfbaece003571e9fb50aba21d0585823d0000c57bd2c96390b2d159fb",
+      "facts": {
+        "dimensions": {
+          "width": 620,
+          "height": 1269
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1279,
+          "visibleRatio": 0.1488,
+          "borderMean": 0.0052
+        },
+        "luminance": {
+          "mean": 0.5609,
+          "max": 1,
+          "borderMean": 0.0038,
+          "borderNearBlackRatio": 0.9801,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5749,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 216,
+          "y": 55,
+          "width": 195,
+          "height": 1214
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 0.9745
         },
         "backgroundVariant": "transparent"
       }

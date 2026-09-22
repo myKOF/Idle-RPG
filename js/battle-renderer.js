@@ -297,15 +297,15 @@ var BattleRenderer = (function () {
                  站著的東西（角色、血條、名字、飄字）放這裡，形狀不壓縮。
                  腳底在 (世界 x, 世界 y × GROUND_Y_SCALE)，往上 h 像素就是再減 h。
        地面平面  groundUnder／groundOver 兩個容器，scale.y = GROUND_Y_SCALE，
-                 子層（zone／presetZone／fx／presetFx）直接用**世界座標**——位置與形狀
+                 子層（舊畫法的 zone／fx）直接用**世界座標**——位置與形狀
                  由容器一次投影：落點永遠對得上模擬層，畫在上面的圓自動變成橢圓。
-     posOf／footOf／playerMuzzle 回傳地面平面座標（給特效）；飄字要用 screenPosOf。
+     Preset 特效（presetZone／presetFx）在直立空間、不壓縮：Preset 本來就是照斜視畫面畫的
+     （地面光圈在編輯器裡就壓扁成約 0.4、往上是高度），VFX Runtime 只負責把位置換成畫面座標
+     （bootVfxRuntime 傳 groundScale 與 screenPosOf／screenFootOf／screenMuzzle）。
+     posOf／footOf／playerMuzzle 回傳地面平面座標（給舊畫法）；飄字與 Preset 用 screen* 版本。
      離地高度換到地面平面座標要除以 GROUND_Y_SCALE（見 screenToGroundY），
      畫面上才會是原本那個像素高度——例如胸口在腳底上方 46px，地面平面座標是 46 / GROUND_Y_SCALE。
-
-     特效目前仍整個掛在地面平面裡（2026-09-22 只改場景，特效另案處理）：
-     貼地的（火池、魔法陣、光圈）已經是正確的橢圓；火柱、龍捲本體、粒子這類直立的
-     暫時也被壓扁，之後要改成不壓縮（改掛直立空間，或自己反向放大 1 / GROUND_Y_SCALE）。 */
+     舊畫法（Preset 沒接手、或 ?vfx=legacy）仍整個在地面平面：貼地的正確，直立的會被壓扁。 */
   /* 0.5 ≒ 相機仰角 30°。2026-09-22 先做了 0.7（≒ 44°，仍接近正上方俯視，跟 3/4 視角畫的騎士對不起來），
      使用者看過 0.7／0.5／0.4 同一格畫面的並排比較後選 0.5；示意圖量出來的地磚菱形也是 0.46～0.52。 */
   var GROUND_Y_SCALE = 0.5;
@@ -393,6 +393,11 @@ var BattleRenderer = (function () {
   function playerMuzzle() {
     var p = playerPos();
     return { x: p.x, y: p.y - screenToGroundY(52) };
+  }
+  /* 同一個胸口位置的畫面座標（給畫在直立空間的 Preset 特效） */
+  function screenMuzzle() {
+    var p = playerPos();
+    return { x: p.x, y: groundToScreenY(p.y) - 52 };
   }
   /* elId → 身體中心（地面平面，給特效）。飄字與其他直立的東西用 screenPosOf。 */
   function posOf(elId) { return screenToGround(screenPosOf(elId)); }
@@ -6337,16 +6342,20 @@ var BattleRenderer = (function () {
     var outlineLayer = new PIXI.Container();
     var overlay = new PIXI.Container();
     /* 地面平面：子層用世界座標，由容器的 scale.y 一次投影（位置與形狀都壓縮）。
-       特效有的在實體下面、有的在上面，所以分成上下兩個，縮放完全相同。 */
+       只放舊畫法（zone／fx）：那些是程式照世界尺寸畫的，貼地的圓投影後剛好是橢圓。
+       特效有的在實體下面、有的在上面，所以分成上下兩個，縮放完全相同。
+       Preset 的兩層（presetZone／presetFx）在直立空間、不壓縮：Preset 本來就是照斜視畫面畫的
+       （地面光圈已經壓扁、往上是高度），壓了會把地面光圈壓兩次、直立的特效變矮。
+       位置由 VFX Runtime 換成畫面座標（見 bootVfxRuntime 的 groundScale 與畫面座標版 ctx）。 */
     var groundUnder = new PIXI.Container();
     var groundOver = new PIXI.Container();
     groundUnder.scale.set(1, GROUND_Y_SCALE);
     groundOver.scale.set(1, GROUND_Y_SCALE);
-    groundUnder.addChild(zone); groundUnder.addChild(presetZone);
-    groundOver.addChild(fx); groundOver.addChild(presetFx);
-    world.addChild(groundUnder);
+    groundUnder.addChild(zone);
+    groundOver.addChild(fx);
+    world.addChild(groundUnder); world.addChild(presetZone);
     world.addChild(entity);
-    world.addChild(groundOver);
+    world.addChild(groundOver); world.addChild(presetFx);
     world.addChild(outlineLayer);
     world.addChild(floatLayer);
     world.addChild(playerHud);
@@ -6725,19 +6734,26 @@ var BattleRenderer = (function () {
      成功之後 onVfx 才會先問它。任何一步失敗就整批維持舊畫法。 */
   function bootVfxRuntime() {
     if (legacyVfxByQuery() || typeof VFXRuntime === 'undefined' || !S.layers) return;
+    /* Preset 畫在直立空間（見 buildScene），所以 Runtime 拿到的座標一律是畫面座標：
+       ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
     VFXRuntime.boot({
       fxContainer: S.layers.presetFx,
       zoneContainer: S.layers.presetZone,
+      groundScale: GROUND_Y_SCALE,
       ctx: {
-        posOf: posOf,
+        posOf: screenPosOf,
         chainPoint: function (id) {
           var ent = id === 'pv-float' ? S.player : S.entities[id];
           if (!ent || !ent.root || ent.root.destroyed || ent.root.visible === false || ent.root.alpha === 0) return null;
-          return id === 'pv-float' ? playerMuzzle() : posOf(id);
+          return id === 'pv-float' ? screenMuzzle() : screenPosOf(id);
         },
-        footOf: footOf,
-        playerPos: playerMuzzle,
-        projectileTargetPoint: projectileTargetPoint
+        footOf: screenFootOf,
+        playerPos: screenMuzzle,
+        projectileTargetPoint: function (id, sec) {
+          /* 預判用的是世界座標的移動取樣，算完再投影 */
+          var p = projectileTargetPoint(id, sec);
+          return { x: p.x, y: groundToScreenY(p.y) };
+        }
       }
     }).then(function (rt) {
       S.vfxrt = rt || null;
@@ -6819,7 +6835,7 @@ var BattleRenderer = (function () {
         loadSheet('player', 'images/sprites/knight/knight', { outline: true }),
         loadSheet('boss', 'images/sprites/boss_generic'),
         loadFireFlare(),
-        PIXI.Assets.load('images/vfx/thrust_lance.png?v=20260815-narrow-rect').then(function (tex) {
+        PIXI.Assets.load('images/vfx/assets/codex-authored/thrust/thrust_lance.png?v=20260815-narrow-rect').then(function (tex) {
           S.thrustLanceTex = tex;
           tex.source.scaleMode = 'linear';
         }).catch(function () { S.thrustLanceTex = null; })

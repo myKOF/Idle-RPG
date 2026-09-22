@@ -119,6 +119,31 @@ Preset 是照**野外戰場**的名目尺寸畫的。換到別的版面就得整
 
 由 `tests/vfx-runtime.test.cjs` 的 MOVE-4／MOVE-5 各釘住一條。
 
+## 1.2.4 斜俯視：Runtime 在畫面空間工作（2026-09-22）
+
+野外戰場改成輕度斜俯視：畫面 y ＝ 世界 y × `GROUND_Y_SCALE`（0.5，見 js/battle-renderer.js 檔頭）。
+
+**Preset 本來就是照斜視畫面畫的。** 地面光圈在編輯器裡就壓扁成約 0.38～0.45 的橢圓（ring_a {0.42, 0.17}、
+pillar-light 的 ring {0.18, 0.066}），往上（−y）是高度。以前完全俯視時世界座標＝畫面座標，Runtime 一直是在畫面空間工作。
+所以斜俯視之後**不能把 Preset 整份壓扁**（地面光圈被壓兩次、火柱與龍捲變矮），而是：
+
+- `presetZone`／`presetFx` 掛在不壓縮的直立空間；舊畫法的 `zone`／`fx` 仍在壓縮的地面平面（它們照世界尺寸畫）。
+- `ctx` 的座標函式回傳**畫面座標**（battle-renderer 的 `screenPosOf`／`screenFootOf`／`screenMuzzle`；預判點算完再投影）。
+- `VFXRuntime.boot({ groundScale })` → `tryPlay` 進來時由 `screenSpaceSpec` 把事件的世界座標換成畫面座標：
+  - 點：`area.y／sourceY／destY／controlY` × k（x 不變）
+  - 方向：`spec.angle`、`area.a`、`area.moveA` → `atan2(k·sinθ, cosθ)`
+  - 沿方向的長度：`lineLength`（沿 angle）、`area.speed`（沿 moveA，沒有就沿 a）、`area.w`（沿 a）× √(cos²θ + k²·sin²θ)
+  - 半徑與厚度不變：`area.r`、`orbR`、`orbitR`、`area.h`（Preset 的地面圖本身已經畫扁）
+  - 延後播放的事件到期再進來只換一次（`_screenSpace` 標記）；傳進來的事件物件不改（舊畫法還要用世界座標）。
+- 繞行軌道的壓扁比例（原本寫死 `ORBIT_FLAT` 0.62）改用 `groundScale`，與地板一致。
+- 編輯器與測試不給 `groundScale`＝1，行為與以前完全相同。
+
+**新增事件欄位時**：如果它是世界座標的點、方向或沿方向的長度，要加進 `screenSpaceSpec`，
+否則那個特效在畫面上的縱向位置或角度會差一截。由 `tests/vfx-runtime-screen-space.test.cjs` 釘住換算規則。
+
+**已知的差距**：Preset 的地面光圈手繪壓扁約 0.4，比地板的 0.5 略扁；原本就畫成正圓的地面特效仍是正圓。
+要完全一致得逐份調整 Preset（內容工作）。
+
 ## 1.4 高塔：第二個表面
 
 高塔與野外是兩種版面：野外是俯視戰場（實體有世界座標、事件帶 `area`），

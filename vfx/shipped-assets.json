@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 146,
+  "assetCount": 147,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -131,6 +131,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:f5f3abd18c3b6f4b8583c2ee962c4b76f15bae003d45be24ad8d3b96bcef62ea",
       "fileSize": 7611
+    },
+    {
+      "assetId": "codex-authored/thrust/thrust_lance.png",
+      "relativePath": "codex-authored/thrust/thrust_lance.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:276c441dfbaece003571e9fb50aba21d0585823d0000c57bd2c96390b2d159fb",
+      "fileSize": 276517
     },
     {
       "assetId": "codex-authored/tornado/fire-flow.png",

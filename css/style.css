@@ -8238,7 +8238,7 @@ textarea:disabled,
   height: var(--vfx-length, 70px);
   transform-origin: 50% 50%;
   transform: translate(-50%, -50%) rotate(calc(var(--vfx-angle, 0rad) - 1.5708rad)) scaleY(0.08);
-  background: url('../images/vfx/thrust_lance.png') center / 100% 100% no-repeat;
+  background: url('../images/vfx/assets/codex-authored/thrust/thrust_lance.png') center / 100% 100% no-repeat;
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 0%, transparent var(--vfx-reveal-end), transparent 100%);
   mask-image: linear-gradient(to bottom, #000 0%, #000 0%, transparent var(--vfx-reveal-end), transparent 100%);
   -webkit-mask-size: 100% 100%;

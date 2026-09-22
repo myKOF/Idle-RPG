@@ -992,3 +992,56 @@ test('攻擊：在 images/vfx 放偽造 marker，也不會讓那一層被當成�
   assert.equal(fs.readFileSync(precious, 'utf8'), 'precious', 'images/vfx 的檔案必須毫髮無傷');
   assert.ok(fs.existsSync(path.join(parent, exporter.MARKER_NAME)), '偽造的 marker 也不該被刪');
 });
+
+/* ---------------- RT：程式直接引用的素材（vfx/runtime-assets.json，2026-09-22） ----------------
+   匯出目錄整棵換新、只留被引用的素材。舊畫法／CSS 直接載入的圖沒有 preset 引用，
+   不登記就會在下次匯出時被刪掉（突刺光槍移進 images/vfx/assets 時補上這條路）。 */
+
+function writeRuntime(env, doc) {
+  writeJson(path.join(env.repo, exporter.RUNTIME_ASSETS_REL.split('/').join(path.sep)), doc);
+}
+
+test('RT-1. 登記在 runtime-assets 的素材即使沒有 preset 引用也會匯出，且 --check 視為最新', function () {
+  const env = scaffold({ presets: [spritePreset('p-one', ['pack/a.png'])] });
+  writeRuntime(env, { schemaVersion: 1, kind: 'vfx-runtime-assets',
+    assets: [{ assetId: 'pack/c.png', usedBy: ['js/legacy.js 舊畫法'] }] });
+  run(env);
+  assert.deepEqual(exportedFiles(env), ['pack/a.png', 'pack/c.png']);
+  const again = run(env, { dryRun: true });
+  assert.equal(again.upToDate, true, '登記過的素材不能被當成陳舊檔');
+});
+
+test('RT-2. 沒有 runtime-assets 檔＝沒有這類素材（行為與加入前相同）', function () {
+  const env = scaffold({ presets: [spritePreset('p-one', ['pack/a.png'])] });
+  run(env);
+  assert.deepEqual(exportedFiles(env), ['pack/a.png']);
+});
+
+test('RT-3. 從 runtime-assets 拿掉之後，下次匯出就不再保留（整棵換新）', function () {
+  const env = scaffold({ presets: [spritePreset('p-one', ['pack/a.png'])] });
+  writeRuntime(env, { schemaVersion: 1, kind: 'vfx-runtime-assets',
+    assets: [{ assetId: 'pack/c.png', usedBy: ['css/legacy.css'] }] });
+  run(env);
+  writeRuntime(env, { schemaVersion: 1, kind: 'vfx-runtime-assets', assets: [] });
+  run(env);
+  assert.deepEqual(exportedFiles(env), ['pack/a.png']);
+});
+
+test('RT-4. 格式不對、沒寫 usedBy、assetId 重複、索引沒有 → 整批失敗（不猜）', function () {
+  const cases = [
+    [{ schemaVersion: 1, kind: 'wrong', assets: [] }, /格式不對/],
+    [{ schemaVersion: 1, kind: 'vfx-runtime-assets', assets: [{ assetId: 'pack/c.png', usedBy: [] }] }, /usedBy/],
+    [{ schemaVersion: 1, kind: 'vfx-runtime-assets', assets: [
+      { assetId: 'pack/c.png', usedBy: ['a'] }, { assetId: 'pack/c.png', usedBy: ['b'] }] }, /重複/],
+    [{ schemaVersion: 1, kind: 'vfx-runtime-assets', assets: [{ assetId: 'pack/nope.png', usedBy: ['a'] }] }, /索引中沒有這個 assetId.*runtime:a/]
+  ];
+  cases.forEach(function (pair) {
+    const env = scaffold({ presets: [spritePreset('p-one', ['pack/a.png'])] });
+    writeRuntime(env, pair[0]);
+    assert.throws(function () { run(env); }, function (e) {
+      assert.ok(e.problems.some(function (p) { return pair[1].test(p); }), e.problems.join('；'));
+      return true;
+    });
+    assert.deepEqual(exportedFiles(env), [], '失敗時不寫出任何檔案');
+  });
+});

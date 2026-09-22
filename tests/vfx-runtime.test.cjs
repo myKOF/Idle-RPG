@@ -1702,7 +1702,11 @@ test('DEVOUR 正式素材跨8秒循環不跳轉，尾焰留在世界路徑，尺
  const nodes=[];const rt=VFXCore.createRuntime({backend:{createNode(spec){const n={spec,transforms:[]};nodes.push(n);return n},updateNode(n,t){n.transforms.push({...t})},destroyNode(){}},resolver:{has:()=>true,resolve:id=>id}});
  rt.registerPreset(field);const h=rt.play(field.id);rt.update(7.99);
  const ring=nodes.find(n=>n.spec.assetUrl.endsWith('vortex.png'));const a=ring.transforms.at(-1).rotation;rt.update(.02);const b=ring.transforms.at(-1).rotation;
- assert.ok(Math.abs((b-a)-Math.PI/4*.02)<1e-8);assert.equal(ring.transforms.at(-1).alpha,ring.transforms.at(-2).alpha);
+ assert.ok(Math.abs((b-a)-Math.PI/4*.02)<1e-8);
+ /* 2026-09-22 使用者調過漩渦的 alphaOverLife（頭 1.0、尾 0.965，沒有首尾相接），循環邊界會有約 0.03 的透明度落差。
+    不釘 preset 的確切數值（使用者之後還會再調），只驗「跨循環沒有明顯跳動」：0.05 以內。 */
+ const alphaStep=Math.abs(ring.transforms.at(-1).alpha-ring.transforms.at(-2).alpha);
+ assert.ok(alphaStep<=0.05,'跨 8 秒循環的透明度跳動 '+alphaStep.toFixed(4)+' 超過 0.05');
  assert.ok(Math.abs(ball.sizing.widthM-6*.7)<1e-8);assert.ok(Math.abs(ball.sizing.heightM-6*.7)<1e-8);
  rt.stop(h);rt.registerPreset(ball);const bh=rt.play(ball.id);rt.setTransform(bh,{position:{x:0,y:0}});rt.update(.1);
  const tail=nodes.find(n=>n.spec.assetUrl===ball.layers[0].assetId&&n.transforms.length);const before=tail.transforms.at(-1);
