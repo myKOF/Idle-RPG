@@ -7587,7 +7587,7 @@ Worker 存活且頁面正常完成載入。
   - A（b48fac7f）：GROUND_Y_SCALE = 0.7 與換算函式。world 層直屬座標改為投影後的畫面座標（角色、血條、名字、飄字、HUD、輪廓，形狀不壓縮）；特效四層（zone／presetZone／fx／presetFx）包進 scale.y = 0.7 的 groundUnder／groundOver，沿用世界座標——落點與模擬層一致，貼地的圓自動成為 1:0.7 橢圓。posOf／footOf／playerMuzzle 回傳地面平面座標（離地高度 ÷ 0.7，畫面上維持原像素高度），飄字改用 screenPosOf。地磚 tileScale.y = 0.7、先在世界單位取餘數再投影；鏡頭縱向對準投影位置。面向改用世界向量（與移動轉向同一套）。
   - B（本紀錄所在提交之前的 dac332b8）：敵人進場淡入 0.3 秒。模擬層 440 的生成距離在畫面上下方只剩約 310px，比畫布半高短，會在畫面裡憑空冒出來；生成距離是遊戲節奏不為畫面改。
 - 決策：投影只縱向縮放，不加斜切與近大遠小（加斜切會讓貼地的圓變成歪的橢圓，與「統一 1:0.7」衝突）。敵人腳下陰影、角色 8 方向素材維持原樣。一開始把示意圖的「菱形格子」當成概念圖而只做了縱向壓縮，使用者實機回報「似乎還沒調整」，C 段補上。
-- 給特效交接的現況（Codex 接手時的起點）：特效目前全部在地面平面裡，位置都對；貼地的已正確，直立的（火柱、龍捲本體、煙霧、粒子、彈體、斬擊）暫時跟著被壓扁（× GROUND_Y_SCALE，D 段起為 0.5）。直立化有兩條路：改掛 world 直屬層並用 screenPosOf 類座標，或留在地面平面自行反向放大 1 / GROUND_Y_SCALE（帶旋轉的要把旋轉放在反向縮放的子節點，否則會變成斜切）。程式裡寫死的高度（例：天降落雷的 S.H × 0.7、starfall 的 drop、各處 y − 60 之類）在地面平面裡也被壓扁，要換成 ÷ GROUND_Y_SCALE。一律引用 GROUND_Y_SCALE，不要寫死數字（D 段就改過一次）。E 段的透視是整張畫面的後製，特效照平行投影做即可，不必處理透視。
+- 特效的現況（原本交給 Codex，2026-09-22 使用者改派給 Claude，見 G 段）：Preset 特效已在直立空間、不壓縮，Runtime 吃畫面座標；舊畫法（zone／fx，Preset 沒接手或 ?vfx=legacy）仍在地面平面，直立的會被壓扁，但實機所有技能都走 Preset、舊畫法圖層 0 個節點。一律引用 GROUND_Y_SCALE，不要寫死數字。E 段的透視是整張畫面的後製，特效照平行投影做即可。
 - 驗證：新增 tests/battle-ground-projection.test.cjs（PROJ-1～6：真正跑 buildScene 看各層投影縮放與繪製順序、錨點投影後與畫面身體位置重合、目標消失退路、進場淡入）與 tests/helpers/battle-scene.cjs；player-outline、player-shield-bar 的圖層順序測試改看場景樹，basic-melee、player-cast-act 依新面向換算更新。7 個突變全部被抓到。受影響的 25 支測試 333 項：失敗與改動前基線相同，另有「雙刀逐刀目標」一條是隨機不穩（同一份程式重跑紅綠交替、與本次無關）。build_check 391 檔通過。實機（claude 副本 8331，手動推幀＋抽圖）：地磚 128×90、鏡頭與地板捲動數值吻合、角色與血條不壓縮、輪廓對齊、新敵人淡入。
 - C（86d61df1）：使用者實機回報「似乎還沒調整」。只壓縮不轉，正方形地磚只會變成扁長方形，眼睛讀成平鋪的長方形地磚，沒有斜視感；示意圖寫的是「斜視的菱形格子（Y 軸壓縮）」。
   - 地板改掛 scale.y = 0.7 的地面平面容器，TilingSprite 轉 45°（GROUND_TILE_ROTATION）：先在世界平面裡轉、再由容器壓縮，畫面上是正的 1:0.7 菱形。轉的是地板圖樣不是投影，貼地特效仍是 1:0.7 橢圓。捲動抽成 syncGroundScroll，週期＝邊長 × √2（GROUND_TILE_PERIOD，貼圖必須是正方形）。
@@ -7600,7 +7600,14 @@ Worker 存活且頁面正常完成載入。
   - 效能（670×731、解析度 1、12 隻敵人、每幀讀回像素強制等 GPU）：1.0～1.1ms／幀，?persp=0 為 0.8ms。高解析度（DPR × UI 縮放最高 2.5）尚未實測，填充成本會隨像素數增加。
   - 取捨：畫面上下緣的直立角色跟著縮放（上緣約寬 82%、高 67%，稍微矮胖）；角色永遠在中心不受影響。
   - 測試：新增 tests/battle-perspective.test.cjs（PERSP-1～5：公式、畫布每點反推都在離屏範圍內、開關兩條路徑的場景結構與重建）；PROJ-8 加上透視時地板蓋滿離屏範圍；player-event-float 的死亡倒數位置斷言跟上。6 個突變全部被抓到。受影響 26 支測試 341 項，失敗與基線相同（加上雙刀那條隨機不穩）。
-- 待確認：直立特效暫時被壓扁到 Codex 完成為止；高 DPI 下的透視效能。
+- F（26331649）：2bd16023 刪掉了 images/vfx/thrust_lance.png，但突刺舊畫法與高塔 CSS 還在用；使用者要求還原並放進 assets 底下合適的資料夾。
+  - images/vfx/assets 由 tools/vfx/export-assets.cjs 整棵換新、只留 preset 引用的素材，直接放進去下次匯出就被刪。改走同一條管線：素材放進素材庫 codex-authored/thrust/（附 SOURCE.md），asset-index 只插入這一筆（素材庫另有 9 張新圖、42 個 SVG 雜湊變動未整理，整份重掃會夾帶），新增 vfx/runtime-assets.json 登記「程式直接引用的素材」，匯出工具一併收錄（不存在＝沒有；格式錯、沒寫 usedBy、重複一律失敗）。重新匯出只多這一張，其餘 146 張不變；renderer 與 CSS 改新路徑。
+  - DEVOUR 循環測試：使用者調過漩渦的 alphaOverLife（頭 1.0、尾 0.965），循環邊界有約 0.03 的透明度落差；測試改驗跳動 ≤ 0.05，不再釘確切數值。要完全無縫得把曲線尾端改回 1.0（使用者的 preset，沒動）。
+- G（400ee321）：直立特效不壓縮（使用者改派給 Claude）。盤點 229 份 preset 發現它們本來就是照斜視畫面畫的（地面光圈已壓扁約 0.38～0.45、往上是高度），先前放進地面平面等於壓兩次。
+  - presetZone／presetFx 移到直立空間；VFX Runtime 改吃畫面座標：ctx 給 screen* 版本，boot 傳 groundScale，tryPlay 由 screenSpaceSpec 換事件座標（點 y×k、方向 atan2(k·sinθ,cosθ)、沿方向長度×投影比；半徑與厚度不變；延後事件只換一次；不改原物件）；繞行軌道壓扁由 0.62 改用 groundScale。編輯器與測試不給 groundScale＝行為不變。規則寫在 docs/vfx/VFX_RUNTIME_ADAPTER.md §1.2.4。
+  - 實機（Lv.500、火龍捲／落雷／岩甲／火球）：落雷全高、龍捲底環扁而本體直立、火球是圓的、石塊直立；console 無錯誤。測試：新增 vfx-runtime-screen-space（SCREEN-1～4）、PROJ-9；42 支相關測試與 HEAD 比較沒有新增失敗。
+  - 已知差距：preset 的地面光圈手繪約 0.4，比地板 0.5 略扁；原本就畫成正圓的地面特效仍是正圓——要完全一致得逐份調 preset（內容工作）。
+- 待確認：高 DPI 下的透視效能；地面光圈扁度與地板的細微差距（是否要逐份調 preset）。
 
 ## Claude｜普攻次數跟不上面板攻速（ATKCD-CARRY-20260922）
 
