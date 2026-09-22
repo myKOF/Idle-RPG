@@ -150,10 +150,10 @@ test('輪廓層排在所有特效之上、飄字與玩家 HUD 之下', () => {
      特效層自 2026-09-22 起包在斜俯視的地面平面容器裡，所以看真正組出來的場景樹，不看 addChild 字面。 */
   const S = buildSceneTree(renderer);
   const L = S.layers;
-  const order = drawOrder(L.world);
+  const order = drawOrder(S.app.stage);
   const names = ['zone', 'presetZone', 'entity', 'fx', 'presetFx', 'outline', 'float', 'playerHud'];
   const at = names.map((n) => order.indexOf(L[n]));
-  names.forEach((n, i) => assert.ok(at[i] >= 0, n + ' 不在 world 底下'));
+  names.forEach((n, i) => assert.ok(at[i] >= 0, n + ' 不在場景裡'));
   for (let i = 1; i < at.length; i++) {
     assert.ok(at[i] > at[i - 1], '層順序不對：' + names[i] + ' 必須畫在 ' + names[i - 1] + ' 之後');
   }

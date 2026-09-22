@@ -101,10 +101,40 @@ test('PROJ-2 舊畫法特效層在地面平面（縱向 × GROUND_Y_SCALE）；P
     assert.equal(s.x, 1, name + ' 橫向不可縮放');
     assert.ok(Math.abs(s.y - K) < 1e-12, name + ' 應在地面平面（縱向 ' + K + '），實際 ' + s.y);
   }
-  for (const name of ['presetZone', 'presetFx', 'entity', 'outline', 'float', 'playerHud']) {
+  for (const name of ['presetZone', 'presetFx', 'entity', 'outline']) {
     const s = scaleToWorld(L[name], L.world);
     assert.deepEqual(s, { x: 1, y: 1 }, name + ' 是直立空間，不可被投影壓扁');
   }
+  /* 傷害浮字與玩家 HUD 在場景外的螢幕層：開了透視時場景整張被變形，它們不能跟著被拉歪（2026-09-22 使用者回報） */
+  for (const name of ['float', 'playerHud']) {
+    assert.equal(L[name].parent, S.app.stage, name + ' 要直接掛在 stage（螢幕層），不在場景裡');
+    assert.deepEqual([L[name].scale.x, L[name].scale.y], [1, 1]);
+  }
+});
+
+test('PROJ-10 傷害浮字照正常大小播放：位置跟著透視後的目標，比對重疊用直立空間座標', () => {
+  const layout = (() => {
+    const c = { Math }; vm.createContext(c);
+    vm.runInContext(extractFunction(renderer, 'perspectiveLayout'), c);
+    return c.perspectiveLayout(670, 731, 0.82);
+  })();
+  const c = { Math, S: { persp: { layout }, layers: { world: { x: -1000, y: -300 } }, floats: [] } };
+  vm.createContext(c);
+  vm.runInContext(['perspScreenPoint', 'worldToScreenPoint', 'placeFloatNode'].map((n) => extractFunction(renderer, n)).join(';'), c);
+  /* 位置＝透視(鏡頭平移 + 直立空間座標) */
+  const p = c.worldToScreenPoint(1200, 500);
+  const want = layout.project(-1000 + 1200, -300 + 500);
+  near(p.x, want.x, '浮字 x'); near(p.y, want.y, '浮字 y');
+  /* 沒開透視：只有鏡頭平移（與加入透視前相同） */
+  c.S.persp = null;
+  const q = c.worldToScreenPoint(1200, 500);
+  assert.deepEqual([q.x, q.y], [200, 200]);
+  /* 重疊判斷用別的浮字的 lx/ly（直立空間），不是 node.x/y（螢幕座標，可能差很遠） */
+  c.S.floats.push({ node: { width: 40, height: 16, x: 9999, y: 9999 }, lx: 1200, ly: 500 });
+  const node = { width: 40, height: 16, x: 0, y: 0 };
+  c.Math = Object.assign(Object.create(Math), { random: () => 0.5 });   // 去掉 ±8 的隨機抖動
+  c.placeFloatNode(node, 1200, 500);
+  assert.ok(node.y <= 500 - 16, '同一個直立空間位置已經有字，要往上讓一行：' + node.y);
 });
 
 test('PROJ-9 VFX Runtime 拿到的是畫面座標：ctx 用 screen* 版本、groundScale 交給 Runtime 換事件座標', () => {
@@ -136,8 +166,8 @@ test('PROJ-3 圖層繪製順序不變：地面特效 < 實體 < 特效 < 輪廓 
   /* 包進地面平面容器之後，順序仍要和投影前一樣——輪廓壓在所有特效上面是它存在的理由。 */
   const S = buildSceneTree(renderer);
   const L = S.layers;
-  const order = drawOrder(L.world);
-  const at = (name) => { const i = order.indexOf(L[name]); assert.ok(i >= 0, name + ' 不在 world 底下'); return i; };
+  const order = drawOrder(S.app.stage);
+  const at = (name) => { const i = order.indexOf(L[name]); assert.ok(i >= 0, name + ' 不在場景裡'); return i; };
   const seq = [['zone', 'presetZone'], ['entity'], ['fx', 'presetFx'], ['outline'], ['float'], ['playerHud']];
   for (let i = 1; i < seq.length; i++) {
     for (const lo of seq[i - 1]) for (const hi of seq[i]) {

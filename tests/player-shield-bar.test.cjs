@@ -64,13 +64,13 @@ test('Canvas 玩家血條、法力條與護盾條位於敵人及所有浮字之�
      所以看真正組出來的場景樹。 */
   const S = buildSceneTree(renderer);
   const L = S.layers;
-  const drawn = drawOrder(L.world);
+  const drawn = drawOrder(S.app.stage);
   const names = ['zone', 'presetZone', 'entity', 'fx', 'presetFx', 'float', 'playerHud'];
   const hudAt = drawn.indexOf(L.playerHud);
-  assert.ok(hudAt >= 0, 'playerHud 不在 world 底下');
+  assert.ok(hudAt >= 0, 'playerHud 不在場景裡');
   names.slice(0, -1).forEach(function (name) {
     const at = drawn.indexOf(L[name]);
-    assert.ok(at >= 0, name + ' 不在 world 底下');
+    assert.ok(at >= 0, name + ' 不在場景裡');
     assert.ok(hudAt > at, '層順序不對：playerHud 必須畫在 ' + name + ' 之後');
   });
   assert.match(renderer, /playerHud:\s*playerHud/);
@@ -78,5 +78,6 @@ test('Canvas 玩家血條、法力條與護盾條位於敵人及所有浮字之�
   assert.match(renderer, /S\.layers\.playerHud\.addChild\(hpText\)/);
   assert.match(renderer, /S\.layers\.playerHud\.addChild\(mpText\)/);
   assert.match(renderer, /hud:\s*S\.layers\.playerHud/);
-  assert.match(renderer, /if \(p\.hud\) \{\s*p\.hud\.x = p\.root\.x;\s*p\.hud\.y = p\.root\.y;/);
+  /* 2026-09-22 起玩家 HUD 在螢幕層（不跟著透視變形），位置每幀換到角色腳底的螢幕位置 */
+  assert.match(renderer, /var hudPt = worldToScreenPoint\(p\.root\.x, p\.root\.y\);\s*p\.hud\.x = hudPt\.x;\s*p\.hud\.y = hudPt\.y;/);
 });
