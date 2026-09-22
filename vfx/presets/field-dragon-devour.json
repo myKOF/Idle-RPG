@@ -15,7 +15,29 @@
       "alpha": 0.95,
       "blendMode": "add",
       "duration": 8,
-      "rotationSpeed": 0.7853981633974483
+      "rotationSpeed": 0.7853981633974483,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.2685,
+          0.731383
+        ],
+        [
+          0.4969,
+          0.965426
+        ],
+        [
+          0.7531,
+          0.766489
+        ],
+        [
+          0.9907,
+          0.965426
+        ]
+      ]
     },
     {
       "id": "rim-embers",
@@ -61,6 +83,164 @@
           0
         ]
       ]
+    },
+    {
+      "id": "sprite-3",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "scale": {
+        "x": 0.6271,
+        "y": 0.6271
+      },
+      "alpha": 0.5,
+      "tint": "#ff8e24",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0.0185,
+          0.401405
+        ],
+        [
+          0.3025,
+          1.023936
+        ],
+        [
+          0.5494,
+          0.461316
+        ],
+        [
+          0.7778,
+          1.060427
+        ],
+        [
+          1,
+          0.567553
+        ]
+      ]
+    },
+    {
+      "id": "sprite-3-copy",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "scale": {
+        "x": 0.5246,
+        "y": 0.5246
+      },
+      "alpha": 0.3,
+      "tint": "#ff8e24",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0.0185,
+          0.401405
+        ],
+        [
+          0.3025,
+          1.023936
+        ],
+        [
+          0.5494,
+          0.461316
+        ],
+        [
+          0.7778,
+          1.060427
+        ],
+        [
+          1,
+          0.567553
+        ]
+      ]
+    },
+    {
+      "id": "sprite-3-copy-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "scale": {
+        "x": 0.4053,
+        "y": 0.4053
+      },
+      "alpha": 0.15,
+      "tint": "#ff8e24",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0.0123,
+          0.304027
+        ],
+        [
+          0.3025,
+          1.023936
+        ],
+        [
+          0.5432,
+          0.328845
+        ],
+        [
+          0.7778,
+          1.060427
+        ],
+        [
+          1,
+          0.304027
+        ]
+      ]
+    },
+    {
+      "id": "sprite-6",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/shape_a.png",
+      "scale": {
+        "x": 0.5752,
+        "y": 0.5752
+      },
+      "tint": "#0d0d0d",
+      "blendMode": "normal"
+    },
+    {
+      "id": "sprite-3-copy-3",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "scale": {
+        "x": 0.2904,
+        "y": 0.2904
+      },
+      "alpha": 0.06,
+      "tint": "#ff8e24",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0.0185,
+          0.401405
+        ],
+        [
+          0.3025,
+          1.023936
+        ],
+        [
+          0.5494,
+          0.461316
+        ],
+        [
+          0.7778,
+          1.060427
+        ],
+        [
+          1,
+          0.567553
+        ]
+      ]
+    },
+    {
+      "id": "sprite-6-copy",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/shape_a.png",
+      "scale": {
+        "x": 0.1191,
+        "y": 0.1191
+      },
+      "tint": "#0d0d0d",
+      "blendMode": "normal"
     }
   ],
   "sizing": {
