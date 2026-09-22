@@ -6,14 +6,14 @@
       "id": "field-dragon-devour",
       "name": "field-dragon-devour",
       "layerIds": [
-        "outer-fire-stream",
-        "rim-embers",
-        "sprite-3",
-        "sprite-3-copy",
-        "sprite-3-copy-2",
-        "sprite-3-copy-3",
-        "sprite-6",
-        "sprite-6-copy"
+        "dark-core",
+        "smoke-swirl",
+        "smoke-churn",
+        "inflow-a",
+        "inflow-b",
+        "fire-ring",
+        "fire-ring-flicker",
+        "core-ember"
       ]
     }
   ],

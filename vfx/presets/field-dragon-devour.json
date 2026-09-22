@@ -5,37 +5,46 @@
   "loop": true,
   "layers": [
     {
-      "id": "outer-fire-stream",
+      "id": "dark-core",
       "type": "sprite",
-      "assetId": "codex-authored/dragon-devour/vortex.png",
+      "assetId": "light-masks-1.0/transparent/shape_a.png",
       "scale": {
-        "x": 0.3418,
-        "y": 0.3418
+        "x": 0.62,
+        "y": 0.62
       },
-      "alpha": 0.95,
+      "alpha": 0.85,
+      "tint": "#000000",
+      "blendMode": "normal",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "smoke-swirl",
+      "type": "sprite",
+      "assetId": "claude-authored/dragon-devour/vortex-smoke.png",
+      "scale": {
+        "x": 0.3863,
+        "y": 0.3863
+      },
+      "alpha": 1,
       "blendMode": "add",
-      "duration": 8,
-      "rotationSpeed": 0.7853981633974483,
+      "duration": 4,
+      "loop": true,
+      "rotationSpeed": -0.7854,
       "alphaOverLife": [
         [
           0,
-          1
+          0.8
         ],
         [
-          0.2685,
-          0.731383
+          0.5,
+          0.5
         ],
         [
-          0.4969,
-          0.965426
-        ],
-        [
-          0.7531,
-          0.766489
-        ],
-        [
-          0.9907,
-          0.965426
+          1,
+          0.8
         ]
       ],
       "projection": {
@@ -44,42 +53,59 @@
       }
     },
     {
-      "id": "rim-embers",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/light_03.png",
-      "alpha": 0.7,
-      "tint": "#ffb35a",
+      "id": "smoke-churn",
+      "type": "sprite",
+      "assetId": "claude-authored/dragon-devour/vortex-smoke.png",
+      "rotation": 3.1416,
+      "scale": {
+        "x": 0.3979,
+        "y": 0.3979
+      },
+      "alpha": 1,
       "blendMode": "add",
-      "duration": 8,
-      "emission": {
-        "mode": "rate",
-        "rate": 28
+      "duration": 4,
+      "loop": true,
+      "rotationSpeed": -1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          0.15
+        ],
+        [
+          0.5,
+          0.45
+        ],
+        [
+          1,
+          0.15
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "inflow-a",
+      "type": "sprite",
+      "assetId": "claude-authored/dragon-devour/vortex-smoke.png",
+      "rotation": 1.1,
+      "scale": {
+        "x": 0.3863,
+        "y": 0.3863
       },
-      "maxParticles": 45,
-      "lifetime": [
-        0.25,
-        0.65
-      ],
-      "spawn": {
-        "radius": 142,
-        "shape": "circle"
-      },
-      "speed": [
-        8,
-        22
-      ],
-      "orbitalSpeed": 2,
-      "startScale": [
-        0.002,
-        0.0049
-      ],
+      "alpha": 0.16,
+      "blendMode": "add",
+      "duration": 2,
+      "loop": true,
+      "rotationSpeed": -2.3562,
       "alphaOverLife": [
         [
           0,
           0
         ],
         [
-          0.15,
+          0.35,
           1
         ],
         [
@@ -87,189 +113,171 @@
           0
         ]
       ],
+      "scaleOverLife": [
+        [
+          0,
+          1.05
+        ],
+        [
+          1,
+          0.5
+        ]
+      ],
       "projection": {
-        "upright": true,
         "x": 1,
         "y": 0.5
       }
     },
     {
-      "id": "sprite-3",
+      "id": "inflow-b",
       "type": "sprite",
-      "assetId": "particle-pack/png-transparent/circle_02.png",
+      "assetId": "claude-authored/dragon-devour/vortex-smoke.png",
+      "rotation": 4.2,
       "scale": {
-        "x": 0.6271,
-        "y": 0.6271
+        "x": 0.3863,
+        "y": 0.3863
+      },
+      "alpha": 0.16,
+      "blendMode": "add",
+      "delay": 1,
+      "duration": 2,
+      "loop": true,
+      "rotationSpeed": -2.3562,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.35,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1.05
+        ],
+        [
+          1,
+          0.5
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "fire-ring",
+      "type": "sprite",
+      "assetId": "claude-authored/dragon-devour/vortex-ring.png",
+      "scale": {
+        "x": 0.3863,
+        "y": 0.3863
+      },
+      "alpha": 1,
+      "blendMode": "add",
+      "duration": 2,
+      "loop": true,
+      "rotationSpeed": -1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "fire-ring-flicker",
+      "type": "sprite",
+      "assetId": "claude-authored/dragon-devour/vortex-ring.png",
+      "rotation": 2.1,
+      "scale": {
+        "x": 0.3863,
+        "y": 0.3863
+      },
+      "alpha": 1,
+      "blendMode": "add",
+      "duration": 2,
+      "loop": true,
+      "rotationSpeed": -2.3562,
+      "alphaOverLife": [
+        [
+          0,
+          0.28
+        ],
+        [
+          0.5,
+          0.58
+        ],
+        [
+          1,
+          0.28
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "core-ember",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "scale": {
+        "x": 0.045,
+        "y": 0.045
       },
       "alpha": 0.5,
-      "tint": "#ff8e24",
+      "tint": "#ffb56b",
       "blendMode": "add",
+      "duration": 1,
+      "loop": true,
       "alphaOverLife": [
         [
-          0.0185,
-          0.401405
+          0,
+          0.75
         ],
         [
-          0.3025,
-          1.023936
-        ],
-        [
-          0.5494,
-          0.461316
-        ],
-        [
-          0.7778,
-          1.060427
+          0.5,
+          1
         ],
         [
           1,
-          0.567553
+          0.75
         ]
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "sprite-3-copy",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/circle_02.png",
-      "scale": {
-        "x": 0.5246,
-        "y": 0.5246
-      },
-      "alpha": 0.3,
-      "tint": "#ff8e24",
-      "blendMode": "add",
-      "alphaOverLife": [
+      "scaleOverLife": [
         [
-          0.0185,
-          0.401405
+          0,
+          0.9
         ],
         [
-          0.3025,
-          1.023936
-        ],
-        [
-          0.5494,
-          0.461316
-        ],
-        [
-          0.7778,
-          1.060427
+          0.5,
+          1.1
         ],
         [
           1,
-          0.567553
+          0.9
         ]
       ],
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "sprite-3-copy-2",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/circle_02.png",
-      "scale": {
-        "x": 0.4053,
-        "y": 0.4053
-      },
-      "alpha": 0.15,
-      "tint": "#ff8e24",
-      "blendMode": "add",
-      "alphaOverLife": [
-        [
-          0.0123,
-          0.304027
-        ],
-        [
-          0.3025,
-          1.023936
-        ],
-        [
-          0.5432,
-          0.328845
-        ],
-        [
-          0.7778,
-          1.060427
-        ],
-        [
-          1,
-          0.304027
-        ]
-      ],
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "sprite-6",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/transparent/shape_a.png",
-      "scale": {
-        "x": 0.5752,
-        "y": 0.5752
-      },
-      "tint": "#0d0d0d",
-      "blendMode": "normal",
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "sprite-3-copy-3",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/circle_02.png",
-      "scale": {
-        "x": 0.2904,
-        "y": 0.2904
-      },
-      "alpha": 0.06,
-      "tint": "#ff8e24",
-      "blendMode": "add",
-      "alphaOverLife": [
-        [
-          0.0185,
-          0.401405
-        ],
-        [
-          0.3025,
-          1.023936
-        ],
-        [
-          0.5494,
-          0.461316
-        ],
-        [
-          0.7778,
-          1.060427
-        ],
-        [
-          1,
-          0.567553
-        ]
-      ],
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "sprite-6-copy",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/transparent/shape_a.png",
-      "scale": {
-        "x": 0.1191,
-        "y": 0.1191
-      },
-      "tint": "#0d0d0d",
-      "blendMode": "normal",
       "projection": {
         "x": 1,
         "y": 0.5
