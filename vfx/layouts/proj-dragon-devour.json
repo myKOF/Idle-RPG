@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-dragon-devour",
+  "groups": [
+    {
+      "id": "proj-dragon-devour",
+      "name": "proj-dragon-devour",
+      "layerIds": [
+        "curved-flame-trail",
+        "rolling-flames",
+        "hot-flame-tips",
+        "curved-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-dragon-devour"
+  ]
+}

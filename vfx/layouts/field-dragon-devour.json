@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "field-dragon-devour",
+  "groups": [
+    {
+      "id": "field-dragon-devour",
+      "name": "field-dragon-devour",
+      "layerIds": [
+        "outer-fire-stream",
+        "rim-embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:field-dragon-devour"
+  ]
+}

@@ -33,6 +33,14 @@ for(const ult of [null,'infernoTempest','eternalInferno','dragonDevour']) {
     const p=c.FIELD.player,m=c.FIELD.monsters[0];m.pos={x:10,y:0};m._enterCd=0;p.mp=1e9;
     const events=[];c.playCombatVfx=s=>events.push(s);
     c.castSkill2(p,[m],'firepillar','mv-float');
+    if(ult==='dragonDevour') {
+      const vortex=c.SKILL2_RT.grounds.find(f=>f.kind==='devour');assert.ok(vortex);
+      assert.equal(c.SKILL2_RT.grounds.length,1,'吞噬替換多道火柱');
+      const hp=m.hp;events.length=0;c.sgGroundExpire(vortex,[m],{});
+      assert.equal(m.hp,hp,'新漩渦結束不觸發舊火柱消散傷害');
+      assert.equal(events.length,0,'新漩渦結束不重播舊烈焰衝擊');
+      return;
+    }
     const f=c.SKILL2_RT.grounds.find(f=>f.kind==='pillar');assert.ok(f);
     const ctx={getEnemies:()=>[m]};
     c.sgGroundTick(f,[m],ctx);

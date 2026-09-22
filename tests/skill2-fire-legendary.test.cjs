@@ -600,26 +600,21 @@ test('【永劫火獄】：火龍捲在附近游走，並在移動軌跡上留�
   assert.ok(moved > 0, '火龍捲應該有移動');
 });
 
-test('【火龍之吞噬】：火龍捲聚攏在自己身邊、持續拉近敵人，且段數提高', () => {
+test('【火龍之吞噬】：單一固定火漩渦，獨立節拍與持續聚怪', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;   // sgRollCount 的小數部分不補
   maxLevels(c, 'firepillar');
-  const baseHits = (() => {
-    const b = loadContext();
-    stubHits(b);
-    b.chance = () => false;
-    maxLevels(b, 'firepillar');
-    b.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
-    return b.SKILL2_RT.grounds[0].hits;
-  })();
   setUlt(c, 'firepillar', 'dragonDevour', 1);
   const p = playerEnt();
   const far = enemy(1e9, 250, 0, '遠方');
   c.castSkill2(p, [far], 'firepillar', 'mv-float');
   const f = c.SKILL2_RT.grounds[0];
-  assert.equal(f.hits, baseHits + 3, '傷害段數 +3');
-  assert.equal(f.pullM, c.bfMeterPx(30), '拉近半徑 30 米');
+  assert.equal(c.SKILL2_RT.grounds.length,1);
+  assert.equal(f.kind,'devour');assert.equal(f.hits,22);
+  assert.equal(f.gap,.35);assert.equal(f.expiresAt,8);
+  assert.equal(f.radius,c.bfMeterPx(15));
+  assert.equal(f.devour.fx.pullM,35);
   const home = c.bfPlayerPos();
   assert.equal(Math.round(f.pos.x), Math.round(home.x), '落點改為聚攏在自己身邊');
   assert.equal(Math.round(f.pos.y), Math.round(home.y));

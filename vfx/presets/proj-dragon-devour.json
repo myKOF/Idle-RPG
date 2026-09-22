@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "id": "proj-dragon-devour",
+  "duration": 1,
+  "loop": true,
+  "layers": [
+    {
+      "id": "curved-flame-trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "position": {
+        "x": -6,
+        "y": 0
+      },
+      "alpha": 0.9,
+      "tint": "#ff6419",
+      "blendMode": "screen",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 90
+      },
+      "maxParticles": 80,
+      "lifetime": [
+        0.25,
+        0.55
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        5,
+        20
+      ],
+      "direction": 180,
+      "spread": 50,
+      "startScale": [
+        0.0488,
+        0.082
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -2,
+        2
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.4,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.65
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "rolling-flames",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "alpha": 1,
+      "tint": "#ff8726",
+      "blendMode": "screen",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 55
+      },
+      "maxParticles": 22,
+      "lifetime": [
+        0.12,
+        0.25
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        2,
+        12
+      ],
+      "direction": 180,
+      "spread": 120,
+      "startScale": [
+        0.0488,
+        0.0762
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -5,
+        5
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "hot-flame-tips",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_01.png",
+      "alpha": 0.9,
+      "tint": "#ffd36d",
+      "blendMode": "screen",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 36
+      },
+      "maxParticles": 15,
+      "lifetime": [
+        0.1,
+        0.2
+      ],
+      "spawn": {
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        6,
+        16
+      ],
+      "spread": 180,
+      "startScale": [
+        0.0273,
+        0.0449
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "curved-embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "alpha": 0.9,
+      "tint": "#ffad35",
+      "blendMode": "add",
+      "duration": 1,
+      "emission": {
+        "mode": "rate",
+        "rate": 24
+      },
+      "maxParticles": 30,
+      "lifetime": [
+        0.3,
+        0.6
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        6,
+        22
+      ],
+      "direction": 180,
+      "spread": 70,
+      "startScale": [
+        0.002,
+        0.0059
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 30,
+      "width": 30
+    },
+    "heightM": 4.2,
+    "shape": "custom",
+    "widthM": 4.2
+  }
+}

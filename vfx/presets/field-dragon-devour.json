@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "id": "field-dragon-devour",
+  "duration": 8,
+  "loop": true,
+  "layers": [
+    {
+      "id": "outer-fire-stream",
+      "type": "sprite",
+      "assetId": "codex-authored/dragon-devour/vortex.png",
+      "scale": {
+        "x": 0.3418,
+        "y": 0.3418
+      },
+      "alpha": 0.95,
+      "blendMode": "add",
+      "duration": 8,
+      "rotationSpeed": 0.7853981633974483
+    },
+    {
+      "id": "rim-embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "alpha": 0.7,
+      "tint": "#ffb35a",
+      "blendMode": "add",
+      "duration": 8,
+      "emission": {
+        "mode": "rate",
+        "rate": 28
+      },
+      "maxParticles": 45,
+      "lifetime": [
+        0.25,
+        0.65
+      ],
+      "spawn": {
+        "radius": 142,
+        "shape": "circle"
+      },
+      "speed": [
+        8,
+        22
+      ],
+      "orbitalSpeed": 2,
+      "startScale": [
+        0.002,
+        0.0049
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.15,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 150
+    },
+    "radiusM": 15,
+    "shape": "circle"
+  }
+}

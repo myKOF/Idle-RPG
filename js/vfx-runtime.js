@@ -669,7 +669,7 @@ var VFXRuntime = (function () {
         ? {x:spec.area.controlX,y:spec.area.controlY} : null;
       var enterAngle = !knifeFlight && chained ? arrivalAngle(ids[0]) : NaN;
       var ctrl = knifeFlight ? knifeControl : curveControl(from, to, enterAngle);
-      var arcHeight = presetId === 'proj-waterball-flow' ? Math.max(0,num(spec.arcM,0)) * (typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10) : 0;
+      var arcHeight = Math.max(0,num(spec.arcM,0)) * (typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10);
       if (arcHeight > 0) ctrl = {x:(from.x+to.x)/2,y:(from.y+to.y)/2-2*arcHeight};
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
       var facing = curveHeading(from, ctrl, to, 0);
@@ -692,7 +692,7 @@ var VFXRuntime = (function () {
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || ''), control: knifeControl, lastTo: to,
+        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || spec.variant === 'dragon-devour-ball', control: knifeControl, lastTo: to,
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
@@ -839,6 +839,11 @@ var VFXRuntime = (function () {
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
       if (g.uniform) p.scale = g.sx;
       else { p.scaleX = g.sx; p.scaleY = g.sy; }
+      if (g.devour) {
+        // 首尾淡入淡出只取施放壽命；不放進會每圈重播的 Preset。
+        var fade = Math.max(0, Math.min(1, (clock - g.bornAt) / .2, (g.expireAt - clock) / .3));
+        p.opacity = fade * fade * (3 - 2 * fade);
+      }
       if (g.rise) {
         var enter = Math.max(0, Math.min(1, (clock - g.bornAt) / 0.3));
         var leave = Math.max(0, Math.min(1, (g.expireAt - clock) / 0.3));
@@ -884,10 +889,14 @@ var VFXRuntime = (function () {
            (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0))));
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
       key = (role === 'field' ? 'field:' : 'ground:') + key;
-      var keep = Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
+      // 吞噬全場只保留一個：新施放立即移除舊畫面，並從新位置重新出生。
+      if (spec.variant === 'dragon-devour') key = 'field:dragon-devour';
+      // 吞噬只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
+      var keep = spec.variant === 'dragon-devour' ? Math.max(0, num(spec.dur, 0))
+        : Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
       var mult = noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
       var live = grounds[key];
-      if (live && live.presetId === presetId) {
+      if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
         groundAim(live, spec);
         return true;
@@ -896,6 +905,7 @@ var VFXRuntime = (function () {
       var g = {
         bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
+        devour: spec.variant === 'dragon-devour',
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
         x: 0, y: 0, rot: 0, trot: 0, sx: 1, sy: 1, tsx: 1, tsy: 1, uniform: true
@@ -1518,7 +1528,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260916-knife-user-tuning';
+  var DATA_VERSION = '20260922-dragon-devour-v3';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
