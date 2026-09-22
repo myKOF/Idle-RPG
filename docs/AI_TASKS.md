@@ -7468,13 +7468,19 @@ Worker 存活且頁面正常完成載入。
   - tools/build_character_sprites.cjs：原圖 → images/sprites/knight/。每個動作裁到所有方向與幀的聯集，Pixi trim 還原成 128 邏輯格（共用一個 anchor）；影子＝純黑且 alpha < 240（本體一律 255，逐像素量過），輪廓先算好只框 alpha ≥ 250 的本體（刀光拖影不框）；--check 比對與素材庫同步。
   - battle-renderer：loadDirectionalSheet；移動面向移動方向（10° 遲滯）、出手精準面向目標（腳底對腳底）、出手動作播完前不因移動轉走、換方向接著播同一幀；不翻面；影子在圖裡不另畫橢圓；普攻兩段輪流、不插隊施法；死亡播 die 停格不轉 90 度，復活倒放當起身；跑步播放速度跟實際移速（300 px/s ↔ 30 fps，實測著地腳每幀滑 7 px × 1.4 倍）。
   - 節奏：普攻 first 3／4（出劍第 6～7／7～8 幀），因為傷害數字在事件到達那一刻出現。
-- B（本紀錄所在提交）：
+- B（5dea3230；測試字面斷言跟上在 e469ed11）：
   - 根因：技能特效大多交給 Preset，onVfx 在 Preset 接手後就 return，走不到角色動作；而從 vfx 事件猜「哪一則是施放」不可靠（一次施放送好幾則）。
   - 協議 v36：新增事件種類 act＝{ act:'cast', elId, target, lockMs }。js/skills.js beginSkillCast（施放硬直起點，新版／舊版／潛能共用；自動連發不經過這裡）經 shim.js emitPlayerAct 送出，走 visual 低延遲；ui.js 轉給 BattleRenderer.onAct。
   - 渲染器：延後 POS_BUFFER_MS、面向目標、播 cast；把 first→release（2→8）這段調成剛好在硬直內播完（預設 0.2 秒＝30 fps，夾在 12～60 fps），釋放幀對到特效出現的那一刻。onVfx 只有普攻帶動角色動作。
   - 快取：battle-renderer 1.6.131、skills.js 1.0.39、ui.js 1.0.75、protocol.js ?v=37、bridge.js 1.0.137、WORKER_ASSET_VERSION 20260922-cast-act、sim.worker 的 protocol／shim／skills token。
 - 驗證：新增 player-directional-sprite（8 項，含與素材庫同步、影子上沒有輪廓）、player-cast-act（7 項，含突變：拿掉「只有普攻」條件 CAST-7 會紅）；basic-melee、hit-react-throttle、player-outline、worker-protocol 依新行為改寫。實機（claude 副本 8331，手動推幀＋抽圖）：8 方向與攻擊姿勢、血條位置、死亡停格與起身、施法 act 帶 lockMs 200 且以 30 fps 播放；console 無錯誤。全測試與 HEAD 比對見提交說明。
-- 風險／待確認：素材包授權未知；Clarice 的 player.png／json 保留未刪；高塔仍走 DOM，沒有角色動作（設計如此）。
+- C（本紀錄所在提交）：使用者確認 Clarice 的舊圖不要了。
+  - 刪除 images/sprites/player.png／player.json（換騎士後已無人載入）。
+  - tools/gen_placeholder_sprites.py 拿掉產生玩家佔位圖那段（重跑會把 player.png 生回來），只剩 BOSS；重跑後 boss_generic 逐像素與 JSON 皆與提交版相同。
+  - 刪除 scratch/_outline_verify.html：那頁只抓 player.json 驗執行期現算的輪廓，檔案沒了就開不起來。
+  - 未動：tools/pack_character_sheet.py（通用的 Aseprite 打包工具，說明裡以 Clarice 為例，留著給之後的角色或 BOSS 用）。
+  - 待辦：battle-renderer 的 buildOutlineFrames（執行期現算輪廓）與 PLAYER_OUTLINE.radiusPx 自換騎士起已無人呼叫（騎士的輪廓是工具先算好的）；battle-renderer.js 第 100、788、6613 行與 tests/player-outline.test.cjs 開頭的註解仍提到 Clarice／player.json／_outline_verify。這兩支檔案在這次提交時正被同一副本的另一段工作修改中（未提交），所以沒有動。
+- 風險／待確認：素材包授權未知；高塔仍走 DOM，沒有角色動作（設計如此）。
 
 ## Claude｜VFX Editor 重新命名：直接輸入新名字、可以取代既有特效（PRESET-RENAME-INLINE-20260921）
 
