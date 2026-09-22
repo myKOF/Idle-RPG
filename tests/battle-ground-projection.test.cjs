@@ -12,7 +12,7 @@ const K = groundYScale(renderer);
 /* ============================================================
    戰鬥畫面的斜俯視投影（2.5D，js/battle-renderer.js 的 GROUND_Y_SCALE，2026-09-22）
 
-   需求：地面縱向壓縮成約 0.7，貼地的圓呈 1:0.7 的橢圓；角色等直立的東西不壓縮；
+   需求：地面縱向壓縮（最初 0.7，使用者看過並排比較後改 0.5），貼地的圓呈 1 : 壓縮比 的橢圓；角色等直立的東西不壓縮；
    只改表現，模擬層的座標、距離、技能範圍不動。
 
    作法是兩種座標並存（見 battle-renderer 檔頭「斜俯視投影」）：
@@ -24,10 +24,10 @@ const K = groundYScale(renderer);
      ③ 特效錨點（posOf／footOf／playerMuzzle）的座標系弄錯 —— 爆點、彈道起點離開角色身體。
    ============================================================ */
 
-test('PROJ-1 壓縮比是 0.7；地板在世界平面裡轉 45°（菱形），再由同一個壓縮比投影', () => {
+test('PROJ-1 壓縮比是 0.5（使用者選定）；地板在世界平面裡轉 45°（菱形），再由同一個壓縮比投影', () => {
   /* 只壓縮不轉，正方形地磚只會變成扁長方形，看起來像平鋪的長方形地磚（2026-09-22 使用者實機回報「似乎還沒調整」）。
      壓縮必須在轉之後：寫在 tileScale 上是先壓再轉，會得到歪的平行四邊形。 */
-  assert.equal(K, 0.7);
+  assert.equal(K, 0.5);
   const S = buildSceneTree(renderer);
   const g = S.groundTile;
   assert.deepEqual(scaleToWorld(g, S.app.stage), { x: 1, y: K }, '地板的總縮放要與特效層同一個投影');
@@ -36,7 +36,7 @@ test('PROJ-1 壓縮比是 0.7；地板在世界平面裡轉 45°（菱形），�
 });
 
 test('PROJ-8 地板的 TilingSprite 在本地空間是正方形且蓋滿畫布（Pixi v8 寬高不同時 tileRotation 會被拉歪）', () => {
-  /* 2026-09-22 實測：926×3023 的地板轉 45° 後變成一組細密、一組稀疏的陡斜線；改成正方形就是 1:0.7 的菱形。 */
+  /* 2026-09-22 實測：926×3023 的地板轉 45° 後變成一組細密、一組稀疏的陡斜線；改成正方形就是正的菱形。 */
   for (const [W, H] of [[670, 731], [670, 1860], [1400, 500]]) {
     const g = { width: 0, height: 0, x: 0, y: 0 };
     const c = { Math, S: { layers: {}, groundTile: g, W, H } };
@@ -166,7 +166,7 @@ function extractBlock(src, marker) {
 }
 
 test('PROJ-6 敵人進場淡入：從 0 漸進到 1，進場結束時剛好完全不透明，進場很短也不跳格', () => {
-  /* 斜俯視把縱向壓成 0.7 之後，模擬層 440 的生成距離在畫面上下方只剩約 310px，
+  /* 斜俯視把縱向壓縮之後，模擬層 440 的生成距離在畫面上下方只剩 440 × 壓縮比（0.5 時 220px），
      比畫布半高還短——不淡入就是在畫面裡憑空冒出來。 */
   const tick = extractBlock(renderer, "if (e.state === 'entering') {");
   const fade = Number(/var ENEMY_FADE_IN_SEC = ([0-9.]+);/.exec(renderer)[1]);
