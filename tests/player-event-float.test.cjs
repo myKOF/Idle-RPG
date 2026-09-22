@@ -148,7 +148,9 @@ test('血條與死亡倒數的畫面間距及字級符合死亡 UI 規格', () =
   assert.match(renderer, /mpText\.y\s*=\s*PLAYER_VITALS_Y\s*\+\s*16/);
   assert.match(reviveHud, /fontSize:\s*24/);
   assert.match(reviveHud, /reviveText\.y\s*=\s*-104/);
-  assert.match(renderer, /p\.reviveText\.y\s*=\s*world\.y\s*\+\s*p\.root\.y\s*-\s*104/);
+  /* 倒數在螢幕層，開了輕微透視（2026-09-22）要先換到變形後的螢幕位置，高度仍是角色腳底上方 104 */
+  assert.match(renderer, /perspScreenPoint\(world\.x\s*\+\s*p\.root\.x,\s*world\.y\s*\+\s*p\.root\.y\s*-\s*104\)/);
+  assert.match(renderer, /p\.reviveText\.y\s*=\s*revivePt\.y/);
 });
 
 test('玩家死亡時紅色視野迷霧由外向中心收縮，復活後恢復黑色暗角', () => {

@@ -50,6 +50,10 @@ var BattleRenderer = (function () {
   function legacyVfxByQuery() {
     return typeof location !== 'undefined' && /[?&]vfx=legacy(&|$)/.test(location.search || '');
   }
+  /* ?persp=0：關掉輕微透視（見 PERSPECTIVE_TOP_SCALE），場景直接畫在畫布上，用來 A／B 比對畫面與效能。 */
+  function perspectiveDisabledByQuery() {
+    return typeof location !== 'undefined' && /[?&]persp=0(&|$)/.test(location.search || '');
+  }
   /* ?outline=0：關掉穿透式角色輪廓（見 PLAYER_OUTLINE），用來直接比對有無輪廓的畫面。 */
   function outlineDisabledByQuery() {
     return typeof location !== 'undefined' && /[?&]outline=0(&|$)/.test(location.search || '');
@@ -155,6 +159,8 @@ var BattleRenderer = (function () {
     imgTex: {},               // 敵人圖檔快取：src -> Texture | 'loading' | 'failed'
     thrustLanceTex: null,     // 突刺光槍圖片；載入失敗時由 spawnThrustLine 保留程序化退化畫法
     groundTile: null,
+    sceneRoot: null,          // 地板＋world；開透視時畫進離屏貼圖（見 syncPerspective）
+    persp: null,              // 輕微透視：{ rt, mesh, res, layout, vigTex, vigKey }；沒開是 null
     vignette: null,
     deathFog: null,
     deathFogCanvas: null,
@@ -295,15 +301,17 @@ var BattleRenderer = (function () {
                  由容器一次投影：落點永遠對得上模擬層，畫在上面的圓自動變成橢圓。
      posOf／footOf／playerMuzzle 回傳地面平面座標（給特效）；飄字要用 screenPosOf。
      離地高度換到地面平面座標要除以 GROUND_Y_SCALE（見 screenToGroundY），
-     畫面上才會是原本那個像素高度——例如胸口在腳底上方 46px，地面平面座標是 46 / 0.7。
+     畫面上才會是原本那個像素高度——例如胸口在腳底上方 46px，地面平面座標是 46 / GROUND_Y_SCALE。
 
      特效目前仍整個掛在地面平面裡（2026-09-22 只改場景，特效另案處理）：
      貼地的（火池、魔法陣、光圈）已經是正確的橢圓；火柱、龍捲本體、粒子這類直立的
      暫時也被壓扁，之後要改成不壓縮（改掛直立空間，或自己反向放大 1 / GROUND_Y_SCALE）。 */
-  var GROUND_Y_SCALE = 0.7;
-  /* 地磚在世界平面裡的鋪法：正方形轉 45°（菱形鋪法），再由同一個 GROUND_Y_SCALE 投影成 1:0.7 的菱形。
+  /* 0.5 ≒ 相機仰角 30°。2026-09-22 先做了 0.7（≒ 44°，仍接近正上方俯視，跟 3/4 視角畫的騎士對不起來），
+     使用者看過 0.7／0.5／0.4 同一格畫面的並排比較後選 0.5；示意圖量出來的地磚菱形也是 0.46～0.52。 */
+  var GROUND_Y_SCALE = 0.5;
+  /* 地磚在世界平面裡的鋪法：正方形轉 45°（菱形鋪法），再由同一個 GROUND_Y_SCALE 投影成 1 : GROUND_Y_SCALE 的菱形。
      只壓縮不轉的話，正方形只會變成扁長方形，看起來像平鋪的長方形地磚，沒有斜視感。
-     轉的是地板圖樣、不是投影，所以貼地特效的圓照樣是正的 1:0.7 橢圓。
+     轉的是地板圖樣、不是投影，所以貼地特效的圓照樣是正的 1 : GROUND_Y_SCALE 橢圓。
      GROUND_TILE_PERIOD 是「轉過之後，圖樣沿畫面橫／縱軸多長重複一次」相對於貼圖邊長的倍率：
      45° 是 √2（0° 是 1）。兩者綁在一起，只改其一地板捲動會在取餘數時跳格（見 syncGroundScroll）。 */
   var GROUND_TILE_ROTATION = Math.PI / 4;
@@ -6114,9 +6122,10 @@ var BattleRenderer = (function () {
     world.y = S.H / 2 - groundToScreenY(cam.y) + shy;
     syncGroundScroll(cam, shx, shy);
     if (p && p.reviveText && p.reviveText.visible) {
-      /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平。 */
-      p.reviveText.x = world.x + p.root.x;
-      p.reviveText.y = world.y + p.root.y - 104;
+      /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平；開了透視要換到變形後的螢幕位置。 */
+      var revivePt = perspScreenPoint(world.x + p.root.x, world.y + p.root.y - 104);
+      p.reviveText.x = revivePt.x;
+      p.reviveText.y = revivePt.y;
     }
 
     /* 敵人 */
@@ -6341,10 +6350,15 @@ var BattleRenderer = (function () {
     world.addChild(outlineLayer);
     world.addChild(floatLayer);
     world.addChild(playerHud);
-    app.stage.addChild(bg);
-    app.stage.addChild(world);
+    /* 場景根＝地板＋world。開了輕微透視（見 PERSPECTIVE_TOP_SCALE）時它不掛在 stage 上，
+       每幀先畫進離屏貼圖再由透視網格貼到畫面；沒開就直接掛在 stage 上。由 syncPerspective 決定。 */
+    var sceneRoot = new PIXI.Container();
+    sceneRoot.addChild(bg);
+    sceneRoot.addChild(world);
+    app.stage.addChild(sceneRoot);
     app.stage.addChild(overlay);
     S.bgLayer = bg;
+    S.sceneRoot = sceneRoot;
 
     /* 死亡時獨立覆蓋黑色暗角：中心透明區由大逐步縮小，外圍因此像淡紅色視野迷霧
        從四周壓向倒地的玩家。用螢幕座標層，避免鏡頭移動時迷霧跟著世界漂移。 */
@@ -6444,17 +6458,20 @@ var BattleRenderer = (function () {
   }
   function layoutScene() {
     if (!S.layers) return;
-    /* 地板鋪滿畫布再多一格，鏡頭移動時邊緣不會露出底色。
+    syncPerspective();
+    /* 要畫出來的範圍（平行投影的畫面座標）：沒開透視就是畫布，開了是離屏貼圖涵蓋的那一塊（見 perspectiveLayout）。 */
+    var R = sceneDrawRect();
+    /* 地板鋪滿這個範圍再多一格，鏡頭移動時邊緣不會露出底色。
        地板在地面平面容器裡（縱向被壓成 GROUND_Y_SCALE），本地的高度與位置要換回世界單位。
        ⚠️ 本地尺寸必須是正方形：Pixi v8 的 TilingSprite 在寬高不同時，tileRotation 會被長寬比拉歪
-       （2026-09-22 實測 926×3023：轉 45° 的方格變成一組細密、一組稀疏的陡斜線，而不是 1:0.7 的菱形）。
+       （2026-09-22 實測 926×3023：轉 45° 的方格變成一組細密、一組稀疏的陡斜線，而不是正的菱形）。
        取兩邊較大者當邊長；多出來的部分在畫面外，GPU 只畫得到畫面內的像素，不多花成本。 */
     if (S.groundTile) {
-      var groundSide = Math.max(S.W + 256, screenToGroundY(S.H + 256));
+      var groundSide = Math.max(R.width + 256, screenToGroundY(R.height + 256));
       S.groundTile.width = groundSide; S.groundTile.height = groundSide;
-      S.groundTile.x = -128; S.groundTile.y = screenToGroundY(-128);
+      S.groundTile.x = R.x - 128; S.groundTile.y = screenToGroundY(R.y - 128);
     }
-    if (S.vignette) { S.vignette.width = S.W; S.vignette.height = S.H; }
+    syncVignette(R);
     if (S.deathFog) {
       var fogSize = Math.max(S.W, S.H);
       S.deathFog.width = fogSize;
@@ -6470,6 +6487,150 @@ var BattleRenderer = (function () {
     }
     if (S.bossBar) { S.bossBar.root.x = S.W / 2; S.bossBar.root.y = BOSS_BAR_Y; }
     /* 槽位每幀由 tickWorld 依玩家位置重算，這裡不需要再覆寫實體座標 */
+  }
+
+  /* ============ 輕微透視（2026-09-22） ============
+     斜俯視（GROUND_Y_SCALE）是平行投影：遠近的地磚一樣大，少了「近大遠小」這個最強的深度線索。
+     使用者比對示意圖時量出上下兩塊地磚寬差 5%、高差 18%，看過三種強度的並排比較後選上緣 ×0.82。
+
+     作法是後製：場景（地板＋world）照原本的平行投影畫進一張離屏貼圖，再用 PerspectiveMesh
+     把整張貼到畫面上——上方縮小、下方放大，畫面中心（角色所在）不動。
+       t = y − cy，w = 1 − β·t，x' = cx + (x − cx) / w，y' = cy + t / w，β = (1 / 上緣縮放 − 1) / cy
+     這是一個單應變換：水平線保持水平、中心處縮放為 1，橫向縮放 1/w、縱向 1/w²。
+     地面在平行投影裡是世界平面的仿射像，再套一次單應變換，結果就是真正的針孔相機透視——
+     地板與所有貼地特效自動遵守同一套透視，特效、站位、模擬層的程式都不用知道這件事。
+     代價：每幀多畫一次離屏貼圖；畫面上下緣的直立角色會跟著一點縮放（上緣約寬 82%、高 67%）。
+
+     不參與變形的只有螢幕層 overlay（BOSS 血條、暫停遮罩、死亡迷霧、復活倒數）。
+     暗角原本畫在地板與世界之間，所以留在場景裡，改用預先反向變形過的貼圖（見 perspectiveVignetteTexture），
+     變形後剛好是原本那個以畫布為準的暗角。
+     ?persp=0 或 PERSPECTIVE_TOP_SCALE = 1 就整個不走這條路，場景直接掛在 stage 上（與加入透視前完全相同）。 */
+  var PERSPECTIVE_TOP_SCALE = 0.82;
+  var PERSPECTIVE_MESH_VERTS = 24;        // 網格細分：貼圖在每個三角形裡是線性內插，格數夠多才貼近真正的透視
+  var PERSPECTIVE_RENDER_PRIORITY = -10;  // 排在 tickWorld（NORMAL＝0）之後、Application 的 render（LOW＝−25）之前
+  function perspectiveTopScale() {
+    if (perspectiveDisabledByQuery()) return 1;
+    var s = Number(PERSPECTIVE_TOP_SCALE);
+    /* β·cy 必須小於 1（上緣縮放 > 0.5），否則上緣的消失線會跑進畫面裡 */
+    return (isFinite(s) && s > 0.55 && s < 1) ? s : 1;
+  }
+  /* 透視版面：給畫布寬高與上緣縮放，算出變形公式與離屏貼圖要涵蓋的範圍（平行投影的畫面座標）。
+     螢幕上緣 y' = 0 對應平行投影的 t0 = −cy / (1 − β·cy)，那一列要的寬度最大（1/w 最小），
+     所以上方與左右要多畫；下緣 y' = H 對應 t1 = cy / (1 + β·cy) < cy，平行投影畫面最下面那段反而用不到。 */
+  function perspectiveLayout(W, H, topScale) {
+    var cx = W / 2, cy = H / 2;
+    var beta = (1 / topScale - 1) / cy;
+    var t0 = -cy / (1 - beta * cy), t1 = cy / (1 + beta * cy);
+    var pad = 8;
+    var x0 = -Math.ceil((W / 2) * (-beta * t0)) - pad;   // 左右多畫 (W/2)·(w0 − 1)
+    var y0 = -Math.ceil(-(cy + t0)) - pad;
+    var x1 = W - x0;
+    var y1 = Math.ceil(cy + t1) + pad;
+    function project(x, y) {
+      var t = y - cy, w = 1 - beta * t;
+      return { x: cx + (x - cx) / w, y: cy + t / w };
+    }
+    return {
+      topScale: topScale, beta: beta, cx: cx, cy: cy,
+      x0: x0, y0: y0, width: x1 - x0, height: y1 - y0,
+      corners: [project(x0, y0), project(x1, y0), project(x1, y1), project(x0, y1)],
+      project: project
+    };
+  }
+  /* 平行投影畫面座標 → 螢幕座標（沒開透視就原樣回傳）。給螢幕層上跟著角色走的東西用。 */
+  function perspScreenPoint(x, y) {
+    var L = S.persp && S.persp.layout;
+    return L ? L.project(x, y) : { x: x, y: y };
+  }
+  /* 場景要畫出來的範圍（平行投影的畫面座標） */
+  function sceneDrawRect() {
+    var L = S.persp && S.persp.layout;
+    if (L) return { x: L.x0, y: L.y0, width: L.width, height: L.height };
+    return { x: 0, y: 0, width: S.W, height: S.H };
+  }
+  /* 建立／更新離屏貼圖與透視網格；尺寸或解析度變了就重建。由 layoutScene 呼叫（resize 也會走到）。 */
+  function syncPerspective() {
+    var app = S.app, root = S.sceneRoot;
+    if (!app || !root) return;
+    var top = perspectiveTopScale();
+    var P = S.persp;
+    if (top >= 1) {
+      if (P) {
+        if (P.mesh) P.mesh.destroy();
+        if (P.rt) P.rt.destroy(true);
+        if (P.vigTex) { if (S.vignette) S.vignette.texture = vignetteTexture(); P.vigTex.destroy(true); }
+        S.persp = null;
+      }
+      if (root.parent !== app.stage) app.stage.addChildAt(root, 0);
+      root.position.set(0, 0);
+      return;
+    }
+    var lay = perspectiveLayout(S.W, S.H, top);
+    var res = app.renderer.resolution;
+    if (!P) P = S.persp = { rt: null, mesh: null, res: 0, layout: null, vigTex: null, vigKey: '' };
+    if (!P.rt || P.rt.width !== lay.width || P.rt.height !== lay.height || P.res !== res) {
+      if (P.mesh) { P.mesh.destroy(); P.mesh = null; }
+      if (P.rt) P.rt.destroy(true);
+      /* antialias：場景原本直接畫在開了 MSAA 的畫布上；改畫進貼圖若不開，Graphics 的邊緣會變成鋸齒 */
+      P.rt = PIXI.RenderTexture.create({ width: lay.width, height: lay.height, resolution: res, antialias: true });
+      P.res = res;
+    }
+    if (!P.mesh) {
+      P.mesh = new PIXI.PerspectiveMesh({ texture: P.rt, verticesX: PERSPECTIVE_MESH_VERTS, verticesY: PERSPECTIVE_MESH_VERTS });
+      app.stage.addChildAt(P.mesh, 0);
+    }
+    var c = lay.corners;
+    P.mesh.setCorners(c[0].x, c[0].y, c[1].x, c[1].y, c[2].x, c[2].y, c[3].x, c[3].y);
+    if (root.parent) root.parent.removeChild(root);
+    /* 離屏貼圖的 (0, 0) 是平行投影畫面座標的 (x0, y0) */
+    root.position.set(-lay.x0, -lay.y0);
+    P.layout = lay;
+  }
+  /* 每幀把場景畫進離屏貼圖（掛在 app.ticker，優先序見 PERSPECTIVE_RENDER_PRIORITY）。 */
+  function renderPerspectiveScene() {
+    var P = S.persp;
+    if (!P || !P.rt || !S.sceneRoot || !S.app) return;
+    S.app.renderer.render({ container: S.sceneRoot, target: P.rt, clear: true });
+  }
+  /* 暗角（見 vignetteTexture）在畫布座標上的不透明度：u、v 是畫布上的比例位置（0～1）。
+     與原本那張放射漸層同一條曲線：內半徑 40、外半徑 150（256 格的貼圖），62% 處 0.10、外緣 0.55。 */
+  function vignetteAlphaAt(u, v) {
+    var d = Math.sqrt((u - 0.5) * (u - 0.5) + (v - 0.5) * (v - 0.5)) * 256;
+    var f = Math.max(0, Math.min(1, (d - 40) / 110));
+    return f <= 0.62 ? 0.10 * f / 0.62 : 0.10 + 0.45 * (f - 0.62) / 0.38;
+  }
+  /* 預先反向變形的暗角：貼圖涵蓋離屏範圍，每個像素先算出它變形後落在畫布的哪裡，再取原本暗角在那裡的濃度。 */
+  function perspectiveVignetteTexture(lay, W, H) {
+    var N = 192;
+    var c = document.createElement('canvas');
+    c.width = c.height = N;
+    var g = c.getContext('2d');
+    var img = g.createImageData(N, N);
+    for (var j = 0; j < N; j++) {
+      for (var i = 0; i < N; i++) {
+        var p = lay.project(lay.x0 + (i + 0.5) / N * lay.width, lay.y0 + (j + 0.5) / N * lay.height);
+        img.data[(j * N + i) * 4 + 3] = Math.round(vignetteAlphaAt(p.x / W, p.y / H) * 255);
+      }
+    }
+    g.putImageData(img, 0, 0);
+    return PIXI.Texture.from(c);
+  }
+  function syncVignette(R) {
+    var v = S.vignette;
+    if (!v) return;
+    var P = S.persp, L = P && P.layout;
+    if (L) {
+      var key = S.W + 'x' + S.H + '@' + L.topScale;
+      if (P.vigKey !== key) {
+        if (P.vigTex) P.vigTex.destroy(true);
+        P.vigTex = perspectiveVignetteTexture(L, S.W, S.H);
+        P.vigKey = key;
+      }
+      v.texture = P.vigTex;
+    } else {
+      v.texture = vignetteTexture();
+    }
+    v.x = R.x; v.y = R.y; v.width = R.width; v.height = R.height;
   }
 
   /* ============ 尺寸與解析度 ============ */
@@ -6676,6 +6837,7 @@ var BattleRenderer = (function () {
          不是 tickWorld 自己判斷要不要跑。maxFPS = 0 代表不節流。 */
       app.ticker.maxFPS = battleMaxFps();
       app.ticker.add(tickWorld);
+      app.ticker.add(renderPerspectiveScene, null, PERSPECTIVE_RENDER_PRIORITY);
       if (typeof ResizeObserver === 'function') {
         S.resizeObs = new ResizeObserver(function () { resize(); });
         S.resizeObs.observe(host);
@@ -6719,6 +6881,7 @@ var BattleRenderer = (function () {
       /* Preset 端是另一套集合，同樣要看得到「只增不減」。 */
       preset: S.vfxrt ? S.vfxrt.stats() : null,
       paused: S.paused, zone: S.zoneKey,
+      persp: S.persp ? S.persp.layout.topScale : 1,     // 輕微透視的上緣縮放（1 ＝ 沒開）
       /* ---- 洩漏診斷 ---- */
       lastPos: Object.keys(S.lastPos).length,          // 離場實體的殘留座標，應隨 LASTPOS_KEEP_MS 回落
       floatMerge: Object.keys(S.floatMerge).length,    // 合併表，鍵是遞增的 mv-float-N

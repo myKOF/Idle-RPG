@@ -40,9 +40,19 @@ class Container {
     this.children = []; this.parent = null;
     this.x = 0; this.y = 0; this.scale = point(1, 1); this.visible = true;
   }
-  addChild(c) { this.children.push(c); c.parent = this; return c; }
-  addChildAt(c, i) { this.children.splice(i, 0, c); c.parent = this; return c; }
+  addChild(c) { if (c.parent) c.parent.removeChild(c); this.children.push(c); c.parent = this; return c; }
+  addChildAt(c, i) { if (c.parent) c.parent.removeChild(c); this.children.splice(i, 0, c); c.parent = this; return c; }
+  removeChild(c) { const i = this.children.indexOf(c); if (i >= 0) this.children.splice(i, 1); c.parent = null; return c; }
+  get position() { const self = this; return { set(x, y) { self.x = x; self.y = y; } }; }
+  destroy() { if (this.parent) this.parent.removeChild(this); this.destroyed = true; }
 }
+class PerspectiveMesh extends Container {
+  constructor(o) { super(); this.texture = o.texture; this.corners = null; }
+  setCorners(...c) { this.corners = c; }
+}
+const RenderTexture = {
+  create(o) { return { width: o.width, height: o.height, resolution: o.resolution, antialias: o.antialias, destroy() { this.destroyed = true; } }; }
+};
 class TilingSprite extends Container {
   constructor(o) {
     super();
@@ -64,7 +74,7 @@ function buildSceneTree(renderer) {
   const S = { app: { stage: new Container() }, W: 800, H: 500 };
   const ctx = {
     S, Math,
-    PIXI: { Container, TilingSprite, Sprite, Graphics, Text, Texture: { from: () => ({}) } },
+    PIXI: { Container, TilingSprite, Sprite, Graphics, Text, PerspectiveMesh, RenderTexture, Texture: { from: () => ({}) } },
     document: { createElement: () => ({ width: 0, height: 0, getContext: () => ({}) }) },
     groundFallbackTexture: () => ({}), loadGroundTexture() {}, vignetteTexture: () => ({}),
     drawDeathFog() {}, layoutScene() {}
@@ -89,4 +99,7 @@ function drawOrder(world) {
   return out;
 }
 
-module.exports = { extractFunction, groundYScale, groundDecls, buildSceneTree, scaleToWorld, drawOrder };
+module.exports = {
+  extractFunction, groundYScale, groundDecls, buildSceneTree, scaleToWorld, drawOrder,
+  fakePixi: { Container, TilingSprite, Sprite, Graphics, Text, PerspectiveMesh, RenderTexture }
+};
