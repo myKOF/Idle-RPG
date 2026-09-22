@@ -9,12 +9,16 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/light_03.png",
       "zIndex": 0,
-      "scale": {
-        "x": 0.0781,
-        "y": 0.0781
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.18,
-      "tint": "#ff6a2a",
+      "scale": {
+        "x": 0.0899,
+        "y": 0.0899
+      },
+      "alpha": 0.75,
+      "tint": "#ffdd00",
       "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
@@ -63,12 +67,16 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.043,
-        "y": 0.043
+        "x": 0.0914,
+        "y": 0.0914
       },
       "alpha": 1,
-      "tint": "#ffd447",
+      "tint": "#ffc400",
       "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
@@ -88,16 +96,6 @@
           1,
           0
         ]
-      ],
-      "rotationYOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          24.5044
-        ]
       ]
     },
     {
@@ -105,10 +103,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/slash_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -0.5236,
       "scale": {
-        "x": 0.0352,
-        "y": 0.0352
+        "x": 0.0487,
+        "y": 0.0487
       },
       "alpha": 0.55,
       "tint": "#ffb83d",
@@ -148,30 +150,34 @@
       "type": "particle",
       "assetId": "particle-pack/png-transparent/fire_01.png",
       "zIndex": 4,
-      "tint": "#ff8a3d",
-      "blendMode": "normal",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "tint": "#ffffff",
+      "blendMode": "add",
       "emission": {
         "mode": "rate",
         "rate": 14
       },
       "lifetime": [
         0.14,
-        0.26
+        1
       ],
       "spawn": {
-        "radius": 3,
+        "radius": 4.1514,
         "shape": "circle"
       },
       "speed": [
-        10,
-        40
+        13.838,
+        55.3519
       ],
       "direction": 180,
       "spread": 40,
       "drag": 5,
       "startScale": [
-        0.0117,
-        0.0215
+        0.0162,
+        0.0298
       ],
       "alphaOverLife": [
         [
@@ -217,7 +223,7 @@
     "authored": {
       "radius": 11
     },
-    "shape": "projectile-circle",
-    "radiusM": 1.1
+    "radiusM": 1.1,
+    "shape": "projectile-circle"
   }
 }

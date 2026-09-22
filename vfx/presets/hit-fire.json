@@ -13,7 +13,7 @@
         "x": 0.1406,
         "y": 0.1406
       },
-      "alpha": 0.5,
+      "alpha": 0.3,
       "tint": "#ff6a2a",
       "blendMode": "add",
       "delay": 0,
@@ -64,7 +64,7 @@
         "x": 0.2031,
         "y": 0.2031
       },
-      "alpha": 1,
+      "alpha": 0.4,
       "blendMode": "normal",
       "delay": 0,
       "duration": 0.14,
