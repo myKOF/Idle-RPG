@@ -278,8 +278,9 @@ var BattleRenderer = (function () {
      畫面不再是正上方俯視，而是從斜上方看這個平面，所以地面縱向被壓扁：
        畫面 x = 世界 x
        畫面 y = 世界 y × GROUND_Y_SCALE − 離地高度
-     世界裡的正圓在畫面上是 1 : GROUND_Y_SCALE 的橢圓，正方形地磚是扁長方形。
-     只有縱向縮放、不加斜切或近大遠小——這樣貼地的圓一律是「正的」橢圓，
+     世界裡的正圓在畫面上是 1 : GROUND_Y_SCALE 的橢圓；地磚在世界平面裡轉 45° 鋪設，
+     畫面上是 1 : GROUND_Y_SCALE 的菱形（見 GROUND_TILE_ROTATION）。
+     投影只有縱向縮放、不加斜切或近大遠小——這樣貼地的圓一律是「正的」橢圓，
      所有地面特效才能共用同一個比例（加了斜切，圓會變成歪的橢圓）。
 
      ⚠️ 這是純表現：模擬層的座標、距離、碰撞、技能半徑一個字都沒動，
@@ -300,6 +301,13 @@ var BattleRenderer = (function () {
      貼地的（火池、魔法陣、光圈）已經是正確的橢圓；火柱、龍捲本體、粒子這類直立的
      暫時也被壓扁，之後要改成不壓縮（改掛直立空間，或自己反向放大 1 / GROUND_Y_SCALE）。 */
   var GROUND_Y_SCALE = 0.7;
+  /* 地磚在世界平面裡的鋪法：正方形轉 45°（菱形鋪法），再由同一個 GROUND_Y_SCALE 投影成 1:0.7 的菱形。
+     只壓縮不轉的話，正方形只會變成扁長方形，看起來像平鋪的長方形地磚，沒有斜視感。
+     轉的是地板圖樣、不是投影，所以貼地特效的圓照樣是正的 1:0.7 橢圓。
+     GROUND_TILE_PERIOD 是「轉過之後，圖樣沿畫面橫／縱軸多長重複一次」相對於貼圖邊長的倍率：
+     45° 是 √2（0° 是 1）。兩者綁在一起，只改其一地板捲動會在取餘數時跳格（見 syncGroundScroll）。 */
+  var GROUND_TILE_ROTATION = Math.PI / 4;
+  var GROUND_TILE_PERIOD = Math.SQRT2;
   function groundToScreenY(y) { return y * GROUND_Y_SCALE; }
   function screenToGroundY(y) { return y / GROUND_Y_SCALE; }
 
@@ -1126,6 +1134,22 @@ var BattleRenderer = (function () {
     if (!S.groundTile || S.groundTile.destroyed || !tex || typeof tex === 'string') return;
     S.groundTile.texture = tex;
     S.groundTile.tint = 0xffffff;   // 用圖本身的顏色，不再靠染色
+  }
+  /* 地板捲動：地板鋪在螢幕座標的 bg 層，靠 tilePosition 反向捲動假裝自己釘在世界上。
+     地板的 TilingSprite 掛在 scale.y = GROUND_Y_SCALE 的地面平面容器裡（見 buildScene），
+     所以 tilePosition 用的是世界單位；震動是畫面像素，縱向要換回世界單位。
+     貼圖是可四方連續的，所以取一個週期的餘數就好。角色的世界座標會隨著推進一路長大
+     （一場下來幾十萬），直接丟給 tilePosition 會踩到 float32 的精度上限，地板開始抖；
+     取餘數之後畫面完全一樣，數值永遠是小數。圖樣轉過 GROUND_TILE_ROTATION，
+     週期是邊長 × GROUND_TILE_PERIOD（貼圖必須是正方形，images/ground/*.png 都是 128×128）。 */
+  function syncGroundScroll(cam, shx, shy) {
+    var g = S.groundTile;
+    if (!g) return;
+    var tex = g.texture;
+    var perX = ((tex && tex.width) || 128) * GROUND_TILE_PERIOD;
+    var perY = ((tex && tex.height) || 128) * GROUND_TILE_PERIOD;
+    g.tilePosition.x = -(cam.x % perX) + shx;
+    g.tilePosition.y = -(cam.y % perY) + screenToGroundY(shy);
   }
   function syncZone(zoneKey) {
     if (zoneKey === S.zoneKey) return;
@@ -6078,17 +6102,7 @@ var BattleRenderer = (function () {
     var shy = S.shake > 0.2 ? (Math.random() * 2 - 1) * S.shake * 0.6 : 0;
     world.x = S.W / 2 - cam.x + shx;
     world.y = S.H / 2 - groundToScreenY(cam.y) + shy;
-    if (S.groundTile) {
-      /* 貼圖是可四方連續的，所以取一個週期的餘數就好。角色的世界座標會隨著
-         推進一路長大（一場下來幾十萬），直接丟給 tilePosition 會踩到 float32
-         的精度上限，地板開始抖；取餘數之後畫面完全一樣，數值永遠是小數。
-         縱向：一個週期是貼圖高 perY 個世界單位，畫面上被 tileScale.y 壓成 perY × GROUND_Y_SCALE，
-         先在世界單位取餘數再投影，捲動速度才與角色的畫面縱向速度一致。 */
-      var gtx = S.groundTile.texture;
-      var perX = (gtx && gtx.width) || 128, perY = (gtx && gtx.height) || 128;
-      S.groundTile.tilePosition.x = -(cam.x % perX) + shx;
-      S.groundTile.tilePosition.y = -groundToScreenY(cam.y % perY) + shy;
-    }
+    syncGroundScroll(cam, shx, shy);
     if (p && p.reviveText && p.reviveText.visible) {
       /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平。 */
       p.reviveText.x = world.x + p.root.x;
@@ -6265,10 +6279,15 @@ var BattleRenderer = (function () {
                 （見檔頭「斜俯視投影」）。
          overlay 螢幕座標。BOSS 血條、空場提示、暫停遮罩。 */
     var bg = new PIXI.Container();
+    /* 地板：地面平面容器（scale.y = GROUND_Y_SCALE）裡鋪一張轉 GROUND_TILE_ROTATION 的 TilingSprite。
+       順序很重要：先在世界平面裡轉、再由容器縱向壓縮，菱形才是正的；把壓縮寫在 tileScale 上
+       會變成先壓再轉，得到歪斜的平行四邊形。貼圖本身維持正方形（正式圖直接換檔即可）。 */
+    var groundPlane = new PIXI.Container();
+    groundPlane.scale.set(1, GROUND_Y_SCALE);
     var ground = new PIXI.TilingSprite({ texture: groundFallbackTexture(), width: S.W, height: S.H });
-    /* 地磚縱向壓縮成斜俯視：貼圖本身維持正方形（正式圖直接換檔即可），由這裡統一投影 */
-    ground.tileScale.set(1, GROUND_Y_SCALE);
-    bg.addChild(ground);
+    ground.tileRotation = GROUND_TILE_ROTATION;
+    groundPlane.addChild(ground);
+    bg.addChild(groundPlane);
     S.groundTile = ground;
     loadGroundTexture(null);
 
@@ -6415,8 +6434,16 @@ var BattleRenderer = (function () {
   }
   function layoutScene() {
     if (!S.layers) return;
-    /* 地板鋪滿畫布再多一格，鏡頭移動時邊緣不會露出底色 */
-    if (S.groundTile) { S.groundTile.width = S.W + 256; S.groundTile.height = S.H + 256; S.groundTile.x = -128; S.groundTile.y = -128; }
+    /* 地板鋪滿畫布再多一格，鏡頭移動時邊緣不會露出底色。
+       地板在地面平面容器裡（縱向被壓成 GROUND_Y_SCALE），本地的高度與位置要換回世界單位。
+       ⚠️ 本地尺寸必須是正方形：Pixi v8 的 TilingSprite 在寬高不同時，tileRotation 會被長寬比拉歪
+       （2026-09-22 實測 926×3023：轉 45° 的方格變成一組細密、一組稀疏的陡斜線，而不是 1:0.7 的菱形）。
+       取兩邊較大者當邊長；多出來的部分在畫面外，GPU 只畫得到畫面內的像素，不多花成本。 */
+    if (S.groundTile) {
+      var groundSide = Math.max(S.W + 256, screenToGroundY(S.H + 256));
+      S.groundTile.width = groundSide; S.groundTile.height = groundSide;
+      S.groundTile.x = -128; S.groundTile.y = screenToGroundY(-128);
+    }
     if (S.vignette) { S.vignette.width = S.W; S.vignette.height = S.H; }
     if (S.deathFog) {
       var fogSize = Math.max(S.W, S.H);

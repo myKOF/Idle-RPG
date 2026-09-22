@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { extractFunction, groundYScale, buildSceneTree, scaleToWorld, drawOrder } = require('./helpers/battle-scene.cjs');
+const { extractFunction, groundYScale, groundDecls, buildSceneTree, scaleToWorld, drawOrder } = require('./helpers/battle-scene.cjs');
 
 const root = path.resolve(__dirname, '..');
 const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
@@ -24,11 +24,63 @@ const K = groundYScale(renderer);
      ③ 特效錨點（posOf／footOf／playerMuzzle）的座標系弄錯 —— 爆點、彈道起點離開角色身體。
    ============================================================ */
 
-test('PROJ-1 壓縮比是 0.7，且地磚與特效層共用同一個值', () => {
+test('PROJ-1 壓縮比是 0.7；地板在世界平面裡轉 45°（菱形），再由同一個壓縮比投影', () => {
+  /* 只壓縮不轉，正方形地磚只會變成扁長方形，看起來像平鋪的長方形地磚（2026-09-22 使用者實機回報「似乎還沒調整」）。
+     壓縮必須在轉之後：寫在 tileScale 上是先壓再轉，會得到歪的平行四邊形。 */
   assert.equal(K, 0.7);
   const S = buildSceneTree(renderer);
-  assert.equal(S.groundTile.tileScale.x, 1);
-  assert.equal(S.groundTile.tileScale.y, K, '地磚縱向要與地面平面同一個壓縮比');
+  const g = S.groundTile;
+  assert.deepEqual(scaleToWorld(g, S.app.stage), { x: 1, y: K }, '地板的總縮放要與特效層同一個投影');
+  assert.deepEqual([g.tileScale.x, g.tileScale.y], [1, 1], '投影交給容器，貼圖本身不縮放');
+  assert.ok(Math.abs(g.tileRotation - Math.PI / 4) < 1e-12, '地磚在世界平面裡轉 45°：' + g.tileRotation);
+});
+
+test('PROJ-8 地板的 TilingSprite 在本地空間是正方形且蓋滿畫布（Pixi v8 寬高不同時 tileRotation 會被拉歪）', () => {
+  /* 2026-09-22 實測：926×3023 的地板轉 45° 後變成一組細密、一組稀疏的陡斜線；改成正方形就是 1:0.7 的菱形。 */
+  for (const [W, H] of [[670, 731], [670, 1860], [1400, 500]]) {
+    const g = { width: 0, height: 0, x: 0, y: 0 };
+    const c = { Math, S: { layers: {}, groundTile: g, W, H } };
+    vm.createContext(c);
+    vm.runInContext(groundDecls(renderer) + extractFunction(renderer, 'screenToGroundY') + ';' +
+      extractFunction(renderer, 'layoutScene'), c);
+    c.layoutScene();
+    assert.equal(g.width, g.height, W + '×' + H + '：本地寬高必須相同');
+    /* 蓋滿：左上角在畫面外、右下角超過畫布（縱向要乘回投影比例才是畫面像素） */
+    assert.ok(g.x <= 0 && g.y * K <= 0, '左上角要在畫面外');
+    assert.ok(g.x + g.width >= W && (g.y + g.height) * K >= H, W + '×' + H + '：要蓋滿畫布');
+  }
+});
+
+test('PROJ-7 地板捲動：地面上固定一點看到的貼圖位置不隨鏡頭改變，跨過取餘數的邊界也不跳格', () => {
+  /* tilePosition 取餘數是為了避開 float32 精度；週期若算錯（轉 45° 的正方形是邊長 × √2），
+     每跨過一次邊界地板就會整片跳一下。這裡直接算「世界上固定一點落在貼圖的哪個座標」。 */
+  const side = 128;
+  const g = { texture: { width: side, height: side }, tilePosition: { x: 0, y: 0 } };
+  const c = { Math, S: { groundTile: g } };
+  vm.createContext(c);
+  vm.runInContext(groundDecls(renderer) + extractFunction(renderer, 'screenToGroundY') + ';' +
+    extractFunction(renderer, 'syncGroundScroll'), c);
+  const rot = c.GROUND_TILE_ROTATION;
+  const cos = Math.cos(-rot), sin = Math.sin(-rot);
+  const P = { x: 37.5, y: -81.25 };                      // 世界上固定的一點
+  const texAt = (cam) => {
+    c.syncGroundScroll(cam, 0, 0);
+    /* 地面平面本地座標（世界單位、只差一個常數）＝ P − cam；貼圖座標＝R(−θ)·(本地 − tilePosition)，再對邊長取餘數 */
+    const lx = P.x - cam.x - g.tilePosition.x, ly = P.y - cam.y - g.tilePosition.y;
+    const u = lx * cos - ly * sin, v = lx * sin + ly * cos;
+    const m = (a) => ((a % side) + side) % side;
+    return [m(u), m(v)];
+  };
+  const per = side * c.GROUND_TILE_PERIOD;
+  const base = texAt({ x: 5, y: 7 });
+  /* 大座標（一場下來幾十萬）與正好跨過週期邊界的前後兩點 */
+  for (const cam of [{ x: 123456.7, y: -98765.4 }, { x: per - 1e-3, y: per - 1e-3 }, { x: per + 1e-3, y: per + 1e-3 },
+                     { x: -3 * per + 0.5, y: 5 * per - 0.5 }]) {
+    const t = texAt(cam);
+    const d = (a, b) => Math.min(Math.abs(a - b), side - Math.abs(a - b));
+    assert.ok(d(t[0], base[0]) < 1e-3 && d(t[1], base[1]) < 1e-3,
+      '鏡頭在 ' + JSON.stringify(cam) + ' 時，同一個世界點落在貼圖 ' + t.map((n) => n.toFixed(3)) + '，應為 ' + base.map((n) => n.toFixed(3)));
+  }
 });
 
 test('PROJ-2 特效層在地面平面（縱向 × GROUND_Y_SCALE、橫向不變）；角色、輪廓、飄字、HUD 不壓縮', () => {

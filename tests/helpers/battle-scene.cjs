@@ -25,6 +25,12 @@ function groundYScale(renderer) {
   assert.ok(m, '找不到 var GROUND_Y_SCALE');
   return Number(m[1]);
 }
+/* 斜俯視相關常數（var GROUND_* = …;）整行搬進 vm，值與原始碼一致。 */
+function groundDecls(renderer) {
+  const lines = renderer.match(/^ *var GROUND_[A-Z_]+ = [^;\n]+;/gm);
+  assert.ok(lines && lines.length, '找不到 var GROUND_* 常數');
+  return lines.join('\n') + '\n';
+}
 
 function point(x, y) {
   return { x, y, set(a, b) { this.x = a; this.y = (b === undefined ? a : b); } };
@@ -41,7 +47,7 @@ class TilingSprite extends Container {
   constructor(o) {
     super();
     this.texture = o && o.texture; this.width = o && o.width; this.height = o && o.height;
-    this.tileScale = point(1, 1); this.tilePosition = point(0, 0);
+    this.tileScale = point(1, 1); this.tilePosition = point(0, 0); this.tileRotation = 0;
   }
 }
 class Sprite extends Container {
@@ -64,7 +70,7 @@ function buildSceneTree(renderer) {
     drawDeathFog() {}, layoutScene() {}
   };
   vm.createContext(ctx);
-  vm.runInContext('var GROUND_Y_SCALE = ' + groundYScale(renderer) + ';' + extractFunction(renderer, 'buildScene'), ctx);
+  vm.runInContext(groundDecls(renderer) + extractFunction(renderer, 'buildScene'), ctx);
   ctx.buildScene();
   return S;
 }
@@ -83,4 +89,4 @@ function drawOrder(world) {
   return out;
 }
 
-module.exports = { extractFunction, groundYScale, buildSceneTree, scaleToWorld, drawOrder };
+module.exports = { extractFunction, groundYScale, groundDecls, buildSceneTree, scaleToWorld, drawOrder };
