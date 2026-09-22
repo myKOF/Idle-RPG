@@ -5859,13 +5859,20 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
   var origin = geomOk ? bfPlayerPos() : null;
   var angle = geomOk ? bfAngleTo(target) : 0;
   var travelMs = Math.max(1, Math.round(flyPx / speed * 1000));
+  var ringRoles = sgVfxRoles('firehunt', { vfxUlt: 'fireGodDescend', vfxBase: true });
   var out = { killed: false, dmg: 0, crit: false };
   for (var i = 0; i < orbs; i++) {
     var beginSec = i * SG_FIREGOD_ORB_STAGGER_SEC;
     sgQueueFlyingProjectile(pEnt, st, 'firehunt', dmgVal, origin, angle, flyPx, floatSel, [target], {
       /* 無座標（高塔）時退化成「時間到打當初的目標」——與其他飛行物的既有退化規則一致。 */
-      singleHit: true, waitForEnd: !geomOk,
-      speed: speed, travelMs: travelMs, beginSec: beginSec
+      singleHit: true, waitForEnd: !geomOk, targetOnly: !geomOk,
+      speed: speed, travelMs: travelMs, beginSec: beginSec,
+      onHit: function (enemy) {
+        sgEmitVfx('firehunt', [enemy], floatSel, {
+          fxKind: 'impact', variant: 'firehunt-ring-hit', preserveDeadTargets: true,
+          vfxRoles: { hit: ringRoles.hit }
+        });
+      }
     }, out);
     /* 使用者決策 2026-08-26：星環要畫成「丟出去的旋轉圓環」，不是小火球。
        帶 angle／lineLength ＝ 顯示層照同一條直線飛完整段距離，而不是咬著目標飛；
@@ -5874,7 +5881,8 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
       fxKind: 'projectile', variant: 'firehunt-ring', elem: 'fire', count: 1,
       travelMs: [travelMs], projectile: true, delayMs: Math.round(beginSec * 1000),
       angle: angle, lineLength: flyPx,
-      vfxUlt: 'fireGodDescend'
+      // 發射只播表定星環；不可帶入普通火狩的爆炸與地板角色。
+      hit: false, vfxRoles: { projectile: ringRoles.projectile }
     });
   }
   return orbs;

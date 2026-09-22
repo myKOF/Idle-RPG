@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜火神降臨星環白光（FIREGOD-VFX-20260922）
+
+- Done。發射只派送表定星環子彈，移除誤繼承爆炸／地板；實際貫穿命中才播受擊，高塔無座標延後命中修正。火焰纏身與數值不變。
+- 修改skills2、快取、回歸測試及文件；預檢無衝突。9項測試、build397檔與diff check通過；未瀏覽器實戰，無素材變更、無未完成實作，可合併。Commit見本紀錄所在提交；未合併／推送。完整交接見docs/skill-tests/20260922-firegod-vfx.md。
+
 ## Codex｜火球等速預判追蹤（TEMPEST-INTERCEPT-20260922）
 
 - Owner Codex；Done。修正移動敵人使火球剎車：以共用純函式依敵人位移預判攔截，火球每拍按速度推進，實際接觸才結算；同步模擬與 Runtime，不沿出生飛行秒數強迫到達。修改 util、skills2、Runtime、測試、快取與本紀錄；預檢無衝突。此項取代 TEMPEST-HOMING 的固定秒數飛行。
