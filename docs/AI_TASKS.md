@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜統一新版火球（FIREBALL-VISUAL-20260922）
+
+- Owner Codex；Done。使用者指定所有火球改用融火之心 proj-dragon-devour；範圍含火球術、分裂火球、火鳳伴生火球、烈焰暴風與敵方火屬性投射物。修改配置 Excel／CSV／JS、data 普攻對照、Runtime 尾焰收尾、快取與來源登記／測試。預檢無衝突；保留軌跡／傷害／爆炸與火狩星環，無素材編輯及素材庫提交。
+- 後續指示取代前項 TEMPEST-FIREBALL 舊節拍：每道火龍捲每 0.33 秒發射 1 顆，每顆從自身 24 米內重新隨機抽選敵人，不優先近敵、不保留上次鎖敵；允許連續抽中同一敵人。Excel 第 99 列 gap=0.33、count=1，描述與特效說明同步。
+- 驗證：`node --test tests/inferno-tempest.test.cjs tests/dragon-devour.test.cjs tests/skills2-vfx-schema.test.cjs tests/vfx-preset-usage.test.cjs` 44/44；包含隨機樣本、0.33秒間隔、平射中點、命中爆炸、Excel/CSV一致與來源登记。`node tools/build_check.cjs`、`node tools/config_tables.cjs --apply Skills2`、`git diff --check`。唯讀盤點所有 CSV／JS 火球引用、既有新火球素材與尾焰；未瀏覽器實戰驗證。無未完成實作，可供使用者合併；Commit 見本紀錄所在提交，未合併或推送，建議整合後確認連發觀感。
+
 ## Codex｜烈焰暴風平射火球（TEMPEST-FIREBALL-20260922）
 
 - Owner Codex；Done。使用者指定取代數量倍率：每道火龍捲每秒向 24 米內最多 3 名敵人平射火球，命中爆炸半徑 6 米，基礎 200% 火焰傷害，每級 +20 百分點（沿既有升級公式，Lv.1 為 220%）。修改 Skills2 Excel／CSV／JS、幾何與特效欄位工具、專項與舊規格測試、快取及本紀錄。預檢無衝突；不更動其他超神或素材。

@@ -1730,7 +1730,7 @@ var VFX_COMBAT_DEFAULTS = {
   enemyProjectile: { projectile: 'proj-enemy-bolt', hit: 'hit-enemy' },
   /* 有屬性的敵方遠程攻擊改用對應屬性的投射物與爆點（沒有屬性就用上面兩組）。 */
   enemyProjectileByElem: {
-    fire: 'proj-fire', ice: 'proj-ice-shard', lightning: 'proj-lightning', poison: 'proj-poison-drop',
+    fire: 'proj-dragon-devour', ice: 'proj-ice-shard', lightning: 'proj-lightning', poison: 'proj-poison-drop',
     light: 'proj-light-orb', dark: 'proj-dark-orb', earth: 'proj-earth-rock', wind: 'proj-wind-crescent'
   },
   enemyHitByElem: {

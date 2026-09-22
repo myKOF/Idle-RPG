@@ -760,7 +760,7 @@ var VFXRuntime = (function () {
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || spec.variant === 'dragon-devour-ball', control: knifeControl, lastTo: to,
+        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour', control: knifeControl, lastTo: to,
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
