@@ -46,9 +46,10 @@ test('近戰普攻立即傷害、零飛行，連擊延遲與浮字同步且攻�
   assert.ok(floats[3][3].includes('damage-group-basic-2'));
 });
 test('Preset 接手仍播放主普攻，追加連擊不重播，面向目標', () => {
-  const animations=[]; let presets=0;
-  const c={ S:{ready:true,player:{root:{x:0}},vfxrt:{tryPlay(){presets++;return true;}}},
+  const animations=[], turns=[]; let presets=0;
+  const c={ S:{ready:true,player:{root:{x:0,y:0}},entities:{},vfxrt:{tryPlay(){presets++;return true;}}},
     areaRect:()=>null, documentHidden:()=>false, vfxTargetsLive:()=>true, posOf:()=>({x:-50,y:0}),
+    turnToward:(ent,dx,dy,sticky)=>turns.push([dx,dy,sticky]),
     playerAttackAnim:(...args)=>animations.push(args) };
   vm.createContext(c);
   vm.runInContext(fn(renderer,'shouldAnimatePlayer')+';'+fn(renderer,'onVfx'),c);
@@ -56,17 +57,34 @@ test('Preset 接手仍播放主普攻，追加連擊不重播，面向目標', (
   assert.equal(presets,2);
   assert.deepEqual(animations,[['melee','enemy',0.125]]);
   assert.equal(c.S.player.facing,-1);
+  /* 8 方向素材：精準面向目標（不帶遲滯），在出手動作之前轉好 */
+  assert.deepEqual(turns,[[-50,0,false]]);
 });
-test('GIF 完整攻擊影格隨高攻速加快，死亡不播放動作', () => {
-  const manifest=JSON.parse(fs.readFileSync('images/sprites/player.json','utf8'));
-  const p={sheetName:'player',body:{animationSpeed:1},dead:false};
-  let calls=0;
-  const c={Math,S:{player:p,sheets:{player:{manifest}}},playAnim(){calls++;p.body.animationSpeed=1;}};
-  vm.createContext(c); vm.runInContext(fn(renderer,'playerAttackAnim'),c);
+test('普攻輪流兩段、隨高攻速加快；施法不被普攻插隊；死亡不播放動作', () => {
+  /* 2026-09-22 主角換成騎士：普攻兩段（Melee／Melee2）輪流，施法用 Special1。
+     多方向素材從 first 開始播，加速倍率要用「實際會播的幀數」算，不能用整條 frames。 */
+  const manifest=JSON.parse(fs.readFileSync('images/sprites/knight/knight.json','utf8'));
+  const anims={};
+  for (const [k,a] of Object.entries(manifest.anims)) if (a.frames) anims[k]=new Array(a.frames-(a.first||0)).fill(0);
+  const p={sheetName:'player',body:{animationSpeed:1},dead:false,curAnim:'idle'};
+  const played=[];
+  const c={Math,S:{player:p,sheets:{player:{manifest,anims}}},
+    playAnim(ent,name){played.push(name);ent.curAnim=name;p.body.animationSpeed=1;}};
+  vm.createContext(c);
+  vm.runInContext(fn(renderer,'playerAttackAnimNames')+';'+fn(renderer,'playerAttackAnim'),c);
+  const natural=name=>anims[name].length/manifest.anims[name].fps*1000;
   c.playerAttackAnim('melee','enemy',0.125);
-  assert.equal(p.body.animationSpeed,8);
+  assert.equal(played[0],'attack1');
+  assert.ok(Math.abs(p.body.animationSpeed-natural('attack1')/125)<1e-9,'攻速週期比動作短：整段加速塞進一次普攻');
+  p.curAnim='idle';
   c.playerAttackAnim('melee','enemy',2);
-  assert.equal(p.body.animationSpeed,1);
-  p.dead=true;c.playerAttackAnim('melee','enemy',0.125);
-  assert.equal(calls,2);
+  assert.equal(played[1],'attack2','輪流，不是隨機');
+  assert.equal(p.body.animationSpeed,1,'週期比動作長：照原速');
+  c.playerAttackAnim('cast');
+  assert.equal(played[2],'cast');
+  c.playerAttackAnim('melee','enemy',0.125);
+  assert.equal(played.length,3,'施法動作播完之前普攻不插隊');
+  p.curAnim='idle'; p.dead=true;
+  c.playerAttackAnim('melee','enemy',0.125);
+  assert.equal(played.length,3,'死亡不播放動作');
 });

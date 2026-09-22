@@ -1,0 +1,120 @@
+{
+  "generatedBy": "tools/build_character_sprites.cjs knight",
+  "source": "effects-materials/characters/knight-hd",
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "directions": [
+    "E",
+    "SE",
+    "S",
+    "SW",
+    "W",
+    "NW",
+    "N",
+    "NE"
+  ],
+  "defaultDirection": 0,
+  "scale": 1.4,
+  "anchorX": 0.5,
+  "anchorY": 0.7656,
+  "smooth": true,
+  "bakedShadow": true,
+  "outlinePx": 2,
+  "anims": {
+    "idle": {
+      "image": "idle.png",
+      "outline": "idle.outline.png",
+      "source": "Idle.png",
+      "trim": {
+        "x": 34,
+        "y": 30,
+        "w": 64,
+        "h": 83
+      },
+      "frames": 15,
+      "fps": 15,
+      "loop": true
+    },
+    "walk": {
+      "image": "walk.png",
+      "outline": "walk.outline.png",
+      "source": "Run.png",
+      "trim": {
+        "x": 18,
+        "y": 23,
+        "w": 95,
+        "h": 101
+      },
+      "frames": 15,
+      "fps": 30,
+      "loop": true,
+      "strideSpeed": 300
+    },
+    "attack1": {
+      "image": "attack1.png",
+      "outline": "attack1.outline.png",
+      "source": "Melee.png",
+      "trim": {
+        "x": 0,
+        "y": 20,
+        "w": 128,
+        "h": 108
+      },
+      "frames": 15,
+      "fps": 30,
+      "loop": false,
+      "first": 3
+    },
+    "attack2": {
+      "image": "attack2.png",
+      "outline": "attack2.outline.png",
+      "source": "Melee2.png",
+      "trim": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 128
+      },
+      "frames": 15,
+      "fps": 30,
+      "loop": false,
+      "first": 4
+    },
+    "cast": {
+      "image": "cast.png",
+      "outline": "cast.outline.png",
+      "source": "Special1.png",
+      "trim": {
+        "x": 10,
+        "y": 0,
+        "w": 116,
+        "h": 128
+      },
+      "frames": 15,
+      "fps": 30,
+      "loop": false,
+      "first": 4
+    },
+    "die": {
+      "image": "die.png",
+      "outline": "die.outline.png",
+      "source": "Die.png",
+      "trim": {
+        "x": 0,
+        "y": 23,
+        "w": 128,
+        "h": 105
+      },
+      "frames": 15,
+      "fps": 15,
+      "loop": false,
+      "hold": true
+    },
+    "rise": {
+      "from": "die",
+      "reverse": true,
+      "fps": 30,
+      "loop": false
+    }
+  }
+}
