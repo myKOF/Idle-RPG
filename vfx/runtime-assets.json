@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "kind": "vfx-runtime-assets",
+  "note": "程式直接引用、沒有經過 Preset 的素材（舊畫法、DOM／CSS）。tools/vfx/export-assets.cjs 會一併匯出到 images/vfx/assets；匯出目錄整棵換新、只留被引用的素材，沒登記在這裡的會在下次匯出時被刪掉。usedBy 寫明誰在用（匯出工具的報表與錯誤訊息會加上 runtime: 前綴）；搬移或刪除這些素材時，程式裡的路徑要一起改。",
+  "assets": [
+    {
+      "assetId": "codex-authored/thrust/thrust_lance.png",
+      "usedBy": [
+        "js/battle-renderer.js 突刺舊畫法 spawnThrustLine",
+        "css/style.css 高塔 DOM 突刺"
+      ]
+    }
+  ]
+}
