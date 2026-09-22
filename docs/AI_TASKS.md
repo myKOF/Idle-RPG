@@ -2,8 +2,9 @@
 
 ## Codex｜火神降臨星環白光（FIREGOD-VFX-20260922）
 
-- Done。發射只派送表定星環子彈，移除誤繼承爆炸／地板；實際貫穿命中才播受擊，高塔無座標延後命中修正。火焰纏身與數值不變。
-- 修改skills2、快取、回歸測試及文件；預檢無衝突。9項測試、build397檔與diff check通過；未瀏覽器實戰，無素材變更、無未完成實作，可合併。Commit見本紀錄所在提交；未合併／推送。完整交接見docs/skill-tests/20260922-firegod-vfx.md。
+- Done。前次 ca4fbe6c 只移除誤繼承爆炸，仍可用純星環重現白塊。本次修正漏填尺寸導致半徑 6 米放大及加法疊白；星環事件沿用實際碰撞半寬 8 世界單位，透明暖色 normal 混色，編輯器名目半徑 11 單位。
+- 修改星環 preset／製作來源、skills2 尺寸事件、快取、渲染及命中測試與文件。預檢無衝突；保留傷害、數量、射程、速度和既有命中判定。素材庫保存 preset，Commit 49432e4；遊戲 Commit 見本紀錄所在提交。
+- 實際 Runtime/Core／出貨貼圖以每秒 10 波 × 每波 6 枚壓測，1 秒時保留 50 枚，白色像素 0、圓環可見；已展示 4 秒動圖，未完整瀏覽器實戰。10/10 測試、build 398 檔、素材匯出檢查與 diff check 通過。無未完成實作，可合併，未合併／推送；完整交接見 docs/skill-tests/20260922-firegod-vfx.md。
 
 ## Codex｜火球等速預判追蹤（TEMPEST-INTERCEPT-20260922）
 
@@ -181,7 +182,7 @@
 
 - Owner Codex；Done。使用者授權修正敵方飛彈在遊戲中被預設米制尺寸放大的問題。
 - 範圍：js/vfx-runtime.js、tests/vfx-runtime.test.cjs、index.html、本紀錄。無前置依賴；衝突預檢通過。不修改素材、配置、傷害與命中邏輯；保留使用者 slash-dual preset/layout 修改。
-- 未帶權威彈體尺寸的敵方遠程攻擊依製作尺寸播放；帶 bodyLength／lineWidth 的事件仍依判定尺寸。驗證正式暗影素材、各場景倍率、飛行時序與敵方傷害回歸。
+- 未帶權威彈體尺寸的敵方遠程攻擊依製作尺寸播放；帶 lineWidth 的事件仍依判定尺寸。驗證正式暗影素材、各場景倍率、飛行時序與敵方傷害回歸。
 - 驗證：node --test tests/vfx-runtime.test.cjs tests/enemy-projectile-retaliation.test.cjs，98 項中 97 通過；唯一 CATALOG-3（bolt-sky-purple 頂層兩列）以 HEAD Runtime 在記憶體執行確認同樣失敗。新增尺寸案例在舊 Runtime 會失敗，修正後通過。node tools/build_check.cjs：379 檔通過；git diff --check 通過。
 - 唯讀檢查：combat.js、data.js、battlefield.js、Editor 播放、proj-dark-orb 與 asset-index。沒有素材修改／素材庫提交。未進行實機畫面與 Console 驗證；後續由使用者在整合後確認畫面。可合併本次修正；未合併或推送，使用者既有素材修改留在工作區。
 

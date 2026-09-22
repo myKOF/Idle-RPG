@@ -745,6 +745,10 @@ var VFXRuntime = (function () {
       var facing = curveHeading(from, ctrl, to, 0);
       var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
         ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
+      // 圓形彈體只需權威直徑；lineWidth 已由 Worker 白名單透傳。
+      if (!dimensions && num(spec.lineWidth, 0) > 0 && presetSizes[presetId] && presetSizes[presetId].shape === 'projectile-circle') {
+        dimensions = sizeOf(presetId, { r: spec.lineWidth / 2 });
+      }
       // 敵方普攻與神聖光彈只表現飛行，不表達碰撞範圍；與編輯器共用製作尺寸。
       // 有權威彈體尺寸的事件仍沿用上面的幾何換算。
       var holyFlight = spec.variant === 'counter-holy-flight';
@@ -1612,7 +1616,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260922-ground-plane';
+  var DATA_VERSION = '20260922-firegod-ring-size';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

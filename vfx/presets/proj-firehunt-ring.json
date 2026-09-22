@@ -7,15 +7,15 @@
     {
       "id": "glow",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-transparent/light_03.png",
       "zIndex": 0,
       "scale": {
         "x": 0.0781,
         "y": 0.0781
       },
-      "alpha": 0.6,
+      "alpha": 0.18,
       "tint": "#ff6a2a",
-      "blendMode": "add",
+      "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
         [
@@ -61,7 +61,7 @@
     {
       "id": "ring",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
       "zIndex": 1,
       "scale": {
         "x": 0.043,
@@ -69,7 +69,7 @@
       },
       "alpha": 1,
       "tint": "#ffd447",
-      "blendMode": "add",
+      "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
         [
@@ -103,16 +103,16 @@
     {
       "id": "gloss",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "particle-pack/png-transparent/slash_02.png",
       "zIndex": 2,
       "rotation": -0.5236,
       "scale": {
         "x": 0.0352,
         "y": 0.0352
       },
-      "alpha": 0.9,
-      "tint": "#ffffff",
-      "blendMode": "add",
+      "alpha": 0.55,
+      "tint": "#ffb83d",
+      "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
         [
@@ -146,10 +146,10 @@
     {
       "id": "trail",
       "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "assetId": "particle-pack/png-transparent/fire_01.png",
       "zIndex": 4,
       "tint": "#ff8a3d",
-      "blendMode": "add",
+      "blendMode": "normal",
       "emission": {
         "mode": "rate",
         "rate": 14
@@ -190,15 +190,15 @@
       "tintOverLife": [
         [
           0,
-          "#ffffff"
+          "#ffb83d"
         ],
         [
           0.5,
-          "#ffffff"
+          "#ff7926"
         ],
         [
           1,
-          "#2a2a30"
+          "#6b2610"
         ]
       ],
       "scaleOverLife": [
@@ -217,6 +217,7 @@
     "authored": {
       "radius": 11
     },
-    "shape": "projectile-circle"
+    "shape": "projectile-circle",
+    "radiusM": 1.1
   }
 }

@@ -5867,6 +5867,7 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
       /* 無座標（高塔）時退化成「時間到打當初的目標」——與其他飛行物的既有退化規則一致。 */
       singleHit: true, waitForEnd: !geomOk, targetOnly: !geomOk,
       speed: speed, travelMs: travelMs, beginSec: beginSec,
+      halfWidthPx: SG_FLYING_PROJECTILE_HALF_WIDTH,
       onHit: function (enemy) {
         sgEmitVfx('firehunt', [enemy], floatSel, {
           fxKind: 'impact', variant: 'firehunt-ring-hit', preserveDeadTargets: true,
@@ -5881,6 +5882,7 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
       fxKind: 'projectile', variant: 'firehunt-ring', elem: 'fire', count: 1,
       travelMs: [travelMs], projectile: true, delayMs: Math.round(beginSec * 1000),
       angle: angle, lineLength: flyPx,
+      lineWidth: SG_FLYING_PROJECTILE_HALF_WIDTH * 2,
       // 發射只播表定星環；不可帶入普通火狩的爆炸與地板角色。
       hit: false, vfxRoles: { projectile: ringRoles.projectile }
     });
