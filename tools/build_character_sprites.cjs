@@ -35,6 +35,9 @@ const REPO = path.resolve(__dirname, '..');
      idle 站立、walk 移動、attack1／attack2 普攻（輪流）、cast 技能施法、die 死亡、rise 復活起身。
    first  從第幾幀開始播。普攻與施法的傷害數字、技能特效都在「事件到達的那一刻」出現，
           所以把架式砍短，讓出劍／釋放幀緊跟在那一刻之後（關鍵幀見素材庫 README）。
+   release  施法「釋放」的那一幀（素材的原幀號）。技能開始施放時模擬層會說硬直多長（協議 v36 act:'cast'），
+          硬直結束技能才放出去、特效才出現；執行期把 first→release 這段的播放速度調成剛好在那一刻播到 release。
+          預設硬直 0.2 秒、first 2、release 8 ＝ 30 fps，與其他動作同速。
    hold   播完停在最後一幀（死亡）。
    strideSpeed  這個 fps 下腳步剛好對上的移動速度（px/s）：著地腳每幀往後滑約 7 px（原尺寸），
           ×1.4 倍 × 30 fps ≈ 300 px/s ＝ BF_PLAYER_SPEED。移動速度變了，執行期照比例調播放速度，腳不會打滑。
@@ -58,7 +61,7 @@ const CHARACTERS = {
       walk: { src: 'Run.png', fps: 30, loop: true, strideSpeed: 300 },
       attack1: { src: 'Melee.png', fps: 30, loop: false, first: 3 },
       attack2: { src: 'Melee2.png', fps: 30, loop: false, first: 4 },
-      cast: { src: 'Special1.png', fps: 30, loop: false, first: 4 },
+      cast: { src: 'Special1.png', fps: 30, loop: false, first: 2, release: 8 },
       die: { src: 'Die.png', fps: 15, loop: false, hold: true },
       rise: { from: 'die', reverse: true, fps: 30, loop: false }
     }
@@ -187,6 +190,10 @@ function build(name, opts) {
     files[outlineName] = raster.encodePng(sheets.ring, sheets.W, sheets.H);
     const entry = { image: imageName, outline: outlineName, source: a.src, trim: trim, frames: ch.cols, fps: a.fps, loop: !!a.loop };
     if (a.first) entry.first = a.first;
+    if (a.release) {
+      if (!(a.release > (a.first || 0) && a.release < ch.cols)) throw new Error(key + ' 的 release 要在 first 之後、幀數之內');
+      entry.release = a.release;
+    }
     if (a.hold) entry.hold = true;
     if (a.strideSpeed) entry.strideSpeed = a.strideSpeed;
     manifest.anims[key] = entry;

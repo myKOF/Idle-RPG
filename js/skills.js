@@ -3032,6 +3032,22 @@ function executeSkillCastJob(job) {
   return castSkill(job.pEnt, job.target, job.skillId, job.lv, job.floatSel, job.statSlot, job.opts);
 }
 
+/* 施法動作（協議 v36 act:'cast'，2026-09-22 主角換成有施法動作的騎士）。
+   在這裡送而不是在各技能裡送：新版、舊版、潛能技能都經過 beginSkillCast，而且只有這裡知道硬直多長。
+   顯示層據此面向目標、播施法姿勢，並把「釋放」那一幀對到硬直結束（技能真的放出去、特效出現）的那一刻。
+   主要目標與 castSkill2 同一套挑法（先看鎖定目標），只用來決定面向。 */
+function skillCastActEmit(job, lockSec) {
+  if (typeof emitPlayerAct !== 'function' || !job) return;
+  var t = job.target;
+  var live = Array.isArray(t) ? t.filter(function (e) { return e && e.hp > 0; }) : ((t && t.hp > 0) ? [t] : []);
+  var primary = null;
+  if (live.length) {
+    primary = (typeof bfPickPrimary === 'function') ? bfPickPrimary(live, job.pEnt && job.pEnt._lockTarget) : null;
+    if (!primary) primary = live[0];
+  }
+  emitPlayerAct('cast', job.floatSel, primary, lockSec);
+}
+
 function beginSkillCast(job) {
   var pEnt = job && job.pEnt;
   if (!pEnt || skillCastInProgress(pEnt)) return null;
@@ -3041,8 +3057,10 @@ function beginSkillCast(job) {
   if (!(sec > 0)) {
     var immediate = executeSkillCastJob(job);
     if (!immediate) requeueSkillAfterFailedCast(pEnt, readyKey);
+    else skillCastActEmit(job, 0);   // 沒有硬直：技能已經放出去了，確定成功才播
     return immediate;
   }
+  skillCastActEmit(job, sec);
 
   var entry = {
     pEnt: pEnt,

@@ -93,7 +93,8 @@
       "frames": 15,
       "fps": 30,
       "loop": false,
-      "first": 4
+      "first": 2,
+      "release": 8
     },
     "die": {
       "image": "die.png",

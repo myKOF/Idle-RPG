@@ -69,7 +69,8 @@ function shimSetBackground(hidden) {
 
 function shimIsUrgentVisualEvent(kind, data) {
   if (_shimBackground) return false;
-  if (kind === 'vfx') return true;
+  /* act（v36 角色動作）與 vfx 同一條：施法姿勢比特效晚一個 tick 就對不上了 */
+  if (kind === 'vfx' || kind === 'act') return true;
   return kind === 'float' && /(?:^|\s)skill-cast(?:\s|$)/.test(String(data && data.cls || ''));
 }
 
@@ -229,6 +230,19 @@ function playCombatVfx(spec) {
   if (spec.vfx && typeof spec.vfx === 'object') event.vfx = spec.vfx;
   if (spec.presetOnly) event.presetOnly = true;
   shimPushEvent('vfx', event);
+}
+
+/* ---- 角色動作（協議 v36 EVENT_KINDS.ACT）----
+   模擬層只說「開始施放技能了、對著誰、硬直多長」，姿勢與播放時序由顯示層決定。
+   定址與 float／vfx 一致：不帶實體，只帶圖層 id。 */
+function emitPlayerAct(act, floatSel, targetEnt, lockSec) {
+  if (typeof playerEventFloatTarget !== 'function') return;
+  shimPushEvent('act', {
+    act: act,
+    elId: playerEventFloatTarget(floatSel),
+    target: (targetEnt && typeof enemyEventFloatTarget === 'function') ? enemyEventFloatTarget(targetEnt, floatSel) : null,
+    lockMs: lockSec > 0 ? Math.round(lockSec * 1000) : 0
+  });
 }
 
 /* ---- 其餘 ui.js 函式替身 ----

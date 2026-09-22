@@ -1476,7 +1476,9 @@ var BattleRenderer = (function () {
     for (var i = 1; sheet && sheet.anims && sheet.anims['attack' + i]; i++) names.push('attack' + i);
     return names.length ? names : ['attack1'];
   }
-  function playerAttackAnim(kind, targetId, duration) {
+  /* 施法動作把「釋放」那一幀對到硬直結束時，播放速度的上下限（fps）：硬直很短或很長時不要快成一閃、慢成停格 */
+  var CAST_FPS_MIN = 12, CAST_FPS_MAX = 60;
+  function playerAttackAnim(kind, targetId, duration, leadMs) {
     var p = S.player;
     if (!p || p.dead || p.revival) return;
     var melee = kind !== 'cast';
@@ -1504,7 +1506,35 @@ var BattleRenderer = (function () {
       /* 短於原素材時加速整段，保留各影格比例；低攻速不把揮刀拖成慢動作。 */
       p.body.animationSpeed *= Math.max(1, naturalMs / (duration * 1000));
     }
+    /* 施法：硬直 leadMs 之後技能才真的放出去、特效才出現。把幀定義的 release（釋放那一幀）對到那一刻：
+       first→release 這段要在 leadMs 內播完。預設硬直 0.2 秒、first 2、release 8 剛好是 30 fps。 */
+    if (!melee && meta && p.body && leadMs > 0 && meta.release > (meta.first | 0)) {
+      var castFps = (meta.release - (meta.first | 0)) / (leadMs / 1000);
+      p.body.animationSpeed = Math.max(CAST_FPS_MIN, Math.min(CAST_FPS_MAX, castFps)) / 60;
+    }
     p.lunge = melee ? 0.18 : 0.12;
+  }
+
+  /* ---- 角色動作事件（協議 v36 EVENT_KINDS.ACT）----
+     { act: 'cast', elId, target, lockMs }：技能開始施放（施放硬直的起點，js/skills.js beginSkillCast）。
+     特效仍由各自的 vfx 事件負責，這裡只換角色的面向與姿勢。 */
+  function onAct(ev) {
+    if (!ev || !S.ready || documentHidden()) return;
+    if (ev.elId !== 'pv-float') return;          // 高塔（tp-float）不在這個渲染器
+    /* 與特效同一套顯示延遲：畫面上的世界落後模擬 POS_BUFFER_MS，姿勢也延後才對得上特效與站位 */
+    if (!ev._buffered) {
+      ev._buffered = true;
+      setTimeout(function () { onAct(ev); }, POS_BUFFER_MS);
+      return;
+    }
+    var p = S.player;
+    if (!p || p.dead || p.revival || ev.act !== 'cast') return;
+    var ent = ev.target ? S.entities[ev.target] : null;
+    if (ent && ent.root) {
+      p.facing = ent.root.x < p.root.x ? -1 : 1;
+      turnToward(p, ent.root.x - p.root.x, ent.root.y - p.root.y, false);
+    }
+    playerAttackAnim('cast', ev.target || null, 0, Number(ev.lockMs) || 0);
   }
 
   /* ============ reconcile（PANEL battle，約 5Hz） ============ */
@@ -5233,10 +5263,11 @@ var BattleRenderer = (function () {
     var count = Math.min(isThrust ? 8 : 5, Math.max(1, spec.count || 1));
     var stagger = ((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000;
 
-    /* 普攻即使已由 Preset 接手仍要播角色動作；其它技能維持既有分流。 */
-    if (shouldAnimatePlayer(spec) && vfxTargetsLive(spec)) {
+    /* 普攻即使已由 Preset 接手仍要播角色動作。技能的施法動作改由模擬層的 act 事件驅動（見 onAct，協議 v36）：
+       一次施放會送出好幾則特效事件（子段、飛行物命中、場域週期），從特效事件猜「哪一則是施放」會一直重播施法姿勢；
+       而且 Preset 接手的技能根本走不到這裡——這正是技能原本沒有施法動作的原因（2026-09-22）。 */
+    if (shouldAnimatePlayer(spec) && spec.cat === 'basic' && vfxTargetsLive(spec)) {
       var contactFx = spec.fxKind === 'slash' || spec.fxKind === 'impact' || spec.fxKind === 'burst';
-      var meleeCat = spec.cat === 'basic' || spec.cat === 'phys';
       var firstTarget = spec.targets && spec.targets.length ? spec.targets[0] : null;
       if (firstTarget) {
         /* 出手當下先面向目標；跑不跑過去由模擬層決定，這裡只管朝向。 */
@@ -5248,11 +5279,8 @@ var BattleRenderer = (function () {
         turnToward(S.player, (tEnt ? tEnt.root.x : tp.x) - S.player.root.x,
           (tEnt ? tEnt.root.y : tp.y) - S.player.root.y, false);
       }
-      if (meleeCat && contactFx && firstTarget) {
-        playerAttackAnim('melee', firstTarget, spec.cat === 'basic' ? spec.dur : 0);
-      } else {
-        playerAttackAnim(spec.cat === 'magic' || spec.fxKind === 'rain' || spec.fxKind === 'beam' ? 'cast' : 'melee');
-      }
+      /* dur＝這一次普攻的實際攻速週期：整段揮擊要在下一次普攻前播完 */
+      playerAttackAnim('melee', firstTarget, (contactFx && firstTarget) ? spec.dur : 0);
     }
 
     if (presetHandled) return;
@@ -6629,6 +6657,7 @@ var BattleRenderer = (function () {
     wantsFloat: wantsFloat,
     wantsVfx: wantsVfx,
     onFloat: onFloat,
+    onAct: onAct,
     onVfx: onVfx,
     syncBattle: syncBattle,
     status: status,

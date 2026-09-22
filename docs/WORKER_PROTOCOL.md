@@ -1,6 +1,8 @@
-# Worker 協議 v35
+# Worker 協議 v36
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 35`　最後更新：2026-09-21
+> 協議版本：`WORKER_PROTOCOL_VERSION = 36`　最後更新：2026-09-22
+
+v36 新增事件種類 `act`（角色動作）：`{ act, elId, target, lockMs }`。目前只有 `act: 'cast'`＝技能開始施放（`js/skills.js beginSkillCast`，施放硬直的起點；新版、舊版、潛能技能共用），超神重複施放與暴風之舞化身這類自動連發不送。`elId` 是施放者的浮字圖層（`pv-float`／`tp-float`），`target` 是主要目標的圖層 id 或 `null`，`lockMs` 是施放硬直毫秒數（結束時技能才放出去、特效才出現）。顯示層據此面向目標、播施法動作，並把「釋放」那一幀對到特效出現的那一刻。走 `visual` 訊息。主執行緒不認得的事件種類一律略過，舊主執行緒不受影響。
 
 v35 新增可選 `battle.field.player._sgRevival = {startAt, endAt}`（GT 秒）。表示不屈鬥魂的復甦過程：玩家保留站姿向上飄起，HP 為模擬端提供的逐漸回復值，不代表真正死亡。缺省表示未復甦；完成或重置時移除。不設 reviveCd、不觸發敵群死亡清場。
 > **單一資料來源是 `js/worker/protocol.js`。** 本文件是說明；兩者衝突時以程式碼為準。
@@ -47,7 +49,7 @@ v35 新增可選 `battle.field.player._sgRevival = {startAt, endAt}`（GT 秒）
 |---|---|---|
 | `booted` | `{ snapshot, offlineSummary, notices, protocolVersion }` | 開機完成。`protocolVersion` 不符時主執行緒必須報錯而非硬跑 |
 | `tick` | `{ view, dirty, events, catchup }` | 高頻。`view` 為小量純量、`dirty` 為髒面板鍵陣列、`events` 為一般合批事件、`catchup` 為目前欠帳秒數（見 6.1） |
-| `visual` | `{ events }` | 技能施放飄字與重要 VFX；同一個模擬步驟內合併後低延遲送出，不等待下一個一般 tick |
+| `visual` | `{ events }` | 技能施放飄字、重要 VFX 與角色動作（`act`，v36）；同一個模擬步驟內合併後低延遲送出，不等待下一個一般 tick |
 | `panel` | `{ name, data }` | 面板完整資料 |
 | `full` | `{ snapshot }` | 完整狀態（開檔、讀檔、GM 指令、重開遊戲後） |
 | `persist` | `{ token, kind, payload: { json, meta } }` | 請主執行緒落地存檔，`kind` 見 `PERSIST_KINDS`。**v2 起附 `meta`**（由 Worker 以 `saveRecMeta()` 產生），主執行緒不得改用自己那份過期的 `G` 推算 |
@@ -311,6 +313,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 36 | 2026-09-22 | **角色動作事件**：新增事件種類 `act`＝`{ act, elId, target, lockMs }`，目前只有 `act: 'cast'`（技能開始施放）。發送端：`js/skills.js beginSkillCast`（經 `shim.js emitPlayerAct`）；接收端：`js/ui.js` 轉給 `BattleRenderer.onAct`。走 `visual` 訊息。指令表未變動（仍 93 條）。<br>理由：主角換成有施法動作的騎士（Special1）。技能特效大多交給 Preset 播，顯示層在 Preset 接手之後就不再碰角色，所以技能一直沒有施法動作；而用特效事件去猜「哪一則是施放」也不可靠——同一次施放會送出很多則（子段、飛行物命中、場域週期）。只有模擬層知道技能真的開始施放、硬直多長，所以由它說。 |
 | 27 | 2026-09-03 | **狀態每跳的 Preset 特效**：`vfx` 事件新增**可選**旗標 `presetOnly`。帶著它的事件只有 VFX Preset 端畫得出來（值來自狀態表的「作用特效」欄），沒有接上 Preset Runtime 的顯示層必須**整則忽略**，而不是退回泛用畫法。發送端：`js/combat.js` 的 `statusTickVfxFlush()`——同一個模擬步驟裡，同一個狀態打在多個敵人身上合併成一則（最多 8 個目標）。指令表未變動（仍 93 條）。<br>理由：DoT 每秒跳兩次，若沒有這個旗標，`?vfx=legacy` 或 Preset 組裝失敗時，每一次跳動都會退回泛用受擊爆點，畫面會變成滿場火花——那是**新增的**畫面，不是「維持舊畫法」。 |
 | 26 | 2026-09-03 | **VFX Preset 化**：`vfx` 事件新增**可選**欄位 `vfx`＝`{ cast, attack, projectile, hit, ground }`（角色 → `vfx/presets/<id>.json` 的 preset id，每個鍵都可省略）。值來自技能表／狀態表新增的特效欄（`config/CSV/Skills.csv`、`Skills2.csv` 五欄；`Status.csv` 三欄，經 config_tables.cjs 回寫成 `sk.vfx`／`tiers[i].vfx`／`ult[i].vfx`／`st.vfx`），由發送端依「這一發屬於表上哪一列」帶出（`js/skills.js skillVfxSpec`、`js/skills2.js sgVfxRoles`：extra.vfxTier／vfxUlt／vfxGid／vfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，`fxKind`／`variant`／`travelMs`／`area` 仍決定行為與時序；沒有欄位＝退回程式畫法，舊事件完全相容。指令表未變動（仍 93 條）。<br>理由：使用者要求「用 VFX 編輯器重做全部特效，且每個技能用到的特效檔名都寫在技能表裡、之後自己改」。長相要能由表格換掉，事件就必須帶「表上寫的那幾個檔名」；而行為與時序（AI_RULES 8.3 的計算層／表現層一致）仍由既有欄位負責，兩者分離才不會讓改一個檔名就改動命中時序。 |
 | 25 | 2026-08-26 | **火狩圈距與火神降臨**：環形 `area` 再新增 `rGrowTo`／`rGrowSec`（**這一道環**的半徑在幾秒內長到幾倍；最內圈恆為 1）。另外明確化一條既有約定：環形事件的 `r` 送的是**出生半徑**而不是當下半徑——顯示層的節點合併鍵含半徑，送當下值會讓每次補送都被當成另一道環而多畫一圈。<br>同批新增兩個變體（依 v17 規則本身不動協議）：`aura` 的 `follow-aura`（玩家錨定、逐幀跟隨的領域光環，供【火神降臨】與岩甲術兩個領域共用）與 `projectile` 的 `firehunt-ring`（翻轉中的火焰圓環）。指令表未變動（仍 93 條）。<br>理由：【烈陽星環】把火狩體積放大時，內外圈的間距必須照同一個比例拉開，否則兩圈的火狩會疊在一起——而那個間距**就是模擬層接觸判定用的幾何**（AI_RULES 8.3），只寫在顯示層會讓畫面與傷害範圍對不起來。 |

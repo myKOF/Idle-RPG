@@ -615,6 +615,16 @@ function handleWorkerUiEvents(events) {
       queueWorkerVisualEvent(event);
       return;
     }
+    /* 角色動作（協議 v36：目前只有技能開始施放）。直接交給戰鬥渲染器，不進特效佇列：
+       一則只是換個動作，排隊反而會讓施法姿勢落在特效後面。背景分頁不畫就不必轉。
+       高塔（tp-float）沒有角色動作，渲染器自己會略過。 */
+    if (event.kind === 'act') {
+      if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) return;
+      if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.onAct === 'function') {
+        BattleRenderer.onAct(event);
+      }
+      return;
+    }
     if (event.kind === 'loot') {
       // Battle statistics are authoritative Worker state projected by
       // panel('battle'). Replaying recorder calls here would double-count.
