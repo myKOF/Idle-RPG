@@ -7608,3 +7608,15 @@ Worker 存活且頁面正常完成載入。
 - 影響：普攻實際次數提高到面板值，攻速 5 的普攻輸出約多 25%（原本 3.97 下）。數值平衡若是用舊的實際次數調的，要重新看。
 - 不在這次範圍、實戰仍會讓普攻變稀的設計規則：普攻擊殺後換目標間隔 0.7 秒（TARGET_SWITCH_DELAY）、技能施放硬直 0.2 秒期間不普攻。
 - 同樣的夾法也在技能冷卻（js/skills.js tickSkillCds 夾 0），短冷卻技能（最短間隔 0.4 秒）同樣會被多拖一步，沒有一起改。
+
+## Claude｜普攻三招隨機混合（ATTACK-MIX-20260922）
+
+- Owner：Claude。使用者要求：兩段攻擊動作（Melee／Melee2）與特殊攻擊 1（Special1）隨機混合出現，不要一直用同一招。
+- 原本：普攻只有 attack1／attack2 固定輪流；Special1 只在技能施放（act:'cast'）時播。
+- 修改（本紀錄所在提交；素材庫 1fa5ab1 只改 README）：
+  - tools/build_character_sprites.cjs：新增 attack3＝{ from:'cast', first:5 }，不另外出圖（與 cast 同一套 Texture）；from 動作可帶 first（素材原幀號，不能早於來源的 first）。第 8～9 幀釋放，從第 5 幀開始＝與另外兩段一樣出劍前留 3 幀架式。重跑後只有 knight.json 多一段。
+  - battle-renderer：loadDirectionalSheet 的 from 動作依 first 往後切；playerAttackAnim 普攻改成隨機、但不連續兩下同一招（純隨機會連抽同一段像卡住重播，固定輪流又太規律）。
+  - 順手修：onVfx 只認主普攻的斬擊（variant melee）才帶動角色。神鑄【天罰】的落雷也是 cat basic、跟主普攻同一刻到，原本會把同一刀換成另一招而且不加速（duration 0），整段揮擊被下一刀攔腰切掉。
+  - 快取：battle-renderer 1.6.136。
+- 測試：basic-melee 改寫（300 下：三招都會出、次數相近、從不連續同一招、出現 A-B-A＝不是固定輪流、每招都照攻速加速；天罰落雷不帶動角色）；player-directional-sprite 新增 DIR-9（整支 loadDirectionalSheet 用假 PIXI 跑：attack3 是 cast 同一批 Texture 從第 5 幀切起、輪廓查得到、起身照舊整段倒轉）與 DIR-1 的 attack3 幀定義；skill2-vfx 的字面斷言跟上條件。
+- 取捨：attack3 與施法動作是同一套圖，畫面上分不出「這一下是普攻還是技能」。

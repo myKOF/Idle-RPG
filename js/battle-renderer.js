@@ -638,8 +638,13 @@ var BattleRenderer = (function () {
       keys.forEach(function (k) {
         var a = manifest.anims[k];
         if (!a.from || !dirAnims[a.from]) return;
-        /* 同一批 Texture 物件換個順序：輪廓對照表不必另外登記 */
-        dirAnims[k] = dirAnims[a.from].map(function (fr) { return a.reverse ? fr.slice().reverse() : fr.slice(); });
+        /* 同一批 Texture 物件換個順序或起點：輪廓對照表不必另外登記。
+           first 是素材的原幀號，來源動作自己已經從它的 first 開始，差多少就再往後切多少。 */
+        var skip = Math.max(0, (a.first | 0) - (manifest.anims[a.from].first | 0));
+        dirAnims[k] = dirAnims[a.from].map(function (fr) {
+          fr = fr.slice(skip);
+          return a.reverse ? fr.reverse() : fr;
+        });
       });
       Object.keys(dirAnims).forEach(function (k) {
         anims[k] = dirAnims[k][defaultDir];
@@ -1488,7 +1493,7 @@ var BattleRenderer = (function () {
       directional: !!(sheet && sheet.dirAnims),
       dir: sheet && sheet.dirAnims ? Math.max(0, Math.min(sheet.dirCount - 1, manifest.defaultDirection | 0)) : 0,
       dieAnim: !!(sheet && sheet.anims.die),
-      attackSeq: 0, runSpeed: 0,
+      lastAttack: '', runSpeed: 0,
       /* 世界座標。samples 是模擬層座標的取樣緩衝，wx/wy 是內插後畫出來的位置；
          鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
       wx: 0, wy: 0, samples: null,
@@ -1532,7 +1537,7 @@ var BattleRenderer = (function () {
 
   /* 出手動作。近戰不再「瞬間衝過去再彈回原位」——角色平常就會跑向目標
      （見 tickWorld 的追擊移動），出手時只播揮擊動作與一點前傾。 */
-  /* 普攻輪流用的動作：attack1、attack2…有幾段用幾段（舊素材三段都指同一列也照樣成立） */
+  /* 普攻用的動作：attack1、attack2…有幾段用幾段（騎士的 attack3 借用特殊攻擊 1；舊素材三段都指同一列也照樣成立） */
   function playerAttackAnimNames(sheet) {
     var names = [];
     for (var i = 1; sheet && sheet.anims && sheet.anims['attack' + i]; i++) names.push('attack' + i);
@@ -1549,10 +1554,13 @@ var BattleRenderer = (function () {
     if (melee && p.curAnim === 'cast') return;
     var name;
     if (melee) {
-      /* 輪流而不是隨機：隨機會連續抽到同一段，看起來像卡住重播 */
+      /* 隨機混著出，但不連續兩下同一招：純隨機會連抽同一段，看起來像卡住重播；
+         只輪流又太規律（使用者 2026-09-22 要兩段普攻與特殊攻擊隨機混合）。 */
       var attacks = playerAttackAnimNames(sheet);
-      name = attacks[(p.attackSeq || 0) % attacks.length];
-      p.attackSeq = (p.attackSeq || 0) + 1;
+      var pool = attacks.length > 1
+        ? attacks.filter(function (n) { return n !== p.lastAttack; }) : attacks;
+      name = pool[Math.floor(Math.random() * pool.length)] || attacks[0];
+      p.lastAttack = name;
     } else {
       name = (sheet && sheet.anims && sheet.anims.cast) ? 'cast' : 'attack2';
     }
@@ -5328,8 +5336,10 @@ var BattleRenderer = (function () {
 
     /* 普攻即使已由 Preset 接手仍要播角色動作。技能的施法動作改由模擬層的 act 事件驅動（見 onAct，協議 v36）：
        一次施放會送出好幾則特效事件（子段、飛行物命中、場域週期），從特效事件猜「哪一則是施放」會一直重播施法姿勢；
-       而且 Preset 接手的技能根本走不到這裡——這正是技能原本沒有施法動作的原因（2026-09-22）。 */
-    if (shouldAnimatePlayer(spec) && spec.cat === 'basic' && vfxTargetsLive(spec)) {
+       而且 Preset 接手的技能根本走不到這裡——這正是技能原本沒有施法動作的原因（2026-09-22）。
+       普攻這一類也只認主普攻的斬擊（variant melee）：神鑄【天罰】的落雷同屬 basic、跟主普攻同一刻到，
+       照樣帶動的話同一刀會換成另一招、而且不加速，整段揮擊被下一刀攔腰切掉。 */
+    if (shouldAnimatePlayer(spec) && spec.cat === 'basic' && spec.variant === 'melee' && vfxTargetsLive(spec)) {
       var contactFx = spec.fxKind === 'slash' || spec.fxKind === 'impact' || spec.fxKind === 'burst';
       var firstTarget = spec.targets && spec.targets.length ? spec.targets[0] : null;
       if (firstTarget) {

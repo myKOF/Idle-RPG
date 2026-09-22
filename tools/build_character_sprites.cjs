@@ -32,7 +32,8 @@ const REPO = path.resolve(__dirname, '..');
 
 /* ---- 角色設定 ----
    anims 的鍵是遊戲裡的動作名（battle-renderer 認得的名字）：
-     idle 站立、walk 移動、attack1／attack2 普攻（輪流）、cast 技能施法、die 死亡、rise 復活起身。
+     idle 站立、walk 移動、attack1～3 普攻（隨機、不連續兩下同一招）、cast 技能施法、die 死亡、rise 復活起身。
+     attack3 借用特殊攻擊 1（與 cast 同一套幀），使用者要兩段普攻與特殊攻擊隨機混著出（2026-09-22）。
    first  從第幾幀開始播。普攻與施法的傷害數字、技能特效都在「事件到達的那一刻」出現，
           所以把架式砍短，讓出劍／釋放幀緊跟在那一刻之後（關鍵幀見素材庫 README）。
    release  施法「釋放」的那一幀（素材的原幀號）。技能開始施放時模擬層會說硬直多長（協議 v36 act:'cast'），
@@ -41,7 +42,8 @@ const REPO = path.resolve(__dirname, '..');
    hold   播完停在最後一幀（死亡）。
    strideSpeed  這個 fps 下腳步剛好對上的移動速度（px/s）：著地腳每幀往後滑約 7 px（原尺寸），
           ×1.4 倍 × 30 fps ≈ 300 px/s ＝ BF_PLAYER_SPEED。移動速度變了，執行期照比例調播放速度，腳不會打滑。
-   from／reverse  不另外出圖，拿另一個動作的幀倒著播（起身＝倒地倒轉）。 */
+   from／reverse  不另外出圖，拿另一個動作的幀來播（起身＝倒地倒轉）。from 也可以帶 first
+          （素材的原幀號，不能早於來源動作的 first）：同一套幀從不同的地方開始播。 */
 const CHARACTERS = {
   knight: {
     library: 'characters/knight-hd',
@@ -62,6 +64,8 @@ const CHARACTERS = {
       attack1: { src: 'Melee.png', fps: 30, loop: false, first: 3 },
       attack2: { src: 'Melee2.png', fps: 30, loop: false, first: 4 },
       cast: { src: 'Special1.png', fps: 30, loop: false, first: 2, release: 8 },
+      /* 當普攻用：第 8～9 幀釋放，從第 5 幀開始＝與另外兩段一樣，出劍前只留 3 幀架式 */
+      attack3: { from: 'cast', fps: 30, loop: false, first: 5 },
       die: { src: 'Die.png', fps: 15, loop: false, hold: true },
       rise: { from: 'die', reverse: true, fps: 30, loop: false }
     }
@@ -174,6 +178,7 @@ function build(name, opts) {
     const a = ch.anims[key];
     if (a.from) {
       manifest.anims[key] = { from: a.from, reverse: !!a.reverse, fps: a.fps, loop: !!a.loop };
+      if (a.first) manifest.anims[key].first = a.first;
       continue;
     }
     const buf = fs.readFileSync(path.join(srcDir, a.src));
@@ -201,6 +206,10 @@ function build(name, opts) {
   for (const key of Object.keys(manifest.anims)) {
     const from = manifest.anims[key].from;
     if (from && !(manifest.anims[from] && manifest.anims[from].image)) throw new Error(key + ' 的 from 指到不存在的動作：' + from);
+    const first = manifest.anims[key].first;
+    if (from && first && !(first >= (manifest.anims[from].first || 0) && first < manifest.anims[from].frames)) {
+      throw new Error(key + ' 的 first 要在 ' + from + ' 的 first 之後、幀數之內');
+    }
   }
   files[ch.manifest] = Buffer.from(JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 

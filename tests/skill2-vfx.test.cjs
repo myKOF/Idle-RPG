@@ -138,8 +138,8 @@ test('普攻觸發角色動作；飛刀彈射與連鎖不觸發，目標離場�
   assert.match(renderer, /spec\.fxKind !== 'chain' && spec\.variant !== 'knife-bounce'/);
   assert.match(onVfx, /if \(fxGate\(spec\)\) return;\s*spec\.delayMs = 0;/);
   /* 2026-09-22 起只有普攻帶動角色動作；技能的施法動作改由模擬層的 act 事件驅動（onAct，協議 v36），
-     行為測試在 tests/player-cast-act.test.cjs CAST-7 */
-  assert.match(onVfx, /if \(shouldAnimatePlayer\(spec\) && spec\.cat === 'basic' && vfxTargetsLive\(spec\)\)/);
+     行為測試在 tests/player-cast-act.test.cjs CAST-7；普攻只認主普攻的斬擊（天罰落雷不算），行為測試在 basic-melee */
+  assert.match(onVfx, /if \(shouldAnimatePlayer\(spec\) && spec\.cat === 'basic' && spec\.variant === 'melee' && vfxTargetsLive\(spec\)\)/);
   assert.doesNotMatch(onVfx, /if \(spec\.cat !== 'enemy'\) \{/);
   assert.match(renderer, /if \(spec && \(spec\.cat === 'basic' \|\| spec\.variant === 'knife-bounce'\)\)/);
   /* 失效條件只認「離場」。若把垂死（dying／hp<=0）也算失效，普攻事件因 POS_BUFFER_MS

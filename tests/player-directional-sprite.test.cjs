@@ -51,6 +51,10 @@ test('DIR-1 幀定義與圖集一致：每張圖＝trim × 幀數 × 方向數�
   }
   assert.equal(manifest.anims.die.hold, true, '死亡停在最後一幀');
   assert.deepEqual(manifest.anims.rise, { from: 'die', reverse: true, fps: manifest.anims.rise.fps, loop: false }, '起身＝倒地倒著播');
+  const a3 = manifest.anims.attack3;
+  assert.ok(a3 && a3.from === 'cast' && !a3.reverse && !a3.loop, '第三段普攻借用特殊攻擊 1（與施法同一套幀）');
+  assert.ok(a3.first > manifest.anims.cast.first && a3.first < manifest.anims.cast.release,
+    '當普攻用從比施法晚的地方開始，但要在釋放幀之前（出劍前留幾幀架式）');
   assert.ok(manifest.anims.walk.strideSpeed > 0, '跑步要記下腳步對上的移動速度');
 });
 
@@ -190,4 +194,35 @@ test('DIR-8 死亡：有 die 的素材播 die 停在最後一幀、不轉 90 度
   /* 多方向素材不翻面、影子在圖裡不另畫橢圓 */
   assert.match(renderer, /p\.bodyWrap\.scale\.x = \(!p\.directional && p\.facing < 0\) \? -1 : 1/);
   assert.match(renderer, /if \(!manifest\.bakedShadow\) \{[\s\S]*?shadow\.ellipse/);
+});
+
+test('DIR-9 借用幀的動作：同一批 Texture 從 first 切起（輪廓照樣查得到）；倒轉的起身不受影響', async () => {
+  /* loadDirectionalSheet 整支拿來跑，PIXI 換成只記錄切格位置的假物件 */
+  function Rectangle(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; }
+  function Texture(o) { this.frame = o.frame; this.source = o.source; }
+  const PIXI = {
+    Rectangle, Texture,
+    Assets: { load: (url) => Promise.resolve({ source: { url, scaleMode: '' } }) }
+  };
+  const c = { PIXI, Map, Promise, Math, S: { sheets: {} } };
+  vm.createContext(c);
+  vm.runInContext(fn(renderer, 'loadDirectionalSheet'), c);
+  await c.loadDirectionalSheet('player', 'images/sprites/knight/knight', manifest, { outline: true });
+  const sheet = c.S.sheets.player;
+  const cast = manifest.anims.cast, a3 = manifest.anims.attack3, die = manifest.anims.die;
+  for (let d = 0; d < manifest.directions.length; d++) {
+    const castFrames = sheet.dirAnims.cast[d];
+    const a3Frames = sheet.dirAnims.attack3[d];
+    assert.equal(castFrames.length, cast.frames - cast.first);
+    assert.equal(a3Frames.length, cast.frames - a3.first, '方向 ' + d + '：從原幀號 first 開始');
+    a3Frames.forEach((t, i) => assert.equal(t, castFrames[i + (a3.first - cast.first)], '同一個 Texture 物件，不另外切'));
+    assert.equal(a3Frames[0].frame.x, a3.first * cast.trim.w, '第一幀就是素材的第 ' + a3.first + ' 幀');
+    assert.equal(a3Frames[0].frame.y, d * cast.trim.h);
+    assert.ok(a3Frames.every((t) => sheet.outline.map.has(t)), '輪廓對照表查得到');
+    const rise = sheet.dirAnims.rise[d];
+    assert.equal(rise.length, die.frames, '起身沒有 first：整段倒著播');
+    assert.equal(rise[0], sheet.dirAnims.die[d][die.frames - 1]);
+  }
+  assert.ok(Math.abs(sheet.speeds.attack3 - a3.fps / 60) < 1e-12);
+  assert.equal(sheet.anims.attack3, sheet.dirAnims.attack3[manifest.defaultDirection]);
 });
