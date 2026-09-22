@@ -1,4 +1,22 @@
-# FIREGOD-VFX-20260922
+# FIREGOD-FORMATION-20260922／FIREGOD-VFX-20260922
+
+## 後續：旋轉編隊（目前規格）
+
+使用者附圖指定六枚等距成環、整組移動，後續指定半徑 8 米、中心前進 12 米／秒、順時針每秒 1.5 圈。取代前次排成一線／80ms 延遲；數量繼續依等級計算（Lv.10 六枚）。中心沿目標起始方向走 40 米，約 3.333 秒，成員在中心外 8 米公轉。
+
+- Skills2 Excel／CSV 第 111 列同步速度、環繞半徑、JSON rps 與描述；新增 orbitM 專用欄位綁定，沒有第二份數值來源。工作簿只改五個儲存格並保留原樣式，其餘內容未改。
+- util.projectileOrbitPoint 純函式供模擬與 Runtime 共用；事件透過既有 area 白名單傳完整未投影軌跡，協議升 v37、主執行緒與 Worker 快取同步。
+- 模擬每拍掃過公轉弧線（每段最多 7.5 度，8 米半徑的弦誤差 <0.18 世界單位），逐枚沿用一次命中／貫穿邏輯，不能以共同中心直線代替。無座標高塔維持抵達後命中相容行為。
+- Runtime 逐幀計算位置與切線朝向，最後才投影地面 Y；動畫壽命依權威飛行時間延長，六枚不在 1.5 秒提前消失。未修改 preset、貼圖或傷害倍率；素材庫無變更，不建立空提交。
+- 修改檔案：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tools/skills2-geometry.cjs、js/skills2.js、js/util.js、js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、js/worker/protocol.js、index.html、tests/firegod-vfx.test.cjs、tests/firegod-render.test.cjs、tests/worker-protocol.test.cjs、docs/WORKER_PROTOCOL.md、docs/AI_TASKS.md、本報告。
+- 唯讀檢查：battlefield 線段碰撞、Worker shim area 透傳、既有星環 preset 與貼圖、battle-renderer 投影入口。
+- node --test tests/firegod-vfx.test.cjs tests/firegod-render.test.cjs tests/skills2-vfx-schema.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs：28/28。涵蓋同時起飛／六枚等距、共同中心速度／旋向、低 tick 弧線命中與中心直線不誤中、兩種投影比例逐幀位置、完整飛行壽命、高塔與致死命中、連發不疊白、Excel／CSV 一致及 Worker 協議。
+- node --test --test-name-pattern='尺寸|sizing|projectile|PROJECTILE|THRUST|DEVOUR' tests/vfx-runtime.test.cjs：12/12。
+- node tools/build_check.cjs：398 檔通過；node tools/config_tables.cjs --apply Skills2：語意變更 0；git diff --check 通過。
+- 已展示實際 Runtime 的單波六枚 GIF（先預覽）；未完整瀏覽器／GPU 實戰驗證，後續可重新載入 8123 確認觀感。無未完成實作，可合併；遊戲 Commit 為本紀錄所在提交，未合併／推送。
+
+以下保留前次白光修正紀錄；其中速度與節拍已由本節取代。
+
 
 ## 本次完成
 

@@ -25,6 +25,8 @@ var VFXRuntime = (function () {
 
   /* 米制本體尺寸。authored 是素材座標中的本體，不包含外暈／拖尾。
      保留作者的座標精度，以轉換矩陣統一尺寸；Editor 往返不必重採樣素材。 */
+  var orbitPoint = typeof projectileOrbitPoint === 'function' ? projectileOrbitPoint
+    : (typeof require === 'function' ? require('./util.js').projectileOrbitPoint : null);
   var SIZE_DEFAULTS = { circle: { radiusM: 6 }, square: { widthM: 6, heightM: 6 },
     rectangle: { widthM: 6, heightM: 3 }, 'projectile-circle': { radiusM: 6 },
     'projectile-square': { widthM: 6, heightM: 6 } };
@@ -756,13 +758,17 @@ var VFXRuntime = (function () {
       if (authoredProjectile) mult = 1;
       dimensions = dimensions || (authoredProjectile ? { scaleX: 1, scaleY: 1 }
         : defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1));
-      var params = Object.assign({ position: from, rotation: facing }, dimensions);
+      var flightOrbit = spec.area && spec.area.flightOrbit;
+      if (flightOrbit) flightOrbit = Object.assign({}, flightOrbit, { origin: flightOrbit.origin || { x: from.x, y: from.y / groundScale } });
+      var startPoint = flightOrbit ? orbitPoint(flightOrbit, 0) : null;
+      var params = Object.assign({ position: startPoint ? {x:startPoint.x,y:startPoint.y*groundScale} : from, rotation: facing }, dimensions);
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
-      if ((presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
         /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
+        flightOrbit: flightOrbit,
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
         homingSpeed:spec.area&&num(spec.area.homingSpeed,0),
         homingPosition:spec.area&&spec.area.homingSpeed>0?{x:from.x,y:from.y/groundScale}:null,
@@ -1436,6 +1442,11 @@ var VFXRuntime = (function () {
           pr.homingPosition={x:next.x,y:next.y};pr.previousTarget=worldTarget;
           at={x:next.x,y:next.y*groundScale};k=next.hit?1:0;
         }
+        if (pr.flightOrbit) {
+          var orbitAt = orbitPoint(pr.flightOrbit, pr.t);
+          at = {x:orbitAt.x,y:orbitAt.y*groundScale};
+          pr.facing = Math.atan2(orbitAt.vy*groundScale, orbitAt.vx);
+        }
         var movingDimensions = pr.dimensions;
         if (pr.thrustBody) {
           var distance = pr.thrustLength * k;
@@ -1443,7 +1454,7 @@ var VFXRuntime = (function () {
           at = {x:pr.from.x+Math.cos(pr.facing)*tailDistance,y:pr.from.y+Math.sin(pr.facing)*tailDistance};
           movingDimensions = {scaleX:pr.dimensions.scaleX*Math.min(1,distance/pr.thrustBody),scaleY:pr.dimensions.scaleY};
         }
-        if(!(pr.homingSpeed>0))pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
+        if(!pr.flightOrbit && !(pr.homingSpeed>0))pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
           step, PROJECTILE_FACING_TAU_SEC);
         var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },

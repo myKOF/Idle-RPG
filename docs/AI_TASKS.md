@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜火神星環旋轉編隊（FIREGOD-FORMATION-20260922）
+
+- Done。依附圖改為同波同時起飛、等距成環並順時針公轉。使用者最終數值：半徑 8 米、每秒 1.5 圈、中心每秒前進 12 米；中心射程 40 米。數量仍讀等級表（Lv.10 六枚），傷害與素材不變。
+- 修改 Skills2 Excel／CSV／JS、幾何欄位、util 純軌跡函式、模擬弧線掃掠、Runtime、Worker v37／快取、測試與文件。預檢無衝突；表格第111列可調半徑、速度，JSON rps 可調旋轉。已先展示實際 Runtime 動圖。
+- 專項／配置／Worker 28/28、Runtime 選定回歸 12/12、build 398 檔及 config_tables apply 語意差異 0、diff check 通過。未完整瀏覽器實戰；素材未變，不需素材庫提交。無未完成實作，可合併但未合併／推送；Commit 見本紀錄所在提交，完整交接見 docs/skill-tests/20260922-firegod-vfx.md。
+
+
 ## Codex｜火神降臨星環白光（FIREGOD-VFX-20260922）
 
 - Done。前次 ca4fbe6c 只移除誤繼承爆炸，仍可用純星環重現白塊。本次修正漏填尺寸導致半徑 6 米放大及加法疊白；星環事件沿用實際碰撞半寬 8 世界單位，透明暖色 normal 混色，編輯器名目半徑 11 單位。

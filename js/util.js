@@ -32,6 +32,17 @@ function projectileHomingStep(position, previousTarget, target, speed, dt) {
   return {x:position.x+(d?dx/d*distance:0),y:position.y+(d?dy/d*distance:0),hit:d<1e-9};
 }
 if(typeof module!=='undefined'&&module.exports)module.exports.projectileHomingStep=projectileHomingStep;
+/* 旋轉編隊飛行：共同中心直線前進，成員依相位繞中心公轉；純世界座標。 */
+function projectileOrbitPoint(orbit, seconds) {
+  var t = Math.max(0, Math.min(seconds, orbit.length / orbit.speed));
+  var a = orbit.phase + orbit.spin * t;
+  var vx = Math.cos(orbit.heading) * orbit.speed, vy = Math.sin(orbit.heading) * orbit.speed;
+  return { x: orbit.origin.x + vx * t + Math.cos(a) * orbit.radius,
+    y: orbit.origin.y + vy * t + Math.sin(a) * orbit.radius,
+    vx: vx - Math.sin(a) * orbit.radius * orbit.spin,
+    vy: vy + Math.cos(a) * orbit.radius * orbit.spin };
+}
+if(typeof module!=='undefined'&&module.exports)module.exports.projectileOrbitPoint=projectileOrbitPoint;
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 // 屬性上限套用：上限 cap 為 0（或負）代表「無上限」，僅保留下限 0；否則夾在 [0, cap]。
 function capValue(v, cap) { return cap > 0 ? clamp(v, 0, cap) : Math.max(0, v); }
