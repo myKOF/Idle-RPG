@@ -1,5 +1,58 @@
 # AI_TASKS.md
 
+## Codex｜飛行特效透視保形（AIR-VFX-20260922）
+
+- Done。飛行物移出整張場景 PerspectiveMesh，只投影位置並等比縮放；涵蓋 35 份 proj 素材、飛行斬擊／環繞彈體／尾粒子、持續場域維護的雷球與追蹤冰箭／風刃，以及 legacy 子彈路徑。地面仍維持原透視。
+- 修改 battle-renderer、VFX Runtime／Pixi backend、快取與測試文件。預檢無衝突；使用者正在調整的技能表、skills2、hit-fire／星環 preset/layout 保留未提交，未修改素材庫。
+- 22 項專項／透視／後端／投影測試與18項 Runtime 回歸通過；瀏覽器以實際 Pixi、目前星環素材做遠近九宮格比較，四角不再歪斜；build／diff check 通過。未完整戰鬥場景與 GPU 效能壓測；可合併，未合併／推送。Commit 見本紀錄所在提交，詳見 docs/skill-tests/20260922-air-vfx.md。
+
+
+## Codex｜火神星環旋轉編隊（FIREGOD-FORMATION-20260922）
+
+- Done。依附圖改為同波同時起飛、等距成環並順時針公轉。使用者最終數值：半徑 8 米、每秒 1.5 圈、中心每秒前進 12 米；中心射程 40 米。數量仍讀等級表（Lv.10 六枚），傷害與素材不變。
+- 修改 Skills2 Excel／CSV／JS、幾何欄位、util 純軌跡函式、模擬弧線掃掠、Runtime、Worker v37／快取、測試與文件。預檢無衝突；表格第111列可調半徑、速度，JSON rps 可調旋轉。已先展示實際 Runtime 動圖。
+- 專項／配置／Worker 28/28、Runtime 選定回歸 12/12、build 398 檔及 config_tables apply 語意差異 0、diff check 通過。未完整瀏覽器實戰；素材未變，不需素材庫提交。無未完成實作，可合併但未合併／推送；Commit 見本紀錄所在提交，完整交接見 docs/skill-tests/20260922-firegod-vfx.md。
+
+
+## Codex｜火神降臨星環白光（FIREGOD-VFX-20260922）
+
+- Done。前次 ca4fbe6c 只移除誤繼承爆炸，仍可用純星環重現白塊。本次修正漏填尺寸導致半徑 6 米放大及加法疊白；星環事件沿用實際碰撞半寬 8 世界單位，透明暖色 normal 混色，編輯器名目半徑 11 單位。
+- 修改星環 preset／製作來源、skills2 尺寸事件、快取、渲染及命中測試與文件。預檢無衝突；保留傷害、數量、射程、速度和既有命中判定。素材庫保存 preset，Commit 49432e4；遊戲 Commit 見本紀錄所在提交。
+- 實際 Runtime/Core／出貨貼圖以每秒 10 波 × 每波 6 枚壓測，1 秒時保留 50 枚，白色像素 0、圓環可見；已展示 4 秒動圖，未完整瀏覽器實戰。10/10 測試、build 398 檔、素材匯出檢查與 diff check 通過。無未完成實作，可合併，未合併／推送；完整交接見 docs/skill-tests/20260922-firegod-vfx.md。
+
+## Codex｜火球等速預判追蹤（TEMPEST-INTERCEPT-20260922）
+
+- Owner Codex；Done。修正移動敵人使火球剎車：以共用純函式依敵人位移預判攔截，火球每拍按速度推進，實際接觸才結算；同步模擬與 Runtime，不沿出生飛行秒數強迫到達。修改 util、skills2、Runtime、測試、快取與本紀錄；預檢無衝突。此項取代 TEMPEST-HOMING 的固定秒數飛行。
+- 同一個世界座標純函式解相對運動攔截，每顆只讀既定目標，沒有逐幀掃怪或重選目標。Runtime 還原地面Y比例後計算再投影，跳過舊曲線／朝向計算；其他子彈不配置新追蹤狀態。沒有額外Timer、貼圖或粒子。無座標高塔保留原延後命中相容流程。
+- `node --test tests/inferno-tempest.test.cjs tests/dragon-devour.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-runtime.test.cjs`：125項，123通過、2項既有 CATALOG-3／STARFALL-TAIL 失敗，HEAD基準確認；新相關22/22。涵蓋迎面提前命中、横移等速、停步、移遠不隔空命中、投影後Runtime速度。`node tools/build_check.cjs` 396檔、diff check 通過。
+- 效能微基準：300顆×60Hz×60秒×5輪，共用攔截數學每幀中位0.0202ms、最慢0.0214ms（Node／固定代表性輸入，不含GPU、整體場景與不同硬體差異，不視為實戰FPS保證）。唯讀檢查 battlefield 逼近與 battle-renderer 預判／座標取樣；未改素材或素材庫，未瀏覽器實戰。無未完成實作，可供使用者合併；建議整合後實戰觀察，Commit 見本紀錄所在提交，未合併／推送。
+
+## Codex｜烈焰暴風射程36米（TEMPEST-RANGE-20260922）
+
+- Owner Codex；Done。使用者指定火球射程36米，調整烈焰暴風 searchM 24→36；修改 Skills2 Excel／CSV／JS、快取、邊界測試與本紀錄。預檢無衝突，保留36米／秒速度、0.33秒單發與6米爆炸。
+- 驗證 `node --test tests/inferno-tempest.test.cjs tests/skills2-vfx-schema.test.cjs` 13/13，包含36米可選／超界不可選；`node tools/build_check.cjs` 396檔、config_tables --apply Skills2 語意差異0、diff check 通過。唯讀檢查既有搜敵與表格綁定，未改素材／素材庫，未瀏覽器實戰。無未完成實作，可供使用者合併；Commit 見本紀錄所在提交，未合併／推送。
+
+## Codex｜烈焰暴風追蹤必中（TEMPEST-HOMING-20260922）
+
+- Owner Codex；Done。使用者指定火球追蹤必中與速度 +50%；烈焰暴風速度 24→36 米／秒，保留 0.33 秒隨機單發／6 米爆炸。修改 Skills2 表與程式、Runtime 追蹤起點、測試／快取與本紀錄，預檢無衝突。
+- 沿既有追蹤飛行以初始距離／速度決定抵達時間，畫面逐幀追向目標；爆炸在抵達當下目標位置查詢傷害圈。主目標略過命中／閃避擲骰，防禦、抗性與無敵仍有效；範圍內其他敵人仍正常判定。目標死亡沿現有生命判斷不對屍體造成傷害，不另選新目標。
+- `node --test tests/inferno-tempest.test.cjs tests/dragon-devour.test.cjs tests/skills2-vfx-schema.test.cjs` 22/22；涵蓋移動目標／爆炸位置、速度倍率、實際 Runtime 追蹤座標與必中設定。`node tools/build_check.cjs` 396 檔、config_tables --apply Skills2 語意差異 0、diff check 通過。唯讀檢查 formula 命中判定與既有飛行插值；无素材修改／素材庫提交。
+- 未瀏覽器實戰驗證；無未完成實作，可合併，建議整合後確認追蹤觀感。Commit 見本紀錄所在提交，未合併／推送。
+
+## Codex｜統一新版火球（FIREBALL-VISUAL-20260922）
+
+- Owner Codex；Done。使用者指定所有火球改用融火之心 proj-dragon-devour；範圍含火球術、分裂火球、火鳳伴生火球、烈焰暴風與敵方火屬性投射物。修改配置 Excel／CSV／JS、data 普攻對照、Runtime 尾焰收尾、快取與來源登記／測試。預檢無衝突；保留軌跡／傷害／爆炸與火狩星環，無素材編輯及素材庫提交。
+- 後續指示取代前項 TEMPEST-FIREBALL 舊節拍：每道火龍捲每 0.33 秒發射 1 顆，每顆從自身 24 米內重新隨機抽選敵人，不優先近敵、不保留上次鎖敵；允許連續抽中同一敵人。Excel 第 99 列 gap=0.33、count=1，描述與特效說明同步。
+- 驗證：`node --test tests/inferno-tempest.test.cjs tests/dragon-devour.test.cjs tests/skills2-vfx-schema.test.cjs tests/vfx-preset-usage.test.cjs` 44/44；包含隨機樣本、0.33秒間隔、平射中點、命中爆炸、Excel/CSV一致與來源登记。`node tools/build_check.cjs`、`node tools/config_tables.cjs --apply Skills2`、`git diff --check`。唯讀盤點所有 CSV／JS 火球引用、既有新火球素材與尾焰；未瀏覽器實戰驗證。無未完成實作，可供使用者合併；Commit 見本紀錄所在提交，未合併或推送，建議整合後確認連發觀感。
+
+## Codex｜烈焰暴風平射火球（TEMPEST-FIREBALL-20260922）
+
+- Owner Codex；Done。使用者指定取代數量倍率：每道火龍捲每秒向 24 米內最多 3 名敵人平射火球，命中爆炸半徑 6 米，基礎 200% 火焰傷害，每級 +20 百分點（沿既有升級公式，Lv.1 為 220%）。修改 Skills2 Excel／CSV／JS、幾何與特效欄位工具、專項與舊規格測試、快取及本紀錄。預檢無衝突；不更動其他超神或素材。
+- 每道龍捲出生後 1 秒開始，最近的不同目標優先，少怪不補射；以表定 24 米／秒飛向發射當下目標位置，直線無拋物線，抵達時依當下敵人位置查詢爆炸圈（含體型邊緣），逃離落點可避開。重生重新計時，離開龍捲的火球可完成飛行；死亡不結算傷害，重置清空。觸發子彈／特效讀本列 proj-fireball／burst-fire，正常龍捲本體維持原外觀。
+- `node --test tests/inferno-tempest.test.cjs tests/firepillar-expire-vfx.test.cjs tests/dragon-devour.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill2-fire-legendary.test.cjs tests/vfx-preset-usage.test.cjs`：69 項，67 通過、2 個既有地爆天星倒數／預警失敗（HEAD 基準同樣失敗）；本次專項 5/5，涵蓋模擬／事件與實際 Runtime 半程直線座標。舊烈焰暴風數量測試依本次新需求更新。
+- `node tools/build_check.cjs` 396 檔、`node tools/config_tables.cjs --apply Skills2` 語意差異 0、`git diff --check` 通過。唯讀檢查 battlefield 搜敵／體型、VFX Runtime 飛行、既有火球／爆炸素材及場域重生／清除。素材無修改，無素材庫提交。
+- Excel 工具匯入時把原空白格讀成 934，匯出比對攔下；改用原始 ZIP/XML 精準改第 99 列，逐格核對其餘值與原工作簿一致。預覽工具同樣受空白格問題影響，未宣稱完成原生 Excel 視覺驗收；未做瀏覽器實戰。無未完成實作，可供使用者合併，建議整合後確認火球速度與實戰觀感；Commit 見本紀錄所在提交，未合併／推送。
+
 ## Codex｜永劫火獄火池分離（ETERNAL-POOL-20260921）
 
 - Owner Codex；Done。永劫火獄 ground 改觸發 ground，火池明確事件只讀觸發角色，本體繼承正常龍捲。允許配置工具、Skills2 表／程式、專項測試、快取與本紀錄；預檢乾淨，保留使用者素材及其他配置。
@@ -143,7 +196,7 @@
 
 - Owner Codex；Done。使用者授權修正敵方飛彈在遊戲中被預設米制尺寸放大的問題。
 - 範圍：js/vfx-runtime.js、tests/vfx-runtime.test.cjs、index.html、本紀錄。無前置依賴；衝突預檢通過。不修改素材、配置、傷害與命中邏輯；保留使用者 slash-dual preset/layout 修改。
-- 未帶權威彈體尺寸的敵方遠程攻擊依製作尺寸播放；帶 bodyLength／lineWidth 的事件仍依判定尺寸。驗證正式暗影素材、各場景倍率、飛行時序與敵方傷害回歸。
+- 未帶權威彈體尺寸的敵方遠程攻擊依製作尺寸播放；帶 lineWidth 的事件仍依判定尺寸。驗證正式暗影素材、各場景倍率、飛行時序與敵方傷害回歸。
 - 驗證：node --test tests/vfx-runtime.test.cjs tests/enemy-projectile-retaliation.test.cjs，98 項中 97 通過；唯一 CATALOG-3（bolt-sky-purple 頂層兩列）以 HEAD Runtime 在記憶體執行確認同樣失敗。新增尺寸案例在舊 Runtime 會失敗，修正後通過。node tools/build_check.cjs：379 檔通過；git diff --check 通過。
 - 唯讀檢查：combat.js、data.js、battlefield.js、Editor 播放、proj-dark-orb 與 asset-index。沒有素材修改／素材庫提交。未進行實機畫面與 Console 驗證；後續由使用者在整合後確認畫面。可合併本次修正；未合併或推送，使用者既有素材修改留在工作區。
 

@@ -340,6 +340,7 @@ var VFXPixiBackend = (function () {
 
     function updateNode(node, t) {
       if (!t) return;
+      if (opts.projectTransform) t = opts.projectTransform(t);
       if (t.visible === false) { node.visible = false; detachDepth(node); return; }
       node.visible = true;
       assignDepth(node, t);

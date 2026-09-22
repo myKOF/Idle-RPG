@@ -7,15 +7,19 @@
     {
       "id": "glow",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/light_03.png",
+      "assetId": "particle-pack/png-transparent/light_03.png",
       "zIndex": 0,
-      "scale": {
-        "x": 0.0781,
-        "y": 0.0781
+      "position": {
+        "x": 0,
+        "y": 0
       },
-      "alpha": 0.6,
-      "tint": "#ff6a2a",
-      "blendMode": "add",
+      "scale": {
+        "x": 0.0899,
+        "y": 0.0899
+      },
+      "alpha": 0.75,
+      "tint": "#ffdd00",
+      "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
         [
@@ -61,15 +65,19 @@
     {
       "id": "ring",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "assetId": "particle-pack/png-transparent/circle_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.043,
-        "y": 0.043
+        "x": 0.0914,
+        "y": 0.0914
       },
       "alpha": 1,
-      "tint": "#ffd447",
-      "blendMode": "add",
+      "tint": "#ffc400",
+      "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
         [
@@ -88,31 +96,25 @@
           1,
           0
         ]
-      ],
-      "rotationYOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          24.5044
-        ]
       ]
     },
     {
       "id": "gloss",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/slash_01.png",
+      "assetId": "particle-pack/png-transparent/slash_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": -0.5236,
       "scale": {
-        "x": 0.0352,
-        "y": 0.0352
+        "x": 0.0487,
+        "y": 0.0487
       },
-      "alpha": 0.9,
-      "tint": "#ffffff",
-      "blendMode": "add",
+      "alpha": 0.55,
+      "tint": "#ffb83d",
+      "blendMode": "normal",
       "duration": 1.5,
       "alphaOverLife": [
         [
@@ -146,9 +148,13 @@
     {
       "id": "trail",
       "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "assetId": "particle-pack/png-transparent/fire_01.png",
       "zIndex": 4,
-      "tint": "#ff8a3d",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "tint": "#ffffff",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
@@ -156,22 +162,22 @@
       },
       "lifetime": [
         0.14,
-        0.26
+        1
       ],
       "spawn": {
-        "radius": 3,
+        "radius": 4.1514,
         "shape": "circle"
       },
       "speed": [
-        10,
-        40
+        13.838,
+        55.3519
       ],
       "direction": 180,
       "spread": 40,
       "drag": 5,
       "startScale": [
-        0.0117,
-        0.0215
+        0.0162,
+        0.0298
       ],
       "alphaOverLife": [
         [
@@ -190,15 +196,15 @@
       "tintOverLife": [
         [
           0,
-          "#ffffff"
+          "#ffb83d"
         ],
         [
           0.5,
-          "#ffffff"
+          "#ff7926"
         ],
         [
           1,
-          "#2a2a30"
+          "#6b2610"
         ]
       ],
       "scaleOverLife": [
@@ -217,6 +223,7 @@
     "authored": {
       "radius": 11
     },
+    "radiusM": 1.1,
     "shape": "projectile-circle"
   }
 }

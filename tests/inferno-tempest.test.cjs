@@ -1,0 +1,137 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const {createEngine}=require('../scripts/sim/engine');
+function setup(lv=1){
+ const c=createEngine({seed:42}).boot(null).ctx;
+ c.G.player.level=1000;c.G.player.loadout=['sg:firepillar'];
+ c.G.player.skills2.levels.firepillar=Array(7).fill(10);
+ c.G.player.skills2.ult={firepillar:{pick:c.sgUltIndexOfId('firepillar','infernoTempest'),lv}};
+ c.initFieldPlayer();c.gmArenaSpawn(5,'elite',1000000);
+ const p=c.FIELD.player;p.pos={x:0,y:0};p.mp=1e9;
+ c.FIELD.monsters.forEach((m,i)=>{m.pos={x:100+i*40,y:0};m._enterCd=0;});
+ const events=[],hits=[],realHit=c.sgHitOne;c.playCombatVfx=s=>events.push(s);
+ c.sgHitOne=(p,s,m,d,g,f,o,delay,bonus,elem,guaranteed)=>{hits.push({m,d,elem,guaranteed});return {miss:false};};
+ c.sgCastFirepillar(p,c.getStats(),c.SKILLS2.firepillar,Array(7).fill(10),c.FIELD.monsters,c.FIELD.monsters[0],'mv-float',{});
+ return {c,p,events,hits,realHit,f:c.SKILL2_RT.grounds[0],ctx:{getEnemies:()=>c.FIELD.monsters}};
+}
+test('烈焰暴風：不倍增龍捲，每道獨立每0.33秒隨機鎖定1名36米內敵人',()=>{
+ const {c,f,events}=setup();assert.equal(c.SKILL2_RT.grounds.length,2);
+ assert.notEqual(f.tempest,c.SKILL2_RT.grounds[1].tempest);
+ assert.equal(f.tempest.gap,.33);assert.equal(f.tempest.count,1);
+ f.pos={x:1000,y:100};
+ assert.equal(f.tempest.range,360);
+ const distances=[300,340,360,361,50];
+ c.FIELD.monsters.forEach((m,i)=>m.pos={x:1000+distances[i],y:100});c.FIELD.monsters[4]._enterCd=1;
+ c.GT=f.tempest.nextAt-.001;c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,0);
+ c.GT+=.001;c.sgTickInfernoTempest(f,c.FIELD.monsters);
+ assert.equal(c.SKILL2_RT.projectiles.length,1);
+ const shots=events.filter(e=>e.variant==='inferno-tempest-ball');assert.equal(shots.length,1);
+ assert.equal(new Set(c.SKILL2_RT.projectiles.map(p=>p.target)).size,1);
+ shots.forEach(s=>{assert.equal(s.area.sourceX,1000);assert.equal(s.arcM||0,0);assert.equal(s.area.homingFlight,true);assert.deepEqual(Object.keys(s.vfx),['projectile']);});
+ c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,1);
+ c.GT=f.tempest.nextAt;c.FIELD.monsters.splice(1);c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,2);
+ c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,3);
+ assert.ok(Math.abs(c.GT-.99)<1e-9,'前三顆分別在0.33、0.66、0.99秒發射');
+ c.FIELD.monsters[0].pos.x=f.pos.x+360;c.GT=f.tempest.nextAt;
+ c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,4,'36米邊界可鎖定');
+ c.FIELD.monsters[0].pos.x=f.pos.x+361;c.GT=f.tempest.nextAt;
+ c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,4,'超過36米不可鎖定');
+});
+test('烈焰暴風：速度提高50%，追蹤移動目標並在命中位置爆炸',()=>{
+ const {c,f,events,hits,ctx}=setup();c.FIELD.monsters.splice(1);const target=c.FIELD.monsters[0];
+ f.pos={x:0,y:0};target.pos={x:240,y:0};c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);
+ const shot=c.SKILL2_RT.projectiles[0];assert.ok(Math.abs(shot.endAt-c.GT-2/3)<1e-9);assert.equal(f.tempest.speed,360);
+ c.GT=shot.endAt-.001;c.sgTickFlyingProjectiles(.999,ctx);assert.equal(hits.length,0);assert.equal(events.filter(e=>e.variant==='inferno-tempest-impact').length,0);
+ const edge={hp:100,pos:{x:500,y:60+c.bfBodyRadius()}},outside={hp:100,pos:{x:500,y:61+c.bfBodyRadius()}};
+ target.pos.x=500;c.FIELD.monsters.push(edge,outside);
+ c.GT=shot.endAt;c.sgTickFlyingProjectiles(.001,ctx);
+ assert.equal(hits.length,0,'目標移遠不能在舊的出生倒數結束時隔空命中');
+ for(let i=0;i<100&&c.SKILL2_RT.projectiles.length;i++){c.GT+=1/60;c.sgTickFlyingProjectiles(1/60,ctx);}
+ assert.deepEqual(hits.map(h=>h.m),[target,edge]);assert.equal(hits[0].elem,'fire');assert.equal(hits[0].guaranteed,true);assert.equal(hits[1].guaranteed,false);
+ const impact=events.find(e=>e.variant==='inferno-tempest-impact');assert.equal(impact.area.x,500);assert.equal(impact.area.r,60);assert.deepEqual(Object.keys(impact.vfx),['attack']);
+ assert.equal(c.SKILL2_RT.projectiles.length,0);
+});
+test('烈焰暴風：只升火球傷害，重生龍捲重新計時，死亡與重置停止傷害',()=>{
+ const a=setup(1),b=setup(10);
+ const base=a.c.sgGroupBaseStat(a.c.SKILLS2.firepillar,a.c.getStats());
+ assert.equal(a.f.tempest.dmgVal,base*2.2);assert.equal(b.f.tempest.dmgVal,base*4);
+ assert.equal(a.f.dmgVal,b.f.dmgVal);assert.equal(a.f.tempest.range,b.f.tempest.range);
+ a.c.GT=3;a.c.sgGroundExpire(a.f,a.c.FIELD.monsters,a.ctx);
+ const child=a.c.SKILL2_RT.grounds.at(-1);assert.notEqual(child,a.f);assert.equal(child.tempest.nextAt,3.33);assert.notEqual(child.tempest,a.f.tempest);
+ a.c.GT=4;a.c.sgTickInfernoTempest(child,a.c.FIELD.monsters);assert.ok(a.c.SKILL2_RT.projectiles.length>0);
+ a.hits.length=0;a.p.hp=0;a.c.GT=10;a.c.sgTickFlyingProjectiles(6,a.ctx);assert.equal(a.hits.length,0);
+ a.c.resetSkill2RT();assert.equal(a.c.SKILL2_RT.projectiles.length,0);
+});
+test('烈焰暴風：無座標高塔單目標仍可飛行後命中，生命結束後不再發射',()=>{
+ const {c,f,hits,ctx}=setup();c.FIELD.monsters.splice(1);delete c.FIELD.monsters[0].pos;f.pos=null;
+ c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,1);
+ c.GT+=.26;c.sgTickFlyingProjectiles(.26,ctx);assert.equal(hits.length,1);
+ c.GT=100;c.sgTickInfernoTempest(f,c.FIELD.monsters);const count=c.SKILL2_RT.projectiles.length;
+ c.GT++;c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,count);
+});
+
+test('烈焰暴風：實際 Runtime 從龍捲發射，持續追蹤移動目標且不拋高',()=>{
+ const {c,f,events}=setup();c.FIELD.monsters.splice(1);f.pos={x:100,y:100};c.FIELD.monsters[0].pos={x:340,y:100};
+ c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);
+ const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js'),log=[];
+ const backend={createNode(){const n={};log.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){}};
+ let targetPoint={x:340,y:50};
+ const adapter=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},fxBackend:backend,zoneBackend:backend,groundScale:.5,
+ ctx:{posOf:()=>targetPoint,playerPos:()=>({x:0,y:0})}});
+ adapter.registerPresets([{schemaVersion:1,id:'proj-dragon-devour',duration:1.5,loop:false,layers:[{id:'body',type:'sprite',assetId:'ball',scale:{x:1,y:1}}]}]);
+ assert.equal(adapter.tryPlay(events.find(e=>e.variant==='inferno-tempest-ball')),true);
+ adapter.update(1/3);
+ assert.ok(log.some(n=>n.t&&Math.abs(n.t.x-220)<.001&&Math.abs(n.t.y-50)<.001),'半程在投影後直線中點');
+ targetPoint={x:460,y:110};adapter.update(1/6);
+ assert.ok(log.some(n=>n.t&&Math.abs(Math.hypot(n.t.x-220,(n.t.y-50)/.5)-60)<.001),'目標改變位置時仍按36米每秒走60世界單位，不瞬移或剎車');
+});
+
+test('等速攔截：迎面與橫移均保持速度，目標停步後重算，最後才截短命中步',()=>{
+ const step=require('../js/util.js').projectileHomingStep;
+ for(const velocity of [{x:-60,y:0},{x:0,y:80}]){
+  let p={x:0,y:0},target={x:240,y:0},hit=false,time=0;
+  while(!hit&&time<3){
+   const nextTarget={x:target.x+velocity.x/120,y:target.y+velocity.y/120};
+   const next=step(p,target,nextTarget,360,1/120);
+   if(!next.hit)assert.ok(Math.abs(Math.hypot(next.x-p.x,next.y-p.y)-3)<1e-8);
+   p=next;target=nextTarget;hit=next.hit;time+=1/120;
+  }
+  assert.equal(hit,true);if(velocity.x<0)assert.ok(time<240/360,'迎面移動提前命中，不等出生倒數');
+ }
+ const stopped=step({x:0,y:0},{x:120,y:0},{x:120,y:0},360,.1);
+ assert.equal(stopped.x,36);assert.equal(stopped.hit,false);
+ const stationary=step({x:119,y:0},{x:120,y:0},{x:120,y:0},360,.1);
+ assert.equal(stationary.hit,true);assert.equal(stationary.x,120);
+});
+
+test('火球模擬：迎面移動目標提前接觸才爆炸，非命中步都走固定速度',()=>{
+ const {c,f,hits,ctx}=setup();c.FIELD.monsters.splice(1);const target=c.FIELD.monsters[0];
+ f.pos={x:0,y:0};target.pos={x:240,y:0};c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);
+ const shot=c.SKILL2_RT.projectiles[0],start=c.GT;let previous={...shot.position};
+ for(let i=0;i<120&&!hits.length;i++){
+  target.pos.x-=.5;c.GT+=1/120;c.sgTickFlyingProjectiles(1/120,ctx);
+  if(!hits.length)assert.ok(Math.abs(Math.hypot(shot.position.x-previous.x,shot.position.y-previous.y)-3)<1e-7);
+  previous={...shot.position};
+ }
+ assert.ok(hits.length>0);assert.ok(c.GT-start<2/3);assert.equal(hits[0].m,target);
+});
+
+test('烈焰暴風：必中主目標跳過閃避，不改其他傷害防禦流程',()=>{
+ const {c,p,f,realHit}=setup();const target=c.FIELD.monsters[0];
+ target.dodge=999;let checked=false;
+ c.resolveHit=(a,d,atk,def)=>{assert.equal(atk.hit,100);assert.equal(def.dodge,0);assert.equal(def.absDodge,0);checked=true;return {dmg:0,miss:false};};
+ realHit(p,c.getStats(),target,f.tempest.dmgVal,'firepillar','mv-float',{dmg:0},0,0,'fire',true);
+ assert.equal(checked,true);assert.equal(target.dodge,999);
+});
+
+test('烈焰暴風：每顆重新隨機抽樣，遠敵可入選且同輪不重複',()=>{
+ const {c,f}=setup();f.pos={x:0,y:0};
+ c.FIELD.monsters.forEach((m,i)=>m.pos={x:40+i*40,y:0});
+ c.Math.random=()=>0;c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);
+ const first=c.SKILL2_RT.projectiles.map(p=>p.target);
+ assert.equal(new Set(first).size,1);
+ let draws=0;c.Math.random=()=>draws++===0?0:.999;c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);
+ const second=c.SKILL2_RT.projectiles.slice(1).map(p=>p.target);
+ assert.equal(new Set(second).size,1);assert.notDeepEqual(first,second);
+ assert.ok([...first,...second].includes(c.FIELD.monsters[4]),'遠敵也能被抽中');
+});

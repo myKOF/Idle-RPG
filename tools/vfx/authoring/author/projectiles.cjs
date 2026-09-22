@@ -230,17 +230,17 @@ P['proj-waterball'] = () => ({
 
 /* ---------- proj-firehunt-ring：火神星環（翻滾 2.6 轉／秒） ---------- */
 P['proj-firehunt-ring'] = () => ({
-  id: 'proj-firehunt-ring', duration: 1.5, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 40, alpha: 0.6, tint: '#ff6a2a', blend: 'add', duration: 1.5, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
+  id: 'proj-firehunt-ring', duration: 1.5, sizing: {shape: 'projectile-circle', radiusM: 1.1, authored: {radius: 11}}, layers: [
+    sprite({ id: 'glow', asset: 'particle-pack/png-transparent/light_03.png', z: 0, size: 40, alpha: 0.18, tint: '#ff6a2a', blend: 'normal', duration: 1.5, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
     sprite({
-      id: 'ring', asset: A.ringThin, z: 1, size: 22, alpha: 1, tint: '#ffd447', blend: 'add',
+      id: 'ring', asset: 'particle-pack/png-transparent/circle_02.png', z: 1, size: 22, alpha: 1, tint: '#ffd447', blend: 'normal',
       duration: 1.5, alphaOverLife: BODY_A, rotationYOverLife: [[0, 0], [1, +(PI * 2 * 2.6 * 1.5).toFixed(4)]]
     }),
     sprite({
-      id: 'gloss', asset: A.slash01, z: 2, size: 18, rotDeg: -30, alpha: 0.9, tint: '#ffffff', blend: 'add',
+      id: 'gloss', asset: 'particle-pack/png-transparent/slash_02.png', z: 2, size: 18, rotDeg: -30, alpha: 0.55, tint: '#ffb83d', blend: 'normal',
       duration: 1.5, alphaOverLife: BODY_A, rotationYOverLife: [[0, 0], [1, +(PI * 2 * 2.6 * 1.5).toFixed(4)]]
     }),
-    trail({ asset: A.flame05, tint: '#ff8a3d', rate: 14, startPx: [6, 11], lifetime: [0.14, 0.26] })
+    Object.assign(trail({ asset: 'particle-pack/png-transparent/fire_01.png', tint: '#ff8a3d', rate: 14, startPx: [6, 11], lifetime: [0.14, 0.26] }), {blendMode: 'normal', tintOverLife: [[0, '#ffb83d'], [.5, '#ff7926'], [1, '#6b2610']]})
   ]
 });
 

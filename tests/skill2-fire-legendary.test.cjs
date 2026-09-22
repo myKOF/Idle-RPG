@@ -558,7 +558,7 @@ test('【火龍共鳴】：場上每存在 1 道火龍捲就替所有火龍捲�
    4) 火龍捲的三個超神進化
    =========================================================================== */
 
-test('【烈焰暴風】：每次施放的火龍捲數量變為 N 倍', () => {
+test('【烈焰暴風】：保留火龍捲數量，每道附加每0.33秒一發火球', () => {
   const c = loadContext();
   stubHits(c);
   c.chance = () => false;
@@ -570,9 +570,10 @@ test('【烈焰暴風】：每次施放的火龍捲數量變為 N 倍', () => {
   stubHits(c2);
   c2.chance = () => false;
   maxLevels(c2, 'firepillar');
-  setUlt(c2, 'firepillar', 'infernoTempest', 1);   // Lv.1：1.2 ＋ 0.8 ＝ 2.0 倍
+  setUlt(c2, 'firepillar', 'infernoTempest', 1);
   c2.castSkill2(playerEnt(), [enemy(1e9, 100, 0)], 'firepillar', 'mv-float');
-  assert.equal(c2.SKILL2_RT.grounds.length, 4, '2 道 × 2.0 倍');
+  assert.equal(c2.SKILL2_RT.grounds.length, 2);
+  c2.SKILL2_RT.grounds.forEach(f=>{assert.equal(f.tempest.gap,.33);assert.equal(f.tempest.count,1);});
 });
 
 test('【永劫火獄】：火龍捲在附近游走，並在移動軌跡上留下火池', () => {

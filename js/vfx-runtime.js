@@ -20,9 +20,13 @@
    ============================================================ */
 
 var VFXRuntime = (function () {
+  var homingStep = typeof projectileHomingStep === 'function' ? projectileHomingStep
+    : (typeof require === 'function' ? require('./util.js').projectileHomingStep : null);
 
   /* 米制本體尺寸。authored 是素材座標中的本體，不包含外暈／拖尾。
      保留作者的座標精度，以轉換矩陣統一尺寸；Editor 往返不必重採樣素材。 */
+  var orbitPoint = typeof projectileOrbitPoint === 'function' ? projectileOrbitPoint
+    : (typeof require === 'function' ? require('./util.js').projectileOrbitPoint : null);
   var SIZE_DEFAULTS = { circle: { radiusM: 6 }, square: { widthM: 6, heightM: 6 },
     rectangle: { widthM: 6, heightM: 3 }, 'projectile-circle': { radiusM: 6 },
     'projectile-square': { widthM: 6, heightM: 6 } };
@@ -328,6 +332,8 @@ var VFXRuntime = (function () {
       budget: o.zoneBudget || ZONE_BUDGET
     });
 
+    // 飛行物使用螢幕空中層；編輯器／無專用後端時共用原 fx Runtime。
+    var rtAir = o.airBackend ? Core.createRuntime({backend:o.airBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtFx;
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var presetSizes = Object.create(null);
     var planePresets = Object.create(null);
@@ -386,6 +392,7 @@ var VFXRuntime = (function () {
         if (p.sizing) resolveSizing(p.sizing); // 載入即驗證，錯誤不可靜默變成 NaN
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
+        if (rtAir !== rtFx) rtAir.registerPreset(p);
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
@@ -605,7 +612,7 @@ var VFXRuntime = (function () {
             var travel = Math.max(0.05, travelSecAt(spec, 0) || len / 480);
             var origin = { x: shape.position.x, y: shape.position.y };
             var dimensions = { scaleX: shape.scaleX, scaleY: shape.scaleY };
-            var ref = play(rt, presetId, Object.assign({}, shape, {
+            var ref = play(rtAir, presetId, Object.assign({}, shape, {
               scaleX: 0, timeScale: presetDurations[presetId] / (travel + 0.08)
             }));
             if (ref) {
@@ -639,7 +646,7 @@ var VFXRuntime = (function () {
         var len = spec.directionRanges && spec.directionRanges[d] > 0 ? spec.directionRanges[d] : num(spec.lineLength, 0);
         var flight = !!spec.projectile && len > 0;
         var travel = Math.max(0.05, len / 240);
-        var ref = play(rt, presetId, Object.assign({position:origin,rotation:facing,
+        var ref = play(flight ? rtAir : rt, presetId, Object.assign({position:origin,rotation:facing,
           timeScale:flight ? presetDurations[presetId] / (travel + 0.08) : 1}, dimensions));
         if (!ref) continue;
         any = true;
@@ -681,6 +688,7 @@ var VFXRuntime = (function () {
 
     /* 飛行物：逐幀 setTransform 從起點移到目標，朝飛行方向旋轉 */
     function playProjectile(rt, presetId, spec) {
+      rt = rtAir;
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       /* 天降永遠不是連鎖段。少了後半這個條件，一顆同時打到兩個以上敵人的
          隕石會被當成雷鏈：起點取 ids[0] 的位置、終點取 ids[1]，於是
@@ -699,7 +707,7 @@ var VFXRuntime = (function () {
       var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
       // 共用明確起點／終點的飛行定位，來源死亡也不回退成由玩家發射。
-      var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true);
+      var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true || spec.area.homingFlight === true);
       var fixedLanding = spec.area && spec.area.fixedLanding === true;
       if (!toId && !directed && !fixedLanding && !knifeFlight) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
@@ -743,6 +751,10 @@ var VFXRuntime = (function () {
       var facing = curveHeading(from, ctrl, to, 0);
       var dimensions = num(spec.bodyLength, 0) > 0 && num(spec.lineWidth, 0) > 0
         ? sizeOf(presetId, { w: spec.bodyLength, h: spec.lineWidth }) : null;
+      // 圓形彈體只需權威直徑；lineWidth 已由 Worker 白名單透傳。
+      if (!dimensions && num(spec.lineWidth, 0) > 0 && presetSizes[presetId] && presetSizes[presetId].shape === 'projectile-circle') {
+        dimensions = sizeOf(presetId, { r: spec.lineWidth / 2 });
+      }
       // 敵方普攻與神聖光彈只表現飛行，不表達碰撞範圍；與編輯器共用製作尺寸。
       // 有權威彈體尺寸的事件仍沿用上面的幾何換算。
       var holyFlight = spec.variant === 'counter-holy-flight';
@@ -750,17 +762,24 @@ var VFXRuntime = (function () {
       if (authoredProjectile) mult = 1;
       dimensions = dimensions || (authoredProjectile ? { scaleX: 1, scaleY: 1 }
         : defaultSize(presetId, Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 1));
-      var params = Object.assign({ position: from, rotation: facing }, dimensions);
+      var flightOrbit = spec.area && spec.area.flightOrbit;
+      if (flightOrbit) flightOrbit = Object.assign({}, flightOrbit, { origin: flightOrbit.origin || { x: from.x, y: from.y / groundScale } });
+      var startPoint = flightOrbit ? orbitPoint(flightOrbit, 0) : null;
+      var params = Object.assign({ position: startPoint ? {x:startPoint.x,y:startPoint.y*groundScale} : from, rotation: facing }, dimensions);
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
-      if ((presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
         /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
+        flightOrbit: flightOrbit,
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
+        homingSpeed:spec.area&&num(spec.area.homingSpeed,0),
+        homingPosition:spec.area&&spec.area.homingSpeed>0?{x:from.x,y:from.y/groundScale}:null,
+        previousTarget:spec.area&&spec.area.homingSpeed>0?{x:to.x,y:to.y/groundScale}:null,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || spec.variant === 'dragon-devour-ball', control: knifeControl, lastTo: to,
+        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour', control: knifeControl, lastTo: to,
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
@@ -984,7 +1003,8 @@ var VFXRuntime = (function () {
       g.ox = 0; g.oy = 0;
       g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
       // 吞噬漩渦是貼地環帶，整體置於人物下方；其他直立場域維持原圖層。
-      var ref = play(role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
+      var flyingField = spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing';
+      var ref = play(flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -1044,7 +1064,7 @@ var VFXRuntime = (function () {
           var ref = old.find(function (r) { return r.memberId === member.id && r.presetId === presetId; });
           if (!ref) {
             var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre();
-            ref = play(rtFx, presetId, Object.assign({
+            ref = play(rtAir, presetId, Object.assign({
               position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * orbitFlat }
             }, sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), profile.areaScale);
           }
@@ -1056,7 +1076,7 @@ var VFXRuntime = (function () {
       }
       while (entry.orbs.length > entry.geo.orbs) stopRef(entry.orbs.pop());
       while (entry.orbs.length < entry.geo.orbs) {
-        var ref = play(rtFx, entry.orbId, Object.assign({ position: orbitCentre() },
+        var ref = play(rtAir, entry.orbId, Object.assign({ position: orbitCentre() },
           sizeOf(entry.orbId, { r: entry.geo.orbR }) || { scale: entry.geo.orbR / NOMINAL_ORB }), profile.areaScale);
         if (!ref) break;                    // 預算滿了就先少幾團，下一次事件再補
         entry.orbs.push(ref);
@@ -1188,7 +1208,7 @@ var VFXRuntime = (function () {
       if(!id||!has(id))return true;
       var centre=footOf('pv-float'),angle=num(a.orbitAngle,0),r=num(a.orbitR,30);
       var dimensions=defaultSize(id,1);
-      var ref=play(rtFx,id,Object.assign({position:{x:centre.x+Math.cos(angle)*r,y:centre.y+Math.sin(angle)*r},
+      var ref=play(rtAir,id,Object.assign({position:{x:centre.x+Math.cos(angle)*r,y:centre.y+Math.sin(angle)*r},
         rotation:angle+Math.PI/2,timeScale:presetDurations[id]/dur},dimensions),profile.scale);
       if(ref)soulOrbits[a.soulId]={ref:ref,t:0,dur:dur,angle:angle,r:r,spin:num(a.orbitSpin,Math.PI*2),dimensions:dimensions};
       return true;
@@ -1416,9 +1436,22 @@ var VFXRuntime = (function () {
           }
           pr.lastTo=to;
         }
-        var ctrl = pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle);
+        var ctrl = pr.homingSpeed>0 ? null : pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle);
         if (pr.arcHeight > 0) ctrl = {x:(pr.from.x+to.x)/2,y:(pr.from.y+to.y)/2-2*pr.arcHeight};
-        var at = curvePoint(pr.from, ctrl, to, k);
+        var at = pr.homingSpeed>0 ? null : curvePoint(pr.from, ctrl, to, k);
+        if(pr.homingSpeed>0&&homingStep){
+          var worldTarget={x:to.x,y:to.y/groundScale};
+          var next=homingStep(pr.homingPosition,pr.previousTarget,worldTarget,pr.homingSpeed,step);
+          var moveX=next.x-pr.homingPosition.x,moveY=(next.y-pr.homingPosition.y)*groundScale;
+          if(Math.hypot(moveX,moveY)>1e-9)pr.facing=Math.atan2(moveY,moveX);
+          pr.homingPosition={x:next.x,y:next.y};pr.previousTarget=worldTarget;
+          at={x:next.x,y:next.y*groundScale};k=next.hit?1:0;
+        }
+        if (pr.flightOrbit) {
+          var orbitAt = orbitPoint(pr.flightOrbit, pr.t);
+          at = {x:orbitAt.x,y:orbitAt.y*groundScale};
+          pr.facing = Math.atan2(orbitAt.vy*groundScale, orbitAt.vx);
+        }
         var movingDimensions = pr.dimensions;
         if (pr.thrustBody) {
           var distance = pr.thrustLength * k;
@@ -1426,7 +1459,7 @@ var VFXRuntime = (function () {
           at = {x:pr.from.x+Math.cos(pr.facing)*tailDistance,y:pr.from.y+Math.sin(pr.facing)*tailDistance};
           movingDimensions = {scaleX:pr.dimensions.scaleX*Math.min(1,distance/pr.thrustBody),scaleY:pr.dimensions.scaleY};
         }
-        pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
+        if(!pr.flightOrbit && !(pr.homingSpeed>0))pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
           step, PROJECTILE_FACING_TAU_SEC);
         var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },
@@ -1493,6 +1526,7 @@ var VFXRuntime = (function () {
       updateGrounds(step);
 
       rtFx.update(step);
+      if (rtAir !== rtFx) rtAir.update(step);
       rtZone.update(step);
     }
 
@@ -1506,6 +1540,7 @@ var VFXRuntime = (function () {
     function clearFields() {
       Object.keys(soulOrbits).forEach(function(id){stopSoul(id,false);});
       if (rtFx.clearTails) rtFx.clearTails();
+      if (rtAir !== rtFx && rtAir.clearTails) rtAir.clearTails();
       projectiles.filter(function(p){return p.soulId;}).forEach(function(p){stopSoul(p.soulId);});
       Object.keys(orbits).forEach(stopOrbit);
       Object.keys(grounds).forEach(function (k) {
@@ -1525,12 +1560,14 @@ var VFXRuntime = (function () {
       grounds = Object.create(null);
       auras = Object.create(null);
       rtFx.stopAll();
+      if (rtAir !== rtFx) rtAir.stopAll();
       rtZone.stopAll();
     }
 
     function destroy() {
       clear();
       rtFx.destroy();
+      if (rtAir !== rtFx) rtAir.destroy();
       rtZone.destroy();
     }
 
@@ -1554,7 +1591,7 @@ var VFXRuntime = (function () {
           pending: pending.length,
           played: counters.played, skipped: counters.skipped, missing: counters.missing,
           dropped: counters.dropped,
-          fx: rtFx.stats(), zone: rtZone.stats()
+          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats()
         };
       }
     };
@@ -1599,7 +1636,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260922-ground-plane';
+  var DATA_VERSION = '20260922-user-fire-vfx';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -1626,6 +1663,7 @@ var VFXRuntime = (function () {
           resolver: resolver,
           fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true }),
           zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true }),
+          airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true, projectTransform:opts.projectAirTransform}) : null,
           ctx: opts.ctx,
           groundScale: opts.groundScale
         });

@@ -59,7 +59,10 @@
 /* v35：battle.field.player._sgRevival 可選 {startAt,endAt}，GT 秒；非死亡、站姿升空復甦。 */
 /* v36（2026-09-22 主角換成 8 方向騎士）：新增事件種類 act（EVENT_KINDS.ACT）＝角色動作，
    目前只有 act:'cast'（技能開始施放）。舊主執行緒不認得的事件種類一律略過，所以向下相容。 */
-var WORKER_PROTOCOL_VERSION = 36;
+/* v37：vfx.area.flightOrbit = {origin:{x,y}|null, heading, speed, length, radius, phase, spin}。
+   全為未投影世界幾何；速度為世界單位／秒，角度為弧度、spin 為弧度／秒。
+   中心直線飛行加成員公轉；缺省沿舊路徑，origin=null 僅無座標高塔取畫面起點。 */
+var WORKER_PROTOCOL_VERSION = 37;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
