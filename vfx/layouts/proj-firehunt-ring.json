@@ -6,10 +6,10 @@
       "id": "proj-firehunt-ring",
       "name": "proj-firehunt-ring",
       "layerIds": [
-        "glow",
-        "ring",
-        "gloss",
-        "trail"
+        "flame-shell",
+        "flame-body",
+        "star-core",
+        "curved-flame-trail"
       ]
     }
   ],

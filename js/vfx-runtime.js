@@ -766,6 +766,7 @@ var VFXRuntime = (function () {
       if (flightOrbit) flightOrbit = Object.assign({}, flightOrbit, { origin: flightOrbit.origin || { x: from.x, y: from.y / groundScale } });
       var startPoint = flightOrbit ? orbitPoint(flightOrbit, 0) : null;
       var params = Object.assign({ position: startPoint ? {x:startPoint.x,y:startPoint.y*groundScale} : from, rotation: facing }, dimensions);
+      if (flightOrbit) params.particleOrigin = {x:flightOrbit.origin.x,y:flightOrbit.origin.y*groundScale};
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
       if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
       var ref = play(rt, presetId, params, mult);
@@ -779,7 +780,7 @@ var VFXRuntime = (function () {
         previousTarget:spec.area&&spec.area.homingSpeed>0?{x:to.x,y:to.y/groundScale}:null,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
-        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour', control: knifeControl, lastTo: to,
+        dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour' || !!flightOrbit, control: knifeControl, lastTo: to,
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
@@ -1453,6 +1454,15 @@ var VFXRuntime = (function () {
           pr.facing = Math.atan2(orbitAt.vy*groundScale, orbitAt.vx);
         }
         var movingDimensions = pr.dimensions;
+        if (pr.flightOrbit) {
+          var fo = pr.flightOrbit, distance = Math.min(fo.length, fo.speed * pr.t);
+          movingDimensions = Object.assign({}, pr.dimensions, {particleOrigin:{
+            x:fo.origin.x + Math.cos(fo.heading)*distance,
+            y:(fo.origin.y + Math.sin(fo.heading)*distance)*groundScale
+          }});
+          var angle = fo.phase + fo.spin * Math.min(pr.t, fo.length/fo.speed);
+          pr.facing = Math.atan2(Math.cos(angle)*fo.spin*groundScale, -Math.sin(angle)*fo.spin);
+        }
         if (pr.thrustBody) {
           var distance = pr.thrustLength * k;
           var tailDistance = Math.max(0, distance - pr.thrustBody);
@@ -1636,7 +1646,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260922-user-fire-vfx';
+  var DATA_VERSION = '20260922-star-orbit-tail';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
