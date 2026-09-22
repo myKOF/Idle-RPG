@@ -293,9 +293,11 @@ var BattleRenderer = (function () {
         縱向跑同樣的世界距離，在畫面上只是看起來短一點。
 
      world 層（鏡頭）底下因此有兩種座標：
-       直立空間  world 的直屬子層（entity／outline／float／playerHud），座標＝投影後的畫面位置。
-                 站著的東西（角色、血條、名字、飄字）放這裡，形狀不壓縮。
+       直立空間  world 的直屬子層（entity／presetZone／presetFx／outline），座標＝投影後的畫面位置。
+                 站著的東西（角色、敵人血條與名字）放這裡，形狀不壓縮。
                  腳底在 (世界 x, 世界 y × GROUND_Y_SCALE)，往上 h 像素就是再減 h。
+                 傷害浮字與玩家 HUD 的位置也用這個座標，但本身畫在場景外的螢幕層（不跟著透視變形），
+                 每幀用 worldToScreenPoint 換成螢幕位置。
        地面平面  groundUnder／groundOver 兩個容器，scale.y = GROUND_Y_SCALE，
                  子層（舊畫法的 zone／fx）直接用**世界座標**——位置與形狀
                  由容器一次投影：落點永遠對得上模擬層，畫在上面的圓自動變成橢圓。
@@ -5853,7 +5855,10 @@ var BattleRenderer = (function () {
   /* 找一個不會壓到別人的位置。
      同一瞬間常有三四個字落在同一點（傷害、護盾吸收、吸血、吸魔），
      舊版只給 ±18px 的隨機抖動，數字一多必然疊成一團看不清楚。
-     這裡改成實際做碰撞檢查：疊到了就往上讓一行，讓滿了就往旁邊挪一欄。 */
+     這裡改成實際做碰撞檢查：疊到了就往上讓一行，讓滿了就往旁邊挪一欄。
+     這裡的座標都是直立空間（world 的直屬座標）；node.x/y 在呼叫期間也暫時是直立空間，
+     放好之後由 onFloat 記進 f.lx/f.ly、再換成螢幕位置（飄字畫在螢幕層，見 worldToScreenPoint）。
+     所以跟別的飄字比對要用它們的 lx/ly，不是 node.x/y（那已經是螢幕座標）。 */
   function placeFloatNode(node, baseX, baseY) {
     node.x = baseX + (Math.random() * 16 - 8);
     node.y = baseY;
@@ -5866,12 +5871,12 @@ var BattleRenderer = (function () {
         if (!o || o.dead || !o.node || o.node.destroyed) continue;
         var ow = o.node.width || 20, oh = o.node.height || 16;
         /* anchor 是 (0.5, 1)：x 是中心、y 是底邊 */
-        if (Math.abs(o.node.x - node.x) >= (w + ow) / 2 - 2) continue;
-        if (node.y - h >= o.node.y || o.node.y - oh >= node.y) continue;
+        if (Math.abs(o.lx - node.x) >= (w + ow) / 2 - 2) continue;
+        if (node.y - h >= o.ly || o.ly - oh >= node.y) continue;
         hit = o; break;
       }
       if (!hit) break;
-      node.y = hit.node.y - (hit.node.height || 16) - 3;
+      node.y = hit.ly - (hit.node.height || 16) - 3;
       if (baseY - node.y > 96) {           // 這一欄疊太高了，換一欄重來
         lane++;
         node.x = baseX + (lane % 2 ? 1 : -1) * (34 + Math.floor(lane / 2) * 30);
@@ -5987,8 +5992,12 @@ var BattleRenderer = (function () {
       popStart: isEnemyDamageFloat ? 0.72 : 0.6,
       popPeak: isEnemyDamageFloat ? (isCritFloat ? 1.16 : 1.14) : 1.1,
       fadeTail: isEnemyDamageFloat,
-      drift: castLeft ? -PLAYER_SKILL_FLOAT_DRIFT : (castRight ? PLAYER_SKILL_FLOAT_DRIFT : 0)
+      drift: castLeft ? -PLAYER_SKILL_FLOAT_DRIFT : (castRight ? PLAYER_SKILL_FLOAT_DRIFT : 0),
+      /* 直立空間的位置（上浮、側滑都算在這裡）；node 本身畫在螢幕層，每幀由 tickWorld 換成螢幕位置 */
+      lx: node.x, ly: node.y
     };
+    var floatPt = worldToScreenPoint(f.lx, f.ly);   // 立刻放到螢幕位置，不要在直立空間座標閃一幀
+    node.x = floatPt.x; node.y = floatPt.y;
     S.floats.push(f);
     if (mergeable) {
       f.mergeKey = floatMergeKey(ev.elId, ev.cls);
@@ -6100,10 +6109,6 @@ var BattleRenderer = (function () {
       p.root.x = p.wx;
       p.root.y = groundToScreenY(p.wy);
       p.root.zIndex = p.root.y;
-      if (p.hud) {
-        p.hud.x = p.root.x;
-        p.hud.y = p.root.y;
-      }
       /* 面向目標：只有朝右一版的舊素材，往左打就水平翻面；多方向素材每個方向都有自己的圖，不翻 */
       if (!p.dead) p.bodyWrap.scale.x = (!p.directional && p.facing < 0) ? -1 : 1;
       updateFlashJolt(p, dt);
@@ -6126,6 +6131,13 @@ var BattleRenderer = (function () {
     world.x = S.W / 2 - cam.x + shx;
     world.y = S.H / 2 - groundToScreenY(cam.y) + shy;
     syncGroundScroll(cam, shx, shy);
+    if (p && p.hud) {
+      /* 玩家 HUD 在螢幕層（不跟著透視變形）。一定要在鏡頭算完之後才換位置：
+         用上一幀的鏡頭會差一幀的位移，角色一跑起來狀態條就抖。 */
+      var hudPt = worldToScreenPoint(p.root.x, p.root.y);
+      p.hud.x = hudPt.x;
+      p.hud.y = hudPt.y;
+    }
     if (p && p.reviveText && p.reviveText.visible) {
       /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平；開了透視要換到變形後的螢幕位置。 */
       var revivePt = perspScreenPoint(world.x + p.root.x, world.y + p.root.y - 104);
@@ -6237,8 +6249,11 @@ var BattleRenderer = (function () {
         var f = S.floats[i];
         f.t += dt;
         var fk = Math.min(1, f.t / f.life);
-        f.node.y -= (f.rise / f.life) * dt;
-        if (f.drift) f.node.x += (f.drift / f.life) * dt;
+        f.ly -= (f.rise / f.life) * dt;
+        if (f.drift) f.lx += (f.drift / f.life) * dt;
+        /* 飄字畫在螢幕層、不跟著透視變形：只把位置換到透視後目標所在的地方，字的大小照舊 */
+        var floatAt = worldToScreenPoint(f.lx, f.ly);
+        f.node.x = floatAt.x; f.node.y = floatAt.y;
         /* 傷害字要像影片一樣一出現就可讀，只在最後四分之一淡出；
            其他 Canvas 浮字保留原本的淡入／淡出曲線。 */
         f.node.alpha = f.fadeTail
@@ -6334,8 +6349,8 @@ var BattleRenderer = (function () {
        「沒有被 S.fx 追蹤」的孩子全部 destroy，Core 的節點會被當成孤兒清掉。 */
     var presetZone = new PIXI.Container();
     var presetFx = new PIXI.Container();
-    /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，
-       但仍跟著 world 一起移動，避免被任何戰鬥表現層蓋住。 */
+    /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，避免被任何戰鬥表現層蓋住。
+       與傷害浮字一樣畫在螢幕層、不跟著透視變形，位置每幀跟著角色換（見 worldToScreenPoint）。 */
     var playerHud = new PIXI.Container();
     /* 穿透式角色輪廓：必須在所有特效之上（那正是它存在的理由），但仍在飄字與
        玩家 HUD 之下。整層只有一個精靈，成本等同多畫一張貼圖。 */
@@ -6357,14 +6372,16 @@ var BattleRenderer = (function () {
     world.addChild(entity);
     world.addChild(groundOver); world.addChild(presetFx);
     world.addChild(outlineLayer);
-    world.addChild(floatLayer);
-    world.addChild(playerHud);
     /* 場景根＝地板＋world。開了輕微透視（見 PERSPECTIVE_TOP_SCALE）時它不掛在 stage 上，
        每幀先畫進離屏貼圖再由透視網格貼到畫面；沒開就直接掛在 stage 上。由 syncPerspective 決定。 */
     var sceneRoot = new PIXI.Container();
     sceneRoot.addChild(bg);
     sceneRoot.addChild(world);
     app.stage.addChild(sceneRoot);
+    /* 傷害浮字與玩家 HUD 在場景外的螢幕層：不跟著透視變形（字不會被拉歪、上面縮小下面放大），
+       每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
+    app.stage.addChild(floatLayer);
+    app.stage.addChild(playerHud);
     app.stage.addChild(overlay);
     S.bgLayer = bg;
     S.sceneRoot = sceneRoot;
@@ -6550,6 +6567,13 @@ var BattleRenderer = (function () {
   function perspScreenPoint(x, y) {
     var L = S.persp && S.persp.layout;
     return L ? L.project(x, y) : { x: x, y: y };
+  }
+  /* 直立空間座標（world 的直屬座標）→ 螢幕座標：先加上鏡頭平移，再套透視（沒開透視就只有平移）。
+     傷害數字與玩家 HUD 畫在螢幕層、不跟著透視變形（2026-09-22 使用者：傷害數字照正常播放），
+     位置用這個換；字與狀態條的大小照舊。 */
+  function worldToScreenPoint(x, y) {
+    var w = S.layers && S.layers.world;
+    return perspScreenPoint((w ? w.x : 0) + x, (w ? w.y : 0) + y);
   }
   /* 場景要畫出來的範圍（平行投影的畫面座標） */
   function sceneDrawRect() {
