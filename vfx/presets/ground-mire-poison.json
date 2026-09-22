@@ -11,7 +11,7 @@
       "zIndex": 0,
       "scale": {
         "x": 0.3463,
-        "y": 0.1801
+        "y": 0.3463
       },
       "alpha": 0.3,
       "tint": "#ff4c38",
@@ -63,7 +63,11 @@
           1.000532
         ]
       ],
-      "rotationOverLife": 0
+      "rotationOverLife": 0,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "edge",
@@ -72,7 +76,7 @@
       "zIndex": 1,
       "scale": {
         "x": 0.3382,
-        "y": 0.1759
+        "y": 0.3382
       },
       "alpha": 0.55,
       "tint": "#5b2b72",
@@ -91,7 +95,11 @@
           1,
           0.55
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "ripple-a",
@@ -100,7 +108,7 @@
       "zIndex": 2,
       "scale": {
         "x": 0.3906,
-        "y": 0.2031
+        "y": 0.3906
       },
       "alpha": 0.45,
       "tint": "#7e3f9a",
@@ -137,7 +145,11 @@
           1,
           1
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "ripple-b",
@@ -146,7 +158,7 @@
       "zIndex": 3,
       "scale": {
         "x": 0.3906,
-        "y": 0.2031
+        "y": 0.3906
       },
       "alpha": 0.4,
       "tint": "#7e3f9a",
@@ -184,7 +196,11 @@
           1,
           1
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "ripple-c",
@@ -193,7 +209,7 @@
       "zIndex": 4,
       "scale": {
         "x": 0.3906,
-        "y": 0.2031
+        "y": 0.3906
       },
       "alpha": 0.35,
       "tint": "#7e3f9a",
@@ -231,7 +247,11 @@
           1,
           1
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "bubbles",
@@ -290,7 +310,12 @@
           1,
           1.1
         ]
-      ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "fume-a",
@@ -478,9 +503,9 @@
   ],
   "sizing": {
     "authored": {
-      "height": 100,
-      "width": 200
+      "radius": 100
     },
-    "shape": "rectangle"
+    "radiusM": 3,
+    "shape": "circle"
   }
 }

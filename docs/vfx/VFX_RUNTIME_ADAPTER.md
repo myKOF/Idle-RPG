@@ -1,5 +1,13 @@
 # VFX_RUNTIME_ADAPTER.md
 
+## 地面投影（2026-09-22）
+
+明確標記 projection 的圖層改用地面座標，直立圖層維持螢幕座標；此規則補充下文舊版全 Preset 直立的描述。Adapter 以目前場景 groundScale 覆蓋註冊副本的 projection.y，不修改原 Preset；未提供場景比例時保留製作值 0.5。場景的透視後處理仍只執行一次。
+
+screenSpaceSpec 保存原始 area.w／a，標記素材使用原始尺寸、方向計算，再投影一次；rotation 交由 projectionRotation 處理。未帶區域方向的事件沿用素材預設方向。圓形地面比例為 1:0.5；方形先旋轉 π/4 再壓缩，與地磚一致。泥沼與暴風雪的實際作用判定同步使用旋轉矩形及敵人體型邊緣接觸，牆型場域維持原判定。
+
+83 份既有素材的地面層已標記，混合素材的龍捲、光柱、雪與上升粒子仍直立；沒有增加配置表以外的特效來源。清單與驗證見 [GROUND_PROJECTION_AUDIT.md](GROUND_PROJECTION_AUDIT.md)。
+
 ## 迴旋斬圓形刀波（2026-09-16）
 
 使用者確認保留原本三組刀弧快速旋轉整圈的表現，不採用分段小刀弧。飛行 Preset 校正 authored.radius，避免已放大的造型再次被飛行距離倍率放大；降低 glow／edge／trail 的疊加亮度以保留內圈。保留原始旋轉、延遲與擴張曲線。迴旋斬專用 SG_CLEAVE_WAVE_GAP_SEC 同時控制傷害與事件 delayMs，維持 0.3 秒。

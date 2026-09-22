@@ -6352,12 +6352,16 @@
       },
       "scale": {
         "x": 0.3156,
-        "y": 0.082
+        "y": 0.3156
       },
       "alpha": 0.5,
       "tint": "#281f13",
       "blendMode": "normal",
-      "duration": 4
+      "duration": 4,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "amber-underlight",
@@ -6366,11 +6370,11 @@
       "zIndex": -1,
       "position": {
         "x": 0,
-        "y": -2
+        "y": -4
       },
       "scale": {
         "x": 0.2462,
-        "y": 0.0756
+        "y": 0.2462
       },
       "alpha": 0.22,
       "tint": "#ba873e",
@@ -6389,7 +6393,11 @@
           1,
           0.7
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     }
   ],
   "sizing": {

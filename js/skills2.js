@@ -4788,6 +4788,8 @@ function sgGroundApplyGrowth(f) {
    （sgGroundArea）——漏掉某一種牆型場域的話，牆身會沿著行進方向躺平，
    變成「一條跟著自己跑的長條」而不是一道橫掃過去的牆。 */
 function sgGroundRectAxis(f) {
+  // 方形地面沿菱形地磚鋪設；判定與 sgGroundArea 共用同一個方向。
+  if (f.kind === 'mire' || f.kind === 'blizzard') return Math.PI / 4;
   return (f.kind === 'wall' || f.kind === 'thunderwall') ? f.angle + Math.PI / 2 : 0;
 }
 
@@ -4797,6 +4799,19 @@ function sgGroundVictims(f, enemies) {
   if (!f.pos) return (f.tgt && f.tgt.hp > 0) ? [f.tgt] : [];
   if (f.length > 0 && f.width > 0 && typeof bfSegmentTargets === 'function') {
     var axis = sgGroundRectAxis(f);
+    if (f.kind === 'mire' || f.kind === 'blizzard') {
+      // 地面方形必須用矩形邊界；線段加半寬是膠囊，兩端會超出圖上的邊長。
+      var co = Math.cos(axis), si = Math.sin(axis);
+      return bfLiveList(enemies).filter(function (enemy) {
+        var p = bfPos(enemy);
+        if (!p) return false;
+        var dx = p.x - f.pos.x, dy = p.y - f.pos.y;
+        var ex = Math.max(0, Math.abs(dx * co + dy * si) - f.length / 2);
+        var ey = Math.max(0, Math.abs(-dx * si + dy * co) - f.width / 2);
+        var body = bfEntityRadius(enemy);
+        return ex * ex + ey * ey <= body * body;
+      });
+    }
     var half = f.length / 2;
     var origin = { x: f.pos.x - Math.cos(axis) * half, y: f.pos.y - Math.sin(axis) * half };
     return bfSegmentTargets(origin, axis, 0, f.length, enemies, f.width / 2);

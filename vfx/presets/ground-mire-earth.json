@@ -16,6 +16,11 @@
       "alpha": 0.5,
       "blendMode": "normal",
       "duration": 4,
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      },
       "sheet": {
         "columns": 8,
         "count": 48,

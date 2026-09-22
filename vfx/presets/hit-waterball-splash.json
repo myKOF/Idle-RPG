@@ -51,7 +51,7 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "scale": {
         "x": 0.9961,
-        "y": 0.5273
+        "y": 0.9961
       },
       "alpha": 0.7,
       "tint": "#a4ffec",
@@ -80,7 +80,11 @@
           1,
           1.1
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "splash-droplets",
@@ -147,7 +151,7 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "scale": {
         "x": 1.2891,
-        "y": 0.7617
+        "y": 1.2891
       },
       "alpha": 0.65,
       "tint": "#22eec7",
@@ -177,7 +181,11 @@
           1,
           1.15
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "foam-sparks",

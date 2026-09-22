@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜地面特效投影（VFX-GROUND-20260922）
+
+- Owner Codex；Done。83 份 Preset／185 個地面圖層投影成橢圓或菱形，直立本體保留。使用者另同意方形作用判定同步旋轉，保留邊長／傷害／時序。Core／Runtime 與編輯器選取框一致。
+- 範圍：VFX Core／Runtime、既有 Preset 與素材庫來源、skills2 方形場域方向、相關測試、主頁／Worker 快取與文件。禁止修改其他技能規則、配置數值及其他副本。
+- 前置：場景 GROUND_Y_SCALE 與透視已具備。預檢 index.html／本紀錄與 Claude 修改不同區段，依使用者「不會合併衝突即可改」授權，git merge-file 乾跑兩檔皆 exit 0。
+- 驗收：圓形旋轉過程維持地面橢圓、方形邊界與命中一致、混合特效直立層不壓縮、編輯器與遊戲外觀一致、素材雙倉庫同步、Build／Console。完成後交使用者整合，不自行合併或推送。
+- 驗證：ground-plane／preset-usage 28/28；最終 10 檔回歸 404 項，399 通過／4 已基準確認的既有失敗／1 跳過；Build 395、素材 export --check 與 diff check 通過。83 份預覽檢查、GPU 編輯器 Console 無錯誤。未做全技能長時間實戰；既有失敗詳見交接。
+- 素材庫提交 `987e2c4`，遊戲 Commit 見本紀錄所在提交。無未完成實作，可供使用者整合，未合併／推送；完整修改與唯讀檢查清單、測試指令、已知風險和素材來源見 [GROUND_PROJECTION_AUDIT.md](vfx/GROUND_PROJECTION_AUDIT.md)。建議下一步實戰確認視覺比例。
+
 ## Codex｜永劫火獄火池分離（ETERNAL-POOL-20260921）
 
 - Owner Codex；Done。永劫火獄 ground 改觸發 ground，火池明確事件只讀觸發角色，本體繼承正常龍捲。允許配置工具、Skills2 表／程式、專項測試、快取與本紀錄；預檢乾淨，保留使用者素材及其他配置。

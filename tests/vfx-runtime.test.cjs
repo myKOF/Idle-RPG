@@ -325,6 +325,7 @@ function recordingBackend(log, tag) {
     updateNode(node, t) {
       if (!t || t.visible === false) return;
       node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame });
+      if (t.skewX) node.transforms[node.transforms.length - 1].skewX = t.skewX;
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
     destroyNode() {},
@@ -1533,13 +1534,21 @@ test('CLEAVE 四方向從中心飛行，保持本體尺寸、不預播命中，�
   assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
+function assertGroundRectTransform(t, width, height) {
+ const a=t.rotation,b=t.rotation-(t.skewX||0);
+ const xx=Math.cos(a)*t.scaleX,xy=Math.sin(a)*t.scaleX/.5;
+ const yx=-Math.sin(b)*t.scaleY,yy=Math.cos(b)*t.scaleY/.5;
+ assert.ok(Math.abs(Math.hypot(xx,xy)-width/256)<.0001);
+ assert.ok(Math.abs(Math.hypot(yx,yy)-height/256)<.0001);
+ assert.ok(Math.abs(Math.atan2(xy,xx)-Math.PI/4)<.0001);
+}
 test('MIRE 泥流依權威長寬縮放、保持地板層、續命不重播並回收',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-mire-earth.json'),'utf8'));
- const {adapter,log}=makeAdapter([p]);const s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-test',x:100,y:200,w:120,h:180},vfx:{ground:p.id}};
+ const {adapter,log}=makeAdapter([p]);const s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-test',x:100,y:200,w:120,h:180,a:Math.PI/4},vfx:{ground:p.id}};
  assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
  const n=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow.png')),t=n.transforms.at(-1);
  assert.equal(n.tag,'zone');assert.equal(t.x,100);assert.equal(t.y,200);
- assert.ok(Math.abs(t.scaleX-120/256)<.0001);assert.ok(Math.abs(t.scaleY-180/256)<.0001);
+ assertGroundRectTransform(t,120,180);
  adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);
  adapter.update(5);assert.equal(adapter.stats().grounds,0);
 });
@@ -1548,10 +1557,10 @@ test('MIRE 進化保留Preset透明度、權威矩形與續命',()=>{
  for(const id of ['ground-mire-venom','ground-mire-magma']){
   const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
   assert.ok(VFXCore.validatePreset(p).ok);
-  const {adapter,log}=makeAdapter([p]),s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-evo',x:120,y:160,w:180,h:240},vfx:{ground:id}};
+  const {adapter,log}=makeAdapter([p]),s={fxKind:'aura',variant:'mire',dur:2,area:{id:'mire-evo',x:120,y:160,w:180,h:240,a:Math.PI/4},vfx:{ground:id}};
   assert.equal(adapter.tryPlay(s),true);adapter.update(.3);
   const body=log.nodes.find(n=>n.spec.assetUrl?.includes('mud-flow-')),t=body.transforms.at(-1);
-  assert.equal(body.tag,'zone');assert.equal(t.alpha,p.layers[0].alpha);assert.equal(t.x,120);assert.equal(t.y,160);assert.ok(Math.abs(t.scaleX-180/256)<.0001);assert.ok(Math.abs(t.scaleY-240/256)<.0001);
+  assert.equal(body.tag,'zone');assert.equal(t.alpha,p.layers[0].alpha);assert.equal(t.x,120);assert.equal(t.y,160);assertGroundRectTransform(t,180,240);
   adapter.tryPlay(s);adapter.update(.3);assert.equal(adapter.stats().played,1);adapter.update(5);assert.equal(adapter.stats().grounds,0);
  }
 });
@@ -1705,7 +1714,10 @@ test('DEVOUR 正式素材跨8秒循環不跳轉，尾焰留在世界路徑，尺
  const nodes=[];const rt=VFXCore.createRuntime({backend:{createNode(spec){const n={spec,transforms:[]};nodes.push(n);return n},updateNode(n,t){n.transforms.push({...t})},destroyNode(){}},resolver:{has:()=>true,resolve:id=>id}});
  rt.registerPreset(field);const h=rt.play(field.id);rt.update(7.99);
  const ring=nodes.find(n=>n.spec.assetUrl.endsWith('vortex.png'));const a=ring.transforms.at(-1).rotation;rt.update(.02);const b=ring.transforms.at(-1).rotation;
- assert.ok(Math.abs((b-a)-Math.PI/4*.02)<1e-8);
+ // 投影後畫面角速度不均勻；回到地面平面檢查原本每秒旋轉量，並處理 atan2 的接縫。
+ const phase=t=>Math.atan2(Math.sin(t)/.5,Math.cos(t));
+ const step=phase(b)-phase(a);
+ assert.ok(Math.abs(Math.atan2(Math.sin(step),Math.cos(step))-Math.PI/4*.02)<1e-8);
  /* 2026-09-22 使用者調過漩渦的 alphaOverLife（頭 1.0、尾 0.965，沒有首尾相接），循環邊界會有約 0.03 的透明度落差。
     不釘 preset 的確切數值（使用者之後還會再調），只驗「跨循環沒有明顯跳動」：0.05 以內。 */
  const alphaStep=Math.abs(ring.transforms.at(-1).alpha-ring.transforms.at(-2).alpha);

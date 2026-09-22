@@ -95,11 +95,11 @@
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": -0.5405
+        "y": -1.081
       },
       "scale": {
         "x": 0.5505,
-        "y": 0.2092
+        "y": 0.5505
       },
       "anchor": {
         "x": 0.5,
@@ -108,6 +108,10 @@
       "alpha": 0.16,
       "tint": "#66ffa0",
       "blendMode": "add",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
       "sheet": {
         "columns": 1,
         "count": 1,
@@ -123,11 +127,11 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": -0.5405
+        "y": -1.081
       },
       "scale": {
         "x": 0.5377,
-        "y": 0.2043
+        "y": 0.5377
       },
       "anchor": {
         "x": 0.5,
@@ -136,6 +140,10 @@
       "alpha": 0.07,
       "tint": "#eefff3",
       "blendMode": "add",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
       "sheet": {
         "columns": 1,
         "count": 1,
@@ -235,11 +243,11 @@
       "zIndex": 20,
       "position": {
         "x": 0,
-        "y": -0.5405
+        "y": -1.081
       },
       "scale": {
         "x": 0.5505,
-        "y": -0.2092
+        "y": -0.5505
       },
       "anchor": {
         "x": 0.5,
@@ -248,6 +256,10 @@
       "alpha": 0.4,
       "tint": "#66ffa0",
       "blendMode": "add",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
       "sheet": {
         "columns": 1,
         "count": 1,
@@ -263,11 +275,11 @@
       "zIndex": 21,
       "position": {
         "x": 0,
-        "y": -0.5405
+        "y": -1.081
       },
       "scale": {
         "x": 0.5377,
-        "y": -0.2043
+        "y": -0.5377
       },
       "anchor": {
         "x": 0.5,
@@ -276,6 +288,10 @@
       "alpha": 0.2,
       "tint": "#eefff3",
       "blendMode": "add",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
       "sheet": {
         "columns": 1,
         "count": 1,
