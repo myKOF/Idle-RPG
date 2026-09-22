@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { buildSceneTree, drawOrder } = require('./helpers/battle-scene.cjs');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -58,12 +59,20 @@ test('Canvas 玩家護盾條以護盾最大值為分母，不以最大生命鎖�
 
 test('Canvas 玩家血條、法力條與護盾條位於敵人及所有浮字之上', () => {
   /* 釘的是「相對順序」而不是那一行的字面：VFX Preset 的 presetZone／presetFx
-     之後插在 zone 與 fx 後面，字面比對會因為無關的層而失效，但這條要驗的
-     一直都是「玩家 HUD 在敵人與所有浮字之上」。 */
-  const order = ['zone', 'entity', 'fx', 'floatLayer', 'playerHud']
-    .map(function (name) { return renderer.indexOf('world.addChild(' + name + ')'); });
-  order.forEach(function (at, i) { assert.ok(at > 0, '找不到 world.addChild(' + ['zone', 'entity', 'fx', 'floatLayer', 'playerHud'][i] + ')'); });
-  for (let i = 1; i < order.length; i++) assert.ok(order[i] > order[i - 1], '層順序不對：playerHud 必須最後加入');
+     之後插在 zone 與 fx 後面，2026-09-22 特效層又包進斜俯視的地面平面容器，
+     字面比對會因為無關的層而失效，但這條要驗的一直都是「玩家 HUD 在敵人與所有浮字之上」。
+     所以看真正組出來的場景樹。 */
+  const S = buildSceneTree(renderer);
+  const L = S.layers;
+  const drawn = drawOrder(L.world);
+  const names = ['zone', 'presetZone', 'entity', 'fx', 'presetFx', 'float', 'playerHud'];
+  const hudAt = drawn.indexOf(L.playerHud);
+  assert.ok(hudAt >= 0, 'playerHud 不在 world 底下');
+  names.slice(0, -1).forEach(function (name) {
+    const at = drawn.indexOf(L[name]);
+    assert.ok(at >= 0, name + ' 不在 world 底下');
+    assert.ok(hudAt > at, '層順序不對：playerHud 必須畫在 ' + name + ' 之後');
+  });
   assert.match(renderer, /playerHud:\s*playerHud/);
   assert.match(renderer, /S\.layers\.playerHud\.addChild\(vitals\)/);
   assert.match(renderer, /S\.layers\.playerHud\.addChild\(hpText\)/);

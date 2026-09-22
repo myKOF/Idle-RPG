@@ -7468,13 +7468,19 @@ Worker 存活且頁面正常完成載入。
   - tools/build_character_sprites.cjs：原圖 → images/sprites/knight/。每個動作裁到所有方向與幀的聯集，Pixi trim 還原成 128 邏輯格（共用一個 anchor）；影子＝純黑且 alpha < 240（本體一律 255，逐像素量過），輪廓先算好只框 alpha ≥ 250 的本體（刀光拖影不框）；--check 比對與素材庫同步。
   - battle-renderer：loadDirectionalSheet；移動面向移動方向（10° 遲滯）、出手精準面向目標（腳底對腳底）、出手動作播完前不因移動轉走、換方向接著播同一幀；不翻面；影子在圖裡不另畫橢圓；普攻兩段輪流、不插隊施法；死亡播 die 停格不轉 90 度，復活倒放當起身；跑步播放速度跟實際移速（300 px/s ↔ 30 fps，實測著地腳每幀滑 7 px × 1.4 倍）。
   - 節奏：普攻 first 3／4（出劍第 6～7／7～8 幀），因為傷害數字在事件到達那一刻出現。
-- B（本紀錄所在提交）：
+- B（5dea3230；測試字面斷言跟上在 e469ed11）：
   - 根因：技能特效大多交給 Preset，onVfx 在 Preset 接手後就 return，走不到角色動作；而從 vfx 事件猜「哪一則是施放」不可靠（一次施放送好幾則）。
   - 協議 v36：新增事件種類 act＝{ act:'cast', elId, target, lockMs }。js/skills.js beginSkillCast（施放硬直起點，新版／舊版／潛能共用；自動連發不經過這裡）經 shim.js emitPlayerAct 送出，走 visual 低延遲；ui.js 轉給 BattleRenderer.onAct。
   - 渲染器：延後 POS_BUFFER_MS、面向目標、播 cast；把 first→release（2→8）這段調成剛好在硬直內播完（預設 0.2 秒＝30 fps，夾在 12～60 fps），釋放幀對到特效出現的那一刻。onVfx 只有普攻帶動角色動作。
   - 快取：battle-renderer 1.6.131、skills.js 1.0.39、ui.js 1.0.75、protocol.js ?v=37、bridge.js 1.0.137、WORKER_ASSET_VERSION 20260922-cast-act、sim.worker 的 protocol／shim／skills token。
 - 驗證：新增 player-directional-sprite（8 項，含與素材庫同步、影子上沒有輪廓）、player-cast-act（7 項，含突變：拿掉「只有普攻」條件 CAST-7 會紅）；basic-melee、hit-react-throttle、player-outline、worker-protocol 依新行為改寫。實機（claude 副本 8331，手動推幀＋抽圖）：8 方向與攻擊姿勢、血條位置、死亡停格與起身、施法 act 帶 lockMs 200 且以 30 fps 播放；console 無錯誤。全測試與 HEAD 比對見提交說明。
-- 風險／待確認：素材包授權未知；Clarice 的 player.png／json 保留未刪；高塔仍走 DOM，沒有角色動作（設計如此）。
+- C（本紀錄所在提交）：使用者確認 Clarice 的舊圖不要了。
+  - 刪除 images/sprites/player.png／player.json（換騎士後已無人載入）。
+  - tools/gen_placeholder_sprites.py 拿掉產生玩家佔位圖那段（重跑會把 player.png 生回來），只剩 BOSS；重跑後 boss_generic 逐像素與 JSON 皆與提交版相同。
+  - 刪除 scratch/_outline_verify.html：那頁只抓 player.json 驗執行期現算的輪廓，檔案沒了就開不起來。
+  - 未動：tools/pack_character_sheet.py（通用的 Aseprite 打包工具，說明裡以 Clarice 為例，留著給之後的角色或 BOSS 用）。
+  - 待辦：battle-renderer 的 buildOutlineFrames（執行期現算輪廓）與 PLAYER_OUTLINE.radiusPx 自換騎士起已無人呼叫（騎士的輪廓是工具先算好的）；battle-renderer.js 第 100、788、6613 行與 tests/player-outline.test.cjs 開頭的註解仍提到 Clarice／player.json／_outline_verify。這兩支檔案在這次提交時正被同一副本的另一段工作修改中（未提交），所以沒有動。
+- 風險／待確認：素材包授權未知；高塔仍走 DOM，沒有角色動作（設計如此）。
 
 ## Claude｜VFX Editor 重新命名：直接輸入新名字、可以取代既有特效（PRESET-RENAME-INLINE-20260921）
 
@@ -7572,3 +7578,45 @@ Worker 存活且頁面正常完成載入。
 - 測試：node --test --test-name-pattern="戰神體" tests/skill2-ult-evolution.test.cjs：4/4，含野外／高塔排程、補拍、半秒與兩秒邊界、治療後再受傷、護盾、以血還血、鎖血與重置。node --test tests/death-revive-restore.test.cjs tests/field-death-retreat.test.cjs tests/skill-cooldown-death.test.cjs：5/5。
 - 廣域：node --test tests/skill2-counter-bloodrage.test.cjs tests/skills2-geometry.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/skill2-ult-evolution.test.cjs：當時 99 項 73 通過 26 失敗；以 HEAD 原程式／測試／配置預載重跑為 97 項 71 通過、相同 26 項失敗，無新增失敗（之後新增的野外／高塔戰神體案例另已通過）。node tools/build_check.cjs：379 檔通過；diff check 通過。
 - 唯讀檢查 player.js／potential.js 生命變化、既有扣血與復活流程、配置工具及說明產生器。限制：未實機畫面與 Console 驗證，既有廣域失敗未在本次擴大修正；无未完成實作。Commit 見本紀錄所在提交，可合併，未合併或推送；下一步使用者整合後確認戰神體技能說明及自傷節拍。
+
+## Claude｜戰鬥場景輕度斜俯視 2.5D（BATTLE-TILT-20260922）
+
+- Owner：Claude；Done。使用者需求（附示意圖）：場景從完全俯視改成輕度斜俯視，地面與方格 Y 軸壓縮約 0.7；貼地特效與直立特效的處理交給 Codex，本任務只做場景；不改角色移動、碰撞、技能範圍與世界座標邏輯。
+- 範圍：js/battle-renderer.js、index.html（快取版號）、對應測試。模擬層、Worker、協議、存檔、參數表、vfx-runtime／vfx-core／preset 都沒動。無前置依賴。
+- 修改：
+  - A（b48fac7f）：GROUND_Y_SCALE = 0.7 與換算函式。world 層直屬座標改為投影後的畫面座標（角色、血條、名字、飄字、HUD、輪廓，形狀不壓縮）；特效四層（zone／presetZone／fx／presetFx）包進 scale.y = 0.7 的 groundUnder／groundOver，沿用世界座標——落點與模擬層一致，貼地的圓自動成為 1:0.7 橢圓。posOf／footOf／playerMuzzle 回傳地面平面座標（離地高度 ÷ 0.7，畫面上維持原像素高度），飄字改用 screenPosOf。地磚 tileScale.y = 0.7、先在世界單位取餘數再投影；鏡頭縱向對準投影位置。面向改用世界向量（與移動轉向同一套）。
+  - B（本紀錄所在提交之前的 dac332b8）：敵人進場淡入 0.3 秒。模擬層 440 的生成距離在畫面上下方只剩約 310px，比畫布半高短，會在畫面裡憑空冒出來；生成距離是遊戲節奏不為畫面改。
+- 決策：投影只縱向縮放，不加斜切與近大遠小（加斜切會讓貼地的圓變成歪的橢圓，與「統一 1:0.7」衝突）。敵人腳下陰影、角色 8 方向素材維持原樣。一開始把示意圖的「菱形格子」當成概念圖而只做了縱向壓縮，使用者實機回報「似乎還沒調整」，C 段補上。
+- 給特效交接的現況（Codex 接手時的起點）：特效目前全部在地面平面裡，位置都對；貼地的已正確，直立的（火柱、龍捲本體、煙霧、粒子、彈體、斬擊）暫時跟著被壓成 0.7。直立化有兩條路：改掛 world 直屬層並用 screenPosOf 類座標，或留在地面平面自行反向放大 1/0.7（帶旋轉的要把旋轉放在反向縮放的子節點，否則會變成斜切）。程式裡寫死的高度（例：天降落雷的 S.H × 0.7、starfall 的 drop、各處 y − 60 之類）在地面平面裡也被壓成 0.7，要換成 ÷ GROUND_Y_SCALE。
+- 驗證：新增 tests/battle-ground-projection.test.cjs（PROJ-1～6：真正跑 buildScene 看各層投影縮放與繪製順序、錨點投影後與畫面身體位置重合、目標消失退路、進場淡入）與 tests/helpers/battle-scene.cjs；player-outline、player-shield-bar 的圖層順序測試改看場景樹，basic-melee、player-cast-act 依新面向換算更新。7 個突變全部被抓到。受影響的 25 支測試 333 項：失敗與改動前基線相同，另有「雙刀逐刀目標」一條是隨機不穩（同一份程式重跑紅綠交替、與本次無關）。build_check 391 檔通過。實機（claude 副本 8331，手動推幀＋抽圖）：地磚 128×90、鏡頭與地板捲動數值吻合、角色與血條不壓縮、輪廓對齊、新敵人淡入。
+- C（86d61df1）：使用者實機回報「似乎還沒調整」。只壓縮不轉，正方形地磚只會變成扁長方形，眼睛讀成平鋪的長方形地磚，沒有斜視感；示意圖寫的是「斜視的菱形格子（Y 軸壓縮）」。
+  - 地板改掛 scale.y = 0.7 的地面平面容器，TilingSprite 轉 45°（GROUND_TILE_ROTATION）：先在世界平面裡轉、再由容器壓縮，畫面上是正的 1:0.7 菱形。轉的是地板圖樣不是投影，貼地特效仍是 1:0.7 橢圓。捲動抽成 syncGroundScroll，週期＝邊長 × √2（GROUND_TILE_PERIOD，貼圖必須是正方形）。
+  - Pixi v8 的坑：TilingSprite 寬高不同時 tileRotation 會被長寬比拉歪（926×3023 轉 45° 變成一組細密、一組稀疏的陡斜線）。地板 sprite 在本地空間取兩邊較大者做成正方形。用純方格測試貼圖在頁面裡抽圖確認（只在記憶體裡換，不動檔案）。
+  - 測試：PROJ-1 改驗菱形鋪法，新增 PROJ-7（世界上固定一點的貼圖座標跨週期邊界不跳格）、PROJ-8（地板 sprite 正方形且蓋滿畫布）；4 個突變全部被抓到。受影響測試 335 項，失敗與基線相同（加上同一條隨機不穩的雙刀測試）。
+- 待確認：直立特效暫時被壓扁到 Codex 完成為止。
+
+## Claude｜普攻次數跟不上面板攻速（ATKCD-CARRY-20260922）
+
+- Owner：Claude。使用者回報：面板攻速 5 次/秒，目測只有 1 秒 3 下。
+- 實測（claude 副本 8330，新存檔，GM：level 500、god 1、statset aspd 5、statset crit 0、spawn 12 small 1000，攔 queueWorkerVisualEvent 記 15 秒普攻事件）：每秒 3.97 下；59 次中間隔 0.2 秒 36 次、0.3 秒 19 次，其餘 0.4～0.8 秒是技能施放硬直。
+- 根因：js/combat.js 每一步把 atkCd 夾在 0。出手只發生在步與步的交界（Worker 一步 0.1 秒，計時器抖動時切成整步加零頭），週期的尾巴落在步中間時，超出 0 的那一點整個丟掉，要多等一整步。攻速 4.9 在整齊步長下直接掉成 3.33（每刀 3 步）。高塔（js/tower.js）本來就不夾，沒有這個問題。
+- A（本紀錄所在提交）：只在「這一步剛歸零」時保留超出的量（最多一步），出手後從週期扣掉；上一步已經是 0（等待中）的照樣夾在 0——2026-08-16「追擊累積負數冷卻、抵達後連續補攻」的修正照樣成立（既有兩條測試不動、仍通過）。
+  - 快取：combat.js 1.0.58、bridge.js 1.0.138、WORKER_ASSET_VERSION 20260922-atkcd-carry、sim.worker 的 combat token。
+  - 測試：multi-enemy 新增「普攻次數跟得上面板攻速」：照 Worker loop 切步（0.1 ± 0.01 秒切成整步加零頭）跑 60 秒，攻速 5／4.9／3.3／2.5 誤差 2% 內。突變：換回舊夾法時攻速 5 只剩 4.28、4.9 只剩 3.33，測試紅。
+  - Node 照 loop 切步模擬 120 秒：修正後間隔幾乎都是 0.2 秒、每秒 5.00 下；舊版 0.2／0.3 秒混雜、每秒 4.21 下（與實機修正前一致）。實機重測（同一組 GM）：扣掉施法硬直後每秒 5.08 下。
+  - 量測的坑：Browser 面板隱藏時，主執行緒大約每 0.2～0.3 秒才收到一批 Worker 訊息，同一批裡的兩刀會量成「同時到」；要看模擬層節奏用 Node 照 loop 切步跑，不要只看主執行緒到達時間。
+- 影響：普攻實際次數提高到面板值，攻速 5 的普攻輸出約多 25%（原本 3.97 下）。數值平衡若是用舊的實際次數調的，要重新看。
+- 不在這次範圍、實戰仍會讓普攻變稀的設計規則：普攻擊殺後換目標間隔 0.7 秒（TARGET_SWITCH_DELAY）、技能施放硬直 0.2 秒期間不普攻。
+- 同樣的夾法也在技能冷卻（js/skills.js tickSkillCds 夾 0），短冷卻技能（最短間隔 0.4 秒）同樣會被多拖一步，沒有一起改。
+
+## Claude｜普攻三招隨機混合（ATTACK-MIX-20260922）
+
+- Owner：Claude。使用者要求：兩段攻擊動作（Melee／Melee2）與特殊攻擊 1（Special1）隨機混合出現，不要一直用同一招。
+- 原本：普攻只有 attack1／attack2 固定輪流；Special1 只在技能施放（act:'cast'）時播。
+- 修改（本紀錄所在提交；素材庫 1fa5ab1 只改 README）：
+  - tools/build_character_sprites.cjs：新增 attack3＝{ from:'cast', first:5 }，不另外出圖（與 cast 同一套 Texture）；from 動作可帶 first（素材原幀號，不能早於來源的 first）。第 8～9 幀釋放，從第 5 幀開始＝與另外兩段一樣出劍前留 3 幀架式。重跑後只有 knight.json 多一段。
+  - battle-renderer：loadDirectionalSheet 的 from 動作依 first 往後切；playerAttackAnim 普攻改成隨機、但不連續兩下同一招（純隨機會連抽同一段像卡住重播，固定輪流又太規律）。
+  - 順手修：onVfx 只認主普攻的斬擊（variant melee）才帶動角色。神鑄【天罰】的落雷也是 cat basic、跟主普攻同一刻到，原本會把同一刀換成另一招而且不加速（duration 0），整段揮擊被下一刀攔腰切掉。
+  - 快取：battle-renderer 1.6.136。
+- 測試：basic-melee 改寫（300 下：三招都會出、次數相近、從不連續同一招、出現 A-B-A＝不是固定輪流、每招都照攻速加速；天罰落雷不帶動角色）；player-directional-sprite 新增 DIR-9（整支 loadDirectionalSheet 用假 PIXI 跑：attack3 是 cast 同一批 Texture 從第 5 幀切起、輪廓查得到、起身照舊整段倒轉）與 DIR-1 的 attack3 幀定義；skill2-vfx 的字面斷言跟上條件。
+- 取捨：attack3 與施法動作是同一套圖，畫面上分不出「這一下是普攻還是技能」。

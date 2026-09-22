@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-"""佔位序列幀產生器：玩家角色與 BOSS 的 sprite sheet + 幀定義 JSON。
+"""佔位序列幀產生器：BOSS 的 sprite sheet + 幀定義 JSON。
 
 正式圖到位後只需替換 images/sprites/*.png 並同步調整同名 .json 的
 frameWidth/frameHeight/anims 幀數即可，程式端（js/battle-renderer.js）不用改。
 
+玩家原本也由這裡產生佔位圖，2026-09-22 換成 8 方向騎士後改由
+tools/build_character_sprites.cjs 產生（images/sprites/knight/），這裡只剩 BOSS。
+
 用法：python tools/gen_placeholder_sprites.py
-輸出：images/sprites/player.png / player.json / boss_generic.png / boss_generic.json
+輸出：images/sprites/boss_generic.png / boss_generic.json
 """
 import json
 import math
@@ -16,16 +19,6 @@ from PIL import Image, ImageDraw
 OUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'images', 'sprites')
 
 # ---- 調色盤（像素風） ----
-STEEL = (168, 178, 194, 255)
-STEEL_D = (110, 120, 138, 255)
-TUNIC = (52, 98, 168, 255)
-TUNIC_D = (36, 68, 120, 255)
-SKIN = (232, 190, 152, 255)
-LEATHER = (104, 72, 44, 255)
-BLADE = (222, 230, 240, 255)
-BLADE_HL = (255, 255, 255, 255)
-HILT = (196, 156, 58, 255)
-PLUME = (196, 60, 60, 255)
 OUTLINE = (24, 26, 34, 255)
 
 BOSS_BODY = (122, 44, 138, 255)
@@ -65,139 +58,6 @@ def outline_sprite(img):
     for x, y in edge:
         src[x, y] = OUTLINE
     return img
-
-
-# ================= 玩家（32x32，面向右） =================
-S = 32
-
-
-def draw_knight(bob=0, lead_leg=0, back_leg=0, arm='rest', sword='side',
-                lunge=0, torso_lean=0):
-    """參數化騎士。座標以 (16,16) 為身體中心附近。
-    bob: 全身上下位移； lead/back_leg: 前後腳的水平擺幅
-    arm: rest/raise/swing/thrust  sword: side/up/overhead/down/slash/thrust/wind
-    lunge: 全身向前(右)位移  torso_lean: 上身前傾像素
-    """
-    img = new_frame(S)
-    d = ImageDraw.Draw(img)
-    ox = 10 + lunge          # 身體左緣基準
-    oy = 6 + bob             # 頭頂基準
-    tl = torso_lean
-
-    # 後腳 / 前腳（褲+靴）
-    rect(d, ox + 2 + back_leg, oy + 16, ox + 4 + back_leg, oy + 21, TUNIC_D)
-    rect(d, ox + 1 + back_leg, oy + 21, ox + 4 + back_leg, oy + 22, LEATHER)
-    rect(d, ox + 6 + lead_leg, oy + 16, ox + 8 + lead_leg, oy + 21, TUNIC)
-    rect(d, ox + 6 + lead_leg, oy + 21, ox + 9 + lead_leg, oy + 22, LEATHER)
-
-    # 軀幹（鎧甲）
-    rect(d, ox + 1 + tl, oy + 9, ox + 8 + tl, oy + 15, TUNIC)
-    rect(d, ox + 1 + tl, oy + 9, ox + 3 + tl, oy + 15, TUNIC_D)
-    rect(d, ox + 1 + tl, oy + 12, ox + 8 + tl, oy + 12, LEATHER)  # 腰帶
-
-    # 頭（頭盔+臉+羽飾）
-    hx = ox + 2 + tl
-    rect(d, hx, oy + 2, hx + 6, oy + 8, STEEL)
-    rect(d, hx, oy + 2, hx + 1, oy + 8, STEEL_D)
-    rect(d, hx + 4, oy + 5, hx + 6, oy + 7, SKIN)   # 臉
-    px(d, hx + 5, oy + 5, OUTLINE)                   # 眼
-    rect(d, hx + 1, oy + 0, hx + 3, oy + 2, PLUME)   # 羽飾
-
-    # 手臂與劍
-    ax = ox + 6 + tl
-    ay = oy + 10
-    if arm == 'rest':
-        rect(d, ax, ay, ax + 2, ay + 4, STEEL_D)
-        rect(d, ax + 1, ay + 4, ax + 2, ay + 5, SKIN)
-    elif arm == 'raise':
-        rect(d, ax, ay - 4, ax + 2, ay, STEEL_D)
-        rect(d, ax + 1, ay - 5, ax + 2, ay - 4, SKIN)
-    elif arm == 'swing':
-        rect(d, ax + 1, ay + 1, ax + 4, ay + 3, STEEL_D)
-        rect(d, ax + 4, ay + 1, ax + 5, ay + 2, SKIN)
-    elif arm == 'thrust':
-        rect(d, ax + 1, ay + 1, ax + 5, ay + 2, STEEL_D)
-        rect(d, ax + 5, ay + 1, ax + 6, ay + 2, SKIN)
-
-    def blade_v(x, y0, y1):
-        rect(d, x, y0, x, y1, BLADE)
-        px(d, x, y0, BLADE_HL)
-
-    if sword == 'side':          # 垂在身側
-        rect(d, ax + 1, ay + 5, ax + 3, ay + 5, HILT)
-        blade_v(ax + 2, ay + 6, ay + 12)
-    elif sword == 'up':          # 舉到頭上（過肩劈前置）
-        rect(d, ax, ay - 6, ax + 2, ay - 6, HILT)
-        blade_v(ax + 1, ay - 13, ay - 7)
-    elif sword == 'overhead':    # 過肩、劍尖朝前上
-        rect(d, ax + 2, ay - 5, ax + 2, ay - 3, HILT)
-        for i in range(7):
-            px(d, ax + 3 + i, ay - 6 - i // 2, BLADE)
-        px(d, ax + 9, ay - 9, BLADE_HL)
-    elif sword == 'down':        # 劈到底，劍尖朝前下
-        rect(d, ax + 3, ay + 2, ax + 3, ay + 4, HILT)
-        for i in range(8):
-            px(d, ax + 4 + i, ay + 4 + i // 2, BLADE)
-        px(d, ax + 11, ay + 7, BLADE_HL)
-    elif sword == 'slash':       # 水平橫掃（劍在前方水平）
-        rect(d, ax + 4, ay + 1, ax + 4, ay + 3, HILT)
-        rect(d, ax + 5, ay + 2, ax + 13, ay + 2, BLADE)
-        px(d, ax + 13, ay + 2, BLADE_HL)
-    elif sword == 'thrust':      # 突刺（更長、帶速度感高光）
-        rect(d, ax + 5, ay + 0, ax + 5, ay + 3, HILT)
-        rect(d, ax + 6, ay + 1, ax + 15, ay + 1, BLADE)
-        rect(d, ax + 12, ay + 1, ax + 15, ay + 1, BLADE_HL)
-    elif sword == 'wind':        # 收劍到身後蓄力
-        rect(d, ax - 2, ay + 1, ax - 2, ay + 3, HILT)
-        for i in range(6):
-            px(d, ax - 3 - i, ay + 2 - i // 2, BLADE)
-
-    return outline_sprite(img)
-
-
-def knight_frames():
-    anims = {}
-    # 待機：輕微起伏 + 劍身微沉
-    anims['idle'] = [
-        draw_knight(bob=0, arm='rest', sword='side'),
-        draw_knight(bob=0, arm='rest', sword='side'),
-        draw_knight(bob=1, arm='rest', sword='side'),
-        draw_knight(bob=1, arm='rest', sword='side'),
-    ]
-    # 移動：六幀跑步循環
-    anims['walk'] = [
-        draw_knight(bob=0, lead_leg=2, back_leg=-2, arm='rest', sword='side', torso_lean=1),
-        draw_knight(bob=1, lead_leg=1, back_leg=-1, arm='rest', sword='side', torso_lean=1),
-        draw_knight(bob=0, lead_leg=0, back_leg=0, arm='rest', sword='side', torso_lean=1),
-        draw_knight(bob=0, lead_leg=-2, back_leg=2, arm='rest', sword='side', torso_lean=1),
-        draw_knight(bob=1, lead_leg=-1, back_leg=1, arm='rest', sword='side', torso_lean=1),
-        draw_knight(bob=0, lead_leg=0, back_leg=0, arm='rest', sword='side', torso_lean=1),
-    ]
-    # 攻擊1：橫掃
-    anims['attack1'] = [
-        draw_knight(arm='raise', sword='wind', torso_lean=-1),
-        draw_knight(arm='raise', sword='up', torso_lean=0),
-        draw_knight(arm='swing', sword='slash', lunge=2, torso_lean=1, lead_leg=2, back_leg=-2),
-        draw_knight(arm='swing', sword='slash', lunge=3, torso_lean=1, lead_leg=2, back_leg=-2),
-        draw_knight(arm='rest', sword='side', lunge=1),
-    ]
-    # 攻擊2：過肩劈
-    anims['attack2'] = [
-        draw_knight(arm='raise', sword='up', torso_lean=-1),
-        draw_knight(arm='raise', sword='up', bob=-1, torso_lean=-1),
-        draw_knight(arm='swing', sword='overhead', lunge=2, torso_lean=1),
-        draw_knight(arm='swing', sword='down', lunge=3, torso_lean=2, lead_leg=2, back_leg=-2),
-        draw_knight(arm='rest', sword='side', lunge=1),
-    ]
-    # 攻擊3：突刺
-    anims['attack3'] = [
-        draw_knight(arm='rest', sword='wind', torso_lean=-1, lunge=-1),
-        draw_knight(arm='thrust', sword='thrust', lunge=1, torso_lean=1),
-        draw_knight(arm='thrust', sword='thrust', lunge=4, torso_lean=2, lead_leg=3, back_leg=-2),
-        draw_knight(arm='thrust', sword='thrust', lunge=4, torso_lean=2, lead_leg=3, back_leg=-2),
-        draw_knight(arm='rest', sword='side', lunge=1),
-    ]
-    return anims
 
 
 # ================= BOSS（48x48，面向左） =================
@@ -306,16 +166,6 @@ def pack(anims, cell, scale, out_png, out_json, meta):
 
 def main():
     out = os.path.abspath(OUT_DIR)
-    pack(
-        knight_frames(), S, 3,
-        os.path.join(out, 'player.png'), os.path.join(out, 'player.json'),
-        meta={
-            'idle': {'fps': 5, 'loop': True},
-            'walk': {'fps': 10, 'loop': True},
-            'attack1': {'fps': 14, 'loop': False},
-            'attack2': {'fps': 14, 'loop': False},
-            'attack3': {'fps': 14, 'loop': False},
-        })
     pack(
         boss_frames(), B, 3,
         os.path.join(out, 'boss_generic.png'), os.path.join(out, 'boss_generic.json'),

@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const { buildSceneTree, drawOrder } = require('./helpers/battle-scene.cjs');
+
 const root = path.resolve(__dirname, '..');
 const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
 
@@ -144,14 +146,17 @@ test('查不到對應幀的輪廓貼圖時寧可不畫，不沿用上一幀', ()
 });
 
 test('輪廓層排在所有特效之上、飄字與玩家 HUD 之下', () => {
-  /* 釘相對順序而不是字面：輪廓的用途就是壓在特效上面，被排到特效底下＝功能沒了。 */
-  const names = ['zone', 'entity', 'fx', 'presetFx', 'outlineLayer', 'floatLayer', 'playerHud'];
-  const at = names.map((n) => renderer.indexOf('world.addChild(' + n + ')'));
-  names.forEach((n, i) => assert.ok(at[i] > 0, '找不到 world.addChild(' + n + ')'));
+  /* 釘相對順序而不是字面：輪廓的用途就是壓在特效上面，被排到特效底下＝功能沒了。
+     特效層自 2026-09-22 起包在斜俯視的地面平面容器裡，所以看真正組出來的場景樹，不看 addChild 字面。 */
+  const S = buildSceneTree(renderer);
+  const L = S.layers;
+  const order = drawOrder(L.world);
+  const names = ['zone', 'presetZone', 'entity', 'fx', 'presetFx', 'outline', 'float', 'playerHud'];
+  const at = names.map((n) => order.indexOf(L[n]));
+  names.forEach((n, i) => assert.ok(at[i] >= 0, n + ' 不在 world 底下'));
   for (let i = 1; i < at.length; i++) {
-    assert.ok(at[i] > at[i - 1], '層順序不對：' + names[i] + ' 必須晚於 ' + names[i - 1] + ' 加入');
+    assert.ok(at[i] > at[i - 1], '層順序不對：' + names[i] + ' 必須畫在 ' + names[i - 1] + ' 之後');
   }
-  assert.match(renderer, /outline:\s*outlineLayer/);
 });
 
 test('輪廓掛在獨立圖層而不是角色 root，且每幀都會同步', () => {

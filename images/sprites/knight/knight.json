@@ -96,6 +96,13 @@
       "first": 2,
       "release": 8
     },
+    "attack3": {
+      "from": "cast",
+      "reverse": false,
+      "fps": 30,
+      "loop": false,
+      "first": 5
+    },
     "die": {
       "image": "die.png",
       "outline": "die.outline.png",

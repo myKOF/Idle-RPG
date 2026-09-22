@@ -359,6 +359,60 @@ test('場上沒有可交戰敵人時普攻冷卻照樣倒數，敵人一進場�
   assert.equal(player.atkCd, 1, '出手後補回一個完整攻擊週期');
 });
 
+/* 前兩條測的是「等待中夾在 0」；這一條測「剛歸零那一步的零頭要留著」。
+   出手只發生在步與步的交界，零頭整個夾掉的話，週期只要比步長的倍數多一點點就得多等一整步：
+   2026-09-22 實機攻速 5（0.2 秒）有三分之一的間隔變成 0.3 秒，實際每秒 3.97 下。
+   步長照 Worker 的 loop：多半 0.1，偶爾被計時器抖動切成一長一短（sim.worker.js 的 _catchupDebt）。 */
+test('普攻次數跟得上面板攻速：歸零那一步超出的時間不夾掉', () => {
+  function attacksPerSec(aspd, steps) {
+    const context = loadCombatContext();
+    let attacks = 0;
+    const player = context.newPlayerEntity({ hp: 100, mp: 0, aspd });
+    const enemy = { name: '木樁', hp: 1e9, maxHp: 1e9, pos: { x: 40, y: 0 }, _enterCd: 0, atkCd: 1e9, magic: false };
+    context.G = {
+      player: { gold: 0 },
+      stage: { current: 1, best: 1, kills: 0, autoAdvance: false, zone: 'desert' },
+      tower: { active: false }
+    };
+    context.FIELD = {
+      player, monster: enemy, monsters: [enemy], spawnCd: Infinity, reviveCd: 0,
+      dpsWindow: [], _waveClearPending: false, mapComplete: true,
+      stageKills: 0, quotaStage: 1, stageQuota: 999
+    };
+    context.getStats = () => ({ hp: 100, mp: 0, aspd, moveSpeed: 0, passives: {}, skillTriggers: {} });
+    context.playerHpRegenPerSec = () => 0;
+    context.playerMpRegenPerSec = () => 0;
+    context.tickSkillCds = () => {};
+    context.tickFieldDeathClears = () => {};
+    context.tickFieldEnterDelays = () => [];
+    context.bfTickPlayer = () => {};
+    context.bfTickApproach = () => [];
+    context.bfPlayerCanReach = () => true;
+    context.pickAndCastSkill = () => null;
+    context.tickSkillSchedulers = () => {};
+    context.tickLegendaryEffects = () => null;
+    context.effectActive = () => false;
+    context.fieldMonsterAttack = () => false;
+    context.doPlayerAttack = () => { attacks++; return { killed: false }; };
+    let t = 0;
+    steps.forEach((dt) => { context.fieldTick(dt); t += dt; });
+    return attacks / t;
+  }
+  const even = Array(600).fill(0.1);                       // 60 秒、每步剛好 0.1
+  /* 60 秒、照 Worker loop 切步：每次 loop 經過的真實時間 0.1 ± 0.01 秒（計時器抖動），
+     切成 0.1 的整步加一個零頭——步的交界因此對不齊 0.1 的格子，週期的尾巴會落在步中間。 */
+  const jitter = [];
+  for (let i = 0; i < 600; i++) {
+    let debt = 0.1 + (((i * 37) % 21) - 10) / 1000;
+    while (debt > 1e-9) { const dt = Math.min(debt, 0.1); jitter.push(dt); debt -= dt; }
+  }
+  [[5, even], [5, jitter], [4.9, even], [4.9, jitter], [3.3, jitter], [2.5, jitter]].forEach(([aspd, steps]) => {
+    const rate = attacksPerSec(aspd, steps);
+    assert.ok(Math.abs(rate - aspd) < aspd * 0.02,
+      '攻速 ' + aspd + '（' + (steps === even ? '整齊步長' : '抖動步長') + '）實際每秒 ' + rate.toFixed(2) + ' 下');
+  });
+});
+
 /* 2026-08 波次串流改版：敵人改成每隔幾秒補一波、不等場上清空，
    推進判定因此從「整波清空」改為「殺滿本關配額」（fieldStageQuota）。
    本測試改測新語意：逐一擊殺各自結算，殺滿配額後的下一個 tick 推進。 */
