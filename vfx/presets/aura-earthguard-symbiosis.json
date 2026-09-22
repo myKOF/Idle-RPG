@@ -10,11 +10,15 @@
       "assetId": "codex-authored/earthguard/hexagram-symbiosis.png",
       "scale": {
         "x": 0.7142857142857142,
-        "y": 0.7142857142857142
+        "y": 1.0989010989010988
       },
       "alpha": 0.8,
       "blendMode": "add",
       "duration": 16,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      },
       "sheet": {
         "columns": 8,
         "count": 192,

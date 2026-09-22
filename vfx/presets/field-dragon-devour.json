@@ -37,7 +37,11 @@
           0.9907,
           0.965426
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "rim-embers",
@@ -82,7 +86,12 @@
           1,
           0
         ]
-      ]
+      ],
+      "projection": {
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "sprite-3",
@@ -116,7 +125,11 @@
           1,
           0.567553
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "sprite-3-copy",
@@ -150,7 +163,11 @@
           1,
           0.567553
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "sprite-3-copy-2",
@@ -184,7 +201,11 @@
           1,
           0.304027
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "sprite-6",
@@ -195,7 +216,11 @@
         "y": 0.5752
       },
       "tint": "#0d0d0d",
-      "blendMode": "normal"
+      "blendMode": "normal",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "sprite-3-copy-3",
@@ -229,7 +254,11 @@
           1,
           0.567553
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "sprite-6-copy",
@@ -240,7 +269,11 @@
         "y": 0.1191
       },
       "tint": "#0d0d0d",
-      "blendMode": "normal"
+      "blendMode": "normal",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     }
   ],
   "sizing": {

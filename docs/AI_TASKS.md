@@ -7645,3 +7645,19 @@ Worker 存活且頁面正常完成載入。
 - 已完成技能／表格／特效與快取同步，Excel原生儲存重開，僅12格資料改變；21項配置與技能測試通過、DEVOUR畫面測試通過。火系52/56、Runtime99/101，其餘6項以HEAD重跑確認既有失敗。build392檔通過；正式Preset在瀏覽器已顯示，Console無新增錯誤。
 - 第二版：新漩渦取代舊漩渦、疏紋亮外圈暗中心、三道漸層螺旋環帶、整圈無縫旋轉；火球縮小30%、世界座標弧線尾焰及落地爆炸。修正聚怪錯用6.6米近戰停止線，只保留體型。23項配置／技能與3項DEVOUR畫面測試通過，Runtime101/103仍僅既有失敗。使用者同意index.html與Claude分行改快取。
 - 素材已存入素材庫並同步Preset/layout，位元組一致。依「先給預覽」保留未提交，沒有合併／推送；完整交接與限制見 docs/skill-tests/20260922-dragon-devour-codex.md。
+
+## Codex｜火漩渦範圍內停止聚攏（DEVOUR-PULL-20260922）
+
+- Owner Codex；Done。使用者要求已在火漩渦範圍內的敵人不再聚攏。僅修改 skills2 聚攏判定、dragon-devour 測試、主頁／Worker 快取及本紀錄。沿實際傷害範圍含體型接觸判斷，圈外維持既有拉動。
+- 衝突預檢僅 index.html／AI_TASKS 與 Claude 不同區段有修改，三方乾跑 exit 0，依既有「不會合併衝突即可改」授權執行。無素材變更。
+- 驗證：`node --test tests/dragon-devour.test.cjs tests/firepillar-expire-vfx.test.cjs` 14/14；`node --test tests/skill2-fire-legendary.test.cjs` 18/21，3 個既有失敗（地爆天星倒數／預警、烈焰暴風數量）以 HEAD 基準重跑確認。`node tools/build_check.cjs` 395 檔、`git diff --check` 通過。測試包含圈內／邊界／Boss 體型、圈外拉入後傷害與移動排程，特效事件半徑與判定一致。
+- 唯讀檢查 battlefield.js 範圍／體型與技能配置、VFX 範圍事件；未修改素材，無素材庫提交。未瀏覽器實戰驗證，無未完成實作；可供使用者合併，建議整合後確認實戰聚攏感受。未合併／推送，Commit 見本紀錄所在提交。
+
+## Codex｜地面特效投影（VFX-GROUND-20260922）
+
+- Owner Codex；Done。83 份 Preset／185 個地面圖層投影成橢圓或菱形，直立本體保留。使用者另同意方形作用判定同步旋轉，保留邊長／傷害／時序。Core／Runtime 與編輯器選取框一致。
+- 範圍：VFX Core／Runtime、既有 Preset 與素材庫來源、skills2 方形場域方向、相關測試、主頁／Worker 快取與文件。禁止修改其他技能規則、配置數值及其他副本。
+- 前置：場景 GROUND_Y_SCALE 與透視已具備。預檢 index.html／本紀錄與 Claude 修改不同區段，依使用者「不會合併衝突即可改」授權，git merge-file 乾跑兩檔皆 exit 0。
+- 驗收：圓形旋轉過程維持地面橢圓、方形邊界與命中一致、混合特效直立層不壓縮、編輯器與遊戲外觀一致、素材雙倉庫同步、Build／Console。完成後交使用者整合，不自行合併或推送。
+- 驗證：ground-plane／preset-usage 28/28；最終 10 檔回歸 404 項，399 通過／4 已基準確認的既有失敗／1 跳過；Build 395、素材 export --check 與 diff check 通過。83 份預覽檢查、GPU 編輯器 Console 無錯誤。未做全技能長時間實戰；既有失敗詳見交接。
+- 素材庫提交 `987e2c4`，遊戲 Commit 見本紀錄所在提交。無未完成實作，可供使用者整合，未合併／推送；完整修改與唯讀檢查清單、測試指令、已知風險和素材來源見 [GROUND_PROJECTION_AUDIT.md](vfx/GROUND_PROJECTION_AUDIT.md)。建議下一步實戰確認視覺比例。

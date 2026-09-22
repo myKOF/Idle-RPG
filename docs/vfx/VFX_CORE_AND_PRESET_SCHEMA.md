@@ -2,6 +2,14 @@
 
 # VFX Core 架構 ＋ VFX Preset Schema v1
 
+## 地面投影（2026-09-22）
+
+drawable 圖層（sprite／procedural／particle）新增可選 `projection: {x: 1, y: 0.5, rotation: 0}`；rotation 為弧度。x／y 必填且為有限數，rotation 可省略，empty 不支援。此欄位在本地、父層與特效變換完成後，以特效原點先旋轉再壓縮，保留持續旋轉的地面橢圓。未標記圖層保持既有行為，schemaVersion 仍為 1。
+
+play／setTransform 可用 `projectionRotation` 指定地面方向，優先於圖層的 rotation。particle 可另填 `upright: true`，只投影初始發射位置，粒子外形與後續升空運動保持直立；worldSpace 粒子記住出生時的地面方向。其他圖層不接受 upright。Editor 提供 projection JSON 編輯，選取框與拖曳座標包含相同投影。
+
+已壓扁的舊圖層先還原製作比例；六芒星圖集另補償內建 0.65 壓縮，避免二次壓扁。完整清單見 [GROUND_PROJECTION_AUDIT.md](GROUND_PROJECTION_AUDIT.md)。
+
 ## 圖層持續循環與等速旋轉（2026-09-18）
 
 `sprite`、`procedural`、`empty` 圖層新增可選 `loop`（預設 false）及 `rotationSpeed`（有限數，弧度／秒，預設0）。Editor在圖層提供「持續循環」，Rotation區塊提供度／秒滑桿及數字輸入；負值逆時針，正值順時針。既有particle的rotationSpeed仍是每顆粒子的自轉速度與範圍值。

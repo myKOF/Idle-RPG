@@ -252,6 +252,8 @@ var VFXRuntime = (function () {
     var a = spec.area;
     if (a && typeof a === 'object') {
       var b = Object.assign({}, a);
+      // 貼地圖層自己做最終投影，保留判定平面的長度與角度，避免尺寸被換兩次。
+      b._planeW = a.w; b._planeA = a.a;
       ['y', 'sourceY', 'destY', 'controlY'].forEach(function (f) { if (isNum(a[f])) b[f] = a[f] * k; });
       var heading = isNum(a.moveA) ? a.moveA : (isNum(a.a) ? a.a : NaN);
       if (isNum(a.speed) && isNum(heading)) b.speed = a.speed * projectedLength(heading, k);
@@ -328,6 +330,8 @@ var VFXRuntime = (function () {
 
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var presetSizes = Object.create(null);
+    var planePresets = Object.create(null);
+    var planeAngles = Object.create(null);
     var presetDurations = Object.create(null);
     var trackedBeamWidths = Object.create(null);
     var projectiles = [];                   // 逐幀前進的飛行物
@@ -372,6 +376,13 @@ var VFXRuntime = (function () {
       });
       (list || []).forEach(function (p) {
         if (!p || !p.id || known[p.id]) return;
+        planePresets[p.id] = p.layers.some(function (l) { return !!l.projection; });
+        var planeLayer = p.layers.find(function (l) { return !!l.projection; });
+        planeAngles[p.id] = planeLayer ? num(planeLayer.projection.rotation, 0) : 0;
+        if (planePresets[p.id] && isNum(o.groundScale) && o.groundScale > 0 && o.groundScale <= 1) {
+          p = JSON.parse(JSON.stringify(p));
+          p.layers.forEach(function (l) { if (l.projection) l.projection.y = groundScale; });
+        }
         if (p.sizing) resolveSizing(p.sizing); // 載入即驗證，錯誤不可靜默變成 NaN
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
@@ -459,6 +470,10 @@ var VFXRuntime = (function () {
        （2026-09-06 實機回報）。少一道遠比多一種畫風不顯眼，所以超預算時整則丟掉。
        budgetDrops 就是給 tryPlay 分辨這兩者用的。 */
     var budgetDrops = 0;
+    function planeParams(presetId, params) {
+      if (!planePresets[presetId] || params.rotation === undefined) return params;
+      return Object.assign({}, params, { projectionRotation: params.rotation, rotation: 0 });
+    }
     function play(rt, presetId, params, mult) {
       if ((presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') && has(presetId + '-front')) {
         var back = play(rtZone, presetId + '-back', params, mult);
@@ -467,10 +482,10 @@ var VFXRuntime = (function () {
         return { parts: [back, front] };
       }
       if (!has(presetId)) { counters.missing++; return null; }
-      var handle = rt.play(presetId, sized(params || {}, mult));
+      var handle = rt.play(presetId, planeParams(presetId, sized(params || {}, mult)));
       if (handle === null || handle === undefined) { budgetDrops++; return null; }
       counters.played++;
-      return { rt: rt, handle: handle };
+      return { rt: rt, handle: handle, presetId: presetId };
     }
     function stopRef(ref) {
       if (!ref) return;
@@ -485,17 +500,25 @@ var VFXRuntime = (function () {
     /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
     function moveRef(ref, params, mult) {
       if (ref.parts) { var alive = ref.parts.map(function(part) { return moveRef(part, params, mult); }); return alive.every(Boolean); }
-      return ref.rt.setTransform(ref.handle, sized(params, mult));
+      return ref.rt.setTransform(ref.handle, planeParams(ref.presetId, sized(params, mult)));
     }
 
     /* ---- 幾何 ---- */
+    function planeArea(area, presetId) {
+      if (!planePresets[presetId] || !area || area._planeW === undefined && area._planeA === undefined) return area;
+      var out = Object.assign({}, area);
+      if (isNum(area._planeW)) out.w = area._planeW;
+      if (isNum(area._planeA)) out.a = area._planeA;
+      return out;
+    }
     function areaCentre(area) {
       return { x: num(area.x, 0), y: num(area.y, 0) };
     }
     /* 場域／範圍的縮放：圓形吃半徑，矩形吃長寬，兩者的名目尺寸不同。 */
     function areaScaleParams(area, presetId) {
+      area = planeArea(area, presetId);
       var resolved = sizeOf(presetId, area);
-      if (resolved) { resolved.rotation = num(area.a, 0); return resolved; }
+      if (resolved) { resolved.rotation = num(area.a, planeAngles[presetId] || 0); return resolved; }
       var w = num(area.w, 0), h = num(area.h, 0);
       if (w > 0 && h > 0) {
         return { scaleX: w / NOMINAL_RECT_W, scaleY: h / NOMINAL_RECT_H, rotation: num(area.a, 0) };
@@ -771,7 +794,7 @@ var VFXRuntime = (function () {
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
-        g.trot = 0;
+        g.trot = planeAngles[g.presetId] || 0;
         return;
       }
       var area = spec.area;
@@ -791,7 +814,7 @@ var VFXRuntime = (function () {
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
       // 追蹤冰箭沿用發射本體尺寸；area.r 僅控制碰撞，不能縮小箭體。
-      var actualSize = area;
+      var actualSize = planeArea(area, g.presetId);
       if (g.presetId === 'ground-homing-wind-crescent' && area.r > 0 && presetSizes[g.presetId]) {
         var body = presetSizes[g.presetId];
         // 碰撞半徑代表刃寬的一半，不能當作月牙半長。
@@ -810,7 +833,7 @@ var VFXRuntime = (function () {
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
       g.trot = (g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') &&
-        typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(area.a, 0);
+        typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(planeArea(area, g.presetId).a, planeAngles[g.presetId] || 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
       var prevX = g.bx + g.ox, prevY = g.by + g.oy;
@@ -1576,7 +1599,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260922-dragon-devour-v3';
+  var DATA_VERSION = '20260922-ground-plane';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

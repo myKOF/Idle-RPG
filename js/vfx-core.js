@@ -479,6 +479,14 @@ var VFXCore = (function () {
        跟著一起轉，長軸就不是水平的了——那是旋轉與非等比縮放的順序問題，
        換幾個數字都解不掉。 */
     validateVec2(layer.outerScale, where + '.outerScale', errors);
+    validateVec2(layer.projection, where + '.projection', errors);
+    if (layer.projection && layer.projection.rotation !== undefined && !isFiniteNumber(layer.projection.rotation)) {
+      errors.push(where + '.projection.rotation 必須是有限數');
+    }
+    if (layer.projection && layer.projection.upright !== undefined &&
+        (layer.type !== 'particle' || typeof layer.projection.upright !== 'boolean')) {
+      errors.push(where + '.projection.upright 只支援 particle 的布林值');
+    }
   }
 
   /* 子發射器：這一層的粒子在出生或死亡時，往另一層丟幾顆。
@@ -633,7 +641,7 @@ var VFXCore = (function () {
   var PRESET_FIELDS = ['deformation', 'schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
-    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet'];
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet', 'projection'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
      這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
      那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
@@ -682,7 +690,7 @@ var VFXCore = (function () {
   /* 巢狀結構同樣要擋未知欄位，否則 spawn.raduis、emission.counnt 這類拼錯
      仍會被靜靜忽略——「無 silent fallback」必須連巢狀一起守。 */
   var NESTED_FIELDS = {
-    position: ['x', 'y'], scale: ['x', 'y'], anchor: ['x', 'y'],
+    position: ['x', 'y'], scale: ['x', 'y'], anchor: ['x', 'y'], projection: ['x', 'y', 'rotation', 'upright'],
     gravity: ['x', 'y'], size: ['x', 'y'], scrollSpeed: ['x', 'y'],
     emission: ['mode', 'count', 'rate'],
     spawn: ['shape', 'radius', 'width', 'height'],
@@ -935,7 +943,7 @@ var VFXCore = (function () {
     'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife',
-    'offsetXOverLife', 'offsetYOverLife', 'outerScale',
+    'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection',
     'sheet', 'radiusProfile', 'water'];
 
   // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
@@ -1065,7 +1073,8 @@ var VFXCore = (function () {
       rotationYOverLife: layer.rotationYOverLife,
       offsetXOverLife: layer.offsetXOverLife,
       offsetYOverLife: layer.offsetYOverLife,
-      outerScale: layer.outerScale
+      outerScale: layer.outerScale,
+      projection: layer.projection
     };
   }
 
@@ -1349,6 +1358,7 @@ var VFXCore = (function () {
       }
       if (p.opacity !== undefined) effect.opacity = Math.max(0, Math.min(1, transformNumber(p.opacity, 'opacity')));
       if (p.rotation !== undefined) effect.rotation = transformNumber(p.rotation, 'rotation');
+      if (p.projectionRotation !== undefined) effect.projectionRotation = transformNumber(p.projectionRotation, 'projectionRotation');
       var hasScale = p.scale !== undefined;
       var hasAxis = p.scaleX !== undefined || p.scaleY !== undefined;
       if (hasScale) {
@@ -1606,8 +1616,26 @@ var VFXCore = (function () {
       t.deformation=w;
     }
 
-    /* sprite／procedural 節點共用的收尾：序列幀、錨點、排序、程序圖層的捲動與水龍捲。
-       根圖層與子物件都走這裡，兩者只差在變換、透明度、顏色怎麼算。 */
+    /* 最終平面投影：以特效落點為原點，先完成所有局部／父層／特效旋轉，再投影。
+       不影響同一份 Preset 內未標記的直立圖層。Core 只處理通用仿射變換。 */
+    function projectTransform(frame, projection, t) {
+      if (!projection) return;
+      var px = projection.x, py = projection.y;
+      var angle = frame.projectionRotation === undefined ? (projection.rotation || 0) : frame.projectionRotation;
+      var co = Math.cos(angle), si = Math.sin(angle);
+      var dx = t.x - frame.origin.x, dy = t.y - frame.origin.y;
+      t.x = frame.origin.x + (co * dx - si * dy) * px;
+      t.y = frame.origin.y + (si * dx + co * dy) * py;
+      var m = scratchWorldMatrix;
+      m.a = Math.cos(t.rotation + angle) * t.scaleX * px;
+      m.b = Math.sin(t.rotation + angle) * t.scaleX * py;
+      m.c = -Math.sin(t.rotation + angle - (t.skewX || 0)) * t.scaleY * px;
+      m.d = Math.cos(t.rotation + angle - (t.skewX || 0)) * t.scaleY * py;
+      var parts = decomposeMatrix(m, scratchParts);
+      t.rotation = parts.rotation; t.scaleX = parts.scaleX;
+      t.scaleY = parts.scaleY; t.skewX = parts.skewX;
+    }
+    /* sprite／procedural 共用收尾；根圖層與子物件使用相同投影。 */
     function finishSpriteNode(effect, layer, t, progress, elapsed) {
       var d = layer.def;
       /* 序列幀：sprite 的年紀就是它自己這一段的經過時間。 */
@@ -1618,6 +1646,7 @@ var VFXCore = (function () {
       t.sortGroup = effect.handle; t.sortY = effect.origin.y;
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
+      projectTransform(effect, d.projection, t);
       setDeformation(effect, layer, t);
       if (d.effect === 'waterTornado') {
         var phaseTime = d.water.palette === 'fire' ? proceduralClock * effect.timeScale : elapsed;
@@ -1723,6 +1752,7 @@ var VFXCore = (function () {
       // 粒子狀態物件也重用（free-list），避免每次發射都配置新物件
       var p = particlePool.length ? particlePool.pop() : {};
       p.x = px; p.y = py;
+      p.planeX = px; p.planeY = py;
       // 出生座標隨粒子池重用；轉彎只影響新粒子，不搬動已留下的軌跡。
       p.spawnFrame = null;
       if (d.worldSpace) {
@@ -1730,6 +1760,7 @@ var VFXCore = (function () {
         var sourceFrame = at && at.frame ? at.frame : effect;
         frame.origin.x = sourceFrame.origin.x; frame.origin.y = sourceFrame.origin.y;
         frame.rotation = sourceFrame.rotation;
+        frame.projectionRotation = sourceFrame.projectionRotation;
         frame.scaleX = sourceFrame.scaleX; frame.scaleY = sourceFrame.scaleY;
         p.spawnFrame = frame;
       }
@@ -1962,6 +1993,17 @@ var VFXCore = (function () {
         t.sortGroup = effect.handle; t.sortY = effect.origin.y;
         t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined; t.generated = undefined;
         t.deformation = undefined;
+        if (d.projection && d.projection.upright) {
+          // 發射面貼地，離開發射點之後的上升高度與粒子本體維持直立。
+          var base = toWorld(particleFrame,
+            pm ? pm.a * p.planeX + pm.c * p.planeY + pm.tx : p.planeX,
+            pm ? pm.b * p.planeX + pm.d * p.planeY + pm.ty : p.planeY);
+          var bx = base.x - particleFrame.origin.x, by = base.y - particleFrame.origin.y;
+          var pr = particleFrame.projectionRotation === undefined ? (d.projection.rotation || 0) : particleFrame.projectionRotation;
+          var pc = Math.cos(pr), ps = Math.sin(pr);
+          t.x += (pc * bx - ps * by) * d.projection.x - bx;
+          t.y += (ps * bx + pc * by) * d.projection.y - by;
+        } else projectTransform(particleFrame, d.projection, t);
         backend.updateNode(p.node, t);
         layer.particles[write++] = p;
       }

@@ -11,203 +11,11 @@
       "zIndex": 0,
       "position": {
         "x": -190.2765,
-        "y": -43.7918
+        "y": -87.5836
       },
       "scale": {
         "x": 0.5903,
-        "y": 0.2245
-      },
-      "alpha": 0.5,
-      "tint": "#3ba4ea",
-      "blendMode": "add",
-      "duration": 3,
-      "alphaOverLife": [
-        [
-          0,
-          0.75
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.75
-        ]
-      ]
-    },
-    {
-      "id": "irregular-frost-1",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 0,
-      "position": {
-        "x": -2.4562,
-        "y": -47.7829
-      },
-      "scale": {
-        "x": 1.0927,
-        "y": 0.3894
-      },
-      "alpha": 0.5,
-      "tint": "#258dd9",
-      "blendMode": "add",
-      "duration": 3,
-      "alphaOverLife": [
-        [
-          0,
-          0.75
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.75
-        ]
-      ]
-    },
-    {
-      "id": "irregular-frost-2",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 0,
-      "position": {
-        "x": 189.3905,
-        "y": -38.23
-      },
-      "scale": {
-        "x": 0.6377,
-        "y": 0.2062
-      },
-      "alpha": 0.5,
-      "tint": "#3ba4ea",
-      "blendMode": "add",
-      "duration": 3,
-      "alphaOverLife": [
-        [
-          0,
-          0.75
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.75
-        ]
-      ]
-    },
-    {
-      "id": "irregular-frost-3",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 0,
-      "position": {
-        "x": -221.2147,
-        "y": 32.0289
-      },
-      "scale": {
-        "x": 0.7857,
-        "y": 0.3395
-      },
-      "alpha": 0.5,
-      "tint": "#258dd9",
-      "blendMode": "add",
-      "duration": 3,
-      "alphaOverLife": [
-        [
-          0,
-          0.75
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.75
-        ]
-      ]
-    },
-    {
-      "id": "irregular-frost-4",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 0,
-      "position": {
-        "x": 155.4363,
-        "y": 45.8162
-      },
-      "scale": {
-        "x": 1.051,
-        "y": 0.3735
-      },
-      "alpha": 0.5,
-      "tint": "#3ba4ea",
-      "blendMode": "add",
-      "duration": 3,
-      "alphaOverLife": [
-        [
-          0,
-          0.75
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.75
-        ]
-      ]
-    },
-    {
-      "id": "irregular-frost-7",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 0,
-      "position": {
-        "x": -90.8752,
-        "y": 77.2333
-      },
-      "scale": {
-        "x": 1.1986,
-        "y": 0.3548
-      },
-      "alpha": 0.5,
-      "tint": "#258dd9",
-      "blendMode": "add",
-      "duration": 3,
-      "alphaOverLife": [
-        [
-          0,
-          0.75
-        ],
-        [
-          0.5,
-          1
-        ],
-        [
-          1,
-          0.75
-        ]
-      ]
-    },
-    {
-      "id": "irregular-frost-8",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
-      "zIndex": 0,
-      "position": {
-        "x": 82.1831,
-        "y": 89.4499
-      },
-      "scale": {
-        "x": 0.8448,
-        "y": 0.2412
+        "y": 0.449
       },
       "alpha": 0.5,
       "tint": "#3ba4ea",
@@ -227,7 +35,234 @@
           0.75
         ]
       ],
-      "scaleOverLife": 1
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "irregular-frost-1",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": -2.4562,
+        "y": -95.5658
+      },
+      "scale": {
+        "x": 1.0927,
+        "y": 0.7788
+      },
+      "alpha": 0.5,
+      "tint": "#258dd9",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "irregular-frost-2",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": 189.3905,
+        "y": -76.46
+      },
+      "scale": {
+        "x": 0.6377,
+        "y": 0.4124
+      },
+      "alpha": 0.5,
+      "tint": "#3ba4ea",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "irregular-frost-3",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": -221.2147,
+        "y": 64.0578
+      },
+      "scale": {
+        "x": 0.7857,
+        "y": 0.679
+      },
+      "alpha": 0.5,
+      "tint": "#258dd9",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "irregular-frost-4",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": 155.4363,
+        "y": 91.6324
+      },
+      "scale": {
+        "x": 1.051,
+        "y": 0.747
+      },
+      "alpha": 0.5,
+      "tint": "#3ba4ea",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "irregular-frost-7",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": -90.8752,
+        "y": 154.4666
+      },
+      "scale": {
+        "x": 1.1986,
+        "y": 0.7096
+      },
+      "alpha": 0.5,
+      "tint": "#258dd9",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "irregular-frost-8",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "zIndex": 0,
+      "position": {
+        "x": 82.1831,
+        "y": 178.8998
+      },
+      "scale": {
+        "x": 0.8448,
+        "y": 0.4824
+      },
+      "alpha": 0.5,
+      "tint": "#3ba4ea",
+      "blendMode": "add",
+      "duration": 3,
+      "alphaOverLife": [
+        [
+          0,
+          0.75
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      "scaleOverLife": 1,
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "ground-ice-mist-0",
@@ -236,7 +271,7 @@
       "zIndex": 1,
       "position": {
         "x": 160.3714,
-        "y": -1.1521
+        "y": -2.3042
       },
       "alpha": 0.26,
       "tint": "#b1ddf2",
@@ -250,7 +285,7 @@
         1.1
       ],
       "spawn": {
-        "height": 25.6294,
+        "height": 51.2588,
         "shape": "box",
         "width": 245.6157
       },
@@ -292,7 +327,13 @@
           1,
           2.445908
         ]
-      ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "ground-ice-mist-1",
@@ -301,7 +342,7 @@
       "zIndex": 1,
       "position": {
         "x": 51.5497,
-        "y": 35.9257
+        "y": 71.8514
       },
       "alpha": 0.26,
       "tint": "#b1ddf2",
@@ -315,7 +356,7 @@
         1.1
       ],
       "spawn": {
-        "height": 25.6294,
+        "height": 51.2588,
         "shape": "box",
         "width": 245.6157
       },
@@ -357,7 +398,13 @@
           1,
           1.89582
         ]
-      ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "ground-ice-mist-2",
@@ -366,7 +413,7 @@
       "zIndex": 1,
       "position": {
         "x": -57.2721,
-        "y": 73.0034
+        "y": 146.0068
       },
       "alpha": 0.26,
       "tint": "#b1ddf2",
@@ -380,7 +427,7 @@
         1.1
       ],
       "spawn": {
-        "height": 25.6294,
+        "height": 51.2588,
         "shape": "box",
         "width": 245.6157
       },
@@ -422,7 +469,13 @@
           1,
           2.386045
         ]
-      ]
+      ],
+      "projection": {
+        "rotation": 0.7853981633974483,
+        "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "driven-snow-0",
@@ -667,7 +720,7 @@
   ],
   "sizing": {
     "authored": {
-      "height": 150,
+      "height": 300,
       "width": 300
     },
     "shape": "square"

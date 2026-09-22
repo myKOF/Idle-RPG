@@ -11,15 +11,19 @@
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": 126
+        "y": 252
       },
       "scale": {
         "x": 0.5,
-        "y": 0.24
+        "y": 0.5
       },
       "alpha": 0.5,
       "tint": "#3b2a20",
-      "blendMode": "normal"
+      "blendMode": "normal",
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "ground-ring",
@@ -28,11 +32,11 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": 124
+        "y": 248
       },
       "scale": {
         "x": 0.42,
-        "y": 0.17
+        "y": 0.42
       },
       "tint": "#ff7a24",
       "blendMode": "add",
@@ -63,7 +67,11 @@
           1,
           1.25
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "base-glow",
@@ -72,11 +80,11 @@
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": 112
+        "y": 224
       },
       "scale": {
         "x": 0.34,
-        "y": 0.2
+        "y": 0.34
       },
       "alpha": 0.5,
       "tint": "#ff8a2b",
@@ -94,7 +102,11 @@
           1,
           0.9
         ]
-      ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     },
     {
       "id": "funnel-body",

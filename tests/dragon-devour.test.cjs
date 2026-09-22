@@ -76,10 +76,17 @@ test('吞噬：重新施放立即取消舊漩渦；火球20米圓內也能落在
  assert.ok(radii.every(r=>r<=200));assert.ok(radii.some(r=>r<150));assert.ok(radii.some(r=>r>150));
 });
 
-test('吞噬：正式移動與技能排程並行，拉過近戰停止線直到圓心體型邊界',()=>{
+test('吞噬：正式移動與技能排程並行，進入傷害圈後不再強拉至圓心',()=>{
  const {c,p,ctx}=setup();c.FIELD.monsters.splice(1);const m=c.FIELD.monsters[0];m.pos={x:300,y:0};c.sgHitOne=()=>({miss:false});
- const start=c.GT;for(let i=1;i<=180;i++){c.GT=start+i/60;c.bfTickApproach([m],1/60);c.tickSkillSchedulers(1/60,ctx);}
- assert.ok(Math.hypot(m.pos.x,m.pos.y)<c.bfStopDistance(m));assert.ok(Math.abs(Math.hypot(m.pos.x,m.pos.y)-c.bfEntityRadius(m))<.001);
+ const start=c.GT;let insideTicks=0;
+ for(let i=1;i<=180;i++){
+   c.GT=start+i/60;c.bfTickApproach([m],1/60);
+   const before={...m.pos},inArea=c.bfEntityInArea(m,{x:0,y:0,r:150});
+   c.tickSkillSchedulers(1/60,ctx);
+   if(inArea){assert.deepEqual(m.pos,before,'正常移動後已在圈內，技能排程不再搬動');insideTicks++;}
+ }
+ assert.ok(c.bfEntityInArea(m,{...c.SKILL2_RT.grounds[0].pos,r:150}));
+ assert.ok(insideTicks>0);
 });
 
 test('吞噬：首拍將35米內敵人直接拉入傷害圈，玩家反向移動也無法抵消',()=>{
@@ -88,7 +95,23 @@ test('吞噬：首拍將35米內敵人直接拉入傷害圈，玩家反向移動
  const hits=[];c.sgHitOne=(p,s,m)=>{hits.push(m);return {miss:false};};
  c.GT=f.nextAt;c.sgTickGrounds(.35,ctx);
  assert.equal(m.pos.x,c.bfEntityRadius(m));assert.ok(hits.includes(m));assert.equal(c.FIELD.monsters[1].pos.x,351);assert.equal(c.FIELD.monsters[2].pos.x,300);
- c.bfPlayerPos().x=300;p.pos.x=300;m.pos.x=150;
+ c.bfPlayerPos().x=300;p.pos.x=300;m.pos.x=f.radius+c.bfEntityRadius(m)+1;
  c.bfTickApproach([m],.35);assert.ok(m.pos.x>150);
  c.GT=f.nextAt;c.sgTickGrounds(.35,ctx);assert.equal(m.pos.x,c.bfEntityRadius(m));assert.equal(f.pos.x,0);
+});
+
+test('吞噬：圈內、圓周與體型接觸邊界不移動仍受傷；圈外才聚攏',()=>{
+ const {c,ctx,events}=setup(),f=c.SKILL2_RT.grounds[0];
+ f.pos={x:70,y:30};f.devour.nextShotAt=Infinity;
+ const make=(distance,boss=false)=>({hp:100,pos:{x:f.pos.x,y:f.pos.y+distance},isBoss:boss,_enterCd:0});
+ const inside=[make(50),make(f.radius),make(f.radius+c.bfBodyRadius()),make(f.radius+c.bfBossRadius(),true)];
+ const outside=make(f.radius+c.bfBodyRadius()+1),far=make(351),entering=make(250);entering._enterCd=1;
+ const enemies=[...inside,outside,far,entering];c.FIELD.monsters=enemies;
+ const before=inside.map(m=>({...m.pos})),hits=[];c.sgHitOne=(p,s,m)=>{hits.push(m);return {miss:false};};
+ c.sgDevourDamage(f,enemies,ctx);
+ inside.forEach((m,i)=>{assert.deepEqual(m.pos,before[i]);assert.ok(hits.includes(m));});
+ assert.equal(outside.pos.y,f.pos.y+c.bfEntityRadius(outside));assert.ok(hits.includes(outside));
+ assert.equal(far.pos.y,f.pos.y+351);assert.equal(entering.pos.y,f.pos.y+250);
+ c.sgDevourDamage(f,enemies,ctx);inside.forEach((m,i)=>assert.deepEqual(m.pos,before[i]));
+ assert.equal(events[0].area.r,f.radius,'停止聚攏門檻沿用對外顯示的傷害半徑');
 });

@@ -884,10 +884,11 @@
 
   var LOOP_FIELD = { key: 'loop', label: '持續循環', kind: 'bool', default: false };
   var TYPE_FIELDS = {
-    sprite: [LOOP_FIELD, OUTER_SCALE_FIELD],
+    sprite: [LOOP_FIELD, OUTER_SCALE_FIELD, json('projection', '地面投影（x／y／rotation）')],
     /* 空物件不畫東西，只收會被子物件繼承的欄位；共通欄位裡不適用的由 fieldsOf 濾掉 */
     empty: [LOOP_FIELD, OUTER_SCALE_FIELD],
     particle: [
+      json('projection', '地面投影（upright 保留上升高度）'),
       json('emission', 'emission'),
       num('maxParticles', 'maxParticles', 1),
       json('lifetime', 'lifetime'),
@@ -923,7 +924,7 @@
       { key: 'effect', label: 'effect', kind: 'select', options: function () { return VFXCore.PROCEDURAL_EFFECTS; } },
       vec('size', 'size(px)'),
       vec('scrollSpeed', 'scrollSpeed'),
-      OUTER_SCALE_FIELD
+      OUTER_SCALE_FIELD, json('projection', '地面投影（x／y／rotation）')
     ]
   };
 
@@ -1232,7 +1233,13 @@
      根層級回傳 undefined：原本的路徑一個位元都不差。 */
   function spaceOf(layer) {
     var pid = H.parentIdOf(layer);
-    return pid ? H.parentMatrixOf(state.preset, pid) : undefined;
+    var space = pid ? H.parentMatrixOf(state.preset, pid) : undefined;
+    if (layer && layer.projection) {
+      var projection = VFXCore.layerMatrix({ rotation: layer.projection.rotation || 0,
+        outerScale: { x: layer.projection.x, y: layer.projection.y } });
+      space = space ? VFXCore.multiplyMatrix(projection, space, {}) : projection;
+    }
+    return space;
   }
 
   /* 一起變形時只動最上層：父物件與它的子物件同時在裡面時，子物件跟著父物件走，
