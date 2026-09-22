@@ -100,3 +100,35 @@ test('PROJ-5 目標已不在時的退路：落在角色面前一個身位，而�
   assert.equal(p.x, 1000 + 52 + 14);
   near(p.y, 2000 * K - 24, '面前一個身位、略高於腳底（畫面座標）');
 });
+
+/* 從 marker 開始挖出一整個 { ... } 區塊（大括號配對）。 */
+function extractBlock(src, marker) {
+  const head = src.indexOf(marker);
+  assert.notEqual(head, -1, '找不到 ' + marker);
+  let i = src.indexOf('{', head), depth = 0;
+  for (; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(head, i + 1);
+  }
+  throw new Error(marker + ' 的大括號沒有配對');
+}
+
+test('PROJ-6 敵人進場淡入：從 0 漸進到 1，進場結束時剛好完全不透明，進場很短也不跳格', () => {
+  /* 斜俯視把縱向壓成 0.7 之後，模擬層 440 的生成距離在畫面上下方只剩約 310px，
+     比畫布半高還短——不淡入就是在畫面裡憑空冒出來。 */
+  const tick = extractBlock(renderer, "if (e.state === 'entering') {");
+  const fade = Number(/var ENEMY_FADE_IN_SEC = ([0-9.]+);/.exec(renderer)[1]);
+  for (const enterDur of [0.45, 0.1]) {
+    const c = { Math, ENEMY_FADE_IN_SEC: fade, dt: 1 / 60, e: { state: 'entering', enterT: 0, enterDur, root: { alpha: 1 } } };
+    vm.createContext(c);
+    const alphas = [];
+    for (let f = 0; f < 60 && c.e.state === 'entering'; f++) { vm.runInContext(tick, c); alphas.push(c.e.root.alpha); }
+    assert.equal(c.e.state, 'idle', '進場要結束');
+    assert.ok(alphas[0] < 0.2, '第一幀幾乎透明（enterDur ' + enterDur + '）：' + alphas[0]);
+    for (let i = 1; i < alphas.length; i++) assert.ok(alphas[i] >= alphas[i - 1], '淡入不可倒退');
+    assert.equal(alphas[alphas.length - 1], 1, '進場結束時完全不透明');
+    /* 最後一步的跳幅不能比一幀的正常增量大太多（進場比淡入時間短時要跟著縮短） */
+    const lastStep = alphas[alphas.length - 1] - alphas[alphas.length - 2];
+    assert.ok(lastStep <= (1 / 60) / Math.min(fade, enterDur) + 1e-9, '結尾不可一口氣跳到 1：' + lastStep);
+  }
+});

@@ -71,6 +71,7 @@ var BattleRenderer = (function () {
   var PLAYER_REACH = 52;
   var ENEMY_CONTACT_GAP = 34;      // 敵人出手時衝到離角色這麼近（＝接觸）
   var ENEMY_MAX_CHARGE = 460;      // 單次衝刺的最大距離，避免從畫面另一頭瞬間貼臉
+  var ENEMY_FADE_IN_SEC = 0.3;     // 進場淡入時間（見 tickWorld 的 entering）；進場比這短就跟著縮短
   var MAX_FLOATS = 60;           // 一般飄字同時存在上限；技能名稱＋傷害不計入
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
@@ -6121,7 +6122,12 @@ var BattleRenderer = (function () {
 
       if (e.state === 'entering') {
         e.enterT += dt;
-        if (e.enterT >= e.enterDur) e.state = 'idle';
+        /* 進場淡入。模擬層在離我方 BF_SPAWN_DIST 的圓周上生成（原意是「畫面外一點」），
+           但斜俯視把縱向壓成 GROUND_Y_SCALE 之後，從正上下方生成的敵人會落在畫面裡面，
+           直接出現就是憑空冒出來。生成距離是遊戲節奏（走多久才接觸），不能為了畫面去改，
+           所以在這裡淡入；左右兩側本來就在畫面外，淡不淡看不出差別。 */
+        e.root.alpha = Math.min(1, e.enterT / Math.min(ENEMY_FADE_IN_SEC, e.enterDur));
+        if (e.enterT >= e.enterDur) { e.state = 'idle'; e.root.alpha = 1; }
       }
 
       if (e.state === 'idle') {
