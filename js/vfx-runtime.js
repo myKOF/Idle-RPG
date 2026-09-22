@@ -61,7 +61,7 @@ var VFXRuntime = (function () {
   /* 環繞場域的三個常數與舊畫法（battle-renderer spawnFireHunt）取同一組值：
      兩邊畫的是同一個東西，數字分家就會出現「切 ?vfx=legacy 前後大小不一樣」。 */
   var ORBIT_MAX_SEC = 12;       // 顯示上限（秒）；【再生】可延長，但不無限延長
-  var ORBIT_FLAT = 0.62;        // 俯視壓扁，與棋盤的透視一致
+  var ORBIT_FLAT = 0.62;        // 俯視壓扁，與棋盤的透視一致（有給 groundScale 時改用它，見 create）
   var ORBIT_LIFT = 12;          // 圓心略高於腳底，對齊角色貼圖的視覺中心
   var STRONG_HIT_SCALE = 1.6;   // 範圍型命中的受擊爆點放大倍率
 
@@ -223,6 +223,45 @@ var VFXRuntime = (function () {
     var n = Number(v);
     return isFinite(n) ? n : fallback;
   }
+
+  /* ---- 斜俯視：事件的世界座標 → 畫面座標（2026-09-22）----
+     Preset 是照「斜視畫面」畫的：地面光圈本身就壓扁（約 0.4），往上（−y）是高度。
+     以前戰場是完全俯視、世界座標＝畫面座標，所以這個 Adapter 一直是在畫面空間工作。
+     戰場改成斜俯視（畫面 y ＝ 世界 y × groundScale）之後，只要把輸入換到畫面空間，
+     preset 照原樣畫就是對的——不能把整份 preset 再壓扁一次（地面光圈會被壓兩次、直立的變矮）。
+     ctx 的座標函式由呼叫端直接給畫面座標；事件（spec）裡的欄位在這裡換：
+       點          area.y／sourceY／destY／controlY × groundScale（x 不變）
+       方向        spec.angle、area.a、area.moveA → 畫面上的方向 atan2(k·sinθ, cosθ)
+       沿方向的長度 spec.lineLength（沿 angle）、area.speed（沿 moveA，沒有就沿 a）、area.w（沿 a）
+                   × 該方向的投影長度比 √(cos²θ + k²·sin²θ)
+       半徑與厚度  area.r、orbR、orbitR、area.h 不變（preset 的地面圖本身已經畫扁，再乘會壓兩次）
+     groundScale 沒給（編輯器、測試）＝ 1，事件原封不動。換過的事件帶 _screenSpace，不會被換第二次。 */
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function projectedLength(theta, k) {
+    var c = Math.cos(theta), s = Math.sin(theta);
+    return Math.sqrt(c * c + k * k * s * s);
+  }
+  function projectedAngle(theta, k) { return Math.atan2(k * Math.sin(theta), Math.cos(theta)); }
+  function screenSpaceSpec(spec, k) {
+    if (!spec || !(k > 0) || k === 1 || spec._screenSpace) return spec;
+    var out = Object.assign({}, spec, { _screenSpace: true });
+    if (isNum(spec.angle)) {
+      if (isNum(spec.lineLength)) out.lineLength = spec.lineLength * projectedLength(spec.angle, k);
+      out.angle = projectedAngle(spec.angle, k);
+    }
+    var a = spec.area;
+    if (a && typeof a === 'object') {
+      var b = Object.assign({}, a);
+      ['y', 'sourceY', 'destY', 'controlY'].forEach(function (f) { if (isNum(a[f])) b[f] = a[f] * k; });
+      var heading = isNum(a.moveA) ? a.moveA : (isNum(a.a) ? a.a : NaN);
+      if (isNum(a.speed) && isNum(heading)) b.speed = a.speed * projectedLength(heading, k);
+      if (isNum(a.w)) b.w = a.w * projectedLength(isNum(a.a) ? a.a : 0, k);
+      if (isNum(a.a)) b.a = projectedAngle(a.a, k);
+      if (isNum(a.moveA)) b.moveA = projectedAngle(a.moveA, k);
+      out.area = b;
+    }
+    return out;
+  }
   // Preset 與 legacy 共用權威逐團幾何；age 是整次施放的經過秒數。
   function sampleOrbitMember(area, age, index) {
     var members = area && area.members;
@@ -255,6 +294,8 @@ var VFXRuntime = (function () {
      建立一份 Adapter。backend／resolver／ctx 全部由呼叫端注入，
      因此測試可以用 NullBackend 在 Node 裡跑完整條路徑。
      ctx 需要：posOf(id)、playerPos()、projectileTargetPoint(id, sec)
+     groundScale（選填，0～1）：戰場是斜俯視時給它的縱向比例；此時 ctx 必須回傳畫面座標，
+     事件裡的世界座標由 screenSpaceSpec 換成畫面座標。沒給＝世界座標就是畫面座標（編輯器、測試）。
      --------------------------------------------------------------- */
   function create(opts) {
     var o = opts || {};
@@ -263,6 +304,10 @@ var VFXRuntime = (function () {
     /* 受擊爆點打在身體中心，施放光環與狀態光環的原點卻在腳底（名目身高 60px 的 0 點）。
        沒有 footOf 就退回 posOf——光環會浮高半個身位，但不會壞掉。 */
     var footOf = ctx.footOf || ctx.posOf;
+    /* 斜俯視的縱向比例（見 screenSpaceSpec）。給了就代表 ctx 回傳的是畫面座標；
+       繞行軌道也改用同一個比例壓扁，才會和地板、地面光圈一致。 */
+    var groundScale = (num(o.groundScale, 1) > 0 && num(o.groundScale, 1) < 1) ? num(o.groundScale, 1) : 1;
+    var orbitFlat = groundScale < 1 ? groundScale : ORBIT_FLAT;
     var profile = {
       scale: num(o.profile && o.profile.scale, DEFAULT_PROFILE.scale),
       areaScale: num(o.profile && o.profile.areaScale, DEFAULT_PROFILE.areaScale),
@@ -976,7 +1021,7 @@ var VFXRuntime = (function () {
           if (!ref) {
             var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre();
             ref = play(rtFx, presetId, Object.assign({
-              position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * ORBIT_FLAT }
+              position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * orbitFlat }
             }, sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), profile.areaScale);
           }
           if (ref) { ref.memberId = member.id; ref.presetId = presetId; next.push(ref); }
@@ -1094,9 +1139,9 @@ var VFXRuntime = (function () {
           var presetId = o.orbs[i].presetId || o.orbId;
           /* 朝向取「螢幕上的切線方向」而不是 ang＋90°：橢圓被壓扁 0.62 之後，
              那兩者差得出來（Preset 一律朝 +X 繪製，拖尾會指錯邊）。 */
-          var heading = Math.atan2(Math.cos(ang) * ORBIT_FLAT * dir, -Math.sin(ang) * dir);
+          var heading = Math.atan2(Math.cos(ang) * orbitFlat * dir, -Math.sin(ang) * dir);
           var alive = moveRef(o.orbs[i], Object.assign({
-            position: { x: centre.x + Math.cos(ang) * rNow, y: centre.y + Math.sin(ang) * rNow * ORBIT_FLAT },
+            position: { x: centre.x + Math.cos(ang) * rNow, y: centre.y + Math.sin(ang) * rNow * orbitFlat },
             rotation: heading
           }, sizeOf(presetId, { r: orbR }) || { scale: orbR / NOMINAL_ORB }), profile.areaScale);
           if (!alive) o.orbs.splice(i, 1);
@@ -1133,6 +1178,8 @@ var VFXRuntime = (function () {
         pending.push({ at: clock + spec.delayMs / 1000, spec: Object.assign({}, spec, { delayMs: 0 }) });
         return true;
       }
+      /* 延後的事件到期會再進來一次，所以換座標放在延後之後；換過的帶 _screenSpace，不會換第二次 */
+      spec = screenSpaceSpec(spec, groundScale);
       if(spec.area && spec.area.soulId) {
         stopSoul(spec.area.soulId, true);
         if(spec.area.soulMode==='stop')return true;
@@ -1555,7 +1602,8 @@ var VFXRuntime = (function () {
           resolver: resolver,
           fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true }),
           zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true }),
-          ctx: opts.ctx
+          ctx: opts.ctx,
+          groundScale: opts.groundScale
         });
         var ids = collectPresetIds();
         return loadPresets(ids, opts.presetBase).then(function (presets) {
@@ -1573,6 +1621,7 @@ var VFXRuntime = (function () {
     loadPresets: loadPresets,
     primaryRoleOf: primaryRoleOf,
     resolveSizing: resolveSizing,
+    screenSpaceSpec: screenSpaceSpec,
     sampleOrbitMember: sampleOrbitMember,
     SIZE_DEFAULTS: SIZE_DEFAULTS,
     NOMINAL: {

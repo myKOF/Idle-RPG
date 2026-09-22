@@ -91,18 +91,45 @@ test('PROJ-7 地板捲動：地面上固定一點看到的貼圖位置不隨鏡�
   }
 });
 
-test('PROJ-2 特效層在地面平面（縱向 × GROUND_Y_SCALE、橫向不變）；角色、輪廓、飄字、HUD 不壓縮', () => {
+test('PROJ-2 舊畫法特效層在地面平面（縱向 × GROUND_Y_SCALE）；Preset 特效、角色、輪廓、飄字、HUD 不壓縮', () => {
+  /* Preset 本來就照斜視畫面畫（地面光圈已壓扁約 0.4、往上是高度）；2026-09-22 起不再整份壓扁，
+     否則地面光圈被壓兩次、直立的特效變矮。舊畫法是照世界尺寸畫的，仍靠地面平面投影。 */
   const S = buildSceneTree(renderer);
   const L = S.layers;
-  for (const name of ['zone', 'presetZone', 'fx', 'presetFx']) {
+  for (const name of ['zone', 'fx']) {
     const s = scaleToWorld(L[name], L.world);
     assert.equal(s.x, 1, name + ' 橫向不可縮放');
     assert.ok(Math.abs(s.y - K) < 1e-12, name + ' 應在地面平面（縱向 ' + K + '），實際 ' + s.y);
   }
-  for (const name of ['entity', 'outline', 'float', 'playerHud']) {
+  for (const name of ['presetZone', 'presetFx', 'entity', 'outline', 'float', 'playerHud']) {
     const s = scaleToWorld(L[name], L.world);
     assert.deepEqual(s, { x: 1, y: 1 }, name + ' 是直立空間，不可被投影壓扁');
   }
+});
+
+test('PROJ-9 VFX Runtime 拿到的是畫面座標：ctx 用 screen* 版本、groundScale 交給 Runtime 換事件座標', () => {
+  let opts = null;
+  const K0 = K;
+  const c = {
+    Math, S: { layers: { presetFx: 'fx', presetZone: 'zone' }, player: null, entities: {} },
+    legacyVfxByQuery: () => false,
+    VFXRuntime: { boot(o) { opts = o; return { then() { return { catch() {} }; } }; } },
+    screenPosOf: (id) => ({ x: 1, y: 2, id }), screenFootOf: (id) => ({ x: 3, y: 4, id }),
+    screenMuzzle: () => ({ x: 5, y: 6 }), posOf() { throw new Error('Preset 不可拿地面平面座標'); },
+    footOf() { throw new Error('Preset 不可拿地面平面座標'); }, playerMuzzle() { throw new Error('Preset 不可拿地面平面座標'); },
+    projectileTargetPoint: () => ({ x: 10, y: 100 })
+  };
+  vm.createContext(c);
+  vm.runInContext('var GROUND_Y_SCALE = ' + K0 + ';' + extractFunction(renderer, 'groundToScreenY') + ';' +
+    extractFunction(renderer, 'bootVfxRuntime'), c);
+  c.bootVfxRuntime();
+  assert.ok(opts, '要呼叫 VFXRuntime.boot');
+  assert.equal(opts.groundScale, K0);
+  assert.equal(opts.ctx.posOf, c.screenPosOf);
+  assert.equal(opts.ctx.footOf, c.screenFootOf);
+  assert.equal(opts.ctx.playerPos, c.screenMuzzle);
+  const tp = opts.ctx.projectileTargetPoint('m', 0.5);
+  assert.deepEqual([tp.x, tp.y], [10, 100 * K0], '預判點算完要投影');
 });
 
 test('PROJ-3 圖層繪製順序不變：地面特效 < 實體 < 特效 < 輪廓 < 飄字 < 玩家 HUD', () => {
@@ -130,7 +157,7 @@ function loadAnchors() {
   };
   vm.createContext(ctx);
   const names = ['groundToScreenY', 'screenToGroundY', 'screenToGround', 'playerPos',
-    'footOf', 'screenFootOf', 'playerMuzzle', 'posOf', 'screenPosOf'];
+    'footOf', 'screenFootOf', 'playerMuzzle', 'screenMuzzle', 'posOf', 'screenPosOf'];
   vm.runInContext('var GROUND_Y_SCALE = ' + K + ';' + names.map((n) => extractFunction(renderer, n)).join(';'), ctx);
   return ctx;
 }
@@ -150,8 +177,10 @@ test('PROJ-4 特效錨點回傳地面平面座標：經過容器投影後正好�
     near(c.groundToScreenY(c.footOf(id).y), c.screenFootOf(id).y, id + ' 的 footOf 投影後要與 screenFootOf 重合');
     assert.equal(c.posOf(id).x, c.screenPosOf(id).x, '橫向不投影');
   }
-  /* 投射物起點：胸口在腳底上方 52 畫面像素 */
+  /* 投射物起點：胸口在腳底上方 52 畫面像素；畫面座標版（給 Preset）與地面平面版投影後是同一點 */
   near(c.groundToScreenY(c.playerMuzzle().y), 2000 * K - 52, '彈道起點投影後在玩家胸口');
+  near(c.screenMuzzle().y, 2000 * K - 52, '畫面座標版的彈道起點');
+  assert.equal(c.screenMuzzle().x, c.playerMuzzle().x);
 });
 
 test('PROJ-5 目標已不在時的退路：落在角色面前一個身位，而不是投影前的世界座標', () => {
