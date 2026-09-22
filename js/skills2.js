@@ -4367,7 +4367,7 @@ function sgTickDragonDevour(f, dt, enemies) {
   }
 }
 
-// 沿原版每拍直接聚攏的行為，圓心改為固定漩渦位置。
+// 每拍只聚攏傷害圈外的敵人；體型邊緣已接觸範圍者保持原位。
 function sgPullDragonDevour(f, enemies) {
   var pullR = bfMeterPx(f.devour.fx.pullM);
   for (var i = 0; i < enemies.length; i++) {
@@ -4375,7 +4375,7 @@ function sgPullDragonDevour(f, enemies) {
     if (!p || enemy.hp <= 0 || enemy._enterCd > 0) continue;
     var dx = p.x - f.pos.x, dy = p.y - f.pos.y, dist = Math.hypot(dx, dy);
     var stop = bfEntityRadius(enemy);
-    if (dist <= stop || dist > pullR) continue;
+    if (dist <= f.radius + stop || dist > pullR) continue;
     p.x = f.pos.x + dx / dist * stop;
     p.y = f.pos.y + dy / dist * stop;
   }

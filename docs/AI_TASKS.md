@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜火漩渦範圍內停止聚攏（DEVOUR-PULL-20260922）
+
+- Owner Codex；Done。使用者要求已在火漩渦範圍內的敵人不再聚攏。僅修改 skills2 聚攏判定、dragon-devour 測試、主頁／Worker 快取及本紀錄。沿實際傷害範圍含體型接觸判斷，圈外維持既有拉動。
+- 衝突預檢僅 index.html／AI_TASKS 與 Claude 不同區段有修改，三方乾跑 exit 0，依既有「不會合併衝突即可改」授權執行。無素材變更。
+- 驗證：`node --test tests/dragon-devour.test.cjs tests/firepillar-expire-vfx.test.cjs` 14/14；`node --test tests/skill2-fire-legendary.test.cjs` 18/21，3 個既有失敗（地爆天星倒數／預警、烈焰暴風數量）以 HEAD 基準重跑確認。`node tools/build_check.cjs` 395 檔、`git diff --check` 通過。測試包含圈內／邊界／Boss 體型、圈外拉入後傷害與移動排程，特效事件半徑與判定一致。
+- 唯讀檢查 battlefield.js 範圍／體型與技能配置、VFX 範圍事件；未修改素材，無素材庫提交。未瀏覽器實戰驗證，無未完成實作；可供使用者合併，建議整合後確認實戰聚攏感受。未合併／推送，Commit 見本紀錄所在提交。
+
 ## Codex｜地面特效投影（VFX-GROUND-20260922）
 
 - Owner Codex；Done。83 份 Preset／185 個地面圖層投影成橢圓或菱形，直立本體保留。使用者另同意方形作用判定同步旋轉，保留邊長／傷害／時序。Core／Runtime 與編輯器選取框一致。
