@@ -1712,18 +1712,31 @@ test('DEVOUR 正式素材跨8秒循環不跳轉，尾焰留在世界路徑，尺
  const field=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/field-dragon-devour.json')));
  const ball=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-dragon-devour.json')));
  const nodes=[];const rt=VFXCore.createRuntime({backend:{createNode(spec){const n={spec,transforms:[]};nodes.push(n);return n},updateNode(n,t){n.transforms.push({...t})},destroyNode(){}},resolver:{has:()=>true,resolve:id=>id}});
- rt.registerPreset(field);const h=rt.play(field.id);rt.update(7.99);
- const ring=nodes.find(n=>n.spec.assetUrl.endsWith('vortex.png'));const a=ring.transforms.at(-1).rotation;rt.update(.02);const b=ring.transforms.at(-1).rotation;
- // 投影後畫面角速度不均勻；回到地面平面檢查原本每秒旋轉量，並處理 atan2 的接縫。
- const phase=t=>Math.atan2(Math.sin(t)/.5,Math.cos(t));
- const step=phase(b)-phase(a);
- assert.ok(Math.abs(Math.atan2(Math.sin(step),Math.cos(step))-Math.PI/4*.02)<1e-8);
- /* 2026-09-22 使用者調過漩渦的 alphaOverLife（頭 1.0、尾 0.965，沒有首尾相接），循環邊界會有約 0.03 的透明度落差。
-    不釘 preset 的確切數值（使用者之後還會再調），只驗「跨循環沒有明顯跳動」：0.05 以內。 */
- const alphaStep=Math.abs(ring.transforms.at(-1).alpha-ring.transforms.at(-2).alpha);
- assert.ok(alphaStep<=0.05,'跨 8 秒循環的透明度跳動 '+alphaStep.toFixed(4)+' 超過 0.05');
+ /* 漩渦由多層 sprite 疊成，使用者會在 Editor 裡繼續調整：圖層 id、素材、轉速一律從 preset 現讀，不釘內容。
+    逐層獨立播放（一層一個節點），跨 preset 的 8 秒循環邊界檢查每一層：
+      - 有 rotationSpeed 的層，旋轉照原速延續，不會在循環點歸零；
+      - 透明度沒有明顯跳動（0.05 以內——使用者調過的曲線不一定首尾完全相接）。 */
+ const sprites=field.layers.filter(l=>l.type==='sprite'&&!l.parent);
+ assert.ok(sprites.some(l=>l.rotationSpeed),'漩渦至少要有一層在旋轉');
+ for(const layer of sprites){
+  // 每層各用一個 runtime：同素材同混色的節點會被節點池重用，共用 runtime 就分不出是哪一層的節點。
+  const own=[];const lrt=VFXCore.createRuntime({backend:{createNode(spec){const n={spec,transforms:[]};own.push(n);return n},updateNode(n,t){n.transforms.push({...t})},destroyNode(){}},resolver:{has:()=>true,resolve:id=>id}});
+  lrt.registerPreset({...field,layers:[layer]});lrt.play(field.id);lrt.update(7.99);
+  const node=own.find(n=>n.transforms.length);assert.ok(node,layer.id+' 在循環邊界前應該是可見的');
+  const a=node.transforms.at(-1);lrt.update(.02);const b=node.transforms.at(-1);
+  if(layer.rotationSpeed){
+   // 投影後畫面角速度不均勻；回到地面平面檢查原本每秒旋轉量，並處理 atan2 的接縫。
+   const pj=layer.projection||{x:1,y:1};
+   const phase=t=>Math.atan2(Math.sin(t)/pj.y,Math.cos(t)/pj.x);
+   const step=phase(b.rotation)-phase(a.rotation);
+   assert.ok(Math.abs(Math.atan2(Math.sin(step),Math.cos(step))-layer.rotationSpeed*.02)<1e-8,layer.id+' 跨循環的旋轉不連續');
+  }
+  const alphaStep=Math.abs(b.alpha-a.alpha);
+  assert.ok(alphaStep<=0.05,layer.id+' 跨 8 秒循環的透明度跳動 '+alphaStep.toFixed(4)+' 超過 0.05');
+  lrt.destroy();
+ }
  assert.ok(Math.abs(ball.sizing.widthM-6*.7)<1e-8);assert.ok(Math.abs(ball.sizing.heightM-6*.7)<1e-8);
- rt.stop(h);rt.registerPreset(ball);const bh=rt.play(ball.id);rt.setTransform(bh,{position:{x:0,y:0}});rt.update(.1);
+ rt.registerPreset(ball);const bh=rt.play(ball.id);rt.setTransform(bh,{position:{x:0,y:0}});rt.update(.1);
  const tail=nodes.find(n=>n.spec.assetUrl===ball.layers[0].assetId&&n.transforms.length);const before=tail.transforms.at(-1);
  rt.setTransform(bh,{position:{x:100,y:50},rotation:1});rt.update(.01);const after=tail.transforms.at(-1);
  assert.ok(Math.hypot(after.x-before.x,after.y-before.y)<3,'已出生尾焰不跟著彈頭跳動');rt.destroy();

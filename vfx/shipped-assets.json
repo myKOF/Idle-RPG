@@ -4,21 +4,28 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 147,
+  "assetCount": 148,
   "assets": [
+    {
+      "assetId": "claude-authored/dragon-devour/vortex-ring.png",
+      "relativePath": "claude-authored/dragon-devour/vortex-ring.png",
+      "package": "claude-authored",
+      "contentHash": "sha256:85ac2376a488e4be93ffb1d8adfaef28371be2f7459fdfaf313fa2e35540b295",
+      "fileSize": 482374
+    },
+    {
+      "assetId": "claude-authored/dragon-devour/vortex-smoke.png",
+      "relativePath": "claude-authored/dragon-devour/vortex-smoke.png",
+      "package": "claude-authored",
+      "contentHash": "sha256:7262eb4d884cf422a016b6c367e466422d7869eb74375166120c613c8dd7c33b",
+      "fileSize": 674141
+    },
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "relativePath": "codex-authored/cleave/sharp-cyclone.png",
       "package": "codex-authored",
       "contentHash": "sha256:1877cb744b4d05c9792376b9d8c08cc8f87aaae09dad88675031f85ac3e747b3",
       "fileSize": 538579
-    },
-    {
-      "assetId": "codex-authored/dragon-devour/vortex.png",
-      "relativePath": "codex-authored/dragon-devour/vortex.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:1eea766a5a88021277ff81edd6304559aa67c2f93ca222016784290658bb529a",
-      "fileSize": 1055735
     },
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",

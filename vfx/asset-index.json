@@ -6,8 +6,100 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2433,
+  "assetCount": 2435,
   "assets": [
+    {
+      "assetId": "claude-authored/dragon-devour/vortex-ring.png",
+      "package": "claude-authored",
+      "relativePath": "claude-authored/dragon-devour/vortex-ring.png",
+      "format": "png",
+      "fileSize": 482374,
+      "contentHash": "sha256:85ac2376a488e4be93ffb1d8adfaef28371be2f7459fdfaf313fa2e35540b295",
+      "facts": {
+        "dimensions": {
+          "width": 1024,
+          "height": 1024
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.0515,
+          "max": 0.8029,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.294,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 1024
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "blackBackground"
+      }
+    },
+    {
+      "assetId": "claude-authored/dragon-devour/vortex-smoke.png",
+      "package": "claude-authored",
+      "relativePath": "claude-authored/dragon-devour/vortex-smoke.png",
+      "format": "png",
+      "fileSize": 674141,
+      "contentHash": "sha256:7262eb4d884cf422a016b6c367e466422d7869eb74375166120c613c8dd7c33b",
+      "facts": {
+        "dimensions": {
+          "width": 1024,
+          "height": 1024
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.1029,
+          "max": 0.5043,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.7062,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 1024
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "blackBackground"
+      }
+    },
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
       "package": "codex-authored",
