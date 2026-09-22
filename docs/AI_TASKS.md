@@ -7578,3 +7578,15 @@ Worker 存活且頁面正常完成載入。
 - 測試：node --test --test-name-pattern="戰神體" tests/skill2-ult-evolution.test.cjs：4/4，含野外／高塔排程、補拍、半秒與兩秒邊界、治療後再受傷、護盾、以血還血、鎖血與重置。node --test tests/death-revive-restore.test.cjs tests/field-death-retreat.test.cjs tests/skill-cooldown-death.test.cjs：5/5。
 - 廣域：node --test tests/skill2-counter-bloodrage.test.cjs tests/skills2-geometry.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/skill2-ult-evolution.test.cjs：當時 99 項 73 通過 26 失敗；以 HEAD 原程式／測試／配置預載重跑為 97 項 71 通過、相同 26 項失敗，無新增失敗（之後新增的野外／高塔戰神體案例另已通過）。node tools/build_check.cjs：379 檔通過；diff check 通過。
 - 唯讀檢查 player.js／potential.js 生命變化、既有扣血與復活流程、配置工具及說明產生器。限制：未實機畫面與 Console 驗證，既有廣域失敗未在本次擴大修正；无未完成實作。Commit 見本紀錄所在提交，可合併，未合併或推送；下一步使用者整合後確認戰神體技能說明及自傷節拍。
+
+## Claude｜戰鬥場景輕度斜俯視 2.5D（BATTLE-TILT-20260922）
+
+- Owner：Claude；Done。使用者需求（附示意圖）：場景從完全俯視改成輕度斜俯視，地面與方格 Y 軸壓縮約 0.7；貼地特效與直立特效的處理交給 Codex，本任務只做場景；不改角色移動、碰撞、技能範圍與世界座標邏輯。
+- 範圍：js/battle-renderer.js、index.html（快取版號）、對應測試。模擬層、Worker、協議、存檔、參數表、vfx-runtime／vfx-core／preset 都沒動。無前置依賴。
+- 修改：
+  - A（b48fac7f）：GROUND_Y_SCALE = 0.7 與換算函式。world 層直屬座標改為投影後的畫面座標（角色、血條、名字、飄字、HUD、輪廓，形狀不壓縮）；特效四層（zone／presetZone／fx／presetFx）包進 scale.y = 0.7 的 groundUnder／groundOver，沿用世界座標——落點與模擬層一致，貼地的圓自動成為 1:0.7 橢圓。posOf／footOf／playerMuzzle 回傳地面平面座標（離地高度 ÷ 0.7，畫面上維持原像素高度），飄字改用 screenPosOf。地磚 tileScale.y = 0.7、先在世界單位取餘數再投影；鏡頭縱向對準投影位置。面向改用世界向量（與移動轉向同一套）。
+  - B（本紀錄所在提交之前的 dac332b8）：敵人進場淡入 0.3 秒。模擬層 440 的生成距離在畫面上下方只剩約 310px，比畫布半高短，會在畫面裡憑空冒出來；生成距離是遊戲節奏不為畫面改。
+- 決策（使用者沒有指定、依慣例決定）：只縱向縮放，不加斜切與近大遠小（示意圖的菱形格是概念圖；加斜切會讓貼地的圓變成歪的橢圓，與「統一 1:0.7」衝突）。敵人腳下陰影、角色 8 方向素材維持原樣。
+- 給特效交接的現況（Codex 接手時的起點）：特效目前全部在地面平面裡，位置都對；貼地的已正確，直立的（火柱、龍捲本體、煙霧、粒子、彈體、斬擊）暫時跟著被壓成 0.7。直立化有兩條路：改掛 world 直屬層並用 screenPosOf 類座標，或留在地面平面自行反向放大 1/0.7（帶旋轉的要把旋轉放在反向縮放的子節點，否則會變成斜切）。程式裡寫死的高度（例：天降落雷的 S.H × 0.7、starfall 的 drop、各處 y − 60 之類）在地面平面裡也被壓成 0.7，要換成 ÷ GROUND_Y_SCALE。
+- 驗證：新增 tests/battle-ground-projection.test.cjs（PROJ-1～6：真正跑 buildScene 看各層投影縮放與繪製順序、錨點投影後與畫面身體位置重合、目標消失退路、進場淡入）與 tests/helpers/battle-scene.cjs；player-outline、player-shield-bar 的圖層順序測試改看場景樹，basic-melee、player-cast-act 依新面向換算更新。7 個突變全部被抓到。受影響的 25 支測試 333 項：失敗與改動前基線相同，另有「雙刀逐刀目標」一條是隨機不穩（同一份程式重跑紅綠交替、與本次無關）。build_check 391 檔通過。實機（claude 副本 8331，手動推幀＋抽圖）：地磚 128×90、鏡頭與地板捲動數值吻合、角色與血條不壓縮、輪廓對齊、新敵人淡入。
+- 待確認：直立特效暫時被壓扁到 Codex 完成為止。
