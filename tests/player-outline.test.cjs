@@ -162,5 +162,5 @@ test('輪廓掛在獨立圖層而不是角色 root，且每幀都會同步', () 
   /* 同步必須在 `if (p && dt > 0)` 區塊之外：暫停時 dt 是 0，輪廓仍要對齊。 */
   assert.match(renderer, /\n {4}if \(p\) syncOutline\(p\);/);
   /* 玩家序列幀載入時要一併備好輪廓貼圖。 */
-  assert.match(renderer, /loadSheet\('player', 'images\/sprites\/player', \{ outline: true \}\)/);
+  assert.match(renderer, /loadSheet\('player', 'images\/sprites\/knight\/knight', \{ outline: true \}\)/);
 });

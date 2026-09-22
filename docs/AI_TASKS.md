@@ -7459,6 +7459,23 @@ Worker 存活且頁面正常完成載入。
 - 修正：`groupRow` 的名稱改在 mousedown 以 `e.detail >= 2`（作業系統算的連點次數，不受 DOM 重建影響）接手，擋掉冒泡與預設焦點轉移；新增 `renameGroupRow` 先選到群組、再對重畫後的名稱元素開輸入框。
 - 驗證：新增 ROW-5b（結構守門）。實機真實雙擊：輸入框出現且取得焦點、原名全選；Enter 寫入 layout、Escape 取消；群組已選取時雙擊一樣可改；單擊行為不變；Ctrl+Z 可還原改名。未存檔。
 
+## Claude｜主角換成 8 方向騎士序列幀＋技能施法動作（KNIGHT-SPRITE-20260922）
+
+- 需求：用「2D HD Character Knight」包（D:\MyGame\2D HD Character Knight，29 個動作、每張 15 幀 × 8 方向、128×128）替換主角動作：站立、跑步、攻擊 1、攻擊 2、特殊攻擊 1、死亡；特殊攻擊 1 當作技能施法動作（原本技能沒有施法動作）。挑選後必要的收進 effects-materials。
+- 方向對應：列＝方向，正右方順時針每 45°。兩種攻擊的刀光方向逐列量測（平均 −12°、23°、84°、156°、187°、208°、252°、317°）與跑步著地腳滑動方向交叉確認；站立點 (64, 98)。依據寫在素材庫 characters/knight-hd/README.md。
+- A（592bde4e；素材庫 266c537）：
+  - 素材庫收 6 張原圖（雜湊與來源一致）、README、PROVENANCE（無授權檔，標待確認）。
+  - tools/build_character_sprites.cjs：原圖 → images/sprites/knight/。每個動作裁到所有方向與幀的聯集，Pixi trim 還原成 128 邏輯格（共用一個 anchor）；影子＝純黑且 alpha < 240（本體一律 255，逐像素量過），輪廓先算好只框 alpha ≥ 250 的本體（刀光拖影不框）；--check 比對與素材庫同步。
+  - battle-renderer：loadDirectionalSheet；移動面向移動方向（10° 遲滯）、出手精準面向目標（腳底對腳底）、出手動作播完前不因移動轉走、換方向接著播同一幀；不翻面；影子在圖裡不另畫橢圓；普攻兩段輪流、不插隊施法；死亡播 die 停格不轉 90 度，復活倒放當起身；跑步播放速度跟實際移速（300 px/s ↔ 30 fps，實測著地腳每幀滑 7 px × 1.4 倍）。
+  - 節奏：普攻 first 3／4（出劍第 6～7／7～8 幀），因為傷害數字在事件到達那一刻出現。
+- B（本紀錄所在提交）：
+  - 根因：技能特效大多交給 Preset，onVfx 在 Preset 接手後就 return，走不到角色動作；而從 vfx 事件猜「哪一則是施放」不可靠（一次施放送好幾則）。
+  - 協議 v36：新增事件種類 act＝{ act:'cast', elId, target, lockMs }。js/skills.js beginSkillCast（施放硬直起點，新版／舊版／潛能共用；自動連發不經過這裡）經 shim.js emitPlayerAct 送出，走 visual 低延遲；ui.js 轉給 BattleRenderer.onAct。
+  - 渲染器：延後 POS_BUFFER_MS、面向目標、播 cast；把 first→release（2→8）這段調成剛好在硬直內播完（預設 0.2 秒＝30 fps，夾在 12～60 fps），釋放幀對到特效出現的那一刻。onVfx 只有普攻帶動角色動作。
+  - 快取：battle-renderer 1.6.131、skills.js 1.0.39、ui.js 1.0.75、protocol.js ?v=37、bridge.js 1.0.137、WORKER_ASSET_VERSION 20260922-cast-act、sim.worker 的 protocol／shim／skills token。
+- 驗證：新增 player-directional-sprite（8 項，含與素材庫同步、影子上沒有輪廓）、player-cast-act（7 項，含突變：拿掉「只有普攻」條件 CAST-7 會紅）；basic-melee、hit-react-throttle、player-outline、worker-protocol 依新行為改寫。實機（claude 副本 8331，手動推幀＋抽圖）：8 方向與攻擊姿勢、血條位置、死亡停格與起身、施法 act 帶 lockMs 200 且以 30 fps 播放；console 無錯誤。全測試與 HEAD 比對見提交說明。
+- 風險／待確認：素材包授權未知；Clarice 的 player.png／json 保留未刪；高塔仍走 DOM，沒有角色動作（設計如此）。
+
 ## Claude｜VFX Editor 重新命名：直接輸入新名字、可以取代既有特效（PRESET-RENAME-INLINE-20260921）
 
 - 需求：使用者把 `proj-cleave-ring-tricolor-09` 改名成 `proj-cleave-ring-tricolor` 之後 `-09` 還在；問名字開的是 Windows 存檔視窗，看起來就是另存新檔。要求改名直接輸入新名字。

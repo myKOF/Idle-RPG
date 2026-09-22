@@ -74,7 +74,9 @@ test('Canvas 與 DOM 受擊震動都使用三秒冷卻並降低幅度', () => {
   assert.doesNotMatch(renderer, /if \(isMega \|\| isPurple\) addShake\(/);
   assert.match(renderer, /e\.bodyWrap\.x = e\.jolt > 0/);
   assert.match(renderer, /e\.bodyWrap\.y = e\.jolt > 0/);
-  assert.match(renderer, /p\.bodyWrap\.x \+= p\.jolt > 0/);
+  /* 玩家的抖動疊在出手前送（lunge）之上：8 方向素材的前送有縱向分量，y 也要疊 */
+  assert.match(renderer, /p\.bodyWrap\.x = lungeX \+ \(p\.jolt > 0/);
+  assert.match(renderer, /p\.bodyWrap\.y = lungeY \+ \(p\.jolt > 0/);
   assert.match(vfx, /var VFX_HIT_COOLDOWN_MS = 3000/);
   assert.match(vfx, /hitAt - card\._vfxHitLastAt < VFX_HIT_COOLDOWN_MS/);
   assert.match(vfx, /function vfxHitVisualTarget\(elId, card\)/);

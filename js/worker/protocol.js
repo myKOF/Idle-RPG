@@ -57,7 +57,9 @@
 // v33：追魂刃 area.soulId/soulMode/soulLife 串接飛行、返回、環繞與消失；orbitR/Angle/Spin 描述待機。
 // v34：header／equip 的 passivePanel 提供裝配被動結算值；装卸技能同步刷新面板。
 /* v35：battle.field.player._sgRevival 可選 {startAt,endAt}，GT 秒；非死亡、站姿升空復甦。 */
-var WORKER_PROTOCOL_VERSION = 35;
+/* v36（2026-09-22 主角換成 8 方向騎士）：新增事件種類 act（EVENT_KINDS.ACT）＝角色動作，
+   目前只有 act:'cast'（技能開始施放）。舊主執行緒不認得的事件種類一律略過，所以向下相容。 */
+var WORKER_PROTOCOL_VERSION = 36;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -188,7 +190,17 @@ var EVENT_KINDS = {
      presetOnly（v27，可選）：true＝這一則只有 Preset 端畫得出來，沒有接上 Preset
              Runtime 的顯示層必須整則忽略。狀態每跳（status-tick）用它：那是為了
              Preset 才新增的事件，退回泛用受擊爆點會讓每一次 DoT 跳動都閃一下。 */
-  VFX: 'vfx'
+  VFX: 'vfx',
+  /* { act, elId, target, lockMs }  角色動作（v36）。模擬層只說「發生了什麼動作」，
+     姿勢與播放時序完全由顯示層決定（js/battle-renderer.js onAct）。
+     act     'cast'＝開始施放技能（js/skills.js beginSkillCast：施放硬直的起點，新版、舊版、潛能技能共用）。
+             超神重複施放、暴風之舞化身這類自動連發不送：每一下都播施法姿勢會一直從頭抽搐。
+     elId    施放者的浮字圖層（pv-float＝野外、tp-float＝高塔），定址同 FLOAT。
+     target  主要目標的圖層 id（mv-float-N／tb-float），沒有就 null；顯示層據此面向目標。
+     lockMs  施放硬直毫秒數（這段期間角色站定，結束時技能才真的放出去、特效才出現）。
+             顯示層用它把施法動作的「釋放」那一幀對到特效出現的那一刻；0＝特效同時出現。
+     走低延遲的 visual 訊息（與 VFX 同一條），否則施法姿勢會比特效晚一個 tick。 */
+  ACT: 'act'
 };
 
 /* ---- 存檔落地種類（PERSIST.kind）---- */

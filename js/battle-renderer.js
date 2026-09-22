@@ -15,7 +15,8 @@
    ui.js 會維持原 DOM 戰鬥畫面，所有舊路徑原封不動。
 
    序列幀資源（正式圖直接替換同名檔案即可，幀數不同就改同名 .json）：
-     images/sprites/player.png + player.json          玩家（idle/walk/attack1~3）
+     images/sprites/knight/*.png + knight.json         玩家（8 方向：idle/walk/attack1~2/cast/die/rise；
+                                                       由 tools/build_character_sprites.cjs 產生，見 loadDirectionalSheet）
      images/sprites/boss_generic.png + boss_generic.json  野外 BOSS（idle/attack/hurt） */
 
 var BattleRenderer = (function () {
@@ -96,7 +97,9 @@ var BattleRenderer = (function () {
        color     亮綠。戰場上的火光、冰藍、雷黃都不在這個色相附近，最好認
        alpha     輪廓本身的不透明度
        radiusPx  輪廓寬度，單位是**素材像素**，畫到螢幕上還要乘 manifest 的 scale
-                 （player.json 是 3.154，所以 2 ≒ 螢幕上 6px）
+                 （舊的 player.json 是 3.154，所以 2 ≒ 螢幕上 6px）。只給執行期現算輪廓的舊素材用；
+                 多方向素材（騎士）的輪廓是 tools/build_character_sprites.cjs 先算好的（影子不框），
+                 粗細看它的 outlinePx（2 × 1.4 倍 ≒ 螢幕上 3px）。
      ?outline=0 可以整個關掉，用來比對有無輪廓的畫面。 */
   var PLAYER_OUTLINE = { color: 0x3dff6e, alpha: 0.92, radiusPx: 1 };
 
@@ -492,6 +495,7 @@ var BattleRenderer = (function () {
       if (!r.ok) throw new Error('manifest http ' + r.status);
       return r.json();
     }).then(function (manifest) {
+      if (Array.isArray(manifest.directions)) return loadDirectionalSheet(name, base, manifest, opts);
       return PIXI.Assets.load(base + '.png').then(function (tex) {
         tex.source.scaleMode = 'nearest';   // 像素風：放大不要糊
         var anims = {};
@@ -518,6 +522,87 @@ var BattleRenderer = (function () {
         /* 輪廓貼圖是從這份序列幀推出來的，所以在同一個地方一起備好。 */
         if (opts && opts.outline) S.sheets[name].outline = buildOutlineFrames(S.sheets[name], tex);
       });
+    });
+  }
+
+  /* ---- 多方向序列幀（2026-09-22 主角換成 8 方向的騎士）----
+     幀定義由 tools/build_character_sprites.cjs 從素材庫產生，不手改：
+       { frameWidth, frameHeight,             邏輯格：所有動作共用同一個站立點
+         directions: ['E','SE',…],            列＝方向，從正右方開始順時針每 45°（螢幕座標，y 向下）
+         defaultDirection, scale, anchorX, anchorY,
+         smooth,                              true＝線性取樣（3D 算圖，不是像素畫，放大用 nearest 會鋸齒）
+         bakedShadow,                         影子畫在圖裡：不再另外畫腳下的橢圓
+         anims: { 名稱: { image, outline, trim: {x,y,w,h}, frames, fps, loop, first?, hold?, strideSpeed? }
+                  或 { from, reverse, fps, loop } } }       from＝拿另一個動作的幀（reverse＝倒著播）
+     每個動作一張圖，每格只存 trim 那一塊（格子大多是空的）；貼圖用 Pixi 的 orig／trim
+     還原成邏輯格，所以 anchor 對每個動作都一樣，切換動作時角色不會跳。
+     first＝從第幾幀開始播（普攻與施法把架式砍短，出劍幀才跟得上傷害數字，見那支工具的說明）。
+     輪廓也是工具先算好的：影子也不透明，執行期照 alpha 推會把地上的影子一起框起來。
+
+     sheet.dirAnims[名稱][方向] 是那個方向的幀；sheet.anims[名稱] 留預設方向那一組，
+     給不分方向的呼叫端（makeAnimSprite 的第一格、「這個動作存不存在」的判斷）照舊使用。 */
+  function loadDirectionalSheet(name, base, manifest, opts) {
+    var folder = base.slice(0, base.lastIndexOf('/') + 1);
+    var dirCount = manifest.directions.length;
+    var defaultDir = Math.max(0, Math.min(dirCount - 1, manifest.defaultDirection | 0));
+    var fw = manifest.frameWidth, fh = manifest.frameHeight;
+    var keys = Object.keys(manifest.anims);
+    var wantOutline = !!(opts && opts.outline);
+    var urls = [];
+    keys.forEach(function (k) {
+      var a = manifest.anims[k];
+      if (a.image && urls.indexOf(folder + a.image) < 0) urls.push(folder + a.image);
+      if (wantOutline && a.outline && urls.indexOf(folder + a.outline) < 0) urls.push(folder + a.outline);
+    });
+    return Promise.all(urls.map(function (u) { return PIXI.Assets.load(u); })).then(function (texs) {
+      var byUrl = {};
+      urls.forEach(function (u, i) {
+        texs[i].source.scaleMode = manifest.smooth ? 'linear' : 'nearest';
+        byUrl[u] = texs[i];
+      });
+      function cut(tex, a, d, i) {
+        var t = a.trim;
+        return new PIXI.Texture({
+          source: tex.source,
+          frame: new PIXI.Rectangle(i * t.w, d * t.h, t.w, t.h),
+          orig: new PIXI.Rectangle(0, 0, fw, fh),
+          trim: new PIXI.Rectangle(t.x, t.y, t.w, t.h)
+        });
+      }
+      var dirAnims = {}, anims = {}, speeds = {};
+      var outlineMap = wantOutline ? new Map() : null;
+      keys.forEach(function (k) {
+        var a = manifest.anims[k];
+        if (!a.image) return;
+        var body = byUrl[folder + a.image];
+        var ring = outlineMap && a.outline ? byUrl[folder + a.outline] : null;
+        var perDir = [];
+        for (var d = 0; d < dirCount; d++) {
+          var frames = [];
+          for (var i = Math.max(0, a.first | 0); i < a.frames; i++) {
+            var t = cut(body, a, d, i);
+            /* 對照表的鍵是本體那一幀的 Texture：同 buildOutlineFrames，執行時拿 body.texture 查 */
+            if (ring) outlineMap.set(t, cut(ring, a, d, i));
+            frames.push(t);
+          }
+          perDir.push(frames);
+        }
+        dirAnims[k] = perDir;
+      });
+      keys.forEach(function (k) {
+        var a = manifest.anims[k];
+        if (!a.from || !dirAnims[a.from]) return;
+        /* 同一批 Texture 物件換個順序：輪廓對照表不必另外登記 */
+        dirAnims[k] = dirAnims[a.from].map(function (fr) { return a.reverse ? fr.slice().reverse() : fr.slice(); });
+      });
+      Object.keys(dirAnims).forEach(function (k) {
+        anims[k] = dirAnims[k][defaultDir];
+        speeds[k] = (manifest.anims[k].fps || 8) / 60;
+      });
+      S.sheets[name] = {
+        manifest: manifest, anims: anims, speeds: speeds, dirAnims: dirAnims, dirCount: dirCount,
+        outline: outlineMap ? { map: outlineMap, source: null } : null
+      };
     });
   }
 
@@ -681,17 +766,27 @@ var BattleRenderer = (function () {
     sp.play();
     return sp;
   }
+  /* 這個動作在實體目前方向的那一組幀；不分方向的序列幀就是唯一那一組 */
+  function animFrames(sheet, entity, animName) {
+    var set = sheet.dirAnims && sheet.dirAnims[animName];
+    if (!set) return sheet.anims[animName];
+    return set[entity.dir | 0] || set[0];
+  }
   function playAnim(entity, animName, backTo) {
     var sheet = S.sheets[entity.sheetName];
     if (!sheet || !sheet.anims[animName] || !entity.body) return;
     if (entity.curAnim === animName && sheet.manifest.anims[animName].loop) return;
     var meta = sheet.manifest.anims[animName];
     entity.curAnim = animName;
-    entity.body.textures = sheet.anims[animName];
+    entity.texAnim = animName;     // 換方向時要知道身上是哪個動作的幀（curAnim 在播完那一刻會清空）
+    entity.body.textures = animFrames(sheet, entity, animName);
     entity.body.animationSpeed = sheet.speeds[animName];
     entity.body.loop = !!meta.loop;
     entity.body.gotoAndPlay(0);
-    if (!meta.loop) {
+    if (meta.hold) {
+      /* 播完停在最後一幀、curAnim 留著（死亡）：走路／站立的切換都會看到它而不去覆蓋 */
+      entity.body.onComplete = null;
+    } else if (!meta.loop) {
       entity.body.onComplete = function () {
         entity.curAnim = '';
         /* 讀「當下」的 baseAnim 而非呼叫時捕捉的 backTo：出招期間狀態可能已翻
@@ -701,6 +796,53 @@ var BattleRenderer = (function () {
     } else {
       entity.body.onComplete = null;
     }
+  }
+
+  /* ---- 多方向：轉向 ----
+     換方向時接著播同一個動作的同一幀——跑步中斜切過去，腳步不會從頭再來一次。
+     Pixi 的 textures setter 會跳回第 0 幀並停住，所以幀號、播放狀態、速度都要自己接回去。 */
+  function setEntityDir(entity, d) {
+    var sheet = entity && S.sheets[entity.sheetName];
+    if (!sheet || !sheet.dirAnims) return;
+    var n = sheet.dirCount;
+    d = ((d % n) + n) % n;
+    if (entity.dir === d) return;
+    entity.dir = d;
+    var body = entity.body;
+    var set = entity.texAnim && sheet.dirAnims[entity.texAnim];
+    if (!body || body.destroyed || !set) return;
+    var frame = body.currentFrame, playing = body.playing, speed = body.animationSpeed;
+    body.textures = set[d];
+    body.animationSpeed = speed;
+    if (playing) body.gotoAndPlay(frame); else body.gotoAndStop(frame);
+  }
+  /* 向量 → 方向格：0＝正右，順時針每 360/n 度（與素材的列順序一致，見 tools/build_character_sprites.cjs） */
+  function dirFromVector(n, dx, dy) {
+    var step = Math.PI * 2 / n;
+    return ((Math.round(Math.atan2(dy, dx) / step) % n) + n) % n;
+  }
+  /* 移動時轉向的遲滯（度）：斜著走在兩格交界附近時，位移的角度會在交界兩側抖動，
+     沒有遲滯就是逐幀在兩個方向之間來回跳。要超出目前那一格的半寬再多這麼多才轉。 */
+  var DIR_TURN_HYSTERESIS_DEG = 10;
+  /* sticky：移動用（帶遲滯）；出手面向目標用 false（精準面向，不遲疑） */
+  function turnToward(entity, dx, dy, sticky) {
+    var sheet = entity && S.sheets[entity.sheetName];
+    if (!sheet || !sheet.dirAnims || (!dx && !dy)) return;
+    var n = sheet.dirCount;
+    var d = dirFromVector(n, dx, dy);
+    if (sticky && typeof entity.dir === 'number' && d !== entity.dir) {
+      var step = 360 / n;
+      var ang = Math.atan2(dy, dx) * 180 / Math.PI;
+      var diff = Math.abs(((ang - entity.dir * step) % 360 + 540) % 360 - 180);
+      if (diff < step / 2 + DIR_TURN_HYSTERESIS_DEG) return;
+    }
+    setEntityDir(entity, d);
+  }
+  /* 正在播出手動作（普攻、施法）：這段期間方向由目標決定，不因為邊打邊移動而轉走 */
+  function actionLocked(entity) {
+    var sheet = entity && S.sheets[entity.sheetName];
+    var meta = sheet && entity.curAnim && sheet.manifest.anims[entity.curAnim];
+    return !!(meta && !meta.loop && !meta.hold);
   }
 
   /* ---- 柔光貼圖（發亮用，一次生成重複使用） ---- */
@@ -1213,9 +1355,14 @@ var BattleRenderer = (function () {
 
   function makePlayer() {
     var root = new PIXI.Container();
-    var shadow = new PIXI.Graphics();
-    shadow.ellipse(0, 0, 24, 8).fill({ color: 0x000000, alpha: 0.4 });
-    root.addChild(shadow);
+    var sheet = S.sheets.player;
+    var manifest = sheet ? sheet.manifest : {};
+    /* 影子畫在序列幀裡的（騎士）就不再疊一個橢圓：兩層影子會一深一淺、方向也對不上 */
+    if (!manifest.bakedShadow) {
+      var shadow = new PIXI.Graphics();
+      shadow.ellipse(0, 0, 24, 8).fill({ color: 0x000000, alpha: 0.4 });
+      root.addChild(shadow);
+    }
     var bodyWrap = new PIXI.Container();
     /* 縮放交給 player.json 的 scale：那個倍率取決於素材裡的角色佔格子多大，
        是素材的性質而不是程式的設定（原本寫死 1.09，換一組圖就得改這一行）。 */
@@ -1271,9 +1418,15 @@ var BattleRenderer = (function () {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap, outline: outline,
       vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
       hud: S.layers.playerHud,
-      sheetName: 'player', curAnim: 'idle', baseAnim: 'idle',
+      sheetName: 'player', curAnim: 'idle', baseAnim: 'idle', texAnim: 'idle',
       hitHeight: 70, walking: false, dead: false, stillFor: 99, fallK: 0,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
+      /* 多方向序列幀（騎士）：dir＝面向哪一格（0＝正右，順時針）。不翻面、倒地播死亡動作而不是轉 90 度。
+         只有左右兩版的舊素材維持 facing 翻面與旋轉倒地。 */
+      directional: !!(sheet && sheet.dirAnims),
+      dir: sheet && sheet.dirAnims ? Math.max(0, Math.min(sheet.dirCount - 1, manifest.defaultDirection | 0)) : 0,
+      dieAnim: !!(sheet && sheet.anims.die),
+      attackSeq: 0, runSpeed: 0,
       /* 世界座標。samples 是模擬層座標的取樣緩衝，wx/wy 是內插後畫出來的位置；
          鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
       wx: 0, wy: 0, samples: null,
@@ -1317,23 +1470,71 @@ var BattleRenderer = (function () {
 
   /* 出手動作。近戰不再「瞬間衝過去再彈回原位」——角色平常就會跑向目標
      （見 tickWorld 的追擊移動），出手時只播揮擊動作與一點前傾。 */
-  function playerAttackAnim(kind, targetId, duration) {
+  /* 普攻輪流用的動作：attack1、attack2…有幾段用幾段（舊素材三段都指同一列也照樣成立） */
+  function playerAttackAnimNames(sheet) {
+    var names = [];
+    for (var i = 1; sheet && sheet.anims && sheet.anims['attack' + i]; i++) names.push('attack' + i);
+    return names.length ? names : ['attack1'];
+  }
+  /* 施法動作把「釋放」那一幀對到硬直結束時，播放速度的上下限（fps）：硬直很短或很長時不要快成一閃、慢成停格 */
+  var CAST_FPS_MIN = 12, CAST_FPS_MAX = 60;
+  function playerAttackAnim(kind, targetId, duration, leadMs) {
     var p = S.player;
     if (!p || p.dead || p.revival) return;
     var melee = kind !== 'cast';
-    var name = melee ? ('attack' + (1 + Math.floor(Math.random() * 3))) : 'attack2';
+    var sheet = S.sheets[p.sheetName];
+    /* 施法動作播完之前普攻不插隊：高攻速時每秒好幾下普攻，照舊「後到的蓋掉先到的」，施法動作永遠看不到 */
+    if (melee && p.curAnim === 'cast') return;
+    var name;
+    if (melee) {
+      /* 輪流而不是隨機：隨機會連續抽到同一段，看起來像卡住重播 */
+      var attacks = playerAttackAnimNames(sheet);
+      name = attacks[(p.attackSeq || 0) % attacks.length];
+      p.attackSeq = (p.attackSeq || 0) + 1;
+    } else {
+      name = (sheet && sheet.anims && sheet.anims.cast) ? 'cast' : 'attack2';
+    }
     p.baseAnim = p.walking ? 'walk' : 'idle';
     playAnim(p, name, p.baseAnim);
-    var sheet = S.sheets[p.sheetName];
     var meta = sheet && sheet.manifest.anims[name];
     if (meta && p.body && duration > 0) {
+      /* 以實際會播的幀數算（多方向素材從 first 開始播，不是整條 frames） */
+      var played = (sheet.anims && sheet.anims[name] && sheet.anims[name].length) || meta.frames;
       var naturalMs = Array.isArray(meta.durations)
         ? meta.durations.reduce(function (sum, ms) { return sum + ms; }, 0)
-        : meta.frames / meta.fps * 1000;
+        : played / meta.fps * 1000;
       /* 短於原素材時加速整段，保留各影格比例；低攻速不把揮刀拖成慢動作。 */
       p.body.animationSpeed *= Math.max(1, naturalMs / (duration * 1000));
     }
+    /* 施法：硬直 leadMs 之後技能才真的放出去、特效才出現。把幀定義的 release（釋放那一幀）對到那一刻：
+       first→release 這段要在 leadMs 內播完。預設硬直 0.2 秒、first 2、release 8 剛好是 30 fps。 */
+    if (!melee && meta && p.body && leadMs > 0 && meta.release > (meta.first | 0)) {
+      var castFps = (meta.release - (meta.first | 0)) / (leadMs / 1000);
+      p.body.animationSpeed = Math.max(CAST_FPS_MIN, Math.min(CAST_FPS_MAX, castFps)) / 60;
+    }
     p.lunge = melee ? 0.18 : 0.12;
+  }
+
+  /* ---- 角色動作事件（協議 v36 EVENT_KINDS.ACT）----
+     { act: 'cast', elId, target, lockMs }：技能開始施放（施放硬直的起點，js/skills.js beginSkillCast）。
+     特效仍由各自的 vfx 事件負責，這裡只換角色的面向與姿勢。 */
+  function onAct(ev) {
+    if (!ev || !S.ready || documentHidden()) return;
+    if (ev.elId !== 'pv-float') return;          // 高塔（tp-float）不在這個渲染器
+    /* 與特效同一套顯示延遲：畫面上的世界落後模擬 POS_BUFFER_MS，姿勢也延後才對得上特效與站位 */
+    if (!ev._buffered) {
+      ev._buffered = true;
+      setTimeout(function () { onAct(ev); }, POS_BUFFER_MS);
+      return;
+    }
+    var p = S.player;
+    if (!p || p.dead || p.revival || ev.act !== 'cast') return;
+    var ent = ev.target ? S.entities[ev.target] : null;
+    if (ent && ent.root) {
+      p.facing = ent.root.x < p.root.x ? -1 : 1;
+      turnToward(p, ent.root.x - p.root.x, ent.root.y - p.root.y, false);
+    }
+    playerAttackAnim('cast', ev.target || null, 0, Number(ev.lockMs) || 0);
   }
 
   /* ============ reconcile（PANEL battle，約 5Hz） ============ */
@@ -1437,11 +1638,14 @@ var BattleRenderer = (function () {
         updateDeathFog(p.deathFogK);
         if (S.deathFog) S.deathFog.visible = dead;
         if (S.vignette) S.vignette.visible = !dead;
+        /* 有死亡動作的素材（騎士）：倒下播 die、停在最後一幀；起身把 die 倒著播（rise），播完回站立。
+           沒有的（舊素材）照舊站姿＋ tickWorld 把本體轉 90 度。 */
         if (dead) {
           p.lunge = 0;
-          playAnim(p, 'idle');
+          playAnim(p, p.dieAnim ? 'die' : 'idle');
         } else {
-          playAnim(p, 'idle');
+          p.baseAnim = 'idle';
+          playAnim(p, (p.dieAnim && S.sheets[p.sheetName].anims.rise) ? 'rise' : 'idle', 'idle');
         }
       }
       /* 倒地期間：模擬層已經把技能執行期狀態整批清掉，畫面上還在的持續場域
@@ -5059,21 +5263,24 @@ var BattleRenderer = (function () {
     var count = Math.min(isThrust ? 8 : 5, Math.max(1, spec.count || 1));
     var stagger = ((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000;
 
-    /* 普攻即使已由 Preset 接手仍要播角色動作；其它技能維持既有分流。 */
-    if (shouldAnimatePlayer(spec) && vfxTargetsLive(spec)) {
+    /* 普攻即使已由 Preset 接手仍要播角色動作。技能的施法動作改由模擬層的 act 事件驅動（見 onAct，協議 v36）：
+       一次施放會送出好幾則特效事件（子段、飛行物命中、場域週期），從特效事件猜「哪一則是施放」會一直重播施法姿勢；
+       而且 Preset 接手的技能根本走不到這裡——這正是技能原本沒有施法動作的原因（2026-09-22）。 */
+    if (shouldAnimatePlayer(spec) && spec.cat === 'basic' && vfxTargetsLive(spec)) {
       var contactFx = spec.fxKind === 'slash' || spec.fxKind === 'impact' || spec.fxKind === 'burst';
-      var meleeCat = spec.cat === 'basic' || spec.cat === 'phys';
       var firstTarget = spec.targets && spec.targets.length ? spec.targets[0] : null;
       if (firstTarget) {
         /* 出手當下先面向目標；跑不跑過去由模擬層決定，這裡只管朝向。 */
         var tp = posOf(firstTarget);
         S.player.facing = (tp.x < S.player.root.x) ? -1 : 1;
+        /* 多方向素材：精準面向目標那一格（不帶遲滯），出手動作用這個方向播。
+           角度用腳底對腳底：posOf 給的是受擊點（胸口），近身時會把方向往上拉偏一格。 */
+        var tEnt = S.entities[firstTarget];
+        turnToward(S.player, (tEnt ? tEnt.root.x : tp.x) - S.player.root.x,
+          (tEnt ? tEnt.root.y : tp.y) - S.player.root.y, false);
       }
-      if (meleeCat && contactFx && firstTarget) {
-        playerAttackAnim('melee', firstTarget, spec.cat === 'basic' ? spec.dur : 0);
-      } else {
-        playerAttackAnim(spec.cat === 'magic' || spec.fxKind === 'rain' || spec.fxKind === 'beam' ? 'cast' : 'melee');
-      }
+      /* dur＝這一次普攻的實際攻速週期：整段揮擊要在下一次普攻前播完 */
+      playerAttackAnim('melee', firstTarget, (contactFx && firstTarget) ? spec.dur : 0);
     }
 
     if (presetHandled) return;
@@ -5727,14 +5934,19 @@ var BattleRenderer = (function () {
                                          : Math.max(fallTarget, p.fallK - stepK);
       }
       if (p.fallK > 0) {
-        var ease = p.fallK * p.fallK * (3 - 2 * p.fallK);            // smoothstep
-        var bounce = Math.sin(Math.min(1, p.fallK) * Math.PI) * 0.12;  // 倒下與起身途中的一點回彈
-        /* 只翻轉角色本體；血條、法力條與文字都留在 root 上保持水平。 */
-        p.bodyWrap.rotation = -(Math.PI / 2) * ease * p.facing - bounce * p.facing;
+        /* 有死亡動作的素材自己會倒下（die），不再把本體轉 90 度——疊上旋轉就是躺著再轉一次 */
+        if (!p.dieAnim) {
+          var ease = p.fallK * p.fallK * (3 - 2 * p.fallK);            // smoothstep
+          var bounce = Math.sin(Math.min(1, p.fallK) * Math.PI) * 0.12;  // 倒下與起身途中的一點回彈
+          /* 只翻轉角色本體；血條、法力條與文字都留在 root 上保持水平。 */
+          p.bodyWrap.rotation = -(Math.PI / 2) * ease * p.facing - bounce * p.facing;
+        }
         p.body.tint = 0x777777;
-      } else if (p.bodyWrap.rotation !== 0) {
+        p.fallTinted = true;
+      } else if (p.bodyWrap.rotation !== 0 || p.fallTinted) {
         p.bodyWrap.rotation = 0;
         p.body.tint = 0xffffff;
+        p.fallTinted = false;
       }
       if (p.dead) {
         p.deathFogK = Math.min(1, (p.deathFogK || 0) + dt / Math.max(1, p.deathFogDuration || 1));
@@ -5753,21 +5965,42 @@ var BattleRenderer = (function () {
         if (pStep > 0.5 * dt * 60) p.stillFor = 0;
         else p.stillFor = (p.stillFor || 0) + dt;
         moving = p.stillFor < 0.22;
-        if (pStep > 0.6) p.facing = pdx < 0 ? -1 : 1;
+        if (pStep > 0.6) {
+          p.facing = pdx < 0 ? -1 : 1;
+          /* 多方向：跑向哪就面向哪（帶遲滯）；出手動作播完之前方向由目標決定，不跟著移動轉走 */
+          if (p.directional && !actionLocked(p)) turnToward(p, pdx, pdy, true);
+        }
+        /* 跑步的播放速度跟著實際移速走：幀定義的 strideSpeed 是「這個 fps 下腳步剛好對上」的速度，
+           移速加成或減速時照比例調，腳不會在地上打滑。位移逐幀有小抖動，所以先平滑再用。 */
+        var runMeta = p.curAnim === 'walk' && S.sheets[p.sheetName].manifest.anims.walk;
+        if (runMeta && runMeta.strideSpeed > 0 && pStep > 0) {
+          var spd = pStep / dt;
+          p.runSpeed = p.runSpeed > 0 ? p.runSpeed + (spd - p.runSpeed) * Math.min(1, dt * 6) : spd;
+          p.body.animationSpeed = S.sheets[p.sheetName].speeds.walk *
+            Math.max(0.5, Math.min(1.8, p.runSpeed / runMeta.strideSpeed));
+        }
       }
       if (moving !== p.walking) {
         p.walking = moving;
         p.baseAnim = moving ? 'walk' : 'idle';
+        if (!moving) p.runSpeed = 0;
         if (!p.curAnim || p.curAnim === 'idle' || p.curAnim === 'walk') playAnim(p, p.baseAnim);
       }
+      /* 出手時往前送一小段。多方向素材沿面向的那一格送（上下方向在畫面上是斜視角，縱向打對折） */
+      var lungeX = 0, lungeY = 0;
       if (p.lunge > 0) {
         p.lunge = Math.max(0, p.lunge - dt);
-        p.bodyWrap.x = Math.sin((0.18 - p.lunge) / 0.18 * Math.PI) * 14 * p.facing;
-      } else {
-        p.bodyWrap.x = 0;
+        var lungeK = Math.sin((0.18 - p.lunge) / 0.18 * Math.PI) * 14;
+        if (p.directional) {
+          var lungeA = p.dir * Math.PI * 2 / S.sheets[p.sheetName].dirCount;
+          lungeX = Math.cos(lungeA) * lungeK;
+          lungeY = Math.sin(lungeA) * lungeK * 0.5;
+        } else {
+          lungeX = lungeK * p.facing;
+        }
       }
-      p.bodyWrap.x += p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltX || HIT_JOLT_X) : 0;
-      p.bodyWrap.y = p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltY || HIT_JOLT_Y) : 0;
+      p.bodyWrap.x = lungeX + (p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltX || HIT_JOLT_X) : 0);
+      p.bodyWrap.y = lungeY + (p.jolt > 0 ? (Math.random() * 2 - 1) * (p.joltY || HIT_JOLT_Y) : 0);
       if (p.revival) {
         var revivalLeft = typeof uiCountdownRemain === 'function'
           ? uiCountdownRemain(p.revival.endAt - p.revivalGt, p.revivalGt)
@@ -5784,8 +6017,8 @@ var BattleRenderer = (function () {
         p.hud.x = p.root.x;
         p.hud.y = p.root.y;
       }
-      /* 面向目標：序列幀只有朝右一版，往左打就水平翻面 */
-      if (!p.dead) p.bodyWrap.scale.x = p.facing < 0 ? -1 : 1;
+      /* 面向目標：只有朝右一版的舊素材，往左打就水平翻面；多方向素材每個方向都有自己的圖，不翻 */
+      if (!p.dead) p.bodyWrap.scale.x = (!p.directional && p.facing < 0) ? -1 : 1;
       updateFlashJolt(p, dt);
       drawPlayerVitals();
     }
@@ -6321,7 +6554,9 @@ var BattleRenderer = (function () {
       eventFeatures: { move: false, globalMove: false, click: false, wheel: false }
     }).then(function () {
       return Promise.all([
-        loadSheet('player', 'images/sprites/player', { outline: true }),
+        /* 2026-09-22 主角換成 8 方向的騎士（Clarice 的 player.png／player.json 留在原處沒刪）。
+           圖集與幀定義由 tools/build_character_sprites.cjs 從素材庫 characters/knight-hd 產生。 */
+        loadSheet('player', 'images/sprites/knight/knight', { outline: true }),
         loadSheet('boss', 'images/sprites/boss_generic'),
         loadFireFlare(),
         PIXI.Assets.load('images/vfx/thrust_lance.png?v=20260815-narrow-rect').then(function (tex) {
@@ -6422,6 +6657,7 @@ var BattleRenderer = (function () {
     wantsFloat: wantsFloat,
     wantsVfx: wantsVfx,
     onFloat: onFloat,
+    onAct: onAct,
     onVfx: onVfx,
     syncBattle: syncBattle,
     status: status,
@@ -6435,6 +6671,8 @@ var BattleRenderer = (function () {
       return {
         player: p ? {
           x: Math.round(p.wx), y: Math.round(p.wy), walking: !!p.walking, facing: p.facing, anim: p.curAnim,
+          dir: p.dir, texAnim: p.texAnim, frame: p.body ? p.body.currentFrame : -1,
+          animSpeed: p.body ? +p.body.animationSpeed.toFixed(3) : 0,
           /* 倒地驗證用：dead 是否觸發、倒下進度、實際旋轉角度、倒數文字 */
           dead: !!p.dead, fallK: +(p.fallK || 0).toFixed(2),
           rotDeg: Math.round((p.bodyWrap.rotation || 0) * 180 / Math.PI),
