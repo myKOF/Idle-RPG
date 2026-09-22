@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜烈焰暴風射程36米（TEMPEST-RANGE-20260922）
+
+- Owner Codex；Done。使用者指定火球射程36米，調整烈焰暴風 searchM 24→36；修改 Skills2 Excel／CSV／JS、快取、邊界測試與本紀錄。預檢無衝突，保留36米／秒速度、0.33秒單發與6米爆炸。
+- 驗證 `node --test tests/inferno-tempest.test.cjs tests/skills2-vfx-schema.test.cjs` 13/13，包含36米可選／超界不可選；`node tools/build_check.cjs` 396檔、config_tables --apply Skills2 語意差異0、diff check 通過。唯讀檢查既有搜敵與表格綁定，未改素材／素材庫，未瀏覽器實戰。無未完成實作，可供使用者合併；Commit 見本紀錄所在提交，未合併／推送。
+
 ## Codex｜烈焰暴風追蹤必中（TEMPEST-HOMING-20260922）
 
 - Owner Codex；Done。使用者指定火球追蹤必中與速度 +50%；烈焰暴風速度 24→36 米／秒，保留 0.33 秒隨機單發／6 米爆炸。修改 Skills2 表與程式、Runtime 追蹤起點、測試／快取與本紀錄，預檢無衝突。

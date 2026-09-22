@@ -14,12 +14,13 @@ function setup(lv=1){
  c.sgCastFirepillar(p,c.getStats(),c.SKILLS2.firepillar,Array(7).fill(10),c.FIELD.monsters,c.FIELD.monsters[0],'mv-float',{});
  return {c,p,events,hits,realHit,f:c.SKILL2_RT.grounds[0],ctx:{getEnemies:()=>c.FIELD.monsters}};
 }
-test('烈焰暴風：不倍增龍捲，每道獨立每0.33秒隨機鎖定1名24米內敵人',()=>{
+test('烈焰暴風：不倍增龍捲，每道獨立每0.33秒隨機鎖定1名36米內敵人',()=>{
  const {c,f,events}=setup();assert.equal(c.SKILL2_RT.grounds.length,2);
  assert.notEqual(f.tempest,c.SKILL2_RT.grounds[1].tempest);
  assert.equal(f.tempest.gap,.33);assert.equal(f.tempest.count,1);
  f.pos={x:1000,y:100};
- const distances=[100,160,240,241,50];
+ assert.equal(f.tempest.range,360);
+ const distances=[300,340,360,361,50];
  c.FIELD.monsters.forEach((m,i)=>m.pos={x:1000+distances[i],y:100});c.FIELD.monsters[4]._enterCd=1;
  c.GT=f.tempest.nextAt-.001;c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,0);
  c.GT+=.001;c.sgTickInfernoTempest(f,c.FIELD.monsters);
@@ -31,6 +32,10 @@ test('烈焰暴風：不倍增龍捲，每道獨立每0.33秒隨機鎖定1名24�
  c.GT=f.tempest.nextAt;c.FIELD.monsters.splice(1);c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,2);
  c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,3);
  assert.ok(Math.abs(c.GT-.99)<1e-9,'前三顆分別在0.33、0.66、0.99秒發射');
+ c.FIELD.monsters[0].pos.x=f.pos.x+360;c.GT=f.tempest.nextAt;
+ c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,4,'36米邊界可鎖定');
+ c.FIELD.monsters[0].pos.x=f.pos.x+361;c.GT=f.tempest.nextAt;
+ c.sgTickInfernoTempest(f,c.FIELD.monsters);assert.equal(c.SKILL2_RT.projectiles.length,4,'超過36米不可鎖定');
 });
 test('烈焰暴風：速度提高50%，追蹤移動目標並在命中位置爆炸',()=>{
  const {c,f,events,hits,ctx}=setup();c.FIELD.monsters.splice(1);const target=c.FIELD.monsters[0];
