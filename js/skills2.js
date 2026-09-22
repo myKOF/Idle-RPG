@@ -2204,7 +2204,15 @@ function sgTickFlyingProjectiles(dt, ctx) {
   for (var pi = list.length - 1; pi >= 0; pi--) {
     var projectile = list[pi];
     if (projectile.tempestFlight) {
-      if (now >= projectile.endAt) { list.splice(pi, 1); sgResolveInfernoTempest(projectile, ctx); }
+      var arrived=false, targetPoint=bfPos(projectile.target);
+      if(projectile.position && targetPoint){
+        var flightStep=projectileHomingStep(projectile.position,projectile.previousTarget,targetPoint,
+          projectile.speed,Math.max(0,now-projectile.lastAt));
+        projectile.position={x:flightStep.x,y:flightStep.y};
+        projectile.previousTarget={x:targetPoint.x,y:targetPoint.y};projectile.lastAt=now;
+        arrived=flightStep.hit;
+      } else arrived=now>=projectile.endAt;
+      if (arrived) { list.splice(pi, 1); sgResolveInfernoTempest(projectile, ctx); }
       continue;
     }
     if (projectile.counterHolyFlight) {
@@ -4342,11 +4350,12 @@ function sgTickInfernoTempest(f, enemies) {
     bfRandomOthers(null, targets, t.count, 0, null).forEach(function(target) {
       var p=bfPos(target),start=f.pos,end=p?{x:p.x,y:p.y}:null;
       var travel=start&&end?Math.max(.05,Math.hypot(end.x-start.x,end.y-start.y)/t.speed):.26;
-      var area=start&&end?{x:end.x,y:end.y,r:t.radius,sourceX:start.x,sourceY:start.y,homingFlight:true}:null;
+      var area=start&&end?{x:end.x,y:end.y,r:t.radius,sourceX:start.x,sourceY:start.y,homingFlight:true,homingSpeed:t.speed}:null;
       sgEmitVfx('firepillar',[target],f.floatSel,{fxKind:'projectile',variant:'inferno-tempest-ball',
         projectile:true,hit:false,arcM:0,travelMs:[travel*1000],area:area,
         vfxRoles:{projectile:t.roles.projectile}});
       SKILL2_RT.projectiles.push({tempestFlight:true,pEnt:f.pEnt,st:f.st,target:target,
+        position:start?{x:start.x,y:start.y}:null,previousTarget:end,speed:t.speed,lastAt:sgProjectileNow(),
         area:area,endAt:sgProjectileNow()+travel,dmgVal:t.dmgVal,roles:t.roles,floatSel:f.floatSel});
     });
   }

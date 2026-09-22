@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜火球等速預判追蹤（TEMPEST-INTERCEPT-20260922）
+
+- Owner Codex；Done。修正移動敵人使火球剎車：以共用純函式依敵人位移預判攔截，火球每拍按速度推進，實際接觸才結算；同步模擬與 Runtime，不沿出生飛行秒數強迫到達。修改 util、skills2、Runtime、測試、快取與本紀錄；預檢無衝突。此項取代 TEMPEST-HOMING 的固定秒數飛行。
+- 同一個世界座標純函式解相對運動攔截，每顆只讀既定目標，沒有逐幀掃怪或重選目標。Runtime 還原地面Y比例後計算再投影，跳過舊曲線／朝向計算；其他子彈不配置新追蹤狀態。沒有額外Timer、貼圖或粒子。無座標高塔保留原延後命中相容流程。
+- `node --test tests/inferno-tempest.test.cjs tests/dragon-devour.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-runtime.test.cjs`：125項，123通過、2項既有 CATALOG-3／STARFALL-TAIL 失敗，HEAD基準確認；新相關22/22。涵蓋迎面提前命中、横移等速、停步、移遠不隔空命中、投影後Runtime速度。`node tools/build_check.cjs` 396檔、diff check 通過。
+- 效能微基準：300顆×60Hz×60秒×5輪，共用攔截數學每幀中位0.0202ms、最慢0.0214ms（Node／固定代表性輸入，不含GPU、整體場景與不同硬體差異，不視為實戰FPS保證）。唯讀檢查 battlefield 逼近與 battle-renderer 預判／座標取樣；未改素材或素材庫，未瀏覽器實戰。無未完成實作，可供使用者合併；建議整合後實戰觀察，Commit 見本紀錄所在提交，未合併／推送。
+
 ## Codex｜烈焰暴風射程36米（TEMPEST-RANGE-20260922）
 
 - Owner Codex；Done。使用者指定火球射程36米，調整烈焰暴風 searchM 24→36；修改 Skills2 Excel／CSV／JS、快取、邊界測試與本紀錄。預檢無衝突，保留36米／秒速度、0.33秒單發與6米爆炸。

@@ -7,6 +7,31 @@ function rnd(a, b) { return a + Math.random() * (b - a); }
 function ri(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
 function chance(p) { return Math.random() * 100 < p; }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+/* 等速追蹤共用幾何：以目標本拍位移求速度、解攔截時間；不依出生距離倒數。
+   輸入與輸出皆為世界座標，函式不持有遊戲狀態。 */
+function projectileHomingStep(position, previousTarget, target, speed, dt) {
+  if (!(dt > 0) || !(speed > 0)) return {x:position.x,y:position.y,hit:false};
+  var vx=(target.x-previousTarget.x)/dt, vy=(target.y-previousTarget.y)/dt;
+  var rx=previousTarget.x-position.x, ry=previousTarget.y-position.y;
+  var a=vx*vx+vy*vy-speed*speed, b=2*(rx*vx+ry*vy), c=rx*rx+ry*ry;
+  var time=Infinity;
+  if(c<1e-12)time=0;
+  else if(Math.abs(a)<1e-9){if(b<0)time=-c/b;}
+  else {
+    var disc=b*b-4*a*c;
+    if(disc>=0){
+      var q=Math.sqrt(disc),t1=(-b-q)/(2*a),t2=(-b+q)/(2*a);
+      if(t1>=0)time=t1;if(t2>=0)time=Math.min(time,t2);
+    }
+  }
+  if(time<=dt+1e-9)return {x:previousTarget.x+vx*time,y:previousTarget.y+vy*time,hit:true};
+  var dx=(isFinite(time)?previousTarget.x+vx*time:target.x)-position.x;
+  var dy=(isFinite(time)?previousTarget.y+vy*time:target.y)-position.y,d=Math.hypot(dx,dy);
+  var distance=Math.min(d,speed*dt);
+  return {x:position.x+(d?dx/d*distance:0),y:position.y+(d?dy/d*distance:0),hit:d<1e-9};
+}
+if(typeof module!=='undefined'&&module.exports)module.exports.projectileHomingStep=projectileHomingStep;
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 // 屬性上限套用：上限 cap 為 0（或負）代表「無上限」，僅保留下限 0；否則夾在 [0, cap]。
 function capValue(v, cap) { return cap > 0 ? clamp(v, 0, cap) : Math.max(0, v); }

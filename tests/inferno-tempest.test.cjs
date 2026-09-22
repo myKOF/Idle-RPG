@@ -45,6 +45,8 @@ test('烈焰暴風：速度提高50%，追蹤移動目標並在命中位置爆�
  const edge={hp:100,pos:{x:500,y:60+c.bfBodyRadius()}},outside={hp:100,pos:{x:500,y:61+c.bfBodyRadius()}};
  target.pos.x=500;c.FIELD.monsters.push(edge,outside);
  c.GT=shot.endAt;c.sgTickFlyingProjectiles(.001,ctx);
+ assert.equal(hits.length,0,'目標移遠不能在舊的出生倒數結束時隔空命中');
+ for(let i=0;i<100&&c.SKILL2_RT.projectiles.length;i++){c.GT+=1/60;c.sgTickFlyingProjectiles(1/60,ctx);}
  assert.deepEqual(hits.map(h=>h.m),[target,edge]);assert.equal(hits[0].elem,'fire');assert.equal(hits[0].guaranteed,true);assert.equal(hits[1].guaranteed,false);
  const impact=events.find(e=>e.variant==='inferno-tempest-impact');assert.equal(impact.area.x,500);assert.equal(impact.area.r,60);assert.deepEqual(Object.keys(impact.vfx),['attack']);
  assert.equal(c.SKILL2_RT.projectiles.length,0);
@@ -81,7 +83,37 @@ test('烈焰暴風：實際 Runtime 從龍捲發射，持續追蹤移動目標�
  adapter.update(1/3);
  assert.ok(log.some(n=>n.t&&Math.abs(n.t.x-220)<.001&&Math.abs(n.t.y-50)<.001),'半程在投影後直線中點');
  targetPoint={x:460,y:110};adapter.update(1/6);
- assert.ok(log.some(n=>n.t&&Math.abs(n.t.x-370)<.001&&Math.abs(n.t.y-95)<.001),'飛行75%時追向目標最新位置：'+JSON.stringify(log));
+ assert.ok(log.some(n=>n.t&&Math.abs(Math.hypot(n.t.x-220,(n.t.y-50)/.5)-60)<.001),'目標改變位置時仍按36米每秒走60世界單位，不瞬移或剎車');
+});
+
+test('等速攔截：迎面與橫移均保持速度，目標停步後重算，最後才截短命中步',()=>{
+ const step=require('../js/util.js').projectileHomingStep;
+ for(const velocity of [{x:-60,y:0},{x:0,y:80}]){
+  let p={x:0,y:0},target={x:240,y:0},hit=false,time=0;
+  while(!hit&&time<3){
+   const nextTarget={x:target.x+velocity.x/120,y:target.y+velocity.y/120};
+   const next=step(p,target,nextTarget,360,1/120);
+   if(!next.hit)assert.ok(Math.abs(Math.hypot(next.x-p.x,next.y-p.y)-3)<1e-8);
+   p=next;target=nextTarget;hit=next.hit;time+=1/120;
+  }
+  assert.equal(hit,true);if(velocity.x<0)assert.ok(time<240/360,'迎面移動提前命中，不等出生倒數');
+ }
+ const stopped=step({x:0,y:0},{x:120,y:0},{x:120,y:0},360,.1);
+ assert.equal(stopped.x,36);assert.equal(stopped.hit,false);
+ const stationary=step({x:119,y:0},{x:120,y:0},{x:120,y:0},360,.1);
+ assert.equal(stationary.hit,true);assert.equal(stationary.x,120);
+});
+
+test('火球模擬：迎面移動目標提前接觸才爆炸，非命中步都走固定速度',()=>{
+ const {c,f,hits,ctx}=setup();c.FIELD.monsters.splice(1);const target=c.FIELD.monsters[0];
+ f.pos={x:0,y:0};target.pos={x:240,y:0};c.GT=f.tempest.nextAt;c.sgTickInfernoTempest(f,c.FIELD.monsters);
+ const shot=c.SKILL2_RT.projectiles[0],start=c.GT;let previous={...shot.position};
+ for(let i=0;i<120&&!hits.length;i++){
+  target.pos.x-=.5;c.GT+=1/120;c.sgTickFlyingProjectiles(1/120,ctx);
+  if(!hits.length)assert.ok(Math.abs(Math.hypot(shot.position.x-previous.x,shot.position.y-previous.y)-3)<1e-7);
+  previous={...shot.position};
+ }
+ assert.ok(hits.length>0);assert.ok(c.GT-start<2/3);assert.equal(hits[0].m,target);
 });
 
 test('烈焰暴風：必中主目標跳過閃避，不改其他傷害防禦流程',()=>{

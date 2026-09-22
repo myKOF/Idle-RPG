@@ -20,6 +20,8 @@
    ============================================================ */
 
 var VFXRuntime = (function () {
+  var homingStep = typeof projectileHomingStep === 'function' ? projectileHomingStep
+    : (typeof require === 'function' ? require('./util.js').projectileHomingStep : null);
 
   /* 米制本體尺寸。authored 是素材座標中的本體，不包含外暈／拖尾。
      保留作者的座標精度，以轉換矩陣統一尺寸；Editor 往返不必重採樣素材。 */
@@ -758,6 +760,9 @@ var VFXRuntime = (function () {
       projectiles.push({
         /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
+        homingSpeed:spec.area&&num(spec.area.homingSpeed,0),
+        homingPosition:spec.area&&spec.area.homingSpeed>0?{x:from.x,y:from.y/groundScale}:null,
+        previousTarget:spec.area&&spec.area.homingSpeed>0?{x:to.x,y:to.y/groundScale}:null,
         dur: travel > 0 ? travel : 0.001,
         mult: mult, enterAngle: enterAngle, facing: facing, arcHeight: arcHeight,
         dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour', control: knifeControl, lastTo: to,
@@ -1416,9 +1421,17 @@ var VFXRuntime = (function () {
           }
           pr.lastTo=to;
         }
-        var ctrl = pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle);
+        var ctrl = pr.homingSpeed>0 ? null : pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle);
         if (pr.arcHeight > 0) ctrl = {x:(pr.from.x+to.x)/2,y:(pr.from.y+to.y)/2-2*pr.arcHeight};
-        var at = curvePoint(pr.from, ctrl, to, k);
+        var at = pr.homingSpeed>0 ? null : curvePoint(pr.from, ctrl, to, k);
+        if(pr.homingSpeed>0&&homingStep){
+          var worldTarget={x:to.x,y:to.y/groundScale};
+          var next=homingStep(pr.homingPosition,pr.previousTarget,worldTarget,pr.homingSpeed,step);
+          var moveX=next.x-pr.homingPosition.x,moveY=(next.y-pr.homingPosition.y)*groundScale;
+          if(Math.hypot(moveX,moveY)>1e-9)pr.facing=Math.atan2(moveY,moveX);
+          pr.homingPosition={x:next.x,y:next.y};pr.previousTarget=worldTarget;
+          at={x:next.x,y:next.y*groundScale};k=next.hit?1:0;
+        }
         var movingDimensions = pr.dimensions;
         if (pr.thrustBody) {
           var distance = pr.thrustLength * k;
@@ -1426,7 +1439,7 @@ var VFXRuntime = (function () {
           at = {x:pr.from.x+Math.cos(pr.facing)*tailDistance,y:pr.from.y+Math.sin(pr.facing)*tailDistance};
           movingDimensions = {scaleX:pr.dimensions.scaleX*Math.min(1,distance/pr.thrustBody),scaleY:pr.dimensions.scaleY};
         }
-        pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
+        if(!(pr.homingSpeed>0))pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
           step, PROJECTILE_FACING_TAU_SEC);
         var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },
