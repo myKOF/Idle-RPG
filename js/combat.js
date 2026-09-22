@@ -1477,9 +1477,17 @@ function fieldTick(dt) {
        等待期間只保持 ready，不會在抵達當下連續補攻。
        暈眩期間維持停住（無法行動就不該累積 ready），與下方玩家行動閘門一致。
        ── 潛力【極速之力】施放期間以倍率放大攻擊頻率（突破一般攻速上限）；
-          新版技能【狂風斬】同樣是突破上限的攻速乘算（js/skills2.js skill2AspdFactor）。 */
+          新版技能【狂風斬】同樣是突破上限的攻速乘算（js/skills2.js skill2AspdFactor）。
+       ── 例外：**剛好在這一步歸零**時，超過 0 的那一點要留著（最多一步的量），出手後從週期裡扣掉。
+          出手只發生在步與步的交界（一步 0.1 秒），整個夾掉的話，週期只要比步長的倍數多一點點
+          就得多等一整步：攻速 5（0.2 秒）實測有三分之一的間隔變成 0.3 秒，實際每秒不到 4 下
+          （2026-09-22）。上一步就已經是 0 的（等待中）照樣夾在 0，所以欠債最多一步、不會連續補攻。 */
     var playerAttackRate = playerBasicAttackRate(p, st);
-    if (!effectActive(p, 'stun')) p.atkCd = Math.max(0, p.atkCd - dt * playerAttackRate);
+    if (!effectActive(p, 'stun')) {
+        var atkCdBefore = p.atkCd;
+        var atkCdAfter = atkCdBefore - dt * playerAttackRate;
+        p.atkCd = atkCdBefore > 0 ? atkCdAfter : Math.max(0, atkCdAfter);
+    }
 
     // 持續傷害（玩家：中毒 / 詛咒等）
     var playerDotDeath = tickStatuses(p, dt);
