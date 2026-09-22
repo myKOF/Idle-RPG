@@ -24,7 +24,7 @@ route('search',`knife/3 knife/soulhunterBlade gale/4 gale/thunderFlash bloodblad
  chainlightning/eternalSuperconductor chainlightning/flyingThunderGod thunderstrike/heavenTribulation
  thunderorb/thunderBurst waterball/5 frostnova/crystalResonance vacuumslash/1 stormbarrier/5`);
 route('effect',`dualdance/5 rockarmor/superRockArt rockarmor/gravityField thunderstrike/5 waterball/waterPrisonFall waterball/abyssBurial`);
-route('damage','firepillar/dragonDevour');
+route('damage','firepillar/dragonDevour firepillar/infernoTempest');
 route('trigger',`bloodblade/slayerDomain bloodrage/6 fireball/6`);
 route('travel',`cleave/6 icearrow/4 windblade/1`);
 route('orbit',`firehunt/1 firehunt/infiniteRing thunderorb/4 vacuumslash/7 vacuumslash/spacetimeCollapse`);
@@ -57,6 +57,7 @@ function bindings(gid,stage){
  if(['icearrow/7','windblade/5','windblade/stormMyriad'].includes(id))b.push(['search',['chaseM']]);
  if(id==='waterball/1')b.push(['height',['arcM']]);
  if(id==='firepillar/dragonDevour')b.push(['effect',['pullM']],['placement',['ballRange']],['height',['arcM']],['gap',['gap']]);
+ if(id==='firepillar/infernoTempest')b.push(['search',['searchM']],['gap',['gap']],['speed',['speed']]);
  if(id==='waterball/7')b.push(['placement',['side','sideWidth']]);
  if(id==='frostnova/7')b.push(['damage',['side','sideWidth']]);
  if(id==='windblade/4')b.push(['body',['lenM','widthM']]);

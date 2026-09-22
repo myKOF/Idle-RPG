@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜烈焰暴風平射火球（TEMPEST-FIREBALL-20260922）
+
+- Owner Codex；Done。使用者指定取代數量倍率：每道火龍捲每秒向 24 米內最多 3 名敵人平射火球，命中爆炸半徑 6 米，基礎 200% 火焰傷害，每級 +20 百分點（沿既有升級公式，Lv.1 為 220%）。修改 Skills2 Excel／CSV／JS、幾何與特效欄位工具、專項與舊規格測試、快取及本紀錄。預檢無衝突；不更動其他超神或素材。
+- 每道龍捲出生後 1 秒開始，最近的不同目標優先，少怪不補射；以表定 24 米／秒飛向發射當下目標位置，直線無拋物線，抵達時依當下敵人位置查詢爆炸圈（含體型邊緣），逃離落點可避開。重生重新計時，離開龍捲的火球可完成飛行；死亡不結算傷害，重置清空。觸發子彈／特效讀本列 proj-fireball／burst-fire，正常龍捲本體維持原外觀。
+- `node --test tests/inferno-tempest.test.cjs tests/firepillar-expire-vfx.test.cjs tests/dragon-devour.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill2-fire-legendary.test.cjs tests/vfx-preset-usage.test.cjs`：69 項，67 通過、2 個既有地爆天星倒數／預警失敗（HEAD 基準同樣失敗）；本次專項 5/5，涵蓋模擬／事件與實際 Runtime 半程直線座標。舊烈焰暴風數量測試依本次新需求更新。
+- `node tools/build_check.cjs` 396 檔、`node tools/config_tables.cjs --apply Skills2` 語意差異 0、`git diff --check` 通過。唯讀檢查 battlefield 搜敵／體型、VFX Runtime 飛行、既有火球／爆炸素材及場域重生／清除。素材無修改，無素材庫提交。
+- Excel 工具匯入時把原空白格讀成 934，匯出比對攔下；改用原始 ZIP/XML 精準改第 99 列，逐格核對其餘值與原工作簿一致。預覽工具同樣受空白格問題影響，未宣稱完成原生 Excel 視覺驗收；未做瀏覽器實戰。無未完成實作，可供使用者合併，建議整合後確認火球速度與實戰觀感；Commit 見本紀錄所在提交，未合併／推送。
+
 ## Codex｜永劫火獄火池分離（ETERNAL-POOL-20260921）
 
 - Owner Codex；Done。永劫火獄 ground 改觸發 ground，火池明確事件只讀觸發角色，本體繼承正常龍捲。允許配置工具、Skills2 表／程式、專項測試、快取與本紀錄；預檢乾淨，保留使用者素材及其他配置。
