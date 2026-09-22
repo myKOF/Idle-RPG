@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜烈焰暴風追蹤必中（TEMPEST-HOMING-20260922）
+
+- Owner Codex；Done。使用者指定火球追蹤必中與速度 +50%；烈焰暴風速度 24→36 米／秒，保留 0.33 秒隨機單發／6 米爆炸。修改 Skills2 表與程式、Runtime 追蹤起點、測試／快取與本紀錄，預檢無衝突。
+- 沿既有追蹤飛行以初始距離／速度決定抵達時間，畫面逐幀追向目標；爆炸在抵達當下目標位置查詢傷害圈。主目標略過命中／閃避擲骰，防禦、抗性與無敵仍有效；範圍內其他敵人仍正常判定。目標死亡沿現有生命判斷不對屍體造成傷害，不另選新目標。
+- `node --test tests/inferno-tempest.test.cjs tests/dragon-devour.test.cjs tests/skills2-vfx-schema.test.cjs` 22/22；涵蓋移動目標／爆炸位置、速度倍率、實際 Runtime 追蹤座標與必中設定。`node tools/build_check.cjs` 396 檔、config_tables --apply Skills2 語意差異 0、diff check 通過。唯讀檢查 formula 命中判定與既有飛行插值；无素材修改／素材庫提交。
+- 未瀏覽器實戰驗證；無未完成實作，可合併，建議整合後確認追蹤觀感。Commit 見本紀錄所在提交，未合併／推送。
+
 ## Codex｜統一新版火球（FIREBALL-VISUAL-20260922）
 
 - Owner Codex；Done。使用者指定所有火球改用融火之心 proj-dragon-devour；範圍含火球術、分裂火球、火鳳伴生火球、烈焰暴風與敵方火屬性投射物。修改配置 Excel／CSV／JS、data 普攻對照、Runtime 尾焰收尾、快取與來源登記／測試。預檢無衝突；保留軌跡／傷害／爆炸與火狩星環，無素材編輯及素材庫提交。

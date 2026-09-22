@@ -699,7 +699,7 @@ var VFXRuntime = (function () {
       var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
         !chained && !spec.sourceId && spec.fxKind !== 'rain';
       // 共用明確起點／終點的飛行定位，來源死亡也不回退成由玩家發射。
-      var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true);
+      var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true || spec.area.homingFlight === true);
       var fixedLanding = spec.area && spec.area.fixedLanding === true;
       if (!toId && !directed && !fixedLanding && !knifeFlight) return false;
       var travel = travelSecAt(spec, chained ? 1 : 0);
