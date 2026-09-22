@@ -7607,6 +7607,7 @@ Worker 存活且頁面正常完成載入。
   - presetZone／presetFx 移到直立空間；VFX Runtime 改吃畫面座標：ctx 給 screen* 版本，boot 傳 groundScale，tryPlay 由 screenSpaceSpec 換事件座標（點 y×k、方向 atan2(k·sinθ,cosθ)、沿方向長度×投影比；半徑與厚度不變；延後事件只換一次；不改原物件）；繞行軌道壓扁由 0.62 改用 groundScale。編輯器與測試不給 groundScale＝行為不變。規則寫在 docs/vfx/VFX_RUNTIME_ADAPTER.md §1.2.4。
   - 實機（Lv.500、火龍捲／落雷／岩甲／火球）：落雷全高、龍捲底環扁而本體直立、火球是圓的、石塊直立；console 無錯誤。測試：新增 vfx-runtime-screen-space（SCREEN-1～4）、PROJ-9；42 支相關測試與 HEAD 比較沒有新增失敗。
   - 已知差距：preset 的地面光圈手繪約 0.4，比地板 0.5 略扁；原本就畫成正圓的地面特效仍是正圓——要完全一致得逐份調 preset（內容工作）。
+- H（dcac82b6）：使用者回報傷害數字也被透視拉歪。浮字層與玩家 HUD 移出場景、掛在 stage 的螢幕層；浮字的位置記在 f.lx/f.ly，每幀用 worldToScreenPoint（鏡頭平移＋透視）換成螢幕位置，字本身大小照舊；重疊判斷改用 lx/ly；HUD 位置改在鏡頭算完後換算。敵人頭上的名字與血條仍在場景裡（會跟著透視，使用者沒提）。測試 PROJ-2／PROJ-10，三條圖層順序測試改看整個 stage。
 - 待確認：高 DPI 下的透視效能；地面光圈扁度與地板的細微差距（是否要逐份調 preset）。
 
 ## Claude｜普攻次數跟不上面板攻速（ATKCD-CARRY-20260922）
