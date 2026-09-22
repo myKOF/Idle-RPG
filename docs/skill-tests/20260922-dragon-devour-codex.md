@@ -2,6 +2,14 @@
 
 狀態：使用者已確認動圖並指示接入，正式技能與素材已接線，完成驗證後提交至 ai/codex。未合併 develop、未推送。
 
+## 角色遮擋修正
+
+- 使用者指出後側火環蓋住角色。吞噬variant的field改交給rtZone／presetZone；battle-renderer的groundUnder在entity之前，整個貼地環帶因此位於人物下方。火球與爆炸仍使用rtFx，其他直立場域不變。
+- 修改js/vfx-runtime.js、index.html快取、tests/vfx-runtime.test.cjs與本報告；唯讀檢查battle-renderer圖層順序。未修改Preset或配置表，無素材庫變更。
+- 驗證：node --test --test-name-pattern="DEVOUR (隨機|新施放)" tests/vfx-runtime.test.cjs（2/2，含zone派送、單一漩渦、8秒回收、爆炸仍在fx）；build及git diff --check通過。
+- DEVOUR正式素材測試的亮度不變斷言目前失敗（0.9488119825對0.9171547），以HEAD原測試重跑得到相同失敗；保留目前素材，不降低斷言。
+- 未做本輪瀏覽器實戰截图驗證；無未完成程式修改，可合併本次提交，未合併／推送。Commit為包含本節的提交。
+
 ## 正式接入交接
 
 - 任務 DRAGON-DEVOUR-20260922 已完成，最終行為以本報告「行為」與「最新聚怪修正」為準；下方第二版段落保留修正背景。

@@ -421,8 +421,9 @@ test('DEVOUR 隨機地面火球沿權威弧高飛行，不需要敵人目標；�
   adapter.update(.46);assert.equal(adapter.stats().projectiles,0);
   adapter.clear();adapter.tryPlay({fxKind:'aura',variant:'dragon-devour',dur:8,area:{id:'devour',x:0,y:0,r:150},vfx:{field:field.id}});
   adapter.update(.01);assert.equal(log.nodes.at(-1).transforms.at(-1).scaleX,1);
-  adapter.update(7.8);assert.ok(adapter.stats().fx.activeEffects>0);
-  adapter.update(.3);assert.equal(adapter.stats().fx.activeEffects,0);
+  adapter.update(7.8);assert.ok(adapter.stats().zone.activeEffects>0);
+  assert.equal(log.nodes.at(-1).tag,'zone','貼地漩渦在角色下方');
+  adapter.update(.3);assert.equal(adapter.stats().zone.activeEffects,0);
 });
 
 test('BLOOD-FLIGHT 毒彈使用事件來源與飛行時間，不從玩家發射或瞬間消失',()=>{
@@ -1689,10 +1690,12 @@ test('DEVOUR 新施放取代舊場域，無敵人目標仍播放落點爆炸',()
  for(const [id,x] of [['first',0],['second',90]]){
   adapter.tryPlay({fxKind:'aura',variant:'dragon-devour',dur:8,area:{id,x,y:0,r:150},vfx:{field:field.id}});adapter.update(.01);
  }
- assert.equal(adapter.stats().fx.activeEffects,1);
+ assert.equal(adapter.stats().zone.activeEffects,1);assert.equal(adapter.stats().fx.activeEffects,0);
+ assert.equal(log.nodes.at(-1).tag,'zone');
  assert.equal(log.nodes.at(-1).transforms.at(-1).x,90);
  adapter.tryPlay({fxKind:'burst',variant:'dragon-devour-impact',hit:false,targets:[],area:{x:140,y:30,r:60},vfx:{attack:burst.id}});adapter.update(.01);
- assert.equal(adapter.stats().fx.activeEffects,2);
+ assert.equal(adapter.stats().fx.activeEffects,1);assert.equal(adapter.stats().zone.activeEffects,1);
+ assert.equal(log.nodes.at(-1).tag,'fx','爆炸維持原特效圖層');
  const impact=log.nodes.at(-1).transforms.at(-1);assert.equal(impact.x,140);assert.equal(impact.y,30);
 });
 
