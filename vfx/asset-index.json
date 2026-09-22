@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2430,
+  "assetCount": 2432,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -52,6 +52,71 @@
           "v": 0.9996
         },
         "backgroundVariant": "blackBackground"
+      }
+    },
+    {
+      "assetId": "codex-authored/dragon-devour/vortex.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/dragon-devour/vortex.png",
+      "format": "png",
+      "fileSize": 1055735,
+      "contentHash": "sha256:1eea766a5a88021277ff81edd6304559aa67c2f93ca222016784290658bb529a",
+      "facts": {
+        "dimensions": {
+          "width": 1024,
+          "height": 1024
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1974,
+          "visibleRatio": 0.5401,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5256,
+          "max": 0.9496,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.873,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 57,
+          "y": 57,
+          "width": 910,
+          "height": 910
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/dragon-devour/vortex.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/dragon-devour/vortex.svg",
+      "format": "svg",
+      "fileSize": 215401,
+      "contentHash": "sha256:74379d4ecf317d220ff77eeb2c3253259be9cbfad944419186d80f8a3f2878ca",
+      "facts": {
+        "dimensions": {
+          "width": 1024,
+          "height": 1024
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
       }
     },
     {

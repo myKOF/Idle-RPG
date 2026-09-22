@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "presetId": "field-dragon-devour",
+  "groups": [
+    {
+      "id": "field-dragon-devour",
+      "name": "field-dragon-devour",
+      "layerIds": [
+        "outer-fire-stream",
+        "rim-embers",
+        "sprite-3",
+        "sprite-3-copy",
+        "sprite-3-copy-2",
+        "sprite-3-copy-3",
+        "sprite-6",
+        "sprite-6-copy"
+      ]
+    }
+  ],
+  "order": [
+    "group:field-dragon-devour"
+  ]
+}

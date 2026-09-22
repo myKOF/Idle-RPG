@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-dragon-devour",
+  "duration": 1,
+  "loop": false,
+  "layers": [
+    {
+      "id": "blast-flame",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "alpha": 0.9,
+      "tint": "#ff791c",
+      "blendMode": "screen",
+      "duration": 0.7,
+      "emission": {
+        "count": 24,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.65
+      ],
+      "spawn": {
+        "radius": 9,
+        "shape": "circle"
+      },
+      "speed": [
+        45,
+        105
+      ],
+      "spread": 360,
+      "startScale": [
+        0.0586,
+        0.1074
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -3,
+        3
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    },
+    {
+      "id": "hot-fragments",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "alpha": 0.95,
+      "tint": "#ffc760",
+      "blendMode": "screen",
+      "duration": 0.5,
+      "emission": {
+        "count": 14,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.2,
+        0.45
+      ],
+      "spawn": {
+        "radius": 6,
+        "shape": "circle"
+      },
+      "speed": [
+        60,
+        130
+      ],
+      "spread": 360,
+      "startScale": [
+        0.0293,
+        0.0586
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "blast-sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "alpha": 0.9,
+      "tint": "#ffba52",
+      "blendMode": "add",
+      "duration": 0.8,
+      "emission": {
+        "count": 28,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.8
+      ],
+      "spawn": {
+        "radius": 5,
+        "shape": "circle"
+      },
+      "speed": [
+        65,
+        150
+      ],
+      "spread": 360,
+      "drag": 2,
+      "startScale": [
+        0.002,
+        0.0059
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 60
+    },
+    "radiusM": 6,
+    "shape": "circle"
+  }
+}

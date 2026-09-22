@@ -409,6 +409,22 @@ function makeAdapter(presets, over) {
   return { adapter, log };
 }
 
+test('DEVOUR 隨機地面火球沿權威弧高飛行，不需要敵人目標；漩渦八秒回收',()=>{
+  const ball=unitPreset('configured-devour-ball',2);
+  const field=unitPreset('configured-devour-field',8,true);
+  field.sizing={shape:'circle',radiusM:15,authored:{radius:150}};
+  const {adapter,log}=makeAdapter([ball,field]);
+  adapter.tryPlay({fxKind:'projectile',variant:'dragon-devour-ball',targets:[],arcM:12,travelMs:[900],
+    area:{x:180,y:0,sourceX:0,sourceY:0,fixedLanding:true},vfx:{projectile:ball.id}});
+  adapter.update(.45);
+  const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,90);assert.equal(t.y,-120);
+  adapter.update(.46);assert.equal(adapter.stats().projectiles,0);
+  adapter.clear();adapter.tryPlay({fxKind:'aura',variant:'dragon-devour',dur:8,area:{id:'devour',x:0,y:0,r:150},vfx:{field:field.id}});
+  adapter.update(.01);assert.equal(log.nodes.at(-1).transforms.at(-1).scaleX,1);
+  adapter.update(7.8);assert.ok(adapter.stats().fx.activeEffects>0);
+  adapter.update(.3);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
 test('BLOOD-FLIGHT 毒彈使用事件來源與飛行時間，不從玩家發射或瞬間消失',()=>{
  const p=unitPreset('configured-poison-flight',.2);
  const {adapter,log}=makeAdapter([p]);
@@ -1666,3 +1682,30 @@ test('VACUUMSPIN uses simulation centre and scales with radius',()=>{
 test('STARFALL-FEEDBACK 黑圈逐漸擴張至戰場尺度，落地攻擊爆炸可獨立播放',()=>{const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-starfall-shadow.json'),'utf8'));const burst=unitPreset('test-starfall-burst');const {adapter,log}=makeAdapter([p,burst]);adapter.tryPlay({fxKind:'aura',variant:'starfall-shadow',dur:5,area:{x:0,y:0,r:440},vfx:{ground:p.id}});adapter.update(.5);const node=log.nodes.find(n=>n.spec.assetUrl?.endsWith('window_h.png'));assert.ok(node);const small=node.transforms.at(-1).scaleX;for(let i=0;i<8;i++)adapter.update(.5);assert.ok(node.transforms.at(-1).scaleX>small*5);assert.ok(node.transforms.at(-1).alpha>0);const before=adapter.stats().played;adapter.tryPlay({fxKind:'burst',variant:'starfall-burst',area:{x:0,y:0,r:440},vfx:{attack:burst.id}});assert.equal(adapter.stats().played,before+1);});
 test('STARFALL-FOLLOW 黑圈移動時維持放大進度並逐幀貼齊角色',()=>{const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/ground-starfall-shadow.json'),'utf8'));let point={x:0,y:0};const {adapter,log}=makeAdapter([p],{ctx:{footOf:()=>point,playerPos:()=>point,posOf:()=>point}});adapter.tryPlay({fxKind:'aura',variant:'starfall-shadow',dur:5,area:{x:0,y:0,r:440,follow:true},vfx:{ground:p.id}});adapter.update(.5);const n=log.nodes.find(n=>n.spec.assetUrl?.endsWith('window_h.png')),size=n.transforms.at(-1).scaleX;point={x:800,y:-500};adapter.update(.5);const t=n.transforms.at(-1);assert.equal(t.x,800);assert.equal(t.y,-500);assert.ok(t.scaleX>size);assert.equal(adapter.stats().played,1);});
 test('STARFALL-TAIL 下墜火星沿拖尾速度排列，出生在殞石後方且短命',()=>{const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-starfall.json'),'utf8'));const t=p.layers.find(l=>l.id==='tail');assert.ok(!t.assetId.includes('flame'));assert.ok(t.position.x<0&&t.lifetime[1]<1&&t.alignToVelocity);const isolated={...p,layers:[t]};const {adapter,log}=makeAdapter([isolated],{ctx:{posOf:()=>({x:0,y:0}),playerPos:()=>({x:0,y:0})}});adapter.tryPlay({fxKind:'rain',variant:'meteor-starfall',targets:['pv-float'],travelMs:[2000],vfx:{projectile:p.id}});adapter.update(.2);assert.ok(log.nodes.length>0);for(const n of log.nodes){const v=n.transforms.at(-1);assert.ok(v.y<0);assert.ok(Math.abs(Math.cos(v.rotation))<.25,'火星長軸應近乎垂直');}});
+
+test('DEVOUR 新施放取代舊場域，無敵人目標仍播放落點爆炸',()=>{
+ const field=unitPreset('configured-field',8,true),burst=unitPreset('configured-burst',1);
+ const {adapter,log}=makeAdapter([field,burst]);
+ for(const [id,x] of [['first',0],['second',90]]){
+  adapter.tryPlay({fxKind:'aura',variant:'dragon-devour',dur:8,area:{id,x,y:0,r:150},vfx:{field:field.id}});adapter.update(.01);
+ }
+ assert.equal(adapter.stats().fx.activeEffects,1);
+ assert.equal(log.nodes.at(-1).transforms.at(-1).x,90);
+ adapter.tryPlay({fxKind:'burst',variant:'dragon-devour-impact',hit:false,targets:[],area:{x:140,y:30,r:60},vfx:{attack:burst.id}});adapter.update(.01);
+ assert.equal(adapter.stats().fx.activeEffects,2);
+ const impact=log.nodes.at(-1).transforms.at(-1);assert.equal(impact.x,140);assert.equal(impact.y,30);
+});
+
+test('DEVOUR 正式素材跨8秒循環不跳轉，尾焰留在世界路徑，尺寸縮小30%',()=>{
+ const field=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/field-dragon-devour.json')));
+ const ball=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/proj-dragon-devour.json')));
+ const nodes=[];const rt=VFXCore.createRuntime({backend:{createNode(spec){const n={spec,transforms:[]};nodes.push(n);return n},updateNode(n,t){n.transforms.push({...t})},destroyNode(){}},resolver:{has:()=>true,resolve:id=>id}});
+ rt.registerPreset(field);const h=rt.play(field.id);rt.update(7.99);
+ const ring=nodes.find(n=>n.spec.assetUrl.endsWith('vortex.png'));const a=ring.transforms.at(-1).rotation;rt.update(.02);const b=ring.transforms.at(-1).rotation;
+ assert.ok(Math.abs((b-a)-Math.PI/4*.02)<1e-8);assert.equal(ring.transforms.at(-1).alpha,ring.transforms.at(-2).alpha);
+ assert.ok(Math.abs(ball.sizing.widthM-6*.7)<1e-8);assert.ok(Math.abs(ball.sizing.heightM-6*.7)<1e-8);
+ rt.stop(h);rt.registerPreset(ball);const bh=rt.play(ball.id);rt.setTransform(bh,{position:{x:0,y:0}});rt.update(.1);
+ const tail=nodes.find(n=>n.spec.assetUrl===ball.layers[0].assetId&&n.transforms.length);const before=tail.transforms.at(-1);
+ rt.setTransform(bh,{position:{x:100,y:50},rotation:1});rt.update(.01);const after=tail.transforms.at(-1);
+ assert.ok(Math.hypot(after.x-before.x,after.y-before.y)<3,'已出生尾焰不跟著彈頭跳動');rt.destroy();
+});

@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 144,
+  "assetCount": 146,
   "assets": [
     {
       "assetId": "codex-authored/cleave/sharp-cyclone.png",
@@ -12,6 +12,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:1877cb744b4d05c9792376b9d8c08cc8f87aaae09dad88675031f85ac3e747b3",
       "fileSize": 538579
+    },
+    {
+      "assetId": "codex-authored/dragon-devour/vortex.png",
+      "relativePath": "codex-authored/dragon-devour/vortex.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:1eea766a5a88021277ff81edd6304559aa67c2f93ca222016784290658bb529a",
+      "fileSize": 1055735
     },
     {
       "assetId": "codex-authored/earthguard/hexagram-orbit.png",
@@ -663,6 +670,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:35fc73c16895d11e6782aba8d4a9b374cd09fad914429cef12d1f6612a38851b",
       "fileSize": 96339
+    },
+    {
+      "assetId": "particle-pack/png-black-background/flame_01.png",
+      "relativePath": "particle-pack/PNG (Black background)/flame_01.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:dc6b5decd0e7e99900b0493fa1496f80e34d272f5603081634d0e99235ea9d2b",
+      "fileSize": 35189
     },
     {
       "assetId": "particle-pack/png-black-background/flame_04.png",
