@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude｜融火之心漩渦依參考 GIF 重做（DEVOUR-VORTEX-20260922）
+
+- Owner：Claude；Done。使用者需求：參考附上的火焰漩渦 GIF 改良融火之心（火龍捲超神 dragonDevour）的持續場域特效，還原度 90% 以上；不准用序列幀，只能畫 1～2 張 1024² 的圖做旋轉或扭曲，搭配現有 VFX 素材。先給動態預覽，使用者審閱核准後才寫入。
+- 範圍：只改 `field-dragon-devour`（漩渦本體）；飛行小火球 `proj-dragon-devour`、落地爆炸 `burst-dragon-devour` 參考圖裡沒有，未動。技能數值、事件與判定都沒動。
+- 修改：
+  - 素材（素材庫 939a496）：`claude-authored/dragon-devour/vortex-ring.png`（火環、火絲、螺旋火臂）、`vortex-smoke.png`（煙暈、內部螺旋紅煙、中心紅光），由同目錄的 `generate-vortex.cjs` 程序化產生（seed 7 可逐位元重現），設計與量測寫在 SOURCE.md；PROVENANCE 登記新套件 `claude-authored`。
+  - Preset（58756f38）：8 層 sprite、0 粒子。火環／煙渦各兩份同圖錯速旋轉＋交叉淡化；兩份煙渦縮小＋加速旋轉做向內吸；`shape_a` 壓暗地面、`circle_05` 當中心火星。轉速一律為負（逆時針，對應貼圖火臂捲向），且取 2π/8 的整數倍，8 秒循環接得起來。asset-index 只插入這兩筆（素材庫有別人未整理的變動，未整份重掃）；舊 `codex-authored/dragon-devour/vortex.png` 不再被引用，由匯出流程移出出貨目錄，素材庫保留。作者腳本 `author/dragon-devour.cjs` 同步改成新版，三份 preset 輸出與 repo 逐字相同。
+  - 快取（本紀錄所在提交）：`DATA_VERSION` → `20260922-devour-vortex`、`vfx-runtime.js?v=1.0.122`。等 Codex 合併完才改，避免撞到它同時在改的同兩行。
+- 決策：參考 GIF 傳到 Claude 這邊只有單張靜態畫格，動態（逆時針、火環 4 秒一圈、向內吸）是推測的，已向使用者說明。火環落在傷害半徑的 0.83 倍，煙暈淡淡延伸到約 1.27 倍，照參考圖比例。貼圖沒有 mipmap，縮到約 0.4 倍又被地面投影壓扁，產生器在最後做了 1.2～1.6px 模糊，避免細紋理旋轉時閃爍。使用者先前在 Editor 加的 circle_02 光圈、環上火花、兩個黑色圓盤由新圖層取代（壓暗中心保留成一層 shape_a）。
+- 驗證：與參考圖的半徑亮度剖面，整段動畫平均誤差約 6%；火環峰值亮度 186（參考 187）、環寬 33px（參考 30.5）。Pixi（VFX Editor）實際渲染與離線預覽一致，console 0 錯誤；每幀 GPU 增加約 0.5ms（放大兩倍約 0.6～0.7ms），Core 更新 0.013ms。`DEVOUR 正式素材跨8秒循環不跳轉` 原本釘死 vortex.png 與 π/4 轉速，改為逐層從 preset 現讀（兩種突變都會轉紅）。受影響的 38 支測試 904 項中 22 項失敗，以 HEAD 版本比對失敗名稱，沒有新增失敗；build 399 檔、export-assets --check、diff check 通過。
+- 待確認：遊戲內實戰觀感（斜俯視、重新施放取代、8 秒到期收尾、範圍增幅縮放、與小火球／爆炸同時出現的畫面密度）。
+
 ## Codex｜飛行特效透視保形（AIR-VFX-20260922）
 
 - Done。飛行物移出整張場景 PerspectiveMesh，只投影位置並等比縮放；涵蓋 35 份 proj 素材、飛行斬擊／環繞彈體／尾粒子、持續場域維護的雷球與追蹤冰箭／風刃，以及 legacy 子彈路徑。地面仍維持原透視。
