@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜飛行特效透視保形（AIR-VFX-20260922）
+
+- Done。飛行物移出整張場景 PerspectiveMesh，只投影位置並等比縮放；涵蓋 35 份 proj 素材、飛行斬擊／環繞彈體／尾粒子、持續場域維護的雷球與追蹤冰箭／風刃，以及 legacy 子彈路徑。地面仍維持原透視。
+- 修改 battle-renderer、VFX Runtime／Pixi backend、快取與測試文件。預檢無衝突；使用者正在調整的技能表、skills2、hit-fire／星環 preset/layout 保留未提交，未修改素材庫。
+- 22 項專項／透視／後端／投影測試與18項 Runtime 回歸通過；瀏覽器以實際 Pixi、目前星環素材做遠近九宮格比較，四角不再歪斜；build／diff check 通過。未完整戰鬥場景與 GPU 效能壓測；可合併，未合併／推送。Commit 見本紀錄所在提交，詳見 docs/skill-tests/20260922-air-vfx.md。
+
+
 ## Codex｜火神星環旋轉編隊（FIREGOD-FORMATION-20260922）
 
 - Done。依附圖改為同波同時起飛、等距成環並順時針公轉。使用者最終數值：半徑 8 米、每秒 1.5 圈、中心每秒前進 12 米；中心射程 40 米。數量仍讀等級表（Lv.10 六枚），傷害與素材不變。

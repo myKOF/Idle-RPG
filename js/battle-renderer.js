@@ -1937,6 +1937,10 @@ var BattleRenderer = (function () {
     return fx;
   }
   function killFx(fx) {
+    if (fx.node && fx.node.__airWrapper) {
+      var wrapper = fx.node.__airWrapper; legacyAirNodes.delete(fx.node);
+      if (wrapper.parent) wrapper.parent.removeChild(wrapper); wrapper.destroy({children:true});
+    }
     if (fx.node && !fx.node.destroyed) fx.node.destroy({ children: true });
     fx.dead = true;
   }
@@ -2264,7 +2268,7 @@ var BattleRenderer = (function () {
     }
     node.addChild(core);
     node.x = from.x; node.y = from.y;
-    S.layers.fx.addChild(node);
+    attachAirFx(node);
 
     var dur = Math.max(60, projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 300)) / 1000;
     /* 進場航向：連鎖彈射的第二段起由呼叫端給上一段的航向，路徑因此是一條
@@ -2439,7 +2443,7 @@ var BattleRenderer = (function () {
     glow.blendMode = 'add';
     node.addChild(glow); node.addChild(core);
     node.x = start.x; node.y = start.y;
-    S.layers.fx.addChild(node);
+    attachAirFx(node);
 
     var dur = Math.max(0.42 / projectileSpeedMultiplier(),
       projectileTravelMs(travelMs, spec.dur ? spec.dur * 1000 : 360) / 1000);
@@ -2494,7 +2498,7 @@ var BattleRenderer = (function () {
     g.x = x; g.y = y;
     g.alpha = 0.7;
     g.blendMode = 'add';
-    S.layers.fx.addChild(g);
+    attachAirFx(g);
     var t = 0;
     addFx({
       node: g,
@@ -2593,7 +2597,7 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     g.x = x; g.y = y;
     g.rotation = typeof rotation === 'number' ? rotation : 0;
-    S.layers.fx.addChild(g);
+    if (travel && travel.length > 0) attachAirFx(g); else S.layers.fx.addChild(g);
     // 與 DOM 版同步：大型斬擊弧光半徑縮為原值 1/3；一般 spawnImpact 不受影響。
     var rangeScale = Number(spec && spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1;
     var t = -(delaySec || 0), dur = Math.max(0.38, spec.dur || 0.5), R = 86 / 3 * rangeScale;
@@ -2714,7 +2718,7 @@ var BattleRenderer = (function () {
       group.addChild(sprite);
       group.addChild(revealMask);
       sprite.mask = revealMask;
-      S.layers.fx.addChild(group);
+      attachAirFx(group);
       var st = -(delaySec || 0), sd = isFinal
         ? Math.max(0.24, spec.dur || 0.3)
         : Math.max(0.16, Math.min(0.22, (spec.dur || 0.3) * 0.75));
@@ -2748,7 +2752,7 @@ var BattleRenderer = (function () {
     var fallbackFlightDistance = Math.max(0, lineLength - fallbackBodyLength);
     var g = new PIXI.Graphics();
     g.x = startX; g.y = startY; g.rotation = angle;
-    S.layers.fx.addChild(g);
+    attachAirFx(g);
     var t = -(delaySec || 0), dur = isFinal
       ? Math.max(0.24, spec.dur || 0.3)
       : Math.max(0.16, Math.min(0.22, (spec.dur || 0.3) * 0.75));
@@ -3840,7 +3844,7 @@ var BattleRenderer = (function () {
       node.addChild(g);
       drawWindCrescent(g, width, body, theme, 1);
       node.x = from.x; node.y = from.y; node.rotation = angle;
-      S.layers.fx.addChild(node);
+      attachAirFx(node);
       var t = 0, dur = flight / 1000, trail = 0;
       addFx({
         node: node,
@@ -4176,7 +4180,7 @@ var BattleRenderer = (function () {
     var g = new PIXI.Graphics();
     node.addChild(g);
     // 暴風雪是壟罩地面的雲霧 → zone 層；水龍捲與冰箭是立體物件 → fx 層
-    (isRect ? S.layers.zone : S.layers.fx).addChild(node);
+    if (isHoming) attachAirFx(node); else (isRect ? S.layers.zone : S.layers.fx).addChild(node);
     var fx = fieldMotionInit({
       node: node, variant: variant, t: 0,
       expiresAt: nowMs() + holdMs, key: key, dead: false, windAngle: null
@@ -4314,7 +4318,7 @@ var BattleRenderer = (function () {
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
     node.addChild(g);
-    S.layers.fx.addChild(node);
+    attachAirFx(node);
     var orbR = Math.max(8, Number(a.r) || 30);
     var fx = fieldMotionInit({
       node: node, t: 0, expiresAt: nowMs() + holdMs, key: key, dead: false
@@ -4373,7 +4377,7 @@ var BattleRenderer = (function () {
     var node = new PIXI.Container();
     var g = new PIXI.Graphics();
     node.addChild(g);
-    S.layers.fx.addChild(node);
+    attachAirFx(node);
     var t = -(Math.max(0, delaySec || 0)), landed = false;
     var targetGuard = typeof targetId === 'string' ? function () {
       return vfxTargetLiveForSpec(spec, targetId);
@@ -4422,7 +4426,7 @@ var BattleRenderer = (function () {
       node.blendMode = 'add';
     }
     node.x = x; node.y = y;
-    S.layers.fx.addChild(node);
+    attachAirFx(node);
     var t = 0;
     addFx({
       node: node,
@@ -4465,7 +4469,7 @@ var BattleRenderer = (function () {
         /* 起點在目標正上方（世界座標）：鏡頭會移動，不能再用「畫面頂端」當天空 */
         var sky = ty - S.H * 0.6;
         node.x = tx + 40; node.y = sky;
-        S.layers.fx.addChild(node);
+        attachAirFx(node);
         var t = -(idx * 0.08), dur = 0.5;
         addFx({
           node: node,
@@ -4490,7 +4494,7 @@ var BattleRenderer = (function () {
     node.scale.set(scale || 1);
     node.x = from.x; node.y = from.y;
     node.rotation = Math.atan2(to.y - from.y, to.x - from.x);
-    S.layers.fx.addChild(node);
+    attachAirFx(node);
     var t = -(Math.max(0, delaySec || 0)), arrived = false;
     addFx({
       node: node,
@@ -4647,7 +4651,7 @@ var BattleRenderer = (function () {
     shock.y = shockR * 0.62;
     node.addChild(shock);
     node.x = anchor.x; node.y = anchor.y - drop;
-    S.layers.fx.addChild(node);
+    attachAirFx(node);
     var t = 0, arrived = false;
     addFx({
       node: node,
@@ -6349,6 +6353,10 @@ var BattleRenderer = (function () {
        「沒有被 S.fx 追蹤」的孩子全部 destroy，Core 的節點會被當成孤兒清掉。 */
     var presetZone = new PIXI.Container();
     var presetFx = new PIXI.Container();
+    var airFx = new PIXI.Container();
+    airFx.sortableChildren = true;
+    var presetAir = new PIXI.Container();
+    airFx.addChild(presetAir);
     /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，避免被任何戰鬥表現層蓋住。
        與傷害浮字一樣畫在螢幕層、不跟著透視變形，位置每幀跟著角色換（見 worldToScreenPoint）。 */
     var playerHud = new PIXI.Container();
@@ -6380,6 +6388,7 @@ var BattleRenderer = (function () {
     app.stage.addChild(sceneRoot);
     /* 傷害浮字與玩家 HUD 在場景外的螢幕層：不跟著透視變形（字不會被拉歪、上面縮小下面放大），
        每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
+    app.stage.addChild(airFx);
     app.stage.addChild(floatLayer);
     app.stage.addChild(playerHud);
     app.stage.addChild(overlay);
@@ -6423,7 +6432,7 @@ var BattleRenderer = (function () {
 
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
-      presetZone: presetZone, presetFx: presetFx,
+      presetZone: presetZone, presetFx: presetFx, airFx: airFx, presetAir: presetAir,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay
@@ -6575,6 +6584,37 @@ var BattleRenderer = (function () {
     var w = S.layers && S.layers.world;
     return perspScreenPoint((w ? w.x : 0) + x, (w ? w.y : 0) + y);
   }
+  // 空中彈體只投影錨點並等比縮放，絕不經過整片場景的 PerspectiveMesh。
+  function airScreenPose(x, y) {
+    var world = S.layers && S.layers.world;
+    var px = x + (world ? world.x : 0), py = y + (world ? world.y : 0);
+    var L = S.persp && S.persp.layout;
+    var p = L ? L.project(px, py) : {x:px,y:py};
+    p.scale = L ? 1 / Math.max(0.1, 1 - L.beta * (py - L.cy)) : 1;
+    return p;
+  }
+  function projectAirTransform(t) {
+    var p = airScreenPose(t.x || 0, t.y || 0);
+    var out = Object.assign({}, t, {x:p.x,y:p.y,scaleX:t.scaleX*p.scale,scaleY:t.scaleY*p.scale});
+    if (t.width !== undefined) out.width = t.width*p.scale;
+    if (t.height !== undefined) out.height = t.height*p.scale;
+    return out;
+  }
+  var legacyAirNodes = new Map();
+  function attachAirFx(node) {
+    var wrapper = new PIXI.Container();
+    wrapper.addChild(node); S.layers.airFx.addChild(wrapper);
+    node.__airWrapper = wrapper; legacyAirNodes.set(node, wrapper);
+  }
+  function syncLegacyAir() {
+    legacyAirNodes.forEach(function(wrapper,node) {
+      if (node.destroyed || wrapper.destroyed) {legacyAirNodes.delete(node);return;}
+      var p = airScreenPose(node.x, groundToScreenY(node.y));
+      wrapper.scale.set(p.scale);
+      wrapper.position.set(p.x-node.x*p.scale,p.y-node.y*p.scale);
+      wrapper.zIndex = p.y;
+    });
+  }
   /* 場景要畫出來的範圍（平行投影的畫面座標） */
   function sceneDrawRect() {
     var L = S.persp && S.persp.layout;
@@ -6621,6 +6661,7 @@ var BattleRenderer = (function () {
   }
   /* 每幀把場景畫進離屏貼圖（掛在 app.ticker，優先序見 PERSPECTIVE_RENDER_PRIORITY）。 */
   function renderPerspectiveScene() {
+    syncLegacyAir();
     var P = S.persp;
     if (!P || !P.rt || !S.sceneRoot || !S.app) return;
     S.app.renderer.render({ container: S.sceneRoot, target: P.rt, clear: true });
@@ -6761,6 +6802,8 @@ var BattleRenderer = (function () {
     /* Preset 畫在直立空間（見 buildScene），所以 Runtime 拿到的座標一律是畫面座標：
        ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
     VFXRuntime.boot({
+      airContainer: S.layers.presetAir,
+      projectAirTransform: projectAirTransform,
       fxContainer: S.layers.presetFx,
       zoneContainer: S.layers.presetZone,
       groundScale: GROUND_Y_SCALE,
