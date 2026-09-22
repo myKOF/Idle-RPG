@@ -960,7 +960,8 @@ var VFXRuntime = (function () {
       /* 出生的第一幀沒有推算歷史：畫面值＝權威值，殘差為 0。 */
       g.ox = 0; g.oy = 0;
       g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
-      var ref = play(role === 'field' ? rtFx : rtZone, presetId, groundParams(g), mult);
+      // 吞噬漩渦是貼地環帶，整體置於人物下方；其他直立場域維持原圖層。
+      var ref = play(role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
