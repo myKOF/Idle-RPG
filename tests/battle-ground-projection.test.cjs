@@ -37,17 +37,25 @@ test('PROJ-1 壓縮比是 0.5（使用者選定）；地板在世界平面裡轉
 
 test('PROJ-8 地板的 TilingSprite 在本地空間是正方形且蓋滿畫布（Pixi v8 寬高不同時 tileRotation 會被拉歪）', () => {
   /* 2026-09-22 實測：926×3023 的地板轉 45° 後變成一組細密、一組稀疏的陡斜線；改成正方形就是正的菱形。 */
-  for (const [W, H] of [[670, 731], [670, 1860], [1400, 500]]) {
-    const g = { width: 0, height: 0, x: 0, y: 0 };
-    const c = { Math, S: { layers: {}, groundTile: g, W, H } };
-    vm.createContext(c);
-    vm.runInContext(groundDecls(renderer) + extractFunction(renderer, 'screenToGroundY') + ';' +
-      extractFunction(renderer, 'layoutScene'), c);
-    c.layoutScene();
-    assert.equal(g.width, g.height, W + '×' + H + '：本地寬高必須相同');
-    /* 蓋滿：左上角在畫面外、右下角超過畫布（縱向要乘回投影比例才是畫面像素） */
-    assert.ok(g.x <= 0 && g.y * K <= 0, '左上角要在畫面外');
-    assert.ok(g.x + g.width >= W && (g.y + g.height) * K >= H, W + '×' + H + '：要蓋滿畫布');
+  /* 開了輕微透視時，地板要蓋滿的是離屏貼圖涵蓋的範圍（比畫布大），不是畫布 */
+  const topScale = Number(/var PERSPECTIVE_TOP_SCALE = ([0-9.]+);/.exec(renderer)[1]);
+  for (const persp of [false, true]) {
+    for (const [W, H] of [[670, 731], [670, 1860], [1400, 500]]) {
+      const g = { width: 0, height: 0, x: 0, y: 0 };
+      const c = { Math, S: { layers: {}, groundTile: g, W, H } };
+      vm.createContext(c);
+      vm.runInContext(groundDecls(renderer) + ['screenToGroundY', 'perspectiveLayout', 'syncPerspective', 'sceneDrawRect',
+        'syncVignette', 'layoutScene'].map((n) => extractFunction(renderer, n)).join(';'), c);
+      if (persp) c.S.persp = { layout: c.perspectiveLayout(W, H, topScale) };
+      c.layoutScene();
+      const R = c.sceneDrawRect();
+      const tag = (persp ? '透視 ' : '') + W + '×' + H;
+      if (!persp) assert.deepEqual([R.x, R.y, R.width, R.height], [0, 0, W, H], '沒開透視＝畫布');
+      assert.equal(g.width, g.height, tag + '：本地寬高必須相同');
+      /* 蓋滿：左上角在範圍外、右下角超過範圍（縱向要乘回投影比例才是畫面像素） */
+      assert.ok(g.x <= R.x && g.y * K <= R.y, tag + '：左上角要在範圍外');
+      assert.ok(g.x + g.width >= R.x + R.width && (g.y + g.height) * K >= R.y + R.height, tag + '：要蓋滿範圍');
+    }
   }
 });
 
