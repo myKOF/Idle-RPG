@@ -1352,6 +1352,21 @@ var VFXCore = (function () {
       return value;
     }
     function applyTransformParams(effect, p) {
+      // 可選的移動參考中心：只平移既有世界粒子，不把彈體本身的旋轉帶入尾焰。
+      if (p.particleOrigin) {
+        var px = transformNumber(p.particleOrigin.x, 'particleOrigin.x');
+        var py = transformNumber(p.particleOrigin.y, 'particleOrigin.y');
+        var previous = effect.particleOrigin;
+        if (previous && effect.layers) effect.layers.forEach(function(layer) {
+          layer.particles.forEach(function(particle) {
+            if (particle.spawnFrame) {
+              particle.spawnFrame.origin.x += px - previous.x;
+              particle.spawnFrame.origin.y += py - previous.y;
+            }
+          });
+        });
+        effect.particleOrigin = { x: px, y: py };
+      }
       if (p.position !== undefined && p.position !== null) {
         if (p.position.x !== undefined) effect.origin.x = transformNumber(p.position.x, 'position.x');
         if (p.position.y !== undefined) effect.origin.y = transformNumber(p.position.y, 'position.y');

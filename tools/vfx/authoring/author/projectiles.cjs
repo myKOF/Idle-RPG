@@ -228,20 +228,318 @@ P['proj-waterball'] = () => ({
   ]
 });
 
-/* ---------- proj-firehunt-ring：火神星環（翻滾 2.6 轉／秒） ---------- */
+/* ---------- proj-firehunt-ring：實心火核與隨中心平移的旋轉尾焰 ---------- */
 P['proj-firehunt-ring'] = () => ({
-  id: 'proj-firehunt-ring', duration: 1.5, sizing: {shape: 'projectile-circle', radiusM: 1.1, authored: {radius: 11}}, layers: [
-    sprite({ id: 'glow', asset: 'particle-pack/png-transparent/light_03.png', z: 0, size: 40, alpha: 0.18, tint: '#ff6a2a', blend: 'normal', duration: 1.5, alphaOverLife: GLOW_A, scaleOverLife: PULSE }),
-    sprite({
-      id: 'ring', asset: 'particle-pack/png-transparent/circle_02.png', z: 1, size: 22, alpha: 1, tint: '#ffd447', blend: 'normal',
-      duration: 1.5, alphaOverLife: BODY_A, rotationYOverLife: [[0, 0], [1, +(PI * 2 * 2.6 * 1.5).toFixed(4)]]
-    }),
-    sprite({
-      id: 'gloss', asset: 'particle-pack/png-transparent/slash_02.png', z: 2, size: 18, rotDeg: -30, alpha: 0.55, tint: '#ffb83d', blend: 'normal',
-      duration: 1.5, alphaOverLife: BODY_A, rotationYOverLife: [[0, 0], [1, +(PI * 2 * 2.6 * 1.5).toFixed(4)]]
-    }),
-    Object.assign(trail({ asset: 'particle-pack/png-transparent/fire_01.png', tint: '#ff8a3d', rate: 14, startPx: [6, 11], lifetime: [0.14, 0.26] }), {blendMode: 'normal', tintOverLife: [[0, '#ffb83d'], [.5, '#ff7926'], [1, '#6b2610']]})
-  ]
+  "schemaVersion": 1,
+  "id": "proj-firehunt-ring",
+  "duration": 1.5,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flame-shell",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.07421875,
+        "y": 0.07421875
+      },
+      "alpha": 0.92,
+      "tint": "#ed4a0c",
+      "blendMode": "screen",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          1
+        ],
+        [
+          0.94,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.18,
+          1.08
+        ],
+        [
+          0.36,
+          0.94
+        ],
+        [
+          0.53,
+          1.06
+        ],
+        [
+          0.7,
+          0.97
+        ],
+        [
+          0.86,
+          1.05
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotation": 0.65
+    },
+    {
+      "id": "flame-body",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/flame_01.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.05859375,
+        "y": 0.05859375
+      },
+      "alpha": 0.95,
+      "tint": "#ff941c",
+      "blendMode": "screen",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          1
+        ],
+        [
+          0.94,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.18,
+          1.08
+        ],
+        [
+          0.36,
+          0.94
+        ],
+        [
+          0.53,
+          1.06
+        ],
+        [
+          0.7,
+          0.97
+        ],
+        [
+          0.86,
+          1.05
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotation": -0.8,
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          5.8
+        ]
+      ]
+    },
+    {
+      "id": "star-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/flame_05.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.04296875,
+        "y": 0.04296875
+      },
+      "alpha": 1,
+      "tint": "#ffd25b",
+      "blendMode": "screen",
+      "duration": 1.5,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          1
+        ],
+        [
+          0.94,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.18,
+          1.08
+        ],
+        [
+          0.36,
+          0.94
+        ],
+        [
+          0.53,
+          1.06
+        ],
+        [
+          0.7,
+          0.97
+        ],
+        [
+          0.86,
+          1.05
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -4.2
+        ]
+      ]
+    },
+    {
+      "id": "curved-flame-trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": -1,
+      "blendMode": "screen",
+      "tint": "#ff982a",
+      "alpha": 0.9,
+      "emission": {
+        "mode": "rate",
+        "rate": 110
+      },
+      "maxParticles": 58,
+      "lifetime": [
+        0.24,
+        0.24
+      ],
+      "spawn": {
+        "shape": "box",
+        "width": 2,
+        "height": 3
+      },
+      "speed": [
+        0,
+        0
+      ],
+      "direction": 180,
+      "spread": 0,
+      "drag": 2,
+      "worldSpace": true,
+      "startScale": [
+        0.04296875,
+        0.05859375
+      ],
+      "rotationStart": [
+        -3.14,
+        3.14
+      ],
+      "rotationSpeed": [
+        0,
+        0
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.85
+        ],
+        [
+          0.3,
+          0.7
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.4,
+          0.8
+        ],
+        [
+          1,
+          0.15
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffb331"
+        ],
+        [
+          0.3,
+          "#fb6b12"
+        ],
+        [
+          0.7,
+          "#b72c09"
+        ],
+        [
+          1,
+          "#632008"
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 11
+    },
+    "radiusM": 1.1,
+    "shape": "projectile-circle"
+  }
 });
 
 /* ---------- proj-enemy-bolt：敵方魔法彈 ---------- */

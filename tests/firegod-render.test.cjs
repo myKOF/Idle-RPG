@@ -30,7 +30,8 @@ function renderStress(onFrame, options = {}) {
     groundScale: options.groundScale || 1,
     ctx: { playerPos: () => ({ x: 0, y: 0 }), posOf: () => ({ x: 300, y: 0 }) } });
   adapter.registerPresets([preset]);
-  const width = 650, height = 240;
+  const previewScale = options.scale || 1;
+  const width = 650 * previewScale, height = 240 * previewScale;
   function frame() {
     const pixels = Buffer.alloc(width * height * 4);
     for (let i = 0; i < pixels.length; i += 4) {
@@ -40,7 +41,7 @@ function renderStress(onFrame, options = {}) {
       if (!n.t?.visible) continue;
       const tex = textures.get(n.spec.assetUrl);
       drawSprite(pixels, width, height, tex, { x: 0, y: 0, w: tex.width, h: tex.height },
-        { ...n.t, x: n.t.x + 100, y: n.t.y + 120 }, n.spec.blendMode);
+        { ...n.t, x: (n.t.x + 100)*previewScale, y: (n.t.y + 120)*previewScale, scaleX:n.t.scaleX*previewScale,scaleY:n.t.scaleY*previewScale }, n.spec.blendMode);
     }
     return pixels;
   }
@@ -48,13 +49,13 @@ function renderStress(onFrame, options = {}) {
   for (let i = 0; i < (onFrame || options.inspect ? 480 : 120); i++) {
     if (i < (options.single ? 1 : 240) && i % 12 === 0) for (let j = 0; j < 6; j++) shim.playCombatVfx({
       fxKind: 'projectile', variant: 'firehunt-ring', targets: ['enemy'], hit: false,
-      vfx: { projectile: preset.id }, travelMs: [3333], angle: 0, lineLength: 400,
+      vfx: { projectile: preset.id }, travelMs: [2083], angle: 0, lineLength: 500,
       lineWidth: 16, delayMs: 0,
-      area: {flightOrbit: {origin:{x:0,y:0},heading:0,speed:120,length:400,radius:80,phase:-Math.PI/2+j*Math.PI/3,spin:Math.PI*3}}
+      area: {flightOrbit: {origin:{x:0,y:0},heading:0,speed:240,length:500,radius:80,phase:-Math.PI/2+j*Math.PI/3,spin:Math.PI}}
     });
     for (const event of shim.shimDrainEvents()) adapter.tryPlay(event);
     adapter.update(1 / 120);
-    if (i === 119) atOneSecond = { count: adapter.stats().projectiles, pixels: frame(), ringDiameter: Math.max(...[...nodes].filter(n => n.spec.assetUrl.endsWith('/circle_02.png') && n.t?.visible).map(n => Math.abs(n.t.scaleY) * textures.get(n.spec.assetUrl).height)) };
+    if (i === 119) atOneSecond = { count: adapter.stats().projectiles, pixels: frame(), ringDiameter: Math.max(...[...nodes].filter(n => n.t?.zIndex === 3 && n.t?.visible).map(n => Math.abs(n.t.scaleY) * textures.get(n.spec.assetUrl).height)) };
     if (onFrame && i % 5 === 4) onFrame(frame(), width, height);
     if(options.inspect)options.inspect([...nodes], (i+1)/120);
   }
@@ -63,7 +64,7 @@ function renderStress(onFrame, options = {}) {
 
 test('火神星環實際 Runtime 高速連發仍可見，不疊成白色實心光塊', () => {
   const { count, pixels, ringDiameter } = renderStress();
-  assert.ok(ringDiameter > 15.9 && ringDiameter < 16.1, `actual diameter ${ringDiameter} must follow Worker collision width`);
+  assert.ok(ringDiameter > 14 && ringDiameter < 18, `actual diameter ${ringDiameter} must follow Worker collision width`);
   assert.equal(count, 60, 'must retain every active projectile, not suppress overlapping volleys');
   let white = 0, visible = 0;
   for (let i = 0; i < pixels.length; i += 4) {
@@ -83,13 +84,36 @@ test('Worker 幾何通過投影後，Runtime 六枚位置逐幀符合共同旋�
   const point=require('../js/util.js').projectileOrbitPoint;
   for(const groundScale of [1,.62])renderStress(null,{single:true,groundScale,inspect(nodes,t){
     if(t<.05)return;
-    const rings=nodes.filter(n=>n.spec.assetUrl.endsWith('/circle_02.png')&&n.t?.visible);
-    if(t>3.34){assert.equal(rings.length,0);return;}
-    if(t>3.25)return;
+    const rings=nodes.filter(n=>n.t?.zIndex === 3&&n.t?.visible);
+    if(t>2.09){assert.equal(rings.length,0);return;}
+    if(t>1.98)return;
     assert.equal(rings.length,6);
     rings.forEach((n,j)=>{
-      const expected=point({origin:{x:0,y:0},heading:0,speed:120,length:400,radius:80,phase:-Math.PI/2+j*Math.PI/3,spin:Math.PI*3},t);
+      const expected=point({origin:{x:0,y:0},heading:0,speed:240,length:500,radius:80,phase:-Math.PI/2+j*Math.PI/3,spin:Math.PI},t);
       assert.ok(Math.abs(n.t.x-expected.x)<1e-7);assert.ok(Math.abs(n.t.y-expected.y*groundScale)<1e-7);
     });
   }});
+});
+
+test('星環抵達後保留尾焰自然淡出，之後完整回收',()=>{
+  let lingering=false, cleared=false;
+  renderStress(null,{single:true,inspect(nodes,t){
+    const visible=nodes.filter(n=>n.t?.visible);
+    if(t>2.1&&t<2.2&&visible.some(n=>n.t.zIndex===-1))lingering=true;
+    if(t>2.7){assert.equal(visible.length,0);cleared=true;}
+  }});
+  assert.ok(lingering,'抵達瞬間不應刪除尚未消散的世界座標尾焰');assert.ok(cleared);
+});
+
+test('星環尾焰與中心一起平移，只留下旋轉弧線，不被前進速度拉向後方',()=>{
+  let checked=0;
+  renderStress(null,{single:true,inspect(nodes,t){
+    if(t<.4||t>1.9)return;
+    for(const n of nodes.filter(n=>n.t?.visible&&n.t.zIndex===-1)){
+      const radius=Math.hypot(n.t.x-240*t,n.t.y);
+      assert.ok(Math.abs(radius-80)<4,`尾焰應沿當前環帶，t=${t} r=${radius}`);
+      checked++;
+    }
+  }});
+  assert.ok(checked>100);
 });
