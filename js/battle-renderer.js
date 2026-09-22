@@ -272,6 +272,36 @@ var BattleRenderer = (function () {
   function nowMs() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
   function fmtNum(n) { return (typeof fmt === 'function') ? fmt(n) : String(Math.floor(n)); }
 
+  /* ---- 斜俯視投影（2.5D）----
+     模擬層的世界是一個平面（x, y，單位≈像素，距離是真正的歐幾里得距離）。
+     畫面不再是正上方俯視，而是從斜上方看這個平面，所以地面縱向被壓扁：
+       畫面 x = 世界 x
+       畫面 y = 世界 y × GROUND_Y_SCALE − 離地高度
+     世界裡的正圓在畫面上是 1 : GROUND_Y_SCALE 的橢圓，正方形地磚是扁長方形。
+     只有縱向縮放、不加斜切或近大遠小——這樣貼地的圓一律是「正的」橢圓，
+     所有地面特效才能共用同一個比例（加了斜切，圓會變成歪的橢圓）。
+
+     ⚠️ 這是純表現：模擬層的座標、距離、碰撞、技能半徑一個字都沒動，
+        縱向跑同樣的世界距離，在畫面上只是看起來短一點。
+
+     world 層（鏡頭）底下因此有兩種座標：
+       直立空間  world 的直屬子層（entity／outline／float／playerHud），座標＝投影後的畫面位置。
+                 站著的東西（角色、血條、名字、飄字）放這裡，形狀不壓縮。
+                 腳底在 (世界 x, 世界 y × GROUND_Y_SCALE)，往上 h 像素就是再減 h。
+       地面平面  groundUnder／groundOver 兩個容器，scale.y = GROUND_Y_SCALE，
+                 子層（zone／presetZone／fx／presetFx）直接用**世界座標**——位置與形狀
+                 由容器一次投影：落點永遠對得上模擬層，畫在上面的圓自動變成橢圓。
+     posOf／footOf／playerMuzzle 回傳地面平面座標（給特效）；飄字要用 screenPosOf。
+     離地高度換到地面平面座標要除以 GROUND_Y_SCALE（見 screenToGroundY），
+     畫面上才會是原本那個像素高度——例如胸口在腳底上方 46px，地面平面座標是 46 / 0.7。
+
+     特效目前仍整個掛在地面平面裡（2026-09-22 只改場景，特效另案處理）：
+     貼地的（火池、魔法陣、光圈）已經是正確的橢圓；火柱、龍捲本體、粒子這類直立的
+     暫時也被壓扁，之後要改成不壓縮（改掛直立空間，或自己反向放大 1 / GROUND_Y_SCALE）。 */
+  var GROUND_Y_SCALE = 0.7;
+  function groundToScreenY(y) { return y * GROUND_Y_SCALE; }
+  function screenToGroundY(y) { return y / GROUND_Y_SCALE; }
+
   /* ---- 世界座標 ----
      棋盤（BF_COLS×BF_ROWS，預設 4×4）鋪在畫面右側 62%，col 1 靠玩家。
      玩家站左側約 17% 寬、垂直置中。實體座標一律以「腳底」為原點。 */
@@ -328,22 +358,29 @@ var BattleRenderer = (function () {
     if (p && typeof p.wx === 'number') return { x: p.wx, y: p.wy };
     return { x: 0, y: 0 };
   }
-  /* elId → 腳底座標。受擊爆點打在身體中心（posOf），但施放光環與狀態光環的
+  /* 畫面（直立空間）座標 → 地面平面座標。見上方「斜俯視投影」。 */
+  function screenToGround(pt) { return { x: pt.x, y: screenToGroundY(pt.y) }; }
+
+  /* elId → 腳底座標（地面平面，給特效）。受擊爆點打在身體中心（posOf），但施放光環與狀態光環的
      原點在腳底——Preset 的名目身高 60px 就是從這裡往上量的。 */
-  function footOf(elId) {
+  function footOf(elId) { return screenToGround(screenFootOf(elId)); }
+  function screenFootOf(elId) {
     if (elId === 'pv-float' && S.player) return { x: S.player.root.x, y: S.player.root.y };
     var ent = S.entities[elId];
     if (ent) return { x: ent.root.x, y: ent.root.y };
-    return posOf(elId);
+    return screenPosOf(elId);
   }
 
-  /* 投射物起點：跟著玩家目前位置（近戰突進時玩家會離開原位） */
+  /* 投射物起點：跟著玩家目前位置（近戰突進時玩家會離開原位）。
+     胸口在腳底上方 52 畫面像素；地面平面座標要除以壓縮比，畫面上才是同一個高度。 */
   function playerMuzzle() {
     var p = playerPos();
-    return { x: p.x, y: p.y - 52 };
+    return { x: p.x, y: p.y - screenToGroundY(52) };
   }
-  /* elId → 目前世界座標（實體活著追實體，死了用殘留座標，再不行用棋盤中央） */
-  function posOf(elId) {
+  /* elId → 身體中心（地面平面，給特效）。飄字與其他直立的東西用 screenPosOf。 */
+  function posOf(elId) { return screenToGround(screenPosOf(elId)); }
+  /* elId → 身體中心的畫面座標（實體活著追實體，死了用殘留座標，再不行用角色面前一個身位） */
+  function screenPosOf(elId) {
     if (elId === 'pv-float' && S.player) return { x: S.player.root.x, y: S.player.root.y - 46 };
     var ent = S.entities[elId];
     if (ent) return { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55 };
@@ -354,7 +391,7 @@ var BattleRenderer = (function () {
        斬擊與爆點會直接炸在自己身上。 */
     var pp = playerPos();
     var face = (S.player && S.player.facing < 0) ? -1 : 1;
-    return { x: pp.x + face * (PLAYER_REACH + 14), y: pp.y - 24 };
+    return { x: pp.x + face * (PLAYER_REACH + 14), y: groundToScreenY(pp.y) - 24 };
   }
 
   /* 投射物只追蹤單一目標，不重新搜尋敵人：用已有的座標取樣估出速度，
@@ -1276,8 +1313,8 @@ var BattleRenderer = (function () {
     var sp = (data && data.pos && isFinite(data.pos.x)) ? data.pos : { x: home.x + 220, y: home.y };
     ent.wx = sp.x; ent.wy = sp.y;
     posTrack(ent, sp.x, sp.y);
-    root.x = ent.wx; root.y = ent.wy;
-    root.zIndex = ent.wy;
+    root.x = ent.wx; root.y = groundToScreenY(ent.wy);
+    root.zIndex = root.y;
 
     S.layers.entity.addChild(root);
     drawHpBar(ent);
@@ -1532,7 +1569,8 @@ var BattleRenderer = (function () {
     var ent = ev.target ? S.entities[ev.target] : null;
     if (ent && ent.root) {
       p.facing = ent.root.x < p.root.x ? -1 : 1;
-      turnToward(p, ent.root.x - p.root.x, ent.root.y - p.root.y, false);
+      /* 方向格吃世界向量（與移動時的轉向同一套）；root 是投影後的畫面座標，縱向要換回去 */
+      turnToward(p, ent.root.x - p.root.x, screenToGroundY(ent.root.y - p.root.y), false);
     }
     playerAttackAnim('cast', ev.target || null, 0, Number(ev.lockMs) || 0);
   }
@@ -5271,13 +5309,14 @@ var BattleRenderer = (function () {
       var firstTarget = spec.targets && spec.targets.length ? spec.targets[0] : null;
       if (firstTarget) {
         /* 出手當下先面向目標；跑不跑過去由模擬層決定，這裡只管朝向。 */
-        var tp = posOf(firstTarget);
+        var tp = screenPosOf(firstTarget);
         S.player.facing = (tp.x < S.player.root.x) ? -1 : 1;
         /* 多方向素材：精準面向目標那一格（不帶遲滯），出手動作用這個方向播。
-           角度用腳底對腳底：posOf 給的是受擊點（胸口），近身時會把方向往上拉偏一格。 */
+           角度用腳底對腳底：screenPosOf 給的是受擊點（胸口），近身時會把方向往上拉偏一格。
+           方向格吃世界向量（與移動時的轉向同一套），畫面上的縱向差要換回世界縱向。 */
         var tEnt = S.entities[firstTarget];
         turnToward(S.player, (tEnt ? tEnt.root.x : tp.x) - S.player.root.x,
-          (tEnt ? tEnt.root.y : tp.y) - S.player.root.y, false);
+          screenToGroundY((tEnt ? tEnt.root.y : tp.y) - S.player.root.y), false);
       }
       /* dur＝這一次普攻的實際攻速週期：整段揮擊要在下一次普攻前播完 */
       playerAttackAnim('melee', firstTarget, (contactFx && firstTarget) ? spec.dur : 0);
@@ -5853,7 +5892,7 @@ var BattleRenderer = (function () {
       }
     }
     var st = floatStyle(ev.elId, ev.cls, ev.text || '');
-    var pt = posOf(ev.elId);
+    var pt = screenPosOf(ev.elId);   // 飄字在直立空間（float 層），不走地面平面
     var playerTarget = ev.elId === 'pv-float' || ev.elId === 'tp-float';
     var playerDamage = playerTarget &&
       (String(ev.cls || '').indexOf('mdmg') >= 0 || /^\s*(爆擊\s*)?-/.test(String(ev.text || '')));
@@ -5986,7 +6025,7 @@ var BattleRenderer = (function () {
         if (!moving) p.runSpeed = 0;
         if (!p.curAnim || p.curAnim === 'idle' || p.curAnim === 'walk') playAnim(p, p.baseAnim);
       }
-      /* 出手時往前送一小段。多方向素材沿面向的那一格送（上下方向在畫面上是斜視角，縱向打對折） */
+      /* 出手時往前送一小段。多方向素材沿面向的那一格送（這是地面上的位移，縱向照投影壓縮） */
       var lungeX = 0, lungeY = 0;
       if (p.lunge > 0) {
         p.lunge = Math.max(0, p.lunge - dt);
@@ -5994,7 +6033,7 @@ var BattleRenderer = (function () {
         if (p.directional) {
           var lungeA = p.dir * Math.PI * 2 / S.sheets[p.sheetName].dirCount;
           lungeX = Math.cos(lungeA) * lungeK;
-          lungeY = Math.sin(lungeA) * lungeK * 0.5;
+          lungeY = groundToScreenY(Math.sin(lungeA) * lungeK);
         } else {
           lungeX = lungeK * p.facing;
         }
@@ -6011,8 +6050,8 @@ var BattleRenderer = (function () {
         p.bodyWrap.x = 0;
       }
       p.root.x = p.wx;
-      p.root.y = p.wy;
-      p.root.zIndex = p.wy;
+      p.root.y = groundToScreenY(p.wy);
+      p.root.zIndex = p.root.y;
       if (p.hud) {
         p.hud.x = p.root.x;
         p.hud.y = p.root.y;
@@ -6028,7 +6067,8 @@ var BattleRenderer = (function () {
 
     /* ---- 鏡頭：即時對準玩家 ----
        world 整層平移，玩家因此永遠在畫面正中央；地板是螢幕座標，
-       靠 tilePosition 反向捲動假裝自己釘在世界上。 */
+       靠 tilePosition 反向捲動假裝自己釘在世界上。
+       world 的直屬座標是投影後的畫面座標，所以縱向對的是 玩家世界 y × GROUND_Y_SCALE。 */
     var world = S.layers.world;
     var cam = playerPos();
     if (S.shake > 0.2 && dt > 0) S.shake *= Math.pow(0.0025, dt);
@@ -6036,15 +6076,17 @@ var BattleRenderer = (function () {
     var shx = S.shake > 0.2 ? (Math.random() * 2 - 1) * S.shake : 0;
     var shy = S.shake > 0.2 ? (Math.random() * 2 - 1) * S.shake * 0.6 : 0;
     world.x = S.W / 2 - cam.x + shx;
-    world.y = S.H / 2 - cam.y + shy;
+    world.y = S.H / 2 - groundToScreenY(cam.y) + shy;
     if (S.groundTile) {
       /* 貼圖是可四方連續的，所以取一個週期的餘數就好。角色的世界座標會隨著
          推進一路長大（一場下來幾十萬），直接丟給 tilePosition 會踩到 float32
-         的精度上限，地板開始抖；取餘數之後畫面完全一樣，數值永遠是小數。 */
+         的精度上限，地板開始抖；取餘數之後畫面完全一樣，數值永遠是小數。
+         縱向：一個週期是貼圖高 perY 個世界單位，畫面上被 tileScale.y 壓成 perY × GROUND_Y_SCALE，
+         先在世界單位取餘數再投影，捲動速度才與角色的畫面縱向速度一致。 */
       var gtx = S.groundTile.texture;
       var perX = (gtx && gtx.width) || 128, perY = (gtx && gtx.height) || 128;
       S.groundTile.tilePosition.x = -(cam.x % perX) + shx;
-      S.groundTile.tilePosition.y = -(cam.y % perY) + shy;
+      S.groundTile.tilePosition.y = -groundToScreenY(cam.y % perY) + shy;
     }
     if (p && p.reviveText && p.reviveText.visible) {
       /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平。 */
@@ -6109,7 +6151,7 @@ var BattleRenderer = (function () {
           e.bodyWrap.scale.y = 1 - dk * 0.5;
           e.bodyWrap.scale.x = 1 + dk * 0.18;
           e.root.alpha = 1 - dk;
-          e.root.y = e.wy + dk * 6;
+          e.root.y = groundToScreenY(e.wy) + dk * 6;
           if (dk >= 1) { destroyEntity(id); continue; }
         } else {
           /* 非死亡消失（換關）：快速淡出 */
@@ -6119,9 +6161,10 @@ var BattleRenderer = (function () {
       }
 
       updateFlashJolt(e, dt);
+      /* 撲擊位移是世界座標（地面上的一段路），跟站位一起投影 */
       e.root.x = e.wx + (e.dashX || 0);
       if (e.state !== 'dying') {
-        e.root.y = e.wy + (e.dashY || 0);
+        e.root.y = groundToScreenY(e.wy + (e.dashY || 0));
       }
       e.bodyWrap.x = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltX || HIT_JOLT_X) : 0;
       e.bodyWrap.y = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltY || HIT_JOLT_Y) : 0;
@@ -6210,11 +6253,15 @@ var BattleRenderer = (function () {
     /* 三層結構（鏡頭跟隨角色）：
          bg     螢幕座標。地板用 TilingSprite 鋪滿畫布，tilePosition 反向跟著鏡頭捲動，
                 看起來就是釘在世界上的地板；暗角也在這層。
-         world  世界座標。實體、特效、飄字都放這裡，整層依鏡頭平移
+         world  實體、特效、飄字都放這裡，整層依鏡頭平移
                 （所以角色永遠在畫面中央，是鏡頭跟著他，不是他被釘在中間）。
+                直屬座標是斜俯視投影後的畫面座標；特效層包在兩個地面平面容器裡用世界座標
+                （見檔頭「斜俯視投影」）。
          overlay 螢幕座標。BOSS 血條、空場提示、暫停遮罩。 */
     var bg = new PIXI.Container();
     var ground = new PIXI.TilingSprite({ texture: groundFallbackTexture(), width: S.W, height: S.H });
+    /* 地磚縱向壓縮成斜俯視：貼圖本身維持正方形（正式圖直接換檔即可），由這裡統一投影 */
+    ground.tileScale.set(1, GROUND_Y_SCALE);
     bg.addChild(ground);
     S.groundTile = ground;
     loadGroundTexture(null);
@@ -6245,9 +6292,17 @@ var BattleRenderer = (function () {
        玩家 HUD 之下。整層只有一個精靈，成本等同多畫一張貼圖。 */
     var outlineLayer = new PIXI.Container();
     var overlay = new PIXI.Container();
-    world.addChild(zone); world.addChild(presetZone);
+    /* 地面平面：子層用世界座標，由容器的 scale.y 一次投影（位置與形狀都壓縮）。
+       特效有的在實體下面、有的在上面，所以分成上下兩個，縮放完全相同。 */
+    var groundUnder = new PIXI.Container();
+    var groundOver = new PIXI.Container();
+    groundUnder.scale.set(1, GROUND_Y_SCALE);
+    groundOver.scale.set(1, GROUND_Y_SCALE);
+    groundUnder.addChild(zone); groundUnder.addChild(presetZone);
+    groundOver.addChild(fx); groundOver.addChild(presetFx);
+    world.addChild(groundUnder);
     world.addChild(entity);
-    world.addChild(fx); world.addChild(presetFx);
+    world.addChild(groundOver);
     world.addChild(outlineLayer);
     world.addChild(floatLayer);
     world.addChild(playerHud);
@@ -6294,6 +6349,7 @@ var BattleRenderer = (function () {
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
       presetZone: presetZone, presetFx: presetFx,
+      groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay
     };

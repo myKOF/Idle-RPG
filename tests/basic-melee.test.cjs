@@ -11,6 +11,8 @@ function fn(src, name) {
   for (; depth; end++) { if (src[end] === '{') depth++; if (src[end] === '}') depth--; }
   return src.slice(start, end);
 }
+/* 斜俯視投影：面向用世界向量，畫面縱向差要除以壓縮比（見 battle-renderer 的 GROUND_Y_SCALE） */
+function groundScale() { return 'var GROUND_Y_SCALE = ' + /var GROUND_Y_SCALE = ([0-9.]+);/.exec(renderer)[1] + ';'; }
 function loadAttack() {
   const events = [], floats = [];
   const st = { aspd: 4, passives: {}, comboHits: 2, lifesteal: 0, manaSteal: 0 };
@@ -48,11 +50,11 @@ test('近戰普攻立即傷害、零飛行，連擊延遲與浮字同步且攻�
 test('Preset 接手仍播放主普攻，追加連擊不重播，面向目標', () => {
   const animations=[], turns=[]; let presets=0;
   const c={ S:{ready:true,player:{root:{x:0,y:0}},entities:{},vfxrt:{tryPlay(){presets++;return true;}}},
-    areaRect:()=>null, documentHidden:()=>false, vfxTargetsLive:()=>true, posOf:()=>({x:-50,y:0}),
+    areaRect:()=>null, documentHidden:()=>false, vfxTargetsLive:()=>true, screenPosOf:()=>({x:-50,y:0}),
     turnToward:(ent,dx,dy,sticky)=>turns.push([dx,dy,sticky]),
     playerAttackAnim:(...args)=>animations.push(args) };
   vm.createContext(c);
-  vm.runInContext(fn(renderer,'shouldAnimatePlayer')+';'+fn(renderer,'onVfx'),c);
+  vm.runInContext(groundScale()+fn(renderer,'screenToGroundY')+';'+fn(renderer,'shouldAnimatePlayer')+';'+fn(renderer,'onVfx'),c);
   for(const variant of ['melee','melee-extra']) c.onVfx({_buffered:true,fxKind:'slash',cat:'basic',variant,targets:['enemy'],dur:0.125});
   assert.equal(presets,2);
   assert.deepEqual(animations,[['melee','enemy',0.125]]);

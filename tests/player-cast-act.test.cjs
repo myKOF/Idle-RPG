@@ -102,6 +102,11 @@ test('CAST-4 主執行緒：act 事件直接交給戰鬥渲染器；背景分頁
   assert.deepEqual(got, ['cast'], '背景分頁什麼都不畫');
 });
 
+/* 斜俯視投影（battle-renderer 的 GROUND_Y_SCALE）：root 是投影後的畫面座標，
+   面向要用世界向量，縱向差得除以壓縮比。用原始碼裡的實際值，不寫死。 */
+const GROUND_Y_SCALE = Number(/var GROUND_Y_SCALE = ([0-9.]+);/.exec(renderer)[1]);
+const groundHelpers = () => 'var GROUND_Y_SCALE = ' + GROUND_Y_SCALE + ';' + fn(renderer, 'screenToGroundY') + ';';
+
 function loadOnAct() {
   const calls = [], turns = [], timers = [];
   const p = { root: { x: 0, y: 0 }, dead: false, revival: null, facing: 1 };
@@ -114,7 +119,7 @@ function loadOnAct() {
     playerAttackAnim: (...args) => calls.push(args)
   };
   vm.createContext(c);
-  vm.runInContext(fn(renderer, 'onAct'), c);
+  vm.runInContext(groundHelpers() + fn(renderer, 'onAct'), c);
   return { c, p, calls, turns, timers };
 }
 
@@ -124,7 +129,8 @@ test('CAST-5 渲染器 onAct：延後 POS_BUFFER_MS（與特效同步）、面�
   assert.equal(calls.length, 0, '先延後，與特效同一套顯示延遲');
   assert.equal(timers[0][1], 120);
   timers[0][0]();
-  assert.deepEqual(turns, [[-40, 30, false]], '腳底對腳底面向目標，不帶遲滯');
+  assert.deepEqual(turns, [[-40, 30 / GROUND_Y_SCALE, false]],
+    '腳底對腳底面向目標，不帶遲滯；畫面縱向差換回世界縱向（與移動時的轉向同一套）');
   assert.equal(p.facing, -1);
   assert.deepEqual(calls, [['cast', 'mv-float-3', 0, 200]]);
 
@@ -163,10 +169,11 @@ test('CAST-7 技能特效事件不再帶動角色動作（避免同一次施放�
   const c = {
     S: { ready: true, player: { root: { x: 0, y: 0 } }, entities: {}, vfxrt: { tryPlay: () => false } },
     areaRect: () => null, documentHidden: () => false, vfxTargetsLive: () => true, posOf: () => ({ x: 10, y: 0 }),
+    screenPosOf: () => ({ x: 10, y: 0 }),
     turnToward() {}, playerAttackAnim: (...args) => animations.push(args)
   };
   vm.createContext(c);
-  vm.runInContext(fn(renderer, 'shouldAnimatePlayer') + ';' + fn(renderer, 'onVfx'), c);
+  vm.runInContext(groundHelpers() + fn(renderer, 'shouldAnimatePlayer') + ';' + fn(renderer, 'onVfx'), c);
   for (const cat of ['magic', 'phys']) {
     /* 後面的程式畫法缺依賴會丟錯；角色動作在那之前就決定了，所以只看有沒有被叫到 */
     try { c.onVfx({ _buffered: true, fxKind: 'slash', cat, targets: ['enemy'], dur: 0.3 }); } catch (e) { /* 畫法缺依賴 */ }
