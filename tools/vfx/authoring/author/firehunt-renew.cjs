@@ -1,13 +1,16 @@
 'use strict';
-/* 火狩環繞體：orb-firehunt（本體）、orb-firehunt-solar（烈陽星環，與本體相同）、orb-firehunt-companion（伴生，藍色）。
+/* 火狩環繞體（母體＋伴生的雙色組合，配色由 Skills2 表決定哪一組用在哪裡：母體＝本體欄飛行子彈、伴生＝觸發子彈）：
+     orb-firehunt ＋ orb-firehunt-companion                  黃＋藍（第一～七階、無限星環）
+     orb-firehunt-solar ＋ orb-firehunt-solar-companion      紫＋紅（烈陽星環）
+     orb-firehunt ＋ orb-firehunt-firegod-companion          黃＋青（火神降臨：它那一列的飛行子彈是普攻星環，母體照第一階）
    2026-09-23 Claude 依使用者回饋重做：舊版兩層 35～54px 的火團拖尾每秒 120 顆、加法疊成粉白一片，火頭不突出。
    座標：+X＝前進方向；火狩本體半徑＝authored 20，Runtime 以 scale＝orbR/20 縮放、逐幀把朝向設成畫面切線。
 
    拖尾的關鍵：Core 不在一幀內內插出生位置，同一幀發的粒子疊在同一點，所以拖尾的間距＝每幀位移。
    用沿切線方向的細光條（世界座標粒子出生時繼承特效朝向），長度蓋過每幀位移，才會連成平滑的一條而不是一顆顆蓋章。
 
-   node tools/vfx/authoring/author/firehunt-renew.cjs          寫本體與烈陽星環
-   node tools/vfx/authoring/author/firehunt-companion.cjs      寫伴生 */
+   node tools/vfx/authoring/author/firehunt-renew.cjs          寫兩個母體（黃、紫）
+   node tools/vfx/authoring/author/firehunt-companion.cjs      寫三個伴生（藍、紅、青） */
 const kit = require('../preset-kit.cjs');
 
 const P = 'particle-pack/png-black-background/';
@@ -28,6 +31,14 @@ const PALETTES = {
     spark: [[0, '#fff0c0'], [0.4, '#ffb040'], [1, '#ff4a18']],
     wisp: [[0, '#ffb848'], [1, '#d42e1c']], lick: '#ff8a28', trailK: 1
   },
+  /* 烈陽星環的母體：與黃色母體同一套加法畫法，換成紫色 */
+  purple: {
+    core: '#f8ecff', fire: '#d890ff', comet: '#b050ff', halo: '#8a28ff',
+    trail: [[0, '#f4e0ff'], [0.3, '#d890ff'], [0.65, '#9a40f0'], [1, '#5a1498']],
+    glow: [[0, '#a048ff'], [1, '#4a1070']],
+    spark: [[0, '#f8e8ff'], [0.4, '#d090ff'], [1, '#8a3cf0']],
+    wisp: [[0, '#d088ff'], [1, '#6a1eb8']], lick: '#b060ff', trailK: 1
+  },
   /* 伴生（2026-09-23 第二版）：火狩一多時，加法的藍白核心與拖尾疊成一整圈白環、分不清首尾。
      比照火神降臨的做法——加法層的紅色成分壓到 ≤ 10（拖尾尾端 ≤ 42 且已淡出），再怎麼疊只會飽和成青藍、到不了白；
      核心與火星改透明底 normal 混色，核心的暗邊光圈把每一團的頭和拖尾分開。 */
@@ -40,6 +51,24 @@ const PALETTES = {
     solidCore: true,
     /* 伴生是配角，而且緊跟母體走同一條軌道：藍拖尾疊在火拖尾上會變白。壓到一半，火色本體才是主角 */
     trailK: 0.5
+  },
+  /* 烈陽星環的伴生：同藍色伴生的做法，加法層的綠、藍成分 ≤ 10，疊多只飽和成紅橘 */
+  red: {
+    core: '#ffd4cc', fire: '#ff400a', comet: '#ff280a', halo: '#d00a0a',
+    trail: [[0, '#ff700a'], [0.3, '#ff400a'], [0.65, '#d0160a'], [1, '#6e0a0a']],
+    glow: [[0, '#ff200a'], [1, '#600a0a']],
+    spark: [[0, '#ffe0d4'], [0.4, '#ff7a5a'], [1, '#c81e14']],
+    wisp: [[0, '#ff480a'], [1, '#900a0a']], lick: '#ff300a',
+    solidCore: true, trailK: 0.5
+  },
+  /* 火神降臨的伴生：加法層的紅色成分 ≤ 10，偏綠的青色，和藍色伴生分得開 */
+  cyan: {
+    core: '#d4fff6', fire: '#0affd8', comet: '#0ae0c8', halo: '#0aa8b0',
+    trail: [[0, '#0afff0'], [0.3, '#0af0d4'], [0.65, '#0ab4c0'], [1, '#0a6480']],
+    glow: [[0, '#0ac0c8'], [1, '#0a4a64']],
+    spark: [[0, '#e0fff8'], [0.4, '#7af0e0'], [1, '#20a8b8']],
+    wisp: [[0, '#0af0d0'], [1, '#0a78a0']], lick: '#0af0d0',
+    solidCore: true, trailK: 0.5
   }
 };
 
@@ -90,7 +119,7 @@ function make(id, palette) {
 }
 
 if (require.main === module) {
-  kit.write(make('orb-firehunt-solar', 'fire'));
+  kit.write(make('orb-firehunt-solar', 'purple'));
   kit.write(make('orb-firehunt', 'fire'));
 }
 module.exports = { make, PALETTES };

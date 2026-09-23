@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude｜火狩雙色組合依超神由 Skills2 表決定（FIREHUNT-PAIRS-20260923）
+
+- Owner：Claude；Done。使用者規格：第七階用目前的黃藍雙色不變；烈陽星環改紫（母體）＋紅（伴生）；無限星環用黃藍；火神降臨改青色伴生。使用者要求**不寫死，填在 Skills2 表**，並選定欄位：母體＝本體欄「飛行子彈」、伴生＝「觸發子彈」；火神降臨那一列的飛行子彈是普攻星環，因此該超神底下母體維持第一階的黃色。
+- 前一筆相關提交 1055480a（伴生火狩數量多時分得出首尾：核心透明底 normal 帶暗邊光圈、加法層壓掉一個色光、拖尾減半）當時因 Codex 未合併的 index.html／AI_TASKS 而延後補版號與紀錄，一併在本次完成。
+- 修改：
+  - 表（config/Excel/Skills2.xlsx，經 tools/excel-update-sheets.ps1 以 Excel COM 寫 10 格、正常模式重開驗證；再 `--sync` → `--apply --write`，試跑語意變更 0）：伴生火狩列的伴生由本體飛行子彈移到觸發子彈（放本體欄會讓母體沿階繼承到伴生外觀）；烈陽星環 飛行子彈＝orb-firehunt-solar、觸發子彈＝orb-firehunt-solar-companion；無限星環 觸發子彈＝orb-firehunt-companion（觸發欄不繼承，要明填）；火神降臨 觸發子彈＝orb-firehunt-firegod-companion；四列的「特效作用說明」同步。
+  - 接線：tools/skills2-vfx.cjs 新增 firehunt.3／solarRing／infiniteRing／fireGodDescend 四個只開放觸發子彈的事件。js/skills2.js：母體帶 vfxUlt（只在烈陽／無限，這兩個改變環繞方式）＋ vfxBase（只讀本體欄，環繞、軌道環、命中特效不被觸發欄攔走）；伴生選了超神讀該列觸發子彈，否則讀第三階。
+  - Preset：orb-firehunt-solar 改紫色母體（原本無人引用）；新增 orb-firehunt-solar-companion（紅，加法層綠藍 ≤ 10）、orb-firehunt-firegod-companion（偏綠的青，加法層紅 ≤ 10），皆為暗邊光圈核心、拖尾減半。作者腳本 firehunt-renew／firehunt-companion 與 vfx-catalog 同步（catalog 的第三階本體欄不再列伴生）。
+  - 快取：skills2.js?v=1.0.212、Worker importScripts skills2.js?v=20260923-firehunt-pairs、DATA_VERSION＝20260923-firehunt-pairs、vfx-runtime.js?v=1.0.126。
+- 驗證：新增 tests/firehunt-orb-pairs.test.cjs（真引擎施放第七階，四種情境的母體／伴生／命中／軌道環，預期值從表現讀）5/5，兩種突變（伴生固定讀第三階、拿掉 vfxBase）都會轉紅。78 支相關測試 1522 項與 HEAD 比對失敗名稱無新增；build 401 檔、export-assets --check、diff check 通過。三組配色以 60fps 軌道模擬出圖；遊戲實際載入新版 skills2 並以新 DATA_VERSION 預載三份新 preset，console 0 錯誤。素材庫無變更。
+- 待確認：遊戲內實戰觀感（紫紅在烈陽星環長大後、青色伴生在火神降臨時與普攻星環同框）。
+
 ## Codex｜護盾圓形貼邊（SHIELD-ORB-FIT-20260923）
 
 - Owner：Codex；Done。使用者回報護盾藍色區域形狀與紅色圓瓶不一致、左右有細縫；將藍色漸層固定為整顆圓瓶尺寸，用原有護盾高度裁切，液面仍隨數值下降；改用 `closest-side` 使左右圓周到達深藍終點，採用使用者偏好的較大藍色區域 30%／45%／63%／80%。瀏覽器量測漸層寬高均與瓶內圈相同（89.1875px）；實戰畫面觀察護盾 439/453 → 256/453、液面約 96.9% → 56.6% 時形狀與邊緣貼合。400 檔 build 與 diff check 通過。修改戰鬥 HUD CSS、主頁 CSS 快取與本紀錄。預檢發現 Antigravity 工作區對同一 CSS 行有未提交變更（含 `5.63%`），使用者已明確授權 Codex 工作區修正；未改其工作區，整合時需處理該行衝突。不合併／推送。

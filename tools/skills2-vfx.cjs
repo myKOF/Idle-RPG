@@ -18,7 +18,13 @@ const events = {
   'bloodblade.6': {roles:['attack'], note:'流血或中毒敵人死亡時，在死亡位置播放屍爆；選取周邊受害者的距離不是特效縮放範圍。'},
   'bloodblade.7': {roles:['attack'], note:'每次持續傷害機率提前結算剩餘傷害時，在該敵人位置播放；傳染搜尋距離不是傷害範圍，維持原尺寸。'},
   'bloodblade.venomDomain': {roles:['attack','hit'], note:'領域每拍對範圍內的敵人播放觸發／命中特效；領域本身（跟著玩家、依半徑縮放）的畫面是狀態表「萬毒血霧」的持續特效。'},
-  'bloodblade.disintegrate': {roles:['attack','projectile','hit'], note:'每次中毒／流血結算後，在原敵人位置播放範圍爆炸；觸發子彈由此飛向各受害者，抵達後結算並播放命中特效。中心匹配爆炸半徑，單體抵達特效維持原尺寸。'}
+  'bloodblade.disintegrate': {roles:['attack','projectile','hit'], note:'每次中毒／流血結算後，在原敵人位置播放範圍爆炸；觸發子彈由此飛向各受害者，抵達後結算並播放命中特效。中心匹配爆炸半徑，單體抵達特效維持原尺寸。'},
+  /* 伴生火狩的外觀：沒選超神讀第三階這一列，選了超神改讀該超神列（觸發欄不繼承，每列都要自己填）。
+     母體仍是本體欄的飛行子彈，所以伴生不能放在本體欄——放了母體會沿階繼承到伴生的外觀。 */
+  'firehunt.3': {roles:['projectile'], note:'伴生火狩（含第七階狩神之舞出生即帶的伴生）：觸發子彈沿母體的軌道跟在母體後方繞行，依火狩體積縮放。沒選超神時用本列；選了超神改用該超神列的觸發子彈。母體是本體欄的飛行子彈。'},
+  'firehunt.solarRing': {roles:['projectile'], note:'選擇本超神時伴生火狩的外觀：觸發子彈跟在母體後方繞行，依火狩體積縮放。母體讀本列本體欄的飛行子彈（留白沿前階繼承）。'},
+  'firehunt.infiniteRing': {roles:['projectile'], note:'選擇本超神時伴生火狩的外觀：觸發子彈跟在母體後方繞行，依火狩體積縮放。母體讀本列本體欄的飛行子彈（留白沿前階繼承）。'},
+  'firehunt.fireGodDescend': {roles:['projectile'], note:'選擇本超神時伴生火狩的外觀：觸發子彈跟在母體後方繞行，依火狩體積縮放。本列本體欄的飛行子彈是普攻射出的火狩星環，環繞的母體因此維持第一階的外觀。'}
 };
 for (const stage of ['1','2','3','4','5','6','7','slayerAdvent','warGodRoll','asuraFist']) {
   events['bloodrage.'+stage]={roles:['attack','hit'],note:'狂怒系列普攻事件：攻擊特效於主目標播放一次，命中特效於每個實際受傷敵人播放；第七階前單體維持原尺寸，多目標普攻依實際半徑縮放。阿修羅效果生效期間亦可播放。'};

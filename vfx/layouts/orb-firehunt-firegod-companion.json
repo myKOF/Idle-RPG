@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "presetId": "orb-firehunt-firegod-companion",
+  "groups": [
+    {
+      "id": "orb-firehunt-firegod-companion",
+      "name": "orb-firehunt-firegod-companion",
+      "layerIds": [
+        "trail-glow",
+        "trail-core",
+        "trail-wisps",
+        "trail-sparks",
+        "head-halo",
+        "head-comet",
+        "head-licks",
+        "head-fire",
+        "head-core"
+      ]
+    }
+  ],
+  "order": [
+    "group:orb-firehunt-firegod-companion"
+  ]
+}
