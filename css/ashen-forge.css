@@ -659,7 +659,7 @@ html *::-webkit-scrollbar-corner { background: #141719; }
 .mana-orb .orb-liquid { background: radial-gradient(ellipse at 45% 15%, #488fff, #1848ca 43%, #102679 78%, #070c39); box-shadow: inset 0 1px #92caff; }
 .orb-shield { background: linear-gradient(180deg, #197bfa8c, #0a52cb94); box-shadow: inset 0 2px 5px #8dcaff99; }
 .orb-glass::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(ellipse at 33% 23%, #ffffffa8 0%, #ffffff30 5%, transparent 17%), radial-gradient(circle at 46% 38%, transparent 34%, #0007 78%, #000d 100%); box-shadow: inset 0 0 8px #000a; }
-#battle-action-dock { --orb-size: clamp(60px, 16cqw, 108px); --orb-inset: 12px; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(340px, 62cqw); z-index: 30; pointer-events: none; }
+#battle-action-dock { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(340px, 62cqw); z-index: 30; pointer-events: none; }
 #battle-canvas-host #battle-skill-bar {
   position: relative; bottom: auto; left: auto; transform: none; width: 100%; max-width: none; box-sizing: border-box;
   display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -668,8 +668,8 @@ html *::-webkit-scrollbar-corner { background: #141719; }
 }
 #battle-skill-bar .battle-skill-slot { width: 100%; min-width: 0; min-height: 0; height: auto; aspect-ratio: 1; box-sizing: border-box; }
 #battle-xp-bar {
-  position: relative; left: calc(var(--orb-inset) + var(--orb-size) + 4px - 50cqw + min(170px, 31cqw)); margin: 0 0 3px; pointer-events: auto;
-  width: calc(100cqw - var(--orb-inset) - var(--orb-inset) - var(--orb-size) - var(--orb-size) - 8px); height: 9px; box-sizing: border-box; overflow: hidden;
+  position: relative; margin: 0 0 3px; pointer-events: auto;
+  width: 100%; height: 9px; box-sizing: border-box; overflow: hidden;
   border: 1px solid #948968; background: linear-gradient(#42463a, #131b17 48%, #080d0e); box-shadow: 0 1px 4px #000, inset 0 1px #d7cda16b, inset 0 -2px 3px #000; z-index: 31; cursor: help;
 }
 #battle-xp-fill { width: 0; height: 100%; background: linear-gradient(#fff0ae, #c7a84e 45%, #80602b 100%); box-shadow: 0 0 7px #eac76780, inset 0 1px #fff5c8; }
@@ -679,7 +679,6 @@ html *::-webkit-scrollbar-corner { background: #141719; }
   #battle-canvas-host .battle-resource-orb { padding: 5px; width: 16cqw; }
   #battle-health-orb { left: 5px; }
   #battle-mana-orb { right: 5px; }
-  #battle-action-dock { --orb-size: 16cqw; --orb-inset: 5px; }
   #battle-canvas-host #battle-skill-bar { padding: 5px; gap: 3px; }
   #battle-skill-bar .bss-emoji { font-size: 17px; }
   #battle-skill-bar .bss-cd-text { font-size: 10px; }
