@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 148,
+  "assetCount": 149,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -40,6 +40,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:56b35ca8564d059a07d84d33313cc35151c36e478371d00618bd59d6d79796b6",
       "fileSize": 20395025
+    },
+    {
+      "assetId": "codex-authored/firegod/sharp-flame.png",
+      "relativePath": "codex-authored/firegod/sharp-flame.png",
+      "package": "codex-authored",
+      "contentHash": "sha256:28e11a4d9585531446416ffb78ffb4305928861d6406259c71a71f9c1d9e1a34",
+      "fileSize": 25599
     },
     {
       "assetId": "codex-authored/icearrow/icicle.png",
