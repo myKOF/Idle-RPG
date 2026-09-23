@@ -1402,8 +1402,8 @@ html *::-webkit-scrollbar-corner {
   width: 100%;
   height: auto;
   aspect-ratio: 1;
-  background: radial-gradient(circle closest-side at 50% 50%, #2b8aff00 0%, #2b8aff00 30%, #1d75df1a 45%, #1056c05c 63%, #0b318dd9 80%, #061c57f2 100%);
-  box-shadow: inset 0 0 5px #396ad366;
+  background: radial-gradient(circle closest-side at 50% 50%, #2b8aff00 0%, #2b8aff00 60%, #2142ff1a 70%, #5213ff46 78%, #1a01fd56 90%, #4300fc60 100%);
+  box-shadow: inset 0 0 5px #0051ff4b;
 }
 
 .orb-glass::after {
