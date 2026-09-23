@@ -14,6 +14,8 @@ const P = 'particle-pack/png-black-background/';
 const TRACE = P + 'rotated/trace_07_rotated.png';     // 柔邊光條：墨量 寬 0.65、高 0.139
 const COMET = P + 'rotated/muzzle_02_rotated.png';    // 左端圓亮、往右張開；轉 180° 後亮端朝前
 const DOT = P + 'circle_05.png';                      // 柔點：墨量直徑 0.46
+/* 透明底版的 RGB 往邊緣變暗（半徑 96 處只剩 126），normal 混色疊在亮光上會描出一圈較暗的光圈 */
+const DOT_T = 'particle-pack/png-transparent/circle_05.png';
 const FIRE = P + 'fire_01.png';
 const WISP = P + 'flame_04.png';
 const q = (px) => +(px / 512).toFixed(5);            // 方框邊長（authored px）→ scale
@@ -26,14 +28,18 @@ const PALETTES = {
     spark: [[0, '#fff0c0'], [0.4, '#ffb040'], [1, '#ff4a18']],
     wisp: [[0, '#ffb848'], [1, '#d42e1c']], lick: '#ff8a28', trailK: 1
   },
+  /* 伴生（2026-09-23 第二版）：火狩一多時，加法的藍白核心與拖尾疊成一整圈白環、分不清首尾。
+     比照火神降臨的做法——加法層的紅色成分壓到 ≤ 10（拖尾尾端 ≤ 42 且已淡出），再怎麼疊只會飽和成青藍、到不了白；
+     核心與火星改透明底 normal 混色，核心的暗邊光圈把每一團的頭和拖尾分開。 */
   blue: {
-    core: '#eef7ff', fire: '#8cc4ff', comet: '#4f86ff', halo: '#2f58ff',
-    trail: [[0, '#e6f4ff'], [0.3, '#96caff'], [0.65, '#5a80ff'], [1, '#7a30d0']],
-    glow: [[0, '#4a7cff'], [1, '#5a1ca8']],
-    spark: [[0, '#f0f8ff'], [0.4, '#8cc4ff'], [1, '#4a5cff']],
-    wisp: [[0, '#9cc8ff'], [1, '#5a3cd8']], lick: '#6a9cff',
-    /* 伴生是配角：拖尾壓暗三成，火色本體才是畫面主角 */
-    trailK: 0.7
+    core: '#d6ecff', fire: '#0a9cff', comet: '#0a6cff', halo: '#0048ff',
+    trail: [[0, '#0ae0ff'], [0.3, '#0aa8ff'], [0.65, '#0a5aff'], [1, '#2a14c8']],
+    glow: [[0, '#0a4cff'], [1, '#200a9c']],
+    spark: [[0, '#e0f4ff'], [0.4, '#8cc4ff'], [1, '#4a5cff']],
+    wisp: [[0, '#0aa0ff'], [1, '#2a2ad8']], lick: '#0a78ff',
+    solidCore: true,
+    /* 伴生是配角，而且緊跟母體走同一條軌道：藍拖尾疊在火拖尾上會變白。壓到一半，火色本體才是主角 */
+    trailK: 0.5
   }
 };
 
@@ -55,7 +61,7 @@ function layersFor(c) {
       spawn: { shape: 'circle', radius: 4 }, speed: [5, 20], direction: 180, spread: 60,
       startScale: [q(22), q(30)], rotationStart: [0, 6.28], rotationSpeed: [-5, 5], worldSpace: true,
       tintOverLife: c.wisp, alphaOverLife: [[0, 0], [0.25, 1], [1, 0]], scaleOverLife: [[0, 0.6], [0.5, 1], [1, 0.7]] },
-    { id: 'trail-sparks', type: 'particle', assetId: DOT, zIndex: 3, alpha: 1, blendMode: 'add',
+    { id: 'trail-sparks', type: 'particle', assetId: c.solidCore ? DOT_T : DOT, zIndex: 3, alpha: 1, blendMode: c.solidCore ? 'normal' : 'add',
       duration: 1, emission: { mode: 'rate', rate: 10 }, lifetime: [0.15, 0.5],
       spawn: { shape: 'circle', radius: 8 }, speed: [10, 90], direction: 180, spread: 200, drag: 2,
       startScale: [q(5), q(11)], worldSpace: true,
@@ -73,8 +79,8 @@ function layersFor(c) {
       startScale: [q(22), q(30)], rotationStart: [0, 6.28], alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] },
     { id: 'head-fire', type: 'sprite', assetId: FIRE, zIndex: 7, scale: { x: q(38), y: q(38) }, alpha: 0.6,
       tint: c.fire, blendMode: 'add', rotationSpeed: 7 },
-    { id: 'head-core', type: 'sprite', assetId: DOT, zIndex: 8, scale: { x: q(26), y: q(26) }, alpha: 1,
-      tint: c.core, blendMode: 'add' }
+    { id: 'head-core', type: 'sprite', assetId: c.solidCore ? DOT_T : DOT, zIndex: 8, scale: { x: q(26), y: q(26) }, alpha: 1,
+      tint: c.core, blendMode: c.solidCore ? 'normal' : 'add' }
   ];
 }
 

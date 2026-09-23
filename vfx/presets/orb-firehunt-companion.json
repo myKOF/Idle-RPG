@@ -9,7 +9,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 0,
-      "alpha": 0.21,
+      "alpha": 0.15,
       "blendMode": "add",
       "duration": 1,
       "emission": {
@@ -49,11 +49,11 @@
       "tintOverLife": [
         [
           0,
-          "#4a7cff"
+          "#0a4cff"
         ],
         [
           1,
-          "#5a1ca8"
+          "#200a9c"
         ]
       ],
       "scaleOverLife": [
@@ -72,7 +72,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/rotated/trace_07_rotated.png",
       "zIndex": 1,
-      "alpha": 0.63,
+      "alpha": 0.45,
       "blendMode": "add",
       "duration": 1,
       "emission": {
@@ -112,19 +112,19 @@
       "tintOverLife": [
         [
           0,
-          "#e6f4ff"
+          "#0ae0ff"
         ],
         [
           0.3,
-          "#96caff"
+          "#0aa8ff"
         ],
         [
           0.65,
-          "#5a80ff"
+          "#0a5aff"
         ],
         [
           1,
-          "#7a30d0"
+          "#2a14c8"
         ]
       ],
       "scaleOverLife": [
@@ -143,7 +143,7 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 2,
-      "alpha": 0.315,
+      "alpha": 0.225,
       "blendMode": "add",
       "duration": 1,
       "emission": {
@@ -194,11 +194,11 @@
       "tintOverLife": [
         [
           0,
-          "#9cc8ff"
+          "#0aa0ff"
         ],
         [
           1,
-          "#5a3cd8"
+          "#2a2ad8"
         ]
       ],
       "scaleOverLife": [
@@ -219,10 +219,10 @@
     {
       "id": "trail-sparks",
       "type": "particle",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 3,
       "alpha": 1,
-      "blendMode": "add",
+      "blendMode": "normal",
       "duration": 1,
       "emission": {
         "mode": "rate",
@@ -265,7 +265,7 @@
       "tintOverLife": [
         [
           0,
-          "#f0f8ff"
+          "#e0f4ff"
         ],
         [
           0.4,
@@ -287,7 +287,7 @@
         "y": 0.19531
       },
       "alpha": 0.35,
-      "tint": "#2f58ff",
+      "tint": "#0048ff",
       "blendMode": "add",
       "duration": 0.5,
       "loop": true,
@@ -321,7 +321,7 @@
         "y": 0.16797
       },
       "alpha": 0.95,
-      "tint": "#4f86ff",
+      "tint": "#0a6cff",
       "blendMode": "add",
       "duration": 0.24,
       "loop": true,
@@ -346,7 +346,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 6,
       "alpha": 0.8,
-      "tint": "#6a9cff",
+      "tint": "#0a78ff",
       "blendMode": "add",
       "duration": 1,
       "emission": {
@@ -400,22 +400,22 @@
         "y": 0.07422
       },
       "alpha": 0.6,
-      "tint": "#8cc4ff",
+      "tint": "#0a9cff",
       "blendMode": "add",
       "rotationSpeed": 7
     },
     {
       "id": "head-core",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 8,
       "scale": {
         "x": 0.05078,
         "y": 0.05078
       },
       "alpha": 1,
-      "tint": "#eef7ff",
-      "blendMode": "add"
+      "tint": "#d6ecff",
+      "blendMode": "normal"
     }
   ],
   "sizing": {

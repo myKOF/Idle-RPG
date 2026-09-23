@@ -141,7 +141,7 @@ def('ground-tornado-wind', 'ground', '風龍捲：同幾何，綠色 #22c55e 柱
 def('ground-homing-ice-shard', 'ground', '追蹤冰箭本體：半徑 30px 的冰晶菱形（#4da6ff/#f2fbff）+ 淡藍光暈 + 尾端冰塵；朝 +X；loop 脈動 0.55s。', { nominal: 'R 30px', dur: 0.55, loop: true });
 def('ground-homing-wind-crescent', 'ground', '追跡風刃本體：半徑 30px 的風系新月（尖端朝 +X，#86efac/#ffffff）+ 微風尾；loop 脈動 0.55s。', { nominal: 'R 30px', dur: 0.55, loop: true });
 def('orb-firehunt', 'orb', '火狩火球（環繞體）：白熱核心＋自轉火焰＋前圓後尖的彗星形，拖尾是沿切線的細光條（白黃→橘→深紅）加淡紅光暈、小火苗與零星火星；製作腳本 author/firehunt-renew.cjs。Runtime 以 scale = orbR/20 並逐幀繞玩家轉。', { nominal: 'R 20px', dur: 1, loop: true });
-def('orb-firehunt-companion', 'orb', '伴生火狩：與火狩同一套造型，藍→紫配色、拖尾壓暗三成；沿權威軌道跟在母體後方。', { nominal: 'R 20px', dur: 1, loop: true });
+def('orb-firehunt-companion', 'orb', '伴生火狩：與火狩同一套造型，藍色；加法層紅色成分 ≤ 10（疊多只到青藍）、核心透明底 normal 帶暗邊光圈、拖尾壓到一半，數量多時仍分得出每一團；沿權威軌道跟在母體後方。', { nominal: 'R 20px', dur: 1, loop: true });
 def('orb-thunder', 'orb', '環體電球：半徑 20px 的雷球（#fff8b0 核、#f2b705 體、#ffd23f 暈）+ 表面電弧絲閃爍；loop。', { nominal: 'R 20px', dur: 0.5, loop: true });
 def('orb-void-disc', 'orb', '虛空斬鋸刃：半徑 24px 的 12 齒鋸盤（mask-shape 星形或 gear 素材，#86efac 填、#ffffff 邊、白色軸心），自轉 3 圈/s，帶 5 層漸淡殘影；loop。', { nominal: 'R 24px', dur: 1.0, loop: true });
 def('ground-orbit-ring-fire', 'ground', '火狩軌道環：扁橢圓（縱向 0.62）淡火紅 #e63924 細環 α0.18（名目半徑 100px）+ 環上零星上升火星；loop。', { nominal: 'R 100px', dur: 2.0, loop: true });
