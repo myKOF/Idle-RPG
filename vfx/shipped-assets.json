@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 149,
+  "assetCount": 150,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -453,6 +453,13 @@
       "package": "new_materials",
       "contentHash": "sha256:28a18d56c78afca6d9a98dde8af3760b54e2c1e3669f3d2cb6229b5848b9f235",
       "fileSize": 172423
+    },
+    {
+      "assetId": "new_materials/impact-ring/impact_2.png",
+      "relativePath": "new_materials/impact-ring/impact_2.png",
+      "package": "new_materials",
+      "contentHash": "sha256:0b301c8b940ea3c1bfaf7f8ed0140596d5ca8226a110f0f759352438b24d8ddc",
+      "fileSize": 142003
     },
     {
       "assetId": "new_materials/impact-ring/impact_7.png",

@@ -600,6 +600,23 @@ test('【超重力場】：施放時使範圍內的敵人僵化，且岩甲期�
   assert.equal(c.legendaryElementDamageUp(c.BASE_STATS, p).earth, undefined, '岩甲結束就沒有增傷');
 });
 
+test('岩甲領域作用敵人時不把玩家的石碑環附加到敵人', () => {
+  for (const ult of ['gravityField', 'superRockArt']) {
+    const c = loadContext();
+    stubHits(c);
+    const specs = stubVfx(c);
+    maxLevels(c, 'rockarmor');
+    setUlt(c, 'rockarmor', ult, 1);
+    equip(c, 'rockarmor');
+    c.castSkill2(playerEnt(), [enemy(1e9, 60, 0)], 'rockarmor', 'mv-float');
+    const playerAura = specs.find(s => s.variant === 'rock-armor');
+    const enemyBurst = specs.find(s => s.variant === (ult === 'gravityField' ? 'gravity-field' : 'rock-petrify'));
+    assert.ok(playerAura && playerAura.vfx.ground, ult + ' 玩家仍有石碑環');
+    assert.ok(enemyBurst && enemyBurst.vfx.attack && enemyBurst.vfx.hit, ult + ' 敵人仍有爆發與受擊');
+    assert.equal(enemyBurst.vfx.ground, undefined, ult + ' 敵人不得繼承玩家石碑環');
+  }
+});
+
 /* ===========================================================================
    5) 參數表往返
    =========================================================================== */

@@ -6060,13 +6060,18 @@ function sgRockFieldUlt() {
 }
 
 /* 對這一批敵人套用【超重岩之術】的石化。 */
+function sgRockFieldEnemyVfxRoles(ultId) {
+  var roles = sgVfxRoles('rockarmor', { vfxUlt: ultId });
+  /* 岩甲本體的 ground 是玩家專用石碑環；敵方領域事件只播本列的爆發與受擊。 */
+  return { attack: roles.attack, hit: roles.hit };
+}
 function sgRockPetrifyApply(victims, u, floatSel) {
   if (!victims || !victims.length) return;
   var sec = Math.max(0.5, Number(u.def.fx.sec) || 4);
   var pct = Math.max(0, sgUltVal(u, 'pct'));
   sgEmitVfx('rockarmor', victims, floatSel, {
     fxKind: 'burst', variant: 'rock-petrify', elem: 'earth', dur: 0.8,
-    vfxUlt: 'superRockArt'
+    vfxUlt: 'superRockArt', vfxRoles: sgRockFieldEnemyVfxRoles('superRockArt')
   });
   for (var i = 0; i < victims.length; i++) {
     /* 石化標記照塗（增傷不是控場，不受控場免疫影響）；行動限制則交給暈眩，
@@ -6083,7 +6088,7 @@ function sgRockGravityApply(victims, u, floatSel) {
   var pct = Math.max(0, Math.min(95, Number(u.def.fx.stiff) || 0));
   sgEmitVfx('rockarmor', victims, floatSel, {
     fxKind: 'burst', variant: 'gravity-field', elem: 'earth', dur: 0.8,
-    vfxUlt: 'gravityField'
+    vfxUlt: 'gravityField', vfxRoles: sgRockFieldEnemyVfxRoles('gravityField')
   });
   for (var i = 0; i < victims.length; i++) sgApplySlot(victims[i], 'rockarmor', 'gravityField', 'enemy', 0, { val: pct, dur: sec });
 }
