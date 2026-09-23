@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "presetId": "orb-firehunt-solar-companion",
+  "groups": [
+    {
+      "id": "orb-firehunt-solar-companion",
+      "name": "orb-firehunt-solar-companion",
+      "layerIds": [
+        "trail-glow",
+        "trail-core",
+        "trail-wisps",
+        "trail-sparks",
+        "head-halo",
+        "head-comet",
+        "head-licks",
+        "head-fire",
+        "head-core"
+      ]
+    }
+  ],
+  "order": [
+    "group:orb-firehunt-solar-companion"
+  ]
+}
