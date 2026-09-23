@@ -1937,11 +1937,14 @@ var BattleRenderer = (function () {
     return fx;
   }
   function killFx(fx) {
+    var impactGroup = fx.node && fx.node.parent && fx.node.parent.__impactGroup
+      ? fx.node.parent : null;
     if (fx.node && fx.node.__airWrapper) {
       var wrapper = fx.node.__airWrapper; legacyAirNodes.delete(fx.node);
       if (wrapper.parent) wrapper.parent.removeChild(wrapper); wrapper.destroy({children:true});
     }
     if (fx.node && !fx.node.destroyed) fx.node.destroy({ children: true });
+    if (impactGroup && !impactGroup.children.length && !impactGroup.destroyed) impactGroup.destroy();
     fx.dead = true;
   }
 
@@ -1989,7 +1992,7 @@ var BattleRenderer = (function () {
     sweepOrphanFxNodes();
   }
 
-  function spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard) {
+  function spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard, impactGroup) {
     if (REDUCED_MOTION) return;
     count = particleBudget(Math.min(count, 14));
     if (count <= 0) return;
@@ -2003,9 +2006,9 @@ var BattleRenderer = (function () {
         g.anchor.set(0.5);
         g.scale.set(r * particleScale / DOT_TEX_RADIUS);
         g.tint = Math.random() < 0.5 ? c1 : c2;
-        g.x = x; g.y = y;
+        g.x = impactGroup ? 0 : x; g.y = impactGroup ? 0 : y;
         g.blendMode = 'add';
-        S.layers.fx.addChild(g);
+        (impactGroup || S.layers.fx).addChild(g);
         var ang = Math.random() * Math.PI * 2;
         var v = (60 + Math.random() * 120) * (speed || 1) * particleScale * 0.55;
         var vx = Math.cos(ang) * v, vy = Math.sin(ang) * v - 40;
@@ -2520,6 +2523,12 @@ var BattleRenderer = (function () {
     var visualStrong = strong || fireExplosion;
     var t = 0, dur = fireExplosion ? 0.62 : (visualStrong ? 0.4 : 0.26);
     var maxR = fireExplosion ? 30 : (visualStrong ? 15 : 8.5);
+    var impactGroup = new PIXI.Container();
+    impactGroup.__impactGroup = true;
+    impactGroup.position.set(x, groundToScreenY(y));
+    impactGroup.scale.y = GROUND_Y_SCALE;
+    impactGroup.zIndex = groundToScreenY(y) + 46;
+    S.layers.entity.addChild(impactGroup);
     /* 逐幀 clear()＋stroke() 換成貼圖縮放，理由見 ringTexture()。 */
     var ring = new PIXI.Sprite(ringTexture());
     ring.anchor.set(0.5);
@@ -2532,9 +2541,9 @@ var BattleRenderer = (function () {
        飛刀彈射一次幾十跳，畫面上等於常駐一堆大圈，而且怎麼調 maxR 都沒用。 */
     ring.scale.set(1.3 / RING_TEX_RADIUS);
     ring.tint = cssColorToInt(theme.c1, 0xffffff);
-    ring.x = x; ring.y = y;
-    S.layers.fx.addChild(ring);
-    addFx({
+    ring.x = 0; ring.y = 0;
+    impactGroup.addChild(ring);
+    if (!addFx({
       node: ring,
       update: function (dt) {
         if (targetGuard && !targetGuard()) return false;
@@ -2544,9 +2553,9 @@ var BattleRenderer = (function () {
         ring.alpha = 1 - k;
         return t < dur;
       }
-    }, 1);
+    }, 1)) return;
     spawnParticles(x, y, fireExplosion ? 22 : (strong ? 12 : 6), theme,
-      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1, targetGuard);
+      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1, targetGuard, impactGroup);
     if (strong) addShake(5, spec);
   }
 
@@ -6353,10 +6362,16 @@ var BattleRenderer = (function () {
        「沒有被 S.fx 追蹤」的孩子全部 destroy，Core 的節點會被當成孤兒清掉。 */
     var presetZone = new PIXI.Container();
     var presetFx = new PIXI.Container();
+    var airBack = new PIXI.Container();
+    airBack.sortableChildren = true;
     var airFx = new PIXI.Container();
     airFx.sortableChildren = true;
     var presetAir = new PIXI.Container();
     airFx.addChild(presetAir);
+    /* 空中物保持螢幕 billboard；後方空中物和前方空中物之間補畫角色本體。
+       只補本體，不複製影子或 HUD；前景仍由前方空中層正常遮住角色。 */
+    var airPlayer = new PIXI.Sprite(PIXI.Texture.EMPTY);
+    airPlayer.visible = false;
     /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，避免被任何戰鬥表現層蓋住。
        與傷害浮字一樣畫在螢幕層、不跟著透視變形，位置每幀跟著角色換（見 worldToScreenPoint）。 */
     var playerHud = new PIXI.Container();
@@ -6388,6 +6403,8 @@ var BattleRenderer = (function () {
     app.stage.addChild(sceneRoot);
     /* 傷害浮字與玩家 HUD 在場景外的螢幕層：不跟著透視變形（字不會被拉歪、上面縮小下面放大），
        每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
+    app.stage.addChild(airBack);
+    app.stage.addChild(airPlayer);
     app.stage.addChild(airFx);
     app.stage.addChild(floatLayer);
     app.stage.addChild(playerHud);
@@ -6432,7 +6449,8 @@ var BattleRenderer = (function () {
 
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
-      presetZone: presetZone, presetFx: presetFx, airFx: airFx, presetAir: presetAir,
+      presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
+      airFx: airFx, presetAir: presetAir,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay
@@ -6613,7 +6631,33 @@ var BattleRenderer = (function () {
       wrapper.scale.set(p.scale);
       wrapper.position.set(p.x-node.x*p.scale,p.y-node.y*p.scale);
       wrapper.zIndex = p.y;
+      var playerY = S.player && S.player.root ? S.player.root.y : -Infinity;
+      var parent = groundToScreenY(node.y) < playerY ? S.layers.airBack : S.layers.airFx;
+      if (parent && wrapper.parent !== parent) parent.addChild(wrapper);
     });
+  }
+  function syncAirPlayer() {
+    var copy = S.layers && S.layers.airPlayer;
+    var p = S.player;
+    if (!copy || !p || !p.body || !p.bodyWrap || !p.root || p.body.destroyed ||
+        !p.body.visible || !p.bodyWrap.visible || !p.root.visible ||
+        !S.layers.airBack.children.length) { if (copy) copy.visible = false; return; }
+    var body = p.body, wrap = p.bodyWrap, root = p.root;
+    var pt = { x: body.x * wrap.scale.x, y: body.y * wrap.scale.y };
+    rotateOutlinePt(pt, wrap.rotation);
+    pt.x = (pt.x + wrap.x) * root.scale.x;
+    pt.y = (pt.y + wrap.y) * root.scale.y;
+    rotateOutlinePt(pt, root.rotation);
+    var pose = airScreenPose(root.x + pt.x, root.y + pt.y);
+    copy.texture = body.texture;
+    copy.anchor.copyFrom(body.anchor);
+    copy.position.set(pose.x, pose.y);
+    copy.scale.set(root.scale.x * wrap.scale.x * body.scale.x * pose.scale,
+      root.scale.y * wrap.scale.y * body.scale.y * pose.scale);
+    copy.rotation = root.rotation + wrap.rotation + body.rotation;
+    copy.alpha = root.alpha * wrap.alpha * body.alpha;
+    copy.tint = body.tint;
+    copy.visible = true;
   }
   /* 場景要畫出來的範圍（平行投影的畫面座標） */
   function sceneDrawRect() {
@@ -6662,6 +6706,7 @@ var BattleRenderer = (function () {
   /* 每幀把場景畫進離屏貼圖（掛在 app.ticker，優先序見 PERSPECTIVE_RENDER_PRIORITY）。 */
   function renderPerspectiveScene() {
     syncLegacyAir();
+    syncAirPlayer();
     var P = S.persp;
     if (!P || !P.rt || !S.sceneRoot || !S.app) return;
     S.app.renderer.render({ container: S.sceneRoot, target: P.rt, clear: true });
@@ -6803,8 +6848,11 @@ var BattleRenderer = (function () {
        ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
     VFXRuntime.boot({
       airContainer: S.layers.presetAir,
+      airBackContainer: S.layers.airBack,
+      airDepthSplitY: function () { return S.player && S.player.root ? S.player.root.y : -Infinity; },
       projectAirTransform: projectAirTransform,
       fxContainer: S.layers.presetFx,
+      fxDepthContainer: S.layers.entity,
       zoneContainer: S.layers.presetZone,
       groundScale: GROUND_Y_SCALE,
       ctx: {

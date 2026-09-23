@@ -29,9 +29,29 @@ test('空中投影在四角／遠近只改錨點與等比大小，保留素材�
 test('空中層位於場景網格外、HUD 之下，Preset 與 legacy 使用独立子容器',()=>{
   const s=buildSceneTree(source),layers=s.layers,stage=s.app.stage;
   assert.equal(layers.airFx.parent,stage);assert.equal(layers.presetAir.parent,layers.airFx);
+  assert.equal(layers.airBack.parent,stage);
+  assert.ok(stage.children.indexOf(layers.airBack)<stage.children.indexOf(layers.airPlayer));
+  assert.ok(stage.children.indexOf(layers.airPlayer)<stage.children.indexOf(layers.airFx));
   assert.ok(stage.children.indexOf(layers.airFx)>stage.children.indexOf(s.sceneRoot));
   assert.ok(stage.children.indexOf(layers.airFx)<stage.children.indexOf(layers.playerHud));
   assert.notEqual(layers.presetAir,layers.airFx);
+});
+test('空中效果跨過玩家腳點會切換前後；地面受擊效果與角色共用深度排序',()=>{
+  const back=new fakePixi.Container(), front=new fakePixi.Container(), entity=new fakePixi.Container();
+  let playerY=100;
+  const air=Backend.createBackend({PIXI:fakePixi,container:front,depthSort:true,
+    depthBackContainer:back,depthSplitY:()=>playerY});
+  const node=new fakePixi.Container();
+  const pose=y=>({x:20,y,scaleX:1,scaleY:1,sortGroup:7,sortY:y,visible:true});
+  air.updateNode(node,pose(90));assert.equal(node.parent.parent,back);
+  air.updateNode(node,pose(110));assert.equal(node.parent.parent,front);
+  playerY=120;air.updateNode(node,pose(110));assert.equal(node.parent.parent,back);
+  air.updateNode(node,{visible:false});assert.equal(back.children.length,0);
+  const fx=new fakePixi.Container();
+  const hit=Backend.createBackend({PIXI:fakePixi,container:fx,depthSort:true,depthParent:entity});
+  const impact=new fakePixi.Container();hit.updateNode(impact,pose(85));
+  assert.equal(impact.parent.parent,entity);
+  assert.equal(impact.parent.zIndex,85);
 });
 function backend(){const nodes=new Set();return {nodes,createNode(s){const n={s};nodes.add(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){nodes.delete(n);}};}
 test('盤點所有 proj 素材：彈體與粒子全部進空中後端，clear 完整回收',()=>{

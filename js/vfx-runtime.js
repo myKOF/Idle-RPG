@@ -553,6 +553,7 @@ var VFXRuntime = (function () {
         // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
         var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
         params.position = p;
+        params.depthY = footOf(ids[i]).y;
         if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
@@ -1417,7 +1418,7 @@ var VFXRuntime = (function () {
         pending.splice(q, 1);
         if (job.spec) { tryPlay(job.spec); continue; }
         play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
-          { position: ctx.posOf(job.targetId) }), job.authoredSize ? 1 : undefined);
+          { position: ctx.posOf(job.targetId), depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
       }
 
       /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
@@ -1671,9 +1672,11 @@ var VFXRuntime = (function () {
         var resolver = VFXCore.createIndexResolver(index, index.baseUrl || 'images/vfx/assets');
         var adapter = create({
           resolver: resolver,
-          fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true }),
+          fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true, depthParent: opts.fxDepthContainer }),
           zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true }),
-          airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true, projectTransform:opts.projectAirTransform}) : null,
+          airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true,
+            depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
+            projectTransform:opts.projectAirTransform}) : null,
           ctx: opts.ctx,
           groundScale: opts.groundScale
         });

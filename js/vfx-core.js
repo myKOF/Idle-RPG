@@ -1294,6 +1294,7 @@ var VFXCore = (function () {
         done: false,
         frameNo: 0,
         origin: { x: 0, y: 0 },
+        depthY: null,
         rotation: 0,
         scale: 1, scaleX: 1, scaleY: 1, opacity: 1,
         seed: (p.seed === undefined ? (nextEffectId * 2654435761) : p.seed) >>> 0,
@@ -1371,6 +1372,7 @@ var VFXCore = (function () {
         if (p.position.x !== undefined) effect.origin.x = transformNumber(p.position.x, 'position.x');
         if (p.position.y !== undefined) effect.origin.y = transformNumber(p.position.y, 'position.y');
       }
+      if (p.depthY !== undefined) effect.depthY = transformNumber(p.depthY, 'depthY');
       if (p.opacity !== undefined) effect.opacity = Math.max(0, Math.min(1, transformNumber(p.opacity, 'opacity')));
       if (p.rotation !== undefined) effect.rotation = transformNumber(p.rotation, 'rotation');
       if (p.projectionRotation !== undefined) effect.projectionRotation = transformNumber(p.projectionRotation, 'projectionRotation');
@@ -1658,7 +1660,7 @@ var VFXCore = (function () {
       t.anchorX = d.anchor.x;
       t.anchorY = d.anchor.y;
       t.zIndex = d.zIndex;
-      t.sortGroup = effect.handle; t.sortY = effect.origin.y;
+      t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
       projectTransform(effect, d.projection, t);
@@ -2005,7 +2007,7 @@ var VFXCore = (function () {
         t.anchorX = d.anchor.x;
         t.anchorY = d.anchor.y;
         t.zIndex = d.zIndex;
-        t.sortGroup = effect.handle; t.sortY = effect.origin.y;
+        t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
         t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined; t.generated = undefined;
         t.deformation = undefined;
         if (d.projection && d.projection.upright) {
