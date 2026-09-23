@@ -657,7 +657,7 @@ html *::-webkit-scrollbar-corner { background: #141719; }
 .orb-liquid, .orb-shield { position: absolute; bottom: 0; left: 0; width: 100%; height: 0; transition: height .18s linear; }
 .health-orb .orb-liquid { background: radial-gradient(ellipse at 45% 15%, #fb5445, #c11625 43%, #760b19 78%, #340714); box-shadow: inset 0 1px #ff9883; }
 .mana-orb .orb-liquid { background: radial-gradient(ellipse at 45% 15%, #488fff, #1848ca 43%, #102679 78%, #070c39); box-shadow: inset 0 1px #92caff; }
-.orb-shield { background: linear-gradient(180deg, #197bfa8c, #0a52cb94); box-shadow: inset 0 2px 5px #8dcaff99; }
+.orb-shield { background: radial-gradient(circle at 50% 47%, #2b8aff00 0%, #2b8aff00 44%, #1d75df1a 58%, #1056c05c 72%, #0b318dd9 86%, #061c57f2 100%); box-shadow: inset 0 2px 4px #a9d4ff99, inset 0 0 5px #396ad366; }
 .orb-glass::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(ellipse at 33% 23%, #ffffffa8 0%, #ffffff30 5%, transparent 17%), radial-gradient(circle at 46% 38%, transparent 34%, #0007 78%, #000d 100%); box-shadow: inset 0 0 8px #000a; }
 #battle-action-dock { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(340px, 62cqw); z-index: 30; pointer-events: none; }
 #battle-canvas-host #battle-skill-bar {
@@ -669,11 +669,11 @@ html *::-webkit-scrollbar-corner { background: #141719; }
 #battle-skill-bar .battle-skill-slot { width: 100%; min-width: 0; min-height: 0; height: auto; aspect-ratio: 1; box-sizing: border-box; }
 #battle-xp-bar {
   position: relative; margin: 0 0 3px; pointer-events: auto;
-  width: 100%; height: 9px; box-sizing: border-box; overflow: hidden;
-  border: 1px solid #948968; background: linear-gradient(#42463a, #131b17 48%, #080d0e); box-shadow: 0 1px 4px #000, inset 0 1px #d7cda16b, inset 0 -2px 3px #000; z-index: 31; cursor: help;
+  width: 100%; height: 11px; box-sizing: border-box; overflow: hidden;
+  border: 1px solid #c9b778; background: linear-gradient(#786443, #453421 35%, #251c15 70%, #58412a); box-shadow: 0 1px 5px #000, 0 0 4px #e3c46b33, inset 0 1px #fff2bc66, inset 0 -2px 3px #0009; z-index: 31; cursor: help;
 }
-#battle-xp-fill { width: 0; height: 100%; background: linear-gradient(#fff0ae, #c7a84e 45%, #80602b 100%); box-shadow: 0 0 7px #eac76780, inset 0 1px #fff5c8; }
-#battle-xp-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 1px), #e8ddae66 calc(20% - 1px) 20%); box-shadow: inset 0 0 3px #0009; }
+#battle-xp-fill { width: 0; height: 100%; background: linear-gradient(#fff9db, #ffe79c 32%, #efbd52 70%, #b97827); box-shadow: 0 0 8px #f6d477a6, inset 0 1px #fffdf1, inset 0 -1px #80511666; }
+#battle-xp-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(#fff8d333, transparent 40%, #0003), repeating-linear-gradient(90deg, transparent 0 calc(20% - 1px), #f4dfaa88 calc(20% - 1px) 20%); box-shadow: inset 0 0 2px #0006; }
 #battle-canvas-host #battle-buff-bar { bottom: calc(100% + 10px); width: 100%; max-width: none; padding: 0 7px; gap: 5px; }
 @container (max-width: 420px) {
   #battle-canvas-host .battle-resource-orb { padding: 5px; width: 16cqw; }
