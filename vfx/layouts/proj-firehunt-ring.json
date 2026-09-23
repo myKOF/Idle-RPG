@@ -6,6 +6,7 @@
       "id": "proj-firehunt-ring",
       "name": "proj-firehunt-ring",
       "layerIds": [
+        "ember-glow",
         "flame-shell",
         "flame-body",
         "star-core",

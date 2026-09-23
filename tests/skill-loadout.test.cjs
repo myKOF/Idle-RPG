@@ -20,7 +20,7 @@ function loadFormulaContext() {
    LOADOUT_SIZE（改參數請改 xlsx，改 config/CSV 會被下次 sync 沖掉）。
    依 AI_RULES.md 9.1 例外，測試刻意釘住目前數值：參數表一動這裡就會紅，
    這是預期行為——確認新值是有意調整後，把期望值一併更新。
-   2026-08-10（commit 3d5a323）起：a=50、b=4、c=10（上限原為 20）。 */
+   2026-09-23 使用者調整：a=50、b=4、c=6。 */
 test('未轉生玩家技能裝載欄依等級成長與上限計算', () => {
   const context = loadFormulaContext();
   context.G.player.level = 1;
@@ -34,16 +34,16 @@ test('未轉生玩家技能裝載欄依等級成長與上限計算', () => {
   context.G.player.level = 100;
   assert.equal(context.loadoutSize(), 6);
   context.G.player.level = 200;
-  assert.equal(context.loadoutSize(), 8);
+  assert.equal(context.loadoutSize(), 6);
   context.G.player.level = 250;
-  assert.equal(context.loadoutSize(), 9);
+  assert.equal(context.loadoutSize(), 6);
   context.G.player.level = 9999;
-  assert.equal(context.loadoutSize(), 10);   // 封頂＝「技能裝載欄」param c
+  assert.equal(context.loadoutSize(), 6);   // 封頂＝「技能裝載欄」param c
 });
 
-test('1 轉以上玩家不論等級皆解鎖全數 10 格裝載欄位', () => {
+test('1 轉以上玩家不論等級皆解鎖全數 6 格裝載欄位', () => {
   const context = loadFormulaContext();
   context.reincarnationCount = () => 1;
   context.G.player.level = 1;
-  assert.equal(context.loadoutSize(), 10);   // 1 轉直接給滿＝「技能裝載欄」param c
+  assert.equal(context.loadoutSize(), 6);   // 1 轉直接給滿＝「技能裝載欄」param c
 });

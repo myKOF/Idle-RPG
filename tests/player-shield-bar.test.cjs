@@ -2,7 +2,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { buildSceneTree, drawOrder } = require('./helpers/battle-scene.cjs');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -50,34 +49,9 @@ test('玩家護盾同時顯示獨立護盾條與血量文字數值', () => {
   assert.match(ui, /setHtmlIfChanged\(\$id\('tp-hptext'\),\s*fmt\(Math\.max\(0,\s*p\.hp\)\) \+ playerShieldText\(p\) \+ ' \/ ' \+ fmt\(st\.hp\)\)/);
 });
 
-test('Canvas 玩家護盾條以護盾最大值為分母，不以最大生命鎖住滿格', () => {
-  assert.match(renderer, /playerShieldMax:\s*0/);
-  assert.match(renderer, /var shieldMax = S\.playerShieldMax > 0 \? S\.playerShieldMax : Math\.max\(0, v\.shield \|\| 0\)/);
-  assert.match(renderer, /sh \/ Math\.max\(1, shieldMax\)/);
-  assert.doesNotMatch(renderer, /sh \/ hpMax/);
-});
-
-test('Canvas 玩家血條、法力條與護盾條位於敵人及所有浮字之上', () => {
-  /* 釘的是「相對順序」而不是那一行的字面：VFX Preset 的 presetZone／presetFx
-     之後插在 zone 與 fx 後面，2026-09-22 特效層又包進斜俯視的地面平面容器，
-     字面比對會因為無關的層而失效，但這條要驗的一直都是「玩家 HUD 在敵人與所有浮字之上」。
-     所以看真正組出來的場景樹。 */
-  const S = buildSceneTree(renderer);
-  const L = S.layers;
-  const drawn = drawOrder(S.app.stage);
-  const names = ['zone', 'presetZone', 'entity', 'fx', 'presetFx', 'float', 'playerHud'];
-  const hudAt = drawn.indexOf(L.playerHud);
-  assert.ok(hudAt >= 0, 'playerHud 不在場景裡');
-  names.slice(0, -1).forEach(function (name) {
-    const at = drawn.indexOf(L[name]);
-    assert.ok(at >= 0, name + ' 不在場景裡');
-    assert.ok(hudAt > at, '層順序不對：playerHud 必須畫在 ' + name + ' 之後');
-  });
-  assert.match(renderer, /playerHud:\s*playerHud/);
-  assert.match(renderer, /S\.layers\.playerHud\.addChild\(vitals\)/);
-  assert.match(renderer, /S\.layers\.playerHud\.addChild\(hpText\)/);
-  assert.match(renderer, /S\.layers\.playerHud\.addChild\(mpText\)/);
-  assert.match(renderer, /hud:\s*S\.layers\.playerHud/);
-  /* 2026-09-22 起玩家 HUD 在螢幕層（不跟著透視變形），位置每幀換到角色腳底的螢幕位置 */
-  assert.match(renderer, /var hudPt = worldToScreenPoint\(p\.root\.x, p\.root\.y\);\s*p\.hud\.x = hudPt\.x;\s*p\.hud\.y = hudPt\.y;/);
+test('Canvas 不再建立角色腳下的資源條，由固定 DOM 圓瓶顯示', () => {
+  assert.doesNotMatch(renderer, /function drawPlayerVitals|var hpText =|var mpText =/);
+  assert.match(html, /id="battle-health-orb"/);
+  assert.match(html, /id="battle-mana-orb"/);
+  assert.match(html, /id="battle-shield-fill"/);
 });

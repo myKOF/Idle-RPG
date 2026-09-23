@@ -2294,7 +2294,7 @@ function skillCooldownWithMinimum(cooldown) {
 }
 
 // 裝載欄：參數表「技能裝載欄」＝clamp(b + ⌊等級/a⌋, b, c)；1 轉後解鎖全部上限。
-var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 10 };
+var LOADOUT_SIZE = { perLevels: 50, min: 4, base: 4, max: 6 };
 /* 純函式版本：不讀 G，讓讀檔遷移（save.js）能對「存檔裡的」等級與轉數算格數。
    loadoutSize() 是它讀取現況 G 的包裝，兩者必須是同一套規則——分成兩份算法遲早會飄。 */
 function loadoutSizeFor(level, reincarnations) {

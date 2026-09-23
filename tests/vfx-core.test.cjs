@@ -12,6 +12,25 @@ const VFXCore = require('../js/vfx-core.js');
 
 const root = path.resolve(__dirname, '..');
 
+test('受擊可用腳點排序而維持身體中心的實際繪製位置', () => {
+  const nodes = [];
+  const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {
+    createNode() { const n = {}; nodes.push(n); return n; },
+    updateNode(n, t) { n.t = { ...t }; }, destroyNode() {}
+  } });
+  rt.registerPreset({ schemaVersion: 1, id: 'impact-depth', duration: 1,
+    layers: [{ id: 'flash', type: 'sprite', assetId: 'pack/hit.png' }] });
+  const handle = rt.play('impact-depth', { position: { x: 20, y: 54 }, depthY: 100 });
+  rt.update(0.1);
+  assert.equal(nodes[0].t.y, 54);
+  assert.equal(nodes[0].t.sortY, 100);
+  rt.setTransform(handle, { position: { x: 20, y: 64 }, depthY: 110 });
+  rt.update(0.1);
+  assert.equal(nodes[0].t.y, 64);
+  assert.equal(nodes[0].t.sortY, 110);
+  rt.destroy();
+});
+
 test('圖層loop跨越Preset壽命、旋轉速度不歸零，outerScale保持地板投影', () => {
   for (const presetLoop of [false, true]) {
     const nodes = [];

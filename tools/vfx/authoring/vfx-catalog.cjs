@@ -90,7 +90,7 @@ def('proj-arcane-missile', 'projectile', '奧術飛彈：小型淡藍紫 #8ea2ff
 def('proj-waterball-flow', 'projectile', '青綠蛋形水彈與濃密水滴拖尾。', { nominal: '90×58px', dur: 1.2 });
 def('hit-waterball-splash', 'hit', '水珠飛濺、泡沫亮點及雙層擴散水紋。', { nominal: 'R 100px', dur: 0.85 });
 def('proj-waterball', 'projectile', '水流彈：藍色 #38bdf8 水球（直徑 18px）+ 白 #f0f9ff 高光 + 飛濺水珠拖尾。', { nominal: 'D 18px', dur: 1.2 });
-def('proj-firehunt-ring', 'projectile', '火神星環：實心金橙火核、紅橙外焰與沿實際曲線留下的短尾焰；暖色濾色混合與限制粒子壽命，避免連發疊白。', { nominal: 'R 11px', dur: 1.5 });
+def('proj-firehunt-ring', 'projectile', '火神星環：清晰金橙火核、薄外焰與細弧尾焰；暖色濾色混合與限制粒子壽命，避免連發疊白。', { nominal: 'R 11px', dur: 1.5 });
 def('proj-enemy-bolt', 'projectile', '敵方魔法彈：紅 #ff6b6b 光球（直徑 13px）+ 光暈 + 淡紅拖尾；無屬性敵人的遠程攻擊。', { nominal: 'D 13px', dur: 1.2 });
 def('proj-meteor', 'projectile', '隕石：直徑約 110px 的火焰團（flare／flame 素材、加法混合、顏色由 #facc22→#f89800→#f83600→#9f0404 漸暗）持續朝 -X 噴出拖尾火焰（拖尾長約 240px、每秒 13 顆、壽命 2.4s、飛行中不斷發射）。', { nominal: 'D 110px', dur: 2.5 });
 def('proj-meteor-small', 'projectile', '小隕石：同 proj-meteor 縮小（直徑約 35px、拖尾約 125px、每秒 7 顆）。', { nominal: 'D 35px', dur: 2.0 });

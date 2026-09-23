@@ -46,13 +46,13 @@ function fakeLoadout(n) {
 /* 期望格數出處：config/Excel/game_parameters.xlsx「1-成長經驗」第 4 列「技能裝載欄」
    → a=每 a 級 +1 格、b=下限、c=上限，經 tools/apply_params.cjs 套進 LOADOUT_SIZE。
    依 AI_RULES.md 9.1 例外刻意釘住數值：參數表一改這裡就會紅，是預期行為。
-   目前設定：a=50、b=4、c=10。 */
+   目前設定：a=50、b=4、c=6。 */
 test('loadoutSizeFor：不讀 G，直接對存檔裡的等級與轉數算格數', () => {
   const c = loadMigrationContext();
   assert.equal(c.loadoutSizeFor(1, 0), 4);
-  assert.equal(c.loadoutSizeFor(250, 0), 9);
-  assert.equal(c.loadoutSizeFor(9999, 0), 10);   // 封頂＝param c
-  assert.equal(c.loadoutSizeFor(1, 1), 10);      // 1 轉直接給滿
+  assert.equal(c.loadoutSizeFor(250, 0), 6);
+  assert.equal(c.loadoutSizeFor(9999, 0), 6);   // 封頂＝param c
+  assert.equal(c.loadoutSizeFor(1, 1), 6);      // 1 轉直接給滿
   // 髒資料不該讓格數變成 NaN 或 0：退回下限
   assert.equal(c.loadoutSizeFor(undefined, undefined), 4);
   assert.equal(c.loadoutSizeFor('abc', null), 4);
@@ -61,15 +61,15 @@ test('loadoutSizeFor：不讀 G，直接對存檔裡的等級與轉數算格數'
 test('舊存檔超出上限的裝載欄會被裁掉，保留排在前面的格子並公告一次', () => {
   const c = loadMigrationContext();
   const data = oldSave(c, (d) => {
-    d.player.level = 250;          // 0 轉 250 級 → 9 格
+    d.player.level = 250;          // 0 轉 250 級 → 6 格
     d.player.reincarnations = 0;
     d.player.loadout = fakeLoadout(15);
   });
   c.migrateSave(data);
-  assert.equal(data.player.loadout.length, 9);
-  assert.deepEqual(data.player.loadout, fakeLoadout(9));   // 保留前段、順序不變
-  assert.match(data._loadoutCapClampNotice || '', /9 格/);
-  assert.match(data._loadoutCapClampNotice || '', /6 個技能/);
+  assert.equal(data.player.loadout.length, 6);
+  assert.deepEqual(data.player.loadout, fakeLoadout(6));   // 保留前段、順序不變
+  assert.match(data._loadoutCapClampNotice || '', /6 格/);
+  assert.match(data._loadoutCapClampNotice || '', /9 個技能/);
   assert.equal(data.loadoutCapClampV1, true);
 });
 

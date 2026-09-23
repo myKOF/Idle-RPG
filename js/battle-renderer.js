@@ -146,7 +146,6 @@ var BattleRenderer = (function () {
     towerActive: false,
     zoneKey: '',
     player: null,             // 玩家實體
-    playerShieldMax: 0,       // 本次護盾條的分母（由 battle panel 的 shieldMax 提供）
     bossBar: null,            // 場上 BOSS 的頂部大血條
     entities: {},             // floatSel -> enemy entity
     lastPos: {},              // floatSel -> { x, y, at }（實體移除後短暫保留）
@@ -1430,11 +1429,6 @@ var BattleRenderer = (function () {
   }
 
   /* ---- 玩家 ---- */
-  var PLAYER_BAR_W = 88;
-  /* 腳下狀態條（護盾／生命／法力三條與兩行數字）離角色原點的垂直距離；
-     三條與文字都以它為基準，整組上下移動只改這一個數。 */
-  var PLAYER_VITALS_Y = 11;
-
   function makePlayer() {
     var root = new PIXI.Container();
     var sheet = S.sheets.player;
@@ -1453,31 +1447,6 @@ var BattleRenderer = (function () {
     root.addChild(bodyWrap);
     /* 穿透式角色輪廓（見 PLAYER_OUTLINE）：獨立掛在特效層之上，逐幀鏡像本體。 */
     var outline = makeOutlineSprite('player', body);
-
-    /* 生命／法力條：跟著角色走，畫在腳下（與敵人同一套視覺語言） */
-    var vitals = new PIXI.Graphics();
-    vitals.y = PLAYER_VITALS_Y;
-    S.layers.playerHud.addChild(vitals);
-    var hpText = new PIXI.Text({
-      text: '',
-      style: {
-        fontFamily: 'sans-serif', fontSize: 9, fontWeight: 'bold',
-        fill: '#ffffff', stroke: { color: '#000000', width: 2 }
-      }
-    });
-    hpText.anchor.set(0.5, 0.5);
-    hpText.y = PLAYER_VITALS_Y + 5;
-    S.layers.playerHud.addChild(hpText);
-    var mpText = new PIXI.Text({
-      text: '',
-      style: {
-        fontFamily: 'sans-serif', fontSize: 8, fontWeight: 'bold',
-        fill: '#dbeafe', stroke: { color: '#000000', width: 2 }
-      }
-    });
-    mpText.anchor.set(0.5, 0.5);
-    mpText.y = PLAYER_VITALS_Y + 16;
-    S.layers.playerHud.addChild(mpText);
 
     /* 復活倒數：技能與狀態列都收進彈出面板後，倒地資訊只剩畫面上這一條 */
     var reviveText = new PIXI.Text({
@@ -1498,8 +1467,7 @@ var BattleRenderer = (function () {
     S.layers.entity.addChild(root);
     S.player = {
       id: 'pv-float', root: root, body: body, bodyWrap: bodyWrap, outline: outline,
-      vitals: vitals, hpText: hpText, mpText: mpText, reviveText: reviveText,
-      hud: S.layers.playerHud,
+      reviveText: reviveText,
       sheetName: 'player', curAnim: 'idle', baseAnim: 'idle', texAnim: 'idle',
       hitHeight: 70, walking: false, dead: false, stillFor: 99, fallK: 0,
       flash: 0, jolt: 0, lunge: 0, facing: 1,
@@ -1512,42 +1480,8 @@ var BattleRenderer = (function () {
       /* 世界座標。samples 是模擬層座標的取樣緩衝，wx/wy 是內插後畫出來的位置；
          鏡頭對準 wx/wy，所以角色永遠在畫面正中央。 */
       wx: 0, wy: 0, samples: null,
-      vitalsShown: '', deathFogK: 0, deathFogDuration: 1, deathFogDrawnK: -1
+      deathFogK: 0, deathFogDuration: 1, deathFogDrawnK: -1
     };
-    drawPlayerVitals();
-  }
-
-  /* 生命／法力條（資料來自 5Hz 的 TICK view，不必等面板） */
-  function drawPlayerVitals() {
-    var p = S.player;
-    if (!p || !p.vitals || p.vitals.destroyed) return;
-    var v = S.vitals;
-    if (!v) return;
-    var hpMax = Math.max(1, v.hpMax || 1), mpMax = Math.max(1, v.mpMax || 1);
-    var hp = Math.max(0, v.hp || 0), mp = Math.max(0, v.mp || 0);
-    /* 護盾可能大於最大生命；用 shieldMax 才能讓 200% → 100% 的護盾也能
-       從滿格逐步縮短，而不是被 hpMax 當分母鎖在 100%。 */
-    var shieldMax = S.playerShieldMax > 0 ? S.playerShieldMax : Math.max(0, v.shield || 0);
-    var sig = Math.round(hp) + '/' + Math.round(hpMax) + '|' + Math.round(mp) + '/' +
-      Math.round(mpMax) + '|' + Math.round(v.shield || 0) + '/' + Math.round(shieldMax);
-    if (p.vitalsShown === sig) return;
-    p.vitalsShown = sig;
-
-    var w = PLAYER_BAR_W, hpH = 10, mpH = 7, gap = 2;
-    var g = p.vitals;
-    g.clear();
-    g.roundRect(-w / 2 - 1, -1, w + 2, hpH + gap + mpH + 2, 2).fill({ color: 0x000000, alpha: 0.78 });
-    var hpPct = Math.max(0, Math.min(1, hp / hpMax));
-    if (hpPct > 0) g.roundRect(-w / 2, 0, w * hpPct, hpH, 1.5).fill(0xc0392b);
-    var mpPct = Math.max(0, Math.min(1, mp / mpMax));
-    if (mpPct > 0) g.roundRect(-w / 2, hpH + gap, w * mpPct, mpH, 1.5).fill(0x2f7fd0);
-    var sh = Math.max(0, v.shield || 0);
-    if (sh > 0.5) {
-      var sp = Math.max(0.05, Math.min(1, sh / Math.max(1, shieldMax)));
-      g.roundRect(-w / 2, -4, w * sp, 3, 1).fill({ color: 0x8ecbff, alpha: 0.95 });
-    }
-    p.hpText.text = fmtNum(hp) + ' / ' + fmtNum(hpMax);
-    p.mpText.text = fmtNum(mp) + ' / ' + fmtNum(mpMax);
   }
 
   /* 出手動作。近戰不再「瞬間衝過去再彈回原位」——角色平常就會跑向目標
@@ -1629,11 +1563,6 @@ var BattleRenderer = (function () {
     var field = panel.field || {};
     var stage = panel.stage || {};
     syncZone(stage.zone || '');
-    var panelPlayer = field.player;
-    if (panelPlayer && typeof panelPlayer.shieldMax === 'number' && isFinite(panelPlayer.shieldMax)) {
-      S.playerShieldMax = Math.max(0, panelPlayer.shieldMax);
-    }
-
     /* 殘留座標表清理：鍵是單調遞增的 mv-float-N，過期即刪，不清會無限增長 */
     for (var lp in S.lastPos) {
       if (Object.prototype.hasOwnProperty.call(S.lastPos, lp) &&
@@ -1937,11 +1866,14 @@ var BattleRenderer = (function () {
     return fx;
   }
   function killFx(fx) {
+    var impactGroup = fx.node && fx.node.parent && fx.node.parent.__impactGroup
+      ? fx.node.parent : null;
     if (fx.node && fx.node.__airWrapper) {
       var wrapper = fx.node.__airWrapper; legacyAirNodes.delete(fx.node);
       if (wrapper.parent) wrapper.parent.removeChild(wrapper); wrapper.destroy({children:true});
     }
     if (fx.node && !fx.node.destroyed) fx.node.destroy({ children: true });
+    if (impactGroup && !impactGroup.children.length && !impactGroup.destroyed) impactGroup.destroy();
     fx.dead = true;
   }
 
@@ -1989,7 +1921,7 @@ var BattleRenderer = (function () {
     sweepOrphanFxNodes();
   }
 
-  function spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard) {
+  function spawnParticles(x, y, count, theme, speed, radiusScale, targetGuard, impactGroup) {
     if (REDUCED_MOTION) return;
     count = particleBudget(Math.min(count, 14));
     if (count <= 0) return;
@@ -2003,9 +1935,9 @@ var BattleRenderer = (function () {
         g.anchor.set(0.5);
         g.scale.set(r * particleScale / DOT_TEX_RADIUS);
         g.tint = Math.random() < 0.5 ? c1 : c2;
-        g.x = x; g.y = y;
+        g.x = impactGroup ? 0 : x; g.y = impactGroup ? 0 : y;
         g.blendMode = 'add';
-        S.layers.fx.addChild(g);
+        (impactGroup || S.layers.fx).addChild(g);
         var ang = Math.random() * Math.PI * 2;
         var v = (60 + Math.random() * 120) * (speed || 1) * particleScale * 0.55;
         var vx = Math.cos(ang) * v, vy = Math.sin(ang) * v - 40;
@@ -2520,6 +2452,12 @@ var BattleRenderer = (function () {
     var visualStrong = strong || fireExplosion;
     var t = 0, dur = fireExplosion ? 0.62 : (visualStrong ? 0.4 : 0.26);
     var maxR = fireExplosion ? 30 : (visualStrong ? 15 : 8.5);
+    var impactGroup = new PIXI.Container();
+    impactGroup.__impactGroup = true;
+    impactGroup.position.set(x, groundToScreenY(y));
+    impactGroup.scale.y = GROUND_Y_SCALE;
+    impactGroup.zIndex = groundToScreenY(y) + 46;
+    S.layers.entity.addChild(impactGroup);
     /* 逐幀 clear()＋stroke() 換成貼圖縮放，理由見 ringTexture()。 */
     var ring = new PIXI.Sprite(ringTexture());
     ring.anchor.set(0.5);
@@ -2532,9 +2470,9 @@ var BattleRenderer = (function () {
        飛刀彈射一次幾十跳，畫面上等於常駐一堆大圈，而且怎麼調 maxR 都沒用。 */
     ring.scale.set(1.3 / RING_TEX_RADIUS);
     ring.tint = cssColorToInt(theme.c1, 0xffffff);
-    ring.x = x; ring.y = y;
-    S.layers.fx.addChild(ring);
-    addFx({
+    ring.x = 0; ring.y = 0;
+    impactGroup.addChild(ring);
+    if (!addFx({
       node: ring,
       update: function (dt) {
         if (targetGuard && !targetGuard()) return false;
@@ -2544,9 +2482,9 @@ var BattleRenderer = (function () {
         ring.alpha = 1 - k;
         return t < dur;
       }
-    }, 1);
+    }, 1)) return;
     spawnParticles(x, y, fireExplosion ? 22 : (strong ? 12 : 6), theme,
-      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1, targetGuard);
+      fireExplosion ? 1.35 : (strong ? 0.9 : 0.55), fireExplosion ? 1.45 : 1, targetGuard, impactGroup);
     if (strong) addShake(5, spec);
   }
 
@@ -6116,7 +6054,6 @@ var BattleRenderer = (function () {
       /* 面向目標：只有朝右一版的舊素材，往左打就水平翻面；多方向素材每個方向都有自己的圖，不翻 */
       if (!p.dead) p.bodyWrap.scale.x = (!p.directional && p.facing < 0) ? -1 : 1;
       updateFlashJolt(p, dt);
-      drawPlayerVitals();
     }
     /* 輪廓層在 dt === 0（暫停）也要對齊：它不是 root 的子節點，
        暫停時若跳過這一步，輪廓會停在上一次的位置。 */
@@ -6135,13 +6072,6 @@ var BattleRenderer = (function () {
     world.x = S.W / 2 - cam.x + shx;
     world.y = S.H / 2 - groundToScreenY(cam.y) + shy;
     syncGroundScroll(cam, shx, shy);
-    if (p && p.hud) {
-      /* 玩家 HUD 在螢幕層（不跟著透視變形）。一定要在鏡頭算完之後才換位置：
-         用上一幀的鏡頭會差一幀的位移，角色一跑起來狀態條就抖。 */
-      var hudPt = worldToScreenPoint(p.root.x, p.root.y);
-      p.hud.x = hudPt.x;
-      p.hud.y = hudPt.y;
-    }
     if (p && p.reviveText && p.reviveText.visible) {
       /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平；開了透視要換到變形後的螢幕位置。 */
       var revivePt = perspScreenPoint(world.x + p.root.x, world.y + p.root.y - 104);
@@ -6353,10 +6283,16 @@ var BattleRenderer = (function () {
        「沒有被 S.fx 追蹤」的孩子全部 destroy，Core 的節點會被當成孤兒清掉。 */
     var presetZone = new PIXI.Container();
     var presetFx = new PIXI.Container();
+    var airBack = new PIXI.Container();
+    airBack.sortableChildren = true;
     var airFx = new PIXI.Container();
     airFx.sortableChildren = true;
     var presetAir = new PIXI.Container();
     airFx.addChild(presetAir);
+    /* 空中物保持螢幕 billboard；後方空中物和前方空中物之間補畫角色本體。
+       只補本體，不複製影子或 HUD；前景仍由前方空中層正常遮住角色。 */
+    var airPlayer = new PIXI.Sprite(PIXI.Texture.EMPTY);
+    airPlayer.visible = false;
     /* 玩家三條狀態條必須在所有敵人、敵方血條／名稱與傷害浮字之上，避免被任何戰鬥表現層蓋住。
        與傷害浮字一樣畫在螢幕層、不跟著透視變形，位置每幀跟著角色換（見 worldToScreenPoint）。 */
     var playerHud = new PIXI.Container();
@@ -6388,6 +6324,8 @@ var BattleRenderer = (function () {
     app.stage.addChild(sceneRoot);
     /* 傷害浮字與玩家 HUD 在場景外的螢幕層：不跟著透視變形（字不會被拉歪、上面縮小下面放大），
        每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
+    app.stage.addChild(airBack);
+    app.stage.addChild(airPlayer);
     app.stage.addChild(airFx);
     app.stage.addChild(floatLayer);
     app.stage.addChild(playerHud);
@@ -6432,7 +6370,8 @@ var BattleRenderer = (function () {
 
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
-      presetZone: presetZone, presetFx: presetFx, airFx: airFx, presetAir: presetAir,
+      presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
+      airFx: airFx, presetAir: presetAir,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay
@@ -6613,7 +6552,33 @@ var BattleRenderer = (function () {
       wrapper.scale.set(p.scale);
       wrapper.position.set(p.x-node.x*p.scale,p.y-node.y*p.scale);
       wrapper.zIndex = p.y;
+      var playerY = S.player && S.player.root ? S.player.root.y : -Infinity;
+      var parent = groundToScreenY(node.y) < playerY ? S.layers.airBack : S.layers.airFx;
+      if (parent && wrapper.parent !== parent) parent.addChild(wrapper);
     });
+  }
+  function syncAirPlayer() {
+    var copy = S.layers && S.layers.airPlayer;
+    var p = S.player;
+    if (!copy || !p || !p.body || !p.bodyWrap || !p.root || p.body.destroyed ||
+        !p.body.visible || !p.bodyWrap.visible || !p.root.visible ||
+        !S.layers.airBack.children.length) { if (copy) copy.visible = false; return; }
+    var body = p.body, wrap = p.bodyWrap, root = p.root;
+    var pt = { x: body.x * wrap.scale.x, y: body.y * wrap.scale.y };
+    rotateOutlinePt(pt, wrap.rotation);
+    pt.x = (pt.x + wrap.x) * root.scale.x;
+    pt.y = (pt.y + wrap.y) * root.scale.y;
+    rotateOutlinePt(pt, root.rotation);
+    var pose = airScreenPose(root.x + pt.x, root.y + pt.y);
+    copy.texture = body.texture;
+    copy.anchor.copyFrom(body.anchor);
+    copy.position.set(pose.x, pose.y);
+    copy.scale.set(root.scale.x * wrap.scale.x * body.scale.x * pose.scale,
+      root.scale.y * wrap.scale.y * body.scale.y * pose.scale);
+    copy.rotation = root.rotation + wrap.rotation + body.rotation;
+    copy.alpha = root.alpha * wrap.alpha * body.alpha;
+    copy.tint = body.tint;
+    copy.visible = true;
   }
   /* 場景要畫出來的範圍（平行投影的畫面座標） */
   function sceneDrawRect() {
@@ -6662,6 +6627,7 @@ var BattleRenderer = (function () {
   /* 每幀把場景畫進離屏貼圖（掛在 app.ticker，優先序見 PERSPECTIVE_RENDER_PRIORITY）。 */
   function renderPerspectiveScene() {
     syncLegacyAir();
+    syncAirPlayer();
     var P = S.persp;
     if (!P || !P.rt || !S.sceneRoot || !S.app) return;
     S.app.renderer.render({ container: S.sceneRoot, target: P.rt, clear: true });
@@ -6739,10 +6705,6 @@ var BattleRenderer = (function () {
       var view = msg && msg.view;
       if (!view) return;
       S.towerActive = !!view.towerActive;
-      /* 玩家血魔條的資料源：高頻視圖就有 hp/hpMax/mp/mpMax/shield，不必等面板 */
-      S.vitals = {
-        hp: view.hp, hpMax: view.hpMax, mp: view.mp, mpMax: view.mpMax, shield: view.shield
-      };
       var paused = !!view.paused;
       if (paused !== S.paused) {
         S.paused = paused;
@@ -6769,7 +6731,6 @@ var BattleRenderer = (function () {
       S.floats.length = 0;
       S.floatMerge = {};
       S.lastPos = {};
-      S.playerShieldMax = 0;
       for (var id in S.entities) {
         if (Object.prototype.hasOwnProperty.call(S.entities, id)) destroyEntity(id);
       }
@@ -6803,8 +6764,11 @@ var BattleRenderer = (function () {
        ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
     VFXRuntime.boot({
       airContainer: S.layers.presetAir,
+      airBackContainer: S.layers.airBack,
+      airDepthSplitY: function () { return S.player && S.player.root ? S.player.root.y : -Infinity; },
       projectAirTransform: projectAirTransform,
       fxContainer: S.layers.presetFx,
+      fxDepthContainer: S.layers.entity,
       zoneContainer: S.layers.presetZone,
       groundScale: GROUND_Y_SCALE,
       ctx: {

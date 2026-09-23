@@ -56,7 +56,7 @@ var VFXPixiBackend = (function () {
       var group = node.__depthGroup;
       if (!group) return;
       group.removeChild(node); node.__depthGroup = null;
-      if (!group.children.length) { depthGroups.delete(group.__effectId); container.removeChild(group); group.destroy(); }
+      if (!group.children.length) { depthGroups.delete(group.__effectId); if (group.parent) group.parent.removeChild(group); group.destroy(); }
     }
     function assignDepth(node, t) {
       if (!opts.depthSort || t.sortGroup === undefined) return;
@@ -69,6 +69,9 @@ var VFXPixiBackend = (function () {
         group.addChild(node); node.__depthGroup = group;
       }
       group.zIndex = t.sortY;
+      var parent = opts.depthBackContainer && opts.depthSplitY && t.sortY < opts.depthSplitY()
+        ? opts.depthBackContainer : (opts.depthParent || container);
+      if (group.parent !== parent) parent.addChild(group);
     }
 
     /* url -> { state: 'loading' | 'ready' | 'failed', texture, promise }

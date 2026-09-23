@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2435,
+  "assetCount": 2436,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -298,6 +298,52 @@
         "trimmed": false,
         "edgeContinuity": {
           "u": 0.9367,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/firegod/sharp-flame.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/firegod/sharp-flame.png",
+      "format": "png",
+      "fileSize": 25599,
+      "contentHash": "sha256:28e11a4d9585531446416ffb78ffb4305928861d6406259c71a71f9c1d9e1a34",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3094,
+          "visibleRatio": 0.3415,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4019,
+          "max": 0.9437,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.9114,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 19,
+          "y": 12,
+          "width": 225,
+          "height": 224
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
           "v": 1
         },
         "backgroundVariant": "transparent"

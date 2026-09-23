@@ -2604,6 +2604,7 @@ function renderHeader() {
     el.parentNode.style.display = shownRes[item.id] ? '' : 'none';
   });
 
+  renderBattleResourceOrbs();
   refreshOpenResourceTooltip();
 
   $id('toggle-compare').checked = !!(headerSnapshot.settings && headerSnapshot.settings.compareEq);
@@ -2648,6 +2649,12 @@ function renderHeader() {
   setAttrIfChanged(xpBar, 'data-tt-title', '角色經驗');
   setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
   removeAttrIfPresent(xpBar, 'title');
+  var battleXp = $id('battle-xp-bar');
+  var battleXpPct = isMaxedOut ? 100 : clamp((Number(p.xp) || 0) / Math.max(1, need) * 100, 0, 100);
+  setStyleIfChanged($id('battle-xp-fill'), 'width', battleXpPct + '%');
+  setAttrIfChanged(battleXp, 'aria-valuenow', String(Math.round(battleXpPct)));
+  setAttrIfChanged(battleXp, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('Lv.' + p.level + '｜經驗：' + fmtFull(p.xp) + ' / ' + fmtFull(need)));
+  if (UI.tooltipAnchor === battleXp) refreshOpenStatTooltip();
 
   // 屬性面板顯示「檢視中」裝備套的預覽屬性（切頁即變，不需確定切換）；header 其他區塊維持穿著中數值
   renderAttrPanel(headerSnapshot.viewStats || st, headerSnapshot);
@@ -3301,7 +3308,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     lo = player.loadout;
   }
 
-  var TOTAL_SLOTS = 10;
+  var TOTAL_SLOTS = LOADOUT_SIZE.max;
   var states = [];
 
   for (var i = 0; i < TOTAL_SLOTS; i++) {
@@ -3901,6 +3908,32 @@ function rebuildEnemyParty(party, html) {
       retained.appendChild(oldLayer);
     }
   }
+}
+
+/* 資源圓瓶沿用 TICK 視圖；護盾容量仍由 battle panel 的權威值提供。 */
+function renderBattleResourceOrbs() {
+  var view = viewState() || {};
+  var battle = uiBattlePanelSnapshot() || {};
+  var p = (battle.field && battle.field.player) || {};
+  function value(tickValue, panelValue) {
+    return Math.max(0, Number.isFinite(tickValue) ? tickValue : (Number(panelValue) || 0));
+  }
+  var hp = value(view.hp, p.hp), hpMax = value(view.hpMax, p.maxHp);
+  var mp = value(view.mp, p.mp), mpMax = value(view.mpMax, p.maxMp);
+  var shield = value(view.shield, p.shield);
+  var shieldMax = Math.max(shield, value(p.shieldMax, 0));
+  function fill(id, current, max) {
+    setStyleIfChanged($id(id), 'height', (clamp(current / Math.max(1, max), 0, 1) * 100) + '%');
+  }
+  fill('battle-health-fill', hp, hpMax);
+  fill('battle-mana-fill', mp, mpMax);
+  fill('battle-shield-fill', shield, shieldMax);
+  var hpDesc = '生命：' + fmtFull(hp) + ' / ' + fmtFull(hpMax) + '<br>護盾：' + fmtFull(shield) + ' / ' + fmtFull(shieldMax);
+  var mpDesc = '法力：' + fmtFull(mp) + ' / ' + fmtFull(mpMax);
+  setAttrIfChanged($id('battle-health-orb'), 'data-tt-desc', hpDesc);
+  setAttrIfChanged($id('battle-health-orb'), 'aria-label', hpDesc.replace('<br>', '，'));
+  setAttrIfChanged($id('battle-mana-orb'), 'data-tt-desc', mpDesc);
+  setAttrIfChanged($id('battle-mana-orb'), 'aria-label', mpDesc);
 }
 
 function renderBattle() {
@@ -9934,11 +9967,21 @@ function initBattleCanvasMode() {
   if (typeof BattleRenderer === 'undefined') return;
   var host = $id('battle-canvas-host');
   if (!host) return;
+  ['battle-health-orb', 'battle-mana-orb', 'battle-xp-bar'].forEach(function (id) {
+    var resource = $id(id);
+    if (!resource) return;
+    resource.addEventListener('focus', function () {
+      showStatTooltip(resource.getAttribute('data-tt-title'), resource.getAttribute('data-tt-desc') || '', resource);
+    });
+    resource.addEventListener('blur', function () {
+      if (UI.tooltipAnchor === resource) hideTooltip();
+    });
+  });
   BattleRenderer.init(host).then(function (ok) {
     if (!ok) return;
     document.body.classList.add('battle-canvas-mode');
 
-    /* 玩家資訊：血魔條改由畫布畫在角色腳下（資料走 TICK view），
+    /* 玩家資訊：血魔與護盾改由畫布兩側的 DOM 圓瓶顯示（資料走 TICK view），
        DOM 的 #pv-hp／#pv-mp 留在隱藏的 .battle-scene 裡讓 renderBattle 照常寫、不再顯示。
        BUFF 狀態圖示直接於技能快捷列上方實時呈現。 */
 

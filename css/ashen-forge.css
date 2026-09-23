@@ -633,3 +633,54 @@ html *::-webkit-scrollbar-corner { background: #141719; }
 @media (prefers-reduced-motion: reduce) {
   .tab-btn, .zone-btn, .btn, .item-cell, .eq-slot { transition: none; }
 }
+/* 戰鬥資源圓瓶：以戰鬥容器寬度縮放，為中央六格保留獨立空間。 */
+#battle-canvas-host { container-type: inline-size; }
+#battle-canvas-host .battle-resource-orb {
+  position: absolute;
+  bottom: clamp(16px, 4cqw, 26px);
+  width: clamp(60px, 16cqw, 108px);
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  z-index: 31;
+  padding: 7px;
+  border-radius: 50%;
+  border: 2px solid #9b9270;
+  background: conic-gradient(from 30deg, #1b2428, #727e78 12%, #252d2c 25%, #a49a76 43%, #222a2c 60%, #6c7770 80%, #1b2428);
+  box-shadow: 0 4px 12px #000c, inset 0 0 0 2px #141b1c, inset 0 0 0 4px #747765;
+  cursor: help;
+  pointer-events: auto;
+}
+#battle-health-orb { left: 12px; }
+#battle-mana-orb { right: 12px; }
+.battle-resource-orb:focus-visible { outline: 2px solid #e7d99b; outline-offset: 3px; }
+.orb-glass { position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #090c14; box-shadow: 0 0 0 1px #000; }
+.orb-liquid, .orb-shield { position: absolute; bottom: 0; left: 0; width: 100%; height: 0; transition: height .18s linear; }
+.health-orb .orb-liquid { background: radial-gradient(ellipse at 45% 15%, #fb5445, #c11625 43%, #760b19 78%, #340714); box-shadow: inset 0 1px #ff9883; }
+.mana-orb .orb-liquid { background: radial-gradient(ellipse at 45% 15%, #488fff, #1848ca 43%, #102679 78%, #070c39); box-shadow: inset 0 1px #92caff; }
+.orb-shield { background: linear-gradient(180deg, #197bfa8c, #0a52cb94); box-shadow: inset 0 2px 5px #8dcaff99; }
+.orb-glass::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(ellipse at 33% 23%, #ffffffa8 0%, #ffffff30 5%, transparent 17%), radial-gradient(circle at 46% 38%, transparent 34%, #0007 78%, #000d 100%); box-shadow: inset 0 0 8px #000a; }
+#battle-action-dock { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(340px, 62cqw); z-index: 30; pointer-events: none; }
+#battle-canvas-host #battle-skill-bar {
+  position: relative; bottom: auto; left: auto; transform: none; width: 100%; max-width: none; box-sizing: border-box;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 7px; gap: 5px; border-color: #777e69;
+  background: linear-gradient(#313934, #11191c); box-shadow: inset 0 0 0 1px #111, inset 0 0 0 3px #424c42, 0 3px 12px #000b;
+}
+#battle-skill-bar .battle-skill-slot { width: 100%; min-width: 0; min-height: 0; height: auto; aspect-ratio: 1; box-sizing: border-box; }
+#battle-xp-bar {
+  position: relative; margin: 0 0 3px; pointer-events: auto;
+  width: 100%; height: 9px; box-sizing: border-box; overflow: hidden;
+  border: 1px solid #948968; background: linear-gradient(#42463a, #131b17 48%, #080d0e); box-shadow: 0 1px 4px #000, inset 0 1px #d7cda16b, inset 0 -2px 3px #000; z-index: 31; cursor: help;
+}
+#battle-xp-fill { width: 0; height: 100%; background: linear-gradient(#fff0ae, #c7a84e 45%, #80602b 100%); box-shadow: 0 0 7px #eac76780, inset 0 1px #fff5c8; }
+#battle-xp-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 1px), #e8ddae66 calc(20% - 1px) 20%); box-shadow: inset 0 0 3px #0009; }
+#battle-canvas-host #battle-buff-bar { bottom: calc(100% + 10px); width: 100%; max-width: none; padding: 0 7px; gap: 5px; }
+@container (max-width: 420px) {
+  #battle-canvas-host .battle-resource-orb { padding: 5px; width: 16cqw; }
+  #battle-health-orb { left: 5px; }
+  #battle-mana-orb { right: 5px; }
+  #battle-canvas-host #battle-skill-bar { padding: 5px; gap: 3px; }
+  #battle-skill-bar .bss-emoji { font-size: 17px; }
+  #battle-skill-bar .bss-cd-text { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .orb-liquid, .orb-shield { transition: none; } }

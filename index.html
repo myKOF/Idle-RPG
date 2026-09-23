@@ -8,7 +8,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.65">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.5">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.13">
 </head>
 
 <body>
@@ -631,10 +631,19 @@
               </div>
               <div id="battle-info-drawer-body"></div>
             </div>
-            <!-- 戰鬥區 BUFF 狀態列：顯示於技能快捷列上方 -->
-            <div id="battle-buff-bar"></div>
-            <!-- 戰鬥區技能欄：戰鬥區下方中央固定顯示 10 個技能圖示與冷卻碼錶 -->
-            <div id="battle-skill-bar"></div>
+            <div id="battle-health-orb" class="battle-resource-orb health-orb" tabindex="0" role="img" aria-label="生命與護盾" data-tt-title="生命與護盾">
+              <div class="orb-glass" aria-hidden="true"><div id="battle-health-fill" class="orb-liquid"></div><div id="battle-shield-fill" class="orb-shield"></div></div>
+            </div>
+            <div id="battle-mana-orb" class="battle-resource-orb mana-orb" tabindex="0" role="img" aria-label="法力" data-tt-title="法力">
+              <div class="orb-glass" aria-hidden="true"><div id="battle-mana-fill" class="orb-liquid"></div></div>
+            </div>
+            <div id="battle-action-dock">
+              <div id="battle-xp-bar" tabindex="0" role="progressbar" aria-label="角色經驗" aria-valuemin="0" aria-valuemax="100" data-tt-title="角色經驗"><div id="battle-xp-fill"></div></div>
+              <!-- 戰鬥區 BUFF 狀態列：顯示於技能快捷列上方 -->
+              <div id="battle-buff-bar"></div>
+              <!-- 戰鬥區技能欄：戰鬥區下方中央依配置上限顯示技能圖示與冷卻碼錶 -->
+              <div id="battle-skill-bar"></div>
+            </div>
           </div>
           <div class="battle-scene">
             <div class="combatant">
@@ -847,7 +856,7 @@
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.50"></script>
   <script src="js/status.js?v=1.0.25"></script>
-  <script src="js/formula.js?v=1.0.36"></script>
+  <script src="js/formula.js?v=1.0.37"></script>
   <script src="js/battlefield.js?v=1.4.0"></script>
   <script src="js/vfx.js?v=1.0.77"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
@@ -857,12 +866,12 @@
        Backend 是 Pixi 繪圖、Runtime 是「事件 → 角色 → 擺哪裡」的轉接層。
        必須在 battle-renderer 之前載入：它的 init() 會直接組裝這三支。 -->
   <script src="js/vfx-water-tornado.js?v=1.0.4"></script>
-  <script src="js/vfx-core.js?v=20260922-orbit-tail"></script>
-  <script src="js/vfx-pixi-backend.js?v=20260922-air-perspective"></script>
-    <script src="js/vfx-runtime.js?v=1.0.122"></script>
+  <script src="js/vfx-core.js?v=20260923-depth-order"></script>
+  <script src="js/vfx-pixi-backend.js?v=20260923-depth-order"></script>
+    <script src="js/vfx-runtime.js?v=1.0.124"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.1"></script>
-  <script src="js/battle-renderer.js?v=1.6.142"></script>
+  <script src="js/battle-renderer.js?v=1.6.144"></script>
   <script src="js/stats.js?v=1.0.1"></script>
   <script src="js/item.js?v=1.0.3"></script>
   <script src="js/skills.js?v=1.0.39"></script>
@@ -874,7 +883,7 @@
   <script src="js/potential.js?v=1.0.5"></script>
   <script src="js/tower.js?v=1.0.12"></script>
   <script src="js/save.js?v=1.0.9"></script>
-  <script src="js/ui.js?v=1.0.75"></script>
+  <script src="js/ui.js?v=1.0.79"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>
@@ -884,7 +893,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.153"></script>
+  <script src="js/bridge.js?v=1.0.154"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

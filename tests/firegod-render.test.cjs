@@ -64,7 +64,7 @@ function renderStress(onFrame, options = {}) {
 
 test('火神星環實際 Runtime 高速連發仍可見，不疊成白色實心光塊', () => {
   const { count, pixels, ringDiameter } = renderStress();
-  assert.ok(ringDiameter > 14 && ringDiameter < 18, `actual diameter ${ringDiameter} must follow Worker collision width`);
+  assert.ok(ringDiameter > 12 && ringDiameter < 16, `actual diameter ${ringDiameter} sharp inner core must stay near the Worker collision width`);
   assert.equal(count, 60, 'must retain every active projectile, not suppress overlapping volleys');
   let white = 0, visible = 0;
   for (let i = 0; i < pixels.length; i += 4) {

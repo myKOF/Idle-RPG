@@ -141,8 +141,9 @@ test('PROJ-9 VFX Runtime 拿到的是畫面座標：ctx 用 screen* 版本、gro
   let opts = null;
   const K0 = K;
   const c = {
-    Math, S: { layers: { presetFx: 'fx', presetZone: 'zone' }, player: null, entities: {} },
+    Math, S: { layers: { presetFx: 'fx', presetZone: 'zone', entity: 'entity', airBack: 'airBack' }, player: null, entities: {} },
     legacyVfxByQuery: () => false,
+    projectAirTransform: t => t,
     VFXRuntime: { boot(o) { opts = o; return { then() { return { catch() {} }; } }; } },
     screenPosOf: (id) => ({ x: 1, y: 2, id }), screenFootOf: (id) => ({ x: 3, y: 4, id }),
     screenMuzzle: () => ({ x: 5, y: 6 }), posOf() { throw new Error('Preset 不可拿地面平面座標'); },
