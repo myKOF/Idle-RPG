@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜超重岩／超重力場狀態持續特效同步（ROCK-DOMAIN-STATUS-VFX-20260923）
+
+- Owner：Codex；Done。Status Excel 中 `sgPetrifyDomain` 使用 `ground-domain-earth`、`sgGravityDomain` 已改為 `ground-domain-earth-10`，但 CSV／JS 尚未同步，實戰兩者仍讀舊預設。將 Excel 權威值同步至 CSV／JS 並更新頁面與 Worker 的 status.js 快取；不修改使用者預設素材與 Skills2 特效。
+- Runtime 測試讀正式 Status 資料，確認兩個狀態的持續特效不同且皆能建立；不合併／推送。
+- 定向 ROCK-DOMAINS／CATALOG-1 2/2 通過，Status 套表語意差異 0，build 401 檔通過。較廣的三檔測試 148/154；6 項失敗分屬火神降臨、金剛不壞、FIELD、CATALOG-3、STARFALL-TAIL，均非本次 Status 欄位斷言；工作區同時有使用者正在調整的 Preset／素材，未納入本提交。
+
 ## Codex｜深淵火獄改為拋物線範圍火球（MIRE-ABYSS-FIREBALL-20260923）
 
 - Owner：Codex；Done。深淵火獄取消定期火龍捲與火屬性烙印，改為熔岩沼每 1 秒向範圍內最多 3 名不同敵人發射火球；落點於發射時固定，沿用融火之心火球的 0.9 秒拋物線飛行與落地爆炸預設，落地對 6 米內敵人造成基礎 300%＋每級 30% 火焰傷害。保留使用者的深淵火獄專屬地板。

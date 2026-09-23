@@ -438,6 +438,29 @@ test('BLOOD-FLIGHT 毒彈使用事件來源與飛行時間，不從玩家發射�
  adapter.update(.51);assert.equal(adapter.stats().projectiles,0);
 });
 
+test('ROCK-DOMAINS 兩種狀態從正式 Status 表載入各自的持續特效', () => {
+  const src = fs.readFileSync(path.join(REPO, 'js/status.js'), 'utf8');
+  const match = /^var STATUS = /m.exec(src);
+  assert.ok(match);
+  const status = eval('(' + extractLiteral(src, match.index + match[0].length) + ')'); // eslint-disable-line no-eval
+  const stone = status.sgPetrifyDomain.vfx.aura;
+  const gravity = status.sgGravityDomain.vfx.aura;
+  assert.equal(stone, 'ground-domain-earth');
+  assert.equal(gravity, 'ground-domain-earth-10');
+  assert.notEqual(stone, gravity);
+  global.statusVfxPreset = (sid, role) => role === 'aura' ? (status[sid]?.vfx?.aura || '') : '';
+  try {
+    const { adapter, log } = makeAdapter([unitPreset(stone, 1, true), unitPreset(gravity, 1, true)]);
+    adapter.syncStatuses([{ key: 'pv-float', sids: ['sgPetrifyDomain'], radii: { sgPetrifyDomain: 120 } }]);
+    adapter.update(.01);
+    adapter.syncStatuses([{ key: 'pv-float', sids: ['sgGravityDomain'], radii: { sgGravityDomain: 120 } }]);
+    adapter.update(.01);
+    assert.ok(log.nodes.some((n) => n.spec.assetUrl.includes(gravity + '.png')), '重力場要播放新預設');
+    assert.ok(log.nodes.some((n) => n.spec.assetUrl.includes(stone + '.png')), '超重岩保留自己的預設');
+    adapter.clear();
+  } finally { delete global.statusVfxPreset; }
+});
+
 test('BLOOD-DOMAIN 領域狀態的光環依半徑縮放、每幀跟著玩家，半徑改變時平滑補間', () => {
   /* 2026-09-18 領域類光環：領域是玩家身上的狀態，快照帶 radii（狀態實例的 vfxR）。 */
   global.statusVfxPreset = (sid, role) => (role === 'aura' && sid === 'sgSlayerDomain' ? 'configured-blood-domain' : '');
