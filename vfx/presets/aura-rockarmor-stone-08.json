@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "aura-rockarmor-stone-09",
+  "id": "aura-rockarmor-stone-08",
   "duration": 4,
   "loop": true,
   "layers": [
@@ -22,7 +22,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#7f7e7a",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -374,7 +374,7 @@
         "y": 0.5
       },
       "alpha": 0.5,
-      "tint": "#0040ff",
+      "tint": "#0062ff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -726,7 +726,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#2da80b",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -1078,7 +1078,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#7f7e7a",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -1430,7 +1430,7 @@
         "y": 0.5
       },
       "alpha": 0.5,
-      "tint": "#0040ff",
+      "tint": "#0062ff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -1782,7 +1782,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#2da80b",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -2134,7 +2134,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#7f7e7a",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -2486,7 +2486,7 @@
         "y": 0.5
       },
       "alpha": 0.5,
-      "tint": "#0040ff",
+      "tint": "#0062ff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -2838,7 +2838,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#2da80b",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -3190,7 +3190,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#7f7e7a",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -3542,7 +3542,7 @@
         "y": 0.5
       },
       "alpha": 0.5,
-      "tint": "#0040ff",
+      "tint": "#0062ff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -3894,7 +3894,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#2da80b",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -4246,7 +4246,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#7f7e7a",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -4598,7 +4598,7 @@
         "y": 0.5
       },
       "alpha": 0.5,
-      "tint": "#0040ff",
+      "tint": "#0062ff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -4950,7 +4950,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#2da80b",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -5302,7 +5302,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#7f7e7a",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -5654,7 +5654,7 @@
         "y": 0.5
       },
       "alpha": 0.5,
-      "tint": "#0040ff",
+      "tint": "#0062ff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -6007,7 +6007,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#2da80b",
+      "tint": "#ffffff",
       "blendMode": "add",
       "duration": 4,
       "scaleXOverLife": [
@@ -6356,7 +6356,7 @@
         "y": 0.8867
       },
       "alpha": 0.5,
-      "tint": "#fddb63",
+      "tint": "#000000",
       "blendMode": "normal",
       "duration": 4,
       "projection": {
@@ -6378,7 +6378,7 @@
         "y": 0.7292
       },
       "alpha": 0.22,
-      "tint": "#ffffff",
+      "tint": "#ffadad",
       "blendMode": "add",
       "duration": 4,
       "alphaOverLife": [
