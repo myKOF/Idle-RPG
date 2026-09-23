@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "ground-domain-earth",
+  "id": "ground-domain-earth-10",
   "duration": 1.85,
   "loop": true,
   "layers": [
@@ -14,8 +14,8 @@
         "y": 0
       },
       "scale": {
-        "x": 0.8096,
-        "y": 0.8075
+        "x": 0.81,
+        "y": 0.81
       },
       "alpha": 0.1,
       "tint": "#5b3a27",
@@ -64,11 +64,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.8096,
-        "y": 0.8075
+        "x": 0.81,
+        "y": 0.81
       },
       "alpha": 0.75,
-      "tint": "#ad7444",
+      "tint": "#ed66ff",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
@@ -114,8 +114,8 @@
         "y": 0
       },
       "scale": {
-        "x": 0.6072,
-        "y": 0.6056
+        "x": 0.6076,
+        "y": 0.6076
       },
       "alpha": 0.55,
       "tint": "#c48a55",
@@ -163,7 +163,7 @@
         "x": 0,
         "y": 0
       },
-      "tint": "#c48a55",
+      "tint": "#ffffff",
       "blendMode": "normal",
       "emission": {
         "mode": "rate",
@@ -174,22 +174,22 @@
         1.1
       ],
       "spawn": {
-        "radius": 130,
+        "radius": 139.2,
         "shape": "circle"
       },
       "speed": [
-        41.3971,
-        103.493
+        41.4741,
+        103.6851
       ],
       "direction": -90,
       "spread": 50,
       "gravity": {
         "x": 0,
-        "y": -103.3605
+        "y": -103.6851
       },
       "startScale": [
         0.0485,
-        0.089
+        0.0892
       ],
       "alphaOverLife": [
         [
@@ -208,11 +208,11 @@
       "scaleOverLife": [
         [
           0,
-          1
+          0.552926
         ],
         [
           1,
-          0.4
+          0
         ]
       ]
     },
@@ -226,11 +226,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.5057,
-        "y": 0.5044
+        "x": 0.506,
+        "y": 0.506
       },
       "alpha": 0.75,
-      "tint": "#5c4838",
+      "tint": "#ffa8ef",
       "blendMode": "add",
       "duration": 1.85,
       "alphaOverLife": [
