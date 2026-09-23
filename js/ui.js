@@ -3928,10 +3928,10 @@ function renderBattleResourceOrbs() {
   fill('battle-health-fill', hp, hpMax);
   fill('battle-mana-fill', mp, mpMax);
   fill('battle-shield-fill', shield, shieldMax);
-  var hpDesc = '生命：' + fmtFull(hp) + ' / ' + fmtFull(hpMax) + '｜護盾：' + fmtFull(shield) + ' / ' + fmtFull(shieldMax);
+  var hpDesc = '生命：' + fmtFull(hp) + ' / ' + fmtFull(hpMax) + '<br>護盾：' + fmtFull(shield) + ' / ' + fmtFull(shieldMax);
   var mpDesc = '法力：' + fmtFull(mp) + ' / ' + fmtFull(mpMax);
   setAttrIfChanged($id('battle-health-orb'), 'data-tt-desc', hpDesc);
-  setAttrIfChanged($id('battle-health-orb'), 'aria-label', hpDesc);
+  setAttrIfChanged($id('battle-health-orb'), 'aria-label', hpDesc.replace('<br>', '，'));
   setAttrIfChanged($id('battle-mana-orb'), 'data-tt-desc', mpDesc);
   setAttrIfChanged($id('battle-mana-orb'), 'aria-label', mpDesc);
 }

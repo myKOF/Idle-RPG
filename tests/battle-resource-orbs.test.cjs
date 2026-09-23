@@ -17,15 +17,16 @@ function setup() {
   vm.createContext(ctx); vm.runInContext(source,ctx);
   return {ctx, view, player, elements, render: () => ctx.renderBattleResourceOrbs()};
 }
-test('圓瓶使用即時 TICK 數值，超過生命上限的護盾按獨立容量下降', () => {
+test('圓瓶使用即時 TICK 數值，超過生命上限的護盾仍以液面高度扣減', () => {
   const s=setup();s.render();
   assert.equal(s.elements.get('battle-health-fill').style.height,'25%');
   assert.equal(s.elements.get('battle-mana-fill').style.height,'50%');
   assert.equal(s.elements.get('battle-shield-fill').style.height,'50%');
-  assert.match(s.elements.get('battle-health-orb').attrs['data-tt-desc'], /生命：25 \/ 100｜護盾：200 \/ 400/);
+  assert.match(s.elements.get('battle-health-orb').attrs['data-tt-desc'], /生命：25 \/ 100<br>護盾：200 \/ 400/);
+  assert.equal(s.elements.get('battle-health-orb').attrs['aria-label'], '生命：25 / 100，護盾：200 / 400');
   s.view.hp=10;s.view.shield=100;s.render();
   assert.equal(s.elements.get('battle-shield-fill').style.height,'25%');
-  assert.match(s.elements.get('battle-health-orb').attrs['data-tt-desc'], /生命：10 \/ 100｜護盾：100 \/ 400/);
+  assert.match(s.elements.get('battle-health-orb').attrs['data-tt-desc'], /生命：10 \/ 100<br>護盾：100 \/ 400/);
   assert.equal(s.player.hp,90,'不得改動權威快照');
 });
 test('死亡、零容量與護盾耗盡皆清空，不殘留最低液面', () => {
