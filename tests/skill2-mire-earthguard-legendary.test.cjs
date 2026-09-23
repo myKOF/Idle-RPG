@@ -201,7 +201,7 @@ test('【惡疫魔沼】：塗上惡疫，且該敵人受到的毒屬性持續�
 
 test('【深淵火獄】：熔岩沼定期噴出火龍捲並把敵人屬性改寫為火', () => {
   const c = loadContext();
-  stubVfx(c);
+  const vfx = stubVfx(c);
   maxLevels(c, 'mire');
   equip(c, 'mire');
   setUlt(c, 'mire', 'abyssInferno', 1);
@@ -209,13 +209,16 @@ test('【深淵火獄】：熔岩沼定期噴出火龍捲並把敵人屬性改�
   const e = enemy(1e9, 20, 0);
   c.castSkill2(p, [e], 'mire', 'mv-float');
   assert.equal(c.SKILL2_RT.grounds.filter((f) => f.kind === 'lavapillar').length, 0, '出生當下先等一個節拍');
-  advance(c, p, [e], 2.5);
+  advance(c, p, [e], 3);
   const pillars = c.SKILL2_RT.grounds.filter((f) => f.kind === 'lavapillar');
   assert.ok(pillars.length >= 1, '應噴出火龍捲');
   assert.equal(pillars[0].gid, 'mire', '傷害掛在泥沼術名下');
   assert.equal(pillars[0].hitElem, 'fire', '火屬性');
   assert.equal(pillars[0].hits, 8, '八段');
   assert.equal(c.skill2ForcedAttr(e), 'fire', '被噴到的敵人屬性標籤改為火');
+  assert.ok(vfx.some((s) => s.vfx?.ground === 'ground-mire-magma'), '熔岩沼應持續顯示岩漿地板');
+  assert.ok(vfx.some((s) => s.vfx?.field === 'fire-tornado-inferno'), '噴出的火龍捲應使用新版場域');
+  assert.ok(!vfx.some((s) => Object.values(s.vfx || {}).includes('ground-tornado-fire')), '不應再播放舊版火龍捲');
 });
 
 test('【深淵火獄】沒練到熔岩沼就不生效（設計文字是「熔岩沼每 N 秒…」）', () => {
