@@ -12,7 +12,7 @@
 
 importScripts('protocol.js?v=37', 'shim.js?v=8');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260922-fireball-intercept', '../status.js?v=20260918-domain-status', '../formula.js?v=20260921-indomitable-revival', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260922-fireball-intercept', '../status.js?v=20260918-domain-status', '../formula.js?v=20260923-six-slot-hud', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260922-cast-act', '../skills2.js?v=20260922-user-fire-vfx', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
