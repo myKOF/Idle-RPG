@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "aura-rockarmor-stone-09",
+  "id": "aura-rockarmor-stone-10",
   "duration": 4,
   "loop": true,
   "layers": [
@@ -22,7 +22,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#adc2ff",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -1078,7 +1078,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#adc2ff",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -2134,7 +2134,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#adc2ff",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -3190,7 +3190,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#adc2ff",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -4246,7 +4246,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#adc2ff",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -5302,7 +5302,7 @@
         "y": 0.5
       },
       "alpha": 1,
-      "tint": "#fdff70",
+      "tint": "#adc2ff",
       "blendMode": "normal",
       "duration": 4,
       "scaleXOverLife": [
@@ -6356,7 +6356,7 @@
         "y": 0.8867
       },
       "alpha": 0.5,
-      "tint": "#fddb63",
+      "tint": "#6396fd",
       "blendMode": "normal",
       "duration": 4,
       "projection": {
@@ -6378,7 +6378,7 @@
         "y": 0.7292
       },
       "alpha": 0.22,
-      "tint": "#ffffff",
+      "tint": "#7d7d7d",
       "blendMode": "add",
       "duration": 4,
       "alphaOverLife": [
