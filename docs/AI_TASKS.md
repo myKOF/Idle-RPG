@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜特效依畫面水平 Y 與角色交錯（VFX-SCREEN-DEPTH-20260923）
+
+- Owner：Codex；Done。場域／狀態地板特效原本固定在角色圖層後方，改為與角色共用 entity 深度排序；依已投影至畫面的 Y 值判定前後，畫面上方在後、下方在前。空中彈體及受擊特效原有的畫面 Y 排序保持不變。
+- 新增場域跨越角色水平線的回歸測試，更新 vfx-runtime.js 頁面快取；不修改使用者正在編輯的 VFX 素材／Preset，不合併／推送。
+
 ## Codex｜超重岩／超重力場狀態持續特效同步（ROCK-DOMAIN-STATUS-VFX-20260923）
 
 - Owner：Codex；Done。Status Excel 中 `sgPetrifyDomain` 使用 `ground-domain-earth`、`sgGravityDomain` 已改為 `ground-domain-earth-10`，但 CSV／JS 尚未同步，實戰兩者仍讀舊預設。將 Excel 權威值同步至 CSV／JS 並更新頁面與 Worker 的 status.js 快取；不修改使用者預設素材與 Skills2 特效。

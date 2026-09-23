@@ -53,6 +53,22 @@ test('空中效果跨過玩家腳點會切換前後；地面受擊效果與角�
   assert.equal(impact.parent.parent,entity);
   assert.equal(impact.parent.zIndex,85);
 });
+test('場域特效依畫面水平 Y 與角色交錯，包含狀態與地板後端',()=>{
+  assert.match(fs.readFileSync(path.join(__dirname,'../js/vfx-runtime.js'),'utf8'),
+    /zoneBackend:\s*VFXPixiBackend\.createBackend\(\{[^}]*depthParent:\s*opts\.fxDepthContainer/);
+  const zone=new fakePixi.Container(), entity=new fakePixi.Container();
+  entity.sortableChildren=true;
+  const player=new fakePixi.Container();player.zIndex=100;entity.addChild(player);
+  const backend=Backend.createBackend({PIXI:fakePixi,container:zone,depthSort:true,depthParent:entity});
+  const rear=new fakePixi.Container(),front=new fakePixi.Container();
+  backend.updateNode(rear,{x:180,y:80,sortGroup:1,sortY:80,visible:true});
+  backend.updateNode(front,{x:20,y:120,sortGroup:2,sortY:120,visible:true});
+  assert.equal(rear.parent.parent,entity);
+  assert.equal(front.parent.parent,entity);
+  assert.ok(rear.parent.zIndex<player.zIndex);
+  assert.ok(front.parent.zIndex>player.zIndex);
+  assert.equal(zone.children.length,0);
+});
 function backend(){const nodes=new Set();return {nodes,createNode(s){const n={s};nodes.add(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){nodes.delete(n);}};}
 test('盤點所有 proj 素材：彈體與粒子全部進空中後端，clear 完整回收',()=>{
   const dir=path.join(__dirname,'../vfx/presets');

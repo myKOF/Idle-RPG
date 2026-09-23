@@ -1673,7 +1673,8 @@ var VFXRuntime = (function () {
         var adapter = create({
           resolver: resolver,
           fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true, depthParent: opts.fxDepthContainer }),
-          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true }),
+          // 場域與狀態特效按畫面 Y 與角色交錯；固定留在 presetZone 會全部蓋到角色後面。
+          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true, depthParent: opts.fxDepthContainer }),
           airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true,
             depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
             projectTransform:opts.projectAirTransform}) : null,
