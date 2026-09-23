@@ -4966,7 +4966,7 @@ function sgGroundVfxSpec(f) {
   spec.vfxTier = f.vfxTier || 0;
   spec.vfxUlt = f.vfxUlt || '';
   spec.vfxGid = f.vfxGid || '';
-  // 沼澤本體只用第七階岩漿地板；噴出的火龍捲只用超神場域，避免兩者互相覆蓋。
+  // 沼澤地板由每拍事件選取；噴出的火龍捲只用超神場域，避免重疊地板。
   if (f.kind === 'lavapillar' && f.vfxUlt === 'abyssInferno') {
     var infernoRoles = sgVfxRoles('mire', { vfxUlt: 'abyssInferno', vfxBase: true });
     spec.vfxRoles = { field: infernoRoles.field, hit: infernoRoles.hit };
@@ -6444,13 +6444,15 @@ function sgMireInfernoSpec(lvs, base) {
 function sgMireGroundTick(f, victims, ctx) {
   var m = f.mire || {};
   var poison = m.poisonDps > 0;
+  var mireTier = m.lava ? 7 : (poison ? 3 : 1);
+  var mireRoles = sgVfxRoles('mire', { vfxTier: mireTier });
   var mireVariant = m.lava
     ? (poison ? 'mire-lava-poison' : 'mire-lava')
     : (poison ? 'mire-poison' : 'mire');
   sgEmitVfx('mire', victims, f.floatSel, {
     fxKind: 'aura', variant: mireVariant,
     elem: m.lava && !poison ? 'fire' : 'earth', dur: f.gap, area: sgGroundArea(f),
-    vfxTier: m.lava ? 7 : (poison ? 3 : 1), vfxBase: true
+    vfxRoles: { ground: mireRoles.ground }
   });
   if (!victims.length) return;
   var hold = f.gap * 2;   // 只給兩跳：離開沼澤後最多再殘留一個節拍

@@ -216,9 +216,32 @@ test('【深淵火獄】：熔岩沼定期噴出火龍捲並把敵人屬性改�
   assert.equal(pillars[0].hitElem, 'fire', '火屬性');
   assert.equal(pillars[0].hits, 8, '八段');
   assert.equal(c.skill2ForcedAttr(e), 'fire', '被噴到的敵人屬性標籤改為火');
-  assert.ok(vfx.some((s) => s.vfx?.ground === 'ground-mire-magma'), '熔岩沼應持續顯示岩漿地板');
+  assert.ok(vfx.some((s) => s.vfx?.ground === 'ground-mire-magma-09'), '深淵火獄應顯示專屬岩漿地板');
   assert.ok(vfx.some((s) => s.vfx?.field === 'fire-tornado-inferno'), '噴出的火龍捲應使用新版場域');
   assert.ok(!vfx.some((s) => Object.values(s.vfx || {}).includes('ground-tornado-fire')), '不應再播放舊版火龍捲');
+});
+
+test('泥沼術三種超神各用技能表指定的地板，未選超神仍用熔岩沼', () => {
+  for (const [ult, expected] of [
+    ['plagueMire', 'ground-mire-venom-08'],
+    ['abyssInferno', 'ground-mire-magma-09'],
+    ['netherMire', 'ground-mire-magma-10'],
+    [null, 'ground-mire-magma']
+  ]) {
+    const c = loadContext();
+    const vfx = stubVfx(c);
+    maxLevels(c, 'mire');
+    equip(c, 'mire');
+    if (ult) setUlt(c, 'mire', ult, 1);
+    const p = playerEnt();
+    const e = enemy(1e9, 20, 0);
+    c.castSkill2(p, [e], 'mire', 'mv-float');
+    advance(c, p, [e], 0.6);
+    const ground = vfx.filter((s) => s.fxKind === 'aura' && s.vfx?.ground);
+    assert.ok(ground.length, `${ult || 'base'} 應播放地板`);
+    assert.ok(ground.every((s) => s.vfx.ground === expected), `${ult || 'base'} 應使用 ${expected}`);
+    assert.ok(ground.every((s) => !s.vfx.field), '沼澤地板事件不應同時播放火龍捲');
+  }
 });
 
 test('【深淵火獄】沒練到熔岩沼就不生效（設計文字是「熔岩沼每 N 秒…」）', () => {

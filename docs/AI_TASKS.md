@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜泥沼術三種超神專屬地板接線（MIRE-ULT-GROUND-20260923）
+
+- Owner：Codex；Done。使用者已在 Skills2 表填入惡疫魔沼 `ground-mire-venom-08`、深淵火獄 `ground-mire-magma-09`、黃泉沼 `ground-mire-magma-10`，但前次接線強制只讀第七階，實戰皆顯示 `ground-mire-magma`。沼澤每拍改為依目前超神解析地板欄，且事件只派送地板角色；深淵火獄定期火龍捲仍獨立使用 `fire-tornado-inferno`。未選超神仍用第七階地板。
+- 更新 skills2.js 快取並補四情境回歸測試。未改使用者的預設或表格、傷害與持續時間；不合併／推送。
+
 ## Codex｜深淵火獄特效接線修正（MIRE-ABYSS-VFX-20260923）
 
 - Owner：Codex；Done。深淵火獄原本在超神列以 `ground-tornado-fire` 覆寫熔岩沼第七階的岩漿地板。改為超神列使用新版 `fire-tornado-inferno` 場域，沼澤本體固定讀第七階 `ground-mire-magma`；火龍捲事件只播放超神場域與火焰命中，避免重複疊地板。
