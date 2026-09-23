@@ -669,11 +669,11 @@ html *::-webkit-scrollbar-corner { background: #141719; }
 #battle-skill-bar .battle-skill-slot { width: 100%; min-width: 0; min-height: 0; height: auto; aspect-ratio: 1; box-sizing: border-box; }
 #battle-xp-bar {
   position: relative; margin: 0 0 3px; pointer-events: auto;
-  width: 100%; height: 9px; box-sizing: border-box; overflow: hidden;
-  border: 1px solid #948968; background: linear-gradient(#42463a, #131b17 48%, #080d0e); box-shadow: 0 1px 4px #000, inset 0 1px #d7cda16b, inset 0 -2px 3px #000; z-index: 31; cursor: help;
+  width: 100%; height: 11px; box-sizing: border-box; overflow: hidden;
+  border: 1px solid #c9b778; background: linear-gradient(#786443, #453421 35%, #251c15 70%, #58412a); box-shadow: 0 1px 5px #000, 0 0 4px #e3c46b33, inset 0 1px #fff2bc66, inset 0 -2px 3px #0009; z-index: 31; cursor: help;
 }
-#battle-xp-fill { width: 0; height: 100%; background: linear-gradient(#fff0ae, #c7a84e 45%, #80602b 100%); box-shadow: 0 0 7px #eac76780, inset 0 1px #fff5c8; }
-#battle-xp-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 1px), #e8ddae66 calc(20% - 1px) 20%); box-shadow: inset 0 0 3px #0009; }
+#battle-xp-fill { width: 0; height: 100%; background: linear-gradient(#fff9db, #ffe79c 32%, #efbd52 70%, #b97827); box-shadow: 0 0 8px #f6d477a6, inset 0 1px #fffdf1, inset 0 -1px #80511666; }
+#battle-xp-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(#fff8d333, transparent 40%, #0003), repeating-linear-gradient(90deg, transparent 0 calc(20% - 1px), #f4dfaa88 calc(20% - 1px) 20%); box-shadow: inset 0 0 2px #0006; }
 #battle-canvas-host #battle-buff-bar { bottom: calc(100% + 10px); width: 100%; max-width: none; padding: 0 7px; gap: 5px; }
 @container (max-width: 420px) {
   #battle-canvas-host .battle-resource-orb { padding: 5px; width: 16cqw; }
