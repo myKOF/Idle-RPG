@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude｜火狩與火神降臨改成彗星火頭＋平滑拖尾（FIREHUNT-COMET-20260923）
+
+- Owner：Claude；Done。使用者回饋：火神降臨（Codex 58d76a8a 版）顏色單調、拖尾生硬；火狩太糊、拖尾粒子太濃、火頭不突出。要介於兩者之間、適合火狩、不生硬、夠清楚、拖尾流暢不搶戲。先給動態預覽，核准後寫入；火神降臨也一起改。
+- 原因分析：Core 不在一幀內內插出生位置，同一幀發的粒子疊在同一點，拖尾間距＝每幀位移。火神降臨把 sharp-flame 以固定角度每秒蓋 95 次＝看得出一個個重複的星形；火狩兩層 35～54px 火團每秒 120 顆、加法疊成粉白一片，火頭是 normal 混色的淡黃圓片，壓不過拖尾。
+- 修改：
+  - 火狩三份（orb-firehunt／-solar／-companion）改為同一套：白熱核心＋自轉火焰＋前圓後尖的彗星形（muzzle_02_rotated 轉 180°）＋淡橘光暈＋往後甩的小火舌；拖尾是沿切線的細光條（trace_07_rotated，長度蓋過每幀位移才連得起來）白黃→金→橘→深紅，外加一層淡紅光暈、隨機旋轉的小火苗與不規則火星。伴生改藍→紫同款、拖尾壓暗三成。狩神之舞＋伴生 12 團時同時存在的粒子 431 → 349。
+  - 火神降臨（proj-firehunt-ring）沿用同一套造型，但遵守既有測試的限制：加法層藍色成分 ≤ 10（60 顆重疊時 R、G 飽和也只到亮黃）、核心改 normal 混色的淡黃；zIndex -1＝拖尾主體、3＝唯一核心（方框約 14 世界單位＝碰撞寬度）；壽命／發射率／速度依 timeScale 0.72 換算回實際秒數。
+  - 作者腳本：firehunt-renew.cjs 成為火狩三份的唯一來源、firehunt-companion.cjs 改從它取藍色版、grounds.cjs 的 09-03 舊定義改為委派（避免重跑時蓋回最初版）；projectiles.cjs 的火神降臨改為產生程式（只寫出這一份，其他 proj-* 未重寫）。vfx-catalog 說明同步。
+  - 素材：只用素材庫既有的 particle-pack，新出貨 trace_07_rotated；codex-authored/firegod/sharp-flame.png 不再被引用，由匯出流程移出出貨目錄（素材庫保留）。素材庫無變更、不需提交。DATA_VERSION → 20260923-firehunt-comet、vfx-runtime.js?v=1.0.125。
+- 驗證：預覽用 60fps 逐幀推進的軌道模擬（照 updateOrbits 的壓扁、切線朝向、scale＝orbR/20）與真正 Runtime 事件流程（火神降臨）產出，並確認模擬重現了使用者截圖的舊版樣貌。tests/firegod-render（含 60 顆重疊 0 白像素、核心直徑、拖尾貼環、抵達淡出回收）4/4、firegod-vfx 5/5、skill2-magic-firehunt 18/18；讀 preset／素材的 45 支測試與 HEAD 比對失敗名稱，無新增失敗；build 400 檔、export-assets --check、diff check 通過。VFX Editor（Pixi）三份實際渲染、console 0 錯誤、trace_07_rotated 已載入。
+- 待確認：遊戲內實戰觀感（火狩各階、狩神之舞＋伴生、烈陽星環長大後、火神降臨連發），尚未在實機戰鬥中看過。
+
 ## Codex｜經驗條對齊六格技能欄（XP-SKILL-ALIGN-20260923）
 
 - Owner：Codex；Done。依使用者最新指示，六格技能欄固定不變；經驗條改為與技能欄共用容器寬度，左右邊緣對齊，保留原有五等分淡刻線與外觀。瀏覽器量測兩者左右邊緣及寬度完全相同；400 檔 build 與 diff check 通過。更新 CSS 快取；未改技能格數、戰鬥數值與存檔。完成後由使用者整合，不合併／推送。

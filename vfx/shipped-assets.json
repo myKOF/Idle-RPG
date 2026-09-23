@@ -42,13 +42,6 @@
       "fileSize": 20395025
     },
     {
-      "assetId": "codex-authored/firegod/sharp-flame.png",
-      "relativePath": "codex-authored/firegod/sharp-flame.png",
-      "package": "codex-authored",
-      "contentHash": "sha256:28e11a4d9585531446416ffb78ffb4305928861d6406259c71a71f9c1d9e1a34",
-      "fileSize": 25599
-    },
-    {
       "assetId": "codex-authored/icearrow/icicle.png",
       "relativePath": "codex-authored/icearrow/icicle.png",
       "package": "codex-authored",
@@ -761,6 +754,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:78897a32080c608f4f37fea77500e3866d0ac3f7958eb744a3853ed2502983a7",
       "fileSize": 17003
+    },
+    {
+      "assetId": "particle-pack/png-black-background/rotated/trace_07_rotated.png",
+      "relativePath": "particle-pack/PNG (Black background)/Rotated/trace_07_rotated.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:5d369cb6dd89b2f93913e308437213e78350de23b77f46e77b6eec08734360ce",
+      "fileSize": 12758
     },
     {
       "assetId": "particle-pack/png-black-background/scorch_02.png",

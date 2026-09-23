@@ -234,20 +234,8 @@ P['ground-homing-wind-crescent'] = () => ({
 });
 
 /* =========================== 環繞體 =========================== */
-P['orb-firehunt'] = () => ({
-  id: 'orb-firehunt', duration: 0.5, loop: true, layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 60, alpha: 0.55, tint: '#ff6a2a', blend: 'add', duration: 0.5, alphaOverLife: LOOP_A(0.5, 0.65), scaleOverLife: LOOP_A(1, 1.1) }),
-    sprite({ id: 'tail', asset: A.muzzle02R, z: 1, sizeX: 44, sizeY: 24, x: -18, alpha: 0.75, tint: '#e63924', blend: 'add', duration: 0.5, alphaOverLife: LOOP_A(0.7, 0.85) }),
-    sprite({ id: 'body', asset: A.flame04, z: 2, size: 40, alpha: 1, tint: '#e63924', blend: 'add', duration: 0.5, alphaOverLife: LOOP_A(0.95, 1), rotationOverLife: C.spin(0.5) }),
-    sprite({ id: 'core', asset: A.dot, z: 3, size: 18, alpha: 1, tint: '#ffd447', blend: 'add', duration: 0.5, alphaOverLife: LOOP_A(0.9, 1), scaleOverLife: LOOP_A(0.95, 1.12) }),
-    particle({
-      id: 'embers', asset: A.dot, z: 4, blend: 'add', tint: '#ffd447',
-      rate: 10, lifetime: [0.25, 0.4], spawnRadius: 12, speed: [25, 55], direction: -90, spread: 70,
-      gravity: { x: 0, y: -60 }, startPx: [3, 6],
-      alphaOverLife: [[0, 0.9], [1, 0]], scaleOverLife: [[0, 1], [1, 0.35]]
-    })
-  ]
-});
+/* 火狩已改由專屬腳本維護（三份共用一套造型），這裡只委派，重跑本檔才不會把它蓋回最初版。 */
+P['orb-firehunt'] = () => require('./firehunt-renew.cjs').make('orb-firehunt', 'fire');
 
 P['orb-thunder'] = () => ({
   id: 'orb-thunder', duration: 0.5, loop: true, layers: [
