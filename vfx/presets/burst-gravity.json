@@ -9,9 +9,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/twirl_02.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.2786,
+        "y": 0.2786
       },
       "alpha": 0.8,
       "tint": "#5b3a27",
@@ -65,9 +69,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.332,
-        "y": 0.332
+        "x": 0.2368,
+        "y": 0.2368
       },
       "alpha": 0.75,
       "tint": "#6f2da8",
@@ -121,9 +129,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_05.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.0898,
-        "y": 0.0898
+        "x": 0.0641,
+        "y": 0.0641
       },
       "alpha": 0.9,
       "tint": "#1a0c2e",
@@ -167,9 +179,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.2786,
+        "y": 0.2786
       },
       "alpha": 0.7,
       "tint": "#913dcc",
@@ -213,6 +229,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "tint": "#913dcc",
       "blendMode": "add",
       "emission": {
@@ -224,18 +244,18 @@
         0.6
       ],
       "spawn": {
-        "radius": 96,
+        "radius": 68.4689,
         "shape": "circle"
       },
       "speed": [
-        -170,
-        -110
+        -121.2471,
+        -78.454
       ],
       "direction": 0,
       "spread": 360,
       "startScale": [
-        0.0098,
-        0.0176
+        0.007,
+        0.0126
       ],
       "alphaOverLife": [
         [

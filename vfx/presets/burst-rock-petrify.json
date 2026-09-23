@@ -9,9 +9,13 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/transparent/circle_a.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.2987,
+        "y": 0.2987
       },
       "alpha": 0.42,
       "tint": "#3d3025",
@@ -59,9 +63,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.4102,
-        "y": 0.4102
+        "x": 0.3136,
+        "y": 0.3136
       },
       "alpha": 0.55,
       "tint": "#e8e0d0",
@@ -101,9 +109,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.2987,
+        "y": 0.2987
       },
       "alpha": 0.9,
       "tint": "#ad7444",
@@ -151,9 +163,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/smoke_04.png",
       "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3711,
-        "y": 0.2078
+        "x": 0.2837,
+        "y": 0.1589
       },
       "alpha": 0.45,
       "tint": "#c9a06a",
@@ -193,6 +209,10 @@
       "type": "particle",
       "assetId": "new_materials/mask-shape/dingbats-366.png",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "tint": "#8a7f6e",
       "blendMode": "normal",
       "emission": {
@@ -204,23 +224,23 @@
         0.68
       ],
       "spawn": {
-        "radius": 12,
+        "radius": 9.1752,
         "shape": "circle"
       },
       "speed": [
-        140,
-        260
+        107.044,
+        198.796
       ],
       "direction": 0,
       "spread": 360,
       "gravity": {
         "x": 0,
-        "y": 430
+        "y": 328.778
       },
       "drag": 4,
       "startScale": [
-        0.0098,
-        0.0215
+        0.0075,
+        0.0164
       ],
       "rotationStart": [
         0,
