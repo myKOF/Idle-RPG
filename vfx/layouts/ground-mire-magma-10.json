@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-mire-magma-10",
+  "groups": [
+    {
+      "id": "ground-mire-magma-10",
+      "name": "ground-mire-magma-10",
+      "layerIds": [
+        "flowing-earth-mud",
+        "magma-flames",
+        "magma-sparks",
+        "sprite-4"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-mire-magma-10"
+  ]
+}

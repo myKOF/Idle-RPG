@@ -57,6 +57,7 @@ function bindings(gid,stage){
  if(['icearrow/7','windblade/5','windblade/stormMyriad'].includes(id))b.push(['search',['chaseM']]);
  if(id==='waterball/1')b.push(['height',['arcM']]);
  if(id==='firepillar/dragonDevour')b.push(['effect',['pullM']],['placement',['ballRange']],['height',['arcM']],['gap',['gap']]);
+ if(id==='mire/abyssInferno')b.push(['height',['arcM']]);
  if(id==='firepillar/infernoTempest')b.push(['search',['searchM']],['gap',['gap']],['speed',['speed']]);
  if(id==='waterball/7')b.push(['placement',['side','sideWidth']]);
  if(id==='frostnova/7')b.push(['damage',['side','sideWidth']]);

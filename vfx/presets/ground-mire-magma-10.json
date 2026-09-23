@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "ground-mire-magma",
+  "id": "ground-mire-magma-10",
   "duration": 4,
   "loop": true,
   "layers": [
@@ -13,8 +13,8 @@
         "y": 0.46875
       },
       "alpha": 1,
-      "tint": "#ddfa00",
-      "blendMode": "add",
+      "tint": "#ffffff",
+      "blendMode": "multiply",
       "duration": 4,
       "projection": {
         "rotation": 0.7853981633974483,
@@ -36,7 +36,7 @@
       "assetId": "particle-pack/png-black-background/flame_04.png",
       "zIndex": 1,
       "alpha": 0.216,
-      "tint": "#ff3d3d",
+      "tint": "#ffb23c",
       "blendMode": "add",
       "duration": 4,
       "emission": {
@@ -156,6 +156,24 @@
       "projection": {
         "rotation": 0.7853981633974483,
         "upright": true,
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "sprite-4",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/window_a_noise.png",
+      "rotation": 0.785398,
+      "scale": {
+        "x": 0.2757,
+        "y": 0.2757
+      },
+      "alpha": 0.8,
+      "tint": "#da8aff",
+      "blendMode": "add",
+      "scaleOverLife": 1,
+      "outerScale": {
         "x": 1,
         "y": 0.5
       }
