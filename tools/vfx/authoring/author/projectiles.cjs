@@ -228,386 +228,72 @@ P['proj-waterball'] = () => ({
   ]
 });
 
-/* ---------- proj-firehunt-ring：清晰火核、細弧尾焰 ---------- */
-P['proj-firehunt-ring'] = () => ({
-  "schemaVersion": 1,
-  "id": "proj-firehunt-ring",
-  "duration": 1.5,
-  "loop": false,
-  "layers": [
-    {
-      "id": "ember-glow",
-      "type": "particle",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": -2,
-      "blendMode": "screen",
-      "tint": "#ff982a",
-      "alpha": 0.27,
-      "emission": {
-        "mode": "rate",
-        "rate": 38
-      },
-      "maxParticles": 22,
-      "lifetime": [
-        0.18,
-        0.18
-      ],
-      "spawn": {
-        "shape": "box",
-        "width": 2,
-        "height": 3
-      },
-      "speed": [
-        0,
-        0
-      ],
-      "direction": 180,
-      "spread": 0,
-      "drag": 2,
-      "worldSpace": true,
-      "startScale": [
-        0.02734375,
-        0.0390625
-      ],
-      "rotationStart": [
-        -3.14,
-        3.14
-      ],
-      "rotationSpeed": [
-        0,
-        0
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0.85
-        ],
-        [
-          0.3,
-          0.7
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.4,
-          0.8
-        ],
-        [
-          1,
-          0.15
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#ff8d24"
-        ],
-        [
-          0.65,
-          "#d8460a"
-        ],
-        [
-          1,
-          "#5c1c08"
-        ]
-      ]
-    },
-    {
-      "id": "flame-shell",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 1,
-      "scale": {
-        "x": 0.06640625,
-        "y": 0.06640625
-      },
-      "alpha": 0.5,
-      "tint": "#ed4a0c",
-      "blendMode": "screen",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.035,
-          1
-        ],
-        [
-          0.94,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.18,
-          1.08
-        ],
-        [
-          0.36,
-          0.94
-        ],
-        [
-          0.53,
-          1.06
-        ],
-        [
-          0.7,
-          0.97
-        ],
-        [
-          0.86,
-          1.05
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "rotation": 0.65
-    },
-    {
-      "id": "flame-body",
-      "type": "sprite",
-      "assetId": "codex-authored/firegod/sharp-flame.png",
-      "zIndex": 2,
-      "scale": {
-        "x": 0.11328125,
-        "y": 0.11328125
-      },
-      "alpha": 0.95,
-      "tint": "#ffffff",
-      "blendMode": "normal",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.035,
-          1
-        ],
-        [
-          0.94,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.18,
-          1.08
-        ],
-        [
-          0.36,
-          0.94
-        ],
-        [
-          0.53,
-          1.06
-        ],
-        [
-          0.7,
-          0.97
-        ],
-        [
-          0.86,
-          1.05
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "rotation": -0.8,
-      "rotationOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          1.6
-        ]
-      ]
-    },
-    {
-      "id": "star-core",
-      "type": "sprite",
-      "assetId": "codex-authored/firegod/sharp-flame.png",
-      "zIndex": 3,
-      "scale": {
-        "x": 0.06640625,
-        "y": 0.06640625
-      },
-      "alpha": 0.48,
-      "tint": "#fff2bd",
-      "blendMode": "screen",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.035,
-          1
-        ],
-        [
-          0.94,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.18,
-          1.08
-        ],
-        [
-          0.36,
-          0.94
-        ],
-        [
-          0.53,
-          1.06
-        ],
-        [
-          0.7,
-          0.97
-        ],
-        [
-          0.86,
-          1.05
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          -1.2
-        ]
-      ]
-    },
-    {
-      "id": "curved-flame-trail",
-      "type": "particle",
-      "assetId": "codex-authored/firegod/sharp-flame.png",
-      "zIndex": -1,
-      "blendMode": "normal",
-      "tint": "#ffffff",
-      "alpha": 0.85,
-      "emission": {
-        "mode": "rate",
-        "rate": 95
-      },
-      "maxParticles": 48,
-      "lifetime": [
-        0.2,
-        0.2
-      ],
-      "spawn": {
-        "shape": "box",
-        "width": 2,
-        "height": 3
-      },
-      "speed": [
-        0,
-        0
-      ],
-      "direction": 180,
-      "spread": 0,
-      "drag": 2,
-      "worldSpace": true,
-      "startScale": [
-        0.046875,
-        0.06640625
-      ],
-      "rotationStart": [
-        -3.14,
-        3.14
-      ],
-      "rotationSpeed": [
-        0,
-        0
-      ],
-      "alphaOverLife": [
-        [
-          0,
-          0.92
-        ],
-        [
-          0.65,
-          0.72
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.5,
-          0.72
-        ],
-        [
-          1,
-          0.12
-        ]
-      ]
-    }
-  ],
-  "sizing": {
-    "authored": {
-      "radius": 11
-    },
-    "radiusM": 1.1,
-    "shape": "projectile-circle"
-  }
-});
+/* ---------- proj-firehunt-ring：火神降臨星環（2026-09-23 Claude，沿用火狩新版造型） ----------
+   使用者回饋：前一版（sharp-flame 蓋章式尾焰）顏色單調、拖尾生硬；要與火狩新版同一套——
+   彗星火頭＋沿切線的平滑細光條拖尾（黃 → 橘 → 紅）＋隨機小火苗與零星火星。
+   與火狩不同的限制（tests/firegod-render.test.cjs）：
+     - 60 顆同時重疊不得出現 R/G/B 皆 > 240 的像素 → 加法層的藍色成分一律 ≤ 10，R、G 飽和也只到亮黃；
+       白熱感交給 normal 混色的淡黃核心（藍 210，疊再多層也停在它自己的顏色）
+     - zIndex -1＝拖尾主體（無初速，隨隊形中心平移成繞環的弧；抵達後留存再淡出）
+     - zIndex  3＝唯一的核心，方框高 12～16 世界單位（碰撞半寬 8，看到多大就打多大）
+   尺寸：authored 半徑 11 ↔ 碰撞半寬 8；以火狩的 authored 尺寸 × G 換算（核心方框 26 → 19.3 → 世界 14）。
+   時間：preset 1.5 秒被 timeScale 拉長到整段飛行（預設 50 米 ÷ 24 米／秒），壽命、發射率、速度都換算回實際秒數。 */
+P['proj-firehunt-ring'] = () => {
+  const TS = 1.5 / (50 / 24);
+  const G = 0.741;
+  const q = (px) => +(px * G / 512).toFixed(5);
+  const sec = (s) => +(s * TS).toFixed(4);           // 實際秒數 → preset 時間
+  const perSec = (n) => +(n / TS).toFixed(3);        // 每實際秒 → 每 preset 秒
+  const spd = (v) => +(v * G / TS).toFixed(2);       // 火狩 authored px／秒 → 星環 authored px／preset 秒
+  const FADE = [[0, 0], [0.035, 1], [0.94, 1], [1, 0]];
+  const flicker = (amp, n) => Array.from({ length: n + 1 }, (_, i) => [+(i / n).toFixed(4), i % 2 ? 1 + amp : 1]);
+  const T = 'particle-pack/png-transparent/', B = 'particle-pack/png-black-background/';
+  const c = {
+    core: '#fff8d2', fire: '#ffb40a', comet: '#ff8a08', halo: '#ff5000',
+    trail: [[0, '#ffd80a'], [0.3, '#ffb008'], [0.65, '#ff6406'], [1, '#b41a04']],
+    glow: [[0, '#ff6200'], [1, '#8c1000']],
+    spark: [[0, '#ffe07a'], [0.4, '#ffa434'], [1, '#e8401a']],
+    wisp: [[0, '#ffa008'], [1, '#c82804']], lick: '#ff7a06'
+  };
+  return {
+    id: 'proj-firehunt-ring', duration: 1.5, loop: false, layers: [
+      { id: 'trail-wisps', type: 'particle', assetId: B + 'flame_04.png', zIndex: -5, alpha: 0.45, blendMode: 'add',
+        emission: { mode: 'rate', rate: perSec(18) }, maxParticles: 8, lifetime: [sec(0.14), sec(0.26)],
+        spawn: { shape: 'circle', radius: 3 }, speed: [spd(5), spd(20)], direction: 180, spread: 60,
+        startScale: [q(22), q(30)], rotationStart: [0, 6.28], rotationSpeed: [-5 / TS, 5 / TS], worldSpace: true,
+        tintOverLife: c.wisp, alphaOverLife: [[0, 0], [0.25, 1], [1, 0]], scaleOverLife: [[0, 0.6], [0.5, 1], [1, 0.7]] },
+      /* 火星用 normal：白色小點互相重疊時才不會加成白點 */
+      { id: 'trail-sparks', type: 'particle', assetId: T + 'circle_05.png', zIndex: -4, alpha: 1, blendMode: 'normal',
+        emission: { mode: 'rate', rate: perSec(10) }, maxParticles: 8, lifetime: [sec(0.15), sec(0.5)],
+        spawn: { shape: 'circle', radius: 6 }, speed: [spd(10), spd(90)], direction: 180, spread: 200, drag: +(2 / TS).toFixed(3),
+        startScale: [q(7), q(13)], worldSpace: true,
+        tintOverLife: c.spark, alphaOverLife: [[0, 1], [0.7, 0.8], [1, 0]] },
+      { id: 'head-licks', type: 'particle', assetId: B + 'flame_04.png', zIndex: -3, alpha: 0.8, tint: c.lick, blendMode: 'add',
+        emission: { mode: 'rate', rate: perSec(16) }, maxParticles: 6, lifetime: [sec(0.1), sec(0.2)],
+        spawn: { shape: 'circle', radius: 4 }, speed: [spd(30), spd(60)], direction: 180, spread: 50,
+        startScale: [q(22), q(30)], rotationStart: [0, 6.28], alphaOverLife: [[0, 0], [0.3, 1], [1, 0]] },
+      { id: 'trail-glow', type: 'particle', assetId: B + 'circle_05.png', zIndex: -2, alpha: 0.3, blendMode: 'add',
+        emission: { mode: 'rate', rate: perSec(36) }, maxParticles: 16, lifetime: [sec(0.3), sec(0.3)],
+        spawn: { shape: 'point' }, speed: [0, 0], startScale: [q(52), q(52)], worldSpace: true,
+        tintOverLife: c.glow, alphaOverLife: [[0, 1], [0.5, 0.7], [1, 0]], scaleOverLife: [[0, 0.8], [1, 1.25]] },
+      { id: 'trail-core', type: 'particle', assetId: B + 'rotated/trace_07_rotated.png', zIndex: -1, alpha: 0.9, blendMode: 'add',
+        emission: { mode: 'rate', rate: perSec(36) }, maxParticles: 14, lifetime: [sec(0.26), sec(0.26)],
+        spawn: { shape: 'point' }, speed: [0, 0], startScale: [q(58), q(58)], worldSpace: true,
+        tintOverLife: c.trail, alphaOverLife: [[0, 1], [0.55, 0.8], [1, 0]], scaleOverLife: [[0, 1], [1, 0.4]] },
+      { id: 'head-halo', type: 'sprite', assetId: B + 'circle_05.png', zIndex: 0, scale: { x: q(100), y: q(100) }, alpha: 0.35,
+        tint: c.halo, blendMode: 'add', alphaOverLife: FADE, scaleOverLife: flicker(0.08, 6) },
+      /* 亮端（原圖 x=0.33）轉 180° 後落在中心右方：往回挪，讓亮端對齊火球中心 */
+      { id: 'head-comet', type: 'sprite', assetId: B + 'rotated/muzzle_02_rotated.png', zIndex: 1,
+        position: { x: +(-14.6 * G).toFixed(2), y: 0 }, rotation: 3.1416, scale: { x: q(86), y: q(86) }, alpha: 0.95,
+        tint: c.comet, blendMode: 'add', alphaOverLife: FADE, scaleOverLife: flicker(0.07, 14) },
+      { id: 'head-fire', type: 'sprite', assetId: B + 'fire_01.png', zIndex: 2, scale: { x: q(38), y: q(38) }, alpha: 0.75,
+        tint: c.fire, blendMode: 'add', rotationSpeed: +(7 / TS).toFixed(3), alphaOverLife: FADE },
+      { id: 'head-core', type: 'sprite', assetId: T + 'circle_05.png', zIndex: 3, scale: { x: q(26), y: q(26) }, alpha: 1,
+        tint: c.core, blendMode: 'normal', alphaOverLife: FADE }
+    ],
+    sizing: { authored: { radius: 11 }, radiusM: 1.1, shape: 'projectile-circle' }
+  };
+};
 
 /* ---------- proj-enemy-bolt：敵方魔法彈 ---------- */
 P['proj-enemy-bolt'] = () => ({

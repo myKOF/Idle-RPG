@@ -90,7 +90,7 @@ def('proj-arcane-missile', 'projectile', '奧術飛彈：小型淡藍紫 #8ea2ff
 def('proj-waterball-flow', 'projectile', '青綠蛋形水彈與濃密水滴拖尾。', { nominal: '90×58px', dur: 1.2 });
 def('hit-waterball-splash', 'hit', '水珠飛濺、泡沫亮點及雙層擴散水紋。', { nominal: 'R 100px', dur: 0.85 });
 def('proj-waterball', 'projectile', '水流彈：藍色 #38bdf8 水球（直徑 18px）+ 白 #f0f9ff 高光 + 飛濺水珠拖尾。', { nominal: 'D 18px', dur: 1.2 });
-def('proj-firehunt-ring', 'projectile', '火神星環：清晰金橙火核、薄外焰與細弧尾焰；暖色濾色混合與限制粒子壽命，避免連發疊白。', { nominal: 'R 11px', dur: 1.5 });
+def('proj-firehunt-ring', 'projectile', '火神星環：與火狩同一套彗星火頭＋沿切線細光條拖尾（黃→橘→紅）；加法層藍色成分 ≤ 10、淡黃核心 normal，連發重疊不疊白。', { nominal: 'R 11px', dur: 1.5 });
 def('proj-enemy-bolt', 'projectile', '敵方魔法彈：紅 #ff6b6b 光球（直徑 13px）+ 光暈 + 淡紅拖尾；無屬性敵人的遠程攻擊。', { nominal: 'D 13px', dur: 1.2 });
 def('proj-meteor', 'projectile', '隕石：直徑約 110px 的火焰團（flare／flame 素材、加法混合、顏色由 #facc22→#f89800→#f83600→#9f0404 漸暗）持續朝 -X 噴出拖尾火焰（拖尾長約 240px、每秒 13 顆、壽命 2.4s、飛行中不斷發射）。', { nominal: 'D 110px', dur: 2.5 });
 def('proj-meteor-small', 'projectile', '小隕石：同 proj-meteor 縮小（直徑約 35px、拖尾約 125px、每秒 7 顆）。', { nominal: 'D 35px', dur: 2.0 });
@@ -140,8 +140,8 @@ def('field-water-tornado', 'ground', '水龍捲：連續藍色水體、白色浪
 def('ground-tornado-wind', 'ground', '風龍捲：同幾何，綠色 #22c55e 柱、#86efac 邊、白色風芯與葉片狀碎片。', { nominal: 'R 28px', dur: 1.2, loop: true });
 def('ground-homing-ice-shard', 'ground', '追蹤冰箭本體：半徑 30px 的冰晶菱形（#4da6ff/#f2fbff）+ 淡藍光暈 + 尾端冰塵；朝 +X；loop 脈動 0.55s。', { nominal: 'R 30px', dur: 0.55, loop: true });
 def('ground-homing-wind-crescent', 'ground', '追跡風刃本體：半徑 30px 的風系新月（尖端朝 +X，#86efac/#ffffff）+ 微風尾；loop 脈動 0.55s。', { nominal: 'R 30px', dur: 0.55, loop: true });
-def('orb-firehunt', 'orb', '火狩火球（環繞體）：半徑 20px 的火球（#ffd447 內芯、#e63924 外焰、加法）+ 朝 -X 的短火焰尾 + 上升餘燼；loop 0.5s。Runtime 以 scale = orbR/20 並逐幀繞玩家轉。', { nominal: 'R 20px', dur: 0.5, loop: true });
-def('orb-firehunt-companion', 'orb', '伴生火狩：沿用核准火狩的弧形拖尾，紅焰外層與藍色焰芯；沿權威軌道跟在母體後方。', { nominal: 'R 20px', dur: 1, loop: true });
+def('orb-firehunt', 'orb', '火狩火球（環繞體）：白熱核心＋自轉火焰＋前圓後尖的彗星形，拖尾是沿切線的細光條（白黃→橘→深紅）加淡紅光暈、小火苗與零星火星；製作腳本 author/firehunt-renew.cjs。Runtime 以 scale = orbR/20 並逐幀繞玩家轉。', { nominal: 'R 20px', dur: 1, loop: true });
+def('orb-firehunt-companion', 'orb', '伴生火狩：與火狩同一套造型，藍→紫配色、拖尾壓暗三成；沿權威軌道跟在母體後方。', { nominal: 'R 20px', dur: 1, loop: true });
 def('orb-thunder', 'orb', '環體電球：半徑 20px 的雷球（#fff8b0 核、#f2b705 體、#ffd23f 暈）+ 表面電弧絲閃爍；loop。', { nominal: 'R 20px', dur: 0.5, loop: true });
 def('orb-void-disc', 'orb', '虛空斬鋸刃：半徑 24px 的 12 齒鋸盤（mask-shape 星形或 gear 素材，#86efac 填、#ffffff 邊、白色軸心），自轉 3 圈/s，帶 5 層漸淡殘影；loop。', { nominal: 'R 24px', dur: 1.0, loop: true });
 def('ground-orbit-ring-fire', 'ground', '火狩軌道環：扁橢圓（縱向 0.62）淡火紅 #e63924 細環 α0.18（名目半徑 100px）+ 環上零星上升火星；loop。', { nominal: 'R 100px', dur: 2.0, loop: true });

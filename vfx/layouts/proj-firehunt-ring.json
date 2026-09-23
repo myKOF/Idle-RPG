@@ -6,11 +6,15 @@
       "id": "proj-firehunt-ring",
       "name": "proj-firehunt-ring",
       "layerIds": [
-        "ember-glow",
-        "flame-shell",
-        "flame-body",
-        "star-core",
-        "curved-flame-trail"
+        "trail-wisps",
+        "trail-sparks",
+        "head-licks",
+        "trail-glow",
+        "trail-core",
+        "head-halo",
+        "head-comet",
+        "head-fire",
+        "head-core"
       ]
     }
   ],

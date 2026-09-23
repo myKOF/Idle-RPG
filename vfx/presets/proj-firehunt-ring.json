@@ -5,54 +5,229 @@
   "loop": false,
   "layers": [
     {
-      "id": "ember-glow",
+      "id": "trail-wisps",
       "type": "particle",
       "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": -2,
-      "blendMode": "screen",
-      "tint": "#ff982a",
-      "alpha": 0.27,
+      "zIndex": -5,
+      "alpha": 0.45,
+      "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 38
+        "rate": 25
       },
-      "maxParticles": 22,
+      "maxParticles": 8,
       "lifetime": [
-        0.18,
-        0.18
+        0.1008,
+        0.1872
       ],
       "spawn": {
-        "shape": "box",
-        "width": 2,
-        "height": 3
+        "radius": 3,
+        "shape": "circle"
+      },
+      "speed": [
+        5.15,
+        20.58
+      ],
+      "direction": 180,
+      "spread": 60,
+      "startScale": [
+        0.03184,
+        0.04342
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "rotationSpeed": [
+        -6.944444444444445,
+        6.944444444444445
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffa008"
+        ],
+        [
+          1,
+          "#c82804"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "trail-sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": -4,
+      "alpha": 1,
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 13.889
+      },
+      "maxParticles": 8,
+      "lifetime": [
+        0.108,
+        0.36
+      ],
+      "spawn": {
+        "radius": 6,
+        "shape": "circle"
+      },
+      "speed": [
+        10.29,
+        92.63
+      ],
+      "direction": 180,
+      "spread": 200,
+      "drag": 2.778,
+      "startScale": [
+        0.01013,
+        0.01881
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffe07a"
+        ],
+        [
+          0.4,
+          "#ffa434"
+        ],
+        [
+          1,
+          "#e8401a"
+        ]
+      ]
+    },
+    {
+      "id": "head-licks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": -3,
+      "alpha": 0.8,
+      "tint": "#ff7a06",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 22.222
+      },
+      "maxParticles": 6,
+      "lifetime": [
+        0.072,
+        0.144
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        30.88,
+        61.75
+      ],
+      "direction": 180,
+      "spread": 50,
+      "startScale": [
+        0.03184,
+        0.04342
+      ],
+      "rotationStart": [
+        0,
+        6.28
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "trail-glow",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": -2,
+      "alpha": 0.3,
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 50
+      },
+      "maxParticles": 16,
+      "lifetime": [
+        0.216,
+        0.216
+      ],
+      "spawn": {
+        "shape": "point"
       },
       "speed": [
         0,
         0
       ],
-      "direction": 180,
-      "spread": 0,
-      "drag": 2,
-      "worldSpace": true,
       "startScale": [
-        0.02734375,
-        0.0390625
+        0.07526,
+        0.07526
       ],
-      "rotationStart": [
-        -3.14,
-        3.14
-      ],
-      "rotationSpeed": [
-        0,
-        0
-      ],
+      "worldSpace": true,
       "alphaOverLife": [
         [
           0,
-          0.85
+          1
         ],
         [
-          0.3,
+          0.5,
           0.7
         ],
         [
@@ -60,293 +235,122 @@
           0
         ]
       ],
+      "tintOverLife": [
+        [
+          0,
+          "#ff6200"
+        ],
+        [
+          1,
+          "#8c1000"
+        ]
+      ],
       "scaleOverLife": [
         [
           0,
-          1
-        ],
-        [
-          0.4,
           0.8
         ],
         [
           1,
-          0.15
-        ]
-      ],
-      "tintOverLife": [
-        [
-          0,
-          "#ff8d24"
-        ],
-        [
-          0.65,
-          "#d8460a"
-        ],
-        [
-          1,
-          "#5c1c08"
+          1.25
         ]
       ]
     },
     {
-      "id": "flame-shell",
-      "type": "sprite",
-      "assetId": "particle-pack/png-black-background/flame_04.png",
-      "zIndex": 1,
-      "scale": {
-        "x": 0.06640625,
-        "y": 0.06640625
-      },
-      "alpha": 0.5,
-      "tint": "#ed4a0c",
-      "blendMode": "screen",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.035,
-          1
-        ],
-        [
-          0.94,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.18,
-          1.08
-        ],
-        [
-          0.36,
-          0.94
-        ],
-        [
-          0.53,
-          1.06
-        ],
-        [
-          0.7,
-          0.97
-        ],
-        [
-          0.86,
-          1.05
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "rotation": 0.65
-    },
-    {
-      "id": "flame-body",
-      "type": "sprite",
-      "assetId": "codex-authored/firegod/sharp-flame.png",
-      "zIndex": 2,
-      "scale": {
-        "x": 0.11328125,
-        "y": 0.11328125
-      },
-      "alpha": 0.95,
-      "tint": "#ffffff",
-      "blendMode": "normal",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.035,
-          1
-        ],
-        [
-          0.94,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.18,
-          1.08
-        ],
-        [
-          0.36,
-          0.94
-        ],
-        [
-          0.53,
-          1.06
-        ],
-        [
-          0.7,
-          0.97
-        ],
-        [
-          0.86,
-          1.05
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "rotation": -0.8,
-      "rotationOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          1.6
-        ]
-      ]
-    },
-    {
-      "id": "star-core",
-      "type": "sprite",
-      "assetId": "codex-authored/firegod/sharp-flame.png",
-      "zIndex": 3,
-      "scale": {
-        "x": 0.06640625,
-        "y": 0.06640625
-      },
-      "alpha": 0.48,
-      "tint": "#fff2bd",
-      "blendMode": "screen",
-      "duration": 1.5,
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.035,
-          1
-        ],
-        [
-          0.94,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          1
-        ],
-        [
-          0.18,
-          1.08
-        ],
-        [
-          0.36,
-          0.94
-        ],
-        [
-          0.53,
-          1.06
-        ],
-        [
-          0.7,
-          0.97
-        ],
-        [
-          0.86,
-          1.05
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "rotationOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          1,
-          -1.2
-        ]
-      ]
-    },
-    {
-      "id": "curved-flame-trail",
+      "id": "trail-core",
       "type": "particle",
-      "assetId": "codex-authored/firegod/sharp-flame.png",
+      "assetId": "particle-pack/png-black-background/rotated/trace_07_rotated.png",
       "zIndex": -1,
-      "blendMode": "normal",
-      "tint": "#ffffff",
-      "alpha": 0.85,
+      "alpha": 0.9,
+      "blendMode": "add",
       "emission": {
         "mode": "rate",
-        "rate": 95
+        "rate": 50
       },
-      "maxParticles": 48,
+      "maxParticles": 14,
       "lifetime": [
-        0.2,
-        0.2
+        0.1872,
+        0.1872
       ],
       "spawn": {
-        "shape": "box",
-        "width": 2,
-        "height": 3
+        "shape": "point"
       },
       "speed": [
         0,
         0
       ],
-      "direction": 180,
-      "spread": 0,
-      "drag": 2,
-      "worldSpace": true,
       "startScale": [
-        0.046875,
-        0.06640625
+        0.08394,
+        0.08394
       ],
-      "rotationStart": [
-        -3.14,
-        3.14
-      ],
-      "rotationSpeed": [
-        0,
-        0
-      ],
+      "worldSpace": true,
       "alphaOverLife": [
         [
           0,
-          0.92
+          1
+        ],
+        [
+          0.55,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffd80a"
+        ],
+        [
+          0.3,
+          "#ffb008"
         ],
         [
           0.65,
-          0.72
+          "#ff6406"
+        ],
+        [
+          1,
+          "#b41a04"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.4
+        ]
+      ]
+    },
+    {
+      "id": "head-halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.14473,
+        "y": 0.14473
+      },
+      "alpha": 0.35,
+      "tint": "#ff5000",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          1
+        ],
+        [
+          0.94,
+          1
         ],
         [
           1,
@@ -359,12 +363,189 @@
           1
         ],
         [
+          0.1667,
+          1.08
+        ],
+        [
+          0.3333,
+          1
+        ],
+        [
           0.5,
-          0.72
+          1.08
+        ],
+        [
+          0.6667,
+          1
+        ],
+        [
+          0.8333,
+          1.08
         ],
         [
           1,
-          0.12
+          1
+        ]
+      ]
+    },
+    {
+      "id": "head-comet",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/rotated/muzzle_02_rotated.png",
+      "zIndex": 1,
+      "position": {
+        "x": -10.82,
+        "y": 0
+      },
+      "rotation": 3.1416,
+      "scale": {
+        "x": 0.12446,
+        "y": 0.12446
+      },
+      "alpha": 0.95,
+      "tint": "#ff8a08",
+      "blendMode": "add",
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          1
+        ],
+        [
+          0.94,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.0714,
+          1.07
+        ],
+        [
+          0.1429,
+          1
+        ],
+        [
+          0.2143,
+          1.07
+        ],
+        [
+          0.2857,
+          1
+        ],
+        [
+          0.3571,
+          1.07
+        ],
+        [
+          0.4286,
+          1
+        ],
+        [
+          0.5,
+          1.07
+        ],
+        [
+          0.5714,
+          1
+        ],
+        [
+          0.6429,
+          1.07
+        ],
+        [
+          0.7143,
+          1
+        ],
+        [
+          0.7857,
+          1.07
+        ],
+        [
+          0.8571,
+          1
+        ],
+        [
+          0.9286,
+          1.07
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "head-fire",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/fire_01.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.055,
+        "y": 0.055
+      },
+      "alpha": 0.75,
+      "tint": "#ffb40a",
+      "blendMode": "add",
+      "rotationSpeed": 9.722,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          1
+        ],
+        [
+          0.94,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "head-core",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/circle_05.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.03763,
+        "y": 0.03763
+      },
+      "alpha": 1,
+      "tint": "#fff8d2",
+      "blendMode": "normal",
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          1
+        ],
+        [
+          0.94,
+          1
+        ],
+        [
+          1,
+          0
         ]
       ]
     }

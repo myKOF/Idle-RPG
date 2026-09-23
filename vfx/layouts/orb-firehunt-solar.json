@@ -6,12 +6,15 @@
       "id": "orb-firehunt-solar",
       "name": "orb-firehunt-solar",
       "layerIds": [
-        "arc-gold",
-        "arc-crimson",
-        "ember-shell",
-        "molten-heart",
-        "surface-flames",
-        "trailing-embers"
+        "trail-glow",
+        "trail-core",
+        "trail-wisps",
+        "trail-sparks",
+        "head-halo",
+        "head-comet",
+        "head-licks",
+        "head-fire",
+        "head-core"
       ]
     }
   ],
