@@ -199,26 +199,64 @@ test('【惡疫魔沼】：塗上惡疫，且該敵人受到的毒屬性持續�
   assert.equal(c.skill2DotElemFactor(clean, 'sgMirePoison'), 1, '沒中惡疫就沒有放大');
 });
 
-test('【深淵火獄】：熔岩沼定期噴出火龍捲並把敵人屬性改寫為火', () => {
+test('【深淵火獄】：每秒向最多三名不同敵人拋出融火之心同款火球', () => {
   const c = loadContext();
   const vfx = stubVfx(c);
   maxLevels(c, 'mire');
   equip(c, 'mire');
   setUlt(c, 'mire', 'abyssInferno', 1);
   const p = playerEnt();
-  const e = enemy(1e9, 20, 0);
-  c.castSkill2(p, [e], 'mire', 'mv-float');
-  assert.equal(c.SKILL2_RT.grounds.filter((f) => f.kind === 'lavapillar').length, 0, '出生當下先等一個節拍');
-  advance(c, p, [e], 3);
-  const pillars = c.SKILL2_RT.grounds.filter((f) => f.kind === 'lavapillar');
-  assert.ok(pillars.length >= 1, '應噴出火龍捲');
-  assert.equal(pillars[0].gid, 'mire', '傷害掛在泥沼術名下');
-  assert.equal(pillars[0].hitElem, 'fire', '火屬性');
-  assert.equal(pillars[0].hits, 8, '八段');
-  assert.equal(c.skill2ForcedAttr(e), 'fire', '被噴到的敵人屬性標籤改為火');
+  const enemies = [enemy(1e9, 20, 0), enemy(1e9, 30, 0), enemy(1e9, 40, 0)];
+  c.castSkill2(p, enemies, 'mire', 'mv-float');
+  advance(c, p, enemies, 0.9);
+  assert.equal(vfx.filter((s) => s.variant === 'dragon-devour-ball').length, 0, '出生未滿一秒不可先發射');
+  advance(c, p, enemies, 0.1);
+  const shots = vfx.filter((s) => s.variant === 'dragon-devour-ball');
+  assert.equal(shots.length, 3, '一輪應朝三名不同敵人發射');
+  assert.equal(new Set(shots.map((s) => `${s.area.x},${s.area.y}`)).size, 3);
+  for (const shot of shots) {
+    assert.equal(shot.vfx.projectile, 'proj-dragon-devour');
+    assert.equal(shot.arcM, 12);
+    assert.equal(shot.travelMs[0], 900);
+    assert.equal(shot.area.fixedLanding, true);
+  }
+  const blasts = c.SKILL2_RT.grounds.filter((f) => f.kind === 'mirefireball');
+  assert.equal(blasts.length, 3);
+  assert.ok(blasts.every((f) => f.radius === c.bfMeterPx(6)));
+  assert.ok(blasts.every((f) => f.dmgVal === c.sgGroupBaseStat(c.SKILLS2.mire, c.getStats()) * 3.3));
+  advance(c, p, enemies, 1);
+  assert.ok(vfx.some((s) => s.variant === 'dragon-devour-impact' && s.vfx?.attack === 'burst-dragon-devour'));
+  assert.equal(c.skill2ForcedAttr(enemies[0]), '', '新版不再附加火屬性烙印');
+  assert.equal(c.SKILL2_RT.grounds.filter((f) => f.kind === 'lavapillar').length, 0);
   assert.ok(vfx.some((s) => s.vfx?.ground === 'ground-mire-magma-09'), '深淵火獄應顯示專屬岩漿地板');
-  assert.ok(vfx.some((s) => s.vfx?.field === 'fire-tornado-inferno'), '噴出的火龍捲應使用新版場域');
-  assert.ok(!vfx.some((s) => Object.values(s.vfx || {}).includes('ground-tornado-fire')), '不應再播放舊版火龍捲');
+  assert.ok(!vfx.some((s) => s.vfx?.field === 'fire-tornado-inferno'), '不應播放火龍捲');
+});
+
+test('【深淵火獄】：落地才依六米範圍結算，升級每級增傷 30%', () => {
+  for (const lv of [1, 10]) {
+    const c = loadContext();
+    stubVfx(c);
+    maxLevels(c, 'mire');
+    equip(c, 'mire');
+    setUlt(c, 'mire', 'abyssInferno', lv);
+    const p = playerEnt();
+    const target = enemy(1e9, 20, 0);
+    c.castSkill2(p, [target], 'mire', 'mv-float');
+    advance(c, p, [target], 1.5);
+    const ball = c.SKILL2_RT.grounds.find((f) => f.kind === 'mirefireball');
+    assert.ok(ball);
+    const base = c.sgGroupBaseStat(c.SKILLS2.mire, c.getStats());
+    assert.equal(ball.dmgVal, base * (300 + 30 * lv) / 100);
+    const inside = enemy(1e9, ball.pos.x + c.bfMeterPx(5), ball.pos.y);
+    const outside = enemy(1e9, ball.pos.x + c.bfMeterPx(20), ball.pos.y);
+    target.pos.x = ball.pos.x + c.bfMeterPx(20);
+    const hits = [];
+    c.sgHitOne = (pEnt, st, e, dmg, gid, floatSel, out, delay, bonus, elem) => { hits.push({ e, elem }); return { miss: false }; };
+    c.sgMireFireballBlast(ball, [target, inside, outside], tickCtx(c, p, [target, inside, outside]));
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0].e, inside);
+    assert.equal(hits[0].elem, 'fire');
+  }
 });
 
 test('泥沼術三種超神各用技能表指定的地板，未選超神仍用熔岩沼', () => {
@@ -254,7 +292,7 @@ test('【深淵火獄】沒練到熔岩沼就不生效（設計文字是「熔�
   const e = enemy(1e9, 20, 0);
   c.castSkill2(p, [e], 'mire', 'mv-float');
   advance(c, p, [e], 3);
-  assert.equal(c.SKILL2_RT.grounds.filter((f) => f.kind === 'lavapillar').length, 0);
+  assert.equal(c.SKILL2_RT.grounds.filter((f) => f.kind === 'mirefireball').length, 0);
 });
 
 test('【黃泉沼】：低血且在沼澤中的敵人每次受傷累加斬殺機率，BOSS 不吃', () => {

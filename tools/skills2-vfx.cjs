@@ -5,6 +5,7 @@ const noteColumn = '特效作用說明';
 const events = {
   'firepillar.infernoTempest': {roles:['projectile','attack'],note:'每道火龍捲每0.33秒向搜敵範圍內每次重新隨機選取1名敵人平射1顆火球；觸發子彈以36米／秒追蹤敵人，主目標必中，抵達後觸發特效匹配爆炸傷害半徑。'},
   'firepillar.dragonDevour': {roles:['attack'],note:'本體持續場域播放單一火漩渦，本體子彈隨機拋向地面、不搜敵；每顆落地播放一次匹配傷害半徑的觸發特效。'},
+  'mire.abyssInferno': {roles:['attack'],note:'熔岩沼每秒向範圍內至多三名不同敵人的當下位置拋出火球；本體飛行子彈沿用融火之心，落地時觸發特效匹配六米爆炸半徑。'},
   'firepillar.eternalInferno': {roles:['ground'],note:'沿龍捲移動軌跡產生的火池只播放本列觸發地板特效，範圍與存續時間依火池判定，不繼承龍捲本體。'},
   'fireball.starfallCataclysm': {roles:['attack'],note:'超巨型殞石落地時，在角色當下中心播放一次全場爆炸；小型受擊另讀本列本體命中特效，各自依 Preset 持續時間播放。'},
   'firepillar.5': {roles:['attack','hit'],note:'每道火龍捲消失時播放一次範圍爆炸及受擊；不隨平時傷害跳動播放，不重播龍捲場域。'},

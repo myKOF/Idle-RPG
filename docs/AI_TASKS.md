@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜深淵火獄改為拋物線範圍火球（MIRE-ABYSS-FIREBALL-20260923）
+
+- Owner：Codex；Done。深淵火獄取消定期火龍捲與火屬性烙印，改為熔岩沼每 1 秒向範圍內最多 3 名不同敵人發射火球；落點於發射時固定，沿用融火之心火球的 0.9 秒拋物線飛行與落地爆炸預設，落地對 6 米內敵人造成基礎 300%＋每級 30% 火焰傷害。保留使用者的深淵火獄專屬地板。
+- Excel／CSV／JS 技能表、幾何與觸發特效欄位接線、Worker／頁面快取及回歸測試同步。未改火球素材或其他技能數值；不合併／推送。
+
 ## Codex｜泥沼術三種超神專屬地板接線（MIRE-ULT-GROUND-20260923）
 
 - Owner：Codex；Done。使用者已在 Skills2 表填入惡疫魔沼 `ground-mire-venom-08`、深淵火獄 `ground-mire-magma-09`、黃泉沼 `ground-mire-magma-10`，但前次接線強制只讀第七階，實戰皆顯示 `ground-mire-magma`。沼澤每拍改為依目前超神解析地板欄，且事件只派送地板角色；深淵火獄定期火龍捲仍獨立使用 `fire-tornado-inferno`。未選超神仍用第七階地板。
