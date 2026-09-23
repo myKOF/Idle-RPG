@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "ground-mire-venom",
+  "id": "ground-mire-venom-08",
   "duration": 4,
   "loop": true,
   "layers": [
@@ -12,8 +12,8 @@
         "x": 0.46875,
         "y": 0.46875
       },
-      "alpha": 1,
-      "tint": "#71ad75",
+      "alpha": 0.9,
+      "tint": "#00ff11",
       "blendMode": "add",
       "duration": 4,
       "projection": {
@@ -34,13 +34,17 @@
       "id": "sprite-4",
       "type": "sprite",
       "assetId": "light-masks-1.0/transparent/window_a_noise.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "rotation": 0.785398,
       "scale": {
         "x": 0.2757,
         "y": 0.2757
       },
-      "alpha": 0.2,
-      "tint": "#000000",
+      "alpha": 0.7,
+      "tint": "#ae00ff",
       "blendMode": "add",
       "scaleOverLife": 1,
       "outerScale": {

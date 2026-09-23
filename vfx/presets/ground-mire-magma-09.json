@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "ground-mire-magma",
+  "id": "ground-mire-magma-09",
   "duration": 4,
   "loop": true,
   "layers": [
@@ -13,7 +13,7 @@
         "y": 0.46875
       },
       "alpha": 1,
-      "tint": "#ddfa00",
+      "tint": "#fa7900",
       "blendMode": "add",
       "duration": 4,
       "projection": {
