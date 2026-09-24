@@ -62,7 +62,8 @@
           0
         ]
       ],
-      "rotationOverLife": 0
+      "rotationOverLife": 0,
+      "perspective": false
     },
     {
       "id": "seg-a",
@@ -125,7 +126,8 @@
           "#3b1060"
         ]
       ],
-      "rotationYOverLife": 0
+      "rotationYOverLife": 0,
+      "perspective": false
     },
     {
       "id": "seg-b",
@@ -188,7 +190,8 @@
           "#3b1060"
         ]
       ],
-      "rotationYOverLife": 0
+      "rotationYOverLife": 0,
+      "perspective": false
     },
     {
       "id": "seg-c",
@@ -251,7 +254,8 @@
           "#3b1060"
         ]
       ],
-      "rotationYOverLife": 0
+      "rotationYOverLife": 0,
+      "perspective": false
     },
     {
       "id": "branch",
@@ -314,7 +318,8 @@
           1,
           "#3b1060"
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "flash",
@@ -361,7 +366,8 @@
           1,
           1.25
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "seg-a-copy",
@@ -423,7 +429,8 @@
           1,
           "#3b1060"
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "seg-a-copy-2",
@@ -485,7 +492,8 @@
           1,
           "#3b1060"
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "flash-copy",
@@ -532,7 +540,8 @@
           1,
           1.25
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "blue-droplets",
@@ -583,7 +592,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "white-droplets",
@@ -634,7 +644,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-0",
@@ -698,7 +709,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-1",
@@ -762,7 +774,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-2",
@@ -826,7 +839,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-3",
@@ -890,7 +904,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-4",
@@ -954,7 +969,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "impact-core",
@@ -977,7 +993,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     }
   ],
   "sizing": {

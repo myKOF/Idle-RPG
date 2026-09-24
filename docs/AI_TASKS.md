@@ -7861,3 +7861,13 @@ Worker 存活且頁面正常完成載入。
 - 顯示層兩條路：只有幾層標記時留在場景層，由 battle-renderer 的 `projectSceneTransform` 就地左乘 diag(w, w²) 抵銷（前後遮擋不變，代價是單應變換在圖層範圍內不完全均勻、邊緣有輕微殘留）；整份 preset 都標記時 Adapter 改走 billboard 層（完全不變形）。後者原本是 Codex 寫死 `presetId === 'pillar-earth' && spec.variant === 'pillar'`，改成看 preset 資料（`billboardPresets`），`vfx/presets/pillar-earth.json` 的 8 層補上 `perspective: false`，行為與改動前相同；之後幫這類特效加圖層時新的那層也要標，否則整份會掉回場景層。
 - 修改 `js/vfx-core.js`（欄位、驗證、旗標傳給顯示層）、`js/vfx-runtime.js`、`js/battle-renderer.js`、`tools/vfx/editor/editor.js`（兩個勾選，「跟著發射方向轉」只在有地面投影的圖層出現）、`index.html` 與編輯器頁面的快取版號、`DATA_VERSION`、`vfx/presets/pillar-earth.json`、Schema 與 RUNTIME_ADAPTER 文件、三支測試。衝突預檢擋下 `js/vfx-runtime.js`（ai/codex 6 筆）與 `js/battle-renderer.js`（2 筆），經使用者同意先合併 ai/codex 再做。
 - 驗證：新增 CAM-1～5（Core 與編輯器接線）、PERSP-6～8（補償數學、原樣回傳、接線）與 billboard 路由改看資料一條；14 個突變全部被抓到。VFX／戰鬥／技能相關 1564 項中 82 項失敗，與合併後的基線逐項相同（零新增失敗）。編輯器實機確認：pillar-earth 開起來每層都是未勾選且不算未存檔、有地面投影的圖層才出現第二個勾選、點擊寫入資料並進復原紀錄。未合併／推送。
+
+## Claude｜落雷永遠筆直落下（VFX-LIGHTNING-STRAIGHT-20260924）
+
+- Owner：Claude；Done。承接上一則的三個每層鏡頭開關（後續兩輪已合入 `83d03057`「跟著發射方向轉」擴大到整份特效的剛體旋轉、`7dbf6ff3` 新增第三個開關「跟著特效拉長」）。本輪處理使用者回報的落雷：雷柱被畫面透視推成斜的，希望永遠直線落下。
+- 又高又細的東西沒辦法就地補償——同一條垂直線在不同高度會被梯形網格推往不同的橫向位置，`projectSceneTransform` 只校正得了圖層原點附近的一小塊。變形圖層（`deformation.layers`，閃電那種沿路徑彎折的）更是只有 billboard 那條路走得通，因為它的網格頂點是在特效座標裡算好的。因此把 `perspective: false` 對變形圖層開放，但限制**整份 preset 的每一層都要標**（只標幾層時 Core 擋下並說明原因）；編輯器那一格也從「變灰不能點」改成可點，提示寫明要先全選圖層。
+- 同時修掉一個既有缺陷：變形圖層的節點位置、旋轉與縮放是後端 `updateWarp` 從變形矩陣蓋上去的，`projectAirTransform`／`projectBillboardTransform` 算完的投影會被整個蓋掉（實測掛勾算出 125,250／1.25，節點仍停在 100,200／1）。新增 `projectedWarp`，把投影套進矩陣的原點與縮放：空中層每份矩陣用自己的原點取遠近，billboard 整張以錨點取一次，柱身才是直的。飛行的閃電類投射物一併受惠。
+- 三份落雷 preset（`bolt-sky-lightning`、`bolt-sky-purple`、`bolt-thunderstrike-bluewhite`）整份標上 `perspective: false`；落雷術走的 `playThunderstrike` 是另一條派送，也改成看 `billboardPresets`（不是寫死 preset 名字）。**之後幫這三份加圖層時，新的那層也要標**，否則整份會掉回場景層又變斜。
+- 修改 `js/vfx-core.js`（驗證改為「整份都標才收」）、`js/battle-renderer.js`（`projectedWarp` 與兩條投影掛勾）、`js/vfx-runtime.js`（落雷路由、`DATA_VERSION`）、`tools/vfx/editor/editor.js`（開放該格與提示）、三份 preset、`index.html` 與編輯器頁面的快取版號、Schema 與 RUNTIME_ADAPTER 文件、兩支測試。
+- 驗證：新增 CAM-11 與「變形矩陣一起投影」一項、落雷路由兩項；12 個突變全部被抓到。全庫 3174 項中 92 項失敗，與 HEAD 快照逐項相同（零新增、零修好）。build_check 402 檔通過、diff check 通過。遊戲實機確認：落雷的變形網格確實進入 `presetBillboard`，畫面上數道雷柱垂直落在畫面右半邊（以前那裡會被網格推斜）。
+- 衝突預檢：`ai/codex` 已有兩筆比 HEAD 新的提交動到 `index.html` 與 `js/vfx-runtime.js`（連鎖閃電逐段彈射、逆轉乾坤復活次數），合併時要留意；codex 工作區另有未提交的 `vfx/presets/beam-light.json`，未碰。未合併／推送。

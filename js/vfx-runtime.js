@@ -1327,7 +1327,9 @@ var VFXRuntime = (function () {
             vacuumParams.rotation = isFinite(spec.angle) ? Number(spec.angle) : Math.atan2(vacuumTarget.y-vacuumSource.y,vacuumTarget.x-vacuumSource.x);
             ok = !!play(rtFx, presetId, vacuumParams);
           } else if (presetId === 'bolt-thunderstrike-bluewhite') {
-            ok = playThunderstrike(rtFx, presetId, spec);
+            /* 落雷同樣吃「整份標了 perspective: false」的 billboard 路：又高又細的東西
+               留在場景層就會被透視網格推成斜的（2026-09-24 使用者回報）。 */
+            ok = playThunderstrike(billboardPresets[presetId] ? rtBillboard : rtFx, presetId, spec);
           } else if (spec.variant === 'dual-slash' || spec.variant === 'dual-storm') {
             var danceIds = spec.targets || [];
             var danceSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
@@ -1684,7 +1686,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260924-camera-flags';
+  var DATA_VERSION = '20260924-camera-flags-3';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

@@ -795,7 +795,8 @@
      兩個鏡頭開關對它們不會有任何作用，Core 也擋著不收。留在原位變灰並說明，不藏起來——
      2026-09-24 使用者在看不到某一格時只能猜是不是壞了。 */
   var DEFORMED_LAYER_HINT = '這一層是「變形圖層」（閃電那種沿路徑彎折的）。' +
-    '它的形狀整個由變形決定，鏡頭的兩個開關對它沒有作用，所以不開放。';
+    '它的形狀與角度整個由變形決定，這個開關對它沒有作用，所以不開放。\n' +
+    '（「受畫面透視影響」是唯一開放的一格：那是整份換一種畫法，不是逐層補償。）';
   function cameraFlagAllowed(layer) {
     var def = state.preset && state.preset.deformation;
     return !(def && def.layers && def.layers.indexOf(layer.id) >= 0);
@@ -829,10 +830,13 @@
          跟著發射方向轉  方向：貼地圖層會在地面平面上跟著技能方向轉（圓變成斜橢圓）。
                          只對有填「地面投影」的圖層有意義，所以只在那種圖層上出現（Core 也只收那種）。
        編輯器沒有畫面透視、也不會給發射方向，所以這兩格在預覽裡看不出差別，差別在遊戲畫面上。 */
+    /* 變形圖層也能關畫面透視，但必須整份一起關（Core 擋著）：那是「整份走不變形的畫法」，
+       不是逐層補償。所以這一格對變形圖層開放，說明寫在 hint 裡。 */
     { key: 'perspective', label: '受畫面透視影響', kind: 'bool', default: true,
-      enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT,
       hint: '勾選（預設）：跟著戰鬥畫面的輕微透視一起縮放（遠近關係，大部分特效都該勾著）。\n' +
-        '取消：這一層照原尺寸畫。整份特效每一層都取消的話，遊戲會改用完全不變形的畫法。\n' +
+        '取消：這一層照原尺寸畫。整份特效每一層都取消的話，遊戲會改用完全不變形的畫法\n' +
+        '（又高又細的東西例如落雷、光柱，只有這條路能讓它永遠筆直；變形圖層只能走這條，\n' +
+        '所以閃電類要取消就得整份一起取消：先全選圖層再點這一格）。\n' +
         '（預覽區看不出差別，差別在遊戲畫面上。）' },
     { key: 'followDirection', label: '跟著發射方向轉', kind: 'bool', default: true,
       enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT,

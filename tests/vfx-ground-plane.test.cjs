@@ -204,8 +204,12 @@ test('CAM-6 編輯器：兩個勾選預設都勾著，變形圖層留在原位�
   assert.match(fields,/key: 'perspective', label: '受畫面透視影響', kind: 'bool', default: true/);
   assert.match(fields,/key: 'followDirection', label: '跟著發射方向轉', kind: 'bool', default: true/);
   assert.match(fields,/key: 'followStretch', label: '跟著特效拉長', kind: 'bool', default: true/);
-  assert.equal((fields.match(/enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT/g)||[]).length,2,
-    '前兩個開關都只有變形圖層不給點，而且都要說明原因');
+  /* 畫面透視對變形圖層開放（整份一起關＝走不變形的畫法，那是閃電唯一能走的路），
+     方向與拉長對它們沒有作用，所以停用並說明 */
+  const persp=fields.slice(fields.indexOf("key: 'perspective'"),fields.indexOf("key: 'followDirection'"));
+  assert.ok(persp.indexOf('enabledWhen')<0,'畫面透視不該對變形圖層停用');
+  assert.equal((fields.match(/enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT/g)||[]).length,1,
+    '方向那一格對變形圖層停用並說明原因');
   /* 拉長那一個另外排除粒子：粒子的圖本來就只吃等比縮放，Core 也不收 */
   assert.match(fields,/return cameraFlagAllowed\(l\) && l\.type !== 'particle';/);
   /* 欄位不因為「對這一層沒意義」而消失：使用者在看不到某一格時只能猜是不是壞了 */
@@ -296,4 +300,21 @@ test('CAM-9 followStretch 的 schema：粒子與變形圖層不收，序列化�
   const back=JSON.parse(Core.serialisePreset(one({followStretch:false}))).layers[0];
   assert.equal(back.followStretch,false);
   assert.equal(JSON.parse(Core.serialisePreset(one({}))).layers[0].followStretch,undefined);
+});
+
+test('CAM-11 變形圖層（閃電）要關畫面透視必須整份一起關，且會走 billboard 層',()=>{
+  /* 2026-09-24 使用者：落雷希望永遠筆直。又高又細的東西沒辦法就地補償（同一條垂直線在不同
+     高度被推往不同橫向位置），只有整份走 billboard 層才是直的——Adapter 的條件正是每一層都標。 */
+  const bolt=(marks)=>({schemaVersion:1,id:'cam-bolt',duration:1,
+    deformation:{axis:'y',start:0,end:100,amplitude:5,widthJitter:.05,mirror:false,layers:['seg']},
+    layers:[{id:'seg',type:'sprite',assetId:'a.png'},{id:'flash',type:'sprite',assetId:'b.png'}]
+      .map((l,i)=>marks[i]?Object.assign({},l,{perspective:false}):l)});
+  assert.match(Core.validatePreset(bolt([true,false])).errors.join(),/必須整份 preset 的每一層都關/);
+  assert.equal(Core.validatePreset(bolt([true,true])).ok,true,'整份都關才收');
+  assert.equal(Core.validatePreset(bolt([false,false])).ok,true,'都不關當然可以');
+  /* 正式的落雷 preset 已經整份標記，才會走 billboard 層 */
+  const sky=read('bolt-sky-lightning');
+  assert.equal(Core.validatePreset(sky).ok,true);
+  assert.ok(sky.layers.every(l=>l.type==='empty'||l.perspective===false),
+    'bolt-sky-lightning 要整份標記，否則落雷會掉回場景層而傾斜');
 });

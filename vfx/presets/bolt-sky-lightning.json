@@ -55,7 +55,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "seg-a",
@@ -117,7 +118,8 @@
           1,
           "#6b3f00"
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "seg-b",
@@ -179,7 +181,8 @@
           1,
           "#6b3f00"
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "seg-c",
@@ -241,7 +244,8 @@
           1,
           "#6b3f00"
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "branch",
@@ -304,7 +308,8 @@
           1,
           "#6b3f00"
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "ground",
@@ -347,7 +352,8 @@
       "projection": {
         "x": 1,
         "y": 0.5
-      }
+      },
+      "perspective": false
     },
     {
       "id": "flash",
@@ -390,7 +396,8 @@
           1,
           1.2
         ]
-      ]
+      ],
+      "perspective": false
     }
   ],
   "sizing": {

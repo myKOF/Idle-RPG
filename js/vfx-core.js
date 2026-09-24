@@ -756,12 +756,18 @@ var VFXCore = (function () {
     if(!isFiniteNumber(c.widthJitter)||c.widthJitter<0||c.widthJitter>.15)errors.push('deformation.widthJitter 必須在0到0.15');
     if(typeof c.mirror!=='boolean')errors.push('deformation.mirror 必須是布林值');
     if(!Array.isArray(c.layers)||!c.layers.length||new Set(c.layers).size!==c.layers.length){errors.push('deformation.layers 必须是非空、不重複的圖層清單');return;}
+    /* 變形圖層的幾何整個由變形矩陣決定（見 setDeformation 與後端的 updateWarp）：
+       留在場景層時沒有辦法就地補償畫面透視，只有「整份走 billboard 層」那條路才做得到
+       （Adapter 的條件正是每一層都標 perspective: false）。所以只標一部分就是 silent fallback，擋下來。
+       followDirection 對它們則完全沒有作用（角度也在變形矩陣裡），一律不收。 */
+    var allFlat=preset.layers.every(function(l){return !l||l.type==='empty'||l.perspective===false;});
     c.layers.forEach(function(id){var l=preset.layers.find(function(l){return l&&l.id===id;});
       if(!l||l.type!=='sprite'||l.radiusProfile)errors.push('deformation 只支援一般sprite圖層：'+id);
-      /* 變形圖層的幾何整個由變形矩陣決定（見 setDeformation 與後端的 updateWarp），
-         鏡頭開關對它們不會有任何作用。收下來再靜靜忽略就是 silent fallback，所以擋在這裡。 */
-      else if(l.perspective===false||l.followDirection===false){
-        errors.push('deformation 圖層不支援 perspective／followDirection：'+id);
+      else if(l.followDirection===false){
+        errors.push('deformation 圖層不支援 followDirection（角度在變形矩陣裡，關不掉）：'+id);
+      }
+      else if(l.perspective===false&&!allFlat){
+        errors.push('deformation 圖層要關畫面透視，必須整份 preset 的每一層都關：'+id);
       }
     });
   }
