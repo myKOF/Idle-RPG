@@ -153,6 +153,14 @@ test('ROCKARMOR tiers 8–10 split each orbiting stone across the actor depth',(
   adapter.destroy();
  }
 });
+test('天地共生的表定白光依五秒復甦事件持續，不在舊 0.9 秒結束',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/pillar-light.json'),'utf8'));
+ const {adapter}=makeAdapter([p],{ctx:{footOf:()=>({x:0,y:0}),posOf:()=>({x:0,y:0}),playerPos:()=>({x:0,y:0})}});
+ assert.equal(adapter.tryPlay({fxKind:'rain',variant:'pillar',dur:5,targets:['pv-float'],hit:false,vfx:{attack:p.id}}),true);
+ adapter.update(4.5);assert.equal(adapter.stats().fx.activeEffects,1);
+ adapter.update(.6);assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.destroy();
+});
 
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/fire-tornado-inferno.json'),'utf8'));

@@ -521,7 +521,7 @@ test('生命反射之盾（T6）：目標不只一個時避開當前攻擊者', 
   assert.equal(only[0], attacker, '只剩一個目標時才打攻擊者');
 });
 
-test('天地共生（T7）：死亡復活、無敵、進入自身冷卻；冷卻中不再觸發', () => {
+test('天地共生（T7）：五秒從零血復甦，完成後才獲得無敵並恢復戰鬥', () => {
   const c = loadContext();
   const p = playerEnt();
   setLevels(c, 'earthguard', [1, 1, 1, 1, 1, 1, 1]);
@@ -529,10 +529,19 @@ test('天地共生（T7）：死亡復活、無敵、進入自身冷卻；冷卻
 
   p.hp = 0;
   assert.equal(c.skills2TryRebirth(p), true, '應攔下死亡');
-  assert.equal(p.hp, 280, '回復 28% 最大生命');
-  assert.ok(c.effectActive(p, 'invuln'), '復活後無敵');
+  assert.equal(p.hp, 0);
+  assert.equal(p._sgRevival.mode, 'earthguard');
+  assert.equal(p._sgRevival.endAt-c.GT, 5);
+  assert.equal(c.skill2DownedActive(), true);
+  assert.equal(c.effectActive(p, 'invuln'), false, '倒數結束後才給無敵');
   assert.equal(p.skillCds['sg:earthguard'], 57, '冷卻寫進技能格（通用冷卻顯示）');
-
+  c.GT = 2.5;c.sgTickEarthguardRevival(p);
+  assert.equal(p.hp,500);
+  c.GT = 5;c.sgTickEarthguardRevival(p);
+  assert.equal(p.hp,1000);
+  assert.equal(p._sgRevival,undefined);
+  assert.equal(c.skill2DownedActive(),false);
+  assert.ok(c.effectActive(p, 'invuln'), '完成復活後無敵');
   p.hp = 0;
   assert.equal(c.skills2TryRebirth(p), false, '冷卻中不再復活');
 });

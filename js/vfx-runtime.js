@@ -563,6 +563,9 @@ var VFXRuntime = (function () {
         var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
         params.position = p;
         params.depthY = footOf(ids[i]).y;
+        if (spec.variant === 'pillar' && presetId === 'pillar-light' && num(spec.dur, 0) > 0) {
+          params.timeScale = presetDurations[presetId] / spec.dur;
+        }
         if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);

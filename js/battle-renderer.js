@@ -1640,9 +1640,13 @@ var BattleRenderer = (function () {
          不在玩家實體上。舊版讀 field.player.reviveCd，那個欄位根本不存在，
          於是 dead 永遠是 false——倒地動作與倒數都不會出現。 */
       var reviveLeft = Number(field.reviveCd) || 0;
+      var wasEarthguardRevival = p.revival && p.revival.mode === 'earthguard';
       p.revival = field.player && field.player._sgRevival || null;
       p.revivalGt = panel.gt;
-      if (p.revival && p.curAnim !== 'idle') playAnim(p, 'idle');
+      var earthguardRevival = p.revival && p.revival.mode === 'earthguard';
+      if (earthguardRevival && !wasEarthguardRevival) playAnim(p, p.dieAnim ? 'die' : 'idle');
+      else if (wasEarthguardRevival && !earthguardRevival) playAnim(p, 'idle');
+      else if (p.revival && !earthguardRevival && p.curAnim !== 'idle') playAnim(p, 'idle');
       var dead = reviveLeft > 0;
       if (dead !== p.dead) {
         /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
@@ -1669,8 +1673,12 @@ var BattleRenderer = (function () {
       /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
       if (p.reviveText) {
-        p.reviveText.visible = dead;
-        if (dead) {
+        p.reviveText.visible = dead || earthguardRevival;
+        if (earthguardRevival) {
+          var earthguardLeft = (typeof uiCountdownRemain === 'function')
+            ? uiCountdownRemain(p.revival.endAt - panel.gt, panel.gt) : p.revival.endAt - panel.gt;
+          p.reviveText.text = '✨ 復活倒數 ' + Math.max(1, Math.ceil(Math.max(0, earthguardLeft)));
+        } else if (dead) {
           var left = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
           p.reviveText.text = '💀 復活倒數 ' + Math.max(1, Math.ceil(Math.max(0, left)));
@@ -6044,8 +6052,21 @@ var BattleRenderer = (function () {
           ? uiCountdownRemain(p.revival.endAt - p.revivalGt, p.revivalGt)
           : p.revival.endAt - p.revivalGt;
         var revivalProgress = Math.max(0, Math.min(1, 1 - revivalLeft / (p.revival.endAt - p.revival.startAt)));
-        p.bodyWrap.y = -60 * revivalProgress;
-        p.bodyWrap.rotation = 0;
+        if (p.revival.mode === 'earthguard') {
+          // 倒地 → 逐漸站起；浮空到中段最高，五秒結束時落回原位。
+          p.bodyWrap.y = -60 * Math.sin(Math.PI * revivalProgress);
+          if (p.dieAnim && S.sheets[p.sheetName].anims.rise && revivalProgress >= 0.2) {
+            if (p.curAnim !== 'rise') playAnim(p, 'rise');
+            p.body.gotoAndStop(Math.min(p.body.totalFrames - 1,
+              Math.floor((revivalProgress - 0.2) / 0.8 * p.body.totalFrames)));
+            p.bodyWrap.rotation = 0;
+          } else if (!p.dieAnim) {
+            p.bodyWrap.rotation = -(Math.PI / 2) * (1 - revivalProgress) * p.facing;
+          }
+        } else {
+          p.bodyWrap.y = -60 * revivalProgress;
+          p.bodyWrap.rotation = 0;
+        }
         p.bodyWrap.x = 0;
       }
       p.root.x = p.wx;

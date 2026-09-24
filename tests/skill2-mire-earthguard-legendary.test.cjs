@@ -392,7 +392,9 @@ test('【不滅意志】：只延長【天地共生】給的那段無敵', () =>
   c.skills2OnEnemyKill(p, enemy(100, 10, 0));
   assert.equal(p.effects.invuln, c.GT + 3, '非天地共生的無敵不受影響');
   // 天地共生的那一段才算
+  p.hp = 0;
   c.skills2TryRebirth(p);
+  c.GT += 5;c.sgTickEarthguardRevival(p);
   const before = p.effects.invuln;
   c.skills2OnEnemyKill(p, enemy(100, 10, 0));
   assert.equal(Math.round((p.effects.invuln - before) * 10), 5, '每擊殺 +0.5 秒');
@@ -446,8 +448,12 @@ test('【逆轉乾坤】：冷卻結束後累積復活次數，用完才真的�
   assert.equal(c.skills2TryRebirth(p), true, '第一次：花掉「冷卻已結束」的那一次');
   assert.ok(p.skillCds[c.SG_PREFIX + 'earthguard'] > 0, '冷卻開始跑');
   assert.equal(c.SKILL2_RT.rebirth.charges, 1, '累積的那一次還在');
+  assert.equal(c.skills2TryRebirth(p), true, '演出中的重入仍屬同一次，不消耗次數');
+  assert.equal(c.SKILL2_RT.rebirth.charges, 1);
+  c.GT += 5;c.sgTickEarthguardRevival(p);p.hp=0;
   assert.equal(c.skills2TryRebirth(p), true, '第二次：花掉累積的那一次');
   assert.equal(c.SKILL2_RT.rebirth.charges, 0);
+  c.GT += 5;c.sgTickEarthguardRevival(p);p.hp=0;
   assert.equal(c.skills2TryRebirth(p), false, '用完就要等冷卻');
 });
 
@@ -457,6 +463,7 @@ test('沒選【逆轉乾坤】時，【天地共生】維持「冷卻好了才�
   c.sgTickRebirthCharge(p);
   assert.equal(c.SKILL2_RT.rebirth, null, '不建立累積狀態＝零成本');
   assert.equal(c.skills2TryRebirth(p), true);
+  c.GT += 5;c.sgTickEarthguardRevival(p);p.hp=0;
   assert.equal(c.skills2TryRebirth(p), false, '冷卻中不能再復活');
 });
 
