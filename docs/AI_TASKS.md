@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜連鎖閃電彈射畫面恢復（CHAIN-VISUAL-20260924）
+
+- Owner：Codex；Done。使用者回報視角調整後只剩電光團；確認基礎技能表攻擊／子彈欄空白，Runtime 不回退舊畫法。恢復既有彈射 Preset 配置，事件傳遞原抵達時間，命中電光僅在終點抵達時播放，不改傷害、彈射數量或節奏。
+- 範圍：Skills2 Excel／CSV／JS、必要 Runtime 接線、主頁／Worker 快取、相關測試與文件；禁止修改其他技能規則及使用者未提交的 beam-light 素材。前置依賴已具備；index.html 與 Claude 快取不同列，使用者授權無合併衝突即可繼續，merge-tree 乾跑成功。
+- 驗收：Excel 正常重開、配置往返、真技能事件逐段播放與座標投影、命中時序、Build／Console；完成後提交交由使用者整合，不合併／推送。
+- 結果：Excel 僅一格改值、無樣式變更；18 項專項通過，完整回歸 196/200（4 項與 HEAD 相同的既有失敗），402 檔 build 通過。隔離瀏覽器以正式 Runtime／Pixi 與 FOV 確認逐段電弧，Console 無錯誤／警告。無素材變更；可合併。完整交接見 `docs/skill-tests/20260924-chainlightning-visual.md`，Commit 見本紀錄所在提交。
+
 ## Codex｜可累積復活次數技能圖標與重生後充能（REBIRTH-CHARGE-BADGE-20260924）
 
 - Owner：Codex；Done。逆轉乾坤啟用後，戰鬥技能圖標右下角顯示目前可用的復活次數（含已就緒的基本一次、累積次數，冷卻期間可為 0）；由 Worker 的 battle 面板投影權威值，更新協議 v38、文件及快取。修正進場即滿：初始只有基本一次，首次天地共生復活後才開始每次冷卻完成累積，累積狀態仍不入存檔。驗證充能、消耗、重置與 UI 投影；不修改其他技能數值／特效，不合併／推送。

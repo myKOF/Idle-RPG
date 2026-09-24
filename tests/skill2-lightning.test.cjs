@@ -623,6 +623,8 @@ test('CHAIN 藍白電弧每隔 300ms 連接下一目標，傷害顯示對齊抵�
  const events=[],hits=[];c.playCombatVfx=s=>events.push(s);c.floatEnemyEvent=(ent,sel,text,cls,dmg,delay)=>{if(dmg>0)hits.push(delay||0)};
  setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,es,'chainlightning','mv-float');
  const chains=events.filter(s=>s.variant==='lightning-chain');assert.equal(chains.length,4);
+ assert.ok(chains.every(s=>s.vfx.attack==='bolt-chain-travel-bluewhite'),'表格必須有真正的彈射電弧，不能只剩命中電光');
+ assert.deepEqual(chains.map(s=>(s.delayMs||0)+s.travelMs.at(-1)),[183,483,783,1083],'電弧命中事件與傷害浮字使用同一抵達時間');
  assert.deepEqual(chains.map(s=>s.delayMs||0),[0,300,600,900]);assert.ok(chains.every(s=>s.vfx.attack===table.vfx('chainlightning',1,'攻擊特效')&&s.vfx.projectile===table.vfx('chainlightning',1,'飛行子彈')));
  assert.deepEqual(hits,[183,483,783,1083]);
 });

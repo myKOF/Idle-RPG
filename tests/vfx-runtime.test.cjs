@@ -1705,6 +1705,29 @@ test('CHAIN 離場端點不使用 lastPos 或備用位置，取消延遲與飛�
  visible.a={x:50,y:40};delete visible.b;assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
 });
 
+test('CHAIN 斜俯視彈射逐段連接投影端點，命中電光只在終點抵達時播放',()=>{
+ // 幾何標記延長存活，避免節點池重用讓兩段的觀測紀錄混在一起；正式圖集壽命另測。
+ const p=unitPreset('bolt-chain-travel-bluewhite',1);p.layers[0].id='travelling-electric-front';
+ p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
+ const hit=unitPreset('chain-hit',1),points={'pv-float':{x:0,y:0},a:{x:100,y:180},b:{x:-100,y:-120}};
+ const screen=id=>({x:points[id].x,y:points[id].y*.5});
+ const {adapter,log}=makeAdapter([p,hit],{groundScale:.5,ctx:{posOf:screen,chainPoint:screen,playerPos:()=>screen('pv-float')}});
+ const vfx={attack:p.id,hit:hit.id};
+ adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a'],travelMs:[183],vfx});
+ adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],delayMs:300,travelMs:[0,183],vfx});
+ const beams=()=>log.nodes.filter(n=>n.spec.assetUrl.includes(p.id));
+ const hits=()=>log.nodes.filter(n=>n.spec.assetUrl.includes(hit.id));
+ function checkEnd(node,from,to){const t=node.transforms.at(-1),end={x:t.x+Math.cos(t.rotation)*t.scaleX*256,y:t.y+Math.sin(t.rotation)*t.scaleX*256};
+  assert.ok(Math.abs(t.x-from.x)<1e-6&&Math.abs(t.y-from.y)<1e-6);
+  assert.ok(Math.abs(end.x-to.x)<1e-6&&Math.abs(end.y-to.y)<1e-6,'座標已投影，不得再壓一次 Y');}
+ adapter.update(.18);assert.equal(beams().length,1);assert.equal(hits().length,0);checkEnd(beams()[0],screen('pv-float'),screen('a'));
+ adapter.update(.004);assert.equal(hits().length,1);assert.equal(hits()[0].transforms.at(-1).y,90);
+ adapter.update(.116);adapter.update(.001);assert.equal(beams().length,2);assert.equal(hits().length,1);
+ points.b={x:-180,y:240};adapter.update(.17);checkEnd(beams()[1],screen('a'),screen('b'));assert.equal(hits().length,1);
+ adapter.update(.02);assert.equal(hits().length,2);assert.equal(hits()[1].transforms.at(-1).x,-180);assert.equal(hits()[1].transforms.at(-1).y,120);
+ adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
 test('THUNDER 雷柱即時起播跟隨腳底，爆炸只由落地事件觸發',()=>{
  // 中心標記隔離美術偏移與每次隨機變形，專測落雷事件的附著與命中時序。
  const ps=['bolt','hit'].map(k=>unitPreset(k+'-thunderstrike-bluewhite',.5));
