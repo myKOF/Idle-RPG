@@ -1406,7 +1406,7 @@
     /* 框畫的是 effect-local 座標，所以這一層要與 stageRoot 保持同一個變換：
        畫布尺寸變了要跟著移動，縮放變了要跟著縮。少同步 scale 的話，
        放大之後框會停在 100% 的大小，看起來像框跑掉了。
-       把手與十字的**螢幕**尺寸不受影響——它們走 screenRadiusToLocal 反算。 */
+       把手、十字與線寬的**螢幕**尺寸不受影響——它們走 screenRadiusToLocal 反算。 */
     if (c.x !== state.stageRoot.x || c.y !== state.stageRoot.y ||
         c.scale.x !== state.stageRoot.scale.x) {
       c.x = state.stageRoot.x; c.y = state.stageRoot.y;
@@ -1434,8 +1434,13 @@
 
   /* 一個框：外框、旋轉把手的連線、pivot 十字、把手。emphasis 1＝正常，越小越淡。
      space：框所在的父物件座標。每個點換到特效座標再畫——父物件非等比縮放時框是平行四邊形，
-     與畫面上的圖一致；十字與把手的大小仍是螢幕上的固定像素。 */
+     與畫面上的圖一致；十字、把手與**線寬**的大小都是螢幕上的固定像素。
+
+     線寬也要換算是 2026-09-24 使用者回報的：這一層跟著鏡頭縮放（見 drawGizmo），
+     線寬留在 effect 單位的話，拉近鏡頭時線跟著變粗，把手（固定 8px）就被吞進線裡，
+     看起來像節點消失了。 */
   function drawGizmoBox(g, b, caps, isGroup, emphasis, space) {
+    var px = screenRadiusToLocal(1);            // 螢幕上的 1px，換算成這一層的座標
     var hs = G.handles(b, caps).map(function (h) {
       var p = G.mapPoint(space, h);
       return { kind: h.kind, x: p.x, y: p.y };
@@ -1449,28 +1454,28 @@
     g.moveTo(corners[0].x, corners[0].y);
     corners.slice(1).forEach(function (p) { g.lineTo(p.x, p.y); });
     g.lineTo(corners[0].x, corners[0].y);
-    g.stroke({ width: isGroup ? 2 : 1, color: isGroup ? 0x9be08a : 0xffffff, alpha: 0.85 * emphasis });
+    g.stroke({ width: px * (isGroup ? 2 : 1), color: isGroup ? 0x9be08a : 0xffffff, alpha: 0.85 * emphasis });
 
     /* 旋轉把手到框上緣的連線 */
     var rot = hs.filter(function (h) { return h.kind === 'rotate'; })[0];
     if (rot) {
       var top = G.mapPoint(space, G.rotateAround({ x: b.x + b.w / 2, y: b.y }, b.pivot, b.rotation));
       g.moveTo(top.x, top.y); g.lineTo(rot.x, rot.y);
-      g.stroke({ width: 1, color: 0xffffff, alpha: 0.5 * emphasis });
+      g.stroke({ width: px, color: 0xffffff, alpha: 0.5 * emphasis });
     }
 
     /* pivot：十字，標出 position 實際落在哪裡（受 anchor 影響） */
     var pv = G.mapPoint(space, b.pivot), r = screenRadiusToLocal(6);
     g.moveTo(pv.x - r, pv.y); g.lineTo(pv.x + r, pv.y);
     g.moveTo(pv.x, pv.y - r); g.lineTo(pv.x, pv.y + r);
-    g.stroke({ width: 1, color: 0xffb454, alpha: 0.95 * emphasis });
+    g.stroke({ width: px, color: 0xffb454, alpha: 0.95 * emphasis });
 
     var hr = screenRadiusToLocal(4);
     hs.forEach(function (h) {
       if (h.kind === 'rotate') {
         g.circle(h.x, h.y, hr);
         g.fill({ color: 0x7fb2ff, alpha: emphasis });
-        g.stroke({ width: 1, color: 0xffffff, alpha: 0.9 * emphasis });
+        g.stroke({ width: px, color: 0xffffff, alpha: 0.9 * emphasis });
       } else {
         g.rect(h.x - hr, h.y - hr, hr * 2, hr * 2);
         g.fill({ color: 0xffffff, alpha: emphasis });
