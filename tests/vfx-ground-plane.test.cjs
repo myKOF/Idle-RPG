@@ -203,8 +203,11 @@ test('CAM-6 編輯器：兩個勾選預設都勾著，變形圖層留在原位�
   const fields=src.slice(src.indexOf('var COMMON_FIELDS'),src.indexOf('var VEC_DEFAULTS'));
   assert.match(fields,/key: 'perspective', label: '受畫面透視影響', kind: 'bool', default: true/);
   assert.match(fields,/key: 'followDirection', label: '跟著發射方向轉', kind: 'bool', default: true/);
+  assert.match(fields,/key: 'followStretch', label: '跟著特效拉長', kind: 'bool', default: true/);
   assert.equal((fields.match(/enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT/g)||[]).length,2,
-    '兩個開關都只有變形圖層不給點，而且都要說明原因');
+    '前兩個開關都只有變形圖層不給點，而且都要說明原因');
+  /* 拉長那一個另外排除粒子：粒子的圖本來就只吃等比縮放，Core 也不收 */
+  assert.match(fields,/return cameraFlagAllowed\(l\) && l\.type !== 'particle';/);
   /* 欄位不因為「對這一層沒意義」而消失：使用者在看不到某一格時只能猜是不是壞了 */
   const at=src.indexOf('function fieldsOf(');
   const body=src.slice(at,src.indexOf('\n  }',at)+4);
@@ -234,4 +237,63 @@ test('CAM-7 掛在父物件底下的子圖層一樣：圖不轉、位置跟著�
   near(kid.rotation,Math.PI/2);
   near(kid2.rotation,0);
   near(kid2.x,kid.x);near(kid2.y,kid.y);near(kid2.x,0);near(kid2.y,100);
+});
+
+test('CAM-8 followStretch: false：圖不被拉長，位置照樣跟著拉到尾端',()=>{
+  /* 光束（fxKind: chain／beam）會被 Runtime 拉長到敵人身上：scaleX = 距離／標準長度、scaleY = 1。
+     2026-09-24 使用者把前兩個開關都取消後，beam-light 尾端的星芒仍被壓扁，來源就是這個。 */
+  const p={schemaVersion:1,id:'cam-stretch',duration:10,loop:true,
+    sizing:{shape:'custom',widthM:20,heightM:3,authored:{width:200,height:30}},
+    layers:[
+      {id:'beam',type:'sprite',assetId:'beam.png',position:{x:100,y:0}},
+      {id:'star',type:'sprite',assetId:'star.png',position:{x:200,y:0},followStretch:false}
+    ]};
+  const run=(sx,sy)=>{
+    const r=recorder(),rt=Core.createRuntime({backend:r.backend,resolver});
+    rt.registerPreset(p);rt.play(p.id,{position:{x:0,y:0},scaleX:sx,scaleY:sy});rt.update(.1);
+    return {beam:r.nodes[0].t,star:r.nodes[1].t};
+  };
+  const wide=run(3,1);
+  near(wide.beam.scaleX,3);near(wide.beam.scaleY,1);      // 沒標的：跟著拉長
+  near(wide.star.scaleX,1);near(wide.star.scaleY,1);      // 標了的：維持原本長寬比
+  near(wide.star.x,600);near(wide.star.y,0);              // 位置照樣跟著拉到尾端
+  near(wide.beam.x,300);
+  /* 縱向被撐開（場域那種）也要顧到，不能只處理橫軸 */
+  const tall=run(1,3);
+  near(tall.beam.scaleX,1);near(tall.beam.scaleY,3);
+  near(tall.star.scaleX,1);near(tall.star.scaleY,1);
+  near(tall.star.x,200);
+});
+
+test('CAM-10 子圖層一樣不被拉長，位置照樣跟著拉',()=>{
+  /* 子物件走的是矩陣分解那條路，與根圖層不是同一段程式 */
+  const p={schemaVersion:1,id:'cam-stretch-child',duration:10,loop:true,
+    sizing:{shape:'custom',widthM:20,heightM:3,authored:{width:200,height:30}},
+    layers:[
+      {id:'root',type:'empty',position:{x:0,y:0}},
+      {id:'kid',type:'sprite',assetId:'a.png',parent:'root',position:{x:200,y:0}},
+      {id:'kid2',type:'sprite',assetId:'b.png',parent:'root',position:{x:200,y:0},followStretch:false}
+    ]};
+  const r=recorder(),rt=Core.createRuntime({backend:r.backend,resolver});
+  rt.registerPreset(p);
+  rt.play(p.id,{position:{x:0,y:0},scaleX:3,scaleY:1});
+  rt.update(.1);
+  const kid=r.nodes[0].t,kid2=r.nodes[1].t;
+  near(kid.scaleX,3);near(kid.scaleY,1);
+  near(kid2.scaleX,1);near(kid2.scaleY,1);
+  near(kid2.x,kid.x);near(kid2.x,600);
+});
+
+test('CAM-9 followStretch 的 schema：粒子與變形圖層不收，序列化保留',()=>{
+  const one=extra=>({schemaVersion:1,id:'cam-stretch-schema',duration:1,layers:[
+    Object.assign({id:'a',type:'sprite',assetId:'x.png'},extra)]});
+  assert.equal(Core.validatePreset(one({followStretch:false})).ok,true);
+  assert.match(Core.validatePreset(one({followStretch:0})).errors.join(),/followStretch 必須是布林值/);
+  assert.match(Core.validatePreset({schemaVersion:1,id:'cam-stretch-p',duration:1,layers:[
+    {id:'p',type:'particle',assetId:'x.png',emission:{mode:'burst',count:1},lifetime:[1,1],
+      speed:[0,0],startScale:[1,1],followStretch:false}]}).errors.join(),
+    /followStretch 不支援 particle/);
+  const back=JSON.parse(Core.serialisePreset(one({followStretch:false}))).layers[0];
+  assert.equal(back.followStretch,false);
+  assert.equal(JSON.parse(Core.serialisePreset(one({}))).layers[0].followStretch,undefined);
 });
