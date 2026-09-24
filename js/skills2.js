@@ -6912,15 +6912,26 @@ function sgTickRebirthCharge(pEnt) {
   if (cap <= 1) { SKILL2_RT.rebirth = null; return; }
   var lvs = skill2EarthguardLevels();
   if (!lvs || lvs[6] < 1 || !pEnt) { SKILL2_RT.rebirth = null; return; }
-  if (!SKILL2_RT.rebirth) SKILL2_RT.rebirth = { charges: cap - 1 };   // 進場即滿
+  if (!SKILL2_RT.rebirth) SKILL2_RT.rebirth = { charges: 0, started: false }; // 首次復活後才開始充能
   var rt = SKILL2_RT.rebirth;
   rt.charges = Math.max(0, Math.min(cap - 1, Math.floor(Number(rt.charges) || 0)));
+  if (!rt.started) return;
   if (!pEnt.skillCds) pEnt.skillCds = {};
   if ((pEnt.skillCds[SG_PREFIX + 'earthguard'] || 0) > 0) return;
   if (rt.charges >= cap - 1) return;                                  // 已經滿了：冷卻停在 0
   rt.charges++;
   pEnt.skillCds[SG_PREFIX + 'earthguard'] = sgRebirthCdSec(lvs);
-  if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.skills = true;
+  if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.skills = true; UI.dirty.battle = true; }
+}
+
+/* 戰鬥面板只投影實際可用次數，不把執行期累積狀態寫進存檔或讓 UI 重算。 */
+function skills2RebirthAvailableCharges(pEnt) {
+  if (!pEnt || skills2RebirthMaxCharges() <= 1) return null;
+  var lvs = skill2EarthguardLevels();
+  if (!lvs || lvs[6] < 1) return null;
+  var ready = !((pEnt.skillCds && pEnt.skillCds[SG_PREFIX + 'earthguard'] || 0) > 0);
+  var stored = SKILL2_RT.rebirth ? Math.max(0, Math.floor(Number(SKILL2_RT.rebirth.charges) || 0)) : 0;
+  return Math.min(skills2RebirthMaxCharges(), (ready ? 1 : 0) + stored);
 }
 
 /* 【天地共生】（T7）：死亡攔截。掛在野外 onPlayerFieldDeath 與高塔 endTowerFight
@@ -6931,6 +6942,8 @@ function skills2TryRebirth(pEnt) {
   if (SKILL2_RT.earthguardRevival && SKILL2_RT.earthguardRevival.pEnt === pEnt) return true;
   var lvs = skill2EarthguardLevels();
   if (!lvs || lvs[6] < 1) return false;
+  if (skills2RebirthMaxCharges() > 1 && !SKILL2_RT.rebirth)
+    SKILL2_RT.rebirth = { charges: 0, started: false };
   if (!pEnt.skillCds) pEnt.skillCds = {};
   var ready = !((pEnt.skillCds[SG_PREFIX + 'earthguard'] || 0) > 0);
   var stored = (SKILL2_RT.rebirth && skills2RebirthMaxCharges() > 1)
@@ -6948,6 +6961,7 @@ function skills2TryRebirth(pEnt) {
      不會出現「還有存量所以冷卻一直停在 0」的無限復活。 */
   if (ready) pEnt.skillCds[SG_PREFIX + 'earthguard'] = sgRebirthCdSec(lvs);
   else SKILL2_RT.rebirth.charges = stored - 1;
+  if (SKILL2_RT.rebirth) SKILL2_RT.rebirth.started = true;
   sgEmitPlayerVfx('earthguard', 'pv-float', { fxKind: 'rain', variant: 'pillar', elem: 'light', dur: riseSec, vfxTier: 7,
     vfxRoles: { attack: sgVfxRoles('earthguard', { vfxTier: 7, vfxBase: true }).attack } });
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent('pv-float', '天地共生!', 'buff');

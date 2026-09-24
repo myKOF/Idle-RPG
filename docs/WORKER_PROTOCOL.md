@@ -1,6 +1,8 @@
-# Worker 協議 v37
+# Worker 協議 v38
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 37`　最後更新：2026-09-22
+> 協議版本：`WORKER_PROTOCOL_VERSION = 38`　最後更新：2026-09-24
+
+v38 的 `battle` 面板新增 `rebirthCharges`（整數或 `null`）：逆轉乾坤啟用時回報目前實際可用的復活次數，供技能圖標顯示；未啟用時為 `null`。此值由模擬層計算，不進存檔。原因是累積次數屬於 Worker 執行期狀態，主執行緒不能由技能冷卻自行推算。
 
 v37 新增 `vfx.area.flightOrbit = {origin:{x,y}|null, heading, speed, length, radius, phase, spin}`，全為未投影世界幾何。中心沿 heading 以 speed 前進 length，成員以 phase 起角、spin 弧度／秒、radius 半徑公轉。六枚同波同時起飛；舊事件缺省維持既有路徑。origin=null 僅無座標高塔取畫面起點；模擬仍延後命中。模擬與畫面共用 util.projectileOrbitPoint。
 
