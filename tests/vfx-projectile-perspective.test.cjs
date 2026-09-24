@@ -29,6 +29,10 @@ test('空中投影在四角／遠近只改錨點與等比大小，保留素材�
 test('天地再造紫光柱沿空中保形路徑播放，尺寸為玩家復活白光的一半',()=>{
   const read=id=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets',id+'.json'),'utf8'));
   const white=read('pillar-light'),purple=read('pillar-earth');
+  assert.deepEqual(purple.layers.map(l=>l.id),white.layers.map(l=>l.id),
+    '紫光柱須包含玩家光柱的完整法陣與光暈圖層');
+  const layout=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/layouts/pillar-earth.json'),'utf8'));
+  assert.deepEqual(layout.groups[0].layerIds,purple.layers.map(l=>l.id));
   const source=new Map(white.layers.map(l=>[l.id,l]));
   for(const layer of purple.layers){
     const base=source.get(layer.id);assert.ok(base,layer.id);

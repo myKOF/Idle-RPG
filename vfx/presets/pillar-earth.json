@@ -340,6 +340,45 @@
           0.4
         ]
       ]
+    },
+    {
+      "id": "sprite-7",
+      "type": "sprite",
+      "assetId": "shape-alpha/pdalpha_150.png",
+      "position": {
+        "x": 0,
+        "y": 0.12955
+      },
+      "scale": {
+        "x": 0.0313,
+        "y": 0.03955
+      },
+      "tint": "#d8b4fe",
+      "blendMode": "add",
+      "loop": false,
+      "outerScale": {
+        "x": 1,
+        "y": 0.3
+      }
+    },
+    {
+      "id": "sprite-8",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/shape_a.png",
+      "position": {
+        "x": 0,
+        "y": 0.12955
+      },
+      "scale": {
+        "x": 0.1749,
+        "y": 0.25615
+      },
+      "tint": "#a855f7",
+      "blendMode": "add",
+      "outerScale": {
+        "x": 1,
+        "y": 0.3
+      }
     }
   ],
   "sizing": {

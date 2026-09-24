@@ -162,6 +162,25 @@ test('天地共生的表定白光依五秒復甦事件持續，不在舊 0.9 秒
  adapter.destroy();
 });
 
+test('玩家與敵人復活光柱落在腳點，其他單體特效仍落在身體中心',()=>{
+ const presets=[unitPreset('pillar-light'),unitPreset('pillar-earth'),unitPreset('ordinary-hit')];
+ const log={nodes:[],updates:[]};
+ const ctx={posOf:()=>({x:120,y:80}),footOf:()=>({x:120,y:126}),playerPos:()=>({x:0,y:0})};
+ const rt=VFXRuntime.create({core:VFXCore,resolver:RESOLVER,fxBackend:recordingBackend(log,'fx'),
+   airBackend:recordingBackend(log,'air'),billboardBackend:recordingBackend(log,'billboard'),ctx});
+ rt.registerPresets(presets);
+ for(const [id,target] of [['pillar-light','pv-float'],['pillar-earth','mv-float-1']]){
+   assert.equal(rt.tryPlay({fxKind:'rain',variant:'pillar',targets:[target],hit:false,vfx:{attack:id}}),true);
+   rt.update(.01);
+   const n=log.nodes.find(n=>n.spec.assetUrl.endsWith(id+'.png'));
+   assert.equal(n.transforms.at(-1).y,126,id+' 必須落在腳下');
+ }
+ assert.equal(rt.tryPlay({fxKind:'slash',targets:['mv-float-1'],hit:false,vfx:{attack:'ordinary-hit'}}),true);
+ rt.update(.01);
+ assert.equal(log.nodes.find(n=>n.spec.assetUrl.endsWith('ordinary-hit.png')).transforms.at(-1).y,80);
+ rt.destroy();
+});
+
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/fire-tornado-inferno.json'),'utf8'));
  const {adapter,log}=makeAdapter([p]);

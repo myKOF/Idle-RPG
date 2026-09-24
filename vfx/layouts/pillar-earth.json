@@ -11,7 +11,9 @@
         "core",
         "land",
         "ring",
-        "motes"
+        "motes",
+        "sprite-7",
+        "sprite-8"
       ]
     }
   ],

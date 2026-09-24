@@ -556,12 +556,16 @@ var VFXRuntime = (function () {
       if (!ids.length) return false;
       var any = false;
       for (var i = 0; i < ids.length; i++) {
+        // 復活光柱的 Preset 原點是落地光環；目標身體中心會讓它懸在角色腰部。
+        var pillarFoot = spec.variant === 'pillar' &&
+          (presetId === 'pillar-light' || presetId === 'pillar-earth');
         if (delaySec > 0) {
-          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale, authoredSize: authoredSize });
+          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
+            authoredSize: authoredSize, pillarFoot: pillarFoot });
           any = true;
           continue;
         }
-        var p = ctx.posOf(ids[i]);
+        var p = pillarFoot ? footOf(ids[i]) : ctx.posOf(ids[i]);
         // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
         var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
         params.position = p;
@@ -1435,7 +1439,8 @@ var VFXRuntime = (function () {
         pending.splice(q, 1);
         if (job.spec) { tryPlay(job.spec); continue; }
         play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
-          { position: ctx.posOf(job.targetId), depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
+          { position: job.pillarFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
+            depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
       }
 
       /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
@@ -1668,7 +1673,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260924-world-rebirth-purple-pillar';
+  var DATA_VERSION = '20260924-rebirth-pillar-ground-center';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

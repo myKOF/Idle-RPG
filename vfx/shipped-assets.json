@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 151,
+  "assetCount": 153,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -257,6 +257,13 @@
       "package": "light-masks-1.0",
       "contentHash": "sha256:a044952d654de0f1086421ea66149b2dc2c21be775b322279ed929ebabdd3846",
       "fileSize": 41457
+    },
+    {
+      "assetId": "light-masks-1.0/default/shape_a.png",
+      "relativePath": "light-masks-1.0/Default/shape_a.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:02a496e7865e9a60be8fb211d5e329700de028232cbcd9063da3b1ae3033b1fb",
+      "fileSize": 24927
     },
     {
       "assetId": "light-masks-1.0/default/streaks_composed_b.png",
@@ -1020,6 +1027,13 @@
       "package": "sci-fi-effects",
       "contentHash": "sha256:994440b153cb59ba5547dedeb5ec201d7f0ae646ac1c02beeb69a8a80d16a0f7",
       "fileSize": 131779
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_150.png",
+      "relativePath": "shape-alpha/PDAlpha_150.png",
+      "package": "shape-alpha",
+      "contentHash": "sha256:93933eb98e1ccb95704ca1f6bc99fd244c3a55d8e9b87a486e0b29956dde42f5",
+      "fileSize": 448688
     },
     {
       "assetId": "splat-pack/png/double-512px/splat05.png",
