@@ -791,6 +791,16 @@
   function vec(key, label) { return { key: key, label: label, kind: 'vec2' }; }
   function json(key, label) { return { key: key, label: label, kind: 'json' }; }
 
+  /* 變形圖層（閃電那種沿路徑彎折的，preset.deformation.layers）的形狀整個由變形矩陣決定，
+     兩個鏡頭開關對它們不會有任何作用，Core 也擋著不收。留在原位變灰並說明，不藏起來——
+     2026-09-24 使用者在看不到某一格時只能猜是不是壞了。 */
+  var DEFORMED_LAYER_HINT = '這一層是「變形圖層」（閃電那種沿路徑彎折的）。' +
+    '它的形狀整個由變形決定，鏡頭的兩個開關對它沒有作用，所以不開放。';
+  function cameraFlagAllowed(layer) {
+    var def = state.preset && state.preset.deformation;
+    return !(def && def.layers && def.layers.indexOf(layer.id) >= 0);
+  }
+
   var COMMON_FIELDS = [
     { key: 'id', label: 'id', kind: 'text' },
     /* 父子層級（2026-09-17）。選了就換算數值讓畫面不動，見 parentSelect。 */
@@ -820,17 +830,15 @@
                          只對有填「地面投影」的圖層有意義，所以只在那種圖層上出現（Core 也只收那種）。
        編輯器沒有畫面透視、也不會給發射方向，所以這兩格在預覽裡看不出差別，差別在遊戲畫面上。 */
     { key: 'perspective', label: '受畫面透視影響', kind: 'bool', default: true,
+      enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT,
       hint: '勾選（預設）：跟著戰鬥畫面的輕微透視一起縮放（遠近關係，大部分特效都該勾著）。\n' +
         '取消：這一層照原尺寸畫。整份特效每一層都取消的話，遊戲會改用完全不變形的畫法。\n' +
         '（預覽區看不出差別，差別在遊戲畫面上。）' },
-    /* 沒填地面投影時不是「藏起來」而是「變灰並說明」：2026-09-24 使用者在沒有地面投影的圖層上
-       找不到這一格，只能猜是不是壞了。藏起來的選項無法解釋自己為什麼不在。 */
     { key: 'followDirection', label: '跟著發射方向轉', kind: 'bool', default: true,
-      enabledWhen: function (l) { return !!l.projection; },
-      disabledHint: '這一層沒有填「地面投影」，不會被貼到地面上轉，所以沒有方向可以跟。\n' +
-        '要讓它貼地並跟著方向轉，先在「地面投影」填 {"x":1,"y":0.5}。',
-      hint: '勾選（預設）：貼地的圖形會跟著技能的發射方向在地面上轉，圓因此變成斜橢圓。\n' +
-        '取消：維持「地面投影」裡填的角度，不管技能往哪個方向打。\n' +
+      enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT,
+      hint: '勾選（預設）：技能往哪打，這一層就跟著轉向哪裡；貼地的圖形還會在地面上轉成斜橢圓。\n' +
+        '取消：圖維持編輯器裡看到的角度，位置照樣跟著方向走——\n' +
+        '例如光束尾端的星芒仍在尾端，但不會跟著歪。\n' +
         '（預覽區看不出差別，差別在遊戲畫面上。）' }
   ];
 

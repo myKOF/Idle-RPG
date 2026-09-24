@@ -490,19 +490,14 @@ var VFXCore = (function () {
     /* 鏡頭造成的兩種變形，各自一個開關（2026-09-24 使用者要求）。沒填＝受影響（既有行為）。
          perspective      畫面透視（遠近）：整個戰鬥畫面的輕微透視網格。false 時顯示層會抵銷它
                           （整份 preset 都標的話，Runtime 直接把它播在不經過網格的 billboard 層）。
-         followDirection  發射方向：貼地圖層會在地面平面上跟著技能方向轉（圓變成斜橢圓）。
-                          false 時維持作者填的 projection.rotation。
-       followDirection 只對「有地面投影」的圖層有意義，沒有 projection 就填它是 silent fallback，
-       所以直接擋下來——與 projection.upright 只給 particle 同一種處理。 */
+         followDirection  發射方向：技能往哪打，整份特效就轉向哪裡；貼地圖層另外會在地面平面上
+                          轉成斜橢圓。false 時這一層的**圖**維持作者畫的角度，**位置**照樣跟著轉
+                          （例如光束尾端的星芒要待在尾端，但不該跟著歪）。 */
     if (layer.perspective !== undefined && typeof layer.perspective !== 'boolean') {
       errors.push(where + '.perspective 必須是布林值');
     }
-    if (layer.followDirection !== undefined) {
-      if (typeof layer.followDirection !== 'boolean') {
-        errors.push(where + '.followDirection 必須是布林值');
-      } else if (!layer.projection) {
-        errors.push(where + '.followDirection 只能用在有 projection（地面投影）的圖層');
-      }
+    if (layer.followDirection !== undefined && typeof layer.followDirection !== 'boolean') {
+      errors.push(where + '.followDirection 必須是布林值');
     }
   }
 
@@ -752,6 +747,11 @@ var VFXCore = (function () {
     if(!Array.isArray(c.layers)||!c.layers.length||new Set(c.layers).size!==c.layers.length){errors.push('deformation.layers 必须是非空、不重複的圖層清單');return;}
     c.layers.forEach(function(id){var l=preset.layers.find(function(l){return l&&l.id===id;});
       if(!l||l.type!=='sprite'||l.radiusProfile)errors.push('deformation 只支援一般sprite圖層：'+id);
+      /* 變形圖層的幾何整個由變形矩陣決定（見 setDeformation 與後端的 updateWarp），
+         鏡頭開關對它們不會有任何作用。收下來再靜靜忽略就是 silent fallback，所以擋在這裡。 */
+      else if(l.perspective===false||l.followDirection===false){
+        errors.push('deformation 圖層不支援 perspective／followDirection：'+id);
+      }
     });
   }
 
@@ -1594,7 +1594,11 @@ var VFXCore = (function () {
       t.visible = true;
       t.x = world.x;
       t.y = world.y;
-      t.rotation = effect.rotation + d.rotation + (rotK === null ? 0 : rotK) + d.rotationSpeed * Math.max(0, effect.totalTime - d.delay);
+      /* followDirection: false ＝這一層的圖不跟著「整份特效朝向目標」的那個角度轉。
+         位置不在這裡算（toWorld 已經算完），所以位置照樣跟著轉——例如光束尾端的星芒
+         要待在尾端，但星芒本身不該跟著歪（2026-09-24 使用者要求）。 */
+      var dirRot = d.followDirection === false ? 0 : effect.rotation;
+      t.rotation = dirRot + d.rotation + (rotK === null ? 0 : rotK) + d.rotationSpeed * Math.max(0, effect.totalTime - d.delay);
       /* 「外層」縮放＝在圖層旋轉**之後**才套用的那一層。有兩個來源，而且它們
          是同一件事，所以乘在一起：
            effect.scaleX/Y   特效尺寸，屬於整個特效的座標軸
@@ -1625,7 +1629,7 @@ var VFXCore = (function () {
         var bx = -outerX * sa * qy, by = outerY * ca * qy;
         var angleX = Math.atan2(ay, ax);
         var angleY = Math.atan2(-bx, by);
-        t.rotation = effect.rotation + angleX;
+        t.rotation = dirRot + angleX;
         t.scaleX = Math.sqrt(ax * ax + ay * ay);
         t.scaleY = Math.sqrt(bx * bx + by * by);
         t.skewX = angleX - angleY;
@@ -1659,19 +1663,20 @@ var VFXCore = (function () {
     function projectTransform(frame, projection, t) {
       if (!projection) return;
       var px = projection.x, py = projection.y;
-      /* 實例的 projectionRotation 是技能的「發射方向」：followDirection: false 的圖層不吃它，
-         維持作者填的 projection.rotation（編輯器裡看到的角度）。 */
-      var angle = (frame.projectionRotation === undefined || t.followDirection === false)
+      /* 實例的 projectionRotation 是技能的「發射方向」。位置一律跟著它轉（圖層要待在它該在
+         的地方）；圖本身在 followDirection: false 時維持作者填的 projection.rotation。 */
+      var angle = frame.projectionRotation === undefined
         ? (projection.rotation || 0) : frame.projectionRotation;
+      var artAngle = t.followDirection === false ? (projection.rotation || 0) : angle;
       var co = Math.cos(angle), si = Math.sin(angle);
       var dx = t.x - frame.origin.x, dy = t.y - frame.origin.y;
       t.x = frame.origin.x + (co * dx - si * dy) * px;
       t.y = frame.origin.y + (si * dx + co * dy) * py;
       var m = scratchWorldMatrix;
-      m.a = Math.cos(t.rotation + angle) * t.scaleX * px;
-      m.b = Math.sin(t.rotation + angle) * t.scaleX * py;
-      m.c = -Math.sin(t.rotation + angle - (t.skewX || 0)) * t.scaleY * px;
-      m.d = Math.cos(t.rotation + angle - (t.skewX || 0)) * t.scaleY * py;
+      m.a = Math.cos(t.rotation + artAngle) * t.scaleX * px;
+      m.b = Math.sin(t.rotation + artAngle) * t.scaleX * py;
+      m.c = -Math.sin(t.rotation + artAngle - (t.skewX || 0)) * t.scaleY * px;
+      m.d = Math.cos(t.rotation + artAngle - (t.skewX || 0)) * t.scaleY * py;
       var parts = decomposeMatrix(m, scratchParts);
       t.rotation = parts.rotation; t.scaleX = parts.scaleX;
       t.scaleY = parts.scaleY; t.skewX = parts.skewX;
@@ -1726,9 +1731,11 @@ var VFXCore = (function () {
       t.visible = true;
       t.x = world.x;
       t.y = world.y;
-      /* 特效本身：先在特效座標系分軸縮放，再旋轉——與 toWorld 同一個順序 */
+      /* 特效本身：先在特效座標系分軸縮放，再旋轉——與 toWorld 同一個順序。
+         followDirection: false 的圖層不吃這個旋轉（位置仍由 toWorld 跟著轉）。 */
       var sx = effect.scaleX, sy = effect.scaleY;
-      var ce = Math.cos(effect.rotation), se = Math.sin(effect.rotation);
+      var childDir = layer.def.followDirection === false ? 0 : effect.rotation;
+      var ce = Math.cos(childDir), se = Math.sin(childDir);
       var m = scratchWorldMatrix;
       m.a = ce * sx * h.a - se * sy * h.b;
       m.b = se * sx * h.a + ce * sy * h.b;
@@ -2012,7 +2019,8 @@ var VFXCore = (function () {
            alignToVelocity 是「再加上去」的一項，不是取代：rotationStart 仍是初始
            偏移、rotationSpeed 仍是相對自轉、rotationOverLife 仍是疊加曲線。
            關閉時這一行與加入本功能之前完全相同。 */
-        t.rotation = particleFrame.rotation + d.rotation + p.rotation + (rotK === null ? 0 : rotK);
+        t.rotation = (d.followDirection === false ? 0 : particleFrame.rotation) +
+          d.rotation + p.rotation + (rotK === null ? 0 : rotK);
         t.skewX = 0;
         if (d.alignToVelocity && p.hasVelAngle) {
           t.rotation += p.velAngle + d.velocityRotationOffset;
@@ -2046,7 +2054,8 @@ var VFXCore = (function () {
             pm ? pm.a * p.planeX + pm.c * p.planeY + pm.tx : p.planeX,
             pm ? pm.b * p.planeX + pm.d * p.planeY + pm.ty : p.planeY);
           var bx = base.x - particleFrame.origin.x, by = base.y - particleFrame.origin.y;
-          var pr = (particleFrame.projectionRotation === undefined || d.followDirection === false)
+          /* 這一段只算出生位置，位置一律跟著發射方向轉（圖本身的角度在上面已經處理） */
+          var pr = particleFrame.projectionRotation === undefined
             ? (d.projection.rotation || 0) : particleFrame.projectionRotation;
           var pc = Math.cos(pr), ps = Math.sin(pr);
           t.x += (pc * bx - ps * by) * d.projection.x - bx;
