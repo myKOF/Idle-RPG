@@ -1201,3 +1201,78 @@ test('FLIP-7 旋轉把手一律在畫面上的上緣之外，翻轉時不得落�
     assert.ok(Math.abs(top - rot.y - G.ROTATE_OFFSET) < 1e-9, '與上緣的距離要是 ROTATE_OFFSET');
   });
 });
+
+/* ============================================================
+   SCREEN — 框、把手、線寬在螢幕上的尺寸
+
+   Gizmo 畫在一層跟著鏡頭縮放的容器上（drawGizmo 把 overlay 的 scale 同步成 stageRoot 的），
+   所以「畫出來的數字 × 鏡頭縮放」才是螢幕上的像素。把手與十字一直都有反算回去，線寬沒有：
+   2026-09-24 使用者回報拉近鏡頭時框線跟著變粗，把手被吞進線裡，看起來像節點消失了。
+   ============================================================ */
+
+/* 把 editor.js 的 drawGizmoBox 原樣拿出來跑，不是比對原始碼字串：要驗的是
+   「乘上鏡頭縮放之後相不相等」，那是算出來的結果。假的 Graphics 只記下畫了什麼，
+   每一筆 stroke 帶著自己的線段。 */
+function captureGizmoDraw(scale, opts) {
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const at = src.indexOf('function drawGizmoBox(');
+  assert.ok(at > 0, '找不到 drawGizmoBox');
+  const body = src.slice(at, src.indexOf('\n  }\n', at) + 4);
+  const rec = { strokes: [], rects: [], circles: [] };
+  let pending = [];
+  const g = {
+    moveTo: (x, y) => { pending.push([x, y]); return g; },
+    lineTo: (x, y) => { pending.push([x, y]); return g; },
+    rect: (x, y, w, h) => { rec.rects.push({ x, y, w, h }); return g; },
+    circle: (x, y, r) => { rec.circles.push({ x, y, r }); return g; },
+    fill: () => g,
+    stroke: (s) => { rec.strokes.push({ width: s.width, color: s.color, pts: pending }); pending = []; return g; }
+  };
+  const draw = new Function('G', 'screenRadiusToLocal', body + '\nreturn drawGizmoBox;')(
+    G, (px) => px / scale);
+  draw(g, opts.bounds, opts.caps, opts.isGroup || false, 1, opts.space);
+  return rec;
+}
+
+const SCREEN_CAPS = { move: true, scaleX: true, scaleY: true, rotate: true };
+
+/* 回傳換算成「螢幕像素」的各種尺寸（畫出來的值 × 鏡頭縮放） */
+function screenSizes(zoom, isGroup) {
+  const b = G.baseBounds(sprite({ position: { x: 12, y: -8 } }), TEX);
+  const r = captureGizmoDraw(zoom, { bounds: b, caps: SCREEN_CAPS, isGroup: isGroup });
+  const px = (v) => Math.round(v * zoom * 1e6) / 1e6;
+  return {
+    widths: r.strokes.map((s) => px(s.width)),
+    handleW: r.rects.map((h) => px(h.w)),
+    handleH: r.rects.map((h) => px(h.h)),
+    rotateR: r.circles.map((c) => px(c.r)),
+    /* pivot 十字的橫向那一段（第三筆 stroke 的前兩個點） */
+    crossLen: px(Math.abs(r.strokes[2].pts[1][0] - r.strokes[2].pts[0][0])),
+    boxPts: r.strokes[0].pts
+  };
+}
+
+test('SCREEN-1 框線、pivot 十字、把手的螢幕尺寸不隨鏡頭縮放改變', function () {
+  const base = screenSizes(1);
+  [0.25, 2, 4, 8].forEach(function (zoom) {
+    const z = screenSizes(zoom);
+    assert.deepStrictEqual(z.widths, base.widths, '鏡頭 ' + zoom + ' 倍時線寬變了');
+    assert.deepStrictEqual(z.handleW, base.handleW, '鏡頭 ' + zoom + ' 倍時把手寬度變了');
+    assert.deepStrictEqual(z.handleH, base.handleH);
+    assert.deepStrictEqual(z.rotateR, base.rotateR);
+    assert.equal(z.crossLen, base.crossLen);
+    /* 框本身相反：它是特效座標，位置與大小本來就該跟著鏡頭走，不能一起被「固定」掉 */
+    assert.deepStrictEqual(z.boxPts, base.boxPts, '框的四個角是特效座標，不該換算成螢幕像素');
+  });
+  assert.deepStrictEqual(base.widths, [1, 1, 1, 1], '單層的線（框、旋轉連線、十字、旋轉把手外框）都是 1px');
+  assert.deepStrictEqual(base.handleW, [8, 8, 8, 8, 8, 8, 8, 8], '四角＋四邊的拉伸把手都是 8px 見方');
+  assert.deepStrictEqual(base.handleH, base.handleW);
+  assert.deepStrictEqual(base.rotateR, [4], '旋轉把手半徑 4px');
+  assert.equal(base.crossLen, 12, 'pivot 十字橫向 12px');
+});
+
+test('SCREEN-2 群組的框線一樣固定，只是比單層粗一倍', function () {
+  assert.equal(screenSizes(1, true).widths[0], 2);
+  assert.equal(screenSizes(6, true).widths[0], 2, '拉近 6 倍還是 2px');
+  assert.equal(screenSizes(0.3, true).widths[0], 2, '拉遠也不會細到看不見');
+});

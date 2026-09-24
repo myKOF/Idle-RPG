@@ -105,7 +105,8 @@ function startTowerAuto(floor, count) {
 }
 
 function towerTick(dt) {
-  if (typeof tickDeferredEnemyAttackRetaliations === 'function') tickDeferredEnemyAttackRetaliations();
+  if (!(TOWER.player && TOWER.player._sgRevival && TOWER.player._sgRevival.mode === 'earthguard') &&
+      typeof tickDeferredEnemyAttackRetaliations === 'function') tickDeferredEnemyAttackRetaliations();
   // 連續挑戰：上一場結束後倒數，自動開始下一場
   if (!G.tower.active && TOWER.auto && TOWER.autoNextCd > 0) {
     TOWER.autoNextCd -= dt;
@@ -123,6 +124,12 @@ function towerTick(dt) {
   if (!G.tower.active || TOWER.showingResult) return;
   var st = getStats();
   var p = TOWER.player, b = TOWER.boss;
+  if (p && p._sgRevival && p._sgRevival.mode === 'earthguard') {
+    tickSkillCds(p, dt);
+    sgTickEarthguardRevival(p);
+    if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.battle = true;
+    return;
+  }
   var bcfg = towerBossCfg(TOWER.floor);   // 該塔戰鬥規則（限時/狂暴/蓄力）
   TOWER.elapsed += dt;
 
@@ -274,7 +281,7 @@ function towerTick(dt) {
 function endTowerFight(win, reason) {
   /* 新版技能【天地共生】（大地守護 T7，js/skills2.js）：死亡攔截。
      高塔有十來處 `p.hp <= 0 → endTowerFight(false, 'death')`，這裡是它們的共同出口；
-     復活成功就當這次判死沒發生過，呼叫端本來就只是 return，下一個 tick 會繼續打。 */
+     啟動五秒復甦演出後保留目前 BOSS 與挑戰；呼叫端 return，演出期間由 towerTick 暫停戰鬥。 */
   if (!win && reason === 'death' && typeof skills2TryRebirth === 'function' &&
       TOWER.player && skills2TryRebirth(TOWER.player)) {
     return;

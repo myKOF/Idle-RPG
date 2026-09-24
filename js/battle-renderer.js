@@ -1640,9 +1640,13 @@ var BattleRenderer = (function () {
          不在玩家實體上。舊版讀 field.player.reviveCd，那個欄位根本不存在，
          於是 dead 永遠是 false——倒地動作與倒數都不會出現。 */
       var reviveLeft = Number(field.reviveCd) || 0;
+      var wasEarthguardRevival = p.revival && p.revival.mode === 'earthguard';
       p.revival = field.player && field.player._sgRevival || null;
       p.revivalGt = panel.gt;
-      if (p.revival && p.curAnim !== 'idle') playAnim(p, 'idle');
+      var earthguardRevival = p.revival && p.revival.mode === 'earthguard';
+      if (earthguardRevival && !wasEarthguardRevival) playAnim(p, p.dieAnim ? 'die' : 'idle');
+      else if (wasEarthguardRevival && !earthguardRevival) playAnim(p, 'idle');
+      else if (p.revival && !earthguardRevival && p.curAnim !== 'idle') playAnim(p, 'idle');
       var dead = reviveLeft > 0;
       if (dead !== p.dead) {
         /* 倒地與起身都要有過程：瞬間翻 90 度看起來像穿模，不像被打倒。
@@ -1669,8 +1673,12 @@ var BattleRenderer = (function () {
       /* 倒地倒數：狀態列收進彈出面板後，畫面上只剩這一條告訴玩家發生什麼事。
          面板 5Hz 才來一次，這裡照快照時間扣掉已經過的秒數（同 ui.js 的做法）。 */
       if (p.reviveText) {
-        p.reviveText.visible = dead;
-        if (dead) {
+        p.reviveText.visible = dead || earthguardRevival;
+        if (earthguardRevival) {
+          var earthguardLeft = (typeof uiCountdownRemain === 'function')
+            ? uiCountdownRemain(p.revival.endAt - panel.gt, panel.gt) : p.revival.endAt - panel.gt;
+          p.reviveText.text = '✨ 復活倒數 ' + Math.max(1, Math.ceil(Math.max(0, earthguardLeft)));
+        } else if (dead) {
           var left = (typeof uiCountdownRemain === 'function')
             ? uiCountdownRemain(reviveLeft, panel.gt) : reviveLeft;
           p.reviveText.text = '💀 復活倒數 ' + Math.max(1, Math.ceil(Math.max(0, left)));
@@ -6044,8 +6052,21 @@ var BattleRenderer = (function () {
           ? uiCountdownRemain(p.revival.endAt - p.revivalGt, p.revivalGt)
           : p.revival.endAt - p.revivalGt;
         var revivalProgress = Math.max(0, Math.min(1, 1 - revivalLeft / (p.revival.endAt - p.revival.startAt)));
-        p.bodyWrap.y = -60 * revivalProgress;
-        p.bodyWrap.rotation = 0;
+        if (p.revival.mode === 'earthguard') {
+          // 倒地 → 逐漸站起；浮空到中段最高，五秒結束時落回原位。
+          p.bodyWrap.y = -60 * Math.sin(Math.PI * revivalProgress);
+          if (p.dieAnim && S.sheets[p.sheetName].anims.rise && revivalProgress >= 0.2) {
+            if (p.curAnim !== 'rise') playAnim(p, 'rise');
+            p.body.gotoAndStop(Math.min(p.body.totalFrames - 1,
+              Math.floor((revivalProgress - 0.2) / 0.8 * p.body.totalFrames)));
+            p.bodyWrap.rotation = 0;
+          } else if (!p.dieAnim) {
+            p.bodyWrap.rotation = -(Math.PI / 2) * (1 - revivalProgress) * p.facing;
+          }
+        } else {
+          p.bodyWrap.y = -60 * revivalProgress;
+          p.bodyWrap.rotation = 0;
+        }
         p.bodyWrap.x = 0;
       }
       p.root.x = p.wx;
@@ -6289,6 +6310,8 @@ var BattleRenderer = (function () {
     airFx.sortableChildren = true;
     var presetAir = new PIXI.Container();
     airFx.addChild(presetAir);
+    var presetBillboard = new PIXI.Container();
+    airFx.addChild(presetBillboard);
     /* 空中物保持螢幕 billboard；後方空中物和前方空中物之間補畫角色本體。
        只補本體，不複製影子或 HUD；前景仍由前方空中層正常遮住角色。 */
     var airPlayer = new PIXI.Sprite(PIXI.Texture.EMPTY);
@@ -6371,7 +6394,7 @@ var BattleRenderer = (function () {
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
       presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
-      airFx: airFx, presetAir: presetAir,
+      airFx: airFx, presetAir: presetAir, presetBillboard: presetBillboard,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay
@@ -6539,6 +6562,51 @@ var BattleRenderer = (function () {
     if (t.height !== undefined) out.height = t.height*p.scale;
     return out;
   }
+  // 直立光柱是整張 billboard：以敵人腳點決定遠近倍率，柱頂不再各自套一次透視。
+  function projectBillboardTransform(t) {
+    var anchorY = isFinite(t.sortY) ? Number(t.sortY) : (t.y || 0);
+    var p = airScreenPose(t.x || 0, anchorY);
+    var out = Object.assign({}, t, {
+      x: p.x, y: p.y + ((t.y || 0) - anchorY) * p.scale,
+      scaleX: t.scaleX * p.scale, scaleY: t.scaleY * p.scale
+    });
+    if (t.width !== undefined) out.width = t.width * p.scale;
+    if (t.height !== undefined) out.height = t.height * p.scale;
+    return out;
+  }
+  /* 場景層（presetFx／presetZone）裡標了 perspective: false 的圖層：就地把畫面透視抵銷掉。
+     場景整片會被 PerspectiveMesh 變形，在某一點的局部縮放是橫向 1/w、縱向 1/w²（w 見 perspectiveLayout），
+     所以這裡先左乘 diag(w, w²)；位置不動——那一層仍然要待在它該在的地方，跟著場景一起被搬過去。
+
+     為什麼要拆矩陣而不是直接乘在 scaleX／scaleY 上：抵銷發生在螢幕座標，而 scaleX／scaleY 是圖層
+     自己的軸。圖層一旦有旋轉或斜切，兩者就不是同一回事，直接乘會把圖轉歪。
+
+     殘留：單應變換在圖層範圍內不是完全均勻（離畫面中心越遠、圖越大，殘留的輕微傾斜越明顯）。
+     整份 preset 都標 perspective: false 時 Runtime 會改走 billboard 層（完全不變形），
+     這裡處理的是「同一份特效裡只有幾層要維持原樣」的情況，好處是前後遮擋不變。 */
+  function projectSceneTransform(t) {
+    if (!t || t.perspective !== false) return t;
+    var L = S.persp && S.persp.layout;
+    if (!L || typeof VFXCore === 'undefined') return t;   // 沒開透視＝本來就沒被變形
+    var world = S.layers && S.layers.world;
+    var py = (t.y || 0) + (world ? world.y : 0);
+    var w = Math.max(0.1, 1 - L.beta * (py - L.cy));
+    var out = Object.assign({}, t);
+    if (t.scaleX !== undefined) {
+      var rot = t.rotation || 0, sk = t.skewX || 0;
+      var p = VFXCore.decomposeMatrix({
+        a: Math.cos(rot) * t.scaleX * w, b: Math.sin(rot) * t.scaleX * w * w,
+        c: -Math.sin(rot - sk) * t.scaleY * w, d: Math.cos(rot - sk) * t.scaleY * w * w,
+        tx: 0, ty: 0
+      }, {});
+      out.rotation = p.rotation; out.scaleX = p.scaleX; out.scaleY = p.scaleY; out.skewX = p.skewX;
+    }
+    /* procedural 的 width／height 會蓋掉 scale（Pixi 的 width setter 就是改 scale），一起補 */
+    if (t.width !== undefined) out.width = t.width * w;
+    if (t.height !== undefined) out.height = t.height * w * w;
+    return out;
+  }
+
   var legacyAirNodes = new Map();
   function attachAirFx(node) {
     var wrapper = new PIXI.Container();
@@ -6764,9 +6832,13 @@ var BattleRenderer = (function () {
        ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
     VFXRuntime.boot({
       airContainer: S.layers.presetAir,
+      billboardContainer: S.layers.presetBillboard,
       airBackContainer: S.layers.airBack,
       airDepthSplitY: function () { return S.player && S.player.root ? S.player.root.y : -Infinity; },
       projectAirTransform: projectAirTransform,
+      projectBillboardTransform: projectBillboardTransform,
+      /* 場景層的鏡頭補償：只對 perspective: false 的圖層動手，其餘原樣回傳 */
+      projectSceneTransform: projectSceneTransform,
       fxContainer: S.layers.presetFx,
       fxDepthContainer: S.layers.entity,
       zoneContainer: S.layers.presetZone,

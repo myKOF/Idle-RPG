@@ -4,6 +4,8 @@
      anchor y=1（底端釘在原點）＋ sizeY=H 就是整根柱子；分段收窄用多個 sprite 疊。
    光束類：沿 +X 長 200px，anchor x=0（根部在原點）；Runtime 以 scaleX = 距離/200 拉長。 */
 const kit = require('../preset-kit.cjs');
+const fs = require('node:fs');
+const path = require('node:path');
 const { A, T, C, RAMP, deg, sprite, particle } = kit;
 const PI = Math.PI;
 
@@ -185,17 +187,32 @@ function pillar(o) {
   ];
 }
 
-/* ---------- pillar-light：聖光柱 ---------- */
-P['pillar-light'] = () => ({ id: 'pillar-light', duration: 0.9, layers: pillar({ core: '#fffef4', edge: '#ffe47a' }) });
+/* 玩家在編輯器調整過的 pillar-light 是這兩份光柱的權威幾何；不要用舊程式稿覆寫它。 */
+const playerPillar = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../../vfx/presets/pillar-light.json'), 'utf8'));
+P['pillar-light'] = () => structuredClone(playerPillar);
 
-/* ---------- pillar-earth：大地再造光柱（塵土向外散開） ---------- */
-P['pillar-earth'] = () => ({
-  id: 'pillar-earth', duration: 0.9,
-  layers: pillar({
-    core: '#c48a55', edge: '#ad7444',
-    motes: { asset: A.smokeT, blend: 'normal', burst: 7, direction: 0, spread: 360, speed: [50, 110], gravity: { x: 0, y: 60 }, startPx: [10, 18], alphaOverLife: [[0, 0], [0.2, 0.7], [1, 0]] }
-  })
-});
+/* ---------- pillar-earth：天地再造光柱（玩家復活光柱的紫色半尺寸版本） ---------- */
+P['pillar-earth'] = () => {
+  const p = structuredClone(playerPillar);
+  p.id = 'pillar-earth';
+  const tint = { glow: '#9333ea', body: '#a855f7', core: '#d8b4fe', land: '#c084fc',
+    ring: '#a855f7', motes: '#c084fc', 'sprite-7': '#d8b4fe', 'sprite-8': '#a855f7' };
+  p.layers.forEach(l => {
+    l.tint = tint[l.id] || '#a855f7';
+    if (l.position) { l.position.x *= 0.5; l.position.y *= 0.5; }
+    if (l.scale) { l.scale.x *= 0.5; l.scale.y *= 0.5; }
+    if (l.spawn && typeof l.spawn.radius === 'number') l.spawn.radius *= 0.5;
+    if (Array.isArray(l.speed)) l.speed = l.speed.map(v => v * 0.5);
+    if (l.gravity) { l.gravity.x *= 0.5; l.gravity.y *= 0.5; }
+    if (Array.isArray(l.startScale)) l.startScale = l.startScale.map(v => v * 0.5);
+    if (l.tintOverLife) l.tintOverLife = [[0, '#e9d5ff'], [0.5, '#a855f7'], [1, '#251238']];
+  });
+  p.sizing.authored.width *= 0.5;
+  p.sizing.authored.height *= 0.5;
+  p.sizing.widthM *= 0.5;
+  p.sizing.heightM *= 0.5;
+  return p;
+};
 
 /* ---- 光束共用：沿 +X、根部在原點 ---- */
 /* ---- 光束：w 是**可見的粗細**，不是圖層高度 ----

@@ -121,6 +121,8 @@ test('ROCKARMOR and EARTH-REVERSAL share object textures and cross actor depth w
  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
  const seen=new Set();for(let frame=0;frame<45;frame++){point={x:300+frame,y:150};assert(adapter.tryPlay(spec));adapter.update(.11);
  const back=log.nodes.filter(n=>n.tag==='zone'),front=log.nodes.filter(n=>n.tag==='fx');assert.equal(back.length,20);assert.equal(front.length,18);for(let i=18;i<20;i++){const floor=back[i].transforms.at(-1);assert.equal(floor.x,point.x);assert(floor.alpha>0);assert.equal(back[i].spec.assetUrl.includes('light_03.png'),true);}
+ assert.ok(back.every(n=>n.transforms.at(-1).sortY<point.y),'後方石碑低於角色的排序值: '+JSON.stringify({point,sortY:back.map(n=>n.transforms.at(-1).sortY)}));
+ assert.ok(front.every(n=>n.transforms.at(-1).sortY>point.y),'前方石碑高於角色的排序值');
  for(let i=0;i<18;i++){const a=back[i].transforms.at(-1),b=front[i].transforms.at(-1);for(const key of ['x','y','scaleX','scaleY','rotation'])assert.equal(a[key],b[key]);const enter=Math.min(1,(frame+1)*.11/.3),opacity=enter*enter*(3-2*enter);assert(Math.abs(a.alpha+b.alpha-p.layers[i].alpha*opacity)<1e-6);}
  const t=front[0].transforms.at(-1);seen.add(t.alpha>.5);}
  assert.equal(seen.size,2);adapter.update(4);assert.equal(adapter.stats().grounds,0);assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);adapter.destroy();
@@ -134,6 +136,49 @@ test('ROCKARMOR edited geometry also drives blue evolution',()=>{
  const run=id=>{const {adapter,log}=makeAdapter([blue,normal]);adapter.tryPlay({fxKind:'aura',targets:['pv-float'],dur:5,vfx:{ground:id}});adapter.update(.5);return log.nodes.map(n=>({tag:n.tag,t:n.transforms.at(-1)}));};
  const a=run(normal.id),b=run(blue.id);assert.equal(a.length,b.length);
  a.forEach((n,i)=>{assert.equal(n.tag,b[i].tag);for(const k of ['x','y','scaleX','scaleY','rotation','alpha'])assert.equal(n.t[k],b[i].t[k]);});assert.equal(JSON.stringify(blue),base);
+});
+test('ROCKARMOR tiers 8–10 split each orbiting stone across the actor depth',()=>{
+ for(const suffix of ['08','09','10']){
+  const id='aura-rockarmor-stone-'+suffix;
+  const preset=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
+  const point={x:300,y:150};
+  const {adapter,log}=makeAdapter([preset],{ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
+  assert.equal(adapter.tryPlay({fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:id}}),true,id);
+  adapter.update(.11);
+  const back=log.nodes.filter(n=>n.tag==='zone'),front=log.nodes.filter(n=>n.tag==='fx');
+  assert.equal(back.length,preset.layers.length,id);
+  assert.equal(front.length,preset.layers.filter(l=>/^stone-\d+-/.test(l.id)).length,id);
+  assert.ok(back.every(n=>n.transforms.at(-1).sortY<point.y),id+' 後方');
+  assert.ok(front.every(n=>n.transforms.at(-1).sortY>point.y),id+' 前方');
+  adapter.destroy();
+ }
+});
+test('天地共生的表定白光依五秒復甦事件持續，不在舊 0.9 秒結束',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/pillar-light.json'),'utf8'));
+ const {adapter}=makeAdapter([p],{ctx:{footOf:()=>({x:0,y:0}),posOf:()=>({x:0,y:0}),playerPos:()=>({x:0,y:0})}});
+ assert.equal(adapter.tryPlay({fxKind:'rain',variant:'pillar',dur:5,targets:['pv-float'],hit:false,vfx:{attack:p.id}}),true);
+ adapter.update(4.5);assert.equal(adapter.stats().fx.activeEffects,1);
+ adapter.update(.6);assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.destroy();
+});
+
+test('玩家與敵人復活光柱落在腳點，其他單體特效仍落在身體中心',()=>{
+ const presets=[unitPreset('pillar-light'),unitPreset('pillar-earth'),unitPreset('ordinary-hit')];
+ const log={nodes:[],updates:[]};
+ const ctx={posOf:()=>({x:120,y:80}),footOf:()=>({x:120,y:126}),playerPos:()=>({x:0,y:0})};
+ const rt=VFXRuntime.create({core:VFXCore,resolver:RESOLVER,fxBackend:recordingBackend(log,'fx'),
+   airBackend:recordingBackend(log,'air'),billboardBackend:recordingBackend(log,'billboard'),ctx});
+ rt.registerPresets(presets);
+ for(const [id,target] of [['pillar-light','pv-float'],['pillar-earth','mv-float-1']]){
+   assert.equal(rt.tryPlay({fxKind:'rain',variant:'pillar',targets:[target],hit:false,vfx:{attack:id}}),true);
+   rt.update(.01);
+   const n=log.nodes.find(n=>n.spec.assetUrl.endsWith(id+'.png'));
+   assert.equal(n.transforms.at(-1).y,126,id+' 必須落在腳下');
+ }
+ assert.equal(rt.tryPlay({fxKind:'slash',targets:['mv-float-1'],hit:false,vfx:{attack:'ordinary-hit'}}),true);
+ rt.update(.01);
+ assert.equal(log.nodes.find(n=>n.spec.assetUrl.endsWith('ordinary-hit.png')).transforms.at(-1).y,80);
+ rt.destroy();
 });
 
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
@@ -324,7 +369,7 @@ function recordingBackend(log, tag) {
     createNode(spec) { const n = { tag, spec, transforms: [] }; log.nodes.push(n); return n; },
     updateNode(node, t) {
       if (!t || t.visible === false) return;
-      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame });
+      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY });
       if (t.skewX) node.transforms[node.transforms.length - 1].skewX = t.skewX;
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
@@ -436,6 +481,29 @@ test('BLOOD-FLIGHT 毒彈使用事件來源與飛行時間，不從玩家發射�
  assert.equal(adapter.stats().projectiles,1);
  const t=log.nodes[0].transforms.at(-1);assert.equal(t.x,200);assert.equal(t.y,50);
  adapter.update(.51);assert.equal(adapter.stats().projectiles,0);
+});
+
+test('ROCK-DOMAINS 兩種狀態從正式 Status 表載入各自的持續特效', () => {
+  const src = fs.readFileSync(path.join(REPO, 'js/status.js'), 'utf8');
+  const match = /^var STATUS = /m.exec(src);
+  assert.ok(match);
+  const status = eval('(' + extractLiteral(src, match.index + match[0].length) + ')'); // eslint-disable-line no-eval
+  const stone = status.sgPetrifyDomain.vfx.aura;
+  const gravity = status.sgGravityDomain.vfx.aura;
+  assert.equal(stone, 'ground-domain-earth');
+  assert.equal(gravity, 'ground-domain-earth-10');
+  assert.notEqual(stone, gravity);
+  global.statusVfxPreset = (sid, role) => role === 'aura' ? (status[sid]?.vfx?.aura || '') : '';
+  try {
+    const { adapter, log } = makeAdapter([unitPreset(stone, 1, true), unitPreset(gravity, 1, true)]);
+    adapter.syncStatuses([{ key: 'pv-float', sids: ['sgPetrifyDomain'], radii: { sgPetrifyDomain: 120 } }]);
+    adapter.update(.01);
+    adapter.syncStatuses([{ key: 'pv-float', sids: ['sgGravityDomain'], radii: { sgGravityDomain: 120 } }]);
+    adapter.update(.01);
+    assert.ok(log.nodes.some((n) => n.spec.assetUrl.includes(gravity + '.png')), '重力場要播放新預設');
+    assert.ok(log.nodes.some((n) => n.spec.assetUrl.includes(stone + '.png')), '超重岩保留自己的預設');
+    adapter.clear();
+  } finally { delete global.statusVfxPreset; }
 });
 
 test('BLOOD-DOMAIN 領域狀態的光環依半徑縮放、每幀跟著玩家，半徑改變時平滑補間', () => {

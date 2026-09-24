@@ -487,6 +487,23 @@ var VFXCore = (function () {
         (layer.type !== 'particle' || typeof layer.projection.upright !== 'boolean')) {
       errors.push(where + '.projection.upright 只支援 particle 的布林值');
     }
+    /* 鏡頭造成的兩種變形，各自一個開關（2026-09-24 使用者要求）。沒填＝受影響（既有行為）。
+         perspective      畫面透視（遠近）：整個戰鬥畫面的輕微透視網格。false 時顯示層會抵銷它
+                          （整份 preset 都標的話，Runtime 直接把它播在不經過網格的 billboard 層）。
+         followDirection  發射方向：貼地圖層會在地面平面上跟著技能方向轉（圓變成斜橢圓）。
+                          false 時維持作者填的 projection.rotation。
+       followDirection 只對「有地面投影」的圖層有意義，沒有 projection 就填它是 silent fallback，
+       所以直接擋下來——與 projection.upright 只給 particle 同一種處理。 */
+    if (layer.perspective !== undefined && typeof layer.perspective !== 'boolean') {
+      errors.push(where + '.perspective 必須是布林值');
+    }
+    if (layer.followDirection !== undefined) {
+      if (typeof layer.followDirection !== 'boolean') {
+        errors.push(where + '.followDirection 必須是布林值');
+      } else if (!layer.projection) {
+        errors.push(where + '.followDirection 只能用在有 projection（地面投影）的圖層');
+      }
+    }
   }
 
   /* 子發射器：這一層的粒子在出生或死亡時，往另一層丟幾顆。
@@ -641,7 +658,8 @@ var VFXCore = (function () {
   var PRESET_FIELDS = ['deformation', 'schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
-    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet', 'projection'];
+    'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet', 'projection',
+    'perspective', 'followDirection'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
      這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
      那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
@@ -943,7 +961,7 @@ var VFXCore = (function () {
     'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife',
-    'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection',
+    'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection', 'perspective', 'followDirection',
     'sheet', 'radiusProfile', 'water'];
 
   // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
@@ -1074,7 +1092,10 @@ var VFXCore = (function () {
       offsetXOverLife: layer.offsetXOverLife,
       offsetYOverLife: layer.offsetYOverLife,
       outerScale: layer.outerScale,
-      projection: layer.projection
+      projection: layer.projection,
+      /* 兩個都是「沒填＝受影響」（既有 preset 行為不變），與 enabled 同一種預設寫法 */
+      perspective: layer.perspective !== false,
+      followDirection: layer.followDirection !== false
     };
   }
 
@@ -1638,7 +1659,10 @@ var VFXCore = (function () {
     function projectTransform(frame, projection, t) {
       if (!projection) return;
       var px = projection.x, py = projection.y;
-      var angle = frame.projectionRotation === undefined ? (projection.rotation || 0) : frame.projectionRotation;
+      /* 實例的 projectionRotation 是技能的「發射方向」：followDirection: false 的圖層不吃它，
+         維持作者填的 projection.rotation（編輯器裡看到的角度）。 */
+      var angle = (frame.projectionRotation === undefined || t.followDirection === false)
+        ? (projection.rotation || 0) : frame.projectionRotation;
       var co = Math.cos(angle), si = Math.sin(angle);
       var dx = t.x - frame.origin.x, dy = t.y - frame.origin.y;
       t.x = frame.origin.x + (co * dx - si * dy) * px;
@@ -1663,6 +1687,10 @@ var VFXCore = (function () {
       t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
       t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined;
       t.generated = undefined;
+      /* perspective 給顯示層（要不要抵銷畫面透視），followDirection 給下面的 projectTransform。
+         scratchTransform 是共用的，每一層都要寫，不能只在 false 時寫。 */
+      t.perspective = d.perspective;
+      t.followDirection = d.followDirection;
       projectTransform(effect, d.projection, t);
       setDeformation(effect, layer, t);
       if (d.effect === 'waterTornado') {
@@ -2010,13 +2038,16 @@ var VFXCore = (function () {
         t.sortGroup = effect.handle; t.sortY = effect.depthY === null ? effect.origin.y : effect.depthY;
         t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined; t.generated = undefined;
         t.deformation = undefined;
+        t.perspective = d.perspective;
+        t.followDirection = d.followDirection;
         if (d.projection && d.projection.upright) {
           // 發射面貼地，離開發射點之後的上升高度與粒子本體維持直立。
           var base = toWorld(particleFrame,
             pm ? pm.a * p.planeX + pm.c * p.planeY + pm.tx : p.planeX,
             pm ? pm.b * p.planeX + pm.d * p.planeY + pm.ty : p.planeY);
           var bx = base.x - particleFrame.origin.x, by = base.y - particleFrame.origin.y;
-          var pr = particleFrame.projectionRotation === undefined ? (d.projection.rotation || 0) : particleFrame.projectionRotation;
+          var pr = (particleFrame.projectionRotation === undefined || d.followDirection === false)
+            ? (d.projection.rotation || 0) : particleFrame.projectionRotation;
           var pc = Math.cos(pr), ps = Math.sin(pr);
           t.x += (pc * bx - ps * by) * d.projection.x - bx;
           t.y += (ps * bx + pc * by) * d.projection.y - by;

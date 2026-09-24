@@ -130,3 +130,58 @@ test('PERSP-5 關掉（PERSPECTIVE_TOP_SCALE = 1）：場景直接掛回 stage �
   assert.deepEqual(stage.children, [sceneRoot, overlay]);
   assert.deepEqual([sceneRoot.x, sceneRoot.y], [0, 0]);
 });
+
+/* perspective: false 的圖層（2026-09-24 使用者要求的每層勾選）在場景層裡就地把透視抵銷掉。
+   會讓它安靜地畫錯的：補償乘錯軸（橫向 w、縱向 w²，寫反了圖會變胖或變瘦）、
+   對有旋轉的圖層直接乘在 scaleX／scaleY 上（圖會被轉歪）、把沒標的圖層也一起改到。 */
+test('PERSP-6 perspective: false 就地抵銷：補償後再經過網格＝作者畫的矩陣，位置不動', () => {
+  const L = loadLayout()(670, 731, TOP);
+  const c = { Math, Object, VFXCore: require('../js/vfx-core.js'),
+    S: { persp: { layout: L }, layers: { world: { x: 0, y: 0 } } } };
+  vm.createContext(c);
+  vm.runInContext(extractFunction(renderer, 'projectSceneTransform'), c);
+  const mat = (t) => [Math.cos(t.rotation) * t.scaleX, Math.sin(t.rotation) * t.scaleX,
+    -Math.sin(t.rotation - (t.skewX || 0)) * t.scaleY, Math.cos(t.rotation - (t.skewX || 0)) * t.scaleY];
+  for (const y of [40, 365, 700]) {
+    const w = 1 - L.beta * (y - L.cy);
+    for (const [rot, sx, sy, sk] of [[0, 1, 1, 0], [0.7, 2, 0.5, 0], [-1.2, 0.8, 1.4, 0.3]]) {
+      const t = { x: 300, y: y, rotation: rot, scaleX: sx, scaleY: sy, skewX: sk, perspective: false };
+      const out = c.projectSceneTransform(t);
+      const m = mat(out), want = mat(t);
+      /* 網格在該點的局部縮放：橫向 1/w、縱向 1/w²。補償過的矩陣再經過它，要回到原本那一個 */
+      [m[0] / w, m[1] / (w * w), m[2] / w, m[3] / (w * w)].forEach((v, i) =>
+        near(v, want[i], 1e-9, 'y=' + y + ' rot=' + rot + ' 矩陣第 ' + i + ' 項'));
+      assert.equal(out.x, t.x, '位置不動：那一層仍要待在它該在的地方');
+      assert.equal(out.y, t.y);
+    }
+    /* procedural 的 width／height 會蓋掉 scale，要照同一組比例補 */
+    const tile = c.projectSceneTransform({ x: 0, y: y, rotation: 0, scaleX: 1, scaleY: 1,
+      width: 256, height: 128, perspective: false });
+    near(tile.width / w, 256, 1e-9, 'width'); near(tile.height / (w * w), 128, 1e-9, 'height');
+  }
+});
+
+test('PERSP-7 沒標的圖層、關掉透視、隱藏用的 transform 都原樣回傳（不配置也不算數）', () => {
+  const L = loadLayout()(670, 731, TOP);
+  const c = { Math, Object, VFXCore: require('../js/vfx-core.js'),
+    S: { persp: { layout: L }, layers: { world: { x: 0, y: 0 } } } };
+  vm.createContext(c);
+  vm.runInContext(extractFunction(renderer, 'projectSceneTransform'), c);
+  const on = { x: 1, y: 2, rotation: 0, scaleX: 1, scaleY: 1, perspective: true };
+  assert.equal(c.projectSceneTransform(on), on, '沒標的要原樣回傳，逐幀逐節點不能多配置物件');
+  assert.equal(c.projectSceneTransform({ visible: false }).visible, false, '隱藏用的 transform 不得出錯');
+  c.S.persp = null;                                   // ?persp=0：本來就沒有變形可抵銷
+  const off = { x: 1, y: 2, rotation: 0, scaleX: 1, scaleY: 1, perspective: false };
+  assert.equal(c.projectSceneTransform(off), off);
+});
+
+test('PERSP-8 接線：場景的兩個後端都吃 projectSceneTransform，空中／billboard 各走自己那一套', () => {
+  assert.match(renderer, /projectSceneTransform: projectSceneTransform/, 'boot 要把補償函式交出去');
+  const runtime = fs.readFileSync(path.join(root, 'js/vfx-runtime.js'), 'utf8');
+  const boot = runtime.slice(runtime.indexOf('fxBackend: VFXPixiBackend.createBackend'),
+    runtime.indexOf('ctx: opts.ctx'));
+  assert.equal((boot.match(/projectTransform: opts\.projectSceneTransform/g) || []).length, 2,
+    'fx 與 zone 兩個後端都要接上');
+  assert.match(boot, /projectTransform:opts\.projectAirTransform/, '空中層仍走自己的投影');
+  assert.match(boot, /projectTransform:opts\.projectBillboardTransform/, 'billboard 層仍走自己的投影');
+});
