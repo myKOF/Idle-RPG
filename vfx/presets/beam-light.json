@@ -133,11 +133,12 @@
         "y": 0.0722
       },
       "scale": {
-        "x": 0.0591,
-        "y": 0.0591
+        "x": 0.0916,
+        "y": 0.0916
       },
       "duration": 0.3,
-      "perspective": true
+      "perspective": false,
+      "followDirection": false
     }
   ],
   "sizing": {
