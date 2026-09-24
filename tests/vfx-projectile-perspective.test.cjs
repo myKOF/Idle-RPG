@@ -7,7 +7,7 @@ const Backend=require('../js/vfx-pixi-backend.js');
 const source=fs.readFileSync(path.join(__dirname,'../js/battle-renderer.js'),'utf8');
 function projection(){
   const c={Math,S:{layers:{world:{x:17,y:-29}},persp:null}};vm.createContext(c);
-  for(const name of ['perspectiveLayout','airScreenPose','projectAirTransform'])vm.runInContext(extractFunction(source,name),c);
+  for(const name of ['perspectiveLayout','airScreenPose','projectAirTransform','projectBillboardTransform'])vm.runInContext(extractFunction(source,name),c);
   c.S.persp={layout:c.perspectiveLayout(700,680,.82)};return c;
 }
 test('空中投影在四角／遠近只改錨點與等比大小，保留素材旋轉和寬高比',()=>{
@@ -25,6 +25,36 @@ test('空中投影在四角／遠近只改錨點與等比大小，保留素材�
   assert.ok(c.airScreenPose(350,0).scale<c.airScreenPose(350,680).scale);
   c.S.persp=null;
   assert.equal(c.projectAirTransform({x:10,y:20,scaleX:2,scaleY:3}).scaleY,3);
+});
+test('天地再造紫光柱沿空中保形路徑播放，尺寸為玩家復活白光的一半',()=>{
+  const read=id=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets',id+'.json'),'utf8'));
+  const white=read('pillar-light'),purple=read('pillar-earth');
+  assert.deepEqual(purple.layers.map(l=>l.id),white.layers.map(l=>l.id),
+    '紫光柱須包含玩家光柱的完整法陣與光暈圖層');
+  const layout=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/layouts/pillar-earth.json'),'utf8'));
+  assert.deepEqual(layout.groups[0].layerIds,purple.layers.map(l=>l.id));
+  const source=new Map(white.layers.map(l=>[l.id,l]));
+  for(const layer of purple.layers){
+    const base=source.get(layer.id);assert.ok(base,layer.id);
+    if(base.position){assert.equal(layer.position.x,base.position.x*.5);assert.equal(layer.position.y,base.position.y*.5);}
+    if(base.scale){assert.equal(layer.scale.x,base.scale.x*.5);assert.equal(layer.scale.y,base.scale.y*.5);}
+  }
+  assert.equal(purple.sizing.authored.height,white.sizing.authored.height*.5);
+  const fx=backend(),air=backend(),billboard=backend();
+  const rt=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},fxBackend:fx,airBackend:air,billboardBackend:billboard,
+    ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:150,y:80}),footOf:()=>({x:150,y:90})}});
+  rt.registerPresets([purple]);
+  assert.equal(rt.tryPlay({fxKind:'rain',variant:'pillar',targets:['enemy'],hit:false,vfx:{attack:purple.id}}),true);
+  rt.update(.2);
+  assert.equal(fx.nodes.size,0,'光柱不進入受 FOV 網格拉伸的場景層');
+  assert.equal(air.nodes.size,0,'光柱不走逐圖層投影的飛行物路徑');
+  assert.ok(billboard.nodes.size>0,'光柱進入共用腳點倍率的 billboard 層');
+  const c=projection();
+  const bottom=c.projectBillboardTransform({x:150,y:90,sortY:90,scaleX:1,scaleY:1});
+  const top=c.projectBillboardTransform({x:150,y:-310,sortY:90,scaleX:1,scaleY:1});
+  assert.equal(top.scaleX,bottom.scaleX,'柱頂與柱底只取一次遠近倍率');
+  assert.ok(Math.abs((bottom.y-top.y)-400*bottom.scaleX)<1e-9,'柱身保持原本的直線高度');
+  rt.destroy();
 });
 test('空中層位於場景網格外、HUD 之下，Preset 與 legacy 使用独立子容器',()=>{
   const s=buildSceneTree(source),layers=s.layers,stage=s.app.stage;
@@ -52,6 +82,22 @@ test('空中效果跨過玩家腳點會切換前後；地面受擊效果與角�
   const impact=new fakePixi.Container();hit.updateNode(impact,pose(85));
   assert.equal(impact.parent.parent,entity);
   assert.equal(impact.parent.zIndex,85);
+});
+test('場域特效依畫面水平 Y 與角色交錯，包含狀態與地板後端',()=>{
+  assert.match(fs.readFileSync(path.join(__dirname,'../js/vfx-runtime.js'),'utf8'),
+    /zoneBackend:\s*VFXPixiBackend\.createBackend\(\{[^}]*depthParent:\s*opts\.fxDepthContainer/);
+  const zone=new fakePixi.Container(), entity=new fakePixi.Container();
+  entity.sortableChildren=true;
+  const player=new fakePixi.Container();player.zIndex=100;entity.addChild(player);
+  const backend=Backend.createBackend({PIXI:fakePixi,container:zone,depthSort:true,depthParent:entity});
+  const rear=new fakePixi.Container(),front=new fakePixi.Container();
+  backend.updateNode(rear,{x:180,y:80,sortGroup:1,sortY:80,visible:true});
+  backend.updateNode(front,{x:20,y:120,sortGroup:2,sortY:120,visible:true});
+  assert.equal(rear.parent.parent,entity);
+  assert.equal(front.parent.parent,entity);
+  assert.ok(rear.parent.zIndex<player.zIndex);
+  assert.ok(front.parent.zIndex>player.zIndex);
+  assert.equal(zone.children.length,0);
 });
 function backend(){const nodes=new Set();return {nodes,createNode(s){const n={s};nodes.add(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){nodes.delete(n);}};}
 test('盤點所有 proj 素材：彈體與粒子全部進空中後端，clear 完整回收',()=>{

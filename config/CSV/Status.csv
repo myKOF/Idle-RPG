@@ -90,6 +90,6 @@ sgSlayerDomain,殺神領域,⚰️,buff,stat,sgSlayerDomain,dark,,0,,0,0,99999,0
 sgVenomDomain,萬毒血霧,☣️,buff,stat,sgVenomDomain,poison,,0,,0,0,99999,0,refresh,1,,ground-mire-poison,,超神進化【萬毒血霧】：展開中的毒霧領域，跟著你移動；持續特效依領域半徑縮放（領域內敵人身上的【萬毒侵蝕】另計）。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
 sgFireGodBody,火神降臨,🔥,buff,stat,sgFireGodBody,fire,,0,,0,0,99999,0,refresh,1,,ground-domain-fire,,超神進化【火神降臨】：火焰纏身，定時灼燒周圍敵人；持續特效依作用半徑縮放、跟著你移動。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
 sgPetrifyDomain,超重岩領域,🗿,buff,stat,sgPetrifyDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth,,超神進化【超重岩之術】：岩甲護盾存在期間展開的領域，進入的敵人被石化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
-sgGravityDomain,超重力場,🌐,buff,stat,sgGravityDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth,,超神進化【超重力場】：岩甲護盾存在期間展開的重力場，進入的敵人僵化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
+sgGravityDomain,超重力場,🌐,buff,stat,sgGravityDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth-10,,超神進化【超重力場】：岩甲護盾存在期間展開的重力場，進入的敵人僵化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
 sgWaterPrisonDomain,水牢天瀑,🫧,buff,stat,sgWaterPrisonDomain,ice,,0,,0,0,6,0,refresh,1,,ground-domain-ice,,超神進化【水牢天瀑】：圍在你周圍的水牢，持續期間跟著你移動；持續特效依水牢半徑縮放（牢內敵人身上的【水牢】與攻擊下降另計）。
 sgAbyssDomain,海淵葬界,🌊,buff,stat,sgAbyssDomain,ice,,0,,0,0,99999,0,refresh,1,,ground-domain-ice,,超神進化【海淵葬界】：永久展開的水之領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。

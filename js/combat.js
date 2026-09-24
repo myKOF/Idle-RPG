@@ -1433,11 +1433,19 @@ function combatDebugAuditFieldDeaths(snapshot, phase) {
 }
 /* ---- 野外主迴圈 ---- */
 function fieldTick(dt) {
-    tickDeferredEnemyAttackRetaliations();
     if (G.tower.active) return; // 高塔戰鬥期間野外暫停
     var st = getStats();
     if (!FIELD.player) initFieldPlayer();
     var p = FIELD.player;
+
+    // 天地共生是同一場戰鬥中的五秒演出：保留敵人與關卡，暫停雙方行動。
+    if (p._sgRevival && p._sgRevival.mode === 'earthguard') {
+        tickSkillCds(p, dt);
+        sgTickEarthguardRevival(p);
+        UI.dirty.battle = true;
+        return;
+    }
+    tickDeferredEnemyAttackRetaliations();
 
     // 死亡復活
     if (FIELD.reviveCd > 0) {
@@ -1622,7 +1630,7 @@ function fieldTick(dt) {
     }
     // 玩家行動（受減速時依減速比例放慢；時間扭曲等攻速增益加速）
     //（45 新技能共用排程器已上移至「出怪」空場檢查之前，避免波次間隙排程停擺）
-    /* 新版技能超神【不屈鬥魂】倒地期間：普攻與技能一起停，這是「死了 5 秒」的代價。
+    /* 復甦演出期間：普攻與技能一起停。
        倒地時普攻與技能共用同一個行動閘門。 */
     if (!playerActionControlBlocked(p, true) &&
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
@@ -1860,7 +1868,7 @@ function fieldDeathRetreatStage(currentStage) {
 }
 
 function onPlayerFieldDeath() {
-    /* 新版技能【天地共生】（大地守護 T7，js/skills2.js）：死亡攔截。
+    /* 新版技能【天地共生】（大地守護 T7，js/skills2.js）：五秒復甦攔截。
        掛在這裡而不是 resolveHit 的致死分支，是因為野外有多條判死路徑
        （敵人攻擊、持續傷害、自傷技能、反震），這裡是它們唯一的共同出口。 */
     if (typeof skills2TryRebirth === 'function' && FIELD.player && skills2TryRebirth(FIELD.player)) {
@@ -1868,14 +1876,14 @@ function onPlayerFieldDeath() {
         return;
     }
     /* 新版技能超神【不屈鬥魂】（反擊，js/skills2.js）：死亡時全屏地系爆發、倒地數秒後原地復活。
-       排在天地共生之後、不屈之誓之前——天地共生是「立刻滿血站起來」，嚴格優於「先倒 5 秒」；
+       排在天地共生之後、不屈之誓之前；兩者都可用時先觸發天地共生。
        而不屈鬥魂本身又嚴格優於不屈之誓（後者只是把死亡往後推，時間到還是真的死）。 */
     if (typeof skills2TryLastStand === 'function' && FIELD.player && skills2TryLastStand(FIELD.player)) {
         UI.dirty.battle = true;
         return;
     }
     /* 傳奇【不屈之誓】（雙刀亂舞，js/skills2.js）：暴風之舞期間的死亡延後 10 秒生效。
-       排在天地共生之後——天地共生是「原地滿血復活」，嚴格優於「再撐 10 秒然後還是死」，
+       排在天地共生之後；天地共生於原地復甦，不屈之誓只是延後死亡，
        兩者都可用時先走前者才不會浪費掉不屈之誓的那一次。 */
     if (typeof skills2TryDeathDefer === 'function' && FIELD.player && skills2TryDeathDefer(FIELD.player)) {
         UI.dirty.battle = true;

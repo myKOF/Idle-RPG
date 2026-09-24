@@ -334,6 +334,8 @@ var VFXRuntime = (function () {
 
     // 飛行物使用螢幕空中層；編輯器／無專用後端時共用原 fx Runtime。
     var rtAir = o.airBackend ? Core.createRuntime({backend:o.airBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtFx;
+    var rtBillboard = o.billboardBackend
+      ? Core.createRuntime({backend:o.billboardBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtAir;
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var presetSizes = Object.create(null);
     var planePresets = Object.create(null);
@@ -353,6 +355,9 @@ var VFXRuntime = (function () {
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     var presetDefinitions = Object.create(null);
+    function isRockOrbitPreset(id) {
+      return id === 'aura-earth-reversal' || /^aura-rockarmor-stone(?:-08|-09|-10)?$/.test(id);
+    }
     function registerPresets(list) {
       (list || []).forEach(function(p) { if(p && p.id) presetDefinitions[p.id]=p; });
       list = (list || []).map(function(p) {
@@ -393,6 +398,7 @@ var VFXRuntime = (function () {
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
         if (rtAir !== rtFx) rtAir.registerPreset(p);
+        if (rtBillboard !== rtAir && p.id === 'pillar-earth') rtBillboard.registerPreset(p);
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
@@ -401,13 +407,13 @@ var VFXRuntime = (function () {
           trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) : NOMINAL_BEAM;
         }
         // Two synchronized passes share textures; each stone switches sides at the orbit midline.
-        if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
+        if (isRockOrbitPreset(p.id) && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
           ['back','front'].forEach(function(half) {
             var part=JSON.parse(JSON.stringify(p));part.id+='-'+half;
-            if(half==='front')part.layers=part.layers.filter(function(l){return l.id!=='earth-shadow' && l.id!=='amber-underlight';});
+            if(half==='front')part.layers=part.layers.filter(function(l){return /^stone-\d+-/.test(l.id);});
             part.layers.forEach(function(l) {
               var curve=l.offsetYOverLife;
-              if(l.id==='earth-shadow' || l.id==='amber-underlight')return;
+              if(!/^stone-\d+-/.test(l.id))return;
               if(!curve || curve.length<2){l.alpha=half==='front'?l.alpha:0;return;}
               var points=[0,1];
               for(var i=1;i<curve.length;i++){
@@ -420,7 +426,7 @@ var VFXRuntime = (function () {
             });registerPresets([part]);
           });
         }
-        if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
+        if (isRockOrbitPreset(p.id) && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
           ['back', 'front'].forEach(function(half) {
             var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
             part.layers = part.layers.filter(function(l) { return (l.id === 'orbiting-stone-plates-front') === (half === 'front'); });
@@ -482,9 +488,11 @@ var VFXRuntime = (function () {
       return Object.assign({}, params, { projectionRotation: params.rotation, rotation: 0 });
     }
     function play(rt, presetId, params, mult) {
-      if ((presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') && has(presetId + '-front')) {
-        var back = play(rtZone, presetId + '-back', params, mult);
-        var front = play(rtFx, presetId + '-front', params, mult);
+      if (isRockOrbitPreset(presetId) && has(presetId + '-front')) {
+        // 前後石碑各自有透明度曲線；兩份必須跨在角色的畫面 Y 兩側，
+        // 否則共用同一個 sortY 時會依加入順序一起蓋到角色上。
+        var back = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
+        var front = play(rtFx, presetId + '-front', rockDepthParams(params, 1), mult);
         if (!back || !front) { stopRef(back); stopRef(front); return null; }
         return { parts: [back, front] };
       }
@@ -493,6 +501,10 @@ var VFXRuntime = (function () {
       if (handle === null || handle === undefined) { budgetDrops++; return null; }
       counters.played++;
       return { rt: rt, handle: handle, presetId: presetId };
+    }
+    function rockDepthParams(params, side) {
+      var actorY = params.depthY === undefined ? params.position.y : params.depthY;
+      return Object.assign({}, params, { depthY: actorY + side * 0.01 });
     }
     function stopRef(ref) {
       if (!ref) return;
@@ -506,7 +518,7 @@ var VFXRuntime = (function () {
     }
     /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
     function moveRef(ref, params, mult) {
-      if (ref.parts) { var alive = ref.parts.map(function(part) { return moveRef(part, params, mult); }); return alive.every(Boolean); }
+      if (ref.parts) { var alive = ref.parts.map(function(part, i) { return moveRef(part, rockDepthParams(params, i === 0 ? -1 : 1), mult); }); return alive.every(Boolean); }
       return ref.rt.setTransform(ref.handle, planeParams(ref.presetId, sized(params, mult)));
     }
 
@@ -544,16 +556,23 @@ var VFXRuntime = (function () {
       if (!ids.length) return false;
       var any = false;
       for (var i = 0; i < ids.length; i++) {
+        // 復活光柱的 Preset 原點是落地光環；目標身體中心會讓它懸在角色腰部。
+        var pillarFoot = spec.variant === 'pillar' &&
+          (presetId === 'pillar-light' || presetId === 'pillar-earth');
         if (delaySec > 0) {
-          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale, authoredSize: authoredSize });
+          pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
+            authoredSize: authoredSize, pillarFoot: pillarFoot });
           any = true;
           continue;
         }
-        var p = ctx.posOf(ids[i]);
+        var p = pillarFoot ? footOf(ids[i]) : ctx.posOf(ids[i]);
         // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
         var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
         params.position = p;
         params.depthY = footOf(ids[i]).y;
+        if (spec.variant === 'pillar' && presetId === 'pillar-light' && num(spec.dur, 0) > 0) {
+          params.timeScale = presetDurations[presetId] / spec.dur;
+        }
         if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
@@ -811,7 +830,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal' || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
+        var fallbackSize = sizeOf(g.presetId, (isRockOrbitPreset(g.presetId) || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -992,7 +1011,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
-        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
+        bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         devour: spec.variant === 'dragon-devour',
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
@@ -1338,7 +1357,9 @@ var VFXRuntime = (function () {
           } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
-          else ok = playOnTargets(rtFx, presetId, spec, 1, hitDelayFor(spec), true);
+          // 天地再造的直立光柱只投影落點並等比縮放，避免整張場景的 FOV 網格把柱身拉歪。
+          else ok = playOnTargets(presetId === 'pillar-earth' && spec.variant === 'pillar' ? rtBillboard : rtFx,
+            presetId, spec, 1, hitDelayFor(spec), true);
           break;
         default:
           ok = false;
@@ -1418,7 +1439,8 @@ var VFXRuntime = (function () {
         pending.splice(q, 1);
         if (job.spec) { tryPlay(job.spec); continue; }
         play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
-          { position: ctx.posOf(job.targetId), depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
+          { position: job.pillarFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
+            depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
       }
 
       /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
@@ -1538,6 +1560,7 @@ var VFXRuntime = (function () {
 
       rtFx.update(step);
       if (rtAir !== rtFx) rtAir.update(step);
+      if (rtBillboard !== rtAir) rtBillboard.update(step);
       rtZone.update(step);
     }
 
@@ -1552,6 +1575,7 @@ var VFXRuntime = (function () {
       Object.keys(soulOrbits).forEach(function(id){stopSoul(id,false);});
       if (rtFx.clearTails) rtFx.clearTails();
       if (rtAir !== rtFx && rtAir.clearTails) rtAir.clearTails();
+      if (rtBillboard !== rtAir && rtBillboard.clearTails) rtBillboard.clearTails();
       projectiles.filter(function(p){return p.soulId;}).forEach(function(p){stopSoul(p.soulId);});
       Object.keys(orbits).forEach(stopOrbit);
       Object.keys(grounds).forEach(function (k) {
@@ -1572,6 +1596,7 @@ var VFXRuntime = (function () {
       auras = Object.create(null);
       rtFx.stopAll();
       if (rtAir !== rtFx) rtAir.stopAll();
+      if (rtBillboard !== rtAir) rtBillboard.stopAll();
       rtZone.stopAll();
     }
 
@@ -1579,6 +1604,7 @@ var VFXRuntime = (function () {
       clear();
       rtFx.destroy();
       if (rtAir !== rtFx) rtAir.destroy();
+      if (rtBillboard !== rtAir) rtBillboard.destroy();
       rtZone.destroy();
     }
 
@@ -1602,7 +1628,7 @@ var VFXRuntime = (function () {
           pending: pending.length,
           played: counters.played, skipped: counters.skipped, missing: counters.missing,
           dropped: counters.dropped,
-          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats()
+          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats()
         };
       }
     };
@@ -1647,7 +1673,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260923-firehunt-pairs';
+  var DATA_VERSION = '20260924-rebirth-pillar-ground-center';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -1673,10 +1699,14 @@ var VFXRuntime = (function () {
         var adapter = create({
           resolver: resolver,
           fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true, depthParent: opts.fxDepthContainer }),
-          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true }),
+          // 場域與狀態特效按畫面 Y 與角色交錯；固定留在 presetZone 會全部蓋到角色後面。
+          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true, depthParent: opts.fxDepthContainer }),
           airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true,
             depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
             projectTransform:opts.projectAirTransform}) : null,
+          billboardBackend: opts.billboardContainer ? VFXPixiBackend.createBackend({container:opts.billboardContainer, depthSort:true,
+            depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
+            projectTransform:opts.projectBillboardTransform}) : null,
           ctx: opts.ctx,
           groundScale: opts.groundScale
         });

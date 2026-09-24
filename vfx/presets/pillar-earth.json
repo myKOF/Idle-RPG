@@ -11,18 +11,18 @@
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": -400
+        "y": -572.40755
       },
       "scale": {
-        "x": 0.1445,
-        "y": 0.7813
+        "x": 0.2069,
+        "y": 1.11825
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 0.4,
-      "tint": "#ad7444",
+      "tint": "#9333ea",
       "blendMode": "add",
       "duration": 0.9,
       "alphaOverLife": [
@@ -65,18 +65,18 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": -400
+        "y": -572.40755
       },
       "scale": {
-        "x": 0.0781,
-        "y": 0.7813
+        "x": 0.11175,
+        "y": 1.11825
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 0.95,
-      "tint": "#ad7444",
+      "tint": "#a855f7",
       "blendMode": "add",
       "duration": 0.9,
       "alphaOverLife": [
@@ -119,18 +119,18 @@
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": -400
+        "y": -572.40755
       },
       "scale": {
-        "x": 0.0313,
-        "y": 0.7813
+        "x": 0.0448,
+        "y": 1.11825
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 1,
-      "tint": "#c48a55",
+      "tint": "#d8b4fe",
       "blendMode": "add",
       "duration": 0.9,
       "alphaOverLife": [
@@ -171,12 +171,16 @@
       "type": "sprite",
       "assetId": "new_materials/flare/flare_30.png",
       "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0.12955
+      },
       "scale": {
-        "x": 0.1367,
-        "y": 0.1367
+        "x": 0.1956,
+        "y": 0.1956
       },
       "alpha": 1,
-      "tint": "#c48a55",
+      "tint": "#c084fc",
       "blendMode": "add",
       "delay": 0.2,
       "duration": 0.36,
@@ -218,12 +222,16 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/ring_a.png",
       "zIndex": 4,
+      "position": {
+        "x": 0,
+        "y": 0.25925
+      },
       "scale": {
-        "x": 0.1758,
-        "y": 0.1758
+        "x": 0.25155,
+        "y": 0.25155
       },
       "alpha": 0.8,
-      "tint": "#ad7444",
+      "tint": "#a855f7",
       "blendMode": "add",
       "delay": 0.2,
       "duration": 0.5,
@@ -259,12 +267,16 @@
     {
       "id": "motes",
       "type": "particle",
-      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 5,
-      "tint": "#ad7444",
-      "blendMode": "normal",
+      "position": {
+        "x": 0,
+        "y": 0.12955
+      },
+      "tint": "#c084fc",
+      "blendMode": "add",
       "emission": {
-        "count": 7,
+        "count": 5,
         "mode": "burst"
       },
       "lifetime": [
@@ -272,23 +284,23 @@
         0.6
       ],
       "spawn": {
-        "radius": 22,
+        "radius": 31.48955,
         "shape": "circle"
       },
       "speed": [
-        50,
-        110
+        42.9403,
+        85.8806
       ],
-      "direction": 0,
-      "spread": 360,
+      "direction": -90,
+      "spread": 70,
       "gravity": {
         "x": 0,
-        "y": 60
+        "y": -71.5671
       },
       "drag": 2.5,
       "startScale": [
-        0.0195,
-        0.0352
+        0.01405,
+        0.02515
       ],
       "alphaOverLife": [
         [
@@ -297,7 +309,7 @@
         ],
         [
           0.2,
-          0.7
+          1
         ],
         [
           1,
@@ -307,15 +319,15 @@
       "tintOverLife": [
         [
           0,
-          "#ffffff"
+          "#e9d5ff"
         ],
         [
           0.5,
-          "#ffffff"
+          "#a855f7"
         ],
         [
           1,
-          "#2a2a30"
+          "#251238"
         ]
       ],
       "scaleOverLife": [
@@ -328,15 +340,54 @@
           0.4
         ]
       ]
+    },
+    {
+      "id": "sprite-7",
+      "type": "sprite",
+      "assetId": "shape-alpha/pdalpha_150.png",
+      "position": {
+        "x": 0,
+        "y": 0.12955
+      },
+      "scale": {
+        "x": 0.0313,
+        "y": 0.03955
+      },
+      "tint": "#d8b4fe",
+      "blendMode": "add",
+      "loop": false,
+      "outerScale": {
+        "x": 1,
+        "y": 0.3
+      }
+    },
+    {
+      "id": "sprite-8",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/shape_a.png",
+      "position": {
+        "x": 0,
+        "y": 0.12955
+      },
+      "scale": {
+        "x": 0.1749,
+        "y": 0.25615
+      },
+      "tint": "#a855f7",
+      "blendMode": "add",
+      "outerScale": {
+        "x": 1,
+        "y": 0.3
+      }
     }
   ],
   "sizing": {
     "authored": {
-      "height": 400,
-      "width": 60
+      "height": 200,
+      "width": 30
     },
-    "heightM": 40,
+    "heightM": 20,
     "shape": "custom",
-    "widthM": 6
+    "widthM": 3
   }
 }
