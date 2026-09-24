@@ -177,21 +177,23 @@ test('CAM-4 schema：只收布林、followDirection 要有 projection、empty �
   assert.equal(back.perspective,false);assert.equal(back.followDirection,false);
 });
 
-test('CAM-5 編輯器：兩個勾選預設都勾著，「跟著發射方向轉」只出現在有地面投影的圖層',()=>{
+test('CAM-5 編輯器：兩個勾選預設都勾著；沒有地面投影時「跟著發射方向轉」留在原位但不能點',()=>{
   const src=fs.readFileSync(path.join(root,'tools/vfx/editor/editor.js'),'utf8');
   const fields=src.slice(src.indexOf('var COMMON_FIELDS'),src.indexOf('var VEC_DEFAULTS'));
   assert.match(fields,/key: 'perspective', label: '受畫面透視影響', kind: 'bool', default: true/);
   assert.match(fields,/key: 'followDirection', label: '跟著發射方向轉', kind: 'bool', default: true/);
-  assert.match(fields,/when: function \(l\) \{ return !!l\.projection; \}/);
-  /* fieldsOf 真的照 when 過濾，而且空物件仍以 Core 的清單為準（那兩個欄位 Core 不收） */
+  assert.match(fields,/enabledWhen: function \(l\) \{ return !!l\.projection; \}/);
+  assert.match(fields,/disabledHint:/,'不能點的時候要說明為什麼，不能只是變灰');
+  /* 欄位不因為「對這一層沒意義」而消失：2026-09-24 使用者在沒有地面投影的圖層上找不到它 */
   const at=src.indexOf('function fieldsOf(');
   const body=src.slice(at,src.indexOf('\n  }',at)+4);
   const fieldsOf=new Function('VFXCore','WATER_TORNADO_HIDDEN_FIELDS',body+'\nreturn fieldsOf;')(Core,[]);
-  const list=[{key:'perspective'},{key:'followDirection',when:l=>!!l.projection},{key:'alpha'}];
+  const list=[{key:'perspective'},{key:'followDirection',enabledWhen:l=>!!l.projection},{key:'alpha'}];
   const keys=layer=>fieldsOf(layer,list).map(f=>f.key);
-  assert.deepEqual(keys({type:'sprite'}),['perspective','alpha']);
+  assert.deepEqual(keys({type:'sprite'}),['perspective','followDirection','alpha'],'沒有地面投影也要看得到');
   assert.deepEqual(keys({type:'sprite',projection:{x:1,y:.5}}),['perspective','followDirection','alpha']);
   assert.deepEqual(keys({type:'empty'}),['alpha'],'空物件只留 Core 收的欄位');
-  /* 勾選寫入走既有的 bool 分支（寫 true／false 到每一個選取的圖層） */
+  /* 勾選寫入走既有的 bool 分支；不適用的圖層在那裡被停用（多選時要全部適用才給點） */
   assert.match(src,/control\.onchange = function \(\) \{ MX\.writeAll\(targets, f\.key, control\.checked\);/);
+  assert.match(src,/if \(f\.enabledWhen && !targets\.every\(f\.enabledWhen\)\) \{\s*control\.disabled = true;/);
 });
