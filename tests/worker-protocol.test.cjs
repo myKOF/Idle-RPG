@@ -115,7 +115,8 @@ test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
   // v27：VFX 事件新增可選旗標 presetOnly（只有 Preset 端畫得出來的事件）
   // v36：新增事件種類 act（角色動作；目前只有技能開始施放）
   // v37：星環旋轉編隊的世界幾何。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 37);
+  // v38：戰鬥面板投影逆轉乾坤的實際可用次數。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 38);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');

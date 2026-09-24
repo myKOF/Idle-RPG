@@ -71,7 +71,7 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | `hit-earth` | 敵方命中·地 | 地屬性敵人打中我方的爆點 |
 | `hit-wind` | 敵方命中·風 | 風屬性敵人打中我方的爆點 |
 | `ground-firewall` | 火牆 | `js/vfx-runtime.js` 寫死的火牆三柱播放處理（火龍捲第 7 階在 2026-09-12 由無限火牆改成無限火龍後，技能表已經沒有任何一列填它） |
-| `bolt-chain-travel-bluewhite` | 連鎖閃電彈射 | `js/vfx-runtime.js` 寫死的連鎖閃電彈射電弧處理（2026-09-14 Codex 的 38f2476 把技能表連鎖閃電第 1 階的攻擊特效換掉之後，表上已經沒有列填它） |
+| `bolt-chain-travel-bluewhite` | 連鎖閃電彈射 | Skills2 第 1 階攻擊特效指定；`js/vfx-runtime.js` 另有此 Preset 的圖集寬度及移動端點追蹤處理 |
 | `hit-thunderstrike-bluewhite` | 落雷命中 | `js/vfx-runtime.js` playRole 的受擊角色：填這份時改走 playThunderstrike（腳底錨定、跟著目標走的落雷擺法）。2026-09-18 補登記——Codex 15942105 起程式寫死了它，目前沒有任何表格填入（落雷術第 1 階的攻擊特效是 `bolt-thunderstrike-bluewhite`）。 |
 
 除了最後三列（寫死在 `js/vfx-runtime.js`），上面全部來自 `js/data.js` 的

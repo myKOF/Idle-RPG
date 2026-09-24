@@ -1281,8 +1281,11 @@ var VFXRuntime = (function () {
           presetId !== 'proj-thunderfall-sky' && presetId !== 'hit-thunderfall-impact' &&
           presetId !== 'bolt-thunderstrike-bluewhite' &&
           !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || ''))) {
-        playOnTargets(rtFx, roles.hit, spec, hitScaleOf(spec),
-          roles.projectile ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
+        // 雷鏈的 targets 是「起點、終點」，只在抵達終點時播命中，不能起飛就讓兩端一起爆。
+        var chainHit = spec.variant === 'lightning-chain' && spec.fxKind === 'chain';
+        var hitSpec = chainHit ? Object.assign({}, spec, { targets: (spec.targets || []).slice(-1) }) : spec;
+        playOnTargets(rtFx, roles.hit, hitSpec, hitScaleOf(spec),
+          roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
       return true;
     }

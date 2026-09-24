@@ -10,11 +10,11 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=37', 'shim.js?v=8');
+importScripts('protocol.js?v=38', 'shim.js?v=8');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20260922-fireball-intercept', '../status.js?v=20260923-rock-domain-vfx', '../formula.js?v=20260923-six-slot-hud', '../battlefield.js?v=20260825-firehunt-rock-legendary', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260922-cast-act', '../skills2.js?v=20260924-earthguard-reflect-vfx', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260922-cast-act', '../skills2.js?v=20260924-chain-visual', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
   '../combat.js?v=20260924-earthguard-revival', '../legendary.js?v=20260921-war-god-body', '../potential.js?v=20260903-vfx-runtime-adapter', '../tower.js?v=20260924-earthguard-revival',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
@@ -757,6 +757,9 @@ function buildPanel(name, params) {
          再突然歸零。有了 gt 就能扣掉「拍照到現在」經過的時間，變成真正的碼錶。 */
       return {
         gt: GT,
+        rebirthCharges: (typeof skills2RebirthAvailableCharges === 'function')
+          ? skills2RebirthAvailableCharges((typeof TOWER !== 'undefined' && TOWER && TOWER.active && TOWER.player)
+            || (typeof FIELD !== 'undefined' && FIELD && FIELD.player)) : null,
         field: (typeof FIELD !== 'undefined') ? FIELD : null,
         tower: (typeof TOWER !== 'undefined') ? TOWER : null,
         stage: G.stage, zoneProgress: G.zoneProgress,

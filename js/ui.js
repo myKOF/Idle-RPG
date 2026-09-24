@@ -3198,6 +3198,7 @@ function battleSkillSlotMarkup(state) {
     (state.lv > 0 ? '<span class="bss-lv">' + state.lv + '</span>' : '') +
     '<div class="bss-cd-mask" style="--cd-deg:' + state.cdDeg + ';"></div>' +
     '<span class="bss-cd-text">' + state.cdText + '</span>' +
+    (state.chargeCount !== null ? '<span class="bss-charge-count">' + state.chargeCount + '</span>' : '') +
     (state.isNoMp ? '<span class="bss-nomp-tag">無魔</span>' : '') +
     '</div>';
 }
@@ -3270,6 +3271,18 @@ function syncBattleSkillSlot(slot, state) {
   var cdTextEl = slot.querySelector('.bss-cd-text');
   if (cdTextEl) setTextIfChanged(cdTextEl, state.cdText);
 
+  var chargeEl = slot.querySelector('.bss-charge-count');
+  if (state.chargeCount !== null) {
+    if (!chargeEl) {
+      chargeEl = document.createElement('span');
+      chargeEl.className = 'bss-charge-count';
+      slot.appendChild(chargeEl);
+    }
+    setTextIfChanged(chargeEl, state.chargeCount);
+  } else if (chargeEl) {
+    chargeEl.remove();
+  }
+
   var noMpTag = slot.querySelector('.bss-nomp-tag');
   if (state.isNoMp) {
     if (!noMpTag) {
@@ -3286,8 +3299,8 @@ function syncBattleSkillSlot(slot, state) {
 function renderBattleSkillBar(pEnt, snapshotGt) {
   var bar = $id('battle-skill-bar');
   if (!bar) return;
+  var battleSnap = peekUiPanelData('battle') || {};
   if (!pEnt) {
-    var battleSnap = peekUiPanelData('battle') || {};
     var field = battleSnap.field || {};
     pEnt = field.player || battleSnap.player || null;
     snapshotGt = battleSnap.gt || 0;
@@ -3367,6 +3380,10 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var cdRatio = clamp(cd / totalCd, 0, 1);
     var cdDeg = cdDegString(cdRatio);
     var cdText = cd > 0 ? (cd >= 10 ? Math.ceil(cd) + 's' : fmt1(cd) + 's') : '';
+    var earthguardUlt = isSgE && entry === 'sg:earthguard' ? sgUiUltPick(skillsSnapshot, 'earthguard') : null;
+    var chargeCount = earthguardUlt && earthguardUlt.id === 'fateReversal' &&
+      Number.isInteger(battleSnap.rebirthCharges)
+      ? battleSnap.rebirthCharges : null;
 
     /* 個別階可以帶自己的內部冷卻（大地守護【天地共生】），冷卻中改用一般技能的
        「不可用」呈現。群組冷卻是 0，畫不出有意義的比例，故整圈罩住＋顯示剩餘秒數。 */
@@ -3376,13 +3393,14 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var isActivePassive = isPassiveGroup && !isPassiveOnCd && !isPassiveNoMp;
     var isOnCd = !isActivePassive && cd > 0;
     var isNoMp = !isActivePassive && !isOnCd && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
-    var slotCls = 'battle-skill-slot equipped' +
+    var slotCls = 'battle-skill-slot equipped' + (chargeCount !== null ? ' has-charges' : '') +
       (isActivePassive ? ' active-passive ready' : (isOnCd ? ' on-cd' : '') + (isNoMp ? ' no-mp' : (!isOnCd ? ' ready' : '')));
     var equippedState = {
       kind: 'equipped', index: i, entry: entry, emoji: sk.emoji || '⚔️', lv: lv,
       rawCdVal: rawCdVal, snapshotGt: snapshotGt, totalCd: totalCd,
       cdDeg: isActivePassive ? '0deg' : (isPassiveOnCd ? '360deg' : cdDeg),
       cdText: isActivePassive ? '' : cdText,
+      chargeCount: chargeCount,
       isOnCd: isOnCd, isNoMp: isNoMp, isActivePassive: isActivePassive, slotCls: slotCls
     };
     equippedState.key = battleSkillSlotKey(equippedState);

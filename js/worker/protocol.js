@@ -62,7 +62,8 @@
 /* v37：vfx.area.flightOrbit = {origin:{x,y}|null, heading, speed, length, radius, phase, spin}。
    全為未投影世界幾何；速度為世界單位／秒，角度為弧度、spin 為弧度／秒。
    中心直線飛行加成員公轉；缺省沿舊路徑，origin=null 僅無座標高塔取畫面起點。 */
-var WORKER_PROTOCOL_VERSION = 37;
+/* v38：battle 面板新增 rebirthCharges（整數或 null），只投影逆轉乾坤的實際可用復活次數。 */
+var WORKER_PROTOCOL_VERSION = 38;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

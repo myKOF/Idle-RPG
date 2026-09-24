@@ -453,23 +453,36 @@ test('【天地再造】：普通／菁英敵人機率重生，同一隻只會�
   assert.equal(c.skills2OnEnemyKill(p, boss), false, 'BOSS 不重生');
 });
 
-test('【逆轉乾坤】：冷卻結束後累積復活次數，用完才真的進冷卻', () => {
+test('【逆轉乾坤】：首次復活後才開始逐次充能，圖標可用次數隨消耗更新', () => {
   const c = earthguardCtx([], 'fateReversal', 1);
   assert.equal(c.skills2RebirthMaxCharges(), 2, 'Lv.1 ＝ 2 次');
   const p = playerEnt();
-  // 進場即滿：可用次數＝（冷卻已結束 1）＋（累積 1）
+  // 進場只有基本一次；未復活前不偷偷充滿。
   c.sgTickRebirthCharge(p);
-  assert.equal(c.SKILL2_RT.rebirth.charges, 1);
+  assert.equal(c.SKILL2_RT.rebirth.charges, 0);
+  assert.equal(c.skills2RebirthAvailableCharges(p), 1);
+  c.sgTickRebirthCharge(p);
+  assert.equal(c.SKILL2_RT.rebirth.charges, 0);
   assert.equal(c.skills2TryRebirth(p), true, '第一次：花掉「冷卻已結束」的那一次');
   assert.ok(p.skillCds[c.SG_PREFIX + 'earthguard'] > 0, '冷卻開始跑');
-  assert.equal(c.SKILL2_RT.rebirth.charges, 1, '累積的那一次還在');
+  assert.equal(c.SKILL2_RT.rebirth.charges, 0, '還沒有額外累積次數');
+  assert.equal(c.skills2RebirthAvailableCharges(p), 0);
   assert.equal(c.skills2TryRebirth(p), true, '演出中的重入仍屬同一次，不消耗次數');
-  assert.equal(c.SKILL2_RT.rebirth.charges, 1);
-  c.GT += 5;c.sgTickEarthguardRevival(p);p.hp=0;
-  assert.equal(c.skills2TryRebirth(p), true, '第二次：花掉累積的那一次');
   assert.equal(c.SKILL2_RT.rebirth.charges, 0);
   c.GT += 5;c.sgTickEarthguardRevival(p);p.hp=0;
+  assert.equal(c.skills2TryRebirth(p), false, '冷卻完成前沒有第二次');
+  p.skillCds[c.SG_PREFIX + 'earthguard'] = 0;
+  c.sgTickRebirthCharge(p);
+  assert.equal(c.SKILL2_RT.rebirth.charges, 1, '第一段冷卻完成才累積一次');
+  assert.equal(c.skills2RebirthAvailableCharges(p), 1);
+  assert.equal(c.skills2TryRebirth(p), true, '第二次：花掉累積的那一次');
+  assert.equal(c.SKILL2_RT.rebirth.charges, 0);
+  assert.equal(c.skills2RebirthAvailableCharges(p), 0);
+  c.GT += 5;c.sgTickEarthguardRevival(p);p.hp=0;
   assert.equal(c.skills2TryRebirth(p), false, '用完就要等冷卻');
+  c.resetSkill2RT();
+  c.sgTickRebirthCharge(p);
+  assert.equal(c.SKILL2_RT.rebirth.charges, 0, '新一輪不繼承上一輪累積');
 });
 
 test('沒選【逆轉乾坤】時，【天地共生】維持「冷卻好了才有一次」的原行為', () => {
