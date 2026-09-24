@@ -421,6 +421,21 @@ test('【光耀之堂】：回復倍率再乘一層，且溢出的生命與法�
   assert.ok(p.shield > afterHp, '溢出的法力也轉護盾');
 });
 
+test('三種大地守護超神的反射事件只播放第六階光束，不重播天地共生光柱', () => {
+  for (const ultId of ['hallOfRadiance', 'worldRebirth', 'fateReversal']) {
+    const c = earthguardCtx([], ultId, 1);
+    const specs = stubVfx(c);
+    const p = playerEnt();
+    const attacker = enemy(1000);
+    c.sgEarthguardReflect(attacker, p, 100, { absorbed: 0 }, 'mv-float');
+    const reflect = specs.find((spec) => spec.variant === 'earth-reflect');
+    assert.ok(reflect, ultId + ' 應有反射事件');
+    assert.equal(reflect.vfx.attack, 'beam-light', ultId + ' 應保留第六階光束');
+    assert.notEqual(reflect.vfx.attack, 'pillar-light', ultId + ' 不得重播復活光柱');
+    assert.notEqual(reflect.vfx.attack, 'pillar-earth', ultId + ' 不得借用敵人重生光柱');
+  }
+});
+
 test('【天地再造】：普通／菁英敵人機率重生，同一隻只會重生一次，BOSS 不重生', () => {
   const c = earthguardCtx([], 'worldRebirth', 1);
   c.Math.random = () => 0;                       // 必中

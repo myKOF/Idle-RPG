@@ -6849,7 +6849,8 @@ function sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel) {
   var eSel = (typeof THORN_FLOAT_MAP !== 'undefined' && THORN_FLOAT_MAP[floatSel]) || floatSel;
   var pctOfMax = lostPct * sgVal(fx, 'pct', lvs[5]) / 100;
   var killed = false;
-  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'light', vfxTier: 6 });
+  // 反射固定使用第六階的光束；超神選項的空欄會繼承第七階復活光柱，不能在每次受傷時重播。
+  sgEmitVfx('earthguard', victims, eSel, { fxKind: 'chain', variant: 'earth-reflect', elem: 'light', vfxTier: 6, vfxBase: true });
   for (var i = 0; i < victims.length; i++) {
     var e = victims[i];
     var amount = Math.max(1, Math.round((Number(e.maxHp) || 0) * pctOfMax / 100));
