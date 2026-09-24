@@ -483,8 +483,10 @@ var VFXRuntime = (function () {
     }
     function play(rt, presetId, params, mult) {
       if ((presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') && has(presetId + '-front')) {
-        var back = play(rtZone, presetId + '-back', params, mult);
-        var front = play(rtFx, presetId + '-front', params, mult);
+        // 前後石碑各自有透明度曲線；兩份必須跨在角色的畫面 Y 兩側，
+        // 否則共用同一個 sortY 時會依加入順序一起蓋到角色上。
+        var back = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
+        var front = play(rtFx, presetId + '-front', rockDepthParams(params, 1), mult);
         if (!back || !front) { stopRef(back); stopRef(front); return null; }
         return { parts: [back, front] };
       }
@@ -493,6 +495,10 @@ var VFXRuntime = (function () {
       if (handle === null || handle === undefined) { budgetDrops++; return null; }
       counters.played++;
       return { rt: rt, handle: handle, presetId: presetId };
+    }
+    function rockDepthParams(params, side) {
+      var actorY = params.depthY === undefined ? params.position.y : params.depthY;
+      return Object.assign({}, params, { depthY: actorY + side * 0.01 });
     }
     function stopRef(ref) {
       if (!ref) return;
@@ -506,7 +512,7 @@ var VFXRuntime = (function () {
     }
     /* setTransform 也要走同一條縮放，否則逐幀更新會把 play 時乘上的係數洗掉。 */
     function moveRef(ref, params, mult) {
-      if (ref.parts) { var alive = ref.parts.map(function(part) { return moveRef(part, params, mult); }); return alive.every(Boolean); }
+      if (ref.parts) { var alive = ref.parts.map(function(part, i) { return moveRef(part, rockDepthParams(params, i === 0 ? -1 : 1), mult); }); return alive.every(Boolean); }
       return ref.rt.setTransform(ref.handle, planeParams(ref.presetId, sized(params, mult)));
     }
 

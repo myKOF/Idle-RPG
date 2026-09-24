@@ -121,6 +121,8 @@ test('ROCKARMOR and EARTH-REVERSAL share object textures and cross actor depth w
  const spec={fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:p.id}};
  const seen=new Set();for(let frame=0;frame<45;frame++){point={x:300+frame,y:150};assert(adapter.tryPlay(spec));adapter.update(.11);
  const back=log.nodes.filter(n=>n.tag==='zone'),front=log.nodes.filter(n=>n.tag==='fx');assert.equal(back.length,20);assert.equal(front.length,18);for(let i=18;i<20;i++){const floor=back[i].transforms.at(-1);assert.equal(floor.x,point.x);assert(floor.alpha>0);assert.equal(back[i].spec.assetUrl.includes('light_03.png'),true);}
+ assert.ok(back.every(n=>n.transforms.at(-1).sortY<point.y),'後方石碑低於角色的排序值: '+JSON.stringify({point,sortY:back.map(n=>n.transforms.at(-1).sortY)}));
+ assert.ok(front.every(n=>n.transforms.at(-1).sortY>point.y),'前方石碑高於角色的排序值');
  for(let i=0;i<18;i++){const a=back[i].transforms.at(-1),b=front[i].transforms.at(-1);for(const key of ['x','y','scaleX','scaleY','rotation'])assert.equal(a[key],b[key]);const enter=Math.min(1,(frame+1)*.11/.3),opacity=enter*enter*(3-2*enter);assert(Math.abs(a.alpha+b.alpha-p.layers[i].alpha*opacity)<1e-6);}
  const t=front[0].transforms.at(-1);seen.add(t.alpha>.5);}
  assert.equal(seen.size,2);adapter.update(4);assert.equal(adapter.stats().grounds,0);assert.equal(adapter.stats().fx.activeEffects,0);assert.equal(adapter.stats().zone.activeEffects,0);adapter.destroy();
@@ -324,7 +326,7 @@ function recordingBackend(log, tag) {
     createNode(spec) { const n = { tag, spec, transforms: [] }; log.nodes.push(n); return n; },
     updateNode(node, t) {
       if (!t || t.visible === false) return;
-      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame });
+      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY });
       if (t.skewX) node.transforms[node.transforms.length - 1].skewX = t.skewX;
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
