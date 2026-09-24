@@ -17,11 +17,11 @@ play／setTransform 可用 `projectionRotation` 指定地面方向，優先於�
 | 欄位 | 關掉的是什麼 | 誰在做 |
 | --- | --- | --- |
 | `perspective: false` | 畫面透視（遠近）：整個戰鬥畫面的輕微透視網格（`PERSPECTIVE_TOP_SCALE`），越靠畫面上下緣壓得越厲害 | 顯示層。場景層由 `projectSceneTransform` 就地左乘 diag(w, w²) 抵銷；**整份 Preset 的 drawable 圖層都標記時**，Adapter 改把它播在不經過網格的 billboard 層（完全不變形，見 VFX_RUNTIME_ADAPTER §1.2.4） |
-| `followDirection: false` | 發射方向：貼地圖層會在地面平面上跟著技能方向轉（圓變成斜橢圓），也就是實例的 `projectionRotation` | Core。改用圖層自己的 `projection.rotation` |
+| `followDirection: false` | 發射方向：技能往哪打，整份特效就轉向哪裡（實例的 `rotation`）；貼地圖層另外會在地面平面上轉成斜橢圓（實例的 `projectionRotation`） | Core。這一層的**圖**維持作者畫的角度，**位置**照樣跟著方向走——例如光束尾端的星芒仍在尾端，但不會跟著歪 |
 
-`followDirection` 只能用在有 `projection` 的圖層（沒有地面投影就沒有方向可跟，填了會被驗證擋下，與 `projection.upright` 只給 particle 同一種處理）。圖層自己的 `projection`（貼地與壓扁比例）是作者資料，不受這兩個開關影響——關掉之後畫面上就是 Editor 預覽看到的樣子。
+兩個開關都不收在 `deformation.layers` 裡的圖層（閃電那種沿路徑彎折的）：它們的形狀整個由變形矩陣決定，開關對它們不會有任何作用，收下來再靜靜忽略就是 silent fallback。圖層自己的 `projection`（貼地與壓扁比例）是作者資料，不受這兩個開關影響——關掉之後畫面上就是 Editor 預覽看到的樣子。
 
-Editor 的 Inspector 各給一個勾選（預設勾選）；`跟著發射方向轉` 只在有填地面投影的圖層出現。編輯器沒有畫面透視、也不會給發射方向，所以兩格在預覽裡看不出差別，差別在遊戲畫面上。
+Editor 的 Inspector 各給一個勾選（預設勾選）；不適用的圖層（變形圖層）留在原位變灰並說明原因，不藏起來——看不到的選項沒辦法解釋自己為什麼不在。編輯器沒有畫面透視、也不會給發射方向，所以兩格在預覽裡看不出差別，差別在遊戲畫面上。
 
 ## 圖層持續循環與等速旋轉（2026-09-18）
 

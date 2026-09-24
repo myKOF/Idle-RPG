@@ -112,39 +112,57 @@ test('PLANE-5 正式素材投影可序列化，圖集補償／直立本體與 sc
    兩個都是「沒填＝受影響」，既有 preset 的行為一個位元都不能變。
    ============================================================ */
 
-test('CAM-1 followDirection: false 維持作者角度，沒標的照舊跟著發射方向轉',()=>{
-  const p={schemaVersion:1,id:'cam-dir',duration:10,loop:true,layers:[
-    {id:'turns',type:'sprite',assetId:'ring.png',projection:{x:1,y:.5}},
-    {id:'stays',type:'sprite',assetId:'ring.png',projection:{x:1,y:.5},followDirection:false}
+
+test('CAM-1 followDirection: false：圖維持作者角度，位置照樣跟著發射方向走',()=>{
+  /* 光束尾端的星芒（beam-light 的 sprite-4）要待在尾端，但不該跟著歪——2026-09-24 使用者回報。 */
+  const p={schemaVersion:1,id:'cam-beam',duration:10,loop:true,layers:[
+    {id:'beam',type:'sprite',assetId:'beam.png',position:{x:200,y:0}},
+    {id:'star',type:'sprite',assetId:'star.png',position:{x:200,y:0},followDirection:false}
   ]};
   const r=recorder(),rt=Core.createRuntime({backend:r.backend,resolver});
   rt.registerPreset(p);
-  rt.play(p.id,{position:{x:0,y:0},projectionRotation:Math.PI/3});
+  rt.play(p.id,{position:{x:0,y:0},rotation:Math.PI/2});   // 技能朝下打
   rt.update(.1);
-  const turns=r.nodes[0].t,stays=r.nodes[1].t;
-  /* 跟著轉的：橢圓長軸被轉離水平（矩陣第一行的角度不為 0） */
-  assert.ok(Math.abs(turns.rotation)>.5,'沒標的要跟著方向轉，實際 '+turns.rotation);
-  /* 不跟著轉的：仍是作者畫的水平橢圓，壓扁照舊（projection 是作者資料，不受這個開關影響） */
-  near(stays.rotation,0);near(stays.scaleX,1);near(stays.scaleY,.5);
+  const beam=r.nodes[0].t,star=r.nodes[1].t;
+  near(beam.rotation,Math.PI/2);                            // 沒標的：整個轉過去
+  near(star.rotation,0);                                    // 標了的：圖不轉
+  near(star.x,beam.x);near(star.y,beam.y);                  // 位置一樣跟著轉到 (0,200)
+  near(star.x,0);near(star.y,200);
 });
 
-test('CAM-2 粒子（含 upright 發射面）一樣吃 followDirection',()=>{
+test('CAM-2 貼地圖層：位置跟著方向轉，圖維持作者填的 projection.rotation',()=>{
+  const p={schemaVersion:1,id:'cam-ground',duration:10,loop:true,layers:[
+    {id:'turns',type:'sprite',assetId:'ring.png',position:{x:100,y:0},projection:{x:1,y:.5}},
+    {id:'stays',type:'sprite',assetId:'ring.png',position:{x:100,y:0},projection:{x:1,y:.5},followDirection:false}
+  ]};
+  const r=recorder(),rt=Core.createRuntime({backend:r.backend,resolver});
+  rt.registerPreset(p);
+  rt.play(p.id,{position:{x:0,y:0},projectionRotation:Math.PI/2});
+  rt.update(.1);
+  const turns=r.nodes[0].t,stays=r.nodes[1].t;
+  assert.ok(Math.abs(turns.rotation)>.5,'沒標的要跟著方向轉，實際 '+turns.rotation);
+  near(stays.rotation,0);near(stays.scaleX,1);near(stays.scaleY,.5);   // 壓扁照舊，只是不轉
+  near(stays.x,turns.x);near(stays.y,turns.y);                          // 位置一樣跟著轉
+  near(stays.x,0);near(stays.y,50);                                     // 轉 90° 再壓 0.5
+});
+
+test('CAM-3 粒子：圖不跟著方向轉，發射面位置照樣跟著轉',()=>{
   const layer=extra=>Object.assign({id:'p',type:'particle',assetId:'f.png',
     emission:{mode:'burst',count:1},position:{x:40,y:0},speed:[0,0],direction:0,spread:0,
-    lifetime:[3,3],startScale:[1,1],projection:{x:1,y:.5,rotation:0,upright:true}},extra);
+    lifetime:[3,3],startScale:[1,1],rotationStart:0,
+    projection:{x:1,y:.5,rotation:0,upright:true}},extra);
   const run=extra=>{
     const p={schemaVersion:1,id:'cam-particle',duration:3,loop:false,layers:[layer(extra)]};
     const r=recorder(),rt=Core.createRuntime({backend:r.backend,resolver});
-    rt.registerPreset(p);rt.play(p.id,{position:{x:0,y:0},projectionRotation:Math.PI/2});rt.update(.1);
-    return r.nodes[0].t;
+    rt.registerPreset(p);rt.play(p.id,{position:{x:0,y:0},rotation:Math.PI/2,projectionRotation:Math.PI/2});
+    rt.update(.1);return r.nodes[0].t;
   };
   const turned=run({}),kept=run({followDirection:false});
-  /* 發射面轉 90°：出生點從 +x 轉到 +y（再壓扁 0.5） */
-  near(turned.x,0);near(turned.y,20);
-  near(kept.x,40);near(kept.y,0);
+  near(turned.rotation,Math.PI/2);near(kept.rotation,0,'粒子的圖不跟著轉');
+  near(kept.x,turned.x);near(kept.y,turned.y);
 });
 
-test('CAM-3 旗標逐層傳給顯示層，共用的 transform 不把上一層的值留給下一層',()=>{
+test('CAM-4 旗標逐層傳給顯示層，共用的 transform 不把上一層的值留給下一層',()=>{
   const p={schemaVersion:1,id:'cam-flags',duration:10,loop:true,layers:[
     {id:'locked',type:'sprite',assetId:'a.png',perspective:false},
     {id:'normal',type:'sprite',assetId:'b.png'},
@@ -159,39 +177,61 @@ test('CAM-3 旗標逐層傳給顯示層，共用的 transform 不把上一層的
   assert.equal(r.nodes[1].t.followDirection,true);
 });
 
-test('CAM-4 schema：只收布林、followDirection 要有 projection、empty 不支援、序列化保留',()=>{
+test('CAM-5 schema：只收布林、empty 與變形圖層不支援、序列化保留、沒填的一個位元都不變',()=>{
   const one=extra=>({schemaVersion:1,id:'cam-schema',duration:1,layers:[
     Object.assign({id:'a',type:'sprite',assetId:'x.png'},extra)]});
   assert.equal(Core.validatePreset(one({perspective:false})).ok,true);
-  assert.equal(Core.validatePreset(one({projection:{x:1,y:.5},followDirection:false})).ok,true);
+  assert.equal(Core.validatePreset(one({followDirection:false})).ok,true,'不必有地面投影也能用');
   assert.match(Core.validatePreset(one({perspective:'no'})).errors.join(),/perspective 必須是布林值/);
-  assert.match(Core.validatePreset(one({followDirection:false})).errors.join(),
-    /followDirection 只能用在有 projection/);
+  assert.match(Core.validatePreset(one({followDirection:1})).errors.join(),/followDirection 必須是布林值/);
   assert.match(Core.validatePreset({schemaVersion:1,id:'cam-empty',duration:1,layers:[
     {id:'e',type:'empty',perspective:false},{id:'a',type:'sprite',assetId:'x.png',parent:'e'}]})
     .errors.join(),/不支援的欄位：perspective/);
-  /* 沒填的 preset 一個位元都不能變（既有 229 份都是這種） */
+  /* 變形圖層的形狀由變形矩陣決定，開關對它沒有作用——收下來靜靜忽略就是 silent fallback */
+  const bolt={schemaVersion:1,id:'cam-bolt',duration:1,
+    deformation:{axis:'x',start:0,end:100,amplitude:5,widthJitter:.05,mirror:false,layers:['a']},
+    layers:[{id:'a',type:'sprite',assetId:'x.png',followDirection:false}]};
+  assert.match(Core.validatePreset(bolt).errors.join(),/deformation 圖層不支援/);
   const plain=one({});assert.equal(JSON.parse(Core.serialisePreset(plain)).layers[0].perspective,undefined);
-  const marked=one({perspective:false,projection:{x:1,y:.5},followDirection:false});
+  const marked=one({perspective:false,followDirection:false});
   const back=JSON.parse(Core.serialisePreset(marked)).layers[0];
   assert.equal(back.perspective,false);assert.equal(back.followDirection,false);
 });
 
-test('CAM-5 編輯器：兩個勾選預設都勾著，「跟著發射方向轉」只出現在有地面投影的圖層',()=>{
+test('CAM-6 編輯器：兩個勾選預設都勾著，變形圖層留在原位但不能點',()=>{
   const src=fs.readFileSync(path.join(root,'tools/vfx/editor/editor.js'),'utf8');
   const fields=src.slice(src.indexOf('var COMMON_FIELDS'),src.indexOf('var VEC_DEFAULTS'));
   assert.match(fields,/key: 'perspective', label: '受畫面透視影響', kind: 'bool', default: true/);
   assert.match(fields,/key: 'followDirection', label: '跟著發射方向轉', kind: 'bool', default: true/);
-  assert.match(fields,/when: function \(l\) \{ return !!l\.projection; \}/);
-  /* fieldsOf 真的照 when 過濾，而且空物件仍以 Core 的清單為準（那兩個欄位 Core 不收） */
+  assert.equal((fields.match(/enabledWhen: cameraFlagAllowed, disabledHint: DEFORMED_LAYER_HINT/g)||[]).length,2,
+    '兩個開關都只有變形圖層不給點，而且都要說明原因');
+  /* 欄位不因為「對這一層沒意義」而消失：使用者在看不到某一格時只能猜是不是壞了 */
   const at=src.indexOf('function fieldsOf(');
   const body=src.slice(at,src.indexOf('\n  }',at)+4);
   const fieldsOf=new Function('VFXCore','WATER_TORNADO_HIDDEN_FIELDS',body+'\nreturn fieldsOf;')(Core,[]);
-  const list=[{key:'perspective'},{key:'followDirection',when:l=>!!l.projection},{key:'alpha'}];
-  const keys=layer=>fieldsOf(layer,list).map(f=>f.key);
-  assert.deepEqual(keys({type:'sprite'}),['perspective','alpha']);
-  assert.deepEqual(keys({type:'sprite',projection:{x:1,y:.5}}),['perspective','followDirection','alpha']);
-  assert.deepEqual(keys({type:'empty'}),['alpha'],'空物件只留 Core 收的欄位');
-  /* 勾選寫入走既有的 bool 分支（寫 true／false 到每一個選取的圖層） */
-  assert.match(src,/control\.onchange = function \(\) \{ MX\.writeAll\(targets, f\.key, control\.checked\);/);
+  const list=[{key:'perspective'},{key:'followDirection'},{key:'alpha'}];
+  assert.deepEqual(fieldsOf({type:'sprite'},list).map(f=>f.key),['perspective','followDirection','alpha']);
+  assert.deepEqual(fieldsOf({type:'empty'},list).map(f=>f.key),['alpha'],'空物件只留 Core 收的欄位');
+  /* 變形圖層的判斷看的是 preset.deformation.layers（與 Core 同一份資料） */
+  const at2=src.indexOf('function cameraFlagAllowed(');
+  const allowedBody=src.slice(at2,src.indexOf('\n  }',at2)+4);
+  assert.match(allowedBody,/state\.preset && state\.preset\.deformation/);
+  assert.match(src,/if \(f\.enabledWhen && !targets\.every\(f\.enabledWhen\)\) \{\s*control\.disabled = true;/);
+});
+
+test('CAM-7 掛在父物件底下的子圖層一樣：圖不轉、位置跟著轉',()=>{
+  /* 子物件走的是矩陣分解那條路（updateChildSpriteLayer），與根圖層不是同一段程式 */
+  const p={schemaVersion:1,id:'cam-child',duration:10,loop:true,layers:[
+    {id:'root',type:'empty',position:{x:0,y:0}},
+    {id:'kid',type:'sprite',assetId:'a.png',parent:'root',position:{x:100,y:0}},
+    {id:'kid2',type:'sprite',assetId:'b.png',parent:'root',position:{x:100,y:0},followDirection:false}
+  ]};
+  const r=recorder(),rt=Core.createRuntime({backend:r.backend,resolver});
+  rt.registerPreset(p);
+  rt.play(p.id,{position:{x:0,y:0},rotation:Math.PI/2});
+  rt.update(.1);
+  const kid=r.nodes[0].t,kid2=r.nodes[1].t;
+  near(kid.rotation,Math.PI/2);
+  near(kid2.rotation,0);
+  near(kid2.x,kid.x);near(kid2.y,kid.y);near(kid2.x,0);near(kid2.y,100);
 });
