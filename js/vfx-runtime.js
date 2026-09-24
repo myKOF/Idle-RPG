@@ -353,6 +353,9 @@ var VFXRuntime = (function () {
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     var presetDefinitions = Object.create(null);
+    function isRockOrbitPreset(id) {
+      return id === 'aura-earth-reversal' || /^aura-rockarmor-stone(?:-08|-09|-10)?$/.test(id);
+    }
     function registerPresets(list) {
       (list || []).forEach(function(p) { if(p && p.id) presetDefinitions[p.id]=p; });
       list = (list || []).map(function(p) {
@@ -401,13 +404,13 @@ var VFXRuntime = (function () {
           trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) : NOMINAL_BEAM;
         }
         // Two synchronized passes share textures; each stone switches sides at the orbit midline.
-        if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
+        if (isRockOrbitPreset(p.id) && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
           ['back','front'].forEach(function(half) {
             var part=JSON.parse(JSON.stringify(p));part.id+='-'+half;
-            if(half==='front')part.layers=part.layers.filter(function(l){return l.id!=='earth-shadow' && l.id!=='amber-underlight';});
+            if(half==='front')part.layers=part.layers.filter(function(l){return /^stone-\d+-/.test(l.id);});
             part.layers.forEach(function(l) {
               var curve=l.offsetYOverLife;
-              if(l.id==='earth-shadow' || l.id==='amber-underlight')return;
+              if(!/^stone-\d+-/.test(l.id))return;
               if(!curve || curve.length<2){l.alpha=half==='front'?l.alpha:0;return;}
               var points=[0,1];
               for(var i=1;i<curve.length;i++){
@@ -420,7 +423,7 @@ var VFXRuntime = (function () {
             });registerPresets([part]);
           });
         }
-        if ((p.id === 'aura-rockarmor-stone' || p.id === 'aura-earth-reversal') && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
+        if (isRockOrbitPreset(p.id) && p.layers.some(function(l) { return l.id === 'orbiting-stone-plates-front'; })) {
           ['back', 'front'].forEach(function(half) {
             var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
             part.layers = part.layers.filter(function(l) { return (l.id === 'orbiting-stone-plates-front') === (half === 'front'); });
@@ -482,7 +485,7 @@ var VFXRuntime = (function () {
       return Object.assign({}, params, { projectionRotation: params.rotation, rotation: 0 });
     }
     function play(rt, presetId, params, mult) {
-      if ((presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') && has(presetId + '-front')) {
+      if (isRockOrbitPreset(presetId) && has(presetId + '-front')) {
         // 前後石碑各自有透明度曲線；兩份必須跨在角色的畫面 Y 兩側，
         // 否則共用同一個 sortY 時會依加入順序一起蓋到角色上。
         var back = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
@@ -817,7 +820,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, (g.presetId === 'aura-rockarmor-stone' || g.presetId === 'aura-earth-reversal' || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
+        var fallbackSize = sizeOf(g.presetId, (isRockOrbitPreset(g.presetId) || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -998,7 +1001,7 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
-        bornAt: clock, rise: (presetId === 'aura-rockarmor-stone' || presetId === 'aura-earth-reversal') || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
+        bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         devour: spec.variant === 'dragon-devour',
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,

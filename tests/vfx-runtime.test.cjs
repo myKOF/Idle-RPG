@@ -137,6 +137,22 @@ test('ROCKARMOR edited geometry also drives blue evolution',()=>{
  const a=run(normal.id),b=run(blue.id);assert.equal(a.length,b.length);
  a.forEach((n,i)=>{assert.equal(n.tag,b[i].tag);for(const k of ['x','y','scaleX','scaleY','rotation','alpha'])assert.equal(n.t[k],b[i].t[k]);});assert.equal(JSON.stringify(blue),base);
 });
+test('ROCKARMOR tiers 8–10 split each orbiting stone across the actor depth',()=>{
+ for(const suffix of ['08','09','10']){
+  const id='aura-rockarmor-stone-'+suffix;
+  const preset=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+id+'.json'),'utf8'));
+  const point={x:300,y:150};
+  const {adapter,log}=makeAdapter([preset],{ctx:{footOf:()=>point,posOf:()=>point,playerPos:()=>point}});
+  assert.equal(adapter.tryPlay({fxKind:'aura',variant:'rock-armor',targets:['pv-float'],dur:1,vfx:{ground:id}}),true,id);
+  adapter.update(.11);
+  const back=log.nodes.filter(n=>n.tag==='zone'),front=log.nodes.filter(n=>n.tag==='fx');
+  assert.equal(back.length,preset.layers.length,id);
+  assert.equal(front.length,preset.layers.filter(l=>/^stone-\d+-/.test(l.id)).length,id);
+  assert.ok(back.every(n=>n.transforms.at(-1).sortY<point.y),id+' 後方');
+  assert.ok(front.every(n=>n.transforms.at(-1).sortY>point.y),id+' 前方');
+  adapter.destroy();
+ }
+});
 
 test('TORNADO 持續場域本體定位縮放並跨節拍保持同一實例', () => {
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/fire-tornado-inferno.json'),'utf8'));
