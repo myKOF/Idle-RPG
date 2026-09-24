@@ -334,6 +334,8 @@ var VFXRuntime = (function () {
 
     // 飛行物使用螢幕空中層；編輯器／無專用後端時共用原 fx Runtime。
     var rtAir = o.airBackend ? Core.createRuntime({backend:o.airBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtFx;
+    var rtBillboard = o.billboardBackend
+      ? Core.createRuntime({backend:o.billboardBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtAir;
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var presetSizes = Object.create(null);
     var planePresets = Object.create(null);
@@ -396,6 +398,7 @@ var VFXRuntime = (function () {
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
         if (rtAir !== rtFx) rtAir.registerPreset(p);
+        if (rtBillboard !== rtAir && p.id === 'pillar-earth') rtBillboard.registerPreset(p);
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
@@ -1350,7 +1353,9 @@ var VFXRuntime = (function () {
           } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
-          else ok = playOnTargets(rtFx, presetId, spec, 1, hitDelayFor(spec), true);
+          // 天地再造的直立光柱只投影落點並等比縮放，避免整張場景的 FOV 網格把柱身拉歪。
+          else ok = playOnTargets(presetId === 'pillar-earth' && spec.variant === 'pillar' ? rtBillboard : rtFx,
+            presetId, spec, 1, hitDelayFor(spec), true);
           break;
         default:
           ok = false;
@@ -1550,6 +1555,7 @@ var VFXRuntime = (function () {
 
       rtFx.update(step);
       if (rtAir !== rtFx) rtAir.update(step);
+      if (rtBillboard !== rtAir) rtBillboard.update(step);
       rtZone.update(step);
     }
 
@@ -1564,6 +1570,7 @@ var VFXRuntime = (function () {
       Object.keys(soulOrbits).forEach(function(id){stopSoul(id,false);});
       if (rtFx.clearTails) rtFx.clearTails();
       if (rtAir !== rtFx && rtAir.clearTails) rtAir.clearTails();
+      if (rtBillboard !== rtAir && rtBillboard.clearTails) rtBillboard.clearTails();
       projectiles.filter(function(p){return p.soulId;}).forEach(function(p){stopSoul(p.soulId);});
       Object.keys(orbits).forEach(stopOrbit);
       Object.keys(grounds).forEach(function (k) {
@@ -1584,6 +1591,7 @@ var VFXRuntime = (function () {
       auras = Object.create(null);
       rtFx.stopAll();
       if (rtAir !== rtFx) rtAir.stopAll();
+      if (rtBillboard !== rtAir) rtBillboard.stopAll();
       rtZone.stopAll();
     }
 
@@ -1591,6 +1599,7 @@ var VFXRuntime = (function () {
       clear();
       rtFx.destroy();
       if (rtAir !== rtFx) rtAir.destroy();
+      if (rtBillboard !== rtAir) rtBillboard.destroy();
       rtZone.destroy();
     }
 
@@ -1614,7 +1623,7 @@ var VFXRuntime = (function () {
           pending: pending.length,
           played: counters.played, skipped: counters.skipped, missing: counters.missing,
           dropped: counters.dropped,
-          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats()
+          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats()
         };
       }
     };
@@ -1659,7 +1668,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260923-firehunt-pairs';
+  var DATA_VERSION = '20260924-world-rebirth-purple-pillar';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -1690,6 +1699,9 @@ var VFXRuntime = (function () {
           airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true,
             depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
             projectTransform:opts.projectAirTransform}) : null,
+          billboardBackend: opts.billboardContainer ? VFXPixiBackend.createBackend({container:opts.billboardContainer, depthSort:true,
+            depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
+            projectTransform:opts.projectBillboardTransform}) : null,
           ctx: opts.ctx,
           groundScale: opts.groundScale
         });

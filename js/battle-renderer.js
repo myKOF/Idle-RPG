@@ -6310,6 +6310,8 @@ var BattleRenderer = (function () {
     airFx.sortableChildren = true;
     var presetAir = new PIXI.Container();
     airFx.addChild(presetAir);
+    var presetBillboard = new PIXI.Container();
+    airFx.addChild(presetBillboard);
     /* 空中物保持螢幕 billboard；後方空中物和前方空中物之間補畫角色本體。
        只補本體，不複製影子或 HUD；前景仍由前方空中層正常遮住角色。 */
     var airPlayer = new PIXI.Sprite(PIXI.Texture.EMPTY);
@@ -6392,7 +6394,7 @@ var BattleRenderer = (function () {
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
       presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
-      airFx: airFx, presetAir: presetAir,
+      airFx: airFx, presetAir: presetAir, presetBillboard: presetBillboard,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay
@@ -6558,6 +6560,18 @@ var BattleRenderer = (function () {
     var out = Object.assign({}, t, {x:p.x,y:p.y,scaleX:t.scaleX*p.scale,scaleY:t.scaleY*p.scale});
     if (t.width !== undefined) out.width = t.width*p.scale;
     if (t.height !== undefined) out.height = t.height*p.scale;
+    return out;
+  }
+  // 直立光柱是整張 billboard：以敵人腳點決定遠近倍率，柱頂不再各自套一次透視。
+  function projectBillboardTransform(t) {
+    var anchorY = isFinite(t.sortY) ? Number(t.sortY) : (t.y || 0);
+    var p = airScreenPose(t.x || 0, anchorY);
+    var out = Object.assign({}, t, {
+      x: p.x, y: p.y + ((t.y || 0) - anchorY) * p.scale,
+      scaleX: t.scaleX * p.scale, scaleY: t.scaleY * p.scale
+    });
+    if (t.width !== undefined) out.width = t.width * p.scale;
+    if (t.height !== undefined) out.height = t.height * p.scale;
     return out;
   }
   var legacyAirNodes = new Map();
@@ -6785,9 +6799,11 @@ var BattleRenderer = (function () {
        ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
     VFXRuntime.boot({
       airContainer: S.layers.presetAir,
+      billboardContainer: S.layers.presetBillboard,
       airBackContainer: S.layers.airBack,
       airDepthSplitY: function () { return S.player && S.player.root ? S.player.root.y : -Infinity; },
       projectAirTransform: projectAirTransform,
+      projectBillboardTransform: projectBillboardTransform,
       fxContainer: S.layers.presetFx,
       fxDepthContainer: S.layers.entity,
       zoneContainer: S.layers.presetZone,

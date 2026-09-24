@@ -103,7 +103,7 @@ def('bolt-sky-purple', 'bolt', '紫雷（雷紋刻印／落雷術）：同 bolt-
 def('bolt-chain-lightning', 'bolt', '連鎖雷鏈段：沿 +X 長 200px 的水平金黃電弧（spark 素材橫放 2～3 段疊接、寬 7→2.5px）+ #ffd23f 外暈 + 白核心，0.32s 閃爍後消失；Runtime 以 scaleX = 兩點距離/200 拉長並旋轉對準。', { nominal: 'L 200px', dur: 0.32 });
 def('bolt-curtain-lightning', 'bolt', '雷幕電柱：從 (0,-450) 劈到原點的藍白電柱（#7dd3fc 主體、白核心、#2563eb 外暈），loop 且每 0.07s 重抖一次（用多層短壽命 spark 粒子 rate 發射模擬閃爍）；著地點白色小圓 + 藍色暈。', { nominal: 'H 450px', dur: 0.4, loop: true });
 def('pillar-light', 'bolt', '聖光柱：寬 40px 的光柱從 (0,-400) 落到原點（0.8s：前 22% 由上往下伸展、70% 後淡出），亮白 #fffef4 核心 + 金黃 #ffe47a 邊緣 + 著地閃光 + 5 顆金塵上浮。', { nominal: 'H 400px', dur: 0.9 });
-def('pillar-earth', 'bolt', '大地再造光柱：同 pillar-light 但為土黃 #c48a55 / 棕 #ad7444，塵土向外散開。', { nominal: 'H 400px', dur: 0.9 });
+def('pillar-earth', 'bolt', '天地再造光柱：以 pillar-light 的主光束為基礎，紫色直立光束與落地光環，尺寸縮為玩家復活光柱的一半；遊戲中只投影落點、不受 FOV 形變。', { nominal: 'H 200px', dur: 0.9 });
 def('beam-light', 'bolt', '聖光光束：沿 +X 長 200px 的白色 #fffef4 細光束（寬 10→5px）+ 金黃 #ffe47a 外暈，0.45s 內 α 0→1→0；Runtime 以 scaleX 拉到目標。', { nominal: 'L 200px', dur: 0.45 });
 def('beam-ice', 'bolt', '寒冰槍光束：沿 +X 長 200px 的冰藍 #4da6ff 光束（寬 8px）帶白色 #f2fbff 斜紋（uvScroll 或 streak 條紋）+ 淡藍 #79d8ff 外暈，0.45s。', { nominal: 'L 200px', dur: 0.45 });
 

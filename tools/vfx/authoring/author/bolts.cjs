@@ -188,12 +188,19 @@ function pillar(o) {
 /* ---------- pillar-light：聖光柱 ---------- */
 P['pillar-light'] = () => ({ id: 'pillar-light', duration: 0.9, layers: pillar({ core: '#fffef4', edge: '#ffe47a' }) });
 
-/* ---------- pillar-earth：大地再造光柱（塵土向外散開） ---------- */
+/* ---------- pillar-earth：天地再造光柱（玩家復活光柱的紫色半尺寸版本） ---------- */
 P['pillar-earth'] = () => ({
   id: 'pillar-earth', duration: 0.9,
-  layers: pillar({
-    core: '#c48a55', edge: '#ad7444',
-    motes: { asset: A.smokeT, blend: 'normal', burst: 7, direction: 0, spread: 360, speed: [50, 110], gravity: { x: 0, y: 60 }, startPx: [10, 18], alphaOverLife: [[0, 0], [0.2, 0.7], [1, 0]] }
+  layers: pillar({ core: '#d8b4fe', edge: '#a855f7', motes: { tint: '#c084fc' } }).map(l => {
+    if (l.id === 'glow') l.tint = '#9333ea';
+    if (l.id === 'land') l.tint = '#c084fc';
+    if (l.position) { l.position.x *= 0.5; l.position.y *= 0.5; }
+    if (l.scale) { l.scale.x *= 0.5; l.scale.y *= 0.5; }
+    if (l.spawn && l.spawn.radius) l.spawn.radius *= 0.5;
+    if (Array.isArray(l.speed)) l.speed = l.speed.map(v => v * 0.5);
+    if (l.gravity) { l.gravity.x *= 0.5; l.gravity.y *= 0.5; }
+    if (Array.isArray(l.startScale)) l.startScale = l.startScale.map(v => v * 0.5);
+    return l;
   })
 });
 
