@@ -7854,3 +7854,10 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex；Done。超重力場／超重岩之術對敵人作用時，敵方事件原本繼承岩甲術的玩家專用 `ground` 石碑環，造成敵人身邊也出現石碑。敵方事件現只帶該超神的爆發與受擊角色；玩家岩甲石碑與領域效果不變。
 - 修改 `js/skills2.js`、主頁快取、回歸測試及本紀錄；預檢發現 Claude 工作區的 `js/skills2.js` 火狩段與 `index.html` 快取行有未提交修改，已告知並獲使用者同意在 Codex 工作區修正。未碰 Claude 工作區或本工作區既有未提交素材。
 - 專項回歸兩種超神通過、build 400 檔通過。整份 `tests/skill2-firehunt-rock-legendary.test.cjs` 29 項中 26 通過，火神降臨 2 項／金剛不壞 1 項為本次修改範圍外失敗。素材庫無變更；交接見 `docs/skill-tests/20260923-rock-gravity-vfx.md`。Commit 見本紀錄所在提交；未合併／推送。
+
+## Claude｜每層的鏡頭變形開關（VFX-CAMERA-FLAGS-20260924）
+
+- Owner：Claude；Done。使用者要求 Inspector 加一個勾選，決定該圖層要不要受 FOV 與方向性旋轉扭曲影響；討論後分成兩個欄位，因為兩者來源不同（畫面透視來自渲染器的梯形網格、跟位置有關；方向旋轉來自技能事件、跟發射方向有關），一個開關表達不了「要跟方向轉但不要被 FOV 壓」。`perspective: false` 不吃畫面透視，`followDirection: false` 讓貼地圖層維持作者填的角度；兩個都是沒填＝受影響，既有 preset 一個位元都沒變。圖層自己的 `projection`（貼地與壓扁比例）仍是作者資料，不受這兩個開關影響。
+- 顯示層兩條路：只有幾層標記時留在場景層，由 battle-renderer 的 `projectSceneTransform` 就地左乘 diag(w, w²) 抵銷（前後遮擋不變，代價是單應變換在圖層範圍內不完全均勻、邊緣有輕微殘留）；整份 preset 都標記時 Adapter 改走 billboard 層（完全不變形）。後者原本是 Codex 寫死 `presetId === 'pillar-earth' && spec.variant === 'pillar'`，改成看 preset 資料（`billboardPresets`），`vfx/presets/pillar-earth.json` 的 8 層補上 `perspective: false`，行為與改動前相同；之後幫這類特效加圖層時新的那層也要標，否則整份會掉回場景層。
+- 修改 `js/vfx-core.js`（欄位、驗證、旗標傳給顯示層）、`js/vfx-runtime.js`、`js/battle-renderer.js`、`tools/vfx/editor/editor.js`（兩個勾選，「跟著發射方向轉」只在有地面投影的圖層出現）、`index.html` 與編輯器頁面的快取版號、`DATA_VERSION`、`vfx/presets/pillar-earth.json`、Schema 與 RUNTIME_ADAPTER 文件、三支測試。衝突預檢擋下 `js/vfx-runtime.js`（ai/codex 6 筆）與 `js/battle-renderer.js`（2 筆），經使用者同意先合併 ai/codex 再做。
+- 驗證：新增 CAM-1～5（Core 與編輯器接線）、PERSP-6～8（補償數學、原樣回傳、接線）與 billboard 路由改看資料一條；14 個突變全部被抓到。VFX／戰鬥／技能相關 1564 項中 82 項失敗，與合併後的基線逐項相同（零新增失敗）。編輯器實機確認：pillar-earth 開起來每層都是未勾選且不算未存檔、有地面投影的圖層才出現第二個勾選、點擊寫入資料並進復原紀錄。未合併／推送。

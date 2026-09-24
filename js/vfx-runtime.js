@@ -337,6 +337,12 @@ var VFXRuntime = (function () {
     var rtBillboard = o.billboardBackend
       ? Core.createRuntime({backend:o.billboardBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtAir;
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
+    var billboardPresets = Object.create(null);   // presetId → 整份都標了 perspective: false
+    /* 空物件不畫東西（它只是父物件），所以不列入判斷；一層可畫的都沒有時不算。 */
+    function allBillboard(p) {
+      var drawable = (p.layers || []).filter(function (l) { return l && l.type !== 'empty'; });
+      return drawable.length > 0 && drawable.every(function (l) { return l.perspective === false; });
+    }
     var presetSizes = Object.create(null);
     var planePresets = Object.create(null);
     var planeAngles = Object.create(null);
@@ -398,7 +404,11 @@ var VFXRuntime = (function () {
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
         if (rtAir !== rtFx) rtAir.registerPreset(p);
-        if (rtBillboard !== rtAir && p.id === 'pillar-earth') rtBillboard.registerPreset(p);
+        /* 整份都標了「不受畫面透視影響」的 preset 改走 billboard 層：只投影落點並等比縮放，
+           完全不經過場景的透視網格（比場景層的就地補償更徹底，代價是繪製順序改用空中層那一套）。
+           以前這裡寫死 pillar-earth，改成看圖層資料（2026-09-24 使用者要求的每層勾選）。 */
+        billboardPresets[p.id] = allBillboard(p);
+        if (rtBillboard !== rtAir && billboardPresets[p.id]) rtBillboard.registerPreset(p);
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
@@ -1357,8 +1367,9 @@ var VFXRuntime = (function () {
           } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
-          // 天地再造的直立光柱只投影落點並等比縮放，避免整張場景的 FOV 網格把柱身拉歪。
-          else ok = playOnTargets(presetId === 'pillar-earth' && spec.variant === 'pillar' ? rtBillboard : rtFx,
+          /* 整份都標了 perspective: false 的（例如天地再造的直立光柱）只投影落點並等比縮放，
+             避免整張場景的 FOV 網格把柱身拉歪。判斷來自 preset 資料，不是寫死的名字。 */
+          else ok = playOnTargets(billboardPresets[presetId] ? rtBillboard : rtFx,
             presetId, spec, 1, hitDelayFor(spec), true);
           break;
         default:
@@ -1673,7 +1684,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260924-rebirth-pillar-ground-center';
+  var DATA_VERSION = '20260924-camera-flags';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -1698,9 +1709,13 @@ var VFXRuntime = (function () {
         var resolver = VFXCore.createIndexResolver(index, index.baseUrl || 'images/vfx/assets');
         var adapter = create({
           resolver: resolver,
-          fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true, depthParent: opts.fxDepthContainer }),
+          /* projectSceneTransform：場景層裡標了 perspective: false 的圖層要就地抵銷畫面透視
+             （見 battle-renderer）。沒給就是不補償——編輯器與測試本來就沒有畫面透視。 */
+          fxBackend: VFXPixiBackend.createBackend({ container: opts.fxContainer, depthSort: true,
+            depthParent: opts.fxDepthContainer, projectTransform: opts.projectSceneTransform }),
           // 場域與狀態特效按畫面 Y 與角色交錯；固定留在 presetZone 會全部蓋到角色後面。
-          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true, depthParent: opts.fxDepthContainer }),
+          zoneBackend: VFXPixiBackend.createBackend({ container: opts.zoneContainer, depthSort: true,
+            depthParent: opts.fxDepthContainer, projectTransform: opts.projectSceneTransform }),
           airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true,
             depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
             projectTransform:opts.projectAirTransform}) : null,

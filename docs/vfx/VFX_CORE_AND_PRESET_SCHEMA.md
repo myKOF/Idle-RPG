@@ -10,6 +10,19 @@ play／setTransform 可用 `projectionRotation` 指定地面方向，優先於�
 
 已壓扁的舊圖層先還原製作比例；六芒星圖集另補償內建 0.65 壓縮，避免二次壓扁。完整清單見 [GROUND_PROJECTION_AUDIT.md](GROUND_PROJECTION_AUDIT.md)。
 
+## 鏡頭變形的兩個開關（2026-09-24）
+
+遊戲對每一層會做兩種鏡頭變形，來源不同，所以各給一個可選的布林欄位，drawable 圖層適用（empty 不支援）。兩者都是**沒填＝受影響**，既有 Preset 的行為不變，schemaVersion 仍為 1。
+
+| 欄位 | 關掉的是什麼 | 誰在做 |
+| --- | --- | --- |
+| `perspective: false` | 畫面透視（遠近）：整個戰鬥畫面的輕微透視網格（`PERSPECTIVE_TOP_SCALE`），越靠畫面上下緣壓得越厲害 | 顯示層。場景層由 `projectSceneTransform` 就地左乘 diag(w, w²) 抵銷；**整份 Preset 的 drawable 圖層都標記時**，Adapter 改把它播在不經過網格的 billboard 層（完全不變形，見 VFX_RUNTIME_ADAPTER §1.2.4） |
+| `followDirection: false` | 發射方向：貼地圖層會在地面平面上跟著技能方向轉（圓變成斜橢圓），也就是實例的 `projectionRotation` | Core。改用圖層自己的 `projection.rotation` |
+
+`followDirection` 只能用在有 `projection` 的圖層（沒有地面投影就沒有方向可跟，填了會被驗證擋下，與 `projection.upright` 只給 particle 同一種處理）。圖層自己的 `projection`（貼地與壓扁比例）是作者資料，不受這兩個開關影響——關掉之後畫面上就是 Editor 預覽看到的樣子。
+
+Editor 的 Inspector 各給一個勾選（預設勾選）；`跟著發射方向轉` 只在有填地面投影的圖層出現。編輯器沒有畫面透視、也不會給發射方向，所以兩格在預覽裡看不出差別，差別在遊戲畫面上。
+
 ## 圖層持續循環與等速旋轉（2026-09-18）
 
 `sprite`、`procedural`、`empty` 圖層新增可選 `loop`（預設 false）及 `rotationSpeed`（有限數，弧度／秒，預設0）。Editor在圖層提供「持續循環」，Rotation區塊提供度／秒滑桿及數字輸入；負值逆時針，正值順時針。既有particle的rotationSpeed仍是每顆粒子的自轉速度與範圍值。

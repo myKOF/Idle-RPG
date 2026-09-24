@@ -149,6 +149,23 @@ pillar-light 的 ring {0.18, 0.066}），往上（−y）是高度。以前完�
 **新增事件欄位時**：如果它是世界座標的點、方向或沿方向的長度，要加進 `screenSpaceSpec`，
 否則那個特效在畫面上的縱向位置或角度會差一截。由 `tests/vfx-runtime-screen-space.test.cjs` 釘住換算規則。
 
+### 每層的鏡頭開關（2026-09-24）
+
+畫面透視（`PERSPECTIVE_TOP_SCALE` 的梯形網格）是**後製**：整個場景畫進離屏貼圖再變形貼回，
+所以場景裡的東西沒辦法各自退出。圖層標了 `perspective: false`（Schema §鏡頭變形的兩個開關）時分兩條路：
+
+| 情況 | 走法 | 為什麼 |
+| --- | --- | --- |
+| 整份 Preset 的 drawable 圖層都標了 | Adapter 播在 `rtBillboard`（`presetBillboard` 容器，在場景網格之外）：只投影落點、等比縮放 | 完全不變形。繪製順序改用空中層那一套（與玩家腳點比前後），所以只適合整份都要維持原樣的特效 |
+| 只有幾層標了 | 留在場景層，由 `projectSceneTransform`（battle-renderer）就地左乘 diag(w, w²) 抵銷 | 前後遮擋不變。單應變換在圖層範圍內不完全均勻，離畫面中心越遠、圖越大，殘留的輕微傾斜越明顯 |
+
+判斷來自 Preset 資料（`billboardPresets`），不是寫死的 preset 名字——2026-09-24 之前天地再造的光柱
+是靠 `presetId === 'pillar-earth'` 走 billboard 層，現在那份 Preset 的每一層都標了 `perspective: false`，
+行為相同但下一份特效不必再改程式。**幫這類特效加新圖層時，新的那層也要標**，否則整份會掉回場景層。
+
+飛行物那條路（`rtAir`）本來就只投影錨點、等比縮放，不經過網格，所以 `perspective` 在那裡沒有作用；
+`followDirection` 則與走哪一層無關，一律由 Core 處理。
+
 **已知的差距**：Preset 的地面光圈手繪壓扁約 0.4，比地板的 0.5 略扁；原本就畫成正圓的地面特效仍是正圓。
 要完全一致得逐份調整 Preset（內容工作）。
 

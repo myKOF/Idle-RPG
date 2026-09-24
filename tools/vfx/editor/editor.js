@@ -812,7 +812,22 @@
        與 uvScroll 疊起來就是「會播動畫的平鋪紋理」，是有意義的組合。
          { columns, rows, count?, mode?('life'|'fps'), fps?, randomStart?, loop? }
        素材庫目前一張圖集都沒有，所以正式 preset 還沒有人用（Material Gap）。 */
-    json('sheet', 'sheet')
+    json('sheet', 'sheet'),
+    /* 鏡頭造成的兩種變形各一個勾選（2026-09-24 使用者要求）。兩者來源不同，分開才關得掉對的那一個：
+         受畫面透視影響  遠近：整個戰鬥畫面的輕微透視網格，越靠畫面上下緣壓得越厲害。
+                         大部分特效都該維持勾選——那是遠近關係，關掉會讓它跟旁邊的角色不同一套比例。
+         跟著發射方向轉  方向：貼地圖層會在地面平面上跟著技能方向轉（圓變成斜橢圓）。
+                         只對有填「地面投影」的圖層有意義，所以只在那種圖層上出現（Core 也只收那種）。
+       編輯器沒有畫面透視、也不會給發射方向，所以這兩格在預覽裡看不出差別，差別在遊戲畫面上。 */
+    { key: 'perspective', label: '受畫面透視影響', kind: 'bool', default: true,
+      hint: '勾選（預設）：跟著戰鬥畫面的輕微透視一起縮放（遠近關係，大部分特效都該勾著）。\n' +
+        '取消：這一層照原尺寸畫。整份特效每一層都取消的話，遊戲會改用完全不變形的畫法。\n' +
+        '（預覽區看不出差別，差別在遊戲畫面上。）' },
+    { key: 'followDirection', label: '跟著發射方向轉', kind: 'bool', default: true,
+      when: function (l) { return !!l.projection; },
+      hint: '勾選（預設）：貼地的圖形會跟著技能的發射方向在地面上轉，圓因此變成斜橢圓。\n' +
+        '取消：維持「地面投影」裡填的角度，不管技能往哪個方向打。\n' +
+        '（預覽區看不出差別，差別在遊戲畫面上。）' }
   ];
 
   /* 與 vfx-core.js layerDefaults() 對齊的向量預設值 */
@@ -3184,13 +3199,16 @@
   var WATER_TORNADO_HIDDEN_FIELDS = ['sheet', 'size', 'scrollSpeed', 'effect'];
 
   function fieldsOf(layer, list) {
+    /* 有條件的欄位：例如「跟著發射方向轉」只對有地面投影的圖層有意義，Core 也只收那種圖層。
+       顯示出來只會讓人填了之後存不了檔——與下面空物件那一段同一個理由。 */
+    var out = list.filter(function (f) { return !f.when || f.when(layer); });
     /* 空物件：Core 會把 assetId、blendMode、anchor、zIndex、sheet 當成不支援的欄位擋下，
        顯示出來只會讓人填了之後存不了檔。清單以 Core 為準，不另抄一份。 */
     if (layer.type === 'empty') {
-      return list.filter(function (f) { return VFXCore.EMPTY_LAYER_FIELDS.indexOf(f.key) >= 0; });
+      return out.filter(function (f) { return VFXCore.EMPTY_LAYER_FIELDS.indexOf(f.key) >= 0; });
     }
-    if (layer.effect !== 'waterTornado') return list;
-    return list.filter(function (f) { return WATER_TORNADO_HIDDEN_FIELDS.indexOf(f.key) < 0; });
+    if (layer.effect !== 'waterTornado') return out;
+    return out.filter(function (f) { return WATER_TORNADO_HIDDEN_FIELDS.indexOf(f.key) < 0; });
   }
 
   /* 要顯示哪些欄位。單選就是該型別的完整清單；多選時取交集，另外拿掉兩格：
@@ -3343,7 +3361,11 @@
         control.checked = !flag.mixed && flag.value;
         /* 各層不同：顯示半勾。點一下就把全部設成同一個值。 */
         control.indeterminate = flag.mixed;
-        if (flag.mixed) control.title = '選取的圖層有的開、有的關。點一下會把全部設成同一個值。';
+        if (f.hint) control.title = f.hint;
+        if (flag.mixed) {
+          control.title = (f.hint ? f.hint + '\n\n' : '') +
+            '選取的圖層有的開、有的關。點一下會把全部設成同一個值。';
+        }
         control.onchange = function () { MX.writeAll(targets, f.key, control.checked); onPresetChanged(); };
       } else if (f.kind === 'select') {
         control = document.createElement('select');

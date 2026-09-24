@@ -6574,6 +6574,39 @@ var BattleRenderer = (function () {
     if (t.height !== undefined) out.height = t.height * p.scale;
     return out;
   }
+  /* 場景層（presetFx／presetZone）裡標了 perspective: false 的圖層：就地把畫面透視抵銷掉。
+     場景整片會被 PerspectiveMesh 變形，在某一點的局部縮放是橫向 1/w、縱向 1/w²（w 見 perspectiveLayout），
+     所以這裡先左乘 diag(w, w²)；位置不動——那一層仍然要待在它該在的地方，跟著場景一起被搬過去。
+
+     為什麼要拆矩陣而不是直接乘在 scaleX／scaleY 上：抵銷發生在螢幕座標，而 scaleX／scaleY 是圖層
+     自己的軸。圖層一旦有旋轉或斜切，兩者就不是同一回事，直接乘會把圖轉歪。
+
+     殘留：單應變換在圖層範圍內不是完全均勻（離畫面中心越遠、圖越大，殘留的輕微傾斜越明顯）。
+     整份 preset 都標 perspective: false 時 Runtime 會改走 billboard 層（完全不變形），
+     這裡處理的是「同一份特效裡只有幾層要維持原樣」的情況，好處是前後遮擋不變。 */
+  function projectSceneTransform(t) {
+    if (!t || t.perspective !== false) return t;
+    var L = S.persp && S.persp.layout;
+    if (!L || typeof VFXCore === 'undefined') return t;   // 沒開透視＝本來就沒被變形
+    var world = S.layers && S.layers.world;
+    var py = (t.y || 0) + (world ? world.y : 0);
+    var w = Math.max(0.1, 1 - L.beta * (py - L.cy));
+    var out = Object.assign({}, t);
+    if (t.scaleX !== undefined) {
+      var rot = t.rotation || 0, sk = t.skewX || 0;
+      var p = VFXCore.decomposeMatrix({
+        a: Math.cos(rot) * t.scaleX * w, b: Math.sin(rot) * t.scaleX * w * w,
+        c: -Math.sin(rot - sk) * t.scaleY * w, d: Math.cos(rot - sk) * t.scaleY * w * w,
+        tx: 0, ty: 0
+      }, {});
+      out.rotation = p.rotation; out.scaleX = p.scaleX; out.scaleY = p.scaleY; out.skewX = p.skewX;
+    }
+    /* procedural 的 width／height 會蓋掉 scale（Pixi 的 width setter 就是改 scale），一起補 */
+    if (t.width !== undefined) out.width = t.width * w;
+    if (t.height !== undefined) out.height = t.height * w * w;
+    return out;
+  }
+
   var legacyAirNodes = new Map();
   function attachAirFx(node) {
     var wrapper = new PIXI.Container();
@@ -6804,6 +6837,8 @@ var BattleRenderer = (function () {
       airDepthSplitY: function () { return S.player && S.player.root ? S.player.root.y : -Infinity; },
       projectAirTransform: projectAirTransform,
       projectBillboardTransform: projectBillboardTransform,
+      /* 場景層的鏡頭補償：只對 perspective: false 的圖層動手，其餘原樣回傳 */
+      projectSceneTransform: projectSceneTransform,
       fxContainer: S.layers.presetFx,
       fxDepthContainer: S.layers.entity,
       zoneContainer: S.layers.presetZone,

@@ -56,7 +56,8 @@
           1,
           1
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "body",
@@ -110,7 +111,8 @@
           1,
           1
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "core",
@@ -164,7 +166,8 @@
           1,
           1
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "land",
@@ -215,7 +218,8 @@
           1,
           1.15
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "ring",
@@ -262,7 +266,8 @@
       "projection": {
         "x": 1,
         "y": 0.5
-      }
+      },
+      "perspective": false
     },
     {
       "id": "motes",
@@ -339,7 +344,8 @@
           1,
           0.4
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "sprite-7",
@@ -359,7 +365,8 @@
       "outerScale": {
         "x": 1,
         "y": 0.3
-      }
+      },
+      "perspective": false
     },
     {
       "id": "sprite-8",
@@ -378,7 +385,8 @@
       "outerScale": {
         "x": 1,
         "y": 0.3
-      }
+      },
+      "perspective": false
     }
   ],
   "sizing": {

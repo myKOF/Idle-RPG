@@ -142,3 +142,31 @@ test('legacy 包裝只做等比縮放，死亡完整釋放包裝與登記',()=>{
   assert.equal(node.scale.x,2);assert.equal(node.scale.y,3);
   c.killFx({node});assert.equal(c.legacyAirNodes.size,0);assert.equal(c.S.layers.airFx.children.length,0);
 });
+
+/* 2026-09-24：「走不走 billboard 層」以前寫死 pillar-earth，改成看圖層的 perspective 旗標
+   （使用者要求的每層勾選）。寫死的話，下一份同樣需求的特效又要改一次程式。 */
+test('整份標了 perspective: false 的 preset 走 billboard 層；只標幾層的留在場景層',()=>{
+  const make=(id,marks)=>({schemaVersion:1,id,duration:1,layers:marks.map((m,i)=>
+    Object.assign({id:'l'+i,type:'sprite',assetId:'a.png'},m?{perspective:false}:{}))});
+  const play=(preset)=>{
+    const fx=backend(),air=backend(),billboard=backend();
+    const rt=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},
+      fxBackend:fx,airBackend:air,billboardBackend:billboard,
+      ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:150,y:80}),footOf:()=>({x:150,y:90})}});
+    rt.registerPresets([preset]);
+    assert.equal(rt.tryPlay({fxKind:'rain',variant:'pillar',targets:['enemy'],hit:false,
+      vfx:{attack:preset.id}}),true,preset.id);
+    rt.update(.2);
+    const out={fx:fx.nodes.size,billboard:billboard.nodes.size};rt.destroy();return out;
+  };
+  assert.deepEqual(play(make('cam-all',[true,true])),{fx:0,billboard:2},'整份都標＝完全不變形的那條路');
+  assert.deepEqual(play(make('cam-some',[true,false])),{fx:2,billboard:0},
+    '只標幾層的留在場景層，由顯示層就地補償，前後遮擋才不會跳掉');
+  assert.deepEqual(play(make('cam-none',[false,false])),{fx:2,billboard:0});
+  /* 天地再造的紫光柱靠這份資料維持原本的行為（以前是寫死名字） */
+  const pillar=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/pillar-earth.json'),'utf8'));
+  assert.ok(pillar.layers.every(l=>l.perspective===false),'pillar-earth 每一層都要標，否則會掉回場景層');
+  const runtime=fs.readFileSync(path.join(__dirname,'../js/vfx-runtime.js'),'utf8');
+  assert.equal(/billboardPresets\[presetId\]/.test(runtime),true,'路由要看資料');
+  assert.equal(/'pillar-earth' && spec\.variant/.test(runtime),false,'不得再用寫死的 preset 名字決定圖層');
+});
