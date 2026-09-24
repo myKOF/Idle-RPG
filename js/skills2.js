@@ -6674,9 +6674,13 @@ function sgTickEarthguardAura(ctx) {
   if (SKILL2_RT.earthguardVfxAt > GT) return;
   SKILL2_RT.earthguardVfxAt = GT + 0.25;
   var tier = lvs[6] > 0 ? 7 : lvs[3] > 0 ? 4 : lvs[2] > 0 ? 3 : 1;
+  // 常駐續命只送地板；第七階的攻擊／命中欄屬於死亡復活，不能每 0.25 秒重播光柱。
+  var ground = sgVfxRoles('earthguard', { vfxTier: tier, vfxBase: true }).ground;
+  if (!ground) return;
   var pp = (typeof bfPlayerPos === 'function' && bfPlayerPos()) || { x: 0, y: 0 };
   sgEmitPlayerVfx('earthguard', 'pv-float', {
     fxKind: 'aura', variant: 'earthguard', elem: 'light', dur: 0.25, vfxTier: tier,
+    vfxRoles: ground ? { ground: ground } : {},
     area: { id: 'sg-earthguard-aura', x: pp.x, y: pp.y, r: bfMeterPx(tier === 7 ? 10 : 8), follow: true }
   });
 }

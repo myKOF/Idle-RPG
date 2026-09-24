@@ -597,21 +597,37 @@ test('泥沼特效逐階使用核准的泥流、毒沼與熔岩沼',()=>{
  }
 });
 
-test('EARTHGUARD 常駐法陣只在裝備且存活時續命，使用八米跟隨圓心',()=>{
+test('EARTHGUARD 只在表格填有地板時續命，且需裝備並存活',()=>{
  const c=loadContext(),p=playerEnt(),events=[];
  setLevels(c,'earthguard',[1,0,0,0,0,0,0]);equip(c,'earthguard');
- c.playCombatVfx=s=>events.push(s);run(c,p,[],.6);
+ c.playCombatVfx=s=>events.push(s);run(c,p,[],.6);assert.equal(events.length,0,'表格地板欄空白不能補畫');
+ c.SKILLS2.earthguard.tiers[0].vfx={ground:'test-earthguard-ground'};run(c,p,[],.6);
  const a=events.filter(s=>s.variant==='earthguard');assert.ok(a.length>=2);
- assert.ok(a.every(s=>s.vfx.ground===table.vfx('earthguard',1,'地板特效') && s.area.r===80 && s.area.follow && s.area.id==='sg-earthguard-aura'));
+ assert.ok(a.every(s=>s.vfx.ground==='test-earthguard-ground' && !s.vfx.attack && !s.vfx.hit && s.area.r===80 && s.area.follow && s.area.id==='sg-earthguard-aura'));
  events.length=0;c.G.player.loadout=[];run(c,p,[],.5);assert.equal(events.filter(s=>s.variant==='earthguard').length,0);
  equip(c,'earthguard');p.hp=0;run(c,p,[],.5);assert.equal(events.filter(s=>s.variant==='earthguard').length,0);
 });
 
-test('EARTHGUARD 七階依配置繼承特效，空白不憑空產生法陣，保留復活光柱',()=>{
+test('EARTHGUARD 七階只繼承表格地板欄，光柱留給復活事件',()=>{
  const c=loadContext(),p=playerEnt(),events=[];equip(c,'earthguard');c.playCombatVfx=s=>events.push(s);
  for(let tier=1;tier<=7;tier++){
   setLevels(c,'earthguard',Array.from({length:7},(_,i)=>i<tier?1:0));events.length=0;run(c,p,[],.3);
-  const s=events.find(s=>s.variant==='earthguard');assert.ok(s);assert.equal(s.vfx.ground,table.vfx('earthguard',tier,'地板特效'));assert.equal(s.area.r,tier===7?100:80);
+  assert.equal(events.filter(s=>s.variant==='earthguard').length,0,'未填地板不播放：第 '+tier+' 階');
  }
+ c.SKILLS2.earthguard.tiers[0].vfx={ground:'test-base-ground'};
+ setLevels(c,'earthguard',[1,1,1,1,1,1,1]);events.length=0;run(c,p,[],.3);
+ const s=events.find(s=>s.variant==='earthguard');assert.ok(s);assert.equal(s.vfx.ground,'test-base-ground');assert.equal(s.area.r,100);
  assert.equal(c.SKILLS2.earthguard.tiers[6].vfx.attack,'pillar-light');
+});
+test('天地共生常駐只續地板，死亡復活才播放一次光柱',()=>{
+ const c=loadContext(),p=playerEnt(),events=[];
+ equip(c,'earthguard');setLevels(c,'earthguard',[1,1,1,1,1,1,1]);
+ c.playCombatVfx=s=>events.push(s);
+ run(c,p,[],1);
+ assert.equal(events.length,0,'地板欄空白，常駐事件不應重播白光');
+ events.length=0;p.hp=0;
+ assert.equal(c.skills2TryRebirth(p),true);
+ assert.equal(events.filter(s=>s.variant==='pillar' && s.vfx.attack==='pillar-light').length,1);
+ run(c,p,[],1);
+ assert.equal(events.filter(s=>s.variant==='pillar').length,1);
 });
