@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 153,
+  "assetCount": 159,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -385,6 +385,13 @@
       "fileSize": 26557
     },
     {
+      "assetId": "new_materials/arcane-ring/spiral_31.png",
+      "relativePath": "new_materials/arcane-ring/spiral_31.png",
+      "package": "new_materials",
+      "contentHash": "sha256:dc8de4a5d3d92a70236a6e736b3ccbdd3620fe1cc33eec86e6216e889b665428",
+      "fileSize": 16287
+    },
+    {
       "assetId": "new_materials/arcane-ring/spiral_6.png",
       "relativePath": "new_materials/arcane-ring/spiral_6.png",
       "package": "new_materials",
@@ -455,11 +462,25 @@
       "fileSize": 15084
     },
     {
+      "assetId": "new_materials/hud-reticle/target_33.png",
+      "relativePath": "new_materials/hud-reticle/target_33.png",
+      "package": "new_materials",
+      "contentHash": "sha256:74941d955a96171df4b06470658450f2c2f274277853285806b557bdb22f11b1",
+      "fileSize": 45820
+    },
+    {
       "assetId": "new_materials/hud-reticle/target_9.png",
       "relativePath": "new_materials/hud-reticle/target_9.png",
       "package": "new_materials",
       "contentHash": "sha256:a4ee688c893d04134aa993d2f29cdba9f78026c44b63946db0efe259fccd1ed8",
       "fileSize": 19949
+    },
+    {
+      "assetId": "new_materials/impact-ring/impact_10.png",
+      "relativePath": "new_materials/impact-ring/impact_10.png",
+      "package": "new_materials",
+      "contentHash": "sha256:c5af37e77c828018da95f80df8f5c90cd7119ac22c9ee4fdff1c60e02a85f447",
+      "fileSize": 161391
     },
     {
       "assetId": "new_materials/impact-ring/impact_14.png",
@@ -735,6 +756,13 @@
       "fileSize": 62268
     },
     {
+      "assetId": "particle-pack/png-black-background/magic_02.png",
+      "relativePath": "particle-pack/PNG (Black background)/magic_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:5aa9465da6c2ca15620e4f1f8f94cf141feb02b8274689d6ae36796484339ae5",
+      "fileSize": 68717
+    },
+    {
       "assetId": "particle-pack/png-black-background/magic_03.png",
       "relativePath": "particle-pack/PNG (Black background)/magic_03.png",
       "package": "particle-pack",
@@ -973,6 +1001,13 @@
       "fileSize": 86500
     },
     {
+      "assetId": "particle-pack/png-transparent/magic_03.png",
+      "relativePath": "particle-pack/PNG (Transparent)/magic_03.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:c2ef5fe86cd2fd08e5b9768389ab6580b346c391db3c7c09fc9b0a63e00ec4ce",
+      "fileSize": 58093
+    },
+    {
       "assetId": "particle-pack/png-transparent/slash_02.png",
       "relativePath": "particle-pack/PNG (Transparent)/slash_02.png",
       "package": "particle-pack",
@@ -1027,6 +1062,13 @@
       "package": "sci-fi-effects",
       "contentHash": "sha256:994440b153cb59ba5547dedeb5ec201d7f0ae646ac1c02beeb69a8a80d16a0f7",
       "fileSize": 131779
+    },
+    {
+      "assetId": "shape-alpha/pdalpha_142.png",
+      "relativePath": "shape-alpha/PDAlpha_142.png",
+      "package": "shape-alpha",
+      "contentHash": "sha256:360f18b0f58c67eb86271f69fe633547036793fa607a99891ba5b05502b1eca7",
+      "fileSize": 97680
     },
     {
       "assetId": "shape-alpha/pdalpha_150.png",
