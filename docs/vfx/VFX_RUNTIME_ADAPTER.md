@@ -152,7 +152,7 @@ pillar-light 的 ring {0.18, 0.066}），往上（−y）是高度。以前完�
 ### 每層的鏡頭開關（2026-09-24）
 
 畫面透視（`PERSPECTIVE_TOP_SCALE` 的梯形網格）是**後製**：整個場景畫進離屏貼圖再變形貼回，
-所以場景裡的東西沒辦法各自退出。圖層標了 `perspective: false`（Schema §鏡頭變形的兩個開關）時分兩條路：
+所以場景裡的東西沒辦法各自退出。圖層標了 `perspective: false`（Schema §每層的三個變形開關）時分兩條路：
 
 | 情況 | 走法 | 為什麼 |
 | --- | --- | --- |
@@ -165,6 +165,18 @@ pillar-light 的 ring {0.18, 0.066}），往上（−y）是高度。以前完�
 
 飛行物那條路（`rtAir`）本來就只投影錨點、等比縮放，不經過網格，所以 `perspective` 在那裡沒有作用；
 `followDirection` 則與走哪一層無關，一律由 Core 處理。
+
+**落雷（2026-09-24）**：`bolt-sky-lightning`、`bolt-sky-purple`、`bolt-thunderstrike-bluewhite`
+三份都整份標了 `perspective: false`——使用者要求雷永遠筆直落下，而這三份都是變形圖層（沿路徑彎折），
+只有 billboard 那條路才是直的（理由見 Schema §每層的三個變形開關）。落雷術走的是 `playThunderstrike`
+（腳底錨定、跟著目標移動）這條獨立派送，它同樣改看 `billboardPresets`，不是寫死名字。
+
+**變形圖層的投影**：`deformation.layers` 裡的圖層由後端的 `updateWarp` 用變形矩陣的
+`originX／originY／rotation／scaleX／scaleY` **蓋掉**節點的 transform，所以 `rtAir`／`rtBillboard`
+的投影掛勾（`projectAirTransform`／`projectBillboardTransform`）必須把投影一起套進那份矩陣
+（`projectedWarp`），否則掛勾算完就被蓋掉，整道閃電會畫在沒投影的位置。矩陣是 Core 每幀重用的
+同一個物件，只能複製、不能就地改。空中層每份矩陣用自己的原點取遠近；billboard 整張以錨點取一次，
+柱身才不會被推歪。
 
 **已知的差距**：Preset 的地面光圈手繪壓扁約 0.4，比地板的 0.5 略扁；原本就畫成正圓的地面特效仍是正圓。
 要完全一致得逐份調整 Preset（內容工作）。

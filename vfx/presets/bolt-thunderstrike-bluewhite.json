@@ -77,7 +77,8 @@
           1,
           1
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "white-core",
@@ -139,7 +140,8 @@
           1,
           1
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "side-fork",
@@ -176,7 +178,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "blue-droplets",
@@ -231,7 +234,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "white-droplets",
@@ -286,7 +290,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-0",
@@ -350,7 +355,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-1",
@@ -414,7 +420,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-2",
@@ -478,7 +485,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-3",
@@ -542,7 +550,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "electric-fork-4",
@@ -606,7 +615,8 @@
           1,
           1.08
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "impact-core",
@@ -629,7 +639,8 @@
           1,
           0
         ]
-      ]
+      ],
+      "perspective": false
     }
   ]
 }

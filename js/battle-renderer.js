@@ -6555,11 +6555,28 @@ var BattleRenderer = (function () {
     p.scale = L ? 1 / Math.max(0.1, 1 - L.beta * (py - L.cy)) : 1;
     return p;
   }
+  /* 變形圖層（閃電那種沿路徑彎折的）的節點位置、旋轉與縮放**不是**從 transform 來的：
+     後端的 updateWarp 會用變形矩陣裡的 originX／originY／rotation／scaleX／scaleY 蓋掉節點的
+     transform（網格頂點是在特效座標裡算的，節點只負責把整份擺到特效原點上）。
+     所以投影也要套進那一份矩陣，否則整道閃電會畫在「沒有投影」的位置——2026-09-24 實測：
+     掛勾算出 125,250／1.25，節點仍在 100,200／1。
+     矩陣是 Core 每幀重用的同一個物件，只能複製、不能就地改。 */
+  function projectedWarp(w, origin, scale) {
+    var out = Object.assign({}, w);
+    out.originX = origin.x; out.originY = origin.y;
+    out.scaleX = w.scaleX * scale; out.scaleY = w.scaleY * scale;
+    return out;
+  }
   function projectAirTransform(t) {
     var p = airScreenPose(t.x || 0, t.y || 0);
     var out = Object.assign({}, t, {x:p.x,y:p.y,scaleX:t.scaleX*p.scale,scaleY:t.scaleY*p.scale});
     if (t.width !== undefined) out.width = t.width*p.scale;
     if (t.height !== undefined) out.height = t.height*p.scale;
+    if (t.deformation) {
+      /* 每一份變形矩陣用它自己的原點取遠近倍率，與非變形圖層各自投影自己的位置一致 */
+      var q = airScreenPose(t.deformation.originX || 0, t.deformation.originY || 0);
+      out.deformation = projectedWarp(t.deformation, q, q.scale);
+    }
     return out;
   }
   // 直立光柱是整張 billboard：以敵人腳點決定遠近倍率，柱頂不再各自套一次透視。
@@ -6572,6 +6589,13 @@ var BattleRenderer = (function () {
     });
     if (t.width !== undefined) out.width = t.width * p.scale;
     if (t.height !== undefined) out.height = t.height * p.scale;
+    if (t.deformation) {
+      /* 與上面同一個道理，但 billboard 是「整張以錨點決定遠近」：原點照錨點投影，
+         高於錨點的部分等比拉開，柱身／雷柱才是直的。 */
+      out.deformation = projectedWarp(t.deformation,
+        { x: airScreenPose(t.deformation.originX || 0, anchorY).x,
+          y: p.y + ((t.deformation.originY || 0) - anchorY) * p.scale }, p.scale);
+    }
     return out;
   }
   /* 場景層（presetFx／presetZone）裡標了 perspective: false 的圖層：就地把畫面透視抵銷掉。

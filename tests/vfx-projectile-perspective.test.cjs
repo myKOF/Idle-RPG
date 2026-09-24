@@ -7,7 +7,7 @@ const Backend=require('../js/vfx-pixi-backend.js');
 const source=fs.readFileSync(path.join(__dirname,'../js/battle-renderer.js'),'utf8');
 function projection(){
   const c={Math,S:{layers:{world:{x:17,y:-29}},persp:null}};vm.createContext(c);
-  for(const name of ['perspectiveLayout','airScreenPose','projectAirTransform','projectBillboardTransform'])vm.runInContext(extractFunction(source,name),c);
+  for(const name of ['perspectiveLayout','airScreenPose','projectedWarp','projectAirTransform','projectBillboardTransform'])vm.runInContext(extractFunction(source,name),c);
   c.S.persp={layout:c.perspectiveLayout(700,680,.82)};return c;
 }
 test('空中投影在四角／遠近只改錨點與等比大小，保留素材旋轉和寬高比',()=>{
@@ -25,6 +25,45 @@ test('空中投影在四角／遠近只改錨點與等比大小，保留素材�
   assert.ok(c.airScreenPose(350,0).scale<c.airScreenPose(350,680).scale);
   c.S.persp=null;
   assert.equal(c.projectAirTransform({x:10,y:20,scaleX:2,scaleY:3}).scaleY,3);
+});
+/* 2026-09-24：變形圖層（沿路徑彎折的閃電）的節點位置與縮放是後端從變形矩陣蓋上去的，
+   不是從 transform 來的。投影沒有一起套進那份矩陣，整道閃電就會畫在「沒有投影」的位置。 */
+test('變形矩陣一起投影：飛行物各自取遠近，billboard 整張同一個倍率，且不就地改 Core 的矩陣',()=>{
+  const c=projection();
+  const variation={config:{axis:'y',start:0,end:100,amplitude:5},phase:.4,mirror:1,width:1};
+  const warp=(x,y)=>({a:1,b:0,c:0,d:1,x:0,y:0,originX:x,originY:y,rotation:.3,scaleX:2,scaleY:2,variation});
+  const w1=warp(100,200);
+  /* 節點自己的 x／y 刻意跟矩陣原點不同：矩陣要用它自己的原點取遠近，不是節點的 */
+  const air=c.projectAirTransform({x:400,y:640,scaleX:1,scaleY:1,deformation:w1});
+  const pose=c.airScreenPose(100,200);
+  assert.ok(Math.abs(air.deformation.originX-pose.x)<1e-9,'變形圖層要畫在投影後的位置');
+  assert.ok(Math.abs(air.deformation.originY-pose.y)<1e-9);
+  assert.ok(Math.abs(air.deformation.scaleX-2*pose.scale)<1e-9,'遠近倍率要乘進矩陣的縮放');
+  assert.ok(Math.abs(air.deformation.scaleY-2*pose.scale)<1e-9);
+  assert.equal(air.deformation.rotation,.3,'角度在矩陣裡，投影不動它');
+  assert.notEqual(air.deformation,w1);
+  assert.equal(w1.originX,100);assert.equal(w1.scaleX,2);  // Core 每幀重用同一個矩陣物件
+  /* billboard：柱頂與柱底只取一次遠近倍率，同一條垂直線不能被推成斜的 */
+  const pose2=c.airScreenPose(150,90);
+  const top=c.projectBillboardTransform({x:150,y:-310,sortY:90,scaleX:1,scaleY:1,deformation:warp(150,-310)});
+  const foot=c.projectBillboardTransform({x:150,y:90,sortY:90,scaleX:1,scaleY:1,deformation:warp(150,90)});
+  assert.ok(Math.abs(top.deformation.originX-foot.deformation.originX)<1e-9,'落雷要筆直落下');
+  assert.equal(top.deformation.scaleX,foot.deformation.scaleX);
+  assert.ok(Math.abs(foot.deformation.scaleX-2*pose2.scale)<1e-9,'整張以錨點的遠近倍率縮放');
+  assert.ok(Math.abs((foot.deformation.originY-top.deformation.originY)-400*pose2.scale)<1e-9,
+    '雷柱維持原本的直線高度');
+  /* 後端真的照投影後的矩陣擺節點（以前掛勾算完就被 updateWarp 蓋掉） */
+  const node=Object.assign(new fakePixi.Container(),
+    {skew:{set(){}},texture:{orig:{width:64,height:64}}});
+  node.__warp={uvs:[0,0,1,0,0,1,1,1],positions:new Float32Array(8),cache:{},point:{},
+    geometry:{getBuffer:()=>({update(){}})}};
+  const backend=Backend.createBackend({PIXI:fakePixi,Core,container:new fakePixi.Container(),
+    projectTransform:c.projectAirTransform});
+  backend.updateNode(node,{x:100,y:200,scaleX:1,scaleY:1,anchorX:.5,anchorY:.5,visible:true,
+    deformation:warp(100,200)});
+  assert.ok(Math.abs(node.x-pose.x)<1e-9,'節點位置來自投影後的矩陣');
+  assert.ok(Math.abs(node.y-pose.y)<1e-9);
+  assert.ok(Math.abs(node.scale.x-2*pose.scale)<1e-9);
 });
 test('天地再造紫光柱沿空中保形路徑播放，尺寸為玩家復活白光的一半',()=>{
   const read=id=>JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets',id+'.json'),'utf8'));
@@ -163,6 +202,17 @@ test('整份標了 perspective: false 的 preset 走 billboard 層；只標幾�
   assert.deepEqual(play(make('cam-some',[true,false])),{fx:2,billboard:0},
     '只標幾層的留在場景層，由顯示層就地補償，前後遮擋才不會跳掉');
   assert.deepEqual(play(make('cam-none',[false,false])),{fx:2,billboard:0});
+  /* 落雷走的是另一條派送（腳底錨定、跟著目標移動），2026-09-24 一併改成看旗標：
+     又高又細的雷柱留在場景層，同一條垂直線在不同高度會被推往不同橫向位置而傾斜。 */
+  assert.deepEqual(play(make('bolt-thunderstrike-bluewhite',[true,true])),{fx:0,billboard:2},
+    '整份標記的落雷要走 billboard 層才會筆直落下');
+  assert.deepEqual(play(make('bolt-thunderstrike-bluewhite',[true,false])),{fx:2,billboard:0},
+    '沒整份標記就留在場景層，不能因為是落雷就特別待遇');
+  for(const id of ['bolt-sky-lightning','bolt-sky-purple','bolt-thunderstrike-bluewhite']){
+    const bolt=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets',id+'.json'),'utf8'));
+    assert.ok(bolt.layers.every(l=>l.type==='empty'||l.perspective===false),
+      id+' 每一層都要標，否則落雷會掉回場景層而傾斜');
+  }
   /* 天地再造的紫光柱靠這份資料維持原本的行為（以前是寫死名字） */
   const pillar=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/pillar-earth.json'),'utf8'));
   assert.ok(pillar.layers.every(l=>l.perspective===false),'pillar-earth 每一層都要標，否則會掉回場景層');

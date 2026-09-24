@@ -499,6 +499,17 @@ var VFXCore = (function () {
     if (layer.followDirection !== undefined && typeof layer.followDirection !== 'boolean') {
       errors.push(where + '.followDirection 必須是布林值');
     }
+    /* followStretch：遊戲把整份特效沿某一軸拉長時（光束拉到敵人身上＝scaleX 變大、scaleY 不變，
+       場域依判定尺寸撐開也一樣），這一層的圖要不要跟著被拉。false＝只吃等比的那一份
+       （effect.scale），位置照樣跟著拉——例如光束尾端的星芒要留在尾端，但不該被壓扁。
+       粒子的圖本來就只吃等比縮放（見 updateParticleLayer），填了不會有任何作用，所以不收。 */
+    if (layer.followStretch !== undefined) {
+      if (typeof layer.followStretch !== 'boolean') {
+        errors.push(where + '.followStretch 必須是布林值');
+      } else if (layer.type === 'particle') {
+        errors.push(where + '.followStretch 不支援 particle：粒子的圖本來就只吃等比縮放');
+      }
+    }
   }
 
   /* 子發射器：這一層的粒子在出生或死亡時，往另一層丟幾顆。
@@ -654,7 +665,7 @@ var VFXCore = (function () {
   var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet', 'projection',
-    'perspective', 'followDirection'];
+    'perspective', 'followDirection', 'followStretch'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
      這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
      那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
@@ -745,12 +756,18 @@ var VFXCore = (function () {
     if(!isFiniteNumber(c.widthJitter)||c.widthJitter<0||c.widthJitter>.15)errors.push('deformation.widthJitter 必須在0到0.15');
     if(typeof c.mirror!=='boolean')errors.push('deformation.mirror 必須是布林值');
     if(!Array.isArray(c.layers)||!c.layers.length||new Set(c.layers).size!==c.layers.length){errors.push('deformation.layers 必须是非空、不重複的圖層清單');return;}
+    /* 變形圖層的幾何整個由變形矩陣決定（見 setDeformation 與後端的 updateWarp）：
+       留在場景層時沒有辦法就地補償畫面透視，只有「整份走 billboard 層」那條路才做得到
+       （Adapter 的條件正是每一層都標 perspective: false）。所以只標一部分就是 silent fallback，擋下來。
+       followDirection 對它們則完全沒有作用（角度也在變形矩陣裡），一律不收。 */
+    var allFlat=preset.layers.every(function(l){return !l||l.type==='empty'||l.perspective===false;});
     c.layers.forEach(function(id){var l=preset.layers.find(function(l){return l&&l.id===id;});
       if(!l||l.type!=='sprite'||l.radiusProfile)errors.push('deformation 只支援一般sprite圖層：'+id);
-      /* 變形圖層的幾何整個由變形矩陣決定（見 setDeformation 與後端的 updateWarp），
-         鏡頭開關對它們不會有任何作用。收下來再靜靜忽略就是 silent fallback，所以擋在這裡。 */
-      else if(l.perspective===false||l.followDirection===false){
-        errors.push('deformation 圖層不支援 perspective／followDirection：'+id);
+      else if(l.followDirection===false){
+        errors.push('deformation 圖層不支援 followDirection（角度在變形矩陣裡，關不掉）：'+id);
+      }
+      else if(l.perspective===false&&!allFlat){
+        errors.push('deformation 圖層要關畫面透視，必須整份 preset 的每一層都關：'+id);
       }
     });
   }
@@ -961,7 +978,7 @@ var VFXCore = (function () {
     'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife',
-    'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection', 'perspective', 'followDirection',
+    'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection', 'perspective', 'followDirection', 'followStretch',
     'sheet', 'radiusProfile', 'water'];
 
   // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
@@ -1093,9 +1110,10 @@ var VFXCore = (function () {
       offsetYOverLife: layer.offsetYOverLife,
       outerScale: layer.outerScale,
       projection: layer.projection,
-      /* 兩個都是「沒填＝受影響」（既有 preset 行為不變），與 enabled 同一種預設寫法 */
+      /* 三個都是「沒填＝受影響」（既有 preset 行為不變），與 enabled 同一種預設寫法 */
       perspective: layer.perspective !== false,
-      followDirection: layer.followDirection !== false
+      followDirection: layer.followDirection !== false,
+      followStretch: layer.followStretch !== false
     };
   }
 
@@ -1606,8 +1624,13 @@ var VFXCore = (function () {
 
          等比的時候（兩軸相同）縮放與旋轉可交換，直接乘進 scaleX/scaleY 就對了。
          不等比才需要下面的矩陣分解。 */
-      var outerX = effect.scaleX * (d.outerScale ? d.outerScale.x : 1);
-      var outerY = effect.scaleY * (d.outerScale ? d.outerScale.y : 1);
+      /* followStretch: false ＝不吃「兩軸不同」的那一份（光束被拉長、場域被撐開），
+         只留等比的 effect.scale。位置仍由 toWorld 用完整的 scaleX／scaleY 算，所以
+         圖層照樣待在被拉長之後該在的地方（2026-09-24 使用者：光束尾端的星芒被壓扁）。 */
+      var effX = d.followStretch === false ? effect.scale : effect.scaleX;
+      var effY = d.followStretch === false ? effect.scale : effect.scaleY;
+      var outerX = effX * (d.outerScale ? d.outerScale.x : 1);
+      var outerY = effY * (d.outerScale ? d.outerScale.y : 1);
       /* 繞 Y 軸轉會壓縮水平方向，繞 X 軸轉會壓縮垂直方向——軸與被壓的方向是交叉的 */
       t.scaleX = d.scale.x * outerX * (scaleKX === null ? 1 : scaleKX) * flipX;
       t.scaleY = d.scale.y * outerY * (scaleKY === null ? 1 : scaleKY) * flipY;
@@ -1733,7 +1756,8 @@ var VFXCore = (function () {
       t.y = world.y;
       /* 特效本身：先在特效座標系分軸縮放，再旋轉——與 toWorld 同一個順序。
          followDirection: false 的圖層不吃這個旋轉（位置仍由 toWorld 跟著轉）。 */
-      var sx = effect.scaleX, sy = effect.scaleY;
+      var stretch = layer.def.followStretch !== false;
+      var sx = stretch ? effect.scaleX : effect.scale, sy = stretch ? effect.scaleY : effect.scale;
       var childDir = layer.def.followDirection === false ? 0 : effect.rotation;
       var ce = Math.cos(childDir), se = Math.sin(childDir);
       var m = scratchWorldMatrix;
