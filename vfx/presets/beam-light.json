@@ -9,9 +9,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
         "x": 0.3906,
-        "y": 0.5774
+        "y": 0.1189
       },
       "anchor": {
         "x": 0,
@@ -20,7 +24,7 @@
       "alpha": 0.4,
       "tint": "#ffe47a",
       "blendMode": "screen",
-      "duration": 0.45,
+      "duration": 25,
       "alphaOverLife": [
         [
           0,
@@ -45,9 +49,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
         "x": 0.3906,
-        "y": 0.3397
+        "y": 0.0699
       },
       "anchor": {
         "x": 0,
@@ -56,7 +64,7 @@
       "alpha": 0.95,
       "tint": "#fffef4",
       "blendMode": "add",
-      "duration": 0.45,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,
@@ -81,9 +89,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
         "x": 0.3906,
-        "y": 0.1427
+        "y": 0.0294
       },
       "anchor": {
         "x": 0,
@@ -92,7 +104,7 @@
       "alpha": 1,
       "tint": "#ffffff",
       "blendMode": "add",
-      "duration": 0.45,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,
@@ -111,6 +123,19 @@
           0
         ]
       ]
+    },
+    {
+      "id": "sprite-4",
+      "type": "sprite",
+      "assetId": "particle-pack/png-transparent/magic_03.png",
+      "position": {
+        "x": 200.1273,
+        "y": 0.0722
+      },
+      "scale": {
+        "x": 0.0346,
+        "y": 0.0346
+      }
     }
   ],
   "sizing": {
