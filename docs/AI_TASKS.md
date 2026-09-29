@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜魔法盾百分比法力承傷（MANA-SHIELD-PERCENT-20260929）
+
+- Owner：Codex；Done。生命損耗按生命上限換算法力上限同比例消耗，全部由法力承擔；每級降低法力成本 5%，滿級乘以 50%，不足部分回扣生命。
+- 範圍：Skills2 Excel／CSV／JS、必要快取、地系回歸測試與本紀錄。禁止改其他技能及既有使用者修改。前置具備、衝突預檢乾淨；無素材變更。
+- 驗收：不同生命／法力上限、逐級乘算、不足額、護盾優先、直接扣血與一般命中及顯示成本、配置一致性、Build。完成後提交交使用者整合，不合併／推送。
+- 修改：js/skills2.js、Skills2 Excel／CSV、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-earth.test.cjs、本紀錄。檢查未改：js/formula.js、js/combat.js、tools/config_tables.cjs、tests/helpers/skill-table.cjs。沒有協議或存檔變更，沒有素材庫變更。
+- 驗證：node --test tests/skill2-earth.test.cjs（33/34，唯一岩甲特效名稱失敗已以 HEAD 原程式／資料／測試重現）；node --test tests/earthguard-revival.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs tests/gm-skill-test-tools.test.cjs（32/32）；魔法盾與說明定向4/4。node tools/build_check.cjs（399檔通過）；node tools/config_tables.cjs --apply Skills2（0語意變更）；diff check通過。
+- Excel 由 Artifact Tool 設定目標值，再由原生 Excel API 寫入、正常模式重開驗證無修復；僅 AU136／AW136／AX136 三格改值，樣式未變，Excel／CSV 目標列一致。暫存提交版同樣以 Excel API 修改 HEAD 原表，避免納入使用者先前配置修改。
+- 限制：未跑完整遊戲瀏覽器實戰／Console 驗收；數值、說明及飄字成本已用真實函式回歸驗證。既有岩甲測試失敗另案處理。Commit 見本紀錄所在提交；可交由使用者整合，建議實戰確認資源條；未合併／推送，其他使用者修改保留未提交。
+
 ## Codex｜飛雷神雙敵連線與靜態淡出（FLYING-THUNDER-PAIR-20260929）
 
 - Owner：Codex；Done。使用者要求寬度五倍、兩名敵人連線、劈出後固定形態淡出。允許 Skills2 表與邏輯、專用 Preset、必要快取、配置說明與測試；禁止改其他技能／其他副本。預檢乾淨，依賴已完成。驗收雙敵連線與不足兩敵略過、30米判定、波形不再重抽與漸淡、原節拍與壽命、表格及編輯器防覆寫；完成後雙倉庫提交。
