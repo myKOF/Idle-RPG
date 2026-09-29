@@ -10,11 +10,11 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=38', 'shim.js?v=8');
+importScripts('protocol.js?v=39', 'shim.js?v=8');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-npc-move-attack', '../status.js?v=20260923-rock-domain-vfx', '../formula.js?v=20260923-six-slot-hud', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260922-cast-act', '../skills2.js?v=20260929-chain-train', '../talents.js?v=20260811-loadout-cap-clamp',
+  '../skills.js?v=20260922-cast-act', '../skills2.js?v=20260929-chain-stable', '../talents.js?v=20260811-loadout-cap-clamp',
   '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
   '../combat.js?v=20260929-npc-move-attack', '../legendary.js?v=20260921-war-god-body', '../potential.js?v=20260903-vfx-runtime-adapter', '../tower.js?v=20260924-earthguard-revival',
   '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',

@@ -1868,3 +1868,23 @@ test('CHAIN-TRAIN 固定18米，轉折後10米尾部與8米前端同時存在並
  adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,1);
  adapter.update(1.1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+test('CHAIN-HOMING 移動來源不拖曳，追逐超過原估時仍等速，終止僅清指定鏈',()=>{
+ const p=unitPreset('bolt-chain-travel-bluewhite',.366);p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
+ const points={a:{x:0,y:0},b:{x:300,y:0}};
+ const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>points[id],playerPos:()=>points.a}});
+ const spec={fxKind:'chain',variant:'lightning-chain',targets:['a','b'],lineLength:180,travelMs:[0,3000],hit:false,vfx:{attack:p.id},area:{chainId:'one',homingSpeed:100}};
+ adapter.tryPlay(spec);let previous=0;
+ for(let i=0;i<40;i++){
+  points.a.x+=30;points.b.x+=20;adapter.update(.1);
+  const t=log.nodes[0].transforms.at(-1),head=t.x+t.scaleX*256;
+  assert.ok(Math.abs(head-previous-10)<1e-6,'每幀移動等於速度×dt，不按估計抵達時間加速');
+  assert.ok(Math.abs(t.scaleX*256-180)<1e-6);previous=head;
+ }
+ assert.equal(adapter.stats().fx.activeEffects,1,'4秒超過原先3秒估時仍未追上');
+ adapter.tryPlay({...spec,area:{...spec.area,chainId:'two'}});adapter.update(.01);
+ adapter.tryPlay({variant:'lightning-chain-end',area:{chainId:'one'},targets:[],vfx:{}});
+ assert.equal(adapter.stats().fx.activeEffects,1);
+ adapter.tryPlay({variant:'lightning-chain-end',area:{chainId:'two'},targets:[],vfx:{}});
+ assert.equal(adapter.stats().fx.activeEffects,0);
+});

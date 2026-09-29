@@ -723,16 +723,20 @@ var VFXRuntime = (function () {
       var authoredLength = num(spec.lineLength, 0);
       var body = travel > 0 ? (authoredLength > 0 ? authoredLength : 180) * dist / Math.max(1,Math.hypot(dx,dy/groundScale)) : dist;
       var width = trackedBeamWidths[presetId] || NOMINAL_BEAM;
+      var chaseSpeed=spec.area && num(spec.area.homingSpeed,0);
       var ref = play(rt, presetId, {
         position: travel > 0 ? {x:from.x-dx*body/dist,y:from.y-dy*body/dist} : from,
         rotation: Math.atan2(dy, dx),
-        timeScale: travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / (travel*(1+body/dist)+.02) : 1,
+        loop: chaseSpeed > 0,
+        timeScale: chaseSpeed > 0 ? 1 : travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / (travel*(1+body/dist)+.02) : 1,
         clipX: travel > 0 ? {min:width,max:width} : null,
         scaleX: body / width,
         scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
       }, trackedBeamWidths[presetId] ? 1 : undefined);
       if (ref && presetId === 'bolt-chain-travel-bluewhite') {
-        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: width, body:body, travel: travel, startedAt: clock, from: from, to: to });
+        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: width, body:body, worldBody:authoredLength>0?authoredLength:180,
+          chaseSpeed:chaseSpeed, position:{x:from.x,y:from.y/groundScale}, previousTarget:{x:to.x,y:to.y/groundScale}, travelled:0, drain:0, heading:Math.atan2(dy,dx),
+          speed:dist/Math.max(.001,travel), chainId:spec.area && spec.area.chainId, travel: travel, startedAt: clock, from: {x:from.x,y:from.y}, to: {x:to.x,y:to.y} });
       }
       return !!ref;
     }
@@ -1276,6 +1280,16 @@ var VFXRuntime = (function () {
     }
     function playSpec(spec) {
       if (!spec) return false;
+      if (spec.variant === 'lightning-chain-end') {
+        var endId=spec.area && spec.area.chainId;
+        if (endId) {
+          for(var ci=trackingBeams.length-1;ci>=0;ci--)if(trackingBeams[ci].chainId===endId) {
+            stopRef(trackingBeams[ci].ref);trackingBeams.splice(ci,1);
+          }
+          pending=pending.filter(function(p){return !(p.spec.area && p.spec.area.chainId===endId);});
+        }
+        return true;
+      }
       var roles = spec.vfx;
       if (!roles || typeof roles !== 'object') return false;
       // 表格事件即使全空或名稱無法載入，也不能換成另一份特效／舊畫法。
@@ -1577,21 +1591,43 @@ var VFXRuntime = (function () {
       /* 使用每幀已插值的實體座標，電弧前端抵達時仍落在移動目標上。 */
       for (var bi = trackingBeams.length - 1; bi >= 0; bi--) {
         var beam = trackingBeams[bi];
-        var beamFrom = beam.fromId ? ctx.posOf(beam.fromId) : ctx.playerPos();
+        var beamFrom = beam.travel > 0 ? beam.from : (beam.fromId ? ctx.posOf(beam.fromId) : ctx.playerPos());
         var beamTo = ctx.posOf(beam.toId);
         if (ctx.chainPoint) {
-          beamFrom = ctx.chainPoint(beam.fromId || 'pv-float') || beam.from;
+          beamFrom = beam.travel > 0 ? beam.from : (ctx.chainPoint(beam.fromId || 'pv-float') || beam.from);
           beamTo = ctx.chainPoint(beam.toId) || beam.to;
           if (!beamFrom || !beamTo) {
             stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
           }
         }
-        if (beam.travel > 0 && clock-beam.startedAt > beam.travel) { beamFrom=beam.from;beamTo=beam.to; }
-        beam.from = beamFrom; beam.to = beamTo;
+        if(beam.chaseSpeed>0 && homingStep) {
+          var targetWorld={x:beamTo.x,y:beamTo.y/groundScale};
+          if(!beam.arrived) {
+            var nextHead=homingStep(beam.position,beam.previousTarget,targetWorld,beam.chaseSpeed,step);
+            var hx=nextHead.x-beam.position.x,hy=nextHead.y-beam.position.y;
+            var advanced=Math.hypot(hx,hy);
+            if(advanced>1e-9)beam.heading=Math.atan2(hy,hx);
+            beam.travelled+=advanced;beam.position={x:nextHead.x,y:nextHead.y};beam.previousTarget=targetWorld;
+            beam.arrived=nextHead.hit;
+          } else beam.drain+=beam.chaseSpeed*step;
+          if(beam.drain>=beam.worldBody) {stopRef(beam.ref);trackingBeams.splice(bi,1);continue;}
+          var ux=Math.cos(beam.heading),uy=Math.sin(beam.heading),projection=Math.hypot(ux,uy*groundScale);
+          var tailOffset=beam.drain-beam.worldBody;
+          moveRef(beam.ref,{
+            position:{x:beam.position.x+ux*tailOffset,y:(beam.position.y+uy*tailOffset)*groundScale},
+            rotation:Math.atan2(uy*groundScale,ux),scaleX:beam.worldBody*projection/beam.width,scaleY:profile.scale,
+            clipX:{min:Math.max(0,beam.worldBody-beam.travelled-beam.drain)/beam.worldBody*beam.width,
+              max:(beam.worldBody-beam.drain)/beam.worldBody*beam.width,taper:beam.width*.12}
+          },1);
+          continue;
+        }
+        if (beam.arrived) beamTo=beam.to;
+        beam.from = {x:beamFrom.x,y:beamFrom.y}; beam.to = {x:beamTo.x,y:beamTo.y};
         var bdx = beamTo.x - beamFrom.x, bdy = beamTo.y - beamFrom.y;
         var distance = Math.max(1, Math.sqrt(bdx * bdx + bdy * bdy));
         var progress = beam.travel > 0 ? (clock - beam.startedAt) / beam.travel : 0;
-        var head = distance * progress;
+        var head = progress > 1 ? distance + (clock-beam.startedAt-beam.travel)*beam.speed : distance * progress;
+        if(beam.travel > 0 && progress >= 1)beam.arrived=true;
         if (beam.travel > 0 && head >= distance + beam.body) {
           stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
         }
@@ -1602,7 +1638,8 @@ var VFXRuntime = (function () {
           scaleX: bodyLength / beam.width,
           clipX: beam.travel > 0 ? {
             min:Math.max(0,bodyLength-head)/bodyLength*beam.width,
-            max:Math.min(bodyLength,distance-head+bodyLength)/bodyLength*beam.width
+            max:Math.min(bodyLength,distance-head+bodyLength)/bodyLength*beam.width,
+            taper:beam.width*.12
           } : null,
           scaleY: profile.scale
         }, 1)) trackingBeams.splice(bi, 1);
@@ -1749,7 +1786,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260929-chain-train';
+  var DATA_VERSION = '20260929-chain-stable';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

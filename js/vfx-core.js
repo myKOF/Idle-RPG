@@ -1327,6 +1327,7 @@ var VFXCore = (function () {
         handle: nextEffectId++,
         presetId: presetId,
         preset: preset,
+        loop: p.loop === true || preset.loop,
         time: startTime,
         totalTime: startTime,
         timeScale: isFiniteNumber(p.timeScale) && p.timeScale > 0 ? p.timeScale : 1,
@@ -1393,7 +1394,8 @@ var VFXCore = (function () {
     }
     function applyTransformParams(effect, p) {
       if (Object.prototype.hasOwnProperty.call(p, 'clipX')) effect.clipX = p.clipX
-        ? { min: transformNumber(p.clipX.min, 'clipX.min'), max: transformNumber(p.clipX.max, 'clipX.max') } : null;
+        ? { min: transformNumber(p.clipX.min, 'clipX.min'), max: transformNumber(p.clipX.max, 'clipX.max'),
+          taper: Math.max(0, Number(p.clipX.taper) || 0) } : null;
       // 可選的移動參考中心：只平移既有世界粒子，不把彈體本身的旋轉帶入尾焰。
       if (p.particleOrigin) {
         var px = transformNumber(p.particleOrigin.x, 'particleOrigin.x');
@@ -1681,6 +1683,7 @@ var VFXCore = (function () {
       w.variation=layer.deformation;
       w.clipMin=effect.clipX ? effect.clipX.min : undefined;
       w.clipMax=effect.clipX ? effect.clipX.max : undefined;
+      w.clipTaper=effect.clipX ? effect.clipX.taper : 0;
       w.originX=effect.origin.x;w.originY=effect.origin.y;w.rotation=effect.rotation;w.scaleX=sx;w.scaleY=sy;
       t.deformation=w;
     }
@@ -2120,7 +2123,7 @@ var VFXCore = (function () {
         effect.time += effect.lastDt;
         effect.totalTime += effect.lastDt;
         var preset = effect.preset;
-        if (!effect.draining && preset.loop && effect.time >= preset.duration) {
+        if (!effect.draining && effect.loop && effect.time >= preset.duration) {
           effect.time = effect.time % preset.duration;
           effect.layers.forEach(function (l) { l.burstDone = false; });
         }
@@ -2135,7 +2138,7 @@ var VFXCore = (function () {
           return l.def.loop && (l.def.duration === undefined || l.def.duration > 0) &&
             (!l.def.parent || hierarchyState(effect, l).active);
         });
-        var over = effect.draining || (!preset.loop && !layerLoop && effect.time >= preset.duration);
+        var over = effect.draining || (!effect.loop && !layerLoop && effect.time >= preset.duration);
         var particlesLeft = effect.layers.some(function (l) { return l.particles.length > 0; });
         if (over && !particlesLeft) {
           releaseEffect(effect);

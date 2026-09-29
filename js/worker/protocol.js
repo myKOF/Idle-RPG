@@ -63,7 +63,7 @@
    全為未投影世界幾何；速度為世界單位／秒，角度為弧度、spin 為弧度／秒。
    中心直線飛行加成員公轉；缺省沿舊路徑，origin=null 僅無座標高塔取畫面起點。 */
 /* v38：battle 面板新增 rebirthCharges（整數或 null），只投影逆轉乾坤的實際可用復活次數。 */
-var WORKER_PROTOCOL_VERSION = 38;
+var WORKER_PROTOCOL_VERSION = 39;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -164,6 +164,9 @@ var EVENT_KINDS = {
        delayMs 為逐道起飛延遲。第六階起使用 projectile 欄取代 attack 本體；命中由獨立 impact 事件播放。
        擴張曲線由 Skills2 第一階 radiusCurve 同步生成 Preset，模擬沿同一曲線掃過環帶且每道僅命中一次。
      area（可選）：打在地上的那塊區域，世界座標。圓形＝{ x, y, r }；
+             v39：雷鏈事件可帶 area.chainId（字串）；variant=lightning-chain-end 帶相同 id，
+             表示立即取消該鏈的所有飛行／尾流，targets 可為空。不影響其他鏈或命中閃光。
+             雷鏈 area.homingSpeed 為世界單位／秒，逐幀追蹤移動目標；travelMs 僅作估時，抵達才命中。
              矩形（火牆等地板場域）＝{ x, y, w, h, a }（長、寬、朝向弧度）並附帶 r＝
              外接圓半徑，讓只認得圓的既有畫法仍能退化出合理尺寸。
              環形（火狩等環繞場域）＝{ x, y, r, orbR, orbs, spin, spinRate }（環繞半徑、單一環繞體
