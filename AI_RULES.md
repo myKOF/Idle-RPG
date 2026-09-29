@@ -443,7 +443,7 @@ node --test "tests/*.test.cjs"
 **只能是下列兩種之一，不應存在第三種情況**：
 
 1. **配置表填入的**：技能表、狀態表等配置表的特效欄位
-   （`config/CSV/Skills.csv`、`Skills2.csv`、`Status.csv`，源頭是 Excel）。
+   （`config/CSV/Skills2.csv`、`Status.csv`，源頭是 Excel）。
 2. **程式碼裡寫死的**：例如 `js/data.js` 的 `VFX_COMBAT_DEFAULTS`（普攻、天罰、敵方出手）與 Runtime 的特殊處理。
    **一律登記在 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md`**，寫明是誰在用（顯示標籤）與用在哪裡。
    同一份特效即使配置表上也有人用，寫死的那一邊仍然要登記。

@@ -60,7 +60,6 @@ gold -10000 （扣除 10,000 金幣）
 scrap 數量 （裝備碎片 / 增加或扣除的數量）
 essence 數量 （附魔精華 / 增加或扣除的數量）
 dust 數量 （魔塵 / 增加或扣除的數量）
-scroll 數量 （魔法卷軸 / 增加或扣除的數量；2026-07-30 技能融合材料）
 ```
 
 範例：
@@ -78,7 +77,7 @@ dust -5 （扣除 5 魔塵）
 
 ```text
 【指令格式】
-mat 材料key 數量 （統一材料 / 材料名稱 / 數量；key 可為 gold、scrap、essence、dust、scroll）
+mat 材料key 數量 （統一材料 / 材料名稱 / 數量；key 可為 gold、scrap、essence、dust）
 
 範例：
 mat gold 50000 （發放 50,000 金幣）
@@ -856,8 +855,6 @@ masterylv 等級 （直接設定技能熟練度等級 0~1000；經驗歸零）
 ```text
 skillxp 100000
 masterylv 500
-scroll 100
-mat scroll -10
 ```
 
 【新版技能一鍵滿級（2026-08-18 內測服專用）】
