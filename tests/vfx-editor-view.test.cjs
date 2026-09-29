@@ -385,7 +385,12 @@ test('VIEW-35 用途那一欄再長，也不能把特效名稱擠掉或蓋住', 
   const src = stripped();
   const fn = src.slice(src.indexOf('function renderComboList'));
   const body = fn.slice(0, fn.indexOf('\n  }'));
-  assert.ok(/row\.all/.test(body), 'tooltip 要給逐階的完整清單');
+  /* 2026-09-29：逐階的完整清單從原生 tooltip 換成自繪的提示卡（見 USAGE-18／19），
+     所以這裡改成「列上要接得到提示卡」，清單本身仍然由 comboTipLines 從 row.all 取。 */
+  assert.ok(/showComboTip\(row, el\)/.test(body), '列上要開得出提示卡');
+  const tip = src.slice(src.indexOf('function comboTipLines'));
+  assert.ok(/row\.all/.test(tip.slice(0, tip.indexOf('\n  }'))),
+    '提示卡要給逐階的完整清單');
   /* 搜尋要用完整的那一份，否則打「水龍捲」這種被收攏掉的階段名會找不到 */
   const fill = src.slice(src.indexOf('function fillPresetPicker'));
   const fillBody = fill.slice(0, fill.indexOf('\n  }'));

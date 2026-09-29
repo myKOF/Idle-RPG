@@ -83,6 +83,24 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
   overflow: hidden; text-overflow: ellipsis;
   color: #7a9a7a; font-size: 11px;
 }
+/* 用途提示卡：列上那一欄是收攏過的（多階只寫群組名），完整清單攤在這裡。
+   掛在 body 上、position: fixed，所以清單捲動時不會跟著飄走。
+   pointer-events: none 是必要的——清單靠 input 的 blur 關掉，提示卡只要吃到
+   一次 mousedown，被它蓋住的那一列就永遠點不到。 */
+.combo-tip {
+  position: fixed; z-index: 60; max-width: 420px;
+  padding: 6px 9px; pointer-events: none;
+  background: #14141a; border: 1px solid #4a4a56; border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .6);
+  font-size: 11px; line-height: 1.55;
+}
+.combo-tip[hidden] { display: none; }
+.combo-tip-id { color: #d6d6dc; font-weight: 600; }
+.combo-tip-count, .combo-tip-none { color: #8a8a96; }
+.combo-tip-count { margin-bottom: 3px; }
+.combo-tip-line { color: #7a9a7a; white-space: normal; }
+/* 命中的那幾筆：使用者就是打那個字找過來的，要一眼看出命中的是哪一列 */
+.combo-tip-line.hit { color: #ffd479; font-weight: 600; }
 .combo-empty { padding: 6px 8px; color: #8a8a96; font-size: 12px; }
 /* 伺服器版本對不上的提示。黏在清單頂端：捲到一半才看到警告等於沒看到。 */
 .combo-warn {

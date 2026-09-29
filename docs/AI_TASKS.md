@@ -7929,3 +7929,13 @@ Worker 存活且頁面正常完成載入。
 - 範圍：VFX Core／Runtime、Editor、必要快取、相關測試與參數稽核文件；不修改技能表、傷害、其他工作副本或使用者素材。既有 preset 預設外觀維持相容。
 - 預檢：除 index.html 有 Claude 未提交修改外，其餘無衝突；依使用者既有授權，只在合併乾跑無衝突後繼續共用檔案。
 - 驗收：13 項新增測試通過；綜合 538 項 531 通過、1 跳過、6 失敗均於 HEAD 原版重現；Build 404 檔通過。Edge 實際參數編輯、undo/redo、移動目標雷鏈預覽無錯。無素材變動，不需素材庫空提交；保留使用者 Excel 修改。詳見 `docs/vfx/VFX_EDITOR_CODE_CONTROLS.md`。提交後交使用者整合，不合併或推送。
+
+## Claude｜Preset 下拉的用途提示卡與傳奇特效正名（VFX-COMBO-TIP-20260929）
+
+- Owner：Claude；Done。使用者搜「永恒超導體」跳出三份特效，三份的列上都沒有那四個字，問為什麼；並指出「雷霆過載」「傳說連鎖閃電」這兩個名字在特效清單裡根本查不到。查出兩件事：列上那一欄是**收攏過的**（同一個群組用到多階時只寫群組名，USAGE-7C 保證它短到放得下），而搜尋比對的是逐階的完整清單（`all`）——命中的字因此常常不在列上；另一個是「傳說連鎖閃電」不是任何東西的名稱，是當初在文件上取的描述。
+- 改動一（使用者：「用 tips 方式顯示完整的使用清單」）：完整清單從原生 `el.title` 換成自繪的提示卡。原生 title 要停一秒才出現、字級與換行不受控、清單一捲動就消失，等於沒人知道它存在。新的提示卡滑過或用 ↑↓ 移到那一列就出現，列出「共 N 處使用」與逐筆用途，並把**被目前關鍵字命中的那幾筆標黃**。`pointer-events: none` 是必要的——清單靠 input 的 blur 關掉，提示卡只要吃到一次 mousedown，被它蓋住的那一列就永遠點不到。關鍵字拆法抽成 `comboTerms`，篩選與標記共用同一套規則。
+- 改動二（使用者：「如果是用在傳說特效那麼就顯示傳說特效的名稱」）：`bolt-sky-lightning`／`bolt-chain-lightning`／`hit-lightning` 三列拆成一個使用者一列，標籤改用遊戲表上的名稱——傳奇特效【閃電飛越】【迅雷穿刺】（兩者走同一條 `legendaryScheduleChain`：前者施放魔法技能觸發、後者突刺命中附加）、神鑄特效【天罰】、潛力技能【雷霆過載】。下拉上 `bolt-chain-lightning` 從「連鎖閃電、雷霆過載／傳說連鎖閃電」變成「連鎖閃電、雷霆過載、閃電飛越、迅雷穿刺」。
+- 修改 `tools/vfx/editor/editor.js`、`editor.css`、編輯器頁面的快取版號、`docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md`、`tests/vfx-preset-usage.test.cjs`、`tests/vfx-editor-view.test.cjs`。沒有動到任何 preset、配置表或遊戲程式。
+- 驗證：新增 USAGE-17（標成傳奇／神鑄特效或潛力技能的列，標籤必須是 `Equipment_Affix.csv`／`Skills.csv` 上的名稱，設計師改名當場轉紅）、USAGE-18／18b（提示卡列出完整清單並標出命中；後者不寫死技能名，改為「凡是列上收攏掉的用途，提示卡都要攤開並標記」）、USAGE-19（滑鼠與鍵盤都接上、不得留著 `el.title`、CSS 不得吃掉點擊）。USAGE-10 與 VIEW-35 跟著搬家的實作更新（行為不變，斷言從字面比對改成跑 `comboTerms` 驗行為）。編輯器 426 項中 3 項失敗（CAP-2、HISTORY-42、16b canonical），三項都在既有基線上、與本次無關。build_check 404 檔通過、diff check 通過。
+- 實機確認（本機編輯器 28362）：搜「永恒超導體」得到三份特效；滑過 `bolt-chain-lightning` 跳出提示卡「共 5 處使用」，其中「連鎖閃電·永恒超導體」標黃；↓ 鍵移動時提示卡跟著換；點擊照常開啟 `hit-lightning`，清單與提示卡一起收起。
+- 衝突預檢：`ai/codex` 有一筆比 HEAD 新的提交（`0aa6f755` 連鎖閃電改用配置表飛行速度與子彈欄位）同樣動到 `tools/vfx/editor/index.html`，但改的是 `vfx-runtime.js` 那一行、我改的是 `editor.js` 那一行，行不同；它另外動到 `config/CSV/Skills2.csv` 的連鎖閃電第 1 階欄位，與本次的用途標籤無關。codex 工作區另有未提交的 `vfx/presets/bolt-chain-travel-bluewhite.json`，未碰。未合併／推送。

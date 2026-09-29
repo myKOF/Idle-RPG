@@ -156,12 +156,90 @@
       .catch(function () { /* 清單拿不到就維持原本的檔案對話框流程 */ });
   }
 
-  function comboFilter(text) {
+  /* 關鍵字拆法只有這一份：清單怎麼篩，提示卡就怎麼標，兩邊不得各寫各的。
+     空白分隔的多個關鍵字要全部命中：打「ground fire」找得到 ground-field-fire，
+     但不會被「fire」的一大堆結果淹掉。 */
+  function comboTerms(text) {
     var q = String(text || '').trim().toLowerCase();
-    if (!q) return combo.rows.slice();
-    /* 空白分隔的多個關鍵字要全部命中：打「ground fire」找得到 ground-field-fire，
-       但不會被「fire」的一大堆結果淹掉。 */
-    var terms = q.split(/\s+/);
+    return q ? q.split(/\s+/) : [];
+  }
+
+  /* 用途提示卡（2026-09-29 使用者要求）：列上那一欄是**收攏過的**（同一個群組用到
+     多階時只寫群組名），所以搜尋命中的字常常不在列上——打「永恒超導體」跳出三份
+     特效，三份的列上都只寫著「連鎖閃電」，看起來像搜錯了。滑過去或用鍵盤移到那一列，
+     就把完整清單攤開，並把命中的那幾筆標起來。
+
+     原本掛在 el.title：原生提示要停一秒才出現、字級與換行都不受控，清單一捲動就消失
+     ——等於沒有人知道它存在。 */
+  var comboTip = null;
+  function comboTipEl() {
+    if (comboTip && comboTip.parentNode) return comboTip;
+    comboTip = document.createElement('div');
+    comboTip.className = 'combo-tip';
+    comboTip.hidden = true;
+    document.body.appendChild(comboTip);
+    return comboTip;
+  }
+
+  /* 這一列的完整使用清單，逐筆標出有沒有被目前的關鍵字命中。純函式，好測。 */
+  function comboTipLines(row, query) {
+    var terms = comboTerms(query);
+    return ((row && row.all) || []).map(function (label) {
+      var low = String(label).toLowerCase();
+      return {
+        text: label,
+        hit: terms.length > 0 && terms.every(function (t) { return low.indexOf(t) >= 0; })
+      };
+    });
+  }
+
+  function hideComboTip() {
+    if (comboTip) { comboTip.hidden = true; comboTip.textContent = ''; }
+  }
+
+  function showComboTip(row, anchor) {
+    if (!row || !anchor) { hideComboTip(); return; }
+    var el = comboTipEl();
+    el.textContent = '';
+    var head = document.createElement('div');
+    head.className = 'combo-tip-id';
+    head.textContent = row.id;
+    el.appendChild(head);
+    var input = $('preset-search');
+    var lines = comboTipLines(row, input ? input.value : '');
+    if (!lines.length) {
+      var none = document.createElement('div');
+      none.className = 'combo-tip-none';
+      none.textContent = '目前沒有任何技能或程式碼用到';
+      el.appendChild(none);
+    } else {
+      var count = document.createElement('div');
+      count.className = 'combo-tip-count';
+      count.textContent = '共 ' + lines.length + ' 處使用';
+      el.appendChild(count);
+      lines.forEach(function (line) {
+        var item = document.createElement('div');
+        item.className = 'combo-tip-line' + (line.hit ? ' hit' : '');
+        item.textContent = line.text;
+        el.appendChild(item);
+      });
+    }
+    el.hidden = false;
+    /* 貼在那一列右邊，放不下就翻到左邊。清單自己會捲動，所以位置一律由
+       getBoundingClientRect ＋ position: fixed 決定，不跟著捲軸飄走。 */
+    var r = anchor.getBoundingClientRect();
+    var left = r.right + 8;
+    if (left + el.offsetWidth > window.innerWidth - 8) {
+      left = Math.max(8, r.left - el.offsetWidth - 8);
+    }
+    el.style.left = left + 'px';
+    el.style.top = Math.min(Math.max(8, r.top),
+      Math.max(8, window.innerHeight - el.offsetHeight - 8)) + 'px';
+  }
+
+  function comboFilter(text) {
+    var terms = comboTerms(text);
+    if (!terms.length) return combo.rows.slice();
     return combo.rows.filter(function (row) {
       for (var i = 0; i < terms.length; i++) {
         if (row.search.indexOf(terms[i]) < 0) return false;
@@ -175,6 +253,9 @@
     var host = $('preset-list');
     if (!host) return;
     host.textContent = '';
+    /* 整批換掉的那一瞬間，滑鼠底下的那一列已經不存在了；留著提示卡會指向一份
+       不在畫面上的 preset。 */
+    hideComboTip();
     /* 提示放在清單最上面，因為「為什麼沒有技能名？」就是在這裡問出來的。 */
     if (comboNotice) {
       var warn = document.createElement('div');
@@ -206,11 +287,11 @@
         tag.textContent = row.label;
         el.appendChild(tag);
       }
-      /* tooltip 給逐階的完整清單：列上為了長度把同群組的多個階段收攏成群組名，
-         真的要知道是哪幾階時，滑鼠停一下就有。 */
-      el.title = row.all && row.all.length
-        ? row.id + '\n共 ' + row.count + ' 處使用：\n· ' + row.all.join('\n· ')
-        : row.id + '：目前沒有任何技能或程式碼用到';
+      /* 逐階的完整清單改用自繪的提示卡（showComboTip）：列上為了長度把同群組的
+         多個階段收攏成群組名，滑過去才看得到是哪幾階、以及命中的是哪一筆。
+         刻意不留 el.title——兩個提示會一起冒出來。 */
+      el.addEventListener('mouseenter', function () { showComboTip(row, el); });
+      el.addEventListener('mouseleave', hideComboTip);
       /* mousedown 而不是 click：input 的 blur 會先關掉清單，click 就永遠打不中。 */
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
@@ -239,22 +320,26 @@
     combo.open = false;
     var host = $('preset-list');
     if (host) { host.hidden = true; host.textContent = ''; }
+    /* 提示卡掛在 body 上，不是清單的子節點：清單收起來它不會自己消失。 */
+    hideComboTip();
   }
 
   function scrollComboActive() {
     var host = $('preset-list');
-    if (!host) return;
+    if (!host) return null;
     /* 用 class 查而不是 children[i]：清單最上面可能還有一行警告，
        用索引會整個差一格——高亮在 A、捲到的卻是 B。 */
     var el = host.querySelectorAll('.combo-row')[combo.active];
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    return el || null;
   }
 
   function moveComboActive(delta) {
     if (!combo.shown.length) return;
     combo.active = (combo.active + delta + combo.shown.length) % combo.shown.length;
     renderComboList();
-    scrollComboActive();
+    /* 鍵盤移動也要看得到用途：只做滑鼠的話，用 ↑↓ 挑特效的人永遠看不到完整清單。 */
+    showComboTip(combo.shown[combo.active], scrollComboActive());
   }
 
   function choosePreset(id) {

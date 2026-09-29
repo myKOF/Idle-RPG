@@ -46,9 +46,15 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | preset id | 顯示標籤 | 用在哪裡 |
 | --- | --- | --- |
 | `hit-basic-irregular` | 普攻 | 我方普通攻擊的命中爆點（含連擊的額外段） |
-| `bolt-sky-lightning` | 天罰／雷霆過載 | 神鑄特效【天罰】的落雷，與潛力技能【雷霆過載】的本體雷擊 |
-| `bolt-chain-lightning` | 雷霆過載／傳說連鎖閃電 | 雷霆過載與傳說特效連鎖閃電在敵人之間跳躍的電弧 |
-| `hit-lightning` | 天罰／雷霆過載／傳說連鎖閃電 | 上面三者的命中爆點 |
+| `bolt-sky-lightning` | 天罰 | 神鑄特效【天罰】追加的落雷（`js/combat.js`） |
+| `bolt-sky-lightning` | 雷霆過載 | 潛力技能【雷霆過載】的本體雷擊（`js/potential.js`） |
+| `bolt-chain-lightning` | 雷霆過載 | 潛力技能【雷霆過載】在敵人之間跳躍的電弧 |
+| `bolt-chain-lightning` | 閃電飛越 | 傳奇特效【閃電飛越】施放魔法技能時觸發的連鎖閃電（`js/legendary.js` 的 `legendaryScheduleChain`） |
+| `bolt-chain-lightning` | 迅雷穿刺 | 傳奇特效【迅雷穿刺】突刺命中時附加的連鎖閃電（`js/skills2.js` 走同一條 `legendaryScheduleChain`） |
+| `hit-lightning` | 天罰 | 天罰落雷的命中爆點 |
+| `hit-lightning` | 雷霆過載 | 潛力技能【雷霆過載】的命中爆點 |
+| `hit-lightning` | 閃電飛越 | 傳奇特效【閃電飛越】連鎖的命中爆點 |
+| `hit-lightning` | 迅雷穿刺 | 傳奇特效【迅雷穿刺】連鎖的命中爆點 |
 | `proj-meteor-small` | 小隕石 | 由 Runtime 依 variant 取用的小隕石投射物 |
 | `hit-fire-explosion` | 小隕石 | 小隕石落地的爆點 |
 | `slash-enemy-melee` | 敵方近戰 | 敵人近身攻擊的斬擊 |
@@ -97,6 +103,14 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
   讓它在下拉上顯示成孤兒。使用者指正：特效只存在兩種情況——配置表填入的、程式裡寫死的，
   寫死的都必須寫在清單裡，才能一眼看出哪個特效被誰使用。已改回清單並拿掉那一段。
   使用者並說明：不必另外標註「沒有被使用」，下拉上沒有任何顯示就代表沒有被使用。
+- **2026-09-29**：使用者回報下拉上標著「傳說連鎖閃電」，但遊戲裡查遍特效也沒有這個名字——
+  那不是任何東西的名稱，是當初在文件上取的描述。實際在用的是兩個**傳奇特效**：
+  【閃電飛越】（施放魔法技能時觸發）與【迅雷穿刺】（突刺命中時附加），兩者走同一條
+  `legendaryScheduleChain`。使用者要求「用在傳說特效就顯示傳說特效的名稱」，因此
+  `bolt-sky-lightning`／`bolt-chain-lightning`／`hit-lightning` 三列拆成一個使用者一列，
+  標籤一律採 `Equipment_Affix.csv`（傳奇／神鑄特效）與 `Skills.csv`（潛力技能）上的名稱。
+  由 USAGE-17 守住：「用在哪裡」講了是哪一種來源，標籤就必須是那張表上的名稱本身，
+  設計師改名時當場轉紅。
 
 ## 格式規定（測試會檢查）
 
