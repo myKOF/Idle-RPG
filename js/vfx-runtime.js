@@ -419,12 +419,11 @@ var VFXRuntime = (function () {
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
-        if (p.id === 'bolt-chain-travel-bluewhite') {
-          var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
-          trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) * num(front.scaleOverLife, 1) : num(p.sizing && p.sizing.authored && p.sizing.authored.width, NOMINAL_BEAM);
-          // 既有圖集第 11 格前端抵達右緣；播放速度需對齊事件的抵達秒數。
-          trackedBeamArrivalTimes[p.id] = front && front.sheet ? 11 / num(front.sheet.fps, 60) : p.duration;
-        }
+        // 每份 Preset 都保存自己的製作幾何；是否追蹤由播放事件決定。
+        var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
+        trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) * num(front.scaleOverLife, 1) : num(p.sizing && p.sizing.authored && p.sizing.authored.width, NOMINAL_BEAM);
+        // 既有圖集第 11 格前端抵達右緣；播放速度需對齊事件的抵達秒數。
+        trackedBeamArrivalTimes[p.id] = front && front.sheet ? 11 / num(front.sheet.fps, 60) : p.duration;
         // Two synchronized passes share textures; each stone switches sides at the orbit midline.
         if (isRockOrbitPreset(p.id) && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
           ['back','front'].forEach(function(half) {
@@ -700,13 +699,15 @@ var VFXRuntime = (function () {
 
     /* 從玩家（或起點）沿方向拉長到目標：光束與連鎖段 */
     function playBeam(rt, presetId, spec) {
+      // 飛行／回收屬於事件語意，複製或換色後的新 Preset 名稱也必須走同一路徑。
+      var tracked = spec.fxKind === 'chain';
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       var from = ids.length >= 2 ? ctx.posOf(ids[0])
         : (spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos());
       var toId = ids.length >= 2 ? ids[1] : ids[0];
       if (!toId) return false;
       var to = ctx.posOf(toId);
-      if (presetId === 'bolt-chain-travel-bluewhite' && ctx.chainPoint) {
+      if (tracked && ctx.chainPoint) {
         from = ctx.chainPoint(ids.length >= 2 ? ids[0] : (spec.sourceId || 'pv-float'));
         to = ctx.chainPoint(toId);
         if (!from && spec.area && isNum(spec.area.sourceX)) from = {x:spec.area.sourceX,y:spec.area.sourceY};
@@ -717,14 +718,14 @@ var VFXRuntime = (function () {
       var dx = to.x - from.x, dy = to.y - from.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (!(dist > 0)) dist = 1;
-      var travel = trackedBeamWidths[presetId] ? travelSecAt(spec, ids.length >= 2 ? 1 : 0) : 0;
+      var travel = tracked ? travelSecAt(spec, ids.length >= 2 ? 1 : 0) : 0;
       // 有權威飛行時間時，保留長電弧與 Preset 原厚度，本體由 A 平移到 B。
       // 舊事件沒有 travelMs 才維持全長連線，避免推測另一個命中時刻。
       var authoredLength = tuning(presetId,'chainLengthM') > 0
         ? tuning(presetId,'chainLengthM') * (typeof bfMeterPx==='function'?bfMeterPx(1):10) : num(spec.lineLength, 0);
       var body = travel > 0 ? (authoredLength > 0 ? authoredLength : 180) * dist / Math.max(1,Math.hypot(dx,dy/groundScale)) : dist;
-      var width = trackedBeamWidths[presetId] || NOMINAL_BEAM;
-      var chaseSpeed=spec.area && num(spec.area.homingSpeed,0);
+      var width = tracked ? trackedBeamWidths[presetId] || NOMINAL_BEAM : NOMINAL_BEAM;
+      var chaseSpeed=tracked && spec.area && num(spec.area.homingSpeed,0);
       var ref = play(rt, presetId, {
         position: travel > 0 ? {x:from.x-dx*body/dist,y:from.y-dy*body/dist} : from,
         rotation: Math.atan2(dy, dx),
@@ -732,9 +733,10 @@ var VFXRuntime = (function () {
         timeScale: chaseSpeed > 0 ? 1 : travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / (travel*(1+body/dist)+.02) : 1,
         clipX: travel > 0 ? {min:width,max:width} : null,
         scaleX: body / width,
-        scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
-      }, trackedBeamWidths[presetId] ? 1 : undefined);
-      if (ref && presetId === 'bolt-chain-travel-bluewhite') {
+        // 飛行本體等比縮放，包含貼圖內建折線；只壓X會把彎曲角度放大。
+        scaleY: tracked && travel > 0 ? body / width : tracked ? profile.scale : 1
+      }, tracked ? 1 : undefined);
+      if (ref && tracked) {
         trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: width, body:body, worldBody:authoredLength>0?authoredLength:180,
           chaseSpeed:chaseSpeed, position:{x:from.x,y:from.y/groundScale}, previousTarget:{x:to.x,y:to.y/groundScale}, travelled:0, drain:0, heading:Math.atan2(dy,dx),
           speed:dist/Math.max(.001,travel), chainId:spec.area && spec.area.chainId, travel: travel, startedAt: clock, from: {x:from.x,y:from.y}, to: {x:to.x,y:to.y} });
@@ -1617,7 +1619,7 @@ var VFXRuntime = (function () {
           var tailOffset=beam.drain-beam.worldBody;
           moveRef(beam.ref,{
             position:{x:beam.position.x+ux*tailOffset,y:(beam.position.y+uy*tailOffset)*groundScale},
-            rotation:Math.atan2(uy*groundScale,ux),scaleX:beam.worldBody*projection/beam.width,scaleY:profile.scale,
+            rotation:Math.atan2(uy*groundScale,ux),scaleX:beam.worldBody*projection/beam.width,scaleY:beam.worldBody*projection/beam.width,
             clipX:{min:Math.max(0,beam.worldBody-beam.travelled-beam.drain)/beam.worldBody*beam.width,
               max:(beam.worldBody-beam.drain)/beam.worldBody*beam.width,taper:beam.width*tuning(beam.ref.presetId,'tipTaper')}
           },1);
@@ -1643,7 +1645,7 @@ var VFXRuntime = (function () {
             max:Math.min(bodyLength,distance-head+bodyLength)/bodyLength*beam.width,
             taper:beam.width*tuning(beam.ref.presetId,'tipTaper')
           } : null,
-          scaleY: profile.scale
+          scaleY: beam.travel > 0 ? bodyLength / beam.width : profile.scale
         }, 1)) trackingBeams.splice(bi, 1);
       }
 
@@ -1787,7 +1789,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260929-chain-stable';
+  var DATA_VERSION = '20260929-chain-wave-motion';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

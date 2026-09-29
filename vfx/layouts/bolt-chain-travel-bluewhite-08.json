@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "bolt-chain-travel-bluewhite-08",
+  "groups": [
+    {
+      "id": "bolt-chain-travel-bluewhite-08",
+      "name": "bolt-chain-travel-bluewhite-08",
+      "layerIds": [
+        "blue-corona",
+        "white-core",
+        "side-fork"
+      ]
+    }
+  ],
+  "order": [
+    "group:bolt-chain-travel-bluewhite-08"
+  ]
+}

@@ -10,12 +10,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
       "zIndex": 0,
       "position": {
-        "x": -0.7562,
-        "y": 0.6999
+        "x": -14.9944,
+        "y": 0.0623
       },
       "scale": {
-        "x": 0.2664,
-        "y": 0.1905
+        "x": 0.4839,
+        "y": 0.1408
       },
       "anchor": {
         "x": 0,
@@ -50,12 +50,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
       "zIndex": 1,
       "position": {
-        "x": -0.7562,
-        "y": 0.6999
+        "x": -14.9944,
+        "y": 0.0623
       },
       "scale": {
-        "x": 0.2664,
-        "y": 0.112
+        "x": 0.4839,
+        "y": 0.0828
       },
       "anchor": {
         "x": 0,
@@ -90,12 +90,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 2,
       "position": {
-        "x": -0.7562,
-        "y": 0.6999
+        "x": -14.9944,
+        "y": 0.0623
       },
       "scale": {
-        "x": 0.2664,
-        "y": 0.0471
+        "x": 0.4839,
+        "y": 0.0348
       },
       "anchor": {
         "x": 0,
