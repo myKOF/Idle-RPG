@@ -1,7 +1,7 @@
 {
   "name": "baseline-idle-v2",
   "notes": [
-    "預設基礎策略：換裝→強化→技能→熔煉→高塔。",
+    "預設基礎策略：換裝→強化→熔煉→高塔。",
     "⚠️ 拆解只設普通/優良。遊戲的自動裝備只填空格、不做替換（js/player.js:313），",
     "所以稀有以上必須留在背包當換裝候選；全部拆掉的話角色會被鎖死在開場隨便填進去的裝備。",
     "⚠️ 不要加 stage.goMax 的高頻規則：死亡會退回第 1 關，goMax 會立刻把角色送回死掉的那一關，",
@@ -15,89 +15,11 @@
     "newforge",
     "talents",
     "equip",
-    "skills",
     "header",
     "inv",
     "battle"
   ],
   "lists": {
-    "skillEarly": [
-      "toughness",
-      "manaBarrier",
-      "regenerate",
-      "healWound",
-      "secondWind",
-      "vampirism",
-      "sharpBlade",
-      "powerSlash",
-      "doubleStrike",
-      "whirlwind",
-      "armorBreak"
-    ],
-    "skillMid": [
-      "toughness",
-      "sharpBlade",
-      "keenEye",
-      "brutality",
-      "vampirism",
-      "swiftness",
-      "ironSkin",
-      "fortuneFavor",
-      "phantomEcho",
-      "meditation",
-      "reaperTempo",
-      "battleReflex",
-      "zeroCadence",
-      "afterimagePursuit",
-      "bulwarkFeedback",
-      "huntSigil",
-      "lingeringGlow",
-      "virulentPulse",
-      "arcaneMind",
-      "manaBarrier",
-      "regenerate",
-      "healWound",
-      "secondWind"
-    ],
-    "skillLate": [
-      "sharpBlade",
-      "keenEye",
-      "brutality",
-      "swiftness",
-      "vampirism",
-      "toughness",
-      "powerSlash",
-      "doubleStrike",
-      "whirlwind",
-      "armorBreak",
-      "executeStrike",
-      "rendWound",
-      "stunBlow",
-      "berserkStrike",
-      "preciseThrust",
-      "heavySmash",
-      "swiftCuts",
-      "counterStance",
-      "soulBrandFlurry",
-      "sinDetonate",
-      "echoBlade",
-      "warSpiritEngine",
-      "pursuitDecree",
-      "warOverture",
-      "woundCollapse",
-      "mindflowChain",
-      "swordDomain",
-      "phantomEcho",
-      "reaperTempo",
-      "battleReflex",
-      "zeroCadence",
-      "afterimagePursuit",
-      "huntSigil",
-      "manaBarrier",
-      "regenerate",
-      "healWound",
-      "secondWind"
-    ],
     "affixWeapon": [
       "atkPct",
       "critRate",
@@ -175,35 +97,6 @@
     ],
     "affixVsNormalRed": [
       "normalDmgRed"
-    ],
-    "loadoutPriority": [
-      "soulBrandFlurry",
-      "counterStance",
-      "swiftCuts",
-      "preciseThrust",
-      "heavySmash",
-      "rendWound",
-      "berserkStrike",
-      "stunBlow",
-      "swordDomain",
-      "mindflowChain",
-      "doubleStrike",
-      "powerSlash",
-      "woundCollapse",
-      "warOverture",
-      "pursuitDecree",
-      "warSpiritEngine",
-      "echoBlade",
-      "sinDetonate",
-      "executeStrike",
-      "armorBreak",
-      "whirlwind",
-      "manaBarrier",
-      "regenerate",
-      "healWound",
-      "secondWind",
-      "treasureSense",
-      "midasTouch"
     ]
   },
   "rules": [
@@ -918,140 +811,6 @@
         }
       ],
       "why": "只拆解普通與優良。稀有以上要留在背包當換裝候選——遊戲的自動裝備只填空格不做替換（js/player.js:313），全拆掉等於把換裝的來源砍光，角色會被鎖死在開場隨便填進去的裝備"
-    },
-    {
-      "id": "learn-skills",
-      "everySec": 30,
-      "cmd": "skill.learn",
-      "expand": [
-        {
-          "key": "id",
-          "listByLevel": [
-            {
-              "maxLevel": 50,
-              "list": "skillEarly"
-            },
-            {
-              "maxLevel": 100,
-              "list": "skillMid"
-            },
-            {
-              "list": "skillLate"
-            }
-          ]
-        }
-      ],
-      "why": "依 player_strategy.md 技能升級優先順序分段：前期(≤50)先點生命上限被動與護盾／持續恢復；中期(51~100)把被動技能全點滿；後期(101+)依裝備詞條方向（targetAffixes 為物理向）集中投物理。清單順序即投點優先序，點數不足時後面的由遊戲擋下"
-    },
-    {
-      "id": "learn-fusions",
-      "everySec": 60,
-      "cmd": "skill.learn",
-      "expand": [
-        {
-          "key": "id",
-          "path": "panels.skills.fusions",
-          "field": "id"
-        }
-      ],
-      "why": "融合技產出時是未學習狀態，要先升到 Lv.1 才能裝備。id 由遊戲生成（fusion_ + uid），只能從 fusions[].id 撈"
-    },
-    {
-      "id": "equip-loadout-fusions",
-      "everySec": 60,
-      "cmd": "skill.equipLoadout",
-      "expand": [
-        {
-          "key": "id",
-          "path": "panels.skills.fusions",
-          "field": "id"
-        }
-      ],
-      "why": "融合技裝上技能欄，排在一般技能之前——格數有限時優先給融合技"
-    },
-    {
-      "id": "unequip-worst-skill",
-      "everySec": 60,
-      "cmd": "skill.unequipLoadout",
-      "loadoutSwap": {
-        "skills": "panels.skills",
-        "priority": "loadoutPriority"
-      },
-      "why": "技能欄滿了就卸下優先序最差的，讓 equip-loadout 補上更好的。開局預設的 arcaneBurst（Lv.1 魔法技，物理流用不到）不卸就永久佔位"
-    },
-    {
-      "id": "equip-loadout",
-      "everySec": 60,
-      "cmd": "skill.equipLoadout",
-      "expand": [
-        {
-          "key": "id",
-          "list": "loadoutPriority"
-        }
-      ],
-      "why": "把學會的技能真的裝上技能欄。原本六份策略都沒有這條，實測 100 小時後技能欄仍是開局預設的 powerSlash／arcaneBurst(Lv.1)／manaBarrier，學會的 28 個技能一個都沒上場。清單依多段傷害排序（js/skills.js 的 fx.hits），重複／已滿／未學會一律由遊戲擋下"
-    },
-    {
-      "id": "fuse-skills-1",
-      "everySec": 300,
-      "cmd": "skill.fuse",
-      "if": [
-        [
-          "panels.skills.fusions.length",
-          "<",
-          1
-        ],
-        [
-          "view.level",
-          ">=",
-          100
-        ],
-        [
-          "view.gold",
-          ">=",
-          500000
-        ]
-      ],
-      "args": {
-        "ids": [
-          "whirlwind",
-          "armorBreak",
-          "executeStrike",
-          "sinDetonate"
-        ]
-      },
-      "why": "技能融合：whirlwind＋armorBreak＋executeStrike＋sinDetonate。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
-    },
-    {
-      "id": "fuse-skills-2",
-      "everySec": 300,
-      "cmd": "skill.fuse",
-      "if": [
-        [
-          "panels.skills.fusions.length",
-          "<",
-          2
-        ],
-        [
-          "view.level",
-          ">=",
-          200
-        ],
-        [
-          "view.gold",
-          ">=",
-          500000
-        ]
-      ],
-      "args": {
-        "ids": [
-          "echoBlade",
-          "warSpiritEngine",
-          "pursuitDecree",
-          "warOverture"
-        ]
-      },
-      "why": "技能融合：echoBlade＋warSpiritEngine＋pursuitDecree＋warOverture。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
     },
     {
       "id": "gem-shop-buy",

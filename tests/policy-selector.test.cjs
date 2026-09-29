@@ -834,12 +834,12 @@ test('關卡閘門：品質沒到門檻時要退回安全關卡區間', () => {
   assert.equal(at(30, { helmet: 3 })[0].args.on, true, '品質達標就放行，不受安全關卡區間限制');
 });
 
-test('學技能：清單隨等級換段', () => {
+test('expand listByLevel：清單隨等級換段', () => {
   const p = createPolicy({
     name: 'test', decideEveryGameSec: 1, needPanels: [],
     lists: { early: ['toughness'], mid: ['keenEye'], late: ['sharpBlade'] },
     rules: [{
-      id: 'learn', cmd: 'skill.learn',
+      id: 'pick', cmd: 'gem.composeAll',
       expand: [{ key: 'id', listByLevel: [
         { maxLevel: 50, list: 'early' }, { maxLevel: 100, list: 'mid' }, { list: 'late' }
       ] }]

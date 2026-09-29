@@ -262,19 +262,19 @@ for (const line of policy.bootstrap) {
    ⚠️ runCommand 的 ok 只代表「執行時沒有拋錯」，不代表「這個操作真的發生了」。
    而「做到了沒有」這件事，模擬層**沒有統一的表達方式**：
 
-     js/skills.js:2129   learnOrUpgradeSkill  成功回 null，失敗回 '技能點不足'
+     js/skills2.js       skills2Learn         成功回 null，失敗回 '金幣不足' 之類的原因字串
      js/factory.js:457   manualUpgrade        成功回 'ok'，資源不足回 'poor'，失敗回 'fail'
      js/tower.js:95      startTowerAuto       成敗都無回傳值
      gem.composeAll                           回 { made, err }
 
-   注意 learnOrUpgradeSkill 與 manualUpgrade **完全相反**：一個字串代表失敗，
+   注意 skills2Learn 與 manualUpgrade **完全相反**：一個字串代表失敗，
    另一個字串代表成功。所以**不能用型別猜語意**——這個坑踩過兩次了：
-   第一次把「字串＝失敗」寫死，於是 learnOrUpgradeSkill 的成功被算成失敗；
+   第一次把「字串＝失敗」寫死，於是舊版技能 learnOrUpgradeSkill（已移除）的成功被算成失敗；
    第二次沿用同一條規則，於是 manualUpgrade 回的 'ok' 又被算成失敗，
    報表顯示「強化 231 次全部無效」，實際上武器已經 +6。
 
    所以只在語意明確時分類，字串一律歸到 gameReply 並保留原文直方圖，交給人判讀——
-   遊戲回的字串本來就是講給人看的（'poor' / 'ok' / '技能點不足'），呈現原文比猜測有用。 */
+   遊戲回的字串本來就是講給人看的（'poor' / 'ok' / '金幣不足'），呈現原文比猜測有用。 */
 const cmdStats = Object.create(null);
 function bump(bucket, key) { bucket[key] = (bucket[key] || 0) + 1; }
 
@@ -305,7 +305,7 @@ function dispatch(cmds) {
       /* 沒有回傳值就是沒有證據（js/tower.js:95）。要判斷成敗只能看原生日誌。 */
       s.noReturn++;
     } else {
-      /* null（js/skills.js:2129 的成功慣例）、true、或有內容的物件 */
+      /* null（skills2Learn 的成功慣例）、true、或有內容的物件 */
       s.ok++;
     }
   }
@@ -389,10 +389,10 @@ function assertInvariants(view, stats) {
 /* ---- 快照（圖表資料來源）----
    每一欄都是遊戲原生的值，harness 不做任何再計算、外插或平滑。
    來源欄位記在 snapshots.meta.json，供圖表標註。 */
-/* gems / magicScroll / soulOrigin 也是 buildView() 既有欄位（見 protocol.js 的
+/* gems / soulOrigin 也是 buildView() 既有欄位（見 protocol.js 的
    TICK_VIEW_KEYS）。先前沒放進來，導致儀表板拿不到寶石數量只能顯示 0。 */
 const SNAP_VIEW_KEYS = ['level', 'stage', 'gold', 'scrap', 'dust', 'essence',
-  'ancientEssence', 'demonSeed', 'gems', 'magicScroll', 'soulOrigin',
+  'ancientEssence', 'demonSeed', 'gems', 'soulOrigin',
   'hp', 'hpMax', 'mp', 'mpMax', 'xp', 'xpMax'];
 const snapRows = [];
 

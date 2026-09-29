@@ -1,6 +1,6 @@
 {
   "name": "policy-extreme",
-  "description": "極限玩家：24小時不間斷在線。採最佳技能與配裝策略(物理+吸血續戰+爆擊爆傷詞條+技能融合)，equip-best-per-slot自動換裝，全身11部位平均強化至+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力與技能融合，階梯點滿轉生天賦。穩定擴背包至1000格，R0~R1自動拆解，史詩以上裝備洗詞條",
+  "description": "極限玩家：24小時不間斷在線。採最佳配裝策略(物理+吸血續戰+爆擊爆傷詞條)，equip-best-per-slot自動換裝，全身11部位平均強化至+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，極速潛力技能，階梯點滿轉生天賦。穩定擴背包至1000格，R0~R1自動拆解，史詩以上裝備洗詞條",
   "decideEveryGameSec": 5,
   "dailyActiveHours": 24,
   "needPanels": [
@@ -8,7 +8,6 @@
     "gems",
     "newforge",
     "equip",
-    "skills",
     "talents",
     "header",
     "inv",
@@ -57,94 +56,6 @@
       "t3_def",
       "t3_mdef",
       "t3_allres2"
-    ],
-    "skillEarly": [
-      "midasTouch",
-      "powerSlash",
-      "doubleStrike",
-      "manaBarrier",
-      "regenerate",
-      "sharpBlade",
-      "rendWound",
-      "berserkStrike",
-      "stunBlow",
-      "treasureSense",
-      "toughness",
-      "vampirism",
-      "healWound",
-      "whirlwind",
-      "armorBreak",
-      "secondWind"
-    ],
-    "skillMid": [
-      "midasTouch",
-      "swiftCuts",
-      "preciseThrust",
-      "heavySmash",
-      "rendWound",
-      "berserkStrike",
-      "stunBlow",
-      "powerSlash",
-      "doubleStrike",
-      "sharpBlade",
-      "keenEye",
-      "brutality",
-      "fortuneFavor",
-      "treasureSense",
-      "manaBarrier",
-      "regenerate",
-      "toughness",
-      "vampirism",
-      "swiftness",
-      "ironSkin",
-      "reaperTempo",
-      "battleReflex",
-      "zeroCadence",
-      "afterimagePursuit",
-      "arcaneMind",
-      "healWound",
-      "secondWind"
-    ],
-    "skillLate": [
-      "midasTouch",
-      "treasureSense",
-      "sharpBlade",
-      "keenEye",
-      "brutality",
-      "swiftness",
-      "vampirism",
-      "toughness",
-      "powerSlash",
-      "doubleStrike",
-      "whirlwind",
-      "armorBreak",
-      "executeStrike",
-      "rendWound",
-      "stunBlow",
-      "berserkStrike",
-      "preciseThrust",
-      "heavySmash",
-      "swiftCuts",
-      "counterStance",
-      "soulBrandFlurry",
-      "sinDetonate",
-      "echoBlade",
-      "warSpiritEngine",
-      "pursuitDecree",
-      "warOverture",
-      "woundCollapse",
-      "mindflowChain",
-      "swordDomain",
-      "phantomEcho",
-      "reaperTempo",
-      "battleReflex",
-      "zeroCadence",
-      "afterimagePursuit",
-      "huntSigil",
-      "manaBarrier",
-      "regenerate",
-      "healWound",
-      "secondWind"
     ],
     "affixWeapon": [
       "atkPct",
@@ -223,39 +134,7 @@
     ],
     "affixVsNormalRed": [
       "normalDmgRed"
-    ],
-    "loadoutPriority": [
-      "midasTouch",
-      "soulBrandFlurry",
-      "counterStance",
-      "treasureSense",
-      "swiftCuts",
-      "preciseThrust",
-      "heavySmash",
-      "rendWound",
-      "berserkStrike",
-      "stunBlow",
-      "swordDomain",
-      "mindflowChain",
-      "doubleStrike",
-      "powerSlash",
-      "woundCollapse",
-      "warOverture",
-      "pursuitDecree",
-      "warSpiritEngine",
-      "echoBlade",
-      "sinDetonate",
-      "executeStrike",
-      "armorBreak",
-      "whirlwind",
-      "manaBarrier",
-      "regenerate",
-      "healWound",
-      "secondWind"
-    ],
-    "skillEarly_依據": "技能點極度稀缺，清單順序＝投點順序（點數不足時後面的由遊戲擋下），所以順序就是策略本身。實測改前 Lv.97 時 powerSlash 與 arcaneBurst 都停在 1 級、防禦與被動八個全 10 級、技能點剩 0——等於用 440% 攻擊的一級強力斬打完前 100 級（滿級 1160%）。真人 24 小時存檔是 37 個技能全 Lv.10。排序原則：點金手（金幣引擎，解開強化的瓶頸，收益擴散到每個部位）→ Lv.1 多段技 → 最低限度生存 → Lv.20/50 多段技。",
-    "skillMid_依據": "原本這一段（51~100 級）攻擊技掛零，是前期最大的漏洞。Lv.50 解鎖 swiftCuts／preciseThrust／heavySmash 皆為多段x3。",
-    "loadoutPriority_依據": "技能欄同時是資源產出的位置，不只是輸出位。點金手金幣 = goldPer × 技能等級 × 角色等級（js/skills.js:2705），8 級後 goldPer=35；尋寶直覺給 lootUp。真人 24 小時存檔的 12 格裡兩個都在。⚠️ 排進這份清單還不夠——三份 learn 清單裡也要有，沒學會的技能裝不上（實測只改本清單時 A/B 兩組結果完全相同）。"
+    ]
   },
   "rules": [
     {
@@ -1048,140 +927,6 @@
         }
       ],
       "why": "極速：潛力技能解鎖後優先潛力技能升級"
-    },
-    {
-      "id": "learn-skills",
-      "everySec": 10,
-      "cmd": "skill.learn",
-      "expand": [
-        {
-          "key": "id",
-          "listByLevel": [
-            {
-              "maxLevel": 50,
-              "list": "skillEarly"
-            },
-            {
-              "maxLevel": 100,
-              "list": "skillMid"
-            },
-            {
-              "list": "skillLate"
-            }
-          ]
-        }
-      ],
-      "why": "依 player_strategy.md 技能升級優先順序分段：前期(≤50)先點生命上限被動與護盾／持續恢復；中期(51~100)把被動技能全點滿；後期(101+)依裝備詞條方向（targetAffixes 為物理向）集中投物理。清單順序即投點優先序，點數不足時後面的由遊戲擋下"
-    },
-    {
-      "id": "learn-fusions",
-      "everySec": 60,
-      "cmd": "skill.learn",
-      "expand": [
-        {
-          "key": "id",
-          "path": "panels.skills.fusions",
-          "field": "id"
-        }
-      ],
-      "why": "融合技產出時是未學習狀態，要先升到 Lv.1 才能裝備。id 由遊戲生成（fusion_ + uid），只能從 fusions[].id 撈"
-    },
-    {
-      "id": "equip-loadout-fusions",
-      "everySec": 60,
-      "cmd": "skill.equipLoadout",
-      "expand": [
-        {
-          "key": "id",
-          "path": "panels.skills.fusions",
-          "field": "id"
-        }
-      ],
-      "why": "融合技裝上技能欄，排在一般技能之前——格數有限時優先給融合技"
-    },
-    {
-      "id": "unequip-worst-skill",
-      "everySec": 60,
-      "cmd": "skill.unequipLoadout",
-      "loadoutSwap": {
-        "skills": "panels.skills",
-        "priority": "loadoutPriority"
-      },
-      "why": "技能欄滿了就卸下優先序最差的，讓 equip-loadout 補上更好的。開局預設的 arcaneBurst（Lv.1 魔法技，物理流用不到）不卸就永久佔位"
-    },
-    {
-      "id": "equip-loadout",
-      "everySec": 60,
-      "cmd": "skill.equipLoadout",
-      "expand": [
-        {
-          "key": "id",
-          "list": "loadoutPriority"
-        }
-      ],
-      "why": "把學會的技能真的裝上技能欄。原本六份策略都沒有這條，實測 100 小時後技能欄仍是開局預設的 powerSlash／arcaneBurst(Lv.1)／manaBarrier，學會的 28 個技能一個都沒上場。清單依多段傷害排序（js/skills.js 的 fx.hits），重複／已滿／未學會一律由遊戲擋下"
-    },
-    {
-      "id": "fuse-skills-1",
-      "everySec": 300,
-      "cmd": "skill.fuse",
-      "if": [
-        [
-          "panels.skills.fusions.length",
-          "<",
-          1
-        ],
-        [
-          "view.level",
-          ">=",
-          100
-        ],
-        [
-          "view.gold",
-          ">=",
-          500000
-        ]
-      ],
-      "args": {
-        "ids": [
-          "whirlwind",
-          "armorBreak",
-          "executeStrike",
-          "sinDetonate"
-        ]
-      },
-      "why": "技能融合：whirlwind＋armorBreak＋executeStrike＋sinDetonate。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
-    },
-    {
-      "id": "fuse-skills-2",
-      "everySec": 300,
-      "cmd": "skill.fuse",
-      "if": [
-        [
-          "panels.skills.fusions.length",
-          "<",
-          2
-        ],
-        [
-          "view.level",
-          ">=",
-          200
-        ],
-        [
-          "view.gold",
-          ">=",
-          500000
-        ]
-      ],
-      "args": {
-        "ids": [
-          "echoBlade",
-          "warSpiritEngine",
-          "pursuitDecree",
-          "warOverture"
-        ]
-      },
-      "why": "技能融合：echoBlade＋warSpiritEngine＋pursuitDecree＋warOverture。真人 24 小時存檔做了 3 組四材融合並全部裝上技能欄。素材取單段技，多段技留給技能欄。前提用融合技數量而非 once——做不到要能重試，做到了條件自然不成立"
     },
     {
       "id": "talent-upgrade-step1",
