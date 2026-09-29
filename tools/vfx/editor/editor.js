@@ -959,6 +959,7 @@
       /* particle 專屬：只掛在 TYPE_FIELDS.particle 底下，
          sprite／procedural 的 Inspector 不會出現這兩欄。 */
       { key: 'alignToVelocity', label: 'alignToVelocity', kind: 'bool', default: false },
+      { key: 'worldSpace', label: '粒子使用世界座標', kind: 'bool', default: true },
       deg('velocityRotationOffset', 'velocityRotationOffset(°)')
     ],
     procedural: [LOOP_FIELD,
@@ -3059,6 +3060,107 @@
     };
     wireFieldTransaction(chk, 'loop');
     host.appendChild(makeField('loop', chk));
+    renderCodeControls(host);
+  }
+
+  /* 所有程式參數寫回同一份 Preset；先用 Core 驗證，避免 NaN 或半份設定進入預覽。
+     commit 使用既有 edit transaction，因此復原、另存與分頁切換都保留這些欄位。 */
+  function commitCodeControl(path, value) {
+    var next = JSON.parse(JSON.stringify(state.preset)), target = next;
+    path.slice(0, -1).forEach(function (key) { target = target[key] || (target[key] = {}); });
+    if (value === undefined) delete target[path[path.length - 1]];
+    else target[path[path.length - 1]] = value;
+    var result = VFXCore.validatePreset(next);
+    if (!result.ok) { showSaveError('參數無效', result.errors); return false; }
+    edit('調整 ' + path.join('.'), function () {
+      var live=state.preset;
+      path.slice(0,-1).forEach(function(key){live=live[key]||(live[key]={});});
+      if(value===undefined)delete live[path[path.length-1]];
+      else live[path[path.length-1]]=value;
+    });
+    onPresetChanged();
+    if(path[0]==='sizing'&&typeof document!=='undefined'){
+      var sizeInput=document.querySelector('[data-code-control="sizing"]');
+      if(sizeInput)sizeInput.value=state.preset.sizing?JSON.stringify(state.preset.sizing,null,2):'';
+    }
+    return true;
+  }
+
+  function renderCodeControls(host) {
+    function section(label, hint, open) {
+      var box = document.createElement('details'), summary = document.createElement('summary');
+      summary.textContent = label; box.appendChild(summary); box.open = !!open;
+      var note = document.createElement('div'); note.className = 'hint'; note.textContent = hint;
+      box.appendChild(note); host.appendChild(box); return box;
+    }
+    function field(box, path, desc, value) {
+      var input = document.createElement(desc.options ? 'select' : 'input');
+      input.setAttribute('data-code-control', path.join('.'));
+      if (desc.options) desc.options.forEach(function (v) { var option = document.createElement('option'); option.value = v; option.textContent = v; input.appendChild(option); });
+      else input.type = typeof desc.default === 'boolean' ? 'checkbox' : desc.color ? 'color' : 'number';
+      if (input.type === 'checkbox') input.checked = value;
+      else input.value = value;
+      if (input.type === 'number') {
+        input.step = 'any'; if (desc.min !== undefined) input.min = desc.min;
+        if (desc.max !== undefined) input.max = desc.max;
+      }
+      input.onchange = function () {
+        var v = input.type === 'checkbox' ? input.checked : input.type === 'number' ? Number(input.value) : input.value;
+        if (input.type === 'number' && (!input.value || !Number.isFinite(v))) return;
+        if (!commitCodeControl(path, v)) {
+          if (input.type === 'checkbox') input.checked = value; else input.value = value;
+        } else value = v;
+      };
+      box.appendChild(makeField(desc.label, input));
+    }
+    var p = state.preset;
+    var defBox = section('程式變形／隨機鏡射',
+      '作用於整份特效座標，包含圖層 position；因此鏡射也會把上方位置翻到下方。關閉鏡射可固定上下方向。', !!p.deformation);
+    var enabled = document.createElement('input'); enabled.type = 'checkbox'; enabled.checked = !!p.deformation;
+    enabled.setAttribute('data-code-control', 'deformation.enabled');
+    enabled.onchange = function () {
+      var ids = p.layers.filter(function (l) { return l.type === 'sprite' && !l.radiusProfile && l.followDirection !== false; }).map(function (l) { return l.id; });
+      var def = enabled.checked ? {axis:'x',start:0,end:200,amplitude:0,widthJitter:0,mirror:false,layers:ids} : undefined;
+      if (commitCodeControl(['deformation'], def)) renderInspector(); else enabled.checked = !!p.deformation;
+    };
+    defBox.appendChild(makeField('啟用整體變形', enabled));
+    if (p.deformation) {
+      field(defBox,['deformation','axis'],{label:'沿哪個軸彎曲',options:['x','y']},p.deformation.axis);
+      ['start','end'].forEach(function (key) {field(defBox,['deformation',key],{label:key+'（px）'},p.deformation[key]);});
+      field(defBox,['deformation','mirror'],{label:'每次播放隨機鏡射',default:false},p.deformation.mirror);
+      Object.keys(VFXCore.DEFORMATION_FIELDS).forEach(function (key) {
+        field(defBox,['deformation',key],VFXCore.DEFORMATION_FIELDS[key],VFXCore.deformationValue(p.deformation,key));
+      });
+      p.layers.filter(function (l) { return l.type === 'sprite' && !l.radiusProfile; }).forEach(function (layer) {
+        var check = document.createElement('input'); check.type = 'checkbox'; check.checked = p.deformation.layers.indexOf(layer.id) >= 0;
+        check.setAttribute('data-deformation-layer',layer.id);
+        check.onchange = function () {
+          var ids = state.preset.deformation.layers.filter(function (id) { return id !== layer.id; });
+          if(check.checked) ids.push(layer.id);
+          if(!commitCodeControl(['deformation','layers'],ids))check.checked=!check.checked;
+        };
+        defBox.appendChild(makeField('作用圖層：'+layer.id,check));
+      });
+    }
+    var runtimeBox = section('遊戲播放控制',
+      '依技能的播放方式套用；單純素材預覽不包含敵人、場域或飛行事件。未填值採以下預設。目標、移速、命中時機、判定範圍與結束訊號由戰鬥事件提供，不能以視覺參數改寫。');
+    Object.keys(VFXCore.PLAYBACK_FIELDS).forEach(function (key) {
+      field(runtimeBox,['playback',key],VFXCore.PLAYBACK_FIELDS[key],VFXCore.playbackValue(p,key));
+    });
+    var reset = document.createElement('button'); reset.textContent = '恢復播放控制預設';
+    reset.onclick = function () { if(commitCodeControl(['playback'],undefined))renderInspector(); }; runtimeBox.appendChild(reset);
+    var preview=document.createElement('button');preview.textContent='遊戲播放測試';
+    preview.onclick=function(){VFXRuntimePreview.open(JSON.parse(JSON.stringify(state.preset)),state.resolver);};runtimeBox.appendChild(preview);
+    var sizingBox = section('本體尺寸／程式縮放基準',
+      'authored 是素材座標中的本體尺寸；米制尺寸是沒有戰鬥判定尺寸時的預設。範圍技能仍依事件的實際範圍換算。');
+    if(p.sizing){
+      ['radiusM','widthM','heightM'].forEach(function(key){if(p.sizing[key]!==undefined)field(sizingBox,['sizing',key],{label:key+'（米）',min:.001},p.sizing[key]);});
+      Object.keys(p.sizing.authored||{}).forEach(function(key){field(sizingBox,['sizing','authored',key],{label:'製作本體 '+key+'（px）',min:.001},p.sizing.authored[key]);});
+    }
+    var sizing = document.createElement('textarea'); sizing.rows=5; sizing.value=p.sizing?JSON.stringify(p.sizing,null,2):'';
+    sizing.setAttribute('data-code-control','sizing'); sizing.placeholder='未設定：採既有名目尺寸';
+    sizing.onchange=function(){try{if(!commitCodeControl(['sizing'],sizing.value.trim()?JSON.parse(sizing.value):undefined))return;sizing.classList.remove('err');}catch(e){sizing.classList.add('err');showSaveError('尺寸 JSON 無效',[e.message]);}};
+    sizingBox.appendChild(sizing);
   }
 
   /* ---------------- 群組區塊 ----------------
@@ -3634,9 +3736,12 @@
       var title = document.createElement('div');
       title.className = 'group-title'; title.textContent = '水柱半徑輪廓'; host.appendChild(title);
       [['centerScale', '中央半徑倍率', 1], ['topRatio', '上端／中央半徑比例', 2],
-        ['bottomRatio', '下端／中央半徑比例', 2]].forEach(function (f) {
+        ['bottomRatio', '下端／中央半徑比例', 2], ['sourceTopRatio','來源上端半徑比例',2],
+        ['sourceBottomRatio','來源下端半徑比例',2], ['topY','輪廓頂端 Y（0～1）',0],
+        ['centerY','輪廓中央 Y（0～1）',.5], ['bottomY','輪廓底端 Y（0～1）',1]].forEach(function (f) {
         var input = document.createElement('input');
-        input.type = 'number'; input.min = '0.1'; input.max = '8'; input.step = '0.1';
+        var isY=/Y$/.test(f[0]);
+        input.type = 'number'; input.min = isY?'0':'0.1'; input.max = isY?'1':'8'; input.step = '0.01';
         input.setAttribute('data-radius-profile', f[0]);
         var readProfile = function (l) {
           return l.radiusProfile[f[0]] === undefined ? f[2] : l.radiusProfile[f[0]];
@@ -3648,7 +3753,7 @@
         input.oninput = function () {
           if (restoreProfile()) return;
           var value = Number(input.value);
-          if (!input.value || !Number.isFinite(value) || value < 0.1 || value > 8) return;
+          if (!input.value || !Number.isFinite(value) || value < (isY?0:.1) || value > (isY?1:8)) return;
           targets.forEach(function (l) { l.radiusProfile[f[0]] = value; }); onPresetChanged();
         };
         wireFieldTransaction(input, f[1]); host.appendChild(makeField(f[1], input));
@@ -3662,7 +3767,7 @@
       var parts = [];
       targets.forEach(function (l) { if (parts.indexOf(l.water.part) < 0) parts.push(l.water.part); });
       [['speed', '氣流速度倍率'], ['density', '粒子數量倍率']].forEach(function (field) {
-        if (field[0] === 'density' && parts.some(function (p) { return ['dust', 'spray'].indexOf(p) < 0; })) return;
+        if (field[0] === 'density' && parts.some(function (p) { return ['dust', 'spray','cyclone-rear','cyclone-front'].indexOf(p) < 0; })) return;
         var input = document.createElement('input'); input.type = 'number'; input.min = 0; input.max = 4; input.step = .1;
         var readWater = function (l) { return l.water[field[0]] === undefined ? 1 : l.water[field[0]]; };
         showCommon(input, MX.commonValue(targets, readWater));
@@ -3678,6 +3783,14 @@
           }
         };
         wireFieldTransaction(input, field[1]); host.appendChild(makeField(field[1], input));
+      });
+      [['part','程序組件',VFXWaterTornado.PARTS],['palette','程序配色',['water','fire']]].forEach(function(f){
+        var select=document.createElement('select');
+        f[2].forEach(function(value){var option=document.createElement('option');option.value=value;option.textContent=value;select.appendChild(option);});
+        select.value=targets[0].water[f[0]]||(f[0]==='palette'?'water':'body');
+        select.setAttribute('data-water-param',f[0]);
+        select.onchange=function(){edit('調整 '+f[1],function(){targets.forEach(function(l){l.water[f[0]]=select.value;});});onPresetChanged();renderInspector();};
+        host.appendChild(makeField(f[1],select));
       });
       var note = document.createElement('div'); note.className = 'hint'; note.textContent = '即時計算圖層：' + parts.join('、') + '。可分別調整色彩、透明度、位置、縮放與氣流速度；沒有序列圖集。'; host.appendChild(note);
     }

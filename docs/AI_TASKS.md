@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜特效程式控制參數公開（VFX-CODE-CONTROLS-20260929）
+
+- Owner：Codex；Done。使用者授權全面檢視特效的程式額外控制，將可調視覺參數公開於 VFX Editor；保留權威命中、路徑與生命週期同步。已檢查 238 份 Preset、1,589 層，公開整體變形、Runtime 視覺參數、尺寸與遺漏的圖層控制，新增正式 Runtime 測試場景。
+- 範圍：VFX Core／Runtime、Editor、必要快取、相關測試與參數稽核文件；不修改技能表、傷害、其他工作副本或使用者素材。既有 preset 預設外觀維持相容。
+- 預檢：除 index.html 有 Claude 未提交修改外，其餘無衝突；依使用者既有授權，只在合併乾跑無衝突後繼續共用檔案。
+- 驗收：13 項新增測試通過；綜合 538 項 531 通過、1 跳過、6 失敗均於 HEAD 原版重現；Build 404 檔通過。Edge 實際參數編輯、undo/redo、移動目標雷鏈預覽無錯。無素材變動，不需素材庫空提交；保留使用者 Excel 修改。詳見 `docs/vfx/VFX_EDITOR_CODE_CONTROLS.md`。提交後交使用者整合，不合併或推送。
+
 ## Codex｜金色落雷型態連鎖重做（CHAIN-REBUILD-20260929）
 
 - Owner：Codex；Done。使用者指定以 bolt-thunderstrike-bluewhite 主弧／分岔重做金色雷鏈，飛行速度 50%，移除大斷點，命中後重新找存活目標；死亡來源不中斷鏈。保留表定上限與傷害。
