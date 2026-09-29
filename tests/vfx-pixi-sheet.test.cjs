@@ -191,6 +191,21 @@ test('WARP-CLIP 移動裁切同步UV，保留內部比例且可清除裁切重�
  }
 });
 
+test('WARP-MOTION 相同變形物件隨時間刷新GPU頂點，暫停保留快取',async()=>{
+ const PIXI=makePixi();let writes=0;
+ PIXI.MeshGeometry=class{constructor(o){Object.assign(this,o)}getBuffer(){return {update(){writes++;}}}};
+ PIXI.Mesh=class extends PIXI.Sprite{constructor(o){super(o.texture);this.geometry=o.geometry;this.position=this.scale=this.skew={set(){}}}};
+ const {backend}=setup(PIXI),n=backend.createNode({kind:'deformed',warpAxis:'x',assetUrl:'/animated.png'});
+ await Promise.resolve();await Promise.resolve();n.texture.orig={width:512,height:256};
+ const variation={config:{axis:'x',start:0,end:512,amplitude:0,motionAmplitude:16},mirror:1,width:1,phase:0,
+  motionFrom:[0,1],motionTo:[2,3],motionBlend:0,motionTime:0};
+ const w={a:1,b:0,c:0,d:1,x:0,y:0,originX:0,originY:0,rotation:0,scaleX:1,scaleY:1,variation};
+ const t={deformation:w,anchorX:0,anchorY:.5};backend.updateNode(n,t);const before=Array.from(n.__warp.positions);
+ const oldWrites=writes;backend.updateNode(n,t);assert.equal(writes,oldWrites);
+ variation.motionBlend=.5;variation.motionTime=.04;backend.updateNode(n,t);
+ assert.ok(writes>oldWrites);assert.notDeepEqual(Array.from(n.__warp.positions),before);
+});
+
 test('WARP-TIP 裁切端點收束到軸心，內側保留寬度與UV',async()=>{
  const PIXI=makePixi();PIXI.MeshGeometry=class{constructor(o){Object.assign(this,o)}getBuffer(){return {update(){}}}};
  PIXI.Mesh=class extends PIXI.Sprite{constructor(o){super(o.texture);this.geometry=o.geometry;this.position=this.scale=this.skew={set(){}}}};

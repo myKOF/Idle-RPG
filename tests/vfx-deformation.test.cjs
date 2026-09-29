@@ -5,11 +5,41 @@ function preset(){return {schemaVersion:1,id:'joined',duration:1,layers:[
  {id:'upper',type:'sprite',assetId:'a',position:{x:0,y:-100}},
  {id:'lower',type:'sprite',assetId:'a'}],
  deformation:{axis:'y',start:-200,end:0,amplitude:10,widthJitter:.07,mirror:true,layers:['upper','lower']}};}
-function run(seed,params={}){
+function run(seed,params={},motion){
  const nodes=[],backend={createNode(s){const n={spec:s};nodes.push(n);return n;},updateNode(n,t){n.t=structuredClone(t);},destroyNode(){},destroy(){}};
- const rt=Core.createRuntime({backend,resolver:{resolve:x=>x,has:()=>true}});rt.registerPreset(preset());
+ const rt=Core.createRuntime({backend,resolver:{resolve:x=>x,has:()=>true}});const p=preset();Object.assign(p.deformation,motion);rt.registerPreset(p);
  const h=rt.play('joined',{seed,...params});rt.update(.1);return {rt,h,nodes};
 }
+test('DEFORM-MOTION 波形隨時間改變，圖層共用、端點固定且關閉後維持舊形狀',()=>{
+ const a=run(12,{loop:true},{motionSpeed:12,motionAmplitude:16});
+ const sample=()=>[-170,-135,-70,-35].map(y=>Core.deformPoint(a.nodes[0].t.deformation.variation,0,y,{}).x);
+ const before=sample();a.rt.update(.04);assert.notDeepEqual(sample(),before);
+ assert.deepEqual(a.nodes[0].t.deformation.variation,a.nodes[1].t.deformation.variation);
+ for(const y of [-200,0])assert.ok(Math.abs(Core.deformPoint(a.nodes[0].t.deformation.variation,0,y,{}).x)<1e-9);
+ for(const motion of [{motionSpeed:0,motionAmplitude:16},{motionSpeed:12,motionAmplitude:0}]){
+  const b=run(12,{loop:true},motion),v=b.nodes[0].t.deformation.variation;
+  const old=Core.deformPoint(v,0,-75,{});b.rt.update(.3);
+  assert.deepEqual(Core.deformPoint(b.nodes[0].t.deformation.variation,0,-75,{}),old);
+ }
+});
+test('DEFORM-MOTION 相同seed與總時間不依FPS；跨循環連續、暫停與重用可重現',()=>{
+ const motion={motionSpeed:12,motionAmplitude:16},a=run(123,{loop:true},motion),b=run(123,{loop:true},motion);
+ a.rt.update(1.17);for(let i=0;i<117;i++)b.rt.update(.01);
+ const point=r=>Core.deformPoint(r.nodes[0].t.deformation.variation,0,-83,{}).x;
+ assert.ok(Math.abs(point(a)-point(b))<1e-8);
+ const before=point(a);a.rt.update(0);assert.equal(point(a),before);
+ const c=run(123,{loop:true},motion);c.rt.update(.899999);const left=point(c);c.rt.update(.000002);
+ assert.ok(Math.abs(point(c)-left)<.01,'跨1秒循環邊界不重置波形');
+ const v=run(123,{loop:true},motion);const first=point(v);v.rt.stop(v.h);v.rt.play('joined',{seed:123,loop:true});v.rt.update(.1);
+ assert.equal(point(v),first);
+});
+test('DEFORM-MOTION 設定可序列化，拒絕負速度及超大幅度',()=>{
+ const p=preset();Object.assign(p.deformation,{motionSpeed:12,motionAmplitude:16});
+ assert.ok(Core.validatePreset(p).ok);assert.deepEqual(JSON.parse(Core.serialisePreset(p)),p);
+ for(const bad of [{motionSpeed:-1},{motionSpeed:Infinity},{motionAmplitude:31}])assert.equal(Core.validatePreset({...p,deformation:{...p.deformation,...bad}}).ok,false);
+ const editor=fs.readFileSync(path.join(__dirname,'../tools/vfx/editor/editor.js'),'utf8');
+ assert.ok(editor.includes('Object.keys(VFXCore.DEFORMATION_FIELDS)'),'編輯器使用相同欄位定義');
+});
 test('DEFORM 同seed可重現，每次施放使用獨立變形，圖層共用參數',()=>{
  const a=run(12),b=run(12),c=run(99);
  assert.deepEqual(a.nodes[0].t.deformation,b.nodes[0].t.deformation);

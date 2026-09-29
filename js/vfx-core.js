@@ -696,6 +696,8 @@ var VFXCore = (function () {
   }
   var DEFORMATION_FIELDS = {
     amplitude: { label: '彎曲振幅（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
+    motionSpeed: { label: '波形變化速度（次／秒；0 靜止）', default: 0, min: 0, max: 60 },
+    motionAmplitude: { label: '動態波形幅度（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
     widthJitter: { label: '隨機寬度變化比例', default: 0, min: 0, max: .15 },
     mirrorChance: { label: '鏡射機率（0～1）', default: .5, min: 0, max: 1 },
     pivot: { label: '鏡射／寬度變化中心（橫向 px）', default: 0, min: -10000, max: 10000 },
@@ -790,10 +792,28 @@ var VFXCore = (function () {
     var mix=deformationValue(c,'secondaryWeight'), pivot=deformationValue(c,'pivot');
     var displacement=envelope*c.amplitude*(Math.sin(q*deformationValue(c,'frequency')+w.phase)*(1-mix)+
       Math.sin(q*deformationValue(c,'secondaryFrequency')+w.phase*deformationValue(c,'phaseCoupling'))*mix);
+    if(w.motionFrom){
+      var a=w.motionFrom,b=w.motionTo,t=w.motionBlend;
+      var wave0=Math.sin(q*deformationValue(c,'frequency')+a[0])*(1-mix)+Math.sin(q*deformationValue(c,'secondaryFrequency')+a[1])*mix;
+      var wave1=Math.sin(q*deformationValue(c,'frequency')+b[0])*(1-mix)+Math.sin(q*deformationValue(c,'secondaryFrequency')+b[1])*mix;
+      displacement+=envelope*deformationValue(c,'motionAmplitude')*(wave0+(wave1-wave0)*t);
+    }
     across=pivot+(across-pivot)*w.mirror*w.width+displacement;
     out.x=c.axis==='x'?along:across;
     out.y=c.axis==='x'?across:along;
     return out;
+  }
+  // 以總播放時間取樣，不依幀數；循環、不同FPS與暫停都不會改變隨機序列。
+  function updateDeformationMotion(w, time, seed) {
+    var speed=deformationValue(w.config,'motionSpeed');
+    if(!(speed>0 && deformationValue(w.config,'motionAmplitude')>0))return;
+    var age=time*speed,key=Math.floor(age),t=age-key;
+    if(w.motionKey!==key){
+      function phases(index){var rng=makeRng(seed ^ Math.imul(index,0x9e3779b9) ^ 0x3c6ef372);return [rng()*Math.PI*2,rng()*Math.PI*2];}
+      w.motionFrom=phases(key);w.motionTo=phases(key+1);w.motionKey=key;
+    }
+    w.motionBlend=t*t*(3-2*t);
+    w.motionTime=time;
   }
   function validateDeformation(preset, errors) {
     var c=preset.deformation;
@@ -807,6 +827,7 @@ var VFXCore = (function () {
     if(c.axis!=='x'&&c.axis!=='y')errors.push('deformation.axis 必須是 x 或 y');
     if(!isFiniteNumber(c.start)||!isFiniteNumber(c.end)||c.end<=c.start)errors.push('deformation 範圍無效');
     if(!isFiniteNumber(c.amplitude)||c.amplitude<0||c.amplitude>(c.end-c.start)*.15)errors.push('deformation.amplitude 超過長度15%');
+    if(deformationValue(c,'motionAmplitude')>(c.end-c.start)*.15)errors.push('deformation.motionAmplitude 超過長度15%');
     if(!isFiniteNumber(c.widthJitter)||c.widthJitter<0||c.widthJitter>.15)errors.push('deformation.widthJitter 必須在0到0.15');
     if(typeof c.mirror!=='boolean')errors.push('deformation.mirror 必須是布林值');
     if(!Array.isArray(c.layers)||!c.layers.length||new Set(c.layers).size!==c.layers.length){errors.push('deformation.layers 必须是非空、不重複的圖層清單');return;}
@@ -1417,6 +1438,7 @@ var VFXCore = (function () {
           phase:deformationValue(preset.deformation,'phase')+wr()*deformationValue(preset.deformation,'phaseRandom'),
           mirror:preset.deformation.mirror&&wr()<deformationValue(preset.deformation,'mirrorChance')?-1:1,
           width:1+(wr()*2-1)*preset.deformation.widthJitter};
+        updateDeformationMotion(effect.deformation,0,effect.seed);
       }
       applyTransformParams(effect, p);
       preset.layers.forEach(function (raw, i) {
@@ -2192,6 +2214,7 @@ var VFXCore = (function () {
         if (effect.draining) effect.drainAge += dt;
         effect.time += effect.lastDt;
         effect.totalTime += effect.lastDt;
+        if(effect.deformation)updateDeformationMotion(effect.deformation,effect.totalTime,effect.seed);
         var preset = effect.preset;
         if (!effect.draining && effect.loop && effect.time >= preset.duration) {
           effect.time = effect.time % preset.duration;

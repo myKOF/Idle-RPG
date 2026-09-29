@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "bolt-chain-travel-bluewhite",
+  "id": "bolt-chain-travel-bluewhite-08",
   "duration": 0.366,
   "loop": false,
   "deformation": {
-    "amplitude": 7,
+    "amplitude": 4,
     "axis": "x",
     "end": 542.464,
     "layers": [
@@ -15,10 +15,8 @@
     "mirror": true,
     "motionAmplitude": 16,
     "motionSpeed": 12,
-    "secondaryFrequency": 5,
-    "secondaryWeight": 0.1,
     "start": 0,
-    "widthJitter": 0.1
+    "widthJitter": 0.07
   },
   "layers": [
     {
@@ -27,20 +25,20 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
-        "x": 5.8781,
-        "y": 3.6442
+        "x": 0,
+        "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.459,
-        "y": 1.9453
+        "x": 0.3469,
+        "y": 1.0595
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 0.85,
-      "tint": "#ffd43b",
+      "tint": "#e83dff",
       "blendMode": "screen",
       "duration": 0.366,
       "alphaOverLife": [
@@ -65,20 +63,20 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
-        "x": 5.8781,
-        "y": 3.6442
+        "x": 0,
+        "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 1.0513,
-        "y": 1.9453
+        "x": 0.1602,
+        "y": 1.0595
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 1,
-      "tint": "#fff8cf",
+      "tint": "#fdbefe",
       "blendMode": "screen",
       "duration": 0.366,
       "alphaOverLife": [
@@ -103,16 +101,16 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "position": {
-        "x": 784.3921,
-        "y": 3.3653
+        "x": 424.0337,
+        "y": -0.1519
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.459,
-        "y": 0.4662
+        "x": 0.1046,
+        "y": 0.2539
       },
       "alpha": 0.48,
-      "tint": "#ffbc32",
+      "tint": "#8c00ff",
       "blendMode": "screen",
       "duration": 0.366,
       "alphaOverLife": [
