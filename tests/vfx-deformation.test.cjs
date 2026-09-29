@@ -13,7 +13,7 @@ function run(seed,params={},motion){
 test('DEFORM-MOTION 波形隨時間改變，圖層共用、端點固定且關閉後維持舊形狀',()=>{
  const a=run(12,{loop:true},{motionSpeed:12,motionAmplitude:16});
  const sample=()=>[-170,-135,-70,-35].map(y=>Core.deformPoint(a.nodes[0].t.deformation.variation,0,y,{}).x);
- const before=sample();a.rt.update(.04);assert.notDeepEqual(sample(),before);
+ const before=sample();a.rt.update(.09);assert.notDeepEqual(sample(),before);
  assert.deepEqual(a.nodes[0].t.deformation.variation,a.nodes[1].t.deformation.variation);
  for(const y of [-200,0])assert.ok(Math.abs(Core.deformPoint(a.nodes[0].t.deformation.variation,0,y,{}).x)<1e-9);
  for(const motion of [{motionSpeed:0,motionAmplitude:16},{motionSpeed:12,motionAmplitude:0}]){
@@ -22,14 +22,14 @@ test('DEFORM-MOTION 波形隨時間改變，圖層共用、端點固定且關閉
   assert.deepEqual(Core.deformPoint(b.nodes[0].t.deformation.variation,0,-75,{}),old);
  }
 });
-test('DEFORM-MOTION 相同seed與總時間不依FPS；跨循環連續、暫停與重用可重現',()=>{
+test('DEFORM-MOTION 相同seed與總時間不依FPS；跨循環不重置、暫停與重用可重現',()=>{
  const motion={motionSpeed:12,motionAmplitude:16},a=run(123,{loop:true},motion),b=run(123,{loop:true},motion);
  a.rt.update(1.17);for(let i=0;i<117;i++)b.rt.update(.01);
  const point=r=>Core.deformPoint(r.nodes[0].t.deformation.variation,0,-83,{}).x;
  assert.ok(Math.abs(point(a)-point(b))<1e-8);
  const before=point(a);a.rt.update(0);assert.equal(point(a),before);
- const c=run(123,{loop:true},motion);c.rt.update(.899999);const left=point(c);c.rt.update(.000002);
- assert.ok(Math.abs(point(c)-left)<.01,'跨1秒循環邊界不重置波形');
+ const c=run(123,{loop:true},motion);c.rt.update(.899999);c.rt.update(.000002);
+ assert.equal(c.nodes[0].t.deformation.variation.motionKey,12,'跨1秒循環邊界仍使用總時間，不重置出生形狀');
  const v=run(123,{loop:true},motion);const first=point(v);v.rt.stop(v.h);v.rt.play('joined',{seed:123,loop:true});v.rt.update(.1);
  assert.equal(point(v),first);
 });
@@ -76,4 +76,38 @@ test('DEFORM 正式Preset全數合法且可往返，落雷受擊沿用已核准�
  for(const f of fs.readdirSync(dir).filter(f=>f.endsWith('.json'))){const p=JSON.parse(fs.readFileSync(path.join(dir,f)));if(!p.deformation)continue;count++;assert.deepEqual(Core.validatePreset(p).errors,[],f);assert.equal(Core.serialisePreset(JSON.parse(Core.serialisePreset(p))),Core.serialisePreset(p));}
  assert.ok(count>=22);const hit=JSON.parse(fs.readFileSync(path.join(dir,'hit-thunderstrike-bluewhite.json')));
  assert.ok(hit.deformation);assert.ok(hit.layers.some(l=>l.type==='particle'),'已核准的藍白粒子飛濺保留');
+});
+
+
+test('DEFORM-RESHAPE 出生與飛行同一生成器，完整重抽鏡像、寬度、相位且不插值壓扁',()=>{
+ const seed=123,motion={motionSpeed:10,motionAmplitude:10};
+ const born=run(seed,{loop:true},{motionSpeed:5,motionAmplitude:10}).nodes[0].t.deformation.variation;
+ const staticBorn=run(seed,{loop:true}).nodes[0].t.deformation.variation;
+ assert.equal(born.motionKey,0);
+ for(const field of ['phase','mirror','width'])assert.equal(born[field],staticBorn[field]);
+ for(const y of [-190,-150,-80,-10])assert.deepEqual(Core.deformPoint(born,4,y,{}),Core.deformPoint(staticBorn,4,y,{}));
+ const a=run(seed,{loop:true},motion),mirrors=new Set(),widths=new Set(),phases=new Set();
+ for(let key=1;key<=25;key++){
+  const w=a.nodes[0].t.deformation.variation;
+  assert.equal(w.motionKey,key);
+  const birth=run((seed^Math.imul(key,0x9e3779b9))>>>0,{loop:true}).nodes[0].t.deformation.variation;
+  for(const field of ['phase','mirror','width'])assert.equal(w[field],birth[field],field+' 與重新出生使用同樣抽樣');
+  mirrors.add(w.mirror);widths.add(w.width);phases.add(w.phase);
+  assert.ok(w.width>=.93 && w.width<=1.07);assert.ok(w.mirror===1||w.mirror===-1);
+  const revision=w.motionTime;a.rt.update(.04);
+  const middle=a.nodes[0].t.deformation.variation;
+  assert.equal(middle.motionTime,revision);assert.equal(middle.mirror,w.mirror);assert.equal(middle.width,w.width);
+  assert.deepEqual(a.nodes[0].t.deformation.variation,a.nodes[1].t.deformation.variation);
+  a.rt.update(.06);
+ }
+ assert.equal(mirrors.size,2);assert.ok(widths.size>20&&phases.size>20);
+});
+
+test('DEFORM-RESHAPE 尊重關閉鏡射機率、寬度與相位隨機參數',()=>{
+ const a=run(123,{loop:true},{motionSpeed:12,motionAmplitude:10,mirrorChance:0,widthJitter:0,phaseRandom:0,phase:1});
+ for(let i=0;i<30;i++){
+  const w=a.nodes[0].t.deformation.variation;
+  assert.equal(w.mirror,1);assert.equal(w.width,1);assert.equal(w.phase,1);
+  a.rt.update(.1);
+ }
 });

@@ -696,8 +696,8 @@ var VFXCore = (function () {
   }
   var DEFORMATION_FIELDS = {
     amplitude: { label: '彎曲振幅（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
-    motionSpeed: { label: '波形變化速度（次／秒；0 靜止）', default: 0, min: 0, max: 60 },
-    motionAmplitude: { label: '動態波形幅度（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
+    motionSpeed: { label: '完整形狀重抽頻率（次／秒；0 靜止）', default: 0, min: 0, max: 60 },
+    motionAmplitude: { label: '重抽形狀彎曲幅度（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
     widthJitter: { label: '隨機寬度變化比例', default: 0, min: 0, max: .15 },
     mirrorChance: { label: '鏡射機率（0～1）', default: .5, min: 0, max: 1 },
     pivot: { label: '鏡射／寬度變化中心（橫向 px）', default: 0, min: -10000, max: 10000 },
@@ -790,30 +790,31 @@ var VFXCore = (function () {
     var q=Math.max(0,Math.min(1,(along-c.start)/(c.end-c.start)));
     var envelope=Math.sin(Math.PI*q);
     var mix=deformationValue(c,'secondaryWeight'), pivot=deformationValue(c,'pivot');
-    var displacement=envelope*c.amplitude*(Math.sin(q*deformationValue(c,'frequency')+w.phase)*(1-mix)+
+    var amplitude=w.motionKey===undefined?c.amplitude:deformationValue(c,'motionAmplitude');
+    var displacement=envelope*amplitude*(Math.sin(q*deformationValue(c,'frequency')+w.phase)*(1-mix)+
       Math.sin(q*deformationValue(c,'secondaryFrequency')+w.phase*deformationValue(c,'phaseCoupling'))*mix);
-    if(w.motionFrom){
-      var a=w.motionFrom,b=w.motionTo,t=w.motionBlend;
-      var wave0=Math.sin(q*deformationValue(c,'frequency')+a[0])*(1-mix)+Math.sin(q*deformationValue(c,'secondaryFrequency')+a[1])*mix;
-      var wave1=Math.sin(q*deformationValue(c,'frequency')+b[0])*(1-mix)+Math.sin(q*deformationValue(c,'secondaryFrequency')+b[1])*mix;
-      displacement+=envelope*deformationValue(c,'motionAmplitude')*(wave0+(wave1-wave0)*t);
-    }
     across=pivot+(across-pivot)*w.mirror*w.width+displacement;
     out.x=c.axis==='x'?along:across;
     out.y=c.axis==='x'?across:along;
     return out;
   }
-  // 以總播放時間取樣，不依幀數；循環、不同FPS與暫停都不會改變隨機序列。
+  // Birth and every refresh share exactly the same shape distribution. A refresh
+  // replaces the complete electrical shape; it never interpolates mirror through 0.
+  function sampleDeformationShape(w, seed, key) {
+    var c=w.config, rng=makeRng(seed ^ 0x6a09e667 ^ Math.imul(key,0x9e3779b9));
+    w.phase=deformationValue(c,'phase')+rng()*deformationValue(c,'phaseRandom');
+    w.mirror=c.mirror&&rng()<deformationValue(c,'mirrorChance')?-1:1;
+    w.width=1+(rng()*2-1)*deformationValue(c,'widthJitter');
+  }
   function updateDeformationMotion(w, time, seed) {
     var speed=deformationValue(w.config,'motionSpeed');
     if(!(speed>0 && deformationValue(w.config,'motionAmplitude')>0))return;
-    var age=time*speed,key=Math.floor(age),t=age-key;
-    if(w.motionKey!==key){
-      function phases(index){var rng=makeRng(seed ^ Math.imul(index,0x9e3779b9) ^ 0x3c6ef372);return [rng()*Math.PI*2,rng()*Math.PI*2];}
-      w.motionFrom=phases(key);w.motionTo=phases(key+1);w.motionKey=key;
-    }
-    w.motionBlend=t*t*(3-2*t);
-    w.motionTime=time;
+    // Snap tiny floating point error at cadence boundaries for frame-rate invariance.
+    var key=Math.floor(time*speed+1e-9);
+    if(w.motionKey===key)return;
+    sampleDeformationShape(w,seed,key);
+    w.motionKey=key;
+    w.motionTime=key; // geometry revision: unchanged between shape refreshes
   }
   function validateDeformation(preset, errors) {
     var c=preset.deformation;
@@ -1433,11 +1434,8 @@ var VFXCore = (function () {
         byId: Object.create(null)
       };
       if(preset.deformation){
-        var wr=makeRng(effect.seed ^ 0x6a09e667);
-        effect.deformation={config:preset.deformation,
-          phase:deformationValue(preset.deformation,'phase')+wr()*deformationValue(preset.deformation,'phaseRandom'),
-          mirror:preset.deformation.mirror&&wr()<deformationValue(preset.deformation,'mirrorChance')?-1:1,
-          width:1+(wr()*2-1)*preset.deformation.widthJitter};
+        effect.deformation={config:preset.deformation};
+        sampleDeformationShape(effect.deformation,effect.seed,0);
         updateDeformationMotion(effect.deformation,0,effect.seed);
       }
       applyTransformParams(effect, p);

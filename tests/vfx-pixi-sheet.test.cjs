@@ -200,11 +200,11 @@ test('WARP-MOTION 相同變形物件隨時間刷新GPU頂點，暫停保留快�
  const {backend}=setup(PIXI),n=backend.createNode({kind:'deformed',warpAxis:'x',assetUrl:'/animated.png'});
  await Promise.resolve();await Promise.resolve();n.texture.orig={width:512,height:256};
  const variation={config:{axis:'x',start:0,end:512,amplitude:0,motionAmplitude:16},mirror:1,width:1,phase:0,
-  motionFrom:[0,1],motionTo:[2,3],motionBlend:0,motionTime:0};
+  motionKey:0,motionTime:0};
  const w={a:1,b:0,c:0,d:1,x:0,y:0,originX:0,originY:0,rotation:0,scaleX:1,scaleY:1,variation};
  const t={deformation:w,anchorX:0,anchorY:.5};backend.updateNode(n,t);const before=Array.from(n.__warp.positions);
  const oldWrites=writes;backend.updateNode(n,t);assert.equal(writes,oldWrites);
- variation.motionBlend=.5;variation.motionTime=.04;backend.updateNode(n,t);
+ variation.phase=2;variation.motionKey=1;variation.motionTime=1;backend.updateNode(n,t);
  assert.ok(writes>oldWrites);assert.notDeepEqual(Array.from(n.__warp.positions),before);
 });
 
@@ -231,14 +231,14 @@ test('WARP-ROTATED 真實雷鏈旋轉與半幅裁切仍有17個縱向取樣，�
  const {backend}=setup(PIXI),n=backend.createNode({kind:'deformed',warpAxis:'x',assetUrl:'/spark_05.png'});
  await Promise.resolve();await Promise.resolve();n.texture.orig={width:512,height:512};
  const variation={config:{axis:'x',start:0,end:542.464,amplitude:0,motionAmplitude:40},mirror:1,width:1,phase:0,
- motionFrom:[0,1],motionTo:[2,3],motionBlend:0,motionTime:0};
+ motionKey:0,motionTime:0};
  const w={a:0,b:-.459,c:2.0455,d:0,x:5.8781,y:3.6442,originX:0,originY:0,rotation:0,scaleX:1/3,scaleY:1/3,
  variation,clipMin:80,clipMax:542.464,clipTaper:20};
  const t={deformation:w,anchorX:.5,anchorY:0};backend.updateNode(n,t);
  const before=Array.from(n.__warp.positions);
  const xs=new Set(before.filter((_,i)=>i%2===0).map(x=>x.toFixed(3)));
  assert.equal(xs.size,17,'縱向樣本不能因PNG旋轉／裁切退化成2到3點');
- variation.motionBlend=1;variation.motionTime=1/12;backend.updateNode(n,t);
+ variation.phase=2;variation.motionKey=1;variation.motionTime=1;backend.updateNode(n,t);
  const deltas=[];
  for(let i=0;i<before.length;i+=2){assert.equal(n.__warp.positions[i],before[i]);deltas.push(n.__warp.positions[i+1]-before[i+1]);}
  assert.ok(Math.min(...deltas)<-10 && Math.max(...deltas)>10,'同一幀有反向位移，不能只是整體平移或縮放');
@@ -260,13 +260,16 @@ test('WARP-SHIPPED 正式金色與紫色Preset經Core送到GPU，停止位移仍
   rt.update(.1);const nodes=container.children.filter(n=>n.__warp);
   assert.ok(nodes.length>=2);
   const before=nodes.map(n=>Array.from(n.__warp.positions));
-  let peak=0;
+  let peak=0;const mirrors=new Set(),widths=new Set();
   for(let frame=0;frame<60;frame++){
    rt.update(1/60);
    const n=nodes[0];assert.ok(n.visible);
+   const shape=n.__warp.cache.variation;mirrors.add(shape.mirror);widths.add(shape.width);
+   assert.ok(Math.abs(shape.mirror*shape.width)>.8,"GPU鏡像切換不能穿越零寬度");
    const delta=Array.from(n.__warp.positions).filter((_,i)=>i%2).map((y,i)=>y-before[0][i*2+1]);
    peak=Math.max(peak,Math.max(...delta.map(Math.abs))/3);
   }
   assert.ok(peak>8,id+' 固定位置播放一秒，遊戲等比縮放後彎曲差異超過8px');
+  assert.equal(mirrors.size,2);assert.ok(widths.size>5);
  }
 });
