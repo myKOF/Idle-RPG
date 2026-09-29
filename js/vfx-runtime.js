@@ -733,7 +733,8 @@ var VFXRuntime = (function () {
         timeScale: chaseSpeed > 0 ? 1 : travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / (travel*(1+body/dist)+.02) : 1,
         clipX: travel > 0 ? {min:width,max:width} : null,
         scaleX: body / width,
-        scaleY: tracked ? profile.scale : 1
+        // 飛行本體等比縮放，包含貼圖內建折線；只壓X會把彎曲角度放大。
+        scaleY: tracked && travel > 0 ? body / width : tracked ? profile.scale : 1
       }, tracked ? 1 : undefined);
       if (ref && tracked) {
         trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: width, body:body, worldBody:authoredLength>0?authoredLength:180,
@@ -1618,7 +1619,7 @@ var VFXRuntime = (function () {
           var tailOffset=beam.drain-beam.worldBody;
           moveRef(beam.ref,{
             position:{x:beam.position.x+ux*tailOffset,y:(beam.position.y+uy*tailOffset)*groundScale},
-            rotation:Math.atan2(uy*groundScale,ux),scaleX:beam.worldBody*projection/beam.width,scaleY:profile.scale,
+            rotation:Math.atan2(uy*groundScale,ux),scaleX:beam.worldBody*projection/beam.width,scaleY:beam.worldBody*projection/beam.width,
             clipX:{min:Math.max(0,beam.worldBody-beam.travelled-beam.drain)/beam.worldBody*beam.width,
               max:(beam.worldBody-beam.drain)/beam.worldBody*beam.width,taper:beam.width*tuning(beam.ref.presetId,'tipTaper')}
           },1);
@@ -1644,7 +1645,7 @@ var VFXRuntime = (function () {
             max:Math.min(bodyLength,distance-head+bodyLength)/bodyLength*beam.width,
             taper:beam.width*tuning(beam.ref.presetId,'tipTaper')
           } : null,
-          scaleY: profile.scale
+          scaleY: beam.travel > 0 ? bodyLength / beam.width : profile.scale
         }, 1)) trackingBeams.splice(bi, 1);
       }
 

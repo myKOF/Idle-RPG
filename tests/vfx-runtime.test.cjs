@@ -1713,7 +1713,7 @@ test('CHAIN 斜俯視飛行前端沿已投影路徑連續前進，366ms 抵達',
    adapter.update(.036);const t=log.nodes[0].transforms.at(-1);
    const head={x:t.x+Math.cos(t.rotation)*t.scaleX*256,y:t.y+Math.sin(t.rotation)*t.scaleX*256};
    assert.ok(Math.abs(head.x-screen.x*i*.036/.366)<1e-6);assert.ok(Math.abs(head.y-screen.y*i*.036/.366)<1e-6);
-   assert.ok(Math.abs(t.scaleX*256-180*Math.hypot(screen.x,screen.y)/Math.hypot(dest.x,dest.y))<1e-6,'本體固定18米不拉伸');assert.equal(t.scaleY,1,'原厚度不隨飛行縮小');assert.equal(adapter.stats().fx.activeEffects,1);
+   assert.ok(Math.abs(t.scaleX*256-180*Math.hypot(screen.x,screen.y)/Math.hypot(dest.x,dest.y))<1e-6,'本體固定18米不拉伸');assert.equal(t.scaleY,t.scaleX,'飛行縮放保持素材彎折比例');assert.equal(adapter.stats().fx.activeEffects,1);
   }
   adapter.update(.007);assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
  }
@@ -1867,6 +1867,27 @@ test('CHAIN-TRAIN 固定18米，轉折後10米尾部與8米前端同時存在並
  assert.equal(first.scaleX,second.scaleX);
  adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,1);
  adapter.update(1.1);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
+test('CHAIN-ASPECT 飛行與收尾等比縮放，素材折線不因距離、方向、透視或角色倍率變陡',()=>{
+ for(const groundScale of [1,.5])for(const homingSpeed of [0,300])for(const angle of [0,Math.PI/4,Math.PI/2,Math.PI]){
+  const p=unitPreset('custom-purple-chain',.366);
+  p.sizing={shape:'custom',authored:{width:542.464,height:106},widthM:54.2464,heightM:10.6};
+  const points={a:{x:0,y:0},b:{x:300*Math.cos(angle),y:300*Math.sin(angle)*groundScale}};
+  const {adapter,log}=makeAdapter([p],{groundScale,profile:{scale:.65},ctx:{posOf:id=>points[id],playerPos:()=>points.a}});
+  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],lineLength:180,travelMs:[0,1000],hit:false,vfx:{projectile:p.id},area:{chainId:'shape',homingSpeed}});
+  const assertShape=()=>{
+   const t=log.nodes[0].transforms.at(-1);
+   assert.ok(Math.abs(t.scaleX-t.scaleY)<1e-9,'局部折線斜率與編輯器相同');
+   assert.ok(t.scaleX>0&&t.scaleX<=180/542.464+1e-9,'18米本體尺寸不變');
+  };
+  adapter.update(.001);assertShape();
+  for(let i=0;i<12;i++){
+   if(homingSpeed && i===3){points.b.x+=20;points.b.y+=10*groundScale;}
+   adapter.update(.1);assertShape();
+  }
+  adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
+ }
 });
 
 test('CHAIN-VARIANT 正式素材只換名稱與顏色時，飛行幾何及壽命完全一致',()=>{
