@@ -1355,7 +1355,8 @@ var VFXRuntime = (function () {
             : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0);
           break;
         case 'projectile':
-          ok = spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
+          ok = spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
+            : spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
           break;
         case 'cast':
           ok = playOnPlayer(rtFx, presetId, spec);
