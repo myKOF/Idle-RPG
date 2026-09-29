@@ -1,5 +1,10 @@
 # AI_TASKS.md
 
+## Codex｜金色落雷型態連鎖重做（CHAIN-REBUILD-20260929）
+
+- Owner：Codex；Done。使用者指定以 bolt-thunderstrike-bluewhite 主弧／分岔重做金色雷鏈，飛行速度 50%，移除大斷點，命中後重新找存活目標；死亡來源不中斷鏈。保留表定上限與傷害。
+- 允許 skills2 邏輯、Runtime／必要 renderer、原雷鏈 Preset／layout／作者工具、快取、測試及文件。禁止改使用者正在編輯的 Skills2 資料列、表格、beam-light 與素材刪除。預檢無分支衝突，既有本地資料修改獨立保留；驗收多次致死彈射、50% 速度、無提前光環、連續飛行與金色外觀。已完成：198 測試 194 通過、4 項既有失敗；實戰捕捉四段飛行、清場無殘留與 Console 錯誤。素材庫 `8ff0bae`；詳見 `docs/skill-tests/20260929-chainlightning-rebuild.md`。
+
 ## Codex｜雷鏈原貌與抵達光環（CHAIN-APPEARANCE-20260929）
 
 - Owner：Codex；Done。恢復雷鏈原本厚度及較長電弧，保留本體平移；將起飛時誤播的地板光環移至權威命中事件。依賴既有抵達事件；允許 Runtime、測試、快取與紀錄，不改 Preset／素材、技能數值或其他副本。預檢無衝突；驗證起飛無目標特效、抵達才播放、原厚度與飛行。完成交使用者整合。152 測試 148 通過、4 項已知原有失敗；Build 402 檔通過。真實 Worker 七階未選超神：起飛新增光環 0、命中新增 8、Console 無錯。詳見 `docs/skill-tests/20260929-chainlightning-appearance.md`。

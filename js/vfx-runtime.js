@@ -421,9 +421,9 @@ var VFXRuntime = (function () {
         presetDurations[p.id] = p.duration;
         if (p.id === 'bolt-chain-travel-bluewhite') {
           var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
-          trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) * num(front.scaleOverLife, 1) : NOMINAL_BEAM;
+          trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) * num(front.scaleOverLife, 1) : num(p.sizing && p.sizing.authored && p.sizing.authored.width, NOMINAL_BEAM);
           // 既有圖集第 11 格前端抵達右緣；播放速度需對齊事件的抵達秒數。
-          trackedBeamArrivalTimes[p.id] = front && front.sheet ? 11 / num(front.sheet.fps, 60) : 0;
+          trackedBeamArrivalTimes[p.id] = front && front.sheet ? 11 / num(front.sheet.fps, 60) : p.duration;
         }
         // Two synchronized passes share textures; each stone switches sides at the orbit midline.
         if (isRockOrbitPreset(p.id) && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
@@ -709,6 +709,8 @@ var VFXRuntime = (function () {
       if (presetId === 'bolt-chain-travel-bluewhite' && ctx.chainPoint) {
         from = ctx.chainPoint(ids.length >= 2 ? ids[0] : (spec.sourceId || 'pv-float'));
         to = ctx.chainPoint(toId);
+        if (!from && spec.area && isNum(spec.area.sourceX)) from = {x:spec.area.sourceX,y:spec.area.sourceY};
+        if (!to && spec.area && isNum(spec.area.x)) to = {x:spec.area.x,y:spec.area.y};
         // 端點已離場時消費事件，不能退回 legacy 的備用位置。
         if (!from || !to) return true;
       }
@@ -718,7 +720,7 @@ var VFXRuntime = (function () {
       var travel = trackedBeamWidths[presetId] ? travelSecAt(spec, ids.length >= 2 ? 1 : 0) : 0;
       // 有權威飛行時間時，保留長電弧與 Preset 原厚度，本體由 A 平移到 B。
       // 舊事件沒有 travelMs 才維持全長連線，避免推測另一個命中時刻。
-      var body = travel > 0 ? dist * .8 : dist;
+      var body = travel > 0 ? .001 : dist;
       var ref = play(rt, presetId, {
         position: from,
         rotation: Math.atan2(dy, dx),
@@ -727,7 +729,7 @@ var VFXRuntime = (function () {
         scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
       }, trackedBeamWidths[presetId] ? 1 : undefined);
       if (ref && presetId === 'bolt-chain-travel-bluewhite') {
-        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM, travel: travel, startedAt: clock });
+        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM, travel: travel, startedAt: clock, from: from, to: to });
       }
       return !!ref;
     }
@@ -1262,7 +1264,7 @@ var VFXRuntime = (function () {
     }
     function tryPlay(spec) {
       var previous = chainTargets;
-      chainTargets = spec && (spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit')
+      chainTargets = spec && spec.variant === 'lightning-chain-hit'
         ? (spec.targets || []).slice(spec.fxKind === 'chain' ? -1 : 0) : null;
       try {
         if (!chainTargetsAlive(chainTargets)) return true;
@@ -1400,7 +1402,8 @@ var VFXRuntime = (function () {
             var poisonSpec = Object.assign({}, spec);
             delete poisonSpec.sourceId;
             ok = playOnTargets(rtFx, presetId, poisonSpec, 1, 0, true);
-          } else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
+          } else if (spec.variant === 'lightning-chain' && spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
+          else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
           /* 整份都標了 perspective: false 的（例如天地再造的直立光柱）只投影落點並等比縮放，
@@ -1578,20 +1581,22 @@ var VFXRuntime = (function () {
         var beamFrom = beam.fromId ? ctx.posOf(beam.fromId) : ctx.playerPos();
         var beamTo = ctx.posOf(beam.toId);
         if (ctx.chainPoint) {
-          beamFrom = ctx.chainPoint(beam.fromId || 'pv-float');
-          beamTo = ctx.chainPoint(beam.toId);
+          beamFrom = ctx.chainPoint(beam.fromId || 'pv-float') || beam.from;
+          beamTo = ctx.chainPoint(beam.toId) || beam.to;
           if (!beamFrom || !beamTo) {
             stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
           }
         }
+        beam.from = beamFrom; beam.to = beamTo;
         var bdx = beamTo.x - beamFrom.x, bdy = beamTo.y - beamFrom.y;
         var distance = Math.max(1, Math.sqrt(bdx * bdx + bdy * bdy));
         var progress = beam.travel > 0 ? Math.min(1, (clock - beam.startedAt) / beam.travel) : 0;
         if (beam.travel > 0 && progress >= 1) {
           stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
         }
-        var bodyLength = beam.travel > 0 ? distance * .8 : distance;
-        var offset = progress * (1 - bodyLength / distance);
+        var tail = Math.max(0, progress - .65);
+        var bodyLength = beam.travel > 0 ? Math.max(.001, distance * (progress - tail)) : distance;
+        var offset = beam.travel > 0 ? tail : 0;
         if (!moveRef(beam.ref, {
           position: {x:beamFrom.x + bdx * offset, y:beamFrom.y + bdy * offset}, rotation: Math.atan2(bdy, bdx),
           scaleX: bodyLength / beam.width,
@@ -1740,7 +1745,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260924-camera-flags-3';
+  var DATA_VERSION = '20260929-chain-thunder-rebuild';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

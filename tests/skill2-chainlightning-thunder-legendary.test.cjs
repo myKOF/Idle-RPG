@@ -250,7 +250,6 @@ test('【天地雷鎖陣】：施放後每 gap 秒自動再施放，且重複施
   for (let i = 0; i < 8; i++) es.push(enemy(1e9, 20 + i * 5, 0, 'e' + i));
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
 
-  settleChain(c);
   const mpAfterCast = p.mp;
   const cdAfterCast = p.skillCds['sg:chainlightning'];
   const firstBatch = calls.length;
@@ -264,7 +263,9 @@ test('【天地雷鎖陣】：施放後每 gap 秒自動再施放，且重複施
   assert.equal(p.skillCds['sg:chainlightning'], cdAfterCast, '重複施放不重設冷卻');
 
   // 持續時間走完就停（Lv.1 ＝ 3 + 0.3 秒）
-  advance(c, p, es, 6);
+  advance(c, p, es, 9);
+  assert.equal(c.SKILL2_RT.ultRepeat.chainlightning,undefined,'持續結束不再起新施放');
+  settleChain(c); // 半速分支鏈可晚於施放狀態抵達；先讓已發射的鏈結束。
   const settled = calls.length;
   advance(c, p, es, 3);
   assert.equal(calls.length, settled, '持續時間結束後不再自動施放');
@@ -322,7 +323,6 @@ test('【飛雷神】：放電期每 gap 秒打向最遠的 N 個敵人，各自
   const es = [near, mid, far1, far2];
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
 
-  settleChain(c);
   assert.ok(c.SKILL2_RT.flyThunder, '施放後進入放電期');
   const afterCast = calls.length;
 
@@ -333,6 +333,7 @@ test('【飛雷神】：放電期每 gap 秒打向最遠的 N 個敵人，各自
 
   // 持續 6.3 秒（Lv.1）：走完就停
   advance(c, p, es, 8);
+  settleChain(c);
   const settled = calls.length;
   advance(c, p, es, 2);
   assert.equal(calls.length, settled, '放電期結束後不再放電');

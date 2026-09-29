@@ -7142,71 +7142,64 @@ function sgChainNextTarget(from, pool, visited, hopPx) {
   return (typeof bfRandomOther === 'function') ? bfRandomOther(from, pool, hopPx, visited) : null;
 }
 
-function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce) {
+// 飛行速度降為原來 50%；每段抵達即起飛下一段，沒有額外空白間隔。
+var SG_CHAIN_TRAVEL_MS = 366;
+function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce, continueChain) {
   sgQueueMeteor(cfg.pEnt, cfg.st, dmg, target, pool, 0, null, cfg.floatSel, cfg.out, at, {
     gid: 'chainlightning', variant: 'lightning-chain-hit',
     onImpact: function (shot, victims, ctx) {
-      if (!victims.length) return;
       var livePool = ctx.getEnemies ? ctx.getEnemies() : pool;
-      sgChainOverload(cfg, target, livePool, 0);
-      if (!isBounce || !(cfg.splashPct > 0)) return;
-      var splash = typeof bfRandomOthers === 'function'
-        ? bfRandomOthers(target, livePool, cfg.splashCount, cfg.splashPx, null) : [];
-      for (var i = 0; i < splash.length; i++) {
-        sgQueueMeteor(cfg.pEnt, cfg.st, dmg * cfg.splashPct / 100, splash[i], livePool, 0,
-          null, cfg.floatSel, cfg.out, GT + sgStaggerMs(i + 1) / 1000,
-          { gid: 'chainlightning', variant: 'lightning-chain-hit', vfxTier: 5 });
+      if (cfg.pEnt !== ctx.pEnt || !(cfg.pEnt.hp > 0)) return;
+      if (victims.length) {
+        sgChainOverload(cfg, target, livePool, 0);
+        if (isBounce && cfg.splashPct > 0) {
+          var splash = typeof bfRandomOthers === 'function'
+            ? bfRandomOthers(target, livePool, cfg.splashCount, cfg.splashPx, null) : [];
+          for (var i = 0; i < splash.length; i++) {
+            sgQueueMeteor(cfg.pEnt, cfg.st, dmg * cfg.splashPct / 100, splash[i], livePool, 0,
+              null, cfg.floatSel, cfg.out, GT + sgStaggerMs(i + 1) / 1000,
+              { gid: 'chainlightning', variant: 'lightning-chain-hit', vfxTier: 5 });
+          }
+        }
       }
+      // 目標已被其他鏈擊殺也續找；死亡只取消該次傷害，不取消整條鏈。
+      if (continueChain) continueChain(livePool);
     }
   });
 }
 
 function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   if (!start || start.hp <= 0) return;
-  var gid = 'chainlightning';
-  var cur = start;
-  var visited = [start];
-  var isBounce = false;   // 起手那一擊不算彈射（電殛擴散只在彈射時追加）
-  var bounces = 0;        // 這一道鏈已經彈射幾次（傳奇【超導】的傷害成長）
-  var linksLeft = cfg.links;
-  var arrivalMs = 183; // 與電弧圖集前端抵達時刻一致
-  var delayMs = arrivalMs;
-  sgEmitVfx(gid, [start], floatSel, {
-    fxKind: 'chain', variant: 'lightning-chain', count: 1, travelMs: [arrivalMs],
-    preserveDeadTargets: true, hit: false
-  });
-  var guard = 0;
-  while (linksLeft > 0 && cur && cur.hp > 0 && guard < 64) {
-    guard++;
-    linksLeft--;
-    /* 傳奇【超導】：每彈射 1 次，這一道鏈之後每一擊的傷害就多一份（加算而非複利——
-       設計文檔寫的是「每彈射 1 次傷害 +10%」，複利會讓長鏈的尾段爆炸成完全不同的量級）。 */
-    var hopDmg = cfg.dmgVal * (1 + cfg.bouncePct * bounces / 100);
-    sgQueueChainHit(cfg, cur, hopDmg, GT + delayMs / 1000, pool, isBounce);
-    // 【雷鳴術】：被擊中的敵人再多吃幾次同樣的閃電傷害（不足 1 次的部分已於施放時擲骰）
-    for (var e = 0; e < cfg.extraHits; e++) {
-      sgQueueMeteor(pEnt, st, hopDmg, cur, pool, 0, null, floatSel, out,
-        GT + (delayMs + sgStaggerMs(e + 1)) / 1000, { gid: gid, variant: 'lightning-chain-hit' });
-    }
-    if (linksLeft <= 0) break;
-    var next = sgChainNextTarget(cur, pool, visited, cfg.hopPx);
-    if (!next) break;
-    visited.push(next);
-    if (cfg.spawnChance > 0 && cfg.chainCount < cfg.maxChains &&
-        chance(cfg.spawnChance)) {
-      cfg.spawnQueue.push(next);
-      cfg.chainCount++;
-    }
-    var hopMs = 300;
-    sgEmitVfx(gid, [cur, next], floatSel, {
-      fxKind: 'chain', variant: 'lightning-chain', count: 1,
-      delayMs: delayMs + hopMs - arrivalMs, travelMs: [0, arrivalMs], preserveDeadTargets: true, hit: false
+  var visited = [], remaining = Math.min(64, cfg.links), bounces = 0;
+  function launch(from, target, livePool) {
+    if (!target || remaining <= 0 || !(pEnt.hp > 0)) return;
+    remaining--; visited.push(target);
+    var origin = from && typeof bfPos === 'function' ? bfPos(from) : null;
+    var end = typeof bfPos === 'function' ? bfPos(target) : null;
+    sgEmitVfx('chainlightning', from ? [from, target] : [target], floatSel, {
+      fxKind: 'chain', variant: 'lightning-chain', count: 1, hit: false,
+      travelMs: from ? [0, SG_CHAIN_TRAVEL_MS] : [SG_CHAIN_TRAVEL_MS], preserveDeadTargets: true,
+      area: origin && end ? { sourceX: origin.x, sourceY: origin.y, x: end.x, y: end.y } : null
     });
-    delayMs += hopMs;
-    cur = next;
-    isBounce = true;
-    bounces++;
+    var dmg = cfg.dmgVal * (1 + cfg.bouncePct * bounces / 100);
+    sgQueueChainHit(cfg, target, dmg, GT + SG_CHAIN_TRAVEL_MS / 1000, livePool, bounces > 0, function (currentPool) {
+      if (remaining <= 0) return;
+      var next = sgChainNextTarget(target, currentPool, visited, cfg.hopPx);
+      if (!next) return;
+      bounces++;
+      launch(target, next, currentPool);
+      if (cfg.spawnChance > 0 && cfg.chainCount < cfg.maxChains && chance(cfg.spawnChance)) {
+        cfg.chainCount++;
+        sgChainlightningBolt(pEnt, st, cfg, next, currentPool, floatSel, out);
+      }
+    });
+    for (var e = 0; e < cfg.extraHits; e++) {
+      sgQueueMeteor(pEnt, st, dmg, target, livePool, 0, null, floatSel, out,
+        GT + (SG_CHAIN_TRAVEL_MS + sgStaggerMs(e + 1)) / 1000,
+        { gid: 'chainlightning', variant: 'lightning-chain-hit' });
+    }
   }
+  launch(null, start, pool);
 }
 
 /* 傳奇【過載】：同一個敵人被閃電鏈打滿 N 次就在牠身上炸開一次，計數隨即歸零重算。

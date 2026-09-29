@@ -254,7 +254,8 @@ var BattleRenderer = (function () {
   }
   function fxGate(spec) {
     if (!S.ready || documentHidden()) return true;
-    if (spec && (spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit')) {
+    if (spec && spec.variant === 'lightning-chain') return !(spec.targets && spec.targets.length);
+    if (spec && spec.variant === 'lightning-chain-hit') {
       var ids = (spec.targets || []).slice(spec.fxKind === 'chain' ? -1 : 0);
       return !ids.length || ids.some(function (id) { return !chainTargetAlive(id); });
     }

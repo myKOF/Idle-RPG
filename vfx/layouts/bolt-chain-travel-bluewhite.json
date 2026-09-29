@@ -6,7 +6,9 @@
       "id": "bolt-chain-travel-bluewhite",
       "name": "bolt-chain-travel-bluewhite",
       "layerIds": [
-        "travelling-electric-front"
+        "blue-corona",
+        "white-core",
+        "side-fork"
       ]
     }
   ],

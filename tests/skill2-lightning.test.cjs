@@ -639,22 +639,20 @@ test('無座標時三個技能都能施放並造成傷害（高塔退化）', ()
   assert.ok(calls.length > beforeTick, '落雷與雷球在 tick 中結算');
 });
 
-test('CHAIN 藍白電弧每隔 300ms 連接下一目標，傷害顯示對齊抵達時刻',()=>{
- const c=loadContext();stubHits(c);const p=playerEnt(),es=[enemy(1e9,50,0),enemy(1e9,80,0),enemy(1e9,110,0),enemy(1e9,140,0),enemy(1e9,170,0)];
- const events=[],hits=[];c.playCombatVfx=s=>events.push(s);c.floatEnemyEvent=(ent,sel,text,cls,dmg,delay)=>{if(dmg>0)hits.push({at:c.GT,delay:delay||0})};
- setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,es,'chainlightning','mv-float');
- const chains=events.filter(s=>s.variant==='lightning-chain');assert.equal(chains.length,4);
- assert.ok(chains.every(s=>s.vfx.attack==='bolt-chain-travel-bluewhite'),'表格必須有真正的彈射電弧，不能只剩命中電光');
- assert.deepEqual(chains.map(s=>(s.delayMs||0)+s.travelMs.at(-1)),[183,483,783,1083],'電弧命中事件與傷害浮字使用同一抵達時間');
- assert.deepEqual(chains.map(s=>s.delayMs||0),[0,300,600,900]);assert.ok(chains.every(s=>s.vfx.attack===table.vfx('chainlightning',1,'攻擊特效')&&s.vfx.projectile===table.vfx('chainlightning',1,'飛行子彈')));
- assert.equal(hits.length,0);
- for(const at of [.182,.183,.482,.483,.782,.783,1.082,1.083]) {
-  c.GT=at;c.sgTickMeteors(tickCtx(c,p,es));
-  assert.equal(hits.length,[.183,.483,.783,1.083].filter(t=>t<=at).length);
+test('CHAIN 半速每段 366ms 抵達才傷害並立即發射下一段',()=>{
+ const c=loadContext(),calls=stubHits(c),p=playerEnt(),es=Array.from({length:5},(_,i)=>enemy(1e9,50+i*30,0,'e'+i));
+ const events=stubVfx(c);setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
+ c.castSkill2(p,es,'chainlightning','mv-float');
+ assert.equal(events.filter(e=>e.variant==='lightning-chain').length,1,'只發射首段，不預排死目標');
+ for(let i=1;i<=4;i++){
+  const at=c.SKILL2_RT.meteors.find(m=>m.variant==='lightning-chain-hit').at;
+  c.GT=at-.001;c.sgTickMeteors(tickCtx(c,p,es));assert.equal(calls.length,i-1);
+  c.GT=at;c.sgTickMeteors(tickCtx(c,p,es));assert.equal(calls.length,i);
+  assert.equal(Math.round(at*1000),366*i);
  }
- assert.deepEqual(hits.map(h=>Math.round(h.at*1000)),[183,483,783,1083]);
- assert.ok(hits.every(h=>h.delay===0));
- assert.ok(chains.every(s=>s.hit===false),'飛行事件不預播命中');
+ const chains=events.filter(e=>e.variant==='lightning-chain');assert.equal(chains.length,4);
+ assert.ok(chains.every(e=>e.hit===false&&!e.delayMs&&e.travelMs.at(-1)===366));
+ assert.ok(chains.every(e=>e.vfx.attack===table.vfx('chainlightning',1,'攻擊特效')));
 });
 
 test('THUNDER 加速三成後落地才命中，每道仍間隔 200ms',()=>{
@@ -697,9 +695,33 @@ test('CHAIN 致死首擊抵達後仍逐段彈向存活敵人，沒有整鏈瞬�
  const es=[enemy(50,50,0,'a'),enemy(50,80,0,'b'),enemy(50,110,0,'c')];
  setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
  c.castSkill2(p,es,'chainlightning','mv-float');
- for(const [at,count] of [[.182,0],[.183,1],[.482,1],[.483,2],[.783,3]]) {
+ for(const [at,count] of [[.365,0],[.366,1],[.731,1],[.732,2],[1.098,3]]) {
   c.GT=at;c.sgTickMeteors(tickCtx(c,p,es.filter(e=>e.hp>0)));
   assert.equal(calls.length,count);assert.equal(es.filter(e=>e.hp===0).length,count);
  }
  assert.equal(events.filter(e=>e.variant==='lightning-chain-hit').length,3);
+});
+
+
+test('CHAIN 每次致死後重新找敵，連續四擊；新出現敵人可接棒，範圍外不選',()=>{
+ const c=loadContext(),calls=stubHits(c),events=stubVfx(c),p=playerEnt();
+ const a=enemy(50,50,0,'a'),b=enemy(50,80,0,'b'),far=enemy(50,9999,0,'far');let pool=[a,b,far];
+ setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,pool,'chainlightning','mv-float');
+ c.GT=.366;c.sgTickMeteors(tickCtx(c,p,pool));assert.equal(a.hp,0);
+ const d=enemy(50,110,0,'d');pool=[b,d,far];
+ c.GT=.732;c.sgTickMeteors(tickCtx(c,p,pool));assert.equal(b.hp,0);
+ const e=enemy(50,140,0,'e');pool=[d,e,far];
+ c.GT=1.098;c.sgTickMeteors(tickCtx(c,p,pool));
+ c.GT=1.464;c.sgTickMeteors(tickCtx(c,p,[e,far]));
+ assert.deepEqual(calls.map(h=>h.ent.name),['a','b','d','e']);
+ assert.equal(far.hp,50);assert.equal(c.SKILL2_RT.meteors.length,0);
+ const chains=events.filter(s=>s.variant==='lightning-chain');
+ assert.deepEqual(chains.map(s=>Array.from(s.targets)),[['a'],['a','b'],['b','d'],['d','e']]);
+});
+
+test('CHAIN 飛行目標被另一條鏈擊殺後仍找下一隻，沒有候選才結束',()=>{
+ const c=loadContext(),calls=stubHits(c),p=playerEnt(),a=enemy(50,50,0,'a'),b=enemy(50,80,0,'b');
+ stubVfx(c);setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,[a,b],'chainlightning','mv-float');
+ a.hp=0;c.GT=.366;c.sgTickMeteors(tickCtx(c,p,[b]));assert.equal(calls.length,0);
+ c.GT=.732;c.sgTickMeteors(tickCtx(c,p,[b]));assert.equal(calls.length,1);assert.equal(c.SKILL2_RT.meteors.length,0);
 });
