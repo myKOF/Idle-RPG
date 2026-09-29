@@ -1,6 +1,8 @@
-# Worker 協議 v38
+# Worker 協議 v39
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 38`　最後更新：2026-09-24
+> 協議版本：`WORKER_PROTOCOL_VERSION = 39`　最後更新：2026-09-29
+
+v39 新增可選 `vfx.area.chainId`（字串）：同一條雷鏈的各跳共用 id；`variant=lightning-chain-end` 帶相同 id 且 targets 可為空，要求立即收掉該鏈所有飛行本體及尾流，不等待播放完畢，不影響其他鏈。終止事件由模擬在沒有候選、達到彈射上限或取消時送出，透過既有 area 白名單傳遞；不入存檔。雷鏈同時攜帶 `area.homingSpeed`（世界單位／秒），以共用 `projectileHomingStep` 逐步追蹤移動目標；`travelMs` 僅為起飛估時，不能當作命中期限。抵達才结算傷害、排追加打擊與下一跳。舊事件沒有 homingSpeed 時才保留既有估時播放；高塔無世界座標時亦採相容退化。
 
 v38 的 `battle` 面板新增 `rebirthCharges`（整數或 `null`）：逆轉乾坤啟用時回報目前實際可用的復活次數，供技能圖標顯示；未啟用時為 `null`。此值由模擬層計算，不進存檔。原因是累積次數屬於 Worker 執行期狀態，主執行緒不能由技能冷卻自行推算。
 

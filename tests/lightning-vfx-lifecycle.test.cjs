@@ -94,3 +94,15 @@ test('Canvas 雷鏈飛行不被死亡取消，但死亡目標不播命中特效'
  assert.equal(c.fxGate({...spec,targets:[]}),true);
  assert.equal(c.fxGate({fxKind:'impact',variant:'lightning-chain-hit',targets:['from']}),true);
 });
+
+test('CHAIN-END 清場訊號不經顯示緩衝或死亡守門，Worker保留鏈編號',()=>{
+ const events=[];const c={S:{ready:true,vfxrt:{tryPlay:s=>events.push(s)}}};
+ vm.runInNewContext(extractFunction(read('js/battle-renderer.js'),'onVfx'),c);
+ c.onVfx({variant:'lightning-chain-end',targets:[],area:{chainId:'one'},vfx:{}});
+ assert.equal(events.length,1);
+ const wire=[];const w={_diag(){},SHIM_DIAG:{ui:0},shimPushEvent:(k,e)=>wire.push(e)};
+ vm.runInNewContext(extractFunction(read('js/worker/shim.js'),'playCombatVfx'),w);
+ w.playCombatVfx(events[0]);assert.equal(wire[0].area.chainId,'one');assert.equal(wire[0].variant,'lightning-chain-end');
+ w.playCombatVfx({variant:'lightning-chain',area:{chainId:'one',homingSpeed:700},lineLength:180});
+ assert.equal(wire[1].area.homingSpeed,700);assert.equal(wire[1].lineLength,180);
+});

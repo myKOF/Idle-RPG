@@ -639,7 +639,7 @@ test('無座標時三個技能都能施放並造成傷害（高塔退化）', ()
   assert.ok(calls.length > beforeTick, '落雷與雷球在 tick 中結算');
 });
 
-test('CHAIN 首段加速50%至244ms，其後保持同速 抵達才傷害並立即發射下一段',()=>{
+test('CHAIN 固定18米每244ms速度 抵達才傷害並立即發射下一段',()=>{
  const c=loadContext(),calls=stubHits(c),p=playerEnt(),es=Array.from({length:5},(_,i)=>enemy(1e9,50+i*30,0,'e'+i));
  const events=stubVfx(c);setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
  c.castSkill2(p,es,'chainlightning','mv-float');
@@ -650,8 +650,8 @@ test('CHAIN 首段加速50%至244ms，其後保持同速 抵達才傷害並立�
   c.GT=at;c.sgTickMeteors(tickCtx(c,p,es));assert.equal(calls.length,i);
   const flight=events.filter(e=>e.variant==='lightning-chain')[i-1];
   const a=flight.area,distance=Math.hypot(a.x-a.sourceX,a.y-a.sourceY);
-  assert.ok(Math.abs(distance/flight.travelMs.at(-1)-50/244)<1e-8);
-  if(i===1)assert.equal(at,.244);
+  assert.ok(Math.abs(distance/flight.travelMs.at(-1)-180/244)<1e-8);
+  if(i===1)assert.ok(Math.abs(at-50/180*.244)<1e-8);
  }
  const chains=events.filter(e=>e.variant==='lightning-chain');assert.equal(chains.length,4);
  assert.ok(chains.every(e=>e.hit===false&&!e.delayMs&&e.lineLength===180));
@@ -731,4 +731,53 @@ test('CHAIN 飛行目標被另一條鏈擊殺後仍找下一隻，沒有候選�
  stubVfx(c);setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,[a,b],'chainlightning','mv-float');
  a.hp=0;c.GT=.366;c.sgTickMeteors(tickCtx(c,p,[b]));assert.equal(calls.length,0);
  c.GT=.732;c.sgTickMeteors(tickCtx(c,p,[b]));assert.equal(calls.length,1);assert.equal(c.SKILL2_RT.meteors.length,0);
+});
+
+test('CHAIN 近距離首擊不降低後續速度，移動目標未追到不命中',()=>{
+ const c=loadContext(),calls=stubHits(c),events=stubVfx(c),p=playerEnt();
+ const a=enemy(10000,2,0,'a'),b=enemy(10000,300,0,'b');
+ setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,[a,b],'chainlightning','mv-float');
+ const speed=180/.244,first=events.find(e=>e.variant==='lightning-chain');
+ assert.ok(Math.abs(first.area.homingSpeed-speed)<1e-8);
+ c.GT=.01;c.sgTickMeteors(tickCtx(c,p,[a,b]));assert.equal(calls.length,1);
+ const second=events.filter(e=>e.variant==='lightning-chain')[1];assert.ok(Math.abs(second.area.homingSpeed-speed)<1e-8);
+ assert.ok(second.travelMs.at(-1)<500,'不繼承貼身首擊低速');
+ const originalArrival=c.SKILL2_RT.meteors[0].at;
+ let last=c.SKILL2_RT.meteors[0].homing.position;
+ while(c.GT<originalArrival+.1){
+  c.GT+=.02;b.pos.x+=8;
+  c.sgTickMeteors(tickCtx(c,p,[a,b]));assert.equal(calls.length,1);
+  const pos=c.SKILL2_RT.meteors[0].homing.position;
+  assert.ok(Math.hypot(pos.x-last.x,pos.y-last.y)<=speed*.02+1e-6);last=pos;
+ }
+ b.pos.x=last.x+5;c.GT+=.02;c.sgTickMeteors(tickCtx(c,p,[a,b]));
+ assert.equal(calls.length,2,'追上才命中');
+ assert.equal(events.filter(e=>e.variant==='lightning-chain-end').length,1);
+});
+
+test('CHAIN 飛行中清場立即送終止，候選以邊緣範圍判斷且各鏈id獨立',()=>{
+ const c=loadContext(),calls=stubHits(c),events=stubVfx(c),p=playerEnt();
+ const a=enemy(10000,300,0,'a');setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
+ c.castSkill2(p,[a],'chainlightning','mv-float');
+ const id=events.find(e=>e.variant==='lightning-chain').area.chainId;
+ a.hp=0;c.GT=.01;c.sgTickMeteors(tickCtx(c,p,[]));
+ assert.equal(calls.length,0);assert.equal(c.SKILL2_RT.meteors.length,0);
+ assert.equal(events.find(e=>e.variant==='lightning-chain-end').area.chainId,id);
+ a.hp=10000;c.castSkill2(p,[a],'chainlightning','mv-float');
+ assert.notEqual(events.filter(e=>e.variant==='lightning-chain').at(-1).area.chainId,id);
+});
+
+test('CHAIN 無目標提前終止沿用邊緣距離，雷鳴追加傷害等實際追上',()=>{
+ const c=loadContext(),calls=stubHits(c),events=stubVfx(c),p=playerEnt();
+ const a=enemy(10000,300,0,'a'),b=enemy(10000,739,0,'b');
+ setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,[a,b],'chainlightning','mv-float');a.hp=0;
+ c.GT=.01;c.sgTickMeteors(tickCtx(c,p,[b]));assert.equal(events.filter(e=>e.variant==='lightning-chain-end').length,0,'399單位邊緣距離仍可接續');
+ b.pos.x=741;c.GT=.02;c.sgTickMeteors(tickCtx(c,p,[b]));assert.equal(events.filter(e=>e.variant==='lightning-chain-end').length,1);
+ assert.equal(calls.length,0);
+ const d=loadContext(),hits=stubHits(d),player=playerEnt(),target=enemy(10000,100,0,'moving');stubVfx(d);
+ setLevels(d,'chainlightning',[1,1,1,0,0,0,0]);d.castSkill2(player,[target],'chainlightning','mv-float');
+ target.pos.x=500;d.GT=.2;d.sgTickMeteors(tickCtx(d,player,[target]));
+ target.pos.x=800;d.GT=.4;d.sgTickMeteors(tickCtx(d,player,[target]));assert.equal(hits.length,0,'超過舊估時及追加間隔仍不能預先傷害');
+ target.pos.x=d.SKILL2_RT.meteors[0].homing.position.x+1;d.GT=.42;d.sgTickMeteors(tickCtx(d,player,[target]));assert.equal(hits.length,1);
+ assert.equal(d.SKILL2_RT.meteors.length,1);assert.ok(d.SKILL2_RT.meteors.every(m=>m.at>.42));d.GT=d.SKILL2_RT.meteors[0].at;d.sgTickMeteors(tickCtx(d,player,[target]));assert.equal(hits.length,2);
 });

@@ -5267,6 +5267,11 @@ var BattleRenderer = (function () {
   }
   function onVfx(spec) {
     if (!S.ready || !spec) return;
+    // 終止訊號不等位置緩衝，也不能被死亡目標／空目標守門擋掉。
+    if (spec.variant === 'lightning-chain-end') {
+      if (S.vfxrt) S.vfxrt.tryPlay(spec);
+      return;
+    }
     if ((spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit') && fxGate(spec)) return;
     /* 背景分頁不畫特效（與 DOM 版 vfxSetEnabled(false) 同精神）；
        setTimeout 排進來的延遲段也會走到這裡被擋掉。 */

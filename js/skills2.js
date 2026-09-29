@@ -3924,6 +3924,9 @@ function sgQueueMeteor(pEnt, st, dmgVal, target, pool, radius, burnSpec, floatSe
        onImpact(meteor, victims, ctx)＝落地後的附加效果（震暈、再生一道落雷）。 */
     bonusPctFn: (extra && extra.bonusPctFn) || null,
     onImpact: (extra && extra.onImpact) || null,
+    cancelIf: (extra && extra.cancelIf) || null,
+    onCancel: (extra && extra.onCancel) || null,
+    homing: (extra && extra.homing) || null,
     /* 特效欄位的列標記（見 sgVfxRoles）：落地爆點要讀「發出這一顆的那一階」的受擊特效。 */
     vfxTier: (extra && extra.vfxTier) || 0,
     vfxBase: !!(extra && extra.vfxBase),
@@ -3939,6 +3942,22 @@ function sgTickMeteors(ctx) {
   var keep = [];
   for (var i = 0; i < list.length; i++) {
     var m = list[i];
+    if (m && m.cancelIf && m.cancelIf(ctx)) {
+      if (m.onCancel) m.onCancel();
+      sgFinishSkillCastFloat(m.out);
+      continue;
+    }
+    if (m && m.homing) {
+      var flight=m.homing, livePoint=bfPos(m.target) || flight.previousTarget;
+      var flightStep=projectileHomingStep(flight.position,flight.previousTarget,livePoint,flight.speed,Math.max(0,GT-flight.lastAt));
+      flight.position={x:flightStep.x,y:flightStep.y};
+      flight.previousTarget={x:livePoint.x,y:livePoint.y};flight.lastAt=GT;
+      if (!flightStep.hit) {
+        m.at=GT+Math.max(.001,Math.hypot(livePoint.x-flight.position.x,livePoint.y-flight.position.y)/flight.speed);
+        keep.push(m);continue;
+      }
+      m.at=GT;
+    }
     if (!m || m.at > GT) { if (m) keep.push(m); continue; }
     var before = m.out.dmg;
     var killed = false;
@@ -7142,15 +7161,22 @@ function sgChainNextTarget(from, pool, visited, hopPx) {
   return (typeof bfRandomOther === 'function') ? bfRandomOther(from, pool, hopPx, visited) : null;
 }
 
-// 首段由366ms加速50%至244ms；同一鏈沿用首段速度，轉折處18米尾流不中斷。
-var SG_CHAIN_TRAVEL_MS = 244;
-function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce, continueChain) {
+// 固定世界速度：18米／244ms，不依首個目標距離校準，避免貼身施放變成慢速鏈。
+var SG_CHAIN_SPEED_MPS = 18 / .244;
+var SG_CHAIN_SERIAL = 0;
+function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce, continueChain, cancelIf, onCancel, homing) {
   sgQueueMeteor(cfg.pEnt, cfg.st, dmg, target, pool, 0, null, cfg.floatSel, cfg.out, at, {
     gid: 'chainlightning', variant: 'lightning-chain-hit',
+    cancelIf: cancelIf, onCancel: onCancel,
+    homing: homing,
     onImpact: function (shot, victims, ctx) {
       var livePool = ctx.getEnemies ? ctx.getEnemies() : pool;
       if (cfg.pEnt !== ctx.pEnt || !(cfg.pEnt.hp > 0)) return;
       if (victims.length) {
+        for(var e=0;e<cfg.extraHits;e++) {
+          sgQueueMeteor(cfg.pEnt,cfg.st,dmg,target,livePool,0,null,cfg.floatSel,cfg.out,
+            GT+sgStaggerMs(e+1)/1000,{gid:'chainlightning',variant:'lightning-chain-hit'});
+        }
         sgChainOverload(cfg, target, livePool, 0);
         if (isBounce && cfg.splashPct > 0) {
           var splash = typeof bfRandomOthers === 'function'
@@ -7170,7 +7196,16 @@ function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce, continueChain) {
 
 function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   if (!start || start.hp <= 0) return;
-  var visited = [], remaining = Math.min(64, cfg.links), bounces = 0, speed = 0;
+  var visited = [], remaining = Math.min(64, cfg.links), bounces = 0;
+  var chainId = 'chain-' + (++SG_CHAIN_SERIAL), ended = false;
+  var speed = bfMeterPx(SG_CHAIN_SPEED_MPS);
+  function endChain() {
+    if (ended) return;
+    ended = true;
+    sgEmitVfx('chainlightning', [], floatSel, {
+      fxKind:'chain', variant:'lightning-chain-end', hit:false, vfxRoles:{}, area:{chainId:chainId}
+    });
+  }
   function launch(from, target, livePool) {
     if (!target || remaining <= 0 || !(pEnt.hp > 0)) return;
     remaining--; visited.push(target);
@@ -7178,31 +7213,36 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
       : (typeof bfPlayerPos === 'function' ? bfPlayerPos() : null);
     var end = typeof bfPos === 'function' ? bfPos(target) : null;
     var distance = origin && end ? Math.hypot(end.x-origin.x,end.y-origin.y) : 0;
-    if (!speed && distance > 0) speed = distance / SG_CHAIN_TRAVEL_MS;
-    var travelMs = speed && distance > 0 ? distance / speed : SG_CHAIN_TRAVEL_MS;
+    var travelMs = origin && end ? Math.max(1, distance / speed * 1000) : 244;
     sgEmitVfx('chainlightning', from ? [from, target] : [target], floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1, hit: false,
       travelMs: from ? [0, travelMs] : [travelMs], preserveDeadTargets: true,
       lineLength: bfMeterPx(18),
-      area: origin && end ? { sourceX: origin.x, sourceY: origin.y, x: end.x, y: end.y } : null
+      area: origin && end ? { sourceX: origin.x, sourceY: origin.y, x: end.x, y: end.y, chainId:chainId, homingSpeed:speed } : {chainId:chainId}
     });
     var dmg = cfg.dmgVal * (1 + cfg.bouncePct * bounces / 100);
     sgQueueChainHit(cfg, target, dmg, GT + travelMs / 1000, livePool, bounces > 0, function (currentPool) {
-      if (remaining <= 0) return;
+      if (remaining <= 0) { endChain(); return; }
       var next = sgChainNextTarget(target, currentPool, visited, cfg.hopPx);
-      if (!next) return;
+      if (!next) { endChain(); return; }
       bounces++;
       launch(target, next, currentPool);
       if (cfg.spawnChance > 0 && cfg.chainCount < cfg.maxChains && chance(cfg.spawnChance)) {
         cfg.chainCount++;
         sgChainlightningBolt(pEnt, st, cfg, next, currentPool, floatSel, out);
       }
-    });
-    for (var e = 0; e < cfg.extraHits; e++) {
-      sgQueueMeteor(pEnt, st, dmg, target, livePool, 0, null, floatSel, out,
-        GT + (travelMs + sgStaggerMs(e + 1)) / 1000,
-        { gid: 'chainlightning', variant: 'lightning-chain-hit' });
-    }
+    }, function(ctx) {
+      if (cfg.pEnt !== ctx.pEnt || !(cfg.pEnt.hp > 0)) return true;
+      var currentPool = ctx.getEnemies ? ctx.getEnemies() : livePool;
+      if (target.hp > 0 && currentPool.indexOf(target) >= 0) return false;
+      // 查詢不得隨機抽樣：只有死亡目標且沒有未訪問的範圍內候選，才提前終止。
+      var at = typeof bfPos === 'function' ? bfPos(target) : null;
+      return !currentPool.some(function(enemy) {
+        if (!enemy || !(enemy.hp > 0) || visited.indexOf(enemy) >= 0 || remaining <= 0) return false;
+        var gap = at ? bfEntityGap(target, enemy) : bfEntityDistance(enemy);
+        return !(cfg.hopPx > 0) || gap <= cfg.hopPx;
+      });
+    }, endChain, origin && end ? {position:{x:origin.x,y:origin.y},previousTarget:{x:end.x,y:end.y},speed:speed,lastAt:GT} : null);
   }
   launch(null, start, pool);
 }
