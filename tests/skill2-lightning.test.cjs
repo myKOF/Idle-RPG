@@ -87,6 +87,15 @@ function run(c, p, enemies, sec, step) {
 function setLevels(c, gid, levels) { c.G.player.skills2.levels[gid] = levels.slice(); }
 function forceRolls(c, value) { c.Math.random = () => value; }   // 0＝機率必中、0.999＝必不中
 
+
+// 數值／次數測試等待既有抵達佇列；精確時序與取消另有逐 Tick 測試。
+function settleChain(c) {
+ let guard=0;while(c.SKILL2_RT.meteors.some(m=>m.variant==='lightning-chain-hit')&&guard++<2000){
+  const job=c.SKILL2_RT.meteors.filter(m=>m.variant==='lightning-chain-hit').sort((a,b)=>a.at-b.at)[0];
+  c.GT=Math.max(c.GT,job.at);c.sgTickMeteors({pEnt:job.pEnt,getEnemies:()=>job.pool,onDeaths(){},onDamage(){}});
+ }
+ assert.ok(guard<2000,'雷鏈佇列應完成');
+}
 const M = 10; // 1 米 = 10 個系統距離單位（bfMeterPx）
 
 /* ===========================================================================
@@ -142,6 +151,7 @@ test('連鎖閃電 T1：吃魔攻，在最多 4 個目標間彈射，每擊 165%
     enemy(1e9, 14 * M, 0), enemy(1e9, 17 * M, 0)];
   setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   assert.equal(calls.length, 4, '4 個目標＝4 擊');
   calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 1.65) < 1e-9, '165% 魔攻（不是物攻）'));
   const hitSet = new Set(calls.map((call) => call.ent));
@@ -155,6 +165,7 @@ test('連鎖閃電 T2：強化閃電與本體傷害累加', () => {
   const es = [enemy(1e9, 5 * M, 0), enemy(1e9, 8 * M, 0)];
   setLevels(c, 'chainlightning', [1, 1, 0, 0, 0, 0, 0]);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   assert.ok(Math.abs(calls[0].atk - 500 * 2.2) < 1e-9, '165% + 55% ＝ 220% 魔攻');
 });
 
@@ -172,6 +183,7 @@ test('連鎖閃電 T3：雷鳴術讓每個被擊中的敵人多吃一次', () =>
   setLevels(c, 'chainlightning', [1, 1, 1, 0, 0, 0, 0]);
   forceRolls(c, 0.999);       // 關掉 add 小數部分的擲骰，只留整數 1 次
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   assert.equal(calls.length, 8, '4 個目標 × (1 + 1 次額外)');
   calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.2) < 1e-9, '含 T2 的 165%+55%'));
 });
@@ -185,6 +197,7 @@ test('連鎖閃電 T4：強化連鎖讓彈射數 +1（＝多一個目標）', ()
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 0, 0, 0]);
   forceRolls(c, 0.999);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   assert.equal(new Set(calls.map((call) => call.ent)).size, 5, '4 + 1 個目標');
   assert.equal(calls.length, 10, '5 個目標 × (1 + T3 的 1 次額外)');
 });
@@ -199,6 +212,7 @@ test('連鎖閃電 T5：電殛擴散只在「彈射」時追加，且起手那�
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 0, 0]);
   forceRolls(c, 0.999);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   // 5 個目標 ×（本體 + 雷鳴術 1 次）＝ 10，再加 4 次彈射各 1 個擴散目標
   assert.equal(calls.length, 14);
   const splash = calls.filter((call) => Math.abs(call.atk - 500 * 2.2 * 0.275) < 1e-9);
@@ -213,6 +227,7 @@ test('連鎖閃電 T6：無下一個敵人即停止，雷幻身仍保留增傷',
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 1, 0]);
   forceRolls(c, 0.999);
   c.castSkill2(p, [only], 'chainlightning', 'mv-float');
+  settleChain(c);
   assert.equal(calls.length, 2, '依使用者新規則，只有起手與雷鳴術追加，不透過自身延續');
   calls.forEach((call) => assert.ok(Math.abs(call.atk - 500 * 2.75) < 1e-9, '165% + 55% + 55% ＝ 275% 魔攻'));
 
@@ -221,6 +236,7 @@ test('連鎖閃電 T6：無下一個敵人即停止，雷幻身仍保留增傷',
   setLevels(c2, 'chainlightning', [1, 1, 1, 1, 1, 0, 0]);
   forceRolls(c2, 0.999);
   c2.castSkill2(playerEnt(), [enemy(1e9, 5 * M, 0)], 'chainlightning', 'mv-float');
+  settleChain(c2);
   assert.equal(calls2.length, 2, '沒有雷幻身時，單一敵人只吃起手那一段（含雷鳴術追加）');
 });
 
@@ -233,6 +249,7 @@ test('連鎖閃電 T7：雷電暴風＝三道鏈、彈射 +1、傷害 +110%', ()
   setLevels(c, 'chainlightning', [1, 1, 1, 1, 1, 1, 1]);
   forceRolls(c, 0.999);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   // 每道鏈：6 個目標 ×（本體 + 雷鳴術）＝ 12，加 5 次彈射的擴散 ＝ 17；三道共 51
   assert.equal(calls.length, 51, '3 道 × 17 段');
   assert.ok(Math.abs(calls[0].atk - 500 * 3.85) < 1e-9, '165% + 55% + 55% + 110% ＝ 385% 魔攻');
@@ -251,6 +268,7 @@ test('連鎖閃電 T7：每次彈射有 20% 機率生成同規格閃電鏈', () 
   // 目標排序本身也會擲骰；全數必中可穩定驗證生成鏈的佇列路徑。
   forceRolls(c, 0);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   const chainStarts = specs.filter((spec) => spec.variant === 'lightning-chain' && spec.targets.length === 1);
   assert.ok(chainStarts.length > 3, '3 道初始鏈外，彈射成功時應再生成閃電鏈');
 });
@@ -265,6 +283,7 @@ test('連鎖閃電：彈射範圍外的敵人不會被跳到', () => {
   const es = [enemy(1e9, 5 * M, 0), enemy(1e9, (5+radius+1) * M, 0)];
   setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   assert.equal(calls.length, 1, '跳不到就結束，不會硬跳');
 });
 
@@ -280,6 +299,7 @@ test('連鎖閃電：上一個目標死亡仍保留為下一段 VFX 的起點', 
 
   c.castSkill2(p, [dead, next, third], 'chainlightning', 'mv-float');
 
+  settleChain(c);
   assert.equal(dead.hp, 0, '第一個目標應死亡');
   // 彈射目標是範圍內隨機挑的，因此只能斷言「有人被續打」，不能指定是 B 還是 C
   assert.ok(next.hp < next.maxHp || third.hp < third.maxHp, '死亡後仍應繼續命中下一個目標');
@@ -566,6 +586,7 @@ test('三個技能都送出雷屬性的特效事件（鏈、天降、球體場�
   const chainSpecs = stubVfx(c);
   setLevels(c, 'chainlightning', [1, 0, 0, 0, 0, 0, 0]);
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+  settleChain(c);
   assert.ok(chainSpecs.some((s) => s.fxKind === 'chain' && s.variant === 'lightning-chain'));
   assert.ok(chainSpecs.every((s) => s.elem === 'lightning'), '雷系事件一律帶雷屬性');
 
@@ -614,19 +635,26 @@ test('無座標時三個技能都能施放並造成傷害（高塔退化）', ()
   assert.ok(c.castSkill2(p, [boss], 'thunderorb', 'tb-float'), '雷球可施放');
   const beforeTick = calls.length;
   run(c, p, [boss], 3);
-  assert.ok(beforeTick > 0, '連鎖閃電在施放當下就結算');
+  assert.equal(beforeTick, 0, '三個技能都等待抵達才結算');
   assert.ok(calls.length > beforeTick, '落雷與雷球在 tick 中結算');
 });
 
 test('CHAIN 藍白電弧每隔 300ms 連接下一目標，傷害顯示對齊抵達時刻',()=>{
  const c=loadContext();stubHits(c);const p=playerEnt(),es=[enemy(1e9,50,0),enemy(1e9,80,0),enemy(1e9,110,0),enemy(1e9,140,0),enemy(1e9,170,0)];
- const events=[],hits=[];c.playCombatVfx=s=>events.push(s);c.floatEnemyEvent=(ent,sel,text,cls,dmg,delay)=>{if(dmg>0)hits.push(delay||0)};
+ const events=[],hits=[];c.playCombatVfx=s=>events.push(s);c.floatEnemyEvent=(ent,sel,text,cls,dmg,delay)=>{if(dmg>0)hits.push({at:c.GT,delay:delay||0})};
  setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);c.castSkill2(p,es,'chainlightning','mv-float');
  const chains=events.filter(s=>s.variant==='lightning-chain');assert.equal(chains.length,4);
  assert.ok(chains.every(s=>s.vfx.attack==='bolt-chain-travel-bluewhite'),'表格必須有真正的彈射電弧，不能只剩命中電光');
  assert.deepEqual(chains.map(s=>(s.delayMs||0)+s.travelMs.at(-1)),[183,483,783,1083],'電弧命中事件與傷害浮字使用同一抵達時間');
  assert.deepEqual(chains.map(s=>s.delayMs||0),[0,300,600,900]);assert.ok(chains.every(s=>s.vfx.attack===table.vfx('chainlightning',1,'攻擊特效')&&s.vfx.projectile===table.vfx('chainlightning',1,'飛行子彈')));
- assert.deepEqual(hits,[183,483,783,1083]);
+ assert.equal(hits.length,0);
+ for(const at of [.182,.183,.482,.483,.782,.783,1.082,1.083]) {
+  c.GT=at;c.sgTickMeteors(tickCtx(c,p,es));
+  assert.equal(hits.length,[.183,.483,.783,1.083].filter(t=>t<=at).length);
+ }
+ assert.deepEqual(hits.map(h=>Math.round(h.at*1000)),[183,483,783,1083]);
+ assert.ok(hits.every(h=>h.delay===0));
+ assert.ok(chains.every(s=>s.hit===false),'飛行事件不預播命中');
 });
 
 test('THUNDER 加速三成後落地才命中，每道仍間隔 200ms',()=>{
@@ -646,4 +674,32 @@ test('THUNDER 每道發動時重新隨機選敵，排除死亡與出界並納入
  run(c,p,pool,.21,.01);const bolts=events.filter(s=>s.variant==='thunder-strike');assert.equal(bolts.length,2);assert.equal(bolts[1].targets[0],'新敵人');
  fresh.hp=0;run(c,p,pool,.6,.01);assert.equal(events.filter(s=>s.variant==='thunder-strike').length,2,'沒有有效敵人時不發射');
  assert.equal(c.SKILL2_RT.thunderLaunches.length,0);
+});
+
+
+test('CHAIN 抵達前死亡、離場與玩家換場都取消傷害和命中事件', () => {
+ for (const cancelled of ['dead','removed','player']) {
+  const c=loadContext(), calls=stubHits(c), events=stubVfx(c), p=playerEnt();
+  const es=[enemy(1000,50,0,'a'),enemy(1000,80,0,'b')];
+  setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
+  c.castSkill2(p,es,'chainlightning','mv-float');
+  assert.equal(calls.length,0);assert.ok(es.every(e=>e.hp===1000));
+  if(cancelled==='dead')es.forEach(e=>e.hp=0);
+  c.GT=2;c.sgTickMeteors(tickCtx(c,cancelled==='player'?playerEnt():p,cancelled==='removed'?[]:es));
+  assert.equal(calls.length,0);
+  assert.equal(events.filter(e=>e.variant==='lightning-chain-hit').length,0);
+  assert.equal(c.SKILL2_RT.meteors.length,0);
+ }
+});
+
+test('CHAIN 致死首擊抵達後仍逐段彈向存活敵人，沒有整鏈瞬殺', () => {
+ const c=loadContext(),calls=stubHits(c),events=stubVfx(c),p=playerEnt();
+ const es=[enemy(50,50,0,'a'),enemy(50,80,0,'b'),enemy(50,110,0,'c')];
+ setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
+ c.castSkill2(p,es,'chainlightning','mv-float');
+ for(const [at,count] of [[.182,0],[.183,1],[.482,1],[.483,2],[.783,3]]) {
+  c.GT=at;c.sgTickMeteors(tickCtx(c,p,es.filter(e=>e.hp>0)));
+  assert.equal(calls.length,count);assert.equal(es.filter(e=>e.hp===0).length,count);
+ }
+ assert.equal(events.filter(e=>e.variant==='lightning-chain-hit').length,3);
 });

@@ -3945,7 +3945,11 @@ function sgTickMeteors(ctx) {
     /* 只有這裡才讀取落點周圍的敵人；敵人若在落地前死亡或移出範圍，
        就不會被這一發扣血。radius ≤ 0＝單體落點（落雷術），不做範圍查詢：
        半徑 0 的圓仍會涵蓋「身體壓到落點中心」的旁邊敵人，那不是單體技能該有的行為。 */
-    var victims = (m.radius > 0 && typeof bfTargetsAround === 'function')
+    var chainHit = m.variant === 'lightning-chain-hit';
+    var currentPool = chainHit && ctx.getEnemies ? ctx.getEnemies() : m.pool;
+    var chainCancelled = chainHit && (m.pEnt !== ctx.pEnt || !(m.pEnt.hp > 0) ||
+      !m.target || !(m.target.hp > 0) || (currentPool || []).indexOf(m.target) < 0);
+    var victims = chainCancelled ? [] : (m.radius > 0 && typeof bfTargetsAround === 'function')
       ? bfTargetsAround(m.target, m.pool || [], m.radius)
       : ((m.target && m.target.hp > 0) ? [m.target] : []);
     for (var vi = 0; vi < victims.length; vi++) {
@@ -7138,6 +7142,25 @@ function sgChainNextTarget(from, pool, visited, hopPx) {
   return (typeof bfRandomOther === 'function') ? bfRandomOther(from, pool, hopPx, visited) : null;
 }
 
+function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce) {
+  sgQueueMeteor(cfg.pEnt, cfg.st, dmg, target, pool, 0, null, cfg.floatSel, cfg.out, at, {
+    gid: 'chainlightning', variant: 'lightning-chain-hit',
+    onImpact: function (shot, victims, ctx) {
+      if (!victims.length) return;
+      var livePool = ctx.getEnemies ? ctx.getEnemies() : pool;
+      sgChainOverload(cfg, target, livePool, 0);
+      if (!isBounce || !(cfg.splashPct > 0)) return;
+      var splash = typeof bfRandomOthers === 'function'
+        ? bfRandomOthers(target, livePool, cfg.splashCount, cfg.splashPx, null) : [];
+      for (var i = 0; i < splash.length; i++) {
+        sgQueueMeteor(cfg.pEnt, cfg.st, dmg * cfg.splashPct / 100, splash[i], livePool, 0,
+          null, cfg.floatSel, cfg.out, GT + sgStaggerMs(i + 1) / 1000,
+          { gid: 'chainlightning', variant: 'lightning-chain-hit', vfxTier: 5 });
+      }
+    }
+  });
+}
+
 function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   if (!start || start.hp <= 0) return;
   var gid = 'chainlightning';
@@ -7150,7 +7173,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   var delayMs = arrivalMs;
   sgEmitVfx(gid, [start], floatSel, {
     fxKind: 'chain', variant: 'lightning-chain', count: 1, travelMs: [arrivalMs],
-    preserveDeadTargets: true
+    preserveDeadTargets: true, hit: false
   });
   var guard = 0;
   while (linksLeft > 0 && cur && cur.hp > 0 && guard < 64) {
@@ -7159,27 +7182,11 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
     /* 傳奇【超導】：每彈射 1 次，這一道鏈之後每一擊的傷害就多一份（加算而非複利——
        設計文檔寫的是「每彈射 1 次傷害 +10%」，複利會讓長鏈的尾段爆炸成完全不同的量級）。 */
     var hopDmg = cfg.dmgVal * (1 + cfg.bouncePct * bounces / 100);
-    sgHitOne(pEnt, st, cur, hopDmg, gid, floatSel, out, delayMs);
-    sgChainOverload(cfg, cur, pool, delayMs);
+    sgQueueChainHit(cfg, cur, hopDmg, GT + delayMs / 1000, pool, isBounce);
     // 【雷鳴術】：被擊中的敵人再多吃幾次同樣的閃電傷害（不足 1 次的部分已於施放時擲骰）
     for (var e = 0; e < cfg.extraHits; e++) {
-      sgHitOne(pEnt, st, cur, hopDmg, gid, floatSel, out, delayMs + sgStaggerMs(e + 1));
-    }
-    // 【電殛擴散】：每次彈射時劈向附近的敵人（不占彈射數、不繼續延伸鏈）
-    if (isBounce && cfg.splashPct > 0) {
-      // 「額外對 m 米內的 count 個敵人」沒有指定最近＝範圍內隨機
-      var splash = (typeof bfRandomOthers === 'function')
-        ? bfRandomOthers(cur, pool, cfg.splashCount, cfg.splashPx, null) : [];
-      for (var s = 0; s < splash.length; s++) {
-        sgHitOne(pEnt, st, splash[s], hopDmg * cfg.splashPct / 100, gid, floatSel, out,
-          delayMs + sgStaggerMs(s + 1));
-      }
-      if (splash.length) {
-        sgEmitVfx(gid, splash, floatSel, {
-          fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.3,
-          vfxTier: 5
-        });
-      }
+      sgQueueMeteor(pEnt, st, hopDmg, cur, pool, 0, null, floatSel, out,
+        GT + (delayMs + sgStaggerMs(e + 1)) / 1000, { gid: gid, variant: 'lightning-chain-hit' });
     }
     if (linksLeft <= 0) break;
     var next = sgChainNextTarget(cur, pool, visited, cfg.hopPx);
@@ -7193,7 +7200,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
     var hopMs = 300;
     sgEmitVfx(gid, [cur, next], floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1,
-      delayMs: delayMs + hopMs - arrivalMs, travelMs: [0, arrivalMs], preserveDeadTargets: true
+      delayMs: delayMs + hopMs - arrivalMs, travelMs: [0, arrivalMs], preserveDeadTargets: true, hit: false
     });
     delayMs += hopMs;
     cur = next;

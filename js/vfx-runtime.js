@@ -351,6 +351,12 @@ var VFXRuntime = (function () {
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
     var trackingBeams = [];                  // 彈射電弧逐幀追蹤兩端的顯示位置
+    var chainEffects = [], chainTargets = null;
+    function chainTargetsAlive(ids) {
+      return !ids || ids.every(function (id) {
+        return ctx.targetAlive ? ctx.targetAlive(id) : !ctx.chainPoint || !!ctx.chainPoint(id);
+      });
+    }
     var grounds = Object.create(null);      // area.id → 場域
     var arrivals = Object.create(null);     // targetId → 上一段飛行抵達時的航向
     var soulOrbits = Object.create(null);
@@ -510,7 +516,9 @@ var VFXRuntime = (function () {
       var handle = rt.play(presetId, planeParams(presetId, sized(params || {}, mult)));
       if (handle === null || handle === undefined) { budgetDrops++; return null; }
       counters.played++;
-      return { rt: rt, handle: handle, presetId: presetId };
+      var ref = { rt: rt, handle: handle, presetId: presetId };
+      if (chainTargets) chainEffects.push({ref:ref, targets:chainTargets});
+      return ref;
     }
     function rockDepthParams(params, side) {
       var actorY = params.depthY === undefined ? params.position.y : params.depthY;
@@ -571,7 +579,7 @@ var VFXRuntime = (function () {
           (presetId === 'pillar-light' || presetId === 'pillar-earth');
         if (delaySec > 0) {
           pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
-            authoredSize: authoredSize, pillarFoot: pillarFoot });
+            authoredSize: authoredSize, pillarFoot: pillarFoot, chainTargets: chainTargets });
           any = true;
           continue;
         }
@@ -1245,6 +1253,15 @@ var VFXRuntime = (function () {
       return true;
     }
     function tryPlay(spec) {
+      var previous = chainTargets;
+      chainTargets = spec && (spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit')
+        ? (spec.targets || []).slice(spec.fxKind === 'chain' ? -1 : 0) : null;
+      try {
+        if (!chainTargetsAlive(chainTargets)) return true;
+        return playSpec(spec);
+      } finally { chainTargets = previous; }
+    }
+    function playSpec(spec) {
       if (!spec) return false;
       var roles = spec.vfx;
       if (!roles || typeof roles !== 'object') return false;
@@ -1448,15 +1465,26 @@ var VFXRuntime = (function () {
       var step = Math.max(0, num(dt, 0));
       clock += step;
 
+      for (var ce = chainEffects.length - 1; ce >= 0; ce--) {
+        var effect = chainEffects[ce];
+        if (!chainTargetsAlive(effect.targets)) {
+          stopRef(effect.ref); chainEffects.splice(ce, 1);
+        } else if (effect.ref.rt.timeOf(effect.ref.handle) === null) chainEffects.splice(ce, 1);
+      }
+
       /* 延後的受擊爆點 */
       for (var q = pending.length - 1; q >= 0; q--) {
         if (pending[q].at > clock) continue;
         var job = pending[q];
         pending.splice(q, 1);
+        if (!chainTargetsAlive(job.chainTargets)) continue;
         if (job.spec) { tryPlay(job.spec); continue; }
+        var previousTargets = chainTargets;
+        chainTargets = job.chainTargets || null;
         play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
           { position: job.pillarFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
             depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
+        chainTargets = previousTargets;
       }
 
       /* 飛行物：沿「起點 → 目標當下座標」的曲線前進，目標會動就跟著動。
@@ -1605,6 +1633,7 @@ var VFXRuntime = (function () {
       projectiles.length = 0;
       follows.length = 0;
       trackingBeams.length = 0;
+      chainEffects.length = 0;
       pending.length = 0;
       arrivals = Object.create(null);
       Object.keys(orbits).forEach(stopOrbit);

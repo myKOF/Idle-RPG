@@ -1832,3 +1832,25 @@ test('DEVOUR 正式素材跨8秒循環不跳轉，尾焰留在世界路徑，尺
  rt.setTransform(bh,{position:{x:100,y:50},rotation:1});rt.update(.01);const after=tail.transforms.at(-1);
  assert.ok(Math.hypot(after.x-before.x,after.y-before.y)<3,'已出生尾焰不跟著彈頭跳動');rt.destroy();
 });
+
+
+test('CHAIN-LIFECYCLE 死亡取消播放中光環與待播命中，死亡來源仍可彈往存活目標', () => {
+ const alive=new Set(['mv-float-1','mv-float-2']);
+ const presets=['bolt-chain-travel-bluewhite','hit-test','ground-test'].map(id=>unitPreset(id,2));
+ const {adapter}=makeAdapter(presets,{ctx:{
+  targetAlive:id=>alive.has(id),posOf:id=>ENT[id],playerPos:()=>ENT['pv-float'],chainPoint:id=>ENT[id]
+ }});
+ const spec={fxKind:'chain',variant:'lightning-chain',targets:['mv-float-1','mv-float-2'],
+  travelMs:[0,183],area:{x:300,y:50,r:20},
+  vfx:{attack:presets[0].id,hit:'hit-test',ground:'ground-test'}};
+ alive.delete('mv-float-1');adapter.tryPlay(spec);adapter.update(.01);
+ assert.ok(adapter.stats().played>0,'來源死亡仍可從屍體位置彈向存活終點');
+ alive.clear();adapter.update(.01);
+ assert.equal(adapter.stats().fx.activeEffects+adapter.stats().zone.activeEffects,0);
+ const played=adapter.stats().played;adapter.update(.3);
+ assert.equal(adapter.stats().played,played,'取消尚未抵達的命中');
+ adapter.tryPlay({...spec,delayMs:300});adapter.update(.5);
+ assert.equal(adapter.stats().played,played,'不排入已死亡目標的新事件');
+ alive.add('mv-float-2');adapter.tryPlay({...spec,delayMs:300});
+ alive.clear();adapter.update(.5);assert.equal(adapter.stats().played,played,'排程後死亡也取消');
+});
