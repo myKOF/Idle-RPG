@@ -1258,12 +1258,16 @@ var BattleRenderer = (function () {
 
     var root = new PIXI.Container();
     var sz = cellSize();
+    /* NPC 是直立的貼圖：只吃遠近縮放，不跟著整片場景的透視被拉歪（見 applyEntityBillboard）。
+       抵銷矩陣掛在這一層，root 仍然只有位置、排序與受擊彈跳，其他程式看到的 root 語意不變。 */
+    var view = new PIXI.Container();
+    root.addChild(view);
 
     /* 陰影 */
     var shadow = new PIXI.Graphics();
     var shw = (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5;
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
-    root.addChild(shadow);
+    view.addChild(shadow);
 
     /* 菁英光環 */
     if (isElite) {
@@ -1274,7 +1278,7 @@ var BattleRenderer = (function () {
       glow.scale.set(1.7);
       glow.y = -24;
       glow.blendMode = 'add';
-      root.addChild(glow);
+      view.addChild(glow);
     }
 
     /* 本體（受擊抖動/縮放/旋轉都作用在 bodyWrap 上，陰影與血條不跟著晃） */
@@ -1291,7 +1295,7 @@ var BattleRenderer = (function () {
       if (data.img) requestMobImage(data.img);
     }
     bodyWrap.addChild(body);
-    root.addChild(bodyWrap);
+    view.addChild(bodyWrap);
 
     /* 菁英標記 */
     if (isElite) {
@@ -1300,14 +1304,14 @@ var BattleRenderer = (function () {
       });
       mark.anchor.set(0.5, 1);
       mark.y = -58 * visScale;
-      root.addChild(mark);
+      view.addChild(mark);
     }
 
     /* 血條 + 名字（在腳下，不干擾本體動作） */
     var barW = isBoss ? sz.w * 1.5 : (isElite ? 60 : 48) * dScale;
     var hpBar = new PIXI.Graphics();
     hpBar.y = 7;
-    root.addChild(hpBar);
+    view.addChild(hpBar);
 
     var elemEmoji = (data.attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[data.attr])
       ? ELEM_INFO[data.attr].emoji : '';
@@ -1326,7 +1330,7 @@ var BattleRenderer = (function () {
     name.anchor.set(0.5, 0);
     name.y = 8 + 6 * dScale;
     name.alpha = 0.92;
-    root.addChild(name);
+    view.addChild(name);
 
     var status = new PIXI.Text({
       text: '',
@@ -1334,11 +1338,11 @@ var BattleRenderer = (function () {
     });
     status.anchor.set(0.5, 0);
     status.y = (isBoss ? 32 : 28) * Math.max(0.7, dScale);
-    root.addChild(status);
+    view.addChild(status);
 
     var ent = {
       id: data.floatSel, data: data,
-      root: root, bodyWrap: bodyWrap, body: body, shadow: shadow,
+      root: root, view: view, bodyWrap: bodyWrap, body: body, shadow: shadow,
       hpBar: hpBar, nameText: name, statusText: status,
       sheetName: sheetName, curAnim: sheetName ? 'idle' : '', baseAnim: 'idle',
       isBoss: isBoss, isElite: isElite, visScale: visScale,
@@ -1371,6 +1375,7 @@ var BattleRenderer = (function () {
     root.zIndex = root.y;
 
     S.layers.entity.addChild(root);
+    applyEntityBillboard(ent);   // 出生的那一幀就別歪（tickWorld 之後每幀會再算）
     drawHpBar(ent);
     return ent;
   }
@@ -6204,6 +6209,8 @@ var BattleRenderer = (function () {
       e.bodyWrap.x = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltX || HIT_JOLT_X) : 0;
       e.bodyWrap.y = e.jolt > 0 ? (Math.random() * 2 - 1) * (e.joltY || HIT_JOLT_Y) : 0;
       e.root.zIndex = e.root.y + (e.isBoss ? 1000 : 0);
+      /* 位置定了才抵銷透視（鏡頭在上面幾行剛算完，用舊的會差一幀） */
+      applyEntityBillboard(e);
     }
 
     /* ---- 互斥推擠 ----
@@ -6569,6 +6576,31 @@ var BattleRenderer = (function () {
   function worldToScreenPoint(x, y) {
     var w = S.layers && S.layers.world;
     return perspScreenPoint((w ? w.x : 0) + x, (w ? w.y : 0) + y);
+  }
+  /* NPC 與牠的血條／名字是直立的貼圖：只吃遠近縮放，不跟著整片場景的透視被拉歪
+     （2026-09-29 使用者：「不要扭曲或仰斜」）。它們必須留在場景層才能與特效維持前後遮擋，
+     所以改成就地把變形抵銷掉：場景會被 PerspectiveMesh 變形，在某一點的局部線性部分是
+       J = [[1/w, β(X−cx)/w²], [0, 1/w²]]，w = 1 − β(Y−cy)（見 perspectiveLayout）
+     想要的結果是「等比縮放 s = 1/w、不傾斜」，所以在實體底下先左乘
+       J⁻¹·s = [[1, −β(X−cx)], [0, w]]
+     ——橫向不動、縱向乘 w，再加一點斜切把傾斜抵銷掉；Pixi 用 skewX 表示。
+     抵銷在錨點（腳底）上是精確的，離錨點越遠殘留越多（整張圖高約 100px 時殘留約 5%，
+     遠小於原本整片變形造成的傾斜）。
+     ⚠️ 玩家不需要這一層：鏡頭永遠對準他，他就在畫面中心，而中心點的 J 是單位矩陣
+     （只有鏡頭震動的幾 px 偏移，殘留 0.1° 以下）。所以輪廓與空中分身那兩條鏈維持原樣。 */
+  function applyEntityBillboard(ent) {
+    var view = ent && ent.view;
+    if (!view || view.destroyed) return;
+    var L = S.persp && S.persp.layout;
+    if (!L) { view.skew.x = 0; view.scale.set(1, 1); return; }
+    var world = S.layers && S.layers.world;
+    var px = ent.root.x + (world ? world.x : 0);
+    var py = ent.root.y + (world ? world.y : 0);
+    var w = Math.max(0.1, 1 - L.beta * (py - L.cy));
+    var shear = -L.beta * (px - L.cx);
+    /* Pixi（rotation 0）：a = scaleX、c = sin(skewX)·scaleY、d = cos(skewX)·scaleY */
+    view.skew.x = Math.atan2(shear, w);
+    view.scale.set(1, Math.sqrt(shear * shear + w * w));
   }
   // 空中彈體只投影錨點並等比縮放，絕不經過整片場景的 PerspectiveMesh。
   function airScreenPose(x, y) {
