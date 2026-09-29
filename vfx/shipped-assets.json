@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 157,
+  "assetCount": 154,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -448,13 +448,6 @@
       "fileSize": 171037
     },
     {
-      "assetId": "new_materials/hud-reticle/target_11.png",
-      "relativePath": "new_materials/hud-reticle/target_11.png",
-      "package": "new_materials",
-      "contentHash": "sha256:67d88f581ba5a65956aa287da2079b564159b666668a08fcadea9fc2b034f82d",
-      "fileSize": 15084
-    },
-    {
       "assetId": "new_materials/hud-reticle/target_33.png",
       "relativePath": "new_materials/hud-reticle/target_33.png",
       "package": "new_materials",
@@ -658,13 +651,6 @@
       "fileSize": 192419
     },
     {
-      "assetId": "new_materials/smoke/smoke3_11.png",
-      "relativePath": "new_materials/smoke/smoke3_11.png",
-      "package": "new_materials",
-      "contentHash": "sha256:0ba98cbe862f1fc30201dffc6b4c56492e0b96caa1c209d0a47f22a59174d1e4",
-      "fileSize": 169585
-    },
-    {
       "assetId": "new_materials/spiro/color_spirowires_1.png",
       "relativePath": "new_materials/spiro/color_spirowires_1.png",
       "package": "new_materials",
@@ -677,13 +663,6 @@
       "package": "new_materials",
       "contentHash": "sha256:8adaa00726d0a5380f8773957f59684e33887885b79e86d628ce1abd161e347d",
       "fileSize": 56357
-    },
-    {
-      "assetId": "new_materials/streak/lines_4.png",
-      "relativePath": "new_materials/streak/lines_4.png",
-      "package": "new_materials",
-      "contentHash": "sha256:33fb316ec10b9b9cdd63f5947a3be3f06a0a26313951f4e6895046820f03e113",
-      "fileSize": 92029
     },
     {
       "assetId": "particle-pack/png-black-background/circle_01.png",

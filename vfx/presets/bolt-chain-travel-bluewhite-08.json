@@ -4,7 +4,7 @@
   "duration": 0.366,
   "loop": false,
   "deformation": {
-    "amplitude": 4,
+    "amplitude": 1,
     "axis": "x",
     "end": 542.464,
     "layers": [
@@ -13,10 +13,13 @@
       "side-fork"
     ],
     "mirror": true,
-    "motionAmplitude": 40,
+    "motionAmplitude": 10,
     "motionSpeed": 12,
+    "pivot": 0,
+    "secondaryFrequency": 5,
+    "secondaryWeight": 0.1,
     "start": 0,
-    "widthJitter": 0.07
+    "widthJitter": 0.15
   },
   "layers": [
     {
@@ -25,20 +28,20 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
-        "x": 0,
-        "y": 0
+        "x": 11.4605,
+        "y": 6.9545
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.3469,
-        "y": 1.0595
+        "x": 0.6125,
+        "y": 2.281
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 0.85,
-      "tint": "#e83dff",
+      "tint": "#c800ff",
       "blendMode": "screen",
       "duration": 0.366,
       "alphaOverLife": [
@@ -63,20 +66,20 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
-        "x": 0,
-        "y": 0
+        "x": 11.4605,
+        "y": 6.9545
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.1602,
-        "y": 1.0595
+        "x": 0.4856,
+        "y": 2.2284
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 1,
-      "tint": "#fdbefe",
+      "tint": "#efb7f0",
       "blendMode": "screen",
       "duration": 0.366,
       "alphaOverLife": [
@@ -101,13 +104,13 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "position": {
-        "x": 424.0337,
-        "y": -0.1519
+        "x": 903.2834,
+        "y": 6.6352
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.1046,
-        "y": 0.2539
+        "x": 0.22,
+        "y": 0.534
       },
       "alpha": 0.48,
       "tint": "#8c00ff",

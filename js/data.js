@@ -509,12 +509,12 @@ var PRIMARY_STAT_EFFECTS = {
   strAtk: 1,
   strDef: 0.35,
   strWeight: 0.5,
-  agiCritRate: 0.00001,
+  agiCritRate: 1.0000000000000001E-5,
   agiAspdPct: 0.2,
-  agiEvasion: 0.0000035,
+  agiEvasion: 3.4999999999999999E-6,
   agiHit: 0,        // 命中率每點敏捷（原本內嵌在 formula.js 的 st.hit 算式裡）
   intMp: 2,
-  intMpRegen: 0.004,
+  intMpRegen: 4.0000000000000001E-3,
   intMatk: 1,
   intMdef: 0.35,
   vitHp: 10,
@@ -544,7 +544,7 @@ var XP_LEVEL_COEF = { a: 20, b: 3, c: 40 };
 /* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
 var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數：連擊數 = a·ln(暴擊率−100) + b·(暴擊率−100) + c（暴擊率 ≤100% 時為 0；由參數表「2-屬性派生／連擊數」控制）
-var COMBO_HITS_COEF = { a: 0.875, b: 0.0025, c: 0.05 };
+var COMBO_HITS_COEF = { a: 0.875, b: 2.5000000000000001E-3, c: 0.05 };
 var ASPD_BASE = 0.86;
 var ASPD_MIN = 0.2;
 var ASPD_CAP = 5;
