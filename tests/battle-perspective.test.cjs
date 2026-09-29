@@ -185,3 +185,53 @@ test('PERSP-8 接線：場景的兩個後端都吃 projectSceneTransform，空�
   assert.match(boot, /projectTransform:opts\.projectAirTransform/, '空中層仍走自己的投影');
   assert.match(boot, /projectTransform:opts\.projectBillboardTransform/, 'billboard 層仍走自己的投影');
 });
+
+test('PERSP-9 NPC 只吃遠近縮放：抵銷矩陣經過網格之後是等比縮放、零斜切、不變形', () => {
+  /* 2026-09-29 使用者：場景中的 NPC 與牠的血條、文字不要被透視扭曲或仰斜，只要遠近縮放。
+     NPC 必須留在場景層（前後遮擋），所以是就地抵銷——這條驗「抵銷 × 網格 ＝ 純等比縮放」。 */
+  const L = loadLayout()(670, 731, TOP);
+  const c = { Math, S: { persp: { layout: L }, layers: { world: { x: -400, y: -120 } } } };
+  vm.createContext(c);
+  vm.runInContext(extractFunction(renderer, 'applyEntityBillboard'), c);
+  const makeEnt = (x, y) => ({
+    root: { x, y },
+    view: { destroyed: false, skew: { x: 0 }, scale: { x: 1, y: 1, set(a, b) { this.x = a; this.y = (b === undefined ? a : b); } } }
+  });
+  for (const [rx, ry] of [[0, 0], [600, -300], [-500, 250], [900, 400], [-200, -450]]) {
+    const ent = makeEnt(rx, ry);
+    c.applyEntityBillboard(ent);
+    /* 抵銷矩陣（Pixi，rotation 0）：a = scaleX、b = 0、c = sin(skewX)·scaleY、d = cos(skewX)·scaleY */
+    const sk = ent.view.skew.x, sy = ent.view.scale.y;
+    const M = [ent.view.scale.x, 0, Math.sin(sk) * sy, Math.cos(sk) * sy];
+    /* 網格在該點的局部線性部分：J = [[1/w, β(X−cx)/w²], [0, 1/w²]] */
+    const X = rx + c.S.layers.world.x, Y = ry + c.S.layers.world.y;
+    const w = 1 - L.beta * (Y - L.cy);
+    const J = [1 / w, 0, L.beta * (X - L.cx) / (w * w), 1 / (w * w)];
+    /* 乘起來（[a,b,c,d]：x' = a·x + c·y、y' = b·x + d·y） */
+    const a = J[0] * M[0] + J[2] * M[1], b = J[1] * M[0] + J[3] * M[1];
+    const cc = J[0] * M[2] + J[2] * M[3], d = J[1] * M[2] + J[3] * M[3];
+    const s = 1 / w;
+    near(a, s, 1e-9, '(' + rx + ',' + ry + ') 橫向縮放＝遠近倍率');
+    near(d, s, 1e-9, '縱向縮放要與橫向相同（不被壓扁或拉長）');
+    near(b, 0, 1e-9, '不可有縱向斜切');
+    near(cc, 0, 1e-9, '不可有橫向斜切（那就是使用者說的「仰斜」）');
+  }
+  /* 沒開透視：單位矩陣，與加入透視前完全相同 */
+  c.S.persp = null;
+  const off = makeEnt(300, 200);
+  c.applyEntityBillboard(off);
+  assert.equal(off.view.skew.x, 0);
+  assert.deepEqual([off.view.scale.x, off.view.scale.y], [1, 1]);
+});
+
+test('PERSP-10 接線：NPC 的視覺子節點掛在 view 上，每幀與出生時都抵銷；玩家不套（永遠在畫面中心）', () => {
+  const enemy = renderer.slice(renderer.indexOf('function makeEnemy(data) {'), renderer.indexOf('function drawHpBar(ent) {'));
+  assert.match(enemy, /var view = new PIXI\.Container\(\);\s*\n\s*root\.addChild\(view\);/, 'view 要掛在 root 底下');
+  assert.equal((enemy.match(/root\.addChild\(/g) || []).length, 1, 'root 底下只有 view，視覺子節點都要進 view');
+  assert.ok((enemy.match(/view\.addChild\(/g) || []).length >= 5, '本體、血條、名字、狀態都在 view 裡');
+  assert.match(enemy, /applyEntityBillboard\(ent\);/, '出生那一幀就不能歪');
+  const tick = renderer.slice(renderer.indexOf('function tickWorld('));
+  assert.match(tick, /e\.root\.zIndex = e\.root\.y \+ \(e\.isBoss \? 1000 : 0\);\s*\n[^\n]*\n\s*applyEntityBillboard\(e\);/,
+    '每幀在位置與鏡頭都算完之後抵銷');
+  assert.doesNotMatch(tick, /applyEntityBillboard\(p\)/, '玩家永遠在畫面中心，中心點不需要抵銷');
+});
