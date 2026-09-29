@@ -1964,3 +1964,60 @@ test('SUPERCONDUCT 回程與改追使用權威起點，不從玩家重發；結�
  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain-end',targets:[],vfx:{},area:{chainId:'return'}});
  assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+
+test('FLYING-THUNDER 固定矩形場域共存、權威壽命無續命緩衝，結束只移除指定雷電',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/beam-flying-thunder-god.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const spec={fxKind:'aura',variant:'flying-thunder',dur:3,hit:false,area:{id:'a',x:40,y:20,w:2000,h:60,a:0},vfx:{field:p.id}};
+ adapter.tryPlay(spec);adapter.update(.1);
+ assert.equal(adapter.stats().fx.activeEffects,1);
+ const t=log.nodes[0].transforms.at(-1);
+ assert.ok(Math.abs(t.scaleY/p.layers[0].scale.y-2000/p.sizing.authored.width)<1e-8);
+ assert.ok(Math.abs(t.scaleX/p.layers[0].scale.x-60/p.sizing.authored.height)<1e-8);
+ adapter.update(.15);adapter.tryPlay({...spec,area:{...spec.area,id:'b',a:Math.PI/3}});
+ adapter.update(2.7);assert.equal(adapter.stats().fx.activeEffects,2);
+ adapter.update(.06);assert.equal(adapter.stats().fx.activeEffects,1,'第一道3秒到期，第二道仍存在');
+ adapter.tryPlay({fxKind:'aura',variant:'flying-thunder-end',area:{id:'b'}});
+ assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.tryPlay({...spec,dur:6,area:{...spec.area,id:'c'}});adapter.update(3.1);
+ assert.equal(adapter.stats().fx.activeEffects,1,'可調持續時間同步到動畫速度');
+ adapter.update(2.91);assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.destroy();
+});
+
+test('THUNDER-MATRIX 雷幕電柱逐拍續命不堆疊，停送及清場回收',()=>{
+ const presets=['bolt-curtain-lightning','ground-thunder-curtain'].map(id=>JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets',id+'.json'),'utf8')));
+ for(const groundScale of [1,.5]) {
+  const billboard={nodes:[],updates:[]};
+  const backend=recordingBackend(billboard,'billboard'), update=backend.updateNode;
+  backend.updateNode=(node,t)=>{node.visible=t.visible!==false;update(node,t);};
+  backend.destroyNode=node=>{node.visible=false;};
+  const {adapter,log}=makeAdapter(presets,{groundScale,billboardBackend:backend});
+  const event=(id,x,a)=>({fxKind:'aura',variant:'thunder-curtain',dur:.05,hit:false,
+   area:{id,x,y:200,w:1056,h:30,a,moveA:0,speed:300,destX:1200,destY:200},
+   vfx:{attack:presets[0].id,ground:presets[1].id}});
+  for(let frame=0;frame<80;frame++) {
+   adapter.tryPlay(event('horizontal',frame*15,0));
+   adapter.tryPlay(event('vertical',frame*15,Math.PI/2));
+   adapter.update(.05);
+   assert.equal(adapter.stats().grounds,16,'兩道雷幕各七根電柱加一片地板');
+   assert.equal(adapter.stats().played,16,'逐拍更新不得重建 loop');
+  }
+  assert.equal(log.nodes.filter(n=>n.tag==='fx').length,0,'電柱不可留在場景透視網格');
+  const authored=presets[0].layers.find(l=>l.id==='col-a');
+  const node=billboard.nodes.find(n=>n.spec.assetUrl.endsWith(authored.assetId));
+  const transform=node.transforms.at(-1);
+  assert.ok(Math.abs(transform.scaleX-authored.scale.x)<1e-6);
+  assert.ok(Math.abs(transform.scaleY-authored.scale.y)<1e-6,'柱高不可被地面厚度壓縮');
+  assert.equal(transform.rotation,0,'垂直地面雷幕不應讓電柱横躺');
+  adapter.update(1);
+  assert.equal(adapter.stats().grounds,0);
+  assert.equal(adapter.stats().fx.activeEffects,0);
+  assert.equal(adapter.stats().zone.activeEffects,0);
+  assert(billboard.nodes.every(n=>!n.visible),'停送後循環電柱必須全數隱藏回收');
+  adapter.tryPlay(event('next',0,0));adapter.update(.01);adapter.clearFields();
+  assert.equal(adapter.stats().grounds,0);
+  assert(billboard.nodes.every(n=>!n.visible),'死亡／清場同步移除電柱');
+ }
+});

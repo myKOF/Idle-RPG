@@ -5281,7 +5281,7 @@ var BattleRenderer = (function () {
   function onVfx(spec) {
     if (!S.ready || !spec) return;
     // 終止訊號不等位置緩衝，也不能被死亡目標／空目標守門擋掉。
-    if (spec.variant === 'lightning-chain-end') {
+    if (spec.variant === 'lightning-chain-end' || spec.variant === 'flying-thunder-end') {
       if (S.vfxrt) S.vfxrt.tryPlay(spec);
       return;
     }
@@ -5297,7 +5297,7 @@ var BattleRenderer = (function () {
     if (!spec._buffered) {
       spec._buffered = true;
       // 雷鏈已在 Worker 抵達時結算；再加位置緩衝會讓弱怪先死亡、起手電弧被取消。
-      if (!isEnemyAttack && spec.variant !== 'lightning-chain' && spec.variant !== 'lightning-chain-hit') {
+      if (!isEnemyAttack && spec.variant !== 'lightning-chain' && spec.variant !== 'lightning-chain-hit' && spec.variant !== 'flying-thunder') {
         spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS;
       }
     }

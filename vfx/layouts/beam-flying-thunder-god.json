@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "beam-flying-thunder-god",
+  "groups": [
+    {
+      "id": "beam-flying-thunder-god",
+      "name": "beam-flying-thunder-god",
+      "layerIds": [
+        "blue-corona",
+        "white-core",
+        "side-fork"
+      ]
+    }
+  ],
+  "order": [
+    "group:beam-flying-thunder-god"
+  ]
+}

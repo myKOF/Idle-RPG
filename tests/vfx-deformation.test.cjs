@@ -131,3 +131,15 @@ test('金色雷鏈製作寬度與素材實際幾何一致，光暈也收尖',()=
  assert.ok(p.deformation.tipTaper>0);
  assert.deepEqual(new Set(p.deformation.layers),new Set(p.layers.map(l=>l.id)));
 });
+
+
+test('FLYING-THUNDER 劈出後完整波形固定，僅透明度漸淡，出生仍可隨機',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/beam-flying-thunder-god.json'),'utf8'));
+ const nodes=[],rt=Core.createRuntime({resolver:{resolve:x=>x,has:()=>true},backend:{createNode(s){const n={};nodes.push(n);return n;},updateNode(n,t){n.t=structuredClone(t);},destroyNode(){},destroy(){}}});
+ assert.equal(p.sizing.heightM,30);assert.equal(p.deformation.motionSpeed,0);rt.registerPreset(p);
+ rt.play(p.id,{seed:19});rt.update(.1);
+ const shapes=nodes.map(n=>n.t.deformation),alpha=nodes.map(n=>n.t.alpha);
+ rt.update(1);nodes.forEach((n,i)=>{assert.deepEqual(n.t.deformation,shapes[i]);assert.ok(n.t.alpha<alpha[i]);});
+ const middle=nodes.map(n=>n.t.alpha);rt.update(1.7);nodes.forEach((n,i)=>{assert.deepEqual(n.t.deformation,shapes[i]);assert.ok(n.t.alpha<middle[i]);});
+ rt.destroy();
+});

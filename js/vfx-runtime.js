@@ -415,7 +415,8 @@ var VFXRuntime = (function () {
            完全不經過場景的透視網格（比場景層的就地補償更徹底，代價是繪製順序改用空中層那一套）。
            以前這裡寫死 pillar-earth，改成看圖層資料（2026-09-24 使用者要求的每層勾選）。 */
         billboardPresets[p.id] = allBillboard(p);
-        if (rtBillboard !== rtAir && billboardPresets[p.id]) rtBillboard.registerPreset(p);
+        // 雷幕事件也可將表定 attack 作為直立電柱；註冊不改變其他事件的路由。
+        if (rtBillboard !== rtAir) rtBillboard.registerPreset(p);
         known[p.id] = true;
         presetSizes[p.id] = p.sizing || null;
         presetDurations[p.id] = p.duration;
@@ -986,6 +987,9 @@ var VFXRuntime = (function () {
     }
     function groundParams(g) {
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
+      // 雷幕電柱僅以柱腳定位；地板範圍不代表柱身的長寬或旋轉。
+      if (g.curtainColumn) return { position: p.position, depthY: g.y, scaleX: 1, scaleY: 1, rotation: 0 };
+      if (g.fixedLifetime) p.timeScale = presetDurations[g.presetId] / g.fixedLifetime;
       if (g.uniform) p.scale = g.sx;
       else { p.scaleX = g.sx; p.scaleY = g.sy; }
       if (g.devour) {
@@ -1037,13 +1041,14 @@ var VFXRuntime = (function () {
         : (spec.area.id ||
            (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0))));
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
-      key = (role === 'field' ? 'field:' : 'ground:') + key;
+      key = (role === 'attack' ? 'attack:' : role === 'field' ? 'field:' : 'ground:') + key;
       // 吞噬全場只保留一個：新施放立即移除舊畫面，並從新位置重新出生。
       if (spec.variant === 'dragon-devour') key = 'field:dragon-devour';
-      // 吞噬只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
-      var keep = spec.variant === 'dragon-devour' ? Math.max(0, num(spec.dur, 0))
+      // 吞噬與飛雷神只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
+      var keep = (spec.variant === 'dragon-devour' || spec.variant === 'flying-thunder') ? Math.max(0, num(spec.dur, 0))
         : Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
-      var mult = noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
+      var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
+      var mult = curtainColumn || spec.variant === 'flying-thunder' ? 1 : noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -1052,9 +1057,11 @@ var VFXRuntime = (function () {
       }
       if (live) { stopRef(live.ref); delete grounds[key]; }
       var g = {
+        curtainColumn: curtainColumn,
         bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         devour: spec.variant === 'dragon-devour',
+        fixedLifetime: spec.variant === 'flying-thunder' ? keep : 0,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
         x: 0, y: 0, rot: 0, trot: 0, sx: 1, sy: 1, tsx: 1, tsy: 1, uniform: true
@@ -1066,7 +1073,7 @@ var VFXRuntime = (function () {
       g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
       // 吞噬漩渦是貼地環帶，整體置於人物下方；其他直立場域維持原圖層。
       var flyingField = spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing';
-      var ref = play(flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
+      var ref = play(curtainColumn ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -1298,6 +1305,11 @@ var VFXRuntime = (function () {
         }
         return true;
       }
+      if (spec.variant === 'flying-thunder-end') {
+        var key = 'field:' + (spec.area && spec.area.id);
+        if (grounds[key]) { stopRef(grounds[key].ref); delete grounds[key]; }
+        return true;
+      }
       var roles = spec.vfx;
       if (!roles || typeof roles !== 'object') return false;
       // 表格事件即使全空或名稱無法載入，也不能換成另一份特效／舊畫法。
@@ -1346,6 +1358,11 @@ var VFXRuntime = (function () {
 
     // 各欄獨立派送，主要欄缺值不能阻止其他有填值的角色。
     function playRole(spec, role) {
+      if (spec.variant === 'flying-thunder-end') {
+        var key = 'field:' + (spec.area && spec.area.id);
+        if (grounds[key]) { stopRef(grounds[key].ref); delete grounds[key]; }
+        return true;
+      }
       var roles = spec.vfx;
       var presetId = role ? roles[role] : '';
       if (!presetId || !has(presetId)) { counters.skipped++; return false; }
@@ -1372,7 +1389,22 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec, role);
           break;
         case 'attack':
-          if (presetId === 'burst-vacuum-shockwave') {
+          if (spec.variant === 'thunder-curtain' && spec.area) {
+            // 沿用舊雷幕的柱距與數量上限；每柱具有穩定 ID，不隨逐拍事件重建。
+            var wall = spec.area, axis = num(wall.a, 0);
+            var worldWidth = num(wall._planeW, num(wall.w, 0));
+            var columns = Math.max(2, Math.min(8, Math.round(worldWidth / 150)));
+            for (var column = 0; column < columns; column++) {
+              var offset = (column / (columns - 1) - 0.5) * num(wall.w, 0);
+              var dx = Math.cos(axis) * offset, dy = Math.sin(axis) * offset;
+              var area = Object.assign({}, wall, {
+                id: (wall.id || 'thunder-curtain') + '-column-' + column,
+                x: num(wall.x, 0) + dx, y: num(wall.y, 0) + dy
+              });
+              if (isNum(wall.destX) && isNum(wall.destY)) { area.destX += dx; area.destY += dy; }
+              ok = playGround(presetId, Object.assign({}, spec, { area: area }), 'attack') || ok;
+            }
+          } else if (presetId === 'burst-vacuum-shockwave') {
             var shockParams = sizeOf(tuning(presetId,'inheritGeometry')?'slash-wind-crescent':presetId, {r:num(spec.lineLength,0)}) || defaultSize(presetId, 1);
             shockParams.position = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
             shockParams.rotation = num(spec.angle, 0);
@@ -1794,7 +1826,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260929-superconduct-tips';
+  var DATA_VERSION = '20260929-thunder-pair';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

@@ -1,5 +1,60 @@
 # AI_TASKS.md
 
+## Codex｜飛雷神單敵回退（FLYING-THUNDER-SINGLE-20260929）
+
+- Owner：Codex；Done。兩敵優先，剩一敵改玩家與該敵連線，每道生成重新選敵，零敵才略過；座標重疊仍生成，無座標單敵保留傷害。保留使用者傷害 300%／每級 30% 與未提交素材／配置。
+- 修改：js/skills2.js、tools/skills2-vfx.cjs、Skills2 Excel／CSV 三格說明、雷系測試、index.html／bridge／Worker 快取、本紀錄與 VFX_RUNTIME_ADAPTER。使用者已允許 index.html 僅更新 skills2／bridge 兩行，不改 Claude 的 ui.js。唯讀檢查：js/data.js、Equipment_Affix.csv 及現有 VFX 變更。
+- 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs（27/27）；npm run build（399 檔）；node tools/config_tables.cjs --apply（17 字面值、0 語意差異）；git diff --check。Excel 以 COM 寫入／重新開啟，僅 AV151／AW151／AX151 值變更，樣式無變更。
+- 交付：本節隨修正 commit；未合併／推送，可供整合。既有未提交修改保留於工作區。本次未做完整遊戲視覺操作；僅目標選擇調整，視覺資產未修改，無未完成實作。
+
+
+## Codex｜雷電矩陣循環電柱回收（THUNDER-MATRIX-LIFETIME-20260929）
+
+- Owner Codex；Done。雷幕 attack 每拍建立無人回收的 loop 電柱且拉成整道範圍，造成永久堆疊白光。改依 area.id 管理直立電柱，與地板共用權威移動／續命及清場；FOV 只投影柱腳。
+- 範圍：VFX Runtime、必要頁面快取、Runtime 回歸及本紀錄；禁止修改傷害、技能配置、素材及使用者既有修改。前置齊備、衝突預檢乾淨。
+- 驗收：連續事件效果數不成長、停止續命／clearFields 回收、平滑移動、柱身尺寸／方向不被地面範圍拉伸；Build 與正式 Pixi 預覽。完成提交交使用者整合，不合併推送。
+- 完成：電柱沿權威雷幕長度排列，使用舊雷幕柱距及數量上限，依投影前長度計數；地板及各電柱分別持有穩定 ID，逐拍只更新位置與續命，停送後依既有 0.35 秒保活回收，clearFields 即時移除。電柱使用原製作尺寸、billboard 柱腳投影，不套地面矩形拉伸或旋轉；未更動傷害／技能資料／Preset。
+- 修改：js/vfx-runtime.js、tests/vfx-runtime.test.cjs、index.html、tools/vfx/editor/index.html、本紀錄。檢查未改：js/skills2.js、js/battle-renderer.js、js/vfx-core.js、js/vfx-pixi-backend.js、兩份雷幕 Preset、editor/runtime-preview.js。無素材變更，不需素材庫提交。
+- 測試：node --test --test-name-pattern=THUNDER-MATRIX tests/vfx-runtime.test.cjs 通過；node --test --test-reporter=tap tests/vfx-runtime.test.cjs tests/skill2-chainlightning-thunder-legendary.test.cjs tests/vfx-editor-guard.test.cjs 為 150 項145通過／5失敗，五項均於 HEAD 原 Runtime 重現（飛雷神既有配置、FIELD、CATALOG-3、CHAIN生成器、STARFALL-TAIL）。新增案例在 HEAD 失敗、修正後通過。node tools/build_check.cjs 399檔通過，diff check通過。
+- 正式 Edge／Pixi 隔離預覽：2道雷幕連續60拍保持14柱＋2地板，停送與清場皆歸零；可見電柱及清空畫面均截圖檢視，Console零錯誤。加入 battle-renderer 原始 FOV／billboard 投影函式驗證直立柱身；未冒稱完整遊戲戰場實測。
+- 交付：Commit 見本紀錄所在提交，可整合；未合併／推送。遊戲需重新載入以清除舊版累積物件；編輯器先備份未存工作再重載，既有 stale guard 測試通過。其他使用者配置／素材保持未提交。建議整合後實戰確認多道交錯時外觀。
+
+## Codex｜魔法盾百分比法力承傷（MANA-SHIELD-PERCENT-20260929）
+
+- Owner：Codex；Done。生命損耗按生命上限換算法力上限同比例消耗，全部由法力承擔；每級降低法力成本 5%，滿級乘以 50%，不足部分回扣生命。
+- 範圍：Skills2 Excel／CSV／JS、必要快取、地系回歸測試與本紀錄。禁止改其他技能及既有使用者修改。前置具備、衝突預檢乾淨；無素材變更。
+- 驗收：不同生命／法力上限、逐級乘算、不足額、護盾優先、直接扣血與一般命中及顯示成本、配置一致性、Build。完成後提交交使用者整合，不合併／推送。
+- 修改：js/skills2.js、Skills2 Excel／CSV、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-earth.test.cjs、本紀錄。檢查未改：js/formula.js、js/combat.js、tools/config_tables.cjs、tests/helpers/skill-table.cjs。沒有協議或存檔變更，沒有素材庫變更。
+- 驗證：node --test tests/skill2-earth.test.cjs（33/34，唯一岩甲特效名稱失敗已以 HEAD 原程式／資料／測試重現）；node --test tests/earthguard-revival.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs tests/gm-skill-test-tools.test.cjs（32/32）；魔法盾與說明定向4/4。node tools/build_check.cjs（399檔通過）；node tools/config_tables.cjs --apply Skills2（0語意變更）；diff check通過。
+- Excel 由 Artifact Tool 設定目標值，再由原生 Excel API 寫入、正常模式重開驗證無修復；僅 AU136／AW136／AX136 三格改值，樣式未變，Excel／CSV 目標列一致。暫存提交版同樣以 Excel API 修改 HEAD 原表，避免納入使用者先前配置修改。
+- 限制：未跑完整遊戲瀏覽器實戰／Console 驗收；數值、說明及飄字成本已用真實函式回歸驗證。既有岩甲測試失敗另案處理。Commit 見本紀錄所在提交；可交由使用者整合，建議實戰確認資源條；未合併／推送，其他使用者修改保留未提交。
+
+## Codex｜飛雷神雙敵連線與靜態淡出（FLYING-THUNDER-PAIR-20260929）
+
+- Owner：Codex；Done。使用者要求寬度五倍、兩名敵人連線、劈出後固定形態淡出。允許 Skills2 表與邏輯、專用 Preset、必要快取、配置說明與測試；禁止改其他技能／其他副本。預檢乾淨，依賴已完成。驗收雙敵連線與不足兩敵略過、30米判定、波形不再重抽與漸淡、原節拍與壽命、表格及編輯器防覆寫；完成後雙倉庫提交。
+- 完成：傷害及可見寬度皆為原來五倍，Skills2 L151=200*30、Preset heightM=30；每道隨機選兩名具不同座標的存活敵人，用其中點／連線固定場域。不足兩敵、尚未進場、死亡或無有效連線時不生成。原每波三秒／逐道0.25秒／每道三秒與每半秒傷害維持。
+- 外觀：專用 Preset motionSpeed=0，出生隨機形態保持到結束，alphaOverLife 在劈亮後一路淡出；沿用編輯器既有參數，無新增隱藏程式控制。Core／Pixi 未修改。
+- 修改：Skills2 Excel／CSV／js、tools/skills2-vfx.cjs、專用 Preset、主頁／Worker／Editor 快取、Runtime 資料版本、兩支專項與 Runtime 說明。檢查未改：Core、Pixi、battlefield、editor guard。Excel 以 Artifact Tool 整理四格，再由 Excel API 正常儲存／重新開啟；僅 L151／AV151／AW151／AX151 值改變，樣式零變更。
+- 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs tests/vfx-deformation.test.cjs tests/vfx-editor-guard.test.cjs，46/46 通過；覆蓋雙敵方向、中點不依玩家、30米路徑、移動目標、少於兩敵與重疊、固定變形／透明度遞減、舊分頁拒絕覆寫。node tools/build_check.cjs 399檔通過、node tools/config_tables.cjs --apply 17字面值／0變更、git diff --check通過。
+- 正式 Runtime＋Pixi 隔離預覽確認五倍寬度、分散交錯、最後一道回收後0道，Console無錯誤；未宣稱完整遊戲FOV實戰驗收。使用者需備份未存內容後重載編輯器，伺服器舊版本保護測試通過。
+- 素材庫 af7302f；遊戲提交見本紀錄所在提交。可合併，無本次未完成項目，未合併／推送。建議以遊戲實戰確認新的加寬與淡出手感。
+
+
+
+## Codex｜飛雷神全場持續雷電（FLYING-THUNDER-20260929）
+
+- Owner：Codex；Done。每三秒一波隨機三至六道，每道間隔 0.25 秒，出生時重新選取敵人決定固定貫穿方向；寬六米、持續三秒，每半秒重新查詢路徑並造成表定雷傷，升級每級增加二十百分點。
+- 範圍：Skills2 Excel／CSV／生成資料、技能排程與 VFX Runtime、配置接線、專用 Preset／layout、快取、專項測試與本紀錄；不改其他技能規則或其他工作副本。前置已完成，衝突預檢乾淨。
+- 驗收：逐道出生／逐波節拍、移動敵人命中與固定方向、獨立到期與卸下清理、表格往返、正式特效尺寸／壽命、編輯器舊分頁保護；完成後雙倉庫提交，交使用者整合，不合併／推送。
+- 完成：裝配飛雷神後每三秒排一波，普通連鎖施放不重置節拍。每道出生重新隨機選敵、固定位置與方向；傷害在出生後半秒起每半秒結算，三秒內共六次。新波與上一波尾道可共存；沒有目標不生成，玩家死亡／卸下／reset 立即結束現有雷電。
+- 配置：Skills2 第151列十格更新，最低全場長度*寬度為 200*6 米，實際出生長度亦涵蓋當時更遠的敵人；逐道間隔 Z151=0.25，波次 interval=3、tick=0.5、sec=3、count=3、countMax=6，pct=200、pctPer=20（沿既有表格底值＋等級增量公式）。觸發持續場域 AR151=beam-flying-thunder-god，不覆蓋本體子彈。
+- 修改：js/skills2.js、js/vfx-runtime.js、js/battle-renderer.js、tools/skills2-geometry.cjs、tools/skills2-vfx.cjs、Skills2 Excel／CSV、新 Preset／layout、主頁／Worker／Editor 快取、兩支回歸、Runtime 文件與本紀錄。檢查未改：battlefield 線段碰撞、Core／Pixi、Worker protocol、editor stale guard、config_tables。
+- Excel：Artifact Tool 產生指定儲存格值後，透過 Microsoft Excel COM API 寫回原檔並正常重新開啟核對，沒有手改 XML。唯讀比較僅十格值有差異、新填 AR151 採 Excel 欄位樣式，其餘樣式／工作表保留；CSV→JS 17字面值／0語意差異。
+- 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs（25/25）；新增 Runtime FLYING-THUNDER 1/1，驗證固定尺寸、共存、精確到期、可調壽命及指定回收；editor-guard／skills2-vfx 7/7。綜合156項151通過，5項失敗（既有速度期待舊值、FIELD、CATALOG-3、CHAIN生成器對照、STARFALL-TAIL）全部用 HEAD 原始程式／配置重現，未放寬斷言。node tools/build_check.cjs 399檔通過、git diff --check 通過。
+- 視覺：正式 Runtime＋Pixi 在隔離驗證頁確認 1.5 秒六道紫雷共存、4.3 秒最後一道也消失。預覽僅確認渲染，不冒稱完整實戰已驗收；遊戲 FOV 下的視覺手感仍由使用者確認。已更新快取及 Runtime 指紋，編輯器舊分頁拒絕覆寫的測試通過，使用者須先備份再重載。
+- 素材庫：d911476，新增 codex-authored/lightning 的 Preset 與 layout，與遊戲檔案逐位元一致，無新點陣圖。遊戲 Commit 見本紀錄所在提交；功能可合併，未合併／推送。無本次未完成功能；上述五項既有失敗另案處理。
+
+
 ## Codex｜VFX 舊分頁防覆寫與快取補齊（VFX-STALE-GUARD-20260929）
 
 - Owner：Codex；Done。Claude已合併，預檢乾淨。補前輪Core／backend／Runtime快取，編輯器更新提示、未存內容備份與伺服器條件寫入（Preset／layout／改名）。

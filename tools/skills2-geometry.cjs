@@ -21,7 +21,7 @@ route('damage',`thrust/phantomOcta cleave/1 cleave/windChaser gale/1 gale/7 gale
  waterball/7 waterball/ragingTide frostnova/1 frostnova/2 frostnova/iceKingDomain windblade/6 vacuumslash/4 stormbarrier/2 stormbarrier/skyfallStars`);
 route('search',`knife/3 knife/soulhunterBlade gale/4 gale/thunderFlash bloodblade/7 counter/7
  fireball/3 fireball/5 firepillar/3 firepillar/6 mire/4 earthguard/6 chainlightning/1 chainlightning/5
- chainlightning/eternalSuperconductor chainlightning/flyingThunderGod thunderstrike/heavenTribulation
+ chainlightning/eternalSuperconductor thunderstrike/heavenTribulation
  thunderorb/thunderBurst waterball/5 frostnova/crystalResonance vacuumslash/1 stormbarrier/5`);
 route('effect',`dualdance/5 rockarmor/superRockArt rockarmor/gravityField thunderstrike/5 waterball/waterPrisonFall waterball/abyssBurial`);
 route('damage','firepillar/dragonDevour firepillar/infernoTempest');
@@ -52,7 +52,7 @@ function bindings(gid,stage){
  if(routes[id])b.push([routes[id],['m']]);
  if(id==='gale/thunderFlash')b.push(['damage',['len','wid']]);
  if(id==='thunderstrike/thunderMatrix')b.push(['curtain',['wid']]);
- if(id==='chainlightning/flyingThunderGod')b.push(['damage',['r']]);
+ if(id==='chainlightning/flyingThunderGod')b.push(['damage',['len','wid']]);
  if(id==='firehunt/fireGodDescend')b.push(['travel',['flyM']],['orbit',['orbitM']]);
  if(['icearrow/7','windblade/5','windblade/stormMyriad'].includes(id))b.push(['search',['chaseM']]);
  if(id==='waterball/1')b.push(['height',['arcM']]);

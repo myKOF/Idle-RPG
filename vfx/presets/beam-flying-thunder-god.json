@@ -1,24 +1,26 @@
 {
   "schemaVersion": 1,
-  "id": "bolt-chain-travel-bluewhite",
-  "duration": 0.366,
+  "id": "beam-flying-thunder-god",
+  "duration": 3,
   "loop": false,
   "deformation": {
-    "amplitude": 1,
+    "amplitude": 18,
     "axis": "x",
-    "end": 542.464,
+    "end": 583.936,
     "layers": [
       "blue-corona",
       "white-core",
       "side-fork"
     ],
     "mirror": true,
-    "motionAmplitude": 10,
-    "motionSpeed": 12,
+    "motionAmplitude": 18,
+    "motionSpeed": 0,
+    "pivot": 0,
     "secondaryFrequency": 5,
     "secondaryWeight": 0.1,
-    "start": 0,
-    "widthJitter": 0.1
+    "start": -583.936,
+    "tipTaper": 0.035,
+    "widthJitter": 0.15
   },
   "layers": [
     {
@@ -27,37 +29,36 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
-        "x": 9.3032,
-        "y": 3.3016
+        "x": -583.936,
+        "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.3367,
-        "y": 1.6573
+        "x": 0.6125,
+        "y": 2.281
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 0.85,
-      "tint": "#0091ff",
+      "tint": "#ffea00",
       "blendMode": "screen",
-      "duration": 0.366,
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          1
+          0
         ],
         [
-          0.9,
+          0.025,
           1
         ],
         [
           1,
-          0.8
+          0
         ]
-      ],
-      "perspective": false
+      ]
     },
     {
       "id": "white-core",
@@ -65,37 +66,36 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "position": {
-        "x": 9.3032,
-        "y": 3.3016
+        "x": -583.936,
+        "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.4131,
-        "y": 1.6573
+        "x": 0.4856,
+        "y": 2.2284
       },
       "anchor": {
         "x": 0.5,
         "y": 0
       },
       "alpha": 1,
-      "tint": "#d1f0ff",
+      "tint": "#faf8eb",
       "blendMode": "screen",
-      "duration": 0.366,
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          1
+          0
         ],
         [
-          0.9,
+          0.025,
           1
         ],
         [
           1,
-          0.8
+          0
         ]
-      ],
-      "perspective": false
+      ]
     },
     {
       "id": "side-fork",
@@ -103,42 +103,41 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "position": {
-        "x": 655.3455,
-        "y": 18.3533
+        "x": 307.88689999999997,
+        "y": 0
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.2797,
-        "y": 0.3972
+        "x": 0.22,
+        "y": 0.534
       },
       "alpha": 0.48,
-      "tint": "#33a7ff",
+      "tint": "#ffea00",
       "blendMode": "screen",
-      "duration": 0.366,
+      "duration": 3,
       "alphaOverLife": [
         [
           0,
-          1
+          0
         ],
         [
-          0.9,
+          0.025,
           1
         ],
         [
           1,
-          0.8
+          0
         ]
-      ],
-      "perspective": false
+      ]
     }
   ],
   "sizing": {
     "authored": {
       "height": 106,
-      "width": 542.464
+      "width": 1167.872
     },
-    "heightM": 10.6,
+    "heightM": 30,
     "shape": "custom",
-    "widthM": 54.24640000000001
+    "widthM": 200
   }
 }

@@ -4,7 +4,7 @@
      1. 連鎖閃電五個傳奇：電荷連鎖（彈射數）、電擊（發射道數）、雷散落（擴散）、
         超導（每彈射一次增傷）、過載（打滿次數即爆炸）
      2. 連鎖閃電三個超神：天地雷鎖陣（重複施放）、永恒超導體（往返鏈＋雷電傷害疊層）、
-        飛雷神（放電期每拍打最遠的 N 個敵人）
+        飛雷神（逐道生成的全場持續雷電）
      3. 落雷術五個傳奇：三重雷（每目標次數）、雷鎖（目標數）、震雷（暈眩時間＋暈眩易傷）、
         雷之再生（迅雷重生機率改寫）、引雷針（優先低血並加傷）
      4. 落雷術三個超神：雷電矩陣（十字雷幕）、雷霆天劫（永久追擊雷）、永恒雷獄（重複施放）
@@ -301,36 +301,68 @@ test('【永恒超導體】：獨立金鏈追蹤往返，抵達才傷害／疊�
   c.resetSkill2RT();assert.equal(p.buffs.sgSuperconduct,undefined);
 });
 
-test('【飛雷神】：放電期每 gap 秒打向最遠的 N 個敵人，各自炸開一個範圍', () => {
-  const c = loadContext();
-  stubVfx(c);
-  const calls = stubHits(c);
-  maxLevels(c, 'chainlightning');
-  equip(c, 'chainlightning');
-  setUlt(c, 'chainlightning', 'flyingThunderGod', 1);
-  const p = playerEnt();
-  const near = enemy(1e9, 10, 0, 'near');
-  const mid = enemy(1e9, 100, 0, 'mid');
-  const far1 = enemy(1e9, 200, 0, 'far1');
-  const far2 = enemy(1e9, 210, 0, 'far2');       // 與 far1 相距 1 米，互相在 12 米爆炸範圍內
-  const es = [near, mid, far1, far2];
-  c.castSkill2(p, es, 'chainlightning', 'mv-float');
-
-  assert.ok(c.SKILL2_RT.flyThunder, '施放後進入放電期');
-  const afterCast = calls.length;
-
-  advance(c, p, es, 0.4);
-  const pulse = calls.slice(afterCast);
-  assert.ok(pulse.length > 0, '節拍到就放電');
-  assert.ok(pulse.some((h) => h.ent === far1) && pulse.some((h) => h.ent === far2), '打最遠的敵人');
-
-  // 持續 6.3 秒（Lv.1）：走完就停
-  advance(c, p, es, 8);
-  settleChain(c);
-  const settled = calls.length;
-  advance(c, p, es, 2);
-  assert.equal(calls.length, settled, '放電期結束後不再放電');
-  assert.equal(c.SKILL2_RT.flyThunder, null, '放電期回收');
+function flyingSetup(random=0) {
+  const c=loadContext(), specs=stubVfx(c), calls=stubHits(c);
+  maxLevels(c,'chainlightning'); equip(c,'chainlightning');setUlt(c,'chainlightning','flyingThunderGod',1);
+  c.Math.random=()=>random;
+  const p=playerEnt(), es=[enemy(1e9,100,200,'aim'),enemy(1e9,300,200,'second')];
+  const ctx={pEnt:p,floatSel:'mv-float',getEnemies:()=>es};
+  const tick=t=>{const dt=t-c.GT;c.GT=t;c.sgTickFlyingThunder(ctx,dt);};
+  tick(0);return {c,specs,calls,p,es,ctx,tick};
+}
+test('【飛雷神】：每三秒一波，三至六道逐道間隔0.25秒，重新選敵且不覆寫普通雷鏈',()=>{
+  for(const [random,count] of [[0,3],[.999,6]]) {
+    const {c,specs,es,tick}=flyingSetup(random);
+    tick(2.99);assert.equal(specs.length,0);
+    tick(3);assert.equal(specs.length,1);
+    assert.equal(specs[0].dur,3);assert.equal(specs[0].area.h,300);
+    assert.equal(specs[0].vfx.field,'beam-flying-thunder-god');
+    assert.equal(c.sgVfxRoles('chainlightning').projectile,'bolt-chain-travel-bluewhite');
+    es[0].pos={x:300,y:100};tick(3.24);assert.equal(specs.length,1);
+    for(let i=1;i<count;i++)tick(3+i*.25);
+    assert.equal(specs.length,count);assert.ok(Math.abs(Math.sin(specs[0].area.a))<1e-9);
+    assert.equal(specs[0].area.x,200);assert.equal(specs[0].area.y,200,'連線不穿過玩家原點');
+    assert.ok(Math.abs(Math.cos(specs[1].area.a))<1e-9,'每道出生才讀兩敵位置');
+    tick(5.99);assert.equal(specs.length,count);
+    tick(6);assert.equal(specs.length,count+1,'前一波尾道還在時可開始下一波');
+  }
+});
+test('【飛雷神】：三十米路徑固定，每半秒查當下敵人，六次傷害後獨立消失',()=>{
+ const {c,specs,calls,es,tick}=flyingSetup();tick(3);
+ c.SKILL2_RT.flyThunder.pending=[];c.SKILL2_RT.flyThunder.nextWave=100;
+ const inside=enemy(1e9,-300,320,'inside'),off=enemy(1e9,100,500,'off');es.push(inside,off);
+ tick(3.49);assert.equal(calls.length,0);tick(3.5);
+ assert.deepEqual(calls.map(x=>x.ent.name),['inside','aim','second']);
+ const u=c.sgUlt('chainlightning','flyingThunderGod');
+ assert.equal(calls[0].atk,c.getStats().matk*(u.def.fx.pct+u.def.fx.pctPer*u.lv)/100);assert.equal(calls[0].elem,'lightning');
+ es[0].pos.y=500;off.pos.y=200;c.BF_PLAYER.y=1000;
+ tick(4);assert.deepEqual(calls.slice(3).map(x=>x.ent.name),['inside','off','second']);
+ assert.equal(specs.length,1,'位置固定，無需重新播放');
+ for(const t of [4.5,5,5.5,6])tick(t);
+ assert.equal(calls.length,18);assert.equal(c.SKILL2_RT.flyThunder.beams.length,0);
+ tick(6.5);assert.equal(calls.length,18);
+});
+test('【飛雷神】：每道重選雙敵、單敵回退玩家，零敵才略過',()=>{
+ const {c,specs,es,tick}=flyingSetup();tick(3);
+ es[0].hp=0;c.BF_PLAYER.x=100;c.BF_PLAYER.y=0;tick(3.25);
+ assert.equal(specs.length,2);assert.equal(specs[1].area.x,200);assert.equal(specs[1].area.y,100);
+ assert.ok(Math.abs(Math.tan(specs[1].area.a)-1)<1e-9);
+ es[1].hp=0;tick(3.5);assert.equal(specs.length,2);
+});
+test('【飛雷神】：單敵正常結算傷害，無座標敵人亦可使用',()=>{
+ for(const spatial of [true,false]) {
+  const {c,specs,calls,es,tick}=flyingSetup();es.splice(1);if(!spatial)delete es[0].pos;
+  tick(3);assert.equal(specs.length,1);assert.ok(Number.isFinite(specs[0].area.a));
+  c.SKILL2_RT.flyThunder.pending=[];tick(3.5);
+  assert.equal(calls.length,1);assert.equal(calls[0].ent,es[0]);
+ }
+});
+test('【飛雷神】：重疊仍生成，死亡及reset立即終止',()=>{
+ const {c,specs,p,es,tick}=flyingSetup();es[0].pos={...es[1].pos};tick(3);
+ assert.equal(specs.length,1);assert.equal(specs[0].area.a,0);
+ p.hp=0;tick(3.6);assert.equal(c.SKILL2_RT.flyThunder,null);assert.equal(specs.at(-1).variant,'flying-thunder-end');
+ p.hp=1000;tick(4);tick(7);assert.equal(c.SKILL2_RT.flyThunder.beams.length,1);
+ c.resetSkill2RT();assert.equal(specs.at(-1).variant,'flying-thunder-end');assert.equal(c.SKILL2_RT.flyThunder,null);
 });
 
 /* ===========================================================================

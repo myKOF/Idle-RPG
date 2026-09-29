@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "id": "hit-lightning-blue",
+  "duration": 0.14,
+  "loop": false,
+  "deformation": {
+    "amplitude": 1.973,
+    "axis": "x",
+    "end": 28.186,
+    "layers": [
+      "arcweb"
+    ],
+    "mirror": true,
+    "start": -28.186,
+    "widthJitter": 0.07
+  },
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1094,
+        "y": 0.1094
+      },
+      "alpha": 0.55,
+      "tint": "#3d9bff",
+      "blendMode": "screen",
+      "delay": 0,
+      "duration": 0.091,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.85,
+      "tint": "#05a9f0",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.105,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.33
+        ],
+        [
+          0.35,
+          0.8
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "flash",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/scorch_02.png",
+      "zIndex": 3,
+      "rotation": 0,
+      "scale": {
+        "x": 0.0781,
+        "y": 0.0781
+      },
+      "alpha": 0.85,
+      "tint": "#b3ecff",
+      "blendMode": "screen",
+      "delay": 0,
+      "duration": 0.049,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          0.4,
+          0.45
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.2,
+          1
+        ],
+        [
+          1,
+          1.15
+        ]
+      ]
+    },
+    {
+      "id": "arcweb",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/spark_02.png",
+      "zIndex": 2,
+      "rotation": 0.3491,
+      "scale": {
+        "x": 0.0859,
+        "y": 0.0859
+      },
+      "alpha": 0.9,
+      "tint": "#0596f0",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.07,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          0.35,
+          0.55
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.3,
+          1
+        ],
+        [
+          1,
+          1.1
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "zIndex": 5,
+      "tint": "#fcfcfc",
+      "blendMode": "add",
+      "delay": 0,
+      "duration": 0.14,
+      "emission": {
+        "count": 6,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.042,
+        0.077
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        400,
+        685.714286
+      ],
+      "direction": -90,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 1632.653061
+      },
+      "drag": 8.571429,
+      "startScale": [
+        0.0273,
+        0.043
+      ],
+      "alignToVelocity": true,
+      "velocityRotationOffset": 1.5708,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.2,
+          0.65
+        ],
+        [
+          0.6,
+          0.2
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.5,
+          "#ffffff"
+        ],
+        [
+          1,
+          "#2a2a30"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 60,
+      "width": 60
+    },
+    "heightM": 6,
+    "shape": "custom",
+    "widthM": 6
+  }
+}

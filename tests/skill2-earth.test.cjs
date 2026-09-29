@@ -102,11 +102,13 @@ test('三個新群組都在表上：地系、魔法傷害，且大地守護是�
   assert.equal(c.SKILLS2.earthguard.cd, 0);
   assert.equal(c.SKILLS2.earthguard.cost, 0);
   const magicShieldFx = c.SKILLS2.earthguard.tiers[4].fx;
-  assert.equal(magicShieldFx.pct, 30);
-  assert.equal(magicShieldFx.pctPer, 3);
-  assert.equal(magicShieldFx.manaRed, 30);
+  assert.equal(magicShieldFx.pct, undefined);
+  assert.equal(magicShieldFx.pctPer, undefined);
+  assert.equal(magicShieldFx.manaRed, 0);
   assert.equal(magicShieldFx.manaRedPer, 5,
-    '魔法盾資料應包含轉換承傷與承擔法力降低兩組倍率');
+    '魔法盾只升級法力減耗倍率');
+  assert.match(c.describeSkill2Tier('earthguard', 4, 1), /法力消耗降低 5%/);
+  assert.match(c.describeSkill2Tier('earthguard', 4, 10), /法力消耗降低 50%/);
   assert.equal(c.skills2IsPassive('rockarmor'), false, '岩甲術是主動技（只有第 4 階是被動階）');
   assert.equal(c.skills2IsPassive('mire'), false);
 });
@@ -463,45 +465,85 @@ test('沒裝配大地守護時，回復與吸血換算完全維持原本行為',
   assert.ok(Math.abs(c.manaStealAmount(st, 100) - st.mpRegen) < 1e-9);
 });
 
-test('魔法盾（T5）：轉換傷害與承擔法力各自套用降低倍率，法力不足時按成本反推', () => {
+test('魔法盾（T5）：同比例上限換算、每級乘算減耗及不足額回扣生命', () => {
   const c = loadContext();
   const p = playerEnt();
-  setLevels(c, 'earthguard', [1, 1, 1, 1, 1, 0, 0]);
   equip(c, 'earthguard');
-
-  p.mp = 200;
-  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 33, '33% 由法力承擔');
-  assert.ok(Math.abs(p.mp - 178.55) < 1e-9, 'Lv.1 承擔法力降低 35%，只扣 21.45 MP');
-
-  p.mp = 10;
-  assert.ok(Math.abs(c.skills2ManaShieldAbsorb(p, 100) - (10 / 0.65)) < 1e-9,
-    '法力不足＝依降低後的 MP 成本反推可轉換傷害');
+  for (let lv = 1; lv <= 10; lv++) {
+    setLevels(c, 'earthguard', [1, 1, 1, 1, lv, 0, 0]);
+    p.mp = 200;
+    const result = c.skills2ManaShieldResult(p, 100);
+    assert.equal(result.damage, 100);
+    assert.ok(Math.abs(result.mana - (20 - lv)) < 1e-9, '10% HP 換 10% MP，再乘上逐級減耗');
+  }
+  p.hp = 500;
+  p.mp = 50;
+  assert.equal(c.applyEnemyHpDamage(p, 100), 0);
+  assert.equal(p.hp, 500, '分母使用最大生命，不受目前生命影響');
+  assert.equal(p.mp, 40, '滿級 10% HP 只扣 5% 最大法力，不是目前法力');
+  p.mp = 5;
+  assert.equal(c.applyEnemyHpDamage(p, 100), 50, '只能承擔一半時，餘額扣生命');
+  assert.equal(p.hp, 450);
   assert.equal(p.mp, 0);
-  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 0, '沒法力就不再轉換');
+  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 0);
 
-  p.hp = 1000;
-  p.mp = 200;
-  assert.equal(c.applyEnemyHpDamage(p, 100), 67, '直接扣血路徑仍只把未轉換的 67 點扣到生命');
-  assert.equal(p.hp, 933);
-  assert.ok(Math.abs(p.mp - 178.55) < 1e-9, '直接扣血路徑只扣降低後的實際法力');
+  const stats = c.getStats();
+  c.getStats = () => ({ ...stats, hp: 200, mp: 1000 });
+  p.mp = 1000;
+  const swapped = c.skills2ManaShieldResult(p, 20);
+  assert.equal(swapped.damage, 20);
+  assert.equal(swapped.mana, 50, '法力上限大於生命時也按百分比計費');
+});
 
+test('魔法盾：一般命中、護盾優先與法力飄字成本一致', () => {
+  const c = loadContext();
+  const p = playerEnt();
+  setLevels(c, 'earthguard', [1, 1, 1, 1, 10, 0, 0]);
+  equip(c, 'earthguard');
   c.Math.random = () => 0.5;
-  p.hp = 1000;
-  p.mp = 200;
-  const hit = c.resolveHit({}, p,
+  const attack = () => c.resolveHit({}, p,
     { atk: 100, dmgType: 'phys', level: 1, hit: 100, critRate: 0, critDmg: 150 },
     { def: 0, mdef: 0, level: 1, dodge: 0, pRes: 0, mRes: 0, resist: {},
       isPlayer: true, tenacity: 0 });
-  assert.ok(Math.abs(hit.hpDamage - 59.63) < 1e-9, 'resolveHit 路徑只把未轉換傷害扣到生命');
-  assert.ok(Math.abs(hit.manaShield - 19.0905) < 1e-9,
-    'resolveHit 顯示實際扣除的法力，不是轉換的生命傷害量');
+  let hit = attack();
+  assert.equal(hit.hpDamage, 0);
+  assert.ok(Math.abs(hit.manaShield - 8.9) < 1e-9, '減傷後的 89 傷害消耗 8.9 MP');
+  assert.equal(p.hp, 1000);
+  assert.ok(Math.abs(p.mp - 191.1) < 1e-9);
+  p.shield = 39;
+  p.mp = 200;
+  hit = attack();
+  assert.equal(hit.absorbed, 39);
+  assert.equal(hit.hpDamage, 0);
+  assert.equal(hit.manaShield, 5);
+  assert.equal(p.mp, 195);
+  p.mp = 4;
+  hit = attack();
+  assert.equal(hit.hpDamage, 49);
+  assert.equal(hit.manaShield, 4);
+  assert.equal(p.hp, 951);
+  const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
+  assert.match(combat, /floatPlayerEvent\(playerFloatSel, '🔵抵擋 ' \+ fmt\(res.manaShield\)/);
+});
 
+test('魔法盾：未學習、未裝配、無有效上限及 GM 法力鎖不轉換', () => {
+  const c = loadContext();
+  const p = playerEnt();
+  equip(c, 'earthguard');
+  setLevels(c, 'earthguard', [1, 1, 1, 1, 0, 0, 0]);
+  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 0);
   setLevels(c, 'earthguard', [1, 1, 1, 1, 10, 0, 0]);
-  p.mp = 100;
-  const result = c.skills2ManaShieldResult(p, 100);
-  assert.equal(result.damage, 60, '滿級轉換 60% 生命傷害');
-  assert.ok(Math.abs(result.mana - 12) < 1e-9, '滿級承擔法力降低 80%，60 點傷害只扣 12 MP');
-  assert.ok(Math.abs(p.mp - 88) < 1e-9);
+  c.G.player.loadout = [];
+  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 0);
+  equip(c, 'earthguard');
+  c.GM_TEST = { mpLock: true };
+  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 0);
+  c.GM_TEST = {};
+  c.getStats = () => ({ hp: 1000, mp: 0 });
+  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 0);
+  c.getStats = () => ({ hp: 0, mp: 200 });
+  assert.equal(c.skills2ManaShieldAbsorb(p, 100), 0);
+  assert.equal(p.mp, 200);
 });
 
 test('生命反射之盾（T6）：目標不只一個時避開當前攻擊者', () => {

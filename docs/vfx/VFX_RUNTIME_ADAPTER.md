@@ -482,3 +482,14 @@ Browser 面板未顯示，所以這是 **CPU 側的下限**，實機還要再加
 - 參數表往返：`node tools/config_tables.cjs --apply` 語意變更 0；Excel 開啟 Skills／Skills2／Status 可見新欄與說明頁。
 - 舊版畫法零回歸：目前 Runtime Adapter 尚未接上，事件多帶 `vfx` 欄位不應改變任何畫面；實機 8331 普攻／技能／狀態顯示與前一版相同、console 無錯誤。
 - Editor：`啟動VFX編輯器.bat hit-fire` 等 13 份受擊特效可開啟、可播放、存檔後 byte 不變。
+
+
+### 飛雷神持續貫穿雷電
+
+`variant: flying-thunder` 使用 Skills2 超神列的 `triggerVfx.field`；`area.id` 每道獨立，
+`area.x/y` 是出生時兩名不同敵人的中點（只剩一敵時改用玩家與該敵人的中點），`w/h/a` 為判定平面的完整長度、寬度與固定方向。
+`dur` 是該道權威壽命，禁止套用一般場域逐拍續命緩衝；Preset 動畫時間同步此壽命。
+`variant: flying-thunder-end` 搭配相同 `area.id` 在死亡、卸下或 reset 時立即回收。
+沿用既有 aura／area／dur 協議欄位，不新增封包欄位。表格 interval、gap、tick 分別控制波次、逐道出生、傷害節拍。
+
+飛雷神專用 Preset 的 motionSpeed 設為 0：每道出生形狀仍隨機，但播放期間不再重抽，僅依 alphaOverLife 漸淡；只有零敵人不生成；單敵時由玩家補足連線，重疊座標仍生成。
