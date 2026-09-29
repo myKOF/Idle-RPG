@@ -518,7 +518,8 @@ test('skill cast summary formats total damage and keeps the doubled lifetime con
   assert.match(css, /\.float-txt\.player-event\.skill-cast-total\s*\{[\s\S]*?animation-duration:\s*2\.1s/);
   assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC = PLAYER_SKILL_FLOAT_LIFE_SEC \* 2/);
   assert.match(renderer, /PLAYER_SKILL_TOTAL_FLOAT_LIFE_SEC : PLAYER_SKILL_FLOAT_LIFE_SEC/);
-  assert.match(renderer, /var MAX_FLOATS = 60;[\s\S]*?技能名稱.*傷害不計入/);
+  /* 要釘的是「技能名稱＋傷害不計入一般飄字上限」這句契約，不是上限的數值（2026-09-29 由 60 調到 120） */
+  assert.match(renderer, /var MAX_FLOATS = \d+;[\s\S]*?技能名稱.*傷害不計入/);
   assert.match(renderer, /function isSkillCastFloatEvent\(ev\)/);
   assert.match(renderer, /if \(!skillCastEvent\) \{[\s\S]*?ordinaryFloatCount[\s\S]*?if \(!S\.floats\[oi\]\.skillCast\)/);
   assert.match(renderer, /skillCast: skillCast/);
