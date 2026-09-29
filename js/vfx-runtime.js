@@ -986,6 +986,7 @@ var VFXRuntime = (function () {
     }
     function groundParams(g) {
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
+      if (g.fixedLifetime) p.timeScale = presetDurations[g.presetId] / g.fixedLifetime;
       if (g.uniform) p.scale = g.sx;
       else { p.scaleX = g.sx; p.scaleY = g.sy; }
       if (g.devour) {
@@ -1040,10 +1041,10 @@ var VFXRuntime = (function () {
       key = (role === 'field' ? 'field:' : 'ground:') + key;
       // 吞噬全場只保留一個：新施放立即移除舊畫面，並從新位置重新出生。
       if (spec.variant === 'dragon-devour') key = 'field:dragon-devour';
-      // 吞噬只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
-      var keep = spec.variant === 'dragon-devour' ? Math.max(0, num(spec.dur, 0))
+      // 吞噬與飛雷神只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
+      var keep = (spec.variant === 'dragon-devour' || spec.variant === 'flying-thunder') ? Math.max(0, num(spec.dur, 0))
         : Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
-      var mult = noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
+      var mult = spec.variant === 'flying-thunder' ? 1 : noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -1055,6 +1056,7 @@ var VFXRuntime = (function () {
         bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         devour: spec.variant === 'dragon-devour',
+        fixedLifetime: spec.variant === 'flying-thunder' ? keep : 0,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
         bx: 0, by: 0, ox: 0, oy: 0,
         x: 0, y: 0, rot: 0, trot: 0, sx: 1, sy: 1, tsx: 1, tsy: 1, uniform: true
@@ -1296,6 +1298,11 @@ var VFXRuntime = (function () {
         }
         return true;
       }
+      if (spec.variant === 'flying-thunder-end') {
+        var key = 'field:' + (spec.area && spec.area.id);
+        if (grounds[key]) { stopRef(grounds[key].ref); delete grounds[key]; }
+        return true;
+      }
       var roles = spec.vfx;
       if (!roles || typeof roles !== 'object') return false;
       // 表格事件即使全空或名稱無法載入，也不能換成另一份特效／舊畫法。
@@ -1344,6 +1351,11 @@ var VFXRuntime = (function () {
 
     // 各欄獨立派送，主要欄缺值不能阻止其他有填值的角色。
     function playRole(spec, role) {
+      if (spec.variant === 'flying-thunder-end') {
+        var key = 'field:' + (spec.area && spec.area.id);
+        if (grounds[key]) { stopRef(grounds[key].ref); delete grounds[key]; }
+        return true;
+      }
       var roles = spec.vfx;
       var presetId = role ? roles[role] : '';
       if (!presetId || !has(presetId)) { counters.skipped++; return false; }
@@ -1792,7 +1804,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260929-superconduct-tips';
+  var DATA_VERSION = '20260929-flying-thunder';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

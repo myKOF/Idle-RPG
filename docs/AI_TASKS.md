@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜飛雷神全場持續雷電（FLYING-THUNDER-20260929）
+
+- Owner：Codex；Done。每三秒一波隨機三至六道，每道間隔 0.25 秒，出生時重新選取敵人決定固定貫穿方向；寬六米、持續三秒，每半秒重新查詢路徑並造成表定雷傷，升級每級增加二十百分點。
+- 範圍：Skills2 Excel／CSV／生成資料、技能排程與 VFX Runtime、配置接線、專用 Preset／layout、快取、專項測試與本紀錄；不改其他技能規則或其他工作副本。前置已完成，衝突預檢乾淨。
+- 驗收：逐道出生／逐波節拍、移動敵人命中與固定方向、獨立到期與卸下清理、表格往返、正式特效尺寸／壽命、編輯器舊分頁保護；完成後雙倉庫提交，交使用者整合，不合併／推送。
+- 完成：裝配飛雷神後每三秒排一波，普通連鎖施放不重置節拍。每道出生重新隨機選敵、固定位置與方向；傷害在出生後半秒起每半秒結算，三秒內共六次。新波與上一波尾道可共存；沒有目標不生成，玩家死亡／卸下／reset 立即結束現有雷電。
+- 配置：Skills2 第151列十格更新，最低全場長度*寬度為 200*6 米，實際出生長度亦涵蓋當時更遠的敵人；逐道間隔 Z151=0.25，波次 interval=3、tick=0.5、sec=3、count=3、countMax=6，pct=200、pctPer=20（沿既有表格底值＋等級增量公式）。觸發持續場域 AR151=beam-flying-thunder-god，不覆蓋本體子彈。
+- 修改：js/skills2.js、js/vfx-runtime.js、js/battle-renderer.js、tools/skills2-geometry.cjs、tools/skills2-vfx.cjs、Skills2 Excel／CSV、新 Preset／layout、主頁／Worker／Editor 快取、兩支回歸、Runtime 文件與本紀錄。檢查未改：battlefield 線段碰撞、Core／Pixi、Worker protocol、editor stale guard、config_tables。
+- Excel：Artifact Tool 產生指定儲存格值後，透過 Microsoft Excel COM API 寫回原檔並正常重新開啟核對，沒有手改 XML。唯讀比較僅十格值有差異、新填 AR151 採 Excel 欄位樣式，其餘樣式／工作表保留；CSV→JS 17字面值／0語意差異。
+- 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs（25/25）；新增 Runtime FLYING-THUNDER 1/1，驗證固定尺寸、共存、精確到期、可調壽命及指定回收；editor-guard／skills2-vfx 7/7。綜合156項151通過，5項失敗（既有速度期待舊值、FIELD、CATALOG-3、CHAIN生成器對照、STARFALL-TAIL）全部用 HEAD 原始程式／配置重現，未放寬斷言。node tools/build_check.cjs 399檔通過、git diff --check 通過。
+- 視覺：正式 Runtime＋Pixi 在隔離驗證頁確認 1.5 秒六道紫雷共存、4.3 秒最後一道也消失。預覽僅確認渲染，不冒稱完整實戰已驗收；遊戲 FOV 下的視覺手感仍由使用者確認。已更新快取及 Runtime 指紋，編輯器舊分頁拒絕覆寫的測試通過，使用者須先備份再重載。
+- 素材庫：d911476，新增 codex-authored/lightning 的 Preset 與 layout，與遊戲檔案逐位元一致，無新點陣圖。遊戲 Commit 見本紀錄所在提交；功能可合併，未合併／推送。無本次未完成功能；上述五項既有失敗另案處理。
+
+
 ## Codex｜VFX 舊分頁防覆寫與快取補齊（VFX-STALE-GUARD-20260929）
 
 - Owner：Codex；Done。Claude已合併，預檢乾淨。補前輪Core／backend／Runtime快取，編輯器更新提示、未存內容備份與伺服器條件寫入（Preset／layout／改名）。

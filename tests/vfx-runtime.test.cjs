@@ -1964,3 +1964,24 @@ test('SUPERCONDUCT 回程與改追使用權威起點，不從玩家重發；結�
  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain-end',targets:[],vfx:{},area:{chainId:'return'}});
  assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+
+test('FLYING-THUNDER 固定矩形場域共存、權威壽命無續命緩衝，結束只移除指定雷電',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/beam-flying-thunder-god.json'),'utf8'));
+ const {adapter,log}=makeAdapter([p]);
+ const spec={fxKind:'aura',variant:'flying-thunder',dur:3,hit:false,area:{id:'a',x:40,y:20,w:2000,h:60,a:0},vfx:{field:p.id}};
+ adapter.tryPlay(spec);adapter.update(.1);
+ assert.equal(adapter.stats().fx.activeEffects,1);
+ const t=log.nodes[0].transforms.at(-1);
+ assert.ok(Math.abs(t.scaleY/p.layers[0].scale.y-2000/p.sizing.authored.width)<1e-8);
+ assert.ok(Math.abs(t.scaleX/p.layers[0].scale.x-60/p.sizing.authored.height)<1e-8);
+ adapter.update(.15);adapter.tryPlay({...spec,area:{...spec.area,id:'b',a:Math.PI/3}});
+ adapter.update(2.7);assert.equal(adapter.stats().fx.activeEffects,2);
+ adapter.update(.06);assert.equal(adapter.stats().fx.activeEffects,1,'第一道3秒到期，第二道仍存在');
+ adapter.tryPlay({fxKind:'aura',variant:'flying-thunder-end',area:{id:'b'}});
+ assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.tryPlay({...spec,dur:6,area:{...spec.area,id:'c'}});adapter.update(3.1);
+ assert.equal(adapter.stats().fx.activeEffects,1,'可調持續時間同步到動畫速度');
+ adapter.update(2.91);assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.destroy();
+});

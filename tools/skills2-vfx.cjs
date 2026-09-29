@@ -3,6 +3,7 @@
 const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
 const noteColumn = '特效作用說明';
 const events = {
+  'chainlightning.flyingThunderGod': {roles:['field'],note:'每波逐道生成全場貫穿雷電；每道出生時依自身與隨機敵人決定固定方向，寬度、長度及持續時間由權威事件傳入。觸發持續場域不覆蓋普通雷鏈。'},
   'chainlightning.eternalSuperconductor': {roles:['projectile','hit'],note:'額外維持一道自身與範圍內敵人往返的雷鏈；觸發子彈不覆蓋普通雷鏈，追蹤抵達敵人時播放觸發命中特效，回到自身才疊層；無目標立即終止。'},
   'firepillar.infernoTempest': {roles:['projectile','attack'],note:'每道火龍捲每0.33秒向搜敵範圍內每次重新隨機選取1名敵人平射1顆火球；觸發子彈以36米／秒追蹤敵人，主目標必中，抵達後觸發特效匹配爆炸傷害半徑。'},
   'firepillar.dragonDevour': {roles:['attack'],note:'本體持續場域播放單一火漩渦，本體子彈隨機拋向地面、不搜敵；每顆落地播放一次匹配傷害半徑的觸發特效。'},
