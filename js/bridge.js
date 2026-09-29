@@ -387,7 +387,7 @@ var WorkerBridge = (function () {
       var seedMatch = /[?&]seed=(\d+)(&|$)/.exec((typeof location !== 'undefined' && location.search) || '');
       if (seedMatch) qs.push('seed=' + seedMatch[1]);
       // 獨立雷鏈版本避免與同期NPC的Worker快取更新互相覆蓋。
-      var workerQuery = ['v=' + WORKER_ASSET_VERSION, 'chain=20260929-thunder-pair'].concat(qs);
+      var workerQuery = ['v=' + WORKER_ASSET_VERSION, 'chain=20260929-thunder-single'].concat(qs);
       _worker = new Worker(WORKER_URL + '?' + workerQuery.join('&'));
     } catch (e) {
       console.error('[bridge] 無法建立 Worker（以 file:// 開啟時瀏覽器會封鎖，請用開發伺服器）：', e);

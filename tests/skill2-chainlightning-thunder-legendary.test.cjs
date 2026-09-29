@@ -333,7 +333,8 @@ test('【飛雷神】：三十米路徑固定，每半秒查當下敵人，六�
  const inside=enemy(1e9,-300,320,'inside'),off=enemy(1e9,100,500,'off');es.push(inside,off);
  tick(3.49);assert.equal(calls.length,0);tick(3.5);
  assert.deepEqual(calls.map(x=>x.ent.name),['inside','aim','second']);
- assert.equal(calls[0].atk,1100);assert.equal(calls[0].elem,'lightning');
+ const u=c.sgUlt('chainlightning','flyingThunderGod');
+ assert.equal(calls[0].atk,c.getStats().matk*(u.def.fx.pct+u.def.fx.pctPer*u.lv)/100);assert.equal(calls[0].elem,'lightning');
  es[0].pos.y=500;off.pos.y=200;c.BF_PLAYER.y=1000;
  tick(4);assert.deepEqual(calls.slice(3).map(x=>x.ent.name),['inside','off','second']);
  assert.equal(specs.length,1,'位置固定，無需重新播放');
@@ -341,10 +342,24 @@ test('【飛雷神】：三十米路徑固定，每半秒查當下敵人，六�
  assert.equal(calls.length,18);assert.equal(c.SKILL2_RT.flyThunder.beams.length,0);
  tick(6.5);assert.equal(calls.length,18);
 });
-test('【飛雷神】：不足兩敵或位置重疊不生成，死亡及reset立即終止',()=>{
- const {c,specs,p,es,tick}=flyingSetup();es[0].hp=0;tick(3);assert.equal(specs.length,0);
- es[0].hp=1e9;es[0].pos={...es[1].pos};tick(3.25);assert.equal(specs.length,0);
- es[0].pos.x=100;tick(3.5);assert.equal(specs.length,1);
+test('【飛雷神】：每道重選雙敵、單敵回退玩家，零敵才略過',()=>{
+ const {c,specs,es,tick}=flyingSetup();tick(3);
+ es[0].hp=0;c.BF_PLAYER.x=100;c.BF_PLAYER.y=0;tick(3.25);
+ assert.equal(specs.length,2);assert.equal(specs[1].area.x,200);assert.equal(specs[1].area.y,100);
+ assert.ok(Math.abs(Math.tan(specs[1].area.a)-1)<1e-9);
+ es[1].hp=0;tick(3.5);assert.equal(specs.length,2);
+});
+test('【飛雷神】：單敵正常結算傷害，無座標敵人亦可使用',()=>{
+ for(const spatial of [true,false]) {
+  const {c,specs,calls,es,tick}=flyingSetup();es.splice(1);if(!spatial)delete es[0].pos;
+  tick(3);assert.equal(specs.length,1);assert.ok(Number.isFinite(specs[0].area.a));
+  c.SKILL2_RT.flyThunder.pending=[];tick(3.5);
+  assert.equal(calls.length,1);assert.equal(calls[0].ent,es[0]);
+ }
+});
+test('【飛雷神】：重疊仍生成，死亡及reset立即終止',()=>{
+ const {c,specs,p,es,tick}=flyingSetup();es[0].pos={...es[1].pos};tick(3);
+ assert.equal(specs.length,1);assert.equal(specs[0].area.a,0);
  p.hp=0;tick(3.6);assert.equal(c.SKILL2_RT.flyThunder,null);assert.equal(specs.at(-1).variant,'flying-thunder-end');
  p.hp=1000;tick(4);tick(7);assert.equal(c.SKILL2_RT.flyThunder.beams.length,1);
  c.resetSkill2RT();assert.equal(specs.at(-1).variant,'flying-thunder-end');assert.equal(c.SKILL2_RT.flyThunder,null);

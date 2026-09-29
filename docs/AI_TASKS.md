@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜飛雷神單敵回退（FLYING-THUNDER-SINGLE-20260929）
+
+- Owner：Codex；Done。兩敵優先，剩一敵改玩家與該敵連線，每道生成重新選敵，零敵才略過；座標重疊仍生成，無座標單敵保留傷害。保留使用者傷害 300%／每級 30% 與未提交素材／配置。
+- 修改：js/skills2.js、tools/skills2-vfx.cjs、Skills2 Excel／CSV 三格說明、雷系測試、index.html／bridge／Worker 快取、本紀錄與 VFX_RUNTIME_ADAPTER。使用者已允許 index.html 僅更新 skills2／bridge 兩行，不改 Claude 的 ui.js。唯讀檢查：js/data.js、Equipment_Affix.csv 及現有 VFX 變更。
+- 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs（27/27）；npm run build（399 檔）；node tools/config_tables.cjs --apply（17 字面值、0 語意差異）；git diff --check。Excel 以 COM 寫入／重新開啟，僅 AV151／AW151／AX151 值變更，樣式無變更。
+- 交付：本節隨修正 commit；未合併／推送，可供整合。既有未提交修改保留於工作區。本次未做完整遊戲視覺操作；僅目標選擇調整，視覺資產未修改，無未完成實作。
+
+
 ## Codex｜雷電矩陣循環電柱回收（THUNDER-MATRIX-LIFETIME-20260929）
 
 - Owner Codex；Done。雷幕 attack 每拍建立無人回收的 loop 電柱且拉成整道範圍，造成永久堆疊白光。改依 area.id 管理直立電柱，與地板共用權威移動／續命及清場；FOV 只投影柱腳。
