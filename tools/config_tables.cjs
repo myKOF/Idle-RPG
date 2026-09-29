@@ -354,8 +354,10 @@ function rowGetter(header) {
 const SCHEMAS = {};
 
 /* ---- NPC ← 各地圖 NPC pool ----
-   NPC.csv 只管理 NPC 基本資料；hpMult／atkMult／defMult／aspdMult 等戰鬥倍率
+   NPC.csv 管理 NPC 基本資料與移動／攻擊三項（2026-09-29）：移動速度（米/秒 → runSpeed）、
+   攻擊速度（次/秒 → atkSpeed）、攻擊距離（米 → atkRange）；hpMult／atkMult／defMult 等戰鬥倍率
    仍保留在 js/data.js，不讓「表格沒有的欄位」在套用時被清掉。
+   舊的 aspdMult 已被 atkSpeed 取代（絕對值，不再是倍率）；套用時一併刪除，避免兩套攻速並存。
    外觀欄沿用既有 NPC.csv 語意：舊地圖填 emoji，亡靈山脈等有獨立外觀 key 的
    NPC 填 appearance key；套用時依既有物件是否有 appearance 欄位判斷寫回位置。 */
 const NPC_POOL_DEFS = [
@@ -370,7 +372,7 @@ const NPC_POOL_DEFS = [
 
 SCHEMAS.NPC = {
   name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName),
-  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '屬性', '外觀', '魔法型（1是／0否）', '出現權重'],
+  header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '屬性', '外觀', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '魔法型（1是／0否）', '出現權重'],
   extract(src) {
     const rows = [];
     NPC_POOL_DEFS.forEach(def => {
@@ -378,6 +380,8 @@ SCHEMAS.NPC = {
       pool.forEach((entry, index) => {
         const id = entry.id || (def.zone + '_' + (index + 1));
         rows.push([id, entry.name, def.zone, entry.attr || '', entry.appearance || entry.emoji || '',
+          numStr(entry.runSpeed == null ? '' : entry.runSpeed), numStr(entry.atkSpeed == null ? '' : entry.atkSpeed),
+          numStr(entry.atkRange == null ? '' : entry.atkRange),
           entry.magic ? '1' : '0', numStr(entry.weight == null ? 1 : entry.weight)]);
       });
     });
@@ -419,6 +423,16 @@ SCHEMAS.NPC = {
       }
       o.magic = toBool(get(row, '魔法型（1是／0否）'));
       o.weight = toNum(get(row, '出現權重'));
+      /* 移動／攻擊三項：空白格＝沿用系統預設（欄位不寫入）；填了就必須是正數，
+         填 0 或負數多半是誤植，寧可中止套用也不要讓敵人靜靜變成不動或不攻擊。 */
+      [['移動速度(米/秒)', 'runSpeed'], ['攻擊速度(次/秒)', 'atkSpeed'], ['攻擊距離(米)', 'atkRange']].forEach(function (pair) {
+        const raw = get(row, pair[0]).trim();
+        if (raw === '') { delete o[pair[1]]; return; }
+        const v = toNum(raw);
+        if (!(v > 0)) throw new Error('NPC 第 ' + (index + 2) + ' 列「' + pair[0] + '」必須是大於 0 的數字：' + raw);
+        o[pair[1]] = v;
+      });
+      delete o.aspdMult;
       rowsByZone[zone].push(o);
     });
     return NPC_POOL_DEFS.reduce((out, def) => {

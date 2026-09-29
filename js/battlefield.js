@@ -53,8 +53,13 @@ function bfPlayerSpeedFactor(pEnt) {
   var f = Number(skill2PlayerMoveFactor(pEnt));
   return (isFinite(f) && f > 0) ? f : 1;
 }
-/* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。 */
+/* 敵人跑速是獨立的值，不由我方換算——兩邊要能分開調。
+   這是「沒有個別設定」時的預設；NPC 表有填移動速度的敵人用自己的 ent.runSpeed（bfEnemyRunSpeed）。 */
 function bfEnemySpeed() { return bfNum('BF_ENEMY_SPEED', 210); }
+function bfEnemyRunSpeed(ent) {
+  var v = Number(ent && ent.runSpeed);
+  return v > 0 ? v : bfEnemySpeed();
+}
 /* 單一敵人的跑速倍率：來源是新版技能的場域型緩速（泥沼術×冰系寒霜，
    收斂在 js/skills2.js 的 skill2SlowMoveFactor）。
    本檔不認識任何技能，只認得「有沒有人提供倍率」——沒載入就恆為 1。 */
@@ -66,7 +71,10 @@ function bfEnemySpeedFactor(ent) {
   return (isFinite(f) && f > 0) ? Math.min(1, f) : 1;
 }
 function bfMeleeRange() { return bfNum('BF_MELEE_RANGE', 50); }       // 近戰攻擊距離
-function bfRangedRange() { return bfNum('BF_RANGED_RANGE', 320); }    // 魔法系敵人的攻擊距離
+function bfRangedRange() { return bfNum('BF_RANGED_RANGE', 320); }    // 沒有 NPC 表攻擊距離時，魔法系敵人的預設攻擊距離
+/* 遠程敵人停在射程的這個比例處開火（近戰的 46/50 也是同一個比例）。
+   不貼滿射程邊界，是為了同伴互相推擠時不會一直跨在射程線上來回補步。 */
+function bfRangedStopRatio() { return bfNum('BF_RANGED_STOP_RATIO', 0.92); }
 function bfBodyRadius() { return bfNum('BF_BODY_RADIUS', 20); }
 function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
 
@@ -98,18 +106,43 @@ function bfEntityDistance(ent) {
   return Math.max(0, Math.sqrt(dx * dx + dy * dy) - bfEntityRadius(ent));
 }
 
-/* 停止距離：走到這裡就不再前進（接觸距離 + 自己的體型）。 */
-function bfStopDistance(ent) {
+/* 敵人的攻擊距離（座標單位、算到身體邊緣）。
+   NPC 表有填攻擊距離的敵人用自己的 ent.atkRange；沒有的（高塔 BOSS、測試替身）
+   維持改版前的規則：魔法系是遠程、其餘貼到近戰距離。 */
+function bfEnemyAttackRange(ent) {
+  var v = Number(ent && ent.atkRange);
+  if (v > 0) return v;
+  return (ent && ent.magic) ? bfRangedRange() : bfMeleeRange();
+}
+/* 遠程敵人＝射程超過近戰距離兩倍。攻擊畫面（投射物 vs 近戰撲擊）與停步位置都看這個，
+   不看 magic——魔法型只代表傷害類型，跟射程是兩件事。 */
+function bfEnemyIsRanged(ent) {
+  return bfEnemyAttackRange(ent) > bfMeleeRange() * 2;
+}
+
+/* 身體停步距離（接觸距離 + 自己的體型）。貼身類敵人的停步點，
+   也是「拉近」類技能不能把敵人推進的最小距離。 */
+function bfBodyStopDistance(ent) {
   return bfContactDist() + bfEntityRadius(ent);
 }
 
-/* 打不打得到。魔法系敵人是遠程，其餘要貼到近戰距離。
+/* 停止距離：走到這裡就不再前進。
+   NPC 表有填攻擊距離的敵人：遠程停在射程內側（bfRangedStopRatio），站樁開火；
+   近戰仍貼到接觸距離（射程比接觸距離短的，停在射程內側）。 */
+function bfStopDistance(ent) {
+  var range = Number(ent && ent.atkRange);
+  if (!(range > 0)) return bfBodyStopDistance(ent);
+  var inside = range * bfRangedStopRatio();
+  var edge = bfEnemyIsRanged(ent) ? inside : Math.min(bfContactDist(), inside);
+  return edge + bfEntityRadius(ent);
+}
+
+/* 打不打得到。打得到的距離由 bfEnemyAttackRange 決定。
    ⚠️ 這是改造前完全不存在的判定——舊版任何位置都打得到。 */
 function bfInAttackRange(ent) {
   if (!ent) return false;
   if (!bfPos(ent)) return true;                 // 沒有座標（高塔）＝沿用舊行為，不擋
-  var range = (ent.magic ? bfRangedRange() : bfMeleeRange());
-  return bfEntityDistance(ent) <= range;
+  return bfEntityDistance(ent) <= bfEnemyAttackRange(ent);
 }
 
 /* 我方能不能打到這個目標（普攻是近戰）。 */
@@ -188,7 +221,6 @@ function bfFreeCellCount(placed) {
 function bfTickApproach(enemies, dt) {
   var live = bfLiveList(enemies);
   var i, j;
-  var speed = bfEnemySpeed();
   var home = bfPlayerPos();
   var justInRange = [];
   for (i = 0; i < live.length; i++) {
@@ -201,7 +233,7 @@ function bfTickApproach(enemies, dt) {
     var d = Math.sqrt(dx0 * dx0 + dy0 * dy0);
     var stop = bfStopDistance(ent);
     if (d > stop && d > 0.0001) {
-      var step = Math.min(d - stop, speed * bfEnemySpeedFactor(ent) * dt);
+      var step = Math.min(d - stop, bfEnemyRunSpeed(ent) * bfEnemySpeedFactor(ent) * dt);
       p.x -= (dx0 / d) * step;
       p.y -= (dy0 / d) * step;
     }
@@ -588,7 +620,7 @@ function bfNearestOthers(from, enemies, count, maxGapPx) {
 /* ---- 拉近（傳奇特效【聚敵旋渦】）----
    把離我方 fromPx 以內、但比 toPx 還遠的敵人，沿原本的方位角拉到 toPx 的圓周上。
    座標改寫一律走本檔（幾何唯一權威）：呼叫端只給「多遠以內的拉、拉到多近」。
-   不會把敵人拉進停止距離內（否則會直接疊在玩家身上，逼近推擠那一段還要再推開一次）；
+   不會把敵人拉進身體停步距離內（否則會直接疊在玩家身上，逼近推擠那一段還要再推開一次）；
    沒有座標的實體（高塔 BOSS）一律略過。回傳實際被拉動的實體陣列。 */
 function bfPullEnemies(enemies, fromPx, toPx) {
   var moved = [];
@@ -602,7 +634,9 @@ function bfPullEnemies(enemies, fromPx, toPx) {
     var dx = p.x - c.x, dy = p.y - c.y;
     var d = Math.sqrt(dx * dx + dy * dy);
     if (!(d > 0) || d > fromPx) continue;
-    var want = Math.max(bfStopDistance(ent), Math.max(0, Number(toPx) || 0));
+    /* 用身體停步距離而不是射程停步點：遠程敵人站在射程邊緣，
+       拉近技能要能把牠拉到玩家身邊，不能被牠自己的站樁位置擋住。 */
+    var want = Math.max(bfBodyStopDistance(ent), Math.max(0, Number(toPx) || 0));
     if (d <= want) continue;
     p.x = c.x + dx / d * want;
     p.y = c.y + dy / d * want;

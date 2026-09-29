@@ -219,6 +219,24 @@ function fieldStageQuota() {
     return FIELD.stageQuota;
 }
 
+/* NPC 表的移動／攻擊三項 → 這一隻敵人的戰鬥參數（生成時算一次，存在敵人身上）。
+   - aspd：NPC 表的攻擊速度（次/秒，絕對值）× 階級係數（base.aspd：普通/菁英/BOSS，
+     FIELD_MONSTER_GROWTH／FIELD_ELITE／FIELD_BOSS_ASPD）× 場景攻速倍率。
+     表格留白＝以 1 次/秒計，與改版前「基礎攻速 1」相同。
+   - runSpeed／atkRange：NPC 表以「米」填寫，這裡換成戰場座標單位（js/battlefield.js
+     bfMeterPx：10 單位 = 1 米）。留白＝0＝戰場使用預設值（BF_ENEMY_SPEED／近戰或魔法射程）。 */
+function npcCombatProfile(mtype, base, zn) {
+    var tableAspd = Number(mtype.atkSpeed) > 0 ? Number(mtype.atkSpeed) : 1;
+    var tierAspd = Number(base.aspd) > 0 ? Number(base.aspd) : 1;
+    var zoneAspd = Number(zn && zn.aspdMult) > 0 ? Number(zn.aspdMult) : 1;
+    var px = (typeof bfMeterPx === 'function') ? bfMeterPx : function (m) { return m * 10; };
+    return {
+        aspd: tableAspd * tierAspd * zoneAspd,
+        runSpeed: Number(mtype.runSpeed) > 0 ? px(mtype.runSpeed) : 0,
+        atkRange: Number(mtype.atkRange) > 0 ? px(mtype.atkRange) : 0
+    };
+}
+
 /* append=true：波次串流補怪——保留場上既有敵人與站位，只把新的一波填進空格。
    不帶參數＝原本的「整批換波」行為（死亡重來、測試直接呼叫）。
    回傳這一波實際站上棋盤的敵人（沒有空位時回傳空陣列）。 */
@@ -259,8 +277,8 @@ function spawnFieldMonster(append) {
         var hpMult = Number(mtype.hpMult) > 0 ? Number(mtype.hpMult) : 1;
         var atkMult = Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1;
         var defMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
-        var npcAspdMult = Number(mtype.aspdMult) > 0 ? Number(mtype.aspdMult) : 1;
-        var mAspd = base.aspd * zn.aspdMult * npcAspdMult; // 攻速 × 場景攻速倍率 × NPC 倍率
+        var profile = npcCombatProfile(mtype, base, zn);
+        var mAspd = profile.aspd; // NPC 表攻速 × 階級係數 × 場景攻速倍率
         enemies.push({
             // 名稱一律用 NPC 原名，不加「菁英・」前綴；階級改由圖示、名稱顏色與血條樣式表示。
             name: mtype.name, emoji: mtype.emoji, npcId: mtype.id || null, appearance: mtype.appearance || mtype.emoji || '',
@@ -271,6 +289,7 @@ function spawnFieldMonster(append) {
             magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
             attr: mtype.attr || null,      // 屬性標籤（六大屬性；對X屬性傷害加成與 tips 顯示）
             aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
+            runSpeed: profile.runSpeed, atkRange: profile.atkRange, // 座標單位；0＝用戰場預設 → js/battlefield.js
             elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
             atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 控場遞減計時起點 → formula.js §3
@@ -324,7 +343,8 @@ function gmArenaSpawn(count, kind, hpMult) {
         var npcHpMult = Number(mtype.hpMult) > 0 ? Number(mtype.hpMult) : 1;
         var npcAtkMult = Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1;
         var npcDefMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
-        var mAspd = base.aspd * zn.aspdMult * (Number(mtype.aspdMult) > 0 ? Number(mtype.aspdMult) : 1);
+        var profile = npcCombatProfile(mtype, base, zn);
+        var mAspd = profile.aspd;
         var ang = Math.PI * 2 * i / count;
         enemies.push({
             name: mtype.name, emoji: mtype.emoji, npcId: mtype.id || null, appearance: mtype.appearance || mtype.emoji || '',
@@ -334,6 +354,7 @@ function gmArenaSpawn(count, kind, hpMult) {
             def: base.def * zn.defMult * npcDefMult, mdef: base.mdef * zn.defMult * npcDefMult,
             magic: !!mtype.magic, attr: mtype.attr || null,
             aspd: mAspd, dodge: base.dodge, hit: base.hit,
+            runSpeed: profile.runSpeed, atkRange: profile.atkRange,
             elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult,
             atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT,
@@ -1187,8 +1208,17 @@ var THORN_FLOAT_MAP = { 'pv-float': 'mv-float', 'tp-float': 'tb-float' };
 var ENEMY_PROJECTILE_HIT_DELAY_SEC = 0.26;
 var DEFERRED_ENEMY_RETALIATIONS = [];
 
+/* 這一隻敵人的攻擊是不是遠程（投射物飛行、反傷延後結算）。
+   看射程不看 magic：魔法型只代表傷害類型，射程 6 米的魔法怪照樣是近身出手。
+   → js/battlefield.js bfEnemyIsRanged（未載入時退回舊規則：魔法系＝遠程）。 */
+function enemyAttackIsRanged(ent) {
+    if (!ent) return false;
+    if (typeof bfEnemyIsRanged === 'function') return bfEnemyIsRanged(ent);
+    return !!ent.magic;
+}
+
 function enemyAttackProjectileTravelMs(ent) {
-    return ent && ent.magic ? Math.round(ENEMY_PROJECTILE_HIT_DELAY_SEC * 1000) : 0;
+    return enemyAttackIsRanged(ent) ? Math.round(ENEMY_PROJECTILE_HIT_DELAY_SEC * 1000) : 0;
 }
 
 function enemyAttackRetaliationDelaySec(ent) {
@@ -1300,20 +1330,21 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
        travelMs 與 DEFERRED_ENEMY_RETALIATIONS 共用同一個 260ms 時序。 */
     if (typeof playCombatVfx === 'function') {
         var enemyTravelMs = enemyAttackProjectileTravelMs(mEnt);
+        var enemyRanged = enemyTravelMs > 0;
         playCombatVfx({
             fxKind: 'enemy-attack',
-            variant: mEnt && mEnt.magic ? 'enemy-projectile' : 'enemy-melee',
+            variant: enemyRanged ? 'enemy-projectile' : 'enemy-melee',
             elem: enemyVfxElem, cat: 'enemy',
-            glyph: mEnt && mEnt.magic ? '✦' : '💢',
+            glyph: enemyRanged ? '✦' : '💢',
             color: enemyVfxElem ? ELEM_INFO[enemyVfxElem].color
-                : (mEnt && mEnt.magic ? '#c084fc' : '#ff6b6b'),
+                : (enemyRanged ? '#c084fc' : '#ff6b6b'),
             sourceId: enemyAttackSourceId(mEnt, floatSel),
             targets: [playerFloatSel],
             travelMs: enemyTravelMs > 0 ? [enemyTravelMs] : null,
             dur: enemyTravelMs > 0 ? enemyTravelMs / 1000 : 0.35,
             count: 1,
             hit: !res.invuln && !res.miss,
-            vfx: vfxEnemyRoles(!!(mEnt && mEnt.magic), enemyVfxElem)
+            vfx: vfxEnemyRoles(enemyRanged, enemyVfxElem)
         });
     }
     var hpDamage = 0;

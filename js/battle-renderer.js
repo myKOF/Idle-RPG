@@ -441,6 +441,11 @@ var BattleRenderer = (function () {
     if (targetId === 'pv-float') return 0;
     var ent = S.entities[targetId];
     if (!ent) return 0;
+    /* 停步點以模擬層的規則為準（NPC 表攻擊距離：遠程站在射程內側），不自己再算一套。 */
+    if (typeof bfStopDistance === 'function' && ent.data) {
+      var simStop = bfStopDistance(ent.data);
+      if (simStop > 0) return simStop;
+    }
     var contact = (typeof BF_CONTACT_DIST === 'number' && BF_CONTACT_DIST > 0) ? BF_CONTACT_DIST : 46;
     var radius = ent.isBoss
       ? ((typeof BF_BOSS_RADIUS === 'number' && BF_BOSS_RADIUS > 0) ? BF_BOSS_RADIUS : 52)

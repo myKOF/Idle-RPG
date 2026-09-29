@@ -8891,6 +8891,16 @@ function showTowerTooltip(flStr, anchorEl) {
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
+/* 敵人提示的「攻擊距離／移動速度」兩行（NPC 表欄位；座標單位 ÷ 10＝米）。
+   沒有這兩項的敵人（高塔 BOSS、表格留白）不顯示，避免出現一個不是實際生效的數字。 */
+function npcRangeMoveTipLines(m) {
+  var perM = (typeof BF_SYSTEM_UNITS_PER_METER === 'number' && BF_SYSTEM_UNITS_PER_METER > 0) ? BF_SYSTEM_UNITS_PER_METER : 10;
+  var out = '';
+  if (m && m.atkRange > 0) out += '🎯 攻擊距離：' + fmt1(m.atkRange / perM) + ' 米<br>';
+  if (m && m.runSpeed > 0) out += '👟 移動速度：' + fmt1(m.runSpeed / perM) + ' 米/秒<br>';
+  return out;
+}
+
 function showEnemyTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip || !anchorEl) return;
@@ -8974,6 +8984,7 @@ function showEnemyTooltip(anchorEl) {
     '<div class="skt-desc" style="text-align:left;">' +
     (m.magic ? '🔮 魔法攻擊力：' : '⚔️ 物理攻擊力：') + fmt(m.atk) + '<br>' +
     '⚡ 攻擊速度：' + fmt1(m.aspd) + ' 次/秒<br>' +
+    npcRangeMoveTipLines(m) +
     '🛡️ 物理防禦：' + fmt(m.def) + '<br>' +
     '🔮 魔法防禦：' + fmt(m.mdef || m.def * 0.75) + '<br>' +
     '❤️ 最大生命：' + fmt(m.maxHp) + '<br>' +

@@ -352,3 +352,74 @@ test('施法期間我方不移動', () => {
   assert.equal(c.bfTickPlayer([enemy], 1, null, player), true);
   assert.equal(Math.round(c.bfPlayerPos().x), c.BF_PLAYER_SPEED);
 });
+
+/* ---- NPC 表的攻擊距離／移動速度（2026-09-29）----
+   敵人身上的 atkRange／runSpeed（座標單位）優先於全場預設；沒有的維持舊規則。 */
+
+test('敵人有自己的攻擊距離時，打不打得到以牠自己的射程為準（不再看 magic）', () => {
+  const c = loadBattlefield();
+  const R = c.bfMeterPx(24);
+  const shooter = (edge) => at(edge + c.BF_BODY_RADIUS, 0, { atkRange: R });
+  assert.equal(c.bfInAttackRange(shooter(R - 5)), true, '射程內要打得到');
+  assert.equal(c.bfInAttackRange(shooter(R + 5)), false, '射程外要打不到');
+  // 魔法型但射程只有 6 米：不能因為 magic 就變成遠程
+  const melee = at(c.bfMeterPx(20) + c.BF_BODY_RADIUS, 0, { magic: true, atkRange: c.bfMeterPx(6) });
+  assert.equal(c.bfInAttackRange(melee), false);
+  // 物理型但射程 24 米：照樣打得到
+  assert.equal(c.bfInAttackRange(at(c.bfMeterPx(20) + c.BF_BODY_RADIUS, 0, { magic: false, atkRange: R })), true);
+});
+
+test('沒有 atkRange 的敵人沿用舊規則（高塔 BOSS、測試替身不受影響）', () => {
+  const c = loadBattlefield();
+  assert.equal(c.bfEnemyAttackRange({ magic: true }), c.BF_RANGED_RANGE);
+  assert.equal(c.bfEnemyAttackRange({ magic: false }), c.BF_MELEE_RANGE);
+  assert.equal(c.bfEnemyIsRanged({ magic: true }), true);
+  assert.equal(c.bfEnemyIsRanged({ magic: false }), false);
+  assert.equal(c.bfStopDistance(at(100, 0, { magic: true })), c.BF_CONTACT_DIST + c.BF_BODY_RADIUS,
+    '沒有表格射程的遠程敵人仍走到接觸距離（改版前行為）');
+});
+
+test('遠程／近戰以射程判定：6 米是近戰、24 米是遠程，與魔法型無關', () => {
+  const c = loadBattlefield();
+  assert.equal(c.bfEnemyIsRanged({ atkRange: c.bfMeterPx(6), magic: true }), false);
+  assert.equal(c.bfEnemyIsRanged({ atkRange: c.bfMeterPx(24), magic: false }), true);
+});
+
+test('遠程敵人走到射程內側就停下來站樁；近戰敵人仍貼到接觸距離', () => {
+  const c = loadBattlefield();
+  const R = c.bfMeterPx(24);
+  const shooter = at(c.BF_SPAWN_DIST, 0, { atkRange: R, runSpeed: c.bfMeterPx(12) });
+  const brawler = at(0, c.BF_SPAWN_DIST, { atkRange: c.bfMeterPx(6), runSpeed: c.bfMeterPx(12) });
+  for (let i = 0; i < 400; i++) c.bfTickApproach([shooter, brawler], 0.1);
+  const dShooter = c.bfEntityDistance(shooter);
+  const dBrawler = c.bfEntityDistance(brawler);
+  assert.ok(dShooter > c.BF_MELEE_RANGE * 2, '遠程敵人不該貼上來，實際邊緣距離 ' + dShooter.toFixed(1));
+  assert.ok(dShooter <= R, '要停在自己的射程內才打得到，實際 ' + dShooter.toFixed(1));
+  assert.equal(c.bfInAttackRange(shooter), true);
+  assert.ok(Math.abs(dBrawler - c.BF_CONTACT_DIST) < 1, '近戰敵人貼到接觸距離，實際 ' + dBrawler.toFixed(1));
+  // 站定後不再往前
+  const before = shooter.pos.x;
+  c.bfTickApproach([shooter], 0.1);
+  assert.equal(shooter.pos.x, before);
+});
+
+test('敵人的移動速度各自獨立：有 runSpeed 用自己的，沒有才用 BF_ENEMY_SPEED', () => {
+  const c = loadBattlefield();
+  const slow = at(400, 0, { runSpeed: c.bfMeterPx(6) });
+  const fast = at(0, 400, { runSpeed: c.bfMeterPx(24) });
+  const plain = at(-400, 0);
+  c.bfTickApproach([slow, fast, plain], 0.5);
+  assert.equal(Math.round(400 - slow.pos.x), Math.round(c.bfMeterPx(6) * 0.5));
+  assert.equal(Math.round(400 - fast.pos.y), Math.round(c.bfMeterPx(24) * 0.5));
+  assert.equal(Math.round(400 + plain.pos.x), Math.round(c.BF_ENEMY_SPEED * 0.5));
+});
+
+test('拉近技能能把站在射程邊緣的遠程敵人拉到玩家身邊', () => {
+  const c = loadBattlefield();
+  const shooter = at(c.bfMeterPx(24) * c.bfRangedStopRatio() + c.BF_BODY_RADIUS, 0, { atkRange: c.bfMeterPx(24) });
+  const toPx = c.bfMeterPx(8);
+  const moved = c.bfPullEnemies([shooter], c.bfMeterPx(30), toPx);
+  assert.equal(moved.length, 1);
+  assert.equal(moved[0], shooter);
+  assert.ok(Math.abs(shooter.pos.x - toPx) < 0.001, '應被拉到指定距離，實際 ' + shooter.pos.x.toFixed(1));
+});
