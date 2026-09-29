@@ -516,6 +516,9 @@
     var l = layerById(preset, oldId);
     if (!l) return false;
     l.id = newId;
+    if (preset.deformation) preset.deformation.layers = preset.deformation.layers.map(function(id) {
+      return id === oldId ? newId : id;
+    });
     preset.layers.forEach(function (other) {
       if (other.parent === oldId) other.parent = newId;
       if (other.subEmitter && other.subEmitter.layer === oldId) other.subEmitter.layer = newId;

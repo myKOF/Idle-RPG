@@ -54,7 +54,6 @@ var VFXRuntime = (function () {
     return { scaleX: w / aw, scaleY: h / ah };
   }
 
-  var WIND_MOTION_CORRECTION_SEC = 0.12; // 位置與航向修正共用的收斂時間
   var NOMINAL_RADIUS = 100;     // 圓形場域／範圍爆發
   var NOMINAL_RECT_W = 200;     // 矩形場域
   var NOMINAL_RECT_H = 100;
@@ -66,7 +65,6 @@ var VFXRuntime = (function () {
      兩邊畫的是同一個東西，數字分家就會出現「切 ?vfx=legacy 前後大小不一樣」。 */
   var ORBIT_MAX_SEC = 12;       // 顯示上限（秒）；【再生】可延長，但不無限延長
   var ORBIT_FLAT = 0.62;        // 俯視壓扁，與棋盤的透視一致（有給 groundScale 時改用它，見 create）
-  var ORBIT_LIFT = 12;          // 圓心略高於腳底，對齊角色貼圖的視覺中心
   var STRONG_HIT_SCALE = 1.6;   // 範圍型命中的受擊爆點放大倍率
 
   /* 場域事件是每一拍送一次的：這一拍之後多久沒有續命就收掉。
@@ -75,7 +73,6 @@ var VFXRuntime = (function () {
   var GROUND_MIN_KEEP_SEC = 0.35;
   /* 狀態光環的快照頻率是 5Hz，同樣要容忍一次遺失。 */
   var AURA_KEEP_SEC = 0.6;
-  var AURA_SCALE_TAU_SEC = 0.15;   // 狀態光環的半徑補間時間常數（與領域升級、成長同步但不跳格）
 
   /* ---- 移動場域的畫面位置／尺寸：推算自走 ＋ 連續修正（AI_RULES 8.3.1）----
      一則場域事件＝模擬層的一個節拍快照，但事件的到達節奏本身不平均：Worker 是
@@ -96,14 +93,13 @@ var VFXRuntime = (function () {
      時間常數與舊畫法（battle-renderer 的 FIELD_VFX_FOLLOW_TAU_SEC）取同一個值：
      兩邊畫的是同一件事，數字分家就會出現「切 ?vfx=legacy 前後手感不一樣」。
      判定位置永遠是模擬層的 area.x/y，這裡只補畫面，不改命中。 */
-  var GROUND_FOLLOW_TAU_SEC = 0.14;
+  // 平滑時間、修正速度等視覺值來自 Core.PLAYBACK_FIELDS 與 preset.playback。
   /* 殘差上限：超過一個名目場域半徑就不吸收，直接就位。 */
   var GROUND_MAX_RESIDUAL_PX = NOMINAL_RADIUS;
   /* 修正速度的上限＝行進速度的一部分。事件描述的模擬時刻與它到達的時刻對不齊，
      每則事件因此都會留下一點殘差；修正得比行進本身還快，畫面就會忽快忽慢——
      一樣是不平滑。壓在行進速度之下，殘差會收斂成一個固定的落後量（看不出來），
      修正過程則完全藏在行進裡。 */
-  var GROUND_CORRECT_MAX_RATIO = 0.3;
 
   /* 逐幀朝目標值收斂的一階低通：係數只跟 dt 有關，因此掉幀時不會走過頭。 */
   function approach(cur, target, dt, tau) {
@@ -127,7 +123,9 @@ var VFXRuntime = (function () {
      前進」，比硬折角更糟；夾到上限之後仍然是一道連續的弧。 */
   var CURVE_ENTRY_MAX_RAD = Math.PI * 2 / 3;   // 進場航向與弦的最大夾角
   var CURVE_HANDLE_RATIO = 0.55;               // 控制點離起點多遠（弦長的比例）
-  function curveControl(from, to, enterAngle) {
+  function curveControl(from, to, enterAngle, tuning) {
+    var maxAngle = tuning ? tuning.curveAngle * Math.PI / 180 : CURVE_ENTRY_MAX_RAD;
+    var handle = tuning ? tuning.curveHandle : CURVE_HANDLE_RATIO;
     if (!isFinite(enterAngle)) return null;
     var dx = to.x - from.x, dy = to.y - from.y;
     var chord = Math.sqrt(dx * dx + dy * dy);
@@ -135,10 +133,10 @@ var VFXRuntime = (function () {
     var chordAng = Math.atan2(dy, dx);
     var diff = Math.atan2(Math.sin(enterAngle - chordAng), Math.cos(enterAngle - chordAng));
     if (Math.abs(diff) < 1e-3) return null;    // 本來就對著目標＝直線，不必彎
-    var a = chordAng + Math.max(-CURVE_ENTRY_MAX_RAD, Math.min(CURVE_ENTRY_MAX_RAD, diff));
+    var a = chordAng + Math.max(-maxAngle, Math.min(maxAngle, diff));
     return {
-      x: from.x + Math.cos(a) * chord * CURVE_HANDLE_RATIO,
-      y: from.y + Math.sin(a) * chord * CURVE_HANDLE_RATIO
+      x: from.x + Math.cos(a) * chord * handle,
+      y: from.y + Math.sin(a) * chord * handle
     };
   }
   /* 二次貝茲取點與切線；ctrl 為 null 時退化成直線（與加入轉彎之前完全相同）。 */
@@ -157,7 +155,6 @@ var VFXRuntime = (function () {
       2 * u * (ctrl.x - from.x) + 2 * k * (to.x - ctrl.x));
   }
   /* 機身朝向追上實際航向的時間常數：轉彎時刀鋒要跟著彎，但不能一幀轉到底。 */
-  var PROJECTILE_FACING_TAU_SEC = 0.05;
   /* 上一段飛行抵達時的航向保留多久（連鎖的下一段要接得上）。 */
   var ARRIVAL_KEEP_SEC = 1.2;
 
@@ -218,9 +215,9 @@ var VFXRuntime = (function () {
   }
 
   /* 範圍型命中的爆點放大：一顆隕石的落點不該與一刀砍中同樣大小。 */
-  function hitScaleOf(spec) {
+  function hitScaleOf(spec, scale) {
     if (Number(spec.sizeMult) > 0) return Number(spec.sizeMult);
-    return (spec.fxKind === 'rain' || spec.fxKind === 'burst') ? STRONG_HIT_SCALE : 1;
+    return (spec.fxKind === 'rain' || spec.fxKind === 'burst') ? (scale === undefined ? STRONG_HIT_SCALE : scale) : 1;
   }
 
   function num(v, fallback) {
@@ -368,24 +365,27 @@ var VFXRuntime = (function () {
     var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
 
     var presetDefinitions = Object.create(null);
+    function tuning(id, key) { return Core.playbackValue(presetDefinitions[id], key); }
+    function curveTuning(id) { return {curveAngle:tuning(id,'curveAngle'),curveHandle:tuning(id,'curveHandle')}; }
+    function fraction(age, duration) { return duration > 0 ? Math.max(0,Math.min(1,age/duration)) : 1; }
     function isRockOrbitPreset(id) {
       return id === 'aura-earth-reversal' || /^aura-rockarmor-stone(?:-08|-09|-10)?$/.test(id);
     }
     function registerPresets(list) {
       (list || []).forEach(function(p) { if(p && p.id) presetDefinitions[p.id]=p; });
       list = (list || []).map(function(p) {
-        // 天地逆返僅換符文顏色，幾何永遠取玩家編輯的岩甲術。
+        // 預設繼承岩甲；作者可關閉繼承或指定符文／光暈配色。
         var rock = presetDefinitions['aura-rockarmor-stone'];
-        if(p && p.id==='aura-earth-reversal' && rock){
-          var blue=JSON.parse(JSON.stringify(rock));blue.id=p.id;
+        if(p && p.id==='aura-earth-reversal' && rock && tuning(p.id,'inheritGeometry')){
+          var blue=JSON.parse(JSON.stringify(rock));blue.id=p.id;blue.playback=p.playback;
           blue.layers.forEach(function(l){
-            if(/^stone-\d+-rune$/.test(l.id))l.tint='#a2ddff';
-            if(/^stone-\d+-glow$/.test(l.id))l.tint='#3c9cff';
+            if(/^stone-\d+-rune$/.test(l.id))l.tint=tuning(p.id,'runeTint');
+            if(/^stone-\d+-glow$/.test(l.id))l.tint=tuning(p.id,'glowTint');
           });
           return blue;
         }
         var source = presetDefinitions['slash-wind-crescent'];
-        if(!p || p.id!=='burst-vacuum-shockwave' || !source) return p;
+        if(!p || p.id!=='burst-vacuum-shockwave' || !source || !tuning(p.id,'inheritGeometry')) return p;
         var derived=JSON.parse(JSON.stringify(p));
         derived.sizing=JSON.parse(JSON.stringify(source.sizing));
         derived.layers.forEach(function(l) {
@@ -403,7 +403,7 @@ var VFXRuntime = (function () {
         planePresets[p.id] = p.layers.some(function (l) { return !!l.projection; });
         var planeLayer = p.layers.find(function (l) { return !!l.projection; });
         planeAngles[p.id] = planeLayer ? num(planeLayer.projection.rotation, 0) : 0;
-        if (planePresets[p.id] && isNum(o.groundScale) && o.groundScale > 0 && o.groundScale <= 1) {
+        if (planePresets[p.id] && tuning(p.id,'sceneProjection') && isNum(o.groundScale) && o.groundScale > 0 && o.groundScale <= 1) {
           p = JSON.parse(JSON.stringify(p));
           p.layers.forEach(function (l) { if (l.projection) l.projection.y = groundScale; });
         }
@@ -460,7 +460,7 @@ var VFXRuntime = (function () {
             part.id = p.id + '-column-' + column;
             part.layers = part.layers.filter(function (l) { return l.id.indexOf(prefix) === 0; });
             var columnWidth = p.sizing.authored.width / 3;
-            part.layers.forEach(function (l) { l.position.x -= (column - 1) * columnWidth * .8; });
+            part.layers.forEach(function (l) { l.position.x -= (column - 1) * columnWidth * tuning(p.id,'wallSourceSpacing'); });
             part.sizing = { shape: 'custom', widthM: 6, heightM: 12, authored: { width: columnWidth, height: p.sizing.authored.height, radius: columnWidth / 2 } };
             registerPresets([part]);
           }
@@ -507,7 +507,7 @@ var VFXRuntime = (function () {
       return Object.assign({}, params, { projectionRotation: params.rotation, rotation: 0 });
     }
     function play(rt, presetId, params, mult) {
-      if (isRockOrbitPreset(presetId) && has(presetId + '-front')) {
+      if (isRockOrbitPreset(presetId) && tuning(presetId,'splitRockDepth') && has(presetId + '-front')) {
         // 前後石碑各自有透明度曲線；兩份必須跨在角色的畫面 Y 兩側，
         // 否則共用同一個 sortY 時會依加入順序一起蓋到角色上。
         var back = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
@@ -654,7 +654,7 @@ var VFXRuntime = (function () {
             var origin = { x: shape.position.x, y: shape.position.y };
             var dimensions = { scaleX: shape.scaleX, scaleY: shape.scaleY };
             var ref = play(rtAir, presetId, Object.assign({}, shape, {
-              scaleX: 0, timeScale: presetDurations[presetId] / (travel + 0.08)
+              scaleX: 0, timeScale: presetDurations[presetId] / (travel + tuning(presetId,'projectileTail'))
             }));
             if (ref) {
               projectiles.push({ref:ref,from:origin,to:{x:origin.x+Math.cos(angle)*len,y:origin.y+Math.sin(angle)*len},
@@ -688,7 +688,7 @@ var VFXRuntime = (function () {
         var flight = !!spec.projectile && len > 0;
         var travel = Math.max(0.05, len / 240);
         var ref = play(flight ? rtAir : rt, presetId, Object.assign({position:origin,rotation:facing,
-          timeScale:flight ? presetDurations[presetId] / (travel + 0.08) : 1}, dimensions));
+          timeScale:flight ? presetDurations[presetId] / (travel + tuning(presetId,'projectileTail')) : 1}, dimensions));
         if (!ref) continue;
         any = true;
         if (flight) projectiles.push({ref:ref,from:{x:origin.x,y:origin.y},
@@ -720,7 +720,8 @@ var VFXRuntime = (function () {
       var travel = trackedBeamWidths[presetId] ? travelSecAt(spec, ids.length >= 2 ? 1 : 0) : 0;
       // 有權威飛行時間時，保留長電弧與 Preset 原厚度，本體由 A 平移到 B。
       // 舊事件沒有 travelMs 才維持全長連線，避免推測另一個命中時刻。
-      var authoredLength = num(spec.lineLength, 0);
+      var authoredLength = tuning(presetId,'chainLengthM') > 0
+        ? tuning(presetId,'chainLengthM') * (typeof bfMeterPx==='function'?bfMeterPx(1):10) : num(spec.lineLength, 0);
       var body = travel > 0 ? (authoredLength > 0 ? authoredLength : 180) * dist / Math.max(1,Math.hypot(dx,dy/groundScale)) : dist;
       var width = trackedBeamWidths[presetId] || NOMINAL_BEAM;
       var chaseSpeed=spec.area && num(spec.area.homingSpeed,0);
@@ -776,12 +777,12 @@ var VFXRuntime = (function () {
            換到別的版面時高度要跟著整體縮——柱子縮小了、出生點卻還在 500px 之外，
            會變成「先看到一段空白才落下來」。 */
         var landing = spec.area ? areaCentre(spec.area) : ctx.posOf(toId);
-        from = { x: landing.x, y: landing.y - 500 * profile.skyScale };
+        from = { x: landing.x, y: landing.y - tuning(presetId,'fallHeight') * profile.skyScale };
         if (presetId === 'proj-meteor-inferno' || presetId === 'proj-thunderfall-sky') {
           // 正規化後「未指定角度」是 null，Number(null) 會變成 0，不能用 num。
-          var fallAngle = typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle : Math.PI / 3;
-          from = { x: landing.x - Math.cos(fallAngle) * 500 * profile.skyScale,
-            y: landing.y - Math.sin(fallAngle) * 500 * profile.skyScale };
+          var fallAngle = typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle : tuning(presetId,'fallAngle') * Math.PI / 180;
+          from = { x: landing.x - Math.cos(fallAngle) * tuning(presetId,'fallHeight') * profile.skyScale,
+            y: landing.y - Math.sin(fallAngle) * tuning(presetId,'fallHeight') * profile.skyScale };
         }
       } else from = ctx.playerPos();
       var to = fixedLanding ? {x:spec.area.x,y:spec.area.y} : directed
@@ -799,7 +800,7 @@ var VFXRuntime = (function () {
       var knifeControl=knifeFlight && typeof spec.area.controlX==='number' && typeof spec.area.controlY==='number'
         ? {x:spec.area.controlX,y:spec.area.controlY} : null;
       var enterAngle = !knifeFlight && chained ? arrivalAngle(ids[0]) : NaN;
-      var ctrl = knifeFlight ? knifeControl : curveControl(from, to, enterAngle);
+      var ctrl = knifeFlight ? knifeControl : curveControl(from, to, enterAngle, curveTuning(presetId));
       var arcHeight = Math.max(0,num(spec.arcM,0)) * (typeof bfMeterPx === 'function' ? bfMeterPx(1) : 10);
       if (arcHeight > 0) ctrl = {x:(from.x+to.x)/2,y:(from.y+to.y)/2-2*arcHeight};
       var mult = spec.fxKind === 'rain' ? profile.skyScale : profile.scale;
@@ -859,7 +860,7 @@ var VFXRuntime = (function () {
     }
 
     /* 這一則事件的權威幾何 → 場域的推算基準與目標尺寸。畫面值由 updateGrounds
-       逐幀推進，事件本身不動畫面（見 GROUND_FOLLOW_TAU_SEC 的說明）。 */
+       逐幀推進，事件本身不動畫面（見 playback.groundTau 的說明）。 */
     function groundAim(g, spec) {
       if (!spec.area) {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
@@ -929,7 +930,7 @@ var VFXRuntime = (function () {
       var run = g.speed * dt;
       if (g.presetId === 'ground-homing-wind-crescent' && Math.abs(g.headingResidual || 0) > 1e-6) {
         var oldResidual = g.headingResidual;
-        g.headingResidual *= Math.exp(-dt / WIND_MOTION_CORRECTION_SEC);
+        g.headingResidual *= Math.exp(-dt / tuning(g.presetId,'windTau'));
         var fromAngle = g.moveA + oldResidual;
         var toAngle = g.moveA + (g.turnRate || 0) * dt + g.headingResidual;
         var delta = Math.atan2(Math.sin(toAngle-fromAngle), Math.cos(toAngle-fromAngle));
@@ -963,10 +964,10 @@ var VFXRuntime = (function () {
       if (!(dt > 0)) return;
       var mag = Math.sqrt(g.ox * g.ox + g.oy * g.oy);
       if (!(mag > 1e-4)) { g.ox = 0; g.oy = 0; g.correctVX = 0; g.correctVY = 0; return; }
-      var want = mag / GROUND_FOLLOW_TAU_SEC;
-      if (g.speed > 0) want = Math.min(want, g.speed * GROUND_CORRECT_MAX_RATIO);
+      var want = mag / tuning(g.presetId,'groundTau');
+      if (g.speed > 0) want = Math.min(want, g.speed * tuning(g.presetId,'groundCorrection'));
       if (g.presetId === 'ground-homing-wind-crescent' && g.speed > 0) {
-        var blend = 1 - Math.exp(-dt / WIND_MOTION_CORRECTION_SEC);
+        var blend = 1 - Math.exp(-dt / tuning(g.presetId,'windTau'));
         g.correctVX = num(g.correctVX, 0) + (g.ox/mag*want-num(g.correctVX,0))*blend;
         g.correctVY = num(g.correctVY, 0) + (g.oy/mag*want-num(g.correctVY,0))*blend;
         var cx=g.correctVX*dt, cy=g.correctVY*dt;
@@ -984,12 +985,12 @@ var VFXRuntime = (function () {
       else { p.scaleX = g.sx; p.scaleY = g.sy; }
       if (g.devour) {
         // 首尾淡入淡出只取施放壽命；不放進會每圈重播的 Preset。
-        var fade = Math.max(0, Math.min(1, (clock - g.bornAt) / .2, (g.expireAt - clock) / .3));
+        var fade = Math.max(0, Math.min(1, fraction(clock - g.bornAt,tuning(g.presetId,'devourEnter')), fraction(g.expireAt - clock,tuning(g.presetId,'devourExit'))));
         p.opacity = fade * fade * (3 - 2 * fade);
       }
       if (g.rise) {
-        var enter = Math.max(0, Math.min(1, (clock - g.bornAt) / 0.3));
-        var leave = Math.max(0, Math.min(1, (g.expireAt - clock) / 0.3));
+        var enter = fraction(clock - g.bornAt,tuning(g.presetId,'fieldEnter'));
+        var leave = fraction(g.expireAt - clock,tuning(g.presetId,'fieldExit'));
         var amount = Math.min(enter, leave);
         amount = amount * amount * (3 - 2 * amount);
         delete p.scale;
@@ -1004,7 +1005,7 @@ var VFXRuntime = (function () {
       if (presetId === 'ground-firewall' && has(presetId + '-column-0') && spec.area) {
         var wall = spec.area, axis = num(wall.a, 0), result = false;
         for (var column = 0; column < 3; column++) {
-          var offset = (column - 1) * num(wall.w, 180) * 0.8 / 3;
+          var offset = (column - 1) * num(wall.w, 180) * tuning(presetId,'wallSpacing') / 3;
           var area = Object.assign({}, wall, {
             id: (wall.id || 'firewall@' + wall.x + ',' + wall.y) + '-column-' + column,
             x: num(wall.x, 0) + Math.cos(axis) * offset,
@@ -1099,9 +1100,9 @@ var VFXRuntime = (function () {
         rGrowSec: Math.max(0.1, num(area.rGrowSec, num(area.orbGrowSec, 1)))
       };
     }
-    function orbitCentre() {
+    function orbitCentre(presetId) {
       var p = footOf('pv-float');
-      return { x: p.x, y: p.y - ORBIT_LIFT };
+      return { x: p.x, y: p.y - tuning(presetId,'orbitLift') };
     }
     /* 合併鍵：同一道（半徑＋方向相同）只保留一組。【再生】延長持續時間時
        模擬層會補送同一道的事件，沒有這層合併就會愈疊愈多團。
@@ -1119,7 +1120,7 @@ var VFXRuntime = (function () {
           var presetId = member.companion ? entry.companionId : entry.orbId;
           var ref = old.find(function (r) { return r.memberId === member.id && r.presetId === presetId; });
           if (!ref) {
-            var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre();
+            var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre(entry.orbId);
             ref = play(rtAir, presetId, Object.assign({
               position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * orbitFlat }
             }, sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), profile.areaScale);
@@ -1132,7 +1133,7 @@ var VFXRuntime = (function () {
       }
       while (entry.orbs.length > entry.geo.orbs) stopRef(entry.orbs.pop());
       while (entry.orbs.length < entry.geo.orbs) {
-        var ref = play(rtAir, entry.orbId, Object.assign({ position: orbitCentre() },
+        var ref = play(rtAir, entry.orbId, Object.assign({ position: orbitCentre(entry.orbId) },
           sizeOf(entry.orbId, { r: entry.geo.orbR }) || { scale: entry.geo.orbR / NOMINAL_ORB }), profile.areaScale);
         if (!ref) break;                    // 預算滿了就先少幾團，下一次事件再補
         entry.orbs.push(ref);
@@ -1165,7 +1166,7 @@ var VFXRuntime = (function () {
       }
       if (live) stopOrbit(key);
       var ringId = (roles.ground && has(roles.ground)) ? roles.ground : '';
-      var centre = orbitCentre();
+      var centre = orbitCentre(orbId);
       var entry = {
         orbId: orbId, companionId: companionId, ringId: ringId, geo: geo,
         t: geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0,
@@ -1201,10 +1202,10 @@ var VFXRuntime = (function () {
           var dx = g.x - previousX, dy = g.y - previousY;
           if (step > 0 && dx * dx + dy * dy > 1e-10) g.rot = Math.atan2(dy, dx);
         } else {
-          g.rot = approachAngle(g.rot, g.trot, step, GROUND_FOLLOW_TAU_SEC);
+          g.rot = approachAngle(g.rot, g.trot, step, tuning(g.presetId,'groundTau'));
         }
-        g.sx = approach(g.sx, g.tsx, step, GROUND_FOLLOW_TAU_SEC);
-        g.sy = approach(g.sy, g.tsy, step, GROUND_FOLLOW_TAU_SEC);
+        g.sx = approach(g.sx, g.tsx, step, tuning(g.presetId,'groundTau'));
+        g.sy = approach(g.sy, g.tsy, step, tuning(g.presetId,'groundTau'));
         if (!moveRef(g.ref, groundParams(g), g.mult)) delete grounds[k];
       });
     }
@@ -1214,7 +1215,7 @@ var VFXRuntime = (function () {
         o.t += step;
         if (o.t >= o.dur) { stopOrbit(key); return; }
         var g = o.geo;
-        var centre = orbitCentre();
+        var centre = orbitCentre(o.orbId);
         function ease(sec) { return Math.max(0, Math.min(1, o.t / sec)); }
         /* 體積成長（超神【烈陽星環】）：出生後 orbGrowSec 秒內線性長到 orbGrowTo 倍。 */
         var orbR = g.orbGrowTo > 1 ? g.orbR * (1 + (g.orbGrowTo - 1) * ease(g.orbGrowSec)) : g.orbR;
@@ -1330,7 +1331,7 @@ var VFXRuntime = (function () {
         // 雷鏈的 targets 是「起點、終點」，只在抵達終點時播命中，不能起飛就讓兩端一起爆。
         var chainHit = spec.variant === 'lightning-chain' && spec.fxKind === 'chain';
         var hitSpec = chainHit ? Object.assign({}, spec, { targets: (spec.targets || []).slice(-1) }) : spec;
-        playOnTargets(rtFx, roles.hit, hitSpec, hitScaleOf(spec),
+        playOnTargets(rtFx, roles.hit, hitSpec, hitScaleOf(spec,tuning(roles.hit,'hitScale')),
           roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
       }
       return true;
@@ -1346,12 +1347,12 @@ var VFXRuntime = (function () {
       switch (role) {
         case 'hit':
           if(spec.area && spec.area.knifeImpact) {
-            ok=!!play(rtFx,presetId,Object.assign(defaultSize(presetId,hitScaleOf(spec)),{position:areaCentre(spec.area)}));
+            ok=!!play(rtFx,presetId,Object.assign(defaultSize(presetId,hitScaleOf(spec,tuning(presetId,'hitScale'))),{position:areaCentre(spec.area)}));
             break;
           }
           ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash') && spec.area
             ? playOnArea(rtFx, presetId, spec)
-            : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec), 0);
+            : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0);
           break;
         case 'projectile':
           ok = spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
@@ -1364,7 +1365,7 @@ var VFXRuntime = (function () {
           break;
         case 'attack':
           if (presetId === 'burst-vacuum-shockwave') {
-            var shockParams = sizeOf('slash-wind-crescent', {r:num(spec.lineLength,0)}) || defaultSize(presetId, 1);
+            var shockParams = sizeOf(tuning(presetId,'inheritGeometry')?'slash-wind-crescent':presetId, {r:num(spec.lineLength,0)}) || defaultSize(presetId, 1);
             shockParams.position = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
             shockParams.rotation = num(spec.angle, 0);
             ok = !!play(rtFx, presetId, shockParams);
@@ -1393,7 +1394,7 @@ var VFXRuntime = (function () {
             var flashParams = areaScaleParams(spec.area, presetId);
             flashParams.position = areaCentre(spec.area); // 事件原點就是玩家後方的光束起點。
             // 核准 Preset 在生命週期 2/7 處伸滿；伸展時間由模擬事件決定。
-            flashParams.timeScale = presetDurations[presetId] * (2 / 7) / Math.max(.001, travelSecAt(spec, 0));
+            flashParams.timeScale = presetDurations[presetId] * tuning(presetId,'flashArrival') / Math.max(.001, travelSecAt(spec, 0));
             ok = !!play(rtFx, presetId, flashParams, 1);
           } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
@@ -1534,7 +1535,7 @@ var VFXRuntime = (function () {
           }
           pr.lastTo=to;
         }
-        var ctrl = pr.homingSpeed>0 ? null : pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle);
+        var ctrl = pr.homingSpeed>0 ? null : pr.knifeFlight ? pr.control : curveControl(pr.from, to, pr.enterAngle, curveTuning(pr.ref.presetId));
         if (pr.arcHeight > 0) ctrl = {x:(pr.from.x+to.x)/2,y:(pr.from.y+to.y)/2-2*pr.arcHeight};
         var at = pr.homingSpeed>0 ? null : curvePoint(pr.from, ctrl, to, k);
         if(pr.homingSpeed>0&&homingStep){
@@ -1567,7 +1568,7 @@ var VFXRuntime = (function () {
           movingDimensions = {scaleX:pr.dimensions.scaleX*Math.min(1,distance/pr.thrustBody),scaleY:pr.dimensions.scaleY};
         }
         if(!pr.flightOrbit && !(pr.homingSpeed>0))pr.facing = pr.arcHeight > 0 ? curveHeading(pr.from, ctrl, to, k) : approachAngle(pr.facing, curveHeading(pr.from, ctrl, to, k),
-          step, PROJECTILE_FACING_TAU_SEC);
+          step, tuning(pr.ref.presetId,'facingTau'));
         var alive = moveRef(pr.ref, Object.assign({
           position: { x: at.x, y: at.y },
           rotation: pr.facing
@@ -1617,7 +1618,7 @@ var VFXRuntime = (function () {
             position:{x:beam.position.x+ux*tailOffset,y:(beam.position.y+uy*tailOffset)*groundScale},
             rotation:Math.atan2(uy*groundScale,ux),scaleX:beam.worldBody*projection/beam.width,scaleY:profile.scale,
             clipX:{min:Math.max(0,beam.worldBody-beam.travelled-beam.drain)/beam.worldBody*beam.width,
-              max:(beam.worldBody-beam.drain)/beam.worldBody*beam.width,taper:beam.width*.12}
+              max:(beam.worldBody-beam.drain)/beam.worldBody*beam.width,taper:beam.width*tuning(beam.ref.presetId,'tipTaper')}
           },1);
           continue;
         }
@@ -1639,7 +1640,7 @@ var VFXRuntime = (function () {
           clipX: beam.travel > 0 ? {
             min:Math.max(0,bodyLength-head)/bodyLength*beam.width,
             max:Math.min(bodyLength,distance-head+bodyLength)/bodyLength*beam.width,
-            taper:beam.width*.12
+            taper:beam.width*tuning(beam.ref.presetId,'tipTaper')
           } : null,
           scaleY: profile.scale
         }, 1)) trackingBeams.splice(bi, 1);
@@ -1657,9 +1658,11 @@ var VFXRuntime = (function () {
       }
 
       /* 狀態光環跟著實體走；範圍半徑改變時尺寸以時間常數補間，不一格一格跳 */
-      var auraK = step > 0 ? 1 - Math.exp(-step / AURA_SCALE_TAU_SEC) : 0;
+
       Object.keys(auras).forEach(function (k) {
         var a = auras[k];
+        var tau=tuning(a.presetId,'auraTau');
+        var auraK=step>0?(tau>0?1-Math.exp(-step/tau):1):0;
         if (a.expireAt <= clock) { stopRef(a.ref); delete auras[k]; return; }
         a.sx += (a.tsx - a.sx) * auraK;
         a.sy += (a.tsy - a.sy) * auraK;

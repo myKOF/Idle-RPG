@@ -7922,3 +7922,10 @@ Worker 存活且頁面正常完成載入。
 - Owner Codex；Done。修正近距離首擊造成整鏈低速、清場後殘留尾流與平切端點。範圍：skills2／VFX Core、Runtime、Pixi、renderer終止事件、Worker協議與快取、測試及交接。預檢：Claude的renderer第444行新增NPC停步距離，與本次第5270行終止事件分派不同區段；index、bridge、sim.worker為快取修改。四檔以對方未提交內容做三方乾跑皆0，依使用者無衝突即可繼續授權執行。不得改NPC邏輯或其他副本。驗收固定速度、移動來源、空目標終止、多鏈隔離、尖端與實際Pixi。無素材變更，不合併／推送。
 
 - 已完成固定世界速度逐步追蹤，實際追上才命中／追加打擊；每鏈終止事件與尖端收束。專項20/20，全回歸363項359通過／4項既有失敗，build402檔通過，正式Pixi尖端與追逐超時／立即終止驗證，Console無錯誤。四個共享檔與Claude未提交修改三方乾跑全部0；素材庫無變更。完整交接見 `docs/skill-tests/20260929-chainlightning-stability.md`，Commit見本紀錄所在提交；可整合，未合併／推送。
+
+## Codex｜特效程式控制參數公開（VFX-CODE-CONTROLS-20260929）
+
+- Owner：Codex；Done。使用者授權全面檢視特效的程式額外控制，將可調視覺參數公開於 VFX Editor；保留權威命中、路徑與生命週期同步。已檢查 238 份 Preset、1,589 層，公開整體變形、Runtime 視覺參數、尺寸與遺漏的圖層控制，新增正式 Runtime 測試場景。
+- 範圍：VFX Core／Runtime、Editor、必要快取、相關測試與參數稽核文件；不修改技能表、傷害、其他工作副本或使用者素材。既有 preset 預設外觀維持相容。
+- 預檢：除 index.html 有 Claude 未提交修改外，其餘無衝突；依使用者既有授權，只在合併乾跑無衝突後繼續共用檔案。
+- 驗收：13 項新增測試通過；綜合 538 項 531 通過、1 跳過、6 失敗均於 HEAD 原版重現；Build 404 檔通過。Edge 實際參數編輯、undo/redo、移動目標雷鏈預覽無錯。無素材變動，不需素材庫空提交；保留使用者 Excel 修改。詳見 `docs/vfx/VFX_EDITOR_CODE_CONTROLS.md`。提交後交使用者整合，不合併或推送。

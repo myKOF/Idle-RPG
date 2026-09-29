@@ -661,7 +661,55 @@ var VFXCore = (function () {
     validateVec2(layer.scrollSpeed, where + '.scrollSpeed', errors);
   }
 
-  var PRESET_FIELDS = ['deformation', 'schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
+  // Editor 與 Runtime 共用參數描述，預設值不寫回既有素材。
+  var PLAYBACK_FIELDS = {
+    sceneProjection: { label: '地面投影 Y 跟隨場景傾角', default: true },
+    splitRockDepth: { label: '岩甲石碑依前後位置分層', default: true },
+    hitScale: { label: '範圍受擊放大倍率', default: 1.6, min: 0, max: 10 },
+    fallHeight: { label: '天降出生高度（px）', default: 500, min: 1, max: 10000 },
+    fallAngle: { label: '隕石／落雷預設角度（度）', default: 60, min: -360, max: 360 },
+    tipTaper: { label: '飛行雷鏈尖端長度比例', default: .12, min: 0, max: .5 },
+    chainLengthM: { label: '飛行雷鏈本體長度（米，0 跟隨事件）', default: 0, min: 0, max: 100 },
+    orbitLift: { label: '環繞整組中心抬高（px，設定在環繞本體）', default: 12, min: -500, max: 500 },
+    projectileTail: { label: '突刺／迴旋飛行動畫餘量（秒）', default: .08, min: 0, max: 2 },
+    curveAngle: { label: '連鎖轉彎最大角度（度）', default: 120, min: 0, max: 180 },
+    curveHandle: { label: '連鎖轉彎控制點比例', default: .55, min: 0, max: 1 },
+    facingTau: { label: '彈體朝向平滑（秒）', default: .05, min: 0, max: 1 },
+    groundTau: { label: '場域位置／尺寸平滑（秒）', default: .14, min: .001, max: 1 },
+    groundCorrection: { label: '場域位置修正速度比例', default: .3, min: 0, max: 1 },
+    windTau: { label: '追蹤風刃航向平滑（秒）', default: .12, min: .001, max: 1 },
+    auraTau: { label: '狀態光環尺寸平滑（秒）', default: .15, min: 0, max: 1 },
+    fieldEnter: { label: '場域長出時間（秒）', default: .3, min: 0, max: 5 },
+    fieldExit: { label: '場域縮回時間（秒）', default: .3, min: 0, max: 5 },
+    devourEnter: { label: '吞噬場域淡入（秒）', default: .2, min: 0, max: 5 },
+    devourExit: { label: '吞噬場域淡出（秒）', default: .3, min: 0, max: 5 },
+    wallSpacing: { label: '火牆柱間距比例', default: .8, min: 0, max: 2 },
+    wallSourceSpacing: { label: '火牆製作圖原始柱間距比例', default: .8, min: 0, max: 2 },
+    flashArrival: { label: '雷光閃伸滿時間點（0～1）', default: 2 / 7, min: .001, max: 1 },
+    inheritGeometry: { label: '繼承來源特效幾何（天地逆返／真空衝擊）', default: true },
+    runeTint: { label: '天地逆返符文顏色', default: '#a2ddff', color: true },
+    glowTint: { label: '天地逆返光暈顏色', default: '#3c9cff', color: true }
+  };
+  function playbackValue(preset, key) {
+    return preset && preset.playback && preset.playback[key] !== undefined
+      ? preset.playback[key] : PLAYBACK_FIELDS[key].default;
+  }
+  var DEFORMATION_FIELDS = {
+    amplitude: { label: '彎曲振幅（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
+    widthJitter: { label: '隨機寬度變化比例', default: 0, min: 0, max: .15 },
+    mirrorChance: { label: '鏡射機率（0～1）', default: .5, min: 0, max: 1 },
+    pivot: { label: '鏡射／寬度變化中心（橫向 px）', default: 0, min: -10000, max: 10000 },
+    frequency: { label: '主波彎曲頻率', default: 9, min: 0, max: 100 },
+    secondaryFrequency: { label: '細波彎曲頻率', default: 19, min: 0, max: 100 },
+    secondaryWeight: { label: '細波混合比例', default: .3, min: 0, max: 1 },
+    phaseCoupling: { label: '細波相位倍率', default: .7, min: 0, max: 4 },
+    phase: { label: '基礎相位（弧度）', default: 0, min: -100, max: 100 },
+    phaseRandom: { label: '隨機相位範圍（弧度）', default: Math.PI * 2, min: 0, max: Math.PI * 2 }
+  };
+  function deformationValue(config, key) {
+    return config[key] === undefined ? DEFORMATION_FIELDS[key].default : config[key];
+  }
+  var PRESET_FIELDS = ['playback', 'deformation', 'schemaVersion', 'id', 'duration', 'loop', 'layers', 'sizing'];
   var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet', 'projection',
@@ -739,8 +787,10 @@ var VFXCore = (function () {
     var c=w.config, along=c.axis==='x'?x:y, across=c.axis==='x'?y:x;
     var q=Math.max(0,Math.min(1,(along-c.start)/(c.end-c.start)));
     var envelope=Math.sin(Math.PI*q);
-    var displacement=envelope*c.amplitude*(Math.sin(q*9+w.phase)*.7+Math.sin(q*19+w.phase*.7)*.3);
-    across=across*w.mirror*w.width+displacement;
+    var mix=deformationValue(c,'secondaryWeight'), pivot=deformationValue(c,'pivot');
+    var displacement=envelope*c.amplitude*(Math.sin(q*deformationValue(c,'frequency')+w.phase)*(1-mix)+
+      Math.sin(q*deformationValue(c,'secondaryFrequency')+w.phase*deformationValue(c,'phaseCoupling'))*mix);
+    across=pivot+(across-pivot)*w.mirror*w.width+displacement;
     out.x=c.axis==='x'?along:across;
     out.y=c.axis==='x'?across:along;
     return out;
@@ -749,7 +799,11 @@ var VFXCore = (function () {
     var c=preset.deformation;
     if(c===undefined)return;
     if(!c||typeof c!=='object'){errors.push('deformation 必須是物件');return;}
-    checkUnknownFields(c,['axis','start','end','amplitude','widthJitter','mirror','layers'],'deformation',errors);
+    checkUnknownFields(c,['axis','start','end','mirror','layers'].concat(Object.keys(DEFORMATION_FIELDS)),'deformation',errors);
+    Object.keys(DEFORMATION_FIELDS).forEach(function(key){
+      var v=c[key],f=DEFORMATION_FIELDS[key];
+      if(v!==undefined&&(!isFiniteNumber(v)||v<f.min||v>f.max))errors.push('deformation.'+key+' 無效');
+    });
     if(c.axis!=='x'&&c.axis!=='y')errors.push('deformation.axis 必須是 x 或 y');
     if(!isFiniteNumber(c.start)||!isFiniteNumber(c.end)||c.end<=c.start)errors.push('deformation 範圍無效');
     if(!isFiniteNumber(c.amplitude)||c.amplitude<0||c.amplitude>(c.end-c.start)*.15)errors.push('deformation.amplitude 超過長度15%');
@@ -790,6 +844,20 @@ var VFXCore = (function () {
     }
     if (preset.loop !== undefined && typeof preset.loop !== 'boolean') {
       errors.push('preset.loop 必須是布林值');
+    }
+    if (preset.playback !== undefined) {
+      if (!preset.playback || typeof preset.playback !== 'object' || Array.isArray(preset.playback)) errors.push('playback 必須是物件');
+      else {
+        checkUnknownFields(preset.playback, Object.keys(PLAYBACK_FIELDS), 'playback', errors);
+        Object.keys(PLAYBACK_FIELDS).forEach(function (key) {
+          var v = preset.playback[key], f = PLAYBACK_FIELDS[key];
+          if (v === undefined) return;
+          var valid = f.color ? typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)
+            : typeof f.default === 'boolean' ? typeof v === 'boolean'
+            : isFiniteNumber(v) && v >= f.min && v <= f.max;
+          if (!valid) errors.push('playback.' + key + ' 無效');
+        });
+      }
     }
     if (!Array.isArray(preset.layers) || !preset.layers.length) {
       errors.push('preset.layers 不得為空');
@@ -1345,8 +1413,10 @@ var VFXCore = (function () {
       };
       if(preset.deformation){
         var wr=makeRng(effect.seed ^ 0x6a09e667);
-        effect.deformation={config:preset.deformation,phase:wr()*Math.PI*2,
-          mirror:preset.deformation.mirror&&wr()<.5?-1:1,width:1+(wr()*2-1)*preset.deformation.widthJitter};
+        effect.deformation={config:preset.deformation,
+          phase:deformationValue(preset.deformation,'phase')+wr()*deformationValue(preset.deformation,'phaseRandom'),
+          mirror:preset.deformation.mirror&&wr()<deformationValue(preset.deformation,'mirrorChance')?-1:1,
+          width:1+(wr()*2-1)*preset.deformation.widthJitter};
       }
       applyTransformParams(effect, p);
       preset.layers.forEach(function (raw, i) {
@@ -2314,10 +2384,14 @@ var VFXCore = (function () {
      用 deepFreeze 而不是 Object.freeze——HARD_LIMITS.budget 是巢狀物件，
      淺凍結擋不住 HARD_LIMITS.budget.maxParticles = Infinity。 */
   [LAYER_TYPES, BLEND_MODES, SPAWN_SHAPES, EMISSION_MODES, PROCEDURAL_EFFECTS,
-    HARD_LIMITS, DEFAULT_BUDGET].forEach(function (o) { deepFreeze(o); });
+    HARD_LIMITS, DEFAULT_BUDGET, PLAYBACK_FIELDS, DEFORMATION_FIELDS].forEach(function (o) { deepFreeze(o); });
 
   return {
     SCHEMA_VERSION: SCHEMA_VERSION,
+    PLAYBACK_FIELDS: PLAYBACK_FIELDS,
+    playbackValue: playbackValue,
+    DEFORMATION_FIELDS: DEFORMATION_FIELDS,
+    deformationValue: deformationValue,
     LAYER_TYPES: LAYER_TYPES,
     BLEND_MODES: BLEND_MODES,
     SPAWN_SHAPES: SPAWN_SHAPES,
