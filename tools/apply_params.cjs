@@ -203,9 +203,12 @@ if (zoneStageWaveValue !== null) {
   });
 }
 function esc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+// 完整十進位字面值，包含 Excel 轉出的科學記號；不可留下舊指數尾碼。
+const NUMBER_SOURCE = /[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/.source;
+const NUMBER_LITERAL = new RegExp('^(?:' + NUMBER_SOURCE + ')$');
 // 具名純量常數： var NAME = <num>;
 function scalarValue(file, varName, value, label) {
-  edits.push({ file, re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*)(-?[\\d.]+)'), grp: 2, value: String(value), label: label || varName });
+  edits.push({ file, re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*)(' + NUMBER_SOURCE + ')'), grp: 2, value: String(value), label: label || varName });
 }
 function scalar(file, varName, cat, name, i) {
   scalarValue(file, varName, P(cat, name, i), varName);
@@ -231,7 +234,7 @@ function scalarOrList(file, varName, cat, name, i) {
   const list = numberListLiteral(raw);
   edits.push({
     file,
-    re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*)(\\[[^\\]]*\\]|-?[\\d.]+)'),
+    re: new RegExp('(\\b' + esc(varName) + '\\s*=\\s*)(\\[[^\\]]*\\]|' + NUMBER_SOURCE + ')'),
     grp: 2, value: list || String(raw).trim(), label: varName
   });
 }
@@ -266,7 +269,7 @@ function rangeBound(file, varName, cat, name, i, bound) {
 function objField(file, keyAnchor, field, cat, name, i, label) {
   edits.push({
     file,
-    re: new RegExp('(' + esc(keyAnchor) + '[^\\n]*?\\b' + esc(field) + ':\\s*)(-?[\\d.]+)'),
+    re: new RegExp('(' + esc(keyAnchor) + '[^\\n]*?\\b' + esc(field) + ':\\s*)(' + NUMBER_SOURCE + ')'),
     grp: 2, value: P(cat, name, i), label: (label || keyAnchor) + '.' + field
   });
 }
@@ -274,14 +277,14 @@ function objField(file, keyAnchor, field, cat, name, i, label) {
 function objFieldML(file, keyAnchor, field, cat, name, i, label, scopeVar) {
   edits.push({
     file,
-    re: new RegExp('(' + esc(keyAnchor) + '[\\s\\S]*?\\b' + esc(field) + ':\\s*)(-?[\\d.]+)'),
+    re: new RegExp('(' + esc(keyAnchor) + '[\\s\\S]*?\\b' + esc(field) + ':\\s*)(' + NUMBER_SOURCE + ')'),
     grp: 2, value: P(cat, name, i), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
 function objFieldMLValue(file, keyAnchor, field, value, label, scopeVar) {
   edits.push({
     file,
-    re: new RegExp('(' + esc(keyAnchor) + '[\\s\\S]*?\\b' + esc(field) + ':\\s*)(-?[\\d.]+)'),
+    re: new RegExp('(' + esc(keyAnchor) + '[\\s\\S]*?\\b' + esc(field) + ':\\s*)(' + NUMBER_SOURCE + ')'),
     grp: 2, value: String(value), label: (label || keyAnchor) + '.' + field, scopeVar: scopeVar
   });
 }
@@ -1051,12 +1054,12 @@ function scopedTextValue(t, scopeVar) {
 }
 // 抽掉數字與空白後剩下的骨架（鍵名、標點）——用來偵測「數值相同但鍵名不同」的變更
 function nonNumericSkeleton(s) {
-  return String(s).replace(/-?[\d.]+/g, '#').replace(/\s+/g, '');
+  return String(s).replace(new RegExp(NUMBER_SOURCE, 'g'), '#').replace(/\s+/g, '');
 }
 // 比較兩段文字的數值序列是否相同（忽略空白/格式差異）
 function numsEqual(a, b) {
-  const na = (String(a).match(/-?[\d.]+/g) || []).map(Number);
-  const nb = (String(b).match(/-?[\d.]+/g) || []).map(Number);
+  const na = (String(a).match(new RegExp(NUMBER_SOURCE, 'g')) || []).map(Number);
+  const nb = (String(b).match(new RegExp(NUMBER_SOURCE, 'g')) || []).map(Number);
   return na.length === nb.length && na.every((x, i) => x === nb[i]);
 }
 
@@ -1092,7 +1095,7 @@ edits.forEach(e => {
          （例如候選值陣列 [0.75, 1, 2]）就改比字串，忽略空白差異。
          照數字比的話 Number('[...]') 是 NaN，NaN !== NaN 恆成立，
          每跑一次都會報「將變更」，內容卻一模一樣。 */
-      const plainNum = (v) => /^-?[\d.]+$/.test(String(v).trim());
+      const plainNum = (v) => NUMBER_LITERAL.test(String(v).trim());
       const chg = e.multiGroup
         ? (!numsEqual(cur, e.value) || nonNumericSkeleton(cur) !== nonNumericSkeleton(e.value))
         : (plainNum(cur) && plainNum(e.value)

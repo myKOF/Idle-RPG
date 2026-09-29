@@ -12,17 +12,17 @@
 
 importScripts('protocol.js?v=40', 'shim.js?v=8');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-legacy-skill-removal', '../status.js?v=20260929-legacy-skill-removal', '../formula.js?v=20260929-legacy-skill-removal', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-legacy-skill-removal',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-superconduct', '../status.js?v=20260929-superconduct', '../formula.js?v=20260929-superconduct', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-superconduct',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260929-legacy-skill-removal', '../skills2.js?v=20260929-legacy-skill-removal', '../talents.js?v=20260929-legacy-skill-removal',
-  '../player.js?v=20260929-legacy-skill-removal', '../special_rules.js',
-  '../combat.js?v=20260929-legacy-skill-removal', '../legendary.js?v=20260929-legacy-skill-removal', '../potential.js?v=20260929-legacy-skill-removal', '../tower.js?v=20260929-legacy-skill-removal',
-  '../factory.js?v=20260929-legacy-skill-removal', '../newforge.js', '../forge.js', '../save.js?v=20260929-legacy-skill-removal',
-  '../tasks.js?v=20260929-legacy-skill-removal'
+  '../skills.js?v=20260929-superconduct', '../skills2.js?v=20260929-superconduct', '../talents.js?v=20260929-superconduct',
+  '../player.js?v=20260929-superconduct', '../special_rules.js',
+  '../combat.js?v=20260929-superconduct', '../legendary.js?v=20260929-superconduct', '../potential.js?v=20260929-superconduct', '../tower.js?v=20260929-superconduct',
+  '../factory.js?v=20260929-superconduct', '../newforge.js', '../forge.js', '../save.js?v=20260929-superconduct',
+  '../tasks.js?v=20260929-superconduct'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20260929-legacy-skill-removal');
+importScripts('../gm_exec.js?v=20260929-superconduct');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器

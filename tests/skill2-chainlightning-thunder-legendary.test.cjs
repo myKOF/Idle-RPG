@@ -272,40 +272,33 @@ test('【天地雷鎖陣】：施放後每 gap 秒自動再施放，且重複施
   assert.equal(c.SKILL2_RT.ultRepeat.chainlightning, undefined, '節拍回收');
 });
 
-test('【永恒超導體】：往返鏈對範圍內每個敵人各打一次，並疊出雷電傷害提升', () => {
-  /* 三隻敵人各離我方 25 米（在超導體的 30 米範圍內），但彼此相距 43 米（超過彈射範圍），
-     因此主鏈的擴散一個也打不到——命中次數與隨機選目標無關，兩邊才比得準。 */
-  const RING = [[250, 0], [-125, 216], [-125, -216]];
-  function cast(ultOn) {
-    const c = loadContext();
-    stubVfx(c);
-    const calls = stubHits(c);
-    c.chance = () => false;
-    maxLevels(c, 'chainlightning');
-    equip(c, 'chainlightning');
-    if (ultOn) setUlt(c, 'chainlightning', 'eternalSuperconductor', 1);
-    const p = playerEnt();
-    const es = RING.map((xy, i) => enemy(1e9, xy[0], xy[1], 'e' + i));
-    c.castSkill2(p, es, 'chainlightning', 'mv-float');
-
-    settleChain(c);
-    return { c: c, p: p, calls: calls };
-  }
-  const plain = cast(false);
-  const withUlt = cast(true);
-  assert.ok(plain.calls.length > 0, '基準本身要打得到人');
-  assert.equal(withUlt.calls.length - plain.calls.length, RING.length, '額外鏈＝範圍內每個敵人各一次');
-
-  const c = withUlt.c;
-  const p = withUlt.p;
-  assert.equal(c.buffVal(p, 'sgSuperconduct'), RING.length * (2 + 0.2), '每經過自身一次疊 1 層（Lv.1 單層 2.2%）');
-  assert.equal(c.skill2LightningDamageUpPct(p), c.buffVal(p, 'sgSuperconduct'));
-  // 疊層直接進入「屬性傷害提升%」的唯一收斂點
-  const up = c.legendaryElementDamageUp(c.getStats(), p);
-  assert.equal(Math.round(up.lightning * 10) / 10, Math.round(c.buffVal(p, 'sgSuperconduct') * 10) / 10);
-  // 死亡／讀檔時要收得回來，否則會帶進下一場
-  c.resetSkill2RT();
-  assert.equal(p.buffs.sgSuperconduct, undefined, 'resetSkill2RT 撤掉疊層');
+test('【永恒超導體】：獨立金鏈追蹤往返，抵達才傷害／疊層，可重複命中同一敵人', () => {
+  const c=loadContext(),playerTarget=c.playerEventFloatTarget,specs=stubVfx(c),calls=stubHits(c);
+  c.playerEventFloatTarget=playerTarget;
+  maxLevels(c,'chainlightning');equip(c,'chainlightning');setUlt(c,'chainlightning','eternalSuperconductor',1);
+  const p=playerEnt(),e=enemy(1e9,100,0,'target'),out={dmg:0};
+  c.BF_PLAYER.x=0;c.BF_PLAYER.y=0;
+  const cfg={pEnt:p,st:c.getStats(),dmgVal:100,speedPx:100,out};
+  c.sgChainSuperconductor(p,cfg.st,cfg,[e],'mv-float',out);
+  const f=c.SKILL2_RT.superconductFlight;
+  assert.equal(calls.length,0);assert.equal(c.buffVal(p,'sgSuperconduct'),0);
+  assert.equal(specs.at(-1).vfx.projectile,'bolt-chain-lightning');
+  assert.equal(c.sgVfxRoles('chainlightning').projectile,'bolt-chain-travel-bluewhite');
+  const ctx={pEnt:p,getEnemies:()=>[e]};
+  c.GT=.5;c.sgTickSuperconduct(ctx);assert.equal(calls.length,0);
+  e.pos.x=200;c.GT=1;c.sgTickSuperconduct(ctx);assert.equal(calls.length,0,'移動目標不能按舊估時命中');
+  c.GT=2;c.sgTickSuperconduct(ctx);assert.equal(calls.length,1);
+  assert.equal(c.buffVal(p,'sgSuperconduct'),0,'命中敵人時還沒回到玩家');
+  assert.equal(specs.at(-1).targets[0],'pv-float');
+  c.BF_PLAYER.x=-100;c.GT=3;c.sgTickSuperconduct(ctx);assert.equal(c.buffVal(p,'sgSuperconduct'),0);
+  c.GT=5;c.sgTickSuperconduct(ctx);assert.equal(c.buffVal(p,'sgSuperconduct'),2.2);
+  c.sgChainSuperconductor(p,cfg.st,cfg,[e],'mv-float',out);assert.equal(c.SKILL2_RT.superconductFlight,f,'重複施放不堆永久鏈');
+  c.GT=8;c.sgTickSuperconduct(ctx);assert.equal(calls.length,2,'同一敵人可以再被命中');
+  c.GT=11;c.sgTickSuperconduct(ctx);assert.equal(c.buffVal(p,'sgSuperconduct'),4.4);
+  e.hp=0;c.GT=11.1;c.sgTickSuperconduct(ctx);
+  assert.equal(c.SKILL2_RT.superconductFlight,null);assert.equal(specs.at(-1).variant,'lightning-chain-end');
+  assert.equal(c.skill2LightningDamageUpPct(p),4.4);
+  c.resetSkill2RT();assert.equal(p.buffs.sgSuperconduct,undefined);
 });
 
 test('【飛雷神】：放電期每 gap 秒打向最遠的 N 個敵人，各自炸開一個範圍', () => {
@@ -652,4 +645,21 @@ test('參數表往返：Skills2 的六個超神進化列與 Equipment_Affix 的�
   const status = fs.readFileSync(path.join(root, 'config/CSV/Status.csv'), 'utf8');
   assert.ok(status.includes('sgSuperconduct'), 'Status.csv 缺少超導電荷');
   assert.ok(status.includes('sgThunderQuake'), 'Status.csv 缺少震雷雷痕');
+});
+
+test('【永恒超導體】：目標死亡從當下位置改追，無目標／玩家死亡即收回且不提前疊層',()=>{
+ const c=loadContext(),playerTarget=c.playerEventFloatTarget,specs=stubVfx(c),calls=stubHits(c);c.playerEventFloatTarget=playerTarget;
+ maxLevels(c,'chainlightning');equip(c,'chainlightning');setUlt(c,'chainlightning','eternalSuperconductor',1);
+ const p=playerEnt(),a=enemy(1000,100,0,'a'),b=enemy(1000,200,0,'b'),out={dmg:0};
+ c.BF_PLAYER.x=0;c.BF_PLAYER.y=0;c.Math.random=()=>0;
+ const cfg={pEnt:p,st:c.getStats(),dmgVal:100,speedPx:100,out},ctx={pEnt:p,getEnemies:()=>[a,b]};
+ c.sgChainSuperconductor(p,cfg.st,cfg,[a,b],'mv-float',out);
+ c.GT=.5;c.sgTickSuperconduct(ctx);a.hp=0;c.GT=.6;c.sgTickSuperconduct(ctx);
+ assert.equal(c.SKILL2_RT.superconductFlight.target,b);
+ assert.equal(specs.at(-1).area.sourceX,50,'不能重回玩家起點');
+ assert.equal(specs.at(-2).variant,'lightning-chain-end','舊追蹤特效立即回收');
+ assert.equal(calls.length,0);assert.equal(c.buffVal(p,'sgSuperconduct'),0);
+ p.hp=0;c.GT=.7;c.sgTickSuperconduct(ctx);assert.equal(c.SKILL2_RT.superconductFlight,null);
+ p.hp=1000;c.sgChainSuperconductor(p,cfg.st,cfg,[b],'mv-float',out);
+ b.pos.x=10000;c.GT=.8;c.sgTickSuperconduct(ctx);assert.equal(c.SKILL2_RT.superconductFlight,null,'離開搜敵範圍立即消失');
 });

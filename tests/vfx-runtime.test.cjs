@@ -1951,3 +1951,16 @@ test('CHAIN-HOMING 飛行子彈欄保留長電弧，移動來源不拖曳，超�
  adapter.tryPlay({variant:'lightning-chain-end',area:{chainId:'two'},targets:[],vfx:{}});
  assert.equal(adapter.stats().fx.activeEffects,0);
 });
+
+test('SUPERCONDUCT 回程與改追使用權威起點，不從玩家重發；結束事件回收整條鏈',()=>{
+ const p=unitPreset('gold-return',1);p.sizing={shape:'custom',authored:{width:200,height:30},widthM:20,heightM:3};
+ const points={'pv-float':{x:0,y:0}};
+ const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>points[id],chainPoint:id=>points[id],playerPos:()=>points['pv-float']}});
+ adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['pv-float'],sourceId:'pv-float',travelMs:[3000],lineLength:180,hit:false,vfx:{projectile:p.id},area:{sourceX:300,sourceY:0,x:0,y:0,homingSpeed:100,chainId:'return'}});
+ adapter.update(.1);
+ const t=log.nodes[0].transforms.at(-1);
+ assert.ok(Math.abs(t.x-470)<1e-6,'尾端應在敵人端，前端向玩家移動');
+ assert.ok(Math.abs(Math.abs(t.rotation)-Math.PI)<1e-6);
+ adapter.tryPlay({fxKind:'chain',variant:'lightning-chain-end',targets:[],vfx:{},area:{chainId:'return'}});
+ assert.equal(adapter.stats().fx.activeEffects,0);
+});

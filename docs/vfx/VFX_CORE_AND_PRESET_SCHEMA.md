@@ -835,3 +835,10 @@ Preset 可選的 `deformation` 物件：
 - Editor 自動循環每輪換種子，暫停／編輯曲線沿用當前種子；刪除圖層時同步移除其變形引用。
 - Authoring 工具重新產生 Preset 時，必須保留／重建 deformation 及正確 layers 清單；不得只依素材名稱在 Runtime 自動猜測變形。
 - 詳細盤點、驗證及效能結果見 [LIGHTNING_DEFORMATION.md](LIGHTNING_DEFORMATION.md)。
+
+### 尖端收束與金色往返雷鏈（2026-09-29）
+
+- `deformation.tipTaper`：0～0.5，預設 0。沿 start/end 兩端各佔此比例的區段，以 smoothstep 將橫向厚度與位移收束到 pivot。編輯器「程式變形／隨機鏡射」公開「兩端尖細收束比例」；Core 同時供編輯器和遊戲使用。
+- `playback.tipTaper` 仍負責飛行中裁切邊界的尖端；前者負責素材完整形狀，後者負責尚未飛出／收入的可見切口。需讓光暈與主弧一起列入 deformation.layers，才不殘留平切光暈。
+- bolt-chain-lightning 實際素材寬為 512×0.7621＝390.1952；製作寬度與變形範圍同步，避免錯用 200 導致遊戲額外放大。原金色貼圖不變。
+- 永恒超導體的觸發子彈／觸發命中特效只屬於獨立往返鏈，本體欄留白繼承。往返每段都以表定速度追蹤移動目標；回到玩家才疊層，死亡、無範圍內目標時終止。再次施放維持一條存續鏈，不累積永久投射物。

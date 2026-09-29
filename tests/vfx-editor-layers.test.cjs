@@ -608,10 +608,10 @@ function request(port, opts, body) {
   });
 }
 
-function putLayout(port, id, body) {
+async function putLayout(port, id, body) {
   return request(port, {
     method: 'PUT', path: '/vfx/layouts/' + id + '.json',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    headers: Object.assign({ 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },await require('./helpers/vfx-write-headers.cjs')(port,id,'layout'))
   }, body);
 }
 
@@ -682,7 +682,7 @@ test('L40 layout 與 preset 是兩個獨立目錄，互不干擾', async functio
     const body = JSON.stringify(preset);
     const r1 = await request(h.port, {
       method: 'PUT', path: '/vfx/presets/demo-basic.json',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+      headers: Object.assign({ 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },await require('./helpers/vfx-write-headers.cjs')(h.port,'demo-basic'))
     }, body);
     assert.equal(r1.status, 200, r1.text);
 
@@ -996,7 +996,7 @@ test('R12 layout 的 presetId 與目前 preset 不符時不得套用', function 
   assert.ok(/raw\.presetId !== presetId/.test(fn), 'loadLayout 必須比對 presetId');
   assert.ok(/emptyLayout\(presetId\)/.test(fn), '不符時退回空 layout');
   assert.ok(/error:/.test(fn), '必須把原因說出來，不能安靜變成空白');
-  assert.ok(!/serialiseLayout/.test(fn), '不得自動覆寫壞掉的檔案');
+  assert.ok(!/method:.*PUT|saveLayout\(/.test(fn), '載入只計算版本基準，不得自動寫入壞掉的檔案');
 });
 
 /* ---- MAJOR 2：存檔競態 ---- */

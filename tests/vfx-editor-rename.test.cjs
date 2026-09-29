@@ -121,7 +121,9 @@ function request(port, opts, bodyBuf) {
 }
 
 /* body 是物件就 JSON 化；是字串就原樣送（測壞掉的 JSON 用） */
-function post(port, body, headers) {
+async function post(port, body, headers) {
+  const parsed=typeof body==='string'?null:body;
+  headers=Object.assign({},parsed&&/^[a-z0-9-]+$/.test(parsed.from)?await require('./helpers/vfx-write-headers.cjs')(port,parsed.from,'preset',parsed.overwrite?parsed.to:null):{},headers||{});
   const data = Buffer.from(typeof body === 'string' ? body : JSON.stringify(body), 'utf8');
   return request(port, {
     method: 'POST', path: editorServer.RENAME_PATH,
@@ -589,7 +591,7 @@ test('RENAME-12 Editor：按鈕在另存新檔旁邊；直接問名字；不先�
   assert.ok(commit.indexOf('openPresetInPane') < 0, '不重新開啟：那會丟掉沒存的修改與復原紀錄');
   assert.ok(/paneHolding\(to\)/.test(commit), '送出前再查一次：要取代的那份這段時間被別的視窗打開了就不蓋');
   const waitAt = commit.indexOf('state.layoutSave');
-  const requestAt = commit.indexOf('renameRequest({ from: from, to: to, overwrite: overwrite })');
+  const requestAt = commit.indexOf('renameRequest({ from: from, to: to, overwrite: overwrite },target)');
   const adoptAt = commit.indexOf('adoptRename(from, to, body)');
   assert.ok(waitAt > 0 && requestAt > waitAt && adoptAt > requestAt, '等分組存完 → 請伺服器改名 → 就地換名字');
   assert.ok(/body\.references/.test(commit) && /body\.pendingDelete/.test(commit) && /showSaveNotice\(/.test(commit),

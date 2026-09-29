@@ -1522,7 +1522,7 @@ function newForgePartSlotCost(reinc, unlocked, furnaceCount) {
    欄位名刻意各自唯一（xxxWeight / xxxCap），套用參數表的錨點才能綁到單一欄位。
    出現門檻（minStage）目前參數表是文字欄（「階段 8+」），未接自動套用，先具名收在這裡。 */
 var RARITY_ROLL = {
-  bonusDivisor: 200, bonusPerStage: 0.006,
+  bonusDivisor: 200, bonusPerStage: 6.0000000000000001E-3,
   commonWeight: 55,                                          // 普通無加成上限
   uncommonWeight: 25, uncommonCap: 2,
   rareWeight: 12, rareCap: 2.5,
@@ -1530,7 +1530,7 @@ var RARITY_ROLL = {
   epicWeight: 1.8, epicCap: 3.5, epicMinStage: 8,
   legendaryWeight: 0.35, legendaryCap: 4, legendaryMinStage: 15,
   mythicWeight: 0.08, mythicCap: 4.5, mythicMinStage: 25,
-  genesisWeight: 0.015, genesisCap: 5, genesisMinStage: 40
+  genesisWeight: 1.4999999999999999E-2, genesisCap: 5, genesisMinStage: 40
 };
 
 function rollRarity(stage, lootBonus) {

@@ -1,14 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜VFX 舊分頁防覆寫與快取補齊（VFX-STALE-GUARD-20260929）
+
+- Owner：Codex；Done。Claude已合併，預檢乾淨。補前輪Core／backend／Runtime快取，編輯器更新提示、未存內容備份與伺服器條件寫入（Preset／layout／改名）。
+- 允許：VFX runtime版本、頁面、editor/server及guard模組、相關測試、文件。禁止改技能／數值／素材外觀。依賴已完成，單人處理；驗收舊分頁、外部修改、正常儲存、新檔競爭與編輯資料保留。HTTP／VM測試通過；實機Ctrl+S拒絕過期分頁、未存值保留，詳見 docs/skill-tests/20260929-vfx-editor-stale-guard.md。
+
 ## Codex｜雷鏈完整形狀重抽（CHAIN-SHAPE-REFRESH-20260929）
 
-- Owner：Codex；核心完成，整體交付待Claude合併後補快取與編輯器防護。出生與飛行共用形狀生成，按頻率重抽鏡像、寬度、相位；不把鏡像補間穿越零，不改飛行路徑與命中。允許Core、必要後端、測試、文件及無衝突快取。
+- Owner：Codex；Done；快取與編輯器防護已於VFX-STALE-GUARD-20260929補齊。出生與飛行共用形狀生成，按頻率重抽鏡像、寬度、相位；不把鏡像補間穿越零，不改飛行路徑與命中。允許Core、必要後端、測試、文件及無衝突快取。
 - 前置：既有動態網格；待Claude合併後才可修改editor.js、index.html、vfx-runtime.js（使用者明確要求）。防覆寫與重啟提示保留為必要待辦，不假裝已完成。禁止修改配置表、技能數值及使用者素材。
 - 驗收：出生／飛行同生成器、鏡像與寬度重抽、無零寬度、圖層同步、同seed/FPS可重現、暫停及回收重用、GPU更新；177項全過、Build 404檔通過。詳見 docs/skill-tests/20260929-chain-shape-refresh.md；未實機驗收，不合併推送。
 
 ## Codex｜旋轉雷鏈動態網格修正（CHAIN-WAVE-MESH-20260929）
 
-- Owner：Codex；程式／素材完成，快取更新待 Claude 合併。旋轉 PNG 的縱向取樣改依實際矩陣，裁切重新分配可見 UV，保留85頂點。金色補回遺失的動態欄位，金紫幅度40px、12次／秒，保留使用者尺寸。
+- Owner：Codex；Done；快取更新已於VFX-STALE-GUARD-20260929補齊。旋轉 PNG 的縱向取樣改依實際矩陣，裁切重新分配可見 UV，保留85頂點。金色補回遺失的動態欄位，金紫幅度40px、12次／秒，保留使用者尺寸。
 - 175項測試全過，Build 404檔通過；素材庫 `de2df11`。瀏覽器驗證頁無法連線，未聲稱完成實機觀察。
 - index.html／js/vfx-runtime.js 預檢發現 Claude 修改；使用者明確要求等 Claude 改好並合併後再改，因此兩檔未動。剩餘步驟、修改及未修改檔案見 `docs/skill-tests/20260929-chain-wave-mesh.md`。
 
@@ -7975,3 +7980,24 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex；Done。基礎連鎖閃電改讀 Skills2 飛行子彈速度，素材由攻擊欄移入飛行子彈欄；追蹤、動畫及抵達結算共用速度。維持現行 18/.244 米／秒手感，不變更傷害或超神機制。
 - 允許 Skills2 Excel／CSV／編譯資料、幾何欄位路由、Runtime、Worker／頁面快取、測試及交接文件；禁止改其他技能內容、使用者素材及其他副本。前置依賴已整合，預檢無衝突。
 - 驗收：Excel→CSV→JS 往返、兩種速度／每級增量、追蹤移動敵人不提前命中、連續彈射與單份特效通過；554 參數／錨點與 404 檔 Build 通過。完整回歸 3221 項：3123 通過、96 失敗、2 略過；96 項均在修改前程式重現，無新增失敗。詳見 `docs/skill-tests/20260929-chain-table-speed.md`。提交交使用者整合，不合併或推送；外部素材變更保持未提交。
+
+## Codex｜參數套用科學記號修正（PARAMS-SCIENTIFIC-20260929）
+
+- Owner：Codex；Done。使用者截圖顯示 E-5E-5 語法錯誤：原數值錨點只捕獲尾數，未消耗指數，替換後留下舊指數。本次共用完整十進位／科學記號模式，套用於五種具名錨點及數值相等比較。
+- 修改：tools/apply_params.cjs、tests/apply-params-scientific.test.cjs、本紀錄。檢查未修改：js/data.js、js/formula.js、既有 apply-params 測試。保留工作區配置、素材及遊戲程式的使用者修改；無素材庫變更。
+- 驗證：node --test tests/apply-params*.test.cjs，5/5 通過；隔離副本測試科學記號正負指數、實際寫入語法檢查、重複套用零變更；五種錨點逐一驗證完整捕獲。node tools/apply_params.cjs 及 --write 均 534 一致／0 變更／0 錨點問題；--check-anchors 擾動 487 項通過。node --check js/data.js、js/formula.js 與工具通過。
+- 全庫 node --test "tests/*.test.cjs" 有非本次範圍失敗及長時間案例；另以 --test-timeout=60000 執行，詳細結果見後續補記。未宣稱全庫通過，未調整遊戲數值配合測試。
+- 交付：Commit 見本紀錄所在提交；修正可獨立合併，未合併／推送。使用者可重新執行套用參數.bat。沒有未完成的套用工具修正；全庫失敗需另案排查。
+- 全庫補記：兩次全庫執行均長時間停在模擬／技能測試，設定 60 秒 timeout 仍未正常結束，已停止本輪啟動的測試程序；因此沒有完整全庫統計。輸出已出現「敵人出手 VFX 由攻擊結算事件驅動，不依賴死亡後快照」失敗；未對其歸因或宣稱已驗證為基線。本次修改僅 CLI 套用工具，專項五項與實際套用檢查全部通過。
+
+## Codex｜永恒超導體獨立往返與金色雷鏈尖端（SUPERCONDUCT-20260929）
+
+- Owner：Codex；Done。使用者確認額外金色雷鏈應獨立，並要求一併修正 VFX 預覽兩端平切。已將 Skills2 永恒超導體的本體子彈／命中移至觸發欄，清除該列舊地面電團覆寫；普通鏈繼承原外觀。
+- 實作：一條執行期往返鏈，以既有 projectileHomingStep 追蹤敵人與移動玩家，實際抵達敵人才傷害，回到自身才疊層。同一敵人可重複命中；死目標可從目前位置改追，無範圍內敵人／玩家死亡／reset 立即送結束事件；再次施放維持一道、不堆積永久鏈。Runtime 以事件 sourceX/Y 為權威起點，回程不從玩家重發。
+- 外觀：gold Preset 保留使用者當前貼圖／金色設計，修正實際 390.1952 寬卻填 200 的製作基準；新增 deformation.tipTaper，Core 共享且 Editor 自動公開「兩端尖細收束比例」，本份設 0.12，包含光暈三層皆收束。頁面、Runtime 資料與 Worker 快取同步；既有 editor guard 偵測版本變更，舊分頁需備份後重啟，不能覆蓋新檔。
+- 修改範圍：Skills2 Excel／CSV／js、tools/skills2-vfx.cjs、Core／Runtime、主頁／Worker／Editor 快取、gold Preset、3 支專項測試、Schema 與任務紀錄。未修改但检查：Pixi backend、battle renderer、util 的玩家飄字映射、config_tables。其他使用者的數值／紫色素材／刪除資源保持原狀，不納入此修正提交。
+- 配置驗證：Artifact Tool 讀寫目標六格；為避免其匯出改動其他內容，僅將六格字串合入原 XLSX XML，所有其他 ZIP 項目逐位元一致；既有儲存格樣式不變，原空白新增兩格使用鄰格 style 1。獨立 openpyxl 唯讀核對六格；CSV→JS apply 為 0 差異。
+- 測試：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs tests/vfx-deformation.test.cjs 通過；加入移動目標／玩家、回程、重複命中、死目標改追、清場／死亡終止、尖端數學與幾何基準；tests/vfx-runtime.test.cjs 的新增回程權威起點／回收通過。VFX／配置綜合 153 項 149 通過，FIELD／CATALOG-3／CHAIN 金色生成器對照／STARFALL-TAIL 四項在 HEAD 原 Runtime 同樣重現；未降低斷言。另編輯器 stale guard／配置／技能／變形 63/63 通過（後續多一項幾何基準測試）。build_check 399 檔通過。
+- 實機：獨立 28370 Editor 開啟合法 Preset、新欄位 0.12、兩端尖細；正式 Runtime 測試場景可選連鎖飛行及移動目標，Console 無警告／錯誤。完整遊戲戰鬥視覺仍待使用者確認手感，未聲稱已跑實戰。
+- 素材庫提交：9679e6b（codex-authored/lightning 的 gold Preset 與配對 layout）；遊戲 Commit 見本紀錄所在提交。可合併，未合併／推送；無待處理功能修改，既有四項回歸失敗另案排查。
+- 最終補驗：提交暫存版本（不混入使用者既有速度／紫色受擊配置）的技能機制 23/23、Excel／CSV／JS 配置 8/8 通過，apply 17 字面值／0 語意變更；工作區技能＋變形 36/36 通過。暂存 XLSX 與 HEAD 比較僅指定六格改值。
