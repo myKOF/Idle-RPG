@@ -8,8 +8,7 @@
       "layerIds": [
         "glow",
         "body",
-        "core",
-        "sprite-4"
+        "core"
       ]
     }
   ],
