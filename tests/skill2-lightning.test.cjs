@@ -639,7 +639,7 @@ test('無座標時三個技能都能施放並造成傷害（高塔退化）', ()
   assert.ok(calls.length > beforeTick, '落雷與雷球在 tick 中結算');
 });
 
-test('CHAIN 半速每段 366ms 抵達才傷害並立即發射下一段',()=>{
+test('CHAIN 首段加速50%至244ms，其後保持同速 抵達才傷害並立即發射下一段',()=>{
  const c=loadContext(),calls=stubHits(c),p=playerEnt(),es=Array.from({length:5},(_,i)=>enemy(1e9,50+i*30,0,'e'+i));
  const events=stubVfx(c);setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
  c.castSkill2(p,es,'chainlightning','mv-float');
@@ -648,10 +648,13 @@ test('CHAIN 半速每段 366ms 抵達才傷害並立即發射下一段',()=>{
   const at=c.SKILL2_RT.meteors.find(m=>m.variant==='lightning-chain-hit').at;
   c.GT=at-.001;c.sgTickMeteors(tickCtx(c,p,es));assert.equal(calls.length,i-1);
   c.GT=at;c.sgTickMeteors(tickCtx(c,p,es));assert.equal(calls.length,i);
-  assert.equal(Math.round(at*1000),366*i);
+  const flight=events.filter(e=>e.variant==='lightning-chain')[i-1];
+  const a=flight.area,distance=Math.hypot(a.x-a.sourceX,a.y-a.sourceY);
+  assert.ok(Math.abs(distance/flight.travelMs.at(-1)-50/244)<1e-8);
+  if(i===1)assert.equal(at,.244);
  }
  const chains=events.filter(e=>e.variant==='lightning-chain');assert.equal(chains.length,4);
- assert.ok(chains.every(e=>e.hit===false&&!e.delayMs&&e.travelMs.at(-1)===366));
+ assert.ok(chains.every(e=>e.hit===false&&!e.delayMs&&e.lineLength===180));
  assert.ok(chains.every(e=>e.vfx.attack===table.vfx('chainlightning',1,'攻擊特效')));
 });
 
@@ -693,9 +696,13 @@ test('CHAIN 抵達前死亡、離場與玩家換場都取消傷害和命中事�
 test('CHAIN 致死首擊抵達後仍逐段彈向存活敵人，沒有整鏈瞬殺', () => {
  const c=loadContext(),calls=stubHits(c),events=stubVfx(c),p=playerEnt();
  const es=[enemy(50,50,0,'a'),enemy(50,80,0,'b'),enemy(50,110,0,'c')];
+ forceRolls(c,0);
  setLevels(c,'chainlightning',[1,0,0,0,0,0,0]);
  c.castSkill2(p,es,'chainlightning','mv-float');
- for(const [at,count] of [[.365,0],[.366,1],[.731,1],[.732,2],[1.098,3]]) {
+ for(let count=1;count<=3;count++) {
+  const at=c.SKILL2_RT.meteors.find(m=>m.variant==='lightning-chain-hit').at;
+  c.GT=at-.000001;c.sgTickMeteors(tickCtx(c,p,es.filter(e=>e.hp>0)));
+  assert.equal(calls.length,count-1);
   c.GT=at;c.sgTickMeteors(tickCtx(c,p,es.filter(e=>e.hp>0)));
   assert.equal(calls.length,count);assert.equal(es.filter(e=>e.hp===0).length,count);
  }

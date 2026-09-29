@@ -369,7 +369,7 @@ function recordingBackend(log, tag) {
     createNode(spec) { const n = { tag, spec, transforms: [] }; log.nodes.push(n); return n; },
     updateNode(node, t) {
       if (!t || t.visible === false) return;
-      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY });
+      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY, deformation: t.deformation ? {...t.deformation} : null });
       if (t.skewX) node.transforms[node.transforms.length - 1].skewX = t.skewX;
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
@@ -1693,13 +1693,13 @@ test('CHAIN 移動與反向目標逐幀追蹤，延遲彈射於起飛時取得�
  adapter.clear();adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
-test('CHAIN 已起飛電弧保留離場來源最後位置，到達才回收',()=>{
+test('CHAIN 已起飛電弧保留離場來源最後位置，尾部收入後才回收',()=>{
  const p=unitPreset('bolt-chain-travel-bluewhite',.366);p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
  const visible={a:{x:10,y:20},b:{x:210,y:20}};
  const {adapter}=makeAdapter([p],{ctx:{posOf:id=>visible[id]||{x:999,y:999},playerPos:()=>({x:0,y:0}),chainPoint:id=>visible[id]||null}});
  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],travelMs:[0,366],hit:false,vfx:{attack:p.id}});
  adapter.update(.1);delete visible.a;delete visible.b;adapter.update(.1);
- assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(.167);assert.equal(adapter.stats().fx.activeEffects,0);
+ assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(.167);assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(2);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
 
@@ -1708,14 +1708,14 @@ test('CHAIN 斜俯視飛行前端沿已投影路徑連續前進，366ms 抵達',
  for(const dest of [{x:600,y:0},{x:-300,y:400}]){
   const screen={x:dest.x,y:dest.y*.5};
   const {adapter,log}=makeAdapter([p],{groundScale:.5,ctx:{posOf:id=>id==='a'?{x:0,y:0}:screen,playerPos:()=>({x:0,y:0})}});
-  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],area:{sourceX:0,sourceY:0,x:dest.x,y:dest.y},travelMs:[0,366],hit:false,vfx:{attack:p.id}});
+  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],area:{sourceX:0,sourceY:0,x:dest.x,y:dest.y},lineLength:null,travelMs:[0,366],hit:false,vfx:{attack:p.id}});
   for(let i=1;i<=10;i++){
    adapter.update(.036);const t=log.nodes[0].transforms.at(-1);
    const head={x:t.x+Math.cos(t.rotation)*t.scaleX*256,y:t.y+Math.sin(t.rotation)*t.scaleX*256};
    assert.ok(Math.abs(head.x-screen.x*i*.036/.366)<1e-6);assert.ok(Math.abs(head.y-screen.y*i*.036/.366)<1e-6);
-   assert.equal(t.scaleY,1,'原厚度不隨飛行縮小');assert.equal(adapter.stats().fx.activeEffects,1);
+   assert.ok(Math.abs(t.scaleX*256-180*Math.hypot(screen.x,screen.y)/Math.hypot(dest.x,dest.y))<1e-6,'本體固定18米不拉伸');assert.equal(t.scaleY,1,'原厚度不隨飛行縮小');assert.equal(adapter.stats().fx.activeEffects,1);
   }
-  adapter.update(.007);assert.equal(adapter.stats().fx.activeEffects,0);
+  adapter.update(.007);assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
  }
 });
 
@@ -1833,11 +1833,11 @@ test('CHAIN-LIFECYCLE 死亡取消命中光環，但飛行繼續到最後落點'
  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['mv-float-1','mv-float-2'],hit:false,travelMs:[0,366],vfx});
  adapter.update(.1);alive.clear();adapter.update(.1);assert.equal(adapter.stats().fx.activeEffects,1);
  const played=adapter.stats().played;adapter.tryPlay({fxKind:'impact',variant:'lightning-chain-hit',targets:['mv-float-2'],vfx});assert.equal(adapter.stats().played,played);
- adapter.update(.167);assert.equal(adapter.stats().fx.activeEffects,0);
+ adapter.update(.167);assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(2);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
 
-test('CHAIN-ARRIVAL 起飛不播目標光環，權威命中才播放受擊與光環',()=>{
+test('CHAIN-ARRIVAL 起飛不播受擊，權威命中僅播受擊、不疊舊地面電團',()=>{
  const ps=['bolt-chain-travel-bluewhite','configured-hit','configured-ground'].map(id=>unitPreset(id,.3));
  const {adapter,log}=makeAdapter(ps);
  const vfx={attack:ps[0].id,hit:ps[1].id,ground:ps[2].id};
@@ -1848,5 +1848,23 @@ test('CHAIN-ARRIVAL 起飛不播目標光環，權威命中才播放受擊與光
  assert.equal(log.nodes.filter(n=>/configured-(hit|ground)/.test(n.spec.assetUrl)).length,0,'即使本地飛行結束仍等待權威命中');
  adapter.tryPlay({variant:'lightning-chain-hit',fxKind:'impact',targets:['mv-float-2'],area:{x:300,y:50,r:0},vfx});adapter.update(.01);
  assert.ok(log.nodes.some(n=>n.spec.assetUrl.includes('configured-hit')));
- assert.ok(log.nodes.some(n=>n.spec.assetUrl.includes('configured-ground')));
+ assert.ok(!log.nodes.some(n=>n.spec.assetUrl.includes('configured-ground')));
+});
+
+test('CHAIN-TRAIN 固定18米，轉折後10米尾部與8米前端同時存在並收入端點',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const points={a:{x:0,y:0},b:{x:200,y:0},c:{x:200,y:200}};
+ const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>points[id],playerPos:()=>points.a}});
+ const emit=(a,b)=>adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:[a,b],lineLength:180,travelMs:[0,1e3],hit:false,vfx:{attack:p.id}});
+ emit('a','b');adapter.update(.5);
+ let w=log.nodes[0].transforms.at(-1).deformation;
+ assert.ok(Math.abs(w.scaleX-180/542.464)<1e-8);assert.ok(Math.abs((w.clipMax-w.clipMin)*w.scaleX-100)<1e-6);
+ adapter.update(.5);emit('b','c');adapter.update(.4);
+ const first=log.nodes[0].transforms.at(-1).deformation,second=log.nodes[3].transforms.at(-1).deformation;
+ assert.equal(adapter.stats().fx.activeEffects,2);
+ assert.ok(Math.abs((first.clipMax-first.clipMin)*first.scaleX-100)<1e-6);
+ assert.ok(Math.abs((second.clipMax-second.clipMin)*second.scaleX-80)<1e-6);
+ assert.equal(first.scaleX,second.scaleX);
+ adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,1);
+ adapter.update(1.1);assert.equal(adapter.stats().fx.activeEffects,0);
 });

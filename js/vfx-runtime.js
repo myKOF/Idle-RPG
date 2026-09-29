@@ -720,16 +720,19 @@ var VFXRuntime = (function () {
       var travel = trackedBeamWidths[presetId] ? travelSecAt(spec, ids.length >= 2 ? 1 : 0) : 0;
       // 有權威飛行時間時，保留長電弧與 Preset 原厚度，本體由 A 平移到 B。
       // 舊事件沒有 travelMs 才維持全長連線，避免推測另一個命中時刻。
-      var body = travel > 0 ? .001 : dist;
+      var authoredLength = num(spec.lineLength, 0);
+      var body = travel > 0 ? (authoredLength > 0 ? authoredLength : 180) * dist / Math.max(1,Math.hypot(dx,dy/groundScale)) : dist;
+      var width = trackedBeamWidths[presetId] || NOMINAL_BEAM;
       var ref = play(rt, presetId, {
-        position: from,
+        position: travel > 0 ? {x:from.x-dx*body/dist,y:from.y-dy*body/dist} : from,
         rotation: Math.atan2(dy, dx),
-        timeScale: travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / travel : 1,
-        scaleX: body / (trackedBeamWidths[presetId] || NOMINAL_BEAM),
+        timeScale: travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / (travel*(1+body/dist)+.02) : 1,
+        clipX: travel > 0 ? {min:width,max:width} : null,
+        scaleX: body / width,
         scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
       }, trackedBeamWidths[presetId] ? 1 : undefined);
       if (ref && presetId === 'bolt-chain-travel-bluewhite') {
-        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM, travel: travel, startedAt: clock, from: from, to: to });
+        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: width, body:body, travel: travel, startedAt: clock, from: from, to: to });
       }
       return !!ref;
     }
@@ -1291,10 +1294,6 @@ var VFXRuntime = (function () {
       // 純命中事件不可再次施法或發射；這些角色已由起飛事件播放。
       if (primary === 'hit') {
         if (spec.hit !== false) playRole(spec, 'hit');
-        if (spec.variant === 'lightning-chain-hit') {
-          if (roles.ground) playRole(spec, 'ground');
-          if (roles.field) playRole(spec, 'field');
-        }
         return true;
       }
       var orbit = spec.area && (num(spec.area.orbs, 0) > 0 || Array.isArray(spec.area.members));
@@ -1302,7 +1301,7 @@ var VFXRuntime = (function () {
       var order = ['cast', 'attack', 'projectile', 'field', 'ground'];
       for (var ri = 0; ri < order.length; ri++) {
         var role = order[ri];
-        // 雷幻身光環也是目標端演出，必須等權威命中，不能起飛就點亮敵人。
+        // 雷鏈以飛行本體及短促受擊呈現，不再疊播雷幻身的舊地面電團。
         if (spec.variant === 'lightning-chain' && (role === 'ground' || role === 'field')) continue;
         if (!roles[role] || (orbit && (role === 'projectile' || (orbitPlayed && role === 'ground')))) continue;
         playRole(spec, role);
@@ -1587,19 +1586,24 @@ var VFXRuntime = (function () {
             stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
           }
         }
+        if (beam.travel > 0 && clock-beam.startedAt > beam.travel) { beamFrom=beam.from;beamTo=beam.to; }
         beam.from = beamFrom; beam.to = beamTo;
         var bdx = beamTo.x - beamFrom.x, bdy = beamTo.y - beamFrom.y;
         var distance = Math.max(1, Math.sqrt(bdx * bdx + bdy * bdy));
-        var progress = beam.travel > 0 ? Math.min(1, (clock - beam.startedAt) / beam.travel) : 0;
-        if (beam.travel > 0 && progress >= 1) {
+        var progress = beam.travel > 0 ? (clock - beam.startedAt) / beam.travel : 0;
+        var head = distance * progress;
+        if (beam.travel > 0 && head >= distance + beam.body) {
           stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
         }
-        var tail = Math.max(0, progress - .65);
-        var bodyLength = beam.travel > 0 ? Math.max(.001, distance * (progress - tail)) : distance;
-        var offset = beam.travel > 0 ? tail : 0;
+        var bodyLength = beam.travel > 0 ? beam.body : distance;
+        var offset = beam.travel > 0 ? (head-bodyLength)/distance : 0;
         if (!moveRef(beam.ref, {
           position: {x:beamFrom.x + bdx * offset, y:beamFrom.y + bdy * offset}, rotation: Math.atan2(bdy, bdx),
           scaleX: bodyLength / beam.width,
+          clipX: beam.travel > 0 ? {
+            min:Math.max(0,bodyLength-head)/bodyLength*beam.width,
+            max:Math.min(bodyLength,distance-head+bodyLength)/bodyLength*beam.width
+          } : null,
           scaleY: profile.scale
         }, 1)) trackingBeams.splice(bi, 1);
       }
@@ -1745,7 +1749,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260929-chain-thunder-rebuild';
+  var DATA_VERSION = '20260929-chain-train';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

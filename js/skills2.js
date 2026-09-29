@@ -7142,8 +7142,8 @@ function sgChainNextTarget(from, pool, visited, hopPx) {
   return (typeof bfRandomOther === 'function') ? bfRandomOther(from, pool, hopPx, visited) : null;
 }
 
-// 飛行速度降為原來 50%；每段抵達即起飛下一段，沒有額外空白間隔。
-var SG_CHAIN_TRAVEL_MS = 366;
+// 首段由366ms加速50%至244ms；同一鏈沿用首段速度，轉折處18米尾流不中斷。
+var SG_CHAIN_TRAVEL_MS = 244;
 function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce, continueChain) {
   sgQueueMeteor(cfg.pEnt, cfg.st, dmg, target, pool, 0, null, cfg.floatSel, cfg.out, at, {
     gid: 'chainlightning', variant: 'lightning-chain-hit',
@@ -7170,19 +7170,24 @@ function sgQueueChainHit(cfg, target, dmg, at, pool, isBounce, continueChain) {
 
 function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
   if (!start || start.hp <= 0) return;
-  var visited = [], remaining = Math.min(64, cfg.links), bounces = 0;
+  var visited = [], remaining = Math.min(64, cfg.links), bounces = 0, speed = 0;
   function launch(from, target, livePool) {
     if (!target || remaining <= 0 || !(pEnt.hp > 0)) return;
     remaining--; visited.push(target);
-    var origin = from && typeof bfPos === 'function' ? bfPos(from) : null;
+    var origin = from && typeof bfPos === 'function' ? bfPos(from)
+      : (typeof bfPlayerPos === 'function' ? bfPlayerPos() : null);
     var end = typeof bfPos === 'function' ? bfPos(target) : null;
+    var distance = origin && end ? Math.hypot(end.x-origin.x,end.y-origin.y) : 0;
+    if (!speed && distance > 0) speed = distance / SG_CHAIN_TRAVEL_MS;
+    var travelMs = speed && distance > 0 ? distance / speed : SG_CHAIN_TRAVEL_MS;
     sgEmitVfx('chainlightning', from ? [from, target] : [target], floatSel, {
       fxKind: 'chain', variant: 'lightning-chain', count: 1, hit: false,
-      travelMs: from ? [0, SG_CHAIN_TRAVEL_MS] : [SG_CHAIN_TRAVEL_MS], preserveDeadTargets: true,
+      travelMs: from ? [0, travelMs] : [travelMs], preserveDeadTargets: true,
+      lineLength: bfMeterPx(18),
       area: origin && end ? { sourceX: origin.x, sourceY: origin.y, x: end.x, y: end.y } : null
     });
     var dmg = cfg.dmgVal * (1 + cfg.bouncePct * bounces / 100);
-    sgQueueChainHit(cfg, target, dmg, GT + SG_CHAIN_TRAVEL_MS / 1000, livePool, bounces > 0, function (currentPool) {
+    sgQueueChainHit(cfg, target, dmg, GT + travelMs / 1000, livePool, bounces > 0, function (currentPool) {
       if (remaining <= 0) return;
       var next = sgChainNextTarget(target, currentPool, visited, cfg.hopPx);
       if (!next) return;
@@ -7195,7 +7200,7 @@ function sgChainlightningBolt(pEnt, st, cfg, start, pool, floatSel, out) {
     });
     for (var e = 0; e < cfg.extraHits; e++) {
       sgQueueMeteor(pEnt, st, dmg, target, livePool, 0, null, floatSel, out,
-        GT + (SG_CHAIN_TRAVEL_MS + sgStaggerMs(e + 1)) / 1000,
+        GT + (travelMs + sgStaggerMs(e + 1)) / 1000,
         { gid: 'chainlightning', variant: 'lightning-chain-hit' });
     }
   }
