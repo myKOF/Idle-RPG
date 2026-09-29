@@ -1706,7 +1706,7 @@ test('CHAIN 離場端點不使用 lastPos 或備用位置，取消延遲與飛�
 });
 
 test('CHAIN 斜俯視彈射逐段連接投影端點，命中電光只在終點抵達時播放',()=>{
- // 幾何標記延長存活，避免節點池重用讓兩段的觀測紀錄混在一起；正式圖集壽命另測。
+ // 幾何標記隔離美術；抵達回收後第二段可重用節點，依播放次數驗證。
  const p=unitPreset('bolt-chain-travel-bluewhite',1);p.layers[0].id='travelling-electric-front';
  p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
  const hit=unitPreset('chain-hit',1),points={'pv-float':{x:0,y:0},a:{x:100,y:180},b:{x:-100,y:-120}};
@@ -1718,12 +1718,15 @@ test('CHAIN 斜俯視彈射逐段連接投影端點，命中電光只在終點�
  const beams=()=>log.nodes.filter(n=>n.spec.assetUrl.includes(p.id));
  const hits=()=>log.nodes.filter(n=>n.spec.assetUrl.includes(hit.id));
  function checkEnd(node,from,to){const t=node.transforms.at(-1),end={x:t.x+Math.cos(t.rotation)*t.scaleX*256,y:t.y+Math.sin(t.rotation)*t.scaleX*256};
-  assert.ok(Math.abs(t.x-from.x)<1e-6&&Math.abs(t.y-from.y)<1e-6);
-  assert.ok(Math.abs(end.x-to.x)<1e-6&&Math.abs(end.y-to.y)<1e-6,'座標已投影，不得再壓一次 Y');}
+  const dx=to.x-from.x,dy=to.y-from.y,dist=Math.hypot(dx,dy);
+  assert.ok(Math.abs((t.x-from.x)*dy-(t.y-from.y)*dx)<1e-6,'本體沿已投影的 A→B 直線移動');
+  assert.ok(Math.hypot(t.x-from.x,t.y-from.y)>0,'本體確實離開 A');
+  assert.ok(t.scaleX*256<dist*.36,'短電弧不鋪滿兩端');
+  assert.ok(Math.hypot(end.x-from.x,end.y-from.y)<=dist+1e-6);}
  adapter.update(.18);assert.equal(beams().length,1);assert.equal(hits().length,0);checkEnd(beams()[0],screen('pv-float'),screen('a'));
  adapter.update(.004);assert.equal(hits().length,1);assert.equal(hits()[0].transforms.at(-1).y,90);
- adapter.update(.116);adapter.update(.001);assert.equal(beams().length,2);assert.equal(hits().length,1);
- points.b={x:-180,y:240};adapter.update(.17);checkEnd(beams()[1],screen('a'),screen('b'));assert.equal(hits().length,1);
+ adapter.update(.116);adapter.update(.001);assert.equal(adapter.stats().played,3);assert.equal(hits().length,1);
+ points.b={x:-180,y:240};adapter.update(.17);checkEnd(beams().at(-1),screen('a'),screen('b'));assert.equal(hits().length,1);
  adapter.update(.02);assert.equal(hits().length,2);assert.equal(hits()[1].transforms.at(-1).x,-180);assert.equal(hits()[1].transforms.at(-1).y,120);
  adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
@@ -1853,4 +1856,32 @@ test('CHAIN-LIFECYCLE 死亡取消播放中光環與待播命中，死亡來源�
  assert.equal(adapter.stats().played,played,'不排入已死亡目標的新事件');
  alive.add('mv-float-2');adapter.tryPlay({...spec,delayMs:300});
  alive.clear();adapter.update(.5);assert.equal(adapter.stats().played,played,'排程後死亡也取消');
+});
+
+
+test('CHAIN-FLIGHT 正式電弧本體連續離開 A、短拖尾飛向 B，抵達才消失',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const {decodePng}=require('../tools/vfx/vfx-raster.cjs');
+ const tex=decodePng(fs.readFileSync(path.join(REPO,'images/vfx/assets/codex-authored/lightning/chain-travel.png')));
+ function centre(frame){let sum=0,mass=0;for(let y=0;y<128;y++)for(let x=0;x<256;x++){
+  const a=tex.rgba[((Math.floor(frame/6)*128+y)*tex.width+(frame%6*256+x))*4+3];sum+=x*a;mass+=a;
+ }return sum/mass;}
+ for(const target of [{x:600,y:0},{x:-300,y:400}]){
+  const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>id==='a'?{x:0,y:0}:target,playerPos:()=>({x:0,y:0})}});
+  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],travelMs:[0,183],hit:false,vfx:{attack:p.id}});
+  let previous=-1;
+  for(let i=1;i<=10;i++){
+   adapter.update(.018);const t=log.nodes[0].transforms.at(-1),len=Math.hypot(target.x,target.y);
+   const offset=(t.x*target.x+t.y*target.y)/len;
+   const luminous=offset+centre(t.frame)*t.scaleX;
+   assert.ok(luminous>previous,'亮電弧的實際像素中心必須逐幀向 B 前進');previous=luminous;
+   assert.ok(t.scaleX*256<len*.36,'每格都是短電弧，不是完整 A-B 連線');
+   assert.ok(t.scaleY<=t.scaleX+1e-6,'縮短電弧時同步收窄，避免擠成粗電球');
+   assert.ok(offset>0,'整個電弧節點有平移，不只換圖集幀');
+   assert.ok(Math.abs(t.x*target.y-t.y*target.x)<1e-6);
+   assert.equal(adapter.stats().fx.activeEffects,1);
+  }
+  assert.ok(previous>Math.hypot(target.x,target.y)*.85,'抵達前亮部已接近 B');
+  adapter.update(.004);assert.equal(adapter.stats().fx.activeEffects,0);
+ }
 });

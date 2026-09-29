@@ -348,6 +348,7 @@ var VFXRuntime = (function () {
     var planeAngles = Object.create(null);
     var presetDurations = Object.create(null);
     var trackedBeamWidths = Object.create(null);
+    var trackedBeamArrivalTimes = Object.create(null);
     var projectiles = [];                   // 逐幀前進的飛行物
     var follows = [];                       // 跟著玩家／實體走的效果（cast）
     var trackingBeams = [];                  // 彈射電弧逐幀追蹤兩端的顯示位置
@@ -420,7 +421,9 @@ var VFXRuntime = (function () {
         presetDurations[p.id] = p.duration;
         if (p.id === 'bolt-chain-travel-bluewhite') {
           var front = p.layers.find(function(l) { return l.id === 'travelling-electric-front'; });
-          trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) : NOMINAL_BEAM;
+          trackedBeamWidths[p.id] = front ? 256 * num(front.scale && front.scale.x, 1) * num(front.scaleOverLife, 1) : NOMINAL_BEAM;
+          // 既有圖集第 11 格前端抵達右緣；播放速度需對齊事件的抵達秒數。
+          trackedBeamArrivalTimes[p.id] = front && front.sheet ? 11 / num(front.sheet.fps, 60) : 0;
         }
         // Two synchronized passes share textures; each stone switches sides at the orbit midline.
         if (isRockOrbitPreset(p.id) && p.layers.some(function(l) { return /^stone-\d+-plate$/.test(l.id); })) {
@@ -712,14 +715,19 @@ var VFXRuntime = (function () {
       var dx = to.x - from.x, dy = to.y - from.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (!(dist > 0)) dist = 1;
+      var travel = trackedBeamWidths[presetId] ? travelSecAt(spec, ids.length >= 2 ? 1 : 0) : 0;
+      // 有權威飛行時間時，電弧只佔路徑一小段，整段本體由 A 平移到 B。
+      // 舊事件沒有 travelMs 才維持全長連線，避免推測另一個命中時刻。
+      var body = travel > 0 ? Math.min(dist * .35, 96 * profile.scale) : dist;
       var ref = play(rt, presetId, {
         position: from,
         rotation: Math.atan2(dy, dx),
-        scaleX: dist / (trackedBeamWidths[presetId] || NOMINAL_BEAM),
-        scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
+        timeScale: travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / travel : 1,
+        scaleX: body / (trackedBeamWidths[presetId] || NOMINAL_BEAM),
+        scaleY: travel > 0 ? Math.min(profile.scale, body / trackedBeamWidths[presetId]) : trackedBeamWidths[presetId] ? profile.scale : 1
       }, trackedBeamWidths[presetId] ? 1 : undefined);
       if (ref && presetId === 'bolt-chain-travel-bluewhite') {
-        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM });
+        trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM, travel: travel, startedAt: clock });
       }
       return !!ref;
     }
@@ -1571,9 +1579,17 @@ var VFXRuntime = (function () {
           }
         }
         var bdx = beamTo.x - beamFrom.x, bdy = beamTo.y - beamFrom.y;
+        var distance = Math.max(1, Math.sqrt(bdx * bdx + bdy * bdy));
+        var progress = beam.travel > 0 ? Math.min(1, (clock - beam.startedAt) / beam.travel) : 0;
+        if (beam.travel > 0 && progress >= 1) {
+          stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
+        }
+        var bodyLength = beam.travel > 0 ? Math.min(distance * .35, 96 * profile.scale) : distance;
+        var offset = progress * (1 - bodyLength / distance);
         if (!moveRef(beam.ref, {
-          position: beamFrom, rotation: Math.atan2(bdy, bdx),
-          scaleX: Math.max(1, Math.sqrt(bdx * bdx + bdy * bdy)) / beam.width, scaleY: profile.scale
+          position: {x:beamFrom.x + bdx * offset, y:beamFrom.y + bdy * offset}, rotation: Math.atan2(bdy, bdx),
+          scaleX: bodyLength / beam.width,
+          scaleY: beam.travel > 0 ? Math.min(profile.scale, bodyLength / beam.width) : profile.scale
         }, 1)) trackingBeams.splice(bi, 1);
       }
 
