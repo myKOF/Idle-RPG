@@ -4,7 +4,9 @@
    2. 吸血／吸魔不設上限，且改由每秒生命回復／法力恢復決定
    3. 韌性上限 80%，同時作用於被控場機率／控場時間／被爆擊機率
    4. 敵人依敵種爆擊（普通 8%／菁英 6%／BOSS 4%、爆傷 300%），可由參數表調整
-   5. 技能不再降低敵人防禦，改為穿透增益；穿透無上限並走遞減曲線，超過 100% 轉增傷 */
+   5. 技能不再降低敵人防禦，改為穿透增益；穿透無上限並走遞減曲線，超過 100% 轉增傷
+   （2026-09-29：舊技能系統整個移除，第 5 項中「舊技能改給 penUp」的原始碼比對與
+    「傷害技附帶增益不受重複疊放閘門限制」兩項隨舊技能一併刪除；穿透公式與 penUp 增益的加成仍守住。） */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -45,6 +47,7 @@ test('healPlayer：noShield（生命回復／吸血等非技能來源）溢出�
 test('戰鬥端與技能端的吸血／汲取／過關回復皆以 noShield 呼叫', () => {
   const combat = read('js/combat.js');
   const skills = read('js/skills.js');
+  const skills2 = read('js/skills2.js');
   assert.match(combat, /healPlayer\(pEnt, healAmt, st, \{ noShield: true \}\)/);       // 普攻吸血/汲取
   /* 2026-08：擊殺回復（每殺一隻 12%）改為過關回復（整波清空 30%），觸發點從
      onFieldKill 移到 completeFieldWave，回復性質不變——仍是非技能來源、溢出不轉護盾。 */
@@ -52,9 +55,12 @@ test('戰鬥端與技能端的吸血／汲取／過關回復皆以 noShield 呼�
   assert.match(combat, /st\.passives\.soulEater \/ 100, st, \{ noShield: true \}\)/);   // 吸魂
   assert.match(combat, /healPlayer\(player, lifestealHealAmount\(st, hpPct\) \* count, st, \{ noShield: true \}\)/);
   assert.doesNotMatch(skills, /healPlayer\(pEnt, lifestealHealAmount\(st, st\.lifesteal\)/);
-  // 技能自身的治療（healPctMax／healPctOfDmg）不得帶 noShield
-  assert.match(skills, /healPlayer\(pEnt, totalDmg \* fx\.healPctOfDmg \/ 100, st\);/);
-  assert.match(skills, /healPlayer\(pEnt, hv, st\);/);
+  assert.doesNotMatch(skills2, /healPlayer\(pEnt, lifestealHealAmount\(st, st\.lifesteal\)/);
+  /* 技能自身的治療不得帶 noShield（溢出仍轉護盾）。2026-09-29 舊技能（healPctMax／healPctOfDmg）移除後，
+     改以新版技能超神【殺神領域】的擊殺回復為代表；同一個檔案裡持續小額吸血的傳奇【血霧】則明確帶 noShield，
+     兩者並存正好證明旗標是「依來源性質」而不是整個模組一刀切。 */
+  assert.match(skills2, /healPlayer\(pEnt, heal, st\);/);
+  assert.match(skills2, /healPlayer\(pEnt, st\.hp \* pct \/ 100, st, \{ noShield: true \}\);/);
 });
 
 /* ---- 2. 吸血／吸魔改由回復決定，且無上限 ---- */
@@ -264,36 +270,22 @@ test('resolveHit：敵方穿透只折減防禦，維持舊版防禦減傷公式'
   assert.ok(Math.abs(high - expectAt(5000)) <= 1, '5000% 穿透傷害不符：' + high);
 });
 
-test('技能不再有降低敵人防禦效果，改為穿透增益 penUp', () => {
-  const skills = read('js/skills.js');
-  const skillsCsv = read('config/CSV/Skills.csv');
-  // 技能定義與里程碑皆不得再出現 defDown（僅保留 buffLabel／浮字分類的相容對照）
-  // 2026-08-11 技能及狀態改造：增益改以狀態引用 status:[{id:'penUp',…}] 表達（→ config/Excel/Status.xlsx）
-  assert.doesNotMatch(skills, /id: 'defDown'/);
-  assert.ok(!skillsCsv.includes('defDown'), 'Skills 表仍有 defDown');
-  assert.match(skills, /armorBreak:.*status: \[\{ id: 'penUp', base: 25, per: 5, dur: 5 \}\]/);
-  assert.match(skills, /whirlwind: \{ 4: \{ status: \[\{ id: 'slow', dur: 2 \}\] \}, 8: \{ status: \[\{ id: 'slow', dur: 3 \}, \{ id: 'penUp'/);
-  assert.match(skills, /manaBurn: \{ 4: \{ mpOnCrit: 35 \}, 8: \{ mpOnCrit: 40, status: \[\{ id: 'penUp'/);
-  assert.match(read('js/status.js'), /penUp: \{ name: '物理\/魔法穿透'/);
-});
-
 test('penUp 增益同時加成物理與魔法穿透，且各攻擊來源都吃得到', () => {
   const c = loadContext();
+  /* 2026-09-29：舊技能（破甲擊／旋風斬 M8／法力灼燒 M8）整個移除後，js/skills.js 已不含任何傷害結算，
+     技能端的傷害來源改為新版技能（js/skills2.js）；狀態表的 penUp 定義仍在。 */
+  assert.equal(c.STATUS.penUp.kind, 'buff');
+  assert.equal(c.STATUS.penUp.effect, 'stat');
+  assert.equal(c.STATUS.penUp.key, 'penUp');
   c.buffVal = (ent, key) => (ent && ent.buffs && ent.buffs[key]) || 0;
   const st = { pPen: 100, mPen: 30 };
   const ent = { buffs: { penUp: 25 } };
   assert.equal(c.effectivePPen(st, ent), 125);
   assert.equal(c.effectiveMPen(st, ent), 55);
   assert.equal(c.effectivePPen(st, null), 100);      // 無實體時只用屬性值
-  ['js/combat.js', 'js/skills.js', 'js/legendary.js', 'js/potential.js'].forEach((f) => {
+  ['js/combat.js', 'js/skills2.js', 'js/legendary.js', 'js/potential.js'].forEach((f) => {
     const src = read(f);
     assert.ok(/effective[PM]Pen\(/.test(src), f + ' 未套用 penUp 增益');
     assert.doesNotMatch(src, /pen: st\.[pm]Pen\b/);
   });
-});
-
-test('傷害技的附帶增益不受「增益不重複疊放」閘門限制', () => {
-  // 2026-07-30 技能融合改造：增益改走 skillFxBuffList 存取器（支援融合技 buffList），閘門語意不變
-  const skills = read('js/skills.js');
-  assert.match(skills, /if \(firstBuff && !fx\.dmgType && buffVal\(pEnt, statusRefKey\(firstBuff\)\) > 0\) return false;/);
 });

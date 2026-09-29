@@ -5,11 +5,10 @@
 
 | 檔案 | 用途 |
 | --- | --- |
-| `vfx-catalog.cjs` | 特效目錄：`PRESETS`（每個 preset 的 id／家族／製作簡述／名目尺寸）、技能表與狀態表每一列的角色對應（`skillRoles`／`SKILLS2_VFX`／`STATUS_VFX`）、普攻／敵方／潛力的固定對應 `COMBAT_DEFAULTS` |
+| `vfx-catalog.cjs` | 特效目錄：`PRESETS`（每個 preset 的 id／家族／製作簡述／名目尺寸）、技能表與狀態表每一列的角色對應（`SKILLS2_VFX`／`STATUS_VFX`）、普攻／敵方／潛力的固定對應 `COMBAT_DEFAULTS` |
 | `preset-kit.cjs` | 製作工具箱：`kit.sprite / particle / procedural` 建圖層、`kit.write` 驗證（`VFXCore.validatePreset`＋assetId 存在性）後以 canonical 形式寫到 `vfx/presets/<id>.json`、`kit.probe` 無畫面模擬回報尺寸與粒子數；`kit.A` 已驗證存在的素材捷徑、`kit.T` 色票、`kit.C` 常用曲線、`kit.px(n)`＝讓 512px 素材顯示約 n px |
 | `author/<family>.cjs` | 各家族的製作腳本（目前只有 `hits.cjs`：13 份受擊特效）。新家族照同樣寫法：`node tools/vfx/authoring/author/<family>.cjs` |
-| `fill-vfx-cells.cjs` | 依目錄把特效欄位填進 `config/CSV/Skills.csv`、`Skills2.csv`、`Status.csv`（前置：`node tools/config_tables.cjs --gen` 已產生欄位；之後 `--apply --write` 回寫 JS） |
-| `skills-vfx-facts.json` | 舊技能表（SKILLS）逐技能推導出的 fxKind／variant／elem，`fill-vfx-cells.cjs` 用它決定舊技能的角色 |
+| `fill-vfx-cells.cjs` | 依目錄把特效欄位填進 `config/CSV/Skills2.csv`、`Status.csv`（前置：`node tools/config_tables.cjs --gen` 已產生欄位；之後 `--apply --write` 回寫 JS） |
 
 ## 製作一個新家族
 

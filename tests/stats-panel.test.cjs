@@ -170,7 +170,7 @@ test('掉落統計 HTML：品質分行上色、材料含圖示、寶石逐行、
   assert.doesNotMatch(html, /金幣<\/span>：[\d.]+[KMBT]/);
 });
 
-test('野外戰鬥、高塔、分解與技能已掛上統計記錄', () => {
+test('野外戰鬥、高塔與分解已掛上統計記錄', () => {
   const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
   assert.match(combat, /window\.recordLootGold/);
   assert.match(combat, /window\.recordLootKill/);
@@ -197,9 +197,7 @@ test('野外戰鬥、高塔、分解與技能已掛上統計記錄', () => {
   assert.match(factory, /window\.recordLootGold/);
   assert.match(factory, /recordLootMat\([^;]*'factory'\)/);
 
-  const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
-  assert.match(skills, /window\.recordLootGold/);
-  assert.match(skills, /recordLootGold\([^;]*'skill'\)/);
+  // 技能來源（舊技能表的「尋寶／點金」類技能金幣）已隨舊技能系統移除，新版技能沒有直接產出金幣的效果。
 });
 
 test('統計面板 UI：標題、三區塊與每秒即時更新', () => {

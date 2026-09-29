@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const util = fs.readFileSync(path.join(root, 'js', 'util.js'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
-const skills = fs.readFileSync(path.join(root, 'js', 'skills.js'), 'utf8');
+const potential = fs.readFileSync(path.join(root, 'js', 'potential.js'), 'utf8');
 const skills2 = fs.readFileSync(path.join(root, 'js', 'skills2.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 
@@ -201,9 +201,11 @@ test('我方攻擊被敵方閃避時，MISS 顯示在敵方浮層', () => {
   // v17 起普攻 MISS 也等劍氣飛到才跳（atkHitDelayMs＝飛行＋追加波次錯開）
   assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge',\s*undefined,\s*atkHitDelayMs\)/);
   assert.doesNotMatch(combat, /floatText\(mEnt\.floatSel \|\| floatSel,\s*'MISS'/);
-  // 技能的 MISS 與傷害數字一樣要等「打到人」才跳（多段技逐段錯開）
-  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge',\s*undefined,\s*hitDelayMs\)/);
-  assert.doesNotMatch(skills, /floatText\(targetEnt\.floatSel \|\| floatSel,\s*'MISS'/);
+  // 技能的 MISS 與傷害數字一樣要等「打到人」才跳（新版技能 sgHitOne／反擊帶 delayMs，潛力技能連鎖逐跳錯開）
+  assert.match(skills2, /floatEnemyEvent\(target,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge',\s*undefined,\s*delayMs\)/);
+  assert.match(potential, /floatEnemyEvent\(t,\s*floatSel,\s*'MISS',\s*'miss enemy-dodge',\s*undefined,\s*i \* hopMs\)/);
+  assert.doesNotMatch(skills2, /floatText\(target\.floatSel \|\| floatSel,\s*'MISS'/);
+  assert.doesNotMatch(potential, /floatText\([^)]*'MISS'/);
   const missBlock = css.match(/\.float-txt\.miss\s*\{([\s\S]*?)\}/);
   assert.ok(missBlock, '找不到 MISS 浮字樣式');
   assert.match(missBlock[1], /color:\s*#ef4444/);
@@ -416,8 +418,14 @@ test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源�
   // v17 起普攻傷害數字與劍氣命中同步（atkHitDelayMs）
   assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*basicDamageFloatGroupClass\(combatDamageFloatClass\('enemy-attack',\s*res\),\s*damageGroupId\),\s*res\.dmg,\s*atkHitDelayMs\)/);
   assert.match(combat, /'crit enemy-attack'/);
-  assert.match(skills, /floatEnemyEvent\(targetEnt,\s*floatSel,\s*sk\.emoji \+ dmgStr,\s*combatDamageFloatClass\('enemy-skill',\s*dmgRes\),\s*dmgRes\.dmg,\s*hitDelayMs\)/);
-  assert.match(skills, /'crit enemy-skill'/);
+  // 技能傷害數字一律走 combatDamageFloatClass('enemy-skill', 結算結果)：新版技能 sgHitOne、反擊與潛力技能
+  assert.match(skills2, /floatEnemyEvent\(target,\s*floatSel,\s*g\.emoji \+ s,\s*\(typeof combatDamageFloatClass === 'function'\) \? combatDamageFloatClass\('enemy-skill',\s*res\) : 'enemy-skill',\s*res\.dmg,\s*delayMs\)/);
+  assert.match(potential, /combatDamageFloatClass\('enemy-skill',\s*res\)/);
+  const classCtx = {};
+  vm.runInNewContext(util, classCtx);
+  assert.equal(classCtx.combatDamageFloatClass('enemy-skill', { crit: false }), 'dmg enemy-skill');
+  assert.equal(classCtx.combatDamageFloatClass('enemy-skill', { crit: true }), 'crit enemy-skill');
+  assert.equal(classCtx.combatDamageFloatClass('enemy-attack', { crit: true }), 'crit enemy-attack');
   assert.match(util, /function combatDamageFloatClass\(source, result, forceCrit\)/);
   assert.match(util, /crit-high-roll/);
   assert.match(css, /\.float-txt\.enemy-hit-float\.enemy-hit-attack\s*\{[\s\S]*?color:\s*#ffffff/);
@@ -439,17 +447,18 @@ test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源�
   assert.match(css, /\.float-txt\.player-event\.dodge\s*\{[\s\S]*?z-index:\s*8/);
 });
 
-test('玩家技能取得護盾與所有自身 buff 時會顯示玩家事件浮字', () => {
-  assert.match(skills, /function playerBuffFloatClass\(key\)/);
-  assert.match(skills, /function showPlayerBuffFloat\(floatSel,\s*buff,\s*lv,\s*mult\)/); // 5 轉昇華天賦倍率同步顯示
-  assert.match(skills, /playerBuffFloatClass\(statusRefKey\(buff\)\)/);
-  assert.match(skills, /floatPlayerEvent\(floatSel,\s*'🛡️\+' \+ fmt\(gainedShield\)/);
-  // 2026-07-30 技能融合改造：buff 施加改走 skillFxBuffList 迴圈（支援融合技不限數量的 buffList）
-  assert.match(skills, /skillFxBuffList\(fx\)\.forEach\(function \(bf\) \{/);
-  assert.match(skills, /showPlayerBuffFloat\(floatSel,\s*ref,\s*lv,\s*fxMult\)/);
-  assert.match(skills, /floatPlayerEvent\(floatSel,\s*'✨淨化',\s*'special'\)/);
-  assert.match(skills, /floatPlayerEvent\(floatSel,\s*statusRefName\(ref\) \+ ' ' \+ refDur \+ '秒',\s*'heal'\)/);
-  assert.match(skills, /floatPlayerEvent\(floatSel,\s*'法力 \+' \+ fmt\(mpGain\),\s*'mana',\s*mpGain\)/);
+test('玩家技能取得護盾與自身增益時會顯示玩家事件浮字（新版技能與潛力技能）', () => {
+  /* 舊技能系統的通用 buff 浮字（playerBuffFloatClass／showPlayerBuffFloat）已隨其移除；
+     新版技能各自在取得護盾時送 'shield' 浮字，潛力技能的增益／防禦／回復各送對應類型。 */
+  assert.match(skills2, /floatPlayerEvent\(pSel,\s*'🪨\+' \+ fmt\(Math\.max\(0, \(pEnt\.shield \|\| 0\) - before\)\),\s*'shield'\)/);
+  assert.match(skills2, /floatPlayerEvent\(pSel,\s*'🪨\+' \+ fmt\(gain\),\s*'shield'\)/);
+  assert.match(skills2, /floatPlayerEvent\(pSel,\s*'🌪️\+' \+ fmt\(gain\),\s*'shield'\)/);
+  assert.match(skills2, /floatPlayerEvent\(pSel,\s*'🛡️\+' \+ fmt\(gained\),\s*'shield'\)/);
+  assert.match(potential, /floatPlayerEvent\(floatSel,\s*def\.emoji \+ ' 攻速\+' \+ fmt1\(val\) \+ '%',\s*'attack'\)/);
+  assert.match(potential, /floatPlayerEvent\(floatSel,\s*def\.emoji \+ ' CDR\+' \+ fmt1\(val\) \+ '%',\s*'special'\)/);
+  assert.match(potential, /floatPlayerEvent\(floatSel,\s*def\.emoji \+ ' 無敵 ' \+ fmt1\(val\) \+ 's',\s*'defend'\)/);
+  assert.match(potential, /floatPlayerEvent\(floatSel,\s*def\.emoji \+ ' 回復\/溢傷\+' \+ fmt1\(val\) \+ '%',\s*'heal'\)/);
+  assert.match(potential, /floatPlayerEvent\(floatSel,\s*def\.emoji \+ ' 全傷\+' \+ fmt1\(val\) \+ '%',\s*'attack'\)/);
 });
 
 test('玩家事件浮字依效果類型使用不同顏色', () => {
@@ -462,7 +471,6 @@ test('玩家事件浮字依效果類型使用不同顏色', () => {
 
 test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中心向左右隨機滑出', () => {
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
-  const potential = fs.readFileSync(path.join(root, 'js', 'potential.js'), 'utf8');
   assert.match(util, /function floatPlayerSkillCast\(floatSel, skill, totalDamage\)/);
   assert.match(util, /skill-cast-' \+ direction/);
   assert.match(ui, /function playerFloatStyleClass\(elId, text, cls\)/);
@@ -476,7 +484,7 @@ test('我方飄字依承傷／增益分成紅區與藍區，技能名稱從中�
   assert.match(css, /skill-cast-right\s*\{[\s\S]*?left:\s*calc\(50% \+ 120px\)/);
   assert.match(css, /@keyframes\s+skillCastFloatLeft\s*\{[\s\S]*?translate\(calc\(-50% - 16px\)/);
   assert.match(css, /@keyframes\s+skillCastFloatRight\s*\{[\s\S]*?translate\(calc\(-50% \+ 16px\)/);
-  assert.match(skills, /floatPlayerSkillCast\(floatSel, sk, out\.dmg\)/);
+  assert.match(skills2, /floatPlayerSkillCast\(floatSel, skillFloat, out\.dmg\)/);
   assert.match(potential, /floatPlayerSkillCast\(floatSel, def, res && res\.dmg\)/);
   assert.match(renderer, /cls\.indexOf\('skill-cast'\) >= 0/);
   assert.match(renderer, /PLAYER_SKILL_FLOAT_SIDE_OFFSET = 120/);
@@ -521,5 +529,9 @@ test('skill cast summary formats total damage and keeps the doubled lifetime con
   assert.match(renderer, /S\.ready = true;[\s\S]{0,200}?flushPendingFloats\(\);/);
   assert.match(skills2, /if \(out\._pendingProjectiles > 0\)[\s\S]*?out\._skillFloatPending/);
   assert.match(skills2, /sgFinishSkillCastFloat\(projectile\.out\)/);
-  assert.ok(skills.indexOf('floatPlayerSkillCast(floatSel, sk, out.dmg)') > skills.indexOf('out.dmg = totalDmg;'));
+  // 技能名稱字要等技能本體（switch 內各 sgCastXxx）把 out.dmg 累加完才送
+  const castBody = skills2.slice(skills2.indexOf('function castSkill2('));
+  const switchAt = castBody.indexOf('switch (gid)');
+  const floatAt = castBody.indexOf('floatPlayerSkillCast(floatSel, skillFloat, out.dmg)');
+  assert.ok(switchAt >= 0 && floatAt > switchAt, '技能名稱浮字必須在技能本體結算之後');
 });

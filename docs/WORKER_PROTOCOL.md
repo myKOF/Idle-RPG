@@ -1,6 +1,8 @@
-# Worker 協議 v39
+# Worker 協議 v40
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 39`　最後更新：2026-09-29
+> 協議版本：`WORKER_PROTOCOL_VERSION = 40`　最後更新：2026-09-29
+
+v40（2026-09-29 舊版技能系統移除）：**刪除**指令 `skill.learn`／`skill.maxUpgrade`／`skill.downgrade`／`skill.delete`／`skill.fuse`／`skill.deleteFusion` 與參數型別 `ids`（凍結指令表 93 → 87 條）；`TICK_VIEW_KEYS` 移除 `magicScroll`；`skills` 面板投影只剩 `loadout`／`loadoutSize`／`skills2`／`points`／`budget`／`mastery`（不再有 `skills`／`unlocks`／`fusions`／`unlockLv`／`maxLv`／`scrolls`／`fusionCosts`）。保留 `skill.equipLoadout`／`skill.unequipLoadout`／`skill.reorderLoadout` 與 `skill2.*`、`talent.potential*`。
 
 v39 新增可選 `vfx.area.chainId`（字串）：同一條雷鏈的各跳共用 id；`variant=lightning-chain-end` 帶相同 id 且 targets 可為空，要求立即收掉該鏈所有飛行本體及尾流，不等待播放完畢，不影響其他鏈。終止事件由模擬在沒有候選、達到彈射上限或取消時送出，透過既有 area 白名單傳遞；不入存檔。雷鏈同時攜帶 `area.homingSpeed`（世界單位／秒），以共用 `projectileHomingStep` 逐步追蹤移動目標；`travelMs` 僅為起飛估時，不能當作命中期限。抵達才结算傷害、排追加打擊與下一跳。舊事件沒有 homingSpeed 時才保留既有估時播放；高塔無世界座標時亦採相容退化。
 
@@ -319,6 +321,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 40 | 2026-09-29 | **舊版技能系統移除**：刪除 6 條 `skill.*` 舊技能指令與 `ids` 參數型別、`TICK_VIEW_KEYS` 的 `magicScroll`、`skills` 面板的舊技能欄位（見上）。 |
 | 37 | 2026-09-22 | 星環旋轉編隊幾何；讓畫面與旋轉路徑命中同步，避免只畫旋轉卻仍打中心直線。 |
 | 36 | 2026-09-22 | **角色動作事件**：新增事件種類 `act`＝`{ act, elId, target, lockMs }`，目前只有 `act: 'cast'`（技能開始施放）。發送端：`js/skills.js beginSkillCast`（經 `shim.js emitPlayerAct`）；接收端：`js/ui.js` 轉給 `BattleRenderer.onAct`。走 `visual` 訊息。指令表未變動（仍 93 條）。<br>理由：主角換成有施法動作的騎士（Special1）。技能特效大多交給 Preset 播，顯示層在 Preset 接手之後就不再碰角色，所以技能一直沒有施法動作；而用特效事件去猜「哪一則是施放」也不可靠——同一次施放會送出很多則（子段、飛行物命中、場域週期）。只有模擬層知道技能真的開始施放、硬直多長，所以由它說。 |
 | 27 | 2026-09-03 | **狀態每跳的 Preset 特效**：`vfx` 事件新增**可選**旗標 `presetOnly`。帶著它的事件只有 VFX Preset 端畫得出來（值來自狀態表的「作用特效」欄），沒有接上 Preset Runtime 的顯示層必須**整則忽略**，而不是退回泛用畫法。發送端：`js/combat.js` 的 `statusTickVfxFlush()`——同一個模擬步驟裡，同一個狀態打在多個敵人身上合併成一則（最多 8 個目標）。指令表未變動（仍 93 條）。<br>理由：DoT 每秒跳兩次，若沒有這個旗標，`?vfx=legacy` 或 Preset 組裝失敗時，每一次跳動都會退回泛用受擊爆點，畫面會變成滿場火花——那是**新增的**畫面，不是「維持舊畫法」。 |

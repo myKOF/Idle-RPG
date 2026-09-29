@@ -4212,20 +4212,6 @@ textarea:disabled,
   justify-content: start;
 }
 
-#fusion-skill-list.tree-row {
-  display: grid;
-  grid-template-columns: repeat(12, 52px);
-  gap: 8px;
-  align-items: center;
-  justify-content: start;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-#fusion-skill-list .hint {
-  grid-column: 1 / -1;
-}
-
 .tree-gate {
   color: var(--dim);
   font-size: 10.5px;
@@ -4313,19 +4299,6 @@ textarea:disabled,
   left: -5px;
   color: var(--info);
   font-size: 11px;
-}
-
-/* 已投入融合技（佔用中）：左下角 ⚗️ 角標＋整格紫色降飽和（2026-07-30 技能融合改造） */
-.tc-fused {
-  position: absolute;
-  bottom: -4px;
-  left: -5px;
-  font-size: 11px;
-}
-
-.tree-cell.fused-locked {
-  filter: saturate(0.45);
-  box-shadow: inset 0 0 0 1px rgba(160, 90, 220, 0.55);
 }
 
 /* 技能熟練度經驗條（比照 #xp-bar 的窄條樣式） */
@@ -5064,12 +5037,6 @@ textarea:disabled,
   color: #facc15;
   margin-top: 8px;
   font-weight: 500;
-}
-
-.skt-components {
-  color: var(--dim);
-  margin-top: 6px;
-  font-size: 11px;
 }
 
 .skt-lock {
@@ -10286,27 +10253,6 @@ textarea:disabled,
   font-weight: bold;
   font-size: 13.5px;
   white-space: nowrap;
-}
-
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes fusionRotate {
-  to {
-    --angle: 360deg;
-  }
-}
-
-.tree-cell.fusion-selected {
-  border: 3px solid transparent !important;
-  background: linear-gradient(var(--bg2), var(--bg2)) padding-box,
-    conic-gradient(from var(--angle, 0deg), #c084fc, #4c1d95, #e879f9, #4c1d95, #c084fc) border-box !important;
-  animation: fusionRotate 2s linear infinite;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.7), inset 0 0 8px rgba(168, 85, 247, 0.4);
-  opacity: 1 !important;
 }
 
 /* 確�? .battle-scene ?�相對�?位�?以便 #btn-enemy-tip 以其?�基準�?�?*/

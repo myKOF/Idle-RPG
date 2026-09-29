@@ -28,46 +28,55 @@ function loadContext() {
       reincarnations: 0,
       skills: {},
       talents: { levels: {}, potentialLevels: {} },
-      loadout: [],
-      fusions: []
+      loadout: []
     }
   };
   return context;
 }
 
+// 舊技能表（SKILLS）已移除：技能標籤產生器 skillTagsHTML 現在只服務潛力技能
+// （POTENTIAL_TALENTS；新版技能群組走 renderSkill2Modal 自己的版面，不用這組標籤）。
+function potentialById(c, id) {
+  const def = c.POTENTIAL_TALENTS.find((d) => d.id === id);
+  assert.ok(def, `找不到潛力技能 ${id}`);
+  return def;
+}
+
 test('技能標籤會顯示技能類別與元素系別', () => {
   const c = loadContext();
-  const tags = c.skillTagsHTML('holySmite', c.SKILLS.holySmite, 1, false);
+  const tags = c.skillTagsHTML('sacredInversion', potentialById(c, 'sacredInversion'), 1);
 
-  assert.match(tags, />魔法<\/span>/);
+  assert.match(tags, />潛力<\/span>/);
   // §3.5 技能詳情顯示元素圖示＋系別：徽章文字＝emoji＋「X系」
   assert.match(tags, /skill-tag-light[^>]*>✨聖系<\/span>/);
   assert.doesNotMatch(tags, /【|】/);
   assert.doesNotMatch(tags, />物理<\/span>/);
 });
 
-test('Skills 表標籤可修正原本沒有 fx 元素欄位的毒系與奧術技能', () => {
+test('Skills 表標籤（tags）決定元素系別徽章', () => {
   const c = loadContext();
-  const poisonTags = c.skillTagsHTML('venomCloud', c.SKILLS.venomCloud, 1, false);
-  const arcaneTags = c.skillTagsHTML('arcaneBurst', c.SKILLS.arcaneBurst, 1, false);
+  const lightningTags = c.skillTagsHTML('lightningOverdrive', potentialById(c, 'lightningOverdrive'), 1);
 
-  assert.match(poisonTags, /skill-tag-poison[^>]*>☠️毒系<\/span>/);
-  assert.match(arcaneTags, /skill-tag-light[^>]*>✨聖系<\/span>/);
+  assert.match(lightningTags, /skill-tag-lightning[^>]*>⚡雷系<\/span>/);
+  // 標籤欄支援字串（以分號分隔）與陣列兩種形式
+  const multi = c.skillTagsHTML('x', { tags: 'fire;poison' }, 1);
+  assert.match(multi, /skill-tag-fire[^>]*>[^<]*火系<\/span>/);
+  assert.match(multi, /skill-tag-poison[^>]*>☠️毒系<\/span>/);
 });
 
 test('沒有元素的技能仍會顯示類別標籤', () => {
   const c = loadContext();
-  const tags = c.skillTagsHTML('powerSlash', c.SKILLS.powerSlash, 1, false);
+  const tags = c.skillTagsHTML('velocityForce', potentialById(c, 'velocityForce'), 1);
 
-  assert.match(tags, />物理<\/span>/);
+  assert.match(tags, />潛力<\/span>/);
   assert.doesNotMatch(tags, /【|】|聖系|火系|冰系|雷系|毒系|暗系/);
 });
 
 test('技能升級視窗與技能 Tooltip 都接上標籤產生器', () => {
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
-  assert.match(ui, /h \+= skillTagsHTML\(id, sk, Math\.max\(1, lv\), isPotential\);/);
-  assert.match(ui, /skillTagsHTML\(id, sk, lv, isPotential\)/);
+  assert.match(ui, /h \+= skillTagsHTML\(id, sk, Math\.max\(1, lv\)\);/);
+  assert.match(ui, /h \+= skillTagsHTML\(id, sk, lv\);/);
   assert.match(css, /\.skill-tag-light\s*\{/);
   assert.match(css, /\.skill-tag-fire\s*\{/);
 });

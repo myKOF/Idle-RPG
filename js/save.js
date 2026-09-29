@@ -292,15 +292,10 @@ function migrateSave(data) {
      newGameState() 已預帶 loadoutCapClampV1: true，merge 會把它補進舊存檔，
      補完再判斷就永遠是 true、遷移一次也不會跑。 */
   var hadLoadoutCapClampV1 = !!(data.loadoutCapClampV1);
+  /* 舊版技能移除遷移旗標：同樣須在 mergeDefaults 前判斷（newGameState 預帶 true）。 */
+  var hadLegacySkillRemovalV1 = !!(data.legacySkillRemovalV1);
   var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
   var def = newGameState();
-  
-  // 防止玩家手動降級（刪除）的初始技能，在讀檔時被 mergeDefaults 誤判為缺漏而自動補回 1 級
-  if (data.player && data.player.skills) {
-    delete def.player.skills.powerSlash;
-    delete def.player.skills.arcaneBurst;
-    delete def.player.skills.manaBarrier;
-  }
   
   mergeDefaults(data, def);
   /* 地圖改名相容（2026-08-07）：
@@ -390,7 +385,6 @@ function migrateSave(data) {
   }
   data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
   data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
-  data.player.magicScroll = Math.max(0, Math.floor(Number(data.player.magicScroll) || 0));
   // 逐件裝備整理：
   // 1) 太古機制改版（2026-07-23）：洗煉不再使用太古精華，載入時清除殘留欄位。
   // 2) 武器改造（2026-07-23）：舊存檔武器補 weaponType 與 weaponAbility 預留欄位
@@ -405,6 +399,8 @@ function migrateSave(data) {
   var fixLoadedItem = function (it, slotKey) {
     if (!it || typeof it !== 'object') return;
     delete it.useAncientEssence;
+    // 已下架的傳奇特效（舊版技能專屬特效，PASSIVE_POOL 已無此 key）：整條移除
+    if (it.passive && typeof PASSIVE_POOL !== 'undefined' && !PASSIVE_POOL[it.passive.key]) delete it.passive;
     if (typeof ensureWeaponMeta === 'function') {
       ensureWeaponMeta(it, slotKey === 'weapon2' ? 'dagger1h' : undefined);
     }
@@ -603,43 +599,51 @@ function migrateSave(data) {
       cleared: Math.max(0, (Number(data.stage.best) || 1) - 1)   // 無場景概念的舊存檔：通關數由 best 回推
     };
   }
-  /* ---- 技能融合改造遷移（2026-07-30，逐項冪等）----
-     1) 全技能等級夾回轉生對照表的上限；點數採等級推導制，夾限即自動退點。
-     2) 舊融合記錄補 seed（改用種子演算法重算）＋ algo:2；能重建者移除 fx 快照。
-     3) 舊 skillPointBudget → skillMastery.level（扣 SKILL_POINT_BASE 基礎點、保底已花費），欄位移除。
-     4) 裝載欄清出被融合佔用的素材技能。 */
-  var mgCapLv = skillMaxLvForRc(data.player.reincarnations);
-  var mgClamped = 0;
-  for (var skId in data.player.skills) {
-    var skLv = Math.max(0, Math.floor(Number(data.player.skills[skId]) || 0));
-    if (skLv > mgCapLv) { skLv = mgCapLv; mgClamped++; }
-    if (skLv <= 0) delete data.player.skills[skId];
-    else data.player.skills[skId] = skLv;
-  }
-  if (mgClamped > 0) {
-    data._skillCapClampNotice = '技能等級上限調整為 ' + mgCapLv + ' 級：' + mgClamped + ' 個技能已夾回上限，超出的技能點已自動退還';
-  }
-  // 融合記錄：補種子＋清除舊 fx 快照（能重建者）；種子補上後結果即固定，重複讀檔不再變動。
-  if (data.player.fusions && data.player.fusions.length) {
-    data.player.fusions.forEach(function (fs) {
-      if (!fs || !Array.isArray(fs.components)) return;
-      if (fs.seed === undefined || fs.seed === null) {
-        fs.seed = Math.floor(Math.random() * 4294967296) >>> 0;
-        fs.algo = 2;
-      }
-      if (fs.fx && typeof buildFusionRuntimeDef === 'function' && buildFusionRuntimeDef(fs)) {
-        delete fs.fx;
-      }
-    });
-    // 佔用制：被融合素材不可裝備 → 裝載欄清出（素材等級保留）
-    var mgOccupied = {};
-    data.player.fusions.forEach(function (fs) {
-      if (fs && Array.isArray(fs.components)) fs.components.forEach(function (cid) { mgOccupied[cid] = true; });
-    });
-    if (Array.isArray(data.player.loadout)) {
-      data.player.loadout = data.player.loadout.filter(function (id) { return !mgOccupied[id]; });
+  /* ---- ONE-TIME MIGRATION: legacySkillRemovalV1（2026-09-29）----
+     舊版技能系統（SKILLS 表的物理／魔法／防禦／特殊／被動五類技能、融合技、45 機制族）已整批移除。
+     1) 已學等級（player.skills）、人物等級解鎖紀錄（skillUnlocks）、融合技記錄（fusions）全部刪除；
+        技能點是「總預算 − 已投入」的推導制，等級刪除即自動全額退還，不需另外發點。
+     2) 裝載欄只留新版技能群組（'sg:'）與潛力技能（'potential:'）；舊技能一律卸下，
+        其餘格位保持不動（空格允許，由 unequip 慣例在尾端壓實）。
+     3) 融合專用資源魔法卷軸（magicScroll）一併刪除。
+     4) 主線任務：移除兩個以舊技能為目標的任務（原索引 6、16），已領取進度依此平移，
+        玩家不會因為清單縮短而重複領到後面的任務。
+     以上除任務索引外皆為冪等的欄位刪除；索引平移與公告以 legacySkillRemovalV1 旗標只做一次。
+     公告內容交給 Worker 組字（可用技能點只有 Worker 算得出來）。 */
+  var legacyStats = { skills: 0, fusions: 0, equipped: 0, scrolls: 0 };
+  if (data.player.skills && typeof data.player.skills === 'object') {
+    for (var legacyId in data.player.skills) {
+      if ((Number(data.player.skills[legacyId]) || 0) > 0) legacyStats.skills++;
     }
   }
+  if (Array.isArray(data.player.fusions)) legacyStats.fusions = data.player.fusions.length;
+  legacyStats.scrolls = Math.max(0, Math.floor(Number(data.player.magicScroll) || 0));
+  if (Array.isArray(data.player.loadout)) {
+    data.player.loadout = data.player.loadout.map(function (loId) {
+      if (typeof loId === 'string' && (loId.indexOf('sg:') === 0 || loId.indexOf('potential:') === 0)) return loId;
+      if (loId) legacyStats.equipped++;
+      return null;
+    });
+    while (data.player.loadout.length > 0 && !data.player.loadout[data.player.loadout.length - 1]) {
+      data.player.loadout.pop();
+    }
+  } else {
+    data.player.loadout = [];
+  }
+  delete data.player.skills;
+  delete data.player.skillUnlocks;
+  delete data.player.fusions;
+  delete data.player.magicScroll;
+  if (!hadLegacySkillRemovalV1) {
+    if (data.taskState && typeof data.taskState === 'object') {
+      var legacyTaskIdx = Math.max(0, Math.floor(Number(data.taskState.idx) || 0));
+      data.taskState.idx = legacyTaskIdx - (legacyTaskIdx > 6 ? 1 : 0) - (legacyTaskIdx > 16 ? 1 : 0);
+    }
+    if (legacyStats.skills || legacyStats.fusions || legacyStats.equipped || legacyStats.scrolls) {
+      data._legacySkillRemoval = legacyStats;
+    }
+  }
+  data.legacySkillRemovalV1 = true;
   /* ONE-TIME MIGRATION: loadoutCapClampV1
      裝載欄上限由參數表「1-成長經驗／技能裝載欄」param c 下修（20 → 10），
      舊存檔可能裝著超過現行上限的技能。裝備時的檢查只擋「再裝上去」，不會回頭裁切，
@@ -660,10 +664,9 @@ function migrateSave(data) {
   }
   data.loadoutCapClampV1 = true;
   // 技能點改制：舊 skillPointBudget → 熟練度等級（總點數 = 基礎點數 + 熟練度 + 天賦加成）。
-  // 基礎點數以 skills.js 的 SKILL_POINT_BASE 為準，不得寫死：它等於開局自帶技能數，會隨初始技能調整。
+  // 基礎點數以 skills.js 的 SKILL_POINT_BASE 為準，不得寫死。
   var spBase = (typeof SKILL_POINT_BASE === 'number') ? SKILL_POINT_BASE : 2;
   var spSpentAll = 0;
-  for (var spId in data.player.skills) spSpentAll += data.player.skills[spId] || 0;
   if (data.player.talents && data.player.talents.potentialLevels) {
     for (var ppId in data.player.talents.potentialLevels) spSpentAll += data.player.talents.potentialLevels[ppId] || 0;
   }

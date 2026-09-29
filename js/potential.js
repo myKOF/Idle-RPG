@@ -10,13 +10,12 @@
    ── 詮釋備註（天賦V3.xlsx 第 2 頁為設計草案，以下為實作取捨；細節見 game_formula.md）──
    ・極速之力：主動 buff——施放後 6 秒內攻速 +值% 且突破 5 次/秒上限
      （potentialVelocityFactor 於戰鬥迴圈放大攻擊頻率；2026-07-21 使用者補上持續時間定調）。
-   ・時間坍縮：施放時對「一般技能」冷卻額外提供 CDR 並突破 60% 上限（總 CDR 於施放時夾 90%）；不影響潛力技能自身冷卻。
-   ・混沌雙修：所有技能傷害段套用物↔魔互補加成（skills.js castSkill）。
+   ・時間坍縮：施放時對技能冷卻額外提供 CDR 並突破 60% 上限（總 CDR 於施放時夾 90%）；不影響潛力技能自身冷卻。
+   ・混沌雙修：雷霆過載本體雷擊承載物攻加成（firePotentialLightning）。
    ・雷霆過載：電擊攻擊技能（2026-07-22 使用者定調，非純 buff）——本體造成 (atkBase＋atkPer×Lv)% 魔攻
-     的魔法傷害（電屬性 100%、於敵群間隨機彈跳 bounces 次、與一般技能同規格結算；firePotentialLightning），
+     的魔法傷害（電屬性 100%、於敵群間隨機彈跳 bounces 次；firePotentialLightning），
      且持續時間內每 1 秒自動再轟一輪（tickPotentialOverdrive，戰鬥迴圈掛勾）；
-     同時期間雷電系技能「整體傷害」×(1＋值%)（castSkill 於 baseVal 乘算，本體自身也吃），
-     雷電技能命中追加 (3＋連擊數) 次、各 10% 該擊最終傷害的連鎖；浮字 🌩️ 沿用爆擊樣式（黃字）。
+     同時期間雷電傷害 +值%（lightningOverload 增益，本體與持續轟擊同樣乘算）。
    ・聖療逆轉：期間生命/法力回復額外 +值%，溢出的回復量 ×值% 對主要敵人造成真實傷害。
    ・時空凝滯：期間所有敵人靜止＋玩家所有直接傷害 +值%。時間靜止為最終大絕，
      直接寫入 stun 時戳「不可被免疫」（無視 BOSS 控場免疫與控場遞減）。 */
@@ -55,7 +54,7 @@ function potentialEquippable(def) {
 
 /* 由 pickAndCastSkill（skills.js）呼叫：施放裝載欄中的潛力技能。
    冷卻寫入 pEnt.skillCds[loadoutKey]（與一般技能共用 tick 與就緒排序），
-   並只寫入自身冷卻。回傳 { killed, dmg }（與 castSkill 相同介面）。 */
+   並只寫入自身冷卻。回傳 { killed, dmg }（與 castSkill2 相同介面）。 */
 function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
   var st = getStats();
   var targets = Array.isArray(target)
@@ -66,7 +65,7 @@ function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
   }
   if (!pEnt.skillCds) pEnt.skillCds = {};
   pEnt.skillCds[loadoutKey || ('potential:' + def.id)] = potentialActiveCd(def);
-  /* 特效：潛力技不經 castSkill，於此自行送一則。有傷害段（dmgType）的走一般推導，
+  /* 特效：潛力技於此自行送一則。有傷害段（dmgType）的走一般推導，
      純增益的走 selfBuff；顏色沿用潛力系的專屬色（VFX_CAT_COLORS.potential）。
      雷霆過載（chainLightning）例外：firePotentialLightning 自己送連鎖雷鏈，這裡不再疊一發。 */
   if (def.mech !== 'chainLightning' &&
@@ -80,9 +79,6 @@ function castPotentialSkill(pEnt, target, def, floatSel, loadoutKey) {
   }
   var res = firePotentialActive(pEnt, def, targets, floatSel, st);
   floatPlayerSkillCast(floatSel, def, res && res.dmg);
-  // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」——潛力主動技傷害計入快照窗
-  //（潛力施放不經 castSkill，於此統一寫入；typeof 守衛防載入順序問題）
-  if (res && res.dmg > 0 && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(res.dmg);
   UI.dirty.battle = true;
   return { killed: !!(res && res.killed), dmg: (res && res.dmg) || 0 };
 }
@@ -120,7 +116,7 @@ function firePotentialActive(pEnt, def, live, floatSel, st) {
       pEnt.overdriveNext = GT + 1; // 持續轟擊：往後每 1 秒再轟一輪（tickPotentialOverdrive，增益結束即停）
       floatPlayerEvent(floatSel, def.emoji + ' 雷電+' + fmt1(val) + '%', 'attack');
       blog(def.emoji + ' 你施放潛力【' + def.name + '】：萬雷轟落，造成 ' + fmt(strike.dmg) + ' 電屬性魔法傷害；' +
-        dur + ' 秒內每秒持續轟擊，雷電傷害 +' + fmt1(val) + '%，雷電技能命中將引動連鎖雷鏈。', 'log-player-skill', 'combat');
+        dur + ' 秒內每秒持續轟擊，雷電傷害 +' + fmt1(val) + '%。', 'log-player-skill', 'combat');
       return strike;
     }
     case 'sacredInvert':             // 聖療逆轉
@@ -252,62 +248,6 @@ function firePotentialOmega(pEnt, def, live, floatSel, st, mult) {
   return { killed: !!res.killed, dmg: res.dmg || 0 };
 }
 
-/* 雷霆過載連鎖：由 skills.js castSkill 在雷電系技能命中後呼叫。
-   追加 (3＋連擊數) 次、各 chainPortion(10%) 該擊總傷害的連鎖：
-   第一跳打主目標，之後每跳在還沒跳過的存活敵人裡隨機挑（→ js/battlefield.js bfChainOrder）。
-   sourceCrit＝本擊是否爆擊：連鎖傷害本就內含爆擊倍率，浮字樣式沿用一般技能爆擊（黃字）。
-   skDef＝技能定義（可選末參）：§3.5 系別判定統一走 skillElemOf（帶 lightning 標籤即算雷電系）。 */
-function applyPotentialChainLightning(pEnt, fx, targets, totalDmg, comboReps, floatSel, sourceCrit, skDef) {
-  if (buffVal(pEnt, 'lightningOverload') <= 0) return { killed: false };
-  var isLightning = (typeof skillElemOf === 'function')
-    ? (skillElemOf(skDef, fx) === 'lightning' || (fx.elems && fx.elems.lightning))
-    : !!(fx.elems && fx.elems.lightning);
-  if (!isLightning || totalDmg <= 0) return { killed: false };
-  var out = { killed: false, dmg: 0 };
-  var bounces = 3 + Math.max(0, comboReps || 0);
-  var per = totalDmg * 0.10;
-  var floatCls = (sourceCrit ? 'crit ' : 'dmg ') + 'enemy-skill'; // 與一般技能浮字同規則
-  // 前綴用 🌩️（雷霆過載 emoji）：與「⚡天罰（神鑄特效，吃物攻）」及連鎖閃電技能本體的 ⚡ 區隔，避免誤判傷害來源
-  var floatPrefix = '🌩️' + (sourceCrit ? '爆擊 ' : '');
-  /* 彈跳對象取自整個戰場而不是技能自己的 targets：技能改成單體之後，
-     沿用 targets 會讓所有彈跳都落在同一隻身上。第一跳打主目標，之後隨機往其他敵人擴散。 */
-  var field = (typeof skillRtActiveEnemies === 'function')
-    ? skillRtActiveEnemies(targets) : (targets || []).filter(function (m) { return m && m.hp > 0; });
-  var first = (targets || []).filter(function (m) { return m && m.hp > 0; })[0] || null;
-  var chain = (typeof bfChainOrder === 'function') ? bfChainOrder(first, field, bounces) : [];
-  /* 特效（協議 v17）：連鎖雷鏈弧光沿彈跳路徑跳；浮字逐跳延後同步。 */
-  var hopMs = Math.round(((typeof VFX_HIT_STAGGER_SEC === 'number') ? VFX_HIT_STAGGER_SEC : 0.09) * 1000);
-  if (typeof playCombatVfx === 'function') {
-    var chainIds = [];
-    for (var ci = 0; ci < bounces; ci++) {
-      var ce = chain[ci] || field[ci % Math.max(1, field.length)];
-      if (ce && ce.hp > 0) chainIds.push(enemyEventFloatTarget(ce, floatSel));
-    }
-    if (chainIds.length) {
-      playCombatVfx({
-        fxKind: 'chain', variant: 'chain', elem: 'lightning', cat: 'potential',
-        glyph: '🌩️', color: '#f2b705', targets: chainIds, cells: null, dur: 0.4, count: 1,
-        vfx: (typeof vfxCombatRoles === 'function') ? vfxCombatRoles('chainLightning') : null
-      });
-    }
-  }
-  for (var i = 0; i < bounces; i++) {
-    var t = chain[i] || field[i % Math.max(1, field.length)];
-    if (!t || t.hp <= 0) continue;
-    var d = Math.max(1, Math.round(per));
-    d = applyEnemyHpDamage(t, d);
-    out.dmg += d;
-    floatEnemyEvent(t, floatSel, floatPrefix + fmt(d), floatCls, d, i * hopMs);
-    trackDps(d);
-    if (typeof recordRunDamage === 'function') recordRunDamage('雷霆過載·連鎖', d); // 列入傷害統計，可與天罰分辨
-    if (t.hp <= 0) { t.hp = 0; out.killed = true; }
-  }
-  // 45 新技能（echo 族）：連鎖閃電傷害計入 dmgWindow 快照窗——直接於此寫入而不折入
-  // castSkill 的 out.dmg（避免污染 recentBest 重播快照與 proc 擲骰基準）
-  if (out.dmg > 0 && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(out.dmg);
-  return out;
-}
-
 /* 雷霆過載持續轟擊：施放後於增益持續時間內，每 1 秒自動再轟一輪本體雷擊（完整彈跳）。
    由戰鬥迴圈呼叫（與聖療逆轉同位置、不受暈眩影響）；增益結束即停。
    回傳 null（本次未轟）或 { killed, dmg }。 */
@@ -320,8 +260,6 @@ function tickPotentialOverdrive(pEnt, enemies, floatSel) {
   if (!live.length) return null;
   pEnt.overdriveNext = GT + 1;
   var r = firePotentialLightning(pEnt, def, live, floatSel, getStats(), boost);
-  // 45 新技能（echo 族）：持續轟擊傷害計入 dmgWindow 快照窗（不經 castPotentialSkill，於此補寫）
-  if (r && r.dmg > 0 && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(r.dmg);
   return r;
 }
 
@@ -348,8 +286,6 @@ function tickPotentialRegen(pEnt, st, dt, enemies, floatSel) {
   d = applyEnemyHpDamage(t, d);
   floatEnemyEvent(t, floatSel, '✨' + fmt(d), 'dmg enemy-skill', d);
   trackDps(d);
-  // 45 新技能（echo 族）：聖療逆轉溢出真傷計入 dmgWindow 快照窗
-  if (typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(d);
   if (t.hp <= 0) { t.hp = 0; return true; }
   return false;
 }

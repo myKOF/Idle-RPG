@@ -8,8 +8,9 @@ const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
+// 舊版技能樹與融合技能列表已移除；技能樹格線目前只給「潛力」分類使用（新版技能群組走 .sg-skill-list）。
 test('技能樹每列固定六個技能格，分類卡片寬度足以容納六格', () => {
-  assert.match(ui, /cells\.slice\(r,\s*r \+ 6\)/);
+  assert.match(ui, /potentialCells\.slice\(pr,\s*pr \+ 6\)/);
 
   const trees = css.match(/#skill-trees\s*\{([\s\S]*?)\}/);
   assert.ok(trees, '找不到 #skill-trees 樣式');
@@ -22,12 +23,8 @@ test('技能樹每列固定六個技能格，分類卡片寬度足以容納六�
   assert.doesNotMatch(row[1], /flex-wrap:\s*wrap/);
 });
 
-test('融合技能列表維持每排十二個，不套用技能樹四欄排列', () => {
-  assert.match(html, /id="fusion-skill-list" class="tree-row"/);
-
-  const fusionRow = css.match(/#fusion-skill-list\.tree-row\s*\{([\s\S]*?)\}/);
-  assert.ok(fusionRow, '找不到 #fusion-skill-list.tree-row 覆蓋樣式');
-  assert.match(fusionRow[1], /display:\s*grid/);
-  assert.match(fusionRow[1], /grid-template-columns:\s*repeat\(12,\s*52px\)/);
-  assert.match(fusionRow[1], /overflow-x:\s*auto/);
+test('融合技能列表容器已隨融合系統移除，不留孤兒節點與樣式', () => {
+  assert.doesNotMatch(html, /fusion-skill-list/);
+  assert.doesNotMatch(css, /#fusion-skill-list/);
+  assert.match(html, /id="skill-trees"/);
 });

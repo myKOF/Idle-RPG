@@ -12,7 +12,7 @@
      node tools/config_tables.cjs --apply --write    # 實際寫回 JS（先備份、寫入後 node --check、失敗還原）
 
    八表 ↔ JS 字面值：
-     Skills            ← SKILLS + UNLOCKS（js/skills.js）
+     Skills            ← POTENTIAL_TALENTS（js/skills.js；2026-09-29 起只剩潛力技能）
      Skills2           ← SKILLS2（js/skills2.js，2026-08-13 新版主動技能系統）
      Status            ← STATUS（js/status.js，2026-08-11 技能及狀態改造）
      Gems              ← GEM_TYPES（js/data.js）
@@ -523,7 +523,7 @@ SCHEMAS.Equipment_Affix = {
   // 「出現部位」欄表頭帶多行中文說明（rowGetter 取第一行對應欄名，其餘為給使用者看的註解）
   header: ['池', 'id', '名稱', '基礎值', '成長基礎值', '每級成長', '百分比', '權重', '戰力權重', '最低稀有度',
     '出現部位\n空白＝不限（全部部位）\nweapon＝主／副武器；helmet＝頭盔\nshoulder＝肩甲；chest＝胸甲；belt＝腰帶\ngloves＝護手；wrist＝手腕；legs＝護腿\nboots＝靴子；ring＝戒指 I／II；amulet＝項鍊\nall_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在屬性面板）\n多部位用 ; 分隔，例如 ring;amulet＝戒指與項鍊',
-    '每階perR', '屬性桶stats', '說明', '效果類型', '關聯技能', '觸發技能', '限定武器類型', '效果參數JSON'],
+    '每階perR', '屬性桶stats', '說明', '效果類型', '關聯技能', '限定武器類型', '效果參數JSON'],
   extract(src) {
     const AFFIX_POOL = evalLiteral(extractLiteral(src, 'AFFIX_POOL').literal);
     const PASSIVE_POOL = evalLiteral(extractLiteral(src, 'PASSIVE_POOL').literal);
@@ -538,17 +538,17 @@ SCHEMAS.Equipment_Affix = {
     });
     // 防呆：SCORE_WEIGHTS 若出現「非詞條 id」的鍵（目前沒有），仍需落表以免 round-trip 遺失
     Object.keys(SCORE_WEIGHTS).forEach(id => {
-      if (!AFFIX_POOL[id]) rows.push(['戰力權重', id, id, '', '', '', '', '', numStr(SCORE_WEIGHTS[id]), '', '', '', '非詞條屬性的戰力權重（僅寶石等來源）。', '', '', '', '', '']);
+      if (!AFFIX_POOL[id]) rows.push(['戰力權重', id, id, '', '', '', '', '', numStr(SCORE_WEIGHTS[id]), '', '', '', '非詞條屬性的戰力權重（僅寶石等來源）。', '', '', '', '']);
     });
     Object.keys(PASSIVE_POOL).forEach(id => {
       const p = PASSIVE_POOL[id];
       rows.push(['傳奇特效', id, p.name, numStr(p.base), '', '', '', '', '', '', '', numStr(p.perR), '', p.desc,
-        p.type || '', p.relatedSkill || '', p.triggerSkill || '',
+        p.type || '', p.relatedSkill || '',
         p.weaponTypes ? joinList(p.weaponTypes) : '', p.fx ? JSON.stringify(p.fx) : '']);
     });
     Object.keys(GODFORGE_POOL).forEach(id => {
       const g = GODFORGE_POOL[id];
-      rows.push(['神鑄特效', id, g.name, numStr(g.base), '', '', '', '', '', '', '', '', g.stats ? joinList(g.stats) : '', g.desc, '', '', '', '', '']);
+      rows.push(['神鑄特效', id, g.name, numStr(g.base), '', '', '', '', '', '', '', '', g.stats ? joinList(g.stats) : '', g.desc, '', '', '', '']);
     });
     return rows;
   },
@@ -572,13 +572,11 @@ SCHEMAS.Equipment_Affix = {
         const o = { name: get(r, '名稱'), desc: get(r, '說明'), base: toNum(get(r, '基礎值')), perR: toNum(get(r, '每階perR')) };
         const effectType = get(r, '效果類型').trim();
         const relatedSkill = get(r, '關聯技能').trim();
-        const triggerSkill = get(r, '觸發技能').trim();
         const weaponTypes = splitList(get(r, '限定武器類型'));
         const fxText = get(r, '效果參數JSON').trim();
-        if (effectType || relatedSkill || triggerSkill || weaponTypes.length || fxText) o.legendary = true;
+        if (effectType || relatedSkill || weaponTypes.length || fxText) o.legendary = true;
         if (effectType) o.type = effectType;
         if (relatedSkill) o.relatedSkill = relatedSkill;
-        if (triggerSkill) o.triggerSkill = triggerSkill;
         if (weaponTypes.length) o.weaponTypes = weaponTypes;
         if (fxText) o.fx = parseJsonCell(fxText, 'Equipment_Affix ' + id);
         passive.push('  ' + id + ': ' + jsLit(o));
@@ -600,91 +598,29 @@ SCHEMAS.Equipment_Affix = {
   }
 };
 
-/* ---- Skills ← SKILLS + UNLOCKS ---- */
-/* Skills.xlsx 第 2 工作表「變量定義」：基礎/里程碑 fx 全部變量的中文定義（一行一個變量；僅供人閱讀，sync/apply 只讀第 1 表）。 */
-/* 標籤欄供值：以 JS 內 SKILLS/POTENTIAL_TALENTS 的 tags 陣列為唯一準據（SSOT＝js/skills.js；
-   §3.5 定案後初版種子 fallback 已移除）；讀表方向（--apply）仍由 rebuild 解析「標籤」欄回寫 tags。 */
+/* ---- Skills ← POTENTIAL_TALENTS（潛力技能）----
+   2026-09-29：舊版一般技能（物理／魔法／防禦／特殊／被動五類，SKILLS＋UNLOCKS）已整批移除，
+   本表只剩「系統分類＝potential」的潛力技能；新版技能在 Skills2 表。 */
+/* Skills.xlsx 第 2 工作表「變量定義」：潛力技能欄位與 fx 變量的中文定義（僅供人閱讀，sync/apply 只讀第 1 表）。 */
+/* 標籤欄供值：以 JS 內 POTENTIAL_TALENTS 的 tags 陣列為唯一準據（SSOT＝js/skills.js）。 */
 function skillTagsForConfig(s) {
   return Array.isArray(s.tags) ? s.tags : [];
 }
-const INITIAL_SKILL_UNLOCK_LEVELS = {
-  powerSlash: 1,
-  arcaneBurst: 1
-};
-function skillUnlockLevelForConfig(s, id) {
+function skillUnlockLevelForConfig(s) {
   if (s && s.unlockLv != null && isFinite(Number(s.unlockLv))) return Math.max(0, Math.floor(Number(s.unlockLv)));
-  if (s && s.cat === 'potential') return 0;
-  return INITIAL_SKILL_UNLOCK_LEVELS[id] || 5;
+  return 0;
 }
 const FX_GLOSSARY_ROWS = [
-  ['標籤'],
-  ['用途：技能的元素系別標籤；「系統分類」仍表示物理/魔法/防禦與治療/特殊/被動等技能大類，兩者分開管理；'],
-  ['格式：使用元素鍵值，若有多個標籤以半形分號「;」分隔（例：fire;poison）；空白＝此技能沒有元素系別標籤；'],
-  ['fire＝火系：火焰、燃燒、熾熱等元素特性；'],
-  ['ice＝冰系：冰霜、寒冰、凍結、減速等元素特性；'],
-  ['lightning＝雷系：雷電、閃電、雷鳴等元素特性；'],
-  ['poison＝毒系：毒素、劇毒、疫病、腐蝕、蝕骨等元素特性；'],
-  ['light＝聖系：聖光、神聖、治癒、奧術等聖屬特性；本版初始將所有奧術技能歸入聖系；'],
-  ['dark＝暗系：暗影、黑暗、虛空、詛咒等元素特性；'],
-  ['注意：標籤欄同時決定「技能打出的傷害屬性」（2026-07-26 技能屬性化）：帶標籤的傷害技能，整段傷害皆為該屬性；'],
-  ['　　　物攻/魔攻只是加成基礎，最終結算會套用該屬性抗性、屬性傷害提升%、對屬性敵人加成與該屬性的元素特效；'],
-  ['　　　多個標籤時以第一個為傷害屬性，其餘僅作顯示分類；空白＝不屬性化，維持純物理/純魔法；'],
-  ['解鎖等級'],
-  ['用途：決定角色達到哪個人物等級後可學習此技能；達到門檻時會寫入玩家存檔，之後永久解鎖；'],
-  ['格式：填寫非負整數人物等級；0 或空白＝不追加人物等級限制（潛力技能仍由原本的潛力節點規則控制）；'],
-  ['初始測試值：powerSlash、arcaneBurst＝1；其他一般技能＝5；潛力技能＝0；可直接在 Skills 表調整；'],
-  ['注意：此欄只控制人物等級解鎖，不會取代技能點、潛力節點或融合技生成條件；'],
+  ['Skills 表（潛力技能）欄位與參數定義'],
+  ['本表只剩「系統分類＝potential」的潛力技能（列順序＝解鎖順序）；舊版一般技能已於 2026-09-29 整批移除，新版技能請看 Skills2 表。'],
+  ['本頁為說明頁，程式不讀取；第一頁「Skills」才是資料來源。'],
   [''],
-  ['基礎fx(JSON)'],
-  ['【傷害】'],
-  ['dmgType=傷害類型(phys=物理/magic=魔法/true=真實·無視防禦抗性)；'],
-  ['stat=傷害參照屬性(atk=物攻/matk=魔攻)；'],
-  ['base=Lv.1傷害%(占物攻/魔攻)；'],
-  ['per=每級傷害%增量；'],
-  ['hits=攻擊段數；'],
-  ['critBonus=此技能額外爆擊率%；'],
-  ['neverMiss=必定命中(true)；'],
-  ['gamble=傷害隨機50%~250%(true)；'],
-  ['selfDmgPct=自傷(損失自身最大生命%)；'],
-  ['【元素】'],
-  ['傷害屬性由「標籤」欄決定，fx 內不再填 elem 元素占比（舊 elem={type,portion} 已廢除）；'],
-  ['elems={元素:權重,…}=融合技多屬性權重(合計1)，傷害依權重拆成各屬性分別結算；'],
-  ['elemOverride=強制改屬性(特規用，例：傳奇【死亡領域】期間所有技能轉毒屬性)，優先於標籤與 elems；'],
-  ['元素種類：fire=火/ice=冰/lightning=雷/poison=毒/light=聖/dark=暗；'],
-  ['【持續傷害】'],
-  ['dot={pct:每秒跳傷(占技能傷害%),dur:持續秒,name:顯示名}；'],
-  ['dotList=[多條dot](融合技)；'],
-  ['maxHpDotPct={base,per}=詛咒跳傷(占敵最大生命%/秒)；'],
-  ['dotDur=詛咒持續秒；'],
-  ['【控場】'],
-  ['stunDur=暈眩秒數；'],
-  ['slowDur=減速秒數；'],
-  ['【回復/護盾】'],
-  ['healPctMax={base,per}=回復最大生命%；'],
-  ['hotPct={base,per}=每秒再生最大生命%；'],
-  ['hotDur=再生持續秒；'],
-  ['shieldPctMax={base,per}=護盾(占最大生命%)；'],
-  ['healPctOfDmg=傷害轉生命回復%；'],
-  ['mpRestore=回復法力點數；'],
-  ['mpOnCrit=爆擊返還法力點數；'],
-  ['selfCleanse=淨化自身負面(true)；'],
-  ['【增益/減益】'],
-  ['buff/buff2={key,base,per,dur}=自身增益；'],
-  ['debuff/debuff2={key,base,per,dur}=敵方減益；'],
-  ['（其中 base=Lv.1數值%、per=每級增量、dur=持續秒）'],
-  ['key種類：atkUp=攻擊/defUp=防禦/aspdUp=攻速/evasionUp=閃避/critDmgUp=爆傷/lootUp=掉寶/thornsUp=反震/blockUp=格擋/hot=再生/penUp=物理與魔法穿透/atkDown=降敵攻/defDown=降敵防；'],
-  ['注意：2026-07-30 起技能不再使用 defDown（降敵防）；原有降防技改為 buff penUp（增加自身物理與魔法穿透%）；'],
-  ['　　　defDown 僅為舊存檔融合技快照的相容保留，新設計請勿再填；'],
-  ['【處決/其他】'],
-  ['execBelow=處決閾值(敵血量%以下觸發)；'],
-  ['execMult=處決傷害倍率；'],
-  ['goldPer=金幣掠奪係數(×技能等級×角色等級)；'],
-  ['doubleCastPct=雙重施法機率%；'],
-  ['comboDetonate=冰火引爆追加傷害%(融合變異)；'],
-  ['【被動技】'],
-  ['passive={屬性:每級數值}；'],
-  ['屬性種類：hpPct=生命上限%/atkPct=物攻%/matkPct=魔攻%/aspdPct=攻速%/critRate=爆擊率/critDmg=爆擊傷害/lifesteal=吸血/mpFlat=法力上限/mpRegen=法力回復每秒/defPct=物防%/mdefPct=魔防%/goldBonus=金幣獲取%/xpBonus=經驗獲取%；'],
-  ['【潛力技能(系統分類=potential)】'],
+  ['標籤'],
+  ['用途：潛力技能的元素系別標籤；格式：使用元素鍵值，若有多個標籤以半形分號「;」分隔（例：fire;poison）；空白＝沒有元素系別標籤；'],
+  ['fire＝火系／ice＝冰系／lightning＝雷系／poison＝毒系／light＝聖系／dark＝暗系；'],
+  ['解鎖等級：潛力技能固定填 0（由潛力節點規則控制解鎖）；'],
+  [''],
+  ['基礎fx(JSON)【潛力技能】'],
   ['type=類型(active=主動/passive=被動/passiveTrigger=被動觸發)；'],
   ['base=效果基準值；'],
   ['per=每級效果增量；'],
@@ -697,31 +633,7 @@ const FX_GLOSSARY_ROWS = [
   ['en=英文名；'],
   ['desc=質變說明(面板顯示的完整敘述)；'],
   [''],
-  ['傷害範圍'],
-  ['空白＝單體(1*1)，一次只打 1 個敵人；'],
-  ['A*B＝直向 A 格 × 橫向 B 格，以主目標為準取該大小的方框，框內敵人全部命中；'],
-  ['　例：3*3 方框、2*2 方框、1*3 由左往右貫穿的直線、3*1 擋在面前的橫牆；'],
-  ['all＝全體：對敵方 4×4 棋盤內所有敵人造成傷害；'],
-  ['主目標的挑法與普攻相同（最近優先、同距離隨機、鎖定不換）；'],
-  ['佔多格的單位(BOSS)被範圍蓋到時仍只算命中 1 次；'],
-  ['額外觸發的傷害(引爆／濺射／連鎖)不受此欄影響，也不算進單體/群體判定；'],
-  [''],
-  ['里程碑fx(JSON)'],
-  ['格式：{"等級":{覆蓋欄位},…}，例 {"4":{…},"8":{…}}；'],
-  ['＝技能升到該等級後，用其中欄位「覆蓋」基礎fx的同名欄位(淺層覆蓋、達標的高等級優先)；'],
-  ['可用變量與定義同上「基礎fx(JSON)」；'],
-  ['潛力技能不使用此欄；'],
-  [''],
-  ['施放特效 / 攻擊特效 / 飛行子彈 / 受擊特效 / 地板特效 / 持續場域特效（2026-09-03 VFX Preset 化）'],
-  ['每一格填 VFX 編輯器存出來的 Preset 檔名（vfx/presets/<檔名>.json，填的時候不含 .json；含 .json 也接受）；'],
-  ['施放特效＝施放當下出現在角色身上的特效（自身增益的光環、施法閃光）；'],
-  ['攻擊特效＝攻擊本體：斬擊弧、範圍爆發、光束、天降雷柱、敵身詛咒符文；'],
-  ['飛行子彈＝會移動的東西：投射物、連鎖跳段、天降的落體；'],
-  ['受擊特效＝傷害落到敵人身上那一刻的爆點（強力版由程式放大 1.6 倍播放）；'],
-  ['地板特效＝地面的法陣、痕跡與落點預警；舊表填入的持續場域仍相容。持續場域特效＝持續作用的本體（雷球、龍捲風、毒霧），可固定、移動或跟隨角色；填 Preset 檔名，不在此欄設定速度、傷害或間隔。'],
-  ['留白＝該角色沒有特效；整列都留白時這個技能維持舊版程式畫法（退回機制，不會沒有畫面）；'],
-  ['想換一個特效：在 VFX 編輯器把 Preset 另存成新檔名，再把檔名填進對應的格子即可，不必改程式；'],
-  ['潛力技能與融合技不讀這六欄（沿用舊畫法）；']
+  ['冷卻＝主動潛力技能的冷卻秒數；說明文字＝風味文字；完整描述＝給編表者看的註記欄（不寫回程式）。']
 ];
 
 /* 「完整描述」是給人看的註記欄，不寫回 JS。--gen 會整份重建表格，若不特別保留就會被清空
@@ -762,27 +674,15 @@ function vfxFromRow(get, row, columns) {
 }
 
 SCHEMAS.Skills = {
-  name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['SKILLS', 'UNLOCKS', 'POTENTIAL_TALENTS'],
+  name: 'Skills', jsFile: 'skills', sheet: 'Skills', vars: ['POTENTIAL_TALENTS'],
   extraSheets: [{ name: '變量定義', rows: FX_GLOSSARY_ROWS }],
-  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '施法消耗', '冷卻', '施放AI', '傷害範圍', '說明文字', '基礎fx(JSON)', '里程碑fx(JSON)']
-    .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['完整描述']),
+  header: ['id', '系統分類', '標籤', '解鎖等級', '名稱', 'icon圖號', '冷卻', '說明文字', '基礎fx(JSON)', '完整描述'],
   extract(src) {
-    const SKILLS = evalLiteral(extractLiteral(src, 'SKILLS').literal);
-    const UNLOCKS = evalLiteral(extractLiteral(src, 'UNLOCKS').literal);
     const POTENTIAL_TALENTS = evalLiteral(extractLiteral(src, 'POTENTIAL_TALENTS').literal);
     const fullDesc = skillFullDescMap();
-    const rows = Object.keys(SKILLS).map(id => {
-      const s = SKILLS[id];
-      const un = UNLOCKS[id];
-        return [id, s.cat, joinList(skillTagsForConfig(s, id)), skillUnlockLevelForConfig(s, id), s.name, s.emoji,
-        s.cost == null ? '' : numStr(s.cost), s.cd == null ? '' : numStr(s.cd),
-        s.ai || '', s.shape || '', s.flavor || '', JSON.stringify(s.fx), un ? JSON.stringify(un) : '']
-        .concat(vfxCells(s.vfx, SKILL_VFX_COLUMNS))
-        .concat([fullDesc[id] || '']);
-    });
-    // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：與一般技能同格式——
+    // 潛力技能 V3（系統分類=potential；列順序＝解鎖順序）：
     // 共用欄放 名稱/icon/冷卻/說明文字(風味)，其餘機制參數（type/base/per/dur/dmgType/mech/en/desc）收進「基礎fx(JSON)」。
-    POTENTIAL_TALENTS.forEach(t => {
+    return POTENTIAL_TALENTS.map(t => {
       const fx = { type: t.type || 'active', base: t.base == null ? 0 : t.base, per: t.per == null ? 0 : t.per };
       if (t.atkBase != null) fx.atkBase = t.atkBase;
       if (t.atkPer != null) fx.atkPer = t.atkPer;
@@ -792,67 +692,41 @@ SCHEMAS.Skills = {
       fx.mech = t.mech || '';
       if (t.en) fx.en = t.en;
       if (t.desc) fx.desc = t.desc;
-       rows.push([t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t, t.id), t.name, t.emoji, '', t.cd == null ? '' : numStr(t.cd), '', t.shape || '', t.flavor || '', JSON.stringify(fx), '']
-         .concat(vfxCells(null, SKILL_VFX_COLUMNS)).concat([fullDesc[t.id] || '']));
+      return [t.id, 'potential', joinList(skillTagsForConfig(t)), skillUnlockLevelForConfig(t), t.name, t.emoji,
+        t.cd == null ? '' : numStr(t.cd), t.flavor || '', JSON.stringify(fx), fullDesc[t.id] || ''];
     });
-    return rows;
   },
   rebuild(dataRows, header) {
     const get = rowGetter(header);
-    const skillEntries = []; const unlockEntries = []; const potentials = [];
+    const potentials = [];
     dataRows.forEach(r => {
       const id = get(r, 'id').trim(); if (id === '') return;
-      if (get(r, '系統分類').trim() === 'potential') {
-        // 潛力 fx JSON → 依 js/skills.js 欄位順序組裝：id,name,[en],emoji,cat,type,[cd],base,per,[dmgType],[dur],mech,desc,flavor
-        const fxRaw = get(r, '基礎fx(JSON)').trim();
-        if (fxRaw === '') throw new Error('潛力列「' + id + '」缺基礎fx(JSON)——可能是舊格式（獨立欄位版）的 xlsx/CSV，請先重生表格再套用');
-        const fx = parseJsonCell(fxRaw, id + ' 潛力fx');
-         const unlockLvRaw = get(r, '解鎖等級').trim();
-         const o = { id: id, name: get(r, '名稱'), tags: splitList(get(r, '標籤')), unlockLv: unlockLvRaw === '' ? 0 : Math.max(0, Math.floor(toNum(unlockLvRaw))) };
-        if (fx.en) o.en = String(fx.en);
-        o.emoji = get(r, 'icon圖號'); o.cat = 'potential';
-        o.type = fx.type || 'active';
-        const cd = get(r, '冷卻'); if (String(cd).trim() !== '') o.cd = toNum(cd);
-        o.base = toNum(fx.base == null ? '0' : fx.base);
-        o.per = toNum(fx.per == null ? '0' : fx.per);
-        if (fx.atkBase != null) o.atkBase = toNum(fx.atkBase);
-        if (fx.atkPer != null) o.atkPer = toNum(fx.atkPer);
-        if (fx.bounces != null) o.bounces = toNum(fx.bounces);
-        if (fx.dmgType) o.dmgType = String(fx.dmgType);
-        if (fx.dur != null) o.dur = toNum(fx.dur);
-        o.mech = fx.mech == null ? '' : String(fx.mech);
-        o.desc = fx.desc == null ? '' : String(fx.desc);
-        const pShape = get(r, '傷害範圍').trim();
-        if (pShape !== '') o.shape = pShape;
-        const flavor = get(r, '說明文字'); if (flavor !== '') o.flavor = flavor;
-        potentials.push(o);
-        return;
+      if (get(r, '系統分類').trim() !== 'potential') {
+        throw new Error('Skills 表只允許「系統分類＝potential」的列（舊版一般技能已移除），第 ' + id + ' 列不符');
       }
-       const unlockLvRaw = get(r, '解鎖等級').trim();
-       const o = { name: get(r, '名稱'), emoji: get(r, 'icon圖號'), cat: get(r, '系統分類'), tags: splitList(get(r, '標籤')), unlockLv: unlockLvRaw === '' ? 0 : Math.max(0, Math.floor(toNum(unlockLvRaw))) };
-      const cost = get(r, '施法消耗').trim(), cd = get(r, '冷卻').trim(), ai = get(r, '施放AI').trim();
-      if (cost !== '') o.cost = toNum(cost);
-      if (cd !== '') o.cd = toNum(cd);
-      if (ai !== '') o.ai = ai;
-      // 傷害範圍：空白＝單體（1x1）；可填 2x2／3x3／all（全場）。解析 → js/battlefield.js bfParseShape
-      const shape = get(r, '傷害範圍').trim();
-      if (shape !== '') o.shape = shape;
-      o.flavor = get(r, '說明文字');
+      // 潛力 fx JSON → 依 js/skills.js 欄位順序組裝：id,name,[en],emoji,cat,type,[cd],base,per,[dmgType],[dur],mech,desc,flavor
       const fxRaw = get(r, '基礎fx(JSON)').trim();
-      o.fx = fxRaw === '' ? {} : parseJsonCell(fxRaw, id + ' 基礎fx');
-      // 特效欄位：整列留白就不寫 vfx，字面值才不會多出一堆空物件
-      const skillVfx = vfxFromRow(get, r, SKILL_VFX_COLUMNS);
-      if (skillVfx) o.vfx = skillVfx;
-      skillEntries.push('  ' + id + ': ' + jsLit(o));
-      const unRaw = get(r, '里程碑fx(JSON)').trim();
-      if (unRaw !== '' && unRaw !== '{}') {
-        const un = parseJsonCell(unRaw, id + ' 里程碑fx');
-        unlockEntries.push('  ' + id + ': ' + jsLit(un));
-      }
+      if (fxRaw === '') throw new Error('潛力列「' + id + '」缺基礎fx(JSON)');
+      const fx = parseJsonCell(fxRaw, id + ' 潛力fx');
+      const unlockLvRaw = get(r, '解鎖等級').trim();
+      const o = { id: id, name: get(r, '名稱'), tags: splitList(get(r, '標籤')), unlockLv: unlockLvRaw === '' ? 0 : Math.max(0, Math.floor(toNum(unlockLvRaw))) };
+      if (fx.en) o.en = String(fx.en);
+      o.emoji = get(r, 'icon圖號'); o.cat = 'potential';
+      o.type = fx.type || 'active';
+      const cd = get(r, '冷卻'); if (String(cd).trim() !== '') o.cd = toNum(cd);
+      o.base = toNum(fx.base == null ? '0' : fx.base);
+      o.per = toNum(fx.per == null ? '0' : fx.per);
+      if (fx.atkBase != null) o.atkBase = toNum(fx.atkBase);
+      if (fx.atkPer != null) o.atkPer = toNum(fx.atkPer);
+      if (fx.bounces != null) o.bounces = toNum(fx.bounces);
+      if (fx.dmgType) o.dmgType = String(fx.dmgType);
+      if (fx.dur != null) o.dur = toNum(fx.dur);
+      o.mech = fx.mech == null ? '' : String(fx.mech);
+      o.desc = fx.desc == null ? '' : String(fx.desc);
+      const flavor = get(r, '說明文字'); if (flavor !== '') o.flavor = flavor;
+      potentials.push(o);
     });
     return {
-      SKILLS: 'var SKILLS = {\n' + skillEntries.join(',\n') + '\n};',
-      UNLOCKS: 'var UNLOCKS = {\n' + unlockEntries.join(',\n') + '\n};',
       POTENTIAL_TALENTS: 'var POTENTIAL_TALENTS = [\n' + potentials.map(o => '  ' + jsLit(o)).join(',\n') + '\n];'
     };
   }
@@ -895,7 +769,6 @@ const TASK_GLOSSARY_ROWS = [
   ['maxHp＝生命最大值（屬性面板數值；掉回門檻以下進度也會掉）。目標參數留空。'],
   ['stageClear＝通關指定地圖第 N 關（N＝目標數量）。目標參數＝地圖識別碼，見下方對照表。可以指定該地圖的最後一關。'],
   ['towerFloor＝高塔已通關的最高層數（N＝目標數量）。目標參數留空；層數與塔別無關（試煉/地獄/煉獄同一條層數軸）。'],
-  ['skillLevel＝指定技能達到 N 級（N＝目標數量；1＝學會）。目標參數＝技能 id（查 Skills 表第一欄）。'],
   [''],
   ['── 獎勵類型（與獎勵參數格式） ──'],
   ['gold＝金幣、scrap＝裝備碎片、essence＝附魔精華：獎勵參數留空；獎勵數量＝發放量。'],
@@ -923,14 +796,14 @@ const TASK_GLOSSARY_ROWS = [
   ['2. 玩家存檔只記「已領到第幾個」，刪除或重排既有任務會讓舊玩家的進度指到錯的任務；上線後請避免刪列與重排，要停用就把該任務改成極易達成的內容。'],
   ['3. 累計型（強化/洗煉/附魔/合成）跨任務共用同一個計數：例「強化10次」與「強化20次」共用，前者完成時後者即為 10/20。'],
   ['4. 品質/等級門檻是「以上皆可」：稀有任務穿史詩也算。'],
-  ['5. 改完別忘了同步「獎勵顯示」欄的文字。']
+  ['5. 改完別忘了同步「獎勵顯示」欄的文字。'],
+  ['6. 2026-09-29 移除舊版技能系統：原「學習治療技能『再生術』」與「升級防禦技能『魔法屏障』至 5 級」兩個任務已刪除，skillLevel 目標類型不再存在；玩家存檔的領取進度已由存檔遷移（legacySkillRemovalV1）平移。']
 ];
 
 /* ---- Task ← TASKS（js/data.js）主線任務表（2026-08-05 任務系統） ----
    目標類型：equipSlots（參數=最低品質|最低等級）/ upgradeCount / rerollCount /
    enchantCount / composeCount / socketCount / forgeParts / forgePartLevel /
-   ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor /
-   skillLevel（參數=技能id）。
+   ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor。
    獎勵類型：gold / scrap / essence / skillXp / gem（參數=寶石等級）/
    book（參數=附魔書id）/ equip（參數=品質|等級|太古數；等級 0=依當前關卡、太古空白=自然擲骰）。
    「備註」欄為純說明欄，不寫回 JS（同 Skills 表的「完整描述」欄）。

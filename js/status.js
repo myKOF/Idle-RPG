@@ -1,7 +1,7 @@
 'use strict';
 /* ============ 狀態系統（Status） ============
    技能／狀態分工（2026-08-11 技能及狀態改造）：
-     - 技能（js/skills.js）＝「一次性效果」：本體傷害、治療、護盾、法力、金幣…施放當下結算完畢。
+     - 技能（js/skills2.js）＝「一次性效果」：本體傷害、治療、護盾、法力…施放當下結算完畢。
      - 狀態（本檔）＝「有持續時間的效果」：持續傷害、持續回復、控場、增益／減益。
    例：火球術 ＝ 一次性魔法火屬性傷害 ＋「燃燒」狀態（火屬性持續傷害）。
 
@@ -12,10 +12,8 @@
    程式端不得再有第二份狀態定義：UI 的圖示與名稱、戰鬥日誌、技能說明文字全部讀這張表。
 
    ---- 技能如何引用狀態 ----
-   技能 fx 以 status 陣列引用：
-     "status": [ { "id": "burn", "dmg": 20, "dur": 4 } ]
-   id 以外的欄位皆為選填；沒填就吃狀態表的預設值（使用者決策 2026-08-11：
-   狀態表定義預設值，技能可覆寫——保留火球／隕石／里程碑各自的成長曲線）。
+   新版技能（Skills2 表）以「我方狀態／敵方狀態」欄引用狀態表的狀態ID，
+   授予入口一律是 applyStatus；狀態表定義預設值，技能端可覆寫效果值與持續時間。
 
    ---- 物理儲存 ----
    狀態實例仍存放在實體既有的三個容器（dots／buffs／effects），但一律由本檔的
@@ -176,6 +174,8 @@ function statusStackCfg(def, maxOverride) {
 function statusIdByKey(key) { return STATUS_BY_KEY[key] || (STATUS[key] ? key : ''); }
 function statusIdByName(name) { return STATUS_BY_NAME[name] || ''; }
 function statusName(sid, fallback) { var d = statusDef(sid); return d ? d.name : (fallback || ''); }
+/* 增益鍵的顯示名稱：狀態表是唯一來源（表上查無的鍵才回傳原鍵，供除錯辨識）。 */
+function buffLabel(key) { return statusName(statusIdByKey(key), key); }
 function statusIcon(sid, fallback) { var d = statusDef(sid); return d ? d.icon : (fallback || '✨'); }
 /* 狀態的特效欄位（2026-09-03 VFX Preset 化）：st.vfx = { apply 施加, aura 持續, tick 作用 }，
    唯一來源 config/CSV/Status.csv 的三個特效欄——狀態長什麼樣子只寫在這裡，不寫在技能表
@@ -343,130 +343,4 @@ function statusActive(ent, sid) {
     if (d && d.until > GT && (d.sid === sid || (!d.sid && d.name === def.name))) return true;
   }
   return false;
-}
-
-/* 指定狀態的剩餘秒數（0＝未生效）。 */
-function statusRemain(ent, sid) {
-  var list = statusEntries(ent);
-  for (var i = 0; i < list.length; i++) if (list[i].sid === sid) return Math.max(0, list[i].remain);
-  return 0;
-}
-
-/* ===========================================================================
-   技能 ↔ 狀態的橋接：把技能 fx 解析成一份「狀態引用清單」
-   ---------------------------------------------------------------------------
-   授權格式（Skills 表的「基礎fx(JSON)」）：
-     "status": [ { "id": "burn", "base": 35, "dur": 5 },
-                 { "id": "atkUp", "base": 12, "per": 4, "dur": 6 } ]
-     id       狀態表的狀態ID（必填）
-     base     覆寫狀態表的預設效果值——dot＝每次作用占技能傷害%（或占目標最大生命%）、
-              hot＝每秒回復最大生命%、stat＝增減幅度%；未填＝吃狀態表
-     per      每技能等級的增量（沿用全專案 scaleAt 語意：base + per×(等級-1)）
-     dur      覆寫持續時間（秒）；未填＝吃狀態表
-     interval 覆寫作用間隔（秒）；未填＝吃狀態表
-   欄位刻意與技能 fx 既有的 {base, per, dur} 慣例一致，讓引用本身就能當增益定義用。
-
-   舊格式（dot／dotList／maxHpDotPct／stunDur／slowDur／buff／buff2／buffList／
-   debuff／debuff2／debuffList／hotPct／shieldPctMax）仍能讀，統一在這裡翻成同一份清單——
-   結算、說明文字與融合技都只認這份，不留第二條結算路徑。
-   =========================================================================== */
-
-/* 舊格式的增益／減益項 → 狀態引用（key 即狀態表的效果鍵值）。 */
-function statusRefFromBuff(entry, self) {
-  if (!entry || !entry.key) return null;
-  return { id: statusIdByKey(entry.key), key: entry.key, base: entry.base, per: entry.per,
-    dur: entry.dur, self: self };
-}
-
-function skillStatusRefs(fx) {
-  if (!fx) return [];
-  if (Array.isArray(fx.status)) {
-    // 補上效果鍵值：既有呼叫端（增益結算、說明文字、融合池）以 key 辨識增益種類
-    for (var n = 0; n < fx.status.length; n++) {
-      var r = fx.status[n];
-      if (r && !r.key) { var rd = statusDef(r.id); if (rd && rd.key) r.key = rd.key; }
-    }
-    return fx.status;
-  }
-  var out = [];
-  var i;
-  if (fx.dot) out.push({ id: statusIdByName(fx.dot.name), name: fx.dot.name, base: fx.dot.pct, dur: fx.dot.dur });
-  if (Array.isArray(fx.dotList)) {
-    for (i = 0; i < fx.dotList.length; i++) {
-      out.push({ id: statusIdByName(fx.dotList[i].name), name: fx.dotList[i].name,
-        base: fx.dotList[i].pct, dur: fx.dotList[i].dur });
-    }
-  }
-  if (fx.maxHpDotPct) out.push({ id: 'deathCurse', base: fx.maxHpDotPct.base, per: fx.maxHpDotPct.per, dur: fx.dotDur });
-  if (fx.stunDur) out.push({ id: 'stun', dur: fx.stunDur });
-  if (fx.slowDur) out.push({ id: 'slow', dur: fx.slowDur });
-  if (fx.hotPct) out.push({ id: 'regen', key: 'hot', base: fx.hotPct.base, per: fx.hotPct.per, dur: fx.hotDur, self: true });
-  if (fx.shieldPctMax) out.push({ id: 'shield', key: 'shield', base: fx.shieldPctMax.base, per: fx.shieldPctMax.per, self: true });
-  var buffs = [fx.buff, fx.buff2].concat(Array.isArray(fx.buffList) ? fx.buffList : []);
-  for (i = 0; i < buffs.length; i++) { var b = statusRefFromBuff(buffs[i], true); if (b) out.push(b); }
-  var debuffs = [fx.debuff, fx.debuff2].concat(Array.isArray(fx.debuffList) ? fx.debuffList : []);
-  for (i = 0; i < debuffs.length; i++) { var d = statusRefFromBuff(debuffs[i], false); if (d) out.push(d); }
-  return out;
-}
-
-/* 引用指向的狀態定義；查無定義（融合技隨機命名的臨時 DoT）補一份臨時定義，
-   讓結算流程不必到處判斷 null。 */
-function statusRefDef(ref) {
-  var def = statusDef(ref && ref.id);
-  if (def) return def;
-  return { name: (ref && ref.name) || '持續傷害', icon: '🩸', kind: 'debuff', effect: 'dot',
-    key: (ref && ref.key) || '', elem: '', dmgSource: 'skill', dmg: 0, capStat: '', capMult: 0,
-    val: 0, dur: 0, interval: 0, stack: 'strongest', maxStacks: 1, desc: '' };
-}
-function statusRefEffect(ref) { return statusRefDef(ref).effect; }
-function statusRefKey(ref) { return (ref && ref.key) || statusRefDef(ref).key; }
-function statusRefName(ref) { return statusRefDef(ref).name; }
-function statusRefIcon(ref) { return statusRefDef(ref).icon; }
-/* 作用對象：狀態表分類為增益＝施法者自身，其餘（減益／控場）＝敵方；
-   引用可用 self 欄強制指定（相容舊格式的解析結果）。 */
-function statusRefIsSelf(ref) {
-  if (ref && ref.self !== undefined) return !!ref.self;
-  return statusRefDef(ref).kind === 'buff';
-}
-/* 引用的 Lv.1 效果值（未覆寫就吃狀態表：dot／hot 取「狀態傷害」、stat 取「效果數值」）。 */
-function statusRefBase(ref) {
-  var def = statusRefDef(ref);
-  var base = ref && ref.base;
-  if (base === undefined || base === null || base === '') base = (def.effect === 'stat') ? def.val : def.dmg;
-  return Number(base) || 0;
-}
-/* 引用指向的狀態是否可疊層（供技能說明文字標示）。 */
-function statusRefMaxStacks(ref) {
-  var def = statusRefDef(ref);
-  return def.stack === 'stack' ? Math.max(1, Math.floor(Number(def.maxStacks) || 1)) : 1;
-}
-/* 指定技能等級下的效果值（沿用 scaleAt 語意）。 */
-function statusRefAmount(ref, lv) {
-  return statusRefBase(ref) + (Number(ref && ref.per) || 0) * (Math.max(1, Number(lv) || 1) - 1);
-}
-function statusRefDur(ref) {
-  var d = ref && ref.dur;
-  if (d === undefined || d === null || d === '') d = statusRefDef(ref).dur;
-  return Number(d) || 0;
-}
-
-/* 依引用授予狀態；效果值與持續時間由引用（技能）覆寫、其餘一律吃狀態表。
-   ctx：{ base：本次技能傷害（dot 換算基準）、mult：效果倍率、stats：施法者屬性 }。 */
-function applyStatusRef(ent, ref, lv, ctx) {
-  if (!ent || !ref) return false;
-  ctx = ctx || {};
-  var def = statusRefDef(ref);
-  var amount = statusRefAmount(ref, lv);
-  var dur = statusRefDur(ref);
-  if (!(dur > 0)) return false;
-  if (!statusDef(ref.id)) {
-    // 狀態表上沒有的臨時持續傷害（融合技隨機命名）：沿用舊行為以名稱塗抹、連續結算
-    if (def.effect !== 'dot') return false;
-    return applyDot(ent, statusNum(ctx.base, 0) * amount / 100 * statusNum(ctx.mult, 1),
-      dur, def.name, '', ref.interval);
-  }
-  var sub = { base: ctx.base, mult: ctx.mult, stats: ctx.stats, dur: dur, interval: ref.interval };
-  if (def.effect === 'stat' || def.effect === 'hot' || def.effect === 'shield') sub.val = amount;
-  else sub.dmg = amount;
-  return applyStatus(ent, ref.id, sub);
 }

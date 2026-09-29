@@ -82,7 +82,7 @@ function applyBasicAttackKillGap(pEnt, attackRate) {
 
 function initFieldPlayer() {
     FIELD.player = newPlayerEntity(getStats());
-    // 45 新技能：野外玩家實體重建（開局/讀檔/死亡重生等）＝新一場戰鬥，清空技能執行期狀態
+    // 野外玩家實體重建（開局/讀檔/死亡重生等）＝新一場戰鬥，清空技能執行期狀態
     if (typeof resetSkillRT === 'function') resetSkillRT();
 }
 
@@ -491,7 +491,6 @@ function effectActive(ent, key) { return ((ent && ent.effects && ent.effects[key
 function applyPoison(ent, dps, dur) {
     return applyDot(ent, dps, dur, '中毒', 'poison');
 }
-function poisonActive(ent) { return statusActive(ent, 'poison'); }
 // 直接扣血的持續傷害原本只更新 HP，沒有留下戰鬥日誌，導致敵人可能在沒有任何
 // 傷害行的情況下死亡。只對敵方實體記錄，避免把玩家承受的 DoT 誤報成玩家輸出。
 function logEnemyDirectDamage(ent, source, damage, killed) {
@@ -532,11 +531,9 @@ function applyBuff(ent, key, val, dur, sid, stackCfg) {
     if (!ent.buffs) ent.buffs = {};
     var prev = ent.buffs[key];
     var st = stackStep(stackCfg, prev && prev.until > GT ? prev : null, val);
-    // 45 新技能基建（buffExtend 族）：補存原始持續 dur 與累計延長 ext（累計延長 ≤ dur × BUFF_EXTEND_CAP_PCT%）；
-    // 重新施放＝全新一筆，ext 歸零；既有讀取（val/until）不受影響。
     // sid＝狀態表 ID（未帶時由增益鍵反查），供 UI 取狀態圖標與名稱。
     // unit／stacks＝疊層規則用（單層值與層數；val 恆為 unit × stacks）。
-    ent.buffs[key] = { val: st.value, until: GT + dur, dur: dur, ext: 0, sid: sid || statusIdByKey(key),
+    ent.buffs[key] = { val: st.value, until: GT + dur, dur: dur, sid: sid || statusIdByKey(key),
         unit: st.unit, stacks: st.stacks };
     return dur;
 }
@@ -587,7 +584,7 @@ function applyShield(ent, pctOfMaxHp, dur, sid, stats, stackCfg) {
     ent.shield = Math.max(before, target);
     refreshShieldMaxAfterGain(ent, before);
     if (!ent.buffs) ent.buffs = {};
-    ent.buffs.shield = { val: Math.max(0, ent.shield), until: GT + dur, dur: dur, ext: 0, sid: sid || 'shield',
+    ent.buffs.shield = { val: Math.max(0, ent.shield), until: GT + dur, dur: dur, sid: sid || 'shield',
         unit: step.unit, stacks: step.stacks };
     return dur;
 }
@@ -675,9 +672,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
             cur.unit = step2.unit;
             cur.stacks = step2.stacks;
             cur.until = GT + dur;
-            // 45 新技能基建（buffExtend 族）：重新塗抹＝原始持續刷新、累計延長歸零
             cur.dur = dur;
-            cur.ext = 0;
             cur.sid = sid;
             cur.interval = interval;
             if (frostFormula) cur.frostFormula = frostFormula;
@@ -689,20 +684,14 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
             return;
         }
     }
-    // 45 新技能基建（buffExtend 族）：補存原始持續 dur 與累計延長 ext（延長上限依據）
     // acc＝距離下次作用已累積的秒數；unit／stacks＝疊層規則用
     var step3 = stackStep(stackCfg, null, dps);
     ent.dots.push({
-        dps: step3.value, until: GT + dur, name: name, dur: dur, ext: 0, sid: sid,
+        dps: step3.value, until: GT + dur, name: name, dur: dur, sid: sid,
         interval: interval, acc: 0, unit: step3.unit, stacks: step3.stacks,
         frostFormula: frostFormula, bodyDmg: frostBodyDmg, frostMult: frostMult,
         sourceName: sName || undefined, sourceKey: sKey || undefined, sourceLevel: sLv
     });
-}
-function hasDots(ent) {
-    if (!ent || !ent.dots) return false;
-    for (var i = 0; i < ent.dots.length; i++) if (ent.dots[i].until > GT) return true;
-    return false;
 }
 /* 持續傷害結算：依各狀態的「作用間隔」分段跳傷；回傳是否致死。
    間隔 0＝連續結算。到期時把不足一次間隔的餘額補跳，總傷害維持 dps×持續時間
@@ -783,17 +772,7 @@ function tickStatuses(ent, dt, dotContext) {
     tickShieldExpiry(ent);
     if (effectActive(ent, 'invuln')) return false; // 無敵：持續傷害不生效
     if (!ent.dots || !ent.dots.length) return false;
-    // 45 新技能（dotSynergy 族）：DoT 跳動加速——僅對敵方實體生效（以 maxHp 欄位辨識敵人；
-    // 玩家實體無 maxHp，所受 DoT 不受影響）。dotHaste＝目標旗標（時戳自然過期）、
-    // passiveDotHaste（蝕骨頻率）＝全域倍率；持續時間不變，跳得更密＝等效總傷提高。
     var dtEff = dt;
-    if (ent.maxHp) {
-        if ((ent._dotHasteUntil || 0) > GT && ent._dotHasteMult > 0) dtEff *= ent._dotHasteMult;
-        var _dotTrig = (typeof getStats === 'function') ? getStats().skillTriggers : null;
-        if (_dotTrig && _dotTrig.passiveDotHaste && _dotTrig.passiveDotHaste.mult > 0) {
-            dtEff *= _dotTrig.passiveDotHaste.mult;
-        }
-    }
     var total = 0, drainHits = 0;
     var dotNames = [];
     var dotDamageItems = [];
@@ -864,9 +843,6 @@ function tickStatuses(ent, dt, dotContext) {
         // 單一狀態直接報狀態名（例：「受到中毒」），多個才合併報「持續傷害（流血、燃燒）」
         logEnemyDirectDamage(ent, dotNames.length === 1 ? dotNames[0]
             : '持續傷害' + (dotNames.length ? '（' + dotNames.join('、') + '）' : ''), dotDealt, ent.hp <= 0);
-        // 45 新技能（echo 族）：dmgWindow「窗內玩家全部傷害」含你的 DoT 跳動——
-        // 僅敵方實體計入（玩家所受 DoT 非玩家輸出，不計）
-        if (ent.maxHp && typeof skillRtAccWindowDamage === 'function') skillRtAccWindowDamage(dotDealt);
         // 只從權威跳傷結算觸發崩解，無敵／未到節拍不會產生空爆炸。
         var disintegrate = ent.maxHp && typeof sgUlt === 'function' && sgUlt('bloodblade', 'disintegrate');
         if (disintegrate && typeof sgDisintegrate === 'function') {
@@ -1014,8 +990,7 @@ function monsterDefCfg(m) {
 
 /* ---- 治療公式 healPlayer → js/formula.js §3 ----
    戰鬥端的回復（吸血／汲取／過關回復／吸魂）皆為非技能來源，一律以 { noShield: true } 呼叫，
-   溢出不再轉護盾，因此不需要「溢出轉護盾」的浮動字提示（技能路徑用 skills.js 的
-   showPlayerShieldGainAfterHeal）。 */
+   溢出不再轉護盾，因此不需要「溢出轉護盾」的浮動字提示。 */
 
 /* 同一次主普攻的連擊傷害共用一個浮字群組；攻速產生的下一次主普攻會拿到新的群組。
    群組只存在於顯示 class，不改變傷害結算或 Worker FLOAT 欄位。 */
@@ -1033,23 +1008,19 @@ function playerBasicAttackRate(p, st) {
 }
 
 // 完整的一次玩家普攻（含連擊/暈眩/減速/吸血/吸魔/暗影汲取）
-// 45 新技能基建：可選末參 opts（不影響既有呼叫、回傳值不變）——
-//   forceCrit：該次攻擊必定暴擊（殺陣反射 M4 等引動攻擊用）；
-//   noProc：不再觸發連擊/連擊數等後續追加攻擊（procCast 族引動的免費普攻防遞迴用）；
+// 可選末參 opts（不影響既有呼叫、回傳值不變）——
+//   noProc：不再觸發連擊/連擊數等後續追加攻擊（引動攻擊防遞迴用）；
 //   damageGroupId：沿用主普攻的連擊傷害浮字群組。
 function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
     var st = getStats();
     var damageGroupId = (opts && opts.damageGroupId) ||
         (!depth ? 'basic-' + (++BASIC_DAMAGE_FLOAT_GROUP_SEQ) : '');
     var aCfg = playerAtkCfg(pEnt);
-    // 45 新技能（periodicField 族）：領域內敵人受指定類型傷害增幅（普攻端；elemAtk 於函式內先淺拷貝防污染）
-    if (typeof skillRtFieldAmpACfg === 'function') aCfg = skillRtFieldAmpACfg(aCfg, mEnt);
     // 新版技能【虛弱】：流血中的敵人受到的傷害提高（js/skills2.js；普攻端）
     if (typeof skill2VulnACfg === 'function') aCfg = skill2VulnACfg(aCfg, mEnt);
     /* 新版技能超神【殺神降臨】：狂怒期間的普攻傷害加成（js/skills2.js）。
        只掛在這裡——playerAtkCfg 同時服務反擊與新版技能，掛在那裡會變成「所有傷害」。 */
     if (typeof skill2RageBasicAtkACfg === 'function') aCfg = skill2RageBasicAtkACfg(aCfg);
-    if (opts && opts.forceCrit) aCfg.critRate = Math.max(100, aCfg.critRate || 0); // 必定暴擊
     /* 近戰斬擊沒有飛行時間；追加連擊只錯開受擊與浮字，不重播角色動作。
        dur 傳遞本次實際攻速週期，讓完整揮擊能在下一次普攻前播完。 */
     var atkWaveDelayMs = (opts && opts.vfxDelayMs > 0) ? opts.vfxDelayMs : 0;
@@ -1160,9 +1131,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         }
         if (comboN > 0) logMsg += ' <span class="log-hl-good">連擊數 ×' + comboN + '</span>';
     }
-    // 45 新技能：普攻命中/擊殺觸發（僅主攻擊 depth 0 分發；追加攻擊遞迴不重複觸發）——
-    // stackCharge source:'attackHit' 疊層（鬥氣輪轉，含暴擊 addCrit）；
-    // passiveKillCd inclBasic（死神節拍 M8）：普攻擊殺也扣其他技冷卻（與技能擊殺共用 icd）
+    // 普攻命中觸發（僅主攻擊 depth 0 分發；追加攻擊遞迴不重複觸發）
     if (!depth) {
         if (typeof legendaryOnBasicAttack === 'function') {
             var legendaryBasic = legendaryOnBasicAttack(pEnt, mEnt, res, floatSel, st);
@@ -1182,16 +1151,6 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
             if (sgOrbs > 0) {
                 logMsg += ' <span class="log-hl-good">火狩星環 ×' + sgOrbs + '</span>';
             }
-        }
-        if (!res.miss && typeof skillRtChargeInput === 'function') {
-            skillRtChargeInput('attackHit', res.crit ? 'crit' : 'hit');
-        }
-        // 45 新技能（echo 族）：dmgWindow 快照窗累計——普攻總傷害（含連擊/連擊數/天罰折入值）一次寫入
-        if (!res.miss && typeof skillRtAccWindowDamage === 'function') {
-            skillRtAccWindowDamage(res.dmg || 0);
-        }
-        if (res.killed && typeof skillRtOnKillTriggers === 'function') {
-            skillRtOnKillTriggers(pEnt, null, null, 0, st);
         }
     }
     res.logText = logMsg;
@@ -1414,11 +1373,7 @@ function fieldMonsterAttack(m, p) {
     if (typeof skill2WaterPrisonBlocks === 'function' && skill2WaterPrisonBlocks(m)) return false;
     var attackTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
-    var mres = doMonsterAttack(m, attackTarget, 'pv-float');
-    // 45 新技能：受擊觸發統一入口（野外；閃避/無敵不計，格擋計入並帶旗標；absorbed 供破盾判定）
-    if (attackTarget === p && typeof onPlayerHitTaken === 'function' && mres && !mres.miss && !mres.invuln) {
-        onPlayerHitTaken(mres.dmg || 0, !!mres.blocked, p, 'pv-float', mres.absorbed || 0);
-    }
+    doMonsterAttack(m, attackTarget, 'pv-float');
     // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔（降低後攻速 = 原攻速/(1+降低%)）
     m.atkCd += (1 / m.aspd) * (1 + buffVal(m, 'enemyAspdDown') / 100);
     if (p.hp <= 0) { onPlayerFieldDeath(); return true; }
@@ -1564,10 +1519,9 @@ function fieldTick(dt) {
       ? bfTickApproach(fieldEnemyList(), dt) : [];
     var debugFieldTick = combatDebugFieldSnapshot(fieldEnemyList());
 
-    // 45 新技能共用排程器（echo／periodicField／dmgWindow／healWindow／聖痕到期結算；tower.js 塔戰 tick 鏡射）——
+    // 技能排程器（js/skills2.js tickSkill2；tower.js 塔戰 tick 鏡射）——
     // 必須在「出怪」空場早退之「前」執行：整波清空到下一波出怪的間隙 GT 照常前進，若排程器停擺，
-    // 領域補跳 while 迴圈會在新一波出怪的第一個 tick 把間隙內漏掉的每跳一次性全灌到新敵人身上（等效免費爆發）。
-    // 空場時回響/領域跳傷/快照窗轟出自然落空（fizzle）、聖痕期滿仍照時給盾，行為與高塔恆有 BOSS 一致。
+    // 場域補跳 while 迴圈會在新一波出怪的第一個 tick 把間隙內漏掉的每跳一次性全灌到新敵人身上（等效免費爆發）。
     if (typeof tickSkillSchedulers === 'function') {
         tickSkillSchedulers(dt, { pEnt: p, getEnemies: combatFieldEnemies, floatSel: 'mv-float', onDeaths: onFieldDeaths });
         combatDebugAuditFieldDeaths(debugFieldTick, 'skill scheduler');
@@ -1673,7 +1627,7 @@ function fieldTick(dt) {
             enemies = combatFieldEnemies();
             if (!enemies.length) return;
         }
-        if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 狂暴打擊等自傷技能
+        if (p.hp <= 0) { onPlayerFieldDeath(); return; } // 技能自傷（如血飲術反噬）
         if (targetSwitchReady && p.atkCd <= 0) {
             // 普攻打離我方最近的敵人（同距離隨機挑一個）；鎖定後直到該目標死亡才換 → js/battlefield.js
             var primary = bfPickPrimary(combatFieldEnemies(), p._lockTarget);
@@ -1795,9 +1749,8 @@ function completeFieldWave(st) {
 
 function onFieldKill(m) {
     if (!m || m._rewarded) return;
-    // 45 新技能（dotSynergy 族）：dotSplashOnKill（蝕骨頻率 M8）——敵人死亡時，
-    // 其身上 DoT 剩餘的一部分濺射到隨機另一存活敵人（須在清理死亡實體前結算）
-    if (typeof skillRtOnEnemyDeath === 'function') skillRtOnEnemyDeath(m, combatFieldEnemies());
+    // 死亡屍爆等（js/skills2.js）：須在清理死亡實體前結算
+    if (typeof skills2OnEnemyDeath === 'function') skills2OnEnemyDeath(m, combatFieldEnemies());
     m.hp = 0;
     m._rewarded = true;
     // 普攻鎖定的目標死了就解鎖，下一次出手重新挑最近的（順便別把死掉的實體參照留在快照裡）
@@ -1920,8 +1873,8 @@ function onPlayerFieldDeath() {
         UI.dirty.battle = true;
         return;
     }
-    // 45 新技能：死亡＝該場戰鬥結束——比照 finishTowerFight 清空 SKILL_RT 執行期狀態，
-    // 避免死前入列的回響/領域/聖痕/快照窗（帶死前傷害快照）在復活後對退階新波次集中結算
+    // 死亡＝該場戰鬥結束——比照 finishTowerFight 清空技能執行期狀態，
+    // 避免死前排程的場域／延遲結算在復活後對退階新波次集中結算
     if (typeof resetSkillRT === 'function') resetSkillRT();
     var retreatStage = fieldDeathRetreatStage(G.stage.current);
     blog('☠️ 你被擊倒了…退回第 ' + retreatStage + ' 階段繼續挑戰（' + REVIVE_DELAY + ' 秒後復活）', 'bad');

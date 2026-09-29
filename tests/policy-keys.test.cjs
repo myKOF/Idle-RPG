@@ -2,13 +2,12 @@
 
    這是本專案反覆踩到、而且最難察覺的一類失真：策略寫了一個遊戲沒有的鍵，
    送出去只會被遊戲回一句錯誤訊息，模擬照樣跑完、報表照樣產出，
-   只是那條規則整場沒有生效過。實際發生過三次——
+   只是那條規則整場沒有生效過。實際發生過兩次——
      - 詞條清單寫了 patk／crit／xpGain／dropRate 四個不存在的鍵；
-     - 鑲嵌寫死 garnet，1,421 次呼叫全部回「沒有這種寶石」；
-     - 技能清單裡的 id 打錯。
+     - 鑲嵌寫死 garnet，1,421 次呼叫全部回「沒有這種寶石」。
    靠人看報表是看不出來的，只能由這支哨兵擋。
 
-   基準取自**遊戲本體**（透過模擬器的 vm context 直接讀 GEM_TYPES / SKILLS / AFFIX_POOL），
+   基準取自**遊戲本體**（透過模擬器的 vm context 直接讀 GEM_TYPES / AFFIX_POOL），
    不是另抄一份清單——另抄一份的話遊戲改名時兩邊會一起錯。 */
 
 const test = require('node:test');
@@ -22,7 +21,6 @@ const POLICY_FILES = fs.readdirSync(SIM_DIR).filter((f) => /^policy\..+\.json$/.
 
 const ctx = createEngine({ seed: 1 }).ctx;
 const GEM_TYPES = ctx.GEM_TYPES;
-const SKILLS = ctx.SKILLS;
 const AFFIX_POOL = ctx.AFFIX_POOL;
 
 function loadPolicy(f) {
@@ -42,16 +40,6 @@ function gemTypesIn(rule) {
   return out;
 }
 
-/* expand 項目引用的清單名稱：list（單一）與 listByLevel[].list（分段）。 */
-function listNamesIn(rule) {
-  const out = [];
-  for (const spec of rule.expand || []) {
-    if (spec.list) out.push(spec.list);
-    for (const band of spec.listByLevel || []) if (band.list) out.push(band.list);
-  }
-  return out;
-}
-
 test('策略引用的寶石種類都存在於 GEM_TYPES', () => {
   for (const f of POLICY_FILES) {
     for (const rule of loadPolicy(f).rules) {
@@ -60,22 +48,6 @@ test('策略引用的寶石種類都存在於 GEM_TYPES', () => {
           `${f} 規則 ${rule.id} 引用了不存在的寶石種類「${t}」——` +
           'socketGem() 只會回「沒有這種寶石」，整條規則整場落空且無任何徵兆。' +
           '正確鍵名見 js/data.js 的 GEM_TYPES');
-      }
-    }
-  }
-});
-
-test('策略的技能清單裡每個 id 都存在於 SKILLS', () => {
-  for (const f of POLICY_FILES) {
-    const p = loadPolicy(f);
-    for (const rule of p.rules) {
-      if (rule.cmd !== 'skill.learn' && rule.cmd !== 'skill.maxUpgrade') continue;
-      for (const name of listNamesIn(rule)) {
-        const list = p.lists[name];
-        assert.ok(list, `${f} 規則 ${rule.id} 指到不存在的清單「${name}」——清單缺席時展開結果是空的，規則靜靜失效`);
-        for (const id of list) {
-          assert.ok(SKILLS[id], `${f} 清單 ${name} 有不存在的技能 id「${id}」（見 js/skills.js 的 SKILLS）`);
-        }
       }
     }
   }
@@ -444,41 +416,6 @@ test('合成寶石必須排在鑲嵌之前（先合成才鑲得到最高品質�
     if (compose < 0 || socket < 0) continue;
     assert.ok(compose < socket,
       `${f}：gem-compose 必須排在 socket-gems 前面（目前 ${compose} vs ${socket}）`);
-  }
-});
-
-test('learnPlan 宣告的被動清單必須涵蓋遊戲裡所有被動技', () => {
-  /* 被動不佔裝載欄、學會即常駐，所以「主動配滿之後的點數全投被動」這條策略
-     只在**清單涵蓋得夠廣**時才成立。清單短了不會有任何徵兆——技能點就靜靜地
-     堆著，而堆積本身在面板上看起來很正常。
-
-     實測一份 Lv.392 的快照：技能點 118/348 閒置，已學的 23 支全部 10/10
-     （23×10=230，348−230=118）。不是「還沒投完」，是清單學光了沒東西可投——
-     遊戲有 19 個被動，策略只宣告了 8 個（而且舊註解還寫著「全部 10 個被動」，
-     本身就是錯的）。漏掉的 11 個裡包含殺陣反射（暴擊時免費再攻擊）與
-     死神節拍（擊殺減冷卻）這種中後期的主力被動。
-
-     所以這裡拿遊戲當權威逐一比對：日後 SKILLS 新增被動，這支會紅。
-     真的有不想投的（例如物理流的 matkPct），做法是排在清單最後面，
-     不是把它留在清單外——留在外面等於「有剩也不投」，而點數有剩時投什麼都比不投好。 */
-  const passives = Object.keys(SKILLS).filter((k) => SKILLS[k].cat === 'passive');
-  assert.ok(passives.length > 0, '前提：遊戲裡要有被動技');
-
-  for (const f of POLICY_FILES) {
-    const p = loadPolicy(f);
-    for (const rule of p.rules) {
-      const name = rule.learnPlan && rule.learnPlan.passives;
-      if (!name) continue;
-      const list = p.lists[name] || [];
-      const missing = passives.filter((k) => list.indexOf(k) < 0);
-      assert.deepEqual(missing, [],
-        `${f} 的 ${name} 沒有涵蓋這些被動：${missing.join(', ')}` +
-        '——技能點會靜靜地堆著，不會有任何錯誤訊息');
-      const notPassive = list.filter((k) => !SKILLS[k] || SKILLS[k].cat !== 'passive');
-      assert.deepEqual(notPassive, [],
-        `${f} 的 ${name} 有不是被動技的項目：${notPassive.join(', ')}` +
-        '——主動技學了不裝就是死點，那正是這條策略要避免的事');
-    }
   }
 });
 

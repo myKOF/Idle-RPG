@@ -246,23 +246,9 @@ P['beam-light'] = () => ({
   layers: beam({ w: 20, body: '#fffef4', core: '#ffffff', glow: '#ffe47a' })
 });
 
-/* ---------- beam-ice：寒冰槍光束（帶白色斜紋） ---------- */
-P['beam-ice'] = () => ({
-  id: 'beam-ice', duration: 0.45, layers: [
-    ...beam({ w: 17, body: '#4da6ff', core: '#f2fbff', glow: '#79d8ff' }),
-    /* 斜紋：uvScroll 讓條紋沿光束流動（Core 目前唯一的程序化效果） */
-    kit.procedural({
-      id: 'streaks', asset: A.lines4, z: 3, effect: 'uvScroll', sizePx: [200, 30],
-      anchor: LEFT, alpha: 0.7, tint: '#f2fbff', blend: 'add',
-      scrollSpeed: { x: -2.4, y: 0 }, duration: 0.45,
-      alphaOverLife: [[0, 0], [0.25, 0.8], [0.7, 0.7], [1, 0]]
-    })
-  ]
-});
-
 /* ---------- 寫出 + 驗證 ---------- */
 const ORDER = ['bolt-sky-lightning', 'bolt-sky-purple', 'bolt-chain-lightning', 'bolt-curtain-lightning',
-  'pillar-light', 'pillar-earth', 'beam-light', 'beam-ice'];
+  'pillar-light', 'pillar-earth', 'beam-light'];
 const written = [];
 const assets = new Set();
 for (const id of ORDER) {

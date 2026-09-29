@@ -2105,30 +2105,33 @@ test('【天霸風神斬】與【阿修羅霸王拳】倒地期間不自動發�
   assert.ok(c2.SKILL2_RT.asuraFist > fist0, '節拍往後推');
 });
 
-test('傳奇自動觸發（神落天殞／光之碰撞／天譴之誓）與火靈盾自損，倒地期間一起暫停', () => {
+test('傳奇自動觸發（光之碰撞）與火靈盾自損，倒地期間一起暫停', () => {
+  /* 2026-09-29：舊技能系統移除後，神落天殞／天譴之誓（各自的節拍 nextMeteorAt／nextChargeAt）
+     連同詞條一併刪除，傳奇自動觸發只剩【光之碰撞】。 */
   const c = loadContext(['js/legendary.js']);
   stubHits(c); stubVfx(c);
   c.chance = () => false;
   const p = playerEnt(); p.mp = 1e9;
   c.FIELD = { player: p };
   const m = enemy(1e12, 3 * M, 0);
-  setLegendary(c, ['skyfallMeteor', 'lightCollision', 'oathOfCondemnation', 'fireSpiritShield']);
+  setLegendary(c, ['lightCollision', 'fireSpiritShield']);
   const ctx = { pEnt: p, getEnemies: () => [m], floatSel: 'mv-float', onDeaths() {}, onDamage() {} };
 
   c.GT = 0;
-  c.tickLegendaryEffects(0.05, ctx);   // 起算三條節拍
+  c.tickLegendaryEffects(0.05, ctx);   // 起算兩條節拍
   const rt = c.LEGENDARY_RT;
-  const meteor0 = rt.nextMeteorAt, light0 = rt.nextLightAt, charge0 = rt.nextChargeAt;
+  const light0 = rt.nextLightAt;
   const drain0 = rt.nextFireDrainAt;
-  assert.ok(meteor0 > 0 && light0 > 0 && charge0 > 0 && drain0 > 0);
+  assert.ok(light0 > 0 && drain0 > 0);
+  ['nextMeteorAt', 'nextChargeAt'].forEach((key) => {
+    assert.equal(rt[key], undefined, key + ' 屬於已刪除的舊技能詞條，執行期狀態不該再有');
+  });
 
   c.SKILL2_RT.lastStand = { done: false, reviveAt: c.GT + 999, pEnt: p };
   const hpBefore = p.hp;
   for (let t = 0; t < 6; t += 0.05) { c.GT += 0.05; c.tickLegendaryEffects(0.05, ctx); }
   assert.equal(p.hp, hpBefore, '【火靈盾】倒地期間不得自損——那會把「死了 5 秒」的保護砍斷');
-  assert.ok(Math.abs((rt.nextMeteorAt - meteor0) - 6) < 0.2, '神落天殞的節拍往後推');
   assert.ok(Math.abs((rt.nextLightAt - light0) - 6) < 0.2, '光之碰撞的節拍往後推');
-  assert.ok(Math.abs((rt.nextChargeAt - charge0) - 6) < 0.2, '天譴之誓的節拍往後推');
   assert.ok(Math.abs((rt.nextFireDrainAt - drain0) - 6) < 0.2, '火靈盾的節拍往後推（補跳是 while 迴圈，停住會在復活當下一次全灌）');
 });
 

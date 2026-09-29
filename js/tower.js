@@ -66,7 +66,7 @@ function startTowerFight(floor) {
   TOWER.floor = floor;
   TOWER.boss = makeBoss(floor);
   TOWER.player = newPlayerEntity(st);
-  // 45 新技能：塔戰玩家實體全新建立＝新一場戰鬥，清空技能執行期狀態（比照 skillCds 全新重置）
+  // 塔戰玩家實體全新建立＝新一場戰鬥，清空技能執行期狀態（比照 skillCds 全新重置）
   if (typeof resetSkillRT === 'function') resetSkillRT();
   TOWER.player.atkCd = 0.3;
   TOWER.elapsed = 0;
@@ -180,14 +180,14 @@ function towerTick(dt) {
       if (odRes.killed) { endTowerFight(true); return; }
     }
   }
-  // 45 新技能共用排程器（echo／periodicField／dmgWindow／healWindow 到期結算；鏡射 combat.js fieldTick 掛點）
+  // 技能排程器（js/skills2.js tickSkill2；鏡射 combat.js fieldTick 掛點）
   if (typeof tickSkillSchedulers === 'function') {
     tickSkillSchedulers(dt, {
       pEnt: p,
       getEnemies: function () { return (TOWER.boss && TOWER.boss.hp > 0) ? [TOWER.boss] : []; },
       floatSel: 'tb-float',
       onDeaths: function () { if (TOWER.boss && TOWER.boss.hp <= 0 && G.tower.active && !TOWER.showingResult) endTowerFight(true); },
-      onDamage: function (d) { TOWER.dmgDealt += Math.max(0, d || 0); } // 45 新技能：排程結算傷害（回響/領域/聖痕）計入輸出統計
+      onDamage: function (d) { TOWER.dmgDealt += Math.max(0, d || 0); } // 排程結算傷害計入輸出統計
     });
     if (!G.tower.active || TOWER.showingResult) return; // 排程結算若擊殺 BOSS（後棒填入）即結束本場
     if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
@@ -248,10 +248,6 @@ function towerTick(dt) {
       var bossTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
       var bossHit = doMonsterAttack(b, bossTarget, 'tp-float', mult);
-      // 45 新技能：受擊觸發統一入口（高塔一般攻擊；閃避/無敵不計，格擋計入並帶旗標；absorbed 供破盾判定）
-      if (bossTarget === p && typeof onPlayerHitTaken === 'function' && bossHit && !bossHit.miss && !bossHit.invuln) {
-        onPlayerHitTaken(bossHit.dmg || 0, !!bossHit.blocked, p, 'tp-float', bossHit.absorbed || 0);
-      }
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
       TOWER.bossDmgDealt += Math.max(0, (bossHit.dmg || 0));
       // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔。
@@ -266,10 +262,6 @@ function towerTick(dt) {
       var bossSpecialTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
       var bossSpecialHit = doMonsterAttack(b, bossSpecialTarget, 'tp-float', 2.2 * mult, '蓄力重擊');
-      // 45 新技能：受擊觸發統一入口（高塔蓄力重擊；與一般攻擊同規格；absorbed 供破盾判定）
-      if (bossSpecialTarget === p && typeof onPlayerHitTaken === 'function' && bossSpecialHit && !bossSpecialHit.miss && !bossSpecialHit.invuln) {
-        onPlayerHitTaken(bossSpecialHit.dmg || 0, !!bossSpecialHit.blocked, p, 'tp-float', bossSpecialHit.absorbed || 0);
-      }
       TOWER.bossDmgDealt += Math.max(0, (bossSpecialHit.dmg || 0));
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; }
@@ -362,13 +354,6 @@ function endTowerFight(win, reason) {
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
-    // 魔法卷軸（2026-07-30 技能融合材料）：同附魔精華來源、數量 1/10（機率式進位）
-    var scrollGain = (typeof magicScrollFromEssence === 'function') ? magicScrollFromEssence(rw.essence) : 0;
-    if (scrollGain > 0) {
-      G.player.magicScroll = (G.player.magicScroll || 0) + scrollGain;
-      if (window.recordLootMat) window.recordLootMat('magicScroll', scrollGain, 'tower');
-      result.rewards.push('📜 魔法卷軸 x' + scrollGain);
-    }
     // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {

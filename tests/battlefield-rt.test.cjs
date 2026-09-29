@@ -1,6 +1,7 @@
-/* 新版戰鬥 P3：技能執行期機制的空間化
-   領域改為「打在地上的一塊區域」、連鎖與濺射改為由近而遠擴散，
-   不再對整個場上無差別生效或隨機挑對象。 */
+/* 新版戰鬥 P3：連鎖的空間化（bfChainOrder／bfChainNext，js/battlefield.js）
+   連鎖對象在剩下的存活敵人之間隨機擴散，不重複、不原地打同一隻。
+   舊版領域圓、領域受傷增幅、DoT 濺射與印記轉移（skillRt* 45 機制族）已於 2026-09-29 隨舊技能系統移除，
+   對應測試一併刪除。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -29,7 +30,7 @@ function loadGameContext() {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.G = {
-    player: { level: 1, reincarnations: 0, skills: {}, talents: { levels: {}, potentialLevels: {} }, loadout: [], fusions: [] },
+    player: { level: 1, reincarnations: 0, talents: { levels: {}, potentialLevels: {} }, loadout: [] },
     stage: { current: 1 },
     tower: { active: false }
   };
@@ -50,89 +51,6 @@ function enemy(x, y, extra) {
     pos: { x: x, y: y }
   }, extra || {});
 }
-
-test('領域只打施放當下覆蓋到的那塊圓，區域外的敵人不受影響', () => {
-  const c = loadGameContext();
-  c.resetSkillRT();
-  const pEnt = { hp: 1000, mp: 1000, buffs: {}, dots: [], effects: {}, skillCds: {} };
-  const inside = enemy(100, 0);
-  const outside = enemy(600, 0);
-
-  // 在 (100,0) 開一個半徑 120 的領域：涵蓋 inside，打不到 outside
-  const sk = { name: '測試領域', emoji: '🌀', tags: [] };
-  const fx = { dmgType: 'phys', stat: 'atk', field: { tickPct: 100, dur: 10, tickSec: 1 } };
-  const out = { baseVal: 1000, area: { x: 100, y: 0, r: 120 } };
-  c.skillRtOpenField(pEnt, sk, fx, 'testField', 1, c.getStats(), out);
-
-  const entry = c.SKILL_RT.fields[0];
-  assert.ok(entry.area, '領域必須記住覆蓋的區域');
-  entry.onTick({ pEnt, getEnemies: () => [inside, outside], floatSel: 'mv-float' });
-
-  assert.ok(inside.hp < 100000, '站在領域裡的敵人要吃到跳傷');
-  assert.equal(outside.hp, 100000, '領域外的敵人不該吃到跳傷');
-});
-
-test('沒有座標時領域維持全場語意（高塔單體 BOSS 不受影響）', () => {
-  const c = loadGameContext();
-  c.resetSkillRT();
-  const pEnt = { hp: 1000, mp: 1000, buffs: {}, dots: [], effects: {}, skillCds: {} };
-  const boss = { hp: 100000, maxHp: 100000, def: 0, mdef: 0, dodge: 0, resist: {}, ctrlRes: 0, isBoss: true, buffs: {}, dots: [], effects: {}, shield: 0 };
-  const sk = { name: '測試領域', emoji: '🌀', tags: [] };
-  const fx = { dmgType: 'phys', stat: 'atk', field: { tickPct: 100, dur: 10, tickSec: 1 } };
-
-  c.skillRtOpenField(pEnt, sk, fx, 'testField', 1, c.getStats(), { baseVal: 1000, area: null });
-  const entry = c.SKILL_RT.fields[0];
-  assert.equal(entry.area, null);
-  entry.onTick({ pEnt, getEnemies: () => [boss], floatSel: 'tb-float' });
-  assert.ok(boss.hp < 100000, '無座標時仍照原本的全場語意結算');
-});
-
-test('領域的受傷增幅只加在站在領域裡的敵人身上', () => {
-  const c = loadGameContext();
-  c.resetSkillRT();
-  const inside = enemy(100, 0);
-  const outside = enemy(600, 0);
-  c.SKILL_RT.fields.push({
-    name: '增幅領域', until: c.GT + 10, tickSec: 1, nextAt: c.GT + 1,
-    takenAmpPct: 100, ampKey: 'phys',
-    area: { x: 100, y: 0, r: 120 }
-  });
-
-  const ampInside = c.skillRtFieldAmpACfg({ atk: 100, dmgType: 'phys', isPlayer: true }, inside);
-  const ampOutside = c.skillRtFieldAmpACfg({ atk: 100, dmgType: 'phys', isPlayer: true }, outside);
-  assert.equal(ampInside.atk, 200);
-  assert.equal(ampOutside.atk, 100);
-
-  // 不帶目標的呼叫端維持原本的無條件增幅（相容既有呼叫）
-  assert.equal(c.skillRtFieldAmpACfg({ atk: 100, dmgType: 'phys', isPlayer: true }).atk, 200);
-});
-
-test('DoT 濺射與印記轉移交給場上隨機一個存活敵人（技能說明就是寫「隨機」）', () => {
-  const c = loadGameContext();
-  c.resetSkillRT();
-  const stats = {
-    cdr: 0, castSpeed: 0, hp: 1000, mp: 1000, atk: 100, matk: 100,
-    aoeDmg: 0, critRate: 0, critDmg: 150, pPen: 0, mPen: 0, hit: 100, level: 1,
-    passives: {}, lifesteal: 0, manaSteal: 0, shieldEff: 0,
-    skillTriggers: { dotSplashOnKill: 50 }
-  };
-  c.getStats = () => stats;
-
-  const dead = enemy(200, 0, { hp: 0 });
-  dead.dots = [{ dps: 100, until: c.GT + 5, name: '流血', dur: 5, ext: 0 }];
-  const near = enemy(250, 0);   // 就在死者旁邊
-  const far = enemy(700, 0);    // 場上最遠
-
-  const hit = new Set();
-  for (let i = 0; i < 200; i++) {
-    near.dots = []; far.dots = [];
-    c.skillRtOnEnemyDeath(dead, [near, far]);
-    assert.equal(near.dots.length + far.dots.length, 1, '每次死亡只濺射給 1 個接收者');
-    if (near.dots.length) hit.add(near);
-    if (far.dots.length) hit.add(far);
-  }
-  assert.equal(hit.size, 2, '最遠的敵人也要有機會接到（不是固定給最近的）');
-});
 
 test('連鎖隨機擴散：第一跳打主目標，之後在剩下的敵人之間隨機挑', () => {
   const c = loadGameContext();
@@ -165,16 +83,4 @@ test('場上只有一個敵人時連鎖仍打滿次數（與改造前行為一�
   const order = c.bfChainOrder(only, [only], 4);
   assert.equal(order.length, 4);
   order.forEach((e) => assert.equal(e, only));
-});
-
-test('連鎖／濺射的對象取自整個戰場，不受技能傷害範圍限制', () => {
-  const c = loadGameContext();
-  const a = enemy(1, 2);
-  const b = enemy(3, 3);
-  c.FIELD.monsters = [a, b];
-  c.FIELD.monster = a;
-  // 技能只打了 a（單體），但擴散類效果仍看得到 b
-  const field = c.skillRtActiveEnemies([a]);
-  assert.equal(field.length, 2);
-  assert.ok(field.indexOf(b) >= 0);
 });

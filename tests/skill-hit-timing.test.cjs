@@ -1,5 +1,10 @@
-/* 傷害數字的時序：模擬層一瞬間結算完整段傷害，但畫面上子彈要飛、多段要一段一段打。
-   這支測試釘的是「數字什麼時候跳出來」，不是傷害算得對不對。 */
+/* 傷害數字的時序：模擬層一瞬間結算完整段傷害，但畫面上子彈要飛。
+   這支測試釘的是「數字什麼時候跳出來」，不是傷害算得對不對。
+
+   2026-09-29 舊技能系統整批移除：原本靠舊 castSkill 驗的幾條（遠近延遲不同、投射物事件的 travelMs、
+   隕石落點、近戰不延後、舊多段技逐段錯開、延遲不影響結算）隨之刪除。
+   新版技能的「飛行速度 → 特效飛行時間 → 傷害數字延遲」由 tests/skills2-flight-speed.test.cjs 涵蓋；
+   本檔保留與技能種類無關的共用部分：等速飛行公式、travelMs／delayMs 的協議與顯示端接線。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -20,7 +25,7 @@ function loadContext() {
   ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js']
     .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f }));
   context.G = {
-    player: { level: 1, skills: {}, loadout: [], fusions: [], talents: { levels: {}, potentialLevels: {} } },
+    player: { level: 1, loadout: [], talents: { levels: {}, potentialLevels: {} } },
     stage: { current: 1 }, tower: { active: false }
   };
   context.getStats = () => ({
@@ -38,15 +43,6 @@ function enemy(x, y) {
     elite: false, isBoss: false, buffs: {}, dots: [], effects: {}, shield: 0,
     pos: { x: x, y: y }
   };
-}
-
-// 收集每一則浮字的延遲；floatText 的第 7 個參數是 delayMs
-function captureFloats(context) {
-  const floats = [];
-  context.floatText = (elId, text, cls, damageValue, ent, snap, delayMs) => {
-    floats.push({ text, cls, delayMs: delayMs || 0 });
-  };
-  return floats;
 }
 
 test('投射物是等速飛行：距離越遠飛越久，不是固定時間', () => {
@@ -76,31 +72,7 @@ test('投射物速度在目前值上再降低 20%，且上下限同步延長', (
     (c.VFX_PROJECTILE_SPEED_CELLS * c.BF_UNIT));
 });
 
-test('打遠處的敵人，傷害數字比打近處的晚跳出來', () => {
-  function delayOf(x, y) {
-    const c = loadContext();
-    const floats = captureFloats(c);
-    const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-    c.castSkill(player, [enemy(x, y)], 'fireball', 1, 'mv-float');
-    return floats.filter((f) => /enemy-skill/.test(f.cls))[0].delayMs;
-  }
-  const near = delayOf(80, 0);
-  const far = delayOf(340, 0);
-  assert.ok(far > near, '打遠的敵人數字應該較晚：近 ' + near + 'ms／遠 ' + far + 'ms');
-  // 不是固定值——v11 的做法是不管遠近都 500ms，那正是使用者回報「不順」的原因
-  assert.notEqual(near, far);
-});
-
-test('投射物的動畫長度與傷害數字用同一組飛行時間（不會走鐘）', () => {
-  const c = loadContext();
-  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  let spec = null;
-  c.playCombatVfx = (s) => { spec = s; };
-  captureFloats(c);
-  const target = enemy(340, 0);
-  c.castSkill(player, [target], 'fireball', 1, 'mv-float');
-  assert.ok(spec && spec.travelMs && spec.travelMs.length === 1, 'vfx 事件應帶每個目標的飛行時間');
-  assert.equal(spec.travelMs[0], Math.round(c.bfTravelSeconds(target) * 1000));
+test('特效事件的 travelMs 原樣送到顯示端，動畫長度與傷害數字用同一組飛行時間（不會走鐘）', () => {
   // 顯示端拿同一個數字當動畫長度（v17：受擊爆點的命中時刻 hitAt 也用同一個數）
   const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
   assert.match(vfx, /var tr = \(travelMs && travelMs\[rt\.idxs\[t\]\] > 0\) \? travelMs\[rt\.idxs\[t\]\] : 0;/);
@@ -111,86 +83,6 @@ test('投射物的動畫長度與傷害數字用同一組飛行時間（不會�
      變成「數字到了子彈還在飛」——實機驗證時就是這樣抓到的。 */
   const shim = fs.readFileSync(path.join(root, 'js/worker/shim.js'), 'utf8');
   assert.match(shim, /travelMs:\s*spec\.travelMs \|\| null/);
-});
-
-test('投射物技能：傷害數字延後到子彈飛到才跳出', () => {
-  const c = loadContext();
-  const floats = captureFloats(c);
-  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  // 火球術：魔法系單體 → 投射物
-  const sk = c.SKILLS.fireball;
-  assert.ok(sk, '火球術應存在');
-  assert.equal(c.skillVfxKind(sk, c.effectiveFx('fireball', sk, 1), sk.shape), 'projectile');
-
-  c.castSkill(player, [enemy(80, 0)], 'fireball', 1, 'mv-float');
-  const dmg = floats.filter((f) => /enemy-skill/.test(f.cls));
-  assert.ok(dmg.length >= 1, '應該有傷害浮字');
-  assert.ok(dmg[0].delayMs > 0, '投射物的傷害數字不能在發射當下就跳出來');
-});
-
-test('隕石改為 4*4 後仍使用隕石特效，並以主目標為落點', () => {
-  const c = loadContext();
-  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  const meteor = c.skillDef('meteor');
-  meteor.shape = '4*4';
-  let spec = null;
-  c.playCombatVfx = (s) => { spec = s; };
-
-  const primary = enemy(80, 0);
-  const outside = enemy(340, 0);
-  c.castSkill(player, [primary, outside], 'meteor', 1, 'mv-float');
-
-  assert.ok(spec, '隕石施放後應送出特效事件');
-  assert.equal(spec.fxKind, 'rain', '隕石不能因 4*4 被通用範圍推導改成 burst');
-  assert.equal(spec.variant, 'meteor');
-  assert.equal(spec.area.x, primary.pos.x, '4*4 隕石應以主目標為中心');
-  assert.equal(spec.targets.length, 1, '範圍外目標不應成為隕石落點目標');
-});
-
-test('近戰技能：當場命中，數字不延後', () => {
-  const c = loadContext();
-  const floats = captureFloats(c);
-  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  // 強力斬：物理系單體 → 斬擊（沒有飛行時間）
-  const sk = c.SKILLS.powerSlash;
-  assert.equal(c.skillVfxKind(sk, c.effectiveFx('powerSlash', sk, 1), sk.shape), 'slash');
-
-  c.castSkill(player, [enemy(80, 0)], 'powerSlash', 1, 'mv-float');
-  const dmg = floats.filter((f) => /enemy-skill/.test(f.cls));
-  assert.equal(dmg[0].delayMs, 0, '斬擊是當場發生，不該延後');
-});
-
-test('多段技：每一段各自一個傷害數字，且逐段錯開', () => {
-  const c = loadContext();
-  const floats = captureFloats(c);
-  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  // 奧術彈幕：2026-07-30 改制後里程碑全附加，Lv.1 即為 M8 的 6 段
-  const fx = c.effectiveFx('arcaneBarrage', c.SKILLS.arcaneBarrage, 1);
-  assert.equal(fx.hits, 6);
-
-  c.castSkill(player, [enemy(80, 0)], 'arcaneBarrage', 1, 'mv-float');
-  const dmg = floats.filter((f) => /enemy-skill/.test(f.cls));
-  assert.equal(dmg.length, 6, '6 段應該有 6 個獨立的傷害數字，不是一個總和');
-
-  // 逐段遞增錯開，間隔等於 VFX_HIT_STAGGER_SEC
-  const step = Math.round(c.VFX_HIT_STAGGER_SEC * 1000);
-  for (let i = 1; i < dmg.length; i++) {
-    assert.equal(dmg[i].delayMs - dmg[i - 1].delayMs, step,
-      '第 ' + (i + 1) + ' 段應比前一段晚 ' + step + 'ms');
-  }
-});
-
-test('延遲只是顯示時序，不影響傷害結算', () => {
-  const c = loadContext();
-  captureFloats(c);
-  const player = { hp: 1000, mp: 1000, atkCd: 0, skillCds: {}, skillGcd: 0, buffs: {}, dots: [], effects: {} };
-  const target = enemy(80, 0);
-  const before = target.hp;
-  const out = c.castSkill(player, [target], 'arcaneBarrage', 1, 'mv-float');
-  // 呼叫回來的當下血量就已經扣完了——延遲的是數字，不是傷害
-  assert.ok(target.hp < before, '傷害必須在同一次呼叫內結算完畢');
-  assert.ok(out.dmg > 0);
-  assert.equal(Math.round(before - target.hp), Math.round(out.dmg));
 });
 
 test('浮字延遲會原樣送到顯示端（協議 v11 的 delayMs）', () => {

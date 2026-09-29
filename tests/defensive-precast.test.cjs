@@ -6,7 +6,6 @@ function setup(id) {
   const e=createEngine({seed:42}).boot(null),c=e.ctx;
   c.G.player.level=1000;
   for(const gid of ['rockarmor','stormbarrier','cleave']) c.G.player.skills2.levels[gid]=Array(7).fill(10);
-  c.G.player.skills.manaBarrier=10;
   c.G.player.loadout=['sg:cleave',id];
   c.markStatsDirty();c.initFieldPlayer();c.FIELD.player.mp=100000;
   c.gmArenaSpawn(1,'elite',1000000);
@@ -14,8 +13,8 @@ function setup(id) {
   return {e,c,m,p:c.FIELD.player};
 }
 
-test('防禦提前起手：敵人仍在遠處進場，岩甲／暴風屏障／魔法屏障優先準備',()=>{
-  for(const id of ['sg:rockarmor','sg:stormbarrier','manaBarrier']) {
+test('防禦提前起手：敵人仍在遠處進場，岩甲／暴風屏障優先準備',()=>{
+  for(const id of ['sg:rockarmor','sg:stormbarrier']) {
     const {e,c,p}=setup(id);
     e.stepSeconds(0.1);
     assert.equal(p._skillCastId,id.replace('sg:',''));
@@ -24,7 +23,6 @@ test('防禦提前起手：敵人仍在遠處進場，岩甲／暴風屏障／�
     assert.ok(p.skillCds[id]>0,'遠處目標不阻止完成施放');
     if(id==='sg:rockarmor')assert.ok(c.SKILL2_RT.rock && p.shield>0);
     if(id==='sg:stormbarrier')assert.ok(c.SKILL2_RT.barrier);
-    if(id==='manaBarrier')assert.ok(p.shield>0);
     assert.equal(p.skillCds['sg:cleave']||0,0,'攻擊技能不能隔空起手');
   }
 });

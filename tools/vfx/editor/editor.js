@@ -157,7 +157,7 @@
   }
 
   /* 關鍵字拆法只有這一份：清單怎麼篩，提示卡就怎麼標，兩邊不得各寫各的。
-     空白分隔的多個關鍵字要全部命中：打「ground fire」找得到 ground-field-fire，
+     空白分隔的多個關鍵字要全部命中：打「ground fire」找得到 ground-domain-fire，
      但不會被「fire」的一大堆結果淹掉。 */
   function comboTerms(text) {
     var q = String(text || '').trim().toLowerCase();

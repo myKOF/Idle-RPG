@@ -851,7 +851,7 @@
     <div class="app-header">
         <div class="app-title">
             <h1>🎮 放置型 RPG 蒙地卡羅數值模擬驗證工具 (高塔與天賦技能對齊版)</h1>
-            <p>Monte Carlo DES Engine (100%對齊官方高塔 BOSS 試煉/地獄/煉獄關卡倍率、技能升級融合與轉生天賦數值)</p>
+            <p>Monte Carlo DES Engine (100%對齊官方高塔 BOSS 試煉/地獄/煉獄關卡倍率與轉生天賦數值)</p>
         </div>
         <!-- 本次資料是哪一次模擬跑出來的。畫面上不標時間的話，看到的究竟是剛跑完的
              還是幾小時前的舊資料完全分不出來——實際發生過拿舊 sim_out 的快照當成
@@ -1711,7 +1711,6 @@
             currentSimResult.topRun.char = {
                 level: finalSaveG.player ? finalSaveG.player.level : 1,
                 reincarnation: finalSaveG.player ? finalSaveG.player.reincarnations : 0,
-                skills: finalSaveG.player ? finalSaveG.player.skills : {},
                 talents: finalSaveG.player ? finalSaveG.player.talents : { levels: {}, potentialLevels: {} }
             };
             currentSimResult.topRun.profile = { name: '存檔玩家數據' };
@@ -2879,42 +2878,50 @@
     }
 
     /* 🧠 技能快照。
-       與屬性面板同一個資料來源（finalSaveG → window.G），名稱、等級上限、
-       裝載欄格數一律問遊戲的函式（SKILLS / skillMaxLv / loadoutSize），
-       不在這裡抄第二份——抄了就會在遊戲改版後靜靜地顯示錯的東西。 */
+       與屬性面板同一個資料來源（finalSaveG → window.G）。
+       舊版技能系統（SKILLS 表、融合技）已於 2026-09-29 移除，這裡只讀仍存在的欄位：
+       裝載欄（'sg:<群組>' 是新版技能、'potential:<id>' 是潛力技能）、新版技能各階等級
+       （skills2.levels）、熟練度與技能點。裝載欄格數問遊戲的 loadoutSize()，
+       不在這裡抄第二份。 */
     function renderSkillSnapshotPanel() {
         const box = document.getElementById('skillsSnapshotPanel');
         if (!box) return;
 
         const P = (window.G && window.G.player) || null;
-        if (!P || typeof SKILLS === 'undefined') {
+        if (!P) {
             box.innerHTML = '<div class="skills-empty">請載入 save_final.json 存檔資料以顯示技能快照。</div>';
             return;
         }
 
+        const lvsOf = (gid) => {
+            const lv = P.skills2 && P.skills2.levels && P.skills2.levels[gid];
+            return Array.isArray(lv) ? lv : [];
+        };
         const nameOf = (id) => {
-            const d = SKILLS[id];
-            if (d) return (d.emoji ? d.emoji + ' ' : '') + d.name;
-            /* 融合技的 id 是遊戲產生的（fusion_xxx），要從 fusions 陣列取名字 */
-            const fu = (P.fusions || []).find((f) => f && f.id === id);
-            return fu ? ('🌀 ' + (fu.name || '融合技')) : id;
+            if (typeof id === 'string' && id.startsWith('sg:')) {
+                const gid = id.slice(3);
+                const g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
+                return (g && g.name) ? g.name : gid;
+            }
+            if (typeof id === 'string' && id.startsWith('potential:')) {
+                const pid = id.slice(10);
+                const pt = (typeof POTENTIAL_TALENTS !== 'undefined') ? POTENTIAL_TALENTS.find((t) => t.id === pid) : null;
+                return (pt && pt.name) ? pt.name : pid;
+            }
+            return id;
         };
-        const maxOf = (id) => {
-            try { return (typeof skillMaxLv === 'function') ? skillMaxLv(id) : null; } catch (e) { return null; }
-        };
-        const chip = (id, lv, cls, slotLabel) => {
-            const max = maxOf(id);
-            const maxed = (max !== null && lv >= max);
+        const chip = (id, cls, slotLabel) => {
+            const lvs = (typeof id === 'string' && id.startsWith('sg:')) ? lvsOf(id.slice(3)) : [];
             return `<span class="skill-chip ${cls || ''}">`
                 + (slotLabel ? `<span class="sk-slot">${slotLabel}</span>` : '')
                 + `<span>${nameOf(id)}</span>`
-                + `<span class="sk-lv ${maxed ? 'maxed' : ''}">Lv.${lv}${max !== null ? '/' + max : ''}</span>`
+                + (lvs.length ? `<span class="sk-lv">Lv.${lvs.join('/')}</span>` : '')
                 + `</span>`;
         };
 
-        const learned = Object.keys(P.skills || {}).filter((id) => (P.skills[id] || 0) > 0);
+        const groups2 = (P.skills2 && P.skills2.levels) || {};
+        const learned = Object.keys(groups2).filter((gid) => lvsOf(gid).some((n) => n > 0));
         const loadout = Array.isArray(P.loadout) ? P.loadout : [];
-        const inLoadout = new Set(loadout);
         const size = (typeof loadoutSize === 'function') ? loadoutSize() : loadout.length;
         const mastery = (typeof ensureSkillMastery === 'function') ? ensureSkillMastery() : (P.skillMastery || { level: 0 });
         const ptsAvail = (typeof availableSkillPoints === 'function') ? availableSkillPoints() : (P.skillPoints || 0);
@@ -2925,7 +2932,7 @@
                 <div class="skills-panel-title">🧠 技能快照 (Skill Snapshot)</div>
                 <div class="skills-panel-meta">📚 熟練度 <b>Lv.${mastery.level || 0}</b></div>
                 <div class="skills-panel-meta">🔢 技能點 <b>${formatGameNumber(ptsAvail)}</b> / ${formatGameNumber(ptsTotal)} 可用</div>
-                <div class="skills-panel-meta">📖 已學 <b>${learned.length}</b> 個</div>
+                <div class="skills-panel-meta">📖 已學技能群組 <b>${learned.length}</b> 個</div>
                 <div class="skills-panel-meta">🎯 裝載欄 <b>${loadout.length}</b> / ${size} 格</div>
             </div>`;
 
@@ -2934,36 +2941,9 @@
             <div class="skill-section-label">🎯 裝載中（依施放優先序）</div>
             <div class="skill-chip-row">`;
         html += loadout.length
-            ? loadout.map((id, i) => chip(id, (P.skills && P.skills[id]) || 0, 'equipped', '#' + (i + 1))).join('')
+            ? loadout.map((id, i) => chip(id, 'equipped', '#' + (i + 1))).join('')
             : '<span class="skills-empty">裝載欄是空的</span>';
         html += `</div></div>`;
-
-        /* 學了卻沒裝上的：這些技能等級再高也不影響戰鬥，是純粹的沉沒點數。 */
-        const bench = learned.filter((id) => !inLoadout.has(id))
-            .sort((a, b) => (P.skills[b] || 0) - (P.skills[a] || 0));
-        html += `<div class="skill-section">
-            <div class="skill-section-label">📖 已學但未裝載（${bench.length} 個 — 不影響戰鬥）</div>
-            <div class="skill-chip-row">`;
-        html += bench.length
-            ? bench.map((id) => chip(id, P.skills[id] || 0)).join('')
-            : '<span class="skills-empty">沒有——已學的技能全部裝上了</span>';
-        html += `</div></div>`;
-
-        const fusions = P.fusions || [];
-        if (fusions.length) {
-            html += `<div class="skill-section">
-                <div class="skill-section-label">🌀 融合技（${fusions.length} 個）</div>
-                <div class="skill-chip-row">`;
-            html += fusions.map((f) => {
-                const lv = (P.skills && P.skills[f.id]) || 0;
-                const parts = (f.components || []).map((cid) => nameOf(cid)).join(' + ');
-                return `<span class="skill-chip fused"><span>${nameOf(f.id)}</span>`
-                    + `<span class="sk-lv">Lv.${lv}</span>`
-                    + (parts ? `<span class="sk-slot">${parts}</span>` : '')
-                    + `</span>`;
-            }).join('');
-            html += `</div></div>`;
-        }
 
         /* 天賦與潛能只顯示真的點了的——全部列出來會是幾十個 0，把有用的資訊淹掉。 */
         const tal = (P.talents && P.talents.levels) || {};

@@ -670,16 +670,9 @@
       if (amount === null) return { ok: false, message: '格式：' + command + ' 數量（可為正負整數）' };
       return { ok: true, message: gmAddCurrency(command === 'g' ? 'gold' : command, amount) };
     }
-    if (command === 'scroll') {
-      // 魔法卷軸（2026-07-30 技能融合材料）
-      amount = gmSignedAmount(args[0], 1e300);
-      if (amount === null) return { ok: false, message: '格式：scroll 數量（可為正負整數）' };
-      return { ok: true, message: gmAddCurrency('magicScroll', amount) };
-    }
     if (command === 'mat' || command === 'material') {
       key = String(args[0] || '').toLowerCase();
-      if (key === 'magicscroll' || key === 'scroll') key = 'magicScroll';
-      if (['gold', 'scrap', 'essence', 'dust', 'magicScroll'].indexOf(key) < 0) return { ok: false, message: '材料只能是 gold、scrap、essence、dust、scroll' };
+      if (['gold', 'scrap', 'essence', 'dust'].indexOf(key) < 0) return { ok: false, message: '材料只能是 gold、scrap、essence、dust' };
       amount = gmSignedAmount(args[1], 1e300);
       if (amount === null) return { ok: false, message: '格式：mat 材料 數量（可為正負整數）' };
       return { ok: true, message: gmAddCurrency(key, amount) };
@@ -783,11 +776,7 @@
     if (command === 'level' || command === 'lv') {
       level = gmNumber(args[0], 1, 100000);
       if (level === null) return { ok: false, message: '格式：level 等級' };
-      var beforeLevel = Number(G.player.level) || 0;
       G.player.level = level;
-      if (level < beforeLevel && typeof recheckSkillUnlocksForGMLevelChange === 'function') {
-        recheckSkillUnlocksForGMLevelChange(beforeLevel, level);
-      }
       if (typeof markStatsDirty === 'function') markStatsDirty();
       gmDirty();
       return { ok: true, message: '玩家等級設定為 Lv.' + level };

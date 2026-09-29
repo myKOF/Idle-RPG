@@ -39,9 +39,13 @@ test('固定 100% 命中對高閃避敵人幾乎必被閃避（clamp 下限 5）
   assert.equal(r.miss, true, '命中 100% 對閃避 870% → 命中率夾到 5% → 未命中');
 });
 
-test('skills.js 技能命中改吃玩家命中率、保留 100 地板', () => {
-  const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
-  assert.match(skills, /hit:\s*fx\.neverMiss\s*\?\s*999\s*:\s*Math\.max\(100,\s*st\.hit\)/);
+test('新版技能與潛力技能命中改吃玩家命中率、保留 100 地板', () => {
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const potential = fs.readFileSync(path.join(root, 'js/potential.js'), 'utf8');
+  const cfg = skills2.match(/function sgAtkCfg\([\s\S]*?\n\}/);
+  assert.ok(cfg, '找不到 sgAtkCfg');
+  assert.match(cfg[0], /hit:\s*Math\.max\(100,\s*st\.hit\)/);
+  assert.match(potential, /hit:\s*Math\.max\(100,\s*st\.hit\)/);
 });
 
 test('玩家命中派生值包含基礎 100%', () => {

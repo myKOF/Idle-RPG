@@ -10,19 +10,19 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=39', 'shim.js?v=8');
+importScripts('protocol.js?v=40', 'shim.js?v=8');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-npc-move-attack', '../status.js?v=20260923-rock-domain-vfx', '../formula.js?v=20260923-six-slot-hud', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-legacy-skill-removal', '../status.js?v=20260929-legacy-skill-removal', '../formula.js?v=20260929-legacy-skill-removal', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-legacy-skill-removal',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260922-cast-act', '../skills2.js?v=20260929-chain-table-speed', '../talents.js?v=20260811-loadout-cap-clamp',
-  '../player.js?v=20260820-ult-evolution-3', '../special_rules.js',
-  '../combat.js?v=20260929-npc-move-attack', '../legendary.js?v=20260921-war-god-body', '../potential.js?v=20260903-vfx-runtime-adapter', '../tower.js?v=20260924-earthguard-revival',
-  '../factory.js', '../newforge.js', '../forge.js', '../save.js?v=20260820-ult-evolution-3',
-  '../tasks.js'
+  '../skills.js?v=20260929-legacy-skill-removal', '../skills2.js?v=20260929-legacy-skill-removal', '../talents.js?v=20260929-legacy-skill-removal',
+  '../player.js?v=20260929-legacy-skill-removal', '../special_rules.js',
+  '../combat.js?v=20260929-legacy-skill-removal', '../legendary.js?v=20260929-legacy-skill-removal', '../potential.js?v=20260929-legacy-skill-removal', '../tower.js?v=20260929-legacy-skill-removal',
+  '../factory.js?v=20260929-legacy-skill-removal', '../newforge.js', '../forge.js', '../save.js?v=20260929-legacy-skill-removal',
+  '../tasks.js?v=20260929-legacy-skill-removal'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20260823-gm-locks');
+importScripts('../gm_exec.js?v=20260929-legacy-skill-removal');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -192,7 +192,7 @@ function catchupClock() {
    鍵名沿用 DOM id（r-essence…），因為既有存檔就是這樣存的，不能為了好看而破壞相容。 */
 var SHOWN_RES_KEYS = [
   ['r-essence', 'essence'], ['r-dust', 'dust'], ['r-ancient-essence', 'ancientEssence'],
-  ['r-soul-origin', 'soulOrigin'], ['r-demon-seed', 'demonSeed'], ['r-magic-scroll', 'magicScroll']
+  ['r-soul-origin', 'soulOrigin'], ['r-demon-seed', 'demonSeed']
 ];
 
 /* 旗標是**設了就不會再清除**的，所以已經是 true 的就不必再算一次。
@@ -422,7 +422,6 @@ function buildView() {
     ancientEssence: p.ancientEssence || 0,
     soulOrigin: p.soulOrigin || 0,
     demonSeed: p.demonSeed || 0,
-    magicScroll: p.magicScroll || 0,
     gems: (typeof totalGemsAll === 'function') ? totalGemsAll() : 0,
     books: bookTotal,
     level: p.level || 0,
@@ -902,12 +901,11 @@ function buildPanel(name, params) {
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
     case 'skills':
-      // 2026-07-30 熟練度制：points/budget 改由 skills.js 即時計算；mastery 供熟練度條；
-      // scrolls/fusionCosts 供融合面板花費顯示（佔用狀態由 fusions[].components 推導，不另投影）
+      // 2026-07-30 熟練度制：points/budget 由 skills.js 即時計算；mastery 供熟練度條。
+      // 技能點目前只用於潛力技能；一般（新版）技能以金幣升級，等級在 skills2 投影。
       return {
-        skills: p.skills, unlocks: p.skillUnlocks, loadout: p.loadout,
+        loadout: p.loadout,
         loadoutSize: (typeof loadoutSize === 'function') ? loadoutSize() : 0,
-        fusions: p.fusions,
         /* 新版技能群組（v19，js/skills2.js）：只投影會變動的各階等級；
            名稱／說明／費用公式由兩端共載的 SKILLS2 表與純函式計算，不進協議。 */
         skills2: (typeof skills2PanelView === 'function') ? skills2PanelView() : null,
@@ -920,32 +918,7 @@ function buildPanel(name, params) {
             xpMax: (typeof skillMasteryXpForLevel === 'function') ? skillMasteryXpForLevel(m.level) : 0,
             maxLevel: (typeof SKILL_MASTERY_MAX_LEVEL !== 'undefined') ? SKILL_MASTERY_MAX_LEVEL : 1000
           };
-        })(),
-        /* 每個技能的人物等級解鎖門檻（沒有門檻的不列）。
-           純讀取：只呼叫 skillUnlockLevel（讀 SKILLS 的 unlockLv），**不呼叫
-           skillUnlocked**——那一支會把結果 latch 進 G.player.skillUnlocks，
-           建面板就變成寫存檔（同 seed 兩場的雜湊會不同，而症狀只是一串對不上的字串）。
-
-           為什麼要送出來：外面要決定「這幾格裝載欄該學哪幾個主動技」，就得知道
-           清單上第幾個現在真的學得起來。不送的話只能送出去看它回
-           「需人物達到 Lv.100 才解鎖」，而那會讓優先序前面的未解鎖技能永久卡住名額。 */
-        unlockLv: (function () {
-          if (typeof SKILLS === 'undefined' || typeof skillUnlockLevel !== 'function') return null;
-          var out = {};
-          for (var sid in SKILLS) {
-            var need = skillUnlockLevel(sid);
-            if (need > 0) out[sid] = need;
-          }
-          return out;
-        })(),
-        /* 一般技能的等級上限（隨轉生數提高，js/formula.js 的 skillMaxLv 只看轉生數、
-           不看技能定義，所以是單一數字）。沒有這個數字的話，外面只能對著已經滿級的
-           技能一直送升級——實測 3 遊戲小時 18,377 次裡有 16,440 次是「已達最高等級」。 */
-        maxLv: (typeof skillMaxLv === 'function') ? skillMaxLv({}) : null,
-        scrolls: p.magicScroll || 0,
-        fusionCosts: (typeof fusionGoldCost === 'function') ? {
-          goldPerComp: fusionGoldCost(1), scrollPerComp: fusionScrollCost(1)
-        } : null
+        })()
       };
     case 'task':
       // 任務總覽（v18）：只送動態欄位（進度/已領/可領）；
@@ -1739,23 +1712,23 @@ function boot(msg) {
   /* migrateSave 會把改版公告掛在 G 上，交給主執行緒顯示後刪除旗標。
      P5 起文案在這裡組完整：那些「可用 N 點」之類的補充值只有 Worker 算得出來，
      主執行緒沒有 G，不可能自己接上去。 */
-  if (G._skillResetNotice) {
-    notices.push({ key: '_skillResetNotice', text: '🛠️ 偵測到技能點異常：已使用 ' + G._skillResetNotice +
-      '，已重置所有技能並發還初始技能。技能點已依等級全額退還（可用 ' +
-      (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) +
-      ' 點），請重新配點；之後升級將正常獲得技能點。', cls: 'warn' });
-    delete G._skillResetNotice;
+  /* ONE-TIME MIGRATION: legacySkillRemovalV1 的公告（舊版技能系統已移除；統計由 migrateSave 記錄）。 */
+  if (G._legacySkillRemoval) {
+    var lgs = G._legacySkillRemoval;
+    var lgsParts = [];
+    if (lgs.skills) lgsParts.push('已清除 ' + lgs.skills + ' 個舊版技能' + (lgs.fusions ? '（含 ' + lgs.fusions + ' 個融合技）' : ''));
+    else if (lgs.fusions) lgsParts.push('已清除 ' + lgs.fusions + ' 個融合技');
+    if (lgs.equipped) lgsParts.push('裝載欄中的 ' + lgs.equipped + ' 個舊技能已卸下');
+    if (lgs.scrolls) lgsParts.push('魔法卷軸 ' + lgs.scrolls + ' 張已移除');
+    notices.push({ key: '_legacySkillRemoval', text: '🧹 舊版技能系統已移除：' + lgsParts.join('，') +
+      '。技能點已全額退還（目前可用 ' + (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) +
+      ' 點）；請到「技能」頁改用新版技能與潛力技能。', cls: 'warn' });
+    delete G._legacySkillRemoval;
   }
   if (G._skillPointRepairNotice) {
     notices.push({ key: '_skillPointRepairNotice', text: '🧮 ' + G._skillPointRepairNotice + '；目前可用技能點 ' +
       (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
     delete G._skillPointRepairNotice;
-  }
-  // 2026-07-30 技能融合改造：技能等級上限夾回通知（上限值由轉生對照表決定，訊息在 save.js 組好）
-  if (G._skillCapClampNotice) {
-    notices.push({ key: '_skillCapClampNotice', text: '📏 ' + G._skillCapClampNotice + '；目前可用技能點 ' +
-      (typeof availableSkillPoints === 'function' ? availableSkillPoints() : 0) + ' 點。', cls: 'info' });
-    delete G._skillCapClampNotice;
   }
   // ONE-TIME MIGRATION: loadoutCapClampV1 的公告（裝載欄上限下修，超額格數已卸下）
   if (G._loadoutCapClampNotice) {

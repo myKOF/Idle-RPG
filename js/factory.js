@@ -205,13 +205,6 @@ function doSalvage(it, silent, bonus) {
   if (res.essence) {
     G.player.essence += res.essence;
     if (window.recordLootMat) window.recordLootMat('essence', res.essence, 'factory');
-    // 魔法卷軸與最終附魔精華量判定，幸運之心也會間接影響卷軸數量。
-    var scrollGain = (typeof magicScrollFromEssence === 'function') ? magicScrollFromEssence(res.essence) : 0;
-    if (scrollGain > 0) {
-      G.player.magicScroll = (G.player.magicScroll || 0) + scrollGain;
-      if (window.recordLootMat) window.recordLootMat('magicScroll', scrollGain, 'factory');
-      extras.push('📜卷軸x' + scrollGain);
-    }
   }
   if (res.ancientEssence) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + res.ancientEssence;

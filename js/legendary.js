@@ -1,8 +1,7 @@
 'use strict';
 /* ============ 傳奇特效執行引擎 ============
    數值與效果規格只讀 PASSIVE_POOL；本檔負責戰鬥期路由與短暫狀態，不寫入存檔。
-   關聯技能由 legendaryPrepareSkillCast 集中改寫；觸發技能統一走
-   legendaryCastTriggeredSkill，未學習／未解鎖時仍以 Lv.1 免費結算。 */
+   新版技能（js/skills2.js）的關聯技能改寫由 legendarySkill2Mods 集中提供。 */
 
 var LEGENDARY_RT = null;
 
@@ -11,19 +10,12 @@ function resetLegendaryRT() {
     basicAttackCount: 0,
     berserkStacks: 0,
     berserkUntil: 0,
-    nextMultiCast: null,
-    chargedSkill: null,
-    chargedEffectPct: 0,
-    deathDomainUntil: 0,
     queue: [],
-    fields: [],
     knives: [],
     knivesStarted: false,
     dolls: [],
     dollsStarted: false,
-    nextMeteorAt: 0,
     nextLightAt: 0,
-    nextChargeAt: 0,
     nextFireDrainAt: 0,
     lightShieldArmed: true,
     lightShieldCooldownUntil: 0,
@@ -75,15 +67,11 @@ function legendaryFx(key) {
 }
 
 /* ---- 新版技能（js/skills2.js）的傳奇改寫收斂點（2026-08-19）----
-   舊技能走 castSkill（js/skills.js）→ legendaryPrepareSkillCast／legendaryOnSkillCast；
-   新版技能群組走 castSkill2，是**另一條**施放路徑，那兩支掛鉤完全碰不到它。
-   與其在 skills2.js 各處散落 legendaryHas(...) 判斷，這裡提供唯一入口：
+   新版技能群組走 castSkill2。與其在 skills2.js 各處散落 legendaryHas(...) 判斷，這裡提供唯一入口：
    把「relatedSkill 指向該群組 id 且目前生效」的所有傳奇特效的 fx **平坦合併**成一個物件，
    施放端只讀通用參數鍵（thrustLenPct、cleaveFlyM…），不必認得特效 id。
    同名參數鍵的合併規則：**數字相加**（兩個都加 30% 技能傷害就是 +60%，比照詞條加總），
-   其餘型別（布林旗標、規格物件）後者覆蓋前者。因此規格物件請一個特效用一個獨立鍵。
-   relatedSkill 沿用既有欄位（新舊技能 id 不重疊，舊技能沒有 thrust／cleave 這兩個鍵），
-   因此參數表（Equipment_Affix 的「關聯技能」欄）不需要新增欄位。 */
+   其餘型別（布林旗標、規格物件）後者覆蓋前者。因此規格物件請一個特效用一個獨立鍵。 */
 function legendarySkill2Mods(gid) {
   if (!gid || typeof PASSIVE_POOL === 'undefined') return null;
   var st = (typeof getStats === 'function') ? getStats() : null;
@@ -100,27 +88,6 @@ function legendarySkill2Mods(gid) {
     }
   }
   return out;
-}
-
-function legendaryTriggeredSkillLevel(id) {
-  var lv = (typeof skillLevel === 'function') ? skillLevel(id) : 0;
-  return Math.max(1, Math.floor(Number(lv) || 0));
-}
-
-function legendaryCastTriggeredSkill(pEnt, targets, id, floatSel, extraOpts) {
-  var def = (typeof skillDef === 'function') ? skillDef(id) : null;
-  if (!def || typeof castSkill !== 'function') return null;
-  var opts = {
-    free: true,
-    noCooldown: true,
-    noGcd: true,
-    noCastLock: true,
-    noLegendaryProcs: true,
-    triggeredByLegendary: true
-  };
-  extraOpts = extraOpts || {};
-  for (var key in extraOpts) opts[key] = extraOpts[key];
-  return castSkill(pEnt, targets, id, legendaryTriggeredSkillLevel(id), floatSel, undefined, opts);
 }
 
 function legendarySettleTriggeredDeaths(result) {
@@ -161,90 +128,6 @@ function legendaryDualDaggersEquipped() {
   return !!(main && off && main.weaponType === 'dagger1h' && off.weaponType === 'dagger1h');
 }
 
-function legendarySkillManaCost(pEnt, id, sk, lv, st) {
-  if (legendaryHas(st, 'manaExplosion') && id === 'manaBurn') {
-    return Math.max(0, (st.mp || 0) * (legendaryFx('manaExplosion').manaCostMaxPct || 0) / 100);
-  }
-  return (typeof skillManaCost === 'function') ? skillManaCost(sk, lv) : (sk.cost || 0);
-}
-
-/* 關聯技能集中改寫。回傳值只存在本次施放，不污染 SKILLS 原始資料。 */
-function legendaryPrepareSkillCast(pEnt, targets, id, sk, fx, lv, st, opts) {
-  var rt = legendaryEnsureRT();
-  var out = {
-    fx: legendaryClone(fx) || {},
-    effectMult: 1,
-    cdMult: 1,
-    manaCost: null,
-    repeat: 1,
-    deferBloodSurgeSacrifice: false,
-    wasExecute: false
-  };
-
-  if (legendaryHas(st, 'deathDomain')) {
-    var domain = legendaryFx('deathDomain').domainOnSkillCast;
-    rt.deathDomainUntil = Math.max(rt.deathDomainUntil || 0, GT + domain.dur);
-  }
-  if ((rt.deathDomainUntil || 0) > GT && out.fx.dmgType) {
-    var domainFx = legendaryFx('deathDomain').domainOnSkillCast;
-    // 特規：領域期間所有技能整段轉為指定屬性（elemOverride 優先於技能標籤與融合技多屬性）
-    out.fx.dmgType = 'magic';
-    delete out.fx.elems;
-    out.fx.elemOverride = domainFx.convertElem;
-    out.effectMult *= 1 + domainFx.skillDamagePct / 100;
-  }
-
-  if (legendaryHas(st, 'whirlwindBleed') && id === 'whirlwind') {
-    var bleed = legendaryFx('whirlwindBleed').skillDot;
-    // 以狀態引用追加（不可直接寫 fx.dot：技能 fx 一旦有 status 陣列，舊欄位就不再被讀取）；
-    // concat 產生新陣列，避免污染 SKILLS 上的共用定義
-    out.fx.status = (out.fx.status || []).concat([
-      { id: statusIdByName(bleed.name), name: bleed.name, base: bleed.tickPowerPct, dur: bleed.dur }
-    ]);
-  }
-  if (legendaryHas(st, 'stormSigilChain') && id === 'stormSigil') {
-    var sigilFx = legendaryFx('stormSigilChain');
-    out.effectMult *= 1 + sigilFx.skillDamagePct / 100;
-    if (out.fx.brand) out.fx.brand.maxStacks = (out.fx.brand.maxStacks || 1) + sigilFx.brandExtraStacks;
-  }
-  if (legendaryHas(st, 'skyfallMeteor') && id === 'meteor') {
-    out.effectMult *= 1 + legendaryFx('skyfallMeteor').skillDamagePct / 100;
-  }
-  if (legendaryHas(st, 'manaExplosion') && id === 'manaBurn') {
-    var manaFx = legendaryFx('manaExplosion');
-    out.effectMult *= 1 + manaFx.skillDamagePct / 100;
-    out.manaCost = Math.max(0, (st.mp || 0) * manaFx.manaCostMaxPct / 100);
-  }
-  if (legendaryHas(st, 'judgmentArrival') && id === 'holySmite') {
-    var judgeFx = legendaryFx('judgmentArrival');
-    out.effectMult *= 1 + judgeFx.skillDamagePct / 100;
-    out.cdMult *= 1 + judgeFx.skillCdPct / 100;
-  }
-  if (legendaryHas(st, 'shadowAnnihilation') && id === 'voidRift') {
-    var voidFx = legendaryFx('shadowAnnihilation');
-    out.fx.execBelow = voidFx.execBelow;
-    out.effectMult *= 1 + voidFx.skillDamagePct / 100;
-    out.wasExecute = (targets || []).some(function (ent) {
-      return ent && ent.maxHp > 0 && ent.hp / ent.maxHp * 100 < voidFx.execBelow;
-    });
-  }
-  if (legendaryHas(st, 'voidFate') && id === 'bloodSurge') {
-    delete out.fx.hpSacrifice;
-    out.deferBloodSurgeSacrifice = true;
-  }
-  if (rt.chargedSkill === id) {
-    out.effectMult *= 1 + (rt.chargedEffectPct || 0) / 100;
-    rt.chargedSkill = null;
-    rt.chargedEffectPct = 0;
-  }
-  if (rt.nextMultiCast && id !== 'arcaneBurst') {
-    out.repeat = rt.nextMultiCast.repeats || 2;
-    rt.nextMultiCast = null;
-  }
-  if (opts && opts.powerMult) out.effectMult *= Math.max(0, Number(opts.powerMult) || 0);
-  return out;
-}
-
 function legendaryControlDuration(ent, key, dur) {
   if (!ent || !ent.maxHp || (key !== 'stun' && key !== 'slow') || typeof getStats !== 'function') return dur;
   var st = getStats();
@@ -268,10 +151,7 @@ function legendaryElementDamageUp(st, pEnt) {
   var out = {};
   var src = st && st.elemDmgUp || {};
   for (var key in src) out[key] = src[key];
-  if (buffVal(pEnt, 'legendaryDarkUp') > 0) {
-    out.dark = (out.dark || 0) + buffVal(pEnt, 'legendaryDarkUp');
-  }
-  /* 本函式是全專案「屬性傷害提升%」的唯一收斂點（普攻、舊技能、新技能都由此取值），
+  /* 本函式是全專案「屬性傷害提升%」的唯一收斂點（普攻與技能都由此取值），
      所以增益型的屬性加成一律掛在這裡，而不是各傷害端各補一次。
      新版技能【火焰增幅】（js/skills2.js）即循此掛入。 */
   if (typeof skill2FireAmpPct === 'function') {
@@ -330,9 +210,6 @@ function legendaryOutgoingDamageMultiplier(attacker, defender, aCfg) {
   }
   if (legendaryHas(st, 'berserkBloodAxe') && rt.berserkUntil > GT) {
     mult *= 1 + rt.berserkStacks * legendaryFx('berserkBloodAxe').onKillBuff.atkPct / 100;
-  }
-  if (defender && defender._legendaryFrostbite && defender._legendaryFrostbite.until > GT) {
-    mult *= 1 + defender._legendaryFrostbite.stacks * (defender._legendaryFrostbite.ampPct || 0) / 100;
   }
   return mult;
 }
@@ -463,186 +340,6 @@ function legendaryDealAoe(pEnt, enemies, powerPct, dmgType, elem, floatSel, labe
   return { dmg: total, killed: killed };
 }
 
-function legendaryApplyFrostbite(target, dur, ampPct, maxStacks) {
-  if (!target) return;
-  var cur = target._legendaryFrostbite;
-  if (!cur || cur.until <= GT) cur = { stacks: 0, ampPct: 0, until: 0 };
-  cur.stacks = Math.min(maxStacks || 20, cur.stacks + 1);
-  cur.ampPct = Math.max(cur.ampPct || 0, ampPct || 0);
-  cur.until = GT + dur;
-  target._legendaryFrostbite = cur;
-}
-
-function legendaryQueue(at, resolve) {
-  legendaryEnsureRT().queue.push({ at: at, resolve: resolve });
-}
-
-/* 連鎖閃電的畫面（2026-08-19 補）：本檔原本一發特效都不送，玩家只看得到敵人身上
-   憑空跳出傷害字。這裡送出與新版技能【連鎖閃電】同一種 chain 事件，
-   兩個渲染器（js/vfx.js 與 js/battle-renderer.js）都已認得 lightning-chain。
-   from 留白＝從我方出手點連到第一個目標。 */
-function legendaryEmitChainVfx(from, to, floatSel, elem) {
-  if (typeof playCombatVfx !== 'function' || typeof enemyEventFloatTarget !== 'function') return;
-  var ids = [];
-  if (from && from.hp > 0) ids.push(enemyEventFloatTarget(from, floatSel));
-  if (to) ids.push(enemyEventFloatTarget(to, floatSel));
-  if (!ids.length) return;
-  playCombatVfx({
-    fxKind: 'chain', variant: 'lightning-chain', glyph: '⚡',
-    color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS.magic) || '#f2b705',
-    cat: 'magic', elem: elem || 'lightning', targets: ids, area: null, dur: 0.35, count: 1,
-    vfx: (typeof vfxCombatRoles === 'function') ? vfxCombatRoles('legendaryLightningChain') : null
-  });
-}
-
-function legendaryScheduleChain(pEnt, spec, floatSel) {
-  /* 連鎖記住上一跳打到誰，下一跳從「它以外的存活敵人」裡隨機挑一個 → js/battlefield.js。
-     【閃電飛越】【迅雷穿刺】的敘述都沒有規定彈射範圍、也沒有寫「最近」，
-     所以候選是整個戰場、挑法是等機率隨機（使用者定調 2026-08-21）。 */
-  var chainState = { last: null };
-  for (var i = 0; i < spec.bounces; i++) {
-    (function (delayIndex) {
-      legendaryQueue(GT + spec.tickSec * (delayIndex + 1), function (ctx) {
-        var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
-        if (!enemies.length) return;
-        var target = (typeof bfChainNext === 'function')
-          ? (bfChainNext(chainState.last, enemies) || enemies[0])
-          : enemies[Math.floor(Math.random() * enemies.length)];
-        legendaryEmitChainVfx(chainState.last, target, floatSel, spec.elem);
-        chainState.last = target;
-        legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', spec.elem, floatSel,
-          spec.label || '閃電飛越', ctx);
-        if (target.hp <= 0 && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
-      });
-    })(i);
-  }
-}
-
-function legendaryStartVenomField(pEnt, spec, floatSel) {
-  legendaryEnsureRT().fields.push({
-    name: '劇毒血霧',
-    nextAt: GT + spec.tickSec,
-    until: GT + spec.dur,
-    tickSec: spec.tickSec,
-    tick: function (ctx) {
-      var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
-      var result = legendaryDealAoe(pEnt, enemies, spec.powerPct, 'magic', 'poison', floatSel, '劇毒血霧', ctx);
-      if (result.killed && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
-    }
-  });
-}
-
-function legendaryStartVoidFate(pEnt, floatSel) {
-  var spec = legendaryFx('voidFate');
-  var tickSec = 1;
-  var ticks = Math.max(1, Math.round(spec.dur / tickSec));
-  legendaryEnsureRT().fields.push({
-    name: '虛無命運',
-    nextAt: GT + tickSec,
-    until: GT + spec.dur,
-    tickSec: tickSec,
-    ticksLeft: ticks,
-    tick: function (ctx) {
-      if (this.ticksLeft-- <= 0 || !pEnt || pEnt.hp <= 0) return;
-      var st = getStats();
-      var hpPct = spec.deferredHpLossPct / ticks;
-      var hpLoss = Math.min(Math.max(0, pEnt.hp), st.hp * hpPct / 100);
-      if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
-        pEnt.hp = Math.max(0, pEnt.hp - hpLoss);
-        if (typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(hpLoss, pEnt);
-        legendaryOnHealthLost(pEnt, hpLoss, floatSel);
-      }
-      var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
-      for (var i = 0; i < enemies.length; i++) {
-        var damage = Math.max(1, Math.round(enemies[i].maxHp * hpPct * spec.enemyHpLossPerPlayerPct / 100));
-        damage = applyEnemyHpDamage(enemies[i], damage);
-        if (ctx && typeof ctx.onDamage === 'function') ctx.onDamage(damage);
-        if (typeof trackDps === 'function') trackDps(damage);
-        if (typeof recordRunDamage === 'function') recordRunDamage('虛無命運', damage);
-      }
-      if (ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
-    }
-  });
-}
-
-/* 技能完成後的傳奇特效分發。 */
-function legendaryOnSkillCast(pEnt, targets, id, sk, fx, lv, st, out, floatSel, prep, opts) {
-  if (opts && opts.noLegendaryProcs) return;
-  targets = targets || [];
-
-  if (legendaryHas(st, 'whirlwindRift') && sk && sk.cat === 'phys') {
-    var split = legendaryFx('whirlwindRift').onSkillCast;
-    if (chance(split.chance)) {
-      var splitOut = legendaryCastTriggeredSkill(pEnt, targets, split.triggerSkill, floatSel);
-      if (splitOut) {
-        out.dmg = (out.dmg || 0) + (splitOut.dmg || 0);
-        if (splitOut.killed) out.killed = true;
-      }
-    }
-  }
-  if (legendaryHas(st, 'lightningLeap') && sk && sk.cat === 'magic') {
-    var chain = legendaryFx('lightningLeap').onSkillCastChain;
-    if (chance(chain.chance)) legendaryScheduleChain(pEnt, chain, floatSel);
-  }
-
-  var elem = (typeof skillElemOf === 'function') ? skillElemOf(sk, fx) : null;
-  if (legendaryHas(st, 'auroraStaff') && elem === 'ice' && out && out.dmg > 0) {
-    var frost = legendaryFx('auroraStaff').onElemSkill;
-    for (var i = 0; i < targets.length; i++) {
-      legendaryApplyFrostbite(targets[i], frost.frostbiteDur, frost.damageTakenPerStackPct, frost.maxStacks);
-    }
-  }
-  if (legendaryHas(st, 'iceShriek') && elem === 'ice' && chance(legendaryFx('iceShriek').onElemSkillProc.chance)) {
-    var shard = legendaryFx('iceShriek').onElemSkillProc;
-    var shardTarget = targets.filter(function (ent) { return ent && ent.hp > 0; })[0];
-    if (shardTarget) {
-      var shardRes = legendaryDealDamage(pEnt, shardTarget, shard.powerPct, 'magic', 'ice', floatSel, '冰晶尖嘯');
-      legendaryApplyFrostbite(shardTarget, shard.frostbiteDur, 0, 20);
-      if (shardRes && shardRes.killed) out.killed = true;
-      if (shardRes) out.dmg = (out.dmg || 0) + (shardRes.dmg || 0);
-    }
-  }
-  if (legendaryHas(st, 'frostSpike') && id === 'frostNova') {
-    var spike = legendaryFx('frostSpike').extraSkillHit;
-    var spikeTarget = targets.filter(function (ent) { return ent && ent.hp > 0; })[0];
-    if (spikeTarget) {
-      var spikeRes = legendaryDealDamage(pEnt, spikeTarget, spike.powerPct, spike.dmgType, spike.elem, floatSel, '冰霜尖刺');
-      if (spikeRes && spikeRes.killed) out.killed = true;
-      if (spikeRes) out.dmg = (out.dmg || 0) + (spikeRes.dmg || 0);
-    }
-  }
-  if (legendaryHas(st, 'venomMist') && elem === 'poison') {
-    var mist = legendaryFx('venomMist').onElemSkillField;
-    if (chance(mist.chance)) legendaryStartVenomField(pEnt, mist, floatSel);
-  }
-  if (legendaryHas(st, 'holyImpact') && id === 'arcaneBurst') {
-    var multi = legendaryFx('holyImpact').nextMultiCast;
-    legendaryEnsureRT().nextMultiCast = {
-      repeats: chance(multi.tripleChance) ? multi.triple : multi.double
-    };
-  }
-  if (legendaryHas(st, 'shadowAnnihilation') && id === 'voidRift' && prep && prep.wasExecute) {
-    var dark = legendaryFx('shadowAnnihilation').onExecuteElemBuff;
-    applyBuff(pEnt, 'legendaryDarkUp', dark.pct, dark.dur);
-  }
-  if (legendaryHas(st, 'voidFate') && id === 'bloodSurge' && prep && prep.deferBloodSurgeSacrifice) {
-    legendaryStartVoidFate(pEnt, floatSel);
-  }
-}
-
-function legendaryOnManaSpent(pEnt, spent, st, floatSel) {
-  if (!legendaryHas(st, 'manaGuard') || !(spent > 0) || !(st.mp > 0)) return;
-  var spec = legendaryFx('manaGuard').manaSpendShield;
-  var gained = st.hp * (spent / st.mp) * (spec.shieldHpPct / spec.manaPct);
-  var cap = st.hp * spec.capHpPct / 100;
-  var before = Math.max(0, pEnt.shield || 0);
-  pEnt.shield = Math.min(cap, before + gained);
-  if (typeof refreshShieldMaxAfterGain === 'function') refreshShieldMaxAfterGain(pEnt, before);
-  if (pEnt.shield > before && typeof floatPlayerEvent === 'function') {
-    floatPlayerEvent(floatSel, '🛡️+' + fmt(pEnt.shield - before), 'shield');
-  }
-}
-
 function legendaryOnBasicAttack(pEnt, target, res, floatSel, st) {
   if (!legendaryHas(st, 'whirlwindStab') || !legendaryDualDaggersEquipped()) return null;
   var rt = legendaryEnsureRT();
@@ -690,25 +387,12 @@ function legendaryApplyLowLifeShield(pEnt, st, floatSel) {
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent(floatSel, '✨魔法光盾', 'shield');
 }
 
-function legendaryOnHealthLost(pEnt, amount, floatSel) {
-  if (!(amount > 0) || !pEnt || typeof getStats !== 'function') return;
-  var st = getStats();
-  if (!legendaryHas(st, 'shadowRipper')) return;
-  var rip = legendaryFx('shadowRipper').onHealthLost;
-  if (chance(rip.chance)) {
-    var ripOut = legendaryCastTriggeredSkill(pEnt, legendaryActiveEnemies(), rip.triggerSkill,
-      legendaryEnemyFloatSel(floatSel));
-    legendarySettleTriggeredDeaths(ripOut);
-  }
-}
-
 function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, floatSel) {
   if (!pEnt || typeof getStats !== 'function') return;
   var st = getStats();
   var enemies = legendaryActiveEnemies();
   var enemyFloatSel = legendaryEnemyFloatSel(floatSel);
 
-  legendaryOnHealthLost(pEnt, hpDamage, floatSel);
   if (hpDamage > 0 && legendaryHas(st, 'thunderShock')) {
     var shock = legendaryFx('thunderShock').onHealthLostAoe;
     if (chance(shock.chance)) {
@@ -826,6 +510,65 @@ function legendaryEnsureDolls(pEnt, st) {
   }
 }
 
+/* 連鎖閃電排程器：新版技能【突刺】的傳奇特效【迅雷穿刺】（thrustChain）經 js/skills2.js sgThrustOnHit 呼叫。
+   2026-09-29 舊版技能移除時曾連同 lightningLeap 誤刪，由 skills2 的 typeof 守衛靜默略過，效果消失。 */
+function legendaryQueue(at, resolve) {
+  legendaryEnsureRT().queue.push({ at: at, resolve: resolve });
+}
+
+/* 連鎖閃電的畫面（2026-08-19 補）：本檔原本一發特效都不送，玩家只看得到敵人身上
+   憑空跳出傷害字。這裡送出與新版技能【連鎖閃電】同一種 chain 事件，
+   兩個渲染器（js/vfx.js 與 js/battle-renderer.js）都已認得 lightning-chain。
+   from 留白＝從我方出手點連到第一個目標。 */
+function legendaryEmitChainVfx(from, to, floatSel, elem) {
+  if (typeof playCombatVfx !== 'function' || typeof enemyEventFloatTarget !== 'function') return;
+  var ids = [];
+  if (from && from.hp > 0) ids.push(enemyEventFloatTarget(from, floatSel));
+  if (to) ids.push(enemyEventFloatTarget(to, floatSel));
+  if (!ids.length) return;
+  playCombatVfx({
+    fxKind: 'chain', variant: 'lightning-chain', glyph: '⚡',
+    color: (typeof VFX_CAT_COLORS !== 'undefined' && VFX_CAT_COLORS.magic) || '#f2b705',
+    cat: 'magic', elem: elem || 'lightning', targets: ids, area: null, dur: 0.35, count: 1,
+    vfx: (typeof vfxCombatRoles === 'function') ? vfxCombatRoles('legendaryLightningChain') : null
+  });
+}
+
+function legendaryScheduleChain(pEnt, spec, floatSel) {
+  /* 連鎖記住上一跳打到誰，下一跳從「它以外的存活敵人」裡隨機挑一個 → js/battlefield.js。
+     【迅雷穿刺】（原本還有已刪除的【閃電飛越】）的敘述都沒有規定彈射範圍、也沒有寫「最近」，
+     所以候選是整個戰場、挑法是等機率隨機（使用者定調 2026-08-21）。 */
+  var chainState = { last: null };
+  for (var i = 0; i < spec.bounces; i++) {
+    (function (delayIndex) {
+      legendaryQueue(GT + spec.tickSec * (delayIndex + 1), function (ctx) {
+        var enemies = ctx && ctx.getEnemies ? ctx.getEnemies() : legendaryActiveEnemies();
+        if (!enemies.length) return;
+        var target = (typeof bfChainNext === 'function')
+          ? (bfChainNext(chainState.last, enemies) || enemies[0])
+          : enemies[Math.floor(Math.random() * enemies.length)];
+        legendaryEmitChainVfx(chainState.last, target, floatSel, spec.elem);
+        chainState.last = target;
+        legendaryDealDamage(pEnt, target, spec.powerPct, 'magic', spec.elem, floatSel,
+          spec.label || '迅雷穿刺', ctx);
+        if (target.hp <= 0 && ctx && typeof ctx.onDeaths === 'function') ctx.onDeaths();
+      });
+    })(i);
+  }
+}
+
+function legendaryTickQueue(ctx) {
+  var rt = legendaryEnsureRT();
+  var keep = [];
+  for (var i = 0; i < rt.queue.length; i++) {
+    var q = rt.queue[i];
+    if (q.at <= GT) {
+      if (typeof q.resolve === 'function') q.resolve(ctx);
+    } else keep.push(q);
+  }
+  rt.queue = keep;
+}
+
 function legendaryTickKnives(ctx, pEnt, st) {
   var rt = legendaryEnsureRT();
   var spec = legendaryFx('shadowTracker').shadowKnives;
@@ -861,52 +604,14 @@ function legendaryTickDolls(ctx, pEnt, st) {
   }
 }
 
-function legendaryTickQueue(ctx) {
-  var rt = legendaryEnsureRT();
-  var keep = [];
-  for (var i = 0; i < rt.queue.length; i++) {
-    var q = rt.queue[i];
-    if (q.at <= GT) {
-      if (typeof q.resolve === 'function') q.resolve(ctx);
-    } else keep.push(q);
-  }
-  rt.queue = keep;
-}
-
-function legendaryTickFields(ctx) {
-  var rt = legendaryEnsureRT();
-  var keep = [];
-  for (var i = 0; i < rt.fields.length; i++) {
-    var field = rt.fields[i];
-    while (field.nextAt <= GT && field.nextAt <= field.until) {
-      if (typeof field.tick === 'function') field.tick.call(field, ctx);
-      field.nextAt += Math.max(0.1, field.tickSec || 1);
-    }
-    if (field.until > GT) keep.push(field);
-  }
-  rt.fields = keep;
-}
-
 function legendaryTickAutomaticSkills(ctx, pEnt, st, dt) {
   var rt = legendaryEnsureRT();
   /* 死亡／倒地期間暫停所有自動觸發（判定入口在 js/skills2.js skills2AutoCastBlocked）。
      節拍整條往後推 dt，因此剩餘時間不變：既不會在復活瞬間把倒地期間累積的節拍一次補發，
      也不會白白損失一次蓄力。模組未載入時（Node vm 單檔測試）視為未阻擋，行為與改造前相同。 */
   if (typeof skills2AutoCastBlocked === 'function' && skills2AutoCastBlocked(pEnt)) {
-    var step = Math.max(0, Number(dt) || 0);
-    if (rt.nextMeteorAt > 0) rt.nextMeteorAt += step;
-    if (rt.nextLightAt > 0) rt.nextLightAt += step;
-    if (rt.nextChargeAt > 0) rt.nextChargeAt += step;
+    if (rt.nextLightAt > 0) rt.nextLightAt += Math.max(0, Number(dt) || 0);
     return;
-  }
-  if (legendaryHas(st, 'skyfallMeteor')) {
-    var meteor = legendaryFx('skyfallMeteor').autoTrigger;
-    if (!rt.nextMeteorAt) rt.nextMeteorAt = GT + meteor.sec;
-    if (rt.nextMeteorAt <= GT) {
-      rt.nextMeteorAt += meteor.sec;
-      var meteorOut = legendaryCastTriggeredSkill(pEnt, ctx.getEnemies(), meteor.skill, ctx.floatSel);
-      if (meteorOut && meteorOut.killed && ctx.onDeaths) ctx.onDeaths();
-    }
   }
   if (legendaryHas(st, 'lightCollision')) {
     var light = legendaryFx('lightCollision').autoProjectile;
@@ -918,24 +623,6 @@ function legendaryTickAutomaticSkills(ctx, pEnt, st, dt) {
         var lightRes = legendaryDealDamage(pEnt, legendaryNearestEnemy(enemies, pEnt), light.powerPct, 'magic', light.elem,
           ctx.floatSel, '光之碰撞', ctx);
         if (lightRes && lightRes.killed && ctx.onDeaths) ctx.onDeaths();
-      }
-    }
-  }
-  if (legendaryHas(st, 'oathOfCondemnation')) {
-    var charge = legendaryFx('oathOfCondemnation').autoCharge;
-    if (!rt.nextChargeAt) rt.nextChargeAt = GT + charge.sec;
-    if (rt.nextChargeAt <= GT) {
-      rt.nextChargeAt += charge.sec;
-      var cooling = [];
-      for (var id in pEnt.skillCds) {
-        if (id.indexOf('potential:') !== 0 && (pEnt.skillCds[id] || 0) > 0) cooling.push(id);
-      }
-      if (cooling.length) {
-        var chosen = cooling[Math.floor(Math.random() * cooling.length)];
-        pEnt.skillCds[chosen] = 0;
-        if (typeof markSkillReady === 'function') markSkillReady(pEnt, chosen);
-        rt.chargedSkill = chosen;
-        rt.chargedEffectPct = charge.effectPct;
       }
     }
   }
@@ -958,7 +645,6 @@ function legendaryTickFireSpirit(pEnt, st, dt) {
     if (!(typeof gmHpLockActive === 'function' && gmHpLockActive(pEnt))) {
       pEnt.hp = Math.max(0, pEnt.hp - loss);
       if (typeof sgWarGodBodyOnDamaged === 'function') sgWarGodBodyOnDamaged(loss, pEnt);
-      legendaryOnHealthLost(pEnt, loss, 'pv-float');
     }
     rt.nextFireDrainAt += 1;
   }
@@ -988,7 +674,6 @@ function tickLegendaryEffects(dt, ctx) {
   legendaryTickFireSpirit(pEnt, st, dt);
   legendaryTickLightShield(pEnt, st);
   legendaryTickQueue(ctx);
-  legendaryTickFields(ctx);
   if (legendaryHas(st, 'shadowTracker')) legendaryTickKnives(ctx, pEnt, st);
   if (legendaryHas(st, 'ghostLamp')) legendaryTickDolls(ctx, pEnt, st);
   legendaryApplyLowLifeShield(pEnt, st, ctx.floatSel === 'tb-float' ? 'tp-float' : 'pv-float');

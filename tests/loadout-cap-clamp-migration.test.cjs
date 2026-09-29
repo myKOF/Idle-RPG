@@ -37,9 +37,10 @@ function oldSave(context, mutate) {
   return data;
 }
 
+/* 裝載欄只接受新版技能群組（'sg:'）與潛力技能（'potential:'）；舊技能鍵會被 legacySkillRemovalV1 卸下。 */
 function fakeLoadout(n) {
   const out = [];
-  for (let i = 0; i < n; i++) out.push('sk' + i);
+  for (let i = 0; i < n; i++) out.push('sg:g' + i);
   return out;
 }
 
@@ -67,36 +68,32 @@ test('舊存檔超出上限的裝載欄會被裁掉，保留排在前面的格�
   });
   c.migrateSave(data);
   assert.equal(data.player.loadout.length, 6);
-  assert.deepEqual(data.player.loadout, fakeLoadout(6));   // 保留前段、順序不變
+  assert.deepEqual(Array.from(data.player.loadout), fakeLoadout(6));   // 保留前段、順序不變
   assert.match(data._loadoutCapClampNotice || '', /6 格/);
   assert.match(data._loadoutCapClampNotice || '', /9 個技能/);
   assert.equal(data.loadoutCapClampV1, true);
 });
 
-test('裁切只卸下技能，等級與已學狀態不動', () => {
+test('裁切只卸下技能，新版技能等級不動', () => {
   const c = loadMigrationContext();
   const data = oldSave(c, (d) => {
     d.player.level = 1;            // 0 轉 1 級 → 4 格
-    d.player.skills = { powerSlash: 3, arcaneBurst: 5, manaBarrier: 2, meditation: 1 };
-    d.player.loadout = ['powerSlash', 'arcaneBurst', 'manaBarrier', 'meditation', 'ironSkin', 'vampirism'];
+    d.player.skills2 = { levels: { thrust: [3, 1, 0, 0, 0, 0, 0] } };
+    d.player.loadout = ['sg:thrust', 'sg:cleave', 'sg:knife', 'sg:gale', 'sg:fireball', 'sg:firehunt'];
   });
   c.migrateSave(data);
   assert.equal(data.player.loadout.length, 4);
-  // 被卸下的 ironSkin/vampirism 本來就沒學；已學技能等級一個都不能少
-  assert.equal(data.player.skills.powerSlash, 3);
-  assert.equal(data.player.skills.arcaneBurst, 5);
-  assert.equal(data.player.skills.manaBarrier, 2);
-  assert.equal(data.player.skills.meditation, 1);
+  assert.deepEqual(Array.from(data.player.skills2.levels.thrust).slice(0, 2), [3, 1]);
 });
 
 test('未超出上限時不動裝載欄，也不公告', () => {
   const c = loadMigrationContext();
   const data = oldSave(c, (d) => {
     d.player.level = 1;
-    d.player.loadout = ['powerSlash', 'arcaneBurst'];
+    d.player.loadout = ['sg:thrust', 'sg:cleave'];
   });
   c.migrateSave(data);
-  assert.deepEqual(data.player.loadout, ['powerSlash', 'arcaneBurst']);
+  assert.deepEqual(Array.from(data.player.loadout), ['sg:thrust', 'sg:cleave']);
   assert.equal(data._loadoutCapClampNotice, undefined);
   assert.equal(data.loadoutCapClampV1, true);
 });
@@ -129,16 +126,14 @@ test('新帳號不觸發：newGameState 預帶完成旗標', () => {
   assert.equal(fresh._loadoutCapClampNotice, undefined);
 });
 
-test('先清出被融合佔用的素材，再算格數——順序反了會裁得比上限少', () => {
+test('先卸下舊技能，再算格數——順序反了會把新版技能裁掉', () => {
   const c = loadMigrationContext();
   const data = oldSave(c, (d) => {
     d.player.level = 1;   // 4 格
-    d.player.skills = { powerSlash: 1, iceLance: 1, meditation: 1, ironSkin: 1, vampirism: 1, toughness: 1 };
-    // 前兩格是融合素材，會先被清出；清完剩 4 個，剛好等於上限，不該再被裁
-    d.player.loadout = ['powerSlash', 'iceLance', 'meditation', 'ironSkin', 'vampirism', 'toughness'];
-    d.player.fusions = [{ id: 'f1', name: '測試融合', components: ['powerSlash', 'iceLance'], componentLevels: { powerSlash: 1, iceLance: 1 }, seed: 1, algo: 2 }];
+    // 前兩格是舊技能，會先被卸下（留下空格）；剩下的四個新版技能剛好等於上限，不該被裁
+    d.player.loadout = ['powerSlash', 'iceLance', 'sg:thrust', 'sg:cleave', 'sg:knife', 'sg:gale'];
   });
   c.migrateSave(data);
-  assert.deepEqual(data.player.loadout, ['meditation', 'ironSkin', 'vampirism', 'toughness']);
-  assert.equal(data._loadoutCapClampNotice, undefined);   // 清完就沒超額，不該公告
+  assert.deepEqual(Array.from(data.player.loadout), [null, null, 'sg:thrust', 'sg:cleave']);
+  assert.match(data._loadoutCapClampNotice || '', /2 個技能/);   // 空格佔位，仍超額 2 格，裁掉最後兩個
 });

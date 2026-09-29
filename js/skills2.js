@@ -9,7 +9,7 @@
    帶進三個新機制，皆為群組共用能力、不是這兩個技能的特例：
      1. 群組層 dmgType／elem：魔法傷害走魔攻與魔穿、本體傷害段歸屬火屬性（sgAtkCfg）
      2. 施法距離：各階 fx.castM（米）決定射程，取代「新版技能一律近戰起手」的寫死規則
-        （skills2CastRangePx／skills2CanReach，js/skills.js 的施放閘門同步改吃這支）
+        （skills2CastRangePx／skills2CanReach，js/skills.js 的施放閘門吃這支）
      3. 地板場域（SKILL2_RT.grounds）：釘在座標上、按節拍反覆作用的區域，
         可重生；無座標時（高塔）退化為固定打主目標）
    （2026-08-16 第四批追加＝魔法系 firehunt 火狩。帶進第四個群組共用能力：
@@ -67,7 +67,6 @@
      - 每階上限 SG_TIER_MAX_LV 級，固定不隨轉生提高
      - 前一階至少 Lv.1 才可投資下一階；第 1 階預設開啟（恆視為至少 Lv.1）
      - 裝載欄鍵前綴 'sg:<群組id>'（比照潛力技能 'potential:' 的並行前例）
-     - 舊技能系統（js/skills.js SKILLS）完全不動；調教完成後另案刪除
 
    分工：
      - 數值 SSOT：下方 SKILLS2 純資料 literal
@@ -76,7 +75,7 @@
      - 幾何（直線貫穿／扇形／最近 N 敵）→ js/battlefield.js（唯一權威）
      - 持續效果（流血／中毒／增益）→ js/status.js 狀態表 ＋ applyStatus
      - 執行期狀態 → 模組級 SKILL2_RT（絕不掛 G＝保證不入存檔），
-       由 resetSkillRT()（js/skills.js）鏈結重置，重置時機與舊系統完全一致
+       由 resetSkillRT()（js/skills.js）鏈結重置
 
    本檔必須能在三種環境載入且行為一致（主執行緒 <script>／Worker importScripts／
    Node vm 測試），因此只用 ES5 語法、只掛全域、不碰 DOM。 */
@@ -213,7 +212,7 @@ var SKILLS2 = {
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
    由 js/skills.js 的 resetSkillRT() 鏈結重置（比照 resetLegendaryRT），
-   重置時機（開戰／死亡／讀檔／塔戰進出）與舊系統完全一致。 */
+   重置時機：開戰／死亡／讀檔／塔戰進出。 */
 var SKILL2_RT = null;
 function resetSkill2RT() {
   if (SKILL2_RT && SKILL2_RT.lastStand && SKILL2_RT.lastStand.pEnt) delete SKILL2_RT.lastStand.pEnt._sgRevival;
@@ -378,11 +377,6 @@ function skills2Levels(gid) {
 function skills2Castable(gid) {
   var l = skills2Levels(gid);
   return !!l && l[0] >= 1;
-}
-/* 火球術第 7 階是「改為」殞石術：自動施法時不再讓舊技能 fireball 併發。 */
-function skills2FireballIsMeteor() {
-  var l = skills2Levels('fireball');
-  return !!l && l[6] > 0;
 }
 
 /* ===========================================================================
@@ -1120,7 +1114,7 @@ function skills2CanReach(gid, ent, lvs) {
 
 /* 火焰增幅（火球術第 6 階）目前的火屬性傷害提升%。
    掛點：js/legendary.js legendaryElementDamageUp——全專案「屬性傷害提升」的唯一收斂點，
-   因此普攻的元素附傷、舊技能與新技能一體生效，不必在各傷害端各掛一次。 */
+   因此普攻的元素附傷與技能一體生效，不必在各傷害端各掛一次。 */
 function skill2FireAmpPct(pEnt) {
   return (typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgFireAmp')) : 0;
 }
@@ -1332,7 +1326,7 @@ function skills2Cooldown(gid, lvs, pEnt) {
 }
 
 /* 虛弱（血刃斬第 3 階）：流血中的敵人受到的傷害提高。
-   掛點：普攻與技能傷害的攻擊組態（doPlayerAttack／castSkill／本引擎自身）。 */
+   掛點：普攻與技能傷害的攻擊組態（doPlayerAttack／本引擎自身）。 */
 function skill2VulnPct(target) {
   if (!target || !target.dots || !target.dots.length) return 0;
   var lvs = skills2Levels('bloodblade');
@@ -1440,7 +1434,7 @@ function skill2FrenzySkillDamageMultiplier(attacker) {
 }
 
 /* 狂暴（第 2 階）：爆擊傷害乘算因子。掛點：combat.js playerAtkCfg 與本引擎 sgAtkCfg
-   的 critDmg 欄（舊技能 castSkill 依「舊系統不動」原則不套用）。 */
+   的 critDmg 欄。 */
 function skill2RageCritDmgFactor() {
   var lvs = skill2RageLevels();
   if (!lvs || lvs[1] < 1) return 1;
@@ -1449,7 +1443,7 @@ function skill2RageCritDmgFactor() {
 
 /* 狂怒（第 3 階）×血飲術（第 6 階）×狂血盛宴（第 7 階，依目前失血比例動態計算）
    的最終輸出乘區。掛點：formula.js resolveHit 的傳奇最終乘區旁（僅玩家攻擊端），
-   因此普攻、舊技能與新技能一體生效；持續傷害不經 resolveHit、不吃此乘區。 */
+   因此普攻與技能一體生效；持續傷害不經 resolveHit、不吃此乘區。 */
 function skill2RageDamageMultiplier(attacker) {
   var lvs = skill2RageLevels();
   if (!lvs) return 1;
@@ -1561,7 +1555,7 @@ function skills2ShieldBlocked() {
 
 /* 護盾封鎖的不變量掃描。上面那兩條入口（grantShield／healPlayer 的溢出）是「明確攔截」，
    讀程式的人一眼就知道代價掛在哪；但護盾在本專案沒有單一收斂點——狀態表的 shield 效果、
-   傳奇【聖盾】／【光之護盾】、舊技能的護盾都是直接寫 pEnt.shield，一處一處補既碰不完，
+   傳奇【聖盾】／【光之護盾】的護盾都是直接寫 pEnt.shield，一處一處補既碰不完，
    也擋不住之後新加的來源。所以這裡每拍再掃一次：狂怒期間身上就是不會有護盾。
    連「開狂怒之前先疊好的護盾」也一起清掉——不清的話，玩家只要在施放前把護盾疊滿就能
    整個繞過這個代價（狂血盛宴會讓狂怒隨擊殺無限延長，那層護盾等於一直有效）。 */
@@ -1852,10 +1846,10 @@ function sgSpreadBloodbladeDots(source, enemies, st, lvs, tiers) {
   return target;
 }
 
-/* 攻擊組態（比照 castSkill 的技能傷害段規格：命中地板 100、含裝備元素攻擊、
+/* 攻擊組態（技能傷害段規格：命中地板 100、含裝備元素攻擊、
    神鑄被動與敵種加成；另計本系統的狂暴爆擊增益與虛弱增傷）。
    傷害類型與屬性由群組決定：魔法群組走魔攻／魔穿，並把整段本體傷害歸屬該屬性
-   （skillElem，比照 js/skills.js skillElemApplyACfg 的技能屬性化規則）。 */
+   （skillElem：技能屬性化）。 */
 function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
   var g = SKILLS2[gid];
   var magic = sgIsMagic(g);
@@ -1897,7 +1891,6 @@ function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTo
   var atkCfg = sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride), defCfg = monsterDefCfg(target);
   if (guaranteedHit) { atkCfg.hit = 100; defCfg.dodge = 0; defCfg.absDodge = 0; }
   var res = resolveHit(pEnt, target, atkCfg, defCfg);
-  if (typeof applySkillFinalDamageMultiplier === 'function') applySkillFinalDamageMultiplier(target, res, false);
   if (!res.miss) {
     out.dmg += res.dmg;
     if (res.crit) out.crit = true;
@@ -7321,7 +7314,7 @@ function sgSuperconductStack(pEnt, perStack, maxStacks) {
 }
 
 /* 超神【永恒超導體】的雷電傷害增幅（掛在 legendary.js legendaryElementDamageUp——
-   全專案「屬性傷害提升%」的唯一收斂點，普攻與新舊技能因此一體生效）。 */
+   全專案「屬性傷害提升%」的唯一收斂點，普攻與技能因此一體生效）。 */
 function skill2LightningDamageUpPct(pEnt) {
   var pct = (pEnt && typeof buffVal === 'function') ? Math.max(0, buffVal(pEnt, 'sgSuperconduct')) : 0;
   // 傳奇【超載】（雷球）：場上每有 1 個雷球就再加一份，走同一個收斂點
@@ -8238,7 +8231,7 @@ function skill2ForcedAttr(ent) {
 }
 
 /* 受到的寒冰傷害增幅：掛在 resolveHit 既有的 skillElemAmp（每系獨立乘區，原本服務
-   舊技能的元素領域），因此只放大「技能屬性化為寒冰」的本體段，不會誤放大同一次
+   技能場域），因此只放大「技能屬性化為寒冰」的本體段，不會誤放大同一次
    攻擊的火／雷等其他屬性段。寒霜凍傷是施放當下定版的平坦 dps（比照燃燒，不走
    resolveHit），因此不吃這個增幅——與火焰增幅對燃燒的既有關係一致。 */
 function skill2IceTakenPct(target) {
@@ -9626,8 +9619,8 @@ function skill2WindAmpACfg(aCfg, pEnt) {
 
 /* 傳奇【風之壁】：暴風屏障作用中，我方物理與魔法防禦的額外乘算倍率（1＝沒生效）。
    掛在 js/combat.js playerDefCfg 的 defMul——那是我方防禦的唯一出口，野外與高塔一體生效。
-   ⚠️ 刻意不走既有的 defUp 增益：那一格是「取代」規則的共用鍵（舊技能【鐵壁】也在用），
-   每 0.5 秒重塗一次會把玩家的鐵壁數值蓋成屏障這一份。 */
+   ⚠️ 刻意不走既有的 defUp 增益：那一格是「取代」規則的共用鍵，
+   每 0.5 秒重塗一次會把其他來源的 defUp 數值蓋成屏障這一份。 */
 function skill2DefFactor(pEnt) {
   if (!skill2BarrierLevels(pEnt)) return 1;
   var pct = Math.max(0, Number(sgLegendTick('stormbarrier').stormbarrierDefPct) || 0);
@@ -10549,7 +10542,6 @@ function sgCounterStrike(pEnt, st, target, pct, floatSel, out, delayMs, cfg) {
   if (sgUlt('counter', 'indomitable')) aCfg.skillElem = 'earth';
   aCfg = skill2VulnACfg(aCfg, target);
   var res = resolveHit(pEnt, target, aCfg, monsterDefCfg(target));
-  if (typeof applySkillFinalDamageMultiplier === 'function') applySkillFinalDamageMultiplier(target, res, false);
   var g = SKILLS2.counter;
   if (!res.miss) {
     out.dmg += res.dmg;
@@ -10910,7 +10902,7 @@ function sgCounterSplashTargets(exclude, enemies, fx) {
 }
 
 /* ===========================================================================
-   每 tick 排程（由 js/skills.js tickSkillSchedulers 末端鏈結呼叫，
+   每 tick 排程（由 js/skills.js tickSkillSchedulers 呼叫，
    野外與高塔兩處鏡射掛點自然生效；必須在空場提前返回之前執行）
    ctx = { pEnt, getEnemies(), floatSel, onDeaths, onDamage? }
    =========================================================================== */
@@ -11256,7 +11248,7 @@ function sgTickBloodDots(dt, ctx) {
 /* ===========================================================================
    血刃斬的兩個「永久領域」（超神進化：殺神領域／萬毒血霧）
    ---------------------------------------------------------------------------
-   本專案的三套場域（SKILL2_RT.grounds／orbits／SKILL_RT.fields）全部以剩餘段數或
+   本專案的場域（SKILL2_RT.grounds／orbits）全部以剩餘段數或
    到期時間收斂，沒有任何永久物；把 hits 設成無限會多出一條沒有回收路徑的分支。
    因此永久領域**不建立實例**，改成每個節拍直接以玩家為圓心做一次幾何查詢：
    領域的權威就是超神進化本身；玩家身上代表領域的狀態（畫面＝狀態表的持續特效）
@@ -11374,7 +11366,7 @@ function sgBloodFieldsOnDeath(deadEnt) {
    因此取一個夠密的固定值即可，不需要另設參數。 */
 var SG_BLOOD_MIST_GAP = 0.25;
 
-/* ---- 敵人死亡掛勾（js/skills.js skillRtOnEnemyDeath 末端鏈結，野外擊殺時呼叫）---- */
+/* ---- 敵人死亡掛勾（js/combat.js onFieldKill 呼叫，野外擊殺時）---- */
 function skills2OnEnemyDeath(deadEnt, enemies) {
   if (!SKILL2_RT || !deadEnt) return;
   sgRageOnKill();                 // 嗜血狂怒：狂化連殺疊連擊（T4）＋狂血盛宴延時（T7）

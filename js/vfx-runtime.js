@@ -1681,7 +1681,7 @@ var VFXRuntime = (function () {
     }
 
     /* 只收「持續場域」：場域與環繞場域的權威都在模擬層的執行期狀態
-       （SKILL_RT／SKILL2_RT），顯示層本身沒有「現在還在不在」的資訊，只能靠
+       （SKILL2_RT），顯示層本身沒有「現在還在不在」的資訊，只能靠
        模擬層不斷重送來續命。玩家倒地時那一批執行期狀態是被整批清掉的
        （js/combat.js onPlayerFieldDeath → resetSkillRT），之後不會再有人續命——
        留著只是等各自的顯示壽命自己走完，畫面上就是「人已經倒了，岩甲的石板還在繞」。
@@ -1767,9 +1767,6 @@ var VFXRuntime = (function () {
       if (typeof v === 'string') { ids[v] = true; return; }
       if (typeof v !== 'object') return;
       for (var k in v) takeDeep(v[k]);
-    }
-    if (typeof SKILLS !== 'undefined' && SKILLS) {
-      for (var s in SKILLS) take(SKILLS[s] && SKILLS[s].vfx);
     }
     if (typeof SKILLS2 !== 'undefined' && SKILLS2) {
       for (var g in SKILLS2) {

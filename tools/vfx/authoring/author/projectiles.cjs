@@ -210,14 +210,6 @@ P['proj-wind-crescent'] = () => ({
   ]
 });
 
-/* ---------- proj-arcane-missile：奧術飛彈 ---------- */
-P['proj-arcane-missile'] = () => ({
-  id: 'proj-arcane-missile', duration: 1.2, layers: [
-    ...orb({ size: 12, dur: 1.2, tint: T.magic.c1, coreTint: T.magic.c2, glowTint: T.magic.glow, glowRatio: 3 }),
-    trail({ asset: A.trace02H, tint: '#ffffff', rate: 20, startPx: [8, 14], lifetime: [0.12, 0.22], speed: [5, 20], alignToVelocity: true, velocityRotationOffset: 0 })
-  ]
-});
-
 /* ---------- proj-waterball：水流彈 ---------- */
 P['proj-waterball'] = () => ({
   id: 'proj-waterball', duration: 1.2, layers: [
@@ -395,7 +387,7 @@ P['proj-thunder-orb-fall'] = () => {
 /* ---------- 寫出 + 驗證 ---------- */
 const ORDER = ['proj-swordwave', 'proj-knife', 'proj-knife-gold', 'proj-fireball', 'proj-fire',
   'proj-ice-shard', 'proj-lightning', 'proj-poison-drop', 'proj-light-orb', 'proj-dark-orb',
-  'proj-earth-rock', 'proj-wind-crescent', 'proj-arcane-missile', 'proj-waterball',
+  'proj-earth-rock', 'proj-wind-crescent', 'proj-waterball',
   'proj-firehunt-ring', 'proj-enemy-bolt', 'proj-meteor', 'proj-meteor-small', 'proj-starfall',
   'proj-thunder-orb-fall'];
 const written = [];

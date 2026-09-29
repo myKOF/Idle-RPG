@@ -86,7 +86,6 @@ def('proj-light-orb', 'projectile', '聖光／奧術投射物：白金 #fffef4 �
 def('proj-dark-orb', 'projectile', '暗影投射物：深紫 #1a0c2e 核心 + 紫 #6f2da8 漩渦（twirl 素材旋轉）+ 紫光暈 #913dcc + 暗紫煙拖尾。', { nominal: 'D 18px', dur: 1.2 });
 def('proj-earth-rock', 'projectile', '土屬性投射物：棕 #ad7444 方形岩塊（16px、緩慢旋轉）+ 深棕 #5b3a27 陰影 + 土黃塵土拖尾。', { nominal: 'L 16px', dur: 1.2 });
 def('proj-wind-crescent', 'projectile', '風刃：淺綠 #86efac 新月刀刃（名目寬 40px、深 16px，尖端朝 +X）+ 白色 #ffffff 內芯與描邊 + 白色細拖尾；Runtime 以 scaleY = lineWidth/40、scaleX = bodyLength/16。', { nominal: 'W 40px', dur: 1.5 });
-def('proj-arcane-missile', 'projectile', '奧術飛彈：小型淡藍紫 #8ea2ff 光球（直徑 12px）+ 光暈 + 亮白拖尾條；奧術彈幕六發齊射、特殊／潛力技能的通用投射物。', { nominal: 'D 12px', dur: 1.2 });
 def('proj-waterball-flow', 'projectile', '青綠蛋形水彈與濃密水滴拖尾。', { nominal: '90×58px', dur: 1.2 });
 def('hit-waterball-splash', 'hit', '水珠飛濺、泡沫亮點及雙層擴散水紋。', { nominal: 'R 100px', dur: 0.85 });
 def('proj-waterball', 'projectile', '水流彈：藍色 #38bdf8 水球（直徑 18px）+ 白 #f0f9ff 高光 + 飛濺水珠拖尾。', { nominal: 'D 18px', dur: 1.2 });
@@ -105,7 +104,6 @@ def('bolt-curtain-lightning', 'bolt', '雷幕電柱：從 (0,-450) 劈到原點�
 def('pillar-light', 'bolt', '聖光柱：寬 40px 的光柱從 (0,-400) 落到原點（0.8s：前 22% 由上往下伸展、70% 後淡出），亮白 #fffef4 核心 + 金黃 #ffe47a 邊緣 + 著地閃光 + 5 顆金塵上浮。', { nominal: 'H 400px', dur: 0.9 });
 def('pillar-earth', 'bolt', '天地再造光柱：完整複製目前 pillar-light 的光束、法陣與光暈圖層並改紫色，尺寸縮為玩家復活光柱的一半；遊戲中整根光柱共用腳點遠近倍率、不受 FOV 形變。', { nominal: 'H 200px', dur: 0.9 });
 def('beam-light', 'bolt', '聖光光束：沿 +X 長 200px 的白色 #fffef4 細光束（寬 10→5px）+ 金黃 #ffe47a 外暈，0.45s 內 α 0→1→0；Runtime 以 scaleX 拉到目標。', { nominal: 'L 200px', dur: 0.45 });
-def('beam-ice', 'bolt', '寒冰槍光束：沿 +X 長 200px 的冰藍 #4da6ff 光束（寬 8px）帶白色 #f2fbff 斜紋（uvScroll 或 streak 條紋）+ 淡藍 #79d8ff 外暈，0.45s。', { nominal: 'L 200px', dur: 0.45 });
 
 /* 範圍爆發 burst（attack 角色；名目半徑 100px） */
 def('burst-fire', 'burst', '火焰爆發：中心黃白閃光 + 橘紅 #e63924 火球膨脹（半徑 30→100px）+ 3 道扁橢圓震波環 #ffb21c/#7d1708 依序擴散 + 18 顆火舌向外飛並下墜；0.86s。', { nominal: 'R 100px', dur: 0.9 });
@@ -122,9 +120,7 @@ def('burst-holy', 'burst', '神聖爆發：白金 #fffef4 閃光 + 金黃 #ffe47
 def('burst-earth', 'burst', '大地爆發：土黃 #c48a55 地面環 + 棕色岩塊向上噴起後落下 + 塵土；0.8s。', { nominal: 'R 100px', dur: 0.8 });
 def('burst-detonate-phys', 'burst', '斷罪引爆：暖白 #e6ddc8 大型爆閃（半徑到 100px）+ 粗環帶 8px 光暈 + 7 顆大碎片；0.6s；附畫面震動。', { nominal: 'R 100px', dur: 0.7 });
 def('burst-detonate-dark', 'burst', '碎印湮滅／虛空裂隙：紫色 #6f2da8 conic 漩渦先內縮再爆開（rotationOverLife 600°）+ 深紫 #1a0c2e 核心 + 紫光 #913dcc 環；0.6s。', { nominal: 'R 100px', dur: 0.7 });
-def('burst-venom', 'burst', '劇毒雲霧／疫爆：綠 #4caf2b 爆閃 + 綠環 + 殘留 2.5s 的毒霧雲（smoke 素材、tint #4caf2b、α0.6 漸散）與 5 顆空心毒泡上浮。', { nominal: 'R 100px', dur: 2.6 });
 def('burst-fire-shockwave', 'burst', '烈焰衝擊／炎爆：hit-fire-explosion 的大爆炸 + 3 道扁橢圓震波環（#ffb21c 亮環先、#7d1708 暗環後，到 110% 半徑）+ 18 顆火舌 + 6 團塵霧；0.86s。', { nominal: 'R 100px', dur: 0.9 });
-def('burst-cyclone-phys', 'burst', '旋風斬：三道暖白 #e6ddc8 弧刃（各 69°、120° 等分、半徑 64px）整體以 9 rad/s 旋轉，末 0.3s 淡出；名目半徑 100px 對應 area.r。', { nominal: 'R 100px', dur: 1.6, loop: true });
 
 /* 地板／持續場域 ground（loop） */
 def('ground-mire', 'ground', '泥沼：扁矩形（名目 200×100，實際只畫 52% 高度）泥棕 #4a3a20 填色 α0.5 + #7d6533 邊 + 3 圈向外擴散的矩形漣漪 #a37a48 + 6 顆泥泡 #c49b68 緩慢上浮；loop 2.1s。', { nominal: 'rect 200x100', dur: 2.1, loop: true });
@@ -156,8 +152,6 @@ def('ground-storm-rip', 'ground', '暴風撕裂（脈衝）：6 片白色 #fffff
 def('ground-domain-fire', 'ground', '火神降臨領域：扁橢圓（縱向 0.62、名目半徑 100px）——黃 #ffd447 淡填色 α0.1 + 火紅 #e63924 邊 2px + 內圈橘 #ff6a2a 細環，每秒約 10 顆火星從邊緣上升；loop 呼吸 ±4%。', { nominal: 'R 100px', dur: 1.85, loop: true });
 def('ground-domain-earth', 'ground', '超重岩／重力場領域：同幾何，深棕 #5b3a27 填、棕 #ad7444 邊、土黃 #c48a55 內環，塵土上浮。', { nominal: 'R 100px', dur: 1.85, loop: true });
 def('ground-domain-ice', 'ground', '水牢天瀑／海淵葬界領域：同幾何，白 #f2fbff 填、冰藍 #4da6ff 邊、淡藍 #79d8ff 內環，水霧與雪點上浮。', { nominal: 'R 100px', dur: 1.85, loop: true });
-def('ground-field-fire', 'ground', '焚世領域（舊技能地板）：圓形（名目半徑 100px）火紅 #e63924 淡填色 + 黃 #ffd447 邊 + 持續上升的火焰粒子（flame 素材）與火星；loop。', { nominal: 'R 100px', dur: 1.6, loop: true });
-def('ground-swordfield', 'ground', '劍域千鋒：圓形（名目半徑 100px）暖白 #e6ddc8 淡填色 + 一圈虛線劍氣環以 5s 一圈旋轉（rotationOverLife）+ 直立劍光條紋（trace 素材）從地面升起；loop。', { nominal: 'R 100px', dur: 5.0, loop: true });
 def('ground-cyclone-avatar', 'ground', '暴風亂舞化身／不屈之誓：圍繞原點的三道暖白弧刃以 9 rad/s 旋轉（半徑 64px）+ 上升白色火花；loop。', { nominal: 'R 100px', dur: 1.6, loop: true });
 def('aura-rock-armor', 'ground', '岩甲術（自身）：玩家周圍 3～4 塊棕色 #ad7444 岩石（方塊素材）緩慢環繞（rotationOverLife 一圈 3s）+ 土黃 #c48a55 地面環 + 塵土；loop。原點＝玩家腳底。', { nominal: 'body 60px', dur: 3.0, loop: true });
 def('aura-bloodrage', 'ground', '嗜血狂怒（自身）：暗紅 #d92846 呼吸光暈（circle 素材 α0.3 脈動）+ 紅色火花向上噴 + 地面血紅環；loop 0.8s。', { nominal: 'body 60px', dur: 0.8, loop: true });
@@ -172,9 +166,7 @@ def('cast-buff-phys', 'cast', '物理系施放：暖白 #e6ddc8 光環收縮 + �
 def('cast-buff-special', 'cast', '特殊系施放：奧術藍紫 #8ea2ff 光環收縮 + 星芒光點（star_08）上升。', { nominal: 'body 60px', dur: 0.9 });
 def('cast-buff-light', 'cast', '聖光系施放：金黃 #ffe47a 光環 + 白金塵點上升 + 十字星芒閃。', { nominal: 'body 60px', dur: 0.9 });
 def('cast-buff-dark', 'cast', '暗影系施放：紫 #6f2da8 光環 + 暗紫煙絲上升。', { nominal: 'body 60px', dur: 0.9 });
-def('cast-buff-poison', 'cast', '毒系被動施放：綠 #4caf2b 光環 + 毒泡上浮。', { nominal: 'body 60px', dur: 0.9 });
 def('cast-magic', 'cast', '魔法施放閃光：玩家手部位置（原點）一個 0.3s 的淡藍紫 #8ea2ff 魔法圈（arcane-ring 素材快速旋轉放大淡出）+ 幾顆星芒。', { nominal: 'R 24px', dur: 0.35 });
-def('cast-drain', 'cast', '汲取回流：暗綠 #6f2da8→#4ade80 的光絲從外側被吸進玩家（inflow 粒子：gravity 朝中心）+ 中心綠光閃 0.5s；用於暗影箭／生命汲取命中時。', { nominal: 'body 60px', dur: 0.6 });
 def('curse-dark', 'curse', '敵身詛咒：目標身上一個紫色 #c084fc 符文環（arcane-ring 素材，半徑 24px）旋轉 + 中心暗紫 #1a0c2e 符號閃爍，緩慢上升 16px/s、左右擺動，0.9s 淡出。', { nominal: 'target 60px', dur: 1.0 });
 def('curse-bleed', 'curse', '流血詛咒：目標身上暗紅 #d92846 血滴符號（水滴形 mask 素材）上升擺動 + 幾滴血珠落下，0.9s。', { nominal: 'target 60px', dur: 1.0 });
 def('curse-poison', 'curse', '劇毒詛咒：目標身上綠色 #4caf2b 骷髏／毒泡符號上升擺動 + 毒泡上浮，0.9s。', { nominal: 'target 60px', dur: 1.0 });
@@ -214,67 +206,6 @@ def('st-tick-bleed', 'status', '流血每跳：3 滴暗紅血珠濺落（0.45s�
 def('st-tick-ice', 'status', '凍傷每跳：冰藍小閃光 + 3 片冰晶碎片彈出下落（0.45s）。', { nominal: 'body 60px', dur: 0.45 });
 def('st-tick-dark', 'status', '侵蝕每跳：暗紫閃光 + 紫煙絲一縷上升（0.5s）。', { nominal: 'body 60px', dur: 0.5 });
 def('st-tick-wind', 'status', '風切每跳：兩道淺綠風痕交叉閃過（0.35s）。', { nominal: 'body 60px', dur: 0.35 });
-
-/* ---------- 舊技能表（SKILLS）欄位對應 ---------- */
-const CAST_BY_CAT = { def: 'cast-buff-def', phys: 'cast-buff-phys', special: 'cast-buff-special', passive: 'cast-buff-phys', magic: 'cast-buff-special' };
-const CAST_BY_ELEM = { light: 'cast-buff-light', dark: 'cast-buff-dark', poison: 'cast-buff-poison' };
-const PROJ_BY_ELEM = { fire: 'proj-fire', ice: 'proj-ice-shard', lightning: 'proj-lightning', poison: 'proj-poison-drop', light: 'proj-light-orb', dark: 'proj-dark-orb', earth: 'proj-earth-rock', wind: 'proj-wind-crescent' };
-function hitFor(elem, cat) { return 'hit-' + (elem || (cat === 'phys' ? 'phys' : (cat === 'magic' ? 'light' : 'phys'))); }
-
-/* facts 來自 skills-vfx-facts.json（id/cat/elem/shape/fxKind/variant/hasField） */
-function skillRoles(f) {
-  const r = {};
-  const elem = f.elem || null;
-  switch (f.fxKind) {
-    case 'slash':
-      r.attack = f.variant === 'swordfield' ? 'slash-phys-big' : 'slash-phys';
-      if (f.variant === 'detonate') { r.attack = 'burst-detonate-phys'; }
-      r.hit = hitFor(elem, f.cat);
-      if (f.hasField && f.variant === 'swordfield') r.ground = 'ground-swordfield';
-      break;
-    case 'burst':
-      if (f.variant === 'cyclone') r.attack = 'burst-cyclone-phys';
-      else if (f.variant === 'bladestorm') r.attack = 'slash-phys-big';
-      else r.attack = 'burst-' + (elem || 'detonate-phys');
-      r.hit = hitFor(elem, f.cat);
-      break;
-    case 'beam':
-      r.attack = elem === 'ice' ? 'beam-ice' : 'beam-light';
-      r.hit = hitFor(elem, f.cat);
-      break;
-    case 'projectile':
-      if (f.variant === 'fireball') r.projectile = 'proj-fireball';
-      else if (f.variant === 'arcane-barrage') r.projectile = 'proj-arcane-missile';
-      else if (f.variant === 'chain') { r.attack = 'bolt-sky-lightning'; r.projectile = 'bolt-chain-lightning'; }
-      else if (elem) r.projectile = PROJ_BY_ELEM[elem];
-      else r.projectile = 'proj-arcane-missile';
-      r.hit = hitFor(elem, f.cat);
-      if (f.variant === 'nova') { r.attack = 'burst-frost-nova'; }
-      if (f.variant === 'vortex') { r.attack = 'burst-detonate-dark'; }
-      if (f.variant === 'detonate') { r.attack = elem === 'dark' ? 'burst-detonate-dark' : 'burst-detonate-phys'; }
-      if (f.variant === 'venom') { r.attack = 'burst-venom'; }
-      if (f.variant === 'venomburst') { r.attack = 'burst-venom'; }
-      if (f.variant === 'drain') { r.cast = 'cast-drain'; }
-      if (f.variant === 'flamewave') { r.projectile = 'proj-fireball'; }
-      if (f.hasField && f.variant === 'flamewave') r.ground = 'ground-field-fire';
-      if (f.cat === 'magic' && !r.cast) r.cast = 'cast-magic';
-      break;
-    case 'rain':
-      if (f.variant === 'meteor') { r.projectile = 'proj-meteor'; r.hit = 'hit-fire-explosion'; r.ground = 'mark-red'; r.attack = 'burst-fire-shockwave'; }
-      else if (f.variant === 'pillar') { r.attack = 'pillar-light'; r.hit = 'hit-light'; }
-      else if (f.variant === 'purple-thunder') { r.attack = 'bolt-sky-purple'; r.hit = 'hit-thunder-purple'; }
-      else { r.projectile = PROJ_BY_ELEM[elem] || 'proj-arcane-missile'; r.hit = hitFor(elem, f.cat); }
-      break;
-    case 'selfBuff':
-      r.cast = CAST_BY_ELEM[elem] || CAST_BY_CAT[f.cat] || 'cast-buff-phys';
-      break;
-    case 'curse':
-      r.attack = elem === 'dark' ? 'curse-dark' : 'curse-bleed';
-      r.hit = hitFor(elem, f.cat);
-      break;
-  }
-  return r;
-}
 
 /* ---------- 新技能表（SKILLS2）欄位對應：tiers[0..6]、ult 依選項 id ---------- */
 const S2 = {};
@@ -554,4 +485,4 @@ const COMBAT_DEFAULTS = {
   meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }
 };
 
-module.exports = { PRESETS: P, ELEM_THEME, skillRoles, SKILLS2_VFX: S2, STATUS_VFX: ST, COMBAT_DEFAULTS, CAST_BY_CAT, CAST_BY_ELEM, PROJ_BY_ELEM };
+module.exports = { PRESETS: P, ELEM_THEME, SKILLS2_VFX: S2, STATUS_VFX: ST, COMBAT_DEFAULTS };
