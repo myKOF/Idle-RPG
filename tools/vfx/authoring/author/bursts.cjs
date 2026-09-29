@@ -275,32 +275,6 @@ P['burst-detonate-dark'] = () => ({
   ]
 });
 
-/* ---------- burst-venom：劇毒雲霧／疫爆（殘留 2.5s 毒霧） ---------- */
-P['burst-venom'] = () => ({
-  id: 'burst-venom', duration: 2.6, layers: [
-    ring({ id: 'rim', z: 0, tint: T.poison.c2, d: 200, duration: 0.5 }),
-    flash({ tint: T.poison.c2, size: 80, duration: 0.22 }),
-    sprite({
-      id: 'cloud', asset: A.smokeT, z: 1, sizeX: 200, sizeY: 200 * FLAT, alpha: 0.6, tint: T.poison.c1,
-      blend: 'normal', duration: 2.6,
-      alphaOverLife: [[0, 0], [0.08, 1], [0.6, 0.75], [1, 0]],
-      scaleOverLife: [[0, 0.35], [0.35, 1], [1, 1.15]], rotationOverLife: C.spin(0.15)
-    }),
-    sprite({
-      id: 'cloud-b', asset: A.smokeSoft, z: 2, sizeX: 176, sizeY: 176 * FLAT, alpha: 0.45, tint: T.poison.glow,
-      blend: 'normal', duration: 2.6, delay: 0.15,
-      alphaOverLife: [[0, 0], [0.1, 1], [0.6, 0.7], [1, 0]],
-      scaleOverLife: [[0, 0.4], [0.4, 1], [1, 1.1]], rotationOverLife: C.spin(-0.12)
-    }),
-    particle({
-      id: 'bubbles', asset: A.bubble, z: 3, blend: 'add', tint: T.poison.c2,
-      burst: 5, lifetime: [1.2, 2], spawnRadius: 55, speed: [10, 35], direction: -90, spread: 120,
-      gravity: { x: 0, y: -30 }, startPx: [10, 18],
-      alphaOverLife: [[0, 0], [0.2, 0.9], [0.85, 0.7], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.15]]
-    })
-  ]
-});
-
 /* ---------- burst-fire-shockwave：烈焰衝擊／炎爆 ---------- */
 P['burst-fire-shockwave'] = () => ({
   id: 'burst-fire-shockwave', duration: 0.9, layers: [
@@ -319,32 +293,11 @@ P['burst-fire-shockwave'] = () => ({
   ]
 });
 
-/* ---------- burst-cyclone-phys：旋風斬（三道弧刃、9 rad/s） ----------
-   catalog 標 loop：目的是「屏障存在期間一直轉」，因此**不做尾段淡出**——
-   會循環的 preset 每 1.6s 淡到 0 再亮起來，看起來是閃爍而不是持續旋轉。
-   淡出交給 Runtime 停止時處理。 */
-P['burst-cyclone-phys'] = () => {
-  const SPIN = [[0, 0], [1, +(9 * 1.6).toFixed(4)]];   // 9 rad/s × 1.6s
-  const blade = (id, z, rot) => sprite({
-    id: id, asset: A.twirl01, z: z, sizeX: 128, sizeY: 128 * FLAT, rotDeg: rot,
-    alpha: 0.85, tint: T.phys.c1, blend: 'add', duration: 1.6,
-    alphaOverLife: [[0, 0.85], [0.5, 1], [1, 0.85]], rotationOverLife: SPIN
-  });
-  return {
-    id: 'burst-cyclone-phys', duration: 1.6, loop: true, layers: [
-      sprite({ id: 'haze', asset: A.glowSoft, z: 0, sizeX: 200, sizeY: 200 * FLAT, alpha: 0.25, tint: T.phys.glow, blend: 'add', duration: 1.6, alphaOverLife: [[0, 0.8], [0.5, 1], [1, 0.8]] }),
-      blade('blade-a', 1, 0),
-      blade('blade-b', 2, 120),
-      blade('blade-c', 3, 240)
-    ]
-  };
-};
-
 /* ---------- 寫出 + 驗證 ---------- */
 const ORDER = ['burst-fire', 'burst-frost-nova', 'burst-ice-blast', 'burst-frost-freeze',
   'burst-wind', 'burst-blood', 'burst-zero-infection', 'burst-rock-petrify', 'burst-gravity',
-  'burst-holy', 'burst-earth', 'burst-detonate-phys', 'burst-detonate-dark', 'burst-venom',
-  'burst-fire-shockwave', 'burst-cyclone-phys'];
+  'burst-holy', 'burst-earth', 'burst-detonate-phys', 'burst-detonate-dark',
+  'burst-fire-shockwave'];
 const written = [];
 const assets = new Set();
 for (const id of ORDER) {

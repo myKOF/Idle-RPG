@@ -8,7 +8,7 @@
    用途來源有兩個，缺一不可：
 
      1. 配置表（自動掃描）
-        config/CSV/{Skills,Skills2,Status}.csv 的特效欄位。只要任一欄填了某個
+        config/CSV/{Skills2,Status}.csv 的特效欄位。只要任一欄填了某個
         preset id，那一列的技能／狀態就算在用它。掃 CSV 而不是掃產生出來的
         js/data.js 與 js/skills2.js：表才是設計師實際在編的東西，而且欄位名稱
         就寫在表頭上，對不上時錯誤訊息指得到人看得懂的地方。
@@ -41,7 +41,6 @@ const path = require('path');
    groupColumn 只是拿來補上下文——「傷害強化」「擴散」這種階段名稱在很多
    群組裡都有，單看它認不出是誰的。 */
 const TABLES = [
-  { file: 'config/CSV/Skills.csv', nameColumn: '名稱', keyColumn: 'id', label: '技能' },
   {
     file: 'config/CSV/Skills2.csv', nameColumn: '階段名稱',
     groupColumn: '群組名稱', keyColumn: '群組ID', label: '技能群組'

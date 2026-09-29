@@ -1,15 +1,14 @@
 'use strict';
-/* fill-vfx-cells.cjs — 依 vfx-catalog.cjs 把特效欄位填進 config/CSV/{Skills,Skills2,Status}.csv
+/* fill-vfx-cells.cjs — 依 vfx-catalog.cjs 把特效欄位填進 config/CSV/{Skills2,Status}.csv
    前置：tools/config_tables.cjs --gen 已把新欄位（空白）加進 CSV。
    之後：node tools/config_tables.cjs --apply --write 把 CSV 回寫成 JS 字面值。
-   ⚠️ 會覆寫三張表的特效欄位（依目錄重填）；使用者已手動改過的格子會被蓋掉——
+   ⚠️ 會覆寫兩張表的特效欄位（依目錄重填）；使用者已手動改過的格子會被蓋掉——
       正式上線後若只想補新列，改用手填或先備份。 */
 const fs = require('fs');
 const path = require('path');
 const REPO = path.resolve(__dirname, '..', '..', '..');
 const SCR = __dirname;
 const cat = require(path.join(SCR, 'vfx-catalog.cjs'));
-const facts = JSON.parse(fs.readFileSync(path.join(SCR, 'skills-vfx-facts.json'), 'utf8'));
 
 function csvParse(text) {
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
@@ -35,28 +34,6 @@ const STATUS_COLS = [['施加特效', 'apply'], ['持續特效', 'aura'], ['作�
 const presetIds = new Set(Object.keys(cat.PRESETS));
 const referenced = new Set();
 function put(row, idx, id) { if (!id) { row[idx] = ''; return; } if (!presetIds.has(id)) throw new Error('目錄裡沒有這個 preset：' + id); referenced.add(id); row[idx] = id; }
-
-/* ---- Skills ---- */
-{
-  const p = path.join(REPO, 'config/CSV/Skills.csv');
-  const rows = csvParse(fs.readFileSync(p, 'utf8'));
-  const h = rows[0]; const idI = colIdx(h, 'id'); const catI = colIdx(h, '系統分類');
-  const cols = SKILL_COLS.map(c => [colIdx(h, c[0]), c[1]]);
-  const byId = {}; facts.forEach(f => { byId[f.id] = f; });
-  let filled = 0;
-  for (let r = 1; r < rows.length; r++) {
-    const row = rows[r]; const id = (row[idI] || '').trim(); if (!id) continue;
-    while (row.length < h.length) row.push('');
-    if ((row[catI] || '').trim() === 'potential') continue;
-    const f = byId[id]; if (!f) { console.warn('Skills：facts 沒有', id); continue; }
-    if (f.cat === 'passive') continue;               // 被動技能不會施放
-    const roles = cat.skillRoles(f);
-    cols.forEach(c => put(row, c[0], roles[c[1]] || ''));
-    if (Object.keys(roles).length) filled++;
-  }
-  fs.writeFileSync(p, csvStringify(rows), 'utf8');
-  console.log('Skills.csv 填了', filled, '列');
-}
 
 /* ---- Skills2 ---- */
 {

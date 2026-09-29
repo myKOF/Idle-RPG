@@ -65,13 +65,6 @@ P['cast-buff-dark'] = () => ({
     motes: { asset: A.smokeDark, blend: 'normal', startPx: [14, 24], speed: [20, 45], alphaOverLife: [[0, 0], [0.25, 0.6], [1, 0]] }
   })
 });
-P['cast-buff-poison'] = () => ({
-  id: 'cast-buff-poison', duration: CAST_DUR,
-  layers: cast({
-    tint: '#4caf2b', mote: '#d8ff8a',
-    motes: { asset: A.bubble, blend: 'normal', startPx: [7, 13], speed: [20, 45], gravity: { x: 0, y: -25 } }
-  })
-});
 
 /* ---------- cast-magic：手部魔法圈閃光 ---------- */
 P['cast-magic'] = () => ({
@@ -93,87 +86,9 @@ P['cast-magic'] = () => ({
   ]
 });
 
-/* ---------- cast-drain：汲取回流（粒子被吸向中心） ---------- */
-P['cast-drain'] = () => ({
-  id: 'cast-drain', duration: 0.6, layers: [
-    sprite({
-      id: 'glow', asset: A.glowSoft, z: 0, sizeX: 56, sizeY: 70, y: -30, alpha: 0.6, tint: '#4ade80', blend: 'add',
-      duration: 0.5, alphaOverLife: [[0, 0], [0.35, 0.8], [1, 0]], scaleOverLife: [[0, 0.6], [0.6, 1], [1, 0.9]]
-    }),
-    /* 負速度＝朝生成點內縮（Core 的 speed 允許負值＝反向） */
-    particle({
-      id: 'inflow', asset: A.dot, z: 1, blend: 'add', tint: '#6f2da8',
-      burst: 14, lifetime: [0.35, 0.55], spawnRadius: 54, speed: [-150, -100], direction: 0, spread: 360,
-      startPx: [5, 9], y: -30,
-      alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.35]]
-    }),
-    particle({
-      id: 'inflow-green', asset: A.dot, z: 2, blend: 'add', tint: '#4ade80',
-      burst: 10, lifetime: [0.3, 0.5], spawnRadius: 40, speed: [-130, -90], direction: 0, spread: 360,
-      startPx: [4, 8], y: -30, delay: 0.08,
-      alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.35]]
-    }),
-    sprite({
-      id: 'flash', asset: A.flash, z: 3, size: 40, y: -30, alpha: 1, tint: '#bbf7d0', blend: 'add',
-      delay: 0.3, duration: 0.24, alphaOverLife: C.pop, scaleOverLife: [[0, 0.5], [1, 1.2]]
-    })
-  ]
-});
-
-/* ---- 詛咒共用：符號緩慢上升（burst:1 粒子）＋光暈 ---- */
-function curse(o) {
-  return [
-    sprite({
-      id: 'glow', asset: A.glowSoft, z: 0, size: 52, alpha: 0.4, tint: o.tint, blend: 'add',
-      duration: 1, alphaOverLife: CURSE_A
-    }),
-    sprite({
-      id: 'ring', asset: o.ring || A.runeSpiky, z: 1, sizeX: 48, sizeY: 48, alpha: 0.85, tint: o.tint,
-      blend: 'add', duration: 1, alphaOverLife: CURSE_A, rotationOverLife: C.spin(o.spin === undefined ? 0.5 : o.spin)
-    }),
-    particle({
-      id: 'sigil', asset: o.sigil, z: 2, blend: o.sigilBlend || 'add', tint: o.sigilTint || o.tint,
-      burst: 1, lifetime: [0.9, 0.9], spawnRadius: 2, speed: [16, 16], direction: -90, spread: 0,
-      startPx: [o.sigilPx || 22, o.sigilPx || 22],
-      alphaOverLife: CURSE_A, scaleOverLife: [[0, 0.7], [0.3, 1], [1, 0.9]]
-    })
-  ].concat(o.extra || []);
-}
-
-P['curse-dark'] = () => ({
-  id: 'curse-dark', duration: 1,
-  layers: curse({ tint: '#c084fc', sigil: AT.magicOcta, sigilTint: '#1a0c2e', sigilBlend: 'normal', sigilPx: 20, spin: 0.6 })
-});
-
-P['curse-bleed'] = () => ({
-  id: 'curse-bleed', duration: 1,
-  layers: curse({
-    tint: T.bleed.c1, ring: A.ringSegments4, sigil: A.lines1, sigilPx: 18, spin: 0.3,
-    extra: [particle({
-      id: 'drops', asset: AT.dot, z: 3, blend: 'normal', tint: T.bleed.c1,
-      burst: 4, lifetime: [0.4, 0.6], spawnRadius: 14, speed: [20, 50], direction: 90, spread: 80,
-      gravity: { x: 0, y: 380 }, startPx: [4, 7],
-      alphaOverLife: [[0, 1], [0.6, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.7]]
-    })]
-  })
-});
-
-P['curse-poison'] = () => ({
-  id: 'curse-poison', duration: 1,
-  layers: curse({
-    tint: T.poison.c1, ring: A.biohazard, sigil: A.bubble, sigilPx: 18, spin: 0.4,
-    extra: [particle({
-      id: 'bubbles', asset: A.bubble, z: 3, blend: 'normal', tint: T.poison.c1,
-      burst: 4, lifetime: [0.5, 0.85], spawnRadius: 14, speed: [15, 40], direction: -90, spread: 90,
-      gravity: { x: 0, y: -40 }, startPx: [6, 11],
-      alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.1]]
-    })]
-  })
-});
-
 /* ---------- 寫出 + 驗證 ---------- */
 const ORDER = ['cast-buff-def', 'cast-buff-phys', 'cast-buff-special', 'cast-buff-light',
-  'cast-buff-dark', 'cast-buff-poison', 'cast-magic', 'cast-drain',
+  'cast-buff-dark', 'cast-magic',
   'curse-dark', 'curse-bleed', 'curse-poison'];
 const written = [];
 const assets = new Set();

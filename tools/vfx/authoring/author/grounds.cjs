@@ -350,40 +350,6 @@ P['ground-domain-ice'] = () => ({
   layers: domain({ fill: '#f2fbff', edge: '#4da6ff', inner: '#79d8ff', motes: { asset: A.star08, startPx: [6, 12] } })
 });
 
-/* =========================== 舊技能地板 =========================== */
-P['ground-field-fire'] = () => ({
-  id: 'ground-field-fire', duration: 1.6, loop: true, layers: [
-    disc({ id: 'fill', asset: A.discB, z: 0, d: 200, alpha: 0.14, tint: '#e63924', dur: 1.6, alphaOverLife: LOOP_A(0.14, 0.2) }),
-    disc({ id: 'edge', asset: A.ringThin, z: 1, d: 200, alpha: 0.7, tint: '#ffd447', dur: 1.6, alphaOverLife: LOOP_A(0.65, 0.85) }),
-    particle({
-      id: 'flames', asset: A.flame05, z: 2, blend: 'add', tint: '#e63924',
-      rate: 12, lifetime: [0.5, 0.9], spawnRadius: 92, speed: [30, 70], direction: -90, spread: 40,
-      gravity: { x: 0, y: -80 }, startPx: [14, 26],
-      alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]], scaleOverLife: [[0, 0.8], [1, 0.4]]
-    }),
-    particle({
-      id: 'sparks', asset: A.dot, z: 3, blend: 'add', tint: '#ffd447',
-      rate: 10, lifetime: [0.4, 0.7], spawnRadius: 92, speed: [40, 90], direction: -90, spread: 50,
-      gravity: { x: 0, y: -70 }, startPx: [3, 6],
-      alphaOverLife: [[0, 0], [0.2, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 0.35]]
-    })
-  ]
-});
-
-P['ground-swordfield'] = () => ({
-  id: 'ground-swordfield', duration: 5, loop: true, layers: [
-    disc({ id: 'fill', asset: A.discB, z: 0, d: 200, alpha: 0.12, tint: T.phys.c1, dur: 5, alphaOverLife: LOOP_A(0.12, 0.16) }),
-    disc({ id: 'dashes', asset: A.reticleDashed, z: 1, d: 200, alpha: 0.6, tint: T.phys.c1, dur: 5, alphaOverLife: LOOP_A(0.55, 0.75), rotationOverLife: C.spin(1) }),
-    disc({ id: 'edge', asset: A.ringA, z: 2, d: 200, alpha: 0.5, tint: T.phys.c2, dur: 5, alphaOverLife: LOOP_A(0.45, 0.6) }),
-    particle({
-      id: 'blades', asset: A.trace02, z: 3, blend: 'add', tint: T.phys.c2,
-      rate: 8, lifetime: [0.8, 1.3], spawnRadius: 92, speed: [25, 55], direction: -90, spread: 25,
-      gravity: { x: 0, y: -30 }, startPx: [16, 30],
-      alphaOverLife: [[0, 0], [0.2, 0.85], [1, 0]], scaleOverLife: [[0, 0.7], [1, 1.1]]
-    })
-  ]
-});
-
 P['ground-cyclone-avatar'] = () => {
   const SPIN = [[0, 0], [1, +(9 * 1.6).toFixed(4)]];
   const blade = (id, z, rot) => sprite({
@@ -477,7 +443,7 @@ const ORDER = ['ground-mire', 'ground-mire-lava', 'ground-mire-poison', 'ground-
   'ground-orbit-ring-fire', 'ground-orbit-ring-lightning', 'ground-orbit-ring-wind',
   'ground-storm-barrier', 'ground-storm-god', 'ground-storm-rip',
   'ground-domain-fire', 'ground-domain-earth', 'ground-domain-ice',
-  'ground-field-fire', 'ground-swordfield', 'ground-cyclone-avatar',
+  'ground-cyclone-avatar',
   'aura-rock-armor', 'aura-bloodrage', 'aura-lightning-relay',
   'mark-red', 'mark-blue', 'ground-starfall-shadow'];
 const written = [];

@@ -6,7 +6,7 @@ VFX Editor 的 Preset 下拉會在每個 id 後面標出「它被用在哪裡」
 用途來源有兩個：
 
 1. **配置表**（自動掃描，不必維護）
-   `config/CSV/Skills.csv`、`Skills2.csv`、`Status.csv` 的特效欄位。
+   `config/CSV/Skills2.csv`、`Status.csv` 的特效欄位。
    只要任一欄填了某個 preset id，就算那一列的技能／狀態有在用它。
 2. **本檔**（人工維護）
    **程式裡寫死的** preset：普攻、天罰、敵方出手這類不屬於任何一列技能的固定對應
@@ -49,11 +49,9 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | `bolt-sky-lightning` | 天罰 | 神鑄特效【天罰】追加的落雷（`js/combat.js`） |
 | `bolt-sky-lightning` | 雷霆過載 | 潛力技能【雷霆過載】的本體雷擊（`js/potential.js`） |
 | `bolt-chain-lightning` | 雷霆過載 | 潛力技能【雷霆過載】在敵人之間跳躍的電弧 |
-| `bolt-chain-lightning` | 閃電飛越 | 傳奇特效【閃電飛越】施放魔法技能時觸發的連鎖閃電（`js/legendary.js` 的 `legendaryScheduleChain`） |
-| `bolt-chain-lightning` | 迅雷穿刺 | 傳奇特效【迅雷穿刺】突刺命中時附加的連鎖閃電（`js/skills2.js` 走同一條 `legendaryScheduleChain`） |
+| `bolt-chain-lightning` | 迅雷穿刺 | 傳奇特效【迅雷穿刺】突刺命中時附加的連鎖閃電（`js/skills2.js` 呼叫 `js/legendary.js` 的 `legendaryScheduleChain`） |
 | `hit-lightning` | 天罰 | 天罰落雷的命中爆點 |
 | `hit-lightning` | 雷霆過載 | 潛力技能【雷霆過載】的命中爆點 |
-| `hit-lightning` | 閃電飛越 | 傳奇特效【閃電飛越】連鎖的命中爆點 |
 | `hit-lightning` | 迅雷穿刺 | 傳奇特效【迅雷穿刺】連鎖的命中爆點 |
 | `proj-meteor-small` | 小隕石 | 由 Runtime 依 variant 取用的小隕石投射物 |
 | `hit-fire-explosion` | 小隕石 | 小隕石落地的爆點 |
@@ -84,7 +82,7 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 `VFX_COMBAT_DEFAULTS`（2026-09-03 建立，目錄來源是 `tools/vfx/authoring/vfx-catalog.cjs` 的
 `COMBAT_DEFAULTS`）。各組是誰在用：`basicAttack` 在 `js/combat.js`（普攻）、`smite` 在
 `js/combat.js`（神鑄特效天罰）、`chainLightning` 在 `js/potential.js`（雷霆過載）、
-`legendaryLightningChain` 在 `js/legendary.js`、敵方的幾組經由 `vfxEnemyRoles()` 在 `js/combat.js`、
+`legendaryLightningChain` 在 `js/legendary.js`（傳奇【迅雷穿刺】的連鎖閃電）、敵方的幾組經由 `vfxEnemyRoles()` 在 `js/combat.js`、
 `meteorSmall` 由 Runtime 依 variant 取用。
 
 ### 更新紀錄
@@ -106,7 +104,7 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 - **2026-09-29**：使用者回報下拉上標著「傳說連鎖閃電」，但遊戲裡查遍特效也沒有這個名字——
   那不是任何東西的名稱，是當初在文件上取的描述。實際在用的是兩個**傳奇特效**：
   【閃電飛越】（施放魔法技能時觸發）與【迅雷穿刺】（突刺命中時附加），兩者走同一條
-  `legendaryScheduleChain`。使用者要求「用在傳說特效就顯示傳說特效的名稱」，因此
+  `legendaryScheduleChain`（2026-09-29 舊版技能移除後【閃電飛越】已刪，只剩【迅雷穿刺】）。使用者要求「用在傳說特效就顯示傳說特效的名稱」，因此
   `bolt-sky-lightning`／`bolt-chain-lightning`／`hit-lightning` 三列拆成一個使用者一列，
   標籤一律採 `Equipment_Affix.csv`（傳奇／神鑄特效）與 `Skills.csv`（潛力技能）上的名稱。
   由 USAGE-17 守住：「用在哪裡」講了是哪一種來源，標籤就必須是那張表上的名稱本身，

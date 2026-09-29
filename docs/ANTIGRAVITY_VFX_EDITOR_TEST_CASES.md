@@ -287,8 +287,8 @@ Preset 切換已經不是原生 `<select>`，是搜尋框 ＋ 自繪清單。
 - 步驟 3：只剩雷球群組用到的那幾份（`lightning-orb-field`、`orb-thunder`、
   `proj-thunder-orb-fall`、`ground-orbit-ring-lightning`、`mark-blue`）。
   **打技能名找得到 preset 是這個功能的重點**，不只比對 id。
-- 步驟 4：`beam-ice` 與 `beam-light`。
-- 步驟 5：兩個關鍵字都要命中才留下（`ground-field-fire` 這類），
+- 步驟 4：`beam-light`（以及仍存在的 `bolt-sky-lightning`）。
+- 步驟 5：兩個關鍵字都要命中才留下（`ground-domain-fire` 這類），
   不是只比對其中一個。
 - 步驟 6：顯示「沒有符合的 preset」，不是空白一片。
 - 步驟 7：高亮在清單內循環（最後一筆再按 ↓ 回到第一筆）；Enter 開啟高亮那一份。
