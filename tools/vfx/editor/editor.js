@@ -705,6 +705,7 @@
       anchorKey: null,          // Shift 範圍選取的起點
       layout: null,             // vfx/layouts/<id>.json 的內容（Editor 專用）
       layoutRevision: 0,
+      layoutDiskText: null,
       collapsed: {},            // groupId -> true，只存 localStorage
       dragKeys: null,           // 拖曳中的 key 陣列
       selectedLayerId: null,
@@ -1056,6 +1057,20 @@
   };
 
   /* ---------------- 資料載入 ---------------- */
+
+  function guardedWrite(url, options, base, peer, target) {
+    return VFXSaveGuard.headers(base,peer).then(function(headers){
+      if(target){headers['X-VFX-Target-Base']=target[0];headers['X-VFX-Target-Layout']=target[1];}
+      options.headers=Object.assign({},options.headers,headers);
+      return fetch(url,options);
+    }).then(function(response){
+      if(response.status===409)VFXSaveGuard.notice('儲存已阻止：程式或檔案已更新，請先備份再重新載入。');
+      return response;
+    });
+  }
+  function diskTexts(id) {
+    return Promise.all([fetchJson(presetUrl(id)).then(function(p){return VFXCore.serialisePreset(p);}),loadLayout(id).then(function(l){if(l.error)throw new Error(l.error);return l.diskText;})]);
+  }
 
   function fetchJson(url) {
     return fetch(url).then(function (r) {
@@ -2784,7 +2799,7 @@
      退回時不覆寫壞掉的檔案：那份檔案是使用者的資料，要留著給人修。 */
   function loadLayout(presetId) {
     return fetch(layoutUrl(presetId)).then(function (r) {
-      if (r.status === 404) return { layout: VFXLayoutSchema.emptyLayout(presetId) };
+      if (r.status === 404) return { layout: VFXLayoutSchema.emptyLayout(presetId), diskText: null };
       if (!r.ok) throw new Error("layout HTTP " + r.status);
       return r.json().then(function (raw) { return { raw: raw }; });
     }).then(function (res) {
@@ -2806,7 +2821,7 @@
           error: "分組檔不合法，已忽略（檔案未被覆寫）：\n- " + check.errors.join("\n- ")
         };
       }
-      return { layout: raw };
+      return { layout: raw, diskText: VFXLayoutSchema.serialiseLayout(raw) };
     }).catch(function (e) {
       return {
         layout: VFXLayoutSchema.emptyLayout(presetId),
@@ -2861,13 +2876,15 @@
     /* 送出當下的版本號。使用者不會被擋著不能編輯——只是這次存檔不能
        替後來的改動背書。 */
     var sentAt = state.layoutRevision || 0;
-    return fetch(layoutUrl(state.preset.id), {
+    var sentText=VFXLayoutSchema.serialiseLayout(state.layout);
+    return guardedWrite(layoutUrl(state.preset.id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: VFXLayoutSchema.serialiseLayout(state.layout)
-    }).then(bindPane(function (r) {
+      body: sentText
+    },state.layoutDiskText,state.savedText).then(bindPane(function (r) {
       return r.json().then(bindPane(function (body) {
         if (!r.ok || !body.ok) throw new Error(body.error || ("HTTP " + r.status));
+        state.layoutDiskText=sentText;
         /* 只有在送出之後沒有再改過時，才把基準線推到這次存的內容上。
            中途又改了的話，那些改動仍然算未存檔。 */
         if ((state.layoutRevision || 0) === sentAt) {
@@ -3212,7 +3229,7 @@
     if (p.deformation) {
       field(defBox,['deformation','axis'],{label:'沿哪個軸彎曲',options:['x','y']},p.deformation.axis);
       ['start','end'].forEach(function (key) {field(defBox,['deformation',key],{label:key+'（px）'},p.deformation[key]);});
-      field(defBox,['deformation','mirror'],{label:'每次播放隨機鏡射',default:false},p.deformation.mirror);
+      field(defBox,['deformation','mirror'],{label:'隨機鏡射（出生／形狀重抽）',default:false},p.deformation.mirror);
       Object.keys(VFXCore.DEFORMATION_FIELDS).forEach(function (key) {
         field(defBox,['deformation',key],VFXCore.DEFORMATION_FIELDS[key],VFXCore.deformationValue(p.deformation,key));
       });
@@ -4771,11 +4788,11 @@
     syncSaveButton();
     setSaveStatus('存檔中…', '');
     var ok = false;
-    return fetch(presetUrl(state.preset.id), {
+    return guardedWrite(presetUrl(state.preset.id), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: text
-    }).then(bindPane(function (r) {
+    },state.savedText,state.layoutDiskText).then(bindPane(function (r) {
       return r.json().catch(function () {
         throw new Error('伺服器回應不是 JSON（HTTP ' + r.status + '）');
       }).then(bindPane(function (body) {
@@ -4789,6 +4806,7 @@
              那一條會是 true；連線層的錯誤（伺服器沒回應）拿不到 body，
              留在 undefined，下面當成「未寫入」——那也是事實。 */
           err.written = body.written === true;
+          if(err.written)state.savedText=text;
           throw err;
         }
         return body;
@@ -4954,7 +4972,7 @@
             return;
           }
         }
-        return commitSaveAs(newId);
+        return (ids.indexOf(newId)>=0?diskTexts(newId):Promise.resolve([null,null])).then(bindPane(function(base){return commitSaveAs(newId,base);}));
       })).catch(bindPane(function (e) {
         /* 清單抓不到就不存：沒有那份清單就無法保證不會蓋到別人的檔案，
            而「不會改到舊特效」正是這個功能存在的理由。 */
@@ -4973,12 +4991,14 @@
     return VFXLayoutSchema.renameRootGroup(state.layout, newId);
   }
 
-  function commitSaveAs(newId) {
+  function commitSaveAs(newId, base) {
+    base=base||[null,null];
     var prev = {
       id: state.preset.id,
       source: state.sourcePresetId,
       savedText: state.savedText,
       savedLayoutText: state.savedLayoutText,
+      layoutDiskText: state.layoutDiskText,
       layoutPresetId: state.layout ? state.layout.presetId : null,
       isNew: state.isNew
     };
@@ -4994,7 +5014,8 @@
     var prevGroup = renameRootGroup(newId);
     /* 基準線先歸零：新檔案還不存在，這份內容當然算未存檔。
        成功的話 savePreset 會把它設成剛寫出去的文字。 */
-    state.savedText = null;
+    state.savedText = base[0];
+    state.layoutDiskText = base[1];
 
     return savePreset().then(bindPane(function (ok) {
       if (!ok) {
@@ -5002,6 +5023,7 @@
         state.sourcePresetId = prev.source;
         state.savedText = prev.savedText;
         state.savedLayoutText = prev.savedLayoutText;
+        state.layoutDiskText = prev.layoutDiskText;
         state.isNew = prev.isNew;
         if (state.layout) {
           state.layout.presetId = prev.layoutPresetId;
@@ -5179,12 +5201,12 @@
 
   /* 回傳 Promise<伺服器回應>；失敗時丟出的錯誤帶著伺服器給的 problems／incomplete。
      fromServer：有收到伺服器的回應。沒有的話（連線斷了）不知道伺服器做到哪一步，不能說「沒變動」。 */
-  function renameRequest(payload) {
-    return fetch(RENAME_URL, {
+  function renameRequest(payload, target) {
+    return guardedWrite(RENAME_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }).then(function (r) {
+    },state.savedText,state.layoutDiskText,target).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (body) {
         if (r.ok && body.ok) return body;
         /* 舊伺服器對不認得的 POST 一律回 405 */
@@ -5268,7 +5290,7 @@
     /* 分組檔還在寫的話先等它：伺服器搬的是磁碟上的分組檔，晚到的舊名字寫入會在改名後
        再長出一份舊名字的分組檔 */
     return Promise.resolve(state.layoutSave).then(bindPane(function () {
-      return renameRequest({ from: from, to: to, overwrite: overwrite });
+      return (overwrite?diskTexts(to).then(function(texts){return Promise.all(texts.map(VFXSaveGuard.digest));}):Promise.resolve(null)).then(bindPane(function(target){return renameRequest({ from: from, to: to, overwrite: overwrite },target);}));
     })).then(bindPane(function (body) {
       adoptRename(from, to, body);
       var notes = [];
@@ -5367,6 +5389,7 @@
     saveCollapsed();
 
     state.savedText = body.presetText;
+    state.layoutDiskText=body.layoutText==null?null:body.layoutText;
     state.savedLayoutText = body.layoutText !== null && body.layoutText !== undefined
       ? body.layoutText
       : VFXLayoutSchema.serialiseLayout(VFXLayoutSchema.emptyLayout(to));
@@ -5927,6 +5950,7 @@
         var naming = adoptFileName(state.preset, id + '.json');
         state.sourcePresetId = id;
         state.layout = res[1].layout;
+        state.layoutDiskText = res[1].diskText;
         state.layoutRevision = 0;
         /* 分組的「已存檔基準」。載不到分組檔時基準就是空分組，
            所以一份沒有分組的 preset 打開來不會顯示未存檔。 */
@@ -6159,6 +6183,7 @@
     var need = [
       ['PIXI', 'js/vendor/pixi.min.js'],
       ['VFXCore', 'js/vfx-core.js'],
+      ['VFXSaveGuard', 'tools/vfx/editor/save-guard.js'],
       ['VFXPixiBackend', 'js/vfx-pixi-backend.js'],
       ['VFXPresetIdPolicy', 'tools/vfx/editor/preset-id-policy.js'],
       ['VFXViewModel', 'tools/vfx/editor/view-model.js'],
@@ -6313,6 +6338,12 @@
       e.returnValue = '';          // 舊版瀏覽器要這個才會跳
     });
     $('btn-del-layer').onclick = deleteSelection;
+    VFXSaveGuard.start(function(){
+      var docs=panes.filter(function(p){return p.doc.preset;}).map(function(p){return {preset:p.doc.preset,layout:p.doc.layout};});
+      var url=URL.createObjectURL(new Blob([JSON.stringify({savedAt:new Date().toISOString(),documents:docs},null,2)],{type:'application/json'}));
+      var a=document.createElement('a');a.href=url;a.download='vfx-editor-backup-'+Date.now()+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    });
+
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

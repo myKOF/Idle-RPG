@@ -1,14 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜VFX 舊分頁防覆寫與快取補齊（VFX-STALE-GUARD-20260929）
+
+- Owner：Codex；Done。Claude已合併，預檢乾淨。補前輪Core／backend／Runtime快取，編輯器更新提示、未存內容備份與伺服器條件寫入（Preset／layout／改名）。
+- 允許：VFX runtime版本、頁面、editor/server及guard模組、相關測試、文件。禁止改技能／數值／素材外觀。依賴已完成，單人處理；驗收舊分頁、外部修改、正常儲存、新檔競爭與編輯資料保留。HTTP／VM測試通過；實機Ctrl+S拒絕過期分頁、未存值保留，詳見 docs/skill-tests/20260929-vfx-editor-stale-guard.md。
+
 ## Codex｜雷鏈完整形狀重抽（CHAIN-SHAPE-REFRESH-20260929）
 
-- Owner：Codex；核心完成，整體交付待Claude合併後補快取與編輯器防護。出生與飛行共用形狀生成，按頻率重抽鏡像、寬度、相位；不把鏡像補間穿越零，不改飛行路徑與命中。允許Core、必要後端、測試、文件及無衝突快取。
+- Owner：Codex；Done；快取與編輯器防護已於VFX-STALE-GUARD-20260929補齊。出生與飛行共用形狀生成，按頻率重抽鏡像、寬度、相位；不把鏡像補間穿越零，不改飛行路徑與命中。允許Core、必要後端、測試、文件及無衝突快取。
 - 前置：既有動態網格；待Claude合併後才可修改editor.js、index.html、vfx-runtime.js（使用者明確要求）。防覆寫與重啟提示保留為必要待辦，不假裝已完成。禁止修改配置表、技能數值及使用者素材。
 - 驗收：出生／飛行同生成器、鏡像與寬度重抽、無零寬度、圖層同步、同seed/FPS可重現、暫停及回收重用、GPU更新；177項全過、Build 404檔通過。詳見 docs/skill-tests/20260929-chain-shape-refresh.md；未實機驗收，不合併推送。
 
 ## Codex｜旋轉雷鏈動態網格修正（CHAIN-WAVE-MESH-20260929）
 
-- Owner：Codex；程式／素材完成，快取更新待 Claude 合併。旋轉 PNG 的縱向取樣改依實際矩陣，裁切重新分配可見 UV，保留85頂點。金色補回遺失的動態欄位，金紫幅度40px、12次／秒，保留使用者尺寸。
+- Owner：Codex；Done；快取更新已於VFX-STALE-GUARD-20260929補齊。旋轉 PNG 的縱向取樣改依實際矩陣，裁切重新分配可見 UV，保留85頂點。金色補回遺失的動態欄位，金紫幅度40px、12次／秒，保留使用者尺寸。
 - 175項測試全過，Build 404檔通過；素材庫 `de2df11`。瀏覽器驗證頁無法連線，未聲稱完成實機觀察。
 - index.html／js/vfx-runtime.js 預檢發現 Claude 修改；使用者明確要求等 Claude 改好並合併後再改，因此兩檔未動。剩餘步驟、修改及未修改檔案見 `docs/skill-tests/20260929-chain-wave-mesh.md`。
 

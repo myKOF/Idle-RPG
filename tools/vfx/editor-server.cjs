@@ -49,6 +49,7 @@ const libraryRoot = require('./vfx-library-root.cjs');
    伺服器端不另外實作 schema 檢查，否則「Editor 存得進去、Runtime 載不起來」
    的分歧遲早會出現。 */
 const VFXCore = require('../../js/vfx-core.js');
+const saveGuard = require('./editor-guard.cjs');
 /* 「這個 id 能不能當檔名」只有一份定義，Editor 端載入的是同一個檔，
    否則遲早會變成 Editor 顯示可以存、伺服器回 400。 */
 const presetIdPolicy = require('./editor/preset-id-policy.js');
@@ -81,6 +82,7 @@ const saveAsDialog = require('./save-as-dialog.cjs');
    久了就沒人理。所以啟動當下把內容雜湊起來，之後比對雜湊。 */
 const RESTART_REQUIRED_FILES = [
   __filename,
+  path.join(__dirname, 'editor-guard.cjs'),
   path.join(__dirname, 'preset-usage.cjs'),
   /* 縮圖：preset-thumbs 與它帶進來的離線出圖三支 */
   path.join(__dirname, 'preset-thumbs.cjs'),
@@ -593,6 +595,11 @@ function handleSaveRequest(ctx, req, res, presetId, kind) {
     if (aborted) return;
     let result;
     try {
+      const target=path.join(ctx.repoRoot,kind==='layout'?'vfx/layouts':PRESETS_DIR_REL,presetId+SAVE_SUFFIX);
+      const linkProblem=findLinkOnPath(ctx.repoRoot,target)||findLinkOnPath(ctx.repoRoot,path.join(ctx.repoRoot,'vfx',kind==='layout'?'presets':'layouts',presetId+SAVE_SUFFIX));
+      if(linkProblem)return sendJson(res,linkProblem.startsWith('無法檢查')?500:403,{ok:false,error:linkProblem,written:false});
+      const problem=staleServerFiles().length?'伺服器程式已更新，請下載編輯備份後重新啟動VFX編輯器伺服器。':saveGuard.check(ctx.repoRoot,req.headers,presetId,kind);
+      if(problem)return sendJson(res,409,{ok:false,error:problem,written:false});
       const body = Buffer.concat(chunks).toString('utf8');
       result = kind === 'layout'
         ? saveLayoutText(ctx, presetId, body)
@@ -1072,6 +1079,10 @@ function handleRenamePreset(ctx, req, res) {
     if (!presetIdPolicy.isWritablePresetId(from)) {
       return sendJson(res, 400, { ok: false, error: '要改名的特效名稱不合法：' + String(from) });
     }
+    const sourceLink=findLinkOnPath(ctx.repoRoot,path.join(ctx.repoRoot,PRESETS_DIR_REL,from+SAVE_SUFFIX))||findLinkOnPath(ctx.repoRoot,path.join(ctx.repoRoot,'vfx/layouts',from+SAVE_SUFFIX));
+    if(sourceLink)return sendJson(res,403,{ok:false,error:sourceLink});
+    const guardProblem=staleServerFiles().length?'伺服器已更新，請先下載備份再重新啟動。':saveGuard.check(ctx.repoRoot,req.headers,from,'preset');
+    if(guardProblem)return sendJson(res,409,{ok:false,error:guardProblem,written:false});
     const to = body.to;
     const toProblem = typeof to === 'string' ? presetIdPolicy.presetIdProblem(to) : '缺少新名字';
 
@@ -1079,7 +1090,10 @@ function handleRenamePreset(ctx, req, res) {
     if (toProblem) result = { status: 400, error: '新名字不能用：' + toProblem };
     else if (to === from) result = { status: 400, error: '新名字與目前的名字相同，沒有要改的' };
     else {
-      try { result = renamePresetFiles(ctx, from, to, { overwrite: body.overwrite === true }); } catch (e) {
+      try {
+        if(body.overwrite && (req.headers['x-vfx-target-base']!==saveGuard.revision(ctx.repoRoot,to,'preset') || req.headers['x-vfx-target-layout']!==saveGuard.revision(ctx.repoRoot,to,'layout')))
+          return sendJson(res,409,{ok:false,error:'改名目標已變更，未覆寫，請重新確認。'});
+        result = renamePresetFiles(ctx, from, to, { overwrite: body.overwrite === true }); } catch (e) {
         /* 會丟到這裡的只有動檔之前的檢查（動檔那段自己接住），所以檔案確實沒變 */
         result = { status: 500, error: '改名前的檢查發生未預期錯誤，未改名：' + (e && e.message || e) };
       }
@@ -1151,6 +1165,11 @@ function createServer(ctx) {
        同一支伺服器與同一個連接埠範圍，只問「這個埠有沒有人回應」的話，
        從 claude 按下啟動卻開到 develop 的 Editor，改了半天才發現改錯副本。
        啟動器用這個端點確認身分，所以必須含 repo 路徑，不能只回專案名稱。 */
+    if(pathname==='/__vfx_version' || pathname==='/__vfx_version.js'){
+      const info={version:saveGuard.version(ctx.repoRoot),stale:staleServerFiles().length>0};
+      if(pathname.endsWith('.js')){res.writeHead(200,{'Content-Type':'application/javascript','Cache-Control':'no-store'});return res.end('window.VFX_EDITOR_VERSION='+JSON.stringify(info.version)+';');}
+      return sendJson(res,200,info);
+    }
     if (pathname === WHOAMI_PATH) {
       /* 第二行是給啟動器看的：它掃到一個「是本副本的」伺服器就會直接沿用，
          而沿用一個程式已經過期的行程正是 2026-09-09 那次半套更新的成因

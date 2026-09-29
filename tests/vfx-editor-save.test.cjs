@@ -163,8 +163,9 @@ function request(port, opts, body) {
   });
 }
 
-function put(port, urlPath, body, extraHeaders) {
-  const headers = { 'Content-Type': 'application/json' };
+async function put(port, urlPath, body, extraHeaders) {
+  const match=/^\/vfx\/(presets|layouts)\/([a-z0-9-]+)\.json$/.exec(urlPath);
+  const headers = Object.assign({ 'Content-Type': 'application/json' },match?await require('./helpers/vfx-write-headers.cjs')(port,match[2],match[1]==='layouts'?'layout':'preset'):{});
   Object.keys(extraHeaders || {}).forEach(function (k) { headers[k] = extraHeaders[k]; });
   if (body !== undefined && body !== null && headers['Content-Length'] === undefined) {
     headers['Content-Length'] = Buffer.byteLength(body);
