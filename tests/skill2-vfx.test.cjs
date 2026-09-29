@@ -187,7 +187,6 @@ test('施法距離判定收斂在 skills2CanReach，武技仍是近戰、魔法�
 
 test('新版技能的特殊性質都有明確 VFX variant', () => {
   const skills2 = read('js/skills2.js');
-  const skills = read('js/skills.js');
   const vfx = read('js/vfx.js');
   const renderer = read('js/battle-renderer.js');
   const css = read('css/style.css');
@@ -208,8 +207,9 @@ test('新版技能的特殊性質都有明確 VFX variant', () => {
   assert.match(skills2, /vfxId: 'sg-ground-' \+ \(\+\+SKILL2_RT\.groundSeq\)/);
   assert.match(skills2, /function sgFireballProjectileHit[\s\S]*sgEmitVfx\('fireball', \[target\], projectile.floatSel, \{[\s\S]*variant: 'fire-explosion'/);
   assert.match(skills2, /var fireballPlan = meteor \? null : sgFireballProjectilePlan\(primary\)/);
-  assert.match(skills, /id === 'fireball'[\s\S]*skills2FireballIsMeteor/);
-  assert.match(skills2, /function skills2FireballIsMeteor\(/);
+  /* 2026-09-29：skills2FireballIsMeteor 只服務舊技能的自動施法閘門（火球術進化成殞石術後不再併發舊 fireball），
+     舊技能系統整個移除後隨之刪除；殞石術改由 skills2 自己的 meteor 判斷。 */
+  assert.doesNotMatch(skills2, /skills2FireballIsMeteor/);
 
   for (const variant of [
     'thrust-pierce', 'thrust-parallel', 'thrust-octagonal', 'cleave-ring', 'knife', 'knife-bounce', 'knife-soulhunter',

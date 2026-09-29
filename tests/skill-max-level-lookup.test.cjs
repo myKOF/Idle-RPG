@@ -65,11 +65,20 @@ test('對照表整張缺失才回傳 SKILL_MAX_LV_NO_TABLE，且它不是遊戲�
   assert.equal(c.skillMaxLvForRc(3), c.SKILL_MAX_LV_NO_TABLE);
 });
 
-test('skillMaxLv 走同一張表——不得再有第二套上限算法', () => {
-  const c = loadFormulaContext();
-  c.reincarnationCount = () => 3;
-  assert.equal(c.skillMaxLv({ cat: 'active' }), c.skillMaxLvForRc(3));
-  assert.equal(c.skillMaxLv({ cat: 'fusion', maxLv: 40 }), c.skillMaxLvForRc(3));
+/* 舊技能表移除後，skillMaxLvForRc 是唯一入口：潛力技能等級上限（talents.js）直接呼叫它，
+   舊的 skillMaxLv(skill) 包裝已刪，不得復活成第二套算法。 */
+test('潛力技能等級上限走同一張表——skillMaxLv 已刪，不得再有第二套上限算法', () => {
+  const root = path.resolve(__dirname, '..');
+  const context = { console, Math: Object.create(Math) };
+  vm.createContext(context);
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/talents.js'].forEach((file) => {
+    vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
+  });
+  context.G = { player: { level: 1, reincarnations: 3 } };
+  assert.equal(context.potentialSkillMaxLv(), context.skillMaxLvForRc(3));
+  context.G.player.reincarnations = 10;
+  assert.equal(context.potentialSkillMaxLv(), context.skillMaxLvForRc(10));
+  assert.equal(typeof context.skillMaxLv, 'undefined', 'skillMaxLv 已隨舊技能系統刪除');
 });
 
 /* 讀表保底不是靠註解維持的：只要有人再寫死一次 fallback，這條就會紅。 */

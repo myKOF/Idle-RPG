@@ -50,50 +50,41 @@ function loadContext() {
   return context;
 }
 
-test('驗證 1：真的舊存檔（裝載欄 >10 格、技能等級 >10）讀入後裁切至現行上限、公告出現一次、技能等級與狀態不變', () => {
+test('驗證 1：真的舊存檔（裝載欄 >10 格）讀入後裁切至現行上限、公告出現一次、新版技能等級不變', () => {
   const c = loadContext();
   const rawOldSave = c.newGameState();
   
   // 構造舊存檔（無 loadoutCapClampV1 旗標）
   delete rawOldSave.loadoutCapClampV1;
   rawOldSave.player.level = 300;
-  rawOldSave.player.reincarnations = 5; // 5 轉，目前裝載欄上限應為 10
+  rawOldSave.player.reincarnations = 5; // 1 轉起解鎖全部格位，目前裝載欄上限為 6
   
-  // 設置裝載欄 > 10 格 (15 格)
+  // 設置裝載欄 > 上限 (15 格)
   rawOldSave.player.loadout = [
-    'powerSlash', 'arcaneBurst', 'manaBarrier', 'meditation', 'ironSkin',
-    'vampirism', 'fireball', 'iceLance', 'thunderbolt', 'poisonDart',
-    'shieldBash', 'blurryStep', 'shadowStrike', 'holyLight', 'taunt'
+    'sg:thrust', 'sg:cleave', 'sg:knife', 'sg:gale', 'sg:bloodblade',
+    'sg:dualdance', 'sg:counter', 'sg:bloodrage', 'sg:fireball', 'sg:firepillar',
+    'sg:firehunt', 'sg:rockarmor', 'sg:mire', 'sg:earthguard', 'sg:chainlightning'
   ];
-  
-  // 設置技能等級 > 10 (例如 18 級)
-  rawOldSave.player.skills = {
-    powerSlash: 18,
-    arcaneBurst: 15,
-    manaBarrier: 12,
-    fireball: 20
-  };
+
+  // 新版技能群組等級（存檔遷移不得動它）
+  rawOldSave.player.skills2 = { levels: { thrust: [5, 3, 0, 0, 0, 0, 0] } };
 
   // 執行讀檔遷移
   c.migrateSave(rawOldSave);
 
-  // 1. 驗證格子被裁到正確數量 (10 格)
-  assert.equal(rawOldSave.player.loadout.length, 10);
-  assert.deepEqual(rawOldSave.player.loadout, [
-    'powerSlash', 'arcaneBurst', 'manaBarrier', 'meditation', 'ironSkin',
-    'vampirism', 'fireball', 'iceLance', 'thunderbolt', 'poisonDart'
+  // 1. 驗證格子被裁到正確數量 (6 格)
+  assert.equal(rawOldSave.player.loadout.length, 6);
+  assert.deepEqual(Array.from(rawOldSave.player.loadout), [
+    'sg:thrust', 'sg:cleave', 'sg:knife', 'sg:gale', 'sg:bloodblade', 'sg:dualdance'
   ]);
 
   // 2. 驗證公告出現一次
   assert.ok(rawOldSave._loadoutCapClampNotice);
-  assert.match(rawOldSave._loadoutCapClampNotice, /技能裝載欄上限調整為 10 格/);
-  assert.match(rawOldSave._loadoutCapClampNotice, /已卸下超出的 5 個技能/);
+  assert.match(rawOldSave._loadoutCapClampNotice, /技能裝載欄上限調整為 6 格/);
+  assert.match(rawOldSave._loadoutCapClampNotice, /已卸下超出的 9 個技能/);
 
-  // 3. 驗證技能等級與已學狀態完全不變
-  assert.equal(rawOldSave.player.skills.powerSlash, 18);
-  assert.equal(rawOldSave.player.skills.arcaneBurst, 15);
-  assert.equal(rawOldSave.player.skills.manaBarrier, 12);
-  assert.equal(rawOldSave.player.skills.fireball, 20);
+  // 3. 驗證新版技能等級完全不變
+  assert.deepEqual(Array.from(rawOldSave.player.skills2.levels.thrust).slice(0, 2), [5, 3]);
 });
 
 test('驗證 2：重複讀檔（第二次載入）不再裁切也不再產生公告', () => {
@@ -102,11 +93,11 @@ test('驗證 2：重複讀檔（第二次載入）不再裁切也不再產生公
   delete rawOldSave.loadoutCapClampV1;
   rawOldSave.player.level = 300;
   rawOldSave.player.reincarnations = 5;
-  rawOldSave.player.loadout = Array.from({ length: 15 }, (_, i) => 'sk_' + i);
+  rawOldSave.player.loadout = Array.from({ length: 15 }, (_, i) => 'sg:g' + i);
 
   // 第一次讀檔
   c.migrateSave(rawOldSave);
-  assert.equal(rawOldSave.player.loadout.length, 10);
+  assert.equal(rawOldSave.player.loadout.length, 6);
   assert.ok(rawOldSave._loadoutCapClampNotice);
   assert.equal(rawOldSave.loadoutCapClampV1, true);
 
@@ -117,7 +108,7 @@ test('驗證 2：重複讀檔（第二次載入）不再裁切也不再產生公
   c.migrateSave(rawOldSave);
 
   // 驗證第二次載入不再裁切、不再產生公告
-  assert.equal(rawOldSave.player.loadout.length, 10);
+  assert.equal(rawOldSave.player.loadout.length, 6);
   assert.equal(rawOldSave._loadoutCapClampNotice, undefined);
 });
 
@@ -153,7 +144,7 @@ test('驗證 4：存檔持久化落盤後旗標 loadoutCapClampV1 是否正確�
   delete rawOldSave.loadoutCapClampV1;
   rawOldSave.player.level = 100;
   rawOldSave.player.reincarnations = 0; // 0 轉 100 級 -> 6 格上限
-  rawOldSave.player.loadout = Array.from({ length: 12 }, (_, i) => 'skill_' + i);
+  rawOldSave.player.loadout = Array.from({ length: 12 }, (_, i) => 'sg:g' + i);
 
   // 模擬讀檔並執行遷移
   c.migrateSave(rawOldSave);

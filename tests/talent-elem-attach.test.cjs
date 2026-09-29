@@ -112,7 +112,10 @@ test('未點的元素不再憑空附傷', () => {
 
 test('普攻與技能直接傷害段皆傳遞天賦附傷%（原始碼接線）', () => {
   const combat = fs.readFileSync(path.join(root, 'js/combat.js'), 'utf8');
-  const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
+  const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
+  const potential = fs.readFileSync(path.join(root, 'js/potential.js'), 'utf8');
   assert.match(combat, /elemDmgPct:\s*st\.elemDmgPct/);
-  assert.match(skills, /elemDmgPct:\s*st\.elemDmgPct/);
+  // 新版技能的統一攻擊組態 sgAtkCfg，以及潛力技能的傷害段
+  assert.match(skills2, /elemDmgPct:\s*st\.elemDmgPct/);
+  assert.match(potential, /elemDmgPct:\s*st\.elemDmgPct/);
 });

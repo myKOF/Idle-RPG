@@ -87,12 +87,6 @@ test('combat.js 普攻追加連擊段（僅主攻擊、遞迴 depth）', () => {
   assert.match(combat, /!depth[\s\S]*?rollComboHits\(/);
 });
 
-test('skills.js 技能直接傷害段外包連擊迴圈（持續傷害不受影響）', () => {
-  const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
-  assert.match(skills, /var comboReps = rollComboHits\(st\)/);
-  assert.match(skills, /for \(var rep = 0; rep <= comboReps/);
-});
-
 test('data.js 連擊數常數與面板列', () => {
   const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
   assert.match(data, /COMBO_HITS_COEF = \{/);

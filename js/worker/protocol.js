@@ -63,7 +63,11 @@
    全為未投影世界幾何；速度為世界單位／秒，角度為弧度、spin 為弧度／秒。
    中心直線飛行加成員公轉；缺省沿舊路徑，origin=null 僅無座標高塔取畫面起點。 */
 /* v38：battle 面板新增 rebirthCharges（整數或 null），只投影逆轉乾坤的實際可用復活次數。 */
-var WORKER_PROTOCOL_VERSION = 39;
+/* v39：可選 vfx.area.chainId（連鎖閃電同一條鏈的識別）。
+   v40（2026-09-29 舊版技能系統移除）：刪除 skill.learn／maxUpgrade／downgrade／delete／fuse／deleteFusion
+   與參數型別 'ids'（僅融合技使用）；TICK_VIEW_KEYS 移除 magicScroll；skills 面板投影只剩
+   loadout／loadoutSize／skills2／points／budget／mastery。指令表 93 → 87。 */
+var WORKER_PROTOCOL_VERSION = 40;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -153,7 +157,7 @@ var EVENT_KINDS = {
      cat（v17，可選）：技能分類（phys/magic/def/special/fusion/potential）或
              'basic'（普攻）／'enemy'（敵方動作），供顯示層微調風格。
      variant（v17，可選）：特效變體字串（meteor/pillar/chain/cyclone/…，清單見
-             js/skills.js SKILL_VFX_OVERRIDE 註解）。顯示層不認得的 variant 一律
+             js/vfx.js 各原型的變體畫法）。顯示層不認得的 variant 一律
              退回該原型預設畫法，因此新增變體不需要動協議。
      delayMs（v17，可選）：整則特效的基礎延遲（毫秒）——追加劍氣、天罰神雷等
              「接在前一段動作之後」的特效用它錯開時刻。
@@ -235,7 +239,7 @@ var PERSIST_KINDS = {
    （scripts/sim/trace.js）、瀏覽器↔headless 交叉驗證（scripts/cross_check.js）——
    拿 gt 當軸就會在暫停那一段整批錯開，而且分岔點會出現在暫停之後好幾秒，看起來像別的原因。 */
 var TICK_VIEW_KEYS = ['gold', 'scrap', 'essence', 'dust', 'ancientEssence', 'soulOrigin',
-                      'demonSeed', 'magicScroll', 'gems', 'books', 'level', 'xp', 'xpMax', 'hp', 'hpMax',
+                      'demonSeed', 'gems', 'books', 'level', 'xp', 'xpMax', 'hp', 'hpMax',
                       'mp', 'mpMax', 'shield', 'stage', 'zone', 'gt', 'simT', 'paused',
                       'towerActive', 'forgeBusy',
                       /* 任務快捷列（v18）：taskIdx = 目前任務索引（-1 = 全部完成）、
@@ -247,7 +251,7 @@ var TICK_VIEW_KEYS = ['gold', 'scrap', 'essence', 'dust', 'ancientEssence', 'sou
    fn      ：Worker 內實際呼叫的既有函式（沿用現有實作，禁止另寫平行版本）
              null 表示沒有可直接呼叫的既有函式，由 Worker 的 COMMAND_IMPL 實作
    args    ：參數型別。'?' 結尾表示可省略。
-             int/num/bool/str/id/ids/ref（寶石素材參考）/slots（寶石轉換槽陣列）/obj/any
+             int/num/bool/str/id/ref（寶石素材參考）/slots（寶石轉換槽陣列）/obj/any
    resolve ：需要由 id 解析成**物件**再傳給 fn 的參數名清單。
              v3 起改為逐指令白名單——v1「參數名叫 itemId 就自動解析」的慣例是錯的：
              forgePlaceItem(id) 收的是字串 id，自動解析會傳錯型別進去。
@@ -322,12 +326,6 @@ var COMMANDS = {
   'player.setInvSort':       { fn: null,                args: { index: 'int' },                   dirty: ['inv'] },
 
   /* -- 技能 -- */
-  'skill.learn':           { fn: 'learnOrUpgradeSkill', args: { id: 'str' },                      dirty: ['skills', 'header'] },
-  'skill.maxUpgrade':      { fn: 'maxUpgradeSkill',     args: { id: 'str' },                      dirty: ['skills', 'header'] },
-  'skill.downgrade':       { fn: 'downgradeSkill',      args: { id: 'str' },                      dirty: ['skills', 'header'] },
-  'skill.delete':          { fn: 'deleteSkill',         args: { id: 'str' },                      dirty: ['skills'] },
-  'skill.fuse':            { fn: 'fuseSkills',          args: { ids: 'ids' },                     dirty: ['skills'] },
-  'skill.deleteFusion':    { fn: 'deleteFusion',        args: { id: 'str' },                      dirty: ['skills'] },
   'skill.equipLoadout':    { fn: 'equipSkillToLoadout', args: { id: 'str' },                      dirty: ['skills', 'battle', 'header', 'equip'] },
   'skill.unequipLoadout':  { fn: 'unequipSkillFromLoadout', args: { id: 'str' },                  dirty: ['skills', 'battle', 'header', 'equip'] },
   'skill.reorderLoadout':  { fn: null,                  args: { from: 'int', to: 'int' },         dirty: ['skills', 'battle'] },
@@ -454,7 +452,7 @@ var INTERNAL_ONLY = ['addToInventory', 'rollGemShop', 'shopHourlyReset', 'forgeL
 /* ---- 查詢函式（惰性初始化，不是指令）----
    forgeState / gemShop 會在第一次呼叫時建立子狀態；它們只能在 Worker 端執行，
    主執行緒改由 snapshot 取得結果。 */
-var LAZY_QUERIES = ['forgeState', 'gemShop', 'skillLevel', 'availableSkillPoints'];
+var LAZY_QUERIES = ['forgeState', 'gemShop', 'availableSkillPoints'];
 
 function commandSpec(name) {
   return Object.prototype.hasOwnProperty.call(COMMANDS, name) ? COMMANDS[name] : null;
@@ -488,7 +486,6 @@ function _typeOk(type, v) {
     case 'bool': return typeof v === 'boolean';
     case 'str': return typeof v === 'string';
     case 'id': return typeof v === 'string' && v.length > 0;
-    case 'ids': return Array.isArray(v) && v.every(function (x) { return typeof x === 'string' && x.length > 0; });
     case 'ref': return _isGemRef(v);
     case 'slots': return _isGemSlots(v);
     case 'obj': return !!v && typeof v === 'object' && !Array.isArray(v);

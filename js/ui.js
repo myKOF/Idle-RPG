@@ -1079,7 +1079,6 @@ var newForgeCumulativeStats = {
   logCount: 0,
   scrap: 0,
   essence: 0,
-  magicScroll: 0,
   ancientEssence: 0,
   books: {},
   parts: {}
@@ -1093,9 +1092,6 @@ function accumulateNewForgeLog(msg) {
 
   var essenceMatch = msg.match(/附魔精華x(\d+)/);
   if (essenceMatch) newForgeCumulativeStats.essence += parseInt(essenceMatch[1], 10);
-
-  var scrollMatch = msg.match(/卷軸x(\d+)/);
-  if (scrollMatch) newForgeCumulativeStats.magicScroll += parseInt(scrollMatch[1], 10);
 
   var ancientMatch = msg.match(/太古精華x(\d+)/);
   if (ancientMatch) newForgeCumulativeStats.ancientEssence += parseInt(ancientMatch[1], 10);
@@ -1132,7 +1128,6 @@ function resetNewForgeCumulativeStats() {
     logCount: 0,
     scrap: 0,
     essence: 0,
-    magicScroll: 0,
     ancientEssence: 0,
     books: {},
     parts: {}
@@ -1145,7 +1140,6 @@ function getNewForgeLogStats() {
     mats: {
       scrap: newForgeCumulativeStats.scrap,
       essence: newForgeCumulativeStats.essence,
-      magicScroll: newForgeCumulativeStats.magicScroll,
       ancientEssence: newForgeCumulativeStats.ancientEssence,
       books: newForgeCumulativeStats.books,
       parts: newForgeCumulativeStats.parts
@@ -1247,11 +1241,6 @@ function renderNewForgeLogStats() {
   html += '    <div class="stats-mat-card">';
   html += '      <span class="stats-mat-name"><img src="images/icon_essence.png" class="res-icon" alt="">附魔精華</span>';
   html += '      <span class="stats-mat-val">' + fmt(stats.mats.essence) + '</span>';
-  html += '    </div>';
-
-  html += '    <div class="stats-mat-card">';
-  html += '      <span class="stats-mat-name">📜 魔法卷軸</span>';
-  html += '      <span class="stats-mat-val">' + fmt(stats.mats.magicScroll || 0) + '</span>';
   html += '    </div>';
 
   html += '    <div class="stats-mat-card">';
@@ -2548,7 +2537,6 @@ function renderHeader() {
   updateResourceTip('r-scrap', '裝備碎片', '目前持有：' + fmtFull(p.scrap));
   updateResourceTip('r-essence', '附魔精華', '目前持有：' + fmtFull(p.essence));
   updateResourceTip('r-dust', '魔塵', '神鑄材料，可提升鑄造成功率。｜目前持有：' + fmtFull(p.dust || 0));
-  updateResourceTip('r-magic-scroll', '魔法卷軸', '技能融合材料；拆解裝備與高塔通關時隨附魔精華獲得（數量為其 1/10）。｜目前持有：' + fmtFull(p.magicScroll || 0));
   updateResourceTip('r-ancient-essence', '太古精華', '太古機制改版：太古詞條於裝備產出時決定，洗煉不再消耗太古精華（此資源暫保留，用途待定）。｜目前持有：' + fmtFull(p.ancientEssence || 0));
   updateResourceTip('r-soul-origin', '魔魂本源', '用於本源覺醒的道具。｜目前持有：' + fmtFull(p.soulOrigin || 0));
   updateResourceTip('r-demon-seed', '魔種', '煉獄之塔 BOSS 額外掉落材料。煉獄之塔限定｜目前持有：' + fmtFull(p.demonSeed || 0));
@@ -2557,7 +2545,6 @@ function renderHeader() {
   setTextIfChanged($id('r-scrap'), fmt(p.scrap));
   setTextIfChanged($id('r-essence'), fmt(p.essence));
   setTextIfChanged($id('r-dust'), fmt(p.dust || 0));
-  setTextIfChanged($id('r-magic-scroll'), fmt(p.magicScroll || 0));
   setTextIfChanged($id('r-ancient-essence'), fmt(p.ancientEssence || 0));
   setTextIfChanged($id('r-soul-origin'), fmt(p.soulOrigin || 0));
   setTextIfChanged($id('r-demon-seed'), fmt(p.demonSeed || 0));
@@ -2591,7 +2578,6 @@ function renderHeader() {
   var resVisMap = [
     { id: 'r-essence', val: p.essence || 0 },
     { id: 'r-dust', val: p.dust || 0 },
-    { id: 'r-magic-scroll', val: p.magicScroll || 0 },
     { id: 'r-ancient-essence', val: p.ancientEssence || 0 },
     { id: 'r-soul-origin', val: p.soulOrigin || 0 },
     { id: 'r-demon-seed', val: p.demonSeed || 0 },
@@ -2975,14 +2961,12 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
       var isSgE = typeof entry === 'string' && entry.indexOf('sg:') === 0;
       var sk = isSgE
         ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[entry.slice(3)] : null)
-        : (isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry));
+        : (isPotE && typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null);
       if (!sk) continue;
       var cd = uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt);
       var lv = isSgE
         ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
-        : (isPotE
-          ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
-          : skillViewLevel(skillsSnapshot, entry));
+        : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
       /* 反擊法力門檻＝最高生效階段（含超神）的消耗，不逐階累加；
          恆時生效的被動（大地守護）沒有觸發消耗，門檻為 0。 */
       var isPassiveE = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
@@ -2990,7 +2974,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
         ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)) : 0;
       var costE = isSgE
         ? (isPassiveE ? passiveMinMpE : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
-        : (isPotE ? 0 : skillManaCost(sk, lv));
+        : 0;
       arr.push({
         sk: sk, lv: lv, cd: cd, cost: costE,
         /* 主動型被動：恆時生效，不顯示冷卻與無魔。
@@ -3347,7 +3331,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var isSgE = typeof entry === 'string' && entry.indexOf('sg:') === 0;
     var sk = isSgE
       ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[entry.slice(3)] : null)
-      : (isPotE ? (typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null) : skillViewDef(skillsSnapshot, entry));
+      : (isPotE && typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null);
 
     if (!sk) {
       var invalidState = { kind: 'empty', index: i };
@@ -3360,9 +3344,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var cd = pEnt ? uiCountdownRemain(rawCdVal, snapshotGt) : 0;
     var lv = isSgE
       ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
-      : (isPotE
-        ? uiPotentialLevelFromSnapshot(talentSnapshot, sk.id)
-        : skillViewLevel(skillsSnapshot, entry));
+      : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
     /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即生效、不主動施放，
        在快捷列以旋轉流動外框和其他技能區分。反擊的法力門檻使用最高生效階段（含超神）的消耗。 */
     var isPassiveGroup = isSgE && (typeof skills2IsPassive === 'function') && skills2IsPassive(entry.slice(3));
@@ -3370,7 +3352,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       ? skills2PassiveMinMp(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)) : 0;
     var cost = isSgE
       ? (isPassiveGroup ? passiveMinMp : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
-      : (isPotE ? 0 : (typeof skillManaCost === 'function' ? skillManaCost(sk, lv) : (Number(sk.cost) || 0)));
+      : 0;
     var rawCd = Number(sk.cd) || 5;
     var eqSnapshot = uiEquipPanelSnapshot();
     var pStats = (eqSnapshot && eqSnapshot.stats) || (typeof uiViewStats === 'function' ? uiViewStats() : null);
@@ -7291,8 +7273,8 @@ function potentialTypeLabel(def) {
 function potentialDmgLabel(def) {
   return def && def.dmgType ? '·' + (def.dmgType === 'magic' ? '魔法' : (def.dmgType === 'phys' ? '物理' : '真實')) : '';
 }
-/* 潛力技能描述（供共用的 describeSkill → 技能提示/升級面板呼叫）：
-   比照一般技能 describeSkill——效果直接寫在說明內、當前數值內嵌；
+/* 潛力技能描述（供技能提示／升級面板呼叫）：
+   效果直接寫在說明內、當前數值內嵌；
    會隨升級變動的數值用 g()（藍），固定值用 s()（橘）。 */
 function describePotentialSkill(def, lv) {
   if (!def) return '';
@@ -7311,7 +7293,7 @@ function describePotentialSkill(def, lv) {
     }
     case 'chainLightning': {
       var atkPct = (def.atkBase || 0) + (def.atkPer || 0) * lv;
-      return '凝聚過載雷霆轟落敵陣：造成 ' + g(atkPct) + '% 魔攻的' + s('魔法傷害') + '（' + s('電屬性佔 100%') + '），於敵群間彈跳 ' + s(def.bounces || 5) + ' 次、每跳皆為完整傷害，且 ' + s(def.dur || 8) + ' 秒內' + s('每 1 秒') + '持續轟擊一輪；期間雷電系整體傷害額外提高 ' + g(v) + '%（含此技能自身），雷電技能命中追加 ' + s(3) + '＋連擊數 次連鎖、每次 ' + s(10) + '% 該擊傷害';
+      return '凝聚過載雷霆轟落敵陣：造成 ' + g(atkPct) + '% 魔攻的' + s('魔法傷害') + '（' + s('電屬性佔 100%') + '），於敵群間彈跳 ' + s(def.bounces || 5) + ' 次、每跳皆為完整傷害，且 ' + s(def.dur || 8) + ' 秒內' + s('每 1 秒') + '持續轟擊一輪；期間雷電傷害額外提高 ' + g(v) + '%（含此技能自身）';
     }
     case 'cdrUncap':
       return '所有技能的冷卻縮減額外提高 ' + g(v) + '%，可突破 ' + s(60) + '% 上限，持續 ' + s(def.dur || 3) + ' 秒';
@@ -7322,7 +7304,7 @@ function describePotentialSkill(def, lv) {
     case 'enemySlow':
       return '使敵人攻速降低 ' + g(v) + '%，持續 ' + s(def.dur || 8) + ' 秒';
     case 'crossCore':
-      return '所有物理技能額外獲得 ' + g(v) + '% 魔法攻擊力、所有魔法技能額外獲得 ' + g(v) + '% 物理攻擊力';
+      return '雷霆過載的雷擊額外獲得 ' + g(v) + '% 物理攻擊力';
     case 'omega':
       return '打出必殺一擊，造成 爆擊率% × ' + g(v) + '% 物攻 的' + s('物理傷害') + '（爆擊率愈高、傷害愈高）';
     case 'sacredInvert':
@@ -7540,10 +7522,9 @@ function renderTalents() {
   renderTalentModal(snapshot);
 }
 
-/* ---- 技能分頁（技能樹 + 融合） ---- */
+/* ---- 技能分頁（新版技能群組 + 潛力） ---- */
 UI.selSkill = null;      // 目前選取的技能 id
 UI.selTalent = null;     // { kind: 'talent'|'potential', id }
-UI.fuseSlots = [];       // 融合素材槽（最多 4）
 UI.optimisticSkillLoadout = null; // { values: [], acknowledged: bool }
 
 function uiSkillsPanelSnapshot() {
@@ -7557,61 +7538,12 @@ function skillViewReincarnations(headerSnapshot, talentSnapshot) {
   return Math.max(0, Math.floor(Number(player && player.reincarnations) || 0));
 }
 
-function skillViewLevel(snapshot, id) {
-  return Math.max(0, Math.floor(Number(snapshot && snapshot.skills && snapshot.skills[id]) || 0));
-}
-
-function skillViewDef(snapshot, id) {
-  if (SKILLS[id]) return SKILLS[id];
-  var fusions = snapshot && Array.isArray(snapshot.fusions) ? snapshot.fusions : [];
-  for (var i = 0; i < fusions.length; i++) {
-    if (fusions[i] && fusions[i].id === id) {
-      return typeof resolveFusionRecord === 'function'
-        ? resolveFusionRecord(fusions[i])
-        : fusions[i];
-    }
-  }
-  return null;
-}
-
-/* 2026-07-30 技能融合改造：全部技能（含融合技/被動）共用轉生對照表的上限，
-   與模擬層 skillMaxLv 同走 formula.js 的 skillMaxLvForRc（融合技不再用記錄凍結的 maxLv）。
-   這裡吃的是快照傳來的轉數，不是 G，所以不能直接呼叫 skillMaxLv()。 */
-function skillViewMaxLevel(def, reincarnations) {
-  return skillMaxLvForRc(reincarnations);
-}
-
 function skillViewPotentialMaxLevel(reincarnations) {
   return skillMaxLvForRc(reincarnations);
 }
 
-function skillViewUnlockReason(snapshot, headerSnapshot, id, def) {
-  var level = skillViewLevel(snapshot, id);
-  var playerLevel = Math.max(1, Math.floor(Number(
-    headerSnapshot && headerSnapshot.player && headerSnapshot.player.level
-  ) || 1));
-  var unlockLevel = Math.max(0, Math.floor(Number(def && def.unlockLv) || 0));
-  var unlocked = !!(snapshot && snapshot.unlocks && snapshot.unlocks[id]) ||
-    level > 0 ||
-    unlockLevel <= 0 ||
-    playerLevel >= unlockLevel;
-  return unlocked ? null : '需人物達到 Lv.' + unlockLevel + ' 才解鎖';
-}
-
-function skillViewCatSpentPoints(snapshot, cat) {
-  var sum = 0;
-  var levels = snapshot && snapshot.skills ? snapshot.skills : {};
-  for (var id in levels) {
-    var def = SKILLS[id];
-    if (def && def.cat === cat) sum += Math.max(0, Math.floor(Number(levels[id]) || 0));
-  }
-  return sum;
-}
-
 function skillViewSpentPoints(skillsSnapshot, talentSnapshot, reincarnations) {
   var spent = 0;
-  var levels = skillsSnapshot && skillsSnapshot.skills ? skillsSnapshot.skills : {};
-  for (var id in levels) spent += Math.max(0, Math.floor(Number(levels[id]) || 0));
   var potentialMax = skillViewPotentialMaxLevel(reincarnations);
   POTENTIAL_TALENTS.forEach(function (def) {
     spent += talentViewPotentialLevel(talentSnapshot, def.id, potentialMax);
@@ -7630,38 +7562,6 @@ function skillViewLoadout(snapshot) {
   }
   return snapshot && Array.isArray(snapshot.loadout) ? snapshot.loadout : [];
 }
-
-/* 技能說明一律由模擬層的 describeSkill 產生，不得在此另寫簡化版。
-
-   這裡曾經只回傳 `def.flavor || def.desc`，理由是「describeSkill 會回讀主執行緒的
-   G.player.fusions」。那個顧慮只對**融合技**成立——`skillDef(id)` 僅在靜態 SKILLS
-   表查不到時才讀 G，而主執行緒的 G 是 null，當時確實會拋 TypeError。
-   但代價是**所有技能**的傷害數值、成長與附加效果全部消失，連「下一級」都顯示與本級
-   一模一樣的字串。現在 describeSkill 收 fusions 參數（技能面板快照就有這欄），
-   主執行緒可以直接呼叫，不必再退化。
-
-   ⚠️ 回傳值是 HTML（含 txt-grow／txt-static 標記），呼叫端不得再 esc。 */
-function skillViewDescription(id, def, level, skipFusionDetail, isPotential, fusions) {
-  if (isPotential) return describePotentialSkill(def, level);
-
-  var text = (typeof describeSkill === 'function')
-    ? describeSkill(id, Math.max(1, level || 1), skipFusionDetail, fusions)
-    : '';
-  // 查不到定義時才退回風味文字，至少不要整格空白
-  if (!text) text = esc((def && (def.flavor || def.desc)) || '');
-
-  if (def && def.cat === 'fusion' && !SKILLS[id] && !skipFusionDetail) {
-    var componentNames = (def.components || []).map(function (componentId) {
-      return SKILLS[componentId] ? SKILLS[componentId].name : componentId;
-    });
-    if (componentNames.length) {
-      text += '<div class="skt-components">（融合自：' +
-        componentNames.map(esc).join(' ＋ ') + '）</div>';
-    }
-  }
-  return text;
-}
-
 
 /* 新版技能群組指令（skill2.learn／skill2.downgrade：參數是 group+tier，不是 id）。 */
 function runSkill2UiAction(commandName, group, tier) {
@@ -7723,39 +7623,6 @@ function runSkillUiAction(commandName, id, pendingRef, legacyAction, panels, onS
   }, function (error) {
     reportUiCommandFailure('技能操作失敗', error, panels);
   });
-}
-
-
-function skillCellHTML(id, skillsSnapshot, talentSnapshot, headerSnapshot) {
-  var sk = skillViewDef(skillsSnapshot, id);
-  if (!sk) return '';
-  var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
-  var lv = skillViewLevel(skillsSnapshot, id);
-  var lock = skillViewUnlockReason(skillsSnapshot, headerSnapshot, id, sk);
-  var loadout = skillViewLoadout(skillsSnapshot);
-  var inLoadout = loadout.indexOf(id) >= 0;
-  var maxLv = skillViewMaxLevel(sk, reincarnations);
-  var inFusion = (UI.fuseSlots || []).indexOf(id) >= 0;
-  var usedInFusion = skillViewUsedInFusion(skillsSnapshot, id); // 已投入融合技（佔用中）
-  var cls = 'tree-cell' + (lv > 0 ? ' learned' : '') + (lock ? ' locked' : '') +
-    (UI.selSkill === id ? ' selected' : '') + (inLoadout ? ' equipped' : '') +
-    (inFusion ? ' fusion-selected' : '') + (usedInFusion ? ' fused-locked' : '');
-  return '<div class="' + cls + '" data-sk="' + id + '">' +
-    '<span class="tc-emoji">' + sk.emoji + '</span>' +
-    (lv > 0 ? '<span class="tc-lv' + (lv >= maxLv ? ' max-lv' : '') + '">' + lv + '</span>' : (lock ? '<span class="tc-lock">🔒</span>' : '')) +
-    (inLoadout ? '<span class="tc-eq">⚔</span>' : '') +
-    (usedInFusion ? '<span class="tc-fused" title="已投入融合技">⚗️</span>' : '') +
-    '</div>';
-}
-
-/* 被融合佔用查詢：素材 id 出現在任一融合技 components 即為佔用（快照推導，無獨立欄位） */
-function skillViewUsedInFusion(snapshot, id) {
-  var fusions = snapshot && Array.isArray(snapshot.fusions) ? snapshot.fusions : [];
-  for (var i = 0; i < fusions.length; i++) {
-    var comps = fusions[i] && fusions[i].components;
-    if (Array.isArray(comps) && comps.indexOf(id) >= 0) return fusions[i].id;
-  }
-  return null;
 }
 
 
@@ -7832,7 +7699,7 @@ function renderSkills() {
     var isSg0 = typeof id0 === 'string' && id0.indexOf('sg:') === 0;
     var d0 = isSg0
       ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[id0.slice(3)] : null)
-      : (isPot0 ? potentialDef(id0.slice(10)) : skillViewDef(skillsSnapshot, id0));
+      : (isPot0 ? potentialDef(id0.slice(10)) : null);
 
     if (!d0) {
       lh += '<div class="battle-skill-slot empty" data-slot-index="' + i + '" data-index="' + i + '" data-tt-title="技能槽 #' + (i + 1) + '（未裝備）" data-tt-desc="點擊下方技能即可裝備">' +
@@ -7844,9 +7711,7 @@ function renderSkills() {
 
     var loadoutLevel = isSg0
       ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, id0.slice(3)))
-      : (isPot0
-        ? talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations))
-        : skillViewLevel(skillsSnapshot, id0));
+      : talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations));
     var isPassive0 = isSg0 && (typeof skills2IsPassive === 'function') && skills2IsPassive(id0.slice(3));
     var isSelected = (selectedIndex === i);
 
@@ -7870,25 +7735,8 @@ function renderSkills() {
     loBox._lastLh = lh;
   }
 
-  // 融合技（置頂區）
-  var fuList = $id('fusion-skill-list');
-  if (fuList) {
-    var fusions = skillsSnapshot.fusions || [];
-    var fuH = fusions.length
-      ? fusions.map(function (f) {
-        return skillCellHTML(f.id, skillsSnapshot, talentSnapshot, headerSnapshot);
-      }).join('')
-      : '<span class="hint">尚無融合技 — 使用下方「技能融合」創造你的專屬奧義！</span>';
-    if (fuList._lastH !== fuH) {
-      fuList.innerHTML = fuH;
-      fuList._lastH = fuH;
-    }
-  }
-
-  // 技能樹（每系一棵，技能不受前置投入點數限制）
   var h = '';
-  // 新版技能群組（技能改造第一批，js/skills2.js）：同群組顯示為一個技能，
-  // 投資各階持續強化；與舊技能並行調教，舊系統驗收後另案刪除。
+  // 新版技能群組（js/skills2.js）：同群組顯示為一個技能，投資各階持續強化。
   if (typeof SKILLS2 !== 'undefined') {
     var sgLoadout = skillViewLoadout(skillsSnapshot);
     var sgRows = '';
@@ -7899,20 +7747,6 @@ function renderSkills() {
     h += '<div class="tree-panel sg-skill-panel"><div class="tree-title">🌟 新版技能 ' +
       '<span class="dim-text">同群組技能由左至右進階；亮起＝已解鎖，灰色＝未解鎖（可查看）</span></div>' +
       '<div class="sg-skill-list">' + sgRows + '</div></div>';
-  }
-  for (var cat in SKILL_CATS) {
-    var cells = [];
-    for (var id in SKILLS) {
-      if (SKILLS[id].cat === cat) {
-        cells.push(skillCellHTML(id, skillsSnapshot, talentSnapshot, headerSnapshot));
-      }
-    }
-    var rows = '';
-    for (var r = 0; r < cells.length; r += 6) {
-      rows += '<div class="tree-row">' + cells.slice(r, r + 6).join('') + '</div>';
-    }
-    h += '<div class="tree-panel"><div class="tree-title">' + SKILL_CATS[cat].emoji + ' ' + SKILL_CATS[cat].name +
-      ' <span class="dim-text">已投入 ' + skillViewCatSpentPoints(skillsSnapshot, cat) + ' 點</span></div>' + rows + '</div>';
   }
   if (reincarnations >= 3) {
     var potentialCells = POTENTIAL_TALENTS.map(function (def, index) {
@@ -7930,7 +7764,6 @@ function renderSkills() {
   }
 
   renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
-  renderFusionPanel(skillsSnapshot);
   if (typeof UIContainmentManager !== 'undefined') UIContainmentManager.apply();
 }
 
@@ -8319,12 +8152,11 @@ function closeSkillModal() {
   UI.selSkill = null;
 }
 
-/* 技能標籤：標題下方顯示技能類別與元素系別，文字來源沿用 SKILL_CATS／ELEM_INFO。 */
-function skillTagsHTML(id, sk, lv, isPotential) {
+/* 潛力技能標籤：標題下方顯示技能類別與元素系別，文字來源沿用 ELEM_INFO。 */
+function skillTagsHTML(id, sk, lv) {
   if (!sk) return '';
   var tags = [];
-  var category = isPotential ? '潛力' : (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技');
-  tags.push({ text: category, cls: 'skill-tag-category' });
+  tags.push({ text: '潛力', cls: 'skill-tag-category' });
 
   var rawTags = Array.isArray(sk.tags) ? sk.tags : (typeof sk.tags === 'string' ? sk.tags.split(';') : []);
   var elems = [];
@@ -8371,51 +8203,31 @@ function renderSkillModal() {
     renderSkill2Modal(body, sgModalGid, skillsSnapshot, headerSnapshot);
     return;
   }
-  // 舊技能／潛力技能：確保離開超神進化的三選一版面（否則 grid 覆寫會殘留）
+  // 潛力技能：確保離開超神進化的三選一版面（否則 grid 覆寫會殘留）
   if (body.classList) body.classList.remove('sg-ult-picking');
-  var potentialId = potentialSkillId(ref);
-  var isPotential = potentialId !== null;
-  var id = isPotential ? potentialId : ref;
-  var sk = id ? (isPotential ? potentialDef(id) : skillViewDef(skillsSnapshot, id)) : null;
+  var id = potentialSkillId(ref);
+  var sk = id ? potentialDef(id) : null;
   if (!sk) { closeSkillModal(); return; }
   var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
-  var maxLv = isPotential
-    ? skillViewPotentialMaxLevel(reincarnations)
-    : skillViewMaxLevel(sk, reincarnations);
-  var lv = isPotential
-    ? talentViewPotentialLevel(talentSnapshot, id, maxLv)
-    : skillViewLevel(skillsSnapshot, id);
-  var lock = isPotential
-    ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : '潛力節點尚未解鎖'))
-    : skillViewUnlockReason(skillsSnapshot, headerSnapshot, id, sk);
-  // 裝載欄鍵：一般技能＝id、潛力技能＝'potential:<id>'；主動潛力技能與一般技能一樣可裝載施放。
-  var loadoutRef = isPotential ? 'potential:' + id : id;
-  var canEquip = isPotential
-    ? (typeof potentialEquippable === 'function' && potentialEquippable(sk))
-    : (sk.cat !== 'passive');
+  var maxLv = skillViewPotentialMaxLevel(reincarnations);
+  var lv = talentViewPotentialLevel(talentSnapshot, id, maxLv);
+  var lock = potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級' : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : '潛力節點尚未解鎖');
+  // 裝載欄鍵：潛力技能＝'potential:<id>'；主動潛力技能可裝載施放。
+  var loadoutRef = 'potential:' + id;
+  var canEquip = typeof potentialEquippable === 'function' && potentialEquippable(sk);
   var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(loadoutRef) >= 0;
-  var isFusion = !isPotential && sk.cat === 'fusion' && String(id).indexOf('fusion_') === 0;
-  var description = function (level, skipFusion) {
-    return skillViewDescription(id, sk, level, skipFusion, isPotential,
-      skillsSnapshot && skillsSnapshot.fusions);
-  };
-  var pendingRef = isPotential ? 'potential:' + id : 'skill:' + id;
-  var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(pendingRef));
-  var category = isPotential ? ('潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk)) : (SKILL_CATS[sk.cat] ? SKILL_CATS[sk.cat].name : '融合技');
-  var potentialMeta = isPotential
-    ? (sk.type === 'active' ? '<span class="sk-meta">⏱️ ' + sk.cd + 's</span>'
-      : (sk.type === 'passiveTrigger' ? '<span class="sk-meta">⏱️ 觸發冷卻 ' + sk.cd + 's</span>' : ''))
-    : '';
+  var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(loadoutRef));
+  var category = '潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk);
+  var potentialMeta = sk.type === 'active' ? '<span class="sk-meta">⏱️ ' + sk.cd + 's</span>'
+    : (sk.type === 'passiveTrigger' ? '<span class="sk-meta">⏱️ 觸發冷卻 ' + sk.cd + 's</span>' : '');
   var h = '<div class="skd-head"><span class="skd-emoji">' + sk.emoji + '</span><b>' + esc(sk.name) + '</b> ' +
-    '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + category + '</span>' +
-    (isPotential ? potentialMeta : (sk.cat !== 'passive' ? '<span class="sk-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</span>' : '')) + '</div>';
+    '<span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + category + '</span>' + potentialMeta + '</div>';
 
-  h += skillTagsHTML(id, sk, Math.max(1, lv), isPotential);
+  h += skillTagsHTML(id, sk, Math.max(1, lv));
   h += '<div class="skill-modal-copy">';
-  // 潛力與一般技能共用同一份描述（describeSkill）與版面。
-  h += '<div class="sk-desc">' + description(Math.max(1, lv)) + '</div>';
-  if (lv > 0 && lv < maxLv) h += '<div class="skd-next dim-text">下一級：' + description(lv + 1, true) + '</div>';
-  if (sk.flavor && !isFusion) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
+  h += '<div class="sk-desc">' + describePotentialSkill(sk, Math.max(1, lv)) + '</div>';
+  if (lv > 0 && lv < maxLv) h += '<div class="skd-next dim-text">下一級：' + describePotentialSkill(sk, lv + 1) + '</div>';
+  if (sk.flavor) h += '<div class="sk-flavor">' + esc(sk.flavor) + '</div>';
   if (lock) h += '<div class="hint skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
   h += '</div>';
 
@@ -8423,11 +8235,10 @@ function renderSkillModal() {
   h += '<div class="detail-actions skill-modal-actions">';
   if (lv < maxLv && !lock) {
     var cost = skillUpgradeCost(lv);
-    var skillRef = isPotential ? 'potential:' + id : id;
     var insufficientGold = (Number(headerSnapshot.player && headerSnapshot.player.gold) || 0) < cost;
-    h += '<button class="btn sm" data-skill-learn="' + skillRef + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + pendingAttrs + (insufficientGold ? ' disabled' : '') + '>' +
+    h += '<button class="btn sm" data-skill-learn="' + loadoutRef + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' + pendingAttrs + (insufficientGold ? ' disabled' : '') + '>' +
       (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
-    h += '<button class="btn sm" data-skill-max="' + skillRef + '" data-tip="自動消耗技能點與金幣，升到目前技能上限"' + pendingAttrs + '>⚡ 一鍵滿級</button>';
+    h += '<button class="btn sm" data-skill-max="' + loadoutRef + '" data-tip="自動消耗技能點與金幣，升到目前技能上限"' + pendingAttrs + '>⚡ 一鍵滿級</button>';
   } else if (lv >= maxLv) {
     h += '<div style="text-align:center; padding: 4px; color: var(--good); font-size: 12px;">已滿級</div>';
     h += '<div style="visibility: hidden;"></div>'; // 保留一鍵滿級欄位，讓後方按鈕位置固定
@@ -8436,45 +8247,25 @@ function renderSkillModal() {
   }
 
   if (lv > 0) {
-    h += '<button class="btn sm warn" data-skill-downgrade="' + (isPotential ? 'potential:' + id : id) + '" data-tip="退回 1 技能點（不退還金幣）"' + pendingAttrs + '>⬇️ 降級</button>';
+    h += '<button class="btn sm warn" data-skill-downgrade="' + loadoutRef + '" data-tip="退回 1 技能點（不退還金幣）"' + pendingAttrs + '>⬇️ 降級</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
 
-  var usedInFusionModal = !isPotential && skillViewUsedInFusion(skillsSnapshot, id);
-  if (usedInFusionModal && canEquip) {
-    // 佔用中：不可裝備（刪除該融合技後釋放）
-    h += '<button class="btn sm" disabled data-tip="已投入融合技，刪除該融合技後可再裝備">⚗️ 融合中</button>';
-  } else if (canEquip && lv > 0) {
+  if (canEquip && lv > 0) {
     h += inLoadout
       ? '<button class="btn sm warn" data-skill-unequip="' + loadoutRef + '"' + pendingAttrs + '>卸下</button>'
       : '<button class="btn sm" data-skill-equip="' + loadoutRef + '"' + pendingAttrs + '>⚔️ 裝備</button>';
-  } else if (isPotential && !canEquip && lv > 0) {
+  } else if (!canEquip && lv > 0) {
     h += '<button class="btn sm" disabled data-tip="被動潛力技能學會即常駐生效">🌀 常駐</button>';
-  } else if (isFusion && lv <= 0) {
-    h += '<button class="btn sm" disabled data-tip="融合技需升級至 Lv.1 才可裝備">📖 未學習</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>'; // empty grid cell
   }
 
-  // 加入融合：已解鎖即可（不需學習）；被動/潛力/融合技與已佔用素材除外
-  if (!isPotential && !isFusion && sk.cat !== 'passive' && !lock) {
-    var inFuse = (UI.fuseSlots || []).indexOf(id) >= 0;
-    if (usedInFusionModal) {
-      h += '<button class="btn sm" disabled data-tip="一個技能只能投入一個融合技">⚗️ 已投入融合</button>';
-    } else if (inFuse) {
-      h += '<button class="btn sm" disabled>⚗️ 已加入</button>';
-    } else {
-      h += '<button class="btn sm" data-skill-fuse-add="' + id + '">⚗️ 加入融合</button>';
-    }
-  } else {
-    h += '<div style="visibility: hidden;"></div>';
-  }
+  h += '<div style="visibility: hidden;"></div>';
 
-  // 融合技即使尚未學習（Lv.0）也必須能刪除，因為刪除本身會釋放素材技能。
-  if (lv > 0 || isFusion) {
-    var deleteRef = isPotential ? 'potential:' + id : id;
-    h += '<button class="btn sm danger" data-skill-delete="' + deleteRef + '"' + pendingAttrs + '>🗑️ 刪除</button>';
+  if (lv > 0) {
+    h += '<button class="btn sm danger" data-skill-delete="' + loadoutRef + '"' + pendingAttrs + '>🗑️ 刪除</button>';
   } else {
     h += '<div style="visibility: hidden;"></div>';
   }
@@ -8571,33 +8362,20 @@ function showSkillTooltip(ref, anchorEl) {
     return;
   }
   // 潛力技能沿用同一個技能提示元件（data-sk="potential:id"）。
-  var potId = (typeof potentialSkillId === 'function') ? potentialSkillId(ref) : null;
-  var isPotential = potId !== null;
-  var id = isPotential ? potId : ref;
-  var sk = isPotential ? potentialDef(id) : skillViewDef(skillsSnapshot, id);
+  var id = (typeof potentialSkillId === 'function') ? potentialSkillId(ref) : null;
+  var sk = id ? potentialDef(id) : null;
   if (!sk) return;
   var reincarnations = skillViewReincarnations(headerSnapshot, talentSnapshot);
-  var maxLv = isPotential
-    ? skillViewPotentialMaxLevel(reincarnations)
-    : skillViewMaxLevel(sk, reincarnations);
-  var lv = isPotential
-    ? talentViewPotentialLevel(talentSnapshot, id, maxLv)
-    : skillViewLevel(skillsSnapshot, id);
-  var lock = isPotential
-    ? (potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級'
-      : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : (reincarnations < 3 ? '潛力技能需在 3 轉後解鎖' : '潛力節點尚未解鎖')))
-    : skillViewUnlockReason(skillsSnapshot, headerSnapshot, id, sk);
+  var maxLv = skillViewPotentialMaxLevel(reincarnations);
+  var lv = talentViewPotentialLevel(talentSnapshot, id, maxLv);
+  var lock = potentialTemporarilyDisabled(id) ? '此潛力技能目前暫不開放升級'
+    : (talentViewPotentialUnlocked(talentSnapshot, id) ? null : (reincarnations < 3 ? '潛力技能需在 3 轉後解鎖' : '潛力節點尚未解鎖'));
   var h = '<div class="skt-name">' + sk.emoji + ' ' + esc(sk.name) +
-    ' <span class="dim-text">Lv.' + lv + '/' + maxLv + (isPotential ? '｜潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk) : '') + '</span></div>';
-  h += skillTagsHTML(id, sk, lv, isPotential);
-  if (isPotential) {
-    if (sk.type === 'active') h += '<div class="skt-meta">⏱️ ' + sk.cd + 's</div>';
-    else if (sk.type === 'passiveTrigger') h += '<div class="skt-meta">⏱️ 觸發冷卻 ' + sk.cd + 's</div>';
-  } else if (sk.cat !== 'passive') {
-    h += '<div class="skt-meta">🔵 ' + skillManaCost(sk, Math.max(1, lv)) + ' MP　⏱️ ' + sk.cd + 's</div>';
-  }
-  h += '<div class="skt-desc">' + skillViewDescription(id, sk, Math.max(1, lv), false, isPotential,
-    skillsSnapshot && skillsSnapshot.fusions) + '</div>';
+    ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜潛力·' + potentialTypeLabel(sk) + potentialDmgLabel(sk) + '</span></div>';
+  h += skillTagsHTML(id, sk, lv);
+  if (sk.type === 'active') h += '<div class="skt-meta">⏱️ ' + sk.cd + 's</div>';
+  else if (sk.type === 'passiveTrigger') h += '<div class="skt-meta">⏱️ 觸發冷卻 ' + sk.cd + 's</div>';
+  h += '<div class="skt-desc">' + describePotentialSkill(sk, Math.max(1, lv)) + '</div>';
   if (lock) h += '<div class="skt-lock skill-unlock-hint">🔒 ' + esc(lock) + '</div>';
   h += '<div class="skt-hint">點擊開啟升級面板</div>';
   showSkillTooltipHTML(tip, h, anchorEl);
@@ -8850,7 +8628,6 @@ function showTowerTooltip(flStr, anchorEl) {
     '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
     '✨ 經驗 x' + fmt(bossXp) + ' <span style="color:var(--dim)">(基礎，另加經驗加成)</span><br>' +
     '🔮 附魔精華 x' + (3 + fl) + ' <span style="color:var(--dim)">(100%)</span><br>' +
-    '📜 魔法卷軸 <span style="color:var(--dim)">(附魔精華的 1/10，機率式進位)</span><br>' +
     '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
     '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span>' +
@@ -9015,7 +8792,6 @@ function showEnemyTooltip(anchorEl) {
     rewardLines.push('✨ 經驗 x' + fmt(m.xp));
     rewardLines.push('💎 寶石 等級 ' + rw.gemLevel + ' x2 顆');
     rewardLines.push('🔮 附魔精華 x' + rw.essence + '（另附魔書 x2）');
-    rewardLines.push('📜 魔法卷軸（附魔精華的 1/10，機率式進位）');
     if (dustRate > 0) rewardLines.push('💫 魔塵 (' + fmt1(dustRate) + '%)');
     if (soulOriginRate > 0) rewardLines.push('🧿 魔魂本源 (' + fmt1(soulOriginRate) + '%)');
     if (ancientEssenceRate > 0) rewardLines.push('🧿 太古精華 (' + fmt1(ancientEssenceRate) + '%)');
@@ -9103,47 +8879,6 @@ function toggleAffixPool(anchorEl) {
   if (y < 8) y = 8;
   overlay.style.left = x + 'px';
   overlay.style.top = y + 'px';
-}
-
-// 融合面板
-function renderFusionPanel(skillsSnapshot) {
-  var slotBox = $id('fusion-slots');
-  if (!slotBox) return;
-  skillsSnapshot = skillsSnapshot || uiSkillsPanelSnapshot();
-  if (!skillsSnapshot) return;
-  var h = '';
-  for (var i = 0; i < 4; i++) {
-    var id = UI.fuseSlots[i];
-    var d = id ? SKILLS[id] : null;
-    if (d) {
-      var lv = skillViewLevel(skillsSnapshot, id);
-      h += '<div class="tree-cell fusion-selected" data-fuse-remove="' + id + '" data-tip="點擊移出" style="margin:0 4px; cursor:pointer;">' +
-        '<span class="tc-emoji">' + d.emoji + '</span>' +
-        '<span class="tc-lv">' + lv + '</span>' +
-        '</div>';
-    } else {
-      h += '<div class="tree-cell" style="margin:0 4px; border:2px dashed var(--border); background:transparent; opacity:0.5; color:var(--dim); font-size:11px; cursor:default;">素材 ' + (i + 1) + '</div>';
-    }
-  }
-  slotBox.innerHTML = h;
-  var info = $id('fusion-preview');
-  var fuseBtn = $id('btn-fuse');
-  var slotCount = UI.fuseSlots.length;
-  if (slotCount >= 2) {
-    // 花費與庫存（快照 scrolls 由 Worker 投影；fusionGoldCost/fusionScrollCost 主執行緒同樣載入 formula.js）
-    var costGold = (typeof fusionGoldCost === 'function') ? fusionGoldCost(slotCount)
-      : (skillsSnapshot.fusionCosts ? skillsSnapshot.fusionCosts.goldPerComp * slotCount : 0);
-    var costScroll = (typeof fusionScrollCost === 'function') ? fusionScrollCost(slotCount)
-      : (skillsSnapshot.fusionCosts ? skillsSnapshot.fusionCosts.scrollPerComp * slotCount : 0);
-    var haveScroll = Math.max(0, Math.floor(Number(skillsSnapshot.scrolls) || 0));
-    info.textContent = '花費：💰' + fmt(costGold) + ' 金幣＋📜' + costScroll + ' 張魔法卷軸（持有 ' + haveScroll + '）' +
-      '｜融合以素材「滿級」數值隨機生成，產生後為未學習（升至 Lv.1 才可裝備）' +
-      '｜素材投入期間無法裝備，刪除融合技後釋放｜變異機率 ' + fmt1(Math.min(100, FUSION_MUTATION_CHANCE)) + '%';
-    if (fuseBtn) fuseBtn.disabled = haveScroll < costScroll;
-  } else {
-    info.textContent = '請從技能詳情按「⚗️ 加入融合」放入 2~4 個已解鎖的主動技能（不需學習；被動與潛力技能除外）。';
-    if (fuseBtn) fuseBtn.disabled = false;
-  }
 }
 
 /* ---- 寶石分頁 ---- */
@@ -10325,21 +10060,11 @@ function initUI() {
       var isGodAction = count >= 10;
       var actTitle = isGodAction ? '晉階' : '轉生';
 
-      // 轉生確認窗要顯示「這次轉生技能上限 +幾」，一律查表（超出表尾＝已封頂，差值自然為 0）
+      // 轉生確認窗要顯示「這次轉生潛力技能上限 +幾」，一律查表（超出表尾＝已封頂，差值自然為 0）
       var curSkillMax = skillMaxLvForRc(count);
       var nextSkillMax = skillMaxLvForRc(nextCount);
       var skillAdd = Math.max(0, nextSkillMax - curSkillMax);
-
-      var curFusionAdd = (typeof REINCARNATION_FUSION_MAX_LEVELS !== 'undefined' && REINCARNATION_FUSION_MAX_LEVELS[count] !== undefined)
-        ? REINCARNATION_FUSION_MAX_LEVELS[count] : (count * 20);
-      var nextFusionAdd = (typeof REINCARNATION_FUSION_MAX_LEVELS !== 'undefined' && REINCARNATION_FUSION_MAX_LEVELS[nextCount] !== undefined)
-        ? REINCARNATION_FUSION_MAX_LEVELS[nextCount] : (nextCount * 20);
-      var fusionAdd = Math.max(0, nextFusionAdd - curFusionAdd);
-
-      var skillMsgParts = [];
-      if (skillAdd > 0) skillMsgParts.push('一般技能上限 +' + skillAdd + ' 級');
-      if (fusionAdd > 0) skillMsgParts.push('融合技能上限 +' + fusionAdd + ' 級');
-      var skillLimitLine = skillMsgParts.length > 0 ? ('・' + skillMsgParts.join('，') + '。\n') : '';
+      var skillLimitLine = skillAdd > 0 ? ('・潛力技能上限 +' + skillAdd + ' 級。\n') : '';
 
       showConfirmDialog(
         actTitle + '效果：\n' +
@@ -10518,11 +10243,6 @@ function initUI() {
           'talent.potentialMax', maxPotentialId, maxRef, potentialMax,
           ['skills', 'talents', 'header']
         );
-      } else {
-        runSkillUiAction(
-          'skill.maxUpgrade', maxRef, 'skill:' + maxRef, maxUpgradeSkill,
-          ['skills', 'header']
-        );
       }
       return;
     }
@@ -10534,11 +10254,6 @@ function initUI() {
         runSkillUiAction(
           'talent.potentialUpgrade', learnPotentialId, learnRef, potentialUpgrade,
           ['skills', 'talents', 'header']
-        );
-      } else {
-        runSkillUiAction(
-          'skill.learn', learnRef, 'skill:' + learnRef, learnOrUpgradeSkill,
-          ['skills', 'header']
         );
       }
       return;
@@ -10627,68 +10342,22 @@ function initUI() {
           'talent.potentialDowngrade', downPotentialId, downRef, potentialDowngrade,
           ['skills', 'talents', 'header']
         );
-      } else {
-        runSkillUiAction(
-          'skill.downgrade', downRef, 'skill:' + downRef, downgradeSkill,
-          ['skills', 'header']
-        );
       }
       return;
     }
-    // 融合素材：加入 / 移出
-    var fa = e.target.closest('[data-skill-fuse-add]');
-    if (fa) {
-      var fid = fa.getAttribute('data-skill-fuse-add');
-      var faSnapshot = uiSkillsPanelSnapshot();
-      if (UI.fuseSlots.indexOf(fid) >= 0) blog('⚠️ 此技能已在融合槽中', 'warn');
-      else if (UI.fuseSlots.length >= 4) blog('⚠️ 融合槽已滿（最多 4 個）', 'warn');
-      else if (faSnapshot && skillViewUsedInFusion(faSnapshot, fid)) blog('⚠️ 此技能已投入其他融合技', 'warn');
-      else UI.fuseSlots.push(fid);
-      renderSkills();
-      return;
-    }
-    var fr = e.target.closest('[data-fuse-remove]');
-    if (fr) {
-      var rid = fr.getAttribute('data-fuse-remove');
-      var ri2 = UI.fuseSlots.indexOf(rid);
-      if (ri2 >= 0) UI.fuseSlots.splice(ri2, 1);
-      renderSkills();
-      return;
-    }
-    // 刪除/重置技能
+    // 刪除/重置潛力技能
     var fd = e.target.closest('[data-skill-delete]');
     if (fd) {
       var deleteRef = fd.getAttribute('data-skill-delete');
-      var isPotential = deleteRef.indexOf('potential:') === 0;
-      var actualId = isPotential ? deleteRef.slice('potential:'.length) : deleteRef;
-      var skDefObj = isPotential
-        ? potentialDef(actualId)
-        : skillViewDef(uiSkillsPanelSnapshot(), actualId);
+      var actualId = potentialSkillId(deleteRef);
+      var skDefObj = actualId !== null ? potentialDef(actualId) : null;
       if (skDefObj) {
-        var isFusionSkill = !isPotential && skDefObj.cat === 'fusion';
-        var confirmMsg = isFusionSkill
-          ? '確定刪除此融合技？所有投入的技能點將全數歸還，全部素材技能將被釋放（可再次裝備或融合）。'
-          : '確定重置技能「' + skDefObj.name + '」？等級將歸零，已投入的技能點將全額退還。';
-        var confirmTitle = isFusionSkill ? '融合技刪除確認' : '技能重置確認';
-
-        showConfirmDialog(confirmMsg, function () {
-          if (isFusionSkill) {
-            runSkillUiAction(
-              'skill.deleteFusion', actualId, 'skill:' + actualId, deleteFusion,
-              ['skills'], function () { UI.selSkill = null; }
-            );
-          } else if (isPotential) {
-            runSkillUiAction(
-              'talent.potentialDelete', actualId, deleteRef, potentialDelete,
-              ['skills', 'talents', 'header'], function () { UI.selSkill = null; }
-            );
-          } else {
-            runSkillUiAction(
-              'skill.delete', actualId, 'skill:' + actualId, deleteSkill,
-              ['skills'], function () { UI.selSkill = null; }
-            );
-          }
-        }, { title: confirmTitle, danger: true });
+        showConfirmDialog('確定重置技能「' + skDefObj.name + '」？等級將歸零，已投入的技能點將全額退還。', function () {
+          runSkillUiAction(
+            'talent.potentialDelete', actualId, deleteRef, potentialDelete,
+            ['skills', 'talents', 'header'], function () { UI.selSkill = null; }
+          );
+        }, { title: '技能重置確認', danger: true });
       }
       return;
     }
@@ -11071,32 +10740,6 @@ function initUI() {
       } catch (_) {}
     }
   });
-
-  // 執行融合 / 清空
-  var fuseBtn2 = $id('btn-fuse');
-  if (fuseBtn2) {
-    fuseBtn2.addEventListener('click', function () {
-      var fusionIds = UI.fuseSlots.slice();
-      var fusionKeys = fusionIds.map(function (id) {
-        return nodePendingKey('skill:' + id);
-      });
-      sendUiCommand('skill.fuse', { ids: fusionIds }, {
-        silentResultError: true,  // 下方 .then 自行回報
-        keys: fusionKeys,
-        panels: ['skills']
-      }).then(function (result) {
-        var error = uiCommandResultError(result);
-        if (error) reportUiCommandFailure('技能融合失敗', error, ['skills']);
-        else UI.fuseSlots = [];
-      }, function (error) {
-        reportUiCommandFailure('技能融合失敗', error, ['skills']);
-      });
-    });
-    $id('btn-fuse-clear').addEventListener('click', function () {
-      UI.fuseSlots = [];
-      renderFusionPanel();
-    });
-  }
 
   // 寶石合成（3 顆同種同級 → 同種下一階）
   var fuseBtn = $id('fuse-btn');

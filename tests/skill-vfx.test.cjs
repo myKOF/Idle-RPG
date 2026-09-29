@@ -1,6 +1,10 @@
-/* 新版戰鬥 P6：技能／增益特效
-   規格要求「所有技能或 buff 都要有簡易特效」。特效不逐一手寫，而是由技能既有資料推導，
-   所以這裡驗的是「推導規則正確」＋「全表覆蓋率 100%」，而不是逐支技能的畫面。 */
+/* 新版戰鬥 P6：技能／增益特效（潛力技能使用的 skillVfxSpec／skillVfxKind／skillVfxColor，js/skills.js）
+   特效不逐一手寫，而是由技能既有資料推導，所以這裡驗的是「推導規則正確」＋「潛力技能表覆蓋率 100%」，
+   而不是逐支技能的畫面。
+
+   2026-09-29 舊技能系統整批移除：SKILL_VFX_OVERRIDE 特規、隕石專用特效、舊技能表全表覆蓋隨之刪除
+   （全表覆蓋改為只掃潛力技能表）；高塔領域特效錨點原本用舊 skillRtOpenField 驗，改用新版火柱驗同一個約定。
+   新版技能（skills2.js）自己組特效事件、Preset 來自表格欄位。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -20,7 +24,7 @@ function loadContext() {
   vm.createContext(context);
   ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js']
     .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f }));
-  context.G = { player: { level: 1, skills: {}, loadout: [], fusions: [], talents: { levels: {}, potentialLevels: {} } }, stage: { current: 1 }, tower: { active: false } };
+  context.G = { player: { level: 1, loadout: [], talents: { levels: {}, potentialLevels: {} } }, stage: { current: 1 }, tower: { active: false } };
   return context;
 }
 
@@ -80,83 +84,68 @@ test('count 夾在 1~5：段數再多也不會生成一堆節點', () => {
   assert.equal(c.skillVfxSpec(sk, { dmgType: 'phys' }, '', [], null).count, 1);
 });
 
-test('個別技能可用 SKILL_VFX_OVERRIDE 特規，不必改推導規則', () => {
+test('潛力技能也有特效（castPotentialSkill 自己組事件），全表覆蓋且欄位合法', () => {
   const c = loadContext();
-  const meteor = c.skillDef('meteor');
-  assert.ok(meteor, '隕石術應存在');
-  const spec = c.skillVfxSpec(meteor, c.effectiveFx('meteor', meteor, 1), meteor.shape, ['mv-float-0'], null);
-  assert.equal(spec.fxKind, 'rain', '隕石術被覆寫為天降');
-});
-
-test('隕石專用特效不隨範圍值改變，all 與方框只改變落點', () => {
-  const c = loadContext();
-  const meteor = c.skillDef('meteor');
-  const fx = c.effectiveFx('meteor', meteor, 1);
-  const all = c.skillVfxSpec(meteor, fx, 'all', ['mv-float-0', 'mv-float-1'], { x: 0, y: 0, r: Infinity });
-  const box = c.skillVfxSpec(meteor, fx, '4*4', ['mv-float-0'], { x: 120, y: 60, r: 120 });
-
-  assert.equal(all.fxKind, 'rain');
-  assert.equal(box.fxKind, 'rain');
-  assert.equal(all.variant, 'meteor');
-  assert.equal(box.variant, 'meteor');
-  assert.equal(all.area.x, 0, 'all 的落點仍由場景中心提供');
-  assert.equal(box.area.x, 120, '4*4 的落點仍由主目標提供');
-});
-
-test('全表覆蓋：每一支主動技與潛力技都推得出特效，且欄位合法', () => {
-  const c = loadContext();
-  // v17 新增 curse（純詛咒／減益畫在敵人身上）；chain/impact 由 combat.js/potential.js 直接組事件，不經推導
+  // v17 新增 curse（純詛咒／減益畫在敵人身上）；chain/impact 由 potential.js 直接組事件，不經推導
   const KINDS = ['projectile', 'slash', 'burst', 'beam', 'rain', 'aura', 'selfBuff', 'curse'];
-  const ids = Object.keys(c.SKILLS);
-  assert.ok(ids.length >= 90, '技能表應有 90 支以上');
-  const seen = {};
-  ids.forEach((id) => {
-    const sk = c.SKILLS[id];
-    if (sk.cat === 'passive') return; // 被動沒有施放時機
-    const fx = c.effectiveFx(id, sk, 1);
-    const spec = c.skillVfxSpec(sk, fx, fx.shape || sk.shape, ['mv-float-0'], null);
-    assert.ok(KINDS.indexOf(spec.fxKind) >= 0, id + ' 的特效原型不合法：' + spec.fxKind);
-    assert.ok(typeof spec.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(spec.color), id + ' 顏色不合法：' + spec.color);
-    assert.ok(typeof spec.glyph === 'string' && spec.glyph.length > 0, id + ' 缺少圖案');
-    assert.ok(spec.dur > 0 && spec.count >= 1, id + ' 時長或段數不合法');
-    seen[spec.fxKind] = (seen[spec.fxKind] || 0) + 1;
-  });
-  // 推導不能退化成「全部都同一種」——至少要用到斬擊、投射物與我方光暈三種
-  assert.ok(seen.slash > 0 && seen.projectile > 0 && seen.selfBuff > 0,
-    '特效原型分布過於單一：' + JSON.stringify(seen));
-});
-
-test('潛力技能也有特效（不經 castSkill，另一條路徑）', () => {
-  const c = loadContext();
   assert.ok(c.POTENTIAL_TALENTS.length > 0);
   c.POTENTIAL_TALENTS.forEach((t) => {
+    // 與 castPotentialSkill 相同的組法：系統分類固定 potential、傷害類型取表上的 dmgType
     const sk = { id: t.id, name: t.name, emoji: t.emoji, cat: 'potential', tags: t.tags || [] };
     const spec = c.skillVfxSpec(sk, { dmgType: t.dmgType || null }, null, ['mv-float-0'], null);
-    assert.ok(spec.fxKind, t.id + ' 沒有特效原型');
-    assert.ok(spec.color, t.id + ' 沒有顏色');
+    assert.ok(KINDS.indexOf(spec.fxKind) >= 0, t.id + ' 的特效原型不合法：' + spec.fxKind);
+    assert.ok(typeof spec.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(spec.color), t.id + ' 顏色不合法：' + spec.color);
+    assert.ok(typeof spec.glyph === 'string' && spec.glyph.length > 0, t.id + ' 缺少圖案');
+    assert.ok(spec.dur > 0 && spec.count >= 1, t.id + ' 時長或段數不合法');
   });
 });
 
-test('高塔領域特效保留 BOSS 錨點，不退回玩家或野外場景', () => {
+test('沒有配置 Preset 的技能特效事件帶空表，不讓顯示層自行補畫法', () => {
   const c = loadContext();
-  let emitted = null;
-  c.playCombatVfx = (spec) => { emitted = spec; };
-  c.resetSkillRT();
+  const sk = { id: 'a', name: '火球', emoji: '🔥', cat: 'magic', tags: ['fire'] };
+  assert.deepEqual(JSON.parse(JSON.stringify(c.skillVfxSpec(sk, { dmgType: 'magic' }, '', [], null).vfx)), {});
+  const configured = { id: 'b', name: '斬', emoji: '🗡️', cat: 'phys', tags: [], vfx: { cast: 'preset-a', hit: 'preset-b' } };
+  assert.deepEqual(JSON.parse(JSON.stringify(c.skillVfxSpec(configured, { dmgType: 'phys' }, '', [], null).vfx)),
+    { cast: 'preset-a', hit: 'preset-b' });
+});
 
-  const pEnt = { hp: 1000, mp: 1000, buffs: {}, dots: [], effects: {}, skillCds: {} };
-  const sk = { id: 'towerField', name: '高塔領域', emoji: '🌋', cat: 'magic', tags: ['fire'] };
-  const fx = { dmgType: 'magic', stat: 'matk', field: { name: '高塔領域', dur: 6, tickSec: 1, tickPct: 25 } };
-  const st = {
-    level: 1, critRate: 0, critDmg: 150, hit: 100, passives: {},
-    elemDmgPct: {}, elemDmgUp: {}, eliteDmg: 0, bossDmg: 0, normalDmg: 0,
-    totalDmgPct: 0, dmgVsElem: {}
+/* 高塔（單體 BOSS、無座標）：新版技能的場域特效仍要以 BOSS 圖層 'tb-float' 為錨點，
+   不能退回玩家或野外場景（原本用舊「領域」機制驗，改用新版火柱驗同一個約定）。 */
+test('高塔場域特效保留 BOSS 錨點，不退回玩家或野外場景', () => {
+  const context = {
+    console, Math: Object.create(Math), setTimeout() {}, clearTimeout() {},
+    document: { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } },
+    UI: { dirty: {} }, blog() {}, floatText() {}, trackDps() {}, recordRunDamage() {}
   };
-
-  c.skillRtOpenField(pEnt, sk, fx, 'towerField', 1, st, {
-    baseVal: 1000, area: null, vfxTargets: ['tb-float']
+  context.window = context;
+  vm.createContext(context);
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js']
+    .forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), context, { filename: f }));
+  context.G = { player: { gold: 0, skills2: { levels: { firepillar: [1, 0, 0, 0, 0, 0, 0] } }, loadout: [] }, stage: { current: 1 } };
+  context.getStats = () => ({
+    atk: 1000, matk: 1000, hp: 1000, mp: 100, level: 10, aspd: 2, cdr: 0,
+    critRate: 0, critDmg: 150, hit: 100, tenacity: 0,
+    passives: {}, elemAtk: null, elemDmgPct: 0, elemDmgUp: 0,
+    eliteDmg: 0, bossDmg: 0, normalDmg: 0, totalDmgPct: 0, dmgVsElem: null,
+    aoeDmg: 0, globalDmgRed: 0
   });
+  const emitted = [];
+  context.playCombatVfx = (spec) => emitted.push(JSON.parse(JSON.stringify(spec)));
+  context.resetSkillRT();
 
-  assert.ok(emitted, '領域應送出特效事件');
-  assert.deepEqual(emitted.targets, ['tb-float'], '高塔領域應以 BOSS 圖層作為特效錨點');
-  assert.equal(emitted.area, null, '高塔領域仍維持無區域資料（座標制：area）');
+  const pEnt = { hp: 1000, mp: 100, shield: 0, shieldMax: 0, skillCds: {}, buffs: {}, dots: [], effects: {}, _lockTarget: null };
+  // 高塔 BOSS：沒有 pos（無座標）、沒有 floatSel，錨點完全由 floatSel 參數決定
+  const boss = { name: 'boss', maxHp: 1e9, hp: 1e9, def: 0, mdef: 0, level: 1, effects: {}, buffs: {}, dots: [], resist: {}, ctrlRes: 0, isBoss: true };
+
+  assert.ok(context.castSkill2(pEnt, boss, 'firepillar', 'tb-float'), '火柱應可對高塔 BOSS 施放');
+  for (let i = 1; i <= 4; i++) {
+    context.GT = i * 0.5;
+    context.tickSkill2(0.5, { pEnt, getEnemies: () => [boss], floatSel: 'tb-float', onDeaths() {} });
+  }
+
+  assert.ok(emitted.length > 0, '場域跳傷時應送出特效事件');
+  emitted.forEach((spec) => {
+    assert.deepEqual(spec.targets, ['tb-float'], '高塔場域應以 BOSS 圖層作為特效錨點');
+    assert.equal(spec.area, null, '高塔仍維持無區域資料（座標制：area）');
+  });
 });

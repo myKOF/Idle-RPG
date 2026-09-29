@@ -5,9 +5,13 @@ $ErrorActionPreference='Stop'
      1. insertColumns：用 Excel 的插入整欄，在指定欄之前插入新欄（格式、篩選範圍、凍結窗格由 Excel 自己調整）
      2. 逐格比對 rows（插入後的完整目標內容），只寫入與目標不同的儲存格（寫成文字）
    說明頁（replace=true）整頁換成新內容。
+   deleteColumns／deleteRows（2026-09-29 新增）：用 Excel 的刪除整欄／整列（格式、篩選範圍、凍結窗格由 Excel 自己調整），
+   deleteColumns＝要刪的表頭名稱（比對表頭第一行文字）、deleteRows＝要刪的列號（1 起、以「刪除前」的工作表為準）、
+   deleteRowKeys＝{ columns: [表頭名稱...], keys: [[值...], ...] } 以鍵欄位的值找出要刪的列（找不到就中止，不會靜默略過）；
+   三者都在插入欄與逐格比對之前執行，之後 rows 必須是刪完之後的完整目標內容。
    先改暫存副本，正常模式重開逐格驗證、繪圖物件數不變、再存一次重開仍不變，才覆蓋來源；
    來源 hash 在過程中被改動（使用者剛存檔）就停止，不覆蓋。
-   DataPath 的 JSON：{ sheets: [ { name, rows: [[...]], insertColumns?: [{ before, headers: [...], width }], replace?: true } ] } #>
+   DataPath 的 JSON：{ sheets: [ { name, rows: [[...]], insertColumns?: [{ before, headers: [...], width }], deleteColumns?: [表頭名稱...], deleteRows?: [列號...], deleteRowKeys?: { columns, keys }, replace?: true } ] } #>
 $target=[IO.Path]::GetFullPath($WorkbookPath)
 $sourceHash=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
 $tempBook=Join-Path ([IO.Path]::GetTempPath()) ('excel-update-'+[guid]::NewGuid().ToString()+[IO.Path]::GetExtension($target))
@@ -46,6 +50,45 @@ try {
    $range=$ws.Range($ws.Cells.Item(1,1),$ws.Cells.Item($rowCount,$colCount))
    $ws.Columns.Item(1).ColumnWidth=125;$range.WrapText=$true;$range.Rows.AutoFit()|Out-Null
    continue
+  }
+  foreach($colName in @($sheet.deleteColumns)){
+   if(-not $colName){continue}
+   $lastCol=$ws.UsedRange.Column+$ws.UsedRange.Columns.Count-1
+   $found=$false
+   for($c=$lastCol;$c -ge 1;$c--){
+    $head=([string]$ws.Cells.Item(1,$c).Value2).Split([char]10)[0].Trim()
+    if($head -eq [string]$colName){$ws.Columns.Item($c).Delete()|Out-Null;$found=$true;break}
+   }
+   if(-not $found){throw "找不到要刪除的欄位「$colName」"}
+  }
+  $delRows=@(@($sheet.deleteRows)|Where-Object{$_})   # @() 包住：只有一筆或零筆時仍要是陣列，否則 += 會變成數字相加
+  if($sheet.deleteRowKeys){
+   $keyCols=@($sheet.deleteRowKeys.columns)
+   $lastCol=$ws.UsedRange.Column+$ws.UsedRange.Columns.Count-1
+   $colIdx=@()
+   foreach($kc in $keyCols){
+    $ci=0
+    for($c=1;$c -le $lastCol;$c++){
+     if(([string]$ws.Cells.Item(1,$c).Value2).Split([char]10)[0].Trim() -eq [string]$kc){$ci=$c;break}
+    }
+    if($ci -eq 0){throw "找不到鍵欄位「$kc」"}
+    $colIdx+=$ci
+   }
+   $lastRow=$ws.UsedRange.Row+$ws.UsedRange.Rows.Count-1
+   foreach($key in @($sheet.deleteRowKeys.keys)){
+    $hit=0
+    for($r=2;$r -le $lastRow;$r++){
+     $ok=$true
+     for($k=0;$k -lt $colIdx.Count;$k++){
+      if([string]$ws.Cells.Item($r,$colIdx[$k]).Value2 -ne [string]@($key)[$k]){$ok=$false;break}
+     }
+     if($ok){$delRows+=$r;$hit++}
+    }
+    if($hit -ne 1){throw "刪除鍵「$(@($key) -join '|')」命中 $hit 列（必須剛好 1 列）"}
+   }
+  }
+  foreach($rn in ($delRows|Sort-Object {[int]$_} -Descending)){
+   $ws.Rows.Item([int]$rn).Delete()|Out-Null
   }
   foreach($ins in @($sheet.insertColumns)){
    if(-not $ins){continue}

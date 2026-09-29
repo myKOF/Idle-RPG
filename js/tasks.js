@@ -8,7 +8,7 @@
    - 累計次數：讀 G.factory.stats 既有統計（upgraded / enchanted），洗煉與合成
      兩個新計數（rerolled / gemComposed）由 item.js 對應成功點遞增。
    - 狀態檢查：每次讀取時依 G 現況計算（身上品質、鑲嵌數、太古數、關卡、高塔層數、
-     零件等級、技能等級、生命上限），拔下再裝不會重複計數——這正是設計文檔對鑲嵌任務
+     零件等級、生命上限），拔下再裝不會重複計數——這正是設計文檔對鑲嵌任務
      的要求。
 
    存檔欄位只有 G.taskState = { idx }：idx 為下一個可領取的任務索引（0 起）。
@@ -122,8 +122,6 @@ function taskProgressFor(def) {
     case 'towerFloor':
       // 高塔已通關的最高層（G.tower.highest，見 tower.js endTowerFight 的 firstClear）
       return Math.max(0, Math.floor(Number(G.tower && G.tower.highest) || 0));
-    case 'skillLevel':
-      return (typeof skillLevel === 'function') ? (skillLevel(def.param) || 0) : 0;
     default: return 0;
   }
 }

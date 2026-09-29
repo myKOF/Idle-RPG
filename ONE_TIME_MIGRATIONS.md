@@ -1,6 +1,6 @@
 # 一次性遷移與外部存檔特別處理
 
-> **狀態：目前生效中的一次性遷移只有 `loadoutCapClampV1`（2026-08-11 新增，見下方登錄）。**
+> **狀態：目前生效中的一次性遷移有 `loadoutCapClampV1`（2026-08-11 新增）與 `legacySkillRemovalV1`（2026-09-29 新增，舊版技能系統移除），見下方登錄。**
 > 在那之前的全部遷移已於 2026-07-28 移除。
 >
 > ⚠️ 本文件下方仍列著 `equipSetPotentialLimitV1`、`externalGoldRecoveryV1`、
@@ -62,6 +62,40 @@
 - 刪除遷移程式時，不能連同仍在使用的永久性存檔相容處理一併刪除。
 
 ## 目前登錄與規劃中的遷移
+
+### `legacySkillRemovalV1`：舊版技能系統整批移除，存檔卸載已裝備的舊技能
+
+**狀態：已實作（2026-09-29）。以程式碼為準——`js/save.js` 的 `ONE-TIME MIGRATION: legacySkillRemovalV1` 區塊、`js/player.js` 的 `legacySkillRemovalV1: true`、`js/worker/sim.worker.js` 的 `_legacySkillRemoval` 公告。**
+
+**目的**：`SKILLS` 一般技能（物理／魔法／防禦／特殊／被動）、技能融合、45 機制族與魔法卷軸整批刪除，
+只留新版技能群組（`sg:<群組id>`）與潛力技能（`potential:<id>`）。舊存檔的技能資料不能留在存檔裡，
+更不能讓裝載欄留著指向已不存在技能的鍵（施放端會撞到 undefined）。
+
+**執行時機**：`migrateSave(data)` 中，排在 `loadoutCapClampV1` 之前
+（先卸下舊技能，再依上限裁切剩餘格位）。以 `data.legacySkillRemovalV1` 為完成標記，
+於 `mergeDefaults` 前捕捉 `hadLegacySkillRemovalV1`（新帳號由 `newGameState()` 預帶 `true`）。
+
+**處理範圍**：
+
+- `player.skills`（已學等級）、`player.skillUnlocks`、`player.fusions`、`player.magicScroll` 直接刪除。
+  技能點是「總預算 − 已投入（潛力技能等級）」的推導制，舊技能等級一刪就等於全額退還，不需另外發點。
+- `player.loadout`：只保留 `sg:` 與 `potential:` 開頭的鍵，其餘（舊技能、融合技）一律換成空格，
+  再把尾端空格修掉；中間空格保留（裝載欄允許有洞）。
+- 裝備上的傳奇特效：`fixLoadedItem` 發現 `it.passive` 的 key 已不在 `PASSIVE_POOL`（18 條只作用於舊技能的傳奇特效已刪）
+  就移除該特效，物品本體保留。此段為冪等，不受旗標限制。
+- 主線任務：移除原索引 6、16 兩個以舊技能為目標的任務，`taskState.idx` 以
+  `idx − (idx>6 ? 1 : 0) − (idx>16 ? 1 : 0)` 平移，已領取進度對得上、不會重複領到後面的任務。
+- 有實際清除內容時設 `data._legacySkillRemoval = { skills, fusions, equipped, scrolls }`，
+  由 Worker 的 BOOTED notices 公告一次（可用技能點只有 Worker 算得出來，所以文字在那邊組）。
+
+**為何是旗標式**：欄位刪除本身冪等，但任務索引平移重跑會把進度再往前拉一格，
+而且公告只該出現一次。
+
+**測試方式**：`tests/legacy-skill-removal-migration.test.cjs`（舊技能卸載、保留 sg／potential、
+尾端壓實、任務索引平移三個邊界、重複讀檔冪等、新帳號不觸發、公告內容、傳奇特效剝除）。
+
+**日後清理**：所有外部存檔皆完成遷移後，移除 `js/save.js` 的區塊與 `hadLegacySkillRemovalV1` 捕捉、
+`js/player.js` 的預置旗標、`js/worker/sim.worker.js` 的公告分支與本測試檔，並保留本紀錄註明已下線。
 
 ### `loadoutCapClampV1`：技能裝載欄上限下修後裁切超額格數
 

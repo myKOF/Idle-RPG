@@ -12,7 +12,7 @@
      §6  裝備數值（詞條、被動、附魔、評分、分解產出）
      §7  強化 / 洗煉 / 合成 / 生產線容量
      §8  寶石（能力值、插槽、合成、融合、商店）
-     §9  技能（費用、冷卻、裝載欄、技能融合參數）
+     §9  技能（冷卻、裝載欄、技能熟練度、等級上限）
      §10 離線收益
 
    ⚙️ 調整遊戲平衡：改這裡（數值資料表在 data.js，如稀有度表、
@@ -241,43 +241,7 @@ function computeStats(equipmentOverride) {
     });
   });
 
-  // 被動技能加成：每級效果 × 技能等級；4 轉天賦的被動技能效果同步放大。
   var talent = (typeof talentStatBonuses === 'function') ? talentStatBonuses() : {};
-  if (G.player.skills) {
-    for (var sid in G.player.skills) {
-      var slv = G.player.skills[sid];
-      var sdef = (typeof SKILLS !== 'undefined') ? SKILLS[sid] : null;
-      if (!sdef || !sdef.fx || !sdef.fx.passive || !slv) continue;
-      for (var pk in sdef.fx.passive) {
-        if (A[pk] !== undefined) {
-          var passiveVal = sdef.fx.passive[pk] * slv * (1 + (talent.skillPassive || 0) / 100);
-          A[pk] += pk === 'loot' ? effectiveDropRateEffect(passiveVal) : passiveVal;
-        }
-      }
-    }
-  }
-
-  /* 45 新技能：被動觸發路由——聚合已學被動技能（cat passive）的觸發鍵至 st.skillTriggers，供戰鬥端消費。
-     以 effectiveFx 取含里程碑的 fx（guard typeof：載入順序 formula 先於 skills，執行期已齊全）；
-     各鍵以 fxResolveDeep 解析（{base,per} 欄位依技能等級展開為當級數值）；
-     觸發鍵不吃 4 轉被動天賦倍率（skillPassive 僅放大屬性型被動）。 */
-  var skillTriggers = {};
-  if (G.player.skills && typeof effectiveFx === 'function' && typeof PASSIVE_TRIGGER_KEYS !== 'undefined') {
-    for (var tid in G.player.skills) {
-      var tlv = G.player.skills[tid];
-      var tdef = (typeof SKILLS !== 'undefined') ? SKILLS[tid] : null;
-      if (!tdef || !tdef.fx || tdef.cat !== 'passive' || !tlv) continue;
-      var tfx = effectiveFx(tid, tdef, tlv);
-      for (var tki = 0; tki < PASSIVE_TRIGGER_KEYS.length; tki++) {
-        var tkey = PASSIVE_TRIGGER_KEYS[tki];
-        if (tfx[tkey] === undefined) continue;
-        var tval = fxResolveDeep(tfx[tkey], tlv);
-        // 物件型觸發保留來源技能 id（如殺陣反射 M8 重放本技需回查來源）
-        if (tval !== null && typeof tval === 'object' && tval.srcId === undefined) tval.srcId = tid;
-        skillTriggers[tkey] = fxTriggerMerge(skillTriggers[tkey], tval);
-      }
-    }
-  }
 
   // 鑲嵌寶石加成（受「寶石鑲嵌效率」屬性放大；融合寶石逐屬性計入）
   // 10 轉「寶石共鳴」天賦與詞條等來源的寶石鑲嵌效率直接相加。
@@ -377,7 +341,7 @@ function computeStats(equipmentOverride) {
   st.aspd = ASPD_CAP > 0
     ? clamp(ASPD_BASE * (1 + st.aspdBonusBase / 100), ASPD_MIN, ASPD_CAP)
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + st.aspdBonusBase / 100));
-  st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills.js castSkill）
+  st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills2.js 的冷卻計算）
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
   // 吸血／吸魔不設上限（STAT_CAPS = 0）：回復量由「每秒生命回復／法力恢復 × 此%」決定（§3 lifestealHealAmount）。
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);
@@ -451,7 +415,6 @@ function computeStats(equipmentOverride) {
   st.passives = passives;
   st.legendaryEffects = legendaryEffects;
   st.legendaryEffectMults = legendaryEffectMults;
-  st.skillTriggers = skillTriggers; // 45 新技能被動觸發鍵聚合（無已學相關被動時＝空物件）
   st.talent = talent;
   // 5/9 轉元素天賦：攻擊時附加「當次傷害 × 天賦%」的元素傷害（結算於 resolveHit 元素附加段）；
   // 潛力「元素核心」把所有元素附加傷害（含裝備附魔的固定值元素攻擊）乘算提高。
@@ -463,7 +426,7 @@ function computeStats(equipmentOverride) {
     elemDmgPct[e4] = talentElemMap[e4] * elemBoost;
   });
   st.elemDmgPct = elemDmgPct;
-  // 潛力技能【混沌雙修】：物理技能額外獲得魔攻加成、魔法技能額外獲得物攻加成（被動常駐；castSkill 傷害段引用）。
+  // 潛力技能【混沌雙修】：雷霆過載的雷擊額外獲得物攻加成（被動常駐；firePotentialLightning 引用）。
   st.crossCore = (typeof potentialSkillActive === 'function' && potentialSkillActive('dualCoreFusion')) ? potentialSkillValue('dualCoreFusion') : 0;
   st.elemAtk = elemAtk;
   st.A = A;
@@ -659,19 +622,10 @@ var ELEM_PROC = {
 };
 
 /* ---- 技能屬性化：解析本次傷害段的屬性歸屬 ----
-   回傳 null（無屬性歸屬，維持純物理/純魔法）或 {屬性鍵: 權重}（權重合計正規化為 1）。
-   skillElem＝單一屬性鍵；skillElemMix＝融合技多屬性權重表（未正規化亦可）。 */
+   回傳 null（無屬性歸屬，維持純物理/純魔法）或 {屬性鍵: 權重}（權重合計為 1）。
+   skillElem＝單一屬性鍵。 */
 function skillElemMixOf(aCfg) {
   if (!aCfg) return null;
-  var mix = aCfg.skillElemMix, k, w;
-  if (mix) {
-    var total = 0;
-    for (k in mix) { w = Number(mix[k]) || 0; if (w > 0) total += w; }
-    if (total <= 0) return null;
-    var norm = {};
-    for (k in mix) { w = Number(mix[k]) || 0; if (w > 0) norm[k] = w / total; }
-    return norm;
-  }
   if (aCfg.skillElem) { var one = {}; one[aCfg.skillElem] = 1; return one; }
   return null;
 }
@@ -694,7 +648,7 @@ function penIgnorePct(penPct) { return penIgnoreRatio(penPct) * 100; }
 // 有效防禦乘區：忽略防禦比率直接折在防禦上，不會出現負防禦
 function penDefMultiplier(ignoreRatio) { return Math.max(0, 1 - ignoreRatio); }
 /* 有效穿透 = 屬性穿透% + 技能增益 penUp%
-   penUp＝技能（破甲擊／旋風斬 M8／法力灼燒 M8）改版後給予的穿透增益，同時作用於物理與魔法穿透。
+   penUp＝狀態表 penUp 給予的穿透增益，同時作用於物理與魔法穿透（2026-09-29 舊版技能移除後，目前沒有技能授予它；保留供之後的技能／狀態使用）。
    buffVal 定義於 combat.js（同時載入；獨立載入 formula.js 的測試環境以 typeof 保護）。 */
 function penBuffValue(ent) {
   return (typeof buffVal === 'function' && ent) ? (buffVal(ent, 'penUp') || 0) : 0;
@@ -709,9 +663,9 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
            → 總傷害額外增幅 → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 對屬性敵人抗性
            → 護盾吸收 → 扣血 → 反震
    aCfg: { atk, dmgType('phys'|'magic'|'both'), level, critRate, critDmg, hit, sunder, pen,
-     trueDmgPct, skillElem, skillElemMix, elemAtk, elemDmgPct, elemDmgUp,
+     trueDmgPct, skillElem, elemAtk, elemDmgPct, elemDmgUp,
      eliteDmg, bossDmg, normalDmg, totalDmgPct, dmgVsElem, attr, isElite, isBoss, isPlayer }
-         （skillElem/skillElemMix = 技能屬性化：本體傷害段整段歸屬該屬性，於防禦/抗性之後、
+         （skillElem = 技能屬性化：本體傷害段整段歸屬該屬性，於防禦/抗性之後、
            浮動與暴擊之前套用元素抗性與屬性傷害提升；因此屬性傷害吃得到暴擊倍率）
          （elemAtk = 固定值元素攻擊；elemDmgPct = 5/9 轉天賦附傷%，按當次傷害附加）
          （elemDmgUp = 屬性傷害提升% {fire..earth}：自身該屬性元素傷害合計 ×(1+%)，僅玩家攻擊端傳入）
@@ -811,7 +765,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     mDmg *= 1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1);   // 魔法抗性：結算防禦後套用抗性曲線
     dmg += mDmg;
   }
-  /* ---- 技能屬性化（skillElem / skillElemMix）----
+  /* ---- 技能屬性化（skillElem）----
      技能標籤為某屬性時，本體傷害段整段即為該屬性傷害（不再拆成「純魔法段＋元素附加段」）。
      位置在防禦/物魔抗之後、浮動與暴擊之前：套對應元素抗性與自身屬性傷害提升%，
      之後照常吃浮動、暴擊、對敵種/對屬性敵人/總傷加成。 */
@@ -2279,7 +2233,6 @@ function gemShopUpgradeCost(level) {
    §9 技能
    ============================================================ */
 
-var SKILL_MAX_LV = 10;         // 一般技能等級上限（保留給外部參照）
 var SKILL_CAST_LOCK = 0.2;       // 由參數表「9-技能／施放硬直」套用；技能不再改動普攻 atkCd
 var SKILL_MIN_CAST_INTERVAL = 0.2; // 由參數表「9-技能／技能施放最短間隔」套用；各技能獨立、不受冷卻縮減影響
 
@@ -2312,7 +2265,6 @@ function loadoutSize() {
 // 技能升級金幣費用 = 20000 × 當前等級 + 20^(1 + 當前等級/10)
 /* 技能升級費用 = 係數 × 等級 + 底^(1 + 等級 ÷ 除數)。 */
 var SKILL_UPGRADE_COST = { coef: 1000, base: 20, divisor: 10 };
-var SKILL_MANA_PER_LEVEL = 0.1;   // 一般技能法力消耗：每級加成比率
 function skillUpgradeCost(lv) {
   var cost = Math.floor(SKILL_UPGRADE_COST.coef * lv + Math.pow(SKILL_UPGRADE_COST.base, 1 + lv / SKILL_UPGRADE_COST.divisor));
   return Math.min(5000000, cost);
@@ -2356,116 +2308,12 @@ function skillMaxLvForRc(rc) {
   return REINCARNATION_SKILL_MAX_LEVELS[Math.min(i, REINCARNATION_SKILL_MAX_LEVELS.length - 1)];
 }
 
-/* 各類技能等級上限（2026-07-30 技能融合改造）：
-   所有技能（含融合技/被動技）共用上表；融合技不再使用記錄內凍結的 maxLv
-   （素材加總+20 舊制欄位僅為存檔相容保留）。 */
-function skillMaxLv(def) {
-  return skillMaxLvForRc(reincarnationCount());
-}
-
-// 技能傷害倍率（%）= base + per × (等級-1)
-function skillValue(sk, lv) { return (sk.fx.base || 0) + (sk.fx.per || 0) * (lv - 1); }
 // 技能冷卻基準值 = 技能冷卻 × (1 - 冷卻縮減%)；實際寫入時再套用每技能最低施放間隔。
 // extraCdr 為潛力【時間坍縮】施放時的額外 CDR（突破一般上限，總 CDR 另有上限）。
 function skillCdFor(sk, extraCdr) {
   var cdr = Math.min(90, (getStats().cdr || 0) + (Number(extraCdr) || 0));
   return sk.cd * (1 - cdr / 100);
 }
-// 技能基礎法力消耗：融合技能取所有素材技能的原始消耗總和。
-function skillBaseManaCost(def) {
-  if (!def) return 0;
-  if (def.cat === 'fusion' && Array.isArray(def.components)) {
-    var total = 0, found = 0;
-    for (var i = 0; i < def.components.length; i++) {
-      var component = (typeof SKILLS !== 'undefined') ? SKILLS[def.components[i]] : null;
-      if (!component) continue;
-      total += Math.max(0, Number(component.cost) || 0);
-      found++;
-    }
-    if (found) return total;
-  }
-  return Math.max(0, Number(def.cost) || 0);
-}
-// 實際法力消耗 = 基礎消耗 ×（1 + 10% ×（技能等級 - 1））；非複利。
-function skillManaCost(def, level) {
-  if (!def || def.cat === 'passive') return 0;
-  var lv = Math.max(1, Number(level) || 1);
-  return Math.max(0, Math.round(skillBaseManaCost(def) * (1 + SKILL_MANA_PER_LEVEL * (lv - 1))));
-}
-// buff/heal 等 {base,per} 縮放通用式 = base + per × (等級-1)
-function scaleAt(def, lv) { return def.base + def.per * (lv - 1); }
-
-/* ---- 45 新技能基建：fx 欄位取值工具 ----
-   v 為純量（數字/布林/字串）直接回傳；為 {base,per} 物件則複用 scaleAt 語意回傳等級成長值。 */
-function fxVal(v, lv) {
-  if (v !== null && typeof v === 'object' && (v.base !== undefined || v.per !== undefined)) {
-    return scaleAt({ base: Number(v.base) || 0, per: Number(v.per) || 0 }, Math.max(1, Number(lv) || 1));
-  }
-  return v;
-}
-// 遞迴解析觸發鍵設定：物件逐欄位解析（{base,per} 欄位以 fxVal 展開為當級數值），純量原樣保留。
-function fxResolveDeep(v, lv) {
-  if (v === null || v === undefined) return v;
-  if (typeof v === 'object') {
-    if (v.base !== undefined || v.per !== undefined) return fxVal(v, lv);
-    var out = {};
-    for (var k in v) out[k] = fxResolveDeep(v[k], lv);
-    return out;
-  }
-  return v;
-}
-// 觸發鍵聚合：同鍵多來源時數字相加、物件逐欄位遞迴合併（數字加總、其餘後者覆蓋）；目前每鍵僅單一被動來源。
-function fxTriggerMerge(prev, next) {
-  if (prev === undefined || prev === null) return next;
-  if (typeof prev === 'number' && typeof next === 'number') return prev + next;
-  if (typeof prev === 'object' && typeof next === 'object') {
-    var out = {}, k;
-    for (k in prev) out[k] = prev[k];
-    for (k in next) out[k] = fxTriggerMerge(out[k], next[k]);
-    return out;
-  }
-  return next;
-}
-
-/* ---- 技能融合參數（2026-07-30 種子演算法改造）---- */
-var FUSE_FACTOR = 0.75;           // 舊版素材繼承比例；新演算法不再使用，保留供參數表錨點相容
-var FUSION_MUTATION_CHANCE = 45;  // 變異基礎機率 %（種子流內擲骰）
-var FUSION_CD_FACTOR = 1.25;      // 融合技冷卻 = 素材最長冷卻 × 1.25
-
-// 融合變異觸發率 = 基礎 45%
-function fusionMutationChance() { return FUSION_MUTATION_CHANCE; }
-
-/* 新演算法參數：
-   物魔判定＝混合素材時 物理/魔法/雙屬性 權重 45/45/10（物魔票數不等時各自 ×票數比例）；
-   攻擊力＝素材滿級傷害%平均 → 四檔 75/100/125/150%，機率 20/30/30/20；
-   同屬性加成＝素材中同屬性每多 1 個，該屬性最終傷害 ×(1+25%)（折入權重與總值）；
-   雙屬性（物+魔）結果：物攻與魔攻兩段各以 總傷害% × FUSION_BOTH_STAT_FACTOR 結算；
-   所有隨機結果值為融合技滿級（10 級）值，Lv.1 起為 FUSION_LV1_RATIO 線性成長至 100%。 */
-var FUSION_ATK_TIERS = [75, 100, 125, 150];      // 攻擊力四檔（%）
-var FUSION_ATK_TIER_WEIGHTS = [20, 30, 30, 20];  // 四檔機率（%）
-var FUSION_BOTH_BASE_CHANCE = 10;   // 物魔混合素材出「物理+魔法」結果的基礎機率 %
-var FUSION_SAME_ELEM_BONUS = 25;    // 同屬性每多 1 個素材的傷害加成 %
-var FUSION_BOTH_STAT_FACTOR = 0.65; // 雙屬性結果每段攻擊係數
-var FUSION_EFFECT_FUSE_CHANCE = 5;  // 效果融合機率 %（合併兩個素材的特效包，最多 2）
-var FUSION_LV1_RATIO = 0.6;         // 融合技 Lv.1 數值 = 滿級值 × 此比例（線性成長至滿級）
-var FUSION_GOLD_COST_PER_COMP = 50000; // 融合金幣費用（每個素材）
-var FUSION_SCROLL_COST_PER_COMP = 5;   // 融合魔法卷軸費用（每個素材）
-var MAGIC_SCROLL_ESSENCE_RATIO = 0.1;  // 魔法卷軸產出 = 附魔精華量 × 此比例（機率式進位）
-
-// 融合花費（金幣/卷軸）＝每素材費用 × 素材數
-function fusionGoldCost(compCount) { return FUSION_GOLD_COST_PER_COMP * Math.max(0, compCount || 0); }
-function fusionScrollCost(compCount) { return FUSION_SCROLL_COST_PER_COMP * Math.max(0, compCount || 0); }
-
-/* 魔法卷軸產出換算：與附魔精華同來源（拆解/高塔）、同掉落判定，數量 = 精華量 × 0.1。
-   量常小於 1 → 機率式進位（期望值精準等於 精華量 × 比例）。 */
-function magicScrollFromEssence(essenceQty) {
-  var v = Math.max(0, Number(essenceQty) || 0) * MAGIC_SCROLL_ESSENCE_RATIO;
-  var n = Math.floor(v);
-  var frac = v - n;
-  if (frac > 0 && chance(frac * 100)) n++; // 小數部分機率進位；整數量不擲骰
-  return n;
-}
-
 /* ============================================================
    §10 離線收益
    ============================================================ */

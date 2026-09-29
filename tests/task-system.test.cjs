@@ -163,8 +163,12 @@ test('taskPanelData：已領/進行中/未來任務的狀態欄位', () => {
   assert.equal(data.tasks[2].ready, true);
   assert.equal(data.tasks[3].claimed, false);
   assert.equal(data.tasks[3].current, false);
-  // 未來任務也回報即時進度（任務 8 強化20次 → 10/20）
-  assert.equal(data.tasks[7].prog, 10);
+  /* 未來任務也回報即時進度：找第一個「強化裝備 20 次」（統計已累計 10 次 → 10/20）。
+     位置由 TASKS 反推而不寫死序號——企劃增刪任務（例如 2026-09-29 移除兩個舊技能任務）就會位移。 */
+  const upgrade20 = c.TASKS.findIndex((t) => t.type === 'upgradeCount' && t.count === 20);
+  assert.ok(upgrade20 > 2, '前提：強化裝備 20 次是還沒輪到的未來任務');
+  assert.equal(data.tasks[upgrade20].current, false);
+  assert.equal(data.tasks[upgrade20].prog, 10);
 });
 
 /* ---- 6. equip 獎勵的太古指定 ---- */
@@ -219,7 +223,7 @@ test('composeGems 與 consumeRerollResources 遞增對應統計', () => {
 });
 
 /* ---- stageClear / skillLevel 進度 ---- */
-test('stageClear 讀 zoneClearedStage；skillLevel 讀技能等級', () => {
+test('stageClear 讀 zoneClearedStage；每個任務目標類型都有進度計算（skillLevel 已移除）', () => {
   const c = loadContext();
   c.G.stage.zone = 'desert';
   c.G.stage.best = 21; // 已通關 20
@@ -229,9 +233,16 @@ test('stageClear 讀 zoneClearedStage；skillLevel 讀技能等級', () => {
   c.G.zoneProgress.desert.best = 31;
   assert.equal(c.taskProgressFor({ type: 'stageClear', param: 'desert', count: 30 }), 30);
 
-  // 開局自帶 manaBarrier 1 級；regenerate 未學 → 0
-  assert.equal(c.taskProgressFor({ type: 'skillLevel', param: 'manaBarrier', count: 5 }), 1);
-  assert.equal(c.taskProgressFor({ type: 'skillLevel', param: 'regenerate', count: 1 }), 0);
+  /* 2026-09-29 舊技能系統移除：skillLevel 目標類型連同兩個舊技能任務（再生術／魔法屏障）一併刪除。
+     taskProgressFor 對不認得的類型回 0，所以「任務表引用了沒有對應 case 的類型」會變成永遠達不成、
+     卡死整條任務鏈——這裡守住任務表用到的每個類型都有 case。 */
+  const src = read('js/tasks.js');
+  const types = Array.from(new Set(c.TASKS.map((t) => t.type)));
+  assert.ok(!types.includes('skillLevel'), '任務表不得再有 skillLevel 目標');
+  assert.doesNotMatch(src, /case 'skillLevel'/);
+  types.forEach((type) => {
+    assert.match(src, new RegExp("case '" + type + "'"), '任務類型 ' + type + ' 在 taskProgressFor 沒有對應 case');
+  });
 });
 
 /* ---- stageClear：地圖最後一關（best 被上限夾住，只有 cleared 分得出來）---- */

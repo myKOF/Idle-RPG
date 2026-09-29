@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=1.0.66">
+  <link rel="stylesheet" href="css/style.css?v=1.0.67">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.16">
 </head>
@@ -57,7 +57,6 @@
       <span class="res" data-tt-title="附魔精華" data-tt-desc="目前持有的附魔精華"><img src="images/icon_essence.png" class="res-icon" alt="Essence"> <b
           id="r-essence">0</b></span>
       <span class="res" data-tt-title="魔塵" data-tt-desc="神鑄材料，可提升鑄造成功率">💫 <b id="r-dust">0</b></span>
-      <span class="res" data-tt-title="魔法卷軸" data-tt-desc="技能融合材料；拆解裝備與高塔通關時隨附魔精華獲得（數量為其 1/10）"><span class="res-emoji" aria-hidden="true">📜</span> <b id="r-magic-scroll">0</b></span>
       <span class="res" data-tt-title="太古精華" data-tt-desc="太古機制改版：太古詞條於裝備產出時決定，此資源暫保留、用途待定"><img src="images/icon_ancient_essence.png" class="res-icon" alt="Ancient Essence"> <b id="r-ancient-essence">0</b></span>
       <span class="res" data-tt-title="魔魂本源" data-tt-desc="用於本源覺醒的道具"><span class="res-emoji" aria-hidden="true">🧿</span> <b id="r-soul-origin">0</b></span>
       <span class="res" data-tt-title="魔種" data-tt-desc="煉獄之塔 BOSS 額外掉落材料。"><span class="res-emoji" aria-hidden="true">🌱</span> <b id="r-demon-seed">0</b></span>
@@ -432,30 +431,14 @@
         <section id="tab-skills" class="tab">
           <div class="panel" style="margin-bottom:12px">
             <div class="sec-title">🧠 技能 <span class="dim-text">可用技能點：<b id="sp-count"
-                  style="color:var(--accent)">0</b>（技能熟練度每升 1 級 +1 點；技能上限 Lv.10，轉生後 Lv.15）</span></div>
+                  style="color:var(--accent)">0</b>（技能熟練度每升 1 級 +1 點；技能點用於升級潛力技能）</span></div>
             <div class="sec-sub">📚 技能熟練度 <span id="mastery-level" class="dim-text"></span></div>
             <div id="mastery-bar" class="mastery-bar"><div id="mastery-bar-fill" class="mastery-bar-fill"></div><span id="mastery-bar-text" class="mastery-bar-text"></span></div>
             <div class="sec-sub">⚔️ 裝載欄 <span id="loadout-cap" class="dim-text"></span>（依順序自動施放；點擊卸下）</div>
             <div id="skill-loadout" class="chip-row"></div>
           </div>
           <div class="hint" style="margin-bottom:12px">💡 新版技能同群組由左至右進階，箭頭表示方向；亮起階段代表已解鎖，灰色階段仍可查看但不能升級。點擊技能圖示開啟升級面板。</div>
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🧬 融合技 <span class="dim-text">你的專屬奧義（產生時為未學習，升至 Lv.1 後可裝備）</span></div>
-            <div id="fusion-skill-list" class="tree-row"></div>
-          </div>
           <div id="skill-trees"></div>
-          <div class="panel" style="margin-top:12px">
-            <div class="sec-title">⚗️ 技能融合</div>
-            <div class="hint">放入 2~4
-              個已解鎖的主動技能（不需學習）：融合結果以素材「滿級」數值隨機生成——物理/魔法/雙屬性、攻擊力四檔、屬性組合、增益減益數量與數值、特效（5% 機率融合兩種特效）。素材不會消失，但投入期間無法裝備（刪除融合技後釋放）；被動技與潛力技能不可融合。融合花費金幣與魔法卷軸📜。
-            </div>
-            <div id="fusion-slots" class="chip-row" style="margin:8px 0"></div>
-            <div class="btn-row">
-              <button id="btn-fuse" class="btn">⚗️ 執行融合</button>
-              <button id="btn-fuse-clear" class="btn sm">清空素材槽</button>
-            </div>
-            <div class="node-info" id="fusion-preview"></div>
-          </div>
         </section>
 
         <!-- ============ 高塔 ============ -->
@@ -854,11 +837,11 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.51"></script>
-  <script src="js/status.js?v=1.0.26"></script>
-  <script src="js/formula.js?v=1.0.37"></script>
+  <script src="js/data.js?v=1.0.52"></script>
+  <script src="js/status.js?v=1.0.27"></script>
+  <script src="js/formula.js?v=1.0.38"></script>
   <script src="js/battlefield.js?v=1.4.1"></script>
-  <script src="js/vfx.js?v=1.0.77"></script>
+  <script src="js/vfx.js?v=1.0.78"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
@@ -868,32 +851,32 @@
   <script src="js/vfx-water-tornado.js?v=1.0.4"></script>
   <script src="js/vfx-core.js?v=20260929-code-controls"></script>
   <script src="js/vfx-pixi-backend.js?v=20260929-chain-stable"></script>
-  <script src="js/vfx-runtime.js?v=1.0.143"></script>
+  <script src="js/vfx-runtime.js?v=1.0.145"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.1"></script>
   <script src="js/battle-renderer.js?v=1.6.152"></script>
-  <script src="js/stats.js?v=1.0.1"></script>
+  <script src="js/stats.js?v=1.0.2"></script>
   <script src="js/item.js?v=1.0.3"></script>
-  <script src="js/skills.js?v=1.0.39"></script>
+  <script src="js/skills.js?v=1.0.40"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.227"></script>
-  <script src="js/talents.js?v=1.0.2"></script>
-  <script src="js/player.js?v=1.0.7"></script>
-  <script src="js/combat.js?v=1.0.60"></script>
-  <script src="js/potential.js?v=1.0.5"></script>
-  <script src="js/tower.js?v=1.0.13"></script>
-  <script src="js/save.js?v=1.0.9"></script>
-  <script src="js/ui.js?v=1.0.81"></script>
+  <script src="js/skills2.js?v=1.0.228"></script>
+  <script src="js/talents.js?v=1.0.3"></script>
+  <script src="js/player.js?v=1.0.8"></script>
+  <script src="js/combat.js?v=1.0.61"></script>
+  <script src="js/potential.js?v=1.0.6"></script>
+  <script src="js/tower.js?v=1.0.14"></script>
+  <script src="js/save.js?v=1.0.10"></script>
+  <script src="js/ui.js?v=1.0.82"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=40"></script>
+  <script src="js/worker/protocol.js?v=41"></script>
   <script src="js/storage.js"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.162"></script>
+  <script src="js/bridge.js?v=1.0.163"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

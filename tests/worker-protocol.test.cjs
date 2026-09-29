@@ -8,7 +8,7 @@ const protocol = require(path.join(root, 'js/worker/protocol.js'));
 const simWorker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
 
 const VALID_ARG_TYPES = new Set([
-  'int', 'num', 'bool', 'str', 'id', 'ids', 'ref', 'slots', 'obj', 'any'
+  'int', 'num', 'bool', 'str', 'id', 'ref', 'slots', 'obj', 'any'
 ]);
 const EXPECTED_PANEL_KEYS = [
   'header', 'battle', 'equip', 'inv', 'factory', 'forge',
@@ -20,7 +20,7 @@ const EXPECTED_COMMAND_COUNTS = {
   item: 9,
   gem: 14,
   player: 6,
-  skill: 9,
+  skill: 3,
   skill2: 5,
   talent: 8,
   tower: 6,
@@ -54,7 +54,6 @@ function validValue(type, limit) {
     bool: true,
     str: 'value',
     id: 'id-1',
-    ids: ['id-1', 'id-2'],
     ref: { kind: 'plain', type: 'red', lv: 1 },
     slots: [{ type: 'red', lv: 1, n: 1 }],
     obj: { key: 'value' },
@@ -74,7 +73,6 @@ function invalidValue(type) {
     bool: 1,
     str: 1,
     id: '',
-    ids: ['id-1', ''],
     ref: { kind: 'plain', type: 'red', lv: 1.5 },
     slots: [],
     obj: [],
@@ -92,7 +90,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -116,12 +114,16 @@ test('凍結的 Worker 指令表有 92 條且分類數量固定', () => {
   // v36：新增事件種類 act（角色動作；目前只有技能開始施放）
   // v37：星環旋轉編隊的世界幾何。
   // v38：戰鬥面板投影逆轉乾坤的實際可用次數。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 39);
+  // 2026-09-29 移除舊版技能系統：刪除 skill.learn／maxUpgrade／downgrade／delete／fuse／deleteFusion
+  //      六條指令與 'ids' 參數型別（僅融合技使用），93 → 87；skill 分類 9 → 3（只剩裝載欄三條）。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 40);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 93);
+  assert.equal(names.length, 87);
+  ['skill.learn', 'skill.maxUpgrade', 'skill.downgrade', 'skill.delete', 'skill.fuse', 'skill.deleteFusion']
+    .forEach((name) => assert.ok(!names.includes(name), name + ' 屬於已移除的舊技能系統，不得復活'));
 
   const counts = {};
   for (const name of names) {

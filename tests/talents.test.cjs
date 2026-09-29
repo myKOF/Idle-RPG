@@ -407,7 +407,7 @@ test('全部潛力技能的效果文字清楚標示數值意義', () => {
     invuln: /無敵結界/,
     undyingGuard: /免除死亡/,
     enemySlow: /敵人攻速降低/,
-    crossCore: /所有物理技能/,
+    crossCore: /雷霆過載的雷擊額外獲得.*物理攻擊力/,
     omega: /爆擊率%/,
     sacredInvert: /生命與法力回復/,
     timeStop: /所有敵人靜止/
@@ -445,8 +445,21 @@ test('潛力技能沿用一般技能的升級彈窗與操作流程', () => {
   assert.match(skillModal, /class="skill-modal-copy"/);
   assert.match(skillModal, /class="skill-modal-points"/);
   assert.match(skillModal, /skill-modal-actions/);
-  assert.match(skillModal, /data-skill-learn="' \+ skillRef/);
+  /* 2026-09-29：舊技能系統移除後，彈窗只剩「新版技能群組（sg:）」與「潛力技能」兩條分支；
+     潛力分支的按鈕全部帶裝載欄鍵 loadoutRef（＝'potential:<id>'），不再有一般技能的 skillRef。 */
+  assert.match(skillModal, /var loadoutRef = 'potential:' \+ id;/);
+  ['learn', 'max', 'downgrade', 'delete', 'equip', 'unequip'].forEach((action) => {
+    assert.match(skillModal, new RegExp('data-skill-' + action + '="\' \\+ loadoutRef'), '潛力技能彈窗缺少 ' + action + ' 按鈕');
+  });
+  assert.doesNotMatch(skillModal, /skillRef/, '彈窗不該再有舊一般技能的 skillRef');
   assert.doesNotMatch(talentModal, /potential-modal|data-potential-/);
+
+  // 操作流程：彈窗按鈕的點擊處理走既有的 talent.potential* 指令（升級／滿級／降級／重置），不是已刪除的 skill.* 指令
+  ['potentialUpgrade', 'potentialMax', 'potentialDowngrade', 'potentialDelete'].forEach((cmd) => {
+    assert.match(ui, new RegExp("'talent\\." + cmd + "', \\w+, \\w+, " + cmd), '缺少 talent.' + cmd + ' 的點擊接線');
+  });
+  assert.match(ui, /'skill\.equipLoadout', equipRef,/);
+  assert.doesNotMatch(ui, /'skill\.(learn|maxUpgrade|downgrade|delete|fuse|deleteFusion)'/, '舊技能指令已刪除，UI 不得再送');
 });
 
 test('5/9 轉元素天賦使用攻擊附加元素傷害的完整說明', () => {

@@ -1,8 +1,10 @@
 /* 狀態系統（2026-08-11 技能及狀態改造）
-   技能＝一次性效果、狀態＝有持續時間的效果。本測試守住三件事：
+   技能＝一次性效果、狀態＝有持續時間的效果。本測試守住兩件事：
      1. 狀態表是唯一定義來源，且能與 config/CSV/Status.csv 完整往返
      2. 狀態的作用間隔只改變跳傷節奏、不改變總量
-     3. 技能以 status 引用組合狀態，效果值與持續時間可覆寫、其餘吃狀態表 */
+   （2026-09-29：舊技能系統整個移除，原本「技能 fx 以 status 陣列引用狀態」的第 3 項
+    連同 skillStatusRefs／statusRefXxx 橋接一併刪除；新版技能引用狀態表的規則
+    由 tests/skill2-status-slots.test.cjs 守住。） */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -73,8 +75,17 @@ test('狀態表與 config/CSV/Status.csv 內容一致（撥離管線的唯一來
 test('程式端不得再有第二份狀態圖標／名稱對照表', () => {
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.doesNotMatch(ui, /var BUFF_TIP_EMOJI = \{/);
-  const skills = fs.readFileSync(path.join(root, 'js/skills.js'), 'utf8');
-  assert.match(skills, /function buffLabel\(key\) \{\s*return statusName\(statusIdByKey\(key\), key\);/);
+  /* buffLabel（增益鍵 → 顯示名稱）原本在 js/skills.js；舊技能系統移除後搬進 js/status.js，
+     與 statusName／statusIdByKey 放在一起。它必須只有這一份，且只是查狀態表。 */
+  const status = fs.readFileSync(path.join(root, 'js/status.js'), 'utf8');
+  assert.match(status, /function buffLabel\(key\) \{\s*return statusName\(statusIdByKey\(key\), key\);/);
+  const definers = fs.readdirSync(path.join(root, 'js'))
+    .filter((file) => file.endsWith('.js'))
+    .filter((file) => /function buffLabel\(/.test(fs.readFileSync(path.join(root, 'js', file), 'utf8')));
+  assert.deepEqual(definers, ['status.js'], 'buffLabel 只能定義在狀態表旁邊，不得在別處再有一份');
+  const c = loadContext();
+  assert.equal(c.buffLabel('atkUp'), c.STATUS.atkUp.name, '增益鍵的顯示名稱讀狀態表');
+  assert.equal(c.buffLabel('不存在的鍵'), '不存在的鍵', '表上查無的鍵原樣回傳，供除錯辨識');
 });
 
 /* ---- 2) 作用間隔 ---- */
@@ -103,58 +114,7 @@ test('作用間隔不改變總量：到期補跳不足一次間隔的餘額', ()
   assert.equal(Math.round(slowDealt), Math.round(fastDealt), '不同作用間隔的總傷害必須相同');
 });
 
-/* ---- 3) 技能 ＝ 一次性效果 ＋ 狀態 ---- */
-
-test('技能以 status 引用組合狀態；沒覆寫的欄位吃狀態表', () => {
-  const c = loadContext();
-  const fx = { dmgType: 'magic', stat: 'matk', base: 360, per: 80, status: [{ id: 'burn' }] };
-  const refs = c.skillStatusRefs(fx);
-  assert.equal(refs.length, 1);
-  assert.equal(c.statusRefName(refs[0]), '燃燒');
-  assert.equal(c.statusRefIcon(refs[0]), c.STATUS.burn.icon);
-  assert.equal(c.statusRefAmount(refs[0], 1), c.STATUS.burn.dmg, '未覆寫＝吃狀態表的狀態傷害');
-  assert.equal(c.statusRefDur(refs[0]), c.STATUS.burn.dur, '未覆寫＝吃狀態表的持續時間');
-  assert.equal(c.statusRefIsSelf(refs[0]), false, '減益作用於敵方');
-
-  // 技能覆寫：保留各技能與里程碑各自的成長曲線
-  const over = c.skillStatusRefs({ status: [{ id: 'burn', base: 35, per: 5, dur: 6 }] })[0];
-  assert.equal(c.statusRefAmount(over, 1), 35);
-  assert.equal(c.statusRefAmount(over, 3), 45);
-  assert.equal(c.statusRefDur(over), 6);
-});
-
-test('火球術＝一次性魔法火屬性傷害 ＋ 燃燒狀態（實際資料驗證）', () => {
-  const c = loadContext();
-  const fx = c.effectiveFx('fireball', c.SKILLS.fireball, 8);
-  assert.equal(fx.dmgType, 'magic', '一次性效果：魔法傷害');
-  assert.ok(fx.base > 0, '一次性效果：有傷害數值');
-  const refs = c.skillStatusRefs(fx);
-  assert.equal(refs.length, 1);
-  assert.equal(refs[0].id, 'burn', '狀態：火屬性持續傷害');
-  assert.equal(c.STATUS[refs[0].id].elem, 'fire');
-});
-
-test('自身增益與敵方減益依狀態分類自動分流', () => {
-  const c = loadContext();
-  const warcry = c.skillStatusRefs(c.SKILLS.warcry.fx);
-  // 陣列由 vm context 產生（原型不同一個 realm），比對字串避免 deepStrictEqual 誤判
-  const self = warcry.filter((r) => c.statusRefIsSelf(r)).map((r) => r.id).join(',');
-  const foe = warcry.filter((r) => !c.statusRefIsSelf(r)).map((r) => r.id).join(',');
-  assert.equal(self, 'atkUp', '戰吼的攻擊提升作用於自身');
-  assert.equal(foe, 'atkDown', '戰吼的攻擊下降作用於敵方');
-});
-
-test('每一支技能的狀態引用都指得到狀態表（沒有孤兒引用）', () => {
-  const c = loadContext();
-  const missing = [];
-  Object.keys(c.SKILLS).forEach((id) => {
-    const fx = c.effectiveFx(id, c.SKILLS[id], 8);
-    (fx.status || []).forEach((r) => { if (!c.STATUS[r.id]) missing.push(id + ' → ' + JSON.stringify(r)); });
-  });
-  assert.equal(missing.join(' / '), '', '有技能引用了狀態表上沒有的狀態');
-});
-
-/* ---- 4) 狀態列舉（UI 用） ---- */
+/* ---- 3) 狀態列舉（UI 用） ---- */
 
 test('statusEntries 把控場／持續傷害／增益減益列成同一份清單', () => {
   const c = loadContext();
@@ -186,7 +146,7 @@ test('淨化只清負面狀態，不誤清自身增益', () => {
   assert.equal(c.statusActive(p, 'invuln'), true, '無敵要保留');
 });
 
-/* ---- 5) 護盾：有持續時間的狀態（2026-08-11） ---- */
+/* ---- 4) 護盾：有持續時間的狀態（2026-08-11） ---- */
 
 test('護盾＝占施法者最大生命%，吃護盾效率，重放不疊高', () => {
   const c = loadContext();
@@ -243,16 +203,7 @@ test('護盾在狀態列以剩餘吸收量顯示，打完就不列', () => {
   assert.equal(c.statusEntries(p).some((x) => x.sid === 'shield'), false, '打完就不列');
 });
 
-test('魔法屏障＝護盾狀態（實際資料驗證）', () => {
-  const c = loadContext();
-  const fx = c.effectiveFx('manaBarrier', c.SKILLS.manaBarrier, 8);
-  const ref = c.skillStatusRefs(fx).find((r) => c.statusRefEffect(r) === 'shield');
-  assert.ok(ref, '魔法屏障應引用護盾狀態');
-  assert.equal(ref.id, 'shield');
-  assert.ok(c.statusRefDur(ref) > 0, '護盾要有持續時間');
-});
-
-/* ---- 6) 疊層（stack 疊加規則） ---- */
+/* ---- 5) 疊層（stack 疊加規則） ---- */
 
 test('stack 規則：層數累加至上限，效果值＝單層值 × 層數', () => {
   const c = loadContext();

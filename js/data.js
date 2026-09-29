@@ -90,10 +90,8 @@ var REINCARNATION_EXTRA_MULTIPLIERS = [0, 1.5, 2.5, 3.5, 5, 7, 10, 14, 18, 24, 3
 // 升級經驗基礎增加值：升級所需經驗在括號外再加此值（依轉生次數；轉生 0 次為 0，1~10 次見轉生對照表 參數 c）。
 var REINCARNATION_EXP_BASE_ADD = [0, 500000, 1500000, 3000000, 6000000, 12000000, 24000000, 48000000, 96000000, 192000000, 384000000, 768000000, 1536000000, 3072000000, 6144000000, 12288000000, 24576000000, 49152000000, 98304000000, 196608000000, 393216000000];
 var REINCARNATION_EXP_MULTIPLIERS = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e11, 1e13, 1e15, 1e17, 1e19, 1e21, 1e23, 1e25, 1e27, 1e29, 1e33];
-// 全部技能（含融合技/被動/潛力）共用的等級上限，依轉生次數查表（參數表「1-轉生對照表」param e）。
+// 潛力技能的等級上限，依轉生次數查表（參數表「1-轉生對照表」param e）。
 var REINCARNATION_SKILL_MAX_LEVELS = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
-// 融合技上限增加值：改制後融合技與一般技能共用同一上限，本表歸零（保留參數表錨點相容）。
-var REINCARNATION_FUSION_MAX_LEVELS = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 /* ---- 天賦系統（1 轉後開放；《天賦V2》實作 1～10 轉全部天賦） ----
    一般天賦每轉 8 個、每個最高 100 級；數值為每級增量，51 級起使用 high。
@@ -507,32 +505,6 @@ var STAT_CAPS = {
   // 註：全局減傷上限＝GLOBAL_DMG_RED_CAP（由「2-屬性派生/全局減傷」控制）；此處不重複。
 };
 
-/* ---- 45 新技能 × 11 機制族：通用上限常數（PLAN.md §0 防失衡硬條款）----
-   引擎只讀「技能 fx JSON ＋ 此處具名常數」，不得散落硬編碼；
-   印記（brand）儲能端固定值不隨級、引爆端小幅成長屬資料設計規則，寫在各技能 fx，不另設常數。 */
-var DOT_DETONATE_CAP_PCT = 100;      // dotSynergy：DoT 引爆結清倍率上限（引爆 ≤100% 剩餘 DoT 總值）
-var OVERHEAL_DMG_CAP_PCT = 90;       // resourceConvert：溢療轉真傷比例上限（≤90%）
-var SHIELD_BURST_ATK_MULT_CAP = 10;  // resourceConvert：護盾引爆追加傷害上限 = 魔攻 × 此倍數
-var BUFF_EXTEND_CAP_PCT = 100;       // buffExtend：每個增益/DoT 累計延長 ≤ 原始持續 × 此%（依 applyBuff/applyDot 補存的 dur/ext 計）
-var SKILL_PROC_DEPTH_MAX = 1;        // procCast：引動/重播/免費結算的遞迴深度上限（防無限連鎖）
-var BUFF_EXTEND_LOW_REMAIN_SEC = 2;  // buffExtend：增益/DoT 剩餘低於此秒數時，延長量加倍（lowThreshold2x 的門檻）
-var DEF_FEEDBACK_DUR_SEC = 8;        // passiveDefFeedback：施放 def 技後反哺層的存續秒數（守勢反哺）
-var REPLAY_BEST_TRACK_SEC = 15;      // procCast：replayBest 傷害快照保留秒數（須 ≥ 各技 window 上限；消費端仍以自身 window 篩選）
-var RECENT_BEST_MAX_ENTRIES = 20;    // procCast：replayBest 傷害快照筆數上限（防長時間戰鬥無限累積）
-// 被動觸發鍵白名單（PLAN.md §2）：computeStats 被動觸發路由只聚合這些鍵至 st.skillTriggers，供戰鬥端消費。
-var PASSIVE_TRIGGER_KEYS = [
-  'passiveEcho',      // 殘響法則：傷害技延遲回響
-  'passiveKillCd',    // 死神節拍：技能擊殺扣其他技冷卻
-  'passiveProc',      // 殺陣反射：技能暴擊引動免費普攻
-  'passiveDotHaste',  // 蝕骨頻率：DoT 跳動頻率倍率
-  'dotAmpPer',        // 蝕骨頻率 M4：目標每 1 個 DoT 對其技能增傷%
-  'dotSplashOnKill',  // 蝕骨頻率 M8：死亡時 DoT 濺射
-  'passiveNthFree',   // 零式節律：每第 N 次施放免費＋增幅
-  'passiveExtraHit',  // 幻影連鋒：多段技追加幻影段
-  'passiveDefFeedback', // 守勢反哺：def 技後下一傷害技增幅
-  'passiveBrandAmp',  // 獵殺烙印：印記儲能比／不消耗層數
-  'passiveCastExtend' // 流光永續：施放傷害技延長自身增益
-];
 var PRIMARY_STAT_EFFECTS = {
   strAtk: 1,
   strDef: 0.35,
@@ -744,7 +716,7 @@ function affixCat(key) { return AFFIX_CAT_LOOKUP[key] || 'util'; }
 
 // ---- 傳奇特效（傳說級以上） ----
 // 附檔《神力之巔_記事錄.xlsx》「傳奇特效」為企劃來源。
-// weaponTypes 限定可出現的武器類型；relatedSkill 修改既有技能；triggerSkill 可無視解鎖直接觸發既有技能。
+// weaponTypes 限定可出現的武器類型；relatedSkill 指向新版技能群組 id（js/skills2.js SKILLS2 的鍵），修改該技能。
 // fx 僅存 JSON 安全的數值規格，執行邏輯集中於 js/legendary.js。
 var PASSIVE_POOL = {
   sunder: { name: '破甲', desc: '攻擊時忽略目標 {v}% 防禦', base: 10, perR: 2 },
@@ -754,11 +726,6 @@ var PASSIVE_POOL = {
   slowHit: { name: '減速', desc: '攻擊時有 {v}% 機率使敵人攻速降低 30%，持續 3 秒', base: 12, perR: 3 },
   trueDmg: { name: '真傷', desc: '每次攻擊附加 {v}% 攻擊力的真實傷害', base: 6, perR: 1.5 },
   soulEater: { name: '吸魂', desc: '擊殺敵人時回復 {v}% 最大生命', base: 5, perR: 1.5 },
-  whirlwindRift: {
-    name: '旋風裂解', desc: '當你施放物理技能時，有 30% 機率觸發一次無消耗的旋風斬技能。',
-    base: 0, perR: 0, legendary: true, type: 'phys', triggerSkill: 'whirlwind', weaponTypes: ['sword1h'],
-    fx: { onSkillCast: { cat: 'phys', chance: 30, triggerSkill: 'whirlwind' } }
-  },
   mountainSunderer: {
     name: '崩山裂地者', desc: '當你對敵人造成暈眩或緩速效果時，該效果持續時間 +100%，且對處於該狀態的敵人造成的傷害提高 300%。',
     base: 0, perR: 0, legendary: true, weaponTypes: ['axe2h'],
@@ -774,11 +741,6 @@ var PASSIVE_POOL = {
     base: 0, perR: 0, legendary: true, type: 'phys', weaponTypes: ['dagger1h'],
     fx: { dualDaggerAspdPct: 50, basicAttackThreshold: 20, flurryHits: 3, flurryPowerPct: 120 }
   },
-  shadowRipper: {
-    name: '暗影撕裂者', desc: '當你損失生命時，有 25% 機率對敵人施放一次無消耗的撕裂技能。',
-    base: 0, perR: 0, legendary: true, triggerSkill: 'rendWound', weaponTypes: ['dagger1h'],
-    fx: { onHealthLost: { chance: 25, triggerSkill: 'rendWound' } }
-  },
   doomProphet: {
     name: '末日預言者', desc: '沒有生命護盾時傷害提高 50%；生命值每降低 10%，傷害再提高 10%。',
     base: 0, perR: 0, legendary: true, weaponTypes: ['dagger1h'],
@@ -789,50 +751,15 @@ var PASSIVE_POOL = {
     base: 0, perR: 0, legendary: true, weaponTypes: ['axe2h'],
     fx: { onKillBuff: { atkPct: 3, aspdPct: 3, dur: 6, maxStacks: 20 } }
   },
-  manaGuard: {
-    name: '法力防護', desc: '每消耗 1% 法力，獲得 0.5% 最大生命的生命護盾；護盾上限為最大生命的 50%。',
-    base: 0, perR: 0, legendary: true, weaponTypes: ['magicSword1h'],
-    fx: { manaSpendShield: { manaPct: 1, shieldHpPct: 0.5, capHpPct: 50 } }
-  },
   unyieldingGuard: {
     name: '不屈護衛', desc: '格擋成功時有 35% 機率，以自身原始普攻最終傷害 × 實際格擋減傷 × 500% 反擊，並使受到的傷害降低 20%，持續 3 秒。',
     base: 0, perR: 0, legendary: true, weaponTypes: ['shield'],
     fx: { onBlock: { chance: 35, reflectBlockPct: 500, dmgRedPct: 20, dur: 3 } }
   },
-  whirlwindBleed: {
-    name: '旋風回旋斬', desc: '旋風斬會附加流血，每 1 秒造成 50% 物理傷害，持續 5 秒。',
-    base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'whirlwind', weaponTypes: ['greatsword2h'],
-    fx: { skillDot: { name: '流血', tickPowerPct: 50, dur: 5 } }
-  },
-  frostSpike: {
-    name: '冰霜尖刺', desc: '霜之新星會同時施放冰霜尖刺，造成 250% 冰寒傷害。',
-    base: 0, perR: 0, legendary: true, type: 'ice', relatedSkill: 'frostNova', weaponTypes: ['focus'],
-    fx: { extraSkillHit: { powerPct: 250, elem: 'ice', dmgType: 'magic' } }
-  },
-  auroraStaff: {
-    name: '極光法杖', desc: '使用冰寒技能命中時使敵人凍傷 4 秒；每層使敵人受到的傷害提高 10%，最多疊加 20 層。',
-    base: 0, perR: 0, legendary: true, type: 'ice', weaponTypes: ['staff2h'],
-    fx: { onElemSkill: { elem: 'ice', frostbiteDur: 4, damageTakenPerStackPct: 10, maxStacks: 20 } }
-  },
-  iceShriek: {
-    name: '冰晶尖嘯', desc: '施放冰系技能時有 35% 機率射出一道冰晶尖刺，造成 80% 冰寒傷害並使敵人凍傷 3 秒。',
-    base: 0, perR: 0, legendary: true, type: 'ice', weaponTypes: ['orb'],
-    fx: { onElemSkillProc: { elem: 'ice', chance: 35, powerPct: 80, frostbiteDur: 3 } }
-  },
-  lightningLeap: {
-    name: '閃電飛越', desc: '施放魔法技能時有 35% 機率形成連鎖閃電，每 0.3 秒彈射 1 次並造成 50% 雷電傷害，最多 5 次。',
-    base: 0, perR: 0, legendary: true, type: 'lightning', weaponTypes: ['wand1h'],
-    fx: { onSkillCastChain: { cat: 'magic', chance: 35, powerPct: 50, elem: 'lightning', bounces: 5, tickSec: 0.3 } }
-  },
   thunderShock: {
     name: '雷霆之震', desc: '受到生命傷害時有 35% 機率對所有敵人造成 50% 雷電傷害；只有一名敵人時傷害翻倍。',
     base: 0, perR: 0, legendary: true, type: 'lightning', weaponTypes: ['focus'],
     fx: { onHealthLostAoe: { chance: 35, powerPct: 50, elem: 'lightning', singleMult: 2 } }
-  },
-  stormSigilChain: {
-    name: '雷紋連鎖', desc: '雷紋刻印可額外累積 3 次，且造成的傷害提高 100%。',
-    base: 0, perR: 0, legendary: true, type: 'lightning', relatedSkill: 'stormSigil', weaponTypes: ['orb'],
-    fx: { skillDamagePct: 100, brandExtraStacks: 3 }
   },
   burningLaw: {
     name: '燃燒法則', desc: '燃燒持續傷害會一次性全部作用，且傷害提高 30%。',
@@ -844,16 +771,6 @@ var PASSIVE_POOL = {
     base: 0, perR: 0, legendary: true, type: 'fire', weaponTypes: ['spellbook'],
     fx: { selfHpDrainPctPerSec: 1, retaliateBurnPct: 20, maxStacks: 10 }
   },
-  skyfallMeteor: {
-    name: '神落天殞', desc: '每隔 8 秒自動召喚一顆無消耗的殞石，且殞石術傷害提高 50%。',
-    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'meteor', triggerSkill: 'meteor', weaponTypes: ['staff2h'],
-    fx: { autoTrigger: { skill: 'meteor', sec: 8 }, skillDamagePct: 50 }
-  },
-  manaExplosion: {
-    name: '法力爆燃', desc: '法力灼燒改為消耗最大法力的 50%，且傷害提高 500%。',
-    base: 0, perR: 0, legendary: true, type: 'fire', relatedSkill: 'manaBurn', weaponTypes: ['orb'],
-    fx: { manaCostMaxPct: 50, skillDamagePct: 500 }
-  },
   magicLightShield: {
     name: '魔法光盾', desc: '生命值低於 50% 時產生相當於最大生命的光盾；光盾期間受到的傷害降低 35%，持續 5 秒；內建冷卻 20 秒。',
     base: 0, perR: 0, legendary: true, type: 'light', weaponTypes: ['orb'],
@@ -864,45 +781,10 @@ var PASSIVE_POOL = {
     base: 0, perR: 0, legendary: true, type: 'light', weaponTypes: ['wand1h'],
     fx: { autoProjectile: { sec: 4, powerPct: 250, elem: 'light' } }
   },
-  judgmentArrival: {
-    name: '審判降臨', desc: '聖光審判的傷害提高 50%，且冷卻時間縮短 30%。',
-    base: 0, perR: 0, legendary: true, type: 'light', relatedSkill: 'holySmite', weaponTypes: ['wand1h'],
-    fx: { skillDamagePct: 50, skillCdPct: -30 }
-  },
-  holyImpact: {
-    name: '聖光衝擊', desc: '施放奧術衝擊後，下一個技能必定雙重施法，且有 20% 機率變為三重施法。',
-    base: 0, perR: 0, legendary: true, type: 'light', relatedSkill: 'arcaneBurst', weaponTypes: ['focus'],
-    fx: { nextMultiCast: { double: 2, tripleChance: 20, triple: 3 } }
-  },
-  deathDomain: {
-    name: '死亡領域', desc: '施放技能時展開死亡領域，使所有技能傷害轉為毒屬性並提高 50%，持續 10 秒。',
-    base: 0, perR: 0, legendary: true, type: 'poison', weaponTypes: ['spellbook'],
-    fx: { domainOnSkillCast: { dur: 10, convertElem: 'poison', skillDamagePct: 50 } }
-  },
-  venomMist: {
-    name: '劇毒血霧', desc: '施放毒系技能時有 25% 機率使毒霧籠罩所有敵人；每 0.5 秒造成 35% 毒屬性傷害，持續 4 秒。',
-    base: 0, perR: 0, legendary: true, type: 'poison', weaponTypes: ['wand1h'],
-    fx: { onElemSkillField: { elem: 'poison', chance: 25, tickSec: 0.5, powerPct: 35, dur: 4, target: 'all' } }
-  },
   ghostLamp: {
     name: '幽冥神燈', desc: '召喚 2 個擁有你 20% 生命與攻擊力的鬼娃衝向敵人；敵人優先攻擊鬼娃，鬼娃死亡時對所有敵人造成 300% 暗影傷害。',
     base: 0, perR: 0, legendary: true, type: 'dark', weaponTypes: ['focus'],
     fx: { summons: { count: 2, hpPct: 20, atkPct: 20, explosionPct: 300, elem: 'dark', taunt: true } }
-  },
-  shadowAnnihilation: {
-    name: '暗影滅寂', desc: '虛空裂隙的目標血量判定改為 20%，傷害提高 1000%；發動處決後暗屬性傷害提高 30%，持續 6 秒。',
-    base: 0, perR: 0, legendary: true, type: 'dark', relatedSkill: 'voidRift', weaponTypes: ['staff2h'],
-    fx: { execBelow: 20, skillDamagePct: 1000, onExecuteElemBuff: { elem: 'dark', pct: 30, dur: 6 } }
-  },
-  voidFate: {
-    name: '虛無命運', desc: '瀝血狂濤的生命扣減改為 5 秒內扣減 30% 最大生命；期間每減少 1% 生命，所有敵人同等減少 1% 最大生命。',
-    base: 0, perR: 0, legendary: true, type: 'dark', relatedSkill: 'bloodSurge', weaponTypes: ['orb'],
-    fx: { deferredHpLossPct: 30, dur: 5, enemyHpLossPerPlayerPct: 1 }
-  },
-  oathOfCondemnation: {
-    name: '天譴之誓', desc: '每隔 4 秒隨機使一個正在冷卻的技能冷卻歸零，且其下一次傷害或效果提高 50%。',
-    base: 0, perR: 0, legendary: true, weaponTypes: ['orb'],
-    fx: { autoCharge: { sec: 4, effectPct: 50 } }
   },
   magicRecoil: {
     name: '魔法反震', desc: '反震敵人時消耗 10 點魔力，且該次反震傷害提高 100%。',
@@ -911,12 +793,9 @@ var PASSIVE_POOL = {
   },
 
   /* ---- 新版技能改寫型（2026-08-19；設計來源「傳奇進化」頁籤）----
-     這一批的 relatedSkill 指向**新版技能群組 id**（js/skills2.js SKILLS2 的鍵），
-     不是舊技能 id——新舊 id 不重疊，因此沿用同一個欄位，參數表不必加欄。
-     生效路徑與舊技能不同：castSkill2 不經過 legendaryPrepareSkillCast，改由
-     js/legendary.js legendarySkill2Mods 把同群組的 fx 平坦合併後交給施放端，
-     施放端只讀通用參數鍵（見各 fx 的鍵名）。
-     只出現在匕首（dagger1h＝突刺）與單手劍（sword1h＝迴旋斬）。 */
+     這一批的 relatedSkill 指向**新版技能群組 id**（js/skills2.js SKILLS2 的鍵）。
+     生效路徑：js/legendary.js legendarySkill2Mods 把同群組的 fx 平坦合併後交給 castSkill2，
+     施放端只讀通用參數鍵（見各 fx 的鍵名）。 */
   piercingFocus: {
     name: '凝鋒穿刺', desc: '突刺的長度 +30%、寬度 -15%，且造成的傷害 +30%。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
@@ -1803,16 +1682,6 @@ var ENCHANT_ESSENCE_COST = 1; // 每次附魔消耗附魔精華
 var ENCHANT_RES_MAP = {
   fireRes: 'fire', iceRes: 'ice', lightningRes: 'lightning',
   poisonRes: 'poison', lightRes: 'light', darkRes: 'dark', earthRes: 'earth', windRes: 'wind'
-};
-
-// ---- 技能（自動施放） ----
-var SKILL = {
-  name: '奧術衝擊', emoji: '🌠',
-  cost: 30,          // MP 消耗
-  baseCd: 10,        // 基礎冷卻（受 CDR 影響）
-  castTime: 0.8,     // 舊基礎技能資料欄位；現行技能施法規則由 js/skills.js 統一處理
-  matkScale: 1.5,    // 魔攻倍率
-  atkScale: 0.3      // 物攻倍率
 };
 
 // ---- 怪物（magic: 以魔法攻擊，對玩家魔防；attr: 屬性標籤（七大屬性），供「對X屬性敵人傷害」加成與 tips 顯示 ----
@@ -2727,7 +2596,6 @@ var STAT_GROUPS = [
      socketCount  身上目前鑲嵌寶石數      forgeParts  熔爐目前已裝配零件數
      ancientCount 身上太古詞條總數        maxHp       生命最大值
      stageClear   通關指定地圖第 N 關（param=地圖識別碼）
-     skillLevel   技能達 N 級（param=技能 id；1=學會）
    獎勵類型：gold / scrap / essence / skillXp / gem（param=寶石等級，隨機種類）/
      book（param=附魔書 id）/ equip（param=品質|等級|太古數；等級 0=依當前關卡，太古空白=自然擲骰）。 */
 var TASKS = [
@@ -2737,47 +2605,45 @@ var TASKS = [
   { order: 4, name: '洗煉裝備2次', type: 'rerollCount', count: 2, rewardType: 'essence', rewardQty: 20, rewardLabel: '附魔精華+20' },
   { order: 5, name: '挑戰荒漠第20關成功', type: 'stageClear', param: 'desert', count: 20, rewardType: 'equip', rewardParam: '3|1', rewardQty: 1, rewardLabel: '任意獨特1級裝備×1' },
   { order: 6, name: '將全身的裝備替換成獨特品質', type: 'equipSlots', param: '3|0', count: 13, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 7, name: '學習治療技能「再生術」', type: 'skillLevel', param: 'regenerate', count: 1, rewardType: 'skillXp', rewardQty: 10000, rewardLabel: '技能經驗值+10000' },
-  { order: 8, name: '強化裝備20次', type: 'upgradeCount', count: 20, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 9, name: '挑戰荒漠第30關成功', type: 'stageClear', param: 'desert', count: 30, rewardType: 'equip', rewardParam: '3|1|2', rewardQty: 1, rewardLabel: '任意2太古獨特1級裝備×1' },
-  { order: 10, name: '裝備鑲嵌任意寶石8顆', type: 'socketCount', count: 8, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
-  { order: 11, name: '裝備任意附魔2次', type: 'enchantCount', count: 2, rewardType: 'book', rewardParam: 'focus', rewardQty: 1, rewardLabel: '專注附魔×1' },
-  { order: 12, name: '熔爐裝配任意零件4個', type: 'forgeParts', count: 4, rewardType: 'essence', rewardQty: 50, rewardLabel: '附魔精華+50' },
-  { order: 13, name: '合成寶石2次', type: 'composeCount', count: 2, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
-  { order: 14, name: '挑戰荒漠第40關成功', type: 'stageClear', param: 'desert', count: 40, rewardType: 'equip', rewardParam: '4|1|2', rewardQty: 1, rewardLabel: '任意2太古史詩1級裝備×1' },
-  { order: 15, name: '穿上4件史詩裝備', type: 'equipSlots', param: '4|0', count: 4, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 16, name: '裝備鑲嵌任意寶石16顆', type: 'socketCount', count: 16, rewardType: 'gem', rewardParam: '1', rewardQty: 15, rewardLabel: '任意1級寶石×15' },
-  { order: 17, name: '升級防禦技能「魔法屏障」至5級', type: 'skillLevel', param: 'manaBarrier', count: 5, rewardType: 'skillXp', rewardQty: 50000, rewardLabel: '技能經驗值+50000' },
-  { order: 18, name: '生命最大值達5000', type: 'maxHp', count: 5000, rewardType: 'gold', rewardQty: 300000, rewardLabel: '金幣+300000' },
-  { order: 19, name: '挑戰荒漠第50關BOSS成功', type: 'stageClear', param: 'desert', count: 50, rewardType: 'equip', rewardParam: '4|50|2', rewardQty: 1, rewardLabel: '任意2太古史詩50級裝備×1' },
-  { order: 20, name: '將4件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 4, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
+  { order: 7, name: '強化裝備20次', type: 'upgradeCount', count: 20, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 8, name: '挑戰荒漠第30關成功', type: 'stageClear', param: 'desert', count: 30, rewardType: 'equip', rewardParam: '3|1|2', rewardQty: 1, rewardLabel: '任意2太古獨特1級裝備×1' },
+  { order: 9, name: '裝備鑲嵌任意寶石8顆', type: 'socketCount', count: 8, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
+  { order: 10, name: '裝備任意附魔2次', type: 'enchantCount', count: 2, rewardType: 'book', rewardParam: 'focus', rewardQty: 1, rewardLabel: '專注附魔×1' },
+  { order: 11, name: '熔爐裝配任意零件4個', type: 'forgeParts', count: 4, rewardType: 'essence', rewardQty: 50, rewardLabel: '附魔精華+50' },
+  { order: 12, name: '合成寶石2次', type: 'composeCount', count: 2, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
+  { order: 13, name: '挑戰荒漠第40關成功', type: 'stageClear', param: 'desert', count: 40, rewardType: 'equip', rewardParam: '4|1|2', rewardQty: 1, rewardLabel: '任意2太古史詩1級裝備×1' },
+  { order: 14, name: '穿上4件史詩裝備', type: 'equipSlots', param: '4|0', count: 4, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 15, name: '裝備鑲嵌任意寶石16顆', type: 'socketCount', count: 16, rewardType: 'gem', rewardParam: '1', rewardQty: 15, rewardLabel: '任意1級寶石×15' },
+  { order: 16, name: '生命最大值達5000', type: 'maxHp', count: 5000, rewardType: 'gold', rewardQty: 300000, rewardLabel: '金幣+300000' },
+  { order: 17, name: '挑戰荒漠第50關BOSS成功', type: 'stageClear', param: 'desert', count: 50, rewardType: 'equip', rewardParam: '4|50|2', rewardQty: 1, rewardLabel: '任意2太古史詩50級裝備×1' },
+  { order: 18, name: '將4件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 4, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
+  { order: 19, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 20, name: '將8件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 8, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
   { order: 21, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 22, name: '將8件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 8, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
-  { order: 23, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 24, name: '將13件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 13, rewardType: 'essence', rewardQty: 400, rewardLabel: '附魔精華+400' },
-  { order: 25, name: '強化裝備40次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 26, name: '裝備鑲嵌任意寶石10顆', type: 'socketCount', count: 10, rewardType: 'gem', rewardParam: '1', rewardQty: 40, rewardLabel: '任意1級寶石×40' },
-  { order: 27, name: '擁有5個太古詞條', type: 'ancientCount', count: 6, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
-  { order: 28, name: '挑戰荒漠第100關BOSS成功', type: 'stageClear', param: 'desert', count: 100, rewardType: 'equip', rewardParam: '4|100|3', rewardQty: 1, rewardLabel: '任意3太古史詩100級裝備×1' },
-  { order: 20, name: '將4件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 4, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
+  { order: 22, name: '將13件裝備替換成50級史詩品質', type: 'equipSlots', param: '4|50', count: 13, rewardType: 'essence', rewardQty: 400, rewardLabel: '附魔精華+400' },
+  { order: 23, name: '強化裝備40次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 24, name: '裝備鑲嵌任意寶石10顆', type: 'socketCount', count: 10, rewardType: 'gem', rewardParam: '1', rewardQty: 40, rewardLabel: '任意1級寶石×40' },
+  { order: 25, name: '擁有5個太古詞條', type: 'ancientCount', count: 6, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
+  { order: 26, name: '挑戰荒漠第100關BOSS成功', type: 'stageClear', param: 'desert', count: 100, rewardType: 'equip', rewardParam: '4|100|3', rewardQty: 1, rewardLabel: '任意3太古史詩100級裝備×1' },
+  { order: 18, name: '將4件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 4, rewardType: 'essence', rewardQty: 100, rewardLabel: '附魔精華+100' },
+  { order: 19, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 20, name: '將8件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 8, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
   { order: 21, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 22, name: '將8件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 8, rewardType: 'essence', rewardQty: 200, rewardLabel: '附魔精華+200' },
-  { order: 23, name: '強化裝備30次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 24, name: '將13件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 13, rewardType: 'essence', rewardQty: 400, rewardLabel: '附魔精華+400' },
-  { order: 25, name: '強化裝備40次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
-  { order: 26, name: '裝備鑲嵌任意寶石20顆', type: 'socketCount', count: 10, rewardType: 'gem', rewardParam: '1', rewardQty: 40, rewardLabel: '任意1級寶石×40' },
-  { order: 27, name: '強化裝備100次', type: 'upgradeCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
-  { order: 28, name: '挑戰荒漠第150關BOSS成功', type: 'stageClear', param: 'desert', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
-  { order: 29, name: '挑戰高塔BOSS第5層成功', type: 'towerFloor', count: 5, rewardType: 'gem', rewardParam: '2', rewardQty: 15, rewardLabel: '任意2級寶石×15' },
-  { order: 30, name: '將全身的裝備替換成150級傳說品質', type: 'equipSlots', param: '5|150', count: 13, rewardType: 'scrap', rewardQty: 50000, rewardLabel: '裝備碎片+50000' },
-  { order: 31, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
-  { order: 32, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
-  { order: 33, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
-  { order: 34, name: '升級熔爐任意零件至4級', type: 'forgePartLevel', count: 4, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+3000000' },
-  { order: 35, name: '挑戰冰原第250關BOSS成功', type: 'stageClear', param: 'Icefield', count: 250, rewardType: 'equip', rewardParam: '5|250|4', rewardQty: 1, rewardLabel: '任意4太古傳說250級裝備×1' },
-  { order: 36, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
-  { order: 37, name: '挑戰沼澤第350關BOSS成功', type: 'stageClear', param: 'swamp', count: 350, rewardType: 'equip', rewardParam: '6|350|4', rewardQty: 1, rewardLabel: '任意4太古神話350級裝備×1' },
-  { order: 38, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4太古神話400級裝備×1' },
-  { order: 39, name: '挑戰亡靈山脈第450關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 450, rewardType: 'equip', rewardParam: '7|450|4', rewardQty: 1, rewardLabel: '任意4太古創世450級裝備×1' },
-  { order: 40, name: '挑戰亡靈山脈第500關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 500, rewardType: 'equip', rewardParam: '7|500|4', rewardQty: 1, rewardLabel: '任意4太古創世500級裝備×1' }
+  { order: 22, name: '將13件裝備替換成100級史詩品質', type: 'equipSlots', param: '4|100', count: 13, rewardType: 'essence', rewardQty: 400, rewardLabel: '附魔精華+400' },
+  { order: 23, name: '強化裝備40次', type: 'upgradeCount', count: 30, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
+  { order: 24, name: '裝備鑲嵌任意寶石20顆', type: 'socketCount', count: 10, rewardType: 'gem', rewardParam: '1', rewardQty: 40, rewardLabel: '任意1級寶石×40' },
+  { order: 25, name: '強化裝備100次', type: 'upgradeCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
+  { order: 26, name: '挑戰荒漠第150關BOSS成功', type: 'stageClear', param: 'desert', count: 150, rewardType: 'equip', rewardParam: '5|150|3', rewardQty: 1, rewardLabel: '任意3太古傳說150級裝備×1' },
+  { order: 27, name: '挑戰高塔BOSS第5層成功', type: 'towerFloor', count: 5, rewardType: 'gem', rewardParam: '2', rewardQty: 15, rewardLabel: '任意2級寶石×15' },
+  { order: 28, name: '將全身的裝備替換成150級傳說品質', type: 'equipSlots', param: '5|150', count: 13, rewardType: 'scrap', rewardQty: 50000, rewardLabel: '裝備碎片+50000' },
+  { order: 29, name: '洗煉裝備100次', type: 'rerollCount', count: 100, rewardType: 'essence', rewardQty: 300, rewardLabel: '附魔精華+300' },
+  { order: 30, name: '升級熔爐任意零件至3級', type: 'forgePartLevel', count: 3, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+2000000' },
+  { order: 31, name: '挑戰荒漠第200關BOSS成功', type: 'stageClear', param: 'desert', count: 200, rewardType: 'equip', rewardParam: '5|200|3', rewardQty: 1, rewardLabel: '任意3太古傳說200級裝備×1' },
+  { order: 32, name: '升級熔爐任意零件至4級', type: 'forgePartLevel', count: 4, rewardType: 'gold', rewardQty: 2000000, rewardLabel: '金幣+3000000' },
+  { order: 33, name: '挑戰冰原第250關BOSS成功', type: 'stageClear', param: 'Icefield', count: 250, rewardType: 'equip', rewardParam: '5|250|4', rewardQty: 1, rewardLabel: '任意4太古傳說250級裝備×1' },
+  { order: 34, name: '挑戰冰原第300關BOSS成功', type: 'stageClear', param: 'Icefield', count: 300, rewardType: 'equip', rewardParam: '5|300|4', rewardQty: 1, rewardLabel: '任意4太古傳說300級裝備×1' },
+  { order: 35, name: '挑戰沼澤第350關BOSS成功', type: 'stageClear', param: 'swamp', count: 350, rewardType: 'equip', rewardParam: '6|350|4', rewardQty: 1, rewardLabel: '任意4太古神話350級裝備×1' },
+  { order: 36, name: '挑戰沼澤第400關BOSS成功', type: 'stageClear', param: 'swamp', count: 400, rewardType: 'equip', rewardParam: '6|400|4', rewardQty: 1, rewardLabel: '任意4太古神話400級裝備×1' },
+  { order: 37, name: '挑戰亡靈山脈第450關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 450, rewardType: 'equip', rewardParam: '7|450|4', rewardQty: 1, rewardLabel: '任意4太古創世450級裝備×1' },
+  { order: 38, name: '挑戰亡靈山脈第500關BOSS成功', type: 'stageClear', param: 'undead_mountains', count: 500, rewardType: 'equip', rewardParam: '7|500|4', rewardQty: 1, rewardLabel: '任意4太古創世500級裝備×1' }
 ];

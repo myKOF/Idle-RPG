@@ -355,12 +355,6 @@ function potentialDelete(id) {
   return null;
 }
 
-function talentSkillEffectMultiplier(cat) {
-  var b = talentStatBonuses();
-  var key = { phys: 'skillPhys', magic: 'skillMagic', def: 'skillDef', special: 'skillSpecial', passive: 'skillPassive' }[cat];
-  return 1 + (key ? b[key] : 0) / 100;
-}
-
 function inventoryCapacityWithTalents(base) {
   // 潛力技能 V3 起，潛力不再提供背包容量加成（舊 potentialInvCap 已移除）。
   return (base === undefined ? INVENTORY_CAP + (G.player.invUpgrades || 0) : base);

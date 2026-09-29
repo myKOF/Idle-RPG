@@ -2482,8 +2482,8 @@ function renderCombatVfx(spec) {
     var chBase = baseDelay;
     var chStrikes = 1;
     if (kind !== 'chain') {
-      // 技能版（連鎖閃電）：傷害數字延遲＝飛行時間＋段間隔（skillVfxImpactDelayMs 的
-      // projectile 規則），天雷的劈落時刻與段數對齊它，數字跟著每一劈跳出來
+      // 技能版（連鎖閃電）：傷害數字延遲＝飛行時間＋段間隔（projectile 規則），
+      // 天雷的劈落時刻與段數對齊它，數字跟著每一劈跳出來
       chBase += (travelMs && travelMs[0] > 0) ? travelMs[0] : 0;
       chStrikes = count;
     }

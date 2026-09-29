@@ -80,6 +80,7 @@ function newGameState() {
     /* 一次性遷移完成旗標：新帳號預先標記完成，遷移只作用於舊存檔。
        登錄與清理條件見 ONE_TIME_MIGRATIONS.md。 */
     loadoutCapClampV1: true,   // 裝載欄上限下修後裁切超額格數
+    legacySkillRemovalV1: true, // 舊版技能系統移除：清除舊技能／融合技、任務進度索引平移
 
     savedAt: Date.now(),
     player: {
@@ -89,19 +90,15 @@ function newGameState() {
       talents: { levels: {}, potentialLevels: {} },
       gold: INITIAL_GOLD, scrap: INITIAL_SCRAP, essence: INITIAL_ESSENCE, ancientEssence: 0, soulOrigin: 0,
       dust: 0,                // 魔塵（神鑄材料）
-      magicScroll: 0,         // 魔法卷軸（技能融合材料；取得比照附魔精華、數量 1/10）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,
-      // 技能：初始自帶 3 個 1 級技能；技能點由「技能熟練度」提供（2026-07-30 改制）
-      skills: { powerSlash: 1, arcaneBurst: 1, manaBarrier: 1 },
-      skillUnlocks: { powerSlash: true, arcaneBurst: true, manaBarrier: true }, // 人物等級達標後永久解鎖的技能
+      // 技能點由「技能熟練度」提供（2026-07-30 改制）；目前只用於潛力技能
       skillPoints: 0,
       skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，每級 1 技能點，0~1000 級
-      loadout: ['powerSlash', 'arcaneBurst', 'manaBarrier'],
-      fusions: [],  // 玩家自創的融合技定義（{components, seed} 種子重算制）
+      loadout: [],  // 裝載欄：'sg:<群組id>'（新版技能）與 'potential:<id>'（潛力技能）
       /* 新版技能群組（2026-08-13 技能改造，js/skills2.js）：
          levels = { 群組id: [各階等級] }。空字典＝各群組採預設（第 1 階 Lv.1、其餘 0），
          內容於升級時才建立——避免 mergeDefaults 深合併把玩家調過的值「復活」回預設。 */
@@ -281,7 +278,7 @@ function reincarnate() {
     FIELD.player.shieldMax = 0;
     FIELD.player.shieldMaxVersion = SHIELD_MAX_VERSION;
     FIELD.player.skillCds = {};
-    // 45 新技能：轉生重置技能冷卻時，一併清空技能執行期狀態（比照 skillCds）
+    // 轉生重置技能冷卻時，一併清空技能執行期狀態（比照 skillCds）
     if (typeof resetSkillRT === 'function') resetSkillRT();
   }
   UI.dirty.header = true;
