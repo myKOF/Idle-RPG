@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜雷電矩陣循環電柱回收（THUNDER-MATRIX-LIFETIME-20260929）
+
+- Owner Codex；Done。雷幕 attack 每拍建立無人回收的 loop 電柱且拉成整道範圍，造成永久堆疊白光。改依 area.id 管理直立電柱，與地板共用權威移動／續命及清場；FOV 只投影柱腳。
+- 範圍：VFX Runtime、必要頁面快取、Runtime 回歸及本紀錄；禁止修改傷害、技能配置、素材及使用者既有修改。前置齊備、衝突預檢乾淨。
+- 驗收：連續事件效果數不成長、停止續命／clearFields 回收、平滑移動、柱身尺寸／方向不被地面範圍拉伸；Build 與正式 Pixi 預覽。完成提交交使用者整合，不合併推送。
+- 完成：電柱沿權威雷幕長度排列，使用舊雷幕柱距及數量上限，依投影前長度計數；地板及各電柱分別持有穩定 ID，逐拍只更新位置與續命，停送後依既有 0.35 秒保活回收，clearFields 即時移除。電柱使用原製作尺寸、billboard 柱腳投影，不套地面矩形拉伸或旋轉；未更動傷害／技能資料／Preset。
+- 修改：js/vfx-runtime.js、tests/vfx-runtime.test.cjs、index.html、tools/vfx/editor/index.html、本紀錄。檢查未改：js/skills2.js、js/battle-renderer.js、js/vfx-core.js、js/vfx-pixi-backend.js、兩份雷幕 Preset、editor/runtime-preview.js。無素材變更，不需素材庫提交。
+- 測試：node --test --test-name-pattern=THUNDER-MATRIX tests/vfx-runtime.test.cjs 通過；node --test --test-reporter=tap tests/vfx-runtime.test.cjs tests/skill2-chainlightning-thunder-legendary.test.cjs tests/vfx-editor-guard.test.cjs 為 150 項145通過／5失敗，五項均於 HEAD 原 Runtime 重現（飛雷神既有配置、FIELD、CATALOG-3、CHAIN生成器、STARFALL-TAIL）。新增案例在 HEAD 失敗、修正後通過。node tools/build_check.cjs 399檔通過，diff check通過。
+- 正式 Edge／Pixi 隔離預覽：2道雷幕連續60拍保持14柱＋2地板，停送與清場皆歸零；可見電柱及清空畫面均截圖檢視，Console零錯誤。加入 battle-renderer 原始 FOV／billboard 投影函式驗證直立柱身；未冒稱完整遊戲戰場實測。
+- 交付：Commit 見本紀錄所在提交，可整合；未合併／推送。遊戲需重新載入以清除舊版累積物件；編輯器先備份未存工作再重載，既有 stale guard 測試通過。其他使用者配置／素材保持未提交。建議整合後實戰確認多道交錯時外觀。
+
 ## Codex｜魔法盾百分比法力承傷（MANA-SHIELD-PERCENT-20260929）
 
 - Owner：Codex；Done。生命損耗按生命上限換算法力上限同比例消耗，全部由法力承擔；每級降低法力成本 5%，滿級乘以 50%，不足部分回扣生命。
