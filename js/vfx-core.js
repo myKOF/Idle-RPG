@@ -698,6 +698,7 @@ var VFXCore = (function () {
     amplitude: { label: '彎曲振幅（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
     motionSpeed: { label: '完整形狀重抽頻率（次／秒；0 靜止）', default: 0, min: 0, max: 60 },
     motionAmplitude: { label: '重抽形狀彎曲幅度（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
+    tipTaper: { label: '兩端尖細收束比例', default: 0, min: 0, max: .5 },
     widthJitter: { label: '隨機寬度變化比例', default: 0, min: 0, max: .15 },
     mirrorChance: { label: '鏡射機率（0～1）', default: .5, min: 0, max: 1 },
     pivot: { label: '鏡射／寬度變化中心（橫向 px）', default: 0, min: -10000, max: 10000 },
@@ -794,6 +795,11 @@ var VFXCore = (function () {
     var displacement=envelope*amplitude*(Math.sin(q*deformationValue(c,'frequency')+w.phase)*(1-mix)+
       Math.sin(q*deformationValue(c,'secondaryFrequency')+w.phase*deformationValue(c,'phaseCoupling'))*mix);
     across=pivot+(across-pivot)*w.mirror*w.width+displacement;
+    var taper=deformationValue(c,'tipTaper');
+    if(taper>0){
+      var tip=Math.max(0,Math.min(1,q/taper,(1-q)/taper));
+      across=pivot+(across-pivot)*tip*tip*(3-2*tip);
+    }
     out.x=c.axis==='x'?along:across;
     out.y=c.axis==='x'?across:along;
     return out;

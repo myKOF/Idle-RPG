@@ -715,6 +715,9 @@ var VFXRuntime = (function () {
         // 端點已離場時消費事件，不能退回 legacy 的備用位置。
         if (!from || !to) return true;
       }
+      // 追蹤事件的權威發射點也涵蓋敵人回程及途中改追，不能退回玩家槍口。
+      if(tracked && spec.area && spec.area.homingSpeed>0 && isNum(spec.area.sourceX) && isNum(spec.area.sourceY))
+        from={x:spec.area.sourceX,y:spec.area.sourceY};
       var dx = to.x - from.x, dy = to.y - from.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (!(dist > 0)) dist = 1;
@@ -1789,7 +1792,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260929-chain-shape-refresh';
+  var DATA_VERSION = '20260929-superconduct-tips';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

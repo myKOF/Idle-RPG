@@ -111,3 +111,23 @@ test('DEFORM-RESHAPE 尊重關閉鏡射機率、寬度與相位隨機參數',()=
   a.rt.update(.1);
  }
 });
+
+ test('兩端尖細收束在編輯器與遊戲共用變形座標，中心維持原寬度',()=>{
+  for(const axis of ['x','y']){
+   const w={config:{axis,start:0,end:400,amplitude:0,tipTaper:.12},mirror:1,width:1,phase:0};
+   for(const along of [0,400]){
+    const p=Core.deformPoint(w,axis==='x'?along:20,axis==='x'?20:along,{});
+    assert.equal(axis==='x'?p.y:p.x,0);
+   }
+   const p=Core.deformPoint(w,axis==='x'?200:20,axis==='x'?20:200,{});
+   assert.equal(axis==='x'?p.y:p.x,20);
+  }
+ });
+
+test('金色雷鏈製作寬度與素材實際幾何一致，光暈也收尖',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-lightning.json'),'utf8'));
+ assert.equal(p.sizing.authored.width,512*p.layers[0].scale.x);
+ assert.equal(p.deformation.end-p.deformation.start,p.sizing.authored.width);
+ assert.ok(p.deformation.tipTaper>0);
+ assert.deepEqual(new Set(p.deformation.layers),new Set(p.layers.map(l=>l.id)));
+});

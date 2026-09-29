@@ -7989,3 +7989,15 @@ Worker 存活且頁面正常完成載入。
 - 全庫 node --test "tests/*.test.cjs" 有非本次範圍失敗及長時間案例；另以 --test-timeout=60000 執行，詳細結果見後續補記。未宣稱全庫通過，未調整遊戲數值配合測試。
 - 交付：Commit 見本紀錄所在提交；修正可獨立合併，未合併／推送。使用者可重新執行套用參數.bat。沒有未完成的套用工具修正；全庫失敗需另案排查。
 - 全庫補記：兩次全庫執行均長時間停在模擬／技能測試，設定 60 秒 timeout 仍未正常結束，已停止本輪啟動的測試程序；因此沒有完整全庫統計。輸出已出現「敵人出手 VFX 由攻擊結算事件驅動，不依賴死亡後快照」失敗；未對其歸因或宣稱已驗證為基線。本次修改僅 CLI 套用工具，專項五項與實際套用檢查全部通過。
+
+## Codex｜永恒超導體獨立往返與金色雷鏈尖端（SUPERCONDUCT-20260929）
+
+- Owner：Codex；Done。使用者確認額外金色雷鏈應獨立，並要求一併修正 VFX 預覽兩端平切。已將 Skills2 永恒超導體的本體子彈／命中移至觸發欄，清除該列舊地面電團覆寫；普通鏈繼承原外觀。
+- 實作：一條執行期往返鏈，以既有 projectileHomingStep 追蹤敵人與移動玩家，實際抵達敵人才傷害，回到自身才疊層。同一敵人可重複命中；死目標可從目前位置改追，無範圍內敵人／玩家死亡／reset 立即送結束事件；再次施放維持一道、不堆積永久鏈。Runtime 以事件 sourceX/Y 為權威起點，回程不從玩家重發。
+- 外觀：gold Preset 保留使用者當前貼圖／金色設計，修正實際 390.1952 寬卻填 200 的製作基準；新增 deformation.tipTaper，Core 共享且 Editor 自動公開「兩端尖細收束比例」，本份設 0.12，包含光暈三層皆收束。頁面、Runtime 資料與 Worker 快取同步；既有 editor guard 偵測版本變更，舊分頁需備份後重啟，不能覆蓋新檔。
+- 修改範圍：Skills2 Excel／CSV／js、tools/skills2-vfx.cjs、Core／Runtime、主頁／Worker／Editor 快取、gold Preset、3 支專項測試、Schema 與任務紀錄。未修改但检查：Pixi backend、battle renderer、util 的玩家飄字映射、config_tables。其他使用者的數值／紫色素材／刪除資源保持原狀，不納入此修正提交。
+- 配置驗證：Artifact Tool 讀寫目標六格；為避免其匯出改動其他內容，僅將六格字串合入原 XLSX XML，所有其他 ZIP 項目逐位元一致；既有儲存格樣式不變，原空白新增兩格使用鄰格 style 1。獨立 openpyxl 唯讀核對六格；CSV→JS apply 為 0 差異。
+- 測試：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs tests/vfx-deformation.test.cjs 通過；加入移動目標／玩家、回程、重複命中、死目標改追、清場／死亡終止、尖端數學與幾何基準；tests/vfx-runtime.test.cjs 的新增回程權威起點／回收通過。VFX／配置綜合 153 項 149 通過，FIELD／CATALOG-3／CHAIN 金色生成器對照／STARFALL-TAIL 四項在 HEAD 原 Runtime 同樣重現；未降低斷言。另編輯器 stale guard／配置／技能／變形 63/63 通過（後續多一項幾何基準測試）。build_check 399 檔通過。
+- 實機：獨立 28370 Editor 開啟合法 Preset、新欄位 0.12、兩端尖細；正式 Runtime 測試場景可選連鎖飛行及移動目標，Console 無警告／錯誤。完整遊戲戰鬥視覺仍待使用者確認手感，未聲稱已跑實戰。
+- 素材庫提交：9679e6b（codex-authored/lightning 的 gold Preset 與配對 layout）；遊戲 Commit 見本紀錄所在提交。可合併，未合併／推送；無待處理功能修改，既有四項回歸失敗另案排查。
+- 最終補驗：提交暫存版本（不混入使用者既有速度／紫色受擊配置）的技能機制 23/23、Excel／CSV／JS 配置 8/8 通過，apply 17 字面值／0 語意變更；工作區技能＋變形 36/36 通過。暂存 XLSX 與 HEAD 比較僅指定六格改值。
