@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜旋轉雷鏈動態網格修正（CHAIN-WAVE-MESH-20260929）
+
+- Owner：Codex；程式／素材完成，快取更新待 Claude 合併。旋轉 PNG 的縱向取樣改依實際矩陣，裁切重新分配可見 UV，保留85頂點。金色補回遺失的動態欄位，金紫幅度40px、12次／秒，保留使用者尺寸。
+- 175項測試全過，Build 404檔通過；素材庫 `de2df11`。瀏覽器驗證頁無法連線，未聲稱完成實機觀察。
+- index.html／js/vfx-runtime.js 預檢發現 Claude 修改；使用者明確要求等 Claude 改好並合併後再改，因此兩檔未動。剩餘步驟、修改及未修改檔案見 `docs/skill-tests/20260929-chain-wave-mesh.md`。
+
 ## Codex｜雷鏈動態波形（CHAIN-WAVE-MOTION-20260929）
 
 - Owner：Codex；Done。飛行期間依時間平滑切換隨機波形，各圖層共用變形；編輯器公開速度／幅度，更新GPU幾何快取。兩份雷鏈啟用12次／秒、16px，其餘Preset預設不變。

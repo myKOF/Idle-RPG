@@ -4,7 +4,7 @@
   "duration": 0.366,
   "loop": false,
   "deformation": {
-    "amplitude": 7,
+    "amplitude": 4,
     "axis": "x",
     "end": 542.464,
     "layers": [
@@ -13,12 +13,12 @@
       "side-fork"
     ],
     "mirror": true,
-    "motionAmplitude": 16,
-    "motionSpeed": 12,
     "secondaryFrequency": 5,
     "secondaryWeight": 0.1,
     "start": 0,
-    "widthJitter": 0.1
+    "widthJitter": 0.1,
+    "motionAmplitude": 40,
+    "motionSpeed": 12
   },
   "layers": [
     {
@@ -33,7 +33,7 @@
       "rotation": -1.5707963267948966,
       "scale": {
         "x": 0.459,
-        "y": 1.9453
+        "y": 2.0455
       },
       "anchor": {
         "x": 0.5,
@@ -70,8 +70,8 @@
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 1.0513,
-        "y": 1.9453
+        "x": 0.7628,
+        "y": 2.0455
       },
       "anchor": {
         "x": 0.5,
@@ -104,12 +104,12 @@
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "position": {
         "x": 784.3921,
-        "y": 3.3653
+        "y": 3.3509
       },
       "rotation": -1.5707963267948966,
       "scale": {
-        "x": 0.459,
-        "y": 0.4662
+        "x": 0.3452,
+        "y": 0.4903
       },
       "alpha": 0.48,
       "tint": "#ffbc32",

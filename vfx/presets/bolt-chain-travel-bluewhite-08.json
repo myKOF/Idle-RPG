@@ -13,7 +13,7 @@
       "side-fork"
     ],
     "mirror": true,
-    "motionAmplitude": 16,
+    "motionAmplitude": 40,
     "motionSpeed": 12,
     "start": 0,
     "widthJitter": 0.07

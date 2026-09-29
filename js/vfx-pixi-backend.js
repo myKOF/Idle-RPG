@@ -256,7 +256,7 @@ var VFXPixiBackend = (function () {
 
     // 每層85個頂點，可走Pixi的小網格批次；不使用全屏Filter或額外RenderTexture。
     function createWarpMesh(spec) {
-      var cols=spec.warpAxis==='x'?17:5,rows=spec.warpAxis==='x'?5:17;
+      var cols=17,rows=5;
       var positions=new Float32Array(cols*rows*2),uvs=new Float32Array(positions.length);
       var indices=new Uint32Array((cols-1)*(rows-1)*6),n=0;
       for(var y=0;y<rows;y++)for(var x=0;x<cols;x++){
@@ -286,8 +286,28 @@ var VFXPixiBackend = (function () {
         c.clipMin=w.clipMin;c.clipMax=w.clipMax;
         c.clipTaper=w.clipTaper;
         for(var k=0;k<warpMatrixKeys.length;k++)c[warpMatrixKeys[k]]=w[warpMatrixKeys[k]];
+        // Subdivide along the transformed lightning, not the PNG's unrotated X axis.
+        // The thunderstrike sprites are rotated 90 degrees: their length is texture V.
+        var axisY=v.config.axis==='y';
+        var du=(axisY?w.b:w.a)*tw,dv=(axisY?w.d:w.c)*th;
+        var vertical=Math.abs(dv)>Math.abs(du);
         for(var i=0;i<m.uvs.length;i+=2){
-          var u=m.baseUvs[i],vv=m.baseUvs[i+1];
+          var longitudinal=m.baseUvs[i],transverse=m.baseUvs[i+1];
+          var u=vertical?transverse:longitudinal,vv=vertical?longitudinal:transverse;
+          if(Number.isFinite(w.clipMin)&&Number.isFinite(w.clipMax)){
+            // Distribute samples across the visible texels instead of collapsing most
+            // vertices onto the crop edges. UV and position move together (no stretch).
+            var slope=vertical?w.c*th:w.a*tw;
+            var base=w.x-w.a*t.anchorX*tw-w.c*t.anchorY*th+
+              (vertical?w.a*tw*transverse:w.c*th*transverse);
+            if(Math.abs(slope)>1e-9){
+              var lo=(w.clipMin-base)/slope,hi=(w.clipMax-base)/slope;
+              var start=Math.max(0,Math.min(1,Math.min(lo,hi)));
+              var end=Math.max(0,Math.min(1,Math.max(lo,hi)));
+              if(vertical)vv=start+(end-start)*longitudinal;
+              else u=start+(end-start)*longitudinal;
+            }
+          }
           var x=(u-t.anchorX)*tw,y=(vv-t.anchorY)*th;
           // Crop both geometry and texture coordinates: interior texels keep their size.
           if (Number.isFinite(w.clipMin)&&Number.isFinite(w.clipMax)) {
