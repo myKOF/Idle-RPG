@@ -1829,7 +1829,7 @@ test('DEVOUR 正式素材跨8秒循環不跳轉，尾焰留在世界路徑，尺
 test('CHAIN-LIFECYCLE 死亡取消命中光環，但飛行繼續到最後落點',()=>{
  const alive=new Set(['mv-float-2']);const ps=['bolt-chain-travel-bluewhite','hit-test','ground-test'].map(id=>unitPreset(id,.366));
  const {adapter}=makeAdapter(ps,{ctx:{targetAlive:id=>alive.has(id),posOf:id=>ENT[id],playerPos:()=>ENT['pv-float'],chainPoint:id=>ENT[id]}});
- const vfx={attack:ps[0].id,hit:'hit-test',ground:'ground-test'};
+ const vfx={projectile:ps[0].id,hit:'hit-test',ground:'ground-test'};
  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['mv-float-1','mv-float-2'],hit:false,travelMs:[0,366],vfx});
  adapter.update(.1);alive.clear();adapter.update(.1);assert.equal(adapter.stats().fx.activeEffects,1);
  const played=adapter.stats().played;adapter.tryPlay({fxKind:'impact',variant:'lightning-chain-hit',targets:['mv-float-2'],vfx});assert.equal(adapter.stats().played,played);
@@ -1840,7 +1840,7 @@ test('CHAIN-LIFECYCLE 死亡取消命中光環，但飛行繼續到最後落點'
 test('CHAIN-ARRIVAL 起飛不播受擊，權威命中僅播受擊、不疊舊地面電團',()=>{
  const ps=['bolt-chain-travel-bluewhite','configured-hit','configured-ground'].map(id=>unitPreset(id,.3));
  const {adapter,log}=makeAdapter(ps);
- const vfx={attack:ps[0].id,hit:ps[1].id,ground:ps[2].id};
+ const vfx={projectile:ps[0].id,hit:ps[1].id,ground:ps[2].id};
  const spec={variant:'lightning-chain',fxKind:'chain',targets:['mv-float-1','mv-float-2'],travelMs:[0,183],hit:false,vfx};
  adapter.tryPlay(spec);adapter.update(.1);
  assert.equal(log.nodes.filter(n=>/configured-(hit|ground)/.test(n.spec.assetUrl)).length,0);
@@ -1869,11 +1869,11 @@ test('CHAIN-TRAIN 固定18米，轉折後10米尾部與8米前端同時存在並
  adapter.update(1.1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
-test('CHAIN-HOMING 移動來源不拖曳，追逐超過原估時仍等速，終止僅清指定鏈',()=>{
+test('CHAIN-HOMING 飛行子彈欄保留長電弧，移動來源不拖曳，超過估時仍等速，終止僅清指定鏈',()=>{
  const p=unitPreset('bolt-chain-travel-bluewhite',.366);p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
  const points={a:{x:0,y:0},b:{x:300,y:0}};
  const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>points[id],playerPos:()=>points.a}});
- const spec={fxKind:'chain',variant:'lightning-chain',targets:['a','b'],lineLength:180,travelMs:[0,3000],hit:false,vfx:{attack:p.id},area:{chainId:'one',homingSpeed:100}};
+ const spec={fxKind:'chain',variant:'lightning-chain',targets:['a','b'],lineLength:180,travelMs:[0,3000],hit:false,vfx:{projectile:p.id},area:{chainId:'one',homingSpeed:100}};
  adapter.tryPlay(spec);let previous=0;
  for(let i=0;i<40;i++){
   points.a.x+=30;points.b.x+=20;adapter.update(.1);

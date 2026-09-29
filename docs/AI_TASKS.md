@@ -7939,3 +7939,9 @@ Worker 存活且頁面正常完成載入。
 - 驗證：新增 USAGE-17（標成傳奇／神鑄特效或潛力技能的列，標籤必須是 `Equipment_Affix.csv`／`Skills.csv` 上的名稱，設計師改名當場轉紅）、USAGE-18／18b（提示卡列出完整清單並標出命中；後者不寫死技能名，改為「凡是列上收攏掉的用途，提示卡都要攤開並標記」）、USAGE-19（滑鼠與鍵盤都接上、不得留著 `el.title`、CSS 不得吃掉點擊）。USAGE-10 與 VIEW-35 跟著搬家的實作更新（行為不變，斷言從字面比對改成跑 `comboTerms` 驗行為）。編輯器 426 項中 3 項失敗（CAP-2、HISTORY-42、16b canonical），三項都在既有基線上、與本次無關。build_check 404 檔通過、diff check 通過。
 - 實機確認（本機編輯器 28362）：搜「永恒超導體」得到三份特效；滑過 `bolt-chain-lightning` 跳出提示卡「共 5 處使用」，其中「連鎖閃電·永恒超導體」標黃；↓ 鍵移動時提示卡跟著換；點擊照常開啟 `hit-lightning`，清單與提示卡一起收起。
 - 衝突預檢：`ai/codex` 有一筆比 HEAD 新的提交（`0aa6f755` 連鎖閃電改用配置表飛行速度與子彈欄位）同樣動到 `tools/vfx/editor/index.html`，但改的是 `vfx-runtime.js` 那一行、我改的是 `editor.js` 那一行，行不同；它另外動到 `config/CSV/Skills2.csv` 的連鎖閃電第 1 階欄位，與本次的用途標籤無關。codex 工作區另有未提交的 `vfx/presets/bolt-chain-travel-bluewhite.json`，未碰。未合併／推送。
+
+## Codex｜連鎖閃電表定飛行速度（CHAIN-TABLE-SPEED-20260929）
+
+- Owner：Codex；Done。基礎連鎖閃電改讀 Skills2 飛行子彈速度，素材由攻擊欄移入飛行子彈欄；追蹤、動畫及抵達結算共用速度。維持現行 18/.244 米／秒手感，不變更傷害或超神機制。
+- 允許 Skills2 Excel／CSV／編譯資料、幾何欄位路由、Runtime、Worker／頁面快取、測試及交接文件；禁止改其他技能內容、使用者素材及其他副本。前置依賴已整合，預檢無衝突。
+- 驗收：Excel→CSV→JS 往返、兩種速度／每級增量、追蹤移動敵人不提前命中、連續彈射與單份特效通過；554 參數／錨點與 404 檔 Build 通過。完整回歸 3221 項：3123 通過、96 失敗、2 略過；96 項均在修改前程式重現，無新增失敗。詳見 `docs/skill-tests/20260929-chain-table-speed.md`。提交交使用者整合，不合併或推送；外部素材變更保持未提交。

@@ -1,5 +1,17 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path'),vm=require('vm');
 const geo=require('../tools/skills2-geometry.cjs'),tables=require('../tools/config_tables.cjs');
+test('連鎖閃電速度接入表格並保留每級成長，Excel／CSV／JS一致',()=>{
+ const fx=geo.apply('chainlightning','1',{},col=>col===geo.labels.speed?'10,2':'').fx;
+ assert.deepEqual(fx,{speed:10,speedPer:2});
+ assert.equal(geo.extract('chainlightning','1',fx,'')[geo.labels.speed],'10,2');
+ const root=path.join(__dirname,'..'),rows=tables.readXlsxRows(path.join(root,'config/Excel/Skills2.xlsx'));
+ const csv=tables.csvParse(fs.readFileSync(path.join(root,'config/CSV/Skills2.csv'),'utf8'));
+ assert.deepEqual(csv,rows);
+ const data=tables.evalLiteral(tables.extractLiteral(fs.readFileSync(path.join(root,'js/skills2.js'),'utf8'),'SKILLS2').literal);
+ const compiled=tables.evalLiteral(tables.extractLiteral(tables.SCHEMAS.Skills2.rebuild(rows.slice(1),rows[0]).SKILLS2,'SKILLS2').literal);
+ assert.deepEqual(compiled,data);
+ assert.ok(Math.abs(data.chainlightning.tiers[0].fx.speed-18/.244)<1e-10);
+});
 test('範圍格式：空格、矩形各軸增量、圓形半徑、未填增量',()=>{
  assert.deepEqual(geo.parse('10 * 10 , 1 * 1',true),{base:[10,10],per:[1,1],hasGrowth:true});
  assert.deepEqual(geo.parse('6,1'),{base:[6],per:[1],hasGrowth:true});
