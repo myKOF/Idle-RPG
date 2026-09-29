@@ -1721,7 +1721,7 @@ test('CHAIN 斜俯視彈射逐段連接投影端點，命中電光只在終點�
   const dx=to.x-from.x,dy=to.y-from.y,dist=Math.hypot(dx,dy);
   assert.ok(Math.abs((t.x-from.x)*dy-(t.y-from.y)*dx)<1e-6,'本體沿已投影的 A→B 直線移動');
   assert.ok(Math.hypot(t.x-from.x,t.y-from.y)>0,'本體確實離開 A');
-  assert.ok(t.scaleX*256<dist*.36,'短電弧不鋪滿兩端');
+  assert.ok(Math.abs(t.scaleX*256-dist*.8)<1e-6,'保留較長電弧但不鋪滿兩端');
   assert.ok(Math.hypot(end.x-from.x,end.y-from.y)<=dist+1e-6);}
  adapter.update(.18);assert.equal(beams().length,1);assert.equal(hits().length,0);checkEnd(beams()[0],screen('pv-float'),screen('a'));
  adapter.update(.004);assert.equal(hits().length,1);assert.equal(hits()[0].transforms.at(-1).y,90);
@@ -1875,13 +1875,28 @@ test('CHAIN-FLIGHT 正式電弧本體連續離開 A、短拖尾飛向 B，抵達
    const offset=(t.x*target.x+t.y*target.y)/len;
    const luminous=offset+centre(t.frame)*t.scaleX;
    assert.ok(luminous>previous,'亮電弧的實際像素中心必須逐幀向 B 前進');previous=luminous;
-   assert.ok(t.scaleX*256<len*.36,'每格都是短電弧，不是完整 A-B 連線');
-   assert.ok(t.scaleY<=t.scaleX+1e-6,'縮短電弧時同步收窄，避免擠成粗電球');
+   assert.ok(Math.abs(t.scaleX*256-len*.8)<1e-6,'保留長電弧，不能被固定 96px 上限縮小');
+   assert.ok(Math.abs(t.scaleY-p.layers[0].scale.y*p.layers[0].scaleOverLife)<1e-6,'保留 Preset 原厚度');
    assert.ok(offset>0,'整個電弧節點有平移，不只換圖集幀');
    assert.ok(Math.abs(t.x*target.y-t.y*target.x)<1e-6);
    assert.equal(adapter.stats().fx.activeEffects,1);
   }
-  assert.ok(previous>Math.hypot(target.x,target.y)*.85,'抵達前亮部已接近 B');
+  assert.ok(previous>Math.hypot(target.x,target.y)*.75,'抵達前亮部已接近 B');
   adapter.update(.004);assert.equal(adapter.stats().fx.activeEffects,0);
  }
+});
+
+
+test('CHAIN-ARRIVAL 起飛不播目標光環，權威命中才播放受擊與光環',()=>{
+ const ps=['bolt-chain-travel-bluewhite','configured-hit','configured-ground'].map(id=>unitPreset(id,.3));
+ const {adapter,log}=makeAdapter(ps);
+ const vfx={attack:ps[0].id,hit:ps[1].id,ground:ps[2].id};
+ const spec={variant:'lightning-chain',fxKind:'chain',targets:['mv-float-1','mv-float-2'],travelMs:[0,183],hit:false,vfx};
+ adapter.tryPlay(spec);adapter.update(.1);
+ assert.equal(log.nodes.filter(n=>/configured-(hit|ground)/.test(n.spec.assetUrl)).length,0);
+ adapter.update(.09);
+ assert.equal(log.nodes.filter(n=>/configured-(hit|ground)/.test(n.spec.assetUrl)).length,0,'即使本地飛行結束仍等待權威命中');
+ adapter.tryPlay({variant:'lightning-chain-hit',fxKind:'impact',targets:['mv-float-2'],area:{x:300,y:50,r:0},vfx});adapter.update(.01);
+ assert.ok(log.nodes.some(n=>n.spec.assetUrl.includes('configured-hit')));
+ assert.ok(log.nodes.some(n=>n.spec.assetUrl.includes('configured-ground')));
 });

@@ -716,15 +716,15 @@ var VFXRuntime = (function () {
       var dist = Math.sqrt(dx * dx + dy * dy);
       if (!(dist > 0)) dist = 1;
       var travel = trackedBeamWidths[presetId] ? travelSecAt(spec, ids.length >= 2 ? 1 : 0) : 0;
-      // 有權威飛行時間時，電弧只佔路徑一小段，整段本體由 A 平移到 B。
+      // 有權威飛行時間時，保留長電弧與 Preset 原厚度，本體由 A 平移到 B。
       // 舊事件沒有 travelMs 才維持全長連線，避免推測另一個命中時刻。
-      var body = travel > 0 ? Math.min(dist * .35, 96 * profile.scale) : dist;
+      var body = travel > 0 ? dist * .8 : dist;
       var ref = play(rt, presetId, {
         position: from,
         rotation: Math.atan2(dy, dx),
         timeScale: travel > 0 ? (trackedBeamArrivalTimes[presetId] || travel) / travel : 1,
         scaleX: body / (trackedBeamWidths[presetId] || NOMINAL_BEAM),
-        scaleY: travel > 0 ? Math.min(profile.scale, body / trackedBeamWidths[presetId]) : trackedBeamWidths[presetId] ? profile.scale : 1
+        scaleY: trackedBeamWidths[presetId] ? profile.scale : 1
       }, trackedBeamWidths[presetId] ? 1 : undefined);
       if (ref && presetId === 'bolt-chain-travel-bluewhite') {
         trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: trackedBeamWidths[presetId] || NOMINAL_BEAM, travel: travel, startedAt: clock });
@@ -1289,6 +1289,10 @@ var VFXRuntime = (function () {
       // 純命中事件不可再次施法或發射；這些角色已由起飛事件播放。
       if (primary === 'hit') {
         if (spec.hit !== false) playRole(spec, 'hit');
+        if (spec.variant === 'lightning-chain-hit') {
+          if (roles.ground) playRole(spec, 'ground');
+          if (roles.field) playRole(spec, 'field');
+        }
         return true;
       }
       var orbit = spec.area && (num(spec.area.orbs, 0) > 0 || Array.isArray(spec.area.members));
@@ -1296,6 +1300,8 @@ var VFXRuntime = (function () {
       var order = ['cast', 'attack', 'projectile', 'field', 'ground'];
       for (var ri = 0; ri < order.length; ri++) {
         var role = order[ri];
+        // 雷幻身光環也是目標端演出，必須等權威命中，不能起飛就點亮敵人。
+        if (spec.variant === 'lightning-chain' && (role === 'ground' || role === 'field')) continue;
         if (!roles[role] || (orbit && (role === 'projectile' || (orbitPlayed && role === 'ground')))) continue;
         playRole(spec, role);
       }
@@ -1584,12 +1590,12 @@ var VFXRuntime = (function () {
         if (beam.travel > 0 && progress >= 1) {
           stopRef(beam.ref); trackingBeams.splice(bi, 1); continue;
         }
-        var bodyLength = beam.travel > 0 ? Math.min(distance * .35, 96 * profile.scale) : distance;
+        var bodyLength = beam.travel > 0 ? distance * .8 : distance;
         var offset = progress * (1 - bodyLength / distance);
         if (!moveRef(beam.ref, {
           position: {x:beamFrom.x + bdx * offset, y:beamFrom.y + bdy * offset}, rotation: Math.atan2(bdy, bdx),
           scaleX: bodyLength / beam.width,
-          scaleY: beam.travel > 0 ? Math.min(profile.scale, bodyLength / beam.width) : profile.scale
+          scaleY: profile.scale
         }, 1)) trackingBeams.splice(bi, 1);
       }
 

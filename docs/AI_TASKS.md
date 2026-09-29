@@ -1,5 +1,9 @@
 # AI_TASKS.md
 
+## Codex｜雷鏈原貌與抵達光環（CHAIN-APPEARANCE-20260929）
+
+- Owner：Codex；Done。恢復雷鏈原本厚度及較長電弧，保留本體平移；將起飛時誤播的地板光環移至權威命中事件。依賴既有抵達事件；允許 Runtime、測試、快取與紀錄，不改 Preset／素材、技能數值或其他副本。預檢無衝突；驗證起飛無目標特效、抵達才播放、原厚度與飛行。完成交使用者整合。152 測試 148 通過、4 項已知原有失敗；Build 402 檔通過。真實 Worker 七階未選超神：起飛新增光環 0、命中新增 8、Console 無錯。詳見 `docs/skill-tests/20260929-chainlightning-appearance.md`。
+
 ## Codex｜雷鏈電弧實體飛行（CHAIN-FLIGHT-20260929）
 
 - Owner：Codex；Done。依使用者回饋，將 A→B 的全長連線改為短電弧沿路徑快速飛行。依既有 travelMs 抵達，不更改傷害、素材或其他工作副本。依賴上一輪抵達結算已完成。
