@@ -173,7 +173,9 @@ test('NPC 表已接入套用參數流程，且同步後 dry-run 不再有 JS 差
   assert.match(result.stdout, /重建字面值 7 個（語意變更 0）/);
   const c = loadContext(['js/util.js', 'js/data.js']);
   assert.equal(c.NPC_CONFIG_TABLE.undead_1.hpMult, 1.05);
-  assert.equal(c.NPC_CONFIG_TABLE.undead_3.aspdMult, 1.2);
+  // aspdMult 已被 NPC 表的「攻擊速度(次/秒)」取代；留著會變成兩套攻速並存
+  assert.equal(c.NPC_CONFIG_TABLE.undead_3.aspdMult, undefined);
+  assert.equal(c.NPC_CONFIG_TABLE.undead_3.atkSpeed, 1);
   const batch = fs.readFileSync(path.join(root, '套用參數.bat'), 'utf8');
   assert.match(batch, /NPC\.xlsx/);
   assert.match(batch, /%~2"=="NPC" exit \/b 0/);

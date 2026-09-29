@@ -7908,3 +7908,10 @@ Worker 存活且頁面正常完成載入。
 - Owner Codex；Done。固定18米電弧以裁切飛出／收入，速度提高50%，命中立即接續下一段，上一段尾部可重疊。範圍：技能命中時間、Runtime、Core／Pixi裁切、快取、回歸及本紀錄。預檢乾淨；保留使用者未提交的技能資料與素材。驗收：固定縮放、端點裁切、重疊彈射、命中時間、build及實際Pixi。無新素材，不合併／推送。
 
 - 完成：18米固定本體UV裁切、首段244ms與同鏈等速、尾流重疊；移除命中時額外播放雷幻身舊地面電團。348項回歸344通過、4項已確認既有失敗；正式Pixi兩段共存及收尾歸零、Console無錯誤，build402檔通過。無素材變更；Commit見本紀錄所在提交，完整交接見 `docs/skill-tests/20260929-chainlightning-train.md`。可整合，未合併／推送。
+
+## Claude｜NPC 移動速度／攻擊速度／攻擊距離接入戰鬥（NPC-MOVE-ATTACK-20260929）
+
+- Owner：Claude；Done。NPC 表新增三欄（移動速度 米/秒、攻擊速度 次/秒、攻擊距離 米）接入遊戲：CSV → `tools/config_tables.cjs` NPC schema → `js/data.js` 各地圖 pool（`runSpeed`／`atkSpeed`／`atkRange`）→ `NPC_CONFIG_TABLE` → `combat.js npcCombatProfile`（米換成座標單位，1 米 = 10）→ 敵人身上的 `aspd`／`runSpeed`／`atkRange` → `battlefield.js` 逼近與射程判定。
+- 規則：攻速 = 表格值 × 階級係數 × 場景攻速倍率（舊 `aspdMult` 由表格取代並移除）；敵人各自用自己的跑速逼近；打不打得到看自己的射程；射程 > 近戰距離兩倍算遠程（投射物、停在射程 0.92 處站樁），其餘近戰貼到接觸距離；投射物／近戰表現改看射程、不再看魔法型（魔法型只剩傷害類型）。拉近技能改用身體停步距離，不會被遠程敵人的站樁位置擋住。敵人提示多兩行攻擊距離與移動速度。
+- 預期的平衡影響（需要 Antigravity／模擬跑一輪確認）：敵人平均跑速從固定 21 米/秒變成 6～24 米/秒（平均約 15），到達時間拉長；24 米射程的敵人會站著開火，玩家要衝過去才打得到。
+- 測試：新增 `tests/npc-move-attack.test.cjs`、`tests/battlefield.test.cjs` 六項；`earth-element`、`vfx-element-colors` 兩支釘住舊實作的測試已同步。完整回歸與 HEAD 基線逐項比對，零新增失敗。

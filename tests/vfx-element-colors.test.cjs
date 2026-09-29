@@ -83,6 +83,7 @@ test('DOM 後備路徑的敵方攻擊事件讀取敵人屬性', () => {
   const combat = fs.readFileSync(path.join(root, 'js', 'combat.js'), 'utf8');
   assert.match(combat, /var enemyVfxElem = \(mEnt && mEnt\.attr/);
   assert.match(combat, /fxKind: 'enemy-attack'/);
-  assert.match(combat, /variant: mEnt && mEnt\.magic \? 'enemy-projectile' : 'enemy-melee'/);
+  // 投射物 vs 近戰看射程（NPC 表攻擊距離），不看魔法型 → enemyAttackIsRanged
+  assert.match(combat, /variant: enemyRanged \? 'enemy-projectile' : 'enemy-melee'/);
   assert.match(combat, /enemyVfxElem \? ELEM_INFO\[enemyVfxElem\]\.color[\s\S]*#ff6b6b/);
 });
