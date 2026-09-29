@@ -266,11 +266,18 @@ test('USAGE-10 搜尋同時比對 id 與用途，否則打技能名等於找不�
   assert.ok(/search:/.test(body) && /label/.test(body),
     '搜尋字串要含 id 與用途標籤');
 
+  /* 2026-09-29：拆關鍵字的那兩行搬進 comboTerms（提示卡要用同一套規則來標命中），
+     所以這裡不再比對 comboFilter 的字面，直接跑 comboTerms 驗行為——更難繞過。 */
+  const ctx = comboTipContext();
+  assert.deepEqual(ctx.comboTerms('  Ground   FIRE '), ['ground', 'fire'],
+    'id 一律小寫，輸入要先轉小寫再以空白拆開；「ground fire」是兩個都要命中的關鍵字');
+  assert.deepEqual(ctx.comboTerms('   '), [], '沒輸入就不篩掉任何東西');
+
   const filter = editor.slice(editor.indexOf('function comboFilter'));
   const fbody = filter.slice(0, filter.indexOf('\n  }'));
-  assert.ok(/toLowerCase\(\)/.test(fbody), 'id 是小寫，輸入要先轉小寫再比對');
-  assert.ok(/split\(/.test(fbody),
-    '空白分隔的多個關鍵字要全部命中，否則「ground fire」會被 fire 的一大堆結果淹掉');
+  assert.ok(/comboTerms\(text\)/.test(fbody), 'comboFilter 要走同一套拆法');
+  assert.ok(/row\.search\.indexOf\(terms\[i\]\)/.test(fbody),
+    '每個關鍵字都要在該列的搜尋字串裡找得到，否則「ground fire」會被 fire 的結果淹掉');
 });
 
 test('USAGE-11 切換 Preset 換上全新的編輯狀態，未存檔要先問', function () {
@@ -418,4 +425,160 @@ test('USAGE-16e 技能的顯示名稱只有一份實作', function () {
     'rowLabel 要直接用 stageLabel');
   assert.equal((src.match(/group \+ '·' \+/g) || []).length, 2,
     '「群組·階段」的組法只能出現在 stageLabel 與既有的收攏邏輯，不得再多一份');
+});
+
+/* ============================================================
+   USAGE-17 用途名稱要與遊戲裡的表一致（2026-09-29 使用者要求）
+
+   舊寫法是「傳說連鎖閃電」——那不是任何東西的名字，是人在文件上取的描述，
+   於是下拉上標著一個在遊戲裡查不到的詞（使用者回報：找遍特效也沒有這個名字）。
+   實際在用的是傳奇特效【閃電飛越】與【迅雷穿刺】，名稱在 Equipment_Affix.csv 上；
+   潛力技能的名稱在 Skills.csv 上。設計師改名時這一條要當場轉紅。
+   ============================================================ */
+function csvRows(file, want) {
+  const rows = U.csvParse(fs.readFileSync(path.join(REPO, file), 'utf8'));
+  const head = rows[0].map(function (h) {
+    return String(h).replace(/^﻿/, '').split('\n')[0].trim();
+  });
+  const idx = {};
+  Object.keys(want).forEach(function (key) {
+    idx[key] = head.indexOf(want[key]);
+    assert.ok(idx[key] >= 0, file + ' 找不到欄位「' + want[key] + '」');
+  });
+  return rows.slice(1).map(function (r) {
+    const out = {};
+    Object.keys(idx).forEach(function (key) { out[key] = String(r[idx[key]] || '').trim(); });
+    return out;
+  });
+}
+
+test('USAGE-17 標成傳奇／神鑄特效或潛力技能的用途，名字要在對應的表上找得到', function () {
+  const names = { 傳奇特效: new Set(), 神鑄特效: new Set(), 潛力技能: new Set() };
+  csvRows('config/CSV/Equipment_Affix.csv', { pool: '池', name: '名稱' }).forEach(function (r) {
+    if (names[r.pool] && r.name) names[r.pool].add(r.name);
+  });
+  csvRows('config/CSV/Skills.csv', { cat: '系統分類', name: '名稱' }).forEach(function (r) {
+    if (r.cat === 'potential' && r.name) names['潛力技能'].add(r.name);
+  });
+  Object.keys(names).forEach(function (kind) {
+    assert.ok(names[kind].size > 0, kind + '：一個名稱都讀不到，欄位對應壞了');
+  });
+
+  /* 「用在哪裡」講了是哪一種來源，標籤就必須是那張表上的名稱本身。
+     這樣寫而不是列出 preset 清單：之後新增的列自動受同一條規則管。 */
+  const checked = [];
+  const bad = [];
+  U.readOutsideTables(REPO).forEach(function (row) {
+    Object.keys(names).forEach(function (kind) {
+      if (row.where.indexOf(kind) < 0) return;
+      checked.push(row.id + '＝' + row.label);
+      if (!names[kind].has(row.label)) {
+        bad.push(row.id + ' 的「' + row.label + '」不是' + kind + '的名稱');
+      }
+    });
+  });
+  assert.ok(checked.length >= 4, '應該有好幾列標著傳奇／神鑄特效或潛力技能，實際 ' + checked.length + ' 列');
+  assert.deepEqual(bad, [],
+    '這幾列的標籤在遊戲的表上查不到——用表上的名稱，不要自己取一個描述');
+});
+
+/* ============================================================
+   USAGE-18 用途提示卡：列上收攏掉的部分要攤得開（2026-09-29 使用者要求）
+
+   使用者打「永恒超導體」跳出三份特效，三份的列上都只寫著「連鎖閃電」——命中的字
+   一個都看不到，看起來像搜錯了。列上那一欄本來就是收攏過的（USAGE-7C 保證它短到
+   放得下），所以完整清單只能另外給：滑過去或用鍵盤移到那一列就攤開，並把命中的
+   那幾筆標起來。
+   ============================================================ */
+function comboTipContext() {
+  const { extractFunction } = require('./helpers/battle-scene.cjs');
+  const src = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const ctx = {};
+  vm.createContext(ctx);
+  ['comboTerms', 'comboTipLines'].forEach(function (name) {
+    vm.runInContext(extractFunction(src, name), ctx);
+  });
+  return ctx;
+}
+
+test('USAGE-18 提示卡列出完整清單，並標出被關鍵字命中的那幾筆', function () {
+  const ctx = comboTipContext();
+  const row = { id: 'demo', all: ['連鎖閃電·雷幻身', '連鎖閃電·永恒超導體', '雷球'] };
+
+  /* 沒有輸入關鍵字（直接按 ▾ 展開）時什麼都不標——沒有「命中」這回事 */
+  const plain = ctx.comboTipLines(row, '');
+  assert.deepEqual(plain.map(function (l) { return l.text; }), row.all, '完整清單要照原順序列出');
+  assert.deepEqual(plain.map(function (l) { return l.hit; }), [false, false, false]);
+
+  const hit = ctx.comboTipLines(row, '永恒超導體');
+  assert.deepEqual(hit.map(function (l) { return l.hit; }), [false, true, false]);
+
+  /* 多個關鍵字要全部命中同一筆，與清單的篩選規則一致（comboFilter 也走 comboTerms） */
+  assert.deepEqual(ctx.comboTipLines(row, '連鎖 永恒').map(function (l) { return l.hit; }),
+    [false, true, false]);
+  assert.deepEqual(ctx.comboTipLines(row, '連鎖 沒有這個字').map(function (l) { return l.hit; }),
+    [false, false, false]);
+
+  /* 只打到 id 的時候不會有任何一筆被標——清單照樣列出來，只是沒有命中的用途 */
+  assert.deepEqual(ctx.comboTipLines(row, 'demo').map(function (l) { return l.hit; }),
+    [false, false, false]);
+  /* 沒有人用的 preset 不會生出空白列 */
+  assert.deepEqual(ctx.comboTipLines({ id: 'orphan' }, '雷'), []);
+});
+
+test('USAGE-18b 列上收攏掉的那些用途，提示卡上找得到而且會被標起來', function () {
+  /* 不寫死是哪一個技能：使用者隨時會改技能表（改了就該跟著變，不是讓測試轉紅）。
+     條件本身才是重點——「列上看不到、但搜得到」的那些，提示卡要負責解釋。 */
+  const ctx = comboTipContext();
+  const labels = U.usageLabels(REPO);
+  const collapsed = Object.keys(labels).filter(function (id) {
+    return labels[id].all.some(function (a) { return labels[id].labels.indexOf(a) < 0; });
+  });
+  assert.ok(collapsed.length > 0, '應該找得到「列上收攏、完整清單更詳細」的 preset');
+
+  collapsed.slice(0, 20).forEach(function (id) {
+    const entry = labels[id];
+    const hidden = entry.all.filter(function (a) { return entry.labels.indexOf(a) < 0; })[0];
+    const lines = ctx.comboTipLines({ id: id, all: entry.all }, hidden);
+    assert.equal(lines.length, entry.all.length,
+      id + ' 的提示卡要給完整清單，不是列上那份收攏過的');
+    const marked = lines.filter(function (l) { return l.hit; }).map(function (l) { return l.text; });
+    assert.ok(marked.indexOf(hidden) >= 0,
+      id + '：搜「' + hidden + '」找得到它，提示卡上卻沒標出是哪一筆');
+  });
+});
+
+test('USAGE-19 提示卡滑鼠與鍵盤都看得到，而且不得蓋掉點擊', function () {
+  const editor = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.js'), 'utf8');
+  const bodyOf = function (name) {
+    const fn = editor.slice(editor.indexOf('function ' + name + '('));
+    return fn.slice(0, fn.indexOf('\n  }'));
+  };
+
+  const render = bodyOf('renderComboList');
+  assert.ok(/addEventListener\('mouseenter', function \(\) \{ showComboTip\(row, el\); \}\)/.test(render),
+    '滑過某一列要開那一列的提示卡');
+  assert.ok(/addEventListener\('mouseleave', hideComboTip\)/.test(render), '滑開要收起來');
+  assert.ok(!/el\.title\s*=/.test(render),
+    '不得同時留著原生 title——兩個提示會一起冒出來');
+
+  /* 用 ↑↓ 挑特效的人也要看得到：只做滑鼠等於鍵盤使用者沒有這個功能 */
+  assert.ok(/showComboTip\(combo\.shown\[combo\.active\], scrollComboActive\(\)\)/
+    .test(bodyOf('moveComboActive')), '鍵盤移動也要開提示卡');
+  /* 提示卡掛在 body 上，清單收起來不會自己消失 */
+  assert.ok(/hideComboTip\(\)/.test(bodyOf('closeCombo')), '清單關掉要一起收');
+  assert.ok(/hideComboTip\(\)/.test(render), '重畫清單時先收——滑鼠底下那一列已經不是同一個節點');
+
+  /* 篩選與標記共用同一套關鍵字拆法，否則「找得到的」與「標起來的」會是兩套規則 */
+  assert.ok(/comboTerms\(text\)/.test(bodyOf('comboFilter')), 'comboFilter 要走 comboTerms');
+  assert.ok(/comboTerms\(query\)/.test(bodyOf('comboTipLines')), 'comboTipLines 要走 comboTerms');
+  assert.equal((editor.match(/\.trim\(\)\.toLowerCase\(\);\n\s*return q \? q\.split/g) || []).length, 1,
+    '關鍵字拆法只能有一份實作');
+
+  const css = fs.readFileSync(path.join(REPO, 'tools/vfx/editor/editor.css'), 'utf8');
+  const rule = css.slice(css.indexOf('.combo-tip {'), css.indexOf('.combo-tip[hidden]'));
+  assert.ok(/pointer-events:\s*none/.test(rule),
+    '提示卡吃到 mousedown 的話，被它蓋住的那一列就永遠點不到');
+  assert.ok(/position:\s*fixed/.test(rule), '清單會捲動，提示卡不能跟著飄走');
+  assert.ok(/\.combo-tip-line\.hit\s*\{/.test(css), '命中的那幾筆要有自己的樣式');
 });
