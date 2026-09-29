@@ -305,7 +305,7 @@ function flyingSetup(random=0) {
   const c=loadContext(), specs=stubVfx(c), calls=stubHits(c);
   maxLevels(c,'chainlightning'); equip(c,'chainlightning');setUlt(c,'chainlightning','flyingThunderGod',1);
   c.Math.random=()=>random;
-  const p=playerEnt(), es=[enemy(1e9,100,0,'aim')];
+  const p=playerEnt(), es=[enemy(1e9,100,200,'aim'),enemy(1e9,300,200,'second')];
   const ctx={pEnt:p,floatSel:'mv-float',getEnemies:()=>es};
   const tick=t=>{const dt=t-c.GT;c.GT=t;c.sgTickFlyingThunder(ctx,dt);};
   tick(0);return {c,specs,calls,p,es,ctx,tick};
@@ -315,37 +315,39 @@ test('【飛雷神】：每三秒一波，三至六道逐道間隔0.25秒，重�
     const {c,specs,es,tick}=flyingSetup(random);
     tick(2.99);assert.equal(specs.length,0);
     tick(3);assert.equal(specs.length,1);
-    assert.equal(specs[0].dur,3);assert.equal(specs[0].area.h,60);
+    assert.equal(specs[0].dur,3);assert.equal(specs[0].area.h,300);
     assert.equal(specs[0].vfx.field,'beam-flying-thunder-god');
     assert.equal(c.sgVfxRoles('chainlightning').projectile,'bolt-chain-travel-bluewhite');
-    es[0].pos={x:0,y:100};tick(3.24);assert.equal(specs.length,1);
+    es[0].pos={x:300,y:100};tick(3.24);assert.equal(specs.length,1);
     for(let i=1;i<count;i++)tick(3+i*.25);
-    assert.equal(specs.length,count);assert.equal(specs[0].area.a,0);
-    assert.equal(specs[1].area.a,Math.PI/2,'每道出生才讀敵人位置');
+    assert.equal(specs.length,count);assert.ok(Math.abs(Math.sin(specs[0].area.a))<1e-9);
+    assert.equal(specs[0].area.x,200);assert.equal(specs[0].area.y,200,'連線不穿過玩家原點');
+    assert.ok(Math.abs(Math.cos(specs[1].area.a))<1e-9,'每道出生才讀兩敵位置');
     tick(5.99);assert.equal(specs.length,count);
     tick(6);assert.equal(specs.length,count+1,'前一波尾道還在時可開始下一波');
   }
 });
-test('【飛雷神】：六米路徑固定，每半秒查當下敵人，六次傷害後獨立消失',()=>{
-  const {c,specs,calls,es,tick}=flyingSetup();tick(3);
-  c.SKILL2_RT.flyThunder.pending=[];c.SKILL2_RT.flyThunder.nextWave=100;
-  const behind=enemy(1e9,-300,0,'behind'),off=enemy(1e9,100,100,'off');es.push(behind,off);
-  tick(3.49);assert.equal(calls.length,0);
-  tick(3.5);assert.deepEqual(calls.map(x=>x.ent.name),['behind','aim']);
-  assert.equal(calls[0].atk,1100,'表格基值200%加Lv1的20%');assert.equal(calls[0].elem,'lightning');
-  es[0].pos.y=100;off.pos.y=0;c.BF_PLAYER.y=500;
-  tick(4);assert.deepEqual(calls.slice(2).map(x=>x.ent.name),['behind','off']);
-  assert.equal(specs.length,1,'持續期間不重新派送整份動畫');
-  for(const t of [4.5,5,5.5,6])tick(t);
-  assert.equal(calls.length,12);assert.equal(c.SKILL2_RT.flyThunder.beams.length,0);
-  tick(6.5);assert.equal(calls.length,12);
+test('【飛雷神】：三十米路徑固定，每半秒查當下敵人，六次傷害後獨立消失',()=>{
+ const {c,specs,calls,es,tick}=flyingSetup();tick(3);
+ c.SKILL2_RT.flyThunder.pending=[];c.SKILL2_RT.flyThunder.nextWave=100;
+ const inside=enemy(1e9,-300,320,'inside'),off=enemy(1e9,100,500,'off');es.push(inside,off);
+ tick(3.49);assert.equal(calls.length,0);tick(3.5);
+ assert.deepEqual(calls.map(x=>x.ent.name),['inside','aim','second']);
+ assert.equal(calls[0].atk,1100);assert.equal(calls[0].elem,'lightning');
+ es[0].pos.y=500;off.pos.y=200;c.BF_PLAYER.y=1000;
+ tick(4);assert.deepEqual(calls.slice(3).map(x=>x.ent.name),['inside','off','second']);
+ assert.equal(specs.length,1,'位置固定，無需重新播放');
+ for(const t of [4.5,5,5.5,6])tick(t);
+ assert.equal(calls.length,18);assert.equal(c.SKILL2_RT.flyThunder.beams.length,0);
+ tick(6.5);assert.equal(calls.length,18);
 });
-test('【飛雷神】：無敵不生成、逐道新目標、死亡及reset立即終止場域',()=>{
-  const {c,specs,p,es,tick}=flyingSetup();es[0].hp=0;tick(3);assert.equal(specs.length,0);
-  es[0].hp=1e9;tick(3.25);assert.equal(specs.length,1);
-  p.hp=0;tick(3.3);assert.equal(c.SKILL2_RT.flyThunder,null);assert.equal(specs.at(-1).variant,'flying-thunder-end');
-  p.hp=1000;tick(4);tick(7);assert.equal(c.SKILL2_RT.flyThunder.beams.length,1);
-  c.resetSkill2RT();assert.equal(specs.at(-1).variant,'flying-thunder-end');assert.equal(c.SKILL2_RT.flyThunder,null);
+test('【飛雷神】：不足兩敵或位置重疊不生成，死亡及reset立即終止',()=>{
+ const {c,specs,p,es,tick}=flyingSetup();es[0].hp=0;tick(3);assert.equal(specs.length,0);
+ es[0].hp=1e9;es[0].pos={...es[1].pos};tick(3.25);assert.equal(specs.length,0);
+ es[0].pos.x=100;tick(3.5);assert.equal(specs.length,1);
+ p.hp=0;tick(3.6);assert.equal(c.SKILL2_RT.flyThunder,null);assert.equal(specs.at(-1).variant,'flying-thunder-end');
+ p.hp=1000;tick(4);tick(7);assert.equal(c.SKILL2_RT.flyThunder.beams.length,1);
+ c.resetSkill2RT();assert.equal(specs.at(-1).variant,'flying-thunder-end');assert.equal(c.SKILL2_RT.flyThunder,null);
 });
 
 /* ===========================================================================

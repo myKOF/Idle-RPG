@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex｜飛雷神雙敵連線與靜態淡出（FLYING-THUNDER-PAIR-20260929）
+
+- Owner：Codex；Done。使用者要求寬度五倍、兩名敵人連線、劈出後固定形態淡出。允許 Skills2 表與邏輯、專用 Preset、必要快取、配置說明與測試；禁止改其他技能／其他副本。預檢乾淨，依賴已完成。驗收雙敵連線與不足兩敵略過、30米判定、波形不再重抽與漸淡、原節拍與壽命、表格及編輯器防覆寫；完成後雙倉庫提交。
+- 完成：傷害及可見寬度皆為原來五倍，Skills2 L151=200*30、Preset heightM=30；每道隨機選兩名具不同座標的存活敵人，用其中點／連線固定場域。不足兩敵、尚未進場、死亡或無有效連線時不生成。原每波三秒／逐道0.25秒／每道三秒與每半秒傷害維持。
+- 外觀：專用 Preset motionSpeed=0，出生隨機形態保持到結束，alphaOverLife 在劈亮後一路淡出；沿用編輯器既有參數，無新增隱藏程式控制。Core／Pixi 未修改。
+- 修改：Skills2 Excel／CSV／js、tools/skills2-vfx.cjs、專用 Preset、主頁／Worker／Editor 快取、Runtime 資料版本、兩支專項與 Runtime 說明。檢查未改：Core、Pixi、battlefield、editor guard。Excel 以 Artifact Tool 整理四格，再由 Excel API 正常儲存／重新開啟；僅 L151／AV151／AW151／AX151 值改變，樣式零變更。
+- 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs tests/vfx-deformation.test.cjs tests/vfx-editor-guard.test.cjs，46/46 通過；覆蓋雙敵方向、中點不依玩家、30米路徑、移動目標、少於兩敵與重疊、固定變形／透明度遞減、舊分頁拒絕覆寫。node tools/build_check.cjs 399檔通過、node tools/config_tables.cjs --apply 17字面值／0變更、git diff --check通過。
+- 正式 Runtime＋Pixi 隔離預覽確認五倍寬度、分散交錯、最後一道回收後0道，Console無錯誤；未宣稱完整遊戲FOV實戰驗收。使用者需備份未存內容後重載編輯器，伺服器舊版本保護測試通過。
+- 素材庫 af7302f；遊戲提交見本紀錄所在提交。可合併，無本次未完成項目，未合併／推送。建議以遊戲實戰確認新的加寬與淡出手感。
+
+
+
 ## Codex｜飛雷神全場持續雷電（FLYING-THUNDER-20260929）
 
 - Owner：Codex；Done。每三秒一波隨機三至六道，每道間隔 0.25 秒，出生時重新選取敵人決定固定貫穿方向；寬六米、持續三秒，每半秒重新查詢路徑並造成表定雷傷，升級每級增加二十百分點。

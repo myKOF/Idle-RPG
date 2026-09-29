@@ -15,7 +15,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20260929-flying-thunder';
+  var WORKER_ASSET_VERSION = '20260929-thunder-pair';
 
   /* ---- 量測模式（P4 用，預設關閉）----
      網址帶 ?measure=1 時，Worker 與主執行緒兩側都會統計訊息規模與耗時。
@@ -387,7 +387,7 @@ var WorkerBridge = (function () {
       var seedMatch = /[?&]seed=(\d+)(&|$)/.exec((typeof location !== 'undefined' && location.search) || '');
       if (seedMatch) qs.push('seed=' + seedMatch[1]);
       // 獨立雷鏈版本避免與同期NPC的Worker快取更新互相覆蓋。
-      var workerQuery = ['v=' + WORKER_ASSET_VERSION, 'chain=20260929-flying-thunder'].concat(qs);
+      var workerQuery = ['v=' + WORKER_ASSET_VERSION, 'chain=20260929-thunder-pair'].concat(qs);
       _worker = new Worker(WORKER_URL + '?' + workerQuery.join('&'));
     } catch (e) {
       console.error('[bridge] 無法建立 Worker（以 file:// 開啟時瀏覽器會封鎖，請用開發伺服器）：', e);

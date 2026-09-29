@@ -14,7 +14,7 @@
     ],
     "mirror": true,
     "motionAmplitude": 18,
-    "motionSpeed": 12,
+    "motionSpeed": 0,
     "pivot": 0,
     "secondaryFrequency": 5,
     "secondaryWeight": 0.1,
@@ -55,10 +55,6 @@
           1
         ],
         [
-          0.92,
-          1
-        ],
-        [
           1,
           0
         ]
@@ -96,10 +92,6 @@
           1
         ],
         [
-          0.92,
-          1
-        ],
-        [
           1,
           0
         ]
@@ -133,10 +125,6 @@
           1
         ],
         [
-          0.92,
-          1
-        ],
-        [
           1,
           0
         ]
@@ -148,7 +136,7 @@
       "height": 106,
       "width": 1167.872
     },
-    "heightM": 6,
+    "heightM": 30,
     "shape": "custom",
     "widthM": 200
   }

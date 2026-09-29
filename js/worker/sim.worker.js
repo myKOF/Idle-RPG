@@ -12,17 +12,17 @@
 
 importScripts('protocol.js?v=40', 'shim.js?v=8');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-flying-thunder', '../status.js?v=20260929-flying-thunder', '../formula.js?v=20260929-flying-thunder', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-flying-thunder',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-thunder-pair', '../status.js?v=20260929-thunder-pair', '../formula.js?v=20260929-thunder-pair', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-thunder-pair',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260929-flying-thunder', '../skills2.js?v=20260929-flying-thunder', '../talents.js?v=20260929-flying-thunder',
-  '../player.js?v=20260929-flying-thunder', '../special_rules.js',
-  '../combat.js?v=20260929-flying-thunder', '../legendary.js?v=20260929-flying-thunder', '../potential.js?v=20260929-flying-thunder', '../tower.js?v=20260929-flying-thunder',
-  '../factory.js?v=20260929-flying-thunder', '../newforge.js', '../forge.js', '../save.js?v=20260929-flying-thunder',
-  '../tasks.js?v=20260929-flying-thunder'
+  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20260929-thunder-pair', '../talents.js?v=20260929-thunder-pair',
+  '../player.js?v=20260929-thunder-pair', '../special_rules.js',
+  '../combat.js?v=20260929-thunder-pair', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20260929-thunder-pair', '../tower.js?v=20260929-thunder-pair',
+  '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
+  '../tasks.js?v=20260929-thunder-pair'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20260929-flying-thunder');
+importScripts('../gm_exec.js?v=20260929-thunder-pair');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
