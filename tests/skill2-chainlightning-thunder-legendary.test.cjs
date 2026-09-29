@@ -17,6 +17,15 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
+
+// 數值／次數測試等待既有抵達佇列；精確時序與取消另有逐 Tick 測試。
+function settleChain(c) {
+ let guard=0;while(c.SKILL2_RT.meteors.some(m=>m.variant==='lightning-chain-hit')&&guard++<2000){
+  const job=c.SKILL2_RT.meteors.filter(m=>m.variant==='lightning-chain-hit').sort((a,b)=>a.at-b.at)[0];
+  c.GT=Math.max(c.GT,job.at);c.sgTickMeteors({pEnt:job.pEnt,getEnemies:()=>job.pool,onDeaths(){},onDamage(){}});
+ }
+ assert.ok(guard<2000,'雷鏈佇列應完成');
+}
 const M = 10; // 1 米 ＝ 10 個戰場單位（bfMeterPx）
 
 function loadContext(extra) {
@@ -131,6 +140,8 @@ test('【電荷連鎖】：閃電鏈的彈射數 +2（總命中次數跟著多 2
     const es = [];
     for (let i = 0; i < 10; i++) es.push(enemy(1e9, 20 + i * 5, 0, 'e' + i));
     c.castSkill2(playerEnt(), es, 'chainlightning', 'mv-float');
+
+    settleChain(c);
     return calls.length;
   }
   assert.equal(hits([]), 4, '表定 4 次彈射');
@@ -147,6 +158,8 @@ test('【電擊】：同時射出的閃電鏈道數 +2（第 7 階沒學也照�
     const es = [];
     for (let i = 0; i < 10; i++) es.push(enemy(1e9, 20 + i * 5, 0, 'e' + i));
     c.castSkill2(playerEnt(), es, 'chainlightning', 'mv-float');
+
+    settleChain(c);
     /* 每一道鏈的起手都會送一個「只帶 1 個目標、沒有 delayMs」的雷鏈特效，
        正好等於道數（後續每一跳都是兩點式，且帶 delayMs）。 */
     return specs.filter((s) => s.variant === 'lightning-chain' && s.targets.length === 1 && !s.delayMs).length;
@@ -168,6 +181,8 @@ test('【雷散落】：電殛擴散多打 1 個敵人，且擴散傷害 +50%', 
     const es = [];
     for (let i = 0; i < 12; i++) es.push(enemy(1e9, 20 + i * 4, 0, 'e' + i));
     c.castSkill2(playerEnt(), es, 'chainlightning', 'mv-float');
+
+    settleChain(c);
     return calls;
   }
   const base = splash([]);
@@ -190,6 +205,8 @@ test('【超導】：同一道鏈每彈射 1 次，之後每一擊的傷害再�
   const es = [];
   for (let i = 0; i < 10; i++) es.push(enemy(1e9, 20 + i * 5, 0, 'e' + i));
   c.castSkill2(playerEnt(), es, 'chainlightning', 'mv-float');
+
+  settleChain(c);
   assert.equal(calls.length, 4);
   const first = calls[0].atk;
   [0, 1, 2, 3].forEach((i) => {
@@ -209,7 +226,7 @@ test('【過載】：同一個敵人被閃電鏈打滿 5 次就在牠身上炸�
   const near = enemy(1e9, 24, 0, 'near');   // 距離 hub 4 單位＝ 0.4 米，在 6 米爆炸範圍內
   const far = enemy(1e9, 300, 0, 'far');    // 30 米外，不吃爆炸
   // 場上只有這三個，主鏈每次施放都從最近的 hub 起手；累積打滿 5 次即爆
-  for (let i = 0; i < 6; i++) c.castSkill2(p, [hub, near, far], 'chainlightning', 'mv-float');
+  for (let i = 0; i < 6; i++) { c.castSkill2(p, [hub, near, far], 'chainlightning', 'mv-float'); settleChain(c); }
   assert.ok(derived.length > 0, '應該炸過至少一次');
   assert.ok(derived.every((h) => h.ent !== undefined), '爆炸有受害者');
   assert.ok(!derived.some((h) => h.ent === far), '30 米外的敵人不吃爆炸');
@@ -232,6 +249,7 @@ test('【天地雷鎖陣】：施放後每 gap 秒自動再施放，且重複施
   const es = [];
   for (let i = 0; i < 8; i++) es.push(enemy(1e9, 20 + i * 5, 0, 'e' + i));
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+
   const mpAfterCast = p.mp;
   const cdAfterCast = p.skillCds['sg:chainlightning'];
   const firstBatch = calls.length;
@@ -245,7 +263,9 @@ test('【天地雷鎖陣】：施放後每 gap 秒自動再施放，且重複施
   assert.equal(p.skillCds['sg:chainlightning'], cdAfterCast, '重複施放不重設冷卻');
 
   // 持續時間走完就停（Lv.1 ＝ 3 + 0.3 秒）
-  advance(c, p, es, 6);
+  advance(c, p, es, 9);
+  assert.equal(c.SKILL2_RT.ultRepeat.chainlightning,undefined,'持續結束不再起新施放');
+  settleChain(c); // 半速分支鏈可晚於施放狀態抵達；先讓已發射的鏈結束。
   const settled = calls.length;
   advance(c, p, es, 3);
   assert.equal(calls.length, settled, '持續時間結束後不再自動施放');
@@ -267,6 +287,8 @@ test('【永恒超導體】：往返鏈對範圍內每個敵人各打一次，�
     const p = playerEnt();
     const es = RING.map((xy, i) => enemy(1e9, xy[0], xy[1], 'e' + i));
     c.castSkill2(p, es, 'chainlightning', 'mv-float');
+
+    settleChain(c);
     return { c: c, p: p, calls: calls };
   }
   const plain = cast(false);
@@ -300,6 +322,7 @@ test('【飛雷神】：放電期每 gap 秒打向最遠的 N 個敵人，各自
   const far2 = enemy(1e9, 210, 0, 'far2');       // 與 far1 相距 1 米，互相在 12 米爆炸範圍內
   const es = [near, mid, far1, far2];
   c.castSkill2(p, es, 'chainlightning', 'mv-float');
+
   assert.ok(c.SKILL2_RT.flyThunder, '施放後進入放電期');
   const afterCast = calls.length;
 
@@ -310,6 +333,7 @@ test('【飛雷神】：放電期每 gap 秒打向最遠的 N 個敵人，各自
 
   // 持續 6.3 秒（Lv.1）：走完就停
   advance(c, p, es, 8);
+  settleChain(c);
   const settled = calls.length;
   advance(c, p, es, 2);
   assert.equal(calls.length, settled, '放電期結束後不再放電');

@@ -254,6 +254,11 @@ var BattleRenderer = (function () {
   }
   function fxGate(spec) {
     if (!S.ready || documentHidden()) return true;
+    if (spec && spec.variant === 'lightning-chain') return !(spec.targets && spec.targets.length);
+    if (spec && spec.variant === 'lightning-chain-hit') {
+      var ids = (spec.targets || []).slice(spec.fxKind === 'chain' ? -1 : 0);
+      return !ids.length || ids.some(function (id) { return !chainTargetAlive(id); });
+    }
     if (spec && (spec.variant === 'thunder-strike' || spec.variant === 'thunder-fall')) {
       return !vfxTargetsLive(spec);
     }
@@ -5255,8 +5260,14 @@ var BattleRenderer = (function () {
   }
 
   /* ============ VFX 事件分派（協議 v17 spec → Canvas 畫法） ============ */
+  function chainTargetAlive(id) {
+    if (id === 'pv-float') return !!(S.player && !S.player.dead);
+    var ent = S.entities[id];
+    return !!(ent && ent.state !== 'dying' && ent.state !== 'gone' && ent.data && ent.data.hp > 0);
+  }
   function onVfx(spec) {
     if (!S.ready || !spec) return;
+    if ((spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit') && fxGate(spec)) return;
     /* 背景分頁不畫特效（與 DOM 版 vfxSetEnabled(false) 同精神）；
        setTimeout 排進來的延遲段也會走到這裡被擋掉。 */
     if (documentHidden()) return;
@@ -5267,7 +5278,10 @@ var BattleRenderer = (function () {
     var isEnemyAttack = spec.cat === 'enemy' && spec.fxKind === 'enemy-attack';
     if (!spec._buffered) {
       spec._buffered = true;
-      if (!isEnemyAttack) spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS;
+      // 雷鏈已在 Worker 抵達時結算；再加位置緩衝會讓弱怪先死亡、起手電弧被取消。
+      if (!isEnemyAttack && spec.variant !== 'lightning-chain' && spec.variant !== 'lightning-chain-hit') {
+        spec.delayMs = (spec.delayMs || 0) + POS_BUFFER_MS;
+      }
     }
     var baseDelay = Math.max(0, spec.delayMs || 0);
     if (baseDelay > 0) {
@@ -6869,6 +6883,7 @@ var BattleRenderer = (function () {
       groundScale: GROUND_Y_SCALE,
       ctx: {
         posOf: screenPosOf,
+        targetAlive: chainTargetAlive,
         chainPoint: function (id) {
           var ent = id === 'pv-float' ? S.player : S.entities[id];
           if (!ent || !ent.root || ent.root.destroyed || ent.root.visible === false || ent.root.alpha === 0) return null;

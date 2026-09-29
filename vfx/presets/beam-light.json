@@ -10,12 +10,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
       "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -0.7562,
+        "y": 0.6999
       },
       "scale": {
-        "x": 0.3906,
-        "y": 0.1189
+        "x": 0.2664,
+        "y": 0.1905
       },
       "anchor": {
         "x": 0,
@@ -50,12 +50,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_06_rotated.png",
       "zIndex": 1,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -0.7562,
+        "y": 0.6999
       },
       "scale": {
-        "x": 0.3906,
-        "y": 0.0699
+        "x": 0.2664,
+        "y": 0.112
       },
       "anchor": {
         "x": 0,
@@ -90,12 +90,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 2,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -0.7562,
+        "y": 0.6999
       },
       "scale": {
-        "x": 0.3906,
-        "y": 0.0294
+        "x": 0.2664,
+        "y": 0.0471
       },
       "anchor": {
         "x": 0,
@@ -123,22 +123,6 @@
           0
         ]
       ]
-    },
-    {
-      "id": "sprite-4",
-      "type": "sprite",
-      "assetId": "particle-pack/png-transparent/magic_03.png",
-      "position": {
-        "x": 200.1273,
-        "y": 0.0722
-      },
-      "scale": {
-        "x": 0.0916,
-        "y": 0.0916
-      },
-      "duration": 0.3,
-      "perspective": false,
-      "followDirection": false
     }
   ],
   "sizing": {

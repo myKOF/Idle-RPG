@@ -1,64 +1,140 @@
 {
   "schemaVersion": 1,
   "id": "bolt-chain-travel-bluewhite",
-  "duration": 0.3,
+  "duration": 0.366,
   "loop": false,
   "deformation": {
-    "amplitude": 7,
+    "amplitude": 11.55,
     "axis": "x",
-    "end": 200,
+    "end": 542.464,
     "layers": [
-      "travelling-electric-front"
+      "blue-corona",
+      "white-core",
+      "side-fork"
     ],
     "mirror": true,
     "start": 0,
     "widthJitter": 0.07
   },
+  "sizing": {
+    "shape": "custom",
+    "widthM": 54.24640000000001,
+    "heightM": 10.6,
+    "authored": {
+      "width": 542.464,
+      "height": 106
+    }
+  },
   "layers": [
     {
-      "id": "travelling-electric-front",
+      "id": "blue-corona",
       "type": "sprite",
       "enabled": true,
-      "assetId": "codex-authored/lightning/chain-travel.png",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 2,
-        "y": 2
+        "x": 0.207,
+        "y": 1.0595
       },
       "anchor": {
-        "x": 0,
-        "y": 0.5
+        "x": 0.5,
+        "y": 0
       },
-      "alpha": 1,
-      "blendMode": "add",
-      "duration": 0.3,
-      "tintOverLife": [
+      "alpha": 0.85,
+      "tint": "#ffd43b",
+      "blendMode": "screen",
+      "duration": 0.366,
+      "alphaOverLife": [
         [
-          1,
-          "#eeff00"
+          0,
+          1
+        ],
+        [
+          0.9,
+          1
         ],
         [
           1,
-          "#ffffff"
+          0.8
         ]
       ],
-      "scaleOverLife": 1.137447,
-      "sheet": {
-        "columns": 6,
-        "count": 18,
-        "fps": 40,
-        "loop": false,
-        "mode": "fps",
-        "rows": 3
-      }
-    }
-  ],
-  "sizing": {
-    "authored": {
-      "height": 40,
-      "width": 200
+      "perspective": false,
+      "rotation": -1.5707963267948966
     },
-    "heightM": 4,
-    "shape": "custom",
-    "widthM": 20
-  }
+    {
+      "id": "white-core",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/spark_05.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1602,
+        "y": 1.0595
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0
+      },
+      "alpha": 1,
+      "tint": "#fff8cf",
+      "blendMode": "screen",
+      "duration": 0.366,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "perspective": false,
+      "rotation": -1.5707963267948966
+    },
+    {
+      "id": "side-fork",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "particle-pack/png-black-background/spark_04.png",
+      "position": {
+        "x": 403.3767,
+        "y": -20.8088
+      },
+      "scale": {
+        "x": 0.2148,
+        "y": 0.2539
+      },
+      "alpha": 0.48,
+      "tint": "#ffbc32",
+      "blendMode": "screen",
+      "duration": 0.366,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.9,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "perspective": false,
+      "rotation": -1.5707963267948966
+    }
+  ]
 }

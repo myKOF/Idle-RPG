@@ -1392,6 +1392,8 @@ var VFXCore = (function () {
       return value;
     }
     function applyTransformParams(effect, p) {
+      if (Object.prototype.hasOwnProperty.call(p, 'clipX')) effect.clipX = p.clipX
+        ? { min: transformNumber(p.clipX.min, 'clipX.min'), max: transformNumber(p.clipX.max, 'clipX.max') } : null;
       // 可選的移動參考中心：只平移既有世界粒子，不把彈體本身的旋轉帶入尾焰。
       if (p.particleOrigin) {
         var px = transformNumber(p.particleOrigin.x, 'particleOrigin.x');
@@ -1677,6 +1679,8 @@ var VFXCore = (function () {
       var dx=t.x-effect.origin.x,dy=t.y-effect.origin.y;
       w.x=(co*dx+si*dy)/sx;w.y=(-si*dx+co*dy)/sy;
       w.variation=layer.deformation;
+      w.clipMin=effect.clipX ? effect.clipX.min : undefined;
+      w.clipMax=effect.clipX ? effect.clipX.max : undefined;
       w.originX=effect.origin.x;w.originY=effect.origin.y;w.rotation=effect.rotation;w.scaleX=sx;w.scaleY=sy;
       t.deformation=w;
     }

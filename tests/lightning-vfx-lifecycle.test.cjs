@@ -78,3 +78,19 @@ test('DOM 落雷元件共用目標守門，死亡後移除雷柱、落點與爆�
   assert.match(vfx, /vfxLightningGroundImpact\(spec, layer, pt, delayMs \+ 30, false, targetGuard\)/);
   assert.match(vfx, /delayMs \+ 40, targetGuard\)/);
 });
+
+
+test('Canvas 雷鏈飛行不被死亡取消，但死亡目標不播命中特效', () => {
+ const renderer=read('js/battle-renderer.js');
+ const c={S:{ready:true,player:{dead:false},entities:{
+  from:{state:'dying',data:{hp:0}},to:{state:'idle',data:{hp:10}}
+ }},documentHidden:()=>false};
+ vm.runInNewContext([extractFunction(renderer,'chainTargetAlive'),extractFunction(renderer,'fxGate')].join('\n'),c);
+ const spec={fxKind:'chain',variant:'lightning-chain',targets:['from','to']};
+ assert.equal(c.fxGate(spec),false);
+ c.S.entities.to.data.hp=0;assert.equal(c.fxGate(spec),false);
+ c.S.entities.to.data.hp=10;c.S.entities.to.state='dying';assert.equal(c.fxGate(spec),false);
+ delete c.S.entities.to;assert.equal(c.fxGate(spec),false);
+ assert.equal(c.fxGate({...spec,targets:[]}),true);
+ assert.equal(c.fxGate({fxKind:'impact',variant:'lightning-chain-hit',targets:['from']}),true);
+});

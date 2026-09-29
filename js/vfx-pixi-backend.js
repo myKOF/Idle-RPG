@@ -265,7 +265,7 @@ var VFXPixiBackend = (function () {
       }
       var geometry=new PixiLib.MeshGeometry({positions:positions,uvs:uvs,indices:indices});
       var node=new PixiLib.Mesh({geometry:geometry,texture:PixiLib.Texture.EMPTY});
-      node.__warp={uvs:uvs,positions:positions,cache:{},point:{},geometry:geometry};
+      node.__warp={uvs:uvs,baseUvs:uvs.slice(),positions:positions,cache:{},point:{},geometry:geometry};
       return node;
     }
     var warpMatrixKeys=['a','b','c','d','x','y'];
@@ -275,20 +275,33 @@ var VFXPixiBackend = (function () {
       var tex=node.texture,tw=tex.orig ? tex.orig.width : tex.width,th=tex.orig ? tex.orig.height : tex.height;
       if(!(tw>1&&th>1))return;
       var v=w.variation,c=m.cache;
-      var changed=c.tw!==tw||c.th!==th||c.ax!==t.anchorX||c.ay!==t.anchorY||c.variation!==v;
+      var changed=c.tw!==tw||c.th!==th||c.ax!==t.anchorX||c.ay!==t.anchorY||c.variation!==v||c.clipMin!==w.clipMin||c.clipMax!==w.clipMax;
       for(var k=0;k<warpMatrixKeys.length;k++){
         var key=warpMatrixKeys[k];
         if(c[key]===undefined||Math.abs(c[key]-w[key])>1e-10)changed=true;
       }
       if(changed){
         c.tw=tw;c.th=th;c.ax=t.anchorX;c.ay=t.anchorY;c.variation=v;
+        c.clipMin=w.clipMin;c.clipMax=w.clipMax;
         for(var k=0;k<warpMatrixKeys.length;k++)c[warpMatrixKeys[k]]=w[warpMatrixKeys[k]];
         for(var i=0;i<m.uvs.length;i+=2){
-          var x=(m.uvs[i]-t.anchorX)*tw,y=(m.uvs[i+1]-t.anchorY)*th;
+          var u=m.baseUvs[i],vv=m.baseUvs[i+1];
+          var x=(u-t.anchorX)*tw,y=(vv-t.anchorY)*th;
+          // Crop both geometry and texture coordinates: interior texels keep their size.
+          if (Number.isFinite(w.clipMin)&&Number.isFinite(w.clipMax)) {
+            var along=w.a*x+w.c*y+w.x;
+            var delta=Math.max(w.clipMin,Math.min(w.clipMax,along))-along;
+            if(Math.abs(w.a*tw)>Math.abs(w.c*th)) u+=delta/(w.a*tw);
+            else if(Math.abs(w.c*th)>1e-9) vv+=delta/(w.c*th);
+            u=Math.max(0,Math.min(1,u));vv=Math.max(0,Math.min(1,vv));
+            x=(u-t.anchorX)*tw;y=(vv-t.anchorY)*th;
+          }
+          m.uvs[i]=u;m.uvs[i+1]=vv;
           Core.deformPoint(v,w.a*x+w.c*y+w.x,w.b*x+w.d*y+w.y,m.point);
           m.positions[i]=m.point.x;m.positions[i+1]=m.point.y;
         }
         m.geometry.getBuffer('aPosition').update();
+        m.geometry.getBuffer('aUV').update();
       }
       node.position.set(w.originX,w.originY);node.rotation=w.rotation;
       node.scale.set(w.scaleX,w.scaleY);node.skew.set(0,0);

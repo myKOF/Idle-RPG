@@ -169,3 +169,24 @@ test('PSHEET-7 backend.destroy() 才釋放所有格子貼圖', async function ()
   backend.destroy();
   assert.ok(frames.every((t) => t.destroyed), '收攤時要把切出來的 Texture 收掉');
 });
+
+test('WARP-CLIP 移動裁切同步UV，保留內部比例且可清除裁切重用',async()=>{
+ const PIXI=makePixi();
+ PIXI.MeshGeometry=class{constructor(o){Object.assign(this,o)}getBuffer(){return {update(){}}}};
+ PIXI.Mesh=class extends PIXI.Sprite{constructor(o){super(o.texture);this.geometry=o.geometry;this.position=this.scale=this.skew={set(){}}}};
+ const {backend}=setup(PIXI),node=backend.createNode({kind:'deformed',warpAxis:'x',assetUrl:'/bolt.png'});
+ await Promise.resolve();await Promise.resolve();node.texture.orig={width:512,height:256};
+ const variation={config:{axis:'x',start:0,end:512,amplitude:0},mirror:1,width:1,phase:0};
+ for(const rotated of [false,true]){
+  const w={a:rotated?0:1,b:rotated?-1:0,c:rotated?2:0,d:rotated?0:1,x:0,y:0,variation,originX:0,originY:0,rotation:0,scaleX:1,scaleY:1};
+  const t={deformation:w,anchorX:0,anchorY:0};backend.updateNode(node,t);
+  const original=Array.from(node.__warp.positions),uv=Array.from(node.__warp.uvs);
+  w.clipMin=100;w.clipMax=400;backend.updateNode(node,t);
+  for(let i=0;i<original.length;i+=2){
+   assert.ok(Math.abs(node.__warp.positions[i]-Math.max(100,Math.min(400,original[i])))<.001);
+   if(original[i]>=100&&original[i]<=400){assert.equal(node.__warp.uvs[i],uv[i]);assert.equal(node.__warp.uvs[i+1],uv[i+1]);}
+  }
+  delete w.clipMin;delete w.clipMax;backend.updateNode(node,t);
+  assert.deepEqual(Array.from(node.__warp.uvs),uv);assert.deepEqual(Array.from(node.__warp.positions),original);
+ }
+});

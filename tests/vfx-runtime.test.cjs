@@ -369,7 +369,7 @@ function recordingBackend(log, tag) {
     createNode(spec) { const n = { tag, spec, transforms: [] }; log.nodes.push(n); return n; },
     updateNode(node, t) {
       if (!t || t.visible === false) return;
-      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY });
+      node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY, deformation: t.deformation ? {...t.deformation} : null });
       if (t.skewX) node.transforms[node.transforms.length - 1].skewX = t.skewX;
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
@@ -1664,16 +1664,15 @@ test('CHAIN 藍白連線走 beam 並保持兩端距離，延遲段不當作飛�
  adapter.update(.11);assert.equal(adapter.stats().played,2);adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
-test('CHAIN 快速彈射圖集依時間推進並準時回收',()=>{
- const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
- const {adapter,log}=makeAdapter([p]);adapter.tryPlay({fxKind:'chain',targets:['mv-float-1','mv-float-2'],vfx:{attack:p.id}});
- adapter.update(.05);const n=log.nodes[0],early=n.transforms.at(-1).frame;
- adapter.update(.1);const late=n.transforms.at(-1).frame;assert.ok(late>early);
- const {decodePng}=require('../tools/vfx/vfx-raster.cjs');const tex=decodePng(fs.readFileSync(path.join(__dirname,'../images/vfx/assets/codex-authored/lightning/chain-travel.png')));
- function centre(frame){let sum=0,mass=0;for(let y=0;y<128;y++)for(let x=0;x<256;x++){let a=tex.rgba[((Math.floor(frame/6)*128+y)*tex.width+(frame%6*256+x))*4+3];sum+=x*a;mass+=a;}return sum/mass;}
- assert.ok(centre(late)>centre(early)+60,'發亮電弧從起點向終點推進');
- adapter.update(.2);assert.equal(adapter.stats().fx.activeEffects,0);
+test('CHAIN 金色雷鏈直接使用落雷主弧與分岔，不含舊裁切圖集／落地爆點',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const src=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/bolt-thunderstrike-bluewhite.json'),'utf8'));
+ assert.deepEqual(p.layers.map(l=>l.id),['blue-corona','white-core','side-fork']);
+ for(const l of p.layers){assert.equal(l.assetId,src.layers.find(x=>x.id===l.id).assetId);assert.equal(l.sheet,undefined);assert.ok(/^#ff/.test(l.tint));}
+ assert.equal(p.duration,.366);assert.equal(p.deformation.axis,'x');
+ assert.deepEqual(p,require('../tools/vfx/authoring/author/chainlightning-travel.cjs').make());
 });
+
 
 test('CHAIN 移動與反向目標逐幀追蹤，延遲彈射於起飛時取得新位置',()=>{
  // 兩端幾何用固定256單位標記，不將可編輯美術的拉伸／變形當成端點。
@@ -1694,39 +1693,32 @@ test('CHAIN 移動與反向目標逐幀追蹤，延遲彈射於起飛時取得�
  adapter.clear();adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
-test('CHAIN 離場端點不使用 lastPos 或備用位置，取消延遲與飛行中電弧',()=>{
- const p=JSON.parse(fs.readFileSync(path.join(__dirname,'../vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+test('CHAIN 已起飛電弧保留離場來源最後位置，尾部收入後才回收',()=>{
+ const p=unitPreset('bolt-chain-travel-bluewhite',.366);p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
  const visible={a:{x:10,y:20},b:{x:210,y:20}};
- const {adapter}=makeAdapter([p],{ctx:{posOf:()=>({x:999,y:999}),playerPos:()=>({x:0,y:0}),chainPoint:id=>visible[id]||null}});
- const s={fxKind:'chain',targets:['a','b'],vfx:{attack:p.id}};
- adapter.tryPlay(s);adapter.tryPlay({...s,delayMs:200});adapter.update(.05);assert.equal(adapter.stats().fx.activeEffects,1);
- delete visible.a;adapter.update(.05);assert.equal(adapter.stats().fx.activeEffects,0);
- adapter.update(.15);assert.equal(adapter.stats().played,1);assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
- visible.a={x:50,y:40};delete visible.b;assert.equal(adapter.tryPlay(s),true);assert.equal(adapter.stats().played,1);
+ const {adapter}=makeAdapter([p],{ctx:{posOf:id=>visible[id]||{x:999,y:999},playerPos:()=>({x:0,y:0}),chainPoint:id=>visible[id]||null}});
+ adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],travelMs:[0,366],hit:false,vfx:{attack:p.id}});
+ adapter.update(.1);delete visible.a;delete visible.b;adapter.update(.1);
+ assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(.167);assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(2);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
-test('CHAIN 斜俯視彈射逐段連接投影端點，命中電光只在終點抵達時播放',()=>{
- // 幾何標記延長存活，避免節點池重用讓兩段的觀測紀錄混在一起；正式圖集壽命另測。
- const p=unitPreset('bolt-chain-travel-bluewhite',1);p.layers[0].id='travelling-electric-front';
- p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
- const hit=unitPreset('chain-hit',1),points={'pv-float':{x:0,y:0},a:{x:100,y:180},b:{x:-100,y:-120}};
- const screen=id=>({x:points[id].x,y:points[id].y*.5});
- const {adapter,log}=makeAdapter([p,hit],{groundScale:.5,ctx:{posOf:screen,chainPoint:screen,playerPos:()=>screen('pv-float')}});
- const vfx={attack:p.id,hit:hit.id};
- adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a'],travelMs:[183],vfx});
- adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],delayMs:300,travelMs:[0,183],vfx});
- const beams=()=>log.nodes.filter(n=>n.spec.assetUrl.includes(p.id));
- const hits=()=>log.nodes.filter(n=>n.spec.assetUrl.includes(hit.id));
- function checkEnd(node,from,to){const t=node.transforms.at(-1),end={x:t.x+Math.cos(t.rotation)*t.scaleX*256,y:t.y+Math.sin(t.rotation)*t.scaleX*256};
-  assert.ok(Math.abs(t.x-from.x)<1e-6&&Math.abs(t.y-from.y)<1e-6);
-  assert.ok(Math.abs(end.x-to.x)<1e-6&&Math.abs(end.y-to.y)<1e-6,'座標已投影，不得再壓一次 Y');}
- adapter.update(.18);assert.equal(beams().length,1);assert.equal(hits().length,0);checkEnd(beams()[0],screen('pv-float'),screen('a'));
- adapter.update(.004);assert.equal(hits().length,1);assert.equal(hits()[0].transforms.at(-1).y,90);
- adapter.update(.116);adapter.update(.001);assert.equal(beams().length,2);assert.equal(hits().length,1);
- points.b={x:-180,y:240};adapter.update(.17);checkEnd(beams()[1],screen('a'),screen('b'));assert.equal(hits().length,1);
- adapter.update(.02);assert.equal(hits().length,2);assert.equal(hits()[1].transforms.at(-1).x,-180);assert.equal(hits()[1].transforms.at(-1).y,120);
- adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
+
+test('CHAIN 斜俯視飛行前端沿已投影路徑連續前進，366ms 抵達',()=>{
+ const p=unitPreset('bolt-chain-travel-bluewhite',.366);p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
+ for(const dest of [{x:600,y:0},{x:-300,y:400}]){
+  const screen={x:dest.x,y:dest.y*.5};
+  const {adapter,log}=makeAdapter([p],{groundScale:.5,ctx:{posOf:id=>id==='a'?{x:0,y:0}:screen,playerPos:()=>({x:0,y:0})}});
+  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],area:{sourceX:0,sourceY:0,x:dest.x,y:dest.y},lineLength:null,travelMs:[0,366],hit:false,vfx:{attack:p.id}});
+  for(let i=1;i<=10;i++){
+   adapter.update(.036);const t=log.nodes[0].transforms.at(-1);
+   const head={x:t.x+Math.cos(t.rotation)*t.scaleX*256,y:t.y+Math.sin(t.rotation)*t.scaleX*256};
+   assert.ok(Math.abs(head.x-screen.x*i*.036/.366)<1e-6);assert.ok(Math.abs(head.y-screen.y*i*.036/.366)<1e-6);
+   assert.ok(Math.abs(t.scaleX*256-180*Math.hypot(screen.x,screen.y)/Math.hypot(dest.x,dest.y))<1e-6,'本體固定18米不拉伸');assert.equal(t.scaleY,1,'原厚度不隨飛行縮小');assert.equal(adapter.stats().fx.activeEffects,1);
+  }
+  adapter.update(.007);assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,0);
+ }
 });
+
 
 test('THUNDER 雷柱即時起播跟隨腳底，爆炸只由落地事件觸發',()=>{
  // 中心標記隔離美術偏移與每次隨機變形，專測落雷事件的附著與命中時序。
@@ -1831,4 +1823,48 @@ test('DEVOUR 正式素材跨8秒循環不跳轉，尾焰留在世界路徑，尺
  const tail=nodes.find(n=>n.spec.assetUrl===ball.layers[0].assetId&&n.transforms.length);const before=tail.transforms.at(-1);
  rt.setTransform(bh,{position:{x:100,y:50},rotation:1});rt.update(.01);const after=tail.transforms.at(-1);
  assert.ok(Math.hypot(after.x-before.x,after.y-before.y)<3,'已出生尾焰不跟著彈頭跳動');rt.destroy();
+});
+
+
+test('CHAIN-LIFECYCLE 死亡取消命中光環，但飛行繼續到最後落點',()=>{
+ const alive=new Set(['mv-float-2']);const ps=['bolt-chain-travel-bluewhite','hit-test','ground-test'].map(id=>unitPreset(id,.366));
+ const {adapter}=makeAdapter(ps,{ctx:{targetAlive:id=>alive.has(id),posOf:id=>ENT[id],playerPos:()=>ENT['pv-float'],chainPoint:id=>ENT[id]}});
+ const vfx={attack:ps[0].id,hit:'hit-test',ground:'ground-test'};
+ adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['mv-float-1','mv-float-2'],hit:false,travelMs:[0,366],vfx});
+ adapter.update(.1);alive.clear();adapter.update(.1);assert.equal(adapter.stats().fx.activeEffects,1);
+ const played=adapter.stats().played;adapter.tryPlay({fxKind:'impact',variant:'lightning-chain-hit',targets:['mv-float-2'],vfx});assert.equal(adapter.stats().played,played);
+ adapter.update(.167);assert.equal(adapter.stats().fx.activeEffects,1);adapter.update(2);assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
+
+test('CHAIN-ARRIVAL 起飛不播受擊，權威命中僅播受擊、不疊舊地面電團',()=>{
+ const ps=['bolt-chain-travel-bluewhite','configured-hit','configured-ground'].map(id=>unitPreset(id,.3));
+ const {adapter,log}=makeAdapter(ps);
+ const vfx={attack:ps[0].id,hit:ps[1].id,ground:ps[2].id};
+ const spec={variant:'lightning-chain',fxKind:'chain',targets:['mv-float-1','mv-float-2'],travelMs:[0,183],hit:false,vfx};
+ adapter.tryPlay(spec);adapter.update(.1);
+ assert.equal(log.nodes.filter(n=>/configured-(hit|ground)/.test(n.spec.assetUrl)).length,0);
+ adapter.update(.09);
+ assert.equal(log.nodes.filter(n=>/configured-(hit|ground)/.test(n.spec.assetUrl)).length,0,'即使本地飛行結束仍等待權威命中');
+ adapter.tryPlay({variant:'lightning-chain-hit',fxKind:'impact',targets:['mv-float-2'],area:{x:300,y:50,r:0},vfx});adapter.update(.01);
+ assert.ok(log.nodes.some(n=>n.spec.assetUrl.includes('configured-hit')));
+ assert.ok(!log.nodes.some(n=>n.spec.assetUrl.includes('configured-ground')));
+});
+
+test('CHAIN-TRAIN 固定18米，轉折後10米尾部與8米前端同時存在並收入端點',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const points={a:{x:0,y:0},b:{x:200,y:0},c:{x:200,y:200}};
+ const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>points[id],playerPos:()=>points.a}});
+ const emit=(a,b)=>adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:[a,b],lineLength:180,travelMs:[0,1e3],hit:false,vfx:{attack:p.id}});
+ emit('a','b');adapter.update(.5);
+ let w=log.nodes[0].transforms.at(-1).deformation;
+ assert.ok(Math.abs(w.scaleX-180/542.464)<1e-8);assert.ok(Math.abs((w.clipMax-w.clipMin)*w.scaleX-100)<1e-6);
+ adapter.update(.5);emit('b','c');adapter.update(.4);
+ const first=log.nodes[0].transforms.at(-1).deformation,second=log.nodes[3].transforms.at(-1).deformation;
+ assert.equal(adapter.stats().fx.activeEffects,2);
+ assert.ok(Math.abs((first.clipMax-first.clipMin)*first.scaleX-100)<1e-6);
+ assert.ok(Math.abs((second.clipMax-second.clipMin)*second.scaleX-80)<1e-6);
+ assert.equal(first.scaleX,second.scaleX);
+ adapter.update(.5);assert.equal(adapter.stats().fx.activeEffects,1);
+ adapter.update(1.1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
