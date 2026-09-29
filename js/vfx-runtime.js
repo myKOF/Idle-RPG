@@ -1292,7 +1292,9 @@ var VFXRuntime = (function () {
           for(var ci=trackingBeams.length-1;ci>=0;ci--)if(trackingBeams[ci].chainId===endId) {
             stopRef(trackingBeams[ci].ref);trackingBeams.splice(ci,1);
           }
-          pending=pending.filter(function(p){return !(p.spec.area && p.spec.area.chainId===endId);});
+          /* pending 有兩種元素：{at, spec}（延後的整份事件）與 {at, rt, presetId…}（延後的目標受擊，
+             見 playOnTargets），後者沒有 spec；update() 也是先看 job.spec 再分流。 */
+          pending=pending.filter(function(p){return !(p.spec && p.spec.area && p.spec.area.chainId===endId);});
         }
         return true;
       }

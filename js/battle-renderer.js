@@ -76,7 +76,9 @@ var BattleRenderer = (function () {
   var ENEMY_CONTACT_GAP = 34;      // 敵人出手時衝到離角色這麼近（＝接觸）
   var ENEMY_MAX_CHARGE = 460;      // 單次衝刺的最大距離，避免從畫面另一頭瞬間貼臉
   var ENEMY_FADE_IN_SEC = 0.3;     // 進場淡入時間（見 tickWorld 的 entering）；進場比這短就跟著縮短
-  var MAX_FLOATS = 60;           // 一般飄字同時存在上限；技能名稱＋傷害不計入
+  var MAX_FLOATS = 120;          // 一般飄字同時存在上限；技能名稱＋傷害不計入
+                                 // （2026-09-29 由 60 提高：32 隻怪＋飛雷神爆量時存活數會頂到 60 約 4 秒，
+                                 //  最舊的字在還沒淡出時就被淘汰，看起來是數字憑空少一塊）
   var FLOAT_MERGE_MS = 160;      // 同目標同類傷害的合併窗（DOM 版邏輯的簡化版）
   var LASTPOS_KEEP_MS = 3000;    // 實體移除後保留座標，讓遲到的飄字仍有落點
   var HIT_JOLT_COOLDOWN_MS = 3000; // 同一單位的受擊抖動冷卻，避免多段傷害連續晃動
@@ -153,6 +155,7 @@ var BattleRenderer = (function () {
     floats: [],               // 飄字物件
     pendingFloats: [],        // Canvas 初始化完成前暫存的玩家／野外浮字
     floatMerge: {},           // mergeKey -> float 物件
+    floatEvicted: 0,          // 因超過 MAX_FLOATS 被提早淘汰的飄字（累計，診斷用）
     shake: 0,                 // 畫面震動剩餘強度（px）
     sheets: {},               // name -> { tex, manifest, anims: {name: [Texture]} }
     imgTex: {},               // 敵人圖檔快取：src -> Texture | 'loading' | 'failed'
@@ -5917,6 +5920,7 @@ var BattleRenderer = (function () {
         var oldest = oldestIndex >= 0 ? S.floats.splice(oldestIndex, 1)[0] : null;
         if (oldest) {
           killFx(oldest);
+          S.floatEvicted++;
           oldest.dead = true;
           /* 與自然到期路徑對稱：合併表的鍵含單調遞增的 mv-float-N，不清會累積 */
           if (oldest.mergeKey && S.floatMerge[oldest.mergeKey] === oldest) delete S.floatMerge[oldest.mergeKey];
@@ -7077,7 +7081,7 @@ var BattleRenderer = (function () {
       ready: S.ready, failed: S.failed,
       size: S.W + 'x' + S.H,
       entities: Object.keys(S.entities).length,
-      fx: S.fx.length, floats: S.floats.length,
+      fx: S.fx.length, floats: S.floats.length, floatEvicted: S.floatEvicted,
       /* Preset 端是另一套集合，同樣要看得到「只增不減」。 */
       preset: S.vfxrt ? S.vfxrt.stats() : null,
       paused: S.paused, zone: S.zoneKey,

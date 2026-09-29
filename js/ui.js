@@ -135,6 +135,21 @@ var UI_WORKER_VISUAL_FLUSH_HANDLE = 0;
 var UI_WORKER_VISUAL_QUEUE_MAX = 480;
 var UI_WORKER_VISUAL_FRAME_MS = 4;
 var UI_WORKER_VISUAL_FRAME_MAX = 800;
+/* 飄字在佇列裡待超過這麼久就不值得再畫了（傷害數字只活約 0.4 秒，
+   再加上最長約 1.2 秒的顯示延遲）。積壓時依「年齡」丟棄，而不是依「件數」。 */
+var UI_WORKER_VISUAL_FLOAT_STALE_MS = 1500;
+
+/* 視覺事件管線的診斷計數。飄字「偶爾整批消失」時，原因可能在這條管線的任何一段
+   （佇列被丟、單一事件丟例外把整幀中斷……），畫面上看不出差別，所以把各個出口都記下來，
+   由左上角 FPS 計數器在事件發生後的幾秒內顯示（見 uiVisualDiagText）。 */
+var UI_VISUAL_DIAG = {
+  floatStale: 0,      // 因為排太久而丟棄的飄字
+  queueCap: 0,        // 佇列滿（UI_WORKER_VISUAL_QUEUE_MAX）被擠掉的事件
+  flushErrors: 0,     // 處理單一視覺事件時丟出的例外
+  lastDropAt: 0,
+  lastErrorAt: 0,
+  errorLogged: {}     // 訊息 -> 已印次數；同一種例外只印前 3 次，避免 60 次/秒洗版
+};
 
 function hasOwnUiState(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
@@ -509,11 +524,31 @@ function scheduleWorkerVisualEventFlush() {
 
 function queueWorkerVisualEvent(event) {
   if (!event) return;
+  var nowQ = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   if (UI_WORKER_VISUAL_EVENT_QUEUE.length >= UI_WORKER_VISUAL_QUEUE_MAX) {
     UI_WORKER_VISUAL_EVENT_QUEUE.shift();
+    UI_VISUAL_DIAG.queueCap++;
+    UI_VISUAL_DIAG.lastDropAt = nowQ;
   }
+  event._qAt = nowQ;      // 進佇列的時刻，flush 用來判斷飄字是否已經過期
   UI_WORKER_VISUAL_EVENT_QUEUE.push(event);
   scheduleWorkerVisualEventFlush();
+}
+
+/* 單一視覺事件丟例外：記下來、繼續處理下一件。
+   flush 是 rAF 回呼，沒有這一層時，例外會把這一幀剩下的事件全部晾著，
+   而且不會重排下一次 flush——要等下一則事件進佇列才會再動，
+   期間累積的飄字就會在下一次 flush 被當成積壓處理。 */
+function uiNoteVisualEventError(event, err) {
+  var diag = UI_VISUAL_DIAG;
+  diag.flushErrors++;
+  diag.lastErrorAt = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
+  var msg = String(err && err.message ? err.message : err);
+  var key = (event && event.kind) + ': ' + msg;
+  diag.errorLogged[key] = (diag.errorLogged[key] || 0) + 1;
+  if (diag.errorLogged[key] <= 3 && typeof console !== 'undefined' && console.error) {
+    console.error('[visual-event] ' + key, event, err);
+  }
 }
 
 function flushWorkerVisualEvents() {
@@ -529,20 +564,14 @@ function flushWorkerVisualEvents() {
     return;
   }
 
-  /* 佇列積壓保護：極端密集戰鬥或大界面切換時，若視覺事件積壓過多，
-     丟棄老舊的過期浮字，保留最新事件與關鍵特效，防止無窮堆積凍結事件迴圈。 */
-  if (UI_WORKER_VISUAL_EVENT_QUEUE.length > 120) {
-    var keptEvents = [];
-    var dropThreshold = UI_WORKER_VISUAL_EVENT_QUEUE.length - 60;
-    for (var qi = 0; qi < UI_WORKER_VISUAL_EVENT_QUEUE.length; qi++) {
-      var queueItem = UI_WORKER_VISUAL_EVENT_QUEUE[qi];
-      if (qi >= dropThreshold || (queueItem && queueItem.kind !== 'float')) {
-        keptEvents.push(queueItem);
-      }
-    }
-    UI_WORKER_VISUAL_EVENT_QUEUE = keptEvents;
-  }
-
+  /* 積壓保護（防止事件迴圈被無窮堆積凍結）由兩道防線負責：
+       1. 每幀 4ms 的時間預算與 FRAME_MAX——單幀的工作量有上限；
+       2. 佇列上限 UI_WORKER_VISUAL_QUEUE_MAX——記憶體有上限。
+     除此之外只丟「真的過期」的飄字：排在佇列裡超過 STALE_MS 的字，畫出來時它描述的
+     那一擊早已過去，丟掉不可惜。
+     ⚠️ 判準是年齡，不是件數。舊版是「佇列超過 120 件就在處理之前先丟到只剩最新 60 件」，
+     而雷電全開時一個模擬步驟就能送來上百件（多道雷電各打多隻怪），那批飄字明明一幀就
+     排得完，卻在還沒畫之前被整批丟掉——畫面上就是數字一次消失一大片。 */
   var flushStart = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   var processed = 0;
   while (UI_WORKER_VISUAL_EVENT_QUEUE.length && processed < UI_WORKER_VISUAL_FRAME_MAX) {
@@ -552,21 +581,30 @@ function flushWorkerVisualEvents() {
     if (processed && (processed & 1) === 0 && ((typeof uiNowMs === 'function' ? uiNowMs() : Date.now()) - flushStart >= UI_WORKER_VISUAL_FRAME_MS)) break;
     var event = UI_WORKER_VISUAL_EVENT_QUEUE.shift();
     if (!event) continue;
-    if (event.kind === 'float') {
-      floatText(event.elId, event.text, event.cls, event.damageValue, null,
-        uiBattlePanelSnapshot(), event.delayMs);
-    } else if (event.kind === 'vfx') {
-      /* 三條顯示路徑，依定址分流：
-           野外（mv/pv 定址）→ PixiJS 戰鬥渲染器
-           高塔（tb/tp 定址）→ 高塔的 Preset 疊層（js/vfx-tower.js）
-           兩邊都不接手 → js/vfx.js 的 DOM 畫法（也是 Preset 缺件時的退路） */
-      if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsVfx(event)) {
-        BattleRenderer.onVfx(event);
-      } else if (typeof VFXTower !== 'undefined' && VFXTower.onVfx(event)) {
-        /* 高塔疊層已接手 */
-      } else if (typeof playCombatVfx === 'function') {
-        playCombatVfx(event);
+    if (event.kind === 'float' && event._qAt && flushStart - event._qAt > UI_WORKER_VISUAL_FLOAT_STALE_MS) {
+      UI_VISUAL_DIAG.floatStale++;
+      UI_VISUAL_DIAG.lastDropAt = flushStart;
+      continue;                       // 丟棄過期飄字不花預算
+    }
+    try {
+      if (event.kind === 'float') {
+        floatText(event.elId, event.text, event.cls, event.damageValue, null,
+          uiBattlePanelSnapshot(), event.delayMs);
+      } else if (event.kind === 'vfx') {
+        /* 三條顯示路徑，依定址分流：
+             野外（mv/pv 定址）→ PixiJS 戰鬥渲染器
+             高塔（tb/tp 定址）→ 高塔的 Preset 疊層（js/vfx-tower.js）
+             兩邊都不接手 → js/vfx.js 的 DOM 畫法（也是 Preset 缺件時的退路） */
+        if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsVfx(event)) {
+          BattleRenderer.onVfx(event);
+        } else if (typeof VFXTower !== 'undefined' && VFXTower.onVfx(event)) {
+          /* 高塔疊層已接手 */
+        } else if (typeof playCombatVfx === 'function') {
+          playCombatVfx(event);
+        }
       }
+    } catch (err) {
+      uiNoteVisualEventError(event, err);
     }
     processed++;
     if ((typeof uiNowMs === 'function' ? uiNowMs() : Date.now()) - flushStart >= UI_WORKER_VISUAL_FRAME_MS) break;
@@ -9796,6 +9834,16 @@ function isInternalVersion() {
   return false;
 }
 
+/* 視覺事件管線出過狀況的話，在 FPS 後面多印一行（事件發生後 5 秒內）。
+   飄字消失時畫面看不出是哪一段丟的，使用者截圖時這行就是答案。 */
+function uiVisualDiagText(now) {
+  var diag = UI_VISUAL_DIAG;
+  var last = Math.max(diag.lastDropAt, diag.lastErrorAt);
+  if (!last || now - last > 5000) return '';
+  return ' ⚠ 丟字 ' + (diag.floatStale + diag.queueCap) + ' 例外 ' + diag.flushErrors +
+    ' 佇列 ' + UI_WORKER_VISUAL_EVENT_QUEUE.length;
+}
+
 function initBattleFPS() {
   var fpsEl = $id('battle-fps');
   if (!fpsEl || !isInternalVersion()) return;
@@ -9810,7 +9858,7 @@ function initBattleFPS() {
     var delta = now - lastTime;
     if (delta >= 500) {
       var fps = Math.round((frames * 1000) / delta);
-      fpsEl.textContent = 'FPS: ' + fps;
+      fpsEl.textContent = 'FPS: ' + fps + uiVisualDiagText(now);
       frames = 0;
       lastTime = now;
     }
