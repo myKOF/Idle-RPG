@@ -1869,6 +1869,48 @@ test('CHAIN-TRAIN 固定18米，轉折後10米尾部與8米前端同時存在並
  adapter.update(1.1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
+test('CHAIN-VARIANT 正式素材只換名稱與顏色時，飛行幾何及壽命完全一致',()=>{
+ const original=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/bolt-chain-travel-bluewhite.json'),'utf8'));
+ const copy=JSON.parse(JSON.stringify(original));copy.id='bolt-chain-travel-bluewhite-08';
+ copy.layers.forEach(l=>l.tint='#e83dff');
+ const results=[original,copy].map(p=>{
+  const points={a:{x:0,y:0},b:{x:300,y:100}};
+  const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>points[id],playerPos:()=>points.a}});
+  adapter.tryPlay({fxKind:'chain',variant:'lightning-chain',targets:['a','b'],lineLength:180,travelMs:[0,1000],hit:false,vfx:{projectile:p.id},area:{chainId:'test',homingSpeed:300}});
+  const frames=[];
+  for(let i=0;i<30;i++){
+   adapter.update(.1);
+   frames.push({active:adapter.stats().fx.activeEffects,nodes:log.nodes.map(n=>{const t=n.transforms.at(-1);return {x:t.x,y:t.y,scaleX:t.scaleX,scaleY:t.scaleY,rotation:t.rotation};})});
+  }
+  assert.equal(adapter.stats().fx.activeEffects,0);return frames;
+ });
+ assert.deepEqual(results[1],results[0]);
+});
+
+test('CHAIN-VARIANT 任意名稱換色副本依製作尺寸維持18米，追蹤、自然回收與終止一致',()=>{
+ for(const id of ['bolt-chain-travel-bluewhite-08','custom-purple-chain']) {
+  const p=unitPreset(id,.366);p.layers[0].tint='#e83dff';
+  p.sizing={shape:'custom',authored:{width:542.464,height:106},widthM:54.2464,heightM:10.6};
+  const points={a:{x:0,y:0},b:{x:300,y:0}};
+  const {adapter,log}=makeAdapter([p],{ctx:{posOf:id=>points[id],chainPoint:id=>points[id],playerPos:()=>points.a}});
+  const spec={fxKind:'chain',variant:'lightning-chain',targets:['a','b'],lineLength:180,travelMs:[0,3000],hit:false,vfx:{projectile:p.id},area:{chainId:'one',homingSpeed:100}};
+  adapter.tryPlay(spec);adapter.update(.1);
+  let t=log.nodes[0].transforms.at(-1);
+  assert.ok(Math.abs(t.scaleX*542.464-180)<1e-6,'使用542.464製作寬度，不落回200');
+  assert.ok(Math.abs(t.x+t.scaleX*542.464-10)<1e-6,'前端飛行，不直接連接整段');
+  points.b.x=400;
+  for(let i=0;i<30;i++)adapter.update(.1);
+  assert.equal(adapter.stats().fx.activeEffects,1,'超過原估時仍追蹤移動目標');
+  for(let i=0;i<30;i++)adapter.update(.1);
+  assert.equal(adapter.stats().fx.activeEffects,0,'抵達後尾部收入，自然回收循環特效');
+  for(let i=0;i<12;i++){
+   adapter.tryPlay({...spec,area:{...spec.area,chainId:'repeat-'+i}});adapter.update(.01);
+   adapter.tryPlay({variant:'lightning-chain-end',area:{chainId:'repeat-'+i},targets:[],vfx:{}});
+   assert.equal(adapter.stats().fx.activeEffects,0,'重複施放後立即終止不累積');
+  }
+ }
+});
+
 test('CHAIN-HOMING 飛行子彈欄保留長電弧，移動來源不拖曳，超過估時仍等速，終止僅清指定鏈',()=>{
  const p=unitPreset('bolt-chain-travel-bluewhite',.366);p.sizing={shape:'custom',authored:{width:256,height:128},widthM:25.6,heightM:12.8};
  const points={a:{x:0,y:0},b:{x:300,y:0}};

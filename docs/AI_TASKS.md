@@ -1,5 +1,11 @@
 # AI_TASKS.md
 
+## Codex｜雷鏈換色副本尺寸與回收（CHAIN-VARIANT-20260929）
+
+- Owner：Codex；Done。天地雷鎖陣換色副本改以事件語意啟用追蹤及回收，讀取各 Preset 的製作尺寸，不綁特效名稱。
+- 範圍：Runtime、回歸測試、頁面快取與交接文件。保留既有配置表／技能資料／素材的未提交修改；不修改新紫色 Preset。預檢無衝突。
+- 驗收：任意名稱副本維持18米、追蹤移動目標、自然回收及按鏈ID終止，原光束回歸通過。114 項 Runtime 測試，110 通過、4 項既有失敗；新增兩項在修改前失敗、修正後通過。Build 404 檔通過；詳見 `docs/skill-tests/20260929-chain-variant.md`。提交，不合併／推送。
+
 ## Codex｜金色落雷型態連鎖重做（CHAIN-REBUILD-20260929）
 
 - Owner：Codex；Done。使用者指定以 bolt-thunderstrike-bluewhite 主弧／分岔重做金色雷鏈，飛行速度 50%，移除大斷點，命中後重新找存活目標；死亡來源不中斷鏈。保留表定上限與傷害。
