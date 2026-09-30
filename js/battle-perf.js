@@ -22,8 +22,11 @@
             以及是哪個函式佔的。空檔大的時候，這一段告訴你是 JS 還是別的。
             LoAF 只有頁面真的渲染時才會產生；另外收 longtask（任何時候都有，但沒有明細）。
 
-   怎麼看：左上角 FPS 計數器多出幾行（?perf=0 關掉）。7 FPS 的場景截一張圖，
-   或在 Console 執行 perfReport() 取得過去 60 秒逐秒的表格（會複製到剪貼簿）。
+   怎麼看：**預設只有 FPS 一行**。GM 面板輸入 Performance_Information 顯示左上角多出的幾行，
+   再輸入一次就關（重新整理後回到隱藏，與其他 GM 指令一致；指令由 js/gm.js 在主執行緒處理，
+   因為它只影響畫面）。7 FPS 的場景截一張圖，或在 Console 執行 perfReport() 取得過去 60 秒
+   逐秒的表格（會複製到剪貼簿）。收集一直在做（成本 < 0.3ms／幀），隱藏的只是文字；
+   ?perf=0 則整個不啟用。
 
    A／B 開關（網址參數，只在內部版本有效）
      ?fx=off     不畫任何 VFX（Preset 與舊畫法都不畫）——剩下的就是「非特效」的成本
@@ -44,6 +47,7 @@ var BattlePerf = (function () {
   var WINDOW_MS = 1000;
 
   var enabled = false;     // install() 判定為內部版本才會 true
+  var shown = false;       // 疊層文字是否顯示；預設隱藏，GM 指令 Performance_Information 切換
   var attached = false;
   var hooked = false;
   var flags = { fx: 'on', float: 'on', res: null };
@@ -462,9 +466,19 @@ var BattlePerf = (function () {
 
   /* 疊層：回傳字串，ui.js 接在 FPS 後面。 */
   function lines() {
-    if (!enabled || !hooked) return enabled ? '（診斷掛勾等待渲染器就緒…）' : '';
+    if (!enabled || !shown) return '';
+    if (!hooked) return '（診斷掛勾等待渲染器就緒…）';
     return formatLines(snapshot()).join('\n');
   }
+
+  /* 顯示／隱藏疊層文字。回傳切換後的狀態；診斷沒啟用（?perf=0、非內部版本）時回傳 null。
+     不存 localStorage：GM 指令的效果本來就是重新整理即清除。 */
+  function setVisible(v) {
+    if (!enabled) return null;
+    shown = !!v;
+    return shown;
+  }
+  function toggle() { return setVisible(!shown); }
 
   /* Console：perfReport(60) 印出並複製過去 N 秒的逐秒表格。 */
   function report(seconds) {
@@ -512,6 +526,9 @@ var BattlePerf = (function () {
     noteFlush: noteFlush,
     get active() { return enabled && hooked; },
     get enabled() { return enabled; },
+    get visible() { return enabled && shown; },
+    setVisible: setVisible,
+    toggle: toggle,
     /* 測試用 */
     _summarize: summarize,
     _formatLines: formatLines,

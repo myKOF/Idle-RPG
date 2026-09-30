@@ -14,8 +14,46 @@
     return host === 'localhost' || host === '127.0.0.1' || host === '::1';
   }
 
-  /* 送出指令。狀態的權威在 Worker，所以一律送過去；回覆到達前先顯示執行中。 */
+  /* ---- 畫面端指令：只影響主執行緒的畫面，不碰遊戲狀態，所以不送 Worker ----
+     「狀態的權威在 Worker」這條規則管的是遊戲狀態；顯示／隱藏一塊診斷文字不是狀態，
+     送去 Worker 只會換來一個它無法處理的指令（Worker 拿不到 DOM）。
+     和其他 GM 指令一樣不落地：重新整理後回到預設。
+     指令名稱比對不分大小寫，與 gm_exec.js 一致。 */
+  var CLIENT_COMMANDS = {
+    /* Performance_Information [on|off]：戰鬥區 FPS 計數器下方的效能診斷文字（js/battle-perf.js）。
+       預設隱藏；不帶參數＝切換，所以「再輸入一次就關」。 */
+    performance_information: function (args) {
+      var word = String(args[0] === undefined ? '' : args[0]).toLowerCase();
+      if (typeof BattlePerf === 'undefined' || !BattlePerf.enabled) {
+        return { ok: false, message: '效能資訊未啟用（網址帶了 ?perf=0，或不是內部版本）' };
+      }
+      var want;
+      if (word === '') want = !BattlePerf.visible;
+      else if (word === '1' || word === 'on' || word === 'show') want = true;
+      else if (word === '0' || word === 'off' || word === 'hide') want = false;
+      else return { ok: false, message: '格式：Performance_Information [on|off]（省略＝切換）' };
+      BattlePerf.setVisible(want);
+      return {
+        ok: true,
+        message: want ? '效能資訊：已顯示（再輸入一次 Performance_Information 關閉）' : '效能資訊：已隱藏（只留 FPS）'
+      };
+    }
+  };
+
+  /* 不是畫面端指令就回 null，交給 Worker。 */
+  function runClientCommand(text) {
+    if (!isGMHost()) return null;
+    var parts = String(text || '').trim().split(/\s+/);
+    var name = parts.shift().toLowerCase();
+    var fn = Object.prototype.hasOwnProperty.call(CLIENT_COMMANDS, name) ? CLIENT_COMMANDS[name] : null;
+    return fn ? fn(parts) : null;
+  }
+
+  /* 送出指令。遊戲狀態的權威在 Worker，所以一律送過去（畫面端指令除外，見上）；
+     回覆到達前先顯示執行中。 */
   function submitGMCommand(text) {
+    var local = runClientCommand(text);
+    if (local) { setGMStatus(local.message, local.ok); return; }
     setGMStatus('執行中…', true);
     WorkerBridge.send('gm.exec', { line: text }).then(function (res) {
       setGMStatus(res && res.message ? res.message : '已執行', !!(res && res.ok));
@@ -99,6 +137,6 @@
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initGM: initGM };
+    module.exports = { initGM: initGM, runClientCommand: runClientCommand };
   }
 })();
