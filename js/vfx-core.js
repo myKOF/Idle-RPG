@@ -666,6 +666,11 @@ var VFXCore = (function () {
     sceneProjection: { label: '地面投影 Y 跟隨場景傾角', default: true },
     splitRockDepth: { label: '岩甲石碑依前後位置分層', default: true },
     hitScale: { label: '範圍受擊放大倍率', default: 1.6, min: 0, max: 10 },
+    /* 命中類特效（表格 hit 欄）：同一個目標、同一份 preset 同時最多存在幾個。
+       連鎖／回扣冷卻的技能會讓同一隻怪一秒內吃十幾次相同爆點，疊在同一個位置只是
+       多花節點（2026-09-30 使用者場景：每秒 172 個冰晶爆點、單一爆點 74 個節點，FPS 7）。
+       超過的那幾次不畫，傷害數字照常。只對「命中」欄生效，投射物與場域不受影響。 */
+    hitCap: { label: '同一目標的同時命中上限（命中類）', default: 4, min: 1, max: 64 },
     fallHeight: { label: '天降出生高度（px）', default: 500, min: 1, max: 10000 },
     fallAngle: { label: '隕石／落雷預設角度（度）', default: 60, min: -360, max: 360 },
     tipTaper: { label: '飛行雷鏈尖端長度比例', default: .12, min: 0, max: .5 },
@@ -1430,7 +1435,16 @@ var VFXCore = (function () {
       if (!isFiniteNumber(startTime) || startTime < 0) {
         throw new Error('play(startTime) 需要非負的有限數');
       }
+      /* density：粒子發射量的倍率（0 < density ≤ 1，預設 1＝與加入本參數之前逐位元相同）。
+         給 Runtime 的自適應密度調節用——畫面吃緊時，新播出的特效少發一些粒子。
+         只縮放「發射」：爆發的顆數、持續發射的速率、子發射器的顆數；sprite 層不受影響。
+         每一項至少留 1 顆，免得縮到什麼都看不到。 */
+      var density = p.density === undefined ? 1 : p.density;
+      if (!isFiniteNumber(density) || density <= 0 || density > 1) {
+        throw new Error('play(density) 需要 (0, 1] 的有限數，收到：' + p.density);
+      }
       var effect = {
+        density: density,
         handle: nextEffectId++,
         presetId: presetId,
         preset: preset,
@@ -1918,7 +1932,13 @@ var VFXCore = (function () {
       subOrigin.vy = parent.vy * se.inheritVelocity;
       subOrigin.frame = parent.spawnFrame || effect;
       subOrigin.parentMatrix = parent.parentMatrix || null;
-      for (var i = 0; i < se.count; i++) spawnParticle(effect, target, subOrigin);
+      var subCount = scaledCount(se.count, effect.density);
+      for (var i = 0; i < subCount; i++) spawnParticle(effect, target, subOrigin);
+    }
+
+    /* 密度為 1 時原樣回傳（不經過任何浮點運算）；其餘至少留 1 顆。 */
+    function scaledCount(n, density) {
+      return density >= 1 || n <= 0 ? n : Math.max(1, Math.round(n * density));
     }
 
     /* at：由子發射器指定的出生點與繼承速度（{ x, y, vx, vy }）。
@@ -2006,7 +2026,8 @@ var VFXCore = (function () {
         if (d.emission.mode === 'burst') {
           if (!layer.burstDone) {
             var cap = layerParticleCap(d);
-            for (var i = 0; i < d.emission.count; i++) {
+            var burstCount = scaledCount(d.emission.count, effect.density);
+            for (var i = 0; i < burstCount; i++) {
               // 容量滿了就停，不要為了跑完 count 而做上萬次無效呼叫
               if (layer.particles.length >= cap || totalParticles >= budget.maxParticles) {
                 droppedParticles++;
@@ -2019,7 +2040,7 @@ var VFXCore = (function () {
         } else {
           var perLayerCap = layerParticleCap(d);
           // accumulator 夾在單層容量內：即使 dt 異常大也不會累積出天文數字的迴圈次數
-          layer.emitAccumulator = Math.min(layer.emitAccumulator + d.emission.rate * dt, perLayerCap);
+          layer.emitAccumulator = Math.min(layer.emitAccumulator + d.emission.rate * effect.density * dt, perLayerCap);
           while (layer.emitAccumulator >= 1) {
             // 容量滿了就停止本幀發射，不要空轉磨掉 accumulator
             if (layer.particles.length >= perLayerCap || totalParticles >= budget.maxParticles) {

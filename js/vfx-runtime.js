@@ -188,6 +188,51 @@ var VFXRuntime = (function () {
   var ZONE_BUDGET = { maxActiveEffects: 65536, maxParticles: 64000, perEffectParticleLimit: 2000 };
 
   /* ---------------------------------------------------------------
+     命中類特效的密度控制（2026-09-30 實機數據到手後補上）
+
+     上面那段「先整個拿掉」在等實機體感。體感來了：寒冰箭「無限冰裂」每次命中回扣冷卻，
+     敵人越多連鎖越快，實機每秒 172 個 burst-icearrow-crystal（單一爆點 19 層、約 74 個
+     節點、活 1.05 秒），同屏 17,692 個節點／11,035 顆粒子，Core 一幀 51ms，FPS 7。
+     成本幾乎完全正比於節點數（每節點約 3.9µs），而爆點是同一個位置疊了十幾份。
+
+     所以不是把總預算調小（那會整則丟掉、同一次齊射混出兩種畫風），而是兩件事：
+       1. 同目標併發上限：同一個目標、同一份「命中類」preset 同時最多 K 個（預設 4，
+          preset 的 playback.hitCap 可調）。超過的不畫，傷害數字照常。
+          疊 4 份與疊 40 份的輪廓一樣是一顆冰刺球（preset-render --stack 比對過）。
+       2. 自適應密度：畫面吃緊（連續幾幀 <45 FPS）才啟動，K 依比例縮小、新播出的命中特效
+          少發粒子；恢復到 >54 FPS 後慢慢放回。正常負載下完全不介入。
+     只作用於命中類（表格 hit 欄）；投射物、場域、光環不動。
+     --------------------------------------------------------------- */
+  var DENSITY = {
+    slowDt: 1 / 45,      // 平滑後的幀時間超過這個＝畫面吃緊（<45 FPS）
+    fastDt: 1 / 54,      // 低於這個才放回（>54 FPS）；兩者之間是死區，不動
+    smooth: 0.1,         // 幀時間的指數平滑係數（每幀）
+    downPerFrame: 0.08,  // 吃緊時每幀降多少：13 FPS 下約 0.7 秒降到底
+    upPerSec: 0.25,      // 放回的速度：從底回到 1 約 3 秒（慢放回，免得來回震盪）
+    min: 0.25,           // 密度下限
+    maxDt: 0.05          // 與 battle-renderer 的 dt 夾制一致；單一巨大 dt 不足以觸發
+  };
+  function createDensityGovernor(over) {
+    var cfg = {};
+    for (var k in DENSITY) cfg[k] = DENSITY[k];
+    if (over) for (var k2 in over) cfg[k2] = over[k2];
+    var ema = 1 / 60, q = 1;
+    return {
+      step: function (dt) {
+        if (!(dt > 0)) return q;                    // 暫停（dt = 0）不算
+        dt = Math.min(dt, cfg.maxDt);
+        ema += (dt - ema) * cfg.smooth;
+        if (ema > cfg.slowDt) q -= cfg.downPerFrame;
+        else if (ema < cfg.fastDt) q += cfg.upPerSec * dt;
+        q = Math.max(cfg.min, Math.min(1, q));
+        return q;
+      },
+      quality: function () { return q; },
+      frameMs: function () { return ema * 1000; }
+    };
+  }
+
+  /* ---------------------------------------------------------------
      角色選擇：這一則事件的「主要角色」是誰
      --------------------------------------------------------------- */
   function primaryRoleOf(spec, roles) {
@@ -367,10 +412,52 @@ var VFXRuntime = (function () {
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
-    var counters = { played: 0, skipped: 0, missing: 0, dropped: 0 };
+    var counters = { played: 0, skipped: 0, missing: 0, dropped: 0, capped: 0, thinned: 0 };
 
     var presetDefinitions = Object.create(null);
     function tuning(id, key) { return Core.playbackValue(presetDefinitions[id], key); }
+
+    /* ---- 命中類特效的密度控制（見檔頭 DENSITY 那段）---- */
+    var governor = createDensityGovernor(o.densityGovernor);
+    var hitLive = Object.create(null);      // 'presetId|targetId' → 各存活實例的到期時刻（clock）
+    var nextHitSweep = 0;
+    // 目前允許的同目標併發數：preset 的 hitCap 依密度縮小，至少 1。
+    function hitCapNow(presetId) {
+      var base = presetId ? tuning(presetId, 'hitCap') : 4;
+      return Math.max(1, Math.round(base * governor.quality()));
+    }
+    function pruneHits(list) {
+      var n = 0;
+      for (var i = 0; i < list.length; i++) if (list[i] > clock) list[n++] = list[i];
+      list.length = n;
+      return n;
+    }
+    // 循環播放的 preset 沒有「播完」的時刻，不納入併發計算。
+    function hitCountable(presetId) {
+      var def = presetDefinitions[presetId];
+      return !!def && !def.loop;
+    }
+    function hitAllowed(presetId, targetId) {
+      if (!targetId || !hitCountable(presetId)) return true;
+      var list = hitLive[presetId + '|' + targetId];
+      return !list || pruneHits(list) < hitCapNow(presetId);
+    }
+    function noteHit(presetId, targetId) {
+      if (!targetId || !hitCountable(presetId)) return;
+      var key = presetId + '|' + targetId;
+      (hitLive[key] || (hitLive[key] = [])).push(clock + (presetDurations[presetId] || 1));
+    }
+    // 目標離場後鍵不會再被查到；定期掃掉，免得只增不減。
+    function sweepHits() {
+      if (clock < nextHitSweep) return;
+      nextHitSweep = clock + 2;
+      for (var key in hitLive) if (!pruneHits(hitLive[key])) delete hitLive[key];
+    }
+    // 吃緊時新播出的命中特效少發粒子；回傳要併進 play 參數的 density（不需要縮就回 undefined）。
+    function hitDensity() {
+      var q = governor.quality();
+      return q < 1 ? q : undefined;
+    }
     function curveTuning(id) { return {curveAngle:tuning(id,'curveAngle'),curveHandle:tuning(id,'curveHandle')}; }
     function fraction(age, duration) { return duration > 0 ? Math.max(0,Math.min(1,age/duration)) : 1; }
     function isRockOrbitPreset(id) {
@@ -577,7 +664,7 @@ var VFXRuntime = (function () {
 
     /* 目標身上（受擊、詛咒、單體攻擊本體）。
        帶 sourceId 時（敵方近戰）把畫面轉向「攻擊者 → 目標」，爪痕才會朝著被打的人。 */
-    function playOnTargets(rt, presetId, spec, scale, delaySec, authoredSize) {
+    function playOnTargets(rt, presetId, spec, scale, delaySec, authoredSize, hitClass) {
       var ids = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
       if (!ids.length) return false;
       var any = false;
@@ -589,10 +676,13 @@ var VFXRuntime = (function () {
           spec.variant === 'heaven-tribulation-strike' || spec.variant === 'heaven-tribulation-impact';
         if (delaySec > 0) {
           pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
-            authoredSize: authoredSize, groundFoot: groundFoot, chainTargets: chainTargets });
+            authoredSize: authoredSize, groundFoot: groundFoot, chainTargets: chainTargets, hitClass: !!hitClass });
           any = true;
           continue;
         }
+        /* 命中類：同一目標的相同爆點已經夠多就不再疊。要回報「已處理」——回 false 會讓
+           顯示層退回舊畫法，同一次齊射裡就會混出兩種畫風（同 budgetDrops 的道理）。 */
+        if (hitClass && !hitAllowed(presetId, ids[i])) { counters.capped++; any = true; continue; }
         var p = groundFoot ? footOf(ids[i]) : ctx.posOf(ids[i]);
         // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
         var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
@@ -605,7 +695,11 @@ var VFXRuntime = (function () {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
         }
-        if (play(rt, presetId, params, authoredSize ? 1 : undefined)) any = true;
+        if (hitClass) { var hd = hitDensity(); if (hd) { params.density = hd; counters.thinned++; } }
+        if (play(rt, presetId, params, authoredSize ? 1 : undefined)) {
+          any = true;
+          if (hitClass) noteHit(presetId, ids[i]);
+        }
       }
       return any;
     }
@@ -1365,7 +1459,8 @@ var VFXRuntime = (function () {
         var chainHit = spec.variant === 'lightning-chain' && spec.fxKind === 'chain';
         var hitSpec = chainHit ? Object.assign({}, spec, { targets: (spec.targets || []).slice(-1) }) : spec;
         playOnTargets(rtFx, roles.hit, hitSpec, hitScaleOf(spec,tuning(roles.hit,'hitScale')),
-          roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0);
+          roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0,
+          undefined, true);
       }
       return true;
     }
@@ -1390,7 +1485,7 @@ var VFXRuntime = (function () {
           }
           ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash' || spec.variant === 'heaven-tribulation-impact') && spec.area
             ? playOnArea(rtFx, presetId, spec)
-            : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0);
+            : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0, undefined, true);
           break;
         case 'projectile':
           ok = spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
@@ -1551,6 +1646,8 @@ var VFXRuntime = (function () {
     function update(dt) {
       var step = Math.max(0, num(dt, 0));
       clock += step;
+      governor.step(step);
+      sweepHits();
 
       for (var ce = chainEffects.length - 1; ce >= 0; ce--) {
         var effect = chainEffects[ce];
@@ -1566,11 +1663,16 @@ var VFXRuntime = (function () {
         pending.splice(q, 1);
         if (!chainTargetsAlive(job.chainTargets)) continue;
         if (job.spec) { tryPlay(job.spec); continue; }
+        /* 命中類：等到真的要播的這一刻才判斷併發（排隊時目標身上的爆點還沒播出來，數不準）。 */
+        if (job.hitClass && !hitAllowed(job.presetId, job.targetId)) { counters.capped++; continue; }
         var previousTargets = chainTargets;
         chainTargets = job.chainTargets || null;
-        play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
+        var jobParams = Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
           { position: job.groundFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
-            depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
+            depthY: footOf(job.targetId).y });
+        if (job.hitClass) { var jd = hitDensity(); if (jd) { jobParams.density = jd; counters.thinned++; } }
+        var jobRef = play(job.rt, job.presetId, jobParams, job.authoredSize ? 1 : undefined);
+        if (jobRef && job.hitClass) noteHit(job.presetId, job.targetId);
         chainTargets = previousTargets;
       }
 
@@ -1762,6 +1864,7 @@ var VFXRuntime = (function () {
       trackingBeams.length = 0;
       chainEffects.length = 0;
       pending.length = 0;
+      hitLive = Object.create(null);
       arrivals = Object.create(null);
       Object.keys(orbits).forEach(stopOrbit);
       grounds = Object.create(null);
@@ -1800,6 +1903,9 @@ var VFXRuntime = (function () {
           pending: pending.length,
           played: counters.played, skipped: counters.skipped, missing: counters.missing,
           dropped: counters.dropped,
+          /* 命中類密度控制：quality＝目前密度（1＝不介入）、hitCap＝目前預設 K、
+             capped／thinned＝累計被略過的命中特效／少發粒子的命中特效（診斷疊層取差值算每秒） */
+          quality: governor.quality(), hitCap: hitCapNow(null), capped: counters.capped, thinned: counters.thinned,
           fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats()
         };
       }
@@ -1894,6 +2000,8 @@ var VFXRuntime = (function () {
 
   return {
     create: create,
+    createDensityGovernor: createDensityGovernor,
+    DENSITY: DENSITY,
     boot: boot,
     collectPresetIds: collectPresetIds,
     loadPresets: loadPresets,

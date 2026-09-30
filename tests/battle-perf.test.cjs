@@ -110,6 +110,20 @@ test('formatLines：沒有 LoAF 明細時退回長任務；占用率＝三段 CP
   assert.ok(!all.includes('0x00001C81') && !all.includes('NVIDIA, NVIDIA'));
 });
 
+test('formatLines：命中密度控制介入時顯示密度、K 與每秒略過數；沒有這組資料（舊 Runtime）就不印這一行', () => {
+  const P = loadPerf().BattlePerf;
+  const frames = [frame(1000), frame(1100)];
+  const on = P._formatLines(P._summarize({ frames, env: { quality: 0.5, hitCap: 2, cappedRate: 41.4, thinnedRate: 12 } }, 1200)).join('\n');
+  assert.ok(on.includes('命中密度 x0.5(吃緊，已介入)'));
+  assert.ok(on.includes('K=2'));
+  assert.ok(on.includes('略過 41/s'));
+  assert.ok(on.includes('少發粒子 12/s'));
+  const calm = P._formatLines(P._summarize({ frames, env: { quality: 1, hitCap: 4, cappedRate: 0, thinnedRate: 0 } }, 1200)).join('\n');
+  assert.ok(calm.includes('命中密度 x1.0') && !calm.includes('已介入'));
+  const old = P._formatLines(P._summarize({ frames, env: {} }, 1200)).join('\n');
+  assert.ok(!old.includes('命中密度'));
+});
+
 test('掛勾：Core 的 updateNode／update／play 與 gl 的 draw 都數得到，且不改變行為', () => {
   const ctx = loadPerf();
   const P = ctx.BattlePerf;
