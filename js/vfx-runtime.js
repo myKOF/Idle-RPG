@@ -982,7 +982,7 @@ var VFXRuntime = (function () {
         /* 沒有座標的版面（高塔）：釘在目標腳底，逐幀跟著它走。 */
         g.anchored = true;
         g.speed = 0; g.moveA = NaN; g.hasDest = false;
-        var fallbackSize = sizeOf(g.presetId, (isRockOrbitPreset(g.presetId) || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
+        var fallbackSize = sizeOf(g.presetId, (isRockOrbitPreset(g.presetId) || g.iceArrowBody || g.presetId === 'proj-icearrow-frost') ? null : (o.profile && o.profile.groundR > 0 ? { r: profile.groundR } : null));
         g.uniform = !fallbackSize;
         g.tsx = fallbackSize ? fallbackSize.scaleX : profile.groundR / NOMINAL_RADIUS;
         g.tsy = fallbackSize ? fallbackSize.scaleY : g.tsx;
@@ -1012,7 +1012,7 @@ var VFXRuntime = (function () {
         // 碰撞半徑代表刃寬的一半，不能當作月牙半長。
         actualSize = { w: area.r * 2 * body.widthM / body.heightM, h: area.r * 2 };
       }
-      var resolved = sizeOf(g.presetId, g.presetId === 'proj-icearrow-frost' ? null : actualSize);
+      var resolved = sizeOf(g.presetId, g.iceArrowBody || g.presetId === 'proj-icearrow-frost' ? null : actualSize);
       if (resolved) {
         g.uniform = false; g.tsx = resolved.scaleX; g.tsy = resolved.scaleY;
       } else if (w > 0 && h > 0) {
@@ -1024,7 +1024,7 @@ var VFXRuntime = (function () {
         g.uniform = true;
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
-      g.trot = (g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') &&
+      g.trot = (g.iceArrowBody || g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') &&
         typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(planeArea(area, g.presetId).a, planeAngles[g.presetId] || 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
@@ -1151,14 +1151,14 @@ var VFXRuntime = (function () {
         : (spec.area.id ||
            (presetId + '@' + Math.round(num(spec.area.x, 0)) + ',' + Math.round(num(spec.area.y, 0))));
       // 場域本體與地面提示可共用 area.id，但必須分別續命、移動及回收。
-      key = (role === 'attack' ? 'attack:' : role === 'field' ? 'field:' : 'ground:') + key;
+      key = (role === 'attack' ? 'attack:' : role === 'field' ? 'field:' : role === 'projectile' ? 'projectile:' : 'ground:') + key;
       // 吞噬全場只保留一個：新施放立即移除舊畫面，並從新位置重新出生。
       if (spec.variant === 'dragon-devour') key = 'field:dragon-devour';
       // 吞噬與飛雷神只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
       var keep = (spec.variant === 'dragon-devour' || spec.variant === 'flying-thunder') ? Math.max(0, num(spec.dur, 0))
         : Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
-      var mult = curtainColumn || spec.variant === 'flying-thunder' ? 1 : noArea || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
+      var mult = curtainColumn || spec.variant === 'flying-thunder' ? 1 : noArea || spec.variant === 'ice-arrow-homing' || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -1170,6 +1170,7 @@ var VFXRuntime = (function () {
         curtainColumn: curtainColumn,
         bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
+        iceArrowBody: spec.variant === 'ice-arrow-homing',
         devour: spec.variant === 'dragon-devour',
         fixedLifetime: spec.variant === 'flying-thunder' ? keep : 0,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
@@ -1322,7 +1323,7 @@ var VFXRuntime = (function () {
         }
         g.x = g.bx + g.ox;
         g.y = g.by + g.oy;
-        if (g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') {
+        if (g.iceArrowBody || g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') {
           // Face the rendered displacement, including snapshot correction; a separate
           // rotation easing would make the arrow slide sideways while turning.
           var dx = g.x - previousX, dy = g.y - previousY;
@@ -1496,7 +1497,8 @@ var VFXRuntime = (function () {
             : playOnTargets(hitRt, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0, undefined, true);
           break;
         case 'projectile':
-          ok = spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
+          ok = spec.variant === 'ice-arrow-homing' ? playGround(presetId,spec,role)
+            : spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
             : spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
           break;
         case 'cast':
