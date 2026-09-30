@@ -1004,7 +1004,7 @@ function resistCtrl(dCfg) {
    溢出直接捨棄（回滿即止）。呼叫端不傳 opts 時維持原行為（技能路徑）。 */
 var SHIELD_HEAL_CAP_PCT = 10;   // 治療轉化護盾上限（占最大生命 %）
 var SHIELD_OVERFLOW_PCT = 1;    // 溢出治療轉護盾比例（%）
-var SHIELD_SKILL_CAP_PCT = 10000; // 技能直接給予的護盾上限（占最大生命 %；10000 = 100 倍生命）
+var SHIELD_SKILL_CAP_PCT = 1000; // 技能直接給予的護盾上限（占最大生命 %；10000 = 100 倍生命）
 var SHIELD_MAX_VERSION = 2;
 function refreshShieldMaxAfterGain(ent, beforeShield) {
   if (!ent) return;
