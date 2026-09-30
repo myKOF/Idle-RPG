@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>perf probe</title>
+<script>
+/* 把 index.html 原封不動載進來，只在 vfx-core.js 之後插一段計時掛勾。
+   掛勾不改任何行為：包住 VFXCore.createRuntime 產生的 runtime.update 與 backend.updateNode，
+   並且數 WebGL 呼叫。用 fetch + document.write 是因為要在 VFX Runtime 建立「之前」就位。 */
+(async function () {
+  var html = await (await fetch('/index.html', { cache: 'no-store' })).text();
+  var hook = '<script>(' + function () {
+    var T = window.__T = { core: 0, backend: 0, nodeUpdates: 0, effUpdates: 0, calls: {}, byRt: {} };
+    var orig = VFXCore.createRuntime, seq = 0;
+    VFXCore.createRuntime = function (o) {
+      var be = o.backend, id = 'rt' + (seq++);
+      var b = T.byRt[id] = { core: 0, backend: 0, nodes: 0, frames: 0 };
+      var un = be.updateNode;
+      be.updateNode = function (n, t) {
+        var s = performance.now(); var r = un.call(be, n, t);
+        var d = performance.now() - s; T.backend += d; b.backend += d; T.nodeUpdates++; b.nodes++; return r;
+      };
+      var rt = orig.call(this, o);
+      var up = rt.update;
+      rt.update = function (dt) {
+        var s = performance.now(); up.call(rt, dt);
+        var d = performance.now() - s; T.core += d; b.core += d; b.frames++;
+      };
+      rt.__id = id;
+      return rt;
+    };
+    // WebGL 呼叫計數（方法在 prototype 上，已存在的 context 也會被抓到）
+    ['drawElements', 'drawArrays', 'drawElementsInstanced', 'bindTexture', 'texImage2D', 'texSubImage2D',
+      'bufferData', 'bufferSubData', 'useProgram', 'bindFramebuffer', 'blendFunc', 'blendFuncSeparate',
+      'blitFramebuffer', 'bindVertexArray', 'uniform4fv', 'uniformMatrix3fv'].forEach(function (name) {
+      var P = WebGL2RenderingContext.prototype, f = P[name];
+      if (!f) return;
+      P[name] = function () { T.calls[name] = (T.calls[name] || 0) + 1; return f.apply(this, arguments); };
+    });
+  } + ')()<' + '/script>';
+  html = html.replace(/(<script[^>]*vfx-core\.js[^>]*><\/script>)/, '$1' + hook);
+  html = html.replace('<head>', '<head><base href="/">');
+  document.open(); document.write(html); document.close();
+})();
+</script>
