@@ -696,6 +696,8 @@ var VFXCore = (function () {
   }
   var DEFORMATION_FIELDS = {
     amplitude: { label: '彎曲振幅（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
+    bendStrengthMin: { label: '隨機彎曲強度下限（0 直線；1 原形）', default: 1, min: 0, max: 1 },
+    bendStrengthMax: { label: '隨機彎曲強度上限（0 直線；1 原形）', default: 1, min: 0, max: 1 },
     motionSpeed: { label: '完整形狀重抽頻率（次／秒；0 靜止）', default: 0, min: 0, max: 60 },
     motionAmplitude: { label: '重抽形狀彎曲幅度（px，上限為區間15%）', default: 0, min: 0, max: 10000 },
     tipTaper: { label: '兩端尖細收束比例', default: 0, min: 0, max: .5 },
@@ -786,7 +788,7 @@ var VFXCore = (function () {
   }
 
   // 共用的特效區域座標變形：同一座標永遠得到相同位移，不拆散拼接圖層。
-  function deformPoint(w, x, y, out) {
+  function deformPoint(w, x, y, out, centerAcross) {
     var c=w.config, along=c.axis==='x'?x:y, across=c.axis==='x'?y:x;
     var q=Math.max(0,Math.min(1,(along-c.start)/(c.end-c.start)));
     var envelope=Math.sin(Math.PI*q);
@@ -794,7 +796,11 @@ var VFXCore = (function () {
     var amplitude=w.motionKey===undefined?c.amplitude:deformationValue(c,'motionAmplitude');
     var displacement=envelope*amplitude*(Math.sin(q*deformationValue(c,'frequency')+w.phase)*(1-mix)+
       Math.sin(q*deformationValue(c,'secondaryFrequency')+w.phase*deformationValue(c,'phaseCoupling'))*mix);
-    across=pivot+(across-pivot)*w.mirror*w.width+displacement;
+    // Strength bends the authored centreline and the added wave together. The
+    // distance from that centreline stays intact, so a straight bolt keeps its width.
+    var strength=w.bendStrength===undefined?1:w.bendStrength;
+    var center=centerAcross===undefined?across:centerAcross;
+    across=pivot+((center-pivot)*strength+(across-center))*w.mirror*w.width+displacement*strength;
     var taper=deformationValue(c,'tipTaper');
     if(taper>0){
       var tip=Math.max(0,Math.min(1,q/taper,(1-q)/taper));
@@ -811,10 +817,13 @@ var VFXCore = (function () {
     w.phase=deformationValue(c,'phase')+rng()*deformationValue(c,'phaseRandom');
     w.mirror=c.mirror&&rng()<deformationValue(c,'mirrorChance')?-1:1;
     w.width=1+(rng()*2-1)*deformationValue(c,'widthJitter');
+    var min=deformationValue(c,'bendStrengthMin'),max=deformationValue(c,'bendStrengthMax');
+    w.bendStrength=min+(max-min)*rng();
   }
   function updateDeformationMotion(w, time, seed) {
     var speed=deformationValue(w.config,'motionSpeed');
-    if(!(speed>0 && deformationValue(w.config,'motionAmplitude')>0))return;
+    if(!(speed>0 && (deformationValue(w.config,'motionAmplitude')>0 ||
+      deformationValue(w.config,'bendStrengthMin')!==deformationValue(w.config,'bendStrengthMax'))))return;
     // Snap tiny floating point error at cadence boundaries for frame-rate invariance.
     var key=Math.floor(time*speed+1e-9);
     if(w.motionKey===key)return;
@@ -831,6 +840,7 @@ var VFXCore = (function () {
       var v=c[key],f=DEFORMATION_FIELDS[key];
       if(v!==undefined&&(!isFiniteNumber(v)||v<f.min||v>f.max))errors.push('deformation.'+key+' 無效');
     });
+    if(deformationValue(c,'bendStrengthMin')>deformationValue(c,'bendStrengthMax'))errors.push('deformation 彎曲強度下限不可大於上限');
     if(c.axis!=='x'&&c.axis!=='y')errors.push('deformation.axis 必須是 x 或 y');
     if(!isFiniteNumber(c.start)||!isFiniteNumber(c.end)||c.end<=c.start)errors.push('deformation 範圍無效');
     if(!isFiniteNumber(c.amplitude)||c.amplitude<0||c.amplitude>(c.end-c.start)*.15)errors.push('deformation.amplitude 超過長度15%');
@@ -1365,7 +1375,8 @@ var VFXCore = (function () {
       return spec.kind + '|' + spec.assetUrl + '|' + spec.blendMode +
         (spec.sheet ? '|' + spec.sheet.columns + 'x' + spec.sheet.rows : '') +
         (spec.profileScales ? '|profile:' + spec.profileScales.join(',') : '') +
-        (spec.generated ? '|generated:' + spec.generated : '') + (spec.warpAxis ? '|warp:'+spec.warpAxis : '');
+        (spec.generated ? '|generated:' + spec.generated : '') + (spec.warpAxis ? '|warp:'+spec.warpAxis : '') +
+        (spec.straightenBend ? '|straighten' : '');
     }
     function acquireNode(spec) {
       var key = poolKey(spec);
@@ -1576,7 +1587,11 @@ var VFXCore = (function () {
       /* 後端要靠這個把整張圖切成每一格的貼圖。同一張圖切成不同格線就是
          不同的節點規格，所以 poolKey 也要帶上——否則 8×8 的節點會被
          重用成 4×4 的，畫面上是「動畫突然變成別的東西」。 */
-      if (layer.deformation) { spec.kind = 'deformed'; spec.warpAxis=layer.deformation.config.axis; }
+      if (layer.deformation) {
+        spec.kind = 'deformed'; spec.warpAxis=layer.deformation.config.axis;
+        spec.straightenBend=deformationValue(layer.deformation.config,'bendStrengthMin')!==1 ||
+          deformationValue(layer.deformation.config,'bendStrengthMax')!==1;
+      }
       if (layer.def.sheet) {
         spec.sheet = { columns: layer.def.sheet.columns, rows: layer.def.sheet.rows };
       }

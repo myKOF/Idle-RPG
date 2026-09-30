@@ -22,6 +22,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const childProcess = require('node:child_process');
+const os = require('node:os');
+const {EventEmitter} = require('node:events');
 
 const REPO = path.resolve(__dirname, '..');
 const editorServer = require('../tools/vfx/editor-server.cjs');
@@ -141,7 +143,9 @@ function fakeDeps(over) {
       calls.push(['stopAll', servers.map((s) => s.pid), hits.map((h) => h.port)]);
       return Promise.resolve([]);
     },
-    startServerWindow: () => { calls.push(['start']); },
+    startServerProcess: () => { calls.push(['start']); return Promise.resolve(); },
+    serverLogPath: () => 'test-server.log',
+    serverLogTail: () => '[ERROR] Asset Library Root missing',
     waitReady: () => { calls.push(['waitReady']); return Promise.resolve(28361); },
     openBrowser: (url) => { calls.push(['open', url]); },
     listening: () => Promise.resolve('  TCP    127.0.0.1:28361    0.0.0.0:0    LISTENING    4321')
@@ -192,13 +196,91 @@ test('LAUNCH-3 有伺服器關不掉：不啟動新的，列出真正的 PID，�
   assert.ok(!/那個PID/.test(text), '不能再出現要使用者自己填 PID 的說明');
 });
 
-test('LAUNCH-4 新的伺服器沒有就緒：不開瀏覽器、結束代碼 1，並指出去看伺服器視窗', async function () {
+test('LAUNCH-4 背景伺服器沒有就緒：不開瀏覽器、結束代碼 1，顯示日誌位置及錯誤', async function () {
   const f = fakeDeps({ waitReady: () => Promise.resolve(null) });
   assert.equal(await launcher.main([], f.d), 1);
   assert.ok(!f.calls.some((c) => c[0] === 'open'));
   const text = f.logs.join('\n');
-  assert.ok(/「VFX 編輯器伺服器」視窗/.test(text) && /素材庫/.test(text), text);
+  assert.ok(/test-server\.log/.test(text) && /Asset Library Root missing/.test(text) && /素材庫/.test(text), text);
   assert.ok(/LISTENING/.test(text), '附上這段埠目前被誰佔著');
+});
+
+test('BACKGROUND 初次啟動與重啟共用獨立背景程序，保留日誌、不繼承視窗環境',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'vfx-background-test-'));
+ const logPath=path.join(root,'server.log');const old=process.env.VFX_EDITOR_WINDOW;
+ try{
+  process.env.VFX_EDITOR_WINDOW='1';let calls=0,closedFd;
+  const spawn=(exe,args,opts)=>{
+   calls++;assert.equal(exe,process.execPath);
+   assert.deepEqual(args,[path.join(root,'tools/vfx/editor-server.cjs'),'--port',String(ids.PORT_BASE)]);
+   assert.equal(opts.cwd,root);assert.equal(opts.detached,true);assert.equal(opts.windowsHide,true);
+   assert.equal(opts.env.VFX_EDITOR_WINDOW,undefined);
+   assert.equal(opts.stdio[0],'ignore');assert.equal(opts.stdio[1],opts.stdio[2]);
+   assert.equal(typeof opts.stdio[1],'number');fs.writeSync(opts.stdio[1],'boot '+calls+'\n');closedFd=opts.stdio[1];
+   const child=new EventEmitter();child.pid=123;child.unref=()=>{child.unreffed=true;};
+   queueMicrotask(()=>child.emit('spawn'));return child;
+  };
+  await ids.spawnServerProcess(root,undefined,{logPath,spawn,resetLog:true});
+  await ids.spawnServerProcess(root,ids.PORT_BASE,{logPath,spawn});
+  assert.equal(fs.readFileSync(logPath,'utf8'),'boot 1\nboot 2\n');
+  assert.throws(()=>fs.fstatSync(closedFd),{code:'EBADF'},'父程序不保留日誌句柄');
+  assert.notEqual(ids.serverLogPath(root),ids.serverLogPath(root+'-other'),'各工作副本日誌隔離');
+  const source=read('tools/vfx/launch-editor.cjs');assert.match(source,/identity\.spawnServerProcess/);
+  assert.doesNotMatch(source,/start "[^\n]*editor_server_window\.bat/);
+  assert.match(read('tools/vfx/editor-server.cjs'),/spawnServerProcess\(ctx\.repoRoot,port\)/,'重啟走同一個程序啟動器');
+ }finally{
+  if(old===undefined)delete process.env.VFX_EDITOR_WINDOW;else process.env.VFX_EDITOR_WINDOW=old;
+  fs.rmSync(root,{recursive:true,force:true});
+ }
+});
+
+test('BACKGROUND 啟動失敗顯示錯誤，不等待就緒或開頁面',async()=>{
+ const f=fakeDeps({startServerProcess:()=>Promise.reject(new Error('node spawn failed'))});
+ assert.equal(await launcher.main([],f.d),1);
+ assert.deepEqual(f.calls,[]);
+ assert.match(f.logs.join('\n'),/node spawn failed/);assert.match(f.logs.join('\n'),/test-server\.log/);
+});
+
+test('BACKGROUND 真實啟動器退出後仍可載入頁面；HTTP重啟換bootId、保持埠並可關閉',async()=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'vfx-background-live-'));
+ const logPath=path.join(temp,'initial.log');
+ const reserve=http.createServer();await new Promise(resolve=>reserve.listen(0,'127.0.0.1',resolve));
+ const port=reserve.address().port;await new Promise(resolve=>reserve.close(resolve));
+ const url='http://127.0.0.1:'+port;let originalPid;
+ async function ready(different){
+  const until=Date.now()+20000;
+  while(Date.now()<until){
+   try{
+    const response=await fetch(url+'/__vfx_version',{signal:AbortSignal.timeout(1200)});
+    if(response.ok){const data=await response.json();if(data.bootId&&data.bootId!==different)return data;}
+   }catch(e){}
+   await new Promise(resolve=>setTimeout(resolve,150));
+  }
+  throw new Error('背景伺服器未就緒：'+(fs.existsSync(logPath)?fs.readFileSync(logPath,'utf8'):''));
+ }
+ try{
+  // The parent exits naturally; a server inheriting its stdout pipe would hang here.
+  const code="require(process.argv[1]).launcher.spawnServerProcess(process.argv[2],Number(process.argv[3]),{logPath:process.argv[4],resetLog:true}).then(info=>console.log(JSON.stringify(info)),e=>{console.error(e);process.exitCode=1;});";
+  const stdout=await new Promise((resolve,reject)=>childProcess.execFile(process.execPath,
+   ['-e',code,path.join(REPO,'tools/vfx/editor-server.cjs'),REPO,String(port),logPath],
+   {windowsHide:true,timeout:15000},(error,out)=>error?reject(error):resolve(out)));
+  originalPid=JSON.parse(stdout.trim()).pid;assert.ok(originalPid>0);
+  const before=await ready();
+  assert.equal((await fetch(url+'/tools/vfx/editor/index.html')).status,200);
+  const response=await fetch(url+'/__restart-editor',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  assert.equal(response.status,200);assert.equal((await response.json()).bootId,before.bootId);
+  const after=await ready(before.bootId);assert.notEqual(after.bootId,before.bootId);
+  originalPid=undefined; // Old process exited; never kill a potentially reused PID.
+  assert.equal((await fetch(url+'/tools/vfx/editor/index.html')).status,200);
+  const shutdown=await fetch(url+ids.SHUTDOWN_PATH,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  assert.equal(shutdown.status,200);
+  await new Promise(resolve=>setTimeout(resolve,1000));
+  await assert.rejects(fetch(url+'/__vfx_version',{signal:AbortSignal.timeout(1200)}));
+ }finally{
+  try{await fetch(url+ids.SHUTDOWN_PATH,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(1500)});}catch(e){}
+  if(originalPid){try{process.kill(originalPid);}catch(e){}}
+  fs.rmSync(temp,{recursive:true,force:true});
+ }
 });
 
 test('LAUNCH-5 參數不能當成特效名稱：改開空場景並說明；--no-browser 不開瀏覽器', async function () {

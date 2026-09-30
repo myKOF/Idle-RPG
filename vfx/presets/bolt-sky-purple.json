@@ -6,6 +6,7 @@
   "deformation": {
     "amplitude": 13,
     "axis": "y",
+    "bendStrengthMin": 0,
     "end": 0,
     "layers": [
       "glow",
@@ -29,11 +30,11 @@
       "assetId": "light-masks-1.0/default/cone_e_blur.png",
       "zIndex": 0,
       "position": {
-        "x": -4.8508,
-        "y": -6.9366
+        "x": -8.1394,
+        "y": -2.9366
       },
       "scale": {
-        "x": 0.3618,
+        "x": 0.3822,
         "y": 0.912
       },
       "anchor": {
@@ -68,14 +69,14 @@
     {
       "id": "seg-a",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/spark_06.png",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 1,
       "position": {
-        "x": 0.1791,
-        "y": -334.5711
+        "x": 0.0035,
+        "y": -330.5711
       },
       "scale": {
-        "x": 0.344,
+        "x": 0.5569,
         "y": 0.3094
       },
       "alpha": 1,
@@ -135,11 +136,11 @@
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 2,
       "position": {
-        "x": 3.5935,
-        "y": -194.433
+        "x": 5.5311,
+        "y": -190.433
       },
       "scale": {
-        "x": 0.4067,
+        "x": 0.6584,
         "y": 0.2379
       },
       "alpha": 1,
@@ -196,16 +197,16 @@
     {
       "id": "seg-c",
       "type": "sprite",
-      "assetId": "particle-pack/png-black-background/spark_07.png",
+      "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 3,
       "position": {
-        "x": -1.6596,
-        "y": -67.5897
+        "x": 0.1236,
+        "y": -65.5026
       },
-      "rotation": 1.570796,
+      "rotation": 0,
       "scale": {
-        "x": 0.2591,
-        "y": 0.1861
+        "x": 0.4195,
+        "y": 0.2515
       },
       "alpha": 1,
       "tint": "#ffffff",
@@ -264,12 +265,12 @@
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "zIndex": 4,
       "position": {
-        "x": 20.9088,
-        "y": -233.8966
+        "x": 33.5628,
+        "y": -229.8966
       },
       "rotation": 0.5934,
       "scale": {
-        "x": 0.1929,
+        "x": 0.3123,
         "y": 0.105
       },
       "alpha": 0.85,
@@ -329,10 +330,10 @@
       "zIndex": 6,
       "position": {
         "x": 0.4628,
-        "y": -4.6771
+        "y": -0.6771
       },
       "scale": {
-        "x": 0.4323,
+        "x": 0.6999,
         "y": 0.069
       },
       "alpha": 1,
@@ -376,11 +377,11 @@
       "assetId": "new_materials/orb/energyball_1.png",
       "zIndex": 1,
       "position": {
-        "x": -2.106,
-        "y": -411.4235
+        "x": -3.6958,
+        "y": -407.4235
       },
       "scale": {
-        "x": 0.0932,
+        "x": 0.1509,
         "y": 0.0382
       },
       "alpha": 1,
@@ -439,11 +440,11 @@
       "assetId": "new_materials/orb/energyball_1.png",
       "zIndex": 1,
       "position": {
-        "x": -2.106,
-        "y": -411.4235
+        "x": -3.6958,
+        "y": -407.4235
       },
       "scale": {
-        "x": 0.0932,
+        "x": 0.1509,
         "y": 0.0382
       },
       "alpha": 1,
@@ -502,11 +503,11 @@
       "assetId": "particle-pack/png-black-background/scorch_02.png",
       "zIndex": 6,
       "position": {
-        "x": -0.8234,
-        "y": -5.3769
+        "x": -1.6194,
+        "y": -1.3769
       },
       "scale": {
-        "x": 0.2057,
+        "x": 0.333,
         "y": 0.069
       },
       "alpha": 1,

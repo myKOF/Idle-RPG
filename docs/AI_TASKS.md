@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex｜VFX 伺服器背景啟動（VFX-BACKGROUND-SERVER-20260930）
+
+- Owner：Codex；Done。初次啟動及重啟統一為獨立背景 Node 程序，無常駐黑窗；啟動器確認就緒、開頁面後退出。HTTP重啟原本就有 windowsHide，此次修正初次啟動，並使兩條路共用程序生命週期與日誌。編輯器仍需要伺服器運行，網頁「關閉編輯器」可停止它。
+- 修改：tools/vfx/editor-server.cjs、tools/vfx/launch-editor.cjs、tests/vfx-editor-launcher.test.cjs、docs/vfx/VFX_EDITOR_CODE_CONTROLS.md 與本紀錄。唯讀：兩支啟動 bat、tests/vfx-editor-guard.test.cjs、editor.js。預檢無其他副本變更；保留使用者 Skills2 Excel／CSV／JS、bolt-sky-purple／hit-thunder-purple 未提交修改，不納入本次提交。無本任務素材變更，不需素材庫空提交。
+- 驗證：node --test tests/vfx-editor-launcher.test.cjs tests/vfx-editor-guard.test.cjs，25/25 通過；新增實際子程序測試：父啟動器自行退出後正式伺服器仍可回應、網頁HTTP200、重啟保持原埠且換bootId、重啟後網頁HTTP200、關閉後端點不可連線。背景參數／日誌／文件句柄釋放／錯誤提示、來源保護與未存備份檢查通過。node tools/build_check.cjs，400檔通過；diff check 通過。
+- 回歸：加上 vfx-editor-save.test.cjs 共70項，68通過、1略過、1既有失敗：hit-thunderstrike-bluewhite.json 非 canonical；原檔與HEAD一致，HEAD本身序列化也不同，與伺服器啟動無關，未降低斷言。未用瀏覽器點擊或觀察作業系統視窗，已實際驗證Windows程序與HTTP生命週期。
+- 日誌：系統暫存目錄 idle-rpg-vfx-<副本路徑雜湊>.log，初次啟動重設、重啟追加；啟動失敗顯示尾端錯誤及日誌位置，bat保留錯誤視窗。建議備份未存內容後重新執行啟動VFX編輯器.bat一次。可合併；Commit見本紀錄所在提交，未合併／推送，沒有未完成的背景啟動項目。
+
+## Codex｜隨機彎曲強度（VFX-BEND-STRENGTH-20260930）
+
+- Owner：Codex；Done。新增 deformation.bendStrengthMin／Max（0～1，預設 1／1），出生／完整重抽時每道獨立、同道圖層共用；同步縮減程式位移與 PNG 亮部中心線曲折，保留電柱粗細。編輯器自動公開兩個欄位，可試 0.1／1；不覆寫使用者正在編輯的 Preset。
+- 修改：js/vfx-core.js、js/vfx-pixi-backend.js、tools/vfx/editor/editor.js、兩份 HTML 快取、兩份測試、Schema／操作文件及本紀錄。檢查未修改：bolt-sky-purple.json、editor-server.cjs、editor-guard.cjs、Effects-Materials（乾淨且無素材變更，不建空提交）。index.html 有 Claude 其他快取／效能診斷修改，使用者明確同意僅修改 VFX 的兩行；實際 diff 無重疊。
+- 驗證：node --test tests/vfx-core.test.cjs tests/vfx-deformation.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-editor-code-controls.test.cjs tests/vfx-editor-guard.test.cjs，199/199 通過；將拉直網格調成 49×2／98 頂點、保持批次預算後，變形／Pixi 33/33 補驗通過。涵蓋上下限／序列化、seed／FPS、出生及重抽、兩軸粗細、旋轉／裁切／換幀／像素快取、讀取失敗顯式報錯與可見退化、不同網格分池／回收重播、舊設定相容。node tools/build_check.cjs：400 檔通過；diff check 通過。
+- 限制：內建瀏覽器兩次 webview 連線逾時，未完成實際預覽或遊戲畫面確認；單元測試未等同實機視覺驗收。分叉與局部形狀保留，不保證完美幾何直線。舊 Editor 應備份未存內容後按重啟，因本次 Core／後端屬全局更新。Commit 見本紀錄所在提交；程式可合併，建議使用者設定 0.1／1 確認畫面，未合併／推送。沒有未完成的參數接線。
+
 ## Codex｜雷霆天劫雙雷與八米範圍（HEAVEN-TRIBULATION-DOUBLE-AOE-20260930）
 
 - Owner：Codex；Done。每次節拍同時降下兩道天劫雷電，優先選生命最低的兩個不同目標；不足兩敵時剩餘雷電可重複瞄準。同一道各對落點半徑 8 米內所有敵人結算，兩個傷害圈重疊可受兩次傷害。維持原本 0.25 秒節拍與單道表定傷害。

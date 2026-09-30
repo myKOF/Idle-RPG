@@ -254,9 +254,11 @@ var VFXPixiBackend = (function () {
       entry.refs++; node.__generatedEntry = entry; node.__profileFrames = node.__flatGenerated ? [[entry.texture]] : [entry.strips]; node.__frameWanted = 0;
     }
 
-    // 每層85個頂點，可走Pixi的小網格批次；不使用全屏Filter或額外RenderTexture。
+    // Extra longitudinal samples straighten authored PNG bends. Two transverse
+    // edges preserve the stroke width; 98 vertices still fit the small batch.
+    // Existing effects retain their original 85-vertex topology.
     function createWarpMesh(spec) {
-      var cols=17,rows=5;
+      var cols=spec.straightenBend?49:17,rows=spec.straightenBend?2:5;
       var positions=new Float32Array(cols*rows*2),uvs=new Float32Array(positions.length);
       var indices=new Uint32Array((cols-1)*(rows-1)*6),n=0;
       for(var y=0;y<rows;y++)for(var x=0;x<cols;x++){
@@ -268,6 +270,53 @@ var VFXPixiBackend = (function () {
       node.__warp={uvs:uvs,baseUvs:uvs.slice(),positions:positions,cache:{},point:{},geometry:geometry};
       return node;
     }
+    // Read each texture/orientation once, never each frame or each bolt. Bright-core
+    // centroids ignore transparent margins and low-intensity surrounding glow.
+    var bendProfiles=new WeakMap();
+    function bendProfile(tex,vertical) {
+      var profiles=bendProfiles.get(tex);
+      if(!profiles){profiles={};bendProfiles.set(tex,profiles);}
+      var key=vertical?'vertical':'horizontal';
+      if(Object.prototype.hasOwnProperty.call(profiles,key))return profiles[key];
+      try {
+        var image=tex.source.resource,frame=tex.frame,orig=tex.orig||frame,trim=tex.trim;
+        if(!image || tex.rotate)throw new Error('貼圖沒有可讀取的未旋轉圖像');
+        var surface=canvas(),sw=Math.min(512,Math.ceil(orig.width)),sh=Math.min(512,Math.ceil(orig.height));
+        surface.width=sw;surface.height=sh;
+        var ctx=surface.getContext('2d',{willReadFrequently:true});
+        ctx.drawImage(image,frame.x,frame.y,frame.width,frame.height,
+          trim?trim.x/orig.width*sw:0,trim?trim.y/orig.height*sh:0,
+          trim?trim.width/orig.width*sw:sw,trim?trim.height/orig.height*sh:sh);
+        var pixels=ctx.getImageData(0,0,sw,sh).data;
+        var length=vertical?sh:sw,across=vertical?sw:sh;
+        var sums=new Float64Array(length),weights=new Float64Array(length),profile=new Float32Array(length);
+        for(var y=0;y<sh;y++)for(var x=0;x<sw;x++){
+          var i=(y*sw+x)*4,brightness=Math.max(pixels[i],pixels[i+1],pixels[i+2])/255;
+          var weight=pixels[i+3]/255*brightness*brightness*brightness*brightness;
+          var along=vertical?y:x,transverse=vertical?x:y;
+          weights[along]+=weight;sums[along]+=(transverse+.5)/across*weight;
+        }
+        // Interpolate transparent gaps; carry the nearest visible centre at tips.
+        var previous=-1;
+        for(var j=0;j<length;j++)if(weights[j]>1e-8){
+          profile[j]=sums[j]/weights[j];
+          for(var k=previous+1;k<j;k++)profile[k]=previous<0?profile[j]:
+            profile[previous]+(profile[j]-profile[previous])*(k-previous)/(j-previous);
+          previous=j;
+        }
+        for(var j=previous+1;j<length;j++)profile[j]=previous<0?.5:profile[previous];
+        profiles[key]=profile;
+      } catch(err) {
+        profiles[key]=null;
+        pendingErrors.push({url:tex.source && tex.source.label || 'deformation',message:'彎曲中心線讀取失敗：'+String(err.message||err)});
+      }
+      return profiles[key];
+    }
+    function profileCenter(profile,position) {
+      var t=Math.max(0,Math.min(profile.length-1,position*profile.length-.5));
+      var i=Math.floor(t),j=Math.min(profile.length-1,i+1);
+      return profile[i]+(profile[j]-profile[i])*(t-i);
+    }
     var warpMatrixKeys=['a','b','c','d','x','y'];
     function updateWarp(node,t) {
       var w=t.deformation,m=node.__warp;
@@ -275,13 +324,13 @@ var VFXPixiBackend = (function () {
       var tex=node.texture,tw=tex.orig ? tex.orig.width : tex.width,th=tex.orig ? tex.orig.height : tex.height;
       if(!(tw>1&&th>1))return;
       var v=w.variation,c=m.cache;
-      var changed=c.tw!==tw||c.th!==th||c.ax!==t.anchorX||c.ay!==t.anchorY||c.variation!==v||c.motionTime!==v.motionTime||c.clipMin!==w.clipMin||c.clipMax!==w.clipMax||c.clipTaper!==w.clipTaper;
+      var changed=c.texture!==tex||c.tw!==tw||c.th!==th||c.ax!==t.anchorX||c.ay!==t.anchorY||c.variation!==v||c.motionTime!==v.motionTime||c.bendStrength!==v.bendStrength||c.clipMin!==w.clipMin||c.clipMax!==w.clipMax||c.clipTaper!==w.clipTaper;
       for(var k=0;k<warpMatrixKeys.length;k++){
         var key=warpMatrixKeys[k];
         if(c[key]===undefined||Math.abs(c[key]-w[key])>1e-10)changed=true;
       }
       if(changed){
-        c.tw=tw;c.th=th;c.ax=t.anchorX;c.ay=t.anchorY;c.variation=v;
+        c.texture=tex;c.tw=tw;c.th=th;c.ax=t.anchorX;c.ay=t.anchorY;c.variation=v;c.bendStrength=v.bendStrength;
         c.motionTime=v.motionTime;
         c.clipMin=w.clipMin;c.clipMax=w.clipMax;
         c.clipTaper=w.clipTaper;
@@ -291,6 +340,7 @@ var VFXPixiBackend = (function () {
         var axisY=v.config.axis==='y';
         var du=(axisY?w.b:w.a)*tw,dv=(axisY?w.d:w.c)*th;
         var vertical=Math.abs(dv)>Math.abs(du);
+        var profile=v.bendStrength!==undefined&&v.bendStrength!==1?bendProfile(tex,vertical):null;
         for(var i=0;i<m.uvs.length;i+=2){
           var longitudinal=m.baseUvs[i],transverse=m.baseUvs[i+1];
           var u=vertical?transverse:longitudinal,vv=vertical?longitudinal:transverse;
@@ -319,7 +369,16 @@ var VFXPixiBackend = (function () {
             x=(u-t.anchorX)*tw;y=(vv-t.anchorY)*th;
           }
           m.uvs[i]=u;m.uvs[i+1]=vv;
-          Core.deformPoint(v,w.a*x+w.c*y+w.x,w.b*x+w.d*y+w.y,m.point);
+          // A readback error is reported once; keep the sprite visible while the
+          // author repairs the texture source instead of collapsing its width.
+          var centerAcross=profile?undefined:Core.deformationValue(v.config,'pivot');
+          if(v.bendStrength===undefined||v.bendStrength===1)centerAcross=undefined;
+          if(profile){
+            var center=profileCenter(profile,vertical?vv:u);
+            var cx=vertical?(center-t.anchorX)*tw:x,cy=vertical?y:(center-t.anchorY)*th;
+            centerAcross=axisY?w.a*cx+w.c*cy+w.x:w.b*cx+w.d*cy+w.y;
+          }
+          Core.deformPoint(v,w.a*x+w.c*y+w.x,w.b*x+w.d*y+w.y,m.point,centerAcross);
           if(w.clipTaper>0 && Number.isFinite(w.clipMin) && Number.isFinite(w.clipMax)) {
             var tip=Math.max(0,Math.min(1,(m.point.x-w.clipMin)/w.clipTaper,(w.clipMax-m.point.x)/w.clipTaper));
             m.point.y*=tip*tip*(3-2*tip);
