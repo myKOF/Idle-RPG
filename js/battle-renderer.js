@@ -6644,6 +6644,25 @@ var BattleRenderer = (function () {
      關掉的用途：畫面上要維持固定大小的東西（例如標記、指示圈），位置照樣跟著投影走。 */
   function depthScaleOf(t, scale) { return t && t.cameraDepth === false ? 1 : scale; }
   function projectAirTransform(t) {
+    // 飛行刃的整份外觀共用根航向；FOV會改變移動方向，作者圖層的局部角度仍保留。
+    if (typeof t.motionAngle === 'number' && isFinite(t.motionAngle)) {
+      var centre = airScreenPose(t.motionX, t.motionY), angle = t.motionAngle;
+      var layout = S.persp && S.persp.layout;
+      var world = S.layers && S.layers.world;
+      var w = layout ? 1-layout.beta*(t.motionY+(world?world.y:0)-layout.cy) : 1;
+      var shear = layout ? layout.beta*(t.motionX+(world?world.x:0)-layout.cx) : 0;
+      var facing = Math.atan2(Math.sin(angle),w*Math.cos(angle)+shear*Math.sin(angle));
+      var delta = facing-angle, co=Math.cos(delta), si=Math.sin(delta);
+      var dx=t.x-t.motionX, dy=t.y-t.motionY, scale=depthScaleOf(t,centre.scale);
+      var directed = Object.assign({},t,{
+        x:centre.x+(dx*co-dy*si)*scale,y:centre.y+(dx*si+dy*co)*scale,
+        rotation:t.rotation+(t.followDirection===false?0:delta),scaleX:t.scaleX*scale,scaleY:t.scaleY*scale
+      });
+      if(t.width!==undefined)directed.width=t.width*scale;
+      if(t.height!==undefined)directed.height=t.height*scale;
+      if(t.deformation){directed.deformation=projectedWarp(t.deformation,centre,scale);directed.deformation.rotation+=delta;}
+      return directed;
+    }
     var p = airScreenPose(t.x || 0, t.y || 0);
     var k = depthScaleOf(t, p.scale);
     var out = Object.assign({}, t, {x:p.x,y:p.y,scaleX:t.scaleX*k,scaleY:t.scaleY*k});

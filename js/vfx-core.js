@@ -1469,6 +1469,7 @@ var VFXCore = (function () {
         origin: { x: 0, y: 0 },
         depthY: null,
         rotation: 0,
+        motionFacing: false,
         scale: 1, scaleX: 1, scaleY: 1, opacity: 1,
         seed: (p.seed === undefined ? (nextEffectId * 2654435761) : p.seed) >>> 0,
         layers: [],
@@ -1551,6 +1552,7 @@ var VFXCore = (function () {
       if (p.depthY !== undefined) effect.depthY = transformNumber(p.depthY, 'depthY');
       if (p.opacity !== undefined) effect.opacity = Math.max(0, Math.min(1, transformNumber(p.opacity, 'opacity')));
       if (p.rotation !== undefined) effect.rotation = transformNumber(p.rotation, 'rotation');
+      if (p.motionFacing !== undefined) effect.motionFacing = p.motionFacing === true;
       if (p.projectionRotation !== undefined) effect.projectionRotation = transformNumber(p.projectionRotation, 'projectionRotation');
       var hasScale = p.scale !== undefined;
       var hasAxis = p.scaleX !== undefined || p.scaleY !== undefined;
@@ -1863,6 +1865,9 @@ var VFXCore = (function () {
          scratchTransform 是共用的，每一層都要寫，不能只在 false 時寫。 */
       t.perspective = d.perspective;
       t.cameraDepth = d.cameraDepth;
+      t.motionX = effect.motionFacing ? effect.origin.x : undefined;
+      t.motionY = effect.motionFacing ? effect.origin.y : undefined;
+      t.motionAngle = effect.motionFacing ? effect.rotation : undefined;
       t.followDirection = d.followDirection;
       projectTransform(effect, d.projection, t);
       setDeformation(effect, layer, t);
@@ -2224,6 +2229,9 @@ var VFXCore = (function () {
         t.deformation = undefined;
         t.perspective = d.perspective;
         t.cameraDepth = d.cameraDepth;
+        t.motionX = effect.motionFacing ? particleFrame.origin.x : undefined;
+        t.motionY = effect.motionFacing ? particleFrame.origin.y : undefined;
+        t.motionAngle = effect.motionFacing ? particleFrame.rotation : undefined;
         t.followDirection = d.followDirection;
         if (d.projection && d.projection.upright) {
           // 發射面貼地，離開發射點之後的上升高度與粒子本體維持直立。

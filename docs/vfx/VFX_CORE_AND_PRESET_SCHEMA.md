@@ -498,6 +498,8 @@ runtime.play(id, { position, rotation, scale, scaleX, scaleY, seed, startTime })
 runtime.setTransform(handle, { position, rotation, scale, scaleX, scaleY });  // 只更新有給的欄位
 ```
 
+`play`／`setTransform` 可另給 `motionFacing: true`（2026-09-30，預設 false）。Core 將實例根位置及航向附在繪製 transform 的 `motionX`／`motionY`／`motionAngle`；顯示層據此使整份飛行刃沿 FOV 投影後的路徑轉向，不改作者局部旋轉及相對位置。worldSpace 粒子用自己的出生座標系，停用事件不攜帶這些欄位，節點池重用不繼承上一份航向。這是遊戲播放實例的可選參數，不是 Preset 欄位，也沒有改變 schemaVersion。
+
 三個縮放值的關係：
 
 | 欄位 | 作用 |

@@ -1,11 +1,22 @@
 # AI_TASKS.md
 
+## Codex｜風系三技能全階與鏡頭稽核（WIND-SKILL-AUDIT-20260930）
+
+- Owner：Codex；Done。完整檢查風刃、真空斬、暴風屏障各1～7階及各三個超神，共30列；修正追加事件互相覆蓋、傾斜／FOV下方向、連續飛行與判定／演出時序。水系先提交fc71ef20、臨界雷劫先提交bf7d5309，相關紫球素材庫5a7e860。
+- 使用者授權所有需取捨問題採推薦方案繼續並記錄，不等回覆。預檢除編輯器HTML外皆無衝突；Claude未整合8dc2960e只改編輯器Core／water-tornado／util版號，本次限定Core及Runtime快取，不動其餘行、腳本或伺服器。依當前明確授權繼續並記錄；整合Core版號保留本次20260930-wind-facing。
+- 允許三棵風系與共用風切必要接線、幾何顯示必要Core／Runtime／renderer段、Excel／CSV生成／觸發登記、定向測試、必要快取／VFX文件及本紀錄。禁止其他技能規則、其他副本、存檔／Worker協議重設及未授權合併／推送。
+- 驗收30列矩陣、互斥超神／跨樹借用外觀、八方向與多目標穿透、FOV／傾角位置航向、延後波次實際傷害同步、永久排程卸下／倒地／期限、Status及護盾減免、原生Excel逐格重開、回歸與Build。完成Commit交使用者整合，問題與推薦決策見docs/WIND_SKILL_AUDIT.md。
+- 完成：13列追加事件移觸發欄；主刃、追擊、脈衝、震波、虛空斬、反擊、擴散及星體各取自身來源。多目標刃不再誤當連鎖；真空斬正確方向／單次貼地投影；追擊刃世界圓弧後投影，FOV切線整份轉向且保留作者局部造型／鏡頭開關。真空三重奏傷害到波次才結算；天降三種星體都按固定落點、正確元素及當下敵人清單結算。死亡保留永久節拍，接觸／MISS命中派送分開。
+- 修改及未改唯讀檔案完整清單、30列核對、推薦取捨、六項既有失敗及風險見docs/WIND_SKILL_AUDIT.md。沒有修改其他技能規則、Status數值、存檔或Worker協議。Excel原生儲存／重開，231列逐格比對只有13列73格變更；格式、工作表／樣式、列高／欄寬核對通過，無修復模式。Excel／CSV一致，JS重建語意變更0。
+- 測試：node --test tests/wind-skill-audit.test.cjs tests/skill2-wind.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs tests/skill2-stormbarrier-legendary.test.cjs tests/windblade-vfx-integration.test.cjs，121/121。25檔共用回歸594項588通過，6項改讀HEAD仍逐項失敗，0新增；既有FIELD／CATALOG-3／CHAIN／STARFALL-TAIL、連鎖閃電速度預期與變形Backend測試fixture另案追蹤。編輯器舊分頁／外部修改／Core更新防覆寫與備份12/12；Build410檔、diff check通過；config_tables語意差異0、export-assets --check236份Preset／154素材已是最新。
+- 素材庫先提交b56eedd（3份投影Preset及3份既有layout），穩定相對路徑codex-authored/ground-projection/{presets,layouts}，同步回遊戲並核對SHA256，無PNG改動或新引用。遊戲Commit為本紀錄所在提交，可合併，未合併／推送。無未完成程式項目；尚未驗證瀏覽器實戰／Console。整合後重載遊戲確認；編輯器需先下載未存內容備份，再重新啟動，舊分頁禁止覆寫新版。
+
 ## Codex｜臨界雷劫衍生球三秒（CRITICAL-THUNDER-LIFETIME-20260930）
 
 - Owner：Codex；Done。首代外擴電球維持10秒，命中衍生的靜止電球改為3秒。保留每秒3米、單球0.75秒成功生成冷卻、衍生代不再生與96顆保底上限；機率5%＋每級0.5%、傷害50%＋每級5%沿用目前使用者Excel。
 - 依賴使用者完成Claude合併及已提交水系修復fc71ef20；所有目標預檢乾淨。允許Skills2 Excel／CSV／生成JS、雷球限定段、相關測試、必要快取及本紀錄；使用者既有lightning-orb-field-purple修改依提交偏好同步必要素材庫。禁止其他技能、其他副本與未授權合併／推送。
 - 驗收首代10秒與子代3秒邊界、移動／靜止、生成冷卻與世代、正式VFX期限／回收、Excel逐格重開、回歸與Build；素材庫先提交、遊戲後提交。
-- 修改：Skills2 Excel／CSV／JS、index、bridge、sim.worker、雷球傳奇與幾何測試、lightning-orb-field-purple Preset及本紀錄。檢查未改：VFX Core／Runtime、場域上限、紫色電球layout、Status、幾何讀表工具及素材匯出工具；不新增協議或特效来源。Excel原生儲存／唯讀重開，全部儲存格對比只有第169列效果JSON／描述／唯讀描述三格改動。
+- 修改：Skills2 Excel／CSV／JS、index、bridge、sim.worker、雷球傳奇與幾何測試、lightning-orb-field-purple Preset及本紀錄。檢查未改：VFX Core／Runtime、場域上限、紫色電球layout、Status、幾何讀表工具及素材匯出工具；不新增協議或特效來源。Excel原生儲存／唯讀重開，全部儲存格對比只有第169列效果JSON／描述／唯讀描述三格改動。
 - 驗證：node --test --test-name-pattern='CRITICAL-THUNDER|臨界雷劫' tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skills2-geometry.test.cjs，5/5；正式紫色Preset逐幀外擴與靜止、回收。node --test tests/skill2-thunderorb-critical-cap.test.cjs，8/8。node tools/config_tables.cjs --apply Skills2，0差異；node tools/vfx/export-assets.cjs --check，236份Preset／154個素材的引用與匯出一致；Preset驗證通過。npm.cmd run build，409檔；git diff --check通過。
 - 素材庫5a7e860先提交必要Preset與既有layout，穩定相對路徑codex-authored/lightning/{presets,layouts}/lightning-orb-field-purple.json；從素材庫同步回遊戲並核對SHA256，無新二進位引用。兩倉庫僅選本次必要檔案，無其他AI修改。遊戲Commit為本紀錄所在提交；可合併，未合併／推送，無未完成程式項目。尚未驗證遊戲瀏覽器實戰／Console；建議整合後重載確認，接續風系全階稽核。
 

@@ -205,9 +205,9 @@ var SKILLS2 = {
   icearrow: { name: '寒冰箭', emoji: '❄️', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '寒冰箭', unlock: { reinc: 0, lv: 450 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 2, castM: 30, deg: 15, speed: 58.5 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出 {count} 支寒冰箭，每支箭夾角 {deg} 度（射程 {castM} 米、飛行速度 {speed} 米／秒），每支對 1 個敵人造成 {pct}% 寒冰傷害', vfx: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } }, { name: '寒霜箭', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { frostPct: 50, frostPctPer: 5, stacks: 1 }, goldBase: 200000, goldGrow: 1.5, desc: '被寒冰箭擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成寒冰箭傷害 {frostPct}% 的寒冰傷害，每層使移動與攻速下降，疊滿層數時凍結', status: { enemy: [{ id: 'sgFrost' }, { id: 'sgFrostBite' }, { id: 'sgFrozen' }, { id: 'stun' }] } }, { name: '冰系強化', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 100, pctPer: 10 }, goldBase: 400000, goldGrow: 1.5, desc: '進一步強化寒冰箭，額外 +{pct}% 寒冰傷害（與第 1 階累加）' }, { name: '貫穿冰箭', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { m: 10, mPer: 2 }, goldBase: 800000, goldGrow: 1.5, desc: '寒冰箭改為貫穿攻擊，貫穿路徑上的所有敵人，貫穿長度 {m} 米（不足以打到主目標時自動延長到主目標）', vfx: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } }, { name: '冰箭散射', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { add: 1, addPer: 0.1 }, goldBase: 1500000, goldGrow: 1.5, desc: '射出的寒冰箭數量額外 +{add} 支（不足 1 支的部分以機率觸發）' }, { name: '寒霜凍結', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { stacks: 1, stacksPer: 0.4 }, goldBase: 3000000, goldGrow: 1.5, desc: '寒冰箭射中帶寒霜狀態的敵人時，立即再疊 {stacks} 層寒霜，並造成該敵人寒霜剩餘的全部寒冰傷害（不足 1 層的部分以機率觸發）' }, { name: '寒冰爆裂箭', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 400, pctPer: 40, sec: 6, waves: 3, waveGap: 0.3, gap: 0.1, m: 6, chaseM: 30, bodyM: 1.5 }, goldBase: 5000000, goldGrow: 1.5, desc: '寒冰爆裂箭連射 {waves} 波，每波間隔 {waveGap} 秒；寒冰箭變為追蹤冰箭，在 {chaseM} 米內來回穿梭追擊敵人 {sec} 秒（碰到才算一次命中）；敵人的凍結結束時產生冰爆，對其周圍 {m} 米內的所有敵人造成 {pct}% 寒冰傷害', vfx: { hit: 'hit-ice' }, triggerVfx: { attack: 'burst-icearrow-crystal' } }], ult: [{ id: 'absoluteZeroBurst', name: '極寒冰爆', cost: 300, fx: { waves: 10, waveGap: 0.35, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '【寒冰爆裂箭】改為每 {waveGap} 秒連射 {waves} 波，且寒冰箭傷害額外 +{pct}%' }, { id: 'infiniteIceRift', name: '無限冰裂', cost: 300, fx: { sec: 0.1, count: 4, countPer: 0.4 }, goldBase: 10000000, goldGrow: 1.5, desc: '寒冰箭每造成 1 次傷害就使寒冰箭的冷卻時間 -{sec} 秒，且每次發射的寒冰箭數量額外 +{count} 支（不足 1 支的部分以機率觸發）' }, { id: 'tearsOfIce', name: '冰之淚', cost: 300, fx: { waves: 10, pct: 200, pctPer: 20, gap: 0.35, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放寒冰箭時同時召喚 {waves} 波寒冰箭雨從天射下（每波間隔 {gap} 秒），每波對我方 {m} 米內的所有敵人造成 {pct}% 寒冰傷害', triggerVfx: { projectile: 'proj-icearrow-frost', hit: 'hit-icearrow-shatter' } }] },
   waterball: { name: '水流彈', emoji: '💧', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '水流彈', unlock: { reinc: 0, lv: 500 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, speed: 57.96, m: 6, arcM: 8 }, goldBase: 100000, goldGrow: 1.5, desc: '朝敵人起飛時的座標拋出水彈（射程 {castM} 米、弧高 {arcM} 米），途中不追蹤；落地時對落點半徑 {m} 米內的所有敵人造成 {pct}% 寒冰傷害', vfx: { projectile: 'proj-waterball-flow', hit: 'hit-waterball-splash' } }, { name: '寒冰逆轉', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 20, pctPer: 2, sec: 6 }, goldBase: 200000, goldGrow: 1.5, desc: '被水流彈擊中的敵人強制轉變為寒冰屬性，且受到的寒冰傷害 +{pct}%，持續 {sec} 秒', status: { enemy: [{ id: 'sgIceRevert' }] } }, { name: '寒流彈', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { frostPct: 50, frostPctPer: 20, stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '被水流彈擊中的敵人附加 {stacks} 層寒霜狀態：每跳造成水流彈傷害 {frostPct}% 的寒冰傷害', status: { enemy: [{ id: 'sgFrost' }, { id: 'sgFrostBite' }, { id: 'sgFrozen' }, { id: 'stun' }] } }, { name: '寒流爆散', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { bounce: 2, bouncePer: 0.2, m: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '水流彈落地後再彈射 {bounce} 次（不足 1 次以機率觸發）；每次起飛重新鎖定敵人當下座標，途中不追蹤，落地造成半徑 {m} 米範圍傷害', vfx: { projectile: 'proj-waterball-flow', hit: 'hit-waterball-splash' }, triggerVfx: { attack: 'burst-frost-nova' } }, { name: '寒霜擴散', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { chance: 25, chancePer: 2.5, count: 1, m: 10 }, goldBase: 1500000, goldGrow: 1.5, desc: '寒霜狀態每次作用時有 {chance}% 機率擴散至目標 {m} 米內的 {count} 個敵人', triggerVfx: { projectile: 'proj-ice-shard', hit: 'hit-ice' } }, { name: '三重流水', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { add: 1, addPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '朝隨機目標額外丟出 {add} 顆水流彈（不足 1 顆的部分以機率觸發）' }, { name: '水龍捲', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 4, hits: 6, pct: 100, pctPer: 10, frozen: 2, gap: 0.35, m: 5, side: 10, sideWidth: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外在我方 {side}×{side} 米正方形的四個頂點召喚 {count} 道水龍捲（傷害半徑 {m} 米），每道造成連續 {hits} 段 {pct}% 寒冰傷害，且對凍結中的敵人傷害為 {frozen} 倍', triggerVfx: { field: 'field-water-tornado' } }], ult: [{ id: 'waterPrisonFall', name: '水牢天瀑', cost: 300, fx: { atkRed: 50, vuln: 100, vulnPer: 10, sec: 6, m: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放水流彈時在周圍 {m} 米圍起一圈水牢獄：擋下由圈外射進來的遠程攻擊，圈內的敵人攻擊力 -{atkRed}%、受到的傷害 +{vuln}%，持續 {sec} 秒', status: { self: [{ id: 'sgWaterPrisonDomain' }], enemy: [{ id: 'atkDown' }, { id: 'sgWaterPrison' }] } }, { id: 'ragingTide', name: '怒海狂濤', cost: 300, fx: { need: 10, hits: 20, pct: 100, pctPer: 10, m: 20 }, goldBase: 10000000, goldGrow: 1.5, desc: '場上同時有 {need} 道水龍捲時，在它們的中央再生成 1 道巨大水龍捲，對 {m} 米內的所有敵人造成連續 {hits} 段 {pct}% 寒冰傷害', triggerVfx: { ground: 'ground-tornado-water' } }, { id: 'abyssBurial', name: '海淵葬界', cost: 300, fx: { stacks: 10, stacksPer: 1, gap: 0.35, m: 30 }, goldBase: 10000000, goldGrow: 1.5, desc: '在周圍 {m} 米展開一道永久的水之領域：每 {gap} 秒對領域內的敵人施加寒霜狀態，且領域內的敵人可額外再疊 {stacks} 層寒霜', triggerVfx: { hit: 'st-tick-ice' }, status: { self: [{ id: 'sgAbyssDomain' }] } }] },
   frostnova: { name: '冰霜新星', emoji: '🧊', range: '', dmgType: 'magic', elem: 'ice', cd: 15, cost: 40, tiers: [{ name: '冰霜新星', unlock: { reinc: 0, lv: 550 }, cost: 40, fx: { pct: 150, pctPer: 5, stacks: 2, frostPct: 50, castM: 12, m: 12 }, goldBase: 100000, goldGrow: 1.5, desc: '對周圍 {m} 米內的敵人釋放冰霜新星，造成 {pct}% 寒冰傷害並附加 {stacks} 層寒霜狀態（寒霜每跳造成新星傷害 {frostPct}% 的寒冰傷害）', vfx: { attack: 'burst-frost-nova', hit: 'hit-ice' }, status: { enemy: [{ id: 'sgFrost' }, { id: 'sgFrostBite' }, { id: 'sgFrozen' }, { id: 'stun' }] } }, { name: '冰霜衝擊', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 50, pctPer: 5, castM: 13, castMPer: 0.6, m: 13, mPer: 0.6 }, goldBase: 200000, goldGrow: 1.5, desc: '冰霜新星的範圍擴展至 {m} 米，且寒冰傷害額外 +{pct}%' }, { name: '寒冰體', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { stacks: 1 }, goldBase: 400000, goldGrow: 1.5, desc: '施放冰霜新星後的 6 秒內，攻擊你的敵人有 25% 機率被附加 {stacks} 層寒霜狀態', vfx: { hit: 'hit-ice' }, status: { self: [{ id: 'sgFrostbody' }] } }, { name: '極致寒霜', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { dmgPct: 40, dmgPctPer: 4, durPct: 40, durPctPer: 4 }, goldBase: 800000, goldGrow: 1.5, desc: '所有來源的寒霜狀態傷害提高 {dmgPct}%，且持續時間增加 {durPct}%', vfx: { attack: 'burst-frost-freeze', hit: 'hit-ice' } }, { name: '三重新星', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { add: 1, addPer: 0.1, m: 3 }, goldBase: 1500000, goldGrow: 1.5, desc: '冰霜新星的施放次數額外 +{add} 次，且每次釋放的範圍再 +{m} 米（不足 1 次的部分以機率觸發）' }, { name: '死亡新星', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { chance: 35, chancePer: 6.5 }, goldBase: 3000000, goldGrow: 1.5, desc: '帶寒霜狀態的敵人死亡時有 {chance}% 機率再釋放 1 次冰霜新星' }, { name: '暴風雪', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { pct: 100, pctPer: 10, sec: 8, gap: 0.4, side: 24, sideWidth: 24 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外召喚 1 道暴風雪籠罩天空，對 {side}×{side} 米範圍內的敵人每 {gap} 秒造成 {pct}% 寒冰傷害，暴風雪跟隨我方移動，持續 {sec} 秒', triggerVfx: { ground: 'ground-blizzard' } }], ult: [{ id: 'infiniteNova', name: '無限新星', cost: 300, fx: { pct: 50, pctPer: 5, gap: 1 }, goldBase: 10000000, goldGrow: 1.5, desc: '每隔 {gap} 秒自動施放 1 次冰霜新星（不扣法力、不進冷卻），且冰霜新星傷害額外 +{pct}%' }, { id: 'crystalResonance', name: '極致之冰', cost: 300, fx: { pct: 200, pctPer: 20, gap: 0.4, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '凍結中的敵人形成冰晶共鳴：每 {gap} 秒對相距 {m} 米內的其他凍結敵人造成 {pct}% 寒冰傷害', triggerVfx: { projectile: 'proj-ice-shard', hit: 'hit-ice' } }, { id: 'iceKingDomain', name: '冰皇領域', cost: 300, fx: { scale: 50, min: 2, max: 8, hits: 4, pct: 200, pctPer: 20, gap: 1, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '暴風雪的範圍擴大 {scale}%，且每 {gap} 秒在範圍內隨機 {min}～{max} 個目標的地面昇起冰錐，每根冰錐對周圍 {m} 米內的敵人造成連續 {hits} 段 {pct}% 寒冰傷害', triggerVfx: { ground: 'ground-icearrow-frost' } }] },
-  windblade: { name: '風刃', emoji: '🍃', range: '4*8', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '風刃', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, speed: 18, m: 80 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出一道弧形風刃（射程 {castM} 米、飛行速度 {speed} 米/秒），貫穿飛行路徑 {m} 米上的所有敵人，各造成 {pct}% 風系傷害', vfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '巨型風刃', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { size: 30, sizePer: 3 }, goldBase: 200000, goldGrow: 1.5, desc: '風刃的體積 +{size}%（判定範圍與特效同步放大）' }, { name: '雙重風刃', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { pct: 30, pctPer: 30 }, goldBase: 400000, goldGrow: 1.5, desc: '同時向前方與後方各射出一道風刃，且風刃傷害額外 +{pct}%（與第 1 階累加）' }, { name: '亂披風', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 30, pctPer: 3, deg: 30, lenM: 3, widthM: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '風刃射出時同時朝其一側 {deg} 度發射 1 道小型風刃（體積 {lenM}×{widthM} 米、同樣貫穿全場），造成原風刃 {pct}% 的傷害', vfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '追跡風刃', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { sec: 4, secPer: 0.3, gap: 0.1, chaseM: 30 }, goldBase: 1500000, goldGrow: 1.5, desc: '小型風刃不再向前射出，改為在 {chaseM} 米內隨機追擊敵人 {sec} 秒，對路徑上的所有敵人造成傷害（碰到才算一次命中）', vfx: { hit: 'hit-wind', ground: 'ground-homing-wind-crescent' } }, { name: '狂風碎裂', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { move: 60, pct: 50, gap: 0.6, gapPer: -0.03, m: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '風刃命中的敵人移動速度 -{move}%；風刃並在飛行途中每 {gap} 秒對半徑 {m} 米內的敵人造成風刃 {pct}% 的傷害（不含小型風刃）', vfx: { attack: 'burst-wind', hit: 'hit-wind' }, status: { enemy: [{ id: 'sgWindSlow' }] } }, { name: '暴風真空刃', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { pct: 40, pctPer: 40, count: 2, directions: 4, gap: 0.2 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為朝前後左右 {directions} 個方向各連續射出 {count} 道風刃（每道間隔 {gap} 秒，小型風刃同步發射），且風刃傷害額外 +{pct}%' }], ult: [{ id: 'stormMyriad', name: '暴風萬刃', cost: 300, fx: { pct: 50, pctPer: 5, add: 1, sec: 4, chaseM: 60 }, goldBase: 10000000, goldGrow: 1.5, desc: '大型風刃改為在 {chaseM} 米內持續追擊敵人 {sec} 秒，【暴風真空刃】每個方向再多射出 {add} 道風刃，且風刃傷害額外 +{pct}%', vfx: { hit: 'hit-wind', ground: 'ground-homing-wind-crescent' } }, { id: 'stormMountain', name: '嵐之山', cost: 300, fx: { pct: 100, pctPer: 10, directions: 4, scale: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '【暴風真空刃】改為把該次所有大型與小型風刃融合，朝 {directions} 個方向各射出 1 道體積 +{scale}% 的巨型風刃，每道傷害為所融合風刃總和的 {pct}%', vfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { id: 'skyCollapse', name: '天穹崩裂', cost: 300, fx: { chance: 20, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '風刃改為被動技能：受到攻擊時有 {chance}% 機率朝攻擊者射出一道風刃，且其傷害額外 +{pct}%' }] },
-  vacuumslash: { name: '真空斬', emoji: '🌀', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '真空斬', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 3, castM: 6, m: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {m} 米範圍內的 {count} 名敵人揮出一道真空斬擊，造成 {pct}% 風系傷害', vfx: { attack: 'slash-wind-crescent', hit: 'hit-wind' } }, { name: '真空爆震', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { hits: 1, hitsPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '真空斬會爆發出震波，額外造成 {hits} 次傷害（不足 1 次的部分以機率觸發）', vfx: { attack: 'burst-vacuum-shockwave' } }, { name: '風切', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { cutPct: 50, cutPctPer: 5, move: 80, hit: 50, sec: 4, gap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '被真空斬擊中的敵人附加風切狀態：移動速度 -{move}%、命中率 -{hit}%，且每 {gap} 秒受到真空斬傷害 {cutPct}% 的風系傷害，持續 {sec} 秒', status: { enemy: [{ id: 'sgWindRend' }, { id: 'sgWindCut' }] } }, { name: '真空迴旋', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { pct: 30, pctPer: 3, m: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '真空斬改為對自身周圍 {m} 米內的所有敵人造成傷害，且造成的傷害額外 +{pct}%', vfx: { attack: 'slash-wind-spin', hit: 'hit-wind' } }, { name: '真空三重奏', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { add: 2, addPer: 0.2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '迴旋斬額外連續施展 {add} 次，每次的範圍再擴大 {m} 米（不足 1 次的部分以機率觸發）' }, { name: '無限風切', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { stacks: 3, pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '風切狀態可堆疊至 {stacks} 層，每多 1 層使風切每跳額外造成 {pct}% 的風系傷害' }, { name: '虛空斬', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { pct: 400, pctPer: 40, count: 4, sec: 6, rps: 1, m: 6, bodyM: 6, growM: 4 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外斬出 {count} 道虛空斬擊：以自身為中心從半徑 {m} 米起每秒擴大 {growM} 米、{count} 道皆順時針繞行 {rps} 圈，對碰到的敵人造成 {pct}% 風系傷害，持續 {sec} 秒', vfx: { attack: 'burst-wind', projectile: 'orb-void-disc', hit: 'hit-wind', ground: 'ground-orbit-ring-wind' }, status: { self: [{ id: 'sgVoidBlade' }] } }], ult: [{ id: 'vacuumOmen', name: '萬象風劫', cost: 300, fx: { chance: 15, chancePer: 1.5, pct: 100, sec: 3, grow: 2, gap: 0.25 }, goldBase: 10000000, goldGrow: 1.5, desc: '真空斬命中時有 {chance}% 機率在該處留下一道靜止的真空斬：持續 {sec} 秒、半徑隨時間擴大為 {grow} 倍，對碰到的敵人造成 {pct}% 風系傷害', vfx: { hit: 'hit-wind', ground: 'ground-homing-wind-crescent' } }, { id: 'voidAnnihilation', name: '虛空滅界', cost: 300, fx: { pct: 100, pctPer: 10, gap: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒自動斬出 1 道【虛空斬】，且虛空斬傷害額外 +{pct}%' }, { id: 'spacetimeCollapse', name: '時空崩解', cost: 300, fx: { pct: 50, pctPer: 5, m: 12 }, goldBase: 10000000, goldGrow: 1.5, desc: '【虛空斬】不再向外擴展，改為全部固定在你周圍 {m} 米環繞，且持續時間額外 +{pct}%' }] },
-  stormbarrier: { name: '暴風屏障', emoji: '🌪️', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '暴風屏障', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { shield: 1, shieldPer: 1, red: 10, redPer: 1, sec: 8, castM: 30, gap: 0.5 }, goldBase: 100000, goldGrow: 1.5, desc: '對自身施加暴風屏障：每 {gap} 秒獲得最大生命 {shield}% 的護盾，且傷害減免 +{red}%（乘算，只與風系類型的減免相加總），持續 {sec} 秒', status: { self: [{ id: 'sgStormBarrier' }] } }, { name: '暴風撕裂', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 50, pctPer: 5, m: 8 }, goldBase: 200000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對自身半徑 {m} 米內的敵人造成 {pct}% 風系傷害', vfx: { hit: 'hit-wind', ground: 'ground-storm-rip' } }, { name: '亂風切', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 1, countPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對周圍的 {count} 個敵人附加風切狀態（不足 1 個的部分以機率觸發）', vfx: { hit: 'hit-wind' }, status: { enemy: [{ id: 'sgWindRend' }, { id: 'sgWindCut' }] } }, { name: '暴風之刃', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { chance: 15, chancePer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '暴風屏障作用中受到傷害時，有 {chance}% 機率射出 1 道貫穿風刃（【風刃】第 1 階的效果，不含其後續進化）', vfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '風切擴散', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { count: 1, countPer: 0.1, m: 10 }, goldBase: 1500000, goldGrow: 1.5, desc: '風切狀態結束後擴散至 {m} 米內的 {count} 個敵人（不足 1 個的部分以機率觸發）', vfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '颶風屏障', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { shield: 2, shieldPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '暴風屏障每次作用時額外獲得最大生命 {shield}% 的護盾（與第 1 階相加）' }, { name: '暴風神體', unlock: { reinc: 0, lv: 1000 }, cost: 40, fx: { red: 99, sec: 2, secPer: 0.2, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '施放暴風屏障時同時召喚風暴之神附體：{sec} 秒內傷害減免 +{red}%，且自身的風系傷害額外 ×(1+{pct}%)', status: { self: [{ id: 'sgStormGod' }] } }], ult: [{ id: 'valgrForce', name: '瓦爾格之力', cost: 300, fx: { sec: 50, secPer: 5, red: 0.1, redPer: 0.1, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '召喚風之神祇降臨：【暴風神體】的持續時間 +{sec}%、傷害減免再 +{red}%，且自身風系傷害額外 +{pct}%' }, { id: 'skyfallStars', name: '天穹崩裂', cost: 300, fx: { min: 1, max: 3, maxPer: 0.3, pct: 400, pctPer: 40, gap: 2, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒從天上落下 {min}～{max} 個召喚星體（巨大風刃／雷殞石／火殞石隨機，不足 1 個的部分以機率觸發），每個對落點 {m} 米內的敵人造成 {pct}% 傷害', vfx: { attack: 'burst-fire-shockwave', projectile: 'proj-meteor', hit: 'hit-fire-explosion', ground: 'mark-red' } }, { id: 'myriadPhenomena', name: '森羅萬象', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放暴風屏障時同時打出【暴風真空刃】與【虛空斬】，且這兩者的傷害額外 +{pct}%', vfx: { attack: 'burst-wind', projectile: 'orb-void-disc', hit: 'hit-wind', ground: 'ground-orbit-ring-wind' } }] }
+  windblade: { name: '風刃', emoji: '🍃', range: '4*8', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '風刃', unlock: { reinc: 0, lv: 600 }, cost: 40, fx: { pct: 200, pctPer: 20, castM: 30, speed: 18, m: 80 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方射出一道弧形風刃（射程 {castM} 米、飛行速度 {speed} 米/秒），貫穿飛行路徑 {m} 米上的所有敵人，各造成 {pct}% 風系傷害', vfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '巨型風刃', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { size: 30, sizePer: 3 }, goldBase: 200000, goldGrow: 1.5, desc: '風刃的體積 +{size}%（判定範圍與特效同步放大）' }, { name: '雙重風刃', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { pct: 30, pctPer: 30 }, goldBase: 400000, goldGrow: 1.5, desc: '同時向前方與後方各射出一道風刃，且風刃傷害額外 +{pct}%（與第 1 階累加）' }, { name: '亂披風', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 30, pctPer: 3, deg: 30, lenM: 3, widthM: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '風刃射出時同時朝其一側 {deg} 度發射 1 道小型風刃（體積 {lenM}×{widthM} 米、同樣貫穿全場），造成原風刃 {pct}% 的傷害', triggerVfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '追跡風刃', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { sec: 4, secPer: 0.3, gap: 0.1, chaseM: 30 }, goldBase: 1500000, goldGrow: 1.5, desc: '小型風刃不再向前射出，改為在 {chaseM} 米內隨機追擊敵人 {sec} 秒，對路徑上的所有敵人造成傷害（碰到才算一次命中）', triggerVfx: { hit: 'hit-wind', ground: 'ground-homing-wind-crescent' } }, { name: '狂風碎裂', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { move: 60, pct: 50, gap: 0.6, gapPer: -0.03, m: 6 }, goldBase: 3000000, goldGrow: 1.5, desc: '風刃命中的敵人移動速度 -{move}%；風刃並在飛行途中每 {gap} 秒對半徑 {m} 米內的敵人造成風刃 {pct}% 的傷害（不含小型風刃）', triggerVfx: { attack: 'burst-wind', hit: 'hit-wind' }, status: { enemy: [{ id: 'sgWindSlow' }] } }, { name: '暴風真空刃', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { pct: 40, pctPer: 40, count: 2, directions: 4, gap: 0.2 }, goldBase: 5000000, goldGrow: 1.5, desc: '改為朝前後左右 {directions} 個方向各連續射出 {count} 道風刃（每道間隔 {gap} 秒，小型風刃同步發射），且風刃傷害額外 +{pct}%' }], ult: [{ id: 'stormMyriad', name: '暴風萬刃', cost: 300, fx: { pct: 50, pctPer: 5, add: 1, sec: 4, chaseM: 60 }, goldBase: 10000000, goldGrow: 1.5, desc: '大型風刃改為在 {chaseM} 米內持續追擊敵人 {sec} 秒，【暴風真空刃】每個方向再多射出 {add} 道風刃，且風刃傷害額外 +{pct}%', triggerVfx: { hit: 'hit-wind', ground: 'ground-homing-wind-crescent' } }, { id: 'stormMountain', name: '嵐之山', cost: 300, fx: { pct: 100, pctPer: 10, directions: 4, scale: 100 }, goldBase: 10000000, goldGrow: 1.5, desc: '【暴風真空刃】改為把該次所有大型與小型風刃融合，朝 {directions} 個方向各射出 1 道體積 +{scale}% 的巨型風刃，每道傷害為所融合風刃總和的 {pct}%', vfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { id: 'skyCollapse', name: '天穹崩裂', cost: 300, fx: { chance: 20, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '風刃改為被動技能：受到攻擊時有 {chance}% 機率朝攻擊者射出一道風刃，且其傷害額外 +{pct}%' }] },
+  vacuumslash: { name: '真空斬', emoji: '🌀', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '真空斬', unlock: { reinc: 0, lv: 650 }, cost: 40, fx: { pct: 250, pctPer: 25, count: 3, castM: 6, m: 6 }, goldBase: 100000, goldGrow: 1.5, desc: '朝前方 {m} 米範圍內的 {count} 名敵人揮出一道真空斬擊，造成 {pct}% 風系傷害', vfx: { attack: 'slash-wind-crescent', hit: 'hit-wind' } }, { name: '真空爆震', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { hits: 1, hitsPer: 0.1 }, goldBase: 200000, goldGrow: 1.5, desc: '真空斬會爆發出震波，額外造成 {hits} 次傷害（不足 1 次的部分以機率觸發）', triggerVfx: { attack: 'burst-vacuum-shockwave' } }, { name: '風切', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { cutPct: 50, cutPctPer: 5, move: 80, hit: 50, sec: 4, gap: 0.5 }, goldBase: 400000, goldGrow: 1.5, desc: '被真空斬擊中的敵人附加風切狀態：移動速度 -{move}%、命中率 -{hit}%，且每 {gap} 秒受到真空斬傷害 {cutPct}% 的風系傷害，持續 {sec} 秒', status: { enemy: [{ id: 'sgWindRend' }, { id: 'sgWindCut' }] } }, { name: '真空迴旋', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { pct: 30, pctPer: 3, m: 6 }, goldBase: 800000, goldGrow: 1.5, desc: '真空斬改為對自身周圍 {m} 米內的所有敵人造成傷害，且造成的傷害額外 +{pct}%', vfx: { attack: 'slash-wind-spin', hit: 'hit-wind' } }, { name: '真空三重奏', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { add: 2, addPer: 0.2, m: 6 }, goldBase: 1500000, goldGrow: 1.5, desc: '迴旋斬額外連續施展 {add} 次，每次的範圍再擴大 {m} 米（不足 1 次的部分以機率觸發）' }, { name: '無限風切', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { stacks: 3, pct: 50, pctPer: 5 }, goldBase: 3000000, goldGrow: 1.5, desc: '風切狀態可堆疊至 {stacks} 層，每多 1 層使風切每跳額外造成 {pct}% 的風系傷害' }, { name: '虛空斬', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { pct: 400, pctPer: 40, count: 4, sec: 6, rps: 1, m: 6, bodyM: 6, growM: 4 }, goldBase: 5000000, goldGrow: 1.5, desc: '額外斬出 {count} 道虛空斬擊：以自身為中心從半徑 {m} 米起每秒擴大 {growM} 米、{count} 道皆順時針繞行 {rps} 圈，對碰到的敵人造成 {pct}% 風系傷害，持續 {sec} 秒', triggerVfx: { attack: 'burst-wind', projectile: 'orb-void-disc', hit: 'hit-wind', ground: 'ground-orbit-ring-wind' }, status: { self: [{ id: 'sgVoidBlade' }] } }], ult: [{ id: 'vacuumOmen', name: '萬象風劫', cost: 300, fx: { chance: 15, chancePer: 1.5, pct: 100, sec: 3, grow: 2, gap: 0.25 }, goldBase: 10000000, goldGrow: 1.5, desc: '真空斬命中時有 {chance}% 機率在該處留下一道靜止的真空斬：持續 {sec} 秒、半徑隨時間擴大為 {grow} 倍，對碰到的敵人造成 {pct}% 風系傷害', triggerVfx: { hit: 'hit-wind', ground: 'ground-homing-wind-crescent' } }, { id: 'voidAnnihilation', name: '虛空滅界', cost: 300, fx: { pct: 100, pctPer: 10, gap: 2 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒自動斬出 1 道【虛空斬】，且虛空斬傷害額外 +{pct}%' }, { id: 'spacetimeCollapse', name: '時空崩解', cost: 300, fx: { pct: 50, pctPer: 5, m: 12 }, goldBase: 10000000, goldGrow: 1.5, desc: '【虛空斬】不再向外擴展，改為全部固定在你周圍 {m} 米環繞，且持續時間額外 +{pct}%' }] },
+  stormbarrier: { name: '暴風屏障', emoji: '🌪️', range: '', dmgType: 'magic', elem: 'wind', cd: 15, cost: 40, tiers: [{ name: '暴風屏障', unlock: { reinc: 0, lv: 700 }, cost: 40, fx: { shield: 1, shieldPer: 1, red: 10, redPer: 1, sec: 8, castM: 30, gap: 0.5 }, goldBase: 100000, goldGrow: 1.5, desc: '對自身施加暴風屏障：每 {gap} 秒獲得最大生命 {shield}% 的護盾，且傷害減免 +{red}%（乘算，只與風系類型的減免相加總），持續 {sec} 秒', status: { self: [{ id: 'sgStormBarrier' }] } }, { name: '暴風撕裂', unlock: { reinc: 0, lv: 750 }, cost: 40, fx: { pct: 50, pctPer: 5, m: 8 }, goldBase: 200000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對自身半徑 {m} 米內的敵人造成 {pct}% 風系傷害', triggerVfx: { hit: 'hit-wind', ground: 'ground-storm-rip' } }, { name: '亂風切', unlock: { reinc: 0, lv: 800 }, cost: 40, fx: { count: 1, countPer: 0.1 }, goldBase: 400000, goldGrow: 1.5, desc: '暴風屏障每次作用時，對周圍的 {count} 個敵人附加風切狀態（不足 1 個的部分以機率觸發）', triggerVfx: { hit: 'hit-wind' }, status: { enemy: [{ id: 'sgWindRend' }, { id: 'sgWindCut' }] } }, { name: '暴風之刃', unlock: { reinc: 0, lv: 850 }, cost: 40, fx: { chance: 15, chancePer: 1.5 }, goldBase: 800000, goldGrow: 1.5, desc: '暴風屏障作用中受到傷害時，有 {chance}% 機率射出 1 道貫穿風刃（【風刃】第 1 階的效果，不含其後續進化）', triggerVfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '風切擴散', unlock: { reinc: 0, lv: 900 }, cost: 40, fx: { count: 1, countPer: 0.1, m: 10 }, goldBase: 1500000, goldGrow: 1.5, desc: '風切狀態結束後擴散至 {m} 米內的 {count} 個敵人（不足 1 個的部分以機率觸發）', triggerVfx: { projectile: 'proj-wind-crescent', hit: 'hit-wind' } }, { name: '颶風屏障', unlock: { reinc: 0, lv: 950 }, cost: 40, fx: { shield: 2, shieldPer: 0.2 }, goldBase: 3000000, goldGrow: 1.5, desc: '暴風屏障每次作用時額外獲得最大生命 {shield}% 的護盾（與第 1 階相加）' }, { name: '暴風神體', unlock: { reinc: 0, lv: 1000 }, cost: 40, fx: { red: 99, sec: 2, secPer: 0.2, pct: 100, pctPer: 10 }, goldBase: 5000000, goldGrow: 1.5, desc: '施放暴風屏障時同時召喚風暴之神附體：{sec} 秒內傷害減免 +{red}%，且自身的風系傷害額外 ×(1+{pct}%)', status: { self: [{ id: 'sgStormGod' }] } }], ult: [{ id: 'valgrForce', name: '瓦爾格之力', cost: 300, fx: { sec: 50, secPer: 5, red: 0.1, redPer: 0.1, pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '召喚風之神祇降臨：【暴風神體】的持續時間 +{sec}%、傷害減免再 +{red}%，且自身風系傷害額外 +{pct}%' }, { id: 'skyfallStars', name: '天穹崩裂', cost: 300, fx: { min: 1, max: 3, maxPer: 0.3, pct: 400, pctPer: 40, gap: 2, m: 8 }, goldBase: 10000000, goldGrow: 1.5, desc: '每 {gap} 秒從天上落下 {min}～{max} 個召喚星體（巨大風刃／雷殞石／火殞石隨機，不足 1 個的部分以機率觸發），每個對落點 {m} 米內的敵人造成 {pct}% 傷害', triggerVfx: { attack: 'burst-fire-shockwave', projectile: 'proj-meteor', hit: 'hit-fire-explosion', ground: 'mark-red' } }, { id: 'myriadPhenomena', name: '森羅萬象', cost: 300, fx: { pct: 50, pctPer: 5 }, goldBase: 10000000, goldGrow: 1.5, desc: '施放暴風屏障時同時打出【暴風真空刃】與【虛空斬】，且這兩者的傷害額外 +{pct}%', triggerVfx: { attack: 'burst-wind', projectile: 'orb-void-disc', hit: 'hit-wind', ground: 'ground-orbit-ring-wind' } }] }
 };
 
 /* ---- 執行期狀態（絕不掛 G＝保證不入存檔） ----
@@ -253,6 +253,7 @@ function resetSkill2RT() {
     galeStrikes: [], // 疾風斬逐段結算，換場時隨 Runtime 重建
     thunderLaunches: [], // 每道落雷到發動時才選敵，換場隨 Runtime 清除
     waterballs: [], // 固定落點水彈：起飛與落地分開處理，落地才查詢敵人
+    vacuumWaves: [], // 真空三重奏：後續波次到節拍才查詢範圍、播放及結算
     meteors: [], // 殞石落地佇列：{ at, victims, burnSpec, ... }（不入存檔）
     grounds: [], // 地板場域（火龍捲／火牆）的執行期實例（不入存檔）
     groundSeq: 0, // 給顯示層辨識同一道持續場域；不入存檔
@@ -2216,14 +2217,18 @@ function sgProjectilePulse(projectile, now, distance, enemies, ctx) {
     sgEmitVfx(projectile.gid, victims, projectile.floatSel, {
       fxKind: 'burst', variant: projectile.pulseVariant || 'wind-burst',
       area: { x: cx, y: cy, r: projectile.pulseRadius },
-      vfxGid: 'windblade', vfxTier: 6
+      vfxRoles:{attack:sgVfxRoles('windblade',{vfxTier:6}).attack},hit:false
     });
     if (!victims.length) continue;
     var before = projectile.out.dmg;
+    var struck=[];
     for (var i = 0; i < victims.length; i++) {
-      sgHitOne(projectile.pEnt, projectile.st, victims[i], projectile.pulseDmg,
+      var res=sgHitOne(projectile.pEnt, projectile.st, victims[i], projectile.pulseDmg,
         projectile.gid, projectile.floatSel, projectile.out, sgStaggerMs(i));
+      if(res&&!res.miss)struck.push(victims[i]);
     }
+    if(struck.length)sgEmitVfx(projectile.gid,struck,projectile.floatSel,{fxKind:'impact',variant:'wind-burst-hit',
+      vfxRoles:{hit:sgVfxRoles('windblade',{vfxTier:6}).hit},preserveDeadTargets:true});
     if (ctx && ctx.onDamage && projectile.out.dmg > before) ctx.onDamage(projectile.out.dmg - before);
     if (projectile.out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
   }
@@ -3965,7 +3970,9 @@ function sgQueueMeteor(pEnt, st, dmgVal, target, pool, radius, burnSpec, floatSe
     vfxTier: (extra && extra.vfxTier) || 0,
     vfxBase: !!(extra && extra.vfxBase),
     vfxUlt: (extra && extra.vfxUlt) || '',
-    vfxGid: (extra && extra.vfxGid) || ''
+    vfxGid: (extra && extra.vfxGid) || '',
+    vfxRoles: (extra && extra.vfxRoles) || null,
+    fixedPos: (extra && extra.fixedPos) || null
   });
   out._pendingProjectiles = (out._pendingProjectiles || 0) + 1;
 }
@@ -3999,24 +4006,24 @@ function sgTickMeteors(ctx) {
        就不會被這一發扣血。radius ≤ 0＝單體落點（落雷術），不做範圍查詢：
        半徑 0 的圓仍會涵蓋「身體壓到落點中心」的旁邊敵人，那不是單體技能該有的行為。 */
     var chainHit = m.variant === 'lightning-chain-hit' || m.variant === 'thunder-burst';
-    var currentPool = chainHit && ctx.getEnemies ? ctx.getEnemies() : m.pool;
+    var currentPool = (chainHit || m.fixedPos) && ctx.getEnemies ? ctx.getEnemies() : m.pool;
     var chainCancelled = chainHit && (m.pEnt !== ctx.pEnt || !(m.pEnt.hp > 0) ||
       !m.target || !(m.target.hp > 0) || (currentPool || []).indexOf(m.target) < 0);
     var victims = chainCancelled ? [] : (m.radius > 0 && typeof bfTargetsAround === 'function')
-      ? bfTargetsAround(m.target, m.pool || [], m.radius)
+      ? bfTargetsAround(m.fixedPos?{pos:m.fixedPos}:m.target, currentPool || [], m.radius)
       : ((m.target && m.target.hp > 0) ? [m.target] : []);
     for (var vi = 0; vi < victims.length; vi++) {
       var target = victims[vi];
       if (!target || target.hp <= 0) continue;
       var bonusPct = m.bonusPctFn ? m.bonusPctFn(target) : 0;
-      var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, m.gid, m.floatSel, m.out, 0, bonusPct);
+      var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, m.gid, m.floatSel, m.out, 0, bonusPct, m.elem);
       if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);
       if (res && res.killed) killed = true;
     }
     if (victims.length) {
       sgEmitVfx(m.gid, victims, m.floatSel, {
-        fxKind: 'impact', variant: m.variant, elem: m.elem, area: sgAreaAround(m.target, m.radius),
-        vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, vfxBase: m.vfxBase, preserveDeadTargets: true
+        fxKind: 'impact', variant: m.variant, elem: m.elem, area: sgAreaAround(m.fixedPos?{pos:m.fixedPos}:m.target, m.radius),
+        vfxTier: m.vfxTier, vfxUlt: m.vfxUlt, vfxGid: m.vfxGid, vfxBase: m.vfxBase, vfxRoles: m.vfxRoles, preserveDeadTargets: true
       });
     }
     if (m.onImpact) m.onImpact(m, victims, ctx);
@@ -4785,6 +4792,8 @@ function sgGroundTurnRadiusPx(f) {
 function sgGroundChaseStep(f, step, enemies) {
   var startAngle = f.moveAngle;
   f.turnRate = 0;
+  // 風刃沒有存活目標時清除舊落點，沿最後方向飛行，避免繞著已消失敵人的座標轉圈。
+  if (f.kind === 'windblade' && !bfLiveList(enemies || []).length) f.dest = null;
   if (!f.dest) f.dest = sgGroundChaseDest(f, enemies);
   var turnR = sgGroundTurnRadiusPx(f);
   if (f.dest) {
@@ -5000,6 +5009,10 @@ function sgGroundTick(f, enemies, ctx) {
     var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out,
       sgStaggerMs(i), bonusPct, f.hitElem);
     if (!res || res.miss) continue;
+    if(f.kind==='windblade'||f.kind==='vacuumfield')sgEmitVfx(f.gid,[victims[i]],f.floatSel,{
+      fxKind:'impact',variant:'wind-blade-contact',preserveDeadTargets:true,
+      vfxRoles:{hit:sgVfxRoles(f.gid,{vfxTier:f.vfxTier,vfxUlt:f.vfxUlt,vfxGid:f.vfxGid}).hit}
+    });
     if (iceFrostBefore) {
       var iceLevels = skills2Levels('icearrow');
       if (iceLevels[5] > 0) sgFrostShatter(victims[i], iceLevels, f.floatSel, out);
@@ -5033,6 +5046,10 @@ function sgGroundVfxSpec(f) {
   spec.vfxGid = f.vfxGid || '';
   // 追蹤段是冰箭本體：保留本體／所選超神外觀，不讀第7階冰爆的觸發欄。
   if (f.kind === 'icearrow') spec.vfxRoles = sgVfxRoles(f.gid);
+  if(f.kind==='windblade'||f.kind==='vacuumfield'){
+    spec.vfxRoles={ground:sgVfxRoles(f.gid,{vfxTier:spec.vfxTier,vfxUlt:spec.vfxUlt,vfxGid:spec.vfxGid}).ground};
+    spec.hit=false;
+  }
   return spec;
 }
 function sgGroundVfxShape(f) {
@@ -5205,13 +5222,16 @@ function sgGroundPulse(f, enemies, ctx) {
     var victims = bfEnemiesInArea(area, bfLiveList(enemies));
     sgEmitVfx(f.gid, victims, f.floatSel, {
       fxKind: 'burst', variant: f.pulseVariant || 'wind-burst', area: area,
-      vfxGid: 'windblade', vfxTier: 6
+      vfxRoles:{attack:sgVfxRoles('windblade',{vfxTier:6}).attack},hit:false
     });
     if (!victims.length) continue;
-    var out = { killed: false, dmg: 0, crit: false };
+    var out = { killed: false, dmg: 0, crit: false },struck=[];
     for (var i = 0; i < victims.length; i++) {
-      sgHitOne(f.pEnt, f.st, victims[i], f.pulseDmg, f.gid, f.floatSel, out, sgStaggerMs(i));
+      var res=sgHitOne(f.pEnt, f.st, victims[i], f.pulseDmg, f.gid, f.floatSel, out, sgStaggerMs(i));
+      if(res&&!res.miss)struck.push(victims[i]);
     }
+    if(struck.length)sgEmitVfx(f.gid,struck,f.floatSel,{fxKind:'impact',variant:'wind-burst-hit',
+      vfxRoles:{hit:sgVfxRoles('windblade',{vfxTier:6}).hit},preserveDeadTargets:true});
     if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
     if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
   }
@@ -5615,9 +5635,11 @@ function sgOrbitStep(f, enemies, dt, ctx) {
   if (extended) sgOrbitSyncStatus(f.pEnt, f.statusId, f.statusSlot);
   for (var si = 0; si < strikes.length; si++) f.onStrike(f, strikes[si], sgOrbitPos(strikes[si], center), ctx);
   if (struck.length) {
+    var orbitHitRoles = f.auraVariant === 'void-disc'
+      ? {hit:sgVfxRoles(f.gid,{vfxTier:f.vfxTier,vfxUlt:f.vfxUlt,vfxGid:f.vfxGid}).hit} : null;
     sgEmitVfx(f.gid, struck, f.floatSel, {
       fxKind: 'impact', variant: f.hitVariant, elem: f.hitElem, dur: 0.35,
-      vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid, vfxBase: f.vfxBase
+      vfxTier: f.vfxTier, vfxUlt: f.vfxUlt, vfxGid: f.vfxGid, vfxBase: f.vfxBase, vfxRoles: orbitHitRoles
     });
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
@@ -9615,7 +9637,7 @@ function sgTickIceKing(ctx, dt) {
    因此每跳量由引擎依當下層數重算後以 dps 覆寫。
    =========================================================================== */
 
-var SG_VACUUM_WAVE_MS = 260;    // 【迴旋三重奏】第 2 圈之後每圈再錯開多久（純顯示節奏）
+var SG_VACUUM_WAVE_MS = 260;    // 【迴旋三重奏】後續圈的演出與實際命中共用節拍
 var SG_VOID_DISC_SEQ = 0;       // 虛空斬給顯示層辨識同一道圓盤的序號（純顯示，不入存檔）
 
 /* ---- 傳奇進化第十一批（2026-08-28）的兩個共用掛點 ----
@@ -9866,13 +9888,14 @@ function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
   var path = geomOk
     ? bfLineTargets(cfg.angle, geom.lenPx, cfg.pool, halfPx, origin)
     : (cfg.fallback || []);
+  var bladeRoles=sgVfxRoles(gid,{vfxTier:cfg.vfxTier||(cfg.small?4:1),vfxGid:cfg.vfxGid||'',vfxUlt:cfg.vfxUlt||''});
   sgEmitVfx(gid, path.length ? path : (cfg.fallback || []), floatSel, {
     fxKind: 'projectile', variant: cfg.small ? 'wind-blade-small' : 'wind-blade',
     elem: 'wind', count: 1, projectile: true,
     lineLength: geom.lenPx, lineWidth: Math.max(8, halfPx * 2),
     travelMs: [travelMs], delayMs: Math.round((cfg.beginSec || 0) * 1000),
     angle: cfg.angle, bodyLength: bodyPx,
-    vfxTier: cfg.vfxTier || (cfg.small ? 4 : 1), vfxGid: cfg.vfxGid || '', vfxUlt: cfg.vfxUlt || ''
+    vfxRoles:{projectile:bladeRoles.projectile},hit:false
   });
   sgQueueFlyingProjectile(pEnt, st, gid, cfg.dmgVal, geomOk ? origin : null, cfg.angle,
     geom.lenPx, floatSel, cfg.fallback || [], {
@@ -9882,7 +9905,11 @@ function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
       pulseDmg: cfg.pulseDmg || 0, pulseVariant: 'wind-burst',
       /* 傳奇【裂風】的加成在命中前讀、【風蝕】與累加在命中後做。 */
       bonusPctFn: cfg.ramp ? function () { return sgRampPct(cfg.ramp); } : null,
-      onHit: cfg.onHit || null
+      onHit: function(victim,res,projectile,ctx){
+        if(cfg.onHit)cfg.onHit(victim,res,projectile,ctx);
+        sgEmitVfx(gid,[victim],floatSel,{fxKind:'impact',variant:'wind-blade',
+          vfxRoles:{hit:bladeRoles.hit},preserveDeadTargets:true});
+      }
     }, out);
 }
 
@@ -9907,6 +9934,7 @@ function sgSpawnWindChaser(pEnt, st, g, lvs, angle, dmgVal, geom, floatSel, opts
     slowSlot: (opts.slowPct > 0) ? SG_WINDBLADE_SLOW_SLOT : null, slowPct: opts.slowPct || 0,
     pulseGap: opts.pulseGap || 0, pulseRadius: opts.pulseRadius || 0,
     pulseDmg: opts.pulseDmg || 0, pulseVariant: 'wind-burst',
+    startDelaySec: Math.max(0,Number(opts.beginSec)||0),
     vfxTier: 5, vfxUlt: (opts && opts.vfxUlt) || ''
   });
 }
@@ -9943,7 +9971,7 @@ function sgFireWindBlade(pEnt, st, g, lvs, cfg, floatSel, out) {
   var ramp = sgWindbladeRamp(cfg.lg);
   if (cfg.myriad) {
     sgSpawnWindChaser(pEnt, st, g, lvs, cfg.angle, cfg.dmgVal, cfg.geom, floatSel, {
-      sec: sgUltVal(cfg.myriad, 'sec'), chaseM: sgUltVal(cfg.myriad, 'chaseM'),
+      sec: sgUltVal(cfg.myriad, 'sec'), chaseM: sgUltVal(cfg.myriad, 'chaseM'), beginSec: cfg.beginSec,
       radius: cfg.geom.halfWidthPx, ramp: ramp, onHit: sgWindbladeGroundHit(cfg.erode),
       slowPct: cfg.slowPct, pulseGap: cfg.pulseGap,
       pulseRadius: cfg.pulseRadius, pulseDmg: cfg.pulseDmg,
@@ -10039,7 +10067,7 @@ function sgCastWindblade(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         var smallRamp = sgWindbladeRamp(lg);
         if (chase) {
           sgSpawnWindChaser(pEnt, st, g, lvs, ang, smallDmg, geom, floatSel, {
-            ramp: smallRamp, onHit: sgWindbladeGroundHit(erode)
+            ramp: smallRamp, onHit: sgWindbladeGroundHit(erode), beginSec: beginSec
           });
         } else {
           sgLaunchWindBlade(pEnt, st, 'windblade', {
@@ -10130,36 +10158,59 @@ function sgCastVacuumslash(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
   for (var w = 0; w < waves; w++) {
     var radiusPx = bfMeterPx(baseM + stepM * w) * scale;
-    var delayMs = w * SG_VACUUM_WAVE_MS;
-    var victims = sgVacuumWaveVictims(pool, primary, spin, radiusPx, count, baseAngle, geomOk);
-    sgEmitVfx('vacuumslash', victims, floatSel, {
-      fxKind: 'slash', variant: spin ? 'wind-spin' : 'wind-slash', elem: 'wind',
-      dur: 0.45, delayMs: delayMs, lineLength: radiusPx, vfxTier: spin ? 4 : 1,
-      area: (spin && geomOk && typeof bfPlayerPos === 'function')
-        ? { x: bfPlayerPos().x, y: bfPlayerPos().y, r: radiusPx } : null
-    });
-    if (!spin && lvs[1] > 0) sgEmitVfx('vacuumslash', victims, floatSel, {
-      fxKind: 'slash', variant: 'vacuum-shock', elem: 'wind', vfxTier: 2,
-      angle: baseAngle, delayMs: delayMs, dur: 0.6, lineLength: radiusPx
-    });
-    for (var i = 0; i < victims.length; i++) {
-      var landed = false;
-      for (var h = 0; h < hits; h++) {
-        var res = sgHitOne(pEnt, st, victims[i], dmgVal, 'vacuumslash', floatSel, out,
-          delayMs + sgStaggerMs(i + h));
-        if (res && !res.miss) landed = true;
-      }
-      // 【風切】：命中才附加（同一個目標一次施放只塗一次，多段傷害不會多疊層）
-      if (landed && rend && victims[i].hp > 0) sgApplyWindRend(victims[i], rend);
-      /* 超神【萬象風劫】：命中才判定，機率成立就在該敵人腳下留下一道靜止的真空斬。
-         機率是**逐個受害者**判定的（設計寫的是「命中敵人時」）。 */
-      if (landed && omen) sgSpawnStaticVacuum(pEnt, st, omen, victims[i], floatSel, dmgVal, radiusPx);
-    }
+    var wave={at:GT+w*SG_VACUUM_WAVE_MS/1000,pEnt:pEnt,st:st,pool:pool,primary:primary,
+      spin:spin,radius:radiusPx,count:count,angle:baseAngle,geomOk:geomOk,hits:hits,
+      dmgVal:dmgVal,rend:rend,omen:omen,shock:lvs[1]>0,floatSel:floatSel,out:out};
+    if(!w)sgResolveVacuumWave(wave,pool);
+    else{out._pendingProjectiles=(out._pendingProjectiles||0)+1;SKILL2_RT.vacuumWaves.push(wave);}
   }
 
   // 傳奇【真空風刃】：每次施放額外射出 N 道小型風刃
   sgVacuumSmallBlades(pEnt, st, lg, dmgVal, pool, primary, baseAngle, geomOk, floatSel, out);
   if (lvs[6] > 0) sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle);
+}
+
+function sgResolveVacuumWave(wave,pool) {
+  var victims=sgVacuumWaveVictims(pool,wave.primary,wave.spin,wave.radius,wave.count,wave.angle,wave.geomOk);
+  var centre=wave.geomOk&&typeof bfPlayerPos==='function'?bfPlayerPos():null;
+  var roles=sgVfxRoles('vacuumslash',{vfxTier:wave.spin?4:1});
+  sgEmitVfx('vacuumslash',victims,wave.floatSel,{
+    fxKind:'slash',variant:wave.spin?'wind-spin':'wind-slash',elem:'wind',dur:.45,
+    angle:wave.angle,lineLength:wave.radius,vfxRoles:{attack:roles.attack},hit:false,
+    area:centre?{x:centre.x,y:centre.y,r:wave.radius}:null
+  });
+  if(!wave.spin&&wave.shock)sgEmitVfx('vacuumslash',victims,wave.floatSel,{
+    fxKind:'slash',variant:'vacuum-shock',elem:'wind',vfxTier:2,
+    angle:wave.angle,dur:.6,lineLength:wave.radius
+  });
+  for(var i=0;i<victims.length;i++){
+    var landed=false;
+    for(var h=0;h<wave.hits;h++){
+      var res=sgHitOne(wave.pEnt,wave.st,victims[i],wave.dmgVal,'vacuumslash',wave.floatSel,wave.out,sgStaggerMs(i+h));
+      if(res&&!res.miss)landed=true;
+    }
+    if(landed&&wave.rend&&victims[i].hp>0)sgApplyWindRend(victims[i],wave.rend);
+    if(landed&&wave.omen)sgSpawnStaticVacuum(wave.pEnt,wave.st,wave.omen,victims[i],wave.floatSel,wave.dmgVal,wave.radius);
+    if(landed)sgEmitVfx('vacuumslash',[victims[i]],wave.floatSel,{fxKind:'impact',variant:'wind-slash-hit',
+      vfxRoles:{hit:roles.hit},preserveDeadTargets:true});
+  }
+}
+
+function sgTickVacuumWaves(ctx) {
+  var list=SKILL2_RT.vacuumWaves||[],keep=[];
+  for(var i=0;i<list.length;i++){
+    var wave=list[i];
+    if(wave.pEnt!==ctx.pEnt||!(wave.pEnt.hp>0)){sgFinishSkillCastFloat(wave.out);continue;}
+    if(wave.at>GT){keep.push(wave);continue;}
+    var before=wave.out.dmg;
+    var killedBefore=wave.out.killed;wave.out.killed=false;
+    sgResolveVacuumWave(wave,ctx.getEnemies?ctx.getEnemies():wave.pool);
+    if(ctx.onDamage&&wave.out.dmg>before)ctx.onDamage(wave.out.dmg-before);
+    if(wave.out.killed&&ctx.onDeaths)ctx.onDeaths();
+    wave.out.killed=wave.out.killed||killedBefore;
+    sgFinishSkillCastFloat(wave.out);
+  }
+  SKILL2_RT.vacuumWaves=keep;
 }
 
 /* 傳奇【真空風刃】：每次施放真空斬額外射出 N 道小型風刃。
@@ -10252,24 +10303,27 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
 
 /* ---- 超神【天穹崩裂】（暴風屏障）：每 gap 秒從天上落下 1~3 個召喚星體 ----
    三種星體共用同一份傷害規格（設計只寫了「星體可能為…」，沒有分別給數值），
-   差別只在形態與屬性：雷殞石與火殞石走既有的殞石佇列（從天而降＋落點範圍傷害），
-   巨大風刃走風刃自己的既有畫法（放大的貫穿刃）——那是兩個渲染器都認得的變體，
-   硬要它「落下」只會退回泛用雨點畫法，反而看不出來那是一道風刃。
+   三種形態均從天而降，在預告落點結算範圍傷害；風、雷、火各使用對應元素與表內特效。
+   風刃借用第一階風刃及第六階碎裂特效，雷星借用第七階雷球的落雷特效，
+   火星使用本超神的觸發特效；借用只取素材，不繼承其他技能的等級或超神。
    ⚠️ 這一個超神與風刃的【天穹崩裂】同名不同物（設計文檔就是這樣命名的），
    id 是 skyfallStars；風刃那一個是 skyCollapse，兩者沒有任何共用程式。 */
 var SG_SKYFALL_KINDS = ['blade', 'thunder', 'fire'];
 var SG_SKYFALL_BLADE_SCALE = 2;   // 「巨大風刃」的體積倍率（設計只寫「巨大」）
 
-function sgDropSkyfallBlade(pEnt, st, dmgVal, target, pool, floatSel, out) {
-  var wb = SKILLS2.windblade;
-  var angle = (typeof bfAngleTo === 'function') ? bfAngleTo(target) : null;
-  var geomOk = (angle !== null && angle !== undefined);
-  sgLaunchWindBlade(pEnt, st, 'stormbarrier', {
-    geom: sgWindbladeGeom(wb, [1, 0, 0, 0, 0, 0, 0], null),
-    angle: geomOk ? angle : 0, dmgVal: dmgVal, pool: pool,
-    geomOk: geomOk, fallback: [target], sizeMult: SG_SKYFALL_BLADE_SCALE,
-    vfxGid: 'windblade'
-  }, floatSel, out);
+function sgSkyfallVfxRoles(kind) {
+  if(kind==='thunder')return sgVfxRoles('thunderorb',{vfxTier:7});
+  var own=sgVfxRoles('stormbarrier',{vfxUlt:'skyfallStars'});
+  if(kind!=='blade')return own;
+  var blade=sgVfxRoles('windblade',{vfxTier:1,vfxBase:true});
+  var pulse=sgVfxRoles('windblade',{vfxTier:6});
+  return {projectile:blade.projectile,hit:blade.hit,attack:pulse.attack,ground:own.ground};
+}
+function sgSkyfallImpactVfx(roles) {
+  return function(m,victims){
+    sgEmitVfx('stormbarrier',victims,m.floatSel,{fxKind:'burst',variant:'skyfall-impact',elem:m.elem,
+      area:sgAreaAround(m.fixedPos?{pos:m.fixedPos}:m.target,m.radius),vfxRoles:{attack:roles.attack},hit:false});
+  };
 }
 
 function sgTickSkyfallStars(ctx, dt) {
@@ -10301,24 +10355,26 @@ function sgTickSkyfallStars(ctx, dt) {
   for (var i = 0; i < n; i++) {
     var target = live[Math.floor(Math.random() * live.length)];
     var kind = SG_SKYFALL_KINDS[Math.floor(Math.random() * SG_SKYFALL_KINDS.length)];
-    if (kind === 'blade') {
-      sgDropSkyfallBlade(ctx.pEnt, st, dmgVal, target, enemies, ctx.floatSel, out);
-      continue;
-    }
-    var bolt = (kind === 'thunder');
+    var bolt = (kind === 'thunder'),blade=kind==='blade',roles=sgSkyfallVfxRoles(kind);
+    var elem=blade?'wind':bolt?'lightning':'fire',landing=bfPos(target);
+    var shape=blade?sgWindbladeGeom(SKILLS2.windblade,[1,0,0,0,0,0,0],null):null;
     var castDelay = i * SG_METEOR_INTERVAL_MS;
+    var landingArea=sgAreaAround(target,radius);
+    if(landingArea)landingArea.fixedLanding=true;
     sgEmitVfx('stormbarrier', [target], ctx.floatSel, {
-      fxKind: 'rain', variant: bolt ? 'thunder-fall' : 'meteor',
-      elem: bolt ? 'lightning' : 'fire', count: 1,
-      area: sgAreaAround(target, radius), delayMs: castDelay, travelMs: [timing.travelMs],
-      vfxUlt: 'skyfallStars'
+      fxKind: 'rain', variant: blade?'wind-blade':bolt ? 'thunder-fall' : 'meteor',
+      elem: elem, count: 1,hit:false,
+      area: landingArea, delayMs: castDelay, travelMs: [timing.travelMs],
+      bodyLength:shape?shape.bodyLenPx*SG_SKYFALL_BLADE_SCALE:0,
+      lineWidth:shape?shape.halfWidthPx*2*SG_SKYFALL_BLADE_SCALE:0,
+      vfxRoles:{projectile:roles.projectile,ground:roles.ground}
     });
     sgQueueMeteor(ctx.pEnt, st, dmgVal, target, enemies, radius, null, ctx.floatSel, out,
       GT + (castDelay + timing.fallMs) / 1000, {
         gid: 'stormbarrier',
-        variant: bolt ? 'thunder-fall-impact' : 'meteor-impact',
-        elem: bolt ? 'lightning' : 'fire',
-        vfxUlt: 'skyfallStars'
+        variant: bolt ? 'thunder-fall-impact' : 'meteor-impact',elem:elem,
+        fixedPos:landing?{x:landing.x,y:landing.y}:null,
+        vfxRoles:{hit:roles.hit},onImpact:sgSkyfallImpactVfx(roles)
       });
   }
 }
@@ -10466,12 +10522,17 @@ function sgStormBarrierPulse(rt, lvs, ctx) {
   if (lvs[1] > 0) {
     var dmgVal = sgGroupBaseStat(g, st) * sgVal(t[1].fx, 'pct', lvs[1]) / 100;
     var victims = sgEnemiesNearPlayer(enemies, radiusPx, null, 0);
-    sgEmitPlayerVfx('stormbarrier', floatSel, { fxKind: 'aura', variant: 'storm-rip', elem: 'wind', dur: rt.gap, vfxTier: 2 });
+    var ripRoles=sgVfxRoles('stormbarrier',{vfxTier:2}),centre=bfPlayerPos();
+    sgEmitPlayerVfx('stormbarrier', floatSel, { fxKind: 'aura', variant: 'storm-rip', elem: 'wind', dur: rt.gap,
+      area:centre?{id:'storm-rip-'+rt.until,x:centre.x,y:centre.y,r:radiusPx,follow:true}:null,
+      vfxRoles:{ground:ripRoles.ground},hit:false });
     if (dmgVal > 0 && victims.length) {
-      var out = { killed: false, dmg: 0, crit: false };
+      var out = { killed: false, dmg: 0, crit: false },struck=[];
       for (var i = 0; i < victims.length; i++) {
-        sgHitOne(rt.pEnt, st, victims[i], dmgVal, 'stormbarrier', floatSel, out, sgStaggerMs(i));
+        var res=sgHitOne(rt.pEnt, st, victims[i], dmgVal, 'stormbarrier', floatSel, out, sgStaggerMs(i));
+        if(res&&!res.miss)struck.push(victims[i]);
       }
+      if(struck.length)sgEmitVfx('stormbarrier',struck,floatSel,{fxKind:'impact',variant:'storm-rip-hit',vfxRoles:{hit:ripRoles.hit},preserveDeadTargets:true});
       if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
       if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
     }
@@ -10575,10 +10636,9 @@ function sgSpreadWindRend(from, enemies, lvs) {
     spread.push(victims[i]);
   }
   if (spread.length) {
-    sgEmitVfx('stormbarrier', [from].concat(spread), 'mv-float', {
-      fxKind: 'chain', variant: 'wind-rend-spread', elem: 'wind', travelMs: [80],
-      preserveDeadTargets: true,
-      vfxTier: 5
+    for (var vi=0;vi<spread.length;vi++) sgEmitVfx('stormbarrier', [from,spread[vi]], 'mv-float', {
+      fxKind: 'chain', variant: 'wind-rend-spread', elem: 'wind', travelMs: [0,80],
+      preserveDeadTargets: true, vfxTier: 5
     });
   }
 }
@@ -11110,9 +11170,10 @@ function tickSkill2(dt, ctx) {
   sgTickFlyingThunder(ctx, dt);
   sgTickLastStand(ctx);
   sgWarGodBodyState(ctx.pEnt, GT - Math.max(0, Number(dt) || 0));
+  sgTickVacuumWaves(ctx);
   if (!(ctx.pEnt.hp > 0)) {
-    // 冰水永久效果的排程在倒地期間保留剩餘時間；下方各自的暫停分支會被提前return跳過。
-    ['abyssAt', 'infiniteNovaAt', 'resonanceAt', 'iceKingAt'].forEach(function (key) {
+    // 冰水與風系永久效果在倒地期間保留排程剩餘時間；下方的暫停分支會被提前 return 跳過。
+    ['abyssAt', 'infiniteNovaAt', 'resonanceAt', 'iceKingAt', 'skyfallAt', 'voidAnnihilateAt'].forEach(function (key) {
       SKILL2_RT[key] = sgPauseSchedule(SKILL2_RT[key], dt);
     });
     // 雷爆是短暫的逐跳彈射，死亡時取消未抵達段，不在復活後補打。

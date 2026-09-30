@@ -1,5 +1,13 @@
 # VFX_RUNTIME_ADAPTER.md
 
+## 風系方向與事件隔離（2026-09-30）
+
+風刃的方向型 projectile 先於多目標 chain 判別，以事件 angle／lineLength 決定玩家起點的完整貫穿路徑。風刃、追擊刃、沿途脈衝、真空波次與撕裂的本體及實際命中分開；風切擴散每條配對只在目的地播命中。13列追加效果使用獨立 triggerVfx，不覆蓋主風刃、真空斬或屏障。
+
+追跡風刃保留世界座標／速度／轉速，積分圓弧後才套 groundScale。風刃 Core 實例設 motionFacing，將根位置及航向傳至空中 Renderer，以 FOV 投影的切線方向整份轉向，保留作者圖層的局部角度、位置及鏡頭開關；未標記的其他事件維持原路由。真空斬／震波保存原 lineLength／angle，投影圖層只在世界平面旋轉及壓Y一次。
+
+屏障天穹崩裂的風／雷／火星體皆走 rain，在 area.fixedLanding 預告座標落地結算；沒有明確 sourceX／sourceY 時依 Preset 出生高度落下。素材只取本超神或文件登記的表內借用，不繼承別棵技能的超神。完整30列、決策及驗證見 [WIND_SKILL_AUDIT.md](../WIND_SKILL_AUDIT.md)。
+
 ## 地面投影（2026-09-22）
 
 明確標記 projection 的圖層改用地面座標，直立圖層維持螢幕座標；此規則補充下文舊版全 Preset 直立的描述。Adapter 以目前場景 groundScale 覆蓋註冊副本的 projection.y，不修改原 Preset；未提供場景比例時保留製作值 0.5。場景的透視後處理仍只執行一次。
