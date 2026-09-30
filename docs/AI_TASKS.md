@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜VFX 更新判斷與編輯器重啟（VFX-EDITOR-RESTART-20260930）
+
+- Owner：Codex；Done。更新提示只對編輯器共用程式變更、伺服器載入程式變更，或目前開啟的 Preset／layout 外部變更觸發；保留儲存時雙檔防覆寫。工具列「關閉編輯器」旁新增伺服器重啟並重新載入按鈕；有未存內容會先下載全部編輯備份。
+- 前置：現有本機伺服器與舊分頁防護；使用者正在編輯的四份雷電 Preset／layout 不修改。允許 editor guard/server/frontend/CSS/index、測試與本紀錄；禁止改技能、數值與素材。衝突預檢均無其他副本／分支來源。
+- 驗收：非編輯器 Runtime 改動與快取字串變更不提示；全域程式或任一開啟文件外部修改提示；其他文件修改不提示；舊基準仍拒絕存檔；重啟需先確認未存資料、只重啟本副本伺服器、重新載入頁面；通過相關測試及 build。完成後提交，不合併／推送。
+- 修改：tools/vfx/editor-guard.cjs、editor-server.cjs、editor/index.html、editor.css、editor.js、save-guard.js、tests/vfx-editor-guard.test.cjs、本紀錄。唯讀：js/vfx-runtime.js、js/vfx-core.js、tools/vfx/launch-editor.cjs、既有雷電 Preset／layout。Runtime 的遊戲事件接線不再使編輯器整頁過期；若未來修改 Runtime 中「遊戲播放測試」共用行為，需提高 editor-guard.cjs 的 runtimePreviewRevision。
+- 驗證：editor guard 12/12；guard／save／rename／launcher／panes 合併 116 項中 114 通過、1 跳過、1 既有失敗：hit-thunderstrike-bluewhite.json 非 canonical，該檔與 HEAD 位元相同，非本次修改。build 400 檔通過，diff check 通過。重啟已以 HTTP 端點與瀏覽器函式測試；尚未在實際瀏覽器點擊作端到端驗收。本輪不修改使用者未提交的四份雷電素材；可交使用者整合，未合併／推送。Commit 見本紀錄所在提交。
+
 ## Codex｜落雷命中特效貼地（THUNDER-HIT-FOOT-20260930）
 
 - Owner：Codex；Done。實戰中的落雷命中特效原本使用怪物身體中心，與 VFX 編輯器的地板原點及落雷柱腳點不一致。普通落雷與雷霆天劫的命中／追加雷電改錨在腳底，延後播放讀當下腳點；敵人移除後保留最後腳點，一般技能仍命中身體中心。未更動傷害、時序或 Preset 尺寸。

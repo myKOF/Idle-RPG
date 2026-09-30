@@ -4462,9 +4462,45 @@
      只能自己去 netstat 找 PID。有一條從頁面就停得掉的路，這個死結才拆得開。 */
 
   var quitting = false;
+  var restartingServer = false;
   /* 自己主動離開這一頁（切換 preset、關閉編輯器）時要關掉 beforeunload：
      那兩條路自己已經問過一次，再讓瀏覽器跳一次就是連問兩遍。 */
   var leavingOnPurpose = false;
+
+  function downloadAllPanesBackup() {
+    var docs=panes.filter(function(p){return p.doc.preset;}).map(function(p){return {preset:p.doc.preset,layout:p.doc.layout};});
+    var url=URL.createObjectURL(new Blob([JSON.stringify({savedAt:new Date().toISOString(),documents:docs},null,2)],{type:'application/json'}));
+    var a=document.createElement('a');a.href=url;a.download='vfx-editor-backup-'+Date.now()+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+
+  async function restartEditorServer() {
+    if (restartingServer || quitting) return;
+    var dirty=dirtyPanes();
+    var message=dirty.length
+      ? '目前有未存檔的特效。重啟前會下載全部編輯備份；重載後未存內容不會自動還原。確定重啟？'
+      : '重啟編輯器伺服器並重新載入？其他編輯器分頁也會暫時失去連線。';
+    if (!window.confirm(message)) return;
+    restartingServer=true;
+    if (dirty.length) downloadAllPanesBackup();
+    setSaveStatus('重啟中…', '');
+    try {
+      var response=await fetch('/__restart-editor',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      var data=await response.json();
+      if(!response.ok||!data.ok)throw new Error(data.error||'伺服器拒絕重啟');
+      for(var i=0;i<40;i++){
+        await new Promise(function(resolve){setTimeout(resolve,500);});
+        try{
+          var next=await fetch('/__vfx_version',{cache:'no-store'});
+          if(next.ok){var info=await next.json();if(info.bootId&&info.bootId!==data.bootId){leavingOnPurpose=true;window.location.reload();return;}}
+        }catch(e){/* 伺服器正在交接埠 */}
+      }
+      throw new Error('新伺服器尚未就緒，請重新執行啟動VFX編輯器.bat');
+    }catch(e){
+      restartingServer=false;
+      setSaveStatus('重啟失敗', 'err');
+      showSaveError('無法重啟編輯器', [e.message||String(e)]);
+    }
+  }
 
   function quitEditor() {
     if (quitting) return;
@@ -6288,6 +6324,7 @@
     };
     syncPlayPause();
     $('btn-quit').onclick = quitEditor;
+    $('btn-restart-server').onclick = restartEditorServer;
     $('btn-restart').onclick = restart;
     /* 預覽循環是檢視偏好，不進歷史也不進 preset——與播放／暫停同一類。
        preset.loop 改由 Inspector 的「Preset」區塊編輯（見 renderPresetSection）。 */
@@ -6338,10 +6375,9 @@
       e.returnValue = '';          // 舊版瀏覽器要這個才會跳
     });
     $('btn-del-layer').onclick = deleteSelection;
-    VFXSaveGuard.start(function(){
-      var docs=panes.filter(function(p){return p.doc.preset;}).map(function(p){return {preset:p.doc.preset,layout:p.doc.layout};});
-      var url=URL.createObjectURL(new Blob([JSON.stringify({savedAt:new Date().toISOString(),documents:docs},null,2)],{type:'application/json'}));
-      var a=document.createElement('a');a.href=url;a.download='vfx-editor-backup-'+Date.now()+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    VFXSaveGuard.start(downloadAllPanesBackup,function(){
+      return panes.filter(function(p){return !p.closed&&p.doc.sourcePresetId&&p.doc.savedText!=null;})
+        .map(function(p){return {id:p.doc.sourcePresetId,preset:p.doc.savedText,layout:p.doc.layoutDiskText};});
     });
 
   }

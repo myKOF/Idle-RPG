@@ -34,8 +34,9 @@ body {
 }
 #topbar > .sep { flex: 0 0 auto; }
 #topbar .sep { width: 1px; height: 18px; background: #34343e; }
-/* 吃掉剩下的空間，右邊只留「關閉編輯器」 */
+/* 吃掉剩下的空間，右邊保留伺服器控制 */
 #topbar .push-right { margin-left: auto; }
+#topbar > .server-restart-btn, #topbar > .quit-btn { flex: 0 0 auto; }
 button, select, input[type="search"], input[type="text"], input[type="number"] {
   background: #26262e; color: #d6d6dc; border: 1px solid #3a3a44;
   border-radius: 4px; padding: 4px 8px; font: inherit;
@@ -120,6 +121,8 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
    但不用刺眼的紅——它是正常的收工動作，不是危險操作。 */
 .quit-btn { border-color: #5a3a3a; color: #e0a0a0; }
 .quit-btn:hover { background: #4a2a2a; border-color: #8a5a5a; color: #ffd0d0; }
+.server-restart-btn { border-color: #3c5670; color: #a9d3f2; }
+.server-restart-btn:hover { background: #283d50; border-color: #638eb0; }
 .copy-btn.err { color: #ff8080; border-color: #6a3a3a; }
 
 /* minmax(0, 1fr) 而不是 1fr：grid item 的自動最小尺寸預設是 auto，

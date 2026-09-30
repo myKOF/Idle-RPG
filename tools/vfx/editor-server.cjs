@@ -43,6 +43,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const childProcess = require('child_process');
 
 const libraryRoot = require('./vfx-library-root.cjs');
 /* Preset 的驗證與序列化只有一套，就是 Core 的那一套。
@@ -98,6 +99,7 @@ const RESTART_REQUIRED_FILES = [
 ];
 
 const crypto = require('crypto');
+const SERVER_BOOT_ID = crypto.randomBytes(8).toString('hex');
 
 function sourceSignature() {
   return RESTART_REQUIRED_FILES.map(function (f) {
@@ -153,6 +155,7 @@ const WHOAMI_FRESH_MARK = 'idle-rpg-vfx-editor-ok';
 const PRESET_LIST_PATH = '/__presets';
 /* 頁面上的「關閉編輯器」按鈕打這裡。理由見 handleShutdown。 */
 const SHUTDOWN_PATH = '/__shutdown';
+const RESTART_PATH = '/__restart-editor';
 /* 「瀏覽特效」的縮圖：GET /__thumbs/<presetId>.png。見 handleThumbnail。 */
 const THUMB_PREFIX = '/__thumbs/';
 const THUMB_SUFFIX = '.png';
@@ -649,6 +652,36 @@ function handleShutdown(ctx, req, res, server) {
   });
 }
 
+function handleRestart(ctx, req, res, server) {
+  const originProblem = checkWriteOrigin(req);
+  if (originProblem) return sendJson(res, 403, { ok: false, error: originProblem });
+  const port = server.address().port;
+  sendJson(res, 200, { ok: true, bootId: SERVER_BOOT_ID });
+  res.on('finish', function () {
+    server.close(function () {
+      if (ctx.onRestart) return ctx.onRestart(port); // 測試不建立子行程
+      try {
+        const child = childProcess.spawn(process.execPath, [__filename, '--port', String(port)], {
+          cwd: ctx.repoRoot, detached: true, stdio: 'ignore', windowsHide: true
+        });
+        child.once('error', function (e) {
+          console.error('[ERROR] 編輯器重啟失敗：' + e.message);
+          process.exit(2);
+        });
+        child.once('spawn', function () { child.unref(); process.exit(0); });
+      } catch (e) {
+        console.error('[ERROR] 編輯器重啟失敗：' + e.message);
+        process.exit(2);
+      }
+    });
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+    // 正在下載的縮圖可能維持連線；停止接受新請求後結束剩餘連線。
+    setTimeout(function () {
+      if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
+    }, 800).unref();
+  });
+}
+
 /* 縮圖的 presetId 一律取自未解碼的 pathname，規則與存檔路由同一條
    （presetIdPolicy）：[a-z0-9-] 以外全部擋掉，所以 / \ . % 都到不了讀檔那一步。 */
 function thumbIdFromRawPath(rawPathname) {
@@ -1123,6 +1156,9 @@ function createServer(ctx) {
     if (req.method === 'POST' && rawPathname === SHUTDOWN_PATH) {
       return handleShutdown(ctx, req, res, server);
     }
+    if (req.method === 'POST' && rawPathname === RESTART_PATH) {
+      return handleRestart(ctx, req, res, server);
+    }
     if (req.method === 'POST' && rawPathname === SAVE_AS_DIALOG_PATH) {
       return handleSaveAsDialog(ctx, req, res);
     }
@@ -1166,7 +1202,14 @@ function createServer(ctx) {
        從 claude 按下啟動卻開到 develop 的 Editor，改了半天才發現改錯副本。
        啟動器用這個端點確認身分，所以必須含 repo 路徑，不能只回專案名稱。 */
     if(pathname==='/__vfx_version' || pathname==='/__vfx_version.js'){
-      const info={version:saveGuard.version(ctx.repoRoot),stale:staleServerFiles().length>0};
+      const info={version:saveGuard.version(ctx.repoRoot),stale:staleServerFiles().length>0,bootId:SERVER_BOOT_ID};
+      if(pathname==='/__vfx_version'){
+        const ids=new URL(req.url,'http://localhost').searchParams.getAll('id');
+        if(ids.length>4 || ids.some(function(id){return !presetIdPolicy.isWritablePresetId(id);}))
+          return sendJson(res,400,{ok:false,error:'最多查詢四份合法的 Preset'});
+        info.documents={};
+        ids.forEach(function(id){info.documents[id]={preset:saveGuard.revision(ctx.repoRoot,id,'preset'),layout:saveGuard.revision(ctx.repoRoot,id,'layout')};});
+      }
       if(pathname.endsWith('.js')){res.writeHead(200,{'Content-Type':'application/javascript','Cache-Control':'no-store'});return res.end('window.VFX_EDITOR_VERSION='+JSON.stringify(info.version)+';');}
       return sendJson(res,200,info);
     }
