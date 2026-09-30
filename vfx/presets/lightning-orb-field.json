@@ -20,7 +20,7 @@
       },
       "alpha": 0.8,
       "tint": "#0264e3",
-      "blendMode": "screen",
+      "blendMode": "add",
       "alphaOverLife": [
         [
           0,
@@ -146,7 +146,7 @@
       },
       "alpha": 0.5,
       "tint": "#80b7ff",
-      "blendMode": "screen",
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
@@ -277,7 +277,7 @@
       },
       "alpha": 0.5,
       "tint": "#ffffff",
-      "blendMode": "screen",
+      "blendMode": "add",
       "alphaOverLife": [
         [
           0,
@@ -495,6 +495,23 @@
           -0.00807
         ]
       ]
+    },
+    {
+      "id": "sprite-5",
+      "type": "sprite",
+      "enabled": true,
+      "assetId": "light-masks-1.0/transparent/circle_d_noise.png",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "scale": {
+        "x": 0.1562,
+        "y": 0.1562
+      },
+      "alpha": 0.8,
+      "tint": "#000000",
+      "blendMode": "screen"
     }
   ]
 }
