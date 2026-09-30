@@ -21,15 +21,19 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
+      "position": {
+        "x": 0.0001,
+        "y": -0.7409
+      },
       "scale": {
-        "x": 0.1875,
-        "y": 0.1875
+        "x": 0.2961,
+        "y": 0.2284
       },
       "alpha": 0.6,
       "tint": "#9333ea",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.156444,
+      "duration": 0.4,
       "alphaOverLife": [
         [
           0,
@@ -65,22 +69,30 @@
           1,
           1.15
         ]
-      ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.4
+      }
     },
     {
       "id": "ring",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0.0001,
+        "y": -0.7409
+      },
       "scale": {
-        "x": 0.1172,
-        "y": 0.1172
+        "x": 0.185,
+        "y": 0.1427
       },
       "alpha": 0.95,
       "tint": "#c084fc",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.166222,
+      "duration": 0.4,
       "alphaOverLife": [
         [
           0,
@@ -116,17 +128,25 @@
           1,
           1
         ]
-      ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.4
+      }
     },
     {
       "id": "arcweb-a",
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/spark_02.png",
       "zIndex": 2,
+      "position": {
+        "x": 0.0001,
+        "y": -0.7409
+      },
       "rotation": 0.2618,
       "scale": {
-        "x": 0.1289,
-        "y": 0.1289
+        "x": 0.2035,
+        "y": 0.157
       },
       "alpha": 0.9,
       "tint": "#c084fc",
@@ -175,10 +195,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/spark_01.png",
       "zIndex": 3,
+      "position": {
+        "x": 0.0001,
+        "y": -0.7409
+      },
       "rotation": -1.2217,
       "scale": {
-        "x": 0.1133,
-        "y": 0.1133
+        "x": 0.1789,
+        "y": 0.138
       },
       "alpha": 0.8,
       "tint": "#9333ea",
@@ -223,10 +247,14 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/star_09.png",
       "zIndex": 4,
+      "position": {
+        "x": 0.0001,
+        "y": -0.7409
+      },
       "rotation": 0.1745,
       "scale": {
-        "x": 0.0898,
-        "y": 0.0898
+        "x": 0.1418,
+        "y": 0.1094
       },
       "alpha": 1,
       "tint": "#fdf4ff",
@@ -271,6 +299,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/spark_05.png",
       "zIndex": 5,
+      "position": {
+        "x": 0.0001,
+        "y": -0.7409
+      },
       "tint": "#fdf4ff",
       "blendMode": "add",
       "delay": 0,
@@ -284,22 +316,22 @@
         0.127111
       ],
       "spawn": {
-        "radius": 6,
+        "radius": 8.39,
         "shape": "circle"
       },
       "speed": [
-        327.272727,
-        572.727273
+        457.6359,
+        800.8628
       ],
       "direction": -90,
       "spread": 360,
       "gravity": {
         "x": 0,
-        "y": 920.454545
+        "y": 1121.0216
       },
       "startScale": [
-        0.0313,
-        0.0508
+        0.0437,
+        0.0711
       ],
       "alignToVelocity": true,
       "velocityRotationOffset": 1.5708,
@@ -337,6 +369,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_08.png",
       "zIndex": 6,
+      "position": {
+        "x": 0.0001,
+        "y": -0.7409
+      },
       "tint": "#fdf4ff",
       "blendMode": "add",
       "delay": 0,
@@ -350,18 +386,18 @@
         0.146667
       ],
       "spawn": {
-        "radius": 14,
+        "radius": 19.5766,
         "shape": "circle"
       },
       "speed": [
-        81.818182,
-        184.090909
+        114.409,
+        257.4202
       ],
       "direction": -90,
       "spread": 360,
       "startScale": [
-        0.0156,
-        0.0273
+        0.0218,
+        0.0381
       ],
       "alphaOverLife": [
         [
