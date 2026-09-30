@@ -6,7 +6,7 @@
      1. 找出「本副本」所有正在跑的編輯器伺服器——不管程式新舊、有沒有當掉
      2. 全部關掉：有回應的走 POST /__shutdown（伺服器視窗會自己關）；
         沒回應、或關不掉的，用 PID 強制結束（連同它的伺服器視窗）
-     3. 開一個新的「VFX 編輯器伺服器」視窗，等它就緒
+     3. 在背景開一個新的伺服器，等它就緒；不保留黑窗
      4. 用瀏覽器開編輯器頁面
 
    ---- 為什麼一律重開，不沿用 ----
@@ -32,6 +32,7 @@
 
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 const childProcess = require('child_process');
 
 const libraryRoot = require('./vfx-library-root.cjs');
@@ -40,7 +41,6 @@ const presetIdPolicy = require('./editor/preset-id-policy.js');
 const identity = require('./editor-server.cjs').launcher;
 
 const REPO_ROOT = libraryRoot.REPO_ROOT;
-const WINDOW_TITLE = 'VFX 編輯器伺服器 - 關閉此視窗即停止';
 /* 冷啟動要載入 Core 與縮圖模組，慢的電腦要好幾秒；原本 .bat 等 10 秒偶爾不夠 */
 const READY_TIMEOUT_MS = 20000;
 const STOP_TIMEOUT_MS = 4000;
@@ -296,14 +296,13 @@ function stopAll(servers, hits, log, deps) {
 
 /* ---------------- 開伺服器、開頁面 ---------------- */
 
-/* start "標題" cmd /c tools\vfx\editor_server_window.bat
-   /c 後面刻意不加引號，理由見 editor_server_window.bat 開頭。
-   windowsVerbatimArguments：命令列照字面交給 cmd，Node 不另外加引號或跳脫。 */
-function startServerWindow() {
-  const child = childProcess.spawn('cmd.exe',
-    ['/d', '/s', '/c', 'start "' + WINDOW_TITLE + '" cmd /c tools\\vfx\\editor_server_window.bat'],
-    { cwd: REPO_ROOT, detached: true, stdio: 'ignore', windowsVerbatimArguments: true });
-  child.unref();
+function startServerProcess() {
+  return identity.spawnServerProcess(REPO_ROOT,undefined,{resetLog:true});
+}
+
+function serverLogTail() {
+  try{return fs.readFileSync(identity.serverLogPath(REPO_ROOT),'utf8').slice(-8000);}
+  catch(e){return '';}
 }
 
 /* 網址裡的 preset 已經過 preset-id-policy（只有小寫英數與連字號），埠是數字，
@@ -352,7 +351,9 @@ function defaultDeps() {
     scan: scan,
     snapshot: systemSnapshot,
     stopAll: stopAll,
-    startServerWindow: startServerWindow,
+    startServerProcess: startServerProcess,
+    serverLogPath: function(){return identity.serverLogPath(REPO_ROOT);},
+    serverLogTail: serverLogTail,
     waitReady: waitReady,
     openBrowser: openBrowser,
     listening: listeningSummary
@@ -424,15 +425,17 @@ function main(argv, deps) {
 
     log('');
     log('啟動伺服器…');
-    d.startServerWindow();
-    log('等待伺服器就緒…');
-    return d.waitReady(READY_TIMEOUT_MS).then(function (port) {
+    return Promise.resolve(d.startServerProcess()).then(function(){
+      log('等待伺服器就緒…');
+      return d.waitReady(READY_TIMEOUT_MS);
+    }).then(function (port) {
       if (!port) {
         log('');
         log(LINE);
         log('  伺服器在 ' + (READY_TIMEOUT_MS / 1000) + ' 秒內沒有就緒');
         log(LINE);
-        log('  請看剛才開啟的「VFX 編輯器伺服器」視窗，錯誤原因會印在那裡');
+        log('  詳細錯誤日誌：' + d.serverLogPath());
+        const tail=d.serverLogTail();if(tail)log(tail);
         log('  （最常見的是這台電腦還沒設定素材庫位置）。');
         return printListening(log, d).then(function () { log(LINE); return 1; });
       }
@@ -446,6 +449,7 @@ function main(argv, deps) {
   }).catch(function (e) {
     log('');
     log('啟動失敗：' + (e && e.stack || e));
+    log('詳細錯誤日誌：' + d.serverLogPath());
     return 1;
   });
 }

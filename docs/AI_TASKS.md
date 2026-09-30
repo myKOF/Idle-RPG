@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜VFX 伺服器背景啟動（VFX-BACKGROUND-SERVER-20260930）
+
+- Owner：Codex；Done。初次啟動及重啟統一為獨立背景 Node 程序，無常駐黑窗；啟動器確認就緒、開頁面後退出。HTTP重啟原本就有 windowsHide，此次修正初次啟動，並使兩條路共用程序生命週期與日誌。編輯器仍需要伺服器運行，網頁「關閉編輯器」可停止它。
+- 修改：tools/vfx/editor-server.cjs、tools/vfx/launch-editor.cjs、tests/vfx-editor-launcher.test.cjs、docs/vfx/VFX_EDITOR_CODE_CONTROLS.md 與本紀錄。唯讀：兩支啟動 bat、tests/vfx-editor-guard.test.cjs、editor.js。預檢無其他副本變更；保留使用者 Skills2 Excel／CSV／JS、bolt-sky-purple／hit-thunder-purple 未提交修改，不納入本次提交。無本任務素材變更，不需素材庫空提交。
+- 驗證：node --test tests/vfx-editor-launcher.test.cjs tests/vfx-editor-guard.test.cjs，25/25 通過；新增實際子程序測試：父啟動器自行退出後正式伺服器仍可回應、網頁HTTP200、重啟保持原埠且換bootId、重啟後網頁HTTP200、關閉後端點不可連線。背景參數／日誌／文件句柄釋放／錯誤提示、來源保護與未存備份檢查通過。node tools/build_check.cjs，400檔通過；diff check 通過。
+- 回歸：加上 vfx-editor-save.test.cjs 共70項，68通過、1略過、1既有失敗：hit-thunderstrike-bluewhite.json 非 canonical；原檔與HEAD一致，HEAD本身序列化也不同，與伺服器啟動無關，未降低斷言。未用瀏覽器點擊或觀察作業系統視窗，已實際驗證Windows程序與HTTP生命週期。
+- 日誌：系統暫存目錄 idle-rpg-vfx-<副本路徑雜湊>.log，初次啟動重設、重啟追加；啟動失敗顯示尾端錯誤及日誌位置，bat保留錯誤視窗。建議備份未存內容後重新執行啟動VFX編輯器.bat一次。可合併；Commit見本紀錄所在提交，未合併／推送，沒有未完成的背景啟動項目。
+
 ## Codex｜隨機彎曲強度（VFX-BEND-STRENGTH-20260930）
 
 - Owner：Codex；Done。新增 deformation.bendStrengthMin／Max（0～1，預設 1／1），出生／完整重抽時每道獨立、同道圖層共用；同步縮減程式位移與 PNG 亮部中心線曲折，保留電柱粗細。編輯器自動公開兩個欄位，可試 0.1／1；不覆寫使用者正在編輯的 Preset。

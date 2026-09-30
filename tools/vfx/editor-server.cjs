@@ -43,6 +43,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const childProcess = require('child_process');
 
 const libraryRoot = require('./vfx-library-root.cjs');
@@ -652,6 +653,31 @@ function handleShutdown(ctx, req, res, server) {
   });
 }
 
+function serverLogPath(repoRoot) {
+  const key=crypto.createHash('sha1').update(path.resolve(repoRoot).replace(/\\/g,'/').toLowerCase()).digest('hex').slice(0,12);
+  return path.join(os.tmpdir(),'idle-rpg-vfx-'+key+'.log');
+}
+
+// No console or inherited pipes: the launcher may exit without stopping Node.
+// Both initial launch and restart use this path, retaining diagnostics in a file.
+function spawnServerProcess(repoRoot, port, options) {
+  const opts=options||{},logPath=opts.logPath||serverLogPath(repoRoot);
+  const args=[path.resolve(repoRoot,'tools/vfx/editor-server.cjs'),'--port',String(port===undefined?PORT_BASE:port)];
+  return new Promise(function(resolve,reject){
+    let fd;
+    try {
+      fd=fs.openSync(logPath,opts.resetLog?'w':'a');
+      const env=Object.assign({},process.env);delete env.VFX_EDITOR_WINDOW;
+      const child=(opts.spawn||childProcess.spawn)(process.execPath,args,{
+        cwd:repoRoot,detached:true,windowsHide:true,stdio:['ignore',fd,fd],env:env
+      });
+      child.once('error',reject);
+      child.once('spawn',function(){child.unref();resolve({pid:child.pid,logPath:logPath});});
+    } catch(err) { reject(err); }
+    finally { if(fd!==undefined)fs.closeSync(fd); }
+  });
+}
+
 function handleRestart(ctx, req, res, server) {
   const originProblem = checkWriteOrigin(req);
   if (originProblem) return sendJson(res, 403, { ok: false, error: originProblem });
@@ -660,19 +686,10 @@ function handleRestart(ctx, req, res, server) {
   res.on('finish', function () {
     server.close(function () {
       if (ctx.onRestart) return ctx.onRestart(port); // 測試不建立子行程
-      try {
-        const child = childProcess.spawn(process.execPath, [__filename, '--port', String(port)], {
-          cwd: ctx.repoRoot, detached: true, stdio: 'ignore', windowsHide: true
-        });
-        child.once('error', function (e) {
-          console.error('[ERROR] 編輯器重啟失敗：' + e.message);
-          process.exit(2);
-        });
-        child.once('spawn', function () { child.unref(); process.exit(0); });
-      } catch (e) {
+      spawnServerProcess(ctx.repoRoot,port).then(function(){process.exit(0);},function(e){
         console.error('[ERROR] 編輯器重啟失敗：' + e.message);
         process.exit(2);
-      }
+      });
     });
     if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
     // 正在下載的縮圖可能維持連線；停止接受新請求後結束剩餘連線。
@@ -1405,7 +1422,8 @@ else module.exports = {
      它直接讀這裡，不另外寫一份（W7）。 */
   launcher: {
     WHOAMI_PATH: WHOAMI_PATH, WHOAMI_MARK: WHOAMI_MARK, WHOAMI_FRESH_MARK: WHOAMI_FRESH_MARK,
-    SHUTDOWN_PATH: SHUTDOWN_PATH, PORT_BASE: PORT_BASE, PORT_TRIES: PORT_TRIES
+    SHUTDOWN_PATH: SHUTDOWN_PATH, PORT_BASE: PORT_BASE, PORT_TRIES: PORT_TRIES,
+    spawnServerProcess: spawnServerProcess, serverLogPath: serverLogPath
   },
   safeJoin: safeJoin,
   ASSET_PREFIX: ASSET_PREFIX,
