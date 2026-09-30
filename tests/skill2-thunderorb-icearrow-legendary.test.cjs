@@ -584,7 +584,9 @@ test('【連射】：射出的寒冰箭 +2 支', () => {
     setLegendary(c, keys);
     c.chance = () => false;
     setLevels(c, 'icearrow', [1, 0, 0, 0, 0, 0, 0]);
-    c.castSkill2(playerEnt(), line(8, 6 * M), 'icearrow', 'mv-float');
+    const p=playerEnt(),es=line(8,6*M);
+    c.castSkill2(p, es, 'icearrow', 'mv-float');
+    advance(c,p,es,1);
     return calls.length;
   }
   assert.equal(arrows([]), 2, '表定 2 支');
@@ -599,7 +601,9 @@ test('【冰封】：寒冰箭傷害 ×1.5（乘在第 1 階＋冰系強化的�
     setLegendary(c, keys);
     c.chance = () => false;
     setLevels(c, 'icearrow', [1, 0, 0, 0, 0, 0, 0]);
-    c.castSkill2(playerEnt(), [enemy(1e9, 40, 0, 'a')], 'icearrow', 'mv-float');
+    const p=playerEnt(),es=[enemy(1e9,40,0,'a')];
+    c.castSkill2(p, es, 'icearrow', 'mv-float');
+    advance(c,p,es,.1);
     return calls[0].atk;
   }
   assert.equal(Math.round(atk(['icearrowSeal']) / atk([]) * 100), 150);
@@ -614,14 +618,16 @@ test('【凜冬侵蝕】：寒冰箭塗出來的寒霜，每跳量與持續時�
     c.chance = () => false;
     setLevels(c, 'icearrow', [1, 1, 0, 0, 0, 0, 0]);
     const e = enemy(1e9, 40, 0, 'a');
-    c.castSkill2(playerEnt(), [e], 'icearrow', 'mv-float');
-    return c.sgFindDot(e, 'sgFrostBite');
+    const p=playerEnt();c.castSkill2(p, [e], 'icearrow', 'mv-float');
+    advance(c,p,[e],.1);
+    const dot=c.sgFindDot(e, 'sgFrostBite');
+    return dot && {dps:dot.dps,dur:dot.until-c.GT};
   }
   const base = frost([]);
   const winter = frost(['icearrowWinter']);
   assert.ok(base && winter, '第 2 階【寒霜箭】應該塗上凍傷');
   assert.equal(Math.round(winter.dps / base.dps * 100), 150, '每跳量 ×1.5');
-  assert.equal(Math.round(winter.until / base.until * 100), 150, '持續時間 ×1.5');
+  assert.equal(Math.round(winter.dur / base.dur * 100), 150, '命中時授予的持續時間 ×1.5');
 });
 
 test('【冰裂箭】：命中後往前分裂 2 支小箭，打的是前方而不是身後的敵人', () => {
@@ -635,7 +641,9 @@ test('【冰裂箭】：命中後往前分裂 2 支小箭，打的是前方而�
   const behind = enemy(1e9, 10 * M, 0, 'behind');
   const victim = enemy(1e9, 20 * M, 0, 'victim');
   const ahead = enemy(1e9, 28 * M, 0, 'ahead');
-  c.castSkill2(playerEnt(), [victim, ahead, behind], 'icearrow', 'mv-float');
+  const p=playerEnt(),es=[victim,ahead,behind];
+  c.castSkill2(p, es, 'icearrow', 'mv-float');
+  advance(c,p,es,1);
   const splitAtk = Math.min.apply(null, calls.map((h) => h.atk));
   const aheadHits = calls.filter((h) => h.ent === ahead && h.atk === splitAtk);
   assert.ok(aheadHits.length > 0, '前方的敵人吃得到分裂箭');
@@ -656,7 +664,8 @@ test('【深度凍結】：擊中暈眩或凍結中的敵人時 +50%，未控場
     const e = enemy(1e9, 40, 0, 'a');
     if (control === 'stun') e.effects.stun = 999;
     if (control === 'frozen') e.buffs.sgFrozen = { until: 999, val: 0 };
-    c.castSkill2(playerEnt(), [e], 'icearrow', 'mv-float');
+    const p=playerEnt();c.castSkill2(p, [e], 'icearrow', 'mv-float');
+    advance(c,p,[e],.1);
     return calls[0].total;
   }
   assert.equal(bonus(['icearrowDeepFreeze'], null), 0, '沒有控場就沒有加成');

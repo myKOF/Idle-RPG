@@ -271,6 +271,8 @@ test('寒冰箭第 1 階：前方扇形內的單體攻擊，一支箭一個敵�
   const p = playerEnt(); c.FIELD.player = p;
   const es = [enemy(1e9, 5 * M, 0, 'A'), enemy(1e9, 8 * M, 1 * M, 'B'), enemy(1e9, -20 * M, 0, '後方')];
   assert.ok(c.castSkill2(p, es, 'icearrow', 'mv-float'), '可施放');
+  assert.equal(calls.length, 0, '飛行抵達前不造成傷害或寒霜');
+  run(c, p, es, .2);
   assert.equal(calls.length, 2, '文檔：丟出 2 支寒冰箭，各造成一次傷害');
   assert.ok(calls.every((x) => x.ent.name !== '後方'), '扇形 45 度外的敵人不會被選中');
   assert.ok(Math.abs(calls[0].atk - 500 * (250 + 25) / 100) < 1e-6, '每支＝魔攻 ×(250+25×Lv)%');
@@ -291,7 +293,9 @@ test('【冰系強化】與第 1 階累加（文檔明寫累加效果）', () =>
   const c = loadContext(); const calls = stubHits(c); stubVfx(c);
   setLevels(c, 'icearrow', [1, 1, 1, 0, 0, 0, 0]); equip(c, 'icearrow');
   const p = playerEnt(); c.FIELD.player = p;
-  c.castSkill2(p, [enemy(1e9, 5 * M, 0)], 'icearrow', 'mv-float');
+  const es = [enemy(1e9, 5 * M, 0)];
+  c.castSkill2(p, es, 'icearrow', 'mv-float');
+  run(c, p, es, .2);
   const expected = 500 * ((250 + 25) + (100 + 10)) / 100;
   assert.ok(Math.abs(calls[0].atk - expected) < 1e-6, '250+25 與 100+10 相加後再乘魔攻');
 });
@@ -441,12 +445,16 @@ test('【寒冰爆裂箭】凍結結束時產生冰爆', () => {
 
 /* ---- 水流彈 ---- */
 
-test('水流彈第 1 階：單體命中，且拋物線弧高交給顯示層', () => {
+test('水流彈第 1 階：抵達落點才結算六米範圍，且拋物線弧高交給顯示層', () => {
   const c = loadContext(); const calls = stubHits(c); const specs = stubVfx(c);
   setLevels(c, 'waterball', [1, 0, 0, 0, 0, 0, 0]); equip(c, 'waterball');
   const p = playerEnt(); c.FIELD.player = p;
-  c.castSkill2(p, [enemy(1e9, 5 * M, 0)], 'waterball', 'mv-float');
-  assert.equal(calls.length, 1, '未投資爆散前為單體');
+  p.pos = {x:0,y:0};
+  const es = [enemy(1e9, 5 * M, 0), enemy(1e9, 10 * M, 0), enemy(1e9, 16 * M, 0)];
+  c.castSkill2(p, es, 'waterball', 'mv-float');
+  assert.equal(calls.length, 0, '水彈起飛不能提前命中');
+  run(c, p, es, .2);
+  assert.equal(calls.length, 2, '依Excel第1階：落點六米內兩個敵人，半徑加體型外不命中');
   assert.ok(Math.abs(calls[0].atk - 500 * (200 + 20) / 100) < 1e-6, '傷害＝魔攻 ×(200+20×Lv)%');
   const proj = specs.find((s) => s.variant === 'waterball');
   assert.ok(proj, '送出水彈投射物特效');
@@ -460,6 +468,8 @@ test('【寒冰逆轉】強制改寫敵人屬性標籤，並只放大寒冰段',
   const e = enemy(1e9, 5 * M, 0);
   e.attr = 'fire';
   c.castSkill2(p, [e], 'waterball', 'mv-float');
+  assert.equal(c.skill2ForcedAttr(e), '', '起飛時尚未逆轉');
+  run(c, p, [e], .2);
   assert.equal(c.skill2ForcedAttr(e), 'ice', '無論原本是什麼屬性都改為寒冰');
   assert.equal(c.monsterDefCfg(e).attr, 'ice', 'monsterDefCfg 是唯一出口，改寫在這裡生效');
   assert.equal(c.skill2IceTakenPct(e), 22, '受到的寒冰傷害 +22%（Lv.1）');
@@ -478,9 +488,10 @@ test('【寒流爆散】改為範圍攻擊並彈射（不足 1 次以機率觸�
   const p = playerEnt(); c.FIELD.player = p;
   const es = [enemy(1e9, 5 * M, 0, 'A'), enemy(1e9, 6 * M, 0, 'B'), enemy(1e9, 30 * M, 0, 'C')];
   c.castSkill2(p, es, 'waterball', 'mv-float');
+  run(c, p, es, 1.5);
   const hitA = calls.filter((x) => x.ent.name === 'A').length;
   const hitB = calls.filter((x) => x.ent.name === 'B').length;
-  assert.ok(hitA >= 1 && hitB >= 1, '爆散的 8 米範圍同時打到 A 與 B');
+  assert.ok(hitA >= 1 && hitB >= 1, '爆散的六米範圍同時打到 A 與 B');
   assert.ok(calls.length >= 4, '再彈射 2 次 → 總命中次數明顯多於單體（實際 ' + calls.length + '）');
 });
 
@@ -496,6 +507,7 @@ test('【三重流水】追加水流彈（不足 1 顆以機率觸發）', () =>
     const p = playerEnt(); c.FIELD.player = p;
     const es = [enemy(1e9, 5 * M, 0, 'A')];
     c.castSkill2(p, es, 'waterball', 'mv-float');
+    run(c, p, es, .8);
     return calls.length;
   }
   assert.ok(shots(0.999) < shots(0), '小數機率觸發時水彈更多');
@@ -508,6 +520,7 @@ test('【水龍捲】追加四道地板場域，對凍結中的敵人傷害為 2
   const p = playerEnt(); c.FIELD.player = p;
   const e = enemy(1e9, 5 * M, 0);
   c.castSkill2(p, [e], 'waterball', 'mv-float');
+  run(c, p, [e], .5); // 先完成普通水彈；以下只觀察龍捲的凍結增傷
   const tor = c.SKILL2_RT.grounds.filter((f) => f.kind === 'tornado');
   assert.equal(tor.length, 4, '文檔：我方 10×10 米正方形的四個頂點各一道');
   tor.forEach((f) => assert.equal(f.frozenMult, 2, '對凍結敵人 2 倍'));
@@ -518,7 +531,8 @@ test('【水龍捲】追加四道地板場域，對凍結中的敵人傷害為 2
   c.applyStatus(e, 'sgFrozen', { val: 0, dur: 5 });
   const before = calls.length;
   run(c, p, [e], 1);
-  const frozenHits = calls.slice(before).filter((x) => x.ent === e);
+  const tornadoDamage = 500 * c.sgVal(c.SKILLS2.waterball.tiers[6].fx, 'pct', 1) / 100;
+  const frozenHits = calls.slice(before).filter((x) => x.ent === e && x.atk === tornadoDamage);
   assert.ok(frozenHits.length > 0, '水龍捲逐段造成傷害');
   frozenHits.forEach((x) => assert.equal(x.aCfg.totalDmgPct, 100, '2 倍＝總傷加成 +100%，仍完整走防禦與抗性'));
   assert.ok(specs.some((s) => s.variant === 'water-tornado'), '送出水龍捲場域特效');
@@ -659,6 +673,7 @@ test('【寒霜擴散】寒霜每次作用時機率擴散給附近的敵人', ()
   const a = enemy(1e9, 5 * M, 0, 'A');
   const b = enemy(1e9, 12 * M, 0, 'B');
   c.castSkill2(p, [a], 'waterball', 'mv-float');   // 施放時只有 A 在場
+  run(c, p, [a], .2);
   assert.ok(c.sgFrostOn(a), 'A 帶寒霜');
   assert.ok(!c.sgFrostOn(b), 'B 尚未被波及');
   forceRolls(c, 0);                                 // 擴散機率必中

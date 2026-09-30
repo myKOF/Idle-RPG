@@ -1463,7 +1463,7 @@ var VFXRuntime = (function () {
           presetId !== 'bolt-thunderstrike-bluewhite' &&
           !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || ''))) {
         // 雷鏈的 targets 是「起點、終點」，只在抵達終點時播命中，不能起飛就讓兩端一起爆。
-        var chainHit = spec.variant === 'lightning-chain' && spec.fxKind === 'chain';
+        var chainHit = (spec.variant === 'lightning-chain' || spec.variant === 'frost-spread') && spec.fxKind === 'chain';
         var hitSpec = chainHit ? Object.assign({}, spec, { targets: (spec.targets || []).slice(-1) }) : spec;
         playOnTargets(fxRtFor(roles.hit), roles.hit, hitSpec, hitScaleOf(spec,tuning(roles.hit,'hitScale')),
           roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0,
@@ -1497,6 +1497,13 @@ var VFXRuntime = (function () {
             : playOnTargets(hitRt, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0, undefined, true);
           break;
         case 'projectile':
+          if (spec.fxKind === 'rain' && spec.variant === 'ice-rain') {
+            var rainIds = spec.targets || [];
+            for (var ri = 0; ri < rainIds.length; ri++) {
+              ok = playProjectile(rtFx, presetId, Object.assign({}, spec, { targets: [rainIds[ri]], area: null })) || ok;
+            }
+            break;
+          }
           ok = spec.variant === 'ice-arrow-homing' ? playGround(presetId,spec,role)
             : spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
             : spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);

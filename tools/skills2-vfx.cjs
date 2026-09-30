@@ -3,6 +3,15 @@
 const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
 const noteColumn = '特效作用說明';
 const events = {
+  'icearrow.tearsOfIce': {roles:['projectile','hit'],note:'額外箭雨每波只讀本列觸發子彈與命中特效，從每個受害者上方落下；普通發射及追蹤冰箭不繼承箭雨角色。'},
+  'waterball.4': {roles:['attack'],note:'水流彈每次落地在權威落點播放一次觸發爆散，匹配本次傷害半徑；起飛及寒霜擴散不播放爆散。'},
+  'waterball.5': {roles:['projectile','hit'],note:'寒霜成功擴散時，由原敵人向每個實際受感染者分別播放觸發子彈與命中特效；普通水彈不繼承此冰晶外觀，搜敵距離不放大特效。'},
+  'waterball.7': {roles:['field'],note:'額外水龍捲只播放本列觸發持續場域，每道沿權威位置與半徑續播；普通水彈起飛及落地不播放龍捲。'},
+  'waterball.ragingTide': {roles:['ground'],note:'達到水龍捲數量門檻後，巨大水龍捲只播放本列觸發地板特效；不混入普通水彈或第七階龍捲。'},
+  'waterball.abyssBurial': {roles:['hit'],note:'永久領域每拍施加寒霜時只播放本列觸發命中特效；領域外殼仍讀Status表，普通水彈命中不繼承領域每拍特效。'},
+  'frostnova.7': {roles:['ground'],note:'額外暴風雪只播放本列觸發地板特效，矩形範圍及跟隨中心取權威場域；新星爆發、凍結、死亡新星及共鳴不播放暴風雪。'},
+  'frostnova.crystalResonance': {roles:['projectile','hit'],note:'冰晶共鳴每條實際傷害連線各自讀本列觸發子彈及命中特效，從來源敵人到受害者；普通新星及暴風雪不繼承共鳴冰晶。'},
+  'frostnova.iceKingDomain': {roles:['ground'],note:'每根額外冰錐只讀本列觸發地板特效，固定在生成位置並匹配傷害半徑；暴風雪仍用第七階觸發地板，不變為冰錐或水龍捲。'},
   'icearrow.7': {roles:['attack'],note:'追蹤冰箭本體沿用飛行子彈欄並沿權威移動航向連續播放；敵人凍結結束時，在該敵人的當下位置播放一次觸發特效，匹配冰爆傷害半徑。觸發特效不在冰箭發射、追蹤或普通命中時播放。'},
   'chainlightning.flyingThunderGod': {roles:['field'],note:'每波逐道生成全場貫穿雷電；每道出生時以隨機兩名不同敵人連線決定固定方向；只有一名敵人時改用玩家與該敵人連線，零敵人時才略過，寬度、長度及持續時間由權威事件傳入。觸發持續場域不覆蓋普通雷鏈。'},
   'chainlightning.eternalSuperconductor': {roles:['projectile','hit'],note:'額外維持一道自身與範圍內敵人往返的雷鏈；觸發子彈不覆蓋普通雷鏈，追蹤抵達敵人時播放觸發命中特效，回到自身才疊層；無目標立即終止。'},
