@@ -20,6 +20,8 @@ test('未接線事件及角色拒絕填寫，不把標籤當作特效',()=>{
  assert.throws(()=>vfx.validate('bloodblade','6',{projectile:'p'}),/未接線/);
  assert.doesNotThrow(()=>vfx.validate('bloodblade','5',{projectile:'p',hit:'h'}));
  assert.throws(()=>vfx.validate('bloodblade','5',{projectile:'附加效果'}),/Preset 名稱/);
+ assert.doesNotThrow(()=>vfx.validate('thunderstrike','heavenTribulation',{attack:'bolt-sky-purple',hit:'hit-thunder-purple'}));
+ assert.throws(()=>vfx.validate('thunderstrike','heavenTribulation',{ground:'ground-thunder-curtain'}),/未接線/);
 });
 test('觸發角色全部預載並可在編輯器查到用途',()=>{
  const c=context(),runtime=require('../js/vfx-runtime.js'),usage=require('../tools/vfx/preset-usage.cjs');

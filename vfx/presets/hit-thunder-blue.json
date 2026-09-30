@@ -26,7 +26,7 @@
         "y": 0.1875
       },
       "alpha": 0.6,
-      "tint": "#9333ea",
+      "tint": "#34a4ea",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.156444,
@@ -81,7 +81,7 @@
         "y": 0.1172
       },
       "alpha": 0.95,
-      "tint": "#c084fc",
+      "tint": "#83defc",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.166222,
@@ -137,7 +137,7 @@
         "y": 0.1289
       },
       "alpha": 0.9,
-      "tint": "#c084fc",
+      "tint": "#83c1fc",
       "blendMode": "add",
       "delay": 0,
       "duration": 0.107556,
@@ -189,7 +189,7 @@
         "y": 0.1133
       },
       "alpha": 0.8,
-      "tint": "#9333ea",
+      "tint": "#34c5ea",
       "blendMode": "add",
       "delay": 0.024444,
       "duration": 0.097778,

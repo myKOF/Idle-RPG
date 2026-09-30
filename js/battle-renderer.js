@@ -394,6 +394,9 @@ var BattleRenderer = (function () {
     if (elId === 'pv-float' && S.player) return { x: S.player.root.x, y: S.player.root.y };
     var ent = S.entities[elId];
     if (ent) return { x: ent.root.x, y: ent.root.y };
+    var last = S.lastPos[elId];
+    if (last && nowMs() - last.at < LASTPOS_KEEP_MS && isFinite(last.footY))
+      return { x: last.x, y: last.footY };
     return screenPosOf(elId);
   }
 
@@ -1782,7 +1785,7 @@ var BattleRenderer = (function () {
     ent.state = 'dying';
     ent.dieAt = nowMs();
     ent.realDeath = !!realDeath;
-    S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55, at: nowMs() };
+    S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55, footY: ent.root.y, at: nowMs() };
     if (ent.isBoss) {
       removeBossBar(ent.id);
       if (ent.sheetName) {
@@ -1795,7 +1798,7 @@ var BattleRenderer = (function () {
   function destroyEntity(id) {
     var ent = S.entities[id];
     if (!ent) return;
-    S.lastPos[id] = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55, at: nowMs() };
+    S.lastPos[id] = { x: ent.root.x, y: ent.root.y - ent.hitHeight * 0.55, footY: ent.root.y, at: nowMs() };
     ent.root.destroy({ children: true });
     delete S.entities[id];
   }

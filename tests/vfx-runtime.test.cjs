@@ -1730,6 +1730,34 @@ test('THUNDER 雷柱即時起播跟隨腳底，爆炸只由落地事件觸發',(
  adapter.update(1);assert.equal(adapter.stats().fx.activeEffects,0);
 });
 
+test('THUNDER-HIT 普通與天劫落雷的命中原點貼腳底，延後播放仍追當下腳點',()=>{
+ const presets=['hit-thunder-blue','hit-thunder-purple','bolt-sky-purple','ordinary-hit'].map(id=>unitPreset(id,.5));
+ let foot={x:120,y:126};
+ const ctx={posOf:()=>({x:120,y:80}),footOf:()=>foot,playerPos:()=>({x:0,y:0})};
+ const {adapter,log}=makeAdapter(presets,{ctx});
+ const target=['mv-float-1'];
+ const node=id=>log.nodes.find(n=>n.spec.assetUrl.endsWith('/'+id+'.png'));
+ adapter.tryPlay({fxKind:'impact',variant:'thunder-impact',targets:target,vfx:{hit:'hit-thunder-blue'}});
+ adapter.tryPlay({fxKind:'rain',variant:'thunder-strike',targets:target,vfx:{attack:'bolt-sky-purple',hit:'hit-thunder-purple'}});
+ adapter.tryPlay({fxKind:'impact',variant:'ordinary-impact',targets:target,vfx:{hit:'ordinary-hit'}});
+ adapter.update(.01);
+ for(const id of ['hit-thunder-blue','hit-thunder-purple','bolt-sky-purple']){
+  assert.equal(node(id).transforms.at(-1).y,126,id+' 應與落雷柱共用腳底原點');
+ }
+ assert.equal(node('ordinary-hit').transforms.at(-1).y,80,'一般命中仍對準身體中心');
+ adapter.destroy();
+
+ const delayed=makeAdapter([unitPreset('bolt-sky-purple',.5)],{ctx});
+ delayed.adapter.tryPlay({fxKind:'rain',variant:'thunder-strike',targets:target,travelMs:[120],hit:false,vfx:{attack:'bolt-sky-purple'}});
+ delayed.adapter.update(.1);
+ assert.equal(delayed.log.nodes.length,0,'落雷尚未抵達時不播放');
+ foot={x:160,y:150};
+ delayed.adapter.update(.03);
+ assert.equal(delayed.log.nodes[0].transforms.at(-1).x,160);
+ assert.equal(delayed.log.nodes[0].transforms.at(-1).y,150,'延後播放使用最新腳點');
+ delayed.adapter.destroy();
+});
+
 
 test('VACUUM actor-centred clockwise sweep follows target facing and simulation range',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-crescent.json'),'utf8'));

@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## Codex｜VFX 更新判斷與編輯器重啟（VFX-EDITOR-RESTART-20260930）
+
+- Owner：Codex；Done。更新提示只對編輯器共用程式變更、伺服器載入程式變更，或目前開啟的 Preset／layout 外部變更觸發；保留儲存時雙檔防覆寫。工具列「關閉編輯器」旁新增伺服器重啟並重新載入按鈕；有未存內容會先下載全部編輯備份。
+- 前置：現有本機伺服器與舊分頁防護；使用者正在編輯的四份雷電 Preset／layout 不修改。允許 editor guard/server/frontend/CSS/index、測試與本紀錄；禁止改技能、數值與素材。衝突預檢均無其他副本／分支來源。
+- 驗收：非編輯器 Runtime 改動與快取字串變更不提示；全域程式或任一開啟文件外部修改提示；其他文件修改不提示；舊基準仍拒絕存檔；重啟需先確認未存資料、只重啟本副本伺服器、重新載入頁面；通過相關測試及 build。完成後提交，不合併／推送。
+- 修改：tools/vfx/editor-guard.cjs、editor-server.cjs、editor/index.html、editor.css、editor.js、save-guard.js、tests/vfx-editor-guard.test.cjs、本紀錄。唯讀：js/vfx-runtime.js、js/vfx-core.js、tools/vfx/launch-editor.cjs、既有雷電 Preset／layout。Runtime 的遊戲事件接線不再使編輯器整頁過期；若未來修改 Runtime 中「遊戲播放測試」共用行為，需提高 editor-guard.cjs 的 runtimePreviewRevision。
+- 驗證：editor guard 12/12；guard／save／rename／launcher／panes 合併 116 項中 114 通過、1 跳過、1 既有失敗：hit-thunderstrike-bluewhite.json 非 canonical，該檔與 HEAD 位元相同，非本次修改。build 400 檔通過，diff check 通過。重啟已以 HTTP 端點與瀏覽器函式測試；尚未在實際瀏覽器點擊作端到端驗收。本輪不修改使用者未提交的四份雷電素材；可交使用者整合，未合併／推送。Commit 見本紀錄所在提交。
+
+## Codex｜落雷命中特效貼地（THUNDER-HIT-FOOT-20260930）
+
+- Owner：Codex；Done。實戰中的落雷命中特效原本使用怪物身體中心，與 VFX 編輯器的地板原點及落雷柱腳點不一致。普通落雷與雷霆天劫的命中／追加雷電改錨在腳底，延後播放讀當下腳點；敵人移除後保留最後腳點，一般技能仍命中身體中心。未更動傷害、時序或 Preset 尺寸。
+- 修改：js/vfx-runtime.js、js/battle-renderer.js、tests/vfx-runtime.test.cjs、tests/battle-ground-projection.test.cjs、index.html、tools/vfx/editor/index.html、本紀錄。唯讀檢查：js/skills2.js、js/vfx-core.js、vfx/presets/hit-thunder-blue.json、vfx/presets/hit-thunder-purple.json、vfx/presets/bolt-sky-purple.json、vfx/layouts/hit-thunder-purple.json。使用者正在修改的藍／紫雷 Preset 與 layout 保留原狀。衝突預檢無其他副本／分支來源。
+- 驗證：新 THUNDER-HIT、PROJ-5b 測試在舊碼重現懸空，修正後通過；battle-ground-projection／battle-perspective／lightning-vfx-lifecycle 26/26、落雷／復活光柱／矩陣 Runtime 定向 4/4、技能與編輯器防護 36/36、build 400 檔、diff check 通過。完整 vfx-runtime 115/119，4 項既有失敗為 FIELD、CATALOG-3、CHAIN 金色雷鏈素材、STARFALL-TAIL，與本次落雷座標無關。
+- 風險：尚未在遊戲瀏覽器實機畫面驗收。無必要素材庫修改；使用者未提交的四個藍／紫雷 Preset／layout 仍留工作區。本提交可供整合，未合併／推送；建議遊戲重新載入後觀察藍、紫雷在存活與死亡敵人上的落地光圈。Commit 見本紀錄所在提交。
+
+## Codex｜雷霆天劫觸發特效獨立（HEAVEN-TRIBULATION-VFX-20260930）
+
+- Owner：Codex；Done。以使用者已修改的 Skills2 Excel 為準，讓雷霆天劫額外追擊雷電只讀同列觸發特效及觸發命中特效，普通落雷繼續沿用本體階級外觀；同步 Excel／CSV／技能資料與說明、快取及事件回歸。Excel 另有使用者新值：追擊間隔 0.25 秒，已一併同步。
+- 前置：現有 `sgTickHeavenTribulation` 已傳 `vfxUlt`、普通落雷已傳 `vfxBase`；範圍限 Skills2 配置／接線、必要快取、測試及本紀錄。使用者另有未提交的紫雷 Preset 編輯，保留原狀不納入本任務；不改傷害公式與選敵。
+- 衝突預檢：目標檔案無其他副本或分支衝突來源。驗收：Excel／CSV 逐格一致、配置重建成功、天劫事件只帶紫雷觸發角色、普通落雷維持藍白本體、build 及相關測試通過；不合併／推送。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tools/skills2-vfx.cjs、js/skills2.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-chainlightning-thunder-legendary.test.cjs、tests/skills2-vfx-schema.test.cjs、本紀錄。唯讀檢查：js/vfx-runtime.js、js/vfx-core.js、vfx/presets/bolt-sky-purple.json、vfx/presets/hit-thunder-purple.json、vfx/layouts/hit-thunder-purple.json。
+- 驗證：Excel 正式儲存並重新開啟、Excel／CSV 逐格一致；相對 HEAD 僅第 160 列 8 格值及使用者編輯的觸發三格文字樣式變動。`node tools/config_tables.cjs --apply Skills2` 語意變更 0；`node --test tests/skill2-chainlightning-thunder-legendary.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs` 42/42；`node tools/build_check.cjs` 400 檔；`git diff --check` 通過。技能 JS 語意變更僅 thunderstrike 第二個超神列。
+- 交付：無素材庫必要變更；使用者仍在編輯的紫雷 Preset／layout 留在工作區，未納入本次提交。未做遊戲瀏覽器實機畫面驗收；可交使用者整合，不合併／推送。Commit 見本紀錄所在提交。
+
 ## Codex｜雷電矩陣電柱間距 100（THUNDER-MATRIX-GAP-20260930）
 
 - Owner：Codex；Done。雷幕內電柱的最大間距由 150 改為 100 像素；原 8 根上限會令長雷幕調整無效，同步提高為 16 根，並在正式 Runtime 與備援舊畫法使用相同規則。只改視覺密度，不動判定尺寸、傷害或行進速度。
