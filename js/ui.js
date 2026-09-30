@@ -4006,10 +4006,24 @@ function renderBattleResourceOrbs() {
   setAttrIfChanged($id('battle-mana-orb'), 'aria-label', mpDesc);
 }
 
+function renderEnemyFrenzy(battleSnapshot, view) {
+  var el = $id('battle-frenzy');
+  if (!el) return;
+  var field = battleSnapshot.field || {};
+  var tower = battleSnapshot.tower || {};
+  var enemies = view.towerActive ? (tower.boss ? [tower.boss] : [])
+    : (Array.isArray(field.monsters) ? field.monsters : (field.monster ? [field.monster] : []));
+  var pct = enemyFrenzyAverage(enemies, Number(battleSnapshot.gt) || 0);
+  var channel = Math.round(255 * (1 - Math.min(100, pct) / 100));
+  setTextIfChanged(el, '狂暴化：' + Math.round(pct) + '%');
+  setStyleIfChanged(el, 'color', 'rgb(255, ' + channel + ', ' + channel + ')');
+}
+
 function renderBattle() {
   var headerSnapshot = uiHeaderPanelSnapshot() || {};
   var battleSnapshot = uiBattlePanelSnapshot() || {};
   var view = viewState() || {};
+  renderEnemyFrenzy(battleSnapshot, view);
   var st = headerSnapshot.stats || { hp: view.hpMax || 1, mp: view.mpMax || 1 };
   renderZoneBar();
   refreshStageDisplay();

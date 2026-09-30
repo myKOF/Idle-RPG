@@ -14,7 +14,7 @@
     ],
     "mirror": true,
     "motionAmplitude": 10,
-    "motionSpeed": 12,
+    "motionSpeed": 20,
     "secondaryFrequency": 5,
     "secondaryWeight": 0.1,
     "start": 0,
@@ -33,7 +33,7 @@
       "rotation": -1.5707963267948966,
       "scale": {
         "x": 0.3367,
-        "y": 1.6573
+        "y": 1.3959
       },
       "anchor": {
         "x": 0.5,
@@ -71,7 +71,7 @@
       "rotation": -1.5707963267948966,
       "scale": {
         "x": 0.4131,
-        "y": 1.6573
+        "y": 1.3918
       },
       "anchor": {
         "x": 0.5,
@@ -103,8 +103,8 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/spark_04.png",
       "position": {
-        "x": 655.3455,
-        "y": 18.3533
+        "x": 553.3068,
+        "y": 11.0648
       },
       "rotation": -1.5707963267948966,
       "scale": {
