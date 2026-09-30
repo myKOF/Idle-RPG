@@ -7559,11 +7559,12 @@ function sgQueueThunderBolt(pEnt, st, g, lvs, dmgVal, target, pool, floatSel, ou
 
   sgEmitVfx('thunderstrike', [target], floatSel, {
     fxKind: 'rain', variant: 'thunder-strike', elem: 'lightning', count: 1,
-    delayMs: castDelayMs, travelMs: [timing.travelMs]
+    // 超神另有獨立事件；普通落雷不可繼承雷幕的循環電柱。
+    vfxBase: true, delayMs: castDelayMs, travelMs: [timing.travelMs]
   });
   sgQueueMeteor(pEnt, st, dmgVal, target, pool, impactRadius, null, floatSel, out,
     GT + (castDelayMs + timing.fallMs) / 1000, {
-      gid: 'thunderstrike', variant: 'thunder-impact', elem: 'lightning',
+      gid: 'thunderstrike', variant: 'thunder-impact', elem: 'lightning', vfxBase: true,
       /* 【殛道落雷】：加成在落地當下才判定——先落的雷把人暈住，後落的才吃得到。
          傳奇【引雷針】的加傷走同一條路（同樣是落地當下的狀態決定）。 */
       bonusPctFn: (vulnPct > 0 || rod) ? function (tgt) {
