@@ -6859,8 +6859,18 @@ var BattleRenderer = (function () {
     layoutScene();
   }
   function currentResolution() {
+    var forced = resolutionByQuery();
+    if (forced) return forced;
     var dpr = (typeof devicePixelRatio === 'number' && devicePixelRatio > 0) ? devicePixelRatio : 1;
     return Math.max(1, Math.min(2.5, dpr * uiShellScale()));
+  }
+  /* ?res=0.5：強制 Canvas 的渲染解析度（A／B 用，下限 0.25）。
+     正常的下限是 1——縮小只會變糊，沒有理由在正式流程裡用；
+     這個開關是為了在「特效多到 FPS 崩掉」的場景裡判斷瓶頸是不是填色（像素數）。 */
+  function resolutionByQuery() {
+    var m = (typeof location !== 'undefined') && /[?&]res=([0-9.]+)(&|$)/.exec(location.search || '');
+    var v = m ? Number(m[1]) : 0;
+    return (v > 0 && isFinite(v)) ? Math.max(0.25, Math.min(2.5, v)) : 0;
   }
 
   /* ============ Bridge 訂閱 ============ */

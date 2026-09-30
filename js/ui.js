@@ -553,6 +553,7 @@ function queueWorkerVisualEvent(event) {
     uiNoteVisualDrop('cap', nowQ, nowQ - UI_VISUAL_DIAG.lastFlushAt > UI_WORKER_VISUAL_STALL_MS);
   }
   event._qAt = nowQ;      // 進佇列的時刻，flush 用來判斷飄字是否已經過期
+  if (typeof BattlePerf !== 'undefined' && BattlePerf.active) BattlePerf.noteArrival(event);
   UI_WORKER_VISUAL_EVENT_QUEUE.push(event);
   scheduleWorkerVisualEventFlush();
 }
@@ -575,6 +576,7 @@ function uiNoteVisualEventError(event, err) {
 
 function flushWorkerVisualEvents() {
   var diag = UI_VISUAL_DIAG;
+  var perfT0 = (typeof BattlePerf !== 'undefined' && BattlePerf.active) ? performance.now() : 0;
   var flushAt = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   var stalledGap = flushAt - diag.lastFlushAt > UI_WORKER_VISUAL_STALL_MS;   // 距離上一次 flush 太久＝這段時間 rAF 沒在跑
   diag.lastFlushAt = flushAt;
@@ -639,6 +641,7 @@ function flushWorkerVisualEvents() {
     if ((typeof uiNowMs === 'function' ? uiNowMs() : Date.now()) - flushStart >= UI_WORKER_VISUAL_FRAME_MS) break;
   }
   if (UI_WORKER_VISUAL_EVENT_QUEUE.length) scheduleWorkerVisualEventFlush();
+  if (perfT0) BattlePerf.noteFlush(performance.now() - perfT0, processed);
 }
 
 function handleWorkerUiEvents(events) {
@@ -9886,6 +9889,12 @@ function initBattleFPS() {
   if (!fpsEl || !isInternalVersion()) return;
   fpsEl.style.display = 'block';
   fpsEl.removeAttribute('aria-hidden');
+  /* 戰鬥效能診斷（js/battle-perf.js）：多行疊層，?perf=0 可關。 */
+  var perfOn = typeof BattlePerf !== 'undefined' && BattlePerf.attach();
+  if (perfOn) {
+    fpsEl.style.whiteSpace = 'pre';
+    fpsEl.style.lineHeight = '1.3';
+  }
 
   var lastTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   var frames = 0;
@@ -9895,7 +9904,7 @@ function initBattleFPS() {
     var delta = now - lastTime;
     if (delta >= 500) {
       var fps = Math.round((frames * 1000) / delta);
-      fpsEl.textContent = 'FPS: ' + fps + uiVisualDiagText(now);
+      fpsEl.textContent = 'FPS: ' + fps + uiVisualDiagText(now) + (perfOn ? '\n' + BattlePerf.lines() : '');
       frames = 0;
       lastTime = now;
     }
