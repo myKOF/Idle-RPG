@@ -10,23 +10,33 @@ play／setTransform 可用 `projectionRotation` 指定地面方向，優先於�
 
 已壓扁的舊圖層先還原製作比例；六芒星圖集另補償內建 0.65 壓縮，避免二次壓扁。完整清單見 [GROUND_PROJECTION_AUDIT.md](GROUND_PROJECTION_AUDIT.md)。
 
-## 每層的三個變形開關（2026-09-24）
+## 每層的四個鏡頭開關（2026-09-24；2026-09-30 把遠近拆出來）
 
-遊戲播特效時會對圖層做三種變形，來源各不相同，所以各給一個可選的布林欄位，drawable 圖層適用（empty 不支援）。三個都是**沒填＝受影響**，既有 Preset 的行為不變，schemaVersion 仍為 1。共同規則：關掉的是這一層**圖形本身**的變形，**位置一律照舊跟著變形走**（例如光束尾端的星芒仍留在尾端）。
+遊戲播特效時會對圖層做幾種變形，來源各不相同，所以各給一個可選的布林欄位，drawable 圖層適用（empty 不支援）。全部都是**沒填＝受影響**，既有 Preset 的行為不變，schemaVersion 仍為 1。共同規則：關掉的是這一層**圖形本身**的變形，**位置一律照舊跟著變形走**（例如光束尾端的星芒仍留在尾端）。
 
 | 欄位 | 關掉的是什麼 | 誰在做 |
 | --- | --- | --- |
-| `perspective: false` | 畫面透視（遠近）：整個戰鬥畫面的輕微透視網格（`PERSPECTIVE_TOP_SCALE`），越靠畫面上下緣壓得越厲害 | 顯示層。場景層由 `projectSceneTransform` 就地左乘 diag(w, w²) 抵銷；**整份 Preset 的 drawable 圖層都標記時**，Adapter 改把它播在不經過網格的 billboard 層（完全不變形，見 VFX_RUNTIME_ADAPTER §1.2.4） |
+| `perspective: false` | 畫面透視造成的**形變**：整片透視網格（`PERSPECTIVE_TOP_SCALE`）帶來的傾斜與長寬差，越靠畫面上下緣越明顯 | 顯示層。場景層由 `projectSceneTransform` 就地抵銷；**整份 Preset 的 drawable 圖層都標記時**，Adapter 改把它播在不經過網格的 billboard 層（完全不變形，見 VFX_RUNTIME_ADAPTER §1.2.4） |
+| `cameraDepth: false` | 鏡頭遠近造成的**等比大小**：以角色所在的中心橫線為基準，越靠畫面上方越小、越下方越大；純等比，不含任何傾斜或旋轉 | 顯示層。場景層併進同一支 `projectSceneTransform`；空中／billboard 層由 `depthScaleOf` 取 1 倍。關掉＝畫面上維持固定大小，位置照樣投影 |
 | `followStretch: false` | 拉長：遊戲把整份特效沿一軸撐開（光束拉到敵人身上＝`scaleX` 變大、`scaleY` 不變；場域依判定尺寸撐開） | Core。這一層只吃等比的那一份（`effect.scale`），維持原本的長寬比。粒子的圖本來就只吃等比縮放，填了沒有作用所以不收 |
 | `followDirection: false` | 發射方向：技能往哪打，整份特效就轉向哪裡（實例的 `rotation`）；貼地圖層另外會在地面平面上轉成斜橢圓（實例的 `projectionRotation`） | Core。這一層的**圖**維持作者畫的角度，**位置**照樣跟著方向走——例如光束尾端的星芒仍在尾端，但不會跟著歪 |
 
 `followDirection` 與 `followStretch` 都不收在 `deformation.layers` 裡的圖層（閃電那種沿路徑彎折的）：它們的形狀與角度整個由變形矩陣決定，開關對它們不會有任何作用，收下來再靜靜忽略就是 silent fallback。
 
-`perspective: false` 則**收**變形圖層，但有附帶條件：**整份 Preset 的每一層都要標**（2026-09-24）。原因是變形圖層只有 billboard 那條路走得通——它的網格頂點在特效座標裡算好，節點只負責把整份擺到原點上，就地補償只能校正原點附近的一小塊；雷柱又高又細，同一條垂直線在不同高度會被網格推往不同的橫向位置，補不回來。只標其中幾層時 Core 會回報 `deformation 圖層要關畫面透視，必須整份 preset 的每一層都關`。
+`perspective: false` 與 `cameraDepth: false` 則**收**變形圖層，但有附帶條件：**整份 Preset 的每一層都要標 `perspective: false`**（2026-09-24；`cameraDepth` 2026-09-30 比照）。原因是變形圖層只有 billboard 那條路走得通——它的網格頂點在特效座標裡算好，節點只負責把整份擺到原點上，就地補償只能校正原點附近的一小塊；雷柱又高又細，同一條垂直線在不同高度會被網格推往不同的橫向位置，補不回來。只標其中幾層時 Core 會回報 `deformation 圖層要關畫面透視，必須整份 preset 的每一層都關`。
 
 圖層自己的 `projection`（貼地與壓扁比例）是作者資料，不受這三個開關影響——關掉之後畫面上就是 Editor 預覽看到的樣子。
 
-Editor 的 Inspector 各給一個勾選（預設勾選）；不適用的圖層（`followDirection`／`followStretch` 之於變形圖層）留在原位變灰並說明原因，不藏起來——看不到的選項沒辦法解釋自己為什麼不在。編輯器沒有畫面透視、也不會給發射方向，所以三格在預覽裡看不出差別，差別在遊戲畫面上。
+Editor 的 Inspector 各給一個勾選（預設勾選）；不適用的圖層（`followDirection`／`followStretch` 之於變形圖層）留在原位變灰並說明原因，不藏起來——看不到的選項沒辦法解釋自己為什麼不在。編輯器沒有畫面透視、也不會給發射方向，所以這幾格在預覽裡看不出差別，差別在遊戲畫面上。
+
+**四種組合的意思**（顯示層在場景層就地抵銷；`w` 是該點的透視係數、遠近倍率 `s = 1/w`）：
+
+| `perspective` | `cameraDepth` | 畫面上的結果 |
+| --- | --- | --- |
+| 預設 | 預設 | 網格原樣：會跟著遠近縮放，也會被拉歪 |
+| `false` | 預設 | 等比遠近縮放，零形變（多數「不要歪但要有遠近」的情況） |
+| `false` | `false` | 完全維持作者畫的樣子（固定大小、零形變） |
+| 預設 | `false` | 形變照舊，但大小不隨遠近改變 |
 
 ## 圖層持續循環與等速旋轉（2026-09-18）
 

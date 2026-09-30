@@ -33,7 +33,7 @@ const near = (a, b, eps, msg) => assert.ok(Math.abs(a - b) < eps, msg + '：' + 
 test('PERSP-ORB 球心共享遠近倍率：左右上下、鏡頭平移與 FOV 改變仍保持圓形電弧輪廓', () => {
   const c = { Math, Object, isFinite, S: { layers: { world: { x: -100, y: 40 } } } };
   vm.createContext(c);
-  for (const name of ['airScreenPose', 'projectedWarp', 'projectAirTransform', 'projectBillboardTransform'])
+  for (const name of ['airScreenPose', 'projectedWarp', 'depthScaleOf', 'projectAirTransform', 'projectBillboardTransform'])
     vm.runInContext(extractFunction(renderer, name), c);
   let oldDistortion = 0;
   for (const top of [.6, TOP, 1]) for (const [x, y] of [[120, 100], [600, 100], [120, 600], [600, 600], [335, 365]]) {
@@ -172,19 +172,26 @@ test('PERSP-6 perspective: false 就地抵銷：補償後再經過網格＝作�
   for (const y of [40, 365, 700]) {
     const w = 1 - L.beta * (y - L.cy);
     for (const [rot, sx, sy, sk] of [[0, 1, 1, 0], [0.7, 2, 0.5, 0], [-1.2, 0.8, 1.4, 0.3]]) {
-      const t = { x: 300, y: y, rotation: rot, scaleX: sx, scaleY: sy, skewX: sk, perspective: false };
+      const t = { x: 300, y: y, rotation: rot, scaleX: sx, scaleY: sy, skewX: sk,
+        perspective: false, cameraDepth: false };   // 兩個都關＝畫面上維持作者畫的矩陣（見 PERSP-11）
       const out = c.projectSceneTransform(t);
       const m = mat(out), want = mat(t);
-      /* 網格在該點的局部縮放：橫向 1/w、縱向 1/w²。補償過的矩陣再經過它，要回到原本那一個 */
-      [m[0] / w, m[1] / (w * w), m[2] / w, m[3] / (w * w)].forEach((v, i) =>
+      /* 網格在該點的局部線性部分（含斜切）：J = [[1/w, β(X−cx)/w²], [0, 1/w²]]。
+         補償過的矩陣再經過它，要回到作者畫的那一個。 */
+      const sh = L.beta * (t.x - L.cx) / (w * w);
+      [m[0] / w + sh * m[1], m[1] / (w * w), m[2] / w + sh * m[3], m[3] / (w * w)].forEach((v, i) =>
         near(v, want[i], 1e-9, 'y=' + y + ' rot=' + rot + ' 矩陣第 ' + i + ' 項'));
       assert.equal(out.x, t.x, '位置不動：那一層仍要待在它該在的地方');
       assert.equal(out.y, t.y);
     }
     /* procedural 的 width／height 會蓋掉 scale，要照同一組比例補 */
     const tile = c.projectSceneTransform({ x: 0, y: y, rotation: 0, scaleX: 1, scaleY: 1,
-      width: 256, height: 128, perspective: false });
+      width: 256, height: 128, perspective: false, cameraDepth: false });
     near(tile.width / w, 256, 1e-9, 'width'); near(tile.height / (w * w), 128, 1e-9, 'height');
+    /* 只關形變（預設仍受遠近影響）：畫面上是作者的矩陣再乘遠近倍率 1/w */
+    const depth = c.projectSceneTransform({ x: 0, y: y, rotation: 0, scaleX: 1, scaleY: 1,
+      width: 256, height: 128, perspective: false });
+    near(depth.width / w, 256 / w, 1e-9, 'width 保留遠近'); near(depth.height / (w * w), 128 / w, 1e-9, 'height 保留遠近');
   }
 });
 
@@ -261,4 +268,65 @@ test('PERSP-10 接線：NPC 的視覺子節點掛在 view 上，每幀與出生�
   assert.match(tick, /e\.root\.zIndex = e\.root\.y \+ \(e\.isBoss \? 1000 : 0\);\s*\n[^\n]*\n\s*applyEntityBillboard\(e\);/,
     '每幀在位置與鏡頭都算完之後抵銷');
   assert.doesNotMatch(tick, /applyEntityBillboard\(p\)/, '玩家永遠在畫面中心，中心點不需要抵銷');
+});
+
+test('PERSP-11 兩個旗標各管一件事：畫面透視＝形變，鏡頭遠近＝等比大小（四種組合都對）', () => {
+  /* 2026-09-30 使用者要的第四個勾選：「受鏡頭遠近影響」。以角色中心橫線為基準等比縮放，
+     不含任何扭曲或旋轉，與「受畫面透視影響」（傾斜與長寬差）分開。 */
+  const L = loadLayout()(670, 731, TOP);
+  const c = { Math, Object, VFXCore: require('../js/vfx-core.js'),
+    S: { persp: { layout: L }, layers: { world: { x: 0, y: 0 } } } };
+  vm.createContext(c);
+  vm.runInContext(extractFunction(renderer, 'projectSceneTransform'), c);
+  const lin = (t) => [Math.cos(t.rotation) * t.scaleX, Math.sin(t.rotation) * t.scaleX,
+    -Math.sin(t.rotation - (t.skewX || 0)) * t.scaleY, Math.cos(t.rotation - (t.skewX || 0)) * t.scaleY];
+  const mul = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+    m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3]];
+  for (const x of [120, 335, 600]) {
+    for (const y of [40, 365, 700]) {
+      const w = 1 - L.beta * (y - L.cy), s = 1 / w;
+      /* 網格在該點的局部線性部分 */
+      const J = [1 / w, 0, L.beta * (x - L.cx) / (w * w), 1 / (w * w)];
+      for (const [rot, sx, sy, sk] of [[0, 1, 1, 0], [0.7, 2, 0.5, 0], [-1.2, 0.8, 1.4, 0.3]]) {
+        const base = { x, y, rotation: rot, scaleX: sx, scaleY: sy, skewX: sk };
+        const Lm = lin(base);
+        const at = (flags) => mul(J, lin(c.projectSceneTransform(Object.assign({}, base, flags))));
+        const want = (m) => (v, i) => near(v, m[i], 1e-9, JSON.stringify({ x, y, rot }) + ' 第 ' + i + ' 項');
+        /* 都預設：原樣回傳（逐幀逐節點不能多配置物件） */
+        const keep = Object.assign({}, base, { perspective: true, cameraDepth: true });
+        assert.equal(c.projectSceneTransform(keep), keep);
+        /* 關形變、留遠近：等比 s，沒有傾斜 */
+        at({ perspective: false }).forEach(want(Lm.map((v) => v * s)));
+        /* 兩個都關：畫面上就是作者畫的那個矩陣 */
+        at({ perspective: false, cameraDepth: false }).forEach(want(Lm));
+        /* 只關遠近：形變照舊，大小不隨遠近（把 s 抵掉） */
+        at({ cameraDepth: false }).forEach(want(mul(J, Lm).map((v) => v * w)));
+      }
+      /* procedural 的 width／height 走同一組倍率 */
+      const tile = c.projectSceneTransform({ x, y, rotation: 0, scaleX: 1, scaleY: 1,
+        width: 256, height: 128, perspective: false });
+      near(tile.width / w * w, 256, 1e-9, 'width 不再被額外縮放');
+      near(tile.height, 128 * w, 1e-9, 'height 只留等比的那一份');
+    }
+  }
+});
+
+test('PERSP-12 空中與 billboard 兩層：關掉鏡頭遠近就維持原尺寸，位置照樣投影', () => {
+  const L = loadLayout()(670, 731, TOP);
+  const c = { Math, Object, isFinite, Number,
+    S: { persp: { layout: L }, layers: { world: { x: -100, y: -60 } } } };
+  vm.createContext(c);
+  vm.runInContext(['airScreenPose', 'projectedWarp', 'depthScaleOf', 'projectAirTransform', 'projectBillboardTransform']
+    .map((n) => extractFunction(renderer, n)).join(';'), c);
+  for (const fn of ['projectAirTransform', 'projectBillboardTransform']) {
+    const base = { x: 200, y: 500, scaleX: 2, scaleY: 3, width: 40, height: 20 };
+    const on = c[fn](Object.assign({}, base));
+    const off = c[fn](Object.assign({}, base, { cameraDepth: false }));
+    const s = on.scaleX / base.scaleX;
+    const wantS = 1 / (1 - L.beta * (base.y + c.S.layers.world.y - L.cy));
+    near(s, wantS, 1e-9, fn + '：勾著時就是版面算出來的遠近倍率');
+    assert.ok(s > 1, fn + '：畫面下方要放大');
+    assert.deepEqual([off.scaleX, off.scaleY, off.width, off.height], [2, 3, 40, 20], fn + '：關掉就維持原尺寸');
+    assert.deepEqual([off.x, off.y], [on.x, on.y], fn + '：位置照樣投影到同一點');
+  }
 });

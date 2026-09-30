@@ -318,3 +318,50 @@ test('CAM-11 變形圖層（閃電）要關畫面透視必須整份一起關，�
   assert.ok(sky.layers.every(l=>l.type==='empty'||l.perspective===false),
     'bolt-sky-lightning 要整份標記，否則落雷會掉回場景層而傾斜');
 });
+
+test('CAM-12 受鏡頭遠近影響（cameraDepth）：schema、預設、逐層傳遞，與畫面透視是兩個獨立開關',()=>{
+  /* 2026-09-30 使用者要求把「遠近等比縮放」從「畫面透視形變」拆出來：
+     以角色中心橫線為基準，越上方越小、越下方越大，純等比、沒有扭曲或旋轉。預設打勾。 */
+  const one=extra=>({schemaVersion:1,id:'cam-depth',duration:1,layers:[
+    Object.assign({id:'a',type:'sprite',assetId:'x.png'},extra)]});
+  assert.equal(Core.validatePreset(one({cameraDepth:false})).ok,true);
+  assert.equal(Core.validatePreset(one({cameraDepth:false,perspective:false})).ok,true,'兩個可以各自關');
+  assert.match(Core.validatePreset(one({cameraDepth:'no'})).errors.join(),/cameraDepth 必須是布林值/);
+  assert.match(Core.validatePreset({schemaVersion:1,id:'cam-depth-empty',duration:1,layers:[
+    {id:'e',type:'empty',cameraDepth:false},{id:'a',type:'sprite',assetId:'x.png',parent:'e'}]})
+    .errors.join(),/不支援的欄位：cameraDepth/);
+  /* 沒填的一個位元都不變；填了要留住 */
+  assert.equal(JSON.parse(Core.serialisePreset(one({}))).layers[0].cameraDepth,undefined);
+  assert.equal(JSON.parse(Core.serialisePreset(one({cameraDepth:false}))).layers[0].cameraDepth,false);
+
+  /* 逐層傳給顯示層，共用的 transform 不把上一層的值留給下一層（與 CAM-4 同一種坑） */
+  const p={schemaVersion:1,id:'cam-depth-flags',duration:10,loop:true,layers:[
+    {id:'fixed',type:'sprite',assetId:'a.png',cameraDepth:false},
+    {id:'normal',type:'sprite',assetId:'b.png'},
+    {id:'dust',type:'particle',assetId:'c.png',emission:{mode:'burst',count:1},
+      lifetime:[3,3],speed:[0,0],startScale:[1,1],cameraDepth:false}]};
+  const r=recorder(),rt=Core.createRuntime({backend:r.backend,resolver});
+  rt.registerPreset(p);rt.play(p.id,{position:{x:0,y:0}});rt.update(.1);
+  assert.equal(r.nodes[0].t.cameraDepth,false);
+  assert.equal(r.nodes[1].t.cameraDepth,true,'沒填＝受影響，也不能撿到上一層的 false');
+  assert.equal(r.nodes[2].t.cameraDepth,false,'粒子也要帶旗標');
+  assert.equal(r.nodes[1].t.perspective,true,'兩個旗標互不影響');
+
+  /* 變形圖層（閃電）：場景層補償改的是節點 transform，它的幾何在變形矩陣裡，關了不會生效 */
+  const bolt=(marks)=>({schemaVersion:1,id:'cam-depth-bolt',duration:1,
+    deformation:{axis:'y',start:0,end:100,amplitude:5,widthJitter:.05,mirror:false,layers:['seg']},
+    layers:[Object.assign({id:'seg',type:'sprite',assetId:'a.png'},marks.seg),
+      Object.assign({id:'flash',type:'sprite',assetId:'b.png'},marks.flash)]});
+  assert.match(Core.validatePreset(bolt({seg:{cameraDepth:false}})).errors.join(),
+    /必須整份 preset 的每一層都關畫面透視/);
+  assert.equal(Core.validatePreset(bolt({seg:{cameraDepth:false,perspective:false},
+    flash:{perspective:false}})).ok,true,'整份都關畫面透視就走 billboard 層，那裡套得到倍率');
+
+  /* 編輯器：第四格，預設打勾，且沒有對變形圖層停用（Core 已經用整份規則擋著） */
+  const src=fs.readFileSync(path.join(root,'tools/vfx/editor/editor.js'),'utf8');
+  const fields=src.slice(src.indexOf('var COMMON_FIELDS'),src.indexOf('var VEC_DEFAULTS'));
+  assert.match(fields,/key: 'cameraDepth', label: '受鏡頭遠近影響', kind: 'bool', default: true/);
+  const depth=fields.slice(fields.indexOf("key: 'cameraDepth'"),fields.indexOf("key: 'followDirection'"));
+  assert.ok(depth.indexOf('enabledWhen')<0,'遠近縮放對每一種圖層都有意義，不該停用');
+  assert.ok(/等比/.test(depth),'說明要講明是純等比、不含扭曲');
+});

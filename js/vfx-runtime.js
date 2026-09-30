@@ -390,6 +390,12 @@ var VFXRuntime = (function () {
       var drawable = (p.layers || []).filter(function (l) { return l && l.type !== 'empty'; });
       return drawable.length > 0 && drawable.every(function (l) { return l.perspective === false; });
     }
+    /* 整份都標了「不受畫面透視影響」的 preset 一律走 billboard 層（只投影落點並等比縮放，完全不變形）；
+       沒標的留在場景層（由顯示層逐層補償，前後遮擋不變）。判斷來自 preset 資料，不是寫死的名字。
+       ⚠️ 2026-09-30 使用者回報「旗標都關了，遊戲裡還是變形」：當時只有 attack 那一組播放路徑查這個表，
+       受擊（hit）與施放（cast）寫死走場景層，而場景層的逐層補償抵銷得掉縮放、抵銷不掉斜切殘留。
+       新增播放路徑時要一起用這支，不要再寫死 rtFx。 */
+    function fxRtFor(presetId) { return billboardPresets[presetId] ? rtBillboard : rtFx; }
     var presetSizes = Object.create(null);
     var planePresets = Object.create(null);
     var planeAngles = Object.create(null);
@@ -1458,7 +1464,7 @@ var VFXRuntime = (function () {
         // 雷鏈的 targets 是「起點、終點」，只在抵達終點時播命中，不能起飛就讓兩端一起爆。
         var chainHit = spec.variant === 'lightning-chain' && spec.fxKind === 'chain';
         var hitSpec = chainHit ? Object.assign({}, spec, { targets: (spec.targets || []).slice(-1) }) : spec;
-        playOnTargets(rtFx, roles.hit, hitSpec, hitScaleOf(spec,tuning(roles.hit,'hitScale')),
+        playOnTargets(fxRtFor(roles.hit), roles.hit, hitSpec, hitScaleOf(spec,tuning(roles.hit,'hitScale')),
           roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0,
           undefined, true);
       }
@@ -1479,20 +1485,22 @@ var VFXRuntime = (function () {
       var drops0 = budgetDrops;
       switch (role) {
         case 'hit':
+          /* 整份標了不受畫面透視影響的走 billboard 層（見 fxRtFor），其餘維持場景層 */
+          var hitRt = fxRtFor(presetId);
           if(spec.area && spec.area.knifeImpact) {
-            ok=!!play(rtFx,presetId,Object.assign(defaultSize(presetId,hitScaleOf(spec,tuning(presetId,'hitScale'))),{position:areaCentre(spec.area)}));
+            ok=!!play(hitRt,presetId,Object.assign(defaultSize(presetId,hitScaleOf(spec,tuning(presetId,'hitScale'))),{position:areaCentre(spec.area)}));
             break;
           }
-          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash' || spec.variant === 'heaven-tribulation-impact') && spec.area
-            ? playOnArea(rtFx, presetId, spec)
-            : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0, undefined, true);
+          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(hitRt, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash' || spec.variant === 'heaven-tribulation-impact') && spec.area
+            ? playOnArea(hitRt, presetId, spec)
+            : playOnTargets(hitRt, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0, undefined, true);
           break;
         case 'projectile':
           ok = spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
             : spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
           break;
         case 'cast':
-          ok = playOnPlayer(rtFx, presetId, spec);
+          ok = playOnPlayer(fxRtFor(presetId), presetId, spec);
           break;
         case 'field': case 'ground':
           ok = playGround(presetId, spec, role);
@@ -1526,11 +1534,11 @@ var VFXRuntime = (function () {
             vacuumParams.rotation = isFinite(spec.angle) ? Number(spec.angle) : Math.atan2(vacuumTarget.y-vacuumSource.y,vacuumTarget.x-vacuumSource.x);
             ok = !!play(rtFx, presetId, vacuumParams);
           } else if (spec.variant === 'heaven-tribulation-strike' && spec.area) {
-            ok = playThunderstrike(billboardPresets[presetId] ? rtBillboard : rtFx, presetId, spec);
+            ok = playThunderstrike(fxRtFor(presetId), presetId, spec);
           } else if (presetId === 'bolt-thunderstrike-bluewhite') {
             /* 落雷同樣吃「整份標了 perspective: false」的 billboard 路：又高又細的東西
                留在場景層就會被透視網格推成斜的（2026-09-24 使用者回報）。 */
-            ok = playThunderstrike(billboardPresets[presetId] ? rtBillboard : rtFx, presetId, spec);
+            ok = playThunderstrike(fxRtFor(presetId), presetId, spec);
           } else if (spec.variant === 'dual-slash' || spec.variant === 'dual-storm') {
             var danceIds = spec.targets || [];
             var danceSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
@@ -1573,7 +1581,7 @@ var VFXRuntime = (function () {
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
           /* 整份都標了 perspective: false 的（例如天地再造的直立光柱）只投影落點並等比縮放，
              避免整張場景的 FOV 網格把柱身拉歪。判斷來自 preset 資料，不是寫死的名字。 */
-          else ok = playOnTargets(billboardPresets[presetId] ? rtBillboard : rtFx,
+          else ok = playOnTargets(fxRtFor(presetId),
             presetId, spec, 1, hitDelayFor(spec), true);
           break;
         default:
