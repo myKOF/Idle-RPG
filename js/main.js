@@ -43,11 +43,62 @@ function checkForUpdates() {
     .catch(function(e){});
 }
 
+/* initUI 只建立介面；存檔、面板與 Canvas 都仍可能在非同步載入。
+   等目前分頁的資料齊全並完成首次渲染，才讓 Loading 露出遊戲。 */
+function waitForStartupUi() {
+  if (typeof showLoadingScreen === 'function') showLoadingScreen();
+  var finished = false;
+  var rendered = false;
+  WorkerBridge.on(MSG_OUT.BOOTED, function () {
+    // 存檔來源確認曾暫時收掉 Loading；確認完成後恢復黑幕。
+    if (!finished && typeof showLoadingScreen === 'function') showLoadingScreen();
+  });
+  WorkerBridge.on('workerDead', function () {
+    finished = true;
+    // 讓既有的失效通知與重新載入按鈕可見，不被 Loading 蓋住。
+    if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+  });
+  function check() {
+    if (finished) return;
+    if (!uiRenderingSuspended() && WorkerBridge.status().booted && UI_WORKER_STATE.view) {
+      var panels = desiredUiPanelSubscriptions();
+      var dataReady = Object.keys(panels).every(function (key) {
+        return UI_WORKER_STATE.panels[key] != null;
+      });
+      var canvasReady = true;
+      if (typeof BattleRenderer !== 'undefined' && document.getElementById('battle-canvas-host')) {
+        var status = BattleRenderer.status();
+        canvasReady = status.failed || (status.ready && document.body.classList.contains('battle-canvas-mode'));
+      }
+      if (dataReady && canvasReady) {
+        if (!rendered) {
+          markVisibleUiDirty();
+          // 啟動首畫不受上一次無資料的戰鬥重繪節流影響。
+          UI.lastBattleRenderAt = 0;
+        }
+        uiTick();
+        rendered = true;
+        if (!UI.dirty.header && !UI.dirty.battle) {
+          finished = true;
+          // 留一幀讓 Canvas 與 DOM 套用首次版面，再揭開黑幕。
+          requestAnimationFrame(function () {
+            if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+          });
+          return;
+        }
+      }
+    }
+    requestAnimationFrame(check);
+  }
+  requestAnimationFrame(check);
+}
+
 /* 掛在 TabLock 而非 DOMContentLoaded：沒有取得多分頁鎖的分頁完全不初始化遊戲——
    不建 Worker、不 initUI、不讀存檔，只留一層遮罩。這樣「取得控制權的分頁」永遠是
    一個剛載入、還沒跑過任何東西的頁面，不必處理半初始化狀態（見 js/tablock.js）。 */
 TabLock.onGranted(function () {
   initUI();
+  waitForStartupUi();
   if (typeof initGM === 'function') initGM();
 
   /* 清理存檔資料夾「自匯入」bug 產生的同檔名重複記錄。
@@ -115,5 +166,4 @@ TabLock.onGranted(function () {
       }, true);
     });
   }
-  if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
 });

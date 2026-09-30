@@ -118,7 +118,7 @@ test('THUNDER-ORB-PATHS 正式滿階／雷爆事件繼承的雷球在每條路�
     c.chance = () => true; c.bfPlayerPos = () => ({ x: 0, y: 0 });
     const p = playerEnt(), es = [enemy(1e9, 180, -80, 'a'), enemy(1e9, -200, 60, 'b')];
     c.castSkill2(p, es, 'thunderorb', 'mv-float'); advance(c, p, es, 2);
-    assert.ok(events.some(e => e.variant === 'thunder-fall' && e.vfx.field), '正式繼承欄位必須涵蓋');
+    assert.ok(events.some(e => e.variant === 'thunder-fall' && e.vfx.projectile), '天落只使用已配置觸發飛行物');
     const ids = [...new Set(events.flatMap(e => Object.values(e.vfx || {})))];
     const presets = ids.map(id => JSON.parse(fs.readFileSync(path.join(root, 'vfx/presets', id + '.json'), 'utf8')));
     // 雷殞衝擊也用 circle_b 貼圖；為 NullBackend 的素材引用加 Preset 前綴以辨識來源，幾何不變。
@@ -136,11 +136,42 @@ test('THUNDER-ORB-PATHS 正式滿階／雷爆事件繼承的雷球在每條路�
       records.length = 0; adapter.tryPlay(event);
       for (let frame = 0; frame < Math.ceil((event.delayMs || 0) / 10) + 4; frame++) adapter.update(.01);
       const spheres = records.filter(n => n.spec.assetUrl.startsWith('lightning-orb-field/'));
-      assert.ok(spheres.length, event.variant + ' 的正式繼承雷球');
+      if (event.variant === 'thunder-fall') {
+        assert.equal(spheres.length, 0, '天落不可另播普通雷球本體');
+        assert.equal(event.vfx.field, undefined);
+        assert.ok(records.some(n => n.spec.assetUrl.startsWith(event.vfx.projectile + '/') && n.tag === 'billboard'));
+      } else assert.ok(spheres.length, event.variant + ' 的正式繼承雷球');
       assert.ok(spheres.every(n => n.tag === 'billboard'), event.variant + ' 不能經場景 FOV');
       adapter.clear();
     }
+    // 真配置的飛行、預警與落地衝擊全部播過後，自然回收，不能靠 clear 掩蓋殘留。
+    for (const event of events.filter(e => ['thunder-fall', 'thunder-fall-impact'].includes(e.variant))) adapter.tryPlay(event);
+    for (let frame = 0; frame < 240; frame++) adapter.update(.05);
+    const stats = adapter.stats();
+    for (const tag of ['fx', 'zone', 'air', 'billboard']) assert.equal(stats[tag].activeEffects, 0, tag + ' 天落自然回收');
+    assert.equal(stats.grounds, 0);
     adapter.destroy();
+  }
+});
+
+test('雷殞觸發角色與普通／環繞雷球分離，所有超神及永久落雷共用第七階，空觸發欄不回退', () => {
+  for (const ult of [null, 'criticalThunderbolt', 'thunderBurst', 'thunderfallShatter']) {
+    const c = loadContext(), events = stubVfx(c), hits = stubHits(c); maxLevels(c, 'thunderorb'); equip(c, 'thunderorb');
+    if (ult) setUlt(c, 'thunderorb', ult);
+    c.chance = () => false; c.bfPlayerPos = () => ({ x: 0, y: 0 });
+    const trigger = JSON.parse(JSON.stringify(c.SKILLS2.thunderorb.tiers[6].triggerVfx));
+    assert.deepEqual(Object.keys(trigger).sort(), ['ground', 'hit', 'projectile']);
+    const p = playerEnt(), es = [enemy(1e9, 180, 0, 'a')];
+    c.castSkill2(p, es, 'thunderorb', 'mv-float'); advance(c, p, es, 4);
+    const falls = events.filter(e => e.variant === 'thunder-fall'), impacts = events.filter(e => e.variant === 'thunder-fall-impact');
+    assert.ok(falls.length >= 2); assert.ok(impacts.length >= 2); assert.ok(hits.length > 0);
+    for (const e of [...falls, ...impacts]) assert.deepEqual(JSON.parse(JSON.stringify(e.vfx)), trigger);
+    const ordinary = events.filter(e => ['thunder-orb', 'thunder-orbit'].includes(e.variant));
+    assert.ok(ordinary.length); assert.ok(ordinary.some(e => e.vfx.projectile === 'orb-thunder'));
+    for (const e of ordinary) for (const id of Object.values(e.vfx)) assert.ok(!Object.values(trigger).includes(id), e.variant + ' 不繼承天落外觀');
+    if (ult === 'thunderfallShatter') assert.ok(falls.length > 2, '永久追加雷殞仍讀第七階');
+    c.SKILLS2.thunderorb.tiers[6].triggerVfx = {};
+    assert.deepEqual(JSON.parse(JSON.stringify(c.sgVfxRoles('thunderorb', { vfxTier: 7 }))), {});
   }
 });
 

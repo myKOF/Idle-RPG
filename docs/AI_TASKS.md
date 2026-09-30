@@ -1,5 +1,25 @@
 # AI_TASKS.md
 
+## Codex｜雷殞天落觸發特效獨立（THUNDERFALL-TRIGGER-20260930）
+
+- Owner：Codex；Done。以使用者修改的 Skills2 Excel 第168列為準，額外雷殞的飛行／受擊／預警只讀本列觸發角色，普通雷球／環體電球不繼承天落外觀；永久追加雷殞共用第7階配置。不修改傷害、數量、降落時間或素材。
+- 允許 Excel／CSV／生成資料、tools/skills2-vfx.cjs、技能事件必要接線、快取、相關測試及本紀錄；不改 Claude 正在進行的命中密度 Runtime／文件／Editor。index.html 兩行必要快取與 Claude 的 VFX／效能版號無重疊，依 AI_RULES 3.2 已取得使用者「同意更新並提交」。其餘預檢無衝突。
+- Excel 將 proj-thunderfall-sky 填在觸發特效，依飛行用途修正為觸發子彈；命中／地板名稱保持使用者值。驗收 Excel／CSV／JS 一致、各超神與延後落地事件分離、空觸發欄不回退本體、真 Runtime 回收及 Build；完成後提交交使用者整合，不合併／推送。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js 的生成資料、tools/skills2-vfx.cjs、index.html 的 skills2／bridge 快取、js/bridge.js、js/worker/sim.worker.js 的 Worker 資源版號、tests/skills2-vfx-schema.test.cjs、tests/skill2-thunderorb-icearrow-legendary.test.cjs 與本紀錄。使用者移除第1／4／6階受擊欄的設定一併保留同步；Artifact 編輯只移第168列兩個角色欄並更新說明，原檔所有其他儲存格、原有樣式與其他 ZIP 部件完全保留。Excel COM 唯讀重開確認角色值。素材庫無變更，無須提交。
+- 唯讀檢查：js/vfx-runtime.js、js/vfx-core.js、tools/config_tables.cjs、tools/vfx/editor/index.html、docs/vfx/VFX_RUNTIME_ADAPTER.md、tests/skill-vfx-inheritance.test.cjs、tests/skills2-vfx-usage.test.cjs、tests/skills2-geometry.test.cjs、tests/vfx-runtime.test.cjs 與相關雷球／雷殞 Preset。現有降落與命中事件已携帶 vfxTier:7，登記 thunderorb.7 觸發角色後即可分離，不另改技能邏輯或 Runtime。
+- 驗證：node --test tests/skills2-vfx-schema.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，41/41 通過；涵蓋四種超神選擇、永久雷殞、空欄、正式 Preset 球心投影及飛行／預警／衝擊自然回收。node tools/config_tables.cjs --apply Skills2，0 語意差異；非 VFX 資料與 HEAD 完全一致。node tools/build_check.cjs，402 檔通過；git diff --check 通過。
+- 廣泛回歸：node --test tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs tests/skills2-geometry.test.cjs tests/vfx-runtime.test.cjs，135/140 通過。5 項既有失敗為連鎖速度舊期望、FIELD 分層、CATALOG-3 bolt-sky-purple 根群組、CHAIN 金色 tint、STARFALL-TAIL 尾焰。暫存唯讀攔截器將 Excel／CSV／生成 JS／觸發登記讀回 HEAD 再跑幾何與 Runtime，仍是相同5項失敗，未降低斷言或改權威資料。
+- 交付：Commit 見本紀錄所在提交；可合併，未合併／推送。沒有未完成程式項目；未驗證實機遊戲畫面，建議整合後刷新確認普通雷球與雷殞天落外觀分離。既有回歸失敗需另案處理。
+
+## Codex｜啟動黑幕等待資料與畫面（STARTUP-LOADING-20260930）
+
+- Owner：Codex；Done。使用者回報 Loading 結束後約 0.5 秒露出初始角色、空背包與舊戰鬥 UI。移除黑幕改等 Worker 開機、目前分頁所需面板、戰鬥畫布初始化與首次 UI 渲染完成，再於下一幀揭幕，不採固定延遲。
+- 前置：現有 Loading／Worker 面板與 Canvas 備援流程。允許 js/main.js、index.html 本次必要 Loading／快取行、tests/loading-screen.test.cjs 及本紀錄；禁止修改其他 UI／VFX／技能／存檔／協議及 Claude 變更。index.html 預檢有 Claude 未提交 VFX／效能版號，使用者已明確同意限定範圍修改；其餘目標無衝突來源。
+- 驗收：慢讀檔、延後面板、延後畫布均維持黑幕；全部準備好後先渲染再移除；DOM 備援、新角色空背包、背景分頁與 Worker 失效通知不被卡住。相關回歸、Build／diff check，完成提交交使用者整合，不合併／推送。
+- 修改：js/main.js、index.html 的 main 快取行、tests/loading-screen.test.cjs 及本紀錄。唯讀檢查：js/ui.js、js/bridge.js、js/battle-renderer.js、js/tablock.js、js/save_origin.js、css/style.css、package.json、tests/tab-lock.test.cjs 與 tests/update-check.test.cjs。沒有素材變更，素材庫無須提交；工作區既有 Skills2 Excel／CSV／JS 修改未納入本次提交。
+- 驗證：node --test tests/loading-screen.test.cjs tests/update-check.test.cjs tests/tab-lock.test.cjs，20/20 通過；npm.cmd run build，402 檔通過；git diff --check 通過。保留原黑幕外觀測試，將過早揭幕的舊驗收改為資料與渲染完成才揭幕，新增到齊順序、Canvas 備援、背景、dirty 節流、分頁訂閱、失效通知與存檔來源確認案例。
+- 限制／交付：內建瀏覽器 webview 連線逾時，Edge 控制不可用，未完成實機刷新或 Console 驗收；程式與回歸可合併，建議使用者整合後刷新確認畫面。無未完成程式項目，不合併／推送；Commit 見本紀錄所在提交。
+
 ## Codex｜雷球其餘播放路徑投影（THUNDER-ORB-FOV-PATHS-20260930）
 
 - Owner：Codex；Done。使用者回報少數雷球仍被拉歪；實際滿階／超神事件會繼承 field，在雷殞天落或環繞事件另播雷球，該分支仍在場景層。補齊三種雷球事件的 field 與非環繞 projectile 球心投影，不修改繼承配置、技能計算或貼地預警／衝擊波。
