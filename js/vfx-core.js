@@ -488,13 +488,19 @@ var VFXCore = (function () {
       errors.push(where + '.projection.upright 只支援 particle 的布林值');
     }
     /* 鏡頭造成的兩種變形，各自一個開關（2026-09-24 使用者要求）。沒填＝受影響（既有行為）。
-         perspective      畫面透視（遠近）：整個戰鬥畫面的輕微透視網格。false 時顯示層會抵銷它
+         perspective      畫面透視（形變）：整片透視網格造成的傾斜與長寬差。false 時顯示層會抵銷它
                           （整份 preset 都標的話，Runtime 直接把它播在不經過網格的 billboard 層）。
+         cameraDepth      鏡頭遠近（等比縮放）：以角色所在的中心橫線為基準，越靠畫面上方越小、越下方越大，
+                          純等比、不含任何傾斜或旋轉。false 時這一層在畫面上維持固定大小。
+                          與 perspective 是兩件事：那個是形狀被拉歪，這個只是大小。
          followDirection  發射方向：技能往哪打，整份特效就轉向哪裡；貼地圖層另外會在地面平面上
                           轉成斜橢圓。false 時這一層的**圖**維持作者畫的角度，**位置**照樣跟著轉
                           （例如光束尾端的星芒要待在尾端，但不該跟著歪）。 */
     if (layer.perspective !== undefined && typeof layer.perspective !== 'boolean') {
       errors.push(where + '.perspective 必須是布林值');
+    }
+    if (layer.cameraDepth !== undefined && typeof layer.cameraDepth !== 'boolean') {
+      errors.push(where + '.cameraDepth 必須是布林值');
     }
     if (layer.followDirection !== undefined && typeof layer.followDirection !== 'boolean') {
       errors.push(where + '.followDirection 必須是布林值');
@@ -723,7 +729,7 @@ var VFXCore = (function () {
   var COMMON_LAYER_FIELDS = ['id', 'type', 'parent', 'enabled', 'assetId', 'zIndex', 'position',
     'rotation', 'scale', 'anchor', 'alpha', 'tint', 'blendMode', 'delay', 'duration',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'rotationOverLife', 'sheet', 'projection',
-    'perspective', 'followDirection', 'followStretch'];
+    'perspective', 'cameraDepth', 'followDirection', 'followStretch'];
   /* 這四個欄位掛在 sprite 與 procedural，不掛 particle：
      這兩型走 updateSpriteLayer，兩軸各自取樣；粒子走 updateParticleLayer，
      那裡 scaleY 直接等於 scaleX。允許粒子層寫了卻不生效，正是規格禁止的
@@ -865,6 +871,11 @@ var VFXCore = (function () {
       }
       else if(l.perspective===false&&!allFlat){
         errors.push('deformation 圖層要關畫面透視，必須整份 preset 的每一層都關：'+id);
+      }
+      /* 遠近縮放同理：場景層的逐層補償改的是節點 transform，變形圖層的幾何卻在變形矩陣裡，
+         關了不會生效＝silent fallback。只有整份走 billboard 那條路才套得到（projectedWarp 吃倍率）。 */
+      else if(l.cameraDepth===false&&!allFlat){
+        errors.push('deformation 圖層要關鏡頭遠近，必須整份 preset 的每一層都關畫面透視：'+id);
       }
     });
   }
@@ -1089,7 +1100,7 @@ var VFXCore = (function () {
     'alignToVelocity', 'velocityRotationOffset', 'worldSpace', 'subEmitter',
     'alphaOverLife', 'tintOverLife', 'scaleOverLife', 'scaleXOverLife', 'scaleYOverLife',
     'rotationOverLife', 'rotationXOverLife', 'rotationYOverLife',
-    'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection', 'perspective', 'followDirection', 'followStretch',
+    'offsetXOverLife', 'offsetYOverLife', 'outerScale', 'projection', 'perspective', 'cameraDepth', 'followDirection', 'followStretch',
     'sheet', 'radiusProfile', 'water'];
 
   // 每個水平截面的目標半徑／來源半徑；後端只套用 Core 算出的比例。
@@ -1223,6 +1234,7 @@ var VFXCore = (function () {
       projection: layer.projection,
       /* 三個都是「沒填＝受影響」（既有 preset 行為不變），與 enabled 同一種預設寫法 */
       perspective: layer.perspective !== false,
+      cameraDepth: layer.cameraDepth !== false,
       followDirection: layer.followDirection !== false,
       followStretch: layer.followStretch !== false
     };
@@ -1850,6 +1862,7 @@ var VFXCore = (function () {
       /* perspective 給顯示層（要不要抵銷畫面透視），followDirection 給下面的 projectTransform。
          scratchTransform 是共用的，每一層都要寫，不能只在 false 時寫。 */
       t.perspective = d.perspective;
+      t.cameraDepth = d.cameraDepth;
       t.followDirection = d.followDirection;
       projectTransform(effect, d.projection, t);
       setDeformation(effect, layer, t);
@@ -2210,6 +2223,7 @@ var VFXCore = (function () {
         t.width = undefined; t.height = undefined; t.tileX = undefined; t.tileY = undefined; t.generated = undefined;
         t.deformation = undefined;
         t.perspective = d.perspective;
+        t.cameraDepth = d.cameraDepth;
         t.followDirection = d.followDirection;
         if (d.projection && d.projection.upright) {
           // 發射面貼地，離開發射點之後的上升高度與粒子本體維持直立。

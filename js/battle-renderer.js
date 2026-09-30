@@ -6640,15 +6640,19 @@ var BattleRenderer = (function () {
     out.scaleX = w.scaleX * scale; out.scaleY = w.scaleY * scale;
     return out;
   }
+  /* 這一層要不要跟著鏡頭遠近等比縮放（圖層旗標 cameraDepth，沒填＝要）。
+     關掉的用途：畫面上要維持固定大小的東西（例如標記、指示圈），位置照樣跟著投影走。 */
+  function depthScaleOf(t, scale) { return t && t.cameraDepth === false ? 1 : scale; }
   function projectAirTransform(t) {
     var p = airScreenPose(t.x || 0, t.y || 0);
-    var out = Object.assign({}, t, {x:p.x,y:p.y,scaleX:t.scaleX*p.scale,scaleY:t.scaleY*p.scale});
-    if (t.width !== undefined) out.width = t.width*p.scale;
-    if (t.height !== undefined) out.height = t.height*p.scale;
+    var k = depthScaleOf(t, p.scale);
+    var out = Object.assign({}, t, {x:p.x,y:p.y,scaleX:t.scaleX*k,scaleY:t.scaleY*k});
+    if (t.width !== undefined) out.width = t.width*k;
+    if (t.height !== undefined) out.height = t.height*k;
     if (t.deformation) {
       /* 每一份變形矩陣用它自己的原點取遠近倍率，與非變形圖層各自投影自己的位置一致 */
       var q = airScreenPose(t.deformation.originX || 0, t.deformation.originY || 0);
-      out.deformation = projectedWarp(t.deformation, q, q.scale);
+      out.deformation = projectedWarp(t.deformation, q, depthScaleOf(t, q.scale));
     }
     return out;
   }
@@ -6656,51 +6660,70 @@ var BattleRenderer = (function () {
   function projectBillboardTransform(t) {
     var anchorY = isFinite(t.sortY) ? Number(t.sortY) : (t.y || 0);
     var p = airScreenPose(t.x || 0, anchorY);
+    /* 關掉「受鏡頭遠近影響」的圖層維持原尺寸；離錨點的位移也一起不縮放，否則圖不變、位置卻縮，會和同伴分家 */
+    var k = depthScaleOf(t, p.scale);
     var out = Object.assign({}, t, {
-      x: p.x, y: p.y + ((t.y || 0) - anchorY) * p.scale,
-      scaleX: t.scaleX * p.scale, scaleY: t.scaleY * p.scale
+      x: p.x, y: p.y + ((t.y || 0) - anchorY) * k,
+      scaleX: t.scaleX * k, scaleY: t.scaleY * k
     });
-    if (t.width !== undefined) out.width = t.width * p.scale;
-    if (t.height !== undefined) out.height = t.height * p.scale;
+    if (t.width !== undefined) out.width = t.width * k;
+    if (t.height !== undefined) out.height = t.height * k;
     if (t.deformation) {
       /* 與上面同一個道理，但 billboard 是「整張以錨點決定遠近」：原點照錨點投影，
          高於錨點的部分等比拉開，柱身／雷柱才是直的。 */
       out.deformation = projectedWarp(t.deformation,
         { x: airScreenPose(t.deformation.originX || 0, anchorY).x,
-          y: p.y + ((t.deformation.originY || 0) - anchorY) * p.scale }, p.scale);
+          y: p.y + ((t.deformation.originY || 0) - anchorY) * k }, k);
     }
     return out;
   }
-  /* 場景層（presetFx／presetZone）裡標了 perspective: false 的圖層：就地把畫面透視抵銷掉。
-     場景整片會被 PerspectiveMesh 變形，在某一點的局部縮放是橫向 1/w、縱向 1/w²（w 見 perspectiveLayout），
-     所以這裡先左乘 diag(w, w²)；位置不動——那一層仍然要待在它該在的地方，跟著場景一起被搬過去。
+  /* 場景層（presetFx／presetZone）的兩個圖層旗標，在這裡就地抵銷掉整片 PerspectiveMesh 的效果。
+     網格在某一點的局部線性部分是
+       J = [[1/w, β(X−cx)/w²], [0, 1/w²]]，w = 1 − β(Y−cy)（見 perspectiveLayout）
+     它同時包含兩件事：等比的遠近倍率 s = 1/w，以及傾斜與長寬差（形變）。兩個旗標各關一件：
 
+       perspective  cameraDepth   想要的結果            左乘的抵銷矩陣 M
+       ───────────  ───────────   ───────────────────   ─────────────────────────
+       預設（true） 預設（true）  網格原樣               I（不碰，直接回傳）
+       false        true          等比遠近、零形變       J⁻¹·s ＝ [[1, −β(X−cx)], [0, w]]
+       false        false         原尺寸、零形變         J⁻¹   ＝ 上式再乘 w
+       true         false         形變照舊、大小不隨遠近  w·I
+
+     位置不動——那一層仍然要待在它該在的地方，跟著場景一起被搬過去。
      為什麼要拆矩陣而不是直接乘在 scaleX／scaleY 上：抵銷發生在螢幕座標，而 scaleX／scaleY 是圖層
      自己的軸。圖層一旦有旋轉或斜切，兩者就不是同一回事，直接乘會把圖轉歪。
 
-     殘留：單應變換在圖層範圍內不是完全均勻（離畫面中心越遠、圖越大，殘留的輕微傾斜越明顯）。
+     殘留：單應變換在圖層範圍內不是完全均勻（抵銷在圖層原點精確，離原點越遠殘留越多）。
      整份 preset 都標 perspective: false 時 Runtime 會改走 billboard 層（完全不變形），
      這裡處理的是「同一份特效裡只有幾層要維持原樣」的情況，好處是前後遮擋不變。 */
   function projectSceneTransform(t) {
-    if (!t || t.perspective !== false) return t;
+    if (!t || (t.perspective !== false && t.cameraDepth !== false)) return t;
     var L = S.persp && S.persp.layout;
     if (!L || typeof VFXCore === 'undefined') return t;   // 沒開透視＝本來就沒被變形
     var world = S.layers && S.layers.world;
     var py = (t.y || 0) + (world ? world.y : 0);
+    var px = (t.x || 0) + (world ? world.x : 0);
     var w = Math.max(0.1, 1 - L.beta * (py - L.cy));
+    /* M = [[ma, mc], [0, md]]（沒有 mb：網格不會把橫向位移變成縱向） */
+    var ma = 1, mc = 0, md = 1;
+    if (t.perspective === false) { mc = -L.beta * (px - L.cx); md = w; }
+    if (t.cameraDepth === false) { ma *= w; mc *= w; md *= w; }
     var out = Object.assign({}, t);
     if (t.scaleX !== undefined) {
       var rot = t.rotation || 0, sk = t.skewX || 0;
+      /* 圖層自己的線性部分（Pixi 的排法）再左乘 M */
+      var la = Math.cos(rot) * t.scaleX, lb = Math.sin(rot) * t.scaleX;
+      var lc = -Math.sin(rot - sk) * t.scaleY, ld = Math.cos(rot - sk) * t.scaleY;
       var p = VFXCore.decomposeMatrix({
-        a: Math.cos(rot) * t.scaleX * w, b: Math.sin(rot) * t.scaleX * w * w,
-        c: -Math.sin(rot - sk) * t.scaleY * w, d: Math.cos(rot - sk) * t.scaleY * w * w,
+        a: ma * la + mc * lb, b: md * lb,
+        c: ma * lc + mc * ld, d: md * ld,
         tx: 0, ty: 0
       }, {});
       out.rotation = p.rotation; out.scaleX = p.scaleX; out.scaleY = p.scaleY; out.skewX = p.skewX;
     }
     /* procedural 的 width／height 會蓋掉 scale（Pixi 的 width setter 就是改 scale），一起補 */
-    if (t.width !== undefined) out.width = t.width * w;
-    if (t.height !== undefined) out.height = t.height * w * w;
+    if (t.width !== undefined) out.width = t.width * ma;
+    if (t.height !== undefined) out.height = t.height * md;
     return out;
   }
 

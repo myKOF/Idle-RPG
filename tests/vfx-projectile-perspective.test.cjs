@@ -7,7 +7,7 @@ const Backend=require('../js/vfx-pixi-backend.js');
 const source=fs.readFileSync(path.join(__dirname,'../js/battle-renderer.js'),'utf8');
 function projection(){
   const c={Math,S:{layers:{world:{x:17,y:-29}},persp:null}};vm.createContext(c);
-  for(const name of ['perspectiveLayout','airScreenPose','projectedWarp','projectAirTransform','projectBillboardTransform'])vm.runInContext(extractFunction(source,name),c);
+  for(const name of ['perspectiveLayout','airScreenPose','projectedWarp','depthScaleOf','projectAirTransform','projectBillboardTransform'])vm.runInContext(extractFunction(source,name),c);
   c.S.persp={layout:c.perspectiveLayout(700,680,.82)};return c;
 }
 test('空中投影在四角／遠近只改錨點與等比大小，保留素材旋轉和寬高比',()=>{
