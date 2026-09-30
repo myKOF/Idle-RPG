@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜臨界雷劫衍生球三秒（CRITICAL-THUNDER-LIFETIME-20260930）
+
+- Owner：Codex；Done。首代外擴電球維持10秒，命中衍生的靜止電球改為3秒。保留每秒3米、單球0.75秒成功生成冷卻、衍生代不再生與96顆保底上限；機率5%＋每級0.5%、傷害50%＋每級5%沿用目前使用者Excel。
+- 依賴使用者完成Claude合併及已提交水系修復fc71ef20；所有目標預檢乾淨。允許Skills2 Excel／CSV／生成JS、雷球限定段、相關測試、必要快取及本紀錄；使用者既有lightning-orb-field-purple修改依提交偏好同步必要素材庫。禁止其他技能、其他副本與未授權合併／推送。
+- 驗收首代10秒與子代3秒邊界、移動／靜止、生成冷卻與世代、正式VFX期限／回收、Excel逐格重開、回歸與Build；素材庫先提交、遊戲後提交。
+- 修改：Skills2 Excel／CSV／JS、index、bridge、sim.worker、雷球傳奇與幾何測試、lightning-orb-field-purple Preset及本紀錄。檢查未改：VFX Core／Runtime、場域上限、紫色電球layout、Status、幾何讀表工具及素材匯出工具；不新增協議或特效来源。Excel原生儲存／唯讀重開，全部儲存格對比只有第169列效果JSON／描述／唯讀描述三格改動。
+- 驗證：node --test --test-name-pattern='CRITICAL-THUNDER|臨界雷劫' tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skills2-geometry.test.cjs，5/5；正式紫色Preset逐幀外擴與靜止、回收。node --test tests/skill2-thunderorb-critical-cap.test.cjs，8/8。node tools/config_tables.cjs --apply Skills2，0差異；node tools/vfx/export-assets.cjs --check，236份Preset／154個素材的引用與匯出一致；Preset驗證通過。npm.cmd run build，409檔；git diff --check通過。
+- 素材庫5a7e860先提交必要Preset與既有layout，穩定相對路徑codex-authored/lightning/{presets,layouts}/lightning-orb-field-purple.json；從素材庫同步回遊戲並核對SHA256，無新二進位引用。兩倉庫僅選本次必要檔案，無其他AI修改。遊戲Commit為本紀錄所在提交；可合併，未合併／推送，無未完成程式項目。尚未驗證遊戲瀏覽器實戰／Console；建議整合後重載確認，接續風系全階稽核。
+
 ## Codex｜冰水三技能全階與超神稽核（WATER-ICE-AUDIT-20260930）
 
 - Owner：Codex；Done。使用者要求寒冰箭、水流彈、冰霜新星全部1～7階與每棵三個超神，共30列。九列追加效果移至獨立觸發角色，修正普通水彈／新星被冰晶、暴風雪與龍捲覆蓋；補上追蹤冰箭T6、抵達命中、即時落點敵人清單、獨立爆散半徑、逐配對共鳴與每目標箭雨；凍結只用Status。依表格移除共鳴四來源傷害上限，倒地保留永久排程剩餘時間。冰皇冰錐依使用者選擇改用既有ground-icearrow-frost。
