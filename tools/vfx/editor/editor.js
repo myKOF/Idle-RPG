@@ -1828,12 +1828,20 @@
      方向是畫面上的方向、距離是特效座標的 px，與拖曳框同一個語意（G.nudgePositions）：
      掛在轉過角度的父物件底下也往畫面右邊走；多選時父子一起被選只動最上層（transformRoots）。
 
-     按住不放會連續移動，**一次按住到放開算一步歷史**：每一下各記一步的話，按住一秒就是
+     按住不放：先停 0.5 秒（那段時間只走按下去的那 1px，方便一格一格點），之後以每秒 10px
+     連續移動，**一次按住到放開算一步歷史**：每一下各記一步的話，按住一秒就是
      幾十步，Ctrl+Z 要按到手痠，還會把 100 步的歷史擠掉。交易開著的這段時間別的操作可能插進來
      （點輸入框、拖曳），收尾時用交易代號只收自己那一筆，不會替別人提早收掉。 */
   var NUDGE_KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
   var NUDGE_SHIFT_STEP = VFXGizmoModel.SNAP.move;   // 拖曳時 Shift 對齊的格距，同一個數字只寫一處
+  /* 按住不放的連續移動自己計時，**不吃作業系統的鍵盤重複**（keydown 的 e.repeat）：
+     那個速率是使用者的系統設定（Windows 預設延遲 250～1000ms、每秒約 30 下），
+     同一份 preset 在不同機器上手感不一樣，而且快到停不在想要的位置。
+     2026-09-30 使用者指定：按一下 1px，按住 0.5 秒之後以每秒 10px 連續移動。 */
+  var NUDGE_HOLD_MS = 500;         // 按住多久才開始連續移動
+  var NUDGE_REPEAT_MS = 100;       // 每 100ms 走一步 ＝ 每秒 10px
   var nudge = null;                // 按住中：{ pane, doc, history, token }
+  var nudgeHold = null;            // 按住中的方向鍵計時器：{ delay, repeat }
 
   function nudgeSelection(dx, dy) {
     var target = gizmoTarget();
@@ -1858,8 +1866,33 @@
     return true;
   }
 
+  /* 按住某個方向鍵：0.5 秒後開始以每秒 10px 連續移動。
+     步距（1px 或 Shift 的 10px）在按下去那一刻決定——按住的途中才按 Shift 不換速度，
+     因為連續移動中途變速會比較難停在想要的位置。 */
+  function startNudgeHold(dx, dy) {
+    stopNudgeHold();
+    var hold = nudgeHold = { delay: 0, repeat: 0 };
+    hold.delay = setTimeout(function () {
+      hold.delay = 0;
+      hold.repeat = setInterval(function () {
+        /* 中途選取被清掉（例如別的操作插進來）就停手，不要空轉一個永遠不動的計時器 */
+        if (!nudgeSelection(dx, dy)) stopNudgeHold();
+      }, NUDGE_REPEAT_MS);
+    }, NUDGE_HOLD_MS);
+  }
+
+  function stopNudgeHold() {
+    if (!nudgeHold) return;
+    if (nudgeHold.delay) clearTimeout(nudgeHold.delay);
+    if (nudgeHold.repeat) clearInterval(nudgeHold.repeat);
+    nudgeHold = null;
+  }
+
   /* 放開方向鍵、按下滑鼠、切換視窗、瀏覽器失焦時收尾：這一段移動變成一步歷史，Inspector 重畫。 */
   function finishNudge() {
+    /* 計時器一定要停在最前面：nudge 是 null（什麼都沒選到）時也可能有計時器在跑，
+       擺在下面那行 return 之後就會漏掉，變成放開按鍵之後圖層還在自己走。 */
+    stopNudgeHold();
     if (!nudge) return;
     var n = nudge;
     nudge = null;
@@ -3030,8 +3063,15 @@
     var dir = NUDGE_KEYS[e.key];
     if (dir) {
       if (e.ctrlKey || e.metaKey || e.altKey || gizmo.drag || state.pan) return;
+      /* 作業系統的鍵盤重複整個丟掉：連續移動的節奏由 startNudgeHold 決定，
+         否則按住的速度＝使用者的系統設定，每台機器都不一樣。 */
+      if (e.repeat) { e.preventDefault(); return; }
       var step = e.shiftKey ? NUDGE_SHIFT_STEP : 1;
-      if (nudgeSelection(dir[0] * step, dir[1] * step)) e.preventDefault();
+      var dx = dir[0] * step, dy = dir[1] * step;
+      if (nudgeSelection(dx, dy)) {
+        startNudgeHold(dx, dy);
+        e.preventDefault();
+      }
       return;
     }
 

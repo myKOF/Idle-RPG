@@ -8155,3 +8155,12 @@ Worker 存活且頁面正常完成載入。
 - 實機：獨立 28370 Editor 開啟合法 Preset、新欄位 0.12、兩端尖細；正式 Runtime 測試場景可選連鎖飛行及移動目標，Console 無警告／錯誤。完整遊戲戰鬥視覺仍待使用者確認手感，未聲稱已跑實戰。
 - 素材庫提交：9679e6b（codex-authored/lightning 的 gold Preset 與配對 layout）；遊戲 Commit 見本紀錄所在提交。可合併，未合併／推送；無待處理功能修改，既有四項回歸失敗另案排查。
 - 最終補驗：提交暫存版本（不混入使用者既有速度／紫色受擊配置）的技能機制 23/23、Excel／CSV／JS 配置 8/8 通過，apply 17 字面值／0 語意變更；工作區技能＋變形 36/36 通過。暂存 XLSX 與 HEAD 比較僅指定六格改值。
+
+## Claude｜方向鍵按住的連續移動改自己計時（VFX-NUDGE-HOLD-20260930）
+
+- Owner：Claude；Done。使用者要求「選中的 LAYER 可以用方向鍵移動，每按一下 1 像素，長按 0.5 秒後以每秒 10 像素快速位移」。方向鍵移動本來就有（2026-09-17，NUDGE-1～6：1px／Shift 10px、掛在轉過的父物件底下也是畫面上的 1px、一次按住到放開算一步歷史），缺的只有「按住」的節奏——原本吃瀏覽器轉發的**作業系統鍵盤重複**，延遲與速率是使用者的系統設定（Windows 預設延遲 250～1000ms、每秒約 30 下），每台機器手感不同，而且快到停不在想要的位置。
+- 改法：`keydown` 收到 `e.repeat` 就整個丟掉，改由 `startNudgeHold` 自己計時——按下去先走 1px，`NUDGE_HOLD_MS`（500ms）之後每 `NUDGE_REPEAT_MS`（100ms）走一步，即每秒 10px。步距在按下去那一刻決定（Shift 的 10px 一樣整包帶著走），按住途中才按 Shift 不換速度：連續移動中途變速更難停在想要的位置。`stopNudgeHold` 放在 `finishNudge` 的最前面——`nudge` 是 null（什麼都沒選到）時也可能有計時器在跑，擺在那行 return 之後會漏掉，症狀是放開按鍵之後圖層還在自己走。既有的收尾路徑（keyup／按下滑鼠／切換視窗／瀏覽器失焦）不必各自再加一次。
+- 修改 `tools/vfx/editor/editor.js`、編輯器頁面的快取版號、`tests/vfx-editor-gizmo.test.cjs`。沒有動到 preset、配置表或遊戲程式。
+- 驗證：新增 NUDGE-7／7B（用假的計時器跑真正的 `startNudgeHold`／`stopNudgeHold`：延遲 500ms、間隔 100ms、步距整包帶著走、放開時兩種計時器都清乾淨、重按先停舊的、動不了就自己停手），NUDGE-3 的沙箱補上 `stopNudgeHold`，NUDGE-4 補三條接線斷言。9 個突變全部被抓到——其中一個活下來過：`fin.indexOf('stopNudgeHold()') < ...` 在整行被刪掉時 `indexOf` 回 −1 反而通過，補了「先確認它真的在」才釘住。編輯器 416 項中 3 項失敗（CAP-2、HISTORY-42、16b canonical），三項都在既有基線上。build_check 404 檔通過、diff check 通過。
+- 實機確認（本機編輯器 28362，`hit-lightning`）：按一下 +1px；按住量到 1ms／205ms／465ms 都停在 1px，706ms 起開始走，1214ms 累計 7px（706→1214ms 走 5px ≒ 每秒 10px），放開後 300ms 不再移動；連續灌 20 次 `repeat: true` 的 keydown 只移動 1px（系統速率確實被丟掉）；Shift 仍是一次 10px；一次按住到放開仍只記一步歷史。
+- 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/editor/` 或 gizmo 測試的提交。codex 工作區有未提交的 `docs/AI_TASKS.md`（與本檔同一個檔案，合併時可能要手動併一下）與 Skills2／index.html，未碰。本副本另有 FPS 調查留下的未提交修改（`js/battle-perf.js`、`js/gm.js`、`js/ui.js`、`index.html`、`GM_command.md`、`tests/gm-perf-command.test.cjs`），不屬於本次，未一起提交。未合併／推送。

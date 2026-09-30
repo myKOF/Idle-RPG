@@ -1004,7 +1004,10 @@ test('NUDGE-3 按住方向鍵：每一下都移動，放開才記成一步歷史
     onPresetChanged: () => { rebuilt++; }, renderInspector: () => {}
   };
   vmNudge.createContext(c);
-  vmNudge.runInContext('var nudge = null;\n' + extractFn(EDITOR_SRC, 'nudgeSelection') + '\n' +
+  /* finishNudge 會先停掉按住的計時器（NUDGE-7），所以沙箱要一起帶進來 */
+  vmNudge.runInContext('var nudge = null;\nvar nudgeHold = null;\n' +
+    extractFn(EDITOR_SRC, 'nudgeSelection') + '\n' +
+    extractFn(EDITOR_SRC, 'stopNudgeHold') + '\n' +
     extractFn(EDITOR_SRC, 'finishNudge') +
     '\nthis.nudgeSelection = nudgeSelection; this.finishNudge = finishNudge;', c);
 
@@ -1048,6 +1051,16 @@ test('NUDGE-4 Editor 接線：方向鍵排在文字輸入與曲線編輯器的�
   assert.ok(/e\.shiftKey \? NUDGE_SHIFT_STEP : 1/.test(branch), '每按一下 1px，Shift 一次 10px');
   assert.ok(/if \(nudgeSelection\(/.test(branch) && /e\.preventDefault\(\)/.test(branch),
     '真的動了才擋掉預設行為');
+  /* 2026-09-30：連續移動的節奏改成自己計時，作業系統的鍵盤重複整個丟掉 */
+  assert.ok(/if \(e\.repeat\) \{ e\.preventDefault\(\); return; \}/.test(branch),
+    '系統的鍵盤重複要丟掉，否則按住的速度是使用者的系統設定，每台機器都不一樣');
+  assert.ok(/startNudgeHold\(dx, dy\)/.test(branch), '真的動了才開始計時按住');
+  const fin = extractFn(EDITOR_NC, 'finishNudge');
+  const stopAt = fin.indexOf('stopNudgeHold()');
+  /* 先確認它真的在：只比順序的話，整行被刪掉時 indexOf 回 -1 反而「通過」 */
+  assert.ok(stopAt >= 0, 'finishNudge 要停掉按住的計時器，否則放開按鍵之後圖層還在自己走');
+  assert.ok(stopAt < fin.indexOf('if (!nudge) return;'),
+    '計時器要停在「什麼都沒選到就 return」之前，否則那條路徑會漏掉');
   assert.ok(/ArrowLeft: \[-1, 0\], ArrowRight: \[1, 0\], ArrowUp: \[0, -1\], ArrowDown: \[0, 1\]/.test(EDITOR_NC),
     '上＝畫面上方（y 軸朝下）');
   assert.ok(/var NUDGE_SHIFT_STEP = VFXGizmoModel\.SNAP\.move;/.test(EDITOR_NC), 'Shift 的距離與拖曳對齊同一個數字');
@@ -1275,4 +1288,98 @@ test('SCREEN-2 群組的框線一樣固定，只是比單層粗一倍', function
   assert.equal(screenSizes(1, true).widths[0], 2);
   assert.equal(screenSizes(6, true).widths[0], 2, '拉近 6 倍還是 2px');
   assert.equal(screenSizes(0.3, true).widths[0], 2, '拉遠也不會細到看不見');
+});
+
+/* ============================================================
+   NUDGE-7 按住方向鍵的連續移動（2026-09-30 使用者要求）
+
+   規格：按一下 1px；按住 0.5 秒之後以每秒 10px 連續移動。
+
+   為什麼不靠瀏覽器的鍵盤重複：那個延遲與速率是使用者的作業系統設定
+   （Windows 預設延遲 250～1000ms、每秒約 30 下），同一份 preset 在不同機器上
+   手感不一樣，而且快到停不在想要的位置。所以自己計時，並丟掉 e.repeat。
+
+   用假的計時器跑真正的函式，才驗得到「0.5 秒之前一下都不動、之後每 100ms 一步」——
+   拿真的 setTimeout 跑，測試要等半秒，而且會偶爾因為排程抖動而閃紅。
+   ============================================================ */
+function nudgeHoldSandbox() {
+  const decls = ['NUDGE_HOLD_MS', 'NUDGE_REPEAT_MS', 'nudgeHold'].map(function (name) {
+    const m = new RegExp('var ' + name + ' = [^;]+;').exec(EDITOR_NC);
+    assert.ok(m, '找不到 var ' + name + '——改名了就要同步更新測試');
+    return m[0];
+  });
+  const c = {
+    moved: [],        // 每一次 nudgeSelection 收到的 (dx, dy)
+    cleared: [],      // 被清掉的計時器 id
+    pending: null,    // 還沒到期的 setTimeout
+    ticking: null,    // 連續移動的 setInterval
+    alive: true       // nudgeSelection 的回傳值（false ＝ 沒東西可動）
+  };
+  c.setTimeout = function (fn, ms) { c.pending = { fn: fn, ms: ms }; return 11; };
+  c.clearTimeout = function (id) { c.cleared.push(id); };
+  c.setInterval = function (fn, ms) { c.ticking = { fn: fn, ms: ms }; return 22; };
+  c.clearInterval = function (id) { c.cleared.push(id); };
+  c.nudgeSelection = function (dx, dy) { c.moved.push([dx, dy]); return c.alive; };
+  vmNudge.createContext(c);
+  vmNudge.runInContext(decls.join('\n') + '\n' +
+    extractFn(EDITOR_NC, 'startNudgeHold') + '\n' + extractFn(EDITOR_NC, 'stopNudgeHold') +
+    '\nthis.startNudgeHold = startNudgeHold; this.stopNudgeHold = stopNudgeHold;', c);
+  return c;
+}
+
+test('NUDGE-7 按住方向鍵：0.5 秒內只走按下去的那一下，之後每 100ms 一步（每秒 10px）', function () {
+  const c = nudgeHoldSandbox();
+  assert.equal(c.NUDGE_HOLD_MS, 500, '使用者指定按住 0.5 秒才開始連續移動');
+  assert.equal(c.NUDGE_REPEAT_MS, 100, '每秒 10px ＝ 100ms 走一步');
+
+  c.startNudgeHold(1, 0);
+  assert.deepEqual(c.moved, [], '按下去那一下是 onKeyDown 走的，計時器自己不重複走一次');
+  assert.equal(c.pending.ms, 500);
+  assert.equal(c.ticking, null, '延遲還沒到就不該有連續移動的計時器');
+
+  c.pending.fn();                                   // 0.5 秒到
+  assert.equal(c.ticking.ms, 100);
+  c.ticking.fn(); c.ticking.fn(); c.ticking.fn();
+  assert.deepEqual(c.moved, [[1, 0], [1, 0], [1, 0]], '每一步都是按下去時的方向與步距');
+
+  /* 步距在按下去那一刻決定：Shift 的 10px 整包帶著走（按住途中才按 Shift 不換速度，
+     連續移動中途變速會更難停在想要的位置） */
+  const shift = nudgeHoldSandbox();
+  shift.startNudgeHold(0, -10);
+  shift.pending.fn(); shift.ticking.fn();
+  assert.deepEqual(shift.moved, [[0, -10]]);
+});
+
+test('NUDGE-7B 放開按鍵停得乾淨：兩種計時器都清掉，重按不會疊出第二個', function () {
+  const early = nudgeHoldSandbox();
+  early.startNudgeHold(1, 0);
+  early.stopNudgeHold();
+  assert.deepEqual(early.cleared, [11], '還沒開始連續移動就放開：清掉延遲的那一個');
+  early.stopNudgeHold();
+  assert.deepEqual(early.cleared, [11], '已經停過就不再清一次');
+
+  const running = nudgeHoldSandbox();
+  running.startNudgeHold(1, 0);
+  running.pending.fn();
+  running.stopNudgeHold();
+  assert.deepEqual(running.cleared, [22], '連續移動中放開：清掉 interval');
+  running.ticking.fn();
+  assert.deepEqual(running.moved, [[1, 0]],
+    '停掉之後那個 interval 不該再被排程——這裡只證明我們有清它，實際由瀏覽器停手');
+
+  /* 沒放開就換一個方向：先停掉上一個，不得兩個計時器一起跑 */
+  const again = nudgeHoldSandbox();
+  again.startNudgeHold(1, 0);
+  again.startNudgeHold(0, 1);
+  assert.deepEqual(again.cleared, [11], '開新的之前先停舊的');
+  again.pending.fn(); again.ticking.fn();
+  assert.deepEqual(again.moved, [[0, 1]], '走的是最後按下去的那個方向');
+
+  /* 中途沒東西可動（例如選取被清掉）就自己停手，不留一個空轉的計時器 */
+  const dead = nudgeHoldSandbox();
+  dead.startNudgeHold(1, 0);
+  dead.pending.fn();
+  dead.alive = false;
+  dead.ticking.fn();
+  assert.deepEqual(dead.cleared, [22], '動不了就把自己停掉');
 });
