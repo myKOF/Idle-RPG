@@ -326,8 +326,9 @@ test('CRITICAL-THUNDER 首代每秒外擴3米、10秒壽命，逐受害者再生
   assert.equal(child.speed,0); assert.equal(child.dest,null); assert.equal(child.expiresAt-child.bornAt,10);
   assert.equal(child.dmgVal,first.dmgVal); c.sgGroundMove(child,1,es);
   assert.deepEqual({...child.pos},pos); assert.equal(c.sgGroundVfxSpec(child).area.speed,undefined);
-  const childCount=orbFields(c).length; child.onHit(child,es[0],es,{});
-  assert.equal(orbFields(c).length,childCount+1,'衍生球仍可再生'); assert.equal(orbFields(c).at(-1).speed,0);
+  // 規格：靜止雷球（首代）命中可再生 1 個，但電球不可再生電球——衍生球沒有再生的命中回呼。
+  const childCount=orbFields(c).length; assert.ok(!child.onHit,'衍生球不掛再生回呼');
+  c.sgGroundTick(child,es,tickCtx(c,p,es)); assert.equal(orbFields(c).length,childCount,'衍生球命中也不再生');
   c.resolveHit=()=>({dmg:0,miss:true}); const missCount=orbFields(c).length;
   c.sgGroundTick(first,es,tickCtx(c,p,es)); assert.equal(orbFields(c).length,missCount,'未命中不生成');
   c.GT=9.9; assert.ok(Math.abs(c.sgGroundVfxSpec(first).dur-.1)<1e-10,'末拍VFX不超過到期時間'); c.GT=0;
@@ -352,16 +353,15 @@ test('CRITICAL-THUNDER-ICD 每顆球獨立0.75秒冷卻，失敗不消耗且不�
   assert.equal(hits.length,2,'同拍兩敵照常受傷');assert.equal(rolls,2,'失敗後仍可立即嘗試');
   const child=orbFields(c).at(-1);
   second.onHit(second,es[0],es,{});assert.equal(orbFields(c).length,4,'別顆球不共用冷卻');
-  child.onHit(child,es[0],es,{});child.onHit(child,es[1],es,{});
-  assert.equal(orbFields(c).length,5,'衍生代也是每顆獨立冷卻');
+  assert.ok(!child.onHit,'衍生代不可再生，也就沒有冷卻可言');
   const rollsBefore=rolls;c.GT=.7499;c.sgGroundTick(first,es,tickCtx(c,p,es));
-  assert.equal(orbFields(c).length,5);assert.equal(rolls,rollsBefore);
+  assert.equal(orbFields(c).length,4);assert.equal(rolls,rollsBefore);
   assert.equal(hits.length,4,'冷卻只限制生成，不限制命中傷害');
   c.GT=.75;c.sgGroundTick(first,es,tickCtx(c,p,es));
-  assert.equal(orbFields(c).length,6,'剛滿0.75秒可再生成');assert.equal(first.thunderCriticalNextAt,1.5);
+  assert.equal(orbFields(c).length,5,'剛滿0.75秒可再生成');assert.equal(first.thunderCriticalNextAt,1.5);
   assert.equal(orbFields(c).at(-1).speed,0);
-  c.GT=1.4999;first.onHit(first,es[0],es,{});assert.equal(orbFields(c).length,6);
-  c.GT=1.5;first.onHit(first,es[0],es,{});assert.equal(orbFields(c).length,7);
+  c.GT=1.4999;first.onHit(first,es[0],es,{});assert.equal(orbFields(c).length,5);
+  c.GT=1.5;first.onHit(first,es[0],es,{});assert.equal(orbFields(c).length,6);
 });
 
 test('CRITICAL-THUNDER 逐級機率與傷害、取代感電核心時間，未選超神保留原伴生', () => {

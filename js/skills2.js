@@ -8105,8 +8105,10 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
    獨立冷卻（SG_THUNDER_CRITICAL_SPAWN_COOLDOWN）只把成長從每秒 ×3.3 壓到 ×1.9，沒有天花板。
 
    96＝與 SG_GROUND_MAX_FIELDS 同量級的防呆上限（使用者 2026-09-30 定案，硬上限）。
-   穩態成本（32 隻打不死的敵人，無畫面實測）：約 320 ms／遊戲秒（一個核心的 32%），
-   做完 skills2Levels 快取約 200 ms。低於上限時行為與沒有上限完全相同。 */
+   低於上限時行為與沒有上限完全相同。
+   ⚠️ 根因其實是「衍生代也能再生」（規格是電球不可再生電球，見 sgSpawnStationaryThunderOrb 的世代規則）；
+   世代規則補上之後，32 隻打不死的敵人下穩態約 57 顆、遠低於這個上限，所以它現在是保底而不是主要機制。
+   上限沒有拿掉的理由：規格之外的路徑（之後新增的雷球來源、表格把機率調得很高）不該再有失控的可能。 */
 var SG_THUNDERORB_MAX_FIELDS = 96;
 /* 這支在每個臨界雷球的每次命中都會問一次（到頂之後每秒上千次），所以要便宜：
      1. 全部場域加起來都不到上限，雷球就一定沒到——O(1)，絕大多數情況走這條。
@@ -8131,9 +8133,16 @@ function sgThunderorbAtCap() {
   return false;
 }
 
-/* 伴生雷球：臨界雷劫的首代沿生成時玩家到球心方向外移；衍生代維持出生位置。 */
+/* 伴生雷球：臨界雷劫的首代沿生成時玩家到球心方向外移；衍生代維持出生位置。
+
+   世代規則（使用者給的規格，2026-09-30 補上實作）：
+     首代  環體電球命中處生成的靜止雷球。緩慢向外移動，命中時有機率再形成 1 個靜止雷球。
+     衍生代 首代命中時形成的那一個。原地不動，**不可再生雷球**（電球不可再生電球）。
+   之前衍生代帶著和首代同一份命中回呼，等於可以無限世代繁殖（無畫面實測 7 遊戲秒內累計 96 顆，
+   只有 19 顆是首代，最深傳到第 9 代）；獨立冷卻只是把速度壓慢、上限只是保底，規格本身是「一代」。
+   derived＝true 就是衍生代：不掛再生回呼（沒選【雷爆】時 burstHook 也是 null）。 */
 var SG_THUNDER_CRITICAL_SPAWN_COOLDOWN = 0.75;
-function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outward) {
+function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outward, derived) {
   if (sgThunderorbAtCap()) return;
   var critical = cfg.critical;
   var centre = outward && typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
@@ -8149,7 +8158,7 @@ function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outw
     radius: cfg.radius, dmgVal: cfg.dmgVal,
     hits: Math.max(1, critical ? Math.floor(lifeSec / cfg.gap) : Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap,
     lifeSec: critical ? lifeSec : 0,
-    onHit: critical ? function (f, victim, enemies, out) {
+    onHit: (critical && !derived) ? function (f, victim, enemies, out) {
       if (GT < (f.thunderCriticalNextAt || 0)) return;
       // 到頂就不擲骰、也不進冷卻：上限以下的行為（含亂數消耗）與沒有上限完全相同。
       if (sgThunderorbAtCap()) return;
@@ -8157,7 +8166,7 @@ function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outw
         var spawnPos = f.pos || (typeof bfPos === 'function' ? bfPos(victim) : null);
         if (spawnPos) {
           f.thunderCriticalNextAt = GT + SG_THUNDER_CRITICAL_SPAWN_COOLDOWN;
-          sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, cfg, spawnPos, critical.lifeSec, false);
+          sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, cfg, spawnPos, critical.lifeSec, false, true);
         }
       }
     } : burstHook
