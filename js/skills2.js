@@ -372,10 +372,48 @@ function sgEffectiveLevels(raw, gid, prog) {
   return out;
 }
 
-/* Worker 端讀取（讀 G）。 */
+/* Worker 端讀取（讀 G）。
+
+   為什麼有快取：這支是每次命中都會經過的熱路徑（sgHitOne、skills2Ult、skills2Castable、
+   sgNetherMireOnDamaged…各自都問一次「這個群組現在幾級」），而 sgEffectiveLevels 每次都從頭
+   正規化整份等級、逐階比解鎖門檻。2026-09-30 CPU 剖析（臨界雷劫，32 隻敵人）：這一串占 Worker
+   時間的 40%（sgTierUnlockedBy 21%＋sgEffectiveLevels 14%＋其餘），真正算傷害的 resolveHit 只有 6%。
+
+   結果只由下面這幾樣東西決定，快取逐一比對，任何一樣變了就重算，所以結果與不快取位元相同：
+     群組定義與各階解鎖門檻、G.player.level、G.player.reincarnations、存檔裡這個群組的等級。
+   回傳的一律是新陣列（呼叫端有人會就地改它，見 sim.worker.js 的升階指令），不共用快取內的那份。 */
+var SG_LEVELS_CACHE = Object.create(null);
 function skills2Levels(gid) {
-  var raw = (typeof G !== 'undefined' && G && G.player && G.player.skills2) ? G.player.skills2.levels : null;
-  return sgEffectiveLevels(raw, gid);
+  var hasPlayer = typeof G !== 'undefined' && G && G.player;
+  var raw = (hasPlayer && G.player.skills2) ? G.player.skills2.levels : null;
+  var g = SKILLS2[gid];
+  if (!g) return sgEffectiveLevels(raw, gid);
+  var src = raw ? raw[gid] : null;
+  var level = hasPlayer ? G.player.level : undefined;
+  var reinc = hasPlayer ? G.player.reincarnations : undefined;
+  var tiers = g.tiers, n = tiers.length, i;
+  var e = SG_LEVELS_CACHE[gid];
+  if (e && e.g === g && e.tiers === tiers && e.n === n && e.src === src && e.level === level && e.reinc === reinc) {
+    var same = true;
+    for (i = 0; i < n; i++) {
+      var u = tiers[i] && tiers[i].unlock;
+      if ((src ? src[i] : undefined) !== e.copy[i] || u !== e.unlock[i] ||
+          (u && (u.reinc !== e.needR[i] || u.lv !== e.needLv[i]))) { same = false; break; }
+    }
+    if (same) return e.out.slice();
+  }
+  var out = sgEffectiveLevels(raw, gid);
+  var copy = [], unlock = [], needR = [], needLv = [];
+  for (i = 0; i < n; i++) {
+    var ui = tiers[i] && tiers[i].unlock;
+    copy.push(src ? src[i] : undefined);
+    unlock.push(ui);
+    needR.push(ui ? ui.reinc : undefined);
+    needLv.push(ui ? ui.lv : undefined);
+  }
+  SG_LEVELS_CACHE[gid] = { g: g, tiers: tiers, n: n, src: src, level: level, reinc: reinc,
+    copy: copy, unlock: unlock, needR: needR, needLv: needLv, out: out.slice() };
+  return out;
 }
 function skills2Castable(gid) {
   var l = skills2Levels(gid);
@@ -8070,12 +8108,25 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
    穩態成本（32 隻打不死的敵人，無畫面實測）：約 320 ms／遊戲秒（一個核心的 32%），
    做完 skills2Levels 快取約 200 ms。低於上限時行為與沒有上限完全相同。 */
 var SG_THUNDERORB_MAX_FIELDS = 96;
+/* 這支在每個臨界雷球的每次命中都會問一次（到頂之後每秒上千次），所以要便宜：
+     1. 全部場域加起來都不到上限，雷球就一定沒到——O(1)，絕大多數情況走這條。
+     2. 到頂的判定在同一個模擬步、同一個列表長度下只掃一次。只快取「到頂」這個答案：
+        步內若有場域到期，列表長度會變、快取自動失效；就算剛好一減一增而長度相同，
+        錯的方向也只是多擋一次生成，不會讓數量超過上限。 */
+var SG_THUNDERORB_CAP_MEMO = { list: null, gt: -1, len: -1 };
 function sgThunderorbAtCap() {
   if (!SKILL2_RT || !SKILL2_RT.grounds) return false;
-  var n = 0, list = SKILL2_RT.grounds;
-  for (var i = 0; i < list.length; i++) {
+  var list = SKILL2_RT.grounds, len = list.length;
+  if (len < SG_THUNDERORB_MAX_FIELDS) return false;
+  var m = SG_THUNDERORB_CAP_MEMO;
+  if (m.list === list && m.gt === GT && m.len === len) return true;
+  var n = 0;
+  for (var i = 0; i < len; i++) {
     var f = list[i];
-    if (f && f.gid === 'thunderorb' && f.kind === 'orb' && ++n >= SG_THUNDERORB_MAX_FIELDS) return true;
+    if (f && f.gid === 'thunderorb' && f.kind === 'orb' && ++n >= SG_THUNDERORB_MAX_FIELDS) {
+      m.list = list; m.gt = GT; m.len = len;
+      return true;
+    }
   }
   return false;
 }
