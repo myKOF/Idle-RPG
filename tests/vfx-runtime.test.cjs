@@ -2001,12 +2001,16 @@ test('THUNDER-MATRIX 雷幕電柱逐拍續命不堆疊，停送及清場回收',
    adapter.tryPlay(event('horizontal',frame*15,0));
    adapter.tryPlay(event('vertical',frame*15,Math.PI/2));
    adapter.update(.05);
-   assert.equal(adapter.stats().grounds,16,'兩道雷幕各七根電柱加一片地板');
-   assert.equal(adapter.stats().played,16,'逐拍更新不得重建 loop');
+   assert.equal(adapter.stats().grounds,26,'兩道雷幕各十二根電柱加一片地板');
+   assert.equal(adapter.stats().played,26,'逐拍更新不得重建 loop');
   }
   assert.equal(log.nodes.filter(n=>n.tag==='fx').length,0,'電柱不可留在場景透視網格');
   const authored=presets[0].layers.find(l=>l.id==='col-a');
-  const node=billboard.nodes.find(n=>n.spec.assetUrl.endsWith(authored.assetId));
+  const columns=billboard.nodes.filter(n=>n.spec.assetUrl.endsWith(authored.assetId));
+  const positions=columns.slice(0,12).map(n=>n.transforms.at(-1).x).sort((a,b)=>a-b);
+  assert.equal(positions.length,12,'長雷幕需要十二根電柱');
+  for(let i=1;i<positions.length;i++) assert.ok(positions[i]-positions[i-1]<=100+1e-6,'柱腳間距不可超過100像素');
+  const node=columns[0];
   const transform=node.transforms.at(-1);
   assert.ok(Math.abs(transform.scaleX-authored.scale.x)<1e-6);
   assert.ok(Math.abs(transform.scaleY-authored.scale.y)<1e-6,'柱高不可被地面厚度壓縮');

@@ -695,3 +695,31 @@ test('【永恒超導體】：目標死亡從當下位置改追，無目標／�
  p.hp=1000;c.sgChainSuperconductor(p,cfg.st,cfg,[b],'mv-float',out);
  b.pos.x=10000;c.GT=.8;c.sgTickSuperconduct(ctx);assert.equal(c.SKILL2_RT.superconductFlight,null,'離開搜敵範圍立即消失');
 });
+
+test('【雷電矩陣】真實普通落雷與再生事件不借用循環雷柱，完整施放結束無殘留', () => {
+ const c=loadContext();const events=stubVfx(c);stubHits(c);
+ maxLevels(c,'thunderstrike');equip(c,'thunderstrike');setUlt(c,'thunderstrike','thunderMatrix',1);
+ c.Math.random=()=>0;
+ const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
+ const adapter=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},fxBackend:Core.createNullBackend(),zoneBackend:Core.createNullBackend(),billboardBackend:Core.createNullBackend(),ctx:{posOf:()=>({x:0,y:0}),playerPos:()=>({x:0,y:0})}});
+ const presets=new Set();let consumed=0;
+ const p=playerEnt(),enemies=[enemy(1e12,0,0,'center'),enemy(1e12,50,0,'other')];
+ c.castSkill2(p,enemies,'thunderstrike','mv-float');
+ for(let tick=0;tick<400;tick++){
+  advance(c,p,enemies,.05);
+  while(consumed<events.length){const e=events[consumed++];
+   for(const id of Object.values(e.vfx||{}))if(!presets.has(id)){adapter.registerPresets([JSON.parse(fs.readFileSync(path.join(root,'vfx/presets',id+'.json'),'utf8'))]);presets.add(id);}
+   adapter.tryPlay(e);
+  }
+  adapter.update(.05);
+ }
+ const ordinary=events.filter(e=>e.variant==='thunder-strike');
+ assert(ordinary.length>2,'包含追加落雷與再生');
+ for(const e of ordinary)assert.equal(e.vfx.attack,'bolt-thunderstrike-bluewhite');
+ assert(events.some(e=>e.variant==='thunder-curtain'&&e.vfx.attack==='bolt-curtain-lightning'));
+ assert(events.some(e=>e.variant==='thunder-impact'));
+ const result=adapter.stats();
+ for(const key of ['fx','zone','air','billboard'])assert.equal(result[key].activeEffects,0,key+' 不應殘留循環電柱');
+ assert.equal(result.grounds,0);assert.equal(result.pending,0);
+ adapter.destroy();
+});

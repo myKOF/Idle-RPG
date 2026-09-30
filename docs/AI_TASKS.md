@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜雷電矩陣電柱間距 100（THUNDER-MATRIX-GAP-20260930）
+
+- Owner：Codex；Done。雷幕內電柱的最大間距由 150 改為 100 像素；原 8 根上限會令長雷幕調整無效，同步提高為 16 根，並在正式 Runtime 與備援舊畫法使用相同規則。只改視覺密度，不動判定尺寸、傷害或行進速度。
+- 允許：js/vfx-runtime.js、js/battle-renderer.js、tests/vfx-runtime.test.cjs、頁面／編輯器快取、本紀錄。禁止修改其他技能、配置、Preset 或使用者暫存檔；前置已完成。index.html 衝突預檢發現 ai/claude 的 76b421be 僅改 ui.js 版號另一行；使用者已同意更新本次兩個 script 版號。
+- 驗收：1056 像素雷幕產生 12 根電柱、柱腳間距不超過 100，持續事件不增生、停止回收；build 與相關測試。提交交使用者整合，不合併／推送。
+- 驗證：node --test --test-name-pattern=THUNDER-MATRIX tests/vfx-runtime.test.cjs 通過；node tools/build_check.cjs 400 檔通過；git diff --check 通過。未修改素材，素材庫不需提交。編輯器程式更新後應備份未存內容再重載；既有儲存防覆寫機制維持。Commit 見本紀錄所在提交，可交由使用者整合，未合併／推送。
+
+## Codex｜雷電矩陣普通落雷殘留（THUNDER-MATRIX-BASE-20260930）
+
+- Owner Codex；Done。前輪漏掉普通落雷自動繼承超神循環電柱；修正普通落雷／落地事件只讀本體階級，矩陣獨立事件仍讀超神。範圍：skills2、必要快取、實際技能事件回歸及本紀錄，禁止改數值／配置／素材。預檢乾淨、前置完成；驗證真技能事件送入 Runtime 後全部回收，完成提交交使用者整合。
+- 修改：js/skills2.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-chainlightning-thunder-legendary.test.cjs、本紀錄。檢查未改：js/vfx-runtime.js、js/vfx-core.js、js/vfx-pixi-backend.js、tests/vfx-runtime.test.cjs。沒有素材或存檔／協議變更。
+- 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs（28/28）；node --test --test-name-pattern='THUNDER-MATRIX|BILLBOARD' tests/vfx-runtime.test.cjs（1/1）；node tools/build_check.cjs（400檔）；git diff --check 通過。新測試由 castSkill2／tickSkill2 產生普通、追加、再生、命中及雷幕事件，全部送入正式 Core／Runtime，20秒後所有活動效果及待播／場域皆0。以 HEAD 原 skills2 執行新測試會重現普通落雷誤用 bolt-curtain-lightning。
+- 限制：本輪完整流程以 Node 真引擎及 NullBackend 驗證，未宣稱遊戲瀏覽器實戰或 Console 驗收。建議重新載入遊戲後驗證多次施放與清場；重新載入亦可清除上一版已漏出的物件。Commit 見本紀錄所在提交；可整合，未合併／推送，無本次待處理功能項目。
+
 ## Codex｜飛雷神單敵回退（FLYING-THUNDER-SINGLE-20260929）
 
 - Owner：Codex；Done。兩敵優先，剩一敵改玩家與該敵連線，每道生成重新選敵，零敵才略過；座標重疊仍生成，無座標單敵保留傷害。保留使用者傷害 300%／每級 30% 與未提交素材／配置。

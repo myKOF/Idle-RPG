@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "presetId": "hit-thunder-blue",
+  "groups": [
+    {
+      "id": "hit-thunder-blue",
+      "name": "hit-thunder-blue",
+      "layerIds": [
+        "halo",
+        "ring",
+        "arcweb-a",
+        "arcweb-b",
+        "flash",
+        "sparks",
+        "glints"
+      ]
+    }
+  ],
+  "order": [
+    "group:hit-thunder-blue"
+  ]
+}
