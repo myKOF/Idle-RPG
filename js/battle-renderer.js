@@ -3356,8 +3356,8 @@ var BattleRenderer = (function () {
      等速直線，因此顯示層拿同一組語意參數（destX／destY／speed）就能完全重現，
      不是另外捏一條與傷害位置脫節的路徑（AI_RULES 8.3.1）。 */
   var THUNDER_CURTAIN_THEME = { c1: '#7dd3fc', c2: '#ffffff', glow: '#2563eb' };
-  var THUNDER_CURTAIN_BOLT_GAP = 150;    // 相鄰兩道落雷的間距（像素）
-  var THUNDER_CURTAIN_MAX_BOLTS = 8;     // 每道雷幕最多畫幾道落雷（效能上限，與傷害無關）
+  var THUNDER_CURTAIN_BOLT_GAP = 100;    // 相鄰兩道落雷的最大間距（像素）
+  var THUNDER_CURTAIN_MAX_BOLTS = 16;    // 每道雷幕最多畫幾道落雷（效能上限，與傷害無關）
   var THUNDER_CURTAIN_REDRAW_SEC = 0.07; // 重新抽電弧折線的間隔（越短越像持續放電）
   var THUNDER_CURTAIN_MAX_LIFE_SEC = 8;
   var _thunderCurtainFx = Object.create(null);
@@ -3446,7 +3446,7 @@ var BattleRenderer = (function () {
           fx.redrawAt = THUNDER_CURTAIN_REDRAW_SEC;
           var axisX = Math.cos(fx.angle), axisY = Math.sin(fx.angle);
           var bolts = Math.max(2, Math.min(THUNDER_CURTAIN_MAX_BOLTS,
-            Math.round(fx.w / THUNDER_CURTAIN_BOLT_GAP)));
+            Math.ceil(fx.w / THUNDER_CURTAIN_BOLT_GAP) + 1));
           var skyY = S.H * 0.7;
           g.clear();
           /* 貼地的亮帶：兩道落雷之間也要看得出這是一整道牆，而不是幾根分開的電柱。

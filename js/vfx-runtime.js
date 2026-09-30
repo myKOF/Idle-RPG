@@ -1393,7 +1393,7 @@ var VFXRuntime = (function () {
             // 沿用舊雷幕的柱距與數量上限；每柱具有穩定 ID，不隨逐拍事件重建。
             var wall = spec.area, axis = num(wall.a, 0);
             var worldWidth = num(wall._planeW, num(wall.w, 0));
-            var columns = Math.max(2, Math.min(8, Math.round(worldWidth / 150)));
+            var columns = Math.max(2, Math.min(16, Math.ceil(worldWidth / 100) + 1));
             for (var column = 0; column < columns; column++) {
               var offset = (column / (columns - 1) - 0.5) * num(wall.w, 0);
               var dx = Math.cos(axis) * offset, dy = Math.sin(axis) * offset;
