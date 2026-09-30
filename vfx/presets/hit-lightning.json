@@ -28,7 +28,7 @@
       "tint": "#ffd23f",
       "blendMode": "screen",
       "delay": 0,
-      "duration": 0.091,
+      "duration": 0.2,
       "alphaOverLife": [
         [
           0,
@@ -64,7 +64,10 @@
           1,
           1.15
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "ring",
@@ -79,7 +82,7 @@
       "tint": "#f2b705",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.105,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,
@@ -115,7 +118,10 @@
           1,
           1
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "flash",
@@ -131,7 +137,7 @@
       "tint": "#fff8b0",
       "blendMode": "screen",
       "delay": 0,
-      "duration": 0.049,
+      "duration": 0.1,
       "alphaOverLife": [
         [
           0,
@@ -163,7 +169,8 @@
           1,
           1.15
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "arcweb",
@@ -176,10 +183,10 @@
         "y": 0.0859
       },
       "alpha": 0.9,
-      "tint": "#f2b705",
+      "tint": "#fff2cc",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.07,
+      "duration": 0.1,
       "alphaOverLife": [
         [
           0,
@@ -215,7 +222,8 @@
           1,
           1.1
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "sparks",
@@ -296,7 +304,8 @@
           1,
           0.6
         ]
-      ]
+      ],
+      "perspective": false
     }
   ],
   "sizing": {
