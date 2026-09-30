@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "lightning-orb-field-purple",
+  "groups": [
+    {
+      "id": "lightning-orb-field-purple",
+      "name": "lightning-orb-field-purple",
+      "layerIds": [
+        "orb-a-glow",
+        "orb-a-body",
+        "orb-a-body-copy",
+        "orb-a-core",
+        "orb-a-arc"
+      ]
+    }
+  ],
+  "order": [
+    "group:lightning-orb-field-purple"
+  ]
+}
