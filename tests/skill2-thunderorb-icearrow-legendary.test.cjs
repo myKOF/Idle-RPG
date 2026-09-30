@@ -4,7 +4,7 @@ const table = require('./helpers/skill-table.cjs');
    守住的事：
      1. 雷球五個傳奇：雷核（體積）、超載（場上雷球數 → 雷電傷害）、感電核心（伴生時間）、
         雷殞落（降下顆數）、雷殞震（暈眩秒數改寫至 4 秒）
-     2. 雷球三個超神：臨界雷劫（伴生 4 顆／機率翻倍／傷害乘區）、雷爆（命中觸發彈射小球）、
+     2. 雷球三個超神：臨界雷劫（外擴伴生／命中再生／傷害乘區）、雷爆（命中觸發彈射小球）、
         雷殞天地碎（永久節拍不斷降下雷殞石）
      3. 寒冰箭五個傳奇：連射（支數）、冰封（傷害乘區）、凜冬侵蝕（寒霜每跳量與時間）、
         冰裂箭（往前分裂）、深度凍結（控場中增傷）
@@ -297,32 +297,83 @@ test('【雷殞震】：雷殞天落的暈眩改寫「至」4 秒（取高，不
    2) 雷球的三個超神進化
    =========================================================================== */
 
-test('【臨界雷劫】：伴生雷球一次 4 顆、觸發機率 ×2，且雷球傷害 +50%', () => {
-  function run(withUlt) {
-    const c = loadContext();
-    stubVfx(c);
-    stubHits(c);
-    const rolls = [];
-    c.chance = (pct) => { rolls.push(pct); return true; };
-    maxLevels(c, 'thunderorb');
-    equip(c, 'thunderorb');
-    if (withUlt) setUlt(c, 'thunderorb', 'criticalThunderbolt', 1);
-    const p = playerEnt();
-    const es = [enemy(1e9, 40, 0, 'a')];
-    c.castSkill2(p, es, 'thunderorb', 'mv-float');
-    // 飛行雷球的傷害在施放當下就定版在場域上，不必等它飛完才數命中
-    const flyDmg = orbFields(c).filter((f) => f.speed > 0)[0].dmgVal;
-    advance(c, p, es, 1.2);
-    return { orbs: orbFields(c).filter((f) => f.speed === 0).length, rolls, flyDmg };
+test('CRITICAL-THUNDER 首代每秒外擴3米、10秒壽命，逐受害者再生靜止雷球', () => {
+  const c=loadContext(), events=stubVfx(c); stubHits(c); maxLevels(c,'thunderorb');
+  setUlt(c,'thunderorb','criticalThunderbolt',1); c.bfPlayerPos=()=>({x:20,y:30});
+  c.chance=()=>false; const p=playerEnt(), es=[enemy(1e9,80,110,'a'),enemy(1e9,80,110,'b')];
+  c.castSkill2(p,es,'thunderorb','mv-float');
+  const orbit=c.SKILL2_RT.orbits[0], before=orbFields(c).length;
+  const rolls=[]; c.chance=pct=>{rolls.push(pct);return true;};
+  orbit.onStrike(orbit,{}, {x:80,y:110});
+  assert.equal(orbFields(c).length,before+1,'首代一次一顆，移除四顆');
+  assert.equal(rolls[0],30,'伴生機率仍是15+1.5×10，移除翻倍');
+  const first=orbFields(c).at(-1);
+  assert.equal(first.speed,30); assert.equal(first.expiresAt-first.bornAt,10);
+  assert.equal(first.dest.x,260); assert.equal(first.dest.y,350);
+  c.sgGroundMove(first,1,es);
+  assert.equal(first.pos.x,98); assert.equal(first.pos.y,134);
+  const spec=c.sgGroundVfxSpec(first);
+  assert.equal(spec.area.speed,30); assert.equal(spec.area.destX,260);
+  assert.equal(spec.area.destY,350); assert.equal(spec.area.x,98); assert.equal(spec.area.y,134);
+  assert.ok(Math.abs(spec.area.moveA-Math.atan2(4,3))<1e-12);
+  rolls.length=0; const n=orbFields(c).length;
+  c.sgGroundTick(first,es,tickCtx(c,p,es));
+  assert.deepEqual(rolls,[11,11],'每個成功命中各判定10+1×1%');
+  assert.equal(orbFields(c).length,n+2);
+  const child=orbFields(c).at(-1), pos={...child.pos};
+  assert.equal(child.speed,0); assert.equal(child.dest,null); assert.equal(child.expiresAt-child.bornAt,10);
+  assert.equal(child.dmgVal,first.dmgVal); c.sgGroundMove(child,1,es);
+  assert.deepEqual({...child.pos},pos); assert.equal(c.sgGroundVfxSpec(child).area.speed,undefined);
+  const childCount=orbFields(c).length; child.onHit(child,es[0],es,{});
+  assert.equal(orbFields(c).length,childCount+1,'衍生球仍可再生'); assert.equal(orbFields(c).at(-1).speed,0);
+  c.resolveHit=()=>({dmg:0,miss:true}); const missCount=orbFields(c).length;
+  c.sgGroundTick(first,es,tickCtx(c,p,es)); assert.equal(orbFields(c).length,missCount,'未命中不生成');
+  c.GT=9.9; assert.ok(Math.abs(c.sgGroundVfxSpec(first).dur-.1)<1e-10,'末拍VFX不超過到期時間'); c.GT=0;
+  assert.ok(events.some(e=>e.variant==='thunder-orb' && e.area.speed===30),'正式派送保留權威移動資訊');
+  c.chance=()=>false; c.SKILL2_RT.orbits=[]; c.SKILL2_RT.grounds=[first];
+  advance(c,p,[],9.95); assert.equal(c.SKILL2_RT.grounds.length,1);
+  advance(c,p,[],.05); assert.equal(c.SKILL2_RT.grounds.length,0,'10秒到期');
+});
+
+test('CRITICAL-THUNDER 逐級機率與傷害、取代感電核心時間，未選超神保留原伴生', () => {
+  function run(lv){
+    const c=loadContext();stubVfx(c);stubHits(c);maxLevels(c,'thunderorb');
+    c.bfPlayerPos=()=>({x:0,y:0}); c.chance=()=>false;
+    if(lv)setUlt(c,'thunderorb','criticalThunderbolt',lv);
+    setLegendary(c,['thunderorbShockCore']);
+    const p=playerEnt(), es=[enemy(1e9,100,0,'a')];c.castSkill2(p,es,'thunderorb','mv-float');
+    const damage=orbFields(c)[0].dmgVal;const orbit=c.SKILL2_RT.orbits[0];c.chance=()=>true;
+    orbit.onStrike(orbit,{}, {x:100,y:0});const f=orbFields(c).at(-1);
+    let probability; c.chance=pct=>{probability=pct;return false;}; if(f.onHit)f.onHit(f,es[0],es,{});
+    return {damage,f,probability};
   }
-  const base = run(false);
-  const ult = run(true);
-  assert.equal(ult.orbs, base.orbs * 4, '一次生成 4 顆（原本 1 顆）');
-  const baseChance = Math.min.apply(null, base.rolls);
-  const ultChance = Math.min.apply(null, ult.rolls);
-  assert.equal(ultChance, baseChance * 2, '觸發機率 ×2');
-  // Lv.1 ＝ 50 + 5×1 ＝ 55%
-  assert.equal(Math.round(ult.flyDmg / base.flyDmg * 100), 155, '雷球傷害 ×1.55');
+  const base=run(0), one=run(1), ten=run(10);
+  assert.equal(base.f.speed,0); assert.equal(base.f.hits,Math.ceil(4/.35));
+  assert.equal(one.f.expiresAt-one.f.bornAt,10,'固定10秒不乘感電核心');
+  assert.equal(one.probability,11);assert.equal(ten.probability,20);
+  assert.equal(Math.round(one.damage/base.damage*100),155);
+  assert.equal(Math.round(ten.damage/base.damage*100),200);
+});
+
+test('CRITICAL-THUNDER 正式雷球Preset逐幀外移，衍生球維持原地並自然回收', () => {
+  const c=loadContext(), events=stubVfx(c); stubHits(c);maxLevels(c,'thunderorb');
+  setUlt(c,'thunderorb','criticalThunderbolt');c.bfPlayerPos=()=>({x:0,y:0});c.chance=()=>false;
+  const p=playerEnt(), es=[enemy(1e9,100,0,'a')];c.castSkill2(p,es,'thunderorb','mv-float');
+  c.chance=()=>true;const orbit=c.SKILL2_RT.orbits[0];orbit.onStrike(orbit,{}, {x:100,y:0});
+  const first=orbFields(c).at(-1); first.onHit(first,es[0],es,{});const child=orbFields(c).at(-1);
+  events.length=0;c.chance=()=>false;c.sgGroundTick(first,es,tickCtx(c,p,es));c.sgGroundTick(child,es,tickCtx(c,p,es));
+  const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
+  const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/lightning-orb-field.json'),'utf8'));
+  const nodes=[];function backend(tag){return{createNode(spec){const n={tag,spec,t:[]};nodes.push(n);return n;},updateNode(n,t){n.t.push({...t})},destroyNode(){},destroy(){}};}
+  const adapter=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},groundScale:.5,
+    fxBackend:backend('fx'),zoneBackend:backend('zone'),airBackend:backend('air'),billboardBackend:backend('billboard'),ctx:{posOf:()=>({x:100,y:0}),playerPos:()=>({x:0,y:0})}});
+  adapter.registerPresets([preset]);for(const e of events)adapter.tryPlay(e);
+  adapter.update(.01); const bodies=nodes.filter(n=>n.spec.assetUrl===preset.layers[0].assetId);
+  assert.equal(bodies.length,2);assert.ok(bodies.every(n=>n.tag==='billboard'));
+  const start=bodies.map(n=>n.t.at(-1).x);adapter.update(.1);
+  assert.ok(bodies[0].t.at(-1).x>start[0]);assert.equal(bodies[1].t.at(-1).x,start[1]);
+  for(let i=0;i<100;i++)adapter.update(.05);
+  assert.equal(adapter.stats().grounds,0);assert.equal(adapter.stats().billboard.activeEffects,0);adapter.destroy();
 });
 
 test('【雷爆】：一道連鎖閃電在範圍內彈射，總共命中「彈射次數」次', () => {

@@ -1,5 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path'),vm=require('vm');
 const geo=require('../tools/skills2-geometry.cjs'),tables=require('../tools/config_tables.cjs');
+test('臨界雷劫外擴速度使用速度欄，Excel／CSV／JS與新效果一致',()=>{
+ const row=tables.csvParse(fs.readFileSync(path.join(__dirname,'../config/CSV/Skills2.csv'),'utf8'));
+ const found=row.find(r=>r[8]==='criticalThunderbolt');
+ assert.equal(found[row[0].indexOf(geo.labels.speed)],'3');
+ assert.deepEqual(JSON.parse(found[row[0].indexOf('效果參數(JSON)')]),{sec:10,chance:10,chancePer:1,pct:50,pctPer:5});
+ assert.deepEqual(geo.apply('thunderorb','criticalThunderbolt',{},c=>c===geo.labels.speed?'3':'').fx,{speed:3});
+ assert.equal(geo.extract('thunderorb','criticalThunderbolt',{speed:3},'')[geo.labels.speed],'3');
+});
 test('連鎖閃電速度接入表格並保留每級成長，Excel／CSV／JS一致',()=>{
  const fx=geo.apply('chainlightning','1',{},col=>col===geo.labels.speed?'10,2':'').fx;
  assert.deepEqual(fx,{speed:10,speedPer:2});

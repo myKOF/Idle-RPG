@@ -21,14 +21,14 @@
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 0,
       "scale": {
-        "x": 0.1094,
-        "y": 0.1094
+        "x": 0.1288,
+        "y": 0.1288
       },
       "alpha": 0.55,
       "tint": "#ae00ff",
       "blendMode": "screen",
       "delay": 0,
-      "duration": 0.091,
+      "duration": 0.2,
       "alphaOverLife": [
         [
           0,
@@ -64,7 +64,10 @@
           1,
           1.15
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "ring",
@@ -72,14 +75,14 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.0898,
-        "y": 0.0898
+        "x": 0.1057,
+        "y": 0.1057
       },
       "alpha": 0.85,
       "tint": "#af1aff",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.105,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,
@@ -115,7 +118,10 @@
           1,
           1
         ]
-      ]
+      ],
+      "perspective": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "flash",
@@ -131,7 +137,7 @@
       "tint": "#ffb3ee",
       "blendMode": "screen",
       "delay": 0,
-      "duration": 0.049,
+      "duration": 0.1,
       "alphaOverLife": [
         [
           0,
@@ -163,7 +169,8 @@
           1,
           1.15
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "arcweb",
@@ -176,10 +183,10 @@
         "y": 0.0859
       },
       "alpha": 0.9,
-      "tint": "#c905f0",
+      "tint": "#f9e1fe",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.07,
+      "duration": 0.1,
       "alphaOverLife": [
         [
           0,
@@ -215,7 +222,8 @@
           1,
           1.1
         ]
-      ]
+      ],
+      "perspective": false
     },
     {
       "id": "sparks",
@@ -296,7 +304,8 @@
           1,
           0.6
         ]
-      ]
+      ],
+      "perspective": false
     }
   ],
   "sizing": {
