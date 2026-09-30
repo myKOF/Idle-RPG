@@ -138,16 +138,25 @@ var UI_WORKER_VISUAL_FRAME_MAX = 800;
 /* 飄字在佇列裡待超過這麼久就不值得再畫了（傷害數字只活約 0.4 秒，
    再加上最長約 1.2 秒的顯示延遲）。積壓時依「年齡」丟棄，而不是依「件數」。 */
 var UI_WORKER_VISUAL_FLOAT_STALE_MS = 1500;
+/* 上一次 flush 距今超過這麼久，就當作「畫面停擺」（rAF 不跑）。
+   窗格／視窗被遮住時 document.hidden 仍是 false、Worker 照送事件，但 rAF 停了：
+   佇列頂到上限後每來一件就擠掉一件——那時畫面根本沒在畫，丟的字不算「丟字」。 */
+var UI_WORKER_VISUAL_STALL_MS = 1000;
 
 /* 視覺事件管線的診斷計數。飄字「偶爾整批消失」時，原因可能在這條管線的任何一段
    （佇列被丟、單一事件丟例外把整幀中斷……），畫面上看不出差別，所以把各個出口都記下來，
-   由左上角 FPS 計數器在事件發生後的幾秒內顯示（見 uiVisualDiagText）。 */
+   由左上角 FPS 計數器在事件發生後的幾秒內顯示（見 uiVisualDiagText）。
+   累計值都是「自頁面載入以來」，不是最近幾秒。 */
 var UI_VISUAL_DIAG = {
-  floatStale: 0,      // 因為排太久而丟棄的飄字
-  queueCap: 0,        // 佇列滿（UI_WORKER_VISUAL_QUEUE_MAX）被擠掉的事件
+  floatStale: 0,      // 畫面在跑，但因為排太久而丟棄的飄字
+  queueCap: 0,        // 畫面在跑，但佇列滿（UI_WORKER_VISUAL_QUEUE_MAX）被擠掉的事件
   flushErrors: 0,     // 處理單一視覺事件時丟出的例外
+  stallDrops: 0,      // 畫面停擺期間丟掉／略過的事件（不算「丟字」）
+  lastStallMs: 0,     // 最近一次停擺約多久（以最舊的待處理事件的年齡估）
+  lastFlushAt: 0,     // 上一次 flush 開始的時刻；用來判斷畫面是否停擺
   lastDropAt: 0,
   lastErrorAt: 0,
+  lastStallAt: 0,
   errorLogged: {}     // 訊息 -> 已印次數；同一種例外只印前 3 次，避免 60 次/秒洗版
 };
 
@@ -522,13 +531,26 @@ function scheduleWorkerVisualEventFlush() {
   }
 }
 
+/* 記一筆丟棄。畫面停擺期間丟的另計（stallDrops），不混進「丟字」，
+   否則窗格被遮住幾分鐘就會累積上萬筆，看起來像飄字大量遺失。 */
+function uiNoteVisualDrop(reason, now, stalled) {
+  var diag = UI_VISUAL_DIAG;
+  if (stalled) {
+    diag.stallDrops++;
+    diag.lastStallAt = now;
+    return;
+  }
+  if (reason === 'cap') diag.queueCap++;
+  else diag.floatStale++;
+  diag.lastDropAt = now;
+}
+
 function queueWorkerVisualEvent(event) {
   if (!event) return;
   var nowQ = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   if (UI_WORKER_VISUAL_EVENT_QUEUE.length >= UI_WORKER_VISUAL_QUEUE_MAX) {
     UI_WORKER_VISUAL_EVENT_QUEUE.shift();
-    UI_VISUAL_DIAG.queueCap++;
-    UI_VISUAL_DIAG.lastDropAt = nowQ;
+    uiNoteVisualDrop('cap', nowQ, nowQ - UI_VISUAL_DIAG.lastFlushAt > UI_WORKER_VISUAL_STALL_MS);
   }
   event._qAt = nowQ;      // 進佇列的時刻，flush 用來判斷飄字是否已經過期
   UI_WORKER_VISUAL_EVENT_QUEUE.push(event);
@@ -552,6 +574,14 @@ function uiNoteVisualEventError(event, err) {
 }
 
 function flushWorkerVisualEvents() {
+  var diag = UI_VISUAL_DIAG;
+  var flushAt = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
+  var stalledGap = flushAt - diag.lastFlushAt > UI_WORKER_VISUAL_STALL_MS;   // 距離上一次 flush 太久＝這段時間 rAF 沒在跑
+  diag.lastFlushAt = flushAt;
+  if (stalledGap && UI_WORKER_VISUAL_EVENT_QUEUE.length && UI_WORKER_VISUAL_EVENT_QUEUE[0] &&
+      UI_WORKER_VISUAL_EVENT_QUEUE[0]._qAt) {
+    diag.lastStallMs = Math.max(0, flushAt - UI_WORKER_VISUAL_EVENT_QUEUE[0]._qAt);
+  }
   if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) {
     for (var hiddenIndex = 0; hiddenIndex < UI_WORKER_VISUAL_EVENT_QUEUE.length; hiddenIndex++) {
       var hiddenEvent = UI_WORKER_VISUAL_EVENT_QUEUE[hiddenIndex];
@@ -572,7 +602,7 @@ function flushWorkerVisualEvents() {
      ⚠️ 判準是年齡，不是件數。舊版是「佇列超過 120 件就在處理之前先丟到只剩最新 60 件」，
      而雷電全開時一個模擬步驟就能送來上百件（多道雷電各打多隻怪），那批飄字明明一幀就
      排得完，卻在還沒畫之前被整批丟掉——畫面上就是數字一次消失一大片。 */
-  var flushStart = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
+  var flushStart = flushAt;
   var processed = 0;
   while (UI_WORKER_VISUAL_EVENT_QUEUE.length && processed < UI_WORKER_VISUAL_FRAME_MAX) {
     /* 嚴格時間預算防護（方案 A）：
@@ -582,8 +612,7 @@ function flushWorkerVisualEvents() {
     var event = UI_WORKER_VISUAL_EVENT_QUEUE.shift();
     if (!event) continue;
     if (event.kind === 'float' && event._qAt && flushStart - event._qAt > UI_WORKER_VISUAL_FLOAT_STALE_MS) {
-      UI_VISUAL_DIAG.floatStale++;
-      UI_VISUAL_DIAG.lastDropAt = flushStart;
+      uiNoteVisualDrop('stale', flushStart, stalledGap);
       continue;                       // 丟棄過期飄字不花預算
     }
     try {
@@ -9834,14 +9863,22 @@ function isInternalVersion() {
   return false;
 }
 
-/* 視覺事件管線出過狀況的話，在 FPS 後面多印一行（事件發生後 5 秒內）。
-   飄字消失時畫面看不出是哪一段丟的，使用者截圖時這行就是答案。 */
+/* 視覺事件管線出過狀況的話，在 FPS 後面多印一段（事件發生後 5 秒內）。
+   飄字消失時畫面看不出是哪一段丟的，使用者截圖時這行就是答案。
+     ⚠ 丟字／例外：畫面在跑的時候發生的，這才是會讓數字消失的（數字是自載入以來的累計）
+     ⏸ 停幀：畫面停擺（rAF 不跑，例如窗格被遮住）期間略過的事件；那時本來就沒在畫，不算丟字 */
 function uiVisualDiagText(now) {
   var diag = UI_VISUAL_DIAG;
-  var last = Math.max(diag.lastDropAt, diag.lastErrorAt);
-  if (!last || now - last > 5000) return '';
-  return ' ⚠ 丟字 ' + (diag.floatStale + diag.queueCap) + ' 例外 ' + diag.flushErrors +
-    ' 佇列 ' + UI_WORKER_VISUAL_EVENT_QUEUE.length;
+  var real = Math.max(diag.lastDropAt, diag.lastErrorAt);
+  var text = '';
+  if (real && now - real <= 5000) {
+    text += ' ⚠ 丟字 ' + (diag.floatStale + diag.queueCap) + ' 例外 ' + diag.flushErrors +
+      ' 佇列 ' + UI_WORKER_VISUAL_EVENT_QUEUE.length;
+  }
+  if (diag.lastStallAt && now - diag.lastStallAt <= 5000) {
+    text += ' ⏸ 停幀約 ' + (diag.lastStallMs / 1000).toFixed(1) + ' 秒 略過 ' + diag.stallDrops;
+  }
+  return text;
 }
 
 function initBattleFPS() {

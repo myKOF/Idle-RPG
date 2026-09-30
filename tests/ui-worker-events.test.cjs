@@ -43,7 +43,11 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
     UI_WORKER_VISUAL_FRAME_MS: 4,
     UI_WORKER_VISUAL_FRAME_MAX: 800,
     UI_WORKER_VISUAL_FLOAT_STALE_MS: 1500,
-    UI_VISUAL_DIAG: { floatStale: 0, queueCap: 0, flushErrors: 0, lastDropAt: 0, lastErrorAt: 0, errorLogged: {} },
+    UI_WORKER_VISUAL_STALL_MS: 1000,
+    UI_VISUAL_DIAG: {
+      floatStale: 0, queueCap: 0, flushErrors: 0, stallDrops: 0, lastStallMs: 0,
+      lastFlushAt: 0, lastDropAt: 0, lastErrorAt: 0, lastStallAt: 0, errorLogged: {}
+    },
     uiNowMs: () => Date.now(),
     addLog: (...args) => calls.push(['addLog', ...args]),
     routeUiLog: (...args) => calls.push(['routeUiLog', ...args]),
@@ -53,6 +57,7 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
   };
   vm.runInNewContext([
     functionBody('scheduleWorkerVisualEventFlush'),
+    functionBody('uiNoteVisualDrop'),
     functionBody('queueWorkerVisualEvent'),
     functionBody('uiNoteVisualEventError'),
     functionBody('flushWorkerVisualEvents'),
