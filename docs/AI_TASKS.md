@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜臨界雷劫生成內建冷卻（CRITICAL-THUNDER-ICD-20260930）
+
+- Owner：Codex；Done。每顆臨界雷劫雷球成功生成靜止球後內建0.75秒冷卻；同拍多敵最多生成一顆，失敗機率不消耗冷卻，首代與靜止衍生代各自計時。使用GT，暫停不走時間；不改傷害、命中節奏或生成機率。
+- 前置既有命中回呼；允許js/skills2.js的生成程式、相關雷球測試、必要index／Worker快取與本紀錄，禁止改既有未提交技能配置與素材。衝突預檢無其他副本／分支來源。
+- 驗收0.75秒邊界、多敵同拍、失敗不進冷卻、不同球獨立、衍生球冷卻、傷害／移動仍照常，定向回歸與Build；完成提交交使用者整合，不合併／推送。
+- 修改：js/skills2.js的SG_THUNDER_CRITICAL_SPAWN_COOLDOWN與每顆場域thunderCriticalNextAt、tests/skill2-thunderorb-icearrow-legendary.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。檢查未改：js/vfx-runtime.js、js/vfx-core.js、Skills2 Excel／CSV、tools/config_tables.cjs。沿用原VFX事件與判定，不新增協議或素材，素材庫無變更。
+- 驗證：node --test --test-name-pattern='CRITICAL-THUNDER' tests/skill2-thunderorb-icearrow-legendary.test.cjs，4/4，含冷卻邊界、傷害不受冷卻影響、正式Preset逐幀移動及回收。node tools/config_tables.cjs --apply Skills2，0語意差異；npm.cmd run build，405檔通過；git diff --check通過。原機制案例以固定機率fixture驗證，正式配置保留使用者新調整的5%＋每級0.5%。
+- 交付：Commit見本紀錄所在提交；程式可合併，未合併／推送。未完成遊戲瀏覽器實戰／Console驗收；無未完成程式項目。使用者未提交的Skills2配置與雷鏈Preset保持原狀，提交只選生成冷卻程式hunk與本次檔案。建議整合後刷新遊戲確認群戰不會同顆連續生成。
+
 ## Codex｜敵人無上限狂暴化（ENEMY-FRENZY-20260930）
 
 - Owner：Codex；Done。敵人出生後等待10秒，每完整1秒增加1%傷害，無上限；右上角顯示存活敵人平均增傷（四捨五入整數），0～100%由白轉紅，超過100%保持紅色。滿11秒首次+1%，暫停不累加；無存活敵人顯示0%。野外與高塔皆套用，與既有重擊／高塔狂暴乘算；復生沿用原出生時間。

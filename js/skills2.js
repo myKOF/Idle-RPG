@@ -8057,6 +8057,7 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
 }
 
 /* 伴生雷球：臨界雷劫的首代沿生成時玩家到球心方向外移；衍生代維持出生位置。 */
+var SG_THUNDER_CRITICAL_SPAWN_COOLDOWN = 0.75;
 function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outward) {
   var critical = cfg.critical;
   var centre = outward && typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
@@ -8073,9 +8074,13 @@ function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outw
     hits: Math.max(1, critical ? Math.floor(lifeSec / cfg.gap) : Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap,
     lifeSec: critical ? lifeSec : 0,
     onHit: critical ? function (f, victim, enemies, out) {
+      if (GT < (f.thunderCriticalNextAt || 0)) return;
       if (chance(critical.chance)) {
         var spawnPos = f.pos || (typeof bfPos === 'function' ? bfPos(victim) : null);
-        if (spawnPos) sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, cfg, spawnPos, critical.lifeSec, false);
+        if (spawnPos) {
+          f.thunderCriticalNextAt = GT + SG_THUNDER_CRITICAL_SPAWN_COOLDOWN;
+          sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, cfg, spawnPos, critical.lifeSec, false);
+        }
       }
     } : burstHook
   });

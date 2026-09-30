@@ -299,6 +299,8 @@ test('【雷殞震】：雷殞天落的暈眩改寫「至」4 秒（取高，不
 
 test('CRITICAL-THUNDER 首代每秒外擴3米、10秒壽命，逐受害者再生靜止雷球', () => {
   const c=loadContext(), events=stubVfx(c); stubHits(c); maxLevels(c,'thunderorb');
+  // 此機制案例固定測試機率，不覆寫玩家調整中的正式配置。
+  Object.assign(c.SKILLS2.thunderorb.ult[0].fx,{chance:10,chancePer:1});
   setUlt(c,'thunderorb','criticalThunderbolt',1); c.bfPlayerPos=()=>({x:20,y:30});
   c.chance=()=>false; const p=playerEnt(), es=[enemy(1e9,80,110,'a'),enemy(1e9,80,110,'b')];
   c.castSkill2(p,es,'thunderorb','mv-float');
@@ -318,8 +320,8 @@ test('CRITICAL-THUNDER 首代每秒外擴3米、10秒壽命，逐受害者再生
   assert.ok(Math.abs(spec.area.moveA-Math.atan2(4,3))<1e-12);
   rolls.length=0; const n=orbFields(c).length;
   c.sgGroundTick(first,es,tickCtx(c,p,es));
-  assert.deepEqual(rolls,[11,11],'每個成功命中各判定10+1×1%');
-  assert.equal(orbFields(c).length,n+2);
+  assert.deepEqual(rolls,[11],'第一次生成後同拍其他敵人不再判定');
+  assert.equal(orbFields(c).length,n+1);
   const child=orbFields(c).at(-1), pos={...child.pos};
   assert.equal(child.speed,0); assert.equal(child.dest,null); assert.equal(child.expiresAt-child.bornAt,10);
   assert.equal(child.dmgVal,first.dmgVal); c.sgGroundMove(child,1,es);
@@ -335,9 +337,37 @@ test('CRITICAL-THUNDER 首代每秒外擴3米、10秒壽命，逐受害者再生
   advance(c,p,[],.05); assert.equal(c.SKILL2_RT.grounds.length,0,'10秒到期');
 });
 
+test('CRITICAL-THUNDER-ICD 每顆球獨立0.75秒冷卻，失敗不消耗且不阻擋傷害', () => {
+  const c=loadContext();stubVfx(c);const hits=stubHits(c);
+  const p=playerEnt(), es=[enemy(1e9,100,0,'a'),enemy(1e9,100,0,'b')];
+  c.bfPlayerPos=()=>({x:0,y:0});
+  const cfg={radius:40,dmgVal:100,gap:.35,critical:{chance:11,lifeSec:10,speedPx:30}};
+  c.sgSpawnStationaryThunderOrb(p,c.BASE_STATS,'mv-float',cfg,{x:100,y:0},10,true);
+  c.sgSpawnStationaryThunderOrb(p,c.BASE_STATS,'mv-float',cfg,{x:100,y:0},10,true);
+  const [first,second]=orbFields(c);let rolls=0;
+  c.chance=()=>{rolls++;return false;};first.onHit(first,es[0],es,{});
+  assert.equal(orbFields(c).length,2);assert.equal(first.thunderCriticalNextAt,undefined);
+  c.chance=()=>{rolls++;return true;};
+  c.sgGroundTick(first,es,tickCtx(c,p,es));assert.equal(orbFields(c).length,3);
+  assert.equal(hits.length,2,'同拍兩敵照常受傷');assert.equal(rolls,2,'失敗後仍可立即嘗試');
+  const child=orbFields(c).at(-1);
+  second.onHit(second,es[0],es,{});assert.equal(orbFields(c).length,4,'別顆球不共用冷卻');
+  child.onHit(child,es[0],es,{});child.onHit(child,es[1],es,{});
+  assert.equal(orbFields(c).length,5,'衍生代也是每顆獨立冷卻');
+  const rollsBefore=rolls;c.GT=.7499;c.sgGroundTick(first,es,tickCtx(c,p,es));
+  assert.equal(orbFields(c).length,5);assert.equal(rolls,rollsBefore);
+  assert.equal(hits.length,4,'冷卻只限制生成，不限制命中傷害');
+  c.GT=.75;c.sgGroundTick(first,es,tickCtx(c,p,es));
+  assert.equal(orbFields(c).length,6,'剛滿0.75秒可再生成');assert.equal(first.thunderCriticalNextAt,1.5);
+  assert.equal(orbFields(c).at(-1).speed,0);
+  c.GT=1.4999;first.onHit(first,es[0],es,{});assert.equal(orbFields(c).length,6);
+  c.GT=1.5;first.onHit(first,es[0],es,{});assert.equal(orbFields(c).length,7);
+});
+
 test('CRITICAL-THUNDER 逐級機率與傷害、取代感電核心時間，未選超神保留原伴生', () => {
   function run(lv){
     const c=loadContext();stubVfx(c);stubHits(c);maxLevels(c,'thunderorb');
+    Object.assign(c.SKILLS2.thunderorb.ult[0].fx,{chance:10,chancePer:1});
     c.bfPlayerPos=()=>({x:0,y:0}); c.chance=()=>false;
     if(lv)setUlt(c,'thunderorb','criticalThunderbolt',lv);
     setLegendary(c,['thunderorbShockCore']);
