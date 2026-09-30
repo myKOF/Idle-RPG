@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜啟動黑幕等待資料與畫面（STARTUP-LOADING-20260930）
+
+- Owner：Codex；Done。使用者回報 Loading 結束後約 0.5 秒露出初始角色、空背包與舊戰鬥 UI。移除黑幕改等 Worker 開機、目前分頁所需面板、戰鬥畫布初始化與首次 UI 渲染完成，再於下一幀揭幕，不採固定延遲。
+- 前置：現有 Loading／Worker 面板與 Canvas 備援流程。允許 js/main.js、index.html 本次必要 Loading／快取行、tests/loading-screen.test.cjs 及本紀錄；禁止修改其他 UI／VFX／技能／存檔／協議及 Claude 變更。index.html 預檢有 Claude 未提交 VFX／效能版號，使用者已明確同意限定範圍修改；其餘目標無衝突來源。
+- 驗收：慢讀檔、延後面板、延後畫布均維持黑幕；全部準備好後先渲染再移除；DOM 備援、新角色空背包、背景分頁與 Worker 失效通知不被卡住。相關回歸、Build／diff check，完成提交交使用者整合，不合併／推送。
+- 修改：js/main.js、index.html 的 main 快取行、tests/loading-screen.test.cjs 及本紀錄。唯讀檢查：js/ui.js、js/bridge.js、js/battle-renderer.js、js/tablock.js、js/save_origin.js、css/style.css、package.json、tests/tab-lock.test.cjs 與 tests/update-check.test.cjs。沒有素材變更，素材庫無須提交；工作區既有 Skills2 Excel／CSV／JS 修改未納入本次提交。
+- 驗證：node --test tests/loading-screen.test.cjs tests/update-check.test.cjs tests/tab-lock.test.cjs，20/20 通過；npm.cmd run build，402 檔通過；git diff --check 通過。保留原黑幕外觀測試，將過早揭幕的舊驗收改為資料與渲染完成才揭幕，新增到齊順序、Canvas 備援、背景、dirty 節流、分頁訂閱、失效通知與存檔來源確認案例。
+- 限制／交付：內建瀏覽器 webview 連線逾時，Edge 控制不可用，未完成實機刷新或 Console 驗收；程式與回歸可合併，建議使用者整合後刷新確認畫面。無未完成程式項目，不合併／推送；Commit 見本紀錄所在提交。
+
 ## Codex｜雷球其餘播放路徑投影（THUNDER-ORB-FOV-PATHS-20260930）
 
 - Owner：Codex；Done。使用者回報少數雷球仍被拉歪；實際滿階／超神事件會繼承 field，在雷殞天落或環繞事件另播雷球，該分支仍在場景層。補齊三種雷球事件的 field 與非環繞 projectile 球心投影，不修改繼承配置、技能計算或貼地預警／衝擊波。
