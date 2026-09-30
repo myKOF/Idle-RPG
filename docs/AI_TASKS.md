@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜落雷命中特效貼地（THUNDER-HIT-FOOT-20260930）
+
+- Owner：Codex；Done。實戰中的落雷命中特效原本使用怪物身體中心，與 VFX 編輯器的地板原點及落雷柱腳點不一致。普通落雷與雷霆天劫的命中／追加雷電改錨在腳底，延後播放讀當下腳點；敵人移除後保留最後腳點，一般技能仍命中身體中心。未更動傷害、時序或 Preset 尺寸。
+- 修改：js/vfx-runtime.js、js/battle-renderer.js、tests/vfx-runtime.test.cjs、tests/battle-ground-projection.test.cjs、index.html、tools/vfx/editor/index.html、本紀錄。唯讀檢查：js/skills2.js、js/vfx-core.js、vfx/presets/hit-thunder-blue.json、vfx/presets/hit-thunder-purple.json、vfx/presets/bolt-sky-purple.json、vfx/layouts/hit-thunder-purple.json。使用者正在修改的藍／紫雷 Preset 與 layout 保留原狀。衝突預檢無其他副本／分支來源。
+- 驗證：新 THUNDER-HIT、PROJ-5b 測試在舊碼重現懸空，修正後通過；battle-ground-projection／battle-perspective／lightning-vfx-lifecycle 26/26、落雷／復活光柱／矩陣 Runtime 定向 4/4、技能與編輯器防護 36/36、build 400 檔、diff check 通過。完整 vfx-runtime 115/119，4 項既有失敗為 FIELD、CATALOG-3、CHAIN 金色雷鏈素材、STARFALL-TAIL，與本次落雷座標無關。
+- 風險：尚未在遊戲瀏覽器實機畫面驗收。無必要素材庫修改；使用者未提交的四個藍／紫雷 Preset／layout 仍留工作區。本提交可供整合，未合併／推送；建議遊戲重新載入後觀察藍、紫雷在存活與死亡敵人上的落地光圈。Commit 見本紀錄所在提交。
+
 ## Codex｜雷霆天劫觸發特效獨立（HEAVEN-TRIBULATION-VFX-20260930）
 
 - Owner：Codex；Done。以使用者已修改的 Skills2 Excel 為準，讓雷霆天劫額外追擊雷電只讀同列觸發特效及觸發命中特效，普通落雷繼續沿用本體階級外觀；同步 Excel／CSV／技能資料與說明、快取及事件回歸。Excel 另有使用者新值：追擊間隔 0.25 秒，已一併同步。

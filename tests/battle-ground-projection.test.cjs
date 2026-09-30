@@ -223,6 +223,18 @@ test('PROJ-5 目標已不在時的退路：落在角色面前一個身位，而�
   near(p.y, 2000 * K - 24, '面前一個身位、略高於腳底（畫面座標）');
 });
 
+test('PROJ-5b 目標消失後，落雷命中特效仍可取最後腳點而非身體中心', () => {
+  const c = loadAnchors();
+  const id = 'mv-float-1';
+  const root = c.S.entities[id].root;
+  const footY = root.y;
+  root.destroy = () => {};
+  vm.runInContext(extractFunction(renderer, 'destroyEntity'), c);
+  c.destroyEntity(id);
+  near(c.screenFootOf(id).y, footY, '最後腳點應貼住地板');
+  near(c.screenPosOf(id).y, footY - 64 * 0.55, '其他受擊仍用身體中心');
+});
+
 /* 從 marker 開始挖出一整個 { ... } 區塊（大括號配對）。 */
 function extractBlock(src, marker) {
   const head = src.indexOf(marker);

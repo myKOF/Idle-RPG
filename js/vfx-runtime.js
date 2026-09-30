@@ -304,7 +304,7 @@ var VFXRuntime = (function () {
     var o = opts || {};
     var ctx = o.ctx || {};
     if (!ctx.posOf || !ctx.playerPos) throw new Error('VFXRuntime 需要 ctx.posOf 與 ctx.playerPos');
-    /* 受擊爆點打在身體中心，施放光環與狀態光環的原點卻在腳底（名目身高 60px 的 0 點）。
+    /* 一般受擊爆點打在身體中心；落雷命中、施放光環與狀態光環的原點在腳底（名目身高 60px 的 0 點）。
        沒有 footOf 就退回 posOf——光環會浮高半個身位，但不會壞掉。 */
     var footOf = ctx.footOf || ctx.posOf;
     /* 斜俯視的縱向比例（見 screenSpaceSpec）。給了就代表 ctx 回傳的是畫面座標；
@@ -577,16 +577,17 @@ var VFXRuntime = (function () {
       if (!ids.length) return false;
       var any = false;
       for (var i = 0; i < ids.length; i++) {
-        // 復活光柱的 Preset 原點是落地光環；目標身體中心會讓它懸在角色腰部。
-        var pillarFoot = spec.variant === 'pillar' &&
-          (presetId === 'pillar-light' || presetId === 'pillar-earth');
+        // 復活光柱與落雷的 Preset 原點在地板；身體中心會讓命中光圈懸在怪物腰部。
+        var groundFoot = (spec.variant === 'pillar' &&
+          (presetId === 'pillar-light' || presetId === 'pillar-earth')) ||
+          spec.variant === 'thunder-strike' || spec.variant === 'thunder-impact';
         if (delaySec > 0) {
           pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
-            authoredSize: authoredSize, pillarFoot: pillarFoot, chainTargets: chainTargets });
+            authoredSize: authoredSize, groundFoot: groundFoot, chainTargets: chainTargets });
           any = true;
           continue;
         }
-        var p = pillarFoot ? footOf(ids[i]) : ctx.posOf(ids[i]);
+        var p = groundFoot ? footOf(ids[i]) : ctx.posOf(ids[i]);
         // 單體攻擊沒有判定尺寸，保留作者尺寸，不套米制正規化或場景特效倍率。
         var params = authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(presetId, scale);
         params.position = p;
@@ -1553,7 +1554,7 @@ var VFXRuntime = (function () {
         var previousTargets = chainTargets;
         chainTargets = job.chainTargets || null;
         play(job.rt, job.presetId, Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
-          { position: job.pillarFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
+          { position: job.groundFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
             depthY: footOf(job.targetId).y }), job.authoredSize ? 1 : undefined);
         chainTargets = previousTargets;
       }
