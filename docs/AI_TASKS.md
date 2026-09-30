@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜臨界雷劫外擴與靜止衍生（CRITICAL-THUNDER-20260930）
+
+- Owner：Codex；Done。使用者改為環體電球觸發雷球持續10秒，從生成時角色中心朝外每秒3米；每次命中10%＋每級1%再生一顆不移動雷球；傷害50%＋每級5%。移除四顆／機率翻倍。再生雷球同為10秒、每次命中可繼續判定，但永不移動。
+- 允許 Skills2 Excel／CSV／JS、必要快取、雷球測試及本紀錄；禁止修改使用者命中特效素材及其他技能。依賴既有移動場域與命中回呼；衝突預檢全部乾淨，本副本既有連鎖雷爆設定保留。
+- 驗收：外擴方向／速度、子球靜止、10秒到期、各受害者機率、等級與傷害倍率、VFX位置／速度／落點同步、Excel原生重開、定向回歸及build。完成提交交使用者整合，不合併或推送。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、tools/skills2-geometry.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-thunderorb-icearrow-legendary.test.cjs、tests/skills2-geometry.test.cjs、本紀錄。共享配置檔中的使用者連鎖雷爆與光耀之堂設定保留並同步；未提交的命中特效Preset／layout不納入本次提交。本次無素材修改，素材庫無須提交。
+- 唯讀檢查：js/vfx-runtime.js、js/vfx-core.js、js/battle-renderer.js、js/battlefield.js、tools/config_tables.cjs、tools/xlsx_to_csv.cjs、docs/WORKER_PROTOCOL.md、Skills2與Equipment_Affix配置、雷球Preset。沿用現有場域幾何事件，不新增Worker協議。Excel由Artifact匯入時空白格異常顯示914，未用其覆寫，改Excel原生COM只改第169列AU／AW／AX／AB；使用者儲存關閉後正式寫入並唯讀重開驗證。
+- 驗證：node --test --test-name-pattern='CRITICAL-THUNDER|臨界雷劫外擴' tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skills2-geometry.test.cjs，4/4；包含正式Core／Runtime／Preset逐幀外移與靜止、自然回收、未命中不生成、末拍壽命、等級傷害和感電核心固定10秒取代。node tools/config_tables.cjs --apply Skills2，0語意差異；npm.cmd run build，404檔通過；git diff --check通過。
+- 廣泛回歸：雷球傳奇／幾何／VFX schema／Runtime四檔初跑168項159通過9失敗；4項雷爆仍期待舊彈射／速度／命中特效，1項連鎖速度舊期望，4項既有FIELD／CATALOG-3／CHAIN金色／STARFALL-TAIL。唯讀攔截器將本次改的三個函式換回HEAD、保留使用者現行配置後，同9項失敗仍可重現；新效果測試在舊函式下亦正確失敗。未降低斷言。
+- 風險／限制：未做遊戲瀏覽器實戰／Console驗收；依新描述靜止衍生球仍可繼續生成，高等級與密集敵人會快速增加場域數量，未擅自新增數量上限。無未完成程式項目；程式可合併，既有測試落差與實戰效能需另外追蹤。Commit見本紀錄所在提交；建議使用者整合後刷新遊戲確認臨界雷劫，不合併／推送。
+
 ## Codex｜雷殞天落觸發特效獨立（THUNDERFALL-TRIGGER-20260930）
 
 - Owner：Codex；Done。以使用者修改的 Skills2 Excel 第168列為準，額外雷殞的飛行／受擊／預警只讀本列觸發角色，普通雷球／環體電球不繼承天落外觀；永久追加雷殞共用第7階配置。不修改傷害、數量、降落時間或素材。
