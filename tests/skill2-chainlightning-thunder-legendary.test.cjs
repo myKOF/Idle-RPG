@@ -581,7 +581,7 @@ test('雷幕不得沿用火牆的畫法：兩個渲染器都要有自己的雷�
 
 test('【雷霆天劫】：只要落雷術裝配著就永久運轉，每拍追擊範圍內最低血的敵人', () => {
   const c = loadContext();
-  stubVfx(c);
+  const specs = stubVfx(c);
   const calls = stubHits(c);
   maxLevels(c, 'thunderstrike');
   equip(c, 'thunderstrike');
@@ -594,12 +594,35 @@ test('【雷霆天劫】：只要落雷術裝配著就永久運轉，每拍追�
   advance(c, p, es, 2);
   assert.ok(calls.length > 0, '永久雷電不必施放就會運轉');
   assert.ok(calls.every((h) => h.ent === weak), '每拍都挑生命值最低的');
+  const tribulation = specs.filter((s) => s.variant === 'thunder-strike');
+  assert.ok(tribulation.length > 0, '天劫每次追擊都要派送特效');
+  for (const s of tribulation) {
+    assert.deepEqual(Object.assign({}, s.vfx), { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' }, '天劫只讀本列觸發角色');
+  }
 
   // 卸下技能就停
   c.G.player.loadout = [];
   const settled = calls.length;
   advance(c, p, es, 2);
   assert.equal(calls.length, settled, '沒裝配在技能列就不生效');
+});
+
+test('【雷霆天劫】普通落雷保留本體特效，不被天劫觸發欄覆蓋', () => {
+  const c = loadContext();
+  const specs = stubVfx(c);
+  stubHits(c);
+  maxLevels(c, 'thunderstrike');
+  equip(c, 'thunderstrike');
+  setUlt(c, 'thunderstrike', 'heavenTribulation', 1);
+  const p = playerEnt();
+  const es = [enemy(1e9, 20, 0, 'target')];
+  c.castSkill2(p, es, 'thunderstrike', 'mv-float');
+  const ordinary = specs.filter((s) => s.variant === 'thunder-strike');
+  assert.ok(ordinary.length > 0, '手動施放會產生普通落雷');
+  for (const s of ordinary) {
+    assert.equal(s.vfx.attack, 'bolt-thunderstrike-bluewhite', '普通落雷仍讀第一階本體外觀');
+    assert.equal(s.vfx.hit, 'hit-thunder-blue', '普通落雷仍讀第七階本體命中');
+  }
 });
 
 test('【永恒雷獄】：施放落雷術後每 gap 秒自動再施放，持續時間走完就停', () => {

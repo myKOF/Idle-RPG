@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜雷霆天劫觸發特效獨立（HEAVEN-TRIBULATION-VFX-20260930）
+
+- Owner：Codex；Done。以使用者已修改的 Skills2 Excel 為準，讓雷霆天劫額外追擊雷電只讀同列觸發特效及觸發命中特效，普通落雷繼續沿用本體階級外觀；同步 Excel／CSV／技能資料與說明、快取及事件回歸。Excel 另有使用者新值：追擊間隔 0.25 秒，已一併同步。
+- 前置：現有 `sgTickHeavenTribulation` 已傳 `vfxUlt`、普通落雷已傳 `vfxBase`；範圍限 Skills2 配置／接線、必要快取、測試及本紀錄。使用者另有未提交的紫雷 Preset 編輯，保留原狀不納入本任務；不改傷害公式與選敵。
+- 衝突預檢：目標檔案無其他副本或分支衝突來源。驗收：Excel／CSV 逐格一致、配置重建成功、天劫事件只帶紫雷觸發角色、普通落雷維持藍白本體、build 及相關測試通過；不合併／推送。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tools/skills2-vfx.cjs、js/skills2.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-chainlightning-thunder-legendary.test.cjs、tests/skills2-vfx-schema.test.cjs、本紀錄。唯讀檢查：js/vfx-runtime.js、js/vfx-core.js、vfx/presets/bolt-sky-purple.json、vfx/presets/hit-thunder-purple.json、vfx/layouts/hit-thunder-purple.json。
+- 驗證：Excel 正式儲存並重新開啟、Excel／CSV 逐格一致；相對 HEAD 僅第 160 列 8 格值及使用者編輯的觸發三格文字樣式變動。`node tools/config_tables.cjs --apply Skills2` 語意變更 0；`node --test tests/skill2-chainlightning-thunder-legendary.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs` 42/42；`node tools/build_check.cjs` 400 檔；`git diff --check` 通過。技能 JS 語意變更僅 thunderstrike 第二個超神列。
+- 交付：無素材庫必要變更；使用者仍在編輯的紫雷 Preset／layout 留在工作區，未納入本次提交。未做遊戲瀏覽器實機畫面驗收；可交使用者整合，不合併／推送。Commit 見本紀錄所在提交。
+
 ## Codex｜雷電矩陣電柱間距 100（THUNDER-MATRIX-GAP-20260930）
 
 - Owner：Codex；Done。雷幕內電柱的最大間距由 150 改為 100 像素；原 8 根上限會令長雷幕調整無效，同步提高為 16 根，並在正式 Runtime 與備援舊畫法使用相同規則。只改視覺密度，不動判定尺寸、傷害或行進速度。
