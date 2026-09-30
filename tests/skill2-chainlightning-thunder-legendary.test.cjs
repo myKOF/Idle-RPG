@@ -579,7 +579,7 @@ test('雷幕不得沿用火牆的畫法：兩個渲染器都要有自己的雷�
   assert.match(vfx, /s\.variant === 'thunder-curtain'/);
 });
 
-test('【雷霆天劫】：只要落雷術裝配著就永久運轉，每拍追擊範圍內最低血的敵人', () => {
+test('【雷霆天劫】：裝配時永久運轉，每拍優先追擊兩個不同的低血敵人', () => {
   const c = loadContext();
   const specs = stubVfx(c);
   const calls = stubHits(c);
@@ -593,11 +593,13 @@ test('【雷霆天劫】：只要落雷術裝配著就永久運轉，每拍追�
   // 沒有施放技能，也應該自己跑起來
   advance(c, p, es, 2);
   assert.ok(calls.length > 0, '永久雷電不必施放就會運轉');
-  assert.ok(calls.every((h) => h.ent === weak), '每拍都挑生命值最低的');
-  const tribulation = specs.filter((s) => s.variant === 'thunder-strike');
+  assert.ok(calls.some((h) => h.ent === weak), '每拍選到最低血敵人');
+  assert.ok(calls.some((h) => h.ent === fat), '同拍第二道雷另選敵人');
+  const tribulation = specs.filter((s) => s.variant === 'heaven-tribulation-strike');
   assert.ok(tribulation.length > 0, '天劫每次追擊都要派送特效');
   for (const s of tribulation) {
     assert.deepEqual(Object.assign({}, s.vfx), { attack: 'bolt-sky-purple', hit: 'hit-thunder-purple' }, '天劫只讀本列觸發角色');
+    assert.equal(s.hit, false, '雷柱不提前播放命中');
   }
 
   // 卸下技能就停
@@ -605,6 +607,44 @@ test('【雷霆天劫】：只要落雷術裝配著就永久運轉，每拍追�
   const settled = calls.length;
   advance(c, p, es, 2);
   assert.equal(calls.length, settled, '沒裝配在技能列就不生效');
+});
+
+test('【雷霆天劫】兩個八米落點各自結算，重疊雙傷且單敵仍有兩道', () => {
+  const c = loadContext();
+  const specs = stubVfx(c);
+  const calls = stubHits(c);
+  maxLevels(c, 'thunderstrike');
+  equip(c, 'thunderstrike');
+  setUlt(c, 'thunderstrike', 'heavenTribulation', 1);
+  const p = playerEnt();
+  const weak = enemy(1e8, 20, 0, 'weak');
+  const second = enemy(2e8, 180, 0, 'second');
+  const overlap = enemy(3e8, 100, 0, 'overlap');
+  const outside = enemy(4e8, 295, 0, 'outside');
+  const es = [outside, overlap, second, weak];
+  c.GT = .25;
+  c.SKILL2_RT.tribulationAt = .25;
+  c.sgTickHeavenTribulation(tickCtx(c, p, es), .05);
+  const bolts = specs.filter((s) => s.variant === 'heaven-tribulation-strike');
+  const impacts = specs.filter((s) => s.variant === 'heaven-tribulation-impact');
+  assert.deepEqual(bolts.map((s) => s.targets[0]), ['weak', 'second']);
+  assert.deepEqual(bolts.map((s) => [s.area.x, s.area.y]), [[20, 0], [180, 0]], '雷柱在結算前固定落點');
+  assert.deepEqual(impacts.map((s) => s.targets[0]), ['weak', 'second']);
+  assert.deepEqual(impacts.map((s) => [s.area.x, s.area.y, s.area.r]), [[20, 0, 8 * M], [180, 0, 8 * M]]);
+  assert.equal(countFor(calls, weak), 1);
+  assert.equal(countFor(calls, second), 1);
+  assert.equal(countFor(calls, overlap), 2);
+  assert.equal(countFor(calls, outside), 0);
+  const base = calls[0].atk;
+  assert.ok(calls.every((h) => h.atk === base), '每道維持表定單道傷害');
+  assert.equal(c.SKILL2_RT.tribulationAt, .5, '兩道共用原本節拍');
+
+  specs.length = 0;
+  calls.length = 0;
+  c.GT = .5;
+  c.sgTickHeavenTribulation(tickCtx(c, p, [weak]), .05);
+  assert.deepEqual(specs.filter((s) => s.variant === 'heaven-tribulation-strike').map((s) => s.targets[0]), ['weak', 'weak']);
+  assert.equal(countFor(calls, weak), 2, '單敵可受兩道傷害');
 });
 
 test('【雷霆天劫】普通落雷保留本體特效，不被天劫觸發欄覆蓋', () => {

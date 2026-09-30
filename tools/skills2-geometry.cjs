@@ -37,7 +37,7 @@ const legacy=[['施放距離（米）','castM'],['施放距離每級增加（米
  ['矩形長度（米）','len'],['矩形長度每級增加（米）','lenPer'],
  ['矩形寬度（米）','wid'],['矩形寬度每級增加（米）','widPer'],
  ['扇形角度（度）','deg'],['角度每級增減（度）','degPer'],['飛行子彈速度（米／秒）','speed']];
-const spatialKeys=['castM','m','len','wid','r','side','sideWidth','flyM','chaseM','bodyM','lenM','widthM','arcM','growM','range'];
+const spatialKeys=['castM','m','radiusM','len','wid','r','side','sideWidth','flyM','chaseM','bodyM','lenM','widthM','arcM','growM','range'];
 const commonRoutes={
  gap:new Set(`cleave/windChaser gale/1 gale/thunderFlash bloodblade/venomDomain dualdance/5 dualdance/7 dualdance/flameKagura bloodrage/asuraFist fireball/4 fireball/starfallCataclysm firepillar/eternalInferno firehunt/fireGodDescend mire/plagueMire mire/abyssInferno chainlightning/skyThunderArray chainlightning/flyingThunderGod thunderstrike/1 thunderstrike/heavenTribulation thunderstrike/eternalThunderPrison thunderorb/1 thunderorb/thunderfallShatter icearrow/7 icearrow/tearsOfIce waterball/7 waterball/abyssBurial frostnova/7 frostnova/infiniteNova frostnova/crystalResonance frostnova/iceKingDomain windblade/5 windblade/6 windblade/7 vacuumslash/3 vacuumslash/vacuumOmen vacuumslash/voidAnnihilation stormbarrier/1 stormbarrier/skyfallStars`.split(' ')),
  deg:new Set('knife/1 icearrow/1 windblade/4'.split(' ')),
@@ -50,6 +50,7 @@ function bindings(gid,stage){
  if(/^[1-7]$/.test(stage))b.push(['cast',['castM']]);
  for(const kind of Object.keys(commonRoutes))if(commonRoutes[kind].has(id))b.push([kind,[kind==='rangePct'?'range':kind]]);
  if(routes[id])b.push([routes[id],['m']]);
+ if(id==='thunderstrike/heavenTribulation')b.push(['damage',['radiusM']]);
  if(id==='gale/thunderFlash')b.push(['damage',['len','wid']]);
  if(id==='thunderstrike/thunderMatrix')b.push(['curtain',['wid']]);
  if(id==='chainlightning/flyingThunderGod')b.push(['damage',['len','wid']]);
