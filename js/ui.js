@@ -9889,12 +9889,9 @@ function initBattleFPS() {
   if (!fpsEl || !isInternalVersion()) return;
   fpsEl.style.display = 'block';
   fpsEl.removeAttribute('aria-hidden');
-  /* 戰鬥效能診斷（js/battle-perf.js）：多行疊層，?perf=0 可關。 */
+  /* 戰鬥效能診斷（js/battle-perf.js）：預設只有 FPS 一行；GM 指令 Performance_Information
+     （js/gm.js，主執行緒處理）切換多行疊層的顯示，?perf=0 則整個不啟用。 */
   var perfOn = typeof BattlePerf !== 'undefined' && BattlePerf.attach();
-  if (perfOn) {
-    fpsEl.style.whiteSpace = 'pre';
-    fpsEl.style.lineHeight = '1.3';
-  }
 
   var lastTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   var frames = 0;
@@ -9904,7 +9901,11 @@ function initBattleFPS() {
     var delta = now - lastTime;
     if (delta >= 500) {
       var fps = Math.round((frames * 1000) / delta);
-      fpsEl.textContent = 'FPS: ' + fps + uiVisualDiagText(now) + (perfOn ? '\n' + BattlePerf.lines() : '');
+      var perfShown = perfOn && BattlePerf.visible;
+      /* 多行的時候才要保留換行與較鬆的行距；隱藏時回到原本只有一行的樣子。 */
+      fpsEl.style.whiteSpace = perfShown ? 'pre' : '';
+      fpsEl.style.lineHeight = perfShown ? '1.3' : '';
+      fpsEl.textContent = 'FPS: ' + fps + uiVisualDiagText(now) + (perfShown ? '\n' + BattlePerf.lines() : '');
       frames = 0;
       lastTime = now;
     }
