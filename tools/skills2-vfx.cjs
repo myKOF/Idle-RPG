@@ -3,6 +3,7 @@
 const columns = [['觸發特效','attack'],['觸發子彈','projectile'],['觸發命中特效','hit'],['觸發地板特效','ground'],['觸發持續場域特效','field']];
 const noteColumn = '特效作用說明';
 const events = {
+  'icearrow.7': {roles:['attack'],note:'追蹤冰箭本體沿用飛行子彈欄並沿權威移動航向連續播放；敵人凍結結束時，在該敵人的當下位置播放一次觸發特效，匹配冰爆傷害半徑。觸發特效不在冰箭發射、追蹤或普通命中時播放。'},
   'chainlightning.flyingThunderGod': {roles:['field'],note:'每波逐道生成全場貫穿雷電；每道出生時以隨機兩名不同敵人連線決定固定方向；只有一名敵人時改用玩家與該敵人連線，零敵人時才略過，寬度、長度及持續時間由權威事件傳入。觸發持續場域不覆蓋普通雷鏈。'},
   'chainlightning.eternalSuperconductor': {roles:['projectile','hit'],note:'額外維持一道自身與範圍內敵人往返的雷鏈；觸發子彈不覆蓋普通雷鏈，追蹤抵達敵人時播放觸發命中特效，回到自身才疊層；無目標立即終止。'},
   'thunderstrike.heavenTribulation': {roles:['attack','hit'],note:'額外兩道天劫雷電每次追擊時，各在落點播放觸發特效與觸發命中特效；不覆蓋普通落雷的本體外觀，雷柱維持原尺寸，命中特效對應八米傷害半徑。'},

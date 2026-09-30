@@ -428,7 +428,11 @@ test('【寒冰爆裂箭】凍結結束時產生冰爆', () => {
   assert.ok(!specs.some((s) => s.variant === 'ice-blast'), '凍結期間不引爆');
   const before = calls.length;
   run(c, p, es, 0.3);                        // 凍結結束
-  assert.ok(specs.some((s) => s.variant === 'ice-blast'), '凍結結束 → 冰爆');
+  const bursts = specs.filter((s) => s.variant === 'ice-blast');
+  assert.equal(bursts.length, 1, '凍結結束只播放一次冰爆');
+  assert.deepEqual({ ...bursts[0].vfx }, { attack: 'burst-icearrow-crystal' }, '只讀本列觸發特效');
+  assert.equal(bursts[0].area.r, 6 * M, '特效與實際冰爆半徑相同');
+  assert.equal(bursts[0].area.x, target.pos.x, '以凍結結束的敵人為中心');
   assert.ok(calls.length > before, '冰爆造成傷害');
   const blast = calls.slice(before);
   const expected = 500 * (400 + 40) / 100;

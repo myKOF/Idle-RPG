@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜寒冰爆裂箭朝向與冰爆觸發（ICEARROW-T7-VFX-20260930）
+
+- Owner：Codex；Done。第7階追蹤冰箭沿實際位移朝向，不以每拍命中重新發射；burst-icearrow-crystal依使用者Excel放觸發特效，只在凍結結束事件播放。寒冰箭凍結不借用冰霜新星演出。追加驗證第8階極寒冰爆不混播暴風雪與三種超神外觀。未改傷害／速度／追蹤判定或素材。
+- 允許Skills2的寒冰箭與凍結演出限定段、配置生成與Excel說明、Runtime朝向／派送、觸發登記、測試、必要快取與本紀錄。預檢js/skills2.js有Claude雷球96顆上限進行中，使用者已同意限定寒冰箭範圍；不碰雷球段。後續Claude已提交62fc663f，index／bridge／worker相同版號行有變更，使用者另同意限定更新快取；採全新token與skills2版號244避免243撞號。其餘目標無衝突。
+- 驗收追蹤四方向與逐幀轉向、同id只保留一箭、無目標仍持續飛行、平時不播爆點、凍結結束僅播放觸發與正確半徑、空觸發不回退、Excel／CSV／JS一致、回歸及Build；完成提交交使用者整合，不合併／推送。
+- 根因：追蹤場域繼承普通飛行子彈卻走逐次發射分支；原ground冰箭未採運動航向；第7階冰爆放本體攻擊欄使普通事件誤播。共用sgFreezeTarget硬派frostnova／第4階，已有冰霜新星超神時sgVfxRoles會從第7階繼承，帶入ground-blizzard，即使未裝配新星也可能誤播。極寒冰爆本身沒有呼叫sgSpawnBlizzard，只有冰之淚才有合法箭雨。
+- 修改：js/skills2.js限定寒冰箭第7階生成資料、sgGroundVfxSpec／sgFreezeTarget；js/vfx-runtime.js追蹤子彈沿權威area.id持續移動與逐幀朝向；tools/skills2-vfx.cjs登記icearrow.7；config/Excel/Skills2.xlsx、config/CSV/Skills2.csv（保留使用者觸發欄修改，僅額外更新第178列AV作用說明）；tests/icearrow-vfx-integration.test.cjs、tests/skill2-ice.test.cjs；index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html必要快取及本紀錄。全部共12檔；無新素材或Preset修改，素材庫無須提交。
+- 唯讀檢查：js/vfx-core.js、js/battle-renderer.js、js/battlefield.js、js/status.js、tools/config_tables.cjs、tools/xlsx_to_csv.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、相關冰箭／冰爆／暴風雪Preset及傳奇冰箭測試。Excel原生COM儲存／唯讀重開，修改前後逐格比較僅AV178改動，保留樣式與其他使用者設定；Excel／CSV／JS一致，config_tables試跑語意變更0。沿現有事件area位置／速度／轉向，不新增Worker協議或特效來源。
+- 驗證：node --test tests/icearrow-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，23/23；冰箭／凍結／傳奇／三種超神定向node --test --test-name-pattern='寒冰箭|冰系強化|冰箭散射|貫穿冰箭|冰箭齊射|寒霜凍結|寒冰爆裂箭|凍結走|凍結標記|疊滿|三個冰系|每階|連射|冰封|凜冬侵蝕|冰裂箭|深度凍結|極寒冰爆|無限冰裂|冰之淚' tests/skill2-ice.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs，24/24。正式Core／Runtime驗證外觀尺寸、四方朝向、逐幀位移與弧線、空敵持續一箭及回收；新凍結獨立案例在HEAD明確重現暴風雪誤播，修正後通過且合法新星暴風雪保留。npm.cmd run build，405檔；git diff --check通過。
+- 廣泛回歸：node --test tests/skill2-ice.test.cjs tests/vfx-runtime.test.cjs，162項152通過、10失敗。唯讀攔截器將Skills2／Runtime／原冰系測試換回HEAD，仍162項相同10失敗；6項為既有水流彈飛行／寒霜配置落差，4項為FIELD／CATALOG-3／CHAIN金雷／STARFALL-TAIL，未降低斷言。新整合測試在舊程式下5項失敗，覆蓋本體誤播、配置及飛行路徑。
+- 交付：Commit見本紀錄所在提交；可合併，未自行合併／推送。無未完成程式項目；未做遊戲瀏覽器實戰／Console驗收，建議整合後刷新遊戲確認箭尖與極寒冰爆。若VFX編輯器開著，先保存未存內容再重新載入，以取得Runtime版號160；未改通用預覽或Preset結構，不需提升runtimePreviewRevision。既有回歸失敗另外追蹤。
+- 提交前另出現js/formula.js、config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv其他工作修改，保留未提交，不混入寒冰箭修復。
+
 ## Codex｜臨界雷劫生成內建冷卻（CRITICAL-THUNDER-ICD-20260930）
 
 - Owner：Codex；Done。每顆臨界雷劫雷球成功生成靜止球後內建0.75秒冷卻；同拍多敵最多生成一顆，失敗機率不消耗冷卻，首代與靜止衍生代各自計時。使用GT，暫停不走時間；不改傷害、命中節奏或生成機率。
