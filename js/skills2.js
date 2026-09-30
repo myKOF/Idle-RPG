@@ -8056,9 +8056,34 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
   });
 }
 
+/* 雷球場域（gid thunderorb、kind orb：飛行雷球、伴生雷球與臨界雷劫的衍生代）的總量上限。
+
+   為什麼需要：超神【臨界雷劫】的靜止雷球「每次命中有機率在原地再生一顆」，而命中是對範圍內
+   每個敵人各判一次——平均每顆一生會生出 (脈衝數 × 範圍內敵人數 × 機率) 顆子代，只要範圍內
+   常有敵人就是超臨界，數量沒有天花板。敵人打不死時它就一路繁殖（2026-09-30 無畫面實測，
+   32 隻打不死的敵人：第 4 秒 84 顆、第 8 秒 1,127 顆、第 10 秒 4,144 顆、43k 命中／秒，
+   Worker 要 7.5 秒才推進 1 遊戲秒）。所有 UI 操作都是送給 Worker 的指令，Worker 被拖慢
+   之後連一個 help 都要等數秒——所以玩家看到的是「整個遊戲都卡」，不只是戰鬥。
+   獨立冷卻（SG_THUNDER_CRITICAL_SPAWN_COOLDOWN）只把成長從每秒 ×3.3 壓到 ×1.9，沒有天花板。
+
+   96＝與 SG_GROUND_MAX_FIELDS 同量級的防呆上限（使用者 2026-09-30 定案，硬上限）。
+   穩態成本（32 隻打不死的敵人，無畫面實測）：約 320 ms／遊戲秒（一個核心的 32%），
+   做完 skills2Levels 快取約 200 ms。低於上限時行為與沒有上限完全相同。 */
+var SG_THUNDERORB_MAX_FIELDS = 96;
+function sgThunderorbAtCap() {
+  if (!SKILL2_RT || !SKILL2_RT.grounds) return false;
+  var n = 0, list = SKILL2_RT.grounds;
+  for (var i = 0; i < list.length; i++) {
+    var f = list[i];
+    if (f && f.gid === 'thunderorb' && f.kind === 'orb' && ++n >= SG_THUNDERORB_MAX_FIELDS) return true;
+  }
+  return false;
+}
+
 /* 伴生雷球：臨界雷劫的首代沿生成時玩家到球心方向外移；衍生代維持出生位置。 */
 var SG_THUNDER_CRITICAL_SPAWN_COOLDOWN = 0.75;
 function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outward) {
+  if (sgThunderorbAtCap()) return;
   var critical = cfg.critical;
   var centre = outward && typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
   var speed = centre && critical ? critical.speedPx : 0;
@@ -8075,6 +8100,8 @@ function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outw
     lifeSec: critical ? lifeSec : 0,
     onHit: critical ? function (f, victim, enemies, out) {
       if (GT < (f.thunderCriticalNextAt || 0)) return;
+      // 到頂就不擲骰、也不進冷卻：上限以下的行為（含亂數消耗）與沒有上限完全相同。
+      if (sgThunderorbAtCap()) return;
       if (chance(critical.chance)) {
         var spawnPos = f.pos || (typeof bfPos === 'function' ? bfPos(victim) : null);
         if (spawnPos) {
