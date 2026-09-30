@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜雷爆連鎖閃電與三十米彈射（THUNDERBURST-FLIGHT-20260930）
+
+- Owner：Codex；Done。依使用者最新指示，雷爆改用一般連鎖閃電的同一份飛行／命中特效及尺寸，不再生成小型雷球；表定彈射4次（沿原規則含原目標）、搜尋半徑30米，保留先前要求的一般雷球4倍速度。原邏輯只有立即傷害與延後閃光，且擊殺原目標跳過判定；改追蹤抵達才結算，死亡原目標仍可觸發，鏈段在結束或玩家死亡時回收。
+- 前置：現有 projectileHomingStep、sgQueueMeteor 與連鎖閃電 Runtime。允許 Skills2 Excel／CSV／生成資料、skills2技能、tools/skills2-vfx.cjs、主頁／Worker必要快取、相關測試與本紀錄；禁止改觸發機率、傷害倍率、其他技能、素材或命中密度策略。撤回本輪小型雷球專用 Runtime／Editor 改動，保留使用者編輯的 orb-thunder 素材。
+- 衝突：Claude af8ac051 已合併且使用者授權使用；新預檢 index.html 有 Claude 未提交的 ui／gm／battle-perf 快取變更，使用者再次同意只更新 skills2／bridge 快取。其餘預檢乾淨。驗收4次命中、逐跳傷害與同款鏈段、30米邊界、移動／死亡目標與玩家死亡、單敵／零敵、擊殺原目標仍觸發、外觀獨立與自然回收；測試與 Build 後提交，不合併／推送。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、tools/skills2-vfx.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-thunderorb-icearrow-legendary.test.cjs、tests/skills2-vfx-schema.test.cjs、本紀錄。Excel 使用 Artifact 編輯、僅移植第170列8格值，其他列、樣式及 ZIP 部件保留；CSV／JS 同步、重建語意差異0。觸發子彈 bolt-chain-travel-bluewhite、觸發命中 hit-lightning-blue，與普通連鎖閃電一致；移除小球半徑參數。不新增特效來源或協議欄位。
+- 唯讀：js/vfx-runtime.js、js/vfx-core.js、js/worker/protocol.js、js/battlefield.js、tools/config_tables.cjs、連鎖／雷球 Preset、素材庫。最終 Runtime／Editor 與 HEAD 相同；未改命中密度或素材。使用者編輯中的 vfx/presets/orb-thunder.json 保留未提交；素材庫狀態乾淨，無本次必要素材修改。
+- 驗證：node --test tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-hit-density.test.cjs tests/skill2-chainlightning-thunder-legendary.test.cjs，95/95通過。涵蓋30米中心邊界、速度共源、逐跳抵達、死亡目標續跳、單敵／零敵、玩家死亡、同款素材實際 transform 尺寸及停止／自然回收。node tools/build_check.cjs：403檔通過；git diff --check 通過。
+- 廣泛回歸：node --test --test-name-pattern='CHAIN|chain' tests/vfx-runtime.test.cjs：12/13通過，金色雷鏈 tint 是已在 HEAD 重現的既有失敗。本輪先前廣泛回歸另外確認 FIELD、CATALOG-3、STARFALL-TAIL、舊連鎖速度期望及三項冰箭幾何失敗，唯讀攔截器讀回 HEAD 同樣8項失敗，未降低斷言。新雷爆整合測試通過；未做實機遊戲畫面驗收。
+- 交付：Commit 見本紀錄所在提交，可合併；無未完成程式項目，不自行合併／推送。建議整合後重新載入遊戲確認雷爆鏈段與普通雷球外觀分離；既有廣泛回歸失敗另案處理。
+
 ## Codex｜雷殞天落觸發特效獨立（THUNDERFALL-TRIGGER-20260930）
 
 - Owner：Codex；Done。以使用者修改的 Skills2 Excel 第168列為準，額外雷殞的飛行／受擊／預警只讀本列觸發角色，普通雷球／環體電球不繼承天落外觀；永久追加雷殞共用第7階配置。不修改傷害、數量、降落時間或素材。
