@@ -199,6 +199,31 @@ test('整份標了 perspective: false 的 preset 走 billboard 層；只標幾�
     const out={fx:fx.nodes.size,billboard:billboard.nodes.size};rt.destroy();return out;
   };
   assert.deepEqual(play(make('cam-all',[true,true])),{fx:0,billboard:2},'整份都標＝完全不變形的那條路');
+  /* 2026-09-30 使用者回報：hit-lightning-08 整份都關了透視，遊戲裡仍然變形。
+     原因是只有 attack 這一組派送查旗標，受擊與施放寫死走場景層（逐層補償抵銷得掉縮放、抵銷不掉斜切）。
+     每一種角色都要走同一條判斷（js/vfx-runtime.js 的 fxRtFor）。 */
+  const playAs = (preset, spec) => {
+    const fx = backend(), air = backend(), billboard = backend();
+    const rt = Runtime.create({ core: Core, resolver: { has: () => true, resolve: id => id },
+      fxBackend: fx, airBackend: air, billboardBackend: billboard,
+      ctx: { playerPos: () => ({ x: 0, y: 0 }), posOf: () => ({ x: 150, y: 80 }), footOf: () => ({ x: 150, y: 90 }),
+        projectileTargetPoint: () => ({ x: 150, y: 80 }) } });
+    rt.registerPresets([preset]);
+    rt.tryPlay(spec);
+    for (let i = 0; i < 10; i++) rt.update(0.02);
+    const out = { fx: fx.nodes.size, billboard: billboard.nodes.size }; rt.destroy(); return out;
+  };
+  for (const [name, spec] of [
+    ['受擊（雷鏈：抵達終點才炸）', { fxKind: 'chain', variant: 'lightning-chain', targets: ['a', 'b'], travelMs: [80, 80] }],
+    ['受擊（一般）', { fxKind: 'impact', targets: ['a'] }],
+    ['施放', { fxKind: 'cast', targets: ['a'] }]
+  ]) {
+    const role = spec.fxKind === 'cast' ? 'cast' : 'hit';
+    assert.deepEqual(playAs(make('cam-role-all', [true, true]), Object.assign({ vfx: { [role]: 'cam-role-all' } }, spec)),
+      { fx: 0, billboard: 2 }, name + '：整份都標了就要走 billboard 層');
+    assert.deepEqual(playAs(make('cam-role-some', [true, false]), Object.assign({ vfx: { [role]: 'cam-role-some' } }, spec)),
+      { fx: 2, billboard: 0 }, name + '：只標幾層的留在場景層');
+  }
   assert.deepEqual(play(make('cam-some',[true,false])),{fx:2,billboard:0},
     '只標幾層的留在場景層，由顯示層就地補償，前後遮擋才不會跳掉');
   assert.deepEqual(play(make('cam-none',[false,false])),{fx:2,billboard:0});
