@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜雷球其餘播放路徑投影（THUNDER-ORB-FOV-PATHS-20260930）
+
+- Owner：Codex；Done。使用者回報少數雷球仍被拉歪；實際滿階／超神事件會繼承 field，在雷殞天落或環繞事件另播雷球，該分支仍在場景層。補齊三種雷球事件的 field 與非環繞 projectile 球心投影，不修改繼承配置、技能計算或貼地預警／衝擊波。
+- 允許 Runtime、快取、Runtime／真技能事件回歸及文件；禁止修改使用者雷球 Preset／layout、其他技能和副本。預檢無衝突；完成驗證後提交，不合併／推送。
+- 修改：js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、tests/vfx-runtime.test.cjs、tests/skill2-thunderorb-icearrow-legendary.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md 與本紀錄。檢查未改：js/skills2.js、js/vfx-core.js、js/battle-renderer.js、js/vfx-pixi-backend.js、Status／Skills2 CSV。使用者編輯中的 lightning-orb-field／orb-thunder／proj-thunderfall-sky Preset 與 lightning-orb-field layout 全部保留未提交；本輪沒有必要素材庫變更，不建空提交。
+- 驗證：兩项新增測試在修正前重現遺漏路由；實際 castSkill2／tickSkill2 的滿階及雷爆事件送入正式 Core／Runtime，逐事件含延後落雷驗證所有繼承雷球圖層／粒子屬 billboard。素材引用在測試內加 Preset 前綴，區分共用 circle_b 的雷球與貼地衝擊，不改幾何。node --test --test-name-pattern='THUNDER-ORB-PATHS|THUNDER-ORB-FOV|PERSP-ORB|THUNDERFALL' tests/vfx-runtime.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/battle-perspective.test.cjs：7/7。
+- 回歸：node --test tests/vfx-runtime.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/vfx-editor-guard.test.cjs：183項179通過、同先前確認基線的 FIELD／CATALOG-3／CHAIN金雷素材／STARFALL-TAIL 四項失敗，沒有新增失敗。node tools/build_check.cjs：402檔通過；git diff --check 通過。
+- 交付：可合併，未合併／推送；Commit 見本紀錄所在提交。沒有未完成的路由修改；未做遊戲瀏覽器實戰畫面驗收，建議整合並重新載入遊戲後確認少數額外雷球。編輯器通用預覽未改，不需提高 runtimePreviewRevision。
+
 ## Codex｜雷球 FOV 外形修正（THUNDER-ORB-FOV-20260930）
 
 - Owner：Codex；Done。使用者回報雷球被 FOV 拉歪；飛行雷球與環繞電球的球體／電弧改共用球心遠近倍率，保持各層相對位置及圓形輪廓。權威位置、半徑、成長與生命週期不變。

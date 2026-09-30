@@ -214,6 +214,11 @@ var VFXRuntime = (function () {
     }
   }
 
+  // 同族事件可繼承雷球本體／子彈欄；不能只校正持續場域與公轉的主要角色。
+  function thunderOrbBodyEvent(spec) {
+    return spec.variant === 'thunder-orb' || spec.variant === 'thunder-orbit' || spec.variant === 'thunder-fall';
+  }
+
   /* 範圍型命中的爆點放大：一顆隕石的落點不該與一刀砍中同樣大小。 */
   function hitScaleOf(spec, scale) {
     if (Number(spec.sizeMult) > 0) return Number(spec.sizeMult);
@@ -755,7 +760,7 @@ var VFXRuntime = (function () {
 
     /* 飛行物：逐幀 setTransform 從起點移到目標，朝飛行方向旋轉 */
     function playProjectile(rt, presetId, spec) {
-      rt = rtAir;
+      rt = thunderOrbBodyEvent(spec) ? rtBillboard : rtAir;
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       /* 天降永遠不是連鎖段。少了後半這個條件，一顆同時打到兩個以上敵人的
          隕石會被當成雷鏈：起點取 ids[0] 的位置、終點取 ids[1]，於是
@@ -1079,7 +1084,8 @@ var VFXRuntime = (function () {
       // 吞噬漩渦是貼地環帶，整體置於人物下方；其他直立場域維持原圖層。
       var flyingField = spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing';
       // 雷球的電弧粒子也屬於球體；共用球心倍率，避免各自按高度投影而拉歪輪廓。
-      var ref = play(curtainColumn || spec.variant === 'thunder-orb' ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
+      var orbBody = role === 'field' && thunderOrbBodyEvent(spec);
+      var ref = play(curtainColumn || spec.variant === 'thunder-orb' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
