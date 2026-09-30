@@ -16,6 +16,67 @@ const assert = require('node:assert');
 
 const VFXPixiBackend = require('../js/vfx-pixi-backend.js');
 
+test('WARP-STRENGTH 拉直PNG亮部中心線保留粗細，支援旋轉、貼圖換幀與快取',async()=>{
+ const PIXI=makePixi();let reads=0,writes=0;
+ PIXI.MeshGeometry=class{constructor(o){Object.assign(this,o)}getBuffer(){return {update(){writes++;}}}};
+ PIXI.Mesh=class extends PIXI.Sprite{constructor(o){super(o.texture);this.geometry=o.geometry;this.position=this.scale=this.skew={set(){}}}};
+ let image;
+ const pixels=()=>{
+  reads++;const bytes=new Uint8ClampedArray(16*16*4);
+  for(let y=0;y<16;y++){
+   const x=image.shift+(y<8?2:8),i=(y*16+x)*4;
+   bytes.set([255,255,255,255],i);
+   // A much dimmer side branch must not pull the centre away from the core.
+   bytes.set([1,1,1,255],(y*16+15)*4);
+  }
+  return {data:bytes};
+ };
+ const backend=VFXPixiBackend.createBackend({PIXI,container:makeContainer(),canvasFactory:()=>({
+  getContext:()=>({drawImage(resource){image=resource;},getImageData:pixels})
+ })});
+ const node=backend.createNode({kind:'deformed',straightenBend:true,assetUrl:'/bend.png'});
+ await Promise.resolve();await Promise.resolve();
+ node.texture.orig={width:16,height:16};node.texture.frame=new PIXI.Rectangle(0,0,16,16);node.texture.source.resource={shift:0};
+ const shape={config:{axis:'y',start:0,end:16,amplitude:3},mirror:1,width:1,phase:0,bendStrength:0};
+ const w={a:1,b:0,c:0,d:1,x:0,y:0,originX:20,originY:30,rotation:0,scaleX:1,scaleY:1,variation:shape};
+ const t={deformation:w,anchorX:0,anchorY:0};backend.updateNode(node,t);
+ assert.equal(node.__warp.positions.length/2,98,'新模式仍保留小網格批次預算');
+ const vertex=(col,row)=>{const i=(row*49+col)*2;return {x:node.__warp.positions[i],y:node.__warp.positions[i+1]};};
+ // Col 12 samples longitudinal .25 => y=4, whose source centre is x=2.5.
+ assert.ok(Math.abs(vertex(12,0).x+2.5)<1e-5);
+ assert.equal(vertex(12,0).y,4);
+ assert.ok(Math.abs(vertex(12,1).x-vertex(12,0).x-16)<1e-5,'拉直保留完整橫向厚度');
+ assert.ok(Math.abs(vertex(36,0).x+8.5)<1e-5,'曲折貼圖各段均移回同一中心');
+ assert.equal(reads,1);const beforeWrites=writes;backend.updateNode(node,t);assert.equal(writes,beforeWrites);
+ shape.bendStrength=.5;backend.updateNode(node,t);assert.ok(writes>beforeWrites);assert.equal(reads,1,'改強度不重讀像素');
+ shape.bendStrength=1;backend.updateNode(node,t);assert.equal(reads,1);
+ shape.bendStrength=0;
+ node.texture=new PIXI.Texture({source:{resource:{shift:2}},frame:new PIXI.Rectangle(0,0,16,16)});
+ node.texture.orig={width:16,height:16};backend.updateNode(node,t);
+ assert.ok(Math.abs(vertex(12,0).x+4.5)<1e-5);assert.equal(reads,2,'同尺寸換貼圖也刷新幾何');
+ // Rotate the same V-aligned PNG into an X-aligned beam, then crop its length.
+ shape.config={axis:'x',start:0,end:16,amplitude:0};
+ Object.assign(w,{a:0,b:-1,c:1,d:0,clipMin:4,clipMax:12});
+ backend.updateNode(node,t);
+ assert.ok(Math.abs(vertex(12,0).y-4.5)<1e-5);assert.equal(vertex(0,0).x,4);assert.equal(vertex(48,0).x,12);
+ assert.equal(reads,2,'世界軸旋轉仍重用同一PNG方向');
+ assert.deepEqual(backend.takeErrors(),[]);
+});
+
+test('WARP-STRENGTH 中心線讀取失敗只報錯一次，零強度仍保留可見厚度',async()=>{
+ const PIXI=makePixi();PIXI.MeshGeometry=class{constructor(o){Object.assign(this,o)}getBuffer(){return {update(){}}}};
+ PIXI.Mesh=class extends PIXI.Sprite{constructor(o){super(o.texture);this.geometry=o.geometry;this.position=this.scale=this.skew={set(){}}}};
+ const {backend}=setup(PIXI),node=backend.createNode({kind:'deformed',straightenBend:true,assetUrl:'/missing-pixels.png'});
+ await Promise.resolve();await Promise.resolve();node.texture.orig={width:512,height:256};
+ const shape={config:{axis:'x',start:0,end:512,amplitude:3},mirror:1,width:1,phase:0,bendStrength:0};
+ const w={a:1,b:0,c:0,d:1,x:0,y:0,originX:0,originY:0,rotation:0,scaleX:1,scaleY:1,variation:shape};
+ backend.updateNode(node,{deformation:w,anchorX:0,anchorY:.5});
+ assert.equal(backend.takeErrors().length,1);
+ shape.bendStrength=.1;backend.updateNode(node,{deformation:w,anchorX:0,anchorY:.5});
+ assert.equal(backend.takeErrors().length,0);
+ assert.ok(Math.max(...Array.from(node.__warp.positions).filter((_,i)=>i%2))>=128);
+});
+
 /* ---------------- PIXI 替身 ----------------
    只實作後端真的會用到的那幾樣：Texture／Rectangle／Sprite／TilingSprite／Assets。 */
 function makePixi() {

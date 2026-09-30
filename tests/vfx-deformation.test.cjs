@@ -10,6 +10,66 @@ function run(seed,params={},motion){
  const rt=Core.createRuntime({backend,resolver:{resolve:x=>x,has:()=>true}});const p=preset();Object.assign(p.deformation,motion);rt.registerPreset(p);
  const h=rt.play('joined',{seed,...params});rt.update(.1);return {rt,h,nodes};
 }
+
+test('DEFORM-STRENGTH 範圍可存檔、非法上下限拒絕；預設與1/1保持舊形狀',()=>{
+ const p=preset();Object.assign(p.deformation,{bendStrengthMin:.1,bendStrengthMax:1});
+ assert.deepEqual(JSON.parse(Core.serialisePreset(p)),p);
+ for(const bad of [{bendStrengthMin:-.01},{bendStrengthMax:1.01},{bendStrengthMin:.8,bendStrengthMax:.2},{bendStrengthMin:NaN}])
+  assert.equal(Core.validatePreset({...p,deformation:{...p.deformation,...bad}}).ok,false);
+ const old=run(42).nodes[0].t.deformation.variation;
+ const explicit=run(42,{}, {bendStrengthMin:1,bendStrengthMax:1}).nodes[0].t.deformation.variation;
+ assert.equal(old.bendStrength,1);
+ for(const key of ['phase','mirror','width','bendStrength'])assert.equal(old[key],explicit[key]);
+ for(const y of [-180,-90,-20])assert.deepEqual(Core.deformPoint(old,10,y,{}),Core.deformPoint(explicit,10,y,{}));
+});
+
+test('DEFORM-STRENGTH 不同雷獨立抽取、同雷圖層共享，可重現且涵蓋接近直線與完整彎曲',()=>{
+ const settings={bendStrengthMin:.1,bendStrengthMax:1},values=[];
+ for(let seed=1;seed<=150;seed++){
+  const a=run(seed,{},settings),v=a.nodes[0].t.deformation.variation;
+  assert.equal(v.bendStrength,run(seed,{},settings).nodes[0].t.deformation.variation.bendStrength);
+  assert.equal(v.bendStrength,a.nodes[1].t.deformation.variation.bendStrength);
+  assert.ok(v.bendStrength>=.1&&v.bendStrength<=1);values.push(v.bendStrength);
+ }
+ assert.ok(Math.min(...values)<.15&&Math.max(...values)>.95);
+ assert.equal(new Set(values).size,150);
+});
+
+test('DEFORM-STRENGTH 零強度拉直兩軸中心線仍保留局部粗細；額外振幅一起按比例衰減',()=>{
+ for(const axis of ['x','y']){
+  const v=run(42,{}, {bendStrengthMin:0,bendStrengthMax:0,mirror:false,widthJitter:0,pivot:3}).nodes[0].t.deformation.variation;
+  v.config.axis=axis;v.config.start=-200;v.config.end=0;
+  const point=offset=>Core.deformPoint(v,axis==='x'?-100:20+offset,axis==='x'?20+offset:-100,{},20);
+  assert.equal(axis==='x'?point(0).y:point(0).x,3);
+  assert.equal(axis==='x'?point(4).y:point(4).x,7);
+  assert.equal(axis==='x'?point(-4).y:point(-4).x,-1);
+  v.bendStrength=1;const full=axis==='x'?point(0).y:point(0).x;
+  v.bendStrength=.5;assert.ok(Math.abs((axis==='x'?point(0).y:point(0).x)-(3+(full-3)*.5))<1e-10);
+ }
+});
+
+test('DEFORM-STRENGTH 零重抽振幅也可按頻率重抽強度，不受FPS與回收重播影響',()=>{
+ const settings={bendStrengthMin:0,bendStrengthMax:1,motionSpeed:10,motionAmplitude:0};
+ const a=run(42,{loop:true},settings),b=run(42,{loop:true},settings);
+ const first=a.nodes[0].t.deformation.variation.bendStrength;
+ a.rt.update(.6);for(let i=0;i<60;i++)b.rt.update(.01);
+ const v=a.nodes[0].t.deformation.variation;
+ assert.equal(v.bendStrength,b.nodes[0].t.deformation.variation.bendStrength);assert.notEqual(v.bendStrength,first);
+ const born=run((42^Math.imul(v.motionKey,0x9e3779b9))>>>0,{}, {...settings,motionSpeed:0}).nodes[0].t.deformation.variation;
+ assert.equal(v.bendStrength,born.bendStrength);
+ a.rt.stop(a.h);a.rt.play('joined',{seed:42,loop:true});a.rt.update(.1);
+ assert.equal(a.nodes.filter(n=>n.t.visible)[0].t.deformation.variation.bendStrength,first);
+});
+
+test('DEFORM-STRENGTH 高密度拉直網格與舊網格分開回收；相同模式仍重用',()=>{
+ const a=run(42);a.rt.stop(a.h);
+ const p=preset();p.id='straightened';Object.assign(p.deformation,{bendStrengthMin:0,bendStrengthMax:1});
+ a.rt.registerPreset(p);const h=a.rt.play(p.id,{seed:12});a.rt.update(.1);
+ assert.equal(a.nodes.length,4,'不可重用舊的85頂點網格');
+ assert.equal(a.nodes[2].spec.straightenBend,true);
+ a.rt.stop(h);a.rt.play(p.id,{seed:99});a.rt.update(.1);
+ assert.equal(a.nodes.length,4,'相同密度重用既有節點');
+});
 test('DEFORM-MOTION 波形隨時間改變，圖層共用、端點固定且關閉後維持舊形狀',()=>{
  const a=run(12,{loop:true},{motionSpeed:12,motionAmplitude:16});
  const sample=()=>[-170,-135,-70,-35].map(y=>Core.deformPoint(a.nodes[0].t.deformation.variation,0,y,{}).x);

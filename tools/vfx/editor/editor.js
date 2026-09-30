@@ -3217,7 +3217,7 @@
     }
     var p = state.preset;
     var defBox = section('程式變形／隨機鏡射',
-      '作用於整份特效座標，包含圖層 position；因此鏡射也會把上方位置翻到下方。關閉鏡射可固定上下方向。', !!p.deformation);
+      '作用於整份特效座標，包含圖層 position；關閉鏡射可固定方向。彎曲強度每次出生／形狀重抽時抽取，所有作用圖層共用；0 拉直中心線並保留粗細，1 保留原形。紫色落雷可試下限 0.1、上限 1。', !!p.deformation);
     var enabled = document.createElement('input'); enabled.type = 'checkbox'; enabled.checked = !!p.deformation;
     enabled.setAttribute('data-code-control', 'deformation.enabled');
     enabled.onchange = function () {

@@ -1,5 +1,12 @@
 # AI_TASKS.md
 
+## Codex｜隨機彎曲強度（VFX-BEND-STRENGTH-20260930）
+
+- Owner：Codex；Done。新增 deformation.bendStrengthMin／Max（0～1，預設 1／1），出生／完整重抽時每道獨立、同道圖層共用；同步縮減程式位移與 PNG 亮部中心線曲折，保留電柱粗細。編輯器自動公開兩個欄位，可試 0.1／1；不覆寫使用者正在編輯的 Preset。
+- 修改：js/vfx-core.js、js/vfx-pixi-backend.js、tools/vfx/editor/editor.js、兩份 HTML 快取、兩份測試、Schema／操作文件及本紀錄。檢查未修改：bolt-sky-purple.json、editor-server.cjs、editor-guard.cjs、Effects-Materials（乾淨且無素材變更，不建空提交）。index.html 有 Claude 其他快取／效能診斷修改，使用者明確同意僅修改 VFX 的兩行；實際 diff 無重疊。
+- 驗證：node --test tests/vfx-core.test.cjs tests/vfx-deformation.test.cjs tests/vfx-pixi-sheet.test.cjs tests/vfx-editor-code-controls.test.cjs tests/vfx-editor-guard.test.cjs，199/199 通過；將拉直網格調成 49×2／98 頂點、保持批次預算後，變形／Pixi 33/33 補驗通過。涵蓋上下限／序列化、seed／FPS、出生及重抽、兩軸粗細、旋轉／裁切／換幀／像素快取、讀取失敗顯式報錯與可見退化、不同網格分池／回收重播、舊設定相容。node tools/build_check.cjs：400 檔通過；diff check 通過。
+- 限制：內建瀏覽器兩次 webview 連線逾時，未完成實際預覽或遊戲畫面確認；單元測試未等同實機視覺驗收。分叉與局部形狀保留，不保證完美幾何直線。舊 Editor 應備份未存內容後按重啟，因本次 Core／後端屬全局更新。Commit 見本紀錄所在提交；程式可合併，建議使用者設定 0.1／1 確認畫面，未合併／推送。沒有未完成的參數接線。
+
 ## Codex｜雷霆天劫雙雷與八米範圍（HEAVEN-TRIBULATION-DOUBLE-AOE-20260930）
 
 - Owner：Codex；Done。每次節拍同時降下兩道天劫雷電，優先選生命最低的兩個不同目標；不足兩敵時剩餘雷電可重複瞄準。同一道各對落點半徑 8 米內所有敵人結算，兩個傷害圈重疊可受兩次傷害。維持原本 0.25 秒節拍與單道表定傷害。
