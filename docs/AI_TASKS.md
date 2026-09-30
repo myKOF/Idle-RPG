@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜雷球 FOV 外形修正（THUNDER-ORB-FOV-20260930）
+
+- Owner：Codex；Done。使用者回報雷球被 FOV 拉歪；飛行雷球與環繞電球的球體／電弧改共用球心遠近倍率，保持各層相對位置及圓形輪廓。權威位置、半徑、成長與生命週期不變。
+- 範圍：js/vfx-runtime.js、兩份 HTML 快取、Runtime／透視回歸、VFX_RUNTIME_ADAPTER 及本紀錄；禁止改技能規則、素材、其他副本。使用者正在編輯 lightning-orb-field.json，保留未提交。前置齊備，修改前預檢無衝突。
+- 驗收：畫面左右／上下與不同 FOV 下整球等比；球體及粒子共享錨點；飛行／環繞、補送、成長、清場及到期正常；其他飛行特效不改投影。遊戲專用 variant 不影響編輯器通用預覽，不提高 runtimePreviewRevision。完成測試、Build 後提交，交使用者整合，不合併／推送。
+- 修改：js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、tests/vfx-runtime.test.cjs、tests/battle-perspective.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄。唯讀檢查：js/battle-renderer.js、js/vfx-core.js、js/skills2.js、editor/runtime-preview.js、editor-guard.cjs、雷球 Preset／layout 與既有圓形素材。使用者在執行期間持續修改 lightning-orb-field.json、orb-thunder.json 及 lightning-orb-field layout，全部保留未提交；本任務未修改素材，無素材庫必要提交。
+- 測試：新增 4 項先以舊 Runtime 重現 3 項路由失敗，再修正通過；node --test --test-name-pattern='THUNDER-ORB-FOV|PERSP-ORB|ORBIT|CLEAR-FIELDS' tests/vfx-runtime.test.cjs tests/battle-perspective.test.cjs，13/13。node --test tests/vfx-runtime.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/vfx-editor-guard.test.cjs，157 項153通過，FIELD／CATALOG-3／CHAIN金雷素材／STARFALL-TAIL 四項失敗；將 HEAD 原 Runtime 與原測試載入同一環境，120項116通過、相同四項失敗，零新增失敗。node tools/build_check.cjs，402檔通過；git diff --check 通過。
+- 限制與交付：沒有遊戲瀏覽器實戰畫面驗收；已用正式 Core／Runtime 粒子與 renderer 原投影函式驗證。無未完成的投影接線，可合併；Commit 見本紀錄所在提交，未合併／推送。建議整合後重新載入遊戲，觀察畫面邊緣的飛行及環繞雷球。
+
 ## Codex｜VFX 伺服器背景啟動（VFX-BACKGROUND-SERVER-20260930）
 
 - Owner：Codex；Done。初次啟動及重啟統一為獨立背景 Node 程序，無常駐黑窗；啟動器確認就緒、開頁面後退出。HTTP重啟原本就有 windowsHide，此次修正初次啟動，並使兩條路共用程序生命週期與日誌。編輯器仍需要伺服器運行，網頁「關閉編輯器」可停止它。

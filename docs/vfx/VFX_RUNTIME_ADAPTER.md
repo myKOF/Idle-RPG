@@ -493,3 +493,11 @@ Browser 面板未顯示，所以這是 **CPU 側的下限**，實機還要再加
 沿用既有 aura／area／dur 協議欄位，不新增封包欄位。表格 interval、gap、tick 分別控制波次、逐道出生、傷害節拍。
 
 飛雷神專用 Preset 的 motionSpeed 設為 0：每道出生形狀仍隨機，但播放期間不再重抽，僅依 alphaOverLife 漸淡；只有零敵人不生成；單敵時由玩家補足連線，重疊座標仍生成。
+
+### 雷球球心投影
+
+`variant: thunder-orb` 的持續雷球與 `variant: thunder-orbit` 的環繞電球使用 billboard 後端。
+Core 將每顆球的中心放入各節點的 `sortY`；球體、光暈與電弧粒子共用這個深度的 FOV 遠近倍率，
+其相對位置等比投影，避免逐粒子投影把整球輪廓拉成斜橢圓。沒有 billboard 後端時沿用空中後端的相容回退。
+環繞地板環仍使用 zone，軌道平面、權威位置／半徑、成長、續命與回收邏輯不變。
+此路由依遊戲事件 variant 選擇，不修改 Preset、不寫死新素材名稱，亦不改編輯器通用播放測試。
