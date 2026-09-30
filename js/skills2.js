@@ -372,10 +372,48 @@ function sgEffectiveLevels(raw, gid, prog) {
   return out;
 }
 
-/* Worker 端讀取（讀 G）。 */
+/* Worker 端讀取（讀 G）。
+
+   為什麼有快取：這支是每次命中都會經過的熱路徑（sgHitOne、skills2Ult、skills2Castable、
+   sgNetherMireOnDamaged…各自都問一次「這個群組現在幾級」），而 sgEffectiveLevels 每次都從頭
+   正規化整份等級、逐階比解鎖門檻。2026-09-30 CPU 剖析（臨界雷劫，32 隻敵人）：這一串占 Worker
+   時間的 40%（sgTierUnlockedBy 21%＋sgEffectiveLevels 14%＋其餘），真正算傷害的 resolveHit 只有 6%。
+
+   結果只由下面這幾樣東西決定，快取逐一比對，任何一樣變了就重算，所以結果與不快取位元相同：
+     群組定義與各階解鎖門檻、G.player.level、G.player.reincarnations、存檔裡這個群組的等級。
+   回傳的一律是新陣列（呼叫端有人會就地改它，見 sim.worker.js 的升階指令），不共用快取內的那份。 */
+var SG_LEVELS_CACHE = Object.create(null);
 function skills2Levels(gid) {
-  var raw = (typeof G !== 'undefined' && G && G.player && G.player.skills2) ? G.player.skills2.levels : null;
-  return sgEffectiveLevels(raw, gid);
+  var hasPlayer = typeof G !== 'undefined' && G && G.player;
+  var raw = (hasPlayer && G.player.skills2) ? G.player.skills2.levels : null;
+  var g = SKILLS2[gid];
+  if (!g) return sgEffectiveLevels(raw, gid);
+  var src = raw ? raw[gid] : null;
+  var level = hasPlayer ? G.player.level : undefined;
+  var reinc = hasPlayer ? G.player.reincarnations : undefined;
+  var tiers = g.tiers, n = tiers.length, i;
+  var e = SG_LEVELS_CACHE[gid];
+  if (e && e.g === g && e.tiers === tiers && e.n === n && e.src === src && e.level === level && e.reinc === reinc) {
+    var same = true;
+    for (i = 0; i < n; i++) {
+      var u = tiers[i] && tiers[i].unlock;
+      if ((src ? src[i] : undefined) !== e.copy[i] || u !== e.unlock[i] ||
+          (u && (u.reinc !== e.needR[i] || u.lv !== e.needLv[i]))) { same = false; break; }
+    }
+    if (same) return e.out.slice();
+  }
+  var out = sgEffectiveLevels(raw, gid);
+  var copy = [], unlock = [], needR = [], needLv = [];
+  for (i = 0; i < n; i++) {
+    var ui = tiers[i] && tiers[i].unlock;
+    copy.push(src ? src[i] : undefined);
+    unlock.push(ui);
+    needR.push(ui ? ui.reinc : undefined);
+    needLv.push(ui ? ui.lv : undefined);
+  }
+  SG_LEVELS_CACHE[gid] = { g: g, tiers: tiers, n: n, src: src, level: level, reinc: reinc,
+    copy: copy, unlock: unlock, needR: needR, needLv: needLv, out: out.slice() };
+  return out;
 }
 function skills2Castable(gid) {
   var l = skills2Levels(gid);
@@ -8056,9 +8094,56 @@ function sgSpawnThunderOrb(pEnt, st, target, floatSel, cfg) {
   });
 }
 
-/* 伴生雷球：臨界雷劫的首代沿生成時玩家到球心方向外移；衍生代維持出生位置。 */
+/* 雷球場域（gid thunderorb、kind orb：飛行雷球、伴生雷球與臨界雷劫的衍生代）的總量上限。
+
+   為什麼需要：超神【臨界雷劫】的靜止雷球「每次命中有機率在原地再生一顆」，而命中是對範圍內
+   每個敵人各判一次——平均每顆一生會生出 (脈衝數 × 範圍內敵人數 × 機率) 顆子代，只要範圍內
+   常有敵人就是超臨界，數量沒有天花板。敵人打不死時它就一路繁殖（2026-09-30 無畫面實測，
+   32 隻打不死的敵人：第 4 秒 84 顆、第 8 秒 1,127 顆、第 10 秒 4,144 顆、43k 命中／秒，
+   Worker 要 7.5 秒才推進 1 遊戲秒）。所有 UI 操作都是送給 Worker 的指令，Worker 被拖慢
+   之後連一個 help 都要等數秒——所以玩家看到的是「整個遊戲都卡」，不只是戰鬥。
+   獨立冷卻（SG_THUNDER_CRITICAL_SPAWN_COOLDOWN）只把成長從每秒 ×3.3 壓到 ×1.9，沒有天花板。
+
+   96＝與 SG_GROUND_MAX_FIELDS 同量級的防呆上限（使用者 2026-09-30 定案，硬上限）。
+   低於上限時行為與沒有上限完全相同。
+   ⚠️ 根因其實是「衍生代也能再生」（規格是電球不可再生電球，見 sgSpawnStationaryThunderOrb 的世代規則）；
+   世代規則補上之後，32 隻打不死的敵人下穩態約 57 顆、遠低於這個上限，所以它現在是保底而不是主要機制。
+   上限沒有拿掉的理由：規格之外的路徑（之後新增的雷球來源、表格把機率調得很高）不該再有失控的可能。 */
+var SG_THUNDERORB_MAX_FIELDS = 96;
+/* 這支在每個臨界雷球的每次命中都會問一次（到頂之後每秒上千次），所以要便宜：
+     1. 全部場域加起來都不到上限，雷球就一定沒到——O(1)，絕大多數情況走這條。
+     2. 到頂的判定在同一個模擬步、同一個列表長度下只掃一次。只快取「到頂」這個答案：
+        步內若有場域到期，列表長度會變、快取自動失效；就算剛好一減一增而長度相同，
+        錯的方向也只是多擋一次生成，不會讓數量超過上限。 */
+var SG_THUNDERORB_CAP_MEMO = { list: null, gt: -1, len: -1 };
+function sgThunderorbAtCap() {
+  if (!SKILL2_RT || !SKILL2_RT.grounds) return false;
+  var list = SKILL2_RT.grounds, len = list.length;
+  if (len < SG_THUNDERORB_MAX_FIELDS) return false;
+  var m = SG_THUNDERORB_CAP_MEMO;
+  if (m.list === list && m.gt === GT && m.len === len) return true;
+  var n = 0;
+  for (var i = 0; i < len; i++) {
+    var f = list[i];
+    if (f && f.gid === 'thunderorb' && f.kind === 'orb' && ++n >= SG_THUNDERORB_MAX_FIELDS) {
+      m.list = list; m.gt = GT; m.len = len;
+      return true;
+    }
+  }
+  return false;
+}
+
+/* 伴生雷球：臨界雷劫的首代沿生成時玩家到球心方向外移；衍生代維持出生位置。
+
+   世代規則（使用者給的規格，2026-09-30 補上實作）：
+     首代  環體電球命中處生成的靜止雷球。緩慢向外移動，命中時有機率再形成 1 個靜止雷球。
+     衍生代 首代命中時形成的那一個。原地不動，**不可再生雷球**（電球不可再生電球）。
+   之前衍生代帶著和首代同一份命中回呼，等於可以無限世代繁殖（無畫面實測 7 遊戲秒內累計 96 顆，
+   只有 19 顆是首代，最深傳到第 9 代）；獨立冷卻只是把速度壓慢、上限只是保底，規格本身是「一代」。
+   derived＝true 就是衍生代：不掛再生回呼（沒選【雷爆】時 burstHook 也是 null）。 */
 var SG_THUNDER_CRITICAL_SPAWN_COOLDOWN = 0.75;
-function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outward) {
+function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outward, derived) {
+  if (sgThunderorbAtCap()) return;
   var critical = cfg.critical;
   var centre = outward && typeof bfPlayerPos === 'function' ? bfPlayerPos() : null;
   var speed = centre && critical ? critical.speedPx : 0;
@@ -8073,13 +8158,15 @@ function sgSpawnStationaryThunderOrb(pEnt, st, floatSel, cfg, pos, lifeSec, outw
     radius: cfg.radius, dmgVal: cfg.dmgVal,
     hits: Math.max(1, critical ? Math.floor(lifeSec / cfg.gap) : Math.ceil(lifeSec / cfg.gap)), gap: cfg.gap,
     lifeSec: critical ? lifeSec : 0,
-    onHit: critical ? function (f, victim, enemies, out) {
+    onHit: (critical && !derived) ? function (f, victim, enemies, out) {
       if (GT < (f.thunderCriticalNextAt || 0)) return;
+      // 到頂就不擲骰、也不進冷卻：上限以下的行為（含亂數消耗）與沒有上限完全相同。
+      if (sgThunderorbAtCap()) return;
       if (chance(critical.chance)) {
         var spawnPos = f.pos || (typeof bfPos === 'function' ? bfPos(victim) : null);
         if (spawnPos) {
           f.thunderCriticalNextAt = GT + SG_THUNDER_CRITICAL_SPAWN_COOLDOWN;
-          sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, cfg, spawnPos, critical.lifeSec, false);
+          sgSpawnStationaryThunderOrb(f.pEnt, f.st, f.floatSel, cfg, spawnPos, critical.lifeSec, false, true);
         }
       }
     } : burstHook
