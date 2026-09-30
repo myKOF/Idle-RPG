@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## Codex｜雷球其餘播放路徑投影（THUNDER-ORB-FOV-PATHS-20260930）
+
+- Owner：Codex；Done。使用者回報少數雷球仍被拉歪；實際滿階／超神事件會繼承 field，在雷殞天落或環繞事件另播雷球，該分支仍在場景層。補齊三種雷球事件的 field 與非環繞 projectile 球心投影，不修改繼承配置、技能計算或貼地預警／衝擊波。
+- 允許 Runtime、快取、Runtime／真技能事件回歸及文件；禁止修改使用者雷球 Preset／layout、其他技能和副本。預檢無衝突；完成驗證後提交，不合併／推送。
+- 修改：js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、tests/vfx-runtime.test.cjs、tests/skill2-thunderorb-icearrow-legendary.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md 與本紀錄。檢查未改：js/skills2.js、js/vfx-core.js、js/battle-renderer.js、js/vfx-pixi-backend.js、Status／Skills2 CSV。使用者編輯中的 lightning-orb-field／orb-thunder／proj-thunderfall-sky Preset 與 lightning-orb-field layout 全部保留未提交；本輪沒有必要素材庫變更，不建空提交。
+- 驗證：兩项新增測試在修正前重現遺漏路由；實際 castSkill2／tickSkill2 的滿階及雷爆事件送入正式 Core／Runtime，逐事件含延後落雷驗證所有繼承雷球圖層／粒子屬 billboard。素材引用在測試內加 Preset 前綴，區分共用 circle_b 的雷球與貼地衝擊，不改幾何。node --test --test-name-pattern='THUNDER-ORB-PATHS|THUNDER-ORB-FOV|PERSP-ORB|THUNDERFALL' tests/vfx-runtime.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/battle-perspective.test.cjs：7/7。
+- 回歸：node --test tests/vfx-runtime.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/vfx-editor-guard.test.cjs：183項179通過、同先前確認基線的 FIELD／CATALOG-3／CHAIN金雷素材／STARFALL-TAIL 四項失敗，沒有新增失敗。node tools/build_check.cjs：402檔通過；git diff --check 通過。
+- 交付：可合併，未合併／推送；Commit 見本紀錄所在提交。沒有未完成的路由修改；未做遊戲瀏覽器實戰畫面驗收，建議整合並重新載入遊戲後確認少數額外雷球。編輯器通用預覽未改，不需提高 runtimePreviewRevision。
+
+## Codex｜雷球 FOV 外形修正（THUNDER-ORB-FOV-20260930）
+
+- Owner：Codex；Done。使用者回報雷球被 FOV 拉歪；飛行雷球與環繞電球的球體／電弧改共用球心遠近倍率，保持各層相對位置及圓形輪廓。權威位置、半徑、成長與生命週期不變。
+- 範圍：js/vfx-runtime.js、兩份 HTML 快取、Runtime／透視回歸、VFX_RUNTIME_ADAPTER 及本紀錄；禁止改技能規則、素材、其他副本。使用者正在編輯 lightning-orb-field.json，保留未提交。前置齊備，修改前預檢無衝突。
+- 驗收：畫面左右／上下與不同 FOV 下整球等比；球體及粒子共享錨點；飛行／環繞、補送、成長、清場及到期正常；其他飛行特效不改投影。遊戲專用 variant 不影響編輯器通用預覽，不提高 runtimePreviewRevision。完成測試、Build 後提交，交使用者整合，不合併／推送。
+- 修改：js/vfx-runtime.js、index.html、tools/vfx/editor/index.html、tests/vfx-runtime.test.cjs、tests/battle-perspective.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄。唯讀檢查：js/battle-renderer.js、js/vfx-core.js、js/skills2.js、editor/runtime-preview.js、editor-guard.cjs、雷球 Preset／layout 與既有圓形素材。使用者在執行期間持續修改 lightning-orb-field.json、orb-thunder.json 及 lightning-orb-field layout，全部保留未提交；本任務未修改素材，無素材庫必要提交。
+- 測試：新增 4 項先以舊 Runtime 重現 3 項路由失敗，再修正通過；node --test --test-name-pattern='THUNDER-ORB-FOV|PERSP-ORB|ORBIT|CLEAR-FIELDS' tests/vfx-runtime.test.cjs tests/battle-perspective.test.cjs，13/13。node --test tests/vfx-runtime.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/vfx-editor-guard.test.cjs，157 項153通過，FIELD／CATALOG-3／CHAIN金雷素材／STARFALL-TAIL 四項失敗；將 HEAD 原 Runtime 與原測試載入同一環境，120項116通過、相同四項失敗，零新增失敗。node tools/build_check.cjs，402檔通過；git diff --check 通過。
+- 限制與交付：沒有遊戲瀏覽器實戰畫面驗收；已用正式 Core／Runtime 粒子與 renderer 原投影函式驗證。無未完成的投影接線，可合併；Commit 見本紀錄所在提交，未合併／推送。建議整合後重新載入遊戲，觀察畫面邊緣的飛行及環繞雷球。
+
 ## Codex｜VFX 伺服器背景啟動（VFX-BACKGROUND-SERVER-20260930）
 
 - Owner：Codex；Done。初次啟動及重啟統一為獨立背景 Node 程序，無常駐黑窗；啟動器確認就緒、開頁面後退出。HTTP重啟原本就有 windowsHide，此次修正初次啟動，並使兩條路共用程序生命週期與日誌。編輯器仍需要伺服器運行，網頁「關閉編輯器」可停止它。

@@ -30,6 +30,33 @@ function loadLayout() {
 }
 const near = (a, b, eps, msg) => assert.ok(Math.abs(a - b) < eps, msg + '：' + a + ' ≠ ' + b);
 
+test('PERSP-ORB 球心共享遠近倍率：左右上下、鏡頭平移與 FOV 改變仍保持圓形電弧輪廓', () => {
+  const c = { Math, Object, isFinite, S: { layers: { world: { x: -100, y: 40 } } } };
+  vm.createContext(c);
+  for (const name of ['airScreenPose', 'projectedWarp', 'projectAirTransform', 'projectBillboardTransform'])
+    vm.runInContext(extractFunction(renderer, name), c);
+  let oldDistortion = 0;
+  for (const top of [.6, TOP, 1]) for (const [x, y] of [[120, 100], [600, 100], [120, 600], [600, 600], [335, 365]]) {
+    c.S.persp = { layout: loadLayout()(670, 731, top) };
+    const centre = c.airScreenPose(x, y), radius = 30;
+    for (let i = 0; i < 16; i++) {
+      const a = i * Math.PI / 8;
+      const t = { x: x + Math.cos(a) * radius, y: y + Math.sin(a) * radius,
+        sortY: y, scaleX: 2, scaleY: 2 };
+      const out = c.projectBillboardTransform(t);
+      near(Math.hypot(out.x - centre.x, out.y - centre.y), radius * centre.scale, 1e-8, '電弧距球心等距');
+      near(out.scaleX, 2 * centre.scale, 1e-9, '每顆粒子共享球心倍率');
+      near(out.scaleY, out.scaleX, 1e-9, '粒子本身等比');
+      const old = c.projectAirTransform(t);
+      oldDistortion = Math.max(oldDistortion, Math.abs(Math.hypot(old.x - centre.x, old.y - centre.y) - radius * centre.scale));
+    }
+  }
+  assert.ok(oldDistortion > 5, '舊逐粒子投影確實會拉歪球形，測試必須涵蓋可見差異');
+  c.S.persp = null;
+  const off = c.projectBillboardTransform({ x: 160, y: 70, sortY: 50, scaleX: 1, scaleY: 1 });
+  assert.equal(off.x, 60); assert.equal(off.y, 110); assert.equal(off.scaleX, 1);
+});
+
 test('PERSP-1 上緣縮放是使用者選定的 0.82；排在 tickWorld 之後、Application render 之前', () => {
   assert.equal(TOP, 0.82);
   const pri = Number(/var PERSPECTIVE_RENDER_PRIORITY = (-?[0-9]+);/.exec(renderer)[1]);

@@ -30,12 +30,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 0,
       "position": {
-        "x": -100,
-        "y": 0
+        "x": -84.4982,
+        "y": -0.8821
       },
       "scale": {
-        "x": 0.6152,
-        "y": 0.0859
+        "x": 0.5341,
+        "y": 0.0746
       },
       "alpha": 0.85,
       "tint": "#d9f2ff",
@@ -49,13 +49,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 1,
       "position": {
-        "x": -171,
-        "y": 39
+        "x": -146.1404,
+        "y": 32.9777
       },
       "rotation": 0.13,
       "scale": {
-        "x": 0.6152,
-        "y": 0.0957
+        "x": 0.5341,
+        "y": 0.0831
       },
       "alpha": 0.85,
       "tint": "#a8dcff",
@@ -101,13 +101,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 2,
       "position": {
-        "x": -139,
-        "y": -34
+        "x": -118.358,
+        "y": -30.4009
       },
       "rotation": -0.13,
       "scale": {
-        "x": 0.5664,
-        "y": 0.1094
+        "x": 0.4917,
+        "y": 0.095
       },
       "alpha": 0.85,
       "tint": "#7974ff",
@@ -152,13 +152,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 3,
       "position": {
-        "x": -107,
-        "y": 29
+        "x": -90.5756,
+        "y": 24.2957
       },
       "rotation": 0.13,
       "scale": {
-        "x": 0.5176,
-        "y": 0.123
+        "x": 0.4494,
+        "y": 0.1068
       },
       "alpha": 0.85,
       "tint": "#a8dcff",
@@ -203,13 +203,13 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 4,
       "position": {
-        "x": -75,
-        "y": -24
+        "x": -62.7932,
+        "y": -21.7189
       },
       "rotation": -0.13,
       "scale": {
-        "x": 0.4688,
-        "y": 0.1367
+        "x": 0.407,
+        "y": 0.1187
       },
       "alpha": 0.85,
       "tint": "#7974ff",
@@ -255,12 +255,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 5,
       "position": {
-        "x": -145,
-        "y": 0
+        "x": -123.5672,
+        "y": -0.8821
       },
       "scale": {
-        "x": 0.7422,
-        "y": 0.2246
+        "x": 0.6444,
+        "y": 0.195
       },
       "alpha": 0.4,
       "tint": "#6555ed",
@@ -274,8 +274,8 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 6,
       "position": {
-        "x": -55,
-        "y": 0
+        "x": -45.4292,
+        "y": -0.8821
       },
       "alpha": 0.7,
       "tint": "#a4c9ff",
@@ -291,19 +291,19 @@
         0.5
       ],
       "spawn": {
-        "height": 48,
+        "height": 41.6736,
         "shape": "box",
-        "width": 40
+        "width": 34.728
       },
       "speed": [
-        60,
-        125
+        52.092,
+        108.525
       ],
       "direction": 180,
       "spread": 18,
       "startScale": [
-        0.1563,
-        0.293
+        0.1357,
+        0.2544
       ],
       "rotationStart": [
         -0.3,
@@ -346,12 +346,12 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 7,
       "position": {
-        "x": -169,
-        "y": 26
+        "x": -144.404,
+        "y": 21.6911
       },
       "scale": {
-        "x": 0.5527,
-        "y": 0.0352
+        "x": 0.4799,
+        "y": 0.0306
       },
       "alpha": 0.55,
       "tint": "#758aff",
@@ -387,12 +387,12 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 8,
       "position": {
-        "x": -143,
-        "y": 13
+        "x": -121.8308,
+        "y": 10.4045
       },
       "scale": {
-        "x": 0.5098,
-        "y": 0.0449
+        "x": 0.4426,
+        "y": 0.039
       },
       "alpha": 0.55,
       "tint": "#758aff",
@@ -428,12 +428,12 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 9,
       "position": {
-        "x": -117,
-        "y": 0
+        "x": -99.2576,
+        "y": -0.8821
       },
       "scale": {
-        "x": 0.4668,
-        "y": 0.0547
+        "x": 0.4053,
+        "y": 0.0475
       },
       "alpha": 0.55,
       "tint": "#758aff",
@@ -469,12 +469,12 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 10,
       "position": {
-        "x": -91,
-        "y": -13
+        "x": -76.6844,
+        "y": -12.1687
       },
       "scale": {
-        "x": 0.4238,
-        "y": 0.0645
+        "x": 0.3679,
+        "y": 0.056
       },
       "alpha": 0.55,
       "tint": "#d2e6ff",
@@ -509,12 +509,12 @@
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 11,
       "position": {
-        "x": -65,
-        "y": -26
+        "x": -54.1112,
+        "y": -23.4553
       },
       "scale": {
-        "x": 0.3809,
-        "y": 0.0742
+        "x": 0.3307,
+        "y": 0.0644
       },
       "alpha": 0.55,
       "tint": "#758aff",
@@ -550,12 +550,12 @@
       "assetId": "particle-pack/png-black-background/rotated/trace_02_rotated.png",
       "zIndex": 12,
       "position": {
-        "x": -110,
-        "y": 0
+        "x": -93.1802,
+        "y": -0.8821
       },
       "scale": {
-        "x": 0.6445,
-        "y": 0.1953
+        "x": 0.5596,
+        "y": 0.1696
       },
       "alpha": 0.7,
       "tint": "#4773ed",
@@ -568,9 +568,13 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/light_03.png",
       "zIndex": 13,
+      "position": {
+        "x": 2.3218,
+        "y": -0.8821
+      },
       "scale": {
-        "x": 0.32,
-        "y": 0.32
+        "x": 0.2778,
+        "y": 0.2778
       },
       "alpha": 1,
       "tint": "#305aff",
@@ -597,9 +601,13 @@
       "enabled": true,
       "assetId": "new_materials/orb/sphere_45.png",
       "zIndex": 14,
+      "position": {
+        "x": 2.3218,
+        "y": -0.8821
+      },
       "scale": {
-        "x": 0.2148,
-        "y": 0.2148
+        "x": 0.1865,
+        "y": 0.1865
       },
       "alpha": 0.8,
       "tint": "#007bff",
@@ -621,9 +629,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_02.png",
       "zIndex": 15,
+      "position": {
+        "x": 2.3218,
+        "y": -0.8821
+      },
       "scale": {
-        "x": 0.1992,
-        "y": 0.1992
+        "x": 0.1729,
+        "y": 0.1729
       },
       "alpha": 0.8,
       "tint": "#729dff",
@@ -649,9 +661,13 @@
       "type": "sprite",
       "assetId": "new_materials/flare/flare_30.png",
       "zIndex": 16,
+      "position": {
+        "x": 2.3218,
+        "y": -0.8821
+      },
       "scale": {
-        "x": 0.2246,
-        "y": 0.2246
+        "x": 0.195,
+        "y": 0.195
       },
       "alpha": 0.58,
       "tint": "#c9e3ff",
@@ -674,6 +690,10 @@
       "enabled": true,
       "assetId": "particle-pack/png-black-background/rotated/spark_05_rotated.png",
       "zIndex": 17,
+      "position": {
+        "x": 2.3218,
+        "y": -0.8821
+      },
       "alpha": 0.85,
       "tint": "#d5eaff",
       "blendMode": "add",
@@ -688,17 +708,17 @@
         0.27
       ],
       "spawn": {
-        "radius": 24,
+        "radius": 20.8368,
         "shape": "circle"
       },
       "speed": [
         0,
-        6
+        5.2092
       ],
       "spread": 360,
       "startScale": [
-        0.166,
-        0.2539
+        0.1441,
+        0.2204
       ],
       "rotationStart": [
         0,
@@ -729,8 +749,8 @@
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 18,
       "position": {
-        "x": -24,
-        "y": 0
+        "x": -18.515,
+        "y": -0.8821
       },
       "alpha": 0.8,
       "tint": "#7ebeff",
@@ -746,19 +766,19 @@
         0.5
       ],
       "spawn": {
-        "height": 38,
+        "height": 32.9916,
         "shape": "box",
-        "width": 16
+        "width": 13.8912
       },
       "speed": [
-        140,
-        230
+        121.548,
+        199.686
       ],
       "direction": 180,
       "spread": 12,
       "startScale": [
-        0.0039,
-        0.0098
+        0.0034,
+        0.0085
       ],
       "alphaOverLife": [
         [

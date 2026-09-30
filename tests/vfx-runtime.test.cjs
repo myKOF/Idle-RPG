@@ -1191,6 +1191,100 @@ function orbitEvent(over) {
   }, over || {});
 }
 
+test('THUNDER-ORB-FOV 正式雷球全部圖層與電弧共用球心，續命平滑移動與半徑成長不重播，到期回收', () => {
+  const preset = JSON.parse(fs.readFileSync(path.join(REPO, 'vfx/presets/lightning-orb-field.json'), 'utf8'));
+  const log = { nodes: [], updates: [] };
+  const { adapter } = makeAdapter([preset], { airBackend: recordingBackend(log, 'air'), billboardBackend: recordingBackend(log, 'billboard') });
+  const event = (x, r) => ({ fxKind: 'aura', variant: 'thunder-orb', dur: .5,
+    area: { id: 'sphere', x, y: 200, r, speed: 100, moveA: 0 }, vfx: { field: preset.id } });
+  adapter.tryPlay(event(500, 30)); adapter.update(.1);
+  const body = log.nodes.find(n => n.spec.assetUrl?.endsWith('circle_b.png'));
+  assert.ok(body); assert.equal(body.tag, 'billboard');
+  const arc = log.nodes.find(n => n.spec.assetUrl?.endsWith('spark_05.png') && n.transforms.length);
+  assert.ok(arc, '正式電弧粒子必須也走同一後端');
+  assert.ok(log.nodes.every(n => n.tag === 'billboard'));
+  const first = body.transforms.at(-1);
+  assert.equal(first.x, 510); assert.equal(first.sortY, first.y);
+  assert.equal(arc.transforms.at(-1).sortY, first.y, '粒子與本體的球心深度相同');
+  adapter.tryPlay(event(520, 60)); adapter.update(1 / 60);
+  const middle = body.transforms.at(-1);
+  assert.ok(middle.x > first.x && middle.x < 520 + 100 / 60, '快照間維持平滑');
+  assert.ok(middle.scaleX > first.scaleX && middle.scaleX < first.scaleX * 2, '成長維持平滑');
+  assert.equal(middle.scaleX, middle.scaleY); assert.equal(adapter.stats().played, 1);
+  adapter.update(2);
+  assert.equal(adapter.stats().grounds, 0); assert.equal(adapter.stats().billboard.activeEffects, 0);
+});
+
+test('THUNDER-ORB-FOV 環繞電球只改球體投影，軌道地板及公轉判定半徑不變，增加團數與清場回收', () => {
+  for (const variant of ['thunder-orbit', 'firehunt']) {
+    const log = { nodes: [], updates: [] };
+    const { adapter, log: sceneLog } = makeAdapter([unitPreset('orb-x', 1, true), unitPreset('ring-x', 1, true)],
+      { airBackend: recordingBackend(log, 'air'), billboardBackend: recordingBackend(log, 'billboard') });
+    const event = orbitEvent({ variant });
+    adapter.tryPlay(event); adapter.update(.1);
+    const ring = sceneLog.nodes.find(n => n.spec.assetUrl === '/ring-x.png');
+    assert.ok(ring); assert.equal(ring.tag, 'zone');
+    assert.equal(ring.transforms.at(-1).scaleX, 1);
+    const tag = variant === 'thunder-orbit' ? 'billboard' : 'air';
+    assert.equal(log.nodes.length, 3); assert.ok(log.nodes.every(n => n.tag === tag));
+    for (const n of log.nodes) {
+      const t = n.transforms.at(-1);
+      assert.ok(Math.abs(orbitRadius(t) - 100) < 1e-8);
+      assert.equal(t.scaleX, t.scaleY); assert.equal(t.sortY, t.y);
+    }
+    const played = adapter.stats().played;
+    adapter.tryPlay(event); adapter.update(.1); assert.equal(adapter.stats().played, played);
+    adapter.tryPlay({ ...event, area: { ...event.area, orbs: 4 } }); adapter.update(.1);
+    assert.equal(log.nodes.length, 4); assert.ok(log.nodes.every(n => n.tag === tag));
+    adapter.clearFields(); assert.equal(adapter.stats().orbits, 0);
+    assert.equal(adapter.stats()[tag].activeEffects, 0); assert.equal(adapter.stats().zone.activeEffects, 0);
+  }
+});
+
+test('THUNDER-ORB-FOV 逐團母子電球共享各自球心且保留伴生相位；缺 billboard 後端仍相容', () => {
+  const log = { nodes: [], updates: [] };
+  const { adapter } = makeAdapter([unitPreset('orb-x', 1, true), unitPreset('child-x', 1, true)],
+    { airBackend: recordingBackend(log, 'air'), billboardBackend: recordingBackend(log, 'billboard') });
+  const area = { id: 'pair', r: 100, orbR: 20, spinRate: Math.PI, orbitAge: 0, companionGap: 10, companionPreset: 'child-x',
+    members: [{ id: 1, phase: 0, radiusBase: 100, companion: false, parentId: null },
+      { id: 2, phase: -.5, radiusBase: 100, companion: true, parentId: 1 }] };
+  adapter.tryPlay(orbitEvent({ variant: 'thunder-orbit', area, vfx: { projectile: 'orb-x' } })); adapter.update(.5);
+  assert.equal(log.nodes.length, 2); assert.ok(log.nodes.every(n => n.tag === 'billboard'));
+  for (let i = 0; i < 2; i++) {
+    const t = log.nodes[i].transforms.at(-1), pose = VFXRuntime.sampleOrbitMember(area, .5, i);
+    assert.ok(Math.abs(t.x - Math.cos(pose.angle) * pose.radius) < 1e-8);
+    assert.ok(Math.abs(t.y - (Math.sin(pose.angle) * pose.radius * .62 - 12)) < 1e-8);
+    assert.equal(t.sortY, t.y);
+  }
+  adapter.update(5); assert.equal(adapter.stats().billboard.activeEffects, 0);
+  const fallback = makeAdapter([unitPreset('orb-x', 1, true)]);
+  fallback.adapter.tryPlay(orbitEvent({ variant: 'thunder-orbit', vfx: { projectile: 'orb-x' } }));
+  fallback.adapter.update(.1); assert.equal(fallback.adapter.stats().fx.activeEffects, 3);
+  fallback.adapter.clearFields(); assert.equal(fallback.adapter.stats().fx.activeEffects, 0);
+});
+
+test('THUNDER-ORB-PATHS 天落繼承的雷球本體保持球形，地板仍走原投影；非環繞電球飛行共用球心', () => {
+  for (const variant of ['thunder-orb', 'thunder-orbit', 'thunder-fall', 'preview']) {
+    const log = { nodes: [], updates: [] };
+    const presets = [unitPreset('body', 1, true), unitPreset('orb', 1, true), unitPreset('floor')];
+    const { adapter, log: scene } = makeAdapter(presets,
+      { airBackend: recordingBackend(log, 'air'), billboardBackend: recordingBackend(log, 'billboard') });
+    const event = { fxKind: variant === 'thunder-fall' ? 'rain' : 'aura', variant, targets: ['mv-float-1'], dur: .2,
+      travelMs: [500], area: { id: 'inherit-' + variant, x: 100, y: 50, r: 30 },
+      vfx: { field: 'body', projectile: 'orb', ground: 'floor' } };
+    adapter.tryPlay(event); adapter.update(.03);
+    if (variant === 'preview') {
+      assert.equal(scene.nodes.find(n => n.spec.assetUrl === '/body.png').tag, 'fx');
+    } else {
+      assert.equal(log.nodes.find(n => n.spec.assetUrl === '/body.png')?.tag, 'billboard', variant + ' field');
+      assert.equal(log.nodes.find(n => n.spec.assetUrl === '/orb.png')?.tag, 'billboard', variant + ' projectile');
+    }
+    if (variant === 'thunder-fall') assert.equal(scene.nodes.find(n => n.spec.assetUrl === '/floor.png').tag, 'zone');
+    adapter.update(3); assert.equal(adapter.stats().billboard.activeEffects, 0);
+    assert.equal(adapter.stats().grounds, 0); assert.equal(adapter.stats().projectiles, 0);
+  }
+});
+
 test('ORBIT-1 沒有環繞體仍播放已配置地板，不補舊畫法', function () {
   const { adapter } = makeAdapter([unitPreset('ring-x', 1, true)]);
   const ok = adapter.tryPlay(orbitEvent({ vfx: { ground: 'ring-x' } }));

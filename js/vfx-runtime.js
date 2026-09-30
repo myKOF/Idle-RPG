@@ -214,6 +214,11 @@ var VFXRuntime = (function () {
     }
   }
 
+  // 同族事件可繼承雷球本體／子彈欄；不能只校正持續場域與公轉的主要角色。
+  function thunderOrbBodyEvent(spec) {
+    return spec.variant === 'thunder-orb' || spec.variant === 'thunder-orbit' || spec.variant === 'thunder-fall';
+  }
+
   /* 範圍型命中的爆點放大：一顆隕石的落點不該與一刀砍中同樣大小。 */
   function hitScaleOf(spec, scale) {
     if (Number(spec.sizeMult) > 0) return Number(spec.sizeMult);
@@ -755,7 +760,7 @@ var VFXRuntime = (function () {
 
     /* 飛行物：逐幀 setTransform 從起點移到目標，朝飛行方向旋轉 */
     function playProjectile(rt, presetId, spec) {
-      rt = rtAir;
+      rt = thunderOrbBodyEvent(spec) ? rtBillboard : rtAir;
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       /* 天降永遠不是連鎖段。少了後半這個條件，一顆同時打到兩個以上敵人的
          隕石會被當成雷鏈：起點取 ids[0] 的位置、終點取 ids[1]，於是
@@ -1078,7 +1083,9 @@ var VFXRuntime = (function () {
       g.x = g.bx; g.y = g.by; g.rot = g.trot; g.sx = g.tsx; g.sy = g.tsy;
       // 吞噬漩渦是貼地環帶，整體置於人物下方；其他直立場域維持原圖層。
       var flyingField = spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing';
-      var ref = play(curtainColumn ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
+      // 雷球的電弧粒子也屬於球體；共用球心倍率，避免各自按高度投影而拉歪輪廓。
+      var orbBody = role === 'field' && thunderOrbBodyEvent(spec);
+      var ref = play(curtainColumn || spec.variant === 'thunder-orb' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -1138,7 +1145,7 @@ var VFXRuntime = (function () {
           var ref = old.find(function (r) { return r.memberId === member.id && r.presetId === presetId; });
           if (!ref) {
             var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre(entry.orbId);
-            ref = play(rtAir, presetId, Object.assign({
+            ref = play(entry.orbRuntime, presetId, Object.assign({
               position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * orbitFlat }
             }, sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), profile.areaScale);
           }
@@ -1150,7 +1157,7 @@ var VFXRuntime = (function () {
       }
       while (entry.orbs.length > entry.geo.orbs) stopRef(entry.orbs.pop());
       while (entry.orbs.length < entry.geo.orbs) {
-        var ref = play(rtAir, entry.orbId, Object.assign({ position: orbitCentre(entry.orbId) },
+        var ref = play(entry.orbRuntime, entry.orbId, Object.assign({ position: orbitCentre(entry.orbId) },
           sizeOf(entry.orbId, { r: entry.geo.orbR }) || { scale: entry.geo.orbR / NOMINAL_ORB }), profile.areaScale);
         if (!ref) break;                    // 預算滿了就先少幾團，下一次事件再補
         entry.orbs.push(ref);
@@ -1186,6 +1193,8 @@ var VFXRuntime = (function () {
       var centre = orbitCentre(orbId);
       var entry = {
         orbId: orbId, companionId: companionId, ringId: ringId, geo: geo,
+        // 只讓環繞電球以各自球心整體投影；地板環與公轉路徑沿用原本幾何。
+        orbRuntime: spec.variant === 'thunder-orbit' ? rtBillboard : rtAir,
         t: geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0,
         dur: dur + (geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0), orbs: [],
         ring: ringId ? play(rtZone, ringId, Object.assign({ position: centre },
