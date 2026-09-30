@@ -106,7 +106,6 @@
 - 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs（27/27）；npm run build（399 檔）；node tools/config_tables.cjs --apply（17 字面值、0 語意差異）；git diff --check。Excel 以 COM 寫入／重新開啟，僅 AV151／AW151／AX151 值變更，樣式無變更。
 - 交付：本節隨修正 commit；未合併／推送，可供整合。既有未提交修改保留於工作區。本次未做完整遊戲視覺操作；僅目標選擇調整，視覺資產未修改，無未完成實作。
 
-
 ## Codex｜雷電矩陣循環電柱回收（THUNDER-MATRIX-LIFETIME-20260929）
 
 - Owner Codex；Done。雷幕 attack 每拍建立無人回收的 loop 電柱且拉成整道範圍，造成永久堆疊白光。改依 area.id 管理直立電柱，與地板共用權威移動／續命及清場；FOV 只投影柱腳。
@@ -138,8 +137,6 @@
 - 正式 Runtime＋Pixi 隔離預覽確認五倍寬度、分散交錯、最後一道回收後0道，Console無錯誤；未宣稱完整遊戲FOV實戰驗收。使用者需備份未存內容後重載編輯器，伺服器舊版本保護測試通過。
 - 素材庫 af7302f；遊戲提交見本紀錄所在提交。可合併，無本次未完成項目，未合併／推送。建議以遊戲實戰確認新的加寬與淡出手感。
 
-
-
 ## Codex｜飛雷神全場持續雷電（FLYING-THUNDER-20260929）
 
 - Owner：Codex；Done。每三秒一波隨機三至六道，每道間隔 0.25 秒，出生時重新選取敵人決定固定貫穿方向；寬六米、持續三秒，每半秒重新查詢路徑並造成表定雷傷，升級每級增加二十百分點。
@@ -152,7 +149,6 @@
 - 驗證：node --test tests/skill2-chainlightning-thunder-legendary.test.cjs（25/25）；新增 Runtime FLYING-THUNDER 1/1，驗證固定尺寸、共存、精確到期、可調壽命及指定回收；editor-guard／skills2-vfx 7/7。綜合156項151通過，5項失敗（既有速度期待舊值、FIELD、CATALOG-3、CHAIN生成器對照、STARFALL-TAIL）全部用 HEAD 原始程式／配置重現，未放寬斷言。node tools/build_check.cjs 399檔通過、git diff --check 通過。
 - 視覺：正式 Runtime＋Pixi 在隔離驗證頁確認 1.5 秒六道紫雷共存、4.3 秒最後一道也消失。預覽僅確認渲染，不冒稱完整實戰已驗收；遊戲 FOV 下的視覺手感仍由使用者確認。已更新快取及 Runtime 指紋，編輯器舊分頁拒絕覆寫的測試通過，使用者須先備份再重載。
 - 素材庫：d911476，新增 codex-authored/lightning 的 Preset 與 layout，與遊戲檔案逐位元一致，無新點陣圖。遊戲 Commit 見本紀錄所在提交；功能可合併，未合併／推送。無本次未完成功能；上述五項既有失敗另案處理。
-
 
 ## Codex｜VFX 舊分頁防覆寫與快取補齊（VFX-STALE-GUARD-20260929）
 
@@ -8164,3 +8160,14 @@ Worker 存活且頁面正常完成載入。
 - 驗證：新增 NUDGE-7／7B（用假的計時器跑真正的 `startNudgeHold`／`stopNudgeHold`：延遲 500ms、間隔 100ms、步距整包帶著走、放開時兩種計時器都清乾淨、重按先停舊的、動不了就自己停手），NUDGE-3 的沙箱補上 `stopNudgeHold`，NUDGE-4 補三條接線斷言。9 個突變全部被抓到——其中一個活下來過：`fin.indexOf('stopNudgeHold()') < ...` 在整行被刪掉時 `indexOf` 回 −1 反而通過，補了「先確認它真的在」才釘住。編輯器 416 項中 3 項失敗（CAP-2、HISTORY-42、16b canonical），三項都在既有基線上。build_check 404 檔通過、diff check 通過。
 - 實機確認（本機編輯器 28362，`hit-lightning`）：按一下 +1px；按住量到 1ms／205ms／465ms 都停在 1px，706ms 起開始走，1214ms 累計 7px（706→1214ms 走 5px ≒ 每秒 10px），放開後 300ms 不再移動；連續灌 20 次 `repeat: true` 的 keydown 只移動 1px（系統速率確實被丟掉）；Shift 仍是一次 10px；一次按住到放開仍只記一步歷史。
 - 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/editor/` 或 gizmo 測試的提交。codex 工作區有未提交的 `docs/AI_TASKS.md`（與本檔同一個檔案，合併時可能要手動併一下）與 Skills2／index.html，未碰。本副本另有 FPS 調查留下的未提交修改（`js/battle-perf.js`、`js/gm.js`、`js/ui.js`、`index.html`、`GM_command.md`、`tests/gm-perf-command.test.cjs`），不屬於本次，未一起提交。未合併／推送。
+
+## Codex｜雷爆連鎖閃電與三十米彈射（THUNDERBURST-FLIGHT-20260930）
+
+- Owner：Codex；Done。依使用者最新指示，雷爆改用一般連鎖閃電的同一份飛行／命中特效及尺寸，不再生成小型雷球；表定彈射4次（沿原規則含原目標）、搜尋半徑30米，保留先前要求的一般雷球4倍速度。原邏輯只有立即傷害與延後閃光，且擊殺原目標跳過判定；改追蹤抵達才結算，死亡原目標仍可觸發，鏈段在結束或玩家死亡時回收。
+- 前置：現有 projectileHomingStep、sgQueueMeteor 與連鎖閃電 Runtime。允許 Skills2 Excel／CSV／生成資料、skills2技能、tools/skills2-vfx.cjs、主頁／Worker必要快取、相關測試與本紀錄；禁止改觸發機率、傷害倍率、其他技能、素材或命中密度策略。撤回本輪小型雷球專用 Runtime／Editor 改動，保留使用者編輯的 orb-thunder 素材。
+- 衝突：Claude af8ac051 已合併且使用者授權使用；新預檢 index.html 有 Claude 未提交的 ui／gm／battle-perf 快取變更，使用者再次同意只更新 skills2／bridge 快取。其餘預檢乾淨。驗收4次命中、逐跳傷害與同款鏈段、30米邊界、移動／死亡目標與玩家死亡、單敵／零敵、擊殺原目標仍觸發、外觀獨立與自然回收；測試與 Build 後提交，不合併／推送。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、tools/skills2-vfx.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、tests/skill2-thunderorb-icearrow-legendary.test.cjs、tests/skills2-vfx-schema.test.cjs、本紀錄。Excel 使用 Artifact 編輯、僅移植第170列8格值，其他列、樣式及 ZIP 部件保留；CSV／JS 同步、重建語意差異0。觸發子彈 bolt-chain-travel-bluewhite、觸發命中 hit-lightning-blue，與普通連鎖閃電一致；移除小球半徑參數。不新增特效來源或協議欄位。
+- 唯讀：js/vfx-runtime.js、js/vfx-core.js、js/worker/protocol.js、js/battlefield.js、tools/config_tables.cjs、連鎖／雷球 Preset、素材庫。最終 Runtime／Editor 與 HEAD 相同；未改命中密度或素材。使用者編輯中的 vfx/presets/orb-thunder.json 保留未提交；素材庫狀態乾淨，無本次必要素材修改。
+- 驗證：node --test tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-hit-density.test.cjs tests/skill2-chainlightning-thunder-legendary.test.cjs，95/95通過。涵蓋30米中心邊界、速度共源、逐跳抵達、死亡目標續跳、單敵／零敵、玩家死亡、同款素材實際 transform 尺寸及停止／自然回收。node tools/build_check.cjs：403檔通過；git diff --check 通過。
+- 廣泛回歸：node --test --test-name-pattern='CHAIN|chain' tests/vfx-runtime.test.cjs：12/13通過，金色雷鏈 tint 是已在 HEAD 重現的既有失敗。本輪先前廣泛回歸另外確認 FIELD、CATALOG-3、STARFALL-TAIL、舊連鎖速度期望及三項冰箭幾何失敗，唯讀攔截器讀回 HEAD 同樣8項失敗，未降低斷言。新雷爆整合測試通過；未做實機遊戲畫面驗收。
+- 交付：Commit 見本紀錄所在提交，可合併；無未完成程式項目，不自行合併／推送。建議整合後重新載入遊戲確認雷爆鏈段與普通雷球外觀分離；既有廣泛回歸失敗另案處理。

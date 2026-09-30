@@ -7,6 +7,7 @@ const events = {
   'chainlightning.eternalSuperconductor': {roles:['projectile','hit'],note:'額外維持一道自身與範圍內敵人往返的雷鏈；觸發子彈不覆蓋普通雷鏈，追蹤抵達敵人時播放觸發命中特效，回到自身才疊層；無目標立即終止。'},
   'thunderstrike.heavenTribulation': {roles:['attack','hit'],note:'額外兩道天劫雷電每次追擊時，各在落點播放觸發特效與觸發命中特效；不覆蓋普通落雷的本體外觀，雷柱維持原尺寸，命中特效對應八米傷害半徑。'},
   'thunderorb.7': {roles:['projectile','hit','ground'],note:'額外雷殞天落的觸發子彈從天而降，觸發地板特效標示落點，落地時播放觸發命中特效並按實際傷害半徑縮放；雷殞天地碎的永久追加落雷共用本列。這些觸發欄不覆蓋普通雷球、伴生雷球或環體電球的本體外觀。'},
+  'thunderorb.thunderBurst': {roles:['projectile','hit'],note:'雷球每次命中各自判定；觸發後從命中位置發出連鎖閃電，使用普通連鎖閃電的素材與尺寸，按一般雷球速度的表定倍率逐段追蹤、抵達才傷害。彈射次數含原目標，30米搜尋範圍不放大特效；觸發角色不覆蓋普通雷球或環體電球。原目標被擊殺仍從原位置彈向其他敵人，結束或玩家死亡立即回收鏈段。'},
   'firepillar.infernoTempest': {roles:['projectile','attack'],note:'每道火龍捲每0.33秒向搜敵範圍內每次重新隨機選取1名敵人平射1顆火球；觸發子彈以36米／秒追蹤敵人，主目標必中，抵達後觸發特效匹配爆炸傷害半徑。'},
   'firepillar.dragonDevour': {roles:['attack'],note:'本體持續場域播放單一火漩渦，本體子彈隨機拋向地面、不搜敵；每顆落地播放一次匹配傷害半徑的觸發特效。'},
   'mire.abyssInferno': {roles:['attack'],note:'熔岩沼每秒向範圍內至多三名不同敵人的當下位置拋出火球；本體飛行子彈沿用融火之心，落地時觸發特效匹配六米爆炸半徑。'},

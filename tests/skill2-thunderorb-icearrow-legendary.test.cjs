@@ -325,9 +325,9 @@ test('【臨界雷劫】：伴生雷球一次 4 顆、觸發機率 ×2，且雷�
   assert.equal(Math.round(ult.flyDmg / base.flyDmg * 100), 155, '雷球傷害 ×1.55');
 });
 
-test('【雷爆】：一顆小型雷球在範圍內彈射，總共命中「彈射次數」次', () => {
+test('【雷爆】：一道連鎖閃電在範圍內彈射，總共命中「彈射次數」次', () => {
   const c = loadContext();
-  stubVfx(c);
+  const events = stubVfx(c);
   const calls = stubHits(c);
   maxLevels(c, 'thunderorb');
   equip(c, 'thunderorb');
@@ -336,13 +336,57 @@ test('【雷爆】：一顆小型雷球在範圍內彈射，總共命中「彈�
   const spec = c.sgThunderorbBurstSpec(c.SKILLS2.thunderorb, c.BASE_STATS);
   assert.ok(spec, '選了超神就該有規格');
   assert.equal(spec.bounces, 4, '表定彈射 4 次');
-  assert.equal(spec.px, 12 * M, '表定 12 米');
+  assert.equal(spec.px, 30 * M, '表定 30 米');
+  assert.equal(spec.speedPx, 24 * M, '一般雷球 6 米／秒的四倍');
   const es = line(6, 3 * M);
   const out = { killed: false, dmg: 0, crit: false };
-  c.sgThunderorbBurst(playerEnt(), c.BASE_STATS, 'mv-float', spec, es[0], es, out);
+  const p = playerEnt();
+  c.sgThunderorbBurst(p, c.BASE_STATS, 'mv-float', spec, es[0], es, out);
+  assert.equal(calls.length, 1, '出生時只有原目標受擊，不可先結算後續彈射');
+  assert.equal(events.filter(e => e.variant === 'lightning-chain').length, 1);
+  advance(c, p, es, 6);
   assert.equal(calls.length, 4, '4 次命中');
   assert.equal(calls[0].ent, es[0], '第一下就打在觸發它的敵人身上（單一 BOSS 也生效）');
   assert.ok(calls.every((h) => h.elem === 'lightning'));
+  assert.equal(events.filter(e => e.variant === 'lightning-chain').length, 3);
+  assert.equal(c.SKILL2_RT.meteors.length, 0);
+});
+
+test('雷爆按一般雷球四倍速度逐跳抵達，30米邊界與移動目標使用權威位置', () => {
+  const c=loadContext(), events=stubVfx(c), hits=stubHits(c);maxLevels(c,'thunderorb');setUlt(c,'thunderorb','thunderBurst',10);
+  c.chance=()=>true;
+  c.bfRandomOther=(from,pool,gap,visited)=>pool.find(e=>e.hp>0&&!visited.includes(e))||null;
+  c.SKILLS2.thunderorb.tiers[0].fx.speed=7;c.SKILLS2.thunderorb.tiers[0].fx.speedPer=1;
+  const spec=c.sgThunderorbBurstSpec(c.SKILLS2.thunderorb,c.BASE_STATS);
+  assert.equal(spec.speedPx,(7+10)*M*4,'倍率共用實際等級速度');
+  const p=playerEnt(), es=[enemy(1e9,0,0,'a'),enemy(1e9,300,0,'b'),enemy(1e9,600.01,0,'outside')];
+  c.sgThunderorbBurst(p,c.BASE_STATS,'mv-float',spec,es[0],es,{dmg:0,killed:false,crit:false});
+  const flight=events.find(e=>e.variant==='lightning-chain');
+  assert.deepEqual(Array.from(flight.targets),['a','b']);assert.equal(flight.area.sourceX,0);assert.equal(flight.area.homingSpeed,spec.speedPx);
+  assert.ok(Math.abs(flight.travelMs[1]-300/spec.speedPx*1000)<1e-8);
+  advance(c,p,es,.25);assert.equal(hits.length,1,'飛行途中不傷害');
+  es[1].pos.x=400;
+  advance(c,p,es,.2);assert.equal(hits.length,1,'移動目標不可按舊估時提前命中');
+  advance(c,p,es,.15);assert.equal(hits.length,2,'追蹤抵達才命中');
+  const next=events.filter(e=>e.variant==='lightning-chain')[1];assert.equal(next.area.sourceX,400,'續跳由實際抵達處出發');
+  advance(c,p,es,2);assert.equal(hits.length,3);assert.equal(c.SKILL2_RT.meteors.length,0);
+  // 搜敵每跳重新以當下落點為中心；邊界外不因怪物碰撞體半徑而納入。
+  const c2=loadContext(), e2=stubVfx(c2);stubHits(c2);maxLevels(c2,'thunderorb');setUlt(c2,'thunderorb','thunderBurst');c2.chance=()=>true;
+  c2.sgThunderorbBurst(playerEnt(),c2.BASE_STATS,'mv-float',c2.sgThunderorbBurstSpec(c2.SKILLS2.thunderorb,c2.BASE_STATS),es[0],[es[0],es[2]],{dmg:0,killed:false,crit:false});
+  assert.equal(e2.filter(e=>e.variant==='lightning-chain').length,0,'600.01像素的敵人在出生點30米外');
+});
+
+test('雷爆原目標被擊殺仍判定；途中死亡不傷害並續跳，玩家死亡取消，單敵和零敵不殘留', () => {
+  function make(){const c=loadContext(),events=stubVfx(c),hits=stubHits(c);maxLevels(c,'thunderorb');setUlt(c,'thunderorb','thunderBurst');c.chance=()=>true;c.bfRandomOther=(from,pool,gap,visited)=>pool.find(e=>e.hp>0&&!visited.includes(e))||null;return{c,events,hits,spec:c.sgThunderorbBurstSpec(c.SKILLS2.thunderorb,c.BASE_STATS),p:playerEnt(),out:{dmg:0,killed:false,crit:false}};}
+  const a=make(), es=[enemy(0,0,0,'dead'),enemy(1e9,120,0,'b'),enemy(1e9,240,0,'c')];
+  a.c.sgThunderorbBurst(a.p,a.c.BASE_STATS,'mv-float',a.spec,es[0],es,a.out);
+  assert.equal(a.hits.length,0);assert.equal(a.events[0].area.sourceX,0,'從被殺死的雷球受害者位置出生');
+  es[1].hp=0;advance(a.c,a.p,es,.55);assert.equal(a.hits.length,0);
+  assert.equal(a.events.filter(e=>e.variant==='lightning-chain').length,2,'到死亡落點後繼續彈射');
+  advance(a.c,a.p,es,1);assert.equal(a.hits.length,1);assert.equal(a.hits[0].ent,es[2]);
+  const b=make(), pair=[enemy(1e9,0,0,'a'),enemy(1e9,120,0,'b')];b.c.sgThunderorbBurst(b.p,b.c.BASE_STATS,'mv-float',b.spec,pair[0],pair,b.out);b.p.hp=0;advance(b.c,b.p,pair,2);assert.equal(b.hits.length,1);assert.equal(b.c.SKILL2_RT.meteors.length,0);
+  const single=make(), boss=enemy(1e9);single.c.sgThunderorbBurst(single.p,single.c.BASE_STATS,'mv-float',single.spec,boss,[boss],single.out);assert.equal(single.hits.length,1);assert.equal(single.c.SKILL2_RT.meteors.length,0);
+  const empty=make();empty.c.sgThunderorbBurst(empty.p,empty.c.BASE_STATS,'mv-float',empty.spec,null,[],empty.out);assert.equal(empty.hits.length,0);assert.equal(empty.events.length,0);
 });
 
 test('【雷爆】沒選超神時規格為 null，雷球命中完全不進判定', () => {
@@ -365,7 +409,50 @@ test('【雷爆】沒選超神時規格為 null，雷球命中完全不進判定
   const ult = hitsIn(true);
   assert.equal(base.spec, null, '沒選超神＝沒有規格');
   assert.ok(ult.spec);
-  assert.ok(ult.delta > base.delta, '選了之後雷球命中會多帶出小型雷球的傷害');
+  assert.ok(ult.delta > base.delta, '選了之後雷球命中會多帶出連鎖閃電的傷害');
+});
+
+test('雷爆使用普通連鎖閃電的同款素材與尺寸、逐段飛行並自然回收', () => {
+  const c=loadContext(),events=stubVfx(c),hits=stubHits(c);maxLevels(c,'thunderorb');setUlt(c,'thunderorb','thunderBurst');c.chance=()=>true;
+  const p=playerEnt(),es=[enemy(1e9,0,0,'a'),enemy(1e9,120,120,'b')],out={dmg:0,killed:false,crit:false};
+  const trigger=JSON.parse(JSON.stringify(c.SKILLS2.thunderorb.ult.find(u=>u.id==='thunderBurst').triggerVfx));
+  assert.deepEqual(trigger,JSON.parse(JSON.stringify(c.SKILLS2.chainlightning.tiers[0].vfx)));
+  c.sgThunderorbBurst(p,c.BASE_STATS,'mv-float',c.sgThunderorbBurstSpec(c.SKILLS2.thunderorb,c.BASE_STATS),es[0],es,out);
+  const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
+  const ps=Object.values(trigger).map(id=>JSON.parse(fs.readFileSync(path.join(root,'vfx/presets',id+'.json'),'utf8')));
+  ps.forEach(pr=>pr.layers.forEach(l=>{if(l.assetId)l.assetId=pr.id+'/'+l.assetId}));
+  function make(){const nodes=[];function backend(tag){return{createNode(spec){const node={tag,spec,t:[]};nodes.push(node);return node},updateNode(n,t){n.t.push(t)},destroyNode(n){n.dead=true},destroy(){}};}
+    const adapter=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},groundScale:.5,
+      fxBackend:backend('fx'),zoneBackend:backend('zone'),airBackend:backend('air'),billboardBackend:backend('billboard'),
+      ctx:{posOf:id=>{const q=es.find(e=>e.name===id);return q?{x:q.pos.x,y:q.pos.y*.5}:{x:0,y:0}},playerPos:()=>({x:-999,y:-999})}});
+    adapter.registerPresets(ps);return{nodes,adapter};}
+  const {nodes,adapter}=make();let sent=0;function send(){for(;sent<events.length;sent++)adapter.tryPlay(events[sent]);}
+  const flight=events.find(e=>e.variant==='lightning-chain');
+  assert.equal(flight.fxKind,'chain');assert.equal(flight.lineWidth,undefined);assert.equal(flight.sizeMult,undefined);
+  const ordinary=make();ordinary.adapter.tryPlay({...flight,gid:'chainlightning',vfx:c.SKILLS2.chainlightning.tiers[0].vfx});
+  send();adapter.update(.05);ordinary.adapter.update(.05);
+  const beam=nodes.find(n=>n.spec.assetUrl.startsWith(trigger.projectile+'/'));
+  const normalBeam=ordinary.nodes.find(n=>n.spec.assetUrl===beam.spec.assetUrl);
+  assert.ok(beam);assert.equal(beam.tag,'fx');
+  assert.equal(beam.t.at(-1).scaleX,normalBeam.t.at(-1).scaleX,'與一般鏈段同尺寸');
+  assert.equal(beam.t.at(-1).scaleY,normalBeam.t.at(-1).scaleY,'不套小雷球縮放');
+  assert.equal(beam.t.at(-1).x,normalBeam.t.at(-1).x,'同一追蹤起點與速度');
+  ordinary.adapter.destroy();
+  for(let f=0;f<120;f++){advance(c,p,es,.05);send();adapter.update(.05);}
+  assert.equal(hits.length,2);assert.equal(events.filter(e=>e.variant==='lightning-chain').length,1);
+  assert.equal(events.filter(e=>e.variant==='lightning-chain-end').length,1);
+  assert.equal(adapter.stats().projectiles,0);
+  for(const tag of ['fx','zone','air','billboard'])assert.equal(adapter.stats()[tag].activeEffects,0,tag+'自然回收');
+  // 死亡時立即終止正在追蹤的鏈段，不能讓 loop 素材留到復活。
+  events.length=0;sent=0;c.sgThunderorbBurst(p,c.BASE_STATS,'mv-float',c.sgThunderorbBurstSpec(c.SKILLS2.thunderorb,c.BASE_STATS),es[0],es,{dmg:0,killed:false,crit:false});
+  send();adapter.update(.05);p.hp=0;advance(c,p,es,.05);send();adapter.update(.05);
+  assert.equal(events.filter(e=>e.variant==='lightning-chain-end').length,1);
+  assert.ok(nodes.filter(n=>n.spec.assetUrl.startsWith(trigger.projectile+'/')).every(n=>n.dead||n.t.at(-1).visible===false),'死亡立即停止並隱藏鏈段');
+  adapter.update(1); // 已造成的第一下命中閃光仍按其自然時長結束。
+  for(const tag of ['fx','zone','air','billboard'])assert.equal(adapter.stats()[tag].activeEffects,0,tag+'死亡回收');
+  adapter.destroy();
+  c.SKILLS2.thunderorb.ult.find(u=>u.id==='thunderBurst').triggerVfx={};
+  assert.deepEqual(JSON.parse(JSON.stringify(c.sgVfxRoles('thunderorb',{vfxUlt:'thunderBurst'}))),{},'空觸發不回退一般雷球外觀');
 });
 
 test('【雷殞天地碎】：雷殞石體積與傷害放大，並每 1 秒不斷再降下 1 顆', () => {
