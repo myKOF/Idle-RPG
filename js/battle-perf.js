@@ -67,6 +67,7 @@ var BattlePerf = (function () {
 
   var gpuName = '', loafType = '';
   var simMark = null, simRate = null;
+  var hitMark = null, cappedRate = null, thinnedRate = null;
   var worst = null;
 
   function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
@@ -201,6 +202,10 @@ var BattlePerf = (function () {
     } else {
       out.push('長幀/長任務：這 1 秒內沒有 >50ms 的' + (e.loafType ? '' : '（此瀏覽器不支援 LoAF）'));
     }
+    if (e.quality != null) {
+      out.push('命中密度 x' + f1(e.quality) + (e.quality < 1 ? '(吃緊，已介入)' : '') + '  同目標上限 K=' + e.hitCap +
+        '  略過 ' + f0(e.cappedRate || 0) + '/s  少發粒子 ' + f0(e.thinnedRate || 0) + '/s');
+    }
     out.push('播出 ' + topText(s.playsTop));
     out.push('事件 ' + topText(s.arriveTop));
     out.push(gpuLabel(e.gpu) +
@@ -219,6 +224,18 @@ var BattlePerf = (function () {
       env.ent = st.entities; env.floats = st.floats; env.persp = st.persp;
       var p = st.preset;
       if (p) {
+        /* 命中類密度控制（vfx-runtime.js）：目前密度、K，以及每秒被略過／少發粒子的命中特效數 */
+        if (typeof p.quality === 'number') {
+          env.quality = p.quality; env.hitCap = p.hitCap;
+          var tn = now();
+          if (!hitMark) hitMark = { capped: p.capped, thinned: p.thinned, at: tn };
+          else if (tn - hitMark.at >= 900) {
+            cappedRate = (p.capped - hitMark.capped) * 1000 / (tn - hitMark.at);
+            thinnedRate = (p.thinned - hitMark.thinned) * 1000 / (tn - hitMark.at);
+            hitMark = { capped: p.capped, thinned: p.thinned, at: tn };
+          }
+          env.cappedRate = cappedRate; env.thinnedRate = thinnedRate;
+        }
         ['fx', 'zone', 'air', 'billboard'].forEach(function (k) {
           if (p[k]) { env.eff += p[k].activeEffects || 0; env.parts += p[k].activeParticles || 0; }
         });
@@ -412,7 +429,7 @@ var BattlePerf = (function () {
       nodes: s.nodes.avg, nodesMax: s.nodes.max, ivAvg: s.interval.avg, ivMax: s.interval.max,
       tick: s.tick.avg, persp: s.persp.avg, draw: s.draw.avg, core: s.core.avg, gap: s.gap,
       draws: s.draws.avg, uploads: s.uploads.sum, arrive: s.arrive, plays: s.plays, processed: s.processed,
-      queue: s.env.queue, sim: s.env.simRate, loafN: s.loaf.n, loafMax: s.loaf.max,
+      queue: s.env.queue, sim: s.env.simRate, quality: s.env.quality, capped: s.env.cappedRate, loafN: s.loaf.n, loafMax: s.loaf.max,
       loafScripts: s.loaf.scripts, loafRender: s.loaf.render, playsAll: s.playsAll, arriveTop: s.arriveTop
     };
     history.push(row);
@@ -465,6 +482,8 @@ var BattlePerf = (function () {
       ['到達/s', function (r) { return f0(r.arrive); }], ['播出/s', function (r) { return f0(r.plays); }],
       ['處理/s', function (r) { return f0(r.processed); }], ['佇列', function (r) { return r.queue; }],
       ['模擬x', function (r) { return r.sim == null ? '' : f1(r.sim); }],
+      ['密度', function (r) { return r.quality == null ? '' : f1(r.quality); }],
+      ['略過/s', function (r) { return r.capped == null ? '' : f0(r.capped); }],
       ['LoAF數', function (r) { return r.loafN; }], ['LoAF最長', function (r) { return f0(r.loafMax); }],
       ['腳本', function (r) { return f0(r.loafScripts); }], ['渲染', function (r) { return f0(r.loafRender); }]
     ];
