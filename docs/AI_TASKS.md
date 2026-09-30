@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜雷霆天劫雙雷與八米範圍（HEAVEN-TRIBULATION-DOUBLE-AOE-20260930）
+
+- Owner：Codex；Done。每次節拍同時降下兩道天劫雷電，優先選生命最低的兩個不同目標；不足兩敵時剩餘雷電可重複瞄準。同一道各對落點半徑 8 米內所有敵人結算，兩個傷害圈重疊可受兩次傷害。維持原本 0.25 秒節拍與單道表定傷害。
+- 前置：現有雷霆天劫觸發欄與落雷貼地已完成；使用者正在編輯的四份雷電 Preset／layout 保留，不改素材。允許 Skills2 Excel／CSV／生成資料、幾何與 VFX 欄位接線、技能與 Runtime、快取、回歸測試及本紀錄；禁止改其他技能或配置。修改前衝突預檢無來源。
+- 驗收：同刻兩道不同目標；單敵仍兩道；每道命中 8 米內全部存活敵人，範圍外無傷、重疊雙重命中；事件與畫面命中範圍一致、普通落雷不變；Excel／CSV／JS 一致、相關測試與 build 通過。完成後提交交使用者整合，不自行合併／推送。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、tools/skills2-geometry.cjs、tools/skills2-vfx.cjs、js/vfx-runtime.js、js/battle-renderer.js、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、相關技能／幾何／VFX 測試及本紀錄。未修改 Preset 或 layout；唯讀檢查 js/worker/protocol.js、js/worker/shim.js、js/battlefield.js 與既有雷電素材。天劫沿現有 variant／area／hit／vfx 欄位送出，毋須改 Worker 協議。落點在結算前固定，即使第一道殺死第二目標，第二道仍在原落點播放。
+- 驗證：Excel COM 儲存並重開；相對 HEAD 僅第 160 列五格值變更、樣式不變，Excel／CSV 逐格一致；config_tables dry-run 語意變更 0。技能、VFX schema、繼承及落雷生命週期 48/48；雷霆相關 Runtime 定向 3/3；相關幾何 2/2；地面投影、透視與生命週期 26/26；build 400 檔及 diff check 通過。全套 VFX Runtime 有 FIELD、CATALOG-3、CHAIN 金雷素材、STARFALL-TAIL 四項既有失敗；全套幾何另有舊測試要求鏈速 18/.244，但 HEAD 配置已為 120，與本次修改無關。尚未在遊戲瀏覽器實機畫面驗收。可交使用者整合，未合併／推送；Commit 見本紀錄所在提交。
+
 ## Codex｜VFX 更新判斷與編輯器重啟（VFX-EDITOR-RESTART-20260930）
 
 - Owner：Codex；Done。更新提示只對編輯器共用程式變更、伺服器載入程式變更，或目前開啟的 Preset／layout 外部變更觸發；保留儲存時雙檔防覆寫。工具列「關閉編輯器」旁新增伺服器重啟並重新載入按鈕；有未存內容會先下載全部編輯備份。

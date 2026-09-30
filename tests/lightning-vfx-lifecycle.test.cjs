@@ -58,6 +58,9 @@ test('Canvas 落雷沒有目標座標時直接取消，不退回玩家前方地�
   context.S.entities['live-target'] = { state: 'alive' };
   assert.equal(context.vfxTargetLiveForSpec({ variant: 'thunder-strike' }, 'live-target'), true,
     '仍存在的有效目標照常允許落雷');
+  const tribulation = { variant: 'heaven-tribulation-strike', area: { x: 10, y: 20, r: 80 }, targets: ['removed-target'] };
+  assert.equal(context.vfxTargetsLive(tribulation), true, '天劫已固定落點，目標死亡後仍須顯示第二道雷');
+  assert.equal(context.vfxTargetLiveForSpec(tribulation, 'removed-target'), true);
   assert.equal(context.vfxTargetsLive({ cat: 'basic', targets: ['missing-target'] }), true,
     '一般普攻仍保留尚未建立目標的相容行為');
 
@@ -105,4 +108,8 @@ test('CHAIN-END 清場訊號不經顯示緩衝或死亡守門，Worker保留鏈�
  w.playCombatVfx(events[0]);assert.equal(wire[0].area.chainId,'one');assert.equal(wire[0].variant,'lightning-chain-end');
  w.playCombatVfx({variant:'lightning-chain',area:{chainId:'one',homingSpeed:700},lineLength:180});
  assert.equal(wire[1].area.homingSpeed,700);assert.equal(wire[1].lineLength,180);
+ w.playCombatVfx({fxKind:'rain',variant:'heaven-tribulation-strike',targets:['gone'],area:{x:10,y:20,r:80},hit:false,vfx:{attack:'bolt-sky-purple',hit:'hit-thunder-purple'}});
+ assert.equal(wire[2].variant,'heaven-tribulation-strike');
+ assert.equal(wire[2].area.r,80);assert.equal(wire[2].hit,false);
+ assert.equal(wire[2].vfx.attack,'bolt-sky-purple');
 });

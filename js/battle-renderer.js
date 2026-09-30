@@ -2480,7 +2480,8 @@ var BattleRenderer = (function () {
       ? { c1: '#c51e0d', c2: '#ffd447', glow: '#ff3b0a' } : themeOf(spec);
     var visualStrong = strong || fireExplosion;
     var t = 0, dur = fireExplosion ? 0.62 : (visualStrong ? 0.4 : 0.26);
-    var maxR = fireExplosion ? 30 : (visualStrong ? 15 : 8.5);
+    var maxR = spec.variant === 'heaven-tribulation-impact' && spec.area && spec.area.r > 0
+      ? spec.area.r : (fireExplosion ? 30 : (visualStrong ? 15 : 8.5));
     var impactGroup = new PIXI.Container();
     impactGroup.__impactGroup = true;
     impactGroup.position.set(x, groundToScreenY(y));
@@ -2883,14 +2884,16 @@ var BattleRenderer = (function () {
         }
         if (t >= dur * 0.25 && !g._hit) {
           g._hit = true;
-          spawnImpact(to.x, to.y, spec, !!(isMega || isPurple), function () {
-            return typeof targetPtOrId !== 'string' || vfxTargetLiveForSpec(spec, targetPtOrId);
-          });
-          if (typeof targetPtOrId === 'string') {
-            hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
-          }
-          if (isMega || isPurple) {
-            addShake(isPurple ? 5 : 3, spec);
+          if (spec.hit !== false) {
+            spawnImpact(to.x, to.y, spec, !!(isMega || isPurple), function () {
+              return typeof targetPtOrId !== 'string' || vfxTargetLiveForSpec(spec, targetPtOrId);
+            });
+            if (typeof targetPtOrId === 'string') {
+              hitReact(targetPtOrId, spec.elem || 'lightning', !!(isMega || isPurple));
+            }
+            if (isMega || isPurple) {
+              addShake(isPurple ? 5 : 3, spec);
+            }
           }
         }
         return t < dur;
@@ -5668,9 +5671,11 @@ var BattleRenderer = (function () {
           break;
         }
         // 落雷術：一則事件＝一道天雷，落下時間與模擬層的落地結算對齊
-        if (spec.variant === 'thunder-strike') {
+        if (spec.variant === 'thunder-strike' || spec.variant === 'heaven-tribulation-strike') {
           targets.forEach(function (id, ti) {
-            spawnBolt(null, id, spec, (baseDelay + ti * stagger) / 1000, false, true);
+            var boltTarget = spec.variant === 'heaven-tribulation-strike' && spec.area
+              ? { x: spec.area.x, y: groundToScreenY(spec.area.y) } : id;
+            spawnBolt(null, boltTarget, spec, (baseDelay + ti * stagger) / 1000, false, true);
           });
           break;
         }
@@ -5718,6 +5723,11 @@ var BattleRenderer = (function () {
         handleChainVfx(targets, spec, baseDelay, stagger);
         break;
       case 'impact':
+        if (spec.variant === 'heaven-tribulation-impact' && spec.area) {
+          spawnImpact(spec.area.x, spec.area.y, spec, true);
+          targets.forEach(function (id) { hitReact(id, spec.elem || 'lightning', true); });
+          break;
+        }
       default:
         /* 地爆天星落地：殞石本體的到達回呼已經放過爆點與鏡頭晃動，
            這裡只補每個敵人的受擊反饋（傷害是全場的，敵人可能離爆心很遠）。 */

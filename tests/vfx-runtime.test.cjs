@@ -1758,6 +1758,27 @@ test('THUNDER-HIT 普通與天劫落雷的命中原點貼腳底，延後播放�
  delayed.adapter.destroy();
 });
 
+test('THUNDER-TRIBULATION 紫雷本體維持尺寸，命中依每道八米半徑縮放',()=>{
+ const bolt=unitPreset('bolt-sky-purple',.5);
+ const hit=unitPreset('hit-thunder-purple',.5);
+ hit.sizing={shape:'custom',widthM:6,heightM:6,authored:{width:60,height:60}};
+ const {adapter,log}=makeAdapter([bolt,hit],{ctx:{posOf:()=>{throw Error('天劫落點不應依賴已死亡目標');},footOf:()=>{throw Error('天劫落點不應依賴已死亡目標');},playerPos:()=>({x:0,y:0})}});
+ const vfx={attack:bolt.id,hit:hit.id};
+ for(const area of [{x:100,y:80,r:80},{x:220,y:120,r:80}]){
+  adapter.tryPlay({fxKind:'rain',variant:'heaven-tribulation-strike',targets:['enemy'],area,hit:false,vfx});
+  adapter.tryPlay({fxKind:'impact',variant:'heaven-tribulation-impact',targets:['enemy'],area,vfx});
+ }
+ adapter.update(.01);
+ const attacks=log.nodes.filter(n=>n.spec.assetUrl.endsWith('/bolt-sky-purple.png')).map(n=>n.transforms.at(-1));
+ const impacts=log.nodes.filter(n=>n.spec.assetUrl.endsWith('/hit-thunder-purple.png')).map(n=>n.transforms.at(-1));
+ assert.deepEqual(attacks.map(t=>[t.x,t.y,t.scaleX]),[[100,80,1],[220,120,1]]);
+ assert.deepEqual(impacts.map(t=>[t.x,t.y]),[[100,80],[220,120]]);
+ assert.ok(impacts.every(t=>Math.abs(t.scaleX-80/30)<1e-6));
+ assert.equal(log.nodes.length,4,'同時兩道雷各播放一個柱身和一個範圍命中');
+ adapter.update(1);
+ assert.equal(adapter.stats().fx.activeEffects,0);
+});
+
 
 test('VACUUM actor-centred clockwise sweep follows target facing and simulation range',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-crescent.json'),'utf8'));

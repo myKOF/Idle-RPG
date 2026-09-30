@@ -5,7 +5,7 @@ const noteColumn = '特效作用說明';
 const events = {
   'chainlightning.flyingThunderGod': {roles:['field'],note:'每波逐道生成全場貫穿雷電；每道出生時以隨機兩名不同敵人連線決定固定方向；只有一名敵人時改用玩家與該敵人連線，零敵人時才略過，寬度、長度及持續時間由權威事件傳入。觸發持續場域不覆蓋普通雷鏈。'},
   'chainlightning.eternalSuperconductor': {roles:['projectile','hit'],note:'額外維持一道自身與範圍內敵人往返的雷鏈；觸發子彈不覆蓋普通雷鏈，追蹤抵達敵人時播放觸發命中特效，回到自身才疊層；無目標立即終止。'},
-  'thunderstrike.heavenTribulation': {roles:['attack','hit'],note:'額外天劫雷電每次追擊時，在目標位置播放觸發特效與觸發命中特效；不覆蓋普通落雷的本體外觀，單體維持原尺寸。'},
+  'thunderstrike.heavenTribulation': {roles:['attack','hit'],note:'額外兩道天劫雷電每次追擊時，各在落點播放觸發特效與觸發命中特效；不覆蓋普通落雷的本體外觀，雷柱維持原尺寸，命中特效對應八米傷害半徑。'},
   'firepillar.infernoTempest': {roles:['projectile','attack'],note:'每道火龍捲每0.33秒向搜敵範圍內每次重新隨機選取1名敵人平射1顆火球；觸發子彈以36米／秒追蹤敵人，主目標必中，抵達後觸發特效匹配爆炸傷害半徑。'},
   'firepillar.dragonDevour': {roles:['attack'],note:'本體持續場域播放單一火漩渦，本體子彈隨機拋向地面、不搜敵；每顆落地播放一次匹配傷害半徑的觸發特效。'},
   'mire.abyssInferno': {roles:['attack'],note:'熔岩沼每秒向範圍內至多三名不同敵人的當下位置拋出火球；本體飛行子彈沿用融火之心，落地時觸發特效匹配六米爆炸半徑。'},

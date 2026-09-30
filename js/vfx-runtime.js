@@ -580,7 +580,8 @@ var VFXRuntime = (function () {
         // 復活光柱與落雷的 Preset 原點在地板；身體中心會讓命中光圈懸在怪物腰部。
         var groundFoot = (spec.variant === 'pillar' &&
           (presetId === 'pillar-light' || presetId === 'pillar-earth')) ||
-          spec.variant === 'thunder-strike' || spec.variant === 'thunder-impact';
+          spec.variant === 'thunder-strike' || spec.variant === 'thunder-impact' ||
+          spec.variant === 'heaven-tribulation-strike' || spec.variant === 'heaven-tribulation-impact';
         if (delaySec > 0) {
           pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
             authoredSize: authoredSize, groundFoot: groundFoot, chainTargets: chainTargets });
@@ -610,6 +611,9 @@ var VFXRuntime = (function () {
     }
 
     function playThunderstrike(rt, presetId, spec) {
+      if (spec.variant === 'heaven-tribulation-strike' && spec.area) {
+        return !!play(rt, presetId, Object.assign(defaultSize(presetId, 1), { position: areaCentre(spec.area) }));
+      }
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       ids.forEach(function (id) {
         if (ctx.chainPoint && !ctx.chainPoint(id)) return;
@@ -1375,7 +1379,7 @@ var VFXRuntime = (function () {
             ok=!!play(rtFx,presetId,Object.assign(defaultSize(presetId,hitScaleOf(spec,tuning(presetId,'hitScale'))),{position:areaCentre(spec.area)}));
             break;
           }
-          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash') && spec.area
+          ok = presetId === 'hit-thunderstrike-bluewhite' ? playThunderstrike(rtFx, presetId, spec) : (presetId === 'burst-meteor-inferno' || presetId === 'hit-thunderfall-impact' || presetId === 'hit-waterball-splash' || spec.variant === 'heaven-tribulation-impact') && spec.area
             ? playOnArea(rtFx, presetId, spec)
             : playOnTargets(rtFx, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0);
           break;
@@ -1417,6 +1421,8 @@ var VFXRuntime = (function () {
             vacuumParams.position = vacuumSource;
             vacuumParams.rotation = isFinite(spec.angle) ? Number(spec.angle) : Math.atan2(vacuumTarget.y-vacuumSource.y,vacuumTarget.x-vacuumSource.x);
             ok = !!play(rtFx, presetId, vacuumParams);
+          } else if (spec.variant === 'heaven-tribulation-strike' && spec.area) {
+            ok = playThunderstrike(billboardPresets[presetId] ? rtBillboard : rtFx, presetId, spec);
           } else if (presetId === 'bolt-thunderstrike-bluewhite') {
             /* 落雷同樣吃「整份標了 perspective: false」的 billboard 路：又高又細的東西
                留在場景層就會被透視網格推成斜的（2026-09-24 使用者回報）。 */

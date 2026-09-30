@@ -31,6 +31,9 @@ test('搜敵、傷害、路徑、碰撞用途不能互相覆蓋；未接線拒�
  assert.equal(geo.extract('windblade','1',{m:80},'4*8')[geo.labels.body],'4*8');
  assert.equal(geo.extract('windblade','1',{m:80},'4*8')[geo.labels.travel],'80');
  assert.deepEqual(geo.apply('waterball','7',{},c=>c===geo.labels.placement?'10*12,1*2':'').fx,{side:10,sidePer:1,sideWidth:12,sideWidthPer:2});
+ const tribulation={[geo.labels.search]:'30',[geo.labels.damage]:'8'};
+ assert.deepEqual(geo.apply('thunderstrike','heavenTribulation',{},c=>tribulation[c]).fx,{m:30,radiusM:8});
+ assert.equal(geo.extract('thunderstrike','heavenTribulation',{m:30,radiusM:8},'')[geo.labels.damage],'8');
 });
 test('新版匯出往返不遺失230列技能、特效與範圍資料',()=>{
  const source=fs.readFileSync(path.join(__dirname,'../js/skills2.js'),'utf8'),schema=tables.SCHEMAS.Skills2;
