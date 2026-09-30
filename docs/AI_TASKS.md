@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜敵人無上限狂暴化（ENEMY-FRENZY-20260930）
+
+- Owner：Codex；Done。敵人出生後等待10秒，每完整1秒增加1%傷害，無上限；右上角顯示存活敵人平均增傷（四捨五入整數），0～100%由白轉紅，超過100%保持紅色。滿11秒首次+1%，暫停不累加；無存活敵人顯示0%。野外與高塔皆套用，與既有重擊／高塔狂暴乘算；復生沿用原出生時間。
+- 前置：現有出生時間、GT及battle快照；預檢無衝突。允許combat／tower／ui、index與Worker必要快取、專項測試及本紀錄；禁止改其他技能、配置與素材。沿用既有快照，不新增協議欄位；不合併或推送。
+- 驗收：計時邊界、無上限、物理／魔法／元素傷害、存活平均、顏色與暫停、Build。完成後提交交使用者整合。
+- 修改：js/combat.js、js/tower.js、js/ui.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/enemy-frenzy.test.cjs、本紀錄。檢查未改：js/formula.js、js/data.js、js/worker/protocol.js、js/battle-renderer.js、css/style.css、docs/WORKER_PROTOCOL.md；無素材變更，不需素材庫提交。
+- 驗證：node --test tests/enemy-frenzy.test.cjs tests/npc-move-attack.test.cjs，10/10；node --test tests/enemy-frenzy.test.cjs tests/enemy-hit.test.cjs tests/enemy-type-damage.test.cjs tests/combat-pause.test.cjs tests/enemy-projectile-retaliation.test.cjs tests/tower-auto-result.test.cjs，26/26；battlefield專項通過。node tools/build_check.cjs，405檔通過；git diff --check通過。
+- 既有失敗：enemy-attack-vfx的出手延遲字面斷言不符battle-renderer；該受測檔與HEAD相同，失敗不涉及本次修改，未調整斷言。未完成瀏覽器實戰／Console驗收；建議整合後重載確認右上角位置及長戰鬥。程式可合併，未自行合併／推送，Commit見本紀錄所在提交。使用者在本輪期間編輯的bolt-chain-travel-bluewhite-08 Preset保留未提交。
+
 ## Codex｜臨界雷劫外擴與靜止衍生（CRITICAL-THUNDER-20260930）
 
 - Owner：Codex；Done。使用者改為環體電球觸發雷球持續10秒，從生成時角色中心朝外每秒3米；每次命中10%＋每級1%再生一顆不移動雷球；傷害50%＋每級5%。移除四顆／機率翻倍。再生雷球同為10秒、每次命中可繼續判定，但永不移動。

@@ -65,6 +65,7 @@ function startTowerFight(floor) {
   G.tower.active = true;
   TOWER.floor = floor;
   TOWER.boss = makeBoss(floor);
+  TOWER.boss._spawnAt = GT;
   TOWER.player = newPlayerEntity(st);
   // 塔戰玩家實體全新建立＝新一場戰鬥，清空技能執行期狀態（比照 skillCds 全新重置）
   if (typeof resetSkillRT === 'function') resetSkillRT();

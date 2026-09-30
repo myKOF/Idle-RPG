@@ -16,7 +16,7 @@ importScripts(
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20260930-critical-thunder', '../talents.js?v=20260929-thunder-pair',
   '../player.js?v=20260929-thunder-pair', '../special_rules.js',
-  '../combat.js?v=20260929-thunder-pair', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20260929-thunder-pair', '../tower.js?v=20260929-thunder-pair',
+  '../combat.js?v=20260930-enemy-frenzy', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20260929-thunder-pair', '../tower.js?v=20260930-enemy-frenzy',
   '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
   '../tasks.js?v=20260929-thunder-pair'
 );

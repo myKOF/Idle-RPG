@@ -948,8 +948,28 @@ function playerDefCfg(pEnt) {
         maxHp: st.hp, isPlayer: true
     };
 }
+var ENEMY_FRENZY_DELAY_SEC = 10;
+var ENEMY_FRENZY_INTERVAL_SEC = 1;
+var ENEMY_FRENZY_STEP_PCT = 1;
+
+function enemyFrenzyPct(m, now) {
+    if (!m || !Number.isFinite(m._spawnAt)) return 0;
+    var age = Math.max(0, now - m._spawnAt - ENEMY_FRENZY_DELAY_SEC);
+    return Math.floor(age / ENEMY_FRENZY_INTERVAL_SEC + 1e-9) * ENEMY_FRENZY_STEP_PCT;
+}
+
+function enemyFrenzyAverage(enemies, now) {
+    var total = 0, count = 0;
+    for (var i = 0; i < enemies.length; i++) {
+        if (!enemies[i] || enemies[i].hp <= 0) continue;
+        total += enemyFrenzyPct(enemies[i], now);
+        count++;
+    }
+    return count ? total / count : 0;
+}
+
 function monsterAtkCfg(m, mult) {
-    mult = mult || 1;
+    mult = (mult || 1) * (1 + enemyFrenzyPct(m, GT) / 100);
     var ea = m.elemAtk || null;
     if (ea && mult !== 1) { // 狂暴/重擊倍率也要套用到元素傷害
         var scaled = {};
