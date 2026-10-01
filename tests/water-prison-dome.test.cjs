@@ -50,13 +50,13 @@ test('WATER-ARC: authoritative launch heights survive Worker and real Runtime at
   c.GT=0;const shot={pEnt:{pos:{x:-80,y:20}},target:{pos:{x:-80+distance,y:20}},origin:bounced?{x:-80,y:20}:null,bounced,cfg:{arcM:999,bounceSpeed:2,burstR:60}};
   c.sgLaunchWaterball(shot);
   const event=JSON.parse(JSON.stringify(shim.shimDrainUrgentVisualEvents()[0]));
-  assert.equal(event.arcM,distance/20);
+  assert.equal(event.arcM,distance/40);
   assert.equal(event.travelMs[0],Math.max(1,Math.round(distance/(579.6*(bounced?2:1))*1000)),'原速度及彈射速度加成保留');
   const nodes=[],rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend(nodes),zoneBackend:backend(nodes),ctx:{playerPos:()=>({x:999,y:999}),posOf:()=>({x:999,y:999})}});
   try{rt.registerPresets([centre]);assert.equal(rt.tryPlay(event),true);rt.update(event.travelMs[0]/2000);
    const n=nodes.find(n=>n.t?.visible);assert.ok(n);
    assert.ok(Math.abs(n.t.x-(-80+distance/2))<1e-6);
-   assert.ok(Math.abs(n.t.y-(20-distance/2))<1e-6,'真正畫出的最高點為距離一半');
+   assert.ok(Math.abs(n.t.y-(20-distance/4))<1e-6,'真正畫出的最高點為距離四分之一');
   }finally{rt.destroy();}
  }
 });

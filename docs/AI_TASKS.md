@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## Codex｜水流彈弧高再減半（WATERBALL-ARC-QUARTER-20261001）
+
+- Owner：Codex；Done。使用者提供實戰截圖要求目前水流彈彈射高度再減半，改為每段飛行距離四分之一；維持速度、加速、落點、命中時間與傷害。前置冰水／Claude整合dd938283已完成，目標預檢全部乾淨。
+- 允許js/skills2.js水彈起飛弧高、Skills2 Excel／CSV／生成說明、相關水彈高度回歸、必要快取、WATER_ICE_AUDIT及本紀錄；禁止水牢／其他技能、使用者目前編輯中的水牢Preset／layout與素材／匯出索引、其他副本及本輪合併／推送。
+- 驗收5米／20米及每段彈射事件、真實Worker／Runtime最高點、速度及飛行時間不變，原生Excel重開／逐格比對／格式檢查、配置一致、定向回歸、Build及Commit。後續接手者：使用者。
+- 完成10檔：js/skills2.js只改距離弧高除數及說明／註釋；Skills2.xlsx以原生Excel僅更新AW182／AX182、正常儲存及唯讀重開，全部231列逐格比較只有兩格差異；CSV與生成JS同步。index Skills2 1.0.263／bridge 1.0.196，Worker及skills2 import更新20261001-waterball-quarter-arc；兩份水彈回歸、WATER_ICE_AUDIT及本紀錄同步。原速度57.96米／秒與傳奇彈射加速、傷害／結算程式均未修改。
+- 測試指令：node --test tests/waterball-vfx-integration.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/water-ice-audit.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，102/102通過；node --test --test-name-pattern='WATER-ARC' tests/water-prison-dome.test.cjs，1/1通過，真實Worker→Runtime最高點為5米距離1.25米／20米距離5米，下一彈射重算、飛行時間及加速維持。npm.cmd run build，415檔通過；config_tables --apply Skills2試跑語意變更0、diff check通過。
+- Excel驗證：原生Excel正常重開、樣式表／欄寬／列高不變；Artifact Tool唯讀匯入前後目標列渲染，原有窄欄截斷相同，未改布局／格式。檢查未改Runtime／Core／Worker shim、Status、幾何接線及其他技能／素材；無本輪新素材或素材庫Commit。使用者正在編輯的水牢Preset／layout／shipped-assets及兩張新增圖片保留未提交。
+- 交付：本紀錄所在Commit，可合併；本輪未合併／推送，無未完成程式項目。未另做完整遊戲實戰／Console人工驗收，正式Core／Runtime數值回歸已通過；重載本分支確認更低水彈弧線。Temp/codex-waterball-quarter-20261001的本輪前快照及渲染腳本／圖片於提交前清理，工作區僅保留使用者正在編輯的素材。
+
 ## Codex｜develop 冰水技能與 Claude 吸血吸魔整合（DEVELOP-MERGE-20261001）
 
 - Owner：Codex；Done。使用者明確授權解決 develop／Claude 衝突、完成合併並推送。實際整合副本為 D:/MyGame/Idle-RPG/develop，起始 HEAD c00cdc14 已包含 Claude 8afe3288；既有合併中的 MERGE_HEAD 為 Codex e2e002d7。兩個 Agent 副本乾淨，fetch 後沒有新增遠端提交。
