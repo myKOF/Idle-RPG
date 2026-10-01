@@ -12,7 +12,7 @@
 
 importScripts('protocol.js?v=40', 'shim.js?v=8');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-thunder-pair', '../status.js?v=20260929-thunder-pair', '../formula.js?v=20260929-thunder-pair', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-thunder-pair',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-thunder-pair', '../status.js?v=20260929-thunder-pair', '../formula.js?v=20261001-skill-interval', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-thunder-pair',
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261001-ice-tears-hit', '../talents.js?v=20260929-thunder-pair',
   '../player.js?v=20260929-thunder-pair', '../special_rules.js',

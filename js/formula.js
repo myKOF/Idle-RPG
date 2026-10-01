@@ -2234,7 +2234,7 @@ function gemShopUpgradeCost(level) {
    ============================================================ */
 
 var SKILL_CAST_LOCK = 0.2;       // 由參數表「9-技能／施放硬直」套用；技能不再改動普攻 atkCd
-var SKILL_MIN_CAST_INTERVAL = 0.2; // 由參數表「9-技能／技能施放最短間隔」套用；各技能獨立、不受冷卻縮減影響
+var SKILL_MIN_CAST_INTERVAL = 0.5; // 由參數表「9-技能／技能施放最短間隔」套用；各技能獨立、不受冷卻縮減影響
 
 function skillMinimumInterval() {
   return (typeof SKILL_MIN_CAST_INTERVAL === 'number' &&

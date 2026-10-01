@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## Codex｜保存使用者技能間隔調整（SKILL-INTERVAL-20261001）
+
+- Owner：Codex；Done。使用者在冰箭修復期間自行將「技能施放最短間隔」0.2→0.5秒，並同步CSV與formula.js；明確要求包含其修改一起Commit。依一筆提交一個目的，冰箭先提交be9533ec，此項另筆保存原值，不重改使用者Excel。
+- 允許config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、js/formula.js及必要主頁／Worker快取、本紀錄；三份參數檔預檢均無其他來源衝突。驗收Excel／CSV只變該參數、apply_params零差異／534錨點獨立、施放最短間隔／擊殺換目標測試、Build及Commit；不合併／推送。
+- 修改7檔：使用者的config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、js/formula.js三份既有修改，加index.html、js/bridge.js、js/worker/sim.worker.js快取及docs/AI_TASKS.md。Excel316列逐格核對只G285由0.2→0.5，CSV完全一致，程式只有SKILL_MIN_CAST_INTERVAL改值。Formula 1.0.39、Bridge 1.0.187、Worker與Formula import為20261001-skill-interval；冰箭import保留20261001-ice-tears-hit。未改其他數值、素材、Worker協議或存檔。
+- 驗證：node tools/apply_params.cjs，534個對應參數、將變更0／錨點問題0，未減少。node tools/apply_params.cjs --check-anchors，擾動487個數值後534個錨點仍各命中一次。node --test tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/skill-gcd.test.cjs tests/skill2-system.test.cjs tests/multi-enemy.test.cjs，69項54通過、15項失敗全在skill2-system；另以HEAD三份參數檔重跑skill2-system，36項21通過且同樣15項逐項失敗，0新增。參數／施放間隔／換目標定向33/33通過，保留既有技能規則及測試斷言；失敗清單為迴身四方斬2項、突刺4項、飛刀2項、零日感染2項與雙刀亂舞5項，另案追蹤。
+- npm.cmd run build，411檔通過；git diff --check通過。唯讀核對未改：apply_params及上述測試、其他技能／戰鬥邏輯、VFX Runtime與Preset。Commit為本紀錄所在提交，可合併，未合併／推送；提交後工作區乾淨。未完成項目：無；尚未實戰瀏覽器／Console驗收。下一步由使用者整合後重載；全技能最短間隔現在為0.5秒。
+
 ## Codex｜冰之淚落地受擊同步修正（ICE-TEARS-HIT-20261001）
 
 - Owner：Codex；Done。使用者回報雨箭錯落、受擊卻整片同步；修正每箭排程、落地結算與正式 Runtime／Worker 派送。保留每波10支、Lv.10每支400%且不增幅普通／追蹤冰箭。
@@ -11,7 +19,7 @@
 - 配置：依使用者確認，只改Excel第181列AV／AW／AX三格用途與描述；AU數值、十波／十箭／0.35秒／30米／200%＋每級20%皆不變。沿用試算表技能檢查／渲染；Artifact Tool既有匯入不適合保留本檔空白格，使用原生Excel COM窄範圍儲存、唯讀重開，不寫內部XML。231列逐格核對只有上述三格，ZIP、樣式、欄寬、列高及儲存格格式不變，CSV一致、生成JS語意差異0。
 - 測試：node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/waterball-vfx-integration.test.cjs tests/icearrow-vfx-integration.test.cjs tests/skills2-geometry.test.cjs tests/skills2-params.test.cjs tests/skills2-table-vfx.test.cjs，136項135通過；唯一連鎖閃電速度測試在讀取HEAD的Excel／CSV／JS時同樣失敗（仍預期18/.244），本次0新增失敗，未更動其斷言或其他技能數值。新增多敵一箭一受擊／各自抵達時間、移動目標正式Runtime端點、離場不轉打、擊殺回收與無座標防離場命中；原零／單／23敵十箭、400%隔離、MISS、倒地／重置仍通過。
 - 寒冰箭傳奇／超神定向：node --test --test-name-pattern='冰之淚|極寒冰爆|無限冰裂|連射|冰封|凜冬侵蝕|冰裂箭|深度凍結' tests/skill2-thunderorb-icearrow-legendary.test.cjs，10/10。node --test tests/vfx-editor-cache-versions.test.cjs，3/3。node tools/config_tables.cjs --apply Skills2，0差異；npm.cmd run build，411檔通過；git diff --check通過。
-- 快取：Skills2 1.0.254、Bridge 1.0.186，Worker及Skills2 import使用20261001-ice-tears-hit；Runtime未修改。遊戲Commit為本紀錄所在提交，可合併，未合併／推送。工作期間另出現game_parameters.xlsx第285列「技能施放最短間隔」0.2→0.5修改，未寫入該檔、不混入冰箭修正；已另外詢問處理方式，原檔保留。未完成冰箭程式項目：無；限制：未在實戰瀏覽器／Console驗收，已驗正式Core／Runtime與Worker事件資料。下一步由使用者整合、重載遊戲確認畫面；既有連鎖閃電速度測試另案處理。
+- 快取：Skills2 1.0.254、Bridge 1.0.186，Worker及Skills2 import使用20261001-ice-tears-hit；Runtime未修改。遊戲Commit be9533ec，可合併，未合併／推送。工作期間另出現game_parameters.xlsx第285列「技能施放最短間隔」0.2→0.5修改，使用者後續自行同步CSV／程式並授權一併提交，見SKILL-INTERVAL-20261001另筆保存。未完成冰箭程式項目：無；限制：未在實戰瀏覽器／Console驗收，已驗正式Core／Runtime與Worker事件資料。下一步由使用者整合、重載遊戲確認畫面；既有連鎖閃電速度測試另案處理。
 
 ## Codex｜冰之淚十支錯落箭雨（ICE-TEARS-RAIN-20261001）
 
