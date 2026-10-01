@@ -172,22 +172,24 @@ test('ICE-TEARS-RAIN: zero, one and many enemies all get ten arrows in every wav
   assert.ok(first.every(s=>(s.delayMs||0)<350&&s.hit===false));assert.equal(hits.length,0,'起飛不扣血');
   h.advance(c,p,es,4);
   assert.equal(specs.filter(s=>s.variant==='ice-rain').length,100,'10波各10支，不依敵人數變動');
-  assert.equal(hits.length,n*100,'10波各10支，每支對每個範圍內敵人各命中一次');
+  assert.equal(hits.length,n?100:0,'10波各10支，每支只命中自己的目標一次');
   const damage=c.sgGroupBaseStat(c.SKILLS2.icearrow,c.getStats())*c.sgUltVal(c.sgUlt('icearrow','tearsOfIce'),'pct')/100;
   assert.ok(hits.every(hit=>Math.abs(hit.atk-damage)<1e-9),'每次沿用配置的全額傷害');
-  es.forEach(e=>assert.equal(hits.filter(hit=>hit.ent===e).length,100));
+  const impacts=specs.filter(s=>s.variant==='ice-rain-hit');
+  assert.equal(impacts.length,n?100:0);assert.ok(impacts.every(s=>s.targets.length===1));
+  if(n===1)assert.equal(hits.filter(hit=>hit.ent===es[0]).length,100,'單敵仍接受全部100支全額箭雨');
   assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='icerain').length,0,'最後一箭落地後回收');
  }
 });
 
-test('ICE-TEARS-RAIN: Worker carries ten fixed landings and frame rates preserve flight timing',()=>{
+test('ICE-TEARS-RAIN: Worker carries individual targets and frame rates preserve flight timing',()=>{
  const {h,c,p,es,specs}=setup('icearrow',7,'tearsOfIce');
  c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);h.advance(c,p,es,.05);
  const shim={};shim.self=shim;vm.createContext(shim);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/worker/shim.js'),'utf8'),shim);
  specs.filter(s=>s.variant==='ice-rain').forEach(s=>shim.playCombatVfx(s));
  const events=JSON.parse(JSON.stringify(shim.shimDrainUrgentVisualEvents()));assert.equal(events.length,10);
  assert.equal(new Set(events.map(s=>s.delayMs||0)).size,10);
- assert.ok(events.every(s=>s.area.fixedLanding===true&&s.travelMs[0]===350&&s.hit===false));
+ assert.ok(events.every(s=>s.targets.length===1&&!s.area.fixedLanding&&s.travelMs[0]===350&&s.hit===false));
  function sample(delay,steps){
   const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
   const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,groundScale:.42,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:999,y:999})}});
@@ -225,7 +227,7 @@ test('ICE-TEARS-RAIN: level ten rain deals 400% per arrow without increasing nor
  }
  const off=cast(0),one=cast(1),ten=cast(10);
  assert.ok(off.normal.length);assert.deepEqual(one.normal,off.normal);assert.deepEqual(ten.normal,off.normal);
- assert.equal(off.rain.length,0);assert.equal(ten.rain.length,300,'三名敵人各接受100支雨箭');
+ assert.equal(off.rain.length,0);assert.equal(ten.rain.length,100,'100支雨箭各命中自己的目標');
  assert.ok(one.rain.every(hit=>Math.abs(hit.atk/one.base-2.2)<1e-9));
  assert.ok(ten.rain.every(hit=>Math.abs(hit.atk/ten.base-4)<1e-9),'每支都是魔攻400%，沒有除以10或乘到普通箭');
 });
@@ -242,6 +244,80 @@ test('ICE-TEARS-RAIN: staggered landings settle damage and hit effects together'
  const impact=specs.filter(s=>s.variant==='ice-rain-hit');assert.equal(impact.length,10);
  for(let i=0;i<10;i++){assert.equal(impact[i].targets.length,1);assert.equal(impact[i].targets[0],'landing-0');assert.deepEqual(roles(impact[i]),['hit']);}
  assert.equal(c.SKILL2_RT.grounds.includes(f),false);
+});
+
+test('ICE-TEARS-HIT: every arrow settles only its own target at its staggered arrival',()=>{
+ const {h,c,p,hits,specs}=setup('icearrow',7,'tearsOfIce');
+ const es=Array.from({length:23},(_,i)=>h.enemy(1e9,20+i*3,0,'target-'+i));
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);
+ const f=c.SKILL2_RT.grounds.find(f=>f.kind==='icerain');f.hits=f.hitsLeft=1;
+ h.advance(c,p,es,.05);const arrows=specs.filter(s=>s.variant==='ice-rain');
+ assert.equal(new Set(arrows.map(s=>s.targets[0])).size,10,'有足夠敵人時同一波先分配不同目標');
+ const hitTimes=[];const resolve=c.resolveHit;
+ c.resolveHit=function(...args){hitTimes.push(c.GT);return resolve(...args);};
+ h.advance(c,p,es,.7,.01);
+ const impacts=specs.filter(s=>s.variant==='ice-rain-hit');assert.equal(hits.length,10);assert.equal(impacts.length,10);
+ for(let i=0;i<10;i++){
+  assert.equal(hits[i].ent.name,arrows[i].targets[0]);assert.equal(impacts[i].targets[0],arrows[i].targets[0]);
+  const arrival=.05+((arrows[i].delayMs||0)+arrows[i].travelMs[0])/1000;
+  assert.ok(hitTimes[i]+1e-9>=arrival&&hitTimes[i]-arrival<.010001,'扣血與受擊僅在自己的抵達時間發生');
+ }
+ assert.equal(new Set(hitTimes).size,10,'不以一支箭抵達批次攻擊所有敵人');
+ assert.ok(hits.every(hit=>es.indexOf(hit.ent)<10),'其他13個未被選中的敵人不會憑空受擊');
+});
+
+test('ICE-TEARS-HIT: arrows follow their own moving target and never substitute a new enemy',()=>{
+ const {h,c,p,hits,specs}=setup('icearrow',7,'tearsOfIce');const es=[h.enemy(1e9,20,0,'moving')];
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);
+ const f=c.SKILL2_RT.grounds.find(f=>f.kind==='icerain');f.hits=f.hitsLeft=1;
+ h.advance(c,p,es,.05);const arrow=specs.find(s=>s.variant==='ice-rain');
+ assert.equal(arrow.targets[0],'moving');assert.ok(!arrow.area.fixedLanding);
+ es[0].pos={x:90,y:30};h.advance(c,p,es,.35);assert.equal(hits.length,1);assert.equal(hits[0].ent,es[0]);
+ const replacement=h.enemy(1e9,20,0,'replacement');es.splice(0,1,replacement);
+ h.advance(c,p,es,.35);assert.equal(hits.length,1,'原目標離場後剩餘九支不轉打新敵人');
+ assert.equal(specs.filter(s=>s.variant==='ice-rain-hit').length,1);
+});
+
+test('ICE-TEARS-HIT: production adapter follows the moving target and puts impact at the same endpoint',()=>{
+ const {h,c,p,es,specs}=setup('icearrow',7,'tearsOfIce');
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);h.advance(c,p,es,.05);
+ const arrow=specs.find(s=>s.variant==='ice-rain'),nodes=[];
+ const backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,groundScale:.42,
+  ctx:{playerPos:()=>({x:0,y:0}),posOf:id=>{const e=es.find(e=>e.name===id);return {x:e.pos.x,y:e.pos.y*.42};}}});
+ // 運動檢查將箭身中心標記歸零，排除作者的9px局部偏移；正式外觀由 production rain 測試保留核對。
+ rt.registerPresets(['proj-icearrow-frost','hit-icearrow-shatter'].map(id=>{
+  const preset=require('../vfx/presets/'+id+'.json');
+  return {...preset,layers:preset.layers.map(l=>l.id==='faceted-icicle'?{...l,position:{x:0,y:0}}:l)};
+ }));
+ rt.tryPlay(arrow);es[0].pos={x:120,y:40};rt.update(.349);
+ const body=nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);
+ assert.ok(body);assert.ok(Math.abs(body.t.x-120)<1,'箭身追到自己的移動目標');
+ assert.ok(Math.abs(body.t.y-40*.42)<2);
+ h.advance(c,p,es,.35);const impact=specs.find(s=>s.variant==='ice-rain-hit');
+ assert.equal(impact.targets[0],arrow.targets[0]);rt.update(.001);assert.equal(rt.stats().projectiles,0);
+ const before=nodes.length;rt.tryPlay(impact);rt.update(.01);
+ const flashAsset=require('../vfx/presets/hit-icearrow-shatter.json').layers.find(l=>l.id==='cold-flash').assetId;
+ const visible=nodes.slice(before).filter(n=>n.spec.assetUrl===flashAsset&&n.t?.visible);assert.equal(visible.length,1);
+ assert.ok(Math.abs(visible[0].t.x-120)<1e-7&&Math.abs(visible[0].t.y-40*.42)<1e-7,'受擊只在該箭抵達的目標上播放');rt.destroy();
+});
+
+test('ICE-TEARS-HIT: a killed target shows the first impact but consumes remaining arrows without more damage',()=>{
+ const {h,c,p,specs}=setup('icearrow',7,'tearsOfIce');const es=[h.enemy(1,20,0,'lethal')];let hits=0;
+ c.resolveHit=(_p,e)=>{hits++;e.hp=0;return {dmg:100,crit:false,miss:false,killed:true};};
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);
+ const f=c.SKILL2_RT.grounds.find(f=>f.kind==='icerain');f.hits=f.hitsLeft=1;
+ h.advance(c,p,es,.75);assert.equal(hits,1);assert.equal(specs.filter(s=>s.variant==='ice-rain-hit').length,1);
+ assert.equal(c.SKILL2_RT.grounds.length,0);
+});
+
+test('ICE-TEARS-HIT: positionless compatibility cannot damage a removed original target',()=>{
+ const {h,c,p,es,hits,specs}=setup('icearrow',7,'tearsOfIce');
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);
+ const f=c.SKILL2_RT.grounds.find(f=>f.kind==='icerain');f.hits=f.hitsLeft=1;
+ h.advance(c,p,es,.05);f.pos=null;f.follow=false;
+ h.advance(c,p,[],.7);assert.equal(hits.length,0);assert.equal(specs.filter(s=>s.variant==='ice-rain-hit').length,0);
+ assert.equal(c.SKILL2_RT.grounds.length,0);
 });
 
 test('ICE-TEARS-RAIN: invalid targets, downed caster and battle reset cancel pending damage',()=>{

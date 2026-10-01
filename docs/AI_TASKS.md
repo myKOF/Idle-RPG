@@ -1,7 +1,21 @@
 # AI_TASKS.md
 
+## Codex｜冰之淚落地受擊同步修正（ICE-TEARS-HIT-20261001）
+
+- Owner：Codex；Done。使用者回報雨箭錯落、受擊卻整片同步；修正每箭排程、落地結算與正式 Runtime／Worker 派送。保留每波10支、Lv.10每支400%且不增幅普通／追蹤冰箭。
+- 允許冰之淚限定邏輯、必要 Runtime／快取、配置同步、定向測試與文件；禁止其他技能規則、素材新增、存檔／Worker協議變更與合併／推送。修改前目標衝突預檢乾淨。
+- 根因：75aa050c 在每支箭落地時重查並命中全部範圍敵人，且未保存該箭的落點／目標，導致每次整片一起播命中；不是箭身 delayMs 遺失。使用者明確選擇「每箭命中自己的目標」，取代先前全範圍解讀；每支完整傷害與普通箭隔離沿用。
+- 驗收：多敵受擊與各自箭雨抵達一一對應、單敵十箭全額傷害、零敵仍十箭、MISS／離場／倒地／重置處理、普通／追蹤箭傷害隔離、配置一致與回歸／Build／Commit。前置75aa050c。
+- 完成：每波打散我方30米內的目標，十箭先分配不同敵人，不足時重複分配；各箭保存原目標與抵達時刻，只對該目標命中、扣血、播受擊。有目標沿既有Runtime天降路徑追至目標當下位置；無敵仍十支固定落點空箭且不扣血。原目標離場／死亡／移出範圍不轉打其他敵人，無座標相容路徑亦核對正式清單。成功擊殺保留該次受擊，其餘箭不再扣血。
+- 修改11檔：js/skills2.js、tests/water-ice-audit.test.cjs、tools/skills2-vfx.cjs、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、index.html、js/bridge.js、js/worker/sim.worker.js、docs/AI_TASKS.md、docs/WATER_ICE_AUDIT.md、docs/vfx/VFX_RUNTIME_ADAPTER.md。唯讀檢查未改：js/vfx-runtime.js、js/worker/shim.js、js/vfx-core.js、冰箭／受擊Preset、寒冰箭傳奇測試、幾何／參數／表格VFX／編輯器快取測試；無素材、Worker協議或存檔改動。編輯器HTML預檢發現Claude進行中修改；本次沿用Runtime、不需修改該檔，主頁Runtime版本仍與編輯器相同。
+- 配置：依使用者確認，只改Excel第181列AV／AW／AX三格用途與描述；AU數值、十波／十箭／0.35秒／30米／200%＋每級20%皆不變。沿用試算表技能檢查／渲染；Artifact Tool既有匯入不適合保留本檔空白格，使用原生Excel COM窄範圍儲存、唯讀重開，不寫內部XML。231列逐格核對只有上述三格，ZIP、樣式、欄寬、列高及儲存格格式不變，CSV一致、生成JS語意差異0。
+- 測試：node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/waterball-vfx-integration.test.cjs tests/icearrow-vfx-integration.test.cjs tests/skills2-geometry.test.cjs tests/skills2-params.test.cjs tests/skills2-table-vfx.test.cjs，136項135通過；唯一連鎖閃電速度測試在讀取HEAD的Excel／CSV／JS時同樣失敗（仍預期18/.244），本次0新增失敗，未更動其斷言或其他技能數值。新增多敵一箭一受擊／各自抵達時間、移動目標正式Runtime端點、離場不轉打、擊殺回收與無座標防離場命中；原零／單／23敵十箭、400%隔離、MISS、倒地／重置仍通過。
+- 寒冰箭傳奇／超神定向：node --test --test-name-pattern='冰之淚|極寒冰爆|無限冰裂|連射|冰封|凜冬侵蝕|冰裂箭|深度凍結' tests/skill2-thunderorb-icearrow-legendary.test.cjs，10/10。node --test tests/vfx-editor-cache-versions.test.cjs，3/3。node tools/config_tables.cjs --apply Skills2，0差異；npm.cmd run build，411檔通過；git diff --check通過。
+- 快取：Skills2 1.0.254、Bridge 1.0.186，Worker及Skills2 import使用20261001-ice-tears-hit；Runtime未修改。遊戲Commit為本紀錄所在提交，可合併，未合併／推送。工作期間另出現game_parameters.xlsx第285列「技能施放最短間隔」0.2→0.5修改，未寫入該檔、不混入冰箭修正；已另外詢問處理方式，原檔保留。未完成冰箭程式項目：無；限制：未在實戰瀏覽器／Console驗收，已驗正式Core／Runtime與Worker事件資料。下一步由使用者整合、重載遊戲確認畫面；既有連鎖閃電速度測試另案處理。
+
 ## Codex｜冰之淚十支錯落箭雨（ICE-TEARS-RAIN-20261001）
 
+- 本項保留75aa050c的歷史交付；其中「每箭對全部敵人」規則已由使用者在ICE-TEARS-HIT-20261001明確修正為每箭命中自己的目標，現在行為與驗收以上方新任務為準。
 - Owner：Codex；Done。使用者要求冰之淚每波固定10支冰箭、錯開落下時間，並明確每支雨箭都有完整超神配置傷害，Lv.10每支400%；此百分比只限箭雨，不包含普通寒冰箭與追蹤箭。波數、間隔與範圍保留配置。
 - 允許冰之淚限定排程／Runtime天降派送、Skills2 Excel／CSV／生成JS、相關測試／VFX登記、必要主頁／Worker／編輯器快取及文件；禁止其他技能規則、素材重製、存檔／Worker協議變更與未授權合併／推送。修改前衝突預檢所有目標乾淨。
 - 驗收：不同敵人數皆每波10箭；每箭起飛與落地錯開、方向朝落點，每支落地對我方範圍內全部敵人獨立結算完整傷害，Lv.10每支400%，不分攤／除以10；開關箭雨或升超神等級不提高普通／追蹤箭。最後一波完整落下、無敵亦保留十箭，倒地／重置回收；正式Runtime與模擬排程一致、配置三份同步、回歸／Build／Commit。
