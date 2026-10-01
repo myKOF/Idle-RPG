@@ -109,3 +109,52 @@ test('技能施放飄字走低延遲佇列，一般傷害字仍走 tick 批次',
     damageValue: 10, delayMs: 0
   }]);
 });
+
+/* ---- 緊急視覺佇列滿了的取捨（2026-10-01 無限冰裂：36 支發射事件被逐拍刷新擠掉）---- */
+
+const auraEvent = (id) => ({ fxKind: 'aura', variant: 'ice-arrow-homing', area: { id, x: 1, y: 2, r: 15 } });
+const launchEvent = (n) => ({ fxKind: 'projectile', variant: 'ice-arrow-pierce', angle: n });
+
+test('緊急佇列滿了：一次性事件擠掉最舊的持續刷新，而不是被後來的刷新擠掉', () => {
+  const context = loadShim();
+  const cap = context.SHIM_URGENT_VISUAL_CAP;
+  // 同一步：先是 36 支發射事件（排在最前面＝最舊），後面接大量場域逐拍刷新
+  for (let i = 0; i < 36; i++) context.shimPushEvent('vfx', launchEvent(i));
+  for (let i = 0; i < cap * 2; i++) context.shimPushEvent('vfx', auraEvent('sg-ground-' + i));
+  const out = plain(context.shimDrainUrgentVisualEvents());
+  assert.equal(out.length, cap, '上限仍然有效');
+  assert.equal(out.filter((e) => e.variant === 'ice-arrow-pierce').length, 36, '36 支發射事件一支都沒掉');
+});
+
+test('緊急佇列滿了：進來的是持續刷新就直接丟它；進來的是一次性事件就擠掉最舊的刷新', () => {
+  const context = loadShim();
+  const cap = context.SHIM_URGENT_VISUAL_CAP;
+  for (let i = 0; i < cap; i++) context.shimPushEvent('vfx', auraEvent('a' + i));
+  context.shimPushEvent('vfx', auraEvent('late'));                 // 滿了又來一個刷新：丟它
+  context.shimPushEvent('vfx', launchEvent(1));                    // 一次性事件：擠掉最舊的刷新 a0
+  const out = plain(context.shimDrainUrgentVisualEvents());
+  assert.equal(out.length, cap);
+  assert.ok(!out.some((e) => e.area && e.area.id === 'late'), '後到的刷新被丟');
+  assert.ok(!out.some((e) => e.area && e.area.id === 'a0'), '最舊的刷新被擠掉');
+  assert.ok(out.some((e) => e.area && e.area.id === 'a1'), '其餘刷新保留');
+  assert.equal(out[out.length - 1].variant, 'ice-arrow-pierce');
+});
+
+test('緊急佇列裡沒有持續刷新可讓時，維持原本的丟最舊（行為不變）', () => {
+  const context = loadShim();
+  const cap = context.SHIM_URGENT_VISUAL_CAP;
+  for (let i = 0; i < cap + 3; i++) context.shimPushEvent('vfx', launchEvent(i));
+  const out = plain(context.shimDrainUrgentVisualEvents());
+  assert.equal(out.length, cap);
+  assert.equal(out[0].angle, 3, '最舊的 3 件被丟');
+});
+
+test('只有「aura 且帶 area.id」才算持續刷新：沒有 id 的光環與其他型態都是一次性事件', () => {
+  const context = loadShim();
+  assert.equal(context.shimIsSustainVisualEvent({ kind: 'vfx', fxKind: 'aura', area: { id: 'x' } }), true);
+  assert.equal(context.shimIsSustainVisualEvent({ kind: 'vfx', fxKind: 'aura', area: { x: 1 } }), false);
+  assert.equal(context.shimIsSustainVisualEvent({ kind: 'vfx', fxKind: 'aura', area: null }), false);
+  assert.equal(context.shimIsSustainVisualEvent({ kind: 'vfx', fxKind: 'burst', area: { id: 'x' } }), false);
+  assert.equal(context.shimIsSustainVisualEvent({ kind: 'act', fxKind: 'aura', area: { id: 'x' } }), false);
+  assert.equal(context.shimIsSustainVisualEvent(null), false);
+});

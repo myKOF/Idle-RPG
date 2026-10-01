@@ -35,7 +35,10 @@ function shimDiagReset() {
    背景則由 shimSetBackground() 降為只保留最新一筆。 */
 var SHIM_EVENT_CAP = 400;
 var _shimEvents = [];
-var SHIM_URGENT_VISUAL_CAP = 80;
+/* 每個模擬步清一次（sim.worker.js emitUrgentVisualEvents）的上限。
+   2026-10-01：80 擋不住一次滿支數的無限冰裂（36 支貫穿箭發射事件＋72 個追擊場域的逐拍刷新＝100 多件），
+   所以放寬到 160；真正的保護是下面的「滿了先丟持續刷新」，不是這個數字。 */
+var SHIM_URGENT_VISUAL_CAP = 160;
 var _shimUrgentVisualEvents = [];
 var _shimEventsDropped = 0;
 var _shimBackground = false;
@@ -74,11 +77,33 @@ function shimIsUrgentVisualEvent(kind, data) {
   return kind === 'float' && /(?:^|\s)skill-cast(?:\s|$)/.test(String(data && data.cls || ''));
 }
 
+/* 持續場域的逐拍刷新（飛行中的追擊冰箭、雷球、龍捲…每拍一則，顯示層以 area.id 合併、
+   只用來續命與修正位置）。這類事件掉一則下一拍還會再送，掉的代價很小；
+   發射、命中、爆點那種一次性事件掉了就是整個特效不見。 */
+function shimIsSustainVisualEvent(data) {
+  return !!data && data.kind === 'vfx' && data.fxKind === 'aura' && !!(data.area && data.area.id);
+}
+
+/* 佇列滿了的取捨：舊版一律丟最舊的，而一次施放的發射事件永遠排在同一步的最前面（最舊），
+   後面接著每個存活場域的逐拍刷新——場域一多，剛施放的箭整批被擠出去，
+   傷害照算、敵人照死，畫面上卻一支箭都沒有（2026-10-01 無限冰裂實測：36 支發射事件全丟）。
+   現在：進來的是持續刷新就直接丟它；進來的是一次性事件就先擠掉最舊的持續刷新，
+   佇列裡沒有持續刷新時才維持原本的丟最舊。 */
+function shimEvictForUrgent(incoming) {
+  var q = _shimUrgentVisualEvents;
+  if (shimIsSustainVisualEvent(incoming)) return false;
+  for (var i = 0; i < q.length; i++) {
+    if (shimIsSustainVisualEvent(q[i])) { q.splice(i, 1); return true; }
+  }
+  q.shift();
+  return true;
+}
+
 function shimPushEvent(kind, data) {
   data = data || {};
   data.kind = kind;
   if (shimIsUrgentVisualEvent(kind, data)) {
-    if (_shimUrgentVisualEvents.length >= SHIM_URGENT_VISUAL_CAP) _shimUrgentVisualEvents.shift();
+    if (_shimUrgentVisualEvents.length >= SHIM_URGENT_VISUAL_CAP && !shimEvictForUrgent(data)) return;
     _shimUrgentVisualEvents.push(data);
     return;
   }

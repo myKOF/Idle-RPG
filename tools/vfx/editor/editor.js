@@ -61,13 +61,48 @@
      正好是一個分頁，撐得過重載、關掉就沒了。 */
   var SEARCH_STORAGE_KEY = 'vfx-editor.presetSearch';
 
-  function lastComboQuery() {
-    try { return window.sessionStorage.getItem(SEARCH_STORAGE_KEY) || ''; }
-    catch (e) { return ''; }
+  /* 「上次打的關鍵字」是**每個視窗各一份**（2026-10-02 使用者回報）：共用一份的話，
+     在第 3 格搜過 hit-ice，切到第 4 格點一下搜尋框還是跳出 hit-ice ——而那一格開的
+     根本是別份特效，等於別人的搜尋記錄跟著你跑。
+
+     真正的那一份存在 pane 上（pane.comboQuery）；sessionStorage 只是為了重新整理之後
+     還在（視窗本身也是照網址重建的）。鍵用視窗編號，而且視窗一增減就整批重寫——
+     關掉第 2 格之後第 3 格會遞補成第 2，不重寫的話它會撿到前一個第 2 格的關鍵字。 */
+  function comboQueryKey(index) { return SEARCH_STORAGE_KEY + '.' + (index + 1); }
+
+  function lastComboQuery(pane) {
+    var p = pane || ctx;
+    return (p && p.comboQuery) || '';
   }
 
-  function rememberComboQuery(q) {
-    try { window.sessionStorage.setItem(SEARCH_STORAGE_KEY, q || ''); } catch (e) { }
+  function rememberComboQuery(q, pane) {
+    var p = pane || ctx;
+    if (!p) return;
+    p.comboQuery = q || '';
+    syncComboQueryStorage();
+  }
+
+  /* 把每一格的關鍵字寫回 sessionStorage，並清掉多出來的編號（視窗關掉之後留下的）。
+
+     prune＝真的有視窗被關掉（編號會遞補），這時才清掉多出來的編號。平常打字時不清：
+     重新整理時視窗是一格一格建起來的，第 1 格建好就把後面幾格的鍵清掉的話，
+     第 2 格接回來會是空的（2026-10-02 實機踩到）。 */
+  function syncComboQueryStorage(prune) {
+    try {
+      for (var i = 0; i < panes.length; i++) {
+        window.sessionStorage.setItem(comboQueryKey(i), panes[i].comboQuery || '');
+      }
+      if (!prune) return;
+      for (var j = panes.length; j < VFXPaneModel.MAX_PANES; j++) {
+        window.sessionStorage.removeItem(comboQueryKey(j));
+      }
+    } catch (e) { /* 無痕視窗之類：記不住就算了，功能本身不受影響 */ }
+  }
+
+  /* 重新整理之後把這一格的關鍵字接回來（照它現在的編號）。 */
+  function restoreComboQuery(pane) {
+    try { pane.comboQuery = window.sessionStorage.getItem(comboQueryKey(panes.indexOf(pane))) || ''; }
+    catch (e) { pane.comboQuery = ''; }
   }
 
   var combo = {
@@ -5130,7 +5165,7 @@
         onPresetChanged();
         return false;
       }
-      /* 選單的篩選字串存在 sessionStorage，重新整理也會留著——換成新名字，
+      /* 這一格的篩選字串會留著（重新整理也在，見 lastComboQuery）——換成新名字，
          否則一打開選單還是用舊名字在篩（2026-09-17 使用者要求）。 */
       rememberComboQuery(newId);
       /* 清單多了一份：重抓之後網址與下拉的「目前這份」才對得上新名字 */
@@ -5770,6 +5805,8 @@
          preset.loop 是出貨資料（決定遊戲裡這個特效會不會自己重複），
          兩者共用一個勾選框的話，想重看一次爆點就會把它改成永不結束。 */
       previewLoop: previewLoopDefault,
+      /* 這一格的搜尋關鍵字（見 lastComboQuery）：每個視窗各記自己的 */
+      comboQuery: '',
       /* ---- 檢視狀態（「怎麼看」，不是 Preset 內容）----
          和背景色同一類，所以一樣不進 preset、不進 Undo 歷史。
          zoom 刻意不記進 localStorage：留著 320% 隔天再打開，第一眼會以為
@@ -5834,6 +5871,7 @@
     pane.host = host;
     $('preview-host').appendChild(el);
     panes.push(pane);
+    restoreComboQuery(pane);     // 重新整理之後接回這一格自己的搜尋關鍵字
     layoutPanes();
 
     var app = new PIXI.Application();
@@ -6316,6 +6354,7 @@
     pane.closed = true;
     pane.loadToken++;
     panes.splice(panes.indexOf(pane), 1);
+    syncComboQueryStorage(true);  // 編號遞補了：不重寫的話下一格會撿到別人的關鍵字
     selectedPanes = next.selected.map(paneById).filter(Boolean);
     focusPane(paneById(next.focused));
 

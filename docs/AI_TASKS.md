@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Claude｜無限冰裂三症狀：事件被丟、追擊箭迷路、同屏箭數失控（ICEARROW-RIFT-20261001）
+
+- Owner：Claude；Done。使用者回報寒冰箭超神【無限冰裂】三症狀：①常發不出冰箭（有施放動作、敵人照死）②畫面外常有冰箭飛來卻不朝敵人 ③放幾次後 FPS 掉到 15。使用者核可 A、B、C 三項都做；冷卻下限由使用者自行調整參數表（本次未動冷卻規則）。
+- 根因（皆有量測）：① Worker `SHIM_URGENT_VISUAL_CAP=80` 每模擬步滿了丟最舊，而一次施放的 36 個 `ice-arrow-pierce` 發射事件永遠排同一步最前面（最舊），後面接各追擊場域逐拍刷新，場域一多整批被擠掉；主執行緒 480 佇列同樣丟最舊（真實瀏覽器 20 秒：發射事件 270 全丟、追擊刷新丟 97%、飄字丟 99%）。② 追擊場域的搜敵圈圓心是「箭自己」，設計文字是「在 30 米內來回穿梭追擊」；敵人被貫穿段殺光後 91% 的追擊拍無落點，3 秒內全飛出畫面再也回不來，卻每秒仍送 10 則事件、佔 6 秒精靈。③ 每支存活追擊箭約 0.66 ms／幀（0／12／24／36 支＝2.2／10.1／17.1／25.8 ms），一次施放 36 支；追擊場域沒有數量上限，無限冰裂命中回扣冷卻讓施放頻率逐秒升到約 5 次／秒，12 秒內場域 36→1116、命中 4,700／秒。
+- 修法 A（傳輸）：`js/worker/shim.js` 緊急佇列滿了先犧牲「持續刷新」（`fxKind:'aura'` 且帶 `area.id`，顯示層以 id 合併、掉一則下一拍還會再送），一次性事件優先保留，沒有刷新可讓時才維持丟最舊；上限由 80 放寬到 160（一次滿支數施放＝36 發射＋72 刷新＝100 多件）。`js/ui.js` 的 480 佇列同一個判準（`uiIsSustainVisualEvent`）。
+- 修法 B（追擊箭）：`js/skills2.js` 新增 `chaseAnchor:'player'`（只有 `sgSpawnIcearrowHoming` 傳入）。搜敵圈圓心改為我方並把敵人體型半徑算進去（與 `sgIcearrowReach` 同一語意）；圈內沒有活敵就收掉場域（與修前實際傷害持平——飛出去的箭本來就打不到東西；改成原地徘徊會是增傷，所以沒採用）。風刃共用的 `sgGroundChaseDest`／`sgGroundChaseStep` 行為不變（留白＝以場域自己為圓心）。
+- 修法 C（上限）：`SG_ICEARROW_HOMING_MAX_FIELDS = 72`（兩次滿支數施放；防呆上限不是設計數值，低於上限行為與沒有上限完全相同）。到頂時只是這次施放的追擊段少生，貫穿段照飛、傷害照算；少生哪幾支依生成順序（先波次、後箭道）。
+- 效果（無畫面引擎、Lv.800、滿階＋無限冰裂、12 隻打不死的敵人、複刻 Worker 每步清佇列）：場域數 1116→≤72；發射事件丟失 37／39 次施放→0；命中 4,700→約 450／秒。可擊殺情境：追擊拍 3,924→377、「無落點」91%→0，敵人死光後 1～2 秒收掉（原本拖滿 6 秒）。
+- 實機（真實遊戲＋真實 Worker，Browser 窗格 rAF 不跑所以手動推幀、`readPixels` 逼 GPU 完成）：Lv.800 滿階無限冰裂、12 隻打不死的敵人每 3 秒補一批、34 秒——主執行緒佇列丟棄 0（修前每秒 400～3,600；20 秒內發射事件 270 全丟）、貫穿箭事件 2,124 個全數處理、追擊場域峰值 72、每幀工作量中位數 14～40 ms（修前 FPS 掉到 1）；單次施放的穩態 194 幀／4.2 秒、中位 18 ms，截圖看得到環繞敵群的冰箭。滿載（72 支追擊＋72 支貫穿）仍約 25～30 FPS：單支成本是瓶頸，要再往上得靠冷卻下限或降粒子。
+- 修改：js/skills2.js、js/worker/shim.js、js/ui.js、index.html（skills2 1.0.255／ui 1.0.88）、js/bridge.js 與 js/worker/sim.worker.js（token 20261001-icearrow-rift-budget、shim v9）；測試新增 tests/icearrow-rift-budget.test.cjs（11 項，含引擎整場戰鬥）、worker-shim／ui-containment 各補優先序測試；調整 icearrow-vfx-integration（場上要留一隻活敵才會有無目標快照）、water-ice-audit（共線的三隻怪會讓正後方迴轉的慣用邊 turnSide 隨場域序號奇偶翻面，測試把它釘死）、ui-containment 的函式抽取器補上新 helper。突變驗證：移除 chaseAnchor／收掉判定／上限／shim 優先序各一次，對應測試都轉紅。
+- 未處理（設計問題，留給使用者）：① 無限冰裂的冷卻回扣下限——就算有 A、B、C，約 5 次／秒的施放仍會讓貫穿箭同屏約 90 支；使用者說會用參數表的最短冷卻自行設定。② `proj-icearrow-frost` 兩層粒子上限 96＋40 是單支成本的主體（美術屬使用者，未動）。③ 上限 72 的數字是我定的，要調改 `SG_ICEARROW_HOMING_MAX_FIELDS`。
+- 建議驗證（Antigravity）：Lv.800 滿階無限冰裂，對打不死的木樁連放 10 秒，看發射的箭是否每次都出現、FPS 是否穩住；敵人全被打死時追擊箭是否在 1～2 秒內消失；敵人在我方 30 米外時箭是否收掉；順便看風刃追擊是否照舊。
+- 量測方法與環境雷（`localhost:8321` 被別的分頁占著 tab-lock）見記憶 icearrow-infinite-rift-investigation-2026-10-01。
+
 ## Codex｜三個 AI 分支整合與 develop 衝突處理（AI-INTEGRATION-20261001）
 
 - Owner：Codex；Done。使用者明確授權解決 develop 衝突並整合三個 AI 分支至最新，於實際 develop 整合副本操作，允許衝突解決、必要紀錄、驗證及乾淨 AI 副本的快轉同步；禁止推送、production／main 變更及未提交他人工作覆寫。
@@ -8315,3 +8329,15 @@ Worker 存活且頁面正常完成載入。
 - 修改：js/skills2.js 裝配防護、tests/icearrow-vfx-integration.test.cjs 兩項完整擊殺事件回歸、index.html Skills2 1.0.252／Bridge 1.0.184、js/bridge.js 與 js/worker/sim.worker.js 同步 20261001-icearrow-death-nova，以及 AI_TASKS／水系稽核紀錄。檢查未改：Runtime／Core／Renderer、Status／combat 的凍結及死亡流程、Skills2 其他規則、Nova／冰箭素材。使用者配置提交另含 Excel／CSV／生成 JS 與當次快取，Excel 全列與 CSV 逐格一致、生成 JS 試跑語意變更 0。
 - 驗證：新增兩測試在修正前皆失敗，修正後通過，包含正式 castSkill2／tickSkill2→擊殺→skills2OnEnemyDeath、己方範圍的合法命中、卸下及實際 Runtime 不建立新星衝擊波。node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/icearrow-vfx-integration.test.cjs tests/waterball-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，132/132；npm.cmd run build，411 檔通過；git diff --check 通過。
 - 交付：修正 Commit 為本紀錄所在提交，可合併，未合併／推送。無素材變更，素材庫 master 乾淨，不建立空提交。無未完成程式修改；無可讀取的遊戲瀏覽器分頁，未做實戰畫面／Console 驗收。需重載遊戲載入新 Worker；若冰霜新星仍裝配且死亡新星已學，該合法連動仍會存在。
+
+## Claude｜每個預覽視窗各記自己的搜尋關鍵字（VFX-PANE-SEARCH-20261002）
+
+- Owner：Claude；Done。使用者回報：四格開著時，在第 3 格搜過 `hit-ice`，切到第 4 格點一下搜尋框，跳出來的還是 `hit-ice`——那一格開的是別份特效，等於別人的搜尋記錄跟著跑。原因是「上次打的關鍵字」存在**一個共用的** sessionStorage 鍵（`vfx-editor.presetSearch`）。
+- 改法：關鍵字改記在 pane 上（`pane.comboQuery`），sessionStorage 只負責「重新整理之後還在」，鍵帶視窗編號（`vfx-editor.presetSearch.<n>`，視窗本身也是照網址重建的）。`lastComboQuery(pane)`／`rememberComboQuery(q, pane)` 預設作用在焦點視窗，所以另存新檔與改名那兩條路自動變成只動自己那一格（以前會蓋掉全域那一份）。
+- 兩個踩過的坑寫進程式與測試：
+  - **建視窗時不能順手同步 storage**：重新整理時視窗是一格一格建的，第 1 格建好就同步的話，後面幾格的鍵會被「清掉多出來的編號」那段當成垃圾刪掉，於是第 2 格接回來是空的（實機踩到，第一次修完就是這個症狀）。改成 `syncComboQueryStorage(prune)`：只有真的關掉視窗（編號會遞補）才清，打字時只寫入。
+  - **關掉中間那一格之後編號會遞補**：不整批重寫的話，遞補上來的第 2 格會撿到前一個第 2 格的關鍵字。
+- 修改 `tools/vfx/editor/editor.js`、編輯器頁面的快取版號、`tests/vfx-editor-panes.test.cjs`（新增 PANE-31／31B／31C）、`tests/vfx-editor-view.test.cjs`（VIEW-26 跟著改成每視窗一個鍵，行為不變）。沒有動到 preset、配置表或遊戲程式。
+- 驗證：PANE-31 系列用假的 sessionStorage ＋ 假的 panes 跑真的函式，驗各記各的、指定視窗、重新整理接得回來、關掉一格之後不撿別人的、無痕視窗存不了也不會壞。10 個突變全部被抓到（含「退回舊的共用一份」與「打字時也連帶清掉多出來的編號」）。編輯器 422 項中 3 項既有失敗（CAP-2、HISTORY-42、16b canonical）。build_check 413 檔通過、diff check 通過。
+- 實機確認（本機編輯器 28362，兩格分別開 `hit-ice` 與 `lightning-orb-field-purple`）：第 1 格打 `frost`、第 2 格打 `thunder`，來回切換各自回到自己那一份；sessionStorage 是 `.1=frost`、`.2=thunder`；重新整理之後兩格仍各自接回 `frost`／`thunder`。
+- 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/editor/` 的提交。未合併／推送。

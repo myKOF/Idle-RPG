@@ -222,7 +222,12 @@ test('ICE-TEARS-RAIN: level ten rain deals 400% per arrow without increasing nor
   c.sgTickIceRainLandings=function(...args){inRain=true;try{return land(...args);}finally{inRain=false;}};
   c.resolveHit=function(...args){const res=hit(...args);hits.at(-1).rain=inRain;return res;};
   const base=c.sgGroupBaseStat(c.SKILLS2.icearrow,c.getStats());
-  assert.ok(c.castSkill2(p,es,'icearrow','mv-float'));h.advance(c,p,es,4);
+  assert.ok(c.castSkill2(p,es,'icearrow','mv-float'));
+  /* 場上三隻怪共線，追擊箭常會碰到「下一個目標恰在正後方」；正後方迴轉的慣用邊（turnSide）
+     依場域序號奇偶，下雨場域多佔一個序號就翻邊、普通箭的軌跡跟著變。這裡比的是傷害不是轉向，
+     所以把慣用邊釘死，三種情境的普通箭才可逐筆比對。 */
+  c.SKILL2_RT.grounds.forEach(f=>{if(f.kind==='icearrow')f.turnSide=1;});
+  h.advance(c,p,es,4);
   return {normal:Array.from(hits.filter(hit=>!hit.rain),hit=>hit.atk),rain:hits.filter(hit=>hit.rain),base};
  }
  const off=cast(0),one=cast(1),ten=cast(10);

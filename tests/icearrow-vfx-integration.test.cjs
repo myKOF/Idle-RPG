@@ -112,11 +112,16 @@ test('ICEARROW-T7-VFX: authoritative targetless snapshots update one arrow inste
  c.sgSpawnIcearrowHoming(p,c.getStats(),c.SKILLS2.icearrow.tiers[6].fx,null,100,null,'mv-float',{from:{x:30,y:50},moveAngle:Math.PI/2});
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});rt.registerPresets([...presets,require('../vfx/presets/hit-ice.json')]);
+ /* 搜敵圈（我方 30 米）內沒有活敵時追蹤冰箭會直接收掉（見 sgChaseHasPrey），所以要留一隻活敵；
+    它在我方後方 25 米，箭從 (30,50) 朝下飛，要先迴轉才碰得到——前幾拍的快照仍是「沒有目標」。 */
+ const prey=h.enemy(1e9,-250,0,'prey'),es=[prey];let targetless=0;
  for(let i=0;i<12;i++){
-  specs.length=0;h.run(c,p,[],.15);
-  const event=specs.find(s=>s.variant==='ice-arrow-homing');assert.ok(event);assert.equal(event.targets.length,0);
+  specs.length=0;h.run(c,p,es,.15);
+  const event=specs.find(s=>s.variant==='ice-arrow-homing');assert.ok(event);
+  if(!event.targets.length)targetless++;
   assert.equal(rt.tryPlay(event),true);rt.update(.05);assert.equal(rt.stats().grounds,1,'同id追蹤場域只更新一次');
  }
+ assert.ok(targetless>=3,'至少前幾拍是沒有目標的快照（'+targetless+'）');
  assert.equal(nodes.filter(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png').length,1,'無敵人仍有一支連續飛行的箭');
  rt.update(1);assert.equal(rt.stats().grounds,0);rt.destroy();
 });
