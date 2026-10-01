@@ -3,6 +3,41 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
 const presets=['proj-icearrow-frost','hit-icearrow-shatter','ground-icearrow-frost'].map(id=>require('../vfx/presets/'+id+'.json'));
 
+test('ICEARROW-TURN: snapshot headings stay continuous and nearby prey never stops flight',()=>{
+ let t;const backend={createNode(){return {};},updateNode(n,v){t={...v};},destroyNode(){}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});
+ rt.registerPresets([{schemaVersion:1,id:presets[0].id,duration:3,loop:true,layers:[{id:'marker',type:'sprite',assetId:'marker'}]}]);
+ const send=(x,y,a,destX)=>rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:3,
+  area:{id:'smooth',x,y,r:15,speed:585,moveA:a,turnRate:0,destX,destY:y},vfx:{projectile:presets[0].id}});
+ send(0,0,0,1);for(let i=0;i<6;i++)rt.update(1/60);
+ assert.ok(Math.abs(t.x-58.5)<1e-7,'current icearrow speed stays constant beyond prey');
+ let prev={...t};
+ for(let i=1;i<=90;i++){
+  if(i%6===1)send(prev.x+(i%12===1?3:-3),prev.y+2,i%12===1?.3:-.3,prev.x+1);
+  rt.update(1/60);
+  const delta=Math.atan2(Math.sin(t.rotation-prev.rotation),Math.cos(t.rotation-prev.rotation));
+  assert.ok(Math.abs(delta)<.2,'snapshot correction must not jump heading: '+delta);
+  assert.ok(Math.hypot(t.x-prev.x,t.y-prev.y)>0,'flight must not pause at prey');prev={...t};
+ }
+ rt.destroy();
+});
+
+test('ICEARROW-TURN: projected flight preserves simulation circle and current world speed',()=>{
+ const h=simulation(),c=h.c,speed=c.sgIcearrowSpeed(),radius=c.sgGroundTurnRadiusPx({radius:15});
+ assert.equal(speed,585);
+ for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
+  let t;const backend={createNode(){return {};},updateNode(n,v){t={...v};},destroyNode(){}};
+  const k=.45,rt=Runtime.create({groundScale:k,core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:0,y:0})}});
+  rt.registerPresets([{schemaVersion:1,id:presets[0].id,duration:3,loop:true,layers:[{id:'marker',type:'sprite',assetId:'marker'}]}]);
+  rt.tryPlay({fxKind:'aura',variant:'ice-arrow-homing',dur:3,area:{id:'arc',x:0,y:0,r:15,speed,moveA:angle,turnRate:speed/radius},vfx:{projectile:presets[0].id}});
+  for(let i=0;i<6;i++)rt.update(1/60);
+  const end=angle+speed*.1/radius;
+  assert.ok(Math.abs(t.x-radius*(Math.sin(end)-Math.sin(angle)))<1e-7);
+  assert.ok(Math.abs(t.y-k*radius*(Math.cos(angle)-Math.cos(end)))<1e-7,'project after integrating world arc');
+  rt.destroy();
+ }
+});
+
 function simulation() {
  const path=require('path'),{createRequire}=require('module');
  const file=path.join(__dirname,'skill2-ice.test.cjs'),src=fs.readFileSync(file,'utf8');
@@ -10,6 +45,32 @@ function simulation() {
  vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.c=loadContext();',ctx);
  return ctx;
 }
+
+test('ICEARROW-TURN: first fan turn starts at each straight-flight endpoint and heading',()=>{
+ const h=simulation(),c=h.c;h.setLevels(c,'icearrow',[1,1,1,1,1,1,1]);h.equip(c,'icearrow');h.forceRolls(c,0);
+ const p=h.playerEnt();p.pos={x:0,y:0};p.mp=1000;c.FIELD.player=p;
+ const prey=h.enemy(1e9,200,0,'prey'),es=[prey],specs=h.stubVfx(c);h.stubHits(c);
+ assert.ok(c.castSkill2(p,es,'icearrow','mv-float'));
+ const fields=c.SKILL2_RT.grounds.filter(f=>f.kind==='icearrow'&&f.wave===0);
+ assert.ok(fields.length>=3,'real fan must contain multiple arrows');
+ const initial=fields.map(f=>({id:f.vfxId,x:f.pos.x,y:f.pos.y,a:f.moveAngle}));
+ for(let i=0;i<100&&!specs.some(s=>s.variant==='ice-arrow-homing');i++){
+  c.GT+=.05;c.tickSkill2(.05,h.tickCtx(c,p,es));
+ }
+ for(const f of initial){
+  const events=specs.filter(s=>s.variant==='ice-arrow-homing'&&s.area.id===f.id);
+  assert.ok(events.length>=2,'initial pose followed by authoritative moved pose');
+  assert.equal(events[0].area.x,f.x);assert.equal(events[0].area.y,f.y);
+  assert.equal(events[0].area.moveA,f.a);assert.equal(events[0].area.speed,585);
+  const nodes=[],backend={createNode(){const n={};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(){}};
+  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:200,y:0})}});
+  rt.registerPresets([{schemaVersion:1,id:presets[0].id,duration:3,loop:true,layers:[{id:'marker',type:'sprite',assetId:'marker'}]}]);
+  events.forEach(s=>rt.tryPlay(s));rt.update(1/120);
+  const pose=nodes[0].t,delta=Math.atan2(Math.sin(pose.rotation-f.a),Math.cos(pose.rotation-f.a));
+  assert.ok(Math.abs(delta)<.2,'first visible frame must continue lane heading into arc');
+  assert.ok(Math.hypot(pose.x-f.x,pose.y-f.y)<585/60,'first frame cannot skip the turn');rt.destroy();
+ }
+});
 
 test('ICEARROW-DEATH-NOVA: absolute zero kills cannot cast learned but unequipped death nova',()=>{
  const h=simulation(),c=h.c;

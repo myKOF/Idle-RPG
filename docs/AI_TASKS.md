@@ -8398,3 +8398,10 @@ Worker 存活且頁面正常完成載入。
 - 使用者素材另行保存：工作期間ground-icearrow-frost.json調整霧氣／冰粒數、顏色、壽命與透明度。依既有提交偏好，先由vfx-library-root解析共享素材庫（檢查乾淨），保存Preset及既有layout至codex-authored/icearrow/{presets,layouts}，素材庫Commit e1905c9；同步回遊戲核對兩份SHA256一致，正式Preset驗證通過。遊戲素材獨立Commit 4b986122，沒有新圖片引用或匯出索引變更。
 - 交付：水流彈修正Commit為本紀錄所在提交，可合併；素材庫及遊戲素材Commit如上。無未完成程式項目；尚未做瀏覽器實戰畫面／Console人工驗收。整合後重載遊戲確認水流彈第7階與三個超神；如裝配冰霜擴散，出現新星屬合法效果。後續接手者：使用者；本輪不合併或推送。
 - 暫存清理限制：系統Temp/codex-waterball-nova-20261001內為本輪前後預覽、工作簿快照、唯讀檢查／原生編輯腳本、測試日誌與Node依賴junction，皆不在專案／提交內。已核對確切路徑，整目錄清理及較保守的逐檔清理均遭工具自動批准審查拒絕，僅回報blocked by policy、無詳細理由；沒有改用其他途徑繞過拒絕，暫存清理未完成。
+## Codex｜寒冰箭連續轉彎（ICEARROW-TURN-20261001）
+
+- Owner：Codex；Done。使用者補充只在扇形射出後第一次轉彎：追蹤場域先移動才發首個事件，缺少原落點／原航向；Runtime 又未沿用風刃的快照航向、世界座標圓弧及位置修正平滑。補上首次飛行交接事件，再共用平滑追擊；維持 58.5 米／秒及權威模擬轉彎半徑。前置既有圓弧模擬已完成，衝突預檢乾淨。
+- 修改 js/skills2.js 僅首次追蹤演出事件、js/vfx-runtime.js、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、tests/icearrow-vfx-integration.test.cjs 及本紀錄。未改技能配置、傷害、搜敵、運動計算、素材與其他任務內容；保留工作區既有 Excel／CSV／生成 JS 修改且不納入本次提交。無素材庫变更。
+- 驗收：跨快照掉頭不折角、近落點不停頓、投影前圓弧及速度與模擬一致、風刃回歸、Build。完成後 Commit，交使用者整合，不合併或推送。
+- 測試：node --test tests/icearrow-vfx-integration.test.cjs tests/windblade-vfx-integration.test.cjs tests/skill2-wind.test.cjs tests/skill2-ice.test.cjs tests/water-ice-audit.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/battle-ground-projection.test.cjs，165 項 163 通過。兩項既有失敗為冰箭配置仍期待 6 波（現配置 3 波）、凍結冰爆傷害舊斷言；記憶內移除本次交接修正後仍相同兩項失敗。新增三項涵蓋實際扇形每支箭首次交接、世界速度／四向投影及跨快照修正；移除交接修正後新首次轉彎測試轉紅。npm.cmd run build，413 檔通過；git diff --check 通過。
+- 唯讀檢查未改：js/vfx-core.js、js/battle-renderer.js、Skills2 Excel／CSV、風刃與冰系原測試、冰箭 Preset。Worker 協議不變，必要主頁／Worker／Editor 快取同步。無瀏覽器實戰／Console 驗收，建議重載遊戲測首次轉彎；若編輯器開著先下載未存內容備份再重載，未改 Preset 或儲存端防護。程式可合併，Commit 為本紀錄所在提交，未合併／推送。

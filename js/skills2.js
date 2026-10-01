@@ -5298,6 +5298,12 @@ function sgTickGrounds(dt, ctx) {
   for (var i = list.length - 1; i >= 0; i--) {
     var f = list[i];
     if (f.startAt > GT) continue;
+    // 扇形直射接入追蹤時先交付原落點與航向，第一段圓弧才有補間起點。
+    // 傷害仍在移動後按既有節拍結算。
+    if (f.kind === 'icearrow' && !f.flightVfxStarted && f.pos && sgChaseHasPrey(f, enemies)) {
+      f.flightVfxStarted = true;
+      sgEmitVfx(f.gid, [], f.floatSel, sgGroundVfxSpec(f));
+    }
     if (f.devour) sgTickDragonDevour(f, dt, enemies);
     var guard = 0;
     sgGroundMove(f, dt, enemies);   // 移動／跟隨／追擊場域：作用前先推進到當下位置
