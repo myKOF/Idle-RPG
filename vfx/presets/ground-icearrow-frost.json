@@ -14,19 +14,19 @@
         "y": 0
       },
       "alpha": 0.3,
-      "tint": "#92d8ff",
+      "tint": "#8ad6ff",
       "blendMode": "add",
       "emission": {
         "mode": "rate",
         "rate": 172
       },
-      "maxParticles": 96,
+      "maxParticles": 48,
       "lifetime": [
         0.2,
-        1.5
+        2
       ],
       "spawn": {
-        "radius": 6.8138,
+        "radius": 3,
         "shape": "circle"
       },
       "speed": [
@@ -54,12 +54,12 @@
           0
         ],
         [
-          0.15,
-          0.6
+          0.1821,
+          0.77234
         ],
         [
-          0.5,
-          0.35
+          0.716,
+          0.643617
         ],
         [
           1,
@@ -97,7 +97,7 @@
         "mode": "rate",
         "rate": 72
       },
-      "maxParticles": 40,
+      "maxParticles": 10,
       "lifetime": [
         0.15,
         0.32

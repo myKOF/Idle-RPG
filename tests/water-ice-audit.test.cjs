@@ -45,7 +45,9 @@ for(const gid of ['icearrow','waterball','frostnova']){
     launches.forEach(s=>{assert.deepEqual(roles(s),['projectile']);assert.equal(s.vfx.projectile,'proj-waterball-flow');assert.equal(s.hit,false);});
     impacts.forEach(s=>{assert.deepEqual(roles(s),['hit']);assert.equal(s.vfx.hit,'hit-waterball-splash');});
     const bursts=specs.filter(s=>s.variant==='water-burst');assert.equal(bursts.length>0,stage>=4);
-    bursts.forEach(s=>assert.deepEqual({...s.vfx},{attack:'burst-frost-nova'}));
+    bursts.forEach(s=>assert.deepEqual({...s.vfx},{}));
+    assert.ok(!specs.some(s=>s.variant==='frost-nova'||Object.values(s.vfx||{}).includes('burst-frost-nova')),
+     '未裝配冰霜擴散的水流彈不得繼承第4階錯配的新星');
     for(const s of specs.filter(s=>s.variant==='water-tornado')){
      assert.deepEqual({...s.vfx},s.vfxUlt==='ragingTide'?{ground:'ground-tornado-water'}:{field:'field-water-tornado'});
     }

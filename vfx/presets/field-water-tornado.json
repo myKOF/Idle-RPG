@@ -10,12 +10,12 @@
       "assetId": "particle-pack/png-transparent/light_01.png",
       "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": -58
+        "x": -0.0548,
+        "y": -56.7852
       },
       "scale": {
-        "x": 0.18,
-        "y": 0.28
+        "x": 0.1591,
+        "y": 0.2475
       },
       "alpha": 0.14,
       "tint": "#219dff",
@@ -28,8 +28,8 @@
       "assetId": "particle-pack/png-transparent/smoke_01.png",
       "zIndex": 9,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -0.0548,
+        "y": -5.5132
       },
       "alpha": 0.084,
       "tint": "#6c869a",
@@ -45,19 +45,19 @@
         1.2
       ],
       "spawn": {
-        "height": 4,
+        "height": 3.536,
         "shape": "box",
-        "width": 48
+        "width": 42.432
       },
       "speed": [
-        8,
-        18
+        7.072,
+        15.912
       ],
       "direction": -90,
       "spread": 180,
       "startScale": [
-        0.025,
-        0.055
+        0.0221,
+        0.0486
       ],
       "rotationStart": [
         0,
@@ -98,8 +98,8 @@
       "assetId": "particle-pack/png-transparent/spark_01.png",
       "zIndex": 10,
       "position": {
-        "x": 0,
-        "y": -58
+        "x": -0.0548,
+        "y": -56.7852
       },
       "alpha": 0.42,
       "tint": "#69d2ff",
@@ -115,19 +115,19 @@
         0.8
       ],
       "spawn": {
-        "height": 110,
+        "height": 97.24,
         "shape": "box",
-        "width": 58
+        "width": 51.272
       },
       "speed": [
-        12,
-        26
+        10.608,
+        22.984
       ],
       "direction": -90,
       "spread": 180,
       "startScale": [
-        0.004,
-        0.009
+        0.0035,
+        0.008
       ],
       "alignToVelocity": true,
       "alphaOverLife": [
@@ -166,19 +166,19 @@
       "assetId": "codex-authored/tornado/water-flow.png",
       "zIndex": 1,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -0.4724,
+        "y": -5.0956
       },
       "scale": {
-        "x": 1,
-        "y": 1
+        "x": 0.884,
+        "y": 0.884
       },
       "anchor": {
         "x": 0.5,
         "y": 0.6875
       },
-      "alpha": 1,
-      "tint": "#ffffff",
+      "alpha": 0.9,
+      "tint": "#52fff3",
       "blendMode": "normal",
       "duration": 4,
       "sheet": {
@@ -195,16 +195,16 @@
       "type": "sprite",
       "assetId": "new_materials/orb/energyball_1.png",
       "position": {
-        "x": -0.1913,
-        "y": -238.6856
+        "x": -5.8824,
+        "y": -228.9564
       },
       "scale": {
-        "x": 0.2214,
-        "y": 0.2214
+        "x": 0.2038,
+        "y": 0.2038
       },
       "alpha": 1,
-      "tint": "#003780",
-      "blendMode": "add",
+      "tint": "#0665fe",
+      "blendMode": "normal",
       "rotationOverLife": [
         [
           0,
@@ -218,20 +218,68 @@
       "offsetXOverLife": [
         [
           0,
-          0
+          10.608
         ],
         [
-          0.7593,
-          7.5
+          0.5247,
+          3.536
         ],
         [
-          1,
-          -0.5
+          0.9877,
+          9.724
         ]
       ],
       "outerScale": {
         "x": 1,
-        "y": 1
+        "y": 0.6
+      },
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "sprite-5-copy",
+      "type": "sprite",
+      "assetId": "new_materials/orb/energyball_1.png",
+      "position": {
+        "x": -2.4732,
+        "y": -224.7807
+      },
+      "scale": {
+        "x": 0.1398,
+        "y": 0.1398
+      },
+      "alpha": 1,
+      "tint": "#1ce9c0",
+      "blendMode": "screen",
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -6.283185
+        ]
+      ],
+      "offsetXOverLife": [
+        [
+          0,
+          10.608
+        ],
+        [
+          0.5247,
+          3.536
+        ],
+        [
+          0.9877,
+          9.724
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
       },
       "projection": {
         "x": 1,

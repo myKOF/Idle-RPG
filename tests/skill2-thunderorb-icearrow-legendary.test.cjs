@@ -722,7 +722,7 @@ test('【極寒冰爆】：連射改為 10 波／每 0.35 秒，且寒冰箭傷�
   assert.equal(Math.round(ult.dmg / base.dmg * 100), 155, '寒冰箭傷害 ×1.55');
 });
 
-test('【無限冰裂】：發射支數 +4，且每造成 1 次傷害就回扣 0.1 秒冷卻', () => {
+test('【無限冰裂】：發射追加支數及每次傷害回扣冷卻皆讀配置', () => {
   function run(withUlt) {
     const c = loadContext();
     const specs = stubVfx(c);
@@ -738,15 +738,17 @@ test('【無限冰裂】：發射支數 +4，且每造成 1 次傷害就回扣 0
     advance(c, p, es, 1);
     return {
       lanes: specs.filter((s) => s.variant === 'ice-arrow-pierce' && !s.delayMs).length,
-      cdAtCast, cdAfter: p.skillCds[c.SG_PREFIX + 'icearrow'], hits: calls.length
+      cdAtCast, cdAfter: p.skillCds[c.SG_PREFIX + 'icearrow'], hits: calls.length,
+      expectedAdd: Math.floor(c.SKILLS2.icearrow.ult[1].fx.count + c.SKILLS2.icearrow.ult[1].fx.countPer),
+      expectedRefund: c.SKILLS2.icearrow.ult[1].fx.sec
     };
   }
   const base = run(false);
   const ult = run(true);
-  assert.equal(ult.lanes, base.lanes + 4, '每次發射 +4 支');
+  assert.equal(ult.lanes, base.lanes + ult.expectedAdd, 'Lv.1追加支數與配置一致，小數不觸發');
   assert.equal(base.cdAfter, base.cdAtCast, '沒選超神時冷卻不會被命中扣掉');
   assert.ok(ult.hits > 0);
-  assert.ok(ult.cdAfter <= Math.max(0, ult.cdAtCast - ult.hits * 0.1) + 1e-6, '每次命中各扣 0.1 秒');
+  assert.ok(ult.cdAfter <= Math.max(0, ult.cdAtCast - ult.hits * ult.expectedRefund) + 1e-6, '每次命中各扣配置秒數');
   assert.ok(ult.cdAfter < ult.cdAtCast);
 });
 
