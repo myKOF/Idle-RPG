@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## Codex｜未裝寒冰箭的凍結結束冰爆（WATERBALL-THAW-BLAST-20261001）
+
+- Owner：Codex；Done。使用者回報水流彈第7階仍出現冰爆，並要求查寒霜／凍結使用的特效。前置水流彈新星隔離及光圈校正已完成；使用者field-water-tornado Preset／layout及工作期間新增的無限冰裂配置調整，完整保留並依既有偏好另行保存／提交。
+- 根因：sgFrozen狀態表施加／持續／作用欄均留白，sgFrostBite逐跳僅用st-tick-ice；真正誤播的是sgTickFrost與sgIceBlast只檢查寒冰箭T7已學、沒檢查裝配。水彈寒霜凍結結束便誤觸發burst-icearrow-crystal及額外冰爆傷害。只裝水流彈、寒冰箭T7已學的真引擎重現為1次冰爆及3次範圍命中；記憶內防護候選保留凍結且移除上述誤播／傷害。
+- 授權與範圍：只改js/skills2.js約8484／8545行的凍結結束與冰爆裝配判斷、tests/waterball-vfx-integration.test.cjs、必要index.html／bridge.js／sim.worker.js快取及水系／本紀錄。預檢有Claude未整合54506c2d追蹤冰箭搜敵／72支上限與同檔快取、AI_TASKS另有6673e894／bd45bd7d紀錄；使用者同意限定裝配判斷、快取與紀錄，不動其追蹤箭、shim、UI或稽核測試。禁止Excel／CSV／Status表、其他技能機制、Worker協議、合併／推送。
+- 驗收：水彈1～7階及三個超神在只裝水彈時，真實寒霜凍結解除／凍結中死亡都不產生冰箭冰爆或額外傷害；直接helper亦須守裝配。同時裝寒冰箭T7時保留合法跨技能凍結結束冰爆、範圍／傷害／落點／死亡目標一次性演出；中途卸下立即停，水龍捲凍結增傷、寒霜傷害及Status作用演出保留。正式Core／Runtime不建冰爆素材、回歸／Build／配置試跑／Commit，後續接手者：使用者。
+- 完成7檔：js/skills2.js僅兩處裝配防護；tests/waterball-vfx-integration.test.cjs新增三項回歸，涵蓋10種水彈配置×解除／死亡、直接helper及同裝／卸下的合法傷害。index.html、js/bridge.js、js/worker/sim.worker.js同步skills2 1.0.256／bridge 1.0.189／Worker與skills2 import 20261001-waterball-thaw-blast；docs/WATER_ICE_AUDIT.md與本紀錄更新。未修改Status或其他技能機制，沒有新增寫死Preset。
+- 回歸：node --test tests/waterball-vfx-integration.test.cjs tests/water-ice-audit.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/skill2-ice.test.cjs tests/icearrow-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-size.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-water-tornado.test.cjs，186/186通過。node --test --test-name-pattern='連射|冰封|凜冬侵蝕|冰裂箭|深度凍結|極寒冰爆|無限冰裂|冰之淚' tests/skill2-thunderorb-icearrow-legendary.test.cjs，10/10通過；皆0失敗／略過。新增三項冰爆回歸修改前均轉紅，修復後全部通過；合法冰爆保留6米、測試魔攻500時每目標4000傷害及一次演出。
+- 其他檢查：npm.cmd run build，412檔通過；node tools/config_tables.cjs --apply Skills2，語意變更0；readXlsxRows／csvParse唯讀核對Excel／CSV全部231列一致；node tools/vfx/export-assets.cjs --check，236份Preset／154素材已是最新。正式Preset驗證ok、layout全部引用合法圖層，兩倉庫Preset／layout逐位元及SHA256一致；git diff --check通過。
+- 使用者素材另行交付：素材庫起始乾淨，既有codex-authored/ground-projection/{presets,layouts}/field-water-tornado.json與遊戲HEAD一致後，保存使用者新偏移／色彩／新增圖層，素材庫Commit cd16fe2、遊戲Commit a020991c。tests/vfx-water-tornado.test.cjs原本硬編碼柱體座標0，因使用者新偏移而轉紅；唯讀HEAD基線通過，確認新偏移匹配製作比例後，僅改以Preset偏移核對落點，其分層、4／8幀節拍、等比縮放、防重播及回收斷言均保留。預檢該測試無衝突；沒有新圖片、索引或匯出樹變更。
+- 使用者配置另行交付：工作期間使用者將無限冰裂fx改為sec=0.05、count=2、countPer=0.2，Excel／CSV／JS已同步；唯讀語意比較確認只有三個數值變動。本次不改其值，依提交偏好獨立Commit 1e862ac8保存三份配置及tests/skill2-thunderorb-icearrow-legendary.test.cjs。測試原硬編碼+4支／0.1秒，依權威配置驗證Lv.1追加整數支數及逐命中冷卻回扣，無降低傷害／命中斷言；Excel／CSV與該測試預檢皆無其他副本變更。不碰Claude未整合追蹤冰箭邏輯。
+- 使用者素材後續：提交前使用者又調整水龍捲整組縮放／偏移，保留最新內容並驗證正式Preset及兩倉庫逐位元一致；素材庫追加Commit 066e1aa、遊戲追加Commit a0eb3d88。node --test tests/vfx-water-tornado.test.cjs及node --test tests/waterball-vfx-integration.test.cjs最新版本各13/13通過，沒有修改使用者參數。
+- 唯讀檢查未改：js/status.js、js/combat.js、js/battlefield.js、js/vfx-runtime.js、js/vfx-core.js、js/vfx-pixi-backend.js、js/worker/shim.js、tools/config_tables.cjs、tools/vfx/export-assets.cjs、相關Status／Skills2列、burst-icearrow-crystal與st-tick-ice Preset、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md及其他冰水／投影／快取測試。正式角色來源仍讀配置表。
+- 交付：修正Commit為本紀錄所在提交，可合併；沒有未完成程式／測試項目，未做瀏覽器實戰畫面及Console人工驗收。整合後重載遊戲，單裝水彈不應在凍結解除／死亡時冰爆，同裝寒冰箭T7仍有合法冰爆。兩倉庫提交後檢查乾淨，本輪未新增暫存輸出；未合併或推送。
+
 ## Codex｜水流彈落地光圈半徑（WATERBALL-RING-SIZE-20261001）
 
 - Owner：Codex；Done。使用者回報水流彈彈射的地板光圈大於表定6米傷害半徑；前置水流彈新星來源隔離575e53cd已完成，遊戲與素材庫起始乾淨。

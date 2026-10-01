@@ -85,6 +85,59 @@ test('WATERBALL-NOVA: real legendary nova survives the Worker whitelist and rend
  assert.equal(rt.stats().grounds,0,'不由傳奇代放冰霜新星第7階暴風雪');rt.update(2);rt.destroy();
 });
 
+test('WATERBALL-THAW: water tiers and evolutions cannot borrow learned unequipped icearrow blasts on thaw or death',()=>{
+ for(const [stage,ult] of [...Array.from({length:7},(_,i)=>[i+1,null]),...['waterPrisonFall','ragingTide','abyssBurial'].map(id=>[7,id])]){
+  for(const dies of [false,true]){
+   const {h,c,p,es,specs}=waterScenario(stage,false,ult),damage=[];
+   c.recordRunDamage=(name,n,source)=>damage.push({n,source});
+   assert.ok(c.castSkill2(p,es,'waterball','mv-float'));h.advance(c,p,es,1.6);
+   const target=h.enemy(1e9,40,0,'water-frozen');es.push(target);
+   if(stage>=3)c.sgApplyFrost(target,c.sgFrostSpec(c.SKILLS2.waterball,c.skills2Levels('waterball'),2,1000),5);
+   else c.sgFreezeTarget(target,{gid:'waterball',tier:'3'}); // 低階水彈面對已被其他來源凍結的敵人。
+   assert.ok(c.sgFrozenOn(target));assert.ok(c.sgIsStunned(target));
+   for(const role of ['apply','aura','tick'])assert.equal(c.statusVfxPreset('sgFrozen',role),'');
+   assert.equal(c.statusVfxPreset('sgFrostBite','tick'),'st-tick-ice');
+   h.advance(c,p,es,.05);assert.equal(target._sgFrozenWatch,true);
+   if(dies)target.hp=0;
+   h.advance(c,p,es,dies?.1:3.2);
+   assert.ok(!specs.some(s=>s.variant==='ice-blast'||Object.values(s.vfx||{}).includes('burst-icearrow-crystal')),
+    `${stage}/${ult}/${dies}未裝寒冰箭不能冰爆`);
+   assert.ok(!damage.some(d=>d.source==='skill2:icearrow'),'不能只隱藏外觀、保留錯誤傷害');
+   const nodes=[],backend={createNode(s){const n={spec:s};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+   const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,
+    ctx:{playerPos:()=>p.pos,posOf:id=>es.find(e=>e.name===id)?.pos||target.pos}});
+   rt.registerPresets([hit,require('../vfx/presets/burst-icearrow-crystal.json')]);
+   specs.forEach(s=>rt.tryPlay(s));rt.update(.1);
+   assert.ok(!nodes.some(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'),'正式Runtime不建立冰爆冰晶');rt.destroy();
+  }
+ }
+});
+
+test('WATERBALL-THAW: direct ice blast helper rejects learned but unequipped icearrow',()=>{
+ const {h,c,p,es,hits,specs}=waterScenario(7,false);
+ c.sgIceBlast(es[0],es,h.tickCtx(c,p,es));assert.equal(hits.length,0);assert.equal(specs.length,0);
+});
+
+test('WATERBALL-THAW: co-equipped icearrow preserves one legitimate water-frost blast and removing it stops immediately',()=>{
+ for(const dies of [false,true]){
+  const {h,c,p,es,hits,specs}=waterScenario(7,false);c.G.player.loadout.push(c.SG_PREFIX+'icearrow');
+  es[2].pos={x:200,y:0}; // 遠目標連同怪物碰撞半徑都在冰爆圈外。
+  const target=es[0];c.sgApplyFrost(target,c.sgFrostSpec(c.SKILLS2.waterball,c.skills2Levels('waterball'),2,1000),5);
+  h.advance(c,p,es,.05);assert.equal(specs.length,0,'凍結時本身不播放冰爆');
+  if(dies)target.hp=0;
+  h.advance(c,p,es,dies?.1:3.2);const bursts=specs.filter(s=>s.variant==='ice-blast');assert.equal(bursts.length,1);
+  const burst=bursts[0];assert.deepEqual({...burst.vfx},{attack:'burst-icearrow-crystal'});
+  assert.equal(burst.area.x,40);assert.equal(burst.area.r,60);assert.equal(burst.preserveDeadTargets,true);
+  assert.equal(hits.length,dies?1:2);assert.ok(hits.every(v=>v.atk===4000&&v.ent!==es[2]),'合法冰爆保留完整傷害與範圍');
+  h.advance(c,p,es,.2);assert.equal(specs.filter(s=>s.variant==='ice-blast').length,1,'同次解除只爆一次');
+  es[0]=h.enemy(1e9,40,0,'removed-while-frozen');
+  c.sgApplyFrost(es[0],c.sgFrostSpec(c.SKILLS2.waterball,c.skills2Levels('waterball'),2,1000),5);h.advance(c,p,es,.05);
+  c.G.player.loadout=[c.SG_PREFIX+'waterball'];const beforeHits=hits.length,beforeEvents=specs.length;
+  h.advance(c,p,es,3.2);c.sgIceBlast(es[0],es,h.tickCtx(c,p,es));
+  assert.equal(hits.length,beforeHits);assert.equal(specs.length,beforeEvents,'卸下後共用節拍與直接呼叫都立即停止');
+ }
+});
+
 test('WATERBALL-SIZE: both landing rings fit the actual normal and legendary bounce radii throughout playback',()=>{
  // circle_02為512px黑底貼圖；唯讀像素量測的光圈本體外緣約190px，排除黑底與極淡雜訊。
  const bodyRadius=190;

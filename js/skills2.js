@@ -8480,7 +8480,7 @@ function sgTickFrost(dt, ctx) {
   var spreadLv = (wbLvs && wbLvs[0] > 0) ? wbLvs[4] : 0;
   var spreadFx = SKILLS2.waterball.tiers[4].fx;
   var iaLvs = skills2Levels('icearrow');
-  var blastOn = !!(iaLvs && iaLvs[6] > 0);
+  var blastOn = !!(skills2Equipped('icearrow') && iaLvs && iaLvs[6] > 0);
   var biteSids = sgRoleSids('frostBite');
   for (var i = 0; i < enemies.length; i++) {
     var e = enemies[i];
@@ -8542,7 +8542,7 @@ function sgSpreadFrost(from, enemies, fx, dot) {
    ctx 可省略（死亡呼叫點沒有 tick ctx），此時由 FIELD 取得玩家實體。 */
 function sgIceBlast(ent, enemies, ctx) {
   var lvs = skills2Levels('icearrow');
-  if (!lvs || lvs[6] < 1) return;
+  if (!skills2Equipped('icearrow') || !lvs || lvs[6] < 1) return;
   var pEnt = (ctx && ctx.pEnt) || ((typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null);
   if (!pEnt || pEnt.hp <= 0) return;
   var st = getStats();
