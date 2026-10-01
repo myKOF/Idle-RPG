@@ -8254,3 +8254,15 @@ Worker 存活且頁面正常完成載入。
 - 驗證：node --test tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-hit-density.test.cjs tests/skill2-chainlightning-thunder-legendary.test.cjs，95/95通過。涵蓋30米中心邊界、速度共源、逐跳抵達、死亡目標續跳、單敵／零敵、玩家死亡、同款素材實際 transform 尺寸及停止／自然回收。node tools/build_check.cjs：403檔通過；git diff --check 通過。
 - 廣泛回歸：node --test --test-name-pattern='CHAIN|chain' tests/vfx-runtime.test.cjs：12/13通過，金色雷鏈 tint 是已在 HEAD 重現的既有失敗。本輪先前廣泛回歸另外確認 FIELD、CATALOG-3、STARFALL-TAIL、舊連鎖速度期望及三項冰箭幾何失敗，唯讀攔截器讀回 HEAD 同樣8項失敗，未降低斷言。新雷爆整合測試通過；未做實機遊戲畫面驗收。
 - 交付：Commit 見本紀錄所在提交，可合併；無未完成程式項目，不自行合併／推送。建議整合後重新載入遊戲確認雷爆鏈段與普通雷球外觀分離；既有廣泛回歸失敗另案處理。
+
+## Claude｜預覽視窗的效能成本估算（VFX-PRESET-COST-20261001）
+
+- Owner：Claude；Done。使用者要求在每個特效的預覽上方顯示效能參考值（圖層數／型別／粒子數／透明度形狀等算出來的總耗），超過門檻轉橘色，算法與門檻由我決定。
+- **沒有另外發明一套成本模型**：2026-09-30 的 FPS 7 調查已經量出「成本 ≈ 節點數」與每個節點 3.9µs（Core 0.64＋後端寫入 1.1＋渲染 2.1），還留下一份價格表。這次就是把那次的量測變成做特效時當場看得到的數字。新模組 `tools/vfx/preset-cost.cjs`（編輯器、測試、之後的 CLI 共用一份，係數不得在編輯器裡抄第二份）。
+- 算法：`ms／幀 = 峰值節點數 × 3.9µs ＋ 填色覆蓋（幾個畫面）× 21µs`。峰值節點數**以 1/60 秒取樣整條時間軸取最大值**，不是把各層峰值相加——各層的峰值不在同一個時刻（burst-fire 的 6 張圖各有 delay、18 顆火舌死掉才生出 18 顆餘燼，相加會算成 42，實際同時最多 23）。粒子：burst 照壽命範圍凋零、rate 用發射率 × **平均**壽命、sub 用「母層最近一個子壽命內死掉的那些」。填色要先把序列幀除掉格數（整張圖集 2560×7680、實際畫出來的是一格 320×320，不除會高估兩個數量級）。
+- 門檻 0.25ms：素材庫 236 份的中位數 0.047ms、p90 0.22ms，門檻以上 20 份（8%）。提示卡把 ms 換算成「同時 N 份就吃滿一幀」——0.45ms 聽起來很小，但那代表 37 份就滿了，而 FPS 7 那次每秒有 172 個爆點。
+- 顯示：每個預覽視窗右上角一個小標（`.pane-cost`），單視窗也看得到（多視窗才有的那條標籤不適合，使用者要的是「每個特效的預覽上方」）。滑過去展開明細：圖層數與型別、峰值節點與粒子數、CPU 與填色各佔多少、繪製批次、最重的幾層、已知偏保守的地方。快取由 token 控制，拖曳時每幀進來不會重算。
+- 修改：新增 `tools/vfx/preset-cost.cjs`、`tests/vfx-preset-cost.test.cjs`、`docs/vfx/VFX_PRESET_COST.md`；改 `tools/vfx/editor/editor.js`（成本計算與提示卡、tip 的定位抽成 placeTipCard 共用）、`editor.css`、編輯器頁面（載入模組＋快取版號）、`tools/vfx/editor-server.cjs`（REPO_ALLOWLIST 多開這一個檔，否則頁面拿到 403 而且畫面上只少一塊、沒有別的線索）。沒有動到 preset、配置表或遊戲程式。
+- 驗證：COST-1 **拿真的 Core 跑過全部 236 份 preset 對答案**（六成以上完全命中，其餘在 ±25% 或差 1 個節點以內；對照 2026-09-30 價格表：storm-dance 實測 1.10／估 1.21、blizzard 0.70／0.64、icearrow-frost 0.45／0.45、icearrow-crystal 0.29／0.30）；COST-2～4 釘住係數、時間軸、粒子與子發射器；COST-5 驗門檻讓橘色落在 2～25%（目前 8%）；COST-6 驗編輯器接線與伺服器白名單。11 個突變全部被抓到（修了三條不夠緊的斷言：填色係數歸零、子發射器不看時間差、繪製批次永遠 1 批）。編輯器相關 452 項中 3 項既有失敗（CAP-2、HISTORY-42、16b canonical）＋ rename 兩項批次執行的偶發 IPC 問題（單獨跑 19/19 通過，已知現象）。build_check 412 檔通過、diff check 通過。
+- 實機確認（本機編輯器 28362）：`ground-icearrow-frost` 顯示橘色 0.45ms（與 09-30 實測同值）、`hit-phys` 灰色 0.03ms、空白視窗不顯示；雙視窗各自顯示；滑過去的明細正確；刪掉一層粒子後數字當場從 1.21 → 1.11ms，Undo 後回到 1.21ms。
+- 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/` 或 `js/vfx-core.js` 的提交。未合併／推送。
