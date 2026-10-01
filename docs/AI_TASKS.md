@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜極寒冰爆命中冰爆（ABSOLUTE-ZERO-BURST-20261001）
+
+- Owner：Codex；Done。改為追蹤冰箭持續時間＋50%／每級＋5%、每次箭命中必定冰爆、冰爆半徑＋25%、冰爆傷害百分比與T7相加（＋200%／每級＋20%）；移除舊十波／本體增傷。依既有技能等級公式base＋per×Lv，維持T7原三波與速度。前置冰爆及命中掛勾已存在，衝突預檢乾淨。
+- 允許Skills2 Excel／CSV／JS、寒冰箭／冰爆限定接線、相關傳奇／VFX測試、必要快取與本紀錄；禁止其他技能、素材、Worker協議及他人未完成工作。驗收等級公式、逐命中／miss／擊殺／追蹤、冰爆不遞迴、傷害／落點／範圍事件、配置一致、Build及Commit。交使用者整合，不合併／推送。
+- 修改10檔：Skills2三份配置、index／bridge／Worker快取、tests/skill2-thunderorb-icearrow-legendary.test.cjs、tests/icearrow-vfx-integration.test.cjs、tests/waterball-vfx-integration.test.cjs及本紀錄。Excel原生COM只改第179列AU／AW／AX，刪舊waves／waveGap並填durPct50／durPctPer5／rangePct25／pct200／pctPer20；儲存與唯讀重開成功，保留使用者格式。CSV全231列與Excel逐格一致、與HEAD僅上述3格差異；config_tables試跑語意變更0。
+- 計算：追蹤生存時間＝T7秒數×（1＋(50＋5×超神Lv)／100），權威到期時間含起飛延遲且保留小數秒、演出事件在到期前裁切；冰爆傷害＝魔攻×（T7pct＋T7pctPer×T7Lv＋200＋20×超神Lv）／100，原半徑×1.25。Lv.1／T7Lv.10／魔攻500驗4.65秒、7.5米、4100傷害。成功直射／貫穿／追蹤接觸／分裂命中呼叫冰爆，miss不觸發，擊殺落點也爆；合併進原out，範圍死亡可回報，冰爆本身不遞迴。凍結解除原冰爆也套用加成。不改箭速、本體傷害、散射／無限冰裂／冰之淚或傷害協議，特效仍讀T7既有觸發配置。
+- 驗證：node --test tests/icearrow-vfx-integration.test.cjs tests/water-ice-audit.test.cjs tests/waterball-vfx-integration.test.cjs tests/icearrow-rift-budget.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-editor-cache-versions.test.cjs，108/108；node --test --test-name-pattern='連射|冰封|凜冬侵蝕|冰裂箭|深度凍結|極寒冰爆|無限冰裂|冰之淚' tests/skill2-thunderorb-icearrow-legendary.test.cjs，新增擊殺測試後12/12。涵蓋Lv.1／5／10相加、到期時刻、三波不增傷、追蹤重疊只算一次接觸／離開再命中、分裂、miss、擊殺中心、事件75px半徑及傷害／死亡一次回報。npm.cmd run build，413檔通過；git diff --check通過。
+- 檢查未改：js/vfx-runtime.js、js/vfx-core.js、js/battlefield.js、js/worker/protocol.js、Skills2配置工具、其他技能及Preset／layout。使用者持續編輯的素材保留未提交，無素材庫變更。未做遊戲實戰／Console及Excel視覺截圖驗收；無未完成程式項目，Commit為本紀錄所在提交，可合併，未合併／推送。重載遊戲確認逐命中冰爆與延長追蹤。
+
 ## Codex｜無限冰裂僅保留冷卻縮減（ICEARROW-RIFT-CDR-20261001）
 
 - Owner：Codex；Done。使用者要求移除無限冰裂額外寒冰箭數量，保留現有每次造成傷害的冷卻回扣。前置既有回扣掛勾可直接沿用；所有目標衝突預檢乾淨。

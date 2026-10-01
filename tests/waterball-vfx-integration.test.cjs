@@ -127,8 +127,8 @@ test('WATERBALL-THAW: co-equipped icearrow preserves one legitimate water-frost 
   if(dies)target.hp=0;
   h.advance(c,p,es,dies?.1:3.2);const bursts=specs.filter(s=>s.variant==='ice-blast');assert.equal(bursts.length,1);
   const burst=bursts[0];assert.deepEqual({...burst.vfx},{attack:'burst-icearrow-crystal'});
-  assert.equal(burst.area.x,40);assert.equal(burst.area.r,60);assert.equal(burst.preserveDeadTargets,true);
-  assert.equal(hits.length,dies?1:2);assert.ok(hits.every(v=>v.atk===4000&&v.ent!==es[2]),'合法冰爆保留完整傷害與範圍');
+  assert.equal(burst.area.x,40);assert.equal(burst.area.r,75);assert.equal(burst.preserveDeadTargets,true);
+  assert.equal(hits.length,dies?1:2);assert.ok(hits.every(v=>v.atk===4100&&v.ent!==es[2]),'合法冰爆套用極寒冰爆與T7相加傷害及擴大範圍');
   h.advance(c,p,es,.2);assert.equal(specs.filter(s=>s.variant==='ice-blast').length,1,'同次解除只爆一次');
   es[0]=h.enemy(1e9,40,0,'removed-while-frozen');
   c.sgApplyFrost(es[0],c.sgFrostSpec(c.SKILLS2.waterball,c.skills2Levels('waterball'),2,1000),5);h.advance(c,p,es,.05);

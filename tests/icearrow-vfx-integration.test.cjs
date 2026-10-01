@@ -94,7 +94,7 @@ test('ICEARROW-DEATH-NOVA: absolute zero kills cannot cast learned but unequippe
  assert.ok(specs.some(s=>s.variant==='ice-arrow-pierce'));
  assert.ok(!specs.some(s=>s.variant==='frost-nova'||Object.values(s.vfx||{}).some(id=>/^burst-frost-/.test(id))),
   '只裝寒冰箭時，擊殺不能額外施放已學習的冰霜新星');
- assert.equal(new Set(c.SKILL2_RT.grounds.filter(f=>f.kind==='icearrow').map(f=>f.wave)).size,10);
+ assert.equal(new Set(c.SKILL2_RT.grounds.filter(f=>f.kind==='icearrow').map(f=>f.wave)).size,3);
  const novaIds=['burst-frost-nova','burst-frost-freeze'],nodes=[];
  const backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,
@@ -156,13 +156,13 @@ test('ICEARROW-T7-VFX: real T7 and all evolutions keep arrows and freeze events 
   const homing=specs.filter(s=>s.variant==='ice-arrow-homing');assert.ok(homing.length,id);
   homing.forEach(s=>{assert.equal(s.vfx.projectile,presets[0].id);assert.ok(!s.vfx.attack);assert.ok(!s.vfx.ground);assert.ok(s.area.id);assert.equal(s.area.speed,585);});
   const fields=c.SKILL2_RT.grounds;assert.ok(fields.every(f=>f.kind!=='blizzard'));
-  if(id==='absoluteZeroBurst')assert.equal(new Set(fields.filter(f=>f.kind==='icearrow').map(f=>f.wave)).size,10,'極寒冰爆連射十波，沒有暴風雪');
+  if(id==='absoluteZeroBurst')assert.equal(new Set(fields.filter(f=>f.kind==='icearrow').map(f=>f.wave)).size,3,'極寒冰爆維持三波，沒有暴風雪');
   es[0]=h.enemy(1e9,50,0,'fresh');c.sgFreezeTarget(es[0],{gid:'icearrow',tier:'2'});
   assert.ok(c.sgFrozenOn(es[0]),'控場仍實際生效');
   assert.ok(!specs.some(s=>s.gid==='frostnova'||s.variant==='frost-freeze'||Object.values(s.vfx||{}).includes('ground-blizzard')),id);
   const arrowEvents=specs.filter(s=>s.variant!=='ice-blast');assert.ok(arrowEvents.every(s=>!Object.values(s.vfx||{}).includes('burst-icearrow-crystal')),'普通發射、命中與追蹤不播冰爆');
   c.sgIceBlast(es[0],es,h.tickCtx(c,p,es));
-  const burst=specs.at(-1);assert.equal(burst.variant,'ice-blast');assert.deepEqual({...burst.vfx},{attack:'burst-icearrow-crystal'});assert.equal(burst.area.r,60);assert.equal(burst.area.x,50);
+  const burst=specs.at(-1);assert.equal(burst.variant,'ice-blast');assert.deepEqual({...burst.vfx},{attack:'burst-icearrow-crystal'});assert.equal(burst.area.r,id==='absoluteZeroBurst'?75:60);assert.equal(burst.area.x,50);
   c.SKILLS2.icearrow.tiers[6].triggerVfx={};c.sgIceBlast(es[0],es,h.tickCtx(c,p,es));assert.deepEqual({...specs.at(-1).vfx},{},'空觸發不退回本體');
  }
 });
