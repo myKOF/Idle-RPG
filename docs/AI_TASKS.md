@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## Codex｜無限冰裂僅保留冷卻縮減（ICEARROW-RIFT-CDR-20261001）
+
+- Owner：Codex；Done。使用者要求移除無限冰裂額外寒冰箭數量，保留現有每次造成傷害的冷卻回扣。前置既有回扣掛勾可直接沿用；所有目標衝突預檢乾淨。
+- 允許 Skills2 Excel／CSV／生成 JS 該列與施放箭數計算、tests/skill2-thunderorb-icearrow-legendary.test.cjs、tests/icearrow-rift-budget.test.cjs 壓力 fixture、必要 index／bridge／Worker 快取及本紀錄；禁止其他技能、傷害、速度、波次、素材與未完成工作。共享三份配置保留使用者既有欄位排序、寒冰箭冷卻18秒、第7階300%＋每級30%／3秒及無限冰裂回扣0.01秒，不自行改值；提交此配置現況以維持三份一致。使用者編輯中的兩份Preset／layout不納入提交，無素材庫變更。
+- 驗收：未選／選無限冰裂各等級本體箭數一致、舊 count 欄不能再生效、冷卻回扣保留，Excel 原生儲存與重開、CSV／JS 一致、回歸及 Build。完成 Commit 交使用者整合，不合併／推送。
+- 完成：原生Excel僅修改第180列AU效果JSON（刪count／countPer）、AW／AX說明，保留sec=0.01；原生儲存及唯讀重開成功。CSV以既有readXlsxRows／csvStringify同步，JS經config_tables正式重建，移除sgCastIcearrow的ultRift及箭數加成，sgUltHitCdr完全不改。index Skills2 1.0.259／Bridge 1.0.192、Worker token 20261001-icearrow-rift-cdr。
+- 驗證：node --test --test-name-pattern='連射|冰封|凜冬侵蝕|冰裂箭|深度凍結|極寒冰爆|無限冰裂|冰之淚' tests/skill2-thunderorb-icearrow-legendary.test.cjs，10/10；無限冰裂驗Lv.1／5／10並注入舊100支設定仍不加箭、每命中冷卻回扣保留。node --test tests/icearrow-vfx-integration.test.cjs tests/water-ice-audit.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-editor-cache-versions.test.cjs，84/84。node --test tests/icearrow-rift-budget.test.cjs，11/11；原壓力fixture因箭数與回扣降低不再形成壓力，僅在測試內設0.25秒冷卻，維持原72支上限及所有發射事件送達斷言，不改正式數值。npm.cmd run build，413檔通過；node tools/config_tables.cjs --apply Skills2，語意變更0；Excel與CSV231列逐格一致，git diff --check通過。
+- 檢查未改：sgUltHitCdr、其他寒冰箭傷害／散射／連射、js/vfx-runtime.js、冰箭Preset、配置工具及Worker協議。未做遊戲實戰／Console與Excel視覺截圖驗收；無未完成程式項目。Commit為本紀錄所在提交，可合併，未合併／推送。建議重載遊戲確認無限冰裂說明與箭數。
+
 ## Codex｜冰水修正與三個 AI 分支整合（AI-INTEGRATION-WATER-20261001）
 
 - Owner：Codex；Done。使用者明確要求解決develop衝突並將三個AI分支合併到最新；於實際develop整合副本完成衝突解決、必要快取與本紀錄、驗證及乾淨AI副本快轉同步。禁止推送、production／main變更及未提交他人工作覆寫；後續接手者：使用者。

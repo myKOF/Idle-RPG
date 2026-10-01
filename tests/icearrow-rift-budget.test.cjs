@@ -171,6 +171,8 @@ function riftBattle(seconds) {
   eng.state().player.loadout = ['sg:icearrow'];
   gm('spawn 12 small 1000000');
   const ctx = eng.ctx;
+  // 無限冰裂不再追加箭數；壓力案例以短冷卻維持連續施放，仍驗原本上限與全數送達。
+  ctx.SKILLS2.icearrow.cd = 0.25;
   const read = (e) => vm.runInContext(e, ctx);
   const origDamage = ctx.applyEnemyHpDamage;
   ctx.applyEnemyHpDamage = function (t) { const hp = t.hp; const r = origDamage.apply(this, arguments); t.hp = hp; return r; };

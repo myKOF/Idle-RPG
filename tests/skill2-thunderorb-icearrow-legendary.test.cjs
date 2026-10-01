@@ -8,7 +8,7 @@ const table = require('./helpers/skill-table.cjs');
         雷殞天地碎（永久節拍不斷降下雷殞石）
      3. 寒冰箭五個傳奇：連射（支數）、冰封（傷害乘區）、凜冬侵蝕（寒霜每跳量與時間）、
         冰裂箭（往前分裂）、深度凍結（控場中增傷）
-     4. 寒冰箭三個超神：極寒冰爆（波數與間隔改寫）、無限冰裂（支數＋命中回扣冷卻）、
+     4. 寒冰箭三個超神：極寒冰爆（波數與間隔改寫）、無限冰裂（命中回扣冷卻）、
         冰之淚（跟隨我方的箭雨）
 
    ⚠️ 本檔只驗「機制有沒有接上」，不驗「數字調校得對不對」（那是參數表的事）。 */
@@ -722,15 +722,19 @@ test('【極寒冰爆】：連射改為 10 波／每 0.35 秒，且寒冰箭傷�
   assert.equal(Math.round(ult.dmg / base.dmg * 100), 155, '寒冰箭傷害 ×1.55');
 });
 
-test('【無限冰裂】：發射追加支數及每次傷害回扣冷卻皆讀配置', () => {
-  function run(withUlt) {
+test('【無限冰裂】：僅每次傷害回扣冷卻，不增加發射支數', () => {
+  function run(level, legacyCount) {
     const c = loadContext();
     const specs = stubVfx(c);
     const calls = stubHits(c);
     c.chance = () => false;                       // 不足 1 支的部分一律不觸發
     maxLevels(c, 'icearrow');
     equip(c, 'icearrow');
-    if (withUlt) setUlt(c, 'icearrow', 'infiniteIceRift', 1);
+    if (level) setUlt(c, 'icearrow', 'infiniteIceRift', level);
+    assert.equal(c.SKILLS2.icearrow.ult[1].fx.count, undefined);
+    assert.equal(c.SKILLS2.icearrow.ult[1].fx.countPer, undefined);
+    assert.ok(!c.SKILLS2.icearrow.ult[1].desc.includes('數量額外'));
+    if (legacyCount) Object.assign(c.SKILLS2.icearrow.ult[1].fx, { count: 100, countPer: 10 });
     const p = playerEnt();
     const es = line(6, 5 * M);
     c.castSkill2(p, es, 'icearrow', 'mv-float');
@@ -739,17 +743,18 @@ test('【無限冰裂】：發射追加支數及每次傷害回扣冷卻皆讀�
     return {
       lanes: specs.filter((s) => s.variant === 'ice-arrow-pierce' && !s.delayMs).length,
       cdAtCast, cdAfter: p.skillCds[c.SG_PREFIX + 'icearrow'], hits: calls.length,
-      expectedAdd: Math.floor(c.SKILLS2.icearrow.ult[1].fx.count + c.SKILLS2.icearrow.ult[1].fx.countPer),
       expectedRefund: c.SKILLS2.icearrow.ult[1].fx.sec
     };
   }
-  const base = run(false);
-  const ult = run(true);
-  assert.equal(ult.lanes, base.lanes + ult.expectedAdd, 'Lv.1追加支數與配置一致，小數不觸發');
+  const base = run(0);
   assert.equal(base.cdAfter, base.cdAtCast, '沒選超神時冷卻不會被命中扣掉');
+  for (const level of [1, 5, 10]) {
+  const ult = run(level, true);
+  assert.equal(ult.lanes, base.lanes, '所有等級與舊 count 設定均不能追加冰箭');
   assert.ok(ult.hits > 0);
   assert.ok(ult.cdAfter <= Math.max(0, ult.cdAtCast - ult.hits * ult.expectedRefund) + 1e-6, '每次命中各扣配置秒數');
   assert.ok(ult.cdAfter < ult.cdAtCast);
+  }
 });
 
 test('【冰之淚】：施放時另外召喚跟隨我方的箭雨（10 波、我方 30 米內）', () => {
