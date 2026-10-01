@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜develop 冰水技能與 Claude 吸血吸魔整合（DEVELOP-MERGE-20261001）
+
+- Owner：Codex；Done。使用者明確授權解決 develop／Claude 衝突、完成合併並推送。實際整合副本為 D:/MyGame/Idle-RPG/develop，起始 HEAD c00cdc14 已包含 Claude 8afe3288；既有合併中的 MERGE_HEAD 為 Codex e2e002d7。兩個 Agent 副本乾淨，fetch 後沒有新增遠端提交。
+- 範圍：解決 index.html、js/bridge.js、js/worker/sim.worker.js 快取衝突及本紀錄；保留已自動合併的冰水技能、使用者素材及 Claude 吸血／吸魔定值功能，保留協議第41版。禁止覆寫其他副本、其他功能修改、production／main 及強制推送。預檢僅回報本次要整合的 Codex 提交，依使用者衝突解決授權繼續。
+- 驗收：雙方功能與快取／Worker 協議回歸、Build、配置試跑、素材檢查、合併歷史及乾淨狀態；通過後完成現有 merge 並推送 origin/develop。後續接手者：使用者。
+- 解決方式：逐段保留 data 1.0.53、status 1.0.28、potential 1.0.7，合併內容的 formula／skills2／combat／bridge 另升為1.0.41／1.0.262／1.0.64／1.0.195，六支變更模擬腳本與 Worker 啟動鍵統一20261001-drain-water-integration；保留 protocol.js 第41版及主頁原快取42。沒有整檔接受單方，功能段落只使用 Git 自動合併結果；本輪手動修改僅上述三個衝突檔及任務紀錄。自我 Review 核對公式／戰鬥／技能相對兩側的差異，Claude 定值汲取、Codex 水牢與冰箭均保留。
+- 測試：node --test 的22檔整合組（drain-flat-value、damage-drain、passive-stat-panel、worker-protocol、worker-shim、ui-containment、water-prison-dome、waterball-vfx-integration、skill2-waterball-frostnova-legendary、skill2-status-slots、skills2-vfx-schema、skills2-vfx-usage、vfx-preset-usage、vfx-editor-cache-versions、vfx-editor-guard、water-ice-audit、skill-vfx-inheritance、windblade-vfx-integration、icearrow-vfx-integration、icearrow-rift-budget、skill2-mire-earthguard-legendary、earthguard-revival）261項256通過；寒冰箭傳奇／超神定向12項11通過。合計273項267通過、6項既有失敗，0略過。額外重跑汲取／協議／快取28項全過。
+- 既有失敗確認：passive-stat-panel四項在合併前 develop c00cdc14 唯讀讀取程式重新執行仍全部失敗（既有大地守護數值與期望不一致）；冰爆造型一項及極寒持續時間一項，在合併前 Codex e2e002d7 唯讀重跑各1/1失敗（使用者素材／durPct30與舊期望不一致）。不修改功能或降低斷言來掩蓋既有失敗。
+- 其他驗證：npm.cmd run build，415檔語法／編譯通過；config_tables --apply Skills2／Status均語意變更0；apply_params試跑534參數一致、變更0／錨點問題0；export-assets --check，237份Preset／155素材已是最新，素材庫master乾淨且已同步origin/master，無新素材Commit。git diff／diff --cached --check通過。獨立本機28374瀏覽器新頁確認真實Worker／Pixi／Runtime啟動、角色及戰鬥進度正常、吸血吸魔顯示定值，Console error／warn均空；未做高階技能完整實戰驗收。
+- 交付：本紀錄所在merge提交整合Claude 8afe3288與Codex e2e002d7，推送目標僅origin/develop；推送結果與Commit於交付回報。Agent副本保留原分支，沒有同步／切換；production／main不動。無未完成合併項目，六項既有測試問題留原任務追蹤；編輯器如仍開啟，先下載未存內容備份再重載整合版。
+
 ## Claude｜吸血／吸魔改為定值，與每秒回復脫鉤（DRAIN-FLAT-20261001）
 
 - Owner：Claude；Done，待 Antigravity 驗證。使用者要求：①吸血／吸魔由百分比轉為定值，1% = 1（吸血 50% → 每觸發 1 次吸收 50 點生命）②單獨計算，不再與生命／法力回復關聯 ③裝備、技能、寶石、附魔、天賦等所有相關模組全檢查一遍。
@@ -8414,3 +8425,42 @@ Worker 存活且頁面正常完成載入。
 - 使用者素材另行保存：工作期間ground-icearrow-frost.json調整霧氣／冰粒數、顏色、壽命與透明度。依既有提交偏好，先由vfx-library-root解析共享素材庫（檢查乾淨），保存Preset及既有layout至codex-authored/icearrow/{presets,layouts}，素材庫Commit e1905c9；同步回遊戲核對兩份SHA256一致，正式Preset驗證通過。遊戲素材獨立Commit 4b986122，沒有新圖片引用或匯出索引變更。
 - 交付：水流彈修正Commit為本紀錄所在提交，可合併；素材庫及遊戲素材Commit如上。無未完成程式項目；尚未做瀏覽器實戰畫面／Console人工驗收。整合後重載遊戲確認水流彈第7階與三個超神；如裝配冰霜擴散，出現新星屬合法效果。後續接手者：使用者；本輪不合併或推送。
 - 暫存清理限制：系統Temp/codex-waterball-nova-20261001內為本輪前後預覽、工作簿快照、唯讀檢查／原生編輯腳本、測試日誌與Node依賴junction，皆不在專案／提交內。已核對確切路徑，整目錄清理及較保守的逐檔清理均遭工具自動批准審查拒絕，僅回報blocked by policy、無詳細理由；沒有改用其他途徑繞過拒絕，暫存清理未完成。
+
+## Codex｜水流彈距離弧高與水牢罩子（WATER-PRISON-DOME-20261001）
+
+- Owner：Codex；Done。使用者要求每段水流彈弧高＝飛行距離一半；水牢改為遠程減傷30%／每級3%、圈內攻擊下降30%、易傷50%／每級5%；新增半透明罩子，維持現有速度、半徑與持續時間。前置模擬事件及領域狀態已存在，初次與續作衝突預檢均乾淨。使用者已儲存並關閉Excel，解除唯讀鎖定。
+- 允許水流彈／水牢限定接線、Skills2及Status Excel／CSV／JS、幾何表接線、相關測試、獨立水牢Preset與向量素材／索引、必要主頁／Worker快取及本紀錄；禁止其他技能機制、Worker協議、使用者編輯中的冰箭與水龍捲Preset／layout、其他副本及合併／推送。保留目前使用者配置變更，Excel只改目標格。
+- 驗收遠近及各段彈射弧高／速度／落點／VFX事件、圈內外遠程及近戰／到期／卸下、等级公式與實際傷害、獨立罩子縮放及回收、配置一致、Build、素材雙倉庫Commit。後續接手者：使用者。
+- 已實作：各段起飛由固定落點距離計算 arcM＝distance／bfMeterPx(1)／2，無座標沿既有速度／時間反推；水牢遠程減傷掛在共用resolveHit，依實際射程分類、圈內外及高塔皆適用，卸下／到期停止；圈內減益最多一拍刷新，離開後不殘留整段。依既有base＋per×Lv，Lv.1為33%減傷／55%易傷，Lv.10為60%／100%；攻擊下降固定30%，水牢維持6秒／20米。水彈維持57.96米／秒與傳奇彈射加速，模擬事件／Worker／Runtime同一弧高。
+- Excel：Status原生Excel只改87列數值、94列持續特效／說明三格；Skills2原生Excel只改182列AA固定高度及AW／AX描述、189列AU效果JSON及AW／AX描述六格，清除固定8米高度接線。兩份儲存及唯讀重開成功、Excel／CSV全231／95列逐格一致、重建JS語意差異0；格式表、欄寬、列高均與前快照相同。Artifact Tool唯讀渲染前後目標列，保留既有窄欄截斷顯示，未改格式。使用者既有極寒冰爆持續30%／每級3%修改完整保留並與共享三份配置一起提交，不自行改回。
+- 特效：新增field-water-prison-dome與codex-authored/water-prison/water-dome.svg，地板／罩子分別在地面及billboard層播放，共用半徑、腳底位置和回收；登記Runtime特殊分層用途，海淵葬界仍讀原ground-domain-ice。Mote Studio無可用WebMCP繪製工具，使用可編輯SVG；正式Core／Runtime在本機28373預覽確認透明罩面、弧形邊界和角色可見。單一根群組layout同名同id，Preset／layout／SVG兩倉庫逐位元及SHA256一致，索引只新增此素材，其他掃描結果未混入；237份Preset／155素材匯出檢查通過。素材庫先Commit 34240ac，遊戲Commit為本紀錄所在提交。其他使用者Preset／layout六檔保留未提交。
+- 最終定向驗證：node --test tests/water-prison-dome.test.cjs tests/waterball-vfx-integration.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/skill2-status-slots.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/water-ice-audit.test.cjs tests/skill-vfx-inheritance.test.cjs tests/windblade-vfx-integration.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs tests/earthguard-revival.test.cjs tests/worker-protocol.test.cjs，194/194通過。另node --test --test-name-pattern='水流彈|水牢|WATER|DOMAIN'之水系定向及新版LAYOUT-4通過。涵蓋5／20米、下一次彈射重新計算、加速維持、正式Worker白名單到真正Runtime最高點、圈內外及物理／魔法分類、Lv.1／5／10真傷害、攻擊700／易傷1550、離圈／到期／卸下、罩子前後層跟隨／縮放／回收／表格來源及編輯器群組。
+- 擴大驗證：node --test tests/skills2-geometry.test.cjs及tests/vfx-runtime.test.cjs等共用組222項217通過；另一組197項190通過，12項失敗皆在HEAD唯讀對照重現。依参数接線規範另跑node tools/apply_params.cjs，534參數一致、將變更0／錨點問題0；--check-anchors擾動487數值後534錨點各命中一次。node --test 'tests/*.test.cjs'全套3441項3340通過、99失敗、2略過；其中新layout中文群組name不符同id規則已修正，重跑LAYOUT-4及新水牢群組測試通過。其餘98個失敗逐項以任務前版本（HEAD＋保留本輪起始使用者極寒冰爆30%／3%、三份Preset／layout與Excel前快照）唯讀重跑99個案例，98同樣失敗、已修正的LAYOUT-4通過，無新增失敗；既有配置／素材／過時斷言不在本輪修正範圍。npm.cmd run build，414檔通過；兩倉庫diff check通過。
+- 修改27檔：Skills2及Status兩份Excel／CSV、js/skills2.js／status.js／formula.js／combat.js／vfx-runtime.js、index.html／bridge.js／worker/sim.worker.js、tools/skills2-geometry.cjs／vfx/editor/index.html、五份相關測試（skill2-ice、skill2-vfx、水系傳奇、水彈VFX、新water-prison-dome）、新Preset／layout／匯出SVG、asset-index／shipped-assets、docs/WATER_ICE_AUDIT.md／vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md及本紀錄。唯讀檢查未改：js/battlefield.js／vfx-core.js／vfx-pixi-backend.js／worker/shim.js／protocol.js、tools/config_tables.cjs／apply_params.cjs／vfx/export-assets.cjs／asset-scanner.cjs／editor/layout-schema.js、其他技能及使用者素材。
+- 交付：無未完成程式項目，可合併；未合併／推送。已完成獨立Core／Runtime特效預覽與Excel原生重開／前後渲染，未做完整遊戲實戰／Console驗收。建議整合後重載遊戲確認水牢；編輯器若開著，先備份未存內容再重载，避免舊內容覆寫。Temp/codex-water-prison-20261001保存快照、唯讀檢查／對照、日誌及預覽，皆不納入提交。後續接手者：使用者。
+
+## Codex｜極寒冰爆命中冰爆（ABSOLUTE-ZERO-BURST-20261001）
+
+- Owner：Codex；Done。改為追蹤冰箭持續時間＋50%／每級＋5%、每次箭命中必定冰爆、冰爆半徑＋25%、冰爆傷害百分比與T7相加（＋200%／每級＋20%）；移除舊十波／本體增傷。依既有技能等級公式base＋per×Lv，維持T7原三波與速度。前置冰爆及命中掛勾已存在，衝突預檢乾淨。
+- 允許Skills2 Excel／CSV／JS、寒冰箭／冰爆限定接線、相關傳奇／VFX測試、必要快取與本紀錄；禁止其他技能、素材、Worker協議及他人未完成工作。驗收等級公式、逐命中／miss／擊殺／追蹤、冰爆不遞迴、傷害／落點／範圍事件、配置一致、Build及Commit。交使用者整合，不合併／推送。
+- 修改10檔：Skills2三份配置、index／bridge／Worker快取、tests/skill2-thunderorb-icearrow-legendary.test.cjs、tests/icearrow-vfx-integration.test.cjs、tests/waterball-vfx-integration.test.cjs及本紀錄。Excel原生COM只改第179列AU／AW／AX，刪舊waves／waveGap並填durPct50／durPctPer5／rangePct25／pct200／pctPer20；儲存與唯讀重開成功，保留使用者格式。CSV全231列與Excel逐格一致、與HEAD僅上述3格差異；config_tables試跑語意變更0。
+- 計算：追蹤生存時間＝T7秒數×（1＋(50＋5×超神Lv)／100），權威到期時間含起飛延遲且保留小數秒、演出事件在到期前裁切；冰爆傷害＝魔攻×（T7pct＋T7pctPer×T7Lv＋200＋20×超神Lv）／100，原半徑×1.25。Lv.1／T7Lv.10／魔攻500驗4.65秒、7.5米、4100傷害。成功直射／貫穿／追蹤接觸／分裂命中呼叫冰爆，miss不觸發，擊殺落點也爆；合併進原out，範圍死亡可回報，冰爆本身不遞迴。凍結解除原冰爆也套用加成。不改箭速、本體傷害、散射／無限冰裂／冰之淚或傷害協議，特效仍讀T7既有觸發配置。
+- 驗證：node --test tests/icearrow-vfx-integration.test.cjs tests/water-ice-audit.test.cjs tests/waterball-vfx-integration.test.cjs tests/icearrow-rift-budget.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-editor-cache-versions.test.cjs，108/108；node --test --test-name-pattern='連射|冰封|凜冬侵蝕|冰裂箭|深度凍結|極寒冰爆|無限冰裂|冰之淚' tests/skill2-thunderorb-icearrow-legendary.test.cjs，新增擊殺測試後12/12。涵蓋Lv.1／5／10相加、到期時刻、三波不增傷、追蹤重疊只算一次接觸／離開再命中、分裂、miss、擊殺中心、事件75px半徑及傷害／死亡一次回報。npm.cmd run build，413檔通過；git diff --check通過。
+- 檢查未改：js/vfx-runtime.js、js/vfx-core.js、js/battlefield.js、js/worker/protocol.js、Skills2配置工具、其他技能及Preset／layout。使用者持續編輯的素材保留未提交，無素材庫變更。未做遊戲實戰／Console及Excel視覺截圖驗收；無未完成程式項目，Commit為本紀錄所在提交，可合併，未合併／推送。重載遊戲確認逐命中冰爆與延長追蹤。
+
+## Codex｜無限冰裂僅保留冷卻縮減（ICEARROW-RIFT-CDR-20261001）
+
+- Owner：Codex；Done。使用者要求移除無限冰裂額外寒冰箭數量，保留現有每次造成傷害的冷卻回扣。前置既有回扣掛勾可直接沿用；所有目標衝突預檢乾淨。
+- 允許 Skills2 Excel／CSV／生成 JS 該列與施放箭數計算、tests/skill2-thunderorb-icearrow-legendary.test.cjs、tests/icearrow-rift-budget.test.cjs 壓力 fixture、必要 index／bridge／Worker 快取及本紀錄；禁止其他技能、傷害、速度、波次、素材與未完成工作。共享三份配置保留使用者既有欄位排序、寒冰箭冷卻18秒、第7階300%＋每級30%／3秒及無限冰裂回扣0.01秒，不自行改值；提交此配置現況以維持三份一致。使用者編輯中的兩份Preset／layout不納入提交，無素材庫變更。
+- 驗收：未選／選無限冰裂各等級本體箭數一致、舊 count 欄不能再生效、冷卻回扣保留，Excel 原生儲存與重開、CSV／JS 一致、回歸及 Build。完成 Commit 交使用者整合，不合併／推送。
+- 完成：原生Excel僅修改第180列AU效果JSON（刪count／countPer）、AW／AX說明，保留sec=0.01；原生儲存及唯讀重開成功。CSV以既有readXlsxRows／csvStringify同步，JS經config_tables正式重建，移除sgCastIcearrow的ultRift及箭數加成，sgUltHitCdr完全不改。index Skills2 1.0.259／Bridge 1.0.192、Worker token 20261001-icearrow-rift-cdr。
+- 驗證：node --test --test-name-pattern='連射|冰封|凜冬侵蝕|冰裂箭|深度凍結|極寒冰爆|無限冰裂|冰之淚' tests/skill2-thunderorb-icearrow-legendary.test.cjs，10/10；無限冰裂驗Lv.1／5／10並注入舊100支設定仍不加箭、每命中冷卻回扣保留。node --test tests/icearrow-vfx-integration.test.cjs tests/water-ice-audit.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-editor-cache-versions.test.cjs，84/84。node --test tests/icearrow-rift-budget.test.cjs，11/11；原壓力fixture因箭数與回扣降低不再形成壓力，僅在測試內設0.25秒冷卻，維持原72支上限及所有發射事件送達斷言，不改正式數值。npm.cmd run build，413檔通過；node tools/config_tables.cjs --apply Skills2，語意變更0；Excel與CSV231列逐格一致，git diff --check通過。
+- 檢查未改：sgUltHitCdr、其他寒冰箭傷害／散射／連射、js/vfx-runtime.js、冰箭Preset、配置工具及Worker協議。未做遊戲實戰／Console與Excel視覺截圖驗收；無未完成程式項目。Commit為本紀錄所在提交，可合併，未合併／推送。建議重載遊戲確認無限冰裂說明與箭數。
+
+## Codex｜寒冰箭連續轉彎（ICEARROW-TURN-20261001）
+
+- Owner：Codex；Done。使用者補充只在扇形射出後第一次轉彎：追蹤場域先移動才發首個事件，缺少原落點／原航向；Runtime 又未沿用風刃的快照航向、世界座標圓弧及位置修正平滑。補上首次飛行交接事件，再共用平滑追擊；維持 58.5 米／秒及權威模擬轉彎半徑。前置既有圓弧模擬已完成，衝突預檢乾淨。
+- 修改 js/skills2.js 僅首次追蹤演出事件、js/vfx-runtime.js、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、tests/icearrow-vfx-integration.test.cjs 及本紀錄。未改技能配置、傷害、搜敵、運動計算、素材與其他任務內容；保留工作區既有 Excel／CSV／生成 JS 修改且不納入本次提交。無素材庫变更。
+- 驗收：跨快照掉頭不折角、近落點不停頓、投影前圓弧及速度與模擬一致、風刃回歸、Build。完成後 Commit，交使用者整合，不合併或推送。
+- 測試：node --test tests/icearrow-vfx-integration.test.cjs tests/windblade-vfx-integration.test.cjs tests/skill2-wind.test.cjs tests/skill2-ice.test.cjs tests/water-ice-audit.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/battle-ground-projection.test.cjs，165 項 163 通過。兩項既有失敗為冰箭配置仍期待 6 波（現配置 3 波）、凍結冰爆傷害舊斷言；記憶內移除本次交接修正後仍相同兩項失敗。新增三項涵蓋實際扇形每支箭首次交接、世界速度／四向投影及跨快照修正；移除交接修正後新首次轉彎測試轉紅。npm.cmd run build，413 檔通過；git diff --check 通過。
+- 唯讀檢查未改：js/vfx-core.js、js/battle-renderer.js、Skills2 Excel／CSV、風刃與冰系原測試、冰箭 Preset。Worker 協議不變，必要主頁／Worker／Editor 快取同步。無瀏覽器實戰／Console 驗收，建議重載遊戲測首次轉彎；若編輯器開著先下載未存內容備份再重載，未改 Preset 或儲存端防護。程式可合併，Commit 為本紀錄所在提交，未合併／推送。

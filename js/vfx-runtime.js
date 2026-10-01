@@ -307,7 +307,7 @@ var VFXRuntime = (function () {
       var b = Object.assign({}, a);
       // 貼地圖層自己做最終投影，保留判定平面的長度與角度，避免尺寸被換兩次。
       b._planeW = a.w; b._planeA = a.a;
-      if (spec.variant === 'wind-blade-homing') b._worldMotion = Object.assign({},a);
+      if (spec.variant === 'wind-blade-homing' || spec.variant === 'ice-arrow-homing') b._worldMotion = Object.assign({},a);
       ['y', 'sourceY', 'destY', 'controlY'].forEach(function (f) { if (isNum(a[f])) b[f] = a[f] * k; });
       var heading = isNum(a.moveA) ? a.moveA : (isNum(a.a) ? a.a : NaN);
       if (isNum(a.speed) && isNum(heading)) b.speed = a.speed * projectedLength(heading, k);
@@ -553,6 +553,14 @@ var VFXRuntime = (function () {
             registerPresets([part]);
           });
         }
+        // 水牢地板與透明罩子分層，兩份共用範圍與位置。
+        if (p.id === 'field-water-prison-dome') {
+          ['back', 'front'].forEach(function(half) {
+            var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
+            part.layers = part.layers.filter(function(l) { return (l.id === 'dome-shell') === (half === 'front'); });
+            registerPresets([part]);
+          });
+        }
         // 火牆在編輯器是三柱合成；遊戲中各柱保持直立，只沿判定軸排列底部。
         if (p.id === 'ground-firewall' && p.layers.some(function (l) { return l.id.indexOf('column-0-') === 0; })) {
           for (var column = 0; column < 3; column++) {
@@ -608,6 +616,12 @@ var VFXRuntime = (function () {
       return Object.assign({}, params, { projectionRotation: params.rotation, rotation: 0 });
     }
     function play(rt, presetId, params, mult) {
+      if (presetId === 'field-water-prison-dome' && has(presetId + '-front')) {
+        var floor = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
+        var shell = play(rtBillboard, presetId + '-front', rockDepthParams(params, 1), mult);
+        if (!floor || !shell) { stopRef(floor); stopRef(shell); return null; }
+        return { parts: [floor, shell] };
+      }
       if (isRockOrbitPreset(presetId) && tuning(presetId,'splitRockDepth') && has(presetId + '-front')) {
         // 前後石碑各自有透明度曲線；兩份必須跨在角色的畫面 Y 兩側，
         // 否則共用同一個 sortY 時會依加入順序一起蓋到角色上。
@@ -1006,12 +1020,13 @@ var VFXRuntime = (function () {
          沒帶＝這一拍是靜止的，推算自走那一段自然就不會走。 */
       g.speed = Math.max(0, num(area.speed, 0));
       var incomingAngle = num(area.moveA, NaN);
-      if (g.presetId === 'ground-homing-wind-crescent' && isFinite(g.moveA) && isFinite(incomingAngle)) {
+      if (g.smoothChase && isFinite(g.moveA) && isFinite(incomingAngle)) {
         g.headingResidual = Math.atan2(Math.sin(g.moveA + (g.headingResidual || 0) - incomingAngle), Math.cos(g.moveA - incomingAngle));
       }
       g.moveA = incomingAngle;
       g.turnRate = num(area.turnRate, 0);
-      g.hasDest = g.presetId !== 'ground-homing-wind-crescent' && isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
+      // 追擊落點是獵物位置，不是停駐終點；航向與轉速仍由模擬決定。
+      g.hasDest = !g.smoothChase && isFinite(num(area.destX, NaN)) && isFinite(num(area.destY, NaN));
       if (g.hasDest) { g.destX = num(area.destX, 0); g.destY = num(area.destY, 0); }
       var w = num(area.w, 0), h = num(area.h, 0);
       // 追蹤冰箭沿用發射本體尺寸；area.r 僅控制碰撞，不能縮小箭體。
@@ -1053,7 +1068,7 @@ var VFXRuntime = (function () {
     function groundDeadReckon(g, dt) {
       if (!(g.speed > 0) || !isFinite(g.moveA) || !(dt > 0)) return;
       var run = g.speed * dt;
-      if (g.presetId === 'ground-homing-wind-crescent' && Math.abs(g.headingResidual || 0) > 1e-6) {
+      if (g.smoothChase && Math.abs(g.headingResidual || 0) > 1e-6) {
         var oldResidual = g.headingResidual;
         g.headingResidual *= Math.exp(-dt / tuning(g.presetId,'windTau'));
         var fromAngle = g.moveA + oldResidual;
@@ -1091,7 +1106,7 @@ var VFXRuntime = (function () {
       if (!(mag > 1e-4)) { g.ox = 0; g.oy = 0; g.correctVX = 0; g.correctVY = 0; return; }
       var want = mag / tuning(g.presetId,'groundTau');
       if (g.speed > 0) want = Math.min(want, g.speed * tuning(g.presetId,'groundCorrection'));
-      if (g.presetId === 'ground-homing-wind-crescent' && g.speed > 0) {
+      if (g.smoothChase && g.speed > 0) {
         var blend = 1 - Math.exp(-dt / tuning(g.presetId,'windTau'));
         g.correctVX = num(g.correctVX, 0) + (g.ox/mag*want-num(g.correctVX,0))*blend;
         g.correctVY = num(g.correctVY, 0) + (g.oy/mag*want-num(g.correctVY,0))*blend;
@@ -1182,7 +1197,8 @@ var VFXRuntime = (function () {
         bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         iceArrowBody: spec.variant === 'ice-arrow-homing',
-        worldMotion: spec.variant === 'wind-blade-homing' && !!(spec.area && spec.area._worldMotion),
+        worldMotion: (spec.variant === 'wind-blade-homing' || spec.variant === 'ice-arrow-homing') && !!(spec.area && spec.area._worldMotion),
+        smoothChase: spec.variant === 'ice-arrow-homing' || presetId === 'ground-homing-wind-crescent',
         windBody: spec.variant === 'wind-blade-homing',
         devour: spec.variant === 'dragon-devour',
         fixedLifetime: spec.variant === 'flying-thunder' ? keep : 0,

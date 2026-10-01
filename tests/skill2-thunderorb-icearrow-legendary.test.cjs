@@ -8,7 +8,7 @@ const table = require('./helpers/skill-table.cjs');
         雷殞天地碎（永久節拍不斷降下雷殞石）
      3. 寒冰箭五個傳奇：連射（支數）、冰封（傷害乘區）、凜冬侵蝕（寒霜每跳量與時間）、
         冰裂箭（往前分裂）、深度凍結（控場中增傷）
-     4. 寒冰箭三個超神：極寒冰爆（波數與間隔改寫）、無限冰裂（支數＋命中回扣冷卻）、
+     4. 寒冰箭三個超神：極寒冰爆（延時與逐命中冰爆）、無限冰裂（命中回扣冷卻）、
         冰之淚（跟隨我方的箭雨）
 
    ⚠️ 本檔只驗「機制有沒有接上」，不驗「數字調校得對不對」（那是參數表的事）。 */
@@ -697,40 +697,73 @@ test('【深度凍結】與【冰裂箭】在追擊冰箭（第 7 階）那一�
    4) 寒冰箭的三個超神進化
    =========================================================================== */
 
-test('【極寒冰爆】：連射改為 10 波／每 0.35 秒，且寒冰箭傷害 +50%', () => {
-  function run(withUlt) {
-    const c = loadContext();
-    const specs = stubVfx(c);
-    stubHits(c);
-    c.chance = () => false;
-    maxLevels(c, 'icearrow');
-    equip(c, 'icearrow');
-    if (withUlt) setUlt(c, 'icearrow', 'absoluteZeroBurst', 1);
-    c.castSkill2(playerEnt(), [enemy(1e9, 40, 0, 'a')], 'icearrow', 'mv-float');
-    const pierce = specs.filter((s) => s.variant === 'ice-arrow-pierce');
-    const delays = Array.from(new Set(pierce.map((s) => s.delayMs || 0))).sort((a, b) => a - b);
-    // 貫穿箭的傷害在施放當下定版在飛行物上（命中要等它飛完才發生）
-    return { waves: delays.length, gap: delays[1] - delays[0], dmg: c.SKILL2_RT.projectiles[0].dmgVal };
-  }
-  const base = run(false);
-  const ult = run(true);
-  assert.equal(base.waves, 3, '表定 3 波');
-  assert.equal(base.gap, 300, '表定間隔 0.3 秒');
-  assert.equal(ult.waves, 10, '改為 10 波');
-  assert.equal(ult.gap, 350, '改為 0.35 秒');
-  // Lv.1 ＝ 50 + 5×1 ＝ 55%
-  assert.equal(Math.round(ult.dmg / base.dmg * 100), 155, '寒冰箭傷害 ×1.55');
+test('【極寒冰爆】：延長追蹤時間，逐箭命中冰爆，傷害與T7相加', () => {
+ for(const level of [1,5,10]) {
+  const c=loadContext(),specs=stubVfx(c),hits=stubHits(c);c.chance=()=>false;
+  maxLevels(c,'icearrow');equip(c,'icearrow');const p=playerEnt();c.FIELD.player=p;
+  const es=[enemy(1e9,40,0,'a'),enemy(1e9,110,0,'b'),enemy(1e9,200,0,'far')];
+  c.castSkill2(p,es,'icearrow','mv-float');const baseDamage=c.SKILL2_RT.projectiles[0].dmgVal;
+  c.SKILL2_RT.grounds=[];c.SKILL2_RT.projectiles=[];specs.length=0;
+  setUlt(c,'icearrow','absoluteZeroBurst',level);c.castSkill2(p,es,'icearrow','mv-float');
+  const delays=[...new Set(specs.filter(s=>s.variant==='ice-arrow-pierce').map(s=>s.delayMs||0))];
+  assert.deepEqual(delays,[0,300,600]);assert.equal(c.SKILL2_RT.projectiles[0].dmgVal,baseDamage);
+  const f=c.SKILL2_RT.grounds.find(f=>f.kind==='icearrow');
+  const duration=3*(1+(50+5*level)/100);
+  assert.ok(Math.abs(f.expiresAt-f.startAt-duration)<1e-8,'權威到期時間包含小數秒');
+  assert.ok(Math.abs(f.hits*f.gap-duration)<=f.gap,'持續時間包含逐級增幅');
+  specs.length=0;hits.length=0;const out={dmg:0,killed:false,crit:false};
+  c.sgIcearrowHit(p,c.getStats(),es[0],100,null,c.skills2Levels('icearrow'),'mv-float',out,0,tickCtx(c,p,es),null,es);
+  const blasts=specs.filter(s=>s.variant==='ice-blast');assert.equal(blasts.length,1,'命中必定一次冰爆且不遞迴');
+  assert.equal(blasts[0].area.r,75);assert.equal(blasts[0].area.x,40);
+  const blastDamage=500*(300+30*10+200+20*level)/100;
+  assert.equal(hits.length,3,'箭加兩個範圍內冰爆目標');assert.equal(hits[1].atk,blastDamage);assert.equal(hits[2].atk,blastDamage);
+  assert.equal(out.dmg,300,'箭与冰爆合併回報，不能重複結算');
+  specs.length=0;c.resolveHit=()=>({miss:true,dmg:0});
+  c.sgIcearrowHit(p,c.getStats(),es[0],100,null,c.skills2Levels('icearrow'),'mv-float',{dmg:0},0,tickCtx(c,p,es),null,es);
+  assert.equal(specs.filter(s=>s.variant==='ice-blast').length,0,'miss不冰爆');
+ }
 });
 
-test('【無限冰裂】：發射追加支數及每次傷害回扣冷卻皆讀配置', () => {
-  function run(withUlt) {
+test('【極寒冰爆】：追蹤與分裂每次命中冰爆，離開後再接觸仍可觸發',()=>{
+ const c=loadContext(),hits=stubHits(c),specs=stubVfx(c);maxLevels(c,'icearrow');equip(c,'icearrow');setUlt(c,'icearrow','absoluteZeroBurst',1);
+ const p=playerEnt();c.FIELD.player=p;const es=[enemy(1e9,40,0,'a'),enemy(1e9,110,0,'b')];
+ c.sgSpawnIcearrowHoming(p,c.getStats(),c.SKILLS2.icearrow.tiers[6].fx,es[0],100,null,'mv-float',{from:{x:40,y:0},moveAngle:0});
+ const f=c.SKILL2_RT.grounds[0];
+ c.sgGroundTick(f,es,tickCtx(c,p,es));assert.equal(specs.filter(s=>s.variant==='ice-blast').length,1);
+ c.sgGroundTick(f,es,tickCtx(c,p,es));assert.equal(specs.filter(s=>s.variant==='ice-blast').length,1,'持續重疊不新增接觸命中');
+ f.pos={x:400,y:0};c.sgGroundTick(f,es,tickCtx(c,p,es));f.pos={x:40,y:0};c.sgGroundTick(f,es,tickCtx(c,p,es));
+ assert.equal(specs.filter(s=>s.variant==='ice-blast').length,2,'每次實際接觸都爆');
+ const out={dmg:0,killed:false,crit:false};
+ c.sgIcearrowSplit(p,c.getStats(),{split:{count:2,dmgVal:100,lenPx:300,pool:es}},es[0],es,'mv-float',out,0);
+ assert.equal(specs.filter(s=>s.variant==='ice-blast').length,4,'兩支分裂箭各一次，冰爆不自觸發');
+ assert.ok(hits.length>0);
+});
+
+test('【極寒冰爆】：擊殺落點仍冰爆，範圍死亡及傷害只回報一次',()=>{
+ const c=loadContext(),specs=stubVfx(c);maxLevels(c,'icearrow');equip(c,'icearrow');setUlt(c,'icearrow','absoluteZeroBurst',1);
+ const p=playerEnt(),a=enemy(100,40,0,'a'),b=enemy(100,110,0,'b'),es=[a,b];c.FIELD.player=p;
+ c.resolveHit=(_p,target)=>{target.hp=0;return {dmg:100,crit:false,miss:false,killed:true};};c.applySkillFinalDamageMultiplier=()=>{};
+ let damage=0,deaths=0;const ctx={...tickCtx(c,p,es),onDamage:n=>damage+=n,onDeaths:()=>deaths++};
+ const projectile={pEnt:p,st:c.getStats(),dmgVal:100,frostSpec:null,floatSel:'mv-float',out:{dmg:0,killed:false,crit:false}};
+ c.sgIcearrowProjectileHit(projectile,a,ctx);
+ assert.equal(a.hp,0);assert.equal(b.hp,0);assert.equal(damage,200);assert.equal(deaths,1);
+ const blast=specs.find(s=>s.variant==='ice-blast');assert.ok(blast);assert.equal(blast.area.x,40);assert.equal(blast.area.r,75);assert.equal(blast.preserveDeadTargets,true);
+ assert.equal(specs.filter(s=>s.variant==='ice-blast').length,1);
+});
+
+test('【無限冰裂】：僅每次傷害回扣冷卻，不增加發射支數', () => {
+  function run(level, legacyCount) {
     const c = loadContext();
     const specs = stubVfx(c);
     const calls = stubHits(c);
     c.chance = () => false;                       // 不足 1 支的部分一律不觸發
     maxLevels(c, 'icearrow');
     equip(c, 'icearrow');
-    if (withUlt) setUlt(c, 'icearrow', 'infiniteIceRift', 1);
+    if (level) setUlt(c, 'icearrow', 'infiniteIceRift', level);
+    assert.equal(c.SKILLS2.icearrow.ult[1].fx.count, undefined);
+    assert.equal(c.SKILLS2.icearrow.ult[1].fx.countPer, undefined);
+    assert.ok(!c.SKILLS2.icearrow.ult[1].desc.includes('數量額外'));
+    if (legacyCount) Object.assign(c.SKILLS2.icearrow.ult[1].fx, { count: 100, countPer: 10 });
     const p = playerEnt();
     const es = line(6, 5 * M);
     c.castSkill2(p, es, 'icearrow', 'mv-float');
@@ -739,17 +772,18 @@ test('【無限冰裂】：發射追加支數及每次傷害回扣冷卻皆讀�
     return {
       lanes: specs.filter((s) => s.variant === 'ice-arrow-pierce' && !s.delayMs).length,
       cdAtCast, cdAfter: p.skillCds[c.SG_PREFIX + 'icearrow'], hits: calls.length,
-      expectedAdd: Math.floor(c.SKILLS2.icearrow.ult[1].fx.count + c.SKILLS2.icearrow.ult[1].fx.countPer),
       expectedRefund: c.SKILLS2.icearrow.ult[1].fx.sec
     };
   }
-  const base = run(false);
-  const ult = run(true);
-  assert.equal(ult.lanes, base.lanes + ult.expectedAdd, 'Lv.1追加支數與配置一致，小數不觸發');
+  const base = run(0);
   assert.equal(base.cdAfter, base.cdAtCast, '沒選超神時冷卻不會被命中扣掉');
+  for (const level of [1, 5, 10]) {
+  const ult = run(level, true);
+  assert.equal(ult.lanes, base.lanes, '所有等級與舊 count 設定均不能追加冰箭');
   assert.ok(ult.hits > 0);
   assert.ok(ult.cdAfter <= Math.max(0, ult.cdAtCast - ult.hits * ult.expectedRefund) + 1e-6, '每次命中各扣配置秒數');
   assert.ok(ult.cdAfter < ult.cdAtCast);
+  }
 });
 
 test('【冰之淚】：施放時另外召喚跟隨我方的箭雨（10 波、我方 30 米內）', () => {

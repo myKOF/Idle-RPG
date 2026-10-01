@@ -4,7 +4,7 @@
      1. 水流彈五個傳奇：水流連彈（顆數）、冰霜擴散（爆散改為冰霜新星）、
         寒霜湧動（寒霜可疊過凍結門檻＋額外層增傷）、激流（彈射次數與速度）、
         水龍勢（命中機率捲起水龍捲）
-     2. 水流彈三個超神：水牢天瀑（減益＋擋下圈外遠程）、怒海狂濤（門檻觸發巨大水龍捲）、
+     2. 水流彈三個超神：水牢天瀑（圈內減益＋遠程減傷）、怒海狂濤（門檻觸發巨大水龍捲）、
         海淵葬界（永久領域逐拍塗寒霜＋領域內額外疊層）
      3. 冰霜新星五個傳奇：碎冰（範圍）、雙冰爆＋寒潮（機率相加的再爆發）、
         寒冰衝擊（擊殺凍結敵人昇起冰錐）、凜冬寒霜（暴風雪塗寒霜＋寒霜傷害共用層）
@@ -281,7 +281,7 @@ test('沒裝【水龍勢】就不會捲出水龍捲', () => {
    2) 水流彈的三個超神進化
    =========================================================================== */
 
-test('【水牢天瀑】：圈內敵人攻擊力下降並提高受到的傷害，圈外的遠程攻擊被擋下', () => {
+test('【水牢天瀑】：圈內攻擊下降與易傷，圈內外遠程皆減傷、近戰不減傷', () => {
   const c = loadContext();
   stubVfx(c); stubHits(c);
   c.chance = () => false;
@@ -294,14 +294,21 @@ test('【水牢天瀑】：圈內敵人攻擊力下降並提高受到的傷害�
   c.castSkill2(p, [inside, outside], 'waterball', 'mv-float');
   assert.equal(c.SKILL2_RT.waterPrison.radius, 20 * M, '水牢半徑 20 米');
   advance(c, p, [inside, outside], 0.6);
-  assert.equal(inside.buffs.atkDown.val, 50, '圈內攻擊力 -50%');
-  assert.equal(inside.buffs.sgWaterPrison.val, 110, 'Lv.1 ＝ 100 + 10');
+  assert.equal(inside.buffs.atkDown.val, 30, '圈內攻擊力 -30%');
+  assert.equal(inside.buffs.sgWaterPrison.val, 55, 'Lv.1 ＝ 50 + 5');
   assert.equal(outside.buffs.sgWaterPrison, undefined, '圈外不算被關進去');
-  assert.equal(c.skill2WaterPrisonBlocks(outside), true, '圈外的遠程攻擊被牢牆擋下');
-  assert.equal(c.skill2WaterPrisonBlocks(inside), false, '已經在牢裡的敵人照樣能打');
+  for (const e of [inside, outside]) {
+    for (const magic of [false, true]) {
+      e.magic = magic;
+      e.atkRange = 400;
+      assert.ok(Math.abs(c.skill2WaterPrisonDamageMultiplier(p, e) - .67) < 1e-9, '物理／魔法遠程 Lv.1 減傷33%');
+      e.atkRange = 20;
+      assert.equal(c.skill2WaterPrisonDamageMultiplier(p, e), 1, '物理／魔法近戰傷害不降低');
+    }
+  }
 });
 
-test('【水牢天瀑】到期後遠程封鎖與減益一起解除', () => {
+test('【水牢天瀑】到期後遠程減傷與減益一起解除', () => {
   const c = loadContext();
   stubVfx(c); stubHits(c);
   c.chance = () => false;
@@ -313,7 +320,52 @@ test('【水牢天瀑】到期後遠程封鎖與減益一起解除', () => {
   c.castSkill2(p, [out], 'waterball', 'mv-float');
   advance(c, p, [out], 7);
   assert.equal(c.SKILL2_RT.waterPrison, null, '到期回收');
-  assert.equal(c.skill2WaterPrisonBlocks(out), false);
+  out.atkRange = 400;
+  assert.equal(c.skill2WaterPrisonDamageMultiplier(p, out), 1);
+});
+
+test('【水牢天瀑】Lv.1／5／10 實際傷害、高塔、卸下與圈內減益數值', () => {
+  for (const lv of [1, 5, 10]) {
+    const c = loadContext(); stubVfx(c); c.chance = () => false;
+    maxLevels(c, 'waterball'); equip(c, 'waterball'); setUlt(c, 'waterball', 'waterPrisonFall', lv);
+    const p = playerEnt(); p.hp = 100000;
+    const e = enemy(1e9, 100, 0); e.atkRange = 400;
+    c.FIELD.player = p; p.pos = { x: 0, y: 0 };
+    c.sgCastWaterPrison(p); c.sgTickWaterPrison(tickCtx(c, p, [e]), .05);
+    assert.equal(e.buffs.atkDown.val, 30);
+    assert.equal(e.buffs.sgWaterPrison.val, 50 + 5 * lv);
+    const aCfg = { atk: 1000, dmgType: 'phys', level: 1, hit: 100, critRate: 0 };
+    const dCfg = { isPlayer: true, def: 0, mdef: 0, level: 1 };
+    const defended = c.resolveHit(e, p, aCfg, dCfg).dmg;
+    delete e.pos; // 無座標高塔仍以實際射程分類。
+    assert.equal(c.resolveHit(e, p, aCfg, dCfg).dmg, defended);
+    c.G.player.loadout = [];
+    const full = c.resolveHit(e, p, aCfg, dCfg).dmg;
+    assert.equal(defended, Math.round(full * (1 - (30 + 3 * lv) / 100)));
+    c.sgTickWaterPrison(tickCtx(c, p, [e]), .05);
+    assert.equal(c.SKILL2_RT.waterPrison, null);
+    assert.equal(p.buffs.sgWaterPrisonDomain, undefined);
+  }
+});
+
+test('【水牢天瀑】敵人離開後不保留整段水牢減益，易傷與攻擊值真實生效', () => {
+  const c = loadContext(); stubVfx(c); c.chance = () => false;
+  maxLevels(c, 'waterball'); equip(c, 'waterball'); setUlt(c, 'waterball', 'waterPrisonFall', 1);
+  const p = playerEnt(), e = enemy(1e9, 100, 0);
+  c.FIELD.player = p; p.pos = { x: 0, y: 0 };
+  c.sgCastWaterPrison(p); c.sgTickWaterPrison(tickCtx(c, p, [e]), .05);
+  const base = { totalDmgPct: 0 };
+  assert.equal(c.skill2VulnACfg(base, e).totalDmgPct, 55);
+  assert.equal(c.buffVal(e, 'atkDown'), 30);
+  e.atk = 1000;
+  assert.equal(c.monsterAtkCfg(e).atk, 700, '敵人實際攻擊力減少30%');
+  const raw = { atk: 1000, dmgType: 'phys', level: 1, hit: 100, critRate: 0, isPlayer: true };
+  const full = c.resolveHit(p, e, raw, { def: 0, level: 1 }).dmg;
+  const amplified = c.resolveHit(p, e, c.skill2VulnACfg({ ...raw }, e), { def: 0, level: 1 }).dmg;
+  assert.equal(amplified, Math.round(full * 1.55), '受到的傷害提高55%進入真實結算');
+  e.pos.x = 400; c.GT = .56; c.sgTickWaterPrison(tickCtx(c, p, [e]), .56);
+  assert.equal(c.buffVal(e, 'sgWaterPrison'), 0);
+  assert.equal(c.buffVal(e, 'atkDown'), 0);
 });
 
 test('【怒海狂濤】：水龍捲達門檻時在中央生成巨大水龍捲，且不會每一拍重複生成', () => {

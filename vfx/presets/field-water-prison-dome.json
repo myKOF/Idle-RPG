@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "id": "field-water-prison-dome",
+  "duration": 2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "water-floor",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/circle_b.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.390625,
+        "y": 0.390625
+      },
+      "alpha": 0.12,
+      "tint": "#49c9f5",
+      "blendMode": "add",
+      "duration": 2,
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "water-ripple",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/default/ring_a.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.35,
+        "y": 0.35
+      },
+      "alpha": 0.35,
+      "tint": "#77e2ff",
+      "blendMode": "add",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.35
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.55
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "dome-shell",
+      "type": "sprite",
+      "assetId": "codex-authored/water-prison/water-dome.svg",
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -53.448276
+      },
+      "scale": {
+        "x": 0.862069,
+        "y": 0.862069
+      },
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "normal",
+      "duration": 2,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.5,
+          0.92
+        ],
+        [
+          1,
+          0.8
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

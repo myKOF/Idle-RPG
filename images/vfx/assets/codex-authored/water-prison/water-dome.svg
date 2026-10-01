@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="water" cx="36%" cy="28%" r="85%">
+      <stop offset="0" stop-color="#dcfbff" stop-opacity=".24"/>
+      <stop offset=".5" stop-color="#65dbf5" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#158ab8" stop-opacity=".3"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#e1fcff" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#42c8f3" stop-opacity=".65"/>
+    </linearGradient>
+  </defs>
+  <!-- Footprint centre is (128,190), radius 116; anchored to the player's feet by the preset. -->
+  <path d="M12 190 C12 118 64 60 128 60 C192 60 244 118 244 190 A116 58 0 0 1 12 190Z"
+        fill="url(#water)" stroke="url(#rim)" stroke-width="2"/>
+  <ellipse cx="128" cy="190" rx="116" ry="58" fill="none" stroke="#6ce5fa" stroke-opacity=".55" stroke-width="1.6"/>
+  <path d="M128 60 C81 94 81 206 128 248 M128 60 C175 94 175 206 128 248"
+        fill="none" stroke="#9becff" stroke-opacity=".22" stroke-width="1.2"/>
+  <path d="M27 116 C47 146 209 146 229 116 M16 157 C36 202 220 202 240 157"
+        fill="none" stroke="#9becff" stroke-opacity=".16" stroke-width="1.2"/>
+  <path d="M43 117 C58 89 86 74 106 71" fill="none" stroke="#ecffff" stroke-opacity=".7" stroke-width="3" stroke-linecap="round"/>
+</svg>

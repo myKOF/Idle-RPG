@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "presetId": "field-water-prison-dome",
+  "groups": [
+    {
+      "id": "field-water-prison-dome",
+      "name": "field-water-prison-dome",
+      "layerIds": ["water-floor", "water-ripple", "dome-shell"]
+    }
+  ],
+  "order": ["group:field-water-prison-dome"]
+}
