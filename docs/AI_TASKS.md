@@ -8329,3 +8329,15 @@ Worker 存活且頁面正常完成載入。
 - 修改：js/skills2.js 裝配防護、tests/icearrow-vfx-integration.test.cjs 兩項完整擊殺事件回歸、index.html Skills2 1.0.252／Bridge 1.0.184、js/bridge.js 與 js/worker/sim.worker.js 同步 20261001-icearrow-death-nova，以及 AI_TASKS／水系稽核紀錄。檢查未改：Runtime／Core／Renderer、Status／combat 的凍結及死亡流程、Skills2 其他規則、Nova／冰箭素材。使用者配置提交另含 Excel／CSV／生成 JS 與當次快取，Excel 全列與 CSV 逐格一致、生成 JS 試跑語意變更 0。
 - 驗證：新增兩測試在修正前皆失敗，修正後通過，包含正式 castSkill2／tickSkill2→擊殺→skills2OnEnemyDeath、己方範圍的合法命中、卸下及實際 Runtime 不建立新星衝擊波。node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/icearrow-vfx-integration.test.cjs tests/waterball-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，132/132；npm.cmd run build，411 檔通過；git diff --check 通過。
 - 交付：修正 Commit 為本紀錄所在提交，可合併，未合併／推送。無素材變更，素材庫 master 乾淨，不建立空提交。無未完成程式修改；無可讀取的遊戲瀏覽器分頁，未做實戰畫面／Console 驗收。需重載遊戲載入新 Worker；若冰霜新星仍裝配且死亡新星已學，該合法連動仍會存在。
+
+## Claude｜每個預覽視窗各記自己的搜尋關鍵字（VFX-PANE-SEARCH-20261002）
+
+- Owner：Claude；Done。使用者回報：四格開著時，在第 3 格搜過 `hit-ice`，切到第 4 格點一下搜尋框，跳出來的還是 `hit-ice`——那一格開的是別份特效，等於別人的搜尋記錄跟著跑。原因是「上次打的關鍵字」存在**一個共用的** sessionStorage 鍵（`vfx-editor.presetSearch`）。
+- 改法：關鍵字改記在 pane 上（`pane.comboQuery`），sessionStorage 只負責「重新整理之後還在」，鍵帶視窗編號（`vfx-editor.presetSearch.<n>`，視窗本身也是照網址重建的）。`lastComboQuery(pane)`／`rememberComboQuery(q, pane)` 預設作用在焦點視窗，所以另存新檔與改名那兩條路自動變成只動自己那一格（以前會蓋掉全域那一份）。
+- 兩個踩過的坑寫進程式與測試：
+  - **建視窗時不能順手同步 storage**：重新整理時視窗是一格一格建的，第 1 格建好就同步的話，後面幾格的鍵會被「清掉多出來的編號」那段當成垃圾刪掉，於是第 2 格接回來是空的（實機踩到，第一次修完就是這個症狀）。改成 `syncComboQueryStorage(prune)`：只有真的關掉視窗（編號會遞補）才清，打字時只寫入。
+  - **關掉中間那一格之後編號會遞補**：不整批重寫的話，遞補上來的第 2 格會撿到前一個第 2 格的關鍵字。
+- 修改 `tools/vfx/editor/editor.js`、編輯器頁面的快取版號、`tests/vfx-editor-panes.test.cjs`（新增 PANE-31／31B／31C）、`tests/vfx-editor-view.test.cjs`（VIEW-26 跟著改成每視窗一個鍵，行為不變）。沒有動到 preset、配置表或遊戲程式。
+- 驗證：PANE-31 系列用假的 sessionStorage ＋ 假的 panes 跑真的函式，驗各記各的、指定視窗、重新整理接得回來、關掉一格之後不撿別人的、無痕視窗存不了也不會壞。10 個突變全部被抓到（含「退回舊的共用一份」與「打字時也連帶清掉多出來的編號」）。編輯器 422 項中 3 項既有失敗（CAP-2、HISTORY-42、16b canonical）。build_check 413 檔通過、diff check 通過。
+- 實機確認（本機編輯器 28362，兩格分別開 `hit-ice` 與 `lightning-orb-field-purple`）：第 1 格打 `frost`、第 2 格打 `thunder`，來回切換各自回到自己那一份；sessionStorage 是 `.1=frost`、`.2=thunder`；重新整理之後兩格仍各自接回 `frost`／`thunder`。
+- 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/editor/` 的提交。未合併／推送。

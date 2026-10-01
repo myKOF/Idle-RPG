@@ -642,3 +642,129 @@ test('PANE-30 沒帶 preset 的網址＝空場景：不開任何預設特效', f
   const launcherCode = launcher.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
   assert.ok(!/DEFAULT_PRESET|'lightning-orb-field'/.test(launcherCode), '啟動器也不能再帶預設的特效');
 });
+
+/* ============================================================
+   PANE-31 每個視窗各有自己的搜尋關鍵字（2026-10-02 使用者回報）
+
+   症狀：四格開著，在第 3 格搜過 hit-ice，切到第 4 格點一下搜尋框，跳出來的還是
+   hit-ice ——那一格開的根本是別份特效。原因是「上次打的關鍵字」存在一個共用的
+   sessionStorage 鍵裡，所有視窗共用同一份。
+
+   這裡拿真的函式跑：假的 sessionStorage ＋ 假的 panes，驗「各記各的」、
+   「重新整理接得回來」、「關掉一格之後編號遞補不會撿到別人的關鍵字」。
+   ============================================================ */
+function comboQuerySandbox(storage) {
+  const store = storage || (function () {
+    const map = Object.create(null);
+    return {
+      getItem(k) { return Object.prototype.hasOwnProperty.call(map, k) ? map[k] : null; },
+      setItem(k, v) { map[k] = String(v); },
+      removeItem(k) { delete map[k]; },
+      dump() { return Object.assign({}, map); }
+    };
+  })();
+  const c = {
+    window: { sessionStorage: store },
+    panes: [],
+    ctx: null,
+    VFXPaneModel: { MAX_PANES: 4 },
+    store: store
+  };
+  vm.createContext(c);
+  const decl = /var SEARCH_STORAGE_KEY = '[^']+';/.exec(EDITOR);
+  assert.ok(decl, '找不到 SEARCH_STORAGE_KEY');
+  vm.runInContext(decl[0] + '\n' +
+    ['comboQueryKey', 'lastComboQuery', 'rememberComboQuery', 'syncComboQueryStorage', 'restoreComboQuery']
+      .map((n) => extractFunction(EDITOR, n)).join('\n') +
+    '\nthis.api = { lastComboQuery, rememberComboQuery, syncComboQueryStorage, restoreComboQuery, key: comboQueryKey };', c);
+  return c;
+}
+
+test('PANE-31 每個視窗各記自己的搜尋關鍵字，不共用一份', function () {
+  const c = comboQuerySandbox();
+  const a = { comboQuery: '' }, b = { comboQuery: '' };
+  c.panes.push(a, b);
+
+  c.ctx = a;
+  c.api.rememberComboQuery('hit-ice');
+  c.ctx = b;
+  assert.equal(c.api.lastComboQuery(), '', '另一格不該看到別人打的字');
+  c.api.rememberComboQuery('lightning');
+  assert.equal(c.api.lastComboQuery(), 'lightning');
+  c.ctx = a;
+  assert.equal(c.api.lastComboQuery(), 'hit-ice', '切回來還是自己那一份');
+
+  /* 可以指定是哪一格（另存新檔／改名那條路會用到） */
+  c.api.rememberComboQuery('renamed', b);
+  assert.equal(c.api.lastComboQuery(b), 'renamed');
+  assert.equal(c.api.lastComboQuery(a), 'hit-ice');
+
+  /* sessionStorage 是為了重新整理之後還在：鍵照視窗編號分開 */
+  const dumped = c.store.dump();
+  assert.equal(dumped[c.api.key(0)], 'hit-ice');
+  assert.equal(dumped[c.api.key(1)], 'renamed');
+  assert.notEqual(c.api.key(0), c.api.key(1), '兩格的鍵不能是同一個');
+});
+
+test('PANE-31B 重新整理接得回來；關掉一格之後編號遞補不撿別人的關鍵字', function () {
+  const c = comboQuerySandbox();
+  const p1 = { comboQuery: '' }, p2 = { comboQuery: '' }, p3 = { comboQuery: '' };
+  c.panes.push(p1, p2, p3);
+  c.api.rememberComboQuery('one', p1);
+  c.api.rememberComboQuery('two', p2);
+  c.api.rememberComboQuery('three', p3);
+
+  /* 重新整理：視窗照網址重建，各自接回自己編號的那一份 */
+  const reopened = comboQuerySandbox(c.store);
+  const n1 = { comboQuery: '' }, n2 = { comboQuery: '' }, n3 = { comboQuery: '' };
+  [n1, n2, n3].forEach(function (p) { reopened.panes.push(p); reopened.api.restoreComboQuery(p); });
+  assert.deepEqual([n1.comboQuery, n2.comboQuery, n3.comboQuery], ['one', 'two', 'three']);
+
+  /* 關掉第 2 格：第 3 格遞補成第 2，它要帶著自己的 'three'，不是撿到 'two' */
+  reopened.panes.splice(1, 1);
+  reopened.api.syncComboQueryStorage(true);
+  assert.deepEqual([n1.comboQuery, n3.comboQuery], ['one', 'three'], '記憶體裡的不受影響');
+  const after = reopened.store.dump();
+  assert.equal(after[reopened.api.key(0)], 'one');
+  assert.equal(after[reopened.api.key(1)], 'three', '遞補之後第 2 格的鍵要是它自己的字');
+  assert.equal(after[reopened.api.key(2)], undefined, '多出來的編號要清掉');
+
+  /* 再開一格：接回來的是空的，不是已經關掉的那一格留下的 */
+  const fresh = { comboQuery: 'dirty' };
+  reopened.panes.push(fresh);
+  reopened.api.restoreComboQuery(fresh);
+  assert.equal(fresh.comboQuery, '', '新的一格不該撿到別人的關鍵字');
+});
+
+test('PANE-31C 無痕視窗存不了也不能壞掉，接線走的是 per-pane 那條', function () {
+  /* sessionStorage 在無痕或封鎖 cookie 時會丟例外。記不住就算了，功能本身要照常。 */
+  const boom = {
+    getItem() { throw new Error('denied'); },
+    setItem() { throw new Error('denied'); },
+    removeItem() { throw new Error('denied'); }
+  };
+  const c = comboQuerySandbox(boom);
+  const p = { comboQuery: '' };
+  c.panes.push(p);
+  c.ctx = p;
+  assert.doesNotThrow(function () { c.api.rememberComboQuery('x'); });
+  assert.equal(c.api.lastComboQuery(), 'x', '存不進去也要記在這一格身上');
+  assert.doesNotThrow(function () { c.api.restoreComboQuery(p); });
+  assert.equal(p.comboQuery, '', '讀不到就當空的');
+
+  /* 接線：關鍵字來自這一格、打字時記到這一格、視窗增減時整批重寫 */
+  assert.ok(/var q = lastComboQuery\(\);/.test(bodyOf('openComboWithLastQuery')),
+    '點搜尋框時填的是這一格自己的關鍵字');
+  assert.ok(/comboQuery: '',/.test(EDITOR_NC), 'pane 身上要有這個欄位');
+  const create = bodyOf('createPane');
+  assert.ok(/restoreComboQuery\(pane\)/.test(create), '新視窗要接回自己的那一份');
+  /* 建視窗時**不能**順手同步：重新整理時視窗一格一格建，第 1 格就同步會把後面幾格
+     的鍵當成「多出來的」清掉，第 2 格接回來就是空的（2026-10-02 實機踩到）。 */
+  assert.ok(!/syncComboQueryStorage\(/.test(create), '建視窗時不得同步，會清掉還沒建好的那幾格');
+  assert.ok(/syncComboQueryStorage\(true\)/.test(bodyOf('closePane')),
+    '只有真的關掉視窗時才清多出來的編號（prune）');
+  /* 打字時不得 prune：那條路在重新整理的中途也會走到 */
+  assert.ok(/syncComboQueryStorage\(\);/.test(bodyOf('rememberComboQuery')), '打字只寫入、不清理');
+  assert.ok(!/sessionStorage\.(get|set|remove)Item\(SEARCH_STORAGE_KEY\)/.test(EDITOR_NC),
+    '不得再有「整個編輯器共用一個鍵」的寫法');
+});

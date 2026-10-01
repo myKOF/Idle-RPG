@@ -524,20 +524,24 @@ test('VIEW-23 群組 Inspector 的絕對值欄位由 groupBounds 即時算出來
 test('VIEW-26 搜尋關鍵字存 sessionStorage，撐得過選 preset 的整頁重載', function () {
   const src = stripped();
   assert.ok(/vfx-editor\.presetSearch/.test(src), '要有一個專屬的 storage key');
-  assert.ok(/sessionStorage\.getItem\(SEARCH_STORAGE_KEY\)/.test(src) &&
-    /sessionStorage\.setItem\(SEARCH_STORAGE_KEY/.test(src),
-    '關鍵字要讀寫 sessionStorage');
+  /* 2026-10-02：改成每個視窗各一份（鍵帶視窗編號），行為不變——重新整理之後還在。
+     每一格各記各的那一條由 tests/vfx-editor-panes.test.cjs 的 PANE-31 系列驗。 */
+  assert.ok(/sessionStorage\.getItem\(comboQueryKey\(/.test(src) &&
+    /sessionStorage\.setItem\(comboQueryKey\(/.test(src),
+    '關鍵字要讀寫 sessionStorage，而且鍵要分視窗');
+  assert.ok(!/sessionStorage\.(get|set)Item\(SEARCH_STORAGE_KEY\)/.test(src),
+    '不得再有整個編輯器共用一個鍵的寫法');
 
   /* 不能用 localStorage：那是長期偏好（格線、背景色）的位置。
      「剛才在找什麼」是當下的工作方式，與 zoom／平移同一類——
      隔天打開編輯器還躺著昨天的關鍵字，只會讓人以為清單壞了。 */
-  const read = src.slice(src.indexOf('function lastComboQuery'),
+  const read = src.slice(src.indexOf('function comboQueryKey'),
     src.indexOf('var combo = {'));
   assert.ok(!/localStorage/.test(read), '關鍵字不得存進 localStorage');
 
   /* storage 被關掉（無痕視窗、企業原則）時要退成空字串，不能讓整個
      下拉跟著壞掉。 */
-  assert.ok(/catch \(e\) \{ return ''; \}/.test(read), '讀取失敗要退成空字串');
+  assert.ok(/catch \(e\) \{ pane\.comboQuery = ''; \}/.test(read), '讀取失敗要退成空字串');
 });
 
 /* 這一條記著一個已經踩過的坑。focus 時做全選、卻沒擋住 mousedown 的話，
