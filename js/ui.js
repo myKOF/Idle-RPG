@@ -545,12 +545,32 @@ function uiNoteVisualDrop(reason, now, stalled) {
   diag.lastDropAt = now;
 }
 
+/* 持續場域的逐拍刷新（js/worker/shim.js shimIsSustainVisualEvent 的同一個判準）：
+   顯示層以 area.id 合併，只用來續命與修正位置，掉一則下一拍還會再來。 */
+function uiIsSustainVisualEvent(event) {
+  return !!event && event.kind === 'vfx' && event.fxKind === 'aura' && !!(event.area && event.area.id);
+}
+
+/* 佇列滿了的取捨：舊版一律丟最舊的。無限冰裂實測（真實瀏覽器 20 秒）：
+   到達主執行緒的 270 個貫穿箭發射事件全數被丟、追擊刷新丟 97%、飄字丟 99%——
+   發射事件早就排在一大堆逐拍刷新與飄字前面，一滿就先被擠掉，畫面上一支箭都沒有。
+   現在：進來的是持續刷新就直接丟它；進來的是別的事件就先擠掉最舊的持續刷新，
+   佇列裡沒有持續刷新時才維持原本的丟最舊。 */
 function queueWorkerVisualEvent(event) {
   if (!event) return;
   var nowQ = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   if (UI_WORKER_VISUAL_EVENT_QUEUE.length >= UI_WORKER_VISUAL_QUEUE_MAX) {
-    UI_WORKER_VISUAL_EVENT_QUEUE.shift();
+    var evictAt = 0;
+    if (uiIsSustainVisualEvent(event)) evictAt = -1;
+    else {
+      for (var qi = 0; qi < UI_WORKER_VISUAL_EVENT_QUEUE.length; qi++) {
+        if (uiIsSustainVisualEvent(UI_WORKER_VISUAL_EVENT_QUEUE[qi])) { evictAt = qi; break; }
+      }
+    }
+    if (evictAt > 0) UI_WORKER_VISUAL_EVENT_QUEUE.splice(evictAt, 1);
+    else if (evictAt === 0) UI_WORKER_VISUAL_EVENT_QUEUE.shift();
     uiNoteVisualDrop('cap', nowQ, nowQ - UI_VISUAL_DIAG.lastFlushAt > UI_WORKER_VISUAL_STALL_MS);
+    if (evictAt < 0) return;     // 進來的就是持續刷新：丟它，佇列不動
   }
   event._qAt = nowQ;      // 進佇列的時刻，flush 用來判斷飄字是否已經過期
   if (typeof BattlePerf !== 'undefined' && BattlePerf.active) BattlePerf.noteArrival(event);

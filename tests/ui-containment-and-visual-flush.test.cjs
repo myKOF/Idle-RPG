@@ -164,7 +164,7 @@ function makeQueueContext(lastFlushAt) {
     uiNowMs: () => 4242,
     scheduleWorkerVisualEventFlush: () => {}
   };
-  vm.runInNewContext([functionBody('uiNoteVisualDrop'), functionBody('queueWorkerVisualEvent')].join('\n'), context);
+  vm.runInNewContext([functionBody('uiNoteVisualDrop'), functionBody('uiIsSustainVisualEvent'), functionBody('queueWorkerVisualEvent')].join('\n'), context);
   return context;
 }
 
@@ -316,4 +316,45 @@ test('方案 C: UIContainmentManager 具備獨立註冊、註銷與一鍵開關�
   mgr.unregister('custom-panel');
   assert.equal(mgr.registry['custom-panel'], undefined);
   assert.equal(classListMap.get('#custom-panel').has('ui-contain-layout'), false);
+});
+
+/* ---- 主執行緒佇列滿了的取捨（2026-10-01 無限冰裂：真實瀏覽器 20 秒內 270 個發射事件全丟）---- */
+
+function makeSustainQueueContext(queue, max) {
+  const context = {
+    UI_WORKER_VISUAL_EVENT_QUEUE: queue,
+    UI_WORKER_VISUAL_QUEUE_MAX: max,
+    UI_WORKER_VISUAL_STALL_MS: 1000,
+    UI_VISUAL_DIAG: makeDiag({ lastFlushAt: 4200 }),
+    uiNowMs: () => 4242,
+    scheduleWorkerVisualEventFlush: () => {}
+  };
+  vm.runInNewContext([functionBody('uiNoteVisualDrop'), functionBody('uiIsSustainVisualEvent'), functionBody('queueWorkerVisualEvent')].join('\n'), context);
+  return context;
+}
+const sustain = (id) => ({ kind: 'vfx', fxKind: 'aura', variant: 'ice-arrow-homing', area: { id } });
+
+test('佇列滿了：一次性事件（發射、飄字）擠掉最舊的持續刷新，不擠掉別的一次性事件', () => {
+  const context = makeSustainQueueContext([
+    { kind: 'float', text: 'first' }, sustain('s1'), sustain('s2')
+  ], 3);
+  context.queueWorkerVisualEvent({ kind: 'vfx', fxKind: 'projectile', variant: 'ice-arrow-pierce' });
+  const q = context.UI_WORKER_VISUAL_EVENT_QUEUE;
+  assert.equal(q.length, 3);
+  assert.equal(q[0].text, 'first', '更舊的飄字不動');
+  assert.deepEqual(q.map((e) => (e.area && e.area.id) || e.variant || e.text), ['first', 's2', 'ice-arrow-pierce']);
+  assert.equal(context.UI_VISUAL_DIAG.queueCap, 1, '仍算一次丟棄');
+});
+
+test('佇列滿了：進來的是持續刷新就丟它，佇列不動', () => {
+  const context = makeSustainQueueContext([{ kind: 'float', text: 'a' }, sustain('s1')], 2);
+  context.queueWorkerVisualEvent(sustain('late'));
+  assert.deepEqual(context.UI_WORKER_VISUAL_EVENT_QUEUE.map((e) => (e.area && e.area.id) || e.text), ['a', 's1']);
+  assert.equal(context.UI_VISUAL_DIAG.queueCap, 1);
+});
+
+test('佇列裡沒有持續刷新可讓時，維持原本的丟最舊', () => {
+  const context = makeSustainQueueContext([{ kind: 'float', text: 'a' }, { kind: 'float', text: 'b' }], 2);
+  context.queueWorkerVisualEvent({ kind: 'vfx', fxKind: 'projectile' });
+  assert.deepEqual(context.UI_WORKER_VISUAL_EVENT_QUEUE.map((e) => e.text || e.fxKind), ['b', 'projectile']);
 });

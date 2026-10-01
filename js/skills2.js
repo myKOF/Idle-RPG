@@ -49,7 +49,9 @@
          與環繞場域同一種錨定方式，差別只在形狀是地板矩形（暴風雪）
      16. 追擊場域（sgSpawnGround 的 chaseM ＋ contact）：抵達落點後改鎖範圍內的隨機敵人
          繼續飛，並採環繞場域的接觸判定（進入才算一次命中），追蹤冰箭因此不必另寫
-         模擬迴圈，也不會退化成「每個節拍都全額命中」
+         模擬迴圈，也不會退化成「每個節拍都全額命中」。
+         搜敵圈圓心由 chaseAnchor 決定：追蹤冰箭＝我方（圈內沒有活敵就收掉、同時存活
+         有 SG_ICEARROW_HOMING_MAX_FIELDS 上限）；風刃留白＝場域自己
 
    ---- 設計文檔用語對照（2026-08-17 補列於文檔上方）----
    物理傷害／火焰傷害／寒冰傷害／地系傷害／風系傷害（未實裝）／雷電傷害／毒性傷害／
@@ -4639,6 +4641,9 @@ function sgSpawnGround(pEnt, st, gid, cfg) {
        contact＝採環繞場域的接觸判定（進入才算一次命中、離開再進來才會再命中），
        否則以本場域的節拍頻率會變成「每個節拍全額命中一次」的傷害爆炸。 */
     chaseM: Math.max(0, sgGeometryNumber(cfg, 'chaseM') || 0),
+    /* 追擊的搜敵圓心：'player'＝我方（追蹤冰箭）；留白＝場域自己（風刃，原本的行為）。
+       見 sgChaseCentre。 */
+    chaseAnchor: cfg.chaseAnchor === 'player' ? 'player' : '',
     contact: !!cfg.contact,
     contacts: [],
     /* 對凍結中的敵人的傷害倍率（水龍捲）；1＝沒有額外倍率。 */
@@ -4793,6 +4798,15 @@ function sgGroundTurnRadiusPx(f) {
 function sgGroundChaseStep(f, step, enemies) {
   var startAngle = f.moveAngle;
   f.turnRate = 0;
+  /* 搜敵圈內沒有任何活敵（追蹤冰箭）：沒有東西可追，直接收掉這支箭。
+     原本是沿最後航向直線飛到壽命結束——敵人被貫穿段殺光後 91% 的追擊拍都沒有落點，
+     3 秒內全部飛出畫面、再也回不來，卻每秒仍送 10 則事件、佔 6 秒的精靈。
+     收掉與原本的實際傷害相同（飛出去的箭本來就打不到任何東西），只是不再空轉。 */
+  if (f.chaseAnchor === 'player' && !sgChaseHasPrey(f, enemies)) {
+    f.hitsLeft = 0;
+    f.expiresAt = 0;
+    return;
+  }
   // 風刃沒有存活目標時清除舊落點，沿最後方向飛行，避免繞著已消失敵人的座標轉圈。
   if (f.kind === 'windblade' && !bfLiveList(enemies || []).length) f.dest = null;
   if (!f.dest) f.dest = sgGroundChaseDest(f, enemies);
@@ -4883,7 +4897,44 @@ function sgGroundFlyStep(f, step) {
   f.pos.y += dy / dist * step;
 }
 
-/* 追擊場域的下一個落點：以場域當下位置為圓心、chaseM 米內的隨機存活敵人
+/* 追擊場域的搜敵圓心。
+   追蹤冰箭（chaseAnchor＝'player'）＝我方：文檔寫的是「在 {chaseM} 米內來回穿梭追擊敵人」，
+   那個範圍是我方的搜敵範圍。原本以箭自己為圓心，箭一旦順著貫穿方向飛出畫面，
+   範圍跟著它走遠、再也找不到人，也就飛不回來（2026-10-01 使用者回報「畫面外的冰箭不朝敵人飛」）。
+   其餘追擊場域（風刃）維持以場域自己為圓心。 */
+function sgChaseCentre(f) {
+  if (f.chaseAnchor === 'player' && typeof bfPlayerPos === 'function') {
+    var pp = bfPlayerPos();
+    if (pp && isFinite(pp.x) && isFinite(pp.y)) return pp;
+  }
+  return f.pos;
+}
+
+/* 敵人 p 在不在搜敵圈內。以我方為圓心時把敵人的體型半徑算進去（與 sgIcearrowReach
+   「打得到某個敵人所需的行程含體型半徑」同一個語意），否則站在 30 米邊緣的敵人
+   會被施放時的射程判定接受、卻被追擊判定拒絕。 */
+function sgChaseInRange(f, centre, radius, enemy, p) {
+  var dx = p.x - centre.x, dy = p.y - centre.y;
+  var r = radius;
+  if (f.chaseAnchor === 'player' && typeof bfEntityRadius === 'function') r += bfEntityRadius(enemy);
+  return dx * dx + dy * dy <= r * r;
+}
+
+/* 搜敵圈內有沒有任何活敵（含已經貼在腳下的）。 */
+function sgChaseHasPrey(f, enemies) {
+  if (!f.pos || typeof bfLiveList !== 'function' || typeof bfPos !== 'function') return true;
+  var centre = sgChaseCentre(f);
+  if (!centre) return true;
+  var radius = bfMeterPx(f.chaseM);
+  var live = bfLiveList(enemies || []);
+  for (var i = 0; i < live.length; i++) {
+    var p = bfPos(live[i]);
+    if (p && sgChaseInRange(f, centre, radius, live[i], p)) return true;
+  }
+  return false;
+}
+
+/* 追擊場域的下一個落點：搜敵圈（sgChaseCentre）chaseM 米內的隨機存活敵人
    （文檔：朝範圍內的隨機目標飛去——不是最近的）。
    **已經在自己判定圈內的敵人不算候選**：追擊場域是接觸判定，站在腳下的那一個
    早就結算過了，再把它挑成落點只會得到「距離 0 的目標」——場域就地停住、
@@ -4892,6 +4943,7 @@ function sgGroundFlyStep(f, step) {
    飛出接觸圈後同一個敵人又會重新成為候選——來回穿梭因此是自然結果。 */
 function sgGroundChaseDest(f, enemies) {
   if (!f.pos || typeof bfLiveList !== 'function' || typeof bfPos !== 'function') return null;
+  var centre = sgChaseCentre(f);
   var radius = bfMeterPx(f.chaseM);
   var near = Math.max(1, Number(f.radius) || 0);
   var live = bfLiveList(enemies || []);
@@ -4899,9 +4951,9 @@ function sgGroundChaseDest(f, enemies) {
   for (var i = 0; i < live.length; i++) {
     var p = bfPos(live[i]);
     if (!p) continue;
+    if (!sgChaseInRange(f, centre, radius, live[i], p)) continue;
     var dx = p.x - f.pos.x, dy = p.y - f.pos.y;
-    var d2 = dx * dx + dy * dy;
-    if (d2 > radius * radius || d2 <= near * near) continue;
+    if (dx * dx + dy * dy <= near * near) continue;
     cands.push(p);
   }
   if (!cands.length) return null;
@@ -8886,9 +8938,34 @@ function sgTickIceRainLandings(f, ctx) {
   f.rain.pending = keep;
 }
 
+/* 追擊冰箭同時存活的數量上限（防呆上限，不是設計數值；低於上限時行為與沒有上限完全相同）。
+
+   2026-10-01 使用者回報：放幾次無限冰裂之後 FPS 掉到 15。實測（本機 GTX1050、畫布 670×813）：
+   畫面上每支存活的追擊箭約 0.66 ms／幀（0／12／24／36 支＝2.2／10.1／17.1／25.8 ms），
+   一次施放＝12 道×3 波＝36 支，單次就壓到約 38 FPS。超神【無限冰裂】每次命中回扣冷卻，
+   敵人不死時施放頻率逐秒升到約 5 次／秒，場域數 36→1116 還在漲、命中 4,700／秒，
+   真實瀏覽器 FPS 掉到 1。追擊場域原本沒有任何數量上限（SG_GROUND_MAX_FIELDS 只擋火池軌跡）。
+
+   72＝兩次滿支數施放（12 道×3 波×2）。到頂時只是這一次施放的追擊段少生幾支，
+   貫穿段照飛、傷害照算；少生哪幾支依生成順序（先波次、後箭道）。
+   冷卻回扣本身的下限是設計問題（參數表的最短冷卻），不在這裡處理。 */
+var SG_ICEARROW_HOMING_MAX_FIELDS = 72;
+function sgIcearrowHomingAtCap() {
+  if (!SKILL2_RT || !SKILL2_RT.grounds) return false;
+  var list = SKILL2_RT.grounds;
+  if (list.length < SG_ICEARROW_HOMING_MAX_FIELDS) return false;
+  var n = 0;
+  for (var i = 0; i < list.length; i++) {
+    var f = list[i];
+    if (f && f.gid === 'icearrow' && f.kind === 'icearrow' && ++n >= SG_ICEARROW_HOMING_MAX_FIELDS) return true;
+  }
+  return false;
+}
+
 /* 【寒冰爆裂箭】的追擊段：由「這支箭飛完直線的那一刻、那個位置、那個航向」接手，
    在 chaseM 米內來回穿梭。opts 留白＝沒有座標的退化路徑（就地咬住原目標）。 */
 function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, opts) {
+  if (sgIcearrowHomingAtCap()) return;
   var lifeSec = Math.max(0.5, Number(hfx.sec) || 6);
   var gap = Math.max(0.05, sgGeometryNumber(hfx, 'gap') || 0.1);
   var o = opts || {};
@@ -8902,6 +8979,7 @@ function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, o
     radius: bfMeterPx(sgGeometryNumber(hfx, 'bodyM') || 1.5),
     dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
     speed: sgIcearrowSpeed(), chaseM: sgGeometryNumber(hfx, 'chaseM') || 30,
+    chaseAnchor: 'player',   // 「在 chaseM 米內來回穿梭」的範圍是我方的搜敵範圍（見 sgChaseCentre）
     contact: true, frostSpec: frost, tickAtStart: true,
     /* 追擊段同樣是「寒冰箭擊中敵人」，因此兩個傳奇特效照樣生效：
        【深度凍結】走場域的控場增傷、【冰裂箭】走場域的命中後回呼。 */
