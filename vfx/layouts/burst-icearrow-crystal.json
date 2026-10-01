@@ -7,7 +7,6 @@
       "name": "burst-icearrow-crystal",
       "layerIds": [
         "cold-pressure",
-        "outward-frost",
         "radial-crystal-0",
         "radial-crystal-1",
         "radial-crystal-2",
@@ -22,8 +21,6 @@
         "radial-crystal-11",
         "radial-crystal-12",
         "radial-crystal-13",
-        "flying-ice-splinters",
-        "ice-glints",
         "white-core"
       ]
     }
