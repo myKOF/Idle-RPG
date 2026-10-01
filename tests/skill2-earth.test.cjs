@@ -443,10 +443,10 @@ test('生命／法力再生（T3／T4）：回復 +110%、吸血吸魔 +55%，�
   const hpBase = (st.hp * c.BASE_HP_REGEN_PCT / 100) + st.hpRegen;
   assert.ok(Math.abs(c.playerHpRegenPerSec(st) - hpBase * 2.1) < 1e-9, '每秒生命回復 ×2.1');
   assert.ok(Math.abs(c.playerMpRegenPerSec(st) - st.mpRegen * 2.1) < 1e-9, '每秒法力回復 ×2.1');
-  /* 吸血是「每秒回復 × 吸血%」，但吃的是自己的 +50%——
-     若誤用被放大過的回復換算就會變成 ×2（甚至 ×3），這裡正是防那條回歸。 */
-  assert.ok(Math.abs(c.lifestealHealAmount(st, 100) - hpBase * 1.55) < 1e-9, '吸血 ×1.55');
-  assert.ok(Math.abs(c.manaStealAmount(st, 100) - st.mpRegen * 1.55) < 1e-9, '吸魔 ×1.55');
+  /* 吸血／吸魔是定值，只吃自己的 +55%，與每秒回復（這裡被放大 ×2.1）互不關聯；
+     若誤把回復倍率或回復量乘進來，這裡就不會剛好是 155。 */
+  assert.ok(Math.abs(c.lifestealHealAmount(100) - 155) < 1e-9, '吸血 ×1.55');
+  assert.ok(Math.abs(c.manaStealAmount(100) - 155) < 1e-9, '吸魔 ×1.55');
 
   // 滿級：回復 +200%、汲取 +100%
   setLevels(c, 'earthguard', [1, 1, 10, 10, 0, 0, 0]);
@@ -454,15 +454,15 @@ test('生命／法力再生（T3／T4）：回復 +110%、吸血吸魔 +55%，�
   assert.ok(Math.abs(c.skill2DrainFactor('mp') - 2) < 1e-9);
 });
 
-test('沒裝配大地守護時，回復與吸血換算完全維持原本行為', () => {
+test('沒裝配大地守護時，回復與吸血吸魔完全維持原本行為', () => {
   const c = loadContext();
   setLevels(c, 'earthguard', [1, 1, 1, 1, 0, 0, 0]);   // 學了但沒裝
   const st = c.getStats();
   st.hpRegen = 40; st.mpRegen = 20;
   const hpBase = (st.hp * c.BASE_HP_REGEN_PCT / 100) + st.hpRegen;
   assert.ok(Math.abs(c.playerHpRegenPerSec(st) - hpBase) < 1e-9);
-  assert.ok(Math.abs(c.lifestealHealAmount(st, 100) - hpBase) < 1e-9);
-  assert.ok(Math.abs(c.manaStealAmount(st, 100) - st.mpRegen) < 1e-9);
+  assert.ok(Math.abs(c.lifestealHealAmount(100) - 100) < 1e-9, '吸血定值不受任何倍率');
+  assert.ok(Math.abs(c.manaStealAmount(100) - 100) < 1e-9, '吸魔定值不受任何倍率');
 });
 
 test('魔法盾（T5）：同比例上限換算、每級乘算減耗及不足額回扣生命', () => {

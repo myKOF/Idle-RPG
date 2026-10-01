@@ -760,12 +760,12 @@ function playerDrainOnDamage(target, damage, player, hits) {
     if (typeof getStats !== 'function') return;
     var st = getStats();
     var omni = (st.passives && st.passives.omniDrain) || 0;
-    var hpPct = (st.lifesteal || 0) + omni, mpPct = (st.manaSteal || 0) + omni;
-    if (!(hpPct > 0 || mpPct > 0)) return;
+    var hpVal = (st.lifesteal || 0) + omni, mpVal = (st.manaSteal || 0) + omni;
+    if (!(hpVal > 0 || mpVal > 0)) return;
     var count = hits === undefined ? 1 : Math.max(0, Math.floor(Number(hits) || 0));
     if (!(count > 0)) return;
-    if (hpPct > 0) healPlayer(player, lifestealHealAmount(st, hpPct) * count, st, { noShield: true });
-    if (mpPct > 0) gainPlayerMana(player, manaStealAmount(st, mpPct) * count, st);
+    if (hpVal > 0) healPlayer(player, lifestealHealAmount(hpVal) * count, st, { noShield: true });
+    if (mpVal > 0) gainPlayerMana(player, manaStealAmount(mpVal) * count, st);
 }
 
 function tickStatuses(ent, dt, dotContext) {

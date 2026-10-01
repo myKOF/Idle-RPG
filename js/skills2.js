@@ -6805,7 +6805,7 @@ function sgTickNetherMire(ctx) {
      T1 傷害減免  → formula.js resolveHit 我方受擊段（skill2DamageTakenMultiplier）
      T1 生命上限  → formula.js st.hp 派生點（skill2MaxHpFactor）
      T2 全屬性傷害 → legendary.js legendaryElementDamageUp（全專案屬性傷害提升的唯一收斂點）
-     T3 生命回復＋吸血 → formula.js playerHpRegenPerSec ／ lifestealHealAmount（兩個不同倍率）
+     T3 生命回復＋吸血 → formula.js playerHpRegenPerSec ／ lifestealHealAmount（兩個不同倍率，互不關聯）
      T4 法力回復＋吸魔 → formula.js playerMpRegenPerSec ／ manaStealAmount
      T5 魔法盾    → formula.js 我方扣血點（resolveHit ／ applyEnemyHpDamage）
      T6 生命反射  → combat.js doMonsterAttack 的受擊收斂點
@@ -6881,8 +6881,8 @@ function skill2ElemDamageUpPct() {
 }
 
 /* 【生命再生】／【魔力再生】（T3／T4）：同一階給兩個**不同倍率**的乘區——
-   回復本身 +100%（pct），吸血／吸魔 +50%（drain）。因此吸血不能沿用被放大過的
-   每秒回復去換算，兩者在 formula.js 各自從未加成的基準值出發。 */
+   回復本身 +100%（pct）放大每秒回復，吸血／吸魔 +50%（drain）放大吸血／吸魔的定值。
+   吸血／吸魔與每秒回復互不關聯，兩個倍率各管各的（formula.js §3）。 */
 function sgEarthguardRegenTier(kind) {
   var lvs = skill2EarthguardLevels();
   var idx = (kind === 'mp') ? 3 : 2;
@@ -6892,7 +6892,7 @@ function skill2RegenFactor(kind) {
   var t = sgEarthguardRegenTier(kind);
   var mult = t ? 1 + sgVal(t.fx, 'pct', t.lv) / 100 : 1;
   /* 超神【光耀之堂】：生命與法力回復再提高。獨立乘區（與 T3／T4 相乘而不是相加），
-     且只放大「回復」——設計文字沒有提到吸血／吸魔，那兩個仍只吃 T3／T4 的 drain 倍率。
+     且只放大「回復」——設計文字沒有提到吸血／吸魔，那兩個仍只吃 skill2DrainFactor 的倍率。
      ⚠️ 不看 sgEarthguardRegenTier：沒投資 T3／T4 時本效果照樣要生效。 */
   var u = skill2EarthguardLevels() ? sgUlt('earthguard', 'hallOfRadiance') : null;
   if (u) mult *= 1 + Math.max(0, sgUltVal(u, 'pct')) / 100;

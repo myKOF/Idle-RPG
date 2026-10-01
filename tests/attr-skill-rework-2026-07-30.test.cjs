@@ -1,7 +1,7 @@
 /* 屬性及技能效果改造（2026-07-30）回歸測試
    涵蓋五項改造：
    1. 生命回復／吸血等非技能回復，溢出不再轉護盾（技能治療仍轉）
-   2. 吸血／吸魔不設上限，且改由每秒生命回復／法力恢復決定
+   2. 吸血／吸魔不設上限（當時改由每秒生命回復／法力恢復決定；2026-10-01 再改為與回復無關的定值）
    3. 韌性上限 80%，同時作用於被控場機率／控場時間／被爆擊機率
    4. 敵人依敵種爆擊（普通 8%／菁英 6%／BOSS 4%、爆傷 300%），可由參數表調整
    5. 技能不再降低敵人防禦，改為穿透增益；穿透無上限並走遞減曲線，超過 100% 轉增傷
@@ -53,9 +53,9 @@ test('戰鬥端與技能端的吸血／汲取／過關回復皆以 noShield 呼�
      onFieldKill 移到 completeFieldWave，回復性質不變——仍是非技能來源、溢出不轉護盾。 */
   assert.match(combat, /healPlayer\(FIELD\.player, st\.hp \* WAVE_CLEAR_HEAL_PCT \/ 100, st, \{ noShield: true \}\)/);
   assert.match(combat, /st\.passives\.soulEater \/ 100, st, \{ noShield: true \}\)/);   // 吸魂
-  assert.match(combat, /healPlayer\(player, lifestealHealAmount\(st, hpPct\) \* count, st, \{ noShield: true \}\)/);
-  assert.doesNotMatch(skills, /healPlayer\(pEnt, lifestealHealAmount\(st, st\.lifesteal\)/);
-  assert.doesNotMatch(skills2, /healPlayer\(pEnt, lifestealHealAmount\(st, st\.lifesteal\)/);
+  assert.match(combat, /healPlayer\(player, lifestealHealAmount\(hpVal\) \* count, st, \{ noShield: true \}\)/);
+  assert.doesNotMatch(skills, /healPlayer\([^;]*lifestealHealAmount\(/);
+  assert.doesNotMatch(skills2, /healPlayer\([^;]*lifestealHealAmount\(/);
   /* 技能自身的治療不得帶 noShield（溢出仍轉護盾）。2026-09-29 舊技能（healPctMax／healPctOfDmg）移除後，
      改以新版技能超神【殺神領域】的擊殺回復為代表；同一個檔案裡持續小額吸血的傳奇【血霧】則明確帶 noShield，
      兩者並存正好證明旗標是「依來源性質」而不是整個模組一刀切。 */
@@ -63,7 +63,7 @@ test('戰鬥端與技能端的吸血／汲取／過關回復皆以 noShield 呼�
   assert.match(skills2, /healPlayer\(pEnt, st\.hp \* pct \/ 100, st, \{ noShield: true \}\);/);
 });
 
-/* ---- 2. 吸血／吸魔改由回復決定，且無上限 ---- */
+/* ---- 2. 吸血／吸魔是定值，單獨計算，且無上限 ---- */
 test('吸血／吸魔上限已取消（STAT_CAPS = 0）', () => {
   const c = loadContext();
   assert.equal(c.STAT_CAPS.lifesteal, 0);
@@ -71,25 +71,36 @@ test('吸血／吸魔上限已取消（STAT_CAPS = 0）', () => {
   assert.equal(c.capValue(500, c.STAT_CAPS.lifesteal), 500);
 });
 
-test('吸血回復 = 每秒生命回復 × 吸血%', () => {
+test('吸血／吸魔回復 = 吸血／吸魔值（定值）', () => {
   const c = loadContext();
-  /* 每秒生命回復 = 最大生命 × BASE_HP_REGEN_PCT% + 生命恢復屬性。
-     ⚠️ 期望值改為從 BASE_HP_REGEN_PCT 推導，不寫死數字——這支測試原本假設
-     基礎回復是 1.5%，參數調成 2% 之後就紅燈了，但要驗的關係式其實沒有變。
-     測「關係是否成立」才是這支測試的目的，「數值是多少」歸參數表管。 */
-  const st = { hp: 4000, hpRegen: 40, mpRegen: 20 };
-  const perSec = st.hp * c.BASE_HP_REGEN_PCT / 100 + st.hpRegen;
-  assert.equal(c.playerHpRegenPerSec(st), perSec);
-  assert.equal(c.lifestealHealAmount(st, 500), perSec * 5);
-  assert.equal(c.lifestealHealAmount(st, 0), 0);
-  assert.equal(c.manaStealAmount(st, 250), 50);                  // 20/秒 × 250%
+  assert.equal(c.lifestealHealAmount(500), 500);
+  assert.equal(c.lifestealHealAmount(0), 0);
+  assert.equal(c.manaStealAmount(250), 250);
+  assert.equal(c.lifestealHealAmount(-5), 0, '負值不回復');
+  assert.equal(c.lifestealHealAmount(undefined), 0);
+});
+
+test('吸血／吸魔與每秒生命回復、法力恢復完全無關（單獨計算）', () => {
+  const c = loadContext();
+  /* 每秒回復怎麼變，吸血／吸魔的單次回復都只看自己的值；
+     原始碼也不得再引用回復或最大生命——這是「不再與回復相關聯」的字面守門。 */
+  const lowRegen = { hp: 4000, hpRegen: 0, mpRegen: 0 };
+  const highRegen = { hp: 4e9, hpRegen: 1e6, mpRegen: 1e6 };
+  assert.ok(c.playerHpRegenPerSec(highRegen) > c.playerHpRegenPerSec(lowRegen));
+  assert.equal(c.lifestealHealAmount(30), 30);
+  assert.equal(c.manaStealAmount(30), 30);
+  const src = read('js/formula.js');
+  for (const fn of ['lifestealHealAmount', 'manaStealAmount']) {
+    const body = src.match(new RegExp('function ' + fn + '\\([^)]*\\) \\{[\\s\\S]*?\\n\\}'));
+    assert.ok(body, '找不到 ' + fn);
+    assert.doesNotMatch(body[0], /Regen|BASE_HP_REGEN_PCT|\.hp\b|\.mp\b/, fn + ' 不得依賴回復或最大生命／法力');
+  }
 });
 
 test('吸血回復與造成的傷害無關', () => {
   const c = loadContext();
-  const st = { hp: 1000, hpRegen: 0 };
-  // 同一組屬性，不同傷害不影響回復量（函式簽章本身不吃傷害）
-  assert.equal(c.lifestealHealAmount(st, 100), c.playerHpRegenPerSec(st));
+  // 函式簽章本身不吃傷害；戰鬥端也沒有「傷害 × 吸血」的算式
+  assert.equal(c.lifestealHealAmount(100), 100);
   assert.doesNotMatch(read('js/combat.js'), /res\.dmg \* \(st\.lifesteal/);
   assert.doesNotMatch(read('js/skills.js'), /totalDmg \* st\.(lifesteal|manaSteal)/);
 });

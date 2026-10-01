@@ -440,3 +440,7 @@ VFX 事件新增可選 `arcM`，為大於零的有限數，單位米，表示弧
 ### v34：裝配被動的面板結算值
 
 header／equip 的 stats 與 viewStats 新增 passivePanel：hpRegen、mpRegen 為實際每秒回復；lifesteal、manaSteal 為套用汲取倍率的百分比；hpDrainBase／mpDrainBase 是未乘回復技能倍率的汲取基準，hpDrain／mpDrain 為每次實際汲取量；elemPct 為常駐技能的獨立元素增傷乘區；damageRed 為常駐技能減傷百分比。原 stats 基礎值保持不變，投影不回流到戰鬥或存檔。主執行緒不讀 G 計算加成；舊快照缺欄時顯示基礎值。技能裝卸髒區新增 header／equip，使裝卸立即更新屬性。
+
+### v41：吸血／吸魔改定值
+
+passivePanel 移除 hpDrainBase、mpDrainBase、hpDrain、mpDrain（它們是以每秒回復換算的汲取基準與每次汲取量，吸血／吸魔不再與回復關聯，這四個欄位失去意義）；lifesteal、manaSteal 改為套用汲取倍率後「每次對敵人造成傷害時回復的定值」，不再是百分比。其餘欄位不變。主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值；缺欄不會報錯，但協議版本不符時 bridge 會拒絕連線，因此新舊主執行緒／Worker 不會混用。

@@ -10,13 +10,13 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=40', 'shim.js?v=9');
+importScripts('protocol.js?v=41', 'shim.js?v=9');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20260929-thunder-pair', '../status.js?v=20260929-thunder-pair', '../formula.js?v=20261001-skill-interval', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-thunder-pair',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261001-drain-flat', '../status.js?v=20260929-thunder-pair', '../formula.js?v=20261001-drain-flat', '../battlefield.js?v=20260929-npc-move-attack', '../stats.js?v=20260929-thunder-pair',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261001-ai-integration-water', '../talents.js?v=20260929-thunder-pair',
+  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261001-drain-flat', '../talents.js?v=20260929-thunder-pair',
   '../player.js?v=20260929-thunder-pair', '../special_rules.js',
-  '../combat.js?v=20260930-enemy-frenzy', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20260929-thunder-pair', '../tower.js?v=20260930-enemy-frenzy',
+  '../combat.js?v=20261001-drain-flat', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-flat', '../tower.js?v=20260930-enemy-frenzy',
   '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
   '../tasks.js?v=20260929-thunder-pair'
 );
