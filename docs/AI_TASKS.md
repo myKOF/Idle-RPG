@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Codex｜極寒冰爆誤觸死亡新星（ICEARROW-DEATH-NOVA-20261001）
+
+- Owner：Codex；Done。使用者回報極寒冰爆施放時在自身周圍出現冰霜新星。追查正式敵人死亡掛勾：sgDeathNova 只檢查學習等級與寒霜，未檢查冰霜新星裝配；先前水系稽核以不死亡的高血量敵人且機率關閉，未覆蓋此路徑。
+- 允許 js/skills2.js 的死亡新星裝配判定、寒冰箭回歸測試、必要主頁／Worker 快取及相關紀錄；禁止更改寒冰箭冰爆、凍結、冰霜新星已裝配的合法死亡觸發或其他技能／素材。修改前預檢全部乾淨；本副本使用者已調整連鎖雷爆機率 10%＋每級1% 的 Excel／CSV／生成 JS 保留，以 23bcfcd6 獨立保存。
+- 驗收：正式極寒冰爆→飛行命中擊殺→skills2OnEnemyDeath，冰霜新星已學未裝配時不施放新星；已裝配時仍保留合法機率、傷害與自身範圍；卸下即停止。正式 Runtime 不建立新星圖層，冷卻／波次／凍結結束冰爆不受影響。定向回歸、Build、配置一致性及 diff check 後 Commit，不合併／推送。
+- 前置：整合提交 fffb3de4；後續接手者使用者。
+- 完成：sgDeathNova 增加冰霜新星已學且已裝配判定，卸下即停止傷害與特效。只裝寒冰箭時，正式極寒冰爆十波發射、飛行命中、死亡掛勾及 Runtime 圖層均沒有新星。若同時裝配冰霜新星並學死亡新星，箭擊殺帶寒霜的怪仍合法在自身範圍追加一次新星，發射起手不播；兩種情境已分別驗證。截圖第三格看似冰霜新星，無法直接從截圖確定當下裝配／學習資料，未宣稱合法連動一定是錯誤。
+- 修改：js/skills2.js 裝配防護、tests/icearrow-vfx-integration.test.cjs 兩項完整擊殺事件回歸、index.html Skills2 1.0.252／Bridge 1.0.184、js/bridge.js 與 js/worker/sim.worker.js 同步 20261001-icearrow-death-nova，以及 AI_TASKS／水系稽核紀錄。檢查未改：Runtime／Core／Renderer、Status／combat 的凍結及死亡流程、Skills2 其他規則、Nova／冰箭素材。使用者配置提交另含 Excel／CSV／生成 JS 與當次快取，Excel 全列與 CSV 逐格一致、生成 JS 試跑語意變更 0。
+- 驗證：新增兩測試在修正前皆失敗，修正後通過，包含正式 castSkill2／tickSkill2→擊殺→skills2OnEnemyDeath、己方範圍的合法命中、卸下及實際 Runtime 不建立新星衝擊波。node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/icearrow-vfx-integration.test.cjs tests/waterball-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，132/132；npm.cmd run build，411 檔通過；git diff --check 通過。
+- 交付：修正 Commit 為本紀錄所在提交，可合併，未合併／推送。無素材變更，素材庫 master 乾淨，不建立空提交。無未完成程式修改；無可讀取的遊戲瀏覽器分頁，未做實戰畫面／Console 驗收。需重載遊戲載入新 Worker；若冰霜新星仍裝配且死亡新星已學，該合法連動仍會存在。
+
 ## Codex｜三個 AI 分支整合與 develop 衝突處理（AI-INTEGRATION-20261001）
 
 - Owner：Codex；Done。使用者明確授權解決 develop 衝突並整合三個 AI 分支至最新，於實際 develop 整合副本操作，允許衝突解決、必要紀錄、驗證及乾淨 AI 副本的快轉同步；禁止推送、production／main 變更及未提交他人工作覆寫。

@@ -9456,6 +9456,8 @@ function sgSpawnBlizzard(pEnt, st, g, lvs, floatSel, lg) {
    釋放的是「一次爆發」而不是整個 castSkill2：不扣魔、不進冷卻、也不會再觸發
    第 5 階的多次施放與第 7 階的暴風雪（否則連鎖擊殺會遞迴放大）。 */
 function sgDeathNova(deadEnt, enemies) {
+  // 死亡新星是冰霜新星的追加效果；只學習但未裝配時不能由其他寒霜技能代為觸發。
+  if (!skills2Equipped('frostnova')) return;
   var lvs = skills2Levels('frostnova');
   if (!lvs || lvs[5] < 1) return;
   if (!sgFrostOn(deadEnt)) return;
