@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜水流彈落地光圈半徑（WATERBALL-RING-SIZE-20261001）
+
+- Owner：Codex；Done。使用者回報水流彈彈射的地板光圈大於表定6米傷害半徑；前置水流彈新星來源隔離575e53cd已完成，遊戲與素材庫起始乾淨。
+- 根因與方案：權威落地事件正常送6米；hit-waterball-splash的製作半徑仍標100，兩層光圈的貼圖、圖層倍率與擴張曲線卻已超過此基準。實際Core／Runtime量測光圈淡出前半徑約為判定的2.8倍；校正sizing.authored.radius，使普通／彈射範圍均沿事件6米，合法冰霜擴散沿7.8米，不改技能表、傷害、彈射、素材圖層或曲線。
+- 範圍：vfx/presets/hit-waterball-splash.json、tests/waterball-vfx-integration.test.cjs、docs/WATER_ICE_AUDIT.md與本紀錄；素材庫同步既有codex-authored/ground-projection/presets同名Preset。其餘目標預檢乾淨；本文件有Claude未整合無限冰裂／實機驗證及搜尋紀錄，使用者同意僅新增本次任務紀錄，不改對方段落。禁止其他技能、共用Runtime／Core、Excel／CSV／生成JS、Worker協議、其他副本及合併／推送。
+- 驗收：正式施放與彈射落地事件維持原傷害半徑；真實Core／Runtime兩圈動畫全程不超出判定、淡出前接近邊界，投影壓扁與落點一致。修改前測試轉紅、修改後通過，水系／尺寸回歸、Build、Preset驗證、素材匯出、雙倉庫提交及SHA256核對；後續接手者：使用者。
+- 完成4檔：hit-waterball-splash.json只改sizing.authored.radius：100→281.6684（光圈本體190px×圖層倍率1.2891×最大擴張1.15，來源為既有PNG唯讀亮度量測與Preset）；其餘圖層、粒子、曲線及radiusM預設不變。tests/waterball-vfx-integration.test.cjs新增正式施放／多次彈射→真實Core／Runtime的全動畫尺寸測試，兩層光圈都必須播放、不超出判定且擴張至邊界附近；docs/WATER_ICE_AUDIT.md與本紀錄同步。水流彈數值、敵人判定、傷害、位置、時間與所有JS未修改。
+- 測試：node --test tests/waterball-vfx-integration.test.cjs tests/water-ice-audit.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/skill2-ice.test.cjs tests/icearrow-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-size.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-editor-guard.test.cjs，171/171通過、0失敗／略過。新增WATERBALL-SIZE修正前1/1轉紅，修正後1/1通過；補強兩圈存在斷言後再定向跑1/1。npm.cmd run build，412檔通過；Core.validatePreset通過；node tools/vfx/export-assets.cjs --check，236份Preset／154素材已是最新；git diff --check通過。
+- 擴大檢查的既有問題：projectile-impact-size的舊畫法正規式斷言、vfx-editor-save的16b（hit-thunderstrike-bluewhite.json非canonical）、vfx-projectile-perspective的變形Backend fixture缺少profileFrames，合計3項失敗；以node --test --test-name-pattern='命中爆點|16b|變形矩陣'重跑仍3/3失敗，相關Renderer／VFX／CSS／Backend／Core及該雷擊Preset的Git blob均與HEAD完全相同，未因本輪新增或改動。編輯器存檔的檔案符號連結案例因環境EPERM另略過1項；本輪不修改無關斷言或Preset。
+- 素材庫先提交66b94b2，既有codex-authored/ground-projection/presets/hit-waterball-splash.json單欄同步；再同步回遊戲，Preset及未改layout的SHA256均與素材庫一致，沒有新圖片／引用／索引。素材庫沒有其他修改，遊戲Commit為本紀錄所在提交，可合併；沒有合併或推送。
+- 唯讀檢查未改：js/skills2.js落地事件與半徑、js/battlefield.js範圍判定、js/vfx-runtime.js尺寸派送／areaScale／no-store載入、js/vfx-core.js播放變換、js/vfx-pixi-backend.js、js/battle-renderer.js、js/vfx.js、css/style.css、相關Skill2／尺寸／投影／編輯器存檔與防覆寫測試、既有PNG／Preset圖層／layout、素材匯出工具。未修改Excel／CSV／JS／Worker或編輯器程式；JSON以no-store重載，不需JS快取版號變更。
+- 限制及下一步：無未完成程式項目；尚未做瀏覽器實戰畫面／Console驗收。重載遊戲確認6米光圈；有冰霜擴散時合法放大到7.8米。若編輯器仍開著此Preset，先下載未存內容備份，再重新載入新版，避免舊分頁儲存覆寫校正；既有版本防護回歸通過。本輪未新增暫存檔或預覽輸出。
+
 ## Codex｜水流彈新星來源隔離（WATERBALL-NOVA-20261001）
 
 - Owner：Codex；Done。使用者回報水流彈第7階仍產生冰霜新星；追查第4階爆散、傳奇冰霜擴散、凍結與死亡新星來源，修正普通水流彈混播。

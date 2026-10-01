@@ -85,6 +85,36 @@ test('WATERBALL-NOVA: real legendary nova survives the Worker whitelist and rend
  assert.equal(rt.stats().grounds,0,'不由傳奇代放冰霜新星第7階暴風雪');rt.update(2);rt.destroy();
 });
 
+test('WATERBALL-SIZE: both landing rings fit the actual normal and legendary bounce radii throughout playback',()=>{
+ // circle_02為512px黑底貼圖；唯讀像素量測的光圈本體外緣約190px，排除黑底與極淡雜訊。
+ const bodyRadius=190;
+ for(const legendary of [false,true]){
+  const {h,c,p,es,specs}=waterScenario(4,legendary);
+  assert.ok(c.castSkill2(p,es,'waterball','mv-float'));h.advance(c,p,es,1.6);
+  const impacts=specs.filter(s=>s.variant==='water-impact');assert.ok(impacts.length>1,'涵蓋第一次落地與後續彈射');
+  for(const spec of impacts){
+   assert.equal(spec.area.r,legendary?78:60,'權威傷害半徑不可為配合光圈而縮小');
+   const nodes=[],backend={createNode(s){const n={spec:s};nodes.push(n);return n;},
+    updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+   const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,
+    ctx:{playerPos:()=>p.pos,posOf:()=>({x:999,y:999})}});
+   rt.registerPresets([hit]);assert.equal(rt.tryPlay(spec),true);
+   let maxRadius=0;const observedRings=new Set();
+   for(let frame=0;frame<170;frame++){
+    rt.update(.005);
+    for(const n of nodes.filter(n=>n.spec.assetUrl.endsWith('/circle_02.png')&&n.t?.visible&&n.t.alpha>0)){
+     observedRings.add(n);const t=n.t,radius=bodyRadius*Math.abs(t.scaleX);maxRadius=Math.max(maxRadius,radius);
+     assert.equal(t.x,spec.area.x);assert.equal(t.y,spec.area.y);
+     assert.ok(Math.abs(t.scaleY/t.scaleX-.5)<1e-9,'光圈保持原地板投影');
+     assert.ok(radius<=spec.area.r+.01,`光圈${radius}超出傷害半徑${spec.area.r}`);
+    }
+   }
+   assert.equal(observedRings.size,2,'內外兩層光圈都實際播放');
+   assert.ok(maxRadius>=spec.area.r*.985,'擴張應抵達判定邊界附近');rt.destroy();
+  }
+ }
+});
+
 test('waterball and bounce use approved effects and 15% faster shared travel timing',()=>{
  const file=path.join(__dirname,'skill2-ice.test.cjs'),src=fs.readFileSync(file,'utf8'),c={require:require('module').createRequire(file),__dirname,console};vm.createContext(c);vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.c=loadContext();',c);const game=c.c;
  assert.equal(game.SKILLS2.waterball.tiers[0].fx.speed,57.96);
