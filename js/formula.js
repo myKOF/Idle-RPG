@@ -887,7 +887,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   /* 新版技能的我方減傷乘區（大地守護【傷害減免】×岩甲術【天地逆返】，js/skills2.js）。
      刻意與【聖佑】的 dmgRed 分開：那條是加算池且夾 50% 上限，混在一起會互相吃掉空間。 */
   if (dCfg.isPlayer && typeof skill2DamageTakenMultiplier === 'function') {
-    dmg *= skill2DamageTakenMultiplier(defender);
+    dmg *= skill2DamageTakenMultiplier(defender, attacker);
   }
   // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
   if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);

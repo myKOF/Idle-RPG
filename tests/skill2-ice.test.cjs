@@ -458,7 +458,7 @@ test('水流彈第 1 階：抵達落點才結算六米範圍，且拋物線弧�
   assert.ok(Math.abs(calls[0].atk - 500 * (200 + 20) / 100) < 1e-6, '傷害＝魔攻 ×(200+20×Lv)%');
   const proj = specs.find((s) => s.variant === 'waterball');
   assert.ok(proj, '送出水彈投射物特效');
-  assert.equal(proj.arcM, 8, '弧高（離地最高 8 米）必須隨事件傳給顯示層（AI_RULES 8.3）');
+  assert.equal(proj.arcM, 2.5, '飛行 5 米的弧高為 2.5 米，事件傳给顯示層');
 });
 
 test('【寒冰逆轉】強制改寫敵人屬性標籤，並只放大寒冰段', () => {

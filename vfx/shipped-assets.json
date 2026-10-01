@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 154,
+  "assetCount": 155,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -159,6 +159,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:e8f1a9aff36ca7e8c18153b2113d2757c552b42e92c79d1feb7f0d1402ba3482",
       "fileSize": 2132958
+    },
+    {
+      "assetId": "codex-authored/water-prison/water-dome.svg",
+      "relativePath": "codex-authored/water-prison/water-dome.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:67547f00ae7302a44569315ab8c4478240b23d3778b9f91aa5b10f4058943c8c",
+      "fileSize": 1394
     },
     {
       "assetId": "light-masks-1.0/default/circle_a.png",

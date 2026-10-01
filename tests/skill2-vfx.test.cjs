@@ -707,19 +707,19 @@ test('冰霜新星範圍使用模擬半徑繪製圓形，暴風雪維持矩形',
   assert.match(css, /\.vfx-blizzard\s*\{[\s\S]*?border-radius: 42% \/ 58%/);
 });
 
-test('冰系特效：水流彈的拋物線弧高由模擬層的表定值決定', () => {
+test('冰系特效：水流彈的拋物線弧高由模擬層的飛行距離決定', () => {
   const vfx = fs.readFileSync(path.join(root, 'js/vfx.js'), 'utf8');
   const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
   const skills2 = fs.readFileSync(path.join(root, 'js/skills2.js'), 'utf8');
 
-  // 事件必須帶得出 arcM（表定 8 米），而不是讓顯示層自己挑固定弧高
+  // 事件帶出各段最高點，不讓顯示層自行選固定弧高。
   assert.match(skills2, /if \(extra && extra\.arcM > 0\) spec\.arcM = Number\(extra\.arcM\);/);
   const c=loadSkills2(),events=[];c.GT=0;
   c.sgConfiguredFlightSpeed=()=>100;c.sgEmitVfx=(g,t,s,e)=>events.push(e);
-  for(const arcM of [table.number('waterball',1,'拋物線高度（米）'),13.5]){
-   c.sgLaunchWaterball({pEnt:{pos:{x:0,y:0}},target:{pos:{x:100,y:0}},cfg:{arcM,burstR:0}});
-   assert.equal(events.at(-1).arcM,arcM,'發射事件保留設定弧高');
+  for(const distance of [50,200,270]){
+   c.sgLaunchWaterball({pEnt:{pos:{x:0,y:0}},target:{pos:{x:distance,y:0}},cfg:{arcM:999,burstR:0}});
+   assert.equal(events.at(-1).arcM,distance/20,'飛行距離一半，忽略舊固定弧高');
   }
 
   // Canvas：弧高換算成世界單位後餵進拋物線

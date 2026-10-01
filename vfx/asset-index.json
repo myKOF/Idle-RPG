@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2436,
+  "assetCount": 2437,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -1210,6 +1210,25 @@
         "dimensions": {
           "width": 1536,
           "height": 2048
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/water-prison/water-dome.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/water-prison/water-dome.svg",
+      "format": "svg",
+      "fileSize": 1394,
+      "contentHash": "sha256:67547f00ae7302a44569315ab8c4478240b23d3778b9f91aa5b10f4058943c8c",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
         },
         "dimensionsSource": "attributes",
         "colorModel": null,

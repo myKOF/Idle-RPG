@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## Codex｜水流彈距離弧高與水牢罩子（WATER-PRISON-DOME-20261001）
+
+- Owner：Codex；Done。使用者要求每段水流彈弧高＝飛行距離一半；水牢改為遠程減傷30%／每級3%、圈內攻擊下降30%、易傷50%／每級5%；新增半透明罩子，維持現有速度、半徑與持續時間。前置模擬事件及領域狀態已存在，初次與續作衝突預檢均乾淨。使用者已儲存並關閉Excel，解除唯讀鎖定。
+- 允許水流彈／水牢限定接線、Skills2及Status Excel／CSV／JS、幾何表接線、相關測試、獨立水牢Preset與向量素材／索引、必要主頁／Worker快取及本紀錄；禁止其他技能機制、Worker協議、使用者編輯中的冰箭與水龍捲Preset／layout、其他副本及合併／推送。保留目前使用者配置變更，Excel只改目標格。
+- 驗收遠近及各段彈射弧高／速度／落點／VFX事件、圈內外遠程及近戰／到期／卸下、等级公式與實際傷害、獨立罩子縮放及回收、配置一致、Build、素材雙倉庫Commit。後續接手者：使用者。
+- 已實作：各段起飛由固定落點距離計算 arcM＝distance／bfMeterPx(1)／2，無座標沿既有速度／時間反推；水牢遠程減傷掛在共用resolveHit，依實際射程分類、圈內外及高塔皆適用，卸下／到期停止；圈內減益最多一拍刷新，離開後不殘留整段。依既有base＋per×Lv，Lv.1為33%減傷／55%易傷，Lv.10為60%／100%；攻擊下降固定30%，水牢維持6秒／20米。水彈維持57.96米／秒與傳奇彈射加速，模擬事件／Worker／Runtime同一弧高。
+- Excel：Status原生Excel只改87列數值、94列持續特效／說明三格；Skills2原生Excel只改182列AA固定高度及AW／AX描述、189列AU效果JSON及AW／AX描述六格，清除固定8米高度接線。兩份儲存及唯讀重開成功、Excel／CSV全231／95列逐格一致、重建JS語意差異0；格式表、欄寬、列高均與前快照相同。Artifact Tool唯讀渲染前後目標列，保留既有窄欄截斷顯示，未改格式。使用者既有極寒冰爆持續30%／每級3%修改完整保留並與共享三份配置一起提交，不自行改回。
+- 特效：新增field-water-prison-dome與codex-authored/water-prison/water-dome.svg，地板／罩子分別在地面及billboard層播放，共用半徑、腳底位置和回收；登記Runtime特殊分層用途，海淵葬界仍讀原ground-domain-ice。Mote Studio無可用WebMCP繪製工具，使用可編輯SVG；正式Core／Runtime在本機28373預覽確認透明罩面、弧形邊界和角色可見。單一根群組layout同名同id，Preset／layout／SVG兩倉庫逐位元及SHA256一致，索引只新增此素材，其他掃描結果未混入；237份Preset／155素材匯出檢查通過。素材庫先Commit 34240ac，遊戲Commit為本紀錄所在提交。其他使用者Preset／layout六檔保留未提交。
+- 最終定向驗證：node --test tests/water-prison-dome.test.cjs tests/waterball-vfx-integration.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/skill2-status-slots.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/water-ice-audit.test.cjs tests/skill-vfx-inheritance.test.cjs tests/windblade-vfx-integration.test.cjs tests/skill2-mire-earthguard-legendary.test.cjs tests/earthguard-revival.test.cjs tests/worker-protocol.test.cjs，194/194通過。另node --test --test-name-pattern='水流彈|水牢|WATER|DOMAIN'之水系定向及新版LAYOUT-4通過。涵蓋5／20米、下一次彈射重新計算、加速維持、正式Worker白名單到真正Runtime最高點、圈內外及物理／魔法分類、Lv.1／5／10真傷害、攻擊700／易傷1550、離圈／到期／卸下、罩子前後層跟隨／縮放／回收／表格來源及編輯器群組。
+- 擴大驗證：node --test tests/skills2-geometry.test.cjs及tests/vfx-runtime.test.cjs等共用組222項217通過；另一組197項190通過，12項失敗皆在HEAD唯讀對照重現。依参数接線規範另跑node tools/apply_params.cjs，534參數一致、將變更0／錨點問題0；--check-anchors擾動487數值後534錨點各命中一次。node --test 'tests/*.test.cjs'全套3441項3340通過、99失敗、2略過；其中新layout中文群組name不符同id規則已修正，重跑LAYOUT-4及新水牢群組測試通過。其餘98個失敗逐項以任務前版本（HEAD＋保留本輪起始使用者極寒冰爆30%／3%、三份Preset／layout與Excel前快照）唯讀重跑99個案例，98同樣失敗、已修正的LAYOUT-4通過，無新增失敗；既有配置／素材／過時斷言不在本輪修正範圍。npm.cmd run build，414檔通過；兩倉庫diff check通過。
+- 修改27檔：Skills2及Status兩份Excel／CSV、js/skills2.js／status.js／formula.js／combat.js／vfx-runtime.js、index.html／bridge.js／worker/sim.worker.js、tools/skills2-geometry.cjs／vfx/editor/index.html、五份相關測試（skill2-ice、skill2-vfx、水系傳奇、水彈VFX、新water-prison-dome）、新Preset／layout／匯出SVG、asset-index／shipped-assets、docs/WATER_ICE_AUDIT.md／vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md及本紀錄。唯讀檢查未改：js/battlefield.js／vfx-core.js／vfx-pixi-backend.js／worker/shim.js／protocol.js、tools/config_tables.cjs／apply_params.cjs／vfx/export-assets.cjs／asset-scanner.cjs／editor/layout-schema.js、其他技能及使用者素材。
+- 交付：無未完成程式項目，可合併；未合併／推送。已完成獨立Core／Runtime特效預覽與Excel原生重開／前後渲染，未做完整遊戲實戰／Console驗收。建議整合後重載遊戲確認水牢；編輯器若開著，先備份未存內容再重载，避免舊內容覆寫。Temp/codex-water-prison-20261001保存快照、唯讀檢查／對照、日誌及預覽，皆不納入提交。後續接手者：使用者。
+
 ## Codex｜極寒冰爆命中冰爆（ABSOLUTE-ZERO-BURST-20261001）
 
 - Owner：Codex；Done。改為追蹤冰箭持續時間＋50%／每級＋5%、每次箭命中必定冰爆、冰爆半徑＋25%、冰爆傷害百分比與T7相加（＋200%／每級＋20%）；移除舊十波／本體增傷。依既有技能等級公式base＋per×Lv，維持T7原三波與速度。前置冰爆及命中掛勾已存在，衝突預檢乾淨。

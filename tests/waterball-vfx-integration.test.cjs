@@ -192,8 +192,10 @@ test('fixed landing damages current occupants only and bounces from the ground i
  c.sgEmitVfx=(...args)=>events.push(args[3]);c.sgWaterballHit=(p,s,t,cfg,f,o)=>{hits.push(t);o.dmg+=10;return {};};c.bfRandomOther=()=>b;
  const cfg={delayMs:0,bounces:1,burstR:60,arcM:8,bounceSpeed:1};c.GT=0;c.sgWaterballShot(pEnt,{},null,null,pool,a,'mv',out,cfg);
  assert.equal(hits.length,0);assert.equal(events[0].area.x,100);assert.equal(events[0].area.fixedLanding,true);
+ assert.equal(events[0].arcM,5,'首段 10 米，弧高 5 米');
  a.pos.x=500;b.pos.x=110;const shot=c.SKILL2_RT.waterballs[0];c.GT=shot.at;c.sgTickWaterballs({pEnt,enemies:pool});
  assert.deepEqual(hits,[b]);assert.equal(events[1].area.x,100);assert.equal(events[2].area.sourceX,100);assert.equal(events[2].area.x,110);
+ assert.equal(events[2].arcM,.5,'下一段 1 米，弧高 .5 米，沿落地位置起飛');
  b.pos.x=500;const newcomer={hp:100,pos:{x:115,y:0}};c.GT=shot.at;c.sgTickWaterballs({pEnt,enemies:[a,b,newcomer]});
  assert.deepEqual(hits,[b,newcomer]);assert.equal(c.SKILL2_RT.waterballs.length,0);assert.equal(out._pendingProjectiles,0);
  c.bfRandomOther=()=>null;a.pos.x=200;c.sgWaterballShot(pEnt,{},null,null,pool,a,'mv',out,{...cfg,bounces:0});

@@ -84,12 +84,12 @@ sgPlague,惡疫,🦠,debuff,dot,,poison,skill,200,,0,0,8,0.35,strongest,1,,,,超
 sgInferno,火獄烙印,🌋,debuff,stat,sgInferno,fire,,0,,0,1,8,0,refresh,1,,,,超神進化【深淵火獄】：敵人的屬性標籤強制改為火屬性（效果值本身沒有意義，比照【地爆天星】只是一個計時容器）。屬性改寫走 skill2ForcedAttr，與【寒冰逆轉】同一個掛點。
 sgSuperconduct,超導電荷,🔋,buff,stat,sgSuperconduct,lightning,,0,,0,2,99999,0,stack,100,,,,超神進化【永恒超導體】：閃電鏈每經過自身 1 次疊 1 層，每層使你的雷電傷害提高（效果值＝單層% × 層數）；設計未寫持續時間，比照【戰神屠錄】採「持續到死亡為止」，因此持續時間給一個單場戰鬥不可能走完的值，實際回收靠死亡時的 resetSkill2RT。
 sgThunderQuake,震雷,⚡,debuff,stat,sgThunderQuake,lightning,,0,,0,25,8,0,refresh,1,,,,傳奇特效【震雷】：被落雷術擊中留下的雷痕（效果值＝該敵人「暈眩中」時受到的傷害提高%）。只有同時暈眩中才會吃到增傷，因此持續時間只要蓋得住一次落雷的暈眩即可。
-sgWaterPrison,水牢,🌊,debuff,stat,sgWaterPrison,ice,,0,,0,100,6,0,refresh,1,,,,超神進化【水牢天瀑】：被關進水牢的敵人（效果值＝受到的傷害提高%）。攻擊力下降那一半沿用既有的【攻擊】減益 atkDown，不另建一筆。
+sgWaterPrison,水牢,🌊,debuff,stat,sgWaterPrison,ice,,0,,0,50,6,0,refresh,1,,,,超神進化【水牢天瀑】：被關進水牢的敵人（效果值＝受到的傷害提高%）。攻擊力下降那一半沿用既有的【攻擊】減益 atkDown，不另建一筆。
 sgWindErode,風蝕,🌬️,debuff,stat,sgWindErode,wind,,0,,0,25,4,0,refresh,1,,,,傳奇特效【風蝕】：被風刃擊中留下的風蝕（效果值＝受到的傷害提高%）。沒有附加條件，狀態在身上就算數，走 skill2VulnACfg 的同一個 totalDmgPct。
 sgSlayerDomain,殺神領域,⚰️,buff,stat,sgSlayerDomain,dark,,0,,0,0,99999,0,refresh,1,,ground-mire,,超神進化【殺神領域】：展開中的領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
 sgVenomDomain,萬毒血霧,☣️,buff,stat,sgVenomDomain,poison,,0,,0,0,99999,0,refresh,1,,ground-mire-poison,,超神進化【萬毒血霧】：展開中的毒霧領域，跟著你移動；持續特效依領域半徑縮放（領域內敵人身上的【萬毒侵蝕】另計）。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
 sgFireGodBody,火神降臨,🔥,buff,stat,sgFireGodBody,fire,,0,,0,0,99999,0,refresh,1,,ground-domain-fire,,超神進化【火神降臨】：火焰纏身，定時灼燒周圍敵人；持續特效依作用半徑縮放、跟著你移動。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。
 sgPetrifyDomain,超重岩領域,🗿,buff,stat,sgPetrifyDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth,,超神進化【超重岩之術】：岩甲護盾存在期間展開的領域，進入的敵人被石化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
 sgGravityDomain,超重力場,🌐,buff,stat,sgGravityDomain,earth,,0,,0,0,10,0,refresh,1,,ground-domain-earth-10,,超神進化【超重力場】：岩甲護盾存在期間展開的重力場，進入的敵人僵化；持續特效依領域半徑縮放、跟著你移動。持續到岩甲護盾結束（實際秒數由岩甲術給）。
-sgWaterPrisonDomain,水牢天瀑,🫧,buff,stat,sgWaterPrisonDomain,ice,,0,,0,0,6,0,refresh,1,,ground-domain-ice,,超神進化【水牢天瀑】：圍在你周圍的水牢，持續期間跟著你移動；持續特效依水牢半徑縮放（牢內敵人身上的【水牢】與攻擊下降另計）。
+sgWaterPrisonDomain,水牢天瀑,🫧,buff,stat,sgWaterPrisonDomain,ice,,0,,0,0,6,0,refresh,1,,field-water-prison-dome,,超神進化【水牢天瀑】：周圍的水牢罩子（半徑依技能範圍，跟著玩家移動）；期間受到的遠程傷害降低，圈內敵人攻擊下降且受到傷害提高，水牢結束時撤除。
 sgAbyssDomain,海淵葬界,🌊,buff,stat,sgAbyssDomain,ice,,0,,0,0,99999,0,refresh,1,,ground-domain-ice,,超神進化【海淵葬界】：永久展開的水之領域，跟著你移動；持續特效依領域半徑縮放。持續時間只是讓它一直掛著：領域在不在由超神進化與技能列裝配決定，卸下或換掉超神就移除。

@@ -553,6 +553,14 @@ var VFXRuntime = (function () {
             registerPresets([part]);
           });
         }
+        // 水牢地板與透明罩子分層，兩份共用範圍與位置。
+        if (p.id === 'field-water-prison-dome') {
+          ['back', 'front'].forEach(function(half) {
+            var part = JSON.parse(JSON.stringify(p)); part.id += '-' + half;
+            part.layers = part.layers.filter(function(l) { return (l.id === 'dome-shell') === (half === 'front'); });
+            registerPresets([part]);
+          });
+        }
         // 火牆在編輯器是三柱合成；遊戲中各柱保持直立，只沿判定軸排列底部。
         if (p.id === 'ground-firewall' && p.layers.some(function (l) { return l.id.indexOf('column-0-') === 0; })) {
           for (var column = 0; column < 3; column++) {
@@ -608,6 +616,12 @@ var VFXRuntime = (function () {
       return Object.assign({}, params, { projectionRotation: params.rotation, rotation: 0 });
     }
     function play(rt, presetId, params, mult) {
+      if (presetId === 'field-water-prison-dome' && has(presetId + '-front')) {
+        var floor = play(rtZone, presetId + '-back', rockDepthParams(params, -1), mult);
+        var shell = play(rtBillboard, presetId + '-front', rockDepthParams(params, 1), mult);
+        if (!floor || !shell) { stopRef(floor); stopRef(shell); return null; }
+        return { parts: [floor, shell] };
+      }
       if (isRockOrbitPreset(presetId) && tuning(presetId,'splitRockDepth') && has(presetId + '-front')) {
         // 前後石碑各自有透明度曲線；兩份必須跨在角色的畫面 Y 兩側，
         // 否則共用同一個 sortY 時會依加入順序一起蓋到角色上。

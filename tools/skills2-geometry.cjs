@@ -57,7 +57,6 @@ function bindings(gid,stage){
  if(id==='chainlightning/flyingThunderGod')b.push(['damage',['len','wid']]);
  if(id==='firehunt/fireGodDescend')b.push(['travel',['flyM']],['orbit',['orbitM']]);
  if(['icearrow/7','windblade/5','windblade/stormMyriad'].includes(id))b.push(['search',['chaseM']]);
- if(id==='waterball/1')b.push(['height',['arcM']]);
  if(id==='firepillar/dragonDevour')b.push(['effect',['pullM']],['placement',['ballRange']],['height',['arcM']],['gap',['gap']]);
  if(id==='mire/abyssInferno')b.push(['height',['arcM']]);
  if(id==='firepillar/infernoTempest')b.push(['search',['searchM']],['gap',['gap']],['speed',['speed']]);
