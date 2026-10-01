@@ -955,6 +955,7 @@ var VFXRuntime = (function () {
         /* to 固定＝方向型（目標會動也不追）；targetId＝追著目標當下的座標走。 */
         flightOrbit: flightOrbit,
         ref: ref, from: from, targetId: toId, to: directed || fixedLanding ? to : null, t: 0,
+        rainStartedAt: spec.variant === 'ice-rain' ? clock : null,
         homingSpeed:spec.area&&num(spec.area.homingSpeed,0),
         homingPosition:spec.area&&spec.area.homingSpeed>0?{x:from.x,y:from.y/groundScale}:null,
         previousTarget:spec.area&&spec.area.homingSpeed>0?{x:to.x,y:to.y/groundScale}:null,
@@ -1509,13 +1510,7 @@ var VFXRuntime = (function () {
             : playOnTargets(hitRt, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0, undefined, true);
           break;
         case 'projectile':
-          if (spec.fxKind === 'rain' && spec.variant === 'ice-rain') {
-            var rainIds = spec.targets || [];
-            for (var ri = 0; ri < rainIds.length; ri++) {
-              ok = playProjectile(rtFx, presetId, Object.assign({}, spec, { targets: [rainIds[ri]], area: null })) || ok;
-            }
-            break;
-          }
+          // 冰之淚每支箭都是獨立時間／落點的事件，空箭也沿 fixedLanding 落下。
           ok = spec.variant === 'ice-arrow-homing' ? playGround(presetId,spec,role)
             : spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
             : spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
@@ -1693,7 +1688,17 @@ var VFXRuntime = (function () {
         var job = pending[q];
         pending.splice(q, 1);
         if (!chainTargetsAlive(job.chainTargets)) continue;
-        if (job.spec) { tryPlay(job.spec); continue; }
+        if (job.spec) {
+          var firstProjectile = projectiles.length;
+          tryPlay(job.spec);
+          // 本幀中途起飛的雨箭，只前進起飛後經過的時間，不能吃完整一幀。
+          if (job.spec.variant === 'ice-rain') {
+            for (var rainIndex = firstProjectile; rainIndex < projectiles.length; rainIndex++) {
+              projectiles[rainIndex].rainStartedAt = job.at;
+            }
+          }
+          continue;
+        }
         /* 命中類：等到真的要播的這一刻才判斷併發（排隊時目標身上的爆點還沒播出來，數不準）。 */
         if (job.hitClass && !hitAllowed(job.presetId, job.targetId)) { counters.capped++; continue; }
         var previousTargets = chainTargets;
@@ -1712,7 +1717,7 @@ var VFXRuntime = (function () {
          機身朝向取路徑當下的切線並逐幀追上，不會在轉折處瞬間翻面。 */
       for (var i = projectiles.length - 1; i >= 0; i--) {
         var pr = projectiles[i];
-        pr.t += step;
+        pr.t = isNum(pr.rainStartedAt) ? Math.max(0,clock-pr.rainStartedAt) : pr.t+step;
         var k = Math.min(1, pr.t / pr.dur);
         var to = pr.to || ctx.posOf(pr.targetId);
         if(pr.knifeFlight) {
@@ -1979,7 +1984,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260930-wind-skill-audit';
+  var DATA_VERSION = '20261001-ice-tears-rain';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

@@ -8266,3 +8266,52 @@ Worker 存活且頁面正常完成載入。
 - 驗證：COST-1 **拿真的 Core 跑過全部 236 份 preset 對答案**（六成以上完全命中，其餘在 ±25% 或差 1 個節點以內；對照 2026-09-30 價格表：storm-dance 實測 1.10／估 1.21、blizzard 0.70／0.64、icearrow-frost 0.45／0.45、icearrow-crystal 0.29／0.30）；COST-2～4 釘住係數、時間軸、粒子與子發射器；COST-5 驗門檻讓橘色落在 2～25%（目前 8%）；COST-6 驗編輯器接線與伺服器白名單。11 個突變全部被抓到（修了三條不夠緊的斷言：填色係數歸零、子發射器不看時間差、繪製批次永遠 1 批）。編輯器相關 452 項中 3 項既有失敗（CAP-2、HISTORY-42、16b canonical）＋ rename 兩項批次執行的偶發 IPC 問題（單獨跑 19/19 通過，已知現象）。build_check 412 檔通過、diff check 通過。
 - 實機確認（本機編輯器 28362）：`ground-icearrow-frost` 顯示橘色 0.45ms（與 09-30 實測同值）、`hit-phys` 灰色 0.03ms、空白視窗不顯示；雙視窗各自顯示；滑過去的明細正確；刪掉一層粒子後數字當場從 1.21 → 1.11ms，Undo 後回到 1.21ms。
 - 衝突預檢：`ai/codex`／`ai/antigravity`／`develop` 都沒有比 HEAD 新、動到 `tools/vfx/` 或 `js/vfx-core.js` 的提交。未合併／推送。
+
+## Codex｜保存使用者技能間隔調整（SKILL-INTERVAL-20261001）
+
+- Owner：Codex；Done。使用者在冰箭修復期間自行將「技能施放最短間隔」0.2→0.5秒，並同步CSV與formula.js；明確要求包含其修改一起Commit。依一筆提交一個目的，冰箭先提交be9533ec，此項另筆保存原值，不重改使用者Excel。
+- 允許config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、js/formula.js及必要主頁／Worker快取、本紀錄；三份參數檔預檢均無其他來源衝突。驗收Excel／CSV只變該參數、apply_params零差異／534錨點獨立、施放最短間隔／擊殺換目標測試、Build及Commit；不合併／推送。
+- 修改7檔：使用者的config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、js/formula.js三份既有修改，加index.html、js/bridge.js、js/worker/sim.worker.js快取及docs/AI_TASKS.md。Excel316列逐格核對只G285由0.2→0.5，CSV完全一致，程式只有SKILL_MIN_CAST_INTERVAL改值。Formula 1.0.39、Bridge 1.0.187、Worker與Formula import為20261001-skill-interval；冰箭import保留20261001-ice-tears-hit。未改其他數值、素材、Worker協議或存檔。
+- 驗證：node tools/apply_params.cjs，534個對應參數、將變更0／錨點問題0，未減少。node tools/apply_params.cjs --check-anchors，擾動487個數值後534個錨點仍各命中一次。node --test tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/skill-gcd.test.cjs tests/skill2-system.test.cjs tests/multi-enemy.test.cjs，69項54通過、15項失敗全在skill2-system；另以HEAD三份參數檔重跑skill2-system，36項21通過且同樣15項逐項失敗，0新增。參數／施放間隔／換目標定向33/33通過，保留既有技能規則及測試斷言；失敗清單為迴身四方斬2項、突刺4項、飛刀2項、零日感染2項與雙刀亂舞5項，另案追蹤。
+- npm.cmd run build，411檔通過；git diff --check通過。唯讀核對未改：apply_params及上述測試、其他技能／戰鬥邏輯、VFX Runtime與Preset。Commit為本紀錄所在提交，可合併，未合併／推送；提交後工作區乾淨。未完成項目：無；尚未實戰瀏覽器／Console驗收。下一步由使用者整合後重載；全技能最短間隔現在為0.5秒。
+
+## Codex｜冰之淚落地受擊同步修正（ICE-TEARS-HIT-20261001）
+
+- Owner：Codex；Done。使用者回報雨箭錯落、受擊卻整片同步；修正每箭排程、落地結算與正式 Runtime／Worker 派送。保留每波10支、Lv.10每支400%且不增幅普通／追蹤冰箭。
+- 允許冰之淚限定邏輯、必要 Runtime／快取、配置同步、定向測試與文件；禁止其他技能規則、素材新增、存檔／Worker協議變更與合併／推送。修改前目標衝突預檢乾淨。
+- 根因：75aa050c 在每支箭落地時重查並命中全部範圍敵人，且未保存該箭的落點／目標，導致每次整片一起播命中；不是箭身 delayMs 遺失。使用者明確選擇「每箭命中自己的目標」，取代先前全範圍解讀；每支完整傷害與普通箭隔離沿用。
+- 驗收：多敵受擊與各自箭雨抵達一一對應、單敵十箭全額傷害、零敵仍十箭、MISS／離場／倒地／重置處理、普通／追蹤箭傷害隔離、配置一致與回歸／Build／Commit。前置75aa050c。
+- 完成：每波打散我方30米內的目標，十箭先分配不同敵人，不足時重複分配；各箭保存原目標與抵達時刻，只對該目標命中、扣血、播受擊。有目標沿既有Runtime天降路徑追至目標當下位置；無敵仍十支固定落點空箭且不扣血。原目標離場／死亡／移出範圍不轉打其他敵人，無座標相容路徑亦核對正式清單。成功擊殺保留該次受擊，其餘箭不再扣血。
+- 修改11檔：js/skills2.js、tests/water-ice-audit.test.cjs、tools/skills2-vfx.cjs、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、index.html、js/bridge.js、js/worker/sim.worker.js、docs/AI_TASKS.md、docs/WATER_ICE_AUDIT.md、docs/vfx/VFX_RUNTIME_ADAPTER.md。唯讀檢查未改：js/vfx-runtime.js、js/worker/shim.js、js/vfx-core.js、冰箭／受擊Preset、寒冰箭傳奇測試、幾何／參數／表格VFX／編輯器快取測試；無素材、Worker協議或存檔改動。編輯器HTML預檢發現Claude進行中修改；本次沿用Runtime、不需修改該檔，主頁Runtime版本仍與編輯器相同。
+- 配置：依使用者確認，只改Excel第181列AV／AW／AX三格用途與描述；AU數值、十波／十箭／0.35秒／30米／200%＋每級20%皆不變。沿用試算表技能檢查／渲染；Artifact Tool既有匯入不適合保留本檔空白格，使用原生Excel COM窄範圍儲存、唯讀重開，不寫內部XML。231列逐格核對只有上述三格，ZIP、樣式、欄寬、列高及儲存格格式不變，CSV一致、生成JS語意差異0。
+- 測試：node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/waterball-vfx-integration.test.cjs tests/icearrow-vfx-integration.test.cjs tests/skills2-geometry.test.cjs tests/skills2-params.test.cjs tests/skills2-table-vfx.test.cjs，136項135通過；唯一連鎖閃電速度測試在讀取HEAD的Excel／CSV／JS時同樣失敗（仍預期18/.244），本次0新增失敗，未更動其斷言或其他技能數值。新增多敵一箭一受擊／各自抵達時間、移動目標正式Runtime端點、離場不轉打、擊殺回收與無座標防離場命中；原零／單／23敵十箭、400%隔離、MISS、倒地／重置仍通過。
+- 寒冰箭傳奇／超神定向：node --test --test-name-pattern='冰之淚|極寒冰爆|無限冰裂|連射|冰封|凜冬侵蝕|冰裂箭|深度凍結' tests/skill2-thunderorb-icearrow-legendary.test.cjs，10/10。node --test tests/vfx-editor-cache-versions.test.cjs，3/3。node tools/config_tables.cjs --apply Skills2，0差異；npm.cmd run build，411檔通過；git diff --check通過。
+- 快取：Skills2 1.0.254、Bridge 1.0.186，Worker及Skills2 import使用20261001-ice-tears-hit；Runtime未修改。遊戲Commit be9533ec，可合併，未合併／推送。工作期間另出現game_parameters.xlsx第285列「技能施放最短間隔」0.2→0.5修改，使用者後續自行同步CSV／程式並授權一併提交，見SKILL-INTERVAL-20261001另筆保存。未完成冰箭程式項目：無；限制：未在實戰瀏覽器／Console驗收，已驗正式Core／Runtime與Worker事件資料。下一步由使用者整合、重載遊戲確認畫面；既有連鎖閃電速度測試另案處理。
+
+## Codex｜冰之淚十支錯落箭雨（ICE-TEARS-RAIN-20261001）
+
+- 本項保留75aa050c的歷史交付；其中「每箭對全部敵人」規則已由使用者在ICE-TEARS-HIT-20261001明確修正為每箭命中自己的目標，現在行為與驗收以上方新任務為準。
+- Owner：Codex；Done。使用者要求冰之淚每波固定10支冰箭、錯開落下時間，並明確每支雨箭都有完整超神配置傷害，Lv.10每支400%；此百分比只限箭雨，不包含普通寒冰箭與追蹤箭。波數、間隔與範圍保留配置。
+- 允許冰之淚限定排程／Runtime天降派送、Skills2 Excel／CSV／生成JS、相關測試／VFX登記、必要主頁／Worker／編輯器快取及文件；禁止其他技能規則、素材重製、存檔／Worker協議變更與未授權合併／推送。修改前衝突預檢所有目標乾淨。
+- 驗收：不同敵人數皆每波10箭；每箭起飛與落地錯開、方向朝落點，每支落地對我方範圍內全部敵人獨立結算完整傷害，Lv.10每支400%，不分攤／除以10；開關箭雨或升超神等級不提高普通／追蹤箭。最後一波完整落下、無敵亦保留十箭，倒地／重置回收；正式Runtime與模擬排程一致、配置三份同步、回歸／Build／Commit。
+- 數量由Excel fx.count配置；各支雨箭沿用既有我方範圍作用，每次落地重新查詢敵人，不以十個小範圍取代。時間錯落以既有波次間隔分配，沿用既有冰箭／受擊Preset；雨箭傷害只讀tearsOfIce.fx.pct／pctPer，不乘至普通發射／追蹤箭。
+- 前置：e5b5a3f1；完成後交使用者整合。
+- 完成：Excel第181列新增fx.count=10，十波共100支，每支有獨立delayMs與固定落點，無敵也完整落下；每波內按時間窗加亂數錯落，無鎖定目標的箭在我方30米內分散落點。每支雨箭落地獨立對作用範圍內全部敵人造成配置完整傷害；Lv.1每支220%、Lv.10每支400%，普通／追蹤箭的傷害值與命中序列在未選箭雨／Lv.1／Lv.10三種情境完全一致。發射不扣血、不播受擊，落地重新檢查正式敵人清單／存活／我方範圍，MISS不播成功受擊。最後一箭落地後回收，倒地與戰鬥重置取消未結算傷害。Runtime不再依targets複製箭身，長幀只推進起飛後經過的時間；空箭、傾斜後向下航向及不同FPS時序驗證通過。
+- 修改13檔：js/skills2.js、js/vfx-runtime.js、tools/skills2-vfx.cjs、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tests/water-ice-audit.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、docs/AI_TASKS.md、docs/WATER_ICE_AUDIT.md、docs/vfx/VFX_RUNTIME_ADAPTER.md。Skills2／Bridge／Runtime版號253／185／163，主頁與編輯器相同Runtime，Worker同步20261001-ice-tears-rain。不新增素材、借用來源或Worker協議。
+- 唯讀檢查未改：js/vfx-core.js、js/battlefield.js、js/combat.js、js/worker/shim.js／protocol.js、Skills2編譯工具、冰箭／受擊Preset、現有水冰／風系與Runtime測試、素材庫。沿用既有Skills2匯入空白儲存格不保真時的原生Excel COM局部編修，artifact-tool僅唯讀檢視與前後預覽，原生儲存／唯讀重開驗證；231列逐格比較只AU～AX181四格變更，ZIP工作表／樣式／欄寬／列高保留。Excel原先鎖定，使用者回覆已關閉後完成正式檔案同步，沒有覆寫開啟中的活頁簿。
+- 定向驗證：node --test --test-name-pattern='ICE-TEARS-RAIN|production rain' tests/water-ice-audit.test.cjs，7/7；原本四個關鍵案例先在修改前重現失敗。包含0／1／23敵人固定箭數、每敵100次完整雨箭傷害、Lv.10每支400%且普通箭隔離、飛行前零傷害、錯落落地、最後一波、MISS、移出／死亡／離場、倒地／復活與重置，以及正式Worker事件／Core／Runtime的固定落點、原尺寸、向下航向與不同幀率。
+- 水冰與配置回歸指令：node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/icearrow-vfx-integration.test.cjs tests/waterball-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，138/138。
+- 共用回歸：node --test tests/wind-skill-audit.test.cjs tests/skill2-wind.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs tests/skill2-stormbarrier-legendary.test.cjs tests/windblade-vfx-integration.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs，156項152通過；node --test tests/vfx-runtime.test.cjs，124項120通過。共8項失敗皆以唯讀攔截器換回HEAD Skills2／Runtime再次逐項重現：雷爆的4次／4倍速度／死亡時序／舊素材預期與目前使用者配置不同，以及既有FIELD、CATALOG-3、CHAIN金雷、STARFALL-TAIL。不改其他技能配置或降低斷言。
+- 其他檢查：npm.cmd run build，411檔全過；node tools/config_tables.cjs --apply Skills2，語意變更0；Excel／CSV逐格一致與git diff --check通過；素材庫master乾淨，無新素材，不建立空提交。
+- 交付：Commit為本紀錄所在提交；可以合併，未合併／推送。無未完成程式修改，未做遊戲瀏覽器實戰畫面／Console驗收。建議使用者整合後重新載入遊戲；若編輯器仍開啟，先備份未存內容後重載，以使用相同Runtime163。
+
+## Codex｜極寒冰爆誤觸死亡新星（ICEARROW-DEATH-NOVA-20261001）
+
+- Owner：Codex；Done。使用者回報極寒冰爆施放時在自身周圍出現冰霜新星。追查正式敵人死亡掛勾：sgDeathNova 只檢查學習等級與寒霜，未檢查冰霜新星裝配；先前水系稽核以不死亡的高血量敵人且機率關閉，未覆蓋此路徑。
+- 允許 js/skills2.js 的死亡新星裝配判定、寒冰箭回歸測試、必要主頁／Worker 快取及相關紀錄；禁止更改寒冰箭冰爆、凍結、冰霜新星已裝配的合法死亡觸發或其他技能／素材。修改前預檢全部乾淨；本副本使用者已調整連鎖雷爆機率 10%＋每級1% 的 Excel／CSV／生成 JS 保留，以 23bcfcd6 獨立保存。
+- 驗收：正式極寒冰爆→飛行命中擊殺→skills2OnEnemyDeath，冰霜新星已學未裝配時不施放新星；已裝配時仍保留合法機率、傷害與自身範圍；卸下即停止。正式 Runtime 不建立新星圖層，冷卻／波次／凍結結束冰爆不受影響。定向回歸、Build、配置一致性及 diff check 後 Commit，不合併／推送。
+- 前置：整合提交 fffb3de4；後續接手者使用者。
+- 完成：sgDeathNova 增加冰霜新星已學且已裝配判定，卸下即停止傷害與特效。只裝寒冰箭時，正式極寒冰爆十波發射、飛行命中、死亡掛勾及 Runtime 圖層均沒有新星。若同時裝配冰霜新星並學死亡新星，箭擊殺帶寒霜的怪仍合法在自身範圍追加一次新星，發射起手不播；兩種情境已分別驗證。截圖第三格看似冰霜新星，無法直接從截圖確定當下裝配／學習資料，未宣稱合法連動一定是錯誤。
+- 修改：js/skills2.js 裝配防護、tests/icearrow-vfx-integration.test.cjs 兩項完整擊殺事件回歸、index.html Skills2 1.0.252／Bridge 1.0.184、js/bridge.js 與 js/worker/sim.worker.js 同步 20261001-icearrow-death-nova，以及 AI_TASKS／水系稽核紀錄。檢查未改：Runtime／Core／Renderer、Status／combat 的凍結及死亡流程、Skills2 其他規則、Nova／冰箭素材。使用者配置提交另含 Excel／CSV／生成 JS 與當次快取，Excel 全列與 CSV 逐格一致、生成 JS 試跑語意變更 0。
+- 驗證：新增兩測試在修正前皆失敗，修正後通過，包含正式 castSkill2／tickSkill2→擊殺→skills2OnEnemyDeath、己方範圍的合法命中、卸下及實際 Runtime 不建立新星衝擊波。node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/icearrow-vfx-integration.test.cjs tests/waterball-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，132/132；npm.cmd run build，411 檔通過；git diff --check 通過。
+- 交付：修正 Commit 為本紀錄所在提交，可合併，未合併／推送。無素材變更，素材庫 master 乾淨，不建立空提交。無未完成程式修改；無可讀取的遊戲瀏覽器分頁，未做實戰畫面／Console 驗收。需重載遊戲載入新 Worker；若冰霜新星仍裝配且死亡新星已學，該合法連動仍會存在。

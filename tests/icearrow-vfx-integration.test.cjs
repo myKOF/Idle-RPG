@@ -11,6 +11,63 @@ function simulation() {
  return ctx;
 }
 
+test('ICEARROW-DEATH-NOVA: absolute zero kills cannot cast learned but unequipped death nova',()=>{
+ const h=simulation(),c=h.c;
+ h.setLevels(c,'icearrow',[10,10,10,10,10,10,10]);
+ h.setLevels(c,'frostnova',[10,10,10,10,10,10,10]);
+ c.G.player.skills2.ult={icearrow:{pick:0,lv:1},frostnova:{pick:0,lv:1}};
+ h.equip(c,'icearrow');h.forceRolls(c,0);
+ const p=h.playerEnt();p.pos={x:0,y:0};p.mp=1000;c.FIELD.player=p;
+ const doomed=h.enemy(50,50,0,'doomed'),survivor=h.enemy(1e9,80,0,'survivor'),es=[doomed,survivor];
+ c.applyStatus(doomed,'sgFrost',{val:20,dur:5});
+ const hits=h.stubHits(c),specs=h.stubVfx(c),deaths=new Set();
+ let deathHookCalls=0;
+ const onDeaths=()=>{for(const e of es)if(e.hp<=0&&!deaths.has(e)){
+  deaths.add(e);deathHookCalls++;c.skills2OnEnemyDeath(e,es.filter(x=>x.hp>0));
+ }};
+ assert.ok(c.castSkill2(p,es,'icearrow','mv-float'));
+ assert.ok(!specs.some(s=>s.variant==='frost-nova'),'發射起手本身不施放冰霜新星');onDeaths();
+ for(let i=0;i<40;i++){c.GT+=.05;c.tickSkill2(.05,{...h.tickCtx(c,p,es),onDeaths});}
+ assert.equal(deathHookCalls,1,'正式飛行擊殺已經進入敵人死亡掛勾');
+ assert.equal(doomed.hp,0);assert.ok(hits.length>0);
+ assert.ok(specs.some(s=>s.variant==='ice-arrow-pierce'));
+ assert.ok(!specs.some(s=>s.variant==='frost-nova'||Object.values(s.vfx||{}).some(id=>/^burst-frost-/.test(id))),
+  '只裝寒冰箭時，擊殺不能額外施放已學習的冰霜新星');
+ assert.equal(new Set(c.SKILL2_RT.grounds.filter(f=>f.kind==='icearrow').map(f=>f.wave)).size,10);
+ const novaIds=['burst-frost-nova','burst-frost-freeze'],nodes=[];
+ const backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+ const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,
+  ctx:{playerPos:()=>({x:0,y:0}),posOf:key=>key==='doomed'?{x:50,y:0}:{x:80,y:0}}});
+ rt.registerPresets([...presets,...novaIds.map(id=>require('../vfx/presets/'+id+'.json'))]);
+ for(const s of specs)rt.tryPlay(s);rt.update(.1);
+ assert.ok(nodes.length>0,'冰箭本體仍進入正式 Runtime');
+ const novaOnlyAsset='new_materials/impact-ring/impact_14.png';
+ assert.ok(!nodes.some(n=>n.spec.assetUrl===novaOnlyAsset),'Runtime 不應建立新星衝擊波圖層');rt.destroy();
+});
+
+test('ICEARROW-DEATH-NOVA: co-equipped nova follows actual absolute zero kills and stops immediately when removed',()=>{
+ const h=simulation(),c=h.c;
+ h.setLevels(c,'frostnova',[1,1,1,1,1,1,1]);h.setLevels(c,'icearrow',[10,10,10,10,10,10,10]);
+ h.equip(c,'frostnova');c.G.player.loadout.push(c.SG_PREFIX+'icearrow');c.G.player.skills2.ult={icearrow:{pick:0,lv:1}};h.forceRolls(c,0);
+ const p=h.playerEnt();p.pos={x:0,y:0};p.mp=1000;c.FIELD.player=p;
+ const dead=h.enemy(50,50,0,'dead'),near=h.enemy(1e9,80,0,'near'),far=h.enemy(1e9,1000,0,'far'),es=[dead,near,far];
+ c.applyStatus(dead,'sgFrost',{val:20,dur:5});
+ const hits=h.stubHits(c),specs=h.stubVfx(c);
+ let dispatched=false,novaHits=[];
+ const onDeaths=()=>{if(dead.hp<=0&&!dispatched){dispatched=true;const n=hits.length;
+  c.skills2OnEnemyDeath(dead,[near,far]);novaHits=hits.slice(n);
+ }};
+ assert.ok(c.castSkill2(p,es,'icearrow','mv-float'));
+ assert.ok(!specs.some(s=>s.variant==='frost-nova'),'同時裝配時也不能在發射起手就施放新星');
+ for(let i=0;i<10;i++){c.GT+=.05;c.tickSkill2(.05,{...h.tickCtx(c,p,es),onDeaths});}
+ assert.ok(dispatched,'帶寒霜的怪被極寒冰爆擊殺才進入新星掛勾');
+ const nova=specs.find(s=>s.variant==='frost-nova');assert.ok(nova,'裝配冰霜新星時合法追加保留');
+ assert.equal(nova.area.x,0);assert.equal(nova.area.y,0);
+ assert.ok(novaHits.some(hit=>hit.ent===near));assert.ok(!novaHits.some(hit=>hit.ent===far));
+ const hitCount=hits.length,eventCount=specs.length;c.G.player.loadout=[];
+ c.skills2OnEnemyDeath(dead,[near,far]);assert.equal(hits.length,hitCount);assert.equal(specs.length,eventCount);
+});
+
 test('ICEARROW-T7-VFX: icearrow freeze cannot dispatch the learned frostnova evolution or its blizzard',()=>{
  const h=simulation(),c=h.c;h.setLevels(c,'icearrow',[10,10,10,10,10,10,10]);h.setLevels(c,'frostnova',[10,10,10,10,10,10,10]);h.equip(c,'icearrow');
  c.G.player.skills2.ult={icearrow:{pick:0,lv:1},frostnova:{pick:0,lv:1}};
