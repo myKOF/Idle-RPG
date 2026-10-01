@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜水流彈新星來源隔離（WATERBALL-NOVA-20261001）
+
+- Owner：Codex；Done。使用者回報水流彈第7階仍產生冰霜新星；追查第4階爆散、傳奇冰霜擴散、凍結與死亡新星來源，修正普通水流彈混播。
+- 根因：第4階觸發特效誤填burst-frost-nova，且落地派送無論有無傳奇都讀同一列，普通／傳奇只有variant不同，實際Preset相同；前次1～7階稽核測試亦曾錯誤接受該配置。已清除錯配，普通水彈落地保留獨立水花受擊；合法冰霜擴散明確借冰霜新星第1階本體，不繼承其高階／超神。普通觸發欄仍可獨立填入特效，留白不額外播放或借用其他來源。
+- 授權與範圍：水流彈限定落地派送、Skills2三份配置、用途說明、定向測試、必要快取與本紀錄。其他目標預檢乾淨；js/skills2.js存在Claude未提交追蹤冰箭搜敵中心／回收修改，使用者明確同意限定水流彈與必要快取，僅改落地派送約9106行與表格生成段，不碰其追蹤冰箭段。無其他技能數值、新素材、Worker協議或合併／推送變更。
+- 修改11檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tools/skills2-vfx.cjs、tests/water-ice-audit.test.cjs、tests/waterball-vfx-integration.test.cjs、docs/WATER_ICE_AUDIT.md、index.html、js/bridge.js、js/worker/sim.worker.js與本紀錄。沒有新增寫死Preset；跨樹特效明確讀配置表。快取skills2 1.0.255／bridge 1.0.188／Worker及skills2 import 20261001-waterball-nova。
+- 驗收：1～7階及三個超神只裝水流彈、即使已學另兩個冰系技能，未裝冰霜擴散仍不播新星；水花／彈射／龍捲保留。傳奇明確讀第1階，保留30%範圍、自己的傷害與寒霜層數，不借高階／超神／普通觸發；空來源不回退。正式Core／Runtime建出普通水花而沒有新星素材；傳奇新星通過真實Worker白名單，在落地位置播放，沒有暴風雪。傷害、命中時序、彈射、速度、凍結／死亡新星合法條件未修改。
+- Excel：原生Excel COM只改AN185觸發特效與AV185說明，儲存後唯讀重開；231列比對只有上述兩格變動，CSV同步、JS重建語意差異0。樣式表、列高、欄寬不變；AN185清空後省略空節點，仍繼承原AN～AR欄style=1。Artifact Tool唯讀匯入與前後區域渲染確認，避免重新匯出造成既有空格格式漂移。
+- 測試：node --test tests/water-ice-audit.test.cjs tests/waterball-vfx-integration.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/skill2-ice.test.cjs tests/icearrow-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-editor-cache-versions.test.cjs，150/150通過、0失敗／略過。新增正常爆散、傳奇取源與空來源回歸於修復前3/3轉紅；修復後全數通過。npm.cmd run build，412檔通過；node tools/config_tables.cjs --apply Skills2，語意變更0；node tools/vfx/export-assets.cjs --check，236份Preset／154素材已是最新；git diff --check通過。
+- 唯讀檢查未改：js/vfx-runtime.js、js/vfx-core.js、js/worker/shim.js、js/data.js、js/legendary.js、js/status.js、tests/skill2-waterball-frostnova-legendary.test.cjs、相關新星／冰爆／水花Preset、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md與素材匯出工具。Runtime素材fetch已指定no-store，不需修改其邏輯或快取。
+- 使用者素材另行保存：工作期間ground-icearrow-frost.json調整霧氣／冰粒數、顏色、壽命與透明度。依既有提交偏好，先由vfx-library-root解析共享素材庫（檢查乾淨），保存Preset及既有layout至codex-authored/icearrow/{presets,layouts}，素材庫Commit e1905c9；同步回遊戲核對兩份SHA256一致，正式Preset驗證通過。遊戲素材獨立Commit 4b986122，沒有新圖片引用或匯出索引變更。
+- 交付：水流彈修正Commit為本紀錄所在提交，可合併；素材庫及遊戲素材Commit如上。無未完成程式項目；尚未做瀏覽器實戰畫面／Console人工驗收。整合後重載遊戲確認水流彈第7階與三個超神；如裝配冰霜擴散，出現新星屬合法效果。後續接手者：使用者；本輪不合併或推送。
+- 暫存清理限制：系統Temp/codex-waterball-nova-20261001內為本輪前後預覽、工作簿快照、唯讀檢查／原生編輯腳本、測試日誌與Node依賴junction，皆不在專案／提交內。已核對確切路徑，整目錄清理及較保守的逐檔清理均遭工具自動批准審查拒絕，僅回報blocked by policy、無詳細理由；沒有改用其他途徑繞過拒絕，暫存清理未完成。
+
 ## Codex｜三個 AI 分支整合與 develop 衝突處理（AI-INTEGRATION-20261001）
 
 - Owner：Codex；Done。使用者明確授權解決 develop 衝突並整合三個 AI 分支至最新，於實際 develop 整合副本操作，允許衝突解決、必要紀錄、驗證及乾淨 AI 副本的快轉同步；禁止推送、production／main 變更及未提交他人工作覆寫。
