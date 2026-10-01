@@ -286,7 +286,7 @@ test('【天穹崩裂】：每 2 秒落下召喚星體，三種形態都出得�
   assert.ok(kinds.has('meteor'), '火殞石走既有的殞石畫法');
   assert.ok(kinds.has('thunder-fall'), '雷殞石走既有的雷殞天落畫法');
   assert.ok(specs.some((s) => s.variant === 'wind-blade'), '巨大風刃走既有的風刃畫法');
-  assert.ok(rain.every((s) => s.elem === 'fire' || s.elem === 'lightning'));
+  assert.ok(rain.every((s) => ['wind','fire','lightning'].includes(s.elem)));
   assert.ok(hits.length > 0, '召喚星體會造成傷害');
   // 沒裝配在技能列就不生效
   const off = loadContext();

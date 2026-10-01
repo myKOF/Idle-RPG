@@ -4,7 +4,7 @@ test('臨界雷劫外擴速度使用速度欄，Excel／CSV／JS與新效果一�
  const row=tables.csvParse(fs.readFileSync(path.join(__dirname,'../config/CSV/Skills2.csv'),'utf8'));
  const found=row.find(r=>r[8]==='criticalThunderbolt');
  assert.equal(found[row[0].indexOf(geo.labels.speed)],'3');
- assert.deepEqual(JSON.parse(found[row[0].indexOf('效果參數(JSON)')]),{sec:10,chance:10,chancePer:1,pct:50,pctPer:5});
+ assert.deepEqual(JSON.parse(found[row[0].indexOf('效果參數(JSON)')]),{sec:10,chance:5,chancePer:.5,pct:50,pctPer:5,childSec:3});
  assert.deepEqual(geo.apply('thunderorb','criticalThunderbolt',{},c=>c===geo.labels.speed?'3':'').fx,{speed:3});
  assert.equal(geo.extract('thunderorb','criticalThunderbolt',{speed:3},'')[geo.labels.speed],'3');
 });

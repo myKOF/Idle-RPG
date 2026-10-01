@@ -1877,7 +1877,7 @@ test('THUNDER-TRIBULATION 紫雷本體維持尺寸，命中依每道八米半徑
 test('VACUUM actor-centred clockwise sweep follows target facing and simulation range',()=>{
  const p=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-crescent.json'),'utf8'));
  for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
-  const {adapter,log}=makeAdapter([p],{ctx:{playerPos:()=>({x:50,y:60}),posOf:()=>({x:50+Math.cos(angle)*100,y:60+Math.sin(angle)*100})}});
+  const {adapter,log}=makeAdapter([p],{groundScale:1,ctx:{playerPos:()=>({x:50,y:60}),posOf:()=>({x:50+Math.cos(angle)*100,y:60+Math.sin(angle)*100})}});
   assert.equal(adapter.tryPlay({fxKind:'slash',variant:'wind-slash',targets:['enemy'],lineLength:120,vfx:{attack:p.id}}),true);
   adapter.update(.04);const n=log.nodes.find(n=>n.spec.assetUrl?.includes('slash_03'));
   const first=n.transforms.at(-1),offset=p.layers[0].position||{x:0,y:0},sc=first.scaleX/p.layers[0].scale.x;

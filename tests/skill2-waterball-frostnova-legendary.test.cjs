@@ -136,7 +136,9 @@ test('【水流連彈】：水流彈的發射顆數 +2', () => {
     c.chance = () => false;               // 不足 1 顆的擲骰一律失敗，顆數才數得準
     maxLevels(c, 'waterball');
     equip(c, 'waterball');
-    c.castSkill2(playerEnt(), [enemy(1e9, 40, 0, 'a')], 'waterball', 'mv-float');
+    const p=playerEnt(), es=[enemy(1e9,40,0,'a')];c.FIELD.player=p;
+    c.castSkill2(p, es, 'waterball', 'mv-float');
+    advance(c,p,es,1.5); // 同一個敵人無其他彈射目標；等所有錯開的水彈真正起飛
     return specs.filter((s) => s.fxKind === 'projectile' && s.variant === 'waterball').length;
   }
   const base = shots([]);
@@ -154,17 +156,19 @@ test('【冰霜擴散】：爆散改為冰霜新星（範圍 +30%、層數改用
     setLevels(c, 'waterball', [10, 10, 10, 10, 0, 0, 0]); // 只到【寒流爆散】：一顆、一次爆散
     equip(c, 'waterball');
     const e = enemy(1e9, 40, 0, 'a');
-    c.castSkill2(playerEnt(), [e], 'waterball', 'mv-float');
+    const p=playerEnt();p.pos={x:0,y:0};c.FIELD.player=p;
+    c.castSkill2(p, [e], 'waterball', 'mv-float');
+    advance(c,p,[e],.1);
     const b = specs.filter((s) => s.fxKind === 'burst')[0];
     return { variant: b.variant, r: b.area.r, stacks: frostStacks(e) };
   }
   const base = burst([]);
   const nova = burst(['waterballNovaBurst']);
   assert.equal(base.variant, 'water-burst');
-  assert.equal(base.r, 8 * M, '表定爆散半徑 8 米');
+  assert.equal(base.r, 6 * M, 'Excel表定爆散半徑六米');
   assert.equal(base.stacks, 1, '表定塗 1 層寒霜');
   assert.equal(nova.variant, 'frost-nova', '畫法換成冰霜新星的既有變體');
-  assert.equal(Math.round(nova.r), Math.round(8 * M * 1.3), '爆散半徑 +30%');
+  assert.equal(Math.round(nova.r), Math.round(6 * M * 1.3), '爆散半徑 +30%');
   assert.equal(nova.stacks, 2, '層數改用冰霜新星第 1 階的層數');
 });
 
@@ -179,6 +183,7 @@ test('【寒霜湧動】：額外上限層數也納入寒霜總層數增傷', ()
     const p = playerEnt();
     const e = enemy(1e9, 40, 0, 'a');
     for (let i = 0; i < 12; i++) c.castSkill2(p, [e], 'waterball', 'mv-float');
+    advance(c,p,[e],.1);
     const dot = frostDot(c, e);
     return { stacks: frostStacks(e), dps: dot ? dot.dps : 0 };
   }
@@ -233,14 +238,16 @@ test('【激流】：彈射次數 +2，且每一段彈射的飛行時間 ÷1.3',
     equip(c, 'waterball');
     const es = [];
     for (let i = 0; i < 10; i++) es.push(enemy(1e9, 200 + i * 30, 0, 'e' + i));
-    c.castSkill2(playerEnt(), es, 'waterball', 'mv-float');
-    const hops = specs.filter((s) => s.variant === 'water-bounce');
-    return { hops: hops.length, travel: hops[0].travelMs[1] };
+    const p=playerEnt();c.FIELD.player=p;
+    c.castSkill2(p, es, 'waterball', 'mv-float');
+    advance(c,p,es,3);
+    const hops = specs.filter((s) => s.variant === 'waterball').slice(1);
+    return { hops: hops.length, travel: hops[0].travelMs[0] };
   }
   const base = run([]);
   const fast = run(['waterballTorrent']);
   assert.equal(fast.hops, base.hops + 2, '彈射次數 +2');
-  assert.equal(fast.travel, Math.round(base.travel / 1.3), '彈射速度 +30%');
+  assert.ok(Math.abs(fast.travel - base.travel / 1.3) <= 1, '彈射速度 +30%，允許毫秒四捨五入');
 });
 
 test('【水龍勢】：命中時機率在目標處捲起一道水龍捲（段數與傷害由特效自己給）', () => {
@@ -250,7 +257,9 @@ test('【水龍勢】：命中時機率在目標處捲起一道水龍捲（段�
   c.chance = (pct) => pct === 10;          // 只讓水龍勢的擲骰過關
   setLevels(c, 'waterball', [10, 10, 10, 0, 0, 0, 0]); // 第 7 階關掉：場上只會有特效捲出來的那些
   equip(c, 'waterball');
-  c.castSkill2(playerEnt(), [enemy(1e9, 40, 0, 'a')], 'waterball', 'mv-float');
+  const p=playerEnt(),es=[enemy(1e9,40,0,'a')];c.FIELD.player=p;
+  c.castSkill2(p, es, 'waterball', 'mv-float');
+  advance(c,p,es,.1);
   const list = grounds(c, 'waterball', 'tornado');
   assert.equal(list.length, 1, '一次命中捲起一道');
   assert.equal(list[0].hits, 4, '4 段');

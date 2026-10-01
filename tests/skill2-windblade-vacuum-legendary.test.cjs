@@ -268,7 +268,7 @@ test('【斷空刃】：暴風真空刃每方向改寫至 3 道，且風刃傷�
     c.castSkill2(p, list, 'windblade', 'mv-float');
     advance(c, p, list, 6);
     return {
-      big: specs.filter((s) => s.variant === 'wind-blade').length,
+      big: specs.filter((s) => s.variant === 'wind-blade' && s.fxKind === 'projectile').length,
       atk: Math.max.apply(null, hits.map((h) => h.atk))
     };
   }
@@ -337,8 +337,8 @@ test('【嵐之山】：四方向各一道融合後的巨型風刃，且不再�
   }
   const base = cast(false);
   const ult = cast(true);
-  const bigBase = base.specs.filter((s) => s.variant === 'wind-blade');
-  const bigUlt = ult.specs.filter((s) => s.variant === 'wind-blade');
+  const bigBase = base.specs.filter((s) => s.variant === 'wind-blade' && s.fxKind === 'projectile');
+  const bigUlt = ult.specs.filter((s) => s.variant === 'wind-blade' && s.fxKind === 'projectile');
   assert.equal(bigUlt.length, 4, '四個方向各 1 道');
   assert.equal(ult.specs.filter((s) => s.variant === 'wind-blade-small').length, 0,
     '小型風刃已被融合進巨型風刃');

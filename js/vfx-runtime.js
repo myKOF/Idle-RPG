@@ -297,6 +297,8 @@ var VFXRuntime = (function () {
     if (!spec || !(k > 0) || k === 1 || spec._screenSpace) return spec;
     var out = Object.assign({}, spec, { _screenSpace: true });
     if (isNum(spec.angle)) {
+      out._planeAngle = spec.angle;
+      out._planeLineLength = spec.lineLength;
       if (isNum(spec.lineLength)) out.lineLength = spec.lineLength * projectedLength(spec.angle, k);
       out.angle = projectedAngle(spec.angle, k);
     }
@@ -305,6 +307,7 @@ var VFXRuntime = (function () {
       var b = Object.assign({}, a);
       // 貼地圖層自己做最終投影，保留判定平面的長度與角度，避免尺寸被換兩次。
       b._planeW = a.w; b._planeA = a.a;
+      if (spec.variant === 'wind-blade-homing') b._worldMotion = Object.assign({},a);
       ['y', 'sourceY', 'destY', 'controlY'].forEach(function (f) { if (isNum(a[f])) b[f] = a[f] * k; });
       var heading = isNum(a.moveA) ? a.moveA : (isNum(a.a) ? a.a : NaN);
       if (isNum(a.speed) && isNum(heading)) b.speed = a.speed * projectedLength(heading, k);
@@ -867,7 +870,8 @@ var VFXRuntime = (function () {
          「從天而降」變成「在兩個敵人之間橫著飛過去」，而且尺寸還是天降的
          放大倍率——畫面上是一團巨大的火球從旁邊滑過，看起來像特效不見了。
          地爆天星（打全場，targets 是所有敵人）必然踩到這一條。 */
-      var chained = ids.length >= 2 && spec.fxKind !== 'rain';
+      var directionFlight = isNum(spec.angle) && num(spec.lineLength,0)>0 && !spec.sourceId && spec.fxKind!=='chain' && spec.fxKind!=='rain';
+      var chained = ids.length >= 2 && spec.fxKind !== 'rain' && !directionFlight;
       var toId = chained ? ids[1] : ids[0];
       /* 方向型飛行物（風刃、貫穿冰箭、火神星環）：模擬層說的是「朝這個方位飛這麼遠」，
          路徑上可能一個敵人都沒有（四方向齊射就是這樣），所以
@@ -876,8 +880,7 @@ var VFXRuntime = (function () {
          ②正是「同一個技能同時出現新舊兩種畫面」的成因：有敵人在路徑上的那幾把走
          Preset、沒有的那幾把走舊畫法。方位與刀身長度是模擬層的表定值（AI_RULES 8.3），
          直接照用。連鎖段與敵方出手另有各自的起點規則，不套這條。 */
-      var directed = isFinite(spec.angle) && num(spec.lineLength, 0) > 0 &&
-        !chained && !spec.sourceId && spec.fxKind !== 'rain';
+      var directed = directionFlight && !chained;
       // 共用明確起點／終點的飛行定位，來源死亡也不回退成由玩家發射。
       var knifeFlight = spec.area && (spec.area.knifeFlight === true || spec.area.bloodFlight === true || spec.area.homingFlight === true);
       var fixedLanding = spec.area && spec.area.fixedLanding === true;
@@ -908,7 +911,11 @@ var VFXRuntime = (function () {
           ? ctx.projectileTargetPoint(toId, travel) : ctx.posOf(toId));
       /* 連鎖段接上一段的航向：整條鏈因此是一條連續彎過去的線，
          而不是每個彈射點折一次角。第一段沒有上一段，enterAngle 留 NaN＝直線。 */
-      if (fixedLanding) {from={x:spec.area.sourceX,y:spec.area.sourceY};to={x:spec.area.x,y:spec.area.y};}
+      if (fixedLanding) {
+        // 天降只指定落點時沿 Preset 的出生高度落下；有明確來源座標的事件才覆寫起點。
+        if(isNum(spec.area.sourceX)&&isNum(spec.area.sourceY))from={x:spec.area.sourceX,y:spec.area.sourceY};
+        to={x:spec.area.x,y:spec.area.y};
+      }
       if (knifeFlight) {
         from={x:spec.area.sourceX,y:spec.area.sourceY};
         to={x:spec.area.x,y:spec.area.y};
@@ -938,6 +945,7 @@ var VFXRuntime = (function () {
       if (flightOrbit) flightOrbit = Object.assign({}, flightOrbit, { origin: flightOrbit.origin || { x: from.x, y: from.y / groundScale } });
       var startPoint = flightOrbit ? orbitPoint(flightOrbit, 0) : null;
       var params = Object.assign({ position: startPoint ? {x:startPoint.x,y:startPoint.y*groundScale} : from, rotation: facing }, dimensions);
+      params.motionFacing = /^wind-blade(?:-|$)/.test(spec.variant||'');
       if (flightOrbit) params.particleOrigin = {x:flightOrbit.origin.x,y:flightOrbit.origin.y*groundScale};
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
       if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
@@ -989,7 +997,7 @@ var VFXRuntime = (function () {
         g.trot = planeAngles[g.presetId] || 0;
         return;
       }
-      var area = spec.area;
+      var area = g.worldMotion && spec.area._worldMotion ? spec.area._worldMotion : spec.area;
       /* area.follow＝模擬層的圓心恆等於我方座標（暴風雪、常駐領域）。
          這種場域不必推算：畫面每幀直接貼玩家錨點，連一點落後都沒有。 */
       g.anchored = !!area.follow;
@@ -1097,6 +1105,8 @@ var VFXRuntime = (function () {
     }
     function groundParams(g) {
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
+      if(g.worldMotion){p.position.y*=groundScale;p.rotation=projectedAngle(g.rot,groundScale);}
+      if(g.windBody)p.motionFacing=true;
       // 雷幕電柱僅以柱腳定位；地板範圍不代表柱身的長寬或旋轉。
       if (g.curtainColumn) return { position: p.position, depthY: g.y, scaleX: 1, scaleY: 1, rotation: 0 };
       if (g.fixedLifetime) p.timeScale = presetDurations[g.presetId] / g.fixedLifetime;
@@ -1171,6 +1181,8 @@ var VFXRuntime = (function () {
         bornAt: clock, rise: isRockOrbitPreset(presetId) || presetId === 'ground-mire-earth' || presetId === 'ground-mire-venom' || presetId === 'ground-mire-magma' || presetId === 'fire-tornado-inferno' || presetId === 'fire-tornado-infinite' || presetId.indexOf('ground-firewall-column-') === 0,
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         iceArrowBody: spec.variant === 'ice-arrow-homing',
+        worldMotion: spec.variant === 'wind-blade-homing' && !!(spec.area && spec.area._worldMotion),
+        windBody: spec.variant === 'wind-blade-homing',
         devour: spec.variant === 'dragon-devour',
         fixedLifetime: spec.variant === 'flying-thunder' ? keep : 0,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
@@ -1463,7 +1475,7 @@ var VFXRuntime = (function () {
           presetId !== 'bolt-thunderstrike-bluewhite' &&
           !(spec.projectile && /^(?:thrust|cleave)(?:-|$)/.test(spec.variant || ''))) {
         // 雷鏈的 targets 是「起點、終點」，只在抵達終點時播命中，不能起飛就讓兩端一起爆。
-        var chainHit = spec.variant === 'lightning-chain' && spec.fxKind === 'chain';
+        var chainHit = (spec.variant === 'lightning-chain' || spec.variant === 'frost-spread' || spec.variant === 'wind-rend-spread') && spec.fxKind === 'chain';
         var hitSpec = chainHit ? Object.assign({}, spec, { targets: (spec.targets || []).slice(-1) }) : spec;
         playOnTargets(fxRtFor(roles.hit), roles.hit, hitSpec, hitScaleOf(spec,tuning(roles.hit,'hitScale')),
           roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0,
@@ -1497,6 +1509,13 @@ var VFXRuntime = (function () {
             : playOnTargets(hitRt, presetId, spec, hitScaleOf(spec,tuning(presetId,'hitScale')), 0, undefined, true);
           break;
         case 'projectile':
+          if (spec.fxKind === 'rain' && spec.variant === 'ice-rain') {
+            var rainIds = spec.targets || [];
+            for (var ri = 0; ri < rainIds.length; ri++) {
+              ok = playProjectile(rtFx, presetId, Object.assign({}, spec, { targets: [rainIds[ri]], area: null })) || ok;
+            }
+            break;
+          }
           ok = spec.variant === 'ice-arrow-homing' ? playGround(presetId,spec,role)
             : spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
             : spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
@@ -1524,16 +1543,18 @@ var VFXRuntime = (function () {
               ok = playGround(presetId, Object.assign({}, spec, { area: area }), 'attack') || ok;
             }
           } else if (presetId === 'burst-vacuum-shockwave') {
-            var shockParams = sizeOf(tuning(presetId,'inheritGeometry')?'slash-wind-crescent':presetId, {r:num(spec.lineLength,0)}) || defaultSize(presetId, 1);
+            var shockLength = planePresets[presetId] && isNum(spec._planeLineLength) ? spec._planeLineLength : num(spec.lineLength,0);
+            var shockParams = sizeOf(tuning(presetId,'inheritGeometry')?'slash-wind-crescent':presetId, {r:shockLength}) || defaultSize(presetId, 1);
             shockParams.position = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
-            shockParams.rotation = num(spec.angle, 0);
+            shockParams.rotation = planePresets[presetId] && isNum(spec._planeAngle) ? spec._planeAngle : num(spec.angle, 0);
             ok = !!play(rtFx, presetId, shockParams);
           } else if (presetId === 'slash-wind-crescent' && spec.variant === 'wind-slash') {
             var vacuumSource = spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos();
             var vacuumTarget = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : vacuumSource;
-            var vacuumParams = sizeOf(presetId, {r: num(spec.lineLength, 0)}) || defaultSize(presetId, 1);
+            var vacuumLength = planePresets[presetId] && isNum(spec._planeLineLength) ? spec._planeLineLength : num(spec.lineLength,0);
+            var vacuumParams = sizeOf(presetId, {r:vacuumLength}) || defaultSize(presetId, 1);
             vacuumParams.position = vacuumSource;
-            vacuumParams.rotation = isFinite(spec.angle) ? Number(spec.angle) : Math.atan2(vacuumTarget.y-vacuumSource.y,vacuumTarget.x-vacuumSource.x);
+            vacuumParams.rotation = planePresets[presetId] && isNum(spec._planeAngle) ? spec._planeAngle : isNum(spec.angle) ? spec.angle : Math.atan2(vacuumTarget.y-vacuumSource.y,vacuumTarget.x-vacuumSource.x);
             ok = !!play(rtFx, presetId, vacuumParams);
           } else if (spec.variant === 'heaven-tribulation-strike' && spec.area) {
             ok = playThunderstrike(fxRtFor(presetId), presetId, spec);
@@ -1958,7 +1979,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20260929-thunder-pair';
+  var DATA_VERSION = '20260930-wind-skill-audit';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

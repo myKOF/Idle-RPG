@@ -323,12 +323,16 @@ test('CRITICAL-THUNDER 首代每秒外擴3米、10秒壽命，逐受害者再生
   assert.deepEqual(rolls,[11],'第一次生成後同拍其他敵人不再判定');
   assert.equal(orbFields(c).length,n+1);
   const child=orbFields(c).at(-1), pos={...child.pos};
-  assert.equal(child.speed,0); assert.equal(child.dest,null); assert.equal(child.expiresAt-child.bornAt,10);
+  assert.equal(child.speed,0); assert.equal(child.dest,null); assert.equal(child.expiresAt-child.bornAt,3);
   assert.equal(child.dmgVal,first.dmgVal); c.sgGroundMove(child,1,es);
   assert.deepEqual({...child.pos},pos); assert.equal(c.sgGroundVfxSpec(child).area.speed,undefined);
   // 規格：靜止雷球（首代）命中可再生 1 個，但電球不可再生電球——衍生球沒有再生的命中回呼。
   const childCount=orbFields(c).length; assert.ok(!child.onHit,'衍生球不掛再生回呼');
   c.sgGroundTick(child,es,tickCtx(c,p,es)); assert.equal(orbFields(c).length,childCount,'衍生球命中也不再生');
+  c.SKILL2_RT.grounds=[child]; c.SKILL2_RT.orbits=[]; c.chance=()=>false;
+  advance(c,p,[],2.95); assert.equal(orbFields(c).length,1,'衍生球未滿3秒仍存在');
+  advance(c,p,[],.05); assert.equal(orbFields(c).length,0,'衍生球滿3秒到期');
+  c.GT=0; c.SKILL2_RT.grounds=[first];
   c.resolveHit=()=>({dmg:0,miss:true}); const missCount=orbFields(c).length;
   c.sgGroundTick(first,es,tickCtx(c,p,es)); assert.equal(orbFields(c).length,missCount,'未命中不生成');
   c.GT=9.9; assert.ok(Math.abs(c.sgGroundVfxSpec(first).dur-.1)<1e-10,'末拍VFX不超過到期時間'); c.GT=0;
@@ -342,7 +346,7 @@ test('CRITICAL-THUNDER-ICD 每顆球獨立0.75秒冷卻，失敗不消耗且不�
   const c=loadContext();stubVfx(c);const hits=stubHits(c);
   const p=playerEnt(), es=[enemy(1e9,100,0,'a'),enemy(1e9,100,0,'b')];
   c.bfPlayerPos=()=>({x:0,y:0});
-  const cfg={radius:40,dmgVal:100,gap:.35,critical:{chance:11,lifeSec:10,speedPx:30}};
+  const cfg={radius:40,dmgVal:100,gap:.35,critical:{chance:11,childSec:3,speedPx:30}};
   c.sgSpawnStationaryThunderOrb(p,c.BASE_STATS,'mv-float',cfg,{x:100,y:0},10,true);
   c.sgSpawnStationaryThunderOrb(p,c.BASE_STATS,'mv-float',cfg,{x:100,y:0},10,true);
   const [first,second]=orbFields(c);let rolls=0;
@@ -393,7 +397,7 @@ test('CRITICAL-THUNDER 正式雷球Preset逐幀外移，衍生球維持原地並
   const first=orbFields(c).at(-1); first.onHit(first,es[0],es,{});const child=orbFields(c).at(-1);
   events.length=0;c.chance=()=>false;c.sgGroundTick(first,es,tickCtx(c,p,es));c.sgGroundTick(child,es,tickCtx(c,p,es));
   const Core=require('../js/vfx-core.js'),Runtime=require('../js/vfx-runtime.js');
-  const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/lightning-orb-field.json'),'utf8'));
+  const preset=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/lightning-orb-field-purple.json'),'utf8'));
   const nodes=[];function backend(tag){return{createNode(spec){const n={tag,spec,t:[]};nodes.push(n);return n;},updateNode(n,t){n.t.push({...t})},destroyNode(){},destroy(){}};}
   const adapter=Runtime.create({core:Core,resolver:{has:()=>true,resolve:id=>id},groundScale:.5,
     fxBackend:backend('fx'),zoneBackend:backend('zone'),airBackend:backend('air'),billboardBackend:backend('billboard'),ctx:{posOf:()=>({x:100,y:0}),playerPos:()=>({x:0,y:0})}});
@@ -584,7 +588,9 @@ test('【連射】：射出的寒冰箭 +2 支', () => {
     setLegendary(c, keys);
     c.chance = () => false;
     setLevels(c, 'icearrow', [1, 0, 0, 0, 0, 0, 0]);
-    c.castSkill2(playerEnt(), line(8, 6 * M), 'icearrow', 'mv-float');
+    const p=playerEnt(),es=line(8,6*M);
+    c.castSkill2(p, es, 'icearrow', 'mv-float');
+    advance(c,p,es,1);
     return calls.length;
   }
   assert.equal(arrows([]), 2, '表定 2 支');
@@ -599,7 +605,9 @@ test('【冰封】：寒冰箭傷害 ×1.5（乘在第 1 階＋冰系強化的�
     setLegendary(c, keys);
     c.chance = () => false;
     setLevels(c, 'icearrow', [1, 0, 0, 0, 0, 0, 0]);
-    c.castSkill2(playerEnt(), [enemy(1e9, 40, 0, 'a')], 'icearrow', 'mv-float');
+    const p=playerEnt(),es=[enemy(1e9,40,0,'a')];
+    c.castSkill2(p, es, 'icearrow', 'mv-float');
+    advance(c,p,es,.1);
     return calls[0].atk;
   }
   assert.equal(Math.round(atk(['icearrowSeal']) / atk([]) * 100), 150);
@@ -614,14 +622,16 @@ test('【凜冬侵蝕】：寒冰箭塗出來的寒霜，每跳量與持續時�
     c.chance = () => false;
     setLevels(c, 'icearrow', [1, 1, 0, 0, 0, 0, 0]);
     const e = enemy(1e9, 40, 0, 'a');
-    c.castSkill2(playerEnt(), [e], 'icearrow', 'mv-float');
-    return c.sgFindDot(e, 'sgFrostBite');
+    const p=playerEnt();c.castSkill2(p, [e], 'icearrow', 'mv-float');
+    advance(c,p,[e],.1);
+    const dot=c.sgFindDot(e, 'sgFrostBite');
+    return dot && {dps:dot.dps,dur:dot.until-c.GT};
   }
   const base = frost([]);
   const winter = frost(['icearrowWinter']);
   assert.ok(base && winter, '第 2 階【寒霜箭】應該塗上凍傷');
   assert.equal(Math.round(winter.dps / base.dps * 100), 150, '每跳量 ×1.5');
-  assert.equal(Math.round(winter.until / base.until * 100), 150, '持續時間 ×1.5');
+  assert.equal(Math.round(winter.dur / base.dur * 100), 150, '命中時授予的持續時間 ×1.5');
 });
 
 test('【冰裂箭】：命中後往前分裂 2 支小箭，打的是前方而不是身後的敵人', () => {
@@ -635,7 +645,9 @@ test('【冰裂箭】：命中後往前分裂 2 支小箭，打的是前方而�
   const behind = enemy(1e9, 10 * M, 0, 'behind');
   const victim = enemy(1e9, 20 * M, 0, 'victim');
   const ahead = enemy(1e9, 28 * M, 0, 'ahead');
-  c.castSkill2(playerEnt(), [victim, ahead, behind], 'icearrow', 'mv-float');
+  const p=playerEnt(),es=[victim,ahead,behind];
+  c.castSkill2(p, es, 'icearrow', 'mv-float');
+  advance(c,p,es,1);
   const splitAtk = Math.min.apply(null, calls.map((h) => h.atk));
   const aheadHits = calls.filter((h) => h.ent === ahead && h.atk === splitAtk);
   assert.ok(aheadHits.length > 0, '前方的敵人吃得到分裂箭');
@@ -656,7 +668,8 @@ test('【深度凍結】：擊中暈眩或凍結中的敵人時 +50%，未控場
     const e = enemy(1e9, 40, 0, 'a');
     if (control === 'stun') e.effects.stun = 999;
     if (control === 'frozen') e.buffs.sgFrozen = { until: 999, val: 0 };
-    c.castSkill2(playerEnt(), [e], 'icearrow', 'mv-float');
+    const p=playerEnt();c.castSkill2(p, [e], 'icearrow', 'mv-float');
+    advance(c,p,[e],.1);
     return calls[0].total;
   }
   assert.equal(bonus(['icearrowDeepFreeze'], null), 0, '沒有控場就沒有加成');

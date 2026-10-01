@@ -1,5 +1,46 @@
 # AI_TASKS.md
 
+## Codex｜三個 AI 分支整合與 develop 衝突處理（AI-INTEGRATION-20261001）
+
+- Owner：Codex；Done。使用者明確授權解決 develop 衝突並整合三個 AI 分支至最新，於實際 develop 整合副本操作，允許衝突解決、必要紀錄、驗證及乾淨 AI 副本的快轉同步；禁止推送、production／main 變更及未提交他人工作覆寫。
+- 前置：fetch origin 後三分支最新為 ai/antigravity 80a62884、ai/claude 8dc2960e、ai/codex a90bbc17；三個 AI 副本皆乾淨。develop 60ccb31c 已整合前兩者，目前正在合併 a90bbc17，MERGE_HEAD 與遠端一致。
+- 唯一文字衝突：tools/vfx/editor/index.html 第277行附近，共用腳本快取區。保留 Claude 的 water-tornado 1.0.4／util 1.0.3 與伺服器 no-store；保留 Codex 的 Core 20260930-wind-facing／Runtime 1.0.162，使遊戲及編輯器共用版號一致。雙方技能、配置、素材及任務紀錄全部保留。
+- 修改前預檢：僅本次合併涉及的 Codex 未整合提交；沒有其他副本未提交工作。依本次明確衝突解決授權直接處理。
+- 驗收：編輯器快取／防覆寫與 HTTP 行為、冰水／風系定向回歸、Build、配置試跑及素材匯出檢查；三分支最新提交都須為 develop 祖先，三個本地副本乾淨後快轉到整合提交。素材庫唯讀檢查，不新增素材提交；不推送。
+- 完成：唯一衝突僅替換 Core／Runtime 兩行，Claude 的 util／水龍捲版本與 no-store 保留；相對 Codex 最新版，程式差異只有 Claude 的原始 server 修正、cache-versions 測試及編輯器兩行版本，另加本任務紀錄。沒有刪除功能或採取整檔接受單方。
+- 測試指令：node --test tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-launcher.test.cjs tests/water-ice-audit.test.cjs tests/wind-skill-audit.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/skill2-wind.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs tests/skill2-stormbarrier-legendary.test.cjs tests/windblade-vfx-integration.test.cjs tests/icearrow-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skill2-thunderorb-critical-cap.test.cjs，244/244 通過，0 失敗／略過。
+- 其他驗證：npm.cmd run build，411 檔通過；node tools/config_tables.cjs --apply Skills2，語意變更 0；node tools/vfx/export-assets.cjs --check，236 份 Preset／154 個素材已是最新；git diff --cached --check 通過。develop 匯出標記原為 CRLF，依既有工具 markerContent 還原為倉庫規定 LF，內容及 Git diff 皆無變更，不重新匯出／更動素材樹。
+- 修改：tools/vfx/editor/index.html 衝突兩行與本任務紀錄；其餘 31 個合併檔案保留 Codex 三份既有提交。唯讀核對 Claude server／cache-versions 測試、遊戲 HTML／Worker 快取、Excel／CSV／JS、素材及 Git 各分支／副本狀態。素材庫 master 乾淨，既有 b56eedd／5a7e860 已保存必要素材，本次無新素材 Commit。
+- 限制：本輪驗證涵蓋正式 HTTP 快取、過期分頁拒絕儲存及背景重啟流程；未做瀏覽器實戰畫面／Console 人工驗收。先前廣泛回歸的六項基線問題仍依 WIND_SKILL_AUDIT 另案追蹤，本輪未修改其斷言。VFX 編輯器若仍開啟，先下載未存內容備份，再重啟載入整合版。
+- 後續接手者：使用者。完成結果與 Commit 記於本任務紀錄所在提交。
+
+## Codex｜風系三技能全階與鏡頭稽核（WIND-SKILL-AUDIT-20260930）
+
+- Owner：Codex；Done。完整檢查風刃、真空斬、暴風屏障各1～7階及各三個超神，共30列；修正追加事件互相覆蓋、傾斜／FOV下方向、連續飛行與判定／演出時序。水系先提交fc71ef20、臨界雷劫先提交bf7d5309，相關紫球素材庫5a7e860。
+- 使用者授權所有需取捨問題採推薦方案繼續並記錄，不等回覆。預檢除編輯器HTML外皆無衝突；Claude未整合8dc2960e只改編輯器Core／water-tornado／util版號，本次限定Core及Runtime快取，不動其餘行、腳本或伺服器。依當前明確授權繼續並記錄；整合Core版號保留本次20260930-wind-facing。
+- 允許三棵風系與共用風切必要接線、幾何顯示必要Core／Runtime／renderer段、Excel／CSV生成／觸發登記、定向測試、必要快取／VFX文件及本紀錄。禁止其他技能規則、其他副本、存檔／Worker協議重設及未授權合併／推送。
+- 驗收30列矩陣、互斥超神／跨樹借用外觀、八方向與多目標穿透、FOV／傾角位置航向、延後波次實際傷害同步、永久排程卸下／倒地／期限、Status及護盾減免、原生Excel逐格重開、回歸與Build。完成Commit交使用者整合，問題與推薦決策見docs/WIND_SKILL_AUDIT.md。
+- 完成：13列追加事件移觸發欄；主刃、追擊、脈衝、震波、虛空斬、反擊、擴散及星體各取自身來源。多目標刃不再誤當連鎖；真空斬正確方向／單次貼地投影；追擊刃世界圓弧後投影，FOV切線整份轉向且保留作者局部造型／鏡頭開關。真空三重奏傷害到波次才結算；天降三種星體都按固定落點、正確元素及當下敵人清單結算。死亡保留永久節拍，接觸／MISS命中派送分開。
+- 修改及未改唯讀檔案完整清單、30列核對、推薦取捨、六項既有失敗及風險見docs/WIND_SKILL_AUDIT.md。沒有修改其他技能規則、Status數值、存檔或Worker協議。Excel原生儲存／重開，231列逐格比對只有13列73格變更；格式、工作表／樣式、列高／欄寬核對通過，無修復模式。Excel／CSV一致，JS重建語意變更0。
+- 測試：node --test tests/wind-skill-audit.test.cjs tests/skill2-wind.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs tests/skill2-stormbarrier-legendary.test.cjs tests/windblade-vfx-integration.test.cjs，121/121。25檔共用回歸594項588通過，6項改讀HEAD仍逐項失敗，0新增；既有FIELD／CATALOG-3／CHAIN／STARFALL-TAIL、連鎖閃電速度預期與變形Backend測試fixture另案追蹤。編輯器舊分頁／外部修改／Core更新防覆寫與備份12/12；Build410檔、diff check通過；config_tables語意差異0、export-assets --check236份Preset／154素材已是最新。
+- 素材庫先提交b56eedd（3份投影Preset及3份既有layout），穩定相對路徑codex-authored/ground-projection/{presets,layouts}，同步回遊戲並核對SHA256，無PNG改動或新引用。遊戲Commit為本紀錄所在提交，可合併，未合併／推送。無未完成程式項目；尚未驗證瀏覽器實戰／Console。整合後重載遊戲確認；編輯器需先下載未存內容備份，再重新啟動，舊分頁禁止覆寫新版。
+
+## Codex｜臨界雷劫衍生球三秒（CRITICAL-THUNDER-LIFETIME-20260930）
+
+- Owner：Codex；Done。首代外擴電球維持10秒，命中衍生的靜止電球改為3秒。保留每秒3米、單球0.75秒成功生成冷卻、衍生代不再生與96顆保底上限；機率5%＋每級0.5%、傷害50%＋每級5%沿用目前使用者Excel。
+- 依賴使用者完成Claude合併及已提交水系修復fc71ef20；所有目標預檢乾淨。允許Skills2 Excel／CSV／生成JS、雷球限定段、相關測試、必要快取及本紀錄；使用者既有lightning-orb-field-purple修改依提交偏好同步必要素材庫。禁止其他技能、其他副本與未授權合併／推送。
+- 驗收首代10秒與子代3秒邊界、移動／靜止、生成冷卻與世代、正式VFX期限／回收、Excel逐格重開、回歸與Build；素材庫先提交、遊戲後提交。
+- 修改：Skills2 Excel／CSV／JS、index、bridge、sim.worker、雷球傳奇與幾何測試、lightning-orb-field-purple Preset及本紀錄。檢查未改：VFX Core／Runtime、場域上限、紫色電球layout、Status、幾何讀表工具及素材匯出工具；不新增協議或特效來源。Excel原生儲存／唯讀重開，全部儲存格對比只有第169列效果JSON／描述／唯讀描述三格改動。
+- 驗證：node --test --test-name-pattern='CRITICAL-THUNDER|臨界雷劫' tests/skill2-thunderorb-icearrow-legendary.test.cjs tests/skills2-geometry.test.cjs，5/5；正式紫色Preset逐幀外擴與靜止、回收。node --test tests/skill2-thunderorb-critical-cap.test.cjs，8/8。node tools/config_tables.cjs --apply Skills2，0差異；node tools/vfx/export-assets.cjs --check，236份Preset／154個素材的引用與匯出一致；Preset驗證通過。npm.cmd run build，409檔；git diff --check通過。
+- 素材庫5a7e860先提交必要Preset與既有layout，穩定相對路徑codex-authored/lightning/{presets,layouts}/lightning-orb-field-purple.json；從素材庫同步回遊戲並核對SHA256，無新二進位引用。兩倉庫僅選本次必要檔案，無其他AI修改。遊戲Commit為本紀錄所在提交；可合併，未合併／推送，無未完成程式項目。尚未驗證遊戲瀏覽器實戰／Console；建議整合後重載確認，接續風系全階稽核。
+
+## Codex｜冰水三技能全階與超神稽核（WATER-ICE-AUDIT-20260930）
+
+- Owner：Codex；Done。使用者要求寒冰箭、水流彈、冰霜新星全部1～7階與每棵三個超神，共30列。九列追加效果移至獨立觸發角色，修正普通水彈／新星被冰晶、暴風雪與龍捲覆蓋；補上追蹤冰箭T6、抵達命中、即時落點敵人清單、獨立爆散半徑、逐配對共鳴與每目標箭雨；凍結只用Status。依表格移除共鳴四來源傷害上限，倒地保留永久排程剩餘時間。冰皇冰錐依使用者選擇改用既有ground-icearrow-frost。
+- 允許三棵技能及共用寒霜必要接線、相關Runtime路由、觸發登記／Excel說明、針對性測試、快取及本紀錄；禁止其他技能、雷球及等級快取、其他副本。依賴現有表格與正式模擬／Runtime。原預檢Claude在雷球世代及等級快取段修改同一Skills2與快取，使用者已同意限定三技能與必要快取；2026-09-30使用者完成合併後重新預檢，全部無衝突，接回保存修改。
+- 驗收：30列逐一紀錄；三棵交叉裝配／超神不得混播，冰爆／新星／暴風雪／水龍捲／冰錐分開；單體／範圍／彈射與表格一致，飛行抵達才結算；永久效果卸下／死亡／暫停／到期正常；正式VFX與幾何／時序一致；Excel／CSV／JS一致、回歸、Build、Commit。不自行合併或推送。
+- 完整逐列稽核、修改／唯讀檔案、取捨、測試與限制見docs/WATER_ICE_AUDIT.md。專項與配置130/130，寒冰箭傳奇／超神10/10；Runtime及水龍捲133/137，改讀HEAD仍相同四項既有失敗。config_tables試跑0差異，原生Excel重開逐格只34格變更；Build409檔、diff check通過。Commit為本紀錄所在提交；可合併，未合併／推送。無未完成程式項目，未驗瀏覽器實戰／Console；冰錐為使用者指定的暫用冰晶素材。使用者執行期間編輯的lightning-orb-field-purple Preset留待隨後臨界雷劫任務與素材庫同步提交。
+
 ## Codex｜寒冰爆裂箭朝向與冰爆觸發（ICEARROW-T7-VFX-20260930）
 
 - Owner：Codex；Done。第7階追蹤冰箭沿實際位移朝向，不以每拍命中重新發射；burst-icearrow-crystal依使用者Excel放觸發特效，只在凍結結束事件播放。寒冰箭凍結不借用冰霜新星演出。追加驗證第8階極寒冰爆不混播暴風雪與三種超神外觀。未改傷害／速度／追蹤判定或素材。

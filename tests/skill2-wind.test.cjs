@@ -231,19 +231,18 @@ test('【追跡風刃】：每個 tick 都走滿速度，落點在腳下或沒�
   const steps = [];
   for (let i = 0; i < 30; i++) {
     const from = { x: f.pos.x, y: f.pos.y };
-    const destBefore = f.dest;
+    const angleBefore = f.moveAngle;
     c.GT += 0.1;
     c.tickSkill2(0.1, ctx);
-    steps.push({ d: Math.hypot(f.pos.x - from.x, f.pos.y - from.y), turned: f.dest !== destBefore });
+    const turn = Math.abs(Math.atan2(Math.sin(f.moveAngle-angleBefore), Math.cos(f.moveAngle-angleBefore)));
+    steps.push({ d: Math.hypot(f.pos.x - from.x, f.pos.y - from.y), turn });
   }
   const expect = f.speed * 0.1;
   steps.forEach((s2, i) => {
     assert.ok(s2.d > 0, '第 ' + (i + 1) + ' 個 tick 不得原地不動（追擊場域停下來就不再命中）');
-    // 換落點的那一個 tick 會轉向，直線位移因此短於路徑長度；其餘 tick 必須整格走滿
-    if (!s2.turned) {
-      assert.ok(Math.abs(s2.d - expect) < 1e-6,
-        '第 ' + (i + 1) + ' 個 tick 應走滿 speed×dt（實際 ' + s2.d.toFixed(2) + ' / 期望 ' + expect.toFixed(2) + '）');
-    }
+    // 圓弧路徑長為 speed×dt；兩端直線距離是弦長，不能將弦長當成弧長。
+    const chord = s2.turn > 1e-9 ? expect * 2*Math.sin(s2.turn/2)/s2.turn : expect;
+    assert.ok(Math.abs(s2.d - chord) < 1e-6, '第 ' + (i + 1) + ' 個 tick 的弦長符合完整圓弧積分');
   });
 
   // 場上完全沒有敵人時也不得停住：沿最後的方向繼續直線飛
@@ -255,7 +254,7 @@ test('【追跡風刃】：每個 tick 都走滿速度，落點在腳下或沒�
 });
 
 /* 追蹤子彈不做原地掉頭：貫穿之後要畫一個轉彎弧再繞回來，弧的半徑由子彈體積決定
-   （設計指定 4～8 米）。這同時保證每個 tick 的位移仍然是完整的 speed × dt。 */
+   （設計指定 4～8 米）。每個 tick 的圓弧路徑長仍然是完整的 speed × dt。 */
 test('追擊場域有轉彎半徑：體積越大轉得越開，且不做原地掉頭', () => {
   const c = loadContext(); stubHits(c); stubVfx(c);
   const p = playerEnt(); c.FIELD.player = p;
@@ -281,9 +280,12 @@ test('追擊場域有轉彎半徑：體積越大轉得越開，且不做原地�
   let prev = null, sawTurn = false;
   for (let i = 0; i < 40; i++) {
     const from = { x: f.pos.x, y: f.pos.y };
+    const angleBefore = f.moveAngle;
     c.GT += 0.1; c.tickSkill2(0.1, ctx);
     const dx = f.pos.x - from.x, dy = f.pos.y - from.y;
-    assert.ok(Math.abs(Math.hypot(dx, dy) - f.speed * 0.1) < 1e-6, '每個 tick 都走滿 speed×dt');
+    const turnAngle = Math.abs(Math.atan2(Math.sin(f.moveAngle-angleBefore),Math.cos(f.moveAngle-angleBefore)));
+    const arc = f.speed*0.1, chord = turnAngle>1e-9 ? arc*2*Math.sin(turnAngle/2)/turnAngle : arc;
+    assert.ok(Math.abs(Math.hypot(dx, dy) - chord) < 1e-6, '每個 tick 的弦長對應完整 speed×dt 圓弧');
     const ang = Math.atan2(dy, dx);
     if (prev !== null) {
       const turn = Math.abs(Math.atan2(Math.sin(ang - prev), Math.cos(ang - prev)));
@@ -411,6 +413,9 @@ test('【迴旋三重奏】：連續三圈，半徑 6／12／18 米', () => {
   const mid = enemy(1e9, 11 * M, 0, '中');
   const outer = enemy(1e9, 17 * M, 0, '外');
   c.castSkill2(p, [inner, mid, outer], 'vacuumslash', 'mv-float');
+  assert.equal(specs.filter((s) => s.variant === 'wind-spin').length, 1, '施放當下只結算第一圈');
+  assert.equal(calls.filter((x) => x.ent === outer).length, 0, '尚未到第三圈不得提前造成傷害');
+  run(c, p, [inner, mid, outer], 0.6);
   const rings = specs.filter((s) => s.variant === 'wind-spin').map((s) => s.area && s.area.r);
   assert.deepEqual(rings, [c.bfMeterPx(6), c.bfMeterPx(12), c.bfMeterPx(18)], '每圈再擴大 6 米');
   // 真空爆震 Lv.1 ＝ 每圈對每個目標 2 次
@@ -434,7 +439,6 @@ test('【無限風切】：層數上限開放到 3，且每層加傷', () => {
   const e2 = enemy(1e9, 2 * M, 0);
   for (let i = 0; i < 5; i++) c2.castSkill2(p2, [e2], 'vacuumslash', 'mv-float');
   assert.equal(c2.sgWindRendStacks(e2), 3, '上限 3 層');
-  assert.ok(Math.abs(c2.buffVal(e2, 'sgWindRend') - 80 * 3) > 0 || true, '（層數只影響傷害）');
   assert.ok(Math.abs(c2.skill2WindMoveFactor(e2) - 0.2) < 1e-9, '緩速不隨層數提高，仍是 -80%');
   const dot2 = c2.sgFindDot(e2, 'sgWindCut');
   const body2 = 500 * (2.75 + 0.33);

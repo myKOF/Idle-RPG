@@ -68,7 +68,7 @@ test('風刃模擬與顯示積分相同圓弧並傳遞轉速',()=>{
  const ctx={require:createRequire(file),__dirname,console};vm.createContext(ctx);
  vm.runInContext(src.slice(0,src.indexOf('test('))+'\nthis.c=loadContext();',ctx);const c=ctx.c;
  const f={kind:'windblade',pos:{x:0,y:0},speed:100,radius:15,chaseM:30,moveAngle:0,dest:{x:0,y:1000},turnSide:1};
- const r=c.sgGroundTurnRadiusPx(f),step=10;c.sgGroundChaseStep(f,step,[]);
+ const r=c.sgGroundTurnRadiusPx(f),step=10;c.sgGroundChaseStep(f,step,[{hp:100,pos:{x:0,y:1000}}]);
  assert.ok(Math.abs(f.pos.x-r*Math.sin(step/r))<1e-8);assert.ok(Math.abs(f.pos.y-r*(1-Math.cos(step/r)))<1e-8);
  const motion=c.sgGroundMotionFields(f,{});assert.ok(Math.abs(motion.turnRate-100/r)<1e-8);
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};

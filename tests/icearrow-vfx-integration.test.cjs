@@ -66,7 +66,8 @@ test('ICEARROW-T7-VFX: authoritative targetless snapshots update one arrow inste
 test('icearrow ordinary, piercing, homing and rain mappings ship all approved assets',()=>{
  const src=fs.readFileSync(require.resolve('../js/skills2.js'),'utf8'),start=src.indexOf('var SKILLS2 ='),c={};vm.createContext(c);vm.runInContext(src.slice(start,start+src.slice(start).indexOf('\n};')+3),c);
  const g=c.SKILLS2.icearrow;
- for(const row of [g.tiers[0],g.tiers[3],g.ult[2]]){assert.equal(row.vfx.projectile,presets[0].id);assert.equal(row.vfx.hit,presets[1].id);}
+ for(const row of [g.tiers[0],g.tiers[3]]){assert.equal(row.vfx.projectile,presets[0].id);assert.equal(row.vfx.hit,presets[1].id);}
+ assert.equal(g.ult[2].triggerVfx.projectile,presets[0].id);assert.equal(g.ult[2].triggerVfx.hit,presets[1].id);assert.ok(!g.ult[2].vfx);
  assert.ok(!g.tiers[4].vfx?.ground);assert.ok(!g.tiers[6].vfx.ground);assert.ok(!g.tiers[6].vfx.attack);assert.equal(g.tiers[6].triggerVfx.attack,'burst-icearrow-crystal');
  const context={Math,bfMeterPx:n=>n*10};vm.createContext(context);vm.runInContext(src,context);
  context.skills2Levels=()=>[1,1,1,1,1,1,1];context.sgIcearrowSpeed=()=>585;context.sgSpawnGround=(_p,_st,_gid,spec)=>{context.spawned=spec;};context.sgSpawnIcearrowHoming({}, {}, g.tiers[6].fx, {}, 1, null, 'pv-float', {});assert.equal(context.spawned.vfxTier,7);assert.equal(context.sgVfxRoles('icearrow',{vfxTier:7,vfxBase:true}).projectile,presets[0].id);assert.equal(g.tiers[0].fx.speed,58.5);
