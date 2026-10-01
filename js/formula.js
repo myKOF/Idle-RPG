@@ -343,7 +343,7 @@ function computeStats(equipmentOverride) {
     : Math.max(ASPD_MIN, ASPD_BASE * (1 + st.aspdBonusBase / 100));
   st.cdr = capValue(A.cdr, STAT_CAPS.cdr);       // 冷卻縮減上限（潛力【時間坍縮】於施放時另行突破，見 skills2.js 的冷卻計算）
   st.castSpeed = capValue(A.castSpeed, STAT_CAPS.castSpeed);                      // 施法速度上限（上限 0＝無上限）
-  // 吸血／吸魔不設上限（STAT_CAPS = 0）：回復量由「每秒生命回復／法力恢復 × 此%」決定（§3 lifestealHealAmount）。
+  // 吸血／吸魔是定值（每次對敵人造成傷害回復的固定量），與每秒回復無關（§3 lifestealHealAmount）；不設上限（STAT_CAPS = 0）。
   st.lifesteal = capValue(A.lifesteal, STAT_CAPS.lifesteal);
   st.manaSteal = capValue(A.manaSteal, STAT_CAPS.manaSteal);
   // 敵種傷害天賦（清場/破菁/弒王法則）＝「額外」乘算：對應傷害加成總合 ×(1+天賦%)；無其他來源時不憑空提供。
@@ -1074,17 +1074,15 @@ function grantShield(pEnt, amount, st) {
   return Math.max(0, pEnt.shield - before);
 }
 
-/* ---- 吸血／吸魔（2026-07-30 改版）----
-   不再以「造成的傷害 × 吸血%」計算，也不再設 60%／30% 上限；
-   改由「每秒生命回復／每秒法力恢復」決定，每次觸發回復：
-     吸血回復 = 每秒生命回復 × 吸血%      （回復 100/s、吸血 500% → 每次 500）
-     吸魔回復 = 每秒法力恢復 × 吸魔%
-   每秒生命回復 = 最大生命 × BASE_HP_REGEN_PCT% + 額外生命恢復（與屬性面板「生命恢復」同值）。
+/* ---- 吸血／吸魔（定值）----
+   每次對敵人造成一次傷害，固定回復「吸血值」點生命、「吸魔值」點法力：
+     吸血回復 = 吸血值 × 吸血倍率      吸魔回復 = 吸魔值 × 吸魔倍率
+   與造成的傷害、最大生命、每秒生命回復／法力恢復完全無關，單獨計算。
+   吸血值／吸魔值是裝備詞條、寶石等聚合出來的屬性（st.lifesteal／st.manaSteal，不設上限）；
+   舊版的百分比以 1%＝1 轉成定值。倍率只來自 skill2DrainFactor（大地守護 T3／T4、戰神屠錄）。
    溢出不轉護盾（healPlayer 的 noShield 路徑）。 */
 /* 新版技能【生命再生】／【魔力再生】（大地守護 T3／T4，js/skills2.js）：
-   「回復」與「吸血／吸魔」是兩個**不同倍率**的乘區（回復 +100%、汲取 +50%），
-   因此吸血不能直接沿用被放大過的每秒回復——換算基準改讀未加成的 base 版本，
-   再各自乘上自己的倍率。 */
+   同一階給兩個**不同倍率**的乘區：「回復」（每秒回復）與「吸血／吸魔」（本節的定值）各自獨立。 */
 function playerRegenSkillFactor(kind) {
   return (typeof skill2RegenFactor === 'function') ? skill2RegenFactor(kind) : 1;
 }
@@ -1104,11 +1102,11 @@ function playerMpRegenBasePerSec(st) {
 function playerMpRegenPerSec(st) {
   return playerMpRegenBasePerSec(st) * playerRegenSkillFactor('mp');
 }
-function lifestealHealAmount(st, pct) {
-  return Math.max(0, playerHpRegenBasePerSec(st) * (Number(pct) || 0) / 100 * playerDrainSkillFactor('hp'));
+function lifestealHealAmount(value) {
+  return Math.max(0, (Number(value) || 0) * playerDrainSkillFactor('hp'));
 }
-function manaStealAmount(st, pct) {
-  return Math.max(0, playerMpRegenBasePerSec(st) * (Number(pct) || 0) / 100 * playerDrainSkillFactor('mp'));
+function manaStealAmount(value) {
+  return Math.max(0, (Number(value) || 0) * playerDrainSkillFactor('mp'));
 }
 
 /* ============================================================
@@ -2355,16 +2353,15 @@ function offlineKillCount(elapsed, potentialOfflinePct) {
 }
 
 /* 面板專用投影：只複製 stats，不覆寫戰鬥的基準回復與汲取倍率。
-   在 Worker 建快照時呼叫，主執行緒不依賴 G 或技能執行期狀態。 */
+   在 Worker 建快照時呼叫，主執行緒不依賴 G 或技能執行期狀態。
+   lifesteal／manaSteal＝套用汲取倍率後「每次實際回復的定值」。 */
 function playerPanelStats(st) {
   if (!st) return null;
   var out = Object.assign({}, st);
   out.passivePanel = {
     hpRegen: playerHpRegenPerSec(st), mpRegen: playerMpRegenPerSec(st),
-    hpDrainBase: playerHpRegenBasePerSec(st), mpDrainBase: playerMpRegenBasePerSec(st),
-    lifesteal: (st.lifesteal || 0) * playerDrainSkillFactor('hp'),
-    manaSteal: (st.manaSteal || 0) * playerDrainSkillFactor('mp'),
-    hpDrain: lifestealHealAmount(st, st.lifesteal), mpDrain: manaStealAmount(st, st.manaSteal),
+    lifesteal: lifestealHealAmount(st.lifesteal),
+    manaSteal: manaStealAmount(st.manaSteal),
     elemPct: typeof skill2ElemDamageUpPct === 'function' ? skill2ElemDamageUpPct() : 0,
     damageRed: typeof skill2PassiveDamageTakenMultiplier === 'function' ? (1 - skill2PassiveDamageTakenMultiplier()) * 100 : 0
   };

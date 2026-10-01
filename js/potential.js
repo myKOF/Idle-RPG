@@ -269,7 +269,7 @@ function tickPotentialRegen(pEnt, st, dt, enemies, floatSel) {
   var sacred = buffVal(pEnt, 'sacredInvert');
   if (sacred <= 0) return false;
   var ratio = sacred / 100;
-  var baseHp = playerHpRegenPerSec(st) * dt;   // 每秒生命回復（formula.js §3；與吸血換算同一來源）
+  var baseHp = playerHpRegenPerSec(st) * dt;   // 每秒生命回復（formula.js §3）
   var extraHp = baseHp * ratio;
   var hpOverflow = Math.max(0, (pEnt.hp + extraHp) - st.hp);
   pEnt.hp = Math.min(st.hp, pEnt.hp + extraHp);

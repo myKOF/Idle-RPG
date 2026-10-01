@@ -10,7 +10,8 @@ test('裝配大地守護：回復三倍、汲取兩倍，展示等於戰鬥結�
  const c=load(),st=base(),before=JSON.stringify(st),p=c.playerPanelStats(st).passivePanel;
  assert.equal(p.hpRegen,c.playerHpRegenBasePerSec(st)*3);assert.equal(p.mpRegen,150);
  assert.equal(p.lifesteal,40);assert.equal(p.manaSteal,20);
- assert.equal(p.hpDrain,c.lifestealHealAmount(st,20));assert.equal(p.mpDrain,c.manaStealAmount(st,10));
+ assert.equal(p.lifesteal,c.lifestealHealAmount(20));assert.equal(p.manaSteal,c.manaStealAmount(10));
+ for(const k of ['hpDrain','mpDrain','hpDrainBase','mpDrainBase'])assert.equal(p[k],undefined,k+' 已隨吸血／吸魔改定值移除');
  assert.equal(p.elemPct,50);assert.ok(Math.abs(p.damageRed-20)<1e-9);
  assert.equal(JSON.stringify(st),before);
  assert.equal(c.playerHpRegenPerSec(st),p.hpRegen);
@@ -34,8 +35,10 @@ test('序列化後無 G 的 UI 仍顯示正確回復／汲取；預覽套使用�
  const rows=c.STAT_GROUPS.flatMap(g=>g.rows),byName=name=>rows.find(r=>r[0].includes(name));
  delete c.G;
  assert.equal(byName('法力恢復')[1](snap),c.statFmt(150,null,'/s'));
- assert.equal(byName('吸魔')[1](snap),c.statFmt(20,c.STAT_CAPS.manaSteal,'%.1f'));
- assert.match(byName('吸魔')[2](snap),/汲取換算基準/);
+ assert.equal(byName('吸魔')[1](snap),c.statFmt(20,c.STAT_CAPS.manaSteal,'raw1'));
+ assert.doesNotMatch(byName('吸魔')[1](snap),/%/,'吸魔是定值，不顯示百分比');
+ assert.match(byName('吸魔')[2](snap),/單獨計算/);
+ assert.doesNotMatch(byName('吸魔')[2](snap),/汲取換算基準/);
  assert.equal(byName('火屬性傷害提升')[1](snap),c.statFmt(110,null,'%',true));
  assert.equal(byName('法力恢復')[1](st),c.statFmt(50,null,'/s'),'舊快照相容');
 });

@@ -67,7 +67,10 @@
    v40（2026-09-29 舊版技能系統移除）：刪除 skill.learn／maxUpgrade／downgrade／delete／fuse／deleteFusion
    與參數型別 'ids'（僅融合技使用）；TICK_VIEW_KEYS 移除 magicScroll；skills 面板投影只剩
    loadout／loadoutSize／skills2／points／budget／mastery。指令表 93 → 87。 */
-var WORKER_PROTOCOL_VERSION = 40;
+/* v41（吸血／吸魔改定值）：passivePanel 移除 hpDrainBase／mpDrainBase／hpDrain／mpDrain；
+   lifesteal／manaSteal 改為套用汲取倍率後「每次回復的定值」（不再是百分比，也不再依每秒回復換算）。
+   主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值。 */
+var WORKER_PROTOCOL_VERSION = 41;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

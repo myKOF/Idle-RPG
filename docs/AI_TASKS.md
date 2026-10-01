@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## Claude｜吸血／吸魔改為定值，與每秒回復脫鉤（DRAIN-FLAT-20261001）
+
+- Owner：Claude；Done，待 Antigravity 驗證。使用者要求：①吸血／吸魔由百分比轉為定值，1% = 1（吸血 50% → 每觸發 1 次吸收 50 點生命）②單獨計算，不再與生命／法力回復關聯 ③裝備、技能、寶石、附魔、天賦等所有相關模組全檢查一遍。
+- 預檢（AI_RULES 3.2）：ai/codex 副本有未提交修改與 formula.js（L889 受擊倍率多傳 attacker）、combat.js（L1391 刪水牢判定）、skills2.js（水牢／水流彈／冰箭）及 index.html／bridge.js／sim.worker.js 版號行、本檔檔頭重疊；程式段落實測不重疊，只有版號行與本檔檔頭會撞。已告知使用者，使用者選「照改」。
+- 合併試跑（base 0a644957、theirs＝Codex 工作區檔，`git merge-file`）：formula／combat／skills2 零衝突；index.html 3 處、bridge.js 1 處、sim.worker.js 1 處、本檔 1 處，**全是版號／token 行與檔頭**。合併時：index.html 各檔取較大版號（skills2 取 Codex 的 1.0.261 再 +1、bridge 取 1.0.194 再 +1、status 取 Codex 的 1.0.28、data 1.0.53、potential 1.0.7、combat 1.0.63 兩邊相同再 +1）；`WORKER_ASSET_VERSION` 與 sim.worker.js 的 data／status／formula／skills2／combat／potential token 要換成**同一個**新值（兩邊各改過哪支都要涵蓋，只留一邊會讓 Worker 拿到另一邊的舊檔）；protocol.js 的 index 版號（?v=42）與 Worker 側（?v=41）只有我這邊動，直接保留；本檔兩邊紀錄都留。
+- 逐模組盤點結論：**已改**＝裝備詞條 AFFIX_POOL.lifesteal／manaSteal、寶石黑曜石 onyx、神鑄特效【萬象汲取】omniDrain（原說明「回復造成傷害 {v}%」早已與 07-30 改版不符）、屬性面板兩列與提示、Worker 面板投影。**乘區語意不變、不改**＝大地守護第 3／4 階（吸血／吸魔 +X%，乘在定值上）、戰神屠錄（吸血乘區）；兩者本來就是「額外乘算」，定值下仍成立。**與吸血屬性無關、不改**＝傳奇【血霧】（占最大生命%的技能治療，不讀吸血也不讀回復）、暗影元素汲取（攻擊者當前生命 × darkDrainMult，元素觸發）、潛力【聖療逆轉】（吃每秒回復，只修註釋）。**沒有相關模組**＝天賦（TALENT_TREES 無吸血／吸魔節點）、附魔（ENCHANTS 無吸血類）。
+- 修改：js/formula.js §3（`lifestealHealAmount(value)`／`manaStealAmount(value)` ＝ 定值 × `skill2DrainFactor`，不再讀回復；`playerPanelStats` 移除 hpDrain／mpDrain／hpDrainBase／mpDrainBase，`lifesteal`／`manaSteal` 改為帶倍率的定值）、js/combat.js（`playerDrainOnDamage` 傳定值）、js/data.js（`drainDesc`、兩列面板改 `raw1` 整數顯示不帶 %、STAT_CAPS 註釋）、js/skills2.js／js/potential.js（過期註釋）、js/worker/protocol.js v40→v41 與 docs/WORKER_PROTOCOL.md（移除四個面板欄位；缺欄走既有 fallback）、index.html／js/bridge.js／js/worker/sim.worker.js（快取版號與 Worker token 20261001-drain-flat）。
+- 參數表：config/Excel 三表經 tools/excel-update-sheets.ps1（Excel COM 原生寫入，正常重開驗證）改 9 格——Equipment_Affix（吸血／吸魔名稱去 %、百分比欄 FALSE，萬象汲取說明）、Gems（黑曜石名稱／百分比）、game_parameters 的資料源「計算表」F43／F44（吸血／吸魔上限說明；game_parameters 頁是公式鏡像）。再 `config_tables --sync`、`xlsx_to_csv`、`--apply --write`；`--apply` 語意變更 0、`apply_params` 534 項一致／將變更 0／錨點問題 0。⚠️ `--write` 會把 GEM_TYPES 區塊內的手寫註釋洗掉，已還原成 HEAD 版註釋、只保留黑曜石一行的改動。數值（base／growthBase／每級成長／權重／戰力權重）**一個都沒動**，照 1% = 1 沿用。
+- 存檔：不需要遷移。詞條值由強度值 roll 與參數當場算（affixValue），存檔只存 roll；鍵名與數字沿用。晚期存檔夾具 20 件帶吸血／吸魔詞條的裝備載入後全為有限整數。副作用：詞條 pct 改 false 後進位由一位小數改為整數（與生命恢復等定值詞條一致），既有裝備的詞條值會在讀取時改成取整後的數字。
+- 測試：新增 tests/drain-flat-value.test.cjs（8 項：詞條／寶石／萬象汲取／面板／投影／CSV 與程式一致／上限說明）；改 damage-drain（期望值依定值、新增「與回復無關」「萬象汲取」兩項）、attr-skill-rework-2026-07-30（定值與原始碼守門）、passive-stat-panel、skill2-earth、war-god-roll、worker-protocol（版本 41）。突變測試 9 種把舊行為放回去（又乘回復、乘任意係數、詞條／寶石變回百分比、面板殘留舊欄位、提示改回換算說法、戰鬥端又乘回復、萬象汲取說明改回傷害百分比、參數表說明改回百分比），全數被抓到。node tools/build_check.cjs 414 檔通過。
+- 既有失敗：passive-stat-panel 3 項、skill2-earth 2 項、damage-drain 1 項在 HEAD 就是紅的（大地守護回復／汲取倍率目前是 ×2／×1.4，測試仍釘 ×3／×2／×1.55），與本次無關；其中我改過的斷言被前面的失敗擋住沒跑到，已另用腳本直接驗證，結果一致（回復 ×2、汲取 ×1.4：面板吸血 20→28、吸魔 10→14）。**全庫回歸**：`node --test "tests/*.test.cjs"`，我的工作區 3442 項、失敗 91 項；同一份測試對乾淨 HEAD 匯出再跑一次，失敗名稱差集「只有我這邊失敗」＝0 項（91 項全部在 HEAD 就是紅的）；HEAD 匯出另有 28 項是缺 images 等造成的假紅。另外 damage-drain 那一項「大地守護倍率與資源上限」在 HEAD 是紅的，這次因期望值改讀 `skill2DrainFactor` 而轉綠。
+- 實機：Browser 窗格開自己的伺服器（非 5500），Console 無錯誤，Worker 協議 v41 與新版號載入，屬性面板「🧛 吸血／🌊 吸魔」顯示整數不帶 %、提示為新說明。
+- **平衡風險（留給使用者決定）**：1% = 1 只是換算規則，單次回復量的量級變了。舊算法每次 = 每秒回復 × 值%，新算法每次 = 值，兩者在每秒回復基準 = 100 時相等。生命端：晚期存檔（Lv.100）每秒生命回復基準約 150、每秒回復隨最大生命成長（基礎回復% × 最大生命），所以等級越高、定值吸血相對舊版越弱；魔力端相反：同存檔每秒法力恢復基準約 6，舊吸魔 8% 每次 0.5 點，新吸魔 8 每次 8 點，約 16 倍。詞條成長（base／每級成長）、戰力評分權重、神鑄萬象汲取 base 5 都按原數字沿用，要不要重調請到 Excel 的 Equipment_Affix／Gems 表。
+- 未處理：monte_carlo_sim.py（獨立舊版模擬器，詞條表本來就與遊戲不同步）；ui.js L2745 側欄硬編碼屬性區塊（`$id('s-hp')` 在 index.html 不存在，整段是死碼）。
+- 建議驗證（Antigravity）：①穿一件吸血詞條裝備＋鑲黑曜石，面板顯示整數、提示正確；每次對敵人造成傷害回復該數值（範圍技能對 N 隻就 N 次、DoT 每跳、反震都算）②把最大生命與生命恢復拉到天差地遠，單次吸血不變③大地守護第 3／4 階與戰神屠錄的倍率仍乘在定值上④吸魔有值時法力是否過快回滿（見平衡風險）⑤神鑄萬象汲取：生命與法力各回 {v} 點⑥舊存檔載入：裝備詞條值取整、無 NaN。
+
 ## Codex｜冰水修正與三個 AI 分支整合（AI-INTEGRATION-WATER-20261001）
 
 - Owner：Codex；Done。使用者明確要求解決develop衝突並將三個AI分支合併到最新；於實際develop整合副本完成衝突解決、必要快取與本紀錄、驗證及乾淨AI副本快轉同步。禁止推送、production／main變更及未提交他人工作覆寫；後續接手者：使用者。

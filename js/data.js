@@ -496,7 +496,7 @@ var ACCESSORY_SLOTS = ['ring', 'amulet'];
    改上限只需改這裡（或參數表「2-屬性上限」→ apply_params 寫入此表），夾限與 tip 會一起同步。 */
 var STAT_CAPS = {
   // 穿透（pPen/mPen）不設上限：實際忽略防禦% 改由 penIgnorePct 的遞減曲線收斂，最高 100%（formula.js §3）。
-  // 吸血／吸魔不設上限：回復量 = 每秒生命回復／法力恢復 × 此%（formula.js §3）。
+  // 吸血／吸魔是定值（每次對敵人造成傷害固定回復的量），不設上限；與每秒回復無關（formula.js §3）。
   critRate: 0, pPen: 0, mPen: 0, cdr: 60, castSpeed: 50,
   lifesteal: 0, manaSteal: 0, blockRate: 50, blockDmgRed: 50,
   evasion: 0, tenacity: 80, ctrlRes: 80,
@@ -586,7 +586,7 @@ var GODFORGE_POOL = {
   annihilate: { name: '破滅', desc: '暴擊時有 {v}% 機率使本次傷害翻倍', base: 15 },
   sanctuary: { name: '聖佑', desc: '受到的所有傷害降低 {v}%', base: 8 },
   undying: { name: '不朽', desc: '受到致命攻擊時有 {v}% 機率保留 1 點生命並回復 30% 最大生命（60 秒內限一次）', base: 30 },
-  omniDrain: { name: '萬象汲取', desc: '攻擊時額外回復造成傷害 {v}% 的生命與法力', base: 5 },
+  omniDrain: { name: '萬象汲取', desc: '每次對敵人造成傷害時，額外回復 {v} 點生命與法力', base: 5 },
   godWrath: { name: '神怒', desc: '生命低於 30% 時，造成的傷害提高 {v}%', base: 35 }
 };
 
@@ -624,8 +624,8 @@ var AFFIX_POOL = {
   hit: { name: '命中率%', base: 3, growthBase: 3, lv: 0.015, pct: true, weight: 5, slots: ['helmet', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   cdr: { name: '冷卻縮減%', base: 1, growthBase: 2.5, lv: 0.01, pct: true, weight: 4, minR: 4, slots: ['helmet', 'belt', 'gloves', 'ring', 'amulet'] },
   castSpeed: { name: '施法速度%', base: 3, growthBase: 3, lv: 0.012, pct: true, weight: 4, minR: 4, slots: ['all_lock'] },
-  lifesteal: { name: '吸血%', base: 1, growthBase: 1, lv: 0.005, pct: true, weight: 4, slots: ['chest', 'wrist', 'ring', 'amulet'] },
-  manaSteal: { name: '吸魔%', base: 0.8, growthBase: 0.8, lv: 0.003, pct: true, weight: 3, minR: 4, slots: ['chest', 'wrist', 'ring', 'amulet'] },
+  lifesteal: { name: '吸血', base: 1, growthBase: 1, lv: 0.005, pct: false, weight: 4, slots: ['chest', 'wrist', 'ring', 'amulet'] },
+  manaSteal: { name: '吸魔', base: 0.8, growthBase: 0.8, lv: 0.003, pct: false, weight: 3, minR: 4, slots: ['chest', 'wrist', 'ring', 'amulet'] },
   eliteDmg: { name: '對菁英傷害%', base: 2, growthBase: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
   bossDmg: { name: '對BOSS傷害%', base: 2, growthBase: 4, lv: 0.02, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
   normalDmg: { name: '對普通敵人傷害%', base: 2, growthBase: 3, lv: 0.035, pct: true, weight: 9, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
@@ -2162,7 +2162,7 @@ var GEM_TYPES = {
   amethyst: { name: '紫水晶', emoji: '🟣', stat: 'critRate', statName: '暴擊率%', base: 1.5, pct: true },
   garnet: { name: '石榴石', emoji: '🟠', stat: 'critDmg', statName: '暴擊傷害%', base: 5, pct: true },
   opal: { name: '蛋白石', emoji: '🩵', stat: 'aspd', statName: '攻擊速度%', base: 1.5, pct: true },
-  onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血%', base: 1, pct: true },
+  onyx: { name: '黑曜石', emoji: '⚫', stat: 'lifesteal', statName: '吸血', base: 1, pct: false },
   moonstone: { name: '月光石', emoji: '🌙', stat: 'evasion', statName: '閃避率%', base: 1, pct: true },
   /* 命中（月光石的對位）：命中與閃避是 1:1 相抵的一對（resolveHit 取 clamp(命中−閃避, 5, 100)），
      但玩家命中基礎已有 100%、敵人閃避從 5% 起隨等級成長，所以同樣 1 點的命中價值低於閃避。
@@ -2468,12 +2468,11 @@ function penetrationDesc(st, key, label) {
     '<br><br><span style="color:#ffd700">目前忽略防禦：' + pctStrFloor4(ignore) + '</span>';
 }
 
-/* 吸血／吸魔 tips */
-function drainDesc(st, key, label, resLabel, perSec, amount) {
+/* 吸血／吸魔 tips：定值，單獨計算，不看每秒回復也不看造成的傷害 */
+function drainDesc(key) {
   var isHp = key === 'lifesteal';
-  return '每對一名敵人造成一次傷害時回復' + (isHp ? '生命' : '法力') + '；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。' +
-    '<br><br><span style="color:#aaa">汲取換算基準（未乘回復技能倍率）・每秒' + resLabel + '：<span style="color:#fff">' + fmt(perSec) + '</span>' +
-    '<br>目前每次回復：<span style="color:#fff">' + fmt(amount) + '</span></span>';
+  return '每對一名敵人造成一次傷害時，固定回復此數值的' + (isHp ? '生命' : '法力') + '；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。' +
+    '<br><br><span style="color:#aaa">單獨計算，與每秒' + (isHp ? '生命回復' : '法力恢復') + '、造成的傷害皆無關。</span>';
 }
 
 /* 舊快照退回既有基準值；新版只讀 Worker 已結算的面板數值。 */
@@ -2512,8 +2511,8 @@ var STAT_GROUPS = [
       ['⚡ 攻擊速度', function (st) { return statFmt(st.aspd, ASPD_CAP, '/s.1f'); }, function () { return '每秒進行普通攻擊的次數。' + capText(ASPD_CAP, '/秒'); }],
       ['⏱️ 冷卻縮減', function (st) { return statFmt(st.cdr, STAT_CAPS.cdr, '%.1f'); }, '減少技能所需的冷卻時間。' + capText(STAT_CAPS.cdr, '%')],
       ['🌀 施法速度', function (st) { return statFmt(st.castSpeed, STAT_CAPS.castSpeed, '%.1f'); }, '縮短技能的施放延遲或詠唱時間。' + capText(STAT_CAPS.castSpeed, '%')],
-      ['🧛 吸血', function (st) { return statFmt(passivePanelValue(st, 'lifesteal', st.lifesteal), STAT_CAPS.lifesteal, '%.1f'); }, function (st) { return drainDesc(st, 'lifesteal', '吸血', '生命回復', passivePanelValue(st, 'hpDrainBase', playerHpRegenBasePerSec(st)), passivePanelValue(st, 'hpDrain', playerHpRegenBasePerSec(st) * (st.lifesteal || 0) / 100)); }],
-      ['🌊 吸魔', function (st) { return statFmt(passivePanelValue(st, 'manaSteal', st.manaSteal), STAT_CAPS.manaSteal, '%.1f'); }, function (st) { return drainDesc(st, 'manaSteal', '吸魔', '法力恢復', passivePanelValue(st, 'mpDrainBase', playerMpRegenBasePerSec(st)), passivePanelValue(st, 'mpDrain', playerMpRegenBasePerSec(st) * (st.manaSteal || 0) / 100)); }],
+      ['🧛 吸血', function (st) { return statFmt(passivePanelValue(st, 'lifesteal', st.lifesteal), STAT_CAPS.lifesteal, 'raw1'); }, function () { return drainDesc('lifesteal'); }],
+      ['🌊 吸魔', function (st) { return statFmt(passivePanelValue(st, 'manaSteal', st.manaSteal), STAT_CAPS.manaSteal, 'raw1'); }, function () { return drainDesc('manaSteal'); }],
       ['👑 對菁英傷害', function (st) { return statFmt(st.eliteDmg, null, '%', true); }, '對菁英怪或首領怪物造成的額外傷害加成。'],
       ['😈 對BOSS傷害', function (st) { return statFmt(st.bossDmg, null, '%', true); }, '專門對首領怪物造成的額外傷害加成。'],
       ['👤 對普通敵人傷害', function (st) { return statFmt(st.normalDmg, null, '%', true); }, '對普通敵人（非菁英、非BOSS）造成的額外傷害加成。'],

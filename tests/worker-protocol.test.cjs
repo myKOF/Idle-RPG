@@ -116,7 +116,8 @@ test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
   // v38：戰鬥面板投影逆轉乾坤的實際可用次數。
   // 2026-09-29 移除舊版技能系統：刪除 skill.learn／maxUpgrade／downgrade／delete／fuse／deleteFusion
   //      六條指令與 'ids' 參數型別（僅融合技使用），93 → 87；skill 分類 9 → 3（只剩裝載欄三條）。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 40);
+  // v41：吸血／吸魔改定值，passivePanel 移除四個以每秒回復換算的欄位。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 41);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
