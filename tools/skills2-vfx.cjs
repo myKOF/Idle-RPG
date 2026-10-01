@@ -16,7 +16,7 @@ const events = {
   'stormbarrier.5': {roles:['projectile','hit'],note:'風切結束時，向每個實際受感染者各播一條來源到目標的觸發子彈與命中特效；不借播屏障反擊或虛空斬。'},
   'stormbarrier.skyfallStars': {roles:['attack','projectile','hit','ground'],note:'追加天降星體與屏障分離。火殞石讀本列觸發角色；雷殞石借雷球第七階觸發外觀；巨大風刃借風刃第一階子彈／命中與第六階爆點。三者都在固定落點落地後結算八米範圍，星體屬性各自為火／雷／風。'},
   'stormbarrier.myriadPhenomena': {roles:['attack','projectile','hit','ground'],note:'追加虛空斬讀本列觸發角色；追加四方向風刃借風刃第一階本體子彈／命中，不讀玩家在風刃樹的超神。屏障撕裂／反擊／擴散仍各讀自身階段。'},
-  'icearrow.tearsOfIce': {roles:['projectile','hit'],note:'額外箭雨每波只讀本列觸發子彈與命中特效，從每個受害者上方落下；普通發射及追蹤冰箭不繼承箭雨角色。'},
+  'icearrow.tearsOfIce': {roles:['projectile','hit'],note:'額外箭雨每波固定讀 count 支觸發子彈，於波次間隔內錯落落下；每支落地都對我方傷害範圍內所有敵人結算一次完整配置傷害。觸發命中特效僅在成功命中時播放；無鎖定目標的箭仍在範圍內落下並結算。普通發射及追蹤冰箭不繼承箭雨角色。'},
   'waterball.4': {roles:['attack'],note:'水流彈每次落地在權威落點播放一次觸發爆散，匹配本次傷害半徑；起飛及寒霜擴散不播放爆散。'},
   'waterball.5': {roles:['projectile','hit'],note:'寒霜成功擴散時，由原敵人向每個實際受感染者分別播放觸發子彈與命中特效；普通水彈不繼承此冰晶外觀，搜敵距離不放大特效。'},
   'waterball.7': {roles:['field'],note:'額外水龍捲只播放本列觸發持續場域，每道沿權威位置與半徑續播；普通水彈起飛及落地不播放龍捲。'},

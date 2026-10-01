@@ -37,7 +37,7 @@ for(const gid of ['icearrow','waterball','frostnova']){
     assert.ok(!specs.some(s=>s.variant==='blizzard'||s.variant==='water-tornado'));
     if(ult==='tearsOfIce'){
      const rain=specs.filter(s=>s.variant==='ice-rain');assert.ok(rain.length);
-     rain.forEach(s=>{assert.deepEqual(roles(s),['hit','projectile']);assert.equal(s.vfx.projectile,'proj-icearrow-frost');assert.equal(s.travelMs[0],350);});
+     rain.forEach(s=>{assert.deepEqual(roles(s),['projectile']);assert.equal(s.vfx.projectile,'proj-icearrow-frost');assert.equal(s.travelMs[0],350);assert.equal(s.hit,false);});
     }
    }else if(gid==='waterball'){
     const launches=specs.filter(s=>s.variant==='waterball'),impacts=specs.filter(s=>s.variant==='water-impact');
@@ -149,16 +149,109 @@ test('WATER-ICE-AUDIT: permanent resonance pauses while down and resumes without
  assert.equal(hits.length,0);p.hp=1000;h.advance(c,p,es,.15);assert.equal(hits.length,0);h.advance(c,p,es,.1);assert.equal(hits.length,6);
 });
 
-test('WATER-ICE-AUDIT: production rain falls above every target, remains authored size and gets reclaimed',()=>{
+test('WATER-ICE-AUDIT: production rain staggers ten arrows, remains authored size and gets reclaimed',()=>{
  const {h,c,p,es,specs}=setup('icearrow',7,'tearsOfIce');c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);h.advance(c,p,es,.05);
- const rain=specs.find(s=>s.variant==='ice-rain');assert.equal(rain.targets.length,3);
+ const rain=specs.filter(s=>s.variant==='ice-rain');assert.equal(rain.length,10);
  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,ctx:{playerPos:()=>({x:0,y:0}),posOf:id=>es.find(e=>e.name===id)?.pos||{x:0,y:0}}});
  rt.registerPresets(['proj-icearrow-frost','hit-icearrow-shatter'].map(id=>require('../vfx/presets/'+id+'.json')));
- assert.equal(rt.tryPlay(rain),true);assert.equal(rt.stats().projectiles,3);rt.update(.1);
- const arrows=nodes.filter(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.equal(arrows.length,3);
- assert.ok(arrows.every(n=>n.t.y<0));assert.equal(new Set(arrows.map(n=>n.t.x.toFixed(2))).size,3,'每個敵人上方各有一支箭');
+ rain.forEach(s=>assert.equal(rt.tryPlay(s),true));assert.equal(rt.stats().projectiles,1);assert.equal(rt.stats().pending,9);rt.update(.3);
+ assert.equal(rt.stats().projectiles,8);rt.update(.049);assert.equal(rt.stats().projectiles,10);
+ const arrows=nodes.filter(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible);assert.equal(arrows.length,10);
+ assert.equal(new Set(arrows.map(n=>n.t.x.toFixed(2)+','+n.t.y.toFixed(2))).size,10,'出生時間和落點均錯落');
  rt.update(3);assert.equal(rt.stats().projectiles,0);rt.destroy();
+});
+
+test('ICE-TEARS-RAIN: zero, one and many enemies all get ten arrows in every wave',()=>{
+ for(const n of [0,1,23]){
+  const {h,c,p,specs,hits}=setup('icearrow',7,'tearsOfIce');
+  const es=Array.from({length:n},(_,i)=>h.enemy(1e9,20+i*3,0,'rain-'+i));
+  c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);
+  h.advance(c,p,es,.05);const first=specs.filter(s=>s.variant==='ice-rain');
+  assert.equal(first.length,10);assert.equal(new Set(first.map(s=>s.delayMs||0)).size,10);
+  assert.ok(first.every(s=>(s.delayMs||0)<350&&s.hit===false));assert.equal(hits.length,0,'起飛不扣血');
+  h.advance(c,p,es,4);
+  assert.equal(specs.filter(s=>s.variant==='ice-rain').length,100,'10波各10支，不依敵人數變動');
+  assert.equal(hits.length,n*100,'10波各10支，每支對每個範圍內敵人各命中一次');
+  const damage=c.sgGroupBaseStat(c.SKILLS2.icearrow,c.getStats())*c.sgUltVal(c.sgUlt('icearrow','tearsOfIce'),'pct')/100;
+  assert.ok(hits.every(hit=>Math.abs(hit.atk-damage)<1e-9),'每次沿用配置的全額傷害');
+  es.forEach(e=>assert.equal(hits.filter(hit=>hit.ent===e).length,100));
+  assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='icerain').length,0,'最後一箭落地後回收');
+ }
+});
+
+test('ICE-TEARS-RAIN: Worker carries ten fixed landings and frame rates preserve flight timing',()=>{
+ const {h,c,p,es,specs}=setup('icearrow',7,'tearsOfIce');
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);h.advance(c,p,es,.05);
+ const shim={};shim.self=shim;vm.createContext(shim);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/worker/shim.js'),'utf8'),shim);
+ specs.filter(s=>s.variant==='ice-rain').forEach(s=>shim.playCombatVfx(s));
+ const events=JSON.parse(JSON.stringify(shim.shimDrainUrgentVisualEvents()));assert.equal(events.length,10);
+ assert.equal(new Set(events.map(s=>s.delayMs||0)).size,10);
+ assert.ok(events.every(s=>s.area.fixedLanding===true&&s.travelMs[0]===350&&s.hit===false));
+ function sample(delay,steps){
+  const nodes=[],backend={createNode(spec){const n={spec};nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.t=null;}};
+  const rt=Runtime.create({core:Core,resolver:{resolve:id=>id},fxBackend:backend,zoneBackend:backend,groundScale:.42,ctx:{playerPos:()=>({x:0,y:0}),posOf:()=>({x:999,y:999})}});
+  rt.registerPresets([require('../vfx/presets/proj-icearrow-frost.json')]);
+  rt.tryPlay({...events[0],area:{x:120,y:40,fixedLanding:true},delayMs:delay});steps.forEach(dt=>rt.update(dt));
+  const t={...nodes.find(n=>n.spec.assetUrl==='codex-authored/icearrow/icicle.png'&&n.t?.visible).t};
+  assert.equal(rt.stats().projectiles,1);rt.update(1);assert.equal(rt.stats().projectiles,0);rt.destroy();return t;
+ }
+ const reference=sample(0,[.02]);
+ for(const steps of [[.12],[.04,.04,.04],[.01,.01,.01,.01,.01,.01,.01,.01,.01,.01,.01,.01]]){
+  const t=sample(100,steps);assert.ok(Math.abs(t.x-reference.x)<1e-7);assert.ok(Math.abs(t.y-reference.y)<1e-7);
+  assert.ok(Math.abs(t.rotation-reference.rotation)<1e-7,'箭尖沿相同向下航向');
+ }
+});
+
+test('ICE-TEARS-RAIN: misses keep falling arrows without success hit effects',()=>{
+ const {h,c,p,es,specs}=setup('icearrow',7,'tearsOfIce');
+ c.resolveHit=()=>({miss:true,dmg:0,crit:false,killed:false});
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);h.advance(c,p,es,4);
+ assert.equal(specs.filter(s=>s.variant==='ice-rain').length,100);
+ assert.equal(specs.filter(s=>s.variant==='ice-rain-hit').length,0);
+ assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='icerain').length,0);
+});
+
+test('ICE-TEARS-RAIN: level ten rain deals 400% per arrow without increasing normal arrows',()=>{
+ function cast(lv){
+  const {h,c,p,es,hits}=setup('icearrow',7,lv?'tearsOfIce':null);h.maxLevels(c,'icearrow');
+  if(lv)h.setUlt(c,'icearrow','tearsOfIce',lv);
+  let inRain=false;const land=c.sgTickIceRainLandings,hit=c.resolveHit;
+  c.sgTickIceRainLandings=function(...args){inRain=true;try{return land(...args);}finally{inRain=false;}};
+  c.resolveHit=function(...args){const res=hit(...args);hits.at(-1).rain=inRain;return res;};
+  const base=c.sgGroupBaseStat(c.SKILLS2.icearrow,c.getStats());
+  assert.ok(c.castSkill2(p,es,'icearrow','mv-float'));h.advance(c,p,es,4);
+  return {normal:Array.from(hits.filter(hit=>!hit.rain),hit=>hit.atk),rain:hits.filter(hit=>hit.rain),base};
+ }
+ const off=cast(0),one=cast(1),ten=cast(10);
+ assert.ok(off.normal.length);assert.deepEqual(one.normal,off.normal);assert.deepEqual(ten.normal,off.normal);
+ assert.equal(off.rain.length,0);assert.equal(ten.rain.length,300,'三名敵人各接受100支雨箭');
+ assert.ok(one.rain.every(hit=>Math.abs(hit.atk/one.base-2.2)<1e-9));
+ assert.ok(ten.rain.every(hit=>Math.abs(hit.atk/ten.base-4)<1e-9),'每支都是魔攻400%，沒有除以10或乘到普通箭');
+});
+
+test('ICE-TEARS-RAIN: staggered landings settle damage and hit effects together',()=>{
+ const {h,c,p,hits,specs}=setup('icearrow',7,'tearsOfIce');
+ const es=[h.enemy(1e9,20,0,'landing-0')];
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);
+ const f=c.SKILL2_RT.grounds.find(f=>f.kind==='icerain');f.hits=f.hitsLeft=1;
+ h.advance(c,p,es,.05);assert.equal(specs.filter(s=>s.variant==='ice-rain').length,10);
+ h.advance(c,p,es,.3);assert.equal(hits.length,0);assert.ok(c.SKILL2_RT.grounds.includes(f),'發射完仍保留未落地箭');
+ h.advance(c,p,es,.05);assert.equal(hits.length,1);assert.equal(specs.filter(s=>s.variant==='ice-rain-hit').length,1);
+ h.advance(c,p,es,.35);assert.equal(hits.length,10);
+ const impact=specs.filter(s=>s.variant==='ice-rain-hit');assert.equal(impact.length,10);
+ for(let i=0;i<10;i++){assert.equal(impact[i].targets.length,1);assert.equal(impact[i].targets[0],'landing-0');assert.deepEqual(roles(impact[i]),['hit']);}
+ assert.equal(c.SKILL2_RT.grounds.includes(f),false);
+});
+
+test('ICE-TEARS-RAIN: invalid targets, downed caster and battle reset cancel pending damage',()=>{
+ const {h,c,p,es,hits,specs}=setup('icearrow',7,'tearsOfIce');
+ c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);h.advance(c,p,es,.05);
+ es[0].hp=0;es[1].pos={x:1000,y:0};es.splice(2,1);h.advance(c,p,es,.7);assert.equal(hits.length,0);
+ p.hp=0;h.advance(c,p,es,.1);assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='icerain').length,0);
+ const count=specs.length;p.hp=1000;h.advance(c,p,es,3);assert.equal(specs.length,count,'復活不補放舊波次');
+ es[0].hp=1e9;c.sgCastIceTears(p,c.getStats(),c.SKILLS2.icearrow,'mv-float',es[0]);h.advance(c,p,es,.05);
+ c.resetSkill2RT();h.advance(c,p,es,1);assert.equal(hits.length,0);assert.equal(c.SKILL2_RT.grounds.length,0);
 });
 
 test('WATER-ICE-AUDIT: production frost spread hits only the destination after arrival',()=>{

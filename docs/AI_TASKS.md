@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## Codex｜冰之淚十支錯落箭雨（ICE-TEARS-RAIN-20261001）
+
+- Owner：Codex；Done。使用者要求冰之淚每波固定10支冰箭、錯開落下時間，並明確每支雨箭都有完整超神配置傷害，Lv.10每支400%；此百分比只限箭雨，不包含普通寒冰箭與追蹤箭。波數、間隔與範圍保留配置。
+- 允許冰之淚限定排程／Runtime天降派送、Skills2 Excel／CSV／生成JS、相關測試／VFX登記、必要主頁／Worker／編輯器快取及文件；禁止其他技能規則、素材重製、存檔／Worker協議變更與未授權合併／推送。修改前衝突預檢所有目標乾淨。
+- 驗收：不同敵人數皆每波10箭；每箭起飛與落地錯開、方向朝落點，每支落地對我方範圍內全部敵人獨立結算完整傷害，Lv.10每支400%，不分攤／除以10；開關箭雨或升超神等級不提高普通／追蹤箭。最後一波完整落下、無敵亦保留十箭，倒地／重置回收；正式Runtime與模擬排程一致、配置三份同步、回歸／Build／Commit。
+- 數量由Excel fx.count配置；各支雨箭沿用既有我方範圍作用，每次落地重新查詢敵人，不以十個小範圍取代。時間錯落以既有波次間隔分配，沿用既有冰箭／受擊Preset；雨箭傷害只讀tearsOfIce.fx.pct／pctPer，不乘至普通發射／追蹤箭。
+- 前置：e5b5a3f1；完成後交使用者整合。
+- 完成：Excel第181列新增fx.count=10，十波共100支，每支有獨立delayMs與固定落點，無敵也完整落下；每波內按時間窗加亂數錯落，無鎖定目標的箭在我方30米內分散落點。每支雨箭落地獨立對作用範圍內全部敵人造成配置完整傷害；Lv.1每支220%、Lv.10每支400%，普通／追蹤箭的傷害值與命中序列在未選箭雨／Lv.1／Lv.10三種情境完全一致。發射不扣血、不播受擊，落地重新檢查正式敵人清單／存活／我方範圍，MISS不播成功受擊。最後一箭落地後回收，倒地與戰鬥重置取消未結算傷害。Runtime不再依targets複製箭身，長幀只推進起飛後經過的時間；空箭、傾斜後向下航向及不同FPS時序驗證通過。
+- 修改13檔：js/skills2.js、js/vfx-runtime.js、tools/skills2-vfx.cjs、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tests/water-ice-audit.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、docs/AI_TASKS.md、docs/WATER_ICE_AUDIT.md、docs/vfx/VFX_RUNTIME_ADAPTER.md。Skills2／Bridge／Runtime版號253／185／163，主頁與編輯器相同Runtime，Worker同步20261001-ice-tears-rain。不新增素材、借用來源或Worker協議。
+- 唯讀檢查未改：js/vfx-core.js、js/battlefield.js、js/combat.js、js/worker/shim.js／protocol.js、Skills2編譯工具、冰箭／受擊Preset、現有水冰／風系與Runtime測試、素材庫。沿用既有Skills2匯入空白儲存格不保真時的原生Excel COM局部編修，artifact-tool僅唯讀檢視與前後預覽，原生儲存／唯讀重開驗證；231列逐格比較只AU～AX181四格變更，ZIP工作表／樣式／欄寬／列高保留。Excel原先鎖定，使用者回覆已關閉後完成正式檔案同步，沒有覆寫開啟中的活頁簿。
+- 定向驗證：node --test --test-name-pattern='ICE-TEARS-RAIN|production rain' tests/water-ice-audit.test.cjs，7/7；原本四個關鍵案例先在修改前重現失敗。包含0／1／23敵人固定箭數、每敵100次完整雨箭傷害、Lv.10每支400%且普通箭隔離、飛行前零傷害、錯落落地、最後一波、MISS、移出／死亡／離場、倒地／復活與重置，以及正式Worker事件／Core／Runtime的固定落點、原尺寸、向下航向與不同幀率。
+- 水冰與配置回歸指令：node --test tests/water-ice-audit.test.cjs tests/skill2-ice.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/icearrow-vfx-integration.test.cjs tests/waterball-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs，138/138。
+- 共用回歸：node --test tests/wind-skill-audit.test.cjs tests/skill2-wind.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs tests/skill2-stormbarrier-legendary.test.cjs tests/windblade-vfx-integration.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/skill2-thunderorb-icearrow-legendary.test.cjs，156項152通過；node --test tests/vfx-runtime.test.cjs，124項120通過。共8項失敗皆以唯讀攔截器換回HEAD Skills2／Runtime再次逐項重現：雷爆的4次／4倍速度／死亡時序／舊素材預期與目前使用者配置不同，以及既有FIELD、CATALOG-3、CHAIN金雷、STARFALL-TAIL。不改其他技能配置或降低斷言。
+- 其他檢查：npm.cmd run build，411檔全過；node tools/config_tables.cjs --apply Skills2，語意變更0；Excel／CSV逐格一致與git diff --check通過；素材庫master乾淨，無新素材，不建立空提交。
+- 交付：Commit為本紀錄所在提交；可以合併，未合併／推送。無未完成程式修改，未做遊戲瀏覽器實戰畫面／Console驗收。建議使用者整合後重新載入遊戲；若編輯器仍開啟，先備份未存內容後重載，以使用相同Runtime163。
+
 ## Codex｜極寒冰爆誤觸死亡新星（ICEARROW-DEATH-NOVA-20261001）
 
 - Owner：Codex；Done。使用者回報極寒冰爆施放時在自身周圍出現冰霜新星。追查正式敵人死亡掛勾：sgDeathNova 只檢查學習等級與寒霜，未檢查冰霜新星裝配；先前水系稽核以不死亡的高血量敵人且機率關閉，未覆蓋此路徑。
