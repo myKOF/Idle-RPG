@@ -125,7 +125,11 @@ test('WATER four tier-7 fields use fx layer, retain phase between hits and expir
  specs.forEach(s=>assert.equal(a.tryPlay(s),true));a.update(.2);
  assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,0);assert.ok(nodes.every(n=>n.tag==='fx'));
  const column=nodes.find(n=>n.spec.assetUrl?.includes('water-flow.png'));
- assert.equal(column.t.frame,4);assert.equal(column.t.x,0);assert.equal(column.t.y,80);
+ const authored=preset.layers.find(l=>l.id==='baked-water-column');
+ const authoredScale=specs[0].area.r/preset.sizing.authored.radius;
+ assert.equal(column.t.frame,4);
+ assert.equal(column.t.x,specs[0].area.x+authored.position.x*authoredScale);
+ assert.equal(column.t.y,specs[0].area.y+authored.position.y*authoredScale);
  assert.equal(column.t.scaleX,column.t.scaleY);
  specs.forEach(s=>a.tryPlay(s));a.update(.2);
  assert.equal(nodes.filter(n=>n.spec.kind==='generated').length,0);assert.equal(column.t.frame,8);assert.equal(a.stats().played,4);

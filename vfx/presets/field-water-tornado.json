@@ -166,8 +166,8 @@
       "assetId": "codex-authored/tornado/water-flow.png",
       "zIndex": 1,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -0.4724,
+        "y": 0.4724
       },
       "scale": {
         "x": 1,
@@ -177,8 +177,8 @@
         "x": 0.5,
         "y": 0.6875
       },
-      "alpha": 1,
-      "tint": "#ffffff",
+      "alpha": 0.9,
+      "tint": "#52fff3",
       "blendMode": "normal",
       "duration": 4,
       "sheet": {
@@ -195,16 +195,16 @@
       "type": "sprite",
       "assetId": "new_materials/orb/energyball_1.png",
       "position": {
-        "x": -0.1913,
-        "y": -238.6856
+        "x": -6.5923,
+        "y": -246.5272
       },
       "scale": {
-        "x": 0.2214,
-        "y": 0.2214
+        "x": 0.2305,
+        "y": 0.2305
       },
       "alpha": 1,
-      "tint": "#003780",
-      "blendMode": "add",
+      "tint": "#0665fe",
+      "blendMode": "normal",
       "rotationOverLife": [
         [
           0,
@@ -218,20 +218,68 @@
       "offsetXOverLife": [
         [
           0,
-          0
+          12
         ],
         [
-          0.7593,
-          7.5
+          0.5247,
+          4
         ],
         [
-          1,
-          -0.5
+          0.9877,
+          11
         ]
       ],
       "outerScale": {
         "x": 1,
-        "y": 1
+        "y": 0.6
+      },
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "sprite-5-copy",
+      "type": "sprite",
+      "assetId": "new_materials/orb/energyball_1.png",
+      "position": {
+        "x": -2.7358,
+        "y": -241.8035
+      },
+      "scale": {
+        "x": 0.1582,
+        "y": 0.1582
+      },
+      "alpha": 1,
+      "tint": "#1ce9c0",
+      "blendMode": "screen",
+      "rotationOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          -6.283185
+        ]
+      ],
+      "offsetXOverLife": [
+        [
+          0,
+          12
+        ],
+        [
+          0.5247,
+          4
+        ],
+        [
+          0.9877,
+          11
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
       },
       "projection": {
         "x": 1,
