@@ -246,13 +246,19 @@ function safeJoin(root, relative) {
   return target;
 }
 
-/* Editor 自己的檔案一律 no-store，其餘（素材縮圖等）維持 no-cache。
+/* Editor 自己的檔案，以及編輯器頁載入的遊戲腳本（/js/*.js，例如 vfx-core.js），一律 no-store；
+   其餘（素材縮圖、/js/vendor/ 底下不會變的大檔）維持 no-cache。
    原因是實測過的：no-cache 只要求「重新驗證」，而本伺服器不送 ETag／
    Last-Modified，瀏覽器沒有驗證依據時仍可能直接用舊的 editor.js。
    結果是改了程式、重整、行為沒變——量到的數字對不上程式碼，很難查。
+   遊戲腳本也是同一個道理：編輯器頁上的 ?v= 版號要靠人記得跟著改，忘了就會載到舊的核心
+   （2026-09-30 實例：vfx-core.js 加了 cameraDepth，編輯器頁的版號沒跟著升，vfx-water-tornado.js
+   的版號更是自 09-10 起就沒動過）。伺服器直接不留快取，這一類問題就不靠記憶力。
    Asset Browser 有 900 多張縮圖，那些不能一起 no-store，否則每次重整全部重抓。 */
 function cacheControlFor(pathname) {
-  return pathname.indexOf('/tools/vfx/editor/') === 0 ? 'no-store' : 'no-cache';
+  if (pathname.indexOf('/tools/vfx/editor/') === 0) return 'no-store';
+  if (pathname.indexOf('/js/') === 0 && pathname.indexOf('/js/vendor/') !== 0) return 'no-store';
+  return 'no-cache';
 }
 
 function serveFile(res, filePath, pathname) {
