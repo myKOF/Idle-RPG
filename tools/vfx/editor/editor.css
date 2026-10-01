@@ -166,6 +166,19 @@ button.active { background: #3d5a80; border-color: #4d7ab0; }
   background: rgba(20, 20, 26, .78); border: 1px solid #2c2c34; border-radius: 4px;
   font-size: 11px; color: #c8c8d2; white-space: nowrap;
 }
+/* 效能成本（2026-10-01）：每個預覽視窗右上角，單視窗時也要看得到——
+   使用者要的是「每個特效的預覽範圍上方」，不是只有多視窗才有的那條標籤。
+   右上角而不是接在標籤後面：標籤長度隨 preset 名稱變，接在後面會左右抽動。 */
+.pane-cost {
+  position: absolute; top: 6px; right: 6px; z-index: 1;
+  padding: 2px 6px; border-radius: 4px;
+  background: rgba(20, 20, 26, .78); border: 1px solid #2c2c34;
+  font-size: 11px; color: #8fae8f; white-space: nowrap;
+  font-variant-numeric: tabular-nums; cursor: default;
+}
+/* 橘色＝比素材庫裡約 92% 的特效重（門檻見 tools/vfx/preset-cost.cjs 的 WARN_US） */
+.pane-cost.warn { color: #ffa63d; border-color: #6a4a22; }
+.pane-cost[hidden] { display: none; }
 .pane-no { color: #7a7a86; font-variant-numeric: tabular-nums; }
 .pane.focused .pane-no { color: #7fb2ff; }
 .pane-name { overflow: hidden; text-overflow: ellipsis; min-width: 0; }

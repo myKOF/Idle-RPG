@@ -128,6 +128,9 @@ const ASSET_PREFIX = '/asset-library/';
    那兩個是由事實層推導出來的，規則只有一份在 vfx-semantic-vocab.cjs。
    為了不讓 Editor 抄第二份，開放這一個檔；其餘 tools/vfx 的建置工具仍不對外。 */
 const REPO_ALLOWLIST = ['/tools/vfx/editor/', '/tools/vfx/vfx-semantic-vocab.cjs',
+  /* 同樣的理由再開一個檔：每個預覽視窗右上角的效能成本要與 CLI／測試用同一份算法，
+     係數（每個節點 3.9µs 那些）只能有一份，不能在 Editor 裡抄第二份。 */
+  '/tools/vfx/preset-cost.cjs',
   /* Spine 參考面板要的兩樣：vendor/ 的 runtime（按下按鈕才載）與
      fixture/（手寫的最小骨架，讓沒有 Spine 素材的人也能確認面板沒壞）。
      只開這兩個子目錄，不開整個 /tools/spine/——同一層還有 spine-probe.cjs

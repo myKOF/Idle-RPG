@@ -225,8 +225,12 @@
       });
     }
     el.hidden = false;
-    /* 貼在那一列右邊，放不下就翻到左邊。清單自己會捲動，所以位置一律由
-       getBoundingClientRect ＋ position: fixed 決定，不跟著捲軸飄走。 */
+    placeTipCard(el, anchor);
+  }
+
+  /* 貼在錨點右邊，放不下就翻到左邊。清單與預覽都會捲動或改版面，所以位置一律由
+     getBoundingClientRect ＋ position: fixed 決定，不跟著捲軸飄走。 */
+  function placeTipCard(el, anchor) {
     var r = anchor.getBoundingClientRect();
     var left = r.right + 8;
     if (left + el.offsetWidth > window.innerWidth - 8) {
@@ -4342,6 +4346,9 @@
   /* ---------------- 預覽（使用 VFX Core） ---------------- */
 
   function onPresetChanged() {
+    /* 效能成本要重算：圖層數、發射率、素材換了都會改變它。token 推進就夠了，
+       真正的重算延到畫的時候（refreshDirty 在拖曳時每幀都會進來）。 */
+    ctx.costToken = (ctx.costToken || 0) + 1;
     /* 不管合不合法都要更新 dirty：改壞了也是「改過了」，
        這時候把它顯示成乾淨反而最危險。 */
     refreshDirty();
@@ -5808,6 +5815,7 @@
     host.className = 'pane-canvas';
     el.appendChild(host);
     el.appendChild(buildPaneHead(pane));
+    el.appendChild(buildPaneCost(pane));
     /* 捕獲階段：焦點要在畫布自己的 pointerdown（選取、拖曳）之前換好，
        那些處理拿到的 state 才是這個視窗的 */
     el.addEventListener('pointerdown', function (e) {
@@ -6121,6 +6129,100 @@
     renderPanels();
   }
 
+  /* ---------------- 效能成本（2026-10-01 使用者要求） ----------------
+
+     每個預覽視窗右上角顯示「這一份特效在實機上大概多重」，重的變橘色。
+     算法與係數全部在 tools/vfx/preset-cost.cjs（係數來自 2026-09-30 的實機量測），
+     這裡只負責顯示與快取。
+
+     為什麼要快取：refreshDirty 在拖曳時每一幀都會走到，而估算要把整條時間軸跑一遍。
+     Preset 真的變了才重算——token 由 onPresetChanged 推進，換 doc（載入另一份）也算變。 */
+  var costSizeCache = null;      // { assets, lookup }：素材尺寸查詢函式，整個頁面共用
+
+  function costSizeOf() {
+    var assets = (state.index && state.index.assets) || null;
+    if (!costSizeCache || costSizeCache.assets !== assets) {
+      costSizeCache = { assets: assets, lookup: VFXPresetCost.sizeLookup(assets || []) };
+    }
+    return costSizeCache.lookup;
+  }
+
+  function paneCost(pane) {
+    var doc = pane.doc;
+    var preset = doc && doc.preset;
+    if (!preset || !preset.layers || !preset.layers.length) return null;
+    var token = pane.costToken || 0;
+    if (!pane.costCache || pane.costCache.doc !== doc || pane.costCache.token !== token) {
+      pane.costCache = { doc: doc, token: token, value: VFXPresetCost.estimate(preset, { assetSize: costSizeOf() }) };
+    }
+    return pane.costCache.value;
+  }
+
+  /* 一份特效同時出現幾份就吃滿一幀（60fps＝16.7ms）。這個數字比 ms 更好懂：
+     「0.45ms」聽起來很小，但那代表場上同時 37 份就滿了，而連鎖類技能很容易同時幾十份。 */
+  function costPerFrameBudget(cost) {
+    return cost.ms > 0 ? Math.max(1, Math.round(16.7 / cost.ms)) : 0;
+  }
+
+  function buildPaneCost(pane) {
+    var el = document.createElement('div');
+    el.className = 'pane-cost';
+    el.addEventListener('mouseenter', function () { showCostTip(pane, el); });
+    el.addEventListener('mouseleave', hideComboTip);
+    pane.costEl = el;
+    return el;
+  }
+
+  function renderPaneCost(pane) {
+    var el = pane.costEl;
+    if (!el) return;
+    var cost = paneCost(pane);
+    if (!cost) { el.hidden = true; return; }
+    el.hidden = false;
+    setText(el, '⚡ ' + cost.ms.toFixed(2) + ' ms');
+    el.classList.toggle('warn', cost.level === 'warn');
+  }
+
+  /* 滑過去才看得到的明細：使用者問的「用了幾層、什麼類型、粒子幾顆」全在這裡。 */
+  function showCostTip(pane, anchor) {
+    var cost = paneCost(pane);
+    if (!cost) { hideComboTip(); return; }
+    var el = comboTipEl();
+    el.textContent = '';
+    function line(text, cls) {
+      var d = document.createElement('div');
+      d.className = cls || 'combo-tip-line';
+      d.textContent = text;
+      el.appendChild(d);
+    }
+    line('效能估算 ' + cost.ms.toFixed(2) + ' ms／幀', 'combo-tip-id');
+    line('同時 ' + costPerFrameBudget(cost) + ' 份就吃滿一幀（60fps＝16.7ms）', 'combo-tip-count');
+    var kinds = ['sprite', 'particle', 'procedural', 'empty']
+      .filter(function (k) { return cost.byType[k]; })
+      .map(function (k) { return k + ' ' + cost.byType[k]; });
+    line('圖層 ' + cost.layerCount + ' 層：' + kinds.join('、'));
+    line('峰值 ' + cost.nodes + ' 個節點（其中粒子 ' + cost.particles + ' 顆）');
+    line('CPU ' + (cost.cpuUs / 1000).toFixed(2) + ' ms・填色 ' + (cost.fillUs / 1000).toFixed(2) +
+      ' ms（覆蓋 ' + cost.coverage.toFixed(1) + ' 個畫面）・' + cost.batches + ' 批繪製');
+    if (cost.coverage >= 3) {
+      line('⚠ 大面積：疊很多份時吃的是 GPU，不是節點數', 'combo-tip-line hit');
+    }
+    if (cost.level === 'warn') {
+      line('⚠ 超過 ' + (VFXPresetCost.WARN_US / 1000).toFixed(2) + ' ms：整個素材庫只有約 8% 這麼重',
+        'combo-tip-line hit');
+    }
+    /* 最重的幾層排前面：要減成本就是從這裡下手 */
+    var heavy = cost.layers.filter(function (l) { return l.nodes > 0; })
+      .sort(function (a, b) { return b.nodes - a.nodes; }).slice(0, 4);
+    heavy.forEach(function (l) {
+      line('　' + l.id + '（' + l.type + '）' + l.nodes + ' 節點' + (l.mesh ? '・變形網格' : ''));
+    });
+    cost.notes.slice(0, 2).forEach(function (n) { line('　※ ' + n); });
+    line('估算值，不是量測：係數來自 2026-09-30 的實機量測（GTX 1050）', 'combo-tip-count');
+    el.hidden = false;
+    placeTipCard(el, anchor);
+  }
+
   /* 左上角的標籤。只有一個視窗時整條藏起來（CSS），畫面與以前一樣。 */
   function buildPaneHead(pane) {
     var head = document.createElement('div');
@@ -6155,6 +6257,7 @@
     parts[1].title = d.isNew ? '還沒存檔的新特效（名字是暫時的，第一次存檔會問）' : '';
     setText(parts[2], (pane.dirtyFlag ? '●' : '') + (pane.playing ? '' : '⏸'));
     parts[2].title = [pane.dirtyFlag ? '未存檔' : '', pane.playing ? '' : '暫停中'].filter(Boolean).join('、');
+    renderPaneCost(pane);
     pane.el.classList.toggle('focused', pane === focusedPane);
     pane.el.classList.toggle('selected', selectedPanes.indexOf(pane) >= 0);
   }
