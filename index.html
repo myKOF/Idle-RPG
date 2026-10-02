@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=1.0.68">
+  <link rel="stylesheet" href="css/style.css?v=1.0.69">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.25">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.27">
 </head>
 
 <body>
@@ -445,16 +445,18 @@
 
         <!-- ============ 技能 ============ -->
         <section id="tab-skills" class="tab">
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🧠 技能 <span class="dim-text">可用技能點：<b id="sp-count"
-                  style="color:var(--accent)">0</b>（技能熟練度每升 1 級 +1 點；技能點用於升級潛力技能）</span></div>
-            <div class="sec-sub">📚 技能熟練度 <span id="mastery-level" class="dim-text"></span></div>
-            <div id="mastery-bar" class="mastery-bar"><div id="mastery-bar-fill" class="mastery-bar-fill"></div><span id="mastery-bar-text" class="mastery-bar-text"></span></div>
-            <div class="sec-sub">⚔️ 裝載欄 <span id="loadout-cap" class="dim-text"></span>（依順序自動施放；點擊卸下）</div>
+          <div class="sgb-top">
+            <h2 class="sgb-title">技能</h2>
+            <span class="sgb-pill" data-tt-title="技能點" data-tt-desc="技能熟練度每升 1 級 +1 點；技能點用於升級潛力技能">可用技能點 <b id="sp-count">0</b></span>
+            <span class="sgb-pill sgb-mastery" data-tt-title="技能熟練度" data-tt-desc="打怪獲得技能經驗，每升 1 級 +1 技能點">技能熟練度 <span id="mastery-level"></span>
+              <span id="mastery-bar" class="mastery-bar"><span id="mastery-bar-fill" class="mastery-bar-fill"></span><span id="mastery-bar-text" class="mastery-bar-text"></span></span>
+            </span>
+          </div>
+          <div id="skill-trees"></div>
+          <div class="sgb-loadout">
+            <div class="sgb-loadout-title"><b>技能列</b><span id="loadout-cap" class="dim-text"></span><span class="dim-text">依順序自動施放；點選技能格可卸下</span></div>
             <div id="skill-loadout" class="chip-row"></div>
           </div>
-          <div class="hint" style="margin-bottom:12px">💡 新版技能同群組由左至右進階，箭頭表示方向；亮起階段代表已解鎖，灰色階段仍可查看但不能升級。點擊技能圖示開啟升級面板。</div>
-          <div id="skill-trees"></div>
         </section>
 
         <!-- ============ 高塔 ============ -->
@@ -883,7 +885,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.15"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.93"></script>
+  <script src="js/ui.js?v=1.0.94"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -904,7 +906,7 @@
   <!-- 卡頓探針。與錄製器同樣是「只在本機／內網加了旗標才做事」的空殼，
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
-  <script src="js/lagprobe.js?v=1.0.17"></script>
+  <script src="js/lagprobe.js?v=1.0.18"></script>
   <script src="js/main.js?v=1.0.1"></script>
 </body>
 

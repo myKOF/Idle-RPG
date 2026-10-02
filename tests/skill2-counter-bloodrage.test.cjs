@@ -386,22 +386,25 @@ test('反擊法力：未觸發、死亡目標、卸下不扣費；GM 鎖魔仍�
   c.skills2OnPlayerDamaged(m,p,50,false,hitRes(),'pv-float');assert.equal(calls.length,1);assert.equal(p.mp,0);
 });
 
-test('反擊法力 UI：超神彈窗顯示每次反擊 300 MP，前階與追加費用正確',()=>{
+test('反擊法力 UI：超神詳情顯示每次反擊耗魔，前階與追加費用正確',()=>{
   const c=loadContext();
   vm.runInContext(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),c);
-  const body={innerHTML:'',classList:{add(){},remove(){}}};
   c.pendingUiButtonAttributes=()=>''; c.nodePendingKey=()=>'';
   const snapshot={skills2:{levels:{counter:Array(7).fill(10)},ult:{counter:{pick:2,lv:1}}},loadout:['sg:counter']};
-  c.renderSkill2UltModal(body,'counter',snapshot,{player:{gold:0}});
-  assert.match(body.innerHTML,/300 MP／次反擊/);
-  assert.doesNotMatch(body.innerHTML,/300 MP／次施放/);
-  c.UI.selSkill='sg:counter:2';
-  c.renderSkill2Modal(body,'counter',snapshot,{player:{gold:0}});
-  assert.match(body.innerHTML,/20 MP／次反擊（此階生效時）/);
-  c.UI.selSkill='sg:counter:5';
-  c.renderSkill2Modal(body,'counter',snapshot,{player:{gold:0}});
-  assert.match(body.innerHTML,/80 MP／次反擊（此階生效時）/);
-  assert.match(body.innerHTML,/追加效果觸發另扣 80 MP/);
+  /* 技能頁改版後（技能瀏覽器）：標頭顯示選中那一階的反擊耗魔，超神區塊顯示已選選項的耗魔。
+     這裡驗「畫面接對了哪個數」，期望值從參數表讀，不寫死（耗魔會隨參數表調整）。 */
+  const pick=c.sgUiUltPick(snapshot,'counter');
+  const ultMp=c.skills2TierManaCost('counter',0,pick.id);
+  const t3Mp=c.skills2TierTriggerMp('counter',2), t6Mp=c.skills2TierTriggerMp('counter',5);
+  c.UI.sgBrowse.tier=2; c.UI.sgBrowse.ultFocus=null;
+  let html=c.sgbDetailHTML('counter',snapshot,{player:{gold:0}});
+  assert.match(html,new RegExp(ultMp+' MP／次反擊'));
+  assert.doesNotMatch(html,new RegExp(ultMp+' MP／次施放'));
+  assert.match(html,new RegExp(t3Mp+' MP／次反擊（此階生效時）'));
+  c.UI.sgBrowse.tier=5;
+  html=c.sgbDetailHTML('counter',snapshot,{player:{gold:0}});
+  assert.match(html,new RegExp(t6Mp+' MP／次反擊（此階生效時）'));
+  assert.match(html,new RegExp('追加效果觸發另扣 '+t6Mp+' MP'));
 });
 
 /* ---- 4) 嗜血狂怒 ---- */

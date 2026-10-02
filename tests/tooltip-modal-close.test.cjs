@@ -17,9 +17,9 @@ test('彈窗關閉與重繪時自動清理浮動提示 Tooltip', () => {
   const closeTalentBlock = ui.slice(ui.indexOf('function closeTalentModal()'), ui.indexOf('function closeTalentModal()') + 200);
   assert.match(closeTalentBlock, /hideTooltip\(\);/);
 
-  // renderSkill2Modal 重繪包含錨點時必須呼叫 hideTooltip
-  const renderSkill2Block = ui.slice(ui.indexOf('function renderSkill2Modal('), ui.indexOf('function renderSkill2Modal(') + 300);
-  assert.match(renderSkill2Block, /if \(UI\.tooltipAnchor && body\.contains\(UI\.tooltipAnchor\)\)\s*hideTooltip\(\);/);
+  // 技能瀏覽器重繪詳情時，若提示框錨點在詳情裡必須先 hideTooltip
+  const renderBrowserBlock = ui.slice(ui.indexOf('function renderSkillBrowser('), ui.indexOf('function renderSkillBrowser(') + 2000);
+  assert.match(renderBrowserBlock, /if \(UI\.tooltipAnchor && detail\.contains\(UI\.tooltipAnchor\)\) hideTooltip\(\);/);
 
   // renderSkillModal 重繪包含錨點時必須呼叫 hideTooltip
   const renderSkillBlock = ui.slice(ui.indexOf('function renderSkillModal()'), ui.indexOf('function renderSkillModal()') + 300);
