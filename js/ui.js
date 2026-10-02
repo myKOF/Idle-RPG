@@ -2784,7 +2784,11 @@ function buildCharCoreTiles() {
 function initAttrHideZeroToggle() {
   var toggle = $id('attr-hide-zero');
   var panel = $id('attr-panel');
+  var bar = $id('attr-hide-zero-bar');
   if (!toggle || !panel) return;
+  // 內測專用：正式版玩家看不到這個開關，屬性永遠全部顯示（判斷方式與背包關鍵字篩選相同）
+  if (!isInternalServer()) return;
+  if (bar) bar.hidden = false;
   /* 預設全部顯示（與原本左側屬性欄一致）：前期角色大多數屬性都是 0，預設隱藏會被當成屬性不見了。
      舊鍵 idle-rpg.attrHideZero 當時預設為隱藏，改用新鍵讓所有人回到全部顯示。 */
   var hide = false;

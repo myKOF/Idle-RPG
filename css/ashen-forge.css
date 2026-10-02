@@ -2201,3 +2201,8 @@ html *::-webkit-scrollbar-corner {
 #tab-char #attr-panel.hide-zero .attr-zero-count:not(:empty) {
   display: inline;
 }
+
+/* 隱藏 0 值開關只在內測服顯示（js 依 isInternalServer() 拿掉 hidden）；display:flex 會蓋過 hidden 屬性，這裡補回來 */
+.char-attr-toolbar[hidden] {
+  display: none;
+}
