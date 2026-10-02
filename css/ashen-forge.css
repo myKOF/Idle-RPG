@@ -3495,3 +3495,541 @@ html *::-webkit-scrollbar-corner {
 #tab-gems #gem-shop-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
+
+/* ==== 熔爐頁（2026-10）：左熔爐卡片、右側零件工坊／附魔書／紀錄 ==== */
+#workspace-area main > #tab-newforge.active {
+  height: 100%;
+  min-height: 0;
+}
+
+#tab-newforge .nf-add-btn {
+  height: 30px;
+  margin-left: auto;
+  padding: 0 14px;
+  border-color: #7a6440;
+  background: #2a2218;
+  color: #f0cf86;
+}
+
+#tab-newforge .nf-help {
+  margin-left: 0;
+}
+
+#tab-newforge .nfx {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 272px;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#tab-newforge .nfx-main {
+  min-width: 0;
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+
+#tab-newforge #nf-furnaces {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#tab-newforge .nf-empty {
+  padding: 40px 16px;
+  border: 1px dashed #2a2d34;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+  color: #8a857a;
+}
+
+#tab-newforge .nf-furnace {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #5a3a24;
+  border-radius: 8px;
+  background: linear-gradient(160deg, #1d1712, #121418 55%);
+  box-shadow: inset 0 0 24px -12px #a2391a;
+}
+
+#tab-newforge .nf-furnace.nf-line-off {
+  border-color: #2a2d34;
+  background: #121418;
+  box-shadow: none;
+}
+
+#tab-newforge .nf-fhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#tab-newforge .nf-fname {
+  font-family: var(--af-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: #ece6d8;
+}
+
+#tab-newforge .nf-fid {
+  padding: 1px 7px;
+  border: 1px solid #3a3d44;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #a39d90;
+}
+
+#tab-newforge .nf-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 6px;
+  font-size: 12px;
+  color: #a39d90;
+  cursor: pointer;
+}
+
+#tab-newforge .nf-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+#tab-newforge .nf-switch-track {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: #3a3d44;
+}
+
+#tab-newforge .nf-switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #d8d0c0;
+  transition: transform .15s;
+}
+
+#tab-newforge .nf-switch input:checked + .nf-switch-track {
+  background: #b8932f;
+}
+
+#tab-newforge .nf-switch input:checked + .nf-switch-track::after {
+  transform: translateX(16px);
+}
+
+#tab-newforge .nf-switch input:focus-visible + .nf-switch-track {
+  outline: 2px solid #f0cf86;
+  outline-offset: 2px;
+}
+
+#tab-newforge .nf-remove {
+  margin-left: auto;
+}
+
+#tab-newforge .nf-fbody {
+  display: flex;
+  gap: 14px;
+}
+
+#tab-newforge .nf-fart {
+  position: relative;
+  display: flex;
+  flex: 0 0 104px;
+  align-items: center;
+  justify-content: center;
+  height: 104px;
+  overflow: hidden;
+  border: 1px solid #3a2a20;
+  border-radius: 8px;
+  background: radial-gradient(circle at 50% 62%, #8a2e14 0%, #2a120a 45%, #0c0d10 75%);
+}
+
+#tab-newforge .nf-line-off .nf-fart {
+  background: radial-gradient(circle at 50% 62%, #2a2420, #0c0d10 72%);
+}
+
+#tab-newforge .nf-fart .nf-furnace-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#tab-newforge .nf-line-off .nf-furnace-img {
+  filter: grayscale(.7) brightness(.7);
+}
+
+#tab-newforge .nf-fmain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+#tab-newforge .nf-quals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+#tab-newforge .nf-label {
+  margin-right: 2px;
+  font-size: 12px;
+  color: #8a857a;
+  cursor: help;
+}
+
+#tab-newforge .nf-qchip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+#tab-newforge .nf-qchip input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+#tab-newforge .nf-qchip span {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid #2a2d34;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #5c5f66;
+}
+
+#tab-newforge .nf-qchip:hover span {
+  border-color: #4a4d54;
+  color: #8a857a;
+}
+
+#tab-newforge .nf-qchip input:checked + span {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  color: var(--c);
+}
+
+#tab-newforge .nf-qchip input:focus-visible + span {
+  outline: 2px solid #f0cf86;
+  outline-offset: 1px;
+}
+
+#tab-newforge .nf-qchip input:disabled + span {
+  opacity: .6;
+  cursor: wait;
+}
+
+/* 傳送帶：帶面紋理往爐口（左）流動；只在運轉中且有貨時動（transform 動畫，交給合成器） */
+#tab-newforge .nf-belt {
+  position: relative;
+  gap: 0;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #2a2d34;
+  border-radius: 6px;
+  background: #15171b;
+  box-shadow: inset 0 0 12px #000a;
+}
+
+#tab-newforge .nf-belt::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(100% + 32px);
+  background: repeating-linear-gradient(90deg, transparent 0 14px, #ffffff0d 14px 16px);
+  pointer-events: none;
+}
+
+#tab-newforge .nf-belt.is-moving::before {
+  animation: nfBeltFlow 1.2s linear infinite;
+}
+
+@keyframes nfBeltFlow {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-16px);
+  }
+}
+
+#tab-newforge .nf-belt-mouth {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: radial-gradient(circle at 30% 50%, #ff8a3a, #7a240c 60%, #2a0c06);
+  font-size: 16px;
+}
+
+#tab-newforge .nf-line-off .nf-belt-mouth {
+  background: #22252b;
+  filter: grayscale(1);
+}
+
+#tab-newforge .nf-belt-items {
+  position: relative;
+  z-index: 1;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+#tab-newforge .nf-belt .conv-chip {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #0c0d10;
+  font-size: 12px;
+}
+
+#tab-newforge .nf-belt-more {
+  position: relative;
+  z-index: 1;
+  padding-right: 10px;
+  color: #a39d90;
+}
+
+#tab-newforge .nf-parts-row {
+  gap: 6px;
+  margin: 0;
+}
+
+#tab-newforge .nf-part-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 2px;
+  border-color: #2a2d34;
+  border-radius: 6px;
+  background: #101216;
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+#tab-newforge button.nf-part-slot.nf-part-filled {
+  border-color: #7a6440;
+  background: #221c16;
+}
+
+#tab-newforge button.nf-part-slot.nf-part-lock {
+  width: auto;
+  min-width: 40px;
+  padding: 0 8px;
+  color: #c9c3b5;
+  opacity: 1;
+}
+
+#tab-newforge span.nf-part-slot.nf-part-lock {
+  border-color: #1c1e23;
+  background: #0d0e11;
+  color: #3f424a;
+  opacity: 1;
+}
+
+#tab-newforge .nf-parts-list {
+  margin: 0;
+  border-color: #7a6440;
+  border-style: solid;
+  background: #15120e;
+}
+
+/* 右側欄：零件工坊／附魔書／紀錄（紀錄吃剩下的高度） */
+#tab-newforge .nfx-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+#tab-newforge .nfx-card {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #23262d;
+  border-radius: 8px;
+  background: #111317;
+}
+
+#tab-newforge .nfx-card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#tab-newforge .nfx-card-title b {
+  font-family: var(--af-serif);
+  font-size: 14px;
+  color: #e7c47c;
+}
+
+#tab-newforge .nfx-card-title span {
+  font-size: 11px;
+  color: #8a857a;
+  cursor: help;
+}
+
+#tab-newforge .nf-part-upgrades {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+#tab-newforge .nf-pu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#tab-newforge .nf-pu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 4px;
+  border-radius: 6px;
+}
+
+#tab-newforge .nf-pu-row:hover {
+  background: #181a1f;
+}
+
+#tab-newforge .nf-pu-ico {
+  display: flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border: 1px solid #3a3d44;
+  border-radius: 6px;
+  background: #0c0d10;
+  font-size: 15px;
+}
+
+#tab-newforge .nf-pu-ico .part-material-icon {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+#tab-newforge .nf-pu-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  color: #ece6d8;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#tab-newforge .nf-pu-tier {
+  flex: 0 0 26px;
+  font-size: 11px;
+  color: #e7c47c;
+}
+
+#tab-newforge .nf-part-upgrade-button {
+  display: inline-flex;
+  flex: 0 0 74px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 74px;
+  height: 26px;
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+#tab-newforge .nf-part-upgrade-button .res-icon {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+}
+
+#tab-newforge .nf-part-upgrade-button.nf-part-poor {
+  color: #e08a80;
+}
+
+#tab-newforge .nf-part-upgrade-max {
+  flex: 0 0 74px;
+  font-size: 11px;
+  text-align: center;
+  color: #8fd6a0;
+}
+
+#tab-newforge .nfx-books #enc-books {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 22px;
+  gap: 4px;
+  max-height: 128px;
+  margin: 0;
+  padding-right: 2px;
+  overflow-y: auto;
+}
+
+#tab-newforge .nfx-books .book-chip {
+  min-width: 0;
+  margin: 0;
+  padding: 0 6px;
+  line-height: 20px;
+  overflow: hidden;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#tab-newforge .nfx-books .node-info {
+  margin: 0;
+  font-size: 11px;
+}
+
+#tab-newforge .nfx-log {
+  flex: 1 1 auto;
+  min-height: 160px;
+}
+
+#tab-newforge .nfx-log .log-header {
+  margin: 0;
+}
+
+#tab-newforge .nfx-log #newforge-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  overflow-y: auto;
+}

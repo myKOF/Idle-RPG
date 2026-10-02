@@ -8,7 +8,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.69">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.33">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.35">
 </head>
 
 <body>
@@ -235,51 +235,40 @@
           </div>
         </section>
 
-        <!-- ============ 熔爐（正式版：品質勾選路由；原舊生產線已合併移除） ============ -->
+        <!-- ============ 熔爐（正式版：品質勾選路由；2026-10 改版為熔爐卡片＋右側零件工坊） ============ -->
         <section id="tab-newforge" class="tab">
-          <div class="panel nf-top-panel">
-            <div class="sec-title">🏭 熔爐</div>
-            <div class="nf-controls">
-              <span class="dim-text">佇列 <b id="nf-queue-count">0</b> 件</span>
-            </div>
-            <div class="hint">戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（由右至左入爐）；未勾選品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌寶石會自動取回）。零件不再由敵人掉落，改用金幣升級；熔爐裝配只選擇零件種類，升級後所有同名裝配效果同步更新。</div>
+          <div class="pg-top">
+            <h2 class="pg-title">熔爐</h2>
+            <span class="pg-pill">佇列 <b id="nf-queue-count">0</b> 件</span>
+            <span class="pg-pill" data-tt-title="熔爐數量" data-tt-desc="0 轉 2 座、每轉生 1 次 +1 座，最多 12 座。">熔爐 <b id="nf-count">0 / 0 座</b></span>
+            <span class="pg-pill">已拆解 <b id="nf-salvaged">0</b></span>
+            <span class="pg-pill">保留 <b id="nf-kept">0</b></span>
+            <button type="button" id="nf-add-btn" class="btn sm nf-add-btn" data-nf-add="1">＋ 添加熔爐</button>
+            <button type="button" class="pg-help nf-help" aria-label="熔爐說明" data-tt-title="熔爐" data-tt-desc="戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送上傳送帶，從爐口（左端）入爐拆解；未勾選的品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌的寶石會自動取回）。零件改用金幣在「零件工坊」升級；熔爐裝配只選擇零件種類，升級後所有同名裝配效果同步更新。">?</button>
           </div>
 
-          <div id="nf-part-upgrades"></div>
-          <div id="nf-furnaces"></div>
-
-          <div class="panel">
-            <div class="sec-title">➕ 添加熔爐 <span id="nf-count" class="dim-text"></span></div>
-            <div class="nf-add-row">
-              <button class="btn sm" data-nf-add="1">🔥 添加鍛造熔爐</button>
+          <div class="nfx">
+            <div class="nfx-main">
+              <div id="nf-furnaces"></div>
             </div>
-            <div class="hint">熔爐可設數量與轉生連動：0 轉 2 座、每 1 轉 +1 座、上限 12 座。每座熔爐勾選品質後，該品質裝備會自動進入傳送帶拆解。</div>
-          </div>
-
-          <div class="factory-flow">
-            <!-- 附魔書庫存（自原生產線頁搬入） -->
-            <div class="panel node-card">
-              <div class="node-title">✨ 附魔書庫存 <span class="node-badge">Enchant</span></div>
-              <div class="node-body">
-                <div class="hint">📌 附魔已改為手動操作：到「🎒 裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。</div>
-                <div class="node-info" id="enc-info"></div>
-                <div class="sec-sub">附魔書庫存</div>
+            <aside class="nfx-side">
+              <div id="nf-part-upgrades" class="nfx-card"></div>
+              <div class="nfx-card nfx-books">
+                <div class="nfx-card-title"><b>附魔書</b><span data-tip="附魔改為手動操作：到「裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。攻擊類（六元素）→ 武器／戒指／護手／手腕；防禦類（抗性）→ 頭盔／肩甲／胸甲／腰帶／護腿；功能類 → 項鍊／靴子。附魔欄位數依品質：普通～稀有 1、獨特～傳說 2、神話／創世 3。">到裝備頁使用</span></div>
                 <div id="enc-books" class="chip-row"></div>
-                <div class="hint">攻擊類（六元素）→ 武器/戒指/護手/手腕｜防禦類（抗性）→ 頭盔/肩甲/胸甲/腰帶/護腿｜功能類 → 項鍊/靴子。附魔欄位數依品質：普~稀有 1、獨特~傳說
-                  2、神話/創世
-                  3。</div>
+                <div class="node-info" id="enc-info"></div>
               </div>
-            </div>
-
+              <div class="nfx-card nfx-log">
+                <div class="log-header">
+                  <div class="log-title">熔爐紀錄</div>
+                  <div class="log-header-actions">
+                    <button id="btn-newforge-log-detail" class="btn sm" type="button" data-tt-title="熔爐詳情" data-tt-desc="開啟完整熔爐日誌">詳情</button>
+                  </div>
+                </div>
+                <div id="newforge-log" class="log"></div>
+              </div>
+            </aside>
           </div>
-
-          <div class="log-header">
-            <div class="log-title">熔爐紀錄</div>
-            <div class="log-header-actions">
-              <button id="btn-newforge-log-detail" class="btn sm" type="button" data-tt-title="熔爐詳情" data-tt-desc="開啟完整熔爐日誌">📜 詳情</button>
-            </div>
-          </div>
-          <div id="newforge-log" class="log"></div>
         </section>
 
         <!-- ============ 神鑄 ============ -->
@@ -904,7 +893,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.15"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.100"></script>
+  <script src="js/ui.js?v=1.0.101"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>

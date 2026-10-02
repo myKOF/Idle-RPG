@@ -5447,27 +5447,17 @@ function syncFactoryInputs() {
    熔爐清單以整段 innerHTML 重建，僅在內容變動且未聚焦互動元件時覆寫；
    帶視覺由 nfUpdateBelts 定點更新，批次流動不擊穿快取。 */
 
-// 品質勾選摘要（面板收合時顯示）：列出會拆解的品質（0 普通 ~ 7 創世；神鑄創世恆保留）
-function nfQualitySummary(fu) {
-  var salv = [];
+// 拆解品質色塊（常駐）：勾選＝該品質裝備自動入帶拆解，未勾＝保留；上鎖與神鑄創世永遠保留。
+// 底層仍是 data-nf-qual 的 checkbox，change 事件與指令不變；外觀由 CSS 的 :has(:checked) 即時反映。
+function nfQualityChipsHTML(fu) {
+  var chips = '';
   for (var r = 0; r < RARITIES.length; r++) {
     if (isGodforgedRarity(r)) continue;
-    if (fu.qualities[r]) salv.push('<span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span>');
-  }
-  return salv.length ? '分解：' + salv.join('、') + '（其餘保留）' : '未勾選任何品質（全部保留）';
-}
-
-// 品質勾選面板（圖2）：勾選＝該品質裝備自動入帶拆解；未勾＝保留
-function nfQualityPanelHTML(fu) {
-  var rows = '';
-  for (var r = 0; r < RARITIES.length; r++) {
-    if (isGodforgedRarity(r)) continue;
-    rows += '<label class="nf-qual-row"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-qual="' + r + '"' +
+    chips += '<label class="nf-qchip" style="--c:' + RARITIES[r].color + '"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-qual="' + r + '"' +
       pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-      (fu.qualities[r] ? ' checked' : '') + '> <span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span></label>';
+      (fu.qualities[r] ? ' checked' : '') + '><span>' + RARITIES[r].name + '</span></label>';
   }
-  return '<div class="nf-qual-panel">' + rows +
-    '<div class="hint">勾選品質的裝備會自動進入傳送帶拆解；未勾選＝保留入包。上鎖與神鑄創世永遠保留。</div></div>';
+  return '<div class="nf-quals"><span class="nf-label" data-tip="勾選品質的裝備會自動進入傳送帶拆解；未勾選＝保留入包。上鎖與神鑄創世永遠保留。">拆解</span>' + chips + '</div>';
 }
 
 // 傳送帶批次圖示（帶頭在左＝即將入爐；與原版輸送帶樣式一致，縮小尺寸多顯示件數）。
@@ -5543,42 +5533,36 @@ function nfPartUpgradesHTML(factory, player, nf) {
       ? '<span class="nf-part-upgrade-max">Max</span>'
       : '<button class="btn sm nf-part-upgrade-button' + (can ? '' : ' nf-part-poor') + '" data-nf-partupgrade="' + key + '"' +
         pendingUiButtonAttributes(nodePendingKey('newforge-part-upgrade-' + key)) +
-        ' data-tip="升級消耗金幣：' + fmtFull(cost) + '">升級</button>';
-    return '<div class="nf-part-upgrade-card" data-tip="' + esc(partDesc({ key: key, level: level })) + '">' +
-      '<div class="nf-part-upgrade-level">T' + level + '</div>' +
-      '<div class="nf-part-upgrade-icon">' + partIconHTML(key) + '</div>' +
-      '<div class="nf-part-upgrade-name">' + esc(pt.name) + '</div>' +
-      '<div class="nf-part-upgrade-action">' + button + '</div></div>';
+        ' data-tip="升級到 T' + (level + 1) + '：金幣 ' + fmtFull(cost) + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</button>';
+    return '<div class="nf-pu-row" data-tip="' + esc(partDesc({ key: key, level: level })) + '">' +
+      '<span class="nf-pu-ico">' + partIconHTML(key) + '</span>' +
+      '<span class="nf-pu-name">' + esc(pt.name) + '</span>' +
+      '<span class="nf-pu-tier">T' + level + '</span>' + button + '</div>';
   }).join('');
-  return '<div class="nf-part-upgrades"><div class="sec-title">🔧 零件升級</div>' +
-    '<div class="hint">零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。滑鼠移到圖示可查看效果，已裝配零件會立即同步新等級。</div>' +
-    '<div class="nf-part-upgrade-grid">' + rows + '</div></div>';
+  return '<div class="nf-part-upgrades"><div class="nfx-card-title"><b>零件工坊</b>' +
+    '<span data-tip="零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。已裝配的零件會立即同步新等級。">上限 T' + PART_MAX_TIER + '・全熔爐同步</span></div>' +
+    '<div class="nf-pu-list">' + rows + '</div></div>';
 }
 
-// 熔爐卡片（圖1）：左側大圖＋右側傳送帶（拆解設定/啟用/摘要/帶視覺）＋零件格
+// 熔爐卡片：左側熔爐圖、右側拆解品質色塊／傳送帶（帶頭在左＝爐口）／零件格
 function nfFurnaceHTML(fu, nf, factory, player) {
-  var head = '<div class="node-title">' + NEW_FORGE_EMOJI + ' ' + esc(NEW_FORGE_NAME) +
-    ' <span class="node-badge">#' + fu.id + '</span>' +
+  var head = '<div class="nf-fhead">' +
+    '<span class="nf-fname">' + esc(NEW_FORGE_NAME) + '</span><span class="nf-fid">#' + fu.id + '</span>' +
+    '<label class="nf-switch"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '>' +
+    '<span class="nf-switch-track" aria-hidden="true"></span><span class="nf-switch-text">' + (fu.enabled ? '運轉中' : '已停用') + '</span></label>' +
     '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '"' +
-    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除熔爐</button></div>';
-  var open = UI.nfCfgOpen && UI.nfCfgOpen[fu.id];
-  var beltRow = '<div class="nf-line-head">' +
-    '<span class="nf-line-no">傳送帶</span>' +
-    '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 拆解設定</button>' +
-    '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
-    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
-    '</div>' +
-    (open ? nfQualityPanelHTML(fu) : '<div class="nf-line-sum">' + nfQualitySummary(fu) + '</div>') +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除</button></div>';
+  var main = nfQualityChipsHTML(fu) +
     '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解">' + NEW_FORGE_EMOJI + '</span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
     nfPartSlotsHTML(fu, nf, factory, player) +
     (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu, factory, nf) : '');
-  return '<div class="panel node-card nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
-    '<div class="nf-furnace-body">' +
-    '<div class="nf-furnace-left"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGE + '" alt="' + esc(NEW_FORGE_NAME) + '">' +
-    '<div class="nf-furnace-caption dim-text">' + esc(NEW_FORGE_DESC) + '</div></div>' +
-    '<div class="nf-lines">' + beltRow + '</div>' +
+  return '<div class="nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
+    '<div class="nf-fbody">' +
+    '<div class="nf-fart" data-tip="' + esc(NEW_FORGE_DESC) + '"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGE + '" alt="' + esc(NEW_FORGE_NAME) + '"></div>' +
+    '<div class="nf-fmain">' + main + '</div>' +
     '</div></div>';
 }
 
@@ -5595,18 +5579,24 @@ function renderNewForge() {
   renderForgeExtras(factorySnapshot, headerSnapshot); // 附魔書庫存＋強化節點（搬入本頁的面板）
   var upgradeBox = $id('nf-part-upgrades');
   if (upgradeBox) setHtmlIfChanged(upgradeBox, nfPartUpgradesHTML(factory, player, nf));
-  var cnt = $id('nf-count');
-  if (cnt) {
-    var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
-    cnt.textContent = nf.furnaces.length + '/' + allowed + ' 座（轉生+1 座，上限 ' + NEW_FORGE_MAX + '）｜已拆解 ' + fmt(nf.stats.salvaged) +
-      '・保留 ' + fmt(nf.stats.kept);
+  var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
+  setTextIfChanged($id('nf-count'), nf.furnaces.length + ' / ' + allowed + ' 座');
+  setTextIfChanged($id('nf-salvaged'), fmt(nf.stats.salvaged));
+  setTextIfChanged($id('nf-kept'), fmt(nf.stats.kept));
+  var addBtn = $id('nf-add-btn');
+  if (addBtn) {
+    var full = nf.furnaces.length >= allowed;
+    var addTip = full
+      ? '已達目前上限 ' + allowed + ' 座（0 轉 2 座、每轉生 1 次 +1 座，最多 ' + NEW_FORGE_MAX + ' 座）'
+      : '新增一座熔爐（目前上限 ' + allowed + ' 座，最多 ' + NEW_FORGE_MAX + ' 座）';
+    if (addBtn.getAttribute('data-tip') !== addTip) addBtn.setAttribute('data-tip', addTip);
   }
   var list = $id('nf-furnaces');
   if (list) {
     var html = nf.furnaces.map(function (fu) {
       return nfFurnaceHTML(fu, nf, factory, player);
     }).join('') ||
-      '<div class="panel"><div class="hint">尚無熔爐——請於下方添加。</div></div>';
+      '<div class="nf-empty">尚無熔爐——按右上角「添加熔爐」建立第一座。</div>';
     if (UI._nfFurnacesHTML !== html) {
       // 焦點防衛：使用者正聚焦清單內的下拉/輸入框時延後整段重建（帶視覺另行定點更新）
       var ae = document.activeElement;
@@ -5633,6 +5623,9 @@ function nfUpdateBelts(list, snapshot) {
       node._nfBeltHTML = html;
       node.innerHTML = html;
     }
+    var belt = node.parentNode;
+    var moving = !!(fu.enabled && fu.belt && fu.belt.length);
+    if (belt && belt.classList && belt.classList.contains('is-moving') !== moving) belt.classList.toggle('is-moving', moving);
   }
   // 帶尾固定 +N 區：只換文字，空間恆定不變動版面。
   // +N＝該爐「專屬佇列」真實件數（各爐獨立，非共用計數；顯示封頂 +9999、tooltip 精確）。
@@ -5770,12 +5763,6 @@ function bindNewForgeEvents() {
     var clickedFurnaceId = parseInt(el.getAttribute('data-nf-fid'), 10);
     var fu = newForgeViewFurnace(uiNewForgePanelSnapshot(), clickedFurnaceId);
     if (!fu) return;
-    if (el.hasAttribute('data-nf-cfg')) {
-      if (!UI.nfCfgOpen) UI.nfCfgOpen = {};
-      UI.nfCfgOpen[fu.id] = !UI.nfCfgOpen[fu.id];
-      UI.dirty.newforge = true;
-      return;
-    }
     if (el.hasAttribute('data-nf-unlockslot')) {
       {
         sendUiCommand('newforge.unlockPartSlot', { furnaceId: fu.id }, {
