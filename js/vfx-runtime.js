@@ -1219,7 +1219,8 @@ var VFXRuntime = (function () {
       var flyingField = spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing';
       // 雷球的電弧粒子也屬於球體；共用球心倍率，避免各自按高度投影而拉歪輪廓。
       var orbBody = role === 'field' && thunderOrbBodyEvent(spec);
-      var ref = play(curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
+      // 直立地板特效也遵守作者的 perspective:false，柱腳投影、柱身不壓扁。
+      var ref = play(billboardPresets[presetId] || curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -2017,7 +2018,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261002-raging-tide-column';
+  var DATA_VERSION = '20261002-ice-king-spike';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

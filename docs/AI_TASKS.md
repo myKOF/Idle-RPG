@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## DEVELOP-INTEGRATE-20261002 — 解決develop衝突並推送
+
+- Owner：Codex；Done；使用者直接授權解決develop衝突、合併並上傳。工作區為Git登記的D:/MyGame/Idle-RPG/develop，續接既有origin/ai/codex合併，MERGE_HEAD為746960d5；不重新開始合併、不丟棄已暫存內容。
+- 衝突：bridge.js與sim.worker.js的Worker／skills2快取版本（Antigravity傷害統計對Codex冰錐效果）。統一新token 20261002-integrated-ice-damage，主頁skills2／bridge更新為1.0.270／1.0.203。保留Antigravity的combat import版本與傷害明細程式、Codex冰錐與原技能效果、Claude UI。
+- 允許合併中全部檔案及必要衝突修正／快取／本紀錄，禁止重設／整份取單方／發布production。驗收建置、冰錐與傷害統計、Worker／配置一致性、瀏覽器開機、無衝突標記及未合併路徑；完成merge commit後推送origin/develop並核對遠端。
+- 前置：遠端fetch完成，develop已有7筆未推送提交且無遠端新增提交。後續接手者使用者。
+- 驗證：node --test tests/{ice-king-spike,skill-damage-subtypes-summary,skills2-vfx-schema,skills2-vfx-usage,vfx-editor-cache-versions,worker-protocol,worker-shim,extreme-ice}.test.cjs，47/47通過；npm run build，420檔通過；config_tables --apply Skills2試跑語意變更0；diff check與未合併路徑／衝突標記檢查通過。
+- 瀏覽器：獨立28392服務、全新Edge無頭頁，真實Worker booted／alive為true、已收到tick，Worker errors 0、Console error／warning皆空，服務與瀏覽器已關閉。確認合併後冰皇配置正確；保留已整合Claude與Antigravity祖先提交。未做高階角色完整實戰；原配置／素材的既有擴大回歸差異見ICE-KING-SPIKE紀錄。
+- 交付：本紀錄所在merge commit整合Codex冰錐與develop既有UI／傷害統計，同步新快取；依使用者授權執行git push origin develop並在推送後核對遠端HEAD與工作區。素材庫無本輪修改，不涉及素材庫推送；不發布production。修改：續接合併的12檔及快取衝突解決；唯讀檢查：既有combat、兩分支歷史、所有相關測試與素材庫status。無未完成程式項目，可合併；推送實際結果以工具與交付回報為準。
+
+## ICE-KING-SPIKE-20261002 — 冰皇領域冰錐方向與尺寸
+
+- Owner：Codex；Done。使用者要求修正橫倒且過大的冰錐，追加從地下向上刺出及較首版放大30%；前置配置已提交，無傷害數值變更。
+- 範圍：新增ground-ice-spike Preset／layout（沿用既有貼圖）、Skills2冰皇領域触發地板欄與生成配置、Runtime地板播放的透視旗標、定向測試、必要快取及本紀錄；不改其他技能／耗魔／8米傷害半徑。
+- 衝突預檢：Preset／Excel／CSV／Runtime／test乾淨；skills2.js與主頁／bridge／sim.worker另有Antigravity傷害統計與Claude UI未合併修改，使用者明確同意只改特效設定與快取區段後才更新，沒有修改統計／UI邏輯。
+- 驗收：尖端向上、地面底座固定、小型柱身（約角色高度）、8米判定與4段傷害保留、斜俯視不把柱身壓扁、一般冰箭保持原特效；Excel原生重開／格式與CSV／JS一致；正式Runtime與Worker測試、畫面預覽及獨立Commit。後續接手者使用者。
+- 原因／完成：原本將橫向ground-icearrow-frost按傷害半徑放大。改配置為獨立ground-ice-spike，以既有冰箭貼圖旋轉向上、三根細冰錐構圖；較首版63px高放大30%至約82px，寬約22px。地面根節點在0.15秒內由零高度伸出，寬度維持、根部不浮動，伴隨最多8顆冰霧；非循環播放，不會到尾端重新刺出。Runtime地板路徑遵守整份perspective:false，只有地面位置投影，柱身直立且不壓扁；判定半徑仍80px／8米、四段傷害及生成節拍保留。
+- Excel原生COM只改AQ201一格，儲存並唯讀原生重開成功，欄寬／列高／目標格格式保留；Artifact Tool唯讀inspect／render、CSV全231列與Excel一致、生成JS一致。沒有新作圖或改貼圖，僅重用既有素材構圖；素材庫工作區乾淨，無需素材库新Commit。export-assets --check：240 Preset／160素材最新。
+- 驗證：`node --test tests/ice-king-spike.test.cjs`5/5，包括傷害邊界／四段／正式暴風雪生成／Worker至Runtime／8根／82px尺寸／0.15秒刺出根部固定與回收／配置及layout。連同skills2-vfx-schema、skills2-vfx-usage、skill-vfx-inheritance、vfx-preset-usage、vfx-editor-cache-versions、extreme-ice、vfx-ground-plane、vfx-runtime-screen-space、worker-protocol、worker-shim共99/99通過；`npm run build`419檔通過；config_tables --apply Skills2試跑語意變更0。
+- 擴大回歸含vfx-runtime共223項：219通過、4失敗（FIELD分層、CATALOG-3既有layout、CHAIN金色雷鏈、STARFALL-TAIL），唯讀preload還原HEAD的skills2及Runtime後同4項失敗；raging-tide另11項5通過／6失敗（使用者已提交的持續時間／素材尺寸調整），同HEAD基準重現。未修改原數值、素材或降低斷言。
+- 瀏覽器：獨立28391服務、全新Edge無頭頁以正式Runtime／Core／Pixi後端同屏8根，missing／dropped／console error／warning均0；截圖與GIF已展示，驗證方向／30%增大及從地面伸出，服務已關閉。非完整高階實戰。主頁skills2 1.0.269／bridge1.0.202、主頁與編輯器Runtime1.0.167、Worker與Preset data token同步；已提醒遊戲／編輯器重載前先備份未存檔內容。
+- 修改12檔：Skills2.xlsx／CSV、js/skills2.js／vfx-runtime.js／bridge.js／worker/sim.worker.js、index.html、tools/vfx/editor/index.html、ground-ice-spike Preset／layout、tests/ice-king-spike.test.cjs及本紀錄。唯讀檢查：舊ground-icearrow-frost、Core／Pixi Backend、battle-renderer、skills2-vfx／geometry工具、preset-kit與素材匯出工具、原水冰測試及素材庫。
+- 交付Commit為本任務對應`[Codex] fix: 修正冰皇領域冰錐尺寸與向上刺出動畫`提交；可合併本次修正，既有回歸差異另依使用者配置處理。無本次未完成項目，未合併／推送。預覽／原生Excel驗證快照／測試紀錄位於System Temp/codex-ice-king-spike-20261002，不納入專案。
+
 ## WORKTREE-COMMIT-20261002 — 提交全部未暫存修改
 
 - Owner：Codex；使用者直接授權包含使用者修改一起Commit。前置：死亡新星已提交、技能與素材任務已完成；範圍為目前所有未暫存與正式新增檔案，不合併／推送，不丟棄使用者內容。
