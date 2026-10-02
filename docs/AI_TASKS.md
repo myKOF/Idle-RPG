@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜極致之冰凍結冰爆（EXTREME-ICE-20261002）
+
+- Owner：Codex；Done。使用者要求凍結持續時間＋50%／每級＋5%，凍結敵人每0.5秒冰爆，傷害周圍8米敵人200%／每級＋20%。前置共用凍結與永久節拍已存在。
+- 使用者已授權共享skills2檔案分段修改，避開怒海狂濤；Skills2 Excel／CSV／生成資料等怒海狂濤完成才接手。允許凍結／極致之冰段、該列配置與觸發角色說明、相關回歸、game_formula與WATER_ICE_AUDIT對應列、必要快取與本紀錄；禁止怒海狂濤段、其他技能及使用者素材，不合併／推送。
+- 驗收凍結控制遞減與標記一致、各寒霜來源／等級／卸下、單一凍結源也會炸未凍結敵人、半徑／節拍／傷害與獨立冰爆VFX事件、死亡／倒地／到期、Excel與CSV／JS一致、Build及獨立Commit。後續接手者：使用者。
+- 已完成共用凍結倍率、各存活凍結源的範圍冰爆及獨立觸發特效；傷害包含來源自身與範圍內未凍結敵人，多源逐一結算，來源已死亡則跳過。與既有base＋per×Lv一致，Lv.1凍結＋55%／傷害220%，Lv.5＋75%／300%，Lv.10＋100%／400%。BOSS免控與控場遞減保留，標記等於實際暈眩時間，倒地／卸下／到期停止，無座標沿原高塔退化。
+- 確認另一聊天明確回報怒海狂濤配置已同步後，才接手第200列。Excel原生COM儲存／唯讀重開成功，全231列只有O／P／AD／AN／AO／AP／AU／AV／AW／AX十格變動；欄寬／列高與目標格格式保持。8米從搜敵移至傷害欄，間隔0.5秒，duration與damage每級成長在效果JSON，本列觸發填現有burst-icearrow-crystal、清除舊子彈／連線命中。CSV全列與Excel一致，生成JS正式重建、排除本列後其他技能資料與交接快照完全相同。Artifact Tool唯讀前後渲染確認原格式，無素材修改／素材庫Commit，未改Worker協議。
+- 移除暫時fixture後，node --test tests/extreme-ice.test.cjs正式9/9通過，含三來源Lv.1／5／10、實際傷害／擊殺回報、半秒邊界、單凍結源／非凍結目標、含體型的8米邊界、移動圓心、倒地／到期／卸下／高塔／BOSS、Worker白名單至正式Core／Runtime縮放及回收、Excel／CSV／JS及傷害欄接線。113項相關回歸107通過／6失敗（既有耗魔變更使舊fixture角色法力不足），唯讀preload只換回本次兩個邏輯函式後同6項重現，不降低斷言。另icearrow-vfx與status-slots擴大檢查29項的6個既有失敗亦同樣重現。
+- node tools/config_tables.cjs --apply Skills2語意變更0；npm.cmd run build，418檔通過。獨立本機28389與全新無頭Edge讀取正式參數／描述，Console error／warning皆空，服務已關閉；未做高階角色完整實戰。怒海狂濤80e8fcc7提交後才更新skills2 1.0.267／bridge 1.0.200及Worker token 20261002-extreme-ice，共用版號與Git暫存區依序處理。
+- 隔離提交：自最新HEAD取Excel原生修改第200列十格，CSV由該工作簿轉出，生成JS只接本列及兩個授權邏輯函式／註釋；保留工作區使用者耗魔／其他技能設定。node --require（唯讀staged-preload）--test tests/extreme-ice.test.cjs tests/water-ice-audit.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，113/113通過、0略過；另tests/raging-tide.test.cjs 11/11通過，確保另一任務功能保留。staged.js語法及diff check通過。
+- 修改14檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tools/skills2-geometry.cjs、tools/skills2-vfx.cjs、tests/extreme-ice.test.cjs、tests/water-ice-audit.test.cjs、tests/skill2-waterball-frostnova-legendary.test.cjs、game_formula.md、docs/WATER_ICE_AUDIT.md、docs/AI_TASKS.md、index.html、js/bridge.js、js/worker/sim.worker.js。唯讀檢查未改：js/combat.js／formula.js／battlefield.js／status.js／vfx-runtime.js／vfx-core.js／worker/protocol.js／worker/shim.js、tools/config_tables.cjs與現有冰爆Preset；無新素材／素材庫修改。
+- 交付：Commit為本紀錄所在提交，可合併；未合併／推送，無未完成程式項目。使用者其他配置／素材保留未提交。已知限制是工作區原有耗魔fixture及使用者素材相關失敗、未做完整高階實戰；建議重載本分支確認凍結持續與每半秒冰爆。後續接手者：使用者。
+- 暫存清理：已核對System Temp/codex-extreme-ice-20261002確切路徑及Node依賴junction，使用同一PowerShell的非遞迴清理；工具自動核准審核拒絕操作，僅回覆blocked by policy，未提供詳細理由，未改用其他方式繞過。工作簿前後快照／唯讀渲染、隔離提交版本／原生Excel編輯與檢查腳本、測試日誌及依賴junction因此保留於Temp，皆不在專案或Commit內，不影響程式交付。
+
 ## Codex｜怒海狂濤合併與巨型水柱（RAGING-TIDE-20261002）
 
 - Owner：Codex；Done。使用者指定普通水龍捲持續時間+5秒／每級+0.5秒，場上12道時消耗全部水龍捲合併為巨型水龍捲，每0.25秒對30米內敵人造成400%寒冰傷害／每級+40%，巨型壽命固定4秒。追加第12道先顯示1～2秒及人物上空寒冰漩渦，實作合併等待1.5秒。巨型採直通天際的淡色大水柱，降低遮擋及粒子量。前置海淵葬界cc605664已完成，沿用base＋per×Lv：Lv.1普通壽命+5.5秒／巨型440%，Lv.10為+10秒／800%。

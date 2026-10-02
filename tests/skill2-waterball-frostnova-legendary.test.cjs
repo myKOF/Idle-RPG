@@ -534,7 +534,7 @@ test('【無限新星】：每 1 秒自動施放 1 次，不扣法力、不進�
   assert.equal(Math.round(calls[0].atk / plainCalls[0].atk * 100), 155, '新星傷害 ×1.55');
 });
 
-test('【極致之冰】：凍結中的敵人互相共鳴造成傷害；只有一個凍結時不共鳴', () => {
+test('【極致之冰】：單一凍結敵人也會冰爆並傷害未凍結敵人', () => {
   function run(frozenCount) {
     const c = loadContext();
     stubVfx(c);
@@ -548,11 +548,11 @@ test('【極致之冰】：凍結中的敵人互相共鳴造成傷害；只有�
     for (let i = 0; i < frozenCount; i++) {
       es[i].buffs.sgFrozen = { val: 0, until: 999, dur: 3, sid: 'sgFrozen', stacks: 1 };
     }
-    advance(c, p, es, 1);
+    advance(c, p, es, .6);
     return calls.length;
   }
-  assert.equal(run(1), 0, '只有一個凍結＝沒有共鳴對象');
-  assert.ok(run(2) >= 2, '兩個都凍結＝每 0.4 秒互相共鳴一次');
+  assert.equal(run(1), 2, '單一凍結來源也傷害自己及周圍未凍結敵人');
+  assert.equal(run(2), 4, '兩個凍結來源各冰爆一次');
 });
 
 test('【冰皇領域】：暴風雪範圍 +50%，且每 1 秒在範圍內昇起 2～8 根冰錐', () => {

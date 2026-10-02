@@ -23,7 +23,7 @@ const events = {
   'waterball.ragingTide': {roles:['ground','field'],note:'達到門檻後先在人物上空播放觸發地板欄的寒冰漩渦，倒數結束清除全部水龍捲並播放觸發持續場域欄的巨型水柱；不混入普通水彈或第七階龍捲。'},
   'waterball.abyssBurial': {roles:['hit'],note:'永久領域每拍施加寒霜時只播放本列觸發命中特效；領域外殼仍讀Status表，普通水彈命中不繼承領域每拍特效。'},
   'frostnova.7': {roles:['ground'],note:'額外暴風雪只播放本列觸發地板特效，矩形範圍及跟隨中心取權威場域；新星爆發、凍結、死亡新星及共鳴不播放暴風雪。'},
-  'frostnova.crystalResonance': {roles:['projectile','hit'],note:'冰晶共鳴每條實際傷害連線各自讀本列觸發子彈及命中特效，從來源敵人到受害者；普通新星及暴風雪不繼承共鳴冰晶。'},
+  'frostnova.crystalResonance': {roles:['attack'],note:'每次凍結冰爆只讀本列觸發特效，在凍結敵人的當下位置播放一次並匹配冰爆傷害半徑；不播放冰晶連線，不繼承普通新星、暴風雪或寒冰箭的特效。'},
   'frostnova.iceKingDomain': {roles:['ground'],note:'每根額外冰錐只讀本列觸發地板特效，固定在生成位置並匹配傷害半徑；暴風雪仍用第七階觸發地板，不變為冰錐或水龍捲。'},
   'icearrow.7': {roles:['attack'],note:'追蹤冰箭本體沿用飛行子彈欄並沿權威移動航向連續播放；敵人凍結結束時，在該敵人的當下位置播放一次觸發特效，匹配冰爆傷害半徑。觸發特效不在冰箭發射、追蹤或普通命中時播放。'},
   'chainlightning.flyingThunderGod': {roles:['field'],note:'每波逐道生成全場貫穿雷電；每道出生時以隨機兩名不同敵人連線決定固定方向；只有一名敵人時改用玩家與該敵人連線，零敵人時才略過，寬度、長度及持續時間由權威事件傳入。觸發持續場域不覆蓋普通雷鏈。'},
