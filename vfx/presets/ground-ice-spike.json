@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "id": "ground-ice-spike",
+  "duration": 1.4,
+  "loop": false,
+  "layers": [
+    {
+      "id": "rise-root",
+      "type": "empty",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "duration": 1.4,
+      "scaleYOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.025,
+          0.08
+        ],
+        [
+          0.075,
+          0.78
+        ],
+        [
+          0.11,
+          1
+        ],
+        [
+          0.85,
+          1
+        ],
+        [
+          1,
+          0.92
+        ]
+      ]
+    },
+    {
+      "id": "frost-motes",
+      "type": "particle",
+      "assetId": "particle-pack/png-transparent/smoke_04.png",
+      "perspective": false,
+      "zIndex": -1,
+      "position": {
+        "x": 0,
+        "y": -6
+      },
+      "alpha": 0.18,
+      "tint": "#8ad6ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 8
+      },
+      "maxParticles": 8,
+      "lifetime": [
+        0.2,
+        0.45
+      ],
+      "spawn": {
+        "shape": "circle",
+        "radius": 7
+      },
+      "speed": [
+        4,
+        10
+      ],
+      "direction": 270,
+      "spread": 25,
+      "startScale": [
+        0.012,
+        0.022
+      ],
+      "worldSpace": true,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.14,
+          0.75
+        ],
+        [
+          0.75,
+          0.75
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "left-spike",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "perspective": false,
+      "zIndex": 2,
+      "position": {
+        "x": -10.4,
+        "y": -21.45
+      },
+      "rotation": -1.5707963267948966,
+      "scale": {
+        "x": 0.0975,
+        "y": 0.10400000000000001
+      },
+      "alpha": 0.85,
+      "blendMode": "normal",
+      "duration": 1.4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          0.85
+        ],
+        [
+          0.85,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "parent": "rise-root"
+    },
+    {
+      "id": "right-spike",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "perspective": false,
+      "zIndex": 2,
+      "position": {
+        "x": 10.4,
+        "y": -22.880000000000003
+      },
+      "rotation": -1.5707963267948966,
+      "scale": {
+        "x": 0.10400000000000001,
+        "y": 0.0975
+      },
+      "alpha": 0.85,
+      "blendMode": "normal",
+      "duration": 1.4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          0.85
+        ],
+        [
+          0.85,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "parent": "rise-root"
+    },
+    {
+      "id": "main-spike",
+      "type": "sprite",
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "perspective": false,
+      "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": -38.61000000000001
+      },
+      "rotation": -1.5707963267948966,
+      "scale": {
+        "x": 0.17550000000000002,
+        "y": 0.169
+      },
+      "alpha": 0.85,
+      "blendMode": "normal",
+      "duration": 1.4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.035,
+          0.85
+        ],
+        [
+          0.85,
+          0.85
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "parent": "rise-root"
+    }
+  ],
+  "sizing": {
+    "shape": "circle",
+    "radiusM": 8,
+    "authored": {
+      "radius": 80
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-ice-spike",
+  "groups": [
+    {
+      "id": "ground-ice-spike",
+      "name": "ground-ice-spike",
+      "layerIds": [
+        "rise-root",
+        "frost-motes",
+        "left-spike",
+        "right-spike",
+        "main-spike"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-ice-spike"
+  ]
+}
