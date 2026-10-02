@@ -731,6 +731,47 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* 統計面板：技能主體分組區塊與各類型傷害明細 */
+.summary-skill-block {
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-top: 6px;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.summary-skill-block:hover {
+  border-color: rgba(255, 215, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
+}
+.summary-skill-block .summary-card-row {
+  margin-bottom: 0;
+}
+.summary-sub-group {
+  margin-top: 4px;
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 1px dashed rgba(255, 215, 0, 0.2);
+  margin-left: 6px;
+}
+.summary-sub-row {
+  color: var(--dim, #a3a3a3);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.summary-sub-bullet {
+  color: var(--accent, #e5a93c);
+  opacity: 0.85;
+  font-weight: bold;
+}
+.summary-sub-name {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
 /* 統計面板：可獨立懸浮、無全螢幕遮罩、支援滑鼠左鍵拖曳移動 */
 #summary-modal {
   position: fixed;

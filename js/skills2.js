@@ -991,6 +991,12 @@ function sgApplyStatusEntry(ent, entry, gid, tierKey, side, spec) {
   if (side === 'enemy' && def.effect === 'ctrl' && def.kind !== 'buff' && sgCtrlBlocked(ent)) return false;
   var ctx = {}, k, v;
   if (spec) for (k in spec) if (Object.prototype.hasOwnProperty.call(spec, k)) ctx[k] = spec[k];
+  if (!ctx.source && gid && typeof sgStatusSource === 'function') {
+    ctx.source = sgStatusSource(gid);
+  }
+  if (ctx.source && !ctx.source.subType) {
+    ctx.source.subType = (entry && entry.id === 'sgFrostBite') ? '寒霜狀態' : (def.name || entry.id);
+  }
   if ((v = sgStatusParam(entry, 'val', gid, tierKey)) !== undefined) ctx.val = v;
   if ((v = sgStatusParam(entry, 'dmg', gid, tierKey)) !== undefined) { ctx.dmg = v; delete ctx.dps; }
   if ((v = sgStatusParam(entry, 'dur', gid, tierKey)) !== undefined) ctx.dur = v;
@@ -1931,7 +1937,7 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
 
 /* 一次獨立命中（走完整 resolveHit 傷害管線：防禦、爆擊、格擋、護盾、敵種倍率）。
    回傳 resolveHit 結果；同時記錄浮字／DPS／輸出統計並更新 out。 */
-function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTotalPct, elemOverride, guaranteedHit) {
+function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTotalPct, elemOverride, guaranteedHit, subType) {
   if (!target || target.hp <= 0 || !(dmgVal > 0)) return null;
   var g = SKILLS2[gid];
   var atkCfg = sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride), defCfg = monsterDefCfg(target);
@@ -1949,7 +1955,10 @@ function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTo
         res.dmg, delayMs);
     }
     if (typeof trackDps === 'function') trackDps(res.dmg);
-    if (typeof recordRunDamage === 'function') recordRunDamage(g.name, res.dmg, 'skill2:' + gid, sgTotalLevel(skills2Levels(gid)));
+    if (typeof recordRunDamage === 'function') {
+      var effectiveSubType = subType || (g ? g.name : gid);
+      recordRunDamage(g.name, res.dmg, 'skill2:' + gid, sgTotalLevel(skills2Levels(gid)), effectiveSubType);
+    }
   } else if (typeof floatEnemyEvent === 'function') {
     floatEnemyEvent(target, floatSel, 'MISS', 'miss enemy-dodge', undefined, delayMs);
   }
@@ -1973,7 +1982,7 @@ function sgUltHitCdr(pEnt, gid) {
 }
 
 /* 衍生傷害（占「已造成傷害」比例的擴散等）：不再過防禦與爆擊，直接扣血。 */
-function sgDerivedHit(target, amount, gid, floatSel, out, label, delayMs) {
+function sgDerivedHit(target, amount, gid, floatSel, out, label, delayMs, subType) {
   if (!target || target.hp <= 0 || !(amount > 0)) return 0;
   var skillMult = (typeof skill2FrenzySkillDamageMultiplier === 'function')
     ? skill2FrenzySkillDamageMultiplier() : 1;
@@ -1986,7 +1995,8 @@ function sgDerivedHit(target, amount, gid, floatSel, out, label, delayMs) {
   if (typeof trackDps === 'function') trackDps(dealt);
   if (typeof recordRunDamage === 'function') {
     var g = SKILLS2[gid];
-    recordRunDamage(g ? g.name : gid, dealt, 'skill2:' + gid, sgTotalLevel(skills2Levels(gid)));
+    var effectiveSubType = subType || (label ? label.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '') : '') || (g ? g.name : gid);
+    recordRunDamage(g ? g.name : gid, dealt, 'skill2:' + gid, sgTotalLevel(skills2Levels(gid)), effectiveSubType);
   }
   if (target.hp <= 0) { target.hp = 0; out.killed = true; }
   return dealt;
@@ -5055,6 +5065,48 @@ function sgGroundTick(f, enemies, ctx) {
      每一拍重算（場上道數隨生滅改變），只有火龍捲本體吃得到。 */
   var resonancePct = (f.gid === 'firepillar' && (f.kind === 'pillar' || f.kind === 'wall'))
     ? sgFirepillarResonancePct(sgLegendTick(f.gid)) : 0;
+/* 地面場域命中傷害的子類型名稱解析 */
+function sgGroundHitSubType(f) {
+  if (f.subType) return f.subType;
+  if (f.gid === 'waterball') {
+    if (f.kind === 'tornado') return '水龍捲';
+    if (f.kind === 'tidetornado') return '巨型水龍捲';
+  }
+  if (f.gid === 'firepillar') {
+    if (f.kind === 'pillar') return '火柱';
+    if (f.kind === 'wall') return '火牆';
+    if (f.kind === 'firepool') return '火池';
+    if (f.kind === 'devour' || f.kind === 'devourblast') return '吞噬';
+  }
+  if (f.gid === 'frostnova') {
+    if (f.kind === 'blizzard') return '暴風雪';
+    if (f.kind === 'icespike') return '冰錐';
+  }
+  if (f.gid === 'windblade') {
+    if (f.kind === 'windtornado') return '龍捲風';
+    if (f.kind === 'windblade') return '追擊風刃';
+  }
+  if (f.gid === 'vacuumslash') {
+    if (f.kind === 'vacuumfield') return '真空風暴';
+  }
+  if (f.gid === 'icearrow') {
+    if (f.kind === 'icearrow') return '追擊冰箭';
+    if (f.kind === 'icerain') return '冰之淚';
+  }
+  if (f.gid === 'thunderstrike') {
+    if (f.kind === 'thunderwall') return '雷電矩陣';
+  }
+  if (f.gid === 'thunderorb') {
+    if (f.kind === 'orb') return '衍生雷球';
+  }
+  if (f.gid === 'mire') {
+    if (f.kind === 'mire') return '泥沼術';
+    if (f.kind === 'poisonmist') return '毒霧';
+  }
+  var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[f.gid] : null;
+  return g ? g.name : f.gid;
+}
+
   for (var i = 0; i < victims.length; i++) {
     /* 對凍結中的敵人的傷害倍率（水龍捲）：走 sgHitOne 的總傷加成參數，
        因此仍完整經過防禦、抗性與爆擊，不是事後再乘一次的獨立傷害。 */
@@ -5062,8 +5114,9 @@ function sgGroundTick(f, enemies, ctx) {
       resonancePct + sgRampPct(f.ramp) +
       ((f.ctrlPct > 0 && sgIceControlled(victims[i])) ? f.ctrlPct : 0);
     var iceFrostBefore = f.kind === 'icearrow' && sgFrostOn(victims[i]);
+    var groundSubType = sgGroundHitSubType(f);
     var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out,
-      sgStaggerMs(i), bonusPct, f.hitElem);
+      sgStaggerMs(i), bonusPct, f.hitElem, false, groundSubType);
     if (!res || res.miss) continue;
     if (f.kind === 'icearrow') sgIcearrowHitBlast(f.pEnt, victims[i], enemies, f.floatSel, out);
     if(f.kind==='windblade'||f.kind==='vacuumfield')sgEmitVfx(f.gid,[victims[i]],f.floatSel,{
@@ -9249,7 +9302,7 @@ function sgTickWaterballs(ctx) {
    （與落雷術「暈眩塗在傷害之後、後落的雷才吃到增傷」同一個處理原則）。 */
 function sgWaterballHit(pEnt, st, target, cfg, floatSel, out, delayMs) {
   if (!target || target.hp <= 0) return null;
-  var res = sgHitOne(pEnt, st, target, cfg.dmgVal, 'waterball', floatSel, out, delayMs);
+  var res = sgHitOne(pEnt, st, target, cfg.dmgVal, 'waterball', floatSel, out, delayMs, 0, null, false, '水流彈');
   if (!res || res.miss || target.hp <= 0) return res;
   if (cfg.revertSec > 0) {
     sgApplySlot(target, 'waterball', '2', 'enemy', 0, { val: cfg.revertPct, dur: cfg.revertSec });
@@ -9290,6 +9343,7 @@ function sgSpawnWaterTornadoes(pEnt, st, g, lvs, floatSel) {
       lifeSec: life.lifeSec > 0 ? life.lifeSec + i * gap * 0.15 : 0,
       frozenMult: Math.max(1, Number(fx.frozen) || 2),
       delaySec: i * gap * 0.15,
+      subType: '水龍捲',
       vfxTier: 7
     });
   }
@@ -9305,6 +9359,7 @@ function sgSpawnWaterTornadoAt(pEnt, st, spec, target, floatSel) {
     kind: 'tornado', tgt: target, floatSel: floatSel,
     radius: spec.radius, dmgVal: spec.dmgVal, hits: life.hits, gap: spec.gap, lifeSec: life.lifeSec,
     frozenMult: spec.frozenMult,
+    subType: '水龍捲',
     vfxTier: 7
   });
 }
@@ -9443,6 +9498,7 @@ function sgTickRagingTide(ctx, dt) {
     from: spots.length ? { x: cx / spots.length, y: cy / spots.length } : null,
     radius: bfMeterPx(sgUltVal(u, 'm')), dmgVal: dmgVal,
     hits: Math.max(1, Math.floor(sec / gap + 1e-9)), gap: gap, lifeSec: sec,
+    subType: '巨型水龍捲',
     vfxUlt: 'ragingTide'
   });
   sgEmitVfx('waterball', [], ctx.floatSel, sgGroundVfxSpec(SKILL2_RT.grounds[SKILL2_RT.grounds.length - 1]));
