@@ -73,8 +73,8 @@ body {
 }
 
 #ui-shell #game-layout {
-  gap: 32px !important;
-  padding: 26px 26px 28px !important;
+  gap: 24px !important;
+  padding: 26px 22px 28px !important;
   max-width: none !important;
   height: calc(var(--ui-canvas-height, 900px) - 50px) !important;
   min-height: 0 !important;
@@ -86,10 +86,16 @@ body {
   min-width: 230px !important;
 }
 
+/* 戰鬥區寬度跟著畫面高度走，讓戰鬥畫布接近正方形：
+   畫布高＝版面高（--ui-canvas-height − 104）− 上方標題／地區／階段列與邊框（163），
+   畫布寬＝戰鬥區寬 − 50，兩者相等時戰鬥區寬＝--ui-canvas-height − 217。
+   畫面較矮時維持 720 寬，極高的螢幕最多 900 寬，避免左側管理區被擠得太窄。 */
 #ui-shell #combat-area {
-  flex-basis: 720px !important;
-  width: 720px !important;
-  min-width: 720px !important;
+  --af-combat-w: clamp(720px, calc(var(--ui-canvas-height, 900px) - 217px), 900px);
+  flex-basis: var(--af-combat-w) !important;
+  width: var(--af-combat-w) !important;
+  min-width: var(--af-combat-w) !important;
+  max-width: var(--af-combat-w) !important;
 }
 
 #stats-sidebar,
