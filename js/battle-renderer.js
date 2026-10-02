@@ -1168,7 +1168,8 @@ var BattleRenderer = (function () {
   function applyGroundTexture(tex) {
     if (!S.groundTile || S.groundTile.destroyed || !tex || typeof tex === 'string') return;
     S.groundTile.texture = tex;
-    S.groundTile.tint = 0xffffff;   // 用圖本身的顏色，不再靠染色
+    // 用圖本身的顏色；地形裝飾的「地下」階段帶會壓暗（S.groundTint，見 js/battle-decor.js）
+    S.groundTile.tint = S.groundTint || 0xffffff;
   }
   /* 地板捲動：地板鋪在螢幕座標的 bg 層，靠 tilePosition 反向捲動假裝自己釘在世界上。
      地板的 TilingSprite 掛在 scale.y = GROUND_Y_SCALE 的地面平面容器裡（見 buildScene），
@@ -1186,7 +1187,9 @@ var BattleRenderer = (function () {
     g.tilePosition.x = -(cam.x % perX) + shx;
     g.tilePosition.y = -(cam.y % perY) + screenToGroundY(shy);
   }
-  function syncZone(zoneKey) {
+  function syncZone(zoneKey, stageNum) {
+    // 地形裝飾依「地圖＋階段帶」換組合（同一組時 setScene 直接返回，5Hz 呼叫沒有成本）
+    if (S.decor) S.decor.setScene(zoneKey, stageNum);
     if (zoneKey === S.zoneKey) return;
     S.zoneKey = zoneKey;
     loadGroundTexture(zoneKey);
@@ -1583,7 +1586,7 @@ var BattleRenderer = (function () {
     if (!S.ready || !panel) return;
     var field = panel.field || {};
     var stage = panel.stage || {};
-    syncZone(stage.zone || '');
+    syncZone(stage.zone || '', stage.current);
     /* 殘留座標表清理：鍵是單調遞增的 mv-float-N，過期即刪，不清會無限增長 */
     for (var lp in S.lastPos) {
       if (Object.prototype.hasOwnProperty.call(S.lastPos, lp) &&
@@ -6150,6 +6153,15 @@ var BattleRenderer = (function () {
     world.x = S.W / 2 - cam.x + shx;
     world.y = S.H / 2 - groundToScreenY(cam.y) + shy;
     syncGroundScroll(cam, shx, shy);
+    if (S.decor) {
+      // 地面裝飾的平面跟著 world 走（含震動）；擺件在 entity 層，本來就跟著 world
+      S.layers.decorPlane.x = world.x;
+      S.layers.decorPlane.y = world.y;
+      S.decor.update({
+        camX: cam.x, camY: cam.y, drawRect: sceneDrawRect(), W: S.W, H: S.H, dt: dt,
+        playerX: p ? p.root.x : undefined, playerScreenY: p ? p.root.y : undefined
+      });
+    }
     if (p && p.reviveText && p.reviveText.visible) {
       /* reviveText 在 overlay 上，跟著鏡頭中的玩家位置更新但永遠保持水平；開了透視要換到變形後的螢幕位置。 */
       var revivePt = perspScreenPoint(world.x + p.root.x, world.y + p.root.y - 104);
@@ -6344,6 +6356,17 @@ var BattleRenderer = (function () {
     S.groundTile = ground;
     loadGroundTexture(null);
 
+    /* 地形裝飾的地面平面（見 js/battle-decor.js）：地板之上、暗角之下。
+       和 groundUnder 一樣縱向壓成 GROUND_Y_SCALE、子節點用世界座標；位置每幀對齊 world（含鏡頭震動）。
+       decorDecal 是一般混色的色塊／裂痕／碎石，decorLight 是火盆地面光等加色光暈（分開放才能各自合批）。 */
+    var decorPlane = new PIXI.Container();
+    decorPlane.scale.set(1, GROUND_Y_SCALE);
+    var decorDecal = new PIXI.Container();
+    var decorLight = new PIXI.Container();
+    decorPlane.addChild(decorDecal);
+    decorPlane.addChild(decorLight);
+    bg.addChild(decorPlane);
+
     /* 暗角 */
     var vig = new PIXI.Sprite(vignetteTexture());
     vig.width = S.W; vig.height = S.H;
@@ -6404,6 +6427,9 @@ var BattleRenderer = (function () {
     sceneRoot.addChild(bg);
     sceneRoot.addChild(world);
     app.stage.addChild(sceneRoot);
+    /* 天氣粒子（飄沙、落雪、螢火蟲…）：螢幕座標、不跟著透視變形，在場景之上、所有戰鬥表現之下。 */
+    var decorAmbient = new PIXI.Container();
+    app.stage.addChild(decorAmbient);
     /* 傷害浮字與玩家 HUD 在場景外的螢幕層：不跟著透視變形（字不會被拉歪、上面縮小下面放大），
        每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
     app.stage.addChild(airBack);
@@ -6456,7 +6482,8 @@ var BattleRenderer = (function () {
       airFx: airFx, presetAir: presetAir, presetBillboard: presetBillboard,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
-      playerHud: playerHud, overlay: overlay
+      playerHud: playerHud, overlay: overlay,
+      decorPlane: decorPlane, decorDecal: decorDecal, decorLight: decorLight, decorAmbient: decorAmbient
     };
     drawDeathFog(0);
     layoutScene();
@@ -6933,6 +6960,8 @@ var BattleRenderer = (function () {
       var view = msg && msg.view;
       if (!view) return;
       S.towerActive = !!view.towerActive;
+      // 高塔戰期間戰場只顯示「高塔戰鬥中…」，地形裝飾一起藏起來
+      if (S.decor) S.decor.setVisible(!S.towerActive);
       var paused = !!view.paused;
       if (paused !== S.paused) {
         S.paused = paused;
@@ -7057,6 +7086,25 @@ var BattleRenderer = (function () {
     S.vfxrt.syncStatuses(out);
   }
 
+  /* 地形裝飾（js/battle-decor.js）：建立失敗只少了裝飾，戰鬥畫面照常；?decor=0 關閉 */
+  function initDecor() {
+    try {
+      S.decor = BattleDecor.create({
+        PIXI: PIXI, groundScale: GROUND_Y_SCALE,
+        decalLayer: S.layers.decorDecal, lightLayer: S.layers.decorLight,
+        propLayer: S.layers.entity, ambientLayer: S.layers.decorAmbient,
+        onTint: function (tint) {
+          S.groundTint = tint;
+          if (S.groundTile) S.groundTile.tint = tint;
+        }
+      });
+      if (!S.decor.enabled) S.decor = null;
+    } catch (e) {
+      S.decor = null;
+      console.warn('[battle-renderer] 地形裝飾初始化失敗，戰場照常顯示', e);
+    }
+  }
+
   function init(host) {
     if (S.initStarted) return Promise.resolve(active());
     S.initStarted = true;
@@ -7111,6 +7159,7 @@ var BattleRenderer = (function () {
       S.W = Math.max(64, host.clientWidth || 640);
       S.H = Math.max(64, host.clientHeight || 480);
       buildScene();
+      initDecor();
       makePlayer();
       subscribe();
       /* 先設上限再掛 tickWorld：maxFPS 是 Pixi 內部把 rAF 節流的依據，
@@ -7162,6 +7211,8 @@ var BattleRenderer = (function () {
       preset: S.vfxrt ? S.vfxrt.stats() : null,
       paused: S.paused, zone: S.zoneKey,
       persp: S.persp ? S.persp.layout.topScale : 1,     // 輕微透視的上緣縮放（1 ＝ 沒開）
+      /* 地形裝飾：區塊數、地面裝飾／擺件／粒子數（擺件掛在 entity 層，nodes.entity 會含這些） */
+      decor: S.decor ? S.decor.stats() : null,
       /* ---- 洩漏診斷 ---- */
       lastPos: Object.keys(S.lastPos).length,          // 離場實體的殘留座標，應隨 LASTPOS_KEEP_MS 回落
       floatMerge: Object.keys(S.floatMerge).length,    // 合併表，鍵是遞增的 mv-float-N
@@ -7208,6 +7259,8 @@ var BattleRenderer = (function () {
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
        與內部狀態快照。正式流程不得依賴。 */
     _app: function () { return S.app; },
+    /* 地形裝飾（量測／除錯用）：setVisible(false) 可在同一場戰鬥裡做開關對照 */
+    _decor: function () { return S.decor; },
     _debug: function () {
       var p = S.player;
       return {
