@@ -809,10 +809,10 @@ function itemDetailHTML(it, cmp, opts) {
     var marker = isAncient ? '<span class="ancient-star" aria-label="太古詞條">✡</span>' : '◆';
     if (showAffixReroll) {
       h += '<div class="it-affix-row it-affix' + catClass + '" style="' + lineStyle + '">' +
-        '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">' + marker + ' ' + name + ' +' + valHtml + '</span>' +
+        '<div class="it-affix-text"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '"><span class="afx-label">' + marker + ' ' + name + '</span><span class="afx-val">+' + valHtml + '</span></span>' +
         diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
     } else {
-      h += '<div class="it-affix' + catClass + '" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '">' + marker + ' ' + name + ' +' + valHtml + '</span>' +
+      h += '<div class="it-affix' + catClass + '" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '"><span class="afx-label">' + marker + ' ' + name + '</span><span class="afx-val">+' + valHtml + '</span></span>' +
         diffStr + '</div>';
     }
   }
@@ -901,7 +901,9 @@ function itemDetailHTML(it, cmp, opts) {
         h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + ediffStr + '</div>';
       }
     });
-    for (var enSlot = itEns.length; enSlot < enCap; enSlot++) {
+    // 空附魔欄只顯示一行（括號內是已使用／上限），不再每個空欄各佔一行
+    if (itEns.length < enCap) {
+      var enSlot = itEns.length;
       h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + enSlot + '/' + enCap + '）</div>';
     }
 
@@ -911,20 +913,44 @@ function itemDetailHTML(it, cmp, opts) {
        碰到的還是 UI 端的快照複本，改了也不會回到權威狀態，只是白費而且誤導。 */
     var sockets = Array.isArray(it.sockets) ? it.sockets : [];
     if (sockets.length) {
-      h += '<div class="it-sockets">';
+      /* 同種同級的寶石合併成一列（×N），空插槽也合併成一列，避免四顆相同寶石佔四行。
+         合併列點擊時取下其中第一顆（同種同級，取哪一顆結果都一樣）。融合寶石各自獨立一列。 */
+      var gemGroups = [];
+      var gemGroupByKey = {};
+      var emptySockets = 0;
       for (var si = 0; si < sockets.length; si++) {
         var g = sockets[si];
         if (g && g.fused) {
-          h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" data-tip="點擊取下">' +
-            esc(fusedGemLabel(g.fused)) + '</span>';
+          gemGroups.push({ fused: g.fused, index: si, count: 1 });
         } else if (g && GEM_TYPES[g.type]) {
-          var gt = GEM_TYPES[g.type];
-          h += '<span class="socket filled" data-socket-remove="' + si + '" data-tip="點擊取下">' +
-            gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '（' + esc(gt.statName.replace('%', '')) + ' +' +
-            (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '）</span>';
+          var gk = g.type + ':' + g.level;
+          if (gemGroupByKey[gk]) {
+            gemGroupByKey[gk].count++;
+          } else {
+            gemGroupByKey[gk] = { type: g.type, level: g.level, index: si, count: 1 };
+            gemGroups.push(gemGroupByKey[gk]);
+          }
         } else {
-          h += '<span class="socket empty">◇ 空插槽</span>';
+          emptySockets++;
         }
+      }
+      h += '<div class="it-sockets">';
+      gemGroups.forEach(function (grp) {
+        if (grp.fused) {
+          h += '<span class="socket filled fused-socket" data-socket-remove="' + grp.index + '" data-tip="點擊取下">' +
+            esc(fusedGemLabel(grp.fused)) + '</span>';
+          return;
+        }
+        var gt = GEM_TYPES[grp.type];
+        var many = grp.count > 1;
+        h += '<span class="socket filled" data-socket-remove="' + grp.index + '" data-tip="' + (many ? '點擊取下 1 顆' : '點擊取下') + '">' +
+          '<span class="sk-name">' + gt.emoji + ' ' + esc(GEM_NAMES[grp.level] + gt.name) + (many ? ' ×' + grp.count : '') + '</span>' +
+          '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
+          (gt.pct ? pctStr(gemStatValue(grp.type, grp.level)) : fmt(gemStatValue(grp.type, grp.level))) +
+          (many ? '／顆' : '') + '</span></span>';
+      });
+      if (emptySockets) {
+        h += '<span class="socket empty">◇ 空插槽' + (emptySockets > 1 ? ' ×' + emptySockets : '') + '</span>';
       }
       h += '</div>';
     }

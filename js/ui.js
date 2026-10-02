@@ -4898,6 +4898,23 @@ function triggerUpgradeNumberAnimation(itemId) {
   });
 }
 
+// 背包「篩選」按鈕上的啟用數量（太古／品質各算一項）
+function updateInventoryFilterBadge() {
+  var btn = $id('inv-filter-btn');
+  var badge = $id('inv-filter-count');
+  if (!btn || !badge) return;
+  var n = 0;
+  ['inv-ancient-filter', 'inv-rarity-filter'].forEach(function (id) {
+    var el = $id(id);
+    if (el && el.value !== '') n++;
+  });
+  badge.textContent = n ? String(n) : '';
+  btn.classList.toggle('has-filter', n > 0);
+}
+
+// 裝備操作列的「卸下」圖示（箭頭離開框線）
+var EQUIP_UNEQUIP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>';
+
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
@@ -4923,11 +4940,11 @@ function renderDetail() {
     var actionBar = $id('equip-action-bar');
     if (actionBar) {
       actionBar.innerHTML =
-        '<button class="btn" disabled>卸下</button>' +
-        '<button class="btn" disabled>強化</button>' +
+        '<button class="btn btn-primary" disabled>強化</button>' +
         '<button class="btn" disabled>洗煉</button>' +
         '<button class="btn" disabled>鑲嵌</button>' +
-        '<button class="btn" disabled>附魔</button>';
+        '<button class="btn" disabled>附魔</button>' +
+        '<button class="btn btn-icon" disabled aria-label="卸下">' + EQUIP_UNEQUIP_ICON + '</button>';
       actionBar.style.display = 'flex';
     }
     var matPanelEmpty = $id('equip-material-panel');
@@ -4951,27 +4968,40 @@ function renderDetail() {
     essence: player && player.essence,
     justUpgraded: justUpgraded
   });
+  /* 操作列（2026-10 裝備頁改造）：一個主按鈕（背包裝備＝「裝備」，身上裝備＝「強化」）＋次按鈕，
+     卸下縮成最右側的圖示。「鑲嵌／附魔」改為開關右側素材面板：面板平常不顯示，
+     按下才出現對應的寶石或附魔書；換選別件裝備時自動收起（UI.equipMatMode 記著是哪一件）。 */
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
-  if (UI.sel.source === 'inv') {
-    actionsHtml += '<button class="btn" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
-  } else {
-    actionsHtml += '<button class="btn" data-act="unequip"' + pendingUiButtonAttributes(pendingKey) + '>卸下</button>';
+  var fromInv = UI.sel.source === 'inv';
+  var matMode = UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  if (fromInv) {
+    actionsHtml += '<button class="btn btn-primary" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
   }
   var enoughUpGold = player && player.gold >= cost.gold;
   var enoughUpScrap = player && player.scrap >= cost.scrap;
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  actionsHtml += '<button class="btn act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '"' +
+  actionsHtml += '<button class="btn' + (fromInv ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '"' +
     pendingUiButtonAttributes(pendingKey) + '>強化</button>';
 
   actionsHtml += '<button class="btn" data-act="placeholder-reroll">洗煉</button>';
-  actionsHtml += '<button class="btn" data-act="placeholder-socket">鑲嵌</button>';
-  actionsHtml += '<button class="btn" data-act="placeholder-enchant">附魔</button>';
-  // 右側素材面板：可用寶石／附魔書改為小圖示，完整名稱、數值與持有量由滑鼠提示顯示
+  actionsHtml += '<button class="btn" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
+  actionsHtml += '<button class="btn" data-act="toggle-enchant" aria-pressed="' + (matMode === 'enchant') + '">附魔</button>';
+  if (!fromInv) {
+    actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="卸下" data-tip="卸下"' +
+      pendingUiButtonAttributes(pendingKey) + '>' + EQUIP_UNEQUIP_ICON + '</button>';
+  }
+  // 右側素材面板：只顯示目前開啟的那一類（寶石或附魔書）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
-  if (it.sockets.indexOf(null) >= 0) {
+  if (matMode === 'socket' && it.sockets.indexOf(null) < 0) {
+    matHtml += '<div class="equip-material-section">' +
+      '<div class="equip-material-title">💎 鑲嵌寶石</div>' +
+      '<div class="equip-material-empty">沒有空插槽。點擊詳情中已鑲嵌的寶石可取下。</div>' +
+      '</div>';
+  }
+  if (matMode === 'socket' && it.sockets.indexOf(null) >= 0) {
     var gemIcons = [];
     for (var gt in GEM_TYPES) {
       var total = 0, hi = 0;
@@ -4998,7 +5028,13 @@ function renderDetail() {
       '</div>';
   }
   var itEns2 = itemEnchants(it);
-  if (itEns2.length < enchantCapFor(it)) {
+  if (matMode === 'enchant' && itEns2.length >= enchantCapFor(it)) {
+    matHtml += '<div class="equip-material-section">' +
+      '<div class="equip-material-title">✨ 附魔</div>' +
+      '<div class="equip-material-empty">附魔欄已滿。點擊詳情中的附魔效果可取下（返還附魔書）。</div>' +
+      '</div>';
+  }
+  if (matMode === 'enchant' && itEns2.length < enchantCapFor(it)) {
     var cat2 = enchantCatForType(it.slot);
     var bookIcons = [];
     for (var bk2 in ENCHANTS) {
@@ -10019,6 +10055,15 @@ function closeTopmostModalOrOverlay() {
     return true;
   }
 
+  // 8b. 背包篩選浮層 (#inv-filter-panel)
+  var invFilterPanel = $id('inv-filter-panel');
+  if (invFilterPanel && invFilterPanel.style.display !== 'none') {
+    invFilterPanel.style.display = 'none';
+    var invFilterBtn = $id('inv-filter-btn');
+    if (invFilterBtn) invFilterBtn.setAttribute('aria-expanded', 'false');
+    return true;
+  }
+
   // 9. 技能升級彈窗 (#skill-modal)
   var skillModal = $id('skill-modal');
   if (skillModal && skillModal.style.display !== 'none') {
@@ -11463,6 +11508,15 @@ function initUI() {
     var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
     if (actBtn) {
       var act = actBtn.getAttribute('data-act');
+      if (act === 'toggle-socket' || act === 'toggle-enchant') {
+        var matIt = findSelItem();
+        if (!matIt) return;
+        var wantMode = act === 'toggle-socket' ? 'socket' : 'enchant';
+        var curMode = UI.equipMatMode && UI.equipMatMode.itemId === matIt.id ? UI.equipMatMode.mode : null;
+        UI.equipMatMode = curMode === wantMode ? null : { itemId: matIt.id, mode: wantMode };
+        renderDetail();
+        return;
+      }
       if (act && act.indexOf('placeholder-') === 0) {
         if (typeof showFloatingText === 'function') showFloatingText(actBtn, '功能未訂', '#fcd34d');
         return;
@@ -11770,6 +11824,7 @@ function initUI() {
   var ancientFilter = $id('inv-ancient-filter');
   if (ancientFilter) {
     ancientFilter.addEventListener('change', function () {
+      updateInventoryFilterBadge();
       renderInventory();
     });
   }
@@ -11777,8 +11832,38 @@ function initUI() {
   var rarityFilter = $id('inv-rarity-filter');
   if (rarityFilter) {
     rarityFilter.addEventListener('change', function () {
+      updateInventoryFilterBadge();
       renderInventory();
     });
+  }
+
+  /* 背包篩選收進「篩選」按鈕的浮層（2026-10 裝備頁改造）：太古與品質兩個下拉選單
+     原封不動搬進浮層（id 與上面的 change 監聽不變），按鈕上顯示目前啟用了幾項篩選。 */
+  var invFilterBtn = $id('inv-filter-btn');
+  var invFilterPanel = $id('inv-filter-panel');
+  if (invFilterBtn && invFilterPanel) {
+    invFilterBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var opening = invFilterPanel.style.display === 'none' || !invFilterPanel.style.display;
+      invFilterPanel.style.display = opening ? 'flex' : 'none';
+      invFilterBtn.setAttribute('aria-expanded', String(opening));
+    });
+    document.addEventListener('click', function (e) {
+      if (!invFilterPanel.contains(e.target) && !invFilterBtn.contains(e.target)) {
+        invFilterPanel.style.display = 'none';
+        invFilterBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    var invFilterClear = $id('inv-filter-clear');
+    if (invFilterClear) {
+      invFilterClear.addEventListener('click', function () {
+        if (ancientFilter) ancientFilter.value = '';
+        if (rarityFilter) rarityFilter.value = '';
+        updateInventoryFilterBadge();
+        renderInventory();
+      });
+    }
+    updateInventoryFilterBadge();
   }
 
   var keywordFilter = $id('inv-keyword-filter');

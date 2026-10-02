@@ -1526,3 +1526,332 @@ html *::-webkit-scrollbar-corner {
     transition: none;
   }
 }
+
+/* ---- 裝備頁改造（2026-10，照設計稿）：詳情卡＋操作列＋背包改為扁平卡片；人形底圖維持原樣 ----
+   全部限定在 #tab-equip 底下，其他分頁仍是原本的鐵框風格。 */
+#tab-equip .equip-detail-head > span:first-child {
+  font-size: 17px;
+  color: #e7c47c;
+}
+
+/* 詳情卡：上半是 #detail-pane，下半接 #equip-action-bar，看起來是同一張卡 */
+#tab-equip #detail-pane,
+#tab-equip #detail-pane.has-detail {
+  background: #121418 !important;
+  border: 1px solid #3a3d44 !important;
+  border-bottom: 0 !important;
+  border-radius: 8px 8px 0 0 !important;
+  box-shadow: none !important;
+  padding: 12px 14px !important;
+}
+
+#tab-equip #detail-pane .it-name {
+  font-family: var(--af-serif);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+#tab-equip #detail-pane .it-up {
+  color: #ece6d8;
+}
+
+#tab-equip #detail-pane .it-sub {
+  margin-top: 4px;
+  align-items: baseline;
+  color: #a39d90;
+}
+
+#tab-equip #detail-pane .it-score-sub {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ece6d8;
+}
+
+#tab-equip #detail-pane .it-affixes {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #23262d;
+}
+
+#tab-equip #detail-pane .it-affix-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 23px;
+}
+
+#tab-equip #detail-pane .it-affix-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#tab-equip #detail-pane .it-affix-text > .act-btn-tooltip {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#tab-equip #detail-pane .afx-label {
+  color: #c9c3b5;
+}
+
+#tab-equip #detail-pane .afx-val {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 單條詞條洗煉骰子：平常淡化，滑到那一行才亮起來 */
+#tab-equip #detail-pane .affix-reroll-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0 !important;
+  font-size: 12px;
+  opacity: .3;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#tab-equip #detail-pane .it-affix-row:hover .affix-reroll-btn,
+#tab-equip #detail-pane .affix-reroll-btn:focus-visible {
+  opacity: 1;
+  border-color: #3a3d44 !important;
+}
+
+#tab-equip #detail-pane .it-passive,
+#tab-equip #detail-pane .it-godpassive {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #241a12;
+  color: #f0b26a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#tab-equip #detail-pane .it-godpassive {
+  background: #1d1630;
+  color: #d4b8ff;
+}
+
+#tab-equip #detail-pane .it-enchant {
+  margin-top: 6px;
+  font-size: 12.5px;
+}
+
+#tab-equip #detail-pane .it-sockets {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  margin-top: 8px;
+}
+
+#tab-equip #detail-pane .it-sockets .socket {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: auto;
+  margin: 0;
+  padding: 3px 8px;
+  border: 1px solid #2a2d34;
+  border-radius: 5px;
+  background: #17191e;
+  font-size: 12.5px;
+}
+
+#tab-equip #detail-pane .it-sockets .socket.filled:hover {
+  border-color: #5a5d66;
+}
+
+#tab-equip #detail-pane .sk-val {
+  color: #d6d0c3;
+}
+
+#tab-equip #detail-pane .socket.empty {
+  color: #8a857a;
+  border-style: dashed;
+}
+
+/* 操作列＝詳情卡的底部：一個紅色主按鈕＋次按鈕＋卸下圖示 */
+#tab-equip #equip-action-bar {
+  margin-top: 0 !important;
+  padding: 10px 12px;
+  background: #121418;
+  border: 1px solid #3a3d44;
+  border-top-color: #23262d;
+  border-radius: 0 0 8px 8px;
+  box-sizing: border-box;
+}
+
+#tab-equip #equip-action-bar .btn {
+  height: 36px;
+  border: 1px solid #3a3d44 !important;
+  border-radius: 6px !important;
+  background: #1b1e24 !important;
+  color: #ece6d8 !important;
+  box-shadow: none !important;
+  text-shadow: none;
+}
+
+#tab-equip #equip-action-bar .btn:hover:not(:disabled) {
+  border-color: #5a5d66 !important;
+  background: #23262d !important;
+  filter: none;
+}
+
+#tab-equip #equip-action-bar .btn.btn-primary {
+  flex: 1.6 1 0 !important;
+  border-color: #a8322c !important;
+  background: #a8322c !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+#tab-equip #equip-action-bar .btn.btn-primary:hover:not(:disabled) {
+  border-color: #bf3a33 !important;
+  background: #bf3a33 !important;
+}
+
+#tab-equip #equip-action-bar .btn[aria-pressed='true'] {
+  border-color: #c9a35e !important;
+  background: #2a2218 !important;
+  color: #f0cf86 !important;
+}
+
+#tab-equip #equip-action-bar .btn.btn-icon {
+  flex: 0 0 40px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  background: transparent !important;
+  color: #a39d90 !important;
+}
+
+#equip-action-bar .btn-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 鑲嵌／附魔素材面板：與詳情卡同底色，底邊接操作列 */
+#tab-equip .equip-material-panel {
+  background: #121418 !important;
+  border: 1px solid #3a3d44 !important;
+  border-bottom: 0 !important;
+  border-radius: 8px 8px 0 0 !important;
+  box-shadow: none !important;
+}
+
+/* 背包 */
+#tab-equip #inv-section-box {
+  background: #15171c !important;
+  border: 1px solid #2a2d34 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+#tab-equip .inv-head .btn.sm,
+#tab-equip .inv-head .input.sm,
+#tab-equip .inv-head select {
+  height: 30px;
+  border: 1px solid #2a2d34 !important;
+  border-radius: 6px !important;
+  background: #111317 !important;
+  color: #c9c3b5 !important;
+  box-shadow: none !important;
+  text-shadow: none;
+  font-size: 13px;
+}
+
+#tab-equip .inv-head .btn.sm:hover:not(:disabled) {
+  border-color: #5a5d66 !important;
+  background: #1b1e24 !important;
+}
+
+#tab-equip #btn-salvage-settings {
+  background: transparent !important;
+  border-color: #7a2a26 !important;
+  color: #f08a80 !important;
+  font-weight: 700;
+}
+
+#tab-equip #inventory-grid .item-cell {
+  border-radius: 5px !important;
+  background: #111317 !important;
+}
+
+.inv-filter-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+#tab-equip #inv-filter-btn.has-filter {
+  border-color: #c9a35e !important;
+  color: #f0cf86 !important;
+}
+
+.inv-filter-count:not(:empty) {
+  display: inline-block;
+  min-width: 16px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #98251c;
+  color: #f3e3c8;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.inv-filter-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 100;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 210px;
+  margin-top: 5px;
+  padding: 12px;
+  border: 1px solid #515b58;
+  background: #0b0f16;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+}
+
+.inv-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: #b6b4a3;
+}
+
+.inv-filter-row select {
+  flex: 1;
+}
+
+/* 詞條與寶石的名稱／數值拆成兩段後，滑鼠提示框（.equip-detail-card）也改成左右對齊 */
+.it-affix > .act-btn-tooltip {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.afx-val {
+  white-space: nowrap;
+}
+
+.it-sockets .socket .sk-val {
+  margin-left: .5em;
+}

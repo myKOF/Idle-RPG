@@ -8,7 +8,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.67">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.16">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.20">
 </head>
 
 <body>
@@ -144,31 +144,41 @@
               </span>
               <div style="display: flex; gap: 6px; align-items: center;">
                 <input type="text" id="inv-keyword-filter" class="input sm" placeholder="關鍵字篩選" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; font-size: 12px; height: 25px; width: 85px; outline: none; white-space: nowrap;" data-tt-title="關鍵字篩選" data-tt-desc="輸入裝備詞條或傳奇特效關鍵字，符合者亮起、其餘置灰（僅限內測服）">
-                <select id="inv-ancient-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
-                  <option value="" style="color: var(--text);">不限太古</option>
-                  <option value="0" style="color: var(--text); background: #000;">0 太古</option>
-                  <option value="1" style="color: #fb923c; background: #000;">1 太古</option>
-                  <option value="2" style="color: #fb923c; background: #000;">2 太古</option>
-                  <option value="3" style="color: #fb923c; background: #000;">3 太古</option>
-                  <option value="4" style="color: #fb923c; background: #000;">4 太古</option>
-                  <option value="5" style="color: #fb923c; background: #000;">5 太古</option>
-                  <option value="6" style="color: #fb923c; background: #000;">6 太古</option>
-                  <option value="7" style="color: #fb923c; background: #000;">7+ 太古</option>
-                </select>
-                <select id="inv-rarity-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
-                  <option value="" style="color: var(--text);">取消篩選</option>
-                  <option value="0" style="color: #9aa5b1; background: #000;">普通</option>
-                  <option value="1" style="color: #4ade80; background: #000;">精良</option>
-                  <option value="2" style="color: #38bdf8; background: #000;">稀有</option>
-                  <option value="3" style="color: #ffd700; background: #000;">獨特</option>
-                  <option value="4" style="color: #c084fc; background: #000;">史詩</option>
-                  <option value="5" style="color: #fb923c; background: #000;">傳說</option>
-                  <option value="6" style="color: #f87171; background: #000;">神話</option>
-                  <option value="7" style="color: #b8860b; background: #000;">創世</option>
-                  <option value="8" style="color: #f5c542; background: #000;">神鑄創世</option>
-                  <option value="9" style="color: #c084fc; background: #000;">混沌</option>
-                  <option value="10" style="color: #ff6bcb; background: #000;">神鑄混沌</option>
-                </select>
+                <div class="inv-filter-wrap" id="inv-filter-container">
+                  <button type="button" id="inv-filter-btn" class="btn sm" aria-haspopup="true" aria-expanded="false">篩選<span id="inv-filter-count" class="inv-filter-count"></span> ▾</button>
+                  <div id="inv-filter-panel" class="inv-filter-panel" style="display: none;">
+                    <label class="inv-filter-row"><span>太古</span>
+                      <select id="inv-ancient-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
+                        <option value="" style="color: var(--text);">不限太古</option>
+                        <option value="0" style="color: var(--text); background: #000;">0 太古</option>
+                        <option value="1" style="color: #fb923c; background: #000;">1 太古</option>
+                        <option value="2" style="color: #fb923c; background: #000;">2 太古</option>
+                        <option value="3" style="color: #fb923c; background: #000;">3 太古</option>
+                        <option value="4" style="color: #fb923c; background: #000;">4 太古</option>
+                        <option value="5" style="color: #fb923c; background: #000;">5 太古</option>
+                        <option value="6" style="color: #fb923c; background: #000;">6 太古</option>
+                        <option value="7" style="color: #fb923c; background: #000;">7+ 太古</option>
+                      </select>
+                    </label>
+                    <label class="inv-filter-row"><span>品質</span>
+                      <select id="inv-rarity-filter" class="dropdown sm" style="background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 14px 2px 5px; font-size: 12px; cursor: pointer; height: 25px; outline: none; white-space: nowrap;">
+                        <option value="" style="color: var(--text);">取消篩選</option>
+                        <option value="0" style="color: #9aa5b1; background: #000;">普通</option>
+                        <option value="1" style="color: #4ade80; background: #000;">精良</option>
+                        <option value="2" style="color: #38bdf8; background: #000;">稀有</option>
+                        <option value="3" style="color: #ffd700; background: #000;">獨特</option>
+                        <option value="4" style="color: #c084fc; background: #000;">史詩</option>
+                        <option value="5" style="color: #fb923c; background: #000;">傳說</option>
+                        <option value="6" style="color: #f87171; background: #000;">神話</option>
+                        <option value="7" style="color: #b8860b; background: #000;">創世</option>
+                        <option value="8" style="color: #f5c542; background: #000;">神鑄創世</option>
+                        <option value="9" style="color: #c084fc; background: #000;">混沌</option>
+                        <option value="10" style="color: #ff6bcb; background: #000;">神鑄混沌</option>
+                      </select>
+                    </label>
+                    <button type="button" id="inv-filter-clear" class="btn sm">清除篩選</button>
+                  </div>
+                </div>
                 <button id="inv-sort" class="btn sm">🔄 排序 (等級)</button>
                 <div style="position: relative; display: inline-block;" id="salvage-settings-container">
                   <button id="btn-salvage-settings" class="btn sm warn">⚒️ 分解設定</button>
@@ -857,7 +867,7 @@
   <script src="js/vfx-tower.js?v=1.0.1"></script>
   <script src="js/battle-renderer.js?v=1.6.160"></script>
   <script src="js/stats.js?v=1.0.2"></script>
-  <script src="js/item.js?v=1.0.3"></script>
+  <script src="js/item.js?v=1.0.5"></script>
   <script src="js/skills.js?v=1.0.40"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.268"></script>
@@ -867,7 +877,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.15"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.88"></script>
+  <script src="js/ui.js?v=1.0.89"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
