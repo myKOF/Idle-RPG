@@ -2785,13 +2785,15 @@ function initAttrHideZeroToggle() {
   var toggle = $id('attr-hide-zero');
   var panel = $id('attr-panel');
   if (!toggle || !panel) return;
-  var hide = true;
-  try { hide = localStorage.getItem('idle-rpg.attrHideZero') !== '0'; } catch (e) { }
+  /* 預設全部顯示（與原本左側屬性欄一致）：前期角色大多數屬性都是 0，預設隱藏會被當成屬性不見了。
+     舊鍵 idle-rpg.attrHideZero 當時預設為隱藏，改用新鍵讓所有人回到全部顯示。 */
+  var hide = false;
+  try { hide = localStorage.getItem('idle-rpg.attrHideZero.v2') === '1'; } catch (e) { }
   toggle.checked = hide;
   panel.classList.toggle('hide-zero', hide);
   toggle.addEventListener('change', function () {
     panel.classList.toggle('hide-zero', toggle.checked);
-    try { localStorage.setItem('idle-rpg.attrHideZero', toggle.checked ? '1' : '0'); } catch (e) { }
+    try { localStorage.setItem('idle-rpg.attrHideZero.v2', toggle.checked ? '1' : '0'); } catch (e) { }
   });
 }
 
@@ -2809,7 +2811,7 @@ function renderAttrPanel(st, headerSnapshot) {
     // 首次建立骨架（前兩組預設展開）
     var h = '<div id="attr-preview-note" class="attr-preview-note" hidden></div>';
     STAT_GROUPS.forEach(function (g, gi) {
-      h += '<details class="attr-group"' + (gi < 2 ? ' open' : '') + '><summary>' + esc(g.title) + '</summary>';
+      h += '<details class="attr-group"' + (gi < 2 ? ' open' : '') + '><summary>' + esc(g.title) + '<span class="attr-zero-count" data-zero-count="' + gi + '"></span></summary>';
       g.rows.forEach(function (row, ri) {
         if (typeof statPanelRowIsAllLocked === 'function' && statPanelRowIsAllLocked(row)) return;
         var descStr = typeof row[2] === 'function' ? row[2](st) : row[2];
@@ -2842,6 +2844,7 @@ function renderAttrPanel(st, headerSnapshot) {
   }
   // 更新數值
   STAT_GROUPS.forEach(function (g, gi) {
+    var zeroCount = 0;
     g.rows.forEach(function (row, ri) {
       var el = panel.querySelector('[data-attr="' + gi + '-' + ri + '"]');
       if (!el) return;
@@ -2855,6 +2858,7 @@ function renderAttrPanel(st, headerSnapshot) {
       var rowEl = el.parentElement;
       var isZero = attrValueIsZero(el.textContent);
       if (rowEl && rowEl.classList.contains('is-zero') !== isZero) rowEl.classList.toggle('is-zero', isZero);
+      if (isZero) zeroCount++;
       if (typeof row[2] === 'function') {
         var pe = el.parentElement;
         if (pe) {
@@ -2864,6 +2868,8 @@ function renderAttrPanel(st, headerSnapshot) {
         }
       }
     });
+    // 組標題旁的「N 項為 0」：只在勾選隱藏時顯示（CSS 控制），讓玩家知道是收起來而不是不見
+    setTextIfChanged(panel.querySelector('[data-zero-count="' + gi + '"]'), zeroCount ? zeroCount + ' 項為 0，已隱藏' : '');
   });
 }
 

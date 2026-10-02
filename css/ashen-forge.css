@@ -2187,3 +2187,17 @@ html *::-webkit-scrollbar-corner {
 #tab-equip #inventory-grid {
   grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)) !important;
 }
+
+/* 屬性組標題旁的「N 項為 0，已隱藏」：只在勾選隱藏 0 值時出現 */
+#tab-char .attr-zero-count {
+  display: none;
+  margin-left: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: normal;
+  color: #8a857a;
+}
+
+#tab-char #attr-panel.hide-zero .attr-zero-count:not(:empty) {
+  display: inline;
+}
