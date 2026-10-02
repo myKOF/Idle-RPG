@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "field-water-tide-column",
+  "groups": [
+    {
+      "id": "field-water-tide-column",
+      "name": "field-water-tide-column",
+      "layerIds": [
+        "foot-ring",
+        "rising-column",
+        "foot-foam",
+        "sparse-spray",
+        "sprite-5"
+      ]
+    }
+  ],
+  "order": [
+    "group:field-water-tide-column"
+  ]
+}

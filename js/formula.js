@@ -699,7 +699,11 @@ function gmMpLockActive(ent) {
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
 function applyEnemyHpDamage(ent, damage, drainHits) {
   var wasAlive = ent && ent.hp > 0;
-  var amount = towerBossHpDamage(ent, damage);
+  var amount = Math.max(0, Number(damage) || 0);
+  if (ent && ent.maxHp > 0 && typeof skill2AbyssDamageTakenMultiplier === 'function') {
+    amount *= skill2AbyssDamageTakenMultiplier(ent);
+  }
+  amount = towerBossHpDamage(ent, amount);
   if (ent) {
     if (gmHpLockActive(ent) || ent._sgRevival) amount = 0;
     /* GM 鎖血（僅本機 GM 指令 god → js/gm_exec.js）：我方生命最低鎖 1。
@@ -888,6 +892,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
      刻意與【聖佑】的 dmgRed 分開：那條是加算池且夾 50% 上限，混在一起會互相吃掉空間。 */
   if (dCfg.isPlayer && typeof skill2DamageTakenMultiplier === 'function') {
     dmg *= skill2DamageTakenMultiplier(defender, attacker);
+  }
+  if (!dCfg.isPlayer && typeof skill2AbyssDamageTakenMultiplier === 'function') {
+    dmg *= skill2AbyssDamageTakenMultiplier(defender);
   }
   // 全局減傷：所有既有傷害計算完成後才套用，之後才進入最低傷害與護盾結算。
   if (dCfg.globalDmgRed) dmg *= globalDamageMultiplier(dCfg.globalDmgRed);

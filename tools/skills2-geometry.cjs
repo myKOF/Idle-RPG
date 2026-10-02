@@ -18,11 +18,11 @@ route('damage',`thrust/phantomOcta cleave/1 cleave/windChaser gale/1 gale/7 gale
  bloodblade/venomDomain bloodblade/disintegrate counter/holyBody counter/indomitable bloodrage/slayerAdvent
  fireball/1 fireball/7 firepillar/1 firepillar/5 firehunt/fireGodDescend mire/abyssInferno
  thunderstrike/7 thunderorb/1 thunderorb/7 icearrow/7 icearrow/tearsOfIce waterball/1 waterball/4
- waterball/7 waterball/ragingTide frostnova/1 frostnova/2 frostnova/iceKingDomain windblade/6 vacuumslash/4 stormbarrier/2 stormbarrier/skyfallStars`);
+ waterball/7 waterball/ragingTide frostnova/1 frostnova/2 frostnova/crystalResonance frostnova/iceKingDomain windblade/6 vacuumslash/4 stormbarrier/2 stormbarrier/skyfallStars`);
 route('search',`knife/3 knife/soulhunterBlade gale/4 gale/thunderFlash bloodblade/7 counter/7
  fireball/3 fireball/5 firepillar/3 firepillar/6 mire/4 earthguard/6 chainlightning/1 chainlightning/5
  chainlightning/eternalSuperconductor thunderstrike/heavenTribulation
- thunderorb/thunderBurst waterball/5 frostnova/crystalResonance vacuumslash/1 stormbarrier/5`);
+ thunderorb/thunderBurst waterball/5 vacuumslash/1 stormbarrier/5`);
 route('effect',`dualdance/5 rockarmor/superRockArt rockarmor/gravityField thunderstrike/5 waterball/waterPrisonFall waterball/abyssBurial`);
 route('damage','firepillar/dragonDevour firepillar/infernoTempest');
 route('trigger',`bloodblade/slayerDomain bloodrage/6 fireball/6`);
@@ -46,6 +46,7 @@ const commonRoutes={
 };
 function bindings(gid,stage){
  const id=gid+'/'+stage, b=[];
+ if(id==='waterball/ragingTide')b.push(['gap',['gap']]);
  if(id==='counter/warGodBody'||id==='counter/indomitable')b.push(['gap',['gap']]);
  if(id==='thunderorb/criticalThunderbolt')b.push(['speed',['speed']]);
  if(/^[1-7]$/.test(stage))b.push(['cast',['castM']]);

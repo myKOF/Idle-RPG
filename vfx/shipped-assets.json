@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 155,
+  "assetCount": 160,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -168,6 +168,13 @@
       "fileSize": 1394
     },
     {
+      "assetId": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "relativePath": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:bdf29a294c25b9070d384af1c7ede869c8709923ec79484cf0eb8f3e8b7cfec1",
+      "fileSize": 5341
+    },
+    {
       "assetId": "light-masks-1.0/default/circle_a.png",
       "relativePath": "light-masks-1.0/Default/circle_a.png",
       "package": "light-masks-1.0",
@@ -329,6 +336,13 @@
       "fileSize": 59489
     },
     {
+      "assetId": "light-masks-1.0/transparent/cone_composed_a_noise.png",
+      "relativePath": "light-masks-1.0/Transparent/cone_composed_a_noise.png",
+      "package": "light-masks-1.0",
+      "contentHash": "sha256:969ef5ccd68f4f6c81ec2f0b6eccd6c2e468b3ed91ee8ad9240650de44808dc4",
+      "fileSize": 30565
+    },
+    {
       "assetId": "light-masks-1.0/transparent/cone_composed_c.png",
       "relativePath": "light-masks-1.0/Transparent/cone_composed_c.png",
       "package": "light-masks-1.0",
@@ -364,11 +378,25 @@
       "fileSize": 3317
     },
     {
+      "assetId": "new_materials/arcane-ring/dingbats-100.png",
+      "relativePath": "new_materials/arcane-ring/dingbats-100.png",
+      "package": "new_materials",
+      "contentHash": "sha256:dd868681b920f85ae362b90e101453b0678aa07988174112e638998b3334fc24",
+      "fileSize": 5056
+    },
+    {
       "assetId": "new_materials/arcane-ring/dingbats-2.png",
       "relativePath": "new_materials/arcane-ring/dingbats-2.png",
       "package": "new_materials",
       "contentHash": "sha256:bc85a2a40e9a7d3cfceb1b983c452dc492fb3aadbd4df628351368b2657034eb",
       "fileSize": 9914
+    },
+    {
+      "assetId": "new_materials/arcane-ring/dingbats-23.png",
+      "relativePath": "new_materials/arcane-ring/dingbats-23.png",
+      "package": "new_materials",
+      "contentHash": "sha256:bab5a4d25dd36e0c4c13d9c3b3a513efda79e080f8cde9a93c31f770c08f6237",
+      "fileSize": 5759
     },
     {
       "assetId": "new_materials/arcane-ring/dingbats-25.png",
@@ -453,6 +481,13 @@
       "package": "new_materials",
       "contentHash": "sha256:4c41f5d04bbfa3c8b6edfa9347fe574a4db5b4a7c2d07f219e7f8b205d253bc3",
       "fileSize": 171037
+    },
+    {
+      "assetId": "new_materials/hud-reticle/target_19.png",
+      "relativePath": "new_materials/hud-reticle/target_19.png",
+      "package": "new_materials",
+      "contentHash": "sha256:b2238bed79c67846c84e37566127b691eef2c16fd3c2c3dc11b6b3aeee9fd217",
+      "fileSize": 15116
     },
     {
       "assetId": "new_materials/hud-reticle/target_33.png",

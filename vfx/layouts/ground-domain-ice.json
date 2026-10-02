@@ -8,6 +8,9 @@
       "layerIds": [
         "fill",
         "edge",
+        "edge-copy",
+        "edge-copy-2",
+        "edge-copy-3",
         "inner",
         "motes"
       ]

@@ -18,9 +18,9 @@
         "x": 0.2038,
         "y": 0.2038
       },
-      "alpha": 0.8,
-      "tint": "#a55cff",
-      "blendMode": "add",
+      "alpha": 1,
+      "tint": "#c495fe",
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
@@ -146,7 +146,7 @@
       },
       "alpha": 0.6,
       "tint": "#ffffff",
-      "blendMode": "normal",
+      "blendMode": "add",
       "alphaOverLife": [
         [
           0,
@@ -511,7 +511,7 @@
         "y": 0.1657
       },
       "alpha": 0.5,
-      "tint": "#000000",
+      "tint": "#404040",
       "blendMode": "normal",
       "alphaOverLife": [
         [

@@ -6,8 +6,422 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2437,
+  "assetCount": 2448,
   "assets": [
+    {
+      "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
+      "package": "antigravity-authored",
+      "relativePath": "antigravity-authored/ice/ice-arrow-spike.png",
+      "format": "png",
+      "fileSize": 11422,
+      "contentHash": "sha256:cf1d572daab0d88b4520b04e555411de4c7a80b65dce418b65796bef29c2b210",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1947,
+          "visibleRatio": 0.2019,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.6498,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5701,
+          "max": 0.9608
+        },
+        "contentBounds": {
+          "x": 70,
+          "y": 71,
+          "width": 415,
+          "height": 115
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "antigravity-authored/ice/ice-burst-spikes.png",
+      "package": "antigravity-authored",
+      "relativePath": "antigravity-authored/ice/ice-burst-spikes.png",
+      "format": "png",
+      "fileSize": 69325,
+      "contentHash": "sha256:def7403410853e11edd5704453d402559e35108af57a8277ebdf34e7107ff85d",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1925,
+          "visibleRatio": 0.5028,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.3135,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3646,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 19,
+          "y": 19,
+          "width": 475,
+          "height": 475
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "antigravity-authored/ice/ice-spike-single.png",
+      "package": "antigravity-authored",
+      "relativePath": "antigravity-authored/ice/ice-spike-single.png",
+      "format": "png",
+      "fileSize": 2940,
+      "contentHash": "sha256:d8bfd694f1b9fef1430e2144a47680c93599e2d3865e4d87002cfef20dba93b5",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 128
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.1452,
+          "visibleRatio": 0.1498,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7035,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.536,
+          "max": 0.9155
+        },
+        "contentBounds": {
+          "x": 18,
+          "y": 43,
+          "width": 224,
+          "height": 43
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "characters/knight-hd/die.png",
+      "package": "characters",
+      "relativePath": "characters/knight-hd/Die.png",
+      "format": "png",
+      "fileSize": 492341,
+      "contentHash": "sha256:21d6c27199e3573abafa15acc83b165abef057cf36807f50cd726b0f67902751",
+      "facts": {
+        "dimensions": {
+          "width": 1920,
+          "height": 1024
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0724,
+          "visibleRatio": 0.081,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2563,
+          "max": 0.7182,
+          "borderMean": 0.0017,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.1035,
+          "max": 0.8846
+        },
+        "contentBounds": {
+          "x": 26,
+          "y": 45,
+          "width": 1885,
+          "height": 966
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9983,
+          "v": 0.9985
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "characters/knight-hd/idle.png",
+      "package": "characters",
+      "relativePath": "characters/knight-hd/Idle.png",
+      "format": "png",
+      "fileSize": 290656,
+      "contentHash": "sha256:3c3a89e3d16d71568e0fca9a967fc7b81711cd473d9ed4edfad26f17188638f2",
+      "facts": {
+        "dimensions": {
+          "width": 1920,
+          "height": 1024
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0708,
+          "visibleRatio": 0.0812,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2369,
+          "max": 0.7182,
+          "borderMean": 0.0017,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.1008,
+          "max": 0.6
+        },
+        "contentBounds": {
+          "x": 38,
+          "y": 46,
+          "width": 1849,
+          "height": 957
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9983,
+          "v": 0.9985
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "characters/knight-hd/melee.png",
+      "package": "characters",
+      "relativePath": "characters/knight-hd/Melee.png",
+      "format": "png",
+      "fileSize": 1027984,
+      "contentHash": "sha256:95012c4121818c2d114b81ba6409971824373e69889576c315bbb8ab02a934e1",
+      "facts": {
+        "dimensions": {
+          "width": 1920,
+          "height": 1024
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.094,
+          "visibleRatio": 0.1363,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4444,
+          "max": 0.9476,
+          "borderMean": 0.0017,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.0816,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 31,
+          "y": 31,
+          "width": 1884,
+          "height": 980
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9983,
+          "v": 0.9985
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "characters/knight-hd/melee2.png",
+      "package": "characters",
+      "relativePath": "characters/knight-hd/Melee2.png",
+      "format": "png",
+      "fileSize": 809565,
+      "contentHash": "sha256:7ab48356811511fb144ef251d4602079507d124bd405332f41c375d2a4440105",
+      "facts": {
+        "dimensions": {
+          "width": 1920,
+          "height": 1024
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0823,
+          "visibleRatio": 0.104,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.3061,
+          "max": 0.9669,
+          "borderMean": 0.0017,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.0935,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 38,
+          "y": 32,
+          "width": 1850,
+          "height": 982
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9983,
+          "v": 0.9985
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "characters/knight-hd/run.png",
+      "package": "characters",
+      "relativePath": "characters/knight-hd/Run.png",
+      "format": "png",
+      "fileSize": 474338,
+      "contentHash": "sha256:22f9c61307c354831b4b1626794ab5e3b94875de6519f711b5294188c8e3cf03",
+      "facts": {
+        "dimensions": {
+          "width": 1920,
+          "height": 1024
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0751,
+          "visibleRatio": 0.0875,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.2206,
+          "max": 0.7182,
+          "borderMean": 0.0017,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.0902,
+          "max": 0.6
+        },
+        "contentBounds": {
+          "x": 24,
+          "y": 41,
+          "width": 1875,
+          "height": 964
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9983,
+          "v": 0.9985
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "characters/knight-hd/special1.png",
+      "package": "characters",
+      "relativePath": "characters/knight-hd/Special1.png",
+      "format": "png",
+      "fileSize": 803756,
+      "contentHash": "sha256:10fb77af3ad2c39a2dd456a148c9052ff3e5b55386f9f9318db7de65bb5c0e59",
+      "facts": {
+        "dimensions": {
+          "width": 1920,
+          "height": 1024
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0856,
+          "visibleRatio": 0.1065,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.3106,
+          "max": 0.9406,
+          "borderMean": 0.0017,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.0933,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 38,
+          "y": 20,
+          "width": 1868,
+          "height": 987
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9983,
+          "v": 0.9985
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
       "package": "claude-authored",
@@ -340,6 +754,98 @@
           "y": 12,
           "width": 225,
           "height": 224
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/firegod/star-concept.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/firegod/star-concept.png",
+      "format": "png",
+      "fileSize": 2433205,
+      "contentHash": "sha256:a50c62853213c973ccaa80c0ea5352b70a22ec247fa1f2eb7940cbeb953d8ca8",
+      "facts": {
+        "dimensions": {
+          "width": 1536,
+          "height": 1024
+        },
+        "colorModel": "rgb",
+        "bitDepth": 8,
+        "hasAlphaChannel": false,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 1,
+          "visibleRatio": 1,
+          "borderMean": 1
+        },
+        "luminance": {
+          "mean": 0.1602,
+          "max": 1,
+          "borderMean": 0.0898,
+          "borderNearBlackRatio": 0.0178,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.3692,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1536,
+          "height": 1024
+        },
+        "trimmed": true,
+        "edgeContinuity": {
+          "u": 0.9674,
+          "v": 0.9711
+        },
+        "backgroundVariant": "opaqueOther"
+      }
+    },
+    {
+      "assetId": "codex-authored/icearrow/icicle.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/icearrow/icicle.png",
+      "format": "png",
+      "fileSize": 17820,
+      "contentHash": "sha256:f1cb57f1513785b18f5de5e7f3ab60158ab87a9a33ecef98e6b019304a4dab04",
+      "facts": {
+        "dimensions": {
+          "width": 512,
+          "height": 512
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0924,
+          "visibleRatio": 0.1468,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7819,
+          "max": 0.9925,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.4734,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 35,
+          "y": 192,
+          "width": 467,
+          "height": 129
         },
         "trimmed": false,
         "edgeContinuity": {
@@ -779,8 +1285,8 @@
       "package": "codex-authored",
       "relativePath": "codex-authored/moon/moon-polished-accents.svg",
       "format": "svg",
-      "fileSize": 1724,
-      "contentHash": "sha256:9572afb9cf7a5da383271036957cbb1147601d77af67194d30e534bbb3416e8b",
+      "fileSize": 1717,
+      "contentHash": "sha256:e9ecb02d0a3e6b61716b45376e3b4edac7b329289c1828347ceed6aaf16a6f9d",
       "facts": {
         "dimensions": {
           "width": 512,
@@ -798,8 +1304,8 @@
       "package": "codex-authored",
       "relativePath": "codex-authored/moon/moon-polished-body.svg",
       "format": "svg",
-      "fileSize": 1276,
-      "contentHash": "sha256:b03fbb5003540bdeca1e2a6d3abe2ebca4228b13be914d9572897b73f4ff0656",
+      "fileSize": 1275,
+      "contentHash": "sha256:434451456ef9c38f6b8b0e690501156165a780af63d320dde3706f5920520ed2",
       "facts": {
         "dimensions": {
           "width": 512,
@@ -817,8 +1323,8 @@
       "package": "codex-authored",
       "relativePath": "codex-authored/moon/moon-polished-edge.svg",
       "format": "svg",
-      "fileSize": 943,
-      "contentHash": "sha256:e70c39baa7ef377febd11a1043a46882cfc74da52825faaa199b60eb86827990",
+      "fileSize": 942,
+      "contentHash": "sha256:22ce17bfc33b34bb61e262b35abd6bf95bf7fc150bde42e443aae5d21ca832d7",
       "facts": {
         "dimensions": {
           "width": 512,
@@ -829,6 +1335,144 @@
         "bitDepth": null,
         "hasAlphaChannel": null,
         "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor-objects/glow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor-objects/glow.png",
+      "format": "png",
+      "fileSize": 5977,
+      "contentHash": "sha256:be957306addc45dba7ceba28f1a8dd2d9e72c75eba9073d05024b81a84fc968e",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.042,
+          "visibleRatio": 0.1506,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 79,
+          "y": 50,
+          "width": 94,
+          "height": 144
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor-objects/plate.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor-objects/plate.png",
+      "format": "png",
+      "fileSize": 10163,
+      "contentHash": "sha256:456688e861cb04357baad4d4462b30c32c6eba0303e99181c117fc58018fa1b1",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3017,
+          "visibleRatio": 0.3064,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.4646,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.0965,
+          "max": 0.3438
+        },
+        "contentBounds": {
+          "x": 63,
+          "y": 21,
+          "width": 124,
+          "height": 213
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
+      "assetId": "codex-authored/rockarmor-objects/rune.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/rockarmor-objects/rune.png",
+      "format": "png",
+      "fileSize": 1839,
+      "contentHash": "sha256:dcf767d66cc543fe86982405d8ae57ace4cd6c3d1eeedffcf0c96df8af535169",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.014,
+          "visibleRatio": 0.018,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 1,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0,
+          "max": 0
+        },
+        "contentBounds": {
+          "x": 95,
+          "y": 71,
+          "width": 60,
+          "height": 105
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
       }
     },
     {
@@ -1200,6 +1844,52 @@
       }
     },
     {
+      "assetId": "codex-authored/tornado/fire-tip-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/tornado/fire-tip-flow.png",
+      "format": "png",
+      "fileSize": 2784045,
+      "contentHash": "sha256:149cfe8760ace8d3ea6f3f92e9216ed5b46ca34a3ac55d23fcc0a13ed0a48b5f",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 2048
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.2047,
+          "visibleRatio": 0.2812,
+          "borderMean": 0.0201
+        },
+        "luminance": {
+          "mean": 0.5558,
+          "max": 1,
+          "borderMean": 0.0458,
+          "borderNearBlackRatio": 0.8995,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.8007,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 57,
+          "y": 2,
+          "width": 2479,
+          "height": 2046
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 0.8826
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
       "assetId": "codex-authored/tornado/inferno-spiral.svg",
       "package": "codex-authored",
       "relativePath": "codex-authored/tornado/inferno-spiral.svg",
@@ -1219,12 +1909,77 @@
       }
     },
     {
+      "assetId": "codex-authored/tornado/water-flow.png",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/tornado/water-flow.png",
+      "format": "png",
+      "fileSize": 2132958,
+      "contentHash": "sha256:e8f1a9aff36ca7e8c18153b2113d2757c552b42e92c79d1feb7f0d1402ba3482",
+      "facts": {
+        "dimensions": {
+          "width": 2560,
+          "height": 2048
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.0616,
+          "visibleRatio": 0.1375,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.5346,
+          "max": 1,
+          "borderMean": 0,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.6737,
+          "max": 1
+        },
+        "contentBounds": {
+          "x": 65,
+          "y": 41,
+          "width": 2428,
+          "height": 1949
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 1,
+          "v": 1
+        },
+        "backgroundVariant": "transparent"
+      }
+    },
+    {
       "assetId": "codex-authored/water-prison/water-dome.svg",
       "package": "codex-authored",
       "relativePath": "codex-authored/water-prison/water-dome.svg",
       "format": "svg",
       "fileSize": 1394,
       "contentHash": "sha256:67547f00ae7302a44569315ab8c4478240b23d3778b9f91aa5b10f4058943c8c",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "format": "svg",
+      "fileSize": 5341,
+      "contentHash": "sha256:bdf29a294c25b9070d384af1c7ede869c8709923ec79484cf0eb8f3e8b7cfec1",
       "facts": {
         "dimensions": {
           "width": 256,
@@ -5934,8 +6689,8 @@
       "package": "foliage-sprites",
       "relativePath": "foliage-sprites/Vector/foliageSprites_flat.svg",
       "format": "svg",
-      "fileSize": 216141,
-      "contentHash": "sha256:72d473f7ec157d365ab2b1073942c968a8278056948a5fde3fd92deef0bda13c",
+      "fileSize": 216069,
+      "contentHash": "sha256:9a5ca22e2a4196af567f5d5f14ac8db65ba8d4db2e73373350e81307212928f7",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -5950,8 +6705,8 @@
       "package": "foliage-sprites",
       "relativePath": "foliage-sprites/Vector/foliageSprites_shaded.svg",
       "format": "svg",
-      "fileSize": 327631,
-      "contentHash": "sha256:e7cf84db4fad342bcb44a63d42d349bbd78d75afff4dbc6b79c5e67c4d32f909",
+      "fileSize": 326363,
+      "contentHash": "sha256:0329cab717d19bc38b19ef48f160b4a6ff2d76a085c5fd30878105f1e5819cda",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105786,8 +106541,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/overview.svg",
       "format": "svg",
-      "fileSize": 98553,
-      "contentHash": "sha256:a6857b79dc041d6bd2f7bd66553e776dc410ffee40dcdb8038ad042f61d6c9d0",
+      "fileSize": 98513,
+      "contentHash": "sha256:6a737ecd5659912d7aeef106451a59728d991a414e2d87138930f17b06a08158",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105802,8 +106557,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat00.svg",
       "format": "svg",
-      "fileSize": 1669,
-      "contentHash": "sha256:17a88a88c4eab93288f2956b9b68e3be7e3ee6c78f9d5fceae704b0eb1957f29",
+      "fileSize": 1664,
+      "contentHash": "sha256:da55460e19fcb7c1348f0efc41e07fd71c23dfc06dcd5ec5d2932eb55ee53ce1",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105818,8 +106573,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat01.svg",
       "format": "svg",
-      "fileSize": 2181,
-      "contentHash": "sha256:e759b5425ceed7f7df848d4db277085a5e633376a54e3803b412192c18815304",
+      "fileSize": 2176,
+      "contentHash": "sha256:e697d5458fb0c803d1cd218ddcca6cd599db70fcd5c2ba11eb78d51b0a58908c",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105834,8 +106589,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat02.svg",
       "format": "svg",
-      "fileSize": 3396,
-      "contentHash": "sha256:0db6ede1f3ae193778ee2e079cd42c34e5dbb32b704e463194d757533d38bae8",
+      "fileSize": 3391,
+      "contentHash": "sha256:d0d4a62f4b9ebe59ff1f3e73a7465e7224d4519e15790db767fb71e86f0b84f3",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105850,8 +106605,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat03.svg",
       "format": "svg",
-      "fileSize": 1966,
-      "contentHash": "sha256:a7a8c4f5afae1b009a49fa46d12c69f62714eb4e3c45b8f2bf5eefcd5180754a",
+      "fileSize": 1961,
+      "contentHash": "sha256:078dcd18db0e4d1e6962834b6ec41661b17efe20934e8cd85b2143c28fd79729",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105866,8 +106621,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat04.svg",
       "format": "svg",
-      "fileSize": 1985,
-      "contentHash": "sha256:31ef044296fe8a8f9f1ecf50a8d7168620bfdb8e93c04149729c0d3c6dd9f23c",
+      "fileSize": 1980,
+      "contentHash": "sha256:b745e4ca03b300291361a39f42071e15fd639b019f2c52ccdb7b0208bad0d85d",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105882,8 +106637,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat05.svg",
       "format": "svg",
-      "fileSize": 1613,
-      "contentHash": "sha256:439cd704627c7983bb3fed2d993e6135a9e300d9618bd6ed08921e6764a0fe94",
+      "fileSize": 1608,
+      "contentHash": "sha256:80a9fc95527e9ab848c76030509a39741e9154126c8f9f1625810cb231134513",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105898,8 +106653,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat06.svg",
       "format": "svg",
-      "fileSize": 1693,
-      "contentHash": "sha256:d33af5dd59cb4a03d2e9c7f2e1eeb678ec2f5e5b2f1c98eeb5bc3ef8199cc2d0",
+      "fileSize": 1688,
+      "contentHash": "sha256:9101eeb2c27902a6f9967bd6b0337690453a0a28a5f9198e007f65c26036a28b",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105914,8 +106669,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat07.svg",
       "format": "svg",
-      "fileSize": 2109,
-      "contentHash": "sha256:fc349ecfde6cf47d06ea150657b656faeb6731dfffa13ca0d165d695156122ef",
+      "fileSize": 2104,
+      "contentHash": "sha256:86f49c15e3f11bf2437b403f304c70fedea161ea073678d0b02ecacde1e015b7",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105930,8 +106685,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat08.svg",
       "format": "svg",
-      "fileSize": 1710,
-      "contentHash": "sha256:83017b4bcd4c3061f7e65585a493b354e29226076a53c5398c99f4ebc12c31bf",
+      "fileSize": 1705,
+      "contentHash": "sha256:8f6ac1de7b1548bfe3121ece32dbde4826397c036faef4de5aada348e91f7af2",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105946,8 +106701,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat09.svg",
       "format": "svg",
-      "fileSize": 1874,
-      "contentHash": "sha256:1733abd1ca098173b3c78e053deaa051141432cd5524ae065270bdecba55c560",
+      "fileSize": 1869,
+      "contentHash": "sha256:e8e2c79ffe60ddf784a34004008b56d26152b748d5c7c356bade0d90bee1f815",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105962,8 +106717,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat10.svg",
       "format": "svg",
-      "fileSize": 2728,
-      "contentHash": "sha256:2417dc99c7002ee7692d50f514eaa53298030f95f80966fed0d12b726c3d9d8d",
+      "fileSize": 2723,
+      "contentHash": "sha256:db2ddd65daf22e6ecfdc8b38b5c0bf19d87dccbeceef2eddc00cf98e861df209",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105978,8 +106733,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat11.svg",
       "format": "svg",
-      "fileSize": 2410,
-      "contentHash": "sha256:3aafd42ab106aa539af1da33d4ecd666844f103af81a60a11da9c4c1e87deaf0",
+      "fileSize": 2405,
+      "contentHash": "sha256:b3486b995ed918860776b183528ef736e37e04dc9f06d66fc3ae69d716712bd9",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -105994,8 +106749,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat12.svg",
       "format": "svg",
-      "fileSize": 1450,
-      "contentHash": "sha256:c93e54c619f28d5b296014e3c0186ab10e160a9fa73a423374fb91cf193a4c14",
+      "fileSize": 1445,
+      "contentHash": "sha256:d8c7c07741dd6721b56d748df0258370de14c69a580ccf8d05ffa263a5bffc45",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106010,8 +106765,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat13.svg",
       "format": "svg",
-      "fileSize": 1751,
-      "contentHash": "sha256:5653f165720845491bbcf599ea3126d705df7f4b91767235b53fca02cdd7bca3",
+      "fileSize": 1746,
+      "contentHash": "sha256:20ceca1cdf41d75d5ed695d6c8a98d350b17e270225c1a8f96cef3aa4fa24f07",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106026,8 +106781,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat14.svg",
       "format": "svg",
-      "fileSize": 2399,
-      "contentHash": "sha256:6b5478a3047f6a88fe74249057b7a4715659edd9a9a9cf6a25715c118b0b9d6d",
+      "fileSize": 2394,
+      "contentHash": "sha256:1e2168fc193bae4f4a70762665da9b82d8a69096e0e69dc609806b8444bdc6fe",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106042,8 +106797,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat15.svg",
       "format": "svg",
-      "fileSize": 1408,
-      "contentHash": "sha256:4dfa8a6dceab5cb6804a94cdd1e11da8709a065c600044358215c2e9a5c32917",
+      "fileSize": 1403,
+      "contentHash": "sha256:246b1c3476f96bbd1f356f9847cfb20752d81bbe6fcf9b3a3866b914382be7da",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106058,8 +106813,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat16.svg",
       "format": "svg",
-      "fileSize": 2533,
-      "contentHash": "sha256:24b3f7bb3a8ea897d6d32fd55cff2fbb7bec4a2da5e787dd5a86b7dc9a771731",
+      "fileSize": 2528,
+      "contentHash": "sha256:f3f491f0d4016a3cf1cd865e504bd7a3cbd7a87408857cd053514117a473b78f",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106074,8 +106829,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat17.svg",
       "format": "svg",
-      "fileSize": 2025,
-      "contentHash": "sha256:0d624bade1497a5bffa0710c430b693de2d4906a221c898e305e6c03beaa00e3",
+      "fileSize": 2020,
+      "contentHash": "sha256:f4f23197ebd0b1e271c20d2fc292350d17c29a8e26d4c89899357a0aafed651a",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106090,8 +106845,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat18.svg",
       "format": "svg",
-      "fileSize": 2052,
-      "contentHash": "sha256:5f4fa83c7e882db741e84a34df23729e5cfe197a4b65af71efbcd322e3ababbf",
+      "fileSize": 2047,
+      "contentHash": "sha256:f56d3fcd7b3e043df221754ae4c22ce692ccf8649f43be3924158c96c9fd4cf5",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106106,8 +106861,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat19.svg",
       "format": "svg",
-      "fileSize": 3314,
-      "contentHash": "sha256:1e5bd814b1f305b5cd31438e4022631ba8eadb70821734ca58e2ad60f1d3aabb",
+      "fileSize": 3309,
+      "contentHash": "sha256:62af6d46f59145d1660cab0821b38407314f379d29a98976501c8eab4b68e82c",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106122,8 +106877,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat20.svg",
       "format": "svg",
-      "fileSize": 2633,
-      "contentHash": "sha256:1f620e1729c33cda15c6c87b8feb6b8b5879b70d4beb7804a7be0c84c19c101d",
+      "fileSize": 2628,
+      "contentHash": "sha256:5f39e4075345c322e112663bf9cfb8e466f4da96dea4b77c4b67cbd273ea4fbc",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106138,8 +106893,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat21.svg",
       "format": "svg",
-      "fileSize": 2293,
-      "contentHash": "sha256:4ea657d6b62339fb0a1ab7eb411360753261c292f8d8e51c4b4702e43302a72b",
+      "fileSize": 2288,
+      "contentHash": "sha256:3535c17f39a98fc7d52216d769e150034d80ea3cd0f7744ec2370dbb731a8bbc",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106154,8 +106909,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat22.svg",
       "format": "svg",
-      "fileSize": 1605,
-      "contentHash": "sha256:d2f560ed90b6b8782e2b08eaf14cff2fda567b6a033fca169e441c6530fef7a0",
+      "fileSize": 1600,
+      "contentHash": "sha256:50e15434bea846f17af5f619b29cd92450335e1a331b6bfaf0d3381695148a1e",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106170,8 +106925,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat23.svg",
       "format": "svg",
-      "fileSize": 2400,
-      "contentHash": "sha256:fd36e808a45efe619d14b39b1347debb89f84c708abb5ea08659a5e55dbe14eb",
+      "fileSize": 2395,
+      "contentHash": "sha256:b030095e4e13dd79119b4741b080e38a1d8f2b9fb5a4c6e5d8b7c546a590b2e0",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106186,8 +106941,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat24.svg",
       "format": "svg",
-      "fileSize": 2563,
-      "contentHash": "sha256:5c8b2c74f52d87d9f6dc21f34d324cd3b0476577993ff579febf1e7720b0fa8f",
+      "fileSize": 2558,
+      "contentHash": "sha256:e78c966803e5d9b8f672155c543fd9f1752440e1e5dc4ea0b8a4770f3f3a9bdb",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106202,8 +106957,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat25.svg",
       "format": "svg",
-      "fileSize": 1650,
-      "contentHash": "sha256:3b8ddf65d578be52c39ea39a1232089ef55dbbd63aeeab8c48919d8c52a4307a",
+      "fileSize": 1645,
+      "contentHash": "sha256:a8ab4d3ee163863f2ad0fde5e73aa803ff27737df88a1d3617d8d89e8c1cd900",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106218,8 +106973,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat26.svg",
       "format": "svg",
-      "fileSize": 4486,
-      "contentHash": "sha256:b2b4e1269df54dc457986a941146542a5da6764cb2afca6c1bfaf2803842d7d6",
+      "fileSize": 4481,
+      "contentHash": "sha256:8bb135429798035763e879d88c3a2f3758465e0508e7cb39520c313bf6f529de",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106234,8 +106989,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat27.svg",
       "format": "svg",
-      "fileSize": 2240,
-      "contentHash": "sha256:01d3f21ead0ef145e7b2fcd579241bc6c4a1a14f156d3bc4df8cb187cb046888",
+      "fileSize": 2235,
+      "contentHash": "sha256:d116e00957c809a4ed43290388ad47341b7725bc11e98fc519d046fc8b545dd3",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106250,8 +107005,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat28.svg",
       "format": "svg",
-      "fileSize": 2858,
-      "contentHash": "sha256:99601c26d66b587c6c9d4ac3d83be8a8dc17741496b998d8d61409d5b9b8fb07",
+      "fileSize": 2853,
+      "contentHash": "sha256:e4f97d22fffe68f0b6f0d0548c3a37cae3b16296a81c9954f906a047643dfbc1",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106266,8 +107021,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat29.svg",
       "format": "svg",
-      "fileSize": 3052,
-      "contentHash": "sha256:ff7f6376b9aa58cce63bbf2f9f7e43466b1faf15b059482e4eac9257d5eed3cc",
+      "fileSize": 3047,
+      "contentHash": "sha256:f860e8420b49f7de5d49b7452f7314987dafa6262c0587ef41903683f1e81298",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106282,8 +107037,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat30.svg",
       "format": "svg",
-      "fileSize": 3630,
-      "contentHash": "sha256:4ce8e366471740282cab521dd0b2841b1a9a658522e091836b69e739777d2aa8",
+      "fileSize": 3625,
+      "contentHash": "sha256:8708f9dba10641afaca90c0a470c45825916515bab839ca8059eb2ff968c022a",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106298,8 +107053,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat31.svg",
       "format": "svg",
-      "fileSize": 3266,
-      "contentHash": "sha256:8d8942c46ed7dfe664d161241c906788d6ae21a6694dd5ddf29d5f7d5a936537",
+      "fileSize": 3261,
+      "contentHash": "sha256:c3a1a70d8287303382ed49196bf49af05760d25f4a028a24123d3e4b1b0335d8",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106314,8 +107069,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat32.svg",
       "format": "svg",
-      "fileSize": 3177,
-      "contentHash": "sha256:fac19b63d9deab056e5163bd6f89659bdcfb60ad7d6d9415d6d73033bb8c0c30",
+      "fileSize": 3172,
+      "contentHash": "sha256:e7f33ba4c6811dacb0bdf3c676e412b0e784b5b1cf8edf531455e7b13754126a",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106330,8 +107085,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat33.svg",
       "format": "svg",
-      "fileSize": 5318,
-      "contentHash": "sha256:b54a70c4530da6df06e3dee6ff24fa7569818bfc46d3c606cbf37386678411d7",
+      "fileSize": 5313,
+      "contentHash": "sha256:be60fda0f424ca482d2ae4c82180163a1b4a97544a640bfffe5c397eb46c5113",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106346,8 +107101,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat34.svg",
       "format": "svg",
-      "fileSize": 4686,
-      "contentHash": "sha256:827d9493aaea54b504249c69f8fe580022b17fd265050ed4e9fe166435ea6814",
+      "fileSize": 4681,
+      "contentHash": "sha256:eeea9b5d0cba6744a900480dfcd8571291f6bf6aa02c7fc1560ad04c8cb2a58d",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -106362,8 +107117,8 @@
       "package": "splat-pack",
       "relativePath": "splat-pack/Vector/splat35.svg",
       "format": "svg",
-      "fileSize": 4182,
-      "contentHash": "sha256:0c03d6a412ce98757825201f46fa50f2248ce7981c0238c6bbba995ffff5b53d",
+      "fileSize": 4177,
+      "contentHash": "sha256:55fa77a100b679c3e80b5422a5eb9b58cc0c2e1f9ca9d74d38d0cfdfb96f5fab",
       "facts": {
         "dimensions": null,
         "dimensionsSource": null,
@@ -110412,189 +111167,6 @@
           "y": 2,
           "width": 3760,
           "height": 2578
-        },
-        "trimmed": false,
-        "edgeContinuity": {
-          "u": 1,
-          "v": 1
-        },
-        "backgroundVariant": "transparent"
-      }
-    },
-    {
-      "assetId": "codex-authored/icearrow/icicle.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/icearrow/icicle.png",
-      "format": "png",
-      "fileSize": 17820,
-      "contentHash": "sha256:f1cb57f1513785b18f5de5e7f3ab60158ab87a9a33ecef98e6b019304a4dab04",
-      "facts": {
-        "dimensions": {
-          "width": 512,
-          "height": 512
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/tornado/water-flow.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/tornado/water-flow.png",
-      "format": "png",
-      "fileSize": 2132958,
-      "contentHash": "sha256:e8f1a9aff36ca7e8c18153b2113d2757c552b42e92c79d1feb7f0d1402ba3482",
-      "facts": {
-        "dimensions": {
-          "width": 2560,
-          "height": 2048
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/tornado/fire-tip-flow.png",
-      "package": "codex-authored",
-      "relativePath": "codex-authored/tornado/fire-tip-flow.png",
-      "format": "png",
-      "fileSize": 2784045,
-      "contentHash": "sha256:149cfe8760ace8d3ea6f3f92e9216ed5b46ca34a3ac55d23fcc0a13ed0a48b5f",
-      "facts": {
-        "dimensions": {
-          "width": 2560,
-          "height": 2048
-        },
-        "hasAlpha": true
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor-objects/plate.png",
-      "relativePath": "codex-authored/rockarmor-objects/plate.png",
-      "package": "codex-authored",
-      "format": "png",
-      "fileSize": 10163,
-      "contentHash": "sha256:456688e861cb04357baad4d4462b30c32c6eba0303e99181c117fc58018fa1b1",
-      "facts": {
-        "dimensions": {
-          "width": 256,
-          "height": 256
-        },
-        "colorModel": "rgba",
-        "bitDepth": 8,
-        "hasAlphaChannel": true,
-        "pixelsAnalyzed": true,
-        "alpha": {
-          "mean": 0.3017,
-          "visibleRatio": 0.3064,
-          "borderMean": 0
-        },
-        "luminance": {
-          "mean": 0.4646,
-          "max": 1,
-          "borderMean": 0,
-          "borderNearBlackRatio": 1,
-          "borderNearWhiteRatio": 0
-        },
-        "saturation": {
-          "mean": 0.0965,
-          "max": 0.3438
-        },
-        "contentBounds": {
-          "x": 63,
-          "y": 21,
-          "width": 124,
-          "height": 213
-        },
-        "trimmed": false,
-        "edgeContinuity": {
-          "u": 1,
-          "v": 1
-        },
-        "backgroundVariant": "transparent"
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor-objects/glow.png",
-      "relativePath": "codex-authored/rockarmor-objects/glow.png",
-      "package": "codex-authored",
-      "format": "png",
-      "fileSize": 5977,
-      "contentHash": "sha256:be957306addc45dba7ceba28f1a8dd2d9e72c75eba9073d05024b81a84fc968e",
-      "facts": {
-        "dimensions": {
-          "width": 256,
-          "height": 256
-        },
-        "colorModel": "rgba",
-        "bitDepth": 8,
-        "hasAlphaChannel": true,
-        "pixelsAnalyzed": true,
-        "alpha": {
-          "mean": 0.042,
-          "visibleRatio": 0.1506,
-          "borderMean": 0
-        },
-        "luminance": {
-          "mean": 1,
-          "max": 1,
-          "borderMean": 0,
-          "borderNearBlackRatio": 1,
-          "borderNearWhiteRatio": 0
-        },
-        "saturation": {
-          "mean": 0,
-          "max": 0
-        },
-        "contentBounds": {
-          "x": 79,
-          "y": 50,
-          "width": 94,
-          "height": 144
-        },
-        "trimmed": false,
-        "edgeContinuity": {
-          "u": 1,
-          "v": 1
-        },
-        "backgroundVariant": "transparent"
-      }
-    },
-    {
-      "assetId": "codex-authored/rockarmor-objects/rune.png",
-      "relativePath": "codex-authored/rockarmor-objects/rune.png",
-      "package": "codex-authored",
-      "format": "png",
-      "fileSize": 1839,
-      "contentHash": "sha256:dcf767d66cc543fe86982405d8ae57ace4cd6c3d1eeedffcf0c96df8af535169",
-      "facts": {
-        "dimensions": {
-          "width": 256,
-          "height": 256
-        },
-        "colorModel": "rgba",
-        "bitDepth": 8,
-        "hasAlphaChannel": true,
-        "pixelsAnalyzed": true,
-        "alpha": {
-          "mean": 0.014,
-          "visibleRatio": 0.018,
-          "borderMean": 0
-        },
-        "luminance": {
-          "mean": 1,
-          "max": 1,
-          "borderMean": 0,
-          "borderNearBlackRatio": 1,
-          "borderNearWhiteRatio": 0
-        },
-        "saturation": {
-          "mean": 0,
-          "max": 0
-        },
-        "contentBounds": {
-          "x": 95,
-          "y": 71,
-          "width": 60,
-          "height": 105
         },
         "trimmed": false,
         "edgeContinuity": {

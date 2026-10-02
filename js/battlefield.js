@@ -622,22 +622,52 @@ function bfNearestOthers(from, enemies, count, maxGapPx) {
    座標改寫一律走本檔（幾何唯一權威）：呼叫端只給「多遠以內的拉、拉到多近」。
    不會把敵人拉進身體停步距離內（否則會直接疊在玩家身上，逼近推擠那一段還要再推開一次）；
    沒有座標的實體（高塔 BOSS）一律略過。回傳實際被拉動的實體陣列。 */
-function bfPullEnemies(enemies, fromPx, toPx) {
+function bfPullEnemies(enemies, fromPx, toPx, maxStepPx) {
   var moved = [];
   if (!(fromPx > 0)) return moved;
+  /* 可選慢速模式：射程按體型邊緣計算，逐步拉近；路徑被同伴佔用就停，
+     不改寫同伴位置，也不依賴下一輪互斥推擠來清出空間。原有瞬間拉近維持原語意。 */
+  var slow = maxStepPx !== undefined;
+  if (slow && (!(maxStepPx > 0) || !isFinite(maxStepPx))) return moved;
   var live = bfLiveList(enemies);
   var c = bfPlayerPos();
   for (var i = 0; i < live.length; i++) {
     var ent = live[i];
     var p = bfPos(ent);
-    if (!p) continue;
+    if (!p || (slow && ent._enterCd > 0)) continue;
     var dx = p.x - c.x, dy = p.y - c.y;
     var d = Math.sqrt(dx * dx + dy * dy);
-    if (!(d > 0) || d > fromPx) continue;
+    var body = bfEntityRadius(ent);
+    if (!(d > 0) || d - (slow ? body : 0) > fromPx) continue;
     /* 用身體停步距離而不是射程停步點：遠程敵人站在射程邊緣，
        拉近技能要能把牠拉到玩家身邊，不能被牠自己的站樁位置擋住。 */
-    var want = Math.max(bfBodyStopDistance(ent), Math.max(0, Number(toPx) || 0));
+    var want = Math.max(bfBodyStopDistance(ent), Math.max(0, Number(toPx) || 0) + (slow ? body : 0));
     if (d <= want) continue;
+    if (slow) {
+      var step = Math.min(d - want, maxStepPx);
+      var ux = -dx / d, uy = -dy / d;
+      for (var j = 0; j < live.length && step > 0.0001; j++) {
+        if (live[j] === ent) continue;
+        var other = bfPos(live[j]);
+        if (!other) continue;
+        var rx = p.x - other.x, ry = p.y - other.y;
+        var minD = body + bfEntityRadius(live[j]);
+        var along = -(rx * ux + ry * uy);
+        // 先以投影篩掉路徑之外的同伴，只有可能碰撞才計算圓形路徑交點。
+        if (along + minD <= 0 || along - minD >= step) continue;
+        var distSq = rx * rx + ry * ry;
+        if (distSq < minD * minD) {
+          if (along > 0) step = 0;
+          continue; // 已重疊時只允許遠離，不再加深重疊。
+        }
+        var sideSq = Math.max(0, distSq - along * along);
+        if (sideSq >= minD * minD) continue;
+        var contact = along - Math.sqrt(minD * minD - sideSq);
+        if (contact >= -0.0001) step = Math.min(step, Math.max(0, contact - 0.0001));
+      }
+      if (step <= 0.0001) continue;
+      want = d - step;
+    }
     p.x = c.x + dx / d * want;
     p.y = c.y + dy / d * want;
     moved.push(ent);

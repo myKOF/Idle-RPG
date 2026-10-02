@@ -102,14 +102,32 @@ test('WATER-ICE-AUDIT: homing T6 consumes remaining frost damage and reports it 
  assert.equal(target.hp,1e9-200);assert.ok(c.sgFrostStacks(target)>1);
 });
 
-test('WATER-ICE-AUDIT: crystal resonance emits each real directed pair and stops when unequipped',()=>{
+test('WATER-ICE-AUDIT: frozen blasts emit once per source and stop when unequipped',()=>{
  const {h,c,p,es,hits,specs}=setup('frostnova',7,'crystalResonance');
  es[2].pos={x:60,y:-25}; // 三者彼此都在表定八米範圍內
  es.forEach(e=>c.applyStatus(e,'sgFrozen',{val:0,dur:5}));
- h.advance(c,p,es,.5);assert.equal(hits.length,6);
- const links=specs.filter(s=>s.variant==='frost-spread');assert.equal(links.length,6);
- links.forEach(s=>{assert.equal(s.targets.length,2);assert.notEqual(s.targets[0],s.targets[1]);assert.deepEqual({...s.vfx},{projectile:'proj-ice-shard',hit:'hit-ice'});});
- c.G.player.loadout=[];h.advance(c,p,es,1);assert.equal(hits.length,6);
+ h.advance(c,p,es,.6);assert.equal(hits.length,9);
+ const blasts=specs.filter(s=>s.variant==='frozen-ice-blast');assert.equal(blasts.length,3);
+ blasts.forEach(s=>{assert.equal(s.targets.length,1);assert.equal(s.area.r,80);assert.deepEqual({...s.vfx},{attack:'burst-icearrow-crystal'});});
+ c.G.player.loadout=[];h.advance(c,p,es,1);assert.equal(hits.length,9);
+});
+
+test('WATER-ICE-AUDIT: death nova damages and emits at the corpse rather than the player',()=>{
+ const {h,c,p,hits,specs}=setup('frostnova',6,null);
+ const corpse=h.enemy(100,1000,400,'corpse'),near=h.enemy(1e9,1050,400,'near-corpse');
+ const atPlayer=h.enemy(1e9,50,0,'near-player'),far=h.enemy(1e9,2000,400,'far');
+ c.chance=()=>true;c.sgApplyFrost(corpse,{dps:0,dur:5,interval:.5,stacksRaw:1});corpse.hp=0;
+ const mp=p.mp,cds=JSON.stringify(p.skillCds);
+ c.skills2OnEnemyDeath(corpse,[corpse,near,atPlayer,far]);
+ assert.deepEqual(Array.from(hits,x=>x.ent.name),['near-corpse']);assert.ok(c.sgFrostOn(near));
+ const nova=specs.find(s=>s.variant==='frost-nova');assert.ok(nova);
+ assert.deepEqual({...nova.area},{x:1000,y:400,r:c.bfMeterPx(c.sgFrostnovaBaseM(c.SKILLS2.frostnova,c.skills2Levels('frostnova')))});
+ const shim={};shim.self=shim;vm.createContext(shim);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/worker/shim.js'),'utf8'),shim);
+ shim.playCombatVfx(nova);const event=JSON.parse(JSON.stringify(shim.shimDrainUrgentVisualEvents()[0]));
+ assert.deepEqual(event.area,{...nova.area});
+ assert.equal(p.mp,mp);assert.equal(JSON.stringify(p.skillCds),cds);assert.equal(c.SKILL2_RT.grounds.length,0);
+ hits.length=0;specs.length=0;c.sgDeathNova(corpse,[corpse,atPlayer]);
+ assert.equal(hits.length,0);assert.equal(specs.find(s=>s.variant==='frost-nova').area.x,1000);
 });
 
 test('WATER-ICE-AUDIT: death nova does not spawn snow or inherit the selected ice spikes',()=>{
@@ -119,12 +137,12 @@ test('WATER-ICE-AUDIT: death nova does not spawn snow or inherit the selected ic
  assert.ok(!specs.some(s=>s.vfx.ground||s.vfx.projectile));assert.equal(c.SKILL2_RT.grounds.length,0);
 });
 
-test('WATER-ICE-AUDIT: resonance honors every in-range frozen source beyond four links',()=>{
+test('WATER-ICE-AUDIT: frozen blasts honor every in-range source without a damage cap',()=>{
  const {h,c,p,hits,specs}=setup('frostnova',7,'crystalResonance');
  const es=Array.from({length:6},(_,i)=>h.enemy(1e9,50+i*5,0,'frozen-'+i));es.forEach(e=>c.applyStatus(e,'sgFrozen',{val:0,dur:5}));
- h.advance(c,p,es,.5);assert.equal(hits.length,30,'六個敵人各被另外五個來源共鳴');
- es.forEach(e=>assert.equal(hits.filter(x=>x.ent===e).length,5));
- assert.equal(specs.filter(s=>s.variant==='frost-spread').length,30);
+ h.advance(c,p,es,.6);assert.equal(hits.length,36,'六個凍結來源各冰爆並命中六個敵人');
+ es.forEach(e=>assert.equal(hits.filter(x=>x.ent===e).length,6));
+ assert.equal(specs.filter(s=>s.variant==='frozen-ice-blast').length,6);
 });
 
 test('WATER-ICE-AUDIT: ice king retains scaled snow, dispatches the chosen crystal and expires',()=>{
@@ -148,7 +166,7 @@ test('WATER-ICE-AUDIT: empty trigger cells do not fall back to ordinary body or 
 test('WATER-ICE-AUDIT: permanent resonance pauses while down and resumes without a catch-up burst',()=>{
  const {h,c,p,es,hits}=setup('frostnova',7,'crystalResonance');es[2].pos={x:60,y:-25};
  es.forEach(e=>c.applyStatus(e,'sgFrozen',{val:0,dur:20}));h.advance(c,p,es,.2);p.hp=0;h.advance(c,p,es,2);
- assert.equal(hits.length,0);p.hp=1000;h.advance(c,p,es,.15);assert.equal(hits.length,0);h.advance(c,p,es,.1);assert.equal(hits.length,6);
+ assert.equal(hits.length,0);p.hp=1000;h.advance(c,p,es,.15);assert.equal(hits.length,0);h.advance(c,p,es,.2);assert.equal(hits.length,9);
 });
 
 test('WATER-ICE-AUDIT: production rain staggers ten arrows, remains authored size and gets reclaimed',()=>{
