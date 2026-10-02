@@ -6321,6 +6321,177 @@ function bindForgeInventoryVirtualScroll(grid) {
 }
 
 /* ---- 高塔分頁 ---- */
+/* ---- 高塔頁（2026-10）：塔別分頁＋樓層階梯（左）＋選中樓層的 BOSS 與獎勵（右） ----
+   樓層列保留 .tower-floor[data-tower-tip]：滑鼠停留仍可快速預覽其他樓層的掉落；點選則在右側顯示完整詳情。 */
+UI.towerBrowse = { tier: null, sel: null, lastHighest: null };
+
+function towerTiers() {
+  return [
+    { id: 'trial', name: '試煉之塔', start: 1, end: TOWER_TRIAL_MAX_FLOOR },
+    { id: 'hell', name: '地獄之塔', start: TOWER_TRIAL_MAX_FLOOR + 1, end: TOWER_HELL_MAX_FLOOR },
+    { id: 'purgatory', name: '煉獄之塔', start: TOWER_HELL_MAX_FLOOR + 1, end: TOWER_PURGATORY_MAX_FLOOR }
+  ];
+}
+
+function towerTierOf(fl) {
+  var tiers = towerTiers();
+  if (isPurgatoryTowerFloor(fl)) return tiers[2];
+  if (isHellTowerFloor(fl)) return tiers[1];
+  return tiers[0];
+}
+
+function towerBossOf(fl) {
+  return BOSS_LIST[(fl - 1) % BOSS_LIST.length];
+}
+
+function towerBossIconHTML(bd, cls) {
+  var src = (bd.img && !towerBossImageFailed(bd.img)) ? 'images/' + bd.img : null;
+  return src
+    ? '<img class="' + cls + '" src="' + src + '" alt="" data-tower-boss-image="' + esc(bd.img) + '" data-tower-boss-fallback="' + esc(bd.emoji || '👾') + '">'
+    : '<span class="' + cls + ' is-emoji">' + (bd.emoji || '👾') + '</span>';
+}
+
+// 圖片載入失敗時換成 emoji（記住失敗的檔名，之後直接用 emoji）
+function bindTowerBossImageFallback(root) {
+  if (!root || !root.querySelectorAll) return;
+  var imgs = root.querySelectorAll('[data-tower-boss-image]');
+  for (var i = 0; i < imgs.length; i++) {
+    if (imgs[i]._towerFallbackBound) continue;
+    imgs[i]._towerFallbackBound = true;
+    imgs[i].onerror = function () {
+      var imageName = this.getAttribute('data-tower-boss-image');
+      markTowerBossImageFailed(imageName);
+      var fallback = document.createElement('span');
+      fallback.className = this.className + ' is-emoji';
+      fallback.textContent = this.getAttribute('data-tower-boss-fallback') || '👾';
+      if (this.parentNode) this.parentNode.replaceChild(fallback, this);
+    };
+  }
+}
+
+// 通關獎勵與掉落（提示與詳情面板共用；數值一律走 formula.js 的公式，不在這裡寫死）
+function towerRewardRows(fl) {
+  var rw = towerRewardFor(fl, false);
+  var rows = [
+    { icon: '💰', label: '金幣', value: fmt(rw.gold), note: '首通 ×2' },
+    { icon: '✨', label: '經驗', value: fmt(bossStatsFor(fl).xp), note: '另加經驗加成' },
+    { icon: '🔮', label: '附魔精華', value: '×' + fmt(rw.essence) },
+    { icon: '💎', label: '隨機寶石', value: GEM_NAMES[rw.gemLevel] + ' ×2' },
+    { icon: '📖', label: '附魔書', value: '隨機一種 ×2' },
+    { icon: '💫', label: '魔塵', value: fmt1(bossDustRate(fl)) + '%', note: '神鑄材料' }
+  ];
+  var ancientRate = ancientEssenceDropChanceForBoss(fl);
+  if (ancientRate > 0) rows.push({ icon: '<img src="images/icon_ancient_essence.png" class="res-icon" alt="">', label: '太古精華', value: fmt1(ancientRate) + '%' });
+  if (isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl)) rows.push({ icon: '🧿', label: '魔魂本源', value: fmt1(hellSoulOriginDropChance(fl)) + '%', note: '地獄／煉獄之塔' });
+  if (isPurgatoryTowerFloor(fl)) rows.push({ icon: '🌱', label: '魔種', value: fmt1(demonSeedDropChanceForBoss(fl)) + '%', note: '煉獄之塔' });
+  return rows;
+}
+
+function towerEquipDropRows(fl) {
+  var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
+  var rows = [];
+  for (var br = bossRates.length - 1; br >= 0; br--) {
+    if (!bossRates[br]) continue;
+    var rate = bossRates[br];
+    var rateStr;
+    if (rate >= 100) {
+      rateStr = '必定 ' + Math.floor(rate / 100) + ' 件';
+      var rem = rate % 100;
+      if (rem > 0) rateStr += ' + ' + rem + '% 再 1 件';
+    } else {
+      rateStr = rate + '%';
+    }
+    rows.push({ name: RARITIES[br].name + '裝備', color: RARITIES[br].color, rate: rateStr });
+  }
+  return rows;
+}
+
+function towerTierTabsHTML(highest) {
+  var h = '';
+  towerTiers().forEach(function (t) {
+    var open = highest + 1 >= t.start;
+    var on = UI.towerBrowse.tier === t.id;
+    h += '<button type="button" role="tab" class="twx-tier' + (on ? ' is-on' : '') + (open ? '' : ' is-locked') + '" data-tower-tier="' + t.id + '"' +
+      (open ? '' : ' disabled') + ' aria-selected="' + on + '">' + t.name + '<span>' + t.start + '–' + t.end + '</span></button>';
+  });
+  return h;
+}
+
+function towerFloorRowHTML(fl, highest) {
+  var bd = towerBossOf(fl);
+  var cleared = fl <= highest, next = fl === highest + 1, unlocked = fl <= highest + 1;
+  var cls = 'tower-floor ' + towerTierOf(fl).id + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') +
+    (next ? ' is-next' : '') + (UI.towerBrowse.sel === fl ? ' is-sel' : '');
+  var state = cleared ? '已通關' : (next ? '可挑戰' : '未解鎖');
+  return '<div class="' + cls + '" role="button" tabindex="0" data-tower-tip="' + fl + '" data-tower-pick="' + fl + '" aria-pressed="' + (UI.towerBrowse.sel === fl) + '">' +
+    '<span class="twx-fl-no">' + fl + '</span>' +
+    '<span class="tf-emoji">' + towerBossIconHTML(bd, 'twx-fl-ico') + '</span>' +
+    '<span class="tf-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span>' +
+    '<span class="twx-fl-state">' + state + '</span></div>';
+}
+
+function towerDetailHTML(fl, highest) {
+  var bd = towerBossOf(fl);
+  var tier = towerTierOf(fl);
+  var stats = bossStatsFor(fl);
+  var ei = ELEM_INFO[bd.attr] || null;
+  var color = ei ? ei.color : '#c9c3b5';
+  var cleared = fl <= highest, next = fl === highest + 1;
+  var status = cleared ? '已通關（重複挑戰不享首通加倍）' : (next ? '下一個挑戰目標' : '需先通關第 ' + (highest + 1) + ' 層');
+  var tags = (ei ? '<span class="twx-tag" style="--c:' + ei.color + '">' + ei.emoji + ' ' + ei.short + '屬性</span>' : '') +
+    '<span class="twx-tag">限時 ' + towerTimeLimitWithTalents(fl) + ' 秒</span>' +
+    '<span class="twx-tag">血量高於 ' + TOWER_ENRAGE_HP + '% 會狂暴</span>';
+  var stat = function (k, v, c) {
+    return '<span class="twx-stat"><span>' + k + '</span><b' + (c ? ' style="color:' + c + '"' : '') + '>' + v + '</b></span>';
+  };
+  var rewards = towerRewardRows(fl).map(function (r) {
+    return '<span class="twx-rw"><span class="twx-rw-ico">' + r.icon + '</span><span class="twx-rw-label">' + r.label +
+      (r.note ? '<i>' + r.note + '</i>' : '') + '</span><b>' + r.value + '</b></span>';
+  }).join('');
+  var equips = towerEquipDropRows(fl).map(function (r) {
+    return '<span class="twx-eq" style="--c:' + r.color + '"><b>' + r.name + '</b><span>' + r.rate + '</span></span>';
+  }).join('');
+  return '<div class="twx-boss" style="--c:' + color + '">' +
+      '<div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div>' +
+      '<div class="twx-boss-main">' +
+        '<span class="twx-boss-tier ' + tier.id + '">' + tier.name + '・第 ' + fl + ' 層</span>' +
+        '<span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span>' +
+        '<span class="twx-tags">' + tags + '</span>' +
+        '<span class="twx-stats">' + stat('BOSS 等級', 'Lv.' + fmtFull(Math.round(stats.level))) +
+          stat('生命', fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span>' +
+        '<span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="twx-loot">' +
+      '<div class="twx-loot-title"><b>通關獎勵</b><span>機率類獨立判定、不受掉寶率影響（裝備除外）</span></div>' +
+      '<div class="twx-rws">' + rewards + '</div>' +
+      (equips ? '<div class="twx-loot-title"><b>BOSS 裝備</b><span>受掉寶率加成，送入熔爐佇列</span></div><div class="twx-eqs">' + equips + '</div>' : '') +
+    '</div>';
+}
+
+function towerActionsHTML(fl, highest, gold) {
+  if (fl > highest + 1) return '<span class="twx-locked-note">🔒 需先通關第 ' + (highest + 1) + ' 層</span>';
+  var cost = towerChallengeCost(fl);
+  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + '>挑戰第 ' + fl + ' 層' +
+      '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button>' +
+    '<button class="btn twx-auto" data-tower-auto="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) +
+      ' data-tip="連續挑戰此層：金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）">🔁 連挑</button>';
+}
+
+function towerSelectFloor(fl) {
+  fl = Math.max(1, Math.min(TOWER_MAX_FLOOR, fl | 0));
+  var active = typeof document !== 'undefined' ? document.activeElement : null;
+  var hadRowFocus = !!(active && active.hasAttribute && active.hasAttribute('data-tower-pick'));
+  UI.towerBrowse.sel = fl;
+  UI.towerBrowse.tier = towerTierOf(fl).id;
+  renderTower();
+  // 樓層列整段重繪，鍵盤操作時把焦點還給同一層
+  if (hadRowFocus) {
+    var row = $id('tower-floors') && $id('tower-floors').querySelector('[data-tower-pick="' + fl + '"]');
+    if (row) row.focus();
+  }
+}
+
 function renderTower() {
   var fightBox = $id('tower-fight');
   var listBox = $id('tower-list-wrap');
@@ -6339,53 +6510,43 @@ function renderTower() {
     listBox.style.display = '';
     /* 離開戰鬥畫面：疊層上還在跑的特效要收掉，否則下一場一開場就看到上一場的殘留。 */
     if (typeof VFXTower !== 'undefined') VFXTower.stop();
-    var h = '';
     var highest = Math.max(0, towerState.highest || 0);
-    var maxShow = Math.min(TOWER_MAX_FLOOR, highest + 3);
-    for (var fl = 1; fl <= maxShow; fl++) {
-      var unlocked = fl <= highest + 1;
-      var cleared = fl <= highest;
-      var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
-      var hell = isHellTowerFloor(fl);
-      var purgatory = isPurgatoryTowerFloor(fl);
-      var towerClass = purgatory ? 'purgatory' : (hell ? 'hell' : 'trial');
-      if (fl === 1 || fl === TOWER_TRIAL_MAX_FLOOR + 1 || fl === TOWER_HELL_MAX_FLOOR + 1) {
-        var sectionName = purgatory ? '煉獄之塔' : (hell ? '地獄之塔' : '試煉之塔');
-        var sectionStart = purgatory ? TOWER_HELL_MAX_FLOOR + 1 : (hell ? TOWER_TRIAL_MAX_FLOOR + 1 : 1);
-        var sectionEnd = purgatory ? TOWER_PURGATORY_MAX_FLOOR : (hell ? TOWER_HELL_MAX_FLOOR : TOWER_TRIAL_MAX_FLOOR);
-        h += '<div class="tower-section-title ' + towerClass + '">🗼 ' +
-          sectionName + '<span>第 ' + sectionStart + '～' + sectionEnd + ' 層</span></div>';
-      }
-
-      var bossIcon = (bd.img && !towerBossImageFailed(bd.img)) ? 'images/' + bd.img : null;
-      var iconHtml = bossIcon
-        ? '<img src="' + bossIcon + '" data-tower-boss-image="' + esc(bd.img) + '" data-tower-boss-fallback="' + esc(bd.emoji || '👾') + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;">'
-        : '<span style="font-size:24px;vertical-align:middle;">' + (bd.emoji || '👾') + '</span>';
-
-      var twCost = towerChallengeCost(fl);
-      h += '<div class="tower-floor ' + towerClass + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
-        '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
-        '<span class="tf-name' + (purgatory ? ' purgatory-boss' : '') + '" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
-        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + ((player.gold || 0) >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
-        (unlocked
-          ? '<button class="btn sm" data-tower-floor="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + '>挑戰</button>' +
-          '<button class="btn sm" data-tower-auto="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + ' data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
-          : '<span class="tf-lock">🔒</span>') +
-        '</div>';
+    var nextFloor = Math.min(TOWER_MAX_FLOOR, highest + 1);
+    var st = UI.towerBrowse;
+    // 剛通關「下一層」時，選取跟著往上一層走；其他時候保留玩家自己點的樓層。
+    if (!st.sel || (st.lastHighest !== null && highest !== st.lastHighest && st.sel === Math.min(TOWER_MAX_FLOOR, st.lastHighest + 1))) {
+      st.sel = nextFloor;
+      st.tier = towerTierOf(nextFloor).id;
     }
-    $id('tower-floors').innerHTML = h;
-    var towerBossImages = $id('tower-floors').querySelectorAll('[data-tower-boss-image]');
-    for (var ti = 0; ti < towerBossImages.length; ti++) {
-      towerBossImages[ti].onerror = function () {
-        var imageName = this.getAttribute('data-tower-boss-image');
-        var fallbackEmoji = this.getAttribute('data-tower-boss-fallback') || '👾';
-        markTowerBossImageFailed(imageName);
-        var fallback = document.createElement('span');
-        fallback.style.cssText = 'font-size:24px;vertical-align:middle;';
-        fallback.textContent = fallbackEmoji;
-        this.parentNode.replaceChild(fallback, this);
-      };
+    st.lastHighest = highest;
+    if (!st.tier) st.tier = towerTierOf(st.sel).id;
+    var tier = towerTiers().filter(function (t) { return t.id === st.tier; })[0] || towerTiers()[0];
+
+    var tierBox = $id('tower-tiers');
+    var tierH = towerTierTabsHTML(highest);
+    if (tierBox && tierBox._lastH !== tierH) { tierBox._lastH = tierH; tierBox.innerHTML = tierH; }
+    setTextIfChanged($id('tower-highest'), highest ? '第 ' + highest + ' 層' : '尚未通關');
+
+    var floorsBox = $id('tower-floors');
+    var h = '';
+    for (var fl = tier.end; fl >= tier.start; fl--) h += towerFloorRowHTML(fl, highest);
+    if (floorsBox._lastH !== h) {
+      floorsBox._lastH = h;
+      floorsBox.innerHTML = h;
+      bindTowerBossImageFallback(floorsBox);
     }
+
+    var detail = $id('tower-detail');
+    var detailH = towerDetailHTML(st.sel, highest);
+    if (detail && detail._lastH !== detailH) {
+      detail._lastH = detailH;
+      detail.innerHTML = detailH;
+      bindTowerBossImageFallback(detail);
+    }
+    var actions = $id('tower-actions');
+    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0);
+    if (actions && actions._lastH !== actionsH) { actions._lastH = actionsH; actions.innerHTML = actionsH; }
+
     // 上次結果
     var rbox = $id('tower-result');
     var r = runtime.result;
@@ -6398,16 +6559,17 @@ function renderTower() {
         rh += '<div class="tr-sub">戰鬥數據：DPS ' + fmt(r.myDps) + '（通關需求約 ' + fmt(r.needDps) + '）｜BOSS 剩餘血量 ' + r.bossHpPct + '%</div>';
         rh += '<div class="tr-sub">失敗分析：</div>' + r.analysis.map(function (x) { return '<div class="tr-line">📋 ' + esc(x) + '</div>'; }).join('');
       }
-      rbox.innerHTML = rh;
+      if (rbox._lastH !== rh) { rbox._lastH = rh; rbox.innerHTML = rh; }
       rbox.style.display = '';
+      rbox.className = 'twx-result ' + (r.win ? 'is-win' : 'is-lose');
     } else {
       rbox.style.display = 'none';
     }
     if (UI._scrollTower) {
       UI._scrollTower = false;
       setTimeout(function () {
-        var el = document.querySelector('.tower-floor[data-tower-tip="' + (highest + 1) + '"]');
-        if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
+        var el = floorsBox.querySelector('.tower-floor[data-tower-tip="' + st.sel + '"]');
+        if (el) floorsBox.scrollTop = Math.max(0, el.offsetTop - floorsBox.clientHeight / 2 + el.offsetHeight / 2);
       }, 10);
     }
   }
@@ -8858,47 +9020,18 @@ function showTowerTooltip(flStr, anchorEl) {
   var fl = parseInt(flStr, 10);
   if (!fl) return;
   UI.tooltipAnchor = anchorEl;
-  var hasSoul = isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl);
-  var bossStats = bossStatsFor(fl);
-  var bossXp = bossStats.xp;
-  var soulRate = hellSoulOriginDropChance(fl);
-  var ancientEssenceRate = ancientEssenceDropChanceForBoss(fl);
-
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
-    '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) +
-    ' 金幣</div>' +
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">第 ' + fl + ' 層・' + esc(towerBossOf(fl).name) + '</div>' +
+    '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
+    '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) + ' 金幣</div>' +
     '<div class="skt-name" style="margin:6px 0;">【可能掉落物】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
-    '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
-    '✨ 經驗 x' + fmt(bossXp) + ' <span style="color:var(--dim)">(基礎，另加經驗加成)</span><br>' +
-    '🔮 附魔精華 x' + (3 + fl) + ' <span style="color:var(--dim)">(100%)</span><br>' +
-    '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
-    '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
-    '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span>' +
-    '<br><img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 <span style="color:var(--dim)">(' + fmt1(ancientEssenceRate) + '%)</span>' +
-    (hasSoul ? '<br>🧿 魔魂本源 <span style="color:var(--dim)">(' + fmt1(soulRate) + '%，地獄/煉獄之塔限定)</span>' : '') +
-    (isPurgatoryTowerFloor(fl) ? '<br>🌱 魔種 <span style="color:var(--dim)">(' + fmt1(demonSeedDropChanceForBoss(fl)) + '%，煉獄之塔限定)</span>' : '') + '<br>' +
-    '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
-
-  var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
-  var equipStrs = [];
-  for (var br = bossRates.length - 1; br >= 0; br--) {
-    if (!bossRates[br]) continue;
-    var rate = bossRates[br];
-    var rateStr = '';
-    if (rate >= 100) {
-      rateStr = '必定' + Math.floor(rate / 100) + '件';
-      var rem = rate % 100;
-      if (rem > 0) rateStr += ' + ' + rem + '%再1件';
-    } else {
-      rateStr = '機率' + rate + '%';
-    }
-    equipStrs.push('⚔️ <span style="color:' + RARITIES[br].color + '; font-weight:bold;">' + RARITIES[br].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
-  }
-  if (equipStrs.length) {
-    dropTip += '<br>' + equipStrs.join('<br>');
-  }
-
+    towerRewardRows(fl).map(function (r) {
+      return r.icon + ' ' + r.label + ' ' + r.value + (r.note ? ' <span style="color:var(--dim)">(' + r.note + ')</span>' : '');
+    }).join('<br>');
+  var equipStrs = towerEquipDropRows(fl).map(function (r) {
+    return '⚔️ <span style="color:' + r.color + '; font-weight:bold;">' + r.name + '</span> <span style="color:var(--dim)">(' + r.rate + ')</span>';
+  });
+  if (equipStrs.length) dropTip += '<br>' + equipStrs.join('<br>');
   dropTip += '</div>';
   tip.innerHTML = dropTip;
   tip.style.display = 'block';
@@ -11287,6 +11420,37 @@ function initUI() {
         renderGems();
       });
     }
+  }
+
+  // 高塔頁：塔別分頁、點選樓層（樓層列是 role=button 的 div，補上 Enter／空白鍵）
+  var towerList = $id('tower-list-wrap');
+  if (towerList && towerList.addEventListener) {
+    towerList.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var tierBtn = t.closest('[data-tower-tier]');
+      if (tierBtn) {
+        var tierId = tierBtn.getAttribute('data-tower-tier');
+        var tierDef = towerTiers().filter(function (x) { return x.id === tierId; })[0];
+        if (!tierDef) return;
+        var towerSnap = uiTowerPanelSnapshot();
+        var towerHighest = Math.max(0, (towerSnap && towerSnap.tower && towerSnap.tower.highest) || 0);
+        // 換塔時停在該塔「下一個可挑戰」的樓層；整座塔都通關了就停在頂樓
+        towerSelectFloor(Math.max(tierDef.start, Math.min(tierDef.end, towerHighest + 1)));
+        UI._scrollTower = true;
+        renderTower();
+        return;
+      }
+      var floorRow = t.closest('[data-tower-pick]');
+      if (floorRow) towerSelectFloor(parseInt(floorRow.getAttribute('data-tower-pick'), 10));
+    });
+    towerList.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var floorRow = e.target && e.target.closest ? e.target.closest('[data-tower-pick]') : null;
+      if (!floorRow) return;
+      e.preventDefault();
+      towerSelectFloor(parseInt(floorRow.getAttribute('data-tower-pick'), 10));
+    });
   }
 
   // 寶石轉換（九宮格）

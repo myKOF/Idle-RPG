@@ -8,7 +8,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.69">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.35">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.37">
 </head>
 
 <body>
@@ -515,15 +515,23 @@
           </div>
 
           <div id="tower-list-wrap">
-            <div class="sec-title">🗼 BOSS 高塔</div>
-            <div class="hint">限時 60 秒擊敗 BOSS；目前開放試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層。地獄之塔可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。</div>
-            <div class="tower-auto-bar">
-              <span>🔁 連續挑戰次數：</span>
-              <input type="number" id="tw-auto-count" value="5" min="1" max="999">
-              <span class="dim-text" style="font-size:12.5px">按各樓層「連挑」啟動：自動重複挑戰該層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）</span>
+            <div class="pg-top">
+              <h2 class="pg-title">高塔</h2>
+              <div id="tower-tiers" class="twx-tiers" role="tablist" aria-label="塔別"></div>
+              <span class="pg-pill twx-highest">最高通關 <b id="tower-highest">尚未通關</b></span>
+              <button type="button" class="pg-help twx-help" aria-label="高塔說明" data-tt-title="BOSS 高塔" data-tt-desc="限時擊敗 BOSS 即通關，首次通關金幣加倍。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
             </div>
-            <div id="tower-result" class="panel" style="display:none"></div>
-            <div id="tower-floors"></div>
+            <div class="twx">
+              <div id="tower-floors" class="twx-ladder"></div>
+              <div class="twx-main">
+                <div id="tower-detail" class="twx-detail"></div>
+                <div class="twx-actions">
+                  <div id="tower-actions" class="twx-btns"></div>
+                  <label class="twx-count">連挑次數 <input type="number" id="tw-auto-count" value="5" min="1" max="999"></label>
+                </div>
+                <div id="tower-result" class="twx-result" style="display:none"></div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -893,7 +901,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.15"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.101"></script>
+  <script src="js/ui.js?v=1.0.102"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>

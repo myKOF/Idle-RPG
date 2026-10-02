@@ -4033,3 +4033,597 @@ html *::-webkit-scrollbar-corner {
   margin: 0;
   overflow-y: auto;
 }
+
+/* ==== 高塔頁（2026-10）：塔別分頁＋樓層階梯（左）＋選中樓層的 BOSS 與獎勵（右）；戰鬥畫面 #tower-fight 維持原版面 ==== */
+#workspace-area main > #tab-tower.active {
+  height: 100%;
+  min-height: 0;
+}
+
+#tab-tower #tower-list-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#tab-tower .twx-tiers {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #23262d;
+  border-radius: 8px;
+  background: #0e1013;
+}
+
+#tab-tower .twx-tier {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #a39d90;
+  font: inherit;
+  font-size: 13px;
+  line-height: 26px;
+  cursor: pointer;
+}
+
+#tab-tower .twx-tier span {
+  font-size: 11px;
+  color: #6f6a60;
+}
+
+#tab-tower .twx-tier:hover:not(:disabled) {
+  color: #ece6d8;
+}
+
+#tab-tower .twx-tier.is-on {
+  border-color: #7a6440;
+  background: #2a2218;
+  color: #f0cf86;
+}
+
+#tab-tower .twx-tier.is-locked {
+  color: #4f535c;
+  cursor: not-allowed;
+}
+
+#tab-tower .twx-highest {
+  margin-left: auto;
+}
+
+#tab-tower .twx-help {
+  margin-left: 0;
+}
+
+#tab-tower .twx {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* 左：樓層階梯（頂樓在上；左緣一條爬升軌道，已通關段點亮紅色） */
+#tab-tower .twx-ladder {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 10px 10px 32px;
+  overflow-y: auto;
+  border: 1px solid #23262d;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #0b0c0f, #111317 40%);
+}
+
+#tab-tower .tower-floor {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid #1f2228;
+  border-radius: 8px;
+  background: #14161a;
+  box-shadow: none;
+  color: #ece6d8;
+  opacity: 1;
+  cursor: pointer;
+}
+
+#tab-tower .tower-floor::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: -17px;
+  width: 2px;
+  background: #2a2d34;
+}
+
+#tab-tower .tower-floor::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -22px;
+  width: 10px;
+  height: 10px;
+  margin-top: -6px;
+  transform: rotate(45deg);
+  border: 1px solid #0c0d10;
+  background: #2a2d34;
+}
+
+#tab-tower .tower-floor.cleared::before {
+  background: #8e2a22;
+}
+
+#tab-tower .tower-floor.cleared::after {
+  background: #c0392b;
+}
+
+#tab-tower .tower-floor.is-next::after {
+  background: #f0cf86;
+  box-shadow: 0 0 8px #f0cf86;
+}
+
+#tab-tower .tower-floor:hover {
+  border-color: #3a3d44;
+  background: #181a1f;
+}
+
+#tab-tower .tower-floor.is-next {
+  border-color: #6a5430;
+}
+
+#tab-tower .tower-floor.is-sel {
+  border-color: #b8932f;
+  background: #2a2218;
+  box-shadow: 0 0 14px -4px #b8932f88;
+}
+
+#tab-tower .tower-floor.locked {
+  background: #0f1013;
+  color: #5c5f66;
+}
+
+#tab-tower .tower-floor:focus-visible {
+  outline: 2px solid #f0cf86;
+  outline-offset: 1px;
+}
+
+#tab-tower .twx-fl-no {
+  flex: 0 0 32px;
+  font-family: var(--af-serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: #e7c47c;
+}
+
+#tab-tower .tower-floor.locked .twx-fl-no {
+  color: #4f535c;
+}
+
+#tab-tower .tower-floor .tf-emoji {
+  display: flex;
+  flex: 0 0 34px;
+  margin: 0;
+}
+
+#tab-tower .twx-fl-ico {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #3a3d44;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 6%;
+  background: #0c0d10;
+}
+
+#tab-tower span.twx-fl-ico.is-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+#tab-tower .tower-floor.locked .twx-fl-ico {
+  filter: grayscale(1) brightness(.5);
+}
+
+#tab-tower .tower-floor .tf-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#tab-tower .twx-fl-state {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: #5c5f66;
+}
+
+#tab-tower .tower-floor.cleared .twx-fl-state {
+  color: #8fd6a0;
+}
+
+#tab-tower .tower-floor.is-next .twx-fl-state {
+  color: #f0cf86;
+}
+
+/* 右：BOSS 卡＋獎勵＋操作 */
+#tab-tower .twx-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#tab-tower .twx-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#tab-tower .twx-boss {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--c) 35%, #2a2d34);
+  border-radius: 8px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c) 12%, #121418), #121418 60%);
+}
+
+#tab-tower .twx-boss-art {
+  display: flex;
+  flex: 0 0 140px;
+  align-items: center;
+  justify-content: center;
+  height: 140px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--c) 60%, transparent);
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c) 40%, transparent), #0c0d10 72%);
+}
+
+/* BOSS 圖是從帶標題的大圖切出來的，底部約兩成印著檔名：對齊上緣裁切，正方形框只露出上方約 73% */
+#tab-tower .twx-boss-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
+}
+
+#tab-tower span.twx-boss-img.is-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+}
+
+#tab-tower .twx-boss-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+#tab-tower .twx-boss-tier {
+  font-size: 12px;
+  color: #a39d90;
+}
+
+#tab-tower .twx-boss-tier.hell {
+  color: #ffd700;
+}
+
+#tab-tower .twx-boss-tier.purgatory {
+  color: #ff8c00;
+}
+
+#tab-tower .twx-boss-name {
+  font-family: var(--af-serif);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #f5ecd8;
+}
+
+#tab-tower .twx-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#tab-tower .twx-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--c, #3a3d44) 60%, transparent);
+  border-radius: 4px;
+  background: #0e1013;
+  font-size: 12px;
+  color: #c9c3b5;
+}
+
+#tab-tower .twx-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#tab-tower .twx-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #0c0d10;
+}
+
+#tab-tower .twx-stat span {
+  font-size: 11px;
+  color: #8a857a;
+}
+
+#tab-tower .twx-stat b {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ece6d8;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#tab-tower .twx-status {
+  font-size: 12px;
+}
+
+#tab-tower .twx-status.is-cleared {
+  color: #8fd6a0;
+}
+
+#tab-tower .twx-status.is-next {
+  color: #f0cf86;
+}
+
+#tab-tower .twx-status.is-locked {
+  color: #8a857a;
+}
+
+#tab-tower .twx-loot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #2a2d34;
+  border-radius: 8px;
+  background: #121418;
+}
+
+#tab-tower .twx-loot-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+#tab-tower .twx-loot-title b {
+  font-family: var(--af-serif);
+  font-size: 14px;
+  color: #e7c47c;
+}
+
+#tab-tower .twx-loot-title span {
+  font-size: 11px;
+  color: #6f6a60;
+}
+
+#tab-tower .twx-rws {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
+#tab-tower .twx-rw {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 24px;
+  font-size: 12px;
+  color: #c9c3b5;
+}
+
+#tab-tower .twx-rw-ico {
+  flex: 0 0 18px;
+  text-align: center;
+}
+
+#tab-tower .twx-rw-ico .res-icon {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+#tab-tower .twx-rw-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#tab-tower .twx-rw-label i {
+  margin-left: 6px;
+  font-size: 11px;
+  font-style: normal;
+  color: #6f6a60;
+}
+
+#tab-tower .twx-rw b {
+  flex: 0 0 auto;
+  font-weight: 600;
+  color: #ece6d8;
+}
+
+#tab-tower .twx-eqs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#tab-tower .twx-eq {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--c) 8%, #0e1013);
+  font-size: 12px;
+}
+
+#tab-tower .twx-eq b {
+  font-weight: 600;
+  color: var(--c);
+}
+
+#tab-tower .twx-eq span {
+  color: #a39d90;
+}
+
+#tab-tower .twx-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+}
+
+#tab-tower .twx-btns {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 10px;
+}
+
+#tab-tower .twx-go {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 46px;
+  border: 1px solid #a2392f;
+  border-radius: 8px;
+  background: linear-gradient(#7c241d, #521512);
+  color: #f5e6d0;
+  font-size: 15px;
+}
+
+#tab-tower .twx-go:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+#tab-tower .twx-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  color: #f0cf86;
+}
+
+#tab-tower .twx-cost.is-poor {
+  color: #fca5a5;
+}
+
+#tab-tower .twx-cost .res-icon {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+
+#tab-tower .twx-auto {
+  flex: 0 0 auto;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+#tab-tower .twx-locked-note {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  border: 1px dashed #2a2d34;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #8a857a;
+}
+
+#tab-tower .twx-count {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #a39d90;
+  white-space: nowrap;
+}
+
+#tab-tower .twx-count #tw-auto-count {
+  width: 64px;
+  height: 32px;
+  margin: 0;
+  text-align: center;
+}
+
+#tab-tower .twx-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #2a2d34;
+  border-radius: 8px;
+  background: #121418;
+}
+
+#tab-tower .twx-result.is-win {
+  border-color: #2c4434;
+  background: #0f1512;
+}
+
+#tab-tower .twx-result.is-lose {
+  border-color: #4a2a2a;
+  background: #161011;
+}
+
+#tab-tower .twx-result .tr-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+#tab-tower .twx-result .tr-sub,
+#tab-tower .twx-result .tr-line {
+  margin: 0;
+  font-size: 12px;
+}
