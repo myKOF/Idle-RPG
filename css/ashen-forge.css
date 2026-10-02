@@ -1785,9 +1785,34 @@ html *::-webkit-scrollbar-corner {
   font-weight: 700;
 }
 
+/* 背包格：照設計稿改成暗底細框，品質色只留在 1px 邊框上（inline 的內發光拿掉）。
+   選中、置灰兩種狀態仍沿用原本的 box-shadow，所以排除在外。 */
 #tab-equip #inventory-grid .item-cell {
+  border-width: 1px !important;
   border-radius: 5px !important;
   background: #111317 !important;
+}
+
+#tab-equip #inventory-grid .item-cell:not(.selected):not(.dimmed):not(.item-cell-dimmed) {
+  box-shadow: none !important;
+}
+
+#tab-equip #inventory-grid .item-cell .ic-lv {
+  background: transparent;
+  color: #a39d90;
+  font-size: 10px;
+}
+
+/* 沒選裝備時的空白詳情：裝飾星號縮小、變淡，不要搶畫面 */
+#tab-equip #detail-pane:not(.has-detail)::before {
+  font-size: 40px;
+  color: #3a3d44;
+  margin-bottom: 10px;
+}
+
+#tab-equip #detail-pane:not(.has-detail) .hint {
+  font-size: 13px;
+  color: #6f6b62;
 }
 
 .inv-filter-wrap {
