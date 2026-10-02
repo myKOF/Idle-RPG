@@ -8,9 +8,9 @@
       "layerIds": [
         "foot-ring",
         "rising-column",
-        "vertical-flow",
         "foot-foam",
-        "sparse-spray"
+        "sparse-spray",
+        "sprite-5"
       ]
     }
   ],

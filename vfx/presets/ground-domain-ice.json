@@ -56,8 +56,8 @@
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.4287,
+        "y": 0.4287
       },
       "alpha": 0.75,
       "tint": "#4da6ff",
@@ -102,8 +102,8 @@
       "assetId": "light-masks-1.0/default/ring_a.png",
       "zIndex": 2,
       "scale": {
-        "x": 0.293,
-        "y": 0.293
+        "x": 0.3216,
+        "y": 0.3216
       },
       "alpha": 0.55,
       "tint": "#79d8ff",
@@ -147,6 +147,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/star_08.png",
       "zIndex": 3,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "tint": "#79d8ff",
       "blendMode": "add",
       "emission": {
@@ -199,6 +203,149 @@
           0.4
         ]
       ]
+    },
+    {
+      "id": "edge-copy",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-23.png",
+      "zIndex": 1,
+      "rotation": 0,
+      "scale": {
+        "x": 0.2453,
+        "y": 0.2453
+      },
+      "alpha": 0.35,
+      "tint": "#4dfff3",
+      "blendMode": "add",
+      "duration": 1.85,
+      "rotationSpeed": -0.2617993877991494,
+      "alphaOverLife": [
+        [
+          0,
+          0.421277
+        ],
+        [
+          0.5,
+          0.702128
+        ],
+        [
+          1,
+          0.432979
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "edge-copy-2",
+      "type": "sprite",
+      "assetId": "new_materials/hud-reticle/target_19.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.2999,
+        "y": 0.2999
+      },
+      "alpha": 0.35,
+      "tint": "#07d7f2",
+      "blendMode": "add",
+      "duration": 1.85,
+      "rotationSpeed": -0.2617993877991494,
+      "alphaOverLife": [
+        [
+          0,
+          0.421277
+        ],
+        [
+          0.5,
+          0.702128
+        ],
+        [
+          1,
+          0.432979
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "edge-copy-3",
+      "type": "sprite",
+      "assetId": "new_materials/hud-reticle/target_19.png",
+      "zIndex": 1,
+      "rotation": 1.047198,
+      "scale": {
+        "x": 0.2999,
+        "y": 0.2999
+      },
+      "alpha": 0.35,
+      "tint": "#07d7f2",
+      "blendMode": "add",
+      "duration": 1.85,
+      "rotationSpeed": -0.2617993877991494,
+      "alphaOverLife": [
+        [
+          0,
+          0.421277
+        ],
+        [
+          0.5,
+          0.702128
+        ],
+        [
+          1,
+          0.432979
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.96
+        ],
+        [
+          0.5,
+          1.04
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
     }
   ],
   "sizing": {

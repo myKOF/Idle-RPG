@@ -9,12 +9,16 @@
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_01.png",
       "zIndex": 0,
-      "scale": {
-        "x": 0.390625,
-        "y": 0.390625
+      "position": {
+        "x": 4.0496,
+        "y": 16.6014
       },
-      "alpha": 0.16,
-      "tint": "#278eb8",
+      "scale": {
+        "x": 0.2995,
+        "y": 0.2995
+      },
+      "alpha": 0.25,
+      "tint": "#9ee4ff",
       "blendMode": "normal",
       "duration": 4,
       "alphaOverLife": [
@@ -45,15 +49,19 @@
       "type": "sprite",
       "assetId": "codex-authored/tornado/water-flow.png",
       "zIndex": 1,
+      "position": {
+        "x": 4.0496,
+        "y": 8.3006
+      },
       "scale": {
-        "x": 1.65,
-        "y": 2.4
+        "x": 1.8462,
+        "y": 2.6855
       },
       "anchor": {
         "x": 0.5,
         "y": 0.6875
       },
-      "alpha": 0.22,
+      "alpha": 0.8,
       "tint": "#83dfe8",
       "blendMode": "normal",
       "duration": 4,
@@ -95,54 +103,17 @@
       }
     },
     {
-      "id": "vertical-flow",
-      "type": "procedural",
-      "assetId": "light-masks-1.0/default/cone_composed_f.png",
-      "effect": "uvScroll",
-      "zIndex": 2,
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      },
-      "size": {
-        "x": 120,
-        "y": 460
-      },
-      "alpha": 0.075,
-      "tint": "#67c7dc",
-      "blendMode": "add",
-      "duration": 4,
-      "scrollSpeed": {
-        "x": 0,
-        "y": -0.24
-      },
-      "alphaOverLife": [
-        [
-          0,
-          0
-        ],
-        [
-          0.06,
-          1
-        ],
-        [
-          0.88,
-          1
-        ],
-        [
-          1,
-          0
-        ]
-      ]
-    },
-    {
       "id": "foot-foam",
       "type": "sprite",
       "assetId": "particle-pack/png-transparent/circle_01.png",
       "zIndex": 3,
+      "position": {
+        "x": 4.0496,
+        "y": 16.6014
+      },
       "scale": {
-        "x": 0.3359375,
-        "y": 0.3359375
+        "x": 0.3759,
+        "y": 0.3759
       },
       "alpha": 0.09,
       "tint": "#91e5e8",
@@ -187,8 +158,8 @@
       "assetId": "particle-pack/png-transparent/spark_01.png",
       "zIndex": 4,
       "position": {
-        "x": 0,
-        "y": -50
+        "x": 4.0496,
+        "y": -47.6456
       },
       "alpha": 0.14,
       "tint": "#8dddde",
@@ -204,19 +175,19 @@
         0.9
       ],
       "spawn": {
-        "height": 90,
+        "height": 100.7033,
         "shape": "box",
-        "width": 100
+        "width": 111.8925
       },
       "speed": [
-        25,
-        50
+        27.9732,
+        55.9462
       ],
       "direction": -90,
       "spread": 28,
       "startScale": [
-        0.003,
-        0.006
+        0.0034,
+        0.0067
       ],
       "alignToVelocity": true,
       "alphaOverLife": [
@@ -247,6 +218,21 @@
           0.25
         ]
       ]
+    },
+    {
+      "id": "sprite-5",
+      "type": "sprite",
+      "assetId": "light-masks-1.0/transparent/cone_composed_a_noise.png",
+      "position": {
+        "x": 5.4634,
+        "y": -194.3537
+      },
+      "scale": {
+        "x": 0.4311,
+        "y": 0.7995
+      },
+      "alpha": 1,
+      "tint": "#4489f8"
     }
   ],
   "sizing": {

@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## WORKTREE-COMMIT-20261002 — 提交全部未暫存修改
+
+- Owner：Codex；使用者直接授權包含使用者修改一起Commit。前置：死亡新星已提交、技能與素材任務已完成；範圍為目前所有未暫存與正式新增檔案，不合併／推送，不丟棄使用者內容。
+- 內容：技能耗魔／岩之再生配置Excel、CSV與生成JS，水牢／巨型水柱／寒冰領域／紫色雷球Preset及layout、素材索引／匯出清單與四張PNG；另外三份CSV僅換行差異，Git正規化後不產生內容變更。
+- 驗證：`node tools/config_tables.cjs --apply Skills2`試跑語意變更0；技能配置與用途／快取四份測試38/38通過；`node tools/vfx/export-assets.cjs --check`239份Preset／160素材最新；`npm run build`418檔通過。Excel／CSV／JS逐格一致由正式schema測試驗證。
+- 素材庫：D:/MyGame/effects-materials工作區乾淨，HEAD為2f31639，所需素材已保存，匯出內容雜湊檢查一致；沒有素材庫待提交差異，不建立空提交。
+- 唯讀檢查：上述全部diff、素材庫status、AI_RULES.md／AI_WORKFLOW.md／prompts/codex.md及驗證工具／測試。已知風險：耗魔配置使部分舊戰鬥fixture法力不足（前次任務已基準驗證並記錄）；不改使用者數值或測試要求，未做完整實戰。
+- 額外素材／layout測試60項：57通過、1因Windows符號連結權限略過、2既有layout失敗（pillar-indomitable缺layout；bolt-sky-purple與bolt-thunderstrike-bluewhite多群組；hit-thunderstrike-bluewhite群組與圖層不同步）。上述問題檔案與HEAD無差異，不在本次使用者修改範圍；未順帶改動。
+- 狀態：Done；全數納入本任務對應`[Codex] chore: 保存使用者技能配置與特效素材調整`提交，提交後檢查工作區；無未完成提交項目。後續接手者使用者審查，可整合本次保存，但正式整合仍需處理既有fixture與layout差異；未合併／推送。
+
 ## DEAD-NOVA-CENTER-20261002 — 死亡新星以死亡敵人為中心
 
 - Owner：Codex；狀態：Done；使用者直接授權確認並修正。

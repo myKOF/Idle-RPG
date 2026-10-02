@@ -7,62 +7,43 @@
     {
       "id": "water-floor",
       "type": "sprite",
-      "assetId": "light-masks-1.0/default/circle_b.png",
+      "assetId": "new_materials/arcane-ring/dingbats-100.png",
       "zIndex": 0,
-      "scale": {
-        "x": 0.390625,
-        "y": 0.390625
+      "position": {
+        "x": 0.5547,
+        "y": -5.0825
       },
-      "alpha": 0.12,
-      "tint": "#49c9f5",
+      "scale": {
+        "x": 0.5941,
+        "y": 0.5979
+      },
+      "alpha": 1,
+      "tint": "#47e1f5",
       "blendMode": "add",
       "duration": 2,
-      "projection": {
-        "x": 1,
-        "y": 0.5
-      }
-    },
-    {
-      "id": "water-ripple",
-      "type": "sprite",
-      "assetId": "light-masks-1.0/default/ring_a.png",
-      "zIndex": 1,
-      "scale": {
-        "x": 0.35,
-        "y": 0.35
-      },
-      "alpha": 0.35,
-      "tint": "#77e2ff",
-      "blendMode": "add",
-      "duration": 2,
+      "rotationSpeed": 0.17453292519943295,
       "alphaOverLife": [
         [
           0,
-          0
+          0.187234
         ],
         [
-          0.2,
-          0.35
-        ],
-        [
-          1,
-          0
-        ]
-      ],
-      "scaleOverLife": [
-        [
-          0,
-          0.55
+          0.5062,
+          0.362766
         ],
         [
           1,
-          1
+          0.22234
         ]
       ],
-      "projection": {
+      "outerScale": {
         "x": 1,
-        "y": 0.5
-      }
+        "y": 0.6
+      },
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
     },
     {
       "id": "dome-shell",
@@ -70,14 +51,14 @@
       "assetId": "codex-authored/water-prison/water-dome.svg",
       "zIndex": 2,
       "position": {
-        "x": 0,
-        "y": -53.448276
+        "x": 0.2367,
+        "y": -52.1967
       },
       "scale": {
-        "x": 0.862069,
-        "y": 0.862069
+        "x": 0.6595,
+        "y": 0.7507
       },
-      "alpha": 0.85,
+      "alpha": 0.3,
       "tint": "#ffffff",
       "blendMode": "normal",
       "duration": 2,
@@ -94,7 +75,56 @@
           1,
           0.8
         ]
-      ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 1
+      },
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
+    },
+    {
+      "id": "water-floor-copy",
+      "type": "sprite",
+      "assetId": "new_materials/arcane-ring/dingbats-23.png",
+      "zIndex": 0,
+      "position": {
+        "x": 0.2367,
+        "y": -6.2565
+      },
+      "scale": {
+        "x": 0.247,
+        "y": 0.247
+      },
+      "alpha": 1,
+      "tint": "#00ffe1",
+      "blendMode": "add",
+      "duration": 2,
+      "rotationSpeed": 0.17453292519943295,
+      "alphaOverLife": [
+        [
+          0.0062,
+          0.269149
+        ],
+        [
+          0.4969,
+          0.561702
+        ],
+        [
+          1,
+          0.280851
+        ]
+      ],
+      "outerScale": {
+        "x": 1,
+        "y": 0.6
+      },
+      "perspective": false,
+      "cameraDepth": false,
+      "followDirection": false,
+      "followStretch": false
     }
   ],
   "sizing": {
