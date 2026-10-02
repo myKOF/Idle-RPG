@@ -5279,6 +5279,7 @@ var BattleRenderer = (function () {
   }
 
   /* ============ VFX 事件分派（協議 v17 spec → Canvas 畫法） ============ */
+  var endedWaterTornadoes = Object.create(null);
   function chainTargetAlive(id) {
     if (id === 'pv-float') return !!(S.player && !S.player.dead);
     var ent = S.entities[id];
@@ -5286,6 +5287,16 @@ var BattleRenderer = (function () {
   }
   function onVfx(spec) {
     if (!S.ready || !spec) return;
+    if (spec.variant === 'water-tornado-end') {
+      var endNow = Date.now(), endId = spec.area && spec.area.id;
+      Object.keys(endedWaterTornadoes).forEach(function(id) {
+        if (endedWaterTornadoes[id] <= endNow) delete endedWaterTornadoes[id];
+      });
+      if (endId) endedWaterTornadoes[endId] = endNow + 1000;
+      if (S.vfxrt) S.vfxrt.tryPlay(spec);
+      return;
+    }
+    if ((spec.variant === 'water-tornado' || spec.variant === 'water-tide-merge') && spec.area && endedWaterTornadoes[spec.area.id] > Date.now()) return;
     // 終止訊號不等位置緩衝，也不能被死亡目標／空目標守門擋掉。
     if (spec.variant === 'lightning-chain-end' || spec.variant === 'flying-thunder-end') {
       if (S.vfxrt) S.vfxrt.tryPlay(spec);

@@ -4,7 +4,7 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 155,
+  "assetCount": 156,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -166,6 +166,13 @@
       "package": "codex-authored",
       "contentHash": "sha256:67547f00ae7302a44569315ab8c4478240b23d3778b9f91aa5b10f4058943c8c",
       "fileSize": 1394
+    },
+    {
+      "assetId": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "relativePath": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "package": "codex-authored",
+      "contentHash": "sha256:bdf29a294c25b9070d384af1c7ede869c8709923ec79484cf0eb8f3e8b7cfec1",
+      "fileSize": 5341
     },
     {
       "assetId": "light-masks-1.0/default/circle_a.png",

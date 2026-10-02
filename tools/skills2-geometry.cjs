@@ -46,6 +46,7 @@ const commonRoutes={
 };
 function bindings(gid,stage){
  const id=gid+'/'+stage, b=[];
+ if(id==='waterball/ragingTide')b.push(['gap',['gap']]);
  if(id==='counter/warGodBody'||id==='counter/indomitable')b.push(['gap',['gap']]);
  if(id==='thunderorb/criticalThunderbolt')b.push(['speed',['speed']]);
  if(/^[1-7]$/.test(stage))b.push(['cast',['castM']]);

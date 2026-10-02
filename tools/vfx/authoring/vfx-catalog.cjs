@@ -340,7 +340,7 @@ g('waterball', [
   { projectile: 'proj-ice-shard', hit: 'hit-ice' },                     // T5 寒霜擴散（frost-spread）
   _,
   { field: 'field-water-tornado' }                                      // T7 水龍捲
-], { waterPrisonFall: { ground: 'ground-domain-ice' }, ragingTide: { ground: 'ground-tornado-water' }, abyssBurial: { ground: 'ground-domain-ice', hit: 'st-tick-ice' } });
+], { waterPrisonFall: { ground: 'ground-domain-ice' }, ragingTide: { ground: 'cast-water-tide-merge', field: 'field-water-tide-column' }, abyssBurial: { ground: 'ground-domain-ice', hit: 'st-tick-ice' } });
 g('frostnova', [
   { attack: 'burst-frost-nova', hit: 'hit-ice', cast: 'cast-magic' },   // T1 冰霜新星 + frost-freeze（見 vfxTier 註記：凍結走 T1 的 attack？→ 用 T4 極致寒霜）
   _,

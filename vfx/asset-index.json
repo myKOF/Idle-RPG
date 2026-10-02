@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2437,
+  "assetCount": 2438,
   "assets": [
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
@@ -1225,6 +1225,25 @@
       "format": "svg",
       "fileSize": 1394,
       "contentHash": "sha256:67547f00ae7302a44569315ab8c4478240b23d3778b9f91aa5b10f4058943c8c",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "dimensionsSource": "attributes",
+        "colorModel": null,
+        "bitDepth": null,
+        "hasAlphaChannel": null,
+        "pixelsAnalyzed": false
+      }
+    },
+    {
+      "assetId": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "package": "codex-authored",
+      "relativePath": "codex-authored/water-tide/ice-merge-vortex.svg",
+      "format": "svg",
+      "fileSize": 5341,
+      "contentHash": "sha256:bdf29a294c25b9070d384af1c7ede869c8709923ec79484cf0eb8f3e8b7cfec1",
       "facts": {
         "dimensions": {
           "width": 256,

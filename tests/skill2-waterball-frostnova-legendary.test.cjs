@@ -368,7 +368,7 @@ test('【水牢天瀑】敵人離開後不保留整段水牢減益，易傷與�
   assert.equal(c.buffVal(e, 'atkDown'), 0);
 });
 
-test('【怒海狂濤】：水龍捲達門檻時在中央生成巨大水龍捲，且不會每一拍重複生成', () => {
+test('【怒海狂濤】：十二道水龍捲顯示後延遲合併，消耗全部龍捲且不會每一拍重複生成', () => {
   const c = loadContext();
   stubVfx(c); stubHits(c);
   c.chance = () => false;
@@ -377,19 +377,22 @@ test('【怒海狂濤】：水龍捲達門檻時在中央生成巨大水龍捲�
   setUlt(c, 'waterball', 'ragingTide', 1);
   const p = playerEnt();
   const es = [enemy(1e9, 100, 0, 'a')];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     c.sgSpawnGround(p, c.BASE_STATS, 'waterball', {
       kind: 'tornado', tgt: null, floatSel: 'mv-float', from: { x: 100 + i, y: 0 },
       radius: 5 * M, dmgVal: 1, hits: 200, gap: 5
     });
   }
-  advance(c, p, es, 0.2);
+  advance(c, p, es, 1.5);
+  assert.equal(grounds(c, 'waterball', 'tidetornado').length, 0, '第十二道至少先顯示1.5秒');
+  advance(c, p, es, .05);
   const giant = grounds(c, 'waterball', 'tidetornado');
   assert.equal(giant.length, 1, '達門檻生成 1 道');
-  assert.equal(giant[0].radius, 20 * M, '範圍 20 米');
-  assert.equal(giant[0].hits, 20, '20 段');
+  assert.equal(giant[0].radius, 30 * M, '範圍 30 米');
+  assert.equal(giant[0].hits, 16, '4秒／每0.25秒＝16段');
+  assert.equal(grounds(c, 'waterball', 'tornado').length, 0, '全部普通龍捲已消耗');
   advance(c, p, es, 2);
-  assert.equal(grounds(c, 'waterball', 'tidetornado').length, 1, '維持在門檻以上不會再生成');
+  assert.equal(grounds(c, 'waterball', 'tidetornado').length, 1, '消耗後未再達門檻，不會重複生成');
 });
 
 test('【海淵葬界】：永久領域逐拍塗寒霜，且領域內可額外再疊 10 層', () => {

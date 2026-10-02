@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜怒海狂濤合併與巨型水柱（RAGING-TIDE-20261002）
+
+- Owner：Codex；Done。使用者指定普通水龍捲持續時間+5秒／每級+0.5秒，場上12道時消耗全部水龍捲合併為巨型水龍捲，每0.25秒對30米內敵人造成400%寒冰傷害／每級+40%，巨型壽命固定4秒。追加第12道先顯示1～2秒及人物上空寒冰漩渦，實作合併等待1.5秒。巨型採直通天際的淡色大水柱，降低遮擋及粒子量。前置海淵葬界cc605664已完成，沿用base＋per×Lv：Lv.1普通壽命+5.5秒／巨型440%，Lv.10為+10秒／800%。
+- 允許Skills2.xlsx／CSV／生成JS及水龍捲壽命／合併程式、VFX Runtime場域消耗與精確壽命事件、必要快取、新巨型水柱Preset／layout／製作工具、shipped索引及必要素材庫保存、相關回歸、game_formula及本紀錄。禁止使用者正在編輯的耗魔／岩之再生及既有水牢／寒冰領域／雷球素材、其他技能／副本、合併／推送。目標衝突預檢均乾淨；共享檔案提交時隔離本輪變更。
+- 驗收：普通及傳奇水龍捲壽命升級、12道門檻／1.5秒可見延遲／全部消耗／再次觸發／無座標退化、巨型獨立4秒及16拍／範圍與傷害／倒地、立即撤除舊特效及新畫面壽命／尺寸／跟隨人物、預覽截圖、Excel正常重開與格式／逐格範圍、配置一致、相關測試、Build／Console、雙倉庫Commit。後續接手者：使用者。
+- 完成檔案：Skills2 Excel／CSV與js/skills2.js、水龍捲剩餘壽命及消耗事件、js/vfx-runtime.js和js/battle-renderer.js、index.html／js/bridge.js／js/worker/sim.worker.js與tools/vfx/editor/index.html快取、tools/skills2-geometry.cjs／skills2-vfx.cjs及vfx-catalog.cjs兩階段角色接線、兩份water-tide author工具、新cast-water-tide-merge與field-water-tide-column Preset／layout、ice-merge-vortex.svg及asset-index／shipped-assets、本紀錄／game_formula與tests/raging-tide.test.cjs／既有水冰傳奇測試的怒海段。每輪合併獨立ID，丟棄位置緩衝中已撤除的龍捲／漩渦事件，不封鎖下一輪；水柱固定出生重心，只有合併漩渦跟隨人物。Worker協議41不變。
+- 特效來源：兩份ID只從Skills2第190列觸發地板／觸發持續場域欄讀取，Runtime未寫死新Preset ID，沒有第三種來源。巨型使用既有水流atlas及透明貼圖，柱身alpha0.22、水花最多14粒；寒冰漩渦為可重製透明SVG，附最多10粒細霜。RPGMoteStudio網頁嘗試存取失敗，採既有素材及程式生成向量圖；素材庫先提交2f31639，遊戲匯出版本與素材庫／shipped索引SHA256相同。既有使用者素材未提交。
+- Excel：原生Excel正常儲存及唯讀重開，欄寬／列高／styles.xml／凍結窗格／合併／驗證／篩選保持；Artifact Tool唯讀前後渲染，保留原窄欄截斷。本輪第190列只改P／AD／AQ／AR／AU／AV／AW／AX八格；工作區另一項極致之冰第200列更新保留，工作區Excel／CSV全231列一致。隔離提交從HEAD原生Excel更新上述八格再正常重開，與隔離CSV全231列一致，僅八格差異；生成JS保留HEAD所有無關數值。
+- 定向驗證：node --test tests/raging-tide.test.cjs，11/11通過，涵蓋普通／傳奇壽命、固定原節拍及凍結倍率、12道1.5秒延遲、連同延遲出生龍捲／既有巨型全部清除、重心／再次觸發、16拍／30米體型邊緣／440與800%／固定4秒、門檻不足／卸下／無Stats不清除、死亡與復甦無補拍、高塔BOSS、Worker序列化到真實Runtime之半徑／壽命、頭顶跟隨／獨立圖層及即時取消pending。
+- 隔離提交回歸：node --require <唯讀commit-hook.cjs> --test tests/{raging-tide,abyss-domain,waterball-vfx-integration,skill2-waterball-frostnova-legendary,water-ice-audit,skill2-status-slots,worker-protocol,worker-shim,vfx-editor-cache-versions,skills2-vfx-schema,skills2-vfx-usage,vfx-preset-usage}.test.cjs，183/183通過，0略過；preload只提供預備提交的JS／Excel／CSV／接線工具與測試，未改工作區。npm.cmd run build為418檔通過；config_tables --apply Skills2試跑語意變更0，apply_params試跑534一致／變更0／錨點問題0，export-assets --check為239份Preset／159素材最新，diff check通過。
+- 瀏覽器：自建28378服務與全新Edge無頭頁，真實Worker8 ticks／errors0；12個龍捲及漩渦尚在位置緩衝時立即撤除，等待後grounds0，下一輪新ID漩渦正常1個billboard效果，missing0，Console error／warning皆空。實際戰場巨型水柱與12道龍捲上空冰漩渦截圖已先提供使用者，自建服務已關閉；未做高階角色完整實戰，但數值／時間／渲染有正式回歸及真實Runtime驗證。
+- 未修改但檢查：util.js／data.js／status.js／formula.js／combat.js／legendary.js／battlefield.js、Worker protocol／shim、VFX Core／Pixi Backend／preset-kit、其餘技能及素材。隔離提交排除使用者耗魔／岩之再生、其他CSV、水牢／寒冰領域／雷球Preset與layout及三張新PNG；亦排除同副本另一任務的極致之冰程式／配置／接線／測試／文件，以及Scanner重算的既有素材資料。工作區保留上述未提交內容。
+- 交付Commit為本紀錄所在遊戲提交，素材庫2f31639；可合併，本輪未合併或推送。無未完成程式項目；已知限制為尚未高階角色完整實戰及工作區既有耗魔變更需由相應任務維護測試。下一步重載本分支實戰確認合併及水柱透明度；完整交接以本紀錄為準，後續接手者使用者。已交付預覽PNG保留於Temp/codex-raging-tide-20261002，不納入Git。提交前已檢查解析後絕對路徑並嘗試以原生PowerShell清除本次快照／測試腳本，操作遭自動核准審核拒絕（blocked by policy，未提供更詳細原因）；未重試繞過，暫存檔保留，不影響遊戲或素材交付。
+
 ## Codex｜海淵葬界寒冰領域與緩慢吸入（ABYSS-DOMAIN-20261002）
 
 - Owner：Codex；Done。使用者要求永久寒冰領域半徑30米，每0.35秒施加寒霜，額外疊層10／每級1、所有受傷增幅50%／每級5%；吸入範圍為領域再加10米，速度每秒3米，拉到近戰8米範圍即停，無空位不再吸入以免反覆推擠。吸入外圈只用於系統判定、不寫入玩家說明。沿用base＋per×Lv升級語意與既有永久裝配領域；Lv.1額外11層／易傷55%，Lv.10額外20層／易傷100%。

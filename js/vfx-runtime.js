@@ -1183,6 +1183,10 @@ var VFXRuntime = (function () {
       // 吞噬與飛雷神只在出生派送一次完整壽命，不使用逐拍場域的續命緩衝。
       var keep = (spec.variant === 'dragon-devour' || spec.variant === 'flying-thunder') ? Math.max(0, num(spec.dur, 0))
         : Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
+      if ((spec.variant === 'water-tornado' || spec.variant === 'water-tide-merge') && spec.area && isFinite(spec.area.lifeSec)) {
+        keep = Math.max(0, Number(spec.area.lifeSec));
+      }
+      if (spec.variant === 'water-tide-merge' && !spec.area) keep = Math.max(0, num(spec.dur, 0));
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
       var mult = curtainColumn || spec.variant === 'flying-thunder' ? 1 : noArea || spec.variant === 'ice-arrow-homing' || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
       var live = grounds[key];
@@ -1215,7 +1219,7 @@ var VFXRuntime = (function () {
       var flyingField = spec.variant === 'thunder-orb' || spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing';
       // 雷球的電弧粒子也屬於球體；共用球心倍率，避免各自按高度投影而拉歪輪廓。
       var orbBody = role === 'field' && thunderOrbBodyEvent(spec);
-      var ref = play(curtainColumn || spec.variant === 'thunder-orb' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
+      var ref = play(curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -1437,6 +1441,19 @@ var VFXRuntime = (function () {
     }
     function playSpec(spec) {
       if (!spec) return false;
+      if (spec.variant === 'water-tornado-end') {
+        var tornadoId = spec.area && spec.area.id;
+        if (tornadoId) {
+          ['field:', 'ground:', 'attack:', 'projectile:'].forEach(function(prefix) {
+            var key = prefix + tornadoId;
+            if (grounds[key]) { stopRef(grounds[key].ref); delete grounds[key]; }
+          });
+          pending = pending.filter(function(job) {
+            return !(job.spec && job.spec.area && job.spec.area.id === tornadoId);
+          });
+        }
+        return true;
+      }
       if (spec.variant === 'lightning-chain-end') {
         var endId=spec.area && spec.area.chainId;
         if (endId) {
@@ -2000,7 +2017,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261001-ice-tears-rain';
+  var DATA_VERSION = '20261002-raging-tide-column';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
