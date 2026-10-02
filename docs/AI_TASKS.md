@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Codex｜魔法盾承傷與百分比減耗（MANA-SHIELD-SHARE-20261002）
+
+- Owner：Codex；Done。使用者指定法力承擔25%／每級2.5%、法力消耗降低25%／每級2.5%，維持百分比換算；以明確例子驗收：50%最大生命的傷害、承擔50%／減耗50%時，扣25%最大生命及25%最大法力。法力預算基準為本次將扣血傷害占最大生命的比例，再套減耗；不能先乘承擔比例又乘減耗而變成12.5%法力。法力不足按可付成本比例縮減承擔。依現有base＋per×Lv，Lv.1兩項27.5%、Lv.10兩項50%。前置共享結算已存在，初次及續作目標預檢乾淨。
+- 允許Skills2 Excel／CSV／生成JS、魔法盾helper、地系相關回歸、game_formula／本紀錄及必要快取；禁止其他技能、使用者正在編輯的水牢素材／索引與新增圖片、其他副本及本輪合併／推送。驗收普通命中／護盾後／直接扣血／持續傷害、上限百分比、等級及法力不足／卸下／GM鎖、法力飄字、Excel格式／正常重開、配置一致、Build及Commit。後續接手者：使用者。
+- 完成9檔：js/skills2.js共享helper及生成配置、tests/skill2-earth.test.cjs、game_formula.md、Skills2.xlsx／CSV、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。T5 fx={pct:25,pctPer:2.5,manaRed:25,manaRedPer:2.5}；只替換helper段，未以候選整份程式覆蓋現有檔案。主頁skills2 1.0.264／bridge 1.0.197、Worker啟動鍵及skills2 import更新20261002-mana-shield-share，協議41不變。
+- Excel驗證：使用者確認關閉後，以原生Excel正常開啟，只改AU136／AW136／AX136三格、儲存及正常唯讀重開；全231列逐格比對只有三格差異，styles.xml／欄寬／列高不變。Artifact Tool唯讀匯入前後渲染，原有窄欄截斷相同，未更動布局。CSV與Excel全231列一致，node tools/config_tables.cjs --apply Skills2試跑語意變更0；node tools/apply_params.cjs試跑534參數一致、變更0／錨點問題0。
+- 正式定向回歸：node --test --test-name-pattern='魔法盾|三個新群組都在表上' tests/skill2-earth.test.cjs，6/6通過；涵蓋逐級、普通命中／護盾後／法力飄字、25%生命及25%法力例子、不同上限、DoT、不足額、零法力／零承擔／100%減耗、超額傷害及卸下／GM鎖。node --test tests/skill2-mire-earthguard-legendary.test.cjs tests/earthguard-revival.test.cjs tests/damage-drain.test.cjs tests/drain-flat-value.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，54/54通過；npm.cmd run build，415檔通過。
+- 廣域回歸：上述六檔加skill2-earth／skill2-system／skill2-vfx共165項，140通過、25失敗。唯讀載入HEAD程式並保留任務開始時使用者岩之再生0.5／0.05、恢復舊魔法盾helper／配置，逐項重跑相同失敗名稱，25項全部仍失敗；確認為既有技能數值／飛行與特效舊斷言問題，未降低斷言或擴大修改。未修改但核對formula.js／combat.js／status.js、Worker protocol與其他技能接線。
+- 瀏覽器驗證：獨立28376本機服務與全新Edge無頭頁面，真實Worker正常啟動（16 ticks、errors0）、戰鬥及角色進度正常；主頁fx四項及Lv.10承擔50%／減耗50%說明正確，Console error／warning均空。未做高階角色魔法盾完整實戰，數值與共用結算已由正式回歸驗證。
+- 保留使用者工作：開始讀表快照已含岩之再生pct0.5／pctPer0.05（HEAD為1／0.1）；工作區重建CSV／JS同步此已儲存值，未自行改回。提交前偵測到使用者另更新多個技能法力消耗及雷系素材，改以HEAD製作只含魔法盾的暫存區版本：Excel以原生Excel更新三格並正常重開，CSV全231列一致、僅三格差異，JS只更新魔法盾配置／helper；工作區原始檔保持使用者最新設定。此隔離提交版本重新跑上述6＋54項，60/60通過。岩之再生、技能法力消耗、其他CSV、水牢／雷球Preset／layout、素材索引及新增圖片保留未提交；本輪沒有新素材或素材庫Commit。
+- 交付為本紀錄所在Commit，可交Review後合併；本輪未合併／推送。無未完成程式項目，25項既有測試問題留原任務追蹤。自建預覽服務已關閉；Temp/codex-mana-shield-20261002前快照、渲染／候選／基線／隔離提交／啟動檢查腳本及日誌未納入Git。暫存清理的原生PowerShell刪除操作遭自動核准審核拒絕（blocked by policy，未提供更詳細原因），改用只刪具名檔案亦遭拒絕，故保留暫存檔並回報，未繞過限制。
+
 ## Codex｜水流彈弧高再減半（WATERBALL-ARC-QUARTER-20261001）
 
 - Owner：Codex；Done。使用者提供實戰截圖要求目前水流彈彈射高度再減半，改為每段飛行距離四分之一；維持速度、加速、落點、命中時間與傷害。前置冰水／Claude整合dd938283已完成，目標預檢全部乾淨。
