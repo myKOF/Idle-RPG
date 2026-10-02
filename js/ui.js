@@ -2689,6 +2689,7 @@ function renderHeader() {
   // 等級三處每拍重寫，但只有升級時才會變
   var levelText = 'Lv.' + p.level;
   setTextIfChanged($id('p-level'), levelText);
+  setTextIfChanged($id('rail-level'), levelText);   // 左側導覽列頂端的角色縮圖（屬性已收進「角色」分頁）
   setTextIfChanged($id('pv-level'), levelText);
   setTextIfChanged($id('tp-level'), levelText);
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
@@ -2720,7 +2721,9 @@ function renderHeader() {
   }
   var need = uiHeaderXpMax(p);
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
-  setStyleIfChanged($id('xp-fill'), 'width', isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%'));
+  var xpWidth = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
+  setStyleIfChanged($id('xp-fill'), 'width', xpWidth);
+  setStyleIfChanged($id('rail-xp-fill'), 'width', xpWidth);
   var xpBar = $id('xp-bar');
   setAttrIfChanged(xpBar, 'data-tt-title', '角色經驗');
   setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
@@ -2749,11 +2752,59 @@ function renderHeader() {
 }
 
 
-/* ---- 側欄 50+ 屬性面板（分組摺疊） ---- */
+/* ---- 「角色」分頁的 50+ 屬性面板（分組摺疊；2026-10 由左側欄搬進分頁） ---- */
 var _attrPanelBuilt = false;
+// 分頁頂端的核心屬性方塊：依 STAT_GROUPS 的列名對應（列名帶 emoji 前綴，用包含比對）
+var CHAR_CORE_STAT_NAMES = ['生命值', '法力值', '物理攻擊', '魔法攻擊', '暴擊率', '攻擊速度'];
+var _charCoreRows = null;
+// 數值為 0／未啟用的屬性列（勾選「隱藏數值為 0 的屬性」時收起來）
+function attrValueIsZero(html) {
+  var text = String(html).replace(/<[^>]+>/g, '').trim();
+  return text === '—' || /^\+?0(\.0+)?\s*(%|\/s|\/秒|次)?$/.test(text);
+}
+
+function buildCharCoreTiles() {
+  var box = $id('char-core');
+  if (!box) return;
+  _charCoreRows = [];
+  var h = '';
+  CHAR_CORE_STAT_NAMES.forEach(function (name, ci) {
+    STAT_GROUPS.some(function (g) {
+      return g.rows.some(function (row) {
+        if (String(row[0]).replace(/<[^>]+>/g, '').indexOf(name) < 0) return false;
+        _charCoreRows.push(row);
+        h += '<div class="char-core-tile"><span>' + esc(name) + '</span><b data-core="' + ci + '"></b></div>';
+        return true;
+      });
+    });
+  });
+  box.innerHTML = h;
+}
+
+function initAttrHideZeroToggle() {
+  var toggle = $id('attr-hide-zero');
+  var panel = $id('attr-panel');
+  if (!toggle || !panel) return;
+  var hide = true;
+  try { hide = localStorage.getItem('idle-rpg.attrHideZero') !== '0'; } catch (e) { }
+  toggle.checked = hide;
+  panel.classList.toggle('hide-zero', hide);
+  toggle.addEventListener('change', function () {
+    panel.classList.toggle('hide-zero', toggle.checked);
+    try { localStorage.setItem('idle-rpg.attrHideZero', toggle.checked ? '1' : '0'); } catch (e) { }
+  });
+}
+
 function renderAttrPanel(st, headerSnapshot) {
   var panel = $id('attr-panel');
   if (!panel) return;
+  if (!_charCoreRows) buildCharCoreTiles();
+  if (_charCoreRows) {
+    _charCoreRows.forEach(function (row, ci) {
+      var coreEl = document.querySelector('#char-core [data-core="' + ci + '"]');
+      if (coreEl) setHtmlIfChanged(coreEl, row[1](st));
+    });
+  }
   if (!_attrPanelBuilt) {
     // 首次建立骨架（前兩組預設展開）
     var h = '<div id="attr-preview-note" class="attr-preview-note" hidden></div>';
@@ -2800,7 +2851,11 @@ function renderAttrPanel(st, headerSnapshot) {
          製造上百個顯示項失效，全部落在同一塊被縮放的大圖層上。
          （2026-09-13 使用者機器的 trace：失效來源前三名是 LayoutText #text、
            stat-row 與其 SPAN／B，合計每秒數百次。） */
-      setHtmlIfChanged(el, row[1](st));
+      var attrHtml = row[1](st);
+      setHtmlIfChanged(el, attrHtml);
+      var rowEl = el.parentElement;
+      var isZero = attrValueIsZero(attrHtml);
+      if (rowEl && rowEl.classList.contains('is-zero') !== isZero) rowEl.classList.toggle('is-zero', isZero);
       if (typeof row[2] === 'function') {
         var pe = el.parentElement;
         if (pe) {
@@ -11865,6 +11920,8 @@ function initUI() {
     }
     updateInventoryFilterBadge();
   }
+
+  initAttrHideZeroToggle();
 
   var keywordFilter = $id('inv-keyword-filter');
   if (keywordFilter) {
