@@ -7603,21 +7603,6 @@ function runTalentUiAction(commandName, id, legacyAction) {
 }
 
 
-function talentNodeHTML(def, turn, snapshot) {
-  var lv = snapshot ? talentViewLevel(snapshot, def.id) : 0;
-  var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : false;
-  var disabled = !!def.disabled;
-  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : 0;
-  var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnations < turn ? '需 ' + turn + ' 轉' : '尚未開放');
-  var locked = !unlocked || disabled;
-  var aria = def.name + (disabled ? '（' + lockText + '）' : '');
-  return '<button type="button" class="talent-icon' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '') + '" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(aria) + '">' +
-    '<span class="talent-icon-glyph">' + def.emoji + '</span>' +
-    '<span class="talent-icon-level">Lv.' + lv + '/' + TALENT_MAX_LEVEL + '</span>' +
-    (locked ? '<span class="talent-icon-lock">🔒 ' + lockText + '</span>' : '') +
-    '</button>';
-}
-
 /* 潛力技能 V3：類型標籤與「當前等級效果」文字（供面板/提示/彈窗共用）。 */
 function potentialTypeLabel(def) {
   return def && def.type === 'active' ? '主動' : (def && def.type === 'passiveTrigger' ? '被動觸發' : '被動');
@@ -7825,7 +7810,7 @@ function renderTalentModal() {
     h += '<div>下一級：<b>' + talentEffectDescription(def, next) + '</b></div>';
     h += '<div>消耗天賦點：' + cost + '</div>';
   }
-  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 8 個天賦已全滿，效果 ×2</div>';
+  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 ' + (TALENT_TREES[turn] || []).length + ' 個天賦已全滿，效果 ×2</div>';
   if (!unlocked) h += '<div class="hint">🔒 需要達到 ' + turn + ' 轉</div>';
   h += '</div><div class="talent-modal-points">轉生天賦點：' + fmtFull(points) + '</div>';
   h += '<div class="talent-modal-actions">';
@@ -7839,6 +7824,100 @@ function renderTalentModal() {
   body.innerHTML = h;
 }
 
+/* ---- 天賦頁（2026-10）：上排轉數分頁，中間把該轉天賦排成星盤（環上節點＝天賦、外圈進度＝等級），右側列出本轉目前加成。
+   點天賦仍開原本的升級彈窗（renderTalentModal），這裡只負責瀏覽。 */
+UI.talentBrowse = { turn: null };
+
+function talentTreeMaxTotal(turn) {
+  return TALENT_MAX_LEVEL * (TALENT_TREES[turn] || []).length;
+}
+
+function talentDefaultTurn(snapshot) {
+  var rc = talentViewReincarnations(snapshot);
+  var open = Math.min(rc, TALENT_IMPLEMENTED_REINCARNATIONS);
+  for (var t = 1; t <= open; t++) {
+    if (TALENT_TREES[t] && !talentViewTreeComplete(snapshot, t)) return t;
+  }
+  return Math.max(1, open);
+}
+
+function talentTierTabsHTML(snapshot) {
+  var rc = talentViewReincarnations(snapshot);
+  var h = '';
+  for (var turn = 1; turn <= TALENT_IMPLEMENTED_REINCARNATIONS; turn++) {
+    if (!TALENT_TREES[turn]) continue;
+    var total = talentTreeLevelTotal(turn, snapshot);
+    var max = talentTreeMaxTotal(turn);
+    var pct = max ? Math.floor(total / max * 100) : 0;
+    var open = rc >= turn;
+    var complete = talentViewTreeComplete(snapshot, turn);
+    var on = UI.talentBrowse.turn === turn;
+    var state = !open ? '需 ' + turn + ' 轉' : (complete ? '全滿 ×2' : pct + '%');
+    h += '<button type="button" role="tab" class="tlx-tier' + (on ? ' is-on' : '') + (open ? '' : ' is-locked') + (complete ? ' is-complete' : '') +
+      '" data-talent-turn="' + turn + '" aria-selected="' + on + '" style="--p:' + pct + '%">' +
+      '<b>' + turn + ' 轉</b><span class="tlx-tier-bar"></span><span class="tlx-tier-state">' + state + '</span></button>';
+  }
+  return h + '<span class="tlx-tier-more">' + (TALENT_IMPLEMENTED_REINCARNATIONS + 1) + '–' + REINCARNATION_MAX + ' 轉<br>尚未開放</span>';
+}
+
+// 星盤節點：環上的位置由 --a（角度）決定，外圈進度環由 --p（等級百分比）決定
+function talentNodeHTML(def, turn, snapshot, index, count) {
+  var lv = snapshot ? talentViewLevel(snapshot, def.id) : 0;
+  var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : false;
+  var disabled = !!def.disabled;
+  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : 0;
+  var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnations < turn ? '需 ' + turn + ' 轉' : '尚未開放');
+  var locked = !unlocked || disabled;
+  var aria = def.name + ' Lv.' + lv + '/' + TALENT_MAX_LEVEL + (locked ? '（' + lockText + '）' : '');
+  var angle = count ? -90 + (index || 0) * 360 / count : -90;
+  var pct = Math.round(lv / TALENT_MAX_LEVEL * 100);
+  return '<button type="button" class="tlx-node' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '') +
+    '" style="--a:' + angle + 'deg;--p:' + pct + '%" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(aria) + '">' +
+    '<span class="tlx-node-ring"><span class="tlx-node-glyph">' + def.emoji + '</span></span>' +
+    '<span class="tlx-node-name">' + esc(def.name) + '</span>' +
+    '<span class="tlx-node-lv">' + (locked ? '🔒 ' + lockText : 'Lv.' + lv + ' / ' + TALENT_MAX_LEVEL) + '</span>' +
+    '</button>';
+}
+
+function talentBoardHTML(turn, snapshot) {
+  var tree = TALENT_TREES[turn] || [];
+  var total = talentTreeLevelTotal(turn, snapshot);
+  var max = talentTreeMaxTotal(turn);
+  var complete = talentViewTreeComplete(snapshot, turn);
+  var spokes = '', nodes = '';
+  tree.forEach(function (def, i) {
+    var angle = -90 + i * 360 / tree.length;
+    var lv = talentViewLevel(snapshot, def.id);
+    spokes += '<span class="tlx-spoke' + (lv > 0 ? ' is-lit' : '') + (lv >= TALENT_MAX_LEVEL ? ' is-max' : '') + '" style="--a:' + angle + 'deg"></span>';
+    nodes += talentNodeHTML(def, turn, snapshot, i, tree.length);
+  });
+  return '<span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes +
+    '<div class="tlx-core' + (complete ? ' is-complete' : '') + '">' +
+      '<b>' + turn + ' 轉</b>' +
+      '<span>' + (max ? Math.floor(total / max * 100) : 0) + '%・' + fmtFull(total) + ' / ' + fmtFull(max) + '</span>' +
+      (complete ? '<em>效果 ×2</em>' : '') +
+    '</div>' + nodes;
+}
+
+function talentEffectsHTML(turn, snapshot) {
+  var tree = TALENT_TREES[turn] || [];
+  var complete = talentViewTreeComplete(snapshot, turn);
+  var rows = tree.map(function (def) {
+    var lv = talentViewLevel(snapshot, def.id);
+    var text = lv > 0
+      ? talentEffectDescription(def, talentDescriptionValue(def, lv, turn, snapshot))
+      : '尚未學習';
+    return '<div class="tlx-eff' + (lv > 0 ? '' : ' is-empty') + '" data-talent-tip="' + def.id + '">' +
+      '<span class="tlx-eff-head"><span>' + def.emoji + ' ' + esc(def.name) + '</span><span>Lv.' + lv + '</span></span>' +
+      '<span class="tlx-eff-val">' + text + '</span></div>';
+  }).join('');
+  return '<div class="tlx-side-title"><b>本轉效果</b></div>' +
+    '<div class="tlx-side-note' + (complete ? ' is-complete' : '') + '">' +
+      (complete ? '本轉 ' + tree.length + ' 個天賦已全部升滿，效果 ×2' : '本轉 ' + tree.length + ' 個天賦全部升滿後，效果加倍') + '</div>' +
+    '<div class="tlx-effs">' + rows + '</div>' +
+    '<div class="tlx-side-foot">點選星盤上的天賦可升級或調整</div>';
+}
+
 function renderTalents() {
   var root = $id('talent-root');
   if (!root) return;
@@ -7849,29 +7928,22 @@ function renderTalents() {
     return;
   }
   var rc = talentViewReincarnations(snapshot);
-  var h = '<div class="panel talent-summary"><div class="sec-title">🌟 天賦系統</div>' +
-    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+9、Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
-    '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(snapshot.talentPoints || 0) + '</b></div></div>';
-  if (rc < 1) h += '<div class="panel talent-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
-  for (var turn = 1; turn <= REINCARNATION_MAX; turn++) {
-    var tree = TALENT_TREES[turn];
-    if (!tree) {
-      h += '<div class="panel talent-tree-panel locked"><div class="sec-title">' + turn + ' 轉天賦</div><div class="talent-locked-banner">🔒 本版本尚未開放</div></div>';
-      continue;
-    }
-    var treeTotal = talentTreeLevelTotal(turn, snapshot);
-    var treeStatus = rc >= turn ? '已開啟' : '未開啟';
-    var treeMax = TALENT_MAX_LEVEL * 8;
-    var treeComplete = treeTotal >= treeMax;
-    var treeCount = treeComplete ? '<span class="talent-tree-count">' + treeTotal + '/' + treeMax + '</span>' : treeTotal + '/' + treeMax;
-    var treeNotice = treeComplete
-      ? '<span class="talent-tree-complete">' + turn + '轉天賦全滿效果已加倍！</span>'
-      : turn + '轉所有技能升至全滿時此列所有技能效果加倍';
-    h += '<div class="panel talent-tree-panel"><div class="sec-title">' + turn + '轉天賦 <span class="dim-text">' + treeStatus + '　(' + treeCount + ')　' + treeNotice + '</span></div><div class="talent-grid">';
-    h += tree.map(function (def) { return talentNodeHTML(def, turn, snapshot); }).join('') + '</div></div>';
-  }
+  if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
+  var turn = UI.talentBrowse.turn;
+  var h = '<div class="pg-top"><h2 class="pg-title">天賦</h2>' +
+    '<span class="pg-pill">轉生天賦點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
+    '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
+    '<button type="button" class="pg-help" aria-label="天賦說明" data-tt-title="天賦" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生天賦點。升 1 級消耗＝該天賦轉數＋9，Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。同一轉的天賦全部升滿後，該轉效果加倍。潛力是技能分類，與特殊、被動共用技能點，不另設潛力點。">?</button></div>';
+  if (rc < 1) h += '<div class="tlx-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
+  h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
+  h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div>' +
+    '<aside class="tlx-side">' + talentEffectsHTML(turn, snapshot) + '</aside></div>';
   // 潛力屬於技能分類，天賦頁只保留轉生天賦點摘要。
-  root.innerHTML = h;
+  if (root._lastH !== h) {
+    if (UI.tooltipAnchor && root.contains && root.contains(UI.tooltipAnchor)) hideTooltip();
+    root._lastH = h;
+    root.innerHTML = h;
+  }
   renderTalentModal(snapshot);
 }
 
@@ -11420,6 +11492,19 @@ function initUI() {
         renderGems();
       });
     }
+  }
+
+  // 天賦頁：轉數分頁（未達轉數也能預覽；點天賦本身仍走 data-talent-select 開升級彈窗）
+  var talentTab = $id('tab-talents');
+  if (talentTab && talentTab.addEventListener) {
+    talentTab.addEventListener('click', function (e) {
+      var tierBtn = e.target && e.target.closest ? e.target.closest('[data-talent-turn]') : null;
+      if (!tierBtn) return;
+      var turn = parseInt(tierBtn.getAttribute('data-talent-turn'), 10);
+      if (!TALENT_TREES[turn]) return;
+      UI.talentBrowse.turn = turn;
+      renderTalents();
+    });
   }
 
   // 高塔頁：塔別分頁、點選樓層（樓層列是 role=button 的 div，補上 Enter／空白鍵）
