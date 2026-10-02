@@ -8,7 +8,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="stylesheet" href="css/style.css?v=1.0.69">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.32">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.33">
 </head>
 
 <body>
@@ -334,111 +334,130 @@
         </section>
 
         <!-- ============ 寶石 ============ -->
-        <section id="tab-gems" class="tab">
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">💎 寶石圖鑑與庫存（18 種能力：12 攻擊/功能 + 6 防禦）</div>
-            <div class="hint">寶石可鑲嵌到裝備的插槽。到「裝備」分頁點選裝備，即可鑲嵌或點擊已鑲寶石取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時鑲嵌的寶石會自動取回。</div>
-            <div id="gem-table"></div>
+        <section id="tab-gems" class="tab" data-gem-tool="compose">
+          <div class="pg-top">
+            <h2 class="pg-title">寶石</h2>
+            <span class="pg-pill">持有 <b id="gem-total">0</b> 顆</span>
+            <span class="pg-pill">已收集 <b id="gem-kinds">0</b> 種</span>
+            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。6～10 階為神鑄寶石，只能在神鑄法陣以 6 顆同種同階合成。">?</button>
           </div>
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🔀 寶石合成</div>
-            <div class="hint">消耗 2 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石；可選擇「全部類型寶石」逐種類合成。</div>
-            <div class="flt-row" style="margin-top:8px; flex-wrap:wrap">
-              <span>寶石種類</span>
-              <select id="fuse-type"></select>
-              <span>等級</span>
-              <select id="fuse-level">
-                <option value="1">一級 → 二級</option>
-                <option value="2">二級 → 三級</option>
-                <option value="3">三級 → 四級</option>
-                <option value="4">四級 → 五級</option>
-              </select>
-              <button id="fuse-btn" class="btn">🔀 合成一次</button>
-              <button id="fuse-all-btn" class="btn sm">♻️ 全部合成</button>
+          <div class="gx">
+            <div class="gx-lib">
+              <div id="gem-filter" class="gx-chips"></div>
+              <label class="gx-owned"><input type="checkbox" id="gem-owned-only" checked> 只看持有</label>
+              <div id="gem-table" class="gx-items"></div>
             </div>
-            <div class="node-info" id="fuse-info"></div>
-          </div>
-
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🔄 寶石轉換</div>
-            <div class="hint">把九宮格中的寶石一次性轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、每格上限 1000
-              顆；點下方庫存寶石放入（一次放滿可放數量），點格子取出。<b>融合寶石無法轉換</b>。</div>
-            <div class="gconv-layout">
-              <div id="gconv-grid" class="gconv-grid"></div>
-              <div class="gconv-side">
-                <div class="gconv-arrow">➡️</div>
-                <div class="sec-sub">轉換為</div>
-                <select id="gconv-target"></select>
-                <button id="gconv-btn" class="btn">🔄 一鍵轉換</button>
-                <button id="gconv-clear" class="btn sm">清空</button>
-                <div id="gconv-result" class="gem-result">尚未進行轉換</div>
+            <div class="gx-main">
+              <div id="gem-focus" class="gx-focus"></div>
+              <div class="gx-tabs" role="tablist" aria-label="寶石工坊">
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="compose">合成</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert">轉換</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle">拆解</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="fusion" id="gem-tool-fusion">融合</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="shop">商店</button>
               </div>
-            </div>
-            <div class="node-info" id="gconv-info"></div>
-            <div class="sec-sub" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <span>庫存寶石（點擊放入九宮格）</span>
-              <button id="btn-gem-sort" class="btn sm">排序：類型優先</button>
-            </div>
-            <div id="gconv-pool" class="chip-row"></div>
-          </div>
 
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">⛏️ 寶石拆解</div>
-            <div class="hint">將 2 階以上的寶石拆解為同種類 1 階寶石，數量<b>損失 30%</b>（例：5 階寶石合成需 16 顆 1 階，拆解獲得 ⌊16×0.7⌋ = 11
-              顆）。融合寶石依「融合次數」推算 1 階總成本（視為 100% 成功）再打 7 折，並依其屬性種類均分。</div>
-            <div class="flt-row" style="margin-top:8px; flex-wrap:wrap">
-              <span>寶石種類</span>
-              <select id="gdis-type"></select>
-              <span>等級</span>
-              <select id="gdis-level">
-                <option value="2">二級</option>
-                <option value="3">三級</option>
-                <option value="4">四級</option>
-                <option value="5">五級</option>
-                <option value="6">六級</option>
-                <option value="7">七級</option>
-                <option value="8">八級</option>
-                <option value="9">九級</option>
-                <option value="10">十級</option>
-              </select>
-              <button id="gdis-btn" class="btn sm">⛏️ 拆解一顆</button>
-              <button id="gdis-all-btn" class="btn sm warn">⛏️ 全部拆解</button>
-            </div>
-            <div class="node-info" id="gdis-info" style="margin:4px 0 2px"></div>
-            <div class="sec-sub" style="margin-top:4px">融合寶石拆解（點擊拆解，會先確認）</div>
-            <div id="gdis-fused" class="chip-row"></div>
-            <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
-          </div>
-
-          <div id="gem-fusion-panel" class="panel" style="display:none; margin-bottom:12px">
-            <div class="sec-title">🧬 寶石融合 <span class="dim-text">（5 階以上寶石均可，含神鑄寶石）</span></div>
-            <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率
-              60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。<b>融合寶石無法用於神鑄法陣</b>。</div>
-            <div id="gfuse-slots" class="chip-row" style="margin:8px 0"></div>
-            <div class="btn-row">
-              <button id="gfuse-btn" class="btn">🧬 執行融合</button>
-              <button id="gfuse-clear" class="btn sm">清空</button>
-            </div>
-            <div class="node-info" id="gfuse-info"></div>
-            <div class="sec-sub">可用素材（點擊放入融合槽）</div>
-            <div id="gfuse-pool" class="chip-row" style="margin-bottom:8px"></div>
-            <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
-          </div>
-
-          <div class="panel">
-            <div class="shop-title-row">
-              <div class="sec-title">🏪 寶石商店 <span class="dim-text" id="shop-reset-cd"></span></div>
-              <div class="shop-upgrade-box">
-                <span id="gem-shop-level" class="shop-level-label">商店 Lv.1</span>
-                <button id="shop-upgrade" class="btn sm">⬆️ 升級</button>
+              <div class="gx-panel" data-gem-panel="compose">
+                <div class="hint">消耗 3 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石；選「全部類型寶石」會逐種類合成。</div>
+                <div class="flt-row gx-row">
+                  <span>種類</span>
+                  <select id="fuse-type"></select>
+                  <span>等級</span>
+                  <select id="fuse-level">
+                    <option value="1">一級 → 二級</option>
+                    <option value="2">二級 → 三級</option>
+                    <option value="3">三級 → 四級</option>
+                    <option value="4">四級 → 五級</option>
+                  </select>
+                </div>
+                <div id="fuse-recipe" class="gx-recipe"></div>
+                <div class="node-info" id="fuse-info"></div>
+                <div class="gx-actions">
+                  <button id="fuse-btn" class="btn">合成一次</button>
+                  <button id="fuse-all-btn" class="btn">全部合成</button>
+                </div>
               </div>
-            </div>
-            <div id="gem-shop-grid"></div>
-            <div class="btn-row" style="margin-top:8px">
-              <button id="shop-buy-all" class="btn">🛒 一鍵全購買</button>
-              <button id="shop-refresh" class="btn warn">🔄 手動刷新</button>
-            </div>
-            <div class="hint">商店等級越高，刷出數量與高階寶石機率越高。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。
+
+              <div class="gx-panel" data-gem-panel="convert">
+                <div class="hint">把九宮格中的寶石一次轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、上限 1000 顆；點下方庫存寶石放入，點格子取出。<b>融合寶石無法轉換</b>。</div>
+                <div class="gconv-layout">
+                  <div id="gconv-grid" class="gconv-grid"></div>
+                  <div class="gconv-side">
+                    <div class="gconv-arrow" aria-hidden="true">➜</div>
+                    <div class="sec-sub">轉換為</div>
+                    <select id="gconv-target"></select>
+                    <button id="gconv-btn" class="btn">一鍵轉換</button>
+                    <button id="gconv-clear" class="btn sm">清空</button>
+                    <div id="gconv-result" class="gem-result">尚未進行轉換</div>
+                  </div>
+                </div>
+                <div class="node-info" id="gconv-info"></div>
+                <div class="sec-sub gx-pool-head">
+                  <span>庫存寶石（點擊放入九宮格）</span>
+                  <button id="btn-gem-sort" class="btn sm">排序：類型優先</button>
+                </div>
+                <div id="gconv-pool" class="chip-row"></div>
+              </div>
+
+              <div class="gx-panel" data-gem-panel="dismantle">
+                <div class="hint">將 2 階以上的寶石拆解為同種類 1 階寶石，數量<b>損失 30%</b>。融合寶石依「融合次數」推算 1 階總成本再打 7 折，並依其屬性種類均分。</div>
+                <div class="flt-row gx-row">
+                  <span>種類</span>
+                  <select id="gdis-type"></select>
+                  <span>等級</span>
+                  <select id="gdis-level">
+                    <option value="2">二級</option>
+                    <option value="3">三級</option>
+                    <option value="4">四級</option>
+                    <option value="5">五級</option>
+                    <option value="6">六級</option>
+                    <option value="7">七級</option>
+                    <option value="8">八級</option>
+                    <option value="9">九級</option>
+                    <option value="10">十級</option>
+                  </select>
+                </div>
+                <div class="node-info" id="gdis-info"></div>
+                <div class="gx-actions">
+                  <button id="gdis-btn" class="btn">拆解一顆</button>
+                  <button id="gdis-all-btn" class="btn warn">全部拆解</button>
+                </div>
+                <div class="sec-sub">融合寶石拆解（點擊拆解，會先確認）</div>
+                <div id="gdis-fused" class="chip-row"></div>
+                <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
+              </div>
+
+              <div class="gx-panel" data-gem-panel="fusion">
+                <div id="gx-fusion-locked" class="gx-locked">寶石融合在 3 轉後開放。</div>
+                <div id="gem-fusion-panel" style="display:none">
+                  <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率 60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。5 階以上寶石均可，含神鑄寶石。</div>
+                  <div id="gfuse-slots" class="chip-row"></div>
+                  <div class="gx-actions">
+                    <button id="gfuse-btn" class="btn">執行融合</button>
+                    <button id="gfuse-clear" class="btn sm">清空</button>
+                  </div>
+                  <div class="node-info" id="gfuse-info"></div>
+                  <div class="sec-sub">可用素材（點擊放入融合槽）</div>
+                  <div id="gfuse-pool" class="chip-row"></div>
+                  <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
+                </div>
+              </div>
+
+              <div class="gx-panel" data-gem-panel="shop">
+                <div class="shop-title-row">
+                  <div class="sec-sub">商店刷新 <span class="dim-text" id="shop-reset-cd"></span></div>
+                  <div class="shop-upgrade-box">
+                    <span id="gem-shop-level" class="shop-level-label">商店 Lv.1</span>
+                    <button id="shop-upgrade" class="btn sm">升級</button>
+                  </div>
+                </div>
+                <div id="gem-shop-grid"></div>
+                <div class="gx-actions">
+                  <button id="shop-buy-all" class="btn">一鍵全購買</button>
+                  <button id="shop-refresh" class="btn warn">手動刷新</button>
+                </div>
+                <div class="hint">商店等級越高，刷出數量與高階寶石機率越高。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。</div>
+              </div>
             </div>
           </div>
         </section>
@@ -885,7 +904,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.15"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.99"></script>
+  <script src="js/ui.js?v=1.0.100"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -898,7 +917,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.203"></script>
+  <script src="js/bridge.js?v=1.0.204"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
