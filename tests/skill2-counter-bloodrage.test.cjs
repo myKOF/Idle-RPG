@@ -396,7 +396,7 @@ test('反擊法力 UI：超神詳情顯示每次反擊耗魔，前階與追加�
   const pick=c.sgUiUltPick(snapshot,'counter');
   const ultMp=c.skills2TierManaCost('counter',0,pick.id);
   const t3Mp=c.skills2TierTriggerMp('counter',2), t6Mp=c.skills2TierTriggerMp('counter',5);
-  c.UI.sgBrowse.tier=2; c.UI.sgBrowse.ultFocus=null;
+  c.UI.sgBrowse.tier=2; c.UI.sgBrowse.ultFocus=null; c.UI.sgBrowse.focus='ult';
   let html=c.sgbDetailHTML('counter',snapshot,{player:{gold:0}});
   assert.match(html,new RegExp(ultMp+' MP／次反擊'));
   assert.doesNotMatch(html,new RegExp(ultMp+' MP／次施放'));

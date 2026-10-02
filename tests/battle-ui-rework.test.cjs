@@ -37,7 +37,9 @@ test('戰鬥區 CSS 包含頂部任務列膠囊定位與底部 10 技能槽位�
 
 test('ui.js 包含 renderBattleSkillBar 渲染邏輯與跳轉技能頁事件', () => {
   assert.match(ui, /function renderBattleSkillBar\(/);
-  assert.match(ui, /var TOTAL_SLOTS = 10;/);
+  // 技能列格數一律來自參數表（LOADOUT_SIZE.max），技能頁與戰鬥技能列不得各自寫死
+  assert.doesNotMatch(ui, /var TOTAL_SLOTS = \d+;/);
+  assert.equal((ui.match(/var TOTAL_SLOTS = LOADOUT_SIZE\.max;/g) || []).length, 2);
   assert.match(ui, /data-skill-slot-action="goto-skills"/);
   assert.match(ui, /data-tab="skills"/);
   assert.match(ui, /--cd-deg:/);

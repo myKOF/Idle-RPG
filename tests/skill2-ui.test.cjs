@@ -42,9 +42,10 @@ function snapshot(levels, extra) {
   return Object.assign({ skills2: { levels, progress: { level: 576, reinc: 0 } }, loadout: [] }, extra || {});
 }
 
-function detail(c, gid, snap, tier, gold) {
+function detail(c, gid, snap, tier, gold, focus) {
   c.UI.sgBrowse.tier = tier;
   c.UI.sgBrowse.ultFocus = null;
+  c.UI.sgBrowse.focus = focus || 'tier';
   return c.sgbDetailHTML(gid, snap, { player: { gold: gold === undefined ? 1e15 : gold } });
 }
 
@@ -89,17 +90,17 @@ test('第 1 階恆為至少 Lv.1，不能降到 0', () => {
 
 test('超神進化：未開放顯示還差幾階，未選三選一，已選升級走 SG_ULT_SLOT', () => {
   const c = loadContext();
-  const locked = detail(c, 'thrust', snapshot({ thrust: [10, 10, 10, 10, 10, 10, 5] }), 0);
+  const locked = detail(c, 'thrust', snapshot({ thrust: [10, 10, 10, 10, 10, 10, 5] }), 0, undefined, 'ult');
   assert.match(locked, /前 7 階需全部滿級（目前 6／7 階已滿級）/);
   assert.doesNotMatch(locked, /data-skill2-ultpick/);
 
-  const open = detail(c, 'thrust', snapshot({ thrust: Array(7).fill(10) }), 0);
+  const open = detail(c, 'thrust', snapshot({ thrust: Array(7).fill(10) }), 0, undefined, 'ult');
   assert.match(open, /data-skill2-ultpick="thrust:0"/);
   assert.equal((open.match(/class="sgb-ult-card[ "]/g) || []).length, 3);
 
   const snap = snapshot({ thrust: Array(7).fill(10) });
   snap.skills2.ult = { thrust: { pick: 1, lv: 3 } };
-  const chosen = detail(c, 'thrust', snap, 0);
+  const chosen = detail(c, 'thrust', snap, 0, undefined, 'ult');
   assert.match(chosen, new RegExp('data-skill2-learn="thrust:' + c.SG_ULT_SLOT + '"'));
   assert.match(chosen, /sgb-ult-card is-chosen/);
   assert.match(chosen, /sgb-fork-bar is-lit/);
@@ -107,6 +108,26 @@ test('超神進化：未開放顯示還差幾階，未選三選一，已選升�
   c.UI.sgBrowse.ultFocus = 0;
   const other = c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } });
   assert.match(other, /要改選需先按「重選」/);
+});
+
+test('同一時間只展開一段說明：看某一階時超神說明收起，看超神時各階收起', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: Array(7).fill(10) });
+  const tierView = detail(c, 'thrust', snap, 2, undefined, 'tier');
+  assert.equal((tierView.match(/class="sgb-tier-detail"/g) || []).length, 1);
+  assert.doesNotMatch(tierView, /sgb-ult-detail/);
+  assert.match(tierView, /sgb-ult-cards/, '三張超神卡片仍然顯示');
+  const ultView = detail(c, 'thrust', snap, 2, undefined, 'ult');
+  assert.doesNotMatch(ultView, /class="sgb-tier-detail"/);
+  assert.match(ultView, /sgb-ult-detail/);
+});
+
+test('篩選只有全部／物理／魔法三個，依傷害類型分類', () => {
+  const c = loadContext();
+  const chips = c.sgbFilterChipsHTML();
+  assert.deepEqual([...chips.matchAll(/data-sgb-filter="(\w+)"/g)].map((m) => m[1]), ['all', 'phys', 'magic']);
+  assert.equal(c.sgbCategoryOf('fireball'), 'magic');
+  assert.equal(c.sgbCategoryOf('thrust'), 'phys');
 });
 
 test('主動型被動：有裝備鈕與類型標籤；已裝上改為卸下', () => {

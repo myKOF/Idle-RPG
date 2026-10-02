@@ -7875,13 +7875,14 @@ function renderSkills() {
   var equippedCount = lo.filter(Boolean).length;
   $id('loadout-cap').textContent = equippedCount + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
   var lh = '';
-  var TOTAL_SLOTS = 10;
+  // 格數與戰鬥技能列同一個來源（參數表 LOADOUT_SIZE.max），未解鎖格的門檻也由同一組參數算
+  var TOTAL_SLOTS = LOADOUT_SIZE.max;
   var selectedIndex = typeof UI.selectedSkillLoadoutIndex === 'number' ? UI.selectedSkillLoadoutIndex : -1;
 
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
-      var reqLv = (i - 4 + 1) * 50;
+      var reqLv = (i - LOADOUT_SIZE.base + 1) * LOADOUT_SIZE.perLevels;
       var lockDesc = '角色達到 Lv.' + reqLv + ' 或 1 轉解鎖全部技能格';
       lh += '<div class="battle-skill-slot locked" data-slot-index="' + i + '" data-index="' + i + '" data-tt-title="技能槽 #' + (i + 1) + '（未解鎖）" data-tt-desc="' + esc(lockDesc) + '">' +
         '<span class="bss-lock">🔒</span>' +
@@ -8068,7 +8069,9 @@ function isGMHost() {
    左：技能群組清單（可依元素篩選）；右：選中群組的「進化之路」——7 階由上而下以菱形節點
    串連，已投資的段落點亮，第 8 階超神進化畫成三岔。點某一階就地展開說明與操作。
    所有按鈕沿用既有的 data-skill2-*／data-skill-equip 屬性，指令與確認流程完全不變。 */
-UI.sgBrowse = { gid: null, tier: null, filter: 'all', ultFocus: null };
+/* focus：同一時間只展開一段說明——'tier'＝展開 tier 那一階，'ult'＝展開超神選項 ultFocus（各階收起），
+   這樣最長的階說明加最長的超神說明不會同時出現，整頁不必捲動就讀得完。 */
+UI.sgBrowse = { gid: null, tier: null, filter: 'all', ultFocus: null, focus: 'tier' };
 
 var SGB_ELEM_COLORS = {
   phys: '#d6cfbf', fire: '#f08040', earth: '#c9a060', lightning: '#ecd050',
@@ -8078,12 +8081,6 @@ var SGB_ELEM_COLORS = {
 function sgbElemOf(gid) {
   var g = SKILLS2[gid];
   return (g && g.elem) || 'phys';
-}
-
-function sgbElemLabel(elem) {
-  if (elem === 'phys') return '物理';
-  var info = (typeof ELEM_INFO !== 'undefined') ? ELEM_INFO[elem] : null;
-  return info ? (info.short || info.name) : elem;
 }
 
 function sgbTierMax() {
@@ -8127,18 +8124,24 @@ function sgbResolveGroup(skillsSnapshot, ids) {
   return ids[0] || null;
 }
 
-function sgbFilterChipsHTML(ids) {
-  var elems = [];
-  ids.forEach(function (gid) {
-    var e = sgbElemOf(gid);
-    if (elems.indexOf(e) < 0) elems.push(e);
-  });
+/* 篩選依傷害類型分三類：全部／物理／魔法（元素色只留在各技能的圖示框） */
+var SGB_FILTERS = [
+  { id: 'all', label: '全部', color: '#a39d90' },
+  { id: 'phys', label: '物理', color: '#d6cfbf' },
+  { id: 'magic', label: '魔法', color: '#8ec5ff' }
+];
+
+function sgbCategoryOf(gid) {
+  var g = SKILLS2[gid];
+  return g && g.dmgType === 'magic' ? 'magic' : 'phys';
+}
+
+function sgbFilterChipsHTML() {
   var h = '';
-  ['all'].concat(elems).forEach(function (e) {
-    var on = UI.sgBrowse.filter === e;
-    h += '<button type="button" class="sgb-chip' + (on ? ' is-on' : '') + '" data-sgb-filter="' + e + '" aria-pressed="' + on + '">' +
-      '<span class="sgb-chip-dot" style="background:' + (e === 'all' ? '#a39d90' : (SGB_ELEM_COLORS[e] || '#c9c3b5')) + '"></span>' +
-      (e === 'all' ? '全部' : esc(sgbElemLabel(e))) + '</button>';
+  SGB_FILTERS.forEach(function (c) {
+    var on = UI.sgBrowse.filter === c.id;
+    h += '<button type="button" class="sgb-chip' + (on ? ' is-on' : '') + '" data-sgb-filter="' + c.id + '" aria-pressed="' + on + '">' +
+      '<span class="sgb-chip-dot" style="background:' + c.color + '"></span>' + c.label + '</button>';
   });
   return h;
 }
@@ -8169,6 +8172,11 @@ function sgbListItemHTML(gid, skillsSnapshot, loadout, selected) {
     (tag ? '<span class="sgb-item-tag' + (equipped && !groupLocked ? ' is-eq' : '') + '">' + tag + '</span>' : '') + '</span>' +
     '<span class="sgb-item-pips">' + pips + '<span class="sgb-item-total">' + t.total + '/' + t.max + '</span></span>' +
     '</span></button>';
+}
+
+/* 「下一級」只佔一行（超出以…省略，滑鼠提示看全文），保證上方 3 行說明加操作鈕不必捲動就看得到 */
+function sgbNextLineHTML(text) {
+  return '<div class="sgb-next" data-tip="' + esc('下一級：' + text) + '">下一級：' + text + '</div>';
 }
 
 /* 標頭的耗魔／冷卻：主動型被動顯示每次反擊的耗魔（以選中的階為準），其餘顯示施法耗魔與冷卻 */
@@ -8206,7 +8214,7 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
   var upLit = i > 0 && (lvs[i - 1] || 0) > 0 && lv > 0;
   var downLit = last ? (lv > 0 && hasUltPick) : (lv > 0 && (lvs[i + 1] || 0) > 0);
   var state = locked && lv === 0 ? 'locked' : (atCap ? 'max' : (lv > 0 ? 'part' : 'zero'));
-  var selected = UI.sgBrowse.tier === i;
+  var selected = UI.sgBrowse.focus !== 'ult' && UI.sgBrowse.tier === i;
   var h = '<div class="sgb-tier sgb-tier-' + state + (selected ? ' is-sel' : '') + '">' +
     '<div class="sgb-rail" aria-hidden="true">' +
     (i > 0 ? '<span class="sgb-line sgb-line-up' + (upLit ? ' is-lit' : '') + '"></span>' : '') +
@@ -8223,7 +8231,7 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
     var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(gid, i, lv) : 0;
     h += '<div class="sgb-tier-detail">' +
       '<div class="sgb-desc">' + describeSkill2Tier(gid, i, Math.max(1, lv)) + '</div>' +
-      (!locked && !atCap && lv > 0 ? '<div class="sgb-next">下一級：' + describeSkill2Tier(gid, i, lv + 1) + '</div>' : '') +
+      (!locked && !atCap && lv > 0 ? sgbNextLineHTML(describeSkill2Tier(gid, i, lv + 1)) : '') +
       (locked ? '<div class="sgb-lock">🔒 ' + esc(sgStageLockReason(gid, i, skillsSnapshot)) + '；目前僅可查看</div>' : '') +
       '<div class="sgb-actions">';
     if (!locked && !atCap) {
@@ -8252,6 +8260,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   var unlocked = sgUiUltUnlocked(gid, lvs);
   var tierMax = sgbTierMax();
   var f = (typeof UI.sgBrowse.ultFocus === 'number' && list[UI.sgBrowse.ultFocus]) ? UI.sgBrowse.ultFocus : (pick ? pick.idx : 0);
+  var ultOpen = UI.sgBrowse.focus === 'ult';
   var h = '<div class="sgb-ult">' +
     '<div class="sgb-ult-head"><span class="sgb-rail" aria-hidden="true"><span class="sgb-line sgb-line-full' + (pick ? ' is-lit' : '') + '"></span></span>' +
     '<b>第 ' + (g.tiers.length + 1) + ' 階 · 超神進化</b><span class="sgb-ult-sub">三選一</span></div>';
@@ -8263,11 +8272,12 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   for (var j = 0; j < list.length; j++) {
     var chosen = !!pick && pick.idx === j;
     var status = !unlocked && !chosen ? '未開放' : (chosen ? '已選擇 · Lv.' + pick.lv + ' / ' + tierMax : (pick ? '未選擇' : '可選擇'));
-    h += '<button type="button" class="sgb-ult-card' + (chosen ? ' is-chosen' : '') + (f === j ? ' is-focus' : '') +
-      (pick && !chosen ? ' is-other' : '') + '" data-sgb-ult="' + j + '" aria-pressed="' + (f === j) + '">' +
+    h += '<button type="button" class="sgb-ult-card' + (chosen ? ' is-chosen' : '') + (ultOpen && f === j ? ' is-focus' : '') +
+      (pick && !chosen ? ' is-other' : '') + '" data-sgb-ult="' + j + '" aria-pressed="' + (ultOpen && f === j) + '">' +
       '<b>' + esc(list[j].name) + '</b><span>' + status + '</span></button>';
   }
   h += '</div>';
+  if (!ultOpen) return h + '</div>';   // 超神說明收起（正在看某一階）
 
   var fChosen = !!pick && pick.idx === f;
   var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
@@ -8278,7 +8288,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
     '</div>' +
     '<div class="sgb-desc">' + describeSkill2Ult(gid, f, fChosen ? pick.lv : 1) + '</div>';
   if (fChosen && unlocked && pick.lv < tierMax) {
-    h += '<div class="sgb-next">下一級：' + describeSkill2Ult(gid, f, pick.lv + 1) + '</div>';
+    h += sgbNextLineHTML(describeSkill2Ult(gid, f, pick.lv + 1));
   }
   h += '<div class="sgb-actions">';
   if (!unlocked) {
@@ -8344,10 +8354,10 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
     '<span class="sgb-head-icon" aria-hidden="true">' + g.emoji + '</span>' +
     '<div class="sgb-head-main">' +
     '<div class="sgb-head-title"><b>' + esc(g.name) + '</b><span>總 Lv.' + t.total + ' / ' + t.max + '</span></div>' +
-    '<div class="sgb-head-meta"><span class="skill-tags">' + tags + '</span><span class="sgb-meta">' + sgbMetaText(gid, UI.sgBrowse.tier) + '</span></div>' +
+    '<div class="sgb-head-meta"><span class="skill-tags">' + tags + '</span><span class="sgb-meta" data-tip="' + esc(sgbMetaText(gid, UI.sgBrowse.tier)) + '">' + sgbMetaText(gid, UI.sgBrowse.tier) + '</span></div>' +
     '</div><div class="sgb-head-actions">' + maxBtn + equipBtn + '</div></div>';
 
-  h += '<div class="sgb-path-title">進化之路</div><div class="sgb-path">';
+  h += '<div class="sgb-path">';
   for (var i = 0; i < g.tiers.length; i++) {
     h += sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, !!t.pick);
   }
@@ -8364,20 +8374,21 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
       '<div class="sgb-detail" id="sgb-detail"></div></div><div id="sgb-potential"></div>';
   }
   var all = Object.keys(SKILLS2);
-  if (UI.sgBrowse.filter !== 'all' && !all.some(function (id) { return sgbElemOf(id) === UI.sgBrowse.filter; })) {
+  if (UI.sgBrowse.filter !== 'all' && !all.some(function (id) { return sgbCategoryOf(id) === UI.sgBrowse.filter; })) {
     UI.sgBrowse.filter = 'all';
   }
-  var ids = all.filter(function (id) { return UI.sgBrowse.filter === 'all' || sgbElemOf(id) === UI.sgBrowse.filter; });
+  var ids = all.filter(function (id) { return UI.sgBrowse.filter === 'all' || sgbCategoryOf(id) === UI.sgBrowse.filter; });
   var gid = sgbResolveGroup(skillsSnapshot, ids);
   if (gid !== UI.sgBrowse.gid) {
     UI.sgBrowse.gid = gid;
     UI.sgBrowse.tier = null;
     UI.sgBrowse.ultFocus = null;
+    UI.sgBrowse.focus = 'tier';
   }
   var loadout = skillViewLoadout(skillsSnapshot);
 
   var chips = $id('sgb-chips');
-  var chipsH = sgbFilterChipsHTML(all);
+  var chipsH = sgbFilterChipsHTML();
   if (chips._lastH !== chipsH) { chips.innerHTML = chipsH; chips._lastH = chipsH; }
 
   var items = $id('sgb-items');
@@ -10470,6 +10481,7 @@ function initUI() {
         UI.sgBrowse.gid = nextGid;
         UI.sgBrowse.tier = null;
         UI.sgBrowse.ultFocus = null;
+        UI.sgBrowse.focus = 'tier';
       }
       renderSkills();
       return;
@@ -10477,12 +10489,14 @@ function initUI() {
     var sgbTier = e.target.closest('[data-sgb-tier]');
     if (sgbTier) {
       UI.sgBrowse.tier = Math.floor(Number(sgbTier.getAttribute('data-sgb-tier')) || 0);
+      UI.sgBrowse.focus = 'tier';
       renderSkills();
       return;
     }
     var sgbUlt = e.target.closest('[data-sgb-ult]');
     if (sgbUlt) {
       UI.sgBrowse.ultFocus = Math.floor(Number(sgbUlt.getAttribute('data-sgb-ult')) || 0);
+      UI.sgBrowse.focus = 'ult';
       renderSkills();
       return;
     }
@@ -11044,11 +11058,12 @@ function initUI() {
     // 新版技能群組：直接在技能瀏覽器選中該群組（清單沿用目前篩選，被篩掉就切回全部）
     var bssGid = sgGroupIdOf(skId);
     if (bssGid !== null && typeof SKILLS2 !== 'undefined' && SKILLS2[bssGid]) {
-      if (UI.sgBrowse.filter !== 'all' && sgbElemOf(bssGid) !== UI.sgBrowse.filter) UI.sgBrowse.filter = 'all';
+      if (UI.sgBrowse.filter !== 'all' && sgbCategoryOf(bssGid) !== UI.sgBrowse.filter) UI.sgBrowse.filter = 'all';
       if (UI.sgBrowse.gid !== bssGid) {
         UI.sgBrowse.gid = bssGid;
         UI.sgBrowse.tier = null;
         UI.sgBrowse.ultFocus = null;
+        UI.sgBrowse.focus = 'tier';
       }
       renderSkills();
       var bssItem = document.querySelector('#sgb-items [data-sgb-group="' + bssGid + '"]');
