@@ -112,6 +112,24 @@ test('WATER-ICE-AUDIT: frozen blasts emit once per source and stop when unequipp
  c.G.player.loadout=[];h.advance(c,p,es,1);assert.equal(hits.length,9);
 });
 
+test('WATER-ICE-AUDIT: death nova damages and emits at the corpse rather than the player',()=>{
+ const {h,c,p,hits,specs}=setup('frostnova',6,null);
+ const corpse=h.enemy(100,1000,400,'corpse'),near=h.enemy(1e9,1050,400,'near-corpse');
+ const atPlayer=h.enemy(1e9,50,0,'near-player'),far=h.enemy(1e9,2000,400,'far');
+ c.chance=()=>true;c.sgApplyFrost(corpse,{dps:0,dur:5,interval:.5,stacksRaw:1});corpse.hp=0;
+ const mp=p.mp,cds=JSON.stringify(p.skillCds);
+ c.skills2OnEnemyDeath(corpse,[corpse,near,atPlayer,far]);
+ assert.deepEqual(Array.from(hits,x=>x.ent.name),['near-corpse']);assert.ok(c.sgFrostOn(near));
+ const nova=specs.find(s=>s.variant==='frost-nova');assert.ok(nova);
+ assert.deepEqual({...nova.area},{x:1000,y:400,r:c.bfMeterPx(c.sgFrostnovaBaseM(c.SKILLS2.frostnova,c.skills2Levels('frostnova')))});
+ const shim={};shim.self=shim;vm.createContext(shim);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/worker/shim.js'),'utf8'),shim);
+ shim.playCombatVfx(nova);const event=JSON.parse(JSON.stringify(shim.shimDrainUrgentVisualEvents()[0]));
+ assert.deepEqual(event.area,{...nova.area});
+ assert.equal(p.mp,mp);assert.equal(JSON.stringify(p.skillCds),cds);assert.equal(c.SKILL2_RT.grounds.length,0);
+ hits.length=0;specs.length=0;c.sgDeathNova(corpse,[corpse,atPlayer]);
+ assert.equal(hits.length,0);assert.equal(specs.find(s=>s.variant==='frost-nova').area.x,1000);
+});
+
 test('WATER-ICE-AUDIT: death nova does not spawn snow or inherit the selected ice spikes',()=>{
  const {c,p,es,specs}=setup('frostnova',7,'iceKingDomain');
  c.chance=()=>true;c.sgApplyFrost(es[0],{dps:0,dur:5,interval:.5,stacksRaw:1});es[0].hp=0;

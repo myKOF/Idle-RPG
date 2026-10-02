@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## DEAD-NOVA-CENTER-20261002 — 死亡新星以死亡敵人為中心
+
+- Owner：Codex；狀態：Done；使用者直接授權確認並修正。
+- 範圍：死亡新星的傷害與特效中心、回歸測試及瀏覽器／Worker 快取版本；不修改配置表或其他技能數值。
+- 驗收：遠離主角的寒霜敵人死亡後，只命中屍體周圍敵人；特效同一中心；不扣魔、不啟動冷卻或暴風雪。
+- 完成：既有死亡新星錯用主角中心，現共用爆發函式接受死亡敵人中心，傷害選敵與VFX area均取屍體位置；空範圍仍演出，不命中屍體。保留原機率、傷害、範圍及傳奇追加公式；一般施放維持主角中心。同步主頁與Worker快取。
+- 修改：js/skills2.js、tests/water-ice-audit.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。唯讀檢查：js/battlefield.js、js/vfx-runtime.js、js/worker/shim.js、tests/skill2-waterball-frostnova-legendary.test.cjs、AI_RULES.md、AI_WORKFLOW.md。未改配置表與使用者其他未提交修改。
+- 驗證：`node --test --test-name-pattern="death nova|frostnova" tests/water-ice-audit.test.cjs`：12/12通過，含死亡掛勾、遠離主角、傷害／寒霜、空範圍、魔力／冷卻及Worker事件座標；`npm run build`：418檔通過。
+- 擴大回歸：`node --test --test-name-pattern="新星|冰爆|冰錐|寒霜|碎冰" tests/skill2-waterball-frostnova-legendary.test.cjs`：8/12通過；寒霜湧動／凜冬寒霜／無限新星／冰皇領域4項在只還原本次兩函式的HEAD基準也同樣失敗，屬現有配置／fixture差異，未降低測試要求。
+- 風險：未實際遊玩瀏覽器畫面；沿既有無座標幾何退化，沒有位置便無法查詢屍體鄰近敵人。未完成項目：無本次需求缺項。下一步：使用者審查並合併；可合併本次獨立修正，未合併／推送。Commit見本任務對應`[Codex] fix: 修正死亡新星以死亡敵人為中心`提交。
+
+
 ## Codex｜極致之冰凍結冰爆（EXTREME-ICE-20261002）
 
 - Owner：Codex；Done。使用者要求凍結持續時間＋50%／每級＋5%，凍結敵人每0.5秒冰爆，傷害周圍8米敵人200%／每級＋20%。前置共用凍結與永久節拍已存在。

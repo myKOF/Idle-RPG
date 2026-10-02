@@ -9593,15 +9593,16 @@ function sgCastFrostnova(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[2] > 0) sgApplySlot(pEnt, 'frostnova', '3', 'self', 0, null);
 }
 
-/* 一次新星爆發：以我方為圓心的圓形範圍，範圍內每個敵人吃一次本體傷害並附加寒霜。
+/* 一次新星爆發：一般施放以我方為圓心，死亡新星以指定屍體為圓心。
    無座標時（高塔）退化為「打得到的所有敵人」——與本系統其他範圍查詢的退化規則一致。
    opts＝這一次施放的傳奇附加規格（再爆發／冰錐／再爆發的遞迴深度），可省略。 */
-function sgFrostnovaBurst(pEnt, st, pool, floatSel, out, dmgVal, frost, radiusPx, delayMs, opts) {
-  var victims = sgEnemiesNearPlayer(pool, radiusPx, null, 0);
-  var p = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
-  sgEmitVfx('frostnova', victims, floatSel, {
+function sgFrostnovaBurst(pEnt, st, pool, floatSel, out, dmgVal, frost, radiusPx, delayMs, opts, center) {
+  var victims = center ? sgEnemiesAround(center, pool, radiusPx) : sgEnemiesNearPlayer(pool, radiusPx, null, 0);
+  var p = center ? bfPos(center) : ((typeof bfPlayerPos === 'function') ? bfPlayerPos() : null);
+  sgEmitVfx('frostnova', center && !victims.length ? [center] : victims, floatSel, {
     fxKind: 'burst', variant: 'frost-nova', elem: 'ice', delayMs: delayMs,
-    area: p ? { x: p.x, y: p.y, r: radiusPx } : null
+    area: p ? { x: p.x, y: p.y, r: radiusPx } : null,
+    preserveDeadTargets: !!center
   });
   if (!victims.length) return;
   for (var i = 0; i < victims.length; i++) {
@@ -9723,7 +9724,7 @@ function sgDeathNova(deadEnt, enemies) {
     sgFrostSpec(g, lvs, 0, dmgVal), radiusPx, 0, {
       echo: sgFrostnovaEchoSpec(lg), spike: sgIceSpikeSpec(g, st, lg.frostnovaKillSpike),
       radiusPx: radiusPx, depth: 0
-    });
+    }, deadEnt);
 }
 
 /* 【寒冰體】（冰霜新星 T3）：冰霜新星施放後 6 秒內，攻擊玩家的敵人有 25% 機率被附加寒霜。
