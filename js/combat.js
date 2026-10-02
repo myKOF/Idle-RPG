@@ -616,10 +616,32 @@ function resolveDotSource(sid) {
         return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.bloodblade) ? SKILLS2.bloodblade.name : '血刃斬', key: 'skill2:bloodblade', level: blv };
     }
     if (sGroup === ':frostbite') {
-        return { name: '寒霜凍傷', key: 'skill2:frostbite' };
+        if (typeof skills2Equipped === 'function' && typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function') {
+            if (skills2Equipped('waterball')) {
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.waterball) ? SKILLS2.waterball.name : '水流彈', key: 'skill2:waterball', level: sgTotalLevel(skills2Levels('waterball')), subType: '寒霜狀態' };
+            }
+            if (skills2Equipped('icearrow')) {
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.icearrow) ? SKILLS2.icearrow.name : '寒冰箭', key: 'skill2:icearrow', level: sgTotalLevel(skills2Levels('icearrow')), subType: '寒霜狀態' };
+            }
+            if (skills2Equipped('frostnova')) {
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.frostnova) ? SKILLS2.frostnova.name : '冰霜新星', key: 'skill2:frostnova', level: sgTotalLevel(skills2Levels('frostnova')), subType: '寒霜狀態' };
+            }
+        }
+        return { name: '寒霜凍傷', key: 'skill2:frostbite', subType: '寒霜狀態' };
     }
     if (sGroup === ':windcut') {
-        return { name: '風切割裂', key: 'skill2:windcut' };
+        if (typeof skills2Equipped === 'function' && typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function') {
+            if (skills2Equipped('windblade')) {
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.windblade) ? SKILLS2.windblade.name : '風刃', key: 'skill2:windblade', level: sgTotalLevel(skills2Levels('windblade')), subType: '風切割裂' };
+            }
+            if (skills2Equipped('vacuumslash')) {
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.vacuumslash) ? SKILLS2.vacuumslash.name : '真空斬', key: 'skill2:vacuumslash', level: sgTotalLevel(skills2Levels('vacuumslash')), subType: '風切割裂' };
+            }
+            if (skills2Equipped('stormbarrier')) {
+                return { name: (typeof SKILLS2 !== 'undefined' && SKILLS2.stormbarrier) ? SKILLS2.stormbarrier.name : '暴風屏障', key: 'skill2:stormbarrier', level: sgTotalLevel(skills2Levels('stormbarrier')), subType: '風切割裂' };
+            }
+        }
+        return { name: '風切割裂', key: 'skill2:windcut', subType: '風切割裂' };
     }
     var sdef = (typeof statusDef === 'function') ? statusDef(sid) : (typeof STATUS !== 'undefined' ? STATUS[sid] : null);
     if (sdef && sdef.name) {
@@ -651,6 +673,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
     var sKey = (sourceCtx && (sourceCtx.sourceKey || sourceCtx.statKey)) || '';
     var sName = (sourceCtx && (sourceCtx.sourceName || sourceCtx.skillName)) || '';
     var sLv = (sourceCtx && sourceCtx.sourceLevel !== undefined) ? sourceCtx.sourceLevel : undefined;
+    var subType = (sourceCtx && (sourceCtx.subType || sourceCtx.detailName)) || (sid === 'sgFrostBite' ? '寒霜狀態' : '');
     var frostFormula = sourceCtx && sourceCtx.frostFormula;
     var frostBodyDmg = sourceCtx && sourceCtx.bodyDmg;
     var frostMult = sourceCtx && sourceCtx.frostMult;
@@ -660,6 +683,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
             sName = resDef.name;
             sKey = sKey || resDef.key;
             if (sLv === undefined) sLv = resDef.level;
+            if (!subType && resDef.subType) subType = resDef.subType;
         }
     }
 
@@ -681,6 +705,7 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
             if (sName) cur.sourceName = sName;
             if (sKey) cur.sourceKey = sKey;
             if (sLv !== undefined) cur.sourceLevel = sLv;
+            if (subType) cur.subType = subType;
             return;
         }
     }
@@ -690,7 +715,8 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
         dps: step3.value, until: GT + dur, name: name, dur: dur, sid: sid,
         interval: interval, acc: 0, unit: step3.unit, stacks: step3.stacks,
         frostFormula: frostFormula, bodyDmg: frostBodyDmg, frostMult: frostMult,
-        sourceName: sName || undefined, sourceKey: sKey || undefined, sourceLevel: sLv
+        sourceName: sName || undefined, sourceKey: sKey || undefined, sourceLevel: sLv,
+        subType: subType || undefined
     });
 }
 /* 持續傷害結算：依各狀態的「作用間隔」分段跳傷；回傳是否致死。
@@ -825,18 +851,27 @@ function tickStatuses(ent, dt, dotContext) {
                 var sourceName = dItem.sourceName;
                 var sourceKey = dItem.sourceKey;
                 var sourceLevel = dItem.sourceLevel;
+                var subType = dItem.subType;
+                if (!subType) {
+                    if (dItem.sid === 'sgFrostBite' || dItem.sid === 'sgFrost') {
+                        subType = '寒霜狀態';
+                    } else if (dItem.name) {
+                        subType = dItem.name;
+                    }
+                }
                 if (!sourceName && dItem.sid) {
                     var sResolved = resolveDotSource(dItem.sid);
                     if (sResolved) {
                         sourceName = sResolved.name;
                         sourceKey = sResolved.key;
                         if (sourceLevel === undefined) sourceLevel = sResolved.level;
+                        if (!subType && sResolved.subType) subType = sResolved.subType;
                     }
                 }
                 if (sourceName) {
-                    recordRunDamage(sourceName, itemDealt, sourceKey, sourceLevel);
+                    recordRunDamage(sourceName, itemDealt, sourceKey, sourceLevel, subType);
                 } else if (dItem.name) {
-                    recordRunDamage(dItem.name, itemDealt, 'dot:' + (dItem.sid || dItem.name));
+                    recordRunDamage(dItem.name, itemDealt, 'dot:' + (dItem.sid || dItem.name), undefined, subType);
                 }
             }
         }
@@ -2001,21 +2036,30 @@ window.RUN_STATS = { runCount: 1, maxStage: 1, skills: {} };
 function runStatBucket(skillName, statKey, skillLevel) {
     var key = statKey || skillName;
     if (!RUN_STATS.skills[key]) {
-        RUN_STATS.skills[key] = { count: 0, damage: 0 };
+        RUN_STATS.skills[key] = { count: 0, damage: 0, subTypes: {} };
     }
     var stat = RUN_STATS.skills[key];
+    if (!stat.subTypes) stat.subTypes = {};
     // Keep the display metadata on the bucket so same-name skills remain independent.
     if (!stat.name) stat.name = skillName;
     if (typeof skillLevel === 'number') stat.level = skillLevel;
     return stat;
 }
 
-function recordRunDamage(skillName, dmg, statKey, skillLevel) {
+function recordRunDamage(skillName, dmg, statKey, skillLevel, subType) {
     var stat = runStatBucket(skillName, statKey, skillLevel);
     stat.count++;
     stat.hits = (typeof stat.hits === 'number' ? stat.hits : 0) + 1;
     stat.damage += (dmg || 0);
-    RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
+    if (!stat.subTypes) stat.subTypes = {};
+    var subKey = subType || skillName;
+    if (!stat.subTypes[subKey]) {
+        stat.subTypes[subKey] = { hits: 0, damage: 0 };
+    }
+    stat.subTypes[subKey].hits = (typeof stat.subTypes[subKey].hits === 'number' ? stat.subTypes[subKey].hits : 0) + 1;
+    stat.subTypes[subKey].damage += (dmg || 0);
+    var curStage = (typeof G !== 'undefined' && G && G.stage) ? G.stage.current : 1;
+    RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage || 1, curStage);
 }
 
 /* 成功進入技能效果函式才算一次施放；多段、追蹤、反彈與 DoT 仍由 recordRunDamage
@@ -2023,7 +2067,8 @@ function recordRunDamage(skillName, dmg, statKey, skillLevel) {
 function recordRunSkillCast(skillName, statKey, skillLevel) {
     var stat = runStatBucket(skillName, statKey, skillLevel);
     stat.casts = (typeof stat.casts === 'number' ? stat.casts : 0) + 1;
-    RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage, G.stage.current);
+    var curStage = (typeof G !== 'undefined' && G && G.stage) ? G.stage.current : 1;
+    RUN_STATS.maxStage = Math.max(RUN_STATS.maxStage || 1, curStage);
 }
 
 function generateSummaryHtml(current) {
@@ -2064,10 +2109,13 @@ function generateSummaryHtml(current) {
     for (var k in RUN_STATS.skills) {
         var sk = RUN_STATS.skills[k];
         skillList.push({
+            key: k,
+            rawName: (sk && sk.name) || k,
             name: displayNames[k] || (sk && sk.name) || k,
             casts: typeof sk.casts === 'number' ? sk.casts : null,
             hits: typeof sk.hits === 'number' ? sk.hits : (sk.count || 0),
-            damage: sk.damage || 0
+            damage: sk.damage || 0,
+            subTypes: sk.subTypes || null
         });
     }
     skillList.sort(function (a, b) {
@@ -2081,7 +2129,39 @@ function generateSummaryHtml(current) {
         var eventText = item.casts === null
             ? fmt(item.hits) + '次'
             : fmt(item.casts) + '次施放，' + fmt(item.hits) + '次命中/傷害事件';
-        html += '<div class="summary-card-row"><span style="color:var(--accent)">' + item.name + '</span>：' + eventText + '，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
+
+        var subItems = [];
+        if (item.subTypes) {
+            for (var subName in item.subTypes) {
+                var subData = item.subTypes[subName];
+                if (subData && (subData.damage > 0 || subData.hits > 0)) {
+                    subItems.push({
+                        name: subName,
+                        hits: subData.hits || 0,
+                        damage: subData.damage || 0
+                    });
+                }
+            }
+            subItems.sort(function (a, b) {
+                if (b.damage !== a.damage) return b.damage - a.damage;
+                return b.hits - a.hits;
+            });
+        }
+
+        html += '<div class="summary-skill-block">';
+        html += '<div class="summary-card-row"><span style="color:var(--accent); font-weight:bold;">' + item.name + '</span>：' + eventText + '，傷害 ' + fmt(item.damage) + ' (' + pct + '%)</div>';
+
+        var hasDistinctSub = subItems.length > 1 || (subItems.length === 1 && subItems[0].name !== item.rawName && subItems[0].name !== item.name);
+        if (hasDistinctSub) {
+            html += '<div class="summary-sub-group">';
+            for (var s = 0; s < subItems.length; s++) {
+                var sub = subItems[s];
+                var subPct = totalDmg > 0 ? (sub.damage / totalDmg * 100).toFixed(1) : '0.0';
+                html += '<div class="summary-sub-row"><span class="summary-sub-bullet">└ </span><span class="summary-sub-name">' + sub.name + '</span>：' + fmt(sub.hits) + '次命中，傷害 ' + fmt(sub.damage) + ' (' + subPct + '%)</div>';
+            }
+            html += '</div>';
+        }
+        html += '</div>';
     }
     html += '</div>';
     return html;
@@ -2100,7 +2180,8 @@ function flushRunSummary(nextMaxStage) {
         list.insertBefore(d.firstChild, list.firstChild);
     }
     RUN_STATS.runCount++;
-    RUN_STATS.maxStage = Math.max(1, nextMaxStage || (G.stage.current > 1 ? 1 : G.stage.current));
+    var fallbackStage = (typeof G !== 'undefined' && G && G.stage && G.stage.current > 1) ? 1 : ((typeof G !== 'undefined' && G && G.stage) ? G.stage.current : 1);
+    RUN_STATS.maxStage = Math.max(1, nextMaxStage || fallbackStage);
     RUN_STATS.skills = {};
 }
 
