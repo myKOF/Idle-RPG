@@ -797,6 +797,103 @@ var BattleDecor = (function () {
     }
   }
 
+  /* ---- 地標（大型場景物件，偶爾出現） ---- */
+  // 石拱門：兩根柱子撐一塊橫樑，一側可能崩落
+  function drawArch(g, w, h, r, pal) {
+    var fy = h - FOOT, cx = w / 2;
+    shadowEllipse(g, cx + 10, fy - 2, w * 0.5, w * 0.12, 0.5);
+    var pw = w * 0.24, ph = h * 0.86;
+    var broken = r() < 0.5;
+    // 左柱、右柱（右柱可能斷在半截）
+    g.save(); g.translate(w * 0.06, 0); drawPillar(g, pw, h, r, pal, { intact: true, moss: pal.moss }); g.restore();
+    g.save(); g.translate(w - pw - w * 0.06, 0);
+    if (broken) drawPillar(g, pw, h, r, pal, { moss: pal.moss });
+    else drawPillar(g, pw, h, r, pal, { intact: true, moss: pal.moss });
+    g.restore();
+    // 橫樑
+    var ly = h - ph - FOOT - 4, lh = h * 0.1;
+    var lx0 = w * 0.03, lx1 = broken ? w * 0.68 : w * 0.97;
+    var lg = g.createLinearGradient(0, ly - lh, 0, ly);
+    lg.addColorStop(0, shade(pal.base, 0.22)); lg.addColorStop(1, shade(pal.base, -0.35));
+    g.fillStyle = lg;
+    g.beginPath();
+    g.moveTo(lx0, ly); g.lineTo(lx0, ly - lh);
+    if (broken) { g.lineTo(lx1, ly - lh); g.lineTo(lx1 - 6, ly - lh * 0.4); g.lineTo(lx1 + 4, ly - lh * 0.1); g.lineTo(lx1 - 10, ly); }
+    else { g.lineTo(lx1, ly - lh); g.lineTo(lx1, ly); }
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(8,6,4,0.55)'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = shade(pal.base, 0.32);
+    g.fillRect(lx0, ly - lh - 5, lx1 - lx0 - (broken ? 8 : 0), 5);
+    // 樑上刻紋
+    g.strokeStyle = 'rgba(0,0,0,0.3)';
+    for (var k = 1; k < 6; k++) {
+      var x = lerp(lx0, lx1, k / 6);
+      g.beginPath(); g.moveTo(x, ly - lh + 3); g.lineTo(x, ly - 3); g.stroke();
+    }
+    if (broken) {
+      // 掉在地上的半截樑
+      g.save();
+      g.translate(w * 0.8, fy - 10);
+      g.rotate(0.25);
+      g.fillStyle = shade(pal.base, -0.1);
+      g.fillRect(-w * 0.14, -lh * 0.5, w * 0.28, lh);
+      g.strokeStyle = 'rgba(8,6,4,0.55)'; g.strokeRect(-w * 0.14, -lh * 0.5, w * 0.28, lh);
+      g.restore();
+    }
+  }
+
+  // 巨獸骸骨：一條脊椎、幾根拱起的肋骨，一端是頭骨
+  function drawGiantBones(g, w, h, r, pal) {
+    var fy = h - FOOT;
+    shadowEllipse(g, w / 2, fy - 2, w * 0.48, w * 0.1, 0.45);
+    var x0 = w * 0.08, x1 = w * 0.72, sy = fy - h * 0.12;
+    g.lineCap = 'round';
+    // 脊椎
+    for (var v = 0; v < 12; v++) {
+      var vx = lerp(x0, x1, v / 11), vy = sy - Math.sin(v / 11 * Math.PI) * h * 0.12;
+      g.fillStyle = shade(pal.bone, -0.15);
+      g.beginPath(); g.ellipse(vx, vy, 6, 5, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(30,24,18,0.6)'; g.lineWidth = 1; g.stroke();
+    }
+    // 肋骨：從脊椎拱起、落回地面的弧（後排暗一點、略往左錯開，看得出是兩側）
+    [[-0.32, -w * 0.025], [0.04, 0]].forEach(function (side) {
+      for (var k = 0; k < 6; k++) {
+        var t = (k + 1) / 7;
+        var bx = lerp(x0, x1, t) + side[1], by = sy - Math.sin(t * Math.PI) * h * 0.12;
+        var hh = h * (0.5 + 0.32 * Math.sin(t * Math.PI)) * range(r, 0.92, 1.04);
+        var reach = w * range(r, 0.09, 0.12);
+        var ex = bx + reach, ey = fy - range(r, 2, 8);
+        var col = shade(pal.bone, side[0]);
+        // 由粗到細的骨：外層粗、內層細
+        g.strokeStyle = col;
+        g.lineWidth = 6;
+        g.beginPath(); g.moveTo(bx, by); g.bezierCurveTo(bx - reach * 0.1, by - hh, ex + reach * 0.15, by - hh * 0.95, ex, ey); g.stroke();
+        g.strokeStyle = rgba('#000000', 0.25); g.lineWidth = 1.2;
+        g.beginPath(); g.moveTo(bx + 2.5, by); g.bezierCurveTo(bx + 2.5 - reach * 0.1, by - hh + 3, ex + reach * 0.15 + 2.5, by - hh * 0.95 + 3, ex + 2.5, ey); g.stroke();
+        g.strokeStyle = rgba('#ffffff', 0.22); g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(bx - 2, by); g.bezierCurveTo(bx - 2 - reach * 0.1, by - hh - 2, ex + reach * 0.15 - 2, by - hh * 0.95 - 2, ex - 2, ey); g.stroke();
+      }
+    });
+    // 頭骨（貼地、比例放大）
+    var hx = x1 + w * 0.05, hy = fy - h * 0.16;
+    var sg = g.createRadialGradient(hx - 8, hy - 10, 2, hx, hy, h * 0.24);
+    sg.addColorStop(0, shade(pal.bone, 0.2)); sg.addColorStop(1, shade(pal.bone, -0.4));
+    g.fillStyle = sg;
+    g.beginPath();
+    g.moveTo(hx - h * 0.18, hy);
+    g.quadraticCurveTo(hx - h * 0.12, hy - h * 0.26, hx + h * 0.12, hy - h * 0.18);
+    g.lineTo(hx + h * 0.3, hy - h * 0.04);
+    g.lineTo(hx + h * 0.26, hy + h * 0.1);
+    g.lineTo(hx - h * 0.1, hy + h * 0.12);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(30,24,18,0.75)'; g.lineWidth = 1.2; g.stroke();
+    g.fillStyle = '#16120e';
+    g.beginPath(); g.ellipse(hx + h * 0.02, hy - h * 0.08, h * 0.05, h * 0.04, 0.3, 0, Math.PI * 2); g.fill();
+    // 角
+    g.strokeStyle = shade(pal.bone, -0.25); g.lineWidth = 4;
+    g.beginPath(); g.moveTo(hx - h * 0.04, hy - h * 0.2); g.quadraticCurveTo(hx - h * 0.2, hy - h * 0.5, hx + h * 0.05, hy - h * 0.62); g.stroke();
+  }
+
   /* ============ 地面裝飾（俯視畫，地面平面容器會縱向壓成 GROUND_Y_SCALE） ============ */
   function decalPatch(g, w, h, r, pal) {
     var cx = w / 2, cy = h / 2;
@@ -1094,10 +1191,46 @@ var BattleDecor = (function () {
   };
   KITS[''] = KITS.desert;
 
+  /* 地標：大型場景物件，每個區塊約 14% 機率出現一個，其他擺件會避開它。格式同 props。 */
+  var LANDMARKS = {
+    desert: {
+      surface: [['giantBones', 3, 260, 130, { bone: '#d8ccb0' }], ['rock', 2, 190, 130, SAND], ['arch', 1.5, 220, 190, { base: '#b8966a' }]],
+      deep: [['arch', 3, 220, 200, { base: '#a88a62' }], ['giantBones', 1.5, 260, 130, { bone: '#cfc2a6' }]]
+    },
+    Icefield: {
+      surface: [['crystals', 3, 150, 210, { light: '#f0fbff', base: '#8cc8f0', dark: '#2a5a8a', glow: '#9ad8ff', rock: '#6a7a8c' }], ['rock', 2, 190, 140, ICEROCK, { snow: true }],
+        ['giantBones', 1, 260, 130, { bone: '#dfe6ee' }]],
+      deep: [['crystals', 4, 160, 230, { light: '#f0fbff', base: '#7ab8e8', dark: '#1e4a7a', glow: '#7ad0ff', rock: '#4a5a6c' }], ['arch', 1, 220, 190, { base: '#9ab0c4' }]]
+    },
+    swamp: {
+      surface: [['deadTree', 3, 220, 250, { wood: '#26261a', hi: '#7a8a5a' }], ['rock', 1.5, 180, 120, MOSSROCK, { moss: '#5a8a3a' }]],
+      deep: [['deadTree', 2, 220, 250, { wood: '#1e1e16', hi: '#6a7a50' }], ['arch', 1.5, 220, 190, { base: '#5a5a48', moss: '#4a7a3a' }]]
+    },
+    undead_mountains: {
+      surface: [['arch', 2.5, 220, 200, { base: '#6a6672' }], ['deadTree', 2, 220, 260, { wood: '#1a161a', hi: '#8a8090' }], ['giantBones', 1.5, 260, 130, { bone: '#c6bca8' }]],
+      deep: [['arch', 3, 220, 200, { base: '#5a5662' }], ['giantBones', 1.5, 260, 130, { bone: '#beb4a0' }]]
+    },
+    god_battlefield: {
+      surface: [['giantBones', 2, 270, 140, { bone: '#cfc2a8' }], ['arch', 1.5, 220, 190, { base: '#8a7a6a' }], ['rock', 1.5, 190, 130, ASH]],
+      deep: [['arch', 2, 220, 200, { base: '#6a5a4c' }], ['giantBones', 2, 270, 140, { bone: '#c4b69a' }]]
+    },
+    god_chaos: {
+      surface: [['crystals', 3, 160, 230, { light: '#f0c8ff', base: '#a050e0', dark: '#3a1060', glow: '#c070ff', rock: '#3a2e48' }], ['rock', 2, 190, 140, CHAOSROCK]],
+      deep: [['crystals', 4, 170, 240, { light: '#ffd0ff', base: '#c040c0', dark: '#40104a', glow: '#ff60ff', rock: '#2a2034' }], ['runeStone', 1.5, 90, 200, { base: '#3a2e48', glow: '#e070ff' }]]
+    },
+    god_sanctuary: {
+      surface: [['arch', 3, 220, 210, { base: '#d8d0c0' }], ['runeStone', 1.5, 90, 200, { base: '#c8c0b0', glow: '#ffd870' }]],
+      deep: [['arch', 3, 220, 210, { base: '#c8c0ae' }], ['runeStone', 2, 90, 200, { base: '#b8b0a0', glow: '#ffe080' }]]
+    }
+  };
+  var LANDMARK_CHANCE = 0.14;
+  var LANDMARK_VARIANTS = 2;
+
   var PROP_DRAW = {
     rock: drawRock, pillar: drawPillar, deadTree: drawDeadTree, cactus: drawCactus, crystals: drawCrystals,
     grave: drawGrave, skullPile: drawSkullPile, mushrooms: drawMushrooms, reeds: drawReeds, stump: drawStump,
-    brazier: drawBrazier, ruinWall: drawRuinWall, sword: drawSword, banner: drawBanner, runeStone: drawRuneStone, grass: drawGrass
+    brazier: drawBrazier, ruinWall: drawRuinWall, sword: drawSword, banner: drawBanner, runeStone: drawRuneStone, grass: drawGrass,
+    arch: drawArch, giantBones: drawGiantBones
   };
   var DECAL_DRAW = {
     patch: decalPatch, crack: decalCrack, pebbles: decalPebbles, bones: decalBones, puddle: decalPuddle,
@@ -1111,6 +1244,11 @@ var BattleDecor = (function () {
     var kit = KITS[kitKey] || KITS[''];
     var specs = [];
     var props = deep ? kit.deepProps : kit.props;
+    var lm = LANDMARKS[kitKey] || LANDMARKS.desert;
+    var landmarks = (deep ? lm.deep : lm.surface) || [];
+    landmarks.forEach(function (p, i) {
+      for (var v = 0; v < LANDMARK_VARIANTS; v++) specs.push({ kind: 'prop', key: 'L' + i + '_' + v, type: p[0], w: p[2], h: p[3], pal: p[4], opt: p[5], seed: strHash(kitKey + 'L' + p[0] + i + '_' + v + (deep ? 'd' : '')) });
+    });
     var decals = deep ? kit.deepDecals : kit.decals;
     props.forEach(function (p, i) {
       for (var v = 0; v < VARIANTS; v++) specs.push({ kind: 'prop', key: 'p' + i + '_' + v, type: p[0], w: p[2], h: p[3], pal: p[4], opt: p[5], seed: strHash(kitKey + p[0] + i + '_' + v + (deep ? 'd' : '')) });
@@ -1157,7 +1295,7 @@ var BattleDecor = (function () {
       }
       g.restore();
     });
-    return { canvas: canvas, specs: specs, kit: kit, props: props, decals: decals };
+    return { canvas: canvas, specs: specs, kit: kit, props: props, decals: decals, landmarks: landmarks };
   }
 
   function weightedPick(r, list) {
@@ -1305,7 +1443,33 @@ var BattleDecor = (function () {
       var nProp = lite ? (r() < 0.5 ? 1 : 0) : (r() < 0.12 ? 0 : (1 + Math.floor(r() * 2.6)));
       var nSmall = lite ? 0 : 1 + Math.floor(r() * 3);
       var smallList = atlas.props.map(function (p, idx) { return [idx, p[3] <= 60 ? p[1] : 0]; }).filter(function (x) { return x[1] > 0; });
+      // placed：[x, y, 橫向避讓, 縱向避讓]（世界單位）
       var placed = [];
+      function placeProp(p, texKey, px, py, k) {
+        var ptex = texFor(texKey);
+        if (!ptex) return null;
+        var ps = takeSprite('prop', ptex, propLayer);
+        ps.anchor.set(0.5, (p[3] - FOOT) / p[3]);
+        var flip = r() < 0.5 ? -1 : 1;
+        var sc = (1 / TEX_SCALE) * k;   // 貼圖是 TEX_SCALE 倍解析度，畫面上的尺寸＝邏輯尺寸 × k
+        ps.scale.set(sc * flip, sc);
+        ps.x = px;
+        ps.y = py * groundScale;
+        ps.zIndex = ps.y;
+        ps._decorH = p[3] * k;
+        ps._decorW = p[2] * k;
+        chunk.props.push(ps);
+        return ps;
+      }
+      // 地標先放（佔地大），其他擺件避開它
+      if (!lite && atlas.landmarks.length && r() < LANDMARK_CHANCE) {
+        var li = weightedPick(r, atlas.landmarks);
+        var L = atlas.landmarks[li];
+        var lx = x0 + range(r, 0.15, 0.85) * CHUNK_W, ly = y0 + range(r, 0.15, 0.85) * CHUNK_H;
+        if (placeProp(L, 'L' + li + '_' + Math.floor(r() * LANDMARK_VARIANTS), lx, ly, range(r, 0.95, 1.1))) {
+          placed.push([lx, ly, L[2] * 0.55 + 60, 200]);
+        }
+      }
       for (var j = 0; j < nProp + nSmall; j++) {
         var small = j >= nProp;
         if (small && !smallList.length) break;
@@ -1313,22 +1477,12 @@ var BattleDecor = (function () {
         var p = atlas.props[pi];
         var px = x0 + range(r, 0.06, 0.94) * CHUNK_W, py = y0 + range(r, 0.06, 0.94) * CHUNK_H;
         var gapX = small ? 70 : 150, gapY = small ? 80 : 180;
-        var clash = placed.some(function (q) { return Math.abs(q[0] - px) < gapX && Math.abs(q[1] - py) < gapY; });
+        var clash = placed.some(function (q) { return Math.abs(q[0] - px) < Math.max(gapX, q[2] || 0) && Math.abs(q[1] - py) < Math.max(gapY, q[3] || 0); });
         if (clash) continue;
         placed.push([px, py]);
-        var ptex = texFor('p' + pi + '_' + Math.floor(r() * VARIANTS));
-        if (!ptex) continue;
-        var ps = takeSprite('prop', ptex, propLayer);
-        ps.anchor.set(0.5, (p[3] - FOOT) / p[3]);
-        var flip = r() < 0.5 ? -1 : 1;
-        var sc = (1 / TEX_SCALE) * range(r, 0.85, 1.15);
-        ps.scale.set(sc * flip, sc);
-        ps.x = px;
-        ps.y = py * groundScale;
-        ps.zIndex = ps.y;
-        ps._decorH = p[3] * sc;
-        ps._decorW = p[2] * sc;
-        chunk.props.push(ps);
+        var pk = range(r, 0.85, 1.15);
+        var ps = placeProp(p, 'p' + pi + '_' + Math.floor(r() * VARIANTS), px, py, pk);
+        if (!ps) continue;
         if (p[0] === 'brazier') {
           var ftex = texFor('flame' + pi);
           if (ftex) {
@@ -1336,7 +1490,8 @@ var BattleDecor = (function () {
             fl.anchor.set(0.5, 1);
             fl.scale.set(1 / TEX_SCALE);
             fl.x = px;
-            fl.y = ps.y - (p[3] * 0.58 - FOOT) * sc;
+            // 火盆碗口在腳底上方 0.58 × 高（見 drawBrazier 的 bowlY）
+            fl.y = ps.y - p[3] * 0.58 * pk;
             fl.zIndex = ps.zIndex + 0.5;
             fl._phase = r() * 10;
             fl._baseY = fl.y;
