@@ -2689,6 +2689,7 @@ function renderHeader() {
   // 等級三處每拍重寫，但只有升級時才會變
   var levelText = 'Lv.' + p.level;
   setTextIfChanged($id('p-level'), levelText);
+  setTextIfChanged($id('rail-level'), levelText);   // 左側導覽列頂端的角色縮圖（屬性已收進「角色」分頁）
   setTextIfChanged($id('pv-level'), levelText);
   setTextIfChanged($id('tp-level'), levelText);
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
@@ -2720,7 +2721,9 @@ function renderHeader() {
   }
   var need = uiHeaderXpMax(p);
   var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
-  setStyleIfChanged($id('xp-fill'), 'width', isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%'));
+  var xpWidth = isMaxedOut ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
+  setStyleIfChanged($id('xp-fill'), 'width', xpWidth);
+  setStyleIfChanged($id('rail-xp-fill'), 'width', xpWidth);
   var xpBar = $id('xp-bar');
   setAttrIfChanged(xpBar, 'data-tt-title', '角色經驗');
   setAttrIfChanged(xpBar, 'data-tt-desc', isMaxedOut ? '已升至最高等級。' : ('當前經驗值：' + fmt(p.xp) + ' / 升級經驗值：' + fmt(need)));
@@ -2749,11 +2752,59 @@ function renderHeader() {
 }
 
 
-/* ---- 側欄 50+ 屬性面板（分組摺疊） ---- */
+/* ---- 「角色」分頁的 50+ 屬性面板（分組摺疊；2026-10 由左側欄搬進分頁） ---- */
 var _attrPanelBuilt = false;
+// 分頁頂端的核心屬性方塊：依 STAT_GROUPS 的列名對應（列名帶 emoji 前綴，用包含比對）
+var CHAR_CORE_STAT_NAMES = ['生命值', '法力值', '物理攻擊', '魔法攻擊', '暴擊率', '攻擊速度'];
+var _charCoreRows = null;
+// 數值為 0／未啟用的屬性列（勾選「隱藏數值為 0 的屬性」時收起來）
+function attrValueIsZero(html) {
+  var text = String(html).replace(/<[^>]+>/g, '').trim();
+  return text === '—' || /^\+?0(\.0+)?\s*(%|\/s|\/秒|次)?$/.test(text);
+}
+
+function buildCharCoreTiles() {
+  var box = $id('char-core');
+  if (!box) return;
+  _charCoreRows = [];
+  var h = '';
+  CHAR_CORE_STAT_NAMES.forEach(function (name, ci) {
+    STAT_GROUPS.some(function (g) {
+      return g.rows.some(function (row) {
+        if (String(row[0]).replace(/<[^>]+>/g, '').indexOf(name) < 0) return false;
+        _charCoreRows.push(row);
+        h += '<div class="char-core-tile"><span>' + esc(name) + '</span><b data-core="' + ci + '"></b></div>';
+        return true;
+      });
+    });
+  });
+  box.innerHTML = h;
+}
+
+function initAttrHideZeroToggle() {
+  var toggle = $id('attr-hide-zero');
+  var panel = $id('attr-panel');
+  if (!toggle || !panel) return;
+  var hide = true;
+  try { hide = localStorage.getItem('idle-rpg.attrHideZero') !== '0'; } catch (e) { }
+  toggle.checked = hide;
+  panel.classList.toggle('hide-zero', hide);
+  toggle.addEventListener('change', function () {
+    panel.classList.toggle('hide-zero', toggle.checked);
+    try { localStorage.setItem('idle-rpg.attrHideZero', toggle.checked ? '1' : '0'); } catch (e) { }
+  });
+}
+
 function renderAttrPanel(st, headerSnapshot) {
   var panel = $id('attr-panel');
   if (!panel) return;
+  if (!_charCoreRows) buildCharCoreTiles();
+  if (_charCoreRows) {
+    _charCoreRows.forEach(function (row, ci) {
+      var coreEl = document.querySelector('#char-core [data-core="' + ci + '"]');
+      if (coreEl) setHtmlIfChanged(coreEl, row[1](st));
+    });
+  }
   if (!_attrPanelBuilt) {
     // 首次建立骨架（前兩組預設展開）
     var h = '<div id="attr-preview-note" class="attr-preview-note" hidden></div>';
@@ -2801,6 +2852,9 @@ function renderAttrPanel(st, headerSnapshot) {
          （2026-09-13 使用者機器的 trace：失效來源前三名是 LayoutText #text、
            stat-row 與其 SPAN／B，合計每秒數百次。） */
       setHtmlIfChanged(el, row[1](st));
+      var rowEl = el.parentElement;
+      var isZero = attrValueIsZero(el.textContent);
+      if (rowEl && rowEl.classList.contains('is-zero') !== isZero) rowEl.classList.toggle('is-zero', isZero);
       if (typeof row[2] === 'function') {
         var pe = el.parentElement;
         if (pe) {
@@ -4898,6 +4952,23 @@ function triggerUpgradeNumberAnimation(itemId) {
   });
 }
 
+// 背包「篩選」按鈕上的啟用數量（太古／品質各算一項）
+function updateInventoryFilterBadge() {
+  var btn = $id('inv-filter-btn');
+  var badge = $id('inv-filter-count');
+  if (!btn || !badge) return;
+  var n = 0;
+  ['inv-ancient-filter', 'inv-rarity-filter'].forEach(function (id) {
+    var el = $id(id);
+    if (el && el.value !== '') n++;
+  });
+  badge.textContent = n ? String(n) : '';
+  btn.classList.toggle('has-filter', n > 0);
+}
+
+// 裝備操作列的「卸下」圖示（箭頭離開框線）
+var EQUIP_UNEQUIP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>';
+
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
@@ -4923,11 +4994,11 @@ function renderDetail() {
     var actionBar = $id('equip-action-bar');
     if (actionBar) {
       actionBar.innerHTML =
-        '<button class="btn" disabled>卸下</button>' +
-        '<button class="btn" disabled>強化</button>' +
+        '<button class="btn btn-primary" disabled>強化</button>' +
         '<button class="btn" disabled>洗煉</button>' +
         '<button class="btn" disabled>鑲嵌</button>' +
-        '<button class="btn" disabled>附魔</button>';
+        '<button class="btn" disabled>附魔</button>' +
+        '<button class="btn btn-icon" disabled aria-label="卸下">' + EQUIP_UNEQUIP_ICON + '</button>';
       actionBar.style.display = 'flex';
     }
     var matPanelEmpty = $id('equip-material-panel');
@@ -4951,27 +5022,40 @@ function renderDetail() {
     essence: player && player.essence,
     justUpgraded: justUpgraded
   });
+  /* 操作列（2026-10 裝備頁改造）：一個主按鈕（背包裝備＝「裝備」，身上裝備＝「強化」）＋次按鈕，
+     卸下縮成最右側的圖示。「鑲嵌／附魔」改為開關右側素材面板：面板平常不顯示，
+     按下才出現對應的寶石或附魔書；換選別件裝備時自動收起（UI.equipMatMode 記著是哪一件）。 */
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
-  if (UI.sel.source === 'inv') {
-    actionsHtml += '<button class="btn" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
-  } else {
-    actionsHtml += '<button class="btn" data-act="unequip"' + pendingUiButtonAttributes(pendingKey) + '>卸下</button>';
+  var fromInv = UI.sel.source === 'inv';
+  var matMode = UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  if (fromInv) {
+    actionsHtml += '<button class="btn btn-primary" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
   }
   var enoughUpGold = player && player.gold >= cost.gold;
   var enoughUpScrap = player && player.scrap >= cost.scrap;
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  actionsHtml += '<button class="btn act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '"' +
+  actionsHtml += '<button class="btn' + (fromInv ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '"' +
     pendingUiButtonAttributes(pendingKey) + '>強化</button>';
 
   actionsHtml += '<button class="btn" data-act="placeholder-reroll">洗煉</button>';
-  actionsHtml += '<button class="btn" data-act="placeholder-socket">鑲嵌</button>';
-  actionsHtml += '<button class="btn" data-act="placeholder-enchant">附魔</button>';
-  // 右側素材面板：可用寶石／附魔書改為小圖示，完整名稱、數值與持有量由滑鼠提示顯示
+  actionsHtml += '<button class="btn" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
+  actionsHtml += '<button class="btn" data-act="toggle-enchant" aria-pressed="' + (matMode === 'enchant') + '">附魔</button>';
+  if (!fromInv) {
+    actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="卸下" data-tip="卸下"' +
+      pendingUiButtonAttributes(pendingKey) + '>' + EQUIP_UNEQUIP_ICON + '</button>';
+  }
+  // 右側素材面板：只顯示目前開啟的那一類（寶石或附魔書）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
-  if (it.sockets.indexOf(null) >= 0) {
+  if (matMode === 'socket' && it.sockets.indexOf(null) < 0) {
+    matHtml += '<div class="equip-material-section">' +
+      '<div class="equip-material-title">💎 鑲嵌寶石</div>' +
+      '<div class="equip-material-empty">沒有空插槽。點擊詳情中已鑲嵌的寶石可取下。</div>' +
+      '</div>';
+  }
+  if (matMode === 'socket' && it.sockets.indexOf(null) >= 0) {
     var gemIcons = [];
     for (var gt in GEM_TYPES) {
       var total = 0, hi = 0;
@@ -4998,7 +5082,13 @@ function renderDetail() {
       '</div>';
   }
   var itEns2 = itemEnchants(it);
-  if (itEns2.length < enchantCapFor(it)) {
+  if (matMode === 'enchant' && itEns2.length >= enchantCapFor(it)) {
+    matHtml += '<div class="equip-material-section">' +
+      '<div class="equip-material-title">✨ 附魔</div>' +
+      '<div class="equip-material-empty">附魔欄已滿。點擊詳情中的附魔效果可取下（返還附魔書）。</div>' +
+      '</div>';
+  }
+  if (matMode === 'enchant' && itEns2.length < enchantCapFor(it)) {
     var cat2 = enchantCatForType(it.slot);
     var bookIcons = [];
     for (var bk2 in ENCHANTS) {
@@ -10019,6 +10109,15 @@ function closeTopmostModalOrOverlay() {
     return true;
   }
 
+  // 8b. 背包篩選浮層 (#inv-filter-panel)
+  var invFilterPanel = $id('inv-filter-panel');
+  if (invFilterPanel && invFilterPanel.style.display !== 'none') {
+    invFilterPanel.style.display = 'none';
+    var invFilterBtn = $id('inv-filter-btn');
+    if (invFilterBtn) invFilterBtn.setAttribute('aria-expanded', 'false');
+    return true;
+  }
+
   // 9. 技能升級彈窗 (#skill-modal)
   var skillModal = $id('skill-modal');
   if (skillModal && skillModal.style.display !== 'none') {
@@ -11463,6 +11562,15 @@ function initUI() {
     var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
     if (actBtn) {
       var act = actBtn.getAttribute('data-act');
+      if (act === 'toggle-socket' || act === 'toggle-enchant') {
+        var matIt = findSelItem();
+        if (!matIt) return;
+        var wantMode = act === 'toggle-socket' ? 'socket' : 'enchant';
+        var curMode = UI.equipMatMode && UI.equipMatMode.itemId === matIt.id ? UI.equipMatMode.mode : null;
+        UI.equipMatMode = curMode === wantMode ? null : { itemId: matIt.id, mode: wantMode };
+        renderDetail();
+        return;
+      }
       if (act && act.indexOf('placeholder-') === 0) {
         if (typeof showFloatingText === 'function') showFloatingText(actBtn, '功能未訂', '#fcd34d');
         return;
@@ -11770,6 +11878,7 @@ function initUI() {
   var ancientFilter = $id('inv-ancient-filter');
   if (ancientFilter) {
     ancientFilter.addEventListener('change', function () {
+      updateInventoryFilterBadge();
       renderInventory();
     });
   }
@@ -11777,9 +11886,41 @@ function initUI() {
   var rarityFilter = $id('inv-rarity-filter');
   if (rarityFilter) {
     rarityFilter.addEventListener('change', function () {
+      updateInventoryFilterBadge();
       renderInventory();
     });
   }
+
+  /* 背包篩選收進「篩選」按鈕的浮層（2026-10 裝備頁改造）：太古與品質兩個下拉選單
+     原封不動搬進浮層（id 與上面的 change 監聽不變），按鈕上顯示目前啟用了幾項篩選。 */
+  var invFilterBtn = $id('inv-filter-btn');
+  var invFilterPanel = $id('inv-filter-panel');
+  if (invFilterBtn && invFilterPanel) {
+    invFilterBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var opening = invFilterPanel.style.display === 'none' || !invFilterPanel.style.display;
+      invFilterPanel.style.display = opening ? 'flex' : 'none';
+      invFilterBtn.setAttribute('aria-expanded', String(opening));
+    });
+    document.addEventListener('click', function (e) {
+      if (!invFilterPanel.contains(e.target) && !invFilterBtn.contains(e.target)) {
+        invFilterPanel.style.display = 'none';
+        invFilterBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    var invFilterClear = $id('inv-filter-clear');
+    if (invFilterClear) {
+      invFilterClear.addEventListener('click', function () {
+        if (ancientFilter) ancientFilter.value = '';
+        if (rarityFilter) rarityFilter.value = '';
+        updateInventoryFilterBadge();
+        renderInventory();
+      });
+    }
+    updateInventoryFilterBadge();
+  }
+
+  initAttrHideZeroToggle();
 
   var keywordFilter = $id('inv-keyword-filter');
   if (keywordFilter) {
