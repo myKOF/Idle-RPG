@@ -2851,10 +2851,9 @@ function renderAttrPanel(st, headerSnapshot) {
          製造上百個顯示項失效，全部落在同一塊被縮放的大圖層上。
          （2026-09-13 使用者機器的 trace：失效來源前三名是 LayoutText #text、
            stat-row 與其 SPAN／B，合計每秒數百次。） */
-      var attrHtml = row[1](st);
-      setHtmlIfChanged(el, attrHtml);
+      setHtmlIfChanged(el, row[1](st));
       var rowEl = el.parentElement;
-      var isZero = attrValueIsZero(attrHtml);
+      var isZero = attrValueIsZero(el.textContent);
       if (rowEl && rowEl.classList.contains('is-zero') !== isZero) rowEl.classList.toggle('is-zero', isZero);
       if (typeof row[2] === 'function') {
         var pe = el.parentElement;
