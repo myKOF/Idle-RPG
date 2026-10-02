@@ -1,5 +1,19 @@
 # AI_TASKS.md
 
+## Codex｜海淵葬界寒冰領域與緩慢吸入（ABYSS-DOMAIN-20261002）
+
+- Owner：Codex；Done。使用者要求永久寒冰領域半徑30米，每0.35秒施加寒霜，額外疊層10／每級1、所有受傷增幅50%／每級5%；吸入範圍為領域再加10米，速度每秒3米，拉到近戰8米範圍即停，無空位不再吸入以免反覆推擠。吸入外圈只用於系統判定、不寫入玩家說明。沿用base＋per×Lv升級語意與既有永久裝配領域；Lv.1額外11層／易傷55%，Lv.10額外20層／易傷100%。
+- 允許Skills2及Status Excel／CSV／生成JS（Status只同步寒冰領域用詞）、海淵領域執行期、battlefield既有拉近函式的可選慢速防碰撞模式、formula共用敵人受傷結算、針對回歸、game_formula／本紀錄及必要快取。禁止其他技能與使用者正在編輯的耗魔／岩之再生／水牢／寒冰領域及雷球素材、其他副本與合併／推送。目標衝突預檢均乾淨；本副本既有未提交設定保持原樣，交付只提交本輪變更。
+- 驗收：逐級說明、領域內外及吸入外圈界線、每秒速度／近戰停止、擁擠無推擠及大步長無穿透、倒地／卸下／高塔退化、各來源寒霜上限、普攻／魔法／DoT／直接傷害／高塔上限、Worker到Runtime領域半徑及座標同步、Excel正常重開／格式／逐格範圍、配置一致、Build、Console及Commit。後續接手者：使用者。
+- 完成14檔：js/skills2.js領域執行期、共享額外疊層／易傷判定及生成配置，js/battlefield.js可選慢速掃掠防碰撞模式，js/formula.js普攻／技能及直接／持續傷害的共用受傷倍率，js/status.js狀態說明；Skills2.xlsx／CSV、Status.xlsx／CSV、tests/abyss-domain.test.cjs、game_formula.md、本紀錄及index.html／js/bridge.js／js/worker/sim.worker.js快取。仍使用Status表指定ground-domain-ice，未改Preset／layout／圖片、未新增特效來源；既有三參數瞬間拉近保持原語意，Worker協議41不變。
+- Excel驗證：使用者回覆已關閉後，原生Excel正常開啟、儲存及唯讀重開；Skills2全231列只有AU191／AW191／AX191三格變更，Status全95列只有T95寒冰領域用詞變更，CSV與兩份Excel全列一致。欄寬／列高／實際儲存格格式不變，Skills2儲存時Excel自行合併數值欄M的重複General樣式（移除冗餘applyNumberFormat旗標）；Status styles.xml完全相同。Artifact Tool唯讀匯入前後渲染，原有窄欄截斷與布局相同。
+- 正式測試：node --test tests/abyss-domain.test.cjs，9/9通過；涵蓋0.05／0.2／1秒步長相同速度、8米體型邊緣停止、30／40米界線、300輪吸入加互斥推擠後座標穩定、死亡空位釋出、大步長不穿透普通／BOSS／入場敵人、倒地復甦／卸下／高塔、物理／魔法／DoT／直接傷害只放大一次、Lv.1／10及各來源寒霜上限、序列化狀態到真實Runtime的60米畫面直徑與玩家移動同步。
+- 提交版本回歸：node --test tests/abyss-domain.test.cjs tests/battlefield.test.cjs tests/npc-move-attack.test.cjs tests/skill2-waterball-frostnova-legendary.test.cjs tests/waterball-vfx-integration.test.cjs tests/water-ice-audit.test.cjs tests/skill2-status-slots.test.cjs tests/damage-drain.test.cjs tests/drain-flat-value.test.cjs tests/global-damage-reduction.test.cjs tests/tower-boss-damage-cap.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，透過唯讀preload載入隔離提交的skills2版本，190/190通過，0略過。npm.cmd run build，416檔通過；config_tables --apply Skills2及--apply Status各自試跑語意變更0；apply_params試跑534參數一致、變更0／錨點問題0；diff check通過。
+- 工作區回歸同190項為183通過、7失敗；任務前skills2快照及HEAD其他程式唯讀重跑相同7項皆失敗、訊息一致，確認為使用者更新多階耗魔／超神5000後舊測試角色法力不足。保留使用者配置與測試斷言，不修改其他技能來掩蓋問題；隔離提交保持HEAD耗魔後190項全過。未修改但核對util.js／combat.js／legendary.js／vfx-core.js／vfx-runtime.js、Worker protocol／shim及其他技能接線。
+- 瀏覽器驗證：獨立28377服務與全新Edge無頭頁面，實際Worker啟動12 ticks、errors0，戰鬥及角色進度正常；主頁fx／Lv.10說明正確，Console error／warning均空。未做高階角色完整實戰，吸入與結算、Runtime畫面幾何已由正式數值回歸驗證；自建服務已關閉。
+- 隔離提交：從HEAD建立Skills2的Excel／CSV／JS暫存區版本，只加入本輪三格配置與程式修改；暫存Excel同樣以原生Excel更新並正常重開，全列對照CSV一致且只差三格；JS逐組比較只改海淵fx／desc，HEAD耗魔及岩之再生等值保持。工作區Skills2保留使用者最新耗魔／岩之再生，其他CSV、水牢／寒冰領域／雷球Preset與layout、素材索引及三張新增圖片未提交。本輪無新素材或素材庫Commit。
+- 交付為本紀錄所在Commit，可合併；本輪未合併／推送，無未完成程式項目。已知限制為工作區上述7項舊測試需隨耗魔變更另行維護，以及尚未高階角色完整實戰。建議重載本分支實戰確認吸入體感，後續接手者為使用者。Temp/codex-abyss-domain-20261002本輪快照、唯讀渲染、基線／隔離版本及日誌未納入Git。
+
 ## Codex｜魔法盾承傷與百分比減耗（MANA-SHIELD-SHARE-20261002）
 
 - Owner：Codex；Done。使用者指定法力承擔25%／每級2.5%、法力消耗降低25%／每級2.5%，維持百分比換算；以明確例子驗收：50%最大生命的傷害、承擔50%／減耗50%時，扣25%最大生命及25%最大法力。法力預算基準為本次將扣血傷害占最大生命的比例，再套減耗；不能先乘承擔比例又乘減耗而變成12.5%法力。法力不足按可付成本比例縮減承擔。依現有base＋per×Lv，Lv.1兩項27.5%、Lv.10兩項50%。前置共享結算已存在，初次及續作目標預檢乾淨。
