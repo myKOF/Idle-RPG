@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## STORM-MOUNTAIN-VFX-20261003 — 嵐之山三個觸發欄實際播放
+
+- Owner：Codex；Done。使用者明確要求嵐之山觸發子彈／觸發命中／觸發地板三欄生效，並追加把burst-wind-09填入嵐之山「觸發特效」欄以替換圈出的沿途雙圓環。直射小刃讀子彈及命中，追蹤小刃子彈與地板共用權威位置、接觸才播命中；沿途脈衝機制仍屬第六階，選嵐之山時僅攻擊外觀讀超神觸發欄、命中仍讀第六階。大型主刃保持本體欄，不改傷害／數量／尺寸／追擊與護盾。
+- 所有目標預檢乾淨（本副本使用者未提交修改不算衝突），追加tools/vfx/editor/index.html必要Runtime快取預檢亦乾淨。允許tools/skills2-vfx.cjs事件登錄、js/skills2.js最小派送、js/vfx-runtime.js追蹤子彈共用場域動作、Excel同列作用說明／CSV／字面值／快取與定向測試、本紀錄；保留使用者已有Excel／CSV／skills2及data任務名稱修改，依提交偏好一併提交必要變更；不改塔戰、素材、其他技能規格、不合併／推送。
+- 驗收三欄獨立與空欄不繼承、正式Worker→Runtime實際派送／兩個追蹤組件同位置航向及尺寸、不重建／命中時序／到期回收、既有風地傷害與護盾／其他超神回歸、Excel原生重開與非目標值／格式保留、全表配置檢核及Build。
+- 完成接線四欄：AN210觸發特效burst-wind-09控制沿途風爆；AO210觸發子彈proj-wind-crescent-09與AQ210觸發地板ground-homing-wind-crescent-09共用追蹤場域權威位置、尺寸及航向；AP210 hit-wind僅在小刃實際接觸命中時播放。各欄獨立、留白不繼承本體或別階，不增加傷害段／風刃數量；其他超神與跨技能借用碎裂仍使用原欄。使用者最初hit-wind-09不存在，已自行修正為hit-wind；期間追加AN210後同步套用，不改使用者的值。
+- Runtime依wind-blade-homing事件語意處理替換Preset的縮放、轉向、逐幀位移方向及續播；追蹤子彈以projectile前綴和地板ground前綴分別續命同一area.id。短於七秒的非loop動畫沿場域壽命持續循環，位置刷新不重建Core效果，到期隱藏回收節點。保留舊事件缺variant時既有月牙判斷的相容性。修正原本仍依固定檔名判斷導致-09素材追蹤方向／尺寸錯誤的路徑。
+- Excel原生COM兩次只改AV210作用說明；每次正常重開逐格檢查A1:AX231、欄寬／列高／目標樣式／字體／換行皆保持，所有其他格內容不變。第二次曾被使用者開啟鎖定，未寫入；使用者存檔關閉後完成。Artifact Tool只讀匯入及前後截圖核對，沒有XML修改／重建工作簿。最終Excel→CSV逐格一致，四欄與字面值一致。
+- 修改14檔：js/skills2.js、js/vfx-runtime.js、tools/skills2-vfx.cjs、tests/storm-mountain.test.cjs、tests/config-vfx-diagnostics.test.cjs、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、index.html、js/bridge.js、js/worker/sim.worker.js、tools/vfx/editor/index.html、本紀錄；另依使用者提交偏好保留js/data.js的高塔任務名稱及proj-wind-crescent-09.json的使用者圖層X偏移。診斷負例改為真正未接線的第七階，不再把本次已接線的嵐之山當負例。唯讀未改：formula.js、worker/protocol.js／shim.js、battle-renderer.js、既有wind／icearrow／Worker測試、burst-wind(-09)／ground-homing-wind-crescent(-09)／hit-wind及asset-index、Excel轉表工具、協作規範。
+- 快取：主頁skills2 1.0.276／Runtime 1.0.168／bridge 1.0.214／data 1.0.55，編輯器Runtime同步1.0.168；Worker token 20261003-tower-arena-storm-mountain-vfx、skills2及data import 20261003-storm-mountain-vfx。無新增協議欄位，Protocol保持43。
+- 測試：`node --test tests/storm-mountain.test.cjs tests/storm-myriad.test.cjs tests/sky-collapse.test.cjs tests/giant-windblade.test.cjs tests/windblade-vfx-integration.test.cjs tests/config-vfx-diagnostics.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs`125/125通過；最後強化逐事件Core播放計數檢查後storm-mountain 14/14仍全過。`node tools/config_tables.cjs --apply`17字面值語意變更0；`npm.cmd run build`432檔通過；`git diff --check`通過。
+- 擴大回歸已知風險：icearrow-vfx-integration／skill2-windblade-vacuum-legendary／vfx-runtime／windblade-vfx-integration共164項，使用相同測試及素材對比HEAD程式基準20失敗、本次19失敗，新增失敗0；vfx-projectile-perspective另外11項10通過1失敗（mock缺少變形matrix），HEAD相同。既有冰箭／舊技能期待／使用者Preset美術布局測試未修、不調低正確性；未聲稱全庫全綠。本次新增七項風刃事件／動畫測試及原七項傷害護盾全通過。
+- 瀏覽器：獨立隨機localhost、Edge headless新環境、安全模式，不讀正式存檔；正式sim.worker.js import及BOOT後注入測試角色，兩秒半得到184筆追蹤刷新、60筆burst-wind-09沿途風爆、8筆hit-wind接觸命中並實際扣敵人血量，頁面錯誤0、BattleRenderer ready、新主頁與Worker快取請求皆正確。正式Core標記圖層驗證兩組件16本體在groundScale .65／profile scale .8下位置航向一致、尺寸.96倍率、七秒刷新Core不重播、到期池回收；未用使用者實際戰鬥存檔做整場視覺觀感驗收。
+- 素材交付：本機素材庫effects-materials工作區乾淨，必要六份引用圖檔SHA256與asset-index一致；本次只有遊戲Preset的使用者偏移設定、無圖檔新增／修改，素材庫無變更，不建立空Commit。沿用已提交素材庫2f31639。沒有新增寫死Preset或第三種特效來源。
+- 交付：Commit為本紀錄所在`[Codex] fix: 接通嵐之山觸發特效並同步追蹤動畫`提交；需求完成、可合併，未合併／推送。下一步重載測試服，嵐之山沿途雙圓環應改讀burst-wind-09，觸發命中與追蹤外觀各讀其欄；既有回歸紅燈另案處理。
+
 ## CONFIG-VFX-DIAGNOSTICS-20261003 — 特效配置錯誤定位與套用保護
 
 - Owner：Codex；Done。使用者回報套用參數失敗，要求重查特效與程式連結、允許合法名稱調整並提供明確錯誤說明；已自行刪除嵐之山誤填觸發欄，要求只轉CSV，不新增觸發接線。
