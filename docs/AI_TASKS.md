@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## VFX-STARTUP-RACE-20261003 — 重整時禁止載入空窗先畫舊特效
+
+- Owner：Codex；Done。使用者回報剛編輯特效後第一次重整偶發鋸齒圓盤。已定位renderer ready早於非同步VFXRuntime.boot完成，onVfx因此落入legacy；Preset fetch已cache:no-store，非正常JSON快取。單一開發者；允許battle-renderer載入期有限佇列與回收、新回歸、RuntimeAdapter文件與本紀錄、index僅renderer快取。其他檔預檢乾淨，index有已告知的Claude修改，使用者本次要求整理並提交所有必要修改供合併，已授權完成必要快取。不改Preset、Runtime／Core、技能／傷害或存檔，不合併推送；保留使用者slash-wind-spin。
+- 驗收慢載入期間無legacy圓盤、就緒後使用正式Preset；等待不延長場域、過期事件丟棄、同場域合併／佇列有界、清場與死亡取消、終止訊號順序、失敗／明確legacy相容及相關測試／Build，獨立Commit。
+- 完成實作：新增載入期佇列，最多256則並合併同場域刷新；位置緩衝照常先走完，就緒後接原表定Preset。扣除等待壽命、靜止半徑／環繞角度成長／詳細orbitAge接續；到期丟棄，清場／死亡／背景不復活舊效果，終止訊號保留順序。只有boot確實失敗才回相容畫法。無配置／素材／協議變更。
+- 修改：js/battle-renderer.js、tests/vfx-startup-loading.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md與本紀錄；index第908行renderer 1.6.167→1.6.168已完成。唯讀未改Runtime／Core／Pixi後端、shipped／Preset、ui／main／Worker／存檔及協作規範。index最新衝突已成Claude b18edea5提交，第11行ashen-forge.css 1.0.44、第924行ui.js 1.0.113及已知裝備／地景變更；使用者2026-10-03追加「清理unstaged，需要的commit，我要merge」後完成必要版號；Claude的樣式／ui／神鑄／裝備／地景內容沒有修改。
+- 測試：新回歸6/6通過，正式Core／Runtime九層圓盤非stub；與下列cap任務整合執行`node --test tests/vfx-startup-loading.test.cjs tests/vacuum-omen-vfx.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/storm-mountain.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`148/148通過。首輪132/133，剩餘新測試誤讀backend spec.assetId（正式API為assetUrl），修正測試後全過，未降低遊戲正確性。`npm.cmd run build`436檔通過；`git diff --check`通過。
+- 瀏覽器：Edge headless獨立新環境、8123正式renderer／Core／Runtime／Pixi及素材，攔截非GET，最小頁面不載入存檔／模擬。刻意扣住Preset請求，用HEAD舊renderer重現ready=true但preset=null時legacy fx=1，載入後仍fx=1／Preset air=0；修正版連續兩次均等待時fx=0、就緒後fx=0／Preset air=1，三次pageerror=0。第一次臨時頁無base造成knight圖片相對路徑404，補base後重驗通過；最小頁沒載BattleDecor有預期降級warning，不是正式遊戲初始化問題。未使用真人存檔密集戰鬥驗收。
+- 交付：本紀錄所在`[Codex] fix: 等待新版特效載入再播放戰鬥事件`提交；驗證完成、無未完成程式項目，可合併，未合併／推送。已知限制為真人密集戰鬥觀感待驗收；只有Runtime真正載入失敗才維持既有legacy相容。下一步由使用者合併並重整驗收。
+
 ## VACUUM-OMEN-CAP-20261003 — 靜止虛空斬每敵一次、全場同時最多十個
 
 - Owner：Codex；Done。使用者要求內建系統限制，一個敵人最多觸發一個靜止虛空斬；依敵人實體存活期間計算，成功後不因圓盤到期／再次施放／換施放者而重置，未成功生成不占機會，新敵人獨立。追加全場同時最多十個，兩條規則寫入技能說明。單一開發者，前置靜止場域接線／尺寸已完成，接手者使用者。
