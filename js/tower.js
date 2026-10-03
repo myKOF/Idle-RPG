@@ -11,6 +11,7 @@ var TOWER = {
   specialCd: 8,
   dmgDealt: 0,
   bossDmgDealt: 0,
+  playerPos: null,    // 我方戰場座標（＝ bfPlayerPos() 的參照，見 placeTowerCombatants）
   result: null,       // 結束後的結算資料（顯示用）
   showingResult: false,
   auto: null,         // 連續挑戰 { floor, total, done, wins }；null = 未啟用
@@ -19,6 +20,11 @@ var TOWER = {
 var TOWER_AUTO_DELAY = 1.0;   // 連續挑戰場與場之間的間隔（秒）
 var TOWER_AUTO_RESULT_DELAY = 3.0; // 連續挑戰結果畫面停留秒數
 var TOWER_AUTO_MAX = 999;     // 連續挑戰次數上限
+/* 開場時 BOSS 站在我方正前方（+x）多遠（座標單位，見 js/battlefield.js）。
+   塔戰改走野外的即時戰場後，雙方要先走到射程內才打得到；
+   野外的生成距離 BF_SPAWN_DIST（440）會讓限時 60 秒白白燒掉近一秒，
+   這裡取近一點：我方 300／BOSS 210 對衝，約 0.35 秒接戰，仍看得到 BOSS 逼近。 */
+var TOWER_BOSS_SPAWN_DIST = 260;
 
 function makeBoss(floor) {
   var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
@@ -34,6 +40,9 @@ function makeBoss(floor) {
     aspd: bs.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 基礎值 + 樓層×每層值 → formula.js §4
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
     elite: false, isBoss: true, towerBoss: true, xp: bs.xp,
+    /* 浮字／特效定址沿用塔戰原有的 tb-float（我方是 tp-float）；
+       Canvas 戰場也用它當這隻 BOSS 的實體 id（js/battle-renderer.js）。 */
+    floatSel: 'tb-float',
     elem: bd.elem, attr: bd.attr || bd.elem || null, elemAtk: null, resist: {}, stunCount: 0,
     shield: 0, buffs: {}, dots: []
   };
@@ -67,6 +76,7 @@ function startTowerFight(floor) {
   TOWER.boss = makeBoss(floor);
   TOWER.boss._spawnAt = GT;
   TOWER.player = newPlayerEntity(st);
+  placeTowerCombatants(TOWER.boss);
   // 塔戰玩家實體全新建立＝新一場戰鬥，清空技能執行期狀態（比照 skillCds 全新重置）
   if (typeof resetSkillRT === 'function') resetSkillRT();
   TOWER.player.atkCd = 0.3;
@@ -88,6 +98,20 @@ function startTowerFight(floor) {
   var towerName = TOWER.boss.purgatory ? '煉獄之塔' : (TOWER.boss.hell ? '地獄之塔' : '試煉之塔');
   blog('🗼 挑戰' + towerName + '第 ' + floor + ' 層：' + TOWER.boss.name + '（限時 ' + towerTimeLimitWithTalents(floor) + ' 秒）', 'info');
   UI.dirty.tower = true; UI.dirty.battle = true;
+}
+
+/* ---- 戰場站位 ----
+   塔戰與野外共用同一個戰場座標系（js/battlefield.js）：我方就是 BF_PLAYER 本人，
+   BOSS 放在我方正前方。我方不歸零——野外在塔戰期間是凍結的，結束時整批清怪重來
+   （finishTowerFight），沿用當下位置可以讓鏡頭不跳。
+   TOWER.playerPos 與 FIELD.playerPos 同一個參照，面板序列化時自然帶到最新值。
+   沒載入 battlefield.js 的環境（部分單元測試）維持舊的無座標行為：
+   bfPos 回 null ⇒ 射程判定一律放行、技能幾何退化成單體。 */
+function placeTowerCombatants(boss) {
+  if (typeof bfPlayerPos !== 'function') { TOWER.playerPos = null; return; }
+  var home = bfPlayerPos();
+  TOWER.playerPos = home;
+  if (boss) boss.pos = { x: home.x + TOWER_BOSS_SPAWN_DIST, y: home.y };
 }
 
 /* ---- 連續挑戰 ----
@@ -164,7 +188,7 @@ function towerTick(dt) {
   // 持續傷害
   var towerPlayerDotDeath = tickStatuses(p, dt);
   var towerBossDotDeath = towerPlayerDotDeath ? false : tickStatuses(b, dt);
-  /* 高塔走 DOM 顯示層、目前不播 Preset，但緩衝仍要清掉，
+  /* 狀態跳動特效的緩衝每步都要送出（Canvas 戰場與野外一樣播 Preset），
      否則這一批目標會殘留到下一個模擬步驟才送出去。 */
   if (typeof statusTickVfxFlush === 'function') statusTickVfxFlush();
   if (towerPlayerDotDeath) { endTowerFight(false, 'death'); return; }
@@ -215,6 +239,15 @@ function towerTick(dt) {
     if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
   }
 
+  /* 走位（→ js/battlefield.js，與野外 fieldTick 同一組呼叫）：
+     我方朝 BOSS 跑、施放硬直中站定；BOSS 朝我方逼近，近戰貼身、元素 BOSS 進射程就能開火。
+     位移只在模擬層產生，Canvas 戰場只負責畫（見 battlefield.js bfTickPlayer 的說明）。 */
+  var playerMoveDt = dt;
+  if (skillCastTick && skillCastTick.casting) playerMoveDt = 0;
+  else if (skillCastTick && skillCastTick.completed) playerMoveDt = skillCastTick.remainingDt;
+  if (!p._sgRevival && typeof bfTickPlayer === 'function') bfTickPlayer([b], playerMoveDt, b, p);
+  if (typeof bfTickApproach === 'function') bfTickApproach([b], dt);
+
   if (!playerActionControlBlocked(p, false) &&
       (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
     var sres = pickAndCastSkill(p, b, 'tb-float');
@@ -230,7 +263,11 @@ function towerTick(dt) {
       (typeof potentialVelocityFactor === 'function' ? potentialVelocityFactor(p, st) : 1) *
       (typeof legendaryAttackSpeedMultiplier === 'function' ? legendaryAttackSpeedMultiplier(p, st) : 1) *
       (typeof skill2AspdFactor === 'function' ? skill2AspdFactor(p) : 1);
-    if (p.atkCd <= 0) {
+    /* 普攻是近戰：還沒走到 BOSS 面前就不出手，冷卻只保持在 ready、不累積欠債，
+       走進距離的那一刻立刻補上這一擊（與野外同一條規則）。 */
+    if (p.atkCd <= 0 && typeof bfPlayerCanReach === 'function' && !bfPlayerCanReach(b)) {
+      p.atkCd = 0;
+    } else if (p.atkCd <= 0) {
       var res = doPlayerAttack(p, b, 'tb-float');
       TOWER.dmgDealt += Math.max(0, (res.dmg || 0));
       p.atkCd += 1 / st.aspd;
@@ -245,7 +282,11 @@ function towerTick(dt) {
   if (!effectActive(b, 'stun')) {
     var mult = TOWER.enraged ? bcfg.enrageMult : 1;
     b.atkCd -= dt * slowFactor(b);
-    if (b.atkCd <= 0) {
+    /* 打不到就不打（同野外 fieldMonsterAttack）：冷卻停在 ready，進射程當下出手。 */
+    var bossInRange = typeof bfInAttackRange !== 'function' || bfInAttackRange(b);
+    if (b.atkCd <= 0 && !bossInRange) {
+      b.atkCd = 0;
+    } else if (b.atkCd <= 0) {
       var bossTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
       var bossHit = doMonsterAttack(b, bossTarget, 'tp-float', mult);
@@ -258,7 +299,8 @@ function towerTick(dt) {
     }
     // 特殊技：每「蓄力周期」秒重擊（各塔獨立）
     TOWER.specialCd -= dt;
-    if (TOWER.specialCd <= 0 && p.hp > 0) {
+    if (TOWER.specialCd <= 0 && !bossInRange) TOWER.specialCd = 0;   // 蓄滿了等進射程再砸
+    if (TOWER.specialCd <= 0 && bossInRange && p.hp > 0) {
       TOWER.specialCd = bcfg.chargePeriod;
       var bossSpecialTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
@@ -472,6 +514,7 @@ function finishTowerFight() {
   G.tower.active = false;
   TOWER.boss = null;
   TOWER.player = null;
+  TOWER.playerPos = null;
   // 45 新技能：塔戰結束回野外＝場景切換，清空技能執行期狀態（避免塔內殘留排程打進野外）
   if (typeof resetSkillRT === 'function') resetSkillRT();
   /* 野外重生：生命與法力一起補滿——與野外死亡復活（js/combat.js fieldTick 的 reviveCd 出口）
