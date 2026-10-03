@@ -1490,6 +1490,23 @@ var BattleDecor = (function () {
     } catch (e) { return ''; }
   }
 
+  /* 直立貼圖抵銷整片畫面透視，只留遠近縮放（2026-10-03 使用者：場景物件不要被 FOV 往中央上方扭曲）。
+     basis 來自 battle-renderer 的 sceneBillboardBasis（opts.billboard，腳點座標進、{w, shear, skew, k} 出；
+     沒開透視回傳 null＝原樣）。矩陣 [[1, shear], [0, w]] 左乘貼圖自己的縮放，Pixi 寫成 skew.x 與 scale.y 的乘數 k。
+     anchor 給「掛在別的擺件上」的零件（火焰、魔門的眼睛）：它們沿用錨點的基底，位置也經過同一個矩陣，
+     才會像剛體一樣跟著擺件走——不然零件各自被網格推到別處，火焰會飄離火盆的碗口。
+     offX／offY 是零件相對錨點腳底、抵銷之前的位移（世界直屬座標，往上為負）。 */
+  function billboardSprite(s, billboard, bx, by, anchor, offX, offY) {
+    var ref = anchor || s;
+    var b = billboard ? billboard(ref.x, ref.y) : null;
+    if (anchor) {
+      s.x = anchor.x + (offX || 0) + (b ? b.shear * (offY || 0) : 0);
+      s.y = anchor.y + (b ? b.w * (offY || 0) : (offY || 0));
+    }
+    s.skew.x = b ? b.skew : 0;
+    s.scale.set(bx, b ? by * b.k : by);
+  }
+
   function create(opts) {
     var PIXI = opts.PIXI;
     var mode = decorQueryMode();
@@ -1698,6 +1715,7 @@ var BattleDecor = (function () {
       s.alpha = 1;
       s.tint = 0xffffff;
       s.rotation = 0;
+      s.skew.x = 0;
       s.blendMode = pool === 'light' ? 'add' : 'normal';
       parent.addChild(s);
       return s;
@@ -1746,6 +1764,7 @@ var BattleDecor = (function () {
         var flip = r() < 0.5 ? -1 : 1;
         var sc = (1 / TEX_SCALE) * k;   // 貼圖是 TEX_SCALE 倍解析度，畫面上的尺寸＝邏輯尺寸 × k
         ps.scale.set(sc * flip, sc);
+        ps._bx = sc * flip; ps._by = sc;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 billboardChunks）
         ps.x = px;
         ps.y = py * groundScale;
         ps.zIndex = ps.y;
@@ -1787,6 +1806,8 @@ var BattleDecor = (function () {
             fl.x = px;
             // 火盆碗口在腳底上方 0.58 × 高（見 drawBrazier 的 bowlY）
             fl.y = ps.y - p[3] * 0.58 * pk;
+            fl._anchor = ps; fl._offY = fl.y - ps.y;   // 跟著火盆的矩陣走（見 billboardSprite）
+            fl._bx = fl._by = 1 / TEX_SCALE;
             fl.zIndex = ps.zIndex + 0.5;
             fl._phase = r() * 10;
             fl._baseY = fl.y;
@@ -1885,9 +1906,27 @@ var BattleDecor = (function () {
               var fi = Math.floor(D.time * 10 + f._phase * 3) % f._frames.length;
               if (f.texture !== f._frames[fi]) f.texture = f._frames[fi];
             }
-            f.scale.y = (1 / TEX_SCALE) * (0.94 + 0.1 * flick);
-            f.scale.x = (1 / TEX_SCALE) * (0.97 + 0.05 * Math.sin(t * 1.3));
+            // 只算火焰自己的縮放；實際寫進 sprite 在 billboardChunks（要乘上透視抵銷）
+            f._by = (1 / TEX_SCALE) * (0.94 + 0.1 * flick);
+            f._bx = (1 / TEX_SCALE) * (0.97 + 0.05 * Math.sin(t * 1.3));
           }
+        }
+      });
+    }
+
+    /* 直立擺件與火焰抵銷畫面透視：鏡頭每幀都在動，shear 隨橫向位置變，所以每幀對所有在畫的擺件重算
+       （數量約幾十個，每個只有幾次乘除）。加色的地面光暈在地面平面容器裡，本來就該跟地板一起透視，不碰。 */
+    function billboardChunks() {
+      var bb = opts.billboard;
+      D.chunks.forEach(function (c) {
+        for (var i = 0; i < c.props.length; i++) {
+          var s = c.props[i];
+          billboardSprite(s, bb, s._bx, s._by);
+        }
+        for (var j = 0; j < c.flames.length; j++) {
+          var f = c.flames[j];
+          if (f.blendMode === 'add' || !f._anchor) continue;
+          billboardSprite(f, bb, f._bx, f._by, f._anchor, 0, f._offY);
         }
       });
     }
@@ -2049,6 +2088,7 @@ var BattleDecor = (function () {
       syncChunks(view);
       fadeNearPlayer(view);
       animateFlames(dt);
+      billboardChunks();
       updateParticles(view, dt);
     }
 
@@ -2102,7 +2142,8 @@ var BattleDecor = (function () {
       mulberry: mulberry, strHash: strHash, shade: shade, shadeRgba: shadeRgba, rgba: rgba,
       lerp: lerp, range: range, pick: pick, blob: blob, pathPoly: pathPoly, pathSmooth: pathSmooth,
       shadowEllipse: shadowEllipse, speckle: speckle, drawFlame: drawFlame,
-      particleDot: particleDot, particleFog: particleFog, FOOT: FOOT, TEX_SCALE: TEX_SCALE
+      particleDot: particleDot, particleFog: particleFog, FOOT: FOOT, TEX_SCALE: TEX_SCALE,
+      billboardSprite: billboardSprite
     },
     _internals: { mulberry: mulberry, hash3: hash3, CHUNK_W: CHUNK_W, CHUNK_H: CHUNK_H, planAtlas: planAtlas, stepAtlas: stepAtlas }
   };

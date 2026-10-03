@@ -51,7 +51,7 @@ function fakePixi() {
   }
   const point = () => ({ x: 1, y: 1, set(a, b) { this.x = a; this.y = b === undefined ? a : b; } });
   class Sprite extends Container {
-    constructor(tex) { super(); alive++; this.texture = tex; this.anchor = point(); this.scale = point(); this.alpha = 1; this.tint = 0xffffff; this.rotation = 0; }
+    constructor(tex) { super(); alive++; this.texture = tex; this.anchor = point(); this.scale = point(); this.alpha = 1; this.tint = 0xffffff; this.rotation = 0; this.skew = { x: 0 }; }
     destroy() { alive--; this.destroyed = true; if (this.parent) this.parent.removeChild(this); }
   }
   class Texture { constructor(o) { this.o = o; } destroy() {} }

@@ -8853,3 +8853,11 @@ Worker 存活且頁面正常完成載入。
 - 回歸有效性：唯讀preload還原HEAD skills2，新8項中追敵測試失敗（初始moveAngle null），其餘7項通過，證實上一輪壽命與乘算通過仍不足以保證追敵。天穹既有測試改由固定遠處落點改驗指向攻擊者的初始航向與實際事件；初次Runtime測試誤用整段圓弧方向推導最後一幀朝向，改逐幀驗實際位移後通過，未改正式Runtime。
 - 瀏覽器：全新無頭Edge、獨立隨機Port服務／拋棄式儲存／真正Worker；大小各12道在3秒內全部經本體onHit命中、各7秒壽命，主執行緒收到同一批24個場域ID，Worker booted／alive、error／persistError／Console error及warning皆0。新版主頁及Worker import URL皆實際請求；首次cache斷言未納入既有chain query，修正測試URL比對後通過，未改遊戲URL生成。瀏覽器與服務已關閉、未建立新暫存檔。未宣稱瀏覽器正式Preset Runtime完成啟動；畫面運動一致性由上述正式Runtime定向測試驗證，未做長時間真人實戰。
 - 交付：Commit為本紀錄所在`[Codex] fix: 讓大小風刃射出後立即追敵`提交；無未完成需求，可合併；未合併／推送。下一步使用者重載遊戲並審查整合。
+
+## SCENE-PROP-BILLBOARD-20261003 — 場景擺件只吃遠近縮放、不受 FOV 扭曲
+
+- 需求：使用者回報戰鬥場景物件被透視往畫面中央上方扭曲，要改成只受遠近放大縮小、不受 FOV 影響。
+- 原因：敵人已有 `applyEntityBillboard` 抵銷整片 PerspectiveMesh 的形變（2026-09-29），但地形擺件（`battle-decor`）與魔王祭壇的門／火盆／尖刺（`battle-arena`）同樣是直立貼圖、掛在 `entity` 層，從沒套過，離畫面中心越遠越往中心傾斜。
+- 作法：`battle-renderer` 抽出 `sceneBillboardBasis(x, y)`（腳點進、`{w, shear, skew, k}` 出），`applyEntityBillboard` 改用它，並以 `opts.billboard` 傳給 decor／arena。decor 的 `art.billboardSprite` 把 `[[1, shear], [0, w]]` 套在 sprite 的 skew.x 與 scale.y 上；火焰、魔門的眼睛是零件，位置也經過本體同一個矩陣（`_anchor`／`_offY`），不然會被網格各自推開、離開碗口與門楣。縮放改由 `_bx／_by` 記底、每幀（鏡頭在動）重算；火焰動畫不再直接寫 sprite 縮放。地面光暈與裂痕在地面平面容器裡，本來就該跟地板一起透視，不動。沒開透視（`?persp=0`）時完全維持原樣。
+- 殘留：與敵人相同，錨點精確、離錨點越遠殘留越多（魔門這種高大物件頂端殘留較明顯）；要完全消除需改走空中 billboard 層，但會失去與角色的前後遮擋，沒做。
+- 測試：`tests/battle-perspective.test.cjs` 新增 PERSP-13（抵銷 × 網格＝等比縮放、零斜切、翻面保留、零件與本體重合）與 PERSP-14（接線）；decor／arena 測試的假 Sprite 補 `skew`。實機（本機 8125）擷取場景根容器，41 個擺件皆已套用抵銷。快取版本：battle-decor 1.0.8、battle-arena 1.0.1、battle-renderer 1.6.169。
