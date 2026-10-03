@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "ground-homing-wind-crescent-09",
+  "groups": [
+    {
+      "id": "ground-homing-wind-crescent-09",
+      "name": "ground-homing-wind-crescent-09",
+      "layerIds": [
+        "green-rim",
+        "green-body",
+        "green-body-copy",
+        "white-core",
+        "wind-motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:ground-homing-wind-crescent-09"
+  ]
+}
