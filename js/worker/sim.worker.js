@@ -1515,7 +1515,6 @@ var COMMAND_IMPL = {
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;
     var minLv = (tier === 0 ? 1 : 0);
-    if ((lvs[tier] || 0) <= minLv) return true;
     for (var i = tier + 1; i < lvs.length; i++) {
       lvs[i] = 0;
     }
@@ -1523,7 +1522,10 @@ var COMMAND_IMPL = {
     if (!G.player.skills2) G.player.skills2 = { levels: {} };
     if (!G.player.skills2.levels) G.player.skills2.levels = {};
     G.player.skills2.levels[a.group] = lvs;
-    /* 降階同樣可能讓超神進化失去解鎖條件（前 7 階全滿），連帶開關【修羅亂舞】。 */
+    /* 明確重置連帶清除後續的超神選擇與等級；不同於降級時保留投資。
+       即使此階已在保底，也要清除舊重置留下的超神資料。 */
+    if (G.player.skills2.ult) delete G.player.skills2.ult[a.group];
+    /* 超神進化異動連帶開關【修羅亂舞】，需同步屬性及面板。 */
     if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
     else { UI.dirty.skills = true; UI.dirty.header = true; }
     return true;

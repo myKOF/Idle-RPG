@@ -8433,7 +8433,7 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
   var atCap = lv >= tierMax;
   var last = i === g.tiers.length - 1;
   var upLit = i > 0 && (lvs[i - 1] || 0) > 0 && lv > 0;
-  var downLit = last ? (lv > 0 && hasUltPick) : (lv > 0 && (lvs[i + 1] || 0) > 0);
+  var downLit = last ? (lv > 0 && hasUltPick && sgUiUltUnlocked(gid, lvs)) : (lv > 0 && (lvs[i + 1] || 0) > 0);
   var state = locked && lv === 0 ? 'locked' : (atCap ? 'max' : (lv > 0 ? 'part' : 'zero'));
   var selected = UI.sgBrowse.focus !== 'ult' && UI.sgBrowse.tier === i;
   var h = '<div class="sgb-tier sgb-tier-' + state + (selected ? ' is-sel' : '') + '">' +
@@ -8467,7 +8467,10 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
     var canDowngrade = (i === 0) ? (lv > 1) : (lv > 0);
     if (canDowngrade) {
       h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="降 1 級（不退還金幣）"' + pendingAttrs + '>降級</button>';
-      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="重置此階等級（不退還金幣）"' + pendingAttrs + '>重置</button>';
+    }
+    // 已在第 1 階保底時，仍可重置以清除舊存檔殘留的超神投資。
+    if (canDowngrade || (i === 0 && hasUltPick)) {
+      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="重置此階及後續階級，清除超神進化（不退還金幣）"' + pendingAttrs + '>重置</button>';
     }
     h += '</div></div>';
   }
@@ -8479,21 +8482,22 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   var list = sgUltDefs(gid) || [];
   var pick = sgUiUltPick(skillsSnapshot, gid);
   var unlocked = sgUiUltUnlocked(gid, lvs);
+  var activePick = !!pick && unlocked;
   var tierMax = sgbTierMax();
   var f = (typeof UI.sgBrowse.ultFocus === 'number' && list[UI.sgBrowse.ultFocus]) ? UI.sgBrowse.ultFocus : (pick ? pick.idx : 0);
   var ultOpen = UI.sgBrowse.focus === 'ult';
   var h = '<div class="sgb-ult">' +
-    '<div class="sgb-ult-head"><span class="sgb-rail" aria-hidden="true"><span class="sgb-line sgb-line-full' + (pick ? ' is-lit' : '') + '"></span></span>' +
+    '<div class="sgb-ult-head"><span class="sgb-rail" aria-hidden="true"><span class="sgb-line sgb-line-full' + (activePick ? ' is-lit' : '') + '"></span></span>' +
     '<b>第 ' + (g.tiers.length + 1) + ' 階 · 超神進化</b><span class="sgb-ult-sub">三選一</span></div>';
   // 分岔：橫線從節點欄接到被選中的那一張卡，三張卡各自往上接一小段
   var litTo = pick ? ((2 * pick.idx + 1) / (2 * list.length) * 100) : 0;
   h += '<div class="sgb-fork" aria-hidden="true"><span class="sgb-fork-bar"></span>' +
-    (pick ? '<span class="sgb-fork-bar is-lit" style="width:calc(' + litTo.toFixed(2) + '% - 20px)"></span>' : '') + '</div>';
+    (activePick ? '<span class="sgb-fork-bar is-lit" style="width:calc(' + litTo.toFixed(2) + '% - 20px)"></span>' : '') + '</div>';
   h += '<div class="sgb-ult-cards" style="--n:' + list.length + '">';
   for (var j = 0; j < list.length; j++) {
     var chosen = !!pick && pick.idx === j;
-    var status = !unlocked && !chosen ? '未開放' : (chosen ? '已選擇 · Lv.' + pick.lv + ' / ' + tierMax : (pick ? '未選擇' : '可選擇'));
-    h += '<button type="button" class="sgb-ult-card' + (chosen ? ' is-chosen' : '') + (ultOpen && f === j ? ' is-focus' : '') +
+    var status = !unlocked && !chosen ? '未開放' : (chosen ? (unlocked ? '已選擇' : '未生效 · 已保留') + ' · Lv.' + pick.lv + ' / ' + tierMax : (pick ? '未選擇' : '可選擇'));
+    h += '<button type="button" class="sgb-ult-card' + (chosen && unlocked ? ' is-chosen' : '') + (ultOpen && f === j ? ' is-focus' : '') +
       (pick && !chosen ? ' is-other' : '') + '" data-sgb-ult="' + j + '" aria-pressed="' + (ultOpen && f === j) + '">' +
       '<b>' + esc(list[j].name) + '</b><span>' + status + '</span></button>';
   }
@@ -10902,7 +10906,9 @@ function initUI() {
       var gObj = (typeof SKILLS2 !== 'undefined') ? SKILLS2[delGid] : null;
       var tierObj = gObj && gObj.tiers[delTier];
       var tierName = tierObj ? tierObj.name : '技能';
-      var confirmMsg = '確定重置技能階級【' + tierName + '】？等級將歸零（第 1 階保留 Lv.1，不退還金幣）。';
+      var confirmMsg = sgIsUltSlot(delGid, delTier)
+        ? '確定清除超神進化的選擇與等級？前 7 階不受影響，不退還金幣。'
+        : '確定重置技能階級【' + tierName + '】？此階及所有後續階級將重置，超神進化的選擇與等級也會清除（第 1 階保留 Lv.1，不退還金幣）。';
       showConfirmDialog(confirmMsg, function () {
         runSkill2DeleteAction(delGid, delTier);
       }, { title: '技能重置確認', danger: true });
@@ -13494,4 +13500,3 @@ var UIContainmentManager = {
 if (typeof window !== 'undefined') {
   window.UIContainmentManager = UIContainmentManager;
 }
-

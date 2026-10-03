@@ -122,6 +122,30 @@ test('同一時間只展開一段說明：看某一階時超神說明收起，�
   assert.match(ultView, /sgb-ult-detail/);
 });
 
+test('降級保留的超神明確標示未生效，且不亮起選擇卡與連線', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: [10, 10, 10, 10, 10, 10, 9] });
+  snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
+  const h = detail(c, 'thrust', snap, 0, undefined, 'ult');
+  assert.match(h, /未生效 · 已保留 · Lv.10 \/ 10/);
+  assert.doesNotMatch(h, /sgb-ult-card is-chosen|sgb-fork-bar is-lit|sgb-line-full is-lit/);
+  assert.doesNotMatch(h, /data-skill2-learn="thrust:7"/);
+});
+
+test('舊重置殘留可從第 1 階保底再重置，清除後總級數與超神卡一致', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: [1, 0, 0, 0, 0, 0, 0] });
+  snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
+  const residual = detail(c, 'thrust', snap, 0);
+  assert.match(residual, /data-skill2-delete="thrust:0"/);
+  assert.doesNotMatch(residual, /data-skill2-downgrade="thrust:0"/);
+  delete snap.skills2.ult.thrust;
+  const reset = detail(c, 'thrust', snap, 0);
+  assert.equal(c.sgbTotals('thrust', snap.skills2.levels.thrust, snap).total, 1);
+  assert.equal((reset.match(/未開放/g) || []).length, 3);
+  assert.doesNotMatch(reset, /已選擇|已保留|sgb-ult-card is-chosen|data-skill2-delete="thrust:0"/);
+});
+
 test('篩選只有全部／物理／魔法三個，依傷害類型分類', () => {
   const c = loadContext();
   const chips = c.sgbFilterChipsHTML();

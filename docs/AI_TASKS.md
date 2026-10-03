@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## SKILL2-RESET-ULT-20261003 — 前階重置連帶清除超神進化
+
+- Owner：Codex；Done。使用者回報學習超神進化後重置任意前階，前階已清除但超神進化仍顯示已學習。衝突預檢全部乾淨；範圍Worker重置指令、UI提示／失效顯示、正式回歸、必要快取及本紀錄；不改配置／傷害／其他系統，不合併／推送。
+- 目的：明確重置會清除該階及所有後續階級，包含超神進化的選擇／等級；第一階保底Lv.1、不退金幣。一般降級仍保留原超神投資但暫停生效；UI失效狀態不亮起生效路徑。已出現的殘留資料可再重置前階清除，不以讀檔自動刪除合法降級保留的投資。
+- 驗收：每個前階／超神直接重置、殘留記錄／重複重置、其他技能資料與金幣不變、屬性失效／技能快照同步、重新練滿不自動恢復已重置超神、保留一般降級規則；真實Worker及UI回歸、建置。後續接手者使用者。
+- 原因／修正：Worker的skill2.delete只清除普通階，沒有刪除ult[group]；UI則把失效但保留的投資仍畫為已學習。明確重置現在連帶清除超神，且移除保底階級的提前返回，允許再次清除殘留；第1階有超神投資時即使Lv.1也提供重置按鈕。一般降級沿用保留投資規則，卡片標示「未生效 · 已保留」，不點亮卡片／連線。確認視窗明確說明清除範圍，直接重選超神則保留普通7階。
+- 修改7檔：js/worker/sim.worker.js、js/ui.js、js/bridge.js、index.html、tests/skill2-reset.test.cjs、tests/skill2-ui.test.cjs及本紀錄。唯讀檢查：js/skills2.js（降級、解鎖、快取、面板投影）、js/player.js、js/worker/protocol.js、scripts/sim/engine.js、相关測試及協作規範。主頁ui／bridge版號1.0.104／1.0.205，Worker token為20261003-skill2-reset-ult；不涉及存檔格式／配置／素材。
+- 定向驗證：`node --test tests/skill2-reset.test.cjs tests/skill2-ui.test.cjs`25/25通過；新Worker測試在唯讀preload還原HEAD的Worker時10項中8項失敗，確認能攔住原缺陷。`npm run build`423檔語法／編譯通過；`git diff --check`通過。
+- 擴大回歸：`node --test tests/skill2-reset.test.cjs tests/skill2-ui.test.cjs tests/skill2-ult-evolution.test.cjs tests/skill2-system.test.cjs tests/skills2-levels-memo.test.cjs tests/skill2-asura-dualwield.test.cjs tests/worker-protocol.test.cjs tests/ui-worker-panels.test.cjs tests/ui-worker-events.test.cjs`172項128通過、44失敗。唯讀preload還原HEAD的ui／bridge／Worker／index再跑既有套件，44項均重現，無新增失敗；涵蓋既有VFX／戰鬥技能測試與item.upgrade的UI替身缺少UI，未修改斷言或其他技能配合現況。兩個新增UI測試亦在HEAD重現失敗。
+- 瀏覽器：獨立28393服務、全新Edge無頭頁及正式Worker，實際點前階重置→確認→收到技能面板快照；80級回1級、普通後續階歸零、超神三卡未開放。再載入圖中[1,0,0,0,0,0,0]＋超神Lv.10殘留並點第1階重置，選擇清除且UI同步；截圖人工檢查通過。Worker booted／alive、errors／persistErrors／console errors皆0；瀏覽器與服務已關閉。證據C:/Users/user/AppData/Local/Temp/codex-skill2-reset-{current,baseline,repro}.log與after.png。
+- 風險／未完成：擴大回歸已有44項失敗如上；不自動刪除舊存檔失效超神，因其也可能是合法降級保留，已受影響者更新後可再次重置第1階清除。此任務無未完成項目，建議合併本紀錄所在的Codex修正commit，可合併；本輪不推送develop。
+
 ## DEVELOP-INTEGRATE-20261002 — 解決develop衝突並推送
 
 - Owner：Codex；Done；使用者直接授權解決develop衝突、合併並上傳。工作區為Git登記的D:/MyGame/Idle-RPG/develop，續接既有origin/ai/codex合併，MERGE_HEAD為746960d5；不重新開始合併、不丟棄已暫存內容。
