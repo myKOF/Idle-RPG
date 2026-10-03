@@ -100,7 +100,8 @@ test('Canvas 雷鏈飛行不被死亡取消，但死亡目標不播命中特效'
 
 test('CHAIN-END 清場訊號不經顯示緩衝或死亡守門，Worker保留鏈編號',()=>{
  const events=[];const c={S:{ready:true,vfxrt:{tryPlay:s=>events.push(s)}}};
- vm.runInNewContext(extractFunction(read('js/battle-renderer.js'),'onVfx'),c);
+ const rsrc=read('js/battle-renderer.js');
+ vm.runInNewContext(['canvasActorId','normalizeTowerVfxIds','onVfx'].map(n=>extractFunction(rsrc,n)).join(';'),c);
  c.onVfx({variant:'lightning-chain-end',targets:[],area:{chainId:'one'},vfx:{}});
  assert.equal(events.length,1);
  const wire=[];const w={_diag(){},SHIM_DIAG:{ui:0},shimPushEvent:(k,e)=>wire.push(e)};

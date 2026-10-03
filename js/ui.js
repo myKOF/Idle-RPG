@@ -642,9 +642,9 @@ function flushWorkerVisualEvents() {
         floatText(event.elId, event.text, event.cls, event.damageValue, null,
           uiBattlePanelSnapshot(), event.delayMs);
       } else if (event.kind === 'vfx') {
-        /* 三條顯示路徑，依定址分流：
-             野外（mv/pv 定址）→ PixiJS 戰鬥渲染器
-             高塔（tb/tp 定址）→ 高塔的 Preset 疊層（js/vfx-tower.js）
+        /* 三條顯示路徑：
+             Canvas 戰鬥模式 → PixiJS 戰鬥渲染器（野外與封魔塔都畫在戰場上）
+             ?canvas=0 的封魔塔（tb/tp 定址）→ 高塔的 Preset 疊層（js/vfx-tower.js）
              兩邊都不接手 → js/vfx.js 的 DOM 畫法（也是 Preset 缺件時的退路） */
         if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsVfx(event)) {
           BattleRenderer.onVfx(event);
@@ -2208,9 +2208,16 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
     rememberBackgroundEnemyFloat(elId, text, cls, damageValue);
     return;
   }
-  /* Canvas 戰鬥模式：野外目標（pv-float / mv-float-N）的飄字交給 PixiJS 渲染器，
-     延遲與合併都在那邊處理；高塔目標（tp/tb-float）維持下面的 DOM 路徑。
+  /* Canvas 戰鬥模式：戰場目標（pv-float / mv-float-N，封魔塔的 tp-float / tb-float）的飄字
+     交給 PixiJS 渲染器，延遲與合併都在那邊處理；?canvas=0 時才走下面的 DOM 路徑。
      放在暫停偵測之後：背景分頁仍走「只記最新」的既有路徑，回前景時再經這裡轉交。 */
+  /* 塔戰的「BOSS 身上的 MISS」其實是我方閃過了 BOSS 的攻擊：改寫成我方的閃避字。
+     放在 Canvas 分流之前——封魔塔改畫在 Canvas 戰場後，這則字也走渲染器。 */
+  if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
+    elId = 'tp-float';
+    text = '閃避!';
+    cls = 'player-event dodge defend';
+  }
   if (typeof BattleRenderer !== 'undefined' && BattleRenderer.wantsFloat(elId)) {
     BattleRenderer.onFloat({ elId: elId, text: text, cls: cls, damageValue: damageValue, delayMs: delayMs });
     return;
@@ -2226,11 +2233,6 @@ function floatText(elId, text, cls, damageValue, ent, battleSnapshot, delayMs) {
       floatText(elId, text, cls, damageValue, ent, battleSnapshot, 0);
     }, delayMs);
     return;
-  }
-  if (elId === 'tb-float' && text === 'MISS' && cls === 'miss') {
-    elId = 'tp-float';
-    text = '閃避!';
-    cls = 'player-event dodge defend';
   }
   var enemyHitFloat = isEnemyHitFloat(elId, cls);
   if (enemyHitFloat && !enemyFloatTargetStillTracked(elId, ent, battleSnapshot)) return;
@@ -2883,10 +2885,22 @@ function buffTipEmoji(key) {
   return (typeof statusIcon === 'function') ? statusIcon(statusIdByKey(key), '💪') : '💪';
 }
 
+/* 正在打的那一場的玩家實體：塔戰期間是 TOWER.player（野外此時凍結），其餘是 FIELD.player。
+   戰場上的血瓶、技能列、狀態列都畫「正在打的那一個」——封魔塔改畫在 Canvas 戰場之後，
+   讀 FIELD.player 會讓整場塔戰的冷卻與血量停在進塔前的值。 */
+function towerCombatActive(battle) {
+  var view = viewState() || {};
+  return !!(view.towerActive && battle && battle.tower && battle.tower.player);
+}
+
+function combatPlayerOfBattleSnapshot(battle) {
+  if (!battle) return null;
+  if (towerCombatActive(battle)) return battle.tower.player;
+  return battle.field && battle.field.player ? battle.field.player : null;
+}
+
 function currentCombatPlayerEntity() {
-  var battle = peekUiPanelData('battle');
-  var field = battle && battle.field;
-  return field && field.player ? field.player : null;
+  return combatPlayerOfBattleSnapshot(peekUiPanelData('battle'));
 }
 
 
@@ -3439,8 +3453,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
   if (!bar) return;
   var battleSnap = peekUiPanelData('battle') || {};
   if (!pEnt) {
-    var field = battleSnap.field || {};
-    pEnt = field.player || battleSnap.player || null;
+    pEnt = combatPlayerOfBattleSnapshot(battleSnap) || battleSnap.player || null;
     snapshotGt = battleSnap.gt || 0;
   }
   var skillsSnapshot = uiSkillsPanelSnapshot();
@@ -4068,7 +4081,7 @@ function rebuildEnemyParty(party, html) {
 function renderBattleResourceOrbs() {
   var view = viewState() || {};
   var battle = uiBattlePanelSnapshot() || {};
-  var p = (battle.field && battle.field.player) || {};
+  var p = combatPlayerOfBattleSnapshot(battle) || {};
   function value(tickValue, panelValue) {
     return Math.max(0, Number.isFinite(tickValue) ? tickValue : (Number(panelValue) || 0));
   }
@@ -4108,6 +4121,7 @@ function renderBattle() {
   var battleSnapshot = uiBattlePanelSnapshot() || {};
   var view = viewState() || {};
   renderEnemyFrenzy(battleSnapshot, view);
+  renderTowerCanvasHud(battleSnapshot, view);
   var st = headerSnapshot.stats || { hp: view.hpMax || 1, mp: view.mpMax || 1 };
   renderZoneBar();
   refreshStageDisplay();
@@ -4115,7 +4129,8 @@ function renderBattle() {
   renderQuestBar();
 
   var field = battleSnapshot.field || {};
-  var panelPlayer = field.player;
+  var inTowerCombat = towerCombatActive(battleSnapshot);
+  var panelPlayer = combatPlayerOfBattleSnapshot(battleSnapshot);
   var p = panelPlayer ? Object.assign({}, panelPlayer) : {
     hp: view.hp || 0, maxHp: view.hpMax || 1,
     mp: view.mp || 0, maxMp: view.mpMax || 1,
@@ -4137,7 +4152,7 @@ function renderBattle() {
     setHtmlIfChanged($id('pv-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
     // 倒數一律扣掉「快照拍照到現在」經過的時間，才會是逐幀前進的碼錶
     /* 復活倒數在 FIELD 上，不在玩家實體上（見 js/combat.js onPlayerFieldDeath）。 */
-    var reviveLeft = uiCountdownRemain(field.reviveCd, battleSnapshot.gt);
+    var reviveLeft = inTowerCombat ? 0 : uiCountdownRemain(field.reviveCd, battleSnapshot.gt);
     setTextIfChanged($id('pv-status'), reviveLeft > 0 ? ('💀 復活中 ' + fmt1(reviveLeft) + 's') : entStatus(p));
     renderMpSkill(p, 'pv', st, battleSnapshot.gt);
     renderBattleSkillBar(p, battleSnapshot.gt);
@@ -6597,10 +6612,26 @@ function formatTowerTimerSeconds(seconds) {
   return Math.max(0, Number(seconds) || 0).toFixed(1);
 }
 
+/* 倒數顯示在兩個地方：封魔塔分頁的標頭（#tw-timer），與 Canvas 戰場頂部的塔戰資訊列（#tch-timer）。
+   資料來源跟著顯示位置走：在封魔塔分頁時用 tower 面板（renderTowerFight 也讀它），
+   不在時用一直有訂閱的 battle 面板。錨點只由其中一邊設定，兩份快照的 elapsed
+   拍照時刻不同，兩邊輪流重設會讓倒數前後抖動。 */
+function towerTimerRuntime() {
+  if (UI.tab === 'tower') {
+    var snapshot = uiTowerPanelSnapshot();
+    var runtime = snapshot && snapshot.runtime;
+    if (towerViewActive(snapshot) && runtime && runtime.boss) return runtime;
+  }
+  if (towerCanvasHudActive()) {
+    var battle = uiBattlePanelSnapshot();
+    if (battle && battle.tower && battle.tower.boss) return battle.tower;
+  }
+  return null;
+}
+
 function renderTowerTimerFrame() {
-  var snapshot = uiTowerPanelSnapshot();
-  var runtime = snapshot && snapshot.runtime;
-  if (!towerViewActive(snapshot) || UI.tab !== 'tower' || !runtime || !runtime.boss) {
+  var runtime = towerTimerRuntime();
+  if (!runtime) {
     stopTowerTimerAnimation();
     return;
   }
@@ -6611,11 +6642,12 @@ function renderTowerTimerFrame() {
   var remain = !paused && anchor
     ? Math.max(0, towerTimeLimitWithTalents(runtime.floor) - (anchor.elapsed + (towerTimerNow() - anchor.at) / 1000))
     : Math.max(0, towerTimeLimitWithTalents(runtime.floor) - runtime.elapsed);
-  var timerEl = $id('tw-timer');
-  if (timerEl) {
+  ['tw-timer', 'tch-timer'].forEach(function (id) {
+    var timerEl = $id(id);
+    if (!timerEl) return;
     timerEl.textContent = formatTowerTimerSeconds(remain) + 's';
     timerEl.classList.toggle('urgent', remain < 15);
-  }
+  });
   if (paused) {
     UI.towerTimerRaf = 0;
     return;
@@ -6623,19 +6655,69 @@ function renderTowerTimerFrame() {
   UI.towerTimerRaf = scheduleTowerTimerFrame();
 }
 
+/* ---- Canvas 戰場上的塔戰資訊列（#tower-canvas-hud）----
+   封魔塔改畫在右側 Canvas 戰場後，戰鬥畫面與封魔塔分頁可能不在同一個視線範圍（甚至分頁根本沒開），
+   樓層、倒數、狂暴與撤退因此也放到戰場頂部（塔戰期間取代任務快捷列的位置）。
+   ?canvas=0 時不顯示，塔戰照舊在封魔塔分頁的 DOM 畫面裡打。 */
+function towerCanvasHudActive() {
+  var view = viewState() || {};
+  return !!(view.towerActive && typeof BattleRenderer !== 'undefined' && BattleRenderer.active());
+}
+
+function renderTowerCanvasHud(battleSnapshot, view) {
+  var hud = $id('tower-canvas-hud');
+  if (!hud) return;
+  var tower = battleSnapshot && battleSnapshot.tower;
+  var show = towerCanvasHudActive() && !!(tower && tower.boss);
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.toggle('tower-canvas-fight', show);
+  }
+  setStyleIfChanged(hud, 'display', show ? '' : 'none');
+  if (!show) return;
+  var b = tower.boss;
+  setTextIfChanged($id('tch-floor'), '🗼 第 ' + (tower.floor || 0) + ' 層');
+  var enrageEl = $id('tch-enrage');
+  if (enrageEl) {
+    setStyleIfChanged(enrageEl, 'display', tower.enraged ? '' : 'none');
+    var cfg = (typeof towerBossCfg === 'function') ? towerBossCfg(tower.floor) : null;
+    setTextIfChanged(enrageEl, '🔥 狂暴' + (cfg && cfg.enrageMult > 1 ? ' +' + Math.round((cfg.enrageMult - 1) * 100) + '%' : ''));
+  }
+  var autoEl = $id('tch-auto');
+  if (autoEl) {
+    setStyleIfChanged(autoEl, 'display', tower.auto ? '' : 'none');
+    if (tower.auto) setTextIfChanged(autoEl, '🔁 ' + (tower.auto.done + 1) + '/' + tower.auto.total);
+  }
+  var limit = towerTimeLimitWithTalents(tower.floor);
+  setTextIfChanged($id('tch-dps'), 'DPS ' + fmt(tower.elapsed > 1 ? tower.dmgDealt / tower.elapsed : 0) +
+    '／需求 ' + fmt(b.maxHp / limit));
+  /* 倒數：在封魔塔分頁時由 renderTowerFight 管錨點（見 towerTimerRuntime 的說明）。 */
+  if (UI.tab !== 'tower') {
+    var paused = !!(view && view.paused);
+    if (paused) {
+      stopTowerTimerAnimation();
+      renderTowerTimerFrame();
+    } else {
+      if (!UI.towerTimerAnchor || UI.towerTimerAnchor.elapsed !== tower.elapsed) {
+        UI.towerTimerAnchor = { elapsed: tower.elapsed, at: towerTimerNow() };
+      }
+      if (!UI.towerTimerRaf) renderTowerTimerFrame();
+    }
+  }
+}
+
 // 高塔戰鬥動態渲染（每 tick）；倒數文字另外以逐幀動畫更新
 function renderTowerFight() {
   var snapshot = uiTowerPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!towerViewActive(snapshot) || UI.tab !== 'tower' || !headerSnapshot) {
-    stopTowerTimerAnimation();
+    if (!towerCanvasHudActive()) stopTowerTimerAnimation();
     return;
   }
   var runtime = snapshot.runtime || {};
   var st = headerSnapshot.stats;
   var b = runtime.boss, p = runtime.player;
   if (!b || !p || !st) {
-    stopTowerTimerAnimation();
+    if (!towerCanvasHudActive()) stopTowerTimerAnimation();
     return;
   }
   var view = viewState();
@@ -6887,7 +6969,7 @@ function updateDmgAbsorb() {
   var headerSnapshot = uiHeaderPanelSnapshot() || {};
   var battleSnapshot = uiBattlePanelSnapshot() || {};
   var st = headerSnapshot.viewStats || headerSnapshot.stats || {};
-  var pEnt = battleSnapshot.field && battleSnapshot.field.player;
+  var pEnt = combatPlayerOfBattleSnapshot(battleSnapshot);
   var isActive = true;
   var hp = (isActive && pEnt && typeof pEnt.hp === 'number') ? pEnt.hp : st.hp;
   var shield = (isActive && pEnt && typeof pEnt.shield === 'number') ? pEnt.shield : 0;
@@ -12525,14 +12607,18 @@ function initUI() {
       updateInventoryKeywordFilter();
     });
   }
-  $id('tw-flee').setAttribute('data-ui-pending-key', nodePendingKey('tower'));
-  $id('tw-flee').addEventListener('click', function () {
-
-    sendUiCommand('tower.flee', {}, {
-      keys: [nodePendingKey('tower')],
-      panels: ['tower']
-    }).catch(function (error) {
-      reportUiCommandFailure('封魔塔撤退', error, ['tower']);
+  // 撤退：封魔塔分頁標頭與 Canvas 戰場頂部的塔戰資訊列各一顆，送同一個指令
+  ['tw-flee', 'tch-flee'].forEach(function (fleeId) {
+    var fleeBtn = $id(fleeId);
+    if (!fleeBtn) return;
+    fleeBtn.setAttribute('data-ui-pending-key', nodePendingKey('tower'));
+    fleeBtn.addEventListener('click', function () {
+      sendUiCommand('tower.flee', {}, {
+        keys: [nodePendingKey('tower')],
+        panels: ['tower']
+      }).catch(function (error) {
+        reportUiCommandFailure('封魔塔撤退', error, ['tower']);
+      });
     });
   });
 

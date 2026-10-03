@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=1.0.69">
+  <link rel="stylesheet" href="css/style.css?v=1.0.70">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.38">
 </head>
@@ -513,6 +513,7 @@
                 <div class="cb-status" id="tb-status" data-enemy-buff-tip></div>
               </div>
             </div>
+            <div class="tower-canvas-note">⚔️ 戰鬥畫面顯示在戰場上</div>
             <div class="hint">限時 60 秒；40 秒時若 BOSS 血量仍高於 50%，將進入狂暴（傷害 +200%）！</div>
           </div>
 
@@ -630,6 +631,15 @@
           <!-- 任務快捷列：內容由 ui.js renderQuestBar() 依 tick 視圖與 TASKS 表填入；
                搬遷至戰鬥區頂部中央；點擊：可領取時直接領獎，否則開啟任務總覽（#quest-modal） -->
           <div id="quest-bar" style="display:none"></div>
+          <!-- 封魔塔資訊列（Canvas 戰鬥模式的塔戰期間取代任務快捷列）：ui.js renderTowerCanvasHud -->
+          <div id="tower-canvas-hud" style="display:none">
+            <span id="tch-floor" class="tch-floor"></span>
+            <span id="tch-timer" class="tch-timer">60.0s</span>
+            <span id="tch-auto" class="tch-auto" style="display:none"></span>
+            <span id="tch-enrage" class="tch-enrage" style="display:none"></span>
+            <span id="tch-dps" class="tch-dps"></span>
+            <button id="tch-flee" class="btn sm warn" type="button">撤退</button>
+          </div>
           <div id="btn-enemy-tip" class="info-btn">!</div>
           <button id="btn-toggle-damage" class="info-btn damage-toggle-btn" type="button" aria-label="傷害數字開關" data-tt-title="傷害數字" data-tt-desc="目前顯示傷害數字（點擊關閉）">
             <svg class="icon-eye-open" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -893,7 +903,7 @@
   <script src="js/vfx-tower.js?v=1.0.2"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-decor.js?v=1.0.4"></script>
-  <script src="js/battle-renderer.js?v=1.6.163"></script>
+  <script src="js/battle-renderer.js?v=1.6.164"></script>
   <script src="js/stats.js?v=1.0.3"></script>
   <script src="js/item.js?v=1.0.5"></script>
   <script src="js/skills.js?v=1.0.40"></script>
@@ -905,7 +915,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.17"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.107"></script>
+  <script src="js/ui.js?v=1.0.108"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>

@@ -10,7 +10,9 @@
      3. FLOAT / VFX 事件（由 ui.js 分流進來）：傷害飄字與技能特效，沿用協議 v17 欄位
         （fxKind / elem / cat / variant / travelMs / delayMs），定址一律 mv-float-N / pv-float。
 
-   高塔戰（tb-* / tp-* 定址）維持原本的 DOM 表現，不進本渲染器。
+   封魔塔（2026-10-03 起）也畫在這裡：PANEL battle 的 tower 套成野外的形狀（towerFieldView），
+   tp-float 進來時換成 pv-float、tb-float 當 BOSS 的實體 id（canvasActorId／isEnemyEntityId）。
+   ?canvas=0 時塔戰仍回到封魔塔分頁裡的 DOM 卡片＋ js/vfx-tower.js 疊層。
    後備：?canvas=0、PIXI 載入失敗或 WebGL 不可用時 init() 回傳 false，
    ui.js 會維持原 DOM 戰鬥畫面，所有舊路徑原封不動。
 
@@ -178,11 +180,24 @@ var BattleRenderer = (function () {
   function documentHidden() {
     return typeof document !== 'undefined' && document.hidden;
   }
+  /* ---- 塔戰定址 ----
+     封魔塔也畫在這個戰場上（2026-10-03）。模擬層的塔戰定址照舊：我方 tp-float、BOSS tb-float。
+     我方就是畫面上同一個騎士，進來時一律換成 pv-float，後面的程式只認得一種玩家 id；
+     BOSS 的 tb-float 直接當實體 id（syncBattle 以 floatSel 建實體），與 mv-float-N 同等對待。 */
+  function canvasActorId(id) { return id === 'tp-float' ? 'pv-float' : id; }
+  function isEnemyEntityId(id) { return id === 'tb-float' || /^mv-float-\d+$/.test(id || ''); }
+  function normalizeTowerVfxIds(spec) {
+    if (!spec || spec._actorIdsNormalized) return spec;
+    spec._actorIdsNormalized = true;
+    if (Array.isArray(spec.targets) && spec.targets.indexOf('tp-float') >= 0) spec.targets = spec.targets.map(canvasActorId);
+    if (spec.sourceId === 'tp-float') spec.sourceId = 'pv-float';
+    return spec;
+  }
   function isCanvasFloatTarget(elId) {
-    return elId === 'pv-float' || /^mv-float-\d+$/.test(elId || '');
+    return elId === 'pv-float' || elId === 'tp-float' || isEnemyEntityId(elId);
   }
   function enemyFloatTargetAvailable(elId) {
-    if (!/^mv-float-\d+$/.test(elId || '')) return true;
+    if (!isEnemyEntityId(elId)) return true;
     var ent = S.entities[elId];
     if (ent) return ent.state !== 'gone';
     return !S.lastPos[elId];
@@ -1563,7 +1578,7 @@ var BattleRenderer = (function () {
      特效仍由各自的 vfx 事件負責，這裡只換角色的面向與姿勢。 */
   function onAct(ev) {
     if (!ev || !S.ready || documentHidden()) return;
-    if (ev.elId !== 'pv-float') return;          // 高塔（tp-float）不在這個渲染器
+    if (canvasActorId(ev.elId) !== 'pv-float') return;
     /* 與特效同一套顯示延遲：畫面上的世界落後模擬 POS_BUFFER_MS，姿勢也延後才對得上特效與站位 */
     if (!ev._buffered) {
       ev._buffered = true;
@@ -1572,7 +1587,7 @@ var BattleRenderer = (function () {
     }
     var p = S.player;
     if (!p || p.dead || p.revival || ev.act !== 'cast') return;
-    var ent = ev.target ? S.entities[ev.target] : null;
+    var ent = ev.target ? S.entities[canvasActorId(ev.target)] : null;
     if (ent && ent.root) {
       p.facing = ent.root.x < p.root.x ? -1 : 1;
       /* 方向格吃世界向量（與移動時的轉向同一套）；root 是投影後的畫面座標，縱向要換回去 */
@@ -1582,9 +1597,28 @@ var BattleRenderer = (function () {
   }
 
   /* ============ reconcile（PANEL battle，約 5Hz） ============ */
+  /* 塔戰期間把 TOWER 套成野外的形狀：敵人只有那一隻 BOSS（floatSel＝tb-float）、
+     玩家是塔內的玩家實體、站位是同一個 bfPlayerPos 參照（js/tower.js placeTowerCombatants）。
+     之後的 reconcile 完全走野外那一套——BOSS 外觀、頂部大血條、內插、死亡動畫都不另寫。
+     野外在塔戰期間是凍結的，牠的怪不在這份清單裡，會走「從快照消失」的淡出。
+     BOSS 被打倒、結算視窗還開著時 TOWER.boss 仍在（hp≤0），照樣播死亡動畫；
+     確認結算後 TOWER.boss 清空，畫面就回到野外。 */
+  function towerFieldView(panel) {
+    var t = panel && panel.tower;
+    if (!t || !t.boss || !t.player) return null;
+    var field = panel.field || {};
+    return {
+      monsters: [t.boss],
+      player: t.player,
+      playerPos: t.playerPos || field.playerPos,
+      reviveCd: 0,
+      towerView: true
+    };
+  }
+
   function syncBattle(panel) {
     if (!S.ready || !panel) return;
-    var field = panel.field || {};
+    var field = towerFieldView(panel) || panel.field || {};
     var stage = panel.stage || {};
     syncZone(stage.zone || '', stage.current);
     /* 殘留座標表清理：鍵是單調遞增的 mv-float-N，過期即刪，不清會無限增長 */
@@ -1721,7 +1755,7 @@ var BattleRenderer = (function () {
     /* 空場提示只剩高塔那一句。野外的「搜索敵人中…」已移除：
        角色本來就在往前走，空場是過場而不是狀態，不需要文字說明。 */
     if (S.emptyText) {
-      S.emptyText.visible = !!S.towerActive && !anyLive;
+      S.emptyText.visible = !!S.towerActive && !anyLive && !field.towerView;
       if (S.emptyText.visible && S.emptyText.text !== '（封魔塔戰鬥中…）') S.emptyText.text = '（封魔塔戰鬥中…）';
     }
 
@@ -5290,6 +5324,7 @@ var BattleRenderer = (function () {
   }
   function onVfx(spec) {
     if (!S.ready || !spec) return;
+    normalizeTowerVfxIds(spec);
     if (spec.variant === 'water-tornado-end') {
       var endNow = Date.now(), endId = spec.area && spec.area.id;
       Object.keys(endedWaterTornadoes).forEach(function(id) {
@@ -5902,6 +5937,7 @@ var BattleRenderer = (function () {
       return;
     }
     if (documentHidden()) return;   // 背景分頁：ui.js 已改走「只記最新」路徑，這裡擋 setTimeout 殘留
+    if (ev.elId === 'tp-float') ev = Object.assign({}, ev, { elId: 'pv-float' });
     /* 與特效同理：飄字要落在「畫面上那一刻」的實體身上（見 onVfx 的說明）。 */
     if (!ev._buffered) { ev._buffered = true; ev.delayMs = (ev.delayMs || 0) + POS_BUFFER_MS; }
     var delay = Math.max(0, ev.delayMs || 0);
@@ -5987,7 +6023,7 @@ var BattleRenderer = (function () {
     placeFloatNode(node, pt.x, pt.y - 8);
     S.layers.float.addChild(node);
     var prefixMatch = /^([^0-9]*)/.exec(ev.text || '');
-    var isEnemyDamageFloat = /^mv-float-\d+$/.test(String(ev.elId || '')) &&
+    var isEnemyDamageFloat = isEnemyEntityId(String(ev.elId || '')) &&
       (String(ev.cls || '').indexOf('enemy-attack') >= 0 ||
        String(ev.cls || '').indexOf('enemy-skill') >= 0);
     var isCritFloat = String(ev.cls || '').indexOf('crit') >= 0;
@@ -7003,13 +7039,6 @@ var BattleRenderer = (function () {
   }
   function wantsVfx(spec) {
     if (!active() || !spec) return false;
-    var targets = spec.targets;
-    if (Array.isArray(targets)) {
-      for (var i = 0; i < targets.length; i++) {
-        var id = targets[i] || '';
-        if (id === 'tb-float' || id === 'tp-float') return false;   // 高塔 → DOM 路徑
-      }
-    }
     return true;
   }
 
