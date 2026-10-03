@@ -157,7 +157,6 @@
 - 擴大回歸：`node --test --test-name-pattern="新星|冰爆|冰錐|寒霜|碎冰" tests/skill2-waterball-frostnova-legendary.test.cjs`：8/12通過；寒霜湧動／凜冬寒霜／無限新星／冰皇領域4項在只還原本次兩函式的HEAD基準也同樣失敗，屬現有配置／fixture差異，未降低測試要求。
 - 風險：未實際遊玩瀏覽器畫面；沿既有無座標幾何退化，沒有位置便無法查詢屍體鄰近敵人。未完成項目：無本次需求缺項。下一步：使用者審查並合併；可合併本次獨立修正，未合併／推送。Commit見本任務對應`[Codex] fix: 修正死亡新星以死亡敵人為中心`提交。
 
-
 ## Codex｜極致之冰凍結冰爆（EXTREME-ICE-20261002）
 
 - Owner：Codex；Done。使用者要求凍結持續時間＋50%／每級＋5%，凍結敵人每0.5秒冰爆，傷害周圍8米敵人200%／每級＋20%。前置共用凍結與永久節拍已存在。
@@ -8686,3 +8685,30 @@ Worker 存活且頁面正常完成載入。
 - 驗收：跨快照掉頭不折角、近落點不停頓、投影前圓弧及速度與模擬一致、風刃回歸、Build。完成後 Commit，交使用者整合，不合併或推送。
 - 測試：node --test tests/icearrow-vfx-integration.test.cjs tests/windblade-vfx-integration.test.cjs tests/skill2-wind.test.cjs tests/skill2-ice.test.cjs tests/water-ice-audit.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/battle-ground-projection.test.cjs，165 項 163 通過。兩項既有失敗為冰箭配置仍期待 6 波（現配置 3 波）、凍結冰爆傷害舊斷言；記憶內移除本次交接修正後仍相同兩項失敗。新增三項涵蓋實際扇形每支箭首次交接、世界速度／四向投影及跨快照修正；移除交接修正後新首次轉彎測試轉紅。npm.cmd run build，413 檔通過；git diff --check 通過。
 - 唯讀檢查未改：js/vfx-core.js、js/battle-renderer.js、Skills2 Excel／CSV、風刃與冰系原測試、冰箭 Preset。Worker 協議不變，必要主頁／Worker／Editor 快取同步。無瀏覽器實戰／Console 驗收，建議重載遊戲測首次轉彎；若編輯器開著先下載未存內容備份再重載，未改 Preset 或儲存端防護。程式可合併，Commit 為本紀錄所在提交，未合併／推送。
+
+## STORM-MOUNTAIN-20261003 — 嵐之山風地雙屬性與擊殺護盾
+
+- Owner：Codex；Done。使用者要求嵐之山取代融合巨刃：風刃風／地雙屬性，風系傷害提升按75%、地系按50%加權相加，每級係數+7.5／5個百分點；風刃擊殺回復最大生命2%護盾、每級+0.2個百分點，使用者已確認護盾基準。
+- 本地乾淨，技能／公式／Excel／CSV／定向測試預檢乾淨；docs/AI_TASKS.md與index／bridge／Worker有Claude封魔塔未整合修改，使用者已同意僅新增任務紀錄與必要快取，不改塔戰內容，不合併／推送。
+- 允許js/skills2.js嵐之山命中屬性、擊殺護盾及移除融合分支，js/formula.js最小雙屬性／加權增傷支援，Skills2.xlsx／CSV本超神列、相關新舊測試、主頁與Worker必要formula／skills2／bridge快取及本紀錄；禁止其他技能規格／素材／UI／其他副本／塔戰區段。沿用等級基礎值加每級增量規則；加成係數不歸一，雙屬性傷害歸屬按兩係數比例分攤防禦後本體，不額外產生一份基礎傷害，兩系各走抗性及既有屬性效果。
+- 驗收使用者800×75%+500×50%=850%案例、Lv.1／10、零屬性提升不增添基礎傷害、風／地抗性與風系外部乘區、大小刃／脈衝同一加權公式、每敵一次擊殺盾及護盾效率／上限／禁盾／野外與高塔定址、不再融合、其他超神不變、Excel原生重開與格式保留、配置一致、正式Worker及VFX尺寸／數量／時序一致、回歸與Build、獨立Commit。交使用者重載審查整合。
+- 完成：sgAtkCfg為所有風刃本體、小型刃及沿途脈衝加入風地雙屬性，formula僅增加選填歸屬比例／已加權本體增傷支援，未提供者維持單屬性算法。增傷為風系提升×風係數＋地系提升×地係數，兩系分攤同一份基礎傷害（現配置風60%／地40%），各自使用抗性與既有元素判定；風系外部增幅仍作用於風系分量，裝備／天賦附傷維持原有各系提升。刪除嵐之山舊融合分支，滿七階恢復正常大型8／小型8道，尺寸及追擊行為保留。
+- 擊殺盾：僅風刃實際擊殺且玩家仍存活時，呼叫既有grantShield以最大生命×護盾係數給盾，可從零取得、每敵一次；沿用護盾效率、上限、禁盾及野外／高塔飄字定址。沿用sgUltVal基礎值＋每級增量：Lv.1風82.5%／地55%／護盾2.2%，Lv.10風150%／地100%／護盾4%。使用者75%／50%的850%例子以零每級增量的測試配置獨立驗證；正常Lv.1相同角色屬性得到935%加成。
+- 配置：原生Excel COM只改Skills2第210列AU／AW／AX，重新唯讀開啟比較A1:AX231，確認只有這三格變更、所有欄寬／列高及目標格式／字型／換行保留。artifact-tool唯讀inspect及前後PNG檢查完成，未用其重寫工作簿；既有工具同步CSV與JS後dry-run語意變更0。首次COM腳本UTF-8讀取及驗證列號錯誤修正後，重新原生唯讀驗證通過。暫存檔保留於Temp的codex-storm-mountain-20261003，不包含提交。
+- 修改11檔：js/formula.js／skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tests/storm-mountain.test.cjs／storm-myriad.test.cjs／skill2-windblade-vacuum-legendary.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。唯讀檢查未改：js/util.js／combat.js／battlefield.js／legendary.js／worker/shim.js／protocol.js、scripts/sim/engine.js、tools/config_tables.cjs／build_check.cjs、風刃Preset及相關協作規範／測試。主頁formula1.0.43、skills2 1.0.275、bridge1.0.212；Worker及formula／skills2 import token為20261003-storm-mountain。協議43、存檔、素材維持，無必要素材變更，不建立素材庫Commit；Claude封魔塔區段未改。
+- 測試：`node --test tests/storm-mountain.test.cjs tests/storm-myriad.test.cjs tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/element-resistance.test.cjs tests/earth-element.test.cjs tests/shield-max.test.cjs tests/player-shield-bar.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs`113/113通過；`node --test --test-name-pattern="嵐之山" tests/skill2-windblade-vacuum-legendary.test.cjs`1/1通過；`npm.cmd run build`428檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；`git diff --check`通過。未整包執行舊傳奇測試：其既有測試替身MP500不足以施放高階／超神，本次只修正被改規格的嵐之山案例替身，未擴改其他案例。
+- 回歸有效性：唯讀preload還原HEAD skills2與formula，新7項全部失敗，包含舊增傷欄位缺失、擊殺不給盾及仍融合成4道，未改遊戲檔案。正式Worker測試實際命中大型／小型／沿途脈衝三種傷害、雙屬性配置一致、擊殺後護盾及飄字正常；既有Worker→Runtime尺寸／追擊／七秒回收回歸持續通過。
+- 瀏覽器：全新無頭Edge、隨機Port本地服務與拋棄式儲存，真正Worker驗證指定850%加成、100基礎傷害結算950、Lv.1最大生命1000從零取得22盾、正常大型8／小型8，主頁與Worker六個更新URL皆實際請求，booted／alive正常、Worker error／persistError／Console error皆0。首次測試誤用不存在的WorkerBridge.command及把castSkill2回傳物件當true，修正驗證腳本後通過，未為測試改正式API。瀏覽器與服務已關閉，未做長時間真人實戰。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整嵐之山雙屬性加成與擊殺護盾`提交。無未完成需求，可合併；未合併／推送。下一步使用者重新載入遊戲並審查整合；需與Claude既有封魔塔快取變動整合為同一最新版號。
+
+## STORM-CHASE-20261003 — 暴風萬刃大型風刃立即追敵
+
+- Owner：Codex；Done。使用者回報大型風刃仍未追敵，要求與小型風刃行為一致。前置7cd48ee4已在本分支，工作區乾淨，js/skills2.js、tests/storm-myriad.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄衝突預檢皆乾淨；新增必要tests/sky-collapse.test.cjs亦預檢乾淨。
+- 唯讀定位：共用sgSpawnWindChaser以搜敵距離生成固定初始落點，大刃先飛遠處才找敵人；cfg未傳moveAngle且isFinite(null)為true，首次方向被當成零。修正共用入口，將初始航向與搜敵落點分開，射出後由既有隨機追擊及圓弧轉向取得敵人；保留尺寸、傷害、數量、7秒、各自表定搜敵範圍與沿途脈衝。
+- 允許上述技能追擊入口、正式Worker與Runtime定向追敵測試、必要快取與本紀錄；禁止無關技能、數值表、素材、UI、其他副本、合併／推送。驗收大型與小型立即找敵、四方向保留航向、平滑轉彎、反向與側向風刃實際回頭命中、Worker位置／航向／轉速與Runtime一致、既有回歸與Build；完成後獨立Commit交使用者審查。
+- 完成：共用sgSpawnWindChaser不再把搜敵距離當初始固定航程，直接傳入moveAngle並留空dest，由既有sgGroundChaseStep在第一步選擇隨機敵人、按體積決定圓弧轉速。大小風刃與天穹崩裂小刃共用入口，因此不另建大型追擊算法。大小刃既有尺寸／速度、搜敵距離、傷害／數量／7秒、緩速／脈衝／傳奇皆保留。未改共用場域追擊算法或Runtime、協議、存檔、表格或素材。
+- 修改7檔：js/skills2.js、tests/storm-myriad.test.cjs／sky-collapse.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。唯讀檢查未改：js/vfx-runtime.js／vfx-core.js／battle-renderer.js／worker/shim.js／protocol.js、scripts/sim/engine.js、風刃既有Preset及配置、相關測試／協作規範。主頁skills2 1.0.274、bridge1.0.211；Worker／skills2 token 20261003-storm-chase，protocol43維持。沒有必要素材變更，不建立素材庫Commit。
+- 測試：`node --test tests/storm-myriad.test.cjs tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs`89/89通過；`npm.cmd run build`427檔通過；`git diff --check`通過。正式Worker隔離八種方向各一刃、停用沿途脈衝，皆在3秒內以本體追到20米外敵人，最慢反向大型2.45秒命中；第一拍落點即為敵人。Worker反向大小刃轉速／位置／尺寸完整，正式Core＋Runtime在1／0.65投影下三個顯示幀與下一模擬步圓弧終點一致、每幀朝實際位移轉向。七秒及連射回收既有測試持續通過。
+- 回歸有效性：唯讀preload還原HEAD skills2，新8項中追敵測試失敗（初始moveAngle null），其餘7項通過，證實上一輪壽命與乘算通過仍不足以保證追敵。天穹既有測試改由固定遠處落點改驗指向攻擊者的初始航向與實際事件；初次Runtime測試誤用整段圓弧方向推導最後一幀朝向，改逐幀驗實際位移後通過，未改正式Runtime。
+- 瀏覽器：全新無頭Edge、獨立隨機Port服務／拋棄式儲存／真正Worker；大小各12道在3秒內全部經本體onHit命中、各7秒壽命，主執行緒收到同一批24個場域ID，Worker booted／alive、error／persistError／Console error及warning皆0。新版主頁及Worker import URL皆實際請求；首次cache斷言未納入既有chain query，修正測試URL比對後通過，未改遊戲URL生成。瀏覽器與服務已關閉、未建立新暫存檔。未宣稱瀏覽器正式Preset Runtime完成啟動；畫面運動一致性由上述正式Runtime定向測試驗證，未做長時間真人實戰。
+- 交付：Commit為本紀錄所在`[Codex] fix: 讓大小風刃射出後立即追敵`提交；無未完成需求，可合併；未合併／推送。下一步使用者重載遊戲並審查整合。

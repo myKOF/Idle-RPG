@@ -60,15 +60,67 @@ test('暴風萬刃：斷空刃連射與風之痕鏡射相容，仍為獨立傷�
   }
 });
 
-test('其他超神：嵐之山仍融合成四道直線風刃，天穹崩裂仍被動只射一小刃', () => {
+test('其他超神：嵐之山雙屬性保留正常大小刃，天穹崩裂仍被動只射一小刃', () => {
   const mountain = setup(10, [], 'stormMountain'); launch(mountain);
-  assert.equal(mountain.c.SKILL2_RT.projectiles.length, 4);
-  assert.equal(mountain.c.SKILL2_RT.grounds.length, 0);
+  assert.equal(mountain.c.SKILL2_RT.projectiles.length, 8);
+  assert.equal(mountain.c.SKILL2_RT.grounds.length, 8);
   const sky = setup(10, [], 'skyCollapse'); sky.c.Math.random = () => 0;
   sky.c.skills2OnPlayerDamaged(sky.m, sky.p, 1, false, {}, 'mv-float');
   assert.equal(sky.c.SKILL2_RT.projectiles.length, 0);
   assert.equal(sky.c.SKILL2_RT.grounds.length, 1);
   near(sky.c.SKILL2_RT.grounds[0].hits * sky.c.SKILL2_RT.grounds[0].gap, 7);
+});
+
+test('正式Worker：大小風刃四方向立即選敵，保留射出航向，側向／反向都能回頭命中', () => {
+  const headings = [Math.PI / 2, Math.PI * 2 / 3, Math.PI, Math.PI * 7 / 6,
+    Math.PI * 3 / 2, Math.PI * 5 / 3, Math.PI * 2, Math.PI * 13 / 6];
+  for (let i = 0; i < headings.length; i++) {
+    const s = setup(1, [], 'stormMyriad', true); s.m.pos = { x: 0, y: 200 }; launch(s);
+    const f = s.c.SKILL2_RT.grounds.filter(f => f.startAt === 0)[i];
+    near(f.moveAngle, headings[i]); assert.equal(f.dest, null);
+    // 隔離一個本體並停用沿途脈衝，避免別道風刃或範圍爆炸冒充追敵命中。
+    s.c.SKILL2_RT.grounds = [f]; f.pulseGap = 0;
+    h.advance(s.c, s.p, [s.m], .05);
+    near(f.dest.x, 0); near(f.dest.y, 200);
+    const delta = Math.atan2(Math.sin(f.moveAngle - headings[i]), Math.cos(f.moveAngle - headings[i]));
+    assert.ok(Math.abs(delta) <= .05 * f.speed / s.c.sgGroundTurnRadiusPx(f) + 1e-9, '轉彎遵守圓弧速率');
+    h.advance(s.c, s.p, [s.m], 2.95);
+    assert.ok(s.m.hp < 1e15, `${i % 2 ? '小' : '大'}型第${Math.floor(i / 2) + 1}方向須追到敵人`);
+    assert.ok(f.hitsLeft > 0, '追到敵人時仍在七秒壽命內');
+  }
+});
+
+test('正式Worker→Runtime：反向大型與小型風刃的追敵圓弧、位置與轉速一致', () => {
+  for (const index of [4, 5]) {
+    const s = setup(1, [], 'stormMyriad', true); s.m.pos = { x: 0, y: 200 }; launch(s);
+    const f = s.c.SKILL2_RT.grounds.filter(f => f.startAt === 0)[index];
+    s.c.SKILL2_RT.grounds = [f];
+    h.advance(s.c, s.p, [s.m], .1);
+    const e = s.c.shimDrainUrgentVisualEvents().find(e => e.variant === 'wind-blade-homing' && e.area.id === f.vfxId);
+    assert.ok(e); near(e.area.x, f.pos.x); near(e.area.y, f.pos.y);
+    near(e.area.moveA, f.moveAngle); near(e.area.turnRate, f.turnRate);
+    near(e.area.speed, f.speed); near(e.area.r, f.radius);
+    assert.ok(Math.abs(e.area.turnRate) > 0, '反向射出時應持續轉向敵人');
+    for (const groundScale of [1, .65]) {
+      let transform;
+      const backend = { createNode() { return {}; }, updateNode(n, value) { transform = { ...value }; }, destroyNode() {} };
+      const rt = Runtime.create({ core: Core, resolver: { resolve: id => id }, groundScale,
+        fxBackend: backend, airBackend: backend, zoneBackend: backend,
+        ctx: { playerPos: () => s.p.pos, posOf: () => s.m.pos } });
+      // 中心標記量共用運動，不混入正式素材圖層的旋轉與位移。
+      rt.registerPresets([{ schemaVersion: 1, id: preset.id, duration: 7, loop: true,
+        layers: [{ id: 'body', type: 'sprite', assetId: 'marker' }] }]);
+      assert.equal(rt.tryPlay(e), true); rt.update(0);
+      const next = { ...f, pos: { ...f.pos }, dest: { ...f.dest } };
+      s.c.sgGroundChaseStep(next, f.speed * .05, [s.m]);
+      for (let i = 0; i < 3; i++) {
+        const previous = { ...transform }; rt.update(1 / 60);
+        near(transform.rotation, Math.atan2(transform.y - previous.y, transform.x - previous.x));
+      }
+      near(transform.x, next.pos.x); near(transform.y, next.pos.y * groundScale);
+      assert.equal(rt.stats().grounds, 1); rt.destroy();
+    }
+  }
 });
 
 test('正式Worker→Runtime：每道風刃從自己的發射時間追擊七秒，重送位置不新增本體且到期回收', () => {

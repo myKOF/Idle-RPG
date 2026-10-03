@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "id": "burst-wind-09",
+  "duration": 0.34,
+  "loop": false,
+  "layers": [
+    {
+      "id": "outer",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.95,
+      "tint": "#eff782",
+      "blendMode": "add",
+      "duration": 0.34,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.45
+        ],
+        [
+          1,
+          1.05
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "inner",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/circle_02.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.3906,
+        "y": 0.3906
+      },
+      "alpha": 0.9,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "duration": 0.34,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.7,
+          0.5
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.2
+        ],
+        [
+          1,
+          0.7
+        ]
+      ],
+      "projection": {
+        "x": 1,
+        "y": 0.5
+      }
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 100
+    },
+    "shape": "circle"
+  }
+}

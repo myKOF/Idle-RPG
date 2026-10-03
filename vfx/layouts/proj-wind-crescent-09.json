@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "proj-wind-crescent-09",
+  "groups": [
+    {
+      "id": "proj-wind-crescent-09",
+      "name": "proj-wind-crescent-09",
+      "layerIds": [
+        "green-rim",
+        "green-body",
+        "green-body-copy",
+        "white-core",
+        "wind-motes"
+      ]
+    }
+  ],
+  "order": [
+    "group:proj-wind-crescent-09"
+  ]
+}
