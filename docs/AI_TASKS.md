@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## VACUUM-TRIO-GAP-20261003 — 真空三重奏每波間隔0.5秒
+
+- Owner：Codex；Done。使用者要求真空三重奏每次真空斬施放間隔0.5秒；SG_VACUUM_WAVE_MS由260改為500，傷害與特效共用延後波次。單一開發者，前置現有排程已完成；接手者使用者。
+- 允許skills2.js單一節拍常數、tests/wind-skill-audit.test.cjs邊界／同步／取消測試、WIND_SKILL_AUDIT.md及本紀錄、bridge／Worker及必要主頁快取。禁止技能數值／範圍／波數／其他連射間隔、Excel／CSV、Preset／素材、其他副本及合併／推送。保留Skills2三檔与Preset已有使用者修改，skills2只分段提交節拍。所有目標預檢乾淨，主index仍有已知Claude神鑄UI提交，913／933兩行skills2／bridge快取修改須另取得此範圍同意。
+- 驗收Lv.1／10各波0／0.5／1…秒、每波傷害與特效同時觸發、0.499秒不得提前、當下位置查詢／死亡取消保留；低於第五階維持單波、既有風刃0.2秒不改。定向／Worker／快取／Build，獨立Commit。
+- 完成：首波立即，後續每0.5秒傷害與特效同步觸發；保留每波讀取當下玩家／敵人位置及死亡取消。使用者已明確同意只更新主頁913／933兩行skills2／bridge快取，已更新1.0.277／1.0.215；bridge與Worker skills2版本同步20261003-vacuum-trio-half-second。測試服8123主頁、Worker、技能檔均可讀到新版及500ms常數。
+- 修改7檔：js/skills2.js僅節拍常數、js/bridge.js、js/worker/sim.worker.js、index.html、tests/wind-skill-audit.test.cjs、docs/WIND_SKILL_AUDIT.md、本紀錄。唯讀檢查既有技能排程、風刃節拍、配置生成資料、Core／Runtime／戰場、Preset、Worker／快取測試及協作規範。使用者Skills2配置／生成資料及Preset修改全部保留，不納入提交；無素材、資料格式或Protocol變更。
+- 測試：`node --test --test-reporter=spec --test-name-pattern="真空三重奏|延後真空|未學真空" tests/wind-skill-audit.test.cjs`4/4通過；`node --test --test-reporter=spec tests/windblade-vfx-integration.test.cjs tests/storm-mountain.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs`38/38通過；`node --test --test-reporter=spec tests/vfx-editor-cache-versions.test.cjs`3/3通過。完整wind-skill-audit 54項44通過、10項失敗，唯讀原HEAD測試及260ms基準51項41通過、相同10項失敗，新增失敗0；不降低既有要求。以舊260ms執行新定向測試，3項正確攔截提前施放。`npm.cmd run build`433檔通過；`git diff --check`通過。
+- 交付：本紀錄所在`[Codex] fix: 將真空三重奏施放間隔調整為半秒`提交，skills2只分段提交節拍，保留其他修改。無未完成項目、可合併，未合併／推送；已知限制為完整風系測試既有10項失敗及未新增實際戰鬥視覺驗收。下一步重整遊戲頁載入新快取後驗收施放間隔。
+
 ## VFX-LIBRARY-PATH-20261003 — 素材庫搬移後存檔同步失敗
 
 - Owner：Codex；Done。使用者回報VFX Editor存repo後「匯出失敗，共160個問題」，後確認自行將資料夾改名為Asset。Preset已落檔，最新真空迴旋根及14層均2秒，保留此修改。原因為本機環境變數與library.local.json指向已空的effects-materials目錄，實際素材庫已在Asset，160份引用逐份SHA256核對一致，素材庫HEAD仍2f31639。
