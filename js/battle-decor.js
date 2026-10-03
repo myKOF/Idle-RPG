@@ -1727,6 +1727,14 @@ var BattleDecor = (function () {
     // 給預覽頁與測試用：畫出某張地圖（地表／地下）的整張圖集
     buildAtlas: buildAtlas,
     STAGE_BAND: STAGE_BAND,
+    /* 程序化繪圖的小工具與共用畫法：封魔塔的魔王祭壇（js/battle-arena.js）沿用同一套筆觸，
+       不另寫第二份（畫風才會一致）。只放純函式，不含任何執行期狀態。 */
+    art: {
+      mulberry: mulberry, strHash: strHash, shade: shade, shadeRgba: shadeRgba, rgba: rgba,
+      lerp: lerp, range: range, pick: pick, blob: blob, pathPoly: pathPoly, pathSmooth: pathSmooth,
+      shadowEllipse: shadowEllipse, speckle: speckle, drawFlame: drawFlame,
+      particleDot: particleDot, particleFog: particleFog, FOOT: FOOT, TEX_SCALE: TEX_SCALE
+    },
     _internals: { mulberry: mulberry, hash3: hash3, CHUNK_W: CHUNK_W, CHUNK_H: CHUNK_H }
   };
 })();

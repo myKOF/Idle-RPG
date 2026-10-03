@@ -146,6 +146,11 @@ var BattleRenderer = (function () {
     ready: false, failed: false, initStarted: false,
     layers: null,             // ground / zone / entity / fx / float / overlay
     W: 0, H: 0,
+    /* 正在畫的場景：'field'＝野外，'tower:<BOSS 生成時刻>'＝某一場魔王戰（見 sceneKeyOf）。
+       模擬層換場景是瞬間的，畫面要先跑完黑圈收合才真的換（phase：closing → black → opening）。 */
+    scene: { key: 'field', phase: '', t: 0 },
+    lastPanel: null,
+    arena: null, arenaEnraged: false, iris: null,
     paused: false,
     towerActive: false,
     zoneKey: '',
@@ -1182,6 +1187,7 @@ var BattleRenderer = (function () {
   }
   function applyGroundTexture(tex) {
     if (!S.groundTile || S.groundTile.destroyed || !tex || typeof tex === 'string') return;
+    if (S.arena && S.arena.active()) return;   // 魔王祭壇有自己的地板；野外的貼圖晚到也不能蓋掉它
     S.groundTile.texture = tex;
     // 用圖本身的顏色；地形裝飾的「地下」階段帶會壓暗（S.groundTint，見 js/battle-decor.js）
     S.groundTile.tint = S.groundTint || 0xffffff;
@@ -1446,6 +1452,9 @@ var BattleRenderer = (function () {
     c.x = S.W / 2; c.y = BOSS_BAR_Y;
     S.layers.overlay.addChild(c);
     S.bossBar = { root: c, g: g, label: label, forId: ent.id };
+    /* 建立當下就畫：實體的腳下血條早在 makeEnemy 畫過了，drawHpBar 之後要等血量變動才會再進來，
+       不畫的話大血條會空著直到 BOSS 第一次掉血——塔戰「登場」那 2.4 秒就是一條空框。 */
+    drawBossBar(ent);
   }
   function drawBossBar(ent) {
     var bar = S.bossBar;
@@ -1616,9 +1625,115 @@ var BattleRenderer = (function () {
     };
   }
 
+  /* ============ 野外 ⇄ 魔王戰的轉場（黑圈收合） ============
+     黑圈從四周收到全黑 → 黑幕中換場景 → 再往外擴開。模擬層換場景是瞬間的：
+     收合期間畫面凍結在舊場景（面板照收、只是不 reconcile），全黑那一刻才拿最新的面板換過去。
+     塔戰的「登場」（js/tower.js TOWER_INTRO_SEC）讓戰鬥在黑圈展開完才開始，三段加起來要對齊它。
+     連挑的下一場也走一次轉場（BOSS 換人、祭壇以新的站位重新擺）。 */
+  var IRIS_CLOSE_SEC = 1.0, IRIS_HOLD_SEC = 0.35, IRIS_OPEN_SEC = 1.05;
+  function sceneKeyOf(panel) {
+    var tv = towerFieldView(panel);
+    if (!tv) return 'field';
+    var b = tv.monsters[0] || {};
+    return 'tower:' + (b._spawnAt !== undefined ? b._spawnAt : (b.name || ''));
+  }
+  function irisSet(open) {
+    var I = S.iris;
+    if (!I) return;
+    if (open >= 1) { I.root.style.display = 'none'; return; }
+    I.root.style.display = '';
+    var maxR = Math.sqrt(S.W * S.W + S.H * S.H) / 2 + 40;
+    var d = Math.max(0, open) * maxR * 2;
+    I.hole.style.width = d + 'px';
+    I.hole.style.height = d + 'px';
+  }
+  function beginSceneTransition() {
+    var T = S.scene;
+    /* 看不到畫面（背景分頁）或沒有遮罩可用：直接換，不播 */
+    if (!S.iris || documentHidden()) { applySceneSwitch(); return; }
+    T.phase = 'closing';
+    T.t = 0;
+    irisSet(1 - 1e-6);
+  }
+  function tickScene(realDt) {
+    var T = S.scene;
+    if (!T.phase) return;
+    T.t += realDt;
+    if (T.phase === 'closing') {
+      var k = Math.min(1, T.t / IRIS_CLOSE_SEC);
+      irisSet(1 - k * k * k);                    // 先慢後快地收死
+      if (k >= 1) { T.phase = 'black'; T.t = 0; irisSet(0); applySceneSwitch(); }
+    } else if (T.phase === 'black') {
+      if (T.t >= IRIS_HOLD_SEC) { T.phase = 'opening'; T.t = 0; }
+    } else if (T.phase === 'opening') {
+      var k2 = Math.min(1, T.t / IRIS_OPEN_SEC);
+      irisSet(1 - Math.pow(1 - k2, 3));          // 先快後慢地張開
+      if (k2 >= 1) {
+        T.phase = '';
+        irisSet(1);
+        // 轉場期間場景又換了（例如登場中就撤退）：接著再轉一次
+        if (S.lastPanel && sceneKeyOf(S.lastPanel) !== T.key) beginSceneTransition();
+      }
+    }
+  }
+  /* 全黑的那一刻：舊場景的實體、特效、飄字全部清掉（看不到，不必淡出），換地板與擺件，
+     再用最新的面板重建。 */
+  function applySceneSwitch() {
+    var panel = S.lastPanel;
+    var key = panel ? sceneKeyOf(panel) : 'field';
+    if (key === S.scene.key) return;
+    S.scene.key = key;
+    clearAllFx();
+    for (var j = 0; j < S.floats.length; j++) killFx(S.floats[j]);
+    S.floats.length = 0;
+    S.floatMerge = {};
+    S.lastPos = {};
+    for (var id in S.entities) {
+      if (Object.prototype.hasOwnProperty.call(S.entities, id)) destroyEntity(id);
+    }
+    if (S.bossBar) { S.bossBar.root.destroy({ children: true }); S.bossBar = null; }
+    var tv = (key !== 'field' && panel) ? towerFieldView(panel) : null;
+    if (tv) enterArena(tv, panel); else exitArena();
+    if (S.decor) S.decor.setVisible(!tv);
+    if (panel) reconcileBattle(panel, tv || panel.field || {});
+  }
+  function enterArena(tv, panel) {
+    if (!S.arena) return;
+    var b = tv.monsters[0] || {};
+    var pp = tv.playerPos || { x: 0, y: 0 };
+    var bp = (b.pos && isFinite(b.pos.x)) ? b.pos : { x: pp.x + 260, y: pp.y };
+    var tier = BossArena.tierOf(b);
+    var floor = (panel.tower && panel.tower.floor) || 0;
+    S.arena.enter({
+      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, W: S.W, H: S.H,
+      title: String(b.name || '').replace(/^第\d+層・/, ''),
+      subtitle: '封魔塔　第 ' + floor + ' 層　·　' + BossArena.TIERS[tier].name
+    });
+    var ft = S.arena.floorTexture();
+    if (ft && S.groundTile && !S.groundTile.destroyed) { S.groundTile.texture = ft; S.groundTile.tint = 0xffffff; }
+  }
+  function exitArena() {
+    if (!S.arena || !S.arena.active()) return;
+    S.arena.exit();
+    var name = S.zoneKey ? ('ground_' + S.zoneKey) : 'ground_default';
+    var cached = _groundTexCache[name];
+    if (cached && typeof cached !== 'string') applyGroundTexture(cached);
+    else loadGroundTexture(S.zoneKey || null);
+  }
+
   function syncBattle(panel) {
     if (!S.ready || !panel) return;
-    var field = towerFieldView(panel) || panel.field || {};
+    S.lastPanel = panel;
+    S.arenaEnraged = !!(panel.tower && panel.tower.enraged);
+    if (!S.scene.phase && sceneKeyOf(panel) !== S.scene.key) beginSceneTransition();
+    // 收合中與全黑時畫面凍結在舊場景（全黑那一刻 applySceneSwitch 會用最新面板重建）
+    if (S.scene.phase === 'closing' || S.scene.phase === 'black') return;
+    var field = S.scene.key === 'field' ? (panel.field || {}) : towerFieldView(panel);
+    if (!field) return;   // 畫的是魔王戰、這張面板卻已經沒有塔戰：等下一次轉場
+    reconcileBattle(panel, field);
+  }
+
+  function reconcileBattle(panel, field) {
     var stage = panel.stage || {};
     syncZone(stage.zone || '', stage.current);
     /* 殘留座標表清理：鍵是單調遞增的 mv-float-N，過期即刪，不清會無限增長 */
@@ -6054,6 +6169,13 @@ var BattleRenderer = (function () {
   /* ============ 每幀更新 ============ */
   function tickWorld(ticker) {
     var dt = Math.min(0.05, (ticker.deltaMS || 16.7) / 1000);
+    /* 轉場用真實時間走：暫停中也要把黑圈收完／張開，不能卡在全黑；
+       掉幀時（一幀上百毫秒）也照實際經過的時間推進，否則黑幕會拖得比模擬層的登場還久、
+       戰鬥已經開打畫面還是黑的。Pixi 的 deltaMS 會被 maxElapsedMS（100ms）夾住，所以自己量牆上時間；
+       上限 0.5 秒只防「分頁回前景時一次跳過整段」。 */
+    var sceneNow = nowMs();
+    tickScene(S.sceneClock ? Math.min(0.5, Math.max(0, sceneNow - S.sceneClock) / 1000) : 0);
+    S.sceneClock = sceneNow;
     if (S.paused) dt = 0;
     var t = nowMs();
     var rClock = renderClock();      // 這一幀要播放的模擬時刻（見內插緩衝）
@@ -6195,6 +6317,14 @@ var BattleRenderer = (function () {
       S.layers.decorPlane.y = world.y;
       S.decor.update({
         camX: cam.x, camY: cam.y, drawRect: sceneDrawRect(), W: S.W, H: S.H, dt: dt,
+        playerX: p ? p.root.x : undefined, playerScreenY: p ? p.root.y : undefined
+      });
+    }
+    if (S.arena && S.arena.active()) {
+      S.layers.arenaPlane.x = world.x;
+      S.layers.arenaPlane.y = world.y;
+      S.arena.update({
+        W: S.W, H: S.H, dt: dt, enraged: S.arenaEnraged,
         playerX: p ? p.root.x : undefined, playerScreenY: p ? p.root.y : undefined
       });
     }
@@ -6403,6 +6533,17 @@ var BattleRenderer = (function () {
     decorPlane.addChild(decorLight);
     bg.addChild(decorPlane);
 
+    /* 封魔塔魔王祭壇的地面平面（js/battle-arena.js）：法陣、裂隙、深淵、火盆地面光。
+       和地形裝飾同一種做法（世界座標、scale.y = GROUND_Y_SCALE、每幀對齊 world）；
+       arenaBase 一般混色（刻痕、深淵），arenaGlow 加色（法陣光、裂隙光）。 */
+    var arenaPlane = new PIXI.Container();
+    arenaPlane.scale.set(1, GROUND_Y_SCALE);
+    var arenaBase = new PIXI.Container();
+    var arenaGlow = new PIXI.Container();
+    arenaPlane.addChild(arenaBase);
+    arenaPlane.addChild(arenaGlow);
+    bg.addChild(arenaPlane);
+
     /* 暗角 */
     var vig = new PIXI.Sprite(vignetteTexture());
     vig.width = S.W; vig.height = S.H;
@@ -6466,6 +6607,9 @@ var BattleRenderer = (function () {
     /* 天氣粒子（飄沙、落雪、螢火蟲…）：螢幕座標、不跟著透視變形，在場景之上、所有戰鬥表現之下。 */
     var decorAmbient = new PIXI.Container();
     app.stage.addChild(decorAmbient);
+    /* 魔王祭壇的灰燼、火星與心跳光暈：螢幕座標，與天氣粒子同一層級 */
+    var arenaAmbient = new PIXI.Container();
+    app.stage.addChild(arenaAmbient);
     /* 傷害浮字與玩家 HUD 在場景外的螢幕層：不跟著透視變形（字不會被拉歪、上面縮小下面放大），
        每幀只把位置換到透視後的落點（worldToScreenPoint）。順序仍是 場景 < 浮字 < 玩家 HUD < overlay。 */
     app.stage.addChild(airBack);
@@ -6512,6 +6656,10 @@ var BattleRenderer = (function () {
     overlay.addChild(veil);
     S.pauseVeil = { root: veil, bg: veilBg, text: veilText };
 
+    /* 魔王戰的登場標題卡（BOSS 名字），在所有戰鬥表現之上 */
+    var arenaTitle = new PIXI.Container();
+    overlay.addChild(arenaTitle);
+
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
       presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
@@ -6519,7 +6667,8 @@ var BattleRenderer = (function () {
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay,
-      decorPlane: decorPlane, decorDecal: decorDecal, decorLight: decorLight, decorAmbient: decorAmbient
+      decorPlane: decorPlane, decorDecal: decorDecal, decorLight: decorLight, decorAmbient: decorAmbient,
+      arenaPlane: arenaPlane, arenaBase: arenaBase, arenaGlow: arenaGlow, arenaAmbient: arenaAmbient, arenaTitle: arenaTitle
     };
     drawDeathFog(0);
     layoutScene();
@@ -6996,8 +7145,8 @@ var BattleRenderer = (function () {
       var view = msg && msg.view;
       if (!view) return;
       S.towerActive = !!view.towerActive;
-      // 高塔戰期間戰場只顯示「高塔戰鬥中…」，地形裝飾一起藏起來
-      if (S.decor) S.decor.setVisible(!S.towerActive);
+      /* 地形裝飾的顯示改由場景轉場決定（applySceneSwitch：魔王戰期間藏起來），
+         不在這裡跟著 towerActive 立刻切——那會在黑圈還沒收起來前就讓野外的擺件消失。 */
       var paused = !!view.paused;
       if (paused !== S.paused) {
         S.paused = paused;
@@ -7115,6 +7264,36 @@ var BattleRenderer = (function () {
     S.vfxrt.syncStatuses(out);
   }
 
+  /* 封魔塔魔王祭壇（js/battle-arena.js）：建立失敗只少了場景，塔戰照常畫在野外地板上；?arena=0 關閉 */
+  function initArena() {
+    if (typeof BossArena === 'undefined') return;
+    try {
+      S.arena = BossArena.create({
+        PIXI: PIXI, groundScale: GROUND_Y_SCALE,
+        planeBase: S.layers.arenaBase, planeGlow: S.layers.arenaGlow,
+        propLayer: S.layers.entity, ambientLayer: S.layers.arenaAmbient, titleLayer: S.layers.arenaTitle
+      });
+      if (!S.arena.enabled) S.arena = null;
+    } catch (e) {
+      S.arena = null;
+      console.warn('[battle-renderer] 魔王祭壇初始化失敗，塔戰照常顯示', e);
+    }
+  }
+  /* 轉場的黑圈是 DOM（不是畫布上的東西）：要連戰場上的血瓶、技能列、資訊列一起蓋住，
+     而那些都是疊在畫布上的 DOM。中間的洞用 box-shadow 撐出整片黑，改洞的直徑就是收合／張開。 */
+  function initIris(host) {
+    if (typeof document === 'undefined' || !host) return;
+    var root = document.createElement('div');
+    root.className = 'battle-iris';
+    root.setAttribute('aria-hidden', 'true');
+    root.style.display = 'none';
+    var hole = document.createElement('div');
+    hole.className = 'battle-iris-hole';
+    root.appendChild(hole);
+    host.appendChild(root);
+    S.iris = { root: root, hole: hole };
+  }
+
   /* 地形裝飾（js/battle-decor.js）：建立失敗只少了裝飾，戰鬥畫面照常；?decor=0 關閉 */
   function initDecor() {
     try {
@@ -7124,7 +7303,7 @@ var BattleRenderer = (function () {
         propLayer: S.layers.entity, ambientLayer: S.layers.decorAmbient,
         onTint: function (tint) {
           S.groundTint = tint;
-          if (S.groundTile) S.groundTile.tint = tint;
+          if (S.groundTile && !(S.arena && S.arena.active())) S.groundTile.tint = tint;
         }
       });
       if (!S.decor.enabled) S.decor = null;
@@ -7189,6 +7368,8 @@ var BattleRenderer = (function () {
       S.H = Math.max(64, host.clientHeight || 480);
       buildScene();
       initDecor();
+      initArena();
+      initIris(host);
       makePlayer();
       subscribe();
       /* 先設上限再掛 tickWorld：maxFPS 是 Pixi 內部把 rAF 節流的依據，
@@ -7242,6 +7423,8 @@ var BattleRenderer = (function () {
       persp: S.persp ? S.persp.layout.topScale : 1,     // 輕微透視的上緣縮放（1 ＝ 沒開）
       /* 地形裝飾：區塊數、地面裝飾／擺件／粒子數（擺件掛在 entity 層，nodes.entity 會含這些） */
       decor: S.decor ? S.decor.stats() : null,
+      arena: S.arena ? S.arena.stats() : null,
+      scene: { key: S.scene.key, phase: S.scene.phase, t: S.scene.t },
       /* ---- 洩漏診斷 ---- */
       lastPos: Object.keys(S.lastPos).length,          // 離場實體的殘留座標，應隨 LASTPOS_KEEP_MS 回落
       floatMerge: Object.keys(S.floatMerge).length,    // 合併表，鍵是遞增的 mv-float-N
@@ -7290,6 +7473,7 @@ var BattleRenderer = (function () {
     _app: function () { return S.app; },
     /* 地形裝飾（量測／除錯用）：setVisible(false) 可在同一場戰鬥裡做開關對照 */
     _decor: function () { return S.decor; },
+    _arena: function () { return { arena: S.arena, scene: S.scene, layers: S.layers ? { plane: S.layers.arenaPlane, base: S.layers.arenaBase, glow: S.layers.arenaGlow, ambient: S.layers.arenaAmbient } : null }; },
     _debug: function () {
       var p = S.player;
       return {

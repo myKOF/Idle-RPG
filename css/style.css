@@ -12365,3 +12365,25 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   border: 1px dashed rgba(144, 93, 49, .55);
   border-radius: 4px;
 }
+
+/* ---- 野外 ⇄ 魔王戰的轉場黑圈（2026-10-03，js/battle-renderer.js initIris／tickScene）----
+   疊在戰場畫布與其上所有 DOM（血瓶、技能列、塔戰資訊列）之上；中間的洞是圓，
+   外面整片黑由 box-shadow 撐開，改洞的直徑就是收合／張開。內側再一圈 inset 陰影讓邊緣柔一點。 */
+.battle-iris {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 90;
+}
+
+.battle-iris-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: inset 0 0 36px 14px #000, 0 0 0 300vmax #000;
+}
