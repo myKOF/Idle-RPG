@@ -1,6 +1,8 @@
-# Worker 協議 v42
+# Worker 協議 v43
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 42`　最後更新：2026-10-03
+> 協議版本：`WORKER_PROTOCOL_VERSION = 43`　最後更新：2026-10-03
+
+v43：VFX事件新增可選`bodyLength`（飛行物本體長度，正有限數、世界單位），Worker shim與既有`lineWidth`一起透傳給Runtime。原因：巨型風刃的判定雖然已放大，漏傳刀身長度會使特效退回Preset固定尺寸。缺省沿用接收端既有尺寸退化；非法值不透傳，不改指令數、判定或存檔。
 
 v42：新增 `skill2.ultSwitch` → `skills2UltSwitch(group, opt, fromOpt, fromLv, cost)`（指令表 87 → 88 條）。`opt`／`fromOpt` 為 0..2 的整數，`fromLv` 為 1..10 的整數，`cost` 為非負有限數字。UI 二次確認顯示舊技能／等級、新技能 Lv.1、原投資不退還與完整金幣費用；確認前不送指令。Worker 先驗證解鎖、原選擇／等級及配置表首次選擇費用與報價一致、餘額足夠，再一次扣款並替換選擇為 Lv.1。過期確認、相同選項或驗證失敗均保留舊技能與金幣，避免分開刪除／選擇造成投資遺失；不改存檔格式。
 
@@ -83,6 +85,7 @@ v35 新增可選 `battle.field.player._sgRevival = {startAt, endAt}`（GT 秒）
 
 | 欄位 | 語意 | 戰鬥暫停時 |
 | :--- | :--- | :--- |
+| 43 | 2026-10-03 | VFX透傳飛行物bodyLength，與lineWidth共同表達實際體積，修正巨型風刃判定已放大但畫面固定尺寸。 |
 | `gt` | 遊戲時鐘（`js/util.js` 的 `GT`），衡量「打了多久」，給玩家看 | **停住** |
 | `simT` | 模擬時鐘（`js/worker/sim.worker.js` 的 `SIM_T`，v14 新增），衡量「模擬跑了多久」 | 照走 |
 

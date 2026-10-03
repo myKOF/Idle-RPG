@@ -246,6 +246,8 @@ function playCombatVfx(spec) {
      維持既有 Worker protocol 的資料形狀。 */
   // 水彈拋物線高度必須穿過 Worker 白名單，否則顯示端會退成直線。
   if (typeof spec.arcM === 'number' && isFinite(spec.arcM) && spec.arcM > 0) event.arcM = spec.arcM;
+  // 飛行物的刀身長度與刀寬必須一起送，Runtime才能套用實際體積，避免升級後仍用固定尺寸。
+  if (typeof spec.bodyLength === 'number' && isFinite(spec.bodyLength) && spec.bodyLength > 0) event.bodyLength = spec.bodyLength;
   if (spec.sourceId) event.sourceId = spec.sourceId;
   if (typeof spec.hit === 'boolean') event.hit = spec.hit;
   /* 協議 v26／v27（VFX Preset 化）：角色 → preset id 的對照表，以及

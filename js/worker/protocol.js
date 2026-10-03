@@ -71,7 +71,7 @@
    lifesteal／manaSteal 改為套用汲取倍率後「每次回復的定值」（不再是百分比，也不再依每秒回復換算）。
    主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值。 */
 /* v42：skill2.ultSwitch 原子重選；fromOpt／fromLv／cost 釘住使用者確認內容。 */
-var WORKER_PROTOCOL_VERSION = 42;
+var WORKER_PROTOCOL_VERSION = 43;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -167,6 +167,8 @@ var EVENT_KINDS = {
              「接在前一段動作之後」的特效用它錯開時刻。
      projectile（可選）：飛行物命中事件不預先補命中爆點。
      lineLength／lineWidth／laneOffsets／directionCount／angle（可選）：突刺光槍／冰箭的長寬、平行道、方向數與世界方位。
+     bodyLength（v43，可選）：飛行物本體長度，正有限數、世界單位；與lineWidth一起傳遞實際體積。
+       缺省維持接收端既有退化尺寸；不合法值不透傳，不改傷害判定或存檔。
      rangeScale／directionRanges（可選）：舊版迴旋斬事件的範圍倍率及四道扇形半徑，保留歷史事件相容。
      variant=cleave-ring（v31）：area.x/y 為固定發射圓心、area.r 為最終半徑，travelMs[0] 為完整擴張時長；
        delayMs 為逐道起飛延遲。第六階起使用 projectile 欄取代 attack 本體；命中由獨立 impact 事件播放。
