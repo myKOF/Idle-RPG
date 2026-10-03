@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>戰場裝飾預覽</title>
+<!-- 開發工具：把 js/battle-decor.js 每張地圖（地表／地下）的擺件並排畫在地面色上，調美術時對照用。
+     用法：開內測服後連 /tools/decor-preview.html；?kit=desert 只看一張；?scale=2 放大。 -->
+<style>
+  body { margin: 0; background: #101114; color: #d8d2c4; font: 13px/1.5 system-ui, "Microsoft JhengHei", sans-serif; }
+  h2 { margin: 18px 12px 6px; font-size: 15px; color: #e7c47c; }
+  .row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 10px 12px 14px; }
+  figure { margin: 0; text-align: center; }
+  figcaption { font-size: 11px; color: #8a857a; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<script src="../js/decor-sculpt.js"></script>
+<script src="../js/battle-decor.js"></script>
+<script>
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var only = q.get('kit');
+    var scale = Number(q.get('scale')) || 1;
+    var types = q.get('type') ? q.get('type').split(',') : null;   // ?type=rock,spire 只看這幾種
+    var layer = q.get('layer') || '';                              // ?layer=surface 或 deep 只看一層
+    var noDecal = q.get('decal') === '0';
+    // 各地圖的地面底色（約略對應 images/ground_*.png 的平均色）
+    var GROUND = {
+      desert: '#6e5a40', Icefield: '#5a6a7a', swamp: '#2e3a26', undead_mountains: '#2e2c32',
+      god_battlefield: '#3a2c24', god_chaos: '#241c30', god_sanctuary: '#8a8478'
+    };
+    /* 拼成一張圖（給無法截圖的環境用）：decorSheet('desert', false, ['rock'], 2) 回傳 canvas；
+       decorShot(...) 另外 POST 到本機接收伺服器（埠號用 ?recv=8197 指定）。 */
+    window.decorSheet = function (kit, deep, onlyTypes, sc, withDecals) {
+      sc = sc || 2;
+      var atlas = BattleDecor.buildAtlas(kit, deep);
+      var list = atlas.specs.filter(function (s) {
+        var ok = s.kind === 'prop' || s.kind === 'flame' || (withDecals && s.kind === 'decal');
+        return ok && (!onlyTypes || onlyTypes.indexOf(s.type) >= 0);
+      }).sort(function (a, b) { return a.key < b.key ? -1 : 1; });
+      var W = 1600, pad = 12, x = pad, y = pad, rowH = 0, pos = [];
+      list.forEach(function (s) {
+        var dw = s.w * sc, dh = s.kind === 'decal' ? s.h * sc * 0.5 : s.h * sc;
+        if (x + dw + pad > W) { x = pad; y += rowH + pad; rowH = 0; }
+        pos.push([s, x, y, dw, dh]);
+        x += dw + pad; rowH = Math.max(rowH, dh);
+      });
+      var c = document.createElement('canvas');
+      c.width = W; c.height = Math.max(40, y + rowH + pad);
+      var g = c.getContext('2d');
+      g.fillStyle = GROUND[kit] || '#333';
+      g.fillRect(0, 0, c.width, c.height);
+      if (deep) { g.fillStyle = 'rgba(0,0,0,0.38)'; g.fillRect(0, 0, c.width, c.height); }
+      pos.forEach(function (p) { g.drawImage(atlas.canvas, p[0].px, p[0].py, p[0].pw, p[0].ph, p[1], p[2], p[3], p[4]); });
+      return c;
+    };
+    window.decorShot = function (name, kit, deep, onlyTypes, sc, withDecals) {
+      var c = window.decorSheet(kit, deep, onlyTypes, sc, withDecals);
+      var port = q.get('recv') || '8197';
+      return fetch('http://localhost:' + port + '/?name=' + encodeURIComponent(name), { method: 'POST', body: c.toDataURL('image/png') }).then(function (r) { return r.text(); });
+    };
+    if (q.get('sheetOnly') === '1') return;
+    var kits = Object.keys(BattleDecor.KITS).filter(function (k) { return k && (!only || k === only); });
+    kits.forEach(function (kit) {
+      [false, true].forEach(function (deep) {
+        if ((layer === 'surface' && deep) || (layer === 'deep' && !deep)) return;
+        var atlas = BattleDecor.buildAtlas(kit, deep);
+        var h = document.createElement('h2');
+        h.textContent = kit + (deep ? '（地下）' : '（地表）');
+        document.body.appendChild(h);
+        var row = document.createElement('div');
+        row.className = 'row';
+        row.style.background = GROUND[kit] || '#333';
+        if (deep) row.style.filter = 'brightness(0.62)';
+        atlas.specs.filter(function (s) { return (s.kind === 'prop' || s.kind === 'flame') && (!types || types.indexOf(s.type) >= 0); })
+          .sort(function (a, b) { return a.key < b.key ? -1 : 1; })
+          .forEach(function (s) {
+            var c = document.createElement('canvas');
+            c.width = s.pw; c.height = s.ph;
+            c.style.width = (s.w * scale) + 'px';
+            c.style.height = (s.h * scale) + 'px';
+            c.getContext('2d').drawImage(atlas.canvas, s.px, s.py, s.pw, s.ph, 0, 0, s.pw, s.ph);
+            var f = document.createElement('figure');
+            f.appendChild(c);
+            var cap = document.createElement('figcaption');
+            cap.textContent = s.type + ' ' + s.key;
+            f.appendChild(cap);
+            row.appendChild(f);
+          });
+        document.body.appendChild(row);
+        var drow = document.createElement('div');
+        drow.className = 'row';
+        drow.style.background = GROUND[kit] || '#333';
+        if (deep) drow.style.filter = 'brightness(0.62)';
+        atlas.specs.filter(function (s) { return s.kind === 'decal' && !noDecal && (!types || types.indexOf(s.type) >= 0); }).forEach(function (s) {
+          var c = document.createElement('canvas');
+          c.width = s.pw; c.height = s.ph;
+          // 地面平面縱向壓成 0.5（GROUND_Y_SCALE），預覽也照壓
+          c.style.width = (s.w * 0.6 * scale) + 'px';
+          c.style.height = (s.h * 0.3 * scale) + 'px';
+          c.getContext('2d').drawImage(atlas.canvas, s.px, s.py, s.pw, s.ph, 0, 0, s.pw, s.ph);
+          var f = document.createElement('figure');
+          f.appendChild(c);
+          var cap = document.createElement('figcaption');
+          cap.textContent = s.type + ' ' + s.key;
+          f.appendChild(cap);
+          drow.appendChild(f);
+        });
+        document.body.appendChild(drow);
+      });
+    });
+  })();
+</script>
+</body>
+</html>
