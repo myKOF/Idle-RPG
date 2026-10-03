@@ -221,7 +221,7 @@
        操作也一樣慢」，而這條路徑上原本一支都不在名單裡——正是本段開頭警告的那種
        情況：報告會把它顯示成「完全沒問題」。彈窗是同步渲染、不等 Worker 的，
        所以要嘛這幾支自己慢，要嘛主執行緒被別人佔住；兩者都得先量得到才分得出來。 */
-    'openSkillModal', 'renderSkillModal', 'renderSkill2Modal', 'renderSkill2UltModal',
+    'openSkillModal', 'renderSkillModal', 'renderSkillBrowser', 'sgbDetailHTML',
     'showSkillTooltip', 'describeSkill2Group', 'describeSkill2Tier'];
 
   /* ---- rAF 回呼耗時 ----

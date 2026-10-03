@@ -1535,8 +1535,10 @@ var COMMAND_IMPL = {
     var made = 0, err = null;
     while (made < 2500 && !(err = composeGems(a.type, a.level))) made++;
     if (made > 0) {
-      blog('♻️ 全部合成：' + gemLabel(a.type, a.level) + ' ×' + (made * GEM_COMPOSE_INPUT_COUNT) +
-        ' → ' + gemLabel(a.type, a.level + 1) + ' ×' + made, 'good', 'factory');
+      // 「全部類型寶石」不是 GEM_TYPES 的鍵，gemLabel 查不到會拋例外（合成已完成卻回報失敗）。
+      var all = a.type === GEM_TYPE_ALL;
+      blog('♻️ 全部合成：' + (all ? GEM_NAMES[a.level] + '全部類型寶石' : gemLabel(a.type, a.level)) + ' ×' + (made * GEM_COMPOSE_INPUT_COUNT) +
+        ' → ' + (all ? GEM_NAMES[a.level + 1] + '同類型寶石' : gemLabel(a.type, a.level + 1)) + ' ×' + made, 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { made: made, err: made > 0 ? null : err };

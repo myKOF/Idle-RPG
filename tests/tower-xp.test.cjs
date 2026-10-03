@@ -79,7 +79,8 @@ test('高塔通關流程會發放 BOSS 經驗並套用經驗加成', () => {
   assert.match(tower, /hellSoulOriginDropChance\(floor\)/);
   assert.match(html, /id="r-soul-origin"/);
   assert.match(ui, /r-soul-origin/);
-  assert.match(ui, /✨ 經驗 x' \+ fmt\(bossXp\)/);
+  // 高塔提示與詳情面板共用 towerRewardRows：經驗取 BOSS 的基礎經驗（另加經驗加成）
+  assert.match(ui, /icon: '✨', label: '經驗', value: fmt\(bossStatsFor\(fl\)\.xp\)/);
   assert.match(ui, /hellSoulOriginDropChance\(fl\)/);
   assert.match(ui, /ancientEssenceDropChanceForBoss\(fl\)/);
   assert.match(ui, /icon_ancient_essence\.png/);

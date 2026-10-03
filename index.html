@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=1.0.68">
+  <link rel="stylesheet" href="css/style.css?v=1.0.69">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.23">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.38">
 </head>
 
 <body>
@@ -107,8 +107,8 @@
             </div>
           </div>
           <div id="char-core" class="char-core"></div>
-          <div class="char-attr-toolbar">
-            <label><input type="checkbox" id="attr-hide-zero" checked>隱藏數值為 0 的屬性</label>
+          <div class="char-attr-toolbar" id="attr-hide-zero-bar" hidden>
+            <label><input type="checkbox" id="attr-hide-zero">隱藏數值為 0 的屬性（內測）</label>
           </div>
           <div class="sidebar-stats char-attr" id="attr-panel"></div>
         </section>
@@ -235,61 +235,52 @@
           </div>
         </section>
 
-        <!-- ============ 熔爐（正式版：品質勾選路由；原舊生產線已合併移除） ============ -->
+        <!-- ============ 熔爐（正式版：品質勾選路由；2026-10 改版為熔爐卡片＋右側零件工坊） ============ -->
         <section id="tab-newforge" class="tab">
-          <div class="panel nf-top-panel">
-            <div class="sec-title">🏭 熔爐</div>
-            <div class="nf-controls">
-              <span class="dim-text">佇列 <b id="nf-queue-count">0</b> 件</span>
-            </div>
-            <div class="hint">戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（由右至左入爐）；未勾選品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌寶石會自動取回）。零件不再由敵人掉落，改用金幣升級；熔爐裝配只選擇零件種類，升級後所有同名裝配效果同步更新。</div>
+          <div class="pg-top">
+            <h2 class="pg-title">熔爐</h2>
+            <span class="pg-pill">佇列 <b id="nf-queue-count">0</b> 件</span>
+            <span class="pg-pill" data-tt-title="熔爐數量" data-tt-desc="0 轉 2 座、每轉生 1 次 +1 座，最多 12 座。">熔爐 <b id="nf-count">0 / 0 座</b></span>
+            <span class="pg-pill">已拆解 <b id="nf-salvaged">0</b></span>
+            <span class="pg-pill">保留 <b id="nf-kept">0</b></span>
+            <button type="button" id="nf-add-btn" class="btn sm nf-add-btn" data-nf-add="1">＋ 添加熔爐</button>
+            <button type="button" class="pg-help nf-help" aria-label="熔爐說明" data-tt-title="熔爐" data-tt-desc="戰鬥掉落的裝備自動進入熔爐佇列，依各熔爐勾選的品質送上傳送帶，從爐口（左端）入爐拆解；未勾選的品質、上鎖與神鑄創世裝備保留入包。拆解產出裝備碎片、金幣與附魔精華等資源，不會產出寶石（鑲嵌的寶石會自動取回）。零件改用金幣在「零件工坊」升級；熔爐裝配只選擇零件種類，升級後所有同名裝配效果同步更新。">?</button>
           </div>
 
-          <div id="nf-part-upgrades"></div>
-          <div id="nf-furnaces"></div>
-
-          <div class="panel">
-            <div class="sec-title">➕ 添加熔爐 <span id="nf-count" class="dim-text"></span></div>
-            <div class="nf-add-row">
-              <button class="btn sm" data-nf-add="1">🔥 添加鍛造熔爐</button>
+          <div class="nfx">
+            <div class="nfx-main">
+              <div id="nf-furnaces"></div>
             </div>
-            <div class="hint">熔爐可設數量與轉生連動：0 轉 2 座、每 1 轉 +1 座、上限 12 座。每座熔爐勾選品質後，該品質裝備會自動進入傳送帶拆解。</div>
-          </div>
-
-          <div class="factory-flow">
-            <!-- 附魔書庫存（自原生產線頁搬入） -->
-            <div class="panel node-card">
-              <div class="node-title">✨ 附魔書庫存 <span class="node-badge">Enchant</span></div>
-              <div class="node-body">
-                <div class="hint">📌 附魔已改為手動操作：到「🎒 裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。</div>
-                <div class="node-info" id="enc-info"></div>
-                <div class="sec-sub">附魔書庫存</div>
+            <aside class="nfx-side">
+              <div id="nf-part-upgrades" class="nfx-card"></div>
+              <div class="nfx-card nfx-books">
+                <div class="nfx-card-title"><b>附魔書</b><span data-tip="附魔改為手動操作：到「裝備」分頁點選裝備，即可用附魔書附魔（消耗書＋精華），點擊既有附魔可取下（返還書）。攻擊類（六元素）→ 武器／戒指／護手／手腕；防禦類（抗性）→ 頭盔／肩甲／胸甲／腰帶／護腿；功能類 → 項鍊／靴子。附魔欄位數依品質：普通～稀有 1、獨特～傳說 2、神話／創世 3。">到裝備頁使用</span></div>
                 <div id="enc-books" class="chip-row"></div>
-                <div class="hint">攻擊類（六元素）→ 武器/戒指/護手/手腕｜防禦類（抗性）→ 頭盔/肩甲/胸甲/腰帶/護腿｜功能類 → 項鍊/靴子。附魔欄位數依品質：普~稀有 1、獨特~傳說
-                  2、神話/創世
-                  3。</div>
+                <div class="node-info" id="enc-info"></div>
               </div>
-            </div>
-
+              <div class="nfx-card nfx-log">
+                <div class="log-header">
+                  <div class="log-title">熔爐紀錄</div>
+                  <div class="log-header-actions">
+                    <button id="btn-newforge-log-detail" class="btn sm" type="button" data-tt-title="熔爐詳情" data-tt-desc="開啟完整熔爐日誌">詳情</button>
+                  </div>
+                </div>
+                <div id="newforge-log" class="log"></div>
+              </div>
+            </aside>
           </div>
-
-          <div class="log-header">
-            <div class="log-title">熔爐紀錄</div>
-            <div class="log-header-actions">
-              <button id="btn-newforge-log-detail" class="btn sm" type="button" data-tt-title="熔爐詳情" data-tt-desc="開啟完整熔爐日誌">📜 詳情</button>
-            </div>
-          </div>
-          <div id="newforge-log" class="log"></div>
         </section>
 
         <!-- ============ 神鑄 ============ -->
         <section id="tab-forge" class="tab">
+          <div class="pg-top">
+            <h2 class="pg-title">神鑄</h2>
+            <button type="button" class="pg-help" aria-label="神鑄說明" data-tt-title="神鑄法陣" data-tt-desc="放入 6 件相同品質的裝備（傳說／神話／創世）或 6 顆同種同階的寶石（五階起）鑄造。混沌裝備（R9）掉落率由地圖／關卡掉落表 Zone_Stage_Drops 的 R9 欄控制；6 件混沌可神鑄為神鑄混沌，基礎成功率 20%，每個魔塵 +3%，失敗退回 3 件。詳細規則見法陣右上角的「!」。">?</button>
+          </div>
           <div class="panel forge-panel">
             <div class="forge-head">
-              <span class="sec-title">🔯 神鑄法陣</span>
               <span id="forge-rate" class="forge-rate"></span>
             </div>
-            <div class="hint">混沌裝備（R9）掉落率由地圖／關卡掉落表 Zone_Stage_Drops 的 R9 欄控制。6 件混沌可神鑄為神鑄混沌；基礎成功率 20%，每個魔塵 +3%，失敗退回 3 件。</div>
             <div id="forge-stage">
               <div class="forge-info-btn"
                 data-tip="將 6 件&lt;b&gt;相同品質&lt;/b&gt;的裝備（僅限 &lt;span style=&quot;color:#fb923c&quot;&gt;傳說&lt;/span&gt; / &lt;span style=&quot;color:#f87171&quot;&gt;神話&lt;/span&gt; / &lt;span style=&quot;color:#b8860b&quot;&gt;創世&lt;/span&gt;）放入六芒星，點「鑄造」有機會獲得&lt;b&gt;下一品質&lt;/b&gt;隨機部位裝備 1 件；失敗將隨機消耗 3 件、其餘退回背包。&lt;br&gt;點擊六個角尖的圓形符位可放置 💫 魔塵，每個 +5% 成功率（最多 6 個）。&lt;br&gt;6 件創世鑄造成功將獲得&lt;b style=&quot;color:#f5c542&quot;&gt;神鑄創世&lt;/b&gt;暗金裝備：屬性與上限為創世的 1.5 倍、必帶 2 條專屬特效，且無法再放入法陣。&lt;br&gt;基礎成功率：傳說 55%｜神話 40%｜創世 25%。金幣消耗：傳說 500 萬｜神話 2000 萬｜創世 1 億。&lt;br&gt;&lt;br&gt;💎 &lt;b&gt;寶石神鑄&lt;/b&gt;：切換下方「寶石」頁籤，放入 6 顆&lt;b&gt;相同種類與階級&lt;/b&gt;（五階以上）的寶石，成功合成&lt;b&gt;高一階&lt;/b&gt;寶石（最高十階，每高一階能力 ×2）；失敗損失 3 顆、其餘退回。魔塵對寶石鑄造每個 +3% 成功率。&lt;br&gt;基礎成功率：五階 45%｜六階 35%｜七階 25%｜八階 15%｜九階 5%。金幣消耗：100 萬 +（階級 − 5）× 100 萬。&lt;br&gt;&lt;b&gt;融合寶石無法用於神鑄&lt;/b&gt;（可至寶石分頁進行融合）。">
@@ -334,127 +325,148 @@
         </section>
 
         <!-- ============ 寶石 ============ -->
-        <section id="tab-gems" class="tab">
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">💎 寶石圖鑑與庫存（18 種能力：12 攻擊/功能 + 6 防禦）</div>
-            <div class="hint">寶石可鑲嵌到裝備的插槽。到「裝備」分頁點選裝備，即可鑲嵌或點擊已鑲寶石取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時鑲嵌的寶石會自動取回。</div>
-            <div id="gem-table"></div>
+        <section id="tab-gems" class="tab" data-gem-tool="compose">
+          <div class="pg-top">
+            <h2 class="pg-title">寶石</h2>
+            <span class="pg-pill">持有 <b id="gem-total">0</b> 顆</span>
+            <span class="pg-pill">已收集 <b id="gem-kinds">0</b> 種</span>
+            <button type="button" class="pg-help" aria-label="寶石說明" data-tt-title="寶石" data-tt-desc="寶石可鑲嵌到裝備的插槽：到「裝備」分頁點選裝備即可鑲嵌，點擊已鑲寶石可取下；「寶石鑲嵌效率」屬性會放大鑲嵌加成。分解裝備時，鑲在上面的寶石會自動取回。6～10 階為神鑄寶石，只能在神鑄法陣以 6 顆同種同階合成。">?</button>
           </div>
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🔀 寶石合成</div>
-            <div class="hint">消耗 2 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石；可選擇「全部類型寶石」逐種類合成。</div>
-            <div class="flt-row" style="margin-top:8px; flex-wrap:wrap">
-              <span>寶石種類</span>
-              <select id="fuse-type"></select>
-              <span>等級</span>
-              <select id="fuse-level">
-                <option value="1">一級 → 二級</option>
-                <option value="2">二級 → 三級</option>
-                <option value="3">三級 → 四級</option>
-                <option value="4">四級 → 五級</option>
-              </select>
-              <button id="fuse-btn" class="btn">🔀 合成一次</button>
-              <button id="fuse-all-btn" class="btn sm">♻️ 全部合成</button>
+          <div class="gx">
+            <div class="gx-lib">
+              <div id="gem-filter" class="gx-chips"></div>
+              <label class="gx-owned"><input type="checkbox" id="gem-owned-only" checked> 只看持有</label>
+              <div id="gem-table" class="gx-items"></div>
             </div>
-            <div class="node-info" id="fuse-info"></div>
-          </div>
-
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🔄 寶石轉換</div>
-            <div class="hint">把九宮格中的寶石一次性轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、每格上限 1000
-              顆；點下方庫存寶石放入（一次放滿可放數量），點格子取出。<b>融合寶石無法轉換</b>。</div>
-            <div class="gconv-layout">
-              <div id="gconv-grid" class="gconv-grid"></div>
-              <div class="gconv-side">
-                <div class="gconv-arrow">➡️</div>
-                <div class="sec-sub">轉換為</div>
-                <select id="gconv-target"></select>
-                <button id="gconv-btn" class="btn">🔄 一鍵轉換</button>
-                <button id="gconv-clear" class="btn sm">清空</button>
-                <div id="gconv-result" class="gem-result">尚未進行轉換</div>
+            <div class="gx-main">
+              <div id="gem-focus" class="gx-focus"></div>
+              <div class="gx-tabs" role="tablist" aria-label="寶石工坊">
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="compose">合成</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="convert">轉換</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="dismantle">拆解</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="fusion" id="gem-tool-fusion">融合</button>
+                <button type="button" role="tab" class="gx-tab" data-gem-tool-btn="shop">商店</button>
               </div>
-            </div>
-            <div class="node-info" id="gconv-info"></div>
-            <div class="sec-sub" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <span>庫存寶石（點擊放入九宮格）</span>
-              <button id="btn-gem-sort" class="btn sm">排序：類型優先</button>
-            </div>
-            <div id="gconv-pool" class="chip-row"></div>
-          </div>
 
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">⛏️ 寶石拆解</div>
-            <div class="hint">將 2 階以上的寶石拆解為同種類 1 階寶石，數量<b>損失 30%</b>（例：5 階寶石合成需 16 顆 1 階，拆解獲得 ⌊16×0.7⌋ = 11
-              顆）。融合寶石依「融合次數」推算 1 階總成本（視為 100% 成功）再打 7 折，並依其屬性種類均分。</div>
-            <div class="flt-row" style="margin-top:8px; flex-wrap:wrap">
-              <span>寶石種類</span>
-              <select id="gdis-type"></select>
-              <span>等級</span>
-              <select id="gdis-level">
-                <option value="2">二級</option>
-                <option value="3">三級</option>
-                <option value="4">四級</option>
-                <option value="5">五級</option>
-                <option value="6">六級</option>
-                <option value="7">七級</option>
-                <option value="8">八級</option>
-                <option value="9">九級</option>
-                <option value="10">十級</option>
-              </select>
-              <button id="gdis-btn" class="btn sm">⛏️ 拆解一顆</button>
-              <button id="gdis-all-btn" class="btn sm warn">⛏️ 全部拆解</button>
-            </div>
-            <div class="node-info" id="gdis-info" style="margin:4px 0 2px"></div>
-            <div class="sec-sub" style="margin-top:4px">融合寶石拆解（點擊拆解，會先確認）</div>
-            <div id="gdis-fused" class="chip-row"></div>
-            <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
-          </div>
-
-          <div id="gem-fusion-panel" class="panel" style="display:none; margin-bottom:12px">
-            <div class="sec-title">🧬 寶石融合 <span class="dim-text">（5 階以上寶石均可，含神鑄寶石）</span></div>
-            <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率
-              60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。<b>融合寶石無法用於神鑄法陣</b>。</div>
-            <div id="gfuse-slots" class="chip-row" style="margin:8px 0"></div>
-            <div class="btn-row">
-              <button id="gfuse-btn" class="btn">🧬 執行融合</button>
-              <button id="gfuse-clear" class="btn sm">清空</button>
-            </div>
-            <div class="node-info" id="gfuse-info"></div>
-            <div class="sec-sub">可用素材（點擊放入融合槽）</div>
-            <div id="gfuse-pool" class="chip-row" style="margin-bottom:8px"></div>
-            <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
-          </div>
-
-          <div class="panel">
-            <div class="shop-title-row">
-              <div class="sec-title">🏪 寶石商店 <span class="dim-text" id="shop-reset-cd"></span></div>
-              <div class="shop-upgrade-box">
-                <span id="gem-shop-level" class="shop-level-label">商店 Lv.1</span>
-                <button id="shop-upgrade" class="btn sm">⬆️ 升級</button>
+              <div class="gx-panel" data-gem-panel="compose">
+                <div class="hint">消耗 3 顆「同種類、同等級」寶石＋金幣 → 1 顆同種類的<b>下一階</b>寶石；選「全部類型寶石」會逐種類合成。</div>
+                <div class="flt-row gx-row">
+                  <span>種類</span>
+                  <select id="fuse-type"></select>
+                  <span>等級</span>
+                  <select id="fuse-level">
+                    <option value="1">一級 → 二級</option>
+                    <option value="2">二級 → 三級</option>
+                    <option value="3">三級 → 四級</option>
+                    <option value="4">四級 → 五級</option>
+                  </select>
+                </div>
+                <div id="fuse-recipe" class="gx-recipe"></div>
+                <div class="node-info" id="fuse-info"></div>
+                <div class="gx-actions">
+                  <button id="fuse-btn" class="btn">合成一次</button>
+                  <button id="fuse-all-btn" class="btn">全部合成</button>
+                </div>
               </div>
-            </div>
-            <div id="gem-shop-grid"></div>
-            <div class="btn-row" style="margin-top:8px">
-              <button id="shop-buy-all" class="btn">🛒 一鍵全購買</button>
-              <button id="shop-refresh" class="btn warn">🔄 手動刷新</button>
-            </div>
-            <div class="hint">商店等級越高，刷出數量與高階寶石機率越高。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。
+
+              <div class="gx-panel" data-gem-panel="convert">
+                <div class="hint">把九宮格中的寶石一次轉換為右側選擇的種類（<b>同階轉換</b>、數量不變）。每格放一種「同種類同等級」寶石、上限 1000 顆；點下方庫存寶石放入，點格子取出。<b>融合寶石無法轉換</b>。</div>
+                <div class="gconv-layout">
+                  <div id="gconv-grid" class="gconv-grid"></div>
+                  <div class="gconv-side">
+                    <div class="gconv-arrow" aria-hidden="true">➜</div>
+                    <div class="sec-sub">轉換為</div>
+                    <select id="gconv-target"></select>
+                    <button id="gconv-btn" class="btn">一鍵轉換</button>
+                    <button id="gconv-clear" class="btn sm">清空</button>
+                    <div id="gconv-result" class="gem-result">尚未進行轉換</div>
+                  </div>
+                </div>
+                <div class="node-info" id="gconv-info"></div>
+                <div class="sec-sub gx-pool-head">
+                  <span>庫存寶石（點擊放入九宮格）</span>
+                  <button id="btn-gem-sort" class="btn sm">排序：類型優先</button>
+                </div>
+                <div id="gconv-pool" class="chip-row"></div>
+              </div>
+
+              <div class="gx-panel" data-gem-panel="dismantle">
+                <div class="hint">將 2 階以上的寶石拆解為同種類 1 階寶石，數量<b>損失 30%</b>。融合寶石依「融合次數」推算 1 階總成本再打 7 折，並依其屬性種類均分。</div>
+                <div class="flt-row gx-row">
+                  <span>種類</span>
+                  <select id="gdis-type"></select>
+                  <span>等級</span>
+                  <select id="gdis-level">
+                    <option value="2">二級</option>
+                    <option value="3">三級</option>
+                    <option value="4">四級</option>
+                    <option value="5">五級</option>
+                    <option value="6">六級</option>
+                    <option value="7">七級</option>
+                    <option value="8">八級</option>
+                    <option value="9">九級</option>
+                    <option value="10">十級</option>
+                  </select>
+                </div>
+                <div class="node-info" id="gdis-info"></div>
+                <div class="gx-actions">
+                  <button id="gdis-btn" class="btn">拆解一顆</button>
+                  <button id="gdis-all-btn" class="btn warn">全部拆解</button>
+                </div>
+                <div class="sec-sub">融合寶石拆解（點擊拆解，會先確認）</div>
+                <div id="gdis-fused" class="chip-row"></div>
+                <div id="gdis-result" class="gem-result gem-result-3">尚未進行拆解</div>
+              </div>
+
+              <div class="gx-panel" data-gem-panel="fusion">
+                <div id="gx-fusion-locked" class="gx-locked">寶石融合在 3 轉後開放。</div>
+                <div id="gem-fusion-panel" style="display:none">
+                  <div class="hint">兩顆不同屬性 → 雙屬性融合寶石（數值隨機，不一定更高）；兩顆同屬性 → 數值介於兩者之間、上限 2 倍。雙屬性寶石只能與相同雙屬性、或含其屬性的單一寶石融合。基礎成功率 60%，成品每成功融合一次 -10%（最低 10%）。<b>失敗時較弱的寶石會降解</b>為 4~8 顆 1 級或 2~4 顆 2 級同屬性寶石。5 階以上寶石均可，含神鑄寶石。</div>
+                  <div id="gfuse-slots" class="chip-row"></div>
+                  <div class="gx-actions">
+                    <button id="gfuse-btn" class="btn">執行融合</button>
+                    <button id="gfuse-clear" class="btn sm">清空</button>
+                  </div>
+                  <div class="node-info" id="gfuse-info"></div>
+                  <div class="sec-sub">可用素材（點擊放入融合槽）</div>
+                  <div id="gfuse-pool" class="chip-row"></div>
+                  <div id="gfuse-result" class="gem-result gem-result-3">尚未進行融合</div>
+                </div>
+              </div>
+
+              <div class="gx-panel" data-gem-panel="shop">
+                <div class="shop-title-row">
+                  <div class="sec-sub">商店刷新 <span class="dim-text" id="shop-reset-cd"></span></div>
+                  <div class="shop-upgrade-box">
+                    <span id="gem-shop-level" class="shop-level-label">商店 Lv.1</span>
+                    <button id="shop-upgrade" class="btn sm">升級</button>
+                  </div>
+                </div>
+                <div id="gem-shop-grid"></div>
+                <div class="gx-actions">
+                  <button id="shop-buy-all" class="btn">一鍵全購買</button>
+                  <button id="shop-refresh" class="btn warn">手動刷新</button>
+                </div>
+                <div class="hint">商店等級越高，刷出數量與高階寶石機率越高。手動刷新費用 = 50,000 + 刷新次數 × 10,000，刷新次數每小時重置。</div>
+              </div>
             </div>
           </div>
         </section>
 
         <!-- ============ 技能 ============ -->
         <section id="tab-skills" class="tab">
-          <div class="panel" style="margin-bottom:12px">
-            <div class="sec-title">🧠 技能 <span class="dim-text">可用技能點：<b id="sp-count"
-                  style="color:var(--accent)">0</b>（技能熟練度每升 1 級 +1 點；技能點用於升級潛力技能）</span></div>
-            <div class="sec-sub">📚 技能熟練度 <span id="mastery-level" class="dim-text"></span></div>
-            <div id="mastery-bar" class="mastery-bar"><div id="mastery-bar-fill" class="mastery-bar-fill"></div><span id="mastery-bar-text" class="mastery-bar-text"></span></div>
-            <div class="sec-sub">⚔️ 裝載欄 <span id="loadout-cap" class="dim-text"></span>（依順序自動施放；點擊卸下）</div>
+          <div class="sgb-top">
+            <h2 class="sgb-title">技能</h2>
+            <span class="sgb-pill" data-tt-title="技能點" data-tt-desc="技能熟練度每升 1 級 +1 點；技能點用於升級潛力技能">可用技能點 <b id="sp-count">0</b></span>
+            <span class="sgb-pill sgb-mastery" data-tt-title="技能熟練度" data-tt-desc="打怪獲得技能經驗，每升 1 級 +1 技能點">技能熟練度 <span id="mastery-level"></span>
+              <span id="mastery-bar" class="mastery-bar"><span id="mastery-bar-fill" class="mastery-bar-fill"></span><span id="mastery-bar-text" class="mastery-bar-text"></span></span>
+            </span>
+          </div>
+          <div id="skill-trees"></div>
+          <div class="sgb-loadout">
+            <div class="sgb-loadout-title"><b>技能列</b><span id="loadout-cap" class="dim-text"></span><span class="dim-text">依順序自動施放；點選技能格可卸下</span></div>
             <div id="skill-loadout" class="chip-row"></div>
           </div>
-          <div class="hint" style="margin-bottom:12px">💡 新版技能同群組由左至右進階，箭頭表示方向；亮起階段代表已解鎖，灰色階段仍可查看但不能升級。點擊技能圖示開啟升級面板。</div>
-          <div id="skill-trees"></div>
         </section>
 
         <!-- ============ 高塔 ============ -->
@@ -505,15 +517,23 @@
           </div>
 
           <div id="tower-list-wrap">
-            <div class="sec-title">🗼 BOSS 高塔</div>
-            <div class="hint">限時 60 秒擊敗 BOSS；目前開放試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層。地獄之塔可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。</div>
-            <div class="tower-auto-bar">
-              <span>🔁 連續挑戰次數：</span>
-              <input type="number" id="tw-auto-count" value="5" min="1" max="999">
-              <span class="dim-text" style="font-size:12.5px">按各樓層「連挑」啟動：自動重複挑戰該層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）</span>
+            <div class="pg-top">
+              <h2 class="pg-title">高塔</h2>
+              <div id="tower-tiers" class="twx-tiers" role="tablist" aria-label="塔別"></div>
+              <span class="pg-pill twx-highest">最高通關 <b id="tower-highest">尚未通關</b></span>
+              <button type="button" class="pg-help twx-help" aria-label="高塔說明" data-tt-title="BOSS 高塔" data-tt-desc="限時擊敗 BOSS 即通關，首次通關金幣加倍。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
             </div>
-            <div id="tower-result" class="panel" style="display:none"></div>
-            <div id="tower-floors"></div>
+            <div class="twx">
+              <div id="tower-floors" class="twx-ladder"></div>
+              <div class="twx-main">
+                <div id="tower-detail" class="twx-detail"></div>
+                <div class="twx-actions">
+                  <div id="tower-actions" class="twx-btns"></div>
+                  <label class="twx-count">連挑次數 <input type="number" id="tw-auto-count" value="5" min="1" max="999"></label>
+                </div>
+                <div id="tower-result" class="twx-result" style="display:none"></div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -871,7 +891,9 @@
   <script src="js/vfx-runtime.js?v=1.0.167"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.1"></script>
-  <script src="js/battle-renderer.js?v=1.6.160"></script>
+  <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。 -->
+  <script src="js/battle-decor.js?v=1.0.4"></script>
+  <script src="js/battle-renderer.js?v=1.6.162"></script>
   <script src="js/stats.js?v=1.0.2"></script>
   <script src="js/item.js?v=1.0.5"></script>
   <script src="js/skills.js?v=1.0.40"></script>
@@ -883,7 +905,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.15"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.91"></script>
+  <script src="js/ui.js?v=1.0.103"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -896,7 +918,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.203"></script>
+  <script src="js/bridge.js?v=1.0.204"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -904,7 +926,7 @@
   <!-- 卡頓探針。與錄製器同樣是「只在本機／內網加了旗標才做事」的空殼，
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
-  <script src="js/lagprobe.js?v=1.0.17"></script>
+  <script src="js/lagprobe.js?v=1.0.18"></script>
   <script src="js/main.js?v=1.0.1"></script>
 </body>
 

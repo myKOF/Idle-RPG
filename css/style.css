@@ -881,10 +881,6 @@ body {
   margin-bottom: 2px;
 }
 
-
-
-
-
 .sec-sub {
   color: var(--dim);
   font-size: 12px;
@@ -1101,7 +1097,6 @@ textarea#save-io {
 .battle-scene.multi-enemy-layout>.combatant:not(.enemy-combatant) .cb-level {
   font-size: 11px;
 }
-
 
 /* ?�方?��?絕�?定�?填滿?�板：敵人數?��??��?高戰鬥�?，�??�面?��?度是?��??��?�?
    ?��?多敵人�? #combat-area ?�容超�??�出?��??�捲軸。inset 對�? .combatant ?��???*/
@@ -1848,7 +1843,6 @@ textarea#save-io {
   border-bottom-color: rgba(210, 56, 56, 0.18);
 }
 
-
 .log-line.log-enemy-damage {
   color: #fca5a5;
   background: rgba(210, 56, 56, 0.12);
@@ -2028,7 +2022,6 @@ textarea#save-io {
   color: var(--good);
 }
 
-
 .detail-log-line {
   padding: 3px 0;
   color: var(--dim);
@@ -2074,7 +2067,6 @@ textarea#save-io {
   background: rgba(210, 56, 56, 0.12);
   border-bottom-color: rgba(210, 56, 56, 0.18);
 }
-
 
 .detail-log-line.log-player-skill {
   color: #fde047;
@@ -2247,8 +2239,6 @@ textarea#save-io {
   padding: 0;
   margin-bottom: 8px !important;
 }
-
-
 
 /* 裝�??��?位優?��?滿�??��?詳�?欄為 fr 彈性�?，�??��?空�?）�?
    ?��??��??��?例�??��?裝�??�永?�到不�??�大後�?尺寸??*/
@@ -3799,10 +3789,6 @@ textarea#save-io {
   list-style: none;
 }
 
-
-
-
-
 .attr-group .stat-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
@@ -4428,355 +4414,15 @@ textarea:disabled,
 #sk-tooltip .sg-tier-list > div { margin: 2px 0; }
 #sk-tooltip .sg-tier-locked, #sk-tooltip .sg-tier-off { color: var(--dim, #999); }
 
-/* 新版技能樹：每個群組一列，七階由左至右以箭頭表示進階方向。 */
-.sg-skill-panel {
-  grid-column: 1 / -1;
-  min-width: 0;
-}
-
-.sg-skill-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sg-group-row-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  width: 100%;
-}
-
-.sg-group-row {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 5px 6px;
-  border: 1px solid rgba(185, 138, 45, .45);
-  background: rgba(0, 0, 0, .28);
-  border-radius: 4px;
-}
-
-.sg-group-label {
-  display: flex;
-  flex: 0 0 74px;
-  min-height: 56px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
-  padding: 3px 4px;
-  border-left: 3px solid var(--border);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.sg-group-label:hover,
-.sg-group-equipped {
-  border-left-color: var(--accent);
-  color: var(--accent);
-}
-
-.sg-group-emoji {
-  font-size: 20px;
-  line-height: 1;
-}
-
-.sg-group-name {
-  font-size: 13.5px;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.sg-group-total {
-  color: var(--dim);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.sg-stage-track {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2px;
-  min-width: 0;
-}
-
-.sg-stage-node {
-  position: relative;
-  display: flex;
-  flex: 1 1 50px;
-  min-width: 42px;
-  max-width: 56px;
-  height: 56px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  box-sizing: border-box;
-  border: 2px solid #5f5f5f;
-  background: rgba(75, 75, 75, .42);
-  color: #8f8f8f;
-  cursor: pointer;
-  opacity: .58;
-  filter: grayscale(.9);
-  transition: opacity .1s, border-color .1s, box-shadow .1s;
-}
-
-.sg-stage-node.sg-stage-unlocked {
-  border-color: #74c9e8;
-  background: rgba(75, 170, 215, .25);
-  color: var(--text);
-  opacity: 1;
-  filter: none;
-}
-
-.sg-stage-node.sg-stage-learned {
-  box-shadow: 0 0 8px rgba(116, 201, 232, .55), inset 0 0 10px rgba(116, 201, 232, .18);
-}
-
-.sg-stage-node.selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
-}
-
-.sg-stage-node.sg-stage-equipped {
-  outline: 2px solid #facc15;
-  outline-offset: 2px;
-}
-
-/* ---- 超神進化（第 8 格）：與各階同一顆格子，只換配色以區隔「這是三選一的最終階」 ---- */
-.sg-stage-node.sg-stage-ult.sg-stage-unlocked {
-  border-color: #d8a13a;
-  background: linear-gradient(180deg, rgba(216, 161, 58, .34), rgba(140, 92, 20, .24));
-}
-
-.sg-stage-node.sg-stage-ult.sg-stage-learned {
-  box-shadow: 0 0 10px rgba(240, 190, 90, .6), inset 0 0 12px rgba(240, 190, 90, .22);
-}
-
-.sg-stage-node.sg-stage-ult .sg-stage-tier {
-  color: #f0be5a;
-  font-weight: bold;
-}
-
-/* 三選一卡片：直向堆疊。
-   技能彈窗只有 min(440px, 92vw) 寬，三張並排每張不到 130px，效果說明會被壓成細長條；
-   直向排列讓每一張都有完整寬度可讀，捲動交給下面的 .sg-ult-picking 容器。 */
-.sg-ult-picks {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 8px 0;
-}
-
-.sg-ult-pick {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid #d8a13a;
-  border-radius: 6px;
-  background: rgba(216, 161, 58, .1);
-}
-
-/* 三選一版面：#skill-modal-body 平常是固定 5 列的 grid（48/24/140/28/66px），
-   卡片放進 140px 的固定軌一定溢位。選擇畫面改成自動列高＋整體可捲動。 */
-#skill-modal-body.sg-ult-picking {
-  grid-template-rows: auto;
-  min-height: 0;
-  max-height: 68vh;
-  overflow-y: auto;
-}
-
-.sg-ult-pick-name {
-  color: #f0be5a;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-.sg-ult-pick-desc {
-  flex: 1 1 auto;
-  color: var(--text);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.sg-ult-pick-cost {
-  color: var(--dim);
-  font-size: 11px;
-}
-
 .skill-tag-ult {
   border-color: #d8a13a;
   background: rgba(216, 161, 58, .18);
   color: #f0be5a;
 }
 
-.sg-stage-emoji {
-  font-size: 18px;
-  line-height: 1;
-}
-
-.sg-stage-tier {
-  font-size: 10px;
-  line-height: 1.1;
-}
-
-.sg-stage-name {
-  max-width: 52px;
-  overflow: hidden;
-  font-size: 9px;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sg-stage-level {
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: bold;
-  line-height: 1.1;
-}
-
-.sg-stage-locked .sg-stage-emoji,
-.sg-stage-locked .sg-stage-level {
-  filter: grayscale(1);
-  color: #777;
-}
-
-.sg-stage-eq {
-  position: absolute;
-  top: -7px;
-  left: -7px;
-  color: #facc15;
-  font-size: 11px;
-}
-
-.sg-stage-arrow {
-  flex: 0 0 10px;
-  color: #1f8cb7;
-  font-size: 16px;
-  font-weight: bold;
-  line-height: 1;
-  text-align: center;
-  text-shadow: 1px 1px 0 #07141b, 0 0 5px rgba(31, 140, 183, .5);
-}
-
 /* 右側操作按鈕區塊（裝備/卸下 + MAX） */
-.sg-row-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  flex: 0 0 46px;
-  width: 46px;
-}
-
-.sg-row-action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 25px;
-  box-sizing: border-box;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  user-select: none;
-  text-shadow: 1px 1px 1px #000;
-}
-
-.sg-row-equip-btn {
-  background: linear-gradient(180deg, #1b3d52 0%, #0c202d 100%);
-  border: 1.5px solid #38bdf8;
-  color: #bae6fd;
-  box-shadow: 0 0 4px rgba(56, 189, 248, 0.35);
-}
-
-.sg-row-equip-btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, #275674 0%, #133347 100%);
-  border-color: #7dd3fc;
-  color: #ffffff;
-  box-shadow: 0 0 8px rgba(125, 211, 252, 0.6);
-  transform: translateY(-1px);
-}
-
-.sg-row-equip-btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.sg-row-equip-btn:disabled,
-.sg-row-equip-btn.disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  border-color: #555;
-  color: #888;
-  background: #222;
-  box-shadow: none;
-  transform: none;
-}
-
-.sg-row-unequip-btn {
-  background: linear-gradient(180deg, #4a3a1f 0%, #2a2016 100%);
-  border: 1.5px solid #d4a340;
-  color: #ffcc66;
-  box-shadow: 0 0 4px rgba(212, 163, 64, 0.35);
-}
-
-.sg-row-unequip-btn:hover {
-  background: linear-gradient(180deg, #664d26 0%, #3d2b18 100%);
-  border-color: #ffe066;
-  color: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 224, 102, 0.6);
-  transform: translateY(-1px);
-}
-
-.sg-row-unequip-btn:active {
-  transform: translateY(1px);
-}
 
 /* 縮小版一鍵滿級按鈕（內測專用） */
-.sg-row-max-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 23px;
-  box-sizing: border-box;
-  background: linear-gradient(180deg, #421111 0%, #1e0707 100%);
-  border: 1.5px solid #d4a340;
-  border-radius: 4px;
-  color: #ffe066;
-  font-size: 9.5px;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  box-shadow: 0 0 4px rgba(212, 163, 64, 0.4), inset 0 0 6px rgba(255, 60, 60, 0.25);
-  transition: all 0.15s ease;
-  user-select: none;
-}
-
-.sg-row-max-btn:hover {
-  background: linear-gradient(180deg, #661818 0%, #300909 100%);
-  border-color: #fff188;
-  color: #fff;
-  box-shadow: 0 0 8px rgba(255, 241, 136, 0.7), inset 0 0 8px rgba(255, 100, 100, 0.5);
-  transform: translateY(-1px);
-}
-
-.sg-row-max-btn:active {
-  transform: translateY(1px);
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.85);
-}
 
 .sg-modal-locked-action {
   min-height: 26px;
@@ -4788,19 +4434,6 @@ textarea:disabled,
 }
 
 @media (max-width: 700px) {
-  .sg-group-label {
-    flex-basis: 76px;
-  }
-
-  .sg-stage-node {
-    flex-basis: 52px;
-    width: 52px;
-    height: 54px;
-  }
-
-  .sg-stage-name {
-    max-width: 48px;
-  }
 }
 
 #skill-modal-body {
@@ -5121,7 +4754,6 @@ textarea:disabled,
 .act-btn-tooltip:hover .btn-tip {
   display: block;
 }
-
 
 /* ==========================================================================
    ?��??��?魔面?�】Equipment Enchantment Settings
@@ -10419,8 +10051,6 @@ textarea:disabled,
   margin: 4px 0;
 }
 
-
-
 /* ?�送帶：�???��左�??�次?�右?�左流入（沿?��???conv-chip�?*/
 .nf-belt {
   display: flex;
@@ -10448,7 +10078,6 @@ textarea:disabled,
   overflow: hidden;
 }
 
-
 .nf-belt-empty {
   font-size: 12px;
 }
@@ -10456,11 +10085,6 @@ textarea:disabled,
 .nf-line-add {
   margin-top: 2px;
 }
-
-
-
-
-
 
 .nf-add-row {
   display: flex;
@@ -11016,12 +10640,7 @@ button.nf-part-slot.nf-part-ico {
   min-width: 0;
 }
 
-
-
 /* 修正屬性面板折疊箭頭亂碼 */
-
-
-
 
 .attr-group summary {
   padding-left: 4px;
@@ -12112,8 +11731,6 @@ input[type='radio'] {
 
 /* Skill and talent pages */
 .skill-row,
-.sg-group-row,
-.sg-ult-pick,
 .talent-summary,
 .talent-tree-panel {
   border-color: rgba(133, 86, 48, .56);
@@ -12124,7 +11741,6 @@ input[type='radio'] {
   box-shadow: inset 0 0 11px rgba(0, 0, 0, .5);
 }
 
-.sg-group-row:hover,
 .skill-row:hover {
   border-color: rgba(196, 125, 62, .68);
   background:
@@ -12132,13 +11748,7 @@ input[type='radio'] {
     rgba(10, 7, 5, .82);
 }
 
-.sg-group-label {
-  border-left-color: #765033;
-  background: linear-gradient(90deg, rgba(112, 62, 31, .12), transparent);
-}
-
 .tree-cell,
-.sg-stage-node,
 .talent-icon,
 .battle-skill-slot {
   border-radius: 4px;
@@ -12148,7 +11758,6 @@ input[type='radio'] {
   box-shadow: inset 0 0 10px rgba(0, 0, 0, .72), 0 2px 5px rgba(0, 0, 0, .48);
 }
 
-.sg-stage-node.sg-stage-unlocked,
 .tree-cell.learned,
 .talent-icon.learned {
   background:
@@ -12156,20 +11765,8 @@ input[type='radio'] {
     linear-gradient(145deg, #172126, #090a0a);
 }
 
-.sg-stage-node.sg-stage-learned,
 .talent-icon.maxed {
   box-shadow: inset 0 0 12px rgba(96, 190, 215, .12), 0 0 8px rgba(96, 190, 215, .22);
-}
-
-.sg-stage-node.sg-stage-ult.sg-stage-unlocked {
-  background:
-    radial-gradient(circle at 50% 36%, rgba(220, 159, 67, .3), transparent 62%),
-    linear-gradient(145deg, #2c1c0e, #0b0704);
-}
-
-.sg-stage-arrow {
-  color: #b2763e;
-  text-shadow: 0 1px 0 #000, 0 0 5px rgba(196, 111, 49, .24);
 }
 
 .mastery-bar {
@@ -12236,8 +11833,7 @@ input[type='radio'] {
   box-shadow: inset 0 0 18px rgba(0, 0, 0, .72);
 }
 
-.nf-part-upgrade-button,
-.sg-row-action-btn {
+.nf-part-upgrade-button {
   border-radius: 3px;
 }
 
@@ -12648,7 +12244,6 @@ textarea:hover {
 .forge-center,
 .gem-inventory-cell,
 .tree-cell,
-.sg-stage-node,
 .talent-icon,
 .battle-skill-slot,
 .eqset-tab,

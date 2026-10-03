@@ -107,5 +107,37 @@ test('寶石合成介面與紀錄使用共用 3 合 1參數', () => {
   assert.match(ui, /Math\.floor\(allCount \/ GEM_COMPOSE_INPUT_COUNT\)/);
   assert.match(ui, /Math\.floor\(n \/ GEM_COMPOSE_INPUT_COUNT\)/);
   assert.match(ui, /GEM_COMPOSE_INPUT_COUNT[\s\S]*sendGemUiCommand\(\s*['"]gem\.composeAll['"]/);
-  assert.match(index, /消耗 2 顆「同種類、同等級」寶石/);
+  assert.match(index, /消耗 3 顆「同種類、同等級」寶石/);
+});
+
+test('Worker 全部合成選「全部類型寶石」時，紀錄文字不查 GEM_TYPES（合成完成卻拋例外）', () => {
+  const root = path.resolve(__dirname, '..');
+  const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
+  const key = "'gem.composeAll': ";
+  const fnStart = worker.indexOf(key) + key.length;
+  const fnEnd = worker.indexOf('\n  },', fnStart) + 4;
+  assert.ok(fnStart > key.length && fnEnd > fnStart, '找不到 gem.composeAll');
+  const run = (type) => {
+    const logs = [];
+    let calls = 0;
+    const ctx = {
+      GEM_TYPE_ALL: '__all__', GEM_NAMES: ['', '一級', '二級', '三級'], GEM_COMPOSE_INPUT_COUNT: 3,
+      GEM_TYPES: { ruby: { emoji: '🔴', name: '紅寶石' } },
+      gemLabel(t, lv) {
+        if (!ctx.GEM_TYPES[t]) throw new TypeError('unknown gem ' + t);
+        return ctx.GEM_NAMES[lv] + ctx.GEM_TYPES[t].name;
+      },
+      composeGems: () => (calls++ < 2 ? null : '庫存不足'),
+      blog: (msg) => logs.push(msg),
+      UI: { dirty: {} }
+    };
+    const fn = vm.runInNewContext('(' + worker.slice(fnStart, fnEnd) + ')', ctx);
+    return { result: fn({ type, level: 1 }), logs };
+  };
+  const all = run('__all__');
+  assert.equal(all.result.made, 2);
+  assert.equal(all.result.err, null);
+  assert.match(all.logs[0], /一級全部類型寶石 ×6 → 二級同類型寶石 ×2/);
+  const ruby = run('ruby');
+  assert.match(ruby.logs[0], /一級紅寶石 ×6 → 二級紅寶石 ×2/);
 });

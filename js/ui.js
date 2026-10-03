@@ -2784,14 +2784,20 @@ function buildCharCoreTiles() {
 function initAttrHideZeroToggle() {
   var toggle = $id('attr-hide-zero');
   var panel = $id('attr-panel');
+  var bar = $id('attr-hide-zero-bar');
   if (!toggle || !panel) return;
-  var hide = true;
-  try { hide = localStorage.getItem('idle-rpg.attrHideZero') !== '0'; } catch (e) { }
+  // 內測專用：正式版玩家看不到這個開關，屬性永遠全部顯示（判斷方式與背包關鍵字篩選相同）
+  if (!isInternalServer()) return;
+  if (bar) bar.hidden = false;
+  /* 預設全部顯示（與原本左側屬性欄一致）：前期角色大多數屬性都是 0，預設隱藏會被當成屬性不見了。
+     舊鍵 idle-rpg.attrHideZero 當時預設為隱藏，改用新鍵讓所有人回到全部顯示。 */
+  var hide = false;
+  try { hide = localStorage.getItem('idle-rpg.attrHideZero.v2') === '1'; } catch (e) { }
   toggle.checked = hide;
   panel.classList.toggle('hide-zero', hide);
   toggle.addEventListener('change', function () {
     panel.classList.toggle('hide-zero', toggle.checked);
-    try { localStorage.setItem('idle-rpg.attrHideZero', toggle.checked ? '1' : '0'); } catch (e) { }
+    try { localStorage.setItem('idle-rpg.attrHideZero.v2', toggle.checked ? '1' : '0'); } catch (e) { }
   });
 }
 
@@ -2809,7 +2815,7 @@ function renderAttrPanel(st, headerSnapshot) {
     // 首次建立骨架（前兩組預設展開）
     var h = '<div id="attr-preview-note" class="attr-preview-note" hidden></div>';
     STAT_GROUPS.forEach(function (g, gi) {
-      h += '<details class="attr-group"' + (gi < 2 ? ' open' : '') + '><summary>' + esc(g.title) + '</summary>';
+      h += '<details class="attr-group"' + (gi < 2 ? ' open' : '') + '><summary>' + esc(g.title) + '<span class="attr-zero-count" data-zero-count="' + gi + '"></span></summary>';
       g.rows.forEach(function (row, ri) {
         if (typeof statPanelRowIsAllLocked === 'function' && statPanelRowIsAllLocked(row)) return;
         var descStr = typeof row[2] === 'function' ? row[2](st) : row[2];
@@ -2842,6 +2848,7 @@ function renderAttrPanel(st, headerSnapshot) {
   }
   // 更新數值
   STAT_GROUPS.forEach(function (g, gi) {
+    var zeroCount = 0;
     g.rows.forEach(function (row, ri) {
       var el = panel.querySelector('[data-attr="' + gi + '-' + ri + '"]');
       if (!el) return;
@@ -2855,6 +2862,7 @@ function renderAttrPanel(st, headerSnapshot) {
       var rowEl = el.parentElement;
       var isZero = attrValueIsZero(el.textContent);
       if (rowEl && rowEl.classList.contains('is-zero') !== isZero) rowEl.classList.toggle('is-zero', isZero);
+      if (isZero) zeroCount++;
       if (typeof row[2] === 'function') {
         var pe = el.parentElement;
         if (pe) {
@@ -2864,6 +2872,8 @@ function renderAttrPanel(st, headerSnapshot) {
         }
       }
     });
+    // 組標題旁的「N 項為 0」：只在勾選隱藏時顯示（CSS 控制），讓玩家知道是收起來而不是不見
+    setTextIfChanged(panel.querySelector('[data-zero-count="' + gi + '"]'), zeroCount ? zeroCount + ' 項為 0，已隱藏' : '');
   });
 }
 
@@ -5437,27 +5447,17 @@ function syncFactoryInputs() {
    熔爐清單以整段 innerHTML 重建，僅在內容變動且未聚焦互動元件時覆寫；
    帶視覺由 nfUpdateBelts 定點更新，批次流動不擊穿快取。 */
 
-// 品質勾選摘要（面板收合時顯示）：列出會拆解的品質（0 普通 ~ 7 創世；神鑄創世恆保留）
-function nfQualitySummary(fu) {
-  var salv = [];
+// 拆解品質色塊（常駐）：勾選＝該品質裝備自動入帶拆解，未勾＝保留；上鎖與神鑄創世永遠保留。
+// 底層仍是 data-nf-qual 的 checkbox，change 事件與指令不變；外觀由 CSS 的 :has(:checked) 即時反映。
+function nfQualityChipsHTML(fu) {
+  var chips = '';
   for (var r = 0; r < RARITIES.length; r++) {
     if (isGodforgedRarity(r)) continue;
-    if (fu.qualities[r]) salv.push('<span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span>');
-  }
-  return salv.length ? '分解：' + salv.join('、') + '（其餘保留）' : '未勾選任何品質（全部保留）';
-}
-
-// 品質勾選面板（圖2）：勾選＝該品質裝備自動入帶拆解；未勾＝保留
-function nfQualityPanelHTML(fu) {
-  var rows = '';
-  for (var r = 0; r < RARITIES.length; r++) {
-    if (isGodforgedRarity(r)) continue;
-    rows += '<label class="nf-qual-row"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-qual="' + r + '"' +
+    chips += '<label class="nf-qchip" style="--c:' + RARITIES[r].color + '"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-qual="' + r + '"' +
       pendingUiButtonAttributes(furnacePendingKey(fu.id)) +
-      (fu.qualities[r] ? ' checked' : '') + '> <span style="color:' + RARITIES[r].color + '">' + RARITIES[r].name + '</span></label>';
+      (fu.qualities[r] ? ' checked' : '') + '><span>' + RARITIES[r].name + '</span></label>';
   }
-  return '<div class="nf-qual-panel">' + rows +
-    '<div class="hint">勾選品質的裝備會自動進入傳送帶拆解；未勾選＝保留入包。上鎖與神鑄創世永遠保留。</div></div>';
+  return '<div class="nf-quals"><span class="nf-label" data-tip="勾選品質的裝備會自動進入傳送帶拆解；未勾選＝保留入包。上鎖與神鑄創世永遠保留。">拆解</span>' + chips + '</div>';
 }
 
 // 傳送帶批次圖示（帶頭在左＝即將入爐；與原版輸送帶樣式一致，縮小尺寸多顯示件數）。
@@ -5533,42 +5533,36 @@ function nfPartUpgradesHTML(factory, player, nf) {
       ? '<span class="nf-part-upgrade-max">Max</span>'
       : '<button class="btn sm nf-part-upgrade-button' + (can ? '' : ' nf-part-poor') + '" data-nf-partupgrade="' + key + '"' +
         pendingUiButtonAttributes(nodePendingKey('newforge-part-upgrade-' + key)) +
-        ' data-tip="升級消耗金幣：' + fmtFull(cost) + '">升級</button>';
-    return '<div class="nf-part-upgrade-card" data-tip="' + esc(partDesc({ key: key, level: level })) + '">' +
-      '<div class="nf-part-upgrade-level">T' + level + '</div>' +
-      '<div class="nf-part-upgrade-icon">' + partIconHTML(key) + '</div>' +
-      '<div class="nf-part-upgrade-name">' + esc(pt.name) + '</div>' +
-      '<div class="nf-part-upgrade-action">' + button + '</div></div>';
+        ' data-tip="升級到 T' + (level + 1) + '：金幣 ' + fmtFull(cost) + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</button>';
+    return '<div class="nf-pu-row" data-tip="' + esc(partDesc({ key: key, level: level })) + '">' +
+      '<span class="nf-pu-ico">' + partIconHTML(key) + '</span>' +
+      '<span class="nf-pu-name">' + esc(pt.name) + '</span>' +
+      '<span class="nf-pu-tier">T' + level + '</span>' + button + '</div>';
   }).join('');
-  return '<div class="nf-part-upgrades"><div class="sec-title">🔧 零件升級</div>' +
-    '<div class="hint">零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。滑鼠移到圖示可查看效果，已裝配零件會立即同步新等級。</div>' +
-    '<div class="nf-part-upgrade-grid">' + rows + '</div></div>';
+  return '<div class="nf-part-upgrades"><div class="nfx-card-title"><b>零件工坊</b>' +
+    '<span data-tip="零件等級上限 T' + PART_MAX_TIER + '；升級費用公式為 a + b × c^升級後等級（例如 T5→T6 代入 6）。已裝配的零件會立即同步新等級。">上限 T' + PART_MAX_TIER + '・全熔爐同步</span></div>' +
+    '<div class="nf-pu-list">' + rows + '</div></div>';
 }
 
-// 熔爐卡片（圖1）：左側大圖＋右側傳送帶（拆解設定/啟用/摘要/帶視覺）＋零件格
+// 熔爐卡片：左側熔爐圖、右側拆解品質色塊／傳送帶（帶頭在左＝爐口）／零件格
 function nfFurnaceHTML(fu, nf, factory, player) {
-  var head = '<div class="node-title">' + NEW_FORGE_EMOJI + ' ' + esc(NEW_FORGE_NAME) +
-    ' <span class="node-badge">#' + fu.id + '</span>' +
+  var head = '<div class="nf-fhead">' +
+    '<span class="nf-fname">' + esc(NEW_FORGE_NAME) + '</span><span class="nf-fid">#' + fu.id + '</span>' +
+    '<label class="nf-switch"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '>' +
+    '<span class="nf-switch-track" aria-hidden="true"></span><span class="nf-switch-text">' + (fu.enabled ? '運轉中' : '已停用') + '</span></label>' +
     '<button class="btn sm warn nf-remove" data-nf-remove="' + fu.id + '"' +
-    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除熔爐</button></div>';
-  var open = UI.nfCfgOpen && UI.nfCfgOpen[fu.id];
-  var beltRow = '<div class="nf-line-head">' +
-    '<span class="nf-line-no">傳送帶</span>' +
-    '<button class="btn sm" data-nf-fid="' + fu.id + '" data-nf-cfg="1">⚙ 拆解設定</button>' +
-    '<label class="chk"><input type="checkbox" data-nf-fid="' + fu.id + '" data-nf-on="1"' +
-    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + (fu.enabled ? ' checked' : '') + '> 啟用</label>' +
-    '</div>' +
-    (open ? nfQualityPanelHTML(fu) : '<div class="nf-line-sum">' + nfQualitySummary(fu) + '</div>') +
+    pendingUiButtonAttributes(furnacePendingKey(fu.id)) + '>移除</button></div>';
+  var main = nfQualityChipsHTML(fu) +
     '<div class="nf-belt"><span class="nf-belt-mouth" data-tip="熔爐入口：帶頭裝備由此入爐拆解">' + NEW_FORGE_EMOJI + '</span>' +
     '<span class="nf-belt-items" data-nf-belt="' + fu.id + '"></span>' +
     '<span class="nf-belt-more" data-nf-more="' + fu.id + '"></span></div>' +
     nfPartSlotsHTML(fu, nf, factory, player) +
     (UI.nfPartsOpen && UI.nfPartsOpen[fu.id] ? nfPartsListHTML(fu, factory, nf) : '');
-  return '<div class="panel node-card nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
-    '<div class="nf-furnace-body">' +
-    '<div class="nf-furnace-left"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGE + '" alt="' + esc(NEW_FORGE_NAME) + '">' +
-    '<div class="nf-furnace-caption dim-text">' + esc(NEW_FORGE_DESC) + '</div></div>' +
-    '<div class="nf-lines">' + beltRow + '</div>' +
+  return '<div class="nf-furnace' + (fu.enabled ? '' : ' nf-line-off') + '">' + head +
+    '<div class="nf-fbody">' +
+    '<div class="nf-fart" data-tip="' + esc(NEW_FORGE_DESC) + '"><img class="nf-furnace-img" src="' + NEW_FORGE_IMAGE + '" alt="' + esc(NEW_FORGE_NAME) + '"></div>' +
+    '<div class="nf-fmain">' + main + '</div>' +
     '</div></div>';
 }
 
@@ -5585,18 +5579,24 @@ function renderNewForge() {
   renderForgeExtras(factorySnapshot, headerSnapshot); // 附魔書庫存＋強化節點（搬入本頁的面板）
   var upgradeBox = $id('nf-part-upgrades');
   if (upgradeBox) setHtmlIfChanged(upgradeBox, nfPartUpgradesHTML(factory, player, nf));
-  var cnt = $id('nf-count');
-  if (cnt) {
-    var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
-    cnt.textContent = nf.furnaces.length + '/' + allowed + ' 座（轉生+1 座，上限 ' + NEW_FORGE_MAX + '）｜已拆解 ' + fmt(nf.stats.salvaged) +
-      '・保留 ' + fmt(nf.stats.kept);
+  var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));
+  setTextIfChanged($id('nf-count'), nf.furnaces.length + ' / ' + allowed + ' 座');
+  setTextIfChanged($id('nf-salvaged'), fmt(nf.stats.salvaged));
+  setTextIfChanged($id('nf-kept'), fmt(nf.stats.kept));
+  var addBtn = $id('nf-add-btn');
+  if (addBtn) {
+    var full = nf.furnaces.length >= allowed;
+    var addTip = full
+      ? '已達目前上限 ' + allowed + ' 座（0 轉 2 座、每轉生 1 次 +1 座，最多 ' + NEW_FORGE_MAX + ' 座）'
+      : '新增一座熔爐（目前上限 ' + allowed + ' 座，最多 ' + NEW_FORGE_MAX + ' 座）';
+    if (addBtn.getAttribute('data-tip') !== addTip) addBtn.setAttribute('data-tip', addTip);
   }
   var list = $id('nf-furnaces');
   if (list) {
     var html = nf.furnaces.map(function (fu) {
       return nfFurnaceHTML(fu, nf, factory, player);
     }).join('') ||
-      '<div class="panel"><div class="hint">尚無熔爐——請於下方添加。</div></div>';
+      '<div class="nf-empty">尚無熔爐——按右上角「添加熔爐」建立第一座。</div>';
     if (UI._nfFurnacesHTML !== html) {
       // 焦點防衛：使用者正聚焦清單內的下拉/輸入框時延後整段重建（帶視覺另行定點更新）
       var ae = document.activeElement;
@@ -5623,6 +5623,9 @@ function nfUpdateBelts(list, snapshot) {
       node._nfBeltHTML = html;
       node.innerHTML = html;
     }
+    var belt = node.parentNode;
+    var moving = !!(fu.enabled && fu.belt && fu.belt.length);
+    if (belt && belt.classList && belt.classList.contains('is-moving') !== moving) belt.classList.toggle('is-moving', moving);
   }
   // 帶尾固定 +N 區：只換文字，空間恆定不變動版面。
   // +N＝該爐「專屬佇列」真實件數（各爐獨立，非共用計數；顯示封頂 +9999、tooltip 精確）。
@@ -5760,12 +5763,6 @@ function bindNewForgeEvents() {
     var clickedFurnaceId = parseInt(el.getAttribute('data-nf-fid'), 10);
     var fu = newForgeViewFurnace(uiNewForgePanelSnapshot(), clickedFurnaceId);
     if (!fu) return;
-    if (el.hasAttribute('data-nf-cfg')) {
-      if (!UI.nfCfgOpen) UI.nfCfgOpen = {};
-      UI.nfCfgOpen[fu.id] = !UI.nfCfgOpen[fu.id];
-      UI.dirty.newforge = true;
-      return;
-    }
     if (el.hasAttribute('data-nf-unlockslot')) {
       {
         sendUiCommand('newforge.unlockPartSlot', { furnaceId: fu.id }, {
@@ -6324,6 +6321,177 @@ function bindForgeInventoryVirtualScroll(grid) {
 }
 
 /* ---- 高塔分頁 ---- */
+/* ---- 高塔頁（2026-10）：塔別分頁＋樓層階梯（左）＋選中樓層的 BOSS 與獎勵（右） ----
+   樓層列保留 .tower-floor[data-tower-tip]：滑鼠停留仍可快速預覽其他樓層的掉落；點選則在右側顯示完整詳情。 */
+UI.towerBrowse = { tier: null, sel: null, lastHighest: null };
+
+function towerTiers() {
+  return [
+    { id: 'trial', name: '試煉之塔', start: 1, end: TOWER_TRIAL_MAX_FLOOR },
+    { id: 'hell', name: '地獄之塔', start: TOWER_TRIAL_MAX_FLOOR + 1, end: TOWER_HELL_MAX_FLOOR },
+    { id: 'purgatory', name: '煉獄之塔', start: TOWER_HELL_MAX_FLOOR + 1, end: TOWER_PURGATORY_MAX_FLOOR }
+  ];
+}
+
+function towerTierOf(fl) {
+  var tiers = towerTiers();
+  if (isPurgatoryTowerFloor(fl)) return tiers[2];
+  if (isHellTowerFloor(fl)) return tiers[1];
+  return tiers[0];
+}
+
+function towerBossOf(fl) {
+  return BOSS_LIST[(fl - 1) % BOSS_LIST.length];
+}
+
+function towerBossIconHTML(bd, cls) {
+  var src = (bd.img && !towerBossImageFailed(bd.img)) ? 'images/' + bd.img : null;
+  return src
+    ? '<img class="' + cls + '" src="' + src + '" alt="" data-tower-boss-image="' + esc(bd.img) + '" data-tower-boss-fallback="' + esc(bd.emoji || '👾') + '">'
+    : '<span class="' + cls + ' is-emoji">' + (bd.emoji || '👾') + '</span>';
+}
+
+// 圖片載入失敗時換成 emoji（記住失敗的檔名，之後直接用 emoji）
+function bindTowerBossImageFallback(root) {
+  if (!root || !root.querySelectorAll) return;
+  var imgs = root.querySelectorAll('[data-tower-boss-image]');
+  for (var i = 0; i < imgs.length; i++) {
+    if (imgs[i]._towerFallbackBound) continue;
+    imgs[i]._towerFallbackBound = true;
+    imgs[i].onerror = function () {
+      var imageName = this.getAttribute('data-tower-boss-image');
+      markTowerBossImageFailed(imageName);
+      var fallback = document.createElement('span');
+      fallback.className = this.className + ' is-emoji';
+      fallback.textContent = this.getAttribute('data-tower-boss-fallback') || '👾';
+      if (this.parentNode) this.parentNode.replaceChild(fallback, this);
+    };
+  }
+}
+
+// 通關獎勵與掉落（提示與詳情面板共用；數值一律走 formula.js 的公式，不在這裡寫死）
+function towerRewardRows(fl) {
+  var rw = towerRewardFor(fl, false);
+  var rows = [
+    { icon: '💰', label: '金幣', value: fmt(rw.gold), note: '首通 ×2' },
+    { icon: '✨', label: '經驗', value: fmt(bossStatsFor(fl).xp), note: '另加經驗加成' },
+    { icon: '🔮', label: '附魔精華', value: '×' + fmt(rw.essence) },
+    { icon: '💎', label: '隨機寶石', value: GEM_NAMES[rw.gemLevel] + ' ×2' },
+    { icon: '📖', label: '附魔書', value: '隨機一種 ×2' },
+    { icon: '💫', label: '魔塵', value: fmt1(bossDustRate(fl)) + '%', note: '神鑄材料' }
+  ];
+  var ancientRate = ancientEssenceDropChanceForBoss(fl);
+  if (ancientRate > 0) rows.push({ icon: '<img src="images/icon_ancient_essence.png" class="res-icon" alt="">', label: '太古精華', value: fmt1(ancientRate) + '%' });
+  if (isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl)) rows.push({ icon: '🧿', label: '魔魂本源', value: fmt1(hellSoulOriginDropChance(fl)) + '%', note: '地獄／煉獄之塔' });
+  if (isPurgatoryTowerFloor(fl)) rows.push({ icon: '🌱', label: '魔種', value: fmt1(demonSeedDropChanceForBoss(fl)) + '%', note: '煉獄之塔' });
+  return rows;
+}
+
+function towerEquipDropRows(fl) {
+  var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
+  var rows = [];
+  for (var br = bossRates.length - 1; br >= 0; br--) {
+    if (!bossRates[br]) continue;
+    var rate = bossRates[br];
+    var rateStr;
+    if (rate >= 100) {
+      rateStr = '必定 ' + Math.floor(rate / 100) + ' 件';
+      var rem = rate % 100;
+      if (rem > 0) rateStr += ' + ' + rem + '% 再 1 件';
+    } else {
+      rateStr = rate + '%';
+    }
+    rows.push({ name: RARITIES[br].name + '裝備', color: RARITIES[br].color, rate: rateStr });
+  }
+  return rows;
+}
+
+function towerTierTabsHTML(highest) {
+  var h = '';
+  towerTiers().forEach(function (t) {
+    var open = highest + 1 >= t.start;
+    var on = UI.towerBrowse.tier === t.id;
+    h += '<button type="button" role="tab" class="twx-tier' + (on ? ' is-on' : '') + (open ? '' : ' is-locked') + '" data-tower-tier="' + t.id + '"' +
+      (open ? '' : ' disabled') + ' aria-selected="' + on + '">' + t.name + '<span>' + t.start + '–' + t.end + '</span></button>';
+  });
+  return h;
+}
+
+function towerFloorRowHTML(fl, highest) {
+  var bd = towerBossOf(fl);
+  var cleared = fl <= highest, next = fl === highest + 1, unlocked = fl <= highest + 1;
+  var cls = 'tower-floor ' + towerTierOf(fl).id + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') +
+    (next ? ' is-next' : '') + (UI.towerBrowse.sel === fl ? ' is-sel' : '');
+  var state = cleared ? '已通關' : (next ? '可挑戰' : '未解鎖');
+  return '<div class="' + cls + '" role="button" tabindex="0" data-tower-tip="' + fl + '" data-tower-pick="' + fl + '" aria-pressed="' + (UI.towerBrowse.sel === fl) + '">' +
+    '<span class="twx-fl-no">' + fl + '</span>' +
+    '<span class="tf-emoji">' + towerBossIconHTML(bd, 'twx-fl-ico') + '</span>' +
+    '<span class="tf-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span>' +
+    '<span class="twx-fl-state">' + state + '</span></div>';
+}
+
+function towerDetailHTML(fl, highest) {
+  var bd = towerBossOf(fl);
+  var tier = towerTierOf(fl);
+  var stats = bossStatsFor(fl);
+  var ei = ELEM_INFO[bd.attr] || null;
+  var color = ei ? ei.color : '#c9c3b5';
+  var cleared = fl <= highest, next = fl === highest + 1;
+  var status = cleared ? '已通關（重複挑戰不享首通加倍）' : (next ? '下一個挑戰目標' : '需先通關第 ' + (highest + 1) + ' 層');
+  var tags = (ei ? '<span class="twx-tag" style="--c:' + ei.color + '">' + ei.emoji + ' ' + ei.short + '屬性</span>' : '') +
+    '<span class="twx-tag">限時 ' + towerTimeLimitWithTalents(fl) + ' 秒</span>' +
+    '<span class="twx-tag">血量高於 ' + TOWER_ENRAGE_HP + '% 會狂暴</span>';
+  var stat = function (k, v, c) {
+    return '<span class="twx-stat"><span>' + k + '</span><b' + (c ? ' style="color:' + c + '"' : '') + '>' + v + '</b></span>';
+  };
+  var rewards = towerRewardRows(fl).map(function (r) {
+    return '<span class="twx-rw"><span class="twx-rw-ico">' + r.icon + '</span><span class="twx-rw-label">' + r.label +
+      (r.note ? '<i>' + r.note + '</i>' : '') + '</span><b>' + r.value + '</b></span>';
+  }).join('');
+  var equips = towerEquipDropRows(fl).map(function (r) {
+    return '<span class="twx-eq" style="--c:' + r.color + '"><b>' + r.name + '</b><span>' + r.rate + '</span></span>';
+  }).join('');
+  return '<div class="twx-boss" style="--c:' + color + '">' +
+      '<div class="twx-boss-art">' + towerBossIconHTML(bd, 'twx-boss-img') + '</div>' +
+      '<div class="twx-boss-main">' +
+        '<span class="twx-boss-tier ' + tier.id + '">' + tier.name + '・第 ' + fl + ' 層</span>' +
+        '<span class="twx-boss-name' + (isPurgatoryTowerFloor(fl) ? ' purgatory-boss' : '') + '">' + esc(bd.name) + '</span>' +
+        '<span class="twx-tags">' + tags + '</span>' +
+        '<span class="twx-stats">' + stat('BOSS 等級', 'Lv.' + fmtFull(Math.round(stats.level))) +
+          stat('生命', fmt(stats.hp), '#ff8a80') + stat('建議野外階段', (4 + fl * 5) + '+', '#f0cf86') + '</span>' +
+        '<span class="twx-status' + (cleared ? ' is-cleared' : (next ? ' is-next' : ' is-locked')) + '">' + status + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="twx-loot">' +
+      '<div class="twx-loot-title"><b>通關獎勵</b><span>機率類獨立判定、不受掉寶率影響（裝備除外）</span></div>' +
+      '<div class="twx-rws">' + rewards + '</div>' +
+      (equips ? '<div class="twx-loot-title"><b>BOSS 裝備</b><span>受掉寶率加成，送入熔爐佇列</span></div><div class="twx-eqs">' + equips + '</div>' : '') +
+    '</div>';
+}
+
+function towerActionsHTML(fl, highest, gold) {
+  if (fl > highest + 1) return '<span class="twx-locked-note">🔒 需先通關第 ' + (highest + 1) + ' 層</span>';
+  var cost = towerChallengeCost(fl);
+  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + '>挑戰第 ' + fl + ' 層' +
+      '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button>' +
+    '<button class="btn twx-auto" data-tower-auto="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) +
+      ' data-tip="連續挑戰此層：金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）">🔁 連挑</button>';
+}
+
+function towerSelectFloor(fl) {
+  fl = Math.max(1, Math.min(TOWER_MAX_FLOOR, fl | 0));
+  var active = typeof document !== 'undefined' ? document.activeElement : null;
+  var hadRowFocus = !!(active && active.hasAttribute && active.hasAttribute('data-tower-pick'));
+  UI.towerBrowse.sel = fl;
+  UI.towerBrowse.tier = towerTierOf(fl).id;
+  renderTower();
+  // 樓層列整段重繪，鍵盤操作時把焦點還給同一層
+  if (hadRowFocus) {
+    var row = $id('tower-floors') && $id('tower-floors').querySelector('[data-tower-pick="' + fl + '"]');
+    if (row) row.focus();
+  }
+}
+
 function renderTower() {
   var fightBox = $id('tower-fight');
   var listBox = $id('tower-list-wrap');
@@ -6342,53 +6510,43 @@ function renderTower() {
     listBox.style.display = '';
     /* 離開戰鬥畫面：疊層上還在跑的特效要收掉，否則下一場一開場就看到上一場的殘留。 */
     if (typeof VFXTower !== 'undefined') VFXTower.stop();
-    var h = '';
     var highest = Math.max(0, towerState.highest || 0);
-    var maxShow = Math.min(TOWER_MAX_FLOOR, highest + 3);
-    for (var fl = 1; fl <= maxShow; fl++) {
-      var unlocked = fl <= highest + 1;
-      var cleared = fl <= highest;
-      var bd = BOSS_LIST[(fl - 1) % BOSS_LIST.length];
-      var hell = isHellTowerFloor(fl);
-      var purgatory = isPurgatoryTowerFloor(fl);
-      var towerClass = purgatory ? 'purgatory' : (hell ? 'hell' : 'trial');
-      if (fl === 1 || fl === TOWER_TRIAL_MAX_FLOOR + 1 || fl === TOWER_HELL_MAX_FLOOR + 1) {
-        var sectionName = purgatory ? '煉獄之塔' : (hell ? '地獄之塔' : '試煉之塔');
-        var sectionStart = purgatory ? TOWER_HELL_MAX_FLOOR + 1 : (hell ? TOWER_TRIAL_MAX_FLOOR + 1 : 1);
-        var sectionEnd = purgatory ? TOWER_PURGATORY_MAX_FLOOR : (hell ? TOWER_HELL_MAX_FLOOR : TOWER_TRIAL_MAX_FLOOR);
-        h += '<div class="tower-section-title ' + towerClass + '">🗼 ' +
-          sectionName + '<span>第 ' + sectionStart + '～' + sectionEnd + ' 層</span></div>';
-      }
-
-      var bossIcon = (bd.img && !towerBossImageFailed(bd.img)) ? 'images/' + bd.img : null;
-      var iconHtml = bossIcon
-        ? '<img src="' + bossIcon + '" data-tower-boss-image="' + esc(bd.img) + '" data-tower-boss-fallback="' + esc(bd.emoji || '👾') + '" style="width:32px;height:32px;vertical-align:middle;border-radius:4px;box-shadow:0 0 5px #000;">'
-        : '<span style="font-size:24px;vertical-align:middle;">' + (bd.emoji || '👾') + '</span>';
-
-      var twCost = towerChallengeCost(fl);
-      h += '<div class="tower-floor ' + towerClass + (cleared ? ' cleared' : '') + (unlocked ? '' : ' locked') + '" data-tower-tip="' + fl + '">' +
-        '<span class="tf-emoji" style="margin-right:12px;">' + iconHtml + '</span>' +
-        '<span class="tf-name' + (purgatory ? ' purgatory-boss' : '') + '" style="vertical-align:middle;">第 ' + fl + ' 層・' + bd.name + (cleared ? ' ✅' : '') + '</span>' +
-        '<span class="tf-hint" style="margin-left:auto; margin-right:10px;">建議野外階段 ' + (4 + fl * 5) + '+｜挑戰費 <span style="color:' + ((player.gold || 0) >= twCost ? '#ffd700' : '#fca5a5') + '">💰' + fmt(twCost) + '</span></span>' +
-        (unlocked
-          ? '<button class="btn sm" data-tower-floor="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + '>挑戰</button>' +
-          '<button class="btn sm" data-tower-auto="' + fl + '"' + pendingUiButtonAttributes(nodePendingKey('tower')) + ' data-tip="連續挑戰此層（次數見上方設定）：金幣不足或次數用完自動停止並回到野外">🔁 連挑</button>'
-          : '<span class="tf-lock">🔒</span>') +
-        '</div>';
+    var nextFloor = Math.min(TOWER_MAX_FLOOR, highest + 1);
+    var st = UI.towerBrowse;
+    // 剛通關「下一層」時，選取跟著往上一層走；其他時候保留玩家自己點的樓層。
+    if (!st.sel || (st.lastHighest !== null && highest !== st.lastHighest && st.sel === Math.min(TOWER_MAX_FLOOR, st.lastHighest + 1))) {
+      st.sel = nextFloor;
+      st.tier = towerTierOf(nextFloor).id;
     }
-    $id('tower-floors').innerHTML = h;
-    var towerBossImages = $id('tower-floors').querySelectorAll('[data-tower-boss-image]');
-    for (var ti = 0; ti < towerBossImages.length; ti++) {
-      towerBossImages[ti].onerror = function () {
-        var imageName = this.getAttribute('data-tower-boss-image');
-        var fallbackEmoji = this.getAttribute('data-tower-boss-fallback') || '👾';
-        markTowerBossImageFailed(imageName);
-        var fallback = document.createElement('span');
-        fallback.style.cssText = 'font-size:24px;vertical-align:middle;';
-        fallback.textContent = fallbackEmoji;
-        this.parentNode.replaceChild(fallback, this);
-      };
+    st.lastHighest = highest;
+    if (!st.tier) st.tier = towerTierOf(st.sel).id;
+    var tier = towerTiers().filter(function (t) { return t.id === st.tier; })[0] || towerTiers()[0];
+
+    var tierBox = $id('tower-tiers');
+    var tierH = towerTierTabsHTML(highest);
+    if (tierBox && tierBox._lastH !== tierH) { tierBox._lastH = tierH; tierBox.innerHTML = tierH; }
+    setTextIfChanged($id('tower-highest'), highest ? '第 ' + highest + ' 層' : '尚未通關');
+
+    var floorsBox = $id('tower-floors');
+    var h = '';
+    for (var fl = tier.end; fl >= tier.start; fl--) h += towerFloorRowHTML(fl, highest);
+    if (floorsBox._lastH !== h) {
+      floorsBox._lastH = h;
+      floorsBox.innerHTML = h;
+      bindTowerBossImageFallback(floorsBox);
     }
+
+    var detail = $id('tower-detail');
+    var detailH = towerDetailHTML(st.sel, highest);
+    if (detail && detail._lastH !== detailH) {
+      detail._lastH = detailH;
+      detail.innerHTML = detailH;
+      bindTowerBossImageFallback(detail);
+    }
+    var actions = $id('tower-actions');
+    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0);
+    if (actions && actions._lastH !== actionsH) { actions._lastH = actionsH; actions.innerHTML = actionsH; }
+
     // 上次結果
     var rbox = $id('tower-result');
     var r = runtime.result;
@@ -6401,16 +6559,17 @@ function renderTower() {
         rh += '<div class="tr-sub">戰鬥數據：DPS ' + fmt(r.myDps) + '（通關需求約 ' + fmt(r.needDps) + '）｜BOSS 剩餘血量 ' + r.bossHpPct + '%</div>';
         rh += '<div class="tr-sub">失敗分析：</div>' + r.analysis.map(function (x) { return '<div class="tr-line">📋 ' + esc(x) + '</div>'; }).join('');
       }
-      rbox.innerHTML = rh;
+      if (rbox._lastH !== rh) { rbox._lastH = rh; rbox.innerHTML = rh; }
       rbox.style.display = '';
+      rbox.className = 'twx-result ' + (r.win ? 'is-win' : 'is-lose');
     } else {
       rbox.style.display = 'none';
     }
     if (UI._scrollTower) {
       UI._scrollTower = false;
       setTimeout(function () {
-        var el = document.querySelector('.tower-floor[data-tower-tip="' + (highest + 1) + '"]');
-        if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
+        var el = floorsBox.querySelector('.tower-floor[data-tower-tip="' + st.sel + '"]');
+        if (el) floorsBox.scrollTop = Math.max(0, el.offsetTop - floorsBox.clientHeight / 2 + el.offsetHeight / 2);
       }, 10);
     }
   }
@@ -7444,21 +7603,6 @@ function runTalentUiAction(commandName, id, legacyAction) {
 }
 
 
-function talentNodeHTML(def, turn, snapshot) {
-  var lv = snapshot ? talentViewLevel(snapshot, def.id) : 0;
-  var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : false;
-  var disabled = !!def.disabled;
-  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : 0;
-  var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnations < turn ? '需 ' + turn + ' 轉' : '尚未開放');
-  var locked = !unlocked || disabled;
-  var aria = def.name + (disabled ? '（' + lockText + '）' : '');
-  return '<button type="button" class="talent-icon' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '') + '" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(aria) + '">' +
-    '<span class="talent-icon-glyph">' + def.emoji + '</span>' +
-    '<span class="talent-icon-level">Lv.' + lv + '/' + TALENT_MAX_LEVEL + '</span>' +
-    (locked ? '<span class="talent-icon-lock">🔒 ' + lockText + '</span>' : '') +
-    '</button>';
-}
-
 /* 潛力技能 V3：類型標籤與「當前等級效果」文字（供面板/提示/彈窗共用）。 */
 function potentialTypeLabel(def) {
   return def && def.type === 'active' ? '主動' : (def && def.type === 'passiveTrigger' ? '被動觸發' : '被動');
@@ -7666,7 +7810,7 @@ function renderTalentModal() {
     h += '<div>下一級：<b>' + talentEffectDescription(def, next) + '</b></div>';
     h += '<div>消耗天賦點：' + cost + '</div>';
   }
-  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 8 個天賦已全滿，效果 ×2</div>';
+  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 ' + (TALENT_TREES[turn] || []).length + ' 個天賦已全滿，效果 ×2</div>';
   if (!unlocked) h += '<div class="hint">🔒 需要達到 ' + turn + ' 轉</div>';
   h += '</div><div class="talent-modal-points">轉生天賦點：' + fmtFull(points) + '</div>';
   h += '<div class="talent-modal-actions">';
@@ -7680,6 +7824,100 @@ function renderTalentModal() {
   body.innerHTML = h;
 }
 
+/* ---- 天賦頁（2026-10）：上排轉數分頁，中間把該轉天賦排成星盤（環上節點＝天賦、外圈進度＝等級），右側列出本轉目前加成。
+   點天賦仍開原本的升級彈窗（renderTalentModal），這裡只負責瀏覽。 */
+UI.talentBrowse = { turn: null };
+
+function talentTreeMaxTotal(turn) {
+  return TALENT_MAX_LEVEL * (TALENT_TREES[turn] || []).length;
+}
+
+function talentDefaultTurn(snapshot) {
+  var rc = talentViewReincarnations(snapshot);
+  var open = Math.min(rc, TALENT_IMPLEMENTED_REINCARNATIONS);
+  for (var t = 1; t <= open; t++) {
+    if (TALENT_TREES[t] && !talentViewTreeComplete(snapshot, t)) return t;
+  }
+  return Math.max(1, open);
+}
+
+function talentTierTabsHTML(snapshot) {
+  var rc = talentViewReincarnations(snapshot);
+  var h = '';
+  for (var turn = 1; turn <= TALENT_IMPLEMENTED_REINCARNATIONS; turn++) {
+    if (!TALENT_TREES[turn]) continue;
+    var total = talentTreeLevelTotal(turn, snapshot);
+    var max = talentTreeMaxTotal(turn);
+    var pct = max ? Math.floor(total / max * 100) : 0;
+    var open = rc >= turn;
+    var complete = talentViewTreeComplete(snapshot, turn);
+    var on = UI.talentBrowse.turn === turn;
+    var state = !open ? '需 ' + turn + ' 轉' : (complete ? '全滿 ×2' : pct + '%');
+    h += '<button type="button" role="tab" class="tlx-tier' + (on ? ' is-on' : '') + (open ? '' : ' is-locked') + (complete ? ' is-complete' : '') +
+      '" data-talent-turn="' + turn + '" aria-selected="' + on + '" style="--p:' + pct + '%">' +
+      '<b>' + turn + ' 轉</b><span class="tlx-tier-bar"></span><span class="tlx-tier-state">' + state + '</span></button>';
+  }
+  return h + '<span class="tlx-tier-more">' + (TALENT_IMPLEMENTED_REINCARNATIONS + 1) + '–' + REINCARNATION_MAX + ' 轉<br>尚未開放</span>';
+}
+
+// 星盤節點：環上的位置由 --a（角度）決定，外圈進度環由 --p（等級百分比）決定
+function talentNodeHTML(def, turn, snapshot, index, count) {
+  var lv = snapshot ? talentViewLevel(snapshot, def.id) : 0;
+  var unlocked = snapshot ? talentViewUnlocked(snapshot, def.id) : false;
+  var disabled = !!def.disabled;
+  var reincarnations = snapshot ? talentViewReincarnations(snapshot) : 0;
+  var lockText = disabled ? (def.disabledReason || '目前暫不開放升級') : (reincarnations < turn ? '需 ' + turn + ' 轉' : '尚未開放');
+  var locked = !unlocked || disabled;
+  var aria = def.name + ' Lv.' + lv + '/' + TALENT_MAX_LEVEL + (locked ? '（' + lockText + '）' : '');
+  var angle = count ? -90 + (index || 0) * 360 / count : -90;
+  var pct = Math.round(lv / TALENT_MAX_LEVEL * 100);
+  return '<button type="button" class="tlx-node' + (lv > 0 ? ' learned' : '') + (lv >= TALENT_MAX_LEVEL ? ' maxed' : '') + (locked ? ' locked' : '') + (disabled ? ' temporarily-disabled' : '') +
+    '" style="--a:' + angle + 'deg;--p:' + pct + '%" data-talent-select="talent:' + def.id + '" data-talent-tip="' + def.id + '" aria-label="' + esc(aria) + '">' +
+    '<span class="tlx-node-ring"><span class="tlx-node-glyph">' + def.emoji + '</span></span>' +
+    '<span class="tlx-node-name">' + esc(def.name) + '</span>' +
+    '<span class="tlx-node-lv">' + (locked ? '🔒 ' + lockText : 'Lv.' + lv + ' / ' + TALENT_MAX_LEVEL) + '</span>' +
+    '</button>';
+}
+
+function talentBoardHTML(turn, snapshot) {
+  var tree = TALENT_TREES[turn] || [];
+  var total = talentTreeLevelTotal(turn, snapshot);
+  var max = talentTreeMaxTotal(turn);
+  var complete = talentViewTreeComplete(snapshot, turn);
+  var spokes = '', nodes = '';
+  tree.forEach(function (def, i) {
+    var angle = -90 + i * 360 / tree.length;
+    var lv = talentViewLevel(snapshot, def.id);
+    spokes += '<span class="tlx-spoke' + (lv > 0 ? ' is-lit' : '') + (lv >= TALENT_MAX_LEVEL ? ' is-max' : '') + '" style="--a:' + angle + 'deg"></span>';
+    nodes += talentNodeHTML(def, turn, snapshot, i, tree.length);
+  });
+  return '<span class="tlx-orbit" aria-hidden="true"></span><span class="tlx-orbit is-inner" aria-hidden="true"></span>' + spokes +
+    '<div class="tlx-core' + (complete ? ' is-complete' : '') + '">' +
+      '<b>' + turn + ' 轉</b>' +
+      '<span>' + (max ? Math.floor(total / max * 100) : 0) + '%・' + fmtFull(total) + ' / ' + fmtFull(max) + '</span>' +
+      (complete ? '<em>效果 ×2</em>' : '') +
+    '</div>' + nodes;
+}
+
+function talentEffectsHTML(turn, snapshot) {
+  var tree = TALENT_TREES[turn] || [];
+  var complete = talentViewTreeComplete(snapshot, turn);
+  var rows = tree.map(function (def) {
+    var lv = talentViewLevel(snapshot, def.id);
+    var text = lv > 0
+      ? talentEffectDescription(def, talentDescriptionValue(def, lv, turn, snapshot))
+      : '尚未學習';
+    return '<div class="tlx-eff' + (lv > 0 ? '' : ' is-empty') + '" data-talent-tip="' + def.id + '">' +
+      '<span class="tlx-eff-head"><span>' + def.emoji + ' ' + esc(def.name) + '</span><span>Lv.' + lv + '</span></span>' +
+      '<span class="tlx-eff-val">' + text + '</span></div>';
+  }).join('');
+  return '<div class="tlx-side-title"><b>本轉效果</b></div>' +
+    '<div class="tlx-side-note' + (complete ? ' is-complete' : '') + '">' +
+      (complete ? '本轉 ' + tree.length + ' 個天賦已全部升滿，效果 ×2' : '本轉 ' + tree.length + ' 個天賦全部升滿後，效果加倍') + '</div>' +
+    '<div class="tlx-effs">' + rows + '</div>' +
+    '<div class="tlx-side-foot">點選星盤上的天賦可升級或調整</div>';
+}
+
 function renderTalents() {
   var root = $id('talent-root');
   if (!root) return;
@@ -7690,29 +7928,22 @@ function renderTalents() {
     return;
   }
   var rc = talentViewReincarnations(snapshot);
-  var h = '<div class="panel talent-summary"><div class="sec-title">🌟 天賦系統</div>' +
-    '<div class="hint">1 轉後開放；天賦使用轉生天賦點，升 1 級消耗＝該天賦轉數+9、Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。潛力是新的技能分類，與特殊、被動共用技能點，不另設潛力點。</div>' +
-    '<div class="talent-point-line">轉生天賦點：<b>' + fmtFull(snapshot.talentPoints || 0) + '</b></div></div>';
-  if (rc < 1) h += '<div class="panel talent-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
-  for (var turn = 1; turn <= REINCARNATION_MAX; turn++) {
-    var tree = TALENT_TREES[turn];
-    if (!tree) {
-      h += '<div class="panel talent-tree-panel locked"><div class="sec-title">' + turn + ' 轉天賦</div><div class="talent-locked-banner">🔒 本版本尚未開放</div></div>';
-      continue;
-    }
-    var treeTotal = talentTreeLevelTotal(turn, snapshot);
-    var treeStatus = rc >= turn ? '已開啟' : '未開啟';
-    var treeMax = TALENT_MAX_LEVEL * 8;
-    var treeComplete = treeTotal >= treeMax;
-    var treeCount = treeComplete ? '<span class="talent-tree-count">' + treeTotal + '/' + treeMax + '</span>' : treeTotal + '/' + treeMax;
-    var treeNotice = treeComplete
-      ? '<span class="talent-tree-complete">' + turn + '轉天賦全滿效果已加倍！</span>'
-      : turn + '轉所有技能升至全滿時此列所有技能效果加倍';
-    h += '<div class="panel talent-tree-panel"><div class="sec-title">' + turn + '轉天賦 <span class="dim-text">' + treeStatus + '　(' + treeCount + ')　' + treeNotice + '</span></div><div class="talent-grid">';
-    h += tree.map(function (def) { return talentNodeHTML(def, turn, snapshot); }).join('') + '</div></div>';
-  }
+  if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
+  var turn = UI.talentBrowse.turn;
+  var h = '<div class="pg-top"><h2 class="pg-title">天賦</h2>' +
+    '<span class="pg-pill">轉生天賦點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
+    '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
+    '<button type="button" class="pg-help" aria-label="天賦說明" data-tt-title="天賦" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生天賦點。升 1 級消耗＝該天賦轉數＋9，Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。同一轉的天賦全部升滿後，該轉效果加倍。潛力是技能分類，與特殊、被動共用技能點，不另設潛力點。">?</button></div>';
+  if (rc < 1) h += '<div class="tlx-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
+  h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
+  h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div>' +
+    '<aside class="tlx-side">' + talentEffectsHTML(turn, snapshot) + '</aside></div>';
   // 潛力屬於技能分類，天賦頁只保留轉生天賦點摘要。
-  root.innerHTML = h;
+  if (root._lastH !== h) {
+    if (UI.tooltipAnchor && root.contains && root.contains(UI.tooltipAnchor)) hideTooltip();
+    root._lastH = h;
+    root.innerHTML = h;
+  }
   renderTalentModal(snapshot);
 }
 
@@ -7844,8 +8075,8 @@ function renderSkills() {
   var mastery = skillsSnapshot.mastery || { level: 0, xp: 0, xpMax: 0, maxLevel: 1000 };
   var masteryLvEl = $id('mastery-level');
   if (masteryLvEl) {
-    masteryLvEl.textContent = 'Lv.' + (mastery.level || 0) + '/' + (mastery.maxLevel || 1000) +
-      '（打怪獲得技能經驗，每升 1 級 +1 技能點）';
+    // 說明文字移到資訊列的滑鼠提示（index.html .sgb-mastery），這裡只放等級
+    masteryLvEl.textContent = 'Lv.' + (mastery.level || 0) + '/' + (mastery.maxLevel || 1000);
   }
   var masteryFill = $id('mastery-bar-fill');
   var masteryText = $id('mastery-bar-text');
@@ -7865,13 +8096,14 @@ function renderSkills() {
   var equippedCount = lo.filter(Boolean).length;
   $id('loadout-cap').textContent = equippedCount + '/' + cap + ' 格' + (reincarnations >= 1 ? '（1 轉已解鎖全部上限）' : '（依參數表成長）');
   var lh = '';
-  var TOTAL_SLOTS = 10;
+  // 格數與戰鬥技能列同一個來源（參數表 LOADOUT_SIZE.max），未解鎖格的門檻也由同一組參數算
+  var TOTAL_SLOTS = LOADOUT_SIZE.max;
   var selectedIndex = typeof UI.selectedSkillLoadoutIndex === 'number' ? UI.selectedSkillLoadoutIndex : -1;
 
   for (var i = 0; i < TOTAL_SLOTS; i++) {
     var isUnlocked = i < cap;
     if (!isUnlocked) {
-      var reqLv = (i - 4 + 1) * 50;
+      var reqLv = (i - LOADOUT_SIZE.base + 1) * LOADOUT_SIZE.perLevels;
       var lockDesc = '角色達到 Lv.' + reqLv + ' 或 1 轉解鎖全部技能格';
       lh += '<div class="battle-skill-slot locked" data-slot-index="' + i + '" data-index="' + i + '" data-tt-title="技能槽 #' + (i + 1) + '（未解鎖）" data-tt-desc="' + esc(lockDesc) + '">' +
         '<span class="bss-lock">🔒</span>' +
@@ -7929,19 +8161,11 @@ function renderSkills() {
     loBox._lastLh = lh;
   }
 
+  // 新版技能群組（js/skills2.js）：左清單＋右進化之路的技能瀏覽器
+  if (typeof SKILLS2 !== 'undefined') renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot);
+
+  // 潛力技能（3 轉後）：維持原本的格狀面板與升級彈窗，放在瀏覽器下方
   var h = '';
-  // 新版技能群組（js/skills2.js）：同群組顯示為一個技能，投資各階持續強化。
-  if (typeof SKILLS2 !== 'undefined') {
-    var sgLoadout = skillViewLoadout(skillsSnapshot);
-    var sgRows = '';
-    for (var sgGid in SKILLS2) {
-      var sgLvs = sgUiLevels(skillsSnapshot, sgGid);
-      sgRows += sgSkillGroupRowHTML(sgGid, sgLvs, sgLoadout, skillsSnapshot);
-    }
-    h += '<div class="tree-panel sg-skill-panel"><div class="tree-title">🌟 新版技能 ' +
-      '<span class="dim-text">同群組技能由左至右進階；亮起＝已解鎖，灰色＝未解鎖（可查看）</span></div>' +
-      '<div class="sg-skill-list">' + sgRows + '</div></div>';
-  }
   if (reincarnations >= 3) {
     var potentialCells = POTENTIAL_TALENTS.map(function (def, index) {
       return potentialNodeHTML(def, index, talentSnapshot, headerSnapshot);
@@ -7952,9 +8176,10 @@ function renderSkills() {
     }
     h += '<div class="tree-panel potential-skill-panel"><div class="tree-title">✨ 潛力 <span class="dim-text">技能分類；使用技能點與金幣　已解鎖 ' + talentViewPotentialUnlockedCount(talentSnapshot) + '/' + POTENTIAL_NODE_COUNT + '</span></div>' + potentialRows + '</div>';
   }
-  if (treesBox._lastH !== h) {
-    treesBox.innerHTML = h;
-    treesBox._lastH = h;
+  var potentialBox = $id('sgb-potential') || treesBox;
+  if (potentialBox._lastH !== h) {
+    potentialBox.innerHTML = h;
+    potentialBox._lastH = h;
   }
 
   renderSkillModal(skillsSnapshot, talentSnapshot, headerSnapshot);
@@ -8054,37 +8279,6 @@ function sgStageLockReason(gid, tierIndex, skillsSnapshot) {
   return '前一階需至少 Lv.1 才能解鎖';
 }
 
-function sgStageNodeHTML(gid, tierIndex, lvs, loadout, skillsSnapshot) {
-  var g = SKILLS2[gid];
-  var isUlt = sgUiIsUltSlot(gid, tierIndex);
-  var tier = g && (isUlt ? null : g.tiers[tierIndex]);
-  if (!g || (!tier && !isUlt)) return '';
-  /* 超神進化：等級與名稱來自「已選的那一個」，還沒選就顯示待選。 */
-  var pick = isUlt ? sgUiUltPick(skillsSnapshot, gid) : null;
-  var lv = isUlt ? (pick ? pick.lv : 0) : (lvs[tierIndex] || 0);
-  var label = isUlt ? (pick ? pick.def.name : '超神進化') : tier.name;
-  var unlocked = sgStageUnlocked(gid, lvs, tierIndex, skillsSnapshot);
-  var ref = 'sg:' + gid + ':' + tierIndex;
-  var selected = UI.selSkill === ref;
-  var equipped = loadout.indexOf('sg:' + gid) >= 0;
-  var cls = 'sg-stage-node' +
-    (unlocked ? ' sg-stage-unlocked' : ' sg-stage-locked') +
-    (lv > 0 ? ' sg-stage-learned' : '') +
-    (selected ? ' selected' : '') +
-    (equipped ? ' sg-stage-equipped' : '') +
-    (isUlt ? ' sg-stage-ult' : '');
-  var aria = g.name + ' 第' + (tierIndex + 1) + '階 ' + label +
-    ' Lv.' + lv + (unlocked ? '' : '，未解鎖');
-  return '<div class="' + cls + '" data-sk="' + ref + '" data-sg-group="' + gid +
-    '" data-sg-tier="' + tierIndex + '" aria-label="' + esc(aria) + '">' +
-    '<span class="sg-stage-emoji" aria-hidden="true">' + (isUlt ? '🌟' : g.emoji) + '</span>' +
-    '<span class="sg-stage-tier">' + (isUlt ? '超神' : '第' + (tierIndex + 1) + '階') + '</span>' +
-    '<span class="sg-stage-name">' + esc(label) + '</span>' +
-    '<span class="sg-stage-level">' + (isUlt && !pick ? '三選一' : 'Lv.' + lv) + '</span>' +
-    (equipped ? '<span class="sg-stage-eq" title="已裝備">⚔</span>' : '') +
-    '</div>';
-}
-
 function isGMHost() {
   var loc = (typeof window !== 'undefined' && window.location) ||
     (typeof location !== 'undefined' && location);
@@ -8092,243 +8286,340 @@ function isGMHost() {
   return host === 'localhost' || host === '127.0.0.1' || host === '::1';
 }
 
-function sgSkillGroupRowHTML(gid, lvs, loadout, skillsSnapshot) {
+/* ---- 技能頁：技能瀏覽器（2026-10 照設計稿改版，取代逐列方格與群組升級彈窗） ----
+   左：技能群組清單（可依元素篩選）；右：選中群組的「進化之路」——7 階由上而下以菱形節點
+   串連，已投資的段落點亮，第 8 階超神進化畫成三岔。點某一階就地展開說明與操作。
+   所有按鈕沿用既有的 data-skill2-*／data-skill-equip 屬性，指令與確認流程完全不變。 */
+/* focus：同一時間只展開一段說明——'tier'＝展開 tier 那一階，'ult'＝展開超神選項 ultFocus（各階收起），
+   這樣最長的階說明加最長的超神說明不會同時出現，整頁不必捲動就讀得完。 */
+UI.sgBrowse = { gid: null, tier: null, filter: 'all', ultFocus: null, focus: 'tier' };
+
+var SGB_ELEM_COLORS = {
+  phys: '#d6cfbf', fire: '#f08040', earth: '#c9a060', lightning: '#ecd050',
+  ice: '#6ec8ec', wind: '#78dca6', poison: '#8fd46b', light: '#f5df8a', dark: '#b48ae8'
+};
+
+function sgbElemOf(gid) {
   var g = SKILLS2[gid];
-  if (!g) return '';
-  var groupRef = 'sg:' + gid;
-  var equipped = loadout.indexOf(groupRef) >= 0;
-  var labelCls = 'sg-group-label' + (equipped ? ' sg-group-equipped' : '');
-  var totalLv = sgUiTotalLevel(lvs);
-  var isDev = isGMHost();
-
-  var equipBtnHtml = '';
-  if (equipped) {
-    equipBtnHtml = '<button type="button" class="sg-row-action-btn sg-row-unequip-btn" data-skill-unequip="' + esc(groupRef) + '" title="從裝載欄卸下「' + esc(g.name) + '」" aria-label="卸下 ' + esc(g.name) + '">卸下</button>';
-  } else if (totalLv > 0) {
-    equipBtnHtml = '<button type="button" class="sg-row-action-btn sg-row-equip-btn" data-skill-equip="' + esc(groupRef) + '" title="裝備「' + esc(g.name) + '」至裝載欄" aria-label="裝備 ' + esc(g.name) + '">裝備</button>';
-  } else {
-    equipBtnHtml = '<button type="button" class="sg-row-action-btn sg-row-equip-btn disabled" disabled title="需先升級此技能群組才能裝備" aria-label="裝備 ' + esc(g.name) + '（未解鎖）">裝備</button>';
-  }
-
-  var maxBtnHtml = isDev
-    ? '<button type="button" class="sg-row-max-btn" data-sg-max-group="' + esc(gid) + '" title="【內測專用】一鍵將「' + esc(g.name) + '」全階層升至滿級" aria-label="一鍵滿級 ' + esc(g.name) + '">MAX</button>'
-    : '';
-
-  var actionsHtml = '<div class="sg-row-actions">' + equipBtnHtml + maxBtnHtml + '</div>';
-
-  var h = '<div class="sg-group-row-wrap">' +
-    '<div class="sg-group-row">' +
-    '<div class="' + labelCls + '" data-sk="' + groupRef + '">' +
-    '<span class="sg-group-emoji" aria-hidden="true">' + g.emoji + '</span>' +
-    '<span class="sg-group-name">' + esc(g.name) + '</span>' +
-    '<span class="sg-group-total">總 Lv.' + totalLv + '</span>' +
-    '</div><div class="sg-stage-track">';
-  /* 格數＝各階 ＋（有開放超神進化時）第 8 格。sgSlotCount 是共載的唯一權威，
-     未開放的群組不畫空格子——不留一個永遠點不開的死格。 */
-  var slots = (typeof sgSlotCount === 'function') ? sgSlotCount(gid) : g.tiers.length;
-  for (var i = 0; i < slots; i++) {
-    if (i > 0) h += '<span class="sg-stage-arrow" aria-hidden="true">➤</span>';
-    h += sgStageNodeHTML(gid, i, lvs, loadout, skillsSnapshot);
-  }
-  return h + '</div></div>' + actionsHtml + '</div>';
+  return (g && g.elem) || 'phys';
 }
 
-/* 新版技能群組「超神進化」（第 8 格）的升級彈窗內容。
-   與各階最大的差別：要先三選一。還沒選＝顯示三張選項卡，選了＝與各階同樣的升降級界面。 */
-function renderSkill2UltModal(body, gid, skillsSnapshot, headerSnapshot) {
+function sgbTierMax() {
+  return (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
+}
+
+function sgbHasUlt(gid) {
+  var g = SKILLS2[gid];
+  return !!g && (typeof sgSlotCount === 'function') && sgSlotCount(gid) > g.tiers.length;
+}
+
+/* 群組總等級（各階＋超神進化）與上限 */
+function sgbTotals(gid, lvs, skillsSnapshot) {
+  var hasUlt = sgbHasUlt(gid);
+  var pick = hasUlt ? sgUiUltPick(skillsSnapshot, gid) : null;
+  var slots = SKILLS2[gid].tiers.length + (hasUlt ? 1 : 0);
+  return { total: sgUiTotalLevel(lvs) + (pick ? pick.lv : 0), max: slots * sgbTierMax(), pick: pick };
+}
+
+/* 換群組（或第一次進來）時預設展開的階：第一個「已解鎖但還沒滿級」的階，都滿了就第 1 階 */
+function sgbDefaultTier(gid, lvs, skillsSnapshot) {
+  var g = SKILLS2[gid];
+  for (var i = 0; i < g.tiers.length; i++) {
+    if (sgStageUnlocked(gid, lvs, i, skillsSnapshot) && (lvs[i] || 0) < sgbTierMax()) return i;
+  }
+  return 0;
+}
+
+/* 目前選中的群組：沒選過或被篩選掉時，依序挑技能列上的第一個、已學會的第一個、清單第一個 */
+function sgbResolveGroup(skillsSnapshot, ids) {
+  var cur = UI.sgBrowse.gid;
+  if (cur && ids.indexOf(cur) >= 0) return cur;
+  var lo = skillViewLoadout(skillsSnapshot);
+  for (var i = 0; i < lo.length; i++) {
+    var gid = sgGroupIdOf(lo[i]);
+    if (gid && ids.indexOf(gid) >= 0) return gid;
+  }
+  for (var j = 0; j < ids.length; j++) {
+    if (sgUiTotalLevel(sgUiLevels(skillsSnapshot, ids[j])) > 0) return ids[j];
+  }
+  return ids[0] || null;
+}
+
+/* 篩選依傷害類型分三類：全部／物理／魔法（元素色只留在各技能的圖示框） */
+var SGB_FILTERS = [
+  { id: 'all', label: '全部', color: '#a39d90' },
+  { id: 'phys', label: '物理', color: '#d6cfbf' },
+  { id: 'magic', label: '魔法', color: '#8ec5ff' }
+];
+
+function sgbCategoryOf(gid) {
+  var g = SKILLS2[gid];
+  return g && g.dmgType === 'magic' ? 'magic' : 'phys';
+}
+
+function sgbFilterChipsHTML() {
+  var h = '';
+  SGB_FILTERS.forEach(function (c) {
+    var on = UI.sgBrowse.filter === c.id;
+    h += '<button type="button" class="sgb-chip' + (on ? ' is-on' : '') + '" data-sgb-filter="' + c.id + '" aria-pressed="' + on + '">' +
+      '<span class="sgb-chip-dot" style="background:' + c.color + '"></span>' + c.label + '</button>';
+  });
+  return h;
+}
+
+function sgbListItemHTML(gid, skillsSnapshot, loadout, selected) {
   var g = SKILLS2[gid];
   var lvs = sgUiLevels(skillsSnapshot, gid) || [];
+  var color = SGB_ELEM_COLORS[sgbElemOf(gid)] || '#c9c3b5';
+  var groupLocked = !sgStageUnlocked(gid, lvs, 0, skillsSnapshot) && !(lvs[0] > 0);
+  var equipped = loadout.indexOf('sg:' + gid) >= 0;
+  var t = sgbTotals(gid, lvs, skillsSnapshot);
+  var tierMax = sgbTierMax();
+  var pips = '';
+  for (var i = 0; i < g.tiers.length; i++) {
+    var lv = lvs[i] || 0;
+    var cls = lv >= tierMax ? ' is-max' : (lv > 0 ? ' is-part' : (sgStageUnlocked(gid, lvs, i, skillsSnapshot) ? '' : ' is-locked'));
+    pips += '<span class="sgb-pip' + cls + '" style="--pct:' + Math.round(lv / tierMax * 100) + '%"></span>';
+  }
+  if (sgbHasUlt(gid)) pips += '<span class="sgb-pip-ult' + (t.pick ? ' is-on' : '') + '"></span>';
+  var tag = groupLocked
+    ? (g.tiers[0].unlock ? esc(sgUnlockText(g.tiers[0].unlock)) + '解鎖' : '未解鎖')
+    : (equipped ? '已裝上' : '');
+  return '<button type="button" class="sgb-item' + (selected ? ' is-sel' : '') + (groupLocked ? ' is-locked' : '') +
+    '" data-sgb-group="' + gid + '" aria-pressed="' + selected + '" style="--elem:' + color + '">' +
+    '<span class="sgb-item-icon" aria-hidden="true">' + g.emoji + '</span>' +
+    '<span class="sgb-item-main">' +
+    '<span class="sgb-item-top"><b>' + esc(g.name) + '</b>' +
+    (tag ? '<span class="sgb-item-tag' + (equipped && !groupLocked ? ' is-eq' : '') + '">' + tag + '</span>' : '') + '</span>' +
+    '<span class="sgb-item-pips">' + pips + '<span class="sgb-item-total">' + t.total + '/' + t.max + '</span></span>' +
+    '</span></button>';
+}
+
+/* 「下一級」只佔一行（超出以…省略，滑鼠提示看全文），保證上方 3 行說明加操作鈕不必捲動就看得到 */
+function sgbNextLineHTML(text) {
+  return '<div class="sgb-next" data-tip="' + esc('下一級：' + text) + '">下一級：' + text + '</div>';
+}
+
+/* 標頭的耗魔／冷卻：主動型被動顯示每次反擊的耗魔（以選中的階為準），其餘顯示施法耗魔與冷卻 */
+function sgbMetaText(gid, tierIdx) {
+  var g = SKILLS2[gid];
+  var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
+  if (isPassiveGroup) {
+    var tierMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(gid, tierIdx) : 0;
+    return '🌀 被動' + (tierMp > 0 ? '　🔵 ' + tierMp + ' MP／次反擊（此階生效時）' +
+      (tierIdx >= 5 ? '；本階追加效果觸發另扣 ' + tierMp + ' MP' : '') : '');
+  }
+  return '🔵 ' + skills2TierManaCost(gid, tierIdx) + ' MP　⏱️ ' + g.cd + 's';
+}
+
+/* 未解鎖階段在列上顯示的短門檻（完整原因在展開後的說明） */
+function sgStageLockShort(gid, tierIndex, skillsSnapshot) {
+  var g = SKILLS2[gid];
+  var tier = g && g.tiers[tierIndex];
+  var prg = sgUiUnlockProgress(skillsSnapshot);
+  if (tier && tier.unlock && prg && typeof sgTierUnlockedBy === 'function' &&
+      !sgTierUnlockedBy(tier.unlock, prg.level, prg.reinc)) {
+    return sgUnlockText(tier.unlock) + '解鎖';
+  }
+  return '需先學會第 ' + tierIndex + ' 階';
+}
+
+function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltPick) {
+  var g = SKILLS2[gid];
+  var tier = g.tiers[i];
+  var tierMax = sgbTierMax();
+  var lv = lvs[i] || 0;
+  var locked = !sgStageUnlocked(gid, lvs, i, skillsSnapshot);
+  var atCap = lv >= tierMax;
+  var last = i === g.tiers.length - 1;
+  var upLit = i > 0 && (lvs[i - 1] || 0) > 0 && lv > 0;
+  var downLit = last ? (lv > 0 && hasUltPick) : (lv > 0 && (lvs[i + 1] || 0) > 0);
+  var state = locked && lv === 0 ? 'locked' : (atCap ? 'max' : (lv > 0 ? 'part' : 'zero'));
+  var selected = UI.sgBrowse.focus !== 'ult' && UI.sgBrowse.tier === i;
+  var h = '<div class="sgb-tier sgb-tier-' + state + (selected ? ' is-sel' : '') + '">' +
+    '<div class="sgb-rail" aria-hidden="true">' +
+    (i > 0 ? '<span class="sgb-line sgb-line-up' + (upLit ? ' is-lit' : '') + '"></span>' : '') +
+    (last && !sgbHasUlt(gid) ? '' : '<span class="sgb-line sgb-line-down' + (downLit ? ' is-lit' : '') + '"></span>') +
+    '<span class="sgb-node"></span></div>' +
+    '<div class="sgb-tier-body">' +
+    '<button type="button" class="sgb-tier-row" data-sgb-tier="' + i + '" aria-expanded="' + selected + '">' +
+    '<span class="sgb-tier-no">第 ' + (i + 1) + ' 階</span>' +
+    '<span class="sgb-tier-name">' + esc(tier.name) + '</span>' +
+    '<span class="sgb-tier-lv">' + (state === 'locked' ? esc(sgStageLockShort(gid, i, skillsSnapshot)) : 'Lv.' + lv + ' / ' + tierMax) + '</span>' +
+    '<span class="sgb-tier-bar"><span style="width:' + Math.round(lv / tierMax * 100) + '%"></span></span>' +
+    '</button>';
+  if (selected) {
+    var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(gid, i, lv) : 0;
+    h += '<div class="sgb-tier-detail">' +
+      '<div class="sgb-desc">' + describeSkill2Tier(gid, i, Math.max(1, lv)) + '</div>' +
+      (!locked && !atCap && lv > 0 ? sgbNextLineHTML(describeSkill2Tier(gid, i, lv + 1)) : '') +
+      (locked ? '<div class="sgb-lock">🔒 ' + esc(sgStageLockReason(gid, i, skillsSnapshot)) + '；目前僅可查看</div>' : '') +
+      '<div class="sgb-actions">';
+    if (!locked && !atCap) {
+      h += '<button class="btn sgb-btn-primary" data-skill2-learn="' + gid + ':' + i + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' +
+        pendingAttrs + (gold < cost ? ' disabled' : '') + '>' + (lv === 0 ? '學習' : '升級') + ' · ' + fmt(cost) + ' 金幣</button>';
+      h += '<button class="btn" data-skill2-max="' + gid + ':' + i + '" data-tip="自動消耗金幣，升至目前階級上限"' +
+        pendingAttrs + (gold < cost ? ' disabled' : '') + '>一鍵滿級</button>';
+    } else if (atCap) {
+      h += '<span class="sgb-done">已滿級</span>';
+    }
+    // 第 1 階預設開啟（恆為至少 Lv.1），所以降到 1 為止
+    var canDowngrade = (i === 0) ? (lv > 1) : (lv > 0);
+    if (canDowngrade) {
+      h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="降 1 級（不退還金幣）"' + pendingAttrs + '>降級</button>';
+      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="重置此階等級（不退還金幣）"' + pendingAttrs + '>重置</button>';
+    }
+    h += '</div></div>';
+  }
+  return h + '</div></div>';
+}
+
+function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
+  var g = SKILLS2[gid];
   var list = sgUltDefs(gid) || [];
   var pick = sgUiUltPick(skillsSnapshot, gid);
   var unlocked = sgUiUltUnlocked(gid, lvs);
-  var ref = 'sg:' + gid;
-  var gold = Number(headerSnapshot && headerSnapshot.player && headerSnapshot.player.gold) || 0;
-  var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
-  var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(ref));
-  var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(ref) >= 0;
-
-  var h = '<div class="skd-head"><span class="skd-emoji">🌟</span><b>' +
-    (pick ? esc(pick.def.name) : '超神進化') + '</b> ' +
-    '<span class="dim-text">第' + (g.tiers.length + 1) + '階｜Lv.' + (pick ? pick.lv : 0) + '/' + tierMax + '</span>' +
-    '<span class="sk-meta">' + esc(g.emoji + ' ' + g.name) + '</span>';
-  // 耗魔留在標頭，維持升級彈窗的五列 Grid，避免標籤落入說明列。
-  if (pick && (!skills2IsPassive(gid) || gid === 'counter')) h += '<span class="sk-meta">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + (gid === 'counter' ? ' MP／次反擊' : ' MP／次施放') + '</span>';
+  var tierMax = sgbTierMax();
+  var f = (typeof UI.sgBrowse.ultFocus === 'number' && list[UI.sgBrowse.ultFocus]) ? UI.sgBrowse.ultFocus : (pick ? pick.idx : 0);
+  var ultOpen = UI.sgBrowse.focus === 'ult';
+  var h = '<div class="sgb-ult">' +
+    '<div class="sgb-ult-head"><span class="sgb-rail" aria-hidden="true"><span class="sgb-line sgb-line-full' + (pick ? ' is-lit' : '') + '"></span></span>' +
+    '<b>第 ' + (g.tiers.length + 1) + ' 階 · 超神進化</b><span class="sgb-ult-sub">三選一</span></div>';
+  // 分岔：橫線從節點欄接到被選中的那一張卡，三張卡各自往上接一小段
+  var litTo = pick ? ((2 * pick.idx + 1) / (2 * list.length) * 100) : 0;
+  h += '<div class="sgb-fork" aria-hidden="true"><span class="sgb-fork-bar"></span>' +
+    (pick ? '<span class="sgb-fork-bar is-lit" style="width:calc(' + litTo.toFixed(2) + '% - 20px)"></span>' : '') + '</div>';
+  h += '<div class="sgb-ult-cards" style="--n:' + list.length + '">';
+  for (var j = 0; j < list.length; j++) {
+    var chosen = !!pick && pick.idx === j;
+    var status = !unlocked && !chosen ? '未開放' : (chosen ? '已選擇 · Lv.' + pick.lv + ' / ' + tierMax : (pick ? '未選擇' : '可選擇'));
+    h += '<button type="button" class="sgb-ult-card' + (chosen ? ' is-chosen' : '') + (ultOpen && f === j ? ' is-focus' : '') +
+      (pick && !chosen ? ' is-other' : '') + '" data-sgb-ult="' + j + '" aria-pressed="' + (ultOpen && f === j) + '">' +
+      '<b>' + esc(list[j].name) + '</b><span>' + status + '</span></button>';
+  }
   h += '</div>';
-  h += '<div class="skill-tags"><span class="skill-tag skill-tag-ult">超神進化·三選一</span></div>';
+  if (!ultOpen) return h + '</div>';   // 超神說明收起（正在看某一階）
 
+  var fChosen = !!pick && pick.idx === f;
+  var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
+  h += '<div class="sgb-tier-detail sgb-ult-detail">' +
+    '<div class="sgb-ult-name">' + esc(list[f] ? list[f].name : '') +
+    (fChosen && (!isPassiveGroup || gid === 'counter')
+      ? '<span class="sgb-ult-mp">🔵 ' + skills2TierManaCost(gid, 0, pick.id) + (gid === 'counter' ? ' MP／次反擊' : ' MP／次施放') + '</span>' : '') +
+    '</div>' +
+    '<div class="sgb-desc">' + describeSkill2Ult(gid, f, fChosen ? pick.lv : 1) + '</div>';
+  if (fChosen && unlocked && pick.lv < tierMax) {
+    h += sgbNextLineHTML(describeSkill2Ult(gid, f, pick.lv + 1));
+  }
+  h += '<div class="sgb-actions">';
   if (!unlocked) {
-    /* 解鎖進度：直接數「已滿級的階數」，玩家一眼看得出還差幾階。 */
     var maxed = 0;
     for (var mi = 0; mi < g.tiers.length; mi++) if ((lvs[mi] || 0) >= tierMax) maxed++;
-    h += '<div class="skill-modal-copy">' +
-      '<div class="sk-desc">將前 ' + g.tiers.length + ' 階全部練滿後，可從三個超神進化效果中選擇一個，並繼續升至 Lv.' + tierMax + '。</div>' +
-      '<div class="hint skill-unlock-hint">🔒 前 ' + g.tiers.length + ' 階需全部滿級（目前 ' + maxed + '／' + g.tiers.length + ' 階已滿級）</div>' +
-      '</div>';
-  }
-
-  if (!pick) {
-    /* 尚未選擇：三張選項卡（未解鎖時仍可預覽，但按鈕禁用）。
-       版面切換到自動列高＋可捲動——彈窗本體是固定 5 列 grid，卡片塞不進去。 */
-    if (body.classList) body.classList.add('sg-ult-picking');
-    h += '<div class="sg-ult-picks">';
-    for (var i = 0; i < list.length; i++) {
-      var cost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, i, 0) : 0;
-      var afford = gold >= cost;
-      h += '<div class="sg-ult-pick">' +
-        '<div class="sg-ult-pick-name">' + esc(list[i].name) + '</div>' +
-        '<div class="sg-ult-pick-desc">' + describeSkill2Ult(gid, i, 1) + '</div>' +
-        '<div class="sg-ult-pick-cost">💰 ' + fmt(cost) + '</div>' +
-        '<button class="btn sm" data-skill2-ultpick="' + gid + ':' + i + '"' + pendingAttrs +
-        ((!unlocked || !afford) ? ' disabled' : '') + ' data-tip="選定後不可更改；要換效果須先降至 Lv.0">✅ 選擇</button>' +
-        '</div>';
+    h += '<span class="sgb-lock">🔒 前 ' + g.tiers.length + ' 階需全部滿級（目前 ' + maxed + '／' + g.tiers.length + ' 階已滿級）</span>';
+  } else if (!pick) {
+    var pickCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, f, 0) : 0;
+    h += '<button class="btn sgb-btn-primary" data-skill2-ultpick="' + gid + ':' + f + '"' + pendingAttrs +
+      (gold < pickCost ? ' disabled' : '') + ' data-tip="選定後不可更改；要換效果須先降至 Lv.0">選擇「' + esc(list[f].name) + '」 · ' + fmt(pickCost) + ' 金幣</button>';
+  } else if (fChosen) {
+    if (pick.lv < tierMax) {
+      var upCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, pick.idx, pick.lv) : 0;
+      h += '<button class="btn sgb-btn-primary" data-skill2-learn="' + gid + ':' + SG_ULT_SLOT + '" data-tip="花費 ' + fmt(upCost) + ' 金幣"' +
+        pendingAttrs + (gold < upCost ? ' disabled' : '') + '>升級 · ' + fmt(upCost) + ' 金幣</button>';
+      h += '<button class="btn" data-skill2-max="' + gid + ':' + SG_ULT_SLOT + '" data-tip="自動消耗金幣，升至上限"' +
+        pendingAttrs + (gold < upCost ? ' disabled' : '') + '>一鍵滿級</button>';
+    } else {
+      h += '<span class="sgb-done">已滿級</span>';
     }
-    h += '</div>';
-    h += '<div class="skill-modal-points">金幣：' + fmt(gold) + '</div>';
-    body.innerHTML = h;
-    return;
-  }
-
-  // 已選定：版面回到與各階相同的固定 5 列
-  if (body.classList) body.classList.remove('sg-ult-picking');
-  var atCap = pick.lv >= tierMax;
-  var upCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, pick.idx, pick.lv) : 0;
-  h += '<div class="skill-modal-copy">' +
-    '<div class="sk-desc">' + describeSkill2Ult(gid, pick.idx, pick.lv) + '</div>' +
-    (unlocked && !atCap ? '<div class="skd-next dim-text">下一級：' + describeSkill2Ult(gid, pick.idx, pick.lv + 1) + '</div>' : '') +
-    '</div>';
-  h += '<div class="skill-modal-points">金幣：' + fmt(gold) + '</div>';
-  h += '<div class="detail-actions skill-modal-actions">';
-  if (unlocked && !atCap) {
-    h += '<button class="btn sm" data-skill2-learn="' + gid + ':' + SG_ULT_SLOT + '" data-tip="花費 ' + fmt(upCost) + ' 金幣"' +
-      pendingAttrs + (gold < upCost ? ' disabled' : '') + '>⬆️ 升級</button>';
-    h += '<button class="btn sm" data-skill2-max="' + gid + ':' + SG_ULT_SLOT + '" data-tip="自動消耗金幣，升至上限"' +
-      pendingAttrs + (gold < upCost ? ' disabled' : '') + '>⚡ 一鍵滿級</button>';
-  } else if (atCap) {
-    h += '<div style="text-align:center; padding:4px; color:var(--good); font-size:12px;">已滿級</div>';
-    h += '<div style="visibility:hidden;"></div>';
+    h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + SG_ULT_SLOT + '" data-tip="降 1 級（不退還金幣）；降到 Lv.0 會清除選擇，可重新三選一"' + pendingAttrs + '>降級</button>';
+    h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="清除超神進化選擇（不退還金幣），之後可重新三選一"' + pendingAttrs + '>重選</button>';
   } else {
-    h += '<div style="visibility:hidden;"></div><div style="visibility:hidden;"></div>';
+    h += '<span class="sgb-lock">目前選擇「' + esc(pick.def.name) + '」；要改選需先按「重選」</span>';
   }
-  h += '<button class="btn sm warn" data-skill2-downgrade="' + gid + ':' + SG_ULT_SLOT + '" data-tip="降 1 級（不退還金幣）；降到 Lv.0 會清除選擇，可重新三選一"' +
-    pendingAttrs + '>⬇️ 降級</button>';
-
-  var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
-  h += inLoadout
-    ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>'
-    : '<button class="btn sm" data-skill-equip="' + ref + '"' + equipPendingAttrs + '>⚔️ 裝備</button>';
-
-  h += '<div style="visibility:hidden;"></div>';
-  h += '<button class="btn sm danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="清除超神進化選擇（不退還金幣），之後可重新三選一"' +
-    pendingAttrs + '>🗑️ 重選</button>';
-  h += '<div style="visibility:hidden;"></div><div style="visibility:hidden;"></div>';
-  h += '</div>';
-  body.innerHTML = h;
+  return h + '</div></div></div>';
 }
 
-/* 新版技能群組的升級彈窗內容（沿用 #skill-modal 外殼與舊版技能升級界面佈局）。 */
-function renderSkill2Modal(body, gid, skillsSnapshot, headerSnapshot) {
-  if (UI.tooltipAnchor && body.contains(UI.tooltipAnchor)) hideTooltip();
+function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   var g = SKILLS2[gid];
   var lvs = sgUiLevels(skillsSnapshot, gid) || [];
   var ref = 'sg:' + gid;
-  var selectedTier = sgTierIndexOf(UI.selSkill);
-  if (sgUiIsUltSlot(gid, selectedTier)) {
-    renderSkill2UltModal(body, gid, skillsSnapshot, headerSnapshot);
-    return;
-  }
-  if (body.classList) body.classList.remove('sg-ult-picking'); // 回到各階＝回到固定 5 列版面
-  if (selectedTier === null || selectedTier < 0 || selectedTier >= g.tiers.length) selectedTier = 0;
-  var tier = g.tiers[selectedTier];
-  var lv = lvs[selectedTier] || 0;
-  var locked = !sgStageUnlocked(gid, lvs, selectedTier, skillsSnapshot);
   var gold = Number(headerSnapshot && headerSnapshot.player && headerSnapshot.player.gold) || 0;
   var pendingAttrs = pendingUiButtonAttributes(nodePendingKey(ref));
   var inLoadout = skillViewLoadout(skillsSnapshot).indexOf(ref) >= 0;
-  var tierMax = (typeof SG_TIER_MAX_LV === 'number') ? SG_TIER_MAX_LV : 10;
-  var atCap = lv >= tierMax;
-  var cost = (typeof skills2UpgradeCost === 'function') ? skills2UpgradeCost(gid, selectedTier, lv) : 0;
-  // 主動型被動（反擊）：無冷卻、不主動施放，但要裝配技能列才生效
   var isPassiveGroup = (typeof skills2IsPassive === 'function') && skills2IsPassive(gid);
-  var dmgTypeLabel = (g.dmgType === 'magic') ? '魔法' : '物理';
+  var t = sgbTotals(gid, lvs, skillsSnapshot);
+  var color = SGB_ELEM_COLORS[sgbElemOf(gid)] || '#c9c3b5';
   var elemInfo = (g.elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[g.elem]) ? ELEM_INFO[g.elem] : null;
-  var typeStr = dmgTypeLabel + (elemInfo ? '·' + (elemInfo.short || elemInfo.name) : '');
-
-  /* 顯示該階成為最高階時的反擊基本耗魔；T6／T7 另標追加費用。 */
-  var tierMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(gid, selectedTier) : 0;
-  var h = '<div class="skd-head"><span class="skd-emoji">' + g.emoji + '</span><b>' + esc(tier.name) + '</b> ' +
-    '<span class="dim-text">Lv.' + lv + '/' + tierMax + '｜' + typeStr + '</span>' +
-    '<span class="sk-meta">' + (isPassiveGroup
-      ? ('🌀 被動' + (tierMp > 0 ? '　🔵 ' + tierMp + ' MP／次反擊（此階生效時）' + (selectedTier >= 5 ? '；本階追加效果觸發另扣 ' + tierMp + ' MP' : '') : ''))
-      : '🔵 ' + skills2TierManaCost(gid, selectedTier) + ' MP　⏱️ ' + g.cd + 's') + '</span></div>';
-
-  var tags = [{ text: dmgTypeLabel, cls: 'skill-tag-category' }];
-  if (elemInfo) {
-    tags.push({ text: elemInfo.emoji + (elemInfo.short || elemInfo.name) + '系', cls: 'skill-tag-element skill-tag-' + g.elem });
-  }
-  if (isPassiveGroup) {
-    tags.push({ text: '主動型被動·需裝配', cls: 'skill-tag-passive' });
-  }
-  h += '<div class="skill-tags">' + tags.map(function (t) {
-    return '<span class="skill-tag ' + t.cls + '">' + esc(t.text) + '</span>';
-  }).join('') + '</div>';
-
-  h += '<div class="skill-modal-copy">' +
-    '<div class="sk-desc">' + describeSkill2Tier(gid, selectedTier, Math.max(1, lv)) + '</div>' +
-    (!locked && !atCap ? '<div class="skd-next dim-text">下一級：' + describeSkill2Tier(gid, selectedTier, lv + 1) + '</div>' : '') +
-    (tier.desc ? '<div class="sk-flavor">' + esc(tier.desc) + '</div>' : '') +
-    (locked ? '<div class="hint skill-unlock-hint">🔒 ' + esc(sgStageLockReason(gid, selectedTier, skillsSnapshot)) + '；目前僅可查看</div>' : '') +
-    '</div>';
-
-  h += '<div class="skill-modal-points">金幣：' + fmt(gold) + '</div>';
-
-  h += '<div class="detail-actions skill-modal-actions">';
-
-  // 1. 升級與一鍵滿級
-  if (!locked && !atCap) {
-    h += '<button class="btn sm" data-skill2-learn="' + gid + ':' + selectedTier + '" data-tip="花費 ' + fmt(cost) + ' 金幣"' +
-      pendingAttrs + (gold < cost ? ' disabled' : '') + '>' + (lv === 0 ? '📖 學習' : '⬆️ 升級') + '</button>';
-    h += '<button class="btn sm" data-skill2-max="' + gid + ':' + selectedTier + '" data-tip="自動消耗金幣，升至目前階級上限"' +
-      pendingAttrs + (gold < cost ? ' disabled' : '') + '>⚡ 一鍵滿級</button>';
-  } else if (atCap) {
-    h += '<div style="text-align:center; padding:4px; color:var(--good); font-size:12px;">已滿級</div>';
-    h += '<div style="visibility:hidden;"></div>';
-  } else {
-    h += '<div style="visibility:hidden;"></div><div style="visibility:hidden;"></div>';
+  if (typeof UI.sgBrowse.tier !== 'number' || UI.sgBrowse.tier < 0 || UI.sgBrowse.tier >= g.tiers.length) {
+    UI.sgBrowse.tier = sgbDefaultTier(gid, lvs, skillsSnapshot);
   }
 
-  // 2. 降級
-  var canDowngrade = (selectedTier === 0) ? (lv > 1) : (lv > 0);
-  if (canDowngrade) {
-    h += '<button class="btn sm warn" data-skill2-downgrade="' + gid + ':' + selectedTier + '" data-tip="降 1 級（不退還金幣）"' + pendingAttrs + '>⬇️ 降級</button>';
-  } else {
-    h += '<div style="visibility:hidden;"></div>';
-  }
+  var tags = '<span class="skill-tag skill-tag-category">' + (g.dmgType === 'magic' ? '魔法' : '物理') + '</span>';
+  if (elemInfo) tags += '<span class="skill-tag skill-tag-element skill-tag-' + g.elem + '">' + esc(elemInfo.emoji + (elemInfo.short || elemInfo.name) + '系') + '</span>';
+  if (isPassiveGroup) tags += '<span class="skill-tag skill-tag-passive">主動型被動·需裝配</span>';
 
-  // 3. 裝備／卸下
   var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
-  var totalLv = sgUiTotalLevel(lvs);
-  if (totalLv > 0) {
-    h += inLoadout
-      ? '<button class="btn sm warn" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>'
-      : '<button class="btn sm" data-skill-equip="' + ref + '"' + equipPendingAttrs +
-        (isPassiveGroup ? ' data-tip="裝配後被動效果才會生效">🌀 裝備（啟用被動）' : '>⚔️ 裝備') + '</button>';
+  var equipBtn;
+  if (inLoadout) {
+    equipBtn = '<button class="btn sgb-btn-quiet" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>已裝上 · 卸下</button>';
+  } else if (t.total > 0) {
+    equipBtn = '<button class="btn sgb-btn-primary" data-skill-equip="' + ref + '"' + equipPendingAttrs +
+      (isPassiveGroup ? ' data-tip="裝配後被動效果才會生效">裝上技能列（啟用被動）' : '>裝上技能列') + '</button>';
   } else {
-    h += '<div style="visibility:hidden;"></div>';
+    equipBtn = '<button class="btn" disabled data-tip="需先學會這個技能才能裝上">裝上技能列</button>';
   }
+  var maxBtn = isGMHost()
+    ? '<button type="button" class="btn sgb-btn-quiet sgb-gm-max" data-sg-max-group="' + esc(gid) + '" data-tip="【內測專用】一鍵將「' + esc(g.name) + '」全階層升至滿級">MAX</button>'
+    : '';
 
-  // 4. 第二排：加入融合位置留空，右側放置刪除按鈕
-  h += '<div style="visibility:hidden;"></div>';
+  var h = '<div class="sgb-head" style="--elem:' + color + '">' +
+    '<span class="sgb-head-icon" aria-hidden="true">' + g.emoji + '</span>' +
+    '<div class="sgb-head-main">' +
+    '<div class="sgb-head-title"><b>' + esc(g.name) + '</b><span>總 Lv.' + t.total + ' / ' + t.max + '</span></div>' +
+    '<div class="sgb-head-meta"><span class="skill-tags">' + tags + '</span><span class="sgb-meta" data-tip="' + esc(sgbMetaText(gid, UI.sgBrowse.tier)) + '">' + sgbMetaText(gid, UI.sgBrowse.tier) + '</span></div>' +
+    '</div><div class="sgb-head-actions">' + maxBtn + equipBtn + '</div></div>';
 
-  var canDelete = (selectedTier === 0) ? (lv > 1) : (lv > 0);
-  if (canDelete) {
-    h += '<button class="btn sm danger" data-skill2-delete="' + gid + ':' + selectedTier + '" data-tip="重置此階等級（不退還金幣）"' + pendingAttrs + '>🗑️ 刪除</button>';
-  } else {
-    h += '<div style="visibility:hidden;"></div>';
+  h += '<div class="sgb-path">';
+  for (var i = 0; i < g.tiers.length; i++) {
+    h += sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, !!t.pick);
   }
-  h += '<div style="visibility:hidden;"></div><div style="visibility:hidden;"></div>';
-
   h += '</div>';
-  body.innerHTML = h;
+  if (sgbHasUlt(gid)) h += sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs);
+  return h;
+}
+
+/* 技能瀏覽器：清單與詳情分開快取，金幣變動只會重繪詳情，清單的捲動位置不受影響 */
+function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
+  if (!treesBox.querySelector('.sgb')) {
+    treesBox.innerHTML = '<div class="sgb">' +
+      '<div class="sgb-list"><div class="sgb-chips" id="sgb-chips"></div><div class="sgb-items" id="sgb-items"></div></div>' +
+      '<div class="sgb-detail" id="sgb-detail"></div></div><div id="sgb-potential"></div>';
+  }
+  var all = Object.keys(SKILLS2);
+  if (UI.sgBrowse.filter !== 'all' && !all.some(function (id) { return sgbCategoryOf(id) === UI.sgBrowse.filter; })) {
+    UI.sgBrowse.filter = 'all';
+  }
+  var ids = all.filter(function (id) { return UI.sgBrowse.filter === 'all' || sgbCategoryOf(id) === UI.sgBrowse.filter; });
+  var gid = sgbResolveGroup(skillsSnapshot, ids);
+  if (gid !== UI.sgBrowse.gid) {
+    UI.sgBrowse.gid = gid;
+    UI.sgBrowse.tier = null;
+    UI.sgBrowse.ultFocus = null;
+    UI.sgBrowse.focus = 'tier';
+  }
+  var loadout = skillViewLoadout(skillsSnapshot);
+
+  var chips = $id('sgb-chips');
+  var chipsH = sgbFilterChipsHTML();
+  if (chips._lastH !== chipsH) { chips.innerHTML = chipsH; chips._lastH = chipsH; }
+
+  var items = $id('sgb-items');
+  var itemsH = ids.map(function (id) { return sgbListItemHTML(id, skillsSnapshot, loadout, id === gid); }).join('');
+  if (items._lastH !== itemsH) { items.innerHTML = itemsH; items._lastH = itemsH; }
+
+  var detail = $id('sgb-detail');
+  if (UI.tooltipAnchor && detail.contains(UI.tooltipAnchor)) hideTooltip();
+  var detailH = gid ? sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) : '<div class="hint">沒有技能</div>';
+  if (detail._lastH !== detailH) { detail.innerHTML = detailH; detail._lastH = detailH; }
 }
 
 function openSkillModal(id) {
@@ -8390,15 +8681,8 @@ function renderSkillModal() {
   var headerSnapshot = arguments[2] || uiHeaderPanelSnapshot();
   if (!skillsSnapshot || !talentSnapshot || !headerSnapshot) return;
   var ref = UI.selSkill;
-  // 新版技能群組（'sg:'）：獨立版面（7 階清單），沿用同一個彈窗外殼
-  var sgModalGid = sgGroupIdOf(ref);
-  if (sgModalGid !== null) {
-    if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgModalGid]) { closeSkillModal(); return; }
-    renderSkill2Modal(body, sgModalGid, skillsSnapshot, headerSnapshot);
-    return;
-  }
-  // 潛力技能：確保離開超神進化的三選一版面（否則 grid 覆寫會殘留）
-  if (body.classList) body.classList.remove('sg-ult-picking');
+  // 新版技能群組（'sg:'）不再走彈窗：升級操作都在技能頁的技能瀏覽器裡（renderSkillBrowser）
+  if (sgGroupIdOf(ref) !== null) { closeSkillModal(); return; }
   var id = potentialSkillId(ref);
   var sk = id ? potentialDef(id) : null;
   if (!sk) { closeSkillModal(); return; }
@@ -8808,47 +9092,18 @@ function showTowerTooltip(flStr, anchorEl) {
   var fl = parseInt(flStr, 10);
   if (!fl) return;
   UI.tooltipAnchor = anchorEl;
-  var hasSoul = isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl);
-  var bossStats = bossStatsFor(fl);
-  var bossXp = bossStats.xp;
-  var soulRate = hellSoulOriginDropChance(fl);
-  var ancientEssenceRate = ancientEssenceDropChanceForBoss(fl);
-
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
-    '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) +
-    ' 金幣</div>' +
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px;">第 ' + fl + ' 層・' + esc(towerBossOf(fl).name) + '</div>' +
+    '<div class="skt-name" style="margin-bottom:6px;">【挑戰費用】</div>' +
+    '<div class="skt-desc" style="text-align:left;">💰 ' + fmt(towerChallengeCost(fl)) + ' 金幣</div>' +
     '<div class="skt-name" style="margin:6px 0;">【可能掉落物】</div>' +
     '<div class="skt-desc" style="text-align:left;">' +
-    '💰 金幣 x' + fmt(200 * fl) + ' <span style="color:var(--dim)">(首通雙倍)</span><br>' +
-    '✨ 經驗 x' + fmt(bossXp) + ' <span style="color:var(--dim)">(基礎，另加經驗加成)</span><br>' +
-    '🔮 附魔精華 x' + (3 + fl) + ' <span style="color:var(--dim)">(100%)</span><br>' +
-    '💎 隨機寶石 x2 <span style="color:var(--dim)">(100%)</span><br>' +
-    '📖 隨機附魔書 x2 <span style="color:var(--dim)">(100%)</span><br>' +
-    '💫 魔塵 <span style="color:var(--dim)">(' + fmt1(bossDustRate(fl)) + '%，神鑄材料)</span>' +
-    '<br><img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華"> 太古精華 <span style="color:var(--dim)">(' + fmt1(ancientEssenceRate) + '%)</span>' +
-    (hasSoul ? '<br>🧿 魔魂本源 <span style="color:var(--dim)">(' + fmt1(soulRate) + '%，地獄/煉獄之塔限定)</span>' : '') +
-    (isPurgatoryTowerFloor(fl) ? '<br>🌱 魔種 <span style="color:var(--dim)">(' + fmt1(demonSeedDropChanceForBoss(fl)) + '%，煉獄之塔限定)</span>' : '') + '<br>' +
-    '🔩 機組零件 <span style="color:var(--dim)">(首通必掉 / 之後30%)</span>';
-
-  var bossRates = dropRatesFor(BOSS_DROP_TABLE, fl);
-  var equipStrs = [];
-  for (var br = bossRates.length - 1; br >= 0; br--) {
-    if (!bossRates[br]) continue;
-    var rate = bossRates[br];
-    var rateStr = '';
-    if (rate >= 100) {
-      rateStr = '必定' + Math.floor(rate / 100) + '件';
-      var rem = rate % 100;
-      if (rem > 0) rateStr += ' + ' + rem + '%再1件';
-    } else {
-      rateStr = '機率' + rate + '%';
-    }
-    equipStrs.push('⚔️ <span style="color:' + RARITIES[br].color + '; font-weight:bold;">' + RARITIES[br].name + '裝備</span> <span style="color:var(--dim)">(' + rateStr + ')</span>');
-  }
-  if (equipStrs.length) {
-    dropTip += '<br>' + equipStrs.join('<br>');
-  }
-
+    towerRewardRows(fl).map(function (r) {
+      return r.icon + ' ' + r.label + ' ' + r.value + (r.note ? ' <span style="color:var(--dim)">(' + r.note + ')</span>' : '');
+    }).join('<br>');
+  var equipStrs = towerEquipDropRows(fl).map(function (r) {
+    return '⚔️ <span style="color:' + r.color + '; font-weight:bold;">' + r.name + '</span> <span style="color:var(--dim)">(' + r.rate + ')</span>';
+  });
+  if (equipStrs.length) dropTip += '<br>' + equipStrs.join('<br>');
   dropTip += '</div>';
   tip.innerHTML = dropTip;
   tip.style.display = 'block';
@@ -9076,29 +9331,159 @@ function toggleAffixPool(anchorEl) {
 }
 
 /* ---- 寶石分頁 ---- */
+/* ---- 寶石頁：左寶石庫（分類＋只看持有）、右工坊（合成／轉換／拆解／融合／商店一次只顯示一個） ---- */
+UI.gemBrowse = { sel: null, filter: 'all', ownedOnly: true, tool: 'compose' };
+
+var GEM_LIB_FILTERS = [
+  { id: 'all', label: '全部' },
+  { id: 'atk', label: '攻擊' },
+  { id: 'def', label: '防禦' },
+  { id: 'elem', label: '元素' },
+  { id: 'res', label: '抗性' }
+];
+var GEM_DEF_STATS = { hpFlat: 1, hpRegen: 1, defFlat: 1, mdefFlat: 1, evasion: 1, tenacity: 1, blockRate: 1, blockDmgRed: 1, shieldEff: 1, pRes: 1, mRes: 1 };
+var GEM_TOOLS = ['compose', 'convert', 'dismantle', 'fusion', 'shop'];
+
+// 分類只看聚合桶：對屬性增傷與屬性傷害提升歸「元素」、元素抗性歸「抗性」，其餘依攻防分。
+function gemCategoryOf(type) {
+  var gt = GEM_TYPES[type];
+  var stat = gt ? String(gt.stat) : '';
+  if (/^(dmgVs|elemDmg)/.test(stat)) return 'elem';
+  if (/^res/.test(stat)) return 'res';
+  if (GEM_DEF_STATS[stat]) return 'def';
+  return 'atk';
+}
+
+function gemTopLevel(gemsSnapshot, type) {
+  for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
+    if (gemsViewCount(gemsSnapshot, type, lv) > 0) return lv;
+  }
+  return 0;
+}
+
+function gemValueText(type, lv) {
+  var gt = GEM_TYPES[type];
+  var v = gemStatValue(type, lv);
+  return '+' + (gt && gt.pct ? pctStr(v) : fmt(v));
+}
+
+function gemFilterChipsHTML() {
+  var h = '';
+  GEM_LIB_FILTERS.forEach(function (f) {
+    var on = UI.gemBrowse.filter === f.id;
+    h += '<button type="button" class="gx-chip' + (on ? ' is-on' : '') + '" data-gem-filter="' + f.id + '" aria-pressed="' + on + '">' + f.label + '</button>';
+  });
+  return h;
+}
+
+function gemLibItemHTML(gemsSnapshot, type, total) {
+  var gt = GEM_TYPES[type];
+  var top = gemTopLevel(gemsSnapshot, type);
+  var cells = '';
+  for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
+    var n = gemsViewCount(gemsSnapshot, type, lv);
+    cells += n
+      ? '<span class="gx-lv has" style="--c:' + GEM_TIER_COLORS[lv] + '" data-tip="' + esc(GEM_NAMES[lv] + gt.name + ' ×' + fmtFull(n)) + '">' + (n > 99 ? '99+' : n) + '</span>'
+      : '<span class="gx-lv"></span>';
+  }
+  return '<button type="button" class="gx-item' + (UI.gemBrowse.sel === type ? ' is-sel' : '') + (total ? '' : ' is-empty') + '" data-gem-pick="' + type + '">' +
+    '<span class="gx-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + gt.emoji + '</span>' +
+    '<span class="gx-item-main">' +
+      '<span class="gx-item-top"><b>' + esc(gt.name) + '</b><span class="gx-item-total">×' + fmt(total) + '</span></span>' +
+      '<span class="gx-item-stat">' + esc(gt.statName.replace(/%/g, '')) + '</span>' +
+      '<span class="gx-lvs">' + cells + '</span>' +
+    '</span></button>';
+}
+
+function gemFocusHTML(gemsSnapshot, type, total) {
+  var gt = GEM_TYPES[type];
+  if (!gt) return '';
+  var top = gemTopLevel(gemsSnapshot, type);
+  var cells = '';
+  for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
+    var n = gemsViewCount(gemsSnapshot, type, lv);
+    cells += '<span class="gx-curve-cell' + (n ? ' has' : '') + (lv > GEM_MAX_LEVEL ? ' is-forge' : '') + '" style="--c:' + GEM_TIER_COLORS[lv] + '">' +
+      '<span class="gx-curve-lv">' + GEM_NAMES[lv] + '</span>' +
+      '<span class="gx-curve-val">' + gemValueText(type, lv) + '</span>' +
+      '<span class="gx-curve-n">' + (n ? '×' + fmt(n) : '—') + '</span></span>';
+  }
+  var catLabel = '';
+  GEM_LIB_FILTERS.forEach(function (f) { if (f.id === gemCategoryOf(type)) catLabel = f.label; });
+  return '<div class="gx-focus-head">' +
+      '<span class="gx-focus-ico" style="--c:' + (top ? GEM_TIER_COLORS[top] : '#3a3d44') + '">' + gt.emoji + '</span>' +
+      '<span class="gx-focus-name">' + esc(gt.name) + '</span>' +
+      '<span class="gx-focus-stat">' + esc(gt.statName.replace(/%/g, '')) + '・' + catLabel + '</span>' +
+      '<span class="gx-focus-total">共 <b>' + fmtFull(total) + '</b> 顆</span>' +
+    '</div>' +
+    '<div class="gx-curve">' + cells + '</div>';
+}
+
+function selectGemType(type) {
+  if (!GEM_TYPES[type]) return;
+  UI.gemBrowse.sel = type;
+  // 點寶石庫＝把這顆寶石帶進合成與拆解；要逐種類合成全部，再從下拉選回「全部類型寶石」。
+  var fuseType = $id('fuse-type');
+  if (fuseType) fuseType.value = type;
+  var disType = $id('gdis-type');
+  if (disType) disType.value = type;
+  renderGems();
+}
+
+function setGemTool(tool) {
+  if (GEM_TOOLS.indexOf(tool) < 0) return;
+  UI.gemBrowse.tool = tool;
+  var sec = $id('tab-gems');
+  if (sec && sec.setAttribute) sec.setAttribute('data-gem-tool', tool);
+  if (sec && sec.querySelectorAll) {
+    sec.querySelectorAll('[data-gem-tool-btn]').forEach(function (b) {
+      b.setAttribute('aria-selected', String(b.getAttribute('data-gem-tool-btn') === tool));
+    });
+  }
+}
+
 function renderGems() {
   var box = $id('gem-table');
   if (!box) return;
   var gemsSnapshot = uiGemsPanelSnapshot();
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!gemsSnapshot || !headerSnapshot) return;
-  var h = '<table class="gem-tbl"><tr><th>寶石</th><th>鑲嵌能力</th>';
-  for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) h += '<th>' + GEM_NAMES[lv] + '</th>';
-  h += '</tr>';
+  var st = UI.gemBrowse;
+  var totals = {}, owned = 0, kinds = 0, typeCount = 0, firstOwned = null, firstType = null;
   for (var t in GEM_TYPES) {
-    var gt = GEM_TYPES[t];
-    var v1 = gemStatValue(t, 1), vMax = gemStatValue(t, GEM_FORGE_MAX_LEVEL);
-    h += '<tr><td class="gem-name">' + gt.emoji + ' ' + esc(gt.name) + '</td>' +
-      '<td class="dim-text">' + esc(gt.statName.replace('%', '')) + '（L1 +' + (gt.pct ? pctStr(v1) : fmt(v1)) +
-      ' ～ L' + GEM_FORGE_MAX_LEVEL + ' +' + (gt.pct ? pctStr(vMax) : fmt(vMax)) + '）</td>';
-    for (var lv2 = 1; lv2 <= GEM_FORGE_MAX_LEVEL; lv2++) {
-      var n = gemsViewCount(gemsSnapshot, t, lv2);
-      h += '<td class="gem-cnt' + (n ? ' has' : '') + '">' + (n || '－') + '</td>';
+    typeCount++;
+    if (!firstType) firstType = t;
+    var typeTotal = 0;
+    for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) typeTotal += gemsViewCount(gemsSnapshot, t, lv);
+    totals[t] = typeTotal;
+    owned += totals[t];
+    if (totals[t]) {
+      kinds++;
+      if (!firstOwned) firstOwned = t;
     }
-    h += '</tr>';
   }
-  h += '</table>';
-  box.innerHTML = h;
+  if (!st.sel || !GEM_TYPES[st.sel]) st.sel = firstOwned || firstType;
+  setTextIfChanged($id('gem-total'), fmtFull(owned + gemsViewFused(gemsSnapshot).length));
+  setTextIfChanged($id('gem-kinds'), kinds + ' / ' + typeCount);
+
+  var chips = $id('gem-filter');
+  var chipsH = gemFilterChipsHTML();
+  if (chips && chips._lastH !== chipsH) { chips._lastH = chipsH; chips.innerHTML = chipsH; }
+  var ownedOnly = $id('gem-owned-only');
+  if (ownedOnly) ownedOnly.checked = !!st.ownedOnly;
+
+  var h = '';
+  for (var t2 in GEM_TYPES) {
+    if (st.filter !== 'all' && gemCategoryOf(t2) !== st.filter) continue;
+    if (st.ownedOnly && !totals[t2] && t2 !== st.sel) continue;
+    h += gemLibItemHTML(gemsSnapshot, t2, totals[t2]);
+  }
+  if (!h) h = '<div class="gx-empty">這個分類目前沒有持有的寶石</div>';
+  if (box._lastH !== h) { box._lastH = h; box.innerHTML = h; }
+
+  var focus = $id('gem-focus');
+  var focusH = gemFocusHTML(gemsSnapshot, st.sel, totals[st.sel] || 0);
+  if (focus && focus._lastH !== focusH) { focus._lastH = focusH; focus.innerHTML = focusH; }
+
   fillGemTypeSelect($id('fuse-type'), true);
   fillGemTypeSelect($id('gconv-target'));
   fillGemTypeSelect($id('gdis-type'));
@@ -9106,6 +9491,16 @@ function renderGems() {
   renderGemConvert(gemsSnapshot);
   renderGemDismantle(gemsSnapshot);
   renderGemFusion(gemsSnapshot, headerSnapshot);
+  // 融合未解鎖時 renderGemFusion 會把面板藏起來；分頁仍可點，改顯示解鎖條件。
+  var fusionPanel = $id('gem-fusion-panel');
+  var fusionLocked = !fusionPanel || fusionPanel.style.display === 'none';
+  var fusionLockNote = $id('gx-fusion-locked');
+  if (fusionLockNote) fusionLockNote.hidden = !fusionLocked;
+  var fusionTab = $id('gem-tool-fusion');
+  if (fusionTab) {
+    var fusionTabClass = 'gx-tab' + (fusionLocked ? ' is-locked' : '');
+    if (fusionTab.className !== fusionTabClass) fusionTab.className = fusionTabClass;
+  }
   renderGemShop(gemsSnapshot, headerSnapshot);
 }
 
@@ -9129,6 +9524,21 @@ function fillGemTypeSelect(sel, includeAll) {
   sel.innerHTML = h;
 }
 /* ---- 寶石合成（3 顆同種同級 → 下一階） ---- */
+function gemSocketHTML(type, lv, extraClass) {
+  var gt = GEM_TYPES[type];
+  return '<span class="gx-socket' + (extraClass || '') + '" style="--c:' + (GEM_TIER_COLORS[lv] || '#3a3d44') + '">' +
+    '<span class="gx-socket-ico">' + (gt ? gt.emoji : '💎') + '</span>' +
+    '<span class="gx-socket-lv">' + (GEM_NAMES[lv] || '') + '</span></span>';
+}
+
+function fuseRecipeHTML(type, lv) {
+  var ins = '';
+  for (var i = 0; i < GEM_COMPOSE_INPUT_COUNT; i++) ins += gemSocketHTML(type, lv, '');
+  return '<span class="gx-recipe-in">' + ins + '</span>' +
+    '<span class="gx-recipe-arrow"><span class="gx-recipe-cost"><img src="images/icon_gold.png" class="res-icon">' + fmt(FUSE_GOLD_COST[lv]) + '</span></span>' +
+    gemSocketHTML(type, lv + 1, ' is-out');
+}
+
 function renderFuseInfo(gemsSnapshot) {
   var selT = $id('fuse-type'), selL = $id('fuse-level');
   var info = $id('fuse-info');
@@ -9136,6 +9546,9 @@ function renderFuseInfo(gemsSnapshot) {
   gemsSnapshot = resolveGemsPanelSnapshot(gemsSnapshot);
   if (!gemsSnapshot) return;
   var t = selT.value, lv = parseInt(selL.value, 10) || 1;
+  var recipe = $id('fuse-recipe');
+  var recipeH = fuseRecipeHTML(t, lv);
+  if (recipe && recipe._lastH !== recipeH) { recipe._lastH = recipeH; recipe.innerHTML = recipeH; }
   if (t === GEM_TYPE_ALL) {
     var total = 0, available = 0;
     for (var allType in GEM_TYPES) {
@@ -10404,6 +10817,39 @@ function initUI() {
       }
       return;
     }
+    // 技能瀏覽器：切換篩選／群組／展開的階／超神進化選項（純介面狀態，不送指令）
+    var sgbFilter = e.target.closest('[data-sgb-filter]');
+    if (sgbFilter) {
+      UI.sgBrowse.filter = sgbFilter.getAttribute('data-sgb-filter') || 'all';
+      renderSkills();
+      return;
+    }
+    var sgbGroup = e.target.closest('[data-sgb-group]');
+    if (sgbGroup) {
+      var nextGid = sgbGroup.getAttribute('data-sgb-group');
+      if (nextGid !== UI.sgBrowse.gid) {
+        UI.sgBrowse.gid = nextGid;
+        UI.sgBrowse.tier = null;
+        UI.sgBrowse.ultFocus = null;
+        UI.sgBrowse.focus = 'tier';
+      }
+      renderSkills();
+      return;
+    }
+    var sgbTier = e.target.closest('[data-sgb-tier]');
+    if (sgbTier) {
+      UI.sgBrowse.tier = Math.floor(Number(sgbTier.getAttribute('data-sgb-tier')) || 0);
+      UI.sgBrowse.focus = 'tier';
+      renderSkills();
+      return;
+    }
+    var sgbUlt = e.target.closest('[data-sgb-ult]');
+    if (sgbUlt) {
+      UI.sgBrowse.ultFocus = Math.floor(Number(sgbUlt.getAttribute('data-sgb-ult')) || 0);
+      UI.sgBrowse.focus = 'ult';
+      renderSkills();
+      return;
+    }
     // 內測專用：新版技能群組整列一鍵滿級
     var s2RowMax = e.target.closest('[data-sg-max-group]');
     if (s2RowMax) {
@@ -10959,6 +11405,21 @@ function initUI() {
     var tabBtn = document.querySelector('.tab-btn[data-tab="skills"]');
     if (tabBtn) tabBtn.click();
     var skId = bss.getAttribute('data-skill-id') || bss.getAttribute('data-sk');
+    // 新版技能群組：直接在技能瀏覽器選中該群組（清單沿用目前篩選，被篩掉就切回全部）
+    var bssGid = sgGroupIdOf(skId);
+    if (bssGid !== null && typeof SKILLS2 !== 'undefined' && SKILLS2[bssGid]) {
+      if (UI.sgBrowse.filter !== 'all' && sgbCategoryOf(bssGid) !== UI.sgBrowse.filter) UI.sgBrowse.filter = 'all';
+      if (UI.sgBrowse.gid !== bssGid) {
+        UI.sgBrowse.gid = bssGid;
+        UI.sgBrowse.tier = null;
+        UI.sgBrowse.ultFocus = null;
+        UI.sgBrowse.focus = 'tier';
+      }
+      renderSkills();
+      var bssItem = document.querySelector('#sgb-items [data-sgb-group="' + bssGid + '"]');
+      if (bssItem && typeof bssItem.scrollIntoView === 'function') bssItem.scrollIntoView({ block: 'nearest' });
+      return;
+    }
     if (skId) {
       try {
         var targetCell = document.querySelector('#skill-trees [data-sk="' + CSS.escape(skId) + '"], #skill-loadout [data-sk="' + CSS.escape(skId) + '"]');
@@ -11002,6 +11463,79 @@ function initUI() {
     });
     $id('fuse-level').addEventListener('change', renderFuseInfo);
     $id('fuse-type').addEventListener('change', renderFuseInfo);
+  }
+
+  // 寶石頁：寶石庫分類／選取、工坊分頁切換
+  var gemsTab = $id('tab-gems');
+  if (gemsTab && gemsTab.addEventListener) {
+    gemsTab.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var chip = t.closest('[data-gem-filter]');
+      if (chip) {
+        UI.gemBrowse.filter = chip.getAttribute('data-gem-filter');
+        renderGems();
+        return;
+      }
+      var pick = t.closest('[data-gem-pick]');
+      if (pick) {
+        selectGemType(pick.getAttribute('data-gem-pick'));
+        return;
+      }
+      var toolBtn = t.closest('[data-gem-tool-btn]');
+      if (toolBtn) setGemTool(toolBtn.getAttribute('data-gem-tool-btn'));
+    });
+    var gemOwnedOnly = $id('gem-owned-only');
+    if (gemOwnedOnly) {
+      gemOwnedOnly.addEventListener('change', function () {
+        UI.gemBrowse.ownedOnly = !!gemOwnedOnly.checked;
+        renderGems();
+      });
+    }
+  }
+
+  // 天賦頁：轉數分頁（未達轉數也能預覽；點天賦本身仍走 data-talent-select 開升級彈窗）
+  var talentTab = $id('tab-talents');
+  if (talentTab && talentTab.addEventListener) {
+    talentTab.addEventListener('click', function (e) {
+      var tierBtn = e.target && e.target.closest ? e.target.closest('[data-talent-turn]') : null;
+      if (!tierBtn) return;
+      var turn = parseInt(tierBtn.getAttribute('data-talent-turn'), 10);
+      if (!TALENT_TREES[turn]) return;
+      UI.talentBrowse.turn = turn;
+      renderTalents();
+    });
+  }
+
+  // 高塔頁：塔別分頁、點選樓層（樓層列是 role=button 的 div，補上 Enter／空白鍵）
+  var towerList = $id('tower-list-wrap');
+  if (towerList && towerList.addEventListener) {
+    towerList.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var tierBtn = t.closest('[data-tower-tier]');
+      if (tierBtn) {
+        var tierId = tierBtn.getAttribute('data-tower-tier');
+        var tierDef = towerTiers().filter(function (x) { return x.id === tierId; })[0];
+        if (!tierDef) return;
+        var towerSnap = uiTowerPanelSnapshot();
+        var towerHighest = Math.max(0, (towerSnap && towerSnap.tower && towerSnap.tower.highest) || 0);
+        // 換塔時停在該塔「下一個可挑戰」的樓層；整座塔都通關了就停在頂樓
+        towerSelectFloor(Math.max(tierDef.start, Math.min(tierDef.end, towerHighest + 1)));
+        UI._scrollTower = true;
+        renderTower();
+        return;
+      }
+      var floorRow = t.closest('[data-tower-pick]');
+      if (floorRow) towerSelectFloor(parseInt(floorRow.getAttribute('data-tower-pick'), 10));
+    });
+    towerList.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var floorRow = e.target && e.target.closest ? e.target.closest('[data-tower-pick]') : null;
+      if (!floorRow) return;
+      e.preventDefault();
+      towerSelectFloor(parseInt(floorRow.getAttribute('data-tower-pick'), 10));
+    });
   }
 
   // 寶石轉換（九宮格）
