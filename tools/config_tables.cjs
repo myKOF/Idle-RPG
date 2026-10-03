@@ -657,7 +657,7 @@ function skillFullDescMap() {
    填了 .json 也接受）。留白＝這一列在該角色沒有特效；整列都留白時 JS 字面值不寫 vfx 欄位。
    JS 端的形狀：技能 sk.vfx = { cast, attack, projectile, hit, ground, field }、狀態 st.vfx = { apply, aura, tick }。
    角色語意見 docs/vfx/VFX_RUNTIME_ADAPTER.md；顯示層（js/vfx-runtime.js）只認 preset id，
-   這裡不驗證檔案是否存在——存在性由 tests/vfx-catalog.test.cjs 把關。 */
+   套用前會檢查檔名與已接線角色，錯誤只報告、不覆寫任何遊戲 JS。 */
 const SKILL_VFX_COLUMNS = [['施放特效', 'cast'], ['攻擊特效', 'attack'], ['飛行子彈', 'projectile'], ['受擊特效', 'hit'], ['地板特效', 'ground'], ['持續場域特效', 'field']];
 const STATUS_VFX_COLUMNS = [['施加特效', 'apply'], ['持續特效', 'aura'], ['作用特效', 'tick']];
 function vfxIdFromCell(s) {
@@ -671,6 +671,62 @@ function vfxFromRow(get, row, columns) {
   const out = {};
   columns.forEach(c => { const id = vfxIdFromCell(get(row, c[0])); if (id) out[c[1]] = id; });
   return Object.keys(out).length ? out : null;
+}
+
+function excelColumn(index) {
+  let result = '';
+  for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) result = String.fromCharCode(65 + (n - 1) % 26) + result;
+  return result;
+}
+function presetNameDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) next[j] = Math.min(next[j - 1] + 1, prev[j] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = next;
+  }
+  return prev[b.length];
+}
+/* 表格檢查與編譯分開：一次列出所有特效問題，保留原始實體列號（包括空白列）。
+   不依技能名稱或 Preset 的尾碼決定接線；接線只由群組／階段／角色登錄決定。 */
+function validateVfxTable(name, dataRows, header, options = {}) {
+  if (name !== 'Skills2' && name !== 'Status') return [];
+  const columns = name === 'Skills2' ? SKILL_VFX_COLUMNS.concat(skills2Vfx.columns) : STATUS_VFX_COLUMNS;
+  const presetNames = options.presetNames || new Set(fs.readdirSync(path.join(ROOT, 'vfx', 'presets'))
+    .filter(f => /\.json$/i.test(f)).map(f => f.replace(/\.json$/i, '')));
+  const get = rowGetter(header), issues = [], labels = header.map(h => String(h).split('\n')[0].trim());
+  dataRows.forEach((row, index) => {
+    const id = get(row, name === 'Skills2' ? '群組ID' : '狀態ID').trim();
+    if (!id) return;
+    const tier = get(row, '階數').trim(), stage = Number(tier) >= SKILLS2_ULT_ROW_BASE ? get(row, '超神ID').trim() : tier;
+    const title = get(row, name === 'Skills2' ? '階段名稱' : '狀態名稱').trim() || id;
+    const rowNumber = index + (options.startRow || 2);
+    columns.forEach(([label, role]) => {
+      const raw = get(row, label), preset = vfxIdFromCell(raw);
+      if (!preset) return;
+      const cell = excelColumn(labels.indexOf(label)) + rowNumber;
+      const where = `${name}.xlsx 第${rowNumber}列「${title}」（${id}${name === 'Skills2' ? '/' + stage : ''}）\n    ${cell}「${label}」＝「${raw}」`;
+      const trigger = name === 'Skills2' && skills2Vfx.columns.some(c => c[0] === label);
+      if (trigger) {
+        const event = skills2Vfx.event(id, stage);
+        if (!event || !event.roles.includes(role)) {
+          const allowed = event ? skills2Vfx.columns.filter(c => event.roles.includes(c[1])).map(c => '「' + c[0] + '」').join('、') : '無';
+          issues.push(`${where}\n    原因：未接線。這個技能階段${event ? '沒有此觸發角色' : '沒有獨立觸發事件'}，改 Preset 名稱不會新增事件。\n    可用觸發欄：${allowed}。\n    修正：清除此格；本體外觀填本體欄（例如「飛行子彈」「受擊特效」），不要填入觸發欄。需要新增觸發行為時須先接線；請參照同列「特效作用說明」。`);
+          return;
+        }
+      }
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(preset)) {
+        issues.push(`${where}\n    原因：不是有效的 Preset 檔名。\n    修正：填 vfx/presets 內的檔名，可含 .json；不要填路徑、用途標籤或其他文字。`);
+        return;
+      }
+      if (!presetNames.has(preset)) {
+        const near = Array.from(presetNames).map(value => ({ value, distance: presetNameDistance(preset.toLowerCase(), value.toLowerCase()) }))
+          .filter(v => v.distance <= Math.max(2, Math.floor(preset.length / 5))).sort((a, b) => a.distance - b.distance || a.value.localeCompare(b.value)).slice(0, 3);
+        issues.push(`${where}\n    原因：找不到 vfx/presets/${preset}.json（檔名大小寫也須一致）。${near.length ? '\n    相近可用名稱：' + near.map(v => v.value).join('、') + '。' : ''}\n    修正：改成現有 Preset 檔名；合法換名可正常套用，請先保存同名 Preset 檔案。若是誤改，恢復原名稱後重新執行「套用參數.bat」。`);
+      }
+    });
+  });
+  return issues;
 }
 
 SCHEMAS.Skills = {
@@ -1438,10 +1494,19 @@ function cmdApply(only) {
     const sc = SCHEMAS[name];
     const cp = csvPathOf(name);
     if (!fs.existsSync(cp)) { console.log('  – ' + name + '：無 CSV，略過'); return; }
-    const allRows = csvParse(readUtf8(cp)).filter(r => r.length > 1 && r.some(c => String(c).trim() !== ''));
+    const rawRows = csvParse(readUtf8(cp));
+    const allRows = rawRows.filter(r => r.length > 1 && r.some(c => String(c).trim() !== ''));
     if (!allRows.length) { console.log('  – ' + name + '：CSV 空，略過'); return; }
     const header = allRows[0];
     const dataRows = allRows.slice(1);
+    const headerIndex = rawRows.indexOf(header);
+    let vfxIssues;
+    try { vfxIssues = validateVfxTable(name, rawRows.slice(headerIndex + 1), header, { startRow: headerIndex + 2 }); }
+    catch (e) { console.error('  ✗ ' + name + ' 特效檔案檢查失敗：' + e.message); hadError = true; return; }
+    if (vfxIssues.length) {
+      console.error('  ✗ ' + name + ' 特效配置有 ' + vfxIssues.length + ' 個問題：\n  ' + vfxIssues.join('\n\n  '));
+      hadError = true; return;
+    }
     let rebuilt;
     try { rebuilt = sc.rebuild(dataRows, header, srcMap[sc.jsFile]); }
     catch (e) { console.error('  ✗ ' + name + ' 重建失敗：' + e.message); hadError = true; return; }
@@ -1465,7 +1530,7 @@ function cmdApply(only) {
   console.log('重建字面值 ' + changes.length + ' 個（語意變更 ' + changed.length + '）');
   changed.forEach(c => console.log('  • ' + c.name + ' / ' + c.varName + '（' + c.file + '.js）語意有變更'));
 
-  if (hadError) { console.log('\n偵測到重建/定位問題，中止（未寫任何檔）。'); process.exit(2); }
+  if (hadError) { console.log('\n設定檢查未通過，整次套用已中止，任何遊戲 JS 都未覆寫，保留原本可執行設定。\n請依上方 Excel 格位／欄位說明修正、儲存，再重新執行「套用參數.bat」。'); process.exit(2); }
   if (!WRITE) { console.log('\n這是試跑。加 --write 實際寫回 JS。'); return; }
   if (!changed.length) { console.log('\n無語意變更，未寫檔（CSV 與 JS 一致）。'); return; }
 
@@ -1516,4 +1581,4 @@ else {
 }
 
 }
-module.exports={SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral};
+module.exports={SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral,validateVfxTable};

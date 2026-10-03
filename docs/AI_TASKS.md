@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## CONFIG-VFX-DIAGNOSTICS-20261003 — 特效配置錯誤定位與套用保護
+
+- Owner：Codex；Done。使用者回報套用參數失敗，要求重查特效與程式連結、允許合法名稱調整並提供明確錯誤說明；已自行刪除嵐之山誤填觸發欄，要求只轉CSV，不新增觸發接線。
+- 預檢相關工具、CSV、任務紀錄及新測試乾淨。允許套用工具與批次錯誤診斷、特效檢核回歸、使用者Skills2.xlsx變更及對應CSV；不修改技能規格、事件接線、素材、塔戰、不合併／推送。
+- 實作方向：列出Excel檔／技能名稱／實際列號與格位／欄位／填入值、區分未接線角色及找不到Preset並提供修正方式及近似名稱。保留套用前整批檢查，錯誤時任何遊戲JS皆不寫入；有效名稱調整與改回可正常套用，修正Excel同步CSV後驗證。不把配置錯誤當成程式崩潰，也不靜默吞掉錯誤。
+- 原因：fe79b0c0的表格調整把hit-wind-09／ground-homing-wind-crescent-09填到嵐之山的觸發欄；此列沒有獨立觸發事件。Preset名稱與事件接線是兩層關係，名稱尾碼不會新增事件；舊訊息只列技術ID與第一個錯誤，未提供Excel位置及修正方向，因此難以判斷。另，舊套用工具不檢查Preset實體檔案，合法格式的拼字錯誤可能寫入後才失去畫面。
+- 完成：在Skills2／Status套用前驗證Preset檔名及存在性、Skills2觸發角色登錄；一次列出所有特效問題，包括實體Excel列號（空白列仍計入）、中文名稱、格位／欄位／原始值。未接線時說明觸發事件與本體欄不同、列出可用觸發欄與清除／改填指引；缺檔時列實際路徑及最多3個近似名稱；路徑／用途文字／大小寫誤填也有對應原因。保留原子套用保護：錯誤時所有遊戲JS不寫入，Excel→CSV已同步的狀態明確顯示；沒有降低接線檢核或新增寫死Preset／自動猜測外觀。
+- 使用者Excel：只讀轉換Skills2.csv，保留AJ210的新本體proj-wind-crescent-09、AP210／AQ210留白；與原CSV比較僅這三格變動，231列逐格一致。Excel COM正常唯讀開啟確認三格，前後檔案雜湊相同；未代改工作簿、沒有XML修改或再匯出。提交包含使用者的Excel變更。依「轉CSV就行了」未在正式工作區執行--write；下一次套用將把新本體名稱寫入遊戲。
+- 修改6檔：tools/config_tables.cjs、套用參數.bat、tests/config-vfx-diagnostics.test.cjs、config/CSV/Skills2.csv、使用者修改的config/Excel/Skills2.xlsx及本紀錄。唯讀檢查未改：tools/skills2-vfx.cjs／skills2-geometry.cjs／apply_params.cjs、js/skills2.js／vfx-runtime.js／bridge.js／worker/sim.worker.js、index.html、相關Preset與測試／協作規範。沒有遊戲JS／協議／素材變更，無快取或素材庫Commit需求。
+- 測試：`node --test tests/config-vfx-diagnostics.test.cjs tests/skills2-vfx-schema.test.cjs tests/storm-mountain.test.cjs tests/storm-myriad.test.cjs tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs`76/76通過；最後工具讀檔例外保護後重跑新5項仍全過。`npm.cmd run build`432檔通過；`git diff --check`通過；`node tools/config_tables.cjs --apply`全表17個字面值檢核通過，待套用語意變更2（Skills2本體新名稱，以及既有Task表變更），未寫入；`node tools/apply_params.cjs`534參數一致、變更0／錨點問題0。沒有修改參數錨點。
+- 正式CLI回歸：在獨立Temp副本注入兩個未接線角色，再注入合法角色的拼字錯誤，皆exit2且列AP210／AQ210或AJ202、詳細原因與修正方式；四個遊戲JS及CSV雜湊不變、params_version不存在。清除誤填後，依序換入proj-wind-crescent-09及改回proj-wind-crescent，--write成功且只有技能字面值改變，其餘JS雜湊保持；臨時副本用已驗證的Temp路徑清理。未用正式遊戲存檔驗證，也未套用其他Task變動。
+- 交付：Commit為本紀錄所在`[Codex] fix: 補強特效配置錯誤定位與套用保護`提交。需求已完成，可合併；工作區提交後乾淨，未合併／推送。下一步使用者整合後重跑套用參數.bat；若要真正更名Preset，先保存同名素材再更新表格，誤填則依訊息指定格位恢復。
+
 ## Claude｜封魔塔魔王祭壇場景與野外⇄BOSS 戰轉場（TOWER-ARENA-20261003）
 
 - Owner：Claude；Done，待 Antigravity 驗證。使用者要求：①封魔塔 BOSS 戰配上專屬戰鬥場景，不要跟現有任何場景一樣，要有魔王戰的氣氛 ②野外⇄BOSS 戰要有轉場：黑圈由外向內收到全黑，再往外擴開時已換成新場景，約 2～3 秒，雙向都要。
