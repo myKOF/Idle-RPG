@@ -386,6 +386,8 @@ var VFXRuntime = (function () {
     var rtAir = o.airBackend ? Core.createRuntime({backend:o.airBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtFx;
     var rtBillboard = o.billboardBackend
       ? Core.createRuntime({backend:o.billboardBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtAir;
+    var rtEnemyAir = o.enemyAirBackend
+      ? Core.createRuntime({backend:o.enemyAirBackend,resolver:o.resolver,budget:o.fxBudget || FX_BUDGET}) : rtAir;
     var known = Object.create(null);        // presetId → true（兩個 runtime 都註冊過）
     var billboardPresets = Object.create(null);   // presetId → 整份都標了 perspective: false
     /* 空物件不畫東西（它只是父物件），所以不列入判斷；一層可畫的都沒有時不算。 */
@@ -518,6 +520,7 @@ var VFXRuntime = (function () {
         rtFx.registerPreset(p);
         rtZone.registerPreset(p);
         if (rtAir !== rtFx) rtAir.registerPreset(p);
+        if (rtEnemyAir !== rtAir) rtEnemyAir.registerPreset(p);
         /* 整份都標了「不受畫面透視影響」的 preset 改走 billboard 層：只投影落點並等比縮放，
            完全不經過場景的透視網格（比場景層的就地補償更徹底，代價是繪製順序改用空中層那一套）。
            以前這裡寫死 pillar-earth，改成看圖層資料（2026-09-24 使用者要求的每層勾選）。 */
@@ -836,6 +839,22 @@ var VFXRuntime = (function () {
       // 飛行／回收屬於事件語意，複製或換色後的新 Preset 名稱也必須走同一路徑。
       var tracked = spec.fxKind === 'chain';
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
+      var reflection = spec.variant === 'earth-reflect';
+      if (reflection && ids.length > 1) {
+        var any = false;
+        ids.forEach(function(id) { any = playBeam(rt,presetId,Object.assign({},spec,{targets:[id]})) || any; });
+        return any;
+      }
+      var reflectionSource = spec.sourceId || 'pv-float';
+      var reflectionKey = reflection ? reflectionSource + '|' + ids[0] + '|' + presetId : null;
+      if (reflection) {
+        if (!chainTargetsAlive([reflectionSource,ids[0]])) return true;
+        for (var rb = 0; rb < trackingBeams.length; rb++) {
+          var previous = trackingBeams[rb];
+          if (previous.reflectionKey === reflectionKey && previous.expiresAt > clock &&
+              previous.ref.rt.timeOf(previous.ref.handle) !== null) return true;
+        }
+      }
       var from = ids.length >= 2 ? ctx.posOf(ids[0])
         : (spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos());
       var toId = ids.length >= 2 ? ids[1] : ids[0];
@@ -875,6 +894,7 @@ var VFXRuntime = (function () {
       }, tracked ? 1 : undefined);
       if (ref && tracked) {
         trackingBeams.push({ ref: ref, fromId: ids.length >= 2 ? ids[0] : spec.sourceId, toId: toId, width: width, body:body, worldBody:authoredLength>0?authoredLength:180,
+          reflectionKey:reflectionKey, reflectionSource:reflectionSource, expiresAt:reflection ? clock + presetDurations[presetId] : Infinity,
           chaseSpeed:chaseSpeed, position:{x:from.x,y:from.y/groundScale}, previousTarget:{x:to.x,y:to.y/groundScale}, travelled:0, drain:0, heading:Math.atan2(dy,dx),
           speed:dist/Math.max(.001,travel), chainId:spec.area && spec.area.chainId, travel: travel, startedAt: clock, from: {x:from.x,y:from.y}, to: {x:to.x,y:to.y} });
       }
@@ -883,7 +903,8 @@ var VFXRuntime = (function () {
 
     /* 飛行物：逐幀 setTransform 從起點移到目標，朝飛行方向旋轉 */
     function playProjectile(rt, presetId, spec) {
-      rt = thunderOrbBodyEvent(spec) ? rtBillboard : rtAir;
+      rt = spec.cat === 'enemy' && spec.fxKind === 'enemy-attack' ? rtEnemyAir
+        : thunderOrbBodyEvent(spec) ? rtBillboard : rtAir;
       var ids = Array.isArray(spec.targets) ? spec.targets : [];
       /* 天降永遠不是連鎖段。少了後半這個條件，一顆同時打到兩個以上敵人的
          隕石會被當成雷鏈：起點取 ids[0] 的位置、終點取 ids[1]，於是
@@ -1828,6 +1849,10 @@ var VFXRuntime = (function () {
       /* 使用每幀已插值的實體座標，電弧前端抵達時仍落在移動目標上。 */
       for (var bi = trackingBeams.length - 1; bi >= 0; bi--) {
         var beam = trackingBeams[bi];
+        if (beam.reflectionKey && (beam.expiresAt <= clock ||
+            !chainTargetsAlive([beam.reflectionSource,beam.toId]))) {
+          stopRef(beam.ref); trackingBeams.splice(bi,1); continue;
+        }
         var beamFrom = beam.travel > 0 ? beam.from : (beam.fromId ? ctx.posOf(beam.fromId) : ctx.playerPos());
         var beamTo = ctx.posOf(beam.toId);
         if (ctx.chainPoint) {
@@ -1911,6 +1936,7 @@ var VFXRuntime = (function () {
 
       rtFx.update(step);
       if (rtAir !== rtFx) rtAir.update(step);
+      if (rtEnemyAir !== rtAir) rtEnemyAir.update(step);
       if (rtBillboard !== rtAir) rtBillboard.update(step);
       rtZone.update(step);
     }
@@ -1923,6 +1949,11 @@ var VFXRuntime = (function () {
        飛行物、受擊爆點與狀態光環不在此列：前兩者本來就是一次性的，
        狀態光環另有 syncStatuses 逐張快照對帳。 */
     function clearFields() {
+      for (var rb = trackingBeams.length - 1; rb >= 0; rb--) {
+        if (trackingBeams[rb].reflectionKey) {
+          stopRef(trackingBeams[rb].ref); trackingBeams.splice(rb,1);
+        }
+      }
       Object.keys(soulOrbits).forEach(function(id){stopSoul(id,false);});
       if (rtFx.clearTails) rtFx.clearTails();
       if (rtAir !== rtFx && rtAir.clearTails) rtAir.clearTails();
@@ -1949,6 +1980,7 @@ var VFXRuntime = (function () {
       auras = Object.create(null);
       rtFx.stopAll();
       if (rtAir !== rtFx) rtAir.stopAll();
+      if (rtEnemyAir !== rtAir) rtEnemyAir.stopAll();
       if (rtBillboard !== rtAir) rtBillboard.stopAll();
       rtZone.stopAll();
     }
@@ -1957,6 +1989,7 @@ var VFXRuntime = (function () {
       clear();
       rtFx.destroy();
       if (rtAir !== rtFx) rtAir.destroy();
+      if (rtEnemyAir !== rtAir) rtEnemyAir.destroy();
       if (rtBillboard !== rtAir) rtBillboard.destroy();
       rtZone.destroy();
     }
@@ -1984,7 +2017,7 @@ var VFXRuntime = (function () {
           /* 命中類密度控制：quality＝目前密度（1＝不介入）、hitCap＝目前預設 K、
              capped／thinned＝累計被略過的命中特效／少發粒子的命中特效（診斷疊層取差值算每秒） */
           quality: governor.quality(), hitCap: hitCapNow(null), capped: counters.capped, thinned: counters.thinned,
-          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats()
+          fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats(), enemyAir: rtEnemyAir.stats()
         };
       }
     };
@@ -2026,7 +2059,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261003-layer-duration';
+  var DATA_VERSION = '20261003-reflect-threat';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';
@@ -2061,6 +2094,8 @@ var VFXRuntime = (function () {
           airBackend: opts.airContainer ? VFXPixiBackend.createBackend({container:opts.airContainer, depthSort:true,
             depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
             projectTransform:opts.projectAirTransform}) : null,
+          enemyAirBackend: opts.enemyAirContainer ? VFXPixiBackend.createBackend({container:opts.enemyAirContainer,
+            depthSort:true,projectTransform:opts.projectAirTransform}) : null,
           billboardBackend: opts.billboardContainer ? VFXPixiBackend.createBackend({container:opts.billboardContainer, depthSort:true,
             depthBackContainer:opts.airBackContainer, depthSplitY:opts.airDepthSplitY,
             projectTransform:opts.projectBillboardTransform}) : null,

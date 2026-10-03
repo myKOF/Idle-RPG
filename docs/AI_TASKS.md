@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## REFLECT-THREAT-VFX-20261003 — 反射光線回收、敵方子彈辨識與圖層時長稽核
+
+- Owner：Codex；Done。使用者回報黃白光線堆疊、死亡仍殘留及敵方子彈被遮住，並要求全面列出異常長圖層。已定位生命反射之盾beam-light光暈原25秒，其餘層0.25秒；使用者自行改回0.25，保留此設定。查核敵方普攻各屬性與菁英路徑，單一開發者，不改傷害／攻擊時序。
+- 允許Runtime反射光線合併／生命週期與敵方子彈專用後端、battle-renderer專用顯示層及legacy相容、相關新定向測試、主頁／Editor必要快取、時長稽核報告及本紀錄、使用者beam-light時長修正。預檢相關檔乾淨；主index有Claude aef41738／c92f336b／8876d98f的裝備及神鑄UI提交，使用者已同意只改Runtime／battle-renderer兩行快取。不改其他任務、配置表、Core／協議／技能數值、其他副本，不合併／推送。
+- 驗收同源同目標反射不疊加、到期及死亡／離場立即回收、其他光束／雷鏈不受影響；敵方子彈在玩家特效上方但浮字／HUD下方，尺寸／路徑／260ms及反傷時序不變；全部243份Preset圖層時間、延遲、父子／循環／粒子判讀，異常只列不擅改。使用者目前其他Skills2三檔、slash-wind-spin及期間追加orb-void-disc修改保留，不納入本任務提交。
+- 完成：反射依earth-reflect事件語意處理，同源／同目標／同Preset正在播放時共用一道光線；到期、玩家／敵人死亡及離場即回收，多目標各從玩家發出，不再把前兩敵人串成一段。保持作者時長與每次反射傷害，不依固定Preset名稱接生命週期。敵方子彈新增專用Core後端及Canvas空中層，legacy子彈也留在該層，置於玩家技能之上、浮字／HUD之下，保持既有投影／尺寸／260ms，換場／destroy完整回收。敵人一般與菁英九種出手（無屬性及八屬性）沒有另一個黃白光束來源。
+- 稽核：243份1,610層，160份被引用；已修正beam-light/glow是唯一明確100倍誤填。寬鬆最長／最短≥2倍且差≥0.5秒共24份；相對下中位數僅burst-earth與field-dragon-devour，依塵土／循環用途沒有明確誤填。三種飛刀trail存活上限3秒列為需觀感確認；粒子／循環／延遲及未引用項目全部列在docs/vfx/LAYER_DURATION_AUDIT_20261003.md。沒有代改其他美術設定，未逐份播放243份素材。
+- 修改8檔：js/vfx-runtime.js、js/battle-renderer.js、index.html兩行快取、tools/vfx/editor/index.html同Runtime版號、使用者vfx/presets/beam-light.json時長修正、新tests/enemy-attack-vfx-lifecycle.test.cjs、新稽核報告及本紀錄。唯讀未改：Core／Pixi後端、combat／skills2／data／formula／Worker與Protocol、配置CSV／Excel、其他所有Preset／asset-index／shipped-assets、既有測試／素材匯出及協作規範。快取Runtime 1.0.170／renderer 1.6.166、Preset DATA_VERSION 20261003-reflect-threat；協議與Worker無變更。
+- 測試：`node --test tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-duration.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/lightning-chain-end.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/storm-mountain.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs`80/80通過。新測試對HEAD Runtime／renderer唯讀基準1/7通過、修正後7/7；同一正式Worker確保受擊立即扣HP、0.259秒反射尚未出現、0.261秒反射傷害及事件同步。額外enemy-attack-vfx 2項1通過1既有失敗，HEAD也同項失敗（舊regex沒有跟上既有畫面緩衝條件），不更改測試接受現況。CV-3首輪因隨機port被fetch封鎖，重跑正式80項全過。`npm.cmd run build`434檔通過；`git diff --check`通過。未宣稱全庫全綠。
+- 瀏覽器：Edge headless獨立隨機localhost、新環境safe模式，不讀正式存檔；正式遊戲Canvas／Pixi後端與素材、私有測試ctx，100次反射只保留1組，死亡update(0)即0；敵方子彈可見、在stage第6層（airFx第5／float第7／HUD第8）、到期0，頁面錯誤0，兩個新腳本快取請求及Preset三層0.25秒正確。實際玩家密集戰鬥的亮度／可讀性仍待真人驗收。
+- 素材：沿用本機Asset素材庫，git status乾淨、HEAD ed3edfb（使用者RPG Maker_MV提交），本次無圖檔變更、沒有空素材Commit。shell繼承的舊effects-materials環境變數仍指向搬移前路徑，驗證命令僅在該子程序覆寫VFX_ASSET_ROOT_EFFECTS_MATERIALS=D:/MyGame/Asset後export-assets --check成功，160個引用內容雜湊／匯出檔已是最新，不改使用者設定。無新增硬編Preset或第三種來源；臨時本次瀏覽器測試腳本提交前移除。
+- 交付：本紀錄所在`[Codex] fix: 回收反射光線並改善敵方子彈辨識`提交，需求完成、可合併，未合併／推送。使用者其他配置與兩份Preset保留未提交；下一步重整測試服，查看稽核報告後決定是否另調3秒飛刀尾跡。
+
 ## VACUUM-TRIO-GAP-20261003 — 真空三重奏每波間隔0.5秒
 
 - Owner：Codex；Done。使用者要求真空三重奏每次真空斬施放間隔0.5秒；SG_VACUUM_WAVE_MS由260改為500，傷害與特效共用延後波次。單一開發者，前置現有排程已完成；接手者使用者。

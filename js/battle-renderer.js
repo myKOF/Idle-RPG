@@ -2347,6 +2347,7 @@ var BattleRenderer = (function () {
         ? { angle: Number(pathOverride.angle) || 0, length: Number(pathOverride.length) }
         : null);
     var node = new PIXI.Container();
+    node.__enemyProjectile = spec.cat === 'enemy' && spec.variant === 'enemy-projectile';
     var core;
     var glyphOnly = spec.glyph && (spec.variant === 'glyph' ||
       spec.variant === 'knife' || spec.variant === 'knife-bounce' ||
@@ -6567,6 +6568,9 @@ var BattleRenderer = (function () {
     airBack.sortableChildren = true;
     var airFx = new PIXI.Container();
     airFx.sortableChildren = true;
+    // 敵方子彈是即將到來的威脅：置於玩家技能光暈之上、浮字與HUD之下。
+    var enemyAir = new PIXI.Container();
+    enemyAir.sortableChildren = true;
     var presetAir = new PIXI.Container();
     airFx.addChild(presetAir);
     var presetBillboard = new PIXI.Container();
@@ -6615,6 +6619,7 @@ var BattleRenderer = (function () {
     app.stage.addChild(airBack);
     app.stage.addChild(airPlayer);
     app.stage.addChild(airFx);
+    app.stage.addChild(enemyAir);
     app.stage.addChild(floatLayer);
     app.stage.addChild(playerHud);
     app.stage.addChild(overlay);
@@ -6663,7 +6668,7 @@ var BattleRenderer = (function () {
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
       presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
-      airFx: airFx, presetAir: presetAir, presetBillboard: presetBillboard,
+      airFx: airFx, enemyAir: enemyAir, presetAir: presetAir, presetBillboard: presetBillboard,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay,
@@ -6972,7 +6977,7 @@ var BattleRenderer = (function () {
   var legacyAirNodes = new Map();
   function attachAirFx(node) {
     var wrapper = new PIXI.Container();
-    wrapper.addChild(node); S.layers.airFx.addChild(wrapper);
+    wrapper.addChild(node); (node.__enemyProjectile && S.layers.enemyAir || S.layers.airFx).addChild(wrapper);
     node.__airWrapper = wrapper; legacyAirNodes.set(node, wrapper);
   }
   function syncLegacyAir() {
@@ -6983,7 +6988,8 @@ var BattleRenderer = (function () {
       wrapper.position.set(p.x-node.x*p.scale,p.y-node.y*p.scale);
       wrapper.zIndex = p.y;
       var playerY = S.player && S.player.root ? S.player.root.y : -Infinity;
-      var parent = groundToScreenY(node.y) < playerY ? S.layers.airBack : S.layers.airFx;
+      var parent = node.__enemyProjectile && S.layers.enemyAir ||
+        (groundToScreenY(node.y) < playerY ? S.layers.airBack : S.layers.airFx);
       if (parent && wrapper.parent !== parent) parent.addChild(wrapper);
     });
   }
@@ -7199,6 +7205,7 @@ var BattleRenderer = (function () {
        ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
     VFXRuntime.boot({
       airContainer: S.layers.presetAir,
+      enemyAirContainer: S.layers.enemyAir,
       billboardContainer: S.layers.presetBillboard,
       airBackContainer: S.layers.airBack,
       airDepthSplitY: function () { return S.player && S.player.root ? S.player.root.y : -Infinity; },
