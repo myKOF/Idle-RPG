@@ -12,6 +12,7 @@ var TOWER = {
   dmgDealt: 0,
   bossDmgDealt: 0,
   playerPos: null,    // 我方戰場座標（＝ bfPlayerPos() 的參照，見 placeTowerCombatants）
+  introCd: 0,         // 登場倒數（秒）：轉場期間戰鬥不開始、限時不走（見 TOWER_INTRO_SEC）
   result: null,       // 結束後的結算資料（顯示用）
   showingResult: false,
   auto: null,         // 連續挑戰 { floor, total, done, wins }；null = 未啟用
@@ -25,6 +26,12 @@ var TOWER_AUTO_MAX = 999;     // 連續挑戰次數上限
    野外的生成距離 BF_SPAWN_DIST（440）會讓限時 60 秒白白燒掉近一秒，
    這裡取近一點：我方 300／BOSS 210 對衝，約 0.35 秒接戰，仍看得到 BOSS 逼近。 */
 var TOWER_BOSS_SPAWN_DIST = 260;
+/* 野外 ⇄ 魔王戰的轉場（js/battle-renderer.js 的黑圈收合：收 1.0 秒、全黑 0.35 秒、展開 1.05 秒）。
+   模擬是即時的，畫面黑掉的那段戰鬥若照跑，60 秒限時會被吃掉、開場也看不到——
+   所以塔戰開場先有一段「登場」：計時不走、雙方不動，長度對齊整段轉場，黑圈展開完才開打。
+   回到野外時同理，出怪延後同樣長度，黑幕中不會被偷打。兩個數字改了，渲染器的轉場要一起改。 */
+var TOWER_INTRO_SEC = 2.4;
+var TOWER_EXIT_SPAWN_HOLD_SEC = 2.4;
 
 function makeBoss(floor) {
   var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
@@ -81,6 +88,7 @@ function startTowerFight(floor) {
   if (typeof resetSkillRT === 'function') resetSkillRT();
   TOWER.player.atkCd = 0.3;
   TOWER.elapsed = 0;
+  TOWER.introCd = TOWER_INTRO_SEC;
   TOWER.enrageChecked = false;
   TOWER.enraged = false;
   TOWER.specialCd = towerBossCfg(floor).chargePeriod;
@@ -147,6 +155,8 @@ function towerTick(dt) {
     return;
   }
   if (!G.tower.active || TOWER.showingResult) return;
+  // 登場：轉場黑圈還沒展開，計時、冷卻、雙方行動全部不動
+  if (TOWER.introCd > 0) { TOWER.introCd = Math.max(0, TOWER.introCd - dt); return; }
   var st = getStats();
   var p = TOWER.player, b = TOWER.boss;
   if (p && p._sgRevival && p._sgRevival.mode === 'earthguard') {
@@ -524,7 +534,8 @@ function finishTowerFight() {
     FIELD.player.hp = fieldSt.hp;
     FIELD.player.mp = fieldSt.mp;
   }
-  FIELD.monster = null; FIELD.monsters = []; FIELD._waveClearPending = false; FIELD.spawnCd = 0.5;
+  FIELD.monster = null; FIELD.monsters = []; FIELD._waveClearPending = false;
+  holdFieldSpawn(TOWER_EXIT_SPAWN_HOLD_SEC);   // 回野外的轉場期間不出怪（見 TOWER_INTRO_SEC 的說明）
   UI.dirty.tower = true; UI.dirty.battle = true; UI.dirty.header = true; UI.dirty.factory = true;
 }
 

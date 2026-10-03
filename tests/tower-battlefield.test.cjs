@@ -63,13 +63,14 @@ test('交戰：雙方對衝後才出手，普攻一律在近戰距離內、BOSS 
   const s = setup();
   s.c.startTowerFight(4);                     // 第 4 層：鋼鐵魔像（無元素＝近戰）
   assert.equal(s.c.TOWER.boss.magic, false);
-  s.tick(6);
+  const intro = s.c.TOWER_INTRO_SEC;
+  s.tick(intro + 6);
   assert.ok(s.log.player.length > 0, '我方有出手');
   assert.ok(s.log.boss.length > 0, 'BOSS 有出手');
   /* 距離要是有限值：沒有座標時 bfPlayerCanReach／bfInAttackRange 一律放行，光看布林值證明不了有在走位 */
   assert.ok(s.log.player.every(h => h.reach && h.gap <= s.c.bfMeleeRange()), '普攻不隔空');
   assert.ok(s.log.boss.every(h => h.inRange && h.gap <= s.c.bfEnemyAttackRange(s.c.TOWER.boss)), 'BOSS 不隔空');
-  assert.ok(s.log.player[0].t <= 1, '開場一秒內接戰（實際 ' + s.log.player[0].t + ' 秒）');
+  assert.ok(s.log.player[0].t <= intro + 1, '登場結束後一秒內接戰（實際 ' + s.log.player[0].t + ' 秒）');
   assert.ok(s.log.boss.every(h => h.sel === 'tp-float'), 'BOSS 打我方仍走塔戰定址');
   assert.ok(s.c.bfPlayerCanReach(s.c.TOWER.boss));
 });
@@ -80,7 +81,7 @@ test('打不到時冷卻停在 ready 不累積：BOSS 走不過來就不出手�
   const b = s.c.TOWER.boss;
   b.runSpeed = 1e-6;                          // 幾乎走不動
   s.c.bfTickPlayer = () => false;             // 我方也站著不追
-  s.tick(10);                                 // 超過蓄力周期（8 秒）
+  s.tick(s.c.TOWER_INTRO_SEC + 10);                                 // 超過蓄力周期（8 秒）
   assert.equal(s.log.boss.length, 0);
   assert.equal(s.log.player.length, 0);
   assert.equal(b.atkCd, 0);
@@ -101,4 +102,22 @@ test('結束：清掉塔戰站位參照，畫面據此回到野外', () => {
   s.c.finishTowerFight();
   assert.equal(s.c.TOWER.playerPos, null);
   assert.equal(s.c.TOWER.boss, null);
+});
+
+test('登場：轉場期間限時不走、雙方不動也不出手，結束後才開打；回野外時出怪延後同樣長度', () => {
+  const s = setup();
+  s.c.startTowerFight(4);
+  const intro = s.c.TOWER_INTRO_SEC;
+  assert.ok(intro >= 2 && intro <= 3, '轉場約 2～3 秒（使用者要求）');
+  const b = s.c.TOWER.boss;
+  const start = { x: b.pos.x, y: b.pos.y };
+  s.tick(intro - 0.2);
+  assert.equal(s.c.TOWER.elapsed, 0);
+  assert.deepStrictEqual({ x: b.pos.x, y: b.pos.y }, start);
+  assert.equal(s.log.player.length + s.log.boss.length, 0);
+  s.tick(1.2);
+  assert.ok(s.c.TOWER.elapsed > 0.5, '登場結束後限時開始走');
+  s.c.fleeTower();
+  s.c.finishTowerFight();
+  assert.equal(s.c.FIELD.spawnCd, s.c.TOWER_EXIT_SPAWN_HOLD_SEC);
 });
