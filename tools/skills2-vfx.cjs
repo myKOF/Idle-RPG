@@ -7,6 +7,7 @@ const events = {
   'windblade.5': {roles:['ground','hit'],note:'追跡小風刃只讀本階觸發地板與命中特效；沿權威位置及轉速持續播放，不另發射直線大風刃。'},
   'windblade.6': {roles:['attack','hit'],note:'大型風刃沿途脈衝只讀本階觸發與命中特效，匹配脈衝半徑；主刃及小風刃不繼承爆點。'},
   'windblade.stormMyriad': {roles:['ground','hit'],note:'追蹤大型風刃只讀本超神觸發地板與命中特效；小型追跡風刃仍讀第五階，不混入直射或沿途脈衝。'},
+  'windblade.skyCollapse': {roles:['ground','hit'],note:'受擊觸發時只生成一道小型追蹤風刃，讀本超神觸發地板與命中特效；沿權威位置持續播放，不產生大型風刃、連射、鏡射或沿途脈衝。'},
   'vacuumslash.2': {roles:['attack'],note:'前方真空斬的追加震波只讀本階觸發特效，沿施放方向；普通斬擊及迴旋斬外觀分開。'},
   'vacuumslash.7': {roles:['attack','projectile','hit','ground'],note:'額外虛空斬只讀本階觸發角色；環繞體與軌道依實際半徑及成長播放，接觸只播命中特效，不重新發射。虛空滅界與時空崩解共用本列。'},
   'vacuumslash.vacuumOmen': {roles:['ground','hit'],note:'命中觸發的靜止真空斬只讀本超神地板與命中特效，保持出生位置且按權威半徑成長；普通斬擊不繼承靜止場域。'},

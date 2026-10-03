@@ -1,6 +1,10 @@
-# Worker 協議 v40
+# Worker 協議 v42
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 40`　最後更新：2026-09-29
+> 協議版本：`WORKER_PROTOCOL_VERSION = 42`　最後更新：2026-10-03
+
+v42：新增 `skill2.ultSwitch` → `skills2UltSwitch(group, opt, fromOpt, fromLv, cost)`（指令表 87 → 88 條）。`opt`／`fromOpt` 為 0..2 的整數，`fromLv` 為 1..10 的整數，`cost` 為非負有限數字。UI 二次確認顯示舊技能／等級、新技能 Lv.1、原投資不退還與完整金幣費用；確認前不送指令。Worker 先驗證解鎖、原選擇／等級及配置表首次選擇費用與報價一致、餘額足夠，再一次扣款並替換選擇為 Lv.1。過期確認、相同選項或驗證失敗均保留舊技能與金幣，避免分開刪除／選擇造成投資遺失；不改存檔格式。
+
+v41：`passivePanel` 移除 `hpDrainBase`／`mpDrainBase`／`hpDrain`／`mpDrain`；`lifesteal`／`manaSteal` 改為套用汲取倍率後每次回復的定值，缺欄沿主執行緒 fallback。
 
 v40（2026-09-29 舊版技能系統移除）：**刪除**指令 `skill.learn`／`skill.maxUpgrade`／`skill.downgrade`／`skill.delete`／`skill.fuse`／`skill.deleteFusion` 與參數型別 `ids`（凍結指令表 93 → 87 條）；`TICK_VIEW_KEYS` 移除 `magicScroll`；`skills` 面板投影只剩 `loadout`／`loadoutSize`／`skills2`／`points`／`budget`／`mastery`（不再有 `skills`／`unlocks`／`fusions`／`unlockLv`／`maxLv`／`scrolls`／`fusionCosts`）。保留 `skill.equipLoadout`／`skill.unequipLoadout`／`skill.reorderLoadout` 與 `skill2.*`、`talent.potential*`。
 
@@ -321,6 +325,8 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 42 | 2026-10-03 | 超神進化原子切換，驗證確認時的原選擇、等級與報價；避免扣款不足或過期確認刪除原技能。 |
+| 41 | 2026-10-01 | 吸血／吸魔改定值，passivePanel 移除四個以每秒回復換算的欄位。 |
 | 40 | 2026-09-29 | **舊版技能系統移除**：刪除 6 條 `skill.*` 舊技能指令與 `ids` 參數型別、`TICK_VIEW_KEYS` 的 `magicScroll`、`skills` 面板的舊技能欄位（見上）。 |
 | 37 | 2026-09-22 | 星環旋轉編隊幾何；讓畫面與旋轉路徑命中同步，避免只畫旋轉卻仍打中心直線。 |
 | 36 | 2026-09-22 | **角色動作事件**：新增事件種類 `act`＝`{ act, elId, target, lockMs }`，目前只有 `act: 'cast'`（技能開始施放）。發送端：`js/skills.js beginSkillCast`（經 `shim.js emitPlayerAct`）；接收端：`js/ui.js` 轉給 `BattleRenderer.onAct`。走 `visual` 訊息。指令表未變動（仍 93 條）。<br>理由：主角換成有施法動作的騎士（Special1）。技能特效大多交給 Preset 播，顯示層在 Preset 接手之後就不再碰角色，所以技能一直沒有施法動作；而用特效事件去猜「哪一則是施放」也不可靠——同一次施放會送出很多則（子段、飛行物命中、場域週期）。只有模擬層知道技能真的開始施放、硬直多長，所以由它說。 |

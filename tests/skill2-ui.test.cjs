@@ -60,6 +60,59 @@ test('未解鎖的階只能查看，不產生升級鈕', () => {
   assert.match(h, /sgb-tier sgb-tier-locked/);
 });
 
+test('點擊群組預設最高已學階，不跳下一個未學階；七階全滿選第七階', () => {
+  const c = loadContext();
+  for (const [levels, expected] of [
+    [Array(7).fill(0), 0],
+    [[10, 0, 0, 0, 0, 0, 0], 0],
+    [[10, 10, 3, 0, 0, 0, 0], 2],
+    [[10, 10, 10, 0, 0, 0, 0], 2],
+    [Array(7).fill(10), 6]
+  ]) {
+    const snap = snapshot({ thrust: levels });
+    c.sgbSelectGroup('thrust', snap);
+    assert.equal(c.UI.sgBrowse.gid, 'thrust');
+    assert.equal(c.UI.sgBrowse.tier, expected);
+    assert.equal(c.UI.sgBrowse.focus, 'tier');
+    const h = c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } });
+    assert.equal((h.match(/class="sgb-tier-detail"/g) || []).length, 1);
+    assert.doesNotMatch(h, /sgb-ult-detail/);
+  }
+});
+
+test('有效超神為最高已學階，預設展開已選項；失效保留的超神回普通最高階', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: Array(7).fill(10) });
+  snap.skills2.ult = { thrust: { pick: 1, lv: 3 } };
+  c.UI.sgBrowse.tier = null;
+  const initial = c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } });
+  assert.equal(c.UI.sgBrowse.focus, 'ult');
+  assert.equal(c.UI.sgBrowse.ultFocus, 1);
+  assert.match(initial, /sgb-ult-detail/);
+  assert.doesNotMatch(initial, /class="sgb-tier-detail"/);
+  snap.skills2.levels.thrust[6] = 9;
+  c.sgbSelectGroup('thrust', snap);
+  assert.equal(c.UI.sgBrowse.focus, 'tier');
+  assert.equal(c.UI.sgBrowse.tier, 6);
+  assert.equal(c.UI.sgBrowse.ultFocus, null);
+});
+
+test('一般重繪保留手動階級，再點相同群組回最高階與已選超神', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: Array(7).fill(10) });
+  snap.skills2.ult = { thrust: { pick: 2, lv: 10 } };
+  c.sgbSelectGroup('thrust', snap);
+  c.UI.sgBrowse.tier = 0;
+  c.UI.sgBrowse.focus = 'tier';
+  c.sgbDetailHTML('thrust', snap, { player: { gold: 42 } });
+  assert.equal(c.UI.sgBrowse.tier, 0);
+  assert.equal(c.UI.sgBrowse.focus, 'tier');
+  c.UI.sgBrowse.ultFocus = 0;
+  c.sgbSelectGroup('thrust', snap);
+  assert.equal(c.UI.sgBrowse.focus, 'ult');
+  assert.equal(c.UI.sgBrowse.ultFocus, 2);
+});
+
 test('投資中的階有升級與一鍵滿級；滿級只剩降級與重置', () => {
   const c = loadContext();
   const snap = snapshot({ thrust: [10, 4, 0, 0, 0, 0, 0] });
@@ -104,10 +157,71 @@ test('超神進化：未開放顯示還差幾階，未選三選一，已選升�
   assert.match(chosen, new RegExp('data-skill2-learn="thrust:' + c.SG_ULT_SLOT + '"'));
   assert.match(chosen, /sgb-ult-card is-chosen/);
   assert.match(chosen, /sgb-fork-bar is-lit/);
-  // 已選定時，點別的選項只預覽並提示要先重選
+  // 已選定時，點別的選項可直接付費切換。
   c.UI.sgBrowse.ultFocus = 0;
   const other = c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } });
-  assert.match(other, /要改選需先按「重選」/);
+  assert.match(other, /data-skill2-ultswitch="thrust:0"/);
+  assert.match(other, /切換 · .* 金幣/);
+  assert.doesNotMatch(other, /data-skill2-delete|data-skill2-ultpick/);
+  const poor = c.sgbDetailHTML('thrust', snap, { player: { gold: 0 } });
+  assert.match(poor, /data-skill2-ultswitch="thrust:0"[^>]*disabled/);
+  snap.skills2.levels.thrust[6] = 9;
+  assert.doesNotMatch(c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch/);
+});
+
+test('切換二次確認顯示完整費用；取消不送指令，確認只送原子切換', async () => {
+  const c = loadContext();
+  const snap = snapshot({ frostnova: Array(7).fill(10) });
+  snap.skills2.progress = { level: 1000, reinc: 10 };
+  snap.skills2.ult = { frostnova: { pick: 1, lv: 10 } };
+  c.uiSkillsPanelSnapshot = () => snap;
+  const elements = {};
+  function element() {
+    return {
+      style: {}, children: [], text: '',
+      set textContent(value) { this.text = value; this.children = []; },
+      get textContent() { return this.text + this.children.map(child => child.textContent).join(''); },
+      appendChild(child) { this.children.push(child); }
+    };
+  }
+  for (const id of ['confirm-modal', 'confirm-message', 'confirm-ok', 'confirm-cancel', 'confirm-title']) {
+    elements[id] = element();
+  }
+  c.document.createElement = () => element();
+  c.document.createTextNode = (text) => ({ textContent: text });
+  c.document.getElementById = (id) => elements[id] || null;
+  const sent = [], errors = [];
+  c.sendUiCommand = (...args) => { sent.push(args); return Promise.resolve(null); };
+  c.reportUiCommandFailure = (...args) => errors.push(args);
+  const cost = c.skills2UltCost('frostnova', 2, 0);
+  c.runSkill2UltSwitch('frostnova', 2);
+  assert.equal(elements['confirm-modal'].style.display, 'flex');
+  assert.equal(elements['confirm-title'].textContent, '超神進化切換確認');
+  assert.equal(elements['confirm-ok'].textContent, '確認切換');
+  const highlight = elements['confirm-message'].children[0];
+  assert.equal(highlight.className, 'confirm-highlight');
+  assert.equal(highlight.textContent, '需支付 ' + cost.toLocaleString('en-US') + ' 金幣');
+  assert.match(elements['confirm-message'].textContent, /極致之冰.*Lv\.10.*冰皇領域.*Lv\.1/);
+  assert.ok(elements['confirm-message'].textContent.includes(cost.toLocaleString('en-US') + ' 金幣'));
+  assert.match(elements['confirm-message'].textContent, /原技能與等級將清除.*金幣不退還/);
+  assert.equal(sent.length, 0);
+  elements['confirm-cancel'].onclick();
+  assert.equal(sent.length, 0);
+  assert.equal(elements['confirm-modal'].style.display, 'none');
+  c.runSkill2UltSwitch('frostnova', 2);
+  const confirm = elements['confirm-ok'].onclick;
+  confirm();
+  await Promise.resolve();
+  assert.equal(elements['confirm-ok'].onclick, null);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0][0], 'skill2.ultSwitch');
+  assert.deepEqual(JSON.parse(JSON.stringify(sent[0][1])), { group: 'frostnova', opt: 2, fromOpt: 1, fromLv: 10, cost });
+  assert.deepEqual(errors, []);
+  c.sendUiCommand = () => Promise.resolve({ err: '金幣不足' });
+  c.runSkill2UltSwitch('frostnova', 2);
+  elements['confirm-ok'].onclick();
+  await Promise.resolve();
+  assert.equal(errors[0][1], '金幣不足');
 });
 
 test('同一時間只展開一段說明：看某一階時超神說明收起，看超神時各階收起', () => {
@@ -120,6 +234,30 @@ test('同一時間只展開一段說明：看某一階時超神說明收起，�
   const ultView = detail(c, 'thrust', snap, 2, undefined, 'ult');
   assert.doesNotMatch(ultView, /class="sgb-tier-detail"/);
   assert.match(ultView, /sgb-ult-detail/);
+});
+
+test('降級保留的超神明確標示未生效，且不亮起選擇卡與連線', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: [10, 10, 10, 10, 10, 10, 9] });
+  snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
+  const h = detail(c, 'thrust', snap, 0, undefined, 'ult');
+  assert.match(h, /未生效 · 已保留 · Lv.10 \/ 10/);
+  assert.doesNotMatch(h, /sgb-ult-card is-chosen|sgb-fork-bar is-lit|sgb-line-full is-lit/);
+  assert.doesNotMatch(h, /data-skill2-learn="thrust:7"/);
+});
+
+test('舊重置殘留可從第 1 階保底再重置，清除後總級數與超神卡一致', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: [1, 0, 0, 0, 0, 0, 0] });
+  snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
+  const residual = detail(c, 'thrust', snap, 0);
+  assert.match(residual, /data-skill2-delete="thrust:0"/);
+  assert.doesNotMatch(residual, /data-skill2-downgrade="thrust:0"/);
+  delete snap.skills2.ult.thrust;
+  const reset = detail(c, 'thrust', snap, 0);
+  assert.equal(c.sgbTotals('thrust', snap.skills2.levels.thrust, snap).total, 1);
+  assert.equal((reset.match(/未開放/g) || []).length, 3);
+  assert.doesNotMatch(reset, /已選擇|已保留|sgb-ult-card is-chosen|data-skill2-delete="thrust:0"/);
 });
 
 test('篩選只有全部／物理／魔法三個，依傷害類型分類', () => {

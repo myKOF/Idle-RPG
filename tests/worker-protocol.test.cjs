@@ -21,7 +21,7 @@ const EXPECTED_COMMAND_COUNTS = {
   gem: 14,
   player: 6,
   skill: 3,
-  skill2: 5,
+  skill2: 6,
   talent: 8,
   tower: 6,
   forge: 10,
@@ -90,7 +90,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -117,12 +117,13 @@ test('凍結的 Worker 指令表有 87 條且分類數量固定', () => {
   // 2026-09-29 移除舊版技能系統：刪除 skill.learn／maxUpgrade／downgrade／delete／fuse／deleteFusion
   //      六條指令與 'ids' 參數型別（僅融合技使用），93 → 87；skill 分類 9 → 3（只剩裝載欄三條）。
   // v41：吸血／吸魔改定值，passivePanel 移除四個以每秒回復換算的欄位。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 41);
+  // v42：原子超神進化切換，87 → 88。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 42);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 87);
+  assert.equal(names.length, 88);
   ['skill.learn', 'skill.maxUpgrade', 'skill.downgrade', 'skill.delete', 'skill.fuse', 'skill.deleteFusion']
     .forEach((name) => assert.ok(!names.includes(name), name + ' 屬於已移除的舊技能系統，不得復活'));
 

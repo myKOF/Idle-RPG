@@ -528,19 +528,24 @@ function runStandaloneServer(options) {
 }
 
 function listenOnAvailablePort(server, port, open, quiet) {
-  server.once('error', (error) => {
+  const onListening = () => {
+    server.removeListener('error', onError);
+    managerPort = port;
+    const url = `http://127.0.0.1:${port}/`;
+    if (!quiet) console.log(`Idle-RPG test server manager: ${url}`);
+    if (open) setTimeout(() => openBrowser(url), 250);
+  };
+  const onError = (error) => {
+    // Node 在 listen 失敗時不會移除成功回呼；重試前清除，避免成功時一次開出多個分頁。
+    server.removeListener('listening', onListening);
     if (error.code === 'EADDRINUSE' && port < DEFAULT_MANAGER_PORT + 20) {
       listenOnAvailablePort(server, port + 1, open, quiet);
       return;
     }
     throw error;
-  });
-  server.listen(port, '127.0.0.1', () => {
-    managerPort = port;
-    const url = `http://127.0.0.1:${port}/`;
-    if (!quiet) console.log(`Idle-RPG test server manager: ${url}`);
-    if (open) setTimeout(() => openBrowser(url), 250);
-  });
+  };
+  server.once('error', onError);
+  server.listen(port, '127.0.0.1', onListening);
 }
 
 if (require.main === module) {

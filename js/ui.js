@@ -8028,6 +8028,32 @@ function runSkill2UltPick(group, opt) {
   });
 }
 
+function runSkill2UltSwitch(group, opt) {
+  var sk = uiSkillsPanelSnapshot();
+  var pick = sgUiUltPick(sk, group);
+  var target = sgUltOption(group, opt);
+  if (!pick || !target || pick.idx === opt || !sgUiUltUnlocked(group, sgUiLevels(sk, group))) return;
+  var cost = skills2UltCost(group, opt, 0);
+  var costText = '需支付 ' + cost.toLocaleString('en-US') + ' 金幣';
+  var panels = ['skills', 'header'];
+  var args = { group: group, opt: opt, fromOpt: pick.idx, fromLv: pick.lv, cost: cost };
+  showConfirmDialog(
+    '確定將超神進化「' + pick.def.name + '」Lv.' + pick.lv + ' 切換為「' + target.name + '」Lv.1？\n\n' +
+    '此操作視同重選：原技能與等級將清除，已投入的金幣不退還；前 7 階不受影響。\n' +
+    costText + '。', function () {
+      sendUiCommand('skill2.ultSwitch', args, {
+        silentResultError: true,
+        keys: nodePendingKey('sg:' + group),
+        panels: panels
+      }).then(function (result) {
+        var error = uiCommandResultError(result);
+        if (error) reportUiCommandFailure('超神進化切換失敗', error, panels);
+      }, function (error) {
+        reportUiCommandFailure('超神進化切換失敗', error, panels);
+      });
+    }, { title: '超神進化切換確認', okText: '確認切換', highlightText: costText, danger: true });
+}
+
 function runSkill2MaxAction(group, tier) {
   runSkill2UiAction('skill2.max', group, tier);
 }
@@ -8321,13 +8347,23 @@ function sgbTotals(gid, lvs, skillsSnapshot) {
   return { total: sgUiTotalLevel(lvs) + (pick ? pick.lv : 0), max: slots * sgbTierMax(), pick: pick };
 }
 
-/* 換群組（或第一次進來）時預設展開的階：第一個「已解鎖但還沒滿級」的階，都滿了就第 1 階 */
-function sgbDefaultTier(gid, lvs, skillsSnapshot) {
+/* 預設展開最高已學普通階；未學過的群組從第 1 階開始。 */
+function sgbDefaultTier(gid, lvs) {
   var g = SKILLS2[gid];
-  for (var i = 0; i < g.tiers.length; i++) {
-    if (sgStageUnlocked(gid, lvs, i, skillsSnapshot) && (lvs[i] || 0) < sgbTierMax()) return i;
+  for (var i = g.tiers.length - 1; i >= 0; i--) {
+    if ((lvs[i] || 0) > 0) return i;
   }
   return 0;
+}
+
+function sgbSelectGroup(gid, skillsSnapshot) {
+  var lvs = sgUiLevels(skillsSnapshot, gid) || [];
+  var pick = sgUiUltPick(skillsSnapshot, gid);
+  var activePick = pick && sgUiUltUnlocked(gid, lvs);
+  UI.sgBrowse.gid = gid;
+  UI.sgBrowse.tier = sgbDefaultTier(gid, lvs);
+  UI.sgBrowse.ultFocus = activePick ? pick.idx : null;
+  UI.sgBrowse.focus = activePick ? 'ult' : 'tier';
 }
 
 /* 目前選中的群組：沒選過或被篩選掉時，依序挑技能列上的第一個、已學會的第一個、清單第一個 */
@@ -8433,7 +8469,7 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
   var atCap = lv >= tierMax;
   var last = i === g.tiers.length - 1;
   var upLit = i > 0 && (lvs[i - 1] || 0) > 0 && lv > 0;
-  var downLit = last ? (lv > 0 && hasUltPick) : (lv > 0 && (lvs[i + 1] || 0) > 0);
+  var downLit = last ? (lv > 0 && hasUltPick && sgUiUltUnlocked(gid, lvs)) : (lv > 0 && (lvs[i + 1] || 0) > 0);
   var state = locked && lv === 0 ? 'locked' : (atCap ? 'max' : (lv > 0 ? 'part' : 'zero'));
   var selected = UI.sgBrowse.focus !== 'ult' && UI.sgBrowse.tier === i;
   var h = '<div class="sgb-tier sgb-tier-' + state + (selected ? ' is-sel' : '') + '">' +
@@ -8467,7 +8503,10 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
     var canDowngrade = (i === 0) ? (lv > 1) : (lv > 0);
     if (canDowngrade) {
       h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="降 1 級（不退還金幣）"' + pendingAttrs + '>降級</button>';
-      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="重置此階等級（不退還金幣）"' + pendingAttrs + '>重置</button>';
+    }
+    // 已在第 1 階保底時，仍可重置以清除舊存檔殘留的超神投資。
+    if (canDowngrade || (i === 0 && hasUltPick)) {
+      h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="重置此階及後續階級，清除超神進化（不退還金幣）"' + pendingAttrs + '>重置</button>';
     }
     h += '</div></div>';
   }
@@ -8479,21 +8518,22 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   var list = sgUltDefs(gid) || [];
   var pick = sgUiUltPick(skillsSnapshot, gid);
   var unlocked = sgUiUltUnlocked(gid, lvs);
+  var activePick = !!pick && unlocked;
   var tierMax = sgbTierMax();
   var f = (typeof UI.sgBrowse.ultFocus === 'number' && list[UI.sgBrowse.ultFocus]) ? UI.sgBrowse.ultFocus : (pick ? pick.idx : 0);
   var ultOpen = UI.sgBrowse.focus === 'ult';
   var h = '<div class="sgb-ult">' +
-    '<div class="sgb-ult-head"><span class="sgb-rail" aria-hidden="true"><span class="sgb-line sgb-line-full' + (pick ? ' is-lit' : '') + '"></span></span>' +
+    '<div class="sgb-ult-head"><span class="sgb-rail" aria-hidden="true"><span class="sgb-line sgb-line-full' + (activePick ? ' is-lit' : '') + '"></span></span>' +
     '<b>第 ' + (g.tiers.length + 1) + ' 階 · 超神進化</b><span class="sgb-ult-sub">三選一</span></div>';
   // 分岔：橫線從節點欄接到被選中的那一張卡，三張卡各自往上接一小段
   var litTo = pick ? ((2 * pick.idx + 1) / (2 * list.length) * 100) : 0;
   h += '<div class="sgb-fork" aria-hidden="true"><span class="sgb-fork-bar"></span>' +
-    (pick ? '<span class="sgb-fork-bar is-lit" style="width:calc(' + litTo.toFixed(2) + '% - 20px)"></span>' : '') + '</div>';
+    (activePick ? '<span class="sgb-fork-bar is-lit" style="width:calc(' + litTo.toFixed(2) + '% - 20px)"></span>' : '') + '</div>';
   h += '<div class="sgb-ult-cards" style="--n:' + list.length + '">';
   for (var j = 0; j < list.length; j++) {
     var chosen = !!pick && pick.idx === j;
-    var status = !unlocked && !chosen ? '未開放' : (chosen ? '已選擇 · Lv.' + pick.lv + ' / ' + tierMax : (pick ? '未選擇' : '可選擇'));
-    h += '<button type="button" class="sgb-ult-card' + (chosen ? ' is-chosen' : '') + (ultOpen && f === j ? ' is-focus' : '') +
+    var status = !unlocked && !chosen ? '未開放' : (chosen ? (unlocked ? '已選擇' : '未生效 · 已保留') + ' · Lv.' + pick.lv + ' / ' + tierMax : (pick ? '未選擇' : '可選擇'));
+    h += '<button type="button" class="sgb-ult-card' + (chosen && unlocked ? ' is-chosen' : '') + (ultOpen && f === j ? ' is-focus' : '') +
       (pick && !chosen ? ' is-other' : '') + '" data-sgb-ult="' + j + '" aria-pressed="' + (ultOpen && f === j) + '">' +
       '<b>' + esc(list[j].name) + '</b><span>' + status + '</span></button>';
   }
@@ -8519,7 +8559,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   } else if (!pick) {
     var pickCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, f, 0) : 0;
     h += '<button class="btn sgb-btn-primary" data-skill2-ultpick="' + gid + ':' + f + '"' + pendingAttrs +
-      (gold < pickCost ? ' disabled' : '') + ' data-tip="選定後不可更改；要換效果須先降至 Lv.0">選擇「' + esc(list[f].name) + '」 · ' + fmt(pickCost) + ' 金幣</button>';
+      (gold < pickCost ? ' disabled' : '') + ' data-tip="選定為 Lv.1；之後可付金幣切換，原投資不退還">選擇「' + esc(list[f].name) + '」 · ' + fmt(pickCost) + ' 金幣</button>';
   } else if (fChosen) {
     if (pick.lv < tierMax) {
       var upCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, pick.idx, pick.lv) : 0;
@@ -8533,7 +8573,9 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
     h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + SG_ULT_SLOT + '" data-tip="降 1 級（不退還金幣）；降到 Lv.0 會清除選擇，可重新三選一"' + pendingAttrs + '>降級</button>';
     h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="清除超神進化選擇（不退還金幣），之後可重新三選一"' + pendingAttrs + '>重選</button>';
   } else {
-    h += '<span class="sgb-lock">目前選擇「' + esc(pick.def.name) + '」；要改選需先按「重選」</span>';
+    var switchCost = skills2UltCost(gid, f, 0);
+    h += '<button class="btn sgb-btn-primary" data-skill2-ultswitch="' + gid + ':' + f + '"' + pendingAttrs +
+      (gold < switchCost ? ' disabled' : '') + ' data-tip="支付 ' + switchCost.toLocaleString('en-US') + ' 金幣，清除原技能與等級並選擇此技能 Lv.1（不退還原投資）">切換 · ' + fmt(switchCost) + ' 金幣</button>';
   }
   return h + '</div></div></div>';
 }
@@ -8550,7 +8592,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   var color = SGB_ELEM_COLORS[sgbElemOf(gid)] || '#c9c3b5';
   var elemInfo = (g.elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[g.elem]) ? ELEM_INFO[g.elem] : null;
   if (typeof UI.sgBrowse.tier !== 'number' || UI.sgBrowse.tier < 0 || UI.sgBrowse.tier >= g.tiers.length) {
-    UI.sgBrowse.tier = sgbDefaultTier(gid, lvs, skillsSnapshot);
+    sgbSelectGroup(gid, skillsSnapshot);
   }
 
   var tags = '<span class="skill-tag skill-tag-category">' + (g.dmgType === 'magic' ? '魔法' : '物理') + '</span>';
@@ -8601,10 +8643,8 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
   var ids = all.filter(function (id) { return UI.sgBrowse.filter === 'all' || sgbCategoryOf(id) === UI.sgBrowse.filter; });
   var gid = sgbResolveGroup(skillsSnapshot, ids);
   if (gid !== UI.sgBrowse.gid) {
-    UI.sgBrowse.gid = gid;
-    UI.sgBrowse.tier = null;
-    UI.sgBrowse.ultFocus = null;
-    UI.sgBrowse.focus = 'tier';
+    if (gid) sgbSelectGroup(gid, skillsSnapshot);
+    else UI.sgBrowse.gid = null;
   }
   var loadout = skillViewLoadout(skillsSnapshot);
 
@@ -10144,6 +10184,18 @@ function showConfirmDialog(message, onConfirm, options) {
   if (title) title.textContent = options.title || '操作確認';
   modal.className = 'modal-overlay confirm-modal' + (options.dialogClass ? ' ' + options.dialogClass : '');
   msg.textContent = message || '';
+  if (options.highlightText) {
+    var highlightAt = msg.textContent.indexOf(options.highlightText);
+    if (highlightAt >= 0) {
+      var plainMessage = msg.textContent;
+      msg.textContent = plainMessage.slice(0, highlightAt);
+      var highlight = document.createElement('span');
+      highlight.className = 'confirm-highlight';
+      highlight.textContent = options.highlightText;
+      msg.appendChild(highlight);
+      msg.appendChild(document.createTextNode(plainMessage.slice(highlightAt + options.highlightText.length)));
+    }
+  }
   if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
     var talentUnlockNotice = document.createElement('div');
     talentUnlockNotice.className = 'confirm-highlight';
@@ -10827,12 +10879,7 @@ function initUI() {
     var sgbGroup = e.target.closest('[data-sgb-group]');
     if (sgbGroup) {
       var nextGid = sgbGroup.getAttribute('data-sgb-group');
-      if (nextGid !== UI.sgBrowse.gid) {
-        UI.sgBrowse.gid = nextGid;
-        UI.sgBrowse.tier = null;
-        UI.sgBrowse.ultFocus = null;
-        UI.sgBrowse.focus = 'tier';
-      }
+      sgbSelectGroup(nextGid, uiSkillsPanelSnapshot());
       renderSkills();
       return;
     }
@@ -10863,6 +10910,14 @@ function initUI() {
             }
           });
         }
+      }
+      return;
+    }
+    var s2switch = e.target.closest('[data-skill2-ultswitch]');
+    if (s2switch) {
+      if (!s2switch.disabled) {
+        var s2switchRef = String(s2switch.getAttribute('data-skill2-ultswitch')).split(':');
+        runSkill2UltSwitch(s2switchRef[0], Number(s2switchRef[1]));
       }
       return;
     }
@@ -10902,7 +10957,9 @@ function initUI() {
       var gObj = (typeof SKILLS2 !== 'undefined') ? SKILLS2[delGid] : null;
       var tierObj = gObj && gObj.tiers[delTier];
       var tierName = tierObj ? tierObj.name : '技能';
-      var confirmMsg = '確定重置技能階級【' + tierName + '】？等級將歸零（第 1 階保留 Lv.1，不退還金幣）。';
+      var confirmMsg = sgIsUltSlot(delGid, delTier)
+        ? '確定清除超神進化的選擇與等級？前 7 階不受影響，不退還金幣。'
+        : '確定重置技能階級【' + tierName + '】？此階及所有後續階級將重置，超神進化的選擇與等級也會清除（第 1 階保留 Lv.1，不退還金幣）。';
       showConfirmDialog(confirmMsg, function () {
         runSkill2DeleteAction(delGid, delTier);
       }, { title: '技能重置確認', danger: true });
@@ -11409,12 +11466,7 @@ function initUI() {
     var bssGid = sgGroupIdOf(skId);
     if (bssGid !== null && typeof SKILLS2 !== 'undefined' && SKILLS2[bssGid]) {
       if (UI.sgBrowse.filter !== 'all' && sgbCategoryOf(bssGid) !== UI.sgBrowse.filter) UI.sgBrowse.filter = 'all';
-      if (UI.sgBrowse.gid !== bssGid) {
-        UI.sgBrowse.gid = bssGid;
-        UI.sgBrowse.tier = null;
-        UI.sgBrowse.ultFocus = null;
-        UI.sgBrowse.focus = 'tier';
-      }
+      sgbSelectGroup(bssGid, uiSkillsPanelSnapshot());
       renderSkills();
       var bssItem = document.querySelector('#sgb-items [data-sgb-group="' + bssGid + '"]');
       if (bssItem && typeof bssItem.scrollIntoView === 'function') bssItem.scrollIntoView({ block: 'nearest' });
@@ -13494,4 +13546,3 @@ var UIContainmentManager = {
 if (typeof window !== 'undefined') {
   window.UIContainmentManager = UIContainmentManager;
 }
-

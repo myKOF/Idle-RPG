@@ -2,6 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
+const { EventEmitter } = require('node:events');
 
 const root = path.resolve(__dirname, '..');
 const { isRelevantEndpoint } = require(path.join(root, 'tools', 'test_server_manager.cjs'));
@@ -58,4 +60,70 @@ test('刷新時會保留 HttpListener / HTTP.sys 啟動的測試服', () => {
     commandLine: 'powershell.exe -File .claude\\serve.ps1 -Port 8321',
   }), true);
   assert.equal(isRelevantEndpoint({ processName: 'System' }), true);
+});
+
+// 以 CLI 入口執行正式控制台；替身只隔離網路、開瀏覽器與延遲，不改重試邏輯。
+function launchManager(occupiedCount, { open = true, errorCode = 'EADDRINUSE' } = {}) {
+  const attempts = [], opens = [], timers = [], pending = [];
+  const server = new EventEmitter();
+  server.listen = (port, host, onListening) => {
+    attempts.push({ port, host });
+    if (onListening) server.once('listening', onListening);
+    pending.push(() => {
+      if (attempts.length <= occupiedCount) server.emit('error', Object.assign(new Error(errorCode), { code: errorCode }));
+      else server.emit('listening');
+    });
+    return server;
+  };
+  const module = { exports: {} };
+  function isolatedRequire(id) {
+    if (id === 'http') return { createServer: () => server };
+    if (id === 'child_process') return {
+      spawn(file, args, options) { opens.push({ file, args, options }); return { unref() {} }; }
+    };
+    return require(id);
+  }
+  isolatedRequire.main = module;
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'tools/test_server_manager.cjs'), 'utf8'), {
+    module, require: isolatedRequire, __dirname: path.join(root, 'tools'),
+    __filename: path.join(root, 'tools/test_server_manager.cjs'), console,
+    process: { argv: ['node', 'manager', '--quiet', ...(open ? ['--open'] : [])], pid: 12345 },
+    setTimeout(fn) { timers.push(fn); }
+  });
+  function drain() {
+    while (pending.length) pending.shift()();
+    while (timers.length) timers.shift()();
+  }
+  return { server, attempts, opens, drain };
+}
+
+for (const occupiedCount of [0, 1, 5, 20]) {
+  test(`控制台 CLI：${occupiedCount} 個連續 Port 被占用，成功後只開最終地址一頁`, () => {
+    const launch = launchManager(occupiedCount);
+    launch.drain();
+    assert.deepEqual(launch.attempts.map(a => a.port), Array.from({ length: occupiedCount + 1 }, (_, i) => 8124 + i));
+    assert.equal(launch.opens.length, 1);
+    assert.deepEqual(Array.from(launch.opens[0].args), ['/c', 'start', '', `http://127.0.0.1:${8124 + occupiedCount}/`]);
+    assert.equal(launch.opens[0].options.windowsHide, true);
+    assert.equal(launch.server.listenerCount('listening'), 0);
+    // 啟動重試專用的錯誤處理不能在已啟動後殘留。
+    assert.equal(launch.server.listenerCount('error'), 0);
+  });
+}
+
+test('控制台 CLI：未指定 --open，即使換 Port 也不開網頁', () => {
+  const launch = launchManager(5, { open: false });
+  launch.drain();
+  assert.equal(launch.attempts.length, 6);
+  assert.equal(launch.opens.length, 0);
+});
+
+test('控制台 CLI：Port 全部占用或其他啟動錯誤不開網頁，也不留下成功回呼', () => {
+  for (const [occupiedCount, errorCode, expectedAttempts] of [[21, 'EADDRINUSE', 21], [1, 'EACCES', 1]]) {
+    const launch = launchManager(occupiedCount, { errorCode });
+    assert.throws(() => launch.drain(), error => error.code === errorCode);
+    assert.equal(launch.attempts.length, expectedAttempts);
+    assert.equal(launch.opens.length, 0);
+    assert.equal(launch.server.listenerCount('listening'), 0);
+  }
 });

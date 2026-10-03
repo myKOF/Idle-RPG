@@ -1,5 +1,63 @@
 # AI_TASKS.md
 
+## SKY-COLLAPSE-ONE-20261003 — 天穹崩裂只觸發一道小型追蹤風刃
+
+- Owner：Codex；程式／配置／測試完成，Blocked（依使用者指示等待Claude整合快取）。使用者要求每次觸發只射出1道小型追蹤風刃；前置既有小風刃追擊機制。固定20%機率，傷害沿用小風刃計算及超神加成，追蹤範圍／壽命沿用追跡風刃；不再完整施放七階風刃，不受四方向／連射／鏡射增加數量。
+- 允許js/skills2.js限定天穹崩裂、Skills2.xlsx／CSV該列說明與既有觸發特效角色、定向測試、必要index／bridge／Worker快取及本紀錄；禁止其他技能、UI焦點任務區段、配置其他列、Claude威能文字區段、素材、合併／推送。Worker預檢有Claude1739／1747行文字修改，使用者同意只更新第17行skills2快取；其他目標無外部衝突。同副本的技能最高階焦點任務保留，共享紀錄／index分段更新並隔離提交。
+- 驗收Lv.1／10機率與傷害、一次觸發僅一個追擊場域／零大型飛行物、傳奇不增加數量、追擊命中及正式Runtime不重建本體、裝備／死亡／閃避／無敵閘門、既有普通風刃／其他超神保持、Excel原生重開與資料／格式一致、建置及獨立Commit。後續接手者使用者。
+- 完成：受擊成功擲骰後直接共用sgSpawnWindChaser，只產生一道小刃；初始朝攻擊者，後續沿既有30米隨機追擊、Lv.10普通第五階維持7秒。伤害取風刃本體×亂披風小刃比例×傳奇小刃加成，保留超神獨立乘區、裂風及風蝕；不扣魔、不進冷卻、不改原鎖定目標。沒有修改普通風刃或暴風屏障同名超神skyfallStars。
+- 配置：Excel原生COM只改天穹崩裂第211列AP／AQ／AV／AW四格（命中、地板、特效作用說明及技能說明），儲存並原生唯讀重開通過，其他列資料／欄寬／列高／字型／格式／換行保留；CSV與生成JS逐格／語意一致。tools/skills2-vfx.cjs新增該列ground／hit接線登記，預檢乾淨；特效從該列triggerVfx讀既有Preset，沒有新增素材或寫死來源。素材庫工作區乾淨，無素材庫Commit。
+- 修改7檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tools/skills2-vfx.cjs、tests/skill2-windblade-vacuum-legendary.test.cjs、tests/sky-collapse.test.cjs及本紀錄。唯讀檢查未改：js/vfx-runtime.js／vfx-core.js／battlefield.js、js/worker/shim.js／sim.worker.js／protocol.js、js/bridge.js、index.html、scripts/sim/engine.js、風刃既有Preset及相關測試／配置工具。
+- 驗證：`node --test tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`71/71通過；`node --test --test-name-pattern="天穹" tests/skill2-windblade-vacuum-legendary.test.cjs tests/wind-skill-audit.test.cjs`4/4通過。涵蓋20%邊界、Lv.1／10、小型傷害、傳奇數量、正式Worker單一area.id／朝向／速度／半徑／座標／到期回收與Runtime本體重送不重建。唯讀preload還原HEAD技能後，新5項中4項失敗（大型8道、小型8／24道），確認能攔住原行為。
+- 擴大回歸：既有windblade-vacuum-legendary完整22項11通過／11失敗；以HEAD原技能與原測試唯讀執行亦同11項失敗，皆原主動施放fixture法力500不足目前七階耗魔1000等既有差異，不修改其他技能數值或降低斷言。`npm.cmd run build`425檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；`git diff --check`通過。沒有做長時間瀏覽器實戰。
+- 快取待辦：預檢後Claude提交e179d27f涉及index.html第921行bridge版號及js/bridge.js第18行WORKER_ASSET_VERSION，與本次必要快取欄位重疊。使用者回覆「先完成其他修改，快取等Claude整合」，故本輪index／bridge／Worker版號全部保留。整合時須同步更新主頁skills2與bridge版本、WORKER_ASSET_VERSION及sim.worker第17行skills2 import版本，再驗證瀏覽器載入新碼；在此之前不能視為正式發布完成。
+- 交付：本紀錄所在`[Codex] fix: 天穹崩裂每次只觸發一道小型追蹤風刃`提交；可供Claude整合，完成定義尚差上述快取及整合後載入驗證。未合併／推送。臨時Excel計畫／腳本使用後清除，正式回歸測試保留。下一步由Claude於整合時補快取；不得跳過或用舊URL直接发布。
+
+## SKILL2-HIGHEST-FOCUS-20261003 — 點擊技能預設最高已學階級
+
+- Owner：Codex；Done。使用者要求點擊技能群組時選中目前已學習的最高階；已學且生效的超神進化優先，否則選普通階最高已學項，未學則第1階。同群組再次點擊、切換群組、首次進入／篩選切換及戰鬥快捷列均沿同一預設；手動點階級後的一般重繪保留焦點。
+- 前置：既有技能瀏覽器與超神選擇快照已存在，工作區乾淨、目標衝突預檢乾淨。允許js/ui.js群組選擇／預設焦點、tests/skill2-ui.test.cjs、index.html必要快取及本紀錄；禁止技能數值、Worker／協議、配置、素材、其它副本、合併／推送。
+- 驗收未學／單階／部分學習／七階滿級／有效超神／降級後失效超神、重點同群組回最高階、手動焦點重繪不變、快捷列與Console；定向回歸／Build及獨立Commit。後續接手者：使用者。
+- 完成：sgbDefaultTier改為反向查找最高已學普通階，不再預設下一個未滿階或全滿後第1階；sgbSelectGroup統一設定最高階及有效超神焦點，清單與戰鬥快捷列每次點擊都回此預設，首次／篩選變更亦沿用。一般金幣／快照重繪保留手動焦點。主頁ui快取1.0.106；未修改技能資料、Worker或存檔。
+- 修改4檔：js/ui.js、tests/skill2-ui.test.cjs、index.html及本紀錄。唯讀檢查未改：js/skills2.js的等級／超神純函式、js/skills.js裝配流程、js/worker/sim.worker.js面板、js/bridge.js狀態／載入、scripts/sim/engine.js、tests/init-ui-smoke.test.cjs／ui-tick-smoke.test.cjs。沒有素材變更或素材庫Commit。
+- 測試：`node --test tests/skill2-ui.test.cjs tests/init-ui-smoke.test.cjs tests/ui-tick-smoke.test.cjs`22/22通過；`npm.cmd run build`424檔通過；`git diff --check`通過。包含未學、只有滿級第1階、部分學習／前三階滿級、七階全滿、初次有效超神／降級暫時失效、手動焦點重繪與重新選群組。
+- 瀏覽器：獨立隨機Port HTTP服務、全新無頭Edge與seed=9拋棄式存檔，以正式DOM及真正Worker驗證迴旋斬預設超神第2選項Lv.10、點第1階後重繪保留手選、再點迴旋斬恢復已選超神；突刺第3階Lv.3預設第3階、飛刀七階滿且無超神預設第7階；戰鬥快捷列點迴旋斬亦展開已選超神。Console error／warning及Worker errors均0；瀏覽器與HTTP服務正常關閉，無新增暫存檔。
+- 交付：Commit為本紀錄所在`[Codex] fix: 點擊技能預設選中最高已學階級`提交。無未完成需求或已知本次新增風險，可合併；未合併／推送。未做長時間實戰回歸；下一步由使用者重載檢查並審查整合。
+
+## SKILL2-ULT-SWITCH-20261003 — 超神進化直接切換
+
+- Owner：Codex；Done。使用者要求已有超神進化時，查看其它選項顯示切換鈕；二次確認載明金幣及刪除舊技能／等級，再選新技能 Lv.1。前置既有選擇、重選與確認彈窗已存在；目標衝突預檢乾淨。
+- 允許 js/ui.js 的超神詳情／事件／指令、js/skills2.js 的原子切換、js/worker/protocol.js 與 docs/WORKER_PROTOCOL.md、必要 index／bridge／Worker 快取、tests/skill2-ui.test.cjs／skill2-ult-switch.test.cjs／worker-protocol.test.cjs及本紀錄；禁止其他技能數值、配置、素材、其他工作區、合併與推送。
+- 使用者追加：確認按鈕僅「確認切換」，金幣需求整段套用既有黃色 confirm-highlight；不增加 CSS 或素材。
+- 驗收確認／取消、費用與扣款一致、原等級清除／新 Lv.1、普通階與其他群組不變、未解鎖／金幣不足／過期確認／重複請求均不丟失原選擇；UI／真實 Worker 回歸、Build及獨立 Commit。後續接手者：使用者。
+- 完成：其它選項顯示「切換 · 費用 金幣」，費用取 skills2UltCost(group,opt,0)；不足金幣或未解鎖不能切換。確認彈窗載明舊技能／等級、新技能 Lv.1、不退還原投資及完整千分位金幣數字，按鈕「確認切換」，金幣需求黃色。新增單一 Worker 指令 skill2.ultSwitch，驗證原選擇／等級與報價後一次扣款、替換選擇、刷新屬性與快照；失敗不先刪技能。原重選／降級／升級仍保留，不改存檔形狀、配置、傷害或素材。協議 v42、主頁及 Worker 資源快取同步。
+- 修改11檔：js/ui.js、js/skills2.js、js/worker/protocol.js、js/worker/sim.worker.js、js/bridge.js、index.html、tests/skill2-ui.test.cjs、tests/skill2-ult-switch.test.cjs、tests/worker-protocol.test.cjs、docs/WORKER_PROTOCOL.md及本紀錄。唯讀檢查未改：css/style.css／ashen-forge.css、js/util.js／gm_exec.js、scripts/sim/engine.js、tests/skill2-reset.test.cjs／worker-shim.test.cjs／init-ui-smoke.test.cjs／ui-tick-smoke.test.cjs、package.json、共通規範與prompts/codex.md。沒有必要素材變更，無素材庫 Commit。
+- 測試：`node --test tests/skill2-ui.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-reset.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/init-ui-smoke.test.cjs tests/ui-tick-smoke.test.cjs` 59/59通過；`npm.cmd run build`424檔通過；`git diff --check`通過。涵蓋取消不送指令、金幣／等級／選項／報價不足或過期、同選项與重複請求、餘額恰好可付、其他階與群組不變及原選擇指令不允許覆蓋。
+- 瀏覽器：獨立隨機Port HTTP服務、全新無頭Edge與seed=9拋棄式存檔；正式DOM事件＋真正Worker測極致之冰Lv.10切換冰皇領域Lv.1。取消仍保留原選擇，確認後金幣100,000,000→90,000,000；另選項繼續有切換，當前選項保留重選鈕。確認按鈕scrollWidth＝clientWidth＝92px，沒有溢出；金幣字色rgb(250,204,21)，Console error／warning及Worker errors均0。原先高轉生fixture被遊戲解鎖通知攔住，改低轉生且足夠等級fixture後完整流程通過，沒有修改通知程式。瀏覽器與服務已正常關閉，無新增暫存檔。
+- 交付：Commit為本紀錄所在`[Codex] feat: 新增超神進化付費切換與確認提示`提交；可合併，未合併／推送。無未完成需求與已知本次新增風險；未做長時間實戰回歸。建議重載遊戲以取得新UI／Worker，後續由使用者審查整合。
+
+## TEST-MANAGER-TABS-20261003 — 測試服啟動開出重複控制台分頁
+
+- Owner：Codex；Done。使用者回報啟動測試服.bat一次開出整排同名控制台分頁；前置啟動流程已存在，衝突預檢乾淨。允許tools/test_server_manager.cjs的Port重試／開頁回呼、tests/test-server-manager.test.cjs及本紀錄；禁止遊戲邏輯／存檔／既有測試服程序／他人工作區、合併與推送。後續接手者使用者。
+- 原因：listenOnAvailablePort遞迴重試時，Node Server上先前失敗的listen callback仍等待listening事件；最終成功會同時排程多次openBrowser。驗收無衝突／連續多個Port占用皆只開最終地址一次、--open關閉不開頁、耗盡／其他錯誤不開頁、後續錯誤不重新啟動；保留原測試服與批次檔流程，定向回歸／建置、獨立Commit。
+- 完成：失敗時先移除當次listening callback再換Port；啟動成功後移除啟動用error callback。只會開啟最後成功綁定的控制台地址，不會開啟先前被占用的地址。批次檔與現有測試服管理功能未改。
+- 修改3檔：tools/test_server_manager.cjs、tests/test-server-manager.test.cjs及本紀錄。唯讀檢查：啟動測試服.bat、tools/start_test_server.ps1、tools/test_server_manager.html、tests/start-test-server.test.cjs、AI_RULES.md／AGENTS.md／AI_WORKFLOW.md／prompts/codex.md與本機8124..8144監聽清單。不涉及遊戲JS／配置／素材，沒有快取或素材庫修改。
+- 驗證：`node --test tests/test-server-manager.test.cjs tests/start-test-server.test.cjs`9/9通過，包含0／1／5／20個占用Port、未指定--open、21個Port耗盡與EACCES錯誤；`npm run build`423檔全數通過；`git diff --check`通過。正式CLI源碼由VM執行，只替換環境邊界，不替換重試實作。
+- 真實Node HTTP Server A/B：独立隨機Port建立占用服務，把重試的網路綁定導向该Port五次後才成功；舊HEAD源碼6次openBrowser，地址8124..8129，修正版只開8129一次；控制台HTML HTTP 200。只攔截開瀏覽器的spawn以計數，沒有實際打開使用者瀏覽器；測試兩個HTTP程序內服務已正常close，未終止現有服務、未執行會關閉其他控制台的批次檔。
+- 交付：本紀錄所在`[Codex] fix: 修正測試服控制台重試開啟重複分頁`提交；無未完成項目，可合併，未合併／推送。已開出的舊分頁仍需自行關閉；此修正針對一次啟動的重複開頁，重複手動啟動批次檔仍會每次開一個控制台頁。下一步更新後照常執行啟動測試服.bat。
+
+## SKILL2-RESET-ULT-20261003 — 前階重置連帶清除超神進化
+
+- Owner：Codex；Done。使用者回報學習超神進化後重置任意前階，前階已清除但超神進化仍顯示已學習。衝突預檢全部乾淨；範圍Worker重置指令、UI提示／失效顯示、正式回歸、必要快取及本紀錄；不改配置／傷害／其他系統，不合併／推送。
+- 目的：明確重置會清除該階及所有後續階級，包含超神進化的選擇／等級；第一階保底Lv.1、不退金幣。一般降級仍保留原超神投資但暫停生效；UI失效狀態不亮起生效路徑。已出現的殘留資料可再重置前階清除，不以讀檔自動刪除合法降級保留的投資。
+- 驗收：每個前階／超神直接重置、殘留記錄／重複重置、其他技能資料與金幣不變、屬性失效／技能快照同步、重新練滿不自動恢復已重置超神、保留一般降級規則；真實Worker及UI回歸、建置。後續接手者使用者。
+- 原因／修正：Worker的skill2.delete只清除普通階，沒有刪除ult[group]；UI則把失效但保留的投資仍畫為已學習。明確重置現在連帶清除超神，且移除保底階級的提前返回，允許再次清除殘留；第1階有超神投資時即使Lv.1也提供重置按鈕。一般降級沿用保留投資規則，卡片標示「未生效 · 已保留」，不點亮卡片／連線。確認視窗明確說明清除範圍，直接重選超神則保留普通7階。
+- 修改7檔：js/worker/sim.worker.js、js/ui.js、js/bridge.js、index.html、tests/skill2-reset.test.cjs、tests/skill2-ui.test.cjs及本紀錄。唯讀檢查：js/skills2.js（降級、解鎖、快取、面板投影）、js/player.js、js/worker/protocol.js、scripts/sim/engine.js、相关測試及協作規範。主頁ui／bridge版號1.0.104／1.0.205，Worker token為20261003-skill2-reset-ult；不涉及存檔格式／配置／素材。
+- 定向驗證：`node --test tests/skill2-reset.test.cjs tests/skill2-ui.test.cjs`25/25通過；新Worker測試在唯讀preload還原HEAD的Worker時10項中8項失敗，確認能攔住原缺陷。`npm run build`423檔語法／編譯通過；`git diff --check`通過。
+- 擴大回歸：`node --test tests/skill2-reset.test.cjs tests/skill2-ui.test.cjs tests/skill2-ult-evolution.test.cjs tests/skill2-system.test.cjs tests/skills2-levels-memo.test.cjs tests/skill2-asura-dualwield.test.cjs tests/worker-protocol.test.cjs tests/ui-worker-panels.test.cjs tests/ui-worker-events.test.cjs`172項128通過、44失敗。唯讀preload還原HEAD的ui／bridge／Worker／index再跑既有套件，44項均重現，無新增失敗；涵蓋既有VFX／戰鬥技能測試與item.upgrade的UI替身缺少UI，未修改斷言或其他技能配合現況。兩個新增UI測試亦在HEAD重現失敗。
+- 瀏覽器：獨立28393服務、全新Edge無頭頁及正式Worker，實際點前階重置→確認→收到技能面板快照；80級回1級、普通後續階歸零、超神三卡未開放。再載入圖中[1,0,0,0,0,0,0]＋超神Lv.10殘留並點第1階重置，選擇清除且UI同步；截圖人工檢查通過。Worker booted／alive、errors／persistErrors／console errors皆0；瀏覽器與服務已關閉。證據C:/Users/user/AppData/Local/Temp/codex-skill2-reset-{current,baseline,repro}.log與after.png。
+- 風險／未完成：擴大回歸已有44項失敗如上；不自動刪除舊存檔失效超神，因其也可能是合法降級保留，已受影響者更新後可再次重置第1階清除。此任務無未完成項目，建議合併本紀錄所在的Codex修正commit，可合併；本輪不推送develop。
+
 ## DEVELOP-INTEGRATE-20261002 — 解決develop衝突並推送
 
 - Owner：Codex；Done；使用者直接授權解決develop衝突、合併並上傳。工作區為Git登記的D:/MyGame/Idle-RPG/develop，續接既有origin/ai/codex合併，MERGE_HEAD為746960d5；不重新開始合併、不丟棄已暫存內容。

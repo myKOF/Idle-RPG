@@ -10,11 +10,11 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=41', 'shim.js?v=9');
+importScripts('protocol.js?v=42', 'shim.js?v=9');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261003-rename-weineng', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261002-abyss-domain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261002-integrated-ice-damage', '../talents.js?v=20261003-rename-weineng',
+  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261003-ult-switch', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261003-rename-weineng', '../special_rules.js',
   '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261003-rename-weineng',
   '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
@@ -1515,7 +1515,6 @@ var COMMAND_IMPL = {
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;
     var minLv = (tier === 0 ? 1 : 0);
-    if ((lvs[tier] || 0) <= minLv) return true;
     for (var i = tier + 1; i < lvs.length; i++) {
       lvs[i] = 0;
     }
@@ -1523,7 +1522,10 @@ var COMMAND_IMPL = {
     if (!G.player.skills2) G.player.skills2 = { levels: {} };
     if (!G.player.skills2.levels) G.player.skills2.levels = {};
     G.player.skills2.levels[a.group] = lvs;
-    /* 降階同樣可能讓超神進化失去解鎖條件（前 7 階全滿），連帶開關【修羅亂舞】。 */
+    /* 明確重置連帶清除後續的超神選擇與等級；不同於降級時保留投資。
+       即使此階已在保底，也要清除舊重置留下的超神資料。 */
+    if (G.player.skills2.ult) delete G.player.skills2.ult[a.group];
+    /* 超神進化異動連帶開關【修羅亂舞】，需同步屬性及面板。 */
     if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
     else { UI.dirty.skills = true; UI.dirty.header = true; }
     return true;
