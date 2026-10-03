@@ -10539,7 +10539,7 @@ function sgResolveVacuumWave(wave,pool) {
       if(res&&!res.miss)landed=true;
     }
     if(landed&&wave.rend&&victims[i].hp>0)sgApplyWindRend(victims[i],wave.rend);
-    if(landed&&wave.omen)sgSpawnStaticVacuum(wave.pEnt,wave.st,wave.omen,victims[i],wave.floatSel,wave.dmgVal,wave.radius);
+    if(landed&&wave.omen)sgSpawnStaticVacuum(wave.pEnt,wave.st,wave.omen,victims[i],wave.floatSel,wave.dmgVal);
     if(landed)sgEmitVfx('vacuumslash',[victims[i]],wave.floatSel,{fxKind:'impact',variant:'wind-slash-hit',
       vfxRoles:{hit:roles.hit},preserveDeadTargets:true});
   }
@@ -10589,7 +10589,7 @@ function sgVacuumSmallBlades(pEnt, st, lg, dmgVal, pool, primary, baseAngle, geo
 /* 超神【萬象風劫】：在命中處留下一道靜止的真空斬。
    走既有的地板場域＋**接觸判定**：半徑隨時間長大為 grow 倍，因此「擴大」這件事
    本身就是它的命中方式（掃過去的敵人各挨一次），不會每一拍對圈內的人全額重打。 */
-function sgSpawnStaticVacuum(pEnt, st, u, victim, floatSel, bodyDmg, radiusPx) {
+function sgSpawnStaticVacuum(pEnt, st, u, victim, floatSel, bodyDmg) {
   if (!victim || victim.hp <= 0 || !SKILL2_RT) return;
   if (SKILL2_RT.grounds.length >= SG_GROUND_MAX_FIELDS) return;
   if (!chance(sgUltVal(u, 'chance'))) return;
@@ -10601,12 +10601,17 @@ function sgSpawnStaticVacuum(pEnt, st, u, victim, floatSel, bodyDmg, radiusPx) {
   sgSpawnGround(pEnt, st, 'vacuumslash', {
     kind: 'vacuumfield', tgt: victim, floatSel: floatSel,
     from: (typeof bfPos === 'function') ? bfPos(victim) : null,
-    radius: Math.max(4, radiusPx), dmgVal: dmgVal,
+    // 留下一顆第七階虛空斬，不把迴旋範圍或環繞軌道半徑當作圓盤本體尺寸。
+    radius: sgVoidDiscBodyRadius(SKILLS2.vacuumslash), dmgVal: dmgVal,
     hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
     lifeSec: lifeSec,
     growTo: grow, growSec: lifeSec, contact: true, tickAtStart: true,
     vfxUlt: 'vacuumOmen'
   });
+}
+
+function sgVoidDiscBodyRadius(g) {
+  return bfMeterPx(Math.max(1, sgGeometryNumber(g.tiers[6].fx, 'bodyM') || 6)) / 2;
 }
 
 /* 【虛空斬】：四道以自身為圓心、半徑從 m 米起每秒擴大 growM 米的圓盤，
@@ -10636,7 +10641,7 @@ function sgSpawnVoidDiscs(pEnt, st, g, lvs, floatSel, baseAngle, opts) {
   var startR = bfMeterPx(collapse
     ? Math.max(1, sgUltVal(collapse, 'm')) : Math.max(1, sgGeometryNumber(fx, 'm') || 6));
   var grow = collapse ? 0 : bfMeterPx(Math.max(0, sgGeometryNumber(fx, 'growM') || 0));
-  var bodyR = bfMeterPx(Math.max(1, sgGeometryNumber(fx, 'bodyM') || 6)) / 2;
+  var bodyR = sgVoidDiscBodyRadius(g);
   var keyBase = opts.keyPrefix || 'void-disc-';
   for (var i = 0; i < discs; i++) {
     sgSpawnOrbitField(pEnt, st, gid, {

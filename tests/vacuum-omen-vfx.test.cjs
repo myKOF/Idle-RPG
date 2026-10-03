@@ -12,9 +12,10 @@ function setup(){
  const c=createEngine({seed:23}).boot(null).ctx;
  c.G.player.level=1000;c.G.player.skills2={levels:{vacuumslash:Array(7).fill(10)},ult:{vacuumslash:{pick:0,lv:1}}};
  c.G.player.loadout=['sg:vacuumslash'];c.getStats=()=>h.loadContext().BASE_STATS;c.chance=()=>true;
+ c.SKILLS2.vacuumslash.tiers[6].fx.bodyM=12;
  const p=h.playerEnt(),m=h.enemy(1e9,100,80,'victim');p.mp=10000;p.pos={x:20,y:10};
  c.FIELD.player=p;c.FIELD.enemies=[m];c.bfPlayerPos=()=>p.pos;c.shimDrainUrgentVisualEvents();
- c.sgSpawnStaticVacuum(p,c.getStats(),c.sgUlt('vacuumslash','vacuumOmen'),m,'mv-float',100,180);
+ c.sgSpawnStaticVacuum(p,c.getStats(),c.sgUlt('vacuumslash','vacuumOmen'),m,'mv-float',100);
  return {c,p,m,f:c.SKILL2_RT.grounds[0],ctx:h.tickCtx(c,p,[m])};
 }
 function backend(){return {nodes:[],createNode(spec){const n={spec};this.nodes.push(n);return n;},updateNode(n,t){n.t={...t};},destroyNode(n){n.dead=true;}};}
@@ -28,25 +29,25 @@ function spec(age=0,id=disc.id){return {fxKind:'aura',variant:'wind-blade-homing
  area:{id:'static-test',x:100,y:80,r:180*(1+age/3),a:1.1,staticVacuum:true,baseR:180,growTo:2,growSec:3,growAge:age,lifeSec:3-age}};}
 
 test('萬象風劫正式Worker事件使用表定orb-void-disc，保留出生位置／方向與實際判定半徑',()=>{
- const {c,p,m,f,ctx}=setup();assert.ok(f);near(f.baseRadius,180);near(f.angle,Math.atan2(70,80));
+ const {c,p,m,f,ctx}=setup();assert.ok(f);near(f.baseRadius,60);near(f.angle,Math.atan2(70,80));
  c.sgTickGrounds(.01,ctx);
  const e=c.shimDrainUrgentVisualEvents().find(e=>e.area?.staticVacuum);
  assert.ok(e);assert.equal(e.vfx.ground,'orb-void-disc');assert.equal(e.hit,false);near(e.area.r,f.radius);near(e.area.a,f.angle);
  const pos={...f.pos},angle=f.angle;p.pos={x:1000,y:-1000};m.pos={x:900,y:800};
- c.GT=1.5;c.sgTickGrounds(1.5,ctx);near(f.radius,270);near(f.pos.x,pos.x);near(f.pos.y,pos.y);near(f.angle,angle);
- const grown=c.shimDrainUrgentVisualEvents().find(e=>e.area?.staticVacuum);near(grown.area.baseR,180);near(grown.area.growAge,1.5);near(grown.area.lifeSec,1.5);
+ c.GT=1.5;c.sgTickGrounds(1.5,ctx);near(f.radius,90);near(f.pos.x,pos.x);near(f.pos.y,pos.y);near(f.angle,angle);
+ const grown=c.shimDrainUrgentVisualEvents().find(e=>e.area?.staticVacuum);near(grown.area.baseR,60);near(grown.area.growAge,1.5);near(grown.area.lifeSec,1.5);
  c.GT=2.99;c.sgTickGrounds(.01,ctx);assert.ok(c.SKILL2_RT.grounds.includes(f));
- c.GT=3;c.sgTickGrounds(.01,ctx);assert.equal(c.SKILL2_RT.grounds.length,0);near(f.radius,360);
+ c.GT=3;c.sgTickGrounds(.01,ctx);assert.equal(c.SKILL2_RT.grounds.length,0);near(f.radius,120);
 });
 
 test('正式Worker事件送入Runtime後固定命中位置，半徑與接觸傷害同源',()=>{
  const {c,f,p,m,ctx}=setup(),{rt,ground,air}=adapter({...disc,layers:[{id:'marker',type:'sprite',assetId:'marker'}]});
- const outer=h.enemy(1e9,370,80,'outer');c.FIELD.enemies.push(outer);ctx.getEnemies=()=>c.FIELD.enemies;
+ const outer=h.enemy(1e9,190,80,'outer');c.FIELD.enemies.push(outer);ctx.getEnemies=()=>c.FIELD.enemies;
  c.sgTickGrounds(.01,ctx);
  const e=c.shimDrainUrgentVisualEvents().find(e=>e.area?.staticVacuum);assert.equal(rt.tryPlay(e),true);rt.update(0);
  const n=ground.nodes[0],hp=m.hp;near(n.t.scaleX,f.radius/240);assert.ok(hp<1e9);assert.equal(outer.hp,1e9);
  c.GT=.25;c.sgTickGrounds(.25,ctx);assert.equal(m.hp,hp,'持續接觸不重複傷害');
- p.pos={x:-500,y:-500};rt.update(1.5);near(n.t.x,100);near(n.t.y,40);near(n.t.scaleX,270/240);
+ p.pos={x:-500,y:-500};rt.update(1.5);near(n.t.x,100);near(n.t.y,40);near(n.t.scaleX,90/240);
  c.GT=1.5;c.sgTickGrounds(1.25,ctx);assert.ok(outer.hp<1e9,'成長半徑掃到新敵人才命中');
  assert.equal(air.nodes.length,0);rt.destroy();
 });
@@ -88,7 +89,42 @@ test('萬象風劫替換配置Preset仍靜止成長，短動畫可續播且空�
  const e=c.sgGroundVfxSpec(f);assert.equal(e.vfxRoles.ground,undefined);assert.equal(e.hit,false);
 });
 
-test('追蹤風刃沿用原尺寸與空中層，同素材的其他用途不受靜止斬影響',()=>{
+test('整次施放只追加第七階圓盤，萬象風劫與原始單顆虛空斬同尺寸',()=>{
+ const {c,p,m,ctx}=setup();m.pos={x:50,y:10};c.SKILL2_RT.grounds=[];c.shimDrainUrgentVisualEvents();
+ assert.ok(c.castSkill2(p,[m],'vacuumslash','mv-float'));
+ const events=c.shimDrainUrgentVisualEvents(),original=events.filter(e=>e.variant==='void-disc'&&e.fxKind==='aura');
+ assert.equal(original.length,4);original.forEach(e=>near(e.area.orbR,60));
+ assert.equal(events.filter(e=>e.variant==='wind-spin').length,1);
+ assert.equal(events.filter(e=>e.variant==='wind-slash'||e.variant==='vacuum-shock').length,0);
+ c.sgTickGrounds(0,ctx);
+ const fixed=c.shimDrainUrgentVisualEvents().find(e=>e.area?.staticVacuum);assert.ok(fixed);near(fixed.area.r,original[0].area.orbR);
+ assert.deepEqual(Object.keys(fixed.vfx),['ground']);assert.equal(fixed.vfx.ground,original[0].vfx.projectile);
+ const marker={...disc,layers:[{id:'marker',type:'sprite',assetId:'marker'}]},staticView=adapter(marker),orbitView=adapter(marker);
+ assert.equal(staticView.rt.tryPlay(fixed),true);assert.equal(orbitView.rt.tryPlay(original[0]),true);
+ staticView.rt.update(0);orbitView.rt.update(0);
+ near(staticView.ground.nodes[0].t.scaleX,orbitView.air.nodes[0].t.scaleX);
+ near(staticView.ground.nodes[0].t.scaleY,orbitView.air.nodes[0].t.scaleY);
+ near(staticView.ground.nodes[0].t.scaleX,.25);
+ staticView.rt.destroy();orbitView.rt.destroy();
+ const times=c.SKILL2_RT.vacuumWaves.map(w=>w.at);assert.deepEqual(Array.from(times),[.5,1,1.5,2]);
+ for(const at of times){c.GT=at;c.sgTickVacuumWaves(ctx);events.push(...c.shimDrainUrgentVisualEvents());}
+ assert.equal(events.filter(e=>e.variant==='wind-spin').length,5);
+ assert.equal(events.filter(e=>e.variant==='void-disc'&&e.fxKind==='aura').length,4,'後波不重播整組第七階');
+ assert.equal(c.SKILL2_RT.grounds.length,5);c.SKILL2_RT.grounds.forEach(f=>near(f.baseRadius,60));
+});
+
+test('調整第七階本體尺寸會同步靜止圓盤，迴旋／每波增幅／軌道半徑均不放大圓盤',()=>{
+ for(const metres of [6,12,18]){
+  const {c,p,m,ctx}=setup();m.pos={x:50,y:10};c.SKILL2_RT.grounds=[];
+  const t=c.SKILLS2.vacuumslash.tiers;t[3].fx.m=36;t[4].fx.m=100;t[6].fx.m=60;t[6].fx.bodyM=metres;
+  assert.ok(c.castSkill2(p,[m],'vacuumslash','mv-float'));
+  near(c.SKILL2_RT.orbits[0].bodyR,metres*5);near(c.SKILL2_RT.orbits[0].rings[0].r,600);
+  for(const at of Array.from(c.SKILL2_RT.vacuumWaves,w=>w.at)){c.GT=at;c.sgTickVacuumWaves(ctx);}
+  assert.equal(c.SKILL2_RT.grounds.length,5);c.SKILL2_RT.grounds.forEach(f=>near(f.baseRadius,metres*5));
+ }
+});
+
+test('追蹤風刃沿用原尺寸與空中層，不受靜止斬影響',()=>{
  const p=require('../vfx/presets/ground-homing-wind-crescent.json');
  const {rt,air,ground}=adapter({...p,layers:[{id:'marker',type:'sprite',assetId:'marker'}]});
  rt.tryPlay({fxKind:'aura',variant:'wind-blade-homing',dur:1,area:{id:'moving',x:0,y:0,r:30,speed:180,moveA:0},vfx:{ground:p.id}});

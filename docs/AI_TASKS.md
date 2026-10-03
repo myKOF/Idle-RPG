@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## VACUUM-OMEN-BODY-20261003 — 靜止虛空斬使用第七階單顆尺寸
+
+- Owner：Codex；Done。使用者提供巨大圓盤與原始第七階小圓盤對比，要求萬象風劫只使用第七階額外虛空斬的造型／尺寸。上一版換orb-void-disc卻仍繼承第4／5階每波範圍，非逐階重播；改為共用第七階bodyM→單顆半徑來源，從該尺寸3秒內成長兩倍，判定與動畫同源。單一開發者；前置配置／Runtime已接通，接手者使用者。
+- 允許js/skills2.js靜止場域與第七階共用本體尺寸、bridge／Worker／index.html僅913／933必要快取、tests/vacuum-omen-vfx.test.cjs回歸、WIND_SKILL_AUDIT及本紀錄。其他目標預檢乾淨；index仍有Claude已知五筆裝備／神鑄／地景修改，沿用使用者對本連續修正明確同意僅901／913／933版號行的授權，本次只改913／933。不改第1～7階本體施放、傷害係數／機率／波數／配置／素材／Runtime／其他副本；不合併／推送，保留slash-wind-spin既有修改。
+- 驗收正式Worker整次施放事件無逐階重播、靜止初始圓盤與第七階單顆同尺寸且不受迴旋／後波範圍／軌道半徑影響；各配置尺寸均同源、3秒平滑成長與到期回收、接觸傷害判定一致、追蹤風刃與三重奏0.5秒不變；相關測試／Build與獨立Commit。
+- 完成：抽取原始第七階bodyM的一半為sgVoidDiscBodyRadius，原始環繞體及萬象風劫靜止場域共用同一公式；停止將wave.radius傳入靜止場域。當前bodyM=12表示直徑12米，靜止初始半徑6米，3秒長至12米；原先每波18～30米初始半徑不再放大靜止圓盤。保留各波迴旋本體、原始四顆環繞體、靜止機率／命中處／傷害係數／3秒／2倍成長；靜止判定圈隨新本體尺寸一起校正，沒有只把畫面縮小。後續波次的靜止圈大小一致，不重施整組第七階或重播第1～7階鏈。
+- 修改7檔：js/skills2.js（非生成資料）、js/bridge.js、js/worker/sim.worker.js、index.html僅913／933行、tests/vacuum-omen-vfx.test.cjs、docs/WIND_SKILL_AUDIT.md及本紀錄。唯讀未改：Excel／CSV、tools/skills2-vfx.cjs、Core／Runtime／Pixi後端、battlefield／combat／renderer、Worker Protocol／shim、其餘測試與全部Preset／asset-index／shipped-assets；保留使用者slash-wind-spin未提交修改。沒有素材變更／第三來源，不需要素材庫空Commit。
+- 快取：skills2 1.0.279／bridge 1.0.217，Worker token与skills2 import同步20261003-vacuum-disc-body；不改Runtime或Editor，編輯器無需重啟。沿用前次對同一連續修正、同一版號行的明確授權，沒有修改Claude的裝備／神鑄／地景內容。
+- 測試：`node --test tests/vacuum-omen-vfx.test.cjs tests/storm-mountain.test.cjs tests/windblade-vfx-integration.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-guard.test.cjs`91/91通過；新增整次施放及多配置整合回歸、先前傷害／成長測試更新為第七階本體尺寸。以HEAD 53635632技能程式唯讀替換執行同9項，5通過4失敗；修正後9/9，正確攔截錯誤尺寸來源。`node --test --test-name-pattern='真空三重奏|延後真空|未學真空' tests/wind-skill-audit.test.cjs`4/4通過；`npm.cmd run build`435檔通過；`git diff --check`通過。沒有重跑全庫或聲稱已解決上一任務的20項既有廣域fixture失敗。
+- 瀏覽器：Edge headless新環境，只讀8123正式Core／Runtime／Pixi及shipped素材，無正式存檔、攔截全部寫入。使用Node正式Worker引擎整次施放產生的兩種事件，原始area.orbR與靜止area.r同為60單位、兩種圓盤均九層，靜止空中0層且只有ground來源；同動畫相位逐層矩陣面積比只含0.1秒已過成長（1+0.1/3）²，3秒回收0／錯誤0。已檢視起始對比與1.5秒成長截圖；首張標籤因HTML缺charset亂碼，補UTF-8／英文標籤後重拍，圖片保留在工作區外vacuum-omen/vacuum-disc-body-start.png及grown.png供驗收。測試透過stdin執行，無新增臨時腳本；未操作使用者正式存檔做密集戰鬥觀感驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 靜止真空斬共用第七階圓盤本體尺寸`提交，可合併，未合併／推送；無未完成程式項目，已知限制為真人密集戰鬥觀感待驗收及既有全庫fixture問題。下一步遊戲重整，萬象風劫靜止圓盤應從圖2單顆大小開始再放大；一般迴旋本體仍使用玩家自己配置的18米範圍。
+
 ## ELITE-HALO-20261003 — 降低菁英敵人周圍光暈
 
 - Owner：Codex；Done。使用者要求降低截圖中的菁英光暈；既有Canvas/Pixi makeEnemy產生紫色加色光暈，密集敵人疊加過亮。單一開發者，前置既有菁英辨識已完成；後續接手者使用者。
