@@ -1044,11 +1044,11 @@ function bindWorkerUiState() {
     // one full item in `details`.  Rebuilding the whole grid here replaces
     // the cell under the mouse, which emits mouseout/mouseover again and can
     // start an endless tooltip request/repaint loop.
-    if (inventoryGridUnchanged && UI.tab === 'equip') {
+    if (inventoryGridUnchanged && (UI.tab === 'equip' || UI.tab === 'forge')) {
       UI.dirty.inv = false;
       // A hover-only detail response must not refresh selection classes.  The
       // selected pane needs a refresh only when its own full item arrived.
-      if (UI.sel && UI.sel.source === 'inv' && UI.sel.id &&
+      if (UI.tab === 'equip' && UI.sel && UI.sel.source === 'inv' && UI.sel.id &&
         msg.data && msg.data.details && msg.data.details[UI.sel.id]) {
         if (UI.inventoryScrolling) UI.inventoryDetailRefreshPending = true;
         else renderDetail();
@@ -2390,17 +2390,7 @@ function switchTab(name) {
     if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
   }
   UI.tab = name;
-  /* 離開神鑄頁就把它那份背包格線清掉。
-
-     神鑄頁掛的是第二份完整背包格線（後期同樣上千格），而 renderForge 只在
-     UI.tab === 'forge' 時才跑——也就是說離開之後它不會再更新，卻會永遠留在 DOM 裡。
-     實測進過一次神鑄頁，全文件節點就從 5443 變成 9896，而每一次樣式重算與版面計算的
-     單價都取決於節點數，等於在裝備頁戰鬥時一直付這筆錢。
-     回到神鑄頁時 renderForge 會整個重建，所以清掉沒有任何副作用。 */
-  if (name !== 'forge') {
-    var forgeGrid = $id('forge-inventory-grid');
-    if (forgeGrid && forgeGrid.children.length) forgeGrid.innerHTML = '';
-  }
+  mountInventoryBox(name === 'forge');
   uiInvalidateFloatLayout();   // 切分頁會改變版面，浮字幾何快取要作廢
   syncVfxQualityForTab();
   refreshUiPanelSubscriptions();
@@ -4678,9 +4668,41 @@ function inventoryGridRowCount(box) {
    欄數只在容器寬度變動時才會變（視窗縮放、全螢幕切換、介面縮放），那些時機都會走到
    invalidateInventoryGridColumns()，所以快取不會過期。掉一件裝備不改變欄數。 */
 function invalidateInventoryGridColumns() {
-  var boxes = (typeof document !== 'undefined' && document.querySelectorAll)
-    ? document.querySelectorAll('#inventory-grid, #forge-inventory-grid') : [];
-  for (var i = 0; i < boxes.length; i++) boxes[i]._invGridColumns = 0;
+  var box = $id('inventory-grid');
+  if (box) box._invGridColumns = 0;
+}
+
+/* ---- 背包框只有一份：神鑄頁借用裝備頁的 #inv-section-box ----
+   神鑄頁原本有自己的第二份背包格線，表頭沒有篩選／排序／分解、
+   格子樣式與排序也各走各的，兩頁越改越不像；而且後期上千格的格線掛兩份，
+   每一次樣式重算與版面計算都要多付一份節點數的錢。
+
+   改成同一個節點在兩頁之間搬：切到神鑄頁就搬進 #forge-inv-slot，切到其他分頁就放回原位。
+   表頭控制項、篩選狀態、可視排數、捲動與虛擬捲動全都是同一份，天生一致。
+   兩頁唯一的差別在格子本身（renderInventory 依 UI.tab 決定）：神鑄頁的格子點擊是放入法陣
+   （data-src="forgeinv"）、不可鑄造的品質置灰，也不套用裝備頁的選取標示。 */
+var _invBoxHome = null;
+
+function mountInventoryBox(inForge) {
+  var box = $id('inv-section-box');
+  if (!box || !box.parentNode) return;
+  if (!_invBoxHome) _invBoxHome = { parent: box.parentNode, next: box.nextSibling };
+  var target = inForge ? $id('forge-inv-slot') : _invBoxHome.parent;
+  if (!target || box.parentNode === target) return;
+  var next = (!inForge && _invBoxHome.next && _invBoxHome.next.parentNode === target) ? _invBoxHome.next : null;
+  target.insertBefore(box, next);
+  // 兩頁的容器寬度不一定相同，欄數快取要重量
+  invalidateInventoryGridColumns();
+  UI.dirty.inv = true;
+}
+
+// 神鑄頁的寶石模式會把背包框藏起來，那時背包不需要重畫
+function inventoryForgeMode() {
+  return UI.tab === 'forge';
+}
+
+function inventoryBoxVisible() {
+  return UI.tab === 'equip' || (UI.tab === 'forge' && UI.forgeInvTab !== 'gems');
 }
 
 function cachedInventoryGridColumnCount(box) {
@@ -4883,6 +4905,8 @@ function renderInventory() {
          留在格子 HTML 裡會讓「換個選取」變成「整份格線指紋改變」，增量更新就失效了。 */
       var cellKeys = [];
       var cellsHtmlList = [];
+      var forgeMode = inventoryForgeMode();
+      var forgePendingKey = forgeMode ? nodePendingKey('forge') : null;
       for (var ii = firstItem; ii < lastItem; ii++) {
         var it = displayedItems[ii];
         var dimClass = '';
@@ -4893,7 +4917,13 @@ function renderInventory() {
           }
         }
         cellKeys.push(it.id);
-        cellsHtmlList.push(itemCellHTML(it, 'inv', dimClass, itemPendingKey(it.id)));
+        if (forgeMode) {
+          // 神鑄頁：點擊放入法陣；不是傳說／神話／創世／混沌的置灰（見 mountInventoryBox）
+          if (!isForgeableEquipmentRarity(it.rarity)) dimClass += ' forge-na';
+          cellsHtmlList.push(itemCellHTML(it, 'forgeinv', dimClass, forgePendingKey));
+        } else {
+          cellsHtmlList.push(itemCellHTML(it, 'inv', dimClass, itemPendingKey(it.id)));
+        }
       }
       if (virtualize) {
         box.setAttribute('data-inventory-total-rows', String(totalRows));
@@ -4918,6 +4948,8 @@ function renderInventory() {
     }
   }
   applyInventoryVisibleRows(box);
+  // 神鑄頁沒有詳情面板，格子也不套選取標示（updateSelectionUI 會跳過）
+  if (inventoryForgeMode()) return;
   if (UI.inventoryScrolling) updateSelectionUI();
   else renderDetail();
 }
@@ -5263,9 +5295,12 @@ function updateSelectionUI() {
   var selectedEquipSlots = selectionEquipSlotsForItem(selItem, selectedSlot);
   var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
   var highlightEquipByInventory = !!(UI.sel && UI.sel.source === 'inv');
+  // 背包框借給神鑄頁時，裝備頁的選取不可以把那裡的格子置灰（那裡的點擊是放入法陣；見 mountInventoryBox）
+  var forgeMode = UI.tab === 'forge';
 
   document.querySelectorAll('.item-cell, .eq-slot').forEach(function (el) {
     el.classList.remove('selected', 'dimmed', 'inventory-selection-match');
+    if (forgeMode && el.classList.contains('item-cell')) return;
 
     if (selectedSlot && selectedEquipSlots.indexOf(el.getAttribute('data-slot')) >= 0 && el.classList.contains('eq-slot')) {
       if (highlightEquipByInventory) {
@@ -5288,7 +5323,7 @@ function updateSelectionUI() {
     }
   });
 
-  if (!highlightInventoryBySlot || !selectedSlot) return;
+  if (!highlightInventoryBySlot || !selectedSlot || forgeMode) return;
   document.querySelectorAll('.item-cell').forEach(function (el) {
     if (!cellMatchesEquipSlot(el, selectedSlot)) {
       el.classList.add('dimmed');
@@ -6252,7 +6287,7 @@ function renderForge() {
   } else if (famMenuSync && famMenuSync.style.display !== 'none') {
     renderForgeAutoMenu(f, inventorySnapshot, gemsSnapshot);
   }
-  // 背包（裝備 / 寶石切頁；不符資格者以灰階顯示）
+  // 素材來源（裝備神鑄 / 寶石神鑄；不符資格者以灰階顯示）
   var invTab = forgeInventoryTab(f);
   UI.forgeInvTab = invTab;
   var tabItemsBtn = $id('forge-invtab-items'), tabGemsBtn = $id('forge-invtab-gems');
@@ -6260,12 +6295,19 @@ function renderForge() {
   if (tabGemsBtn) tabGemsBtn.classList.toggle('active', invTab === 'gems');
   if (tabItemsBtn) tabItemsBtn.disabled = forgeBusy;
   if (tabGemsBtn) tabGemsBtn.disabled = forgeBusy;
-  var grid = $id('forge-inventory-grid');
-  if (invTab === 'gems') {
-    setTextIfChanged($id('forge-inv-count'), fmt(forgeViewTotalGems(gemsSnapshot)));
+  var invSlot = $id('forge-inv-slot');
+  var gemBox = $id('forge-gem-box');
+  if (invSlot) invSlot.style.display = invTab === 'gems' ? 'none' : '';
+  if (gemBox) gemBox.style.display = invTab === 'gems' ? '' : 'none';
+  if (invTab !== 'gems') {
+    // 裝備神鑄：借用的就是裝備頁那一個背包框，畫法同一支（見 mountInventoryBox）
+    renderInventory();
+  } else {
+    var grid = $id('forge-gem-grid');
+    setTextIfChanged($id('forge-gem-count'), fmt(forgeViewTotalGems(gemsSnapshot)));
     /* 逐格比對，理由同法陣：這一格是「點擊放入法陣」的來源，戰鬥中寶石一直掉、
        數量一直變，整份重建會把玩家正壓著的那一格換掉，那一下點擊就消失。
-       裝備切頁走 renderForgeInventoryCells，早就是增量更新了，寶石切頁先前漏了。 */
+       裝備神鑄借用的背包框本來就是增量更新，寶石這一份先前漏了。 */
     var gemKeys = [];
     var gemHtmls = [];
     for (var glv = GEM_FORGE_MAX_LEVEL; glv >= 1; glv--) {
@@ -6292,74 +6334,7 @@ function renderForge() {
       gemHtmls.push('<div class="hint" style="grid-column: 1 / -1; padding: 10px;">尚無寶石。戰鬥掉落與寶石商店可取得寶石。</div>');
     }
     syncItemGridCells(grid, gemKeys, gemHtmls);
-  } else {
-    var inventoryItems = inventorySnapshot.items || [];
-    $id('forge-inv-count').textContent = inventorySnapshot.count + '/' + inventorySnapshot.cap;
-    if (!inventoryItems.length) {
-      grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
-    } else {
-      renderForgeInventoryCells(grid, inventoryItems);
-    }
   }
-}
-
-/* 神鑄頁的背包格線：與背包頁同一套增量更新＋虛擬捲動。
-
-   它是第二份完整背包格線，後期同樣上千格；掛著的每一格都會讓整份文件的樣式重算與
-   版面計算變貴，而那筆錢是戰鬥中每一次浮字、特效、換波都要付的。
-
-   容器是 max-height + overflow-y: auto（css/style.css #forge-inventory-grid），
-   沒有像背包頁那樣的「可展開排數」設定，所以可視排數直接由容器高度換算。 */
-function renderForgeInventoryCells(grid, inventoryItems) {
-  var virtualize = inventoryItems.length > INVENTORY_VIRTUAL_MIN_ITEMS;
-  var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-  var window_ = null;
-  if (virtualize) {
-    var visibleRows = Math.max(1, Math.ceil((grid.clientHeight || 250) / rowHeight));
-    window_ = virtualGridWindow(grid, inventoryItems.length, visibleRows);
-  }
-  var first = window_ ? window_.first : 0;
-  var last = window_ ? Math.min(inventoryItems.length, window_.last) : inventoryItems.length;
-
-  var keys = [];
-  var htmls = [];
-  for (var i = first; i < last; i++) {
-    var it = inventoryItems[i];
-    var ok = isForgeableEquipmentRarity(it.rarity);
-    keys.push(it.id);
-    htmls.push(itemCellHTML(it, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge')));
-  }
-  if (window_) {
-    if (window_.topRows > 0) {
-      keys.unshift('__forge-spacer-top');
-      htmls.unshift(inventoryVirtualSpacerHTML(window_.topRows));
-    }
-    if (window_.bottomRows > 0) {
-      keys.push('__forge-spacer-bottom');
-      htmls.push(inventoryVirtualSpacerHTML(window_.bottomRows));
-    }
-  }
-  syncItemGridCells(grid, keys, htmls);
-  bindForgeInventoryVirtualScroll(grid);
-}
-
-/* 捲動時只重畫格線，不要整支 renderForge 重跑——那會把法陣、素材、按鈕全部重建，
-   在捲動的每一幀做那件事比虛擬捲動省下來的還貴。 */
-function bindForgeInventoryVirtualScroll(grid) {
-  if (grid.__forgeVirtualScrollBound) return;
-  grid.__forgeVirtualScrollBound = true;
-  grid.addEventListener('scroll', function () {
-    if (UI.tab !== 'forge' || UI.forgeInvTab === 'gems') return;
-    if (grid.__forgeVirtualScrollFrame) return;
-    var schedule = typeof requestAnimationFrame === 'function'
-      ? requestAnimationFrame : function (fn) { return setTimeout(fn, 0); };
-    grid.__forgeVirtualScrollFrame = schedule(function () {
-      grid.__forgeVirtualScrollFrame = 0;
-      var snapshot = uiInventoryPanelSnapshot();
-      var items = snapshot && snapshot.items;
-      if (items && items.length) renderForgeInventoryCells(grid, items);
-    });
-  }, { passive: true });
 }
 
 /* ---- 高塔分頁 ---- */
@@ -11233,7 +11208,7 @@ function initUI() {
 
   // 背包框外向下滾輪：物品超過目前可視排數時逐排展開，最多 9 排；框內仍由自身捲軸處理。
   document.addEventListener('wheel', function (e) {
-    if (UI.tab !== 'equip' || e.deltaY <= 0) return;
+    if (!inventoryBoxVisible() || e.deltaY <= 0) return;
     var target = e.target;
     if (target && target.closest && target.closest('#inv-section-box')) return;
     var box = $id('inventory-grid');
@@ -11250,7 +11225,7 @@ function initUI() {
   if (inventoryGrid && !inventoryGrid.__virtualScrollBound) {
     inventoryGrid.__virtualScrollBound = true;
     inventoryGrid.addEventListener('scroll', function () {
-      if (UI.tab !== 'equip') return;
+      if (!inventoryBoxVisible()) return;
       if (!inventoryGrid.hasAttribute('data-inventory-total-rows')) return;
       UI.inventoryScrolling = true;
       if (UI.inventoryScrollTimer) clearTimeout(UI.inventoryScrollTimer);
@@ -11484,7 +11459,9 @@ function initUI() {
       // tooltip while moving between descendants of the same cell.
       if (e.relatedTarget && eqCell.contains && eqCell.contains(e.relatedTarget)) return;
       var tooltipId = eqCell.getAttribute('data-id');
-      var needsInventoryDetail = eqCell.getAttribute('data-src') === 'inv';
+      var cellSrc = eqCell.getAttribute('data-src');
+      // 神鑄頁借用的背包格（forgeinv）也是摘要資料，一樣要向 Worker 取完整裝備才有提示
+      var needsInventoryDetail = cellSrc === 'inv' || cellSrc === 'forgeinv';
       UI.hoveredItemTooltip = { id: tooltipId, anchor: eqCell };
       var it = findItemById(tooltipId, needsInventoryDetail);
       if (it) { showItemTooltip(it, eqCell); return; }

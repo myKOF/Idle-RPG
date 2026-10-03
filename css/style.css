@@ -2775,17 +2775,16 @@ textarea#save-io {
    那是瀏覽器自己的樣式重算與版面計算。
 
    content-visibility: auto 讓瀏覽器跳過捲動範圍外的格子（可視範圍約 60 格）。
-   兩個格線的軌道都是固定 58px（grid-template-columns / grid-auto-rows），
+   格線的軌道是固定 58px（grid-template-columns / grid-auto-rows），
    被跳過的格子照樣由軌道撐滿一格，捲軸長度與每一格的位置都不變。
 
    ⚠️ 刻意**不加** contain-intrinsic-size。看起來該加，實測會壞：格子尺寸本來就由
    軌道決定、不靠內容，補一個替代尺寸反而讓已渲染的格子從 38.67px 變 41.33px 高、
    捲動總高從 4925px 變 4929px。不寫的話逐格 rect 與 scrollHeight 都與加規則前完全相同。
 
-   ⚠️ 只給這兩個「會捲動且格數上千」的容器。.item-cell 在別處（神鑄法陣槽等）
+   ⚠️ 只給這個「會捲動且格數上千」的容器（神鑄頁借用的也是同一個）。.item-cell 在別處（神鑄法陣槽等）
    數量都是個位數。不支援的瀏覽器會忽略這一行，行為與加之前相同。 */
-#inventory-grid .item-cell,
-#forge-inventory-grid .item-cell {
+#inventory-grid .item-cell {
   content-visibility: auto;
 }
 
@@ -5935,7 +5934,7 @@ textarea:disabled,
 }
 
 #inv-section-box,
-#forge-inv-box {
+#forge-gem-box {
   border: 1px solid var(--accent) !important;
   border-image: none !important;
   border-radius: 6px !important;
@@ -6413,7 +6412,7 @@ textarea:disabled,
   }
 }
 
-#forge-inventory-grid {
+#forge-gem-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 58px);
   grid-auto-rows: 58px;
@@ -11702,14 +11701,14 @@ input[type='radio'] {
 }
 
 #inventory-grid,
-#forge-inventory-grid,
+#forge-gem-grid,
 #gem-shop-grid {
   scrollbar-color: #784a2a #0a0705;
   scrollbar-width: thin;
 }
 
 #inv-section-box,
-#forge-inv-box {
+#forge-gem-box {
   border-color: #5d402a;
   background:
     linear-gradient(145deg, rgba(39, 27, 19, .68), rgba(8, 6, 5, .94)),
@@ -12143,7 +12142,7 @@ input[type='radio'] {
 .detail-log-box,
 .equip-material-panel,
 #inv-section-box,
-#forge-inv-box,
+#forge-gem-box,
 #detail-pane,
 .equip-detail-card,
 .shop-card,

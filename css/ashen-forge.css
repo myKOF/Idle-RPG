@@ -365,7 +365,7 @@ body {
 .detail-log-box,
 .equip-material-panel,
 #inv-section-box,
-#forge-inv-box,
+#forge-gem-box,
 .shop-card,
 .nf-part-upgrade-card,
 .nf-furnace,
@@ -995,7 +995,7 @@ select option {
 }
 
 #inv-section-box,
-#forge-inv-box {
+#forge-gem-box {
   position: relative;
   padding: 16px 14px;
   border: 2px solid #777b72 !important;
@@ -1005,7 +1005,7 @@ select option {
 }
 
 #inv-section-box::after,
-#forge-inv-box::after {
+#forge-gem-box::after {
   display: none;
 }
 
@@ -1024,7 +1024,7 @@ select option {
 }
 
 #inventory-grid,
-#forge-inventory-grid {
+#forge-gem-grid {
   grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
   scrollbar-color: #59665e #111618;
   scrollbar-width: thin;
@@ -1800,17 +1800,18 @@ html *::-webkit-scrollbar-corner {
   box-shadow: none !important;
 }
 
-/* 背包 */
-#tab-equip #inv-section-box {
+/* 背包（神鑄頁借用同一個 #inv-section-box，所以不限定 #tab-equip；寶石神鑄的 #forge-gem-box 同款） */
+#inv-section-box,
+#forge-gem-box {
   background: #15171c !important;
   border: 1px solid #2a2d34 !important;
   border-radius: 8px !important;
   box-shadow: none !important;
 }
 
-#tab-equip .inv-head .btn.sm,
-#tab-equip .inv-head .input.sm,
-#tab-equip .inv-head select {
+#inv-section-box .inv-head .btn.sm,
+#inv-section-box .inv-head .input.sm,
+#inv-section-box .inv-head select {
   height: 30px;
   border: 1px solid #2a2d34 !important;
   border-radius: 6px !important;
@@ -1821,12 +1822,12 @@ html *::-webkit-scrollbar-corner {
   font-size: 13px;
 }
 
-#tab-equip .inv-head .btn.sm:hover:not(:disabled) {
+#inv-section-box .inv-head .btn.sm:hover:not(:disabled) {
   border-color: #5a5d66 !important;
   background: #1b1e24 !important;
 }
 
-#tab-equip #btn-salvage-settings {
+#btn-salvage-settings {
   background: transparent !important;
   border-color: #7a2a26 !important;
   color: #f08a80 !important;
@@ -1835,17 +1836,20 @@ html *::-webkit-scrollbar-corner {
 
 /* 背包格：照設計稿改成暗底細框，品質色只留在 1px 邊框上（inline 的內發光拿掉）。
    選中、置灰兩種狀態仍沿用原本的 box-shadow，所以排除在外。 */
-#tab-equip #inventory-grid .item-cell {
+#inventory-grid .item-cell,
+#forge-gem-grid .item-cell {
   border-width: 1px !important;
   border-radius: 5px !important;
   background: #111317 !important;
 }
 
-#tab-equip #inventory-grid .item-cell:not(.selected):not(.dimmed):not(.item-cell-dimmed) {
+#inventory-grid .item-cell:not(.selected):not(.dimmed):not(.item-cell-dimmed),
+#forge-gem-grid .item-cell {
   box-shadow: none !important;
 }
 
-#tab-equip #inventory-grid .item-cell .ic-lv {
+#inventory-grid .item-cell .ic-lv,
+#forge-gem-grid .item-cell .ic-lv {
   background: transparent;
   color: #a39d90;
   font-size: 10px;
@@ -1868,7 +1872,7 @@ html *::-webkit-scrollbar-corner {
   display: inline-block;
 }
 
-#tab-equip #inv-filter-btn.has-filter {
+#inv-filter-btn.has-filter {
   border-color: #c9a35e !important;
   color: #f0cf86 !important;
 }
@@ -2232,7 +2236,8 @@ html *::-webkit-scrollbar-corner {
 }
 
 /* 面板變寬後，背包固定 12 欄會把格子拉成扁長方形；裝備頁改為依寬度自動排欄（虛擬捲動從實際樣式讀欄數） */
-#tab-equip #inventory-grid {
+#inventory-grid,
+#forge-gem-grid {
   grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)) !important;
 }
 
