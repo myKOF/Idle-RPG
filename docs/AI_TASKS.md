@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## MERGE-PREP-20261003 — 整理所有未提交修改供合併
+
+- Owner：Codex；Done。使用者要求「清理unstaged區，需要的commit，不要的就刪掉，我要merge」。本次所有12項初始未提交內容均必要，含正式回歸測試及使用者slash-wind-spin美術設定，全部保留；無廢棄untracked檔需要刪除，不刪正式檔、正在開啟的Excel鎖檔或本機依賴／素材庫設定。此指示授權完成前次已告知的同檔快取更新，不另重複詢問；不合併／推送。
+- 完成：先提交4f18ed64（VACUUM-OMEN-CAP-20261003，每敵成功一次／全場十個／Excel技能說明與Worker快取），再提交7c3238bb（VFX-STARTUP-RACE-20261003，Preset載入空窗等待／回收），最後本紀錄所在`[Codex] chore: 保留迴旋斬美術設定並完成合併前整理`提交使用者Preset與必要資料快取。index只改901／908／913／933版號，保留Claude b18edea5及既有裝備／神鑄／地景內容。
+- 本提交修改：vfx/presets/slash-wind-spin.json（完整保留使用者14層／1.5秒、位置／尺寸／顏色／screen混合設定）、js/vfx-runtime.js僅DATA_VERSION=20261003-wind-spin-authoring、主頁與Editor Runtime同為1.0.172、本紀錄。唯讀檢查：協作規範、AGENTS／workflow／agent文件、素材root解析／匯出工具、layout與schema、其他Preset／shipped／引用圖檔、所有未提交diff及既有測試；沒有代改技能／傷害、其他AI副本或分組異常。
+- 驗證：`node --test tests/vfx-startup-loading.test.cjs tests/vacuum-omen-vfx.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/storm-mountain.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-duration.test.cjs`159/159通過；`npm.cmd run build`436檔通過；Core.validatePreset、LS.validateLayout及本Preset14層完整單群組／全部duration1.5直接斷言通過；`git diff --check`／cached檢查通過。
+- 素材：經vfx-library-root.cjs讀本機library.local並明確解析改名後D:/MyGame/Asset；shell仍繼承舊effects-materials環境覆寫，驗證使用明確root，不改使用者環境。Asset倉庫status乾淨、HEAD ed3edfb，無新／改圖檔，Preset是遊戲內authoring資料；`node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset`243份Preset／160引用／61640.4KB內容雜湊及匯出一致，無需素材庫空Commit。原舊effects-materials資料夾只殘留.git，未初始化／移動／刪除任何素材庫。
+- 已知風險：額外`node --test tests/vfx-preset-layout.test.cjs tests/vfx-duration.test.cjs`17項15過2失敗；LAYOUT-1既有pillar-indomitable缺layout，LAYOUT-3既有bolt-sky-purple／bolt-thunderstrike-bluewhite兩群組、hit-thunderstrike-bluewhite圖層清單不同步。三份檔案與HEAD無差異；將唯一改動slash-wind-spin唯讀換回HEAD重跑layout仍4/6、相同兩項失敗，未新增分組問題，也不修改測試接受現況。這些只影響Editor authoring metadata，非本次遊戲啟動／數量修正；真人密集戰鬥觀感仍待驗收。
+- 交付：三項必要工作均已提交，預期最終`git status --short`空白；无未完成本次修改，可合併（保留上述既有測試風險），未合併／推送。下一步使用者合併ai/codex至develop，保留Claude另支內容並重整遊戲；既有分組異常另案修正。
+
 ## VFX-STARTUP-RACE-20261003 — 重整時禁止載入空窗先畫舊特效
 
 - Owner：Codex；Done。使用者回報剛編輯特效後第一次重整偶發鋸齒圓盤。已定位renderer ready早於非同步VFXRuntime.boot完成，onVfx因此落入legacy；Preset fetch已cache:no-store，非正常JSON快取。單一開發者；允許battle-renderer載入期有限佇列與回收、新回歸、RuntimeAdapter文件與本紀錄、index僅renderer快取。其他檔預檢乾淨，index有已告知的Claude修改，使用者本次要求整理並提交所有必要修改供合併，已授權完成必要快取。不改Preset、Runtime／Core、技能／傷害或存檔，不合併推送；保留使用者slash-wind-spin。

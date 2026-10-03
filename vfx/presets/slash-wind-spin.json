@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "slash-wind-spin",
-  "duration": 4,
+  "duration": 1.5,
   "loop": false,
   "layers": [
     {
@@ -10,13 +10,13 @@
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 0,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 2.4,
       "scale": {
-        "x": 0.6972,
-        "y": 0.6972
+        "x": 0.6249,
+        "y": 0.6249
       },
       "anchor": {
         "x": 0.5,
@@ -25,7 +25,7 @@
       "alpha": 0.48,
       "tint": "#51efd1",
       "blendMode": "add",
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -80,13 +80,13 @@
       "assetId": "particle-pack/png-black-background/twirl_03.png",
       "zIndex": 1,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 0,
       "scale": {
-        "x": 0.7803,
-        "y": 0.7803
+        "x": 0.6994,
+        "y": 0.6994
       },
       "anchor": {
         "x": 0.5,
@@ -95,7 +95,7 @@
       "alpha": 0.6,
       "tint": "#229ff5",
       "blendMode": "add",
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -150,23 +150,23 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 2,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": -0.2094,
       "scale": {
-        "x": 0.8205,
-        "y": 0.771
+        "x": 0.8852,
+        "y": 0.8318
       },
       "anchor": {
         "x": 0.31076681064521183,
         "y": 0.510697036318065
       },
       "alpha": 0.595,
-      "tint": "#258fff",
-      "blendMode": "add",
+      "tint": "#007bff",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -221,13 +221,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 3,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 0,
       "scale": {
-        "x": 0.7198,
-        "y": 0.676
+        "x": 0.691,
+        "y": 0.649
       },
       "anchor": {
         "x": 0.19899222488038276,
@@ -235,9 +235,9 @@
       },
       "alpha": 0.48999999999999994,
       "tint": "#25d5e8",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -292,23 +292,23 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 4,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 0.2094,
       "scale": {
-        "x": 0.6187,
-        "y": 0.5816
+        "x": 0.5545,
+        "y": 0.5213
       },
       "anchor": {
         "x": 0.0645384287665251,
         "y": 0.5133289187644369
       },
-      "alpha": 0.48999999999999994,
-      "tint": "#52f7a8",
-      "blendMode": "add",
+      "alpha": 0.65,
+      "tint": "#00ff84",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -363,13 +363,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 5,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 0.1745,
       "scale": {
-        "x": 0.5177,
-        "y": 0.5848
+        "x": 0.464,
+        "y": 0.5242
       },
       "anchor": {
         "x": 0.0021711375461210825,
@@ -377,9 +377,9 @@
       },
       "alpha": 0.21,
       "tint": "#b8ffe0",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -434,23 +434,23 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 6,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 1.8405999999999998,
       "scale": {
-        "x": 0.6727,
-        "y": 0.6324
+        "x": 0.7257,
+        "y": 0.6823
       },
       "anchor": {
         "x": 0.31076681064521183,
         "y": 0.510697036318065
       },
       "alpha": 0.595,
-      "tint": "#258fff",
-      "blendMode": "add",
+      "tint": "#007bff",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -505,13 +505,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 7,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 2.05,
       "scale": {
-        "x": 0.5901,
-        "y": 0.5543
+        "x": 0.5665,
+        "y": 0.5321
       },
       "anchor": {
         "x": 0.19899222488038276,
@@ -519,9 +519,9 @@
       },
       "alpha": 0.48999999999999994,
       "tint": "#25d5e8",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -576,23 +576,23 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 8,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 2.2594,
       "scale": {
-        "x": 0.5072,
-        "y": 0.4768
+        "x": 0.4546,
+        "y": 0.4274
       },
       "anchor": {
         "x": 0.0645384287665251,
         "y": 0.5133289187644369
       },
-      "alpha": 0.48999999999999994,
-      "tint": "#52f7a8",
-      "blendMode": "add",
+      "alpha": 0.65,
+      "tint": "#00ff84",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -647,13 +647,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 9,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 2.2245,
       "scale": {
-        "x": 0.4246,
-        "y": 0.4796
+        "x": 0.3806,
+        "y": 0.4299
       },
       "anchor": {
         "x": 0.0021711375461210825,
@@ -661,9 +661,9 @@
       },
       "alpha": 0.21,
       "tint": "#b8ffe0",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -718,23 +718,23 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 10,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 4.2906,
       "scale": {
-        "x": 0.9186,
-        "y": 0.8636
+        "x": 1.029,
+        "y": 0.9675
       },
       "anchor": {
         "x": 0.31076681064521183,
         "y": 0.510697036318065
       },
       "alpha": 0.595,
-      "tint": "#258fff",
-      "blendMode": "add",
+      "tint": "#007bff",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -789,13 +789,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 11,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 4.5,
       "scale": {
-        "x": 0.806,
-        "y": 0.7571
+        "x": 0.7452,
+        "y": 0.6999
       },
       "anchor": {
         "x": 0.19899222488038276,
@@ -803,9 +803,9 @@
       },
       "alpha": 0.48999999999999994,
       "tint": "#25d5e8",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -860,23 +860,23 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 12,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 4.7094,
       "scale": {
-        "x": 0.6928,
-        "y": 0.6513
+        "x": 0.621,
+        "y": 0.5838
       },
       "anchor": {
         "x": 0.0645384287665251,
         "y": 0.5133289187644369
       },
-      "alpha": 0.48999999999999994,
-      "tint": "#52f7a8",
-      "blendMode": "add",
+      "alpha": 0.65,
+      "tint": "#00ff84",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
@@ -931,13 +931,13 @@
       "assetId": "particle-pack/png-black-background/slash_03.png",
       "zIndex": 13,
       "position": {
-        "x": -4.7472,
-        "y": -0.3023
+        "x": -6.5175,
+        "y": -8.1783
       },
       "rotation": 4.6745,
       "scale": {
-        "x": 0.5798,
-        "y": 0.6549
+        "x": 0.5197,
+        "y": 0.587
       },
       "anchor": {
         "x": 0.0021711375461210825,
@@ -945,9 +945,9 @@
       },
       "alpha": 0.21,
       "tint": "#b8ffe0",
-      "blendMode": "add",
+      "blendMode": "screen",
       "delay": 0,
-      "duration": 4,
+      "duration": 1.5,
       "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
