@@ -1643,9 +1643,17 @@ html *::-webkit-scrollbar-corner {
   outline: none;
 }
 
-/* 可選取的詞條：只有文字區（不含骰子）是點擊範圍 */
+/* 可選取的詞條：只有文字區（不含骰子）是點擊範圍。
+   文字區原本被固定成 18px 高，放大到 16px 的字加上框線會貼框；改成自動長高、上下留白，
+   每一行都先留好同樣的高度，換選詞條時版面才不會跳。 */
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable {
+  height: auto;
+  min-height: 30px;
+}
+
 #tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text {
-  padding: 0 5px;
+  height: auto;
+  padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: 3px;
   cursor: pointer;
