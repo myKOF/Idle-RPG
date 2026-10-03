@@ -1,8 +1,31 @@
 # AI_TASKS.md
 
+## STORM-MYRIAD-20261003 — 暴風萬刃大小風刃追擊七秒
+
+- Owner：Codex；Done。使用者要求大型／小型風刃皆追擊7秒、每次射出數量+1，風刃傷害+50%、每級+5%，傷害加成與原風刃風系傷害相乘。既有傷害已是獨立乘區，保留並驗證；追加數量沿既有每個方向連射+1、大小風刃同步發射。
+- 前置既有追擊場域／配置接線；工作區乾淨，衝突預檢乾淨。允許js/skills2.js限定暴風萬刃、Skills2.xlsx／CSV該列持續時間與說明、定向tests/storm-myriad.test.cjs、必要index／bridge／sim.worker快取及本紀錄；禁止其他技能數值／傳奇機制／搜敵範圍／配置其他列／素材／UI／其他副本，合併／推送。
+- 驗收Lv.1／10大小刃7秒（包含發射延遲各自完整存活）、每方向原數量+1及傳奇疊加、傷害獨立相乘、普通風刃／其他超神不變、正式Worker事件到Runtime單一場域續播与回收、Excel原生重開與非目標資料／格式保留、配置一致與快取、回歸／Build／獨立Commit。後續接手者使用者。
+- 完成：大小風刃共用暴風萬刃sec=7；每道從自身發射時間開始保留完整7秒，不隨連射延遲縮短。每方向原2道增加至3道，滿七階由大型8／小型8變成各12道；斷空刃與風之痕同時作用時大型16／小型32道。大小刃保留既有60／30米搜敵範圍；大型沿途脈衝、小刃傷害比例及傳奇乘區保留。傷害為原風系百分比×(1+(50+5×等級)/100)，沿用專案基礎值加每級增量的規則。
+- 配置：Excel原生COM只改Skills2第209列AU／AW／AX，sec由4改7並同步大小刃與乘算說明；原生儲存後唯讀重新開啟，逐格確認A1:AX231僅三格變動、所有欄寬／列高及目標格Style／字型／格式／換行不變。透過既有工具同步CSV及JS；artifact-tool唯讀inspect與前後PNG檢查完成，未用其匯出重寫工作簿。主頁skills2為1.0.273、bridge1.0.210，Worker及skills2 import token為20261003-storm-myriad；無新協議或素材。
+- 修改8檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tests/storm-myriad.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。未修改但檢查：js/vfx-core.js／vfx-runtime.js／worker/shim.js／battlefield.js、scripts/sim/engine.js、既有風刃Preset、tools/config_tables.cjs、相關技能／Worker測試與協作規範。無必要素材變更，不建立素材庫Commit。
+- 測試：`node --test tests/storm-myriad.test.cjs tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs`87/87通過；`npm.cmd run build`427檔通過；`node tools/config_tables.cjs --apply Skills2`試跑語意變更0；`git diff --check`通過。正式Worker實際命中並按0／0.2／0.4秒三波逐批回收，正式Core＋Runtime＋Preset保持24個場域及重用本體，最終皆回收；粒子節點正常重生不列為重複本體。
+- 回歸有效性：唯讀preload替換為HEAD舊skills2後，新6項中5項失敗（舊大型僅4秒、6.9秒時僅12個場域），其他超神保護項仍通過；未修改遊戲檔案配合測試。初次正式Worker測試替身缺少ult容器、初次本體統計誤含粒子，修正測試替身與統計後通過，未改正式Runtime。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整暴風萬刃大小風刃追擊七秒`提交；無未完成需求，可合併。未合併／推送，未做長時間真人實戰；下一步使用者重載審查並整合。自動核准審查以政策阻擋拒絕刪除本輪Temp檔案與依賴Junction，C:/Users/user/AppData/Local/Temp/codex-storm-myriad-20261003保留，未繞過拒絕，不包含於提交。
+
+## GIANT-WINDBLADE-SIZE-20261003 — 巨型風刃特效尺寸與判定同步
+
+- Owner：Codex；Done。使用者回報學習巨型風刃後外觀未變大，要求確認判定並修正。唯讀定位：sgWindbladeGeom與飛行判定已套用第二階倍率，但Worker shim漏傳bodyLength，Runtime無法用完整長寬而退回Preset固定尺寸。
+- 前置既有幾何／Runtime接線；修改前衝突預檢全部乾淨。允許js/worker/shim.js尺寸白名單、protocol.js及WORKER_PROTOCOL.md必要契約／版本、定向測試、index／bridge／sim.worker必要快取及本紀錄；不改技能數值、配置、素材、其他技能機制、其他副本、不合併／推送。
+- 驗收未學／Lv.1／Lv.10判定與正式Worker事件到Runtime的長寬比例一致，新增邊緣敵人命中、真實升級後下次施放更新、追擊小刃／傳奇倍率保持，非法尺寸不透傳及舊事件退化保持。定向回歸／建置／独立Commit；後續接手者使用者。
+- 完成：shim新增正有限數bodyLength透傳，與既有lineWidth共同讓正式Runtime按實際長寬縮放。判定原本正確，未改傷害／範圍／倍率。未學4×8米、第二階Lv.1為5.32×10.64米（+33%）、Lv.10為6.4×12.8米（+60%）；傳奇仍走原倍率。可選事件契約更新v43、主頁協議URL v44、shim v10、bridge 1.0.209及Worker token 20261003-windblade-size同步。沒有修改Runtime、技能程式、配置或素材；不新增特效來源。
+- 修改9檔：js/worker/shim.js／protocol.js／sim.worker.js、js/bridge.js、index.html、docs/WORKER_PROTOCOL.md、tests/giant-windblade.test.cjs／worker-protocol.test.cjs及本紀錄。唯讀檢查：js/skills2.js／vfx-runtime.js／vfx-core.js／battlefield.js／battle-renderer.js、scripts/sim/engine.js、風刃既有Preset、風系與Worker測試、共通規範。無必要素材變更或素材庫Commit。
+- 測試：`node --test tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs`39/39通過；正式Worker施放後推進命中，原邊界外／新邊界內敵人只有學習後受傷、新邊界外仍不命中；正式Core＋Runtime＋實際Preset在正視及0.65斜俯視長寬均按倍率放大，學習指令後下次施放即更新。未學／已學事件尺寸同源，缺省／非法數值維持舊事件形狀。唯讀還原HEAD shim後新3項中2項失敗，確實攔住原缺陷。`npm.cmd run build`426檔通過，`git diff --check`通過。
+- 瀏覽器：獨立隨機Port HTTP服務、全新無頭Edge／拋棄式儲存與真正Worker，以正式施放事件驗證三組bodyLength／lineWidth分別40／80、53.2／106.4、64／128；新協議43、Worker booted／alive，errors／persistErrors／Console error與warning皆0。請求確認主頁skills2 1.0.272、protocol URL44、bridge1.0.209、Worker及skills2新token、Worker protocol43及shim10皆實際載入；瀏覽器與服務已關閉，沒有新增暫存檔。首次測試誤選Pixi的輔助Worker，改依sim.worker.js URL選取正式Worker後通過，未改遊戲配合測試。未做長時間實戰。
+- 交付：Commit為本紀錄所在`[Codex] fix: 同步巨型風刃特效與實際判定尺寸`提交；無未完成需求，可合併，未合併／推送。新增bodyLength亦修復原來使用該幾何欄位的飛行特效傳遞，不改其他技能判定；已驗證缺省事件相容。下一步使用者重載後檢查並審查整合。
+
 ## SKY-COLLAPSE-ONE-20261003 — 天穹崩裂只觸發一道小型追蹤風刃
 
-- Owner：Codex；程式／配置／測試完成，Blocked（依使用者指示等待Claude整合快取）。使用者要求每次觸發只射出1道小型追蹤風刃；前置既有小風刃追擊機制。固定20%機率，傷害沿用小風刃計算及超神加成，追蹤範圍／壽命沿用追跡風刃；不再完整施放七階風刃，不受四方向／連射／鏡射增加數量。
+- Owner：Codex；Done（Claude已整合，GIANT-WINDBLADE-SIZE-20261003同步補齊資源快取並驗證載入）。使用者要求每次觸發只射出1道小型追蹤風刃；前置既有小風刃追擊機制。固定20%機率，傷害沿用小風刃計算及超神加成，追蹤範圍／壽命沿用追跡風刃；不再完整施放七階風刃，不受四方向／連射／鏡射增加數量。
 - 允許js/skills2.js限定天穹崩裂、Skills2.xlsx／CSV該列說明與既有觸發特效角色、定向測試、必要index／bridge／Worker快取及本紀錄；禁止其他技能、UI焦點任務區段、配置其他列、Claude威能文字區段、素材、合併／推送。Worker預檢有Claude1739／1747行文字修改，使用者同意只更新第17行skills2快取；其他目標無外部衝突。同副本的技能最高階焦點任務保留，共享紀錄／index分段更新並隔離提交。
 - 驗收Lv.1／10機率與傷害、一次觸發僅一個追擊場域／零大型飛行物、傳奇不增加數量、追擊命中及正式Runtime不重建本體、裝備／死亡／閃避／無敵閘門、既有普通風刃／其他超神保持、Excel原生重開與資料／格式一致、建置及獨立Commit。後續接手者使用者。
 - 完成：受擊成功擲骰後直接共用sgSpawnWindChaser，只產生一道小刃；初始朝攻擊者，後續沿既有30米隨機追擊、Lv.10普通第五階維持7秒。伤害取風刃本體×亂披風小刃比例×傳奇小刃加成，保留超神獨立乘區、裂風及風蝕；不扣魔、不進冷卻、不改原鎖定目標。沒有修改普通風刃或暴風屏障同名超神skyfallStars。
@@ -11,7 +34,8 @@
 - 驗證：`node --test tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`71/71通過；`node --test --test-name-pattern="天穹" tests/skill2-windblade-vacuum-legendary.test.cjs tests/wind-skill-audit.test.cjs`4/4通過。涵蓋20%邊界、Lv.1／10、小型傷害、傳奇數量、正式Worker單一area.id／朝向／速度／半徑／座標／到期回收與Runtime本體重送不重建。唯讀preload還原HEAD技能後，新5項中4項失敗（大型8道、小型8／24道），確認能攔住原行為。
 - 擴大回歸：既有windblade-vacuum-legendary完整22項11通過／11失敗；以HEAD原技能與原測試唯讀執行亦同11項失敗，皆原主動施放fixture法力500不足目前七階耗魔1000等既有差異，不修改其他技能數值或降低斷言。`npm.cmd run build`425檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；`git diff --check`通過。沒有做長時間瀏覽器實戰。
 - 快取待辦：預檢後Claude提交e179d27f涉及index.html第921行bridge版號及js/bridge.js第18行WORKER_ASSET_VERSION，與本次必要快取欄位重疊。使用者回覆「先完成其他修改，快取等Claude整合」，故本輪index／bridge／Worker版號全部保留。整合時須同步更新主頁skills2與bridge版本、WORKER_ASSET_VERSION及sim.worker第17行skills2 import版本，再驗證瀏覽器載入新碼；在此之前不能視為正式發布完成。
-- 交付：本紀錄所在`[Codex] fix: 天穹崩裂每次只觸發一道小型追蹤風刃`提交；可供Claude整合，完成定義尚差上述快取及整合後載入驗證。未合併／推送。臨時Excel計畫／腳本使用後清除，正式回歸測試保留。下一步由Claude於整合時補快取；不得跳過或用舊URL直接发布。
+- 待辦解除：Claude已在5d0cac7d整合df1fbc52；本輪巨型風刃任務預檢乾淨後統一更新主頁skills2／bridge與Worker import token，真正瀏覽器驗證新版URL已載入，天穹崩裂5項回歸亦通過。沒有在等待期間修改衝突檔案。
+- 交付：df1fbc52 `[Codex] fix: 天穹崩裂每次只觸發一道小型追蹤風刃`，後續整合與快取如上，無未完成需求。臨時Excel計畫／腳本使用後清除，正式回歸測試保留；下一步使用者重載審查。
 
 ## SKILL2-HIGHEST-FOCUS-20261003 — 點擊技能預設最高已學階級
 
