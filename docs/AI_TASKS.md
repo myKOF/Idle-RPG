@@ -1,5 +1,22 @@
 # AI_TASKS.md
 
+## SKY-COLLAPSE-ONE-20261003 — 天穹崩裂只觸發一道小型追蹤風刃
+
+- Owner：Codex；InProgress。使用者要求每次觸發只射出1道小型追蹤風刃；前置既有小風刃追擊機制。固定20%機率，傷害沿用小風刃計算及超神加成，追蹤範圍／壽命沿用追跡風刃；不再完整施放七階風刃，不受四方向／連射／鏡射增加數量。
+- 允許js/skills2.js限定天穹崩裂、Skills2.xlsx／CSV該列說明與既有觸發特效角色、定向測試、必要index／bridge／Worker快取及本紀錄；禁止其他技能、UI焦點任務區段、配置其他列、Claude威能文字區段、素材、合併／推送。Worker預檢有Claude1739／1747行文字修改，使用者同意只更新第17行skills2快取；其他目標無外部衝突。同副本的技能最高階焦點任務保留，共享紀錄／index分段更新並隔離提交。
+- 驗收Lv.1／10機率與傷害、一次觸發僅一個追擊場域／零大型飛行物、傳奇不增加數量、追擊命中及正式Runtime不重建本體、裝備／死亡／閃避／無敵閘門、既有普通風刃／其他超神保持、Excel原生重開與資料／格式一致、建置及獨立Commit。後續接手者使用者。
+
+## SKILL2-HIGHEST-FOCUS-20261003 — 點擊技能預設最高已學階級
+
+- Owner：Codex；Done。使用者要求點擊技能群組時選中目前已學習的最高階；已學且生效的超神進化優先，否則選普通階最高已學項，未學則第1階。同群組再次點擊、切換群組、首次進入／篩選切換及戰鬥快捷列均沿同一預設；手動點階級後的一般重繪保留焦點。
+- 前置：既有技能瀏覽器與超神選擇快照已存在，工作區乾淨、目標衝突預檢乾淨。允許js/ui.js群組選擇／預設焦點、tests/skill2-ui.test.cjs、index.html必要快取及本紀錄；禁止技能數值、Worker／協議、配置、素材、其它副本、合併／推送。
+- 驗收未學／單階／部分學習／七階滿級／有效超神／降級後失效超神、重點同群組回最高階、手動焦點重繪不變、快捷列與Console；定向回歸／Build及獨立Commit。後續接手者：使用者。
+- 完成：sgbDefaultTier改為反向查找最高已學普通階，不再預設下一個未滿階或全滿後第1階；sgbSelectGroup統一設定最高階及有效超神焦點，清單與戰鬥快捷列每次點擊都回此預設，首次／篩選變更亦沿用。一般金幣／快照重繪保留手動焦點。主頁ui快取1.0.106；未修改技能資料、Worker或存檔。
+- 修改4檔：js/ui.js、tests/skill2-ui.test.cjs、index.html及本紀錄。唯讀檢查未改：js/skills2.js的等級／超神純函式、js/skills.js裝配流程、js/worker/sim.worker.js面板、js/bridge.js狀態／載入、scripts/sim/engine.js、tests/init-ui-smoke.test.cjs／ui-tick-smoke.test.cjs。沒有素材變更或素材庫Commit。
+- 測試：`node --test tests/skill2-ui.test.cjs tests/init-ui-smoke.test.cjs tests/ui-tick-smoke.test.cjs`22/22通過；`npm.cmd run build`424檔通過；`git diff --check`通過。包含未學、只有滿級第1階、部分學習／前三階滿級、七階全滿、初次有效超神／降級暫時失效、手動焦點重繪與重新選群組。
+- 瀏覽器：獨立隨機Port HTTP服務、全新無頭Edge與seed=9拋棄式存檔，以正式DOM及真正Worker驗證迴旋斬預設超神第2選項Lv.10、點第1階後重繪保留手選、再點迴旋斬恢復已選超神；突刺第3階Lv.3預設第3階、飛刀七階滿且無超神預設第7階；戰鬥快捷列點迴旋斬亦展開已選超神。Console error／warning及Worker errors均0；瀏覽器與HTTP服務正常關閉，無新增暫存檔。
+- 交付：Commit為本紀錄所在`[Codex] fix: 點擊技能預設選中最高已學階級`提交。無未完成需求或已知本次新增風險，可合併；未合併／推送。未做長時間實戰回歸；下一步由使用者重載檢查並審查整合。
+
 ## SKILL2-ULT-SWITCH-20261003 — 超神進化直接切換
 
 - Owner：Codex；Done。使用者要求已有超神進化時，查看其它選項顯示切換鈕；二次確認載明金幣及刪除舊技能／等級，再選新技能 Lv.1。前置既有選擇、重選與確認彈窗已存在；目標衝突預檢乾淨。

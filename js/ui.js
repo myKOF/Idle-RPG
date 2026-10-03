@@ -8347,13 +8347,23 @@ function sgbTotals(gid, lvs, skillsSnapshot) {
   return { total: sgUiTotalLevel(lvs) + (pick ? pick.lv : 0), max: slots * sgbTierMax(), pick: pick };
 }
 
-/* 換群組（或第一次進來）時預設展開的階：第一個「已解鎖但還沒滿級」的階，都滿了就第 1 階 */
-function sgbDefaultTier(gid, lvs, skillsSnapshot) {
+/* 預設展開最高已學普通階；未學過的群組從第 1 階開始。 */
+function sgbDefaultTier(gid, lvs) {
   var g = SKILLS2[gid];
-  for (var i = 0; i < g.tiers.length; i++) {
-    if (sgStageUnlocked(gid, lvs, i, skillsSnapshot) && (lvs[i] || 0) < sgbTierMax()) return i;
+  for (var i = g.tiers.length - 1; i >= 0; i--) {
+    if ((lvs[i] || 0) > 0) return i;
   }
   return 0;
+}
+
+function sgbSelectGroup(gid, skillsSnapshot) {
+  var lvs = sgUiLevels(skillsSnapshot, gid) || [];
+  var pick = sgUiUltPick(skillsSnapshot, gid);
+  var activePick = pick && sgUiUltUnlocked(gid, lvs);
+  UI.sgBrowse.gid = gid;
+  UI.sgBrowse.tier = sgbDefaultTier(gid, lvs);
+  UI.sgBrowse.ultFocus = activePick ? pick.idx : null;
+  UI.sgBrowse.focus = activePick ? 'ult' : 'tier';
 }
 
 /* 目前選中的群組：沒選過或被篩選掉時，依序挑技能列上的第一個、已學會的第一個、清單第一個 */
@@ -8582,7 +8592,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   var color = SGB_ELEM_COLORS[sgbElemOf(gid)] || '#c9c3b5';
   var elemInfo = (g.elem && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[g.elem]) ? ELEM_INFO[g.elem] : null;
   if (typeof UI.sgBrowse.tier !== 'number' || UI.sgBrowse.tier < 0 || UI.sgBrowse.tier >= g.tiers.length) {
-    UI.sgBrowse.tier = sgbDefaultTier(gid, lvs, skillsSnapshot);
+    sgbSelectGroup(gid, skillsSnapshot);
   }
 
   var tags = '<span class="skill-tag skill-tag-category">' + (g.dmgType === 'magic' ? '魔法' : '物理') + '</span>';
@@ -8633,10 +8643,8 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
   var ids = all.filter(function (id) { return UI.sgBrowse.filter === 'all' || sgbCategoryOf(id) === UI.sgBrowse.filter; });
   var gid = sgbResolveGroup(skillsSnapshot, ids);
   if (gid !== UI.sgBrowse.gid) {
-    UI.sgBrowse.gid = gid;
-    UI.sgBrowse.tier = null;
-    UI.sgBrowse.ultFocus = null;
-    UI.sgBrowse.focus = 'tier';
+    if (gid) sgbSelectGroup(gid, skillsSnapshot);
+    else UI.sgBrowse.gid = null;
   }
   var loadout = skillViewLoadout(skillsSnapshot);
 
@@ -10871,12 +10879,7 @@ function initUI() {
     var sgbGroup = e.target.closest('[data-sgb-group]');
     if (sgbGroup) {
       var nextGid = sgbGroup.getAttribute('data-sgb-group');
-      if (nextGid !== UI.sgBrowse.gid) {
-        UI.sgBrowse.gid = nextGid;
-        UI.sgBrowse.tier = null;
-        UI.sgBrowse.ultFocus = null;
-        UI.sgBrowse.focus = 'tier';
-      }
+      sgbSelectGroup(nextGid, uiSkillsPanelSnapshot());
       renderSkills();
       return;
     }
@@ -11463,12 +11466,7 @@ function initUI() {
     var bssGid = sgGroupIdOf(skId);
     if (bssGid !== null && typeof SKILLS2 !== 'undefined' && SKILLS2[bssGid]) {
       if (UI.sgBrowse.filter !== 'all' && sgbCategoryOf(bssGid) !== UI.sgBrowse.filter) UI.sgBrowse.filter = 'all';
-      if (UI.sgBrowse.gid !== bssGid) {
-        UI.sgBrowse.gid = bssGid;
-        UI.sgBrowse.tier = null;
-        UI.sgBrowse.ultFocus = null;
-        UI.sgBrowse.focus = 'tier';
-      }
+      sgbSelectGroup(bssGid, uiSkillsPanelSnapshot());
       renderSkills();
       var bssItem = document.querySelector('#sgb-items [data-sgb-group="' + bssGid + '"]');
       if (bssItem && typeof bssItem.scrollIntoView === 'function') bssItem.scrollIntoView({ block: 'nearest' });

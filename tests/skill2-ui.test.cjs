@@ -60,6 +60,59 @@ test('未解鎖的階只能查看，不產生升級鈕', () => {
   assert.match(h, /sgb-tier sgb-tier-locked/);
 });
 
+test('點擊群組預設最高已學階，不跳下一個未學階；七階全滿選第七階', () => {
+  const c = loadContext();
+  for (const [levels, expected] of [
+    [Array(7).fill(0), 0],
+    [[10, 0, 0, 0, 0, 0, 0], 0],
+    [[10, 10, 3, 0, 0, 0, 0], 2],
+    [[10, 10, 10, 0, 0, 0, 0], 2],
+    [Array(7).fill(10), 6]
+  ]) {
+    const snap = snapshot({ thrust: levels });
+    c.sgbSelectGroup('thrust', snap);
+    assert.equal(c.UI.sgBrowse.gid, 'thrust');
+    assert.equal(c.UI.sgBrowse.tier, expected);
+    assert.equal(c.UI.sgBrowse.focus, 'tier');
+    const h = c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } });
+    assert.equal((h.match(/class="sgb-tier-detail"/g) || []).length, 1);
+    assert.doesNotMatch(h, /sgb-ult-detail/);
+  }
+});
+
+test('有效超神為最高已學階，預設展開已選項；失效保留的超神回普通最高階', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: Array(7).fill(10) });
+  snap.skills2.ult = { thrust: { pick: 1, lv: 3 } };
+  c.UI.sgBrowse.tier = null;
+  const initial = c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } });
+  assert.equal(c.UI.sgBrowse.focus, 'ult');
+  assert.equal(c.UI.sgBrowse.ultFocus, 1);
+  assert.match(initial, /sgb-ult-detail/);
+  assert.doesNotMatch(initial, /class="sgb-tier-detail"/);
+  snap.skills2.levels.thrust[6] = 9;
+  c.sgbSelectGroup('thrust', snap);
+  assert.equal(c.UI.sgBrowse.focus, 'tier');
+  assert.equal(c.UI.sgBrowse.tier, 6);
+  assert.equal(c.UI.sgBrowse.ultFocus, null);
+});
+
+test('一般重繪保留手動階級，再點相同群組回最高階與已選超神', () => {
+  const c = loadContext();
+  const snap = snapshot({ thrust: Array(7).fill(10) });
+  snap.skills2.ult = { thrust: { pick: 2, lv: 10 } };
+  c.sgbSelectGroup('thrust', snap);
+  c.UI.sgBrowse.tier = 0;
+  c.UI.sgBrowse.focus = 'tier';
+  c.sgbDetailHTML('thrust', snap, { player: { gold: 42 } });
+  assert.equal(c.UI.sgBrowse.tier, 0);
+  assert.equal(c.UI.sgBrowse.focus, 'tier');
+  c.UI.sgBrowse.ultFocus = 0;
+  c.sgbSelectGroup('thrust', snap);
+  assert.equal(c.UI.sgBrowse.focus, 'ult');
+  assert.equal(c.UI.sgBrowse.ultFocus, 2);
+});
+
 test('投資中的階有升級與一鍵滿級；滿級只剩降級與重置', () => {
   const c = loadContext();
   const snap = snapshot({ thrust: [10, 4, 0, 0, 0, 0, 0] });
