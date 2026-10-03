@@ -12284,3 +12284,106 @@ textarea:hover {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .52);
   opacity: .82;
 }
+
+/* ---- 封魔塔畫在 Canvas 戰場（2026-10-03）----
+   塔戰期間戰場頂部的任務快捷列換成塔戰資訊列（ui.js renderTowerCanvasHud）；
+   封魔塔分頁裡的 DOM 對戰卡片讓位給戰場，只留標頭（倒數／DPS／撤退）與提示。
+   ?canvas=0 時 body 沒有 battle-canvas-mode，這些規則全部不生效。 */
+#tower-canvas-hud {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 6px 3px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+  max-width: calc(100% - 120px);
+  color: var(--text);
+  background: rgba(11, 8, 6, .88);
+  border: 1px solid rgba(144, 93, 49, .66);
+  border-radius: 20px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .62), inset 0 0 8px rgba(184, 96, 40, .08);
+}
+
+#tower-canvas-hud .tch-floor {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* 固定寬度：倒數位數變動時後面的 DPS 不左右跳 */
+#tower-canvas-hud .tch-timer {
+  flex: 0 0 52px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--info);
+  font-variant-numeric: tabular-nums;
+}
+
+#tower-canvas-hud .tch-timer.urgent {
+  color: var(--bad);
+  animation: blink 1s infinite;
+}
+
+#tower-canvas-hud .tch-enrage {
+  color: var(--bad);
+  font-weight: bold;
+  animation: blink .8s infinite;
+}
+
+#tower-canvas-hud .tch-auto,
+#tower-canvas-hud .tch-dps {
+  color: var(--dim);
+}
+
+#tower-canvas-hud .btn {
+  padding: 2px 10px;
+}
+
+body.tower-canvas-fight #quest-bar {
+  display: none !important;
+}
+
+.tower-canvas-note {
+  display: none;
+}
+
+body.battle-canvas-mode #tower-fight .battle-scene {
+  display: none;
+}
+
+body.battle-canvas-mode #tower-fight .tower-canvas-note {
+  display: block;
+  margin-bottom: 10px;
+  padding: 18px 12px;
+  text-align: center;
+  color: var(--dim);
+  border: 1px dashed rgba(144, 93, 49, .55);
+  border-radius: 4px;
+}
+
+/* ---- 野外 ⇄ 魔王戰的轉場黑圈（2026-10-03，js/battle-renderer.js initIris／tickScene）----
+   疊在戰場畫布與其上所有 DOM（血瓶、技能列、塔戰資訊列）之上；中間的洞是圓，
+   外面整片黑由 box-shadow 撐開，改洞的直徑就是收合／張開。內側再一圈 inset 陰影讓邊緣柔一點。 */
+.battle-iris {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 90;
+}
+
+.battle-iris-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: inset 0 0 36px 14px #000, 0 0 0 300vmax #000;
+}

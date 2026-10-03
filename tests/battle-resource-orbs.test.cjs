@@ -3,7 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const ui = fs.readFileSync('js/ui.js', 'utf8');
-const source = ui.slice(ui.indexOf('function renderBattleResourceOrbs()'), ui.indexOf('function renderBattle()'));
+/* 圓瓶畫「正在打的那一場」的玩家（塔戰期間是 TOWER.player），取玩家的兩支小工具一起載入 */
+const source = ui.slice(ui.indexOf('function towerCombatActive('), ui.indexOf('function currentCombatPlayerEntity(')) +
+  ui.slice(ui.indexOf('function renderBattleResourceOrbs()'), ui.indexOf('function renderBattle()'));
 function setup() {
   const elements = new Map();
   const view = { hp: 25, hpMax: 100, mp: 30, mpMax: 60, shield: 200 };

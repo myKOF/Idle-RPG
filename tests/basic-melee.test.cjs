@@ -54,7 +54,7 @@ test('Preset 接手仍播放主普攻，追加連擊不重播，面向目標', (
     turnToward:(ent,dx,dy,sticky)=>turns.push([dx,dy,sticky]),
     playerAttackAnim:(...args)=>animations.push(args) };
   vm.createContext(c);
-  vm.runInContext(groundScale()+fn(renderer,'screenToGroundY')+';'+fn(renderer,'shouldAnimatePlayer')+';'+fn(renderer,'onVfx'),c);
+  vm.runInContext(groundScale()+fn(renderer,'screenToGroundY')+';'+fn(renderer,'canvasActorId')+';'+fn(renderer,'normalizeTowerVfxIds')+';'+fn(renderer,'shouldAnimatePlayer')+';'+fn(renderer,'onVfx'),c);
   for(const variant of ['melee','melee-extra']) c.onVfx({_buffered:true,fxKind:'slash',cat:'basic',variant,targets:['enemy'],dur:0.125});
   /* 神鑄【天罰】的落雷也是 basic、跟主普攻同一刻到：帶動的話同一刀會換成另一招而且不加速 */
   c.onVfx({_buffered:true,fxKind:'rain',cat:'basic',variant:'smite',targets:['enemy'],dur:0.4});

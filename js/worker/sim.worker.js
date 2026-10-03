@@ -16,7 +16,7 @@ importScripts(
   '../item.js?v=20260805-tasks',
   '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261003-storm-myriad', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261003-rename-weineng', '../special_rules.js',
-  '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261003-rename-weineng',
+  '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261003-tower-arena',
   '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
   '../tasks.js?v=20260929-thunder-pair'
 );
@@ -408,7 +408,11 @@ function loop() {
 function buildView() {
   var p = (G && G.player) || {};
   var st = (G && G.stage) || {};
-  var fp = (typeof FIELD !== 'undefined' && FIELD) ? FIELD.player : null;
+  /* 血／魔／護盾是「正在打的那一場」的玩家：塔戰期間野外凍結，讀 FIELD.player
+     會讓戰場上的血瓶整場停在進塔前的值。 */
+  var fp = (G && G.tower && G.tower.active && typeof TOWER !== 'undefined' && TOWER && TOWER.player)
+    ? TOWER.player
+    : ((typeof FIELD !== 'undefined' && FIELD) ? FIELD.player : null);
   var stats = (typeof getStats === 'function') ? getStats() : null;
   var tv = (G && typeof taskQuickView === 'function') ? taskQuickView() : null;
   // 附魔書在狀態裡是每種一格的物件；頂欄只顯示總數，別把整個物件塞進高頻視圖

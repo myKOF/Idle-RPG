@@ -192,13 +192,14 @@ test('DECOR-8 渲染器接線：地面平面在地板與暗角之間、天氣層
   const bg = S.sceneRoot.children[0];
   const plane = bg.children.indexOf(L.decorPlane);
   assert.ok(plane > 0, '地面裝飾平面要在地板之後');
-  assert.equal(bg.children[plane + 1], S.vignette, '地面裝飾平面要在暗角之前（暗角蓋在裝飾上面）');
+  assert.ok(plane < bg.children.indexOf(S.vignette), '地面裝飾平面要在暗角之前（暗角蓋在裝飾上面）');
   assert.equal(L.decorPlane.scale.y, Number(/var GROUND_Y_SCALE = ([0-9.]+);/.exec(renderer)[1]));
   const stage = S.app.stage.children;
   assert.ok(stage.indexOf(L.decorAmbient) > stage.indexOf(S.sceneRoot));
   assert.ok(stage.indexOf(L.decorAmbient) < stage.indexOf(L.airBack));
   assert.match(renderer, /propLayer: S\.layers\.entity/);
-  assert.match(renderer, /S\.decor\.setVisible\(!S\.towerActive\)/);
+  /* 魔王戰期間藏起來；改由轉場全黑那一刻切（js/battle-renderer.js applySceneSwitch），不跟著 towerActive 立刻切 */
+  assert.match(renderer, /if \(S\.decor\) S\.decor\.setVisible\(!tv\);/);
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/battle-decor.js?v=') > 0 && html.indexOf('js/battle-decor.js?v=') < html.indexOf('js/battle-renderer.js?v='),
     'battle-decor.js 要在 battle-renderer.js 之前載入');

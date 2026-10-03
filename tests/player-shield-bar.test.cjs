@@ -41,7 +41,8 @@ test('玩家護盾同時顯示獨立護盾條與血量文字數值', () => {
   assert.doesNotMatch(ui, /function currentShieldSkillCap\(stats\)/);
   assert.match(ui, /var shieldMax = playerShieldMax\(entity\)/);
   assert.match(ui, /setStyleIfChanged\(shieldBar,\s*'width',\s*clamp\(shield \/ shieldMax \* 100,\s*0,\s*100\) \+ '%'\)/);
-  assert.match(ui, /var panelPlayer = field\.player/);
+  /* 塔戰期間 HUD 畫塔內玩家（封魔塔畫在 Canvas 戰場，2026-10-03） */
+  assert.match(ui, /var panelPlayer = combatPlayerOfBattleSnapshot\(battleSnapshot\)/);
   assert.match(ui, /if \(typeof view\.shield === 'number' && isFinite\(view\.shield\)\) p\.shield = view\.shield/);
   assert.doesNotMatch(ui, /shieldBar\.style\.width = clamp\(shield \/ stats\.hp \* 100/);
   assert.doesNotMatch(ui, /stats\.hp \* 0\.5/);

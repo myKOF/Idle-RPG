@@ -196,12 +196,25 @@ var VFXTower = (function () {
     }).then(function () { S.booting = false; });
   }
 
-  /* ui.js 的事件分流會先問這一支：回 true＝已接手，false＝交給 js/vfx.js 的 DOM 畫法。 */
+  /* 2026-10-03 起塔戰 BOSS 有戰場座標（Canvas 戰場要用，見 js/tower.js placeTowerCombatants），
+     以 BOSS 為圓心的事件因此會帶世界座標的 area。這一層是 DOM 卡片座標系，世界座標放上來
+     會畫到卡片外——打到 BOSS 的事件一律拿掉位置類 area，回到檔頭「高塔事件沒有 area」的畫法
+     （場域用 TOWER_PROFILE.groundR）。只帶鏈編號這類、沒有 x/y 的 area 原樣保留。 */
+  function cardSpaceSpec(spec) {
+    var a = spec && spec.area;
+    if (!a || !isFinite(a.x) || !isFinite(a.y)) return spec;
+    var t = spec.targets;
+    if (!Array.isArray(t) || t.indexOf(TOWER_IDS.boss) < 0) return spec;
+    return Object.assign({}, spec, { area: null });
+  }
+
+  /* ui.js 的事件分流會先問這一支：回 true＝已接手，false＝交給 js/vfx.js 的 DOM 畫法。
+     Canvas 戰鬥模式下塔戰事件由 js/battle-renderer.js 先接走，這一層只剩 ?canvas=0 的退路。 */
   function onVfx(spec) {
     if (!spec || !towerTargets(spec)) return false;
     if (!S.adapter) { boot(); return false; }
     if (!visibleScene()) return false;    // 高塔已關閉或分頁不在高塔
-    return S.adapter.tryPlay(spec);
+    return S.adapter.tryPlay(cardSpaceSpec(spec));
   }
 
   /* 狀態光環：與野外一樣靠面板快照 reconcile（事件答不出「現在還在不在」）。

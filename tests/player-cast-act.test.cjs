@@ -112,18 +112,18 @@ function loadOnAct() {
   const p = { root: { x: 0, y: 0 }, dead: false, revival: null, facing: 1 };
   const c = {
     Math, POS_BUFFER_MS: 120,
-    S: { ready: true, player: p, entities: { 'mv-float-3': { root: { x: -40, y: 30 } } } },
+    S: { ready: true, player: p, entities: { 'mv-float-3': { root: { x: -40, y: 30 } }, 'tb-float': { root: { x: 50, y: 0 } } } },
     documentHidden: () => false,
     setTimeout: (f, ms) => timers.push([f, ms]),
     turnToward: (ent, dx, dy, sticky) => turns.push([dx, dy, sticky]),
     playerAttackAnim: (...args) => calls.push(args)
   };
   vm.createContext(c);
-  vm.runInContext(groundHelpers() + fn(renderer, 'onAct'), c);
+  vm.runInContext(groundHelpers() + fn(renderer, 'canvasActorId') + ';' + fn(renderer, 'onAct'), c);
   return { c, p, calls, turns, timers };
 }
 
-test('CAST-5 渲染器 onAct：延後 POS_BUFFER_MS（與特效同步）、面向目標、播施法並帶硬直；高塔與死亡時略過', () => {
+test('CAST-5 渲染器 onAct：延後 POS_BUFFER_MS（與特效同步）、面向目標、播施法並帶硬直；封魔塔同一套、死亡時略過', () => {
   const { c, p, calls, turns, timers } = loadOnAct();
   c.onAct({ act: 'cast', elId: 'pv-float', target: 'mv-float-3', lockMs: 200 });
   assert.equal(calls.length, 0, '先延後，與特效同一套顯示延遲');
@@ -134,10 +134,13 @@ test('CAST-5 渲染器 onAct：延後 POS_BUFFER_MS（與特效同步）、面�
   assert.equal(p.facing, -1);
   assert.deepEqual(calls, [['cast', 'mv-float-3', 0, 200]]);
 
+  /* 封魔塔也畫在這個渲染器（2026-10-03）：我方 tp-float 就是同一個騎士，面向 BOSS（tb-float） */
   c.onAct({ act: 'cast', elId: 'tp-float', target: 'tb-float', lockMs: 200, _buffered: true });
+  assert.equal(p.facing, 1);
+  assert.deepEqual(calls[1], ['cast', 'tb-float', 0, 200]);
   p.dead = true;
   c.onAct({ act: 'cast', elId: 'pv-float', target: null, lockMs: 0, _buffered: true });
-  assert.equal(calls.length, 1, '高塔不在這個渲染器；倒地時不擺施法姿勢');
+  assert.equal(calls.length, 2, '倒地時不擺施法姿勢');
 });
 
 test('CAST-6 施法動作的「釋放」幀對到硬直結束：預設 0.2 秒剛好 30 fps；上下限夾住', () => {
@@ -173,7 +176,8 @@ test('CAST-7 技能特效事件不再帶動角色動作（避免同一次施放�
     turnToward() {}, playerAttackAnim: (...args) => animations.push(args)
   };
   vm.createContext(c);
-  vm.runInContext(groundHelpers() + fn(renderer, 'shouldAnimatePlayer') + ';' + fn(renderer, 'onVfx'), c);
+  vm.runInContext(groundHelpers() + fn(renderer, 'canvasActorId') + ';' + fn(renderer, 'normalizeTowerVfxIds') + ';' +
+    fn(renderer, 'shouldAnimatePlayer') + ';' + fn(renderer, 'onVfx'), c);
   for (const cat of ['magic', 'phys']) {
     /* 後面的程式畫法缺依賴會丟錯；角色動作在那之前就決定了，所以只看有沒有被叫到 */
     try { c.onVfx({ _buffered: true, fxKind: 'slash', cat, targets: ['enemy'], dur: 0.3 }); } catch (e) { /* 畫法缺依賴 */ }

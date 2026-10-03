@@ -238,6 +238,7 @@ test('Worker delayed enemy damage float is discarded after the target disappears
   };
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   vm.runInNewContext([
+    sourceFunctionBody(renderer, 'isEnemyEntityId'),
     sourceFunctionBody(renderer, 'enemyFloatTargetAvailable'),
     sourceFunctionBody(renderer, 'onFloat')
   ].join('\n'), context);

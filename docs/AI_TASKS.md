@@ -1,5 +1,35 @@
 # AI_TASKS.md
 
+## Claude｜封魔塔魔王祭壇場景與野外⇄BOSS 戰轉場（TOWER-ARENA-20261003）
+
+- Owner：Claude；Done，待 Antigravity 驗證。使用者要求：①封魔塔 BOSS 戰配上專屬戰鬥場景，不要跟現有任何場景一樣，要有魔王戰的氣氛 ②野外⇄BOSS 戰要有轉場：黑圈由外向內收到全黑，再往外擴開時已換成新場景，約 2～3 秒，雙向都要。
+- 預檢（AI_RULES 3.2）：ai/codex 的 0e4566fa、fdeeaed3 動到 index.html／bridge.js／sim.worker.js 的版號行與本檔檔頭；我這邊只改不同的版號行，WORKER_ASSET_VERSION 與本檔檔頭合併時會撞（取新值／兩篇都留）。已告知使用者，選「照改」。另：codex 把 bridge.js 也 bump 到 1.0.211，與 TOWER-CANVAS 撞號、內容不同，本次已改為 1.0.212。
+- 場景（新檔 js/battle-arena.js，全部執行期 Canvas 程序化繪製、沒有圖檔）：封閉的圓形「魔王祭壇」，刻意和野外無限延伸的區塊地形不同。黑曜石石板地（石縫透塔色光，取代野外地磚）；場中央召喚法陣（外圈符文帶慢轉＋五芒星與魔王之眼呼吸發光）；法陣外緣放射熔裂光痕；圓場外整片壓黑（深淵）；邊緣一圈黑曜石尖刺、角獸頭骨火盆（火焰閃爍＋地面光）、前排燭台；BOSS 身後一座帶角魔門（門洞漩渦、雙眼隨心跳亮）；灰燼飄落、火星上升、畫面四周心跳脈動；登場標題卡（BOSS 名＋「封魔塔 第 N 層 · 祭壇名」）。狂暴時法陣更亮、外圈轉更快、心跳加快加重，進入狂暴瞬間閃一下。三座塔三套配色：試煉＝血月（紅）、地獄＝熔獄（金橙）、煉獄＝冥火（綠）。魔門大小依畫面高度回推，門楣的眼睛一定露在 BOSS 大血條下面。畫風沿用 battle-decor 的低多邊形筆觸，battle-decor 新增 `art` 匯出共用繪圖工具（不另寫第二份）。`?arena=0` 關閉。
+- 轉場（js/battle-renderer.js）：DOM 黑圈（蓋住畫布與其上的血瓶／技能列／塔戰資訊列），收合 1.0 秒 → 全黑 0.35 秒 → 展開 1.05 秒＝2.4 秒。場景狀態機 `S.scene`（key＝'field' 或 'tower:<BOSS 生成時刻>'）：收合中面板照收但不 reconcile（畫面凍結在舊場景），全黑那一刻 `applySceneSwitch` 清掉舊場景的實體／特效／飄字、換地板與祭壇、切地形裝飾、用最新面板重建。連挑的下一場也轉一次（祭壇依新站位重擺）；轉場中場景又變了（登場中撤退）展開完會再轉一次；背景分頁直接切、不播。轉場用牆上時鐘走（Pixi deltaMS 被夾在 100ms，掉幀時黑幕會拖得比登場還久）。地形裝飾的顯隱改由轉場決定，不再跟著 towerActive 立刻切。
+- 模擬層（js/tower.js）：模擬是即時的，黑幕中戰鬥若照跑會吃掉限時、開場也看不到——塔戰開場新增「登場」`TOWER_INTRO_SEC`＝2.4 秒（計時、冷卻、雙方行動都不動，黑圈展開完才開打）；回野外時 `holdFieldSpawn(TOWER_EXIT_SPAWN_HOLD_SEC)`＝2.4 秒（原本 0.5 秒），黑幕中不會被偷打。兩個數字與渲染器轉場三段的總和有測試釘住。
+- 順手修：BOSS 大血條建立後要等第一次掉血才畫（drawHpBar 的值變動閘門），塔戰登場那 2.4 秒會是空框；`ensureBossBar` 建立當下就畫。
+- 快取：battle-decor 1.0.5、battle-arena 1.0.0（新）、battle-renderer 1.6.165、style.css 1.0.71、tower 1.0.18、bridge 1.0.212、Worker token 20261003-tower-arena。
+- 測試：新增 tests/battle-arena.test.cjs（9 項：三塔畫法不拋例外、配色與塔別、進出場／連挑不洩漏節點、標題卡自己收掉、狂暴更亮更重、?arena=0、轉場長度與登場／出怪延後對齊、轉場狀態機的凍結→全黑換場→展開、轉場中再變更、背景分頁直接換）；tower-battlefield 加「登場」一項並把既有兩項改成登場後計時；battle-decor DECOR-8 的接線斷言跟著改（地面平面與暗角之間多了祭壇平面、地形裝飾顯隱改由轉場切）。
+- 實機（自己的 8350 伺服器，抽圖＋截圖）：試煉第 50 層（紅）、煉獄第 120 層（綠）祭壇完整；轉場收合→全黑（連 DOM HUD 一起蓋住）→展開，回野外後祭壇收掉、地形裝飾回來、地板換回 128px 地磚。窗格在這個環境常常不跑 rAF，動畫是手動推幀看的；60 fps 下的實際觀感與節奏仍需真人確認。
+- 建議驗證（Antigravity）：①三座塔各打一場看配色與魔門大小（不同視窗大小）②轉場整段約 2.4 秒、黑圈中心在角色上、展開時正好開打（限時從 60.0 開始走）③連挑：每場之間都有轉場、標題卡換成新 BOSS ④登場中撤退：轉進去後立刻轉出來，不卡全黑 ⑤狂暴：法陣變亮、心跳加快 ⑥回野外：轉場期間不出怪、地形裝飾與地磚恢復 ⑦低幀率（?fps=10）轉場時間仍約 2.4 秒 ⑧`?arena=0`、`?decor=0`、`?canvas=0` 各自退路。
+
+## Claude｜封魔塔改用 Canvas 即時戰場（TOWER-CANVAS-20261003）
+
+- Owner：Claude；Done，待 Antigravity 驗證。使用者要求：封魔塔戰鬥畫面仍是舊版 DOM 卡片（玩家卡 VS BOSS 卡），改成野外那種即時戰鬥模式，頭目比照野外「BOSS」的表現方式。
+- 預檢（AI_RULES 3.2）：ai/codex 兩筆未合併 commit 只動 index.html／bridge.js／sim.worker.js 的版號行，已告知使用者並選「照改」；之後使用者先把 ai/codex 併入（0fac26e4），實際未發生衝突。
+- 架構決策：**不另寫第二套塔戰畫面**，讓塔戰走野外同一個戰場座標系（js/battlefield.js）與同一個渲染器（js/battle-renderer.js）。塔戰的規則（限時、狂暴、蓄力重擊、無每秒基礎回復、DPS 統計、結算）原封不動留在 tower.js；定址沿用 tb-float（BOSS）／tp-float（我方），因為模擬層有十多處（反傷、傳奇、THORN_FLOAT_MAP、enemyAttackSourceId）靠它分辨塔戰，改名風險遠大於在顯示層換算。
+- 模擬層（js/tower.js）：BOSS 加 `floatSel:'tb-float'` 與 `pos`（我方正前方 `TOWER_BOSS_SPAWN_DIST`＝260；野外生成距離 440 會讓限時白燒近一秒），`TOWER.playerPos`＝bfPlayerPos() 參照（不歸零，鏡頭不跳）；towerTick 加 bfTickPlayer／bfTickApproach（與 fieldTick 同一組呼叫），普攻要 bfPlayerCanReach、BOSS 普攻與蓄力重擊要 bfInAttackRange，打不到時冷卻停在 0、不累積欠債。實測開場約 0.35 秒接戰。沒載入 battlefield.js 的環境維持舊的無座標行為。
+- 平衡影響：BOSS 有了座標之後，技能的距離／範圍判定開始對塔戰 BOSS 生效（以前 bfPos 為 null 一律放行、範圍技退化成單體）；我方會貼身站樁，近戰與表定射程技能實際都打得到，但「以我方為圓心、半徑小於接觸距離」的技能理論上可能打不到——需要實戰觀察 DPS 是否與改版前一致。
+- Worker（js/worker/sim.worker.js）：TICK view 的 hp／mp／shield 在塔戰期間改讀 TOWER.player（原本讀凍結中的 FIELD.player，戰場血瓶會整場停在進塔前的值）。協議欄位不變，不升協議版本。
+- 渲染器：`towerFieldView` 把 PANEL battle 的 tower 套成野外形狀（monsters＝[boss]、player、playerPos），之後全走野外 reconcile——BOSS 用 boss_generic 序列幀、頂部大血條、內插、死亡動畫都不另寫；`canvasActorId` 把 tp-float 換成 pv-float、`isEnemyEntityId` 讓 tb-float 與 mv-float-N 同等；`wantsVfx` 不再把塔戰事件推給 DOM。
+- UI（js/ui.js／index.html／css）：戰場頂部新增 `#tower-canvas-hud`（樓層、倒數、連挑、狂暴、DPS、撤退），塔戰期間取代任務快捷列；倒數沿用逐幀插值，資料源跟著顯示位置（封魔塔分頁讀 tower 面板、其他分頁讀 battle 面板，錨點只由一邊設定避免來回抖）。血瓶／技能列／狀態列改讀「正在打的那一場」的玩家（`combatPlayerOfBattleSnapshot`）。封魔塔分頁在 Canvas 模式只留標頭＋提示，DOM 對戰卡片隱藏；BOSS 身上的 MISS→我方「閃避!」改寫移到 Canvas 分流之前。`?canvas=0` 時一切照舊（DOM 卡片＋js/vfx-tower.js）。
+- ?canvas=0 退路（js/vfx-tower.js）：BOSS 有座標後，以 BOSS 為圓心的事件會帶世界座標 area，放到 DOM 卡片上會畫到卡片外；`cardSpaceSpec` 對打到 tb-float 的事件拿掉位置類 area，回到原本「高塔事件沒有 area」的畫法（沒有 x/y 的 area，例如鏈編號，原樣保留）。
+- 快取：style.css 1.0.70、battle-renderer 1.6.164、vfx-tower 1.0.2、tower 1.0.17、ui 1.0.108、bridge 1.0.211、Worker token 20261003-tower-canvas（含 sim.worker 的 tower.js）。
+- 測試：新增 tests/tower-battlefield.test.cjs（4 項，跑真的 startTowerFight／towerTick：開場站位與定址、出手當下距離在射程內且一秒內接戰、打不到時冷卻不累積、結束清站位）；對 HEAD 版 tower.js 0/4、新版 4/4。改 player-cast-act（CAST-5 原本釘「高塔不在這個渲染器」，改成塔戰施法面向 BOSS）、player-shield-bar、battle-resource-orbs、lightning-vfx-lifecycle、basic-melee、ui-worker-events（這幾支以大括號配對抽單一函式，補上新的小工具函式）。全庫回歸 `node --test "tests/*.test.cjs"`：我的工作區 3558 項、失敗 235；同一份測試對 HEAD 匯出（git archive，不含 images）3546 項、失敗 261；失敗名稱差集「只有我這邊失敗」＝0 項（HEAD 多出的 26 項是匯出缺素材／.bat 的假紅）。skill2-vfx「雙刀逐刀」在 HEAD 也隨機紅（6 次紅 4～5 次），與本次無關。`node tools/build_check.cjs` 通過。
+- 實機（自己的 8350 伺服器）：第 1／2（元素、遠程）與第 4（近戰）層，BOSS 走到接觸距離後交戰，普攻／魔法彈／雙方飄字畫在戰場上；擊倒 → 結算視窗 → 確認後回野外，資訊列收起、任務列復原；塔戰中血瓶讀塔內玩家。
+- 未處理：①js/vfx-tower.js 只剩 ?canvas=0 退路：只處理了打到 BOSS 的事件，這條退路沒有實機逐一跑過②封魔塔分頁提示與 tower.js 失敗分析裡的「60 秒／40 秒／+200%」仍是寫死文字，數值實際來自 data.js TOWER_BOSS_*（既有問題）③塔戰我方陣亡時角色不播倒地動作（結算視窗直接接手）。
+- 建議驗證（Antigravity）：①各塔（試煉／地獄／煉獄）近戰與元素 BOSS 各打一場：開場接戰時間、BOSS 外觀與頂部血條、飄字與技能特效位置②同一套裝備改版前後的塔戰 DPS（重點：範圍技、以自身為中心的技能、傳奇特效）③連挑：場與場之間 BOSS 重建、結算倒數、撤退中止④塔戰中切到其他分頁：戰場資訊列倒數持續走、撤退鍵有效⑤暫停：倒數定住⑥天地共生在塔內觸發復甦⑦`?canvas=0`：塔戰回到分頁內 DOM 畫面。
+
 ## STORM-MYRIAD-20261003 — 暴風萬刃大小風刃追擊七秒
 
 - Owner：Codex；Done。使用者要求大型／小型風刃皆追擊7秒、每次射出數量+1，風刃傷害+50%、每級+5%，傷害加成與原風刃風系傷害相乘。既有傷害已是獨立乘區，保留並驗證；追加數量沿既有每個方向連射+1、大小風刃同步發射。
