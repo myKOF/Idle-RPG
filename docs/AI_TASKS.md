@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## TEST-MANAGER-TABS-20261003 — 測試服啟動開出重複控制台分頁
+
+- Owner：Codex；Done。使用者回報啟動測試服.bat一次開出整排同名控制台分頁；前置啟動流程已存在，衝突預檢乾淨。允許tools/test_server_manager.cjs的Port重試／開頁回呼、tests/test-server-manager.test.cjs及本紀錄；禁止遊戲邏輯／存檔／既有測試服程序／他人工作區、合併與推送。後續接手者使用者。
+- 原因：listenOnAvailablePort遞迴重試時，Node Server上先前失敗的listen callback仍等待listening事件；最終成功會同時排程多次openBrowser。驗收無衝突／連續多個Port占用皆只開最終地址一次、--open關閉不開頁、耗盡／其他錯誤不開頁、後續錯誤不重新啟動；保留原測試服與批次檔流程，定向回歸／建置、獨立Commit。
+- 完成：失敗時先移除當次listening callback再換Port；啟動成功後移除啟動用error callback。只會開啟最後成功綁定的控制台地址，不會開啟先前被占用的地址。批次檔與現有測試服管理功能未改。
+- 修改3檔：tools/test_server_manager.cjs、tests/test-server-manager.test.cjs及本紀錄。唯讀檢查：啟動測試服.bat、tools/start_test_server.ps1、tools/test_server_manager.html、tests/start-test-server.test.cjs、AI_RULES.md／AGENTS.md／AI_WORKFLOW.md／prompts/codex.md與本機8124..8144監聽清單。不涉及遊戲JS／配置／素材，沒有快取或素材庫修改。
+- 驗證：`node --test tests/test-server-manager.test.cjs tests/start-test-server.test.cjs`9/9通過，包含0／1／5／20個占用Port、未指定--open、21個Port耗盡與EACCES錯誤；`npm run build`423檔全數通過；`git diff --check`通過。正式CLI源碼由VM執行，只替換環境邊界，不替換重試實作。
+- 真實Node HTTP Server A/B：独立隨機Port建立占用服務，把重試的網路綁定導向该Port五次後才成功；舊HEAD源碼6次openBrowser，地址8124..8129，修正版只開8129一次；控制台HTML HTTP 200。只攔截開瀏覽器的spawn以計數，沒有實際打開使用者瀏覽器；測試兩個HTTP程序內服務已正常close，未終止現有服務、未執行會關閉其他控制台的批次檔。
+- 交付：本紀錄所在`[Codex] fix: 修正測試服控制台重試開啟重複分頁`提交；無未完成項目，可合併，未合併／推送。已開出的舊分頁仍需自行關閉；此修正針對一次啟動的重複開頁，重複手動啟動批次檔仍會每次開一個控制台頁。下一步更新後照常執行啟動測試服.bat。
+
 ## SKILL2-RESET-ULT-20261003 — 前階重置連帶清除超神進化
 
 - Owner：Codex；Done。使用者回報學習超神進化後重置任意前階，前階已清除但超神進化仍顯示已學習。衝突預檢全部乾淨；範圍Worker重置指令、UI提示／失效顯示、正式回歸、必要快取及本紀錄；不改配置／傷害／其他系統，不合併／推送。
