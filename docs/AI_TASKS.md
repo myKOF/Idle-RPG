@@ -9,6 +9,21 @@
 - 驗證：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-editor-cache-versions.test.cjs`49/49通過；`npm.cmd run build`435檔通過；`git diff --check`通過。Node VM直接執行正式makeEnemy確認alpha／scale／normal、骷髏／紫色名稱／血條保留、一般敵人與Boss不產生菁英光暈；首次測試使用既有fake Text未保存style，改測試替身保留options後通過，未為驗證修改遊戲。未做真人密集戰鬥／瀏覽器畫面驗收，最終亮度待重載觀察。
 - 交付：Commit為本紀錄所在`[Codex] fix: 降低菁英敵人周圍光暈`提交。無未完成程式項目，可合併；未合併／推送，既有未提交工作保留。下一步使用者重整遊戲確認光暈觀感並審查整合。
 
+## VACUUM-OMEN-VFX-20261003 — 萬象風劫靜止斬尺寸與方向
+
+- Owner：Codex；Done。使用者回報萬象風劫特效遮住畫面且方向錯誤；定位靜止場域共用追蹤風刃variant，事件漏帶出生方向、Runtime將其當空中飛刃。使用者追加指定orb-void-disc並要求隨時間放大，已依此修正。現有判定繼承每波真空斬半徑，沿用使用者迴旋18米／三重奏增幅3米，沒有獨立縮小傷害圈。單一開發者，前置既有場域與Preset接線已完成；接手者使用者。
+- 允許skills2靜止場域事件語意／時序、Runtime僅此用途的播放與成長、相關新tests/vacuum-omen-vfx.test.cjs及風系矩陣來源斷言、必要Worker／bridge／Editor快取、WIND_SKILL_AUDIT及本紀錄。使用者追加明確指定靜止真空斬為orb-void-disc，允許Skills2.xlsx AQ219與CSV／字面值同步，保留既有其他數值；Preset美術不代改。禁止改傷害／波數／機率、其他技能、其他副本、合併／推送。目標含追加配置／文件／測試預檢皆乾淨，主index有Claude神鑄UI與地景載入修改，使用者已同意只改901／913／933三行Runtime／skills2／bridge快取。保留使用者既有Skills2三檔數值及slash-wind-spin／orb-void-disc美術修改。
+- 驗收正式Worker事件靜止位置／出生方向／判定半徑，Runtime放地面層、圓心依場景投影並尊重作者圖層形狀、不吃追蹤航向；成長連續、續播不重建及到期回收、替換配置Preset仍有效；追蹤風刃回歸不變、快取與Build通過，獨立Commit。不新增素材或特效來源。
+- 完成：Skills2.xlsx AQ219觸發地板由ground-homing-wind-crescent改為orb-void-disc，同步CSV及SKILLS2字面值；其餘技能數字不代改。靜止場域帶staticVacuum、出生方向、基礎半徑／成長倍率／已過與剩餘時間；Runtime依事件語意放地面層、按同一判定公式逐幀線性成長，保留作者outerScale／rotation／followDirection，不套追蹤飛刃尺寸與航向。場域保留完整3秒、短動畫持續循環，最後一跳後仍可顯示至到期，但不增加傷害跳數；刷新不重建效果，3秒立即回收。
+- Excel：Artifact Tool只在臨時副本編輯／渲染，匯出無法保留autofilter，未覆蓋正式檔；改用獨立隱藏Excel COM原生修改AQ219。正常重開RepairMode=false，A1:AX231逐格只有該格變更、第二張定義表／欄寬／列高／目標樣式／字體／換行均保持。沒有手工改XML。完成後使用者追加虛空斬本體12*12配置，沿用其存檔與套用結果，最終Excel／CSV／JS一致。
+- 修改13檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、index.html三行、tools/vfx/editor/index.html、tests/vacuum-omen-vfx.test.cjs、tests/wind-skill-audit.test.cjs一處来源斷言、docs/WIND_SKILL_AUDIT.md及本紀錄；必要的vfx/presets/orb-void-disc.json使用者美術設定一併保留提交，沒有代改美術。Skills2三檔既有18米／3米／12*12數值一併保留；slash-wind-spin與其他任務修改不納入。唯讀未改：Core／Pixi後端、battle-renderer／battlefield／combat、Worker Protocol與shim、工具轉表／VFX來源登錄／匯出／索引、其餘Preset及協作規範。
+- 快取：主頁Runtime 1.0.171／skills2 1.0.278／bridge 1.0.216，只改使用者同意的901／913／933行；Editor Runtime同步1.0.171，bridge與Worker skills2 token同步20261003-vacuum-omen-static。既有協議area物件可承載語意欄位，Protocol維持43。
+- 測試：`node --test --test-reporter=spec tests/vacuum-omen-vfx.test.cjs tests/storm-mountain.test.cjs tests/windblade-vfx-integration.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-guard.test.cjs`89/89通過。新7項對a3153b2f舊Runtime／技能程式唯讀基準1/7通過、修正後7/7，保留當前相同配置與素材；正式Worker傷害／位置信息送Runtime，包含新敵人被成長範圍掃中、持續接觸不重打、2.99秒存活／3秒消失。
+- 擴大回歸：`node --test tests/wind-skill-audit.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs`76項56通過20失敗，對a3153b2f唯讀基準用相同使用者數值及原地板配置／斷言也是相同20項失敗，沒有新增失敗；不修改既有不足MP／技能期待fixture來接受現況。`node tools/config_tables.cjs --apply Skills2`語意變更0；`npm.cmd run build`435檔通過；`git diff --check`通過，未宣稱全庫全綠。
+- 瀏覽器：Edge headless新環境，只讀8123正式Core／Runtime／Pixi後端及shipped素材，無正式存檔、攔截所有寫入；orb-void-disc九層在地面、空中0層，位置不變，0.1至1.5秒矩陣面積倍率吻合線性半徑成長，3秒場域及可見節點0、後端錯誤及pageerror皆0。已檢視開始／成長截圖；這是隔離播放驗證，未操作使用者實際密集戰鬥存檔。
+- 素材：沿用本機D:/MyGame/Asset，`node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset`243份Preset／160素材／61640.4KB已最新；素材庫工作區乾淨、HEAD ed3edfb，沒有新增或修改圖檔、無需空Commit。orb-void-disc是表定來源，沒有新增硬編特效／第三來源。臨時編輯／瀏覽器腳本、失敗匯出副本與預覽PNG全在工作區外，不納入Git。清理明確臨時檔及node_modules junction的原生命令被自動審核拒絕；縮至精確LiteralPath檔名且不遞迴仍回傳blocked by policy，未提供詳細原因，停止刪除。暫存於C:/Users/user/.codex/visualizations/2026/10/03/01a1006a-5b77-7ee2-b972-86105d7f3158/vacuum-omen；遊戲修正與提交不受影響。
+- 交付：Commit為本紀錄所在`[Codex] fix: 修正萬象風劫靜止圓盤與範圍成長`提交；需求完成、可合併，未合併／推送。已知限制為既有20項回歸失敗及真人戰場觀感待驗收；無未完成程式項目。下一步遊戲重整驗收；編輯器有未存內容先下載複本，再重啟編輯器載入共用Runtime更新。
+
 ## REFLECT-THREAT-VFX-20261003 — 反射光線回收、敵方子彈辨識與圖層時長稽核
 
 - Owner：Codex；Done。使用者回報黃白光線堆疊、死亡仍殘留及敵方子彈被遮住，並要求全面列出異常長圖層。已定位生命反射之盾beam-light光暈原25秒，其餘層0.25秒；使用者自行改回0.25，保留此設定。查核敵方普攻各屬性與菁英路徑，單一開發者，不改傷害／攻擊時序。

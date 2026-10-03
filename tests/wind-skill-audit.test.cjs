@@ -48,7 +48,7 @@ for(const gid of gids){
    if(e.variant==='wind-slash')assert.equal(e.vfx.attack,'slash-wind-crescent');
    if(e.variant==='wind-spin')assert.equal(e.vfx.attack,'slash-wind-spin');
    if(e.variant==='vacuum-shock')assert.equal(e.vfx.attack,'burst-vacuum-shockwave');
-   if(e.variant==='wind-blade-homing')assert.equal(e.vfx.ground,'ground-homing-wind-crescent');
+   if(e.variant==='wind-blade-homing')assert.equal(e.vfx.ground,e.area?.staticVacuum?'orb-void-disc':'ground-homing-wind-crescent');
    if(e.variant==='wind-burst'&&e.fxKind==='burst')assert.equal(e.vfx.attack,'burst-wind');
    if(e.variant==='void-disc'&&e.fxKind!=='aura'){
     assert.equal(e.vfx.hit,'hit-wind');assert.ok(!e.vfx.projectile&&!e.vfx.ground,'接觸命中不得再次生成軌道本體');
