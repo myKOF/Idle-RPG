@@ -50,15 +50,48 @@ test('洗煉花費依傳入的餘額標示不足，未提供餘額時不標紅',
   const c = loadItemContext();
   const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)] });
   const cost = c.rerollCost(it);
+  // 花費提示只掛在洗煉模式中選中的骰子上
+  const reroll = { active: true, selIdx: 0, flash: false };
 
-  const rich = c.itemDetailHTML(it, null, { gold: cost.gold, essence: cost.essence });
-  const poor = c.itemDetailHTML(it, null, { gold: cost.gold - 1, essence: 0 });
-  const unknown = c.itemDetailHTML(it, null, {});
+  const rich = c.itemDetailHTML(it, null, { gold: cost.gold, essence: cost.essence, reroll });
+  const poor = c.itemDetailHTML(it, null, { gold: cost.gold - 1, essence: 0, reroll });
+  const unknown = c.itemDetailHTML(it, null, { reroll });
 
   assert.doesNotMatch(rich, /fca5a5/, '買得起不應標紅');
   assert.match(poor, /fca5a5/, '買不起應標紅');
   assert.doesNotMatch(unknown, /fca5a5/,
     '不知道餘額時標紅等於對玩家謊報買不起');
+});
+
+/* 洗煉模式（2026-10）：只有選中的那一條骰子能按，其他骰子灰色且沒有 data-act，
+   點下去不會送出洗煉；未進入洗煉模式時所有骰子都不能按。 */
+test('洗煉模式：只有選中詞條的骰子可按，其餘骰子沒有洗煉動作', () => {
+  const c = loadItemContext();
+  const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10), affixAt(c, 'str', 10)] });
+  const diceOf = (html) => html.match(/<button[^>]*affix-reroll-btn[^>]*>/g) || [];
+
+  const off = diceOf(c.itemDetailHTML(it, null, {}));
+  assert.equal(off.length, 2);
+  off.forEach((b) => {
+    assert.match(b, /data-reroll-state="idle"/);
+    assert.doesNotMatch(b, /data-act=/, '未進入洗煉模式的骰子不得帶洗煉動作');
+  });
+
+  const html = c.itemDetailHTML(it, null, { reroll: { active: true, selIdx: 1, flash: true, flashDelayMs: 250 } });
+  const on = diceOf(html);
+  assert.doesNotMatch(on[0], /data-act=/);
+  assert.match(on[1], /data-act="reroll-affix"/);
+  assert.match(on[1], /data-affix="str"/);
+  assert.match(on[1], /data-affix-idx="1"/);
+  assert.match(on[1], /data-reroll-state="flash"/);
+  assert.match(on[1], /animation-delay:-250ms/, '重繪要接續閃爍相位');
+
+  const picks = html.match(/data-reroll-pick="\d+"/g) || [];
+  assert.deepEqual(picks, ['data-reroll-pick="0"', 'data-reroll-pick="1"'], '每條詞條文字區都要能點選');
+  assert.equal((html.match(/is-reroll-selected/g) || []).length, 1);
+
+  const armed = diceOf(c.itemDetailHTML(it, null, { reroll: { active: true, selIdx: 1, flash: false } }));
+  assert.match(armed[1], /data-reroll-state="armed"/, '洗過之後轉白色常亮，不再閃');
 });
 
 test('渲染不得改動傳入的物品（不補鑲孔、不寫任何欄位）', () => {

@@ -56,6 +56,7 @@ function loadArena(search) {
     Math, Map
   };
   vm.createContext(ctx);
+  vm.runInContext(read('js/decor-sculpt.js'), ctx);
   vm.runInContext(read('js/battle-decor.js'), ctx);
   vm.runInContext(read('js/battle-arena.js'), ctx);
   return { BossArena: ctx.BossArena, BattleDecor: ctx.BattleDecor, warnings };

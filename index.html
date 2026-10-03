@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無限征途：合成之巔</title>
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=1.0.71">
+  <link rel="stylesheet" href="css/style.css?v=1.0.72">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.38">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.44">
 </head>
 
 <body>
@@ -279,6 +279,10 @@
           </div>
           <div class="panel forge-panel">
             <div class="forge-head">
+              <div class="forge-inv-tabs" role="group" aria-label="鑄造素材">
+                <button type="button" id="forge-invtab-items" class="btn sm active">裝備神鑄</button>
+                <button type="button" id="forge-invtab-gems" class="btn sm">寶石神鑄</button>
+              </div>
               <span id="forge-rate" class="forge-rate"></span>
             </div>
             <div id="forge-stage">
@@ -311,16 +315,14 @@
               <div class="forge-progress-track"><div id="forge-progress-fill"></div></div>
             </div>
           </div>
-          <div id="forge-inv-box" class="equip-section-box">
+          <!-- 裝備神鑄：裝備頁那一個背包框（#inv-section-box）在神鑄頁期間搬進這裡，兩頁是同一份背包（見 ui.js mountInventoryBox） -->
+          <div id="forge-inv-slot"></div>
+          <div id="forge-gem-box" class="equip-section-box" style="display:none">
             <div class="inv-head">
-              <span class="sec-title">背包 <span id="forge-inv-count">0/60</span></span>
-              <div class="forge-inv-tabs">
-                <button id="forge-invtab-items" class="btn sm active">🎒 裝備</button>
-                <button id="forge-invtab-gems" class="btn sm">💎 寶石</button>
-              </div>
-              <span class="dim-text" style="font-size:12px">點擊放入法陣；點擊法陣上的物件取回</span>
+              <span class="sec-title">寶石 <span id="forge-gem-count">0</span> 顆</span>
+              <span class="dim-text">點擊放入法陣；點擊法陣上的寶石取回</span>
             </div>
-            <div id="forge-inventory-grid"></div>
+            <div id="forge-gem-grid"></div>
           </div>
         </section>
 
@@ -901,13 +903,15 @@
   <script src="js/vfx-runtime.js?v=1.0.168"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.2"></script>
-  <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。 -->
-  <script src="js/battle-decor.js?v=1.0.5"></script>
+  <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
+       decor-sculpt 是它的程序化浮雕繪圖（塑形＋打光），必須先載入。 -->
+  <script src="js/decor-sculpt.js?v=1.0.0"></script>
+  <script src="js/battle-decor.js?v=1.0.7"></script>
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.0"></script>
   <script src="js/battle-renderer.js?v=1.6.165"></script>
   <script src="js/stats.js?v=1.0.3"></script>
-  <script src="js/item.js?v=1.0.5"></script>
+  <script src="js/item.js?v=1.0.6"></script>
   <script src="js/skills.js?v=1.0.40"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.276"></script>
@@ -917,7 +921,7 @@
   <script src="js/potential.js?v=1.0.7"></script>
   <script src="js/tower.js?v=1.0.18"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.108"></script>
+  <script src="js/ui.js?v=1.0.113"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>

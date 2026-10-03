@@ -1044,11 +1044,11 @@ function bindWorkerUiState() {
     // one full item in `details`.  Rebuilding the whole grid here replaces
     // the cell under the mouse, which emits mouseout/mouseover again and can
     // start an endless tooltip request/repaint loop.
-    if (inventoryGridUnchanged && UI.tab === 'equip') {
+    if (inventoryGridUnchanged && (UI.tab === 'equip' || UI.tab === 'forge')) {
       UI.dirty.inv = false;
       // A hover-only detail response must not refresh selection classes.  The
       // selected pane needs a refresh only when its own full item arrived.
-      if (UI.sel && UI.sel.source === 'inv' && UI.sel.id &&
+      if (UI.tab === 'equip' && UI.sel && UI.sel.source === 'inv' && UI.sel.id &&
         msg.data && msg.data.details && msg.data.details[UI.sel.id]) {
         if (UI.inventoryScrolling) UI.inventoryDetailRefreshPending = true;
         else renderDetail();
@@ -2390,17 +2390,7 @@ function switchTab(name) {
     if (!talentSnapshot || talentViewReincarnations(talentSnapshot) < 1) name = 'equip';
   }
   UI.tab = name;
-  /* 離開神鑄頁就把它那份背包格線清掉。
-
-     神鑄頁掛的是第二份完整背包格線（後期同樣上千格），而 renderForge 只在
-     UI.tab === 'forge' 時才跑——也就是說離開之後它不會再更新，卻會永遠留在 DOM 裡。
-     實測進過一次神鑄頁，全文件節點就從 5443 變成 9896，而每一次樣式重算與版面計算的
-     單價都取決於節點數，等於在裝備頁戰鬥時一直付這筆錢。
-     回到神鑄頁時 renderForge 會整個重建，所以清掉沒有任何副作用。 */
-  if (name !== 'forge') {
-    var forgeGrid = $id('forge-inventory-grid');
-    if (forgeGrid && forgeGrid.children.length) forgeGrid.innerHTML = '';
-  }
+  mountInventoryBox(name === 'forge');
   uiInvalidateFloatLayout();   // 切分頁會改變版面，浮字幾何快取要作廢
   syncVfxQualityForTab();
   refreshUiPanelSubscriptions();
@@ -3144,7 +3134,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
         ? (isPassiveE ? passiveMinMpE : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
         : 0;
       arr.push({
-        sk: sk, lv: lv, cd: cd, cost: costE,
+        sk: sk, entry: entry, lv: lv, cd: cd, cost: costE,
         /* 主動型被動：恆時生效，不顯示冷卻與無魔。
            但個別階可以有自己的內部冷卻（大地守護【天地共生】把冷卻寫進同一個技能格），
            冷卻中就退回一般技能的倒數呈現——否則畫面會宣稱它隨時可用；
@@ -3168,7 +3158,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
       else if (it.cd > 0) { txt = fmt1(Math.max(0, it.cd)) + 's'; cls = 'on-cd'; }
       else if (pEnt.mp < it.cost) { txt = '🚫'; cls = 'no-mp'; }
       else { txt = '✓'; cls = 'ready'; }
-      h += '<div class="sk-run-item ' + cls + '">' + it.sk.emoji + ' <span>' + txt + '</span></div>';
+      h += '<div class="sk-run-item ' + cls + '">' + skillIconHTML(it.entry, it.sk.emoji) + ' <span>' + txt + '</span></div>';
     }
     setHtmlIfChanged(skillEl, h);
   }
@@ -3328,6 +3318,23 @@ function battleSkillSlotKey(state) {
   return JSON.stringify([state.kind, state.index, state.entry || '']);
 }
 
+/* 技能圖示：skills2 群組用畫好的圖（images/skills/<群組id>.png，由 tools/skill-icons/ 產生），
+   潛力技能等其餘技能沿用 emoji。entry 可為 'sg:<群組id>' 或群組 id；
+   圖載入失敗（例如新群組還沒出圖）時退回 emoji。重新出圖後要把 SKILL_ICON_VER +1，否則玩家會看到快取的舊圖。 */
+var SKILL_ICON_VER = '1';
+function skillIconGid(entry) {
+  if (typeof entry !== 'string' || typeof SKILLS2 === 'undefined') return '';
+  var gid = entry.indexOf('sg:') === 0 ? entry.slice(3) : entry;
+  return SKILLS2[gid] ? gid : '';
+}
+function skillIconHTML(entry, emoji) {
+  var gid = skillIconGid(entry);
+  var fallback = emoji || '⚔️';
+  if (!gid) return fallback;
+  return '<img class="skill-icon-img" src="images/skills/' + gid + '.png?v=' + SKILL_ICON_VER + '" alt="" draggable="false"' +
+    ' onerror="this.replaceWith(document.createTextNode(this.dataset.fallback))" data-fallback="' + esc(fallback) + '">';
+}
+
 function battleSkillSlotMarkup(state) {
   if (state.kind === 'locked') {
     return '<div class="battle-skill-slot locked" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-index="' + state.index + '" data-tt-title="技能槽 #' + (state.index + 1) + '（未解鎖）" data-tt-desc="' + esc(state.lockDesc) + '">' +
@@ -3346,7 +3353,7 @@ function battleSkillSlotMarkup(state) {
     ? ' data-snap-cd="' + state.rawCdVal + '" data-snap-gt="' + (state.snapshotGt || 0) + '" data-total-cd="' + state.totalCd + '"'
     : '';
   return '<div class="' + state.slotCls + ' loadout-slot filled" draggable="true" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-index="' + state.index + '" data-sk="' + esc(state.entry) + '" data-skill-id="' + esc(state.entry) + '"' + snapAttrs + '>' +
-    '<span class="bss-emoji">' + (state.emoji || '⚔️') + '</span>' +
+    '<span class="bss-emoji" data-icon-key="' + esc(state.entry) + '">' + skillIconHTML(state.entry, state.emoji) + '</span>' +
     (state.lv > 0 ? '<span class="bss-lv">' + state.lv + '</span>' : '') +
     '<div class="bss-cd-mask" style="--cd-deg:' + state.cdDeg + ';"></div>' +
     '<span class="bss-cd-text">' + state.cdText + '</span>' +
@@ -3399,7 +3406,11 @@ function syncBattleSkillSlot(slot, state) {
   }
 
   var emoji = slot.querySelector('.bss-emoji');
-  if (emoji) setTextIfChanged(emoji, state.emoji || '⚔️');
+  /* 圖示只在換技能時重畫，避免每幀重設 img 造成閃爍與重新解碼 */
+  if (emoji && emoji.getAttribute('data-icon-key') !== state.entry) {
+    emoji.setAttribute('data-icon-key', state.entry);
+    emoji.innerHTML = skillIconHTML(state.entry, state.emoji);
+  }
   var mask = slot.querySelector('.bss-cd-mask');
   if (!mask) {
     mask = document.createElement('div');
@@ -4678,9 +4689,41 @@ function inventoryGridRowCount(box) {
    欄數只在容器寬度變動時才會變（視窗縮放、全螢幕切換、介面縮放），那些時機都會走到
    invalidateInventoryGridColumns()，所以快取不會過期。掉一件裝備不改變欄數。 */
 function invalidateInventoryGridColumns() {
-  var boxes = (typeof document !== 'undefined' && document.querySelectorAll)
-    ? document.querySelectorAll('#inventory-grid, #forge-inventory-grid') : [];
-  for (var i = 0; i < boxes.length; i++) boxes[i]._invGridColumns = 0;
+  var box = $id('inventory-grid');
+  if (box) box._invGridColumns = 0;
+}
+
+/* ---- 背包框只有一份：神鑄頁借用裝備頁的 #inv-section-box ----
+   神鑄頁原本有自己的第二份背包格線，表頭沒有篩選／排序／分解、
+   格子樣式與排序也各走各的，兩頁越改越不像；而且後期上千格的格線掛兩份，
+   每一次樣式重算與版面計算都要多付一份節點數的錢。
+
+   改成同一個節點在兩頁之間搬：切到神鑄頁就搬進 #forge-inv-slot，切到其他分頁就放回原位。
+   表頭控制項、篩選狀態、可視排數、捲動與虛擬捲動全都是同一份，天生一致。
+   兩頁唯一的差別在格子本身（renderInventory 依 UI.tab 決定）：神鑄頁的格子點擊是放入法陣
+   （data-src="forgeinv"）、不可鑄造的品質置灰，也不套用裝備頁的選取標示。 */
+var _invBoxHome = null;
+
+function mountInventoryBox(inForge) {
+  var box = $id('inv-section-box');
+  if (!box || !box.parentNode) return;
+  if (!_invBoxHome) _invBoxHome = { parent: box.parentNode, next: box.nextSibling };
+  var target = inForge ? $id('forge-inv-slot') : _invBoxHome.parent;
+  if (!target || box.parentNode === target) return;
+  var next = (!inForge && _invBoxHome.next && _invBoxHome.next.parentNode === target) ? _invBoxHome.next : null;
+  target.insertBefore(box, next);
+  // 兩頁的容器寬度不一定相同，欄數快取要重量
+  invalidateInventoryGridColumns();
+  UI.dirty.inv = true;
+}
+
+// 神鑄頁的寶石模式會把背包框藏起來，那時背包不需要重畫
+function inventoryForgeMode() {
+  return UI.tab === 'forge';
+}
+
+function inventoryBoxVisible() {
+  return UI.tab === 'equip' || (UI.tab === 'forge' && UI.forgeInvTab !== 'gems');
 }
 
 function cachedInventoryGridColumnCount(box) {
@@ -4883,6 +4926,8 @@ function renderInventory() {
          留在格子 HTML 裡會讓「換個選取」變成「整份格線指紋改變」，增量更新就失效了。 */
       var cellKeys = [];
       var cellsHtmlList = [];
+      var forgeMode = inventoryForgeMode();
+      var forgePendingKey = forgeMode ? nodePendingKey('forge') : null;
       for (var ii = firstItem; ii < lastItem; ii++) {
         var it = displayedItems[ii];
         var dimClass = '';
@@ -4893,7 +4938,13 @@ function renderInventory() {
           }
         }
         cellKeys.push(it.id);
-        cellsHtmlList.push(itemCellHTML(it, 'inv', dimClass, itemPendingKey(it.id)));
+        if (forgeMode) {
+          // 神鑄頁：點擊放入法陣；不是傳說／神話／創世／混沌的置灰（見 mountInventoryBox）
+          if (!isForgeableEquipmentRarity(it.rarity)) dimClass += ' forge-na';
+          cellsHtmlList.push(itemCellHTML(it, 'forgeinv', dimClass, forgePendingKey));
+        } else {
+          cellsHtmlList.push(itemCellHTML(it, 'inv', dimClass, itemPendingKey(it.id)));
+        }
       }
       if (virtualize) {
         box.setAttribute('data-inventory-total-rows', String(totalRows));
@@ -4918,6 +4969,8 @@ function renderInventory() {
     }
   }
   applyInventoryVisibleRows(box);
+  // 神鑄頁沒有詳情面板，格子也不套選取標示（updateSelectionUI 會跳過）
+  if (inventoryForgeMode()) return;
   if (UI.inventoryScrolling) updateSelectionUI();
   else renderDetail();
 }
@@ -4994,6 +5047,26 @@ function updateInventoryFilterBadge() {
 // 裝備操作列的「卸下」圖示（箭頭離開框線）
 var EQUIP_UNEQUIP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>';
 
+/* 洗煉模式（UI.equipRerollMode）：記著是哪一件裝備、選中第幾條詞條（it.affixes 索引）、骰子是否在閃。
+   只對記錄的那一件有效（換選別件就不在洗煉模式）。選中的索引若已不存在或詞條已下架（不渲染），改選第一條有渲染的詞條。 */
+function equipRerollModeFor(it) {
+  var mode = UI.equipRerollMode;
+  if (!it || !mode || mode.itemId !== it.id) return null;
+  var affixes = it.affixes || [];
+  var sel = affixes[mode.selIdx];
+  if (!sel || !AFFIX_POOL[sel.key]) {
+    mode.selIdx = -1;
+    for (var i = 0; i < affixes.length; i++) {
+      if (AFFIX_POOL[affixes[i].key]) { mode.selIdx = i; break; }
+    }
+  }
+  return mode;
+}
+
+function selectEquipRerollAffix(it, idx) {
+  UI.equipRerollMode = { itemId: it.id, selIdx: idx, flash: true, flashStart: Date.now() };
+}
+
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
@@ -5042,10 +5115,17 @@ function renderDetail() {
       justUpgraded = true;
     }
   }
+  var rerollMode = equipRerollModeFor(it);
   var h = itemDetailHTML(it, null, {
     gold: player && player.gold,
     essence: player && player.essence,
-    justUpgraded: justUpgraded
+    justUpgraded: justUpgraded,
+    reroll: rerollMode ? {
+      active: true,
+      selIdx: rerollMode.selIdx,
+      flash: rerollMode.flash,
+      flashDelayMs: (Date.now() - rerollMode.flashStart) % 1000
+    } : null
   });
   /* 操作列（2026-10 裝備頁改造）：一個主按鈕（背包裝備＝「裝備」，身上裝備＝「強化」）＋次按鈕，
      卸下縮成最右側的圖示。「鑲嵌／附魔」改為開關右側素材面板：面板平常不顯示，
@@ -5054,18 +5134,19 @@ function renderDetail() {
   var pendingKey = itemPendingKey(it.id);
   var fromInv = UI.sel.source === 'inv';
   var matMode = UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  /* 洗煉模式時紅色主按鈕移到「洗煉」，表示目前是洗煉分頁；裝備／強化退回次按鈕 */
   if (fromInv) {
-    actionsHtml += '<button class="btn btn-primary" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
+    actionsHtml += '<button class="btn' + (rerollMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
   }
   var enoughUpGold = player && player.gold >= cost.gold;
   var enoughUpScrap = player && player.scrap >= cost.scrap;
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  actionsHtml += '<button class="btn' + (fromInv ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' + esc(upTip) + '"' +
-    pendingUiButtonAttributes(pendingKey) + '>強化</button>';
+  actionsHtml += '<button class="btn' + (fromInv || rerollMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' +
+    esc(rerollMode ? '回到強化（再按一次才強化）' : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>強化</button>';
 
-  actionsHtml += '<button class="btn" data-act="placeholder-reroll">洗煉</button>';
+  actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary' : '') + '" data-act="toggle-reroll">洗煉</button>';
   actionsHtml += '<button class="btn" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
   actionsHtml += '<button class="btn" data-act="toggle-enchant" aria-pressed="' + (matMode === 'enchant') + '">附魔</button>';
   if (!fromInv) {
@@ -5236,9 +5317,12 @@ function updateSelectionUI() {
   var selectedEquipSlots = selectionEquipSlotsForItem(selItem, selectedSlot);
   var highlightInventoryBySlot = !!(UI.sel && (UI.sel.source === 'equip-slot' || UI.sel.source === 'equip'));
   var highlightEquipByInventory = !!(UI.sel && UI.sel.source === 'inv');
+  // 背包框借給神鑄頁時，裝備頁的選取不可以把那裡的格子置灰（那裡的點擊是放入法陣；見 mountInventoryBox）
+  var forgeMode = UI.tab === 'forge';
 
   document.querySelectorAll('.item-cell, .eq-slot').forEach(function (el) {
     el.classList.remove('selected', 'dimmed', 'inventory-selection-match');
+    if (forgeMode && el.classList.contains('item-cell')) return;
 
     if (selectedSlot && selectedEquipSlots.indexOf(el.getAttribute('data-slot')) >= 0 && el.classList.contains('eq-slot')) {
       if (highlightEquipByInventory) {
@@ -5261,7 +5345,7 @@ function updateSelectionUI() {
     }
   });
 
-  if (!highlightInventoryBySlot || !selectedSlot) return;
+  if (!highlightInventoryBySlot || !selectedSlot || forgeMode) return;
   document.querySelectorAll('.item-cell').forEach(function (el) {
     if (!cellMatchesEquipSlot(el, selectedSlot)) {
       el.classList.add('dimmed');
@@ -6225,7 +6309,7 @@ function renderForge() {
   } else if (famMenuSync && famMenuSync.style.display !== 'none') {
     renderForgeAutoMenu(f, inventorySnapshot, gemsSnapshot);
   }
-  // 背包（裝備 / 寶石切頁；不符資格者以灰階顯示）
+  // 素材來源（裝備神鑄 / 寶石神鑄；不符資格者以灰階顯示）
   var invTab = forgeInventoryTab(f);
   UI.forgeInvTab = invTab;
   var tabItemsBtn = $id('forge-invtab-items'), tabGemsBtn = $id('forge-invtab-gems');
@@ -6233,12 +6317,19 @@ function renderForge() {
   if (tabGemsBtn) tabGemsBtn.classList.toggle('active', invTab === 'gems');
   if (tabItemsBtn) tabItemsBtn.disabled = forgeBusy;
   if (tabGemsBtn) tabGemsBtn.disabled = forgeBusy;
-  var grid = $id('forge-inventory-grid');
-  if (invTab === 'gems') {
-    setTextIfChanged($id('forge-inv-count'), fmt(forgeViewTotalGems(gemsSnapshot)));
+  var invSlot = $id('forge-inv-slot');
+  var gemBox = $id('forge-gem-box');
+  if (invSlot) invSlot.style.display = invTab === 'gems' ? 'none' : '';
+  if (gemBox) gemBox.style.display = invTab === 'gems' ? '' : 'none';
+  if (invTab !== 'gems') {
+    // 裝備神鑄：借用的就是裝備頁那一個背包框，畫法同一支（見 mountInventoryBox）
+    renderInventory();
+  } else {
+    var grid = $id('forge-gem-grid');
+    setTextIfChanged($id('forge-gem-count'), fmt(forgeViewTotalGems(gemsSnapshot)));
     /* 逐格比對，理由同法陣：這一格是「點擊放入法陣」的來源，戰鬥中寶石一直掉、
        數量一直變，整份重建會把玩家正壓著的那一格換掉，那一下點擊就消失。
-       裝備切頁走 renderForgeInventoryCells，早就是增量更新了，寶石切頁先前漏了。 */
+       裝備神鑄借用的背包框本來就是增量更新，寶石這一份先前漏了。 */
     var gemKeys = [];
     var gemHtmls = [];
     for (var glv = GEM_FORGE_MAX_LEVEL; glv >= 1; glv--) {
@@ -6265,74 +6356,7 @@ function renderForge() {
       gemHtmls.push('<div class="hint" style="grid-column: 1 / -1; padding: 10px;">尚無寶石。戰鬥掉落與寶石商店可取得寶石。</div>');
     }
     syncItemGridCells(grid, gemKeys, gemHtmls);
-  } else {
-    var inventoryItems = inventorySnapshot.items || [];
-    $id('forge-inv-count').textContent = inventorySnapshot.count + '/' + inventorySnapshot.cap;
-    if (!inventoryItems.length) {
-      grid.innerHTML = '<div class="hint" style="grid-column: 1 / -1; padding: 10px;">背包是空的。戰鬥掉落的裝備會先進入生產線輸送帶，「保留」的會送到這裡。</div>';
-    } else {
-      renderForgeInventoryCells(grid, inventoryItems);
-    }
   }
-}
-
-/* 神鑄頁的背包格線：與背包頁同一套增量更新＋虛擬捲動。
-
-   它是第二份完整背包格線，後期同樣上千格；掛著的每一格都會讓整份文件的樣式重算與
-   版面計算變貴，而那筆錢是戰鬥中每一次浮字、特效、換波都要付的。
-
-   容器是 max-height + overflow-y: auto（css/style.css #forge-inventory-grid），
-   沒有像背包頁那樣的「可展開排數」設定，所以可視排數直接由容器高度換算。 */
-function renderForgeInventoryCells(grid, inventoryItems) {
-  var virtualize = inventoryItems.length > INVENTORY_VIRTUAL_MIN_ITEMS;
-  var rowHeight = INVENTORY_GRID_ROW_HEIGHT + INVENTORY_GRID_ROW_GAP;
-  var window_ = null;
-  if (virtualize) {
-    var visibleRows = Math.max(1, Math.ceil((grid.clientHeight || 250) / rowHeight));
-    window_ = virtualGridWindow(grid, inventoryItems.length, visibleRows);
-  }
-  var first = window_ ? window_.first : 0;
-  var last = window_ ? Math.min(inventoryItems.length, window_.last) : inventoryItems.length;
-
-  var keys = [];
-  var htmls = [];
-  for (var i = first; i < last; i++) {
-    var it = inventoryItems[i];
-    var ok = isForgeableEquipmentRarity(it.rarity);
-    keys.push(it.id);
-    htmls.push(itemCellHTML(it, 'forgeinv', ok ? '' : ' forge-na', nodePendingKey('forge')));
-  }
-  if (window_) {
-    if (window_.topRows > 0) {
-      keys.unshift('__forge-spacer-top');
-      htmls.unshift(inventoryVirtualSpacerHTML(window_.topRows));
-    }
-    if (window_.bottomRows > 0) {
-      keys.push('__forge-spacer-bottom');
-      htmls.push(inventoryVirtualSpacerHTML(window_.bottomRows));
-    }
-  }
-  syncItemGridCells(grid, keys, htmls);
-  bindForgeInventoryVirtualScroll(grid);
-}
-
-/* 捲動時只重畫格線，不要整支 renderForge 重跑——那會把法陣、素材、按鈕全部重建，
-   在捲動的每一幀做那件事比虛擬捲動省下來的還貴。 */
-function bindForgeInventoryVirtualScroll(grid) {
-  if (grid.__forgeVirtualScrollBound) return;
-  grid.__forgeVirtualScrollBound = true;
-  grid.addEventListener('scroll', function () {
-    if (UI.tab !== 'forge' || UI.forgeInvTab === 'gems') return;
-    if (grid.__forgeVirtualScrollFrame) return;
-    var schedule = typeof requestAnimationFrame === 'function'
-      ? requestAnimationFrame : function (fn) { return setTimeout(fn, 0); };
-    grid.__forgeVirtualScrollFrame = schedule(function () {
-      grid.__forgeVirtualScrollFrame = 0;
-      var snapshot = uiInventoryPanelSnapshot();
-      var items = snapshot && snapshot.items;
-      if (items && items.length) renderForgeInventoryCells(grid, items);
-    });
-  }, { passive: true });
 }
 
 /* ---- 高塔分頁 ---- */
@@ -8258,7 +8282,7 @@ function renderSkills() {
       : '';
 
     lh += '<div class="' + slotCls + '" draggable="' + (loadoutPending ? 'false' : 'true') + '" data-index="' + i + '" data-slot-index="' + i + '" data-sk="' + esc(id0) + '" data-skill-id="' + esc(id0) + '" data-loadout-slot-index="' + i + '" data-tt-title="' + esc(d0.name) + ' Lv.' + loadoutLevel + '" data-tt-desc="' + esc(d0.desc || '') + '">' +
-      '<span class="bss-emoji">' + (d0.emoji || '⚔️') + '</span>' +
+      '<span class="bss-emoji">' + skillIconHTML(id0, d0.emoji) + '</span>' +
       (loadoutLevel > 0 ? '<span class="bss-lv">' + loadoutLevel + '</span>' : '') +
       (isPassive0 ? '<span class="bss-cd-text" style="display:flex;">🌀</span>' : '') +
       removeBtn +
@@ -8505,7 +8529,7 @@ function sgbListItemHTML(gid, skillsSnapshot, loadout, selected) {
     : (equipped ? '已裝上' : '');
   return '<button type="button" class="sgb-item' + (selected ? ' is-sel' : '') + (groupLocked ? ' is-locked' : '') +
     '" data-sgb-group="' + gid + '" aria-pressed="' + selected + '" style="--elem:' + color + '">' +
-    '<span class="sgb-item-icon" aria-hidden="true">' + g.emoji + '</span>' +
+    '<span class="sgb-item-icon" aria-hidden="true">' + skillIconHTML(gid, g.emoji) + '</span>' +
     '<span class="sgb-item-main">' +
     '<span class="sgb-item-top"><b>' + esc(g.name) + '</b>' +
     (tag ? '<span class="sgb-item-tag' + (equipped && !groupLocked ? ' is-eq' : '') + '">' + tag + '</span>' : '') + '</span>' +
@@ -8696,7 +8720,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
     : '';
 
   var h = '<div class="sgb-head" style="--elem:' + color + '">' +
-    '<span class="sgb-head-icon" aria-hidden="true">' + g.emoji + '</span>' +
+    '<span class="sgb-head-icon" aria-hidden="true">' + skillIconHTML(gid, g.emoji) + '</span>' +
     '<div class="sgb-head-main">' +
     '<div class="sgb-head-title"><b>' + esc(g.name) + '</b><span>總 Lv.' + t.total + ' / ' + t.max + '</span></div>' +
     '<div class="sgb-head-meta"><span class="skill-tags">' + tags + '</span><span class="sgb-meta" data-tip="' + esc(sgbMetaText(gid, UI.sgBrowse.tier)) + '">' + sgbMetaText(gid, UI.sgBrowse.tier) + '</span></div>' +
@@ -8938,7 +8962,7 @@ function showSkillTooltip(ref, anchorEl) {
     if (sgTipTier !== null && sgTipTier >= 0 && sgTipTier < sgG.tiers.length) {
       var sgTier = sgG.tiers[sgTipTier];
       var sgLocked = !sgStageUnlocked(sgTipGid, sgLvs, sgTipTier, skillsSnapshot);
-      var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgTier.name) +
+      var sgH = '<div class="skt-name">' + skillIconHTML(sgTipGid, sgG.emoji) + ' ' + esc(sgTier.name) +
         ' <span class="dim-text">第' + (sgTipTier + 1) + '階｜Lv.' + (sgLvs[sgTipTier] || 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
       var sgTipMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(sgTipGid, sgTipTier) : 0;
       sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
@@ -8951,7 +8975,7 @@ function showSkillTooltip(ref, anchorEl) {
       showSkillTooltipHTML(tip, sgH, anchorEl);
       return;
     }
-    var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgG.name) +
+    var sgH = '<div class="skt-name">' + skillIconHTML(sgTipGid, sgG.emoji) + ' ' + esc(sgG.name) +
       ' <span class="dim-text">總 Lv.' + sgUiTotalLevel(sgLvs) + '｜新版技能</span></div>';
     sgH += '<div class="skt-meta">' +
       ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
@@ -11206,7 +11230,7 @@ function initUI() {
 
   // 背包框外向下滾輪：物品超過目前可視排數時逐排展開，最多 9 排；框內仍由自身捲軸處理。
   document.addEventListener('wheel', function (e) {
-    if (UI.tab !== 'equip' || e.deltaY <= 0) return;
+    if (!inventoryBoxVisible() || e.deltaY <= 0) return;
     var target = e.target;
     if (target && target.closest && target.closest('#inv-section-box')) return;
     var box = $id('inventory-grid');
@@ -11223,7 +11247,7 @@ function initUI() {
   if (inventoryGrid && !inventoryGrid.__virtualScrollBound) {
     inventoryGrid.__virtualScrollBound = true;
     inventoryGrid.addEventListener('scroll', function () {
-      if (UI.tab !== 'equip') return;
+      if (!inventoryBoxVisible()) return;
       if (!inventoryGrid.hasAttribute('data-inventory-total-rows')) return;
       UI.inventoryScrolling = true;
       if (UI.inventoryScrollTimer) clearTimeout(UI.inventoryScrollTimer);
@@ -11457,7 +11481,9 @@ function initUI() {
       // tooltip while moving between descendants of the same cell.
       if (e.relatedTarget && eqCell.contains && eqCell.contains(e.relatedTarget)) return;
       var tooltipId = eqCell.getAttribute('data-id');
-      var needsInventoryDetail = eqCell.getAttribute('data-src') === 'inv';
+      var cellSrc = eqCell.getAttribute('data-src');
+      // 神鑄頁借用的背包格（forgeinv）也是摘要資料，一樣要向 Worker 取完整裝備才有提示
+      var needsInventoryDetail = cellSrc === 'inv' || cellSrc === 'forgeinv';
       UI.hoveredItemTooltip = { id: tooltipId, anchor: eqCell };
       var it = findItemById(tooltipId, needsInventoryDetail);
       if (it) { showItemTooltip(it, eqCell); return; }
@@ -12227,6 +12253,18 @@ function initUI() {
       renderDetail();
       return;
     }
+    // 洗煉模式：點詞條文字區（不含骰子）切換要洗的詞條
+    var rrPick = e.target.closest('#detail-pane [data-reroll-pick]');
+    if (rrPick) {
+      var pickIt = findSelItem();
+      var pickIdx = parseInt(rrPick.getAttribute('data-reroll-pick'), 10);
+      var pickMode = equipRerollModeFor(pickIt);
+      if (pickMode && pickMode.selIdx !== pickIdx) {
+        selectEquipRerollAffix(pickIt, pickIdx);
+        renderDetail();
+      }
+      return;
+    }
     var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
     if (actBtn) {
       var act = actBtn.getAttribute('data-act');
@@ -12239,9 +12277,24 @@ function initUI() {
         renderDetail();
         return;
       }
-      if (act && act.indexOf('placeholder-') === 0) {
-        if (typeof showFloatingText === 'function') showFloatingText(actBtn, '功能未訂', '#fcd34d');
+      /* 洗煉／強化是一組分頁：按「洗煉」進入洗煉模式（預設選第一條），已在洗煉模式再按不變；
+         洗煉模式下按「強化」只切回強化，不直接強化，避免切分頁時誤花資源 */
+      if (act === 'toggle-reroll' || (act === 'upgrade' && equipRerollModeFor(findSelItem()))) {
+        var rrIt = findSelItem();
+        if (!rrIt) return;
+        if (act === 'upgrade') UI.equipRerollMode = null;
+        else if (!equipRerollModeFor(rrIt)) selectEquipRerollAffix(rrIt, 0);
+        hideTooltip();
+        renderDetail();
         return;
+      }
+      // 骰子只認洗煉模式中選中的那一條；其他骰子（含未進入洗煉模式時）一律不動作
+      if (act === 'reroll-affix') {
+        var rrMode = equipRerollModeFor(findSelItem());
+        if (!rrMode || String(rrMode.selIdx) !== actBtn.getAttribute('data-affix-idx')) return;
+        rrMode.flash = false;
+        actBtn.setAttribute('data-reroll-state', 'armed');
+        actBtn.style.animationDelay = '';
       }
       detailAction(act, actBtn);
       return;

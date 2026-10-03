@@ -365,7 +365,7 @@ body {
 .detail-log-box,
 .equip-material-panel,
 #inv-section-box,
-#forge-inv-box,
+#forge-gem-box,
 .shop-card,
 .nf-part-upgrade-card,
 .nf-furnace,
@@ -995,7 +995,7 @@ select option {
 }
 
 #inv-section-box,
-#forge-inv-box {
+#forge-gem-box {
   position: relative;
   padding: 16px 14px;
   border: 2px solid #777b72 !important;
@@ -1005,7 +1005,7 @@ select option {
 }
 
 #inv-section-box::after,
-#forge-inv-box::after {
+#forge-gem-box::after {
   display: none;
 }
 
@@ -1024,7 +1024,7 @@ select option {
 }
 
 #inventory-grid,
-#forge-inventory-grid {
+#forge-gem-grid {
   grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
   scrollbar-color: #59665e #111618;
   scrollbar-width: thin;
@@ -1608,10 +1608,74 @@ html *::-webkit-scrollbar-corner {
   box-shadow: none !important;
 }
 
-#tab-equip #detail-pane .it-affix-row:hover .affix-reroll-btn,
-#tab-equip #detail-pane .affix-reroll-btn:focus-visible {
+/* 洗煉模式（2026-10）：骰子只有「選中的那一條」能按。
+   未選中＝灰色、滑過不亮、不接受點擊（ui.js 另有守衛）；選中＝亮起，剛選中時閃爍提示，洗過一次後轉為白色常亮。 */
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='idle'] {
+  filter: grayscale(1);
+  cursor: default;
+  pointer-events: none;
+}
+
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='armed'],
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='flash'] {
+  position: relative;
   opacity: 1;
-  border-color: #3a3d44 !important;
+  border-color: #5a5d66 !important;
+  background: #23262d !important;
+}
+
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='armed']:hover {
+  border-color: #ece6d8 !important;
+}
+
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='flash'] {
+  border-color: #fde68a !important;
+  animation: affixRerollFlash 1s ease-in-out infinite;
+}
+
+@keyframes affixRerollFlash {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(253, 230, 138, 0)); }
+  50% { filter: brightness(1.7) drop-shadow(0 0 6px rgba(253, 230, 138, .95)); }
+}
+
+/* 骰子滑過時替整行描框的舊提示：骰子已不再隨滑鼠亮起，描框只會誤導 */
+#tab-equip #detail-pane .it-affix-row:has(.affix-reroll-btn:hover) .it-affix-text {
+  outline: none;
+}
+
+/* 可選取的詞條：只有文字區（不含骰子）是點擊範圍。
+   文字區原本被固定成 18px 高，放大到 16px 的字加上框線會貼框；改成自動長高、上下留白，
+   每一行都先留好同樣的高度，換選詞條時版面才不會跳。 */
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable {
+  height: auto;
+  min-height: 30px;
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text {
+  height: auto;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text > .act-btn-tooltip {
+  cursor: pointer !important;
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable:not(.is-reroll-selected) .it-affix-text:hover {
+  background: rgba(255, 255, 255, .04);
+}
+
+/* 選取框：框住文字區，骰子在框外。用 border 畫——#workspace-area * 全域關掉了 box-shadow */
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .it-affix-text {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, .06);
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .afx-label,
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .afx-val {
+  font-size: 16px;
 }
 
 #tab-equip #detail-pane .it-passive,
@@ -1744,17 +1808,18 @@ html *::-webkit-scrollbar-corner {
   box-shadow: none !important;
 }
 
-/* 背包 */
-#tab-equip #inv-section-box {
+/* 背包（神鑄頁借用同一個 #inv-section-box，所以不限定 #tab-equip；寶石神鑄的 #forge-gem-box 同款） */
+#inv-section-box,
+#forge-gem-box {
   background: #15171c !important;
   border: 1px solid #2a2d34 !important;
   border-radius: 8px !important;
   box-shadow: none !important;
 }
 
-#tab-equip .inv-head .btn.sm,
-#tab-equip .inv-head .input.sm,
-#tab-equip .inv-head select {
+#inv-section-box .inv-head .btn.sm,
+#inv-section-box .inv-head .input.sm,
+#inv-section-box .inv-head select {
   height: 30px;
   border: 1px solid #2a2d34 !important;
   border-radius: 6px !important;
@@ -1765,12 +1830,12 @@ html *::-webkit-scrollbar-corner {
   font-size: 13px;
 }
 
-#tab-equip .inv-head .btn.sm:hover:not(:disabled) {
+#inv-section-box .inv-head .btn.sm:hover:not(:disabled) {
   border-color: #5a5d66 !important;
   background: #1b1e24 !important;
 }
 
-#tab-equip #btn-salvage-settings {
+#btn-salvage-settings {
   background: transparent !important;
   border-color: #7a2a26 !important;
   color: #f08a80 !important;
@@ -1779,17 +1844,20 @@ html *::-webkit-scrollbar-corner {
 
 /* 背包格：照設計稿改成暗底細框，品質色只留在 1px 邊框上（inline 的內發光拿掉）。
    選中、置灰兩種狀態仍沿用原本的 box-shadow，所以排除在外。 */
-#tab-equip #inventory-grid .item-cell {
+#inventory-grid .item-cell,
+#forge-gem-grid .item-cell {
   border-width: 1px !important;
   border-radius: 5px !important;
   background: #111317 !important;
 }
 
-#tab-equip #inventory-grid .item-cell:not(.selected):not(.dimmed):not(.item-cell-dimmed) {
+#inventory-grid .item-cell:not(.selected):not(.dimmed):not(.item-cell-dimmed),
+#forge-gem-grid .item-cell {
   box-shadow: none !important;
 }
 
-#tab-equip #inventory-grid .item-cell .ic-lv {
+#inventory-grid .item-cell .ic-lv,
+#forge-gem-grid .item-cell .ic-lv {
   background: transparent;
   color: #a39d90;
   font-size: 10px;
@@ -1812,7 +1880,7 @@ html *::-webkit-scrollbar-corner {
   display: inline-block;
 }
 
-#tab-equip #inv-filter-btn.has-filter {
+#inv-filter-btn.has-filter {
   border-color: #c9a35e !important;
   color: #f0cf86 !important;
 }
@@ -2176,7 +2244,8 @@ html *::-webkit-scrollbar-corner {
 }
 
 /* 面板變寬後，背包固定 12 欄會把格子拉成扁長方形；裝備頁改為依寬度自動排欄（虛擬捲動從實際樣式讀欄數） */
-#tab-equip #inventory-grid {
+#inventory-grid,
+#forge-gem-grid {
   grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)) !important;
 }
 
@@ -4985,4 +5054,46 @@ html *::-webkit-scrollbar-corner {
 #tab-talents .tlx-side-foot {
   font-size: 11px;
   color: #6f6a60;
+}
+
+/* ==== 技能圖示（2026-10 技能圖改造）：skills2 群組改用 images/skills/<群組id>.png，其餘技能仍是 emoji ==== */
+.skill-icon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sgb-item-icon,
+.sgb-head-icon {
+  overflow: hidden;
+}
+
+.sgb-item-icon .skill-icon-img { border-radius: 5px; }
+.sgb-head-icon .skill-icon-img { border-radius: 6px; }
+
+/* 技能格：放圖的 span 撐滿格子內側，冷卻遮罩（z-index 2）與等級角標（3）仍蓋在上面。
+   不能讓 img 自己 absolute：無魔時 .bss-emoji 帶 filter，會變成 img 的定位基準，而 span 本身寬高是 0。 */
+.battle-skill-slot .bss-emoji:has(> .skill-icon-img) {
+  position: absolute;
+  inset: 2px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.sk-run-item .skill-icon-img,
+.skt-name .skill-icon-img {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  vertical-align: -3px;
+}
+
+.skt-name .skill-icon-img {
+  width: 20px;
+  height: 20px;
+  vertical-align: -5px;
 }

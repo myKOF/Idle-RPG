@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>技能圖示工作站</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; background: #14151a; color: #ddd6c8; font: 13px/1.5 system-ui, "Microsoft JhengHei", sans-serif; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .bar { display: flex; gap: 8px; align-items: center; margin: 10px 0 16px; flex-wrap: wrap; }
+  button { background: #2a2c34; color: #eee; border: 1px solid #4a4d58; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  button:hover { border-color: #c9a45a; }
+  #log { color: #9ab; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .card { background: #0c0d10; border: 1px solid #2a2c34; border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: flex-end; }
+  .card canvas { border-radius: 8px; display: block; }
+  .card .sm { display: flex; flex-direction: column; gap: 6px; }
+  .card .sm canvas { border: 1px solid var(--elem); border-radius: 6px; }
+  .card b { display: block; margin-bottom: 4px; }
+  .card small { color: #8a8478; }
+</style>
+</head>
+<body>
+<h1>技能圖示工作站</h1>
+<div>改 <code>skill-icon-painter.js</code> 後重新整理即可看到；「輸出」會覆寫 <code>images/skills/&lt;群組id&gt;.png</code>（128×128）；輸出後記得把 js/ui.js 的 SKILL_ICON_VER +1。</div>
+<div class="bar">
+  <button id="btn-export">輸出全部到 images/skills</button>
+  <button id="btn-sheet">輸出總覽圖（預覽用）</button>
+  <span id="log"></span>
+</div>
+<div class="grid" id="grid"></div>
+
+<script src="skill-icon-painter.js"></script>
+<script>
+  /* 群組中文名與元素框色——只給這頁標示用，遊戲裡的名稱以 js/skills2.js 為準 */
+  var INFO = {
+    thrust: ['突刺', '#c9c3b5'], cleave: ['迴旋斬', '#c9c3b5'], knife: ['飛刀', '#c9c3b5'], gale: ['疾風迅雷', '#c9c3b5'],
+    bloodblade: ['血刃斬', '#c9c3b5'], dualdance: ['雙刀亂舞', '#c9c3b5'], counter: ['反擊', '#c9c3b5'], bloodrage: ['嗜血狂怒', '#c9c3b5'],
+    fireball: ['火球術', '#e63924'], firepillar: ['火龍捲', '#e63924'], firehunt: ['火狩', '#e63924'],
+    rockarmor: ['岩甲術', '#ad7444'], mire: ['泥沼術', '#ad7444'], earthguard: ['大地守護', '#ad7444'],
+    chainlightning: ['連鎖閃電', '#f2b705'], thunderstrike: ['落雷術', '#f2b705'], thunderorb: ['雷球', '#f2b705'],
+    icearrow: ['寒冰箭', '#4da6ff'], waterball: ['水流彈', '#4da6ff'], frostnova: ['冰霜新星', '#4da6ff'],
+    windblade: ['風刃', '#86efac'], vacuumslash: ['真空斬', '#86efac'], stormbarrier: ['暴風屏障', '#86efac']
+  };
+  var OUT = 128;
+  var ids = SkillIconPainter.ids;
+  var grid = document.getElementById('grid');
+  var log = document.getElementById('log');
+
+  function toCanvas(src) {
+    if (src instanceof HTMLCanvasElement) return src;
+    var cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height;
+    cv.getContext('2d').drawImage(src, 0, 0);
+    return cv;
+  }
+  function scaled(src, px) {
+    var cv = document.createElement('canvas');
+    cv.width = px * devicePixelRatio; cv.height = px * devicePixelRatio;
+    cv.style.width = cv.style.height = px + 'px';
+    var c = cv.getContext('2d'); c.imageSmoothingQuality = 'high';
+    c.drawImage(src, 0, 0, cv.width, cv.height);
+    return cv;
+  }
+
+  var rendered = {};
+  ids.forEach(function (gid) {
+    var t0 = performance.now();
+    var cv = toCanvas(SkillIconPainter.paint(gid, OUT));
+    rendered[gid] = cv;
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.setProperty('--elem', INFO[gid] ? INFO[gid][1] : '#888');
+    var big = scaled(cv, 128);
+    var sm = document.createElement('div'); sm.className = 'sm';
+    sm.appendChild(scaled(cv, 52)); sm.appendChild(scaled(cv, 38));
+    var label = document.createElement('div');
+    label.innerHTML = '<b>' + (INFO[gid] ? INFO[gid][0] : gid) + '</b><small>' + gid + '｜' + (performance.now() - t0).toFixed(0) + 'ms</small>';
+    sm.appendChild(label);
+    card.appendChild(big); card.appendChild(sm);
+    grid.appendChild(card);
+  });
+
+  function post(url, dataUrl) {
+    return fetch(url, { method: 'POST', body: dataUrl }).then(function (r) {
+      if (!r.ok) throw new Error(url + ' → ' + r.status);
+      return r.text();
+    });
+  }
+
+  document.getElementById('btn-export').onclick = function () {
+    var done = 0;
+    Promise.all(ids.map(function (gid) {
+      return post('/save?gid=' + gid, rendered[gid].toDataURL('image/png')).then(function () { log.textContent = '已輸出 ' + (++done) + '/' + ids.length; });
+    })).then(function () { log.textContent = '完成：' + ids.length + ' 張寫入 images/skills/'; },
+      function (e) { log.textContent = '失敗：' + e.message; });
+  };
+
+  /* 總覽圖：每個圖示畫 128、52、38 三種尺寸並排，底色比照技能頁 */
+  window.exportSheet = function (name, only) {
+    var list = only || ids;
+    if (only) {
+      /* 指定群組時改出 256 原尺寸大圖，方便看細節 */
+      var big = document.createElement('canvas'), n = list.length;
+      big.width = n * 266 + 10; big.height = 276;
+      var bc = big.getContext('2d'); bc.fillStyle = '#16171c'; bc.fillRect(0, 0, big.width, big.height);
+      list.forEach(function (gid, i) { bc.drawImage(SkillIconPainter.paint(gid), 10 + i * 266, 10); });
+      return post('/preview?name=' + (name || 'big'), big.toDataURL('image/png'));
+    }
+    var cols = 6, cellW = 128 + 52 + 38 + 40, cellH = 150;
+    var rows = Math.ceil(list.length / cols);
+    var cv = document.createElement('canvas');
+    cv.width = cols * cellW + 20; cv.height = rows * cellH + 20;
+    var c = cv.getContext('2d');
+    c.fillStyle = '#16171c'; c.fillRect(0, 0, cv.width, cv.height);
+    c.font = '13px "Microsoft JhengHei", sans-serif';
+    list.forEach(function (gid, i) {
+      var x = 10 + (i % cols) * cellW, y = 10 + Math.floor(i / cols) * cellH;
+      var src = rendered[gid];
+      c.imageSmoothingQuality = 'high';
+      c.drawImage(src, x, y, 128, 128);
+      c.drawImage(src, x + 136, y + 76, 52, 52);
+      c.drawImage(src, x + 196, y + 90, 38, 38);
+      c.fillStyle = '#ddd6c8';
+      c.fillText((INFO[gid] ? INFO[gid][0] : '') + ' ' + gid, x + 136, y + 14);
+    });
+    return post('/preview?name=' + (name || 'sheet'), cv.toDataURL('image/png'));
+  };
+  document.getElementById('btn-sheet').onclick = function () {
+    window.exportSheet('sheet').then(function (p) { log.textContent = '總覽圖：' + p; });
+  };
+</script>
+</body>
+</html>
