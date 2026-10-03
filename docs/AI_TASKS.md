@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## VFX-LIBRARY-PATH-20261003 — 素材庫搬移後存檔同步失敗
+
+- Owner：Codex；Done。使用者回報VFX Editor存repo後「匯出失敗，共160個問題」，後確認自行將資料夾改名為Asset。Preset已落檔，最新真空迴旋根及14層均2秒，保留此修改。原因為本機環境變數與library.local.json指向已空的effects-materials目錄，實際素材庫已在Asset，160份引用逐份SHA256核對一致，素材庫HEAD仍2f31639。
+- 預檢乾淨。允許本機忽略設定vfx/library.local.json及該使用者的VFX素材庫環境變數、僅此Codex副本Editor服務重啟、必要tests/vfx-duration.test.cjs測試fixture修正及本紀錄。禁止圖檔／索引／配置／使用者Preset改寫、其他副本、共享素材庫未追蹤RPG Maker_MV、合併／推送。無架構或協議變更，單一开发者處理；前置新素材庫已核對，接手者使用者。
+- 驗收預設解析指向新位置、export-assets --check零問題且已是最新、正式Editor的相同內容存檔與素材同步成功、原Preset位元保持／其他分頁未重載；修正前一任務的新測試不應依賴使用者可編輯的4秒現值，改用副本內4秒fixture，測試／Build通過。
+- 完成：本機忽略設定與Windows User環境變數指向D:/MyGame/Asset，啟動器在明確更新的環境重啟本副本服務（原PID29044／28361），瀏覽器分頁保持原狀、不自動重載。正式28361存檔API以最新版與Preset／layout基準傳送同一內容，HTTP200、ok:true，前後Preset位元相同（2秒）；實際素材URL HTTP200且SHA256一致，整批同步成功。根名effects-materials是邏輯libraryId，不需要改成Asset；只改本機實體路徑。
+- 修改：忽略設定library.local.json、User環境變數及可提交的tests/vfx-duration.test.cjs／本紀錄。定向測試在私有副本固定4秒，不再要求正式可編輯檔案永遠4秒；没有改正式Preset。唯讀檢查未改：export-assets.cjs、editor-server.cjs／editor-guard.cjs、launch-editor.cjs、vfx-library-root.cjs、啟動器bat、asset-index／shipped-assets／素材及既有匯出／根解析／存檔保護測試、Skills2三檔及協作規範。
+- 測試：`node --test --test-reporter=dot tests/vfx-duration.test.cjs tests/vfx-library-root.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-launcher.test.cjs`90/90通過；`node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset`及User環境更新後不帶root檢查均通過，243份Preset／160個素材／61640.4KB已是最新，無需再匯出；修正前同一check精確重現160個來源檔不存在。正式相同內容存檔回應200，未新增GUI視覺驗收；`npm.cmd run build`433檔通過、`git diff --check`通過。
+- 交付：本紀錄所在`[Codex] fix: 修復素材庫改名後的本機同步設定`提交，僅紀錄與fixture進Git，本機路徑依規範不進Git；沒有新增／修改素材，不需素材庫Commit，Asset共享倉庫原有未追蹤RPG Maker_MV保持不動。使用者Skills2三檔及2秒Preset保留未提交。無未完成項目、可合併測試修正，未合併／推送；下一步原編輯器再按儲存repo清除錯誤。已開啟且保有舊環境變數的其他工具需重開後才讀到新User設定；其他副本本機設定未改。
+
 ## VFX-LAYER-DURATION-20261003 — 圖層自動決定特效總時長
 
 - Owner：Codex；Done。使用者要求整份Preset依圖層結束時間計算，避免duration改成4秒後仍被舊0.48秒截斷；有delay時包含延遲。前置既有Core／Editor時間軸，單一開發者處理。
