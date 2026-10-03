@@ -6836,20 +6836,28 @@ var BattleRenderer = (function () {
      抵銷在錨點（腳底）上是精確的，離錨點越遠殘留越多（整張圖高約 100px 時殘留約 5%，
      遠小於原本整片變形造成的傾斜）。
      ⚠️ 玩家不需要這一層：鏡頭永遠對準他，他就在畫面中心，而中心點的 J 是單位矩陣
-     （只有鏡頭震動的幾 px 偏移，殘留 0.1° 以下）。所以輪廓與空中分身那兩條鏈維持原樣。 */
-  function applyEntityBillboard(ent) {
-    var view = ent && ent.view;
-    if (!view || view.destroyed) return;
+     （只有鏡頭震動的幾 px 偏移，殘留 0.1° 以下）。所以輪廓與空中分身那兩條鏈維持原樣。
+     地形擺件（樹、石、火盆、地標）與魔王祭壇的門／火盆／尖刺是同一種直立貼圖、也掛在 entity 層，
+     用同一個抵銷基底（sceneBillboardBasis，腳點在 world 直屬座標）；它們由 battle-decor／battle-arena
+     每幀自己套（opts.billboard），因為縮放與錨點的細節只有它們知道。 */
+  function sceneBillboardBasis(x, y) {
     var L = S.persp && S.persp.layout;
-    if (!L) { view.skew.x = 0; view.scale.set(1, 1); return; }
+    if (!L) return null;
     var world = S.layers && S.layers.world;
-    var px = ent.root.x + (world ? world.x : 0);
-    var py = ent.root.y + (world ? world.y : 0);
+    var px = x + (world ? world.x : 0);
+    var py = y + (world ? world.y : 0);
     var w = Math.max(0.1, 1 - L.beta * (py - L.cy));
     var shear = -L.beta * (px - L.cx);
     /* Pixi（rotation 0）：a = scaleX、c = sin(skewX)·scaleY、d = cos(skewX)·scaleY */
-    view.skew.x = Math.atan2(shear, w);
-    view.scale.set(1, Math.sqrt(shear * shear + w * w));
+    return { w: w, shear: shear, skew: Math.atan2(shear, w), k: Math.sqrt(shear * shear + w * w) };
+  }
+  function applyEntityBillboard(ent) {
+    var view = ent && ent.view;
+    if (!view || view.destroyed) return;
+    var b = sceneBillboardBasis(ent.root.x, ent.root.y);
+    if (!b) { view.skew.x = 0; view.scale.set(1, 1); return; }
+    view.skew.x = b.skew;
+    view.scale.set(1, b.k);
   }
   // 空中彈體只投影錨點並等比縮放，絕不經過整片場景的 PerspectiveMesh。
   function airScreenPose(x, y) {
@@ -7331,7 +7339,8 @@ var BattleRenderer = (function () {
       S.arena = BossArena.create({
         PIXI: PIXI, groundScale: GROUND_Y_SCALE,
         planeBase: S.layers.arenaBase, planeGlow: S.layers.arenaGlow,
-        propLayer: S.layers.entity, ambientLayer: S.layers.arenaAmbient, titleLayer: S.layers.arenaTitle
+        propLayer: S.layers.entity, ambientLayer: S.layers.arenaAmbient, titleLayer: S.layers.arenaTitle,
+        billboard: sceneBillboardBasis
       });
       if (!S.arena.enabled) S.arena = null;
     } catch (e) {
@@ -7361,6 +7370,7 @@ var BattleRenderer = (function () {
         PIXI: PIXI, groundScale: GROUND_Y_SCALE,
         decalLayer: S.layers.decorDecal, lightLayer: S.layers.decorLight,
         propLayer: S.layers.entity, ambientLayer: S.layers.decorAmbient,
+        billboard: sceneBillboardBasis,
         onTint: function (tint) {
           S.groundTint = tint;
           if (S.groundTile && !(S.arena && S.arena.active())) S.groundTile.tint = tint;

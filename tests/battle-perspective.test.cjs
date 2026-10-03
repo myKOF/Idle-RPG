@@ -226,7 +226,7 @@ test('PERSP-9 NPC 只吃遠近縮放：抵銷矩陣經過網格之後是等比�
   const L = loadLayout()(670, 731, TOP);
   const c = { Math, S: { persp: { layout: L }, layers: { world: { x: -400, y: -120 } } } };
   vm.createContext(c);
-  vm.runInContext(extractFunction(renderer, 'applyEntityBillboard'), c);
+  vm.runInContext(extractFunction(renderer, 'sceneBillboardBasis') + extractFunction(renderer, 'applyEntityBillboard'), c);
   const makeEnt = (x, y) => ({
     root: { x, y },
     view: { destroyed: false, skew: { x: 0 }, scale: { x: 1, y: 1, set(a, b) { this.x = a; this.y = (b === undefined ? a : b); } } }
@@ -329,4 +329,65 @@ test('PERSP-12 空中與 billboard 兩層：關掉鏡頭遠近就維持原尺寸
     assert.deepEqual([off.scaleX, off.scaleY, off.width, off.height], [2, 3, 40, 20], fn + '：關掉就維持原尺寸');
     assert.deepEqual([off.x, off.y], [on.x, on.y], fn + '：位置照樣投影到同一點');
   }
+});
+
+test('PERSP-13 場景擺件只吃遠近縮放：本體與掛在它上面的零件，經過網格之後是等比縮放、零斜切、相對位置不變', () => {
+  /* 2026-10-03 使用者：戰鬥場景物件被透視往畫面中央上方扭曲，要改成只受遠近縮放、不受 FOV 影響。
+     擺件（地形擺件、魔王祭壇的門／火盆）與敵人同樣是直立貼圖，用同一個抵銷基底；火焰、魔門的眼睛是零件，
+     位置要經過同一個矩陣，否則各自被網格推到別處（火焰飄離碗口、眼睛離開門楣）。 */
+  const L = loadLayout()(670, 731, TOP);
+  const c = { Math, S: { persp: { layout: L }, layers: { world: { x: -400, y: -120 } } } };
+  vm.createContext(c);
+  vm.runInContext(extractFunction(renderer, 'sceneBillboardBasis'), c);
+  const decor = fs.readFileSync(path.join(root, 'js/battle-decor.js'), 'utf8');
+  vm.runInContext(extractFunction(decor, 'billboardSprite'), c);
+  const mkSprite = (x, y) => ({ x, y, skew: { x: 0 }, scale: { x: 1, y: 1, set(a, b) { this.x = a; this.y = b; } } });
+  /* 網格在螢幕上某一點的局部線性部分，與座標映射本身 */
+  const mesh = (x, y) => {
+    const X = x + c.S.layers.world.x, Y = y + c.S.layers.world.y, w = 1 - L.beta * (Y - L.cy);
+    return [1 / w, 0, L.beta * (X - L.cx) / (w * w), 1 / (w * w)];
+  };
+  for (const [fx, fy, flip] of [[0, 0, 1], [600, -300, -1], [-500, 250, 1], [900, 400, -1], [-200, -450, 1]]) {
+    const prop = mkSprite(fx, fy);
+    c.billboardSprite(prop, c.sceneBillboardBasis, 0.7 * flip, 0.7);
+    const sk = prop.skew.x, sy = prop.scale.y;
+    const M = [prop.scale.x, 0, Math.sin(sk) * sy, Math.cos(sk) * sy];
+    const J = mesh(fx, fy);
+    const s = 1 / (1 - L.beta * (fy + c.S.layers.world.y - L.cy));   // 遠近倍率 1/w
+    const a = J[0] * M[0] + J[2] * M[1], d = J[1] * M[2] + J[3] * M[3], cc = J[0] * M[2] + J[2] * M[3];
+    near(a, 0.7 * flip * s, 1e-9, '(' + fx + ',' + fy + ') 橫向＝貼圖縮放 × 遠近倍率（翻面維持）');
+    near(d, 0.7 * s, 1e-9, '縱向與橫向同倍率，不壓扁也不拉長');
+    near(cc, 0, 1e-9, '不可有橫向斜切（往中央上方歪）');
+    near(J[1] * M[0] + J[3] * M[1], 0, 1e-9, '不可有縱向斜切');
+    /* 零件：位移相對錨點腳底，與本體同一個矩陣；沿本體的「上」軸往上 oy，網格之後仍在正上方 */
+    const part = mkSprite(0, 0);
+    c.billboardSprite(part, c.sceneBillboardBasis, 0.5, 0.5, prop, 12, -90);
+    const b = c.sceneBillboardBasis(fx, fy);
+    near(part.x, fx + 12 + b.shear * -90, 1e-9, '零件 x 經過同一個矩陣');
+    near(part.y, fy + b.w * -90, 1e-9, '零件 y 經過同一個矩陣');
+    near(part.skew.x, prop.skew.x, 1e-12, '零件與本體同傾角');
+    /* 本體貼圖上對應腳底位移 (12, −90) 的那一點（除以本體縮放換成貼圖座標），抵銷後的位置要與零件重合 */
+    const u = 12 / (0.7 * flip), v = -90 / 0.7;
+    near(fx + M[0] * u + M[2] * v, part.x, 1e-6, '零件 x 與本體上同一點重合');
+    near(fy + M[1] * u + M[3] * v, part.y, 1e-6, '零件 y 與本體上同一點重合');
+  }
+  /* 沒開透視：與加入前完全相同（零件位置＝錨點＋位移，沒有斜切） */
+  c.S.persp = null;
+  const prop = mkSprite(300, 200), part = mkSprite(0, 0);
+  c.billboardSprite(prop, c.sceneBillboardBasis, 0.7, 0.7);
+  c.billboardSprite(part, c.sceneBillboardBasis, 0.5, 0.5, prop, 12, -90);
+  assert.deepEqual([prop.skew.x, prop.scale.x, prop.scale.y], [0, 0.7, 0.7]);
+  assert.deepEqual([part.x, part.y, part.skew.x], [312, 110, 0]);
+});
+
+test('PERSP-14 接線：地形擺件與魔王祭壇都吃 opts.billboard；每幀在鏡頭算完後重算，火焰與眼睛掛在本體上', () => {
+  assert.equal((renderer.match(/billboard: sceneBillboardBasis/g) || []).length, 2, 'initDecor 與 initArena 都要傳');
+  const decor = fs.readFileSync(path.join(root, 'js/battle-decor.js'), 'utf8');
+  const arena = fs.readFileSync(path.join(root, 'js/battle-arena.js'), 'utf8');
+  assert.match(decor, /animateFlames\(dt\);\s*\n\s*billboardChunks\(\);/, '火焰縮放算完才抵銷');
+  assert.match(decor, /fl\._anchor = ps;/, '火焰跟著火盆走');
+  assert.doesNotMatch(decor.slice(decor.indexOf('function animateFlames')), /f\.scale\.(x|y) =/, '火焰縮放不可繞過抵銷直接寫 sprite');
+  assert.match(arena, /eye\._anchor = gate\.s;/, '魔門的眼睛跟著門走');
+  assert.match(arena, /fl\._anchor = b\.s;/, '祭壇火焰跟著火盆走');
+  assert.doesNotMatch(arena.slice(arena.indexOf('火焰閃爍')), /fl\.scale\.(x|y) =/, '祭壇火焰縮放不可繞過抵銷');
 });

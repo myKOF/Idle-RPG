@@ -29,7 +29,7 @@ function fakePixi() {
   let alive = 0;
   const point = () => ({ x: 1, y: 1, set(a, b) { this.x = a; this.y = b === undefined ? a : b; } });
   class Container {
-    constructor() { alive++; this.children = []; this.parent = null; this.visible = true; this.x = 0; this.y = 0; this.alpha = 1; this.scale = point(); this.rotation = 0; }
+    constructor() { alive++; this.children = []; this.parent = null; this.visible = true; this.x = 0; this.y = 0; this.alpha = 1; this.scale = point(); this.rotation = 0; this.skew = { x: 0 }; }
     addChild(c) { if (c.parent) c.parent.removeChild(c); this.children.push(c); c.parent = this; return c; }
     removeChild(c) { const i = this.children.indexOf(c); if (i >= 0) this.children.splice(i, 1); c.parent = null; return c; }
     destroy(o) {
