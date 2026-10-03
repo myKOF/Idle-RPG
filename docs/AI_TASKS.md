@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## VACUUM-OMEN-CAP-20261003 — 靜止虛空斬每敵一次、全場同時最多十個
+
+- Owner：Codex；Done。使用者要求內建系統限制，一個敵人最多觸發一個靜止虛空斬；依敵人實體存活期間計算，成功後不因圓盤到期／再次施放／換施放者而重置，未成功生成不占機會，新敵人獨立。追加全場同時最多十個，兩條規則寫入技能說明。單一開發者，前置靜止場域接線／尺寸已完成，接手者使用者。
+- 允許skills2靜止生成守門、相關回歸、bridge／Worker及index僅913／933必要快取、WIND_SKILL_AUDIT及本紀錄；不改配置／素材／原始第七階／傷害公式／機率／時序／Runtime／其他副本，不合併推送。其餘目標預檢乾淨；index Claude第11行ashen-forge.css 1.0.44及第924行ui.js 1.0.113與其他裝備／神鑄／地景修改已告知；使用者2026-10-03追加清理並提交必要修改供合併，依此授權只完成必要913／933快取，保留其內容。slash-wind-spin美術另外隔離提交。
+- 驗收同敵人多次命中與後波只生成一個、到期後仍不可再觸發、不延命／換位置、新敵人獨立、機率失敗／零傷害／死亡／場域上限不占成功次數；正式Worker／Runtime及快取／Build、獨立Commit。
+- 追加允許Skills2.xlsx AW219／AX219技能說明及CSV／字面值同步，Spreadsheets／原生Excel保留所有其他值與格式；追加驗收全場十個拒絕第十一、僅計靜止場域、到期騰出名額／滿場不消耗敵人機會、正式技能說明顯示兩條限制。不調整配置數值或美術。
+- 完成實作：sgSpawnStaticVacuum先核對敵人成功標記與十個仍存活vacuumfield，再抽機率；成功生成後才標記。圓盤到期／再次施放／不同施放者均不重置敵人機會，死亡／MISS／零傷害／機率未中／滿場未生成不消耗；全場名額只數未到期靜止斬，其他場域不占十個。第七階本體／3秒成長／判定與傷害公式保留。
+- 修改：js/skills2.js、js/bridge.js、js/worker/sim.worker.js、tests/vacuum-omen-vfx.test.cjs、config/Excel/Skills2.xlsx與config/CSV/Skills2.csv、docs/WIND_SKILL_AUDIT.md、本紀錄；index913／933必要快取。唯讀未改Runtime／Core／Pixi／battlefield／combat／Worker Protocol、其他配置與素材。使用者slash-wind-spin美術修改另案保留提交。
+- 說明：原生隱藏Excel COM僅AW219／AX219追加每敵存活期間一次及全場同時十個；只讀比較HEAD逐格僅這兩格改變，styles／欄寬／列高／儲存格格式一致，重開RepairMode=false。第一次author命令誤用47／48（AU／AV），已原生還原再修正49／50，最終所有其他格與HEAD一致。CSV及JS字面值由正式Excel同步，config_tables dry-run語意差異0，沒有調整數字或為程式改權威資料。
+- 驗證：vacuum-omen14/14、前述啟動與相關148/148；`node tools/config_tables.cjs --apply Skills2`無變更、`npm.cmd run build`436檔、`git diff --check`通過。Worker token/import已同步20261003-vacuum-omen-caps，主頁skills2 1.0.280／bridge1.0.218已完成。本紀錄所在`[Codex] feat: 限制靜止真空斬觸發與同場數量`提交；無未完成程式項目，可合併，未合併／推送。下一步遊戲重整驗收；真人密集戰鬥觀感待驗收。
+
 ## VACUUM-OMEN-BODY-20261003 — 靜止虛空斬使用第七階單顆尺寸
 
 - Owner：Codex；Done。使用者提供巨大圓盤與原始第七階小圓盤對比，要求萬象風劫只使用第七階額外虛空斬的造型／尺寸。上一版換orb-void-disc卻仍繼承第4／5階每波範圍，非逐階重播；改為共用第七階bodyM→單顆半徑來源，從該尺寸3秒內成長兩倍，判定與動畫同源。單一開發者；前置配置／Runtime已接通，接手者使用者。
