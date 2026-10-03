@@ -36,7 +36,10 @@ pause
 goto end
 :cfgapplyfail
 echo.
-echo [撥離表套用失敗] 七表 CSV 格式錯誤或 JSON 無法解析（見上方訊息）。未修改遊戲。
+echo [配置套用未完成] 請查看上方的 Excel 檔名、格位、欄位、填入值與修正方式。
+echo 可能原因：未接線的特效欄、Preset 檔名不存在，或表格／JSON 格式錯誤。
+echo Excel 轉 CSV 已完成；任何遊戲 JS 都未覆寫，原本的遊戲設定仍保留。
+echo 請修正 Excel 並儲存，再重新執行本工具。
 pause
 goto end
 :xlsxfail

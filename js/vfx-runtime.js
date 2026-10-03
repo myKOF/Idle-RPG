@@ -1031,7 +1031,7 @@ var VFXRuntime = (function () {
       var w = num(area.w, 0), h = num(area.h, 0);
       // 追蹤冰箭沿用發射本體尺寸；area.r 僅控制碰撞，不能縮小箭體。
       var actualSize = planeArea(area, g.presetId);
-      if (g.presetId === 'ground-homing-wind-crescent' && area.r > 0 && presetSizes[g.presetId]) {
+      if (g.windBody && area.r > 0 && presetSizes[g.presetId]) {
         var body = presetSizes[g.presetId];
         // 碰撞半徑代表刃寬的一半，不能當作月牙半長。
         actualSize = { w: area.r * 2 * body.widthM / body.heightM, h: area.r * 2 };
@@ -1048,7 +1048,7 @@ var VFXRuntime = (function () {
         g.uniform = true;
         g.tsx = g.tsy = r > 0 ? r / NOMINAL_RADIUS : 1;
       }
-      g.trot = (g.iceArrowBody || g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') &&
+      g.trot = (g.iceArrowBody || g.windBody || g.presetId === 'proj-icearrow-frost') &&
         typeof area.moveA === 'number' && isFinite(area.moveA) ? area.moveA : num(planeArea(area, g.presetId).a, planeAngles[g.presetId] || 0);
       if (g.anchored) return;                 // 位置的權威是玩家，不讀事件座標
       /* 推算基準換成這一則的權威座標，畫面與基準的落差記進殘差，由 update 衰減掉。 */
@@ -1122,7 +1122,7 @@ var VFXRuntime = (function () {
     function groundParams(g) {
       var p = { position: { x: g.x, y: g.y }, rotation: g.rot };
       if(g.worldMotion){p.position.y*=groundScale;p.rotation=projectedAngle(g.rot,groundScale);}
-      if(g.windBody)p.motionFacing=true;
+      if(g.windBody){p.motionFacing=true;p.loop=true;}
       // 雷幕電柱僅以柱腳定位；地板範圍不代表柱身的長寬或旋轉。
       if (g.curtainColumn) return { position: p.position, depthY: g.y, scaleX: 1, scaleY: 1, rotation: 0 };
       if (g.fixedLifetime) p.timeScale = presetDurations[g.presetId] / g.fixedLifetime;
@@ -1188,7 +1188,9 @@ var VFXRuntime = (function () {
       }
       if (spec.variant === 'water-tide-merge' && !spec.area) keep = Math.max(0, num(spec.dur, 0));
       var curtainColumn = role === 'attack' && spec.variant === 'thunder-curtain';
-      var mult = curtainColumn || spec.variant === 'flying-thunder' ? 1 : noArea || spec.variant === 'ice-arrow-homing' || presetId === 'proj-icearrow-frost' || presetId === 'ground-homing-wind-crescent' ? profile.scale : profile.areaScale;
+      // 舊事件缺 variant 時沿用既有月牙辨識；新素材依追蹤事件語意判斷。
+      var windBody = spec.variant === 'wind-blade-homing' || presetId === 'ground-homing-wind-crescent';
+      var mult = curtainColumn || spec.variant === 'flying-thunder' ? 1 : noArea || spec.variant === 'ice-arrow-homing' || windBody || presetId === 'proj-icearrow-frost' ? profile.scale : profile.areaScale;
       var live = grounds[key];
       if (live && live.presetId === presetId && spec.variant !== 'dragon-devour') {
         live.expireAt = clock + keep;
@@ -1202,8 +1204,8 @@ var VFXRuntime = (function () {
         ref: null, presetId: presetId, expireAt: clock + keep, mult: mult, anchor: anchor,
         iceArrowBody: spec.variant === 'ice-arrow-homing',
         worldMotion: (spec.variant === 'wind-blade-homing' || spec.variant === 'ice-arrow-homing') && !!(spec.area && spec.area._worldMotion),
-        smoothChase: spec.variant === 'ice-arrow-homing' || presetId === 'ground-homing-wind-crescent',
-        windBody: spec.variant === 'wind-blade-homing',
+        smoothChase: spec.variant === 'ice-arrow-homing' || windBody,
+        windBody: windBody,
         devour: spec.variant === 'dragon-devour',
         fixedLifetime: spec.variant === 'flying-thunder' ? keep : 0,
         anchored: false, speed: 0, moveA: NaN, hasDest: false, destX: 0, destY: 0,
@@ -1357,7 +1359,7 @@ var VFXRuntime = (function () {
         }
         g.x = g.bx + g.ox;
         g.y = g.by + g.oy;
-        if (g.iceArrowBody || g.presetId === 'proj-icearrow-frost' || g.presetId === 'ground-homing-wind-crescent') {
+        if (g.iceArrowBody || g.windBody || g.presetId === 'proj-icearrow-frost') {
           // Face the rendered displacement, including snapshot correction; a separate
           // rotation easing would make the arrow slide sideways while turning.
           var dx = g.x - previousX, dy = g.y - previousY;
@@ -1545,7 +1547,7 @@ var VFXRuntime = (function () {
           break;
         case 'projectile':
           // 冰之淚每支箭都是獨立時間／落點的事件，空箭也沿 fixedLanding 落下。
-          ok = spec.variant === 'ice-arrow-homing' ? playGround(presetId,spec,role)
+          ok = spec.variant === 'ice-arrow-homing' || spec.variant === 'wind-blade-homing' ? playGround(presetId,spec,role)
             : spec.fxKind === 'chain' && spec.variant === 'lightning-chain' ? playBeam(rtFx,presetId,spec)
             : spec.variant === 'cleave-ring' ? playCleave(rtFx,presetId,spec) : playProjectile(rtFx, presetId, spec);
           break;
