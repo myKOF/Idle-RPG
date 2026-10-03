@@ -48,7 +48,7 @@ for(const gid of gids){
    if(e.variant==='wind-slash')assert.equal(e.vfx.attack,'slash-wind-crescent');
    if(e.variant==='wind-spin')assert.equal(e.vfx.attack,'slash-wind-spin');
    if(e.variant==='vacuum-shock')assert.equal(e.vfx.attack,'burst-vacuum-shockwave');
-   if(e.variant==='wind-blade-homing')assert.equal(e.vfx.ground,'ground-homing-wind-crescent');
+   if(e.variant==='wind-blade-homing')assert.equal(e.vfx.ground,e.area?.staticVacuum?'orb-void-disc':'ground-homing-wind-crescent');
    if(e.variant==='wind-burst'&&e.fxKind==='burst')assert.equal(e.vfx.attack,'burst-wind');
    if(e.variant==='void-disc'&&e.fxKind!=='aura'){
     assert.equal(e.vfx.hit,'hit-wind');assert.ok(!e.vfx.projectile&&!e.vfx.ground,'接觸命中不得再次生成軌道本體');
@@ -79,9 +79,36 @@ test('延後真空波次重新讀當下玩家及敵人位置，倒地取消剩�
  const {c,p,events,hits,enemies,ctx}=setup('vacuumslash',5);c.castSkill2(p,enemies,'vacuumslash','mv-float');
  assert.equal(events.filter(e=>e.variant==='wind-spin').length,1);
  const fresh=h.enemy(1e9,1050,0,'fresh');p.pos.x=1000;ctx.getEnemies=()=>[fresh];
- c.GT=.259;c.sgTickVacuumWaves(ctx);assert.ok(!hits.some(x=>x.ent===fresh));
- c.GT=.260;c.sgTickVacuumWaves(ctx);assert.equal(hits.filter(x=>x.ent===fresh).length,2);near(events.findLast(e=>e.variant==='wind-spin').area.x,1000);
- p.hp=0;c.GT=.520;c.sgTickVacuumWaves(ctx);assert.equal(c.SKILL2_RT.vacuumWaves.length,0);assert.equal(events.filter(e=>e.variant==='wind-spin').length,2);
+ c.GT=.499;c.sgTickVacuumWaves(ctx);assert.ok(!hits.some(x=>x.ent===fresh));
+ c.GT=.500;c.sgTickVacuumWaves(ctx);assert.equal(hits.filter(x=>x.ent===fresh).length,2);near(events.findLast(e=>e.variant==='wind-spin').area.x,1000);
+ p.hp=0;c.GT=1;c.sgTickVacuumWaves(ctx);assert.equal(c.SKILL2_RT.vacuumWaves.length,0);assert.equal(events.filter(e=>e.variant==='wind-spin').length,2);
+});
+
+for(const lv of [1,10])test(`真空三重奏Lv.${lv}每0.5秒才同時施放與命中，首波立即觸發`,()=>{
+ const {c,p,events,hits,enemies,ctx}=setup('vacuumslash',5);
+ h.setLevels(c,'vacuumslash',[1,1,1,1,lv,0,0]);
+ c.GT=7;c.castSkill2(p,enemies,'vacuumslash','mv-float');
+ const waveCount=lv===1?3:5;
+ const slashEvents=()=>events.filter(e=>e.variant==='wind-spin');
+ const hitsPerWave=enemies.length*2;
+ assert.equal(slashEvents().length,1);assert.equal(hits.length,hitsPerWave);
+ for(let wave=1;wave<waveCount;wave++){
+  c.GT=7+wave*.5-.001;c.sgTickVacuumWaves(ctx);
+  assert.equal(slashEvents().length,wave,'波次到時前不播放');
+  assert.equal(hits.length,wave*hitsPerWave,'波次到時前不造成傷害');
+  c.GT=7+wave*.5;c.sgTickVacuumWaves(ctx);
+  assert.equal(slashEvents().length,wave+1);
+  assert.equal(hits.length,(wave+1)*hitsPerWave);
+ }
+ assert.equal(c.SKILL2_RT.vacuumWaves.length,0);
+});
+
+test('未學真空三重奏的迴旋斬仍只有立即施放的一波',()=>{
+ const {c,p,events,enemies,ctx}=setup('vacuumslash',4);
+ c.castSkill2(p,enemies,'vacuumslash','mv-float');
+ c.GT=2;c.sgTickVacuumWaves(ctx);
+ assert.equal(events.filter(e=>e.variant==='wind-spin').length,1);
+ assert.equal(c.SKILL2_RT.vacuumWaves.length,0);
 });
 
 test('暴風萬刃的追擊大刃／小刃沿表定連射間隔出生，不提前移動或命中',()=>{

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "beam-light",
-  "duration": 0.45,
+  "duration": 0.25,
   "loop": false,
   "layers": [
     {
@@ -24,7 +24,7 @@
       "alpha": 0.4,
       "tint": "#ffe47a",
       "blendMode": "screen",
-      "duration": 25,
+      "duration": 0.25,
       "alphaOverLife": [
         [
           0,

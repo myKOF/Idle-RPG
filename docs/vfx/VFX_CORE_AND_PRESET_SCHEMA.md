@@ -2,6 +2,14 @@
 
 # VFX Core 架構 ＋ VFX Preset Schema v1
 
+## 總時長自動推算（2026-10-03）
+
+Preset的`duration`是圖層時間軸的派生值，編輯器Inspector顯示唯讀「總時長(s)・自動」。根圖層取啟用層的`delay + duration`最大值；沒有延遲時就是最長圖層的duration。子層包含祖先延遲，仍遵守原本父層停用／結束時隱藏子層的規則，不自動延長父層。全部停用或零時長時保留原本合法值供繼續編輯。
+
+Core註冊舊檔時會在私有副本重算，避免過期的根duration截斷尚未播完的圖層；Adapter也用相同值計算播放速度及續播。Editor每次修改同步此值，再作預覽／儲存／另存／下載。`derivePresetDuration`只計算，`syncPresetDuration`同步可寫副本，兩者須先通過Preset驗證；派生值仍受60秒上限驗證，超限報錯而不截短。
+
+省略圖層duration的舊檔仍以原始Preset duration作為該層時長；若根值需要更新，先把這些舊預設寫入圖層，防止重算時因delay反覆增長。循環層仍可持續播放，`finish`／`stop`仍可回收；粒子發射結束後，已發射粒子依自己的lifetime自然播完。`serialisePreset`保持忠實序列化，不代改原始資料。
+
 ## 地面投影（2026-09-22）
 
 drawable 圖層（sprite／procedural／particle）新增可選 `projection: {x: 1, y: 0.5, rotation: 0}`；rotation 為弧度。x／y 必填且為有限數，rotation 可省略，empty 不支援。此欄位在本地、父層與特效變換完成後，以特效原點先旋轉再壓縮，保留持續旋轉的地面橢圓。未標記圖層保持既有行為，schemaVersion 仍為 1。
@@ -93,7 +101,7 @@ Core 可以整包搬到其他 Web 遊戲。
 {
   "schemaVersion": 1,
   "id": "demo-basic",          // 小寫英數與連字號；與檔名一致
-  "duration": 1.6,             // 秒，正數，上限 60
+  "duration": 1.6,             // 圖層推算的總秒數，正數，上限 60
   "loop": false,
   "layers": [ /* 見 §2 */ ]
 }

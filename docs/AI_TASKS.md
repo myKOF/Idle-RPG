@@ -1,5 +1,117 @@
 # AI_TASKS.md
 
+## MERGE-PREP-20261003 — 整理所有未提交修改供合併
+
+- Owner：Codex；Done。使用者要求「清理unstaged區，需要的commit，不要的就刪掉，我要merge」。本次所有12項初始未提交內容均必要，含正式回歸測試及使用者slash-wind-spin美術設定，全部保留；無廢棄untracked檔需要刪除，不刪正式檔、正在開啟的Excel鎖檔或本機依賴／素材庫設定。此指示授權完成前次已告知的同檔快取更新，不另重複詢問；不合併／推送。
+- 完成：先提交4f18ed64（VACUUM-OMEN-CAP-20261003，每敵成功一次／全場十個／Excel技能說明與Worker快取），再提交7c3238bb（VFX-STARTUP-RACE-20261003，Preset載入空窗等待／回收），最後本紀錄所在`[Codex] chore: 保留迴旋斬美術設定並完成合併前整理`提交使用者Preset與必要資料快取。index只改901／908／913／933版號，保留Claude b18edea5及既有裝備／神鑄／地景內容。
+- 本提交修改：vfx/presets/slash-wind-spin.json（完整保留使用者14層／1.5秒、位置／尺寸／顏色／screen混合設定）、js/vfx-runtime.js僅DATA_VERSION=20261003-wind-spin-authoring、主頁與Editor Runtime同為1.0.172、本紀錄。唯讀檢查：協作規範、AGENTS／workflow／agent文件、素材root解析／匯出工具、layout與schema、其他Preset／shipped／引用圖檔、所有未提交diff及既有測試；沒有代改技能／傷害、其他AI副本或分組異常。
+- 驗證：`node --test tests/vfx-startup-loading.test.cjs tests/vacuum-omen-vfx.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/storm-mountain.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-duration.test.cjs`159/159通過；`npm.cmd run build`436檔通過；Core.validatePreset、LS.validateLayout及本Preset14層完整單群組／全部duration1.5直接斷言通過；`git diff --check`／cached檢查通過。
+- 素材：經vfx-library-root.cjs讀本機library.local並明確解析改名後D:/MyGame/Asset；shell仍繼承舊effects-materials環境覆寫，驗證使用明確root，不改使用者環境。Asset倉庫status乾淨、HEAD ed3edfb，無新／改圖檔，Preset是遊戲內authoring資料；`node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset`243份Preset／160引用／61640.4KB內容雜湊及匯出一致，無需素材庫空Commit。原舊effects-materials資料夾只殘留.git，未初始化／移動／刪除任何素材庫。
+- 已知風險：額外`node --test tests/vfx-preset-layout.test.cjs tests/vfx-duration.test.cjs`17項15過2失敗；LAYOUT-1既有pillar-indomitable缺layout，LAYOUT-3既有bolt-sky-purple／bolt-thunderstrike-bluewhite兩群組、hit-thunderstrike-bluewhite圖層清單不同步。三份檔案與HEAD無差異；將唯一改動slash-wind-spin唯讀換回HEAD重跑layout仍4/6、相同兩項失敗，未新增分組問題，也不修改測試接受現況。這些只影響Editor authoring metadata，非本次遊戲啟動／數量修正；真人密集戰鬥觀感仍待驗收。
+- 交付：三項必要工作均已提交，預期最終`git status --short`空白；无未完成本次修改，可合併（保留上述既有測試風險），未合併／推送。下一步使用者合併ai/codex至develop，保留Claude另支內容並重整遊戲；既有分組異常另案修正。
+
+## VFX-STARTUP-RACE-20261003 — 重整時禁止載入空窗先畫舊特效
+
+- Owner：Codex；Done。使用者回報剛編輯特效後第一次重整偶發鋸齒圓盤。已定位renderer ready早於非同步VFXRuntime.boot完成，onVfx因此落入legacy；Preset fetch已cache:no-store，非正常JSON快取。單一開發者；允許battle-renderer載入期有限佇列與回收、新回歸、RuntimeAdapter文件與本紀錄、index僅renderer快取。其他檔預檢乾淨，index有已告知的Claude修改，使用者本次要求整理並提交所有必要修改供合併，已授權完成必要快取。不改Preset、Runtime／Core、技能／傷害或存檔，不合併推送；保留使用者slash-wind-spin。
+- 驗收慢載入期間無legacy圓盤、就緒後使用正式Preset；等待不延長場域、過期事件丟棄、同場域合併／佇列有界、清場與死亡取消、終止訊號順序、失敗／明確legacy相容及相關測試／Build，獨立Commit。
+- 完成實作：新增載入期佇列，最多256則並合併同場域刷新；位置緩衝照常先走完，就緒後接原表定Preset。扣除等待壽命、靜止半徑／環繞角度成長／詳細orbitAge接續；到期丟棄，清場／死亡／背景不復活舊效果，終止訊號保留順序。只有boot確實失敗才回相容畫法。無配置／素材／協議變更。
+- 修改：js/battle-renderer.js、tests/vfx-startup-loading.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md與本紀錄；index第908行renderer 1.6.167→1.6.168已完成。唯讀未改Runtime／Core／Pixi後端、shipped／Preset、ui／main／Worker／存檔及協作規範。index最新衝突已成Claude b18edea5提交，第11行ashen-forge.css 1.0.44、第924行ui.js 1.0.113及已知裝備／地景變更；使用者2026-10-03追加「清理unstaged，需要的commit，我要merge」後完成必要版號；Claude的樣式／ui／神鑄／裝備／地景內容沒有修改。
+- 測試：新回歸6/6通過，正式Core／Runtime九層圓盤非stub；與下列cap任務整合執行`node --test tests/vfx-startup-loading.test.cjs tests/vacuum-omen-vfx.test.cjs tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/storm-mountain.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs`148/148通過。首輪132/133，剩餘新測試誤讀backend spec.assetId（正式API為assetUrl），修正測試後全過，未降低遊戲正確性。`npm.cmd run build`436檔通過；`git diff --check`通過。
+- 瀏覽器：Edge headless獨立新環境、8123正式renderer／Core／Runtime／Pixi及素材，攔截非GET，最小頁面不載入存檔／模擬。刻意扣住Preset請求，用HEAD舊renderer重現ready=true但preset=null時legacy fx=1，載入後仍fx=1／Preset air=0；修正版連續兩次均等待時fx=0、就緒後fx=0／Preset air=1，三次pageerror=0。第一次臨時頁無base造成knight圖片相對路徑404，補base後重驗通過；最小頁沒載BattleDecor有預期降級warning，不是正式遊戲初始化問題。未使用真人存檔密集戰鬥驗收。
+- 交付：本紀錄所在`[Codex] fix: 等待新版特效載入再播放戰鬥事件`提交；驗證完成、無未完成程式項目，可合併，未合併／推送。已知限制為真人密集戰鬥觀感待驗收；只有Runtime真正載入失敗才維持既有legacy相容。下一步由使用者合併並重整驗收。
+
+## VACUUM-OMEN-CAP-20261003 — 靜止虛空斬每敵一次、全場同時最多十個
+
+- Owner：Codex；Done。使用者要求內建系統限制，一個敵人最多觸發一個靜止虛空斬；依敵人實體存活期間計算，成功後不因圓盤到期／再次施放／換施放者而重置，未成功生成不占機會，新敵人獨立。追加全場同時最多十個，兩條規則寫入技能說明。單一開發者，前置靜止場域接線／尺寸已完成，接手者使用者。
+- 允許skills2靜止生成守門、相關回歸、bridge／Worker及index僅913／933必要快取、WIND_SKILL_AUDIT及本紀錄；不改配置／素材／原始第七階／傷害公式／機率／時序／Runtime／其他副本，不合併推送。其餘目標預檢乾淨；index Claude第11行ashen-forge.css 1.0.44及第924行ui.js 1.0.113與其他裝備／神鑄／地景修改已告知；使用者2026-10-03追加清理並提交必要修改供合併，依此授權只完成必要913／933快取，保留其內容。slash-wind-spin美術另外隔離提交。
+- 驗收同敵人多次命中與後波只生成一個、到期後仍不可再觸發、不延命／換位置、新敵人獨立、機率失敗／零傷害／死亡／場域上限不占成功次數；正式Worker／Runtime及快取／Build、獨立Commit。
+- 追加允許Skills2.xlsx AW219／AX219技能說明及CSV／字面值同步，Spreadsheets／原生Excel保留所有其他值與格式；追加驗收全場十個拒絕第十一、僅計靜止場域、到期騰出名額／滿場不消耗敵人機會、正式技能說明顯示兩條限制。不調整配置數值或美術。
+- 完成實作：sgSpawnStaticVacuum先核對敵人成功標記與十個仍存活vacuumfield，再抽機率；成功生成後才標記。圓盤到期／再次施放／不同施放者均不重置敵人機會，死亡／MISS／零傷害／機率未中／滿場未生成不消耗；全場名額只數未到期靜止斬，其他場域不占十個。第七階本體／3秒成長／判定與傷害公式保留。
+- 修改：js/skills2.js、js/bridge.js、js/worker/sim.worker.js、tests/vacuum-omen-vfx.test.cjs、config/Excel/Skills2.xlsx與config/CSV/Skills2.csv、docs/WIND_SKILL_AUDIT.md、本紀錄；index913／933必要快取。唯讀未改Runtime／Core／Pixi／battlefield／combat／Worker Protocol、其他配置與素材。使用者slash-wind-spin美術修改另案保留提交。
+- 說明：原生隱藏Excel COM僅AW219／AX219追加每敵存活期間一次及全場同時十個；只讀比較HEAD逐格僅這兩格改變，styles／欄寬／列高／儲存格格式一致，重開RepairMode=false。第一次author命令誤用47／48（AU／AV），已原生還原再修正49／50，最終所有其他格與HEAD一致。CSV及JS字面值由正式Excel同步，config_tables dry-run語意差異0，沒有調整數字或為程式改權威資料。
+- 驗證：vacuum-omen14/14、前述啟動與相關148/148；`node tools/config_tables.cjs --apply Skills2`無變更、`npm.cmd run build`436檔、`git diff --check`通過。Worker token/import已同步20261003-vacuum-omen-caps，主頁skills2 1.0.280／bridge1.0.218已完成。本紀錄所在`[Codex] feat: 限制靜止真空斬觸發與同場數量`提交；無未完成程式項目，可合併，未合併／推送。下一步遊戲重整驗收；真人密集戰鬥觀感待驗收。
+
+## VACUUM-OMEN-BODY-20261003 — 靜止虛空斬使用第七階單顆尺寸
+
+- Owner：Codex；Done。使用者提供巨大圓盤與原始第七階小圓盤對比，要求萬象風劫只使用第七階額外虛空斬的造型／尺寸。上一版換orb-void-disc卻仍繼承第4／5階每波範圍，非逐階重播；改為共用第七階bodyM→單顆半徑來源，從該尺寸3秒內成長兩倍，判定與動畫同源。單一開發者；前置配置／Runtime已接通，接手者使用者。
+- 允許js/skills2.js靜止場域與第七階共用本體尺寸、bridge／Worker／index.html僅913／933必要快取、tests/vacuum-omen-vfx.test.cjs回歸、WIND_SKILL_AUDIT及本紀錄。其他目標預檢乾淨；index仍有Claude已知五筆裝備／神鑄／地景修改，沿用使用者對本連續修正明確同意僅901／913／933版號行的授權，本次只改913／933。不改第1～7階本體施放、傷害係數／機率／波數／配置／素材／Runtime／其他副本；不合併／推送，保留slash-wind-spin既有修改。
+- 驗收正式Worker整次施放事件無逐階重播、靜止初始圓盤與第七階單顆同尺寸且不受迴旋／後波範圍／軌道半徑影響；各配置尺寸均同源、3秒平滑成長與到期回收、接觸傷害判定一致、追蹤風刃與三重奏0.5秒不變；相關測試／Build與獨立Commit。
+- 完成：抽取原始第七階bodyM的一半為sgVoidDiscBodyRadius，原始環繞體及萬象風劫靜止場域共用同一公式；停止將wave.radius傳入靜止場域。當前bodyM=12表示直徑12米，靜止初始半徑6米，3秒長至12米；原先每波18～30米初始半徑不再放大靜止圓盤。保留各波迴旋本體、原始四顆環繞體、靜止機率／命中處／傷害係數／3秒／2倍成長；靜止判定圈隨新本體尺寸一起校正，沒有只把畫面縮小。後續波次的靜止圈大小一致，不重施整組第七階或重播第1～7階鏈。
+- 修改7檔：js/skills2.js（非生成資料）、js/bridge.js、js/worker/sim.worker.js、index.html僅913／933行、tests/vacuum-omen-vfx.test.cjs、docs/WIND_SKILL_AUDIT.md及本紀錄。唯讀未改：Excel／CSV、tools/skills2-vfx.cjs、Core／Runtime／Pixi後端、battlefield／combat／renderer、Worker Protocol／shim、其餘測試與全部Preset／asset-index／shipped-assets；保留使用者slash-wind-spin未提交修改。沒有素材變更／第三來源，不需要素材庫空Commit。
+- 快取：skills2 1.0.279／bridge 1.0.217，Worker token与skills2 import同步20261003-vacuum-disc-body；不改Runtime或Editor，編輯器無需重啟。沿用前次對同一連續修正、同一版號行的明確授權，沒有修改Claude的裝備／神鑄／地景內容。
+- 測試：`node --test tests/vacuum-omen-vfx.test.cjs tests/storm-mountain.test.cjs tests/windblade-vfx-integration.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-guard.test.cjs`91/91通過；新增整次施放及多配置整合回歸、先前傷害／成長測試更新為第七階本體尺寸。以HEAD 53635632技能程式唯讀替換執行同9項，5通過4失敗；修正後9/9，正確攔截錯誤尺寸來源。`node --test --test-name-pattern='真空三重奏|延後真空|未學真空' tests/wind-skill-audit.test.cjs`4/4通過；`npm.cmd run build`435檔通過；`git diff --check`通過。沒有重跑全庫或聲稱已解決上一任務的20項既有廣域fixture失敗。
+- 瀏覽器：Edge headless新環境，只讀8123正式Core／Runtime／Pixi及shipped素材，無正式存檔、攔截全部寫入。使用Node正式Worker引擎整次施放產生的兩種事件，原始area.orbR與靜止area.r同為60單位、兩種圓盤均九層，靜止空中0層且只有ground來源；同動畫相位逐層矩陣面積比只含0.1秒已過成長（1+0.1/3）²，3秒回收0／錯誤0。已檢視起始對比與1.5秒成長截圖；首張標籤因HTML缺charset亂碼，補UTF-8／英文標籤後重拍，圖片保留在工作區外vacuum-omen/vacuum-disc-body-start.png及grown.png供驗收。測試透過stdin執行，無新增臨時腳本；未操作使用者正式存檔做密集戰鬥觀感驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 靜止真空斬共用第七階圓盤本體尺寸`提交，可合併，未合併／推送；無未完成程式項目，已知限制為真人密集戰鬥觀感待驗收及既有全庫fixture問題。下一步遊戲重整，萬象風劫靜止圓盤應從圖2單顆大小開始再放大；一般迴旋本體仍使用玩家自己配置的18米範圍。
+
+## ELITE-HALO-20261003 — 降低菁英敵人周圍光暈
+
+- Owner：Codex；Done。使用者要求降低截圖中的菁英光暈；既有Canvas/Pixi makeEnemy產生紫色加色光暈，密集敵人疊加過亮。單一開發者，前置既有菁英辨識已完成；後續接手者使用者。
+- 允許js/battle-renderer.js菁英光暈透明度／縮放／混合模式、index.html僅renderer必要快取及本紀錄；禁止其他任務／技能／數值／素材／其他副本、合併與推送。保留本副本萬象風劫及使用者既有未提交修改，分段隔離提交。renderer與任務紀錄預檢乾淨；index有Claude五筆神鑄／裝備／地景提交，使用者已同意僅更新第908行renderer快取。
+- 驗收菁英光暈更淡更小、密集重疊不加色過曝、骷髏／名稱／血條與一般敵人／Boss不變；既有renderer回歸、Build與diff檢查，完成獨立Commit。無素材變更。
+- 完成：makeEnemy菁英光暈alpha由0.55降為0.18、scale由1.7縮至1.15，blendMode改normal，避免add混合累積亮度；紫色／垂直位置及菁英其他辨識保留。修改3檔：js/battle-renderer.js、index.html renderer快取1.6.167、本紀錄。唯讀檢查未改：js/battlefield.js、css/style.css、tests/helpers/battle-scene.cjs與既有戰場／敵方特效測試、協作規範；未改Worker、技能、配置或素材，沒有素材庫Commit。
+- 驗證：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-editor-cache-versions.test.cjs`49/49通過；`npm.cmd run build`435檔通過；`git diff --check`通過。Node VM直接執行正式makeEnemy確認alpha／scale／normal、骷髏／紫色名稱／血條保留、一般敵人與Boss不產生菁英光暈；首次測試使用既有fake Text未保存style，改測試替身保留options後通過，未為驗證修改遊戲。未做真人密集戰鬥／瀏覽器畫面驗收，最終亮度待重載觀察。
+- 交付：Commit為本紀錄所在`[Codex] fix: 降低菁英敵人周圍光暈`提交。無未完成程式項目，可合併；未合併／推送，既有未提交工作保留。下一步使用者重整遊戲確認光暈觀感並審查整合。
+
+## VACUUM-OMEN-VFX-20261003 — 萬象風劫靜止斬尺寸與方向
+
+- Owner：Codex；Done。使用者回報萬象風劫特效遮住畫面且方向錯誤；定位靜止場域共用追蹤風刃variant，事件漏帶出生方向、Runtime將其當空中飛刃。使用者追加指定orb-void-disc並要求隨時間放大，已依此修正。現有判定繼承每波真空斬半徑，沿用使用者迴旋18米／三重奏增幅3米，沒有獨立縮小傷害圈。單一開發者，前置既有場域與Preset接線已完成；接手者使用者。
+- 允許skills2靜止場域事件語意／時序、Runtime僅此用途的播放與成長、相關新tests/vacuum-omen-vfx.test.cjs及風系矩陣來源斷言、必要Worker／bridge／Editor快取、WIND_SKILL_AUDIT及本紀錄。使用者追加明確指定靜止真空斬為orb-void-disc，允許Skills2.xlsx AQ219與CSV／字面值同步，保留既有其他數值；Preset美術不代改。禁止改傷害／波數／機率、其他技能、其他副本、合併／推送。目標含追加配置／文件／測試預檢皆乾淨，主index有Claude神鑄UI與地景載入修改，使用者已同意只改901／913／933三行Runtime／skills2／bridge快取。保留使用者既有Skills2三檔數值及slash-wind-spin／orb-void-disc美術修改。
+- 驗收正式Worker事件靜止位置／出生方向／判定半徑，Runtime放地面層、圓心依場景投影並尊重作者圖層形狀、不吃追蹤航向；成長連續、續播不重建及到期回收、替換配置Preset仍有效；追蹤風刃回歸不變、快取與Build通過，獨立Commit。不新增素材或特效來源。
+- 完成：Skills2.xlsx AQ219觸發地板由ground-homing-wind-crescent改為orb-void-disc，同步CSV及SKILLS2字面值；其餘技能數字不代改。靜止場域帶staticVacuum、出生方向、基礎半徑／成長倍率／已過與剩餘時間；Runtime依事件語意放地面層、按同一判定公式逐幀線性成長，保留作者outerScale／rotation／followDirection，不套追蹤飛刃尺寸與航向。場域保留完整3秒、短動畫持續循環，最後一跳後仍可顯示至到期，但不增加傷害跳數；刷新不重建效果，3秒立即回收。
+- Excel：Artifact Tool只在臨時副本編輯／渲染，匯出無法保留autofilter，未覆蓋正式檔；改用獨立隱藏Excel COM原生修改AQ219。正常重開RepairMode=false，A1:AX231逐格只有該格變更、第二張定義表／欄寬／列高／目標樣式／字體／換行均保持。沒有手工改XML。完成後使用者追加虛空斬本體12*12配置，沿用其存檔與套用結果，最終Excel／CSV／JS一致。
+- 修改13檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、index.html三行、tools/vfx/editor/index.html、tests/vacuum-omen-vfx.test.cjs、tests/wind-skill-audit.test.cjs一處来源斷言、docs/WIND_SKILL_AUDIT.md及本紀錄；必要的vfx/presets/orb-void-disc.json使用者美術設定一併保留提交，沒有代改美術。Skills2三檔既有18米／3米／12*12數值一併保留；slash-wind-spin與其他任務修改不納入。唯讀未改：Core／Pixi後端、battle-renderer／battlefield／combat、Worker Protocol與shim、工具轉表／VFX來源登錄／匯出／索引、其餘Preset及協作規範。
+- 快取：主頁Runtime 1.0.171／skills2 1.0.278／bridge 1.0.216，只改使用者同意的901／913／933行；Editor Runtime同步1.0.171，bridge與Worker skills2 token同步20261003-vacuum-omen-static。既有協議area物件可承載語意欄位，Protocol維持43。
+- 測試：`node --test --test-reporter=spec tests/vacuum-omen-vfx.test.cjs tests/storm-mountain.test.cjs tests/windblade-vfx-integration.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-guard.test.cjs`89/89通過。新7項對a3153b2f舊Runtime／技能程式唯讀基準1/7通過、修正後7/7，保留當前相同配置與素材；正式Worker傷害／位置信息送Runtime，包含新敵人被成長範圍掃中、持續接觸不重打、2.99秒存活／3秒消失。
+- 擴大回歸：`node --test tests/wind-skill-audit.test.cjs tests/skill2-windblade-vacuum-legendary.test.cjs`76項56通過20失敗，對a3153b2f唯讀基準用相同使用者數值及原地板配置／斷言也是相同20項失敗，沒有新增失敗；不修改既有不足MP／技能期待fixture來接受現況。`node tools/config_tables.cjs --apply Skills2`語意變更0；`npm.cmd run build`435檔通過；`git diff --check`通過，未宣稱全庫全綠。
+- 瀏覽器：Edge headless新環境，只讀8123正式Core／Runtime／Pixi後端及shipped素材，無正式存檔、攔截所有寫入；orb-void-disc九層在地面、空中0層，位置不變，0.1至1.5秒矩陣面積倍率吻合線性半徑成長，3秒場域及可見節點0、後端錯誤及pageerror皆0。已檢視開始／成長截圖；這是隔離播放驗證，未操作使用者實際密集戰鬥存檔。
+- 素材：沿用本機D:/MyGame/Asset，`node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset`243份Preset／160素材／61640.4KB已最新；素材庫工作區乾淨、HEAD ed3edfb，沒有新增或修改圖檔、無需空Commit。orb-void-disc是表定來源，沒有新增硬編特效／第三來源。臨時編輯／瀏覽器腳本、失敗匯出副本與預覽PNG全在工作區外，不納入Git。清理明確臨時檔及node_modules junction的原生命令被自動審核拒絕；縮至精確LiteralPath檔名且不遞迴仍回傳blocked by policy，未提供詳細原因，停止刪除。暫存於C:/Users/user/.codex/visualizations/2026/10/03/01a1006a-5b77-7ee2-b972-86105d7f3158/vacuum-omen；遊戲修正與提交不受影響。
+- 交付：Commit為本紀錄所在`[Codex] fix: 修正萬象風劫靜止圓盤與範圍成長`提交；需求完成、可合併，未合併／推送。已知限制為既有20項回歸失敗及真人戰場觀感待驗收；無未完成程式項目。下一步遊戲重整驗收；編輯器有未存內容先下載複本，再重啟編輯器載入共用Runtime更新。
+
+## REFLECT-THREAT-VFX-20261003 — 反射光線回收、敵方子彈辨識與圖層時長稽核
+
+- Owner：Codex；Done。使用者回報黃白光線堆疊、死亡仍殘留及敵方子彈被遮住，並要求全面列出異常長圖層。已定位生命反射之盾beam-light光暈原25秒，其餘層0.25秒；使用者自行改回0.25，保留此設定。查核敵方普攻各屬性與菁英路徑，單一開發者，不改傷害／攻擊時序。
+- 允許Runtime反射光線合併／生命週期與敵方子彈專用後端、battle-renderer專用顯示層及legacy相容、相關新定向測試、主頁／Editor必要快取、時長稽核報告及本紀錄、使用者beam-light時長修正。預檢相關檔乾淨；主index有Claude aef41738／c92f336b／8876d98f的裝備及神鑄UI提交，使用者已同意只改Runtime／battle-renderer兩行快取。不改其他任務、配置表、Core／協議／技能數值、其他副本，不合併／推送。
+- 驗收同源同目標反射不疊加、到期及死亡／離場立即回收、其他光束／雷鏈不受影響；敵方子彈在玩家特效上方但浮字／HUD下方，尺寸／路徑／260ms及反傷時序不變；全部243份Preset圖層時間、延遲、父子／循環／粒子判讀，異常只列不擅改。使用者目前其他Skills2三檔、slash-wind-spin及期間追加orb-void-disc修改保留，不納入本任務提交。
+- 完成：反射依earth-reflect事件語意處理，同源／同目標／同Preset正在播放時共用一道光線；到期、玩家／敵人死亡及離場即回收，多目標各從玩家發出，不再把前兩敵人串成一段。保持作者時長與每次反射傷害，不依固定Preset名稱接生命週期。敵方子彈新增專用Core後端及Canvas空中層，legacy子彈也留在該層，置於玩家技能之上、浮字／HUD之下，保持既有投影／尺寸／260ms，換場／destroy完整回收。敵人一般與菁英九種出手（無屬性及八屬性）沒有另一個黃白光束來源。
+- 稽核：243份1,610層，160份被引用；已修正beam-light/glow是唯一明確100倍誤填。寬鬆最長／最短≥2倍且差≥0.5秒共24份；相對下中位數僅burst-earth與field-dragon-devour，依塵土／循環用途沒有明確誤填。三種飛刀trail存活上限3秒列為需觀感確認；粒子／循環／延遲及未引用項目全部列在docs/vfx/LAYER_DURATION_AUDIT_20261003.md。沒有代改其他美術設定，未逐份播放243份素材。
+- 修改8檔：js/vfx-runtime.js、js/battle-renderer.js、index.html兩行快取、tools/vfx/editor/index.html同Runtime版號、使用者vfx/presets/beam-light.json時長修正、新tests/enemy-attack-vfx-lifecycle.test.cjs、新稽核報告及本紀錄。唯讀未改：Core／Pixi後端、combat／skills2／data／formula／Worker與Protocol、配置CSV／Excel、其他所有Preset／asset-index／shipped-assets、既有測試／素材匯出及協作規範。快取Runtime 1.0.170／renderer 1.6.166、Preset DATA_VERSION 20261003-reflect-threat；協議與Worker無變更。
+- 測試：`node --test tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-duration.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/lightning-vfx-lifecycle.test.cjs tests/lightning-chain-end.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-ground-plane.test.cjs tests/storm-mountain.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs`80/80通過。新測試對HEAD Runtime／renderer唯讀基準1/7通過、修正後7/7；同一正式Worker確保受擊立即扣HP、0.259秒反射尚未出現、0.261秒反射傷害及事件同步。額外enemy-attack-vfx 2項1通過1既有失敗，HEAD也同項失敗（舊regex沒有跟上既有畫面緩衝條件），不更改測試接受現況。CV-3首輪因隨機port被fetch封鎖，重跑正式80項全過。`npm.cmd run build`434檔通過；`git diff --check`通過。未宣稱全庫全綠。
+- 瀏覽器：Edge headless獨立隨機localhost、新環境safe模式，不讀正式存檔；正式遊戲Canvas／Pixi後端與素材、私有測試ctx，100次反射只保留1組，死亡update(0)即0；敵方子彈可見、在stage第6層（airFx第5／float第7／HUD第8）、到期0，頁面錯誤0，兩個新腳本快取請求及Preset三層0.25秒正確。實際玩家密集戰鬥的亮度／可讀性仍待真人驗收。
+- 素材：沿用本機Asset素材庫，git status乾淨、HEAD ed3edfb（使用者RPG Maker_MV提交），本次無圖檔變更、沒有空素材Commit。shell繼承的舊effects-materials環境變數仍指向搬移前路徑，驗證命令僅在該子程序覆寫VFX_ASSET_ROOT_EFFECTS_MATERIALS=D:/MyGame/Asset後export-assets --check成功，160個引用內容雜湊／匯出檔已是最新，不改使用者設定。無新增硬編Preset或第三種來源；臨時本次瀏覽器測試腳本提交前移除。
+- 交付：本紀錄所在`[Codex] fix: 回收反射光線並改善敵方子彈辨識`提交，需求完成、可合併，未合併／推送。使用者其他配置與兩份Preset保留未提交；下一步重整測試服，查看稽核報告後決定是否另調3秒飛刀尾跡。
+
+## VACUUM-TRIO-GAP-20261003 — 真空三重奏每波間隔0.5秒
+
+- Owner：Codex；Done。使用者要求真空三重奏每次真空斬施放間隔0.5秒；SG_VACUUM_WAVE_MS由260改為500，傷害與特效共用延後波次。單一開發者，前置現有排程已完成；接手者使用者。
+- 允許skills2.js單一節拍常數、tests/wind-skill-audit.test.cjs邊界／同步／取消測試、WIND_SKILL_AUDIT.md及本紀錄、bridge／Worker及必要主頁快取。禁止技能數值／範圍／波數／其他連射間隔、Excel／CSV、Preset／素材、其他副本及合併／推送。保留Skills2三檔与Preset已有使用者修改，skills2只分段提交節拍。所有目標預檢乾淨，主index仍有已知Claude神鑄UI提交，913／933兩行skills2／bridge快取修改須另取得此範圍同意。
+- 驗收Lv.1／10各波0／0.5／1…秒、每波傷害與特效同時觸發、0.499秒不得提前、當下位置查詢／死亡取消保留；低於第五階維持單波、既有風刃0.2秒不改。定向／Worker／快取／Build，獨立Commit。
+- 完成：首波立即，後續每0.5秒傷害與特效同步觸發；保留每波讀取當下玩家／敵人位置及死亡取消。使用者已明確同意只更新主頁913／933兩行skills2／bridge快取，已更新1.0.277／1.0.215；bridge與Worker skills2版本同步20261003-vacuum-trio-half-second。測試服8123主頁、Worker、技能檔均可讀到新版及500ms常數。
+- 修改7檔：js/skills2.js僅節拍常數、js/bridge.js、js/worker/sim.worker.js、index.html、tests/wind-skill-audit.test.cjs、docs/WIND_SKILL_AUDIT.md、本紀錄。唯讀檢查既有技能排程、風刃節拍、配置生成資料、Core／Runtime／戰場、Preset、Worker／快取測試及協作規範。使用者Skills2配置／生成資料及Preset修改全部保留，不納入提交；無素材、資料格式或Protocol變更。
+- 測試：`node --test --test-reporter=spec --test-name-pattern="真空三重奏|延後真空|未學真空" tests/wind-skill-audit.test.cjs`4/4通過；`node --test --test-reporter=spec tests/windblade-vfx-integration.test.cjs tests/storm-mountain.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs`38/38通過；`node --test --test-reporter=spec tests/vfx-editor-cache-versions.test.cjs`3/3通過。完整wind-skill-audit 54項44通過、10項失敗，唯讀原HEAD測試及260ms基準51項41通過、相同10項失敗，新增失敗0；不降低既有要求。以舊260ms執行新定向測試，3項正確攔截提前施放。`npm.cmd run build`433檔通過；`git diff --check`通過。
+- 交付：本紀錄所在`[Codex] fix: 將真空三重奏施放間隔調整為半秒`提交，skills2只分段提交節拍，保留其他修改。無未完成項目、可合併，未合併／推送；已知限制為完整風系測試既有10項失敗及未新增實際戰鬥視覺驗收。下一步重整遊戲頁載入新快取後驗收施放間隔。
+
+## VFX-LIBRARY-PATH-20261003 — 素材庫搬移後存檔同步失敗
+
+- Owner：Codex；Done。使用者回報VFX Editor存repo後「匯出失敗，共160個問題」，後確認自行將資料夾改名為Asset。Preset已落檔，最新真空迴旋根及14層均2秒，保留此修改。原因為本機環境變數與library.local.json指向已空的effects-materials目錄，實際素材庫已在Asset，160份引用逐份SHA256核對一致，素材庫HEAD仍2f31639。
+- 預檢乾淨。允許本機忽略設定vfx/library.local.json及該使用者的VFX素材庫環境變數、僅此Codex副本Editor服務重啟、必要tests/vfx-duration.test.cjs測試fixture修正及本紀錄。禁止圖檔／索引／配置／使用者Preset改寫、其他副本、共享素材庫未追蹤RPG Maker_MV、合併／推送。無架構或協議變更，單一开发者處理；前置新素材庫已核對，接手者使用者。
+- 驗收預設解析指向新位置、export-assets --check零問題且已是最新、正式Editor的相同內容存檔與素材同步成功、原Preset位元保持／其他分頁未重載；修正前一任務的新測試不應依賴使用者可編輯的4秒現值，改用副本內4秒fixture，測試／Build通過。
+- 完成：本機忽略設定與Windows User環境變數指向D:/MyGame/Asset，啟動器在明確更新的環境重啟本副本服務（原PID29044／28361），瀏覽器分頁保持原狀、不自動重載。正式28361存檔API以最新版與Preset／layout基準傳送同一內容，HTTP200、ok:true，前後Preset位元相同（2秒）；實際素材URL HTTP200且SHA256一致，整批同步成功。根名effects-materials是邏輯libraryId，不需要改成Asset；只改本機實體路徑。
+- 修改：忽略設定library.local.json、User環境變數及可提交的tests/vfx-duration.test.cjs／本紀錄。定向測試在私有副本固定4秒，不再要求正式可編輯檔案永遠4秒；没有改正式Preset。唯讀檢查未改：export-assets.cjs、editor-server.cjs／editor-guard.cjs、launch-editor.cjs、vfx-library-root.cjs、啟動器bat、asset-index／shipped-assets／素材及既有匯出／根解析／存檔保護測試、Skills2三檔及協作規範。
+- 測試：`node --test --test-reporter=dot tests/vfx-duration.test.cjs tests/vfx-library-root.test.cjs tests/vfx-asset-export.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-launcher.test.cjs`90/90通過；`node tools/vfx/export-assets.cjs --check --root D:/MyGame/Asset`及User環境更新後不帶root檢查均通過，243份Preset／160個素材／61640.4KB已是最新，無需再匯出；修正前同一check精確重現160個來源檔不存在。正式相同內容存檔回應200，未新增GUI視覺驗收；`npm.cmd run build`433檔通過、`git diff --check`通過。
+- 交付：本紀錄所在`[Codex] fix: 修復素材庫改名後的本機同步設定`提交，僅紀錄與fixture進Git，本機路徑依規範不進Git；沒有新增／修改素材，不需素材庫Commit，Asset共享倉庫原有未追蹤RPG Maker_MV保持不動。使用者Skills2三檔及2秒Preset保留未提交。無未完成項目、可合併測試修正，未合併／推送；下一步原編輯器再按儲存repo清除錯誤。已開啟且保有舊環境變數的其他工具需重開後才讀到新User設定；其他副本本機設定未改。
+
+## VFX-LAYER-DURATION-20261003 — 圖層自動決定特效總時長
+
+- Owner：Codex；Done。使用者要求整份Preset依圖層結束時間計算，避免duration改成4秒後仍被舊0.48秒截斷；有delay時包含延遲。前置既有Core／Editor時間軸，單一開發者處理。
+- 允許js/vfx-core.js、js/vfx-runtime.js、tools/vfx/editor/editor.js／index.html、slash-wind-spin.json時長、新tests/vfx-duration.test.cjs、必要tests/vfx-core-hierarchy.test.cjs回收檢查、Schema文件及本紀錄；禁止技能數值／傷害、配置表、素材、其他副本及合併／推送。保留使用者現有Skills2修改與14層4秒／旋轉速度／透明度曲線設定。上述目標衝突預檢乾淨；主index.html有Claude未整合的aef41738／c92f336b／8876d98f裝備／神鑄UI提交，已告知實際UI及其他版本行變更，使用者同意只改899／901兩行Core／Runtime快取，照此完成。
+- 驗收Core不提早回收、delay／父子／省略duration穩定、縮短時長、循環／粒子尾巴／timeScale；Editor預览及儲存同步派生時長，Runtime取用同一時長，舊頁存檔保護／快取／Build。後續接手者使用者。
+- 完成：Core註冊私有副本由啟用圖層結束時間推算根duration，子層維持父層門控，粒子尾巴自然排空；省略duration的舊層先固定原始預設，反覆重算不會累加delay。Runtime續播／播放速度用相同派生值。Editor修改先同步再計算dirty／預覽／保存，Inspector增加唯讀「總時長(s)・自動」；序列化仍忠實保存資料。真空迴旋根值同步4秒並保留使用者美術修改；不改範圍／傷害／技能配置。
+- 修改10檔：Core、Runtime、Editor JS／HTML、主index.html、slash-wind-spin.json、定向新測試／hierarchy測試、Schema及本紀錄。hierarchy測試原while把已回收handle的null當作0造成無限迴圈，新增存活條件及0.7秒回收斷言，既有可見性斷言全保留。未修改但檢查：skills2.js、battlefield.js／battle-renderer.js、Skills2.csv／xlsx、layer-model／hierarchy-model、editor-server／editor-guard／save-guard、既有Core／Editor／Runtime／風刃測試、共通規範；Skills2三檔使用者修改保留未納入提交。
+- 測試：`node --test --test-reporter=dot tests/vfx-duration.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-editor-code-controls.test.cjs tests/vfx-editor-guard.test.cjs`193/193通過；`node --test tests/vfx-editor-cache-versions.test.cjs`3/3通過；新11項包含真實14層4秒、舊根0.48秒、delay／父子／停用、縮短／省略時長穩定、loop／timeScale／粒子尾巴、超上限拒絕及Editor同步。只讀載入HEAD舊Core／Runtime執行新3項回歸可攔截截斷與曲線未播完缺陷。舊頁存檔保護測試確認程式更新拒絕寫入409且原檔不變。
+- 擴大回歸330項：Runtime／screen-space／ground-plane／storm-mountain／windblade-vfx-integration共164項4失敗；Editor save／save-as-dialog／paused-preview／history／hierarchy／multi-edit／panes及Runtime-chain-end-pending共166項2失敗。同一測試與素材以HEAD Core／Runtime唯讀替換亦為相同6項失敗（FIELD提示、bolt-sky-purple layout、金色雷鏈配色、殞石尾巴、ground-ice-spike canonical、最大Preset history記憶體）；新增失敗0，不更改素材或降低測試要求。`npm.cmd run build`433檔通過；`git diff --check`通過。
+- 瀏覽器：獨立隨機localhost實際Editor Server、全新無頭Edge、不讀遊戲存檔、不寫repo（攔截所有寫入請求）。新版Core／Runtime／Editor快取確實載入，Inspector總時長4且唯讀、14層；實際頁面Core使用舊根0.48重播，0.6秒／3.9秒仍存活，4.01秒回收，pageerror 0。瀏覽器與服務已關閉。既有編輯器頁面未重載；有未存內容時先下載複本，再按重啟編輯器，遊戲頁重整載入新版。
+- 快取：兩頁Core 20261003-layer-duration、Runtime 1.0.169；Editor 20261003-layer-duration、Preset DATA_VERSION同名更新。沒有Worker／協議／圖檔變更，不需素材庫空Commit。已知風險：舊檔有意留在根duration中的空白尾段將改依實際圖層結束；父層仍能限制子層，60秒硬上限仍需遵守。無未完成需求，可合併；Commit為本紀錄所在`[Codex] fix: 依圖層結束時間自動計算特效總時長`提交，未合併／推送。下一步使用者備份未存修改後重啟Editor、重整遊戲驗收。
+
 ## STORM-MOUNTAIN-VFX-20261003 — 嵐之山三個觸發欄實際播放
 
 - Owner：Codex；Done。使用者明確要求嵐之山觸發子彈／觸發命中／觸發地板三欄生效，並追加把burst-wind-09填入嵐之山「觸發特效」欄以替換圈出的沿途雙圓環。直射小刃讀子彈及命中，追蹤小刃子彈與地板共用權威位置、接觸才播命中；沿途脈衝機制仍屬第六階，選嵐之山時僅攻擊外觀讀超神觸發欄、命中仍讀第六階。大型主刃保持本體欄，不改傷害／數量／尺寸／追擊與護盾。

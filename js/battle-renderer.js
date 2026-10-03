@@ -144,6 +144,7 @@ var BattleRenderer = (function () {
   var S = {
     app: null, host: null,
     ready: false, failed: false, initStarted: false,
+    vfxLoading: false, pendingVfx: [], // Preset 尚在載入時，不先畫舊版效果
     layers: null,             // ground / zone / entity / fx / float / overlay
     W: 0, H: 0,
     /* 正在畫的場景：'field'＝野外，'tower:<BOSS 生成時刻>'＝某一場魔王戰（見 sceneKeyOf）。
@@ -1299,15 +1300,15 @@ var BattleRenderer = (function () {
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     view.addChild(shadow);
 
-    /* 菁英光環 */
+    /* 菁英光環：淡色貼近本體，避免密集敵人以加色混合疊成亮霧。 */
     if (isElite) {
       var glow = new PIXI.Sprite(glowTexture());
       glow.anchor.set(0.5);
       glow.tint = 0xb17aff;
-      glow.alpha = 0.55;
-      glow.scale.set(1.7);
+      glow.alpha = 0.18;
+      glow.scale.set(1.15);
       glow.y = -24;
-      glow.blendMode = 'add';
+      glow.blendMode = 'normal';
       view.addChild(glow);
     }
 
@@ -2060,6 +2061,7 @@ var BattleRenderer = (function () {
 
   /* 全部清空：分頁切背景、Worker 重啟、暫停解除後的補救都用這支。 */
   function clearAllFx() {
+    if (S.pendingVfx) S.pendingVfx.length = 0;
     for (var i = 0; i < S.fx.length; i++) killFx(S.fx[i]);
     S.fx.length = 0;
     sweepOrphanFxNodes();
@@ -2347,6 +2349,7 @@ var BattleRenderer = (function () {
         ? { angle: Number(pathOverride.angle) || 0, length: Number(pathOverride.length) }
         : null);
     var node = new PIXI.Container();
+    node.__enemyProjectile = spec.cat === 'enemy' && spec.variant === 'enemy-projectile';
     var core;
     var glyphOnly = spec.glyph && (spec.variant === 'glyph' ||
       spec.variant === 'knife' || spec.variant === 'knife-bounce' ||
@@ -3341,6 +3344,7 @@ var BattleRenderer = (function () {
      的顯示緩衝裡，會在倒下之後才落地並重新建出節點。倒數期間每張面板都收一次，
      殘留因此最多只有一張面板的長度。 */
   function clearPlayerFields() {
+    if (S.pendingVfx) S.pendingVfx = S.pendingVfx.filter(function (entry) { return entry.spec.fxKind !== 'aura'; });
     for (var auraKey in _followAuras) clearFollowAura(auraKey);
     for (var ringKey in _fireHuntRings) {
       var ring = _fireHuntRings[ringKey];
@@ -5446,13 +5450,13 @@ var BattleRenderer = (function () {
         if (endedWaterTornadoes[id] <= endNow) delete endedWaterTornadoes[id];
       });
       if (endId) endedWaterTornadoes[endId] = endNow + 1000;
-      if (S.vfxrt) S.vfxrt.tryPlay(spec);
+      if (!(S.vfxLoading && deferVfxUntilReady(spec)) && S.vfxrt) S.vfxrt.tryPlay(spec);
       return;
     }
     if ((spec.variant === 'water-tornado' || spec.variant === 'water-tide-merge') && spec.area && endedWaterTornadoes[spec.area.id] > Date.now()) return;
     // 終止訊號不等位置緩衝，也不能被死亡目標／空目標守門擋掉。
     if (spec.variant === 'lightning-chain-end' || spec.variant === 'flying-thunder-end') {
-      if (S.vfxrt) S.vfxrt.tryPlay(spec);
+      if (!(S.vfxLoading && deferVfxUntilReady(spec)) && S.vfxrt) S.vfxrt.tryPlay(spec);
       return;
     }
     if ((spec.variant === 'lightning-chain' || spec.variant === 'lightning-chain-hit') && fxGate(spec)) return;
@@ -5483,6 +5487,7 @@ var BattleRenderer = (function () {
     /* Preset 化（docs/vfx/VFX_RUNTIME_ADAPTER.md）：表格填了特效檔名、
        而且這一則的主要角色在手上時，整則交給 VFX Runtime。
        回 false＝沒有對應的 preset，照舊走下面的程式畫法。 */
+    if (S.vfxLoading && deferVfxUntilReady(spec)) return;
     var presetHandled = S.vfxrt && S.vfxrt.tryPlay(spec);
     if (presetHandled && spec.cat !== 'basic') return;
     /* presetOnly（協議 v27）：只有 Preset 端畫得出來的事件，接不上就整則忽略。 */
@@ -6567,6 +6572,9 @@ var BattleRenderer = (function () {
     airBack.sortableChildren = true;
     var airFx = new PIXI.Container();
     airFx.sortableChildren = true;
+    // 敵方子彈是即將到來的威脅：置於玩家技能光暈之上、浮字與HUD之下。
+    var enemyAir = new PIXI.Container();
+    enemyAir.sortableChildren = true;
     var presetAir = new PIXI.Container();
     airFx.addChild(presetAir);
     var presetBillboard = new PIXI.Container();
@@ -6615,6 +6623,7 @@ var BattleRenderer = (function () {
     app.stage.addChild(airBack);
     app.stage.addChild(airPlayer);
     app.stage.addChild(airFx);
+    app.stage.addChild(enemyAir);
     app.stage.addChild(floatLayer);
     app.stage.addChild(playerHud);
     app.stage.addChild(overlay);
@@ -6663,7 +6672,7 @@ var BattleRenderer = (function () {
     S.layers = {
       world: world, zone: zone, entity: entity, fx: fx, float: floatLayer,
       presetZone: presetZone, presetFx: presetFx, airBack: airBack, airPlayer: airPlayer,
-      airFx: airFx, presetAir: presetAir, presetBillboard: presetBillboard,
+      airFx: airFx, enemyAir: enemyAir, presetAir: presetAir, presetBillboard: presetBillboard,
       groundUnder: groundUnder, groundOver: groundOver,
       outline: outlineLayer,
       playerHud: playerHud, overlay: overlay,
@@ -6972,7 +6981,7 @@ var BattleRenderer = (function () {
   var legacyAirNodes = new Map();
   function attachAirFx(node) {
     var wrapper = new PIXI.Container();
-    wrapper.addChild(node); S.layers.airFx.addChild(wrapper);
+    wrapper.addChild(node); (node.__enemyProjectile && S.layers.enemyAir || S.layers.airFx).addChild(wrapper);
     node.__airWrapper = wrapper; legacyAirNodes.set(node, wrapper);
   }
   function syncLegacyAir() {
@@ -6983,7 +6992,8 @@ var BattleRenderer = (function () {
       wrapper.position.set(p.x-node.x*p.scale,p.y-node.y*p.scale);
       wrapper.zIndex = p.y;
       var playerY = S.player && S.player.root ? S.player.root.y : -Infinity;
-      var parent = groundToScreenY(node.y) < playerY ? S.layers.airBack : S.layers.airFx;
+      var parent = node.__enemyProjectile && S.layers.enemyAir ||
+        (groundToScreenY(node.y) < playerY ? S.layers.airBack : S.layers.airFx);
       if (parent && wrapper.parent !== parent) parent.addChild(wrapper);
     });
   }
@@ -7191,14 +7201,60 @@ var BattleRenderer = (function () {
     return true;
   }
 
-  /* Preset 化 VFX 的組裝：非同步（要抓 shipped-assets 與 150 份 preset），
-     成功之後 onVfx 才會先問它。任何一步失敗就整批維持舊畫法。 */
+  /* 載入期間保留事件；同一場域的更新只需最新一則，避免慢網路堆積。
+     上限只控制待播顯示事件，不影響 Worker 的技能、傷害或場域數量。 */
+  var MAX_PENDING_VFX = 256;
+  function deferVfxUntilReady(spec) {
+    if (!S.vfxLoading) return false;
+    var copy = Object.assign({}, spec);
+    if (spec.area) copy.area = Object.assign({}, spec.area);
+    if (copy.fxKind === 'aura' && copy.area && copy.area.id) {
+      S.pendingVfx = S.pendingVfx.filter(function (entry) {
+        var old = entry.spec;
+        return !(old.fxKind === 'aura' && old.variant === copy.variant && old.area && old.area.id === copy.area.id);
+      });
+    }
+    S.pendingVfx.push({ spec: copy, at: Date.now() });
+    if (S.pendingVfx.length > MAX_PENDING_VFX) S.pendingVfx.shift();
+    return true;
+  }
+
+  function flushPendingVfx() {
+    var pending = S.pendingVfx;
+    S.pendingVfx = [];
+    pending.forEach(function (entry) {
+      var spec = entry.spec, area = spec.area;
+      var age = Math.max(0, (Date.now() - entry.at) / 1000);
+      var isEnd = /-end$/.test(spec.variant || '');
+      var life = area && isFinite(area.lifeSec) ? Number(area.lifeSec) : Number(spec.dur) || 0.5;
+      if (!isEnd && age >= life) return;
+      if (!isEnd) {
+        if (spec.dur > 0) spec.dur = Math.max(0, spec.dur - age);
+        if (area && isFinite(area.lifeSec)) area.lifeSec = Math.max(0, area.lifeSec - age);
+        if (area && area.staticVacuum) {
+          area.growAge = (Number(area.growAge) || 0) + age;
+          var fraction = Math.min(1, area.growAge / Math.max(0.001, Number(area.growSec) || 3));
+          area.r = area.baseR * (1 + (area.growTo - 1) * fraction);
+        } else if (area && area.members) {
+          area.orbitAge = (Number(area.orbitAge) || 0) + age;
+        } else if (area && spec.variant === 'void-disc') {
+          area.startAng = (Number(area.startAng) || 0) + (Number(area.spinRate) || (area.spin < 0 ? -1 : 1) * Math.PI * 2) * age;
+          area.r += (Number(area.grow) || 0) * age;
+        }
+      }
+      onVfx(spec);
+    });
+  }
+
+  /* Preset 化 VFX 的組裝：非同步。成功前暫存事件，失敗才維持舊畫法。 */
   function bootVfxRuntime() {
     if (legacyVfxByQuery() || typeof VFXRuntime === 'undefined' || !S.layers) return;
+    S.vfxLoading = true;
     /* Preset 畫在直立空間（見 buildScene），所以 Runtime 拿到的座標一律是畫面座標：
        ctx 給畫面座標版，事件裡的世界座標由 Runtime 依 groundScale 自己換（VFXRuntime.screenSpaceSpec）。 */
-    VFXRuntime.boot({
+    return VFXRuntime.boot({
       airContainer: S.layers.presetAir,
+      enemyAirContainer: S.layers.enemyAir,
       billboardContainer: S.layers.presetBillboard,
       airBackContainer: S.layers.airBack,
       airDepthSplitY: function () { return S.player && S.player.root ? S.player.root.y : -Infinity; },
@@ -7228,11 +7284,15 @@ var BattleRenderer = (function () {
       }
     }).then(function (rt) {
       S.vfxrt = rt || null;
+      S.vfxLoading = false;
+      flushPendingVfx();
       if (!rt) return;
       console.info('[battle-renderer] VFX Preset Runtime 已接上（' +
         rt.stats().presets + ' 份 preset）。網址加 ?vfx=legacy 可強制舊畫法。');
     }).catch(function (err) {
       S.vfxrt = null;
+      S.vfxLoading = false;
+      flushPendingVfx();
       console.warn('[battle-renderer] VFX Preset Runtime 組裝失敗，維持舊畫法：',
         err && err.message ? err.message : err);
     });

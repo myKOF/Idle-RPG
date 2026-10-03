@@ -229,10 +229,11 @@ test('HIER-10 時間軸跟著父物件：延遲從父物件出現算起，父物
     sprite('c', { parent: 'p', delay: 0.1 })
   ]);
   const r = runtimeFor(p);
-  const at = (sec) => { while (r.rt.timeOf(r.handle) < sec - 1e-9) r.rt.update(0.01); return r.rec.shown('c').length; };
+  const at = (sec) => { while (r.rt.timeOf(r.handle) !== null && r.rt.timeOf(r.handle) < sec - 1e-9) r.rt.update(0.01); return r.rec.shown('c').length; };
   assert.equal(at(0.35), 0, '父物件剛出現 0.05 秒，子物件的 0.1 秒延遲還沒到');
   assert.equal(at(0.45), 1, '父物件出現 0.15 秒，子物件出現了');
   assert.equal(at(0.72), 0, '父物件在 0.7 秒結束，子物件跟著消失（子物件自己的持續時間還沒到）');
+  assert.equal(r.rt.timeOf(r.handle), null, '最後的父層結束即回收，不保留舊根時長的空白區間');
 });
 
 test('HIER-11 父物件被停用：子物件完全不出現', function () {

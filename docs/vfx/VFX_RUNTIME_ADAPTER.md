@@ -1,5 +1,11 @@
 # VFX_RUNTIME_ADAPTER.md
 
+## 重整時的載入空窗（2026-10-03）
+
+Canvas 的 ready 不代表 Preset 已載入。BattleRenderer 在 VFXRuntime.boot 尚未完成時，先暫存已走完位置緩衝的事件，禁止直接落入 legacy 程序畫法；同一 variant／area.id 的 aura 更新合併成最新一則，待播佇列最多256則。終止訊號按原順序保留，就緒後交給原表定素材，不增加任何特效來源。
+
+等待時間從剩餘壽命扣除，已過期事件丟棄；静止真空斬同步更新 growAge／當下半徑，環繞圓盤接續角度與外擴，詳細軌道接續 orbitAge。清場取消全部待播，死亡取消待播場域，背景不新增事件。只有 boot 確實失敗／回 null，或明確使用 ?vfx=legacy／未載入 Runtime，才沿用既有相容路徑。Preset JSON 與 shipped-assets 的 fetch 本來已採 cache:no-store；這次修正的是啟動先後順序。
+
 ## 冰之淚錯落箭雨（2026-10-01）
 
 冰之淚每波由模擬層依 Excel `fx.count` 產生固定十則 `ice-rain` 事件，每則一支觸發子彈；以既有 `delayMs` 在波次間隔內分層並擾動起飛時間，`travelMs[0]` 決定落地時間。在我方30米內打散目標順序，每箭只帶自己的單一目標；不足十名時重複分配，無敵時仍有十支空箭。鎖定箭沿 Runtime 既有天降路徑追至目標當下位置，只有空箭以 `area.fixedLanding` 指定散落點。箭身維持製作尺寸與飛行切線方向。Runtime 延後起飛只推進本幀起飛後經過的時間，避免長幀令多箭一起提前落地。
