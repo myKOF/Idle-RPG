@@ -2,9 +2,16 @@
 
 ## SKY-COLLAPSE-ONE-20261003 — 天穹崩裂只觸發一道小型追蹤風刃
 
-- Owner：Codex；InProgress。使用者要求每次觸發只射出1道小型追蹤風刃；前置既有小風刃追擊機制。固定20%機率，傷害沿用小風刃計算及超神加成，追蹤範圍／壽命沿用追跡風刃；不再完整施放七階風刃，不受四方向／連射／鏡射增加數量。
+- Owner：Codex；程式／配置／測試完成，Blocked（依使用者指示等待Claude整合快取）。使用者要求每次觸發只射出1道小型追蹤風刃；前置既有小風刃追擊機制。固定20%機率，傷害沿用小風刃計算及超神加成，追蹤範圍／壽命沿用追跡風刃；不再完整施放七階風刃，不受四方向／連射／鏡射增加數量。
 - 允許js/skills2.js限定天穹崩裂、Skills2.xlsx／CSV該列說明與既有觸發特效角色、定向測試、必要index／bridge／Worker快取及本紀錄；禁止其他技能、UI焦點任務區段、配置其他列、Claude威能文字區段、素材、合併／推送。Worker預檢有Claude1739／1747行文字修改，使用者同意只更新第17行skills2快取；其他目標無外部衝突。同副本的技能最高階焦點任務保留，共享紀錄／index分段更新並隔離提交。
 - 驗收Lv.1／10機率與傷害、一次觸發僅一個追擊場域／零大型飛行物、傳奇不增加數量、追擊命中及正式Runtime不重建本體、裝備／死亡／閃避／無敵閘門、既有普通風刃／其他超神保持、Excel原生重開與資料／格式一致、建置及獨立Commit。後續接手者使用者。
+- 完成：受擊成功擲骰後直接共用sgSpawnWindChaser，只產生一道小刃；初始朝攻擊者，後續沿既有30米隨機追擊、Lv.10普通第五階維持7秒。伤害取風刃本體×亂披風小刃比例×傳奇小刃加成，保留超神獨立乘區、裂風及風蝕；不扣魔、不進冷卻、不改原鎖定目標。沒有修改普通風刃或暴風屏障同名超神skyfallStars。
+- 配置：Excel原生COM只改天穹崩裂第211列AP／AQ／AV／AW四格（命中、地板、特效作用說明及技能說明），儲存並原生唯讀重開通過，其他列資料／欄寬／列高／字型／格式／換行保留；CSV與生成JS逐格／語意一致。tools/skills2-vfx.cjs新增該列ground／hit接線登記，預檢乾淨；特效從該列triggerVfx讀既有Preset，沒有新增素材或寫死來源。素材庫工作區乾淨，無素材庫Commit。
+- 修改7檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tools/skills2-vfx.cjs、tests/skill2-windblade-vacuum-legendary.test.cjs、tests/sky-collapse.test.cjs及本紀錄。唯讀檢查未改：js/vfx-runtime.js／vfx-core.js／battlefield.js、js/worker/shim.js／sim.worker.js／protocol.js、js/bridge.js、index.html、scripts/sim/engine.js、風刃既有Preset及相關測試／配置工具。
+- 驗證：`node --test tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`71/71通過；`node --test --test-name-pattern="天穹" tests/skill2-windblade-vacuum-legendary.test.cjs tests/wind-skill-audit.test.cjs`4/4通過。涵蓋20%邊界、Lv.1／10、小型傷害、傳奇數量、正式Worker單一area.id／朝向／速度／半徑／座標／到期回收與Runtime本體重送不重建。唯讀preload還原HEAD技能後，新5項中4項失敗（大型8道、小型8／24道），確認能攔住原行為。
+- 擴大回歸：既有windblade-vacuum-legendary完整22項11通過／11失敗；以HEAD原技能與原測試唯讀執行亦同11項失敗，皆原主動施放fixture法力500不足目前七階耗魔1000等既有差異，不修改其他技能數值或降低斷言。`npm.cmd run build`425檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；`git diff --check`通過。沒有做長時間瀏覽器實戰。
+- 快取待辦：預檢後Claude提交e179d27f涉及index.html第921行bridge版號及js/bridge.js第18行WORKER_ASSET_VERSION，與本次必要快取欄位重疊。使用者回覆「先完成其他修改，快取等Claude整合」，故本輪index／bridge／Worker版號全部保留。整合時須同步更新主頁skills2與bridge版本、WORKER_ASSET_VERSION及sim.worker第17行skills2 import版本，再驗證瀏覽器載入新碼；在此之前不能視為正式發布完成。
+- 交付：本紀錄所在`[Codex] fix: 天穹崩裂每次只觸發一道小型追蹤風刃`提交；可供Claude整合，完成定義尚差上述快取及整合後載入驗證。未合併／推送。臨時Excel計畫／腳本使用後清除，正式回歸測試保留。下一步由Claude於整合時補快取；不得跳過或用舊URL直接发布。
 
 ## SKILL2-HIGHEST-FOCUS-20261003 — 點擊技能預設最高已學階級
 

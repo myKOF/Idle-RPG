@@ -352,10 +352,8 @@ test('【嵐之山】：四方向各一道融合後的巨型風刃，且不再�
     '融合的是同一個方向那一疊（2 道大型＋2 道小型）再乘上 110%');
 });
 
-/* 使用者決策 2026-08-28：被動射出的那一道要「比照當下角色的風刃進化情況」——
-   七階全滿就是七階的風刃，帶著 1~7 階（以及風刃自己的傳奇特效）的效果，
-   而不是只射出一道第 1 階的貫穿刃。 */
-test('【天穹崩裂】：風刃退出主動輪替，受擊時機率完整施放一次當下的風刃', () => {
+/* 使用者調整：每次觸發只發射一道小型追蹤風刃。 */
+test('【天穹崩裂】：風刃退出主動輪替，受擊時機率產生一道小型追蹤風刃', () => {
   function shot(opts) {
     opts = opts || {};
     const c = loadContext();
@@ -388,11 +386,9 @@ test('【天穹崩裂】：風刃退出主動輪替，受擊時機率完整施�
   assert.equal(shot({ miss: true }).c.SKILL2_RT.projectiles.length, 0, '機率沒中就不射');
 
   const r = shot();
-  /* 七階全滿＝【暴風真空刃】的四個方向各連射 2 道，且小型風刃已是追擊場域——
-     也就是「完整的一次風刃」，不是單獨一道貫穿刃。 */
-  assert.equal(r.blades, 8);
-  assert.ok(r.chasers > 0, '第 5 階【追跡風刃】的追擊場域也要跟著出來');
-  assert.ok(r.c.SKILL2_RT.projectiles.every((pr) => pr.gid === 'windblade'));
+  assert.equal(r.blades, 0, '不發射大型風刃');
+  assert.equal(r.chasers, 1, '僅一道小型追蹤風刃');
+  assert.equal(r.c.SKILL2_RT.projectiles.length, 0);
   // 傷害＝風刃本體 ×（1＋55%）（Lv.1 ＝ 50＋5×1），乘區收斂在 sgWindbladeBodyDamage
   const plain = shot({ noUlt: true });
   const withUlt = r.c.sgWindbladeBodyDamage(r.c.SKILLS2.windblade, r.c.getStats(),
@@ -400,9 +396,10 @@ test('【天穹崩裂】：風刃退出主動輪替，受擊時機率完整施�
   const without = plain.c.sgWindbladeBodyDamage(plain.c.SKILLS2.windblade, plain.c.getStats(),
     plain.c.skills2Levels('windblade'), {});
   assert.ok(Math.abs(withUlt - without * 1.55) < 1e-6, '這一道的傷害額外 +50%');
-  assert.ok(Math.abs(r.c.SKILL2_RT.projectiles[0].dmgVal - withUlt) < 1e-6);
+  const smallRatio = r.c.sgVal(r.c.SKILLS2.windblade.tiers[3].fx, 'pct', 10) / 100;
+  assert.ok(Math.abs(r.c.SKILL2_RT.grounds[0].dmgVal - withUlt * smallRatio) < 1e-6);
   // 風刃自己的傳奇特效也一起吃到
-  assert.equal(shot({ legendary: ['windbladeVoidCut'] }).blades, 12, '傳奇【斷空刃】：每方向 3 道');
+  assert.equal(shot({ legendary: ['windbladeVoidCut', 'windbladeTrace'] }).chasers, 1, '連射／鏡射不增加數量');
   // 自動射出不扣法力、不進冷卻，且不會改掉玩家原本的鎖定目標
   assert.equal(r.p.mp, r.mp0, '不扣法力');
   assert.equal((r.p.skillCds && r.p.skillCds[r.c.SG_PREFIX + 'windblade']) || 0, 0, '不進冷卻');
@@ -410,8 +407,10 @@ test('【天穹崩裂】：風刃退出主動輪替，受擊時機率完整施�
   // 沒裝配在技能列就不生效（與其他「主動型被動」同一條代價）
   r.c.G.player.loadout = [];
   r.c.SKILL2_RT.projectiles.length = 0;
+  r.c.SKILL2_RT.grounds.length = 0;
   r.c.skills2OnPlayerDamaged(r.m, r.p, 100, false, { miss: false }, 'mv-float');
   assert.equal(r.c.SKILL2_RT.projectiles.length, 0);
+  assert.equal(r.c.SKILL2_RT.grounds.length, 0);
 });
 
 /* ===========================================================================
