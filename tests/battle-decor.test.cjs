@@ -51,9 +51,11 @@ function fakePixi() {
   }
   const point = () => ({ x: 1, y: 1, set(a, b) { this.x = a; this.y = b === undefined ? a : b; } });
   class Sprite extends Container {
-    constructor(tex) { super(); alive++; this.texture = tex; this.anchor = point(); this.scale = point(); this.alpha = 1; this.tint = 0xffffff; this.rotation = 0; this.skew = { x: 0 }; }
+    /* 與真的 Pixi 一樣：anchor 是 getter，底層放在 _anchor——自訂屬性取名撞到它，anchor.set 就會消失（2026-10-04 實際發生過） */
+    constructor(tex) { super(); alive++; this.texture = tex; this._anchor = point(); this.scale = point(); this.alpha = 1; this.tint = 0xffffff; this.rotation = 0; this.skew = { x: 0 }; }
     destroy() { alive--; this.destroyed = true; if (this.parent) this.parent.removeChild(this); }
   }
+  Object.defineProperty(Sprite.prototype, 'anchor', { get() { return this._anchor; } });
   class Texture { constructor(o) { this.o = o; } destroy() {} }
   class CanvasSource { constructor(o) { this.o = o; } }
   class Rectangle { constructor(x, y, w, h) { Object.assign(this, { x, y, w, h }); } }
@@ -272,5 +274,43 @@ test('DECOR-11 裝飾美術全部執行期程序化產生：不載入任何圖�
     assert.doesNotMatch(src, /\.(png|jpe?g|webp|gif)['"?]/i, f + ' 不該引用圖檔');
     assert.doesNotMatch(src, /new Image\(|Assets\.load|fetch\(/, f + ' 不該在執行期載入外部資源');
     assert.doesNotMatch(src, /RPG ?Maker_MV|MyGame[\/]+Asset/i, f + ' 不該指向第三方素材庫');
+  }
+});
+
+test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pixi 的 anchor 仍完好，切地圖重用物件池也不拋例外', () => {
+  /* 2026-10-04 實際事故：火焰掛在火盆上的屬性取名 _anchor，撞到 Pixi Sprite 內部的 _anchor（anchor 的底層），
+     下次從物件池取出火焰做 anchor.set 就拋例外，tickWorld 死掉、整個戰鬥畫面凍住（切回去過的地圖最容易踩到）。 */
+  const { BattleDecor } = loadDecor();
+  const P = fakePixi();
+  const layers = { decal: new P.Container(), light: new P.Container(), prop: new P.Container(), ambient: new P.Container() };
+  const shear = 0.2, w = 0.9;
+  const decor = BattleDecor.create({
+    PIXI: P.PIXI, groundScale: 0.5,
+    decalLayer: layers.decal, lightLayer: layers.light, propLayer: layers.prop, ambientLayer: layers.ambient,
+    billboard: () => ({ w, shear, skew: Math.atan2(shear, w), k: Math.hypot(shear, w) }),
+    buildBudgetMs: Infinity, prebuildBudgetMs: 0
+  });
+  let flames = 0, props = 0;
+  for (const [zone, stage] of [['desert', 1], ['swamp', 5], ['desert', 1], ['Icefield', 11], ['desert', 1], ['undead_mountains', 21], ['desert', 1]]) {
+    decor.setScene(zone, stage);
+    for (let x = 0; x < 30000; x += 53) {
+      decor.update(view(x, Math.sin(x / 2000) * 1500));
+      for (const s of layers.prop.children) {
+        assert.equal(typeof s.anchor.set, 'function', zone + '：擺件的 anchor 被蓋掉了（自訂屬性撞到 Pixi 內部欄位）');
+        assert.ok(s.anchor.x !== undefined, 'anchor 要是點座標');
+        if (s._bbParent) flames++; else props++;
+      }
+    }
+  }
+  assert.ok(props > 50, '要真的跑到擺件');
+  assert.ok(flames > 0, '要真的跑到火焰（火盆在某些地圖才有），不然測不到零件');
+  /* 抵銷真的有套上：本體 skew／縮放乘上 k，火焰位置經過同一個矩陣 */
+  const prop = layers.prop.children.find((s) => s._bbParent === undefined && s._bbX !== undefined);
+  assert.ok(Math.abs(prop.skew.x - Math.atan2(shear, w)) < 1e-12);
+  assert.ok(Math.abs(prop.scale.y - prop._bbY * Math.hypot(shear, w)) < 1e-12);
+  const flame = layers.prop.children.find((s) => s._bbParent);
+  if (flame) {
+    assert.ok(Math.abs(flame.x - (flame._bbParent.x + shear * flame._bbOffY)) < 1e-9, '火焰 x 跟著火盆的矩陣');
+    assert.ok(Math.abs(flame.y - (flame._bbParent.y + w * flame._bbOffY)) < 1e-9, '火焰 y 跟著火盆的矩陣');
   }
 });
