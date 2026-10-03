@@ -1608,10 +1608,66 @@ html *::-webkit-scrollbar-corner {
   box-shadow: none !important;
 }
 
-#tab-equip #detail-pane .it-affix-row:hover .affix-reroll-btn,
-#tab-equip #detail-pane .affix-reroll-btn:focus-visible {
+/* 洗煉模式（2026-10）：骰子只有「選中的那一條」能按。
+   未選中＝灰色、滑過不亮、不接受點擊（ui.js 另有守衛）；選中＝亮起，剛選中時閃爍提示，洗過一次後轉為白色常亮。 */
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='idle'] {
+  filter: grayscale(1);
+  cursor: default;
+  pointer-events: none;
+}
+
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='armed'],
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='flash'] {
+  position: relative;
   opacity: 1;
-  border-color: #3a3d44 !important;
+  border-color: #5a5d66 !important;
+  background: #23262d !important;
+}
+
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='armed']:hover {
+  border-color: #ece6d8 !important;
+}
+
+#tab-equip #detail-pane .affix-reroll-btn[data-reroll-state='flash'] {
+  border-color: #fde68a !important;
+  animation: affixRerollFlash 1s ease-in-out infinite;
+}
+
+@keyframes affixRerollFlash {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(253, 230, 138, 0)); }
+  50% { filter: brightness(1.7) drop-shadow(0 0 6px rgba(253, 230, 138, .95)); }
+}
+
+/* 骰子滑過時替整行描框的舊提示：骰子已不再隨滑鼠亮起，描框只會誤導 */
+#tab-equip #detail-pane .it-affix-row:has(.affix-reroll-btn:hover) .it-affix-text {
+  outline: none;
+}
+
+/* 可選取的詞條：只有文字區（不含骰子）是點擊範圍 */
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text {
+  padding: 0 5px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text > .act-btn-tooltip {
+  cursor: pointer !important;
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable:not(.is-reroll-selected) .it-affix-text:hover {
+  background: rgba(255, 255, 255, .04);
+}
+
+/* 選取框：框住文字區，骰子在框外。用 border 畫——#workspace-area * 全域關掉了 box-shadow */
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .it-affix-text {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, .06);
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .afx-label,
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .afx-val {
+  font-size: 16px;
 }
 
 #tab-equip #detail-pane .it-passive,
