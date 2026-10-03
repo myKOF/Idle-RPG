@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## STORM-MYRIAD-20261003 — 暴風萬刃大小風刃追擊七秒
+
+- Owner：Codex；Done。使用者要求大型／小型風刃皆追擊7秒、每次射出數量+1，風刃傷害+50%、每級+5%，傷害加成與原風刃風系傷害相乘。既有傷害已是獨立乘區，保留並驗證；追加數量沿既有每個方向連射+1、大小風刃同步發射。
+- 前置既有追擊場域／配置接線；工作區乾淨，衝突預檢乾淨。允許js/skills2.js限定暴風萬刃、Skills2.xlsx／CSV該列持續時間與說明、定向tests/storm-myriad.test.cjs、必要index／bridge／sim.worker快取及本紀錄；禁止其他技能數值／傳奇機制／搜敵範圍／配置其他列／素材／UI／其他副本，合併／推送。
+- 驗收Lv.1／10大小刃7秒（包含發射延遲各自完整存活）、每方向原數量+1及傳奇疊加、傷害獨立相乘、普通風刃／其他超神不變、正式Worker事件到Runtime單一場域續播与回收、Excel原生重開與非目標資料／格式保留、配置一致與快取、回歸／Build／獨立Commit。後續接手者使用者。
+- 完成：大小風刃共用暴風萬刃sec=7；每道從自身發射時間開始保留完整7秒，不隨連射延遲縮短。每方向原2道增加至3道，滿七階由大型8／小型8變成各12道；斷空刃與風之痕同時作用時大型16／小型32道。大小刃保留既有60／30米搜敵範圍；大型沿途脈衝、小刃傷害比例及傳奇乘區保留。傷害為原風系百分比×(1+(50+5×等級)/100)，沿用專案基礎值加每級增量的規則。
+- 配置：Excel原生COM只改Skills2第209列AU／AW／AX，sec由4改7並同步大小刃與乘算說明；原生儲存後唯讀重新開啟，逐格確認A1:AX231僅三格變動、所有欄寬／列高及目標格Style／字型／格式／換行不變。透過既有工具同步CSV及JS；artifact-tool唯讀inspect與前後PNG檢查完成，未用其匯出重寫工作簿。主頁skills2為1.0.273、bridge1.0.210，Worker及skills2 import token為20261003-storm-myriad；無新協議或素材。
+- 修改8檔：js/skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tests/storm-myriad.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。未修改但檢查：js/vfx-core.js／vfx-runtime.js／worker/shim.js／battlefield.js、scripts/sim/engine.js、既有風刃Preset、tools/config_tables.cjs、相關技能／Worker測試與協作規範。無必要素材變更，不建立素材庫Commit。
+- 測試：`node --test tests/storm-myriad.test.cjs tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs`87/87通過；`npm.cmd run build`427檔通過；`node tools/config_tables.cjs --apply Skills2`試跑語意變更0；`git diff --check`通過。正式Worker實際命中並按0／0.2／0.4秒三波逐批回收，正式Core＋Runtime＋Preset保持24個場域及重用本體，最終皆回收；粒子節點正常重生不列為重複本體。
+- 回歸有效性：唯讀preload替換為HEAD舊skills2後，新6項中5項失敗（舊大型僅4秒、6.9秒時僅12個場域），其他超神保護項仍通過；未修改遊戲檔案配合測試。初次正式Worker測試替身缺少ult容器、初次本體統計誤含粒子，修正測試替身與統計後通過，未改正式Runtime。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整暴風萬刃大小風刃追擊七秒`提交；無未完成需求，可合併。未合併／推送，未做長時間真人實戰；下一步使用者重載審查並整合。自動核准審查以政策阻擋拒絕刪除本輪Temp檔案與依賴Junction，C:/Users/user/AppData/Local/Temp/codex-storm-myriad-20261003保留，未繞過拒絕，不包含於提交。
+
 ## GIANT-WINDBLADE-SIZE-20261003 — 巨型風刃特效尺寸與判定同步
 
 - Owner：Codex；Done。使用者回報學習巨型風刃後外觀未變大，要求確認判定並修正。唯讀定位：sgWindbladeGeom與飛行判定已套用第二階倍率，但Worker shim漏傳bodyLength，Runtime無法用完整長寬而退回Preset固定尺寸。
