@@ -70,7 +70,8 @@
 /* v41（吸血／吸魔改定值）：passivePanel 移除 hpDrainBase／mpDrainBase／hpDrain／mpDrain；
    lifesteal／manaSteal 改為套用汲取倍率後「每次回復的定值」（不再是百分比，也不再依每秒回復換算）。
    主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值。 */
-var WORKER_PROTOCOL_VERSION = 41;
+/* v42：skill2.ultSwitch 原子重選；fromOpt／fromLv／cost 釘住使用者確認內容。 */
+var WORKER_PROTOCOL_VERSION = 42;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -345,6 +346,8 @@ var COMMANDS = {
   'skill2.delete':         { fn: null,                  args: { group: 'str', tier: 'int' }, limit: { tier: { min: 0, max: 7 } }, dirty: ['skills', 'header'] },
   /* 超神進化三選一：opt 是選項索引 0~2（SG_ULT_OPTION_COUNT）。 */
   'skill2.ultPick':        { fn: 'skills2UltPick',      args: { group: 'str', opt: 'int' },  limit: { opt: { min: 0, max: 2 } },  dirty: ['skills', 'header'] },
+  'skill2.ultSwitch':      { fn: 'skills2UltSwitch',    args: { group: 'str', opt: 'int', fromOpt: 'int', fromLv: 'int', cost: 'num' },
+                            limit: { opt: { min: 0, max: 2 }, fromOpt: { min: 0, max: 2 }, fromLv: { min: 1, max: 10 }, cost: { min: 0 } }, dirty: ['skills', 'header'] },
 
   /* -- 天賦與潛能 --
      id 是天賦定義鍵（def.id），不是實例 id，不需要解析成物件。 */

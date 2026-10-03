@@ -104,10 +104,71 @@ test('超神進化：未開放顯示還差幾階，未選三選一，已選升�
   assert.match(chosen, new RegExp('data-skill2-learn="thrust:' + c.SG_ULT_SLOT + '"'));
   assert.match(chosen, /sgb-ult-card is-chosen/);
   assert.match(chosen, /sgb-fork-bar is-lit/);
-  // 已選定時，點別的選項只預覽並提示要先重選
+  // 已選定時，點別的選項可直接付費切換。
   c.UI.sgBrowse.ultFocus = 0;
   const other = c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } });
-  assert.match(other, /要改選需先按「重選」/);
+  assert.match(other, /data-skill2-ultswitch="thrust:0"/);
+  assert.match(other, /切換 · .* 金幣/);
+  assert.doesNotMatch(other, /data-skill2-delete|data-skill2-ultpick/);
+  const poor = c.sgbDetailHTML('thrust', snap, { player: { gold: 0 } });
+  assert.match(poor, /data-skill2-ultswitch="thrust:0"[^>]*disabled/);
+  snap.skills2.levels.thrust[6] = 9;
+  assert.doesNotMatch(c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch/);
+});
+
+test('切換二次確認顯示完整費用；取消不送指令，確認只送原子切換', async () => {
+  const c = loadContext();
+  const snap = snapshot({ frostnova: Array(7).fill(10) });
+  snap.skills2.progress = { level: 1000, reinc: 10 };
+  snap.skills2.ult = { frostnova: { pick: 1, lv: 10 } };
+  c.uiSkillsPanelSnapshot = () => snap;
+  const elements = {};
+  function element() {
+    return {
+      style: {}, children: [], text: '',
+      set textContent(value) { this.text = value; this.children = []; },
+      get textContent() { return this.text + this.children.map(child => child.textContent).join(''); },
+      appendChild(child) { this.children.push(child); }
+    };
+  }
+  for (const id of ['confirm-modal', 'confirm-message', 'confirm-ok', 'confirm-cancel', 'confirm-title']) {
+    elements[id] = element();
+  }
+  c.document.createElement = () => element();
+  c.document.createTextNode = (text) => ({ textContent: text });
+  c.document.getElementById = (id) => elements[id] || null;
+  const sent = [], errors = [];
+  c.sendUiCommand = (...args) => { sent.push(args); return Promise.resolve(null); };
+  c.reportUiCommandFailure = (...args) => errors.push(args);
+  const cost = c.skills2UltCost('frostnova', 2, 0);
+  c.runSkill2UltSwitch('frostnova', 2);
+  assert.equal(elements['confirm-modal'].style.display, 'flex');
+  assert.equal(elements['confirm-title'].textContent, '超神進化切換確認');
+  assert.equal(elements['confirm-ok'].textContent, '確認切換');
+  const highlight = elements['confirm-message'].children[0];
+  assert.equal(highlight.className, 'confirm-highlight');
+  assert.equal(highlight.textContent, '需支付 ' + cost.toLocaleString('en-US') + ' 金幣');
+  assert.match(elements['confirm-message'].textContent, /極致之冰.*Lv\.10.*冰皇領域.*Lv\.1/);
+  assert.ok(elements['confirm-message'].textContent.includes(cost.toLocaleString('en-US') + ' 金幣'));
+  assert.match(elements['confirm-message'].textContent, /原技能與等級將清除.*金幣不退還/);
+  assert.equal(sent.length, 0);
+  elements['confirm-cancel'].onclick();
+  assert.equal(sent.length, 0);
+  assert.equal(elements['confirm-modal'].style.display, 'none');
+  c.runSkill2UltSwitch('frostnova', 2);
+  const confirm = elements['confirm-ok'].onclick;
+  confirm();
+  await Promise.resolve();
+  assert.equal(elements['confirm-ok'].onclick, null);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0][0], 'skill2.ultSwitch');
+  assert.deepEqual(JSON.parse(JSON.stringify(sent[0][1])), { group: 'frostnova', opt: 2, fromOpt: 1, fromLv: 10, cost });
+  assert.deepEqual(errors, []);
+  c.sendUiCommand = () => Promise.resolve({ err: '金幣不足' });
+  c.runSkill2UltSwitch('frostnova', 2);
+  elements['confirm-ok'].onclick();
+  await Promise.resolve();
+  assert.equal(errors[0][1], '金幣不足');
 });
 
 test('同一時間只展開一段說明：看某一階時超神說明收起，看超神時各階收起', () => {

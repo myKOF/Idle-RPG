@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## SKILL2-ULT-SWITCH-20261003 — 超神進化直接切換
+
+- Owner：Codex；Done。使用者要求已有超神進化時，查看其它選項顯示切換鈕；二次確認載明金幣及刪除舊技能／等級，再選新技能 Lv.1。前置既有選擇、重選與確認彈窗已存在；目標衝突預檢乾淨。
+- 允許 js/ui.js 的超神詳情／事件／指令、js/skills2.js 的原子切換、js/worker/protocol.js 與 docs/WORKER_PROTOCOL.md、必要 index／bridge／Worker 快取、tests/skill2-ui.test.cjs／skill2-ult-switch.test.cjs／worker-protocol.test.cjs及本紀錄；禁止其他技能數值、配置、素材、其他工作區、合併與推送。
+- 使用者追加：確認按鈕僅「確認切換」，金幣需求整段套用既有黃色 confirm-highlight；不增加 CSS 或素材。
+- 驗收確認／取消、費用與扣款一致、原等級清除／新 Lv.1、普通階與其他群組不變、未解鎖／金幣不足／過期確認／重複請求均不丟失原選擇；UI／真實 Worker 回歸、Build及獨立 Commit。後續接手者：使用者。
+- 完成：其它選項顯示「切換 · 費用 金幣」，費用取 skills2UltCost(group,opt,0)；不足金幣或未解鎖不能切換。確認彈窗載明舊技能／等級、新技能 Lv.1、不退還原投資及完整千分位金幣數字，按鈕「確認切換」，金幣需求黃色。新增單一 Worker 指令 skill2.ultSwitch，驗證原選擇／等級與報價後一次扣款、替換選擇、刷新屬性與快照；失敗不先刪技能。原重選／降級／升級仍保留，不改存檔形狀、配置、傷害或素材。協議 v42、主頁及 Worker 資源快取同步。
+- 修改11檔：js/ui.js、js/skills2.js、js/worker/protocol.js、js/worker/sim.worker.js、js/bridge.js、index.html、tests/skill2-ui.test.cjs、tests/skill2-ult-switch.test.cjs、tests/worker-protocol.test.cjs、docs/WORKER_PROTOCOL.md及本紀錄。唯讀檢查未改：css/style.css／ashen-forge.css、js/util.js／gm_exec.js、scripts/sim/engine.js、tests/skill2-reset.test.cjs／worker-shim.test.cjs／init-ui-smoke.test.cjs／ui-tick-smoke.test.cjs、package.json、共通規範與prompts/codex.md。沒有必要素材變更，無素材庫 Commit。
+- 測試：`node --test tests/skill2-ui.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-reset.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/init-ui-smoke.test.cjs tests/ui-tick-smoke.test.cjs` 59/59通過；`npm.cmd run build`424檔通過；`git diff --check`通過。涵蓋取消不送指令、金幣／等級／選項／報價不足或過期、同選项與重複請求、餘額恰好可付、其他階與群組不變及原選擇指令不允許覆蓋。
+- 瀏覽器：獨立隨機Port HTTP服務、全新無頭Edge與seed=9拋棄式存檔；正式DOM事件＋真正Worker測極致之冰Lv.10切換冰皇領域Lv.1。取消仍保留原選擇，確認後金幣100,000,000→90,000,000；另選項繼續有切換，當前選項保留重選鈕。確認按鈕scrollWidth＝clientWidth＝92px，沒有溢出；金幣字色rgb(250,204,21)，Console error／warning及Worker errors均0。原先高轉生fixture被遊戲解鎖通知攔住，改低轉生且足夠等級fixture後完整流程通過，沒有修改通知程式。瀏覽器與服務已正常關閉，無新增暫存檔。
+- 交付：Commit為本紀錄所在`[Codex] feat: 新增超神進化付費切換與確認提示`提交；可合併，未合併／推送。無未完成需求與已知本次新增風險；未做長時間實戰回歸。建議重載遊戲以取得新UI／Worker，後續由使用者審查整合。
+
 ## TEST-MANAGER-TABS-20261003 — 測試服啟動開出重複控制台分頁
 
 - Owner：Codex；Done。使用者回報啟動測試服.bat一次開出整排同名控制台分頁；前置啟動流程已存在，衝突預檢乾淨。允許tools/test_server_manager.cjs的Port重試／開頁回呼、tests/test-server-manager.test.cjs及本紀錄；禁止遊戲邏輯／存檔／既有測試服程序／他人工作區、合併與推送。後續接手者使用者。

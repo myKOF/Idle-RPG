@@ -1258,6 +1258,26 @@ function skills2UltPick(group, optIdx) {
   return null;
 }
 
+/* 確認後原子重選：先驗證選擇、等級與報價，失敗不刪除舊投資。 */
+function skills2UltSwitch(group, optIdx, fromOpt, fromLv, quotedCost) {
+  var g = SKILLS2[group];
+  if (!g) return '未知技能群組';
+  if (!sgUltDefs(group)) return '此技能尚未開放超神進化';
+  if (!sgUltUnlockedBy(group, skills2Levels(group))) return '需先將前 ' + g.tiers.length + ' 階全部練滿才能切換超神進化';
+  var cur = sgUltPickOf(G.player.skills2 && G.player.skills2.ult, group);
+  if (!cur || cur.idx !== fromOpt || cur.lv !== fromLv) return '超神進化選擇或等級已變更，請重新確認切換';
+  var opt = sgUltOption(group, optIdx);
+  if (!Number.isInteger(optIdx) || !opt) return '未知的超神進化選項';
+  if (cur.idx === optIdx) return '已選擇此超神進化';
+  var cost = skills2UltCost(group, optIdx, 0);
+  if (cost !== quotedCost) return '切換費用已變更，請重新確認';
+  if ((G.player.gold || 0) < cost) return '金幣不足';
+  G.player.gold -= cost;
+  sgUltStore()[group] = { pick: optIdx, lv: 1 };
+  sgAfterSkillChange();
+  return null;
+}
+
 /* 超神進化升級（第 8 格的「升級」；尚未選擇時要先走 skills2UltPick）。 */
 function skills2UltLearn(group) {
   var g = SKILLS2[group];

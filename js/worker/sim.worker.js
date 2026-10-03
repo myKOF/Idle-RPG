@@ -10,11 +10,11 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=41', 'shim.js?v=9');
+importScripts('protocol.js?v=42', 'shim.js?v=9');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261001-drain-water-integration', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261002-abyss-domain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20260929-thunder-pair',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261002-integrated-ice-damage', '../talents.js?v=20260929-thunder-pair',
+  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261003-ult-switch', '../talents.js?v=20260929-thunder-pair',
   '../player.js?v=20260929-thunder-pair', '../special_rules.js',
   '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20260930-enemy-frenzy',
   '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',

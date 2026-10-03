@@ -8028,6 +8028,32 @@ function runSkill2UltPick(group, opt) {
   });
 }
 
+function runSkill2UltSwitch(group, opt) {
+  var sk = uiSkillsPanelSnapshot();
+  var pick = sgUiUltPick(sk, group);
+  var target = sgUltOption(group, opt);
+  if (!pick || !target || pick.idx === opt || !sgUiUltUnlocked(group, sgUiLevels(sk, group))) return;
+  var cost = skills2UltCost(group, opt, 0);
+  var costText = '需支付 ' + cost.toLocaleString('en-US') + ' 金幣';
+  var panels = ['skills', 'header'];
+  var args = { group: group, opt: opt, fromOpt: pick.idx, fromLv: pick.lv, cost: cost };
+  showConfirmDialog(
+    '確定將超神進化「' + pick.def.name + '」Lv.' + pick.lv + ' 切換為「' + target.name + '」Lv.1？\n\n' +
+    '此操作視同重選：原技能與等級將清除，已投入的金幣不退還；前 7 階不受影響。\n' +
+    costText + '。', function () {
+      sendUiCommand('skill2.ultSwitch', args, {
+        silentResultError: true,
+        keys: nodePendingKey('sg:' + group),
+        panels: panels
+      }).then(function (result) {
+        var error = uiCommandResultError(result);
+        if (error) reportUiCommandFailure('超神進化切換失敗', error, panels);
+      }, function (error) {
+        reportUiCommandFailure('超神進化切換失敗', error, panels);
+      });
+    }, { title: '超神進化切換確認', okText: '確認切換', highlightText: costText, danger: true });
+}
+
 function runSkill2MaxAction(group, tier) {
   runSkill2UiAction('skill2.max', group, tier);
 }
@@ -8523,7 +8549,7 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   } else if (!pick) {
     var pickCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, f, 0) : 0;
     h += '<button class="btn sgb-btn-primary" data-skill2-ultpick="' + gid + ':' + f + '"' + pendingAttrs +
-      (gold < pickCost ? ' disabled' : '') + ' data-tip="選定後不可更改；要換效果須先降至 Lv.0">選擇「' + esc(list[f].name) + '」 · ' + fmt(pickCost) + ' 金幣</button>';
+      (gold < pickCost ? ' disabled' : '') + ' data-tip="選定為 Lv.1；之後可付金幣切換，原投資不退還">選擇「' + esc(list[f].name) + '」 · ' + fmt(pickCost) + ' 金幣</button>';
   } else if (fChosen) {
     if (pick.lv < tierMax) {
       var upCost = (typeof skills2UltCost === 'function') ? skills2UltCost(gid, pick.idx, pick.lv) : 0;
@@ -8537,7 +8563,9 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
     h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + SG_ULT_SLOT + '" data-tip="降 1 級（不退還金幣）；降到 Lv.0 會清除選擇，可重新三選一"' + pendingAttrs + '>降級</button>';
     h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + SG_ULT_SLOT + '" data-tip="清除超神進化選擇（不退還金幣），之後可重新三選一"' + pendingAttrs + '>重選</button>';
   } else {
-    h += '<span class="sgb-lock">目前選擇「' + esc(pick.def.name) + '」；要改選需先按「重選」</span>';
+    var switchCost = skills2UltCost(gid, f, 0);
+    h += '<button class="btn sgb-btn-primary" data-skill2-ultswitch="' + gid + ':' + f + '"' + pendingAttrs +
+      (gold < switchCost ? ' disabled' : '') + ' data-tip="支付 ' + switchCost.toLocaleString('en-US') + ' 金幣，清除原技能與等級並選擇此技能 Lv.1（不退還原投資）">切換 · ' + fmt(switchCost) + ' 金幣</button>';
   }
   return h + '</div></div></div>';
 }
@@ -10148,6 +10176,18 @@ function showConfirmDialog(message, onConfirm, options) {
   if (title) title.textContent = options.title || '操作確認';
   modal.className = 'modal-overlay confirm-modal' + (options.dialogClass ? ' ' + options.dialogClass : '');
   msg.textContent = message || '';
+  if (options.highlightText) {
+    var highlightAt = msg.textContent.indexOf(options.highlightText);
+    if (highlightAt >= 0) {
+      var plainMessage = msg.textContent;
+      msg.textContent = plainMessage.slice(0, highlightAt);
+      var highlight = document.createElement('span');
+      highlight.className = 'confirm-highlight';
+      highlight.textContent = options.highlightText;
+      msg.appendChild(highlight);
+      msg.appendChild(document.createTextNode(plainMessage.slice(highlightAt + options.highlightText.length)));
+    }
+  }
   if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
     var talentUnlockNotice = document.createElement('div');
     talentUnlockNotice.className = 'confirm-highlight';
@@ -10867,6 +10907,14 @@ function initUI() {
             }
           });
         }
+      }
+      return;
+    }
+    var s2switch = e.target.closest('[data-skill2-ultswitch]');
+    if (s2switch) {
+      if (!s2switch.disabled) {
+        var s2switchRef = String(s2switch.getAttribute('data-skill2-ultswitch')).split(':');
+        runSkill2UltSwitch(s2switchRef[0], Number(s2switchRef[1]));
       }
       return;
     }
