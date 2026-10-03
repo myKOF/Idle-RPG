@@ -34,8 +34,10 @@ function loadDecor(extra) {
     Math, Map
   }, extra || {});
   vm.createContext(ctx);
+  // 載入順序同 index.html：浮雕繪圖（decor-sculpt）在前
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-sculpt.js'), 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-decor.js'), 'utf8'), ctx);
-  return { BattleDecor: ctx.BattleDecor, warnings, ctx };
+  return { BattleDecor: ctx.BattleDecor, DecorSculpt: ctx.DecorSculpt, warnings, ctx };
 }
 
 /* 最小的假 PIXI：只要 Container／Sprite／Texture／CanvasSource／Rectangle。 */
@@ -58,13 +60,15 @@ function fakePixi() {
   return { PIXI: { Container, Sprite, Texture, CanvasSource, Rectangle }, alive: () => alive, Container };
 }
 
-function makeDecor(BattleDecor, P) {
+/* 測試預設同步建圖（預算無限、不背景預建）；DECOR-9 另外驗分段建圖本身。 */
+function makeDecor(BattleDecor, P, budget) {
   const layers = { decal: new P.Container(), light: new P.Container(), prop: new P.Container(), ambient: new P.Container() };
   const tints = [];
   const decor = BattleDecor.create({
     PIXI: P.PIXI, groundScale: 0.5,
     decalLayer: layers.decal, lightLayer: layers.light, propLayer: layers.prop, ambientLayer: layers.ambient,
-    onTint: (t) => tints.push(t)
+    onTint: (t) => tints.push(t),
+    buildBudgetMs: budget ? budget.build : Infinity, prebuildBudgetMs: budget ? budget.prebuild : 0
   });
   return { decor, layers, tints };
 }
@@ -203,4 +207,70 @@ test('DECOR-8 渲染器接線：地面平面在地板與暗角之間、天氣層
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/battle-decor.js?v=') > 0 && html.indexOf('js/battle-decor.js?v=') < html.indexOf('js/battle-renderer.js?v='),
     'battle-decor.js 要在 battle-renderer.js 之前載入');
+});
+
+test('DECOR-9 圖集分段建造：換場景不會一次畫完卡住，畫好前不擺東西，另一個階段帶在背景預建、之後換帶立即就緒', () => {
+  const { BattleDecor } = loadDecor();
+  const P = fakePixi();
+  // 預算 0：每次 update 只畫一張（至少一張），模擬實機的時間切片
+  const { decor, layers, tints } = makeDecor(BattleDecor, P, { build: 0, prebuild: 0.0001 });
+  decor.setScene('desert', 1);
+  // 場景與地板色調在 setScene 當下就決定（不必等圖集）
+  assert.equal(decor.stats().scene, 'desert');
+  assert.equal(tints[tints.length - 1], BattleDecor.KITS.desert.tint);
+  assert.equal(decor.stats().ready, false);
+  decor.update(view(0, 0));
+  assert.equal(decor.stats().ready, false, '一幀不該把整張圖集畫完');
+  assert.equal(layers.prop.children.length, 0, '圖集還沒畫好之前不擺任何擺件');
+  let frames = 1;
+  while (!decor.stats().ready && frames < 500) { decor.update(view(0, 0)); frames++; }
+  assert.ok(decor.stats().ready, '分段畫完之後要就緒');
+  assert.ok(frames > 10, '應該分好幾幀畫完，實際 ' + frames + ' 幀');
+  assert.ok(layers.prop.children.length > 0);
+  // 就緒後背景預建地下版；畫完之後換到地下帶，當下就緒、不用再等
+  let guard = 0;
+  while (decor.stats().cached.indexOf('desert#deep') < 0 && guard < 800) { decor.update(view(0, 0)); guard++; }
+  assert.ok(decor.stats().cached.indexOf('desert#deep') >= 0, '地下版應該在背景預建好');
+  decor.setScene('desert', 12);
+  assert.equal(decor.stats().scene, 'desert#deep');
+  assert.equal(decor.stats().ready, true, '預建過的階段帶，換過去當下就緒');
+  // 換到別張地圖：圖集要重畫，畫好前不顯示上一張地圖的擺件
+  decor.setScene('swamp', 1);
+  assert.equal(decor.stats().ready, false);
+  assert.equal(layers.prop.children.length, 0);
+});
+
+test('DECOR-10 浮雕打光：光從左上，球體左上半比右下半亮；外輪廓描深色邊；切面與材質色階有色相偏移', () => {
+  const { DecorSculpt } = loadDecor();
+  const S = new DecorSculpt.Sculpt(40, 40, 1, null);
+  const mat = { color: '#8a8a8a' };
+  S.ellipsoid(20, 20, 14, 14, 0, mat, { rz: 14 });
+  const out = S.render(null, { ao: 0, footAO: 0 });
+  // 回傳的是圖元掃過的框，座標要扣掉框的左上角；框外視為透明
+  const px = (x, y) => {
+    const lx = x - out.x, ly = y - out.y;
+    if (lx < 0 || ly < 0 || lx >= out.w || ly >= out.h) return [0, 0, 0, 0];
+    const o = (ly * out.w + lx) * 4;
+    return [out.data[o], out.data[o + 1], out.data[o + 2], out.data[o + 3]];
+  };
+  const lum = (c) => c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11;
+  assert.ok(lum(px(14, 14)) > lum(px(26, 26)) + 40, '左上要比右下亮');
+  assert.equal(px(2, 2)[3], 0, '球外是透明的');
+  assert.ok(px(20, 20)[3] === 255, '球內不透明');
+  // 最外圈（描邊）比內側一點的同方向像素暗
+  assert.ok(lum(px(6, 20)) < lum(px(9, 20)), '外輪廓要描深色邊');
+  // 色階：暗部偏冷（藍多於紅）、亮部偏暖（紅多於藍）——灰色原色才看得出偏移
+  const lut = DecorSculpt._internals.buildLut({ color: '#808080' });
+  const dark = [lut[3 * 4], lut[3 * 4 + 1], lut[3 * 4 + 2]], light = [lut[60 * 3], lut[60 * 3 + 1], lut[60 * 3 + 2]];
+  assert.ok(dark[2] >= dark[0], '暗部偏冷');
+  assert.ok(light[0] >= light[2], '亮部偏暖');
+});
+
+test('DECOR-11 裝飾美術全部執行期程序化產生：不載入任何圖檔（AI_RULES.md 第二原則：外部素材只參考、不直接使用）', () => {
+  for (const f of ['js/decor-sculpt.js', 'js/battle-decor.js']) {
+    const src = fs.readFileSync(path.join(root, f), 'utf8');
+    assert.doesNotMatch(src, /\.(png|jpe?g|webp|gif)['"?]/i, f + ' 不該引用圖檔');
+    assert.doesNotMatch(src, /new Image\(|Assets\.load|fetch\(/, f + ' 不該在執行期載入外部資源');
+    assert.doesNotMatch(src, /RPG ?Maker_MV|MyGame[\/]+Asset/i, f + ' 不該指向第三方素材庫');
+  }
 });

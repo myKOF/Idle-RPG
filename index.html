@@ -903,8 +903,10 @@
   <script src="js/vfx-runtime.js?v=1.0.168"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.2"></script>
-  <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。 -->
-  <script src="js/battle-decor.js?v=1.0.5"></script>
+  <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
+       decor-sculpt 是它的程序化浮雕繪圖（塑形＋打光），必須先載入。 -->
+  <script src="js/decor-sculpt.js?v=1.0.0"></script>
+  <script src="js/battle-decor.js?v=1.0.7"></script>
   <!-- 封魔塔魔王祭壇（BOSS 戰專用場景）：沿用 battle-decor 的繪圖工具，battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-arena.js?v=1.0.0"></script>
   <script src="js/battle-renderer.js?v=1.6.165"></script>
