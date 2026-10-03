@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "slash-wind-spin",
-  "duration": 0.48,
+  "duration": 4,
   "loop": false,
   "layers": [
     {
@@ -25,7 +25,8 @@
       "alpha": 0.48,
       "tint": "#51efd1",
       "blendMode": "add",
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -36,8 +37,8 @@
           1
         ],
         [
-          0.6,
-          0.8
+          0.65,
+          0.85
         ],
         [
           1,
@@ -94,7 +95,8 @@
       "alpha": 0.6,
       "tint": "#229ff5",
       "blendMode": "add",
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -105,8 +107,8 @@
           1
         ],
         [
-          0.6,
-          0.8
+          0.65,
+          0.85
         ],
         [
           1,
@@ -164,7 +166,8 @@
       "tint": "#258fff",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -234,7 +237,8 @@
       "tint": "#25d5e8",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -304,7 +308,8 @@
       "tint": "#52f7a8",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -374,7 +379,8 @@
       "tint": "#b8ffe0",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -444,7 +450,8 @@
       "tint": "#258fff",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -514,7 +521,8 @@
       "tint": "#25d5e8",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -584,7 +592,8 @@
       "tint": "#52f7a8",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -654,7 +663,8 @@
       "tint": "#b8ffe0",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -724,7 +734,8 @@
       "tint": "#258fff",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -794,7 +805,8 @@
       "tint": "#25d5e8",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -864,7 +876,8 @@
       "tint": "#52f7a8",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,
@@ -934,7 +947,8 @@
       "tint": "#b8ffe0",
       "blendMode": "add",
       "delay": 0,
-      "duration": 0.48,
+      "duration": 4,
+      "rotationSpeed": 12.566370614359172,
       "alphaOverLife": [
         [
           0,

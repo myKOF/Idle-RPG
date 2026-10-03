@@ -3226,7 +3226,7 @@
 
   /* ---------------- Preset 區塊 ----------------
 
-     圖層以外的 Preset 級欄位，目前只有 loop。
+     Preset 的總時長由圖層自動推算；loop 控制遊戲中的循環播放。
 
      它原本在工具列，就擠在 ▶ ⏸ ⟲ 旁邊——那個位置讀起來像播放控制，於是
      「我想重複看這顆爆點」會被改到出貨資料上：loop 決定的是**遊戲裡**這個特效
@@ -3251,6 +3251,14 @@
     };
     wireFieldTransaction(chk, 'loop');
     host.appendChild(makeField('loop', chk));
+    var duration = document.createElement('input');
+    duration.type = 'text';
+    duration.readOnly = true;
+    duration.dataset.presetDuration = 'true';
+    duration.title = '由啟用圖層的結束時間自動計算，包含 delay；粒子尾巴會自然播完。';
+    duration.value = VFXCore.validatePreset(state.preset).ok
+      ? String(VFXCore.derivePresetDuration(state.preset)) : '—';
+    host.appendChild(makeField('總時長(s)・自動', duration));
     renderCodeControls(host);
   }
 
@@ -4381,6 +4389,12 @@
   /* ---------------- 預覽（使用 VFX Core） ---------------- */
 
   function onPresetChanged() {
+    // 先同步派生欄位，再計算 dirty；另存／下載／存repo都讀同一份資料。
+    if (VFXCore.validatePreset(state.preset).ok) VFXCore.syncPresetDuration(state.preset);
+    if (!state.inBackground) {
+      var duration = document.querySelector('[data-preset-duration]');
+      if (duration) duration.value = state.preset ? String(state.preset.duration) : '—';
+    }
     /* 效能成本要重算：圖層數、發射率、素材換了都會改變它。token 推進就夠了，
        真正的重算延到畫的時候（refreshDirty 在拖曳時每幀都會進來）。 */
     ctx.costToken = (ctx.costToken || 0) + 1;

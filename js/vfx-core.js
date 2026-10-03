@@ -1134,6 +1134,43 @@ var VFXCore = (function () {
     return out;
   }
 
+  /* 總時長由啟用圖層的時間軸推算；父層仍依原規則限制子層的可見區間。
+     舊檔省略圖層 duration 時，以原本的 preset.duration 作為該層的預設值。 */
+  function derivePresetDuration(preset) {
+    var byId = Object.create(null), windows = Object.create(null);
+    preset.layers.forEach(function (l) { byId[l.id] = l; });
+    function windowOf(l) {
+      if (windows[l.id]) return windows[l.id];
+      var parent = l.parent ? windowOf(byId[l.parent]) : null;
+      var start = (parent ? parent.start : 0) + (l.delay || 0);
+      var duration = l.duration === undefined ? preset.duration : l.duration;
+      var end = start + duration;
+      if (parent && !byId[l.parent].loop) end = Math.min(end, parent.end);
+      return windows[l.id] = { start: start, end: end,
+        active: l.enabled !== false && duration > 0 && (!parent || parent.active) && end > start };
+    }
+    var duration = 0;
+    preset.layers.forEach(function (l) {
+      var w = windowOf(l);
+      if (w.active) duration = Math.max(duration, w.end);
+    });
+    // 全部停用／零時長時沒有播放內容，保留合法的舊值供編輯器繼續編輯。
+    return duration || preset.duration;
+  }
+
+  /* 呼叫端須先驗證。只改作者可寫的副本，不動已註冊／凍結的資料。
+     調整總時長前固定省略欄位的舊預設，避免 delay + duration 每次重算都增長。 */
+  function syncPresetDuration(preset) {
+    var duration = derivePresetDuration(preset);
+    if (duration !== preset.duration) {
+      preset.layers.forEach(function (l) {
+        if (l.duration === undefined) l.duration = preset.duration;
+      });
+      preset.duration = duration;
+    }
+    return duration;
+  }
+
   function serialisePreset(preset) {
     var normalised = canonical(preset, PRESET_KEY_ORDER);
     normalised.layers = preset.layers.map(function (layer) {
@@ -1424,7 +1461,11 @@ var VFXCore = (function () {
       });
       /* 存入自己的深拷貝並凍結：否則呼叫端註冊後仍可把 type／assetId 改成非法值，
          等於繞過驗證，而且 Editor 與 Runtime 會拿到不同內容。 */
-      var frozen = deepFreeze(JSON.parse(JSON.stringify(preset)));
+      var copy = JSON.parse(JSON.stringify(preset));
+      syncPresetDuration(copy);
+      result = validatePreset(copy);
+      if (!result.ok) throw new Error('preset「' + copy.id + '」圖層總時長不合法：\n  - ' + result.errors.join('\n  - '));
+      var frozen = deepFreeze(copy);
       presets[frozen.id] = frozen;
       return frozen.id;
     }
@@ -2488,6 +2529,8 @@ var VFXCore = (function () {
     deformPoint: deformPoint,
     validatePreset: validatePreset,
     serialisePreset: serialisePreset,
+    derivePresetDuration: derivePresetDuration,
+    syncPresetDuration: syncPresetDuration,
     radiusProfileScale: radiusProfileScale,
     createRuntime: createRuntime,
     createNullBackend: createNullBackend,

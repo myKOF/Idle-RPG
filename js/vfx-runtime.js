@@ -501,6 +501,12 @@ var VFXRuntime = (function () {
       });
       (list || []).forEach(function (p) {
         if (!p || !p.id || known[p.id]) return;
+        // Adapter 的續播／timeScale 也必須使用 Core 播放的同一份派生時長。
+        // 非法原始資料留給 registerPreset 報錯，不先修成看似合法的資料。
+        if (Core.validatePreset(p).ok) {
+          p = JSON.parse(JSON.stringify(p));
+          Core.syncPresetDuration(p);
+        }
         planePresets[p.id] = p.layers.some(function (l) { return !!l.projection; });
         var planeLayer = p.layers.find(function (l) { return !!l.projection; });
         planeAngles[p.id] = planeLayer ? num(planeLayer.projection.rotation, 0) : 0;
@@ -2020,7 +2026,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261002-ice-king-spike';
+  var DATA_VERSION = '20261003-layer-duration';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

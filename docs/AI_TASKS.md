@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## VFX-LAYER-DURATION-20261003 — 圖層自動決定特效總時長
+
+- Owner：Codex；Done。使用者要求整份Preset依圖層結束時間計算，避免duration改成4秒後仍被舊0.48秒截斷；有delay時包含延遲。前置既有Core／Editor時間軸，單一開發者處理。
+- 允許js/vfx-core.js、js/vfx-runtime.js、tools/vfx/editor/editor.js／index.html、slash-wind-spin.json時長、新tests/vfx-duration.test.cjs、必要tests/vfx-core-hierarchy.test.cjs回收檢查、Schema文件及本紀錄；禁止技能數值／傷害、配置表、素材、其他副本及合併／推送。保留使用者現有Skills2修改與14層4秒／旋轉速度／透明度曲線設定。上述目標衝突預檢乾淨；主index.html有Claude未整合的aef41738／c92f336b／8876d98f裝備／神鑄UI提交，已告知實際UI及其他版本行變更，使用者同意只改899／901兩行Core／Runtime快取，照此完成。
+- 驗收Core不提早回收、delay／父子／省略duration穩定、縮短時長、循環／粒子尾巴／timeScale；Editor預览及儲存同步派生時長，Runtime取用同一時長，舊頁存檔保護／快取／Build。後續接手者使用者。
+- 完成：Core註冊私有副本由啟用圖層結束時間推算根duration，子層維持父層門控，粒子尾巴自然排空；省略duration的舊層先固定原始預設，反覆重算不會累加delay。Runtime續播／播放速度用相同派生值。Editor修改先同步再計算dirty／預覽／保存，Inspector增加唯讀「總時長(s)・自動」；序列化仍忠實保存資料。真空迴旋根值同步4秒並保留使用者美術修改；不改範圍／傷害／技能配置。
+- 修改10檔：Core、Runtime、Editor JS／HTML、主index.html、slash-wind-spin.json、定向新測試／hierarchy測試、Schema及本紀錄。hierarchy測試原while把已回收handle的null當作0造成無限迴圈，新增存活條件及0.7秒回收斷言，既有可見性斷言全保留。未修改但檢查：skills2.js、battlefield.js／battle-renderer.js、Skills2.csv／xlsx、layer-model／hierarchy-model、editor-server／editor-guard／save-guard、既有Core／Editor／Runtime／風刃測試、共通規範；Skills2三檔使用者修改保留未納入提交。
+- 測試：`node --test --test-reporter=dot tests/vfx-duration.test.cjs tests/vfx-core.test.cjs tests/vfx-core-hierarchy.test.cjs tests/vfx-editor-code-controls.test.cjs tests/vfx-editor-guard.test.cjs`193/193通過；`node --test tests/vfx-editor-cache-versions.test.cjs`3/3通過；新11項包含真實14層4秒、舊根0.48秒、delay／父子／停用、縮短／省略時長穩定、loop／timeScale／粒子尾巴、超上限拒絕及Editor同步。只讀載入HEAD舊Core／Runtime執行新3項回歸可攔截截斷與曲線未播完缺陷。舊頁存檔保護測試確認程式更新拒絕寫入409且原檔不變。
+- 擴大回歸330項：Runtime／screen-space／ground-plane／storm-mountain／windblade-vfx-integration共164項4失敗；Editor save／save-as-dialog／paused-preview／history／hierarchy／multi-edit／panes及Runtime-chain-end-pending共166項2失敗。同一測試與素材以HEAD Core／Runtime唯讀替換亦為相同6項失敗（FIELD提示、bolt-sky-purple layout、金色雷鏈配色、殞石尾巴、ground-ice-spike canonical、最大Preset history記憶體）；新增失敗0，不更改素材或降低測試要求。`npm.cmd run build`433檔通過；`git diff --check`通過。
+- 瀏覽器：獨立隨機localhost實際Editor Server、全新無頭Edge、不讀遊戲存檔、不寫repo（攔截所有寫入請求）。新版Core／Runtime／Editor快取確實載入，Inspector總時長4且唯讀、14層；實際頁面Core使用舊根0.48重播，0.6秒／3.9秒仍存活，4.01秒回收，pageerror 0。瀏覽器與服務已關閉。既有編輯器頁面未重載；有未存內容時先下載複本，再按重啟編輯器，遊戲頁重整載入新版。
+- 快取：兩頁Core 20261003-layer-duration、Runtime 1.0.169；Editor 20261003-layer-duration、Preset DATA_VERSION同名更新。沒有Worker／協議／圖檔變更，不需素材庫空Commit。已知風險：舊檔有意留在根duration中的空白尾段將改依實際圖層結束；父層仍能限制子層，60秒硬上限仍需遵守。無未完成需求，可合併；Commit為本紀錄所在`[Codex] fix: 依圖層結束時間自動計算特效總時長`提交，未合併／推送。下一步使用者備份未存修改後重啟Editor、重整遊戲驗收。
+
 ## STORM-MOUNTAIN-VFX-20261003 — 嵐之山三個觸發欄實際播放
 
 - Owner：Codex；Done。使用者明確要求嵐之山觸發子彈／觸發命中／觸發地板三欄生效，並追加把burst-wind-09填入嵐之山「觸發特效」欄以替換圈出的沿途雙圓環。直射小刃讀子彈及命中，追蹤小刃子彈與地板共用權威位置、接觸才播命中；沿途脈衝機制仍屬第六階，選嵐之山時僅攻擊外觀讀超神觸發欄、命中仍讀第六階。大型主刃保持本體欄，不改傷害／數量／尺寸／追擊與護盾。
