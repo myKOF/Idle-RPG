@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## ELITE-HALO-20261003 — 降低菁英敵人周圍光暈
+
+- Owner：Codex；Done。使用者要求降低截圖中的菁英光暈；既有Canvas/Pixi makeEnemy產生紫色加色光暈，密集敵人疊加過亮。單一開發者，前置既有菁英辨識已完成；後續接手者使用者。
+- 允許js/battle-renderer.js菁英光暈透明度／縮放／混合模式、index.html僅renderer必要快取及本紀錄；禁止其他任務／技能／數值／素材／其他副本、合併與推送。保留本副本萬象風劫及使用者既有未提交修改，分段隔離提交。renderer與任務紀錄預檢乾淨；index有Claude五筆神鑄／裝備／地景提交，使用者已同意僅更新第908行renderer快取。
+- 驗收菁英光暈更淡更小、密集重疊不加色過曝、骷髏／名稱／血條與一般敵人／Boss不變；既有renderer回歸、Build與diff檢查，完成獨立Commit。無素材變更。
+- 完成：makeEnemy菁英光暈alpha由0.55降為0.18、scale由1.7縮至1.15，blendMode改normal，避免add混合累積亮度；紫色／垂直位置及菁英其他辨識保留。修改3檔：js/battle-renderer.js、index.html renderer快取1.6.167、本紀錄。唯讀檢查未改：js/battlefield.js、css/style.css、tests/helpers/battle-scene.cjs與既有戰場／敵方特效測試、協作規範；未改Worker、技能、配置或素材，沒有素材庫Commit。
+- 驗證：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-editor-cache-versions.test.cjs`49/49通過；`npm.cmd run build`435檔通過；`git diff --check`通過。Node VM直接執行正式makeEnemy確認alpha／scale／normal、骷髏／紫色名稱／血條保留、一般敵人與Boss不產生菁英光暈；首次測試使用既有fake Text未保存style，改測試替身保留options後通過，未為驗證修改遊戲。未做真人密集戰鬥／瀏覽器畫面驗收，最終亮度待重載觀察。
+- 交付：Commit為本紀錄所在`[Codex] fix: 降低菁英敵人周圍光暈`提交。無未完成程式項目，可合併；未合併／推送，既有未提交工作保留。下一步使用者重整遊戲確認光暈觀感並審查整合。
+
 ## REFLECT-THREAT-VFX-20261003 — 反射光線回收、敵方子彈辨識與圖層時長稽核
 
 - Owner：Codex；Done。使用者回報黃白光線堆疊、死亡仍殘留及敵方子彈被遮住，並要求全面列出異常長圖層。已定位生命反射之盾beam-light光暈原25秒，其餘層0.25秒；使用者自行改回0.25，保留此設定。查核敵方普攻各屬性與菁英路徑，單一開發者，不改傷害／攻擊時序。
