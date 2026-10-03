@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## STORM-MOUNTAIN-20261003 — 嵐之山風地雙屬性與擊殺護盾
+
+- Owner：Codex；Done。使用者要求嵐之山取代融合巨刃：風刃風／地雙屬性，風系傷害提升按75%、地系按50%加權相加，每級係數+7.5／5個百分點；風刃擊殺回復最大生命2%護盾、每級+0.2個百分點，使用者已確認護盾基準。
+- 本地乾淨，技能／公式／Excel／CSV／定向測試預檢乾淨；docs/AI_TASKS.md與index／bridge／Worker有Claude封魔塔未整合修改，使用者已同意僅新增任務紀錄與必要快取，不改塔戰內容，不合併／推送。
+- 允許js/skills2.js嵐之山命中屬性、擊殺護盾及移除融合分支，js/formula.js最小雙屬性／加權增傷支援，Skills2.xlsx／CSV本超神列、相關新舊測試、主頁與Worker必要formula／skills2／bridge快取及本紀錄；禁止其他技能規格／素材／UI／其他副本／塔戰區段。沿用等級基礎值加每級增量規則；加成係數不歸一，雙屬性傷害歸屬按兩係數比例分攤防禦後本體，不額外產生一份基礎傷害，兩系各走抗性及既有屬性效果。
+- 驗收使用者800×75%+500×50%=850%案例、Lv.1／10、零屬性提升不增添基礎傷害、風／地抗性與風系外部乘區、大小刃／脈衝同一加權公式、每敵一次擊殺盾及護盾效率／上限／禁盾／野外與高塔定址、不再融合、其他超神不變、Excel原生重開與格式保留、配置一致、正式Worker及VFX尺寸／數量／時序一致、回歸與Build、獨立Commit。交使用者重載審查整合。
+- 完成：sgAtkCfg為所有風刃本體、小型刃及沿途脈衝加入風地雙屬性，formula僅增加選填歸屬比例／已加權本體增傷支援，未提供者維持單屬性算法。增傷為風系提升×風係數＋地系提升×地係數，兩系分攤同一份基礎傷害（現配置風60%／地40%），各自使用抗性與既有元素判定；風系外部增幅仍作用於風系分量，裝備／天賦附傷維持原有各系提升。刪除嵐之山舊融合分支，滿七階恢復正常大型8／小型8道，尺寸及追擊行為保留。
+- 擊殺盾：僅風刃實際擊殺且玩家仍存活時，呼叫既有grantShield以最大生命×護盾係數給盾，可從零取得、每敵一次；沿用護盾效率、上限、禁盾及野外／高塔飄字定址。沿用sgUltVal基礎值＋每級增量：Lv.1風82.5%／地55%／護盾2.2%，Lv.10風150%／地100%／護盾4%。使用者75%／50%的850%例子以零每級增量的測試配置獨立驗證；正常Lv.1相同角色屬性得到935%加成。
+- 配置：原生Excel COM只改Skills2第210列AU／AW／AX，重新唯讀開啟比較A1:AX231，確認只有這三格變更、所有欄寬／列高及目標格式／字型／換行保留。artifact-tool唯讀inspect及前後PNG檢查完成，未用其重寫工作簿；既有工具同步CSV與JS後dry-run語意變更0。首次COM腳本UTF-8讀取及驗證列號錯誤修正後，重新原生唯讀驗證通過。暫存檔保留於Temp的codex-storm-mountain-20261003，不包含提交。
+- 修改11檔：js/formula.js／skills2.js、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、tests/storm-mountain.test.cjs／storm-myriad.test.cjs／skill2-windblade-vacuum-legendary.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。唯讀檢查未改：js/util.js／combat.js／battlefield.js／legendary.js／worker/shim.js／protocol.js、scripts/sim/engine.js、tools/config_tables.cjs／build_check.cjs、風刃Preset及相關協作規範／測試。主頁formula1.0.43、skills2 1.0.275、bridge1.0.212；Worker及formula／skills2 import token為20261003-storm-mountain。協議43、存檔、素材維持，無必要素材變更，不建立素材庫Commit；Claude封魔塔區段未改。
+- 測試：`node --test tests/storm-mountain.test.cjs tests/storm-myriad.test.cjs tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/element-resistance.test.cjs tests/earth-element.test.cjs tests/shield-max.test.cjs tests/player-shield-bar.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs`113/113通過；`node --test --test-name-pattern="嵐之山" tests/skill2-windblade-vacuum-legendary.test.cjs`1/1通過；`npm.cmd run build`428檔通過；`node tools/config_tables.cjs --apply Skills2`語意變更0；`git diff --check`通過。未整包執行舊傳奇測試：其既有測試替身MP500不足以施放高階／超神，本次只修正被改規格的嵐之山案例替身，未擴改其他案例。
+- 回歸有效性：唯讀preload還原HEAD skills2與formula，新7項全部失敗，包含舊增傷欄位缺失、擊殺不給盾及仍融合成4道，未改遊戲檔案。正式Worker測試實際命中大型／小型／沿途脈衝三種傷害、雙屬性配置一致、擊殺後護盾及飄字正常；既有Worker→Runtime尺寸／追擊／七秒回收回歸持續通過。
+- 瀏覽器：全新無頭Edge、隨機Port本地服務與拋棄式儲存，真正Worker驗證指定850%加成、100基礎傷害結算950、Lv.1最大生命1000從零取得22盾、正常大型8／小型8，主頁與Worker六個更新URL皆實際請求，booted／alive正常、Worker error／persistError／Console error皆0。首次測試誤用不存在的WorkerBridge.command及把castSkill2回傳物件當true，修正驗證腳本後通過，未為測試改正式API。瀏覽器與服務已關閉，未做長時間真人實戰。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整嵐之山雙屬性加成與擊殺護盾`提交。無未完成需求，可合併；未合併／推送。下一步使用者重新載入遊戲並審查整合；需與Claude既有封魔塔快取變動整合為同一最新版號。
+
 ## STORM-CHASE-20261003 — 暴風萬刃大型風刃立即追敵
 
 - Owner：Codex；Done。使用者回報大型風刃仍未追敵，要求與小型風刃行為一致。前置7cd48ee4已在本分支，工作區乾淨，js/skills2.js、tests/storm-myriad.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄衝突預檢皆乾淨；新增必要tests/sky-collapse.test.cjs亦預檢乾淨。

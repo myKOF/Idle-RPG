@@ -60,10 +60,10 @@ test('暴風萬刃：斷空刃連射與風之痕鏡射相容，仍為獨立傷�
   }
 });
 
-test('其他超神：嵐之山仍融合成四道直線風刃，天穹崩裂仍被動只射一小刃', () => {
+test('其他超神：嵐之山雙屬性保留正常大小刃，天穹崩裂仍被動只射一小刃', () => {
   const mountain = setup(10, [], 'stormMountain'); launch(mountain);
-  assert.equal(mountain.c.SKILL2_RT.projectiles.length, 4);
-  assert.equal(mountain.c.SKILL2_RT.grounds.length, 0);
+  assert.equal(mountain.c.SKILL2_RT.projectiles.length, 8);
+  assert.equal(mountain.c.SKILL2_RT.grounds.length, 8);
   const sky = setup(10, [], 'skyCollapse'); sky.c.Math.random = () => 0;
   sky.c.skills2OnPlayerDamaged(sky.m, sky.p, 1, false, {}, 'mv-float');
   assert.equal(sky.c.SKILL2_RT.projectiles.length, 0);

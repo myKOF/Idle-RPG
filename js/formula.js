@@ -623,9 +623,22 @@ var ELEM_PROC = {
 
 /* ---- 技能屬性化：解析本次傷害段的屬性歸屬 ----
    回傳 null（無屬性歸屬，維持純物理/純魔法）或 {屬性鍵: 權重}（權重合計為 1）。
-   skillElem＝單一屬性鍵。 */
+   skillElem＝單一屬性鍵；skillElemMix＝各屬性歸屬權重，僅歸屬比例正規化。 */
 function skillElemMixOf(aCfg) {
   if (!aCfg) return null;
+  if (aCfg.skillElemMix) {
+    var mix = {}, sum = 0;
+    for (var i = 0; i < ELEMENTS.length; i++) {
+      var key = ELEMENTS[i], weight = aCfg.skillElemMix[key];
+      if (typeof weight === 'number' && isFinite(weight) && weight > 0) {
+        mix[key] = weight; sum += weight;
+      }
+    }
+    if (sum > 0 && isFinite(sum)) {
+      for (var elem in mix) mix[elem] /= sum;
+      return mix;
+    }
+  }
   if (aCfg.skillElem) { var one = {}; one[aCfg.skillElem] = 1; return one; }
   return null;
 }
@@ -663,10 +676,12 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
            → 總傷害額外增幅 → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 對屬性敵人抗性
            → 護盾吸收 → 扣血 → 反震
    aCfg: { atk, dmgType('phys'|'magic'|'both'), level, critRate, critDmg, hit, sunder, pen,
-     trueDmgPct, skillElem, elemAtk, elemDmgPct, elemDmgUp,
+     trueDmgPct, skillElem, skillElemMix, skillElemDmgUpPct, elemAtk, elemDmgPct, elemDmgUp,
      eliteDmg, bossDmg, normalDmg, totalDmgPct, dmgVsElem, attr, isElite, isBoss, isPlayer }
          （skillElem = 技能屬性化：本體傷害段整段歸屬該屬性，於防禦/抗性之後、
            浮動與暴擊之前套用元素抗性與屬性傷害提升；因此屬性傷害吃得到暴擊倍率）
+         （skillElemMix = 多屬性本體歸屬比例；skillElemDmgUpPct = 已加權合計的本體增傷%，
+           只取代本體的逐系提升，裝備與天賦附傷仍使用原本各系提升）
          （elemAtk = 固定值元素攻擊；elemDmgPct = 5/9 轉天賦附傷%，按當次傷害附加）
          （elemDmgUp = 屬性傷害提升% {fire..earth}：自身該屬性元素傷害合計 ×(1+%)，僅玩家攻擊端傳入）
          （eliteDmg/bossDmg/normalDmg = 已含天賦「額外」乘算後的敵種傷害加成總合）
@@ -782,7 +797,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     skillElemParts = {};
     for (var sk in skillMix) {
       var part = dmg * skillMix[sk] * elementalResistanceMultiplier(sRes, sk, sLv);
-      if (aCfg.elemDmgUp && aCfg.elemDmgUp[sk]) part *= 1 + aCfg.elemDmgUp[sk] / 100;
+      // 雙屬性技能可傳入已加權合計的增傷；基礎傷害僅分攤一次，增傷係數不正規化。
+      var skillUp = typeof aCfg.skillElemDmgUpPct === 'number' && isFinite(aCfg.skillElemDmgUpPct)
+        ? aCfg.skillElemDmgUpPct : (aCfg.elemDmgUp && aCfg.elemDmgUp[sk]) || 0;
+      if (skillUp) part *= 1 + skillUp / 100;
       if (aCfg.skillElemAmp && aCfg.skillElemAmp[sk]) part *= aCfg.skillElemAmp[sk]; // 元素領域等外部乘區
       skillElemParts[sk] = part;
       skillElemBase += part;

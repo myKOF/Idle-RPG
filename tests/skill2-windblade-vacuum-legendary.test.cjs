@@ -5,7 +5,7 @@
         風之痕（另一側的小型風刃＋小型風刃增傷）、風蝕（受傷提高的減益）、
         斷空刃（暴風真空刃每方向改寫至 3 道＋風刃增傷）
      2. 風刃三個超神：暴風萬刃（大型風刃改為全場追擊＋多射 1 道＋增傷）、
-        嵐之山（四方向各一道融合的巨型風刃）、天穹崩裂（改為被動、受擊機率射出）
+        嵐之山（風地雙屬性與擊殺護盾）、天穹崩裂（改為被動、受擊機率射出）
      3. 真空斬五個傳奇：共振（多一次傷害）、裂痕（風切層數上限）、
         真空風刃（額外的小型風刃）、空間澎脹（體積）、虛空漲落（虛空斬持續時間）
      4. 真空斬三個超神：萬象風劫（命中留下靜止的真空斬）、虛空滅界（每 2 秒自動一道虛空斬）、
@@ -321,7 +321,7 @@ test('【暴風萬刃】：大型風刃改為全場追擊、每方向多 1 道�
   assert.equal(ult.c.skills2ActsPassive('windblade'), false, '暴風萬刃不改變主動施放');
 });
 
-test('【嵐之山】：四方向各一道融合後的巨型風刃，且不再另外射出小型風刃', () => {
+test('【嵐之山】：雙屬性進化不再融合，大小風刃數量、體積及基礎傷害保持', () => {
   function cast(withUlt) {
     const c = loadContext();
     const specs = stubVfx(c);
@@ -329,27 +329,22 @@ test('【嵐之山】：四方向各一道融合後的巨型風刃，且不再�
     maxLevels(c, 'windblade');
     equip(c, 'windblade');
     if (withUlt) setUlt(c, 'windblade', 'stormMountain', 1);
-    const p = playerEnt();
+    const p = playerEnt(); p.mp = 10000;
     const list = [enemy(1e9, 20, 0, 'a')];
     c.castSkill2(p, list, 'windblade', 'mv-float');
     advance(c, p, list, 6);
-    return { specs, hits };
+    return { specs, hits, grounds: c.SKILL2_RT.grounds.length };
   }
   const base = cast(false);
   const ult = cast(true);
   const bigBase = base.specs.filter((s) => s.variant === 'wind-blade' && s.fxKind === 'projectile');
   const bigUlt = ult.specs.filter((s) => s.variant === 'wind-blade' && s.fxKind === 'projectile');
-  assert.equal(bigUlt.length, 4, '四個方向各 1 道');
-  assert.equal(ult.specs.filter((s) => s.variant === 'wind-blade-small').length, 0,
-    '小型風刃已被融合進巨型風刃');
-  assert.ok(bigUlt[0].bodyLength > bigBase[0].bodyLength, '巨型風刃的刃身更長');
-  /* 融合傷害＝（大型 ＋ 小型×側邊數）× 每方向道數 × 110%（Lv.1）。
-     對照組每一道大型風刃的傷害就是「大型」那一份，因此比值必定大於連射道數。 */
+  assert.equal(bigUlt.length, 8, '四個方向各 2 道');
+  assert.equal(ult.grounds, 8, '小型追跡風刃保持正常發射');
+  assert.equal(bigUlt[0].bodyLength, bigBase[0].bodyLength);
   const baseBig = Math.max.apply(null, base.hits.map((h) => h.atk));
   const ultBig = Math.max.apply(null, ult.hits.map((h) => h.atk));
-  const smallRatio = (30 + 3 * 10) / 100;                 // 【亂披風】Lv.10 的小型風刃佔比
-  assert.ok(Math.abs(ultBig - baseBig * (1 + smallRatio) * 2 * 1.1) < 1e-6,
-    '融合的是同一個方向那一疊（2 道大型＋2 道小型）再乘上 110%');
+  assert.equal(ultBig, baseBig, '沒有屬性提升時，不額外增加本體傷害');
 });
 
 /* 使用者調整：每次觸發只發射一道小型追蹤風刃。 */
