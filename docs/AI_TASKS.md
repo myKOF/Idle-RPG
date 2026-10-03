@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## STORM-CHASE-20261003 — 暴風萬刃大型風刃立即追敵
+
+- Owner：Codex；Done。使用者回報大型風刃仍未追敵，要求與小型風刃行為一致。前置7cd48ee4已在本分支，工作區乾淨，js/skills2.js、tests/storm-myriad.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄衝突預檢皆乾淨；新增必要tests/sky-collapse.test.cjs亦預檢乾淨。
+- 唯讀定位：共用sgSpawnWindChaser以搜敵距離生成固定初始落點，大刃先飛遠處才找敵人；cfg未傳moveAngle且isFinite(null)為true，首次方向被當成零。修正共用入口，將初始航向與搜敵落點分開，射出後由既有隨機追擊及圓弧轉向取得敵人；保留尺寸、傷害、數量、7秒、各自表定搜敵範圍與沿途脈衝。
+- 允許上述技能追擊入口、正式Worker與Runtime定向追敵測試、必要快取與本紀錄；禁止無關技能、數值表、素材、UI、其他副本、合併／推送。驗收大型與小型立即找敵、四方向保留航向、平滑轉彎、反向與側向風刃實際回頭命中、Worker位置／航向／轉速與Runtime一致、既有回歸與Build；完成後獨立Commit交使用者審查。
+- 完成：共用sgSpawnWindChaser不再把搜敵距離當初始固定航程，直接傳入moveAngle並留空dest，由既有sgGroundChaseStep在第一步選擇隨機敵人、按體積決定圓弧轉速。大小風刃與天穹崩裂小刃共用入口，因此不另建大型追擊算法。大小刃既有尺寸／速度、搜敵距離、傷害／數量／7秒、緩速／脈衝／傳奇皆保留。未改共用場域追擊算法或Runtime、協議、存檔、表格或素材。
+- 修改7檔：js/skills2.js、tests/storm-myriad.test.cjs／sky-collapse.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js及本紀錄。唯讀檢查未改：js/vfx-runtime.js／vfx-core.js／battle-renderer.js／worker/shim.js／protocol.js、scripts/sim/engine.js、風刃既有Preset及配置、相關測試／協作規範。主頁skills2 1.0.274、bridge1.0.211；Worker／skills2 token 20261003-storm-chase，protocol43維持。沒有必要素材變更，不建立素材庫Commit。
+- 測試：`node --test tests/storm-myriad.test.cjs tests/giant-windblade.test.cjs tests/sky-collapse.test.cjs tests/windblade-vfx-integration.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-runtime-screen-space.test.cjs`89/89通過；`npm.cmd run build`427檔通過；`git diff --check`通過。正式Worker隔離八種方向各一刃、停用沿途脈衝，皆在3秒內以本體追到20米外敵人，最慢反向大型2.45秒命中；第一拍落點即為敵人。Worker反向大小刃轉速／位置／尺寸完整，正式Core＋Runtime在1／0.65投影下三個顯示幀與下一模擬步圓弧終點一致、每幀朝實際位移轉向。七秒及連射回收既有測試持續通過。
+- 回歸有效性：唯讀preload還原HEAD skills2，新8項中追敵測試失敗（初始moveAngle null），其餘7項通過，證實上一輪壽命與乘算通過仍不足以保證追敵。天穹既有測試改由固定遠處落點改驗指向攻擊者的初始航向與實際事件；初次Runtime測試誤用整段圓弧方向推導最後一幀朝向，改逐幀驗實際位移後通過，未改正式Runtime。
+- 瀏覽器：全新無頭Edge、獨立隨機Port服務／拋棄式儲存／真正Worker；大小各12道在3秒內全部經本體onHit命中、各7秒壽命，主執行緒收到同一批24個場域ID，Worker booted／alive、error／persistError／Console error及warning皆0。新版主頁及Worker import URL皆實際請求；首次cache斷言未納入既有chain query，修正測試URL比對後通過，未改遊戲URL生成。瀏覽器與服務已關閉、未建立新暫存檔。未宣稱瀏覽器正式Preset Runtime完成啟動；畫面運動一致性由上述正式Runtime定向測試驗證，未做長時間真人實戰。
+- 交付：Commit為本紀錄所在`[Codex] fix: 讓大小風刃射出後立即追敵`提交；無未完成需求，可合併；未合併／推送。下一步使用者重載遊戲並審查整合。
+
 ## STORM-MYRIAD-20261003 — 暴風萬刃大小風刃追擊七秒
 
 - Owner：Codex；Done。使用者要求大型／小型風刃皆追擊7秒、每次射出數量+1，風刃傷害+50%、每級+5%，傷害加成與原風刃風系傷害相乘。既有傷害已是獨立乘區，保留並驗證；追加數量沿既有每個方向連射+1、大小風刃同步發射。

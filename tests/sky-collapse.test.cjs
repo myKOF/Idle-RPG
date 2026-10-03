@@ -68,7 +68,8 @@ test('正式Worker：一次受擊只派送一個追擊場域，方向／尺寸�
   assert.equal(c.SKILL2_RT.grounds.length, 1);
   assert.equal(c.SKILL2_RT.projectiles.length, 0);
   const f = c.SKILL2_RT.grounds[0];
-  assert.ok(Math.abs(f.dest.x) < 1e-9); assert.equal(f.dest.y, 300);
+  assert.equal(f.dest, null, '由追擊步驟選敵，不先飛向搜敵圈邊緣');
+  assert.equal(f.moveAngle, Math.PI / 2, '初始航向指向攻擊者');
   h.advance(c, p, [m], .1);
   const events = c.shimDrainUrgentVisualEvents();
   const bodies = events.filter(e => e.variant === 'wind-blade-homing');

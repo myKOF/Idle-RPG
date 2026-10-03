@@ -10245,10 +10245,10 @@ function sgSpawnWindChaser(pEnt, st, g, lvs, angle, dmgVal, geom, floatSel, opts
   var gap = Math.max(0.05, sgGeometryNumber(fx, 'gap') || 0.1);
   var from = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
   var chaseM = Math.max(1, sgGeometryNumber(opts, 'chaseM') > 0 ? sgGeometryNumber(opts, 'chaseM') : (sgGeometryNumber(fx, 'chaseM') || 30));
-  var reach = bfMeterPx(chaseM);
   sgSpawnGround(pEnt, st, 'windblade', {
     kind: 'windblade', tgt: null, floatSel: floatSel, from: from,
-    dest: from ? { x: from.x + Math.cos(angle) * reach, y: from.y + Math.sin(angle) * reach } : null,
+    // 航向只決定射出方向；落點由共用追擊步驟立即選敵，不能先飛到搜敵圈邊緣。
+    moveAngle: angle,
     radius: Math.max(4, Number(opts.radius) > 0 ? Number(opts.radius) : geom.smallHalfPx),
     dmgVal: dmgVal, hits: Math.max(1, Math.round(lifeSec / gap)), gap: gap,
     speed: geom.speedPx, chaseM: chaseM, contact: true,
