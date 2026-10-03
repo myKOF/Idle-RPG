@@ -5026,6 +5026,26 @@ function updateInventoryFilterBadge() {
 // 裝備操作列的「卸下」圖示（箭頭離開框線）
 var EQUIP_UNEQUIP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>';
 
+/* 洗煉模式（UI.equipRerollMode）：記著是哪一件裝備、選中第幾條詞條（it.affixes 索引）、骰子是否在閃。
+   只對記錄的那一件有效（換選別件就不在洗煉模式）。選中的索引若已不存在或詞條已下架（不渲染），改選第一條有渲染的詞條。 */
+function equipRerollModeFor(it) {
+  var mode = UI.equipRerollMode;
+  if (!it || !mode || mode.itemId !== it.id) return null;
+  var affixes = it.affixes || [];
+  var sel = affixes[mode.selIdx];
+  if (!sel || !AFFIX_POOL[sel.key]) {
+    mode.selIdx = -1;
+    for (var i = 0; i < affixes.length; i++) {
+      if (AFFIX_POOL[affixes[i].key]) { mode.selIdx = i; break; }
+    }
+  }
+  return mode;
+}
+
+function selectEquipRerollAffix(it, idx) {
+  UI.equipRerollMode = { itemId: it.id, selIdx: idx, flash: true, flashStart: Date.now() };
+}
+
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
@@ -5058,26 +5078,6 @@ function renderDetail() {
         '<button class="btn btn-icon" disabled aria-label="卸下">' + EQUIP_UNEQUIP_ICON + '</button>';
       actionBar.style.display = 'flex';
     }
-/* 洗煉模式（UI.equipRerollMode）：記著是哪一件裝備、選中第幾條詞條（it.affixes 索引）、骰子是否在閃。
-   只對記錄的那一件有效（換選別件就不在洗煉模式）。選中的索引若已不存在或詞條已下架（不渲染），改選第一條有渲染的詞條。 */
-function equipRerollModeFor(it) {
-  var mode = UI.equipRerollMode;
-  if (!it || !mode || mode.itemId !== it.id) return null;
-  var affixes = it.affixes || [];
-  var sel = affixes[mode.selIdx];
-  if (!sel || !AFFIX_POOL[sel.key]) {
-    mode.selIdx = -1;
-    for (var i = 0; i < affixes.length; i++) {
-      if (AFFIX_POOL[affixes[i].key]) { mode.selIdx = i; break; }
-    }
-  }
-  return mode;
-}
-
-function selectEquipRerollAffix(it, idx) {
-  UI.equipRerollMode = { itemId: it.id, selIdx: idx, flash: true, flashStart: Date.now() };
-}
-
     var matPanelEmpty = $id('equip-material-panel');
     if (matPanelEmpty) matPanelEmpty.innerHTML = '';
     return;
@@ -5094,6 +5094,7 @@ function selectEquipRerollAffix(it, idx) {
       justUpgraded = true;
     }
   }
+  var rerollMode = equipRerollModeFor(it);
   var h = itemDetailHTML(it, null, {
     gold: player && player.gold,
     essence: player && player.essence,
@@ -5112,6 +5113,7 @@ function selectEquipRerollAffix(it, idx) {
   var pendingKey = itemPendingKey(it.id);
   var fromInv = UI.sel.source === 'inv';
   var matMode = UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  /* 洗煉模式時紅色主按鈕移到「洗煉」，表示目前是洗煉分頁；裝備／強化退回次按鈕 */
   if (fromInv) {
     actionsHtml += '<button class="btn' + (rerollMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
   }
@@ -5132,7 +5134,6 @@ function selectEquipRerollAffix(it, idx) {
   }
   // 右側素材面板：只顯示目前開啟的那一類（寶石或附魔書）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
-  var rerollMode = equipRerollModeFor(it);
   if (matMode === 'socket' && it.sockets.indexOf(null) < 0) {
     matHtml += '<div class="equip-material-section">' +
       '<div class="equip-material-title">💎 鑲嵌寶石</div>' +
@@ -12209,18 +12210,6 @@ function initUI() {
         if (isUiCommandPending(nodePendingKey('forge'))) return;
         var fid = cell.getAttribute('data-id');
 
-    // 洗煉模式：點詞條文字區（不含骰子）切換要洗的詞條
-    var rrPick = e.target.closest('#detail-pane [data-reroll-pick]');
-    if (rrPick) {
-      var pickIt = findSelItem();
-      var pickIdx = parseInt(rrPick.getAttribute('data-reroll-pick'), 10);
-      var pickMode = equipRerollModeFor(pickIt);
-      if (pickMode && pickMode.selIdx !== pickIdx) {
-        selectEquipRerollAffix(pickIt, pickIdx);
-        renderDetail();
-      }
-      return;
-    }
         sendUiCommand('forge.placeItem', { itemId: fid }, {
           keys: [nodePendingKey('forge'), itemPendingKey(fid)],
           panels: ['forge', 'inv']
@@ -12243,15 +12232,19 @@ function initUI() {
       renderDetail();
       return;
     }
-    var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
-      // 骰子只認洗煉模式中選中的那一條；其他骰子（含未進入洗煉模式時）一律不動作
-      if (act === 'reroll-affix') {
-        var rrMode = equipRerollModeFor(findSelItem());
-        if (!rrMode || String(rrMode.selIdx) !== actBtn.getAttribute('data-affix-idx')) return;
-        rrMode.flash = false;
-        actBtn.setAttribute('data-reroll-state', 'armed');
-        actBtn.style.animationDelay = '';
+    // 洗煉模式：點詞條文字區（不含骰子）切換要洗的詞條
+    var rrPick = e.target.closest('#detail-pane [data-reroll-pick]');
+    if (rrPick) {
+      var pickIt = findSelItem();
+      var pickIdx = parseInt(rrPick.getAttribute('data-reroll-pick'), 10);
+      var pickMode = equipRerollModeFor(pickIt);
+      if (pickMode && pickMode.selIdx !== pickIdx) {
+        selectEquipRerollAffix(pickIt, pickIdx);
+        renderDetail();
       }
+      return;
+    }
+    var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
     if (actBtn) {
       var act = actBtn.getAttribute('data-act');
       if (act === 'toggle-socket' || act === 'toggle-enchant') {
@@ -12273,6 +12266,14 @@ function initUI() {
         hideTooltip();
         renderDetail();
         return;
+      }
+      // 骰子只認洗煉模式中選中的那一條；其他骰子（含未進入洗煉模式時）一律不動作
+      if (act === 'reroll-affix') {
+        var rrMode = equipRerollModeFor(findSelItem());
+        if (!rrMode || String(rrMode.selIdx) !== actBtn.getAttribute('data-affix-idx')) return;
+        rrMode.flash = false;
+        actBtn.setAttribute('data-reroll-state', 'armed');
+        actBtn.style.animationDelay = '';
       }
       detailAction(act, actBtn);
       return;
