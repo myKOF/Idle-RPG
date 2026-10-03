@@ -224,7 +224,7 @@ function settlePlayerXp(options) {
   if (gained > 0) {
     markStatsDirty();
     var reward = reincarnationCount() > 0
-      ? '、<span class="log-hl-good">轉生天賦點 +' + gained + '</span>'
+      ? '、<span class="log-hl-good">轉生威能點 +' + gained + '</span>'
       : '';
     if (options.silent !== true && typeof blog === 'function') {
       blog('🎉 等級提升！目前等級 ' + p.level + '（四維主屬性 +2' + reward + '）', 'good');

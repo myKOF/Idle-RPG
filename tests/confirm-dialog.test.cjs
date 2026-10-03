@@ -122,5 +122,5 @@ test('首次轉生成功彈窗依 Worker header Snapshot 顯示天賦解鎖提�
 
   const message = elements.get('confirm-message');
   assert.equal(message.children.length, 1);
-  assert.equal(message.children[0].textContent, '已解鎖天賦系統！');
+  assert.equal(message.children[0].textContent, '已解鎖威能系統！');
 });

@@ -543,8 +543,8 @@ test('天賦滿級時標示完成並隱藏下一級與升級消耗', () => {
 
   assert.match(body.innerHTML, /talent-modal-complete">已滿級！/);
   assert.doesNotMatch(body.innerHTML, /下一級：/);
-  assert.doesNotMatch(body.innerHTML, /消耗天賦點：/);
-  assert.match(body.innerHTML, /轉生天賦點：/);
+  assert.doesNotMatch(body.innerHTML, /消耗威能點：/);
+  assert.match(body.innerHTML, /轉生威能點：/);
 });
 
 test('傷害偏折/絕對偏折為乘算：全局減傷 = 裝備總值 × (1 + 天賦%/100)', () => {
@@ -642,10 +642,10 @@ test('天賦升級成本顯示為「轉數+9」，51 級起顯示加倍', () => 
   c.G.player.reincarnations = 6;
   c.UI.selTalent = { kind: 'talent', id: 't6_boss' };
   c.renderTalentModal(talentPanelSnapshot(c));
-  assert.match(body.innerHTML, /消耗天賦點：15/);
+  assert.match(body.innerHTML, /消耗威能點：15/);
 
   // Lv.50 → 下一級 51 → 顯示加倍成本 30
   c.G.player.talents.levels.t6_boss = 50;
   c.renderTalentModal(talentPanelSnapshot(c));
-  assert.match(body.innerHTML, /消耗天賦點：30/);
+  assert.match(body.innerHTML, /消耗威能點：30/);
 });

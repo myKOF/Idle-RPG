@@ -269,13 +269,13 @@ function talentRefresh() {
 
 function talentUpgrade(id) {
   var def = talentDef(id);
-  if (!def) return '找不到天賦';
-  if (def.disabled) return def.disabledReason || '此天賦目前暫不開放升級';
-  if (!talentUnlocked(id)) return reincarnationCountSafe() < talentTurn(id) ? '尚未達到 ' + talentTurn(id) + ' 轉' : '此天賦尚未開放';
+  if (!def) return '找不到威能';
+  if (def.disabled) return def.disabledReason || '此威能目前暫不開放升級';
+  if (!talentUnlocked(id)) return reincarnationCountSafe() < talentTurn(id) ? '尚未達到 ' + talentTurn(id) + ' 轉' : '此威能尚未開放';
   var lv = talentLevel(id);
   if (lv >= TALENT_MAX_LEVEL) return '已達最高等級';
   var cost = talentUpgradeCost(id, lv + 1);
-  if ((G.player.reincarnationTalentPoints || 0) < cost) return '轉生天賦點不足，需要 ' + cost + ' 點';
+  if ((G.player.reincarnationTalentPoints || 0) < cost) return '轉生威能點不足，需要 ' + cost + ' 點';
   G.player.reincarnationTalentPoints -= cost;
   talentState().levels[id] = lv + 1;
   talentRefresh();
@@ -286,14 +286,14 @@ function talentMax(id) {
   var start = talentLevel(id), changed = false;
   while (talentLevel(id) < TALENT_MAX_LEVEL && talentUpgrade(id) === null) changed = true;
   if (changed) return null;
-  return start >= TALENT_MAX_LEVEL ? '已達最高等級' : '轉生天賦點不足';
+  return start >= TALENT_MAX_LEVEL ? '已達最高等級' : '轉生威能點不足';
 }
 
 function talentDowngrade(id) {
   var def = talentDef(id);
-  if (!def) return '找不到天賦';
+  if (!def) return '找不到威能';
   var lv = talentLevel(id);
-  if (!lv) return '天賦目前是 0 級';
+  if (!lv) return '威能目前是 0 級';
   var nextPotentialCount = potentialUnlockedCount() - potentialCountForLevel(def, lv) + potentialCountForLevel(def, lv - 1);
   if (def.stat === 'potentialUnlock' && potentialSpentSkillPoints() > Math.max(0, nextPotentialCount)) return '請先重置超出解鎖數量的潛力技能';
   talentState().levels[id] = lv - 1;
@@ -304,7 +304,7 @@ function talentDowngrade(id) {
 
 function talentDelete(id) {
   var def = talentDef(id);
-  if (!def) return '找不到天賦';
+  if (!def) return '找不到威能';
   var lv = talentLevel(id);
   if (def.stat === 'potentialUnlock' && potentialSpentSkillPoints() > Math.max(0, potentialUnlockedCount() - potentialCountForLevel(def, lv))) return '請先重置超出解鎖數量的潛力技能';
   talentState().levels[id] = 0;

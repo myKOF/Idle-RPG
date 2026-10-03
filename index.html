@@ -82,11 +82,11 @@
         <button class="tab-btn" data-tab="char"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg></span>角色</button>
         <button class="tab-btn active" data-tab="equip"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6z"></path></svg></span>裝備</button>
         <button class="tab-btn" data-tab="skills"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l2.4 5.6L20 9.5l-4.3 3.9 1.2 6L12 16.6l-4.9 2.8 1.2-6L4 9.5l5.6-.9z"></path></svg></span>技能</button>
-        <button class="tab-btn" data-tab="talents"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v5M12 11l-5 6M12 11l5 6M10 4a2 2 0 1 0 4 0 2 2 0 1 0-4 0M5 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0M15 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0"></path></svg></span>天賦</button>
-        <button class="tab-btn" data-tab="forge" style="display:none">🔯 神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
         <button class="tab-btn" data-tab="newforge"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"></path></svg></span>熔爐</button>
         <button class="tab-btn" data-tab="gems"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h12l3 5-9 11L3 9zM3 9h18M9 4 7.5 9 12 20l4.5-11L15 4"></path></svg></span>寶石</button>
-        <button class="tab-btn" data-tab="tower"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 21V9L5 7V3h3v2h2V3h4v2h2V3h3v4l-2 2v12zM10 21v-4a2 2 0 0 1 4 0v4"></path></svg></span>高塔</button>
+        <button class="tab-btn" data-tab="tower"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 21V9L5 7V3h3v2h2V3h4v2h2V3h3v4l-2 2v12zM10 21v-4a2 2 0 0 1 4 0v4"></path></svg></span>封魔塔</button>
+        <button class="tab-btn" data-tab="talents"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v5M12 11l-5 6M12 11l5 6M10 4a2 2 0 1 0 4 0 2 2 0 1 0-4 0M5 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0M15 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0"></path></svg></span>威能</button>
+        <button class="tab-btn" data-tab="forge" style="display:none"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 20 17H4zM12 21 4 7h16z"></path></svg></span>神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
         <button class="tab-btn" data-tab="settings"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></span>設定</button>
       </nav>
 
@@ -477,7 +477,7 @@
         <section id="tab-tower" class="tab">
           <div id="tower-fight" style="display:none">
             <div class="tower-head">
-              <span class="tw-title">🗼 BOSS 高塔挑戰</span>
+              <span class="tw-title">🗼 封魔塔挑戰</span>
               <span id="tw-timer" class="tw-timer">60s</span>
               <span id="tw-auto-status" style="display:none"></span>
               <span id="tw-enrage" class="tw-enrage" style="display:none">🔥 狂暴中 +200%</span>
@@ -518,10 +518,10 @@
 
           <div id="tower-list-wrap">
             <div class="pg-top">
-              <h2 class="pg-title">高塔</h2>
+              <h2 class="pg-title">封魔塔</h2>
               <div id="tower-tiers" class="twx-tiers" role="tablist" aria-label="塔別"></div>
               <span class="pg-pill twx-highest">最高通關 <b id="tower-highest">尚未通關</b></span>
-              <button type="button" class="pg-help twx-help" aria-label="高塔說明" data-tt-title="BOSS 高塔" data-tt-desc="限時擊敗 BOSS 即通關，首次通關金幣加倍。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
+              <button type="button" class="pg-help twx-help" aria-label="封魔塔說明" data-tt-title="封魔塔" data-tt-desc="限時擊敗 BOSS 即通關，首次通關金幣加倍。試煉之塔 1～50 層、地獄之塔 51～100 層、煉獄之塔 101～150 層；地獄之塔起可額外獲得「魔魂本源」，煉獄之塔 BOSS 可額外獲得「魔種」。戰鬥中 BOSS 血量偏高時會進入狂暴。連挑：自動重複挑戰同一層，金幣不足或次數用完自動停止並回到野外（戰鬥中按「撤退」可中止）。">?</button>
             </div>
             <div class="twx">
               <div id="tower-floors" class="twx-ladder"></div>
@@ -579,7 +579,7 @@
                 +1）、寶石鑲孔（1~6）與附魔欄位（1~3）。神話 25
                 階起、創世 40 階起掉落。傳說級以上附帶傳奇特效；附有武器類型限制的特效只會出現在對應武器上。武器/戒指優先裝入空欄、再替換較弱者。</p>
               <p><b>🔯 神鑄：</b>角色達 2000 級且 1 轉後開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 3 件、其餘退回。角尖符位可放💫魔塵（每個
-                +5% 成功率，等級 150+ 敵人與高塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
+                +5% 成功率，等級 150+ 敵人與封魔塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
                 種），無法再入爐。</p>
               <p><b>🏭 熔爐：</b>掉落裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（未勾選＝保留入包）。拆解依裝備品質與零件加成產出碎片、金幣與附魔精華，不會產出寶石。熔爐數量與轉生連動（0 轉 2 座、每轉 +1、上限 12），每爐零件格可用金幣解鎖至 8 格。</p>
               <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1
@@ -591,7 +591,7 @@
                 級；素材歸零可重學；刪除融合技會歸還所有投入點數。</p>
               <p><b>🔨 強化與機制：</b>+5 內必定成功，之後成功率遞減（失敗損失半數材料），可堆「強化成功率」。「幸運值」影響詞條品質/大成功；「負重上限」擴充輸送帶與合成區容量；「狂暴閾值」提高
                 BOSS 狂暴門檻；「合成變異率」讓混合合成有機率產出強化附魔＋額外詞條。</p>
-              <p><b>🗼 BOSS 高塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害
+              <p><b>🗼 封魔塔：</b>60 秒限時戰。40 秒時 BOSS 血量 &gt; 50% 會狂暴（傷害
                 +200%）。通關獲得自動機組零件：加速齒輪、幸運核心、重骰模組。失敗會有分析報告，照著調整生產線配比吧！</p>
             </div>
           </div>
@@ -692,12 +692,12 @@
           <div class="log-title">綜合紀錄</div>
           <div class="log-header-actions">
             <button id="btn-summary" class="btn sm" data-tt-title="統計面板" data-tt-desc="開啟統計面板">📊 統計</button>
-            <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停</button>
+            <button id="btn-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與封魔塔戰鬥" aria-pressed="false">⏸ 暫停</button>
             <button id="btn-detail-log" class="btn sm" type="button" data-tt-title="詳細日誌" data-tt-desc="開啟完整戰鬥日誌">📜 日誌</button>
             <select id="log-filter" class="log-filter">
             <option value="all">全部</option>
             <option value="combat">戰鬥與進度</option>
-            <option value="boss">高塔BOSS戰</option>
+            <option value="boss">封魔塔BOSS戰</option>
             <option value="factory">裝備與強化</option>
             <option value="loot">掉落物</option>
             <option value="system">系統訊息</option>
@@ -719,12 +719,12 @@
         <select id="detail-log-filter" class="log-filter" aria-label="詳細日誌分類">
           <option value="all">全部</option>
           <option value="combat">戰鬥與進度</option>
-          <option value="boss">高塔BOSS戰</option>
+          <option value="boss">封魔塔BOSS戰</option>
           <option value="factory">裝備與強化</option>
           <option value="loot">掉落物</option>
           <option value="system">系統訊息</option>
         </select>
-        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與高塔戰鬥" aria-pressed="false">⏸ 暫停</button>
+        <button id="btn-detail-combat-pause" class="btn sm warn" type="button" data-tt-title="戰鬥控制" data-tt-desc="暫停野外與封魔塔戰鬥" aria-pressed="false">⏸ 暫停</button>
         <button id="detail-log-clear" class="btn sm" type="button">清除詳細日誌</button>
       </div>
       <div id="detail-log-content" class="detail-log-content"></div>
@@ -874,7 +874,7 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.53"></script>
+  <script src="js/data.js?v=1.0.54"></script>
   <script src="js/status.js?v=1.0.29"></script>
   <script src="js/formula.js?v=1.0.42"></script>
   <script src="js/battlefield.js?v=1.4.2"></script>
@@ -893,19 +893,19 @@
   <script src="js/vfx-tower.js?v=1.0.1"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。 -->
   <script src="js/battle-decor.js?v=1.0.4"></script>
-  <script src="js/battle-renderer.js?v=1.6.162"></script>
-  <script src="js/stats.js?v=1.0.2"></script>
+  <script src="js/battle-renderer.js?v=1.6.163"></script>
+  <script src="js/stats.js?v=1.0.3"></script>
   <script src="js/item.js?v=1.0.5"></script>
   <script src="js/skills.js?v=1.0.40"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=1.0.270"></script>
-  <script src="js/talents.js?v=1.0.3"></script>
-  <script src="js/player.js?v=1.0.8"></script>
+  <script src="js/talents.js?v=1.0.4"></script>
+  <script src="js/player.js?v=1.0.9"></script>
   <script src="js/combat.js?v=1.0.65"></script>
   <script src="js/potential.js?v=1.0.7"></script>
-  <script src="js/tower.js?v=1.0.15"></script>
+  <script src="js/tower.js?v=1.0.16"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.103"></script>
+  <script src="js/ui.js?v=1.0.106"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -918,7 +918,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.204"></script>
+  <script src="js/bridge.js?v=1.0.207"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

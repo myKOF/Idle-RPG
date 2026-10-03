@@ -12,17 +12,17 @@
 
 importScripts('protocol.js?v=41', 'shim.js?v=9');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261001-drain-water-integration', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261002-abyss-domain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20260929-thunder-pair',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261003-rename-weineng', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261002-abyss-domain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20260805-tasks',
-  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261002-integrated-ice-damage', '../talents.js?v=20260929-thunder-pair',
-  '../player.js?v=20260929-thunder-pair', '../special_rules.js',
-  '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20260930-enemy-frenzy',
+  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261002-integrated-ice-damage', '../talents.js?v=20261003-rename-weineng',
+  '../player.js?v=20261003-rename-weineng', '../special_rules.js',
+  '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261003-rename-weineng',
   '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
   '../tasks.js?v=20260929-thunder-pair'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20260929-thunder-pair');
+importScripts('../gm_exec.js?v=20261003-rename-weineng');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -1739,7 +1739,7 @@ function boot(msg) {
   }
   if (G._talentRespecNotice) {
     notices.push({ key: '_talentRespecNotice', text: '🌟 ' + G._talentRespecNotice +
-      '，請至【天賦】頁重新配點（新制成本＝天賦轉數+9／級，Lv.51 起每級加倍）。', cls: 'warn' });
+      '，請至【威能】頁重新配點（新制成本＝威能轉數+9／級，Lv.51 起每級加倍）。', cls: 'warn' });
     delete G._talentRespecNotice;
   }
   /* 帶 modal 的公告要彈窗，不是寫進日誌，UI 端據此分辨。
@@ -1747,7 +1747,7 @@ function boot(msg) {
      其餘三個旗標暫時沒有人設定。這段傳輸機制刻意保留——日後若再需要開機公告，
      直接在 migrateSave 設旗標即可，不必重接一次管線。 */
   if (G._talentRespecConfirm) {
-    notices.push({ key: '_talentRespecConfirm', text: '天賦系統已重新改造，請重新配置！', modal: true });
+    notices.push({ key: '_talentRespecConfirm', text: '威能系統已重新改造，請重新配置！', modal: true });
     delete G._talentRespecConfirm;
   }
 

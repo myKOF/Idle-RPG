@@ -171,8 +171,8 @@
   }
 
   function gmClearTowerTo(maxFloor, towerName) {
-    if (!G.tower) return { ok: false, message: '目前找不到高塔進度資料。' };
-    if (G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    if (!G.tower) return { ok: false, message: '目前找不到封魔塔進度資料。' };
+    if (G.tower.active) return { ok: false, message: '封魔塔戰鬥進行中，請先結束目前戰鬥。' };
     var before = Number(G.tower.highest) || 0;
     G.tower.highest = Math.max(before, maxFloor);
     gmTowerDirty();
@@ -183,8 +183,8 @@
   }
 
   function gmResetTowerFrom(startFloor, towerName) {
-    if (!G.tower) return { ok: false, message: '目前找不到高塔進度資料。' };
-    if (G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    if (!G.tower) return { ok: false, message: '目前找不到封魔塔進度資料。' };
+    if (G.tower.active) return { ok: false, message: '封魔塔戰鬥進行中，請先結束目前戰鬥。' };
     var before = Number(G.tower.highest) || 0;
     G.tower.highest = Math.min(before, startFloor - 1);
     gmTowerDirty();
@@ -199,17 +199,17 @@
     if (floor === null) {
       return { ok: false, message: '格式：tower_jump 樓層（1~' + TOWER_MAX_FLOOR + '）' };
     }
-    if (!G.tower) return { ok: false, message: '目前找不到高塔進度資料。' };
-    if (G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    if (!G.tower) return { ok: false, message: '目前找不到封魔塔進度資料。' };
+    if (G.tower.active) return { ok: false, message: '封魔塔戰鬥進行中，請先結束目前戰鬥。' };
     G.tower.highest = floor - 1;
     gmTowerDirty();
-    return { ok: true, message: '已跳至高塔第 ' + floor + ' 層，之前的樓層視為已挑戰成功' };
+    return { ok: true, message: '已跳至封魔塔第 ' + floor + ' 層，之前的樓層視為已挑戰成功' };
   }
 
   function gmSetReincarnation(rawCount) {
     var count = gmNumber(rawCount, 0, REINCARNATION_MAX);
     if (count === null) return { ok: false, message: '格式：reincarnation 轉生次數（0~' + REINCARNATION_MAX + '）' };
-    if (G.tower && G.tower.active) return { ok: false, message: '高塔戰鬥進行中，請先結束目前戰鬥。' };
+    if (G.tower && G.tower.active) return { ok: false, message: '封魔塔戰鬥進行中，請先結束目前戰鬥。' };
     var before = Number(G.player.reincarnations) || 0;
     G.player.reincarnations = count;
     if (before !== count && typeof resetTalentsForReincarnationGM === 'function') {
@@ -901,7 +901,7 @@
       var spawnHpx = args[2] !== undefined ? gmNumber(args[2], 0.01, 1e6) : 1;
       if (spawnHpx === null) return { ok: false, message: '血量倍率範圍 0.01~1000000' };
       if (typeof gmArenaSpawn !== 'function') return { ok: false, message: '戰鬥模組未載入（gmArenaSpawn）' };
-      if (G.tower && G.tower.active) return { ok: false, message: '高塔戰鬥中不可使用演武場出怪' };
+      if (G.tower && G.tower.active) return { ok: false, message: '封魔塔戰鬥中不可使用演武場出怪' };
       var spawned = gmArenaSpawn(count, kind, spawnHpx);
       return { ok: true, message: '演武場：生成 ' + spawned + ' 隻' + (kind === 'boss' ? 'BOSS' : (kind === 'elite' ? '菁英' : '小怪')) +
         '（血量 ×' + spawnHpx + '；自然出怪與過關結算已暫停，spawn off 恢復）' };

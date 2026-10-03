@@ -48,7 +48,7 @@ function makeBoss(floor) {
 function startTowerFight(floor) {
   if (G.tower.active) return;
   if (floor < 1 || floor > TOWER_MAX_FLOOR) {
-    blog('⚠️ 目前僅開放第 1～' + TOWER_MAX_FLOOR + ' 層高塔。', 'warn');
+    blog('⚠️ 目前僅開放第 1～' + TOWER_MAX_FLOOR + ' 層封魔塔。', 'warn');
     return;
   }
   if (floor > G.tower.highest + 1) { blog('⚠️ 需先通過前面的樓層！', 'warn'); return; }
@@ -60,7 +60,7 @@ function startTowerFight(floor) {
   }
   G.player.gold -= cost;
   UI.dirty.header = true;
-  blog('💰 支付高塔挑戰費用 ' + fmt(cost) + ' 金幣。', 'info');
+  blog('💰 支付封魔塔挑戰費用 ' + fmt(cost) + ' 金幣。', 'info');
   var st = getStats();
   G.tower.active = true;
   TOWER.floor = floor;
@@ -96,7 +96,7 @@ function startTowerFight(floor) {
 function startTowerAuto(floor, count) {
   if (G.tower.active) return;
   count = Math.floor(count);
-  if (!(count >= 1)) { blog('⚠️ 請先在高塔分頁上方輸入有效的連續挑戰次數（1 以上）', 'warn'); return; }
+  if (!(count >= 1)) { blog('⚠️ 請先在封魔塔分頁的「連挑次數」輸入有效的次數（1 以上）', 'warn'); return; }
   if (count > TOWER_AUTO_MAX) count = TOWER_AUTO_MAX;
   TOWER.auto = { floor: floor, total: count, done: 0, wins: 0 };
   TOWER.autoNextCd = 0;
@@ -298,7 +298,7 @@ function endTowerFight(win, reason) {
   if (win) {
     var firstClear = floor > G.tower.highest;
     if (firstClear) G.tower.highest = floor;
-    blog('🏆 通關高塔第 ' + floor + ' 層！', 'good');
+    blog('🏆 通關封魔塔第 ' + floor + ' 層！', 'good');
     // 獎勵：資源（零件改由熔爐升級取得）
     var rw = towerRewardFor(floor, firstClear);
     var st2 = getStats();
@@ -379,12 +379,12 @@ function endTowerFight(win, reason) {
       UI.dirty.forge = true;
     }
 
-    blog('🎁 高塔通關獎勵：' + result.rewards.join('、'), 'good', 'boss');
+    blog('🎁 封魔塔通關獎勵：' + result.rewards.join('、'), 'good', 'boss');
   } else if (reason === 'flee') {
-    blog('🏃 你撤出了高塔挑戰。', 'warn');
+    blog('🏃 你撤出了封魔塔挑戰。', 'warn');
     result.analysis.push('已撤退。可隨時再次挑戰。');
   } else {
-    blog('💀 高塔挑戰失敗（第 ' + floor + ' 層）', 'bad');
+    blog('💀 封魔塔挑戰失敗（第 ' + floor + ' 層）', 'bad');
     // 失敗分析系統
     if (reason === 'death') {
       result.analysis.push('【生存過低】你在 ' + Math.round(TOWER.elapsed) + ' 秒時被擊倒。建議提升生命值 / 防禦力詞條、吸血，或附魔對應抗性。');
