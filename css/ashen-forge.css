@@ -5055,3 +5055,45 @@ html *::-webkit-scrollbar-corner {
   font-size: 11px;
   color: #6f6a60;
 }
+
+/* ==== 技能圖示（2026-10 技能圖改造）：skills2 群組改用 images/skills/<群組id>.png，其餘技能仍是 emoji ==== */
+.skill-icon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sgb-item-icon,
+.sgb-head-icon {
+  overflow: hidden;
+}
+
+.sgb-item-icon .skill-icon-img { border-radius: 5px; }
+.sgb-head-icon .skill-icon-img { border-radius: 6px; }
+
+/* 技能格：放圖的 span 撐滿格子內側，冷卻遮罩（z-index 2）與等級角標（3）仍蓋在上面。
+   不能讓 img 自己 absolute：無魔時 .bss-emoji 帶 filter，會變成 img 的定位基準，而 span 本身寬高是 0。 */
+.battle-skill-slot .bss-emoji:has(> .skill-icon-img) {
+  position: absolute;
+  inset: 2px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.sk-run-item .skill-icon-img,
+.skt-name .skill-icon-img {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  vertical-align: -3px;
+}
+
+.skt-name .skill-icon-img {
+  width: 20px;
+  height: 20px;
+  vertical-align: -5px;
+}

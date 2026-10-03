@@ -2,6 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "skill-icon-studio",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/skill-icons/skill-icon-server.cjs",
+        "--port",
+        "28390"
+      ],
+      "port": 28390
+    },
+    {
       "name": "vfx-editor",
       "runtimeExecutable": "node",
       "runtimeArgs": [

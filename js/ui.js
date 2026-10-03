@@ -3134,7 +3134,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
         ? (isPassiveE ? passiveMinMpE : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
         : 0;
       arr.push({
-        sk: sk, lv: lv, cd: cd, cost: costE,
+        sk: sk, entry: entry, lv: lv, cd: cd, cost: costE,
         /* 主動型被動：恆時生效，不顯示冷卻與無魔。
            但個別階可以有自己的內部冷卻（大地守護【天地共生】把冷卻寫進同一個技能格），
            冷卻中就退回一般技能的倒數呈現——否則畫面會宣稱它隨時可用；
@@ -3158,7 +3158,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
       else if (it.cd > 0) { txt = fmt1(Math.max(0, it.cd)) + 's'; cls = 'on-cd'; }
       else if (pEnt.mp < it.cost) { txt = '🚫'; cls = 'no-mp'; }
       else { txt = '✓'; cls = 'ready'; }
-      h += '<div class="sk-run-item ' + cls + '">' + it.sk.emoji + ' <span>' + txt + '</span></div>';
+      h += '<div class="sk-run-item ' + cls + '">' + skillIconHTML(it.entry, it.sk.emoji) + ' <span>' + txt + '</span></div>';
     }
     setHtmlIfChanged(skillEl, h);
   }
@@ -3318,6 +3318,23 @@ function battleSkillSlotKey(state) {
   return JSON.stringify([state.kind, state.index, state.entry || '']);
 }
 
+/* 技能圖示：skills2 群組用畫好的圖（images/skills/<群組id>.png，由 tools/skill-icons/ 產生），
+   潛力技能等其餘技能沿用 emoji。entry 可為 'sg:<群組id>' 或群組 id；
+   圖載入失敗（例如新群組還沒出圖）時退回 emoji。重新出圖後要把 SKILL_ICON_VER +1，否則玩家會看到快取的舊圖。 */
+var SKILL_ICON_VER = '1';
+function skillIconGid(entry) {
+  if (typeof entry !== 'string' || typeof SKILLS2 === 'undefined') return '';
+  var gid = entry.indexOf('sg:') === 0 ? entry.slice(3) : entry;
+  return SKILLS2[gid] ? gid : '';
+}
+function skillIconHTML(entry, emoji) {
+  var gid = skillIconGid(entry);
+  var fallback = emoji || '⚔️';
+  if (!gid) return fallback;
+  return '<img class="skill-icon-img" src="images/skills/' + gid + '.png?v=' + SKILL_ICON_VER + '" alt="" draggable="false"' +
+    ' onerror="this.replaceWith(document.createTextNode(this.dataset.fallback))" data-fallback="' + esc(fallback) + '">';
+}
+
 function battleSkillSlotMarkup(state) {
   if (state.kind === 'locked') {
     return '<div class="battle-skill-slot locked" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-index="' + state.index + '" data-tt-title="技能槽 #' + (state.index + 1) + '（未解鎖）" data-tt-desc="' + esc(state.lockDesc) + '">' +
@@ -3336,7 +3353,7 @@ function battleSkillSlotMarkup(state) {
     ? ' data-snap-cd="' + state.rawCdVal + '" data-snap-gt="' + (state.snapshotGt || 0) + '" data-total-cd="' + state.totalCd + '"'
     : '';
   return '<div class="' + state.slotCls + ' loadout-slot filled" draggable="true" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-index="' + state.index + '" data-sk="' + esc(state.entry) + '" data-skill-id="' + esc(state.entry) + '"' + snapAttrs + '>' +
-    '<span class="bss-emoji">' + (state.emoji || '⚔️') + '</span>' +
+    '<span class="bss-emoji" data-icon-key="' + esc(state.entry) + '">' + skillIconHTML(state.entry, state.emoji) + '</span>' +
     (state.lv > 0 ? '<span class="bss-lv">' + state.lv + '</span>' : '') +
     '<div class="bss-cd-mask" style="--cd-deg:' + state.cdDeg + ';"></div>' +
     '<span class="bss-cd-text">' + state.cdText + '</span>' +
@@ -3389,7 +3406,11 @@ function syncBattleSkillSlot(slot, state) {
   }
 
   var emoji = slot.querySelector('.bss-emoji');
-  if (emoji) setTextIfChanged(emoji, state.emoji || '⚔️');
+  /* 圖示只在換技能時重畫，避免每幀重設 img 造成閃爍與重新解碼 */
+  if (emoji && emoji.getAttribute('data-icon-key') !== state.entry) {
+    emoji.setAttribute('data-icon-key', state.entry);
+    emoji.innerHTML = skillIconHTML(state.entry, state.emoji);
+  }
   var mask = slot.querySelector('.bss-cd-mask');
   if (!mask) {
     mask = document.createElement('div');
@@ -8261,7 +8282,7 @@ function renderSkills() {
       : '';
 
     lh += '<div class="' + slotCls + '" draggable="' + (loadoutPending ? 'false' : 'true') + '" data-index="' + i + '" data-slot-index="' + i + '" data-sk="' + esc(id0) + '" data-skill-id="' + esc(id0) + '" data-loadout-slot-index="' + i + '" data-tt-title="' + esc(d0.name) + ' Lv.' + loadoutLevel + '" data-tt-desc="' + esc(d0.desc || '') + '">' +
-      '<span class="bss-emoji">' + (d0.emoji || '⚔️') + '</span>' +
+      '<span class="bss-emoji">' + skillIconHTML(id0, d0.emoji) + '</span>' +
       (loadoutLevel > 0 ? '<span class="bss-lv">' + loadoutLevel + '</span>' : '') +
       (isPassive0 ? '<span class="bss-cd-text" style="display:flex;">🌀</span>' : '') +
       removeBtn +
@@ -8508,7 +8529,7 @@ function sgbListItemHTML(gid, skillsSnapshot, loadout, selected) {
     : (equipped ? '已裝上' : '');
   return '<button type="button" class="sgb-item' + (selected ? ' is-sel' : '') + (groupLocked ? ' is-locked' : '') +
     '" data-sgb-group="' + gid + '" aria-pressed="' + selected + '" style="--elem:' + color + '">' +
-    '<span class="sgb-item-icon" aria-hidden="true">' + g.emoji + '</span>' +
+    '<span class="sgb-item-icon" aria-hidden="true">' + skillIconHTML(gid, g.emoji) + '</span>' +
     '<span class="sgb-item-main">' +
     '<span class="sgb-item-top"><b>' + esc(g.name) + '</b>' +
     (tag ? '<span class="sgb-item-tag' + (equipped && !groupLocked ? ' is-eq' : '') + '">' + tag + '</span>' : '') + '</span>' +
@@ -8699,7 +8720,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
     : '';
 
   var h = '<div class="sgb-head" style="--elem:' + color + '">' +
-    '<span class="sgb-head-icon" aria-hidden="true">' + g.emoji + '</span>' +
+    '<span class="sgb-head-icon" aria-hidden="true">' + skillIconHTML(gid, g.emoji) + '</span>' +
     '<div class="sgb-head-main">' +
     '<div class="sgb-head-title"><b>' + esc(g.name) + '</b><span>總 Lv.' + t.total + ' / ' + t.max + '</span></div>' +
     '<div class="sgb-head-meta"><span class="skill-tags">' + tags + '</span><span class="sgb-meta" data-tip="' + esc(sgbMetaText(gid, UI.sgBrowse.tier)) + '">' + sgbMetaText(gid, UI.sgBrowse.tier) + '</span></div>' +
@@ -8941,7 +8962,7 @@ function showSkillTooltip(ref, anchorEl) {
     if (sgTipTier !== null && sgTipTier >= 0 && sgTipTier < sgG.tiers.length) {
       var sgTier = sgG.tiers[sgTipTier];
       var sgLocked = !sgStageUnlocked(sgTipGid, sgLvs, sgTipTier, skillsSnapshot);
-      var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgTier.name) +
+      var sgH = '<div class="skt-name">' + skillIconHTML(sgTipGid, sgG.emoji) + ' ' + esc(sgTier.name) +
         ' <span class="dim-text">第' + (sgTipTier + 1) + '階｜Lv.' + (sgLvs[sgTipTier] || 0) + '/' + SG_TIER_MAX_LV + '</span></div>';
       var sgTipMp = (typeof skills2TierTriggerMp === 'function') ? skills2TierTriggerMp(sgTipGid, sgTipTier) : 0;
       sgH += '<div class="skt-meta">' + esc(sgG.name) + '　' +
@@ -8954,7 +8975,7 @@ function showSkillTooltip(ref, anchorEl) {
       showSkillTooltipHTML(tip, sgH, anchorEl);
       return;
     }
-    var sgH = '<div class="skt-name">' + sgG.emoji + ' ' + esc(sgG.name) +
+    var sgH = '<div class="skt-name">' + skillIconHTML(sgTipGid, sgG.emoji) + ' ' + esc(sgG.name) +
       ' <span class="dim-text">總 Lv.' + sgUiTotalLevel(sgLvs) + '｜新版技能</span></div>';
     sgH += '<div class="skt-meta">' +
       ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
