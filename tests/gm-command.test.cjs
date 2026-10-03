@@ -232,7 +232,7 @@ test('高塔戰鬥中不允許執行一鍵通關', () => {
     context.G.tower.active = true;
     const result = execute('tower_purgatory_clear');
     assert.equal(result.ok, false);
-    assert.match(result.message, /高塔戰鬥進行中/);
+    assert.match(result.message, /封魔塔戰鬥進行中/);
     assert.equal(context.G.tower.highest, 20);
   });
 });

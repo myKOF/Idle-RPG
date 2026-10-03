@@ -1138,7 +1138,7 @@ var NEWFORGE_DETAIL_LOG_RENDER_DIRTY = false;
 window.newForgeLogPaused = false;
 
 function detailLogCategoryLabel(cat) {
-  return ({ combat: '戰鬥', boss: '高塔', factory: '裝備', loot: '掉落', system: '系統' })[cat] || '其他';
+  return ({ combat: '戰鬥', boss: '封魔塔', factory: '裝備', loot: '掉落', system: '系統' })[cat] || '其他';
 }
 
 function renderDetailLog() {
@@ -1533,7 +1533,7 @@ function addLog(elId, msg, cls, cap, cat) {
 function classifyUiLogCategory(msg, cat) {
   msg = String(msg || '');
   if (!cat) {
-    if (msg.includes('高塔') || msg.includes('狂暴') || msg.includes('重擊') || msg.includes('撤出')) cat = 'boss';
+    if (msg.includes('封魔塔') || msg.includes('狂暴') || msg.includes('重擊') || msg.includes('撤出')) cat = 'boss';
     else if (msg.includes('📦 戰利品：') || msg.includes('敵人掉落')) cat = 'loot';
     else if (msg.includes('強化') || msg.includes('換裝') || msg.includes('資源不足') || msg.includes('背包已滿') || msg.includes('暫存區已滿')) cat = 'factory';
     else if (msg.includes('推進') || msg.includes('退回') || msg.includes('復活') || msg.includes('擊倒') || msg.includes('遭遇')) cat = 'combat';
@@ -3890,7 +3890,7 @@ function refreshCombatPauseButton() {
     el.setAttribute('aria-pressed', pressed);
     setTextIfChanged(el, paused ? '▶ 繼續' : '⏸ 暫停');
     el.setAttribute('data-tt-title', '戰鬥控制');
-    el.setAttribute('data-tt-desc', paused ? '繼續野外與高塔戰鬥' : '暫停野外與高塔戰鬥');
+    el.setAttribute('data-tt-desc', paused ? '繼續野外與封魔塔戰鬥' : '暫停野外與封魔塔戰鬥');
     el.classList.toggle('active', paused);
   });
 }
@@ -4165,7 +4165,7 @@ function renderBattle() {
   if (!enemies.length) {
     if (party.getAttribute('data-enemy-signature') !== 'empty') {
       /* 野外空場不再顯示「搜索敵人中」：空場只是波次之間的過場，不是狀態。 */
-      rebuildEnemyParty(party, guideHtml + (view.towerActive ? '<div class="enemy-empty">（高塔戰鬥中…）</div>' : ''));
+      rebuildEnemyParty(party, guideHtml + (view.towerActive ? '<div class="enemy-empty">（封魔塔戰鬥中…）</div>' : ''));
       party.setAttribute('data-enemy-signature', 'empty');
       uiInvalidateFloatLayout();
       if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
@@ -5115,7 +5115,7 @@ function renderDetail() {
     matHtml += '<div class="equip-material-section">' +
       '<div class="equip-material-title">✨ 可用附魔書（點擊附魔）</div>' +
       '<div class="equip-material-subtitle">' + catNames2[cat2] + '類部位' +
-      (bookIcons.length ? '' : '｜沒有可用的書（階段 8+ 掉落 / 高塔獎勵）') + '</div>' +
+      (bookIcons.length ? '' : '｜沒有可用的書（階段 8+ 掉落 / 封魔塔獎勵）') + '</div>' +
       (bookIcons.length ? '<div class="equip-material-grid">' + bookIcons.join('') + '</div>' : '') +
       '</div>';
   }
@@ -5409,7 +5409,7 @@ function renderForgeExtras(factorySnapshot, headerSnapshot) {
     for (var bk in player.books) {
       if (player.books[bk] > 0) bookChips.push('<span class="book-chip">' + ENCHANTS[bk].emoji + esc(ENCHANTS[bk].name) + ' x' + player.books[bk] + '</span>');
     }
-    encBooks.innerHTML = bookChips.length ? bookChips.join('') : '<span class="hint">尚無附魔書（階段 8+ 掉落 / 高塔獎勵）</span>';
+    encBooks.innerHTML = bookChips.length ? bookChips.join('') : '<span class="hint">尚無附魔書（階段 8+ 掉落 / 封魔塔獎勵）</span>';
   }
   var encInfo = $id('enc-info');
   if (encInfo) encInfo.textContent = '精華庫存 ' + fmt(player.essence) + '（每次消耗 ' + ENCHANT_ESSENCE_COST + '）｜已附魔 ' + fmt(f.stats.enchanted) + ' 次';
@@ -7544,7 +7544,7 @@ var UI_COMMAND_LABELS = {
   'newforge.addFurnace': '新增熔爐', 'newforge.removeFurnace': '移除熔爐',
   'newforge.installPart': '裝配零件', 'newforge.uninstallPart': '卸下零件',
   'newforge.upgradePart': '零件升級', 'newforge.unlockPartSlot': '解鎖零件格',
-  'tower.start': '挑戰高塔', 'tower.startAuto': '高塔連續挑戰', 'tower.flee': '撤出高塔',
+  'tower.start': '挑戰封魔塔', 'tower.startAuto': '封魔塔連續挑戰', 'tower.flee': '撤出封魔塔',
   'player.buyInvUpgrade': '擴充背包', 'player.switchEquipSet': '切換套裝',
   'task.claim': '領取任務獎勵', 'stage.goMax': '前往最高關卡', 'stage.switchZone': '切換地圖'
 };
@@ -7596,9 +7596,9 @@ function runTalentUiAction(commandName, id, legacyAction) {
     panels: panels
   }).then(function (result) {
     var error = uiCommandResultError(result);
-    if (error) reportUiCommandFailure('天賦操作失敗', error, panels);
+    if (error) reportUiCommandFailure('威能操作失敗', error, panels);
   }, function (error) {
-    reportUiCommandFailure('天賦操作失敗', error, panels);
+    reportUiCommandFailure('威能操作失敗', error, panels);
   });
 }
 
@@ -7792,7 +7792,7 @@ function renderTalentModal() {
   var current = talentDescriptionValue(def, descriptionLv, turn, snapshot);
   var next = talentDescriptionValue(def, lv + 1, turn, snapshot);
   var points = snapshot.talentPoints || 0;
-  var title = turn + ' 轉天賦';
+  var title = turn + ' 轉威能';
   var upgradeAttr = 'data-talent-up="' + def.id + '"';
   var maxAttr = 'data-talent-max="' + def.id + '"';
   var downAttr = 'data-talent-down="' + def.id + '"';
@@ -7808,11 +7808,11 @@ function renderTalentModal() {
   h += '<div class="talent-modal-copy' + (maxed ? ' talent-modal-copy-maxed' : '') + '">';
   if (!maxed && !disabled) {
     h += '<div>下一級：<b>' + talentEffectDescription(def, next) + '</b></div>';
-    h += '<div>消耗天賦點：' + cost + '</div>';
+    h += '<div>消耗威能點：' + cost + '</div>';
   }
-  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 ' + (TALENT_TREES[turn] || []).length + ' 個天賦已全滿，效果 ×2</div>';
+  if (talentViewCompleteMultiplier(snapshot, turn) > 1) h += '<div class="talent-modal-complete">該轉 ' + (TALENT_TREES[turn] || []).length + ' 個威能已全滿，效果 ×2</div>';
   if (!unlocked) h += '<div class="hint">🔒 需要達到 ' + turn + ' 轉</div>';
-  h += '</div><div class="talent-modal-points">轉生天賦點：' + fmtFull(points) + '</div>';
+  h += '</div><div class="talent-modal-points">轉生威能點：' + fmtFull(points) + '</div>';
   h += '<div class="talent-modal-actions">';
   if (!disabled && unlocked && lv < maxLv) {
     h += '<button class="btn sm" ' + upgradeAttr + pendingAttrs + '>⬆️ 升級</button>';
@@ -7913,9 +7913,9 @@ function talentEffectsHTML(turn, snapshot) {
   }).join('');
   return '<div class="tlx-side-title"><b>本轉效果</b></div>' +
     '<div class="tlx-side-note' + (complete ? ' is-complete' : '') + '">' +
-      (complete ? '本轉 ' + tree.length + ' 個天賦已全部升滿，效果 ×2' : '本轉 ' + tree.length + ' 個天賦全部升滿後，效果加倍') + '</div>' +
+      (complete ? '本轉 ' + tree.length + ' 個威能已全部升滿，效果 ×2' : '本轉 ' + tree.length + ' 個威能全部升滿後，效果加倍') + '</div>' +
     '<div class="tlx-effs">' + rows + '</div>' +
-    '<div class="tlx-side-foot">點選星盤上的天賦可升級或調整</div>';
+    '<div class="tlx-side-foot">點選星盤上的威能可升級或調整</div>';
 }
 
 function renderTalents() {
@@ -7924,17 +7924,17 @@ function renderTalents() {
   var snapshot = uiTalentPanelSnapshot();
   uiHeaderPanelSnapshot();
   if (!snapshot) {
-    root.innerHTML = '<div class="panel hint">正在載入天賦 Snapshot…</div>';
+    root.innerHTML = '<div class="panel hint">正在載入威能 Snapshot…</div>';
     return;
   }
   var rc = talentViewReincarnations(snapshot);
   if (!UI.talentBrowse.turn || !TALENT_TREES[UI.talentBrowse.turn]) UI.talentBrowse.turn = talentDefaultTurn(snapshot);
   var turn = UI.talentBrowse.turn;
-  var h = '<div class="pg-top"><h2 class="pg-title">天賦</h2>' +
-    '<span class="pg-pill">轉生天賦點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
+  var h = '<div class="pg-top"><h2 class="pg-title">威能</h2>' +
+    '<span class="pg-pill">轉生威能點 <b>' + fmtFull(snapshot.talentPoints || 0) + '</b></span>' +
     '<span class="pg-pill">已轉生 <b>' + rc + ' 轉</b></span>' +
-    '<button type="button" class="pg-help" aria-label="天賦說明" data-tt-title="天賦" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生天賦點。升 1 級消耗＝該天賦轉數＋9，Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。同一轉的天賦全部升滿後，該轉效果加倍。潛力是技能分類，與特殊、被動共用技能點，不另設潛力點。">?</button></div>';
-  if (rc < 1) h += '<div class="tlx-locked-banner">🔒 天賦系統將於完成 1 轉後開放。</div>';
+    '<button type="button" class="pg-help" aria-label="威能說明" data-tt-title="威能" data-tt-desc="1 轉後開放；轉生後每升 1 級獲得 1 點轉生威能點。升 1 級消耗＝該威能轉數＋9，Lv.51 起每級加倍（例：1 轉前 50 級每級 10 點、51 級起每級 20 點）。同一轉的威能全部升滿後，該轉效果加倍。潛力是技能分類，與特殊、被動共用技能點，不另設潛力點。">?</button></div>';
+  if (rc < 1) h += '<div class="tlx-locked-banner">🔒 威能系統將於完成 1 轉後開放。</div>';
   h += '<div class="tlx-tiers" role="tablist" aria-label="轉數">' + talentTierTabsHTML(snapshot) + '</div>';
   h += '<div class="tlx"><div class="tlx-board">' + talentBoardHTML(turn, snapshot) + '</div>' +
     '<aside class="tlx-side">' + talentEffectsHTML(turn, snapshot) + '</aside></div>';
@@ -8872,7 +8872,7 @@ function showTalentTooltip(ref, anchorEl) {
   var maxLv = TALENT_MAX_LEVEL;
   var turn = talentTurn(id);
   var displayLv = Math.max(1, lv);
-  var title = turn + ' 轉天賦';
+  var title = turn + ' 轉威能';
   var h = '<div class="skt-name">' + def.emoji + ' ' + esc(def.name) +
     ' <span class="dim-text">Lv.' + lv + '/' + maxLv + '｜' + title + '</span></div>';
   var current = talentDescriptionValue(def, displayLv, turn, snapshot);
@@ -9173,7 +9173,7 @@ function showEnemyTooltip(anchorEl) {
 
   if (!m) return;
 
-  var title = isBossTip ? (m.name || '高塔 BOSS') : '敵人情報';
+  var title = isBossTip ? (m.name || '封魔塔 BOSS') : '敵人情報';
 
   // 頂置區標籤：顯示敵人/地圖屬性標籤 (圖2)
   var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'desert';
@@ -9975,7 +9975,7 @@ function miniSnapshot() {
   var s = { stage: '', lv: 'Lv.' + (header.player && header.player.level || 1), pHp: 0, pHpText: '', pMp: 0, pMpText: '', eName: '', eHp: 0, eHpText: '', info: '', logs: [] };
   if (view.towerActive && tower.boss) {
     p = tower.player; enemy = tower.boss;
-    s.stage = '🗼 高塔第 ' + (tower.floor || 0) + ' 層';
+    s.stage = '🗼 封魔塔第 ' + (tower.floor || 0) + ' 層';
     s.info = '⏱️ 剩餘 ' + fmt1(Math.max(0, towerTimeLimitWithTalents(tower.floor) - (tower.elapsed || 0))) + 's' + (tower.enraged ? '　🔥狂暴中' : '');
   } else {
     p = field.player; enemy = field.monster || (Array.isArray(field.monsters) ? field.monsters[0] : null);
@@ -10147,7 +10147,7 @@ function showConfirmDialog(message, onConfirm, options) {
   if (options.title === '轉生成功' && uiReincarnationCount() === 1) {
     var talentUnlockNotice = document.createElement('div');
     talentUnlockNotice.className = 'confirm-highlight';
-    talentUnlockNotice.textContent = '已解鎖天賦系統！';
+    talentUnlockNotice.textContent = '已解鎖威能系統！';
     msg.appendChild(talentUnlockNotice);
   }
   ok.textContent = options.okText || '確定';
@@ -10711,7 +10711,7 @@ function initUI() {
         actTitle + '效果：\n' +
         '・人物等級回到 1 級，經驗歸零。\n' +
         '・生命、法力及力量、敏捷、耐力、智力變為 ×' + reincarnationTotalMultiplier(nextCount) + '。\n' +
-        '・不再獲得技能點，改獲得轉生天賦點。\n' +
+        '・不再獲得技能點，改獲得轉生威能點。\n' +
         skillLimitLine +
         '・裝備、技能、資源與關卡進度保留。\n\n確定要進行' + actTitle + '嗎？',
         function () {
@@ -12257,7 +12257,7 @@ function initUI() {
         keys: [nodePendingKey('tower')],
         panels: ['tower', 'battle', 'header']
       }).catch(function (error) {
-        reportUiCommandFailure('高塔挑戰', error, ['tower', 'header']);
+        reportUiCommandFailure('封魔塔挑戰', error, ['tower', 'header']);
       });
       switchTab('tower');
       return;
@@ -12272,7 +12272,7 @@ function initUI() {
         keys: [nodePendingKey('tower')],
         panels: ['tower', 'battle', 'header']
       }).catch(function (error) {
-        reportUiCommandFailure('高塔連挑', error, ['tower', 'header']);
+        reportUiCommandFailure('封魔塔連挑', error, ['tower', 'header']);
       });
       switchTab('tower');
       return;
@@ -12480,7 +12480,7 @@ function initUI() {
       keys: [nodePendingKey('tower')],
       panels: ['tower']
     }).catch(function (error) {
-      reportUiCommandFailure('高塔撤退', error, ['tower']);
+      reportUiCommandFailure('封魔塔撤退', error, ['tower']);
     });
   });
 
@@ -12831,7 +12831,7 @@ function confirmTowerResultModal() {
     keys: [nodePendingKey('tower')],
     panels: ['tower', 'battle', 'header']
   }).catch(function (error) {
-    reportUiCommandFailure('高塔結算', error, ['tower', 'header']);
+    reportUiCommandFailure('封魔塔結算', error, ['tower', 'header']);
   });
 }
 function stopTowerAutoFromResultModal() {
@@ -12840,7 +12840,7 @@ function stopTowerAutoFromResultModal() {
     keys: [nodePendingKey('tower')],
     panels: ['tower']
   }).catch(function (error) {
-    reportUiCommandFailure('停止高塔連挑', error, ['tower']);
+    reportUiCommandFailure('停止封魔塔連挑', error, ['tower']);
   });
   var confirmBtn = $id('trm-confirm');
   var stopAutoBtn = $id('trm-stop-auto');

@@ -91,7 +91,7 @@ test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => 
   assert.match(combatBlock, /data-tt-title="戰鬥控制"/);
   assert.match(combatBlock, /data-tt-title="迷你視窗"/);
   assert.match(combatBlock, /data-tt-title="統計面板"/);
-  assert.match(ui, /el\.setAttribute\('data-tt-desc', paused \? '繼續野外與高塔戰鬥'/);
+  assert.match(ui, /el\.setAttribute\('data-tt-desc', paused \? '繼續野外與封魔塔戰鬥'/);
   assert.doesNotMatch(ui, /el\.title\s*=/);
 });
 

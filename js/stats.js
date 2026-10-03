@@ -88,7 +88,7 @@ function recordLootGem(type, lv, n, source) {
 }
 
 function statsSourceName(key) {
-  return ({ field: '野外戰鬥', tower: '高塔', factory: '工廠拆解', skill: '技能', other: '其他' })[key] || key;
+  return ({ field: '野外戰鬥', tower: '封魔塔', factory: '工廠拆解', skill: '技能', other: '其他' })[key] || key;
 }
 
 function statsSourceHtml() {

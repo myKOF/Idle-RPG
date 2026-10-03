@@ -1722,7 +1722,7 @@ var BattleRenderer = (function () {
        角色本來就在往前走，空場是過場而不是狀態，不需要文字說明。 */
     if (S.emptyText) {
       S.emptyText.visible = !!S.towerActive && !anyLive;
-      if (S.emptyText.visible && S.emptyText.text !== '（高塔戰鬥中…）') S.emptyText.text = '（高塔戰鬥中…）';
+      if (S.emptyText.visible && S.emptyText.text !== '（封魔塔戰鬥中…）') S.emptyText.text = '（封魔塔戰鬥中…）';
     }
 
     /* 狀態光環：只有面板快照答得出「現在還掛著哪些狀態」，因此在這裡 reconcile。 */
@@ -6454,7 +6454,7 @@ var BattleRenderer = (function () {
 
     /* 空場提示（只在高塔戰期間顯示；野外的「搜索敵人中…」已移除） */
     var emptyText = new PIXI.Text({
-      text: '（高塔戰鬥中…）',
+      text: '（封魔塔戰鬥中…）',
       style: { fontFamily: 'sans-serif', fontSize: 15, fill: '#8b93a3', stroke: { color: '#000', width: 3 } }
     });
     emptyText.anchor.set(0.5);
