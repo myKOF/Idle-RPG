@@ -710,7 +710,7 @@ var BossArena = (function () {
         s.anchor.set(0.5, (spec.h - FOOT) / spec.h);
         var sc = k * (scaleMul || 1);
         s.scale.set(sc / TEX_SCALE * (key === 'gate' || r() < 0.5 ? 1 : -1), sc / TEX_SCALE);
-        s._bx = s.scale.x; s._by = s.scale.y;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 update）
+        s._bbX = s.scale.x; s._bbY = s.scale.y;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 update）
         s.x = wx; s.y = wy * groundScale; s.zIndex = s.y;
         s._h = spec.h * sc; s._w = spec.w * sc;
         R.props.push(s);
@@ -744,13 +744,13 @@ var BossArena = (function () {
         eye.tint = parseInt(T.pal.glow.slice(1), 16);
         eye.blendMode = 'add';
         eye.width = 34 * gsc; eye.height = 18 * gsc;
-        eye._bx = eye.scale.x; eye._by = eye.scale.y;
+        eye._bbX = eye.scale.x; eye._bbY = eye.scale.y;
         /* 眼睛是門的零件：位移相對門腳底，跟著門的抵銷矩陣走（見 update 的 billboardSprite） */
-        eye._anchor = gate.s;
-        eye._offX = side * gs.w * 0.56 * 0.19 * gsc;
-        eye._offY = -gs.h * (0.76 + 0.2 * 0.18) * gsc;
-        eye.x = gate.s.x + eye._offX;
-        eye.y = gate.s.y + eye._offY;
+        eye._bbParent = gate.s;
+        eye._bbOffX = side * gs.w * 0.56 * 0.19 * gsc;
+        eye._bbOffY = -gs.h * (0.76 + 0.2 * 0.18) * gsc;
+        eye.x = gate.s.x + eye._bbOffX;
+        eye.y = gate.s.y + eye._bbOffY;
         eye.zIndex = gate.s.zIndex + 1;
         R.eyes.push(eye);
       });
@@ -764,7 +764,7 @@ var BossArena = (function () {
         fl.x = b.s.x;
         // 碗口在腳底上方 (0.12 + 0.3 + 0.08) × 高（見 drawDemonBrazier 的三層底座），火焰底部埋進碗裡一點
         fl.y = b.s.y - b.spec.h * 0.5 * b.sc + 3 * b.sc;
-        fl._anchor = b.s; fl._offX = 0; fl._offY = fl.y - b.s.y;   // 跟著火盆的矩陣走
+        fl._bbParent = b.s; fl._bbOffX = 0; fl._bbOffY = fl.y - b.s.y;   // 跟著火盆的矩陣走
         fl.zIndex = b.s.zIndex + 0.5;
         fl._phase = r() * 10; fl._sc = b.sc;
         R.flames.push(fl);
@@ -894,20 +894,20 @@ var BossArena = (function () {
       for (var f = 0; f < R.flames.length; f++) {
         var fl = R.flames[f], ft = t * 9 + fl._phase;
         var flick = 0.85 + 0.15 * Math.sin(ft) * Math.sin(ft * 1.7 + 1.3);
-        fl._by = fl._sc / TEX_SCALE * (0.92 + 0.2 * flick) * (R.enraged ? 1.2 : 1);
-        fl._bx = fl._sc / TEX_SCALE * (0.95 + 0.08 * Math.sin(ft * 1.3));
+        fl._bbY = fl._sc / TEX_SCALE * (0.92 + 0.2 * flick) * (R.enraged ? 1.2 : 1);
+        fl._bbX = fl._sc / TEX_SCALE * (0.95 + 0.08 * Math.sin(ft * 1.3));
       }
       /* 直立的門、火盆、尖刺與它們的零件抵銷畫面透視，只留遠近縮放（opts.billboard 沒給＝原樣）。
          鏡頭每幀都在動，shear 隨橫向位置變，所以每幀重算。 */
       var bboard = A.billboardSprite;
-      for (var pi = 0; pi < R.props.length; pi++) bboard(R.props[pi], opts.billboard, R.props[pi]._bx, R.props[pi]._by);
+      for (var pi = 0; pi < R.props.length; pi++) bboard(R.props[pi], opts.billboard, R.props[pi]._bbX, R.props[pi]._bbY);
       for (var fi = 0; fi < R.flames.length; fi++) {
         var fb = R.flames[fi];
-        bboard(fb, opts.billboard, fb._bx, fb._by, fb._anchor, fb._offX, fb._offY);
+        bboard(fb, opts.billboard, fb._bbX, fb._bbY, fb._bbParent, fb._bbOffX, fb._bbOffY);
       }
       for (var ei = 0; ei < R.eyes.length; ei++) {
         var eb = R.eyes[ei];
-        bboard(eb, opts.billboard, eb._bx, eb._by, eb._anchor, eb._offX, eb._offY);
+        bboard(eb, opts.billboard, eb._bbX, eb._bbY, eb._bbParent, eb._bbOffX, eb._bbOffY);
       }
       for (var l = 0; l < R.lights.length; l++) {
         var lg = R.lights[l];

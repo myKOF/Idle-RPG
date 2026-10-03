@@ -1764,7 +1764,7 @@ var BattleDecor = (function () {
         var flip = r() < 0.5 ? -1 : 1;
         var sc = (1 / TEX_SCALE) * k;   // 貼圖是 TEX_SCALE 倍解析度，畫面上的尺寸＝邏輯尺寸 × k
         ps.scale.set(sc * flip, sc);
-        ps._bx = sc * flip; ps._by = sc;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 billboardChunks）
+        ps._bbX = sc * flip; ps._bbY = sc;   // 貼圖自己的縮放；每幀的透視抵銷以它為底（見 billboardChunks）
         ps.x = px;
         ps.y = py * groundScale;
         ps.zIndex = ps.y;
@@ -1806,8 +1806,8 @@ var BattleDecor = (function () {
             fl.x = px;
             // 火盆碗口在腳底上方 0.58 × 高（見 drawBrazier 的 bowlY）
             fl.y = ps.y - p[3] * 0.58 * pk;
-            fl._anchor = ps; fl._offY = fl.y - ps.y;   // 跟著火盆的矩陣走（見 billboardSprite）
-            fl._bx = fl._by = 1 / TEX_SCALE;
+            fl._bbParent = ps; fl._bbOffY = fl.y - ps.y;   // 跟著火盆的矩陣走（見 billboardSprite）
+            fl._bbX = fl._bbY = 1 / TEX_SCALE;
             fl.zIndex = ps.zIndex + 0.5;
             fl._phase = r() * 10;
             fl._baseY = fl.y;
@@ -1907,8 +1907,8 @@ var BattleDecor = (function () {
               if (f.texture !== f._frames[fi]) f.texture = f._frames[fi];
             }
             // 只算火焰自己的縮放；實際寫進 sprite 在 billboardChunks（要乘上透視抵銷）
-            f._by = (1 / TEX_SCALE) * (0.94 + 0.1 * flick);
-            f._bx = (1 / TEX_SCALE) * (0.97 + 0.05 * Math.sin(t * 1.3));
+            f._bbY = (1 / TEX_SCALE) * (0.94 + 0.1 * flick);
+            f._bbX = (1 / TEX_SCALE) * (0.97 + 0.05 * Math.sin(t * 1.3));
           }
         }
       });
@@ -1921,12 +1921,12 @@ var BattleDecor = (function () {
       D.chunks.forEach(function (c) {
         for (var i = 0; i < c.props.length; i++) {
           var s = c.props[i];
-          billboardSprite(s, bb, s._bx, s._by);
+          billboardSprite(s, bb, s._bbX, s._bbY);
         }
         for (var j = 0; j < c.flames.length; j++) {
           var f = c.flames[j];
-          if (f.blendMode === 'add' || !f._anchor) continue;
-          billboardSprite(f, bb, f._bx, f._by, f._anchor, 0, f._offY);
+          if (f.blendMode === 'add' || !f._bbParent) continue;
+          billboardSprite(f, bb, f._bbX, f._bbY, f._bbParent, 0, f._bbOffY);
         }
       });
     }

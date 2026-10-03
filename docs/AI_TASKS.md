@@ -8858,6 +8858,14 @@ Worker 存活且頁面正常完成載入。
 
 - 需求：使用者回報戰鬥場景物件被透視往畫面中央上方扭曲，要改成只受遠近放大縮小、不受 FOV 影響。
 - 原因：敵人已有 `applyEntityBillboard` 抵銷整片 PerspectiveMesh 的形變（2026-09-29），但地形擺件（`battle-decor`）與魔王祭壇的門／火盆／尖刺（`battle-arena`）同樣是直立貼圖、掛在 `entity` 層，從沒套過，離畫面中心越遠越往中心傾斜。
-- 作法：`battle-renderer` 抽出 `sceneBillboardBasis(x, y)`（腳點進、`{w, shear, skew, k}` 出），`applyEntityBillboard` 改用它，並以 `opts.billboard` 傳給 decor／arena。decor 的 `art.billboardSprite` 把 `[[1, shear], [0, w]]` 套在 sprite 的 skew.x 與 scale.y 上；火焰、魔門的眼睛是零件，位置也經過本體同一個矩陣（`_anchor`／`_offY`），不然會被網格各自推開、離開碗口與門楣。縮放改由 `_bx／_by` 記底、每幀（鏡頭在動）重算；火焰動畫不再直接寫 sprite 縮放。地面光暈與裂痕在地面平面容器裡，本來就該跟地板一起透視，不動。沒開透視（`?persp=0`）時完全維持原樣。
+- 作法：`battle-renderer` 抽出 `sceneBillboardBasis(x, y)`（腳點進、`{w, shear, skew, k}` 出），`applyEntityBillboard` 改用它，並以 `opts.billboard` 傳給 decor／arena。decor 的 `art.billboardSprite` 把 `[[1, shear], [0, w]]` 套在 sprite 的 skew.x 與 scale.y 上；火焰、魔門的眼睛是零件，位置也經過本體同一個矩陣（`_bbParent`／`_bbOffY`），不然會被網格各自推開、離開碗口與門楣。縮放改由 `_bbX／_bbY` 記底、每幀（鏡頭在動）重算；火焰動畫不再直接寫 sprite 縮放。地面光暈與裂痕在地面平面容器裡，本來就該跟地板一起透視，不動。沒開透視（`?persp=0`）時完全維持原樣。
 - 殘留：與敵人相同，錨點精確、離錨點越遠殘留越多（魔門這種高大物件頂端殘留較明顯）；要完全消除需改走空中 billboard 層，但會失去與角色的前後遮擋，沒做。
 - 測試：`tests/battle-perspective.test.cjs` 新增 PERSP-13（抵銷 × 網格＝等比縮放、零斜切、翻面保留、零件與本體重合）與 PERSP-14（接線）；decor／arena 測試的假 Sprite 補 `skew`。實機（本機 8125）擷取場景根容器，41 個擺件皆已套用抵銷。快取版本：battle-decor 1.0.8、battle-arena 1.0.1、battle-renderer 1.6.169。
+
+## SCENE-PROP-BILLBOARD-FIX-20261004 — 切換地圖後戰鬥畫面凍結（上一筆的自訂屬性撞到 Pixi 內部欄位）
+
+- 現象：把戰鬥場景切到去過的地圖（例：沼澤 → 荒漠）後畫面卡住：`BattleRenderer.status()` 的 floats 數字不再變、entities 還在增加（5Hz 面板同步照跑，渲染 ticker 已死）。
+- 原因：上一筆（SCENE-PROP-BILLBOARD-20261003）把火焰／魔門眼睛掛在本體上的屬性命名為 `_anchor`，剛好是 Pixi `Sprite` 內部 `anchor` getter 的底層欄位。火焰的 `anchor` 被換成別的 Sprite，下次從物件池取出火焰做 `fl.anchor.set(0.5, 1)` 拋 `TypeError`（Console：`fl.anchor.set is not a function`，出處 battle-decor.js buildChunk）。例外從 `tickWorld` 一路丟進 Pixi ticker，ticker 不再重新排程，整個戰鬥畫面凍結。切地圖會整批重建區塊並重用物件池，所以最容易踩到。
+- 修正：自訂欄位一律改 `_bb` 前綴（`_bbParent`／`_bbX`／`_bbY`／`_bbOffX`／`_bbOffY`），不再與 Pixi 內部欄位同名。
+- 測試：decor／arena 測試的假 Sprite 改成與真的 Pixi 相同（`anchor` 是 getter、底層 `_anchor`），新增 DECOR-BB／ARENA-BB（含切地圖與重進場、物件池重用）；把名稱改回 `_anchor` 後 DECOR-BB 會失敗，確認抓得到。快取版本：battle-decor 1.0.9、battle-arena 1.0.2。
+- 教訓：幫 Pixi 物件掛自訂欄位不要用 `_anchor`、`_width`、`_height`、`_texture`、`_bounds*` 等常見內部名稱；本專案一律用功能前綴。

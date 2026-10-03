@@ -39,7 +39,8 @@ function fakePixi() {
       if (this.parent) this.parent.removeChild(this);
     }
   }
-  class Sprite extends Container { constructor(tex) { super(); this.texture = tex; this.anchor = point(); this.tint = 0xffffff; } }
+  /* 與真的 Pixi 一樣：anchor 是 getter，底層放在 _anchor（自訂屬性撞名就會讓 anchor.set 消失） */
+  class Sprite extends Container { constructor(tex) { super(); this.texture = tex; this._anchor = point(); this.tint = 0xffffff; } get anchor() { return this._anchor; } }
   class Text extends Container { constructor(o) { super(); this.text = o.text; this.style = o.style; this.anchor = point(); } }
   class Graphics extends Container { rect() { return this; } fill() { return this; } }
   class Texture { constructor(o) { this.o = o; } }
@@ -246,4 +247,35 @@ test('TRANS-4 背景分頁不播轉場，直接換場景（不會卡在全黑）
   assert.equal(c.S.scene.phase, '');
   assert.equal(c.S.scene.key, 'tower:5');
   assert.ok(calls.some((x) => x[0] === 'enterArena'));
+});
+
+test('ARENA-BB 透視抵銷（opts.billboard）：門、火盆、火焰、魔門眼睛的 anchor 完好，零件跟著本體的矩陣走', () => {
+  /* 與 DECOR-BB 同一件事故：零件掛在本體上的屬性不能與 Pixi Sprite 內部的 _anchor 撞名。 */
+  const { BossArena } = loadArena();
+  const P = fakePixi();
+  const layers = { base: new P.Container(), glow: new P.Container(), prop: new P.Container(), ambient: new P.Container(), title: new P.Container() };
+  const shear = -0.15, w = 1.1;
+  const arena = BossArena.create({
+    PIXI: P.PIXI, groundScale: 0.5,
+    planeBase: layers.base, planeGlow: layers.glow, propLayer: layers.prop,
+    ambientLayer: layers.ambient, titleLayer: layers.title,
+    billboard: () => ({ w, shear, skew: Math.atan2(shear, w), k: Math.hypot(shear, w) })
+  });
+  for (const tier of ['trial', 'hell', 'trial']) {   // 進場離場再進場：物件重建
+    arena.enter({ cx: 0, cy: 0, tier, W: 800, H: 800, title: 'BOSS' });
+    for (let i = 0; i < 10; i++) arena.update({ W: 800, H: 800, dt: 1 / 30, enraged: i > 5, playerX: 0, playerScreenY: 0 });
+    for (const s of layers.prop.children) {
+      assert.equal(typeof s.anchor.set, 'function', 'anchor 被蓋掉了（自訂屬性撞到 Pixi 內部欄位）');
+      if (s._bbParent) {
+        assert.ok(Math.abs(s.x - (s._bbParent.x + s._bbOffX + shear * s._bbOffY)) < 1e-9, '零件 x 跟著本體矩陣');
+        assert.ok(Math.abs(s.y - (s._bbParent.y + w * s._bbOffY)) < 1e-9, '零件 y 跟著本體矩陣');
+        assert.ok(Math.abs(s.skew.x - Math.atan2(shear, w)) < 1e-12);
+      } else if (s._bbX !== undefined) {
+        assert.ok(Math.abs(s.skew.x - Math.atan2(shear, w)) < 1e-12, '本體抵銷');
+        assert.ok(Math.abs(s.scale.y - s._bbY * Math.hypot(shear, w)) < 1e-12);
+      }
+    }
+    assert.ok(layers.prop.children.some((s) => s._bbParent), '有零件（火焰、魔門眼睛）');
+    arena.exit();
+  }
 });
