@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## EQUIP-REROLL-FLOW-20261004 — 下方按鈕洗煉與專注屬性選取
+
+- Owner：Codex；Done。使用者要求首次按洗煉切模式、屬性顯示選取框，洗煉模式隱藏寶石／附魔，增加屬性間距與選中字體，刪除骰子、改按下方紅色洗煉執行。沿用前次等寬／無位移樣式，單一開發者；既有洗煉Worker指令與UI選取完成，本副本乾淨，目標衝突預檢皆乾淨。
+- 允許js/item.js僅HTML渲染、js/ui.js洗煉模式／操作／提示、css/style.css及css/ashen-forge.css詞條布局、index.html必要快取、tests/item-detail-html.test.cjs／affix-actions-layout.test.cjs／equip-reroll-ui.test.cjs及本紀錄。禁止洗煉公式／機率／費用／Worker協議／存檔／素材及其他副本。item.js模擬邏輯不改，Worker不呼叫詳情HTML，無需更新Worker入口。
+- 驗收首次切模式不扣資源、選取不送指令、下方按鈕只洗當前屬性、等待回應不能連送、洗後選取位置保留／重新讀最新key、沒有骰子、寶石附魔只在洗煉模式隱藏且資料不變、切功能恢復詳情、無可洗詞條禁用、費用與不足提示保留、等寬／無懸停位移、UI回歸、Build、隔離瀏覽器與Console。完成獨立Commit交使用者審查整合，不合併／推送。
+- 完成：首次洗煉按鈕只切換模式並選第一個有效屬性，關閉素材區；模式內按鈕改紅色reroll-affix並加入既有pending鎖，送指令時從目前選中索引讀最新key，防止連送／用洗前舊key；費用、太古說明及材料不足浮字移至下方按鈕。點屬性只選取，強化只退出模式（再按才強化），鑲嵌／附魔也退出並恢復完整詳情。無有效屬性禁用；itemDetailHTML只在洗煉模式省略寶石與附魔，不改物品資料。完整刪除骰子HTML、閃爍状态／動畫及右側按鈕欄CSS。洗煉屬性列固定40px、間距8px，選中文字18px，非洗煉仍用既有字體／密度；四顆操作等寬不變。
+- 修改9檔：js/item.js／ui.js、css/style.css／ashen-forge.css、index.html、tests/item-detail-html.test.cjs／affix-actions-layout.test.cjs／equip-reroll-ui.test.cjs及本紀錄。主頁快取item1.0.7／UI1.0.115、CSS1.0.74／1.0.46。唯讀檢查未改：協作規範／prompts/codex.md、js/formula.js／data.js／bridge.js／gm_exec.js／worker/sim.worker.js／protocol.js、既有UI與洗煉費用／太古回歸檔。沒有素材變更，不需素材庫Commit；Worker協議、模擬及洗煉費用不變。
+- 測試：`node --test tests/item-detail-html.test.cjs tests/affix-actions-layout.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/init-ui-smoke.test.cjs tests/upgrade-animation.test.cjs tests/ui-fixed-canvas.test.cjs tests/reroll-cost.test.cjs tests/reroll-ancient-cost.test.cjs tests/ancient-affix.test.cjs`49/49通過。`npm.cmd run build`439檔通過；`git diff --check`通過。更新舊骰子需求測試為使用者新需求，新增正式事件分支＋正式renderDetail／detailAction測試，驗首按／選取／pending／最新key／普通與太古提示／不足／切頁／失效屬性／換件；未放寬費用或其他行為。
+- 瀏覽器：IAB backend仍無法連線，改bundled Playwright＋headless Edge、隨機本機Port／全新Context。正式index＋真正Worker，GM只在拋棄式環境準備傳說Lv.50單手劍、已鑲紅寶石／火焰附魔及材料；實際點裝備、洗煉、屬性及下方按鈕。首次切換與選取指令0／精華不變，執行後只送一次目前key，扣6精華符合正式公式，其他四條詞條、寶石與附魔完整不變，洗後選取索引保留；切回強化不強化且效果恢復。五行皆40px、gap8px、選中文字18px；四顆操作各104.75px且切模式前後一致，hover不位移。已檢視正式1920×1080截圖，色框／字體／費用提示無裁切；Console error／warning皆0。瀏覽器與服務關閉，臨時截圖刪除，不動正式存檔。
+- 已知既有問題：額外`node --test tests/ui-worker-panels.test.cjs`7/8，一項「item.upgrade status results reach floating text feedback」因測試替身缺UI而ReferenceError；唯讀將fs的ui.js來源換為HEAD修改前版本重跑仍同一項失敗（7/8），不是本次洗煉造成，未改測試接受現況。新增item-detail測試首次用錯附魔欄位level，改用正式gemLv後資料不變斷言通過，未改正式附魔遷移邏輯。
+- 交付：Commit為本紀錄所在`[Codex] fix: 改以下方按鈕洗煉並聚焦屬性選取`提交。無未完成本次需求，可合併；未合併／推送。已知風險為上述既有測試替身問題，未做長時間真人操作。下一步使用者審查整合並重載遊戲確認洗煉流程。
+
+## UI-POINTER-STABILITY-20261004 — 移除禁止游標與按鈕位移、固定裝備操作寬度
+
+- Owner：Codex；Done。使用者要求遊戲所有禁止游標移除、點擊元件懸停位移移除、裝備強化／洗煉／鑲嵌／附魔四顆按鈕等寬且切換不改寬。單一開發者，前置既有UI完成，本副本乾淨，五檔衝突預檢皆乾淨。
+- 允許css/style.css、css/ashen-forge.css、js/ui.js技能拖曳顯示處理、index.html對應快取、本紀錄；禁止遊戲數值、Worker協議、存檔、素材及其他副本。保留停用與非法投放限制，只取消游標符號；合法槽位仍交換，其他區域放下取消。
+- 驗收：遊戲CSS無禁止游標、懸停／按下／選取不位移或放大且保留色框回饋、主按鈕切換前後四顆操作等寬（卸下圖示維持既有40px）、拖曳非法區域／鎖定槽無交換及合法交換／結束清理正常、UI回歸、Build、Console與diff檢查。完成後獨立Commit交使用者審查整合，不合併／推送。
+- 完成：三處not-allowed改default，技能拖曳全頁接住dragover並指定move，drop只在原合法槽位交換、其他區域取消；未進行技能拖曳時不接管外來dragover／drop。取消無遊戲用途的圖片／文字原生dragstart。移除13處懸停／按下／技能選取位移或放大及套裝按鈕放大，保留置中與戰鬥／強化數字動畫、色框回饋；刪除主按鈕1.6倍flex，四顆操作沿用等寬flex，不改卸下圖示。CSS快取1.0.73／1.0.45、UI1.0.114。
+- 修改：css/style.css、css/ashen-forge.css、js/ui.js、index.html及本紀錄。唯讀檢查：AI_RULES.md、AGENTS.md、docs/AI_WORKFLOW.md、prompts/codex.md、package.json、css/inventory-offset.css、.claude/check-conflicts.ps1、上述UI回歸檔及tools/vfx/verify-deformation.cjs；無素材變更，不需素材庫Commit。
+- 測試：`node --test tests/init-ui-smoke.test.cjs tests/skill2-ui.test.cjs tests/skill-loadout.test.cjs tests/upgrade-animation.test.cjs tests/ui-fixed-canvas.test.cjs`36/36；最後修改後`npm.cmd run build`438檔全過，`git diff --check`通過。靜態查遊戲CSS／UI／主頁無not-allowed／no-drop，互動規則只餘transform:none。
+- 瀏覽器：內建IAB backend無法連線，改以bundled Playwright＋headless Edge、隨機本機Port與拋棄式儲存驗證。直接讀正式兩份CSS及正式UI拖曳handler建立隔離fixture；700px操作列的upgrade／reroll／pending三狀態四顆皆152.5px、卸下40px，9類元件hover前後位置與尺寸一致、按下強化不位移；實際mouse drag空白／鎖定無交換，戰鬥列及技能裝載列到合法槽各正常交換，dropEffect全為move、結束class殘留0，外來dragover不接管、原生圖片dragstart被取消。正式index＋真正Worker另啟動，Console error／warning及資源缺失皆0；浏览器及服務皆關閉，無臨時檔。
+- 驗證腳本修正紀錄：首次fixture的favicon 404、第二次未限制測試圖片尺寸造成Playwright自動捲動而誤判viewport y；修正測試頁favicon與排版後完整驗證通過。正式頁第一次測試服務未解碼空白路徑造成素材404，修正服務decodeURIComponent後重跑缺失0，未修改素材或放寬驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 移除禁止游標與按鈕位移並固定裝備操作寬度`提交。無未完成需求、無已知新增風險；未做長時間真人操作，滑鼠系統圖案以瀏覽器實際dropEffect及停用cursor驗證。可合併，未合併／推送。下一步使用者審查整合並重載遊戲。
+
 ## MERGE-PREP-20261003 — 整理所有未提交修改供合併
 
 - Owner：Codex；Done。使用者要求「清理unstaged區，需要的commit，不要的就刪掉，我要merge」。本次所有12項初始未提交內容均必要，含正式回歸測試及使用者slash-wind-spin美術設定，全部保留；無廢棄untracked檔需要刪除，不刪正式檔、正在開啟的Excel鎖檔或本機依賴／素材庫設定。此指示授權完成前次已告知的同檔快取更新，不另重複詢問；不合併／推送。
