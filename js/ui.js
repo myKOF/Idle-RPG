@@ -3023,6 +3023,60 @@ function zoneElementTagsList(z, maxCount) {
   }).filter(Boolean);
 }
 
+/* ---- 戰鬥區上方切頁／關卡列的圖示 ----
+   取代原本的 emoji（各平台字型畫出來大小、配色不一，也太陽春）。24×24 雙色線稿：
+   線條跟著文字色（currentColor），重點色由 CSS 的 --ic 決定（css/ashen-forge-flat.css 的 .ui-ico）。
+   class 約定：ln＝只描線、st＝重點色描線、fa＝實心重點色、fb＝實心固定棕色（香蒲）、fs＝半透明重點色底加重點色線。
+   只畫輪廓與一兩個重點，縮到 18px 仍看得出是什麼。 */
+var UI_ICON_PATHS = {
+  desert: '<circle class="fa" cx="16.5" cy="7.5" r="3.4"/>' +
+    '<path class="fs" d="M2 20.5c2.6-5.6 6.4-7.4 10-4.4 2.4 2 5.8 2.1 10-1.1v5.5z"/>',
+  icefield: '<g class="ln"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g>' +
+    '<g class="ln" transform="rotate(60 12 12)"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g>' +
+    '<g class="ln" transform="rotate(120 12 12)"><path d="M12 2.8v18.4M9.6 5l2.4 2 2.4-2M9.6 19l2.4-2 2.4 2"/></g>' +
+    '<path class="fs" d="M12 8.2l3.2 1.9v3.8L12 15.8l-3.2-1.9v-3.8z"/>',
+  swamp: '<path class="ln" d="M9 19.5V9.5M15.5 19.5v-6M9 16.5c-2.2-.8-3.4-2.4-3.8-4.2M15.5 17c1.8-.6 2.9-1.8 3.3-3.4"/>' +
+    '<rect class="fb" x="7.5" y="3.8" width="3" height="6.4" rx="1.5"/>' +
+    '<rect class="fb" x="14" y="8" width="3" height="5.2" rx="1.5"/>' +
+    '<path class="st" d="M2.5 21.5c1.4-1 2.8-1 4.2 0s2.8 1 4.2 0 2.8-1 4.2 0 2.8 1 4.2 0"/>',
+  undead: '<path class="fs" d="M2 20.5L9 7.5l4.4 7.6 2.6-4 6 9.4z"/>' +
+    '<circle class="fa" cx="18.2" cy="5.2" r="2.2"/>',
+  godwar: '<path class="fs" d="M12 2.5l2.4 2.6v9.4H9.6V5.1z"/>' +
+    '<path class="st" d="M7 14.5h10M12 14.5v5"/>' +
+    '<circle class="fa" cx="12" cy="21" r="1.2"/>',
+  chaos: '<path class="st" d="M12 12c0-1.6 1.7-2.3 2.9-1.5 1.5 1 1.2 3.4-.6 4.5-2.3 1.4-5.4.2-6.2-2.5-.9-3.2 1.5-6.3 4.9-6.5 4.1-.2 7.1 3.3 6.4 7.2"/>' +
+    '<circle class="fa" cx="12" cy="12" r="1.3"/>',
+  sanctuary: '<path class="fs" d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z"/>' +
+    '<path class="st" d="M19 2.8v3.4M17.3 4.5h3.4"/>',
+  lock: '<path class="ln" d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>' +
+    '<rect class="fs" x="5" y="10.5" width="14" height="10" rx="2"/>' +
+    '<circle class="fa" cx="12" cy="15.5" r="1.4"/>',
+  prev: '<path class="ln" d="M15 5.5L8.5 12l6.5 6.5"/>',
+  next: '<path class="ln" d="M9 5.5l6.5 6.5L9 18.5"/>',
+  last: '<path class="ln" d="M6.5 5.5L13 12l-6.5 6.5M18 5.5v13"/>',
+  pip: '<rect class="ln" x="3" y="5" width="18" height="14" rx="2"/>' +
+    '<rect class="fa" x="12" y="11" width="6.5" height="5" rx="1"/>',
+  world: '<circle class="ln" cx="12" cy="12" r="9"/>' +
+    '<path class="st" d="M3 12h18M12 3c3 2.8 3 15.2 0 18M12 3c-3 2.8-3 15.2 0 18"/>'
+};
+var UI_ZONE_ICON = {
+  desert: 'desert', Icefield: 'icefield', swamp: 'swamp', undead_mountains: 'undead',
+  god_battlefield: 'godwar', god_chaos: 'chaos', god_sanctuary: 'sanctuary'
+};
+
+function uiIcon(name) {
+  var paths = UI_ICON_PATHS[name];
+  if (!paths) return '';
+  return '<svg class="ui-ico ui-ico-' + name + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + paths + '</svg>';
+}
+
+/* 地圖圖示；沒有對應圖示的場景退回資料表上的 emoji。 */
+function zoneIconHtml(zoneKey, zoneDef) {
+  var name = UI_ZONE_ICON[zoneKey];
+  if (name) return uiIcon(name);
+  return zoneDef && zoneDef.emoji ? esc(zoneDef.emoji) : '';
+}
+
 function renderSceneTabs() {
   var header = uiHeaderPanelSnapshot() || {};
   var stage = header.stage || {};
@@ -3802,11 +3856,11 @@ function renderZoneBar() {
     toggleBtn.style.display = isGodUnlocked ? 'inline-block' : 'none';
     if (isGodUnlocked) {
       if (activeRlm === 'god') {
-        toggleBtn.textContent = '🌍 凡人界地圖';
+        toggleBtn.innerHTML = uiIcon('world') + ' 凡人界地圖';
         toggleBtn.setAttribute('data-tt-title', '切換至凡人界');
         toggleBtn.setAttribute('data-tt-desc', '切換為荒漠、冰原、沼澤地圖');
       } else {
-        toggleBtn.textContent = '✨ 神界地圖';
+        toggleBtn.innerHTML = uiIcon('sanctuary') + ' 神界地圖';
         toggleBtn.setAttribute('data-tt-title', '切換至神界');
         toggleBtn.setAttribute('data-tt-desc', '切換為太古戰場、混沌界、永恒神域地圖');
       }
@@ -3854,14 +3908,14 @@ function renderZoneBar() {
     }
 
     var badgeText = locked
-      ? '🔒'
+      ? uiIcon('lock')
       : '(' + fmt(zoneBestOf(z)) + ')';
     var cls = 'zone-btn' + (locked ? ' locked' : '') + (z === cur ? ' active' : '');
     var dis = locked ? ' style="opacity:0.5; cursor:default;"' : ' style="opacity:1; cursor:pointer;"';
     var ttAttr = ' data-tt-title="' + esc(zd.name) + '" data-tt-desc="' + esc(ttDesc) + '"';
 
     return '<button class="' + cls + '" data-zone="' + z + '"' + ttAttr + dis + '>' +
-      zd.emoji + ' ' + esc(zd.name) + ' <span class="zone-best">' + badgeText + '</span></button>';
+      zoneIconHtml(z, zd) + ' ' + esc(zd.name) + ' <span class="zone-best">' + badgeText + '</span></button>';
   }).join('');
 
   zoneBox.innerHTML = html;
@@ -3897,7 +3951,7 @@ function refreshStageDisplay(stageOverride) {
     : (UI.stageHold.active && typeof UI.stageHold.targetStage === 'number'
       ? UI.stageHold.targetStage
       : (_stagePendingStage !== null ? _stagePendingStage : stg.current));
-  setTextIfChanged(label, znd.emoji + ' 第 ' + displayStage + ' 階段');
+  setHtmlIfChanged(label, zoneIconHtml(stg.zone || 'desert', znd) + ' 第 ' + displayStage + ' 階段');
   setTextIfChanged(best, '最高' + stg.best + '關');
   // 切換在途時不要用舊快照蓋掉勾選狀態
   if (!isUiCommandPending(nodePendingKey('stage-auto'))) setCheckedIfChanged(auto, stg.autoAdvance);

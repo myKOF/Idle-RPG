@@ -518,3 +518,110 @@ textarea:focus-visible {
     transition: none;
   }
 }
+
+/* ------------------------------------------------------------------ 二次確認彈窗：慎重的厚框
+   一般彈窗維持細線；確認類（會扣資源、不可逆）用較厚的 ridge 立體框，和外框同一語彙，讓人停一下。 */
+.confirm-box {
+  border: 4px ridge #67756c !important;
+  border-radius: 10px !important;
+}
+
+/* ------------------------------------------------------------------ 戰鬥區頁籤與關卡列的圖示（js/ui.js 的 UI_ICON_PATHS） */
+.ui-ico {
+  --ic: currentColor;
+  width: 1.3em;
+  height: 1.3em;
+  flex: none;
+  vertical-align: -.3em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ui-ico .ln {
+  fill: none;
+  stroke: currentColor;
+}
+
+.ui-ico .st {
+  fill: none;
+  stroke: var(--ic);
+}
+
+.ui-ico .fa {
+  fill: var(--ic);
+  stroke: none;
+}
+
+.ui-ico .fs {
+  fill: color-mix(in srgb, var(--ic) 30%, transparent);
+  stroke: var(--ic);
+}
+
+.ui-ico-desert {
+  --ic: #f0b955;
+}
+
+.ui-ico-icefield {
+  --ic: #7fd0f2;
+}
+
+.ui-ico-swamp {
+  --ic: #78c35f;
+}
+
+.ui-ico-undead {
+  --ic: #a99ad0;
+}
+
+.ui-ico-godwar {
+  --ic: #e0b25e;
+}
+
+.ui-ico-chaos {
+  --ic: #a98bff;
+}
+
+.ui-ico-sanctuary {
+  --ic: #f4dc8f;
+}
+
+.ui-ico-lock {
+  --ic: #8b8f98;
+}
+
+.ui-ico-pip,
+.ui-ico-world {
+  --ic: #7fb4e8;
+}
+
+/* 控制鈕裡的方向圖示：粗一點才有按鈕的分量 */
+.ui-ico-prev,
+.ui-ico-next,
+.ui-ico-last {
+  stroke-width: 2.4;
+}
+
+.zone-best .ui-ico {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -.2em;
+}
+
+#stage-label .ui-ico {
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: -.4em;
+}
+
+.stage-main-controls .btn.sm,
+.stage-tools .btn.sm {
+  line-height: 1;
+}
+
+.ui-ico .fb {
+  fill: #b98a56;
+  stroke: none;
+}
