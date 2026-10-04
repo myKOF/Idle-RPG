@@ -124,62 +124,123 @@ test('調整第七階本體尺寸會同步靜止圓盤，迴旋／每波增幅�
  }
 });
 
-test('每個敵人存活期間只成功觸發一次，不延命／移位，到期與換施放者也不重置',()=>{
+test('同一敵人的靜止斬作用中不重生／延命／移位，結束後換施放者也可再觸發',()=>{
  const {c,p,m,ctx}=setup(false),u=c.sgUlt('vacuumslash','vacuumOmen');let rolls=0;c.chance=()=>{rolls++;return true;};
  c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
- const f=c.SKILL2_RT.grounds[0],pos={...f.pos},other=h.playerEnt();assert.ok(f);assert.equal(m._sgVacuumOmenTriggered,true);
+ const f=c.SKILL2_RT.grounds[0],pos={...f.pos},other=h.playerEnt();assert.ok(f);assert.equal(f.tgt,m);
  m.pos={x:400,y:400};c.GT=1;
  for(let i=0;i<100;i++)c.sgSpawnStaticVacuum(i%2?p:other,c.getStats(),u,m,'mv-float',100);
  assert.equal(rolls,1);assert.equal(c.SKILL2_RT.grounds.length,1);near(f.bornAt,0);near(f.expiresAt,3);near(f.pos.x,pos.x);near(f.pos.y,pos.y);
  c.GT=3;c.sgTickGrounds(3,ctx);assert.equal(c.SKILL2_RT.grounds.length,0);
- c.sgSpawnStaticVacuum(other,c.getStats(),u,m,'mv-float',100);assert.equal(c.SKILL2_RT.grounds.length,0);assert.equal(rolls,1);
+ c.sgSpawnStaticVacuum(other,c.getStats(),u,m,'mv-float',100);assert.equal(c.SKILL2_RT.grounds.length,1);assert.equal(rolls,2);
+ const next=c.SKILL2_RT.grounds[0];assert.notEqual(next.vfxId,f.vfxId);assert.equal(next.tgt,m);
+ near(next.bornAt,3);near(next.expiresAt,6);near(next.pos.x,400);near(next.pos.y,400);
  const fresh=h.enemy(1e9,400,400,m.name);c.sgSpawnStaticVacuum(p,c.getStats(),u,fresh,'mv-float',100);
- assert.equal(c.SKILL2_RT.grounds.length,1);assert.equal(rolls,2);assert.equal(fresh._sgVacuumOmenTriggered,true);
+ assert.equal(c.SKILL2_RT.grounds.length,2);assert.equal(rolls,3);assert.equal(c.SKILL2_RT.grounds[1].tgt,fresh);
 });
 
-test('機率未中／零傷害／敵人死亡／場域上限沒有生成時，不消耗敵人的一次觸發',()=>{
+test('截止前阻擋／截止時可再觸發，不必等待舊場域從陣列回收',()=>{
+ const {c,p,m,f}=setup(),u=c.sgUlt('vacuumslash','vacuumOmen');let rolls=0;c.chance=()=>{rolls++;return true;};
+ c.GT=2.999;c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
+ assert.equal(rolls,0);assert.equal(c.SKILL2_RT.grounds.length,1);
+ c.GT=3;c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
+ assert.equal(rolls,1);assert.ok(c.SKILL2_RT.grounds.includes(f));
+ const live=c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield'&&f.expiresAt>c.GT);
+ assert.equal(live.length,1);assert.notEqual(live[0].vfxId,f.vfxId);near(live[0].bornAt,3);near(live[0].expiresAt,6);
+ c.GT=6;c.chance=()=>{rolls++;return false;};c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
+ assert.equal(rolls,2);assert.equal(c.SKILL2_RT.grounds.filter(f=>f.expiresAt>c.GT).length,0,'結束後仍須通過觸發機率');
+ c.chance=()=>true;c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
+ assert.equal(c.SKILL2_RT.grounds.filter(f=>f.expiresAt>c.GT).length,1,'機率失敗沒有鎖住後續觸發');
+});
+
+test('各敵人按自己的靜止斬截止時間解鎖，不受其他敵人的斬結束影響',()=>{
+ const {c,p,m}=setup(),u=c.sgUlt('vacuumslash','vacuumOmen'),other=h.enemy(1e9,400,400,'later');
+ c.GT=1;c.sgSpawnStaticVacuum(p,c.getStats(),u,other,'mv-float',100);
+ const later=c.SKILL2_RT.grounds[1];near(later.expiresAt,4);
+ c.GT=3;c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);c.sgSpawnStaticVacuum(p,c.getStats(),u,other,'mv-float',100);
+ const live=c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield'&&f.expiresAt>c.GT);
+ assert.equal(live.length,2);assert.equal(live.filter(f=>f.tgt===other).length,1);assert.ok(live.includes(later));
+ c.GT=4;c.sgSpawnStaticVacuum(p,c.getStats(),u,other,'mv-float',100);
+ const reborn=c.SKILL2_RT.grounds.filter(f=>f.tgt===other&&f.expiresAt>c.GT);
+ assert.equal(reborn.length,1);assert.notEqual(reborn[0].vfxId,later.vfxId);near(reborn[0].expiresAt,7);
+});
+
+test('靜止斬提前清場後，同一存活敵人可重新觸發',()=>{
+ const {c,p,m,f}=setup();c.GT=1;c.SKILL2_RT.grounds=[];
+ c.sgSpawnStaticVacuum(p,c.getStats(),c.sgUlt('vacuumslash','vacuumOmen'),m,'mv-float',100);
+ assert.equal(c.SKILL2_RT.grounds.length,1);assert.equal(c.SKILL2_RT.grounds[0].tgt,m);
+ assert.notEqual(c.SKILL2_RT.grounds[0].vfxId,f.vfxId);near(c.SKILL2_RT.grounds[0].expiresAt,4);
+});
+
+test('機率未中／零傷害／敵人死亡／場域上限沒有生成時，不鎖住後續觸發',()=>{
  for(const failure of ['chance','damage','dead','cap']){
   const {c,p,m}=setup(false),u=c.sgUlt('vacuumslash','vacuumOmen');
   if(failure==='chance')c.chance=()=>false;
   if(failure==='dead')m.hp=0;
   if(failure==='cap')c.SKILL2_RT.grounds=Array.from({length:c.SG_GROUND_MAX_FIELDS},()=>({kind:'other'}));
   c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',failure==='damage'?0:100);
-  assert.equal(m._sgVacuumOmenTriggered,undefined,failure);assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield').length,0);
+  assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield').length,0,failure);
   c.chance=()=>true;m.hp=1e9;c.SKILL2_RT.grounds=[];
-  c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);assert.equal(c.SKILL2_RT.grounds.length,1);assert.equal(m._sgVacuumOmenTriggered,true);
+  c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);assert.equal(c.SKILL2_RT.grounds.length,1);assert.equal(c.SKILL2_RT.grounds[0].tgt,m);
  }
 });
 
-test('正式施放MISS不消耗觸發；不同敵人各生成一個，後波與再次施放不再生成',()=>{
+test('正式施放MISS不鎖觸發；不同敵人各生成一個，後波／重施不重生，結束後重施可生成',()=>{
  const {c,p,m,ctx}=setup(false);m.pos={x:50,y:10};p.mp=1e6;
  const fresh=h.enemy(1e9,45,15,'second');c.FIELD.enemies.push(fresh);ctx.getEnemies=()=>c.FIELD.enemies;
  const resolve=c.resolveHit;c.resolveHit=()=>({miss:true,dmg:0});
- assert.ok(c.castSkill2(p,c.FIELD.enemies,'vacuumslash','mv-float'));assert.equal(c.SKILL2_RT.grounds.length,0);assert.equal(m._sgVacuumOmenTriggered,undefined);
+ assert.ok(c.castSkill2(p,c.FIELD.enemies,'vacuumslash','mv-float'));assert.equal(c.SKILL2_RT.grounds.length,0);
  c.SKILL2_RT.vacuumWaves=[];c.resolveHit=resolve;
  assert.ok(c.castSkill2(p,c.FIELD.enemies,'vacuumslash','mv-float'));assert.equal(c.SKILL2_RT.grounds.length,2);
  for(const at of Array.from(c.SKILL2_RT.vacuumWaves,w=>w.at)){c.GT=at;c.sgTickVacuumWaves(ctx);}
  assert.equal(c.SKILL2_RT.grounds.length,2);
+ assert.ok(c.castSkill2(p,c.FIELD.enemies,'vacuumslash','mv-float'));assert.equal(c.SKILL2_RT.grounds.length,2);
  c.GT=3;c.sgTickGrounds(3,ctx);assert.equal(c.SKILL2_RT.grounds.length,0);
- assert.ok(c.castSkill2(p,c.FIELD.enemies,'vacuumslash','mv-float'));assert.equal(c.SKILL2_RT.grounds.length,0);
+ assert.ok(c.castSkill2(p,c.FIELD.enemies,'vacuumslash','mv-float'));assert.equal(c.SKILL2_RT.grounds.length,2);
 });
 
-test('全場同時最多十個靜止斬，其他場域不占額度，滿場敵人可在名額釋出後成功一次',()=>{
- const {c,p,ctx}=setup(false),u=c.sgUlt('vacuumslash','vacuumOmen');
+test('全場同時最多十五個靜止斬，其他場域不占額度，名額釋出後新舊敵人均可觸發',()=>{
+ const {c,p}=setup(false),u=c.sgUlt('vacuumslash','vacuumOmen');
  const other={kind:'other',expiresAt:100};c.SKILL2_RT.grounds.push(other);
- const enemies=Array.from({length:11},(_,i)=>h.enemy(1e9,100+i*20,80,'cap-'+i));
+ const enemies=Array.from({length:16},(_,i)=>h.enemy(1e9,100+i*20,80,'cap-'+i));
  for(const m of enemies)c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
- const fixed=c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield');assert.equal(fixed.length,10);assert.ok(c.SKILL2_RT.grounds.includes(other));
- assert.equal(enemies[10]._sgVacuumOmenTriggered,undefined,'滿場拒絕不占用敵人成功次數');
+ const fixed=c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield');assert.equal(fixed.length,15);assert.ok(c.SKILL2_RT.grounds.includes(other));
+ assert.ok(!fixed.some(f=>f.tgt===enemies[15]),'第十六個因滿場而未生成');
  c.GT=3; // 圓盤已到期，即使模擬回收尚未清掉陣列也不占同時存活額度。
- c.sgSpawnStaticVacuum(p,c.getStats(),u,enemies[10],'mv-float',100);assert.equal(enemies[10]._sgVacuumOmenTriggered,true);
+ c.sgSpawnStaticVacuum(p,c.getStats(),u,enemies[15],'mv-float',100);
  assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield'&&f.expiresAt>c.GT).length,1);
- for(const m of enemies.slice(0,10))c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
- assert.equal(c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield'&&f.expiresAt>c.GT).length,1,'已成功過的敵人仍不可再觸發');
+ for(const m of enemies.slice(0,15))c.sgSpawnStaticVacuum(p,c.getStats(),u,m,'mv-float',100);
+ const live=c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield'&&f.expiresAt>c.GT);
+ assert.equal(live.length,15);assert.equal(live.filter(f=>f.tgt===enemies[0]).length,1,'舊敵人的場域結束後可再觸發');
+ assert.ok(!live.some(f=>f.tgt===enemies[14]),'名額重新滿場後仍阻擋新生成');
 });
 
-test('正式技能說明包含每敵一次與全場十個限制',()=>{
+test('正式Worker與Runtime同時保留四道環繞斬及十五道靜止斬，結束後同敵人新斬重新顯示',()=>{
+ const {c,p,ctx}=setup(false);p.mp=1e6;
+ const st=c.getStats();c.getStats=()=>st;
+ const enemies=Array.from({length:16},(_,i)=>h.enemy(1e9,p.pos.x+(i?100*Math.cos((i-1)*Math.PI*2/15):40),p.pos.y+(i?100*Math.sin((i-1)*Math.PI*2/15):0),'cast-cap-'+i));
+ c.FIELD.enemies=enemies;ctx.getEnemies=()=>enemies;
+ const marker={...disc,layers:[{id:'marker',type:'sprite',assetId:'marker'}]},view=adapter(marker);
+ const live=()=>c.SKILL2_RT.grounds.filter(f=>f.kind==='vacuumfield'&&f.expiresAt>c.GT);
+ assert.ok(c.castSkill2(p,enemies,'vacuumslash','mv-float'));assert.equal(c.SKILL2_RT.orbits.length,4);assert.equal(live().length,15);
+ const original=c.shimDrainUrgentVisualEvents().filter(e=>e.variant==='void-disc'&&e.fxKind==='aura');assert.equal(original.length,4);
+ c.sgTickGrounds(0,ctx);const fixed=c.shimDrainUrgentVisualEvents().filter(e=>e.area?.staticVacuum);assert.equal(fixed.length,15);
+ for(const e of [...original,...fixed])assert.equal(view.rt.tryPlay(e),true);
+ view.rt.update(0);assert.equal(view.air.nodes.filter(n=>n.t?.visible).length,4);assert.equal(view.ground.nodes.filter(n=>n.t?.visible).length,15);
+ const ids=new Set(fixed.map(e=>e.area.id));view.rt.update(3);
+ assert.equal(view.ground.nodes.filter(n=>n.t?.visible).length,0);assert.equal(view.air.nodes.filter(n=>n.t?.visible).length,4);
+ c.GT=3;c.sgTickGrounds(3,ctx);c.shimDrainUrgentVisualEvents();assert.equal(live().length,0);
+ assert.ok(c.castSkill2(p,enemies,'vacuumslash','mv-float'));c.shimDrainUrgentVisualEvents();c.sgTickGrounds(0,ctx);
+ const again=c.shimDrainUrgentVisualEvents().filter(e=>e.area?.staticVacuum);assert.equal(again.length,15);
+ again.forEach(e=>{assert.ok(!ids.has(e.area.id));near(e.area.growAge,0);near(e.area.lifeSec,3);assert.equal(view.rt.tryPlay(e),true);});
+ assert.equal(live().filter(f=>f.tgt===enemies[0]).length,1);view.rt.update(0);
+ assert.equal(view.ground.nodes.filter(n=>n.t?.visible).length,15);assert.equal(view.air.nodes.filter(n=>n.t?.visible).length,4);view.rt.destroy();
+});
+
+test('正式技能說明包含同敵人結束後再觸發／十五個上限／不含原始環繞斬',()=>{
  const {c}=setup(false),desc=c.describeSkill2Ult('vacuumslash',0,1);
- assert.match(desc,/每個敵人.*最多成功觸發 1 次/);assert.match(desc,/最多同時存在 10 個靜止真空斬/);
+ assert.match(desc,/同一個敵人.*結束後可再次觸發/);assert.match(desc,/最多同時存在 15 個靜止真空斬/);
+ assert.match(desc,/不包含原本圍繞自身的虛空斬/);assert.doesNotMatch(desc,/存活期間最多成功觸發/);
 });
 
 test('追蹤風刃沿用原尺寸與空中層，不受靜止斬影響',()=>{

@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## VACUUM-OMEN-RETRIGGER-20261004 — 靜止虛空斬十五個上限與結束後再觸發
+
+- Owner：Codex；Done。使用者要求全場最多15個靜止虛空斬，同一敵人生成的靜止斬結束後可再觸發；原始環繞斬不占名額。單一開發者，前置靜止場域／Worker／Runtime接線完成，其他目標衝突預檢乾淨。index.html有Claude第12行樣式新增與未合併風格提交，使用者已同意僅修改skills2／bridge兩行快取並保留雙方內容。
+- 允許js/skills2.js生成限制、js/bridge.js與js/worker/sim.worker.js必要快取、index.html僅skills2／bridge版本、tests/vacuum-omen-vfx.test.cjs、config/Excel/Skills2.xlsx僅AW219／AX219說明及對應CSV、docs/WIND_SKILL_AUDIT.md與本紀錄。禁止技能傷害／機率／時間／尺寸／素材／協議／存檔／UI布局、其他副本與未完成裝備任務；不合併／推送。後續接手者使用者。
+- 驗收：同敵人場域作用中不重生／延命／移位，截止前阻擋／截止時可再觸發，清場解除限制、不同敵人與施放者、MISS／機率失敗／死亡／零傷害／滿場可重試，第16個拒絕、原始4道環繞＋15道靜止的Worker事件與Runtime同時19道，重新生成使用新場域ID／出生位置與壽命，正式說明／Excel僅兩格變更／原生重開、相關回歸、Build及diff檢查。完成獨立Commit，僅提交本任務內容，保留其他進行中修改。
+- 完成：上限改15，移除永久敵人標記，直接查既有vacuumfield的tgt與expiresAt作為單一權威；只阻擋該敵人尚未到期的靜止斬。到期即解鎖（無須等陣列清理），清場也解除；各敵人的截止時間獨立，原始環繞斬不占名額。再次生成仍抽原機率、使用新ID／當下敵人位置／完整表定壽命。傷害／機率／成長／尺寸／持續時間／Protocol43與原始環繞行為未改；skills2 1.0.281、bridge 1.0.219、Worker入口／skills2 import同為20261004-vacuum-omen-retrigger。
+- 修改9檔：js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html、tests/vacuum-omen-vfx.test.cjs、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、docs/WIND_SKILL_AUDIT.md與本紀錄。唯讀檢查未改：AI_RULES.md／AGENTS.md／AI_WORKFLOW.md／prompts/codex.md、js/vfx-core.js／vfx-runtime.js／worker/shim.js／protocol.js／battlefield.js、tools/config_tables.cjs、scripts/sim/engine.js、相關既有回歸檔與Claude的index diff／兩筆風格提交。其他裝備任務於本輪期間另行提交d5132b3c，未混入本次Commit；沒有素材變更，不需素材庫Commit。
+- Excel：Spreadsheets工具僅輸出臨时候選，逐格／格式比對發現無法保留既有空值、字型／邊框、凍結欄、Filter與Validation，因此未寫回專案。改原生隱藏Excel COM僅AW219／AX219；儲存並重開RepairMode=false。逐格僅兩格說明變更、其他值／公式／樣式／凍結欄／Filter／Validation等相同。Office自然正規化原XML尺寸精度及預設高度，另以原生Excel同時讀前後两份核對兩張表每欄實際Width／每列RowHeight完全一致。渲染前後同範圍核對，保留配置表原排版；CSV由正式readXlsxRows／csvStringify生成，JS只替換本列說明，`node tools/config_tables.cjs --apply Skills2`語意變更0。
+- 測試：`node --test tests/vacuum-omen-vfx.test.cjs tests/vfx-startup-loading.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs`54/54通過（vacuum-omen18/18）；正式Worker場域／事件進入正式Core／Runtime，測試後端核對4空中節點＋15地面節點、三秒回收／舊環繞仍在／同敵人新ID重新播放，無瀏覽器人工密集實戰驗收。`npm.cmd run build`439檔通過，`git diff --check`通過。19道測試初版將16敵人重疊而觸發既有緊急視覺佇列飽和，改用有一隻近戰起手目標與周身分布的合法戰場驗完整19道；固定本測試不變的屬性快照避免逐命中重建VM，斷言與正式傷害未減弱。
+- 既有風險：額外`node --test tests/wind-skill-audit.test.cjs`54項44過10失敗（高階風刃／真空斬fixture與既有行為）；以唯讀fs載入HEAD原skills2重跑同檔，44/54及完全相同10項失敗，未新增／未改舊測試接受現況。另用正式Worker的16隻重疊敵人核對，HEAD十道／本版十五道在第一波皆因既有緊急視覺佇列滿而丟掉場域刷新，下一個0.25秒刷新分別恢復完整10／15道；判定場域一直存在，未改此共用佇列策略。密集戰鬥首波顯示可能稍晚，人工觀感待驗收。
+- 交付：本紀錄所在`[Codex] fix: 調整靜止虛空斬上限與再次觸發規則`提交。無本次未完成程式項目，可合併（上述既有回歸／密集首波風險保留），未合併／推送。下一步由使用者審查整合並重載遊戲；完整臨時驗證、候選及渲染均在System Temp/codex-vacuum-omen-retrigger-20261004，未納入遊戲專案。
+
 ## EQUIP-BOARD-LAYOUT-20261004 — 裝備區放大與完整寶石鑲孔
 
 - Owner：Codex；Done。使用者依圖片要求裝備顯示區等比放大約25%、詳情同比縮窄、四功能操作列與裝備區底部對齊、不顯示空附魔文字、所有寶石孔逐孔顯示並改名寶石鑲孔。前置既有等寬／洗煉流程完成，開始時本副本乾淨，單一開發者。
