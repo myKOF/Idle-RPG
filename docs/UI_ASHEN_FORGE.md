@@ -35,3 +35,15 @@ ui-scale.js 保留均勻縮放，依視窗增加設計畫布的高度或寬度�
 - 驗證圖與報告放在忽略的 tmp/ui-*.png、tmp/ui-qa-report.json；未執行全專案測試套件。
 
 預覽：http://127.0.0.1:8347。此為本機測試伺服器，不是正式部署。尚未合併 develop。
+
+## 左側功能區濃重化（2026-10-04）
+
+新增 `css/ashen-forge-heavy.css`，載入順序在 `ashen-forge.css` 之後，只覆蓋 `#workspace-area`（左側功能區）。
+語彙取自「超神進化切換確認」彈窗與戰鬥區地圖頁籤：石紋底、鑄鐵紋理按鈕、ridge 立體邊、暗紅啟用色、襯線體標題。
+只改邊線、背景、用色與字體，不動尺寸、排版與 DOM。
+
+- 底色分四種，定義在檔頭 `--afh-*` 變數：card（浮起的石板）、well（凹槽）、raised（可按的鐵塊）、red（啟用的紅鐵塊）。
+- 不開回 `box-shadow`／`text-shadow`：`ashen-forge.css` 的 `#workspace-area *` 因效能（UI-RASTER-20260913、UI-MODAL-20260914）全域關閉，立體感改靠 ridge 邊與漸層底。
+- 背包格、裝備格不鋪紋理圖（數量多），品質色／元素色邊框（`--elem`、`--c`）不動。
+- 既有規則帶 `!important` 的（裝備操作列、技能頁按鈕、背包列）在此同樣帶 `!important` 覆蓋。
+- 要還原舊貌：拿掉 `index.html` 中這支 CSS 的 link 即可，其他檔案沒有被改。
