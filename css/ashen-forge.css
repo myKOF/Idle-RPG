@@ -1057,9 +1057,11 @@ select option {
 
 .item-cell.selected,
 .eq-slot.selected {
-  outline: 2px solid #ead5c5;
+  outline: 3px solid #ffe354;
   outline-offset: 1px;
-  box-shadow: 0 0 7px #a63129aa !important;
+  background-color: #715b12;
+  background-blend-mode: screen;
+  box-shadow: inset 0 0 0 100px #ffe35438, 0 0 7px #ffe354aa !important;
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured
@@ -1630,7 +1632,9 @@ html *::-webkit-scrollbar-corner {
 }
 
 /* 選取框用 border 畫——#workspace-area * 全域關掉了 box-shadow。 */
-#tab-equip #detail-pane .it-affix-row.is-reroll-selected .it-affix-text {
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .it-affix-text,
+#tab-equip #detail-pane .it-sockets .socket-row.is-socket-selected,
+#tab-equip #detail-pane .it-sockets .socket-row.is-socket-selected:hover {
   border-color: #4ade80;
   background: rgba(74, 222, 128, .06);
 }
@@ -1685,8 +1689,10 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-equip #detail-pane .it-sockets .socket.filled:hover {
-  border-color: #5a5d66;
+  text-decoration: none;
 }
+
+#tab-equip #detail-pane .it-sockets .socket.filled:not(.is-socket-selected):hover { border-color: #5a5d66; }
 
 #tab-equip #detail-pane .sk-val {
   color: #d6d0c3;
@@ -1761,11 +1767,6 @@ html *::-webkit-scrollbar-corner {
   align-items: center;
   gap: 8px;
   min-height: 34px;
-}
-
-#tab-equip #detail-pane .socket-row.is-socket-selected {
-  border: 1px solid #a8322c;
-  background: #241719;
 }
 
 #tab-equip #detail-pane .socket-pick {

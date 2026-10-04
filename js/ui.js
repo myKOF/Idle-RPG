@@ -855,6 +855,7 @@ function releaseUiPendingToken(token) {
     }
   }
   refreshUiPanelSubscriptions();
+  syncEquipSocketPending();
   return true;
 }
 
@@ -900,7 +901,7 @@ function acquireUiPending(commandName, options) {
     syncUiPendingControls(keys[k]);
   }
   refreshUiPanelSubscriptions();
-
+  syncEquipSocketPending();
   return { entry: entry };
 }
 
@@ -1064,6 +1065,7 @@ function bindWorkerUiState() {
       UI.dirty.equip = false;
     }
     releaseUiPendingByPanel(msg.name);
+    if (msg.name === 'gems' && UI.tab === 'equip' && equipSocketModeFor(findSelItem())) renderDetail();
     if (UI_WORKER_STATE.panelQueued[msg.name]) {
       var queuedParams = UI_WORKER_STATE.panelQueued[msg.name];
       delete UI_WORKER_STATE.panelQueued[msg.name];
@@ -3177,7 +3179,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
       if (!sk) continue;
       var cd = uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt);
       var lv = isSgE
-        ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
+        ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
         : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
       /* 反擊法力門檻＝最高生效階段（含超神）的消耗，不逐階累加；
          恆時生效的被動（大地守護）沒有觸發消耗，門檻為 0。 */
@@ -3575,7 +3577,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var rawCdVal = (pEnt && pEnt.skillCds && (pEnt.skillCds[entry] || (isSgE ? pEnt.skillCds[entry.slice(3)] : 0))) || 0;
     var cd = pEnt ? uiCountdownRemain(rawCdVal, snapshotGt) : 0;
     var lv = isSgE
-      ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
+      ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
       : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
     /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即生效、不主動施放，
        在快捷列以旋轉流動外框和其他技能區分。反擊的法力門檻使用最高生效階段（含超神）的消耗。 */
@@ -5156,6 +5158,44 @@ function socketSelectedGem(type, level, fusedId) {
   });
 }
 
+/* 選孔與 pending 只更新現有控制項，保留寶石節點及捲動位置。 */
+function syncEquipSocketControls(it, mode) {
+  var pane = $id('detail-pane');
+  if (!pane || !pane.querySelectorAll || !pane.querySelector) return false;
+  var holes = pane.querySelector('.equip-socket-page');
+  if (!holes) return false;
+  var pending = isUiCommandPending(itemPendingKey(it.id));
+  holes.querySelectorAll('[data-socket-pick]').forEach(function (button) {
+    var selected = Number(button.getAttribute('data-socket-pick')) === mode.selIdx;
+    button.setAttribute('aria-pressed', String(selected));
+    button.parentNode.classList.toggle('is-socket-selected', selected);
+    if (button.disabled !== pending) button.disabled = pending;
+  });
+  holes.querySelectorAll('[data-socket-remove]').forEach(function (button) {
+    if (button.disabled !== pending) button.disabled = pending;
+  });
+  var disabled = pending || mode.selIdx < 0 || !!it.sockets[mode.selIdx];
+  pane.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
+    if (button.disabled !== disabled) button.disabled = disabled;
+  });
+  if (mode.renderedIdx !== mode.selIdx) {
+    var selected = holes.querySelector('.is-socket-selected');
+    if (selected) {
+      var frame = holes.getBoundingClientRect(), row = selected.getBoundingClientRect();
+      if (row.top < frame.top + 1) holes.scrollTop -= Math.ceil(frame.top + 1 - row.top);
+      else if (row.bottom > frame.bottom - 1) holes.scrollTop += Math.ceil(row.bottom - frame.bottom + 1);
+    }
+    mode.renderedIdx = mode.selIdx;
+  }
+  return true;
+}
+
+function syncEquipSocketPending() {
+  if (UI.tab !== 'equip') return;
+  var it = findSelItem(), mode = equipSocketModeFor(it);
+  if (mode) syncEquipSocketControls(it, mode);
+}
+
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
@@ -5207,7 +5247,8 @@ function renderDetail() {
   }
   var rerollMode = equipRerollModeFor(it);
   var socketMode = !rerollMode && equipSocketModeFor(it);
-  var h = itemDetailHTML(it, null, {
+  var socketHolesHtml = socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : null;
+  var h = socketMode ? '<div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
     gold: player && player.gold,
     essence: player && player.essence,
     justUpgraded: justUpgraded,
@@ -5259,10 +5300,9 @@ function renderDetail() {
   }
   // 右側素材面板：只顯示目前開啟的那一類（寶石或附魔書）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
+  var socketGemsHtml = null;
   if (socketMode) {
     var gemIcons = [];
-    var canSocket = socketMode.selIdx >= 0 && !it.sockets[socketMode.selIdx] && !isUiCommandPending(pendingKey);
-    var gemDisabled = canSocket ? '' : ' disabled';
     for (var gt in GEM_TYPES) {
       var gdef = GEM_TYPES[gt];
       for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
@@ -5270,16 +5310,16 @@ function renderDetail() {
         if (!n) continue;
         var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
         gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
-          esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '"' + gemDisabled + '>' +
+          esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '">' +
           gdef.emoji + '<span class="socket-gem-level">' + lv + '</span></button>');
       }
     }
     gemsViewFused(gemsSnapshot).forEach(function (fg) {
       gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
-        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '"' + gemDisabled + '>🧬</button>');
+        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">🧬</button>');
     });
-    h += '<div class="equip-socket-gems">' +
-      (gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>') + '</div>';
+    socketGemsHtml = gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
+    h += '<div class="equip-socket-gems">' + socketGemsHtml + '</div>';
   }
   var itEns2 = itemEnchants(it);
   if (matMode === 'enchant' && itEns2.length >= enchantCapFor(it)) {
@@ -5313,7 +5353,14 @@ function renderDetail() {
   var oldHoles = pane.querySelector && pane.querySelector('.equip-socket-page');
   var gemsScroll = oldGems ? oldGems.scrollTop : 0;
   var holesScroll = oldHoles ? oldHoles.scrollTop : 0;
-  pane.innerHTML = h;
+  var previousSocket = pane._equipSocketRender;
+  if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHoles && oldGems) {
+    if (previousSocket.holes !== socketHolesHtml) oldHoles.innerHTML = socketHolesHtml;
+    if (previousSocket.gems !== socketGemsHtml) oldGems.innerHTML = socketGemsHtml;
+  } else {
+    pane.innerHTML = h;
+  }
+  pane._equipSocketRender = socketMode ? { itemId: it.id, holes: socketHolesHtml, gems: socketGemsHtml } : null;
   pane.classList.add('has-detail');
   if (!socketMode) pane.classList.remove('is-socket-page');
   if (socketMode) {
@@ -5322,12 +5369,7 @@ function renderDetail() {
       pane.querySelector('.equip-socket-gems').scrollTop = gemsScroll;
       var holes = pane.querySelector('.equip-socket-page');
       holes.scrollTop = holesScroll;
-      var selected = holes.querySelector('.is-socket-selected');
-      if (selected && socketMode.renderedIdx !== socketMode.selIdx) {
-        var frame = holes.getBoundingClientRect(), row = selected.getBoundingClientRect();
-        if (row.top < frame.top + 1) holes.scrollTop -= Math.ceil(frame.top + 1 - row.top);
-        else if (row.bottom > frame.bottom - 1) holes.scrollTop += Math.ceil(row.bottom - frame.bottom + 1);
-      }
+      syncEquipSocketControls(it, socketMode);
     }
     socketMode.renderedIdx = socketMode.selIdx;
   }
@@ -8384,7 +8426,7 @@ function renderSkills() {
     }
 
     var loadoutLevel = isSg0
-      ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, id0.slice(3)))
+      ? sgbTotals(id0.slice(3), sgUiLevels(skillsSnapshot, id0.slice(3)), skillsSnapshot).total
       : talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations));
     var isPassive0 = isSg0 && (typeof skills2IsPassive === 'function') && skills2IsPassive(id0.slice(3));
     var isSelected = (selectedIndex === i);
@@ -9037,6 +9079,30 @@ function showSkillTooltipHTML(tip, html, anchorEl) {
 }
 
 /* ---- 技能懸停提示 ---- */
+/* 快捷列只呈現最高已取得且有效的階段；完整進化說明留在技能面板。 */
+function battleSkillGroupTooltipHTML(gid, levels, skillsSnapshot) {
+  var group = SKILLS2[gid];
+  if (!group) return '';
+  var lvs = levels || [], totals = sgbTotals(gid, lvs, skillsSnapshot);
+  var pick = totals.pick;
+  var heading = '', description = '';
+  if (pick && sgUiUltUnlocked(gid, lvs)) {
+    heading = '第' + (group.tiers.length + 1) + '階【超神進化】（' + pick.def.name + '）Lv.' + pick.lv;
+    description = describeSkill2Ult(gid, pick.idx, pick.lv);
+  } else {
+    for (var i = group.tiers.length - 1; i >= 0; i--) {
+      if ((lvs[i] || 0) <= 0) continue;
+      heading = '第' + (i + 1) + '階【' + group.tiers[i].name + '】Lv.' + lvs[i];
+      description = describeSkill2Tier(gid, i, lvs[i]);
+      break;
+    }
+  }
+  var html = '<div class="skt-name">' + skillIconHTML(gid, group.emoji) + ' ' + esc(group.name) +
+    ' <span class="dim-text">總 Lv.' + totals.total + ' / ' + totals.max + '</span></div>';
+  html += '<div class="skt-desc">' + (heading ? '<b>' + esc(heading) + '</b><br>' + description : '尚未學習此技能') + '</div>';
+  return html + '<div class="skt-hint">點擊開啟升級面板</div>';
+}
+
 function showSkillTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
@@ -9051,6 +9117,10 @@ function showSkillTooltip(ref, anchorEl) {
     var sgG = SKILLS2[sgTipGid];
     var sgLvs = sgUiLevels(skillsSnapshot, sgTipGid);
     var sgTipTier = sgTierIndexOf(ref);
+    if (sgTipTier === null && anchorEl && anchorEl.closest && anchorEl.closest('#battle-skill-bar')) {
+      showSkillTooltipHTML(tip, battleSkillGroupTooltipHTML(sgTipGid, sgLvs, skillsSnapshot), anchorEl);
+      return;
+    }
     if (sgUiIsUltSlot(sgTipGid, sgTipTier)) {
       var sgUltPick = sgUiUltPick(skillsSnapshot, sgTipGid);
       var sgUltOk = sgUiUltUnlocked(sgTipGid, sgLvs);
@@ -9092,7 +9162,7 @@ function showSkillTooltip(ref, anchorEl) {
       return;
     }
     var sgH = '<div class="skt-name">' + skillIconHTML(sgTipGid, sgG.emoji) + ' ' + esc(sgG.name) +
-      ' <span class="dim-text">總 Lv.' + sgUiTotalLevel(sgLvs) + '｜新版技能</span></div>';
+      ' <span class="dim-text">總 Lv.' + sgbTotals(sgTipGid, sgLvs, skillsSnapshot).total + '｜新版技能</span></div>';
     sgH += '<div class="skt-meta">' +
       ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
         ? '🌀 主動型被動（裝配到技能列才生效，不會主動施放）' : '🔵 ' + skills2ManaCost(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot)) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
@@ -12385,7 +12455,7 @@ function initUI() {
       if (socketMode && !isUiCommandPending(itemPendingKey(socketIt.id)) && socketIdx >= 0 && socketIdx < socketIt.sockets.length) {
         socketMode.selIdx = socketIdx;
         delete socketMode.advanceFrom;
-        renderDetail();
+        if (!syncEquipSocketControls(socketIt, socketMode)) renderDetail();
       }
       return;
     }
