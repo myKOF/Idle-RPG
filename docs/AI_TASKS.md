@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## BATTLE-SKILL-SUMMARY-20261004 — 快捷列最高階提示與完整總等級
+
+- Owner：Codex；Ready。使用者追加要求戰鬥快捷列只顯示技能目前最高階效果，總等級包含超神進化10級，完整最高80級。前置最高階描述／超神快照／技能瀏覽器總等級工具已存在；同一開發者於裝備回應優化提交後接續，無多AI並行。
+- 允許js/ui.js僅戰鬥快捷列提示內容／總等級、index.html僅ui.js快取、獨立技能提示回歸及本紀錄。禁止修改技能傷害／公式／Worker／協議／存檔／UI風格與排版、技能升級面板完整說明、其他副本。依既有必要快取與雙方內容保留授權；正式修改前補測試檔預檢。
+- 驗收最高已取得普通階／有效超神優先、未學／超神未解鎖的提示、完整等級80／部分超神等級與無超神群組、技能面板／潛力技能原說明不變，快捷列實機懸停、Console、相關回歸／Build／diff。獨立Commit，後續使用者整合重載。
+
+## EQUIP-SOCKET-RESPONSE-20261004 — 鑲嵌介面操作延遲
+
+- Owner：Codex；Done。使用者回報選孔與鑲入寶石有延遲，追加選孔亮綠底／去刪除線與裝備選中3px框／黃色混色；前置獨立鑲嵌頁已整合。本副本ai/codex，開始時有既存vfx/presets/lightning-orb-field-purple.json修改，保留且不納入本任務。單一開發者；ui.js／測試／本紀錄衝突預檢乾淨。index僅Claude尚未整合的battle-hud.css版本1.0.1→1.0.3，沿用使用者已同意的必要快取修改與保留雙方内容授權。
+- 允許js/ui.js僅鑲嵌頁局部重繪、選孔與等待回覆控制／面板到達更新、css/ashen-forge.css僅使用者追加的鑲孔亮綠底／移除刪除線及裝備3px選中框／黃色混色背景、index.html僅ui.js與ashen快取、tests/equip-socket-ui.test.cjs及必要相關回歸與本紀錄。禁止其他風格／布局／傷害／宝石數值／Worker指令／存檔／素材／其他副本，不合併或推送；追加樣式及裝備布局測試預檢乾淨。
+- 驗收大量每階寶石下選孔即時、不重建寶石列表，鑲嵌／卸下收到資料即更新與解鎖，防重送、失敗與切件／切頁相容、成功自動選下一空孔，滾動位置與按鈕布局保留；正式Worker隔離瀏覽器量測前後耗時、DOM節點保留與Console、相關回歸／Build／diff。完成独立Commit，後續使用者整合重載。
+- 完成：選孔只更新現有孔位選取／aria-pressed及寶石可用狀態，不重建列表或掃全部背包。資料刷新比較孔位與寶石HTML，只替換內容變動的區段，保留外層捲動與未變節點。pending取得／解除同步鑲嵌控制項，gems面板到達立即刷新庫存；修正卸下後pending已解除但寶石按鈕仍停用的實際問題。Worker權威／ACK與新快照確認／防重送／失敗／晚到回覆／自動跳孔均保留。
+- 樣式：已鑲孔懸停不再刪除線；選孔底#65ef86／邊#8bffa4／深色文字#092b15，已告知使用者在css/ashen-forge.css第1771行自行調底色，第1775行調寶石效果文字，保留後续自行設定。裝備與背包選中框3px黃色、黃色混色與陰影，品質框及裝備圖維持。index只改ashen1.0.49／ui1.0.120，Claude其餘風格引用保留；無素材或Worker變更。
+- 修改5檔：js/ui.js、css/ashen-forge.css、index.html、tests/equip-socket-ui.test.cjs、本紀錄。唯讀檢查未改：協作規範／prompts/codex.md、js/item.js／bridge.js／worker/sim.worker.js／main.js、css/style.css／ashen-forge-flat.css、既有回歸與Claude的index差異。既存lightning-orb-field-purple.json修改保留未提交，未動其他副本。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/inventory-command-pending.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/policy-selector.test.cjs tests/init-ui-smoke.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs`112/112通過；`npm.cmd run build`441檔通過；`git diff --check`通過。新增節點身分／捲動保留及鎖定／解鎖／已鑲孔不覆蓋回歸；UI替身改具備元件所需DOM屬性與查詢，正式程式無測試專用分支。
+- 效能／實機：沿用browser skill已判定IAB backend不存在的隔離Edge fallback，全新Context、正式Worker、相同240個寶石入口與20次選孔。舊選孔約7～23ms、節點保留0/20，新約0.3～2.5ms、保留20/20；同一次前後比較平均约8.8→0.7ms。新連續4次鑲嵌／卸下全部完成，收到ACK至權威快照／跳孔／解鎖全程约31～86ms；舊卸下後下一顆按鈕仍停用，後續操作未送指令且3秒觀測截止。未修改數值或放寬安全守衛。hover已鑲孔實際textDecorationLine=none，選孔底rgb(101,239,134)，裝備框3px／rgb(255,227,84)，檢視黃色混色截圖；Console error／warning皆0。數字為此機隔離量測，非所有裝置保證。
+- 交付：Commit為本紀錄所在`[Codex] fix: 改善鑲嵌回應與裝備選取標示`提交；本次無未完成或已知阻擋，可合併，未合併／推送。風險：未長時間真人實戰驗收；使用者可自行調選孔配色，整合時保留其設定及Claude最新戰鬥樣式快取。臨時瀏覽器／服務已關閉，測試腳本／截圖提交前清除；下一步接續使用者追加的快捷列說明任務，再由使用者整合重載。
+
 ## EQUIP-SOCKET-PAGE-20261004 — 選孔鑲嵌與逐孔卸下
 
 - Owner：Codex；Done。使用者要求鑲嵌切獨立頁、當前功能紅色其他黑色、僅孔位及全部寶石庫存、孔位選取框、成功後自動選下一孔、已鑲孔右側卸下。開始時本副本乾淨；單一開發者。Claude ui.js正在改戰鬥圖示3026～3954、index圖示／flat版號，使用者已同意修改本副本ui.js裝備鑲嵌區段與index必要快取、保留雙方修改並驗證；其他範圍衝突預檢乾淨。

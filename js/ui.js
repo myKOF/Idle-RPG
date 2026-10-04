@@ -855,6 +855,7 @@ function releaseUiPendingToken(token) {
     }
   }
   refreshUiPanelSubscriptions();
+  syncEquipSocketPending();
   return true;
 }
 
@@ -900,7 +901,7 @@ function acquireUiPending(commandName, options) {
     syncUiPendingControls(keys[k]);
   }
   refreshUiPanelSubscriptions();
-
+  syncEquipSocketPending();
   return { entry: entry };
 }
 
@@ -1064,6 +1065,7 @@ function bindWorkerUiState() {
       UI.dirty.equip = false;
     }
     releaseUiPendingByPanel(msg.name);
+    if (msg.name === 'gems' && UI.tab === 'equip' && equipSocketModeFor(findSelItem())) renderDetail();
     if (UI_WORKER_STATE.panelQueued[msg.name]) {
       var queuedParams = UI_WORKER_STATE.panelQueued[msg.name];
       delete UI_WORKER_STATE.panelQueued[msg.name];
@@ -5156,6 +5158,44 @@ function socketSelectedGem(type, level, fusedId) {
   });
 }
 
+/* 選孔與 pending 只更新現有控制項，保留寶石節點及捲動位置。 */
+function syncEquipSocketControls(it, mode) {
+  var pane = $id('detail-pane');
+  if (!pane || !pane.querySelectorAll || !pane.querySelector) return false;
+  var holes = pane.querySelector('.equip-socket-page');
+  if (!holes) return false;
+  var pending = isUiCommandPending(itemPendingKey(it.id));
+  holes.querySelectorAll('[data-socket-pick]').forEach(function (button) {
+    var selected = Number(button.getAttribute('data-socket-pick')) === mode.selIdx;
+    button.setAttribute('aria-pressed', String(selected));
+    button.parentNode.classList.toggle('is-socket-selected', selected);
+    if (button.disabled !== pending) button.disabled = pending;
+  });
+  holes.querySelectorAll('[data-socket-remove]').forEach(function (button) {
+    if (button.disabled !== pending) button.disabled = pending;
+  });
+  var disabled = pending || mode.selIdx < 0 || !!it.sockets[mode.selIdx];
+  pane.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
+    if (button.disabled !== disabled) button.disabled = disabled;
+  });
+  if (mode.renderedIdx !== mode.selIdx) {
+    var selected = holes.querySelector('.is-socket-selected');
+    if (selected) {
+      var frame = holes.getBoundingClientRect(), row = selected.getBoundingClientRect();
+      if (row.top < frame.top + 1) holes.scrollTop -= Math.ceil(frame.top + 1 - row.top);
+      else if (row.bottom > frame.bottom - 1) holes.scrollTop += Math.ceil(row.bottom - frame.bottom + 1);
+    }
+    mode.renderedIdx = mode.selIdx;
+  }
+  return true;
+}
+
+function syncEquipSocketPending() {
+  if (UI.tab !== 'equip') return;
+  var it = findSelItem(), mode = equipSocketModeFor(it);
+  if (mode) syncEquipSocketControls(it, mode);
+}
+
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
@@ -5207,7 +5247,8 @@ function renderDetail() {
   }
   var rerollMode = equipRerollModeFor(it);
   var socketMode = !rerollMode && equipSocketModeFor(it);
-  var h = itemDetailHTML(it, null, {
+  var socketHolesHtml = socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : null;
+  var h = socketMode ? '<div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
     gold: player && player.gold,
     essence: player && player.essence,
     justUpgraded: justUpgraded,
@@ -5259,10 +5300,9 @@ function renderDetail() {
   }
   // 右側素材面板：只顯示目前開啟的那一類（寶石或附魔書）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
+  var socketGemsHtml = null;
   if (socketMode) {
     var gemIcons = [];
-    var canSocket = socketMode.selIdx >= 0 && !it.sockets[socketMode.selIdx] && !isUiCommandPending(pendingKey);
-    var gemDisabled = canSocket ? '' : ' disabled';
     for (var gt in GEM_TYPES) {
       var gdef = GEM_TYPES[gt];
       for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
@@ -5270,16 +5310,16 @@ function renderDetail() {
         if (!n) continue;
         var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
         gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
-          esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '"' + gemDisabled + '>' +
+          esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '">' +
           gdef.emoji + '<span class="socket-gem-level">' + lv + '</span></button>');
       }
     }
     gemsViewFused(gemsSnapshot).forEach(function (fg) {
       gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
-        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '"' + gemDisabled + '>🧬</button>');
+        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">🧬</button>');
     });
-    h += '<div class="equip-socket-gems">' +
-      (gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>') + '</div>';
+    socketGemsHtml = gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
+    h += '<div class="equip-socket-gems">' + socketGemsHtml + '</div>';
   }
   var itEns2 = itemEnchants(it);
   if (matMode === 'enchant' && itEns2.length >= enchantCapFor(it)) {
@@ -5313,7 +5353,14 @@ function renderDetail() {
   var oldHoles = pane.querySelector && pane.querySelector('.equip-socket-page');
   var gemsScroll = oldGems ? oldGems.scrollTop : 0;
   var holesScroll = oldHoles ? oldHoles.scrollTop : 0;
-  pane.innerHTML = h;
+  var previousSocket = pane._equipSocketRender;
+  if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHoles && oldGems) {
+    if (previousSocket.holes !== socketHolesHtml) oldHoles.innerHTML = socketHolesHtml;
+    if (previousSocket.gems !== socketGemsHtml) oldGems.innerHTML = socketGemsHtml;
+  } else {
+    pane.innerHTML = h;
+  }
+  pane._equipSocketRender = socketMode ? { itemId: it.id, holes: socketHolesHtml, gems: socketGemsHtml } : null;
   pane.classList.add('has-detail');
   if (!socketMode) pane.classList.remove('is-socket-page');
   if (socketMode) {
@@ -5322,12 +5369,7 @@ function renderDetail() {
       pane.querySelector('.equip-socket-gems').scrollTop = gemsScroll;
       var holes = pane.querySelector('.equip-socket-page');
       holes.scrollTop = holesScroll;
-      var selected = holes.querySelector('.is-socket-selected');
-      if (selected && socketMode.renderedIdx !== socketMode.selIdx) {
-        var frame = holes.getBoundingClientRect(), row = selected.getBoundingClientRect();
-        if (row.top < frame.top + 1) holes.scrollTop -= Math.ceil(frame.top + 1 - row.top);
-        else if (row.bottom > frame.bottom - 1) holes.scrollTop += Math.ceil(row.bottom - frame.bottom + 1);
-      }
+      syncEquipSocketControls(it, socketMode);
     }
     socketMode.renderedIdx = socketMode.selIdx;
   }
@@ -12385,7 +12427,7 @@ function initUI() {
       if (socketMode && !isUiCommandPending(itemPendingKey(socketIt.id)) && socketIdx >= 0 && socketIdx < socketIt.sockets.length) {
         socketMode.selIdx = socketIdx;
         delete socketMode.advanceFrom;
-        renderDetail();
+        if (!syncEquipSocketControls(socketIt, socketMode)) renderDetail();
       }
       return;
     }

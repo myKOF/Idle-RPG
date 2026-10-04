@@ -1057,9 +1057,11 @@ select option {
 
 .item-cell.selected,
 .eq-slot.selected {
-  outline: 2px solid #ead5c5;
+  outline: 3px solid #ffe354;
   outline-offset: 1px;
-  box-shadow: 0 0 7px #a63129aa !important;
+  background-color: #715b12;
+  background-blend-mode: screen;
+  box-shadow: inset 0 0 0 100px #ffe35438, 0 0 7px #ffe354aa !important;
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured
@@ -1686,6 +1688,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-equip #detail-pane .it-sockets .socket.filled:hover {
   border-color: #5a5d66;
+  text-decoration: none;
 }
 
 #tab-equip #detail-pane .sk-val {
@@ -1764,9 +1767,12 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-equip #detail-pane .socket-row.is-socket-selected {
-  border: 1px solid #a8322c;
-  background: #241719;
+  border: 1px solid #8bffa4;
+  background: #65ef86;
+  color: #092b15;
 }
+
+#tab-equip #detail-pane .socket-row.is-socket-selected .socket-pick :is(.sk-name, .sk-val) { color: #092b15; }
 
 #tab-equip #detail-pane .socket-pick {
   display: flex;
