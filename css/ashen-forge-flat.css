@@ -625,3 +625,48 @@ textarea:focus-visible {
   fill: #b98a56;
   stroke: none;
 }
+
+/* ------------------------------------------------------------------ 角色經驗條：與戰鬥區經驗條同一套（金色漸層、十等分刻度、細金屬邊）
+   戰鬥區那條在 battle-hud.css；這裡是「角色」分頁大條與導覽列頭像下的小條。
+   #workspace-area 內全域關了 box-shadow，所以邊框用 border、玻璃反光用漸層疊。 */
+#tab-char #xp-bar,
+.rail-xp {
+  position: relative;
+  border: 1px solid #6f6038;
+  background: linear-gradient(#030404, #0e1315 55%, #070909);
+}
+
+#tab-char #xp-bar {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.rail-xp {
+  height: 6px;
+  border-radius: 3px;
+}
+
+#tab-char #xp-fill,
+#rail-xp-fill {
+  background:
+    linear-gradient(#fff6cf88, #fff6cf00 45%, #00000033 100%),
+    linear-gradient(90deg, #b5791c, #f0c455 55%, #ffe8a0);
+}
+
+#tab-char #xp-fill {
+  border-radius: 4px;
+}
+
+#rail-xp-fill {
+  height: 100%;
+}
+
+/* 十等分刻度（畫在填色之上） */
+#tab-char #xp-bar::after,
+.rail-xp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), #000000a6 calc(10% - 1px) 10%);
+}
