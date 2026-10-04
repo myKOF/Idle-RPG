@@ -572,7 +572,6 @@ select option {
   background: rgba(250, 204, 21, 0.2);
   border-color: #facc15;
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.6);
-  transform: scale(1.08);
 }
 
 .eq-search-icon {
@@ -966,7 +965,7 @@ select option {
 
 #equip-action-bar .btn:disabled {
   opacity: 0.45;
-  cursor: not-allowed;
+  cursor: default;
   filter: grayscale(0.8);
 }
 
@@ -1761,7 +1760,6 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-equip #equip-action-bar .btn.btn-primary {
-  flex: 1.6 1 0 !important;
   border-color: #a8322c !important;
   background: #a8322c !important;
   color: #ffffff !important;
@@ -2914,7 +2912,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-skills .sgb .btn:disabled {
   opacity: .45;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 #tab-skills .sgb .btn.sgb-btn-primary {
@@ -4158,7 +4156,7 @@ html *::-webkit-scrollbar-corner {
 
 #tab-tower .twx-tier.is-locked {
   color: #4f535c;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 #tab-tower .twx-highest {

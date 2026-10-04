@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## UI-POINTER-STABILITY-20261004 — 移除禁止游標與按鈕位移、固定裝備操作寬度
+
+- Owner：Codex；Done。使用者要求遊戲所有禁止游標移除、點擊元件懸停位移移除、裝備強化／洗煉／鑲嵌／附魔四顆按鈕等寬且切換不改寬。單一開發者，前置既有UI完成，本副本乾淨，五檔衝突預檢皆乾淨。
+- 允許css/style.css、css/ashen-forge.css、js/ui.js技能拖曳顯示處理、index.html對應快取、本紀錄；禁止遊戲數值、Worker協議、存檔、素材及其他副本。保留停用與非法投放限制，只取消游標符號；合法槽位仍交換，其他區域放下取消。
+- 驗收：遊戲CSS無禁止游標、懸停／按下／選取不位移或放大且保留色框回饋、主按鈕切換前後四顆操作等寬（卸下圖示維持既有40px）、拖曳非法區域／鎖定槽無交換及合法交換／結束清理正常、UI回歸、Build、Console與diff檢查。完成後獨立Commit交使用者審查整合，不合併／推送。
+- 完成：三處not-allowed改default，技能拖曳全頁接住dragover並指定move，drop只在原合法槽位交換、其他區域取消；未進行技能拖曳時不接管外來dragover／drop。取消無遊戲用途的圖片／文字原生dragstart。移除13處懸停／按下／技能選取位移或放大及套裝按鈕放大，保留置中與戰鬥／強化數字動畫、色框回饋；刪除主按鈕1.6倍flex，四顆操作沿用等寬flex，不改卸下圖示。CSS快取1.0.73／1.0.45、UI1.0.114。
+- 修改：css/style.css、css/ashen-forge.css、js/ui.js、index.html及本紀錄。唯讀檢查：AI_RULES.md、AGENTS.md、docs/AI_WORKFLOW.md、prompts/codex.md、package.json、css/inventory-offset.css、.claude/check-conflicts.ps1、上述UI回歸檔及tools/vfx/verify-deformation.cjs；無素材變更，不需素材庫Commit。
+- 測試：`node --test tests/init-ui-smoke.test.cjs tests/skill2-ui.test.cjs tests/skill-loadout.test.cjs tests/upgrade-animation.test.cjs tests/ui-fixed-canvas.test.cjs`36/36；最後修改後`npm.cmd run build`438檔全過，`git diff --check`通過。靜態查遊戲CSS／UI／主頁無not-allowed／no-drop，互動規則只餘transform:none。
+- 瀏覽器：內建IAB backend無法連線，改以bundled Playwright＋headless Edge、隨機本機Port與拋棄式儲存驗證。直接讀正式兩份CSS及正式UI拖曳handler建立隔離fixture；700px操作列的upgrade／reroll／pending三狀態四顆皆152.5px、卸下40px，9類元件hover前後位置與尺寸一致、按下強化不位移；實際mouse drag空白／鎖定無交換，戰鬥列及技能裝載列到合法槽各正常交換，dropEffect全為move、結束class殘留0，外來dragover不接管、原生圖片dragstart被取消。正式index＋真正Worker另啟動，Console error／warning及資源缺失皆0；浏览器及服務皆關閉，無臨時檔。
+- 驗證腳本修正紀錄：首次fixture的favicon 404、第二次未限制測試圖片尺寸造成Playwright自動捲動而誤判viewport y；修正測試頁favicon與排版後完整驗證通過。正式頁第一次測試服務未解碼空白路徑造成素材404，修正服務decodeURIComponent後重跑缺失0，未修改素材或放寬驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 移除禁止游標與按鈕位移並固定裝備操作寬度`提交。無未完成需求、無已知新增風險；未做長時間真人操作，滑鼠系統圖案以瀏覽器實際dropEffect及停用cursor驗證。可合併，未合併／推送。下一步使用者審查整合並重載遊戲。
+
 ## MERGE-PREP-20261003 — 整理所有未提交修改供合併
 
 - Owner：Codex；Done。使用者要求「清理unstaged區，需要的commit，不要的就刪掉，我要merge」。本次所有12項初始未提交內容均必要，含正式回歸測試及使用者slash-wind-spin美術設定，全部保留；無廢棄untracked檔需要刪除，不刪正式檔、正在開啟的Excel鎖檔或本機依賴／素材庫設定。此指示授權完成前次已告知的同檔快取更新，不另重複詢問；不合併／推送。

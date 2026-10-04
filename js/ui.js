@@ -11395,7 +11395,11 @@ function initUI() {
 
   document.addEventListener('dragstart', function (e) {
     var slot = e.target.closest('.battle-skill-slot.equipped, .loadout-slot.filled');
-    if (!slot) return;
+    if (!slot) {
+      // 遊戲只支援技能排序；取消圖片／文字的原生拖曳，避免禁止游標。
+      e.preventDefault();
+      return;
+    }
     var idx = slot.getAttribute('data-slot-index') || slot.getAttribute('data-index');
     if (idx === null || idx === undefined) return;
     draggedSlotIndex = parseInt(idx, 10);
@@ -11405,9 +11409,12 @@ function initUI() {
   });
 
   document.addEventListener('dragover', function (e) {
+    if (draggedSlotIndex === null) return;
+    // 接住技能拖曳以免瀏覽器顯示禁止游標；只有合法槽位能真正交換。
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     var slot = e.target.closest('.battle-skill-slot, .loadout-slot');
     if (slot && !slot.classList.contains('locked')) {
-      e.preventDefault();
       slot.classList.add('drag-over');
     }
   });
@@ -11418,9 +11425,10 @@ function initUI() {
   });
 
   document.addEventListener('drop', function (e) {
+    if (draggedSlotIndex === null) return;
+    e.preventDefault();
     var slot = e.target.closest('.battle-skill-slot, .loadout-slot');
     if (slot && !slot.classList.contains('locked')) {
-      e.preventDefault();
       slot.classList.remove('drag-over');
       var fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
       if (isNaN(fromIndex) && draggedSlotIndex !== null) fromIndex = draggedSlotIndex;
