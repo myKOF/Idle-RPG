@@ -43,19 +43,6 @@
   border-top: 1px solid #000;
 }
 
-/* 上緣的鉚釘帶：避開兩側的球 */
-#battle-canvas-host #battle-action-dock::before {
-  content: '';
-  position: absolute;
-  top: 9px;
-  left: var(--hud-side);
-  right: var(--hud-side);
-  height: 6px;
-  pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, var(--hud-metal-hi) 0 1px, var(--hud-metal) 1.5px 2.2px, var(--hud-seam) 2.8px, transparent 3.2px) 0 0 / 26px 6px repeat-x;
-  opacity: .55;
-}
-
 /* 底緣的雙刻線與兩端的收邊 */
 #battle-canvas-host #battle-action-dock::after {
   content: '';
@@ -74,16 +61,16 @@
 /* ------------------------------------------------------------------ 經驗條：橫跨底座上緣，十等分刻度＋兩端圓釘 */
 #battle-canvas-host #battle-action-dock #battle-xp-bar {
   position: absolute;
-  top: -8px;
+  top: -6px;
   left: var(--hud-side);
   right: var(--hud-side);
   width: auto;
-  height: 17px;
+  height: 12px;
   margin: 0;
   box-sizing: border-box;
   overflow: hidden;
   border: 2px solid var(--hud-seam);
-  border-radius: 8px;
+  border-radius: 6px;
   background: linear-gradient(#030404, #0e1315 55%, #070909);
   box-shadow: 0 0 0 1px var(--hud-metal), 0 0 0 2px var(--hud-seam), 0 3px 5px #000a, inset 0 2px 3px #000;
 }
@@ -103,8 +90,8 @@
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(circle at 7px 50%, var(--hud-metal-hi) 0 1.2px, var(--hud-metal) 2px 3.4px, var(--hud-seam) 4px, transparent 4.5px),
-    radial-gradient(circle at calc(100% - 7px) 50%, var(--hud-metal-hi) 0 1.2px, var(--hud-metal) 2px 3.4px, var(--hud-seam) 4px, transparent 4.5px),
+    radial-gradient(circle at 5px 50%, var(--hud-metal-hi) 0 .8px, var(--hud-metal) 1.4px 2.3px, var(--hud-seam) 2.8px, transparent 3.2px),
+    radial-gradient(circle at calc(100% - 5px) 50%, var(--hud-metal-hi) 0 .8px, var(--hud-metal) 1.4px 2.3px, var(--hud-seam) 2.8px, transparent 3.2px),
     linear-gradient(90deg, transparent calc(50% - 1px), #000000d9 calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
     repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), #000000a6 calc(10% - 1px) 10%);
 }
@@ -234,27 +221,44 @@
   background: radial-gradient(circle at 35% 30%, #b8d8ff, #2a6ae0 55%, #0c2a70);
 }
 
-/* 球內：液面改回有層次的漸層，並補上玻璃反光 */
+/* 球內：液面、玻璃、反光。
+   球面的明暗全部畫在 ::after（跟液面高度無關、整顆圓一致），液面本身只用「上亮下暗＋兩側極輕微」的漸層。
+   不要在邊緣疊黑（舊版的暗角漸層與內陰影會讓四邊出現一圈黑影，液面未滿時頂端空處又像缺了一塊）。 */
 #battle-canvas-host .health-orb .orb-liquid {
-  background: radial-gradient(ellipse at 45% 12%, #ff6a58, #c81c28 43%, #7a0b19 80%, #340714);
+  background:
+    linear-gradient(90deg, #00000026, transparent 24%, transparent 76%, #00000026),
+    linear-gradient(#ff5a48, #d41f2c 40%, #a80f1f 78%, #7a0b19);
   box-shadow: inset 0 2px 0 #ffa08a;
 }
 
 #battle-canvas-host .mana-orb .orb-liquid {
-  background: radial-gradient(ellipse at 45% 12%, #5a9bff, #1a4acc 43%, #102a80 80%, #070c3a);
+  background:
+    linear-gradient(90deg, #00000026, transparent 24%, transparent 76%, #00000026),
+    linear-gradient(#58a0ff, #2a62dc 40%, #1a3ca8 78%, #112a80);
   box-shadow: inset 0 2px 0 #9cd0ff;
 }
 
+/* 護盾：淡藍的氣泡亮邊（舊版邊緣是深紫色，疊在紅色液面上像一圈黑影） */
+#battle-canvas-host .orb-shield {
+  box-shadow: inset 0 2px 3px #bfe0ff99;
+}
+
+#battle-canvas-host .orb-shield::before {
+  background: radial-gradient(circle closest-side at 50% 50%, #7cc0ff00 0%, #7cc0ff00 64%, #7cc0ff26 80%, #a8d6ff59 94%, #d6ecff8c 100%);
+  box-shadow: none;
+}
+
+/* 空的部分是帶煙色的玻璃，不是純黑的洞 */
 #battle-canvas-host .battle-resource-orb .orb-glass {
-  background: #05070b;
-  box-shadow: 0 0 0 1px #000, inset 0 0 10px #000;
+  background: radial-gradient(circle at 50% 28%, #232a31, #0b0e12 75%);
+  box-shadow: 0 0 0 1px #000;
 }
 
 #battle-canvas-host .battle-resource-orb .orb-glass::after {
   background:
-    radial-gradient(ellipse 42% 24% at 36% 20%, #ffffffb0 0%, #ffffff30 55%, transparent 100%),
-    radial-gradient(circle at 48% 40%, transparent 36%, #0006 78%, #000d 100%);
-  box-shadow: inset 0 0 9px #000a;
+    radial-gradient(ellipse 42% 24% at 36% 20%, #ffffffa6 0%, #ffffff2e 55%, transparent 100%),
+    radial-gradient(circle at 50% 44%, transparent 66%, #00000030 100%);
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1226,3 +1226,36 @@ test('C8 存檔失敗的標題依 written 決定，不寫死「repo 檔案未變
   assert.ok(!/problems\.join\('\\n- '\)/.test(saveFn),
     '不得在這裡先加項目符號，那是 showSaveError 的事');
 });
+
+/* C9：匯出失敗時，是哪幾個問題必須傳到畫面上。
+
+   匯出的錯誤訊息本身只有「匯出失敗，共 N 個問題」，逐條的內容全在 e.problems
+   裡。伺服器漏掉它的話，使用者在編輯器裡只看得到一個數字，得自己去命令列重跑
+   一次 export-assets 才知道要修什麼——2026-10-04 實測就是這樣：兩個 SVG 的大小
+   與索引不符，而畫面上一個檔名都沒有。 */
+test('C9 匯出失敗的逐條問題要一起回給 Editor，不是只回一個數字', async () => {
+  /* 用與 export-assets 相同的錯誤形狀：message 只給總數，細節掛在 problems */
+  const detail = ['a.svg 的實際大小與索引不符', 'b.svg 的實際大小與索引不符'];
+  const sb = makeSandbox();
+  const h = await withServer(sb, null, () => {
+    const e = new Error('匯出失敗，共 ' + detail.length + ' 個問題');
+    e.problems = detail.slice();
+    throw e;
+  });
+  try {
+    const p = readPreset(sb, 'demo-basic');
+    p.layers[0].alpha = 0.5;
+    const r = await put(h.port, savePath(p.id), JSON.stringify(p));
+
+    assert.equal(r.status, 500);
+    assert.equal(r.json.written, true, '檔案已經寫進去了');
+    assert.deepEqual(r.json.problems, detail,
+      '逐條問題要原樣傳過去，否則畫面上只剩「共 2 個問題」');
+
+    /* Editor 把 error 與 problems 併成一行一條顯示（見 editor.js 的 savePreset） */
+    const src = fs.readFileSync(path.join(REPO, 'tools', 'vfx', 'editor', 'editor.js'), 'utf8');
+    const saveFn = src.slice(src.indexOf('function savePreset'), src.indexOf('function downloadPreset'));
+    assert.ok(/.concat(body.problems || [])/.test(saveFn),
+      'Editor 要把 problems 逐條列出來');
+  } finally { await closeServer(h); cleanup(sb); }
+});
