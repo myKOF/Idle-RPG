@@ -5121,9 +5121,45 @@ function selectEquipRerollAffix(it, idx) {
   UI.equipRerollMode = { itemId: it.id, selIdx: idx };
 }
 
+function equipSocketModeFor(it) {
+  var mode = UI.equipMatMode;
+  if (!it || !mode || mode.itemId !== it.id || mode.mode !== 'socket') return null;
+  var sockets = it.sockets || [];
+  if (mode.advanceFrom !== undefined && sockets[mode.advanceFrom]) {
+    var from = mode.advanceFrom;
+    mode.selIdx = sockets.length ? (from + 1) % sockets.length : -1;
+    for (var step = 1; step <= sockets.length; step++) {
+      var idx = (from + step) % sockets.length;
+      if (!sockets[idx]) { mode.selIdx = idx; break; }
+    }
+    delete mode.advanceFrom;
+  }
+  if (!Number.isInteger(mode.selIdx) || mode.selIdx < 0 || mode.selIdx >= sockets.length) {
+    mode.selIdx = sockets.indexOf(null);
+    if (mode.selIdx < 0) mode.selIdx = sockets.length ? 0 : -1;
+  }
+  return mode;
+}
+
+function socketSelectedGem(type, level, fusedId) {
+  var it = findSelItem(), mode = equipSocketModeFor(it);
+  if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || it.sockets[mode.selIdx]) return;
+  var idx = mode.selIdx;
+  var command = fusedId ? 'gem.socketFused' : 'gem.socket';
+  var args = fusedId ? { itemId: it.id, fusedId: fusedId, index: idx } : { itemId: it.id, type: type, index: idx, level: level };
+  sendUiCommand(command, args, { keys: [itemPendingKey(it.id)], panels: ['inv', 'equip', 'gems', 'header'] }).then(function (result) {
+    if (result !== null || UI.equipMatMode !== mode || !UI.sel || UI.sel.id !== it.id) return;
+    mode.advanceFrom = idx;
+    renderDetail();
+  }).catch(function (error) {
+    reportUiCommandFailure('鑲嵌寶石', error, ['inv', 'equip', 'gems', 'header']);
+  });
+}
+
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
+  if (!it) pane.classList.remove('is-socket-page');
   if (!it || !UI.sel || UI.affixPoolItemId !== it.id) {
     hideAffixPool();
   }
@@ -5170,6 +5206,7 @@ function renderDetail() {
     }
   }
   var rerollMode = equipRerollModeFor(it);
+  var socketMode = !rerollMode && equipSocketModeFor(it);
   var h = itemDetailHTML(it, null, {
     gold: player && player.gold,
     essence: player && player.essence,
@@ -5177,7 +5214,8 @@ function renderDetail() {
     reroll: rerollMode ? {
       active: true,
       selIdx: rerollMode.selIdx
-    } : null
+    } : null,
+    socket: socketMode ? { active: true, selIdx: socketMode.selIdx, pending: isUiCommandPending(itemPendingKey(it.id)) } : null
   });
   /* 操作列（2026-10 裝備頁改造）：一個主按鈕（背包裝備＝「裝備」，身上裝備＝「強化」）＋次按鈕，
      卸下縮成最右側的圖示。「鑲嵌／附魔」改為開關右側素材面板：面板平常不顯示，
@@ -5188,15 +5226,15 @@ function renderDetail() {
   var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
   /* 洗煉模式時紅色主按鈕移到「洗煉」，表示目前是洗煉分頁；裝備／強化退回次按鈕 */
   if (fromInv) {
-    actionsHtml += '<button class="btn' + (rerollMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
+    actionsHtml += '<button class="btn' + (rerollMode || socketMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
   }
   var enoughUpGold = player && player.gold >= cost.gold;
   var enoughUpScrap = player && player.scrap >= cost.scrap;
   var upGoldHtml = '<span' + (enoughUpGold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(cost.gold) + '</span>';
   var upScrapHtml = '<span' + (enoughUpScrap ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_scrap.png" class="res-icon"> ' + fmt(cost.scrap) + '</span>';
   var upTip = '需要：' + upGoldHtml + ' &nbsp;' + upScrapHtml;
-  actionsHtml += '<button class="btn' + (fromInv || rerollMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' +
-    esc(rerollMode ? '回到強化（再按一次才強化）' : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>強化</button>';
+  actionsHtml += '<button class="btn' + (fromInv || rerollMode || socketMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' +
+    esc(rerollMode || socketMode ? '回到強化（再按一次才強化）' : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>強化</button>';
 
   var rrAttrs = '';
   if (rerollMode) {
@@ -5213,7 +5251,7 @@ function renderDetail() {
     rrAttrs += pendingUiButtonAttributes(pendingKey);
   }
   actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>洗煉</button>';
-  actionsHtml += '<button class="btn" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
+  actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
   actionsHtml += '<button class="btn" data-act="toggle-enchant" aria-pressed="' + (matMode === 'enchant') + '">附魔</button>';
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="卸下" data-tip="卸下"' +
@@ -5221,37 +5259,27 @@ function renderDetail() {
   }
   // 右側素材面板：只顯示目前開啟的那一類（寶石或附魔書）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
-  if (matMode === 'socket' && it.sockets.indexOf(null) < 0) {
-    matHtml += '<div class="equip-material-section">' +
-      '<div class="equip-material-title">💎 鑲嵌寶石</div>' +
-      '<div class="equip-material-empty">沒有空插槽。點擊詳情中已鑲嵌的寶石可取下。</div>' +
-      '</div>';
-  }
-  if (matMode === 'socket' && it.sockets.indexOf(null) >= 0) {
+  if (socketMode) {
     var gemIcons = [];
+    var canSocket = socketMode.selIdx >= 0 && !it.sockets[socketMode.selIdx] && !isUiCommandPending(pendingKey);
+    var gemDisabled = canSocket ? '' : ' disabled';
     for (var gt in GEM_TYPES) {
-      var total = 0, hi = 0;
-      for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
-        var n = gemsViewCount(gemsSnapshot, gt, lv);
-        total += n;
-        if (n && !hi) hi = lv;
-      }
-      if (!total) continue;
       var gdef = GEM_TYPES[gt];
-      var gv = gdef.pct ? pctStr(gemStatValue(gt, hi)) : fmt(gemStatValue(gt, hi));
-      gemIcons.push('<button class="equip-material-icon" data-gem-socket="' + gt + '" data-tip="' +
-        esc(GEM_NAMES[hi] + gdef.name + ' ×' + gemsViewCount(gemsSnapshot, gt, hi) + '｜' + gdef.statName.replace('%', '') + ' +' + gv +
-          '｜點擊鑲入空插槽（自動取最高等級）') + '">' + gdef.emoji + '</button>');
+      for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
+        var n = gemsViewCount(gemsSnapshot, gt, lv);
+        if (!n) continue;
+        var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
+        gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
+          esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '"' + gemDisabled + '>' +
+          gdef.emoji + '<span class="socket-gem-level">' + lv + '</span></button>');
+      }
     }
     gemsViewFused(gemsSnapshot).forEach(function (fg) {
-      gemIcons.push('<button class="equip-material-icon" data-gem-socket-fused="' + fg.id + '" data-tip="' +
-        esc(fusedGemLabel(fg) + '｜雙屬性融合寶石，點擊鑲入空插槽') + '">🧬</button>');
+      gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
+        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '"' + gemDisabled + '>🧬</button>');
     });
-    matHtml += '<div class="equip-material-section">' +
-      '<div class="equip-material-title">💎 可用寶石（點擊鑲嵌）</div>' +
-      (gemIcons.length ? '<div class="equip-material-grid">' + gemIcons.join('') + '</div>'
-        : '<div class="equip-material-empty">尚無寶石庫存</div>') +
-      '</div>';
+    h += '<div class="equip-socket-gems">' +
+      (gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>') + '</div>';
   }
   var itEns2 = itemEnchants(it);
   if (matMode === 'enchant' && itEns2.length >= enchantCapFor(it)) {
@@ -5281,8 +5309,28 @@ function renderDetail() {
       (bookIcons.length ? '<div class="equip-material-grid">' + bookIcons.join('') + '</div>' : '') +
       '</div>';
   }
+  var oldGems = pane.querySelector && pane.querySelector('.equip-socket-gems');
+  var oldHoles = pane.querySelector && pane.querySelector('.equip-socket-page');
+  var gemsScroll = oldGems ? oldGems.scrollTop : 0;
+  var holesScroll = oldHoles ? oldHoles.scrollTop : 0;
   pane.innerHTML = h;
   pane.classList.add('has-detail');
+  if (!socketMode) pane.classList.remove('is-socket-page');
+  if (socketMode) {
+    pane.classList.add('is-socket-page');
+    if (pane.querySelector) {
+      pane.querySelector('.equip-socket-gems').scrollTop = gemsScroll;
+      var holes = pane.querySelector('.equip-socket-page');
+      holes.scrollTop = holesScroll;
+      var selected = holes.querySelector('.is-socket-selected');
+      if (selected && socketMode.renderedIdx !== socketMode.selIdx) {
+        var frame = holes.getBoundingClientRect(), row = selected.getBoundingClientRect();
+        if (row.top < frame.top + 1) holes.scrollTop -= Math.ceil(frame.top + 1 - row.top);
+        else if (row.bottom > frame.bottom - 1) holes.scrollTop += Math.ceil(row.bottom - frame.bottom + 1);
+      }
+    }
+    socketMode.renderedIdx = socketMode.selIdx;
+  }
   var matPanel = $id('equip-material-panel');
   if (matPanel) matPanel.innerHTML = matHtml;
   var actionBar = $id('equip-action-bar');
@@ -12330,6 +12378,17 @@ function initUI() {
       return;
     }
     // 洗煉模式：點詞條只切換選取，執行入口在下方紅色按鈕。
+    var socketPick = e.target.closest('#detail-pane [data-socket-pick]');
+    if (socketPick) {
+      var socketIt = findSelItem(), socketMode = equipSocketModeFor(socketIt);
+      var socketIdx = parseInt(socketPick.getAttribute('data-socket-pick'), 10);
+      if (socketMode && !isUiCommandPending(itemPendingKey(socketIt.id)) && socketIdx >= 0 && socketIdx < socketIt.sockets.length) {
+        socketMode.selIdx = socketIdx;
+        delete socketMode.advanceFrom;
+        renderDetail();
+      }
+      return;
+    }
     var rrPick = e.target.closest('#detail-pane [data-reroll-pick]');
     if (rrPick) {
       var pickIt = findSelItem();
@@ -12351,16 +12410,19 @@ function initUI() {
         UI.equipRerollMode = null;
         var wantMode = act === 'toggle-socket' ? 'socket' : 'enchant';
         var curMode = UI.equipMatMode && UI.equipMatMode.itemId === matIt.id ? UI.equipMatMode.mode : null;
-        UI.equipMatMode = curMode === wantMode ? null : { itemId: matIt.id, mode: wantMode };
+        UI.equipMatMode = wantMode === 'socket' && curMode === 'socket' ? UI.equipMatMode :
+          (curMode === wantMode ? null : { itemId: matIt.id, mode: wantMode });
+        equipSocketModeFor(matIt);
+        hideTooltip();
         renderDetail();
         return;
       }
       /* 初次按「洗煉」只進入模式；再次點擊紅色按鈕走下方 detailAction 執行。
          洗煉模式下按「強化」只切回強化，不直接強化，避免切分頁時誤花資源 */
-      if (act === 'toggle-reroll' || (act === 'upgrade' && equipRerollModeFor(findSelItem()))) {
+      if (act === 'toggle-reroll' || (act === 'upgrade' && (equipRerollModeFor(findSelItem()) || equipSocketModeFor(findSelItem())))) {
         var rrIt = findSelItem();
         if (!rrIt) return;
-        if (act === 'upgrade') UI.equipRerollMode = null;
+        if (act === 'upgrade') { UI.equipRerollMode = null; UI.equipMatMode = null; }
         else {
           selectEquipRerollAffix(rrIt, 0);
           UI.equipMatMode = null;
@@ -12375,26 +12437,14 @@ function initUI() {
     // 寶石鑲嵌 / 取下
     var gs = e.target.closest('[data-gem-socket]');
     if (gs) {
-      var sit = findSelItem();
-      if (sit) {
-
-        sendUiCommand('gem.socket', {
-          itemId: sit.id,
-          type: gs.getAttribute('data-gem-socket')
-        }, {
-          keys: [itemPendingKey(sit.id)],
-          panels: ['inv', 'equip', 'gems', 'header']
-        }).catch(function (error) {
-          reportUiCommandFailure('鑲嵌寶石', error, ['inv', 'equip', 'gems', 'header']);
-        });
-        return;
-      }
+      if (!gs.disabled) socketSelectedGem(gs.getAttribute('data-gem-socket'), parseInt(gs.getAttribute('data-gem-level'), 10), null);
       return;
     }
     var sr = e.target.closest('[data-socket-remove]');
     if (sr) {
       var uit = findSelItem();
       if (uit) {
+        if (sr.disabled || isUiCommandPending(itemPendingKey(uit.id))) return;
         sendUiCommand('gem.unsocket', {
           itemId: uit.id,
           index: parseInt(sr.getAttribute('data-socket-remove'), 10)
@@ -12461,20 +12511,7 @@ function initUI() {
     // 融合寶石鑲嵌
     var gsf = e.target.closest('[data-gem-socket-fused]');
     if (gsf) {
-      var fsit = findSelItem();
-      if (fsit) {
-
-        sendUiCommand('gem.socketFused', {
-          itemId: fsit.id,
-          fusedId: gsf.getAttribute('data-gem-socket-fused')
-        }, {
-          keys: [itemPendingKey(fsit.id)],
-          panels: ['inv', 'equip', 'gems', 'header']
-        }).catch(function (error) {
-          reportUiCommandFailure('鑲嵌融合寶石', error, ['inv', 'equip', 'gems', 'header']);
-        });
-        return;
-      }
+      if (!gsf.disabled) socketSelectedGem(null, null, gsf.getAttribute('data-gem-socket-fused'));
       return;
     }
     // 手動附魔 / 取下附魔
