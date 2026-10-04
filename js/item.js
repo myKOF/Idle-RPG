@@ -678,7 +678,7 @@ function enchantLine(it, en) {
    洗煉模式只渲染屬性選取，費用與執行按鈕由 UI 裝備操作列處理。 */
 function itemSocketHTML(it, mode) {
   var sockets = Array.isArray(it.sockets) ? it.sockets : [];
-  var h = '<div class="it-sockets"><div class="it-sockets-title">寶石鑲孔</div>';
+  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔</div>');
   for (var si = 0; si < sockets.length; si++) {
     var g = sockets[si], text;
     if (g && g.fused) text = (si + 1) + '. ' + esc(fusedGemLabel(g.fused));
@@ -697,34 +697,20 @@ function itemSocketHTML(it, mode) {
         (mode.pending ? ' disabled' : '') + '>卸下</button>';
       h += '</div>';
     } else {
-      h += '<span class="' + cls + '"' + (g ? ' data-socket-remove="' + si + '" data-tip="點擊取下"' : '') + '>' + text + '</span>';
+      h += '<span class="' + cls + '">' + text + '</span>';
     }
   }
   if (!sockets.length) h += '<div class="equip-material-empty">此裝備沒有寶石鑲孔</div>';
   return h + '</div>';
 }
 
-function itemDetailHTML(it, cmp, opts) {
-  cmp = null; // 裝備比較改版：不再在單個 tips 中進行屬性差值比較
+/* 裝備功能與懸停詳情共用標題，僅讀取傳入的物品與選項。 */
+function itemHeaderHTML(it, opts) {
   opts = opts || {};
-  if (opts.socket && opts.socket.active) return '<div class="equip-socket-page">' + itemSocketHTML(it, opts.socket) + '</div>';
   var showAffixReroll = opts.showAffixReroll !== false;
-  /* selIdx 是 it.affixes 的索引；洗完保留選取位置，執行入口在下方操作列。 */
-  var reroll = opts.reroll || null;
-  var rerollActive = !!(reroll && reroll.active);
-  var rerollSelIdx = rerollActive ? reroll.selIdx : -1;
   var r = RARITIES[it.rarity];
   var levelRarity = RARITIES[equipmentLevelRarityIndex(it.level)] || r;
   var curScore = itemScore(it);
-  var cmpScore = cmp ? itemScore(cmp) : 0;
-  var sdiffStr = '';
-  if (cmp) {
-    var diffScore = curScore - cmpScore;
-    if (Math.abs(diffScore) > 0.5) {
-      if (diffScore > 0) sdiffStr = ' <span style="color: #4ade80">↑' + fmt(diffScore) + '</span>';
-      else sdiffStr = ' <span style="color: #f87171">↓' + fmt(-diffScore) + '</span>';
-    }
-  }
 
   // 詞條池內容保留為隱藏模板，點擊按鈕時會搬到 body 層的獨立浮層，避免被詳情捲軸裁切。
   var poolHtml = '<div class="it-pool-box" aria-hidden="true">';
@@ -773,12 +759,19 @@ function itemDetailHTML(it, cmp, opts) {
   h += '<div class="it-sub"><span>' + r.name + '・' +
     ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name) + '・' +
     '<span class="it-level" style="color:' + levelRarity.color + '">等級 ' + it.level + '</span>';
-  if (cmp && cmp.level !== it.level) {
-    var ldiff = it.level - cmp.level;
-    if (ldiff > 0) h += ' <span style="color: #4ade80">↑' + ldiff + '</span>';
-    else if (ldiff < 0) h += ' <span style="color: #f87171">↓' + (-ldiff) + '</span>';
-  }
-  h += '</span><span class="it-score it-score-sub">評分 ' + fmt(curScore) + sdiffStr + '</span></div>';
+  return h + '</span><span class="it-score it-score-sub">評分 ' + fmt(curScore) + '</span></div>';
+}
+
+function itemDetailHTML(it, cmp, opts) {
+  cmp = null; // 裝備比較改版：不再在單個 tips 中進行屬性差值比較
+  opts = opts || {};
+  var h = itemHeaderHTML(it, opts);
+  if (opts.socket && opts.socket.active) return '<div class="equip-socket-header">' + h + '</div><div class="equip-socket-page">' + itemSocketHTML(it, opts.socket) + '</div>';
+  var showAffixReroll = opts.showAffixReroll !== false;
+  /* selIdx 是 it.affixes 的索引；洗完保留選取位置，執行入口在下方操作列。 */
+  var reroll = opts.reroll || null;
+  var rerollActive = !!(reroll && reroll.active);
+  var rerollSelIdx = rerollActive ? reroll.selIdx : -1;
 
   h += '<div class="it-affixes' + (rerollActive ? ' is-reroll-mode' : '') + '">';
   var um = upgradeMult(it);
@@ -913,7 +906,9 @@ function itemDetailHTML(it, cmp, opts) {
       var e = ENCHANTS[en.key];
       if (!e) return;
       if (!cmp) {
-        h += '<div class="it-enchant removable" data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）">' + esc(enchantLine(it, en)) + '</div>';
+        var canRemove = !!(opts.enchant && opts.enchant.active);
+        var removeAttrs = canRemove ? ' data-enchant-remove="' + enIdx + '" data-tip="點擊取下（返還附魔書，精華不退）"' : '';
+        h += '<div class="it-enchant' + (canRemove ? ' removable' : '') + '"' + removeAttrs + '>' + esc(enchantLine(it, en)) + '</div>';
       } else if (!(en.key in cmpEnMap)) {
         h += '<div class="it-enchant" style="color: #4ade80">' + esc(enchantLine(it, en)) + '</div>';
       } else {

@@ -5178,15 +5178,7 @@ function syncEquipSocketControls(it, mode) {
   pane.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
     if (button.disabled !== disabled) button.disabled = disabled;
   });
-  if (mode.renderedIdx !== mode.selIdx) {
-    var selected = holes.querySelector('.is-socket-selected');
-    if (selected) {
-      var frame = holes.getBoundingClientRect(), row = selected.getBoundingClientRect();
-      if (row.top < frame.top + 1) holes.scrollTop -= Math.ceil(frame.top + 1 - row.top);
-      else if (row.bottom > frame.bottom - 1) holes.scrollTop += Math.ceil(row.bottom - frame.bottom + 1);
-    }
-    mode.renderedIdx = mode.selIdx;
-  }
+  mode.renderedIdx = mode.selIdx;
   return true;
 }
 
@@ -5199,6 +5191,11 @@ function syncEquipSocketPending() {
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
+  /* 換裝的面板快照可能先收到背包摘要；等完整詳情才更新標題及孔位。 */
+  if (it && !Array.isArray(it.affixes)) {
+    requestPanelData('inv', true, { detailIds: [it.id] });
+    return;
+  }
   if (!it) pane.classList.remove('is-socket-page');
   if (!it || !UI.sel || UI.affixPoolItemId !== it.id) {
     hideAffixPool();
@@ -5247,11 +5244,14 @@ function renderDetail() {
   }
   var rerollMode = equipRerollModeFor(it);
   var socketMode = !rerollMode && equipSocketModeFor(it);
+  var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  var socketHeaderHtml = socketMode ? itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
   var socketHolesHtml = socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : null;
-  var h = socketMode ? '<div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
+  var h = socketMode ? '<div class="equip-socket-header">' + socketHeaderHtml + '</div><div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
     gold: player && player.gold,
     essence: player && player.essence,
     justUpgraded: justUpgraded,
+    enchant: matMode === 'enchant' ? { active: true } : null,
     reroll: rerollMode ? {
       active: true,
       selIdx: rerollMode.selIdx
@@ -5264,7 +5264,6 @@ function renderDetail() {
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
   var fromInv = UI.sel.source === 'inv';
-  var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
   /* 洗煉模式時紅色主按鈕移到「洗煉」，表示目前是洗煉分頁；裝備／強化退回次按鈕 */
   if (fromInv) {
     actionsHtml += '<button class="btn' + (rerollMode || socketMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
@@ -5305,18 +5304,19 @@ function renderDetail() {
     var gemIcons = [];
     for (var gt in GEM_TYPES) {
       var gdef = GEM_TYPES[gt];
-      for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
+      for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
         var n = gemsViewCount(gemsSnapshot, gt, lv);
         if (!n) continue;
         var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
         gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
           esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '">' +
-          gdef.emoji + '<span class="socket-gem-level">' + lv + '</span></button>');
+          gdef.emoji + '<span class="socket-gem-level">' + lv + '</span><span class="socket-gem-count">×' + fmt(n) + '</span></button>');
+        break;
       }
     }
     gemsViewFused(gemsSnapshot).forEach(function (fg) {
       gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
-        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">🧬</button>');
+        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">🧬<span class="socket-gem-count">×1</span></button>');
     });
     socketGemsHtml = gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
     h += '<div class="equip-socket-gems">' + socketGemsHtml + '</div>';
@@ -5351,16 +5351,18 @@ function renderDetail() {
   }
   var oldGems = pane.querySelector && pane.querySelector('.equip-socket-gems');
   var oldHoles = pane.querySelector && pane.querySelector('.equip-socket-page');
+  var oldHeader = pane.querySelector && pane.querySelector('.equip-socket-header');
   var gemsScroll = oldGems ? oldGems.scrollTop : 0;
   var holesScroll = oldHoles ? oldHoles.scrollTop : 0;
   var previousSocket = pane._equipSocketRender;
-  if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHoles && oldGems) {
+  if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHeader && oldHoles && oldGems) {
+    if (previousSocket.header !== socketHeaderHtml) oldHeader.innerHTML = socketHeaderHtml;
     if (previousSocket.holes !== socketHolesHtml) oldHoles.innerHTML = socketHolesHtml;
     if (previousSocket.gems !== socketGemsHtml) oldGems.innerHTML = socketGemsHtml;
   } else {
     pane.innerHTML = h;
   }
-  pane._equipSocketRender = socketMode ? { itemId: it.id, holes: socketHolesHtml, gems: socketGemsHtml } : null;
+  pane._equipSocketRender = socketMode ? { itemId: it.id, header: socketHeaderHtml, holes: socketHolesHtml, gems: socketGemsHtml } : null;
   pane.classList.add('has-detail');
   if (!socketMode) pane.classList.remove('is-socket-page');
   if (socketMode) {
@@ -12513,7 +12515,7 @@ function initUI() {
     var sr = e.target.closest('[data-socket-remove]');
     if (sr) {
       var uit = findSelItem();
-      if (uit) {
+      if (uit && UI.tab === 'equip' && equipSocketModeFor(uit)) {
         if (sr.disabled || isUiCommandPending(itemPendingKey(uit.id))) return;
         sendUiCommand('gem.unsocket', {
           itemId: uit.id,
@@ -12604,7 +12606,8 @@ function initUI() {
     var er = e.target.closest('[data-enchant-remove]');
     if (er) {
       var rit = findSelItem();
-      if (rit) {
+      if (rit && UI.tab === 'equip' && !equipRerollModeFor(rit) && UI.equipMatMode && UI.equipMatMode.itemId === rit.id && UI.equipMatMode.mode === 'enchant') {
+        if (isUiCommandPending(itemPendingKey(rit.id))) return;
         var rIdx = parseInt(er.getAttribute('data-enchant-remove'), 10);
 
         sendUiCommand('item.removeEnchant', { itemId: rit.id, index: rIdx }, {

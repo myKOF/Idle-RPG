@@ -18,11 +18,11 @@ function section() {
 }
 function pane() {
   const el={style:{},classList:classList()};let html='';
-  Object.defineProperty(el,'innerHTML',{get:()=>html,set(value){html=value;el.holes=el.gems=null;
-    const match=value.match(/<div class="equip-socket-page">([\s\S]*)<\/div><div class="equip-socket-gems">([\s\S]*)<\/div>$/);
-    if(match){el.holes=section();el.holes.innerHTML=match[1];el.gems=section();el.gems.innerHTML=match[2];}
+  Object.defineProperty(el,'innerHTML',{get:()=>html,set(value){html=value;el.header=el.holes=el.gems=null;
+    const match=value.match(/^<div class="equip-socket-header">([\s\S]*?)<\/div><div class="equip-socket-page">([\s\S]*)<\/div><div class="equip-socket-gems">([\s\S]*)<\/div>$/);
+    if(match){el.header=section();el.header.innerHTML=match[1];el.holes=section();el.holes.innerHTML=match[2];el.gems=section();el.gems.innerHTML=match[3];}
   }});
-  el.querySelector=s=>s==='.equip-socket-page'?el.holes:s==='.equip-socket-gems'?el.gems:el.querySelectorAll(s)[0];
+  el.querySelector=s=>s==='.equip-socket-header'?el.header:s==='.equip-socket-page'?el.holes:s==='.equip-socket-gems'?el.gems:el.querySelectorAll(s)[0];
   el.querySelectorAll=s=>[...(el.holes?el.holes.querySelectorAll(s):[]),...(el.gems?el.gems.querySelectorAll(s):[])];
   return el;
 }
@@ -38,27 +38,70 @@ function mount(){
   c.commands=[];c.sendUiCommand=(name,args,opts)=>{c.commands.push({name,args:JSON.parse(JSON.stringify(args))});opts.keys.forEach(k=>c.pending.add(k));c.renderDetail();return new Promise(resolve=>c.finish=result=>{c.pending.clear();resolve(result);});};
   const start=ui.indexOf('    // 洗煉模式：點詞條'),end=ui.indexOf('    // 寶石融合 v2：',start);assert(start>=0&&end>start);
   vm.runInContext('function areaClick(e){'+ui.slice(start,end)+'}',c);
-  c.click=attrs=>c.areaClick({target:{closest(selector){
+  const enchantStart=ui.indexOf("    var er = e.target.closest('[data-enchant-remove]');"),enchantEnd=ui.indexOf("    var tf = e.target.closest('[data-tower-floor]');",enchantStart);
+  assert(enchantStart>=0&&enchantEnd>enchantStart);vm.runInContext('function enchantClick(e){'+ui.slice(enchantStart,enchantEnd)+'}',c);
+  c.click=attrs=>{const event={target:{closest(selector){
     const match=selector.match(/\[data-([a-z-]+)(?:\]|=)/);
     if(match){const key=match[1];if(attrs[key]===undefined)return null;return {disabled:false,getAttribute:n=>attrs[n.replace('data-','')]};}
     if(selector.includes('.btn')&&attrs.act!==undefined)return {disabled:false,getAttribute:n=>n==='data-act'?attrs.act:null};
     return null;
-  }}});c.elements=elements;c.renderDetail();return c;
+  }}};c.areaClick(event);c.enchantClick(event);};c.elements=elements;c.renderDetail();return c;
 }
-test('鑲嵌頁僅孔及全部每階寶石，只有鑲嵌紅色且重按不退出',()=>{
+
+test('一般詳情只展示寶石附魔，取下只能在對應功能頁且防止連送',()=>{
+  const c=mount();c.it.sockets[0]={type:'ruby',level:5};c.renderDetail();
+  const h=c.elements['detail-pane'].innerHTML;assert.match(h,/it-enchant/);assert.match(h,/五級紅寶石/);assert.doesNotMatch(h,/data-socket-remove|data-enchant-remove|點擊取下/);
+  c.click({'socket-remove':'0'});c.click({'enchant-remove':'0'});assert.equal(c.commands.length,0);
+  c.click({act:'toggle-socket'});c.click({'enchant-remove':'0'});assert.equal(c.commands.length,0);
+  c.click({'socket-remove':'0'});assert.equal(c.commands[0].name,'gem.unsocket');c.pending.clear();
+  c.click({act:'toggle-enchant'});assert.match(c.elements['detail-pane'].innerHTML,/data-enchant-remove="0"/);assert.doesNotMatch(c.elements['detail-pane'].innerHTML,/data-socket-remove/);
+  c.click({'socket-remove':'0'});assert.equal(c.commands.length,1);c.click({'enchant-remove':'0'});assert.deepEqual(c.commands[1],{name:'item.removeEnchant',args:{itemId:'gear',index:0}});
+  c.click({'enchant-remove':'0'});assert.equal(c.commands.length,2);c.pending.clear();
+  c.UI.equipMatMode.itemId='other';c.click({'enchant-remove':'0'});assert.equal(c.commands.length,2);
+});
+test('鑲嵌頁有標題、孔及每類最高級寶石與數量，只有鑲嵌紅色且重按不退出',()=>{
   const c=mount();c.click({act:'toggle-socket'});
   const h=c.elements['detail-pane'].innerHTML,bar=c.elements['equip-action-bar'].innerHTML;
-  assert.doesNotMatch(h,/it-title|it-affix|it-enchant/);assert.equal(c.elements['equip-material-panel'].innerHTML,'');
-  assert.equal((h.match(/data-gem-level=/g)||[]).length,3);assert.match(h,/data-gem-socket-fused="f"/);
+  assert.match(h,/it-name/);assert.match(h,/it-sub/);assert.doesNotMatch(h,/it-affixes|it-enchant/);assert.equal(c.elements['equip-material-panel'].innerHTML,'');
+  assert.equal((h.match(/data-gem-level=/g)||[]).length,2);assert.match(h,/data-gem-socket-fused="f"/);
+  assert.doesNotMatch(h,/data-gem-level="1"/);assert.match(h,/socket-gem-count">×2/);assert.match(h,/socket-gem-count">×1/);
   assert.equal((bar.match(/btn-primary/g)||[]).length,1);assert.match(bar,/btn btn-primary" data-act="toggle-socket"/);
   const mode=c.UI.equipMatMode;c.click({act:'toggle-socket'});assert.equal(c.UI.equipMatMode,mode);assert.equal(c.commands.length,0);
 });
-test('選非第一孔及低階寶石，等待中鎖定；新快照才自動跳下一空孔',async()=>{
+
+test('標題即時更新強化、鎖定及評分，保留未變的孔與寶石節點',()=>{
+  const c=mount();c.click({act:'toggle-socket'});const p=c.elements['detail-pane'];
+  const header=p.header,holes=p.holes,gems=p.gems,gem=p.querySelector('[data-gem-level="5"]'),pick=p.holes.querySelector('[data-socket-pick="2"]');
+  c.it.name='新裝備';c.it.upgrade=34;c.it.level=200;c.it.locked=true;c.renderDetail();
+  assert.equal(p.header,header);assert.match(header.innerHTML,/新裝備/);assert.match(header.innerHTML,/it-up">\+34/);assert.match(header.innerHTML,/等級 200/);assert.match(header.innerHTML,/btn-it-lock locked/);
+  assert.equal(p.holes,holes);assert.equal(p.gems,gems);assert.equal(p.querySelector('[data-gem-level="5"]'),gem);assert.equal(p.holes.querySelector('[data-socket-pick="2"]'),pick);
+  const before=header.innerHTML;c.it.sockets[0]={type:'ruby',level:5};c.renderDetail();
+  assert.notEqual(header.innerHTML,before);assert.match(header.innerHTML,new RegExp('評分 '+c.fmt(c.itemScore(c.it))));assert.equal(p.gems,gems);assert.equal(p.querySelector('[data-gem-level="5"]'),gem);
+  c.it.sockets[0]=null;c.renderDetail();assert.equal(header.innerHTML,before);
+});
+
+test('跨面板先到的背包摘要等待完整詳情，不覆寫標題或孔位',()=>{
+  const c=mount();c.click({act:'toggle-socket'});const p=c.elements['detail-pane'],header=p.header,holes=p.holes,html=header.innerHTML;
+  const affixes=c.it.affixes,requests=[];c.requestPanelData=(...args)=>requests.push(JSON.parse(JSON.stringify(args)));
+  delete c.it.affixes;c.renderDetail();assert.deepEqual(requests,[['inv',true,{detailIds:['gear']}]]);assert.equal(p.header,header);assert.equal(p.holes,holes);assert.equal(header.innerHTML,html);
+  c.it.affixes=affixes;c.it.upgrade=5;c.renderDetail();assert.equal(p.header,header);assert.match(header.innerHTML,/it-up">\+5/);
+});
+
+test('最高級庫存耗盡後顯示下一持有級別與其數量；無庫存類型消失',async()=>{
+  const c=mount(),stock={gems:{ruby:{1:9,5:1},sapphire:{2:7}},fusedGems:[]};c.uiGemsPanelSnapshot=()=>stock;c.click({act:'toggle-socket'});
+  const p=c.elements['detail-pane'];assert.match(p.gems.innerHTML,/data-gem-socket="ruby" data-gem-level="5"/);assert.match(p.gems.innerHTML,/socket-gem-count">×7/);
+  c.click({'gem-socket':'ruby','gem-level':'5'});assert.deepEqual(c.commands[0].args,{itemId:'gear',type:'ruby',index:0,level:5});
+  stock.gems.ruby[5]=0;c.it.sockets[0]={type:'ruby',level:5};c.finish(null);await Promise.resolve();c.renderDetail();
+  assert.match(p.gems.innerHTML,/data-gem-socket="ruby" data-gem-level="1"/);assert.match(p.gems.innerHTML,/socket-gem-count">×9/);assert.doesNotMatch(p.gems.innerHTML,/data-gem-level="5"/);assert.equal(c.UI.equipMatMode.selIdx,1);
+  stock.gems.ruby[1]=0;c.renderDetail();assert.doesNotMatch(p.gems.innerHTML,/data-gem-socket="ruby"/);
+  stock.gems.sapphire[2]=0;c.renderDetail();assert.match(p.gems.innerHTML,/尚無寶石庫存/);
+});
+test('選非第一孔及最高級寶石，等待中鎖定；新快照才自動跳下一空孔',async()=>{
   const c=mount();c.click({act:'toggle-socket'});c.click({'socket-pick':'2'});assert.equal(c.commands.length,0);
-  c.click({'gem-socket':'ruby','gem-level':'1'});assert.deepEqual(c.commands,[{name:'gem.socket',args:{itemId:'gear',type:'ruby',index:2,level:1}}]);
+  c.click({'gem-socket':'ruby','gem-level':'5'});assert.deepEqual(c.commands,[{name:'gem.socket',args:{itemId:'gear',type:'ruby',index:2,level:5}}]);
   c.click({'socket-pick':'0'});c.click({'gem-socket':'ruby','gem-level':'5'});assert.equal(c.UI.equipMatMode.selIdx,2);assert.equal(c.commands.length,1);
   c.finish(null);await Promise.resolve();assert.equal(c.UI.equipMatMode.selIdx,2);
-  c.it.sockets[2]={type:'ruby',level:1};c.renderDetail();assert.equal(c.UI.equipMatMode.selIdx,3);
+  c.it.sockets[2]={type:'ruby',level:5};c.renderDetail();assert.equal(c.UI.equipMatMode.selIdx,3);
   c.click({'socket-pick':'3'});c.socketSelectedGem(null,null,'f');assert.equal(c.commands[1].args.index,3);
   c.it.sockets[3]={fused:{id:'f',stats:[{type:'ruby',mult:1}]}};c.finish(null);await Promise.resolve();assert.equal(c.UI.equipMatMode.selIdx,0);
 });
@@ -70,22 +113,22 @@ test('失敗不跳孔；晚到的成功回覆不影響新模式或新裝備',asy
 test('滿孔仍显示全部庫存及各孔卸下按钮，選已鑲孔不能鑲入',()=>{
   const c=mount();c.it.sockets=c.it.sockets.map(()=>({type:'ruby',level:1}));c.click({act:'toggle-socket'});
   assert.equal((c.elements['detail-pane'].innerHTML.match(/class="socket-remove"/g)||[]).length,4);
-  assert.equal(c.elements['detail-pane'].querySelector('[data-gem-level="1"]').disabled,true);
+  assert.equal(c.elements['detail-pane'].querySelector('[data-gem-level="5"]').disabled,true);
   c.socketSelectedGem('ruby',1,null);assert.equal(c.commands.length,0);c.click({'socket-remove':'3'});
   assert.deepEqual(c.commands,[{name:'gem.unsocket',args:{itemId:'gear',index:3}}]);c.click({'socket-remove':'3'});assert.equal(c.commands.length,1);
 });
 
 test('選孔與相同快照重繪保留寶石節點、孔位節點及捲動',()=>{
   const c=mount();c.click({act:'toggle-socket'});const p=c.elements['detail-pane'];
-  const gem=p.querySelector('[data-gem-level="1"]'),pick=p.holes.querySelector('[data-socket-pick="2"]');p.gems.scrollTop=90;
-  c.click({'socket-pick':'2'});assert.equal(p.querySelector('[data-gem-level="1"]'),gem);assert.equal(p.holes.querySelector('[data-socket-pick="2"]'),pick);assert.equal(pick.getAttribute('aria-pressed'),'true');
-  c.renderDetail();assert.equal(p.querySelector('[data-gem-level="1"]'),gem);assert.equal(p.holes.querySelector('[data-socket-pick="2"]'),pick);assert.equal(p.gems.scrollTop,90);
+  const gem=p.querySelector('[data-gem-level="5"]'),pick=p.holes.querySelector('[data-socket-pick="2"]');p.gems.scrollTop=90;
+  c.click({'socket-pick':'2'});assert.equal(p.querySelector('[data-gem-level="5"]'),gem);assert.equal(p.holes.querySelector('[data-socket-pick="2"]'),pick);assert.equal(pick.getAttribute('aria-pressed'),'true');
+  c.renderDetail();assert.equal(p.querySelector('[data-gem-level="5"]'),gem);assert.equal(p.holes.querySelector('[data-socket-pick="2"]'),pick);assert.equal(p.gems.scrollTop,90);
 });
 
 test('等待解除立即恢復孔位和寶石，已鑲孔仍禁止覆蓋',()=>{
-  const c=mount();c.click({act:'toggle-socket'});const p=c.elements['detail-pane'],gem=p.querySelector('[data-gem-level="1"]');
+  const c=mount();c.click({act:'toggle-socket'});const p=c.elements['detail-pane'],gem=p.querySelector('[data-gem-level="5"]');
   c.pending.add(c.itemPendingKey(c.it.id));c.syncEquipSocketPending();assert.equal(gem.disabled,true);assert.equal(p.holes.buttons[0].disabled,true);
   c.pending.clear();c.syncEquipSocketPending();assert.equal(gem.disabled,false);assert.equal(p.holes.buttons[0].disabled,false);
   c.it.sockets[0]={type:'ruby',level:1};c.syncEquipSocketPending();assert.equal(gem.disabled,true);
-  c.it.sockets[0]=null;c.renderDetail();assert.equal(p.querySelector('[data-gem-level="1"]'),gem);assert.equal(gem.disabled,false);
+  c.it.sockets[0]=null;c.renderDetail();assert.equal(p.querySelector('[data-gem-level="5"]'),gem);assert.equal(gem.disabled,false);
 });
