@@ -1,0 +1,627 @@
+/* Ashen Forge Flat — 戰鬥區與其餘界面的簡約化。
+   左側各分頁（裝備、技能、寶石、熔爐、封魔塔、威能、角色）在 ashen-forge.css 內已改成扁平卡片；
+   這支把同一套語彙套到其他還停在鍛鐵風的地方：頂列、戰鬥區控制列／畫布框／技能列／資源球／日誌、
+   各種彈窗與提示框、全域按鈕與輸入欄位。
+   只換邊線、背景、用色與字體，不改尺寸、排版與 DOM。
+
+   語彙（與左側一致）：
+   - 底：卡片 #121418、清單／凹槽 #111317、更深 #0c0d10；線 1px #2a2d34（強調 #3a3d44）
+   - 按鈕：#1b1e24 底、1px #3a3d44 邊，hover 邊 #5a5d66；主按鈕 #a8322c
+   - 選取／啟用：#2a2218 底、#7a6440 邊、#f0cf86 字（金），不再用紅鐵塊
+   - 字：#ece6d8／#c9c3b5／#a39d90，不加 text-shadow，按鈕不用襯線體
+   - 圓角：卡片 8px、按鈕 6px、徽章／膠囊更小或全圓
+
+   不碰：外框的荊棘角飾與標題銘牌（左右兩個面板共用，維持一致）、
+   戰鬥畫布內容、品質色／元素色／狀態色。
+   載入順序在 ashen-forge.css 之後。既有規則帶 !important 的，這裡同樣帶 !important。 */
+
+:root {
+  --afl-card: #121418;
+  --afl-list: #111317;
+  --afl-deep: #0c0d10;
+  --afl-line: #2a2d34;
+  --afl-line-hi: #3a3d44;
+  --afl-line-hover: #5a5d66;
+  --afl-btn: #1b1e24;
+  --afl-btn-hover: #23262d;
+  --afl-gold-bg: #2a2218;
+  --afl-gold-line: #7a6440;
+  --afl-gold-text: #f0cf86;
+  --afl-red: #a8322c;
+  --afl-red-hover: #bf3a33;
+  --afl-text: #ece6d8;
+  --afl-text-soft: #c9c3b5;
+  --afl-text-dim: #a39d90;
+}
+
+/* ------------------------------------------------------------------ 頂列 */
+#topbar {
+  min-height: 52px;
+  border-bottom: 1px solid #23262d;
+  background: #0e1013;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+#topbar::after {
+  display: none;
+}
+
+.brand {
+  text-shadow: none;
+}
+
+.res {
+  border: 1px solid var(--afl-line);
+  border-radius: 6px;
+  background: var(--afl-card);
+  text-shadow: none;
+}
+
+/* ------------------------------------------------------------------ 全域按鈕、輸入 */
+.btn,
+.dropdown,
+#battle-canvas-buttons .btn,
+.info-btn,
+.damage-toggle-btn,
+.fs-btn {
+  border: 1px solid var(--afl-line-hi) !important;
+  border-radius: 6px !important;
+  background: var(--afl-btn) !important;
+  color: var(--afl-text) !important;
+  box-shadow: none;
+  text-shadow: none;
+  font-family: inherit;
+  letter-spacing: 0;
+}
+
+.btn:hover:not(:disabled),
+.dropdown:hover,
+.info-btn:hover,
+.damage-toggle-btn:hover,
+.fs-btn:hover {
+  border-color: var(--afl-line-hover) !important;
+  background: var(--afl-btn-hover) !important;
+  color: #fff !important;
+  box-shadow: none;
+}
+
+.btn:disabled {
+  border-color: var(--afl-line) !important;
+  background: var(--afl-list) !important;
+  color: #5c5f66 !important;
+}
+
+/* 警示類（暫停、撤退、危險操作）：深底紅邊紅字，不再整塊染紅 */
+.btn.warn,
+.btn.danger {
+  border-color: #7a2a26 !important;
+  background: var(--afl-btn) !important;
+  color: #f08a80 !important;
+  box-shadow: none;
+}
+
+.btn.warn:hover:not(:disabled),
+.btn.danger:hover:not(:disabled) {
+  border-color: #a8322c !important;
+  background: #2a1616 !important;
+  color: #ffb0a6 !important;
+  filter: none;
+}
+
+/* 主要動作（確認、合成、鍛造）：紅色實心 */
+#btn-salvage-confirm,
+#fuse-btn,
+#forge-go,
+.btn.primary,
+.btn.btn-primary {
+  border: 1px solid var(--afl-red) !important;
+  background: var(--afl-red) !important;
+  color: #fff !important;
+  box-shadow: none;
+}
+
+#btn-salvage-confirm:hover:not(:disabled),
+#fuse-btn:hover:not(:disabled),
+#forge-go:hover:not(:disabled),
+.btn.primary:hover:not(:disabled),
+.btn.btn-primary:hover:not(:disabled) {
+  border-color: var(--afl-red-hover) !important;
+  background: var(--afl-red-hover) !important;
+}
+
+/* 啟用中的切換鈕：金色 */
+.btn.active,
+.forge-inv-tabs .btn.active,
+.btn[aria-pressed='true'] {
+  border-color: var(--afl-gold-line) !important;
+  background: var(--afl-gold-bg) !important;
+  color: var(--afl-gold-text) !important;
+  box-shadow: none;
+}
+
+.btn.active:hover {
+  filter: none;
+}
+
+.input,
+select,
+input[type='text'],
+input[type='number'],
+textarea,
+.log-filter {
+  border: 1px solid var(--afl-line) !important;
+  border-radius: 6px !important;
+  background: var(--afl-list) !important;
+  color: var(--afl-text-soft) !important;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.input:hover,
+select:hover,
+input[type='text']:hover,
+input[type='number']:hover,
+textarea:hover {
+  border-color: var(--afl-line-hover) !important;
+  background: var(--afl-list) !important;
+  color: var(--afl-text) !important;
+}
+
+select option {
+  background: var(--afl-card);
+  color: var(--afl-text-soft);
+}
+
+.btn:focus-visible,
+.zone-btn:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--afl-gold-line);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ 戰鬥區：地圖頁籤、關卡列 */
+.zone-btn {
+  min-height: 35px;
+  border: 1px solid var(--afl-line);
+  border-radius: 6px;
+  background: var(--afl-list);
+  box-shadow: none;
+  color: var(--afl-text-dim);
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-shadow: none;
+}
+
+.zone-btn:hover {
+  border-color: var(--afl-line-hover);
+  background: #1b1e24;
+  color: var(--afl-text);
+  filter: none;
+}
+
+.zone-btn.active {
+  border-color: var(--afl-gold-line);
+  background: var(--afl-gold-bg);
+  color: var(--afl-gold-text);
+  box-shadow: none;
+}
+
+.zone-btn:disabled,
+.zone-btn.locked {
+  border-color: #1f2228;
+  background: #0e1013;
+  color: #5c5f66;
+}
+
+.zone-best {
+  border: 1px solid var(--afl-line);
+  border-radius: 4px;
+  background: var(--afl-deep);
+  color: var(--afl-gold-text);
+  font-family: inherit;
+  text-shadow: none;
+}
+
+.zone-btn.active .zone-best {
+  border-color: var(--afl-gold-line);
+}
+
+#stage-bar,
+#stage-label,
+#stage-best {
+  text-shadow: none;
+}
+
+#stage-label {
+  color: var(--afl-gold-text);
+}
+
+/* ------------------------------------------------------------------ 戰鬥區：畫面框、技能列、資源球、經驗條 */
+.battle-scene-wrapper {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+#battle-canvas-host {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+#battle-canvas-host::after {
+  display: none;
+}
+
+#battle-canvas-host #battle-skill-bar,
+#battle-skill-bar {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 8px;
+  background: rgba(18, 20, 24, .92);
+  box-shadow: none;
+}
+
+.battle-skill-slot {
+  border: 1px solid var(--afl-line);
+  border-radius: 6px;
+  background: var(--afl-deep);
+  box-shadow: none;
+}
+
+.battle-skill-slot.empty,
+.battle-skill-slot.locked {
+  border-style: solid;
+  border-color: #1f2228;
+  background: #0e1013;
+}
+
+#battle-canvas-host .battle-resource-orb {
+  border: 2px solid var(--afl-line-hi);
+  background: var(--afl-deep);
+  box-shadow: none;
+}
+
+.battle-resource-orb:focus-visible {
+  outline-color: var(--afl-gold-line);
+}
+
+.orb-glass {
+  background: #07090b;
+  box-shadow: none;
+}
+
+.health-orb .orb-liquid {
+  background: linear-gradient(#d23a30, #8e1c1c);
+  box-shadow: none;
+}
+
+.mana-orb .orb-liquid {
+  background: linear-gradient(#3b7fe0, #1c3f9a);
+  box-shadow: none;
+}
+
+.orb-glass::after {
+  background: none;
+  box-shadow: none;
+}
+
+#battle-xp-bar {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 2px;
+  background: var(--afl-deep);
+  box-shadow: none;
+}
+
+#battle-xp-fill {
+  background: linear-gradient(#f0cf86, #c9a35e);
+  box-shadow: none;
+}
+
+#battle-xp-bar::after {
+  background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 1px), #0c0d1099 calc(20% - 1px) 20%);
+  box-shadow: none;
+}
+
+#quest-bar {
+  border: 1px solid var(--afl-line-hi);
+  background: rgba(18, 20, 24, .92);
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ 戰鬥區：日誌 */
+#battle-log {
+  border: 1px solid var(--afl-line);
+  border-radius: 8px;
+  background: var(--afl-list);
+  box-shadow: none;
+}
+
+.log-header,
+.log-title,
+.log-header .btn,
+.log-header select {
+  text-shadow: none;
+}
+
+/* ------------------------------------------------------------------ 彈窗、提示框、抽屜 */
+.modal-box,
+.confirm-box,
+.detail-log-box,
+#battle-info-drawer,
+#salvage-settings-panel {
+  border: 1px solid var(--afl-line-hi) !important;
+  border-radius: 10px !important;
+  background: var(--afl-card) !important;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.modal-box,
+.confirm-box,
+.detail-log-box {
+  box-shadow: 0 12px 32px #000a;
+}
+
+#sk-tooltip:not(:has(.equip-detail-card)) {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 8px;
+  background: var(--afl-card);
+  box-shadow: none;
+}
+
+.modal-x {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 50%;
+  background: var(--afl-btn);
+  box-shadow: none;
+  color: var(--afl-text-dim);
+}
+
+.modal-x:hover {
+  border-color: #7a2a26;
+  background: #2a1616;
+  color: #f08a80;
+}
+
+#confirm-title,
+.modal-box h2,
+.modal-box h3 {
+  text-shadow: none;
+}
+
+.confirm-highlight {
+  text-shadow: none;
+}
+
+/* ------------------------------------------------------------------ 通用卡片、浮層（左側分頁內已有更具體的扁平規則，不受影響） */
+.panel,
+.equip-section-box,
+.tree-panel,
+.log,
+.shop-card,
+.nf-part-upgrade-card,
+.save-row,
+.stats-mat-card,
+.skill-row,
+.talent-summary,
+.talent-tree-panel,
+.summary-card,
+.node-info,
+.gem-result,
+.detail-log-content,
+.detail-log-stats,
+.save-folder-files {
+  border: 1px solid var(--afl-line);
+  border-radius: 8px;
+  background: var(--afl-card);
+  box-shadow: none;
+}
+
+.skill-row:hover,
+.shop-card:hover,
+.nf-part-upgrade-card:hover,
+.save-row:hover {
+  border-color: var(--afl-line-hover);
+  background: var(--afl-btn-hover);
+}
+
+.nf-belt,
+#forge-stage,
+.tower-head,
+.tower-auto-bar {
+  border: 1px solid var(--afl-line);
+  border-radius: 8px;
+  background: var(--afl-list);
+  box-shadow: none;
+}
+
+.gem-tbl th,
+.quest-list-head,
+.nf-lines,
+.save-folder-files-title {
+  background: var(--afl-list);
+  color: var(--afl-text-soft);
+}
+
+.gem-tbl,
+.gem-tbl th,
+.gem-tbl td {
+  border-color: var(--afl-line);
+}
+
+#save-folder-banner {
+  border: 1px solid var(--afl-line-hi) !important;
+  border-radius: 8px !important;
+  background: var(--afl-card) !important;
+}
+
+/* 滑鼠提示裡的裝備卡（#detail-pane 內那張由裝備頁自己的規則處理） */
+#sk-tooltip .equip-detail-card {
+  border: 1px solid var(--afl-line-hi) !important;
+  border-radius: 8px !important;
+  background: var(--afl-card) !important;
+  box-shadow: none !important;
+}
+
+/* 裝備方案切換浮層 */
+#equip-set-tabs {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 8px;
+  background: var(--afl-card);
+  box-shadow: 0 8px 24px #000c;
+}
+
+.eqset-tab {
+  border: 1px solid var(--afl-line-hi);
+  border-radius: 6px;
+  background: var(--afl-btn);
+  color: var(--afl-text-soft);
+}
+
+.eqset-tab.viewing {
+  border-color: var(--afl-gold-line);
+  background: var(--afl-gold-bg);
+  box-shadow: none;
+}
+
+.eqset-tab.active {
+  color: var(--afl-gold-text);
+}
+
+/* ------------------------------------------------------------------ 標題與分隔線 */
+.sec-title,
+.node-title,
+.tree-title,
+.tower-section-title,
+.stats-sec-title,
+.equip-material-title,
+.summary-card-title {
+  border-color: var(--afl-line);
+  text-shadow: none;
+  letter-spacing: .04em;
+}
+
+.sec-title::after,
+.node-title::after,
+.tree-title::after {
+  background: var(--afl-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .btn,
+  .zone-btn {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ 二次確認彈窗：慎重的厚框
+   一般彈窗維持細線；確認類（會扣資源、不可逆）用較厚的 ridge 立體框，和外框同一語彙，讓人停一下。 */
+.confirm-box {
+  border: 4px ridge #67756c !important;
+  border-radius: 10px !important;
+}
+
+/* ------------------------------------------------------------------ 戰鬥區頁籤與關卡列的圖示（js/ui.js 的 UI_ICON_PATHS） */
+.ui-ico {
+  --ic: currentColor;
+  width: 1.3em;
+  height: 1.3em;
+  flex: none;
+  vertical-align: -.3em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ui-ico .ln {
+  fill: none;
+  stroke: currentColor;
+}
+
+.ui-ico .st {
+  fill: none;
+  stroke: var(--ic);
+}
+
+.ui-ico .fa {
+  fill: var(--ic);
+  stroke: none;
+}
+
+.ui-ico .fs {
+  fill: color-mix(in srgb, var(--ic) 30%, transparent);
+  stroke: var(--ic);
+}
+
+.ui-ico-desert {
+  --ic: #f0b955;
+}
+
+.ui-ico-icefield {
+  --ic: #7fd0f2;
+}
+
+.ui-ico-swamp {
+  --ic: #78c35f;
+}
+
+.ui-ico-undead {
+  --ic: #a99ad0;
+}
+
+.ui-ico-godwar {
+  --ic: #e0b25e;
+}
+
+.ui-ico-chaos {
+  --ic: #a98bff;
+}
+
+.ui-ico-sanctuary {
+  --ic: #f4dc8f;
+}
+
+.ui-ico-lock {
+  --ic: #8b8f98;
+}
+
+.ui-ico-pip,
+.ui-ico-world {
+  --ic: #7fb4e8;
+}
+
+/* 控制鈕裡的方向圖示：粗一點才有按鈕的分量 */
+.ui-ico-prev,
+.ui-ico-next,
+.ui-ico-last {
+  stroke-width: 2.4;
+}
+
+.zone-best .ui-ico {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -.2em;
+}
+
+#stage-label .ui-ico {
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: -.4em;
+}
+
+.stage-main-controls .btn.sm,
+.stage-tools .btn.sm {
+  line-height: 1;
+}
+
+.ui-ico .fb {
+  fill: #b98a56;
+  stroke: none;
+}
