@@ -87,16 +87,22 @@ test('未附魔不顯示欄位文字，已有附魔只顯示實際效果', () =>
   assert.doesNotMatch(empty, /it-enchant|空附魔/);
   const filled = c.itemDetailHTML(makeItem({ enchants: [{ key: 'fire', gemLv: 1 }] }), null, {});
   assert.match(filled, /it-enchant/);
-  assert.match(filled, /data-enchant-remove="0"/);
+  assert.doesNotMatch(filled, /data-enchant-remove|removable|點擊取下/);
+  const mode = c.itemDetailHTML(makeItem({ enchants: [{ key: 'fire', gemLv: 1 }] }), null, { enchant: { active: true } });
+  assert.match(mode, /data-enchant-remove="0"/);
   assert.doesNotMatch(filled, /空附魔/);
 });
 
-test('鑲嵌頁只顯示孔位，選取和卸下按鈕分開且不改原始資料', () => {
+test('鑲嵌頁保留裝備標題與孔位，選取和卸下分開且不改原始資料', () => {
   const c = loadItemContext();
   const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)], enchants: [{ key: 'fire', gemLv: 1 }], sockets: [null, { type: 'ruby', level: 2 }, null] });
   const before = JSON.stringify(it);
   const h = c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 1, pending: false } });
-  assert.doesNotMatch(h, /it-title|it-sub|it-affix|it-enchant|it-passive/);
+  assert.match(h, /equip-socket-header/);
+  assert.match(h, /it-name/);
+  assert.match(h, /it-sub/);
+  assert.doesNotMatch(h, /it-sockets-title/);
+  assert.doesNotMatch(h, /it-affixes|it-enchant|it-passive/);
   assert.equal((h.match(/data-socket-pick=/g) || []).length, 3);
   assert.equal((h.match(/is-socket-selected/g) || []).length, 1);
   assert.match(h, /data-socket-pick="1" aria-pressed="true"/);
@@ -105,7 +111,23 @@ test('鑲嵌頁只顯示孔位，選取和卸下按鈕分開且不改原始資�
   assert.equal(JSON.stringify(it), before);
 });
 
-test('寶石鑲孔逐孔顯示，重複寶石不合併且保留原取下索引', () => {
+test('各功能共用完整純標題，包含強化、合成、鎖定與評分', () => {
+  const c = loadItemContext();
+  const it = makeItem({ name: '測試<劍>', upgrade: 34, locked: true, synthesized: true, affixes: [affixAt(c, 'str', 10)], sockets: [null] });
+  const before = JSON.stringify(it), header = c.itemHeaderHTML(it, {});
+  assert.match(header, /測試&lt;劍&gt;/);
+  assert.match(header, /it-up">\+34/);
+  assert.match(header, /✦合成/);
+  assert.match(header, /btn-it-lock locked/);
+  assert.match(header, /等級 50/);
+  assert.match(header, new RegExp('評分 ' + c.fmt(c.itemScore(it))));
+  [{}, { reroll: { active: true, selIdx: 0 } }, { socket: { active: true, selIdx: 0 } }, { enchant: { active: true } }].forEach(opts => {
+    assert.ok(c.itemDetailHTML(it, null, opts).includes(header));
+  });
+  assert.equal(JSON.stringify(it), before);
+});
+
+test('一般詳情寶石逐孔純顯示，切到鑲嵌才有原取下索引', () => {
   const c = loadItemContext();
   const it = makeItem({ sockets: [null, { type: 'ruby', level: 1 }, { type: 'ruby', level: 1 }, null] });
   const before = JSON.stringify(it);
@@ -114,7 +136,9 @@ test('寶石鑲孔逐孔顯示，重複寶石不合併且保留原取下索引',
   assert.equal((html.match(/class="socket /g) || []).length, 4);
   assert.match(html, /鑲孔 1（空）/);
   assert.match(html, /鑲孔 4（空）/);
-  assert.deepEqual(html.match(/data-socket-remove="\d+"/g), ['data-socket-remove="1"', 'data-socket-remove="2"']);
+  assert.doesNotMatch(html, /data-socket-remove|點擊取下/);
+  const mode = c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 0 } });
+  assert.deepEqual(mode.match(/data-socket-remove="\d+"/g), ['data-socket-remove="1"', 'data-socket-remove="2"']);
   assert.equal(JSON.stringify(it), before);
 });
 
@@ -125,8 +149,10 @@ test('融合寶石與不同種類寶石維持各自孔位', () => {
   const before = JSON.stringify(it);
   const html = c.itemDetailHTML(it, null, {});
   assert.equal((html.match(/class="socket /g) || []).length, 4);
-  assert.match(html, /fused-socket" data-socket-remove="0"[^>]*>1\. .*融合寶石/);
-  assert.deepEqual(html.match(/data-socket-remove="\d+"/g), ['data-socket-remove="0"', 'data-socket-remove="1"', 'data-socket-remove="2"']);
+  assert.match(html, /fused-socket">1\. .*融合寶石/);
+  assert.doesNotMatch(html, /data-socket-remove|點擊取下/);
+  const mode = c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 0 } });
+  assert.deepEqual(mode.match(/data-socket-remove="\d+"/g), ['data-socket-remove="0"', 'data-socket-remove="1"', 'data-socket-remove="2"']);
   assert.equal(JSON.stringify(it), before);
 });
 

@@ -5191,6 +5191,11 @@ function syncEquipSocketPending() {
 function renderDetail() {
   var pane = $id('detail-pane');
   var it = findSelItem();
+  /* 換裝的面板快照可能先收到背包摘要；等完整詳情才更新標題及孔位。 */
+  if (it && !Array.isArray(it.affixes)) {
+    requestPanelData('inv', true, { detailIds: [it.id] });
+    return;
+  }
   if (!it) pane.classList.remove('is-socket-page');
   if (!it || !UI.sel || UI.affixPoolItemId !== it.id) {
     hideAffixPool();
@@ -5239,11 +5244,14 @@ function renderDetail() {
   }
   var rerollMode = equipRerollModeFor(it);
   var socketMode = !rerollMode && equipSocketModeFor(it);
+  var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  var socketHeaderHtml = socketMode ? itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
   var socketHolesHtml = socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : null;
-  var h = socketMode ? '<div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
+  var h = socketMode ? '<div class="equip-socket-header">' + socketHeaderHtml + '</div><div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
     gold: player && player.gold,
     essence: player && player.essence,
     justUpgraded: justUpgraded,
+    enchant: matMode === 'enchant' ? { active: true } : null,
     reroll: rerollMode ? {
       active: true,
       selIdx: rerollMode.selIdx
@@ -5256,7 +5264,6 @@ function renderDetail() {
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
   var fromInv = UI.sel.source === 'inv';
-  var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
   /* 洗煉模式時紅色主按鈕移到「洗煉」，表示目前是洗煉分頁；裝備／強化退回次按鈕 */
   if (fromInv) {
     actionsHtml += '<button class="btn' + (rerollMode || socketMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
@@ -5344,16 +5351,18 @@ function renderDetail() {
   }
   var oldGems = pane.querySelector && pane.querySelector('.equip-socket-gems');
   var oldHoles = pane.querySelector && pane.querySelector('.equip-socket-page');
+  var oldHeader = pane.querySelector && pane.querySelector('.equip-socket-header');
   var gemsScroll = oldGems ? oldGems.scrollTop : 0;
   var holesScroll = oldHoles ? oldHoles.scrollTop : 0;
   var previousSocket = pane._equipSocketRender;
-  if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHoles && oldGems) {
+  if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHeader && oldHoles && oldGems) {
+    if (previousSocket.header !== socketHeaderHtml) oldHeader.innerHTML = socketHeaderHtml;
     if (previousSocket.holes !== socketHolesHtml) oldHoles.innerHTML = socketHolesHtml;
     if (previousSocket.gems !== socketGemsHtml) oldGems.innerHTML = socketGemsHtml;
   } else {
     pane.innerHTML = h;
   }
-  pane._equipSocketRender = socketMode ? { itemId: it.id, holes: socketHolesHtml, gems: socketGemsHtml } : null;
+  pane._equipSocketRender = socketMode ? { itemId: it.id, header: socketHeaderHtml, holes: socketHolesHtml, gems: socketGemsHtml } : null;
   pane.classList.add('has-detail');
   if (!socketMode) pane.classList.remove('is-socket-page');
   if (socketMode) {
@@ -12506,7 +12515,7 @@ function initUI() {
     var sr = e.target.closest('[data-socket-remove]');
     if (sr) {
       var uit = findSelItem();
-      if (uit) {
+      if (uit && UI.tab === 'equip' && equipSocketModeFor(uit)) {
         if (sr.disabled || isUiCommandPending(itemPendingKey(uit.id))) return;
         sendUiCommand('gem.unsocket', {
           itemId: uit.id,
@@ -12597,7 +12606,8 @@ function initUI() {
     var er = e.target.closest('[data-enchant-remove]');
     if (er) {
       var rit = findSelItem();
-      if (rit) {
+      if (rit && UI.tab === 'equip' && !equipRerollModeFor(rit) && UI.equipMatMode && UI.equipMatMode.itemId === rit.id && UI.equipMatMode.mode === 'enchant') {
+        if (isUiCommandPending(itemPendingKey(rit.id))) return;
         var rIdx = parseInt(er.getAttribute('data-enchant-remove'), 10);
 
         sendUiCommand('item.removeEnchant', { itemId: rit.id, index: rIdx }, {

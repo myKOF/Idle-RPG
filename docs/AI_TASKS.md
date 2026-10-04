@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## EQUIP-MODE-HEADER-20261005 — 統一裝備頂端資訊與功能頁操作
+
+- Owner：Codex；Done。使用者要求強化／洗煉／鑲嵌／附魔頂端皆有與洗煉相同的裝備名稱、強化與相關資訊。单一開發者，前置詳情與鑲嵌局部更新已完成，副本乾淨，六檔衝突預檢無其他分支／副本修改；追加CSS另預檢、提交前七檔再次預檢均無衝突。
+- 允許js/item.js共用純標題渲染、js/ui.js裝備頁標題與局部刷新、index.html對應快取、tests/item-detail-html.test.cjs／equip-socket-ui.test.cjs、本紀錄；追加指示移除鑲嵌頁「寶石鑲孔」標題並把孔位上移，包含css/ashen-forge.css必要間距（另預檢乾淨）；再次追加一般詳情寶石／附魔純顯示，只在對應功能頁取下並移除非操作提示。不改樣式風格、數值、Worker協議、存檔、素材或其他副本。
+- 驗收四模式共用名稱／強化／品質／部位／等級／評分，標題鎖定操作保留，鑲嵌評分及鎖定更新不重建未變的孔位／寶石節點；既有選孔／最高級库存與完整孔位保持，相關回歸、正式頁隔離瀏覽器及Build通過後獨立Commit，不合併／推送。
+- 完成：抽出純itemHeaderHTML，完整詳情與鑲嵌共用既有名稱、強化、合成標記、品質、部位、等級、評分、鎖定及詞條池；鑲嵌分別比對標題／孔位／庫存，資料沒變不替換節點。取消已不可達的標題比較差值分支（既有cmp固定null），不改數值。移除鑲嵌分頁小標題，孔位接在裝備資訊之後，頂部邊線與內距沿用洗煉；寶石與孔位區維持12px間距，所有孔自然展開。
+- 操作：一般詳情寶石與附魔不帶取下事件、提示或可操作class；寶石維持逐孔效果純顯示，附魔有實際效果才顯示。只有鑲嵌頁生成逐孔卸下按鈕，只有附魔頁生成附魔取下入口；正式事件另驗當前功能／物品／pending，附魔也阻止等待中連送。非操作寶石游標改default且無懸停框色提示。最高級寶石／數量／選中框／跳下一孔保持。
+- 修改7檔：js/item.js、js/ui.js、css/ashen-forge.css、index.html、tests/item-detail-html.test.cjs、tests/equip-socket-ui.test.cjs、本紀錄。快取item1.0.10／ui1.0.123／ashen1.0.53，保留Claude現有flat與battle-hud引用。唯讀檢查未改：協作規範／prompts/codex.md、js/formula.js／data.js／bridge.js／gm_exec.js／worker/sim.worker.js／protocol.js、css/style.css／ashen-forge-flat.css、其餘相關UI回歸；無素材变更，不需素材庫Commit。item.js僅HTML渲染，Worker模擬與協議不變。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs tests/init-ui-smoke.test.cjs tests/upgrade-animation.test.cjs`52/52通過；`npm.cmd run build`442檔通過；`git diff --check`通過。增加共用標題／快照更新／節點保留／非功能頁阻擋／正確頁允許／pending及跨面板摘要等待驗證，依新需求更新舊直接取下斷言，不放寬權威鑲嵌限制。
+- 實機：browser skill完整讀取並啟動IAB，仍No Codex IAB backends；bundled Playwright＋headless Edge，全新Context／隨機本機Port／正式Worker，GM只準備拋棄式裝備與材料。實際強化＋1後四模式裝備資訊相同；洗煉第一屬性與鑲嵌第一孔相對it-sub均15px，小標題不存在。正常詳情實際點已鑲寶石／火焰附魔，取下指令0且原效果不變、寶石游標default；切附魔後取下只送一次且保留寶石，切鑲嵌卸下恢復庫存。鑲入評分1.99K→2.07K，卸下後與正式itemScore一致；鎖定同步更新。1920×1080／1280×720的4孔clientHeight／scrollHeight皆191px、12孔皆575px，所有孔／寶石／操作列完整排列無重疊；已檢視縮放與長孔位截圖，最終Console error／warning0。
+- 驗證發現與修正：測試服務首次Windows路徑正規化不一致導致403，修正臨時服務後通過；第一版孔位比洗煉早6px，沿用同一頂部邊線與6px內距後實測一致。換裝GM準備時背包摘要先到、選取尚指向舊裝備，既有itemScore需要完整affixes；renderDetail改為此時索取正式detailIds並暫不覆寫，收到完整詳情再更新，加入回歸後原重現流程通過。未改投影／公式／權威資料，未略過Console錯誤。
+- 交付：Commit為本紀錄所在`[Codex] fix: 統一裝備資訊並限制寶石附魔功能頁操作`提交；無未完成本次需求或已知新增阻擋，可合併，未合併／推送。尚未長時間真人操作；12孔以上內容仍按前次要求自然延長整頁。臨時服務／瀏覽器已關閉，助手測試腳本與截圖提交前刪除，未改正式存檔或使用者截圖；下一步使用者整合後Ctrl+F5重載驗收。
+
 ## EQUIP-SOCKET-COMPACT-20261005 — 展開所有孔位與最高級寶石清單
 
 - Owner：Codex；Done。使用者要求鑲孔區取消獨立捲動、依實際數量完整展開；普通寶石每種類型只顯示最高持有級別及該級別數量。已告知融合寶石保留各獨立效果入口，因效果／組合不同，不將其混成普通級別。單一開發者，前置選孔／權威庫存／局部刷新已完成，開始時副本乾淨，UI／CSS／index／測試／本紀錄預檢乾淨。
