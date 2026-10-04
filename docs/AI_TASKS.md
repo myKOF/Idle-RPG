@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## EQUIP-SOCKET-FRAME-20261004 — 鑲孔實線框與完整邊框
+
+- Owner：Codex；Done。使用者指出鑲孔與洗煉仍不同，空孔是虛線，後續釐清為選中綠框下緣與上緣不一致。前置鑲嵌／洗煉模式已完成；單一開發者，本副本乾淨，CSS／index／本紀錄衝突預檢皆乾淨。
+- 完成：鑲嵌孔位列與洗煉文字區共用1px實線框、#3a3d44未選取框色、5px圓角、9px／8px內距及40px最小行高；提高孔位樣式優先度，覆蓋空孔既有虛線及較暗框色。孔位間距統一8px，原淡綠底／#4ade80選取框維持。孔位按鈕20px內容高度、卸下按鈕18px行高與零垂直padding，讓空孔與已鑲孔皆40px、不因卸下按鈕撐高；沒有刪除線、沒有新增動態，非鑲嵌模式的原空孔標示不變。
+- 修改3檔：css/ashen-forge.css、index.html僅ashen快取1.0.50→1.0.51、本紀錄。禁止並未修改其他風格、技能／寶石數值、Worker／協議／存檔／素材與其他副本。唯讀檢查：AI_RULES.md／AGENTS.md／AI_WORKFLOW.md／prompts/codex.md、js/ui.js／item.js／gm_exec.js／data.js／ui-scale.js、css/style.css／ashen-forge-flat.css與既有回歸；Claude已整合的最新樣式引用保留。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs`38/38通過；`npm.cmd run build`442檔通過；`git diff --check`通過。純CSS修正未新增重複實作的靜態斷言，使用既有功能回歸與實際瀏覽器畫面驗收。
+- 實機：沿用已確認IAB backend不存在的隔離Edge fallback，全新Context／隨機Port／正式Worker，僅拋棄式GM準備。1920×1080／1280×720／960×720下，已鑲第一孔、空第二孔及最後孔的四邊computed樣式皆1px solid、同色，選孔底／框／內距／圓角與洗煉相同；實際縮放前行高皆40px，hover無刪除線、鑲入成功自動跳下一孔。1920原尺寸截圖上、下框線各382px連續相同RGB(74,222,128)，非只檢查CSS宣告；神鑄混沌雙手大劍12孔最後一列自動捲入且上下框完整。49個寶石入口保持、Console error／warning皆0，已檢視普通與長孔位截圖。
+- 交付：Commit為本紀錄所在`[Codex] fix: 統一鑲孔與洗煉實線框`提交。本次無未完成或已知新增風險，可合併；未合併／推送，未做長時間真人操作。臨時服務／瀏覽器已關閉，測試腳本與截圖提交前刪除；下一步使用者整合後Ctrl+F5重載驗收。
+
 ## EQUIP-SOCKET-PAGE-20261004 — 選孔鑲嵌與逐孔卸下
 
 - Owner：Codex；Done。使用者要求鑲嵌切獨立頁、當前功能紅色其他黑色、僅孔位及全部寶石庫存、孔位選取框、成功後自動選下一孔、已鑲孔右側卸下。開始時本副本乾淨；單一開發者。Claude ui.js正在改戰鬥圖示3026～3954、index圖示／flat版號，使用者已同意修改本副本ui.js裝備鑲嵌區段與index必要快取、保留雙方修改並驗證；其他範圍衝突預檢乾淨。
