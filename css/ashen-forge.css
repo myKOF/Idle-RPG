@@ -1612,13 +1612,15 @@ html *::-webkit-scrollbar-corner {
   min-height: 40px;
 }
 
-#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text {
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text,
+#tab-equip #detail-pane .it-sockets .socket.socket-row {
   height: auto;
   box-sizing: border-box;
   min-height: 40px;
   padding: 9px 8px;
   border: 1px solid #3a3d44;
   border-radius: 5px;
+  background: transparent;
   line-height: 20px;
   cursor: pointer;
 }
@@ -1766,8 +1768,9 @@ html *::-webkit-scrollbar-corner {
 #tab-equip #detail-pane .socket-row {
   align-items: center;
   gap: 8px;
-  min-height: 34px;
 }
+
+#tab-equip #detail-pane.is-socket-page .it-sockets { gap: 8px; }
 
 #tab-equip #detail-pane .socket-pick {
   display: flex;
@@ -1777,7 +1780,7 @@ html *::-webkit-scrollbar-corner {
   justify-content: space-between;
   gap: 2px 8px;
   min-width: 0;
-  min-height: 30px;
+  min-height: 20px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1789,7 +1792,8 @@ html *::-webkit-scrollbar-corner {
 
 #tab-equip #detail-pane .socket-remove {
   flex: 0 0 auto;
-  padding: 3px 7px;
+  padding: 0 7px;
+  line-height: 18px;
   border: 1px solid #3a3d44;
   border-radius: 4px;
   background: #1b1e24;
