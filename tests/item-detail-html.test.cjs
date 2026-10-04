@@ -91,6 +91,20 @@ test('未附魔不顯示欄位文字，已有附魔只顯示實際效果', () =>
   assert.doesNotMatch(filled, /空附魔/);
 });
 
+test('鑲嵌頁只顯示孔位，選取和卸下按鈕分開且不改原始資料', () => {
+  const c = loadItemContext();
+  const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)], enchants: [{ key: 'fire', gemLv: 1 }], sockets: [null, { type: 'ruby', level: 2 }, null] });
+  const before = JSON.stringify(it);
+  const h = c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 1, pending: false } });
+  assert.doesNotMatch(h, /it-title|it-sub|it-affix|it-enchant|it-passive/);
+  assert.equal((h.match(/data-socket-pick=/g) || []).length, 3);
+  assert.equal((h.match(/is-socket-selected/g) || []).length, 1);
+  assert.match(h, /data-socket-pick="1" aria-pressed="true"/);
+  assert.match(h, /class="socket-remove" data-socket-remove="1"[^>]*>卸下/);
+  assert.match(c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 1, pending: true } }), /data-socket-remove="1"[^>]* disabled/);
+  assert.equal(JSON.stringify(it), before);
+});
+
 test('寶石鑲孔逐孔顯示，重複寶石不合併且保留原取下索引', () => {
   const c = loadItemContext();
   const it = makeItem({ sockets: [null, { type: 'ruby', level: 1 }, { type: 'ruby', level: 1 }, null] });

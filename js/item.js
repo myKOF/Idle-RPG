@@ -400,12 +400,19 @@ function normalizeTwoHandItemCounts(it) {
   return it;
 }
 // 鑲嵌：從庫存取一顆該種類最高等級的寶石放入第一個空槽（含 6~10 階神鑄寶石）
-function socketGem(it, type) {
+function socketGem(it, type, index, level) {
   ensureSockets(it);
-  var idx = it.sockets.indexOf(null);
-  if (idx < 0) return '插槽已滿';
+  var idx = index == null ? it.sockets.indexOf(null) : index;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return '沒有可用鑲孔';
+  if (it.sockets[idx] !== null) return '此鑲孔已有寶石';
+  if (!GEM_TYPES[type]) return '沒有這種寶石';
   var lv = 0;
-  for (var l = GEM_FORGE_MAX_LEVEL; l >= 1; l--) { if (gemCount(type, l) > 0) { lv = l; break; } }
+  if (level != null) {
+    if (!Number.isInteger(level) || level < 1 || level > GEM_FORGE_MAX_LEVEL) return '無效寶石階級';
+    if (gemCount(type, level) > 0) lv = level;
+  } else {
+    for (var l = GEM_FORGE_MAX_LEVEL; l >= 1; l--) { if (gemCount(type, l) > 0) { lv = l; break; } }
+  }
   if (!lv) return '沒有這種寶石';
   addGem(type, lv, -1);
   it.sockets[idx] = { type: type, level: lv };
@@ -413,10 +420,11 @@ function socketGem(it, type) {
   return null; // 成功
 }
 // 鑲嵌融合寶石（從 fusedGems 庫存移入插槽）
-function socketFusedGem(it, fusedId) {
+function socketFusedGem(it, fusedId, index) {
   ensureSockets(it);
-  var idx = it.sockets.indexOf(null);
-  if (idx < 0) return '插槽已滿';
+  var idx = index == null ? it.sockets.indexOf(null) : index;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return '沒有可用鑲孔';
+  if (it.sockets[idx] !== null) return '此鑲孔已有寶石';
   var fg = removeFusedGem(fusedId);
   if (!fg) return '找不到該融合寶石';
   it.sockets[idx] = { fused: fg };
@@ -668,9 +676,38 @@ function enchantLine(it, en) {
    而 ui.js 用不了它的結果，就是那邊再長出一份簡化重寫的第二套實作，然後兩份慢慢分歧。
 
    洗煉模式只渲染屬性選取，費用與執行按鈕由 UI 裝備操作列處理。 */
+function itemSocketHTML(it, mode) {
+  var sockets = Array.isArray(it.sockets) ? it.sockets : [];
+  var h = '<div class="it-sockets"><div class="it-sockets-title">寶石鑲孔</div>';
+  for (var si = 0; si < sockets.length; si++) {
+    var g = sockets[si], text;
+    if (g && g.fused) text = (si + 1) + '. ' + esc(fusedGemLabel(g.fused));
+    else if (g && GEM_TYPES[g.type]) {
+      var gt = GEM_TYPES[g.type];
+      text = '<span class="sk-name">' + (si + 1) + '. ' + gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
+        '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
+        (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
+    } else text = '◇ 鑲孔 ' + (si + 1) + '（空）';
+    var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
+    if (mode) {
+      h += '<div class="' + cls + ' socket-row' + (mode.selIdx === si ? ' is-socket-selected' : '') + '">' +
+        '<button type="button" class="socket-pick" data-socket-pick="' + si + '" aria-pressed="' + (mode.selIdx === si) + '"' +
+        (mode.pending ? ' disabled' : '') + '>' + text + '</button>';
+      if (g) h += '<button type="button" class="socket-remove" data-socket-remove="' + si + '" aria-label="卸下鑲孔 ' + (si + 1) + ' 的寶石"' +
+        (mode.pending ? ' disabled' : '') + '>卸下</button>';
+      h += '</div>';
+    } else {
+      h += '<span class="' + cls + '"' + (g ? ' data-socket-remove="' + si + '" data-tip="點擊取下"' : '') + '>' + text + '</span>';
+    }
+  }
+  if (!sockets.length) h += '<div class="equip-material-empty">此裝備沒有寶石鑲孔</div>';
+  return h + '</div>';
+}
+
 function itemDetailHTML(it, cmp, opts) {
   cmp = null; // 裝備比較改版：不再在單個 tips 中進行屬性差值比較
   opts = opts || {};
+  if (opts.socket && opts.socket.active) return '<div class="equip-socket-page">' + itemSocketHTML(it, opts.socket) + '</div>';
   var showAffixReroll = opts.showAffixReroll !== false;
   /* selIdx 是 it.affixes 的索引；洗完保留選取位置，執行入口在下方操作列。 */
   var reroll = opts.reroll || null;
@@ -898,29 +935,7 @@ function itemDetailHTML(it, cmp, opts) {
        這裡刻意不呼叫 ensureSockets(it)——渲染函式不該改狀態。鑲孔補齊已由 Worker 在
        開機與讀檔時統一處理（sim.worker.js 的 backfillItemSockets），在這裡再補一次，
        碰到的還是 UI 端的快照複本，改了也不會回到權威狀態，只是白費而且誤導。 */
-    var sockets = Array.isArray(it.sockets) ? it.sockets : [];
-    if (sockets.length) {
-      // 按原始位置逐孔顯示，保留每一孔的取下索引，重複寶石與空孔也不合併。
-      h += '<div class="it-sockets"><div class="it-sockets-title">寶石鑲孔</div>';
-      for (var si = 0; si < sockets.length; si++) {
-        var g = sockets[si];
-        if (g && g.fused) {
-          h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" data-tip="點擊取下">' +
-            (si + 1) + '. ' + esc(fusedGemLabel(g.fused)) + '</span>';
-          continue;
-        }
-        if (!g || !GEM_TYPES[g.type]) {
-          h += '<span class="socket empty">◇ 鑲孔 ' + (si + 1) + '（空）</span>';
-          continue;
-        }
-        var gt = GEM_TYPES[g.type];
-        h += '<span class="socket filled" data-socket-remove="' + si + '" data-tip="點擊取下">' +
-          '<span class="sk-name">' + (si + 1) + '. ' + gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
-          '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
-          (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span></span>';
-      }
-      h += '</div>';
-    }
+    if (Array.isArray(it.sockets) && it.sockets.length) h += itemSocketHTML(it, null);
   }
   return h;
 }

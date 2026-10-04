@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## EQUIP-SOCKET-PAGE-20261004 — 選孔鑲嵌與逐孔卸下
+
+- Owner：Codex；Done。使用者要求鑲嵌切獨立頁、當前功能紅色其他黑色、僅孔位及全部寶石庫存、孔位選取框、成功後自動選下一孔、已鑲孔右側卸下。開始時本副本乾淨；單一開發者。Claude ui.js正在改戰鬥圖示3026～3954、index圖示／flat版號，使用者已同意修改本副本ui.js裝備鑲嵌區段與index必要快取、保留雙方修改並驗證；其他範圍衝突預檢乾淨。
+- 允許js/ui.js裝備模式／孔位選取／素材列表／鑲嵌卸下事件、js/item.js孔位HTML與指定孔／階級鑲嵌、css/ashen-forge.css鑲嵌頁布局、js/worker/protocol.js與sim.worker.js／js/bridge.js必要接線及快取、index必要版號、相關Worker文檔、tests/equip-socket-ui.test.cjs／item-detail-html.test.cjs／socket-target.test.cjs及本紀錄。禁止其他UI風格／排版、傷害／寶石數值／存檔／素材及其他副本，不合併／推送。
+- 驗收僅孔位與每種每階持有寶石／融合庫存、選孔不送指令、指定孔／指定階成功且僅耗1顆、失敗不跳孔／不扣庫存／不覆蓋、成功從下一孔尋找空孔並循環／滿孔仍可選卸下、右側卸下只動指定孔／返還原宝石、等待中鎖／切件或切功能不受舊回覆影響、舊無參數自動最高階／第一空孔相容、完整快取與協議、UI／Worker回歸／Build／Console／實機截圖。完成獨立Commit。
+- 完成：鑲嵌改獨立分頁，重按維持分頁，鑲嵌按鈕紅色、其餘功能黑色；隱藏一般裝備名稱／屬性／附魔，只呈現全部孔位與每種每階持有寶石、融合寶石。選孔紅框；指定孔／指定階鑲入，成功且新快照確認後由下一孔循環找空孔，滿孔仍可選孔及卸下。各已鑲孔右側獨立卸下，返還原階級或融合實例。等待中禁止重送及換孔，失敗不前進，晚到回覆不更動已切換裝備／功能。寶石清單與長孔位列表各自內捲、重繪保留捲動位置，選取框自動捲入可視區；原25%裝備區與等寬按鈕／底部對齊維持。
+- Worker：gem.socket追加可選index／level，gem.socketFused追加可選index，先驗證孔位／占用／階級／庫存再移入；無參數維持第一空孔與最高階，既有熔爐策略相容。Protocol43→44，指令數仍88，數值／存檔格式不變；主頁快取ashen1.0.48、item1.0.9、ui1.0.118（避開Claude117）、protocol查詢45、bridge1.0.220；Worker入口20261004-socket-page、protocol import44與item import同步更新，skills2既有快取保留。
+- 修改14檔：css/ashen-forge.css、docs/AI_TASKS.md／WORKER_PROTOCOL.md、index.html、js/bridge.js／item.js／ui.js／worker/protocol.js／worker/sim.worker.js、tests/equip-socket-ui.test.cjs／socket-target.test.cjs／equip-reroll-ui.test.cjs／item-detail-html.test.cjs／worker-protocol.test.cjs。唯讀檢查未改：AI_RULES.md／AGENTS.md／AI_WORKFLOW.md／prompts/codex.md、js/data.js／gm_exec.js、既有相關回歸檔及Claude副本ui.js／index.html／flat與battle-pedestal樣式；無素材變更，不需素材庫Commit。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/policy-selector.test.cjs tests/init-ui-smoke.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs`109/109通過；`npm.cmd run build`441檔通過；`git diff --check`通過。新增實際鑲嵌函式庫存／覆蓋防護與融合原實例驗收，UI驗ACK先於新快照、失敗及切件／切頁後舊回覆；洗煉退出鑲嵌舊驗收改驗新分頁，附魔／強化退出仍驗效果恢復，未降低正確性。
+- 瀏覽器：browser skill的IAB backend不存在，改bundled Playwright＋隔離headless Edge／隨機Port／全新Context，正式index與真正Worker；GM只準備拋棄式測試資料。48種寶石共97個持有階級入口均顯示；點第三孔選低階紅寶石只送一次index2／level1、只扣1顆、第一孔保持空，成功自動第四孔；卸下返還數量；滿四孔各有卸下、庫存仍顯示且不能覆蓋；卸下指定孔再鑲5階正確。切強化不扣資源、附魔效果恢復，洗煉仍隱藏孔位。1920／1280／960視窗下407.5px裝備區及底部662.39px對齊維持；捲寶石到下方後重繪scrollTop156保留，12孔裝備選第12孔scrollTop301且整列可見。兩組Console error／warning皆0，已檢視截圖；服務／瀏覽器已關閉，臨時腳本／截圖提交前清除，不改真人存檔。
+- 協作驗證：Claude截至d9a58a4b的戰鬥圖示／金屬底座／flat風格；唯讀取得其ui.js與index，用git merge-file臨時合併ui兩方（無衝突），保留其最新CSS引用並套用本次快取，獨立Context重跑上述正式Worker／顏色／布局／捲動操作全通過。測試暫存合併內容未寫入任一副本；本提交只含本任務內容，整合時保留雙方ui區段與Claude最新樣式引用、使用本次更新的快取。
+- 交付：Commit為本紀錄所在`[Codex] feat: 改為選孔鑲嵌並加入逐孔卸下`提交。無本次未完成項目及已知阻擋，可合併；未合併／推送。風險限Claude後續尚可能變動的風格需依最終內容再核對，未做長時間真人遊玩；下一步使用者整合兩方提交後重載遊戲驗收。
+
 ## VACUUM-OMEN-RETRIGGER-20261004 — 靜止虛空斬十五個上限與結束後再觸發
 
 - Owner：Codex；Done。使用者要求全場最多15個靜止虛空斬，同一敵人生成的靜止斬結束後可再觸發；原始環繞斬不占名額。單一開發者，前置靜止場域／Worker／Runtime接線完成，其他目標衝突預檢乾淨。index.html有Claude第12行樣式新增與未合併風格提交，使用者已同意僅修改skills2／bridge兩行快取並保留雙方內容。

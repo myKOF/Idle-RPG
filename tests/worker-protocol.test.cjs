@@ -119,7 +119,8 @@ test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
   // v41：吸血／吸魔改定值，passivePanel 移除四個以每秒回復換算的欄位。
   // v42：原子超神進化切換，87 → 88。
   // v43：VFX透傳飛行物本體長度bodyLength，指令數不變。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 43);
+  // v44：鑲嵌可指定孔位／階級，保留舊呼叫且指令數不變。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 44);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');

@@ -71,7 +71,7 @@
    lifesteal／manaSteal 改為套用汲取倍率後「每次回復的定值」（不再是百分比，也不再依每秒回復換算）。
    主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值。 */
 /* v42：skill2.ultSwitch 原子重選；fromOpt／fromLv／cost 釘住使用者確認內容。 */
-var WORKER_PROTOCOL_VERSION = 43;
+var WORKER_PROTOCOL_VERSION = 44;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -304,8 +304,8 @@ var COMMANDS = {
   /* -- 寶石 --
      一般寶石沒有實例 id（是 { type, level } 計數），只有融合寶石有 id。
      v1 對所有寶石指令都要求 gemId 是錯的，這裡依實際函式簽章修正。 */
-  'gem.socket':            { fn: 'socketGem',        args: { itemId: 'id', type: 'str' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
-  'gem.socketFused':       { fn: 'socketFusedGem',   args: { itemId: 'id', fusedId: 'id' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
+  'gem.socket':            { fn: 'socketGem',        args: { itemId: 'id', type: 'str', index: 'int?', level: 'int?' }, limit: { index: { min: 0 }, level: { min: 1 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
+  'gem.socketFused':       { fn: 'socketFusedGem',   args: { itemId: 'id', fusedId: 'id', index: 'int?' }, limit: { index: { min: 0 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
   'gem.unsocket':          { fn: 'unsocketGem',      args: { itemId: 'id', index: 'int' }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
   'gem.dismantle':         { fn: 'dismantleGem',     args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   'gem.dismantleFused':    { fn: 'dismantleFusedGem', args: { fusedId: 'id' },                    dirty: ['gems', 'header'] },

@@ -10,10 +10,10 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=43', 'shim.js?v=10');
+importScripts('protocol.js?v=44', 'shim.js?v=10');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261003-storm-mountain-vfx', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261003-storm-mountain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20260805-tasks',
+  '../item.js?v=20261004-socket-page',
   '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261004-vacuum-omen-retrigger', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261003-rename-weineng', '../special_rules.js',
   '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261003-tower-arena',
@@ -1234,7 +1234,7 @@ var COMMAND_IMPL = {
   'gem.socket': function (a) {
     var it = mustResolve(a.itemId);
     if (!it) return false;
-    var res = (typeof socketGem === 'function') ? socketGem(it, a.type) : null;
+    var res = (typeof socketGem === 'function') ? socketGem(it, a.type, a.index, a.level) : null;
     UI.dirty.inv = true; UI.dirty.equip = true; UI.dirty.gems = true; UI.dirty.header = true;
     return res;
   },

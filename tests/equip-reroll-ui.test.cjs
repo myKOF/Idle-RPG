@@ -49,6 +49,7 @@ function mount() {
     const tag = elements['equip-action-bar'].innerHTML.match(new RegExp('<button[^>]*data-act="' + act + '"[^>]*>'));
     const button = { disabled: !!(tag && /\sdisabled/.test(tag[0])), getAttribute(name) { return name === 'data-act' ? act : null; } };
     c.clickRerollArea({ target: { closest(selector) {
+      if (selector.includes('data-socket-pick')) return null;
       if (selector.includes('data-reroll-pick')) return pick === undefined ? null : { getAttribute() { return String(pick); } };
       return pick === undefined ? button : null;
     } } });
@@ -86,8 +87,8 @@ test('首次進入與選取不送洗煉指令，下方按鈕洗當前詞條且�
   assert.equal(c.commands[1].args.affixKey, 'vit');
 });
 
-test('切回強化只退出模式，鑲嵌或附魔恢復完整詳情', () => {
-  for (const action of ['upgrade', 'toggle-socket', 'toggle-enchant']) {
+test('切回強化只退出模式，切換附魔恢復完整詳情', () => {
+  for (const action of ['upgrade', 'toggle-enchant']) {
     const c = mount();
     c.click('toggle-reroll');
     c.click(action);
