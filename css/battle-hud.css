@@ -1,0 +1,266 @@
+/* Battle HUD — 戰鬥區下方的整合底座。
+   原本血球、魔球、經驗條、增益列、技能列各自浮在畫布上，之間有空隙而且都很單薄。
+   這裡把 #battle-action-dock 擴成貼底、滿寬的一整塊金屬石板，血球與魔球坐在兩端，
+   經驗條橫跨在石板上緣，技能列嵌在中央凹槽；底部這一區刻意走「有質感」路線，不跟隨其餘界面的簡約風格。
+
+   只用 CSS：不改 DOM 結構與 id，#battle-action-dock → xp → buff → skill 的順序維持（測試釘住）。
+   style.css／ashen-forge.css 的舊規則不動，這裡以更高的選擇器權重覆蓋。
+   載入順序在 ashen-forge-flat.css 之後（flat 把這一區也簡化過，這裡再蓋回來）。
+
+   尺寸以戰鬥容器寬度（cqw）縮放：--hud-orb 是球的直徑，石板高度、技能列寬度都由它推出，
+   窄容器時整體等比縮小，球不會壓到技能列。 */
+
+#battle-canvas-host {
+  --hud-orb: clamp(64px, 17cqw, 112px);
+  --hud-h: calc(var(--hud-orb) * .82);
+  --hud-side: calc(var(--hud-orb) + 16px);
+  /* 金屬色：高光／本色／暗部／縫 */
+  --hud-metal-hi: #e4d19a;
+  --hud-metal: #8c7a52;
+  --hud-metal-lo: #4a4130;
+  --hud-seam: #14110a;
+}
+
+/* ------------------------------------------------------------------ 底座 */
+#battle-canvas-host #battle-action-dock {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: var(--hud-h);
+  box-sizing: border-box;
+  transform: none;
+  pointer-events: auto;
+  /* 由上到下：上緣金屬飾條、中央微光、拉絲紋、石板底、鑄鐵紋理 */
+  background:
+    linear-gradient(var(--hud-metal-hi) 0 1px, var(--hud-metal) 1px 3px, var(--hud-metal-lo) 3px 4px, var(--hud-seam) 4px 5px, transparent 5px) top / 100% 5px no-repeat,
+    radial-gradient(ellipse 34% 100% at 50% 0, #d7b8641f, transparent 72%),
+    repeating-linear-gradient(45deg, #ffffff08 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(-45deg, #00000040 0 1px, transparent 1px 10px),
+    linear-gradient(#242b2c, #12181a 34%, #0a0d0e),
+    var(--af-iron) center / 300px;
+  background-blend-mode: normal, normal, normal, normal, normal, soft-light;
+  border-top: 1px solid #000;
+}
+
+/* 上緣的鉚釘帶：避開兩側的球 */
+#battle-canvas-host #battle-action-dock::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: var(--hud-side);
+  right: var(--hud-side);
+  height: 6px;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, var(--hud-metal-hi) 0 1px, var(--hud-metal) 1.5px 2.2px, var(--hud-seam) 2.8px, transparent 3.2px) 0 0 / 26px 6px repeat-x;
+  opacity: .55;
+}
+
+/* 底緣的雙刻線與兩端的收邊 */
+#battle-canvas-host #battle-action-dock::after {
+  content: '';
+  position: absolute;
+  left: var(--hud-side);
+  right: var(--hud-side);
+  bottom: 4px;
+  height: 4px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, var(--hud-metal) 18%, var(--hud-metal) 82%, transparent) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent, var(--hud-metal-lo) 12%, var(--hud-metal-lo) 88%, transparent) bottom / 100% 1px no-repeat;
+  opacity: .8;
+}
+
+/* ------------------------------------------------------------------ 經驗條：橫跨底座上緣，十等分刻度＋兩端圓釘 */
+#battle-canvas-host #battle-action-dock #battle-xp-bar {
+  position: absolute;
+  top: -8px;
+  left: var(--hud-side);
+  right: var(--hud-side);
+  width: auto;
+  height: 17px;
+  margin: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 2px solid var(--hud-seam);
+  border-radius: 8px;
+  background: linear-gradient(#030404, #0e1315 55%, #070909);
+  box-shadow: 0 0 0 1px var(--hud-metal), 0 0 0 2px var(--hud-seam), 0 3px 5px #000a, inset 0 2px 3px #000;
+}
+
+#battle-canvas-host #battle-action-dock #battle-xp-fill {
+  background:
+    linear-gradient(#fff6cf88, #fff6cf00 45%, #00000033 100%),
+    linear-gradient(90deg, #b5791c, #f0c455 55%, #ffe8a0);
+  box-shadow: 2px 0 4px #ffd36a99;
+}
+
+/* 刻度（每 10%，5 成處加亮）＋兩端圓釘，畫在填色之上 */
+#battle-canvas-host #battle-action-dock #battle-xp-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 7px 50%, var(--hud-metal-hi) 0 1.2px, var(--hud-metal) 2px 3.4px, var(--hud-seam) 4px, transparent 4.5px),
+    radial-gradient(circle at calc(100% - 7px) 50%, var(--hud-metal-hi) 0 1.2px, var(--hud-metal) 2px 3.4px, var(--hud-seam) 4px, transparent 4.5px),
+    linear-gradient(90deg, transparent calc(50% - 1px), #000000d9 calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), #000000a6 calc(10% - 1px) 10%);
+}
+
+/* 玻璃反光 */
+#battle-canvas-host #battle-action-dock #battle-xp-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 50% 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(#ffffff2e, #ffffff05);
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ 技能列：嵌在底座中央的凹槽 */
+#battle-canvas-host #battle-action-dock #battle-skill-bar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--hud-h) * .1);
+  width: min(344px, calc(100cqw - 2 * var(--hud-side)));
+  max-width: none;
+  transform: translateX(-50%);
+  padding: 6px;
+  gap: 5px;
+  border: 2px solid var(--hud-seam);
+  border-radius: 6px;
+  background: linear-gradient(#040505f2, #101517f2);
+  box-shadow: 0 0 0 1px var(--hud-metal-lo), 0 1px 0 1px #ffffff12, inset 0 2px 6px #000, inset 0 -1px 0 #ffffff0d;
+  backdrop-filter: none;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot {
+  border: 2px solid var(--hud-metal-lo);
+  border-radius: 5px;
+  background: radial-gradient(circle at 50% 38%, #2c3436, #0d1112 78%);
+  box-shadow: inset 0 0 0 1px #000, inset 0 -3px 5px #0009;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot:hover {
+  border-color: var(--hud-metal-hi);
+  box-shadow: inset 0 0 0 1px #000, inset 0 0 8px #e4d19a40;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot.equipped {
+  border-color: var(--hud-metal);
+  background: radial-gradient(circle at 50% 35%, #3a4244, #121819 80%);
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot.equipped.ready {
+  border-color: #6fd36a;
+  box-shadow: inset 0 0 0 1px #000, inset 0 0 7px #56d34f55, 0 0 5px #56d34f40;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot.equipped.active-passive {
+  border-color: #8b5cf6aa;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot.empty {
+  border: 2px solid #26210f;
+  background: radial-gradient(circle at 50% 50%, #080a0b, #121718);
+  box-shadow: inset 0 2px 5px #000, 0 1px 0 #ffffff0d;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot.empty .bss-empty-plus {
+  color: #8c7a5266;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .battle-skill-slot.locked {
+  border-color: #2a2a2a;
+  background: #0a0c0d;
+  box-shadow: inset 0 2px 5px #000;
+}
+
+#battle-canvas-host #battle-action-dock #battle-skill-bar .bss-slot-num {
+  color: #b8a370;
+  opacity: .75;
+}
+
+/* 增益列：貼在底座上緣之上，與技能列同寬 */
+#battle-canvas-host #battle-action-dock #battle-buff-bar {
+  bottom: calc(100% + 12px);
+  width: min(344px, calc(100cqw - 2 * var(--hud-side)));
+  max-width: none;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------------ 血球／魔球：青銅圈＋寶石，坐在底座兩端並凸出上緣 */
+#battle-canvas-host .battle-resource-orb {
+  bottom: 5px;
+  width: var(--hud-orb);
+  padding: 8px;
+  border: 2px solid var(--hud-seam);
+  background: conic-gradient(from 25deg, #3b3322, #bfa86b 9%, #4d432b 20%, #dac58a 34%, #3b3322 48%, #a89258 64%, #4d432b 80%, #cdb878 92%, #3b3322);
+  box-shadow: 0 0 0 3px var(--hud-seam), 0 0 0 5px var(--hud-metal), 0 0 0 6px var(--hud-seam), 0 7px 14px #000c, inset 0 0 0 2px var(--hud-seam), inset 0 0 0 4px #6d5d38;
+}
+
+#battle-canvas-host #battle-health-orb {
+  left: 9px;
+}
+
+#battle-canvas-host #battle-mana-orb {
+  right: 9px;
+}
+
+/* 頂端的寶石 */
+#battle-canvas-host .battle-resource-orb::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
+  z-index: 2;
+  pointer-events: none;
+  transform: rotate(45deg);
+  border: 2px solid var(--hud-seam);
+  box-shadow: 0 0 0 1px var(--hud-metal-hi), 0 2px 4px #000a;
+}
+
+#battle-canvas-host .health-orb::before {
+  background: radial-gradient(circle at 35% 30%, #ffb0a0, #d02a22 55%, #6a0c10);
+}
+
+#battle-canvas-host .mana-orb::before {
+  background: radial-gradient(circle at 35% 30%, #b8d8ff, #2a6ae0 55%, #0c2a70);
+}
+
+/* 球內：液面改回有層次的漸層，並補上玻璃反光 */
+#battle-canvas-host .health-orb .orb-liquid {
+  background: radial-gradient(ellipse at 45% 12%, #ff6a58, #c81c28 43%, #7a0b19 80%, #340714);
+  box-shadow: inset 0 2px 0 #ffa08a;
+}
+
+#battle-canvas-host .mana-orb .orb-liquid {
+  background: radial-gradient(ellipse at 45% 12%, #5a9bff, #1a4acc 43%, #102a80 80%, #070c3a);
+  box-shadow: inset 0 2px 0 #9cd0ff;
+}
+
+#battle-canvas-host .battle-resource-orb .orb-glass {
+  background: #05070b;
+  box-shadow: 0 0 0 1px #000, inset 0 0 10px #000;
+}
+
+#battle-canvas-host .battle-resource-orb .orb-glass::after {
+  background:
+    radial-gradient(ellipse 42% 24% at 36% 20%, #ffffffb0 0%, #ffffff30 55%, transparent 100%),
+    radial-gradient(circle at 48% 40%, transparent 36%, #0006 78%, #000d 100%);
+  box-shadow: inset 0 0 9px #000a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  #battle-canvas-host .orb-liquid,
+  #battle-canvas-host .orb-shield {
+    transition: none;
+  }
+}
