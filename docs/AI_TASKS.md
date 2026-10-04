@@ -2,9 +2,16 @@
 
 ## BATTLE-SKILL-SUMMARY-20261004 — 快捷列最高階提示與完整總等級
 
-- Owner：Codex；Ready。使用者追加要求戰鬥快捷列只顯示技能目前最高階效果，總等級包含超神進化10級，完整最高80級。前置最高階描述／超神快照／技能瀏覽器總等級工具已存在；同一開發者於裝備回應優化提交後接續，無多AI並行。
-- 允許js/ui.js僅戰鬥快捷列提示內容／總等級、index.html僅ui.js快取、獨立技能提示回歸及本紀錄。禁止修改技能傷害／公式／Worker／協議／存檔／UI風格與排版、技能升級面板完整說明、其他副本。依既有必要快取與雙方內容保留授權；正式修改前補測試檔預檢。
-- 驗收最高已取得普通階／有效超神優先、未學／超神未解鎖的提示、完整等級80／部分超神等級與無超神群組、技能面板／潛力技能原說明不變，快捷列實機懸停、Console、相關回歸／Build／diff。獨立Commit，後續使用者整合重載。
+- Owner：Codex；Done。使用者要求戰鬥快捷列只顯示技能目前最高階效果，總等級包含超神進化10級，最高80級；後續撤回鑲孔整片亮綠底，改用洗煉的選取格式。單一開發者，沿用裝備回應優化提交834a60b0。既存vfx/presets/lightning-orb-field-purple.json修改保留未提交，不動其他副本、不合併／推送。
+- 允許js/ui.js僅快捷列提示／總等級、css/ashen-forge.css僅本次追加的鑲孔選取樣式、index.html僅UI／ashen快取、獨立提示回歸及本紀錄。禁止技能傷害／公式／Worker／協議／存檔／其他UI風格與排版／素材。正式修改前預檢；index沿用使用者已同意的必要快取與保留Claude內容授權。docs/AI_TASKS.md頂端本紀錄與Claude末尾VFX-SAVE-PROBLEMS新增紀錄為唯一新同檔來源，更新前取得使用者同意，保留兩端內容並乾跑合併驗證。
+- 完成：戰鬥快捷列群組提示只列目前最高已學且有效的階段與該階效果；有效超神優先，無超神則顯示最高普通階。總等級沿用技能瀏覽器既有工具計入超神，快捷列／裝載列／技能群組標題一致；7階滿級加超神10級顯示80／80，部分超神按實際等級加總，未開放超神依定義維持原上限。技能面板完整進化／各階與潛力技能說明保留，不改技能學習限制與模擬公式。
+- 樣式：鑲孔選取與洗煉共用border-color #4ade80、background rgba(74,222,128,.06)，恢復原文字色；已鑲孔hover沒有刪除線且不蓋掉選取綠框。只更換選取配色，裝備3px黃色框／黃色混色、布局、鑲嵌局部更新與自動跳孔保留。新版取代前項任務整片亮綠底；index主頁ashen1.0.50／ui1.0.121，其餘Claude樣式引用保留。
+- 修改5檔：js/ui.js、css/ashen-forge.css、index.html、tests/battle-skill-summary.test.cjs、本紀錄。唯讀未改：協作規範／prompts/codex.md、js/skills2.js／formula.js／item.js／gm_exec.js、既有技能／洗煉／鑲嵌回歸、Claude最新ashen-forge-flat.css／battle-hud.css與index差異。無素材／Worker修改。
+- 測試：`node --test tests/battle-skill-summary.test.cjs tests/skill2-ui.test.cjs tests/battle-skill-hover.test.cjs tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/affix-actions-layout.test.cjs tests/init-ui-smoke.test.cjs`54/54通過；`npm.cmd run build`442檔通過；`git diff --check`通過。新增完整80／部分74／最高普通階／失效超神／未學／未開放超神與非快捷列完整說明驗收，正式程式沒有測試專用分支。
+- 實機：沿用browser skill已確認IAB backend不存在的隔離Edge fallback，全新Context／隨機Port／正式Worker，僅拋棄式GM準備。實際懸停80級只顯示第8階、關閉超神70级只第7階、部分23级只第3階；鑲入後自動跳下一孔、改選已鑲孔再hover，computed底rgba(74,222,128,0.06)／邊rgb(74,222,128)與洗煉一致、textDecorationLine=none。原樣式及額外套用Claude最新flat／battle-hud兩組均通過，Console error／warning皆0，已檢視截圖，無真人存檔變更。
+- 已知既有問題：首次快速穿装後立刻hover／點選，inv摘要尚未移除而equip新快照已到，findItemById先取不含affixes的inv摘要，itemScore讀affixes.length報錯；唯讀以834a60b0原UI重跑相同行為兩次均重現同樣兩筆錯誤，非本次提示／配色造成。最終流程等上一個穿装動作的背包移除及完整裝備快照到齊再操作，其餘原驗收不變；此跨面板同步競態留待獨立修正，未改公式或用假資料掩蓋。
+- 交付：Commit為本紀錄所在`[Codex] fix: 精簡快捷列技能提示並統一鑲孔選取樣式`提交。本次要求無未完成，可合併，未合併／推送；風險為上述既有裝備快照競態及未長時間真人實戰。臨時瀏覽器／HTTP服務關閉，測試腳本／截圖／文件草稿提交前刪除；下一步使用者整合本提交與834a60b0、保留Claude最新樣式引用並重載。
+
 
 ## EQUIP-SOCKET-RESPONSE-20261004 — 鑲嵌介面操作延遲
 

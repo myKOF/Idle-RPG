@@ -1632,7 +1632,9 @@ html *::-webkit-scrollbar-corner {
 }
 
 /* 選取框用 border 畫——#workspace-area * 全域關掉了 box-shadow。 */
-#tab-equip #detail-pane .it-affix-row.is-reroll-selected .it-affix-text {
+#tab-equip #detail-pane .it-affix-row.is-reroll-selected .it-affix-text,
+#tab-equip #detail-pane .it-sockets .socket-row.is-socket-selected,
+#tab-equip #detail-pane .it-sockets .socket-row.is-socket-selected:hover {
   border-color: #4ade80;
   background: rgba(74, 222, 128, .06);
 }
@@ -1687,9 +1689,10 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-equip #detail-pane .it-sockets .socket.filled:hover {
-  border-color: #5a5d66;
   text-decoration: none;
 }
+
+#tab-equip #detail-pane .it-sockets .socket.filled:not(.is-socket-selected):hover { border-color: #5a5d66; }
 
 #tab-equip #detail-pane .sk-val {
   color: #d6d0c3;
@@ -1765,14 +1768,6 @@ html *::-webkit-scrollbar-corner {
   gap: 8px;
   min-height: 34px;
 }
-
-#tab-equip #detail-pane .socket-row.is-socket-selected {
-  border: 1px solid #8bffa4;
-  background: #65ef86;
-  color: #092b15;
-}
-
-#tab-equip #detail-pane .socket-row.is-socket-selected .socket-pick :is(.sk-name, .sk-val) { color: #092b15; }
 
 #tab-equip #detail-pane .socket-pick {
   display: flex;

@@ -3179,7 +3179,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
       if (!sk) continue;
       var cd = uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt);
       var lv = isSgE
-        ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
+        ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
         : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
       /* 反擊法力門檻＝最高生效階段（含超神）的消耗，不逐階累加；
          恆時生效的被動（大地守護）沒有觸發消耗，門檻為 0。 */
@@ -3577,7 +3577,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var rawCdVal = (pEnt && pEnt.skillCds && (pEnt.skillCds[entry] || (isSgE ? pEnt.skillCds[entry.slice(3)] : 0))) || 0;
     var cd = pEnt ? uiCountdownRemain(rawCdVal, snapshotGt) : 0;
     var lv = isSgE
-      ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, entry.slice(3)))
+      ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
       : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
     /* 主動型被動（js/skills2.js SG_PASSIVE）：裝上即生效、不主動施放，
        在快捷列以旋轉流動外框和其他技能區分。反擊的法力門檻使用最高生效階段（含超神）的消耗。 */
@@ -8426,7 +8426,7 @@ function renderSkills() {
     }
 
     var loadoutLevel = isSg0
-      ? sgUiTotalLevel(sgUiLevels(skillsSnapshot, id0.slice(3)))
+      ? sgbTotals(id0.slice(3), sgUiLevels(skillsSnapshot, id0.slice(3)), skillsSnapshot).total
       : talentViewPotentialLevel(talentSnapshot, d0.id, skillViewPotentialMaxLevel(reincarnations));
     var isPassive0 = isSg0 && (typeof skills2IsPassive === 'function') && skills2IsPassive(id0.slice(3));
     var isSelected = (selectedIndex === i);
@@ -9079,6 +9079,30 @@ function showSkillTooltipHTML(tip, html, anchorEl) {
 }
 
 /* ---- 技能懸停提示 ---- */
+/* 快捷列只呈現最高已取得且有效的階段；完整進化說明留在技能面板。 */
+function battleSkillGroupTooltipHTML(gid, levels, skillsSnapshot) {
+  var group = SKILLS2[gid];
+  if (!group) return '';
+  var lvs = levels || [], totals = sgbTotals(gid, lvs, skillsSnapshot);
+  var pick = totals.pick;
+  var heading = '', description = '';
+  if (pick && sgUiUltUnlocked(gid, lvs)) {
+    heading = '第' + (group.tiers.length + 1) + '階【超神進化】（' + pick.def.name + '）Lv.' + pick.lv;
+    description = describeSkill2Ult(gid, pick.idx, pick.lv);
+  } else {
+    for (var i = group.tiers.length - 1; i >= 0; i--) {
+      if ((lvs[i] || 0) <= 0) continue;
+      heading = '第' + (i + 1) + '階【' + group.tiers[i].name + '】Lv.' + lvs[i];
+      description = describeSkill2Tier(gid, i, lvs[i]);
+      break;
+    }
+  }
+  var html = '<div class="skt-name">' + skillIconHTML(gid, group.emoji) + ' ' + esc(group.name) +
+    ' <span class="dim-text">總 Lv.' + totals.total + ' / ' + totals.max + '</span></div>';
+  html += '<div class="skt-desc">' + (heading ? '<b>' + esc(heading) + '</b><br>' + description : '尚未學習此技能') + '</div>';
+  return html + '<div class="skt-hint">點擊開啟升級面板</div>';
+}
+
 function showSkillTooltip(ref, anchorEl) {
   var tip = $id('sk-tooltip');
   if (!tip) return;
@@ -9093,6 +9117,10 @@ function showSkillTooltip(ref, anchorEl) {
     var sgG = SKILLS2[sgTipGid];
     var sgLvs = sgUiLevels(skillsSnapshot, sgTipGid);
     var sgTipTier = sgTierIndexOf(ref);
+    if (sgTipTier === null && anchorEl && anchorEl.closest && anchorEl.closest('#battle-skill-bar')) {
+      showSkillTooltipHTML(tip, battleSkillGroupTooltipHTML(sgTipGid, sgLvs, skillsSnapshot), anchorEl);
+      return;
+    }
     if (sgUiIsUltSlot(sgTipGid, sgTipTier)) {
       var sgUltPick = sgUiUltPick(skillsSnapshot, sgTipGid);
       var sgUltOk = sgUiUltUnlocked(sgTipGid, sgLvs);
@@ -9134,7 +9162,7 @@ function showSkillTooltip(ref, anchorEl) {
       return;
     }
     var sgH = '<div class="skt-name">' + skillIconHTML(sgTipGid, sgG.emoji) + ' ' + esc(sgG.name) +
-      ' <span class="dim-text">總 Lv.' + sgUiTotalLevel(sgLvs) + '｜新版技能</span></div>';
+      ' <span class="dim-text">總 Lv.' + sgbTotals(sgTipGid, sgLvs, skillsSnapshot).total + '｜新版技能</span></div>';
     sgH += '<div class="skt-meta">' +
       ((typeof skills2IsPassive === 'function' && skills2IsPassive(sgTipGid))
         ? '🌀 主動型被動（裝配到技能列才生效，不會主動施放）' : '🔵 ' + skills2ManaCost(sgTipGid, sgLvs, sgUiUltRaw(skillsSnapshot)) + ' MP　⏱️ ' + sgG.cd + 's') + '</div>';
