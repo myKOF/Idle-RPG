@@ -5178,15 +5178,7 @@ function syncEquipSocketControls(it, mode) {
   pane.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
     if (button.disabled !== disabled) button.disabled = disabled;
   });
-  if (mode.renderedIdx !== mode.selIdx) {
-    var selected = holes.querySelector('.is-socket-selected');
-    if (selected) {
-      var frame = holes.getBoundingClientRect(), row = selected.getBoundingClientRect();
-      if (row.top < frame.top + 1) holes.scrollTop -= Math.ceil(frame.top + 1 - row.top);
-      else if (row.bottom > frame.bottom - 1) holes.scrollTop += Math.ceil(row.bottom - frame.bottom + 1);
-    }
-    mode.renderedIdx = mode.selIdx;
-  }
+  mode.renderedIdx = mode.selIdx;
   return true;
 }
 
@@ -5305,18 +5297,19 @@ function renderDetail() {
     var gemIcons = [];
     for (var gt in GEM_TYPES) {
       var gdef = GEM_TYPES[gt];
-      for (var lv = 1; lv <= GEM_FORGE_MAX_LEVEL; lv++) {
+      for (var lv = GEM_FORGE_MAX_LEVEL; lv >= 1; lv--) {
         var n = gemsViewCount(gemsSnapshot, gt, lv);
         if (!n) continue;
         var gv = gdef.pct ? pctStr(gemStatValue(gt, lv)) : fmt(gemStatValue(gt, lv));
         gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket="' + gt + '" data-gem-level="' + lv + '" data-tip="' +
           esc(GEM_NAMES[lv] + gdef.name + ' ×' + n + '｜' + gdef.statName.replace('%', '') + ' +' + gv + '｜鑲入選中孔位') + '">' +
-          gdef.emoji + '<span class="socket-gem-level">' + lv + '</span></button>');
+          gdef.emoji + '<span class="socket-gem-level">' + lv + '</span><span class="socket-gem-count">×' + fmt(n) + '</span></button>');
+        break;
       }
     }
     gemsViewFused(gemsSnapshot).forEach(function (fg) {
       gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
-        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">🧬</button>');
+        esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">🧬<span class="socket-gem-count">×1</span></button>');
     });
     socketGemsHtml = gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
     h += '<div class="equip-socket-gems">' + socketGemsHtml + '</div>';

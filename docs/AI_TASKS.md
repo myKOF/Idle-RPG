@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## EQUIP-SOCKET-COMPACT-20261005 — 展開所有孔位與最高級寶石清單
+
+- Owner：Codex；Done。使用者要求鑲孔區取消獨立捲動、依實際數量完整展開；普通寶石每種類型只顯示最高持有級別及該級別數量。已告知融合寶石保留各獨立效果入口，因效果／組合不同，不將其混成普通級別。單一開發者，前置選孔／權威庫存／局部刷新已完成，開始時副本乾淨，UI／CSS／index／測試／本紀錄預檢乾淨。
+- 完成：孔位取消55%高度上限及獨立捲動，依實際數量自然展開；鑲嵌卡與右欄允許延長，宝石區及操作列排列在所有孔位下方，超出視窗使用既有主頁捲動。取消選孔時調整孔位scrollTop的舊程式。每普通類型由最高階向下搜尋第一個有庫存級別，僅產生一個入口，上方顯示級別、下方×數量；點擊送實際顯示級別與選中孔。權威庫存刷新後同步更新數量／耗盡回落／卸下恢復；融合實例顯示×1，原選框、pending、防重送、失敗與換頁守衛、成功跳下一孔及局部節點保留均維持。
+- 修改5檔：js/ui.js、css/ashen-forge.css、index.html、tests/equip-socket-ui.test.cjs、本紀錄。主頁ashen1.0.52／ui1.0.122，Claude最新flat／battle-hud引用保留；未修改寶石數值／Worker／協議／存檔／素材／其他副本。唯讀檢查：協作規範／prompts/codex.md、js/item.js／data.js／ui-scale.js／gm_exec.js、css/style.css／ashen-forge-flat.css、既有相關回歸與主頁布局。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs`42/42通過；`npm.cmd run build`442檔通過；`git diff --check`通過。更新原各階全部顯示的舊需求驗收，新增最高級耗盡回落／數量／類型耗盡消失／空庫存與原跳孔確認，不放寬鑲嵌權威判斷。
+- 實機：沿用已確認IAB backend不存在的隔離Edge fallback，全新Context／隨機Port／正式Worker，GM僅準備拋棄式裝備與多階寶石。1920×1080／1280×720，4孔的clientHeight／scrollHeight皆228px、12孔皆612px、overflowY=visible，所有孔均位於孔區及詳情卡內；寶石區完整落在卡內，操作列在卡底之後，無重疊／裁切。48普通類型各1入口，紅寶石先5級×1，實際鑲入後變1級×9／自動選下一孔，卸下後恢復5級×1。原尺寸12孔卡845.25px自然延長，主頁可捲至下方操作；已檢視4／12孔截圖，Console error／warning皆0，沒有真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 展開鑲孔並精簡最高級寶石清單`提交。本次無未完成或已知阻擋，可合併；未合併／推送，未長時間真人遊玩。長孔位卡片會延長整頁，此為取消孔位捲軸的預期結果；融合寶石各獨立入口。臨時服務／瀏覽器已關閉，測試腳本／截圖提交前刪除；下一步使用者整合後Ctrl+F5重載。
+
 ## EQUIP-SOCKET-FRAME-20261004 — 鑲孔實線框與完整邊框
 
 - Owner：Codex；Done。使用者指出鑲孔與洗煉仍不同，空孔是虛線，後續釐清為選中綠框下緣與上緣不一致。前置鑲嵌／洗煉模式已完成；單一開發者，本副本乾淨，CSS／index／本紀錄衝突預檢皆乾淨。

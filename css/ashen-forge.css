@@ -1805,24 +1805,33 @@ html *::-webkit-scrollbar-corner {
 #tab-equip #detail-pane :is(.socket-pick, .socket-remove):disabled { cursor: default; opacity: 0.6; }
 
 .equip-socket-gems { margin-top: 12px; }
+
+#tab-equip .equip-right-col:has(#detail-pane.is-socket-page) {
+  height: auto;
+  min-height: var(--equip-board-height);
+}
+
+#tab-equip .equip-middle-row:has(#detail-pane.is-socket-page) { flex: 1 0 auto; }
+
 #tab-equip #detail-pane.is-socket-page {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow: hidden !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 #detail-pane.is-socket-page .equip-socket-page {
-  flex: 0 1 auto;
-  max-height: 55%;
+  flex: none;
+  max-height: none;
   padding-block: 1px;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 #detail-pane.is-socket-page .equip-socket-gems {
-  flex: 1;
+  flex: none;
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
   margin-top: 0;
 }
 
@@ -1841,10 +1850,20 @@ html *::-webkit-scrollbar-corner {
 .socket-gem-level {
   position: absolute;
   right: 2px;
+  top: 0;
+  font-size: 10px;
+  line-height: 12px;
+  color: #ece6d8;
+}
+
+.socket-gem-count {
+  position: absolute;
+  right: 2px;
   bottom: 0;
   font-size: 10px;
   line-height: 12px;
   color: #ece6d8;
+  background: #121418;
 }
 
 #equip-action-bar .btn-icon svg {
