@@ -21,7 +21,7 @@ function mount() {
   });
   c.it = { id: 'gear', name: '測試劍', slot: 'weapon', rarity: 5, level: 50, affixes: [
     { key: 'atkFlat', roll: 1 }, { key: 'str', roll: 1, ancient: true }
-  ], sockets: [null], enchants: [], upgrade: 0 };
+  ], sockets: [null], enchants: [{ key: 'fire', gemLv: 1 }], upgrade: 0 };
   c.player = { gold: 1e12, essence: 1e12, scrap: 1e12 };
   c.findSelItem = () => c.it;
   c.uiHeaderPanelSnapshot = () => ({ player: c.player });

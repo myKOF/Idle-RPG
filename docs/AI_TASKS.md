@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## EQUIP-BOARD-LAYOUT-20261004 — 裝備區放大與完整寶石鑲孔
+
+- Owner：Codex；Done。使用者依圖片要求裝備顯示區等比放大約25%、詳情同比縮窄、四功能操作列與裝備區底部對齊、不顯示空附魔文字、所有寶石孔逐孔顯示並改名寶石鑲孔。前置既有等寬／洗煉流程完成，開始時本副本乾淨，單一開發者。
+- 允許css/ashen-forge.css僅裝備排版與孔位文字布局、js/item.js僅詳情HTML、index.html既有CSS／item快取、tests/equipment-detail-layout.test.cjs／item-detail-html.test.cjs／equip-reroll-ui.test.cjs及本紀錄；禁止顏色／材質風格、其他功能排版、Worker協議／模擬、存檔、素材及其他副本。Claude正建立css/ashen-forge-heavy.css、不改既有排版檔；index第12行新增引用與本次第11／914行版本號共檔，使用者已明確同意保留雙方修改並驗證。僅在本副本改既有版號，測試額外套用其最新風格，不修改或提交對方未完成檔案。
+- 驗收裝備區寬高同比1.25、13格操作位置跟隨、總寬固定而詳情縮窄、操作列底部對齊、內容長時內捲且不推動按鈕、空附魔完全不顯示／已有附魔效果保留、重複／不同／空／融合寶石每孔各列且取下正確索引、洗煉仍隱藏寶石／附魔且退出恢復、原始資料不變、原風格及Claude新風格／不同視窗下完整顯示、Console／UI回歸／Build。完成獨立Commit交使用者整合，不合併／推送。
+- 完成：裝備區326→407.5px，沿用1096:1440比例與13格百分比座標；詳情使用剩餘寬度（1920視窗下509→427.5px），總寬851px不变。右欄高度與裝備區共用計算值，內容區內捲、素材區跟隨高度，操作列底部對齊，四顆操作保留等寬。未附魔不生成文字列，已附魔效果及取下維持原功能；寶石鑲孔依原陣列逐孔列出序號，重複寶石、不同種類、空孔及融合寶石不合併，取下仍送各孔原索引。窄詳情中的寶石文字允許換行；洗煉隱藏／恢復及渲染無副作用維持。
+- 修改7檔：css/ashen-forge.css、js/item.js、index.html、tests/equipment-detail-layout.test.cjs／item-detail-html.test.cjs／equip-reroll-ui.test.cjs及本紀錄。主頁快取ashen1.0.47／item1.0.8；item只改渲染，無Worker／模擬／存檔／素材變更，不需Worker入口或素材庫Commit。唯讀未改：協作規範／prompts/codex.md、css/style.css、js/ui.js／formula.js／data.js／gm_exec.js／worker/sim.worker.js、Claude副本樣式與index。
+- 測試：`node --test tests/item-detail-html.test.cjs tests/affix-actions-layout.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/init-ui-smoke.test.cjs tests/upgrade-animation.test.cjs tests/ui-fixed-canvas.test.cjs tests/reroll-cost.test.cjs tests/reroll-ancient-cost.test.cjs tests/ancient-affix.test.cjs`52/52通過；`npm.cmd run build`439檔通過；`git diff --check`通過。依新需求更新空附魔舊驗收，洗煉退出用真實附魔fixture驗效果恢復；新增未附魔／真效果／重複與不同寶石／融合及原始索引／資料不變驗收。
+- 瀏覽器：IAB backend無法連線，改bundled Playwright＋headless Edge、隨機Port與全新Context，正式index／真正Worker，GM僅在拋棄式環境準備裝備／寶石／附魔。裝備區407.5×535.39、13格、操作列與裝備底部同為662.39、四顆各84.375px，鑲嵌／附魔開關前後不变。點第二顆重複紅寶石只送一次gem.unsocket index1，第一顆保持；洗煉隱藏孔／附魔、退出恢復。神鑄混沌雙手劍12孔全列，素材區打開後詳情253.5px寬、內捲865px，最後一孔可完整捲入可視區，操作列不被推動。1920×1080／1280×720／960×720／3440×1440均維持比例與底部對齊；Console error／warning皆0，已檢視普通與12孔長內容截圖。服務／瀏覽器关闭，臨時腳本／截圖删除，不改真人存檔。
+- 協作：Claude期間撤回heavy改為ashen-forge-flat.css（其既有ashen-forge.css回到本次基底），已唯讀取得最新flat額外套用，尺寸／孔位／等寬／操作列完全一致；不提交對方未完成樣式及引用。index只提交本次兩個版本號，整合需保留Claude最新flat引用。驗證末期同副本另有VACUUM-OMEN-RETRIGGER任務，僅暫存本任務7檔與本段紀錄；對方skills2／bridge／Worker／說明／快取及任務紀錄保留原樣，不混入提交。
+- 交付：Commit為本紀錄所在`[Codex] fix: 放大裝備區並完整顯示寶石鑲孔`提交。無未完成本次需求，可合併；未合併／推送。風險：Claude風格仍在進行中，若後續又改尺寸則須整合時再看排版；已有UI-worker測試替身缺UI問題見前項任務，不是本次改動，未做長時間真人操作。下一步使用者整合本提交與Claude最新風格後重載確認。
+
 ## EQUIP-REROLL-FLOW-20261004 — 下方按鈕洗煉與專注屬性選取
 
 - Owner：Codex；Done。使用者要求首次按洗煉切模式、屬性顯示選取框，洗煉模式隱藏寶石／附魔，增加屬性間距與選中字體，刪除骰子、改按下方紅色洗煉執行。沿用前次等寬／無位移樣式，單一開發者；既有洗煉Worker指令與UI選取完成，本副本乾淨，目標衝突預檢皆乾淨。

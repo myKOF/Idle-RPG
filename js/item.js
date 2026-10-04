@@ -862,7 +862,6 @@ function itemDetailHTML(it, cmp, opts) {
     // 附魔（多欄位，數量依稀有度）
     var itEns = itemEnchants(it);
     var cmpEns = cmp ? itemEnchants(cmp) : [];
-    var enCap = enchantCapFor(it);
     var cmpEnMap = {};
     cmpEns.forEach(function (ce) { cmpEnMap[ce.key] = enchantValue(cmp, ce); });
     var itEnKeys = {};
@@ -894,11 +893,6 @@ function itemDetailHTML(it, cmp, opts) {
         h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + ediffStr + '</div>';
       }
     });
-    // 空附魔欄只顯示一行（括號內是已使用／上限），不再每個空欄各佔一行
-    if (itEns.length < enCap) {
-      var enSlot = itEns.length;
-      h += '<div class="it-enchant" style="color: var(--dim)">◇ 空附魔欄（' + enSlot + '/' + enCap + '）</div>';
-    }
 
     /* 寶石插槽。
        這裡刻意不呼叫 ensureSockets(it)——渲染函式不該改狀態。鑲孔補齊已由 Worker 在
@@ -906,44 +900,24 @@ function itemDetailHTML(it, cmp, opts) {
        碰到的還是 UI 端的快照複本，改了也不會回到權威狀態，只是白費而且誤導。 */
     var sockets = Array.isArray(it.sockets) ? it.sockets : [];
     if (sockets.length) {
-      /* 同種同級的寶石合併成一列（×N），空插槽也合併成一列，避免四顆相同寶石佔四行。
-         合併列點擊時取下其中第一顆（同種同級，取哪一顆結果都一樣）。融合寶石各自獨立一列。 */
-      var gemGroups = [];
-      var gemGroupByKey = {};
-      var emptySockets = 0;
+      // 按原始位置逐孔顯示，保留每一孔的取下索引，重複寶石與空孔也不合併。
+      h += '<div class="it-sockets"><div class="it-sockets-title">寶石鑲孔</div>';
       for (var si = 0; si < sockets.length; si++) {
         var g = sockets[si];
         if (g && g.fused) {
-          gemGroups.push({ fused: g.fused, index: si, count: 1 });
-        } else if (g && GEM_TYPES[g.type]) {
-          var gk = g.type + ':' + g.level;
-          if (gemGroupByKey[gk]) {
-            gemGroupByKey[gk].count++;
-          } else {
-            gemGroupByKey[gk] = { type: g.type, level: g.level, index: si, count: 1 };
-            gemGroups.push(gemGroupByKey[gk]);
-          }
-        } else {
-          emptySockets++;
+          h += '<span class="socket filled fused-socket" data-socket-remove="' + si + '" data-tip="點擊取下">' +
+            (si + 1) + '. ' + esc(fusedGemLabel(g.fused)) + '</span>';
+          continue;
         }
-      }
-      h += '<div class="it-sockets">';
-      gemGroups.forEach(function (grp) {
-        if (grp.fused) {
-          h += '<span class="socket filled fused-socket" data-socket-remove="' + grp.index + '" data-tip="點擊取下">' +
-            esc(fusedGemLabel(grp.fused)) + '</span>';
-          return;
+        if (!g || !GEM_TYPES[g.type]) {
+          h += '<span class="socket empty">◇ 鑲孔 ' + (si + 1) + '（空）</span>';
+          continue;
         }
-        var gt = GEM_TYPES[grp.type];
-        var many = grp.count > 1;
-        h += '<span class="socket filled" data-socket-remove="' + grp.index + '" data-tip="' + (many ? '點擊取下 1 顆' : '點擊取下') + '">' +
-          '<span class="sk-name">' + gt.emoji + ' ' + esc(GEM_NAMES[grp.level] + gt.name) + (many ? ' ×' + grp.count : '') + '</span>' +
+        var gt = GEM_TYPES[g.type];
+        h += '<span class="socket filled" data-socket-remove="' + si + '" data-tip="點擊取下">' +
+          '<span class="sk-name">' + (si + 1) + '. ' + gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
           '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
-          (gt.pct ? pctStr(gemStatValue(grp.type, grp.level)) : fmt(gemStatValue(grp.type, grp.level))) +
-          (many ? '／顆' : '') + '</span></span>';
-      });
-      if (emptySockets) {
-        h += '<span class="socket empty">◇ 空插槽' + (emptySockets > 1 ? ' ×' + emptySockets : '') + '</span>';
+          (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span></span>';
       }
       h += '</div>';
     }
