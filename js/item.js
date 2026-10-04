@@ -667,21 +667,15 @@ function enchantLine(it, en) {
    主執行緒（Worker 架構下沒有 G）與 Worker 兩邊都要能呼叫，讀 G 會讓 ui.js 用不了它，
    而 ui.js 用不了它的結果，就是那邊再長出一份簡化重寫的第二套實作，然後兩份慢慢分歧。
 
-   洗煉花費要標示「資源不足」，所以需要知道玩家身上有多少金幣與精華：
-   由 opts.gold / opts.essence 傳入（UI 端取自 header 面板快照）。
-   沒傳就不標紅——不知道餘額時假設不足，會對玩家謊報買不起。 */
+   洗煉模式只渲染屬性選取，費用與執行按鈕由 UI 裝備操作列處理。 */
 function itemDetailHTML(it, cmp, opts) {
   cmp = null; // 裝備比較改版：不再在單個 tips 中進行屬性差值比較
   opts = opts || {};
   var showAffixReroll = opts.showAffixReroll !== false;
-  /* 洗煉模式（裝備詳情頁的「洗煉」分頁）：只有選中的那一條詞條，骰子才可按；
-     其他骰子一律灰色、不可按，避免手滑洗到別條。未進入洗煉模式時所有骰子都不可按。
-     selIdx 是 it.affixes 的索引（洗煉保留位置、只換種類，洗完選取框仍停在同一格）。 */
+  /* selIdx 是 it.affixes 的索引；洗完保留選取位置，執行入口在下方操作列。 */
   var reroll = opts.reroll || null;
   var rerollActive = !!(reroll && reroll.active);
   var rerollSelIdx = rerollActive ? reroll.selIdx : -1;
-  var ownedGold = (opts.gold === undefined || opts.gold === null) ? Infinity : (Number(opts.gold) || 0);
-  var ownedEssence = (opts.essence === undefined || opts.essence === null) ? Infinity : (Number(opts.essence) || 0);
   var r = RARITIES[it.rarity];
   var levelRarity = RARITIES[equipmentLevelRarityIndex(it.level)] || r;
   var curScore = itemScore(it);
@@ -749,7 +743,7 @@ function itemDetailHTML(it, cmp, opts) {
   }
   h += '</span><span class="it-score it-score-sub">評分 ' + fmt(curScore) + sdiffStr + '</span></div>';
 
-  h += '<div class="it-affixes">';
+  h += '<div class="it-affixes' + (rerollActive ? ' is-reroll-mode' : '') + '">';
   var um = upgradeMult(it);
   var curMap = {};
   for (var i = 0; i < it.affixes.length; i++) {
@@ -790,23 +784,7 @@ function itemDetailHTML(it, cmp, opts) {
     var valColor = isMax ? '#fbbf24' : '';
     var valHtml = '<span' + (valColor ? ' style="color:' + valColor + ';font-weight:bold"' : '') + '>' + (def.pct ? pctStr(vCur) : fmt(vCur)) + '</span>';
 
-    var rrBtn = '';
     var rrSelected = rerollActive && i === rerollSelIdx;
-    if (showAffixReroll && !rrSelected) {
-      rrBtn = '<button type="button" class="btn affix-reroll-btn" data-reroll-state="idle" tabindex="-1" aria-disabled="true" aria-label="洗煉詞條（未選取）">🎲</button>';
-    } else if (showAffixReroll) {
-      var rrCost = rerollCost(it);
-      var rrGoldHtml = '<span' + (ownedGold >= rrCost.gold ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_gold.png" class="res-icon">' + fmt(rrCost.gold) + '</span>';
-      var rrEssenceHtml = '<span' + (ownedEssence >= rrCost.essence ? '' : ' style="color:#fca5a5"') + '><img src="images/icon_essence.png" class="res-icon">' + fmt(rrCost.essence) + '</span>';
-      var rrTipDesc = isAncient ? '單獨洗煉此太古屬性（只變換種類，必為滿值）' : '單獨洗煉此屬性（改變種類與數值）';
-      var rrTip = '<div style="color:var(--dim);margin-bottom:4px">' + rrTipDesc + '</div>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml;
-      var rrFlash = !!reroll.flash;
-      rrBtn = '<button class="btn affix-reroll-btn act-btn-tooltip" data-act="reroll-affix" data-affix="' + k + '" data-affix-idx="' + i + '"' +
-        ' data-reroll-state="' + (rrFlash ? 'flash' : 'armed') + '"' +
-        // 詳情頁會整塊重繪：用負的 animation-delay 接續閃爍相位，重繪時才不會每次從頭閃
-        (rrFlash ? ' style="animation-delay:-' + (Math.max(0, Number(reroll.flashDelayMs) || 0)) + 'ms"' : '') +
-        ' aria-label="洗煉詞條" data-tip="' + esc(rrTip) + '">🎲</button>';
-    }
 
     var diffStr = '';
     if (vCmp !== 0) {
@@ -825,7 +803,7 @@ function itemDetailHTML(it, cmp, opts) {
       var rowClass = rerollActive ? ' is-reroll-pickable' + (rrSelected ? ' is-reroll-selected' : '') : '';
       h += '<div class="it-affix-row it-affix' + catClass + rowClass + '" style="' + lineStyle + '">' +
         '<div class="it-affix-text"' + (rerollActive ? ' data-reroll-pick="' + i + '"' : '') + '><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '"><span class="afx-label">' + marker + ' ' + name + '</span><span class="afx-val">+' + valHtml + '</span></span>' +
-        diffStr + '</div><div class="it-affix-action">' + rrBtn + '</div></div>';
+        diffStr + '</div></div>';
     } else {
       h += '<div class="it-affix' + catClass + '" style="' + lineStyle + '"><span class="act-btn-tooltip" style="cursor:help;" data-tip="' + esc(limitTip) + '"><span class="afx-label">' + marker + ' ' + name + '</span><span class="afx-val">+' + valHtml + '</span></span>' +
         diffStr + '</div>';
@@ -880,7 +858,7 @@ function itemDetailHTML(it, cmp, opts) {
   }
 
   // 附魔與寶石區塊可移至裝備頁右側；懸停提示仍保留完整效果。
-  if (opts.showEnhancements !== false) {
+  if (!rerollActive && opts.showEnhancements !== false) {
     // 附魔（多欄位，數量依稀有度）
     var itEns = itemEnchants(it);
     var cmpEns = cmp ? itemEnchants(cmp) : [];

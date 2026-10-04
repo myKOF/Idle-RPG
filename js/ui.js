@@ -5047,7 +5047,7 @@ function updateInventoryFilterBadge() {
 // 裝備操作列的「卸下」圖示（箭頭離開框線）
 var EQUIP_UNEQUIP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>';
 
-/* 洗煉模式（UI.equipRerollMode）：記著是哪一件裝備、選中第幾條詞條（it.affixes 索引）、骰子是否在閃。
+/* 洗煉模式（UI.equipRerollMode）：記著是哪一件裝備、選中第幾條詞條（it.affixes 索引）。
    只對記錄的那一件有效（換選別件就不在洗煉模式）。選中的索引若已不存在或詞條已下架（不渲染），改選第一條有渲染的詞條。 */
 function equipRerollModeFor(it) {
   var mode = UI.equipRerollMode;
@@ -5064,7 +5064,7 @@ function equipRerollModeFor(it) {
 }
 
 function selectEquipRerollAffix(it, idx) {
-  UI.equipRerollMode = { itemId: it.id, selIdx: idx, flash: true, flashStart: Date.now() };
+  UI.equipRerollMode = { itemId: it.id, selIdx: idx };
 }
 
 function renderDetail() {
@@ -5122,9 +5122,7 @@ function renderDetail() {
     justUpgraded: justUpgraded,
     reroll: rerollMode ? {
       active: true,
-      selIdx: rerollMode.selIdx,
-      flash: rerollMode.flash,
-      flashDelayMs: (Date.now() - rerollMode.flashStart) % 1000
+      selIdx: rerollMode.selIdx
     } : null
   });
   /* 操作列（2026-10 裝備頁改造）：一個主按鈕（背包裝備＝「裝備」，身上裝備＝「強化」）＋次按鈕，
@@ -5133,7 +5131,7 @@ function renderDetail() {
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
   var fromInv = UI.sel.source === 'inv';
-  var matMode = UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
   /* 洗煉模式時紅色主按鈕移到「洗煉」，表示目前是洗煉分頁；裝備／強化退回次按鈕 */
   if (fromInv) {
     actionsHtml += '<button class="btn' + (rerollMode ? '' : ' btn-primary') + '" data-act="equip"' + pendingUiButtonAttributes(pendingKey) + '>裝備</button>';
@@ -5146,7 +5144,21 @@ function renderDetail() {
   actionsHtml += '<button class="btn' + (fromInv || rerollMode ? '' : ' btn-primary') + ' act-btn-tooltip" data-act="upgrade" data-tip="' +
     esc(rerollMode ? '回到強化（再按一次才強化）' : upTip) + '"' + pendingUiButtonAttributes(pendingKey) + '>強化</button>';
 
-  actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary' : '') + '" data-act="toggle-reroll">洗煉</button>';
+  var rrAttrs = '';
+  if (rerollMode) {
+    var rrAffix = it.affixes[rerollMode.selIdx];
+    if (rrAffix && AFFIX_POOL[rrAffix.key]) {
+      var rrCost = rerollCost(it);
+      var rrGoldHtml = '<span' + (player && player.gold < rrCost.gold ? ' style="color:#fca5a5"' : '') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(rrCost.gold) + '</span>';
+      var rrEssenceHtml = '<span' + (player && player.essence < rrCost.essence ? ' style="color:#fca5a5"' : '') + '><img src="images/icon_essence.png" class="res-icon"> ' + fmt(rrCost.essence) + '</span>';
+      var rrDesc = rrAffix.ancient ? '只變換種類，太古位置與滿值保留' : '改變種類與數值';
+      rrAttrs = ' data-tip="' + esc('洗煉已選屬性：' + AFFIX_POOL[rrAffix.key].name + '（' + rrDesc + '）<br>需要：' + rrGoldHtml + ' &nbsp;' + rrEssenceHtml) + '"';
+    } else {
+      rrAttrs = ' disabled data-tip="沒有可洗煉的屬性"';
+    }
+    rrAttrs += pendingUiButtonAttributes(pendingKey);
+  }
+  actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>洗煉</button>';
   actionsHtml += '<button class="btn" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
   actionsHtml += '<button class="btn" data-act="toggle-enchant" aria-pressed="' + (matMode === 'enchant') + '">附魔</button>';
   if (!fromInv) {
@@ -5425,9 +5437,11 @@ function detailAction(act, actBtn) {
     UI._upgradingItemId = it.id;
     UI._upgradingItemPrevLevel = it.upgrade || 0;
   } else if (act === 'reroll-affix') {
+    var rrMode = equipRerollModeFor(it);
+    var rrAffix = rrMode && it.affixes[rrMode.selIdx];
+    if (!rrAffix || !AFFIX_POOL[rrAffix.key] || isUiCommandPending(itemPendingKey(it.id))) return;
     commandName = 'item.rerollAffix';
-    args.affixKey = actBtn && actBtn.getAttribute('data-affix');
-    if (!args.affixKey) return;
+    args.affixKey = rrAffix.key;
   } else if (act === 'lock') {
     commandName = 'item.setLock';
     args.locked = !it.locked;
@@ -12261,7 +12275,7 @@ function initUI() {
       renderDetail();
       return;
     }
-    // 洗煉模式：點詞條文字區（不含骰子）切換要洗的詞條
+    // 洗煉模式：點詞條只切換選取，執行入口在下方紅色按鈕。
     var rrPick = e.target.closest('#detail-pane [data-reroll-pick]');
     if (rrPick) {
       var pickIt = findSelItem();
@@ -12275,34 +12289,31 @@ function initUI() {
     }
     var actBtn = e.target.closest('#detail-pane .btn, #equip-action-bar .btn');
     if (actBtn) {
+      if (actBtn.disabled) return;
       var act = actBtn.getAttribute('data-act');
       if (act === 'toggle-socket' || act === 'toggle-enchant') {
         var matIt = findSelItem();
         if (!matIt) return;
+        UI.equipRerollMode = null;
         var wantMode = act === 'toggle-socket' ? 'socket' : 'enchant';
         var curMode = UI.equipMatMode && UI.equipMatMode.itemId === matIt.id ? UI.equipMatMode.mode : null;
         UI.equipMatMode = curMode === wantMode ? null : { itemId: matIt.id, mode: wantMode };
         renderDetail();
         return;
       }
-      /* 洗煉／強化是一組分頁：按「洗煉」進入洗煉模式（預設選第一條），已在洗煉模式再按不變；
+      /* 初次按「洗煉」只進入模式；再次點擊紅色按鈕走下方 detailAction 執行。
          洗煉模式下按「強化」只切回強化，不直接強化，避免切分頁時誤花資源 */
       if (act === 'toggle-reroll' || (act === 'upgrade' && equipRerollModeFor(findSelItem()))) {
         var rrIt = findSelItem();
         if (!rrIt) return;
         if (act === 'upgrade') UI.equipRerollMode = null;
-        else if (!equipRerollModeFor(rrIt)) selectEquipRerollAffix(rrIt, 0);
+        else {
+          selectEquipRerollAffix(rrIt, 0);
+          UI.equipMatMode = null;
+        }
         hideTooltip();
         renderDetail();
         return;
-      }
-      // 骰子只認洗煉模式中選中的那一條；其他骰子（含未進入洗煉模式時）一律不動作
-      if (act === 'reroll-affix') {
-        var rrMode = equipRerollModeFor(findSelItem());
-        if (!rrMode || String(rrMode.selIdx) !== actBtn.getAttribute('data-affix-idx')) return;
-        rrMode.flash = false;
-        actBtn.setAttribute('data-reroll-state', 'armed');
-        actBtn.style.animationDelay = '';
       }
       detailAction(act, actBtn);
       return;

@@ -3179,7 +3179,7 @@ textarea#save-io {
 
 .it-affix-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   column-gap: 8px;
   min-height: 18px;
@@ -3190,38 +3190,6 @@ textarea#save-io {
 .it-affix-text {
   min-width: 0;
   white-space: nowrap;
-}
-
-/* 滑�??�側洗�??��??��??�確標示它�?對�??��?條�?*/
-.it-affix-row:has(.affix-reroll-btn:hover) .it-affix-text {
-  outline: 1px solid #fef3c7;
-  outline-offset: -1px;
-}
-
-.it-affix-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 18px;
-  height: 18px;
-}
-
-.affix-reroll-btn {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  font-size: 11px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.affix-reroll-tip {
-  text-align: left;
-  font-size: 12px;
-  line-height: 1.4;
-  font-weight: normal;
 }
 
 /* ?��?被�?（【破?�】�?）�?橘色粗�?段落，�??��??��??��??��??��? */

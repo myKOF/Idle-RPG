@@ -5,30 +5,30 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 
-test('equipment affix reroll buttons render in a fixed right action column', () => {
+test('equipment affix rows have no dice or action column', () => {
   const itemJs = fs.readFileSync(path.join(root, 'js/item.js'), 'utf8');
 
   assert.match(itemJs, /class="it-affix-row/);
   assert.match(itemJs, /class="it-affix-text/);
-  assert.match(itemJs, /class="it-affix-action/);
-  assert.match(itemJs, /class="btn affix-reroll-btn act-btn-tooltip"/);
-  assert.doesNotMatch(itemJs, /var rrBtn = ' <button class="btn act-btn-tooltip" style=/);
+  assert.doesNotMatch(itemJs, /it-affix-action|affix-reroll-btn|🎲/);
 });
 
-test('equipment affix rows reserve a stable right-side button column', () => {
+test('equipment affix rows use full width and enlarge selected text without moving controls', () => {
   const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
 
   assert.match(css, /--it-affix-gap:\s*2px/);
   assert.match(css, /\.it-affixes\s*{[\s\S]*width:\s*100%/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*display:\s*grid/);
-  assert.match(css, /\.it-affix-row\s*{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*32px/);
+  assert.match(css, /\.it-affix-row\s*{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\);/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*width:\s*100%/);
   assert.match(css, /\.it-affix-row\s*{[\s\S]*min-height:\s*18px[\s\S]*height:\s*18px/);
   assert.match(css, /\.it-affix-text\s*{[\s\S]*white-space:\s*nowrap/);
-  assert.match(css, /\.it-affix-action\s*{[\s\S]*justify-content:\s*center/);
-  assert.match(css, /\.it-affix-action\s*{[\s\S]*min-height:\s*18px[\s\S]*height:\s*18px/);
-  assert.match(css, /\.affix-reroll-btn\s*{[\s\S]*width:\s*16px/);
-  assert.match(css, /\.affix-reroll-btn\s*{[\s\S]*height:\s*16px/);
+  assert.doesNotMatch(css, /affix-reroll-btn|it-affix-action/);
+  const skin = fs.readFileSync(path.join(root, 'css/ashen-forge.css'), 'utf8');
+  assert.match(skin, /\.it-affixes\.is-reroll-mode\s*\{\s*gap:\s*8px/);
+  assert.match(skin, /\.it-affix-row\.is-reroll-pickable\s*\{[^}]*min-height:\s*40px/);
+  assert.match(skin, /\.it-affix-row\.is-reroll-selected \.afx-val\s*\{\s*font-size:\s*18px/);
+  assert.doesNotMatch(skin, /affixRerollFlash|affix-reroll-btn/);
 });
 
 test('equipment effect text keeps a 2px wrapped-line gap', () => {
