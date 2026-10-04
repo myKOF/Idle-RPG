@@ -8930,3 +8930,10 @@ Worker 存活且頁面正常完成載入。
 - 修正：自訂欄位一律改 `_bb` 前綴（`_bbParent`／`_bbX`／`_bbY`／`_bbOffX`／`_bbOffY`），不再與 Pixi 內部欄位同名。
 - 測試：decor／arena 測試的假 Sprite 改成與真的 Pixi 相同（`anchor` 是 getter、底層 `_anchor`），新增 DECOR-BB／ARENA-BB（含切地圖與重進場、物件池重用）；把名稱改回 `_anchor` 後 DECOR-BB 會失敗，確認抓得到。快取版本：battle-decor 1.0.9、battle-arena 1.0.2。
 - 教訓：幫 Pixi 物件掛自訂欄位不要用 `_anchor`、`_width`、`_height`、`_texture`、`_bounds*` 等常見內部名稱；本專案一律用功能前綴。
+
+## Claude｜存檔失敗只說「共 N 個問題」卻不說是哪幾個（VFX-SAVE-PROBLEMS-20261004）
+
+- 使用者回報存檔失敗，畫面訊息為「特效設定已保存，但遊戲素材同步失敗，請修正後再按儲存：匯出失敗，共 2 個問題」——數字有了，是哪兩個一個字都沒有。
+- 缺陷：`savePresetText` 的 syncAssets catch 只取 `e.message`，把 `e.problems` 丟掉。匯出的 message 本身只給總數，逐條內容全在 problems 裡。回應格式本來就有這個欄位、Editor 也已經會逐行列出，缺的只是傳過去。已補上並新增 C9 測試（做過突變驗證）。
+- 這次實際卡住的兩個問題：`codex-authored/water-prison/water-dome.svg`（索引 1394、實際 1416）與 `codex-authored/water-tide/ice-merge-vortex.svg`（索引 5341、實際 5342）。差值剛好等於各自的 CR 數（22 與 1）——素材庫沒有 `.gitattributes` 而 `core.autocrlf=true`，SVG 被簽出成 CRLF，索引卻是檔案還是 LF 時建的。已在素材庫建立 `.gitattributes`（`* text=auto eol=lf`，未提交，待使用者決定）並把兩個檔還原成 LF；`export-assets --check` 恢復為 0。
+- 連帶發現：工具訊息要人「重跑 asset-scanner.cjs」，但那條路走不通——掃描以結束碼 2 中止，原因是 28 組 assetId 撞名，全部來自 `RPG Maker_MV/07_戰鬥背景/` 底下的 `地面` 與 `牆景`。根因是 `slugSegment` 把非 `a-z0-9._-` 的字元換成 `-` 再去頭尾，純中文的資料夾名因此變成空字串、被 `filter(Boolean)` 整段丟掉，兩條路徑就撞在一起。素材庫是中文分類的，這會持續發生。未修改 id 規則：那會改動既有 assetId 而讓 preset 失效，需要使用者決定方向。

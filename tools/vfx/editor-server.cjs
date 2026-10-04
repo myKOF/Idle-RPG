@@ -480,9 +480,15 @@ function savePresetText(ctx, presetId, bodyText) {
       /* 這是唯一一條「失敗了但檔案確實已經寫進去」的路。written 就是為了它存在：
          其餘每一條失敗路徑的檔案都原封不動，只有這裡不是。呼叫端不能靠猜——
          Editor 以前寫死「repo 檔案未變動」，在這條路上就是明確的謊話。 */
+      /* problems 一定要帶上。匯出的錯誤訊息本身只有「匯出失敗，共 2 個問題」，
+         是哪兩個全在 e.problems 裡——漏掉它，畫面上就只剩一個數字，使用者得自己
+         去命令列重跑一次 export-assets 才知道要修什麼（2026-10-04 實測踩到：
+         兩個 SVG 的大小與索引不符，訊息卻一個檔名都沒有）。
+         回應格式本來就有這個欄位，Editor 也已經會逐行列出，缺的只是傳過去。 */
       return {
         status: 500, written: true,
-        error: '特效設定已保存，但遊戲素材同步失敗，請修正後再按儲存：' + (e && e.message || e)
+        error: '特效設定已保存，但遊戲素材同步失敗，請修正後再按儲存：' + (e && e.message || e),
+        problems: (e && e.problems) || []
       };
     }
   }
