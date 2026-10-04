@@ -81,6 +81,55 @@ test('渲染不得改動傳入的物品（不補鑲孔、不寫任何欄位）',
   assert.equal(JSON.stringify(it), before, '渲染函式有副作用＝畫面更新時順便改狀態');
 });
 
+test('未附魔不顯示欄位文字，已有附魔只顯示實際效果', () => {
+  const c = loadItemContext();
+  const empty = c.itemDetailHTML(makeItem(), null, {});
+  assert.doesNotMatch(empty, /it-enchant|空附魔/);
+  const filled = c.itemDetailHTML(makeItem({ enchants: [{ key: 'fire', gemLv: 1 }] }), null, {});
+  assert.match(filled, /it-enchant/);
+  assert.match(filled, /data-enchant-remove="0"/);
+  assert.doesNotMatch(filled, /空附魔/);
+});
+
+test('鑲嵌頁只顯示孔位，選取和卸下按鈕分開且不改原始資料', () => {
+  const c = loadItemContext();
+  const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10)], enchants: [{ key: 'fire', gemLv: 1 }], sockets: [null, { type: 'ruby', level: 2 }, null] });
+  const before = JSON.stringify(it);
+  const h = c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 1, pending: false } });
+  assert.doesNotMatch(h, /it-title|it-sub|it-affix|it-enchant|it-passive/);
+  assert.equal((h.match(/data-socket-pick=/g) || []).length, 3);
+  assert.equal((h.match(/is-socket-selected/g) || []).length, 1);
+  assert.match(h, /data-socket-pick="1" aria-pressed="true"/);
+  assert.match(h, /class="socket-remove" data-socket-remove="1"[^>]*>卸下/);
+  assert.match(c.itemDetailHTML(it, null, { socket: { active: true, selIdx: 1, pending: true } }), /data-socket-remove="1"[^>]* disabled/);
+  assert.equal(JSON.stringify(it), before);
+});
+
+test('寶石鑲孔逐孔顯示，重複寶石不合併且保留原取下索引', () => {
+  const c = loadItemContext();
+  const it = makeItem({ sockets: [null, { type: 'ruby', level: 1 }, { type: 'ruby', level: 1 }, null] });
+  const before = JSON.stringify(it);
+  const html = c.itemDetailHTML(it, null, {});
+  assert.match(html, /寶石鑲孔/);
+  assert.equal((html.match(/class="socket /g) || []).length, 4);
+  assert.match(html, /鑲孔 1（空）/);
+  assert.match(html, /鑲孔 4（空）/);
+  assert.deepEqual(html.match(/data-socket-remove="\d+"/g), ['data-socket-remove="1"', 'data-socket-remove="2"']);
+  assert.equal(JSON.stringify(it), before);
+});
+
+test('融合寶石與不同種類寶石維持各自孔位', () => {
+  const c = loadItemContext();
+  const fused = { id: 'fused', stats: [{ type: 'ruby', mult: 1 }, { type: 'sapphire', mult: 1 }], level: 5, fusions: 1, leaves: 2 };
+  const it = makeItem({ sockets: [{ fused }, { type: 'ruby', level: 2 }, { type: 'sapphire', level: 1 }, null] });
+  const before = JSON.stringify(it);
+  const html = c.itemDetailHTML(it, null, {});
+  assert.equal((html.match(/class="socket /g) || []).length, 4);
+  assert.match(html, /fused-socket" data-socket-remove="0"[^>]*>1\. .*融合寶石/);
+  assert.deepEqual(html.match(/data-socket-remove="\d+"/g), ['data-socket-remove="0"', 'data-socket-remove="1"', 'data-socket-remove="2"']);
+  assert.equal(JSON.stringify(it), before);
+});
+
 test('掉寶率詞條顯示經 effectiveDropRateEffect 換算後的實際生效值', () => {
   const c = loadItemContext();
   const it = makeItem({ affixes: [affixAt(c, 'loot', 20)] });
