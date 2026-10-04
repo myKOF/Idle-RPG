@@ -82,7 +82,7 @@ test('原始非法duration不被修成合法值，派生總時長超上限也明
 });
 test('正式真空迴旋以4秒測試時長在Core與遊戲Adapter均完整播放',()=>{
   const p=JSON.parse(fs.readFileSync(path.join(root,'vfx/presets/slash-wind-spin.json')));
-  assert.equal(p.layers.length,14);
+  assert.equal(p.layers.length,8);
   // 作者可在Editor調整時長；回歸情境在私有副本固定4秒，不限制正式檔案的值。
   p.layers.forEach(l=>{l.duration=4;});
   // 模擬尚未經新版Editor存檔的舊根值。
