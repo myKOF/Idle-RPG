@@ -61,6 +61,7 @@ function setup({ canvas = true } = {}) {
       log.push('render');
       c.UI.dirty.header = c.UI.dirty.battle = false;
     },
+    uiTickGuarded() {},   // main.js 的週期重繪掛的是這個包裝（見 ui.js UI_TICK_DIAG）；這裡只需要它存在
     requestAnimationFrame(fn) { frames.push(fn); },
     setInterval() {},
     setTimeout() {}
