@@ -6,6 +6,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const { floatMergeSource } = require('./helpers/ui-float-merge.cjs');
+
 const root = path.resolve(__dirname, '..');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 
@@ -56,6 +58,7 @@ function makeFlushContext(queue, opts) {
   };
   if (opts.battleRenderer) context.BattleRenderer = opts.battleRenderer;
   vm.runInNewContext([
+    floatMergeSource(),
     functionBody('uiNoteVisualDrop'),
     functionBody('uiNoteVisualEventError'),
     functionBody('flushWorkerVisualEvents')
@@ -156,6 +159,7 @@ test('同一種例外只印前 3 次，之後只計數，避免每幀洗版', ()
 });
 
 const QUEUE_FUNCS = ['uiNoteVisualDrop', 'uiIsSustainVisualEvent', 'uiVisualRank', 'uiSameSustainField', 'queueWorkerVisualEvent'];
+const QUEUE_SOURCE = floatMergeSource() + '\n' + QUEUE_FUNCS.map(functionBody).join('\n');
 
 function makeQueueContext(lastFlushAt) {
   const context = {
@@ -166,7 +170,7 @@ function makeQueueContext(lastFlushAt) {
     uiNowMs: () => 4242,
     scheduleWorkerVisualEventFlush: () => {}
   };
-  vm.runInNewContext(QUEUE_FUNCS.map(functionBody).join('\n'), context);
+  vm.runInNewContext(QUEUE_SOURCE, context);
   return context;
 }
 
@@ -217,7 +221,7 @@ test('畫面停擺後恢復：排太久的飄字算「停幀」略過，不算�
 
 test('uiVisualDiagText：平常不出字，事件後 5 秒內顯示，之後消失', () => {
   const context = { UI_VISUAL_DIAG: makeDiag(), UI_WORKER_VISUAL_EVENT_QUEUE: [1, 2, 3] };
-  vm.runInNewContext(functionBody('uiVisualDiagText'), context);
+  vm.runInNewContext(floatMergeSource() + '\n' + functionBody('uiVisualDiagText'), context);
 
   assert.equal(context.uiVisualDiagText(10000), '');
 
@@ -236,7 +240,7 @@ test('uiVisualDiagText：平常不出字，事件後 5 秒內顯示，之後消�
 
 test('uiVisualDiagText：停幀另外顯示，不混進丟字', () => {
   const context = { UI_VISUAL_DIAG: makeDiag({ stallDrops: 10536, lastStallMs: 4321, lastStallAt: 9000 }), UI_WORKER_VISUAL_EVENT_QUEUE: [] };
-  vm.runInNewContext(functionBody('uiVisualDiagText'), context);
+  vm.runInNewContext(floatMergeSource() + '\n' + functionBody('uiVisualDiagText'), context);
 
   const text = context.uiVisualDiagText(10000);
   assert.match(text, /停幀約 4\.3 秒 略過 10536/);
@@ -334,7 +338,7 @@ function makeRankedQueueContext(queue, max) {
     uiNowMs: () => 4242,
     scheduleWorkerVisualEventFlush: () => {}
   };
-  vm.runInNewContext(QUEUE_FUNCS.map(functionBody).join('\n'), context);
+  vm.runInNewContext(QUEUE_SOURCE, context);
   return context;
 }
 const refresh = (id, extra) => Object.assign({ kind: 'vfx', fxKind: 'aura', variant: 'thunder-orb', area: { id } }, extra || {});

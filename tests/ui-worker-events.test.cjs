@@ -6,6 +6,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const { floatMergeSource } = require('./helpers/ui-float-merge.cjs');
+
 const root = path.resolve(__dirname, '..');
 const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
 
@@ -56,6 +58,7 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
     floatText: (...args) => calls.push(['floatText', ...args])
   };
   vm.runInNewContext([
+    floatMergeSource(),
     functionBody('scheduleWorkerVisualEventFlush'),
     functionBody('uiNoteVisualDrop'),
     functionBody('uiIsSustainVisualEvent'),
