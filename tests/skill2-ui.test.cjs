@@ -49,6 +49,100 @@ function detail(c, gid, snap, tier, gold, focus) {
   return c.sgbDetailHTML(gid, snap, { player: { gold: gold === undefined ? 1e15 : gold } });
 }
 
+function loadoutClickHarness(c, snap) {
+  const start = ui.indexOf("  var uq = e.target.closest('[data-skill-unequip]');");
+  const end = ui.indexOf('// 點擊技能樹節點', start);
+  assert.ok(start >= 0 && end > start, '使用正式委派的卸下與快捷格點擊分支');
+  vm.runInContext('function clickLoadout(e) {\n' + ui.slice(start, end) + '\n}', c);
+  const state = { renders: 0, selected: null, detail: '', scrolls: [], commands: [] };
+  c.uiSkillsPanelSnapshot = () => snap;
+  c.renderSkills = () => {
+    state.renders++;
+    state.selected = c.UI.sgBrowse.gid;
+    state.detail = c.sgbDetailHTML(state.selected, snap, { player: { gold: 1e15 } });
+  };
+  c.document.querySelector = (selector) => ({ scrollIntoView(options) {
+    state.scrolls.push({ selector, block: options.block });
+  } });
+  c.runSkillUiAction = (...args) => state.commands.push(args);
+  state.click = (ref, index, remove = false, fallback = false) => {
+    const slot = { getAttribute(name) {
+      if (name === 'data-slot-index') return String(index);
+      if (name === 'data-sk' || (name === 'data-skill-id' && !fallback)) return ref;
+      return null;
+    } };
+    c.clickLoadout({ target: { closest(selector) {
+      if (selector === '[data-skill-unequip]') return remove ? { getAttribute() { return ref; } } : null;
+      if (selector === '#skill-loadout .battle-skill-slot.equipped') return slot;
+      return null;
+    } } });
+  };
+  return state;
+}
+
+test('下方快捷格同步左側群組與最高已學階，捲入可見處且不送裝配指令', () => {
+  const c = loadContext();
+  const snap = snapshot({ rockarmor: Array(7).fill(10), icearrow: [10, 10, 3, 0, 0, 0, 0] });
+  c.sgbSelectGroup('rockarmor', snap);
+  c.UI.sgBrowse.filter = 'magic';
+  const h = loadoutClickHarness(c, snap);
+  h.click('sg:icearrow', 3);
+  assert.equal(c.UI.selectedSkillLoadoutIndex, 3);
+  assert.equal(h.selected, 'icearrow');
+  assert.equal(c.UI.sgBrowse.filter, 'magic');
+  assert.equal(c.UI.sgBrowse.tier, 2);
+  assert.equal(c.UI.sgBrowse.focus, 'tier');
+  assert.match(h.detail, /data-sgb-tier="2" aria-expanded="true"/);
+  assert.deepEqual(h.scrolls, [{ selector: '#sgb-items [data-sgb-group="icearrow"]', block: 'nearest' }]);
+  assert.equal(h.renders, 1);
+  assert.deepEqual(h.commands, []);
+});
+
+test('快捷技能被篩選隱藏時切全部，選中已學超神；重點快捷格仍同步焦點', () => {
+  const c = loadContext();
+  const snap = snapshot({ icearrow: Array(7).fill(10) });
+  snap.skills2.progress = { level: 1000, reinc: 0 };
+  snap.skills2.ult = { icearrow: { pick: 1, lv: 10 } };
+  c.UI.sgBrowse.filter = 'phys';
+  const h = loadoutClickHarness(c, snap);
+  h.click('sg:icearrow', 3, false, true);
+  assert.equal(c.UI.sgBrowse.filter, 'all');
+  assert.equal(c.UI.sgBrowse.gid, 'icearrow');
+  assert.equal(c.UI.sgBrowse.focus, 'ult');
+  assert.equal(c.UI.sgBrowse.ultFocus, 1);
+  assert.match(h.detail, /sgb-ult-detail/);
+  c.UI.sgBrowse.tier = 0;
+  c.UI.sgBrowse.focus = 'tier';
+  h.click('sg:icearrow', 3);
+  assert.equal(c.UI.selectedSkillLoadoutIndex, -1);
+  assert.equal(c.UI.sgBrowse.focus, 'ult');
+  assert.equal(c.UI.sgBrowse.ultFocus, 1);
+  assert.equal(h.renders, 2);
+  assert.deepEqual(h.commands, []);
+});
+
+test('無群組的快捷技能與無效槽索引不改左側群組，卸下按鈕優先只送一次卸下', () => {
+  const c = loadContext();
+  const snap = snapshot({ rockarmor: Array(7).fill(10) });
+  c.sgbSelectGroup('rockarmor', snap);
+  const before = JSON.stringify(c.UI.sgBrowse);
+  const h = loadoutClickHarness(c, snap);
+  for (const ref of ['potential:0', 'sg:missing']) {
+    h.click(ref, 1);
+    assert.equal(JSON.stringify(c.UI.sgBrowse), before);
+  }
+  assert.equal(h.scrolls.length, 0);
+  h.click('sg:icearrow', 'invalid');
+  assert.equal(h.renders, 2);
+  h.click('sg:rockarmor', 0, true);
+  assert.equal(c.UI.selectedSkillLoadoutIndex, -1);
+  assert.equal(JSON.stringify(c.UI.sgBrowse), before);
+  assert.equal(h.renders, 2);
+  assert.equal(h.commands.length, 1);
+  assert.equal(h.commands[0][0], 'skill.unequipLoadout');
+  assert.equal(h.commands[0][1], 'sg:rockarmor');
+});
+
 test('未解鎖的階只能查看，不產生升級鈕', () => {
   const c = loadContext();
   // 寒冰箭第 4 階要 Lv.600，角色 Lv.576 → 鎖住
