@@ -292,7 +292,7 @@ function spawnFieldMonster(append) {
             runSpeed: profile.runSpeed, atkRange: profile.atkRange, // 座標單位；0＝用戰場預設 → js/battlefield.js
             elite: elite, isBoss: boss,
             gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
-            atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 控場遞減計時起點 → formula.js §3
+            atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 帶 _spawnAt ＝ 吃控場遞減（→ formula.js「控場效果遞減」）
             _stage: s,   // 這一隻屬於哪一關（過關配額只認本關的擊殺，見 onFieldKill）
             /* 進場倒數：走進畫面前不可攻擊也不可被攻擊（→ fieldCombatReady）。
                同一波逐隻錯開，避免整排同時抵達。 */
@@ -470,16 +470,58 @@ function hasConfiguredHigherZone(zoneKey) {
    以及把實例寫進 effects／dots／buffs 三個索引。每筆實例都帶 sid 指回狀態表，
    舊呼叫點沒帶 sid 時由鍵值／名稱反查補上（statusIdByKey／statusIdByName）。 */
 
-/* 攻擊頻率控制類套用「控場遞減」（controlDurationFactor → formula.js §3）；
-   成功回傳實際持續秒數（供顯示），遞減歸零或 BOSS 免疫回傳 false。 */
+/* ---- 控場效果遞減（規則與參數 → formula.js「控場效果遞減」）----
+   狀態與控場效果是兩份記錄：
+     狀態  ent.effects／ent.buffs   完整的數值與持續時間（UI 狀態列、「暈眩中增傷」「凍結中」等判定都讀它）
+     控場  ent.ccLock[cat]          控場實際生效到什麼時候＝施加時間 + 持續時間 × 遞減倍率
+           ent.ccDr[cat]            { n 已計次數, last 上次計次時刻, f 這一輪的遞減倍率 }
+   遞減歸零只代表「控場效果沒有了」，狀態依然完整掛在身上。
+   只有帶 _spawnAt 的敵人實體會遞減；玩家與沒登記過的實體一律視為控場永遠生效。 */
+function ccTracked(ent) { return !!(ent && ent._spawnAt !== undefined && ent._spawnAt !== null); }
+
+/* 登記一次控場：依類別決定算不算新的一次、定下這一輪的遞減倍率，並把控場生效時間往後推。
+   cats＝statusControlCats(效果鍵)；dur＝狀態的完整持續秒數。 */
+function ccRegister(ent, cats, dur) {
+    if (!ccTracked(ent) || !cats) return;
+    if (!ent.ccDr) { ent.ccDr = {}; ent.ccLock = {}; }
+    for (var i = 0; i < cats.length; i++) {
+        var c = cats[i];
+        var rec = ent.ccDr[c] || (ent.ccDr[c] = { n: 0, last: -1e9, f: 1 });
+        var lockUntil = ent.ccLock[c] || 0;
+        var active = lockUntil > GT;
+        var counts = (c === 'act') ? (GT - rec.last >= CONTROL_DECAY_MERGE_SEC) : !active;
+        if (counts) {
+            rec.f = controlDecayFactor(c, rec.n);
+            rec.n++;
+            rec.last = GT;
+        }
+        var until = GT + dur * rec.f;
+        ent.ccLock[c] = active ? Math.max(lockUntil, until) : until;
+    }
+}
+/* 這一類控場現在有沒有在作用。沒登記的實體（玩家等）恆為 true，行為與改版前一致。 */
+function ccLockOn(ent, cat) {
+    if (!ccTracked(ent)) return true;
+    return !!(ent.ccLock && (ent.ccLock[cat] || 0) > GT);
+}
+/* 強制讓某類控場生效 dur 秒：不計次、不遞減（時空凝滯這類「任何敵人都無法免疫」的大絕用）。 */
+function ccForceLock(ent, cat, dur) {
+    if (!ccTracked(ent) || !(dur > 0)) return;
+    if (!ent.ccLock) { ent.ccDr = ent.ccDr || {}; ent.ccLock = {}; }
+    ent.ccLock[cat] = Math.max(ent.ccLock[cat] || 0, GT + dur);
+}
+/* 敵人現在是不是被限制行動（無法普攻與施放技能）。暈眩狀態還在，但「無法行動」的控場已經遞減掉時回傳 false。 */
+function ccActionLocked(ent) { return effectActive(ent, 'stun') && ccLockOn(ent, 'act'); }
+/* 潛力【時間結界】的敵人攻速降低%（拉長攻擊間隔用）：攻速控場失效時為 0。 */
+function enemyAspdDownPct(ent) { return ccLockOn(ent, 'aspd') ? buffVal(ent, 'enemyAspdDown') : 0; }
+
+/* 控制類狀態的寫入：狀態一律以完整持續時間寫入，控場遞減另記在 ccLock（見上）。
+   BOSS 對攻擊頻率類控制完全免疫（回傳 false）；其餘一律成功並回傳狀態的持續秒數。 */
 function applyEffect(ent, key, dur) {
     if (key !== 'invuln' && effectActive(ent, 'invuln')) return false; // 無敵：免疫負面效果（暈眩/減速等）
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
     if (typeof legendaryControlDuration === 'function') dur = legendaryControlDuration(ent, key, dur);
-    if (isAttackFrequencyControlKey(key)) {
-        dur *= controlDurationFactor(ent);
-        if (dur <= 0) return false;
-    }
+    ccRegister(ent, statusControlCats(key), dur);
     ent.effects[key] = GT + dur;
     return dur;
 }
@@ -520,14 +562,12 @@ function cleanse(ent) {
 }
 
 /* ---- 增益 / 減益（技能系統用） ----
-   攻速類減益同樣套用「控場遞減」；成功回傳實際持續秒數，歸零/免疫回傳 false。 */
+   攻速／移速類減益同樣登記「控場遞減」（狀態照寫完整時間，控場效果另記）；
+   成功回傳持續秒數，BOSS 對攻擊頻率類控制免疫回傳 false。 */
 function applyBuff(ent, key, val, dur, sid, stackCfg) {
     if ((key === 'atkDown' || key === 'defDown' || key === 'sgDefBrk') && effectActive(ent, 'invuln')) return false; // 無敵：免疫敵方減益
     if (isBossControlImmune(ent) && isAttackFrequencyControlKey(key)) return false;
-    if (isAttackFrequencyControlKey(key)) {
-        dur *= controlDurationFactor(ent);
-        if (dur <= 0) return false;
-    }
+    ccRegister(ent, statusControlCats(key), dur);
     if (!ent.buffs) ent.buffs = {};
     var prev = ent.buffs[key];
     var st = stackStep(stackCfg, prev && prev.until > GT ? prev : null, val);
@@ -1136,7 +1176,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
         // 被動：暈眩 / 減速
         if (!res.killed) {
             if ((st.passives.stun || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.stun) && !resistCtrl(monsterDefCfg(mEnt))) {
-                if (applyEffect(mEnt, 'stun', 1)) logMsg += '<span class="log-hl-good">將其擊暈！</span>'; // 控場遞減歸零時不誤報
+                if (applyEffect(mEnt, 'stun', 1) && ccLockOn(mEnt, 'act')) logMsg += '<span class="log-hl-good">將其擊暈！</span>'; // 控場遞減歸零（只剩狀態、沒有控場效果）時不誤報
             }
             if ((st.passives.slowHit || 0) > 0 && !isBossControlImmune(mEnt) && chance(st.passives.slowHit) && !resistCtrl(monsterDefCfg(mEnt))) {
                 applyEffect(mEnt, 'slow', 3);
@@ -1422,7 +1462,7 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
 
 // 執行一次野外敵人攻擊。新波生成時也會走這個入口，讓首次攻擊不必等下一個 tick。
 function fieldMonsterAttack(m, p) {
-    if (!m || m.hp <= 0 || effectActive(m, 'stun')) return false;
+    if (!m || m.hp <= 0 || ccActionLocked(m)) return false;
     /* 打不到就不打。座標制改版前這裡沒有任何距離判定——站在戰場最遠端的敵人
        照樣打得到玩家，畫面上就是隔空互毆。魔法系是遠程，其餘要貼到近戰距離。 */
     if (typeof bfInAttackRange === 'function' && !bfInAttackRange(m)) return false;
@@ -1430,7 +1470,7 @@ function fieldMonsterAttack(m, p) {
         ? legendaryChooseEnemyAttackTarget(p) : p;
     doMonsterAttack(m, attackTarget, 'pv-float');
     // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔（降低後攻速 = 原攻速/(1+降低%)）
-    m.atkCd += (1 / m.aspd) * (1 + buffVal(m, 'enemyAspdDown') / 100);
+    m.atkCd += (1 / m.aspd) * (1 + enemyAspdDownPct(m) / 100);
     if (p.hp <= 0) { onPlayerFieldDeath(); return true; }
     if (m.hp <= 0) onFieldKill(m); // 反震擊殺
     return false;
@@ -1733,7 +1773,7 @@ function fieldTick(dt) {
            combatFieldEnemies 已經篩掉，這裡一併防呆。 */
         if (firstStrikers.length && firstStrikers.indexOf(m) >= 0) continue;
         if (spawnedEnemies && spawnedEnemies.indexOf(m) >= 0) continue;
-        if (!effectActive(m, 'stun')) {
+        if (!ccActionLocked(m)) {
             m.atkCd -= dt * slowFactor(m);
             if (m.atkCd <= 0 && fieldMonsterAttack(m, p)) return;
         }

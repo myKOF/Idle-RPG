@@ -15,16 +15,21 @@ function setup(lv = 1) {
   c.chance = () => false;
   return { h, c, p, hits, specs, realHit };
 }
-test('極致之冰：各來源凍結延長與遞減後標記、暈眩時間一致', () => {
+test('極致之冰：各來源凍結延長；控場遞減只縮短「無法行動」，凍結標記與暈眩狀態維持完整時間', () => {
   for (const [lv, sec] of [[1,4.65],[5,5.25],[10,6]]) {
     for (const [gid,tier] of [['icearrow','2'],['waterball','3'],['frostnova','1']]) {
       const {h,c} = setup(lv), e = h.enemy(1e9,0,0,'source');
+      e._spawnAt=0; // 測試用敵人沒有 _spawnAt（＝不登記控場遞減），補上才會吃遞減
       assert.ok(Math.abs(c.sgFreezeTarget(e,{gid,tier})-sec)<1e-9);
       assert.ok(Math.abs(e.buffs.sgFrozen.until-sec)<1e-9);
       assert.equal(e.buffs.sgFrozen.until, e.effects.stun);
-      e._spawnAt=-50;
+      assert.ok(Math.abs(e.ccLock.act-sec)<1e-9);            // 第 1 次被控：無法行動的時間不遞減
+      c.GT=100;
       const again = c.sgFreezeTarget(e,{gid,tier});
-      assert.ok(again < sec); assert.equal(e.buffs.sgFrozen.until,e.effects.stun);
+      assert.ok(Math.abs(again-sec)<1e-9);                    // 標記仍是完整秒數
+      assert.ok(Math.abs(e.buffs.sgFrozen.until-(100+sec))<1e-9);
+      assert.equal(e.buffs.sgFrozen.until,e.effects.stun);    // 暈眩狀態同樣完整
+      assert.ok(Math.abs(e.ccLock.act-(100+sec*0.95))<1e-9);  // 第 2 次被控：無法行動只剩 95%
     }
   }
 });

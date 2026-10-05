@@ -289,7 +289,7 @@ function towerTick(dt) {
 
   // BOSS 攻擊（死亡的 BOSS 不得再行動）
   if (b.hp <= 0) { endTowerFight(true); return; }
-  if (!effectActive(b, 'stun')) {
+  if (!ccActionLocked(b)) {
     var mult = TOWER.enraged ? bcfg.enrageMult : 1;
     b.atkCd -= dt * slowFactor(b);
     /* 打不到就不打（同野外 fieldMonsterAttack）：冷卻停在 ready，進射程當下出手。 */
@@ -303,7 +303,7 @@ function towerTick(dt) {
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
       TOWER.bossDmgDealt += Math.max(0, (bossHit.dmg || 0));
       // 潛力【時間結界】：敵攻速降低 → 拉長攻擊間隔。
-      b.atkCd += (1 / b.aspd) * (1 + buffVal(b, 'enemyAspdDown') / 100);
+      b.atkCd += (1 / b.aspd) * (1 + enemyAspdDownPct(b) / 100);
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }
       if (b.hp <= 0) { endTowerFight(true); return; } // 反震擊殺
     }

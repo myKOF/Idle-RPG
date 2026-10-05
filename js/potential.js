@@ -130,9 +130,11 @@ function firePotentialActive(pEnt, def, live, floatSel, st) {
       for (var b = 0; b < live.length; b++) {
         // 直接寫入 stun 時戳，繞過 applyEffect 的 BOSS 控場免疫與控場遞減：
         // 時空凝滯為時間靜止大絕，設計上任何敵人（含 BOSS）皆無法免疫、每次都是完整持續時間。
+        // 「無法行動」的控場記錄（ccLock）一併強制生效，且不計入遞減次數。
         var frozenEnt = live[b];
         frozenEnt.effects = frozenEnt.effects || {};
         frozenEnt.effects.stun = Math.max(frozenEnt.effects.stun || 0, GT + dur);
+        ccForceLock(frozenEnt, 'act', dur);
         frozen++;
       }
       floatPlayerEvent(floatSel, def.emoji + ' 全傷+' + fmt1(val) + '%', 'attack');
