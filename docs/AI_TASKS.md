@@ -11,6 +11,16 @@
 - 瀏覽器：隔離headless Edge／全新Context／隨機Port唯讀HTTP服務，正式Worker與seed=9拋棄式12孔裝備、48類寶石。暫時關閉透明命中區作前後對照，取樣24點鑲孔皆無回應、洗煉4點無回應；啟用正式CSS後1920／1280、兩模式逐次滑鼠點上／下／左／右緣及gap兩端，共96次全部選到命中項目，選孔／屬性皆不送Worker指令。逐物理像素四條縱向掃描各512／340點，四案例共1704點皆能命中選項或原卸下鈕；子像素邊界以浏览器實際映射鄰項判定，不將邊界分派當作死區。寶石48節點全部保留、操作列／背包矩形完全相同、文字tooltip仍可命中原提示元素。pending中點列外緣仍不切選，解除恢復；實際點第2孔卸下僅一次gem.unsocket index1，正確移除／返還。Console error／warning與Worker errors皆0；無真人存檔／臨時檔變更。
 - 交付：Commit為本紀錄所在`[Codex] fix: 消除鑲孔與洗煉列的點擊死區`提交。無未完成本次需求或已知新增風險，可合併，未合併／推送。下一步使用者重載確認整列與空隙可選並審查整合；其他進行中任務仍保留未提交。
 
+## ELITE-HALO-VISIBLE-20261005 — 放大菁英光暈至肉眼可辨
+
+- Owner：Codex；Review（待快取單行修改同意）。使用者回報加回後仍看不出來，要求更大、至少肉眼可辨。前置ELITE-HALO-RESTORE已完成，當前0.28／1.3／add確認存在；單一開發者。renderer／本紀錄預檢乾淨，index有Claude未提交的ui.js版號更新（926行），已詢問僅改914行renderer快取，取得同意前不改；後續接手者使用者。
+- 允許js/battle-renderer.js僅菁英光暈透明度／縮放、index.html僅renderer必要快取及本紀錄；禁止技能／數值／Worker／其他功能／素材／其他副本、合併／推送。保留使用者lightning-orb-field-purple.json既有修改，不納入本次提交；無素材製作或外部參考。
+- 驗收alpha0.42、scale1.65，保留add及紫色／位置／其他菁英辨識、一般敵人與Boss不變；正式Pixi前後渲染對照、既有戰場／敵方特效回歸、Build／diff檢查後獨立Commit。
+- 已完成：js/battle-renderer.js菁英alpha0.28→0.42、scale1.3→1.65（強度+50%、直徑約+27%），add／紫色／位置／骷髏／名稱／血條不變；本紀錄同步。唯讀檢查未改makeMobBody／glowTexture／drawHpBar、tests/helpers/battle-scene.cjs、tools/build_check.cjs、既有定向測試／協作規範及index快取。未改技能、Worker、素材或其他副本，不需素材庫Commit。
+- 驗證：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-editor-cache-versions.test.cjs`51/51通過；`npm.cmd run build`442檔通過；`git diff --check`通過。Node VM執行正式makeEnemy確認新alpha／雙軸縮放／add、原菁英標記保留、普通敵人及Boss無此光暈。
+- 視覺驗證：隔離Edge headless／WebGL、隨機Port唯讀服務，載正式Pixi，執行正式makeEnemy／makeMobBody／glowTexture／drawHpBar（只替換場景與時間邊界），同一emoji／密度0.65／顯示縮放0.75，左右各單隻＋5隻重疊，確認右側紫光較明顯。前後對照已檢視並交付於本聊天visualizations目錄elite-halo-visible-20261005.png；不是真人存檔或密集技能實戰，pageerror0，瀏覽器／服務正常關閉，未產生repo暫存檔。
+- 未完成：index renderer快取1.6.170→1.6.171尚待使用者確認，因此尚未Commit、不可視為完整可合併交付。未修改正在進行的裝備點擊區任務或使用者素材。已知限制：高密度重疊仍會累積加色亮度，實戰需重載觀察；下一步取得單行快取同意後更新、隔離暫存本任務3檔並Commit，不合併／推送。
+
 ## EQUIP-SOCKET-PICK-PERF-20261005 — 調查切孔延遲及減少重複控制項更新
 
 - Owner：Codex；Done。使用者回報切鑲孔仍稍有延遲，要求查是否每次刷新全部寶石。前置鑲嵌局部渲染已完成；目標衝突預檢乾淨，單一開發者。允許js/ui.js限定鑲嵌控制項同步、index.html對應快取、tests/equip-socket-ui.test.cjs與本紀錄；禁止Worker／規則／數值／素材／存檔／其他副本、合併／推送。既有使用者lightning-orb-field-purple.json修改保留不提交。後續接手者使用者。

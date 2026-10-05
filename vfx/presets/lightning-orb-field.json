@@ -19,8 +19,8 @@
         "y": 0.2038
       },
       "alpha": 0.8,
-      "tint": "#0264e3",
-      "blendMode": "add",
+      "tint": "#539bf9",
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
@@ -145,7 +145,7 @@
         "y": 0.0756
       },
       "alpha": 0.5,
-      "tint": "#80b7ff",
+      "tint": "#ffffff",
       "blendMode": "normal",
       "alphaOverLife": [
         [
@@ -268,8 +268,8 @@
         "y": 0
       },
       "scale": {
-        "x": 0.1747,
-        "y": 0.1747
+        "x": 0.1951,
+        "y": 0.1951
       },
       "anchor": {
         "x": 0.5,
@@ -277,7 +277,8 @@
       },
       "alpha": 0.5,
       "tint": "#ffffff",
-      "blendMode": "add",
+      "blendMode": "normal",
+      "rotationSpeed": 0.2617993877991494,
       "alphaOverLife": [
         [
           0,
@@ -506,11 +507,11 @@
         "y": 0
       },
       "scale": {
-        "x": 0.1562,
-        "y": 0.1562
+        "x": 0.1348,
+        "y": 0.1348
       },
       "alpha": 0.8,
-      "tint": "#000000",
+      "tint": "#ffffff",
       "blendMode": "screen"
     }
   ]

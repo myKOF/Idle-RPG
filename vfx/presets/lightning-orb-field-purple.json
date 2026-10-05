@@ -19,7 +19,7 @@
         "y": 0.2038
       },
       "alpha": 0.8,
-      "tint": "#c495fe",
+      "tint": "#b375ff",
       "blendMode": "normal",
       "alphaOverLife": [
         [
@@ -145,8 +145,8 @@
         "y": 0.0929
       },
       "alpha": 0.6,
-      "tint": "#ffffff",
-      "blendMode": "add",
+      "tint": "#000000",
+      "blendMode": "normal",
       "alphaOverLife": [
         [
           0,
@@ -268,16 +268,17 @@
         "y": 1
       },
       "scale": {
-        "x": 0.2253,
-        "y": 0.2253
+        "x": 0.2066,
+        "y": 0.2066
       },
       "anchor": {
         "x": 0.5,
         "y": 0.5
       },
       "alpha": 0.5,
-      "tint": "#a116fe",
+      "tint": "#ffffff",
       "blendMode": "add",
+      "rotationSpeed": 0.17453292519943295,
       "alphaOverLife": [
         [
           0,
@@ -397,7 +398,7 @@
         "x": 0,
         "y": 0
       },
-      "tint": "#fbc1f3",
+      "tint": "#fe81ed",
       "blendMode": "screen",
       "emission": {
         "mode": "rate",
@@ -471,24 +472,24 @@
           0
         ],
         [
-          0.152,
-          0.09978
+          0.1481,
+          0.890118
         ],
         [
           0.3088,
           -0.072542
         ],
         [
-          0.4608,
-          0.087443
+          0.463,
+          0.680678
         ],
         [
           0.6275,
           -0.070154
         ],
         [
-          0.8039,
-          0.087443
+          0.787,
+          0.680678
         ],
         [
           0.9951,
