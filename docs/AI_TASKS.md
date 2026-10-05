@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## EQUIP-ROW-SPACING-20261005 — 洗煉與鑲孔間距減少及未選列去框
+
+- Owner：Codex；Done。使用者要求洗煉屬性及鑲嵌孔位列的間距縮短25%，未選項無外框；沿現有8px列間距改為6px，只選中列保留綠色框。以透明等寬邊框保留幾何，選取／懸停不跳動；保持既有固定操作列及背包位置。
+- 前置既有四功能／選取樣式已完成，目標預檢乾淨；單一開發者。允許css/ashen-forge.css限定列間距／邊框、index.html對應快取、tests/affix-actions-layout.test.cjs既有間距期望及本紀錄；禁止UI邏輯、Worker／配置／素材／其他副本、合併／推送。既有lightning-orb-field-purple.json使用者素材未提交修改保留，不納入本次Commit。後續接手者使用者。
+- 驗收間距8→6px、未選與懸停無框、选中綠框保留、換選尺寸／位置與四功能切換固定、長孔位仍可捲動操作，定向回歸／Build／正式瀏覽器Console後Commit。
+- 完成：洗煉列與鑲嵌孔列gap均6px；兩種可選列的共用邊框改透明，選中沿既有綠色border-color。已鑲但未選孔懸停亦維持透明，避免舊hover灰框重新出現；保留40px列高、內容對齊、卸下小按鈕及選中色底，不改一般詳情的非操作寶石樣式。CSS快取1.0.55。
+- 修改4檔：css/ashen-forge.css、index.html、tests/affix-actions-layout.test.cjs原間距斷言及本紀錄。唯讀檢查未改：css/style.css／ashen-forge-flat.css、js/item.js／ui.js、scripts/sim/engine.js及其餘五份相關回歸測試；無素材庫變更／Commit。起始使用者lightning-orb-field-purple.json仍保留未提交。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；`npm.cmd run build`442檔通過；`git diff --check`通過。
+- 瀏覽器：獨立隨機Port唯讀HTTP服務、全新headless Edge Context、seed=9拋棄式資料＋正式Worker；1920×1080及1280×720、4孔及12孔／48類寶石。兩種列實際gap皆6px，未選／懸停border透明、选中rgb(74,222,128)；點另一屬性及已鑲孔，原項去框／新項綠框，所有列的矩形不變。四功能切換操作列／每顆按鈕／背包矩形全部相同，長孔與寶石仍可捲到末尾，孔／寶石子區無捲軸。初次量測在捲到底後點第2孔，Playwright正常捲回上方導致viewport座標不同；改為同捲動位置比較後通過，沒有改產品或放寬位置要求。Console error／warning及Worker errors均0；服務／瀏覽器已關閉，無臨時檔或真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 縮短洗煉與鑲孔間距並隱藏未選外框`提交。無未完成需求或已知本次新增風險，可合併；未合併／推送，未做長時間真人操作。下一步使用者重載檢查並審查整合。
+
 ## EQUIP-MODE-POSITION-20261005 — 四功能切換固定操作列與背包位置
 
 - Owner：Codex；Done。使用者回報切鑲嵌時四功能按鈕與背包微幅下移，要求強化／洗煉／鑲嵌／附魔切換均不位移。前置共用裝備詳情已完成，工作區乾淨、目標衝突預檢乾淨；單一開發者。

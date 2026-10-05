@@ -1604,7 +1604,7 @@ html *::-webkit-scrollbar-corner {
 
 /* 洗煉模式：整條文字區可選取，預留放大字體所需高度，換選時版面不跳。 */
 #tab-equip #detail-pane .it-affixes.is-reroll-mode {
-  gap: 8px;
+  gap: 6px;
 }
 
 #tab-equip #detail-pane .it-affix-row.is-reroll-pickable {
@@ -1618,7 +1618,7 @@ html *::-webkit-scrollbar-corner {
   box-sizing: border-box;
   min-height: 40px;
   padding: 9px 8px;
-  border: 1px solid #3a3d44;
+  border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
   line-height: 20px;
@@ -1694,7 +1694,7 @@ html *::-webkit-scrollbar-corner {
   text-decoration: none;
 }
 
-#tab-equip #detail-pane .it-sockets .socket.filled.socket-row:not(.is-socket-selected):hover { border-color: #5a5d66; }
+#tab-equip #detail-pane .it-sockets .socket.filled.socket-row:not(.is-socket-selected):hover { border-color: transparent; }
 
 #tab-equip #detail-pane .it-sockets .socket.filled:not(.socket-row) { cursor: default; }
 
@@ -1772,7 +1772,7 @@ html *::-webkit-scrollbar-corner {
   gap: 8px;
 }
 
-#tab-equip #detail-pane.is-socket-page .it-sockets { gap: 8px; margin-top: 0; }
+#tab-equip #detail-pane.is-socket-page .it-sockets { gap: 6px; margin-top: 0; }
 
 #tab-equip #detail-pane .socket-pick {
   display: flex;

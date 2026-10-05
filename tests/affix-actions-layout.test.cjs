@@ -25,7 +25,7 @@ test('equipment affix rows use full width and enlarge selected text without movi
   assert.match(css, /\.it-affix-text\s*{[\s\S]*white-space:\s*nowrap/);
   assert.doesNotMatch(css, /affix-reroll-btn|it-affix-action/);
   const skin = fs.readFileSync(path.join(root, 'css/ashen-forge.css'), 'utf8');
-  assert.match(skin, /\.it-affixes\.is-reroll-mode\s*\{\s*gap:\s*8px/);
+  assert.match(skin, /\.it-affixes\.is-reroll-mode\s*\{\s*gap:\s*6px/);
   assert.match(skin, /\.it-affix-row\.is-reroll-pickable\s*\{[^}]*min-height:\s*40px/);
   assert.match(skin, /\.it-affix-row\.is-reroll-selected \.afx-val\s*\{\s*font-size:\s*18px/);
   assert.doesNotMatch(skin, /affixRerollFlash|affix-reroll-btn/);
