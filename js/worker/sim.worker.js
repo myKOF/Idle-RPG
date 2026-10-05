@@ -10,7 +10,7 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=44', 'shim.js?v=10');
+importScripts('protocol.js?v=44', 'shim.js?v=11');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261003-storm-mountain-vfx', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261003-storm-mountain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261004-socket-page',

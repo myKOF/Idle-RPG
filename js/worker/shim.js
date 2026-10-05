@@ -37,9 +37,17 @@ var SHIM_EVENT_CAP = 400;
 var _shimEvents = [];
 /* 每個模擬步清一次（sim.worker.js emitUrgentVisualEvents）的上限。
    2026-10-01：80 擋不住一次滿支數的無限冰裂（36 支貫穿箭發射事件＋72 個追擊場域的逐拍刷新＝100 多件），
-   所以放寬到 160；真正的保護是下面的「滿了先丟持續刷新」，不是這個數字。 */
-var SHIM_URGENT_VISUAL_CAP = 160;
+   放寬到 160；2026-10-05 再放寬到 512——引擎實測 300 隻敵人時一步最多 239 件、600 隻 465 件，
+   160 會讓雷球與風刃追擊的「場域第一則事件」偶爾被擠掉（600 隻時風刃追擊誕生 2/4）。
+   一件是幾十個欄位的小物件，512 件的訊息仍是微秒到毫秒等級；真正的保護是下面的「滿了先丟刷新」。 */
+var SHIM_URGENT_VISUAL_CAP = 512;
 var _shimUrgentVisualEvents = [];
+/* 持續場域「最近一次送出」的步序，用來認出「場域的第一則事件」（誕生）：
+   誕生事件掉了，顯示層就整個場域不建，要等下一拍的刷新才補得回來（剛裝上的技能看起來像沒特效）。 */
+var _shimSustainSeenAt = {};
+var _shimVisualStep = 0;
+var SHIM_SUSTAIN_REBIRTH_STEPS = 20;     // 這麼多步沒送過同一個場域，再出現就當作新的一個
+var _shimBirthSet = new Set();           // 這一批裡屬於「誕生」的事件（以身分比對，不寫進事件，免得被送去主執行緒）
 var _shimEventsDropped = 0;
 var _shimBackground = false;
 var _shimLatestBackgroundFloat = null;
@@ -84,18 +92,43 @@ function shimIsSustainVisualEvent(data) {
   return !!data && data.kind === 'vfx' && data.fxKind === 'aura' && !!(data.area && data.area.id);
 }
 
+function shimSustainKey(data) {
+  return String(data.variant || '') + '|' + data.area.id;
+}
+
+/* 這個持續刷新是不是場域的第一則（或沉默很久之後的重新出現）。只讀、不登記——
+   登記要等事件真的進了佇列（見 shimPushEvent），否則誕生事件被丟之後，
+   下一拍的刷新會被當成「已經送過了」而一路被當刷新丟掉。 */
+function shimIsSustainBirth(data) {
+  var last = _shimSustainSeenAt[shimSustainKey(data)];
+  return last === undefined || _shimVisualStep - last > SHIM_SUSTAIN_REBIRTH_STEPS;
+}
+
+/* 一批清出去之後：換下一個步序、清掉這一批的誕生標記，並定期清掉很久沒出現的場域。 */
+function shimEndVisualBatch() {
+  _shimVisualStep++;
+  _shimBirthSet.clear();
+  if (_shimVisualStep % 50 === 0) {
+    for (var key in _shimSustainSeenAt) {
+      if (_shimVisualStep - _shimSustainSeenAt[key] > SHIM_SUSTAIN_REBIRTH_STEPS * 5) delete _shimSustainSeenAt[key];
+    }
+  }
+}
+
 /* 佇列滿了的取捨：舊版一律丟最舊的，而一次施放的發射事件永遠排在同一步的最前面（最舊），
    後面接著每個存活場域的逐拍刷新——場域一多，剛施放的箭整批被擠出去，
    傷害照算、敵人照死，畫面上卻一支箭都沒有（2026-10-01 無限冰裂實測：36 支發射事件全丟）。
-   現在：進來的是持續刷新就直接丟它；進來的是一次性事件就先擠掉最舊的持續刷新，
-   佇列裡沒有持續刷新時才維持原本的丟最舊。 */
-function shimEvictForUrgent(incoming) {
+   價值由低到高：持續刷新 ＜ 一次性事件與場域誕生。
+   進來的是刷新就直接丟它（下一拍還會再送）；進來的是別的事件就先擠掉最舊的刷新（不動誕生事件），
+   佇列裡沒有刷新可讓時才維持原本的丟最舊。回傳 false＝丟掉進來的這一件。 */
+function shimEvictForUrgent(incoming, incomingIsBirth) {
   var q = _shimUrgentVisualEvents;
-  if (shimIsSustainVisualEvent(incoming)) return false;
+  if (shimIsSustainVisualEvent(incoming) && !incomingIsBirth) return false;
   for (var i = 0; i < q.length; i++) {
-    if (shimIsSustainVisualEvent(q[i])) { q.splice(i, 1); return true; }
+    if (shimIsSustainVisualEvent(q[i]) && !_shimBirthSet.has(q[i])) { q.splice(i, 1); return true; }
   }
-  q.shift();
+  var dropped = q.shift();
+  if (dropped) _shimBirthSet.delete(dropped);
   return true;
 }
 
@@ -103,7 +136,11 @@ function shimPushEvent(kind, data) {
   data = data || {};
   data.kind = kind;
   if (shimIsUrgentVisualEvent(kind, data)) {
-    if (_shimUrgentVisualEvents.length >= SHIM_URGENT_VISUAL_CAP && !shimEvictForUrgent(data)) return;
+    var sustain = shimIsSustainVisualEvent(data);
+    var birth = sustain && shimIsSustainBirth(data);
+    if (_shimUrgentVisualEvents.length >= SHIM_URGENT_VISUAL_CAP && !shimEvictForUrgent(data, birth)) return;
+    if (sustain) _shimSustainSeenAt[shimSustainKey(data)] = _shimVisualStep;
+    if (birth) _shimBirthSet.add(data);
     _shimUrgentVisualEvents.push(data);
     return;
   }
@@ -134,6 +171,7 @@ function shimPushEvent(kind, data) {
 function shimDrainUrgentVisualEvents() {
   var out = _shimUrgentVisualEvents;
   _shimUrgentVisualEvents = [];
+  shimEndVisualBatch();
   return out;
 }
 
@@ -143,6 +181,7 @@ function shimDrainEvents() {
   if (_shimUrgentVisualEvents.length) {
     out = _shimUrgentVisualEvents.concat(out);
     _shimUrgentVisualEvents = [];
+    shimEndVisualBatch();
   }
   if (!_shimBackground && _shimLatestBackgroundFloat) {
     out.push(_shimLatestBackgroundFloat);

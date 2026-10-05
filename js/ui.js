@@ -551,30 +551,61 @@ function uiIsSustainVisualEvent(event) {
   return !!event && event.kind === 'vfx' && event.fxKind === 'aura' && !!(event.area && event.area.id);
 }
 
-/* 佇列滿了的取捨：舊版一律丟最舊的。無限冰裂實測（真實瀏覽器 20 秒）：
-   到達主執行緒的 270 個貫穿箭發射事件全數被丟、追擊刷新丟 97%、飄字丟 99%——
-   發射事件早就排在一大堆逐拍刷新與飄字前面，一滿就先被擠掉，畫面上一支箭都沒有。
-   現在：進來的是持續刷新就直接丟它；進來的是別的事件就先擠掉最舊的持續刷新，
-   佇列裡沒有持續刷新時才維持原本的丟最舊。 */
+/* 佇列裡事件的價值等級（滿了時先犧牲低的）：
+     0 飄字——量最大（300 隻敵人時每秒約 3,300 件）、單件價值最低，本來就有依年齡丟棄的規則
+     1 持續刷新——掉一則下一拍還會再來，而且同一個場域的刷新彼此可以合併（見下）
+     2 一次性事件與場域的第一則（發射、命中、爆點、場域誕生）——掉了就是整個特效不見 */
+function uiVisualRank(event) {
+  if (!event) return 2;
+  if (event.kind === 'float') return 0;
+  return uiIsSustainVisualEvent(event) ? 1 : 2;
+}
+
+function uiSameSustainField(a, b) {
+  return a.area.id === b.area.id && (a.variant || '') === (b.variant || '');
+}
+
+/* 佇列的兩個規則（2026-10-01 無限冰裂、2026-10-05 臨界雷劫回報）：
+
+   ① 同一個場域的持續刷新就地合併。佇列裡已經有還沒處理的同一場域刷新，就把它換成最新那則，
+      不多佔名額、也不算丟棄。顯示層本來就以 area.id 合併、只取最新的位置與續命，所以內容不變，
+      但佇列長度從「每秒刷新數」變成「活著的場域數」，畫面卡頓後恢復時也不會把幾十則過期位置一次重播。
+
+   ② 滿了的取捨：舊版一律丟最舊的。無限冰裂實測（真實瀏覽器 20 秒）：發射事件 270 全丟、刷新丟 97%、
+      飄字丟 99%。臨界雷劫＋300 隻敵人（飄字每秒約 3,300 件、每個 5Hz tick 批次就 600 多件，
+      一批就把佇列裡還沒 flush 的特效整批擠掉）：雷球事件只有 42% 進得了渲染器。
+      畫面上的樣子就是「新技能特效播不出來」，以及刷新丟了、精靈過了保留窗就消失、
+      下一則刷新進來又重建的「播到一半消失又出現」。
+      現在依價值等級（uiVisualRank）犧牲：先擠掉最舊的飄字，再來才是最舊的持續刷新，
+      一次性事件最後才動。進來的事件價值比佇列裡最低的還低，就丟進來的那一件。 */
 function queueWorkerVisualEvent(event) {
   if (!event) return;
+  var q = UI_WORKER_VISUAL_EVENT_QUEUE;
   var nowQ = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
-  if (UI_WORKER_VISUAL_EVENT_QUEUE.length >= UI_WORKER_VISUAL_QUEUE_MAX) {
-    var evictAt = 0;
-    if (uiIsSustainVisualEvent(event)) evictAt = -1;
-    else {
-      for (var qi = 0; qi < UI_WORKER_VISUAL_EVENT_QUEUE.length; qi++) {
-        if (uiIsSustainVisualEvent(UI_WORKER_VISUAL_EVENT_QUEUE[qi])) { evictAt = qi; break; }
-      }
-    }
-    if (evictAt > 0) UI_WORKER_VISUAL_EVENT_QUEUE.splice(evictAt, 1);
-    else if (evictAt === 0) UI_WORKER_VISUAL_EVENT_QUEUE.shift();
-    uiNoteVisualDrop('cap', nowQ, nowQ - UI_VISUAL_DIAG.lastFlushAt > UI_WORKER_VISUAL_STALL_MS);
-    if (evictAt < 0) return;     // 進來的就是持續刷新：丟它，佇列不動
-  }
   event._qAt = nowQ;      // 進佇列的時刻，flush 用來判斷飄字是否已經過期
   if (typeof BattlePerf !== 'undefined' && BattlePerf.active) BattlePerf.noteArrival(event);
-  UI_WORKER_VISUAL_EVENT_QUEUE.push(event);
+  var rank = uiVisualRank(event);
+  if (rank === 1) {
+    for (var si = q.length - 1; si >= 0; si--) {
+      var queued = q[si];
+      if (queued && uiIsSustainVisualEvent(queued) && uiSameSustainField(queued, event)) {
+        q[si] = event;
+        scheduleWorkerVisualEventFlush();
+        return;
+      }
+    }
+  }
+  if (q.length >= UI_WORKER_VISUAL_QUEUE_MAX) {
+    var victim = -1, victimRank = 3;
+    for (var qi = 0; qi < q.length; qi++) {
+      var r = uiVisualRank(q[qi]);
+      if (r < victimRank) { victimRank = r; victim = qi; if (r === 0) break; }
+    }
+    uiNoteVisualDrop('cap', nowQ, nowQ - UI_VISUAL_DIAG.lastFlushAt > UI_WORKER_VISUAL_STALL_MS);
+    if (victimRank > rank) return;                 // 進來的比佇列裡最低的還低：丟進來的
+    if (victim === 0) q.shift(); else q.splice(victim, 1);
+  }
+  q.push(event);
   scheduleWorkerVisualEventFlush();
 }
 
