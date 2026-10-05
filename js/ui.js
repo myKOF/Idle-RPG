@@ -160,6 +160,46 @@ var UI_VISUAL_DIAG = {
   errorLogged: {}     // 訊息 -> 已印次數；同一種例外只印前 3 次，避免 60 次/秒洗版
 };
 
+/* 傷害數字合併分級（2026-10-05）。
+   敵人一多，飄字每秒上千件，佇列（UI_WORKER_VISUAL_QUEUE_MAX）與渲染器的同屏上限
+   （battle-renderer.js MAX_FLOATS）都會開始丟字——丟的是最舊的，數字就一片一片消失。
+   與其讓數字整件消失，不如把同一個目標的幾次命中加總成一個數字：總傷害不少、只是少了逐次明細。
+
+   分級由「丟字」驅動，一級一級往上：
+     第 0 級  不合併（平常）
+     第 1 級  5 合 1：同一目標、同一類別的命中，每 5 次併成 1 個數字
+     第 2 級  25 合 1：5 合 1 的再 5 合 1（上限 25 次併成 1 個）
+     再丟字     維持原本的丟棄（最舊的飄字先犧牲），不再加級
+   降級要同時滿足兩件事：丟字停了 calmMs，而且飄字的到達率掉到「當初升上這一級時」的 downFrac 以下。
+   只看「沒在丟字」是錯的——合併生效的時候本來就不丟字，降回去同樣的洪水又會立刻丟字，
+   於是約每 5 秒就在「升級 → 安靜 → 降級 → 一大波丟字 → 升級」之間循環（2026-10-05 實測 3,300 件/秒）。
+
+   合併發生在「入列」：新來的飄字併進佇列裡**還沒處理**的同一則（key 相同、還沒吸滿），
+   所以不會延後任何數字的顯示，也不佔佇列名額。 */
+var UI_FLOAT_MERGE = {
+  tiers: [1, 5, 25],        // 每個數字最多吸收幾次命中；1 ＝ 不合併
+  escalateDrops: 3,         // 一個評估窗（windowMs）內丟了這麼多字，才升一級
+  windowMs: 500,
+  holdMs: 750,              // 升級後至少觀察這麼久才判斷要不要再升，讓上一級的效果有時間顯現
+  calmMs: 4000,             // 這麼久沒再丟字、負載也降下來，才降一級
+  downFrac: 0.7,            // 負載（件/秒）要掉到升級時的這個比例以下，才算降下來
+  minRate: 150,             // 飄字到達率（件/秒）低於這個值，丟字不是洪水造成的（例如卡頓恢復），不升級
+  tier: 0,
+  open: Object.create(null),   // 合併鍵 -> 佇列裡仍可吸收同鍵命中的那一則飄字
+  drops: 0,                 // 丟字累計：佇列丟棄＋渲染器同屏淘汰（畫面停擺期間不算）
+  seenDrops: 0,             // 上一次評估時的 drops
+  arrivals: 0,              // 飄字到達累計（含被吸收的）；用來估負載
+  seenArrivals: 0,
+  escRate: [0, 0, 0],       // 升上第 N 級時的飄字到達率（件/秒）；降級要拿它當基準
+  evictedSeen: 0,           // 渲染器 floatEvicted 上一次讀到的值
+  windowAt: 0,              // 0 ＝ 還沒開窗（第一次評估只開窗）
+  changedAt: 0,
+  lastDropAt: 0,
+  lastLoadAt: 0,            // 最近一次「負載還在升級時的水準」的時刻
+  quietUntil: 0,            // 畫面停擺剛恢復：補畫積壓造成的丟字不算洪水，這之前的丟字不計
+  merged: 0                 // 被吸收掉的飄字數（累計，診斷用）
+};
+
 function hasOwnUiState(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
@@ -532,8 +572,9 @@ function scheduleWorkerVisualEventFlush() {
 }
 
 /* 記一筆丟棄。畫面停擺期間丟的另計（stallDrops），不混進「丟字」，
-   否則窗格被遮住幾分鐘就會累積上萬筆，看起來像飄字大量遺失。 */
-function uiNoteVisualDrop(reason, now, stalled) {
+   否則窗格被遮住幾分鐘就會累積上萬筆，看起來像飄字大量遺失。
+   lostFloat：丟掉的是飄字（佇列滿時也可能是特效）；只有飄字會推動合併分級。 */
+function uiNoteVisualDrop(reason, now, stalled, lostFloat) {
   var diag = UI_VISUAL_DIAG;
   if (stalled) {
     diag.stallDrops++;
@@ -543,6 +584,107 @@ function uiNoteVisualDrop(reason, now, stalled) {
   if (reason === 'cap') diag.queueCap++;
   else diag.floatStale++;
   diag.lastDropAt = now;
+  if (lostFloat) uiFloatMergeNoteDrop(now);
+}
+
+function uiFloatMergeNoteDrop(now) {
+  var m = UI_FLOAT_MERGE;
+  if (now < m.quietUntil) return;
+  m.drops++;
+  m.lastDropAt = now;
+}
+
+/* 每次 flush 評估一次要升級還是降級。丟字有兩個來源：
+   佇列丟棄（uiNoteVisualDrop 即時記）與渲染器同屏淘汰（讀它的累計值取差）。
+   stalled：這次 flush 距離上一次太久＝畫面剛從停擺恢復。那時積壓的字一次補畫，
+   同屏上限被頂到、佇列也會丟，但那是補畫的假象，不是洪水，所以接下來兩個評估窗不計丟字。 */
+function uiFloatMergeStep(now, stalled) {
+  var m = UI_FLOAT_MERGE;
+  if (stalled) m.quietUntil = now + 2 * m.windowMs;
+  if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.floatEvictedCount === 'function') {
+    var evicted = BattleRenderer.floatEvictedCount();
+    if (evicted > m.evictedSeen && now >= m.quietUntil) {
+      m.drops += evicted - m.evictedSeen;
+      m.lastDropAt = now;
+    }
+    m.evictedSeen = evicted;
+  }
+  if (!m.windowAt) {
+    m.windowAt = now;
+    m.seenDrops = m.drops;
+    m.seenArrivals = m.arrivals;
+    return;
+  }
+  if (now - m.windowAt < m.windowMs) return;
+  var dropped = m.drops - m.seenDrops;
+  var rate = (m.arrivals - m.seenArrivals) * 1000 / (now - m.windowAt);
+  m.windowAt = now;
+  m.seenDrops = m.drops;
+  m.seenArrivals = m.arrivals;
+  if (dropped >= m.escalateDrops && rate >= m.minRate) {
+    if (m.tier < m.tiers.length - 1 && now - m.changedAt >= m.holdMs) {
+      m.tier++;
+      m.changedAt = now;
+      m.escRate[m.tier] = rate;
+    }
+  } else if (m.tier > 0) {
+    var gate = m.escRate[m.tier];
+    if (gate && rate >= gate * m.downFrac) m.lastLoadAt = now;
+    if (now - Math.max(m.lastDropAt, m.lastLoadAt) >= m.calmMs && now - m.changedAt >= m.calmMs) {
+      m.tier--;
+      m.changedAt = now;
+    }
+  }
+}
+
+/* 這則飄字可不可以併、併給誰。只動「敵人身上的傷害數字」，而且文字必須正好是
+   「前綴＋fmt(damageValue)」（例如「爆擊 1.2K」）；不是這個樣子的一律不動。
+   key 含前綴：爆擊／格擋／反擊的字不會併進普通傷害裡，加總之後重組文字才不會錯。
+   crit-high-roll 留在 key 裡（高倍率爆擊是另一種字型），damage-group-* 拿掉（連擊段數的編號每次不同）。 */
+function uiFloatMergeParts(event) {
+  var id = event.elId;
+  if (typeof id !== 'string' || (id.indexOf('mv-float-') !== 0 && id !== 'tb-float')) return null;
+  var cls = event.cls || '';
+  if (cls.indexOf('player-event') >= 0) return null;
+  var value = event.damageValue;
+  if (typeof value !== 'number' || !isFinite(value) || value <= 0) return null;
+  var text = String(event.text || '');
+  var num = fmt(value);
+  var at = text.length - num.length;
+  if (at < 0 || text.lastIndexOf(num) !== at) return null;
+  var prefix = text.slice(0, at);
+  if (/[0-9]/.test(prefix)) return null;
+  return {
+    key: id + '|' + cls.replace(/(?:^|\s)damage-group-[A-Za-z0-9_-]+/g, '').trim() + '|' + prefix,
+    prefix: prefix
+  };
+}
+
+/* 併進佇列裡的同一則。回傳 true＝已被吸收（呼叫端不必再入列）；
+   false 時若這則可合併，會先替它記下合併鍵，等真的入列之後再登記成「可吸收的那一則」。 */
+function uiFloatMergeAbsorb(event) {
+  var m = UI_FLOAT_MERGE;
+  var limit = m.tiers[m.tier];
+  if (!(limit > 1)) return false;
+  var parts = uiFloatMergeParts(event);
+  if (!parts) return false;
+  var acc = m.open[parts.key];
+  if (acc && acc._mergeHits < limit) {
+    acc.damageValue += event.damageValue;
+    acc.text = parts.prefix + fmt(acc.damageValue);
+    acc._mergeHits++;
+    m.merged++;
+    return true;
+  }
+  event._mergeKey = parts.key;
+  event._mergeHits = 1;
+  return false;
+}
+
+/* 那一則離開佇列（處理掉、被丟、整批清掉）之後，不可以再被併。 */
+function uiFloatMergeRelease(event) {
+  var open = UI_FLOAT_MERGE.open;
+  if (event && event._mergeKey && open[event._mergeKey] === event) delete open[event._mergeKey];
 }
 
 /* 持續場域的逐拍刷新（js/worker/shim.js shimIsSustainVisualEvent 的同一個判準）：
@@ -584,6 +726,13 @@ function queueWorkerVisualEvent(event) {
   var nowQ = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   event._qAt = nowQ;      // 進佇列的時刻，flush 用來判斷飄字是否已經過期
   if (typeof BattlePerf !== 'undefined' && BattlePerf.active) BattlePerf.noteArrival(event);
+  if (event.kind === 'float') {
+    UI_FLOAT_MERGE.arrivals++;
+    if (UI_FLOAT_MERGE.tier > 0 && uiFloatMergeAbsorb(event)) {
+      scheduleWorkerVisualEventFlush();
+      return;
+    }
+  }
   var rank = uiVisualRank(event);
   if (rank === 1) {
     for (var si = q.length - 1; si >= 0; si--) {
@@ -601,11 +750,14 @@ function queueWorkerVisualEvent(event) {
       var r = uiVisualRank(q[qi]);
       if (r < victimRank) { victimRank = r; victim = qi; if (r === 0) break; }
     }
-    uiNoteVisualDrop('cap', nowQ, nowQ - UI_VISUAL_DIAG.lastFlushAt > UI_WORKER_VISUAL_STALL_MS);
+    uiNoteVisualDrop('cap', nowQ, nowQ - UI_VISUAL_DIAG.lastFlushAt > UI_WORKER_VISUAL_STALL_MS,
+      victimRank === 0 || rank === 0);
     if (victimRank > rank) return;                 // 進來的比佇列裡最低的還低：丟進來的
+    uiFloatMergeRelease(q[victim]);
     if (victim === 0) q.shift(); else q.splice(victim, 1);
   }
   q.push(event);
+  if (event._mergeKey) UI_FLOAT_MERGE.open[event._mergeKey] = event;   // 入列了，後面來的同鍵命中可以併進來
   scheduleWorkerVisualEventFlush();
 }
 
@@ -631,6 +783,7 @@ function flushWorkerVisualEvents() {
   var flushAt = (typeof uiNowMs === 'function') ? uiNowMs() : Date.now();
   var stalledGap = flushAt - diag.lastFlushAt > UI_WORKER_VISUAL_STALL_MS;   // 距離上一次 flush 太久＝這段時間 rAF 沒在跑
   diag.lastFlushAt = flushAt;
+  uiFloatMergeStep(flushAt, stalledGap);
   if (stalledGap && UI_WORKER_VISUAL_EVENT_QUEUE.length && UI_WORKER_VISUAL_EVENT_QUEUE[0] &&
       UI_WORKER_VISUAL_EVENT_QUEUE[0]._qAt) {
     diag.lastStallMs = Math.max(0, flushAt - UI_WORKER_VISUAL_EVENT_QUEUE[0]._qAt);
@@ -644,6 +797,7 @@ function flushWorkerVisualEvents() {
       }
     }
     UI_WORKER_VISUAL_EVENT_QUEUE.length = 0;
+    UI_FLOAT_MERGE.open = Object.create(null);     // 佇列清空了，沒有任何一則還能吸收
     return;
   }
 
@@ -664,8 +818,9 @@ function flushWorkerVisualEvents() {
     if (processed && (processed & 1) === 0 && ((typeof uiNowMs === 'function' ? uiNowMs() : Date.now()) - flushStart >= UI_WORKER_VISUAL_FRAME_MS)) break;
     var event = UI_WORKER_VISUAL_EVENT_QUEUE.shift();
     if (!event) continue;
+    if (event._mergeKey) uiFloatMergeRelease(event);   // 離開佇列了，之後的同鍵命中另起一則
     if (event.kind === 'float' && event._qAt && flushStart - event._qAt > UI_WORKER_VISUAL_FLOAT_STALE_MS) {
-      uiNoteVisualDrop('stale', flushStart, stalledGap);
+      uiNoteVisualDrop('stale', flushStart, stalledGap, true);
       continue;                       // 丟棄過期飄字不花預算
     }
     try {
@@ -10802,6 +10957,9 @@ function uiVisualDiagText(now) {
   if (real && now - real <= 5000) {
     text += ' ⚠ 丟字 ' + (diag.floatStale + diag.queueCap) + ' 例外 ' + diag.flushErrors +
       ' 佇列 ' + UI_WORKER_VISUAL_EVENT_QUEUE.length;
+  }
+  if (UI_FLOAT_MERGE.tier > 0) {
+    text += ' ⊕ 傷害合併 ' + UI_FLOAT_MERGE.tiers[UI_FLOAT_MERGE.tier] + ' 合 1（已併 ' + UI_FLOAT_MERGE.merged + '）';
   }
   if (diag.lastStallAt && now - diag.lastStallAt <= 5000) {
     text += ' ⏸ 停幀約 ' + (diag.lastStallMs / 1000).toFixed(1) + ' 秒 略過 ' + diag.stallDrops;

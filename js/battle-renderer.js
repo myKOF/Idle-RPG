@@ -7536,6 +7536,9 @@ var BattleRenderer = (function () {
     onVfx: onVfx,
     syncBattle: syncBattle,
     status: status,
+    /* 同屏飄字被提早淘汰的累計數。ui.js 的傷害合併分級每幀讀一次，
+       所以不用 status()——那個每次都要組一整包物件。 */
+    floatEvictedCount: function () { return S.floatEvicted; },
     clearDamageFloats: clearDamageFloats,
     clearAllFloats: clearAllFloats,
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
