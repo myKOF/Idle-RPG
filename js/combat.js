@@ -1158,7 +1158,7 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                         vfx: vfxCombatRoles('smite')
                     });
                 }
-                floatEnemyEvent(mEnt, floatSel, '⚡' + fmt(smiteDmg), 'crit enemy-attack', smiteDmg, atkHitDelayMs + 90);
+                floatEnemyEvent(mEnt, floatSel, fmt(smiteDmg), 'crit enemy-attack', smiteDmg, atkHitDelayMs + 90);
                 logMsg += '<span class="log-hl-good">天罰降臨，追加 ' + fmt(smiteDmg) + ' 真實傷害！</span>';
                 if (mEnt.hp <= 0) { mEnt.hp = 0; res.killed = true; res.dmg += smiteDmg; }
             }

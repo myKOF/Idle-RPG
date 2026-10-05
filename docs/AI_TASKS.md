@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude｜傷害數字分級合併、刪除傷害數字前的技能圖（FLOAT-MERGE-TIERS-20261005）
+
+- Owner：Claude；Done。使用者要求：①大量傷害數字同屏開始丟字時，先啟動 5 合 1；還丟字就在 5 合 1 上再 5 合 1（最極限 25 合 1）；這樣還丟就丟。②把傷害數字前面的技能圖刪掉。接續 VISUAL-QUEUE-PRIORITY-20261005 的「未處理（觀察）①」：飄字量要減只能合併同目標的傷害數字。
+- 設計（js/ui.js `UI_FLOAT_MERGE`）：合併發生在入列——新來的敵方傷害飄字併進佇列裡**還沒處理**、目標＋類別＋文字前綴都相同的那一則（總傷害加總、文字用加總重組），不延後顯示、不佔名額；只動「前綴＋fmt(damageValue)」形狀的文字。升級由丟字驅動（佇列丟棄＋渲染器同屏淘汰 `BattleRenderer.floatEvictedCount()`）：第 0 級不合併→第 1 級 5 合 1→第 2 級 25 合 1→再丟維持原本的丟最舊。FPS 計數器合併中多印「傷害合併 N 合 1（已併 M）」。
+- 實測抓到的缺陷（單元測試先前全綠）：降級只看「安靜 4 秒沒丟字」會振盪——合併生效時本來就不丟字，降回去同樣的洪水又丟一大波，3,300 件/秒約每 5 秒一輪、一輪約 900 件。修法：升級時記下到達率（`escRate`），降級要負載掉到它的 7 成以下＋安靜 4 秒。另兩道防護：到達率 <150 件/秒的丟字不升級（`minRate`）、畫面停擺恢復後兩個評估窗內不計丟字（`quietUntil`），否則補畫積壓造成的淘汰會以極低負載升級，該低基準讓降級永遠過不了、被釘死在高級。
+- 刪圖：Worker 組字處 9 處（skills2.js 的 `g.emoji`、衍生傷害 label、🌍、反擊；potential.js 的 `def.emoji`、✨；legendary.js 的 ✦；combat.js 天罰 ⚡）。使用者選定範圍＝技能命中圖＋衍生傷害標記＋傳奇詞條標記；**保留**我方頭頂「技能名稱＋總傷害」前的圖（`floatPlayerSkillCast`，圖在名稱前）。`sgDerivedHit` 的 `label` 參數保留但不再顯示。前綴現在只會是爆擊／格擋／反擊／必殺，所以合併鍵的前綴維度才乾淨。
+- 效果（真頁面、32 隻敵人、5Hz 批次灌入真佇列）：3,300 件/秒原本只有 67.6% 進得了渲染器（佇列丟 5,817、同屏淘汰 1,181、同屏數字長期頂著 120 上限）；開啟後第 1 級從第 2 秒穩定到第 15 秒、丟字不再增加、同屏數字約 75、每幀成本 4.3→1.8 ms；9,000 件/秒升到 25 合 1 後穩定；300 件/秒時降回第 0 級、無丟字、傷害總和與送出完全一致。真實 Worker 戰鬥（火球／突刺／寒冰箭／反擊）敵方飄字 47 筆、帶前導圖示 0 筆。
+- 修改：js/ui.js、js/battle-renderer.js（`floatEvictedCount`）、js/skills2.js、js/potential.js、js/legendary.js、js/combat.js、index.html（ui 1.0.125、battle-renderer 1.6.171、skills2 1.0.282、combat 1.0.66、potential 1.0.8）、js/bridge.js＋js/worker/sim.worker.js（token 20261005-float-no-icon）；tests：新增 ui-float-merge（34 項）、float-no-skill-icon（7 項）、helpers/ui-float-merge.cjs；ui-containment-and-visual-flush、ui-worker-events 補新全域；player-event-float 一條釘舊前綴 `g.emoji + s` 的原始碼比對改成 `s`。
+- 測試：突變測試——合併 38 個突變只剩 1 個等價突變倖存（外層 `tier > 0` 短路，`uiFloatMergeAbsorb` 自己在第 0 級就回 false）、刪圖 9 個全數被抓。全庫 3731 項／237 失敗，對照乾淨 HEAD（3724 項／237 失敗）失敗名稱差集只剩已知隨機性的「雙刀逐刀目標與傷害飄字共用 0.2 秒…」（方向相反）。
+- 未處理（觀察）：①傷害數字被併成一個之後數字會比單次命中大（5 次命中顯示總和），與渲染器既有的 160 ms／8 次滾動合併同性質，沒有另加「×5」標示。②MISS／閃避飄字同樣量大但不是傷害數字，沒有合併。③`ui.js?v=1.0.125` 在 Codex 的技能快捷提交與本功能各自 bump 成同值，合併後同一個版號代表兩份內容；若測試者在中間態載入過，瀏覽器可能留著舊檔，Ctrl+F5 即可。
+- 建議驗證（Antigravity）：Lv.800 滿階、GM `spawn 32 small 1000000`＋`maxstats`、裝多個高頻技能，輸入 `Performance_Information` 看左上角；負載高時應出現「傷害合併 5 合 1」、必要時 25 合 1，且同屏數字不再大片消失；負載退去約 5 秒後應自動降回。確認敵人傷害數字前沒有任何圖示（普攻／技能／反擊／潛力技必殺／天罰／傳奇元素傷害），我方頭頂技能名稱前的圖仍在。
+
 ## SKILL-LOADOUT-FOCUS-20261005 — 下方技能快捷同步左側焦點
 
 - Owner：Codex；Done。使用者要求點擊技能頁下方快捷技能，同步左側技能選取；補充圖片僅為示意，並非實際顯示錯誤。單一開發者，本副本開始乾淨。

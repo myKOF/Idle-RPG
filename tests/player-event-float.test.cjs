@@ -419,7 +419,8 @@ test('敵方區四種傷害樣式獨立，爆擊不改變普攻／技能來源�
   assert.match(combat, /floatEnemyEvent\(mEnt,\s*floatSel,\s*dmgStr,\s*basicDamageFloatGroupClass\(combatDamageFloatClass\('enemy-attack',\s*res\),\s*damageGroupId\),\s*res\.dmg,\s*atkHitDelayMs\)/);
   assert.match(combat, /'crit enemy-attack'/);
   // 技能傷害數字一律走 combatDamageFloatClass('enemy-skill', 結算結果)：新版技能 sgHitOne、反擊與潛力技能
-  assert.match(skills2, /floatEnemyEvent\(target,\s*floatSel,\s*g\.emoji \+ s,\s*\(typeof combatDamageFloatClass === 'function'\) \? combatDamageFloatClass\('enemy-skill',\s*res\) : 'enemy-skill',\s*res\.dmg,\s*delayMs\)/);
+  // 傷害數字前不放技能圖示（2026-10-05；tests/float-no-skill-icon.test.cjs 另有逐處檢查），文字就是 s
+  assert.match(skills2, /floatEnemyEvent\(target,\s*floatSel,\s*s,\s*\(typeof combatDamageFloatClass === 'function'\) \? combatDamageFloatClass\('enemy-skill',\s*res\) : 'enemy-skill',\s*res\.dmg,\s*delayMs\)/);
   assert.match(potential, /combatDamageFloatClass\('enemy-skill',\s*res\)/);
   const classCtx = {};
   vm.runInNewContext(util, classCtx);
