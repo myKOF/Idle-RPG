@@ -384,6 +384,12 @@ function migrateSave(data) {
     data.factory.salvageSlots = clamp(Math.floor(Number(data.factory.salvageSlots) || SALVAGE_SLOT_INITIAL), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
   }
   data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
+  // 符文庫存（2026-10-06 符文之語）：舊存檔由 mergeDefaults 補空表；這裡只做防呆，數量整理成非負整數
+  if (!data.player.runes || typeof data.player.runes !== 'object' || Array.isArray(data.player.runes)) data.player.runes = {};
+  Object.keys(data.player.runes).forEach(function (rk) {
+    var rn = Math.max(0, Math.floor(Number(data.player.runes[rk]) || 0));
+    if (rn > 0) data.player.runes[rk] = rn; else delete data.player.runes[rk];
+  });
   data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
   // 逐件裝備整理：
   // 1) 太古機制改版（2026-07-23）：洗煉不再使用太古精華，載入時清除殘留欄位。

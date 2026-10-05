@@ -331,6 +331,11 @@ function endTowerFight(win, reason) {
       TOWER.player && skills2TryRebirth(TOWER.player)) {
     return;
   }
+  // 符文之語【輪迴】（js/runeword.js）：死亡攔截；復活後戰鬥繼續，呼叫端本來就會 return
+  if (!win && reason === 'death' && typeof rwTryRevive === 'function' &&
+      TOWER.player && rwTryRevive(TOWER.player)) {
+    return;
+  }
   var b = TOWER.boss;
   var floor = TOWER.floor;
   var hpPct = b ? (b.hp / b.maxHp * 100) : 0;
@@ -407,6 +412,13 @@ function endTowerFight(win, reason) {
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
+    // 符文（符文之語的素材）：樓層越高階數越高（js/runeword.js）
+    if (typeof rwRollTowerRuneDrop === 'function') {
+      var towerRunes = rwRollTowerRuneDrop(floor, st2.loot);
+      if (towerRunes.length) {
+        result.rewards.push('🔷 ' + towerRunes.map(function (rid) { return runeLabel(rid); }).join('、'));
+      }
+    }
     // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
     if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {

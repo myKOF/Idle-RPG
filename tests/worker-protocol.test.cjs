@@ -19,6 +19,7 @@ const EXPECTED_COMMAND_COUNTS = {
   combat: 2,
   item: 9,
   gem: 14,
+  rune: 4,
   player: 6,
   skill: 3,
   skill2: 6,
@@ -35,7 +36,7 @@ const EXPECTED_COMMAND_COUNTS = {
   task: 1
 };
 const SIMULATION_FILES = [
-  'util.js', 'data.js', 'formula.js', 'stats.js', 'item.js', 'skills.js',
+  'util.js', 'data.js', 'runeword_data.js', 'formula.js', 'stats.js', 'item.js', 'runeword.js', 'skills.js',
   'skills2.js', 'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
   'potential.js', 'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js',
   'tasks.js'
@@ -120,12 +121,13 @@ test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
   // v42：原子超神進化切換，87 → 88。
   // v43：VFX透傳飛行物本體長度bodyLength，指令數不變。
   // v44：鑲嵌可指定孔位／階級，保留舊呼叫且指令數不變。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 44);
+  // v45：符文之語——新增 rune.socket／compose／composeAll／dismantle，88 → 92。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 45);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 88);
+  assert.equal(names.length, 92);
   ['skill.learn', 'skill.maxUpgrade', 'skill.downgrade', 'skill.delete', 'skill.fuse', 'skill.deleteFusion']
     .forEach((name) => assert.ok(!names.includes(name), name + ' 屬於已移除的舊技能系統，不得復活'));
 

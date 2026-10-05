@@ -10,14 +10,14 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=44', 'shim.js?v=11');
+importScripts('protocol.js?v=45', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261005-thrust-cardinal-phantom', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261005-cc-decay-count', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261005-affix-level-gate',
-  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261005-thrust-cardinal-phantom', '../talents.js?v=20261003-rename-weineng',
-  '../player.js?v=20261003-rename-weineng', '../special_rules.js',
-  '../combat.js?v=20261005-cc-decay-count', '../legendary.js?v=20261005-float-no-icon', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261005-cc-decay-count',
-  '../factory.js?v=20261005-affix-level-gate', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261005-thrust-cardinal-phantom', '../runeword_data.js?v=20261006-runeword', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261006-runeword', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261006-runeword', '../runeword.js?v=20261006-runeword',
+  '../skills.js?v=20261006-runeword', '../skills2.js?v=20261006-runeword', '../talents.js?v=20261003-rename-weineng',
+  '../player.js?v=20261006-runeword', '../special_rules.js',
+  '../combat.js?v=20261006-runeword', '../legendary.js?v=20261006-runeword', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261006-runeword',
+  '../factory.js?v=20261006-runeword', '../newforge.js', '../forge.js?v=20261006-runeword', '../save.js?v=20261006-runeword',
   '../tasks.js?v=20260929-thunder-pair'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -904,7 +904,7 @@ function buildPanel(name, params) {
     case 'gems':
       // 一般寶石是 { type: { lv: n } } 計數；融合寶石才是個別實體
       return {
-        gems: p.gems, fusedGems: p.fusedGems,
+        gems: p.gems, fusedGems: p.fusedGems, runes: p.runes || {},
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
     case 'skills':
@@ -1548,6 +1548,19 @@ var COMMAND_IMPL = {
       var all = a.type === GEM_TYPE_ALL;
       blog('♻️ 全部合成：' + (all ? GEM_NAMES[a.level] + '全部類型寶石' : gemLabel(a.type, a.level)) + ' ×' + (made * GEM_COMPOSE_INPUT_COUNT) +
         ' → ' + (all ? GEM_NAMES[a.level + 1] + '同類型寶石' : gemLabel(a.type, a.level + 1)) + ' ×' + made, 'good', 'factory');
+    }
+    UI.dirty.gems = true;
+    return { made: made, err: made > 0 ? null : err };
+  },
+
+  /* 符文全部合成：與 gem.composeAll 同樣在 Worker 內一次跑完（上限 2500 次）。 */
+  'rune.composeAll': function (a) {
+    var made = 0, err = null;
+    while (made < 2500 && !(err = composeRune(a.runeId))) made++;
+    if (made > 0) {
+      var r = RUNE_BY_ID[a.runeId];
+      blog('♻️ 符文全部合成：' + runeLabel(a.runeId) + ' ×' + (made * RUNE_COMPOSE_COUNT) + ' → ' +
+        runeLabel(RUNES[r.tier].id) + ' ×' + made, 'good', 'factory');
     }
     UI.dirty.gems = true;
     return { made: made, err: made > 0 ? null : err };

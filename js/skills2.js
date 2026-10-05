@@ -1406,6 +1406,8 @@ function skills2Cooldown(gid, lvs, pEnt) {
   var cd = (typeof skillCdFor === 'function')
     ? skillCdFor({ cd: base }, (typeof buffVal === 'function' ? buffVal(pEnt, 'chronoCdr') : 0))
     : base;
+  // 符文之語的冷卻乘區（js/runeword.js）：乘算、突破冷卻縮減上限；仍受最低施放間隔約束
+  if (typeof rwCooldownFactor === 'function') cd *= rwCooldownFactor();
   return (typeof skillCooldownWithMinimum === 'function')
     ? skillCooldownWithMinimum(cd) : Math.max(0.4, cd);
 }
@@ -2462,7 +2464,8 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     ? bfPickPrimary(reachable, pEnt._lockTarget) : reachable[0];
   if (!primary) return null;
 
-  var manaCost = skills2ManaCost(gid);
+  // 符文之語的法力消耗乘區（js/runeword.js；技能列的顯示仍是基礎值）
+  var manaCost = skills2ManaCost(gid) * ((typeof rwManaCostFactor === 'function') ? rwManaCostFactor() : 1);
   if (!freeCast && pEnt.mp < manaCost && !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) return null;
   if (!freeCast) {
     if (!(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) {
@@ -2498,6 +2501,8 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
     case 'stormbarrier': sgCastStormbarrier(pEnt, st, g, lvs, pool, primary, floatSel, out); break;
     default: return null;
   }
+  // 符文之語：施放觸發（含免費重施放）。僅玩家自己按下去的施放才觸發，免費施放不連鎖。
+  if (!freeCast && typeof rwOnSkillCast === 'function') rwOnSkillCast(pEnt, gid, out, floatSel, pool);
   // Skills2「我方狀態」的附加條目：每次施放（含自動施放）套在自己身上
   if (sgHasExtraStatuses(gid, 'self')) {
     sgApplyExtraStatuses(pEnt, gid, 'self', { stats: st, source: sgStatusSource(gid) });

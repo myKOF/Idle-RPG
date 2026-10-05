@@ -71,7 +71,10 @@
    lifesteal／manaSteal 改為套用汲取倍率後「每次回復的定值」（不再是百分比，也不再依每秒回復換算）。
    主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值。 */
 /* v42：skill2.ultSwitch 原子重選；fromOpt／fromLv／cost 釘住使用者確認內容。 */
-var WORKER_PROTOCOL_VERSION = 44;
+/* v45（2026-10-06 符文之語）：新增指令 rune.socket／rune.compose／rune.composeAll／rune.dismantle（87 → 92 之外的 4 條，88 → 92）。
+   符文是獨立素材 G.player.runes = { 符文id: 數量 }，鑲在既有鑲孔（item.sockets 的 { rune: id }）；
+   取下沿用 gem.unsocket。gems 面板新增 runes 欄位（符文庫存）。符文之語是衍生狀態，不進存檔、不進協議。 */
+var WORKER_PROTOCOL_VERSION = 45;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -316,6 +319,13 @@ var COMMANDS = {
   'gem.composeAll':        { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   'gem.dismantleAll':      { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   'gem.fuse':              { fn: 'fuseGemsV2',       args: { ref1: 'ref', ref2: 'ref' },          dirty: ['gems'] },
+  /* -- 符文（符文之語；js/runeword.js）--
+     符文是 { 符文id: 數量 } 的計數，沒有實例 id，所以用 runeId（符文 id 字串）定位。
+     鑲嵌用 rune.socket；取下沿用 gem.unsocket（unsocketGem 會依鑲孔內容分流回寶石或符文庫存）。 */
+  'rune.socket':           { fn: 'socketRune',       args: { itemId: 'id', runeId: 'str', index: 'int?' }, limit: { index: { min: 0 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
+  'rune.compose':          { fn: 'composeRune',      args: { runeId: 'str' },                      dirty: ['gems'] },
+  'rune.composeAll':       { fn: null,               args: { runeId: 'str' },                      dirty: ['gems', 'header'] },
+  'rune.dismantle':        { fn: 'dismantleRune',    args: { runeId: 'str' },                      dirty: ['gems', 'header'] },
   'gem.shopBuy':           { fn: 'buyShopGem',       args: { index: 'int' },                      dirty: ['gems', 'header'] },
   'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header'] },
   'gem.shopRefresh':       { fn: 'refreshGemShop',   args: {},                                    dirty: ['gems', 'header'] },

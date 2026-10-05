@@ -92,6 +92,7 @@ function newGameState() {
       dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
+      runes: {},              // 符文庫存 { 符文id: 數量 }（符文之語的素材，js/runeword.js）
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,

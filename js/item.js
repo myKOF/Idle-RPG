@@ -437,7 +437,9 @@ function socketFusedGem(it, fusedId, index) {
 function unsocketGem(it, idx) {
   if (!it.sockets || !it.sockets[idx]) return false;
   var g = it.sockets[idx];
-  if (g.fused) {
+  if (g.rune) {                       // 符文（js/runeword.js）：取下回符文庫存
+    addRune(g.rune, 1);
+  } else if (g.fused) {
     if (!G.player.fusedGems) G.player.fusedGems = [];
     G.player.fusedGems.push(g.fused);
     UI.dirty.gems = true;
@@ -681,17 +683,23 @@ function enchantLine(it, en) {
    洗煉模式只渲染屬性選取，費用與執行按鈕由 UI 裝備操作列處理。 */
 function itemSocketHTML(it, mode) {
   var sockets = Array.isArray(it.sockets) ? it.sockets : [];
-  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔</div>');
+  var hasRune = sockets.some(function (s) { return s && s.rune; });
+  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔' + (hasRune ? '（含符文）' : '') + '</div>');
+  var rwAct = (typeof rwActiveWord === 'function') ? rwActiveWord(it) : null;
   for (var si = 0; si < sockets.length; si++) {
     var g = sockets[si], text;
-    if (g && g.fused) text = (si + 1) + '. ' + esc(fusedGemLabel(g.fused));
+    var inWord = !!rwAct && si >= rwAct.start && si < rwAct.start + rwAct.word.runes.length;
+    if (g && g.rune && typeof RUNE_BY_ID !== 'undefined' && RUNE_BY_ID[g.rune]) {
+      text = '<span class="sk-name">' + (si + 1) + '. ' + RUNE_BY_ID[g.rune].glyph + ' ' + esc(runeLabel(g.rune)) + '</span>' +
+        '<span class="sk-val">' + esc(rwRuneStatLine(it, g.rune)) + '</span>';
+    } else if (g && g.fused) text = (si + 1) + '. ' + esc(fusedGemLabel(g.fused));
     else if (g && GEM_TYPES[g.type]) {
       var gt = GEM_TYPES[g.type];
       text = '<span class="sk-name">' + (si + 1) + '. ' + gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
         '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
         (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
     } else text = '◇ 鑲孔 ' + (si + 1) + '（空）';
-    var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
+    var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') + (g.rune ? ' rune-socket' : '') + (inWord ? ' runeword-socket' : '') : 'empty');
     if (mode) {
       h += '<div class="' + cls + ' socket-row' + (mode.selIdx === si ? ' is-socket-selected' : '') + '">' +
         '<button type="button" class="socket-pick" data-socket-pick="' + si + '" aria-pressed="' + (mode.selIdx === si) + '"' +
@@ -704,6 +712,20 @@ function itemSocketHTML(it, mode) {
     }
   }
   if (!sockets.length) h += '<div class="equip-material-empty">此裝備沒有寶石鑲孔</div>';
+  // 符文之語橫幅：成形時列出名稱與全部效果；未成形時提示「再放入哪幾顆符文就會成形」
+  if (rwAct) {
+    h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '">' +
+      '<div class="it-runeword-name">✨ 符文之語【' + esc(rwAct.word.name) + '】<span class="it-runeword-tier">' +
+      esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
+    rwDescribeLines(rwAct.word, it).forEach(function (line) { h += '<div class="it-runeword-line">' + esc(line) + '</div>'; });
+    h += '</div>';
+  } else if (typeof rwCandidates === 'function') {
+    var cand = rwCandidates(it);
+    if (cand.length) {
+      var near = cand.sort(function (a, b) { return a.missing.length - b.missing.length; })[0];
+      h += '<div class="it-runeword-hint">再鑲入「' + esc(near.missing.map(runeName).join('、')) + '」即可成形【' + esc(near.word.name) + '】</div>';
+    }
+  }
   return h + '</div>';
 }
 

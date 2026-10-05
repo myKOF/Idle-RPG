@@ -271,6 +271,8 @@ function forgeReclaimSockets(it) {
     } else if (g && GEM_TYPES[g.type]) {
       addGem(g.type, g.level, 1);
       it.sockets[i] = null;
+    } else if (g && g.rune && typeof rwReclaimRuneSocket === 'function') {
+      rwReclaimRuneSocket(it, i);
     }
   }
 }

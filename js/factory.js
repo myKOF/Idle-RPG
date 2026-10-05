@@ -144,6 +144,8 @@ function doSalvage(it, silent, bonus) {
         addGem(sg.type, sg.level, 1);
         if (!silent) flog('💎 取回鑲嵌寶石：' + gemLabel(sg.type, sg.level), 'info');
         it.sockets[si] = null;
+      } else if (sg && sg.rune && typeof rwReclaimRuneSocket === 'function') {
+        if (rwReclaimRuneSocket(it, si) && !silent) flog('🔷 取回鑲嵌符文：' + runeLabel(sg.rune), 'info');
       }
     }
   }
