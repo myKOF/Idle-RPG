@@ -64,6 +64,8 @@ function bfEnemyRunSpeed(ent) {
    收斂在 js/skills2.js 的 skill2SlowMoveFactor）。
    本檔不認識任何技能，只認得「有沒有人提供倍率」——沒載入就恆為 1。 */
 function bfEnemySpeedFactor(ent) {
+  // 移速降低類的控場只在「移速控場」生效期間作用（狀態還掛著但控場遞減掉了＝不減速）→ combat.js ccLockOn
+  if (typeof ccLockOn === 'function' && !ccLockOn(ent, 'move')) return 1;
   var src = (typeof skill2SlowMoveFactor === 'function') ? skill2SlowMoveFactor
     : ((typeof skill2MoveSlowFactor === 'function') ? skill2MoveSlowFactor : null);
   if (!src) return 1;

@@ -889,9 +889,9 @@
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=1.0.58"></script>
-  <script src="js/status.js?v=1.0.29"></script>
-  <script src="js/formula.js?v=1.0.44"></script>
-  <script src="js/battlefield.js?v=1.4.2"></script>
+  <script src="js/status.js?v=1.0.30"></script>
+  <script src="js/formula.js?v=1.0.45"></script>
+  <script src="js/battlefield.js?v=1.4.3"></script>
   <script src="js/vfx.js?v=1.0.78"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
@@ -919,11 +919,11 @@
   <script src="js/skills2.js?v=1.0.282"></script>
   <script src="js/talents.js?v=1.0.4"></script>
   <script src="js/player.js?v=1.0.9"></script>
-  <script src="js/combat.js?v=1.0.68"></script>
-  <script src="js/potential.js?v=1.0.8"></script>
-  <script src="js/tower.js?v=1.0.19"></script>
+  <script src="js/combat.js?v=1.0.69"></script>
+  <script src="js/potential.js?v=1.0.9"></script>
+  <script src="js/tower.js?v=1.0.20"></script>
   <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.126"></script>
+  <script src="js/ui.js?v=1.0.127"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -936,7 +936,7 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.221"></script>
+  <script src="js/bridge.js?v=1.0.222"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -945,7 +945,7 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=1.0.18"></script>
-  <script src="js/main.js?v=1.0.1"></script>
+  <script src="js/main.js?v=1.0.2"></script>
 </body>
 
 </html>

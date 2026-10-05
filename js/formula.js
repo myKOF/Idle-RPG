@@ -554,6 +554,8 @@ var WAVE_CLEAR_HEAL_PCT = 12;
    （泥沼術【泥沼緩速】×冰系【寒霜】，收斂在 skill2SlowAspdFactor）。
    兩者是不同機制（控場 vs. 場域減益），故相乘而非取其一。 */
 function slowFactor(ent) {
+  // 攻速降低類的控場效果只在「攻速控場」生效期間作用（狀態本身可以還掛著，見下方控場遞減）
+  if (typeof ccLockOn === 'function' && !ccLockOn(ent, 'aspd')) return 1;
   var f = effectActive(ent, 'slow') ? SLOW_ASPD_FACTOR : 1;
   if (typeof skill2SlowAspdFactor === 'function') f *= skill2SlowAspdFactor(ent);
   else if (typeof skill2MireAspdFactor === 'function') f *= skill2MireAspdFactor(ent);
@@ -566,17 +568,30 @@ function isAttackFrequencyControlKey(key) {
   return key === 'stun' || key === 'slow' || key === 'aspdDown' || key === 'attackSpeedDown';
 }
 
-/* ---- 控場遞減 ----
-   對敵方施加會改變攻擊頻率的控制（暈眩/減速/攻速降低）時，
-   實際持續時間 = 原持續 × max(0, 1 − 敵人存活秒數 × 每秒遞減%/100)。
-   例：普通敵人 1%/秒 → 8 秒暈眩在戰鬥 50 秒時施放剩 4 秒、100 秒後完全無效。
-   套用點＝combat.js applyEffect / applyBuff；玩家實體無 _spawnAt → 不遞減；BOSS 由 isBossControlImmune 完全免疫。 */
-var CONTROL_DECAY_PER_SEC_NORMAL = 1; // 普通敵人每存活 1 秒，控制持續時間 −1%
-var CONTROL_DECAY_PER_SEC_ELITE = 3;  // 菁英每秒 −3%（約 33 秒後完全免疫）
-function controlDurationFactor(ent) {
-  if (!ent || ent._spawnAt === undefined || ent._spawnAt === null) return 1;
-  var decay = ent.elite ? CONTROL_DECAY_PER_SEC_ELITE : CONTROL_DECAY_PER_SEC_NORMAL;
-  return Math.max(0, 1 - (GT - ent._spawnAt) * decay / 100);
+/* ---- 控場效果遞減（2026-10-05 改為依「被控場次數」遞減）----
+   控場＝讓敵人傷害降低或移動變慢的效果，分三類各自獨立計次與遞減：
+     act   無法普攻、施放技能與行動（暈眩、凍結、石化的行動限制、時空凝滯）
+     aspd  攻速降低（減速、時間結界、泥沼、寒霜、僵化）
+     move  移動速度降低（泥沼、寒霜、風切、狂風緩速、僵化）
+   該類每被控場 1 次，之後同類控場的持續時間再 −N%（線性）：
+     實際控場時間 = 原持續時間 × max(0, 1 − 已被控次數 × 每次遞減%/100)
+   例：每次 5%、冰凍 2 秒 → 第 1 次 2 秒、第 2 次 1.9 秒、…、第 20 次起完全免疫。
+   遞減只作用在「控場效果」這份獨立記錄（ent.ccLock／ent.ccDr，→ combat.js），
+   狀態本身（暈眩／凍結／減益）的數值與持續時間不受影響，依然完整掛在身上。
+   次數怎麼算（→ combat.js ccRegister）：
+     act    每次施加算 1 次；CONTROL_DECAY_MERGE_SEC 秒內的重複施加視為同一次（多段命中不連扣）
+     aspd／move 同類控場還在生效中就不算新的一次（延長即可）——場域型緩速每 0.5 秒重塗一次，
+            站在場域裡只算進入的那一次，離開再進來才算下一次
+   套用點＝combat.js applyEffect／applyBuff 與 ccLockOn 讀取點；玩家實體無 _spawnAt → 不遞減；
+   BOSS 對攻擊頻率類控場另有完全免疫（isBossControlImmune）。
+   每次遞減% 填 0 ＝該類不遞減。三個數字與合併秒數由參數表「3-戰鬥核心／控場遞減」調整。 */
+var CONTROL_DECAY_PER_HIT_ACT = 5;   // 無法行動類：每被控 1 次，持續時間 −5%
+var CONTROL_DECAY_PER_HIT_ASPD = 5;  // 攻速降低類：每被控 1 次，持續時間 −5%
+var CONTROL_DECAY_PER_HIT_MOVE = 5;  // 移速降低類：每被控 1 次，持續時間 −5%
+var CONTROL_DECAY_MERGE_SEC = 0.5;   // 無法行動類：這麼短的間隔內重複施加視為同一次
+function controlDecayFactor(cat, hits) {
+  var rate = cat === 'act' ? CONTROL_DECAY_PER_HIT_ACT : (cat === 'aspd' ? CONTROL_DECAY_PER_HIT_ASPD : CONTROL_DECAY_PER_HIT_MOVE);
+  return Math.max(0, 1 - (Number(hits) || 0) * (Number(rate) || 0) / 100);
 }
 
 /* ---- 連擊數（暴擊率破 100% 衍生的多段攻擊） ----
@@ -863,7 +878,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
       var pk = ELEMENTS[pi];
       var pv = elemTotals[pk] || 0;
       if (pv <= 0) continue;
-      if (pk === 'ice' && chance(ELEM_PROC.iceSlowChance) && !resistCtrl(dCfg)) { if (applyEffect(defender, 'slow', ELEM_PROC.iceSlowDur * ccF)) out.procs.push('減速'); } // 控場遞減歸零時不觸發
+      if (pk === 'ice' && chance(ELEM_PROC.iceSlowChance) && !resistCtrl(dCfg)) { if (applyEffect(defender, 'slow', ELEM_PROC.iceSlowDur * ccF) && ccLockOn(defender, 'aspd')) out.procs.push('減速'); } // 狀態照上，但攻速控場已遞減歸零時不誤報
       else if (pk === 'lightning' && chance(ELEM_PROC.lightningChance)) { dmg += pv * ELEM_PROC.lightningChainMult; out.procs.push('連鎖電擊'); }
       else if (pk === 'poison' && chance(ELEM_PROC.poisonChance)) { applyPoison(defender, pv * ELEM_PROC.poisonTickMult, ELEM_PROC.poisonDur); out.procs.push('中毒'); }
       else if (pk === 'light' && chance(ELEM_PROC.lightCleanseChance)) { cleanse(attacker); out.procs.push('淨化'); }

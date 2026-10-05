@@ -106,7 +106,7 @@ TabLock.onGranted(function () {
   var dupRemoved = (typeof dedupeSaveIndex === 'function') ? dedupeSaveIndex() : 0;
   if (dupRemoved > 0) blog('🧹 已清理 ' + dupRemoved + ' 筆重複的存檔記錄（存檔資料夾自匯入問題已修正）', 'info');
 
-  setInterval(uiTick, 200);
+  setInterval(uiTickGuarded, 200);   // 包一層只為了記錄例外與耗時（見 ui.js UI_TICK_DIAG）
 
   // 檢查新版本 (每 3 分鐘)
   setTimeout(checkForUpdates, 3000);

@@ -191,6 +191,19 @@ function statusVfxRoles(sid, role) {
 }
 function statusIsDebuff(sid) { var d = statusDef(sid); return !!d && d.kind === 'debuff'; }
 
+/* 控場分類（控場效果遞減，規則見 js/formula.js「控場效果遞減」）：效果鍵 → 它屬於哪幾類控場。
+     act   無法普攻、施放技能與行動      aspd  攻速降低      move  移動速度降低
+   只列「會讓敵人傷害降低或移動變慢」的效果鍵，其餘狀態（持續傷害、增傷減傷、純標記）不在此列。
+   凍結（sgFrozen）與石化（sgPetrify）只是標記／易傷，行動限制由「暈眩」承擔，所以已經算在 stun 的 act 裡。
+   新增會限制敵人行動或降低其攻速／移速的狀態時，要把效果鍵登記到這裡，否則不會吃到控場遞減。 */
+var CC_CATS_BY_KEY = {
+  stun: ['act'],
+  slow: ['aspd'], aspdDown: ['aspd'], attackSpeedDown: ['aspd'], enemyAspdDown: ['aspd'],
+  sgMire: ['aspd', 'move'], sgFrost: ['aspd', 'move'], sgStiffen: ['aspd', 'move'],
+  sgWindRend: ['move'], sgWindSlow: ['move']
+};
+function statusControlCats(key) { return CC_CATS_BY_KEY[key] || null; }
+
 /* 狀態表數值取用：ctx 沒給就吃表上的預設值。 */
 function statusNum(ctxVal, defVal) {
   var v = Number(ctxVal);

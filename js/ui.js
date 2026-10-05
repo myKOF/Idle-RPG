@@ -424,6 +424,74 @@ function uiNowMs() {
   return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 }
 
+/* 卡頓歸因診斷（2026-10-05）。
+   回報：傷害數字開著、敵人很多時，偶爾「部分或全部技能都不動」，而且打開技能頁是空的、
+   幾秒後才出現；同一張截圖裡 FPS 計數器還在跑（rAF 正常）。
+   畫面凍結可以來自四個不同的地方，從畫面上分不出來，所以每一層各記一筆，
+   由左上角 FPS 計數器在異常發生後的幾秒內顯示（見 uiStallDiagText）：
+     uiTick     週期性重繪（技能頁等分頁靠它畫）：丟例外就整輪跳過、跑太久就延後
+     Worker     主執行緒收不到 Worker 訊息的秒數（Worker 卡住，或主執行緒沒空處理訊息）
+     特效佇列   佇列頭那一件已經等了多久（顯示層追不上 Worker 的事件量）
+   uiTick 原本是裸的 setInterval 回呼，例外會直接冒到 console 而且沒有人看；
+   現在由 uiTickGuarded 包起來：行為不變（例外照樣只讓這一輪結束），只多一筆紀錄。 */
+var UI_TICK_DIAG = {
+  lastAt: 0,          // 上一次 uiTick 開始的時刻
+  lastMs: 0,          // 上一次 uiTick 花的時間
+  slowMs: 0,          // 最近一次「太慢」的 uiTick 花了多久
+  slowAt: 0,
+  errors: 0,
+  lastErrorAt: 0,
+  lastErrorMsg: '',
+  errorLogged: {}
+};
+var UI_TICK_SLOW_MS = 150;
+var UI_TICK_GAP_MS = 1000;       // 超過這麼久沒跑 uiTick（正常是每 200ms 一次）就提示
+var UI_WORKER_SILENT_MS = 1500;  // 超過這麼久沒收到 Worker 訊息（正常 5Hz）就提示
+var UI_VISUAL_WAIT_MS = 500;     // 特效佇列頭等超過這麼久就提示
+
+/* 記一筆 uiTick 內的例外。name 是丟例外的那一段（'battle'、'header'…；最外層接到的記 'tick'），
+   同一段同一種例外只印前 3 次到 console，之後只計數——uiTick 每 200ms 一次，不能洗版。 */
+function uiTickNoteError(name, err) {
+  var diag = UI_TICK_DIAG;
+  var msg = '[' + name + '] ' + String(err && err.message ? err.message : err);
+  diag.errors++;
+  diag.lastErrorAt = uiNowMs();
+  diag.lastErrorMsg = msg;
+  diag.errorLogged[msg] = (diag.errorLogged[msg] || 0) + 1;
+  if (diag.errorLogged[msg] <= 3 && typeof console !== 'undefined' && console.error) {
+    console.error('[uiTick] ' + msg, err);
+  }
+}
+
+/* uiTick 的分段隔離：一段丟例外，不連累後面的段落。
+   原本 uiTick 是一條直線，頭部或戰鬥那幾段只要丟例外，排在後面的分頁重繪（技能頁、裝備頁…）
+   整輪都被跳過——實測注入 renderBattle 例外：技能頁保持空字串（連「載入中」提示都沒有），
+   例外一停立刻填好，與回報的「技能頁全空、幾秒後才出現」一致。
+   回傳 true＝這一段正常完成。失敗時呼叫端不得清 dirty 旗標，下一輪照舊重試（與原本丟例外時相同）。 */
+function uiTickStep(name, fn) {
+  try {
+    fn();
+    return true;
+  } catch (err) {
+    uiTickNoteError(name, err);
+    return false;
+  }
+}
+
+function uiTickGuarded() {
+  var diag = UI_TICK_DIAG;
+  var t0 = uiNowMs();
+  diag.lastAt = t0;
+  try {
+    uiTick();
+  } catch (err) {
+    uiTickNoteError('tick', err);
+  }
+  var ms = uiNowMs() - t0;
+  diag.lastMs = ms;
+  if (ms >= UI_TICK_SLOW_MS) { diag.slowMs = ms; diag.slowAt = t0; }
+}
+
 function uiSyncGameTime(view) {
   if (!view || typeof view.gt !== 'number' || !isFinite(view.gt)) return;
   _uiGtBase = view.gt;
@@ -7293,14 +7361,18 @@ function uiTick() {
   // 分頁標題戰況（每秒更新一次即可）
   _titleTimer += 0.2;
   if (_titleTimer >= 1) { _titleTimer = 0; updateLiveTitle(); }
-  if (d.header) { renderHeader(); d.header = false; }
+  /* 頭部、戰鬥、增益提示各自隔離（見 uiTickStep）：它們出事不該讓下面的分頁重繪跟著停擺。 */
+  if (d.header && uiTickStep('header', function () { renderHeader(); })) d.header = false;
   var now = Date.now();
   if (shouldRenderBattle(now)) {
-    renderBattle(); // Keep combat visible, but yield briefly to equipment input.
-    UI.lastBattleRenderAt = now;
-    d.battle = false;
+    if (uiTickStep('battle', function () {
+      renderBattle(); // Keep combat visible, but yield briefly to equipment input.
+    })) {
+      UI.lastBattleRenderAt = now;
+      d.battle = false;
+    }
   }
-  refreshBuffTooltip();
+  uiTickStep('buffTooltip', function () { refreshBuffTooltip(); });
   var towerSnapshot = UI.tab === 'tower' ? uiTowerPanelSnapshot() : null;
   if (UI.tab === 'tower' && towerViewActive(towerSnapshot)) renderTowerFight();
   if (d.equip && UI.tab === 'equip') { renderEquip(); d.equip = false; }
@@ -10974,6 +11046,33 @@ function uiVisualDiagText(now) {
   return text;
 }
 
+/* 卡頓歸因（見 UI_TICK_DIAG 的說明）：平常不出字，異常的那一層才顯示。
+     uiTick 例外  ＝ 週期重繪丟例外，這一輪之後的分頁重繪（含技能頁）全被跳過
+     uiTick 慢/停 ＝ 主執行緒被同步工作塞住，分頁重繪延後
+     Worker 靜默  ＝ 收不到 Worker 訊息：Worker 卡住，或主執行緒沒空處理訊息
+     特效佇列等   ＝ 佇列頭那一件事件已經等了這麼久：顯示層追不上 Worker 的事件量
+   四個都沒出現卻還是凍住，問題就在這幾層之外（渲染器／GPU），請改看 Performance_Information。 */
+function uiStallDiagText(now) {
+  var diag = UI_TICK_DIAG;
+  var text = '';
+  if (diag.errors && now - diag.lastErrorAt <= 5000) {
+    text += ' ⚠ uiTick 例外 ' + diag.errors + '：' + diag.lastErrorMsg.slice(0, 60);
+  } else if (diag.slowAt && now - diag.slowAt <= 5000) {
+    text += ' ⚠ uiTick 慢 ' + Math.round(diag.slowMs) + 'ms';
+  } else if (diag.lastAt && now - diag.lastAt > UI_TICK_GAP_MS) {
+    text += ' ⚠ uiTick 停 ' + ((now - diag.lastAt) / 1000).toFixed(1) + ' 秒';
+  }
+  var silent = (typeof WorkerBridge !== 'undefined' && WorkerBridge.status) ? WorkerBridge.status().silentMs : null;
+  if (silent !== null && silent > UI_WORKER_SILENT_MS) {
+    text += ' ⚠ Worker 靜默 ' + (silent / 1000).toFixed(1) + ' 秒';
+  }
+  var head = UI_WORKER_VISUAL_EVENT_QUEUE[0];
+  if (head && head._qAt && now - head._qAt > UI_VISUAL_WAIT_MS) {
+    text += ' ⚠ 特效佇列等 ' + ((now - head._qAt) / 1000).toFixed(1) + ' 秒（' + UI_WORKER_VISUAL_EVENT_QUEUE.length + ' 件）';
+  }
+  return text;
+}
+
 function initBattleFPS() {
   var fpsEl = $id('battle-fps');
   if (!fpsEl || !isInternalVersion()) return;
@@ -10995,7 +11094,7 @@ function initBattleFPS() {
       /* 多行的時候才要保留換行與較鬆的行距；隱藏時回到原本只有一行的樣子。 */
       fpsEl.style.whiteSpace = perfShown ? 'pre' : '';
       fpsEl.style.lineHeight = perfShown ? '1.3' : '';
-      fpsEl.textContent = 'FPS: ' + fps + uiVisualDiagText(now) + (perfShown ? '\n' + BattlePerf.lines() : '');
+      fpsEl.textContent = 'FPS: ' + fps + uiVisualDiagText(now) + uiStallDiagText(now) + (perfShown ? '\n' + BattlePerf.lines() : '');
       frames = 0;
       lastTime = now;
     }

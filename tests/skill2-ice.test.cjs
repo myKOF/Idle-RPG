@@ -230,17 +230,18 @@ test('凍結走既有控場管線：BOSS 完全免疫，但寒霜層數與緩速
   assert.ok(!c.effectActive(b, 'stun'), 'BOSS 也不會被暈眩');
 });
 
-test('凍結標記的長度跟隨「實際暈到的秒數」，不是表定秒數', () => {
+test('控場遞減到 0 之後：凍結標記與暈眩狀態仍是完整秒數，只是「無法行動」的控場沒了', () => {
   const c = loadContext(); stubHits(c); stubVfx(c);
   const e = enemy(1e9, 3 * M, 0);
-  // 控場遞減把 3 秒砍成 1.2 秒：標記必須跟著縮短，否則會出現「標記凍結卻能行動」
-  c.applyStatus = function (ent, sid, ctx) {
-    if (sid === 'stun') { ent.effects.stun = c.GT + 1.2; return 1.2; }
-    return c.applyBuff(ent, c.STATUS[sid].key || sid, Number(ctx.val) || 0, Number(ctx.dur) || 0, sid, null);
-  };
+  e._spawnAt = 0; // 測試用敵人沒有 _spawnAt（＝不登記控場遞減）
+  // 這個敵人已經被控「無法行動」20 次 → 該類完全免疫
+  e.ccDr = { act: { n: 20, last: -1e9, f: 0 } }; e.ccLock = {};
   const sec = c.sgFreezeTarget(e);
-  assert.ok(Math.abs(sec - 1.2) < 1e-9, 'sgFreezeTarget 回傳實際秒數');
-  assert.ok(Math.abs((e.buffs.sgFrozen.until - c.GT) - 1.2) < 1e-9, '凍結標記與行動限制同時到期');
+  assert.ok(sec > 0, '回傳狀態的完整秒數，不因遞減歸零而是 0');
+  assert.ok(Math.abs((e.buffs.sgFrozen.until - c.GT) - sec) < 1e-9, '凍結標記是完整時間：依賴凍結的增傷與冰爆照常判定');
+  assert.ok(c.sgFrozenOn(e));
+  assert.ok(c.effectActive(e, 'stun'), '暈眩狀態仍掛著');
+  assert.ok(!c.ccActionLocked(e), '但沒有「無法行動」的控場效果');
 });
 
 test('【極致寒霜】跨群組放大所有來源的寒霜（傷害與持續時間）', () => {
