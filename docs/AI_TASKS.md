@@ -2,12 +2,12 @@
 
 ## Claude｜符文之語系統（RUNEWORD-20261006）
 
-- Owner：Claude；Done（在獨立分支 `feature/runeword`，由 `ai/claude` 分出，**尚未合併**——使用者要求確認後才合併進當前分支）。使用者要求：參考暗黑破壞神 2 的符文之語，設計至少 40 種組合（能力、屬性加成、特殊威能，甚至打破現有技能框架），比例要平均分配（普通／強／非常強／極度特殊），授權全權設計並實作，可多設計幾個讓使用者篩選。
+- Owner：Claude；Done（在獨立分支 `ai/claude-runeword`，由 `ai/claude` 分出，**尚未合併**——使用者要求確認後才合併進當前分支）。使用者要求：參考暗黑破壞神 2 的符文之語，設計至少 40 種組合（能力、屬性加成、特殊威能，甚至打破現有技能框架），比例要平均分配（普通／強／非常強／極度特殊），授權全權設計並實作，可多設計幾個讓使用者篩選。
 - 需求分析：現有成長線全是數值疊加，缺一條「配方式終局目標」。設計成：符文（33 種、獨立素材）鑲進既有鑲孔，依序排出指定配方＋裝備類型符合 → 成形。**成形是當場判定的衍生狀態，不存檔**（拆一顆就失效），因此沒有遷移問題；存檔只新增 `player.runes`（mergeDefaults 補空表）。
 - 設計：56 組（普通／強力／非常強力／極度特殊各 14）；屬性與詞條同源（affixBaseValue × mult，隨裝備等級／稀有度／強化成長；雙手武器不吃詞條 ×2，已靠 ×1.75 鑲孔數補償），機制數字為固定值；平衡以 `tools/rw_dps_probe.cjs` 探針校準過一輪（結果見設計文件第 3 節）。機制由「靜態 fx ＋ 事件觸發 procs（hit／crit／kill／hurt／block／cast／tick／lowhp × 16 種動作）＋借用既有傳奇特效＋併入既有被動」組成。打破技能框架的手法：冷卻／攻速乘算突破上限、普攻引發免費技能、技能免費重施放、借用傳奇特效（不受武器類型限制）、死亡復活、單次受傷上限、條件式增傷、代價（最大生命乘區、每秒自損、傷害折減）。完整總表見 `docs/RUNEWORD_DESIGN.md`（由 `tools/gen_runeword_doc.cjs` 從資料表產生）。
 - 修改：新增 js/runeword_data.js、js/runeword.js、js/ui-runeword.js、css/runeword.css、tools/gen_runeword_doc.cjs、docs/RUNEWORD_DESIGN.md、tests/{runeword-data,runeword-engine,runeword-ui}.test.cjs、tests/helpers/runeword-env.cjs；修改 js/formula.js（computeStats 聚合、resolveHit 單次傷害上限、itemScore、生命%下限）、legendary.js、combat.js、tower.js、skills.js、skills2.js、item.js、factory.js、forge.js、player.js、save.js、gm_exec.js、js/worker/protocol.js（**v44 → v45**，+4 指令 rune.*）、sim.worker.js、bridge.js、index.html（符文分頁、快取版號）、GM_command.md、docs/WORKER_PROTOCOL.md、tests/worker-protocol.test.cjs。
 - 預檢：`.claude/check-conflicts.ps1` 對 17 支既有檔案退出碼 0（無衝突來源）。
-- 測試：新增 49 項（資料完整性 8、執行層 36、UI 5）全過；全庫 3840 項，失敗 237 與基線（ai/claude HEAD 乾淨副本）**同為 237**，失敗名稱差集只剩一條與本改動無關的參數表測試（基線失敗、本分支通過）；`npm run build` 456 檔通過。實機（Browser 窗格，本機測試服）：符文頁兩個工具頁渲染；裝備頁鑲嵌模式點符文 → Worker 鑲入 → 蛇吻成形並顯示橫幅；蛇吻的中毒觸發、閃擊的「普攻每 6 下免費施放突刺」實測生效，Console 無錯誤。
+- 測試：新增 105 項（資料完整性 8、執行層 36、UI 5、56 組逐一煙霧 56）全過；全庫 3896 項／235 失敗，基線（ai/claude HEAD 乾淨副本）3791 項／237 失敗，**失敗名稱差集：本分支沒有任何新增失敗**（基線獨有的 2 條為環境相關的參數表重建與雙刀飄字測試）；`npm run build` 456 檔通過。實機（Browser 窗格，本機測試服）：符文頁兩個工具頁渲染；裝備頁鑲嵌模式點符文 → Worker 鑲入 → 蛇吻成形並顯示橫幅；蛇吻中毒觸發、閃擊「普攻每 6 下免費施放突刺」實測生效；符文掉落出現在戰利品；重新整理後符文庫存與鑲孔保留；Console 無錯誤。
 - 風險／平衡：①未經模擬器校準，建議內測先看 `RW_STAT_SCALE`；可能偏強的候選：武庫、閃擊、時之沙、孤狼、屠龍者、創世紀、天啟。②借用傳奇特效需裝配對應技能才有感。③無專屬 VFX（沿用浮字與狀態圖示）。④掉落常數 `RUNE_DROP` 尚未接進 Excel 參數表。⑤技能列法力顯示為基礎值。⑥高塔沒有 kill 觸發；離線收益不掉符文。
 - 建議驗證（Antigravity）：見 `docs/RUNEWORD_DESIGN.md` 第 8 節（鑲嵌流程、成形判定、存檔相容、八種觸發、輪迴復活、掉落與合成、UI）。
 

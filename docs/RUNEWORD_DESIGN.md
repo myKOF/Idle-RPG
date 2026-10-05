@@ -1,6 +1,6 @@
 # 符文之語系統設計（2026-10-06）
 
-> 分支：`feature/runeword`（由 `ai/claude` 分出，尚未合併）。
+> 分支：`ai/claude-runeword`（由 `ai/claude` 分出，尚未合併）。
 > 參考：暗黑破壞神 2 的符文之語——「指定符文、依指定順序、鑲進指定孔數與類型的裝備 → 成形為符文之語」。
 > 本文件的總表由 `node tools/gen_runeword_doc.cjs` 從資料表產生；資料表是唯一來源，改資料後重跑即可。
 

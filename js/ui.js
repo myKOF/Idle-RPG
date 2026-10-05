@@ -7431,7 +7431,8 @@ function uiTick() {
   }
   if (d.tower && UI.tab === 'tower') { renderTower(); d.tower = false; }
   if (d.gems && UI.tab === 'gems') { renderGems(); d.gems = false; }
-  if ((d.gems || d.equip) && UI.tab === 'runes' && typeof renderRunes === 'function') { renderRunes(); d.gems = false; }
+  // 符文頁同時看 gems（庫存）與 equip（穿戴中成形）；兩個旗標都在這裡消耗，否則 equip 旗標會讓這一頁每拍重畫
+  if ((d.gems || d.equip) && UI.tab === 'runes' && typeof renderRunes === 'function') { renderRunes(); d.gems = false; d.equip = false; }
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
   if (d.skills && UI.tab === 'skills') { renderSkills(); d.skills = false; }
   if (d.talents && UI.tab === 'talents') { renderTalents(); d.talents = false; }
