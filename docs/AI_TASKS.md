@@ -1,5 +1,23 @@
 # AI_TASKS.md
 
+## EQUIP-ROW-GAP-2PX-20261005 — 洗煉與鑲孔空隙由6px改2px
+
+- Owner：Codex；Done。使用者回報前次縮距看不明顯；前次只改gap8→6px，保留40px列高，整體列距48→46px。已說明並依使用者最新明確指示將兩處gap6→2px、列高40→30px；內距9→4px配合20px行高與等寬透明框，文字列距32px。單一開發者，與本輪選取外框修改同屬裝備CSS；前置完成、目標衝突預檢乾淨。
+- 允許css/ashen-forge.css两處操作列gap／列高／內距、index.html對應快取、tests/affix-actions-layout.test.cjs既有間距／列高期望及本紀錄；禁止其他功能、素材、邏輯／Worker／數值、其他副本、合併／推送。驗收兩處瀏覽器實際空隙2px、列高30px／文字列距32px、換選不跳動、四功能按鈕及背包矩形不變、未選無框、長內容可操作，回歸與Build後Commit。後續接手者使用者。
+- 完成／修改4檔：css/ashen-forge.css、index.html的CSS快取1.0.56、tests/affix-actions-layout.test.cjs更新既有間距／列高期望及本紀錄。與本輪選中外框合為一筆裝備樣式Commit；未選透明框與選中綠框保留。唯讀檢查未改css/style.css／ashen-forge-flat.css、js/ui.js／item.js、scripts/sim/engine.js與其餘五份定向測試；未改配置、素材或其他副本，保留使用者lightning-orb-field-purple.json未提交修改。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；`npm.cmd run build`442檔通過；`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機Port唯讀HTTP服務／全新Context，seed=9拋棄式存檔＋正式Worker，1920×1080與1280×720、4孔／12孔／48類寶石。兩處computed gap2px／每列height30px、文字列距32px；1280視窗依既有畫布等比缩為20px／21.333px，按縮放比驗實際矩形。選中與未選均同高、換選不改列位置；未選／懸停無框、選中綠框；四功能操作列／每顆按鈕／背包矩形完全相同，12孔可捲至末孔與寶石末尾。Console error／warning及Worker errors均0；測試服務已關閉，無臨時檔或真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整裝備選取外框與洗煉鑲孔列距`提交。無未完成需求／已知本次新增風險，可合併，未合併／推送。下一步使用者重載驗收並審查整合。
+
+## EQUIP-SELECTION-FRAME-20261005 — 裝備選中保留底色及5px外框
+
+- Owner：Codex；Done。使用者要求裝備選中時取消底色變色，選中外框改5px；涵蓋裝備欄及背包裝備共用選取樣式，保留原品質底色與格子位置／尺寸。前置既有裝備樣式已完成，目標衝突預檢乾淨；單一開發者。
+- 允許css/ashen-forge.css僅裝備選取樣式、index.html對應CSS快取及本紀錄；禁止UI／Worker邏輯、數值、素材、其他副本及合併／推送。既有使用者lightning-orb-field-purple.json未提交修改保留，不納入本次Commit。後續接手者使用者。
+- 驗收：裝備欄／背包選取前後底色／背景圖／混合模式相同、選中外框5px、品質與雙手副槽一致、矩形不變，定向回歸／Build／正式瀏覽器Console驗證後Commit。
+- 完成：刪除選中專用黃色background-color／screen混合模式／染色陰影，沿用原底圖與品質色。選中outline改5px、維持1px offset，增加workspace範圍讓高品質雙手副槽不被舊3px白框覆寫；外框不占布局尺寸。修改css/ashen-forge.css、index.html快取1.0.56及本紀錄；本輪另依使用者最新指示完成上述列高／間距與既有測試期望，同一Commit共4檔。唯讀檢查未改css/style.css／ashen-forge-flat.css、js/ui.js／item.js、scripts/sim/engine.js及相關回歸；無素材變更，保留使用者既有素材修改。
+- 測試指令／結果同上述EQUIP-ROW-GAP-2PX：31/31回歸、442檔Build及diff檢查均通過。另隔離headless Edge＋正式Worker＋拋棄式存檔，1920／1280視窗、稀有度3／5／6／7／8各裝備欄及背包共20案例；同hover狀態選前／後background、blend、border、box-shadow與偽元素底色完全相同，移出滑鼠後同樣相等，矩形不變、外框皆5px金色。實際點雙手副槽亦5px；Console error／warning與Worker errors均0。測試暫停品質背景動畫以固定比較時間，不改產品動畫；測試服務／瀏覽器已關閉、無暫存檔／真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整裝備選取外框與洗煉鑲孔列距`提交。无未完成項目／已知本次新增風險，可合併；未合併／推送。下一步使用者重載檢查並審查整合。
+
 ## EQUIP-ROW-SPACING-20261005 — 洗煉與鑲孔間距減少及未選列去框
 
 - Owner：Codex；Done。使用者要求洗煉屬性及鑲嵌孔位列的間距縮短25%，未選項無外框；沿現有8px列間距改為6px，只選中列保留綠色框。以透明等寬邊框保留幾何，選取／懸停不跳動；保持既有固定操作列及背包位置。

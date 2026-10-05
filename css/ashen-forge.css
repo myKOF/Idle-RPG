@@ -1055,13 +1055,10 @@ select option {
   box-shadow: inset 0 0 0 1px #d0d2bb20, inset 0 0 9px #000b;
 }
 
-.item-cell.selected,
-.eq-slot.selected {
-  outline: 3px solid #ffe354;
+#workspace-area .item-cell.selected,
+#workspace-area .eq-slot.selected {
+  outline: 5px solid #ffe354;
   outline-offset: 1px;
-  background-color: #715b12;
-  background-blend-mode: screen;
-  box-shadow: inset 0 0 0 100px #ffe35438, 0 0 7px #ffe354aa !important;
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured
@@ -1604,20 +1601,20 @@ html *::-webkit-scrollbar-corner {
 
 /* 洗煉模式：整條文字區可選取，預留放大字體所需高度，換選時版面不跳。 */
 #tab-equip #detail-pane .it-affixes.is-reroll-mode {
-  gap: 6px;
+  gap: 2px;
 }
 
 #tab-equip #detail-pane .it-affix-row.is-reroll-pickable {
   height: auto;
-  min-height: 40px;
+  min-height: 30px;
 }
 
 #tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text,
 #tab-equip #detail-pane .it-sockets .socket.socket-row {
   height: auto;
   box-sizing: border-box;
-  min-height: 40px;
-  padding: 9px 8px;
+  min-height: 30px;
+  padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
@@ -1772,7 +1769,7 @@ html *::-webkit-scrollbar-corner {
   gap: 8px;
 }
 
-#tab-equip #detail-pane.is-socket-page .it-sockets { gap: 6px; margin-top: 0; }
+#tab-equip #detail-pane.is-socket-page .it-sockets { gap: 2px; margin-top: 0; }
 
 #tab-equip #detail-pane .socket-pick {
   display: flex;
