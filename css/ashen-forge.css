@@ -1626,6 +1626,27 @@ html *::-webkit-scrollbar-corner {
   cursor: pointer !important;
 }
 
+/* 透明命中區含整列內距、邊框與相鄰2px空隙的一半，不改列高或選框。
+   鑲孔按鈕以整列為定位容器；文字提示與卸下按鈕仍在命中區上方。 */
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text,
+#tab-equip #detail-pane .socket-row {
+  position: relative;
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .it-affix-text::after,
+#tab-equip #detail-pane .socket-row .socket-pick::after {
+  content: "";
+  position: absolute;
+  inset: -2px -1px;
+  cursor: pointer;
+}
+
+#tab-equip #detail-pane .it-affix-row.is-reroll-pickable .act-btn-tooltip,
+#tab-equip #detail-pane .socket-remove {
+  position: relative;
+  z-index: 1;
+}
+
 #tab-equip #detail-pane .it-affix-row.is-reroll-pickable:not(.is-reroll-selected) .it-affix-text:hover {
   background: rgba(255, 255, 255, .04);
 }
@@ -1772,6 +1793,7 @@ html *::-webkit-scrollbar-corner {
 #tab-equip #detail-pane.is-socket-page .it-sockets { gap: 2px; margin-top: 0; }
 
 #tab-equip #detail-pane .socket-pick {
+  position: static;
   display: flex;
   align-items: center;
   flex: 1;

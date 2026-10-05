@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## EQUIP-ROW-HIT-AREA-20261005 — 消除鑲孔與洗煉列的點擊死區
+
+- Owner：Codex；Done。使用者確認延遲感來自鑲孔與洗煉列間點擊不回應，要求移除所有死區。前置30px列高／2px間距及切孔局部同步完成，單一開發者；後續接手者使用者。
+- 允許css/ashen-forge.css限定可選列點擊範圍、index.html僅CSS快取及本紀錄；禁止UI／Worker邏輯、資料／數值／素材、其他副本、合併／推送。初步預檢js/ui.js有Claude未提交視覺佇列修改551～612行，因此排除該檔、以CSS擴張現有點擊元素命中區。CSS／紀錄預檢乾淨；index.html有Claude第926行UI快取123→124修改，使用者已同意僅改本副本第11行CSS快取、保留對方UI引用。保留既有使用者lightning-orb-field-purple.json未提交修改。
+- 原因：鑲孔socket-pick按鈕僅20px高，30px列的上下內距與左右外緣不能點，還有2px列間gap；洗煉文字區雖滿列高，gap仍不接收點擊。讓既有按鈕／可選文字區的透明命中區涵蓋整列、各延伸1px覆蓋gap；文字tooltip及卸下按鈕置前保留原互動，不增加新事件或刷新。
+- 驗收：兩模式各列上／下／左／右緣及gap兩半可切選，filled／empty／融合孔、1920與1280視窗；30px列高／2px間距／選框與四功能按鈕／背包矩形保持，卸下只送一次／選孔不送Worker／pending仍阻擋，寶石節點不重建。正式瀏覽器實際座標點擊／Console、定向回歸／Build後Commit。
+- 完成／修改3檔：css/ashen-forge.css加入透明偽元素擴張原點選元素範圍，index.html僅ashen快取1.0.57及本紀錄。外觀仍30px列高／2px間距與原選框；洗煉提示及鑲孔卸下按鈕維持前景事件範圍，原委派處理及pending防重送不變。唯讀檢查未改js/ui.js／item.js、css/style.css、七份相關回歸、prompts/codex.md與協作規範；無素材變更／素材庫Commit。執行期間另一任務新增battle-renderer.js與ELITE-HALO-VISIBLE紀錄，保留其修改、不納入本次Commit；使用者原lightning-orb-field-purple.json亦保留。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/init-ui-smoke.test.cjs tests/ui-fixed-canvas.test.cjs`47/47通過；`npm.cmd run build`442檔通過；`git diff --check`通過。沒有新增只比對CSS文字的測試，改以正式瀏覽器實際點擊與命中掃描驗收。
+- 瀏覽器：隔離headless Edge／全新Context／隨機Port唯讀HTTP服務，正式Worker與seed=9拋棄式12孔裝備、48類寶石。暫時關閉透明命中區作前後對照，取樣24點鑲孔皆無回應、洗煉4點無回應；啟用正式CSS後1920／1280、兩模式逐次滑鼠點上／下／左／右緣及gap兩端，共96次全部選到命中項目，選孔／屬性皆不送Worker指令。逐物理像素四條縱向掃描各512／340點，四案例共1704點皆能命中選項或原卸下鈕；子像素邊界以浏览器實際映射鄰項判定，不將邊界分派當作死區。寶石48節點全部保留、操作列／背包矩形完全相同、文字tooltip仍可命中原提示元素。pending中點列外緣仍不切選，解除恢復；實際點第2孔卸下僅一次gem.unsocket index1，正確移除／返還。Console error／warning與Worker errors皆0；無真人存檔／臨時檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 消除鑲孔與洗煉列的點擊死區`提交。無未完成本次需求或已知新增風險，可合併，未合併／推送。下一步使用者重載確認整列與空隙可選並審查整合；其他進行中任務仍保留未提交。
+
 ## EQUIP-SOCKET-PICK-PERF-20261005 — 調查切孔延遲及減少重複控制項更新
 
 - Owner：Codex；Done。使用者回報切鑲孔仍稍有延遲，要求查是否每次刷新全部寶石。前置鑲嵌局部渲染已完成；目標衝突預檢乾淨，單一開發者。允許js/ui.js限定鑲嵌控制項同步、index.html對應快取、tests/equip-socket-ui.test.cjs與本紀錄；禁止Worker／規則／數值／素材／存檔／其他副本、合併／推送。既有使用者lightning-orb-field-purple.json修改保留不提交。後續接手者使用者。
