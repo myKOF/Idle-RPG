@@ -9,9 +9,13 @@
       "type": "sprite",
       "assetId": "light-masks-1.0/default/ring_a.png",
       "zIndex": 0,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.4063,
-        "y": 0.4063
+        "x": 0.3031,
+        "y": 0.3031
       },
       "alpha": 0.14400000000000002,
       "tint": "#86efac",
@@ -41,9 +45,13 @@
       "type": "sprite",
       "assetId": "particle-pack/png-black-background/circle_02.png",
       "zIndex": 1,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "scale": {
-        "x": 0.3906,
-        "y": 0.3906
+        "x": 0.2914,
+        "y": 0.2914
       },
       "alpha": 0.41600000000000004,
       "tint": "#86efac",
@@ -73,6 +81,10 @@
       "type": "particle",
       "assetId": "particle-pack/png-black-background/circle_05.png",
       "zIndex": 2,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
       "tint": "#86efac",
       "blendMode": "add",
       "emission": {
@@ -84,24 +96,24 @@
         0.9
       ],
       "spawn": {
-        "radius": 96,
+        "radius": 71.6256,
         "shape": "circle"
       },
       "speed": [
-        15,
-        40
+        11.1915,
+        29.844
       ],
       "direction": -90,
       "spread": 60,
       "gravity": {
         "x": 0,
-        "y": -40
+        "y": -29.844
       },
       "drag": 0.8,
       "orbitalSpeed": 2.5133,
       "startScale": [
-        0.0059,
-        0.0117
+        0.0044,
+        0.0087
       ],
       "alphaOverLife": [
         [
