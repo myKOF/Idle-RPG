@@ -194,14 +194,15 @@ function rwCandidates(it) {
 /* ============================================================
    §3 屬性聚合
    ============================================================ */
-/* 單條 stats 的數值＝ 詞條基準值(詞條, 裝備等級, 稀有度) × mult × 強化倍率 × 雙手倍率。
-   與詞條同源（affixBaseValue／affixRoundValue → js/formula.js §6），隨裝備成長。 */
+/* 單條 stats 的數值＝ 詞條基準值(詞條, 裝備等級, 稀有度) × mult × 強化倍率。
+   與詞條同源（affixBaseValue／affixRoundValue → js/formula.js §6），隨裝備成長。
+   不吃雙手倍率（TWO_HAND_AFFIX_VALUE_MULT）：雙手武器已經靠 ×1.75 的鑲孔數拿到補償
+   （更多符文屬性＋更容易湊出長配方），再 ×2 會讓雙手符文之語整整領先一個級距。 */
 function rwStatValue(it, key, mult) {
   if (!AFFIX_POOL[key] || !it) return 0;
-  var handed = (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) ? TWO_HAND_AFFIX_VALUE_MULT : 1;
   var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
   var base = affixBaseValue(key, it.level, it.rarity);
-  return affixRoundValue(key, base * (Number(mult) || 0) * handed * um * RW_STAT_SCALE);
+  return affixRoundValue(key, base * (Number(mult) || 0) * um * RW_STAT_SCALE);
 }
 
 /* 符文單獨鑲著的加成類別：主手／雙手武器用 w，其餘（防具、飾品、副手）用 a。 */

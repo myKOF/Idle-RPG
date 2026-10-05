@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadRuneEnv, makeItem, fillRunes } = require('./helpers/runeword-env.cjs');
+const { loadRuneEnv, makeItem, fillRunes, wordItem } = require('./helpers/runeword-env.cjs');
 // vm 內建立的物件原型與測試端不同，deepStrictEqual 會因此誤判；一律先轉成純 JSON 再比
 const plain = (x) => JSON.parse(JSON.stringify(x));
 
@@ -26,23 +26,12 @@ function equip(c, slot, it) {
   return c.getStats();
 }
 const WORD = (c, id) => c.RUNEWORD_BY_ID[id];
-function wordItem(c, id, over) {
-  const w = WORD(c, id);
-  const base = { slot: 'weapon', weaponType: 'sword1h', rarity: 7, level: 100 };
-  // 為每種 bases 挑一個可行的裝備型態
-  const b = w.bases[0];
-  if (b === 'chest' || b === 'helmet' || b === 'boots' || b === 'shoulder' || b === 'belt' || b === 'gloves') { base.slot = b; delete base.weaponType; }
-  if (b === 'ring' || b === 'amulet') { base.slot = b; delete base.weaponType; }
-  if (b === 'jewelry') { base.slot = 'ring'; delete base.weaponType; }
-  if (b === 'armor') { base.slot = 'chest'; delete base.weaponType; }
-  if (b === 'caster') base.weaponType = 'wand1h';
-  if (b === 'twoHand') base.weaponType = 'axe2h';
-  if (b === 'shield' || b === 'focus' || b === 'orb' || b === 'spellbook') base.weaponType = b;
-  if (['dagger1h', 'staff2h', 'greatsword2h'].includes(b)) base.weaponType = b;
-  const it = makeItem(c, Object.assign(base, over || {}));
-  while (it.sockets.length < w.runes.length) it.sockets.push(null);
-  fillRunes(it, w.runes);
-  return it;
+/* 測試只依賴「自己釘住的數字」，不依賴資料表目前的調校值（使用者調平衡後測試不該跟著紅）。 */
+function pin(c, id, spec) {
+  const w = c.RUNEWORD_BY_ID[id];
+  Object.assign(w, spec);
+  c.markStatsDirty();
+  return w;
 }
 
 /* ---------------- 鑲嵌與庫存 ---------------- */
@@ -170,14 +159,14 @@ test('單顆符文依武器／防具各給一條屬性，數值＝詞條基準�
   assert.equal(c.rwItemStatEntries(shield)[0].key, 'hpPct', '副手視同防具側');
 });
 
-test('強化倍率與雙手倍率同樣套用在符文屬性上', () => {
+test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2（已靠 ×1.75 鑲孔數補償）', () => {
   const c = loadRuneEnv();
   const one = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const up = fillRunes(makeItem(c, { rarity: 5, level: 100, upgrade: 10 }), ['r10']);
   const two = fillRunes(makeItem(c, { rarity: 5, level: 100, weaponType: 'axe2h' }), ['r10']);
   const v = (it) => c.rwItemStatEntries(it)[0].val;
   assert.ok(v(up) > v(one) * 1.4, '+10 約 ×1.5');
-  assert.ok(Math.abs(v(two) - v(one) * c.TWO_HAND_AFFIX_VALUE_MULT) < 1, '雙手 ×2');
+  assert.equal(v(two), v(one), '雙手武器的符文屬性與單手相同');
 });
 
 test('computeStats：符文之語屬性併入面板；拆下一顆就失效', () => {
@@ -197,6 +186,8 @@ test('computeStats：符文之語屬性併入面板；拆下一顆就失效', ()
 
 test('符文之語的被動並入 st.passives、借用的傳奇特效並入 legendaryEffects', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_stoneskin', { passives: { thorns: 3 } });
+  pin(c, 'rw_assassin', { legend: ['knifeShadowblade', 'knifeChain'] });
   const st = equip(c, 'chest', wordItem(c, 'rw_stoneskin', { slot: 'shoulder' }));
   assert.equal(st.passives.thorns, 3);
   const st2 = equip(c, 'weapon', wordItem(c, 'rw_assassin'));
@@ -242,6 +233,7 @@ test('符文屬性計入裝備評分；符文之語成形再乘一個階級係�
 
 test('rwOutgoingMultiplier：全傷／技能／普攻分流，條件式增傷各自成立', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_apocalypse', { fx: { dmgPct: 18, aspdMult: 10 } });
   equip(c, 'weapon', wordItem(c, 'rw_apocalypse'));           // dmgPct 18
   const p = setup(c);
   const foe = enemy();
@@ -275,6 +267,7 @@ test('傷害乘區確實接進 resolveHit（與傳奇特效同一個入口）', 
   const dcfg = { def: 0, isBoss: false };
   c.Math.random = () => 0.5;                                      // 浮動取中間值 → 結果穩定
   const base = c.resolveHit(p, enemy(), cfg(), dcfg).dmg;
+  pin(c, 'rw_apocalypse', { fx: { dmgPct: 18 } });
   equip(c, 'weapon', wordItem(c, 'rw_apocalypse'));
   c.Math.random = () => 0.5;
   const boosted = c.resolveHit(p, enemy(), cfg(), dcfg).dmg;
@@ -283,6 +276,7 @@ test('傷害乘區確實接進 resolveHit（與傳奇特效同一個入口）', 
 
 test('單次受傷上限：玩家為防守方時單次傷害被夾在最大生命的 N%，護盾吸收之前', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_unmoving', { fx: { maxHitPct: 40 } });
   const st = equip(c, 'chest', wordItem(c, 'rw_unmoving'));            // maxHitPct 40
   const p = setup(c);
   const dcfg = c.playerDefCfg(p);
@@ -303,6 +297,9 @@ test('攻速／冷卻／法力的乘區：未裝備時為 1；裝備後乘算且
   assert.equal(c.rwAttackSpeedMultiplier(), 1);
   assert.equal(c.rwCooldownFactor(), 1);
   assert.equal(c.rwManaCostFactor(), 1);
+  pin(c, 'rw_timeloop', { fx: { cdPct: 45 } });
+  pin(c, 'rw_blitz', { fx: { aspdMult: 15 } });
+  pin(c, 'rw_manafountain', { fx: { manaCostRedPct: 40 } });
   equip(c, 'amulet', wordItem(c, 'rw_timeloop'));                     // cdPct 45
   assert.ok(Math.abs(c.rwCooldownFactor() - 0.55) < 1e-9);
   equip(c, 'weapon', wordItem(c, 'rw_blitz'));                        // aspdMult 15
@@ -320,6 +317,7 @@ function fakeRes(over) { return Object.assign({ miss: false, dmg: 1000, crit: fa
 
 test('hit 觸發：機率擲骰、傷害走既有傷害管線、擊殺回報給呼叫端', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_minorthunder', { procs: [{ on: 'hit', chance: 8, acts: [{ act: 'dmg', pct: 90, elem: 'lightning', to: 'target' }] }] });
   equip(c, 'weapon', wordItem(c, 'rw_minorthunder'));             // 8%：90% 雷電傷害
   const p = setup(c);
   const foe = c.FIELD.monsters[0];
@@ -365,17 +363,19 @@ test('every：每 N 次命中才觸發；cd：內建冷卻內不再觸發', () =
 
 test('crit 只在暴擊時觸發；擴散傷害打其他敵人但不重複打主目標', () => {
   const c = loadRuneEnv();
-  equip(c, 'weapon', wordItem(c, 'rw_swarmhunter'));              // splashPct 40
+  pin(c, 'rw_swarmhunter', { fx: { splashPct: 30 } });
+  equip(c, 'weapon', wordItem(c, 'rw_swarmhunter'));              // splashPct 30
   const a = enemy(), b = enemy(), d = enemy();
   const p = setup(c, [a, b, d]);
   const st = c.getStats();
   c.Math.random = () => 0.99;
   const out = c.rwOnBasicAttack(p, a, fakeRes({ dmg: 1000 }), 'mv-float', st);
   assert.equal(a.hp, 1e9, '主目標由普攻本身處理');
-  assert.equal(b.hp, 1e9 - 400);
-  assert.equal(d.hp, 1e9 - 400);
-  assert.equal(out.dmg, 800);
+  assert.equal(b.hp, 1e9 - 300);
+  assert.equal(d.hp, 1e9 - 300);
+  assert.equal(out.dmg, 600);
   // crit 專用
+  pin(c, 'rw_chainstorm', { procs: [{ on: 'crit', chance: 30, acts: [{ act: 'dmg', pct: 120, elem: 'lightning', to: 'all' }] }] });
   equip(c, 'weapon', wordItem(c, 'rw_chainstorm'));               // crit：對全體 150% 雷電
   const p2 = setup(c, [enemy(), enemy()]);
   const st2 = c.getStats();
@@ -389,6 +389,8 @@ test('crit 只在暴擊時觸發；擴散傷害打其他敵人但不重複打主
 
 test('kill：擊殺回復生命與法力；kill 觸發可縮短技能冷卻', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_timewarden', { procs: [{ on: 'kill', acts: [{ act: 'cdr', sec: 1 }] }], fx: {} });
+  pin(c, 'rw_bloodring', { fx: { killHealPct: 1 } });
   equip(c, 'weapon', wordItem(c, 'rw_timewarden', { weaponType: 'orb' }));
   equip(c, 'ring', wordItem(c, 'rw_bloodring'));                  // killHealPct 1
   const p = setup(c);
@@ -403,6 +405,7 @@ test('kill：擊殺回復生命與法力；kill 觸發可縮短技能冷卻', ()
 
 test('hurt／block 觸發以攻擊者為目標；受傷為 0 時不觸發 hurt', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_ironoath', { procs: [{ on: 'hurt', chance: 20, cd: 3, acts: [{ act: 'dmg', pct: 100, type: 'phys', to: 'attacker' }] }] });
   equip(c, 'shoulder', wordItem(c, 'rw_ironoath'));                // hurt 20%，冷卻 3 秒，100% 物理打攻擊者
   const p = setup(c);
   const attacker = c.FIELD.monsters[0];
@@ -417,6 +420,7 @@ test('hurt／block 觸發以攻擊者為目標；受傷為 0 時不觸發 hurt',
   c.rwOnPlayerDamaged(attacker, p, 500, false, {}, 'pv-float');
   assert.equal(attacker.hp, after, '冷卻內不再觸發');
   // block
+  pin(c, 'rw_guardian', { procs: [{ on: 'block', chance: 40, acts: [{ act: 'dmg', pct: 200, type: 'phys', to: 'attacker' }] }] });
   equip(c, 'weapon', wordItem(c, 'rw_guardian'));
   const p2 = setup(c); const atk2 = c.FIELD.monsters[0];
   c.rwOnPlayerDamaged(atk2, p2, 100, true, {}, 'pv-float');
@@ -425,6 +429,7 @@ test('hurt／block 觸發以攻擊者為目標；受傷為 0 時不觸發 hurt',
 
 test('legendaryOnPlayerDamaged 入口確實會呼叫符文之語（受擊路徑接線）', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_ironoath', { procs: [{ on: 'hurt', chance: 20, cd: 3, acts: [{ act: 'dmg', pct: 100, type: 'phys', to: 'attacker' }] }] });
   equip(c, 'shoulder', wordItem(c, 'rw_ironoath'));
   const p = setup(c);
   const attacker = c.FIELD.monsters[0];
@@ -436,6 +441,7 @@ test('legendaryOnPlayerDamaged 入口確實會呼叫符文之語（受擊路徑�
 
 test('lowhp：生命低於門檻觸發，內建冷卻內不重複；提供無敵與回血', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_lastbreath', { procs: [{ on: 'lowhp', below: 30, cd: 90, acts: [{ act: 'invuln', sec: 3 }, { act: 'heal', pctMax: 30 }, { act: 'cleanse' }] }] });
   equip(c, 'chest', wordItem(c, 'rw_lastbreath'));
   const p = setup(c);
   const st = c.getStats();
@@ -456,6 +462,7 @@ test('lowhp：生命低於門檻觸發，內建冷卻內不重複；提供無敵
 
 test('tick：每 N 秒觸發一次；倒地期間暫停；selfDrain 不致死', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_dawncrown', { procs: [{ on: 'tick', every: 10, acts: [{ act: 'heal', pctMax: 8 }, { act: 'mana', pctMax: 8 }] }] });
   equip(c, 'helmet', wordItem(c, 'rw_dawncrown'));                // tick 10 秒：回血回魔 8%
   const p = setup(c);
   const st = c.getStats();
@@ -470,6 +477,7 @@ test('tick：每 N 秒觸發一次；倒地期間暫停；selfDrain 不致死', 
   c.GT = 15; c.rwTick(0.1, ctx);
   assert.equal(p.mp, mp1, '第二次要等到 20 秒');
   // 生命祭獻
+  pin(c, 'rw_bloodmoon', { fx: { selfDrainPct: 2 } });
   equip(c, 'weapon', wordItem(c, 'rw_bloodmoon'));                 // selfDrainPct 2
   const p2 = setup(c);
   const st2 = c.getStats();
@@ -483,6 +491,7 @@ test('tick：每 N 秒觸發一次；倒地期間暫停；selfDrain 不致死', 
 
 test('cast：重施放與隨機施放呼叫 castSkill2 的免費模式（repeat），且不連鎖觸發', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_timeloop', { procs: [{ on: 'cast', chance: 25, acts: [{ act: 'recast' }] }] });
   equip(c, 'amulet', wordItem(c, 'rw_timeloop'));                  // cast 25%：recast
   const p = setup(c);
   const calls = [];
@@ -494,6 +503,7 @@ test('cast：重施放與隨機施放呼叫 castSkill2 的免費模式（repeat�
   assert.equal(calls[0].opts.repeat, true);
   assert.equal(out.dmg, 600, '重施放的傷害併入該次施放總傷害');
   // castRandom：只會挑已裝配且可施放的非被動技能
+  pin(c, 'rw_blitz', { procs: [{ on: 'hit', every: 6, acts: [{ act: 'castRandom' }] }] });
   equip(c, 'weapon', wordItem(c, 'rw_blitz'));                     // hit 每 6 次：castRandom
   c.G.player.loadout = ['sg:thrust', 'potential:x'];
   c.G.player.skills2 = { levels: { thrust: [1, 0, 0, 0, 0, 0, 0] } };
@@ -516,6 +526,7 @@ test('castSkill2 的施放掛勾存在（非免費施放才觸發，免費施放
 
 test('輪迴：死亡時復活、無敵、增傷、重置冷卻；冷卻期間不再復活；重置戰鬥不洗掉復活冷卻', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_reincarnation', { fx: { reviveHpPct: 60, reviveCdSec: 180, reviveInvulnSec: 3, reviveDmgPct: 60, reviveDmgSec: 10, reviveRefresh: 1 } });
   equip(c, 'chest', wordItem(c, 'rw_reincarnation'));
   const p = setup(c);
   const st = c.getStats();
@@ -537,6 +548,7 @@ test('輪迴：死亡時復活、無敵、增傷、重置冷卻；冷卻期間�
 
 test('死亡出口接線：野外 onPlayerFieldDeath 與高塔 endTowerFight 都會先問輪迴', () => {
   const c = loadRuneEnv();
+  pin(c, 'rw_reincarnation', { fx: { reviveHpPct: 60, reviveCdSec: 180, reviveInvulnSec: 3, reviveDmgPct: 60, reviveDmgSec: 10, reviveRefresh: 1 } });
   equip(c, 'chest', wordItem(c, 'rw_reincarnation'));
   const p = setup(c);
   p.hp = 0; c.GT = 10;
@@ -585,6 +597,7 @@ test('野外掉落：符文入庫並回報字串；符文掉落率加成會放�
   c.rollDropCount = (pct) => { seen = pct; return 0; };
   c.rwRollFieldRuneDrops('desert', 1, 0, 1, 1, []);
   const basePct = seen;
+  pin(c, 'rw_scavenger', { fx: { runeFindPct: 8 } });
   equip(c, 'ring', wordItem(c, 'rw_scavenger'));                    // runeFindPct 8
   c.rwRollFieldRuneDrops('desert', 1, 0, 1, 1, []);
   assert.ok(Math.abs(seen / basePct - 1.08) < 1e-9);

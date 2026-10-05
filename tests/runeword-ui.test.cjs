@@ -75,7 +75,7 @@ test('圖鑑：全部配方、材料齊全旗標（含重複符文的數量需�
   c.setPanels({ gems: {}, fusedGems: [], runes: { r06: 1, r08: 1, r03: 1 } }, null);
   c.renderRunes();
   let list = c.els['runeword-list'].innerHTML;
-  assert.equal((list.match(/class="rx-word[ "]/g) || []).length, 56);
+  assert.equal((list.match(/class="rx-word[ "]/g) || []).length, c.RUNEWORDS.length);
   assert.match(list, /id="rxw-rw_viperkiss"[^>]*>/);
   const viper = list.slice(list.indexOf('id="rxw-rw_viperkiss"'), list.indexOf('id="rxw-rw_minorthunder"'));
   assert.match(viper, /材料齊全/);
@@ -99,13 +99,13 @@ test('圖鑑篩選：級距與「只看材料齊全」', () => {
   st.tier = 4;
   c.renderRunes();
   let list = c.els['runeword-list'].innerHTML;
-  assert.equal((list.match(/class="rx-word[ "]/g) || []).length, 14);
+  assert.equal((list.match(/class="rx-word[ "]/g) || []).length, c.RUNEWORDS.filter((w) => w.tier === 4).length);
   st.tier = 0; st.ready = true;
   c.renderRunes();
   list = c.els['runeword-list'].innerHTML;
   assert.equal((list.match(/class="rx-word[ "]/g) || []).length, 1, '只剩材料齊全的蛇吻');
   assert.match(list, /蛇吻/);
-  assert.match(c.els['rune-codex-count'].textContent, /顯示 1 \/ 56/);
+  assert.match(c.els['rune-codex-count'].textContent, new RegExp('顯示 1 / ' + c.RUNEWORDS.length));
 });
 
 test('按鈕送出對應的符文指令', () => {

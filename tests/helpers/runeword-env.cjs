@@ -57,3 +57,28 @@ function fillRunes(it, runes, start) {
 }
 
 module.exports = { loadRuneEnv, makeItem, fillRunes, root, SIM_FILES };
+
+/* 為指定符文之語建一件「剛好能成形」的裝備：挑 bases 裡第一個可行的裝備型態，孔數補到足夠。 */
+function wordItem(c, id, over) {
+  const w = c.RUNEWORD_BY_ID[id];
+  const base = { slot: 'weapon', weaponType: 'sword1h', rarity: 7, level: 100 };
+  const b = w.bases[0];
+  if (['chest', 'helmet', 'boots', 'shoulder', 'belt', 'gloves', 'legs', 'wrist', 'ring', 'amulet'].includes(b)) { base.slot = b; delete base.weaponType; }
+  if (b === 'jewelry') { base.slot = 'ring'; delete base.weaponType; }
+  if (b === 'armor') { base.slot = 'chest'; delete base.weaponType; }
+  if (b === 'caster') base.weaponType = 'wand1h';
+  if (b === 'twoHand') base.weaponType = 'axe2h';
+  if (['shield', 'focus', 'orb', 'spellbook', 'dagger1h', 'staff2h', 'greatsword2h', 'magicSword1h'].includes(b)) base.weaponType = b;
+  const it = makeItem(c, Object.assign(base, over || {}));
+  while (it.sockets.length < w.runes.length) it.sockets.push(null);
+  fillRunes(it, w.runes);
+  return it;
+}
+/* 這件裝備該放進哪個裝備欄（副手類型走 weapon2）。 */
+function slotFor(c, it) {
+  if (it.slot !== 'weapon') return it.slot;
+  const wd = c.weaponDef(it);
+  return wd && wd.cat === 'offHand' ? 'weapon2' : 'weapon';
+}
+module.exports.wordItem = wordItem;
+module.exports.slotFor = slotFor;
