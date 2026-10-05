@@ -243,6 +243,19 @@ test('只洗遊戲允許的部位——武器洗不出寶石鑲嵌效率', () =>
   assert.notEqual(cmds[0].args.itemId, 'w1');
 });
 
+test('裝備等級 ≤ 詞條的 gateLevel 就不去洗它（等級前不出現的屬性）', () => {
+  /* 遊戲規則（AFFIX_LEVEL_GATES）：屬性抗性等詞條在裝備等級 200 以前洗不出來。
+     策略讀 affixRules.gateLevel，別把精華燒在注定洗不出來的裝備上。 */
+  const gated = (level) => {
+    const state = jewelState(1, jewelGear({}));
+    state.panels.equip.affixRules.gemEff.gateLevel = 200;
+    Object.keys(state.panels.inv.equipment).forEach((k) => { state.panels.inv.equipment[k].level = level; });
+    return countPolicy(3).decide(state).filter((c) => c.name === 'item.rerollAffix').length;
+  };
+  assert.equal(gated(200), 0, '200 級（含）以前洗不出來，不該下洗煉指令');
+  assert.equal(gated(250), 1, '超過門檻就照常洗');
+});
+
 test('不會把已經洗出來的目標詞條當成犧牲品洗掉', () => {
   const p = countPolicy(3);
   const gear = jewelGear({ amulet: ['gemEff', 'critRate'] });

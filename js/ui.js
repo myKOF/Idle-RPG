@@ -3027,11 +3027,18 @@ function renderAttrPanel(st, headerSnapshot) {
     }
   }
   // 更新數值
+  /* 等級前不出現的屬性（AFFIX_LEVEL_GATES → data.js）：角色等級 ≤ 門檻的列整列收起，避免面板過於龐雜。
+     骨架只建一次（保留各分組的展開狀態），所以不重建，而是逐列切換 display；
+     收起的列不更新內容、也不計入「N 項為 0」。取不到等級（NaN）視為不擋。 */
+  var attrLevel = headerSnapshot && headerSnapshot.player ? Number(headerSnapshot.player.level) : NaN;
   STAT_GROUPS.forEach(function (g, gi) {
     var zeroCount = 0;
     g.rows.forEach(function (row, ri) {
       var el = panel.querySelector('[data-attr="' + gi + '-' + ri + '"]');
       if (!el) return;
+      var gated = typeof statPanelRowHiddenAtLevel === 'function' && statPanelRowHiddenAtLevel(row, attrLevel);
+      setStyleIfChanged(el.parentElement, 'display', gated ? 'none' : '');
+      if (gated) return;
       /* 一律先比對再寫。innerHTML 的指派**一定**會換掉子節點，即使字串完全相同，
          而換節點就是一次幾何失效、一次重繪。這一支每秒跑 4～5 次、面板有約 40 列，
          但力量／敏捷／智力這些值只在升級或換裝時才變——原本的寫法等於每秒白白

@@ -392,7 +392,7 @@ function normalizeTwoHandItemCounts(it) {
   var target = r.affix[0] + TWO_HAND_BONUS_AFFIXES;
   var guard = 0;
   while (it.affixes.length < target && guard++ < 50) {
-    var added = rollAffixes(1, it.rarity, it.slot).filter(function (na) {
+    var added = rollAffixes(1, it.rarity, it.slot, undefined, undefined, it.level).filter(function (na) {
       return !it.affixes.some(function (a) { return a.key === na.key; });
     });
     if (added.length) it.affixes = it.affixes.concat(added);
@@ -455,14 +455,17 @@ function unsocketGem(it, idx) {
 // ancientSet：太古位置集合（{索引:true}）。太古改版（2026-07-23）：太古與否只看位置，
 // 產出時由 pickAncientPositions 決定、洗煉時沿用原位置；太古位置數值必為滿值。
 // 只擲「強度值」不算數值：數值一律由 affixValue 當場算（詞條存檔改造 → formula.js §6），
-// 所以這裡不需要裝備等級，rarityIdx 只用於過濾高階詞條池（minR）。
-function rollAffixes(count, rarityIdx, slot, ancientSet, affixCap) {
+// 所以這裡不需要裝備等級來算值，rarityIdx 只用於過濾高階詞條池（minR）。
+// itemLevel：裝備等級，只用來過濾「等級前不出現」的詞條（AFFIX_LEVEL_GATES → data.js）；
+// 不傳（undefined）＝不過濾，呼叫端手上沒有裝備時維持舊行為。
+function rollAffixes(count, rarityIdx, slot, ancientSet, affixCap, itemLevel) {
   var pool = [];
   for (var k in AFFIX_POOL) {
     var d = AFFIX_POOL[k];
     if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(k)) continue;
     if (d.minR !== undefined && rarityIdx < d.minR) continue;          // 高階詞條限稀有度
     if (d.slots && slot && d.slots.indexOf(slot) < 0) continue;        // 部位專屬詞條
+    if (typeof affixAvailableAtLevel === 'function' && !affixAvailableAtLevel(k, itemLevel)) continue;  // 等級前不出現
     pool.push([k, d.weight]);
   }
   var out = [], used = {};
@@ -523,7 +526,7 @@ function makeEquipment(stage, opts) {
     rarity: rarity,
     level: lvl,
     name: RARITY_PREFIX[rarity] + pick(weaponType ? WEAPON_TYPES[weaponType].basenames : SLOT_BASENAMES[slot]),
-    affixes: rollAffixes(affixCount, rarity, slot, ancientSet),
+    affixes: rollAffixes(affixCount, rarity, slot, ancientSet, undefined, lvl),
     passive: null,
     enchant: null,   // { key, val }
     sockets: [],     // 寶石插槽 [{type, level}|null, ...]
@@ -720,6 +723,7 @@ function itemHeaderHTML(it, opts) {
     if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(k)) continue;
     if (d.minR !== undefined && it.rarity < d.minR) continue;
     if (d.slots && d.slots.indexOf(it.slot) < 0 && d.slots.indexOf('all') < 0) continue;
+    if (typeof affixAvailableAtLevel === 'function' && !affixAvailableAtLevel(k, it.level)) continue;   // 等級前不出現
     var reqRarity = d.minR ? ' <span style="font-size:10.5px;color:' + RARITIES[d.minR].color + '">(' + RARITIES[d.minR].name + '+)</span>' : '';
 
     var baseVal = affixBaseValue(k, it.level, it.rarity);
@@ -948,7 +952,7 @@ function rerollItemAffixes(it) {
   for (var ai = 0; ai < it.affixes.length; ai++) {
     if (it.affixes[ai].ancient) ancientSet[ai] = true;
   }
-  it.affixes = rollAffixes(it.affixes.length, it.rarity, it.slot, ancientSet, affixCap);
+  it.affixes = rollAffixes(it.affixes.length, it.rarity, it.slot, ancientSet, affixCap, it.level);
   markStatsDirty();
   UI.dirty.header = true; UI.dirty.equip = true; UI.dirty.inv = true;
   return null;
@@ -977,6 +981,7 @@ function rerollSingleAffix(it, affixKey) {
     if (typeof affixIsAllLocked === 'function' && affixIsAllLocked(k)) continue;
     if (d.minR !== undefined && it.rarity < d.minR) continue;
     if (d.slots && it.slot && d.slots.indexOf(it.slot) < 0) continue;
+    if (typeof affixAvailableAtLevel === 'function' && !affixAvailableAtLevel(k, it.level)) continue;   // 等級前不出現
     if (used[k]) continue;
     pool.push([k, d.weight]);
   }

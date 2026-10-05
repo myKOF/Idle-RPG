@@ -2231,6 +2231,8 @@ function decide(state, policy, memo) {
           if (avoid.indexOf(itC.slot) >= 0) continue;
           if (tg2.slots && tg2.slots.indexOf(sk3) < 0 && tg2.slots.indexOf(itC.slot) < 0) continue;
           if (allowRule && allowRule.minR !== null && (itC.rarity || 0) < allowRule.minR) continue;
+          /* 裝備等級 ≤ gateLevel 的裝備洗不出這條詞條（AFFIX_LEVEL_GATES，例如屬性抗性 200 級前不出現）。 */
+          if (allowRule && allowRule.gateLevel > 0 && (Number(itC.level) || 0) <= allowRule.gateLevel) continue;
           slots.push(sk3);
         }
         /* 依偏好排序。沒列到的一律排在列到的後面；同組之間用部位鍵排序，
