@@ -1300,15 +1300,15 @@ var BattleRenderer = (function () {
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     view.addChild(shadow);
 
-    /* 菁英光環：淡色貼近本體，避免密集敵人以加色混合疊成亮霧。 */
+    /* 菁英光環：以低強度、小範圍加色保留發光辨識。 */
     if (isElite) {
       var glow = new PIXI.Sprite(glowTexture());
       glow.anchor.set(0.5);
       glow.tint = 0xb17aff;
-      glow.alpha = 0.18;
-      glow.scale.set(1.15);
+      glow.alpha = 0.28;
+      glow.scale.set(1.3);
       glow.y = -24;
-      glow.blendMode = 'normal';
+      glow.blendMode = 'add';
       view.addChild(glow);
     }
 

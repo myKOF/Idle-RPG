@@ -1,5 +1,14 @@
 # AI_TASKS.md
 
+## ELITE-HALO-RESTORE-20261005 — 加回部分菁英敵人光暈
+
+- Owner：Codex；Done。使用者回報前次菁英光暈降低後幾乎不可見，要求加回一些。前置ELITE-HALO-20261003已完成；單一開發者，renderer／index／本紀錄衝突預檢乾淨，後續接手者使用者。
+- 允許js/battle-renderer.js僅菁英光暈透明度／縮放／混合模式、index.html僅renderer必要快取及本紀錄；禁止其他功能／技能／數值／素材／Worker／其他副本、合併／推送。保留使用者lightning-orb-field-purple.json既有未提交修改，不納入本次提交；沒有素材製作或外部參考。
+- 驗收恢復紫色發光辨識、強度與範圍仍低於最初設定；保留骷髏／名稱／血條，一般敵人及Boss不新增光暈。既有戰場／敵方特效回歸、正式makeEnemy執行檢查、Build／diff檢查後獨立Commit。
+- 完成／修改3檔：js/battle-renderer.js菁英光暈alpha0.18→0.28、scale1.15→1.3、normal→add；恢復發光感，強度仍約為最初0.55的一半、直徑比最初1.7小約24%。index.html renderer快取1.6.170、本紀錄同步；紫色／位置／菁英大小／骷髏／名稱／血條保留。唯讀檢查未改：tests/helpers/battle-scene.cjs、package.json、既有戰場與敵方特效測試／協作規範；沒有素材／素材庫Commit、外部參考或新增特效来源。
+- 測試：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-editor-cache-versions.test.cjs`51/51通過；`npm.cmd run build`442檔通過；`git diff --check`通過。Node VM執行正式makeEnemy，驗證alpha／雙軸縮放／add與低於原設定、骷髏／紫色名稱／血條不變、一般敵人／Boss無此光暈。不增加僅鏡像數值的小型測試檔；未做瀏覽器或真人密集戰鬥觀感驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 加回部分菁英敵人光暈`提交。無未完成程式項目，可合併，未合併／推送；使用者既有素材未提交修改保留。已知限制：add在密集重疊時仍會累積亮度，本次以低強度／小範圍折衷，實際觀感待使用者重整遊戲驗收；下一步由使用者審查整合。
+
 ## EQUIP-ROW-GAP-2PX-20261005 — 洗煉與鑲孔空隙由6px改2px
 
 - Owner：Codex；Done。使用者回報前次縮距看不明顯；前次只改gap8→6px，保留40px列高，整體列距48→46px。已說明並依使用者最新明確指示將兩處gap6→2px、列高40→30px；內距9→4px配合20px行高與等寬透明框，文字列距32px。單一開發者，與本輪選取外框修改同屬裝備CSS；前置完成、目標衝突預檢乾淨。
