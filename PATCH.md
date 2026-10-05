@@ -1,5 +1,15 @@
 # PATCH.md
 
+## 裝備選中外框移除漸變動畫，點擊後立刻出現外框（Antigravity 2026-10-05）
+
+- **外框漸變動畫移除（`css/style.css`、`css/ashen-forge.css`）**：
+  - 移除 `.eq-slot` 原有的全屬性過渡 `transition: all 0.2s`，調整為僅對 `opacity, filter` 過渡，防止選中外框（`outline`）被套上 0.2 秒平滑過渡。
+  - 移除 `.item-cell` 與 `.eq-slot.filled` 中的 `outline 0.2s` 與 `box-shadow 0.2s` 漸變設定。
+  - 為 `.eq-slot.selected`、`.item-cell.selected` 以及 `#workspace-area` 的選中外框規則明確加入 `transition: none !important;`，點擊裝備槽位或背包格子選中時，外框立即 100% 渲染呈現，不再有緩慢放大或淡入的漸變過程；切換選中目標時前一個外框亦立即消失，無重影殘留。
+- **快取版本與單元測試**：
+  - [index.html](file:///d:/MyGame/Idle-RPG/antigravity/index.html) 快取版本號更新為 `style.css?v=1.0.75`、`ashen-forge.css?v=1.0.58`。
+  - 新增單元測試 [tests/equip-selection-outline-instant.test.cjs](file:///d:/MyGame/Idle-RPG/antigravity/tests/equip-selection-outline-instant.test.cjs)。
+
 ## 裝備詞條預覽界面支援點擊外部任意區域自動關閉（Antigravity 2026-10-05）
 
 - **外部點擊關閉判定優化（`js/ui.js`）**：

@@ -2376,7 +2376,7 @@ textarea#save-io {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: all 0.2s;
+  transition: opacity 0.2s, filter 0.2s;
   min-height: 0;
   box-sizing: border-box;
 }
@@ -2762,7 +2762,7 @@ textarea#save-io {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s;
+  transition: opacity 0.2s, filter 0.2s;
 }
 
 /* ---- 捲動格線：畫面外的格子不參與版面與繪製 ----
@@ -2792,7 +2792,7 @@ textarea#save-io {
 
 .eq-slot.filled,
 .item-cell {
-  transition: opacity 0.2s, filter 0.2s, box-shadow 0.2s, outline 0.2s;
+  transition: opacity 0.2s, filter 0.2s;
 }
 
 /* ?�中標示：在裝�?框「�??�」�??��??�白框�??��?之�??�出?��?）�?
@@ -2801,12 +2801,14 @@ textarea#save-io {
   outline: 3px solid #fff;
   outline-offset: 5px;
   box-shadow: 0 0 18px rgba(255, 255, 255, 0.45) !important;
+  transition: none !important;
 }
 
 .item-cell.selected {
   outline: 2px solid #fff;
   outline-offset: 2px;
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
+  transition: none !important;
 }
 
 /* 背包來源選取時，裝備欄對應部位加粗原本的品質邊框，保留品質色不偏黃。
@@ -2820,6 +2822,7 @@ textarea#save-io {
   background: rgba(0, 0, 0, 0.7) !important;
   /* 加粗原本的 border（顏色由 inline style 的 border-color 決定，即品質色） */
   border-width: 3px !important;
+  transition: none !important;
 }
 
 .eq-slot.inventory-selection-match[class~="eff-mythic"] {
