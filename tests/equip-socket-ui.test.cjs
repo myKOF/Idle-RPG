@@ -132,3 +132,28 @@ test('等待解除立即恢復孔位和寶石，已鑲孔仍禁止覆蓋',()=>{
   c.it.sockets[0]={type:'ruby',level:1};c.syncEquipSocketPending();assert.equal(gem.disabled,true);
   c.it.sockets[0]=null;c.renderDetail();assert.equal(p.querySelector('[data-gem-level="5"]'),gem);assert.equal(gem.disabled,false);
 });
+
+test('相同可鑲狀態切孔不掃寶石或重寫未變aria，只更新新舊孔位',()=>{
+  const c=mount();c.it.sockets[1]={type:'ruby',level:5};c.it.sockets[3]={type:'ruby',level:1};c.click({act:'toggle-socket'});
+  const p=c.elements['detail-pane'],gems=p.gems,buttons=gems.buttons.slice();let queries=0,ariaWrites=0,renders=0;
+  const query=gems.querySelectorAll;gems.querySelectorAll=s=>{queries++;return query(s);};
+  p.holes.querySelectorAll('[data-socket-pick]').forEach(b=>{const set=b.setAttribute;b.setAttribute=(n,v)=>{if(n==='aria-pressed')ariaWrites++;set(n,v);};});
+  const render=c.renderDetail;c.renderDetail=()=>{renders++;render();};
+  c.click({'socket-pick':'2'});assert.equal(queries,0);assert.equal(ariaWrites,2);assert.equal(renders,0);assert.deepEqual(gems.buttons,buttons);
+  c.click({'socket-pick':'2'});assert.equal(queries,0);assert.equal(ariaWrites,2);
+  c.click({'socket-pick':'1'});assert.equal(queries,1);assert.ok(buttons.every(b=>b.disabled));
+  c.click({'socket-pick':'3'});assert.equal(queries,1);assert.ok(buttons.every(b=>b.disabled));
+  c.click({'socket-pick':'0'});assert.equal(queries,2);assert.ok(buttons.every(b=>!b.disabled));assert.equal(c.commands.length,0);
+});
+
+test('庫存清單替換後重新同步禁用，pending及換件仍正確',()=>{
+  const c=mount(),stock={gems:{ruby:{5:2}},fusedGems:[]};c.uiGemsPanelSnapshot=()=>stock;c.it.sockets[0]={type:'ruby',level:5};c.click({act:'toggle-socket'});c.click({'socket-pick':'0'});
+  const p=c.elements['detail-pane'],gems=p.gems,before=gems.buttons[0];assert.equal(before.disabled,true);
+  stock.gems.ruby[5]=1;c.renderDetail();assert.equal(p.gems,gems);assert.notEqual(gems.buttons[0],before);assert.equal(gems.buttons[0].disabled,true);
+  c.click({'socket-pick':'2'});assert.equal(gems.buttons[0].disabled,false);
+  c.pending.add(c.itemPendingKey(c.it.id));c.syncEquipSocketPending();assert.equal(gems.buttons[0].disabled,true);
+  stock.gems.sapphire={2:3};c.renderDetail();assert.ok(gems.buttons.every(b=>b.disabled));
+  c.pending.clear();c.syncEquipSocketPending();assert.ok(gems.buttons.every(b=>!b.disabled));
+  c.it.id='other';c.UI.sel.id='other';c.click({act:'toggle-socket'});assert.notEqual(p.gems,gems);assert.ok(p.gems.buttons.every(b=>!b.disabled));
+  c.click({'socket-pick':'0'});assert.ok(p.gems.buttons.every(b=>b.disabled));
+});

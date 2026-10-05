@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## EQUIP-SOCKET-PICK-PERF-20261005 — 調查切孔延遲及減少重複控制項更新
+
+- Owner：Codex；Done。使用者回報切鑲孔仍稍有延遲，要求查是否每次刷新全部寶石。前置鑲嵌局部渲染已完成；目標衝突預檢乾淨，單一開發者。允許js/ui.js限定鑲嵌控制項同步、index.html對應快取、tests/equip-socket-ui.test.cjs與本紀錄；禁止Worker／規則／數值／素材／存檔／其他副本、合併／推送。既有使用者lightning-orb-field-purple.json修改保留不提交。後續接手者使用者。
+- 初步測量：隔離Edge正式Worker、12孔／48類寶石／1500背包資料（可視DOM168格），50次空孔切換renderDetail0、childList0、寶石mutation0、原節點全保留；但同步50次掃48個寶石按鈕、700次孔位屬性Mutation，handler平均0.162ms／含style0.232ms，未重現明顯長停頓。優化不據此宣稱已定位所有真人延遲來源。
+- 驗收：相同可鑲狀態切孔僅更新新舊框／aria、不遍歷寶石；空／已鑲切換、pending解除、庫存替換、換件／換頁後仍準確禁用，節點及捲動保留、不送Worker指令；回歸／實機A/B測量／Build／Console後Commit。
+- 完成：孔位aria值改變才寫入；寶石清單的可用狀態不變時不遍歷按鈕。禁用狀態是DOM衍生快取，清單內容替換時失效、新裝備／頁面容器自然重設；空／已鑲切換、pending及库存变化仍即時同步，遊戲資料權威不變。修改4檔：js/ui.js、index.html的ui快取1.0.124、tests/equip-socket-ui.test.cjs新增兩項行為回歸及本紀錄。唯讀檢查未改css/style.css／ashen-forge.css、js/item.js／bridge.js、scripts/sim/engine.js、其餘相关測試及協作規範；無素材庫變更／Commit，使用者素材修改保留。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/init-ui-smoke.test.cjs tests/policy-selector.test.cjs`84/84通過；`npm.cmd run build`442檔通過；`git diff --check`通過。初版新增fixture預設會選首個空孔，而非已鑲第1孔，修正fixture為明確點第1孔後驗證禁用；未改產品預設選孔／放寬斷言。
+- 額外pending整合：`node --test tests/inventory-command-pending.test.cjs tests/ui-worker-panels.test.cjs tests/ui-tick-smoke.test.cjs`8/10通過；ui-worker-panels兩項既有失敗（gem.socket文字正規式不支援既有三元指令；獨立detailAction fixture未提供UI）。唯讀git show HEAD:js/ui.js、fs載入覆寫後重跑ui-worker-panels，兩項原因相同；未修改這些舊測試或擴大範圍修其fixture。pending與uiTick項目本次通過。
+- 瀏覽器前後同fixture：50次空孔切換均不重建寶石或詳情；寶石掃描50→0、孔位Mutation700→200，handler平均0.162→0.086ms／含同步style0.232→0.114ms，量測數值屬本機隔離環境，非真人全場效能保證。12次真實滑鼠輸入，事件派發約3.2～4.4ms、處理後下一幀約1.5～6ms；未重現明顯長停頓。實際點已鑲孔禁用全部寶石、切空孔恢復；正式Worker鑲入第3孔，等待中全部禁用、ACK／快照後自動第4孔並恢復可用、庫存×25→×24。Console error／warning与Worker errors0；全新Context／隨機Port服務已關閉，無臨時檔／真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 減少切換鑲孔時的重複更新`提交。調查與必要優化完成，可合併；未合併／推送。已知限制：無法從隔離資料確認真人當下全部延遲原因，上述兩項既有測試失敗保留；下一步使用者重載感受切孔反應，若仍延遲需以當下遊戲負载量測主執行緒，不能據此宣稱真人延遲已全數消除。
+
 ## ELITE-HALO-RESTORE-20261005 — 加回部分菁英敵人光暈
 
 - Owner：Codex；Done。使用者回報前次菁英光暈降低後幾乎不可見，要求加回一些。前置ELITE-HALO-20261003已完成；單一開發者，renderer／index／本紀錄衝突預檢乾淨，後續接手者使用者。

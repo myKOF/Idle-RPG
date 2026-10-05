@@ -5167,7 +5167,9 @@ function syncEquipSocketControls(it, mode) {
   var pending = isUiCommandPending(itemPendingKey(it.id));
   holes.querySelectorAll('[data-socket-pick]').forEach(function (button) {
     var selected = Number(button.getAttribute('data-socket-pick')) === mode.selIdx;
-    button.setAttribute('aria-pressed', String(selected));
+    if (button.getAttribute('aria-pressed') !== String(selected)) {
+      button.setAttribute('aria-pressed', String(selected));
+    }
     button.parentNode.classList.toggle('is-socket-selected', selected);
     if (button.disabled !== pending) button.disabled = pending;
   });
@@ -5175,9 +5177,15 @@ function syncEquipSocketControls(it, mode) {
     if (button.disabled !== pending) button.disabled = pending;
   });
   var disabled = pending || mode.selIdx < 0 || !!it.sockets[mode.selIdx];
-  pane.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
-    if (button.disabled !== disabled) button.disabled = disabled;
-  });
+  var gems = pane.querySelector('.equip-socket-gems');
+  // 同為空孔或同為已鑲孔時，寶石可用狀態不變，不再掃整份庫存。
+  // 清單內容替換後會清除此記錄，新的按鈕仍須同步 pending／孔位狀態。
+  if (gems && gems._equipSocketDisabled !== disabled) {
+    gems.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
+      if (button.disabled !== disabled) button.disabled = disabled;
+    });
+    gems._equipSocketDisabled = disabled;
+  }
   mode.renderedIdx = mode.selIdx;
   return true;
 }
@@ -5358,7 +5366,10 @@ function renderDetail() {
   if (socketMode && previousSocket && previousSocket.itemId === it.id && oldHeader && oldHoles && oldGems) {
     if (previousSocket.header !== socketHeaderHtml) oldHeader.innerHTML = socketHeaderHtml;
     if (previousSocket.holes !== socketHolesHtml) oldHoles.innerHTML = socketHolesHtml;
-    if (previousSocket.gems !== socketGemsHtml) oldGems.innerHTML = socketGemsHtml;
+    if (previousSocket.gems !== socketGemsHtml) {
+      oldGems.innerHTML = socketGemsHtml;
+      delete oldGems._equipSocketDisabled;
+    }
   } else {
     pane.innerHTML = h;
   }
