@@ -210,7 +210,7 @@ function firePotentialLightning(pEnt, def, live, floatSel, st, boostVal) {
     var res = resolveHit(pEnt, t, aCfg, monsterDefCfg(t));
     // 浮字延遲＝該跳序 × 間隔，與連鎖雷鏈的弧光跳點同步
     if (!res.miss) {
-      floatEnemyEvent(t, floatSel, def.emoji + (res.crit ? '爆擊 ' : '') + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res), res.dmg, i * hopMs);
+      floatEnemyEvent(t, floatSel, (res.crit ? '爆擊 ' : '') + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res), res.dmg, i * hopMs);
       trackDps(res.dmg);
       if (typeof recordRunDamage === 'function') recordRunDamage(def.name, res.dmg, 'potential:' + def.id, lv);
       out.dmg += res.dmg;
@@ -238,7 +238,7 @@ function firePotentialOmega(pEnt, def, live, floatSel, st, mult) {
   };
   var res = resolveHit(pEnt, target, aCfg, monsterDefCfg(target));
   if (!res.miss) {
-    floatEnemyEvent(target, floatSel, def.emoji + '必殺 ' + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res, true), res.dmg);
+    floatEnemyEvent(target, floatSel, '必殺 ' + fmt(res.dmg), combatDamageFloatClass('enemy-skill', res, true), res.dmg);
     trackDps(res.dmg);
     if (typeof recordRunDamage === 'function') recordRunDamage(def.name, res.dmg, 'potential:' + def.id, potentialLevel(def.id));
     blog(def.emoji + ' 你施放潛力【' + def.name + '】：必殺一擊造成 ' + fmt(res.dmg) + ' 物理傷害！', 'log-player-skill', 'combat');
@@ -284,7 +284,7 @@ function tickPotentialRegen(pEnt, st, dt, enemies, floatSel) {
   var t = live[0];
   var d = Math.max(1, Math.round(overflowDmg));
   d = applyEnemyHpDamage(t, d);
-  floatEnemyEvent(t, floatSel, '✨' + fmt(d), 'dmg enemy-skill', d);
+  floatEnemyEvent(t, floatSel, fmt(d), 'dmg enemy-skill', d);
   trackDps(d);
   if (t.hp <= 0) { t.hp = 0; return true; }
   return false;

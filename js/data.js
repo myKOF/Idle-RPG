@@ -697,6 +697,65 @@ function statPanelRowIsAllLocked(row) {
   return false;
 }
 
+/* ---- 等級門檻詞條（2026-10-05）----
+   「等級 ≤ level 時不出現」的詞條清單；每一組＝一個等級＋一串詞條鍵（AFFIX_POOL 的鍵）。
+   唯一來源是參數表 game_parameters「6-裝備／等級前不出現的屬性」（a/b 為第一組、c/d 為第二組…，
+   由 tools/apply_params.cjs 整段重建），這裡的字面值只是預設值。
+
+   判斷基準依場合不同——
+     裝備掉落、洗煉（item.js）、詞條池提示 → 裝備等級 it.level（裝備等級是 1/50/100… 的分段值）
+     角色屬性面板（ui.js renderAttrPanel）   → 角色等級 player.level
+   只擋「新出現」與「面板顯示」：已經在裝備上的詞條照常計入屬性（formula.js 不看這張表），
+   所以舊存檔不會因為調這張表而掉屬性。同一個鍵出現在多組時取最高的等級。 */
+var AFFIX_LEVEL_GATES = [
+  { level: 200, keys: ['elemDmgFire', 'elemDmgIce', 'elemDmgLightning', 'elemDmgPoison', 'elemDmgLight', 'elemDmgDark', 'elemDmgEarth', 'elemDmgWind', 'resFire', 'resIce', 'resLightning', 'resPoison', 'resLight', 'resDark', 'resEarth', 'resWind', 'resAll'] }
+];
+
+var _affixGateCache = { src: null, map: null };
+// 詞條鍵 → 門檻等級（沒有門檻的鍵不在表內）。以 AFFIX_LEVEL_GATES 的參考當快取鍵，整張表被換掉時自動重建。
+function affixGateMap() {
+  if (_affixGateCache.src === AFFIX_LEVEL_GATES) return _affixGateCache.map;
+  var map = {};
+  (AFFIX_LEVEL_GATES || []).forEach(function (g) {
+    var lv = Number(g && g.level);
+    if (!isFinite(lv) || lv <= 0 || !g.keys) return;
+    g.keys.forEach(function (k) { if (!(map[k] >= lv)) map[k] = lv; });
+  });
+  _affixGateCache = { src: AFFIX_LEVEL_GATES, map: map };
+  return map;
+}
+// 這個詞條在 level 級（含）以前不出現；0＝沒有門檻
+function affixGateLevel(key) { return affixGateMap()[key] || 0; }
+// level 不是有限數字（呼叫端沒有等級可比）一律視為可出現，不擋
+function affixAvailableAtLevel(key, level) {
+  var gate = affixGateLevel(key);
+  if (!(gate > 0)) return true;
+  var lv = Number(level);
+  return !isFinite(lv) || lv > gate;
+}
+
+/* 屬性面板的一列對應哪一條「有門檻」的詞條（沒有則 null）。
+   列名是「🔥 火屬性傷害提升」這種帶 emoji 的字串，與 statPanelRowIsAllLocked 同樣用詞條名稱做包含比對；
+   只比對有門檻的鍵，並把結果記在列上（跟著 AFFIX_LEVEL_GATES 換表時失效重算）。 */
+function statPanelRowGateKey(row) {
+  if (!row) return null;
+  if (row._gateSrc === AFFIX_LEVEL_GATES) return row._gateKey;
+  var label = String(row[0] || '').replace(/<[^>]+>/g, '').replace(/%/g, '').replace(/\s/g, '');
+  var found = null, map = affixGateMap();
+  for (var key in map) {
+    var def = AFFIX_POOL[key];
+    var name = def ? String(def.name || '').replace(/%/g, '').replace(/\s/g, '') : '';
+    if (name && label.indexOf(name) >= 0) { found = key; break; }
+  }
+  row._gateSrc = AFFIX_LEVEL_GATES;
+  row._gateKey = found;
+  return found;
+}
+function statPanelRowHiddenAtLevel(row, level) {
+  var key = statPanelRowGateKey(row);
+  return !!key && !affixAvailableAtLevel(key, level);
+}
+
 var AFFIX_CATS = {
   base: ['hpFlat', 'hpPct', 'hpRegen', 'mpFlat', 'mpRegen', 'str', 'agi', 'int', 'vit'],
   off: ['atkFlat', 'atkPct', 'matkFlat', 'matkPct', 'aspd', 'critRate', 'critDmg', 'pPen', 'mPen',

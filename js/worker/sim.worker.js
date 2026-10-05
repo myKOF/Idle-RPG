@@ -12,12 +12,12 @@
 
 importScripts('protocol.js?v=44', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261003-storm-mountain-vfx', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261003-storm-mountain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261004-socket-page',
-  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261004-vacuum-omen-retrigger', '../talents.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261005-affix-level-gate', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261003-storm-mountain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261005-affix-level-gate',
+  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261005-float-no-icon', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261003-rename-weineng', '../special_rules.js',
-  '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261003-tower-arena',
-  '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
+  '../combat.js?v=20261005-float-no-icon', '../legendary.js?v=20261005-float-no-icon', '../potential.js?v=20261005-float-no-icon', '../tower.js?v=20261003-tower-arena',
+  '../factory.js?v=20261005-affix-level-gate', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
   '../tasks.js?v=20260929-thunder-pair'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -832,7 +832,10 @@ function buildPanel(name, params) {
           for (var k in AFFIX_POOL) {
             var d = AFFIX_POOL[k];
             if (!d) continue;
-            out[k] = { slots: d.slots || null, minR: (d.minR === undefined) ? null : d.minR };
+            /* gateLevel：裝備等級 ≤ 此值時這條詞條洗不出來（AFFIX_LEVEL_GATES → data.js；0＝沒有門檻）。
+               與 slots／minR 同理——想洗出某條詞條的一方要連同「等級」一起看，否則會把精華花在洗不出來的裝備上。
+               新增的可選欄位，舊的讀取端不認得就忽略，協議版本不動。 */
+            out[k] = { slots: d.slots || null, minR: (d.minR === undefined) ? null : d.minR, gateLevel: (typeof affixGateLevel === 'function') ? affixGateLevel(k) : 0 };
           }
           return out;
         })()

@@ -1033,6 +1033,37 @@ scalar('formula', 'SKILL_MASTERY_XP_B', '1-成長經驗', '技能熟練度經驗
 scalar('formula', 'SKILL_MASTERY_XP_C', '1-成長經驗', '技能熟練度經驗需求', 2);
 scalar('formula', 'SKILL_MASTERY_MAX_LEVEL', '1-成長經驗', '技能熟練度', 0);
 scalar('formula', 'SKILL_MASTERY_XP_RATE', '1-成長經驗', '技能熟練度', 1);
+/* 等級前不出現的屬性（2026-10-05）→ data.js AFFIX_LEVEL_GATES。
+   「6-裝備／等級前不出現的屬性」一列：參數 a／b＝第一組（等級／{詞條鍵,詞條鍵…}），c／d＝第二組…，
+   最多六組。等級為空或 0 的那一組略過（Excel 會把空格補成 0）；裝備等級（掉落、洗煉）或角色等級
+   （屬性面板）≤ 該等級時，陣列內的詞條不出現。
+   詞條鍵必須存在於 Equipment_Affix 表的詞條池，打錯就中止——否則那一筆限制會靜靜地失效。
+   表上還沒有這一列時跳過，data.js 保留預設值（Excel 與程式的更新順序不一定同步）。 */
+{
+  const GATE_CAT = '6-裝備', GATE_NAME = '等級前不出現的屬性';
+  const gateRow = index[GATE_CAT] && index[GATE_CAT][GATE_NAME];
+  if (!gateRow) {
+    skippedParams.push(GATE_CAT + ' / ' + GATE_NAME + ' → AFFIX_LEVEL_GATES');
+  } else {
+    const affixCsvPath = process.env.EQUIPMENT_AFFIX_CSV || path.join(ROOT, 'config', 'CSV', 'Equipment_Affix.csv');
+    const knownAffixKeys = new Set(parseCsv(fs.readFileSync(affixCsvPath, 'utf8'))
+      .filter(r => r[0] === '詞條池').map(r => r[1]));
+    const groups = [];
+    for (let i = 0; i + 1 < gateRow.length; i += 2) {
+      const lvTxt = String(gateRow[i] == null ? '' : gateRow[i]).trim();
+      const listTxt = String(gateRow[i + 1] == null ? '' : gateRow[i + 1]).trim();
+      if (lvTxt === '' || Number(lvTxt) === 0) continue;
+      const level = Number(lvTxt);
+      if (!Number.isFinite(level) || level < 0) throw new Error(GATE_NAME + ' 的等級不是正數：「' + lvTxt + '」');
+      const keys = listTxt.replace(/^\{|\}$/g, '').split(/[,;、\s]+/).map(x => x.trim()).filter(x => x !== '' && x !== '0');
+      if (!keys.length) throw new Error(GATE_NAME + ' 的等級 ' + lvTxt + ' 沒有對應的屬性陣列（應為 {詞條鍵,詞條鍵…}）');
+      const unknown = keys.filter(k => !knownAffixKeys.has(k));
+      if (unknown.length) throw new Error(GATE_NAME + ' 含有詞條池沒有的鍵：' + unknown.join('、') + '（詞條鍵見 Equipment_Affix 表「詞條池」的 id 欄）');
+      groups.push('  { level: ' + level + ', keys: [' + keys.map(k => "'" + k + "'").join(', ') + '] }');
+    }
+    arrayContent('data', 'AFFIX_LEVEL_GATES', groups.length ? '\n' + groups.join(',\n') + '\n' : '', 'AFFIX_LEVEL_GATES');
+  }
+}
 /* ===========================================================================
    套用引擎
    =========================================================================== */

@@ -270,7 +270,7 @@ function legendaryDealDamage(pEnt, target, powerPct, dmgType, elem, floatSel, la
   var result = resolveHit(pEnt, target, legendaryDamageCfg(pEnt, st, powerPct, dmgType, elem), monsterDefCfg(target));
   if (!result.miss && result.dmg > 0) {
     if (typeof floatEnemyEvent === 'function') {
-      floatEnemyEvent(target, floatSel, (elem ? '✦' : '') + fmt(result.dmg), combatDamageFloatClass('enemy-skill', result), result.dmg);
+      floatEnemyEvent(target, floatSel, fmt(result.dmg), combatDamageFloatClass('enemy-skill', result), result.dmg);
     }
     if (typeof trackDps === 'function') trackDps(result.dmg);
     if (typeof recordRunDamage === 'function') recordRunDamage(label || '傳奇特效', result.dmg);

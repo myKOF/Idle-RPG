@@ -380,7 +380,7 @@ function tryHybridSynthesis() {
       if (mens[mi].key === bookKey) { mens[mi].mult = (Number(mens[mi].mult) || 1) * 1.5; break; }
     }
     if (it.affixes.length < maxAffixesFor(it)) {
-      it.affixes = it.affixes.concat(rollAffixes(1, it.rarity, it.slot)
+      it.affixes = it.affixes.concat(rollAffixes(1, it.rarity, it.slot, undefined, undefined, it.level)
         .filter(function (na) { return !it.affixes.some(function (a) { return a.key === na.key; }); }));
     }
     G.factory.stats.mutated = (G.factory.stats.mutated || 0) + 1;

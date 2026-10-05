@@ -1984,7 +1984,7 @@ function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTo
     if (res.crit) s = '爆擊 ' + s;
     if (res.blocked) s = '格擋 ' + s;
     if (typeof floatEnemyEvent === 'function') {
-      floatEnemyEvent(target, floatSel, g.emoji + s,
+      floatEnemyEvent(target, floatSel, s,
         (typeof combatDamageFloatClass === 'function') ? combatDamageFloatClass('enemy-skill', res) : 'enemy-skill',
         res.dmg, delayMs);
     }
@@ -2018,7 +2018,9 @@ function sgUltHitCdr(pEnt, gid) {
   sgReduceSkillCooldownOnHit(pEnt, SG_PREFIX + gid, sgUltVal(u, spec.key));
 }
 
-/* 衍生傷害（占「已造成傷害」比例的擴散等）：不再過防禦與爆擊，直接扣血。 */
+/* 衍生傷害（占「已造成傷害」比例的擴散等）：不再過防禦與爆擊，直接扣血。
+   label 原本是飄字前面的圖示；傷害數字前不放圖示之後（2026-10-05），飄字只剩數字，
+   label 只在沒給 subType 時拿來推導統計用的子類型。 */
 function sgDerivedHit(target, amount, gid, floatSel, out, label, delayMs, subType) {
   if (!target || target.hp <= 0 || !(amount > 0)) return 0;
   var skillMult = (typeof skill2FrenzySkillDamageMultiplier === 'function')
@@ -2027,7 +2029,7 @@ function sgDerivedHit(target, amount, gid, floatSel, out, label, delayMs, subTyp
   if (dealt <= 0) return 0;
   out.dmg += dealt;
   if (typeof floatEnemyEvent === 'function') {
-    floatEnemyEvent(target, floatSel, label + fmt(dealt), 'enemy-skill', dealt, delayMs);
+    floatEnemyEvent(target, floatSel, fmt(dealt), 'enemy-skill', dealt, delayMs);
   }
   if (typeof trackDps === 'function') trackDps(dealt);
   if (typeof recordRunDamage === 'function') {
@@ -7137,7 +7139,7 @@ function sgEarthguardReflect(mEnt, pEnt, hpDamage, res, floatSel) {
     var amount = Math.max(1, Math.round((Number(e.maxHp) || 0) * pctOfMax / 100));
     var dealt = (typeof applyEnemyHpDamage === 'function') ? applyEnemyHpDamage(e, amount) : 0;
     if (dealt <= 0) continue;
-    if (typeof floatEnemyEvent === 'function') floatEnemyEvent(e, eSel, '🌍' + fmt(dealt), 'enemy-skill', dealt, 0);
+    if (typeof floatEnemyEvent === 'function') floatEnemyEvent(e, eSel, fmt(dealt), 'enemy-skill', dealt, 0);
     if (typeof trackDps === 'function') trackDps(dealt);
     if (typeof recordRunDamage === 'function') {
       recordRunDamage(SKILLS2.earthguard.name, dealt, 'skill2:earthguard', sgTotalLevel(skills2Levels('earthguard')));
@@ -11188,7 +11190,7 @@ function sgCounterStrike(pEnt, st, target, pct, floatSel, out, delayMs, cfg) {
     if (res.crit) s = '爆擊 ' + s;
     if (res.blocked) s = '格擋 ' + s;
     if (typeof floatEnemyEvent === 'function') {
-      floatEnemyEvent(target, floatSel, g.emoji + '反擊 ' + s,
+      floatEnemyEvent(target, floatSel, '反擊 ' + s,
         (typeof combatDamageFloatClass === 'function') ? combatDamageFloatClass('enemy-skill', res) : 'enemy-skill',
         res.dmg, delayMs);
     }
