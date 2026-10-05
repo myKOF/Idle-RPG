@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## BASE-REGEN-FLAT-20261005 — 初始生命回復定值與法力基礎調整
+
+- Owner：Codex；Done。使用者要求初始生命回復為5、法力基礎回復為1，生命基礎回復不再依最大生命。單一開發者；既有回復與參數表接線已存在，無前置阻塞；後續接手者使用者。
+- 允許js/formula.js／data.js回復公式與面板、combat.js／tower.js相關註釋、tools/apply_params.cjs具名錨點、config/Excel/game_parameters.xlsx及CSV目標兩列、game_formula.md、相關回歸、index.html／bridge.js／worker/sim.worker.js快取與本紀錄。禁止技能／裝備規格、塔戰基礎回復規則、協議／存檔、素材與其他副本；不合併／推送。
+- 預檢：公式／資料／參數／Excel／CSV／文件／測試乾淨；Claude的95023863改combat.js:1161天罰飄字刪圖、index技能／戰鬥快取、bridge Worker token、sim.worker技能／戰鬥import與任務檔頭。使用者明確同意分段修改，整合保留双方內容；本次只改回復註釋與所需快取，不改刪圖程式。
+- 驗收：固定生命基礎5/秒、法力基礎1/秒，最大生命變動不影響回復；裝備／寶石／智力及技能倍率維持；面板投影與結算一致、高塔仍只有額外生命回復。參數試跑0變更／0錨點問題、錨點擾動檢核、全庫測試及基準差異、Build、隔離瀏覽器／Worker與Console、Excel正常開啟及目標外值／格式保持後獨立Commit。
+- 完成：BASE_HP_REGEN取代最大生命百分比，生命基礎與額外回復相加後再吃技能倍率；mpRegenBase改為1。面板相容舊快照時共用基礎函式，提示改為定值；高塔只更新註釋、仍不加野外生命基礎。保留智力加成，所以Lv.1無裝備法力實際1.02/秒、既有格式顯示1/秒。沒有協議／存檔格式改動，不需遷移。
+- 修改14檔：js/formula.js、js/data.js、js/combat.js及js/tower.js回復註釋、tools/apply_params.cjs、config/Excel/game_parameters.xlsx、config/CSV/game_parameters.csv、index.html、js/bridge.js、js/worker/sim.worker.js、tests/base-regen.test.cjs、tests/skill2-earth.test.cjs、game_formula.md、本紀錄。唯讀未改：共通規範／prompts/codex.md、js/player.js／skills2.js／potential.js／worker/protocol.js、scripts/sim/engine.js、既有寶石／汲取／塔戰／Worker回歸及轉表工具。沒有新增／修改素材，不需素材庫Commit。
+- Excel：Artifact Tool無法計算既有跨中文工作表引用、顯示#NAME?，沒有用它匯出或覆蓋工作簿；改用Excel原生COM只改「計算表」G60與E72:H72，CalculateFull／正常存檔後唯讀重開，game_parameters原引用公式全保留。兩張表逐格值／公式核對，僅兩列共五格內容改變；相關格式／字體／顏色／換行／欄寬／列高與表格／物件數保持，Native值代入Artifact只讀模型前後渲染比對既有外觀。Excel→CSV只有两列變動；禁止手改XML的規則已遵守。
+- 測試：`node --test tests/base-regen.test.cjs tests/gem-mana.test.cjs tests/drain-flat-value.test.cjs tests/damage-drain.test.cjs tests/tower-battlefield.test.cjs tests/death-revive-restore.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs`57/57通過；`node tools/apply_params.cjs`534參數、將變更0／錨點問題0；`node tools/apply_params.cjs --check-anchors`擾動487值後534錨點各命中一次；`npm.cmd run build`444檔通過；`git diff --check`通過。
+- 全庫：`node --test --test-reporter=tap "tests/*.test.cjs"`3729項、3489通過／238失敗／2略過。乾淨HEAD隔離副本3724項最初241失敗，其中4項是Windows tar漏解中文路徑造成ENOENT；用bundled Python正確解壓後定向重跑相關34項全過，有效HEAD基準237失敗。失敗名稱差集僅CLEAVE配置預期冷卻20、工作期间使用者調為12；把使用者當前skills2.js放進HEAD原回復程式的隔離副本，CLEAVE同項仍失敗，與本次回復無關。本次新增失敗0；既有失敗不修、不降低測試要求。
+- 瀏覽器：隨機Port唯讀HTTP／全新headless Edge Context、安全模式與正式sim.worker.js、新角色BOOT→header面板，HP回復5、MP1.02、面板5/秒與1/秒；主執行緒1e12最大生命仍只回5，提示基礎5點且無百分比；Console error／warning0。新Worker及data／formula／combat／tower／bridge快取請求皆驗證；資料快取最後提高至1.0.57避免與Claude新增詞條門檻1.0.56重複。未使用真人存檔，服務／瀏覽器已關閉。
+- 同時修改／交付：開始乾淨，工作中使用者調整Skills2.xlsx／CSV／js/skills2.js及ground-orbit-ring-wind Preset／layout；保留、未納入本次Commit。提交前再次預檢看到Claude進行中的低等級詞條門檻：data.js第700行新增函式、apply_params第1036行新增表格接線、game_parameters尾端新增第332列，與本次已完成的回復段落不同；未再修改其相關數值或工作簿。整合須保留雙方JS段落與CSV列，Excel須用原生API合併目標儲存格，快取取新值、本紀錄兩篇都留。已有使用者同意共用快取／紀錄分段修改；沒有修改其他副本。
+- Commit為本紀錄所在`[Codex] fix: 改用固定初始生命回復並降低法力基礎回復`提交。無未完成本次需求，既有全庫紅燈與跨副本整合風險已記錄；本次可審查合併，未合併／推送。建議整合者處理上述共檔及Excel目標儲存格後Ctrl+F5驗收；沒有執行長時間真人操作。
+
 ## SKILL-LOADOUT-FOCUS-20261005 — 下方技能快捷同步左側焦點
 
 - Owner：Codex；Done。使用者要求點擊技能頁下方快捷技能，同步左側技能選取；補充圖片僅為示意，並非實際顯示錯誤。單一開發者，本副本開始乾淨。

@@ -12,11 +12,11 @@
 
 importScripts('protocol.js?v=44', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261003-storm-mountain-vfx', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261003-storm-mountain', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261005-base-regen-flat', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261005-base-regen-flat', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261004-socket-page',
   '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261004-vacuum-omen-retrigger', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261003-rename-weineng', '../special_rules.js',
-  '../combat.js?v=20261002-damage-stats-detail', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261003-tower-arena',
+  '../combat.js?v=20261005-base-regen-flat', '../legendary.js?v=20260929-thunder-pair', '../potential.js?v=20261001-drain-water-integration', '../tower.js?v=20261005-base-regen-flat',
   '../factory.js?v=20260929-thunder-pair', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
   '../tasks.js?v=20260929-thunder-pair'
 );

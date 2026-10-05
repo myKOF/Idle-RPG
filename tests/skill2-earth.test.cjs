@@ -440,7 +440,7 @@ test('生命／法力再生（T3／T4）：回復 +110%、吸血吸魔 +55%，�
 
   const st = c.getStats();
   st.hpRegen = 40; st.mpRegen = 20;
-  const hpBase = (st.hp * c.BASE_HP_REGEN_PCT / 100) + st.hpRegen;
+  const hpBase = 5 + st.hpRegen;
   assert.ok(Math.abs(c.playerHpRegenPerSec(st) - hpBase * 2.1) < 1e-9, '每秒生命回復 ×2.1');
   assert.ok(Math.abs(c.playerMpRegenPerSec(st) - st.mpRegen * 2.1) < 1e-9, '每秒法力回復 ×2.1');
   /* 吸血／吸魔是定值，只吃自己的 +55%，與每秒回復（這裡被放大 ×2.1）互不關聯；
@@ -459,7 +459,7 @@ test('沒裝配大地守護時，回復與吸血吸魔完全維持原本行為',
   setLevels(c, 'earthguard', [1, 1, 1, 1, 0, 0, 0]);   // 學了但沒裝
   const st = c.getStats();
   st.hpRegen = 40; st.mpRegen = 20;
-  const hpBase = (st.hp * c.BASE_HP_REGEN_PCT / 100) + st.hpRegen;
+  const hpBase = 5 + st.hpRegen;
   assert.ok(Math.abs(c.playerHpRegenPerSec(st) - hpBase) < 1e-9);
   assert.ok(Math.abs(c.lifestealHealAmount(100) - 100) < 1e-9, '吸血定值不受任何倍率');
   assert.ok(Math.abs(c.manaStealAmount(100) - 100) < 1e-9, '吸魔定值不受任何倍率');

@@ -308,7 +308,7 @@ function computeStats(equipmentOverride) {
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100) *
     ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1) *
     ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1));
-  st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（另有 BASE_HP_REGEN_PCT%/秒 基礎回復）
+  st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
   st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
@@ -543,7 +543,7 @@ function enemyTypeDamageReduction(total) {
 }
 
 var SLOW_ASPD_FACTOR = 0.7;   // 減速狀態：攻速 -30%（攻擊冷卻累積 ×0.7）
-var BASE_HP_REGEN_PCT = 2;  // 野外每秒基礎生命回復（最大生命 %；高塔內無此回復）
+var BASE_HP_REGEN = 5;  // 野外每秒基礎生命回復定值（高塔內無此回復）
 /* 野外過關回復：整波敵人清空時回復最大生命 %。
    ⚠️ 溢出**不**轉護盾——呼叫端傳 { noShield: true }（見 combat.js 的 completeFieldWave）。
    高塔沒有這個回復，也沒有每秒基礎回復，是純爆發戰。
@@ -1116,7 +1116,7 @@ function playerDrainSkillFactor(kind) {
 }
 function playerHpRegenBasePerSec(st) {
   if (!st) return 0;
-  return (st.hp || 0) * (BASE_HP_REGEN_PCT / 100) + (st.hpRegen || 0);
+  return BASE_HP_REGEN + (st.hpRegen || 0);
 }
 function playerHpRegenPerSec(st) {
   return playerHpRegenBasePerSec(st) * playerRegenSkillFactor('hp');

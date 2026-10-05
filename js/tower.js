@@ -181,7 +181,7 @@ function towerTick(dt) {
   }
 
   // 回復與冷卻（含再生增益）
-  /* 高塔沒有每秒基礎生命回復（formula.js BASE_HP_REGEN_PCT 只作用於野外），
+  /* 高塔沒有每秒基礎生命回復（formula.js BASE_HP_REGEN 只作用於野外），
      因此這裡不能直接改用 playerHpRegenPerSec；新版技能【生命再生】／【魔力再生】
      （大地守護 T3／T4）的乘算則兩邊都要吃，故單獨乘在屬性值上。 */
   var regenHpMul = (typeof skill2RegenFactor === 'function') ? skill2RegenFactor('hp') : 1;

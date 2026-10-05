@@ -534,7 +534,7 @@ var DERIVED_COEF = {
      0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */
   hpBase: 500, hpPerLevel: 50,
   mpBase: 100,
-  mpRegenBase: 5,
+  mpRegenBase: 1,
   critRateBase: 5, critDmgBase: 150,
   hitBase: 100
 };
@@ -2486,10 +2486,10 @@ var STAT_GROUPS = [
   {
     title: '基礎屬性', rows: [
       ['❤️ 生命值', function (st) { return statFmt(st.hp, null); }, function (st) { return statDesc(st, '承受傷害的能力，歸零時角色將會死亡。', '生命', 'hp', 'hpPct'); }],
-      /* 說明寫成函式而不是固定字串：基礎回復是可調參數（BASE_HP_REGEN_PCT），
-         寫死數字的話一調參就變成錯的說明——先前寫著 1.5%，實際值早已是 2%。 */
-      ['💗 生命恢復', function (st) { return statFmt(passivePanelValue(st, 'hpRegen', st.hpRegen + st.hp * BASE_HP_REGEN_PCT / 100), null, '/s'); },
-        function () { return '每秒自動回復的生命值（包含基礎 ' + BASE_HP_REGEN_PCT + '% 與額外加成）。'; }],
+      /* 說明寫成函式而不是固定字串：基礎回復是可調參數（BASE_HP_REGEN），
+         寫死數字會讓調參後的說明與實際計算不同步。 */
+      ['💗 生命恢復', function (st) { return statFmt(passivePanelValue(st, 'hpRegen', playerHpRegenBasePerSec(st)), null, '/s'); },
+        function () { return '每秒自動回復的生命值（包含基礎 ' + BASE_HP_REGEN + ' 點與額外加成），基礎回復不隨最大生命值變動。'; }],
       ['🔵 法力值', function (st) { return statFmt(st.mp, null); }, function (st) { return statDesc(st, '施放多數技能所需的能量。', '法力', 'mp', null); }],
       ['💧 法力恢復', function (st) { return statFmt(passivePanelValue(st, 'mpRegen', st.mpRegen), null, '/s'); }, '每秒自動回復的法力值。'],
       ['💪 力量', function (st) { return statFmt(st.str, null); }, function () { return primaryStatDesc('str'); }],

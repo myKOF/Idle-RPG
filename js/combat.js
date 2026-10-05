@@ -1503,7 +1503,7 @@ function fieldTick(dt) {
         return;
     }
 
-    /* 回復：每秒生命回復（基礎 BASE_HP_REGEN_PCT% + 生命恢復屬性；formula.js §3）+ 再生增益；法力恢復；技能冷卻
+    /* 回復：每秒生命回復（基礎 BASE_HP_REGEN 定值 + 生命恢復屬性；formula.js §3）+ 再生增益；法力恢復；技能冷卻
        兩者都走 formula.js 的入帳收斂點（healPlayer／gainPlayerMana）：夾在上限的行為與
        改版前完全相同（noShield ＝ 溢出不轉護盾），差別只在**溢出量**現在有地方可以接——
        大地守護的傳奇【生命滋養】【魔力滋養】與超神【光耀之堂】就吃這一份。 */
