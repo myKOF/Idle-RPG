@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## THRUST-CARDINAL-PHANTOM-20261005 — 四方突刺與幻影八方向
+
+- Owner：Codex；Done。使用者要求八方連刺改名四方突刺，僅上下左右；幻影八方陣同時八向突刺，保留命中全額擴散與施放後絕對閃避。後續要求包含使用者修改一起Commit。
+- 依賴：現有突刺飛行物與方向事件。單一開發者；允許Skills2／Equipment_Affix Excel與CSV、js/skills2.js突刺段／生成表、js/data.js相關名稱、DOM／Canvas突刺事件角度、相關測試、game_formula.md、快取及本紀錄；禁止無關技能、傷害係數／波次／存檔／協議格式、其他副本及素材修改。
+- 預檢：fetch後相關檔案無衝突，後續Claude開始修改index第926行UI與第948行main快取；使用者同意分段修改本次引用。Skills2活頁簿原開啟且未儲存，使用者自行儲存關閉後才編輯，保留使用者第七階count=2及第三階說明修改；保存前以雜湊與原值核對防止覆蓋中途編輯。
+- 驗收：斜向主要目標不旋轉四向、不強制斜向命中；幻影八向命中與畫面事件、全額擴散／閃避；傳奇／一擊必殺單向相容、舊事件退化、三道平行／波次同步；Excel原生開啟、表格往返、相關回歸、Build、diff。獨立Commit，交由使用者整合，不合併／推送。
+- 完成：第七階方向數4、幻影方向數8，由既有angle／directionCount共用計算與演出；多向固定世界軸，單向仍朝主要目標。保留thrust-octagonal變體／octaToSingle傳奇鍵及存檔ID；貫日之刺仍優先改單向。DOM／Canvas後備改讀事件角度，舊事件缺角／null回到目標方位；高塔缺幾何座標的多向事件仍帶固定角度。Excel、CSV、生成表、關聯名稱與說明、公式、快取同步，無協議欄位或素材修改，不需Protocol／素材庫Commit。
+- 修改：config/Excel/Skills2.xlsx／Equipment_Affix.xlsx、相應CSV、js/skills2.js、js/data.js、js/vfx.js、js/battle-renderer.js、js/bridge.js、js/worker/sim.worker.js、index.html、tests/skill2-thrust-directions.test.cjs（新增9項）／skill2-system.test.cjs／skill2-vfx.test.cjs／vfx-runtime.test.cjs、game_formula.md、docs/vfx/VFX_SIZE_STANDARD.md及本紀錄。使用者的config/CSV/game_parameters.csv只有換行差異，也納入提交前檢查。未修改但檢查：協作規範／prompts/codex.md、js/battlefield.js／status.js／worker/protocol.js／worker/shim.js、config_tables工具、傳奇及超神回歸、既有Preset；素材維持現況。
+- 測試：`node --test --test-reporter=tap tests/skill2-thrust-directions.test.cjs`9/9；`node --test --test-reporter=tap --test-name-pattern="突刺 1|突刺波次|四方突刺|SKILLS2 與|THRUST" tests/skill2-system.test.cjs tests/vfx-runtime.test.cjs`7/7。七檔廣回歸（上述三檔＋skill2-vfx／legendary-affix／worker-protocol／skill2-ult-evolution）295項242通過／53失敗；修改前285項230通過／55失敗，失敗名稱差集無新增，修復兩項突刺fixture的MP不足並同步新方向／最新波次斷言。其餘既有失敗不放寬、不改無關技能。
+- 表格：Artifact Tool讀取／窄域預覽與編輯計畫，原生Excel Value2僅修改Skills2九格與Equipment_Affix一格；保存後正常模式原生重開，沒有修復；唯讀逐格比對其餘資料、公式、樣式、工作表與資料驗證全保留。初次檢查程式將COM Style物件當值比較而中止未保存，修正為樣式名稱後完成；已關閉本任務隱藏實例，使用者其他Excel未關閉。`node tools/config_tables.cjs --sync`後分別`--apply --write Skills2`／`Equipment_Affix`；還原生成器無關排版，最終各`--apply`語意變更0。
+- 實機／Build：bundled Playwright＋headless Edge／隔離Context／本機正式頁面，確認四方名稱、方向4／8及完整幻影說明；Console error／warning均0，未碰正式存檔。初次smoke錯把詞法全域G當window.G等待而超時，修正測試後通過。`npm.cmd run build`449檔通過；`git diff --check`通過。臨時服務／瀏覽器已關閉。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整四方突刺與幻影八方陣方向`提交；包含使用者最新設定，無本次未完成程式項目，可合併，未合併／推送。已知限制：廣回歸仍有53項既有失敗；未做長時間真人戰鬥觀感驗收。下一步使用者整合後Ctrl+F5重載，確認一般四向與幻影八向；後續Claude共檔快取更新需保留。
+
 ## Claude｜傷害數字分級合併、刪除傷害數字前的技能圖（FLOAT-MERGE-TIERS-20261005）
 
 - Owner：Claude；Done。使用者要求：①大量傷害數字同屏開始丟字時，先啟動 5 合 1；還丟字就在 5 合 1 上再 5 合 1（最極限 25 合 1）；這樣還丟就丟。②把傷害數字前面的技能圖刪掉。接續 VISUAL-QUEUE-PRIORITY-20261005 的「未處理（觀察）①」：飄字量要減只能合併同目標的傷害數字。

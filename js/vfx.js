@@ -2396,7 +2396,7 @@ function renderCombatVfx(spec) {
     laneOffsets: Array.isArray(spec.laneOffsets) ? spec.laneOffsets.slice(0, 3) : null,
     directionCount: Number(spec.directionCount) > 0 ? Number(spec.directionCount) : null,
     directionRanges: Array.isArray(spec.directionRanges) ? spec.directionRanges.slice(0, 4).map(Number) : null,
-    angle: isFinite(spec.angle) ? Number(spec.angle) : null,
+    angle: typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle : null,
     rangeScale: Number(spec.rangeScale) > 0 ? Number(spec.rangeScale) : 1,
     /* 超神【地爆天星】的殞石體積倍率；沒帶就由畫法自己取預設。 */
     sizeMult: Number(spec.sizeMult) > 0 ? Number(spec.sizeMult) : 0
@@ -2686,7 +2686,7 @@ function renderCombatVfx(spec) {
   var stagger = vfxStagger();
 
   /* 新版突刺以使用者提供的光槍圖片播放：普通突刺為前方範圍，
-     超連刺為三道平行光槍，八方突刺則以八個徑向角度同時播放。 */
+     超連刺為平行光槍，多向突刺依事件方位與方向數同時播放。 */
   if (kind === 'slash' && (s.variant === 'thrust-pierce' || s.variant === 'thrust-parallel' ||
       s.variant === 'thrust-octagonal' || s.variant === 'thrust')) {
     if (!rt.pts.length) return;
@@ -2697,7 +2697,8 @@ function renderCombatVfx(spec) {
     /* 突刺連段要讓每一道的「向外飛出」看得清楚：7 次時
        6 個間隔 × 220ms + 最後收尾 300ms ≈ 1.62 秒。 */
     var thrustStagger = 220;
-    var thrustFrontAngle = Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
+    var thrustFrontAngle = typeof s.angle === 'number' ? s.angle
+      : Math.atan2(rt.pts[0].y - from.y, rt.pts[0].x - from.x);
     for (var tc = 0; tc < count; tc++) {
       var thrustDelay = baseDelay + tc * thrustStagger;
       var isFinalThrust = tc === count - 1;

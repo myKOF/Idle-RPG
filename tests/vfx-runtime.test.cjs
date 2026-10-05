@@ -349,6 +349,20 @@ test('THRUST 八方向各三條平行道，尺寸／位置來自事件，飛行�
   adapter.clear(); assert.equal(adapter.stats().fx.activeEffects, 0);
 });
 
+test('THRUST 四方事件不依斜向目標旋轉，保留平行道與飛行方向', () => {
+  const { adapter, log } = makeAdapter([unitPreset('lance')]);
+  adapter.tryPlay({ fxKind: 'slash', variant: 'thrust-octagonal', projectile: true,
+    targets: ['mv-float-1'], angle: 0, lineLength: 240, lineWidth: 60, travelMs: [1000],
+    laneOffsets: [-30, 0, 30], directionCount: 4, vfx: { attack: 'lance' } });
+  adapter.update(.5);
+  assert.equal(log.nodes.length, 12);
+  const transforms = log.nodes.map(n => n.transforms.at(-1));
+  assert.deepEqual([...new Set(transforms.map(t => t.rotation.toFixed(6)))].sort(),
+    [0, Math.PI / 2, Math.PI, Math.PI * 1.5].map(a => a.toFixed(6)).sort());
+  assert.ok(transforms.some(t => Math.abs(t.x - 40) < 1e-8 && Math.abs(t.y) < 1e-8));
+  assert.ok(transforms.some(t => Math.abs(t.y - 40) < 1e-8 && Math.abs(t.x) < 1e-8));
+});
+
 test('THRUST 高塔直送 Adapter 的波次遵守 delayMs，clear 取消未播波次', () => {
   const { adapter, log } = makeAdapter([unitPreset('lance')]);
   const spec = { fxKind: 'slash', variant: 'thrust', lineLength: 120, lineWidth: 30,

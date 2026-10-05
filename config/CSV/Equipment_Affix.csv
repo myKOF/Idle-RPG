@@ -108,7 +108,7 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 傳奇特效,magicRecoil,魔法反震,0,,,,,,,,0,,反震敵人時消耗 10 點魔力，且該次反震傷害提高 100%。,,,spellbook,"{""thornsManaCost"":10,""thornsDamagePct"":100}"
 傳奇特效,piercingFocus,凝鋒穿刺,0,,,,,,,,0,,突刺的長度 +30%、寬度 -15%，且造成的傷害 +30%。,phys,thrust,dagger1h,"{""thrustLenPct"":30,""thrustWidthPct"":-15,""skillDamagePct"":30}"
 傳奇特效,thousandWounds,千瘡百孔,0,,,,,,,,0,,每次突刺命中使敵人受到的傷害 +4%，持續 5 秒，最多疊加 10 層。,phys,thrust,dagger1h,"{""thrustVuln"":{""pct"":4,""dur"":5,""maxStacks"":10}}"
-傳奇特效,sunpiercerLance,貫日之刺,0,,,,,,,,0,,八方連刺改為朝前方的 1 道巨型突刺，突刺範圍 +100%，且造成的傷害 +100%。,phys,thrust,dagger1h,"{""octaToSingle"":true,""thrustRangePct"":100,""skillDamagePct"":100}"
+傳奇特效,sunpiercerLance,貫日之刺,0,,,,,,,,0,,四方突刺改為朝前方的 1 道巨型突刺，突刺範圍 +100%，且造成的傷害 +100%。,phys,thrust,dagger1h,"{""octaToSingle"":true,""thrustRangePct"":100,""skillDamagePct"":100}"
 傳奇特效,thunderStab,迅雷穿刺,0,,,,,,,,0,,每次突刺擊中敵人時有 15% 機率附加 1 道連鎖閃電。,lightning,thrust,dagger1h,"{""thrustChain"":{""chance"":15,""powerPct"":50,""elem"":""lightning"",""bounces"":5,""tickSec"":0.3,""label"":""迅雷穿刺""}}"
 傳奇特效,heartrendBleed,穿心裂血,0,,,,,,,,0,,突刺會附加流血，每 0.5 秒造成 50% 物理傷害，持續 5 秒。,phys,thrust,dagger1h,"{""thrustDot"":{""tickPowerPct"":50,""tickSec"":0.5,""dur"":5}}"
 傳奇特效,chainSpin,連環迴旋,0,,,,,,,,0,,迴旋斬的斬擊次數 +2 次。,phys,cleave,sword1h,"{""cleaveSlashAdd"":2}"

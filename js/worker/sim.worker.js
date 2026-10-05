@@ -12,9 +12,9 @@
 
 importScripts('protocol.js?v=44', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261005-affix-gate-base-regen', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261005-base-regen-flat', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261005-thrust-cardinal-phantom', '../status.js?v=20261002-abyss-domain', '../formula.js?v=20261005-base-regen-flat', '../battlefield.js?v=20261002-abyss-domain', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261005-affix-level-gate',
-  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261005-float-no-icon', '../talents.js?v=20261003-rename-weineng',
+  '../skills.js?v=20260929-thunder-pair', '../skills2.js?v=20261005-thrust-cardinal-phantom', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261003-rename-weineng', '../special_rules.js',
   '../combat.js?v=20261005-affix-gate-base-regen', '../legendary.js?v=20261005-float-no-icon', '../potential.js?v=20261005-float-no-icon', '../tower.js?v=20261005-base-regen-flat',
   '../factory.js?v=20261005-affix-level-gate', '../newforge.js', '../forge.js', '../save.js?v=20260929-thunder-pair',
