@@ -1218,10 +1218,23 @@ function skills2UltCost(gid, optIdx, curLv) {
   return Math.floor((Number(opt.goldBase) || 0) * Math.pow(grow, Math.max(0, Number(curLv) || 0)));
 }
 
-/* 群組總投資等級（前端「同一個技能不斷變強」的顯示用）。 */
-function sgTotalLevel(lvs) {
+/* 群組總投資等級（前端「同一個技能不斷變強」的顯示用；包含超神進化等級，全滿為 80 級）。 */
+function sgTotalLevel(lvs, gid) {
+  if (typeof lvs === 'string') {
+    gid = lvs;
+    lvs = typeof skills2Levels === 'function' ? skills2Levels(gid) : null;
+  }
   var s = 0;
-  for (var i = 0; i < (lvs ? lvs.length : 0); i++) s += lvs[i];
+  if (Array.isArray(lvs)) {
+    for (var i = 0; i < lvs.length; i++) s += (Number(lvs[i]) || 0);
+  }
+  if (gid) {
+    var u = typeof skills2Ult === 'function' ? skills2Ult(gid) : null;
+    if (!u && typeof sgUltPickOf === 'function' && typeof G !== 'undefined' && G && G.player && G.player.skills2) {
+      u = sgUltPickOf(G.player.skills2.ult, gid);
+    }
+    if (u && typeof u.lv === 'number' && u.lv > 0) s += u.lv;
+  }
   return s;
 }
 
@@ -8701,10 +8714,13 @@ function sgSpreadFrost(from, enemies, fx, dot) {
   // 「擴散至目標 m 米內的 count 個敵人」沒有指定最近＝範圍內隨機
   var victims = bfRandomOthers(from, enemies, count, radius, null);
   if (!victims.length) return;
+  var srcKey = (dot && dot.sourceKey) || 'skill2:waterball';
+  var srcGid = srcKey.indexOf('skill2:') === 0 ? srcKey.slice(7) : 'waterball';
   var spec = {
     dps: dot.dps, dur: Math.max(0.1, dot.until - GT), interval: dot.interval, stacksRaw: 1,
     bodyDmg: dot.bodyDmg, frostMult: dot.frostMult, frostFormula: dot.frostFormula,
-    slot: { gid: 'waterball', tier: '3' }   // 【寒霜擴散】是水流彈的階，塗水流彈那一組
+    slot: (dot && dot.slot) || { gid: srcGid, tier: '3' },
+    source: (dot && dot.sourceKey) ? { sourceKey: dot.sourceKey, sourceName: dot.sourceName, sourceLevel: dot.sourceLevel, subType: dot.subType || '寒霜狀態' } : null
   };
   var spread = [];
   for (var i = 0; i < victims.length; i++) {

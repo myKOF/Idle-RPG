@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 技能 DoT 來源鍵隔離、寒霜擴散來源繼承與超神等級統計優化（Antigravity 2026-10-05）
+
+- **DoT 來源堆疊鍵精確隔離（`js/combat.js`）**：
+  - `applyDot` 新增 `sourceKey:sid/name` 複合鍵作為狀態堆疊判定基準，不同主技能（如不同冰系技能）分別施加的同名狀態各自獨立維護與結算，避免後者覆蓋前者或傷害歸屬混淆。
+- **寒霜擴散完整繼承來源資訊（`js/skills2.js`）**：
+  - `sgSpreadFrost` 擴散時傳遞原狀態之 `sourceKey`、`sourceName`、`sourceLevel` 與 `subType`，使目標受群體擴散影響時的凍傷跳傷依然正確歸屬至施加技能。
+- **群組總等級支援超神進化（`js/skills2.js`）**：
+  - `sgTotalLevel` 支援傳入技能 `gid` 並自動納入超神進化等級（7 階共 70 級 + 超神 10 級，全滿 80 級），提升傷害統計面板之等級顯示準確度。
+- **統計桶等級記錄保護（`js/combat.js`）**：
+  - `runStatBucket` 更新為以 `Math.max` 保留最高技能等級。
+
 ## 傷害統計面板支援技能主體區塊分組與各類型傷害詳細明細（Antigravity 2026-10-02）
 
 - **技能主體區塊框線分類（`css/style.css`、`js/combat.js`）**：

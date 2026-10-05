@@ -688,8 +688,10 @@ function applyDot(ent, dps, dur, name, sid, interval, stackCfg, sourceCtx) {
     }
 
     if (!ent.dots) ent.dots = [];
+    var matchKey = (sKey || '') + ':' + (sid || name);
     for (var i = 0; i < ent.dots.length; i++) {
-        if (ent.dots[i].name === name) {
+        var existingKey = (ent.dots[i].sourceKey || '') + ':' + (ent.dots[i].sid || ent.dots[i].name);
+        if (existingKey === matchKey || (!sKey && ent.dots[i].name === name)) {
             var cur = ent.dots[i];
             var step2 = stackStep(stackCfg, cur.until > GT ? cur : null, dps);
             cur.dps = step2.value;
@@ -2040,9 +2042,8 @@ function runStatBucket(skillName, statKey, skillLevel) {
     }
     var stat = RUN_STATS.skills[key];
     if (!stat.subTypes) stat.subTypes = {};
-    // Keep the display metadata on the bucket so same-name skills remain independent.
     if (!stat.name) stat.name = skillName;
-    if (typeof skillLevel === 'number') stat.level = skillLevel;
+    if (typeof skillLevel === 'number') stat.level = Math.max(stat.level || 0, skillLevel);
     return stat;
 }
 
