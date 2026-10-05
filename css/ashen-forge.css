@@ -1808,19 +1808,14 @@ html *::-webkit-scrollbar-corner {
 
 .equip-socket-gems { margin-top: 12px; }
 
-#tab-equip .equip-right-col:has(#detail-pane.is-socket-page) {
-  height: auto;
-  min-height: var(--equip-board-height);
-}
-
-#tab-equip .equip-middle-row:has(#detail-pane.is-socket-page) { flex: 1 0 auto; }
-
+/* 四模式共用固定外框；長鑲嵌內容在詳情區捲動，不推動操作列及背包。 */
 #tab-equip #detail-pane.is-socket-page {
   display: flex;
   flex-direction: column;
   gap: 0;
   height: auto !important;
-  overflow: visible !important;
+  min-height: 0;
+  overflow: auto !important;
 }
 
 #detail-pane.is-socket-page .equip-socket-page {

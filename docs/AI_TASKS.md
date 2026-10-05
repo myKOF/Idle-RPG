@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## EQUIP-MODE-POSITION-20261005 — 四功能切換固定操作列與背包位置
+
+- Owner：Codex；Done。使用者回報切鑲嵌時四功能按鈕與背包微幅下移，要求強化／洗煉／鑲嵌／附魔切換均不位移。前置共用裝備詳情已完成，工作區乾淨、目標衝突預檢乾淨；單一開發者。
+- 允許css/ashen-forge.css限定鑲嵌外框高度／內容溢出、index.html對應CSS快取及本紀錄；必要時才改js/ui.js／定向回歸。禁止數值、鑲嵌規則、Worker協議、存檔、素材與其他副本，無合併／推送。後續接手者使用者。
+- 驗收四模式按鈕／背包矩形不變，4孔／12孔、豐富寶石庫存、1920×1080／1280×720皆可操作；長內容由詳情區整體捲動，孔位及寶石不增加各自捲軸、不裁切或覆蓋操作列。相關回歸、瀏覽器／Console及Build後獨立Commit。
+- 原因／完成：鑲嵌專用規則把equip-right-col改為height:auto、middle-row改為不可收縮的內容高度；孔位及庫存總高超過裝備板時，向下推操作列與背包。移除兩條外框例外，四模式共用既有裝備板高度；鑲嵌詳情改為overflow:auto，孔位與寶石子區仍自然完整排列／overflow:visible，不增加子區捲軸。較長內容現在在詳情區整體捲動，切模式不延長整頁；這是本次固定位置要求取代前次鑲嵌延長整頁的行為。
+- 修改3檔：css/ashen-forge.css、index.html的ashen快取1.0.54及本紀錄。唯讀檢查未改：js/ui.js／item.js／gm_exec.js／worker/sim.worker.js、css/style.css／ashen-forge-flat.css、scripts/sim/engine.js、相關六份回歸測試、共通規範與prompts/codex.md。沒有JS／Worker／配置／素材变更，無素材庫Commit。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；`npm.cmd run build`442檔通過；`git diff --check`通過。未增只比對CSS字樣的測試，以正式瀏覽器座標驗證排版。
+- 瀏覽器：全新headless Edge Context、隨機Port唯讀HTTP服務、正式index／CSS／UI與真正Worker，seed=9拋棄式存檔。1920×1080及1280×720，各測4孔護手／12孔雙手法杖＋48類寶石庫存，洗煉→鑲嵌→附魔→強化循環；逐次比對4個功能鈕、卸下、操作列及背包x／y／width／height全部一致。詳情可視436px，4孔內容484px／12孔868px，孔位／寶石無子捲軸；12孔捲到最後選第12孔並實際鑲入最末寶石成功，前後按鈕／背包矩形仍一致。臨時注入旧CSS重現4孔操作列下移47.15625px，移除舊規則立即恢復0位移。Console error／warning及Worker errors均0；瀏覽器／服務已正常關閉，無臨時檔／真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 固定装備功能切換時按鈕與背包位置`提交。無未完成需求或已知新增風險，可合併；未合併／推送，未做長時間真人操作。建議使用者重載遊戲確認並審查整合。
+
 ## EQUIP-MODE-HEADER-20261005 — 統一裝備頂端資訊與功能頁操作
 
 - Owner：Codex；Done。使用者要求強化／洗煉／鑲嵌／附魔頂端皆有與洗煉相同的裝備名稱、強化與相關資訊。单一開發者，前置詳情與鑲嵌局部更新已完成，副本乾淨，六檔衝突預檢無其他分支／副本修改；追加CSS另預檢、提交前七檔再次預檢均無衝突。
