@@ -72,6 +72,8 @@ var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
      而那個判定只能從 skills 面板快照重算。沒訂閱的話開機第一次畫裝備格必定判成「沒生效」。 */
   equip: ['equip', 'inv', 'gems', 'header', 'skills'],
   gems: ['gems', 'header'],
+  /* 符文頁（符文之語，js/ui-runeword.js）：符文庫存在 gems 面板；equip 面板用來標出「穿戴中已成形」。 */
+  runes: ['gems', 'equip', 'header'],
   skills: ['skills', 'talents', 'header'],
   talents: ['talents', 'header'],
   tower: ['tower', 'header'],
@@ -2635,7 +2637,7 @@ function markTabDirty(name) {
     UI.dirty.factory = true;
   } else if (name === 'forge') UI.dirty.forge = true;
   else if (name === 'tower') UI.dirty.tower = true;
-  else if (name === 'gems') UI.dirty.gems = true;
+  else if (name === 'gems' || name === 'runes') UI.dirty.gems = true;
   else if (name === 'skills') UI.dirty.skills = true;
   else if (name === 'talents') UI.dirty.talents = true;
 }
@@ -2654,6 +2656,7 @@ function switchTab(name) {
   // 分頁重新取得最新快照：背景分頁的 dirty 訊號可能已被 Worker 消費，
   // 若只標記 UI dirty，切回技能頁時會繼續顯示舊技能點／裝載欄數量。
   if (validUiPanelKey(name)) requestPanelData(name, true);
+  if (name === 'runes') { requestPanelData('gems', true); requestPanelData('equip', true); }
   var activeTabButton = document.querySelector('.tab-btn.active');
   var nextTabButton = document.querySelector('.tab-btn[data-tab="' + name + '"]');
   if (activeTabButton && activeTabButton !== nextTabButton) activeTabButton.classList.remove('active');
@@ -5419,6 +5422,20 @@ function socketSelectedGem(type, level, fusedId) {
   });
 }
 
+/* 鑲入符文（js/runeword.js）：流程與 socketSelectedGem 相同，只是指令與參數不同。 */
+function socketSelectedRune(runeId) {
+  var it = findSelItem(), mode = equipSocketModeFor(it);
+  if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || it.sockets[mode.selIdx]) return;
+  var idx = mode.selIdx;
+  sendUiCommand('rune.socket', { itemId: it.id, runeId: runeId, index: idx }, { keys: [itemPendingKey(it.id)], panels: ['inv', 'equip', 'gems', 'header'] }).then(function (result) {
+    if (result !== null || UI.equipMatMode !== mode || !UI.sel || UI.sel.id !== it.id) return;
+    mode.advanceFrom = idx;
+    renderDetail();
+  }).catch(function (error) {
+    reportUiCommandFailure('鑲嵌符文', error, ['inv', 'equip', 'gems', 'header']);
+  });
+}
+
 /* 選孔與 pending 只更新現有控制項，保留寶石節點及捲動位置。 */
 function syncEquipSocketControls(it, mode) {
   var pane = $id('detail-pane');
@@ -5442,7 +5459,7 @@ function syncEquipSocketControls(it, mode) {
   // 同為空孔或同為已鑲孔時，寶石可用狀態不變，不再掃整份庫存。
   // 清單內容替換後會清除此記錄，新的按鈕仍須同步 pending／孔位狀態。
   if (gems && gems._equipSocketDisabled !== disabled) {
-    gems.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
+    gems.querySelectorAll('[data-gem-socket], [data-gem-socket-fused], [data-rune-socket]').forEach(function (button) {
       if (button.disabled !== disabled) button.disabled = disabled;
     });
     gems._equipSocketDisabled = disabled;
@@ -5582,6 +5599,15 @@ function renderDetail() {
           gdef.emoji + '<span class="socket-gem-level">' + lv + '</span><span class="socket-gem-count">×' + fmt(n) + '</span></button>');
         break;
       }
+    }
+    // 符文（js/runeword.js）：與寶石共用同一排鑲孔，高階在前
+    var runeList = (typeof RUNES !== 'undefined' && typeof runesViewCount === 'function') ? RUNES : [];
+    for (var ri = runeList.length - 1; ri >= 0; ri--) {
+      var rune = runeList[ri], rn = runesViewCount(gemsSnapshot, rune.id);
+      if (!rn) continue;
+      gemIcons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '" style="--c:' + rune.color + '" data-tip="' +
+        esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜' + rwRuneStatLine(it, rune.id) + '｜鑲入選中孔位') + '">' +
+        rune.glyph + '<span class="socket-gem-level">' + rune.tier + '</span><span class="socket-gem-count">×' + fmt(rn) + '</span></button>');
     }
     gemsViewFused(gemsSnapshot).forEach(function (fg) {
       gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
@@ -7405,6 +7431,7 @@ function uiTick() {
   }
   if (d.tower && UI.tab === 'tower') { renderTower(); d.tower = false; }
   if (d.gems && UI.tab === 'gems') { renderGems(); d.gems = false; }
+  if ((d.gems || d.equip) && UI.tab === 'runes' && typeof renderRunes === 'function') { renderRunes(); d.gems = false; }
   if (UI.tab === 'gems') updateShopCountdown(); // 商店重置倒數即時更新
   if (d.skills && UI.tab === 'skills') { renderSkills(); d.skills = false; }
   if (d.talents && UI.tab === 'talents') { renderTalents(); d.talents = false; }
@@ -8082,7 +8109,8 @@ var UI_COMMAND_LABELS = {
   'forge.setAuto': '神鑄自動設定', 'forge.setAutoFill': '神鑄自動放入設定',
   'item.equip': '裝備', 'item.unequip': '卸下', 'item.salvage': '分解', 'item.setLock': '鎖定',
   'item.upgrade': '強化', 'item.enchant': '附魔', 'item.removeEnchant': '移除附魔',
-  'item.rerollAffix': '洗煉', 'gem.socket': '鑲嵌', 'gem.unsocket': '取下寶石',
+  'item.rerollAffix': '洗煉', 'gem.socket': '鑲嵌', 'gem.unsocket': '取下寶石', 'rune.socket': '鑲嵌符文',
+  'rune.compose': '符文合成', 'rune.composeAll': '符文全部合成', 'rune.dismantle': '符文拆解',
   'newforge.addFurnace': '新增熔爐', 'newforge.removeFurnace': '移除熔爐',
   'newforge.installPart': '裝配零件', 'newforge.uninstallPart': '卸下零件',
   'newforge.upgradePart': '零件升級', 'newforge.unlockPartSlot': '解鎖零件格',
@@ -12136,6 +12164,9 @@ function initUI() {
     $id('fuse-type').addEventListener('change', renderFuseInfo);
   }
 
+  // 符文頁（符文之語）：由 js/ui-runeword.js 綁定
+  if (typeof initRuneUi === 'function') initRuneUi();
+
   // 寶石頁：寶石庫分類／選取、工坊分頁切換
   var gemsTab = $id('tab-gems');
   if (gemsTab && gemsTab.addEventListener) {
@@ -12893,6 +12924,12 @@ function initUI() {
         'gem-shop',
         ['gems', 'header']
       );
+      return;
+    }
+    // 符文鑲嵌
+    var rsk = e.target.closest('[data-rune-socket]');
+    if (rsk) {
+      if (!rsk.disabled) socketSelectedRune(rsk.getAttribute('data-rune-socket'));
       return;
     }
     // 融合寶石鑲嵌
