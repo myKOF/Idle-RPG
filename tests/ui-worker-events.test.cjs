@@ -58,6 +58,9 @@ test('Worker Event 將 flog、log 與 float 接到既有 UI 呈現函式', () =>
   vm.runInNewContext([
     functionBody('scheduleWorkerVisualEventFlush'),
     functionBody('uiNoteVisualDrop'),
+    functionBody('uiIsSustainVisualEvent'),
+    functionBody('uiVisualRank'),
+    functionBody('uiSameSustainField'),
     functionBody('queueWorkerVisualEvent'),
     functionBody('uiNoteVisualEventError'),
     functionBody('flushWorkerVisualEvents'),

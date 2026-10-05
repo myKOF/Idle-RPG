@@ -155,6 +155,8 @@ test('同一種例外只印前 3 次，之後只計數，避免每幀洗版', ()
   assert.equal(consoleErrors.length, 3);
 });
 
+const QUEUE_FUNCS = ['uiNoteVisualDrop', 'uiIsSustainVisualEvent', 'uiVisualRank', 'uiSameSustainField', 'queueWorkerVisualEvent'];
+
 function makeQueueContext(lastFlushAt) {
   const context = {
     UI_WORKER_VISUAL_EVENT_QUEUE: [{ kind: 'float', text: 'oldest' }],
@@ -164,7 +166,7 @@ function makeQueueContext(lastFlushAt) {
     uiNowMs: () => 4242,
     scheduleWorkerVisualEventFlush: () => {}
   };
-  vm.runInNewContext([functionBody('uiNoteVisualDrop'), functionBody('uiIsSustainVisualEvent'), functionBody('queueWorkerVisualEvent')].join('\n'), context);
+  vm.runInNewContext(QUEUE_FUNCS.map(functionBody).join('\n'), context);
   return context;
 }
 
@@ -318,9 +320,12 @@ test('方案 C: UIContainmentManager 具備獨立註冊、註銷與一鍵開關�
   assert.equal(classListMap.get('#custom-panel').has('ui-contain-layout'), false);
 });
 
-/* ---- 主執行緒佇列滿了的取捨（2026-10-01 無限冰裂：真實瀏覽器 20 秒內 270 個發射事件全丟）---- */
+/* ---- 主執行緒佇列：分級牺牲與就地合併
+   2026-10-01 無限冰裂：真實瀏覽器 20 秒內發射事件 270 個全丟。
+   2026-10-05 臨界雷劫＋300 隻敵人：飄字每秒約 3,300 件、每個 5Hz tick 批次 600 多件，
+   一批就把佇列裡還沒 flush 的特效整批擠掉，雷球事件只有 42% 進得了渲染器。 ---- */
 
-function makeSustainQueueContext(queue, max) {
+function makeRankedQueueContext(queue, max) {
   const context = {
     UI_WORKER_VISUAL_EVENT_QUEUE: queue,
     UI_WORKER_VISUAL_QUEUE_MAX: max,
@@ -329,32 +334,85 @@ function makeSustainQueueContext(queue, max) {
     uiNowMs: () => 4242,
     scheduleWorkerVisualEventFlush: () => {}
   };
-  vm.runInNewContext([functionBody('uiNoteVisualDrop'), functionBody('uiIsSustainVisualEvent'), functionBody('queueWorkerVisualEvent')].join('\n'), context);
+  vm.runInNewContext(QUEUE_FUNCS.map(functionBody).join('\n'), context);
   return context;
 }
-const sustain = (id) => ({ kind: 'vfx', fxKind: 'aura', variant: 'ice-arrow-homing', area: { id } });
+const refresh = (id, extra) => Object.assign({ kind: 'vfx', fxKind: 'aura', variant: 'thunder-orb', area: { id } }, extra || {});
+const shot = (variant) => ({ kind: 'vfx', fxKind: 'projectile', variant: variant || 'ice-arrow-pierce' });
+const floatEv = (text) => ({ kind: 'float', text });
+const label = (e) => e.text || (e.area && e.area.id) || e.variant;
 
-test('佇列滿了：一次性事件（發射、飄字）擠掉最舊的持續刷新，不擠掉別的一次性事件', () => {
-  const context = makeSustainQueueContext([
-    { kind: 'float', text: 'first' }, sustain('s1'), sustain('s2')
-  ], 3);
-  context.queueWorkerVisualEvent({ kind: 'vfx', fxKind: 'projectile', variant: 'ice-arrow-pierce' });
-  const q = context.UI_WORKER_VISUAL_EVENT_QUEUE;
-  assert.equal(q.length, 3);
-  assert.equal(q[0].text, 'first', '更舊的飄字不動');
-  assert.deepEqual(q.map((e) => (e.area && e.area.id) || e.variant || e.text), ['first', 's2', 'ice-arrow-pierce']);
-  assert.equal(context.UI_VISUAL_DIAG.queueCap, 1, '仍算一次丟棄');
-});
-
-test('佇列滿了：進來的是持續刷新就丟它，佇列不動', () => {
-  const context = makeSustainQueueContext([{ kind: 'float', text: 'a' }, sustain('s1')], 2);
-  context.queueWorkerVisualEvent(sustain('late'));
-  assert.deepEqual(context.UI_WORKER_VISUAL_EVENT_QUEUE.map((e) => (e.area && e.area.id) || e.text), ['a', 's1']);
+test('QUEUE-1 滿了：先擠掉最舊的飄字，特效事件（一次性與持續刷新）一件都不動', () => {
+  const context = makeRankedQueueContext([floatEv('f1'), refresh('s1'), floatEv('f2'), shot('old-shot')], 4);
+  context.queueWorkerVisualEvent(shot('new-shot'));
+  assert.deepEqual(context.UI_WORKER_VISUAL_EVENT_QUEUE.map(label), ['s1', 'f2', 'old-shot', 'new-shot']);
   assert.equal(context.UI_VISUAL_DIAG.queueCap, 1);
 });
 
-test('佇列裡沒有持續刷新可讓時，維持原本的丟最舊', () => {
-  const context = makeSustainQueueContext([{ kind: 'float', text: 'a' }, { kind: 'float', text: 'b' }], 2);
-  context.queueWorkerVisualEvent({ kind: 'vfx', fxKind: 'projectile' });
-  assert.deepEqual(context.UI_WORKER_VISUAL_EVENT_QUEUE.map((e) => e.text || e.fxKind), ['b', 'projectile']);
+test('QUEUE-2 滿了且沒有飄字：持續刷新比一次性事件先被犧牲', () => {
+  const context = makeRankedQueueContext([shot('a'), refresh('s1'), shot('b')], 3);
+  context.queueWorkerVisualEvent(shot('c'));
+  assert.deepEqual(context.UI_WORKER_VISUAL_EVENT_QUEUE.map(label), ['a', 'b', 'c']);
+});
+
+test('QUEUE-3 進來的比佇列裡最低的還低：丟進來的（飄字撞上全是特效的佇列）', () => {
+  const context = makeRankedQueueContext([shot('a'), refresh('s1')], 2);
+  context.queueWorkerVisualEvent(floatEv('late'));
+  assert.deepEqual(context.UI_WORKER_VISUAL_EVENT_QUEUE.map(label), ['a', 's1']);
+  assert.equal(context.UI_VISUAL_DIAG.queueCap, 1);
+  // 全是一次性事件時，持續刷新進不來
+  const full = makeRankedQueueContext([shot('a'), shot('b')], 2);
+  full.queueWorkerVisualEvent(refresh('s2'));
+  assert.deepEqual(full.UI_WORKER_VISUAL_EVENT_QUEUE.map(label), ['a', 'b']);
+});
+
+test('QUEUE-4 同等級滿了維持原本的丟最舊（飄字擠飄字、一次性擠一次性）', () => {
+  const floats = makeRankedQueueContext([floatEv('a'), floatEv('b')], 2);
+  floats.queueWorkerVisualEvent(floatEv('c'));
+  assert.deepEqual(floats.UI_WORKER_VISUAL_EVENT_QUEUE.map(label), ['b', 'c']);
+  const shots = makeRankedQueueContext([shot('a'), shot('b')], 2);
+  shots.queueWorkerVisualEvent(shot('c'));
+  assert.deepEqual(shots.UI_WORKER_VISUAL_EVENT_QUEUE.map(label), ['b', 'c']);
+});
+
+test('QUEUE-5 同一個場域的持續刷新就地合併：不多佔名額、不算丟棄，留下最新那則', () => {
+  const context = makeRankedQueueContext([refresh('s1', { n: 1 }), shot('a'), refresh('s2', { n: 1 })], 3);
+  context.queueWorkerVisualEvent(refresh('s1', { n: 2 }));
+  const q = context.UI_WORKER_VISUAL_EVENT_QUEUE;
+  assert.equal(q.length, 3, '佇列沒變長（而且已經滿了也照樣進得來）');
+  assert.equal(q[0].n, 2, '舊的那則被換成最新的');
+  assert.equal(q[0]._qAt, 4242);
+  assert.equal(context.UI_VISUAL_DIAG.queueCap, 0, '合併不是丟棄');
+  assert.deepEqual(q.map(label), ['s1', 'a', 's2']);
+});
+
+test('QUEUE-6 合併的鍵是「變體＋場域 id」：不同變體或不同場域各自保留', () => {
+  const context = makeRankedQueueContext([], 10);
+  context.queueWorkerVisualEvent(refresh('x', { variant: 'thunder-orb' }));
+  context.queueWorkerVisualEvent(refresh('x', { variant: 'wind-blade-homing' }));
+  context.queueWorkerVisualEvent(refresh('y', { variant: 'thunder-orb' }));
+  context.queueWorkerVisualEvent(refresh('x', { variant: 'thunder-orb' }));
+  assert.equal(context.UI_WORKER_VISUAL_EVENT_QUEUE.length, 3);
+});
+
+test('QUEUE-7 沒有 area.id 的光環與一次性事件不合併', () => {
+  const context = makeRankedQueueContext([], 10);
+  const bare = { kind: 'vfx', fxKind: 'aura', variant: 'thunder-orb', area: { x: 1 } };
+  context.queueWorkerVisualEvent(bare);
+  context.queueWorkerVisualEvent(Object.assign({}, bare));
+  context.queueWorkerVisualEvent(shot('a'));
+  context.queueWorkerVisualEvent(shot('a'));
+  assert.equal(context.UI_WORKER_VISUAL_EVENT_QUEUE.length, 4);
+});
+
+test('QUEUE-8 洪水情境：300 隻敵人的飄字批次進來，佇列裡的特效事件一件都不會被擠掉', () => {
+  const context = makeRankedQueueContext([], 480);
+  for (let i = 0; i < 60; i++) context.queueWorkerVisualEvent(refresh('orb-' + i));
+  for (let i = 0; i < 20; i++) context.queueWorkerVisualEvent(shot('launch-' + i));
+  for (let i = 0; i < 700; i++) context.queueWorkerVisualEvent(floatEv('dmg-' + i));   // 一個 tick 批次
+  const q = context.UI_WORKER_VISUAL_EVENT_QUEUE;
+  assert.equal(q.length, 480);
+  assert.equal(q.filter((e) => e.kind === 'vfx').length, 80, '特效 80 件全在');
+  assert.equal(q.filter((e) => e.kind === 'float').length, 400);
+  assert.equal(q[q.length - 1].text, 'dmg-699', '留下的是最新的飄字');
 });
