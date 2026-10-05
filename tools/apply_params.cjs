@@ -728,7 +728,7 @@ scalar('formula', 'GLOBAL_DMG_RED_DENOMINATOR', '2-屬性派生', '全局減傷'
 scalar('formula', 'SLOW_ASPD_FACTOR', '3-戰鬥核心', '減速狀態攻速', 0);
 scalar('formula', 'CONTROL_DECAY_PER_SEC_NORMAL', '3-戰鬥核心', '控場遞減', 0);
 scalar('formula', 'CONTROL_DECAY_PER_SEC_ELITE', '3-戰鬥核心', '控場遞減', 1);
-scalar('formula', 'BASE_HP_REGEN_PCT', '2-屬性派生', '野外基礎生命恢復', 0);
+scalar('formula', 'BASE_HP_REGEN', '2-屬性派生', '野外基礎生命恢復', 0);
 scalar('formula', 'WAVE_CLEAR_HEAL_PCT', '3-戰鬥核心', '過關回復', 0);
 scalar('formula', 'DROP_RATE_EFFECT_MULT', '5-掉落通則', '掉寶率效果折半', 0);
 scalar('formula', 'SPEED_GEAR_FIXED_BONUS', '5-掉落通則', '加速齒輪固定加成', 0);
