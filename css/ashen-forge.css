@@ -1059,6 +1059,7 @@ select option {
 #workspace-area .eq-slot.selected {
   outline: 5px solid #ffe354;
   outline-offset: 1px;
+  transition: none !important;
 }
 
 /* Hover updates must not rerasterize a filtered copy of the entire textured

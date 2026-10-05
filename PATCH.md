@@ -1,5 +1,23 @@
 # PATCH.md
 
+## 裝備選中外框移除漸變動畫，點擊後立刻出現外框（Antigravity 2026-10-05）
+
+- **外框漸變動畫移除（`css/style.css`、`css/ashen-forge.css`）**：
+  - 移除 `.eq-slot` 原有的全屬性過渡 `transition: all 0.2s`，調整為僅對 `opacity, filter` 過渡，防止選中外框（`outline`）被套上 0.2 秒平滑過渡。
+  - 移除 `.item-cell` 與 `.eq-slot.filled` 中的 `outline 0.2s` 與 `box-shadow 0.2s` 漸變設定。
+  - 為 `.eq-slot.selected`、`.item-cell.selected` 以及 `#workspace-area` 的選中外框規則明確加入 `transition: none !important;`，點擊裝備槽位或背包格子選中時，外框立即 100% 渲染呈現，不再有緩慢放大或淡入的漸變過程；切換選中目標時前一個外框亦立即消失，無重影殘留。
+- **快取版本與單元測試**：
+  - [index.html](file:///d:/MyGame/Idle-RPG/antigravity/index.html) 快取版本號更新為 `style.css?v=1.0.75`、`ashen-forge.css?v=1.0.58`。
+  - 新增單元測試 [tests/equip-selection-outline-instant.test.cjs](file:///d:/MyGame/Idle-RPG/antigravity/tests/equip-selection-outline-instant.test.cjs)。
+
+## 裝備詞條預覽界面支援點擊外部任意區域自動關閉（Antigravity 2026-10-05）
+
+- **外部點擊關閉判定優化（`js/ui.js`）**：
+  - 修正詞條預覽浮層的關閉判定：原程式碼在外部點擊判斷中包含了 `#detail-pane`（`!e.target.closest('#affix-pool-overlay, #detail-pane')`），導致開啟可能出現的詞條預覽浮層後，在裝備詳情面板內部點擊任何位置（如屬性文字、空白區域、強化按鈕、洗煉按鈕等）皆無法關閉詞條預覽浮層。
+  - 將外點判定調整為 `!e.target.closest('#affix-pool-overlay')`。點擊詞條預覽界面內部時保持開啟，點擊該界面外的任意區域（包括詳情卡片內部任意處、背包、裝備槽位或任何其他界面）時皆能立即關閉詞條預覽浮層，同時後續點擊操作正常響應執行。
+- **單元測試（`tests/affix-pool-outside-click.test.cjs`）**：
+  - 新增專屬測試套件，涵蓋點擊驚嘆號開啟、浮層內點擊保持顯示、點擊詳情卡片內部文字與按鈕自動關閉、點擊背包區域自動關閉、以及點擊驚嘆號自身正常切換收合。
+
 ## 技能 DoT 來源鍵隔離、寒霜擴散來源繼承與超神等級統計優化（Antigravity 2026-10-05）
 
 - **DoT 來源堆疊鍵精確隔離（`js/combat.js`）**：
