@@ -11504,13 +11504,22 @@ function initUI() {
       );
       return;
     }
-    // 點擊技能頁裝備欄技能格 → 選取該技能（顯示右上角小叉叉）
+    // 點擊技能頁快捷格 → 同步技能瀏覽器焦點，並切換右上角小叉叉
     var loadoutSlotClick = e.target.closest('#skill-loadout .battle-skill-slot.equipped');
     if (loadoutSlotClick) {
       var idx = parseInt(loadoutSlotClick.getAttribute('data-slot-index'), 10);
       if (!isNaN(idx)) {
         UI.selectedSkillLoadoutIndex = (UI.selectedSkillLoadoutIndex === idx ? -1 : idx);
+        var loadoutGid = sgGroupIdOf(loadoutSlotClick.getAttribute('data-skill-id') || loadoutSlotClick.getAttribute('data-sk'));
+        if (loadoutGid !== null && typeof SKILLS2 !== 'undefined' && SKILLS2[loadoutGid]) {
+          if (UI.sgBrowse.filter !== 'all' && sgbCategoryOf(loadoutGid) !== UI.sgBrowse.filter) UI.sgBrowse.filter = 'all';
+          sgbSelectGroup(loadoutGid, uiSkillsPanelSnapshot());
+        }
         renderSkills();
+        if (loadoutGid !== null && typeof SKILLS2 !== 'undefined' && SKILLS2[loadoutGid]) {
+          var loadoutItem = document.querySelector('#sgb-items [data-sgb-group="' + loadoutGid + '"]');
+          if (loadoutItem && typeof loadoutItem.scrollIntoView === 'function') loadoutItem.scrollIntoView({ block: 'nearest' });
+        }
       }
       return;
     }

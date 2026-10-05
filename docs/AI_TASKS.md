@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## SKILL-LOADOUT-FOCUS-20261005 — 下方技能快捷同步左側焦點
+
+- Owner：Codex；Done。使用者要求點擊技能頁下方快捷技能，同步左側技能選取；補充圖片僅為示意，並非實際顯示錯誤。單一開發者，本副本開始乾淨。
+- 範圍：js/ui.js技能頁快捷格點擊、tests/skill2-ui.test.cjs回歸、index.html僅ui.js快取、本紀錄；不改技能數值、裝配指令、Worker、存檔、HUD樣式或其他副本。
+- 衝突：fetch後四檔預檢，程式／測試／紀錄乾淨；index與ai/claude的5581421a共檔，對方僅第13行battle-hud.css版本1.0.4→1.0.6。使用者已明確同意分段更新第926行UI快取，保留HUD引用。
+- 提交前再查：Claude在本次程式與驗收完成後開始未提交修改ui.js第160／532～664／10803行的傷害飄字合併與診斷，index第914行battle-renderer1.6.171及第926行UI1.0.125；未碰本次第11349行快捷點擊，UI版號雙方相同。已核對且不再修改ui.js／index，本次只提交先前完成的授權段落；後续整合须保留两方代码。
+- 驗收：點快捷格同步群組與最高已學階／已選超神，左側選取捲入可見處；若篩選隱藏該技能則切全部；原快捷格選取切換、小叉卸下、無對應群組的潛能技能維持。相關測試與Build、正式頁隔離瀏覽器確認後獨立Commit，不合併／推送。
+- 完成：快捷格選取先以正式skills快照設定sgBrowse，再重繪既有清單／詳情，最後將對應左側項目捲入；相符篩選維持，不符切全部。最高已學階／有效已選超神沿用sgbSelectGroup；再次點同格仍切換小叉顯示，焦點仍同步，不送任何裝配指令；小叉優先走原卸下分支。
+- 修改4檔：js/ui.js、tests/skill2-ui.test.cjs（新增3項事件委派回歸）、index.html僅ui1.0.124→1.0.125、本紀錄。未修改但唯讀檢查：協作規範／prompts/codex.md、js/skills.js／skills2.js／bridge.js／player.js、scripts/sim/engine.js、相關技能／初始化／UI tick回歸；無素材改動，不需素材Commit。
+- 測試指令：`node --test tests/skill2-ui.test.cjs tests/skill-loadout.test.cjs tests/battle-ui-rework.test.cjs tests/battle-skill-summary.test.cjs tests/init-ui-smoke.test.cjs tests/ui-tick-smoke.test.cjs`33/33通過；`npm.cmd run build`442檔通過；`git diff --check`通過。新增事件測試涵蓋最高已學階、已選超神、相符／不符篩選、重點同格、data-sk fallback、無群組潛能／無效參照／索引與卸下優先；測試初次修正錯誤階屬性斷言及未達解鎖級別的超神fixture後全通過，未放寬正式解鎖規則。
+- 實機：bundled Playwright＋headless Edge，全新Context／隨機本機Port／正式Worker與拋棄式引擎存檔，在1920×1080與1280×720實際點擊下方寒冰箭，同步左側is-sel／aria-pressed=true、右側寒冰箭／已選超神，該清單列完整可見；物理篩選點魔法快捷恢復全部；突刺展開最高已學第3階。單純點擊送裝配指令0，小叉只送1次卸下，戰鬥快捷列原跳轉正常；Console error／warning0，載入UI1.0.125。初次fixture讀入後神鑄解鎖彈窗擋住操作，改用正式取消按鈕關閉後驗收通過，未繞過技能點擊或改正式程式。
+- 交付：Commit為本紀錄所在`[Codex] fix: 技能快捷同步左側選取焦點`提交（可由`git log -1 --format=%h -- docs/AI_TASKS.md`取得）；本次無未完成或已知新增風險，可合併，未合併／推送。未做長時間真人操作；臨時服務／隔離瀏覽器已關閉，未寫正式使用者存檔或建立測試檔。下一步使用者整合後Ctrl+F5重載驗收，index與Claude的HUD版本是不同段落，整合時保留雙方快取更新。
+
 ## Claude｜特效量大時新技能特效播不出來、特效播一半消失又出現（VISUAL-QUEUE-PRIORITY-20261005）
 
 - Owner：Claude；Done。使用者回報：特效很多時，新裝上的技能（臨界雷劫）特效播不出來但冷卻與魔耗都有；另外常看到特效播到一半忽然消失又忽然出現，雷球有一陣子整屏忽然全都有、接著又全消失。這與 2026-10-01 無限冰裂是同一條事件管線。
