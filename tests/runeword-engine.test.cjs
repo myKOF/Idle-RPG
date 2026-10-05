@@ -619,3 +619,24 @@ test('存檔相容：新遊戲有 runes 表；舊存檔缺欄位由合併預設�
   const src = require('node:fs').readFileSync(require('node:path').join(require('./helpers/runeword-env.cjs').root, 'js/save.js'), 'utf8');
   assert.match(src, /data\.player\.runes/);
 });
+
+test('代價型效果：maxHpPct 乘算降低最大生命（下限 0.1），不隨稀有度放大；生命% 總和再負也不會讓生命小於 0', () => {
+  const c = loadRuneEnv();
+  const word = c.RUNEWORD_BY_ID.rw_timeloop;
+  // 同一組裝備，只改 maxHpPct：其他屬性（符文本身的生命%等）完全相同，才量得出乘區
+  const hpWith = (pct, rarity) => {
+    word.fx.maxHpPct = pct;
+    return equip(c, 'amulet', wordItem(c, 'rw_timeloop', { rarity: rarity })).hp;
+  };
+  const noCost = hpWith(0, 10);
+  assert.ok(Math.abs(hpWith(-20, 10) / noCost - 0.8) < 0.005, '預期 ×0.8');
+  const noCostLow = hpWith(0, 5);
+  assert.ok(Math.abs(hpWith(-20, 5) / noCostLow - 0.8) < 0.005, '代價不隨稀有度改變（傳說級同樣 ×0.8）');
+  assert.ok(Math.abs(hpWith(-500, 10) / noCost - 0.1) < 0.005, '乘區下限 0.1');
+  assert.ok(hpWith(-500, 10) > 0);
+  // 任何來源把生命% 推到 -100% 以下，也不會得到負生命
+  c.RUNEWORD_BY_ID.rw_timeloop.fx.maxHpPct = 0;
+  c.RUNEWORD_BY_ID.rw_timeloop.stats.push(['hpPct', -50]);
+  const neg = equip(c, 'amulet', wordItem(c, 'rw_timeloop'));
+  assert.ok(neg.hp > 0);
+});

@@ -107,7 +107,7 @@ var RW_BASE_TOKENS = ['any', 'armor', 'jewelry', 'mainHand', 'twoHand', 'oneHand
    fx（靜態，數字相加）：下列鍵之外的鍵一律視為拼字錯誤（tests/runeword-data.test.cjs 會擋）。
    procs（事件觸發）：on ∈ RW_PROC_TRIGGERS；acts[].act ∈ RW_ACTS。 */
 var RW_FX_KEYS = [
-  'dmgPct', 'skillDmgPct', 'basicDmgPct', 'aspdMult', 'cdPct', 'manaCostRedPct', 'maxHitPct',
+  'dmgPct', 'skillDmgPct', 'basicDmgPct', 'aspdMult', 'cdPct', 'manaCostRedPct', 'maxHitPct', 'maxHpPct',
   'dmgHiHpPct', 'dmgLoHpPct', 'dmgSoloPct', 'dmgPerFoePct', 'dmgSelfFullPct', 'dmgSelfLowPct', 'dmgCtrlPct',
   'killHealPct', 'killManaPct', 'runeFindPct', 'selfDrainPct', 'splashPct',
   'reviveHpPct', 'reviveCdSec', 'reviveInvulnSec', 'reviveDmgPct', 'reviveDmgSec', 'reviveRefresh'
@@ -288,12 +288,12 @@ var RUNEWORDS = [
     fx: { reviveHpPct: 60, reviveCdSec: 180, reviveInvulnSec: 3, reviveDmgPct: 60, reviveDmgSec: 10, reviveRefresh: 1 },
     flavor: '死亡只是下一次輪迴的開場白。' },
   { id: 'rw_timeloop', name: '時之沙', tier: 4, runes: ['r28', 'r29', 'r26', 'r30', 'r27'], bases: ['amulet'],
-    stats: [['cdr', 5.0], ['mpRegen', 5.0], ['matkPct', 3.0], ['hpPct', -2.0]], fx: { cdPct: 45 },
+    stats: [['cdr', 5.0], ['mpRegen', 5.0], ['matkPct', 3.0]], fx: { cdPct: 45, maxHpPct: -20 },
     procs: [{ on: 'cast', chance: 25, acts: [{ act: 'recast' }] }],
     flavor: '沙漏倒過來了。代價是你的生命，也在一起流。' },
   { id: 'rw_bloodmoon', name: '血月', tier: 4, runes: ['r10', 'r23', 'r31', 'r16', 'r33'], bases: ['mainHand'],
-    stats: [['atkPct', 4.0], ['matkPct', 4.0], ['critDmg', 4.0], ['lifesteal', 3.0], ['hpPct', -3.0]],
-    fx: { dmgPct: 80, selfDrainPct: 2, killHealPct: 8 },
+    stats: [['atkPct', 4.0], ['matkPct', 4.0], ['critDmg', 4.0], ['lifesteal', 3.0]],
+    fx: { dmgPct: 80, selfDrainPct: 2, killHealPct: 8, maxHpPct: -30 },
     flavor: '血月當空，誰先流盡誰先倒下。' },
   { id: 'rw_arsenal', name: '武庫', tier: 4, runes: ['r19', 'r13', 'r20', 'r27', 'r31'], bases: ['mainHand'],
     stats: [['aspd', 3.0], ['atkPct', 3.0], ['matkPct', 3.0]], fx: { skillDmgPct: 40 },

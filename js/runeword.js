@@ -76,6 +76,13 @@ function dismantleRune(id) {
    §2 鑲嵌與符文之語判定
    ============================================================ */
 function rwIsRuneSocket(g) { return !!(g && g.rune && RUNE_BY_ID[g.rune]); }
+/* 快速路徑：絕大多數裝備沒有任何符文，itemScore／排序會大量呼叫判定，先用這個擋掉。 */
+function rwHasRune(it) {
+  var s = it && it.sockets;
+  if (!s) return false;
+  for (var i = 0; i < s.length; i++) if (s[i] && s[i].rune) return true;
+  return false;
+}
 
 /* 鑲入符文：index 省略＝第一個空孔。成功回 null，失敗回錯誤字串。 */
 function socketRune(it, runeId, index) {
@@ -134,7 +141,7 @@ function rwItemMatches(it, bases) {
 /* 這件裝備目前成形的符文之語：{ word, start }；沒有回 null。
    規則：連續鑲孔依序放滿該組符文，且裝備類型符合；多組同時符合取符文數最多者。 */
 function rwActiveWord(it) {
-  if (!it || !Array.isArray(it.sockets) || !it.sockets.length) return null;
+  if (!it || !Array.isArray(it.sockets) || !it.sockets.length || !rwHasRune(it)) return null;
   var best = null;
   var socks = it.sockets;
   for (var wi = 0; wi < RUNEWORDS.length; wi++) {
@@ -160,7 +167,7 @@ function rwActiveWord(it) {
    至少要有一顆符文已放在正確位置才算候選（全空不列，不然 56 組全是候選）。 */
 function rwCandidates(it) {
   var out = [];
-  if (!it || !Array.isArray(it.sockets) || !it.sockets.length) return out;
+  if (!it || !Array.isArray(it.sockets) || !it.sockets.length || !rwHasRune(it)) return out;
   var socks = it.sockets;
   var active = rwActiveWord(it);
   for (var wi = 0; wi < RUNEWORDS.length; wi++) {
@@ -780,6 +787,7 @@ var RW_FX_TEXT = {
   cdPct: function (v) { return '所有技能冷卻時間 -' + v + '%（乘算，突破冷卻縮減上限）'; },
   manaCostRedPct: function (v) { return '技能法力消耗 -' + v + '%'; },
   maxHitPct: function (v) { return '單次受到的傷害最多只會是最大生命的 ' + v + '%'; },
+  maxHpPct: function (v) { return '最大生命 ' + rwSigned(v) + '%（乘算' + (v < 0 ? '，代價' : '') + '）'; },
   dmgHiHpPct: function (v) { return '對生命高於 70% 的敵人傷害 +' + v + '%'; },
   dmgLoHpPct: function (v) { return '對生命低於 30% 的敵人傷害 +' + v + '%'; },
   dmgSoloPct: function (v) { return '場上只有一名敵人時，傷害 +' + v + '%'; },

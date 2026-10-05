@@ -306,14 +306,16 @@ function computeStats(equipmentOverride) {
   // 基礎：生命 = (基底 + (等級-1)×每級 + 耐力×vitHp + 定值) × (1 + 生命%) × (1 + 天賦生命%［生命洪流，獨立乘區］)
   st.base = {};
   st.base.hp = DERIVED_COEF.hpBase + (lv - 1) * DERIVED_COEF.hpPerLevel + rawVit * PRIMARY_STAT_EFFECTS.vitHp;
-  var rawHp = (st.base.hp + A.hpFlat) * (1 + A.hpPct / 100);
+  var rawHp = (st.base.hp + A.hpFlat) * Math.max(0.1, 1 + A.hpPct / 100);   // 下限 0.1：保險，避免任何負值來源把生命推到 0 以下
   /* 新版技能的兩個生命上限乘區（js/skills2.js）：
        【大地守護】（earthguard T1）＝常駐；
        【金剛不壞】（岩甲術超神）＝只在岩甲護盾存在期間，兩端各自 markStatsDirty 一次。
      兩者相乘而非相加：來源不同層，比照天賦【生命洪流】的獨立乘區。 */
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100) *
     ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1) *
-    ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1));
+    ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1) *
+    // 符文之語的最大生命乘區（正負皆可；負值是代價，如血月、時之沙），下限 0.1
+    ((rwAgg && rwAgg.fx.maxHpPct) ? Math.max(0.1, 1 + rwAgg.fx.maxHpPct / 100) : 1));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
   st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
