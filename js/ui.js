@@ -12520,7 +12520,7 @@ function initUI() {
       toggleAffixPool(poolBtn);
       return;
     }
-    if (!e.target.closest('#affix-pool-overlay, #detail-pane')) hideAffixPool();
+    if (!e.target.closest('#affix-pool-overlay')) hideAffixPool();
     // 神鑄：法陣槽位（點擊取回）/ 魔塵符位（點擊放入或取下）
     var fslot = e.target.closest('[data-forge-slot]');
     if (fslot) {
