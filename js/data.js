@@ -866,7 +866,7 @@ var PASSIVE_POOL = {
     fx: { thrustVuln: { pct: 4, dur: 5, maxStacks: 10 } }
   },
   sunpiercerLance: {
-    name: '貫日之刺', desc: '八方連刺改為朝前方的 1 道巨型突刺，突刺範圍 +100%，且造成的傷害 +100%。',
+    name: '貫日之刺', desc: '四方突刺改為朝前方的 1 道巨型突刺，突刺範圍 +100%，且造成的傷害 +100%。',
     base: 0, perR: 0, legendary: true, type: 'phys', relatedSkill: 'thrust', weaponTypes: ['dagger1h'],
     fx: { octaToSingle: true, thrustRangePct: 100, skillDamagePct: 100 }
   },

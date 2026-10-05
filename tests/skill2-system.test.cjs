@@ -273,12 +273,12 @@ test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技�
     { count: 3, range: 20, rangePer: 2 },
     { pct: 20, pctPer: 2, count: 4 },
     { m: 5, mPer: 0.5 },
-    { pct: 20, pctPer: 2, count: 3, directions: 8 }
+    { pct: 20, pctPer: 2, count: 2, directions: 4 }
   ]);
   assert.doesNotMatch(t[0].desc, /米×寬|\{m\}|\{width\}/, '初始範圍不應寫入遊戲說明');
   assert.match(t[3].desc, /\{count\} 道平行貫穿突刺/);
   assert.match(t[5].desc, /貫穿路徑上所有敵人/);
-  assert.match(t[6].desc, /八個方向/);
+  assert.match(t[6].desc, /上下左右四個方向/);
 });
 
 /* ---- 2) 等級正規化 ---- */
@@ -467,21 +467,22 @@ test('突刺波次 VFX 與飛行物共用起飛時間、方向及三階／五階
   c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 1];
   const events = []; c.playCombatVfx = s => events.push(s);
   c.enemyEventFloatTarget = () => 'mv-float-1';
-  c.castSkill2(playerEnt(), [enemy(1e9, 0, 40)], 'thrust', 'mv-float');
+  const p = playerEnt(); p.mp = 10000;
+  c.castSkill2(p, [enemy(1e9, 0, 40)], 'thrust', 'mv-float');
   const waves = events.filter(e => e.variant === 'thrust-octagonal');
-  assert.equal(waves.length, 7);
-  assert.ok(waves.every(e => e.count === 1 && e.directionCount === 8 && e.laneOffsets.length === 3));
+  assert.equal(waves.length, 6);
+  assert.ok(waves.every(e => e.count === 1 && e.directionCount === 4 && e.laneOffsets.length === 3));
   assert.ok(waves.every(e => e.vfx.attack === 'slash-thrust-scatter'));
   assert.ok(waves.every(e => Math.abs(e.bodyLength / (e.lineWidth / 3) - 4) < 1e-8));
   assert.ok(waves.every(e => Math.abs(e.travelMs[0] / 1000 - e.lineLength / (c.SG_FLYING_PROJECTILE_SPEED * 2)) < 1e-8));
-  assert.ok(waves.every(e => Math.abs(e.angle - Math.PI / 2) < 1e-8));
+  assert.ok(waves.every(e => e.angle === 0));
   const projectiles = c.SKILL2_RT.projectiles.filter(p => p.gid === 'thrust');
-  assert.equal(projectiles.length, 168);
-  for (let i = 0; i < 7; i++) {
+  assert.equal(projectiles.length, 72);
+  for (let i = 0; i < 6; i++) {
     const delay = (waves[i].delayMs || 0) / 1000;
     assert.equal(waves[i].delayMs || 0, i * 200);
-    assert.ok(projectiles.slice(i * 24, (i + 1) * 24).every(p => p.speed === c.SG_FLYING_PROJECTILE_SPEED * 2));
-    assert.ok(projectiles.slice(i * 24, (i + 1) * 24).every(p => Math.abs(p.beginAt - c.GT - delay) < 1e-8));
+    assert.ok(projectiles.slice(i * 12, (i + 1) * 12).every(p => p.speed === c.SG_FLYING_PROJECTILE_SPEED * 2));
+    assert.ok(projectiles.slice(i * 12, (i + 1) * 12).every(p => Math.abs(p.beginAt - c.GT - delay) < 1e-8));
   }
 });
 
@@ -533,25 +534,25 @@ test('延遲飛行物技能：等所有飛行物結算後才顯示含總傷害�
   assert.ok(calls.length > 0);
 });
 
-test('八方突刺：八個方向連續 5 次（2＋3），所有方向目標都命中', () => {
+test('四方突刺：四個方向連續 4 次（2＋2），斜向線外敵人不被突刺命中', () => {
   const c = loadContext();
   const calls = stubHits(c);
   c.chance = () => false;
   c.G.player.skills2.levels.thrust = [1, 1, 1, 1, 1, 1, 1];
-  const p = playerEnt();
+  const p = playerEnt(); p.mp = 10000;
   const targets = [];
   for (let i = 0; i < 8; i++) {
     const a = i * Math.PI / 4;
-    targets.push(enemy(1e9, Math.cos(a) * 60, Math.sin(a) * 60, '方向' + i));
+    targets.push(enemy(1e9, Math.cos(a) * 120, Math.sin(a) * 120, '方向' + i));
   }
   const off = enemy(1e9, 0, 250);
-  c.castSkill2(p, targets.concat(off), 'thrust', 'mv-float');
-  c.GT = 0.5;
-  c.tickSkill2(0.5, { pEnt: p, getEnemies: () => targets.concat(off), floatSel: 'mv-float', onDeaths() {} });
-  assert.ok(targets.every((target) => calls.includes(target)), '八個方向目標都應命中');
-  assert.ok(calls.length >= 40, '八方突刺應為第 1 階 2 次＋第 7 階 3 次，共 8 方向×5 次');
+  c.castSkill2(p, [enemy(1e9, 40, 0)].concat(targets, off), 'thrust', 'mv-float');
+  c.GT = 1;
+  c.tickSkill2(1, { pEnt: p, getEnemies: () => targets.concat(off), floatSel: 'mv-float', onDeaths() {} });
+  targets.forEach((target, i) => assert.equal(calls.includes(target), i % 2 === 0));
+  assert.ok(calls.length >= 16, '四方向各四波突刺');
   assert.equal(calls.includes(off), false, '扇形外敵人不得命中');
-  c.GT = 1.0;
+  c.GT = 1.5;
   const beforeRepeat = calls.length;
   c.tickSkill2(0.5, { pEnt: p, getEnemies: () => targets.concat(off), floatSel: 'mv-float', onDeaths() {} });
   assert.ok(calls.length > beforeRepeat, '每個飛行物應在 0.5 秒後追加命中一次');

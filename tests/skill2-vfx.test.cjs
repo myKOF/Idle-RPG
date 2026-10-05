@@ -441,7 +441,7 @@ test('突刺 VFX 會保留實際長度與完整段數上限', () => {
   const renderer = read('js/battle-renderer.js');
   const shim = read('js/worker/shim.js');
 
-  assert.match(skills2, /第 1 階兩次；第 7 階再加三次；第 2 階觸發時再加兩次/);
+  assert.match(skills2, /thrustCount \+= Math\.max\(1, Math\.floor\(Number\(t\[6\]\.fx\.count\)/);
   assert.match(skills2, /var isParallel = lvs\[3\] > 0/);
   assert.match(shim, /lineLength: Number\(spec\.lineLength\) > 0/);
   assert.match(shim, /lineWidth: Number\(spec\.lineWidth\) > 0/);

@@ -5650,8 +5650,9 @@ var BattleRenderer = (function () {
           var thrustLength = Math.max(48, Number(spec.lineLength) || 70);
           /* 與 DOM VFX 同步：7 次突刺約 1.62 秒播完，保留每道光槍的辨識度。 */
           var thrustStagger = 220;
-          var thrustFrontAngle = Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
-            posOf(targets[0]).x - playerMuzzle().x);
+          var thrustFrontAngle = typeof spec.angle === 'number' && isFinite(spec.angle) ? spec.angle
+            : Math.atan2(posOf(targets[0]).y - playerMuzzle().y,
+              posOf(targets[0]).x - playerMuzzle().x);
           for (var trc = 0; trc < count; trc++) {
             var isFinalThrust = trc === count - 1;
             for (var tro = 0; tro < thrustDirections; tro++) {
