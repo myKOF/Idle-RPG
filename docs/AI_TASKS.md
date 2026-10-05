@@ -9003,3 +9003,84 @@ Worker 存活且頁面正常完成載入。
 - 測試：`node --test tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/inventory-command-pending.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/policy-selector.test.cjs tests/init-ui-smoke.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs`112/112通過；`npm.cmd run build`441檔通過；`git diff --check`通過。新增節點身分／捲動保留及鎖定／解鎖／已鑲孔不覆蓋回歸；UI替身改具備元件所需DOM屬性與查詢，正式程式無測試專用分支。
 - 效能／實機：沿用browser skill已判定IAB backend不存在的隔離Edge fallback，全新Context、正式Worker、相同240個寶石入口與20次選孔。舊選孔約7～23ms、節點保留0/20，新約0.3～2.5ms、保留20/20；同一次前後比較平均约8.8→0.7ms。新連續4次鑲嵌／卸下全部完成，收到ACK至權威快照／跳孔／解鎖全程约31～86ms；舊卸下後下一顆按鈕仍停用，後續操作未送指令且3秒觀測截止。未修改數值或放寬安全守衛。hover已鑲孔實際textDecorationLine=none，選孔底rgb(101,239,134)，裝備框3px／rgb(255,227,84)，檢視黃色混色截圖；Console error／warning皆0。數字為此機隔離量測，非所有裝置保證。
 - 交付：Commit為本紀錄所在`[Codex] fix: 改善鑲嵌回應與裝備選取標示`提交；本次無未完成或已知阻擋，可合併，未合併／推送。風險：未長時間真人實戰驗收；使用者可自行調選孔配色，整合時保留其設定及Claude最新戰鬥樣式快取。臨時瀏覽器／服務已關閉，測試腳本／截圖提交前清除；下一步接續使用者追加的快捷列說明任務，再由使用者整合重載。
+
+## EQUIP-ROW-HIT-AREA-20261005 — 消除鑲孔與洗煉列的點擊死區
+
+- Owner：Codex；Done。使用者確認延遲感來自鑲孔與洗煉列間點擊不回應，要求移除所有死區。前置30px列高／2px間距及切孔局部同步完成，單一開發者；後續接手者使用者。
+- 允許css/ashen-forge.css限定可選列點擊範圍、index.html僅CSS快取及本紀錄；禁止UI／Worker邏輯、資料／數值／素材、其他副本、合併／推送。初步預檢js/ui.js有Claude未提交視覺佇列修改551～612行，因此排除該檔、以CSS擴張現有點擊元素命中區。CSS／紀錄預檢乾淨；index.html有Claude第926行UI快取123→124修改，使用者已同意僅改本副本第11行CSS快取、保留對方UI引用。保留既有使用者lightning-orb-field-purple.json未提交修改。
+- 原因：鑲孔socket-pick按鈕僅20px高，30px列的上下內距與左右外緣不能點，還有2px列間gap；洗煉文字區雖滿列高，gap仍不接收點擊。讓既有按鈕／可選文字區的透明命中區涵蓋整列、各延伸1px覆蓋gap；文字tooltip及卸下按鈕置前保留原互動，不增加新事件或刷新。
+- 驗收：兩模式各列上／下／左／右緣及gap兩半可切選，filled／empty／融合孔、1920與1280視窗；30px列高／2px間距／選框與四功能按鈕／背包矩形保持，卸下只送一次／選孔不送Worker／pending仍阻擋，寶石節點不重建。正式瀏覽器實際座標點擊／Console、定向回歸／Build後Commit。
+- 完成／修改3檔：css/ashen-forge.css加入透明偽元素擴張原點選元素範圍，index.html僅ashen快取1.0.57及本紀錄。外觀仍30px列高／2px間距與原選框；洗煉提示及鑲孔卸下按鈕維持前景事件範圍，原委派處理及pending防重送不變。唯讀檢查未改js/ui.js／item.js、css/style.css、七份相關回歸、prompts/codex.md與協作規範；無素材變更／素材庫Commit。執行期間另一任務新增battle-renderer.js與ELITE-HALO-VISIBLE紀錄，保留其修改、不納入本次Commit；使用者原lightning-orb-field-purple.json亦保留。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/init-ui-smoke.test.cjs tests/ui-fixed-canvas.test.cjs`47/47通過；`npm.cmd run build`442檔通過；`git diff --check`通過。沒有新增只比對CSS文字的測試，改以正式瀏覽器實際點擊與命中掃描驗收。
+- 瀏覽器：隔離headless Edge／全新Context／隨機Port唯讀HTTP服務，正式Worker與seed=9拋棄式12孔裝備、48類寶石。暫時關閉透明命中區作前後對照，取樣24點鑲孔皆無回應、洗煉4點無回應；啟用正式CSS後1920／1280、兩模式逐次滑鼠點上／下／左／右緣及gap兩端，共96次全部選到命中項目，選孔／屬性皆不送Worker指令。逐物理像素四條縱向掃描各512／340點，四案例共1704點皆能命中選項或原卸下鈕；子像素邊界以浏览器實際映射鄰項判定，不將邊界分派當作死區。寶石48節點全部保留、操作列／背包矩形完全相同、文字tooltip仍可命中原提示元素。pending中點列外緣仍不切選，解除恢復；實際點第2孔卸下僅一次gem.unsocket index1，正確移除／返還。Console error／warning與Worker errors皆0；無真人存檔／臨時檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 消除鑲孔與洗煉列的點擊死區`提交。無未完成本次需求或已知新增風險，可合併，未合併／推送。下一步使用者重載確認整列與空隙可選並審查整合；其他進行中任務仍保留未提交。
+
+## ELITE-HALO-VISIBLE-20261005 — 放大菁英光暈至肉眼可辨
+
+- Owner：Codex；Review（待快取單行修改同意）。使用者回報加回後仍看不出來，要求更大、至少肉眼可辨。前置ELITE-HALO-RESTORE已完成，當前0.28／1.3／add確認存在；單一開發者。renderer／本紀錄預檢乾淨，index有Claude未提交的ui.js版號更新（926行），已詢問僅改914行renderer快取，取得同意前不改；後續接手者使用者。
+- 允許js/battle-renderer.js僅菁英光暈透明度／縮放、index.html僅renderer必要快取及本紀錄；禁止技能／數值／Worker／其他功能／素材／其他副本、合併／推送。保留使用者lightning-orb-field-purple.json既有修改，不納入本次提交；無素材製作或外部參考。
+- 驗收alpha0.42、scale1.65，保留add及紫色／位置／其他菁英辨識、一般敵人與Boss不變；正式Pixi前後渲染對照、既有戰場／敵方特效回歸、Build／diff檢查後獨立Commit。
+- 已完成：js/battle-renderer.js菁英alpha0.28→0.42、scale1.3→1.65（強度+50%、直徑約+27%），add／紫色／位置／骷髏／名稱／血條不變；本紀錄同步。唯讀檢查未改makeMobBody／glowTexture／drawHpBar、tests/helpers/battle-scene.cjs、tools/build_check.cjs、既有定向測試／協作規範及index快取。未改技能、Worker、素材或其他副本，不需素材庫Commit。
+- 驗證：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-editor-cache-versions.test.cjs`51/51通過；`npm.cmd run build`442檔通過；`git diff --check`通過。Node VM執行正式makeEnemy確認新alpha／雙軸縮放／add、原菁英標記保留、普通敵人及Boss無此光暈。
+- 視覺驗證：隔離Edge headless／WebGL、隨機Port唯讀服務，載正式Pixi，執行正式makeEnemy／makeMobBody／glowTexture／drawHpBar（只替換場景與時間邊界），同一emoji／密度0.65／顯示縮放0.75，左右各單隻＋5隻重疊，確認右側紫光較明顯。前後對照已檢視並交付於本聊天visualizations目錄elite-halo-visible-20261005.png；不是真人存檔或密集技能實戰，pageerror0，瀏覽器／服務正常關閉，未產生repo暫存檔。
+- 未完成：index renderer快取1.6.170→1.6.171尚待使用者確認，因此尚未Commit、不可視為完整可合併交付。未修改正在進行的裝備點擊區任務或使用者素材。已知限制：高密度重疊仍會累積加色亮度，實戰需重載觀察；下一步取得單行快取同意後更新、隔離暫存本任務3檔並Commit，不合併／推送。
+
+## EQUIP-SOCKET-PICK-PERF-20261005 — 調查切孔延遲及減少重複控制項更新
+
+- Owner：Codex；Done。使用者回報切鑲孔仍稍有延遲，要求查是否每次刷新全部寶石。前置鑲嵌局部渲染已完成；目標衝突預檢乾淨，單一開發者。允許js/ui.js限定鑲嵌控制項同步、index.html對應快取、tests/equip-socket-ui.test.cjs與本紀錄；禁止Worker／規則／數值／素材／存檔／其他副本、合併／推送。既有使用者lightning-orb-field-purple.json修改保留不提交。後續接手者使用者。
+- 初步測量：隔離Edge正式Worker、12孔／48類寶石／1500背包資料（可視DOM168格），50次空孔切換renderDetail0、childList0、寶石mutation0、原節點全保留；但同步50次掃48個寶石按鈕、700次孔位屬性Mutation，handler平均0.162ms／含style0.232ms，未重現明顯長停頓。優化不據此宣稱已定位所有真人延遲來源。
+- 驗收：相同可鑲狀態切孔僅更新新舊框／aria、不遍歷寶石；空／已鑲切換、pending解除、庫存替換、換件／換頁後仍準確禁用，節點及捲動保留、不送Worker指令；回歸／實機A/B測量／Build／Console後Commit。
+- 完成：孔位aria值改變才寫入；寶石清單的可用狀態不變時不遍歷按鈕。禁用狀態是DOM衍生快取，清單內容替換時失效、新裝備／頁面容器自然重設；空／已鑲切換、pending及库存变化仍即時同步，遊戲資料權威不變。修改4檔：js/ui.js、index.html的ui快取1.0.124、tests/equip-socket-ui.test.cjs新增兩項行為回歸及本紀錄。唯讀檢查未改css/style.css／ashen-forge.css、js/item.js／bridge.js、scripts/sim/engine.js、其餘相关測試及協作規範；無素材庫變更／Commit，使用者素材修改保留。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs tests/equip-reroll-ui.test.cjs tests/item-detail-html.test.cjs tests/init-ui-smoke.test.cjs tests/policy-selector.test.cjs`84/84通過；`npm.cmd run build`442檔通過；`git diff --check`通過。初版新增fixture預設會選首個空孔，而非已鑲第1孔，修正fixture為明確點第1孔後驗證禁用；未改產品預設選孔／放寬斷言。
+- 額外pending整合：`node --test tests/inventory-command-pending.test.cjs tests/ui-worker-panels.test.cjs tests/ui-tick-smoke.test.cjs`8/10通過；ui-worker-panels兩項既有失敗（gem.socket文字正規式不支援既有三元指令；獨立detailAction fixture未提供UI）。唯讀git show HEAD:js/ui.js、fs載入覆寫後重跑ui-worker-panels，兩項原因相同；未修改這些舊測試或擴大範圍修其fixture。pending與uiTick項目本次通過。
+- 瀏覽器前後同fixture：50次空孔切換均不重建寶石或詳情；寶石掃描50→0、孔位Mutation700→200，handler平均0.162→0.086ms／含同步style0.232→0.114ms，量測數值屬本機隔離環境，非真人全場效能保證。12次真實滑鼠輸入，事件派發約3.2～4.4ms、處理後下一幀約1.5～6ms；未重現明顯長停頓。實際點已鑲孔禁用全部寶石、切空孔恢復；正式Worker鑲入第3孔，等待中全部禁用、ACK／快照後自動第4孔並恢復可用、庫存×25→×24。Console error／warning与Worker errors0；全新Context／隨機Port服務已關閉，無臨時檔／真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 減少切換鑲孔時的重複更新`提交。調查與必要優化完成，可合併；未合併／推送。已知限制：無法從隔離資料確認真人當下全部延遲原因，上述兩項既有測試失敗保留；下一步使用者重載感受切孔反應，若仍延遲需以當下遊戲負载量測主執行緒，不能據此宣稱真人延遲已全數消除。
+
+## ELITE-HALO-RESTORE-20261005 — 加回部分菁英敵人光暈
+
+- Owner：Codex；Done。使用者回報前次菁英光暈降低後幾乎不可見，要求加回一些。前置ELITE-HALO-20261003已完成；單一開發者，renderer／index／本紀錄衝突預檢乾淨，後續接手者使用者。
+- 允許js/battle-renderer.js僅菁英光暈透明度／縮放／混合模式、index.html僅renderer必要快取及本紀錄；禁止其他功能／技能／數值／素材／Worker／其他副本、合併／推送。保留使用者lightning-orb-field-purple.json既有未提交修改，不納入本次提交；沒有素材製作或外部參考。
+- 驗收恢復紫色發光辨識、強度與範圍仍低於最初設定；保留骷髏／名稱／血條，一般敵人及Boss不新增光暈。既有戰場／敵方特效回歸、正式makeEnemy執行檢查、Build／diff檢查後獨立Commit。
+- 完成／修改3檔：js/battle-renderer.js菁英光暈alpha0.18→0.28、scale1.15→1.3、normal→add；恢復發光感，強度仍約為最初0.55的一半、直徑比最初1.7小約24%。index.html renderer快取1.6.170、本紀錄同步；紫色／位置／菁英大小／骷髏／名稱／血條保留。唯讀檢查未改：tests/helpers/battle-scene.cjs、package.json、既有戰場與敵方特效測試／協作規範；沒有素材／素材庫Commit、外部參考或新增特效来源。
+- 測試：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs tests/vfx-editor-cache-versions.test.cjs`51/51通過；`npm.cmd run build`442檔通過；`git diff --check`通過。Node VM執行正式makeEnemy，驗證alpha／雙軸縮放／add與低於原設定、骷髏／紫色名稱／血條不變、一般敵人／Boss無此光暈。不增加僅鏡像數值的小型測試檔；未做瀏覽器或真人密集戰鬥觀感驗收。
+- 交付：Commit為本紀錄所在`[Codex] fix: 加回部分菁英敵人光暈`提交。無未完成程式項目，可合併，未合併／推送；使用者既有素材未提交修改保留。已知限制：add在密集重疊時仍會累積亮度，本次以低強度／小範圍折衷，實際觀感待使用者重整遊戲驗收；下一步由使用者審查整合。
+
+## EQUIP-ROW-GAP-2PX-20261005 — 洗煉與鑲孔空隙由6px改2px
+
+- Owner：Codex；Done。使用者回報前次縮距看不明顯；前次只改gap8→6px，保留40px列高，整體列距48→46px。已說明並依使用者最新明確指示將兩處gap6→2px、列高40→30px；內距9→4px配合20px行高與等寬透明框，文字列距32px。單一開發者，與本輪選取外框修改同屬裝備CSS；前置完成、目標衝突預檢乾淨。
+- 允許css/ashen-forge.css两處操作列gap／列高／內距、index.html對應快取、tests/affix-actions-layout.test.cjs既有間距／列高期望及本紀錄；禁止其他功能、素材、邏輯／Worker／數值、其他副本、合併／推送。驗收兩處瀏覽器實際空隙2px、列高30px／文字列距32px、換選不跳動、四功能按鈕及背包矩形不變、未選無框、長內容可操作，回歸與Build後Commit。後續接手者使用者。
+- 完成／修改4檔：css/ashen-forge.css、index.html的CSS快取1.0.56、tests/affix-actions-layout.test.cjs更新既有間距／列高期望及本紀錄。與本輪選中外框合為一筆裝備樣式Commit；未選透明框與選中綠框保留。唯讀檢查未改css/style.css／ashen-forge-flat.css、js/ui.js／item.js、scripts/sim/engine.js與其餘五份定向測試；未改配置、素材或其他副本，保留使用者lightning-orb-field-purple.json未提交修改。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；`npm.cmd run build`442檔通過；`git diff --check`通過。
+- 瀏覽器：隔離headless Edge／隨機Port唯讀HTTP服務／全新Context，seed=9拋棄式存檔＋正式Worker，1920×1080與1280×720、4孔／12孔／48類寶石。兩處computed gap2px／每列height30px、文字列距32px；1280視窗依既有畫布等比缩為20px／21.333px，按縮放比驗實際矩形。選中與未選均同高、換選不改列位置；未選／懸停無框、選中綠框；四功能操作列／每顆按鈕／背包矩形完全相同，12孔可捲至末孔與寶石末尾。Console error／warning及Worker errors均0；測試服務已關閉，無臨時檔或真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整裝備選取外框與洗煉鑲孔列距`提交。無未完成需求／已知本次新增風險，可合併，未合併／推送。下一步使用者重載驗收並審查整合。
+
+## EQUIP-SELECTION-FRAME-20261005 — 裝備選中保留底色及5px外框
+
+- Owner：Codex；Done。使用者要求裝備選中時取消底色變色，選中外框改5px；涵蓋裝備欄及背包裝備共用選取樣式，保留原品質底色與格子位置／尺寸。前置既有裝備樣式已完成，目標衝突預檢乾淨；單一開發者。
+- 允許css/ashen-forge.css僅裝備選取樣式、index.html對應CSS快取及本紀錄；禁止UI／Worker邏輯、數值、素材、其他副本及合併／推送。既有使用者lightning-orb-field-purple.json未提交修改保留，不納入本次Commit。後續接手者使用者。
+- 驗收：裝備欄／背包選取前後底色／背景圖／混合模式相同、選中外框5px、品質與雙手副槽一致、矩形不變，定向回歸／Build／正式瀏覽器Console驗證後Commit。
+- 完成：刪除選中專用黃色background-color／screen混合模式／染色陰影，沿用原底圖與品質色。選中outline改5px、維持1px offset，增加workspace範圍讓高品質雙手副槽不被舊3px白框覆寫；外框不占布局尺寸。修改css/ashen-forge.css、index.html快取1.0.56及本紀錄；本輪另依使用者最新指示完成上述列高／間距與既有測試期望，同一Commit共4檔。唯讀檢查未改css/style.css／ashen-forge-flat.css、js/ui.js／item.js、scripts/sim/engine.js及相關回歸；無素材變更，保留使用者既有素材修改。
+- 測試指令／結果同上述EQUIP-ROW-GAP-2PX：31/31回歸、442檔Build及diff檢查均通過。另隔離headless Edge＋正式Worker＋拋棄式存檔，1920／1280視窗、稀有度3／5／6／7／8各裝備欄及背包共20案例；同hover狀態選前／後background、blend、border、box-shadow與偽元素底色完全相同，移出滑鼠後同樣相等，矩形不變、外框皆5px金色。實際點雙手副槽亦5px；Console error／warning與Worker errors均0。測試暫停品質背景動畫以固定比較時間，不改產品動畫；測試服務／瀏覽器已關閉、無暫存檔／真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整裝備選取外框與洗煉鑲孔列距`提交。无未完成項目／已知本次新增風險，可合併；未合併／推送。下一步使用者重載檢查並審查整合。
+
+## EQUIP-ROW-SPACING-20261005 — 洗煉與鑲孔間距減少及未選列去框
+
+- Owner：Codex；Done。使用者要求洗煉屬性及鑲嵌孔位列的間距縮短25%，未選項無外框；沿現有8px列間距改為6px，只選中列保留綠色框。以透明等寬邊框保留幾何，選取／懸停不跳動；保持既有固定操作列及背包位置。
+- 前置既有四功能／選取樣式已完成，目標預檢乾淨；單一開發者。允許css/ashen-forge.css限定列間距／邊框、index.html對應快取、tests/affix-actions-layout.test.cjs既有間距期望及本紀錄；禁止UI邏輯、Worker／配置／素材／其他副本、合併／推送。既有lightning-orb-field-purple.json使用者素材未提交修改保留，不納入本次Commit。後續接手者使用者。
+- 驗收間距8→6px、未選與懸停無框、选中綠框保留、換選尺寸／位置與四功能切換固定、長孔位仍可捲動操作，定向回歸／Build／正式瀏覽器Console後Commit。
+- 完成：洗煉列與鑲嵌孔列gap均6px；兩種可選列的共用邊框改透明，選中沿既有綠色border-color。已鑲但未選孔懸停亦維持透明，避免舊hover灰框重新出現；保留40px列高、內容對齊、卸下小按鈕及選中色底，不改一般詳情的非操作寶石樣式。CSS快取1.0.55。
+- 修改4檔：css/ashen-forge.css、index.html、tests/affix-actions-layout.test.cjs原間距斷言及本紀錄。唯讀檢查未改：css/style.css／ashen-forge-flat.css、js/item.js／ui.js、scripts/sim/engine.js及其餘五份相關回歸測試；無素材庫變更／Commit。起始使用者lightning-orb-field-purple.json仍保留未提交。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；`npm.cmd run build`442檔通過；`git diff --check`通過。
+- 瀏覽器：獨立隨機Port唯讀HTTP服務、全新headless Edge Context、seed=9拋棄式資料＋正式Worker；1920×1080及1280×720、4孔及12孔／48類寶石。兩種列實際gap皆6px，未選／懸停border透明、选中rgb(74,222,128)；點另一屬性及已鑲孔，原項去框／新項綠框，所有列的矩形不變。四功能切換操作列／每顆按鈕／背包矩形全部相同，長孔與寶石仍可捲到末尾，孔／寶石子區無捲軸。初次量測在捲到底後點第2孔，Playwright正常捲回上方導致viewport座標不同；改為同捲動位置比較後通過，沒有改產品或放寬位置要求。Console error／warning及Worker errors均0；服務／瀏覽器已關閉，無臨時檔或真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 縮短洗煉與鑲孔間距並隱藏未選外框`提交。無未完成需求或已知本次新增風險，可合併；未合併／推送，未做長時間真人操作。下一步使用者重載檢查並審查整合。
+
+## EQUIP-MODE-POSITION-20261005 — 四功能切換固定操作列與背包位置
+
+- Owner：Codex；Done。使用者回報切鑲嵌時四功能按鈕與背包微幅下移，要求強化／洗煉／鑲嵌／附魔切換均不位移。前置共用裝備詳情已完成，工作區乾淨、目標衝突預檢乾淨；單一開發者。
+- 允許css/ashen-forge.css限定鑲嵌外框高度／內容溢出、index.html對應CSS快取及本紀錄；必要時才改js/ui.js／定向回歸。禁止數值、鑲嵌規則、Worker協議、存檔、素材與其他副本，無合併／推送。後續接手者使用者。
+- 驗收四模式按鈕／背包矩形不變，4孔／12孔、豐富寶石庫存、1920×1080／1280×720皆可操作；長內容由詳情區整體捲動，孔位及寶石不增加各自捲軸、不裁切或覆蓋操作列。相關回歸、瀏覽器／Console及Build後獨立Commit。
+- 原因／完成：鑲嵌專用規則把equip-right-col改為height:auto、middle-row改為不可收縮的內容高度；孔位及庫存總高超過裝備板時，向下推操作列與背包。移除兩條外框例外，四模式共用既有裝備板高度；鑲嵌詳情改為overflow:auto，孔位與寶石子區仍自然完整排列／overflow:visible，不增加子區捲軸。較長內容現在在詳情區整體捲動，切模式不延長整頁；這是本次固定位置要求取代前次鑲嵌延長整頁的行為。
+- 修改3檔：css/ashen-forge.css、index.html的ashen快取1.0.54及本紀錄。唯讀檢查未改：js/ui.js／item.js／gm_exec.js／worker/sim.worker.js、css/style.css／ashen-forge-flat.css、scripts/sim/engine.js、相關六份回歸測試、共通規範與prompts/codex.md。沒有JS／Worker／配置／素材变更，無素材庫Commit。
+- 測試：`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/ui-fixed-canvas.test.cjs tests/init-ui-smoke.test.cjs`31/31通過；`npm.cmd run build`442檔通過；`git diff --check`通過。未增只比對CSS字樣的測試，以正式瀏覽器座標驗證排版。
+- 瀏覽器：全新headless Edge Context、隨機Port唯讀HTTP服務、正式index／CSS／UI與真正Worker，seed=9拋棄式存檔。1920×1080及1280×720，各測4孔護手／12孔雙手法杖＋48類寶石庫存，洗煉→鑲嵌→附魔→強化循環；逐次比對4個功能鈕、卸下、操作列及背包x／y／width／height全部一致。詳情可視436px，4孔內容484px／12孔868px，孔位／寶石無子捲軸；12孔捲到最後選第12孔並實際鑲入最末寶石成功，前後按鈕／背包矩形仍一致。臨時注入旧CSS重現4孔操作列下移47.15625px，移除舊規則立即恢復0位移。Console error／warning及Worker errors均0；瀏覽器／服務已正常關閉，無臨時檔／真人存檔變更。
+- 交付：Commit為本紀錄所在`[Codex] fix: 固定装備功能切換時按鈕與背包位置`提交。無未完成需求或已知新增風險，可合併；未合併／推送，未做長時間真人操作。建議使用者重載遊戲確認並審查整合。
