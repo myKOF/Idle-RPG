@@ -185,7 +185,10 @@
   width: var(--hud-orb);
   padding: 8px;
   border: 2px solid var(--hud-seam);
-  background: conic-gradient(from 25deg, #3b3322, #bfa86b 9%, #4d432b 20%, #dac58a 34%, #3b3322 48%, #a89258 64%, #4d432b 80%, #cdb878 92%, #3b3322);
+  /* 內圈金環：整圈一致，內側亮、往外均勻變暗，接到外側的青銅細圈（inset 4px 那圈 #6d5d38）。
+     舊版用 conic-gradient 繞圈深淺交錯，暗的那幾段在金環上像一塊塊黑影（使用者 2026-10-05 要求整圈統一）。
+     可見的金環是 padding 的內側 4px（外側 4px 被兩道 inset 細圈蓋住）：100% − 8px 是玻璃邊、100% − 4px 是青銅細圈。 */
+  background: radial-gradient(circle closest-side, #e2cd90 calc(100% - 8px), #b39a5e calc(100% - 6px), #857044 calc(100% - 4px), #6d5d38 100%);
   box-shadow: 0 0 0 3px var(--hud-seam), 0 0 0 5px var(--hud-metal), 0 0 0 6px var(--hud-seam), 0 7px 14px #000c, inset 0 0 0 2px var(--hud-seam), inset 0 0 0 4px #6d5d38;
 }
 
