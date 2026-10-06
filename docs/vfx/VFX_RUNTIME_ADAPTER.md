@@ -487,7 +487,7 @@ Pixi 後端寫入 1.1、Pixi 渲染約 2.1）。滾雪球的是 `burst-icearrow-
 | sgCastThrust 1919 | thrust／-parallel／-pierce／-octagonal | `vfxTier: octagonal?7 : pierce?6 : parallel?4 : 1` |
 | sgCastCleave 2144 | cleave／-shockwave／-cross-shockwave | `vfxTier: cross?7 : isFlying?6 : 1` |
 | sgCleaveWhirlwind 2010 | wind-spin | `vfxGid:'vacuumslash', vfxTier:4` |
-| sgSpawnGround 'cleave' 2022（windtornado） | — | cfg `vfxUlt:'windChaser'` |
+| sgCleaveOnHit（逐風者） | wind-slash | `vfxUlt:'windChaser'`，只讀觸發 attack／hit，單次、原尺寸；不建立龍捲場域 |
 | sgSpawnGround 'gale' 2519（windtornado，傳奇風捲殘雲） | — | cfg `vfxGid:'cleave', vfxUlt:'windChaser'` |
 | sgKnifeBounceChain 2308 | knife-bounce／knife-soulhunter | bounce `vfxTier:3`；soulhunter `vfxUlt:'soulhunterBlade'` |
 | sgKnifeSplit 2339 | knife-bounce | `vfxTier:3` |

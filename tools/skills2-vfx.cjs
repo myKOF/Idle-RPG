@@ -42,7 +42,7 @@ const events = {
   'bloodrage.7': {roles:['attack','hit'], note:'狂怒期間每次普攻在主目標位置播放一次範圍爆炸，匹配多目標普攻半徑；實際命中的敵人各播放原尺寸小型命中特效，追加目標同時結算與播放。'},
   'counter.holyBody': {roles:['attack','projectile'], note:'反擊滿計數後發射一顆光彈；觸發子彈飛到本次鎖定的目標位置，抵達時結算範圍傷害並在落點播放一次觸發特效。爆炸匹配傷害半徑，不在每個受害者身上重播。'},
   'counter.indomitable': {roles:['ground'], note:'復甦開始時於玩家位置播放天降光束，持續至復甦結束，不在每個敵人身上播放。'},
-  'cleave.windChaser': {roles:['ground','field'], note:'每次迴旋斬命中，在敵人位置產生龍捲風；固定命中位置，依龍捲風傷害半徑縮放。'},
+  'cleave.windChaser': {roles:['attack','hit','ground','field'], note:'迴旋斬命中時機率觸發一道單體真空斬，讀觸發特效與命中特效，維持原尺寸；地板／持續場域欄僅供疾風迅雷傳奇風捲殘雲借用，不在逐風者真空斬播放。'},
   'gale.thunderFlash': {roles:['attack'], note:'本體最後一擊後，按次數與間隔重新選敵並播放貫穿雷電；沿玩家與目標連線，匹配雷電長度及寬度。'},
   'gale.thunderGodSlash': {roles:['attack','hit'], note:'本體及爆散每次命中，在該敵人位置落雷；依落雷傷害範圍縮放。'},
   'bloodblade.5': {roles:['projectile','hit'], note:'中毒每次作用時機率感染；由中毒敵人向每個受感染者發射，抵達後感染並播放命中特效；單體維持原尺寸。'},

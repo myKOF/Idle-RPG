@@ -14,7 +14,7 @@ function load() {
   return c;
 }
 const plain = x => JSON.parse(JSON.stringify(x));
-test('逐風者實際場域只播放表定龍捲風，保留風系傷害與本體繼承', () => {
+test('疾風傳奇借逐風者地板欄只播放表定龍捲風，保留風系傷害與本體繼承', () => {
   const c = load(), events = [], hits = [];
   c.SKILLS2.cleave.ult.find(u => u.id === 'windChaser').triggerVfx = { ground: 'ground-tornado-wind' };
   c.playCombatVfx = spec => events.push(plain(spec));

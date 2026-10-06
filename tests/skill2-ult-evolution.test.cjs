@@ -502,31 +502,29 @@ test('【虛空碎裂斬】：迴身四方斬的次數與傷害都再提高（�
   assert.ok(calls2.length > beforeHits, '攻擊次數也要變多');
 });
 
-test('【逐風者】：每次命中在該處生成一道龍捲風，逐段造成風系傷害', () => {
+test('【逐風者】：命中機率追加一道真空斬，且不建立龍捲風場域', () => {
   const c = loadContext();
   const calls = stubHits(c); const specs = stubVfx(c); stubDerived(c);
-  forceRolls(c, 0.999);
+  forceRolls(c, 0.05);
   maxLevels(c, 'cleave'); equip(c, 'cleave');
   setUlt(c, 'cleave', 'windChaser', 10);
-  const p = playerEnt(); c.FIELD = { player: p };
+  const p = playerEnt(); p.mp = 1e9; c.FIELD = { player: p };
   const e = enemy(1e12, 2 * M, 0);
   c.castSkill2(p, [e], 'cleave', 'mv-float');
   run(c, p, [e], 0.4);            // 全滿＝震碎斬生效，命中在飛行物 tick 裡才發生
-  assert.ok(c.SKILL2_RT.grounds.length > 0, '命中後應生成龍捲風場域');
-  const g = c.SKILL2_RT.grounds[0];
-  assert.equal(g.kind, 'windtornado');
-  assert.equal(g.hitElem, 'wind', '龍捲風是風系段（物理群組打出風系傷害）');
-  calls.length = 0;
+  assert.equal(c.SKILL2_RT.grounds.length, 0, '逐風者不建立龍捲風場域');
   run(c, p, [e], 4);
   const windHits = calls.filter((x) => x.elem === 'wind');
-  assert.ok(windHits.length > 0, '龍捲風應逐段結算為風系傷害');
-  assert.ok(specs.some((s) => s.variant === 'wind-tornado'), '龍捲風要送出自己的特效變體');
+  assert.ok(windHits.length > 0, '成功判定機率後追加風系傷害');
+  assert.ok(windHits.every((x) => x.atk === 4000), 'Lv.10 每道真空斬為400%物攻');
+  assert.ok(specs.some((s) => s.variant === 'wind-slash'), '追加一道真空斬特效');
+  assert.ok(!specs.some((s) => s.variant === 'wind-tornado'), '不播放龍捲風');
   // 沒選逐風者時不得出現任何風系段（迴旋斬本體是無屬性物理）
   const c2 = loadContext();
   const calls2 = stubHits(c2); stubVfx(c2); stubDerived(c2);
   forceRolls(c2, 0.999);
   maxLevels(c2, 'cleave'); equip(c2, 'cleave');
-  const p2 = playerEnt(); c2.FIELD = { player: p2 };
+  const p2 = playerEnt(); p2.mp = 1e9; c2.FIELD = { player: p2 };
   const e2 = enemy(1e12, 2 * M, 0);
   c2.castSkill2(p2, [e2], 'cleave', 'mv-float');
   run(c2, p2, [e2], 4);
