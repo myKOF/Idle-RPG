@@ -439,8 +439,15 @@ var VFXPixiBackend = (function () {
       return node;
     }
 
+    /* 透明度到這個值以下的節點不必畫：8 位元色下 1% 最多差 2～3 階，肉眼看不出來。
+       常見於粒子淡出的尾端與還沒淡入的起點；實測重負載約 4～7% 的精靈是這種。
+       在投影之前就擋掉——不投影、不寫屬性、不進 Pixi 的繪製，只把 visible 關掉；
+       下一幀 alpha 回來時走完整更新，所以不會有「變不回來」的狀態。
+       只關 visible、不 detachDepth：深度群組以特效為單位，逐幀拆了又建只是白花力氣。 */
+    var CULL_ALPHA = 0.01;
     function updateNode(node, t) {
       if (!t) return;
+      if (t.alpha !== undefined && t.alpha <= CULL_ALPHA) { node.visible = false; return; }
       if (opts.projectTransform) t = opts.projectTransform(t);
       if (t.visible === false) { node.visible = false; detachDepth(node); return; }
       node.visible = true;

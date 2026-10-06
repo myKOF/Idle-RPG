@@ -124,6 +124,19 @@ test('formatLines：命中密度控制介入時顯示密度、K 與每秒略過�
   assert.ok(!old.includes('命中密度'));
 });
 
+test('formatLines：第二輪降級（限頻、拖尾變疏、全場命中數）有資料才印；舊 Runtime 沒有就不多印一行', () => {
+  const P = loadPerf().BattlePerf;
+  const frames = [frame(1000), frame(1100)];
+  const on = P._formatLines(P._summarize({ frames,
+    env: { quality: 0.25, hitCap: 1, cappedRate: 80, thinnedRate: 20, throttledRate: 47.6, trailRate: 9.2, hitLive: 38 } }, 1200)).join('\n');
+  assert.ok(on.includes('降級 限頻 48/s'));
+  assert.ok(on.includes('拖尾變疏 9/s'));
+  assert.ok(on.includes('全場命中 38'));
+  const noData = P._formatLines(P._summarize({ frames, env: { quality: 0.25, hitCap: 1, cappedRate: 80, thinnedRate: 20 } }, 1200)).join('\n');
+  assert.ok(!noData.includes('降級 限頻'), '只有第一輪資料時不印第二輪那一行');
+  assert.ok(noData.includes('命中密度 x0.3'), '第一輪那一行照舊');
+});
+
 test('掛勾：Core 的 updateNode／update／play 與 gl 的 draw 都數得到，且不改變行為', () => {
   const ctx = loadPerf();
   const P = ctx.BattlePerf;

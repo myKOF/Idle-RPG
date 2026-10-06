@@ -202,7 +202,30 @@ var VFXRuntime = (function () {
        2. 自適應密度：畫面吃緊（連續幾幀 <45 FPS）才啟動，K 依比例縮小、新播出的命中特效
           少發粒子；恢復到 >54 FPS 後慢慢放回。正常負載下完全不介入。
      只作用於命中類（表格 hit 欄）；投射物、場域、光環不動。
+
+     ---- 第二輪（2026-10-06）：同一個密度，多管三件事 ----
+     第一輪之後實機仍只有 FPS 12：命中類早已壓在下限（密度 0.25、併發 1），剩下的成本在別處。
+     重負載穩態實測（32 隻敵人、6 個滿階技能，平均約 4,700 個特效節點）：
+       飛行子彈 36%——冰箭同時 15 支、每支約 88 個節點，幾乎都是拖尾粒子
+                     （煙霧每秒 172 顆、星點每秒 72 顆，加亮混合）；
+       命中爆點 33%——Core.play 每秒約 640 次，其中命中類約 340 次（場域一秒好幾拍，
+                     每拍都想播一次）；併發上限是「同時幾個」，擋不住「一秒播幾次」；
+       持續場域 27%——不動（它們是技能本體，疏了就是換了一個技能）。
+     所以密度小於 1 時（吃緊才會）另外做三件事，密度回到 1 就全部不介入、逐位元與沒有這些的版本相同：
+       1. 飛行物拖尾變疏：新播出的飛行子彈（含冰箭追蹤本體）少發粒子。箭身、軌跡、命中位置不動；
+          下限比命中類高（SHED.trailMin），因為拖尾是箭的辨識度。
+       2. 命中爆點限頻：同一目標、同一種命中特效，兩次之間至少隔一段時間（密度越低隔越久）。
+          傷害數字照常，所以「少播幾次閃光」不會變成「少打了幾下」。
+       3. 全場命中特效同時上限：密度越低越少，滿了就不再疊新的（舊的播完才補）。
      --------------------------------------------------------------- */
+  var SHED = {
+    trailMin: 0.4,       // 密度在下限時，飛行物拖尾的發射密度（命中類是 DENSITY.min）
+    hitGapMax: 0.5,      // 密度在下限時，同目標同種命中特效的最短間隔（秒）
+    hitGapStart: 0.3,    // 吃緊程度（0～1）到這裡才開始限頻，之後線性加到 hitGapMax。
+                         // 不能一吃緊就限：單幀 50ms 就會讓密度從 1 掉到 0.92，那不該改變畫面
+                         // （限頻會把「同一瞬間疊的 4 個爆點」砍成 1 個）。
+    hitLiveBase: 160     // 全場同時存活的命中特效上限＝此數 × 密度；密度 1＝不限
+  };
   var DENSITY = {
     slowDt: 1 / 45,      // 平滑後的幀時間超過這個＝畫面吃緊（<45 FPS）
     fastDt: 1 / 54,      // 低於這個才放回（>54 FPS）；兩者之間是死區，不動
@@ -228,6 +251,7 @@ var VFXRuntime = (function () {
         return q;
       },
       quality: function () { return q; },
+      floor: function () { return cfg.min; },       // 密度下限；其他降級依 (q - floor)/(1 - floor) 換算「降到多深」
       frameMs: function () { return ema * 1000; }
     };
   }
@@ -423,19 +447,32 @@ var VFXRuntime = (function () {
     var auras = Object.create(null);        // entKey + '|' + sid → 狀態光環
     var pending = [];                       // 延後播放（受擊要等飛行物抵達）
     var clock = 0;                          // 累計秒數（隨 update(dt) 前進，暫停時不走）
-    var counters = { played: 0, skipped: 0, missing: 0, dropped: 0, capped: 0, thinned: 0 };
+    // capped＝命中特效被略過的總數（併發上限＋限頻＋全場上限）；throttled 是其中被限頻／全場上限擋下的；
+    // thinned＝少發粒子的命中特效；trailThinned＝拖尾變疏的飛行子彈。
+    var counters = { played: 0, skipped: 0, missing: 0, dropped: 0, capped: 0, thinned: 0, throttled: 0, trailThinned: 0 };
 
     var presetDefinitions = Object.create(null);
     function tuning(id, key) { return Core.playbackValue(presetDefinitions[id], key); }
 
     /* ---- 命中類特效的密度控制（見檔頭 DENSITY 那段）---- */
-    var governor = createDensityGovernor(o.densityGovernor);
+    // o.governor：測試用，直接塞一個調節器（quality／floor／step／frameMs），好把密度固定在某個值。
+    var governor = o.governor || createDensityGovernor(o.densityGovernor);
     var hitLive = Object.create(null);      // 'presetId|targetId' → 各存活實例的到期時刻（clock）
+    var hitLast = Object.create(null);      // 'presetId|targetId' → 最近一次播出的時刻（clock）；限頻用
+    var hitAll = [];                        // 全場所有存活命中特效的到期時刻；全場同時上限用
     var nextHitSweep = 0;
     // 目前允許的同目標併發數：preset 的 hitCap 依密度縮小，至少 1。
     function hitCapNow(presetId) {
       var base = presetId ? tuning(presetId, 'hitCap') : 4;
       return Math.max(1, Math.round(base * governor.quality()));
+    }
+    /* 吃緊到什麼程度：0＝不吃緊（密度 1，其餘降級全部不介入）、1＝已到密度下限。
+       限頻、全場上限、拖尾密度都依它換算，所以密度一回到 1 就一起放開。 */
+    function shedDepth() {
+      var q = governor.quality();
+      if (q >= 1) return 0;
+      var span = 1 - governor.floor();
+      return span > 0 ? Math.min(1, (1 - q) / span) : 1;
     }
     function pruneHits(list) {
       var n = 0;
@@ -448,26 +485,60 @@ var VFXRuntime = (function () {
       var def = presetDefinitions[presetId];
       return !!def && !def.loop;
     }
+    /* 這個命中特效現在能不能播。三道關，後兩道只在吃緊時才有：
+         ① 同目標同種的併發上限（第一輪就有）
+         ② 同目標同種的最短間隔——併發上限擋不住「一秒好幾拍都想播」，間隔才擋得住
+         ③ 全場命中特效同時上限
+       被擋下的呼叫端一律算「已處理」（回 false 會讓顯示層退回舊畫法，同一次齊射混出兩種畫風）。 */
     function hitAllowed(presetId, targetId) {
       if (!targetId || !hitCountable(presetId)) return true;
-      var list = hitLive[presetId + '|' + targetId];
-      return !list || pruneHits(list) < hitCapNow(presetId);
+      var key = presetId + '|' + targetId;
+      var list = hitLive[key];
+      if (list && pruneHits(list) >= hitCapNow(presetId)) return false;
+      var depth = shedDepth();
+      if (depth > 0) {
+        var gap = hitGapNow(depth), last = hitLast[key];
+        if (gap > 0 && last !== undefined && clock - last < gap) { counters.throttled++; return false; }
+        if (hitAll.length >= Math.max(1, Math.round(SHED.hitLiveBase * governor.quality()))) { counters.throttled++; return false; }
+      }
+      return true;
+    }
+    // 同目標同種命中特效的最短間隔：吃緊程度到 hitGapStart 才開始、之後線性加到 hitGapMax。
+    function hitGapNow(depth) {
+      if (!(depth > SHED.hitGapStart)) return 0;
+      return SHED.hitGapMax * (depth - SHED.hitGapStart) / (1 - SHED.hitGapStart);
     }
     function noteHit(presetId, targetId) {
       if (!targetId || !hitCountable(presetId)) return;
       var key = presetId + '|' + targetId;
-      (hitLive[key] || (hitLive[key] = [])).push(clock + (presetDurations[presetId] || 1));
+      var until = clock + (presetDurations[presetId] || 1);
+      (hitLive[key] || (hitLive[key] = [])).push(until);
+      hitLast[key] = clock;
+      hitAll.push(until);
+    }
+    // 全場計數要逐幀剪掉已播完的（每幀一次 O(n)，n 是同屏命中特效數，通常不到兩百）。
+    function pruneAllHits() {
+      var n = 0;
+      for (var i = 0; i < hitAll.length; i++) if (hitAll[i] > clock) hitAll[n++] = hitAll[i];
+      hitAll.length = n;
     }
     // 目標離場後鍵不會再被查到；定期掃掉，免得只增不減。
     function sweepHits() {
       if (clock < nextHitSweep) return;
       nextHitSweep = clock + 2;
       for (var key in hitLive) if (!pruneHits(hitLive[key])) delete hitLive[key];
+      for (var lk in hitLast) if (clock - hitLast[lk] > SHED.hitGapMax) delete hitLast[lk];   // 比最大間隔還舊的，限頻永遠用不到
     }
     // 吃緊時新播出的命中特效少發粒子；回傳要併進 play 參數的 density（不需要縮就回 undefined）。
     function hitDensity() {
       var q = governor.quality();
       return q < 1 ? q : undefined;
+    }
+    /* 吃緊時飛行子彈的拖尾密度（箭身、軌跡不動，只是煙霧與星點發得少）；不吃緊回 undefined＝
+       不帶 density 參數，與沒有這個功能時逐位元相同。 */
+    function trailDensity() {
+      var depth = shedDepth();
+      return depth > 0 ? 1 - (1 - SHED.trailMin) * depth : undefined;
     }
     function curveTuning(id) { return {curveAngle:tuning(id,'curveAngle'),curveHandle:tuning(id,'curveHandle')}; }
     function fraction(age, duration) { return duration > 0 ? Math.max(0,Math.min(1,age/duration)) : 1; }
@@ -990,6 +1061,11 @@ var VFXRuntime = (function () {
       if (flightOrbit) params.particleOrigin = {x:flightOrbit.origin.x,y:flightOrbit.origin.y*groundScale};
       // 風刃的動畫壽命隨權威飛行時間伸縮，避免飛出場景前先消失。
       if ((flightOrbit || presetId === 'proj-wind-crescent' || knifeFlight || holyFlight || /^knife(?:-|$)/.test(spec.variant || '')) && travel > 0) params.timeScale = presetDurations[presetId] / travel;
+      // 敵方出手的彈體不降：那是玩家要看清楚的威脅。
+      if (spec.fxKind !== 'enemy-attack') {
+        var td = trailDensity();
+        if (td !== undefined) { params.density = td; counters.trailThinned++; }
+      }
       var ref = play(rt, presetId, params, mult);
       if (!ref) return false;
       projectiles.push({
@@ -1259,7 +1335,13 @@ var VFXRuntime = (function () {
       // 雷球的電弧粒子也屬於球體；共用球心倍率，避免各自按高度投影而拉歪輪廓。
       var orbBody = role === 'field' && thunderOrbBodyEvent(spec);
       // 直立地板特效也遵守作者的 perspective:false，柱腳投影、柱身不壓扁。
-      var ref = play(billboardPresets[presetId] || curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, groundParams(g), mult);
+      var bodyParams = groundParams(g);
+      // 冰箭追蹤本體與風刃本體是「會飛的子彈」，拖尾同飛行物一併降；雷球、火龍捲這類場域不動。
+      if (g.iceArrowBody || g.windBody) {
+        var bd = trailDensity();
+        if (bd !== undefined) { bodyParams.density = bd; counters.trailThinned++; }
+      }
+      var ref = play(billboardPresets[presetId] || curtainColumn || spec.variant === 'thunder-orb' || spec.variant === 'water-tide-merge' || orbBody ? rtBillboard : flyingField ? rtAir : role === 'field' && !g.devour ? rtFx : rtZone, presetId, bodyParams, mult);
       if (!ref) return false;
       g.ref = ref;
       grounds[key] = g;
@@ -1754,6 +1836,7 @@ var VFXRuntime = (function () {
       clock += step;
       governor.step(step);
       sweepHits();
+      pruneAllHits();
 
       for (var ce = chainEffects.length - 1; ce >= 0; ce--) {
         var effect = chainEffects[ce];
@@ -1991,6 +2074,8 @@ var VFXRuntime = (function () {
       chainEffects.length = 0;
       pending.length = 0;
       hitLive = Object.create(null);
+      hitLast = Object.create(null);
+      hitAll.length = 0;
       arrivals = Object.create(null);
       Object.keys(orbits).forEach(stopOrbit);
       grounds = Object.create(null);
@@ -2034,6 +2119,9 @@ var VFXRuntime = (function () {
           /* 命中類密度控制：quality＝目前密度（1＝不介入）、hitCap＝目前預設 K、
              capped／thinned＝累計被略過的命中特效／少發粒子的命中特效（診斷疊層取差值算每秒） */
           quality: governor.quality(), hitCap: hitCapNow(null), capped: counters.capped, thinned: counters.thinned,
+          /* 第二輪：throttled＝被限頻／全場上限擋下的命中特效（已含在 capped 裡）、
+             trailThinned＝拖尾變疏的飛行子彈、hitLive＝全場目前存活的命中特效數 */
+          throttled: counters.throttled, trailThinned: counters.trailThinned, hitLive: hitAll.length,
           fx: rtFx.stats(), zone: rtZone.stats(), air: rtAir.stats(), billboard: rtBillboard.stats(), enemyAir: rtEnemyAir.stats()
         };
       }
