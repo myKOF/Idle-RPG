@@ -30,6 +30,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const vm = require('vm');
 const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -1522,8 +1523,46 @@ const RUNE_GLOSSARY_ROWS = [
   ['　　動作 act：dmg {pct, elem?, type?(magic/phys), to?(target/all/rand/attacker), n?}、heal {pctMax}、shield {pctMax, sec}、mana {pctMax}、buff {sid, val, sec, max?}、buffRandom {sec, from:[{sid,val}]}、stun {sec, to?}、slow {sec, to?}、'],
   ['　　dot {pct, sec, name(poison/burn/bleed/corrode), to?}、cdr {sec}、refresh {n?}、recast、castRandom、invuln {sec}、execute {hpBelow}、cleanse。elem 可填 fire/ice/lightning/poison/light/dark/earth/wind/random。'],
   ['風味文字：圖鑑與詳情顯示的一句話，可留空。效果說明文字由資料自動產生，不需要另外寫。'],
-  ['備註：純說明欄，不進遊戲。']
+  ['備註：設定列＝該設定的說明；符文列＝兩側屬性的中文名稱與倍率；符文之語列＝屬性中文名稱與倍率，加上被動／靜態效果／事件觸發／借用傳奇特效的中文說明（與遊戲內圖鑑同一份文字）。'],
+  ['　　備註是自動產生的參考，不進遊戲、不影響套用；你改了能力之後，備註不會自動更新（請 AI 重新產生），以左邊各欄實際內容為準。']
 ];
+/* 備註欄的「能力中文名稱說明」：依該列目前的內容產生（符文＝兩側屬性的中文名與倍率；符文之語＝屬性中文名與倍率＋
+   被動／靜態效果／事件觸發／借用傳奇特效的中文說明，文字與遊戲內圖鑑同源 rwDescribeLines）。
+   純參考：不寫回遊戲、不影響套用；使用者改了能力後，備註要重新產生才會跟上（--gen Runes 或 annotateRuneRows）。 */
+function runeNoteEnv() {
+  try {
+    const ctx = { console, Math: Object.create(Math) };
+    vm.createContext(ctx);
+    ['util.js', 'data.js', 'runeword_data.js', 'runeword.js'].forEach(f => {
+      vm.runInContext(readUtf8(path.join(ROOT, 'js', f)), ctx, { filename: f });
+    });
+    return ctx;
+  } catch (e) { return null; }
+}
+function annotateRuneRows(rows) {
+  const header = rows[0];
+  const col = header.indexOf('備註');
+  if (col < 0) return rows;
+  let rebuilt;
+  try { rebuilt = SCHEMAS.Runes.rebuild(rows.slice(1), header); } catch (e) { return rows; }   // 表有錯誤就不加註解（套用時會報錯）
+  const runes = evalLiteral(extractLiteral(rebuilt.RUNES, 'RUNES').literal);
+  const words = evalLiteral(extractLiteral(rebuilt.RUNEWORDS, 'RUNEWORDS').literal);
+  const env = runeNoteEnv();
+  const name = key => { const d = env && env.AFFIX_POOL[key]; return d ? d.name.replace(/%$/, '') : key; };
+  const notes = {};
+  runes.forEach(r => {
+    notes[r.id] = '武器：' + name(r.w[0]) + '×' + numStr(r.w[1]) + '｜防具・飾品・副手：' + name(r.a[0]) + '×' + numStr(r.a[1]) + '（×倍＝一條滿刻度詞條的倍數）';
+  });
+  words.forEach(w => {
+    const stats = (w.stats || []).map(s => name(s[0]) + '×' + numStr(s[1])).join('、');
+    const rest = env ? Array.from(env.rwDescribeLines(w)).slice((w.stats || []).length) : [];
+    notes[w.id] = (stats ? '屬性：' + stats : '') + (rest.length ? (stats ? '｜' : '') + rest.join('；') : '');
+  });
+  return rows.map((r, i) => {
+    if (!i || (r[0] !== '符文' && r[0] !== '符文之語') || notes[r[1]] === undefined) return r;
+    const out = r.slice(); out[col] = notes[r[1]]; return out;
+  });
+}
 const RUNE_TABLE_WIDTHS = [8, 18, 14, 9, 14, 9, 14, 9, 24, 24, 40, 14, 22, 36, 60, 36, 10, 50];
 
 function runeTableRarities() {
@@ -1598,7 +1637,7 @@ SCHEMAS.Runes = {
         靜態效果: runeObjText(w.fx), '事件觸發(JSON)': w.procs ? JSON.stringify(w.procs) : '', 風味文字: w.flavor || ''
       }));
     });
-    return rows;
+    return annotateRuneRows([RUNE_TABLE_HEADER].concat(rows)).slice(1);
   },
   rebuild(dataRows, header) {
     const get = rowGetter(header);
@@ -1788,7 +1827,8 @@ function cmdGen(only) {
 function cmdDumpJson(name, outPath) {
   const sc = SCHEMAS[name];
   if (!sc || !outPath) { console.error('用法：--dump-json <表名> <輸出路徑>'); process.exit(1); }
-  const rows = csvParse(readUtf8(csvPathOf(name))).filter(r => r.length > 1 || (r[0] || '') !== '');
+  let rows = csvParse(readUtf8(csvPathOf(name))).filter(r => r.length > 1 || (r[0] || '') !== '');
+  if (name === 'Runes') rows = annotateRuneRows(rows);   // 備註欄的能力中文名稱說明依目前內容重新產生
   const sheets = [{ name: sc.sheet, rows: rows, widths: sc.widths || undefined, table: true }];
   (sc.extraSheets || []).forEach(s => sheets.push({ name: s.name, rows: s.rows }));
   fs.writeFileSync(outPath, JSON.stringify({ sheets: sheets }), 'utf8');
@@ -1911,4 +1951,4 @@ else {
 }
 
 }
-module.exports={SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral,validateVfxTable};
+module.exports={annotateRuneRows,SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral,validateVfxTable};

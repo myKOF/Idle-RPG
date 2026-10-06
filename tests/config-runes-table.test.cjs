@@ -150,3 +150,27 @@ test('設計表改了就會跟著遊戲走：改 CSV 的孔數／倍率／配方
   assert.equal(ctx.__s.slotsByRarity[2], 2);
   assert.equal(ctx.__w, out.RUNEWORDS.length);
 });
+
+test('備註欄有能力中文名稱說明：符文列＝兩側屬性中文名，符文之語列＝屬性中文名與效果說明，不含英文鍵', () => {
+  const rows = [schema.header].concat(schema.extract(dataSrc));
+  const note = rows[0].indexOf('備註');
+  const keys = Object.keys(lit(fs.readFileSync(path.join(root, 'js', 'data.js'), 'utf8'), 'AFFIX_POOL'));
+  let runes = 0, words = 0;
+  rows.slice(1).forEach((r) => {
+    if (r[0] !== '符文' && r[0] !== '符文之語') return;
+    assert.ok(r[note], `${r[1]} 沒有備註`);
+    assert.doesNotMatch(r[note], /undefined|NaN/);
+    keys.filter((k) => k.length > 4).forEach((k) => assert.ok(!r[note].includes(k), `${r[1]} 的備註出現英文鍵 ${k}`));
+    if (r[0] === '符文') { runes++; assert.match(r[note], /^武器：.+×.+｜防具・飾品・副手：.+×/); }
+    else { words++; assert.match(r[note], /[一-鿿]/); }
+  });
+  assert.equal(runes, 33);
+  assert.equal(words, lit(dataSrc, 'RUNEWORDS').length);
+  const r10 = rows.find((r) => r[1] === 'r10');
+  assert.match(r10[note], /物理攻擊%?×0\.7|物理攻擊×0\.7/, '血誓：武器側物理攻擊 ×0.7');
+  // 重新註解是冪等的，且依該列「目前」的數值產生（使用者改了倍率，備註跟著新數字）
+  assert.deepEqual(cfg.annotateRuneRows(rows), rows);
+  const edited = rows.map((r) => r.slice());
+  edited.find((r) => r[1] === 'r01')[rows[0].indexOf('武器倍率')] = '2';
+  assert.match(cfg.annotateRuneRows(edited).find((r) => r[1] === 'r01')[note], /命中率×2｜/);
+});
