@@ -12,13 +12,13 @@
 
 importScripts('protocol.js?v=46', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes3', '../runeword_data.js?v=20261007-runes3', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes3', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261007-runes3', '../runeword.js?v=20261007-runes3',
-  '../skills.js?v=20261007-runes3', '../skills2.js?v=20261007-runes3', '../talents.js?v=20261003-rename-weineng',
-  '../player.js?v=20261007-runes3', '../special_rules.js',
-  '../combat.js?v=20261007-runes3', '../legendary.js?v=20261007-runes3', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-runes3',
-  '../factory.js?v=20261007-runes3', '../newforge.js', '../forge.js?v=20261007-runes3', '../save.js?v=20261007-runes3',
-  '../tasks.js?v=20261007-runes3'
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes4', '../runeword_data.js?v=20261007-runes4', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes4', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261007-runes4', '../runeword.js?v=20261007-runes4',
+  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261007-runes4', '../talents.js?v=20261003-rename-weineng',
+  '../player.js?v=20261007-runes4', '../special_rules.js',
+  '../combat.js?v=20261007-runes4', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-runes4',
+  '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-runes4',
+  '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
