@@ -114,7 +114,7 @@ function loadOnAct() {
     Math, POS_BUFFER_MS: 120,
     S: { ready: true, player: p, entities: { 'mv-float-3': { root: { x: -40, y: 30 } }, 'tb-float': { root: { x: 50, y: 0 } } } },
     documentHidden: () => false,
-    setTimeout: (f, ms) => timers.push([f, ms]),
+    laterFrame: (f, ms) => timers.push([f, ms]),   // 延遲播放佇列（取代 setTimeout，見 battle-renderer.js laterFrame）
     turnToward: (ent, dx, dy, sticky) => turns.push([dx, dy, sticky]),
     playerAttackAnim: (...args) => calls.push(args)
   };

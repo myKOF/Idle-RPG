@@ -19,7 +19,7 @@ function harness({ legacy = false, absent = false } = {}) {
     legacyVfxByQuery: () => legacy, normalizeTowerVfxIds() {},
     endedWaterTornadoes: {}, documentHidden: () => false, fxGate: () => false,
     areaRect: () => ({}), shouldAnimatePlayer: () => false,
-    spawnVoidDisc: e => old.push(e), setTimeout: fn => timers.push(fn),
+    spawnVoidDisc: e => old.push(e), laterFrame: fn => timers.push(fn),   // 延遲播放佇列（取代 setTimeout）
     killFx() {}, sweepOrphanFxNodes() {}, _followAuras: {}, _fireHuntRings: {},
     projectAirTransform() {}, projectBillboardTransform() {}, projectSceneTransform() {},
     screenPosOf: () => ({ x: 0, y: 0 }), chainTargetAlive: () => true,

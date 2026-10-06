@@ -240,7 +240,7 @@ test('Worker delayed enemy damage float is discarded after the target disappears
     },
     documentHidden: () => false,
     POS_BUFFER_MS: 0,
-    setTimeout: callback => { callbacks.push(callback); return 0; }
+    laterFrame: callback => { callbacks.push(callback); }   // 延遲播放佇列（取代 setTimeout）
   };
   const renderer = fs.readFileSync(path.join(root, 'js', 'battle-renderer.js'), 'utf8');
   vm.runInNewContext([
