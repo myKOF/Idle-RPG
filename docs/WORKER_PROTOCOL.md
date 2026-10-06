@@ -1,6 +1,8 @@
-# Worker 協議 v46
+# Worker 協議 v47
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 46`　最後更新：2026-10-07
+> 協議版本：`WORKER_PROTOCOL_VERSION = 47`　最後更新：2026-10-06
+
+v47（2026-10-06 技能列計時）：`battle.skillTimers` 為裝配新版技能的唯讀投影，key 為 `sg:<群組id>`，值為 `{mode, remaining, total, cost, paused}`。mode 為 `active`（本體冷卻）、`periodic`（取代主動施放的固定節拍）、`passive`（受擊／恆時被動）；remaining／total 單位秒，cost 為實際施放／觸發法力門檻，paused 表示倒地／死亡中節拍凍結。天霸風神斬直接讀執行期下一施放時刻，total 與排程共用間隔函式；天地共生／不屈鬥魂讀觸發後的 skillCds 及其技能配置，逆轉乾坤保留首觸發後才開始充能。仍有主動施放的附加週期效果不取代本體冷卻。高塔由 G.tower.active 選擇實際玩家，修正原 rebirthCharges 讀取不存在的 TOWER.active。投影不改 skillCds／存檔；舊快照缺 skillTimers 時 UI 沿用 skillCds，正式 bridge 仍要求雙端同版本。
 
 v46（2026-10-07 符文取代附魔）：符文改鑲在裝備專屬的符文孔 `it.runes`（`[符文id|null, …]`，最多 4 孔，孔數由稀有度決定，不再與寶石共用 `item.sockets`）；新增指令 `rune.unsocket(itemId, index)`→`unsocketRune`（取下符文；原本借用 `gem.unsocket` 的分流作廢），指令 92 → 93。`rune.socket` 的 `index` 現在指符文孔索引（省略＝第一個空孔）。附魔功能關閉（`data.js` `ENCHANT_ENABLED = false`）：`item.enchant`／`item.removeEnchant` 指令保留，呼叫時回報「附魔功能已關閉」。存檔：`item.runes` 為新欄位（缺欄＝沒有符文）；v45 期間放在寶石鑲孔裡的 `{ rune }` 由 `rwMigrateSocketRunes` 讀檔時搬進符文孔（冪等）；任務新增目標類型 `runeSocketCount`、獎勵類型 `rune`。
 v45（2026-10-06 符文之語）：新增 4 條指令（88 → 92）——`rune.socket(itemId, runeId, index?)`→`socketRune`、`rune.compose(runeId)`→`composeRune`、`rune.composeAll(runeId)`（Worker 內一次跑完，上限 2500 次）、`rune.dismantle(runeId)`→`dismantleRune`；`gems` 面板新增 `runes`（`{符文id: 數量}`）。符文是計數素材、沒有實例 id，所以用 `runeId` 定位；鑲孔內容為 `{ rune: id }`，取下沿用 `gem.unsocket`（`unsocketGem` 依內容分流）。符文之語是衍生狀態（`rwActiveWord` 當場判定），不進存檔也不進協議。存檔新增 `player.runes`，舊存檔由 `mergeDefaults` 補空表，無需遷移旗標。

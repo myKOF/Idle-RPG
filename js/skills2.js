@@ -1412,6 +1412,43 @@ function skills2Cooldown(gid, lvs, pEnt) {
     ? skillCooldownWithMinimum(cd) : Math.max(0.4, cd);
 }
 
+/* 技能列的唯讀計時投影：自動節拍與主動冷卻是不同時鐘，絕不回寫 skillCds。 */
+function skills2BattleTimers(pEnt) {
+  var out = {}, lo = G && G.player && G.player.loadout || [];
+  for (var i = 0; pEnt && i < lo.length; i++) {
+    var entry = lo[i], gid = typeof entry === 'string' && entry.indexOf(SG_PREFIX) === 0
+      ? entry.slice(SG_PREFIX.length) : '';
+    if (!gid || !SKILLS2[gid]) continue;
+    var lvs = skills2Levels(gid);
+    var mode = skills2ActsPassive(gid) ? 'passive' : 'active';
+    var remaining = Math.max(0, Number(pEnt.skillCds && pEnt.skillCds[entry]) || 0);
+    var total = mode === 'active' ? skills2Cooldown(gid, lvs, pEnt) : 0;
+    var cost = mode === 'passive' ? skills2PassiveMinMp(gid)
+      : skills2ManaCost(gid) * (typeof rwManaCostFactor === 'function' ? rwManaCostFactor() : 1);
+    var paused = false;
+    var auto = gid === 'cleave' && sgUlt(gid, 'stormGodSlash');
+    if (gid === 'cleave' && auto) {
+      mode = 'periodic';
+      total = sgUltAutoCastGap(auto);
+      var at = SKILL2_RT.ultAuto && SKILL2_RT.ultAuto.cleave;
+      remaining = at > 0 ? Math.max(0, at - GT) : total;
+      paused = skills2AutoCastBlocked(pEnt);
+      cost = skills2ManaCost(gid) * (typeof rwManaCostFactor === 'function' ? rwManaCostFactor() : 1);
+    } else if (gid === 'windblade' && mode === 'passive') {
+      remaining = 0; cost = 0;
+    } else if (gid === 'earthguard') {
+      total = lvs[6] > 0 ? sgRebirthCdSec(lvs) : 0;
+      if (!(total > 0)) remaining = 0;
+    } else if (gid === 'counter') {
+      var revival = sgUlt(gid, 'indomitable');
+      total = revival ? Math.max(1, sgUltVal(revival, 'cd')) : 0;
+      if (!revival) remaining = 0;
+    }
+    out[entry] = { mode: mode, remaining: remaining, total: total, cost: cost, paused: paused };
+  }
+  return out;
+}
+
 /* 虛弱（血刃斬第 3 階）：流血中的敵人受到的傷害提高。
    掛點：普攻與技能傷害的攻擊組態（doPlayerAttack／本引擎自身）。 */
 function skill2VulnPct(target) {
@@ -11771,6 +11808,7 @@ function sgStarfallImpact(ctx, u) {
      ・暈眩中跳過該次，錯過的不補發
      ・法力不足就不觸發（比照反擊逐階扣魔的使用者決策）
    自動施放走 castSkill2 的正規路徑，因此扣魔、冷卻、傷害結算與手動施放完全一致。 */
+function sgUltAutoCastGap(u) { return Math.max(0.5, sgUltVal(u, 'sec')); }
 function sgTickUltAutoCast(ctx, dt) {
   if (!SKILL2_RT.ultAuto) SKILL2_RT.ultAuto = {};
   var u = sgUlt('cleave', 'stormGodSlash');
@@ -11780,7 +11818,7 @@ function sgTickUltAutoCast(ctx, dt) {
     SKILL2_RT.ultAuto.cleave = sgPauseSchedule(SKILL2_RT.ultAuto.cleave, dt);
     return;
   }
-  var gap = Math.max(0.5, sgUltVal(u, 'sec'));
+  var gap = sgUltAutoCastGap(u);
   var next = SKILL2_RT.ultAuto.cleave;
   if (!(next > 0)) { SKILL2_RT.ultAuto.cleave = GT + gap; return; }
   if (next > GT) return;

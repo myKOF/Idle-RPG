@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## SKILL-TIMER-DISPLAY-20261006 — 技能列施放間隔與觸發冷卻全面清查
+
+- Owner：Codex；Done。使用者要求進化為定時被動的技能列顯示實際間隔、復活技能觸發後才起算，全面清查同類技能。23群組／全部69項超神進化盤點完成；單一開發者。使用者明確授權與逐風者進行中修改分段作業並保留既有內容。
+- 範圍：js/skills2.js唯讀計時投影、js/ui.js兩種技能列與倒數、Worker battle投影／protocol及文件／測試、index／bridge快取、本紀錄、新增tests/skill-cooldown-display.test.cjs。禁止改技能數值、傷害／施放規則、Excel／CSV、素材、存檔與其他副本；不合併／推送。依賴現有排程已滿足；後續使用者整合。
+- 驗收：天霸風神斬讀排程而非主動CD，死亡／倒地保持剩餘間隔；天地共生／不屈鬥魂觸發才倒數、正確比例，逆轉乾坤首觸發後才充能；天穹崩裂無虛構CD／耗魔；其他主動技能保留本體CD。定向回歸、協議相容、Build與隔離瀏覽器／Console，獨立提交只含本次變更，保留逐風者未提交內容。
+- 完成：battle.skillTimers由Worker唯讀投影mode／remaining／total／cost／paused，兩處技能列同源；天霸風神斬直接讀ultAuto排程、總時長與施放共用函式，不回寫主動skillCds；天地共生／不屈鬥魂以自身CD畫正確比例，原觸發後起算及充能規則保留；天穹崩裂顯示恆時受擊被動，失效復活進化的舊CD不再顯示。附加常駐、場域、自動重複、命中節拍維持本體主動冷卻（無限新星、天地雷鎖陣、永恒雷獄、暴風亂舞等），內部節拍不誤當整格CD。一般主動進度圈使用skills2Cooldown，含縮地、時間坍縮、符文倍率與最低間隔。高塔計時與復活次數改讀G.tower.active，修正不存在的TOWER.active誤讀野外玩家。協議46→47、四項主端及Worker快取同步；不改戰鬥數值／施放／觸發／存檔。
+- 修改10檔：js/skills2.js、js/ui.js、js/worker/sim.worker.js、js/worker/protocol.js、js/bridge.js、index.html、tests/skill-cooldown-display.test.cjs（新增9項）、tests/worker-protocol.test.cjs、docs/WORKER_PROTOCOL.md與本紀錄。未修改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/skills.js／combat.js／tower.js／formula.js／battlefield.js、scripts/sim/engine.js、原技能／地系／死亡冷卻及UI回歸；Skills2配置唯讀查核，無Excel／CSV／素材變更，不需素材庫Commit。
+- 測試：`node --test tests/skill-cooldown-display.test.cjs tests/worker-protocol.test.cjs tests/earthguard-revival.test.cjs tests/battle-skill-summary.test.cjs tests/battle-skill-hover.test.cjs tests/cooldown-repaint.test.cjs`33/33通過。`node --test tests/skill2-ult-evolution.test.cjs tests/skill2-earth.test.cjs tests/skill-cooldown-death.test.cjs tests/worker-shim.test.cjs`120項、82通過／38既有失敗；以修改前備份skills2.js重導唯讀載入做同檔測試基線，120／82／38且失敗名稱集合完全相同，新增失敗0，未降低原斷言。`npm.cmd run build`466檔檢查通過；`git diff --check`通過。
+- 實機：隔離headless Edge／隨機Port唯讀HTTP／全新Context／seed=9拋棄式角色、正式Worker47成功BOOT；使用原生引擎buildPanel的快照驗正式UI，在1920×1080與1280×720皆確認天霸1.5/3秒、天地15/30秒、不屈30/60秒，各遮罩180deg；兩種技能列相符、受擊風刃無CD／無魔標籤、復活就緒無CD、凍結1秒後天霸仍1.5秒。Console error／warning均0。精確排程、實際扣魔、自動施放、死亡與活著倒地、首觸發／充能、移除失效效果、高塔來源由新增引擎測試驗證；無真人存檔變動，服務／瀏覽器已關閉。
+- 交付：Commit為本紀錄所在`[Codex] fix: 同步技能列定時施放與觸發冷卻`提交；同副本逐風者與強化洗煉一秒任務期間已各自提交，本次僅提交上述10檔自己的變更。無本次未完成項目，既有38項回歸失敗保留，可審查合併，未合併／推送。下一步使用者重載遊戲驗收；未做長時間真人操作。
+
 ## EQUIP-ACTION-ONE-SECOND-20261006 — 強化洗煉切頁冷卻改為一秒
 
 - Owner：Codex；Done。使用者將前次2秒改為1秒；依賴EQUIP-ACTION-COOLDOWN已完成，單一開發者。fetch後四檔衝突預檢無其他副本／分支衝突；本副本有逐風者進行中修改，僅碰index不同的UI引用與新增本任務段落，保留全部既有工作。

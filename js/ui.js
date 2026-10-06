@@ -3416,6 +3416,17 @@ function entStatus(ent) {
 /* snapshotGt：這份戰鬥快照是什麼時候拍的（battle 面板的 gt）。
    技能冷卻存的是「還剩幾秒」，面板又只在髒區時才更新，所以必須扣掉拍照到現在的時間，
    否則 4 秒的冷卻會卡在 4.0 好幾秒然後突然可以放。 */
+/* 舊快照缺計時投影時沿用 skillCds；新快照只讀 Worker 的權威節拍與總時長。 */
+function uiBattleSkillTimer(entry, pEnt, snapshotGt, battleSnap) {
+  var timer = battleSnap && battleSnap.skillTimers && battleSnap.skillTimers[entry];
+  var raw = timer ? timer.remaining : (pEnt && pEnt.skillCds &&
+    (pEnt.skillCds[entry] || (entry.indexOf('sg:') === 0 ? pEnt.skillCds[entry.slice(3)] : 0)) || 0);
+  return {
+    projected: !!timer, mode: timer && timer.mode,
+    raw: raw, remaining: timer && timer.paused ? raw : uiCountdownRemain(raw, snapshotGt),
+    total: timer && timer.total, cost: timer && timer.cost, paused: !!(timer && timer.paused)
+  };
+}
 function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
   if (!stats) return;
   var maxMp = Math.max(1, Number(stats.mp) || 1);
@@ -3441,7 +3452,8 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
         ? (typeof SKILLS2 !== 'undefined' ? SKILLS2[entry.slice(3)] : null)
         : (isPotE && typeof potentialDef === 'function' ? potentialDef(entry.slice(10)) : null);
       if (!sk) continue;
-      var cd = uiCountdownRemain((pEnt.skillCds && pEnt.skillCds[entry]) || 0, snapshotGt);
+      var timerE = uiBattleSkillTimer(entry, pEnt, snapshotGt, peekUiPanelData('battle'));
+      var cd = timerE.remaining;
       var lv = isSgE
         ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
         : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
@@ -3453,6 +3465,7 @@ function renderMpSkill(pEnt, prefix, stats, snapshotGt) {
       var costE = isSgE
         ? (isPassiveE ? passiveMinMpE : skills2ManaCost(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), sgUiUltRaw(skillsSnapshot)))
         : 0;
+      if (timerE.projected) { isPassiveE = timerE.mode === 'passive'; costE = timerE.cost; }
       arr.push({
         sk: sk, entry: entry, lv: lv, cd: cd, cost: costE,
         /* 主動型被動：恆時生效，不顯示冷卻與無魔。
@@ -3672,6 +3685,7 @@ function battleSkillSlotMarkup(state) {
   var snapAttrs = state.isOnCd
     ? ' data-snap-cd="' + state.rawCdVal + '" data-snap-gt="' + (state.snapshotGt || 0) + '" data-total-cd="' + state.totalCd + '"'
     : '';
+  if (state.paused) snapAttrs += ' data-cd-paused="true"';
   return '<div class="' + state.slotCls + ' loadout-slot filled" draggable="true" data-battle-skill-key="' + esc(state.key) + '" data-slot-index="' + state.index + '" data-index="' + state.index + '" data-sk="' + esc(state.entry) + '" data-skill-id="' + esc(state.entry) + '"' + snapAttrs + '>' +
     '<span class="bss-emoji" data-icon-key="' + esc(state.entry) + '">' + skillIconHTML(state.entry, state.emoji) + '</span>' +
     (state.lv > 0 ? '<span class="bss-lv">' + state.lv + '</span>' : '') +
@@ -3714,6 +3728,8 @@ function syncBattleSkillSlot(slot, state) {
   setAttrIfChanged(slot, 'data-skill-id', state.entry);
   setAttrIfChanged(slot, 'data-index', state.index);
   setAttrIfChanged(slot, 'draggable', 'true');
+  if (state.paused) setAttrIfChanged(slot, 'data-cd-paused', 'true');
+  else removeAttrIfPresent(slot, 'data-cd-paused');
   removeAttrIfPresent(slot, 'data-skill-slot-action');
   if (state.isOnCd) {
     setAttrIfChanged(slot, 'data-snap-cd', state.rawCdVal);
@@ -3838,8 +3854,9 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       continue;
     }
 
-    var rawCdVal = (pEnt && pEnt.skillCds && (pEnt.skillCds[entry] || (isSgE ? pEnt.skillCds[entry.slice(3)] : 0))) || 0;
-    var cd = pEnt ? uiCountdownRemain(rawCdVal, snapshotGt) : 0;
+    var timer = uiBattleSkillTimer(entry, pEnt, snapshotGt, battleSnap);
+    var rawCdVal = timer.raw;
+    var cd = timer.remaining;
     var lv = isSgE
       ? sgbTotals(entry.slice(3), sgUiLevels(skillsSnapshot, entry.slice(3)), skillsSnapshot).total
       : uiPotentialLevelFromSnapshot(talentSnapshot, sk.id);
@@ -3857,6 +3874,11 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
     var pCdr = Math.min(90, Math.max(0, (pStats && Number(pStats.cdr)) || 0));
     var baseCd = rawCd * (1 - pCdr / 100);
     var totalCd = Math.max(0.1, Number(baseCd) || 5);
+    if (timer.projected) {
+      isPassiveGroup = timer.mode === 'passive';
+      cost = timer.cost;
+      totalCd = Math.max(0.1, timer.total || 0.1);
+    }
     var cdRatio = clamp(cd / totalCd, 0, 1);
     var cdDeg = cdDegString(cdRatio);
     var cdText = cd > 0 ? (cd >= 10 ? Math.ceil(cd) + 's' : fmt1(cd) + 's') : '';
@@ -3865,8 +3887,7 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       Number.isInteger(battleSnap.rebirthCharges)
       ? battleSnap.rebirthCharges : null;
 
-    /* 個別階可以帶自己的內部冷卻（大地守護【天地共生】），冷卻中改用一般技能的
-       「不可用」呈現。群組冷卻是 0，畫不出有意義的比例，故整圈罩住＋顯示剩餘秒數。 */
+    /* 被動的觸發冷卻與定時施放均使用實際總時長，進度圈不再固定罩住整圈。 */
     var isPassiveOnCd = isPassiveGroup && cd > 0;
     /* 法力不足時被動同樣觸發不了，退回一般技能的無魔呈現——否則畫面會宣稱它隨時生效。 */
     var isPassiveNoMp = isPassiveGroup && cost > 0 && pEnt && pEnt.mp !== undefined && pEnt.mp < cost;
@@ -3877,8 +3898,8 @@ function renderBattleSkillBar(pEnt, snapshotGt) {
       (isActivePassive ? ' active-passive ready' : (isOnCd ? ' on-cd' : '') + (isNoMp ? ' no-mp' : (!isOnCd ? ' ready' : '')));
     var equippedState = {
       kind: 'equipped', index: i, entry: entry, emoji: sk.emoji || '⚔️', lv: lv,
-      rawCdVal: rawCdVal, snapshotGt: snapshotGt, totalCd: totalCd,
-      cdDeg: isActivePassive ? '0deg' : (isPassiveOnCd ? '360deg' : cdDeg),
+      rawCdVal: rawCdVal, snapshotGt: snapshotGt, totalCd: totalCd, paused: timer.paused,
+      cdDeg: isActivePassive ? '0deg' : cdDeg,
       cdText: isActivePassive ? '' : cdText,
       chargeCount: chargeCount,
       isOnCd: isOnCd, isNoMp: isNoMp, isActivePassive: isActivePassive, slotCls: slotCls
@@ -3998,7 +4019,7 @@ function updateBattleSkillBarCds() {
     var totalCd = Number(slot.getAttribute('data-total-cd')) || 5;
     if (snapCd <= 0) continue;
 
-    var cd = uiCountdownRemain(snapCd, snapGt);
+    var cd = slot.getAttribute('data-cd-paused') === 'true' ? snapCd : uiCountdownRemain(snapCd, snapGt);
     var mask = slot.querySelector('.bss-cd-mask');
     var text = slot.querySelector('.bss-cd-text');
 
