@@ -5368,6 +5368,19 @@ function updateInventoryFilterBadge() {
 // 裝備操作列的「卸下」圖示（箭頭離開框線）
 var EQUIP_UNEQUIP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>';
 
+var EQUIP_ACTION_ENTRY_COOLDOWN_MS = 2000;
+
+/* 只在換裝備或操作頁時起算；資料刷新與洗煉屬性選取不延長冷卻。 */
+function syncEquipActionCooldown(it, act) {
+  var cooldown = UI.equipActionCooldown;
+  if (cooldown && cooldown.itemId === it.id && cooldown.act === act) return;
+  UI.equipActionCooldown = {
+    itemId: it.id,
+    act: act,
+    until: (act === 'upgrade' || act === 'reroll-affix') ? uiNowMs() + EQUIP_ACTION_ENTRY_COOLDOWN_MS : 0
+  };
+}
+
 /* 洗煉模式（UI.equipRerollMode）：記著是哪一件裝備、選中第幾條詞條（it.affixes 索引）。
    只對記錄的那一件有效（換選別件就不在洗煉模式）。選中的索引若已不存在或詞條已下架（不渲染），改選第一條有渲染的詞條。 */
 function equipRerollModeFor(it) {
@@ -5518,6 +5531,7 @@ function renderDetail() {
   }
   updateSelectionUI();
   if (!it) {
+    if (!UI.sel) UI.equipActionCooldown = null;
     if (UI.sel && UI.sel.source === 'inv' && UI.sel.id) {
       requestPanelData('inv', true, { detailIds: [UI.sel.id] });
       pane.innerHTML = '<div class="hint">正在載入裝備詳情…</div>';
@@ -5554,6 +5568,7 @@ function renderDetail() {
   var rerollMode = equipRerollModeFor(it);
   var socketMode = !rerollMode && equipSocketModeFor(it);
   var matMode = !rerollMode && UI.equipMatMode && UI.equipMatMode.itemId === it.id ? UI.equipMatMode.mode : null;
+  syncEquipActionCooldown(it, rerollMode ? 'reroll-affix' : (matMode || 'upgrade'));
   var socketHeaderHtml = socketMode ? itemHeaderHTML(it, { justUpgraded: justUpgraded }) : null;
   var socketHolesHtml = socketMode ? itemSocketHTML(it, { selIdx: -1, pending: false }) : null;
   var h = socketMode ? '<div class="equip-socket-header">' + socketHeaderHtml + '</div><div class="equip-socket-page">' + socketHolesHtml + '</div>' : itemDetailHTML(it, null, {
@@ -5827,6 +5842,13 @@ function showFloatingText(btn, text, color) {
 function detailAction(act, actBtn) {
   var it = findSelItem();
   if (!it || act === 'tosynth') return;
+
+  var cooldown = UI.equipActionCooldown;
+  if ((act === 'upgrade' || act === 'reroll-affix') && cooldown &&
+    cooldown.itemId === it.id && cooldown.act === act && uiNowMs() < cooldown.until) {
+    if (actBtn) showFloatingText(actBtn, '冷卻中無法使用', '#fca5a5');
+    return;
+  }
 
   var headerSnapshot = uiHeaderPanelSnapshot();
   var player = headerSnapshot && headerSnapshot.player;
@@ -12851,7 +12873,9 @@ function initUI() {
       }
       /* 初次按「洗煉」只進入模式；再次點擊紅色按鈕走下方 detailAction 執行。
          洗煉模式下按「強化」只切回強化，不直接強化，避免切分頁時誤花資源 */
-      if (act === 'toggle-reroll' || (act === 'upgrade' && (equipRerollModeFor(findSelItem()) || equipSocketModeFor(findSelItem())))) {
+      var actionItem = findSelItem();
+      var actionMatMode = actionItem && UI.equipMatMode && UI.equipMatMode.itemId === actionItem.id;
+      if (act === 'toggle-reroll' || (act === 'upgrade' && (equipRerollModeFor(actionItem) || actionMatMode))) {
         var rrIt = findSelItem();
         if (!rrIt) return;
         if (act === 'upgrade') { UI.equipRerollMode = null; UI.equipMatMode = null; }

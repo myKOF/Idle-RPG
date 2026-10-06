@@ -9169,3 +9169,14 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：隨機Port唯讀HTTP／全新headless Edge Context、安全模式與正式sim.worker.js、新角色BOOT→header面板，HP回復5、MP1.02、面板5/秒與1/秒；主執行緒1e12最大生命仍只回5，提示基礎5點且無百分比；Console error／warning0。新Worker及data／formula／combat／tower／bridge快取請求皆驗證；資料快取最後提高至1.0.57避免與Claude新增詞條門檻1.0.56重複。未使用真人存檔，服務／瀏覽器已關閉。
 - 同時修改／交付：開始乾淨，工作中使用者調整Skills2.xlsx／CSV／js/skills2.js及ground-orbit-ring-wind Preset／layout；保留、未納入本次Commit。提交前再次預檢看到Claude進行中的低等級詞條門檻：data.js第700行新增函式、apply_params第1036行新增表格接線、game_parameters尾端新增第332列，與本次已完成的回復段落不同；未再修改其相關數值或工作簿。整合須保留雙方JS段落與CSV列，Excel須用原生API合併目標儲存格，快取取新值、本紀錄兩篇都留。已有使用者同意共用快取／紀錄分段修改；沒有修改其他副本。
 - Commit為本紀錄所在`[Codex] fix: 改用固定初始生命回復並降低法力基礎回復`提交。無未完成本次需求，既有全庫紅燈與跨副本整合風險已記錄；本次可審查合併，未合併／推送。建議整合者處理上述共檔及Excel目標儲存格後Ctrl+F5驗收；沒有執行長時間真人操作。
+
+## EQUIP-ACTION-COOLDOWN-20261006 — 強化與洗煉切頁防誤觸
+
+- Owner：Codex；Done。使用者要求切入強化／洗煉後2秒內禁止執行，點擊提示「冷卻中無法使用」。單一開發者，依賴既有裝備模式與正式操作入口；本副本乾淨，fetch後四檔及提交前預檢皆無衝突。
+- 範圍：js/ui.js裝備頁切入與detailAction守衛、tests/equip-reroll-ui.test.cjs、index.html僅UI快取、本紀錄；禁止修改消耗／強化洗煉數值、Worker協議／存檔、素材與其他副本。選擇裝備初次顯示強化也視同切入；換屬性／同頁重繪不延長冷卻，切入新的裝備／操作模式重新計時。
+- 驗收：兩模式切入後0～1999ms操作只提示、不送指令／不扣資源，2000ms恢復；快速切頁／重繪／選屬性維持正確時間，鑲嵌與符文／裝備鎖定等不新增冷卻；符文面板按強化先切回不直接消耗。相關回歸、Build與隔離正式頁實點；獨立Commit，使用者後續整合，不合併／推送。
+- 完成：用既有單調uiNowMs記錄裝備ID／目前操作頁／解禁時間，只在換件或換頁時起算；detailAction先攔強化與洗煉，再進資源檢查／sendUiCommand。按鈕保留可點擊以顯示原有浮動提示，pending與無詞條仍沿用既有禁用；同頁反覆操作不延長期限，詳情快照暫缺不重設，取消選取後重選重算。符文／鑲嵌切回強化都先清模式而不送操作。
+- 修改4檔：js/ui.js、index.html僅UI1.0.134→1.0.135、tests/equip-reroll-ui.test.cjs（新增5項、原洗煉案例依新規等待2秒）、本紀錄。未修改但唯讀檢查：協作規範／prompts/codex.md、js/item.js／player.js／gm_exec.js／bridge.js／worker/protocol.js／sim.worker.js／save.js、scripts/sim/engine.js及相關裝備／初始化回歸；無素材改動，不需素材庫Commit。
+- 測試指令：`node --test tests/equip-reroll-ui.test.cjs tests/equip-socket-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/init-ui-smoke.test.cjs tests/upgrade-animation.test.cjs`48/48通過；`npm.cmd run build`463檔檢查；`git diff --check`通過。虛擬單調時鐘驗證0／1999／2000ms、重點不延長、同頁刷新／選屬性、切回三種模式、初次／換件、缺詳情／重選、資源不足優先序、鎖定不受冷卻影響與原pending防連送。
+- 實機：bundled Playwright＋headless Edge，全新Context／隨機本機Port／正式Worker，僅拋棄式引擎裝備與資源，暫停測試角色戰鬥避免掉落干擾。1920×1080與1280×720實點洗煉、強化：冷卻提示正確，受阻時指令數／金幣／材料／強化／詞條全部不變；超時後各送一次且正常扣對應材料。實測有效操作距切入約2044～2052ms（包含等畫面與點擊），精確2000ms界線由單元測試守住。選第2詞條與強制同頁刷新不延長，鑲嵌／符文切回強化各無直接操作且連按被阻擋；Console error／warning0，UI1.0.135。服務／瀏覽器已關閉，未更動正式存檔、素材或建立臨時檔。
+- 交付：Commit為本紀錄所在`[Codex] fix: 強化洗煉切頁加入兩秒防誤觸`提交（由`git log -1 --format=%h -- docs/AI_TASKS.md`取得）；無本次未完成或已知新增風險，可合併，未合併／推送。此為UI防誤操作，不變更Worker指令規則；未做長時間真人操作。下一步使用者整合後重載驗收，初次顯示裝備強化也有2秒保護。
