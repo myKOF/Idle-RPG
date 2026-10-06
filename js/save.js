@@ -384,6 +384,12 @@ function migrateSave(data) {
     data.factory.salvageSlots = clamp(Math.floor(Number(data.factory.salvageSlots) || SALVAGE_SLOT_INITIAL), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
   }
   data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
+  // 符文庫存（2026-10-06 符文之語）：舊存檔由 mergeDefaults 補空表；這裡只做防呆，數量整理成非負整數
+  if (!data.player.runes || typeof data.player.runes !== 'object' || Array.isArray(data.player.runes)) data.player.runes = {};
+  Object.keys(data.player.runes).forEach(function (rk) {
+    var rn = Math.max(0, Math.floor(Number(data.player.runes[rk]) || 0));
+    if (rn > 0) data.player.runes[rk] = rn; else delete data.player.runes[rk];
+  });
   data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
   // 逐件裝備整理：
   // 1) 太古機制改版（2026-07-23）：洗煉不再使用太古精華，載入時清除殘留欄位。
@@ -407,6 +413,16 @@ function migrateSave(data) {
     if (typeof normalizeItemValueSources === 'function') normalizeItemValueSources(it);
     // 雙手改造（2026-08-05）：既有雙手武器補詞條 +1 與鑲孔 ×1.75（冪等，只補不刪）
     if (typeof normalizeTwoHandItemCounts === 'function') normalizeTwoHandItemCounts(it);
+    // 符文孔（js/runeword.js）：整理成「符文 id 或 null」的陣列，超過孔數上限的部分截掉；
+    // 早期版本把符文放在寶石鑲孔（{ rune }），一併搬進符文孔（冪等）
+    if (it.runes !== undefined) {
+      if (!Array.isArray(it.runes)) delete it.runes;
+      else {
+        it.runes = it.runes.slice(0, RUNE_SETTINGS.maxSlots).map(function (r) { return (typeof r === 'string' && RUNE_BY_ID[r]) ? r : null; });
+        if (!it.runes.some(Boolean)) delete it.runes;
+      }
+    }
+    if (typeof rwMigrateSocketRunes === 'function') rwMigrateSocketRunes(it);
   };
   Object.keys(data.equipment || {}).forEach(function (slot) { fixLoadedItem(data.equipment[slot], slot); });
   Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
@@ -1190,8 +1206,8 @@ function applyOfflineProgress(options) {
         sum.gems[glv + 1] = (sum.gems[glv + 1] || 0) + 1;
       }
     }
-    // 附魔書（階段 8+）
-    if (stage >= 8 || zoneDrop.bookRate !== undefined) {
+    // 附魔書（階段 8+；附魔功能關閉時不掉）
+    if (ENCHANT_ENABLED && (stage >= 8 || zoneDrop.bookRate !== undefined)) {
       var bookN = rollDropCount(bookRate);
       for (var bi = 0; bi < bookN; bi++) {
         G.player.books[pick(Object.keys(ENCHANTS))]++;

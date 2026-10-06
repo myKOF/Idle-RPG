@@ -16,7 +16,7 @@ function mount() {
   const c = { console, document: { addEventListener() {}, querySelectorAll() { return []; }, getElementById(id) { return elements[id] || null; } } };
   c.window = c;
   vm.createContext(c);
-  ['util', 'data', 'status', 'formula', 'item', 'ui'].forEach((name) => {
+  ['util', 'data', 'runeword_data', 'status', 'formula', 'item', 'runeword', 'ui'].forEach((name) => {
     vm.runInContext(fs.readFileSync(path.join(root, 'js', name + '.js'), 'utf8'), c, { filename: name + '.js' });
   });
   c.it = { id: 'gear', name: '測試劍', slot: 'weapon', rarity: 5, level: 50, affixes: [
@@ -87,15 +87,16 @@ test('首次進入與選取不送洗煉指令，下方按鈕洗當前詞條且�
   assert.equal(c.commands[1].args.affixKey, 'vit');
 });
 
-test('切回強化只退出模式，切換附魔恢復完整詳情', () => {
-  for (const action of ['upgrade', 'toggle-enchant']) {
+test('切回強化只退出模式，切換符文恢復完整詳情', () => {
+  for (const action of ['upgrade', 'toggle-rune']) {
     const c = mount();
     c.click('toggle-reroll');
     c.click(action);
     assert.equal(c.UI.equipRerollMode, null);
     assert.equal(c.commands.length, 0);
     assert.match(c.elements['detail-pane'].innerHTML, /it-sockets/);
-    assert.match(c.elements['detail-pane'].innerHTML, /it-enchant/);
+    assert.match(c.elements['detail-pane'].innerHTML, /it-runes/);
+    assert.doesNotMatch(c.elements['detail-pane'].innerHTML, /it-enchant/, '附魔功能已關閉');
     assert.doesNotMatch(c.elements['detail-pane'].innerHTML, /is-reroll-mode/);
     assert.match(c.elements['equip-action-bar'].innerHTML, /data-act="toggle-reroll"/);
   }

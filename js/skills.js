@@ -445,7 +445,7 @@ function pickAndCastSkill(pEnt, target, floatSel, opts) {
         ? target.some(function (ent) { return ent && ent.hp > 0 && sgCanReach(ent); })
         : sgCanReach(target);
       if (!sgReachable && !(typeof skills2DefensivePrecast === 'function' && skills2DefensivePrecast(sgId))) continue;
-      if (pEnt.mp < skills2ManaCost(sgId) &&
+      if (pEnt.mp < skills2ManaCost(sgId) * ((typeof rwManaCostFactor === 'function') ? rwManaCostFactor() : 1) &&
           !(typeof gmMpLockActive === 'function' && gmMpLockActive(pEnt))) continue;
       return beginSkillCast({
         kind: 'skill2', pEnt: pEnt, target: target, skillId: sgId,

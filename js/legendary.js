@@ -22,6 +22,7 @@ function resetLegendaryRT() {
     lightShieldUntil: 0,
     lightShieldGranted: 0
   };
+  if (typeof rwResetRT === 'function') rwResetRT();   // 符文之語的戰鬥期狀態一併重置（js/runeword.js）
 }
 resetLegendaryRT();
 
@@ -144,6 +145,7 @@ function legendaryAttackSpeedMultiplier(pEnt, st) {
   if (legendaryHas(st, 'berserkBloodAxe') && rt.berserkUntil > GT) {
     mult *= 1 + rt.berserkStacks * legendaryFx('berserkBloodAxe').onKillBuff.aspdPct / 100;
   }
+  if (typeof rwAttackSpeedMultiplier === 'function') mult *= rwAttackSpeedMultiplier(); // 符文之語（js/runeword.js）
   return mult;
 }
 
@@ -211,6 +213,8 @@ function legendaryOutgoingDamageMultiplier(attacker, defender, aCfg) {
   if (legendaryHas(st, 'berserkBloodAxe') && rt.berserkUntil > GT) {
     mult *= 1 + rt.berserkStacks * legendaryFx('berserkBloodAxe').onKillBuff.atkPct / 100;
   }
+  // 符文之語的條件式增傷（js/runeword.js）：與傳奇特效同一個乘區入口
+  if (typeof rwOutgoingMultiplier === 'function') mult *= rwOutgoingMultiplier(attacker, defender, aCfg);
   return mult;
 }
 
@@ -389,6 +393,8 @@ function legendaryApplyLowLifeShield(pEnt, st, floatSel) {
 
 function legendaryOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, floatSel) {
   if (!pEnt || typeof getStats !== 'function') return;
+  // 符文之語的受擊／格擋／低血量觸發（js/runeword.js）
+  if (typeof rwOnPlayerDamaged === 'function') rwOnPlayerDamaged(attacker, pEnt, hpDamage, blocked, hitResult, floatSel);
   var st = getStats();
   var enemies = legendaryActiveEnemies();
   var enemyFloatSel = legendaryEnemyFloatSel(floatSel);
@@ -677,5 +683,6 @@ function tickLegendaryEffects(dt, ctx) {
   if (legendaryHas(st, 'shadowTracker')) legendaryTickKnives(ctx, pEnt, st);
   if (legendaryHas(st, 'ghostLamp')) legendaryTickDolls(ctx, pEnt, st);
   legendaryApplyLowLifeShield(pEnt, st, ctx.floatSel === 'tb-float' ? 'tp-float' : 'pv-float');
+  if (typeof rwTick === 'function') rwTick(dt, ctx); // 符文之語：週期觸發、生命祭獻（js/runeword.js）
   return { playerKilled: pEnt.hp <= 0 };
 }

@@ -708,6 +708,30 @@
       addGem(type, level, count);
       return { ok: true, message: '增加 ' + gemLabel(type, level) + ' x' + (typeof fmt === 'function' ? fmt(count) : count) };
     }
+    if (command === 'rune') {
+      // rune <符文id|all> [數量]：r01～r33；all＝每種各給 N 顆
+      var runeKey = String(args[0] || '').toLowerCase();
+      count = gmNumber(args[1] === undefined ? '1' : args[1], 1, 1e9);
+      if (count === null) return { ok: false, message: '格式：rune 符文id(r01~r33|all) 數量' };
+      if (runeKey === 'all') {
+        RUNES.forEach(function (r) { addRune(r.id, count); });
+        return { ok: true, message: '全部 ' + RUNES.length + ' 種符文各 +' + count };
+      }
+      if (!RUNE_BY_ID[runeKey]) return { ok: false, message: '格式：rune 符文id(r01~r33|all) 數量' };
+      addRune(runeKey, count);
+      return { ok: true, message: '增加 ' + runeLabel(runeKey) + ' x' + count };
+    }
+    if (command === 'runeword') {
+      // runeword <符文之語id|list>：把該組配方的符文放進庫存（拿去鑲嵌即成形）
+      var wordKey = String(args[0] || '');
+      if (wordKey === 'list' || !wordKey) {
+        return { ok: true, message: RUNEWORDS.map(function (w) { return w.id + '（' + w.name + '）'; }).join('、') };
+      }
+      var wd = RUNEWORD_BY_ID[wordKey];
+      if (!wd) return { ok: false, message: '找不到符文之語：' + wordKey + '（runeword list 可列出全部）' };
+      wd.runes.forEach(function (rid) { addRune(rid, 1); });
+      return { ok: true, message: '已給【' + wd.name + '】配方符文：' + rwRecipeText(wd) };
+    }
     if (command === 'book') {
       key = String(args[0] || '').toLowerCase();
       count = gmNumber(args[1], 1, 1e300);

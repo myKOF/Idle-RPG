@@ -1,5 +1,27 @@
 # AI_TASKS.md
 
+## Claude｜符文取代附魔、符文最多 4 孔、Runes 配置表（RUNES-TABLE-20261007）
+
+- Owner：Claude；Done（仍在獨立分支 `ai/claude-runeword`，**尚未合併**）。使用者追加：符文之語是用來取代現有附魔的——①把附魔關閉（不刪），符文取代附魔在裝備上的顯示與鑲嵌位置 ②符文最多 4 孔，全部符文之語的強度與組成數量重新調整 ③全部符文能力、符文之語組合與數值建成配置表 runes。
+- 需求分析：附魔與符文都是「裝備上的額外欄位」，若並存會有兩套欄位、兩個按鈕；取代才符合原意。難度原本靠「孔數 5～6」撐，上限改 4 之後必須重新找難度來源。
+- 技術決策：①附魔用單一開關 `ENCHANT_ENABLED=false` 關閉（`itemEnchants` 回 []、`enchantCapFor` 回 0、`manualEnchant` 拒絕、不掉書），裝備上 `it.enchants` 與 `books` 原樣保留，改回 true 即恢復；`ENCHANTS` 同時是元素定義表，不能刪。②符文改鑲專屬符文孔 `it.runes`（0～4 孔依稀有度，雙手不加），不再佔寶石鑲孔；v45 共用鑲孔的符文讀檔時搬進符文孔。③**重做取得難度**：量測發現舊模型（掉落階數從解鎖上限往下遞減）讓終局最高階最常掉，配方幾秒湊齊；拆解 1→2 還會把一顆高階符文拆成指數倍低階符文。改為階越高越稀有（`P(t)∝0.74^(t-1)`，上限由進度解鎖）、拆解 1→1，配方難度只看最高階那顆（T1 ≤10、T2 11–16、T3 17–23、T4 24–33，強的配方放較高階）；`drop.basePct` 1.2→0.3。④強度：第 3、4 級由 5～6 顆減為 4 顆；探針抓到第 4 級離群後下修雷帝（×15→×9.8）、萬軍（×11→×7.8）、屠龍者、群獵。⑤配置表 `Runes`：一張表三種列（設定／符文／符文之語），`config_tables.cjs` 第九表整塊重建 `RUNE_SETTINGS`／`RUNES`／`RUNEWORDS` 並全檢查；xlsx 不由 `--gen` 手拼（AI_RULES 8.5），新建走新腳本 `tools/excel-create-table.ps1`（Excel COM，重開驗證兩次）。
+- 修改：js/data.js（`ENCHANT_ENABLED`、TASKS）、runeword_data.js（`RUNE_SETTINGS`、`RW_PASSIVE_KEYS`、全部配方）、runeword.js（符文孔、`rollRuneTier`、`rwMigrateSocketRunes`）、item.js（`itemRuneHTML`、附魔守衛）、ui.js（「符文」按鈕與面板、角標、附魔顯示隱藏）、ui-runeword.js、formula.js、combat.js、tower.js、save.js、factory.js、forge.js、tasks.js、player.js、worker/protocol.js（**v45 → v46**，+`rune.unsocket`，共 93 指令）、sim.worker.js、bridge.js、index.html、css/runeword.css；新增 config/Excel/Runes.xlsx、config/CSV/Runes.csv、tools/excel-create-table.ps1、tools/rw_econ_probe.cjs、tests/config-runes-table.test.cjs；Task.xlsx／Task.csv 第 10 號任務改為「在裝備上鑲嵌符文 2 次」（餘燼符文 ×3）；docs/RUNEWORD_DESIGN.md、docs/WORKER_PROTOCOL.md、GM_command.md、tools/參數表使用說明.md。
+- 預檢：`.claude/check-conflicts.ps1` 對 js/item.js、ui.js、formula.js、data.js、factory.js、save.js、index.html、config/Excel/Task.xlsx 等退出碼 0（無衝突來源）。
+- 測試：全庫 3924 項／235 失敗，基線 237 失敗；**失敗名稱差集：本分支沒有任何新增失敗**（基線獨有的 2 條為環境相關的參數表重建與雙刀飄字測試）；新增／改寫 runeword 資料、引擎（40）、UI、配置表（9）、裝備頁符文面板測試；保留下來的附魔測試改在打開 `ENCHANT_ENABLED` 的環境驗證（證明程式還在）；`node tools/build_check.cjs` 462 檔通過；`apply_params` 537 項一致、錨點 489 擾動皆命中一次；`config_tables --apply` 語意變更 0。實機（Browser 窗格，本機測試服）：裝備頁只有「符文」按鈕、詳情「符文孔 n／N」接在原附魔位置、符文面板高階在前、點符文鑲入 → 霜語成形並寫戰報、點已鑲符文取下、鑲嵌模式只剩寶石、重新整理後符文保留、背包格角標、任務快捷列顯示新任務、符文頁說明文字隨設定變；Console 無錯誤。
+- 風險／平衡：①取得難度小時數是估算（每小時 3000 次擊殺、掉寶 ×2；`node tools/rw_econ_probe.cjs`）：T1 ≲2h、T2 2–8h、T3 10–50h、T4 30–150h，內測請用 `drop.basePct` 整體校準。②降階頂替要一階一階拆（刻意，避免一步變出任意符文）。③**Runes.xlsx 由 Excel COM 建立並以正常模式重開驗證兩次，但尚未由人工在 Excel 介面開啟確認「沒有修復提示」**（AI_RULES 8.5）。④附魔精華仍用於洗煉，名稱沿用「附魔精華」。⑤既有的借用傳奇特效需配戴對應技能、無專屬 VFX、高塔沒有 kill 觸發等限制不變。
+- 建議驗證（Antigravity）：見 `docs/RUNEWORD_DESIGN.md` 第 8 節（符文面板、附魔已關閉的各處、成形判定、舊存檔搬移、掉落與合成、任務 10、Excel 開啟與改一格套用、故意打錯會整次中止）。
+
+## Claude｜符文之語系統（RUNEWORD-20261006）
+
+- Owner：Claude；Done（在獨立分支 `ai/claude-runeword`，由 `ai/claude` 分出，**尚未合併**——使用者要求確認後才合併進當前分支）。使用者要求：參考暗黑破壞神 2 的符文之語，設計至少 40 種組合（能力、屬性加成、特殊威能，甚至打破現有技能框架），比例要平均分配（普通／強／非常強／極度特殊），授權全權設計並實作，可多設計幾個讓使用者篩選。
+- 需求分析：現有成長線全是數值疊加，缺一條「配方式終局目標」。設計成：符文（33 種、獨立素材）鑲進既有鑲孔，依序排出指定配方＋裝備類型符合 → 成形。**成形是當場判定的衍生狀態，不存檔**（拆一顆就失效），因此沒有遷移問題；存檔只新增 `player.runes`（mergeDefaults 補空表）。
+- 設計：56 組（普通／強力／非常強力／極度特殊各 14）；屬性與詞條同源（affixBaseValue × mult，隨裝備等級／稀有度／強化成長；雙手武器不吃詞條 ×2，已靠 ×1.75 鑲孔數補償），機制數字為固定值；平衡以 `tools/rw_dps_probe.cjs` 探針校準過一輪（結果見設計文件第 3 節）。機制由「靜態 fx ＋ 事件觸發 procs（hit／crit／kill／hurt／block／cast／tick／lowhp × 16 種動作）＋借用既有傳奇特效＋併入既有被動」組成。打破技能框架的手法：冷卻／攻速乘算突破上限、普攻引發免費技能、技能免費重施放、借用傳奇特效（不受武器類型限制）、死亡復活、單次受傷上限、條件式增傷、代價（最大生命乘區、每秒自損、傷害折減）。完整總表見 `docs/RUNEWORD_DESIGN.md`（由 `tools/gen_runeword_doc.cjs` 從資料表產生）。
+- 修改：新增 js/runeword_data.js、js/runeword.js、js/ui-runeword.js、css/runeword.css、tools/gen_runeword_doc.cjs、docs/RUNEWORD_DESIGN.md、tests/{runeword-data,runeword-engine,runeword-ui}.test.cjs、tests/helpers/runeword-env.cjs；修改 js/formula.js（computeStats 聚合、resolveHit 單次傷害上限、itemScore、生命%下限）、legendary.js、combat.js、tower.js、skills.js、skills2.js、item.js、factory.js、forge.js、player.js、save.js、gm_exec.js、js/worker/protocol.js（**v44 → v45**，+4 指令 rune.*）、sim.worker.js、bridge.js、index.html（符文分頁、快取版號）、GM_command.md、docs/WORKER_PROTOCOL.md、tests/worker-protocol.test.cjs。
+- 預檢：`.claude/check-conflicts.ps1` 對 17 支既有檔案退出碼 0（無衝突來源）。
+- 測試：新增 105 項（資料完整性 8、執行層 36、UI 5、56 組逐一煙霧 56）全過；全庫 3896 項／235 失敗，基線（ai/claude HEAD 乾淨副本）3791 項／237 失敗，**失敗名稱差集：本分支沒有任何新增失敗**（基線獨有的 2 條為環境相關的參數表重建與雙刀飄字測試）；`npm run build` 456 檔通過。實機（Browser 窗格，本機測試服）：符文頁兩個工具頁渲染；裝備頁鑲嵌模式點符文 → Worker 鑲入 → 蛇吻成形並顯示橫幅；蛇吻中毒觸發、閃擊「普攻每 6 下免費施放突刺」實測生效；符文掉落出現在戰利品；重新整理後符文庫存與鑲孔保留；Console 無錯誤。
+- 風險／平衡：①未經模擬器校準，建議內測先看 `RW_STAT_SCALE`；可能偏強的候選：武庫、閃擊、時之沙、孤狼、屠龍者、創世紀、天啟。②借用傳奇特效需裝配對應技能才有感。③無專屬 VFX（沿用浮字與狀態圖示）。④掉落常數 `RUNE_DROP` 尚未接進 Excel 參數表。⑤技能列法力顯示為基礎值。⑥高塔沒有 kill 觸發；離線收益不掉符文。
+- 建議驗證（Antigravity）：見 `docs/RUNEWORD_DESIGN.md` 第 8 節（鑲嵌流程、成形判定、存檔相容、八種觸發、輪迴復活、掉落與合成、UI）。
+
 ## THRUST-CARDINAL-PHANTOM-20261005 — 四方突刺與幻影八方向
 
 - Owner：Codex；Done。使用者要求八方連刺改名四方突刺，僅上下左右；幻影八方陣同時八向突刺，保留命中全額擴散與施放後絕對閃避。後續要求包含使用者修改一起Commit。

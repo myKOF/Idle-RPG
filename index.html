@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.58">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.3">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.6">
+  <link rel="stylesheet" href="css/runeword.css?v=1.0.1">
 </head>
 
 <body>
@@ -86,6 +87,7 @@
         <button class="tab-btn" data-tab="skills"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l2.4 5.6L20 9.5l-4.3 3.9 1.2 6L12 16.6l-4.9 2.8 1.2-6L4 9.5l5.6-.9z"></path></svg></span>技能</button>
         <button class="tab-btn" data-tab="newforge"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"></path></svg></span>熔爐</button>
         <button class="tab-btn" data-tab="gems"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h12l3 5-9 11L3 9zM3 9h18M9 4 7.5 9 12 20l4.5-11L15 4"></path></svg></span>寶石</button>
+        <button class="tab-btn" data-tab="runes"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M12 3l-6 5 6 4 6-4zM12 12l-6 4 6 5 6-5z"></path></svg></span>符文</button>
         <button class="tab-btn" data-tab="tower"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 21V9L5 7V3h3v2h2V3h4v2h2V3h3v4l-2 2v12zM10 21v-4a2 2 0 0 1 4 0v4"></path></svg></span>封魔塔</button>
         <button class="tab-btn" data-tab="talents"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v5M12 11l-5 6M12 11l5 6M10 4a2 2 0 1 0 4 0 2 2 0 1 0-4 0M5 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0M15 19a2 2 0 1 0 4 0 2 2 0 1 0-4 0"></path></svg></span>威能</button>
         <button class="tab-btn" data-tab="forge" style="display:none"><span class="af-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 20 17H4zM12 21 4 7h16z"></path></svg></span>神鑄<span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
@@ -457,6 +459,34 @@
           </div>
         </section>
 
+        <!-- ============ 符文（符文之語；js/ui-runeword.js）============ -->
+        <section id="tab-runes" class="tab" data-rune-tool="library">
+          <div class="pg-top">
+            <h2 class="pg-title">符文之語</h2>
+            <span class="pg-pill">持有 <b id="rune-total">0</b> 顆符文</span>
+            <span class="pg-pill">穿戴中成形 <b id="rune-worn">0</b> 組</span>
+            <button type="button" class="pg-help" aria-label="符文之語說明" data-tt-title="符文之語" data-tt-desc="符文鑲在裝備專屬的符文孔裡（取代原本的附魔位置，與寶石鑲孔分開）。在裝備頁按「符文」鑲入；把指定的符文依指定順序鑲進連續的符文孔，且裝備類型符合，就會成形為符文之語。">?</button>
+          </div>
+          <div class="rx-tabs" role="tablist" aria-label="符文工坊">
+            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="library">符文庫</button>
+            <button type="button" role="tab" class="rx-tab" data-rune-tool-btn="codex">符文之語圖鑑</button>
+          </div>
+          <div class="rx-panel" data-rune-panel="library">
+            <div class="rx-lib">
+              <div id="rune-grid" class="rx-grid"></div>
+              <div id="rune-focus" class="rx-focus"></div>
+            </div>
+          </div>
+          <div class="rx-panel" data-rune-panel="codex">
+            <div class="rx-filter">
+              <div id="rune-tier-filter" class="gx-chips"></div>
+              <label class="gx-owned"><input type="checkbox" id="rune-ready-only"> 只看材料齊全／已成形</label>
+              <span id="rune-codex-count" class="dim-text"></span>
+            </div>
+            <div id="runeword-list" class="rx-list"></div>
+          </div>
+        </section>
+
         <!-- ============ 技能 ============ -->
         <section id="tab-skills" class="tab">
           <div class="sgb-top">
@@ -581,14 +611,14 @@
                 10 隻怪（第 10 隻為菁英）後推進，死亡會退回上一階段。</p>
               <p><b>🎒 裝備：</b>13 欄位（武器 x2、戒指 x2、頭盔、肩甲、胸甲、腰帶、護手、手腕、護腿、靴子、項鍊）。品質 9
                 階：普通（灰）→精良（綠）→稀有（藍）→獨特（紫）→史詩（金）→傳說（橘）→神話（紅）→創世（暗金）→神鑄創世（耀金，僅能鑄造取得）；品質決定詞條數（1~7，「詞條上限率」影響洗煉數值偏向
-                +1）、寶石鑲孔（1~6）與附魔欄位（1~3）。神話 25
+                +1）、寶石鑲孔（1~6）與符文孔（1~4）。神話 25
                 階起、創世 40 階起掉落。傳說級以上附帶傳奇特效；附有武器類型限制的特效只會出現在對應武器上。武器/戒指優先裝入空欄、再替換較弱者。</p>
               <p><b>🔯 神鑄：</b>角色達 2000 級且 1 轉後開放。將 6 件相同品質（傳說/神話/創世）的裝備放入六芒星法陣，消耗金幣鑄造下一品質裝備；失敗隨機消耗 3 件、其餘退回。角尖符位可放💫魔塵（每個
                 +5% 成功率，等級 150+ 敵人與封魔塔 BOSS 掉落；神鑄失敗額外獲得 1 個魔塵）。6 件創世鑄造成功可得「神鑄創世」：屬性上限 1.5 倍、必帶 2 條專屬特效（龍血/神力/天罰/不朽…共 12
                 種），無法再入爐。</p>
               <p><b>🏭 熔爐：</b>掉落裝備自動進入熔爐佇列，依各熔爐勾選的品質送入傳送帶拆解（未勾選＝保留入包）。拆解依裝備品質與零件加成產出碎片、金幣與附魔精華，不會產出寶石。熔爐數量與轉生連動（0 轉 2 座、每轉 +1、上限 12），每爐零件格可用金幣解鎖至 8 格。</p>
-              <p><b>✨ 附魔：</b>攻擊類六元素（🔥高傷、❄️減速、⚡連鎖、🧪中毒、🌟淨化、🌑汲取）、防禦類（六元素抗性/控制抵抗）、功能類（掉寶/疾行）。在「裝備」分頁點選裝備 → 點附魔書即可附魔（消耗 1
-                書＋精華），點擊既有附魔可取下（返還書）。附魔欄位數依品質 1~3 欄；混合合成仍會自動賦予附魔。</p>
+              <p><b>🔷 符文：</b>符文取代了原本的附魔（附魔功能已關閉）。符文從野外擊殺與封魔塔通關掉落，同種數顆可合成為下一階。在「裝備」分頁點選裝備 → 按「符文」→ 點符文即可鑲入符文孔（最多 4 孔，孔數依品質），點擊已鑲的符文可取下。
+                把指定的符文依指定順序鑲滿，且裝備類型符合，就會成形為「符文之語」，獲得額外屬性與特殊威能。配方與效果見「符文」分頁的圖鑑。</p>
               <p><b>🧠 技能：</b>54 個技能以五系技能樹呈現（每階需在該系投入點數解鎖）。每升 1 級獲得 1 技能點，技能上限 Lv.10 — 前期升級加基礎數值，Lv.4 解鎖附加狀態、Lv.8
                 強化該狀態。裝載欄初始 2 格，每 20 級再 +1 格，最多 20 格；戰鬥中依順序自動施放；治療/護盾類會等血量偏低才施放；被動學會即永久生效。</p>
               <p><b>⚗️ 技能融合：</b>放入 2~4
@@ -888,9 +918,10 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.3"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=1.0.59"></script>
+  <script src="js/data.js?v=1.0.61"></script>
   <script src="js/status.js?v=1.0.30"></script>
-  <script src="js/formula.js?v=1.0.45"></script>
+  <script src="js/runeword_data.js?v=1.0.4"></script>
+  <script src="js/formula.js?v=1.0.47"></script>
   <script src="js/battlefield.js?v=1.4.3"></script>
   <script src="js/vfx.js?v=1.0.79"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
@@ -913,17 +944,19 @@
   <script src="js/battle-arena.js?v=1.0.2"></script>
   <script src="js/battle-renderer.js?v=1.6.173"></script>
   <script src="js/stats.js?v=1.0.3"></script>
-  <script src="js/item.js?v=1.0.11"></script>
-  <script src="js/skills.js?v=1.0.40"></script>
+  <script src="js/item.js?v=1.0.13"></script>
+  <script src="js/runeword.js?v=1.0.2"></script>
+  <script src="js/skills.js?v=1.0.41"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=1.0.283"></script>
+  <script src="js/skills2.js?v=1.0.284"></script>
   <script src="js/talents.js?v=1.0.4"></script>
-  <script src="js/player.js?v=1.0.9"></script>
-  <script src="js/combat.js?v=1.0.69"></script>
+  <script src="js/player.js?v=1.0.11"></script>
+  <script src="js/combat.js?v=1.0.71"></script>
   <script src="js/potential.js?v=1.0.9"></script>
-  <script src="js/tower.js?v=1.0.20"></script>
-  <script src="js/save.js?v=1.0.10"></script>
-  <script src="js/ui.js?v=1.0.132"></script>
+  <script src="js/tower.js?v=1.0.22"></script>
+  <script src="js/save.js?v=1.0.12"></script>
+  <script src="js/ui.js?v=1.0.133"></script>
+  <script src="js/ui-runeword.js?v=1.0.2"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
   <script src="js/gm.js?v=1.0.1"></script>
@@ -931,12 +964,12 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.2"></script>
   <!-- 模擬 Worker 的協議與橋接。bridge.js 於 DOMContentLoaded 開機 -->
-  <script src="js/worker/protocol.js?v=45"></script>
+  <script src="js/worker/protocol.js?v=46"></script>
   <script src="js/storage.js"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/bridge.js?v=1.0.223"></script>
+  <script src="js/bridge.js?v=1.0.227"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
