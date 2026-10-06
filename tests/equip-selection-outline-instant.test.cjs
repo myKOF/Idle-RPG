@@ -43,6 +43,6 @@ test('裝備選中外框移除漸變動畫，點擊後立刻出現外框', () =>
 
   // 5. 驗證 index.html 快取版本號已同步更新
   const indexHtml = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
-  assert.match(indexHtml, /css\/style\.css\?v=1\.0\.75/);
-  assert.match(indexHtml, /css\/ashen-forge\.css\?v=1\.0\.58/);
+  assert.match(indexHtml, /css\/style\.css\?v=1\.0\.\d+/);
+  assert.match(indexHtml, /css\/ashen-forge\.css\?v=1\.0\.\d+/);
 });

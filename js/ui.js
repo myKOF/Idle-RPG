@@ -8962,8 +8962,9 @@ function sgbListItemHTML(gid, skillsSnapshot, loadout, selected) {
   if (sgbHasUlt(gid)) pips += '<span class="sgb-pip-ult' + (t.pick ? ' is-on' : '') + '"></span>';
   var tag = groupLocked
     ? (g.tiers[0].unlock ? esc(sgUnlockText(g.tiers[0].unlock)) + '解鎖' : '未解鎖')
-    : (equipped ? '已裝上' : '');
+    : (equipped ? '已裝配' : '');
   return '<button type="button" class="sgb-item' + (selected ? ' is-sel' : '') + (groupLocked ? ' is-locked' : '') +
+    (equipped && !groupLocked ? ' is-eq' : '') +
     '" data-sgb-group="' + gid + '" aria-pressed="' + selected + '" style="--elem:' + color + '">' +
     '<span class="sgb-item-icon" aria-hidden="true">' + skillIconHTML(gid, g.emoji) + '</span>' +
     '<span class="sgb-item-main">' +
@@ -9144,7 +9145,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   var equipPendingAttrs = pendingUiButtonAttributes(nodePendingKey('skill:' + ref));
   var equipBtn;
   if (inLoadout) {
-    equipBtn = '<button class="btn sgb-btn-quiet" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>已裝上 · 卸下</button>';
+    equipBtn = '<button class="btn sgb-btn-quiet" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>卸下</button>';
   } else if (t.total > 0) {
     equipBtn = '<button class="btn sgb-btn-primary" data-skill-equip="' + ref + '"' + equipPendingAttrs +
       (isPassiveGroup ? ' data-tip="裝配後被動效果才會生效">裝上技能列（啟用被動）' : '>裝上技能列') + '</button>';
