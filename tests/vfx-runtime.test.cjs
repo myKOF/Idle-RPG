@@ -411,6 +411,32 @@ const ENT = {
   'pv-float': { x: 0, y: 0 }
 };
 
+test('WIND-CHASER 追加斬擊與受擊特效逐敵人播放，保留配置尺寸及事件方向', () => {
+  for (const attackId of ['slash-wind-crescent', 'configured-chaser-slash', 'burst-vacuum-shockwave']) {
+    const attack = unitPreset(attackId), hit = unitPreset('configured-chaser-hit');
+    attack.sizing = { shape: 'custom', widthM: 6, heightM: 6, authored: { width: 120, height: 120 } };
+    const { adapter, log } = makeAdapter([attack, hit], { profile: { scale: .3, areaScale: .3 } });
+    assert.equal(adapter.tryPlay({ fxKind: 'slash', variant: 'wind-chaser-slash',
+      targets: ['mv-float-1', 'mv-float-2'], angle: .8,
+      vfx: { attack: attackId, hit: hit.id } }), true);
+    adapter.update(.01);
+    for (const preset of [attack, hit]) {
+      const nodes = log.nodes.filter(n => n.spec.assetUrl.endsWith(preset.id + '.png'));
+      assert.equal(nodes.length, 2, preset.id);
+      assert.deepEqual(nodes.map(n => ({ x: n.transforms.at(-1).x, y: n.transforms.at(-1).y })),
+        [ENT['mv-float-1'], ENT['mv-float-2']]);
+      for (const node of nodes) {
+        const transform = node.transforms.at(-1);
+        if (preset === attack) {
+          assert.equal(transform.scaleX, 1);
+          assert.equal(transform.scaleY, 1);
+          assert.equal(transform.rotation, .8);
+        }
+      }
+    }
+  }
+});
+
 test('THUNDER-FLASH 光束原點、100×10米矩形與方向取自事件，伸展時間同步且不受場景倍率改變',()=>{
  const p=unitPreset('configured-flash',.28);
  p.sizing={shape:'custom',widthM:30,heightM:10,authored:{width:300,height:100}};

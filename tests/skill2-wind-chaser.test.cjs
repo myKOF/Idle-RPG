@@ -85,7 +85,7 @@ test('逐風者成功只造成一道風系傷害，沿用物攻並計入來源�
   assert.equal(f.records[0][2], 'skill2:cleave');
   assert.equal(f.records[0][4], '逐風者真空斬');
   assert.deepEqual(f.events[0].vfx, { attack: 'slash-wind-crescent', hit: 'hit-wind' });
-  assert.equal(f.events[0].variant, 'wind-slash');
+  assert.equal(f.events[0].variant, 'wind-chaser-slash');
   assert.equal(f.events[0].count, 1);
   assert.equal(f.events[0].angle, 0);
   assert.deepEqual(f.events[0].targets, ['目標']);
@@ -154,7 +154,33 @@ test('逐風者正式施放、無座標高塔與非飛行刀波都接命中掛�
     [f.enemy], f.enemy, 'mv-float', f.out);
   advance(f);
   assert.equal(f.hits.length, 2);
-  assert.equal(f.events.filter(e => e.variant === 'wind-slash').length, 1);
+  assert.equal(f.events.filter(e => e.variant === 'wind-chaser-slash').length, 1);
+});
+
+test('逐風者直接與飛行刀波對多個敵人各派送追加斬擊，不綁當前目標', () => {
+  for (const flying of [false, true]) {
+    const f = fixture();
+    f.p.pos = { x: 0, y: 0 };
+    const enemies = [f.enemy,
+      { ...f.enemy, name: '側面敵人', pos: { x: 0, y: 30 } },
+      { ...f.enemy, name: '後方敵人', pos: { x: -40, y: 0 } }];
+    f.ctx.getEnemies = () => enemies;
+    f.c.sgCastCleave(f.p, f.st, f.c.SKILLS2.cleave, [1, 0, 0, 0, 0, flying ? 1 : 0, 0],
+      enemies, f.enemy, 'mv-float', f.out);
+    advance(f);
+    const windHits = f.hits.filter(h => h.cfg.skillElem === 'wind');
+    const slashes = f.events.filter(e => e.variant === 'wind-chaser-slash');
+    assert.equal(windHits.length, 3, `飛行=${flying}：每個敵人只追加一次`);
+    assert.deepEqual(slashes.map(e => e.targets[0]).sort(), windHits.map(h => h.target.name).sort());
+    for (const enemy of enemies) {
+      const event = slashes.find(e => e.targets[0] === enemy.name);
+      assert.ok(event, enemy.name);
+      assert.equal(event.count, 1);
+      assert.equal(event.area, null);
+      assert.equal(event.angle, Math.atan2(enemy.pos.y, enemy.pos.x));
+      assert.deepEqual(event.vfx, { attack: 'slash-wind-crescent', hit: 'hit-wind' });
+    }
+  }
 });
 
 test('疾風傳奇風捲殘雲仍保留龍捲場域，不混入逐風者真空斬特效', () => {
@@ -166,5 +192,5 @@ test('疾風傳奇風捲殘雲仍保留龍捲場域，不混入逐風者真空�
   const tornado = f.events.filter(e => e.variant === 'wind-tornado');
   assert.ok(tornado.length > 0);
   assert.deepEqual(tornado[0].vfx, { ground: 'slash-cleave-ring-warm-09-hit' });
-  assert.equal(f.events.some(e => e.variant === 'wind-slash'), false);
+  assert.equal(f.events.some(e => e.variant === 'wind-chaser-slash'), false);
 });

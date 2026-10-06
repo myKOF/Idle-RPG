@@ -10,6 +10,18 @@
 - 回歸：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs`49/49通過；另`tests/vfx-editor-cache-versions.test.cjs`2/3，CV-1既有Pixi backend主頁20261006-alpha-cull／Editor20260930-bend-strength不一致。以HEAD兩頁唯讀替換重跑，CV-1同樣失敗且基準另有既有Runtime版號差異；未修改其他任務的快取或測試接受現況。首輪基準檔案攔截範圍過寬導致假CV-2失敗，改精確兩條完整路徑後消失。`npm.cmd run build`466檔通過，`git diff --check`通過。
 - 交付：Commit為本紀錄所在`[Codex] fix: 菁英光暈重疊不再累積亮度`提交。無未完成本次需求，可審查合併，未合併／推送；逐風者與使用者素材等未提交內容保留。已知表現差異：max也與背景取較亮通道，外圈比add收斂，不會因敵人數量而加亮；未做長時間真人密集戰鬥。下一步使用者重整遊戲驗收並整合，既有Editor快取差異交由原任務處理。
 
+## WIND-CHASER-TARGET-VFX-20261006 — 逐風者追加斬擊逐敵人播放
+
+- Owner：Codex；Done。使用者要求逐風者追加真空斬在每個被命中的敵人身上播放。依賴WIND-CHASER已完成；單一開發者。fetch預檢查到Claude d65296c5的技能註解、符文UI／協議與快取變更，使用者明確同意分段修改，保留對方內容。
+- 範圍：js/skills2.js逐風者事件、js/vfx-runtime.js逐目標路由、相關快取index／bridge／Worker、tests/skill2-wind-chaser.test.cjs／skill2-ult-evolution.test.cjs／vfx-runtime.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md及本紀錄。禁止改機率／傷害／命中範圍、Excel／CSV、其他技能、符文UI／協議與其他副本。保留並依使用者既有Commit指示提交已儲存的Preset修改，素材庫先核對同步。
+- 驗收：多敵人成功觸發各自一個事件與目標位置、MISS／未觸發不加特效、追加斬擊方向與原尺寸／配置留白、直接及飛行刀波，真空斬本體原位置保持；定向回歸、VFX／Worker相容與Build。必要驗證後獨立Commit，不合併／推送；後續使用者整合。
+- 完成：原wind-slash路由把斬擊本體畫在玩家位置；逐風者事件改為wind-chaser-slash，Runtime對每個事件目標播放配置的attack，使用目標位置／深度、事件方向與作者原尺寸，hit維持既有逐目標受擊派送。真空斬本體仍用原路由；未更改觸發機率、傷害、每敵人命中掛鉤或Preset引用。沒有新增寫死素材來源。
+- 修改14檔：js/skills2.js、js/vfx-runtime.js、js/bridge.js、js/worker/sim.worker.js、index.html、tools/vfx/editor/index.html、tests/skill2-wind-chaser.test.cjs／skill2-ult-evolution.test.cjs／vfx-runtime.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄，以及使用者已儲存的vfx/presets/slash-cleave-ring-warm.json／proj-cleave-ring-tricolor-08.json／proj-cleave-ring-tricolor-09.json。未修改但檢查：協作規範／prompts、VFX Core、技能與Runtime既有路由、配置表、layout、素材根解析／匯出、Worker協議與降級測試。保留同副本ELITE-HALO-NO-STACK的renderer程式／快取／任務紀錄，僅提交本任務片段。
+- 測試：`node --test --test-reporter=tap --test-name-pattern='逐風者|WIND-CHASER|VACUUM|SINGLE-SIZE|TABLE-EMPTY' tests/skill2-wind-chaser.test.cjs tests/skill2-ult-evolution.test.cjs tests/vfx-runtime.test.cjs`18/18；`node --test --test-reporter=dot tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs tests/vfx-load-shedding.test.cjs`57/57。完整wind-chaser＋Runtime136項132通過／4失敗；HEAD原版Runtime與原測試以記憶體載入做基線125項121通過／4失敗，FIELD分層／CATALOG根群組／CHAIN金雷鏈／STARFALL拖尾四個失敗名稱相同，沒有新增失敗，未放寬原斷言。新增兩項測試包含直接及飛行刀波三敵人、實際Backend座標／方向／原尺寸與自訂配置；既有MISS／未觸發／留白／擊殺驗證保留。`npm.cmd run build`466檔通過；`git diff --check`通過。
+- 實機：隔離headless Edge／正式index／全新Context，實際sgCleaveOnHit→sgEmitVfx→Runtime→Core，正式slash-wind-crescent配置，確認前／側／後三敵人各自位置(120,0)／(0,90)／(-80,0)且縮放1；Console error／warning皆0。外觀不代造素材；未寫使用者存檔，瀏覽器／本機唯讀HTTP關閉，暫存腳本提交前清除。主頁Runtime1.0.174／skills2 1.0.287／bridge1.0.230，Worker技能token20261006-wind-chaser-target-vfx；Editor Runtime同步1.0.174，已提示先另存未儲存內容再重載；協議保持47。
+- 使用者特效：未代改三份Preset；Core schema皆有效。原樣保存Preset及對應layout至解析後素材庫codex-authored/cleave/{presets,layouts}，六份SHA256一致，素材庫先提交；`node tools/vfx/export-assets.cjs --check`243份Preset／160引用／61640.4KB內容與正式匯出一致，無須重匯出，沒有新增圖片或第三方素材。
+- 交付：遊戲Commit為本紀錄所在`[Codex] fix: 逐風者追加真空斬逐敵人播放`提交，包含使用者上述三份特效；素材庫Commit c5cd593。無本次未完成項目，可審查整合，未合併／推送；已知限制為四項既有Runtime失敗及未做長時間真人戰鬥觀感驗收。下一步整合時保留Claude的符文／協議與最新快取，重載遊戲觀察每個觸發敵人的追加斬擊。
+
 ## SKILL-TIMER-DISPLAY-20261006 — 技能列施放間隔與觸發冷卻全面清查
 
 - Owner：Codex；Done。使用者要求進化為定時被動的技能列顯示實際間隔、復活技能觸發後才起算，全面清查同類技能。23群組／全部69項超神進化盤點完成；單一開發者。使用者明確授權與逐風者進行中修改分段作業並保留既有內容。

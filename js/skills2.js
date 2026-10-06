@@ -2841,7 +2841,7 @@ function sgCleaveOnHit(cfg, target, res, ctx) {
     'cleave', cfg.floatSel, out, 0, 0, 'wind', false, '逐風者真空斬');
   var roles = sgVfxRoles('cleave', { vfxUlt: 'windChaser' });
   sgEmitVfx('cleave', [target], cfg.floatSel, {
-    fxKind: 'slash', variant: 'wind-slash', elem: 'wind', dur: 0.35,
+    fxKind: 'slash', variant: 'wind-chaser-slash', elem: 'wind', dur: 0.35,
     angle: typeof bfAngleTo === 'function' ? bfAngleTo(target) : undefined, preserveDeadTargets: true,
     vfxUlt: 'windChaser', vfxRoles: { attack: roles.attack, hit: hit && !hit.miss ? roles.hit : undefined },
     hit: !!(hit && !hit.miss)

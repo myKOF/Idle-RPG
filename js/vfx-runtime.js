@@ -1684,7 +1684,18 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec, role);
           break;
         case 'attack':
-          if (spec.variant === 'thunder-curtain' && spec.area) {
+          if (spec.variant === 'wind-chaser-slash') {
+            // 追加斬擊以本次命中敵人為原點，沿用配置原尺寸與模擬方向。
+            var chaserIds = spec.targets || [];
+            for (var ci = 0; ci < chaserIds.length; ci++) {
+              var chaserParams = {
+                scaleX: 1, scaleY: 1, position: ctx.posOf(chaserIds[ci]),
+                depthY: footOf(chaserIds[ci]).y,
+                rotation: planePresets[presetId] && isNum(spec._planeAngle) ? spec._planeAngle : num(spec.angle, 0)
+              };
+              if (play(fxRtFor(presetId), presetId, chaserParams, 1)) ok = true;
+            }
+          } else if (spec.variant === 'thunder-curtain' && spec.area) {
             // 沿用舊雷幕的柱距與數量上限；每柱具有穩定 ID，不隨逐拍事件重建。
             var wall = spec.area, axis = num(wall.a, 0);
             var worldWidth = num(wall._planeW, num(wall.w, 0));

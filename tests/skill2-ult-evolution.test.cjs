@@ -517,7 +517,7 @@ test('【逐風者】：命中機率追加一道真空斬，且不建立龍捲�
   const windHits = calls.filter((x) => x.elem === 'wind');
   assert.ok(windHits.length > 0, '成功判定機率後追加風系傷害');
   assert.ok(windHits.every((x) => x.atk === 4000), 'Lv.10 每道真空斬為400%物攻');
-  assert.ok(specs.some((s) => s.variant === 'wind-slash'), '追加一道真空斬特效');
+  assert.ok(specs.some((s) => s.variant === 'wind-chaser-slash'), '追加一道真空斬特效');
   assert.ok(!specs.some((s) => s.variant === 'wind-tornado'), '不播放龍捲風');
   // 沒選逐風者時不得出現任何風系段（迴旋斬本體是無屬性物理）
   const c2 = loadContext();
