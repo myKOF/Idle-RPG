@@ -432,60 +432,48 @@
 
   var PAINTERS = {};
 
-  /* 突刺：細劍斜刺，殘影＋刺尖衝擊環 */
+  /* 突刺：只取刀身前半段——刀身從左下畫外伸入，刀尖在畫面中央偏右上，衝擊波紋＋閃光是主角 */
   PAINTERS.thrust = function (c, R) {
-    background(c, R, Object.assign({ cx: 186, cy: 72 }, PAL.steel));
-    var tx = 212, ty = 44, bx = 66, by = 194;
-    var ang = Math.atan2(ty - by, tx - bx);
-    var dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
-    /* 速度線：全部平行於刺擊方向 */
+    background(c, R, Object.assign({ cx: 150, cy: 106 }, PAL.steel));
+    var tx = 156, ty = 96;  /* 量出重心偏右 11，往左補 */
+    var ang = Math.atan2(-1, 1), dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
+    /* 速度線（短、集中在刀身周圍） */
     add(c);
     for (var i = 0; i < 12; i++) {
-      var off = range(R, -70, 70), st = range(R, -80, 40), ln = range(R, 50, 120);
-      var x0 = 128 + nx * off + dx * st, y0 = 128 + ny * off + dy * st;
-      ribbon(c, linePts(x0 - dx * ln, y0 - dy * ln, x0, y0, 8), function (t) { return 2 * Math.sin(Math.PI * t); },
-        rgba('#a8d0ff', range(R, 0.12, 0.35)));
+      var off = range(R, -56, 56), st = range(R, -150, -30), ln = range(R, 40, 90);
+      var x0 = tx + nx * off + dx * st, y0 = ty + ny * off + dy * st;
+      ribbon(c, linePts(x0, y0, x0 + dx * ln, y0 + dy * ln, 8), function (t) { return 2.2 * Math.sin(Math.PI * t); },
+        rgba('#a8d0ff', range(R, 0.15, 0.4)));
     }
     normal(c);
-    /* 殘影：同一直線往後錯開的藍色劍影（連刺） */
+    /* 衝擊波紋：沿刺擊方向排開的橢圓環，越前越大越淡（畫在刀身後，刀尖穿過它們） */
     add(c);
-    [46, 92].forEach(function (back, k) {
-      var pts = linePts(bx - dx * back, by - dy * back, tx - dx * back, ty - dy * back, 20);
-      ribbon(c, pts, function (t) { return 9 * (t > 0.7 ? (1 - t) / 0.3 : 1); }, alongGrad(c, pts,
-        [[0, 'rgba(90,160,255,0)'], [0.6, 'rgba(110,180,255,' + (0.35 - k * 0.12) + ')'], [1, 'rgba(200,230,255,' + (0.55 - k * 0.18) + ')']]));
-    });
-    normal(c);
-    /* 細劍 */
-    bladeAlong(c, linePts(bx, by, tx, ty, 26), 9, STEEL, { wFn: function (t) { return t > 0.62 ? Math.pow((1 - t) / 0.38, 0.8) : 1; } });
-    /* 杯狀護手：金色半球＋護指弓 */
-    c.save(); c.translate(bx, by); c.rotate(ang);
-    var cg = c.createLinearGradient(0, -18, 0, 18);
-    cg.addColorStop(0, '#fff1b8'); cg.addColorStop(0.45, '#d9a441'); cg.addColorStop(1, '#4a2e0c');
-    c.fillStyle = cg;
-    c.beginPath(); c.ellipse(2, 0, 7, 19, 0, -Math.PI / 2, Math.PI / 2); c.lineTo(2, -19); c.fill();
-    c.strokeStyle = '#d9a441'; c.lineWidth = 2.6;
-    c.beginPath(); c.moveTo(4, -17); c.bezierCurveTo(-10, -26, -34, -18, -40, -4); c.stroke();
-    c.fillStyle = '#2a1a12'; roundRect(c, -38, -4, 36, 8, 3); c.fill();
-    c.fillStyle = cg; c.beginPath(); c.arc(-42, 0, 6, 0, TAU); c.fill();
-    c.restore();
-    /* 刺尖：錐狀衝擊環＋前衝光束 */
-    add(c);
-    for (var k = 0; k < 3; k++) {
-      var d = 14 + k * 18;
-      c.save(); c.translate(tx - dx * d, ty - dy * d); c.rotate(ang);
-      c.strokeStyle = rgba('#bfe0ff', 0.8 - k * 0.22); c.lineWidth = 2.4 - k * 0.5;
-      c.shadowBlur = 8; c.shadowColor = '#7fb8ff';
-      c.beginPath(); c.ellipse(0, 0, 4 + k * 2, 12 + k * 10, 0, 0, TAU); c.stroke();
+    for (var k = 0; k < 4; k++) {
+      var d = -26 + k * 20;
+      c.save(); c.translate(tx + dx * d, ty + dy * d); c.rotate(ang);
+      c.strokeStyle = rgba('#bfe0ff', 0.85 - k * 0.17); c.lineWidth = 3.2 - k * 0.5;
+      c.shadowBlur = 12; c.shadowColor = '#7fb8ff';
+      c.beginPath(); c.ellipse(0, 0, 7 + k * 3, 22 + k * 13, 0, 0, TAU); c.stroke();
       c.restore();
     }
-    for (var r2 = 0; r2 < 7; r2++) {
-      var a = ang + range(R, -0.35, 0.35), ln2 = range(R, 18, 44);
-      ribbon(c, linePts(tx, ty, tx + Math.cos(a) * ln2, ty + Math.sin(a) * ln2, 5), function (t) { return 3 * (1 - t); }, rgba('#dff0ff', 0.7));
+    normal(c);
+    /* 刀身前半段：寬，往刀尖收 */
+    var bx = tx - dx * 190, by = ty - dy * 190;
+    bladeAlong(c, linePts(bx, by, tx, ty, 26), 19, STEEL, { wFn: function (t) { return t > 0.4 ? Math.pow((1 - t) / 0.6, 0.75) : 1; } });
+    /* 中央血槽 */
+    add(c);
+    strokePts(c, linePts(bx + dx * 10, by + dy * 10, tx - dx * 70, ty - dy * 70, 2), 2.4, 'rgba(220,235,255,0.45)');
+    normal(c);
+    /* 刀尖閃光與往前迸的光束 */
+    add(c);
+    for (var r2 = 0; r2 < 9; r2++) {
+      var a = ang + range(R, -0.45, 0.45), ln2 = range(R, 22, 60);
+      ribbon(c, linePts(tx, ty, tx + Math.cos(a) * ln2, ty + Math.sin(a) * ln2, 5), function (t) { return 3.4 * (1 - t); }, rgba('#dff0ff', 0.75));
     }
     normal(c);
-    coreGlow(c, tx, ty, 34, '#7fb8ff');
-    sparkle(c, tx, ty, 22, '#9fd0ff', 0.2);
-    motes(c, R, 12, [140, 10, 246, 120], ['#bfe0ff', '#ffffff'], 1, 2.2);
+    coreGlow(c, tx, ty, 36, '#7fb8ff');
+    sparkle(c, tx, ty, 24, '#9fd0ff', 0.2);
+    motes(c, R, 14, [90, 20, 246, 170], ['#bfe0ff', '#ffffff'], 1, 2.4);
   };
 
   /* 迴旋斬：俯視的旋風刀光圓盤，刀光平均分布一整圈；金橘赤紅洋紅多色，青白火花點綴（不畫兵器） */
@@ -573,54 +561,73 @@
     motes(c, R, 12, [30, 20, 240, 230], ['#bfe0ff'], 1, 2);
   };
 
-  /* 疾風迅雷：一道粗大的 Z 字實心雷電斜劈而過，外纏青綠疾風氣流，後方拖速度線（風＋雷＋快） */
+  /* 疾風迅雷：深藍人影突進的剪影（兩道殘影），前方一道白光斬擊，周圍只用細細的白色電弧點綴——本質是斬擊，雷不是主角 */
   PAINTERS.gale = function (c, R) {
-    background(c, R, Object.assign({ cx: 128, cy: 128 }, PAL.bolt));
-    add(c); glowDot(c, 128, 128, 120, '#2a8a7a', 0.25); normal(c);
-    /* 速度線：從左下往右上，與雷電同向 */
-    var dir = Math.atan2(-1, 0.8), dx = Math.cos(dir), dy = Math.sin(dir), nx = -dy, ny = dx;
+    background(c, R, Object.assign({ cx: 120, cy: 128 }, PAL.ice));
+    /* 水平速度線 */
     add(c);
-    for (var i = 0; i < 12; i++) {
-      var off = range(R, -90, 90), st = range(R, -110, 10), ln = range(R, 40, 90);
-      var x0 = 128 + nx * off + dx * st, y0 = 128 + ny * off + dy * st;
-      ribbon(c, linePts(x0, y0, x0 + dx * ln, y0 + dy * ln, 8), function (t) { return 2.4 * Math.sin(Math.PI * t); },
-        rgba(i % 3 ? '#8ff5d0' : '#ffe27a', range(R, 0.15, 0.4)));
+    for (var i = 0; i < 16; i++) {
+      var y = range(R, 40, 220), x0 = range(R, -20, 120), ln = range(R, 50, 130);
+      ribbon(c, linePts(x0, y, x0 + ln, y - ln * 0.12, 8), function (t) { return 2.2 * Math.sin(Math.PI * t); }, rgba('#bfe0ff', range(R, 0.12, 0.35)));
     }
     normal(c);
-    /* 雷電本體：經典的 ⚡ 實心多邊形，內縮一圈當白芯 */
-    /* 上寬下尖，量出重心偏上 10，整個往下 8 */
-    var BOLT = [[150, 24], [92, 144], [128, 144], [100, 246], [176, 118], [138, 118], [178, 24]];
-    var bcx = 0, bcy = 0;
-    BOLT.forEach(function (p) { bcx += p[0] / BOLT.length; bcy += p[1] / BOLT.length; });
-    var bolt = function (cc, k) {
-      cc.beginPath();
-      BOLT.forEach(function (p, i) {
-        var x = bcx + (p[0] - bcx) * k, y = bcy + (p[1] - bcy) * k;
-        if (i) cc.lineTo(x, y); else cc.moveTo(x, y);
-      });
-      cc.closePath();
+    /* 人影：在離屏畫布畫成單色剪影，之後拿來做殘影、本體、輪廓光 */
+    var fig = makeCanvas(S, S), f = fig.getContext('2d');
+    f.fillStyle = '#000'; f.strokeStyle = '#000'; f.lineCap = 'round'; f.lineJoin = 'round';
+    var limb = function (pts, w) {
+      f.lineWidth = w; f.beginPath(); f.moveTo(pts[0][0], pts[0][1]);
+      for (var k = 1; k < pts.length; k++) f.lineTo(pts[k][0], pts[k][1]);
+      f.stroke();
     };
-    c.save(); add(c);
-    bolt(c, 1.08); c.fillStyle = 'rgba(255,190,40,0.25)'; c.shadowBlur = 34; c.shadowColor = '#ffb020'; c.fill();
-    c.restore();
-    c.save();
-    bolt(c, 1);
-    var bg = c.createLinearGradient(110, 16, 150, 240);
-    bg.addColorStop(0, '#fff6c0'); bg.addColorStop(0.45, '#ffd84a'); bg.addColorStop(1, '#ff8a1a');
-    c.fillStyle = bg; c.fill();
-    c.lineJoin = 'round'; c.lineWidth = 2.4; c.strokeStyle = 'rgba(255,255,235,0.95)'; c.stroke();
-    c.restore();
-    c.save(); add(c);
-    bolt(c, 0.55); c.fillStyle = 'rgba(255,255,255,0.75)'; c.shadowBlur = 10; c.shadowColor = '#ffffff'; c.fill();
-    c.restore();
-    /* 纏繞雷電的疾風氣流：兩條 S 形青綠帶子，前後穿插 */
-    swoosh(c, bezPts([30, 200], [90, 120], [190, 210], [226, 70], 50), 16, '#5ef0c0', { taper: 'head' });
-    swoosh(c, bezPts([226, 190], [170, 150], [70, 150], [40, 50], 50), 12, '#8ff5e0', { taper: 'head' });
-    /* 雷電邊緣迸出的細電弧 */
-    lightning(c, 96, 134, 46, 112, R, { width: 1.6, color: '#ffd84a', rough: 0.4, depth: 4 });
-    lightning(c, 176, 110, 224, 132, R, { width: 1.6, color: '#ffd84a', rough: 0.4, depth: 4 });
-    lightning(c, 100, 238, 56, 214, R, { width: 1.4, color: '#ffd84a', rough: 0.4, depth: 4 });
-    motes(c, R, 18, [10, 10, 246, 246], ['#ffe27a', '#8ff5d0'], 1, 2.2);
+    /* 身體大幅前傾往右上衝：頭在右上、後腳往左下拉長。整個人影往左下移，重心才會在中央 */
+    f.translate(-16, 16);
+    /* 披風：從肩膀往後飄的大片布，給剪影份量 */
+    f.beginPath();
+    f.moveTo(146, 94);
+    f.bezierCurveTo(112, 84, 82, 96, 34, 84);
+    f.bezierCurveTo(60, 104, 66, 122, 46, 140);
+    f.bezierCurveTo(84, 138, 104, 150, 122, 150);
+    f.closePath(); f.fill();
+    f.beginPath(); f.arc(166, 80, 17, 0, TAU); f.fill();                         /* 頭 */
+    f.beginPath();                                                               /* 軀幹：寬肩窄腰 */
+    f.moveTo(144, 90); f.lineTo(176, 100); f.lineTo(140, 158); f.lineTo(108, 150); f.closePath(); f.fill();
+    limb([[150, 102], [120, 118], [96, 116]], 15);                                /* 後擺的手 */
+    limb([[166, 104], [192, 120], [214, 114]], 15);                               /* 前伸持刀的手 */
+    limb([[128, 150], [158, 176], [184, 190]], 21);                               /* 前腳（彎曲踏地） */
+    limb([[118, 152], [84, 172], [42, 196]], 19);                                 /* 後腳（拉長蹬地） */
+    f.beginPath(); f.ellipse(190, 192, 13, 6, 0.2, 0, TAU); f.fill();             /* 前腳掌 */
+    /* 手上的刀（短直刀，順著前伸方向） */
+    limb([[208, 115], [250, 104]], 5);
+    f.setTransform(1, 0, 0, 1, 0, 0);
+
+    var tinted = function (color, alpha) {
+      var t = makeCanvas(S, S), tc = t.getContext('2d');
+      tc.drawImage(fig, 0, 0);
+      tc.globalCompositeOperation = 'source-in'; tc.fillStyle = color; tc.fillRect(0, 0, S, S);
+      c.save(); c.globalAlpha = alpha; c.drawImage(t, 0, 0); c.restore();
+      return t;
+    };
+    /* 殘影：往左下錯開、越遠越淡 */
+    c.save(); c.translate(-62, 18); add(c); tinted('#3a7aff', 0.18); c.restore();
+    c.save(); c.translate(-32, 9); add(c); tinted('#5a9aff', 0.32); c.restore();
+    /* 本體：先畫藍色光暈再蓋深藍剪影 */
+    c.save(); c.filter = 'blur(6px)'; add(c); tinted('#4a8cff', 0.9); c.restore();
+    tinted('#0a1846', 1);
+    /* 輪廓光：白色剪影扣掉往左下位移的剪影，只留朝前（右上）的邊 */
+    var rim = makeCanvas(S, S), rc = rim.getContext('2d');
+    rc.drawImage(fig, 0, 0);
+    rc.globalCompositeOperation = 'source-in'; rc.fillStyle = '#d8ecff'; rc.fillRect(0, 0, S, S);
+    rc.globalCompositeOperation = 'destination-out'; rc.drawImage(fig, -3, 3);
+    c.save(); add(c); c.drawImage(rim, 0, 0); c.restore();
+    /* 白光斬擊：從人影前方劃出的細長弧 */
+    /* 斬擊弧很亮，量出重心偏右 14，整條往左移 */
+    swoosh(c, arcPts(84, 266, 186, Math.PI * 1.38, Math.PI * 1.88, 50), 15, '#cfe6ff', { side: 1 });
+    /* 點綴用的細電弧（白藍、細、短） */
+    lightning(c, 184, 64, 220, 84, R, { width: 1.1, color: '#bfe0ff', rough: 0.4, depth: 4 });
+    lightning(c, 150, 186, 196, 214, R, { width: 1.1, color: '#bfe0ff', rough: 0.4, depth: 4 });
+    lightning(c, 60, 186, 96, 210, R, { width: 0.9, color: '#bfe0ff', rough: 0.4, depth: 4 });
+    sparkle(c, 220, 124, 16, '#cfe6ff', 0.2);
+    motes(c, R, 14, [20, 20, 246, 236], ['#cfe6ff', '#ffffff'], 1, 2);
   };
 
   /* 血刃斬：一道大弧形血斬（重心在正中），紫色外暈與紫羅蘭細血痕，切口噴出紅紫血珠（不畫兵器） */
@@ -660,21 +667,23 @@
     motes(c, R, 16, [10, 10, 246, 246], ['#ff4455', '#c070ff', '#ff8a8a'], 1, 2.2);
   };
 
-  /* 雙刀亂舞：兩把直刃短劍交叉，四周是不閉合的旋舞刀光 */
+  /* 雙刀亂舞：兩把比例合理的短劍交叉（刀身細、刀柄約刀身四分之一），四周不閉合的旋舞刀光 */
   PAINTERS.dualdance = function (c, R) {
     background(c, R, Object.assign({ cx: 128, cy: 120 }, PAL.blood));
-    /* 刀光：中心錯開、角度不一的弧，避免組成封閉的圓 */
     swoosh(c, arcPts(118, 132, 100, Math.PI * 0.62, Math.PI * 1.55, 50), 24, '#ff3040', { taper: 'head' });
     swoosh(c, arcPts(140, 120, 92, Math.PI * 1.72, Math.PI * 2.55, 46), 20, '#ff7a2a', { taper: 'head' });
     swoosh(c, arcPts(128, 128, 64, Math.PI * 0.05, Math.PI * 0.6, 30), 12, '#ffb04a', { taper: 'head' });
     var steelR = ['#24141a', '#6e4c56', '#d4b6bc', '#ff7a7a'];
-    bladeAlong(c, linePts(190, 206, 54, 52, 24), 14, steelR, { tip: 0.16 });
-    bladeAlong(c, linePts(66, 206, 202, 52, 24), 14, steelR, { tip: 0.16 });
-    hilt(c, 190, 206, Math.atan2(52 - 206, 54 - 190), 12, ['#30080c', '#a8262e', '#ffb0a0']);
-    hilt(c, 66, 206, Math.atan2(52 - 206, 202 - 66), 12, ['#30080c', '#a8262e', '#ffb0a0']);
-    /* 刀刃交擊點 */
-    coreGlow(c, 128, 136, 34, '#ff5a3a');
-    sparkle(c, 128, 136, 22, '#ffb070', 0.4);
+    var gold = ['#30080c', '#a8262e', '#ffb0a0'];
+    /* 護手在 (gx,gy)、刀尖在 (tx,ty)；握把由 hilt() 往刀尖反方向畫 */
+    var sword = function (gx, gy, tx, ty) {
+      bladeAlong(c, linePts(gx, gy, tx, ty, 22), 10, steelR, { tip: 0.16 });
+      hilt(c, gx, gy, Math.atan2(ty - gy, tx - gx), 18, gold);
+    };
+    sword(176, 180, 60, 48);
+    sword(80, 180, 196, 48);
+    coreGlow(c, 128, 123, 30, '#ff5a3a');
+    sparkle(c, 128, 123, 20, '#ffb070', 0.4);
     motes(c, R, 20, [20, 20, 236, 236], ['#ff8a2a', '#ff4455', '#ffd27a'], 1, 2.4);
   };
 
@@ -1144,16 +1153,17 @@
     motes(c, R, 24, [30, 30, 226, 220], ['#fff2b0', '#ffe48a', '#ffffff'], 1, 2.4);
   };
 
-  /* 連鎖閃電：藍色雷光在光點之間跳躍（使用者指定藍色系，與落雷、雷球的金色區隔） */
+  /* 連鎖閃電：五個光點沿不閉合的五角形跳一圈，均勻鋪滿正方形（W 形會被看成英文字母） */
   PAINTERS.chainlightning = function (c, R) {
     background(c, R, PAL.boltBlue);
-    var nodes = [[44, 60], [128, 140], [210, 70], [196, 214]];
+    var nodes = [[46, 104], [116, 54], [208, 84], [182, 184], [88, 210]];
     for (var i = 0; i < nodes.length - 1; i++) {
-      lightning(c, nodes[i][0], nodes[i][1], nodes[i + 1][0], nodes[i + 1][1], R, { width: i === 0 ? 4.4 : 3.6, branches: 2, rough: 0.2, color: '#5aa8ff' });
+      lightning(c, nodes[i][0], nodes[i][1], nodes[i + 1][0], nodes[i + 1][1], R, { width: 3.6, branches: 1, rough: 0.18, color: '#5aa8ff' });
     }
     nodes.forEach(function (n, i) {
-      coreGlow(c, n[0], n[1], i === 1 ? 42 : 30, '#3a8cff', '#ffffff');
-      sparkle(c, n[0], n[1], i === 1 ? 30 : 20, '#8fd0ff', i * 0.6);
+      var big = i === 0 || i === nodes.length - 1;
+      coreGlow(c, n[0], n[1], big ? 40 : 30, '#3a8cff', '#ffffff');
+      sparkle(c, n[0], n[1], big ? 26 : 18, '#8fd0ff', i * 0.6);
     });
     motes(c, R, 18, [10, 10, 246, 246], ['#8fd0ff', '#c8e6ff'], 1, 2.2);
   };
