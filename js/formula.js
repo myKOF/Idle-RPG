@@ -585,9 +585,9 @@ function isAttackFrequencyControlKey(key) {
    套用點＝combat.js applyEffect／applyBuff 與 ccLockOn 讀取點；玩家實體無 _spawnAt → 不遞減；
    BOSS 對攻擊頻率類控場另有完全免疫（isBossControlImmune）。
    每次遞減% 填 0 ＝該類不遞減。三個數字與合併秒數由參數表「3-戰鬥核心／控場遞減」調整。 */
-var CONTROL_DECAY_PER_HIT_ACT = 5;   // 無法行動類：每被控 1 次，持續時間 −5%
-var CONTROL_DECAY_PER_HIT_ASPD = 5;  // 攻速降低類：每被控 1 次，持續時間 −5%
-var CONTROL_DECAY_PER_HIT_MOVE = 5;  // 移速降低類：每被控 1 次，持續時間 −5%
+var CONTROL_DECAY_PER_HIT_ACT = 10;   // 無法行動類：每被控 1 次，持續時間 −5%
+var CONTROL_DECAY_PER_HIT_ASPD = 10;  // 攻速降低類：每被控 1 次，持續時間 −5%
+var CONTROL_DECAY_PER_HIT_MOVE = 10;  // 移速降低類：每被控 1 次，持續時間 −5%
 var CONTROL_DECAY_MERGE_SEC = 0.5;   // 無法行動類：這麼短的間隔內重複施加視為同一次
 function controlDecayFactor(cat, hits) {
   var rate = cat === 'act' ? CONTROL_DECAY_PER_HIT_ACT : (cat === 'aspd' ? CONTROL_DECAY_PER_HIT_ASPD : CONTROL_DECAY_PER_HIT_MOVE);
