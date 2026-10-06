@@ -5368,7 +5368,7 @@ function updateInventoryFilterBadge() {
 // 裝備操作列的「卸下」圖示（箭頭離開框線）
 var EQUIP_UNEQUIP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>';
 
-var EQUIP_ACTION_ENTRY_COOLDOWN_MS = 2000;
+var EQUIP_ACTION_ENTRY_COOLDOWN_MS = 1000;
 
 /* 只在換裝備或操作頁時起算；資料刷新與洗煉屬性選取不延長冷卻。 */
 function syncEquipActionCooldown(it, act) {

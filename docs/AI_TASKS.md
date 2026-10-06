@@ -1,5 +1,13 @@
 # AI_TASKS.md
 
+## EQUIP-ACTION-ONE-SECOND-20261006 — 強化洗煉切頁冷卻改為一秒
+
+- Owner：Codex；Done。使用者將前次2秒改為1秒；依賴EQUIP-ACTION-COOLDOWN已完成，單一開發者。fetch後四檔衝突預檢無其他副本／分支衝突；本副本有逐風者進行中修改，僅碰index不同的UI引用與新增本任務段落，保留全部既有工作。
+- 範圍：js/ui.js冷卻常數、tests/equip-reroll-ui.test.cjs時間界線、index.html僅UI快取、本紀錄；不改提示、操作／消耗／模式、Worker／存檔／素材或逐風者任務。驗收0～999ms禁止、1000ms恢復及既有防護；相關回歸／Build通過後只提交本任務，不合併／推送，使用者後續整合。
+- 完成／修改4檔：EQUIP_ACTION_ENTRY_COOLDOWN_MS由2000→1000，回歸時鐘／期限與說明同步，UI快取1.0.135→1.0.136；「冷卻中無法使用」、換件／重選、資料刷新／選屬性不延長、pending防連送皆維持。未修改但檢查：協作規範、相關裝備與初始化測試、index既有逐風者快取段落。無素材改動，不需素材庫Commit。
+- 測試指令：`node --test tests/equip-reroll-ui.test.cjs tests/equip-socket-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/init-ui-smoke.test.cjs tests/upgrade-animation.test.cjs`48/48通過，包含洗煉與強化999ms受阻／1000ms允許；`npm.cmd run build`465檔通過及`git diff --check`通過。只有時間常數修改，未重做前次完整瀏覽器實點；初始化／UI tick回歸通過。
+- 交付：Commit為本紀錄所在`[Codex] fix: 強化洗煉冷卻縮短為一秒`提交；只暫存本次程式／測試與index／紀錄片段，逐風者與使用者既有修改保留未提交。無本次未完成或已知新增風險，可合併，未合併／推送；下一步使用者整合後重載驗收，完整Commit ID可由`git log -1 --format=%h -- js/ui.js`取得。
+
 ## Claude｜吃緊時降特效成本：飛行子彈拖尾、命中爆點限頻、全場命中上限、透明節點略過（VFX-SHED-20261006）
 
 - Owner：Claude；Done。使用者在修掉「特效事件卡在計時器隊伍」之後回報 FPS 只有 12（傷害數字關閉），並觀察到畫面上最多的是飛行子彈與受擊特效、場域一秒好幾拍會產生大量命中特效。要求：降低特效節點成本把 FPS 拉回來；範圍＝①無損略過看不見的節點＋②吃緊時才降（拖尾、命中頻率），**不加設定開關**。
