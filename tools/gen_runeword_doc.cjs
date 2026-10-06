@@ -56,12 +56,12 @@ function generate() {
         `**${w.name}**`,
         w.runes.map(c.runeName).join(' → '),
         c.rwBasesText(w),
-        c.rwSocketNeedText(w).replace(/^需要 /, ''),
+        c.rwSocketNeedText(w).replace(/^需要 /, '') + '；最高階 ' + Math.max(...w.runes.map((id) => c.RUNE_BY_ID[id].tier)),
         `${stats}（預算 ${budget(w).toFixed(1)}）`,
         (mech.length ? mech.map((m) => m.replace(/\|/g, '/')).join('；') : '（純屬性）') + (legend.length && !mech.some((m) => /傳奇特效/.test(m)) ? '；' + legend.join('、') : '')
       ];
     });
-    L.push(table(rows, ['名稱', '配方（依序）', '適用裝備', '鑲孔', '屬性', '機制']));
+    L.push(table(rows, ['名稱', '配方（依序）', '適用裝備', '符文孔／最高階', '屬性', '機制']));
   }
   return L.join('\n');
 }

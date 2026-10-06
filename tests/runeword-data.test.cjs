@@ -46,20 +46,21 @@ test('每組的符文數與強度級距相稱、不超過符文孔上限，且�
   });
 });
 
-test('高級符文之語使用的符文階數不低於其級距的下限（越強越難做）', () => {
-  const floor = { 1: 1, 2: 1, 3: 10, 4: 19 };
-  const avg = (w) => w.runes.reduce((s, id) => s + c.RUNE_BY_ID[id].tier, 0) / w.runes.length;
-  const byTier = {};
-  WORDS.forEach((w) => { (byTier[w.tier] = byTier[w.tier] || []).push(avg(w)); });
-  const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
-  assert.ok(mean(byTier[1]) < mean(byTier[2]));
-  assert.ok(mean(byTier[2]) < mean(byTier[3]));
-  assert.ok(mean(byTier[3]) < mean(byTier[4]));
+test('越強的符文之語越難做：配方最高階符文落在各級距的區間，且級距間平均階數遞增', () => {
+  /* 取得難度只由「最高階那顆符文」決定（階越高越稀有，見 RUNE_SETTINGS.drop／rollRuneTier）。
+     區間是設計目標（docs/RUNEWORD_DESIGN.md 的取得難度表）：第 1 級 ≤10、第 2 級 11～16、第 3 級 17～23、第 4 級 24～33。 */
+  const band = { 1: [1, 10], 2: [11, 16], 3: [17, 23], 4: [24, 33] };
+  const top = (w) => Math.max(...w.runes.map((id) => c.RUNE_BY_ID[id].tier));
   WORDS.forEach((w) => {
-    const minTier = Math.min(...w.runes.map((id) => c.RUNE_BY_ID[id].tier));
-    assert.ok(minTier >= 1);
-    assert.ok(avg(w) >= floor[w.tier], `${w.id} 平均符文階 ${avg(w).toFixed(1)} 低於級距下限 ${floor[w.tier]}`);
+    const [lo, hi] = band[w.tier];
+    assert.ok(top(w) >= lo && top(w) <= hi, `${w.id}（第 ${w.tier} 級）最高階 ${top(w)} 不在 ${lo}~${hi}`);
   });
+  const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+  const avgTop = (t) => mean(WORDS.filter((w) => w.tier === t).map(top));
+  assert.ok(avgTop(1) < avgTop(2) && avgTop(2) < avgTop(3) && avgTop(3) < avgTop(4));
+  // 第 4 級要真的爬到終局：至少有一組用到第 33 階，且最高階不全擠在同一格
+  assert.ok(WORDS.some((w) => top(w) === 33));
+  assert.ok(new Set(WORDS.filter((w) => w.tier === 4).map(top)).size >= 6, '第 4 級最高階應分散成階梯');
 });
 
 test('裝備類型標記只能是已知標記、欄位類型或武器類型', () => {
@@ -74,7 +75,7 @@ test('裝備類型標記只能是已知標記、欄位類型或武器類型', ()
 });
 
 test('stats／passives／legend／fx／procs 只用已實作的詞彙', () => {
-  const passiveKeys = new Set(['thorns', 'smite', 'undying', 'sunder', 'trueDmg', 'omniDrain', 'soulEater', 'annihilate', 'sanctuary', 'godWrath']);
+  const passiveKeys = new Set(c.RW_PASSIVE_KEYS);
   WORDS.forEach((w) => {
     (w.stats || []).forEach(([key, mult]) => {
       assert.ok(c.AFFIX_POOL[key], `${w.id} stats 詞條 ${key} 不存在`);

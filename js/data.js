@@ -2673,7 +2673,7 @@ var TASKS = [
   { order: 7, name: '強化裝備20次', type: 'upgradeCount', count: 20, rewardType: 'scrap', rewardQty: 500, rewardLabel: '裝備碎片+500' },
   { order: 8, name: '挑戰荒漠第30關成功', type: 'stageClear', param: 'desert', count: 30, rewardType: 'equip', rewardParam: '3|1|2', rewardQty: 1, rewardLabel: '任意2太古獨特1級裝備×1' },
   { order: 9, name: '裝備鑲嵌任意寶石8顆', type: 'socketCount', count: 8, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
-  { order: 10, name: '裝備任意附魔2次', type: 'enchantCount', count: 2, rewardType: 'book', rewardParam: 'focus', rewardQty: 1, rewardLabel: '專注附魔×1' },
+  { order: 10, name: '在裝備上鑲嵌符文2次', type: 'runeSocketCount', count: 2, rewardType: 'rune', rewardParam: 'r02', rewardQty: 3, rewardLabel: '餘燼符文×3' },
   { order: 11, name: '熔爐裝配任意零件4個', type: 'forgeParts', count: 4, rewardType: 'essence', rewardQty: 50, rewardLabel: '附魔精華+50' },
   { order: 12, name: '合成寶石2次', type: 'composeCount', count: 2, rewardType: 'gem', rewardParam: '1', rewardQty: 10, rewardLabel: '任意1級寶石×10' },
   { order: 13, name: '挑戰荒漠第40關成功', type: 'stageClear', param: 'desert', count: 40, rewardType: 'equip', rewardParam: '4|1|2', rewardQty: 1, rewardLabel: '任意2太古史詩1級裝備×1' },

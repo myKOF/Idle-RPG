@@ -783,7 +783,7 @@ function rwTryRevive(pEnt) {
 /* ============================================================
    §5 掉落
    ============================================================ */
-/* 進度＝（地圖序號 0 起算）＋（關卡 ÷ 該圖關卡上限）；最高階 = 1 + 進度 × progressPerTier。 */
+/* 進度＝（地圖序號 0 起算）＋（關卡 ÷ 該圖關卡上限）；解鎖的最高階 = 1 + 進度 × progressPerTier。 */
 function runeProgress(zone, stage) {
   var keys = Object.keys(ZONES);
   var zi = Math.max(0, keys.indexOf(zone));
@@ -793,11 +793,14 @@ function runeProgress(zone, stage) {
 function runeDropTierMax(zone, stage) {
   return clamp(Math.floor(1 + runeProgress(zone, stage) * RUNE_DROP.progressPerTier), 1, RUNES.length);
 }
-/* 從最高階往下的幾何分佈：機率 (1-q)·q^k 落在「最高階 - k」。 */
+/* 截斷幾何分佈：P(階 t) ∝ tierSpread^(t-1)，t = 1..tierMax。階越高越稀有，與進度無關（進度只決定能不能掉到）。
+   反函數取樣：u 均勻 → t = 1 + floor(ln(1 - u·(1-q^T)) / ln q)。 */
 function rollRuneTier(tierMax) {
-  var q = clamp(RUNE_DROP.tierSpread, 0.05, 0.95);
-  var k = Math.floor(Math.log(Math.max(1e-9, Math.random())) / Math.log(q));
-  return clamp(tierMax - k, 1, tierMax);
+  var q = clamp(RUNE_DROP.tierSpread, 0.05, 0.98);
+  var top = Math.max(1, Math.floor(tierMax));
+  var u = Math.random();
+  var t = 1 + Math.floor(Math.log(1 - u * (1 - Math.pow(q, top))) / Math.log(q));
+  return clamp(t, 1, top);
 }
 
 /* 野外掉落：由 rollFieldDrops 呼叫，掉到的符文描述字串推進 drops。 */

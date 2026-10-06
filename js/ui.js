@@ -6867,7 +6867,7 @@ function towerRewardRows(fl) {
     { icon: '🔮', label: '附魔精華', value: '×' + fmt(rw.essence) },
     { icon: '💎', label: '隨機寶石', value: GEM_NAMES[rw.gemLevel] + ' ×2' },
     ENCHANT_ENABLED ? { icon: '📖', label: '附魔書', value: '隨機一種 ×2' }
-      : { icon: '🔷', label: '符文', value: fmt1(RUNE_DROP.towerBossPct) + '%', note: '樓層越高階數越高' },
+      : { icon: '🔷', label: '符文', value: (typeof RUNE_DROP !== 'undefined' ? fmt1(RUNE_DROP.towerBossPct) + '%' : ''), note: '樓層越高階數越高' },
     { icon: '💫', label: '魔塵', value: fmt1(bossDustRate(fl)) + '%', note: '神鑄材料' }
   ];
   var ancientRate = ancientEssenceDropChanceForBoss(fl);

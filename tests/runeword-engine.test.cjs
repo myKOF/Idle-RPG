@@ -113,7 +113,7 @@ test('舊版（符文與寶石共用鑲孔）的存檔：rwMigrateSocketRunes �
   assert.equal(c.rwMigrateSocketRunes(it), false);
 });
 
-test('合成：3 顆 → 下一階；第 20 階起不能合成；拆解 1 顆 → 低一階 2 顆；第 1 階不可拆', () => {
+test('合成：3 顆 → 下一階；第 20 階起不能合成；拆解 1 顆 → 低一階 1 顆（降階頂替，不會變多）；第 1 階不可拆', () => {
   const c = loadRuneEnv();
   c.addRune('r01', 7);
   assert.equal(c.composeRune('r01'), null);
@@ -127,7 +127,7 @@ test('合成：3 顆 → 下一階；第 20 階起不能合成；拆解 1 顆 �
   const d = c.dismantleRune('r05');
   assert.match(d.err, /沒有/);
   c.addRune('r05', 1);
-  assert.deepEqual({ n: c.dismantleRune('r05').n, r04: c.runeCount('r04'), r05: c.runeCount('r05') }, { n: 2, r04: 2, r05: 0 });
+  assert.deepEqual({ n: c.dismantleRune('r05').n, r04: c.runeCount('r04'), r05: c.runeCount('r05') }, { n: 1, r04: 1, r05: 0 });
   c.addRune('r01', 1);
   assert.match(c.dismantleRune('r01').err, /第 1 階/);
 });
@@ -607,7 +607,7 @@ test('死亡出口接線：野外 onPlayerFieldDeath 與高塔 endTowerFight 都
 
 /* ---------------- 掉落 ---------------- */
 
-test('掉落階數：進度越深上限越高、永遠在 1~33；分佈集中在最高階附近', () => {
+test('掉落階數：進度越深上限越高、永遠在 1~33；階越高越稀有（與進度無關）', () => {
   const c = loadRuneEnv();
   assert.equal(c.runeDropTierMax('desert', 1) >= 1, true);
   let prev = 0;
@@ -621,8 +621,13 @@ test('掉落階數：進度越深上限越高、永遠在 1~33；分佈集中在
   let seed = 7;
   c.Math.random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   for (let i = 0; i < 4000; i++) { const t = c.rollRuneTier(10); counts[t] = (counts[t] || 0) + 1; assert.ok(t >= 1 && t <= 10); }
-  assert.ok(counts[10] > counts[9] && counts[9] > counts[8], '高階機率較高：' + JSON.stringify(counts));
-  assert.ok(counts[10] / 4000 > 0.3 && counts[10] / 4000 < 0.46);
+  assert.ok(counts[1] > counts[2] && counts[2] > counts[3] && counts[3] > counts[5] && counts[5] > (counts[10] || 0), '階越高越稀有：' + JSON.stringify(counts));
+  const rho = c.RUNE_SETTINGS.drop.tierSpread;
+  assert.ok(Math.abs(counts[2] / counts[1] - rho) < 0.06, '相鄰兩階的機率比 ≈ tierSpread：' + counts[2] / counts[1]);
+  // 解鎖更高階不會讓低階變難拿：第 1 階在上限 10 與上限 33 時的機率只差正規化項
+  let ones33 = 0;
+  for (let i = 0; i < 4000; i++) if (c.rollRuneTier(33) === 1) ones33++;
+  assert.ok(Math.abs(ones33 / 4000 - counts[1] / 4000) < 0.03);
 });
 
 test('野外掉落：符文入庫並回報字串；符文掉落率加成會放大機率；封魔塔掉落依樓層', () => {
@@ -718,4 +723,29 @@ test('代價型效果：maxHpPct 乘算降低最大生命（下限 0.1），不�
   c.RUNEWORD_BY_ID.rw_timeloop.stats.push(['hpPct', -50]);
   const neg = equip(c, 'amulet', wordItem(c, 'rw_timeloop'));
   assert.ok(neg.hp > 0);
+});
+
+/* ---------------- 任務 ---------------- */
+
+test('任務：runeSocketCount 計累計鑲入次數，rune 獎勵發符文；任務表第 10 號已改成符文任務', () => {
+  const c = loadRuneEnv();
+  const it = makeItem(c, { rarity: 5 });
+  assert.equal(c.taskProgressFor({ type: 'runeSocketCount' }), 0);
+  c.addRune('r01', 2);
+  c.socketRune(it, 'r01'); c.socketRune(it, 'r01');
+  assert.equal(c.taskProgressFor({ type: 'runeSocketCount' }), 2, '每次成功鑲入各計 1 次');
+  c.unsocketRune(it, 0); c.socketRune(it, 'r01');
+  assert.equal(c.taskProgressFor({ type: 'runeSocketCount' }), 3, '拆下再鑲會再計一次');
+  assert.match(c.socketRune(it, 'zz'), /沒有這種符文/);
+  assert.equal(c.taskProgressFor({ type: 'runeSocketCount' }), 3, '失敗不計');
+  const before = c.runeCount('r02');
+  c.taskGrantReward({ rewardType: 'rune', rewardParam: 'r02', rewardQty: 3 });
+  assert.equal(c.runeCount('r02'), before + 3);
+  c.taskGrantReward({ rewardType: 'rune', rewardParam: 'nope', rewardQty: 3 });
+  assert.equal(c.totalRunes(), before + 3 + c.runeCount('r01'), '未知符文 id 不發獎也不報錯');
+  const t10 = c.TASKS.find((t) => t.order === 10);
+  assert.equal(t10.type, 'runeSocketCount');
+  assert.equal(t10.rewardType, 'rune');
+  assert.ok(c.RUNE_BY_ID[t10.rewardParam], '獎勵符文 id 存在');
+  assert.ok(!c.TASKS.some((t) => t.type === 'enchantCount' || t.rewardType === 'book'), '附魔已關閉，不再有任務要求附魔或發附魔書');
 });

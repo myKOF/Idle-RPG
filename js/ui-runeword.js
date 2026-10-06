@@ -101,7 +101,7 @@ function runeUiFocusHTML(snapshot, id) {
   var note = [];
   if (next && r.tier < RUNE_COMPOSE_MAX_TIER) note.push('合成：' + RUNE_COMPOSE_COUNT + ' 顆「' + r.name + '」→ 1 顆「' + next.name + '」');
   else if (r.tier >= RUNE_COMPOSE_MAX_TIER) note.push('第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上的符文無法合成，只能靠擊殺與封魔塔掉落');
-  if (lower) note.push('拆解：1 顆 → ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」（合成 ' + RUNE_COMPOSE_COUNT + ' → 1 再拆解 1 → ' + RUNE_DISMANTLE_YIELD + '，所以拆解是虧的）');
+  if (lower) note.push('拆解：1 顆 → ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」（合成 ' + RUNE_COMPOSE_COUNT + ' → 1、拆解 1 → ' + RUNE_DISMANTLE_YIELD + '：只能降階頂替、不會變多）');
   h += '<div class="rx-note">' + esc(note.join('；')) + '</div>';
   var uses = [];
   for (var i = 0; i < RUNEWORDS.length; i++) {

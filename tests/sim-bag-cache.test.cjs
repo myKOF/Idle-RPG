@@ -122,18 +122,20 @@ test('鑲嵌寶石（sockets[i] = gem）→ 分數跟著變', () => {
   assert.notEqual(scores(engine)[it.id], before, '鑲了寶石，分數必須跟著變');
 });
 
-test('附魔（push 進 enchants）→ 分數跟著變', () => {
+test('符文（寫進 it.runes）→ 分數跟著變；附魔已關閉，附魔不計分', () => {
   const engine = bootedEngine();
   const it = pickItem(engine);
   const before = scores(engine)[it.id];
-  /* 附魔物件的形狀由遊戲決定：數值是由「附魔當下的寶石等級」當場算出（gemLv），
-     不是存一個 level。寫錯欄位的話 enchantValue 會走凍結值那條路回 0，
-     於是分數不變、測試看起來「通過了」——這支測試就完全沒有測到東西。 */
+  /* 附魔功能已關閉（data.js ENCHANT_ENABLED = false）：it.enchants 寫了也不計分、不會讓快取失效——
+     這是預期行為，先確認。符文取代了附魔的位置（it.runes），改驗它。 */
   const key = Object.keys(engine.ctx.ENCHANTS)[0];
-  const added = { key: key, gemLv: 5 };
-  assert.ok(engine.ctx.enchantValue(it, added) > 0, '前提：這條附魔要真的有數值');
-  it.enchants = (it.enchants || []).concat([added]);
-  assert.notEqual(scores(engine)[it.id], before, '附魔加上去了，分數必須跟著變');
+  it.enchants = (it.enchants || []).concat([{ key: key, gemLv: 5 }]);
+  assert.equal(scores(engine)[it.id], before, '附魔已關閉，不計入評分');
+  it.enchants = [];
+  const rune = engine.ctx.RUNES[9];                       // 血誓：武器側攻擊%、防具側生命%
+  assert.ok(engine.ctx.rwStatValue(it, rune.w[0], rune.w[1]) > 0 || engine.ctx.rwStatValue(it, rune.a[0], rune.a[1]) > 0, '前提：這顆符文在這件裝備上要真的有數值');
+  it.runes = [rune.id];
+  assert.notEqual(scores(engine)[it.id], before, '鑲了符文，分數必須跟著變');
 });
 
 test('快取不得讓評估器改到真實物品（存檔逐位元組不變）', () => {
