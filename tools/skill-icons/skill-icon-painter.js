@@ -418,6 +418,7 @@
     earth: { base: '#090604', tint: '#3a220e', cloud: '#55331a', key: '#e3a457' },
     swamp: { base: '#050604', tint: '#26250c', cloud: '#2f3a10', key: '#9be04a' },
     life: { base: '#040805', tint: '#16331a', cloud: '#21502a', key: '#b8f26a' },
+    holy: { base: '#0b0906', tint: '#3a3016', cloud: '#5a4a20', key: '#fff2b0' },
     bolt: { base: '#07050f', tint: '#241848', cloud: '#352266', key: '#ffd84a' },
     orb: { base: '#05040f', tint: '#1a1a4e', cloud: '#2a2672', key: '#b4b8ff' },
     boltBlue: { base: '#02050e', tint: '#0b1e4c', cloud: '#132c6e', key: '#6ab8ff' },
@@ -966,98 +967,164 @@
     motes(c, R, 12, [20, 20, 236, 236], ['#ffcf6a'], 1, 2);
   };
 
-  /* 泥沼術：俯視的泥漿漩渦，毒光與氣泡 */
+  /* 泥沼術：不規則的毒泥潭（雜訊擾動的輪廓、散落的毒液窪、氣泡與毒氣），刻意不用同心圓 */
   PAINTERS.mire = function (c, R) {
-    background(c, R, Object.assign({ cy: 140 }, PAL.swamp));
-    c.save(); c.translate(128, 140); c.scale(1, 0.62); c.translate(-128, -140);
-    /* 泥沼盆 */
-    var pg = c.createRadialGradient(128, 140, 4, 128, 140, 118);
-    pg.addColorStop(0, '#0a0803'); pg.addColorStop(0.55, '#3a2a12'); pg.addColorStop(0.85, '#5a4418'); pg.addColorStop(1, 'rgba(60,40,10,0)');
-    c.fillStyle = pg; c.beginPath(); c.arc(128, 140, 118, 0, TAU); c.fill();
-    /* 漩渦臂 */
-    for (var k = 0; k < 5; k++) {
-      var sp = spiralPts(128, 140, 108, 8, k * TAU / 5, 1.1, 50);
-      ribbon(c, sp, function (t) { return 16 * Math.sin(Math.PI * t) * (1 - t * 0.5); }, rgba('#7a5a26', 0.6));
-      add(c);
-      ribbon(c, sp, function (t) { return 4 * Math.sin(Math.PI * t); }, rgba('#9be04a', 0.45));
-      normal(c);
-    }
-    /* 毒光環 */
+    background(c, R, Object.assign({ cy: 150 }, PAL.swamp));
+    /* 不規則輪廓：半徑疊幾個不同頻率的正弦，再壓成斜視 */
+    var blob = function (cx, cy, r, sq, seedPh, amp) {
+      var pts = [], ph = [seedPh, seedPh * 1.7 + 1, seedPh * 2.3 + 2];
+      for (var i = 0; i < 72; i++) {
+        var a = i / 72 * TAU;
+        var k = 1 + amp * (0.55 * Math.sin(a * 3 + ph[0]) + 0.3 * Math.sin(a * 5 + ph[1]) + 0.18 * Math.sin(a * 9 + ph[2]));
+        pts.push([cx + Math.cos(a) * r * k, cy + Math.sin(a) * r * k * sq]);
+      }
+      return pts;
+    };
+    var path = function (pts) {
+      c.beginPath();
+      pts.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); });
+      c.closePath();
+    };
+    /* 泥潭外緣的毒光 */
+    var outer = blob(128, 156, 112, 0.6, range(R, 0, TAU), 0.22);
+    c.save(); add(c); path(outer); c.shadowBlur = 24; c.shadowColor = '#7ad02a'; c.fillStyle = 'rgba(90,150,30,0.35)'; c.fill(); c.restore();
+    /* 泥潭本體 */
+    path(outer);
+    var mg = c.createLinearGradient(0, 90, 0, 230);
+    mg.addColorStop(0, '#4a3a16'); mg.addColorStop(0.5, '#2c220c'); mg.addColorStop(1, '#140f05');
+    c.fillStyle = mg; c.fill();
+    c.save(); path(outer); c.clip();
+    /* 泥面的流紋（不規則彎曲，不繞中心） */
     add(c);
-    c.lineWidth = 4; c.strokeStyle = rgba('#9be04a', 0.5); c.shadowBlur = 16; c.shadowColor = '#7ad02a';
-    c.beginPath(); c.arc(128, 140, 104, 0, TAU); c.stroke();
-    c.shadowBlur = 0;
+    for (var i = 0; i < 7; i++) {
+      var x0 = range(R, 30, 120), y0 = range(R, 110, 210);
+      var p = bezPts([x0, y0], [x0 + range(R, 20, 60), y0 + range(R, -30, 30)], [x0 + range(R, 60, 110), y0 + range(R, -30, 30)], [x0 + range(R, 100, 150), y0 + range(R, -20, 20)], 24);
+      ribbon(c, p, function (t) { return range(R, 3, 6) * Math.sin(Math.PI * t); }, rgba('#8a6a30', 0.35));
+    }
     normal(c);
+    /* 散落的毒液窪：大小、位置、形狀都不同 */
+    var pools = [[100, 150, 30], [162, 170, 22], [142, 128, 14], [72, 182, 12], [190, 140, 10]];
+    pools.forEach(function (q) {
+      var pp = blob(q[0], q[1], q[2], 0.55, range(R, 0, TAU), 0.3);
+      c.save(); add(c); path(pp); c.shadowBlur = 8; c.shadowColor = '#9be04a';
+      var pg = c.createRadialGradient(q[0] - q[2] * 0.3, q[1] - q[2] * 0.2, 0, q[0], q[1], q[2] * 1.2);
+      pg.addColorStop(0, 'rgba(210,255,130,0.85)'); pg.addColorStop(0.4, 'rgba(110,200,40,0.6)'); pg.addColorStop(1, 'rgba(50,110,15,0.35)');
+      c.fillStyle = pg; c.fill(); c.restore();
+    });
     c.restore();
-    /* 中心吸力 */
-    add(c); glowDot(c, 128, 140, 34, '#4caf2b', 0.7); normal(c);
-    c.fillStyle = 'rgba(0,0,0,0.8)'; c.beginPath(); c.ellipse(128, 140, 13, 8, 0, 0, TAU); c.fill();
-    /* 氣泡 */
-    for (var i = 0; i < 9; i++) {
-      var x = range(R, 54, 202), y = range(R, 40, 190), r = range(R, 4, 11);
-      c.save();
+    /* 泥潭邊緣：不描整圈硬邊，只在上緣（朝光的那側）留一道濕亮的泥唇 */
+    var lip = outer.filter(function (p) { return p[1] < 156; });
+    lip.sort(function (a, b) { return a[0] - b[0]; });
+    add(c);
+    strokePts(c, lip, 1.6, 'rgba(200,170,110,0.45)', 6, 'rgba(160,220,80,0.6)');
+    normal(c);
+    /* 濺到泥潭外的泥點 */
+    for (var sp = 0; sp < 10; sp++) {
+      var oa = range(R, 0, TAU), od = range(R, 1.05, 1.25), op = outer[Math.floor(oa / TAU * outer.length)];
+      var sx = 128 + (op[0] - 128) * od, sy = 156 + (op[1] - 156) * od, sr = range(R, 2, 5);
+      c.fillStyle = '#3a2c10'; c.beginPath(); c.ellipse(sx, sy, sr * 1.4, sr * 0.8, 0, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(200,170,110,0.5)'; c.beginPath(); c.arc(sx - sr * 0.4, sy - sr * 0.3, sr * 0.35, 0, TAU); c.fill();
+    }
+    /* 氣泡（有的完整、有的破開成小圈） */
+    for (var b = 0; b < 8; b++) {
+      var x = range(R, 60, 196), y = range(R, 118, 196), r = range(R, 4, 12);
       add(c); glowDot(c, x, y, r * 2.4, '#7ad02a', 0.35); normal(c);
+      if (b % 3 === 2) {
+        c.save(); add(c); c.strokeStyle = 'rgba(200,255,140,0.75)'; c.lineWidth = 1.5;
+        c.beginPath(); c.ellipse(x, y, r * 1.3, r * 0.5, 0, 0, TAU); c.stroke(); c.restore();
+        continue;
+      }
       var bg = c.createRadialGradient(x - r * 0.4, y - r * 0.4, 0, x, y, r);
-      bg.addColorStop(0, 'rgba(230,255,200,0.9)'); bg.addColorStop(0.5, 'rgba(120,200,60,0.5)'); bg.addColorStop(1, 'rgba(60,120,20,0.85)');
-      c.fillStyle = bg; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
-      c.strokeStyle = 'rgba(200,255,150,0.8)'; c.lineWidth = 1; c.stroke();
-      c.restore();
+      bg.addColorStop(0, 'rgba(235,255,210,0.95)'); bg.addColorStop(0.5, 'rgba(120,200,60,0.55)'); bg.addColorStop(1, 'rgba(50,110,15,0.9)');
+      c.fillStyle = bg; c.beginPath(); c.arc(x, y - r * 0.4, r, 0, TAU); c.fill();
     }
     /* 往上飄的毒氣 */
     add(c);
-    for (var j = 0; j < 4; j++) {
-      var x0 = range(R, 70, 186);
-      var wisp = bezPts([x0, 150], [x0 - 20, 110], [x0 + 24, 70], [x0 + range(R, -10, 10), 26], 24);
-      ribbon(c, wisp, function (t) { return 10 * Math.sin(Math.PI * t); }, rgba('#9be04a', 0.18));
+    for (var j = 0; j < 5; j++) {
+      var wx = range(R, 60, 196);
+      var wisp = bezPts([wx, 150], [wx - range(R, 10, 30), 110], [wx + range(R, 10, 30), 70], [wx + range(R, -14, 14), 22], 26);
+      ribbon(c, wisp, function (t) { return 12 * Math.sin(Math.PI * t); }, rgba('#9be04a', 0.16));
+      ribbon(c, wisp, function (t) { return 3 * Math.sin(Math.PI * t); }, rgba('#d8ff9a', 0.25));
     }
     normal(c);
+    motes(c, R, 14, [30, 20, 226, 200], ['#b8f26a', '#9be04a'], 1, 2.2);
   };
 
-  /* 大地守護：岩丘上的生命幼苗，金色護罩圈住 */
+  /* 大地守護：黃白聖光——天降光束、六角光盾罩、地面符文陣、中央聖光十字星 */
   PAINTERS.earthguard = function (c, R) {
-    background(c, R, Object.assign({ cy: 150 }, PAL.life));
-    /* 護罩 */
+    background(c, R, Object.assign({ cx: 128, cy: 120 }, PAL.holy));
+    var cx = 128, gy = 200;
+    /* 天降光束 */
     add(c);
-    var dome = c.createRadialGradient(128, 196, 40, 128, 196, 116);
-    dome.addColorStop(0, 'rgba(255,230,140,0)'); dome.addColorStop(0.8, 'rgba(255,220,120,0.12)'); dome.addColorStop(1, 'rgba(255,220,120,0.4)');
-    c.fillStyle = dome; c.beginPath(); c.arc(128, 196, 116, Math.PI, TAU); c.closePath(); c.fill();
+    for (var i = 0; i < 7; i++) {
+      var x = 128 + (i - 3) * 22 + range(R, -6, 6), w = range(R, 10, 26);
+      var g = c.createLinearGradient(0, 0, 0, gy);
+      g.addColorStop(0, 'rgba(255,248,210,0.0)'); g.addColorStop(0.35, 'rgba(255,244,190,' + range(R, 0.12, 0.25) + ')'); g.addColorStop(1, 'rgba(255,236,160,0.02)');
+      c.fillStyle = g;
+      c.beginPath(); c.moveTo(x - w * 0.3, 0); c.lineTo(x + w * 0.3, 0); c.lineTo(x + w + (x - 128) * 0.4, gy); c.lineTo(x - w + (x - 128) * 0.4, gy); c.closePath(); c.fill();
+    }
     normal(c);
-    swoosh(c, arcPts(128, 196, 114, Math.PI * 1.02, Math.PI * 1.98, 60), 8, '#ffd86a', { edge: false });
-    /* 岩丘 */
-    c.beginPath();
-    c.moveTo(30, 232); c.quadraticCurveTo(60, 186, 104, 190); c.quadraticCurveTo(128, 176, 156, 188);
-    c.quadraticCurveTo(204, 184, 226, 232); c.closePath();
-    var rg = c.createLinearGradient(0, 176, 0, 232);
-    rg.addColorStop(0, '#8a6a44'); rg.addColorStop(1, '#2a1a0c');
-    c.fillStyle = rg; c.fill();
-    c.strokeStyle = 'rgba(255,220,160,0.35)'; c.lineWidth = 1.5;
-    c.beginPath(); c.moveTo(56, 200); c.quadraticCurveTo(104, 184, 150, 186); c.stroke();
-    /* 莖 */
-    var stem = bezPts([128, 196], [122, 160], [136, 130], [128, 92], 24);
-    ribbon(c, stem, function (t) { return lerp(9, 4, t); }, '#3f8a2a');
-    add(c); strokePts(c, stem, 1.5, 'rgba(220,255,160,0.6)'); normal(c);
-    /* 葉片 */
-    var leaf = function (x, y, ang, len, wid) {
-      c.save(); c.translate(x, y); c.rotate(ang);
-      c.beginPath(); c.moveTo(0, 0);
-      c.quadraticCurveTo(len * 0.4, -wid, len, 0); c.quadraticCurveTo(len * 0.4, wid, 0, 0); c.closePath();
-      var lg = c.createLinearGradient(0, -wid, 0, wid);
-      lg.addColorStop(0, '#d8ff8a'); lg.addColorStop(0.5, '#6ccf3a'); lg.addColorStop(1, '#1f6a1a');
-      c.fillStyle = lg; c.fill();
-      add(c);
-      c.strokeStyle = 'rgba(240,255,200,0.75)'; c.lineWidth = 1.2;
-      c.beginPath(); c.moveTo(2, 0); c.lineTo(len * 0.92, 0); c.stroke();
-      c.shadowBlur = 12; c.shadowColor = '#b8f26a'; c.strokeStyle = 'rgba(200,255,140,0.4)';
-      c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(len * 0.4, -wid, len, 0); c.stroke();
-      normal(c);
-      c.restore();
-    };
-    leaf(126, 150, -2.6, 56, 18);
-    leaf(130, 132, -0.5, 60, 19);
-    leaf(128, 94, -1.75, 44, 15);
-    coreGlow(c, 128, 88, 46, '#b8f26a', '#fffbe0');
-    /* 上升的光粒 */
-    motes(c, R, 22, [40, 30, 216, 200], ['#ffe27a', '#b8f26a'], 1, 2.4);
+    /* 地面符文陣（斜視橢圓＋刻度） */
+    c.save(); c.translate(cx, gy); c.scale(1, 0.32);
+    add(c);
+    glowDot(c, 0, 0, 118, '#ffe48a', 0.5);
+    c.strokeStyle = 'rgba(255,240,180,0.85)'; c.lineWidth = 3; c.shadowBlur = 12; c.shadowColor = '#ffd86a';
+    c.beginPath(); c.arc(0, 0, 100, 0, TAU); c.stroke();
+    c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 80, 0, TAU); c.stroke();
+    for (var k = 0; k < 24; k++) {
+      var a = k / 24 * TAU;
+      c.beginPath(); c.moveTo(Math.cos(a) * 82, Math.sin(a) * 82); c.lineTo(Math.cos(a) * (k % 2 ? 90 : 98), Math.sin(a) * (k % 2 ? 90 : 98)); c.stroke();
+    }
+    /* 陣中的六芒線 */
+    c.lineWidth = 1.6;
+    [0, Math.PI].forEach(function (off) {
+      c.beginPath();
+      for (var t = 0; t < 3; t++) { var a2 = off + t * TAU / 3 - Math.PI / 2; c[t ? 'lineTo' : 'moveTo'](Math.cos(a2) * 78, Math.sin(a2) * 78); }
+      c.closePath(); c.stroke();
+    });
+    c.restore();
+    normal(c);
+    /* 六角光盾罩：半球上排六角格，越上越透 */
+    var domeR = 96, domeCy = gy;
+    c.save();
+    c.beginPath(); c.arc(cx, domeCy, domeR, Math.PI, TAU); c.closePath(); c.clip();
+    add(c);
+    var dg = c.createRadialGradient(cx, domeCy, 30, cx, domeCy, domeR);
+    dg.addColorStop(0, 'rgba(255,250,220,0.05)'); dg.addColorStop(0.8, 'rgba(255,240,180,0.12)'); dg.addColorStop(1, 'rgba(255,240,180,0.4)');
+    c.fillStyle = dg; c.fillRect(0, 0, S, S);
+    var hs = 16, hh = hs * Math.sqrt(3);
+    c.lineWidth = 1.2;
+    for (var row = -1; row < 9; row++) {
+      for (var col = -1; col < 12; col++) {
+        var hx = 20 + col * hs * 1.5, hy = domeCy - row * hh - (col % 2 ? hh / 2 : 0);
+        var d = Math.hypot(hx - cx, hy - domeCy) / domeR;
+        if (d > 1.05) continue;
+        c.strokeStyle = 'rgba(255,244,200,' + (0.12 + 0.45 * d * d) + ')';
+        c.beginPath();
+        for (var v = 0; v < 6; v++) { var va = v / 6 * TAU; c[v ? 'lineTo' : 'moveTo'](hx + Math.cos(va) * hs * 0.92, hy + Math.sin(va) * hs * 0.92); }
+        c.closePath(); c.stroke();
+      }
+    }
+    normal(c);
+    c.restore();
+    c.save(); add(c);
+    c.strokeStyle = 'rgba(255,248,215,0.9)'; c.lineWidth = 2.6; c.shadowBlur = 16; c.shadowColor = '#ffe07a';
+    c.beginPath(); c.arc(cx, domeCy, domeR, Math.PI, TAU); c.stroke();
+    c.restore();
+    /* 中央聖光十字星 */
+    var sy = 128;
+    add(c);
+    glowDot(c, cx, sy, 80, '#ffe48a', 0.55);
+    [[0, 62, 7], [Math.PI / 2, 46, 6], [Math.PI / 4, 26, 3], [-Math.PI / 4, 26, 3]].forEach(function (ray) {
+      [1, -1].forEach(function (sgn) {
+        var a = ray[0] + (sgn < 0 ? Math.PI : 0);
+        var p = linePts(cx, sy, cx + Math.sin(a) * ray[1], sy - Math.cos(a) * ray[1], 8);
+        ribbon(c, p, function (t) { return ray[2] * 2 * (1 - t); }, alongGrad(c, p, [[0, 'rgba(255,255,255,1)'], [1, 'rgba(255,236,160,0)']]));
+      });
+    });
+    normal(c);
+    coreGlow(c, cx, sy, 30, '#ffe48a', '#ffffff');
+    motes(c, R, 24, [30, 30, 226, 220], ['#fff2b0', '#ffe48a', '#ffffff'], 1, 2.4);
   };
 
   /* 連鎖閃電：藍色雷光在光點之間跳躍（使用者指定藍色系，與落雷、雷球的金色區隔） */
@@ -1368,7 +1435,7 @@
     thrust: PAL.steel.key, cleave: PAL.gold.key, knife: PAL.steel.key, gale: PAL.bolt.key,
     bloodblade: PAL.blood.key, dualdance: PAL.blood.key, counter: PAL.gold.key, bloodrage: PAL.blood.key,
     fireball: PAL.fire.key, firepillar: PAL.fire.key, firehunt: PAL.fire.key,
-    rockarmor: PAL.earth.key, mire: PAL.swamp.key, earthguard: PAL.life.key,
+    rockarmor: PAL.earth.key, mire: PAL.swamp.key, earthguard: PAL.holy.key,
     chainlightning: PAL.boltBlue.key, thunderstrike: PAL.bolt.key, thunderorb: PAL.orb.key,
     icearrow: PAL.ice.key, waterball: PAL.water.key, frostnova: PAL.ice.key,
     windblade: PAL.wind.key, vacuumslash: PAL.vacuum.key, stormbarrier: PAL.wind.key
