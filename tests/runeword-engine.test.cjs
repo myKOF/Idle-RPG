@@ -34,45 +34,83 @@ function pin(c, id, spec) {
   return w;
 }
 
+/* 改 vm 內的 var 常數（context 物件上的屬性即全域變數）。 */
+function vmSet(c, name, value) { require('node:vm').runInContext(name + ' = ' + JSON.stringify(value) + ';', c); }
+
 /* ---------------- 鑲嵌與庫存 ---------------- */
 
-test('socketRune：扣庫存、鑲進第一個空孔；庫存不足／已有鑲嵌物／孔位不合法一律拒絕且不扣', () => {
+test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已有符文／孔位不合法／沒有符文孔一律拒絕且不扣', () => {
   const c = loadRuneEnv();
   const it = makeItem(c, { rarity: 5 });
+  assert.equal(c.runeSlotCountFor(it), 4);
   assert.equal(c.socketRune(it, 'r01'), '符文不足');
   c.addRune('r01', 2);
   assert.equal(c.socketRune(it, 'r01'), null);
-  assert.deepEqual(plain(it.sockets[0]), { rune: 'r01' });
+  assert.deepEqual(plain(it.runes), ['r01', null, null, null]);
   assert.equal(c.runeCount('r01'), 1);
   assert.match(c.socketRune(it, 'r01', 0), /已有/);
-  assert.equal(c.socketRune(it, 'r01', 99), '沒有可用鑲孔');
+  assert.equal(c.socketRune(it, 'r01', 99), '沒有可用的符文孔');
   assert.equal(c.socketRune(it, 'zz'), '沒有這種符文');
   assert.equal(c.runeCount('r01'), 1, '失敗的鑲嵌不得扣庫存');
   assert.equal(c.socketRune(it, 'r01', 3), null);
-  assert.deepEqual(it.sockets.map((s) => s && s.rune), ['r01', null, null, 'r01']);
+  assert.deepEqual(plain(it.runes), ['r01', null, null, 'r01']);
+  assert.deepEqual(it.sockets.filter(Boolean), [], '符文不佔寶石鑲孔');
+  const none = makeItem(c, { rarity: 0 });
+  c.addRune('r01', 1);
+  assert.match(c.socketRune(none, 'r01'), /沒有符文孔/);
+  assert.equal(c.runeCount('r01'), 1, '沒有符文孔時不扣庫存');
 });
 
-test('unsocketGem 取下符文回庫存；分解裝備時鑲著的符文自動取回', () => {
+test('符文孔放滿：第 5 顆被拒；孔數隨稀有度，最多 4 孔', () => {
+  const c = loadRuneEnv();
+  c.addRune('r01', 9);
+  const it = makeItem(c, { rarity: 3 });                    // 獨特：2 孔
+  assert.equal(c.runeSlotCountFor(it), 2);
+  assert.equal(c.socketRune(it, 'r01'), null);
+  assert.equal(c.socketRune(it, 'r01'), null);
+  assert.match(c.socketRune(it, 'r01'), /已滿/);
+  assert.equal(c.runeCount('r01'), 7);
+  const counts = c.RARITIES.map((r, i) => c.runeSlotCountFor({ rarity: i }));
+  assert.deepEqual(plain(counts), plain(c.RUNE_SETTINGS.slotsByRarity));
+  assert.ok(Math.max(...counts) <= 4 && Math.max(...counts) === c.RUNE_SETTINGS.maxSlots);
+  assert.ok(counts.every((n, i) => i === 0 || n >= counts[i - 1]), '稀有度越高孔數不減');
+});
+
+test('unsocketRune 取下符文回庫存；分解裝備時鑲著的符文自動取回；寶石鑲孔的操作不碰符文', () => {
   const c = loadRuneEnv();
   const it = makeItem(c, { rarity: 5 });
   c.addRune('r05', 1);
   c.socketRune(it, 'r05');
   assert.equal(c.runeCount('r05'), 0);
-  assert.equal(c.unsocketGem(it, 0), true);
+  assert.equal(c.unsocketRune(it, 0), true);
   assert.equal(c.runeCount('r05'), 1);
-  assert.equal(it.sockets[0], null);
+  assert.equal(it.runes[0], null);
+  assert.equal(c.unsocketRune(it, 0), false, '空孔取下回 false');
   c.socketRune(it, 'r05');
+  assert.equal(c.unsocketGem(it, 0), false, 'unsocketGem 只管寶石鑲孔');
+  assert.equal(c.runeCount('r05'), 0);
   c.doSalvage(it, true);
   assert.equal(c.runeCount('r05'), 1, '分解不得吃掉符文');
 });
 
-test('神鑄素材取回鑲孔（forgeReclaimSockets）同樣退回符文', () => {
+test('神鑄素材取回（forgeReclaimSockets）同樣退回符文', () => {
   const c = loadRuneEnv();
   const it = makeItem(c, { rarity: 5 });
   fillRunes(it, ['r07', 'r07']);
   c.forgeReclaimSockets(it);
   assert.equal(c.runeCount('r07'), 2);
-  assert.deepEqual(it.sockets.filter(Boolean), []);
+  assert.deepEqual(it.runes.filter(Boolean), []);
+});
+
+test('舊版（符文與寶石共用鑲孔）的存檔：rwMigrateSocketRunes 把符文搬進符文孔，放不下的退回庫存，冪等', () => {
+  const c = loadRuneEnv();
+  const it = makeItem(c, { rarity: 3 });                    // 2 個符文孔
+  it.sockets = [{ rune: 'r01' }, { rune: 'r02' }, { rune: 'r03' }, { type: 'ruby', level: 1 }];
+  assert.equal(c.rwMigrateSocketRunes(it), true);
+  assert.deepEqual(plain(it.runes), ['r01', 'r02']);
+  assert.equal(c.runeCount('r03'), 1, '放不下的退回庫存');
+  assert.deepEqual(plain(it.sockets), [null, null, null, { type: 'ruby', level: 1 }]);
+  assert.equal(c.rwMigrateSocketRunes(it), false);
 });
 
 test('合成：3 顆 → 下一階；第 20 階起不能合成；拆解 1 顆 → 低一階 2 顆；第 1 階不可拆', () => {
@@ -103,10 +141,10 @@ test('符文之語：順序必須完全一致；連續鑲孔即可，前後可�
   assert.equal(c.rwActiveWord(mk(['r06', 'r08'])).word.id, w.id);
   assert.equal(c.rwActiveWord(mk(['r08', 'r06'])), null, '順序反了不成立');
   assert.equal(c.rwActiveWord(mk(['r06', 'r08'], 2)).start, 2, '放在後半段也成立');
-  const gapped = mk(['r06']); gapped.sockets[2] = { rune: 'r08' };
+  const gapped = mk(['r06']); gapped.runes[2] = 'r08';
   assert.equal(c.rwActiveWord(gapped), null, '中間隔著空孔不成立');
   const gem = mk(['r06', 'r08']); gem.sockets[3] = { type: 'ruby', level: 1 };
-  assert.equal(c.rwActiveWord(gem).word.id, w.id, '其他孔鑲寶石不影響');
+  assert.equal(c.rwActiveWord(gem).word.id, w.id, '寶石鑲孔與符文孔互不影響');
 });
 
 test('符文之語：裝備類型不符不成立（匕首可、法杖不可）', () => {
@@ -119,28 +157,28 @@ test('符文之語：裝備類型不符不成立（匕首可、法杖不可）',
   assert.equal(c.rwActiveWord(armor), null);
 });
 
-test('符文之語：多組同時符合時取符文數最多者；孔數不足的裝備不成立', () => {
+test('符文之語：多組同時符合時取符文數最多者；符文孔不足的裝備放不下', () => {
   const c = loadRuneEnv();
   // 創造一組臨時的長配方，包含「初啼」r01→r02 作為前綴
   c.RUNEWORDS.push({ id: 'rw_test_long', name: '測試長配方', tier: 1, runes: ['r01', 'r02', 'r03'], bases: ['mainHand'], stats: [['atkFlat', 1]] });
   const it = fillRunes(makeItem(c, { rarity: 5 }), ['r01', 'r02', 'r03']);
   assert.equal(c.rwActiveWord(it).word.id, 'rw_test_long');
-  const small = fillRunes(makeItem(c, { rarity: 3 }), ['r01', 'r02']);   // 獨特＝2 孔
-  assert.equal(c.rwActiveWord(small).word.id, 'rw_firstcry');
-  const tiny = makeItem(c, { rarity: 0 });                                   // 普通＝1 孔
-  tiny.sockets[0] = { rune: 'r01' };
-  assert.equal(c.rwActiveWord(tiny), null);
+  const small = makeItem(c, { rarity: 3 });                              // 獨特＝2 孔
+  c.addRune('r01', 1); c.addRune('r02', 1); c.addRune('r03', 1);
+  ['r01', 'r02', 'r03'].forEach((id) => c.socketRune(small, id));
+  assert.equal(c.rwActiveWord(small).word.id, 'rw_firstcry', '第 3 顆放不下，只成形 2 顆的配方');
+  assert.equal(c.runeCount('r03'), 1);
 });
 
 test('rwCandidates：列出差幾顆就成形的配方，並說明缺哪幾顆', () => {
   const c = loadRuneEnv();
   const it = makeItem(c, { rarity: 5, weaponType: 'sword1h' });
   assert.equal(c.rwCandidates(it).length, 0, '全空不列候選');
-  it.sockets[0] = { rune: 'r06' };
+  it.runes[0] = 'r06';
   const hit = c.rwCandidates(it).find((x) => x.word.id === 'rw_viperkiss');
   assert.ok(hit);
   assert.deepEqual(Array.from(hit.missing), ['r08']);
-  it.sockets[1] = { rune: 'r08' };
+  it.runes[1] = 'r08';
   assert.equal(c.rwCandidates(it).some((x) => x.word.id === 'rw_viperkiss'), false, '成形後不再列為候選');
 });
 
@@ -159,7 +197,7 @@ test('單顆符文依武器／防具各給一條屬性，數值＝詞條基準�
   assert.equal(c.rwItemStatEntries(shield)[0].key, 'hpPct', '副手視同防具側');
 });
 
-test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2（已靠 ×1.75 鑲孔數補償）', () => {
+test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2，也沒有額外符文孔', () => {
   const c = loadRuneEnv();
   const one = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const up = fillRunes(makeItem(c, { rarity: 5, level: 100, upgrade: 10 }), ['r10']);
@@ -167,6 +205,7 @@ test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2�
   const v = (it) => c.rwItemStatEntries(it)[0].val;
   assert.ok(v(up) > v(one) * 1.4, '+10 約 ×1.5');
   assert.equal(v(two), v(one), '雙手武器的符文屬性與單手相同');
+  assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one), '雙手武器的符文孔數與單手相同');
 });
 
 test('computeStats：符文之語屬性併入面板；拆下一顆就失效', () => {
@@ -177,7 +216,7 @@ test('computeStats：符文之語屬性併入面板；拆下一顆就失效', ()
   assert.ok(st.rw.words.includes('rw_viperkiss'));
   assert.ok(st.critRate > before.critRate, '蛇吻的暴擊率');
   assert.equal(st.rw.procs.length, 1);
-  it.sockets[1] = null;
+  it.runes[1] = null;
   const st2 = equip(c, 'weapon', it);
   assert.deepEqual(Array.from(st2.rw.words), []);
   assert.equal(st2.rw.procs.length, 0);
@@ -225,7 +264,7 @@ test('符文屬性計入裝備評分；符文之語成形再乘一個階級係�
   const withRune = fillRunes(makeItem(c, { rarity: 5 }), ['r10']);
   assert.ok(c.itemScore(withRune) > c.itemScore(plain));
   const word = wordItem(c, 'rw_viperkiss', { rarity: 5 });
-  const broken = wordItem(c, 'rw_viperkiss', { rarity: 5 }); broken.sockets[1] = null;
+  const broken = wordItem(c, 'rw_viperkiss', { rarity: 5 }); broken.runes[1] = null;
   assert.ok(c.itemScore(word) > c.itemScore(broken) * 1.1);
 });
 
@@ -609,21 +648,48 @@ test('野外掉落：符文入庫並回報字串；符文掉落率加成會放�
 
 /* ---------------- 顯示 ---------------- */
 
-test('鑲孔 HTML：符文顯示字形與實際數值；成形時列出符文之語全部效果；差一顆時提示配方', () => {
+test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文之語全部效果；差一顆時提示配方；寶石鑲孔不再混入符文', () => {
   const c = loadRuneEnv();
   const it = makeItem(c, { rarity: 5 });
-  it.sockets[0] = { rune: 'r06' };
-  let html = c.itemSocketHTML(it, null);
+  it.runes[0] = 'r06';
+  let html = c.itemRuneHTML(it, null);
+  assert.match(html, /符文孔 1／4/);
   assert.match(html, /毒牙符文/);
+  assert.match(html, /符文孔 2（空）/);
   assert.match(html, /再鑲入「暗影」即可成形【蛇吻】/);
-  it.sockets[1] = { rune: 'r08' };
-  html = c.itemSocketHTML(it, null);
+  assert.doesNotMatch(html, /data-rune-remove/, '符文面板沒開時不可取下');
+  it.runes[1] = 'r08';
+  html = c.itemRuneHTML(it, null);
   assert.match(html, /符文之語【蛇吻】/);
   assert.match(html, /runeword-socket/);
   assert.match(html, /普通攻擊命中時有 15% 機率/);
   assert.doesNotMatch(html, /再鑲入/);
-  const gemOnly = makeItem(c, { rarity: 5 });
-  assert.doesNotMatch(c.itemSocketHTML(gemOnly, null), /含符文|runeword/);
+  assert.match(c.itemRuneHTML(it, { rune: { active: true } }), /data-rune-remove="0"[\s\S]*data-rune-remove="1"/, '符文面板開啟時已鑲的符文可點擊取下');
+  assert.doesNotMatch(c.itemSocketHTML(it, null), /符文|runeword/, '寶石鑲孔區塊不含符文');
+  assert.equal(c.itemRuneHTML(makeItem(c, { rarity: 0 }), null), '', '沒有符文孔的裝備不輸出符文區塊');
+  // 完整詳情把符文區塊接在附魔原本的位置（寶石鑲孔之前）
+  const detail = c.itemDetailHTML(it, null, {});
+  assert.ok(detail.indexOf('符文孔') > 0 && detail.indexOf('符文孔') < detail.indexOf('寶石鑲孔'));
+});
+
+test('附魔功能已關閉：ENCHANT_ENABLED=false 時附魔欄為 0、附魔不計入屬性與評分、不能附魔／取下，資料原樣保留', () => {
+  const c = loadRuneEnv();
+  assert.equal(c.ENCHANT_ENABLED, false);
+  const it = makeItem(c, { rarity: 5 });
+  it.enchants = [{ key: 'fire', gemLv: 3 }];
+  assert.equal(c.enchantCapFor(it), 0);
+  assert.deepEqual(plain(c.itemEnchants(it)), []);
+  assert.deepEqual(plain(it.enchants), [{ key: 'fire', gemLv: 3 }], '資料沒有被動');
+  assert.equal(c.manualEnchant(it, 'fire'), '附魔功能已關閉（由符文取代）');
+  assert.equal(c.removeEnchantAt(it, 0), false);
+  const bare = makeItem(c, { rarity: 5 });
+  assert.equal(c.itemScore(it), c.itemScore(bare), '附魔不計入評分');
+  assert.doesNotMatch(c.itemDetailHTML(it, null, {}), /it-enchant/);
+  // 打開開關就完整恢復（資料沒丟）
+  vmSet(c, 'ENCHANT_ENABLED', true);
+  assert.deepEqual(plain(c.itemEnchants(it)), [{ key: 'fire', gemLv: 3 }]);
+  assert.ok(c.enchantCapFor(it) >= 1);
+  assert.ok(c.itemScore(it) > c.itemScore(bare));
 });
 
 test('存檔相容：新遊戲有 runes 表；舊存檔缺欄位由合併預設補空表；髒資料整理成非負整數', () => {

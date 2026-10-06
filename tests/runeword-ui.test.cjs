@@ -84,7 +84,7 @@ test('圖鑑：全部配方、材料齊全旗標（含重複符文的數量需�
   assert.doesNotMatch(winter, /材料齊全/);
   assert.match(winter, /×2/);
   // 穿戴中成形
-  const item = { id: 'w', slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100, sockets: [{ rune: 'r06' }, { rune: 'r08' }, null, null], affixes: [] };
+  const item = { id: 'w', slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100, sockets: [], runes: ['r06', 'r08', null, null], affixes: [] };
   c.setPanels({ gems: {}, fusedGems: [], runes: {} }, { equipment: { weapon: item }, sets: null });
   c.renderRunes();
   list = c.els['runeword-list'].innerHTML;
@@ -135,6 +135,12 @@ test('index.html 與 ui.js 的接線：分頁、script／css、面板訂閱、so
   assert.match(ui, /runes: \['gems', 'equip', 'header'\]/);
   assert.match(ui, /data-rune-socket/);
   assert.match(ui, /sendUiCommand\('rune\.socket'/);
+  // 符文取代附魔的位置：裝備頁操作列是「符文」、不再有「附魔」按鈕；符文面板與取下都走符文孔指令
+  assert.match(ui, /data-act="toggle-rune"/);
+  assert.doesNotMatch(ui, /data-act="toggle-enchant"/);
+  assert.match(ui, /sendUiCommand\('rune\.unsocket'/);
+  assert.match(ui, /equipRunePanelHTML/);
+  assert.doesNotMatch(ui, /socketSelectedRune/, '符文不再走寶石鑲孔的選孔流程');
   const worker = fs.readFileSync(path.join(root, 'js/worker/sim.worker.js'), 'utf8');
   assert.match(worker, /runeword_data\.js\?v=/);
   assert.match(worker, /'\.\.\/runeword\.js\?v=/);

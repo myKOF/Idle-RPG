@@ -413,6 +413,16 @@ function migrateSave(data) {
     if (typeof normalizeItemValueSources === 'function') normalizeItemValueSources(it);
     // 雙手改造（2026-08-05）：既有雙手武器補詞條 +1 與鑲孔 ×1.75（冪等，只補不刪）
     if (typeof normalizeTwoHandItemCounts === 'function') normalizeTwoHandItemCounts(it);
+    // 符文孔（js/runeword.js）：整理成「符文 id 或 null」的陣列，超過孔數上限的部分截掉；
+    // 早期版本把符文放在寶石鑲孔（{ rune }），一併搬進符文孔（冪等）
+    if (it.runes !== undefined) {
+      if (!Array.isArray(it.runes)) delete it.runes;
+      else {
+        it.runes = it.runes.slice(0, RUNE_SETTINGS.maxSlots).map(function (r) { return (typeof r === 'string' && RUNE_BY_ID[r]) ? r : null; });
+        if (!it.runes.some(Boolean)) delete it.runes;
+      }
+    }
+    if (typeof rwMigrateSocketRunes === 'function') rwMigrateSocketRunes(it);
   };
   Object.keys(data.equipment || {}).forEach(function (slot) { fixLoadedItem(data.equipment[slot], slot); });
   Object.keys(data.equipmentSets || {}).forEach(function (setKey) {
@@ -1196,8 +1206,8 @@ function applyOfflineProgress(options) {
         sum.gems[glv + 1] = (sum.gems[glv + 1] || 0) + 1;
       }
     }
-    // 附魔書（階段 8+）
-    if (stage >= 8 || zoneDrop.bookRate !== undefined) {
+    // 附魔書（階段 8+；附魔功能關閉時不掉）
+    if (ENCHANT_ENABLED && (stage >= 8 || zoneDrop.bookRate !== undefined)) {
       var bookN = rollDropCount(bookRate);
       for (var bi = 0; bi < bookN; bi++) {
         G.player.books[pick(Object.keys(ENCHANTS))]++;

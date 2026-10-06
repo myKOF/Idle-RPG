@@ -27,7 +27,8 @@ for (const id of ids) {
     Object.keys(w.passives || {}).forEach((k) => assert.ok(st.passives[k] >= w.passives[k]));
     assert.ok(Number.isFinite(st.hp) && st.hp > 0 && Number.isFinite(st.atk), '屬性有限且生命為正');
     assert.ok(c.itemScore(it) > 0);
-    assert.ok(c.itemSocketHTML(it, null).includes(w.name), '鑲孔橫幅顯示名稱');
+    assert.ok(c.itemRuneHTML(it, null).includes(w.name), '符文孔橫幅顯示名稱');
+    assert.ok(c.rwSlots(it).length >= w.runes.length && w.runes.length <= c.RUNE_SETTINGS.maxSlots, '配方放得進符文孔');
 
     // ---- 觸發：逐一執行 ----
     const foes = [enemy(), enemy(), enemy()];

@@ -30,8 +30,8 @@ function mount(){
   const elements=Object.fromEntries(['detail-pane','equip-action-bar','equip-material-panel'].map(id=>[id,{innerHTML:'',style:{},classList:{add(){},remove(){}}}]));
   elements['detail-pane']=pane();
   const c={console,document:{addEventListener(){},querySelectorAll(){return[];},getElementById(id){return elements[id]||null;}}};c.window=c;vm.createContext(c);
-  for(const name of ['util','data','status','formula','item','ui'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
-  c.it={id:'gear',slot:'weapon',name:'劍',level:50,rarity:5,affixes:[{key:'str',roll:1}],sockets:[null,null,null,null],enchants:[{key:'fire',gemLv:1}],upgrade:0};
+  for(const name of ['util','data','runeword_data','status','formula','item','runeword','ui','ui-runeword'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),c);
+  c.it={id:'gear',slot:'weapon',name:'劍',level:50,rarity:5,affixes:[{key:'str',roll:1}],sockets:[null,null,null,null],enchants:[{key:'fire',gemLv:1}],runes:['r01',null,null,null],upgrade:0};
   c.findSelItem=()=>c.it;c.uiHeaderPanelSnapshot=()=>({player:{gold:1e12,scrap:1e12,essence:1e12}});c.uiInventoryPanelSnapshot=()=>null;
   c.uiGemsPanelSnapshot=()=>({gems:{ruby:{1:3,5:2},sapphire:{2:1}},fusedGems:[{id:'f',level:5,stats:[{type:'ruby',mult:1}],fusions:1}]});
   c.hideAffixPool=c.hideTooltip=c.updateSelectionUI=()=>{};c.UI.tab='equip';c.UI.sel={id:'gear',source:'equip'};c.pending=new Set();c.isUiCommandPending=k=>c.pending.has(k);
@@ -40,29 +40,46 @@ function mount(){
   vm.runInContext('function areaClick(e){'+ui.slice(start,end)+'}',c);
   const enchantStart=ui.indexOf("    var er = e.target.closest('[data-enchant-remove]');"),enchantEnd=ui.indexOf("    var tf = e.target.closest('[data-tower-floor]');",enchantStart);
   assert(enchantStart>=0&&enchantEnd>enchantStart);vm.runInContext('function enchantClick(e){'+ui.slice(enchantStart,enchantEnd)+'}',c);
+  const runeStart=ui.indexOf('    // 符文鑲嵌（符文面板點符文圖示）'),runeEnd=ui.indexOf('    // 融合寶石鑲嵌',runeStart);
+  assert(runeStart>=0&&runeEnd>runeStart);vm.runInContext('function runeClick(e){'+ui.slice(runeStart,runeEnd)+'}',c);
   c.click=attrs=>{const event={target:{closest(selector){
     const match=selector.match(/\[data-([a-z-]+)(?:\]|=)/);
     if(match){const key=match[1];if(attrs[key]===undefined)return null;return {disabled:false,getAttribute:n=>attrs[n.replace('data-','')]};}
     if(selector.includes('.btn')&&attrs.act!==undefined)return {disabled:false,getAttribute:n=>n==='data-act'?attrs.act:null};
     return null;
-  }}};c.areaClick(event);c.enchantClick(event);};c.elements=elements;c.renderDetail();return c;
+  }}};c.areaClick(event);c.runeClick(event);c.enchantClick(event);};c.elements=elements;c.renderDetail();return c;
 }
 
-test('一般詳情只展示寶石附魔，取下只能在對應功能頁且防止連送',()=>{
+test('一般詳情只展示寶石與符文孔（附魔已關閉不顯示），取下只能在對應功能頁且防止連送',()=>{
   const c=mount();c.it.sockets[0]={type:'ruby',level:5};c.renderDetail();
-  const h=c.elements['detail-pane'].innerHTML;assert.match(h,/it-enchant/);assert.match(h,/五級紅寶石/);assert.doesNotMatch(h,/data-socket-remove|data-enchant-remove|點擊取下/);
-  c.click({'socket-remove':'0'});c.click({'enchant-remove':'0'});assert.equal(c.commands.length,0);
-  c.click({act:'toggle-socket'});c.click({'enchant-remove':'0'});assert.equal(c.commands.length,0);
+  const h=c.elements['detail-pane'].innerHTML;assert.match(h,/符文孔 1／4/);assert.match(h,/五級紅寶石/);assert.doesNotMatch(h,/it-enchant|data-socket-remove|data-enchant-remove|data-rune-remove|點擊取下/);
+  c.click({'socket-remove':'0'});c.click({'rune-remove':'0'});assert.equal(c.commands.length,0);
+  c.click({act:'toggle-socket'});c.click({'rune-remove':'0'});assert.equal(c.commands.length,0);
   c.click({'socket-remove':'0'});assert.equal(c.commands[0].name,'gem.unsocket');c.pending.clear();
-  c.click({act:'toggle-enchant'});assert.match(c.elements['detail-pane'].innerHTML,/data-enchant-remove="0"/);assert.doesNotMatch(c.elements['detail-pane'].innerHTML,/data-socket-remove/);
-  c.click({'socket-remove':'0'});assert.equal(c.commands.length,1);c.click({'enchant-remove':'0'});assert.deepEqual(c.commands[1],{name:'item.removeEnchant',args:{itemId:'gear',index:0}});
-  c.click({'enchant-remove':'0'});assert.equal(c.commands.length,2);c.pending.clear();
-  c.UI.equipMatMode.itemId='other';c.click({'enchant-remove':'0'});assert.equal(c.commands.length,2);
+  c.click({act:'toggle-rune'});assert.match(c.elements['detail-pane'].innerHTML,/data-rune-remove="0"/);assert.doesNotMatch(c.elements['detail-pane'].innerHTML,/data-socket-remove/);
+  c.click({'socket-remove':'0'});assert.equal(c.commands.length,1);c.click({'rune-remove':'0'});assert.deepEqual(c.commands[1],{name:'rune.unsocket',args:{itemId:'gear',index:0}});
+  c.click({'rune-remove':'0'});assert.equal(c.commands.length,2);c.pending.clear();
+  c.UI.equipMatMode.itemId='other';c.click({'rune-remove':'0'});assert.equal(c.commands.length,2);
+});
+test('符文面板：取代附魔的位置，高階符文在前、點圖示鑲進第一個空孔、孔滿鎖定、沒有符文孔時說明原因',()=>{
+  const c=mount(),stock={gems:{},fusedGems:[],runes:{r01:2,r10:3}};c.uiGemsPanelSnapshot=()=>stock;
+  const bar=()=>c.elements['equip-action-bar'].innerHTML,panel=()=>c.elements['equip-material-panel'].innerHTML;
+  assert.match(bar(),/data-act="toggle-rune"/);assert.doesNotMatch(bar(),/toggle-enchant|附魔/);assert.equal(panel(),'');
+  c.click({act:'toggle-rune'});
+  assert.match(bar(),/btn btn-primary" data-act="toggle-rune"/);
+  assert.ok(panel().indexOf('data-rune-socket="r10"')>0&&panel().indexOf('data-rune-socket="r10"')<panel().indexOf('data-rune-socket="r01"'),'高階在前');
+  assert.match(panel(),/符文孔 1／4/);assert.doesNotMatch(panel(),/data-book-enchant/);
+  c.click({'rune-socket':'r10'});assert.deepEqual(c.commands[0],{name:'rune.socket',args:{itemId:'gear',runeId:'r10'}});c.pending.clear();
+  c.it.runes=['r01','r02','r03','r04'];c.renderDetail();
+  assert.match(panel(),/data-rune-socket="r10" disabled/);assert.match(panel(),/已滿/);
+  c.it.rarity=0;c.it.runes=[];c.renderDetail();
+  assert.match(panel(),/沒有符文孔/);assert.doesNotMatch(panel(),/data-rune-socket/);
+  c.click({act:'toggle-rune'});assert.equal(panel(),'');
 });
 test('鑲嵌頁有標題、孔及每類最高級寶石與數量，只有鑲嵌紅色且重按不退出',()=>{
   const c=mount();c.click({act:'toggle-socket'});
   const h=c.elements['detail-pane'].innerHTML,bar=c.elements['equip-action-bar'].innerHTML;
-  assert.match(h,/it-name/);assert.match(h,/it-sub/);assert.doesNotMatch(h,/it-affixes|it-enchant/);assert.equal(c.elements['equip-material-panel'].innerHTML,'');
+  assert.match(h,/it-name/);assert.match(h,/it-sub/);assert.doesNotMatch(h,/it-affixes|it-enchant|data-rune-socket/);assert.equal(c.elements['equip-material-panel'].innerHTML,'');
   assert.equal((h.match(/data-gem-level=/g)||[]).length,2);assert.match(h,/data-gem-socket-fused="f"/);
   assert.doesNotMatch(h,/data-gem-level="1"/);assert.match(h,/socket-gem-count">×2/);assert.match(h,/socket-gem-count">×1/);
   assert.equal((bar.match(/btn-primary/g)||[]).length,1);assert.match(bar,/btn btn-primary" data-act="toggle-socket"/);

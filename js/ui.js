@@ -4740,6 +4740,7 @@ function itemCellHTML(it, source, extraClass, pendingKey) {
     (it.upgrade ? '<span class="ic-up">+' + it.upgrade + '</span>' : '') +
     (itemEnchants(it).length ? '<span class="ic-enc">' + (ENCHANTS[itemEnchants(it)[0].key] || {}).emoji +
       (itemEnchants(it).length > 1 ? '×' + itemEnchants(it).length : '') + '</span>' : '') +
+    itemRuneBadgeHTML(it) +
     (it.locked ? '<span class="ic-lock">🔒</span>' : '') +
     (it.synthesized ? '<span class="ic-syn">✦</span>' : '') +
     '<span class="ic-lv">' + it.level + '</span>' +
@@ -5422,16 +5423,12 @@ function socketSelectedGem(type, level, fusedId) {
   });
 }
 
-/* 鑲入符文（js/runeword.js）：流程與 socketSelectedGem 相同，只是指令與參數不同。 */
-function socketSelectedRune(runeId) {
-  var it = findSelItem(), mode = equipSocketModeFor(it);
-  if (!mode || isUiCommandPending(itemPendingKey(it.id)) || mode.selIdx < 0 || it.sockets[mode.selIdx]) return;
-  var idx = mode.selIdx;
-  sendUiCommand('rune.socket', { itemId: it.id, runeId: runeId, index: idx }, { keys: [itemPendingKey(it.id)], panels: ['inv', 'equip', 'gems', 'header'] }).then(function (result) {
-    if (result !== null || UI.equipMatMode !== mode || !UI.sel || UI.sel.id !== it.id) return;
-    mode.advanceFrom = idx;
-    renderDetail();
-  }).catch(function (error) {
+/* 鑲入符文（js/runeword.js）：符文面板（UI.equipMatMode.mode === 'rune'）點符文圖示 → 放進第一個空的符文孔。
+   符文孔與寶石鑲孔分開，沒有「選孔」這一步。 */
+function socketRuneToSelected(runeId) {
+  var it = findSelItem();
+  if (!it || isUiCommandPending(itemPendingKey(it.id))) return;
+  sendUiCommand('rune.socket', { itemId: it.id, runeId: runeId }, { keys: [itemPendingKey(it.id)], panels: ['inv', 'equip', 'gems', 'header'] }).catch(function (error) {
     reportUiCommandFailure('鑲嵌符文', error, ['inv', 'equip', 'gems', 'header']);
   });
 }
@@ -5459,7 +5456,7 @@ function syncEquipSocketControls(it, mode) {
   // 同為空孔或同為已鑲孔時，寶石可用狀態不變，不再掃整份庫存。
   // 清單內容替換後會清除此記錄，新的按鈕仍須同步 pending／孔位狀態。
   if (gems && gems._equipSocketDisabled !== disabled) {
-    gems.querySelectorAll('[data-gem-socket], [data-gem-socket-fused], [data-rune-socket]').forEach(function (button) {
+    gems.querySelectorAll('[data-gem-socket], [data-gem-socket-fused]').forEach(function (button) {
       if (button.disabled !== disabled) button.disabled = disabled;
     });
     gems._equipSocketDisabled = disabled;
@@ -5472,6 +5469,32 @@ function syncEquipSocketPending() {
   if (UI.tab !== 'equip') return;
   var it = findSelItem(), mode = equipSocketModeFor(it);
   if (mode) syncEquipSocketControls(it, mode);
+}
+
+/* 右側「符文」素材面板：列出符文庫存（高階在前），點圖示鑲進第一個空的符文孔（js/runeword.js）。 */
+function equipRunePanelHTML(it, gemsSnapshot) {
+  if (typeof RUNE_SETTINGS === 'undefined' || typeof rwSlots !== 'function') return '';
+  var slots = rwSlots(it);
+  if (!slots.length) {
+    return '<div class="equip-material-section"><div class="equip-material-title">🔷 符文</div>' +
+      '<div class="equip-material-empty">這件裝備沒有符文孔（精良以上才有符文孔，孔數隨稀有度增加，最多 ' + RUNE_SETTINGS.maxSlots + ' 孔）。</div></div>';
+  }
+  var filled = slots.filter(Boolean).length;
+  var full = filled >= slots.length;
+  var icons = [];
+  for (var ri = RUNES.length - 1; ri >= 0; ri--) {
+    var rune = RUNES[ri], rn = (typeof runesViewCount === 'function') ? runesViewCount(gemsSnapshot, rune.id) : 0;
+    if (!rn) continue;
+    icons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '"' + (full ? ' disabled' : '') +
+      ' style="--c:' + rune.color + '" data-tip="' +
+      esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜鑲在這件裝備：' + rwRuneStatLine(it, rune.id) + (full ? '｜符文孔已滿' : '｜鑲入第一個空符文孔')) + '">' +
+      rune.glyph + '<span class="socket-gem-level">' + rune.tier + '</span><span class="socket-gem-count">×' + fmt(rn) + '</span></button>');
+  }
+  return '<div class="equip-material-section">' +
+    '<div class="equip-material-title">🔷 可用符文（點擊鑲入）</div>' +
+    '<div class="equip-material-subtitle">符文孔 ' + filled + '／' + slots.length + (full ? '｜已滿，點擊詳情中已鑲的符文可取下' : '｜依序放入指定的符文可組成符文之語（配方見符文頁）') + '</div>' +
+    (icons.length ? '<div class="equip-material-grid">' + icons.join('') + '</div>' : '<div class="equip-material-empty">尚無符文（擊殺與封魔塔會掉落，符文頁可合成）</div>') +
+    '</div>';
 }
 
 function renderDetail() {
@@ -5508,7 +5531,7 @@ function renderDetail() {
         '<button class="btn btn-primary" disabled>強化</button>' +
         '<button class="btn" disabled>洗煉</button>' +
         '<button class="btn" disabled>鑲嵌</button>' +
-        '<button class="btn" disabled>附魔</button>' +
+        '<button class="btn" disabled>符文</button>' +
         '<button class="btn btn-icon" disabled aria-label="卸下">' + EQUIP_UNEQUIP_ICON + '</button>';
       actionBar.style.display = 'flex';
     }
@@ -5537,7 +5560,7 @@ function renderDetail() {
     gold: player && player.gold,
     essence: player && player.essence,
     justUpgraded: justUpgraded,
-    enchant: matMode === 'enchant' ? { active: true } : null,
+    rune: matMode === 'rune' ? { active: true } : null,
     reroll: rerollMode ? {
       active: true,
       selIdx: rerollMode.selIdx
@@ -5545,8 +5568,9 @@ function renderDetail() {
     socket: socketMode ? { active: true, selIdx: socketMode.selIdx, pending: isUiCommandPending(itemPendingKey(it.id)) } : null
   });
   /* 操作列（2026-10 裝備頁改造）：一個主按鈕（背包裝備＝「裝備」，身上裝備＝「強化」）＋次按鈕，
-     卸下縮成最右側的圖示。「鑲嵌／附魔」改為開關右側素材面板：面板平常不顯示，
-     按下才出現對應的寶石或附魔書；換選別件裝備時自動收起（UI.equipMatMode 記著是哪一件）。 */
+     卸下縮成最右側的圖示。「鑲嵌／符文」改為開關右側素材面板：面板平常不顯示，
+     按下才出現對應的寶石或符文；換選別件裝備時自動收起（UI.equipMatMode 記著是哪一件）。
+     「符文」取代了原本「附魔」按鈕的位置（附魔功能已關閉，data.js ENCHANT_ENABLED）。 */
   var actionsHtml = '';
   var pendingKey = itemPendingKey(it.id);
   var fromInv = UI.sel.source === 'inv';
@@ -5578,12 +5602,12 @@ function renderDetail() {
   }
   actionsHtml += '<button class="btn' + (rerollMode ? ' btn-primary act-btn-tooltip' : '') + '" data-act="' + (rerollMode ? 'reroll-affix' : 'toggle-reroll') + '"' + rrAttrs + '>洗煉</button>';
   actionsHtml += '<button class="btn' + (socketMode ? ' btn-primary' : '') + '" data-act="toggle-socket" aria-pressed="' + (matMode === 'socket') + '">鑲嵌</button>';
-  actionsHtml += '<button class="btn" data-act="toggle-enchant" aria-pressed="' + (matMode === 'enchant') + '">附魔</button>';
+  actionsHtml += '<button class="btn' + (matMode === 'rune' ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '">符文</button>';
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="卸下" data-tip="卸下"' +
       pendingUiButtonAttributes(pendingKey) + '>' + EQUIP_UNEQUIP_ICON + '</button>';
   }
-  // 右側素材面板：只顯示目前開啟的那一類（寶石或附魔書）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
+  // 右側素材面板：只顯示目前開啟的那一類（寶石或符文）；小圖示的完整名稱、數值與持有量由滑鼠提示顯示
   var matHtml = '';
   var socketGemsHtml = null;
   if (socketMode) {
@@ -5600,15 +5624,6 @@ function renderDetail() {
         break;
       }
     }
-    // 符文（js/runeword.js）：與寶石共用同一排鑲孔，高階在前
-    var runeList = (typeof RUNES !== 'undefined' && typeof runesViewCount === 'function') ? RUNES : [];
-    for (var ri = runeList.length - 1; ri >= 0; ri--) {
-      var rune = runeList[ri], rn = runesViewCount(gemsSnapshot, rune.id);
-      if (!rn) continue;
-      gemIcons.push('<button type="button" class="equip-material-icon rune-icon" data-rune-socket="' + rune.id + '" style="--c:' + rune.color + '" data-tip="' +
-        esc(rune.name + '符文（第 ' + rune.tier + ' 階）×' + rn + '｜' + rwRuneStatLine(it, rune.id) + '｜鑲入選中孔位') + '">' +
-        rune.glyph + '<span class="socket-gem-level">' + rune.tier + '</span><span class="socket-gem-count">×' + fmt(rn) + '</span></button>');
-    }
     gemsViewFused(gemsSnapshot).forEach(function (fg) {
       gemIcons.push('<button type="button" class="equip-material-icon" data-gem-socket-fused="' + esc(fg.id) + '" data-tip="' +
         esc(fusedGemLabel(fg) + '｜鑲入選中孔位') + '">🧬<span class="socket-gem-count">×1</span></button>');
@@ -5616,34 +5631,7 @@ function renderDetail() {
     socketGemsHtml = gemIcons.length ? '<div class="equip-socket-gem-grid">' + gemIcons.join('') + '</div>' : '<div class="equip-material-empty">尚無寶石庫存</div>';
     h += '<div class="equip-socket-gems">' + socketGemsHtml + '</div>';
   }
-  var itEns2 = itemEnchants(it);
-  if (matMode === 'enchant' && itEns2.length >= enchantCapFor(it)) {
-    matHtml += '<div class="equip-material-section">' +
-      '<div class="equip-material-title">✨ 附魔</div>' +
-      '<div class="equip-material-empty">附魔欄已滿。點擊詳情中的附魔效果可取下（返還附魔書）。</div>' +
-      '</div>';
-  }
-  if (matMode === 'enchant' && itEns2.length < enchantCapFor(it)) {
-    var cat2 = enchantCatForType(it.slot);
-    var bookIcons = [];
-    for (var bk2 in ENCHANTS) {
-      if (ENCHANTS[bk2].cat !== cat2) continue;
-      var bn2 = player && player.books ? (player.books[bk2] || 0) : 0;
-      if (!bn2) continue;
-      var owned = itEns2.some(function (en2) { return en2.key === bk2; });
-      bookIcons.push('<button class="equip-material-icon' + (owned ? ' dim-chip' : '') + '" data-book-enchant="' + bk2 + '" data-tip="' +
-        esc(ENCHANTS[bk2].name + ' ×' + bn2 + '｜' + ENCHANTS[bk2].desc +
-          '｜消耗 1 書＋<img src="images/icon_essence.png" class="res-icon" alt="精華"> ' + ENCHANT_ESSENCE_COST + ' 精華（庫存 ' + fmt(player ? player.essence : 0) + '）' +
-          (owned ? '｜已附魔，僅可升級數值' : '')) + '">' + ENCHANTS[bk2].emoji + '</button>');
-    }
-    var catNames2 = { atk: '攻擊', def: '防禦', util: '功能' };
-    matHtml += '<div class="equip-material-section">' +
-      '<div class="equip-material-title">✨ 可用附魔書（點擊附魔）</div>' +
-      '<div class="equip-material-subtitle">' + catNames2[cat2] + '類部位' +
-      (bookIcons.length ? '' : '｜沒有可用的書（階段 8+ 掉落 / 封魔塔獎勵）') + '</div>' +
-      (bookIcons.length ? '<div class="equip-material-grid">' + bookIcons.join('') + '</div>' : '') +
-      '</div>';
-  }
+  if (matMode === 'rune') matHtml += equipRunePanelHTML(it, gemsSnapshot);
   var oldGems = pane.querySelector && pane.querySelector('.equip-socket-gems');
   var oldHoles = pane.querySelector && pane.querySelector('.equip-socket-page');
   var oldHeader = pane.querySelector && pane.querySelector('.equip-socket-header');
@@ -5960,6 +5948,10 @@ function renderForgeExtras(factorySnapshot, headerSnapshot) {
   var f = factorySnapshot && factorySnapshot.factory;
   var player = headerSnapshot && headerSnapshot.player;
   if (!f || !player) return;
+  /* 附魔功能關閉（data.js ENCHANT_ENABLED）：整張「附魔書」卡片隱藏，符文改在裝備頁使用 */
+  var encCard = ($id('enc-books') && $id('enc-books').closest) ? $id('enc-books').closest('.nfx-books') : null;
+  if (encCard) encCard.style.display = ENCHANT_ENABLED ? '' : 'none';
+  if (!ENCHANT_ENABLED) return;
   var encBooks = $id('enc-books');
   if (encBooks) {
     var bookChips = [];
@@ -6874,7 +6866,8 @@ function towerRewardRows(fl) {
     { icon: '✨', label: '經驗', value: fmt(bossStatsFor(fl).xp), note: '另加經驗加成' },
     { icon: '🔮', label: '附魔精華', value: '×' + fmt(rw.essence) },
     { icon: '💎', label: '隨機寶石', value: GEM_NAMES[rw.gemLevel] + ' ×2' },
-    { icon: '📖', label: '附魔書', value: '隨機一種 ×2' },
+    ENCHANT_ENABLED ? { icon: '📖', label: '附魔書', value: '隨機一種 ×2' }
+      : { icon: '🔷', label: '符文', value: fmt1(RUNE_DROP.towerBossPct) + '%', note: '樓層越高階數越高' },
     { icon: '💫', label: '魔塵', value: fmt1(bossDustRate(fl)) + '%', note: '神鑄材料' }
   ];
   var ancientRate = ancientEssenceDropChanceForBoss(fl);
@@ -7762,6 +7755,24 @@ function inventoryViewItems(snapshot) {
    面板每次回應都是新的一份深拷貝、參考永遠不相等，於是 1208 件裝備要跑 2416 次
    JSON.stringify——只為了確認兩個空陣列一樣。實測光這支就要 4.3 ms，而它在戰鬥中
    每秒被呼叫數次。 */
+/* 格子角標：鑲了符文就顯示第一顆的字形（多顆加 ×N）；成形符文之語用金色。取代附魔角標的位置。 */
+function itemRuneBadgeHTML(it) {
+  if (typeof rwHasRune !== 'function' || !rwHasRune(it)) return '';
+  var ids = it.runes.filter(Boolean);
+  var first = RUNE_BY_ID[ids[0]];
+  if (!first) return '';
+  return '<span class="ic-rune' + (rwActiveWord(it) ? ' is-word' : '') + '">' + first.glyph + (ids.length > 1 ? '×' + ids.length : '') + '</span>';
+}
+
+/* 格子的符文孔比對：只看鑲了哪些符文（角標用）。 */
+function inventoryRunesEqual(av, bv) {
+  var aLen = av ? av.length : 0;
+  var bLen = bv ? bv.length : 0;
+  if (aLen !== bLen) return false;
+  for (var i = 0; i < aLen; i++) if ((av[i] || null) !== (bv[i] || null)) return false;
+  return true;
+}
+
 function inventoryEnchantsEqual(av, bv) {
   var aLen = av ? av.length : 0;
   var bLen = bv ? bv.length : 0;
@@ -7793,6 +7804,7 @@ function inventoryGridSnapshotEqual(previous, next) {
     if (ai.enchant !== bi.enchant &&
       !inventoryEnchantsEqual(ai.enchant ? [ai.enchant] : null, bi.enchant ? [bi.enchant] : null)) return false;
     if (!inventoryEnchantsEqual(ai.enchants, bi.enchants)) return false;
+    if (!inventoryRunesEqual(ai.runes, bi.runes)) return false;
   }
   return true;
 }
@@ -8326,7 +8338,7 @@ function showOfflineSummary(sum) {
       if (sum.gems[glv]) loot.push('💎Lv.' + glv + ' 寶石×' + fmt(sum.gems[glv]));
     }
   }
-  if (sum.books) loot.push('📖附魔書×' + fmt(sum.books));
+  if (sum.books && ENCHANT_ENABLED) loot.push('📖附魔書×' + fmt(sum.books));
   if (sum.essence) loot.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="太古精華">太古精華×' + fmt(sum.essence));
   if (sum.dust) loot.push('💫魔塵×' + fmt(sum.dust));
   if (sum.parts) loot.push('🔧自動機組零件×' + fmt(sum.parts));
@@ -9879,7 +9891,7 @@ function showEnemyTooltip(anchorEl) {
     rewardLines.push('💰 金幣 x' + fmt(rw.gold));
     rewardLines.push('✨ 經驗 x' + fmt(m.xp));
     rewardLines.push('💎 寶石 等級 ' + rw.gemLevel + ' x2 顆');
-    rewardLines.push('🔮 附魔精華 x' + rw.essence + '（另附魔書 x2）');
+    rewardLines.push('🔮 附魔精華 x' + rw.essence + (ENCHANT_ENABLED ? '（另附魔書 x2）' : ''));
     if (dustRate > 0) rewardLines.push('💫 魔塵 (' + fmt1(dustRate) + '%)');
     if (soulOriginRate > 0) rewardLines.push('🧿 魔魂本源 (' + fmt1(soulOriginRate) + '%)');
     if (ancientEssenceRate > 0) rewardLines.push('🧿 太古精華 (' + fmt1(ancientEssenceRate) + '%)');
@@ -12823,11 +12835,11 @@ function initUI() {
     if (actBtn) {
       if (actBtn.disabled) return;
       var act = actBtn.getAttribute('data-act');
-      if (act === 'toggle-socket' || act === 'toggle-enchant') {
+      if (act === 'toggle-socket' || act === 'toggle-rune') {
         var matIt = findSelItem();
         if (!matIt) return;
         UI.equipRerollMode = null;
-        var wantMode = act === 'toggle-socket' ? 'socket' : 'enchant';
+        var wantMode = act === 'toggle-socket' ? 'socket' : 'rune';
         var curMode = UI.equipMatMode && UI.equipMatMode.itemId === matIt.id ? UI.equipMatMode.mode : null;
         UI.equipMatMode = wantMode === 'socket' && curMode === 'socket' ? UI.equipMatMode :
           (curMode === wantMode ? null : { itemId: matIt.id, mode: wantMode });
@@ -12927,10 +12939,24 @@ function initUI() {
       );
       return;
     }
-    // 符文鑲嵌
+    // 符文鑲嵌（符文面板點符文圖示）／取下（符文面板開啟時點詳情裡已鑲的符文）
     var rsk = e.target.closest('[data-rune-socket]');
     if (rsk) {
-      if (!rsk.disabled) socketSelectedRune(rsk.getAttribute('data-rune-socket'));
+      if (!rsk.disabled) socketRuneToSelected(rsk.getAttribute('data-rune-socket'));
+      return;
+    }
+    var rrm = e.target.closest('[data-rune-remove]');
+    if (rrm) {
+      var rmIt = findSelItem();
+      if (rmIt && UI.tab === 'equip' && !equipRerollModeFor(rmIt) && UI.equipMatMode && UI.equipMatMode.itemId === rmIt.id && UI.equipMatMode.mode === 'rune') {
+        if (isUiCommandPending(itemPendingKey(rmIt.id))) return;
+        sendUiCommand('rune.unsocket', { itemId: rmIt.id, index: parseInt(rrm.getAttribute('data-rune-remove'), 10) }, {
+          keys: [itemPendingKey(rmIt.id)],
+          panels: ['inv', 'equip', 'gems', 'header']
+        }).catch(function (error) {
+          reportUiCommandFailure('取下符文', error, ['inv', 'equip', 'gems', 'header']);
+        });
+      }
       return;
     }
     // 融合寶石鑲嵌
@@ -13952,6 +13978,10 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
     case 'book':
       destEl = document.getElementById('r-books') ? document.getElementById('r-books').parentElement : null;
       iconHtml = '<img src="images/icon_books.png" alt="books">';
+      break;
+    case 'rune':
+      destEl = document.querySelector('[data-tab="runes"]') || document.getElementById('r-gold');
+      iconHtml = '<span class="fly-emoji">🔷</span>';
       break;
     case 'skillXp':
       destEl = document.querySelector('[data-tab="skills"]') || document.getElementById('r-gold');

@@ -38,11 +38,7 @@ function build(c, seed, wordId, weaponType) {
   c.G.equipment.ring2 = c.makeEquipment(100, { slot: 'ring', rarity: RAR, level: 100 });
   const weapon = c.makeEquipment(100, { slot: 'weapon', rarity: RAR, level: 100, weaponType: weaponType });
   c.ensureSockets(weapon);
-  if (wordId) {
-    const w = c.RUNEWORD_BY_ID[wordId];
-    while (weapon.sockets.length < w.runes.length) weapon.sockets.push(null);   // 孔數不夠就補（只看效果強度，不看取得難度）
-    fillRunes(weapon, w.runes);
-  }
+  if (wordId) fillRunes(weapon, c.RUNEWORD_BY_ID[wordId].runes);   // 直接寫入符文孔（只看效果強度，不看取得難度）
   c.G.equipment.weapon = weapon;
   c.G.player.level = 100;
   c.markStatsDirty();

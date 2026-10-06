@@ -2239,7 +2239,8 @@ function socketCountFor(rarity, it) {
 }
 // 附魔欄位數：依稀有度表（普通 0、精良~獨特 1、史詩~神話 2、創世/神鑄創世 3）；雙手武器 +1
 function enchantCapFor(it) {
-  var n = RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
+  if (!ENCHANT_ENABLED) return 0;   // 附魔功能關閉（data.js）：沒有附魔欄
+  var n =RARITIES[clamp(it.rarity, 0, RARITIES.length - 1)].enchants;
   if (typeof isTwoHandItem === 'function' && isTwoHandItem(it)) n += TWO_HAND_BONUS_ENCHANTS;
   return n;
 }

@@ -2045,8 +2045,8 @@ function rollFieldDrops(m) {
     if (typeof rwRollFieldRuneDrops === 'function') {
         rwRollFieldRuneDrops(G.stage.zone, s, lootBonus, rw, eliteDropMult, drops);
     }
-    // 附魔書：基礎率由地圖／關卡掉落表提供
-    if (s >= 8 || zoneDrop.bookRate !== undefined) {
+    // 附魔書：基礎率由地圖／關卡掉落表提供（附魔功能關閉時不掉，見 data.js ENCHANT_ENABLED）
+    if (ENCHANT_ENABLED && (s >= 8 || zoneDrop.bookRate !== undefined)) {
         var bookBaseRate = Number(zoneDrop.bookRate || 0);
         var bookN = rollDropCount(bookBaseRate * (1 + lootBonus / 100) * rw * eliteDropMult);
         for (var bi = 0; bi < bookN; bi++) {

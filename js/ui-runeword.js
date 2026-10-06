@@ -101,7 +101,7 @@ function runeUiFocusHTML(snapshot, id) {
   var note = [];
   if (next && r.tier < RUNE_COMPOSE_MAX_TIER) note.push('合成：' + RUNE_COMPOSE_COUNT + ' 顆「' + r.name + '」→ 1 顆「' + next.name + '」');
   else if (r.tier >= RUNE_COMPOSE_MAX_TIER) note.push('第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上的符文無法合成，只能靠擊殺與封魔塔掉落');
-  if (lower) note.push('拆解：1 顆 → ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」（合成 3 → 1 再拆解 1 → 2，所以拆解是虧的）');
+  if (lower) note.push('拆解：1 顆 → ' + RUNE_DISMANTLE_YIELD + ' 顆「' + lower.name + '」（合成 ' + RUNE_COMPOSE_COUNT + ' → 1 再拆解 1 → ' + RUNE_DISMANTLE_YIELD + '，所以拆解是虧的）');
   h += '<div class="rx-note">' + esc(note.join('；')) + '</div>';
   var uses = [];
   for (var i = 0; i < RUNEWORDS.length; i++) {
@@ -217,11 +217,32 @@ function runeUiAction(act) {
   });
 }
 
+/* 說明按鈕的文字：孔數與合成數量都讀設定（RUNE_SETTINGS），表一改說明就跟著變。 */
+function runeUiHelpText() {
+  var by = {}, order = [];
+  for (var i = 0; i < RARITIES.length; i++) {
+    var n = Number(RUNE_SETTINGS.slotsByRarity[i]) || 0;
+    if (!n) continue;
+    if (!by[n]) { by[n] = []; order.push(n); }
+    by[n].push(RARITIES[i].name);
+  }
+  var slotText = order.map(function (n) {
+    var names = by[n];
+    return (names.length > 1 ? names[0] + '～' + names[names.length - 1] : names[0]) + ' ' + n + ' 孔';
+  }).join('、');
+  return '符文鑲在裝備專屬的符文孔裡（取代原本的附魔位置，與寶石鑲孔分開，最多 ' + RUNE_SETTINGS.maxSlots + ' 孔；在裝備頁按「符文」鑲入）。' +
+    '把「指定的符文、依指定順序」鑲進連續的符文孔，且裝備類型符合，就會成形為符文之語，獲得額外屬性與特殊威能；拆下任何一顆就失效，換回來又恢復。' +
+    '符文從野外擊殺與封魔塔通關掉落，' + RUNE_COMPOSE_COUNT + ' 顆同種可合成為下一階（第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上只能掉落）。' +
+    '符文孔數由稀有度決定：' + slotText + '。';
+}
+
 /* 一次性綁定（由 ui.js 的初始化流程呼叫）。 */
 function initRuneUi() {
   var tab = $id('tab-runes');
   if (!tab || !tab.addEventListener || tab._runeUiBound) return;
   tab._runeUiBound = true;
+  var helpBtn = tab.querySelector ? tab.querySelector('.pg-help') : null;
+  if (helpBtn && helpBtn.setAttribute) helpBtn.setAttribute('data-tt-desc', runeUiHelpText());
   tab.addEventListener('click', function (e) {
     var t = e.target;
     if (!t || !t.closest) return;

@@ -10,15 +10,15 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=45', 'shim.js?v=11');
+importScripts('protocol.js?v=46', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261005-thrust-cardinal-phantom', '../runeword_data.js?v=20261006-runeword', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261006-runeword', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261006-runeword', '../runeword.js?v=20261006-runeword',
-  '../skills.js?v=20261006-runeword', '../skills2.js?v=20261006-runeword', '../talents.js?v=20261003-rename-weineng',
-  '../player.js?v=20261006-runeword', '../special_rules.js',
-  '../combat.js?v=20261006-runeword', '../legendary.js?v=20261006-runeword', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261006-runeword',
-  '../factory.js?v=20261006-runeword', '../newforge.js', '../forge.js?v=20261006-runeword', '../save.js?v=20261006-runeword',
-  '../tasks.js?v=20260929-thunder-pair'
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes', '../runeword_data.js?v=20261007-runes', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261007-runes', '../runeword.js?v=20261007-runes',
+  '../skills.js?v=20261007-runes', '../skills2.js?v=20261007-runes', '../talents.js?v=20261003-rename-weineng',
+  '../player.js?v=20261007-runes', '../special_rules.js',
+  '../combat.js?v=20261007-runes', '../legendary.js?v=20261007-runes', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-runes',
+  '../factory.js?v=20261007-runes', '../newforge.js', '../forge.js?v=20261007-runes', '../save.js?v=20261007-runes',
+  '../tasks.js?v=20261007-runes'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
@@ -232,6 +232,7 @@ function backfillItemSockets() {
         seen.push(it);
         ensureSockets(it);
         if (typeof normalizeTwoHandItemCounts === 'function') normalizeTwoHandItemCounts(it);
+        if (typeof rwMigrateSocketRunes === 'function') rwMigrateSocketRunes(it);   // 舊版共用鑲孔的符文 → 符文孔
       }
     }
   }
@@ -473,7 +474,7 @@ function emitTick() {
 
    需要完整資料的地方（詳情面板、格子 tooltip）改用 params.detailIds 按需索取。 */
 var INV_CELL_FIELDS = ['id', 'rarity', 'slot', 'level', 'upgrade', 'synthesized',
-                       'locked', 'name', 'weaponType', 'enchant', 'enchants', 'kind'];
+                       'locked', 'name', 'weaponType', 'enchant', 'enchants', 'runes', 'kind'];
 var INV_DETAIL_MAX = 200; // 單次索取明細的上限，避免一次要回整包
 
 function inventoryCellView(it) {

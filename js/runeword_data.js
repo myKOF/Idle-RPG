@@ -4,11 +4,13 @@
    執行邏輯（鑲嵌判定、屬性聚合、觸發引擎）→ js/runeword.js；兩支同時載入於主執行緒與 Worker。
 
    ---- 玩法（參考暗黑 2 的符文之語）----
-   1. 符文是獨立的素材（G.player.runes = { 符文id: 數量 }），鑲在裝備的鑲孔裡，與寶石共用同一排鑲孔。
-   2. 把「指定的符文、依指定順序」鑲進「連續的鑲孔」，且裝備類型符合 → 該裝備成為符文之語裝備。
+   1. 符文是獨立的素材（G.player.runes = { 符文id: 數量 }），鑲在裝備專屬的「符文孔」裡（it.runes，
+      最多 RUNE_SETTINGS.maxSlots = 4 孔），與寶石的鑲孔（it.sockets）完全分開。
+      符文孔取代了原本的附魔欄位（附魔功能已關閉，見 data.js ENCHANT_ENABLED）。
+   2. 把「指定的符文、依指定順序」鑲進「連續的符文孔」，且裝備類型符合 → 該裝備成為符文之語裝備。
       符文之語是**當場判定**的衍生狀態（不存檔）：拆下任何一顆符文就失效，換回順序又恢復。
-   3. 鑲孔數由稀有度決定（獨特 2、史詩 3、傳說 4、神話 5、創世以上 6~7；雙手武器 ×1.75），
-      所以 2 符文要獨特以上、4 符文要傳說以上、6 符文要創世以上。
+   3. 符文孔數由稀有度決定（RUNE_SETTINGS.slotsByRarity），最多 4 孔，所以任何符文之語最多 4 顆符文：
+      2 符文要稀有以上、3 符文要史詩以上、4 符文要傳說以上。難度因此不靠孔數，而靠符文本身的階數與取得難度。
    4. 每顆符文單獨鑲著也有加成（武器／防具各一條），符文之語生效時兩者並存。
 
    ---- 數值口徑（單一權威）----
@@ -18,10 +20,11 @@
    fx／procs 的數字是固定值（不隨稀有度成長）——它們是機制，不是屬性。
 
    ---- 強度分級（tier）----
-     1 普通      2~3 符文　屬性包為主，附一點小機制
-     2 強力      3~4 符文　屬性包＋一個真正有感的機制
-     3 非常強力  4~5 符文　多重機制，定位明確
-     4 極度特殊  5~6 符文　改寫技能／生存／節奏規則，附代價或高門檻
+     1 普通      2~3 符文（低階符文）　屬性包為主，附一點小機制
+     2 強力      3~4 符文（中階符文）　屬性包＋一個真正有感的機制
+     3 非常強力  4 符文為主（含高階符文）　多重機制，定位明確
+     4 極度特殊  4 符文（全是頂階符文，只能靠掉落）　改寫技能／生存／節奏規則，附代價或高門檻
+   符文孔最多 4 孔，長度不再是難度來源；級距越高，配方裡的符文階數越高、越依賴掉落。
    ============================================================ */
 
 /* ---- 符文（33 種，由低到高）----
@@ -78,19 +81,33 @@ var RUNE_BY_ID = (function () {
   return m;
 })();
 
-/* 合成：同種符文 RUNE_COMPOSE_COUNT 顆 → 下一階 1 顆；RUNE_COMPOSE_MAX_TIER 以上只能靠掉落。 */
-var RUNE_COMPOSE_COUNT = 3;
-var RUNE_COMPOSE_MAX_TIER = 20;       // 能合成到第幾階（第 21 階起只掉落）
-var RUNE_DISMANTLE_YIELD = 2;         // 拆解 1 顆 → 低一階符文 N 顆（比合成吃虧：3 → 1 → 2）
-
-/* 掉落（野外擊殺／封魔塔 BOSS）。機率與階數分佈都是這裡的具名常數，
-   公式 runeDropTierMax／rollRuneTier 在 js/runeword.js。 */
-var RUNE_DROP = {
-  basePct: 1.2,             // 野外每次擊殺的基礎掉落率（%），再乘掉寶率／地圖倍率／敵種倍率
-  towerBossPct: 35,         // 封魔塔通關時的基礎機率（%）
-  tierSpread: 0.62,         // 階數分佈：最高階 38%、次高階 ~23%、…（越小越集中在高階）
-  progressPerTier: 4.6      // 進度（地圖序號＋關卡比例）每 1 對應的最高階增量
+/* ---- 全域設定（配置表 Runes 的「設定」列；寫回時整塊重建，順序即表內順序）----
+   maxSlots       符文孔數的硬上限（符文之語最多幾顆符文）
+   slotsByRarity  各稀有度的符文孔數（依 RARITIES 順序：普通 → 神鑄混沌），不得超過 maxSlots
+   composeCount   合成：同種符文幾顆 → 下一階 1 顆
+   composeMaxTier 能合成到第幾階（更高階只能靠掉落）
+   dismantleYield 拆解 1 顆 → 低一階符文幾顆（比合成吃虧：3 → 1 → 2）
+   statScale      全域縮放：符文與符文之語的 stats 一律乘此值（平衡用旋鈕）
+   drop           掉落（野外擊殺／封魔塔 BOSS）；公式 runeDropTierMax／rollRuneTier 在 js/runeword.js
+     basePct          野外每次擊殺的基礎掉落率（%），再乘掉寶率／地圖倍率／敵種倍率
+     towerBossPct     封魔塔通關時的基礎機率（%）
+     tierSpread       階數分佈：最高階 38%、次高階 ~23%、…（越小越集中在高階）
+     progressPerTier  進度（地圖序號＋關卡比例）每 1 對應的最高階增量 */
+var RUNE_SETTINGS = {
+  maxSlots: 4,
+  slotsByRarity: [0, 1, 1, 2, 3, 4, 4, 4, 4, 4, 4],
+  composeCount: 3,
+  composeMaxTier: 20,
+  dismantleYield: 2,
+  statScale: 1,
+  drop: { basePct: 1.2, towerBossPct: 35, tierSpread: 0.62, progressPerTier: 4.6 }
 };
+/* 既有程式使用的具名常數：全部由上面的設定衍生（唯一來源），不要在別處另寫數字。 */
+var RUNE_MAX_SLOTS = RUNE_SETTINGS.maxSlots;
+var RUNE_COMPOSE_COUNT = RUNE_SETTINGS.composeCount;
+var RUNE_COMPOSE_MAX_TIER = RUNE_SETTINGS.composeMaxTier;   // 第 composeMaxTier + 1 階起只掉落
+var RUNE_DISMANTLE_YIELD = RUNE_SETTINGS.dismantleYield;
+var RUNE_DROP = RUNE_SETTINGS.drop;
 
 /* ---- 裝備類型標記（bases）----
    any 任意；裝備欄位類型（weapon/helmet/…）；armor 八件防具；jewelry 戒指＋項鍊；
@@ -226,15 +243,15 @@ var RUNEWORDS = [
     stats: [['gemEff', 3.0], ['affixCap', 2.0], ['enhanceSuccess', 3.0]],
     flavor: '鎚聲不絕，鋼與靈魂同鍛。' },
 
-  /* ===== 第三級　非常強力（4~5 符文）===== */
-  { id: 'rw_apocalypse', name: '天啟', tier: 3, runes: ['r10', 'r17', 'r21', 'r23', 'r25'], bases: ['mainHand'],
+  /* ===== 第三級　非常強力（4 符文為主）===== */
+  { id: 'rw_apocalypse', name: '天啟', tier: 3, runes: ['r17', 'r21', 'r23', 'r25'], bases: ['mainHand'],
     stats: [['atkPct', 3.0], ['matkPct', 3.0], ['critDmg', 3.0], ['bossDmg', 3.0]], fx: { dmgPct: 18, aspdMult: 10 },
     flavor: '號角響起，審判降臨。' },
-  { id: 'rw_soulcleaver', name: '斷魂', tier: 3, runes: ['r10', 'r11', 'r23', 'r19', 'r26'], bases: ['twoHand'],
+  { id: 'rw_soulcleaver', name: '斷魂', tier: 3, runes: ['r11', 'r23', 'r19', 'r26'], bases: ['twoHand'],
     stats: [['atkPct', 4.0], ['critDmg', 4.0], ['eliteDmg', 3.0], ['pPen', 0.5]], fx: { dmgLoHpPct: 60 },
     procs: [{ on: 'hit', chance: 8, acts: [{ act: 'execute', hpBelow: 15 }] }],
     flavor: '一刀兩斷，魂亦分離。' },
-  { id: 'rw_chainstorm', name: '連環雷暴', tier: 3, runes: ['r07', 'r25', 'r07', 'r20', 'r13'], bases: ['caster'],
+  { id: 'rw_chainstorm', name: '連環雷暴', tier: 3, runes: ['r07', 'r25', 'r07', 'r20'], bases: ['caster'],
     stats: [['matkPct', 3.0], ['elemDmgLightning', 3.0], ['elemDmgWind', 2.0], ['mPen', 0.5]],
     procs: [
       { on: 'crit', chance: 30, acts: [{ act: 'dmg', pct: 120, elem: 'lightning', to: 'all' }] },
@@ -249,7 +266,7 @@ var RUNEWORDS = [
     stats: [['hpPct', 4.0], ['defPct', 3.5], ['mdefPct', 3.5], ['globalDmgRed', 2.0]],
     procs: [{ on: 'lowhp', below: 30, cd: 90, acts: [{ act: 'invuln', sec: 3 }, { act: 'heal', pctMax: 30 }, { act: 'cleanse' }] }],
     flavor: '退無可退之處，才是真正的開始。' },
-  { id: 'rw_swarmhunter', name: '群獵', tier: 3, runes: ['r13', 'r19', 'r04', 'r23', 'r16'], bases: ['mainHand'],
+  { id: 'rw_swarmhunter', name: '群獵', tier: 3, runes: ['r13', 'r19', 'r23', 'r16'], bases: ['mainHand'],
     stats: [['aspd', 2.5], ['atkPct', 2.5], ['critRate', 1.5], ['aoeDmg', 2.0]], fx: { dmgPerFoePct: 6, splashPct: 30 },
     flavor: '獸群越多，獵人越是興奮。' },
   { id: 'rw_assassin', name: '影殺', tier: 3, runes: ['r08', 'r16', 'r13', 'r26'], bases: ['dagger1h'],
@@ -259,21 +276,21 @@ var RUNEWORDS = [
   { id: 'rw_manafountain', name: '魔泉', tier: 3, runes: ['r12', 'r12', 'r18', 'r21'], bases: ['helmet', 'amulet'],
     stats: [['mpFlat', 4.0], ['mpRegen', 4.0], ['matkPct', 2.5]], fx: { manaCostRedPct: 40, killManaPct: 3 },
     flavor: '魔力不是用完的，是流過的。' },
-  { id: 'rw_thornedfury', name: '荊棘之怒', tier: 3, runes: ['r14', 'r05', 'r23', 'r22', 'r11'], bases: ['chest', 'shield'],
+  { id: 'rw_thornedfury', name: '荊棘之怒', tier: 3, runes: ['r14', 'r23', 'r22', 'r11'], bases: ['chest', 'shield'],
     stats: [['hpPct', 3.5], ['defPct', 3.5], ['pRes', 2.0]], passives: { thorns: 35 },
     procs: [{ on: 'hurt', chance: 25, cd: 2, acts: [{ act: 'dmg', pct: 150, type: 'phys', to: 'all' }] }],
     flavor: '怒意生出荊棘，連空氣都帶刺。' },
   { id: 'rw_bossbane', name: '弒王者', tier: 3, runes: ['r21', 'r10', 'r27', 'r11'], bases: ['mainHand'],
     stats: [['bossDmg', 5.0], ['eliteDmg', 4.0], ['atkPct', 2.5], ['matkPct', 2.5]], fx: { dmgHiHpPct: 40, dmgSoloPct: 40 },
     flavor: '王座再高，也有人要把它拆了。' },
-  { id: 'rw_vitalpact', name: '生命契約', tier: 3, runes: ['r10', 'r08', 'r22', 'r10', 'r22'], bases: ['jewelry'],
+  { id: 'rw_vitalpact', name: '生命契約', tier: 3, runes: ['r10', 'r08', 'r22', 'r22'], bases: ['jewelry'],
     stats: [['hpPct', 4.0], ['lifesteal', 4.0], ['hpRegen', 4.0]], fx: { killHealPct: 6, dmgSelfFullPct: 25 },
     flavor: '契約的對價是活著，且活得很好。' },
   { id: 'rw_shieldwall', name: '護盾牆', tier: 3, runes: ['r21', 'r14', 'r21', 'r26'], bases: ['chest', 'shoulder', 'helmet'],
     stats: [['shieldEff', 5.0], ['hpPct', 3.0], ['globalDmgRed', 2.5]],
     procs: [{ on: 'tick', every: 8, acts: [{ act: 'shield', pctMax: 20, sec: 8 }] }],
     flavor: '牆起，風止。' },
-  { id: 'rw_elemental', name: '元素之環', tier: 3, runes: ['r03', 'r17', 'r07', 'r06', 'r20'], bases: ['ring'],
+  { id: 'rw_elemental', name: '元素之環', tier: 3, runes: ['r03', 'r17', 'r07', 'r20'], bases: ['ring'],
     stats: [['elemDmgFire', 1.8], ['elemDmgIce', 1.8], ['elemDmgLightning', 1.8], ['elemDmgWind', 1.8], ['elemDmgPoison', 1.8]],
     fx: { dmgPct: 10 },
     flavor: '五元素各執一角，在指尖上取得平衡。' },
@@ -282,68 +299,68 @@ var RUNEWORDS = [
     procs: [{ on: 'hit', every: 6, acts: [{ act: 'castRandom' }] }],
     flavor: '揮刀太快，連技能都被牽著走。' },
 
-  /* ===== 第四級　極度特殊（5~6 符文；改寫規則，常附代價）===== */
-  { id: 'rw_reincarnation', name: '輪迴', tier: 4, runes: ['r29', 'r30', 'r28', 'r33', 'r32'], bases: ['chest'],
+  /* ===== 第四級　極度特殊（4 符文；改寫規則，常附代價）===== */
+  { id: 'rw_reincarnation', name: '輪迴', tier: 4, runes: ['r29', 'r30', 'r28', 'r33'], bases: ['chest'],
     stats: [['hpPct', 4.0], ['defPct', 4.0], ['mdefPct', 4.0]],
     fx: { reviveHpPct: 60, reviveCdSec: 180, reviveInvulnSec: 3, reviveDmgPct: 60, reviveDmgSec: 10, reviveRefresh: 1 },
     flavor: '死亡只是下一次輪迴的開場白。' },
-  { id: 'rw_timeloop', name: '時之沙', tier: 4, runes: ['r28', 'r29', 'r26', 'r30', 'r27'], bases: ['amulet'],
+  { id: 'rw_timeloop', name: '時之沙', tier: 4, runes: ['r28', 'r29', 'r26', 'r30'], bases: ['amulet'],
     stats: [['cdr', 5.0], ['mpRegen', 5.0], ['matkPct', 3.0]], fx: { cdPct: 45, maxHpPct: -20 },
     procs: [{ on: 'cast', chance: 25, acts: [{ act: 'recast' }] }],
     flavor: '沙漏倒過來了。代價是你的生命，也在一起流。' },
-  { id: 'rw_bloodmoon', name: '血月', tier: 4, runes: ['r10', 'r23', 'r31', 'r16', 'r33'], bases: ['mainHand'],
+  { id: 'rw_bloodmoon', name: '血月', tier: 4, runes: ['r23', 'r31', 'r16', 'r33'], bases: ['mainHand'],
     stats: [['atkPct', 3.0], ['matkPct', 3.0], ['critDmg', 3.0], ['lifesteal', 2.0]],
     fx: { dmgPct: 60, selfDrainPct: 2, killHealPct: 8, maxHpPct: -30 },
     flavor: '血月當空，誰先流盡誰先倒下。' },
-  { id: 'rw_arsenal', name: '武庫', tier: 4, runes: ['r19', 'r13', 'r20', 'r27', 'r31'], bases: ['mainHand'],
+  { id: 'rw_arsenal', name: '武庫', tier: 4, runes: ['r13', 'r20', 'r27', 'r31'], bases: ['mainHand'],
     stats: [['aspd', 3.0], ['atkPct', 3.0], ['matkPct', 3.0]], fx: { skillDmgPct: 40 },
     procs: [
       { on: 'hit', every: 4, acts: [{ act: 'castRandom' }] },
       { on: 'cast', chance: 15, acts: [{ act: 'recast' }] }
     ],
     flavor: '每一次揮擊，都從武器庫裡抽出另一招。' },
-  { id: 'rw_thunderemperor', name: '雷帝', tier: 4, runes: ['r25', 'r07', 'r25', 'r26', 'r20', 'r27'], bases: ['caster'],
+  { id: 'rw_thunderemperor', name: '雷帝', tier: 4, runes: ['r25', 'r07', 'r25', 'r27'], bases: ['caster'],
     stats: [['matkPct', 3.0], ['elemDmgLightning', 3.5], ['critRate', 2.0]], fx: { dmgCtrlPct: 40 },
     procs: [
       { on: 'tick', every: 1.5, acts: [{ act: 'dmg', pct: 150, elem: 'lightning', to: 'rand', n: 3 }] },
       { on: 'crit', acts: [{ act: 'stun', sec: 1, to: 'all' }] }
     ],
     flavor: '帝王不需親自出手，雷霆自會代勞。' },
-  { id: 'rw_lonewolf', name: '孤狼', tier: 4, runes: ['r22', 'r21', 'r23', 'r26', 'r28'], bases: ['mainHand'],
+  { id: 'rw_lonewolf', name: '孤狼', tier: 4, runes: ['r21', 'r23', 'r26', 'r28'], bases: ['mainHand'],
     stats: [['critDmg', 3.5], ['atkPct', 3.0], ['bossDmg', 3.5]], fx: { dmgSoloPct: 80, dmgHiHpPct: 40, cdPct: 15 },
     flavor: '孤狼只獵王者。獵物以外，一概不理。' },
-  { id: 'rw_starfall', name: '星墜', tier: 4, runes: ['r27', 'r26', 'r25', 'r17', 'r24', 'r28'], bases: ['staff2h'],
+  { id: 'rw_starfall', name: '星墜', tier: 4, runes: ['r27', 'r26', 'r24', 'r28'], bases: ['staff2h'],
     stats: [['matkPct', 3.5], ['elemDmgFire', 2.5], ['elemDmgIce', 2.5], ['mPen', 0.6]],
     procs: [{ on: 'tick', every: 3, acts: [{ act: 'dmg', pct: 150, elem: 'random', to: 'rand', n: 5 }] }],
     flavor: '夜空翻面，群星墜落成雨。' },
-  { id: 'rw_chaoslord', name: '混沌之主', tier: 4, runes: ['r31', 'r26', 'r28', 'r29', 'r30'], bases: ['jewelry'],
+  { id: 'rw_chaoslord', name: '混沌之主', tier: 4, runes: ['r31', 'r26', 'r29', 'r30'], bases: ['jewelry'],
     stats: [['resAll', 3.0], ['luck', 4.0], ['critRate', 3.0]], fx: { skillDmgPct: 25 },
     procs: [{ on: 'cast', acts: [{ act: 'buffRandom', sec: 8, from: [
       { sid: 'atkUp', val: 25 }, { sid: 'aspdUp', val: 25 }, { sid: 'critDmgUp', val: 60 },
       { sid: 'defUp', val: 40 }, { sid: 'evasionUp', val: 30 }, { sid: 'allDmgUp', val: 20 }] }] }],
     flavor: '混沌不問因果，每一次施法都是一場賭局。' },
-  { id: 'rw_dragonslayer', name: '屠龍者', tier: 4, runes: ['r21', 'r23', 'r27', 'r30', 'r33'], bases: ['twoHand'],
+  { id: 'rw_dragonslayer', name: '屠龍者', tier: 4, runes: ['r23', 'r27', 'r30', 'r33'], bases: ['twoHand'],
     stats: [['atkPct', 2.5], ['bossDmg', 5.0], ['critDmg', 2.5], ['pPen', 0.8]], fx: { dmgHiHpPct: 50, dmgPct: 25 },
     procs: [{ on: 'crit', chance: 25, acts: [{ act: 'dmg', pct: 300, type: 'phys', to: 'target' }] }],
     flavor: '巨龍的鱗片，就是為了被一劍貫穿而生。' },
-  { id: 'rw_immortalbody', name: '不朽之軀', tier: 4, runes: ['r30', 'r33', 'r29', 'r32', 'r26'], bases: ['armor'],
+  { id: 'rw_immortalbody', name: '不朽之軀', tier: 4, runes: ['r30', 'r33', 'r29', 'r32'], bases: ['armor'],
     stats: [['hpPct', 5.0], ['globalDmgRed', 3.0], ['resAll', 3.0]], fx: { maxHitPct: 15, dmgPct: -20 },
     procs: [{ on: 'lowhp', below: 40, cd: 60, acts: [{ act: 'shield', pctMax: 40, sec: 6 }, { act: 'invuln', sec: 2 }] }],
     flavor: '以出手的力量，換不會倒下的身軀。' },
-  { id: 'rw_legion', name: '萬軍', tier: 4, runes: ['r19', 'r27', 'r20', 'r31', 'r13', 'r26'], bases: ['greatsword2h', 'axe2h'],
+  { id: 'rw_legion', name: '萬軍', tier: 4, runes: ['r20', 'r27', 'r31', 'r26'], bases: ['greatsword2h', 'axe2h'],
     stats: [['atkPct', 3.0], ['aspd', 3.0], ['aoeDmg', 3.0]], fx: { splashPct: 80, dmgPerFoePct: 8 },
     legend: ['skyrendSlash', 'gatheringVortex'],
     flavor: '一人成軍，一劍橫掃萬軍。' },
-  { id: 'rw_bladedancer', name: '劍舞者', tier: 4, runes: ['r13', 'r19', 'r20', 'r31', 'r27'], bases: ['twoHand'],
+  { id: 'rw_bladedancer', name: '劍舞者', tier: 4, runes: ['r19', 'r20', 'r31', 'r27'], bases: ['twoHand'],
     stats: [['aspd', 3.0], ['critRate', 3.0], ['atkPct', 3.0]], fx: { aspdMult: 15 },
     legend: ['danceTwinBlades', 'danceThousandCuts', 'danceUnyielding'],
     flavor: '舞到最後一步時，才知道這是一場不能停的舞。' },
-  { id: 'rw_voidwalker', name: '虛空行者', tier: 4, runes: ['r26', 'r33', 'r26', 'r31', 'r29'], bases: ['boots'],
+  { id: 'rw_voidwalker', name: '虛空行者', tier: 4, runes: ['r26', 'r33', 'r31', 'r29'], bases: ['boots'],
     stats: [['evasion', 6.0], ['hit', 4.0], ['hpPct', 3.0]], fx: { dmgPct: 25 },
     procs: [{ on: 'hurt', chance: 30, cd: 4, acts: [
       { act: 'invuln', sec: 1.5 }, { act: 'dmg', pct: 150, elem: 'dark', to: 'all' }] }],
     flavor: '走進虛空的人，被攻擊的永遠是上一個位置。' },
-  { id: 'rw_genesis', name: '創世紀', tier: 4, runes: ['r28', 'r29', 'r30', 'r31', 'r32', 'r33'], bases: ['any'],
+  { id: 'rw_genesis', name: '創世紀', tier: 4, runes: ['r30', 'r31', 'r32', 'r33'], bases: ['any'],
     stats: [['atkPct', 3.0], ['matkPct', 3.0], ['elemDmgFire', 1.5], ['elemDmgIce', 1.5], ['elemDmgLightning', 1.5],
       ['elemDmgPoison', 1.5], ['elemDmgLight', 1.5], ['elemDmgDark', 1.5], ['elemDmgEarth', 1.5], ['elemDmgWind', 1.5]],
     fx: { dmgPct: 50, cdPct: 20, aspdMult: 15, manaCostRedPct: 30 },

@@ -107,7 +107,8 @@ function taskProgressFor(def) {
       return taskCountEquipSlots(Math.floor(Number(parts[0]) || 0), Math.floor(Number(parts[1]) || 0));
     case 'upgradeCount': return Math.floor(Number(stats.upgraded) || 0);
     case 'rerollCount': return Math.floor(Number(stats.rerolled) || 0);
-    case 'enchantCount': return Math.floor(Number(stats.enchanted) || 0);
+    case 'enchantCount': return Math.floor(Number(stats.enchanted) || 0);   // 附魔功能已關閉（data.js ENCHANT_ENABLED），此類型不再被任何任務使用
+    case 'runeSocketCount': return Math.floor(Number(stats.runeSocketed) || 0);   // 累計鑲入符文次數（socketRune 計）
     case 'composeCount': return Math.floor(Number(stats.gemComposed) || 0);
     case 'socketCount': return taskCountSocketedGems();
     case 'forgeParts': return taskCountForgeParts();
@@ -174,6 +175,11 @@ function taskGrantReward(def) {
     case 'gem': {
       var lv = Math.max(1, Math.floor(Number(def.rewardParam) || 1));
       for (var i = 0; i < qty; i++) addGem(randomGemType(), lv, 1);
+      break;
+    }
+    case 'rune': {   // 符文（param＝符文 id，如 r02）
+      var runeKey = String(def.rewardParam || '');
+      if (typeof RUNE_BY_ID !== 'undefined' && RUNE_BY_ID[runeKey] && typeof addRune === 'function') addRune(runeKey, qty);
       break;
     }
     case 'book': {

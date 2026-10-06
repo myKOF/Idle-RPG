@@ -17,6 +17,8 @@ function loadItemContext() {
   ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
+  // 附魔功能已關閉（data.js ENCHANT_ENABLED = false）但程式保留：本檔驗證的是保留下來的附魔邏輯，所以在這個環境把開關打開。
+  vm.runInContext('ENCHANT_ENABLED = true;', context);
   // 刻意不定義 G：讀到就是 ReferenceError，測試會直接失敗
   return context;
 }

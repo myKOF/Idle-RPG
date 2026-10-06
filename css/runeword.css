@@ -238,9 +238,15 @@
 #tab-runes .rx-lines { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.7; color: #d5d1c4; }
 #tab-runes .rx-flavor { font-size: 11px; color: #7f7a70; font-style: italic; }
 
-/* ---- 裝備詳情：符文鑲孔與符文之語橫幅（js/item.js itemSocketHTML）---- */
+/* ---- 裝備詳情：符文孔與符文之語橫幅（js/item.js itemRuneHTML；取代原本附魔欄位的位置）---- */
 .it-sockets .socket.rune-socket .sk-name { color: #d8c9a0; }
 .it-sockets .socket.runeword-socket { box-shadow: inset 0 0 0 1px #7a6440; }
+/* 符文面板開啟時，已鑲的符文可點擊取下（比照附魔的 .it-enchant.removable） */
+.it-sockets .socket.rune-socket.removable { cursor: pointer; }
+.it-sockets .socket.rune-socket.removable:hover { background: #2a1e2e; border-color: var(--bad, #f87171); text-decoration: line-through; }
+/* 背包格角標：鑲了符文（取代附魔角標），成形符文之語為金色 */
+.ic-rune { position: absolute; bottom: 1px; right: 3px; font-size: 10px; color: #d8c9a0; }
+.ic-rune.is-word { color: #f5c542; text-shadow: 0 0 4px #f5c54288; }
 
 .it-runeword {
   margin-top: 6px;

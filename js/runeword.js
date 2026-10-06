@@ -2,14 +2,15 @@
 /* ============ 符文之語：執行層 ============
    資料表在 js/runeword_data.js（符文、符文之語、效果詞彙）。本檔負責：
      §1 符文庫存與合成／拆解     （G.player.runes = { 符文id: 數量 }，隨存檔）
-     §2 鑲嵌與符文之語判定       （鑲孔 { rune: id }；符文之語是當場判定的衍生狀態，不存檔）
+     §2 符文孔、鑲嵌與符文之語判定（符文孔 it.runes = [符文id|null, …]，最多 4 孔，與寶石鑲孔 it.sockets 分開；
+                                    符文之語是當場判定的衍生狀態，不存檔）
      §3 屬性聚合                 （computeStats 呼叫 rwNewAggregate／rwAddItem／rwFinishAggregate）
      §4 戰鬥掛勾                 （傷害乘區、攻速、冷卻、法力、受擊、死亡、事件觸發 rwFire）
      §5 掉落
      §6 說明文字                 （由資料自動產生，說明與實際效果同源，不會漂移）
    戰鬥期短暫狀態存在 RW_RT，不進存檔。 */
 
-var RW_STAT_SCALE = 1;          // 全域縮放：符文與符文之語的 stats 一律乘此值（平衡用旋鈕）
+var RW_STAT_SCALE = RUNE_SETTINGS.statScale;   // 全域縮放：符文與符文之語的 stats 一律乘此值（平衡用旋鈕；配置表 Runes 的 statScale）
 var RW_DEPTH_LIMIT = 3;         // 事件觸發的巢狀上限（擊殺 → 觸發 → 再擊殺…）
 
 /* ---- 戰鬥期狀態（不入存檔） ---- */
@@ -73,14 +74,36 @@ function dismantleRune(id) {
 }
 
 /* ============================================================
-   §2 鑲嵌與符文之語判定
+   §2 符文孔、鑲嵌與符文之語判定
    ============================================================ */
-function rwIsRuneSocket(g) { return !!(g && g.rune && RUNE_BY_ID[g.rune]); }
+/* 符文孔數：由稀有度決定（RUNE_SETTINGS.slotsByRarity），不超過 maxSlots；沒有雙手加成。 */
+function runeSlotCountFor(it) {
+  if (!it) return 0;
+  var r = clamp(Math.floor(Number(it.rarity) || 0), 0, RARITIES.length - 1);
+  return clamp(Math.floor(Number(RUNE_SETTINGS.slotsByRarity[r]) || 0), 0, RUNE_SETTINGS.maxSlots);
+}
+/* 這件裝備的符文孔內容（純讀取，不改動裝備）：[符文id|null, …]。
+   長度＝孔數；但已鑲在更後面孔位的符文不會因設定調降孔數而消失（仍會列出、可取下）。 */
+function rwSlots(it) {
+  var stored = it && Array.isArray(it.runes) ? it.runes : [];
+  var n = Math.max(runeSlotCountFor(it), Math.min(stored.length, RUNE_SETTINGS.maxSlots));
+  var out = [];
+  for (var i = 0; i < n; i++) out.push(stored[i] && RUNE_BY_ID[stored[i]] ? stored[i] : null);
+  return out;
+}
+/* 補齊 it.runes 到孔數（鑲嵌時才呼叫；渲染函式不得呼叫）。 */
+function ensureRuneSlots(it) {
+  var n = runeSlotCountFor(it);
+  if (!Array.isArray(it.runes)) it.runes = [];
+  while (it.runes.length < n) it.runes.push(null);
+  for (var i = 0; i < it.runes.length; i++) if (it.runes[i] === undefined) it.runes[i] = null;
+  return it.runes;
+}
 /* 快速路徑：絕大多數裝備沒有任何符文，itemScore／排序會大量呼叫判定，先用這個擋掉。 */
 function rwHasRune(it) {
-  var s = it && it.sockets;
+  var s = it && it.runes;
   if (!s) return false;
-  for (var i = 0; i < s.length; i++) if (s[i] && s[i].rune) return true;
+  for (var i = 0; i < s.length; i++) if (s[i]) return true;
   return false;
 }
 
@@ -88,15 +111,19 @@ function rwHasRune(it) {
 function socketRune(it, runeId, index) {
   if (!it) return '找不到裝備';
   if (!RUNE_BY_ID[runeId]) return '沒有這種符文';
-  ensureSockets(it);
-  var idx = index == null ? it.sockets.indexOf(null) : index;
-  if (!Number.isInteger(idx) || idx < 0 || idx >= it.sockets.length) return '沒有可用鑲孔';
-  if (it.sockets[idx] !== null) return '此鑲孔已有鑲嵌物';
+  if (!runeSlotCountFor(it)) return '這件裝備沒有符文孔（精良以上才有）';
+  var slots = ensureRuneSlots(it);
+  var idx = index == null ? slots.indexOf(null) : index;
+  if (index == null && idx < 0) return '符文孔已滿（點擊已鑲的符文可取下）';
+  if (!Number.isInteger(idx) || idx < 0 || idx >= slots.length) return '沒有可用的符文孔';
+  if (slots[idx] !== null) return '此符文孔已有符文';
   if (runeCount(runeId) < 1) return '符文不足';
   var before = rwActiveWord(it);
   addRune(runeId, -1);
-  it.sockets[idx] = { rune: runeId };
+  slots[idx] = runeId;
+  if (typeof G !== 'undefined' && G && G.factory && G.factory.stats) G.factory.stats.runeSocketed = (G.factory.stats.runeSocketed || 0) + 1;   // 任務進度
   if (typeof markStatsDirty === 'function') markStatsDirty();
+  if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true; }
   var after = rwActiveWord(it);
   if (after && (!before || before.word.id !== after.word.id) && typeof blog === 'function') {
     blog('✨ 符文之語【' + after.word.name + '】成形！', 'good');
@@ -104,13 +131,41 @@ function socketRune(it, runeId, index) {
   return null;
 }
 
-/* 拆下符文回庫存（unsocketGem 的符文分支與分解／神鑄取回共用）。回傳是否為符文鑲孔。 */
-function rwReclaimRuneSocket(it, idx) {
-  var g = it && it.sockets && it.sockets[idx];
-  if (!rwIsRuneSocket(g)) return false;
-  addRune(g.rune, 1);
-  it.sockets[idx] = null;
+/* 取下指定符文孔的符文回庫存。成功回 true。 */
+function unsocketRune(it, idx) {
+  if (!it || !Array.isArray(it.runes) || !Number.isInteger(idx) || !it.runes[idx]) return false;
+  addRune(it.runes[idx], 1);
+  it.runes[idx] = null;
+  if (typeof markStatsDirty === 'function') markStatsDirty();
+  if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true; }
   return true;
+}
+
+/* 取回這件裝備上所有符文（分解、神鑄、熔爐取回素材時共用）。回傳取回的顆數。 */
+function rwReclaimAllRunes(it) {
+  var n = 0;
+  if (!it || !Array.isArray(it.runes)) return 0;
+  for (var i = 0; i < it.runes.length; i++) {
+    if (it.runes[i]) { addRune(it.runes[i], 1); it.runes[i] = null; n++; }
+  }
+  return n;
+}
+
+/* 舊版（符文與寶石共用鑲孔）的存檔整理：把 it.sockets 裡的 { rune } 移到符文孔，放不下的退回庫存。冪等。 */
+function rwMigrateSocketRunes(it) {
+  if (!it || !Array.isArray(it.sockets)) return false;
+  var moved = false;
+  for (var i = 0; i < it.sockets.length; i++) {
+    var g = it.sockets[i];
+    if (!g || !g.rune) continue;
+    moved = true;
+    it.sockets[i] = null;
+    var slots = ensureRuneSlots(it);
+    var free = slots.indexOf(null);
+    if (RUNE_BY_ID[g.rune] && free >= 0) slots[free] = g.rune;
+    else if (RUNE_BY_ID[g.rune]) addRune(g.rune, 1);
+  }
+  return moved;
 }
 
 /* 裝備類型標記比對。bases 省略或含 any ＝ 不限。 */
@@ -141,9 +196,9 @@ function rwItemMatches(it, bases) {
 /* 這件裝備目前成形的符文之語：{ word, start }；沒有回 null。
    規則：連續鑲孔依序放滿該組符文，且裝備類型符合；多組同時符合取符文數最多者。 */
 function rwActiveWord(it) {
-  if (!it || !Array.isArray(it.sockets) || !it.sockets.length || !rwHasRune(it)) return null;
+  if (!rwHasRune(it)) return null;
   var best = null;
-  var socks = it.sockets;
+  var socks = rwSlots(it);
   for (var wi = 0; wi < RUNEWORDS.length; wi++) {
     var w = RUNEWORDS[wi];
     var n = w.runes.length;
@@ -153,8 +208,7 @@ function rwActiveWord(it) {
     for (var s = 0; s + n <= socks.length; s++) {
       var ok = true;
       for (var k = 0; k < n; k++) {
-        var g = socks[s + k];
-        if (!g || g.rune !== w.runes[k]) { ok = false; break; }
+        if (socks[s + k] !== w.runes[k]) { ok = false; break; }
       }
       if (ok) { best = { word: w, start: s }; break; }
     }
@@ -167,8 +221,8 @@ function rwActiveWord(it) {
    至少要有一顆符文已放在正確位置才算候選（全空不列，不然 56 組全是候選）。 */
 function rwCandidates(it) {
   var out = [];
-  if (!it || !Array.isArray(it.sockets) || !it.sockets.length || !rwHasRune(it)) return out;
-  var socks = it.sockets;
+  if (!rwHasRune(it)) return out;
+  var socks = rwSlots(it);
   var active = rwActiveWord(it);
   for (var wi = 0; wi < RUNEWORDS.length; wi++) {
     var w = RUNEWORDS[wi];
@@ -181,7 +235,7 @@ function rwCandidates(it) {
       for (var k = 0; k < n; k++) {
         var g = socks[s + k];
         if (!g) { missing.push(w.runes[k]); continue; }
-        if (g.rune === w.runes[k]) { hit++; continue; }
+        if (g === w.runes[k]) { hit++; continue; }
         ok = false; break;
       }
       if (ok && hit > 0 && missing.length) pick = { word: w, start: s, missing: missing };
@@ -229,12 +283,12 @@ function rwRuneStatLine(it, runeId) {
 /* 一件裝備上符文與符文之語提供的所有屬性：[{ key, val, src }]。 */
 function rwItemStatEntries(it) {
   var out = [];
-  if (!it || !Array.isArray(it.sockets)) return out;
+  if (!rwHasRune(it)) return out;
   var side = rwRuneSide(it);
-  for (var i = 0; i < it.sockets.length; i++) {
-    var g = it.sockets[i];
-    if (!rwIsRuneSocket(g)) continue;
-    var spec = RUNE_BY_ID[g.rune][side];
+  var slots = rwSlots(it);
+  for (var i = 0; i < slots.length; i++) {
+    if (!slots[i]) continue;
+    var spec = RUNE_BY_ID[slots[i]][side];
     var v = rwStatValue(it, spec[0], spec[1]);
     if (v) out.push({ key: spec[0], val: v, src: 'rune' });
   }
@@ -882,30 +936,16 @@ function rwDescribeLines(word, it) {
   }
   return lines;
 }
-/* 這組符文之語最少要什麼稀有度才有足夠的鑲孔；twoHand＝以雙手武器計（鑲孔 ×1.75 捨去）。-1＝做不出來。 */
-function rwMinRarity(word, twoHand) {
+/* 這組符文之語最少要什麼稀有度才有足夠的符文孔（RUNE_SETTINGS.slotsByRarity）。-1＝做不出來。 */
+function rwMinRarity(word) {
   for (var i = 0; i < RARITIES.length; i++) {
-    var n = twoHand ? Math.floor(RARITIES[i].sockets * TWO_HAND_SOCKET_MULT) : RARITIES[i].sockets;
-    if (n >= word.runes.length) return i;
+    if (Number(RUNE_SETTINGS.slotsByRarity[i]) >= word.runes.length) return i;
   }
   return -1;
 }
-function rwAllowsTwoHand(word) {
-  for (var i = 0; i < word.bases.length; i++) {
-    var b = word.bases[i];
-    if (b === 'twoHand' || b === 'mainHand' || b === 'any' || b === 'melee' || b === 'caster') return true;
-    if (typeof WEAPON_TYPES !== 'undefined' && WEAPON_TYPES[b] && WEAPON_TYPES[b].cat === 'twoHand') return true;
-  }
-  return false;
-}
 function rwSocketNeedText(word) {
-  var i = rwMinRarity(word, false);
-  var text = '需要 ' + word.runes.length + ' 孔（' + (i >= 0 ? RARITIES[i].name + '以上' : '無法達成');
-  if (rwAllowsTwoHand(word)) {
-    var j = rwMinRarity(word, true);
-    if (j >= 0 && (i < 0 || j < i)) text += '；雙手武器 ' + RARITIES[j].name + '以上';
-  }
-  return text + '）';
+  var i = rwMinRarity(word);
+  return '需要 ' + word.runes.length + ' 個符文孔（' + (i >= 0 ? RARITIES[i].name + '以上' : '無法達成') + '）';
 }
 /* 配方文字：「微光 → 餘燼」。 */
 function rwRecipeText(word) {

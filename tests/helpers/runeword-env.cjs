@@ -39,29 +39,31 @@ function loadRuneEnv(opts) {
   return context;
 }
 
-/* 建立一件可鑲嵌的測試裝備；rarity 預設 5（傳說，4 孔）。 */
+/* 建立一件可鑲嵌的測試裝備；rarity 預設 5（傳說，4 個符文孔）。 */
 function makeItem(c, over) {
   const it = Object.assign({
     id: 'it-' + Math.random().toString(36).slice(2), name: '測試裝備', rarity: 5, slot: 'weapon',
-    weaponType: 'sword1h', level: 100, upgrade: 0, locked: false, affixes: [], sockets: [], enchants: []
+    weaponType: 'sword1h', level: 100, upgrade: 0, locked: false, affixes: [], sockets: [], enchants: [], runes: []
   }, over || {});
   c.ensureSockets(it);
   return it;
 }
 
-/* 把指定符文依序塞進裝備的鑲孔（直接寫入，不經庫存）。 */
+/* 把指定符文依序塞進裝備的符文孔（直接寫入，不經庫存）。 */
 function fillRunes(it, runes, start) {
   const s = start || 0;
-  runes.forEach((id, i) => { it.sockets[s + i] = { rune: id }; });
+  if (!Array.isArray(it.runes)) it.runes = [];
+  while (it.runes.length < s + runes.length) it.runes.push(null);
+  runes.forEach((id, i) => { it.runes[s + i] = id; });
   return it;
 }
 
 module.exports = { loadRuneEnv, makeItem, fillRunes, root, SIM_FILES };
 
-/* 為指定符文之語建一件「剛好能成形」的裝備：挑 bases 裡第一個可行的裝備型態，孔數補到足夠。 */
+/* 為指定符文之語建一件「剛好能成形」的裝備：挑 bases 裡第一個可行的裝備型態（預設傳說，符文孔足夠）。 */
 function wordItem(c, id, over) {
   const w = c.RUNEWORD_BY_ID[id];
-  const base = { slot: 'weapon', weaponType: 'sword1h', rarity: 7, level: 100 };
+  const base = { slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100 };
   const b = w.bases[0];
   if (['chest', 'helmet', 'boots', 'shoulder', 'belt', 'gloves', 'legs', 'wrist', 'ring', 'amulet'].includes(b)) { base.slot = b; delete base.weaponType; }
   if (b === 'jewelry') { base.slot = 'ring'; delete base.weaponType; }
@@ -70,7 +72,6 @@ function wordItem(c, id, over) {
   if (b === 'twoHand') base.weaponType = 'axe2h';
   if (['shield', 'focus', 'orb', 'spellbook', 'dagger1h', 'staff2h', 'greatsword2h', 'magicSword1h'].includes(b)) base.weaponType = b;
   const it = makeItem(c, Object.assign(base, over || {}));
-  while (it.sockets.length < w.runes.length) it.sockets.push(null);
   fillRunes(it, w.runes);
   return it;
 }

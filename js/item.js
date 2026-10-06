@@ -437,9 +437,7 @@ function socketFusedGem(it, fusedId, index) {
 function unsocketGem(it, idx) {
   if (!it.sockets || !it.sockets[idx]) return false;
   var g = it.sockets[idx];
-  if (g.rune) {                       // 符文（js/runeword.js）：取下回符文庫存
-    addRune(g.rune, 1);
-  } else if (g.fused) {
+  if (g.fused) {
     if (!G.player.fusedGems) G.player.fusedGems = [];
     G.player.fusedGems.push(g.fused);
     UI.dirty.gems = true;
@@ -567,6 +565,9 @@ function makeEquipment(stage, opts) {
    附魔數量依稀有度（普通 0、精良~獨特 1、史詩~神話 2、創世/神鑄創世 3）。
    舊存檔單附魔（it.enchant）延遲轉換為 it.enchants 陣列。 */
 function itemEnchants(it) {
+  /* 附魔功能關閉時（data.js ENCHANT_ENABLED）一律視為沒有附魔：屬性、評分、顯示都不計。
+     回傳新陣列、不改動 it——it.enchants／舊的 it.enchant 原樣留著，改回 true 即恢復。 */
+  if (!ENCHANT_ENABLED) return [];
   if (!it.enchants) {
     it.enchants = it.enchant ? [it.enchant] : [];
     delete it.enchant;
@@ -578,6 +579,7 @@ function itemEnchants(it) {
    存的是「附魔當下的寶石等級」而非數值（enchantValue → js/formula.js §6），
    所以「取較高」是比算出來的數值——既有那條可能帶變異倍率，不能只比寶石等級。 */
 function applyEnchantTo(item, bookKey, gemLevel) {
+  if (!ENCHANT_ENABLED) return item;
   var ens = itemEnchants(item);
   var gemLv = Math.max(0, Number(gemLevel) || 0);
   var val = enchantValueFor(item, bookKey, gemLv);
@@ -602,6 +604,7 @@ function enchantCatForType(type) {
 }
 // 附魔：消耗 1 本書 + 精華；同類附魔僅可升級為更高數值。回傳 null=成功
 function manualEnchant(it, bookKey) {
+  if (!ENCHANT_ENABLED) return '附魔功能已關閉（由符文取代）';
   var e = ENCHANTS[bookKey];
   if (!e) return '未知附魔書';
   if ((G.player.books[bookKey] || 0) < 1) return '沒有「' + e.name + '」書';
@@ -629,6 +632,7 @@ function manualEnchant(it, bookKey) {
 }
 // 取下附魔：返還 1 本附魔書（精華不退）
 function removeEnchantAt(it, idx) {
+  if (!ENCHANT_ENABLED) return false;
   var ens = itemEnchants(it);
   var en = ens[idx];
   if (!en) return false;
@@ -683,23 +687,17 @@ function enchantLine(it, en) {
    洗煉模式只渲染屬性選取，費用與執行按鈕由 UI 裝備操作列處理。 */
 function itemSocketHTML(it, mode) {
   var sockets = Array.isArray(it.sockets) ? it.sockets : [];
-  var hasRune = sockets.some(function (s) { return s && s.rune; });
-  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔' + (hasRune ? '（含符文）' : '') + '</div>');
-  var rwAct = (typeof rwActiveWord === 'function') ? rwActiveWord(it) : null;
+  var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔</div>');
   for (var si = 0; si < sockets.length; si++) {
     var g = sockets[si], text;
-    var inWord = !!rwAct && si >= rwAct.start && si < rwAct.start + rwAct.word.runes.length;
-    if (g && g.rune && typeof RUNE_BY_ID !== 'undefined' && RUNE_BY_ID[g.rune]) {
-      text = '<span class="sk-name">' + (si + 1) + '. ' + RUNE_BY_ID[g.rune].glyph + ' ' + esc(runeLabel(g.rune)) + '</span>' +
-        '<span class="sk-val">' + esc(rwRuneStatLine(it, g.rune)) + '</span>';
-    } else if (g && g.fused) text = (si + 1) + '. ' + esc(fusedGemLabel(g.fused));
+    if (g && g.fused) text = (si + 1) + '. ' + esc(fusedGemLabel(g.fused));
     else if (g && GEM_TYPES[g.type]) {
       var gt = GEM_TYPES[g.type];
       text = '<span class="sk-name">' + (si + 1) + '. ' + gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
         '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
         (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
     } else text = '◇ 鑲孔 ' + (si + 1) + '（空）';
-    var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') + (g.rune ? ' rune-socket' : '') + (inWord ? ' runeword-socket' : '') : 'empty');
+    var cls = 'socket ' + (g ? 'filled' + (g.fused ? ' fused-socket' : '') : 'empty');
     if (mode) {
       h += '<div class="' + cls + ' socket-row' + (mode.selIdx === si ? ' is-socket-selected' : '') + '">' +
         '<button type="button" class="socket-pick" data-socket-pick="' + si + '" aria-pressed="' + (mode.selIdx === si) + '"' +
@@ -712,14 +710,40 @@ function itemSocketHTML(it, mode) {
     }
   }
   if (!sockets.length) h += '<div class="equip-material-empty">此裝備沒有寶石鑲孔</div>';
-  // 符文之語橫幅：成形時列出名稱與全部效果；未成形時提示「再放入哪幾顆符文就會成形」
+  return h + '</div>';
+}
+
+/* 符文孔區塊（取代原本附魔欄位的位置；符文與符文之語 → js/runeword.js）。
+   純函式（不讀 G、不改 it）。opts.rune.active＝符文面板開啟：已鑲的符文可點擊取下（data-rune-remove）。
+   符文之語成形時列出名稱與全部效果；未成形時提示「再放入哪幾顆符文就會成形」。
+   沒有符文孔的裝備（普通品質）不輸出任何東西，符文面板那邊另有說明。 */
+function itemRuneHTML(it, opts) {
+  if (typeof rwSlots !== 'function') return '';
+  var slots = rwSlots(it);
+  if (!slots.length) return '';
+  var canRemove = !!(opts && opts.rune && opts.rune.active);
+  var rwAct = rwActiveWord(it);
+  var filled = slots.filter(Boolean).length;
+  var h = '<div class="it-sockets it-runes"><div class="it-sockets-title">符文孔 ' + filled + '／' + slots.length + '</div>';
+  for (var i = 0; i < slots.length; i++) {
+    var id = slots[i];
+    var inWord = !!rwAct && i >= rwAct.start && i < rwAct.start + rwAct.word.runes.length;
+    if (!id) {
+      h += '<span class="socket empty">◇ 符文孔 ' + (i + 1) + '（空）</span>';
+      continue;
+    }
+    var attrs = canRemove ? ' data-rune-remove="' + i + '" data-tip="點擊取下（符文退回符文庫）"' : '';
+    h += '<span class="socket filled rune-socket' + (inWord ? ' runeword-socket' : '') + (canRemove ? ' removable' : '') + '"' + attrs + '>' +
+      '<span class="sk-name">' + (i + 1) + '. ' + RUNE_BY_ID[id].glyph + ' ' + esc(runeLabel(id)) + '</span>' +
+      '<span class="sk-val">' + esc(rwRuneStatLine(it, id)) + '</span></span>';
+  }
   if (rwAct) {
     h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '">' +
       '<div class="it-runeword-name">✨ 符文之語【' + esc(rwAct.word.name) + '】<span class="it-runeword-tier">' +
       esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
     rwDescribeLines(rwAct.word, it).forEach(function (line) { h += '<div class="it-runeword-line">' + esc(line) + '</div>'; });
     h += '</div>';
-  } else if (typeof rwCandidates === 'function') {
+  } else {
     var cand = rwCandidates(it);
     if (cand.length) {
       var near = cand.sort(function (a, b) { return a.missing.length - b.missing.length; })[0];
@@ -951,6 +975,9 @@ function itemDetailHTML(it, cmp, opts) {
         h += '<div class="it-enchant">' + e.emoji + ' ' + esc(e.name) + ' ' + vs + ediffStr + '</div>';
       }
     });
+
+    // 符文孔：接在附魔原本的位置（附魔功能關閉後，上面的附魔迴圈不會輸出任何東西）
+    h += itemRuneHTML(it, opts);
 
     /* 寶石插槽。
        這裡刻意不呼叫 ensureSockets(it)——渲染函式不該改狀態。鑲孔補齊已由 Worker 在

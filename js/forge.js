@@ -261,6 +261,7 @@ function forgeReturnItem(it) {
 
 // 素材被消耗前取回鑲嵌的寶石（比照分解流程，不隨鑄造銷毀）
 function forgeReclaimSockets(it) {
+  if (typeof rwReclaimAllRunes === 'function') rwReclaimAllRunes(it);   // 符文孔的符文退回符文庫存
   if (!it.sockets) return;
   for (var i = 0; i < it.sockets.length; i++) {
     var g = it.sockets[i];
@@ -271,8 +272,6 @@ function forgeReclaimSockets(it) {
     } else if (g && GEM_TYPES[g.type]) {
       addGem(g.type, g.level, 1);
       it.sockets[i] = null;
-    } else if (g && g.rune && typeof rwReclaimRuneSocket === 'function') {
-      rwReclaimRuneSocket(it, i);
     }
   }
 }

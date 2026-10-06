@@ -19,7 +19,7 @@ const EXPECTED_COMMAND_COUNTS = {
   combat: 2,
   item: 9,
   gem: 14,
-  rune: 4,
+  rune: 5,
   player: 6,
   skill: 3,
   skill2: 6,
@@ -91,7 +91,7 @@ function validArgs(spec) {
   return args;
 }
 
-test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
+test('凍結的 Worker 指令表有 93 條且分類數量固定', () => {
   // v8：新增 app.handoff（多分頁交接前先落地並停止模擬），85 → 86
   // v9：移除 visibility 的 pip 欄位（背景休眠機制取消），指令表未變動
   // v10：新增 vfx 事件（技能／增益特效），指令表未變動
@@ -122,12 +122,13 @@ test('凍結的 Worker 指令表有 88 條且分類數量固定', () => {
   // v43：VFX透傳飛行物本體長度bodyLength，指令數不變。
   // v44：鑲嵌可指定孔位／階級，保留舊呼叫且指令數不變。
   // v45：符文之語——新增 rune.socket／compose／composeAll／dismantle，88 → 92。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 45);
+  // v46：符文改鑲在專屬符文孔（取代附魔），新增 rune.unsocket，92 → 93。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 46);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 92);
+  assert.equal(names.length, 93);
   ['skill.learn', 'skill.maxUpgrade', 'skill.downgrade', 'skill.delete', 'skill.fuse', 'skill.deleteFusion']
     .forEach((name) => assert.ok(!names.includes(name), name + ' 屬於已移除的舊技能系統，不得復活'));
 

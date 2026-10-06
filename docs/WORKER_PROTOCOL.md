@@ -1,7 +1,8 @@
-# Worker 協議 v45
+# Worker 協議 v46
 
-> 協議版本：`WORKER_PROTOCOL_VERSION = 45`　最後更新：2026-10-06
+> 協議版本：`WORKER_PROTOCOL_VERSION = 46`　最後更新：2026-10-07
 
+v46（2026-10-07 符文取代附魔）：符文改鑲在裝備專屬的符文孔 `it.runes`（`[符文id|null, …]`，最多 4 孔，孔數由稀有度決定，不再與寶石共用 `item.sockets`）；新增指令 `rune.unsocket(itemId, index)`→`unsocketRune`（取下符文；原本借用 `gem.unsocket` 的分流作廢），指令 92 → 93。`rune.socket` 的 `index` 現在指符文孔索引（省略＝第一個空孔）。附魔功能關閉（`data.js` `ENCHANT_ENABLED = false`）：`item.enchant`／`item.removeEnchant` 指令保留，呼叫時回報「附魔功能已關閉」。存檔：`item.runes` 為新欄位（缺欄＝沒有符文）；v45 期間放在寶石鑲孔裡的 `{ rune }` 由 `rwMigrateSocketRunes` 讀檔時搬進符文孔（冪等）；任務新增目標類型 `runeSocketCount`、獎勵類型 `rune`。
 v45（2026-10-06 符文之語）：新增 4 條指令（88 → 92）——`rune.socket(itemId, runeId, index?)`→`socketRune`、`rune.compose(runeId)`→`composeRune`、`rune.composeAll(runeId)`（Worker 內一次跑完，上限 2500 次）、`rune.dismantle(runeId)`→`dismantleRune`；`gems` 面板新增 `runes`（`{符文id: 數量}`）。符文是計數素材、沒有實例 id，所以用 `runeId` 定位；鑲孔內容為 `{ rune: id }`，取下沿用 `gem.unsocket`（`unsocketGem` 依內容分流）。符文之語是衍生狀態（`rwActiveWord` 當場判定），不進存檔也不進協議。存檔新增 `player.runes`，舊存檔由 `mergeDefaults` 補空表，無需遷移旗標。
 
 v44：`gem.socket`新增可選`index`（0起算的鑲孔）及`level`（指定寶石階級）；`gem.socketFused`新增可選`index`。UI選孔／選寶石後明確送出，Worker拒絕非法孔位、已有寶石及無庫存，不覆蓋、不扣款。省略參數維持第一空孔／最高階自動鑲嵌，供既有熔爐策略使用；指令數、寶石數值及存檔格式不變。
@@ -332,6 +333,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 46 | 2026-10-07 | 符文取代附魔：符文改鑲專屬符文孔 it.runes（最多 4 孔），新增 rune.unsocket，附魔功能關閉。 |
 | 45 | 2026-10-06 | 符文之語：新增 rune.socket／compose／composeAll／dismantle 四條指令，gems 面板新增 runes 欄位。 |
 | 44 | 2026-10-04 | 鑲嵌指令新增可選孔位／階級，UI選孔所見即所得，拒絕覆蓋並保留舊自動鑲嵌呼叫。 |
 | 42 | 2026-10-03 | 超神進化原子切換，驗證確認時的原選擇、等級與報價；避免扣款不足或過期確認刪除原技能。 |

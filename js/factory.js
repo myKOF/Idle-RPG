@@ -144,10 +144,13 @@ function doSalvage(it, silent, bonus) {
         addGem(sg.type, sg.level, 1);
         if (!silent) flog('💎 取回鑲嵌寶石：' + gemLabel(sg.type, sg.level), 'info');
         it.sockets[si] = null;
-      } else if (sg && sg.rune && typeof rwReclaimRuneSocket === 'function') {
-        if (rwReclaimRuneSocket(it, si) && !silent) flog('🔷 取回鑲嵌符文：' + runeLabel(sg.rune), 'info');
       }
     }
+  }
+  // 符文孔裡的符文（js/runeword.js）一併退回符文庫存
+  if (typeof rwReclaimAllRunes === 'function') {
+    var runeBack = rwReclaimAllRunes(it);
+    if (runeBack && !silent) flog('🔷 取回鑲嵌符文 ×' + runeBack, 'info');
   }
   // 基礎分解產出（精粹透鏡：提高附魔精華產出率）
   var res = salvageResult(it,

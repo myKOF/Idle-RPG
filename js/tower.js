@@ -405,10 +405,12 @@ function endTowerFight(win, reason) {
       window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
     }
     result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
-    var bk = pick(Object.keys(ENCHANTS));
-    G.player.books[bk] += 2;
-    if (window.recordLootMat) window.recordLootMat('book', 2, 'tower');
-    result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
+    if (ENCHANT_ENABLED) {
+      var bk = pick(Object.keys(ENCHANTS));
+      G.player.books[bk] += 2;
+      if (window.recordLootMat) window.recordLootMat('book', 2, 'tower');
+      result.rewards.push('📖 ' + ENCHANTS[bk].name + '書 x2');
+    }
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
@@ -451,12 +453,12 @@ function endTowerFight(win, reason) {
     blog('💀 封魔塔挑戰失敗（第 ' + floor + ' 層）', 'bad');
     // 失敗分析系統
     if (reason === 'death') {
-      result.analysis.push('【生存過低】你在 ' + Math.round(TOWER.elapsed) + ' 秒時被擊倒。建議提升生命值 / 防禦力詞條、吸血，或附魔對應抗性。');
-      if (b && b.elem) result.analysis.push('此 BOSS 帶有' + ENCHANTS[b.elem === 'fire' ? 'fireRes' : (b.elem === 'ice' ? 'iceRes' : 'ctrlRes')].name.slice(0, 2) + '屬性攻擊，可在防具上附魔對應抗性。');
+      result.analysis.push('【生存過低】你在 ' + Math.round(TOWER.elapsed) + ' 秒時被擊倒。建議提升生命值 / 防禦力詞條、吸血，或在防具上補對應的抗性詞條。');
+      if (b && b.elem) result.analysis.push('此 BOSS 帶有' + ENCHANTS[b.elem === 'fire' ? 'fireRes' : (b.elem === 'ice' ? 'iceRes' : 'ctrlRes')].name.slice(0, 2) + '屬性攻擊，可在防具上補對應的抗性詞條。');
       if (TOWER.enraged) result.analysis.push('BOSS 已狂暴（傷害 +200%）。若能在 40 秒前將其血量壓到 50% 以下，即可避免狂暴。');
     } else {
       if (hpPct > 50) {
-        result.analysis.push('【傷害不足】60 秒僅造成 ' + Math.round(100 - hpPct) + '% 傷害。你的 DPS 為 ' + fmt(myDps) + '，需要約 ' + fmt(needDps) + '。建議提升攻擊力 / 爆擊詞條，或用生產線合成攻擊附魔裝備。');
+        result.analysis.push('【傷害不足】60 秒僅造成 ' + Math.round(100 - hpPct) + '% 傷害。你的 DPS 為 ' + fmt(myDps) + '，需要約 ' + fmt(needDps) + '。建議提升攻擊力 / 爆擊詞條，或鑲上符文組成符文之語。');
       } else {
         result.analysis.push('【輸出略缺】只差 ' + Math.round(hpPct) + '% 就能擊倒 BOSS！建議微調攻速 / 爆擊傷害詞條，或強化現有裝備。');
       }

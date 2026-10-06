@@ -36,9 +36,10 @@ test('符文之語至少 40 組，四個強度級距數量接近，id／名稱�
   assert.equal(new Set(WORDS.map((w) => w.runes.join(','))).size, WORDS.length, '配方（符文序列）不得重複');
 });
 
-test('每組的符文數與強度級距相稱，且所有符文 id 存在', () => {
-  const range = { 1: [2, 3], 2: [3, 4], 3: [4, 5], 4: [5, 6] };
+test('每組的符文數與強度級距相稱、不超過符文孔上限，且所有符文 id 存在', () => {
+  const range = { 1: [2, 3], 2: [3, 4], 3: [3, 4], 4: [4, 4] };
   WORDS.forEach((w) => {
+    assert.ok(w.runes.length <= c.RUNE_SETTINGS.maxSlots, `${w.id} 的符文數 ${w.runes.length} 超過符文孔上限 ${c.RUNE_SETTINGS.maxSlots}`);
     const [lo, hi] = range[w.tier];
     assert.ok(w.runes.length >= lo && w.runes.length <= hi, `${w.id}（第 ${w.tier} 級）符文數 ${w.runes.length} 不在 ${lo}~${hi}`);
     w.runes.forEach((id) => assert.ok(c.RUNE_BY_ID[id], `${w.id} 引用不存在的符文 ${id}`));
@@ -100,12 +101,33 @@ test('stats／passives／legend／fx／procs 只用已實作的詞彙', () => {
   });
 });
 
-test('每一組符文之語在遊戲裡都做得出來：存在稀有度的鑲孔數足夠（雙手武器 ×1.75）', () => {
+test('RUNE_SETTINGS：孔數表長度對得上稀有度、單調不減、不超過上限；合成／掉落常數合理', () => {
+  const s = c.RUNE_SETTINGS;
+  assert.equal(s.slotsByRarity.length, c.RARITIES.length);
+  assert.equal(s.maxSlots, 4, '設計上限：符文最多 4 孔');
+  s.slotsByRarity.forEach((n, i) => {
+    assert.ok(Number.isInteger(n) && n >= 0 && n <= s.maxSlots, `稀有度 ${i} 的孔數 ${n} 不合法`);
+    if (i) assert.ok(n >= s.slotsByRarity[i - 1], '稀有度越高孔數不減');
+  });
+  assert.equal(s.slotsByRarity[s.slotsByRarity.length - 1], s.maxSlots, '最高稀有度要能放滿上限');
+  assert.ok(Number.isInteger(s.composeCount) && s.composeCount >= 2);
+  assert.ok(Number.isInteger(s.composeMaxTier) && s.composeMaxTier >= 1 && s.composeMaxTier <= c.RUNES.length);
+  assert.ok(Number.isInteger(s.dismantleYield) && s.dismantleYield >= 1 && s.dismantleYield < s.composeCount, '拆解不得賺：產出須小於合成所需');
+  assert.ok(s.statScale > 0);
+  ['basePct', 'towerBossPct', 'tierSpread', 'progressPerTier'].forEach((k) => assert.ok(s.drop[k] > 0, 'drop.' + k));
+  assert.ok(s.drop.tierSpread < 1);
+  // 具名常數都由設定衍生（唯一來源）
+  assert.equal(c.RUNE_COMPOSE_COUNT, s.composeCount);
+  assert.equal(c.RUNE_COMPOSE_MAX_TIER, s.composeMaxTier);
+  assert.equal(c.RUNE_DISMANTLE_YIELD, s.dismantleYield);
+  assert.equal(c.RUNE_DROP, s.drop);
+});
+
+test('每一組符文之語在遊戲裡都做得出來：存在稀有度的符文孔數足夠', () => {
   WORDS.forEach((w) => {
-    const n = w.runes.length;
-    const twoHandOnly = w.bases.every((b) => b === 'twoHand' || ['greatsword2h', 'axe2h', 'staff2h', 'magicSword2h'].includes(b));
-    const max = Math.max(...c.RARITIES.map((r) => twoHandOnly ? Math.floor(r.sockets * c.TWO_HAND_SOCKET_MULT) : r.sockets));
-    assert.ok(max >= n, `${w.id} 需要 ${n} 孔，最高稀有度也只有 ${max} 孔`);
+    const i = c.rwMinRarity(w);
+    assert.ok(i >= 0, `${w.id} 需要 ${w.runes.length} 孔，最高稀有度也不夠`);
+    assert.ok(c.runeSlotCountFor({ rarity: i }) >= w.runes.length);
   });
 });
 

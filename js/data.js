@@ -1704,6 +1704,11 @@ function vfxEnemyRoles(magic, elem) {
 }
 
 // ---- 附魔 ----
+/* 附魔功能總開關（2026-10-07 起關閉：由符文／符文之語取代，js/runeword.js）。
+   關閉時：不能附魔／取下、附魔不計入屬性與評分、不顯示、不再掉落附魔書；
+   裝備上既有的 it.enchants 與玩家的 books 原樣保留，改回 true 即完整恢復。
+   ENCHANTS 本身仍是元素定義表（BOSS 屬性、抗性名稱等也讀它），不可刪。 */
+var ENCHANT_ENABLED = false;
 var ENCHANTS = {
   fire: { name: '火焰附魔', cat: 'atk', elem: 'fire', desc: '附加高額火焰傷害', emoji: '🔥' },
   ice: { name: '冰凍附魔', cat: 'atk', elem: 'ice', desc: '附加冰霜傷害，15% 機率使敵人減速 2 秒', emoji: '❄️' },
@@ -2650,12 +2655,14 @@ var STAT_GROUPS = [
          rewardLabel 獎勵顯示文字。
    目標類型（進度判定在 js/tasks.js，Worker 端執行）：
      equipSlots   身上部位數（param=最低品質|最低等級；雙手武器視同佔用主副手）
-     upgradeCount / rerollCount / enchantCount / composeCount  累計次數（G.factory.stats）
+     upgradeCount / rerollCount / enchantCount / composeCount / runeSocketCount  累計次數（G.factory.stats；
+                  enchantCount 屬已關閉的附魔功能，runeSocketCount＝累計鑲入符文次數）
      socketCount  身上目前鑲嵌寶石數      forgeParts  熔爐目前已裝配零件數
      ancientCount 身上太古詞條總數        maxHp       生命最大值
      stageClear   通關指定地圖第 N 關（param=地圖識別碼）
    獎勵類型：gold / scrap / essence / skillXp / gem（param=寶石等級，隨機種類）/
-     book（param=附魔書 id）/ equip（param=品質|等級|太古數；等級 0=依當前關卡，太古空白=自然擲骰）。 */
+     book（param=附魔書 id；附魔功能已關閉，不再使用）/ rune（param=符文 id，如 r02）/
+     equip（param=品質|等級|太古數；等級 0=依當前關卡，太古空白=自然擲骰）。 */
 var TASKS = [
   { order: 1, name: '將全身的裝備穿滿', type: 'equipSlots', param: '0|0', count: 13, rewardType: 'gold', rewardQty: 50000, rewardLabel: '金幣+50000' },
   { order: 2, name: '將全身的裝備替換成稀有品質', type: 'equipSlots', param: '2|0', count: 13, rewardType: 'gold', rewardQty: 100000, rewardLabel: '金幣+100000' },
