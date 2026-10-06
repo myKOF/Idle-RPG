@@ -174,10 +174,13 @@ runeword rw_viperkiss （發放「蛇吻」配方：毒牙、暗影）
 runeword list （列出 56 組符文之語 id）
 ```
 
-測試流程：`equip legendary 100 weapon 12` 取得傳說武器（4 孔）→ 裝備頁選裝備 → 「鑲嵌」→ 點符文依序鑲入。
-配方與數值見 `docs/RUNEWORD_DESIGN.md`。
+測試流程：`equipset legendary 100` 取得整套傳說裝備（每件 4 個符文孔）→ 裝備頁選裝備 → 「符文」→ 點符文依序鑲入（點已鑲的符文可取下）。
+符文取代了附魔的位置（2026-10-07）：符文孔與寶石鑲孔分開，最多 4 孔，孔數依稀有度（普通 0、精良／稀有 1、獨特 2、史詩 3、傳說以上 4）。
+配方與數值見 `docs/RUNEWORD_DESIGN.md`；全部資料在配置表 `config/Excel/Runes.xlsx`。
 
 ## 5. 附魔書
+
+> ⚠️ **附魔功能已關閉**（2026-10-07，由符文取代；`js/data.js` 的 `ENCHANT_ENABLED = false`）。`book` 指令仍可發書，但書沒有用處、裝備頁也沒有附魔入口；程式保留，開關改回 `true` 即恢復。
 
 ### 指令格式
 

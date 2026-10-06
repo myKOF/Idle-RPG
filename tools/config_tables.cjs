@@ -11,7 +11,7 @@
      node tools/config_tables.cjs --apply            # 試跑：由 CSV 重建 JS 字面值，只報告不寫檔
      node tools/config_tables.cjs --apply --write    # 實際寫回 JS（先備份、寫入後 node --check、失敗還原）
 
-   八表 ↔ JS 字面值：
+   九表 ↔ JS 字面值：
      Skills            ← POTENTIAL_TALENTS（js/skills.js；2026-09-29 起只剩潛力技能）
      Skills2           ← SKILLS2（js/skills2.js，2026-08-13 新版主動技能系統）
      Status            ← STATUS（js/status.js，2026-08-11 技能及狀態改造）
@@ -20,6 +20,7 @@
      Equipment_Affix   ← AFFIX_POOL + PASSIVE_POOL + GODFORGE_POOL（js/data.js）
      NPC               ← 各地圖 NPC pool（js/data.js）
      Task              ← TASKS（js/data.js，2026-08-05 任務系統）
+     Runes             ← RUNE_SETTINGS + RUNES + RUNEWORDS（js/runeword_data.js，2026-10-07 符文取代附魔；xlsx 由 Excel 建立，--gen 只寫 CSV）
 
    原理：這些是「純資料字面值」（`var NAME = {…};`）。--gen 以字串感知的括號配對
    萃取字面值 → eval（沙盒，僅需 ACCESSORY_SLOTS 前置）→ 依 schema 攤平成表格列。
@@ -38,7 +39,8 @@ const JS = {
   data: path.join(ROOT, 'js', 'data.js'),
   skills: path.join(ROOT, 'js', 'skills.js'),
   skills2: path.join(ROOT, 'js', 'skills2.js'),
-  status: path.join(ROOT, 'js', 'status.js')
+  status: path.join(ROOT, 'js', 'status.js'),
+  runes: path.join(ROOT, 'js', 'runeword_data.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -816,7 +818,8 @@ const TASK_GLOSSARY_ROWS = [
   ['　　目標參數＝最低品質|最低等級。例：0|0＝任意裝備、2|0＝稀有(含)以上、4|50＝史詩(含)以上且裝備等級 50(含)以上。品質索引見下方對照表。'],
   ['upgradeCount＝累計強化成功次數（失敗不計）。目標參數留空。'],
   ['rerollCount＝累計洗煉次數（整件洗與單條洗各計 1 次）。目標參數留空。'],
-  ['enchantCount＝累計附魔成功次數（被拒不計）。目標參數留空。'],
+  ['enchantCount＝累計附魔成功次數（被拒不計）。目標參數留空。⚠️ 附魔功能已關閉（由符文取代），目前沒有任務使用此類型。'],
+  ['runeSocketCount＝累計鑲入符文的次數（成功才計；拆下再鑲會再計一次）。目標參數留空。'],
   ['composeCount＝累計寶石合成次數（「全部合成」一次合 N 組計 N）。目標參數留空。'],
   ['socketCount＝身上目前同時鑲嵌的寶石數（拔下即減，重複拔裝不累加）。目標參數留空。'],
   ['forgeParts＝所有熔爐目前已裝配的零件總數（卸下即減）。目標參數留空。'],
@@ -830,7 +833,8 @@ const TASK_GLOSSARY_ROWS = [
   ['gold＝金幣、scrap＝裝備碎片、essence＝附魔精華：獎勵參數留空；獎勵數量＝發放量。'],
   ['skillXp＝技能熟練度經驗：獎勵參數留空；獎勵數量＝經驗值。'],
   ['gem＝寶石（種類隨機）：獎勵參數＝寶石等級 1~5；獎勵數量＝顆數（每顆種類各自隨機）。'],
-  ['book＝附魔書：獎勵參數＝附魔書 id（見下方對照表）；獎勵數量＝本數。'],
+  ['book＝附魔書：獎勵參數＝附魔書 id（見下方對照表）；獎勵數量＝本數。⚠️ 附魔功能已關閉，附魔書不再有用，請勿再當獎勵。'],
+  ['rune＝符文：獎勵參數＝符文 id（r01～r33，名稱與階數見 Runes 表）；獎勵數量＝顆數。'],
   ['equip＝裝備：獎勵參數＝品質|等級|太古數；獎勵數量＝件數。'],
   ['　　品質＝品質索引（見下方對照表）；'],
   ['　　等級＝裝備等級；填 0＝依玩家當前關卡自動決定（裝備等級以 50 關為一階：1~49 關為 1 級裝、50~99 關為 50 級裝…）；'],
@@ -1448,7 +1452,304 @@ SCHEMAS.Skills2 = {
   }
 };
 
-const TABLE_ORDER = ['Skills', 'Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task'];
+/* ---- Runes ← RUNE_SETTINGS + RUNES + RUNEWORDS（js/runeword_data.js；2026-10-07 符文取代附魔）----
+   一張表、三種列（「類型」欄區分，用篩選看各自的那一段）：
+     設定        全域設定（孔數、合成／拆解、屬性縮放、掉落）。id＝設定鍵、「設定值」＝數字。
+     符文        33 種符文。列的先後順序＝階數（第 1 列是第 1 階），不可重排；「階」欄僅供對照。
+                 「武器詞條／倍率」＝鑲在主手／雙手武器時的屬性；「防具詞條／倍率」＝鑲在防具、飾品、副手時的屬性。
+                 倍率＝該裝備上一條滿刻度中位數詞條的幾倍（隨裝備等級、稀有度、強化成長）。
+     符文之語    符文組合與其全部能力。配方＝符文名稱（或 id）依序用「;」分隔，最多「符文孔數上限」顆；
+                 適用裝備＝標記或裝備欄位／武器類型，用「;」分隔（多項為「或」）；
+                 屬性加成／被動／靜態效果＝「鍵:數值」用「;」分隔；傳奇特效＝鍵用「;」分隔；
+                 事件觸發＝JSON 陣列（寫法見 js/runeword_data.js 檔頭與 docs/RUNEWORD_DESIGN.md）。
+   說明文字（裝備詳情、符文頁圖鑑）由資料自動產生，不另設說明欄。
+   寫回：rebuild 整塊重建 RUNE_SETTINGS／RUNES／RUNEWORDS 三個字面值（語意無變更時不動檔案）。
+   xlsx 不由 --gen 產生（AI_RULES 8.5 禁止手拼 xlsx XML）；初次建立用 tools/excel-create-table.ps1（Excel COM）。 */
+const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞條', '武器倍率', '防具詞條', '防具倍率',
+  '配方', '適用裝備', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)', '風味文字', '設定值', '備註'];
+const RUNE_SETTING_NOTES = {
+  maxSlots: '符文孔數的硬上限，也是符文之語最多能有幾顆符文。',
+  composeCount: '合成：同種符文幾顆合成下一階 1 顆。',
+  composeMaxTier: '能合成到第幾階；更高階的符文只能靠擊殺與封魔塔掉落。',
+  dismantleYield: '拆解 1 顆得到低一階符文幾顆；必須小於合成所需顆數。≥2 會讓一顆高階符文拆出指數倍的低階符文、破壞稀有度，所以預設 1（只能降階頂替、不會變多）。',
+  statScale: '全域縮放：符文與符文之語的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。',
+  drop_basePct: '野外每次擊殺的基礎掉落率（%），再乘掉寶率、地圖倍率與敵種倍率。',
+  drop_towerBossPct: '封魔塔通關時的基礎掉落機率（%）。',
+  drop_tierSpread: '階數稀有度：第 t+1 階的出現機率是第 t 階的這個倍數（0~1，越小高階越稀有）。階越高越稀有，與進度無關；進度只決定能掉到幾階。',
+  drop_progressPerTier: '進度（地圖序號＋關卡比例）每 +1 對應的最高掉落階增量（解鎖速度，不影響稀有度）。'
+};
+const RUNE_TIER_NAMES_FOR_TABLE = ['', '普通', '強力', '非常強力', '極度特殊'];
+/* Runes 表的「欄位說明」頁（xlsx 第二頁；程式不讀取，僅供編表者查閱）。 */
+const RUNE_GLOSSARY_ROWS = [
+  ['符文表（Runes）欄位與規則說明'],
+  ['本頁為說明頁，程式不讀取；第一頁「Runes」才是資料來源。改完存檔（Ctrl+S）後雙擊「套用參數.bat」套用，本機開著的遊戲約 2 秒自動重載。'],
+  ['套用時會檢查：詞條鍵、符文名稱、適用裝備、效果鍵、事件觸發 JSON、孔數上限等；任何一格打錯都會整次中止並指出是哪一列哪一格，遊戲程式不會被改到。'],
+  [''],
+  ['── 三種列（「類型」欄；用篩選看各自的那一段）──'],
+  ['設定：全域設定。id 是鑰匙欄，不可改名；數值填在「設定值」。'],
+  ['符文：33 種符文。列的先後順序＝階數（第 1 列＝第 1 階），id 依序為 r01～r33，不可重排、不可增刪。'],
+  ['符文之語：符文組合與其全部能力。可以新增列（id 以 rw_ 開頭、英數字、不重複）、刪除列、修改任何欄位。'],
+  [''],
+  ['── 設定列 ──'],
+  ['maxSlots：符文孔數上限，同時也是符文之語最多能有幾顆符文（設計上限 4）。'],
+  ['slots_<稀有度>：該稀有度裝備的符文孔數；0～上限，不可隨稀有度變少，最高稀有度必須等於上限。符文孔取代原本的附魔欄位，與寶石鑲孔分開，雙手武器沒有額外加成。'],
+  ['composeCount／composeMaxTier／dismantleYield：合成（同種幾顆→下一階 1 顆）、最高合成階（更高階只能掉落）、拆解產出（必須小於合成所需顆數；預設 1＝只能降階頂替、不會變多）。'],
+  ['statScale：全域屬性縮放，符文與符文之語的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
+  ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量。'],
+  ['　　取得難度只由「配方最高階那顆符文」決定；各級距的最高階區間與估算小時數見 docs/RUNEWORD_DESIGN.md，估算用 node tools/rw_econ_probe.cjs。'],
+  [''],
+  ['── 符文列 ──'],
+  ['武器詞條／武器倍率：符文鑲在主手或雙手武器時給的屬性（詞條鍵見 Equipment_Affix 表的詞條池）。倍率＝這件裝備上「一條滿刻度中位數詞條」的幾倍；數值隨裝備等級、稀有度、強化成長，與詞條同一套算法。'],
+  ['　　是「額外附加」的一條屬性，直接加進角色該屬性的加總，不是乘在裝備原有詞條上，也不是乘整個角色的數值。'],
+  ['防具詞條／防具倍率：符文鑲在防具、飾品、副手時給的屬性，規則同上。'],
+  ['單獨鑲著就有效；組成符文之語時，符文之語的屬性與能力另外並存。'],
+  [''],
+  ['── 符文之語列 ──'],
+  ['級距：1 普通／2 強力／3 非常強力／4 極度特殊。只影響圖鑑的分組與顏色，不影響數值（強度要自己調屬性加成與效果）。'],
+  ['配方：符文名稱依序用「;」分隔（也可填 id）。至少 2 顆、最多＝符文孔數上限；順序不同就是不同配方，不得與別的符文之語完全相同。成形條件＝依序放進連續的符文孔，且裝備類型符合。'],
+  ['適用裝備：用「;」分隔，多項為「或」。標記：any 任意、armor 八件防具、jewelry 戒指＋項鍊、mainHand 主手與雙手武器、twoHand 雙手武器、oneHand 單手武器、offHand 副手、melee 近戰武器、caster 施法類武器／副手；'],
+  ['　　也可填裝備欄位（weapon、helmet、shoulder、chest、belt、gloves、wrist、legs、boots、ring、amulet）或武器類型鍵（sword1h、dagger1h、staff2h、shield、focus… 見 data.js WEAPON_TYPES）。'],
+  ['屬性加成：「詞條鍵:倍率」用「;」分隔，例如 atkPct:1.2;critRate:1。倍率意義同符文列；負數＝代價。同一組符文之語穿在多件裝備上時，各件的屬性都計。'],
+  ['被動：「鍵:數值」用「;」分隔，鍵限 thorns（反震）、smite（天罰）、undying（不朽）、sunder（破甲）、trueDmg（真傷）、omniDrain（萬象汲取）、soulEater、annihilate、sanctuary、godWrath；並入既有被動。'],
+  ['傳奇特效：借用既有傳奇特效（Equipment_Affix 表傳奇特效池的 id，用「;」分隔），不受該特效原本的武器類型限制，但仍需要配戴對應技能才有感。'],
+  ['靜態效果：「鍵:數值」用「;」分隔，數字固定、不隨稀有度成長。可用鍵：'],
+  ['　　dmgPct 造成傷害%、skillDmgPct 技能傷害%、basicDmgPct 普攻傷害%、aspdMult 攻速額外乘算%、cdPct 技能冷卻-%（乘算）、manaCostRedPct 法力消耗-%、maxHitPct 單次受傷上限（最大生命%）、maxHpPct 最大生命%（乘算，負數＝代價）、'],
+  ['　　dmgHiHpPct 對高血(>70%)敵人增傷%、dmgLoHpPct 對低血(<30%)敵人增傷%、dmgSoloPct 只有一隻敵人時增傷%、dmgPerFoePct 每多一隻敵人增傷%、dmgSelfFullPct 自身高血增傷%、dmgSelfLowPct 自身低血增傷%、dmgCtrlPct 對被控場敵人增傷%、'],
+  ['　　killHealPct 擊殺回血%、killManaPct 擊殺回魔%、runeFindPct 符文掉落率+%、selfDrainPct 每秒損失最大生命%（代價）、splashPct 普攻擴散給其他敵人%、'],
+  ['　　reviveHpPct／reviveCdSec／reviveInvulnSec／reviveDmgPct／reviveDmgSec／reviveRefresh 死亡復活（生命%、冷卻秒、無敵秒、之後增傷%與秒數、是否重置技能冷卻）。'],
+  ['事件觸發(JSON)：JSON 陣列，每條 { "on": 觸發, "chance": 機率%, "every": 秒（tick）或次數, "cd": 內建冷卻秒, "below": 生命%（lowhp）, "acts": [動作…] }。'],
+  ['　　觸發 on：hit 普攻命中、crit 普攻暴擊、kill 擊殺、hurt 受傷、block 格擋、cast 施放技能、tick 每 every 秒、lowhp 生命低於 below%。'],
+  ['　　動作 act：dmg {pct, elem?, type?(magic/phys), to?(target/all/rand/attacker), n?}、heal {pctMax}、shield {pctMax, sec}、mana {pctMax}、buff {sid, val, sec, max?}、buffRandom {sec, from:[{sid,val}]}、stun {sec, to?}、slow {sec, to?}、'],
+  ['　　dot {pct, sec, name(poison/burn/bleed/corrode), to?}、cdr {sec}、refresh {n?}、recast、castRandom、invuln {sec}、execute {hpBelow}、cleanse。elem 可填 fire/ice/lightning/poison/light/dark/earth/wind/random。'],
+  ['風味文字：圖鑑與詳情顯示的一句話，可留空。效果說明文字由資料自動產生，不需要另外寫。'],
+  ['備註：純說明欄，不進遊戲。']
+];
+const RUNE_TABLE_WIDTHS = [8, 18, 14, 9, 14, 9, 14, 9, 24, 24, 40, 14, 22, 36, 60, 36, 10, 50];
+
+function runeTableRarities() {
+  const RARITIES = evalLiteral(extractLiteral(readUtf8(JS.data), 'RARITIES').literal);
+  return RARITIES.map(r => ({ key: r.key, name: r.name }));
+}
+// 設定列：[[settingKey, 說明, 取值函式(settings)]]
+function runeSettingDefs(rarities) {
+  const defs = [['maxSlots', '符文孔數上限', s => s.maxSlots]];
+  rarities.forEach((r, i) => defs.push(['slots_' + r.key, '符文孔數：' + r.name, s => s.slotsByRarity[i]]));
+  defs.push(['composeCount', '合成所需顆數', s => s.composeCount]);
+  defs.push(['composeMaxTier', '最高合成階', s => s.composeMaxTier]);
+  defs.push(['dismantleYield', '拆解產出顆數', s => s.dismantleYield]);
+  defs.push(['statScale', '全域屬性縮放', s => s.statScale]);
+  defs.push(['drop_basePct', '野外基礎掉落率(%)', s => s.drop.basePct]);
+  defs.push(['drop_towerBossPct', '封魔塔基礎掉落率(%)', s => s.drop.towerBossPct]);
+  defs.push(['drop_tierSpread', '掉落階數分佈', s => s.drop.tierSpread]);
+  defs.push(['drop_progressPerTier', '每進度的最高階增量', s => s.drop.progressPerTier]);
+  return defs;
+}
+function runePairsText(pairs) { return (pairs || []).map(p => p[0] + ':' + numStr(p[1])).join(';'); }
+function runeObjText(obj) { return Object.keys(obj || {}).map(k => k + ':' + numStr(obj[k])).join(';'); }
+function runeParsePairs(text, where, validKeys, label) {
+  return splitList(text).map(part => {
+    const m = /^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(-?[0-9.]+(?:[eE][-+]?[0-9]+)?)$/.exec(part);
+    if (!m) throw new Error(where + '「' + label + '」格式錯誤：「' + part + '」（應為 鍵:數值，用 ; 分隔）');
+    if (validKeys && !validKeys.has(m[1])) throw new Error(where + '「' + label + '」的鍵「' + m[1] + '」不存在');
+    return [m[1], Number(m[2])];
+  });
+}
+function runeTableVocab() {
+  const dataSrc = readUtf8(JS.data), runeSrc = readUtf8(JS.runes);
+  const lit = (src, name) => evalLiteral(extractLiteral(src, name).literal);
+  return {
+    affix: new Set(Object.keys(lit(dataSrc, 'AFFIX_POOL'))),
+    passivePool: lit(dataSrc, 'PASSIVE_POOL'),
+    weaponTypes: new Set(Object.keys(lit(dataSrc, 'WEAPON_TYPES'))),
+    baseTokens: new Set(lit(runeSrc, 'RW_BASE_TOKENS')),
+    fxKeys: new Set(lit(runeSrc, 'RW_FX_KEYS')),
+    passiveKeys: new Set(lit(runeSrc, 'RW_PASSIVE_KEYS')),
+    triggers: new Set(lit(runeSrc, 'RW_PROC_TRIGGERS')),
+    acts: new Set(lit(runeSrc, 'RW_ACTS'))
+  };
+}
+const RUNE_SLOT_TOKENS = ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'];
+
+SCHEMAS.Runes = {
+  name: 'Runes', jsFile: 'runes', sheet: 'Runes', vars: ['RUNE_SETTINGS', 'RUNES', 'RUNEWORDS'],
+  noXlsxGen: true,
+  extraSheets: [{ name: '欄位說明', rows: RUNE_GLOSSARY_ROWS }],
+  widths: RUNE_TABLE_WIDTHS,
+  header: RUNE_TABLE_HEADER,
+  extract(src) {
+    const settings = evalLiteral(extractLiteral(src, 'RUNE_SETTINGS').literal);
+    const RUNES = evalLiteral(extractLiteral(src, 'RUNES').literal);
+    const WORDS = evalLiteral(extractLiteral(src, 'RUNEWORDS').literal);
+    const nameById = {}; RUNES.forEach(r => { nameById[r.id] = r.name; });
+    const col = {}; RUNE_TABLE_HEADER.forEach((h, i) => { col[h] = i; });
+    const mk = (kind, obj) => { const row = RUNE_TABLE_HEADER.map(() => ''); row[col['類型']] = kind; Object.keys(obj).forEach(k => { row[col[k]] = obj[k] == null ? '' : String(obj[k]); }); return row; };
+    const rows = [];
+    runeSettingDefs(runeTableRarities()).forEach(([key, label, get]) => {
+      rows.push(mk('設定', { id: key, 名稱: label, 設定值: numStr(get(settings)), 備註: RUNE_SETTING_NOTES[key] || (key.indexOf('slots_') === 0 ? '該稀有度的裝備有幾個符文孔（不得超過符文孔數上限）。' : '') }));
+    });
+    RUNES.forEach((r, i) => {
+      rows.push(mk('符文', { id: r.id, 名稱: r.name, '階／級距': String(i + 1), 武器詞條: r.w[0], 武器倍率: numStr(r.w[1]), 防具詞條: r.a[0], 防具倍率: numStr(r.a[1]) }));
+    });
+    WORDS.forEach(w => {
+      rows.push(mk('符文之語', {
+        id: w.id, 名稱: w.name, '階／級距': String(w.tier),
+        配方: w.runes.map(id => nameById[id] || id).join(';'), 適用裝備: joinList(w.bases),
+        屬性加成: runePairsText(w.stats), 被動: runeObjText(w.passives), 傳奇特效: joinList(w.legend),
+        靜態效果: runeObjText(w.fx), '事件觸發(JSON)': w.procs ? JSON.stringify(w.procs) : '', 風味文字: w.flavor || ''
+      }));
+    });
+    return rows;
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const V = runeTableVocab();
+    const rarities = runeTableRarities();
+    const fail = msg => { throw new Error(msg); };
+    const setRows = [], runeRows = [], wordRows = [];
+    dataRows.forEach((r, i) => {
+      const kind = get(r, '類型').trim();
+      if (kind === '') return;
+      const item = { r, line: i + 2, id: get(r, 'id').trim(), name: get(r, '名稱').trim() };
+      if (kind === '設定') setRows.push(item);
+      else if (kind === '符文') runeRows.push(item);
+      else if (kind === '符文之語') wordRows.push(item);
+      else fail('第 ' + item.line + ' 列的「類型」是「' + kind + '」，只能是 設定／符文／符文之語');
+    });
+    const where = (it, what) => 'Runes 表 第' + it.line + '列（' + what + '「' + (it.name || it.id) + '」）';
+
+    /* ---- 設定 ---- */
+    const defs = runeSettingDefs(rarities);
+    const val = {};
+    setRows.forEach(it => {
+      if (!defs.some(d => d[0] === it.id)) fail(where(it, '設定') + '：未知的設定鍵「' + it.id + '」（設定列的 id 是鑰匙欄，不可改名）');
+      if (val[it.id] !== undefined) fail(where(it, '設定') + '：設定鍵重複');
+      const s = get(it.r, '設定值').trim();
+      if (s === '' || !isFinite(Number(s))) fail(where(it, '設定') + '：「設定值」必須是數字，目前是「' + s + '」');
+      val[it.id] = Number(s);
+    });
+    defs.forEach(d => { if (val[d[0]] === undefined) fail('Runes 表缺少設定列「' + d[0] + '」（' + d[1] + '）'); });
+    const isInt = n => Number.isInteger(n);
+    const maxSlots = val.maxSlots;
+    if (!isInt(maxSlots) || maxSlots < 1 || maxSlots > 8) fail('Runes 表：符文孔數上限必須是 1~8 的整數');
+    const slots = rarities.map(r => val['slots_' + r.key]);
+    slots.forEach((n, i) => {
+      if (!isInt(n) || n < 0 || n > maxSlots) fail('Runes 表：「符文孔數：' + rarities[i].name + '」必須是 0~' + maxSlots + ' 的整數（符文孔數上限），目前是 ' + n);
+      if (i && n < slots[i - 1]) fail('Runes 表：符文孔數不可隨稀有度變少（' + rarities[i - 1].name + ' ' + slots[i - 1] + ' → ' + rarities[i].name + ' ' + n + '）');
+    });
+    if (slots[slots.length - 1] !== maxSlots) fail('Runes 表：最高稀有度必須放得滿符文孔數上限（' + maxSlots + '）');
+    if (!isInt(val.composeMaxTier) || val.composeMaxTier < 1) fail('Runes 表：最高合成階必須是 ≥1 的整數');
+    if (!isInt(val.composeCount) || val.composeCount < 2) fail('Runes 表：合成所需顆數必須是 ≥2 的整數');
+    if (!isInt(val.dismantleYield) || val.dismantleYield < 1 || val.dismantleYield >= val.composeCount) fail('Runes 表：拆解產出必須是 1~（合成所需顆數-1）的整數，否則拆解會賺');
+    if (!(val.statScale > 0)) fail('Runes 表：全域屬性縮放必須大於 0');
+    ['drop_basePct', 'drop_towerBossPct', 'drop_tierSpread', 'drop_progressPerTier'].forEach(k => { if (!(val[k] > 0)) fail('Runes 表：「' + k + '」必須大於 0'); });
+    if (!(val.drop_tierSpread < 1)) fail('Runes 表：掉落階數分佈必須小於 1');
+
+    /* ---- 符文 ---- */
+    if (!runeRows.length) fail('Runes 表沒有任何符文列');
+    const runeIds = new Set(), runeNames = {};
+    const runes = runeRows.map((it, idx) => {
+      const expectId = 'r' + String(idx + 1).padStart(2, '0');
+      if (it.id !== expectId) fail(where(it, '符文') + '：id 必須是「' + expectId + '」（符文列的順序＝階數，id 依序連號，不可重排或改名）');
+      if (!it.name) fail(where(it, '符文') + '：缺名稱');
+      if (runeNames[it.name]) fail(where(it, '符文') + '：名稱重複');
+      const tier = get(it.r, '階／級距').trim();
+      if (tier !== '' && Number(tier) !== idx + 1) fail(where(it, '符文') + '：「階」是 ' + tier + '，但這一列是第 ' + (idx + 1) + ' 個符文（階由列順序決定，請勿重排）');
+      runeIds.add(it.id); runeNames[it.name] = it.id;
+      const side = (kc, mc, label) => {
+        const key = get(it.r, kc).trim(), mult = Number(get(it.r, mc).trim());
+        if (!V.affix.has(key)) fail(where(it, '符文') + '：「' + kc + '」的詞條「' + key + '」不在詞條池（Equipment_Affix 表）');
+        if (!(mult > 0)) fail(where(it, '符文') + '：「' + mc + '」必須大於 0');
+        return [key, mult];
+      };
+      return { id: it.id, name: it.name, w: side('武器詞條', '武器倍率'), a: side('防具詞條', '防具倍率') };
+    });
+
+    /* ---- 符文之語 ---- */
+    if (!wordRows.length) fail('Runes 表沒有任何符文之語列');
+    const wordIds = new Set(), wordNames = new Set(), recipes = new Set();
+    const words = wordRows.map(it => {
+      const w = where(it, '符文之語');
+      if (!/^rw_[A-Za-z0-9_]+$/.test(it.id)) fail(w + '：id 必須是 rw_ 開頭的英數字（鑰匙欄）');
+      if (wordIds.has(it.id)) fail(w + '：id 重複');
+      if (!it.name) fail(w + '：缺名稱');
+      if (wordNames.has(it.name)) fail(w + '：名稱重複');
+      wordIds.add(it.id); wordNames.add(it.name);
+      const tier = Number(get(it.r, '階／級距').trim());
+      if (!isInt(tier) || tier < 1 || tier > 4) fail(w + '：「級距」必須是 1~4（1 普通／2 強力／3 非常強力／4 極度特殊）');
+      const recipe = splitList(get(it.r, '配方')).map(t => {
+        if (runeIds.has(t)) return t;
+        if (runeNames[t]) return runeNames[t];
+        return fail(w + '：配方裡的「' + t + '」不是符文（請填符文名稱或 id）');
+      });
+      if (recipe.length < 2) fail(w + '：配方至少要 2 顆符文');
+      if (recipe.length > maxSlots) fail(w + '：配方有 ' + recipe.length + ' 顆符文，超過符文孔數上限 ' + maxSlots);
+      const key = recipe.join(',');
+      if (recipes.has(key)) fail(w + '：配方與別的符文之語完全相同');
+      recipes.add(key);
+      const bases = splitList(get(it.r, '適用裝備'));
+      if (!bases.length) fail(w + '：「適用裝備」不可空白（要填 any 才是不限）');
+      bases.forEach(b => {
+        if (!(V.baseTokens.has(b) || RUNE_SLOT_TOKENS.indexOf(b) >= 0 || V.weaponTypes.has(b))) fail(w + '：適用裝備「' + b + '」不是已知標記、裝備欄位或武器類型');
+      });
+      const o = { id: it.id, name: it.name, tier: tier, runes: recipe, bases: bases };
+      const stats = runeParsePairs(get(it.r, '屬性加成'), w, V.affix, '屬性加成');
+      if (stats.length) o.stats = stats;
+      const passives = runeParsePairs(get(it.r, '被動'), w, V.passiveKeys, '被動');
+      if (passives.length) { o.passives = {}; passives.forEach(p => { o.passives[p[0]] = p[1]; }); }
+      const fx = runeParsePairs(get(it.r, '靜態效果'), w, V.fxKeys, '靜態效果');
+      if (fx.length) { o.fx = {}; fx.forEach(p => { o.fx[p[0]] = p[1]; }); }
+      const procsText = get(it.r, '事件觸發(JSON)').trim();
+      if (procsText !== '') {
+        const procs = parseJsonCell(procsText, w + '「事件觸發」');
+        if (!Array.isArray(procs) || !procs.length) fail(w + '：「事件觸發」必須是非空的 JSON 陣列');
+        procs.forEach((p, pi) => {
+          const pw = w + '：事件觸發第 ' + (pi + 1) + ' 條';
+          if (!p || !V.triggers.has(p.on)) fail(pw + '的 on「' + (p && p.on) + '」不是已知觸發（' + Array.from(V.triggers).join('／') + '）');
+          if (p.on === 'tick' && !(p.every > 0)) fail(pw + '：tick 必須有 every（秒）');
+          if (p.on === 'lowhp' && !(p.below > 0)) fail(pw + '：lowhp 必須有 below（%）');
+          if (!Array.isArray(p.acts) || !p.acts.length) fail(pw + '：沒有動作 acts');
+          p.acts.forEach(a => {
+            if (!a || !V.acts.has(a.act)) fail(pw + '的動作「' + (a && a.act) + '」不是已知動作（' + Array.from(V.acts).join('／') + '）');
+            if (a.act === 'dmg' && !(a.pct > 0)) fail(pw + '：dmg 缺 pct');
+          });
+        });
+        o.procs = procs;
+      }
+      const legend = splitList(get(it.r, '傳奇特效'));
+      legend.forEach(k => { if (!(V.passivePool[k] && V.passivePool[k].legendary)) fail(w + '：借用的傳奇特效「' + k + '」不存在於傳奇特效池'); });
+      if (legend.length) o.legend = legend;
+      const flavor = get(it.r, '風味文字').trim();
+      if (flavor) o.flavor = flavor;
+      return o;
+    });
+
+    /* ---- 輸出 ---- */
+    const settingsText = 'var RUNE_SETTINGS = {\n' +
+      '  maxSlots: ' + numStr(maxSlots) + ',\n' +
+      '  slotsByRarity: ' + jsLit(slots) + ',\n' +
+      '  composeCount: ' + numStr(val.composeCount) + ',\n' +
+      '  composeMaxTier: ' + numStr(val.composeMaxTier) + ',\n' +
+      '  dismantleYield: ' + numStr(val.dismantleYield) + ',\n' +
+      '  statScale: ' + numStr(val.statScale) + ',\n' +
+      '  drop: ' + jsLit({ basePct: val.drop_basePct, towerBossPct: val.drop_towerBossPct, tierSpread: val.drop_tierSpread, progressPerTier: val.drop_progressPerTier }) + '\n};';
+    const runesText = 'var RUNES = [\n' + runes.map(r => '  ' + jsLit(r)).join(',\n') + '\n];';
+    const wordLines = [];
+    let lastTier = 0;
+    words.forEach((w, i) => {
+      if (w.tier !== lastTier) {
+        lastTier = w.tier;
+        wordLines.push((i ? '\n' : '') + '  /* ===== 第' + ['', '一', '二', '三', '四'][w.tier] + '級　' + RUNE_TIER_NAMES_FOR_TABLE[w.tier] + ' ===== */');
+      }
+      const head = '{ id: ' + quoteStr(w.id) + ', name: ' + quoteStr(w.name) + ', tier: ' + w.tier + ', runes: ' + jsLit(w.runes) + ', bases: ' + jsLit(w.bases);
+      const rest = ['stats', 'passives', 'fx', 'procs', 'legend', 'flavor'].filter(k => w[k] !== undefined).map(k => k + ': ' + jsLit(w[k]));
+      wordLines.push('  ' + head + (rest.length ? ',\n' + rest.map(l => '    ' + l).join(',\n') : '') + ' }' + (i < words.length - 1 ? ',' : ''));
+    });
+    const wordsText = 'var RUNEWORDS = [\n' + wordLines.join('\n') + '\n];';
+    return { RUNE_SETTINGS: settingsText, RUNES: runesText, RUNEWORDS: wordsText };
+  }
+};
+
+const TABLE_ORDER = ['Skills', 'Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Task', 'Runes'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -1456,18 +1757,42 @@ const TABLE_ORDER = ['Skills', 'Skills2', 'Status', 'Gems', 'Talents', 'Equipmen
 function csvPathOf(name) { return path.join(CSV_DIR, name + '.csv'); }
 function xlsxPathOf(name) { return path.join(XLSX_DIR, name + '.xlsx'); }
 
+/* 讀取各目標 JS。缺檔就略過（不是每個環境都帶齊全部檔案——例如測試複製出的最小專案）；
+   真的有表要用到缺的檔時，再由該表的 extract／rebuild 報錯。 */
+function readAllJs() {
+  const m = {};
+  Object.keys(JS).forEach(k => { if (fs.existsSync(JS[k])) m[k] = readUtf8(JS[k]); });
+  return m;
+}
+function existingJsKeys() { return Object.keys(JS).filter(k => fs.existsSync(JS[k])); }
 function cmdGen(only) {
-  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), skills2: readUtf8(JS.skills2), status: readUtf8(JS.status) };
+  const srcMap = readAllJs();
   TABLE_ORDER.forEach(name => {
     if (only && name !== only) return; // --gen <表名>：只重生指定表，不動其他表
     const sc = SCHEMAS[name];
     const dataRows = sc.extract(srcMap[sc.jsFile]);
     const rows = [sc.header].concat(dataRows);
     writeUtf8(csvPathOf(name), csvStringify(rows));
+    if (sc.noXlsxGen) {   // AI_RULES 8.5：不手拼 xlsx XML；xlsx 由 Excel 本身建立／更新
+      console.log('  ✔ ' + name + '：' + dataRows.length + ' 列 → CSV（xlsx 請用 tools/excel-create-table.ps1 或 excel-update-sheets.ps1，本工具不寫）');
+      return;
+    }
     writeXlsx(xlsxPathOf(name), sc.sheet, rows, sc.extraSheets);
     console.log('  ✔ ' + name + '：' + dataRows.length + ' 列 → CSV + xlsx');
   });
   console.log('[gen] 已由 JS 產生' + (only ? '「' + only + '」表' : '七表') + '。');
+}
+
+/* --dump-json <表名> <輸出路徑>：把「目前的 CSV」＋說明頁整理成 excel-create-table.ps1／excel-update-sheets.ps1 吃的 JSON。
+   用 CSV 當內容（使用者在 Excel 的編輯經 --sync 進了 CSV），所以不會洗掉他的修改。 */
+function cmdDumpJson(name, outPath) {
+  const sc = SCHEMAS[name];
+  if (!sc || !outPath) { console.error('用法：--dump-json <表名> <輸出路徑>'); process.exit(1); }
+  const rows = csvParse(readUtf8(csvPathOf(name))).filter(r => r.length > 1 || (r[0] || '') !== '');
+  const sheets = [{ name: sc.sheet, rows: rows, widths: sc.widths || undefined, table: true }];
+  (sc.extraSheets || []).forEach(s => sheets.push({ name: s.name, rows: s.rows }));
+  fs.writeFileSync(outPath, JSON.stringify({ sheets: sheets }), 'utf8');
+  console.log('  ✔ ' + name + '：' + rows.length + ' 列 + ' + (sheets.length - 1) + ' 張說明頁 → ' + outPath);
 }
 
 function cmdSync() {
@@ -1484,8 +1809,8 @@ function cmdSync() {
 }
 
 function cmdApply(only) {
-  const srcMap = { data: readUtf8(JS.data), skills: readUtf8(JS.skills), skills2: readUtf8(JS.skills2), status: readUtf8(JS.status) };
-  const newSrc = { data: srcMap.data, skills: srcMap.skills, skills2: srcMap.skills2, status: srcMap.status };
+  const srcMap = readAllJs();
+  const newSrc = Object.assign({}, srcMap);
   const changes = []; // {name, var, changed}
   let hadError = false;
 
@@ -1536,14 +1861,14 @@ function cmdApply(only) {
 
   // 寫入：備份 → 只覆蓋有變更的檔 → node --check → 失敗還原
   const touched = Array.from(new Set(changed.map(c => c.file)));
-  const backups = {}; Object.keys(JS).forEach(f => { backups[f] = fs.readFileSync(JS[f], 'utf8'); });
+  const backups = {}; existingJsKeys().forEach(f => { backups[f] = fs.readFileSync(JS[f], 'utf8'); });
   try {
     touched.forEach(f => fs.writeFileSync(JS[f], newSrc[f], 'utf8'));
-    Object.keys(JS).forEach(f => execFileSync(process.execPath, ['--check', JS[f]]));
+    existingJsKeys().forEach(f => execFileSync(process.execPath, ['--check', JS[f]]));
     try { fs.writeFileSync(path.join(ROOT, 'params_version.txt'), String(pseudoStamp())); } catch (e) {}
     console.log('\n✔ 已寫回 JS 並通過語法檢查。遊戲頁面將自動重新整理。');
   } catch (err) {
-    Object.keys(JS).forEach(f => fs.writeFileSync(JS[f], backups[f], 'utf8'));
+    Object.keys(backups).forEach(f => fs.writeFileSync(JS[f], backups[f], 'utf8'));
     console.log('\n✗ 寫入後驗證失敗，已還原所有 JS。錯誤：' + err.message);
     process.exit(1);
   }
@@ -1568,6 +1893,11 @@ function pseudoStamp() {
 
 /* ---- 進入點 ---- */
 if (require.main === module) {
+if (process.argv.includes('--dump-json')) {
+  const at = process.argv.indexOf('--dump-json');
+  cmdDumpJson(process.argv[at + 1], process.argv[at + 2]);
+  process.exit(0);
+}
 const mode = process.argv.includes('--gen') ? 'gen'
   : process.argv.includes('--sync') ? 'sync'
   : process.argv.includes('--apply') ? 'apply' : '';
@@ -1576,7 +1906,7 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills|Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes]');
   process.exit(1);
 }
 
