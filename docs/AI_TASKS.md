@@ -1,5 +1,37 @@
 # AI_TASKS.md
 
+## SKILL-TIMER-DISPLAY-20261006 — 技能列施放間隔與觸發冷卻全面清查
+
+- Owner：Codex；Done。使用者要求進化為定時被動的技能列顯示實際間隔、復活技能觸發後才起算，全面清查同類技能。23群組／全部69項超神進化盤點完成；單一開發者。使用者明確授權與逐風者進行中修改分段作業並保留既有內容。
+- 範圍：js/skills2.js唯讀計時投影、js/ui.js兩種技能列與倒數、Worker battle投影／protocol及文件／測試、index／bridge快取、本紀錄、新增tests/skill-cooldown-display.test.cjs。禁止改技能數值、傷害／施放規則、Excel／CSV、素材、存檔與其他副本；不合併／推送。依賴現有排程已滿足；後續使用者整合。
+- 驗收：天霸風神斬讀排程而非主動CD，死亡／倒地保持剩餘間隔；天地共生／不屈鬥魂觸發才倒數、正確比例，逆轉乾坤首觸發後才充能；天穹崩裂無虛構CD／耗魔；其他主動技能保留本體CD。定向回歸、協議相容、Build與隔離瀏覽器／Console，獨立提交只含本次變更，保留逐風者未提交內容。
+- 完成：battle.skillTimers由Worker唯讀投影mode／remaining／total／cost／paused，兩處技能列同源；天霸風神斬直接讀ultAuto排程、總時長與施放共用函式，不回寫主動skillCds；天地共生／不屈鬥魂以自身CD畫正確比例，原觸發後起算及充能規則保留；天穹崩裂顯示恆時受擊被動，失效復活進化的舊CD不再顯示。附加常駐、場域、自動重複、命中節拍維持本體主動冷卻（無限新星、天地雷鎖陣、永恒雷獄、暴風亂舞等），內部節拍不誤當整格CD。一般主動進度圈使用skills2Cooldown，含縮地、時間坍縮、符文倍率與最低間隔。高塔計時與復活次數改讀G.tower.active，修正不存在的TOWER.active誤讀野外玩家。協議46→47、四項主端及Worker快取同步；不改戰鬥數值／施放／觸發／存檔。
+- 修改10檔：js/skills2.js、js/ui.js、js/worker/sim.worker.js、js/worker/protocol.js、js/bridge.js、index.html、tests/skill-cooldown-display.test.cjs（新增9項）、tests/worker-protocol.test.cjs、docs/WORKER_PROTOCOL.md與本紀錄。未修改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、js/skills.js／combat.js／tower.js／formula.js／battlefield.js、scripts/sim/engine.js、原技能／地系／死亡冷卻及UI回歸；Skills2配置唯讀查核，無Excel／CSV／素材變更，不需素材庫Commit。
+- 測試：`node --test tests/skill-cooldown-display.test.cjs tests/worker-protocol.test.cjs tests/earthguard-revival.test.cjs tests/battle-skill-summary.test.cjs tests/battle-skill-hover.test.cjs tests/cooldown-repaint.test.cjs`33/33通過。`node --test tests/skill2-ult-evolution.test.cjs tests/skill2-earth.test.cjs tests/skill-cooldown-death.test.cjs tests/worker-shim.test.cjs`120項、82通過／38既有失敗；以修改前備份skills2.js重導唯讀載入做同檔測試基線，120／82／38且失敗名稱集合完全相同，新增失敗0，未降低原斷言。`npm.cmd run build`466檔檢查通過；`git diff --check`通過。
+- 實機：隔離headless Edge／隨機Port唯讀HTTP／全新Context／seed=9拋棄式角色、正式Worker47成功BOOT；使用原生引擎buildPanel的快照驗正式UI，在1920×1080與1280×720皆確認天霸1.5/3秒、天地15/30秒、不屈30/60秒，各遮罩180deg；兩種技能列相符、受擊風刃無CD／無魔標籤、復活就緒無CD、凍結1秒後天霸仍1.5秒。Console error／warning均0。精確排程、實際扣魔、自動施放、死亡與活著倒地、首觸發／充能、移除失效效果、高塔來源由新增引擎測試驗證；無真人存檔變動，服務／瀏覽器已關閉。
+- 交付：Commit為本紀錄所在`[Codex] fix: 同步技能列定時施放與觸發冷卻`提交；同副本逐風者與強化洗煉一秒任務期間已各自提交，本次僅提交上述10檔自己的變更。無本次未完成項目，既有38項回歸失敗保留，可審查合併，未合併／推送。下一步使用者重載遊戲驗收；未做長時間真人操作。
+
+## EQUIP-ACTION-ONE-SECOND-20261006 — 強化洗煉切頁冷卻改為一秒
+
+- Owner：Codex；Done。使用者將前次2秒改為1秒；依賴EQUIP-ACTION-COOLDOWN已完成，單一開發者。fetch後四檔衝突預檢無其他副本／分支衝突；本副本有逐風者進行中修改，僅碰index不同的UI引用與新增本任務段落，保留全部既有工作。
+- 範圍：js/ui.js冷卻常數、tests/equip-reroll-ui.test.cjs時間界線、index.html僅UI快取、本紀錄；不改提示、操作／消耗／模式、Worker／存檔／素材或逐風者任務。驗收0～999ms禁止、1000ms恢復及既有防護；相關回歸／Build通過後只提交本任務，不合併／推送，使用者後續整合。
+- 完成／修改4檔：EQUIP_ACTION_ENTRY_COOLDOWN_MS由2000→1000，回歸時鐘／期限與說明同步，UI快取1.0.135→1.0.136；「冷卻中無法使用」、換件／重選、資料刷新／選屬性不延長、pending防連送皆維持。未修改但檢查：協作規範、相關裝備與初始化測試、index既有逐風者快取段落。無素材改動，不需素材庫Commit。
+- 測試指令：`node --test tests/equip-reroll-ui.test.cjs tests/equip-socket-ui.test.cjs tests/item-detail-html.test.cjs tests/equipment-detail-layout.test.cjs tests/affix-actions-layout.test.cjs tests/init-ui-smoke.test.cjs tests/upgrade-animation.test.cjs`48/48通過，包含洗煉與強化999ms受阻／1000ms允許；`npm.cmd run build`465檔通過及`git diff --check`通過。只有時間常數修改，未重做前次完整瀏覽器實點；初始化／UI tick回歸通過。
+- 交付：Commit為本紀錄所在`[Codex] fix: 強化洗煉冷卻縮短為一秒`提交；只暫存本次程式／測試與index／紀錄片段，逐風者與使用者既有修改保留未提交。無本次未完成或已知新增風險，可合併，未合併／推送；下一步使用者整合後重載驗收，完整Commit ID可由`git log -1 --format=%h -- js/ui.js`取得。
+
+## WIND-CHASER-20261006 — 逐風者真空斬與迴旋斬增傷
+
+- Owner：Codex；Done。使用者要求命中時固定10%觸發一道真空斬，基礎200%風系傷害／每級+20%，迴旋斬傷害基礎+150%／每級+15%；取代逐風者原多段龍捲風。單一開發者，沿用既有命中與VFX事件，無前置設計依賴。
+- 允許：Skills2 Excel／CSV／生成表、js/skills2.js逐風者命中與迴旋斬增傷、觸發角色配置工具／預設引用、相關測試、公式／VFX文件、index與Worker快取、本紀錄。禁止：無關技能數值、素材內容、存檔／協議、其他副本。保留本副本使用者修改（迴身四方斬times=2、虛空碎裂斬timesPer=0.1），Runes／Task CSV目前僅換行差異。
+- 預檢：fetch後所列檔案與新增測試皆無其他副本或分支衝突。驗收：機率邊界／MISS不觸發、一次風系段及等級成長、本體倍率、直接與飛行命中、VFX只讀配置／留白不播放、疾風傳奇風捲殘雲原場域相容；Excel原生開啟與格式保留、三份資料一致、定向與基線回歸、Build／Console。必要驗證後獨立Commit，不合併／推送；交由使用者整合。
+- 完成：逐風者命中掛鉤只對本次命中的存活敵人機率追加一道風系真空斬，不遞迴、不建立場域；使用原群組物攻／物穿，記入迴旋斬DPS並標記子類型「逐風者真空斬」，非同步傷害與擊殺通知同步。本體傷害乘以逐風者增傷倍率，不放大追加段；沿用既有底值＋每級增量×等級慣例。真空斬事件只讀本列attack／hit、原尺寸／當次方向，MISS不播受擊、擊殺保留目標。地板／field保留供疾風傳奇風捲殘雲借用，龍捲事件只播這兩個角色，不混入真空斬；無新素材或寫死Preset，素材庫無需提交。
+- 修改：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/bridge.js、js/worker/sim.worker.js、index.html、tools/skills2-vfx.cjs、tools/vfx/authoring/vfx-catalog.cjs、tests/skill2-wind-chaser.test.cjs（新增9項）、tests/skill2-ult-evolution.test.cjs／skill-vfx-inheritance.test.cjs／skills2-vfx-usage.test.cjs、game_formula.md、docs/vfx/SKILLS2_VFX_COLUMNS.md／VFX_RUNTIME_ADAPTER.md及本紀錄。保留使用者迴旋斬2列、飛刀5列及疾風迅雷5列最新數值／說明；其他CSV僅換行差異，檢查後一起staging正規化，無語意變更。
+- 未修改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、tools/config_tables.cjs／skills2-geometry.cjs、js/util.js／battlefield.js／combat.js／ui.js、Worker protocol、既有風系／VFX回歸及引用素材。主執行緒skills2版本1.0.285／bridge1.0.228，Worker token 20261006-wind-chaser-vacuum；協議與存檔格式不變。
+- 測試：`node --test --test-reporter=tap tests/skill2-wind-chaser.test.cjs`9/9；`node --test --test-reporter=tap --test-name-pattern="逐風者|疾風傳奇借|觸發欄|Excel、CSV" tests/skill2-ult-evolution.test.cjs tests/skill-vfx-inheritance.test.cjs tests/skills2-vfx-usage.test.cjs`5/5；`node --test --test-reporter=tap tests/vfx-preset-usage.test.cjs tests/worker-protocol.test.cjs`36/36。六檔廣回歸（上述新增測試＋ult-evolution／skill-vfx-inheritance／skills2-vfx-usage／skill2-vfx／skill2-windblade-vacuum-legendary）147項104通過／43失敗；修改前五檔138項95通過／43失敗。失敗名称差集：舊逐風者fixture缺MP失敗已修復，雙刀隨機目標測試此輪失敗；以HEAD／本版與固定random=0／0.99重現相同錯序，證明既有隨機性，沒有新增功能失敗。未放寬既有斷言或改無關技能。
+- Excel：Artifact Tool原表預覽／八格編輯計畫及驗證，原生Excel Value2套用到最新來源；發現鎖定時停止未寫入，使用者儲存並關閉後重新核對版本，來源雜湊變更使防覆寫攔截，再以最新保存版建立快照，保留追加的疾風迅雷修改。正常模式原生重開無修復；唯讀逐格比較其餘資料／公式、有效樣式（新填字串沿欄樣式）、驗證規則／工作表保持，AY20原LEN公式重算。`config_tables --apply Skills2`語意變更0，Excel／CSV／JS一致測試通過。比對工具首跑編碼未指定、後續以UTF-8及欄繼承樣式核對完成；未手改XML。
+- Build／實機：`npm.cmd run build`465檔通過，`git diff --check`通過。bundled Playwright＋headless Edge、獨立Context／本機正式頁面，實際讀取逐風者名稱、完整新參數／說明／特效與快取，Console error／warning皆0；未改使用者存檔。臨時服務、瀏覽器及本任務Excel實例已關閉，助手暫存輸出提交前清除。
+- 交付：Commit為本紀錄所在`[Codex] fix: 調整逐風者真空斬與迴旋斬增傷`提交，包含使用者最新設定；無本次未完成項目，可合併，未合併／推送。已知限制：廣回歸仍43項既有／隨機性失敗，未做長時間真人戰鬥觀感驗收。下一步整合後Ctrl+F5重載，確認逐風者機率真空斬與本體增傷；風捲殘雲仍保留龍捲風。
+
 ## Claude｜吃緊時降特效成本：飛行子彈拖尾、命中爆點限頻、全場命中上限、透明節點略過（VFX-SHED-20261006）
 
 - Owner：Claude；Done。使用者在修掉「特效事件卡在計時器隊伍」之後回報 FPS 只有 12（傷害數字關閉），並觀察到畫面上最多的是飛行子彈與受擊特效、場域一秒好幾拍會產生大量命中特效。要求：降低特效節點成本把 FPS 拉回來；範圍＝①無損略過看不見的節點＋②吃緊時才降（拖尾、命中頻率），**不加設定開關**。

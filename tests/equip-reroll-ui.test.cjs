@@ -75,7 +75,7 @@ test('首次進入與選取不送洗煉指令，下方按鈕洗當前詞條且�
   c.click(null, 1);
   assert.equal(c.commands.length, 0);
   assert.equal(c.UI.equipRerollMode.selIdx, 1);
-  c.advance(2000);
+  c.advance(1000);
   c.click('reroll-affix');
   assert.deepEqual(c.commands.map((x) => [x.name, x.args]), [['item.rerollAffix', { itemId: 'gear', affixKey: 'str' }]]);
   assert.match(c.elements['equip-action-bar'].innerHTML, /data-act="reroll-affix"[^>]* disabled/);
@@ -118,7 +118,7 @@ test('洗煉按鈕保留普通／太古說明、費用與不足提示；未知�
   c.player.gold = c.player.essence = 0;
   c.renderDetail();
   assert.match(c.elements['equip-action-bar'].innerHTML, /fca5a5/);
-  c.advance(2000);
+  c.advance(1000);
   c.click('reroll-affix');
   assert.equal(c.commands.length, 0);
   assert.deepEqual(c.floats, ['材料不足']);
@@ -145,17 +145,17 @@ test('沒有可洗詞條禁用按鈕，下架詞條會改選有效位置，換�
   assert.match(c.elements['equip-action-bar'].innerHTML, /data-act="toggle-reroll"/);
 });
 
-test('切入洗煉後完整2秒只提示不送指令，選屬性／重繪／重點不延長冷卻', () => {
+test('切入洗煉後完整1秒只提示不送指令，選屬性／重繪／重點不延長冷卻', () => {
   const c = mount();
   c.advance(5000);
   c.click('toggle-reroll');
   const deadline = c.UI.equipActionCooldown.until;
   c.click('reroll-affix');
-  c.advance(1000);
+  c.advance(500);
   c.click(null, 1);
   c.renderDetail();
   c.click('reroll-affix');
-  c.advance(999);
+  c.advance(499);
   c.detailAction('reroll-affix', {});
   assert.equal(c.UI.equipActionCooldown.until, deadline);
   assert.equal(c.commands.length, 0);
@@ -169,10 +169,10 @@ test('切入洗煉後完整2秒只提示不送指令，選屬性／重繪／重�
   c.pending.clear();
   c.renderDetail();
   c.click('reroll-affix');
-  assert.equal(c.commands.length, 2, '冷卻只擋切頁，不在每次洗煉後再加2秒');
+  assert.equal(c.commands.length, 2, '冷卻只擋切頁，不在每次洗煉後再加1秒');
 });
 
-test('洗煉／鑲嵌／符文切回強化只切頁，第二次點擊也需等待2秒', () => {
+test('洗煉／鑲嵌／符文切回強化只切頁，第二次點擊也需等待1秒', () => {
   for (const from of ['toggle-reroll', 'toggle-socket', 'toggle-rune']) {
     const c = mount();
     c.advance(10000);
@@ -181,7 +181,7 @@ test('洗煉／鑲嵌／符文切回強化只切頁，第二次點擊也需等�
     assert.equal(c.UI.equipRerollMode, null);
     assert.equal(c.UI.equipMatMode, null);
     assert.equal(c.commands.length, 0);
-    c.advance(1999);
+    c.advance(999);
     c.click('upgrade');
     assert.deepEqual(c.floats, ['冷卻中無法使用']);
     assert.equal(c.commands.length, 0);
@@ -196,16 +196,16 @@ test('初次顯示與切換裝備重設強化冷卻，同頁刷新不重設；�
   const c = mount();
   c.player.gold = c.player.scrap = 0;
   c.click('upgrade');
-  c.advance(1500);
+  c.advance(500);
   c.renderDetail();
-  assert.equal(c.UI.equipActionCooldown.until, 2000);
+  assert.equal(c.UI.equipActionCooldown.until, 1000);
   c.advance(500);
   c.click('upgrade');
   assert.deepEqual(c.floats, ['冷卻中無法使用', '材料不足']);
   c.it.id = c.UI.sel.id = 'new-gear';
   c.UI.sel.source = 'equip';
   c.renderDetail();
-  assert.equal(c.UI.equipActionCooldown.until, 4000);
+  assert.equal(c.UI.equipActionCooldown.until, 2000);
   c.click('upgrade');
   assert.equal(c.floats[2], '冷卻中無法使用');
   assert.equal(c.commands.length, 0);
@@ -214,7 +214,7 @@ test('初次顯示與切換裝備重設強化冷卻，同頁刷新不重設；�
 test('快速離開再切入洗煉重新計時，鑲嵌／符文切頁與鎖定不被冷卻阻擋', () => {
   const c = mount();
   c.click('toggle-reroll');
-  c.advance(1900);
+  c.advance(900);
   c.click('toggle-socket');
   assert.equal(c.UI.equipMatMode.mode, 'socket');
   c.click('toggle-rune');
@@ -231,13 +231,13 @@ test('快速離開再切入洗煉重新計時，鑲嵌／符文切頁與鎖定�
 test('同件裝備等待詳情快照不延長冷卻，取消選取後重新選取會重算', () => {
   const c = mount();
   const item = c.it, selection = c.UI.sel;
-  c.advance(1500);
+  c.advance(500);
   c.it = null;
   c.renderDetail();
   c.advance(600);
   c.it = item;
   c.renderDetail();
-  assert.equal(c.UI.equipActionCooldown.until, 2000);
+  assert.equal(c.UI.equipActionCooldown.until, 1000);
   c.UI.sel = null;
   c.it = null;
   c.renderDetail();
@@ -245,7 +245,7 @@ test('同件裝備等待詳情快照不延長冷卻，取消選取後重新選�
   c.UI.sel = selection;
   c.it = item;
   c.renderDetail();
-  assert.equal(c.UI.equipActionCooldown.until, 4100);
+  assert.equal(c.UI.equipActionCooldown.until, 2100);
   c.click('upgrade');
   assert.equal(c.commands.length, 0);
   assert.deepEqual(c.floats, ['冷卻中無法使用']);

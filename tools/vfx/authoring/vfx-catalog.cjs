@@ -227,7 +227,7 @@ g('cleave', [
   { attack: 'slash-cleave-stun', hit: 'hit-phys' },
   { attack: 'slash-cleave-stun', hit: 'hit-phys' },
   { attack: 'slash-cleave-stun', hit: 'hit-phys' }
-], { windChaser: { ground: 'ground-tornado-wind' } });
+], { windChaser: { attack: 'slash-wind-crescent', hit: 'hit-wind', ground: 'ground-tornado-wind' } });
 
 g('knife', [
   { projectile: 'proj-knife', hit: 'hit-phys' },      // T1 飛刀

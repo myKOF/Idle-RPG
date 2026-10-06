@@ -77,7 +77,8 @@
 /* v46（2026-10-07 符文取代附魔）：符文改鑲在裝備專屬的符文孔 it.runes（最多 4 孔，取代附魔欄位），不再與寶石共用 item.sockets；
    新增 rune.unsocket(itemId, index)（取下符文，原本借用 gem.unsocket 的分流作廢），指令數 92 → 93。
    附魔指令（item.enchant／item.removeEnchant）保留但附魔功能已關閉（data.js ENCHANT_ENABLED），呼叫會回「附魔功能已關閉」。 */
-var WORKER_PROTOCOL_VERSION = 46;
+/* v47：battle.skillTimers 投影技能列的權威時鐘；不改 skillCds 或存檔。 */
+var WORKER_PROTOCOL_VERSION = 47;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

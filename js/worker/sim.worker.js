@@ -10,11 +10,11 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=46', 'shim.js?v=11');
+importScripts('protocol.js?v=47', 'shim.js?v=11');
 importScripts(
   '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes4', '../runeword_data.js?v=20261007-runes4', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes4', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
   '../item.js?v=20261007-runes4', '../runeword.js?v=20261007-runes4',
-  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261007-runes4', '../talents.js?v=20261003-rename-weineng',
+  '../skills.js?v=20261007-runes4', '../skills2.js?v=20261006-skill-timers', '../talents.js?v=20261003-rename-weineng',
   '../player.js?v=20261007-runes4', '../special_rules.js',
   '../combat.js?v=20261007-runes4', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-runes4',
   '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-runes4',
@@ -760,9 +760,12 @@ function buildPanel(name, params) {
          而面板只在髒區時才更新——主執行緒若照著舊快照直接顯示，倒數會卡住好幾秒
          再突然歸零。有了 gt 就能扣掉「拍照到現在」經過的時間，變成真正的碼錶。 */
       return {
+        skillTimers: (typeof skills2BattleTimers === 'function')
+          ? skills2BattleTimers((G.tower && G.tower.active && typeof TOWER !== 'undefined' && TOWER && TOWER.player)
+            || (typeof FIELD !== 'undefined' && FIELD && FIELD.player)) : {},
         gt: GT,
         rebirthCharges: (typeof skills2RebirthAvailableCharges === 'function')
-          ? skills2RebirthAvailableCharges((typeof TOWER !== 'undefined' && TOWER && TOWER.active && TOWER.player)
+          ? skills2RebirthAvailableCharges((G.tower && G.tower.active && typeof TOWER !== 'undefined' && TOWER && TOWER.player)
             || (typeof FIELD !== 'undefined' && FIELD && FIELD.player)) : null,
         field: (typeof FIELD !== 'undefined') ? FIELD : null,
         tower: (typeof TOWER !== 'undefined') ? TOWER : null,
