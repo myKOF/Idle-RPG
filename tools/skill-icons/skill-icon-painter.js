@@ -418,6 +418,7 @@
     earth: { base: '#090604', tint: '#3a220e', cloud: '#55331a', key: '#e3a457' },
     swamp: { base: '#050604', tint: '#26250c', cloud: '#2f3a10', key: '#9be04a' },
     life: { base: '#040805', tint: '#16331a', cloud: '#21502a', key: '#b8f26a' },
+    holy: { base: '#0b0906', tint: '#3a3016', cloud: '#5a4a20', key: '#fff2b0' },
     bolt: { base: '#07050f', tint: '#241848', cloud: '#352266', key: '#ffd84a' },
     orb: { base: '#05040f', tint: '#1a1a4e', cloud: '#2a2672', key: '#b4b8ff' },
     boltBlue: { base: '#02050e', tint: '#0b1e4c', cloud: '#132c6e', key: '#6ab8ff' },
@@ -431,96 +432,89 @@
 
   var PAINTERS = {};
 
-  /* 突刺：細劍斜刺，殘影＋刺尖衝擊環 */
+  /* 突刺：只取刀身前半段——刀身從左下畫外伸入，刀尖在畫面中央偏右上，衝擊波紋＋閃光是主角 */
   PAINTERS.thrust = function (c, R) {
-    background(c, R, Object.assign({ cx: 186, cy: 72 }, PAL.steel));
-    var tx = 212, ty = 44, bx = 66, by = 194;
-    var ang = Math.atan2(ty - by, tx - bx);
-    var dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
-    /* 速度線：全部平行於刺擊方向 */
+    background(c, R, Object.assign({ cx: 150, cy: 106 }, PAL.steel));
+    var tx = 156, ty = 96;  /* 量出重心偏右 11，往左補 */
+    var ang = Math.atan2(-1, 1), dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
+    /* 速度線（短、集中在刀身周圍） */
     add(c);
     for (var i = 0; i < 12; i++) {
-      var off = range(R, -70, 70), st = range(R, -80, 40), ln = range(R, 50, 120);
-      var x0 = 128 + nx * off + dx * st, y0 = 128 + ny * off + dy * st;
-      ribbon(c, linePts(x0 - dx * ln, y0 - dy * ln, x0, y0, 8), function (t) { return 2 * Math.sin(Math.PI * t); },
-        rgba('#a8d0ff', range(R, 0.12, 0.35)));
+      var off = range(R, -56, 56), st = range(R, -150, -30), ln = range(R, 40, 90);
+      var x0 = tx + nx * off + dx * st, y0 = ty + ny * off + dy * st;
+      ribbon(c, linePts(x0, y0, x0 + dx * ln, y0 + dy * ln, 8), function (t) { return 2.2 * Math.sin(Math.PI * t); },
+        rgba('#a8d0ff', range(R, 0.15, 0.4)));
     }
     normal(c);
-    /* 殘影：同一直線往後錯開的藍色劍影（連刺） */
+    /* 衝擊波紋：沿刺擊方向排開的橢圓環，越前越大越淡（畫在刀身後，刀尖穿過它們） */
     add(c);
-    [46, 92].forEach(function (back, k) {
-      var pts = linePts(bx - dx * back, by - dy * back, tx - dx * back, ty - dy * back, 20);
-      ribbon(c, pts, function (t) { return 9 * (t > 0.7 ? (1 - t) / 0.3 : 1); }, alongGrad(c, pts,
-        [[0, 'rgba(90,160,255,0)'], [0.6, 'rgba(110,180,255,' + (0.35 - k * 0.12) + ')'], [1, 'rgba(200,230,255,' + (0.55 - k * 0.18) + ')']]));
-    });
-    normal(c);
-    /* 細劍 */
-    bladeAlong(c, linePts(bx, by, tx, ty, 26), 9, STEEL, { wFn: function (t) { return t > 0.62 ? Math.pow((1 - t) / 0.38, 0.8) : 1; } });
-    /* 杯狀護手：金色半球＋護指弓 */
-    c.save(); c.translate(bx, by); c.rotate(ang);
-    var cg = c.createLinearGradient(0, -18, 0, 18);
-    cg.addColorStop(0, '#fff1b8'); cg.addColorStop(0.45, '#d9a441'); cg.addColorStop(1, '#4a2e0c');
-    c.fillStyle = cg;
-    c.beginPath(); c.ellipse(2, 0, 7, 19, 0, -Math.PI / 2, Math.PI / 2); c.lineTo(2, -19); c.fill();
-    c.strokeStyle = '#d9a441'; c.lineWidth = 2.6;
-    c.beginPath(); c.moveTo(4, -17); c.bezierCurveTo(-10, -26, -34, -18, -40, -4); c.stroke();
-    c.fillStyle = '#2a1a12'; roundRect(c, -38, -4, 36, 8, 3); c.fill();
-    c.fillStyle = cg; c.beginPath(); c.arc(-42, 0, 6, 0, TAU); c.fill();
-    c.restore();
-    /* 刺尖：錐狀衝擊環＋前衝光束 */
-    add(c);
-    for (var k = 0; k < 3; k++) {
-      var d = 14 + k * 18;
-      c.save(); c.translate(tx - dx * d, ty - dy * d); c.rotate(ang);
-      c.strokeStyle = rgba('#bfe0ff', 0.8 - k * 0.22); c.lineWidth = 2.4 - k * 0.5;
-      c.shadowBlur = 8; c.shadowColor = '#7fb8ff';
-      c.beginPath(); c.ellipse(0, 0, 4 + k * 2, 12 + k * 10, 0, 0, TAU); c.stroke();
+    for (var k = 0; k < 4; k++) {
+      var d = -26 + k * 20;
+      c.save(); c.translate(tx + dx * d, ty + dy * d); c.rotate(ang);
+      c.strokeStyle = rgba('#bfe0ff', 0.85 - k * 0.17); c.lineWidth = 3.2 - k * 0.5;
+      c.shadowBlur = 12; c.shadowColor = '#7fb8ff';
+      c.beginPath(); c.ellipse(0, 0, 7 + k * 3, 22 + k * 13, 0, 0, TAU); c.stroke();
       c.restore();
     }
-    for (var r2 = 0; r2 < 7; r2++) {
-      var a = ang + range(R, -0.35, 0.35), ln2 = range(R, 18, 44);
-      ribbon(c, linePts(tx, ty, tx + Math.cos(a) * ln2, ty + Math.sin(a) * ln2, 5), function (t) { return 3 * (1 - t); }, rgba('#dff0ff', 0.7));
+    normal(c);
+    /* 刀身前半段：寬，往刀尖收 */
+    var bx = tx - dx * 190, by = ty - dy * 190;
+    bladeAlong(c, linePts(bx, by, tx, ty, 26), 19, STEEL, { wFn: function (t) { return t > 0.4 ? Math.pow((1 - t) / 0.6, 0.75) : 1; } });
+    /* 中央血槽 */
+    add(c);
+    strokePts(c, linePts(bx + dx * 10, by + dy * 10, tx - dx * 70, ty - dy * 70, 2), 2.4, 'rgba(220,235,255,0.45)');
+    normal(c);
+    /* 刀尖閃光與往前迸的光束 */
+    add(c);
+    for (var r2 = 0; r2 < 9; r2++) {
+      var a = ang + range(R, -0.45, 0.45), ln2 = range(R, 22, 60);
+      ribbon(c, linePts(tx, ty, tx + Math.cos(a) * ln2, ty + Math.sin(a) * ln2, 5), function (t) { return 3.4 * (1 - t); }, rgba('#dff0ff', 0.75));
     }
     normal(c);
-    coreGlow(c, tx, ty, 34, '#7fb8ff');
-    sparkle(c, tx, ty, 22, '#9fd0ff', 0.2);
-    motes(c, R, 12, [140, 10, 246, 120], ['#bfe0ff', '#ffffff'], 1, 2.2);
+    coreGlow(c, tx, ty, 36, '#7fb8ff');
+    sparkle(c, tx, ty, 24, '#9fd0ff', 0.2);
+    motes(c, R, 14, [90, 20, 246, 170], ['#bfe0ff', '#ffffff'], 1, 2.4);
   };
 
-  /* 迴旋斬：俯視的旋風刀光圓盤（只用刀光與火花，不畫兵器），火花沿切線甩出 */
+  /* 迴旋斬：俯視的旋風刀光圓盤，刀光平均分布一整圈；金橘赤紅洋紅多色，青白火花點綴（不畫兵器） */
   PAINTERS.cleave = function (c, R) {
-    background(c, R, PAL.gold);
-    var cx = 128, cy = 130, sq = 0.62;
+    background(c, R, Object.assign({ cx: 128, cy: 128 }, PAL.gold));
+    /* 圓盤中心往右 10：最外圈刀光的粗頭落在左側，量出重心偏左 11 */
+    var cx = 138, cy = 128, sq = 0.62;
+    /* 底色加一層紅紫，讓畫面不只有黃 */
     add(c);
+    glowDot(c, 70, 70, 110, '#8a1a4a', 0.35);
+    glowDot(c, 190, 196, 110, '#6a1a7a', 0.3);
     c.save(); c.translate(cx, cy); c.scale(1, sq);
-    glowDot(c, 0, 0, 120, '#ff9a2a', 0.35);
+    glowDot(c, 0, 0, 124, '#ff7a2a', 0.32);
     c.restore();
     normal(c);
-    /* 由外到內一圈圈的弧形刀光，越內越亮越短 */
+    /* 刀光：每圈起點錯開 120 度，三圈一組，整圈都有東西，重心才會在中央 */
+    var cols = ['#ffcf5a', '#ff7a2a', '#ff3a5a', '#ff5ad0', '#ffd27a', '#ff4a3a'];
     for (var k = 0; k < 6; k++) {
-      var r = 116 - k * 15, a0 = k * 1.15 + 0.3, span = lerp(4.4, 2.6, k / 5);
-      var col = k % 2 ? '#ffcf5a' : '#ff9a2a';
-      swoosh(c, arcPts(cx, cy, r, a0, a0 + span, 60, r * sq), lerp(18, 9, k / 5), col, { taper: 'head', edge: k < 3 });
+      var r = 116 - k * 15, a0 = k * TAU / 3 + (k > 2 ? 0.9 : 0.2), span = lerp(3.6, 2.4, k / 5);
+      swoosh(c, arcPts(cx, cy, r, a0, a0 + span, 60, r * sq), lerp(18, 9, k / 5), cols[k], { taper: 'head', edge: k < 3 });
     }
-    /* 中心的旋渦亮芯 */
+    /* 中心旋渦亮芯 */
     add(c);
     for (var j = 0; j < 3; j++) {
       var sp = spiralPts(cx, cy, 34, 4, j * TAU / 3, 0.8, 24, sq);
-      ribbon(c, sp, function (t) { return 6 * Math.sin(Math.PI * t); }, rgba('#fff2c0', 0.7));
+      ribbon(c, sp, function (t) { return 6 * Math.sin(Math.PI * t); }, rgba(j ? '#ffe0f0' : '#fff2c0', 0.7));
     }
     normal(c);
-    coreGlow(c, cx, cy, 34, '#ffb347', '#fffbe8');
-    /* 沿切線甩出的火花 */
+    coreGlow(c, cx, cy, 34, '#ff8a4a', '#fffbe8');
+    /* 沿切線甩出的火花：暖色為主，夾幾顆青白 */
     add(c);
-    for (var i = 0; i < 16; i++) {
-      var a = range(R, 0, TAU), rr = range(R, 70, 112);
+    for (var i = 0; i < 18; i++) {
+      var a = i / 18 * TAU + range(R, -0.15, 0.15), rr = range(R, 76, 114);
       var px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr * sq;
-      var tx = -Math.sin(a), ty = Math.cos(a) * sq, ln = range(R, 14, 34);
-      ribbon(c, linePts(px - tx * ln, py - ty * ln, px, py, 6), function (t) { return 3 * t; }, rgba('#ffe7a0', 0.85));
-      glowDot(c, px, py, 5, '#ffcf6a', 0.9);
+      var tx = -Math.sin(a), ty = Math.cos(a) * sq, ln = range(R, 14, 32);
+      var col = i % 5 === 0 ? '#9ff0ff' : (i % 3 === 0 ? '#ff8ad8' : '#ffe7a0');
+      ribbon(c, linePts(px - tx * ln, py - ty * ln, px, py, 6), function (t) { return 3 * t; }, rgba(col, 0.85));
+      glowDot(c, px, py, 5, col, 0.9);
     }
     normal(c);
-    motes(c, R, 14, [10, 10, 246, 246], ['#ffcf6a', '#ff8a2a'], 1, 2.4);
+    motes(c, R, 16, [10, 10, 246, 246], ['#ffcf6a', '#ff5ad0', '#9ff0ff'], 1, 2.4);
   };
 
   /* 飛刀：三把苦無平行疾射，拖出殘光 */
@@ -567,96 +561,129 @@
     motes(c, R, 12, [30, 20, 240, 230], ['#bfe0ff'], 1, 2);
   };
 
-  /* 疾風迅雷：一閃而過的居合細光（斜直線構圖），殘影與雷弧纏繞，不畫兵器 */
+  /* 疾風迅雷：深藍人影突進的剪影（兩道殘影），前方一道白光斬擊，周圍只用細細的白色電弧點綴——本質是斬擊，雷不是主角 */
   PAINTERS.gale = function (c, R) {
-    background(c, R, Object.assign({ cx: 128, cy: 128 }, PAL.bolt));
-    var x0 = 14, y0 = 196, x1 = 242, y1 = 62;
-    var ang = Math.atan2(y1 - y0, x1 - x0), dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
-    /* 殘影：平行的速度光帶 */
+    background(c, R, Object.assign({ cx: 120, cy: 128 }, PAL.ice));
+    /* 水平速度線 */
     add(c);
-    for (var i = 0; i < 14; i++) {
-      var off = range(R, -70, 70), st = range(R, 0.05, 0.6), ln = range(R, 0.2, 0.45);
-      var ax = lerp(x0, x1, st) + nx * off, ay = lerp(y0, y1, st) + ny * off;
-      var bx = ax + dx * ln * 260, by = ay + dy * ln * 260;
-      var a = Math.max(0.08, 0.45 - Math.abs(off) / 180);
-      ribbon(c, linePts(ax, ay, bx, by, 10), function (t) { return 3 * Math.sin(Math.PI * t); }, rgba('#a8c8ff', a));
+    for (var i = 0; i < 16; i++) {
+      var y = range(R, 40, 220), x0 = range(R, -20, 120), ln = range(R, 50, 130);
+      ribbon(c, linePts(x0, y, x0 + ln, y - ln * 0.12, 8), function (t) { return 2.2 * Math.sin(Math.PI * t); }, rgba('#bfe0ff', range(R, 0.12, 0.35)));
     }
     normal(c);
-    /* 主閃光：極細極長，中段最粗 */
-    var main = linePts(x0, y0, x1, y1, 40);
-    add(c);
-    ribbon(c, main, function (t) { return 40 * Math.pow(Math.sin(Math.PI * t), 2); }, rgba('#6a8cff', 0.25));
-    ribbon(c, main, function (t) { return 16 * Math.pow(Math.sin(Math.PI * t), 1.5); }, rgba('#b8d0ff', 0.8));
-    ribbon(c, main, function (t) { return 5 * Math.pow(Math.sin(Math.PI * t), 1.2); }, rgba('#ffffff', 1));
-    normal(c);
-    /* 纏著閃光的雷弧 */
-    lightning(c, 40, 170, 120, 150, R, { width: 2.2, color: '#ffd84a', rough: 0.35 });
-    lightning(c, 130, 120, 220, 92, R, { width: 2.4, color: '#ffd84a', rough: 0.35, branches: 1 });
-    lightning(c, 96, 118, 150, 70, R, { width: 1.6, color: '#ffd84a', rough: 0.4 });
-    lightning(c, 150, 150, 196, 196, R, { width: 1.6, color: '#ffd84a', rough: 0.4 });
-    /* 交會點的十字閃 */
-    coreGlow(c, 128, 129, 40, '#7aa0ff');
-    sparkle(c, 128, 129, 28, '#b8d0ff', ang);
-    motes(c, R, 18, [10, 10, 246, 246], ['#ffe27a', '#a8c8ff'], 1, 2.2);
+    /* 人影：在離屏畫布畫成單色剪影，之後拿來做殘影、本體、輪廓光 */
+    var fig = makeCanvas(S, S), f = fig.getContext('2d');
+    f.fillStyle = '#000'; f.strokeStyle = '#000'; f.lineCap = 'round'; f.lineJoin = 'round';
+    var limb = function (pts, w) {
+      f.lineWidth = w; f.beginPath(); f.moveTo(pts[0][0], pts[0][1]);
+      for (var k = 1; k < pts.length; k++) f.lineTo(pts[k][0], pts[k][1]);
+      f.stroke();
+    };
+    /* 身體大幅前傾往右上衝：頭在右上、後腳往左下拉長。整個人影往左下移，重心才會在中央 */
+    f.translate(-16, 16);
+    /* 披風：從肩膀往後飄的大片布，給剪影份量 */
+    f.beginPath();
+    f.moveTo(146, 94);
+    f.bezierCurveTo(112, 84, 82, 96, 34, 84);
+    f.bezierCurveTo(60, 104, 66, 122, 46, 140);
+    f.bezierCurveTo(84, 138, 104, 150, 122, 150);
+    f.closePath(); f.fill();
+    f.beginPath(); f.arc(166, 80, 17, 0, TAU); f.fill();                         /* 頭 */
+    f.beginPath();                                                               /* 軀幹：寬肩窄腰 */
+    f.moveTo(144, 90); f.lineTo(176, 100); f.lineTo(140, 158); f.lineTo(108, 150); f.closePath(); f.fill();
+    limb([[150, 102], [120, 118], [96, 116]], 15);                                /* 後擺的手 */
+    limb([[166, 104], [192, 120], [214, 114]], 15);                               /* 前伸持刀的手 */
+    limb([[128, 150], [158, 176], [184, 190]], 21);                               /* 前腳（彎曲踏地） */
+    limb([[118, 152], [84, 172], [42, 196]], 19);                                 /* 後腳（拉長蹬地） */
+    f.beginPath(); f.ellipse(190, 192, 13, 6, 0.2, 0, TAU); f.fill();             /* 前腳掌 */
+    /* 手上的刀（短直刀，順著前伸方向） */
+    limb([[208, 115], [250, 104]], 5);
+    f.setTransform(1, 0, 0, 1, 0, 0);
+
+    var tinted = function (color, alpha) {
+      var t = makeCanvas(S, S), tc = t.getContext('2d');
+      tc.drawImage(fig, 0, 0);
+      tc.globalCompositeOperation = 'source-in'; tc.fillStyle = color; tc.fillRect(0, 0, S, S);
+      c.save(); c.globalAlpha = alpha; c.drawImage(t, 0, 0); c.restore();
+      return t;
+    };
+    /* 殘影：往左下錯開、越遠越淡 */
+    c.save(); c.translate(-62, 18); add(c); tinted('#3a7aff', 0.18); c.restore();
+    c.save(); c.translate(-32, 9); add(c); tinted('#5a9aff', 0.32); c.restore();
+    /* 本體：先畫藍色光暈再蓋深藍剪影 */
+    c.save(); c.filter = 'blur(6px)'; add(c); tinted('#4a8cff', 0.9); c.restore();
+    tinted('#0a1846', 1);
+    /* 輪廓光：白色剪影扣掉往左下位移的剪影，只留朝前（右上）的邊 */
+    var rim = makeCanvas(S, S), rc = rim.getContext('2d');
+    rc.drawImage(fig, 0, 0);
+    rc.globalCompositeOperation = 'source-in'; rc.fillStyle = '#d8ecff'; rc.fillRect(0, 0, S, S);
+    rc.globalCompositeOperation = 'destination-out'; rc.drawImage(fig, -3, 3);
+    c.save(); add(c); c.drawImage(rim, 0, 0); c.restore();
+    /* 白光斬擊：從人影前方劃出的細長弧 */
+    /* 斬擊弧很亮，量出重心偏右 14，整條往左移 */
+    swoosh(c, arcPts(84, 266, 186, Math.PI * 1.38, Math.PI * 1.88, 50), 15, '#cfe6ff', { side: 1 });
+    /* 點綴用的細電弧（白藍、細、短） */
+    lightning(c, 184, 64, 220, 84, R, { width: 1.1, color: '#bfe0ff', rough: 0.4, depth: 4 });
+    lightning(c, 150, 186, 196, 214, R, { width: 1.1, color: '#bfe0ff', rough: 0.4, depth: 4 });
+    lightning(c, 60, 186, 96, 210, R, { width: 0.9, color: '#bfe0ff', rough: 0.4, depth: 4 });
+    sparkle(c, 220, 124, 16, '#cfe6ff', 0.2);
+    motes(c, R, 14, [20, 20, 246, 236], ['#cfe6ff', '#ffffff'], 1, 2);
   };
 
-  /* 血刃斬：一道大弧形血斬，切口噴出血珠與血霧，底部毒霧（不畫兵器） */
+  /* 血刃斬：一道大弧形血斬（重心在正中），紫色外暈與紫羅蘭細血痕，切口噴出紅紫血珠（不畫兵器） */
   PAINTERS.bloodblade = function (c, R) {
-    background(c, R, Object.assign({ cx: 128, cy: 120 }, PAL.blood));
+    background(c, R, Object.assign({ cx: 128, cy: 128 }, PAL.blood));
     add(c);
-    for (var i = 0; i < 7; i++) glowDot(c, range(R, 30, 226), range(R, 196, 250), range(R, 26, 50), '#4caf2b', 0.16);
+    glowDot(c, 200, 70, 110, '#5a1a8a', 0.4);
+    glowDot(c, 60, 200, 100, '#6a1080', 0.3);
+    for (var i = 0; i < 6; i++) glowDot(c, range(R, 30, 226), range(R, 206, 252), range(R, 22, 40), '#4caf2b', 0.12);
     normal(c);
-    /* 主血斬：從右上劈到左下的大弧，外層暗紅、內層鮮紅 */
-    var arc = arcPts(196, 196, 150, Math.PI * 1.02, Math.PI * 1.5, 60);
-    swoosh(c, arc, 54, '#a00818', { taper: 'mid', edge: false });
-    swoosh(c, arc, 30, '#ff2a3a', { taper: 'mid' });
-    /* 第二道細血痕 */
-    swoosh(c, arcPts(206, 206, 120, Math.PI * 1.06, Math.PI * 1.42, 40), 10, '#ff6a6a', { taper: 'mid' });
-    /* 從切口往外噴的血珠：沿弧的法線往外，越外越小 */
-    var drop = function (x, y, r) {
+    /* 弧心放右下、半徑 120：弧頂在 (115,115)、弦中點在 (142,142)，筆畫重心落在畫面中央 */
+    var ox = 196, oy = 214;  /* 量測後補正：原本重心偏上 14、偏右 4 */
+    var arc = arcPts(ox, oy, 120, Math.PI * 0.98, Math.PI * 1.52, 60);
+    swoosh(c, arc, 58, '#a00818', { taper: 'mid', edge: false });
+    swoosh(c, arc, 32, '#ff2a3a', { taper: 'mid' });
+    swoosh(c, arcPts(ox + 16, oy + 16, 96, Math.PI * 1.02, Math.PI * 1.46, 40), 11, '#a050ff', { taper: 'mid' });
+    swoosh(c, arcPts(ox - 16, oy - 16, 140, Math.PI * 1.06, Math.PI * 1.42, 40), 6, '#ff7aa0', { taper: 'mid', edge: false });
+    /* 從切口往外噴的血珠：紅為主、夾紫 */
+    var drop = function (x, y, r, purple) {
       c.beginPath(); c.arc(x, y, r, 0, TAU);
       var g = c.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r);
-      g.addColorStop(0, '#ff8a8a'); g.addColorStop(0.45, '#d0101e'); g.addColorStop(1, '#4a0008');
+      if (purple) { g.addColorStop(0, '#e0a0ff'); g.addColorStop(0.45, '#8a20c0'); g.addColorStop(1, '#2a0040'); }
+      else { g.addColorStop(0, '#ff8a8a'); g.addColorStop(0.45, '#d0101e'); g.addColorStop(1, '#4a0008'); }
       c.fillStyle = g; c.fill();
     };
     for (var k = 0; k < 26; k++) {
       var t = range(R, 0.15, 0.85), idx = Math.floor(t * (arc.length - 1));
-      var p = arc[idx], ox = p[0] - 196, oy = p[1] - 196, L = Math.hypot(ox, oy);
-      var out = range(R, 10, 70) * (R() < 0.75 ? -1 : 1);   /* 多數往弧內側（畫面中央）噴 */
-      var x = p[0] + ox / L * out + range(R, -8, 8), y = p[1] + oy / L * out + range(R, -8, 8);
-      var r = lerp(7, 2, Math.abs(out) / 70) * range(R, 0.7, 1.2);
-      add(c); glowDot(c, x, y, r * 3, '#ff2030', 0.35); normal(c);
-      drop(x, y, r);
+      var p = arc[idx], vx = p[0] - ox, vy = p[1] - oy, L = Math.hypot(vx, vy);
+      var out = range(R, 10, 60) * (R() < 0.5 ? -1 : 1);   /* 兩側都噴，避免全堆在一邊 */
+      var x = p[0] + vx / L * out + range(R, -8, 8), y = p[1] + vy / L * out + range(R, -8, 8);
+      var r = lerp(7, 2, Math.abs(out) / 60) * range(R, 0.7, 1.2);
+      var purple = k % 4 === 0;
+      add(c); glowDot(c, x, y, r * 3, purple ? '#a040ff' : '#ff2030', 0.35); normal(c);
+      drop(x, y, r, purple);
     }
-    /* 往下滴的血 */
-    [[96, 150, 7], [128, 112, 6], [70, 196, 5]].forEach(function (d) {
-      var x = d[0], y = d[1], r = d[2];
-      c.beginPath();
-      c.moveTo(x, y - r * 2.6); c.bezierCurveTo(x + r * 0.4, y - r * 1.2, x + r, y - r * 0.4, x + r, y);
-      c.arc(x, y, r, 0, Math.PI); c.bezierCurveTo(x - r, y - r * 0.4, x - r * 0.4, y - r * 1.2, x, y - r * 2.6);
-      var g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r * 1.6);
-      g.addColorStop(0, '#ff6a72'); g.addColorStop(0.5, '#c0101e'); g.addColorStop(1, '#4a0008');
-      c.fillStyle = g; c.fill();
-    });
-    coreGlow(c, 112, 112, 40, '#ff3344');
-    motes(c, R, 14, [10, 10, 246, 220], ['#ff4455', '#ff8a8a'], 1, 2.2);
+    coreGlow(c, 118, 134, 34, '#ff3a4a');
+    motes(c, R, 16, [10, 10, 246, 246], ['#ff4455', '#c070ff', '#ff8a8a'], 1, 2.2);
   };
 
-  /* 雙刀亂舞：兩把直刃短劍交叉，四周是不閉合的旋舞刀光 */
+  /* 雙刀亂舞：兩把比例合理的短劍交叉（刀身細、刀柄約刀身四分之一），四周不閉合的旋舞刀光 */
   PAINTERS.dualdance = function (c, R) {
     background(c, R, Object.assign({ cx: 128, cy: 120 }, PAL.blood));
-    /* 刀光：中心錯開、角度不一的弧，避免組成封閉的圓 */
     swoosh(c, arcPts(118, 132, 100, Math.PI * 0.62, Math.PI * 1.55, 50), 24, '#ff3040', { taper: 'head' });
     swoosh(c, arcPts(140, 120, 92, Math.PI * 1.72, Math.PI * 2.55, 46), 20, '#ff7a2a', { taper: 'head' });
     swoosh(c, arcPts(128, 128, 64, Math.PI * 0.05, Math.PI * 0.6, 30), 12, '#ffb04a', { taper: 'head' });
     var steelR = ['#24141a', '#6e4c56', '#d4b6bc', '#ff7a7a'];
-    bladeAlong(c, linePts(190, 206, 54, 52, 24), 14, steelR, { tip: 0.16 });
-    bladeAlong(c, linePts(66, 206, 202, 52, 24), 14, steelR, { tip: 0.16 });
-    hilt(c, 190, 206, Math.atan2(52 - 206, 54 - 190), 12, ['#30080c', '#a8262e', '#ffb0a0']);
-    hilt(c, 66, 206, Math.atan2(52 - 206, 202 - 66), 12, ['#30080c', '#a8262e', '#ffb0a0']);
-    /* 刀刃交擊點 */
-    coreGlow(c, 128, 136, 34, '#ff5a3a');
-    sparkle(c, 128, 136, 22, '#ffb070', 0.4);
+    var gold = ['#30080c', '#a8262e', '#ffb0a0'];
+    /* 護手在 (gx,gy)、刀尖在 (tx,ty)；握把由 hilt() 往刀尖反方向畫 */
+    var sword = function (gx, gy, tx, ty) {
+      bladeAlong(c, linePts(gx, gy, tx, ty, 22), 10, steelR, { tip: 0.16 });
+      hilt(c, gx, gy, Math.atan2(ty - gy, tx - gx), 18, gold);
+    };
+    sword(176, 180, 60, 48);
+    sword(80, 180, 196, 48);
+    coreGlow(c, 128, 123, 30, '#ff5a3a');
+    sparkle(c, 128, 123, 20, '#ffb070', 0.4);
     motes(c, R, 20, [20, 20, 236, 236], ['#ff8a2a', '#ff4455', '#ffd27a'], 1, 2.4);
   };
 
@@ -966,110 +993,177 @@
     motes(c, R, 12, [20, 20, 236, 236], ['#ffcf6a'], 1, 2);
   };
 
-  /* 泥沼術：俯視的泥漿漩渦，毒光與氣泡 */
+  /* 泥沼術：不規則的毒泥潭（雜訊擾動的輪廓、散落的毒液窪、氣泡與毒氣），刻意不用同心圓 */
   PAINTERS.mire = function (c, R) {
-    background(c, R, Object.assign({ cy: 140 }, PAL.swamp));
-    c.save(); c.translate(128, 140); c.scale(1, 0.62); c.translate(-128, -140);
-    /* 泥沼盆 */
-    var pg = c.createRadialGradient(128, 140, 4, 128, 140, 118);
-    pg.addColorStop(0, '#0a0803'); pg.addColorStop(0.55, '#3a2a12'); pg.addColorStop(0.85, '#5a4418'); pg.addColorStop(1, 'rgba(60,40,10,0)');
-    c.fillStyle = pg; c.beginPath(); c.arc(128, 140, 118, 0, TAU); c.fill();
-    /* 漩渦臂 */
-    for (var k = 0; k < 5; k++) {
-      var sp = spiralPts(128, 140, 108, 8, k * TAU / 5, 1.1, 50);
-      ribbon(c, sp, function (t) { return 16 * Math.sin(Math.PI * t) * (1 - t * 0.5); }, rgba('#7a5a26', 0.6));
-      add(c);
-      ribbon(c, sp, function (t) { return 4 * Math.sin(Math.PI * t); }, rgba('#9be04a', 0.45));
-      normal(c);
-    }
-    /* 毒光環 */
+    background(c, R, Object.assign({ cy: 150 }, PAL.swamp));
+    /* 不規則輪廓：半徑疊幾個不同頻率的正弦，再壓成斜視 */
+    var blob = function (cx, cy, r, sq, seedPh, amp) {
+      var pts = [], ph = [seedPh, seedPh * 1.7 + 1, seedPh * 2.3 + 2];
+      for (var i = 0; i < 72; i++) {
+        var a = i / 72 * TAU;
+        var k = 1 + amp * (0.55 * Math.sin(a * 3 + ph[0]) + 0.3 * Math.sin(a * 5 + ph[1]) + 0.18 * Math.sin(a * 9 + ph[2]));
+        pts.push([cx + Math.cos(a) * r * k, cy + Math.sin(a) * r * k * sq]);
+      }
+      return pts;
+    };
+    var path = function (pts) {
+      c.beginPath();
+      pts.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); });
+      c.closePath();
+    };
+    /* 泥潭外緣的毒光 */
+    var outer = blob(128, 156, 112, 0.6, range(R, 0, TAU), 0.22);
+    c.save(); add(c); path(outer); c.shadowBlur = 24; c.shadowColor = '#7ad02a'; c.fillStyle = 'rgba(90,150,30,0.35)'; c.fill(); c.restore();
+    /* 泥潭本體 */
+    path(outer);
+    var mg = c.createLinearGradient(0, 90, 0, 230);
+    mg.addColorStop(0, '#4a3a16'); mg.addColorStop(0.5, '#2c220c'); mg.addColorStop(1, '#140f05');
+    c.fillStyle = mg; c.fill();
+    c.save(); path(outer); c.clip();
+    /* 泥面的流紋（不規則彎曲，不繞中心） */
     add(c);
-    c.lineWidth = 4; c.strokeStyle = rgba('#9be04a', 0.5); c.shadowBlur = 16; c.shadowColor = '#7ad02a';
-    c.beginPath(); c.arc(128, 140, 104, 0, TAU); c.stroke();
-    c.shadowBlur = 0;
+    for (var i = 0; i < 7; i++) {
+      var x0 = range(R, 30, 120), y0 = range(R, 110, 210);
+      var p = bezPts([x0, y0], [x0 + range(R, 20, 60), y0 + range(R, -30, 30)], [x0 + range(R, 60, 110), y0 + range(R, -30, 30)], [x0 + range(R, 100, 150), y0 + range(R, -20, 20)], 24);
+      ribbon(c, p, function (t) { return range(R, 3, 6) * Math.sin(Math.PI * t); }, rgba('#8a6a30', 0.35));
+    }
     normal(c);
+    /* 散落的毒液窪：大小、位置、形狀都不同 */
+    var pools = [[100, 150, 30], [162, 170, 22], [142, 128, 14], [72, 182, 12], [190, 140, 10]];
+    pools.forEach(function (q) {
+      var pp = blob(q[0], q[1], q[2], 0.55, range(R, 0, TAU), 0.3);
+      c.save(); add(c); path(pp); c.shadowBlur = 8; c.shadowColor = '#9be04a';
+      var pg = c.createRadialGradient(q[0] - q[2] * 0.3, q[1] - q[2] * 0.2, 0, q[0], q[1], q[2] * 1.2);
+      pg.addColorStop(0, 'rgba(210,255,130,0.85)'); pg.addColorStop(0.4, 'rgba(110,200,40,0.6)'); pg.addColorStop(1, 'rgba(50,110,15,0.35)');
+      c.fillStyle = pg; c.fill(); c.restore();
+    });
     c.restore();
-    /* 中心吸力 */
-    add(c); glowDot(c, 128, 140, 34, '#4caf2b', 0.7); normal(c);
-    c.fillStyle = 'rgba(0,0,0,0.8)'; c.beginPath(); c.ellipse(128, 140, 13, 8, 0, 0, TAU); c.fill();
-    /* 氣泡 */
-    for (var i = 0; i < 9; i++) {
-      var x = range(R, 54, 202), y = range(R, 40, 190), r = range(R, 4, 11);
-      c.save();
+    /* 泥潭邊緣：不描整圈硬邊，只在上緣（朝光的那側）留一道濕亮的泥唇 */
+    var lip = outer.filter(function (p) { return p[1] < 156; });
+    lip.sort(function (a, b) { return a[0] - b[0]; });
+    add(c);
+    strokePts(c, lip, 1.6, 'rgba(200,170,110,0.45)', 6, 'rgba(160,220,80,0.6)');
+    normal(c);
+    /* 濺到泥潭外的泥點 */
+    for (var sp = 0; sp < 10; sp++) {
+      var oa = range(R, 0, TAU), od = range(R, 1.05, 1.25), op = outer[Math.floor(oa / TAU * outer.length)];
+      var sx = 128 + (op[0] - 128) * od, sy = 156 + (op[1] - 156) * od, sr = range(R, 2, 5);
+      c.fillStyle = '#3a2c10'; c.beginPath(); c.ellipse(sx, sy, sr * 1.4, sr * 0.8, 0, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(200,170,110,0.5)'; c.beginPath(); c.arc(sx - sr * 0.4, sy - sr * 0.3, sr * 0.35, 0, TAU); c.fill();
+    }
+    /* 氣泡（有的完整、有的破開成小圈） */
+    for (var b = 0; b < 8; b++) {
+      var x = range(R, 60, 196), y = range(R, 118, 196), r = range(R, 4, 12);
       add(c); glowDot(c, x, y, r * 2.4, '#7ad02a', 0.35); normal(c);
+      if (b % 3 === 2) {
+        c.save(); add(c); c.strokeStyle = 'rgba(200,255,140,0.75)'; c.lineWidth = 1.5;
+        c.beginPath(); c.ellipse(x, y, r * 1.3, r * 0.5, 0, 0, TAU); c.stroke(); c.restore();
+        continue;
+      }
       var bg = c.createRadialGradient(x - r * 0.4, y - r * 0.4, 0, x, y, r);
-      bg.addColorStop(0, 'rgba(230,255,200,0.9)'); bg.addColorStop(0.5, 'rgba(120,200,60,0.5)'); bg.addColorStop(1, 'rgba(60,120,20,0.85)');
-      c.fillStyle = bg; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
-      c.strokeStyle = 'rgba(200,255,150,0.8)'; c.lineWidth = 1; c.stroke();
-      c.restore();
+      bg.addColorStop(0, 'rgba(235,255,210,0.95)'); bg.addColorStop(0.5, 'rgba(120,200,60,0.55)'); bg.addColorStop(1, 'rgba(50,110,15,0.9)');
+      c.fillStyle = bg; c.beginPath(); c.arc(x, y - r * 0.4, r, 0, TAU); c.fill();
     }
     /* 往上飄的毒氣 */
     add(c);
-    for (var j = 0; j < 4; j++) {
-      var x0 = range(R, 70, 186);
-      var wisp = bezPts([x0, 150], [x0 - 20, 110], [x0 + 24, 70], [x0 + range(R, -10, 10), 26], 24);
-      ribbon(c, wisp, function (t) { return 10 * Math.sin(Math.PI * t); }, rgba('#9be04a', 0.18));
+    for (var j = 0; j < 5; j++) {
+      var wx = range(R, 60, 196);
+      var wisp = bezPts([wx, 150], [wx - range(R, 10, 30), 110], [wx + range(R, 10, 30), 70], [wx + range(R, -14, 14), 22], 26);
+      ribbon(c, wisp, function (t) { return 12 * Math.sin(Math.PI * t); }, rgba('#9be04a', 0.16));
+      ribbon(c, wisp, function (t) { return 3 * Math.sin(Math.PI * t); }, rgba('#d8ff9a', 0.25));
     }
     normal(c);
+    motes(c, R, 14, [30, 20, 226, 200], ['#b8f26a', '#9be04a'], 1, 2.2);
   };
 
-  /* 大地守護：岩丘上的生命幼苗，金色護罩圈住 */
+  /* 大地守護：黃白聖光——天降光束、六角光盾罩、地面符文陣、中央聖光十字星 */
   PAINTERS.earthguard = function (c, R) {
-    background(c, R, Object.assign({ cy: 150 }, PAL.life));
-    /* 護罩 */
+    background(c, R, Object.assign({ cx: 128, cy: 120 }, PAL.holy));
+    var cx = 128, gy = 200;
+    /* 天降光束 */
     add(c);
-    var dome = c.createRadialGradient(128, 196, 40, 128, 196, 116);
-    dome.addColorStop(0, 'rgba(255,230,140,0)'); dome.addColorStop(0.8, 'rgba(255,220,120,0.12)'); dome.addColorStop(1, 'rgba(255,220,120,0.4)');
-    c.fillStyle = dome; c.beginPath(); c.arc(128, 196, 116, Math.PI, TAU); c.closePath(); c.fill();
+    for (var i = 0; i < 7; i++) {
+      var x = 128 + (i - 3) * 22 + range(R, -6, 6), w = range(R, 10, 26);
+      var g = c.createLinearGradient(0, 0, 0, gy);
+      g.addColorStop(0, 'rgba(255,248,210,0.0)'); g.addColorStop(0.35, 'rgba(255,244,190,' + range(R, 0.12, 0.25) + ')'); g.addColorStop(1, 'rgba(255,236,160,0.02)');
+      c.fillStyle = g;
+      c.beginPath(); c.moveTo(x - w * 0.3, 0); c.lineTo(x + w * 0.3, 0); c.lineTo(x + w + (x - 128) * 0.4, gy); c.lineTo(x - w + (x - 128) * 0.4, gy); c.closePath(); c.fill();
+    }
     normal(c);
-    swoosh(c, arcPts(128, 196, 114, Math.PI * 1.02, Math.PI * 1.98, 60), 8, '#ffd86a', { edge: false });
-    /* 岩丘 */
-    c.beginPath();
-    c.moveTo(30, 232); c.quadraticCurveTo(60, 186, 104, 190); c.quadraticCurveTo(128, 176, 156, 188);
-    c.quadraticCurveTo(204, 184, 226, 232); c.closePath();
-    var rg = c.createLinearGradient(0, 176, 0, 232);
-    rg.addColorStop(0, '#8a6a44'); rg.addColorStop(1, '#2a1a0c');
-    c.fillStyle = rg; c.fill();
-    c.strokeStyle = 'rgba(255,220,160,0.35)'; c.lineWidth = 1.5;
-    c.beginPath(); c.moveTo(56, 200); c.quadraticCurveTo(104, 184, 150, 186); c.stroke();
-    /* 莖 */
-    var stem = bezPts([128, 196], [122, 160], [136, 130], [128, 92], 24);
-    ribbon(c, stem, function (t) { return lerp(9, 4, t); }, '#3f8a2a');
-    add(c); strokePts(c, stem, 1.5, 'rgba(220,255,160,0.6)'); normal(c);
-    /* 葉片 */
-    var leaf = function (x, y, ang, len, wid) {
-      c.save(); c.translate(x, y); c.rotate(ang);
-      c.beginPath(); c.moveTo(0, 0);
-      c.quadraticCurveTo(len * 0.4, -wid, len, 0); c.quadraticCurveTo(len * 0.4, wid, 0, 0); c.closePath();
-      var lg = c.createLinearGradient(0, -wid, 0, wid);
-      lg.addColorStop(0, '#d8ff8a'); lg.addColorStop(0.5, '#6ccf3a'); lg.addColorStop(1, '#1f6a1a');
-      c.fillStyle = lg; c.fill();
-      add(c);
-      c.strokeStyle = 'rgba(240,255,200,0.75)'; c.lineWidth = 1.2;
-      c.beginPath(); c.moveTo(2, 0); c.lineTo(len * 0.92, 0); c.stroke();
-      c.shadowBlur = 12; c.shadowColor = '#b8f26a'; c.strokeStyle = 'rgba(200,255,140,0.4)';
-      c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(len * 0.4, -wid, len, 0); c.stroke();
-      normal(c);
-      c.restore();
-    };
-    leaf(126, 150, -2.6, 56, 18);
-    leaf(130, 132, -0.5, 60, 19);
-    leaf(128, 94, -1.75, 44, 15);
-    coreGlow(c, 128, 88, 46, '#b8f26a', '#fffbe0');
-    /* 上升的光粒 */
-    motes(c, R, 22, [40, 30, 216, 200], ['#ffe27a', '#b8f26a'], 1, 2.4);
+    /* 地面符文陣（斜視橢圓＋刻度） */
+    c.save(); c.translate(cx, gy); c.scale(1, 0.32);
+    add(c);
+    glowDot(c, 0, 0, 118, '#ffe48a', 0.5);
+    c.strokeStyle = 'rgba(255,240,180,0.85)'; c.lineWidth = 3; c.shadowBlur = 12; c.shadowColor = '#ffd86a';
+    c.beginPath(); c.arc(0, 0, 100, 0, TAU); c.stroke();
+    c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 80, 0, TAU); c.stroke();
+    for (var k = 0; k < 24; k++) {
+      var a = k / 24 * TAU;
+      c.beginPath(); c.moveTo(Math.cos(a) * 82, Math.sin(a) * 82); c.lineTo(Math.cos(a) * (k % 2 ? 90 : 98), Math.sin(a) * (k % 2 ? 90 : 98)); c.stroke();
+    }
+    /* 陣中的六芒線 */
+    c.lineWidth = 1.6;
+    [0, Math.PI].forEach(function (off) {
+      c.beginPath();
+      for (var t = 0; t < 3; t++) { var a2 = off + t * TAU / 3 - Math.PI / 2; c[t ? 'lineTo' : 'moveTo'](Math.cos(a2) * 78, Math.sin(a2) * 78); }
+      c.closePath(); c.stroke();
+    });
+    c.restore();
+    normal(c);
+    /* 六角光盾罩：半球上排六角格，越上越透 */
+    var domeR = 96, domeCy = gy;
+    c.save();
+    c.beginPath(); c.arc(cx, domeCy, domeR, Math.PI, TAU); c.closePath(); c.clip();
+    add(c);
+    var dg = c.createRadialGradient(cx, domeCy, 30, cx, domeCy, domeR);
+    dg.addColorStop(0, 'rgba(255,250,220,0.05)'); dg.addColorStop(0.8, 'rgba(255,240,180,0.12)'); dg.addColorStop(1, 'rgba(255,240,180,0.4)');
+    c.fillStyle = dg; c.fillRect(0, 0, S, S);
+    var hs = 16, hh = hs * Math.sqrt(3);
+    c.lineWidth = 1.2;
+    for (var row = -1; row < 9; row++) {
+      for (var col = -1; col < 12; col++) {
+        var hx = 20 + col * hs * 1.5, hy = domeCy - row * hh - (col % 2 ? hh / 2 : 0);
+        var d = Math.hypot(hx - cx, hy - domeCy) / domeR;
+        if (d > 1.05) continue;
+        c.strokeStyle = 'rgba(255,244,200,' + (0.12 + 0.45 * d * d) + ')';
+        c.beginPath();
+        for (var v = 0; v < 6; v++) { var va = v / 6 * TAU; c[v ? 'lineTo' : 'moveTo'](hx + Math.cos(va) * hs * 0.92, hy + Math.sin(va) * hs * 0.92); }
+        c.closePath(); c.stroke();
+      }
+    }
+    normal(c);
+    c.restore();
+    c.save(); add(c);
+    c.strokeStyle = 'rgba(255,248,215,0.9)'; c.lineWidth = 2.6; c.shadowBlur = 16; c.shadowColor = '#ffe07a';
+    c.beginPath(); c.arc(cx, domeCy, domeR, Math.PI, TAU); c.stroke();
+    c.restore();
+    /* 中央聖光十字星 */
+    var sy = 128;
+    add(c);
+    glowDot(c, cx, sy, 80, '#ffe48a', 0.55);
+    [[0, 62, 7], [Math.PI / 2, 46, 6], [Math.PI / 4, 26, 3], [-Math.PI / 4, 26, 3]].forEach(function (ray) {
+      [1, -1].forEach(function (sgn) {
+        var a = ray[0] + (sgn < 0 ? Math.PI : 0);
+        var p = linePts(cx, sy, cx + Math.sin(a) * ray[1], sy - Math.cos(a) * ray[1], 8);
+        ribbon(c, p, function (t) { return ray[2] * 2 * (1 - t); }, alongGrad(c, p, [[0, 'rgba(255,255,255,1)'], [1, 'rgba(255,236,160,0)']]));
+      });
+    });
+    normal(c);
+    coreGlow(c, cx, sy, 30, '#ffe48a', '#ffffff');
+    motes(c, R, 24, [30, 30, 226, 220], ['#fff2b0', '#ffe48a', '#ffffff'], 1, 2.4);
   };
 
-  /* 連鎖閃電：藍色雷光在光點之間跳躍（使用者指定藍色系，與落雷、雷球的金色區隔） */
+  /* 連鎖閃電：五個光點沿不閉合的五角形跳一圈，均勻鋪滿正方形（W 形會被看成英文字母） */
   PAINTERS.chainlightning = function (c, R) {
     background(c, R, PAL.boltBlue);
-    var nodes = [[44, 60], [128, 140], [210, 70], [196, 214]];
+    var nodes = [[46, 104], [116, 54], [208, 84], [182, 184], [88, 210]];
     for (var i = 0; i < nodes.length - 1; i++) {
-      lightning(c, nodes[i][0], nodes[i][1], nodes[i + 1][0], nodes[i + 1][1], R, { width: i === 0 ? 4.4 : 3.6, branches: 2, rough: 0.2, color: '#5aa8ff' });
+      lightning(c, nodes[i][0], nodes[i][1], nodes[i + 1][0], nodes[i + 1][1], R, { width: 3.6, branches: 1, rough: 0.18, color: '#5aa8ff' });
     }
     nodes.forEach(function (n, i) {
-      coreGlow(c, n[0], n[1], i === 1 ? 42 : 30, '#3a8cff', '#ffffff');
-      sparkle(c, n[0], n[1], i === 1 ? 30 : 20, '#8fd0ff', i * 0.6);
+      var big = i === 0 || i === nodes.length - 1;
+      coreGlow(c, n[0], n[1], big ? 40 : 30, '#3a8cff', '#ffffff');
+      sparkle(c, n[0], n[1], big ? 26 : 18, '#8fd0ff', i * 0.6);
     });
     motes(c, R, 18, [10, 10, 246, 246], ['#8fd0ff', '#c8e6ff'], 1, 2.2);
   };
@@ -1368,7 +1462,7 @@
     thrust: PAL.steel.key, cleave: PAL.gold.key, knife: PAL.steel.key, gale: PAL.bolt.key,
     bloodblade: PAL.blood.key, dualdance: PAL.blood.key, counter: PAL.gold.key, bloodrage: PAL.blood.key,
     fireball: PAL.fire.key, firepillar: PAL.fire.key, firehunt: PAL.fire.key,
-    rockarmor: PAL.earth.key, mire: PAL.swamp.key, earthguard: PAL.life.key,
+    rockarmor: PAL.earth.key, mire: PAL.swamp.key, earthguard: PAL.holy.key,
     chainlightning: PAL.boltBlue.key, thunderstrike: PAL.bolt.key, thunderorb: PAL.orb.key,
     icearrow: PAL.ice.key, waterball: PAL.water.key, frostnova: PAL.ice.key,
     windblade: PAL.wind.key, vacuumslash: PAL.vacuum.key, stormbarrier: PAL.wind.key

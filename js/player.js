@@ -92,6 +92,7 @@ function newGameState() {
       dust: 0,                // 魔塵（神鑄材料）
       gems: gems,
       fusedGems: [],          // 融合寶石（雙屬性，個別實體）
+      runes: {},              // 符文庫存 { 符文id: 數量 }（符文之語的素材，js/runeword.js）
       gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
       books: books,
       invUpgrades: 0,
@@ -140,7 +141,7 @@ function newGameState() {
       procTimer: 0, enchTimer: 0, upTimer: 0,
       // rerolled / gemComposed（2026-08-05 任務系統）：洗煉與寶石合成的累計次數，
       // 與 upgraded / enchanted 同屬終身統計，任務進度直接讀這裡（js/tasks.js）
-      stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, upgraded: 0, upgradeFailed: 0, mutated: 0, rerolled: 0, gemComposed: 0 }
+      stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, runeSocketed: 0, upgraded: 0, upgradeFailed: 0, mutated: 0, rerolled: 0, gemComposed: 0 }
     },
     newForge: {   // 熔爐（正式版）：待處理佇列 / 熔爐清單（最多 NEW_FORGE_MAX 座）
       queue: [],

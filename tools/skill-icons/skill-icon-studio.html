@@ -126,6 +126,20 @@
     });
     return post('/preview?name=' + (name || 'sheet'), cv.toDataURL('image/png'));
   };
+  /* 構圖重心：亮度加權的質心（扣掉畫面亮度中位數，只算比底色亮的部分），回傳相對中心的偏移（256 座標）。
+     使用者會指出「偏左上」之類的問題，用數字確認比目測可靠；|dx|、|dy| 在 10 以內算置中。 */
+  window.centroid = function (gid) {
+    var cv = SkillIconPainter.paint(gid), S = cv.width;
+    var d = cv.getContext('2d').getImageData(0, 0, S, S).data, lum = new Float32Array(S * S);
+    for (var i = 0; i < S * S; i++) lum[i] = 0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2];
+    var med = Array.prototype.slice.call(lum).sort(function (a, b) { return a - b; })[Math.floor(S * S / 2)];
+    var sw = 0, sx = 0, sy = 0;
+    for (var y = 10; y < S - 10; y++) for (var x = 10; x < S - 10; x++) {
+      var w = Math.max(0, lum[y * S + x] - med); sw += w; sx += w * x; sy += w * y;
+    }
+    return { gid: gid, dx: Math.round(sx / sw - S / 2), dy: Math.round(sy / sw - S / 2) };
+  };
+
   document.getElementById('btn-sheet').onclick = function () {
     window.exportSheet('sheet').then(function (p) { log.textContent = '總覽圖：' + p; });
   };
