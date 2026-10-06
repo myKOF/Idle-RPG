@@ -71,7 +71,7 @@ var BattlePerf = (function () {
 
   var gpuName = '', loafType = '';
   var simMark = null, simRate = null;
-  var hitMark = null, cappedRate = null, thinnedRate = null;
+  var hitMark = null, cappedRate = null, thinnedRate = null, throttledRate = null, trailRate = null;
   var worst = null;
 
   function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
@@ -209,6 +209,11 @@ var BattlePerf = (function () {
     if (e.quality != null) {
       out.push('命中密度 x' + f1(e.quality) + (e.quality < 1 ? '(吃緊，已介入)' : '') + '  同目標上限 K=' + e.hitCap +
         '  略過 ' + f0(e.cappedRate || 0) + '/s  少發粒子 ' + f0(e.thinnedRate || 0) + '/s');
+      /* 第二輪降級（vfx-runtime.js SHED）：限頻／全場上限擋下的命中特效（已含在「略過」裡）、
+         拖尾變疏的飛行子彈，以及全場目前存活的命中特效數。舊 Runtime 沒有這組資料就不印。 */
+      if (e.hitLive != null) {
+        out.push('降級 限頻 ' + f0(e.throttledRate || 0) + '/s  拖尾變疏 ' + f0(e.trailRate || 0) + '/s  全場命中 ' + e.hitLive);
+      }
     }
     out.push('播出 ' + topText(s.playsTop));
     out.push('事件 ' + topText(s.arriveTop));
@@ -232,13 +237,17 @@ var BattlePerf = (function () {
         if (typeof p.quality === 'number') {
           env.quality = p.quality; env.hitCap = p.hitCap;
           var tn = now();
-          if (!hitMark) hitMark = { capped: p.capped, thinned: p.thinned, at: tn };
+          if (!hitMark) hitMark = { capped: p.capped, thinned: p.thinned, throttled: p.throttled || 0, trail: p.trailThinned || 0, at: tn };
           else if (tn - hitMark.at >= 900) {
             cappedRate = (p.capped - hitMark.capped) * 1000 / (tn - hitMark.at);
             thinnedRate = (p.thinned - hitMark.thinned) * 1000 / (tn - hitMark.at);
-            hitMark = { capped: p.capped, thinned: p.thinned, at: tn };
+            throttledRate = ((p.throttled || 0) - hitMark.throttled) * 1000 / (tn - hitMark.at);
+            trailRate = ((p.trailThinned || 0) - hitMark.trail) * 1000 / (tn - hitMark.at);
+            hitMark = { capped: p.capped, thinned: p.thinned, throttled: p.throttled || 0, trail: p.trailThinned || 0, at: tn };
           }
           env.cappedRate = cappedRate; env.thinnedRate = thinnedRate;
+          env.throttledRate = throttledRate; env.trailRate = trailRate;
+          if (typeof p.hitLive === 'number') env.hitLive = p.hitLive;
         }
         ['fx', 'zone', 'air', 'billboard'].forEach(function (k) {
           if (p[k]) { env.eff += p[k].activeEffects || 0; env.parts += p[k].activeParticles || 0; }
