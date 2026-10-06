@@ -12,7 +12,7 @@ function enemy() {
 const ids = loadRuneEnv({ noState: true }).RUNEWORDS.map((w) => w.id);
 
 for (const id of ids) {
-  test(`符文之語【${id}】：成形、聚合、全部觸發可執行`, () => {
+  test(`符文真言【${id}】：成形、聚合、全部觸發可執行`, () => {
     const c = loadRuneEnv();
     const w = c.RUNEWORD_BY_ID[id];
     const it = wordItem(c, id);

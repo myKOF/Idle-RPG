@@ -72,7 +72,7 @@ var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
      而那個判定只能從 skills 面板快照重算。沒訂閱的話開機第一次畫裝備格必定判成「沒生效」。 */
   equip: ['equip', 'inv', 'gems', 'header', 'skills'],
   gems: ['gems', 'header'],
-  /* 符文頁（符文之語，js/ui-runeword.js）：符文庫存在 gems 面板；equip 面板用來標出「穿戴中已成形」。 */
+  /* 符文頁（符文真言，js/ui-runeword.js）：符文庫存在 gems 面板；equip 面板用來標出「穿戴中已成形」。 */
   runes: ['gems', 'equip', 'header'],
   skills: ['skills', 'talents', 'header'],
   talents: ['talents', 'header'],
@@ -5526,7 +5526,7 @@ function equipRunePanelHTML(it, gemsSnapshot) {
   }
   return '<div class="equip-material-section">' +
     '<div class="equip-material-title">🔷 可用符文（點擊鑲入）</div>' +
-    '<div class="equip-material-subtitle">符文孔 ' + filled + '／' + slots.length + (full ? '｜已滿，點擊詳情中已鑲的符文可取下' : '｜依序放入指定的符文可組成符文之語（配方見符文頁）') + '</div>' +
+    '<div class="equip-material-subtitle">符文孔 ' + filled + '／' + slots.length + (full ? '｜已滿，點擊詳情中已鑲的符文可取下' : '｜依序放入指定的符文可組成符文真言（配方見符文頁）') + '</div>' +
     (icons.length ? '<div class="equip-material-grid">' + icons.join('') + '</div>' : '<div class="equip-material-empty">尚無符文（擊殺與封魔塔會掉落，符文頁可合成）</div>') +
     '</div>';
 }
@@ -7798,7 +7798,7 @@ function inventoryViewItems(snapshot) {
    面板每次回應都是新的一份深拷貝、參考永遠不相等，於是 1208 件裝備要跑 2416 次
    JSON.stringify——只為了確認兩個空陣列一樣。實測光這支就要 4.3 ms，而它在戰鬥中
    每秒被呼叫數次。 */
-/* 格子角標：鑲了符文就顯示第一顆的字形（多顆加 ×N）；成形符文之語用金色。取代附魔角標的位置。 */
+/* 格子角標：鑲了符文就顯示第一顆的字形（多顆加 ×N）；成形符文真言用金色。取代附魔角標的位置。 */
 function itemRuneBadgeHTML(it) {
   if (typeof rwHasRune !== 'function' || !rwHasRune(it)) return '';
   var ids = it.runes.filter(Boolean);
@@ -12221,7 +12221,7 @@ function initUI() {
     $id('fuse-type').addEventListener('change', renderFuseInfo);
   }
 
-  // 符文頁（符文之語）：由 js/ui-runeword.js 綁定
+  // 符文頁（符文真言）：由 js/ui-runeword.js 綁定
   if (typeof initRuneUi === 'function') initRuneUi();
 
   // 寶石頁：寶石庫分類／選取、工坊分頁切換

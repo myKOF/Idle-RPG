@@ -1,7 +1,25 @@
-/* ============ 符文之語（js/ui-runeword.js、js/item.js 的鑲孔橫幅）============
+/* ============ 符文真言（js/ui-runeword.js、js/item.js 的鑲孔橫幅）============
    版型沿用寶石頁的語彙（深色面板、金色強調），顏色一律由 --c（階數色）驅動。 */
 
 /* ---- 頁面骨架 ---- */
+/* 頁首「詳細說明」開關（內測專用；正式版沒有，index.html 預設 hidden，由 js/ui-runeword.js 決定要不要顯示） */
+#tab-runes .rx-detail-toggle {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid #2a2d34;
+  border-radius: 999px;
+  background: #121418;
+  color: #a39d90;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#tab-runes .rx-detail-toggle[hidden] { display: none; }
+#tab-runes .rx-detail-toggle:hover { border-color: #7a6440; color: #ece6d8; }
+#tab-runes .rx-detail-toggle[aria-pressed="true"] { border-color: #7a6440; background: #2a2218; color: #f0cf86; }
+
 #workspace-area main > #tab-runes.active {
   height: 100%;
   min-height: 0;
@@ -152,6 +170,10 @@
 #tab-runes .rx-use i { margin-left: 5px; font-style: normal; font-size: 10px; color: var(--c); }
 #tab-runes .rx-use:hover { background: #1d1a15; }
 
+/* 未激活的用途：問號用該真言的品質色，不可點 */
+#tab-runes .rx-use.is-unknown { color: var(--c); letter-spacing: .1em; cursor: help; }
+#tab-runes .rx-use.is-unknown:hover { background: #14161a; }
+
 /* ---- 圖鑑 ---- */
 #tab-runes .rx-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; }
 #tab-runes .rx-filter .gx-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -234,17 +256,29 @@
 #tab-runes .rx-chip-g { color: var(--c); font-size: 15px; font-family: 'Segoe UI Historic', 'Segoe UI Symbol', 'Noto Sans Runic', serif; }
 #tab-runes .rx-chip i { font-style: normal; font-size: 10px; color: #c7ae79; }
 
+/* 未激活的配方符文：保留品質色外框，內容只有問號（不可點） */
+#tab-runes .rx-chip.is-unknown {
+  justify-content: center;
+  min-width: 54px;
+  border-color: var(--c);
+  color: var(--c);
+  cursor: help;
+}
+
+#tab-runes .rx-chip.is-unknown .rx-chip-g { font-size: 14px; font-family: inherit; }
+
 #tab-runes .rx-bases { font-size: 12px; color: #a39d90; }
 #tab-runes .rx-lines { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.7; color: #d5d1c4; }
+#tab-runes .rx-lines .rx-unknown { color: var(--c); opacity: .7; letter-spacing: .08em; }
 #tab-runes .rx-flavor { font-size: 11px; color: #7f7a70; font-style: italic; }
 
-/* ---- 裝備詳情：符文孔與符文之語橫幅（js/item.js itemRuneHTML；取代原本附魔欄位的位置）---- */
+/* ---- 裝備詳情：符文孔與符文真言橫幅（js/item.js itemRuneHTML；取代原本附魔欄位的位置）---- */
 .it-sockets .socket.rune-socket .sk-name { color: #d8c9a0; }
 .it-sockets .socket.runeword-socket { box-shadow: inset 0 0 0 1px #7a6440; }
 /* 符文面板開啟時，已鑲的符文可點擊取下（比照附魔的 .it-enchant.removable） */
 .it-sockets .socket.rune-socket.removable { cursor: pointer; }
 .it-sockets .socket.rune-socket.removable:hover { background: #2a1e2e; border-color: var(--bad, #f87171); text-decoration: line-through; }
-/* 背包格角標：鑲了符文（取代附魔角標），成形符文之語為金色 */
+/* 背包格角標：鑲了符文（取代附魔角標），成形符文真言為金色 */
 .ic-rune { position: absolute; bottom: 1px; right: 3px; font-size: 10px; color: #d8c9a0; }
 .ic-rune.is-word { color: #f5c542; text-shadow: 0 0 4px #f5c54288; }
 

@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadRuneEnv } = require('./helpers/runeword-env.cjs');
 
-/* 符文之語資料表的完整性：拼字、引用、強度分級與可達性。
+/* 符文真言資料表的完整性：拼字、引用、強度分級與可達性。
    這些都是「資料表打錯一個字就靜默失效」的類型，所以逐項釘死。 */
 const c = loadRuneEnv({ noState: true });
 const RUNES = c.RUNES, WORDS = c.RUNEWORDS;
@@ -24,7 +24,7 @@ test('符文 33 種，id 連號、階數遞增，兩側屬性都是合法且未�
   assert.equal(new Set(RUNES.map((r) => r.glyph)).size, 33, '符文字形不得重複');
 });
 
-test('符文之語至少 40 組，四個強度級距數量接近，id／名稱／配方都唯一', () => {
+test('符文真言至少 40 組，四個強度級距數量接近，id／名稱／配方都唯一', () => {
   assert.ok(WORDS.length >= 40, '至少 40 組，實際 ' + WORDS.length);
   const byTier = [0, 0, 0, 0, 0];
   WORDS.forEach((w) => { byTier[w.tier]++; });
@@ -46,7 +46,7 @@ test('每組的符文數與強度級距相稱、不超過符文孔上限，且�
   });
 });
 
-test('越強的符文之語越難做：配方最高階符文落在各級距的區間，且級距間平均階數遞增', () => {
+test('越強的符文真言越難做：配方最高階符文落在各級距的區間，且級距間平均階數遞增', () => {
   /* 取得難度只由「最高階那顆符文」決定（階越高越稀有，見 RUNE_SETTINGS.drop／rollRuneTier）。
      區間是設計目標（docs/RUNEWORD_DESIGN.md 的取得難度表）：第 1 級 ≤10、第 2 級 11～16、第 3 級 17～23、第 4 級 24～33。 */
   const band = { 1: [1, 10], 2: [11, 16], 3: [17, 23], 4: [24, 33] };
@@ -124,7 +124,7 @@ test('RUNE_SETTINGS：孔數表長度對得上稀有度、單調不減、不超�
   assert.equal(c.RUNE_DROP, s.drop);
 });
 
-test('每一組符文之語在遊戲裡都做得出來：存在稀有度的符文孔數足夠', () => {
+test('每一組符文真言在遊戲裡都做得出來：存在稀有度的符文孔數足夠', () => {
   WORDS.forEach((w) => {
     const i = c.rwMinRarity(w);
     assert.ok(i >= 0, `${w.id} 需要 ${w.runes.length} 孔，最高稀有度也不夠`);

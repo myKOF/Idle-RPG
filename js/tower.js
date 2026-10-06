@@ -331,7 +331,7 @@ function endTowerFight(win, reason) {
       TOWER.player && skills2TryRebirth(TOWER.player)) {
     return;
   }
-  // 符文之語【輪迴】（js/runeword.js）：死亡攔截；復活後戰鬥繼續，呼叫端本來就會 return
+  // 符文真言【輪迴】（js/runeword.js）：死亡攔截；復活後戰鬥繼續，呼叫端本來就會 return
   if (!win && reason === 'death' && typeof rwTryRevive === 'function' &&
       TOWER.player && rwTryRevive(TOWER.player)) {
     return;
@@ -414,7 +414,7 @@ function endTowerFight(win, reason) {
     G.player.essence += rw.essence;
     if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
     result.rewards.push('🔮 附魔精華 x' + rw.essence);
-    // 符文（符文之語的素材）：樓層越高階數越高（js/runeword.js）
+    // 符文（符文真言的素材）：樓層越高階數越高（js/runeword.js）
     if (typeof rwRollTowerRuneDrop === 'function') {
       var towerRunes = rwRollTowerRuneDrop(floor, st2.loot);
       if (towerRunes.length) {
@@ -458,7 +458,7 @@ function endTowerFight(win, reason) {
       if (TOWER.enraged) result.analysis.push('BOSS 已狂暴（傷害 +200%）。若能在 40 秒前將其血量壓到 50% 以下，即可避免狂暴。');
     } else {
       if (hpPct > 50) {
-        result.analysis.push('【傷害不足】60 秒僅造成 ' + Math.round(100 - hpPct) + '% 傷害。你的 DPS 為 ' + fmt(myDps) + '，需要約 ' + fmt(needDps) + '。建議提升攻擊力 / 爆擊詞條，或鑲上符文組成符文之語。');
+        result.analysis.push('【傷害不足】60 秒僅造成 ' + Math.round(100 - hpPct) + '% 傷害。你的 DPS 為 ' + fmt(myDps) + '，需要約 ' + fmt(needDps) + '。建議提升攻擊力 / 爆擊詞條，或鑲上符文組成符文真言。');
       } else {
         result.analysis.push('【輸出略缺】只差 ' + Math.round(hpPct) + '% 就能擊倒 BOSS！建議微調攻速 / 爆擊傷害詞條，或強化現有裝備。');
       }

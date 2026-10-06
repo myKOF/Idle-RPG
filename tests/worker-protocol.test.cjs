@@ -121,10 +121,11 @@ test('凍結的 Worker 指令表有 93 條且分類數量固定', () => {
   // v42：原子超神進化切換，87 → 88。
   // v43：VFX透傳飛行物本體長度bodyLength，指令數不變。
   // v44：鑲嵌可指定孔位／階級，保留舊呼叫且指令數不變。
-  // v45：符文之語——新增 rune.socket／compose／composeAll／dismantle，88 → 92。
+  // v45：符文真言——新增 rune.socket／compose／composeAll／dismantle，88 → 92。
   // v46：符文改鑲在專屬符文孔（取代附魔），新增 rune.unsocket，92 → 93。
   // v47：battle 新增技能列權威計時投影，指令數不變。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 47);
+  // v48：gems 面板新增 runewordSeen（成形過的符文真言），指令數不變。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 48);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');

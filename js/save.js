@@ -384,12 +384,21 @@ function migrateSave(data) {
     data.factory.salvageSlots = clamp(Math.floor(Number(data.factory.salvageSlots) || SALVAGE_SLOT_INITIAL), SALVAGE_SLOT_INITIAL, SALVAGE_SLOT_MAX);
   }
   data.player.ancientEssence = Math.max(0, Math.floor(Number(data.player.ancientEssence) || 0));
-  // 符文庫存（2026-10-06 符文之語）：舊存檔由 mergeDefaults 補空表；這裡只做防呆，數量整理成非負整數
+  // 符文庫存（2026-10-06 符文真言）：舊存檔由 mergeDefaults 補空表；這裡只做防呆，數量整理成非負整數
   if (!data.player.runes || typeof data.player.runes !== 'object' || Array.isArray(data.player.runes)) data.player.runes = {};
   Object.keys(data.player.runes).forEach(function (rk) {
     var rn = Math.max(0, Math.floor(Number(data.player.runes[rk]) || 0));
     if (rn > 0) data.player.runes[rk] = rn; else delete data.player.runes[rk];
   });
+  // 已激活的符文真言（2026-10-07，js/runeword.js §2）：{ 真言id: 1 }。舊存檔沒有這欄；已刪除的真言 id 丟掉，
+  // 下面逐件整理裝備時，目前已成形的再補記進來（記錄功能上線前就成形的不必重鑲）
+  var rwSeen = {};
+  if (data.player.runewordSeen && typeof data.player.runewordSeen === 'object' && !Array.isArray(data.player.runewordSeen)) {
+    Object.keys(data.player.runewordSeen).forEach(function (wk) {
+      if (data.player.runewordSeen[wk] && RUNEWORD_BY_ID[wk]) rwSeen[wk] = 1;
+    });
+  }
+  data.player.runewordSeen = rwSeen;
   data.player.soulOrigin = Math.max(0, Math.floor(Number(data.player.soulOrigin) || 0));
   // 逐件裝備整理：
   // 1) 太古機制改版（2026-07-23）：洗煉不再使用太古精華，載入時清除殘留欄位。
@@ -423,6 +432,7 @@ function migrateSave(data) {
       }
     }
     if (typeof rwMigrateSocketRunes === 'function') rwMigrateSocketRunes(it);
+    if (typeof rwSeenFromItem === 'function') rwSeenFromItem(rwSeen, it);
   };
   Object.keys(data.equipment || {}).forEach(function (slot) { fixLoadedItem(data.equipment[slot], slot); });
   Object.keys(data.equipmentSets || {}).forEach(function (setKey) {

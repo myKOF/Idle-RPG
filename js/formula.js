@@ -159,7 +159,7 @@ function computeStats(equipmentOverride) {
   // 聚合管線已通（詞條/寶石/天賦），目前尚無取得來源＝預設 0，供武器專屬能力等後續來源掛入）
   var elemDmgUp = zeroElemMap();
   var socketed = []; // 鑲嵌的寶石（gemEff 需在詞條聚合完成後才知道，先蒐集）
-  /* 詞條式屬性併入聚合桶的唯一入口：裝備詞條與符文／符文之語（js/runeword.js）共用，
+  /* 詞條式屬性併入聚合桶的唯一入口：裝備詞條與符文／符文真言（js/runeword.js）共用，
      特例（aspd → aspdPct、resX → resist、dmgVs／elemDmg 分桶）只寫這一份。 */
   function addAffixLike(k, v) {
     var re = affixResElem(k);
@@ -172,7 +172,7 @@ function computeStats(equipmentOverride) {
     else if (du) elemDmgUp[du] += v;
     else if (A[k] !== undefined) A[k] += v;
   }
-  var rwAgg = (typeof rwNewAggregate === 'function') ? rwNewAggregate() : null; // 符文之語聚合
+  var rwAgg = (typeof rwNewAggregate === 'function') ? rwNewAggregate() : null; // 符文真言聚合
 
   /* ---- 超神進化【修羅亂舞】（雙刀亂舞，js/skills2.js）----
      它做兩件事：可以同時裝備兩把雙手武器，且雙手武器的詞條效果提升。
@@ -199,7 +199,7 @@ function computeStats(equipmentOverride) {
       // 詞條值由強度值當場算出（affixValue → §6）；修羅亂舞只放大雙手武器的詞條，不含特效／附魔／寶石
       addAffixLike(a.key, affixValue(it, a) * um * (twoHand ? asuraAffixMult : 1));
     });
-    // 符文與符文之語（js/runeword.js）：屬性條目併入同一組桶；機制（fx／procs）由聚合器彙整
+    // 符文與符文真言（js/runeword.js）：屬性條目併入同一組桶；機制（fx／procs）由聚合器彙整
     if (rwAgg) rwAddItem(rwAgg, it).forEach(function (e) { addAffixLike(e.key, e.val); });
     if (it.passive) {
       passives[it.passive.key] = (passives[it.passive.key] || 0) + passiveValue(it, it.passive);
@@ -314,7 +314,7 @@ function computeStats(equipmentOverride) {
   st.hp = Math.round(rawHp * reincMult * (1 + (talent.hpPct || 0) / 100) *
     ((typeof skill2MaxHpFactor === 'function') ? skill2MaxHpFactor() : 1) *
     ((typeof skill2RockMaxHpFactor === 'function') ? skill2RockMaxHpFactor() : 1) *
-    // 符文之語的最大生命乘區（正負皆可；負值是代價，如血月、時之沙），下限 0.1
+    // 符文真言的最大生命乘區（正負皆可；負值是代價，如血月、時之沙），下限 0.1
     ((rwAgg && rwAgg.fx.maxHpPct) ? Math.max(0.1, 1 + rwAgg.fx.maxHpPct / 100) : 1));
   st.hpRegen = A.hpRegen;                                    // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
   // 法力 =（基底 + 原始智力×intMp + 定值）×轉生倍率；法力恢復另依原有公式計算
@@ -422,7 +422,7 @@ function computeStats(equipmentOverride) {
   if (passives.stun) passives.stun = capValue(passives.stun, STAT_CAPS.stun);
   st.passives = passives;
   st.legendaryEffects = legendaryEffects;
-  // 符文之語：被動併入 passives、借用的傳奇特效併入 legendaryEffects，其餘機制掛在 st.rw
+  // 符文真言：被動併入 passives、借用的傳奇特效併入 legendaryEffects，其餘機制掛在 st.rw
   st.rw = rwAgg ? rwFinishAggregate(rwAgg, passives, legendaryEffects) : { words: [], fx: {}, procs: [] };
   st.legendaryEffectMults = legendaryEffectMults;
   st.talent = talent;
@@ -949,7 +949,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   var attrRedTotal = (dCfg.resVsElem && aCfg.attr) ? (dCfg.resVsElem[aCfg.attr] || 0) : 0;
   if (attrRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(attrRedTotal, aCfg.level || 1);
   dmg = Math.max(DAMAGE_MIN, Math.round(dmg));   // 最低傷害由參數表決定
-  // 符文之語【單次受傷上限】：玩家為防守方時，單次傷害最多為最大生命的 N%（護盾吸收之前）
+  // 符文真言【單次受傷上限】：玩家為防守方時，單次傷害最多為最大生命的 N%（護盾吸收之前）
   if (dCfg.isPlayer && dCfg.maxHitPct > 0 && dCfg.maxHp > 0) {
     dmg = Math.min(dmg, Math.max(1, Math.round(dCfg.maxHp * dCfg.maxHitPct / 100)));
   }
@@ -2026,7 +2026,7 @@ function itemScore(it) {
       }
     }
   }
-  // 符文與符文之語的屬性條目同樣計入評分；符文之語的機制以固定加成估價
+  // 符文與符文真言的屬性條目同樣計入評分；符文真言的機制以固定加成估價
   if (typeof rwItemStatEntries === 'function') {
     var rwEntries = rwItemStatEntries(it);
     for (var rj = 0; rj < rwEntries.length; rj++) s += rwEntries[rj].val * (SCORE_WEIGHTS[rwEntries[rj].key] || 1);

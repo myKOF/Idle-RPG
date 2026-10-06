@@ -10,19 +10,19 @@
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-importScripts('protocol.js?v=47', 'shim.js?v=11');
+importScripts('protocol.js?v=48', 'shim.js?v=11');
 importScripts(
-  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes4', '../runeword_data.js?v=20261007-runes4', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes4', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
-  '../item.js?v=20261007-runes4', '../runeword.js?v=20261007-runes4',
+  '../util.js?v=20260922-firegod-formation', '../data.js?v=20261007-runes4', '../runeword_data.js?v=20261007-rune-seen', '../status.js?v=20261005-cc-decay-count', '../formula.js?v=20261007-runes4', '../battlefield.js?v=20261005-cc-decay-count', '../stats.js?v=20261003-rename-weineng',
+  '../item.js?v=20261007-rune-seen', '../runeword.js?v=20261007-rune-seen',
   '../skills.js?v=20261007-runes4', '../skills2.js?v=20261006-skill-timers', '../talents.js?v=20261003-rename-weineng',
-  '../player.js?v=20261007-runes4', '../special_rules.js',
-  '../combat.js?v=20261007-runes4', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-runes4',
-  '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-runes4',
+  '../player.js?v=20261007-rune-seen', '../special_rules.js',
+  '../combat.js?v=20261007-rune-seen', '../legendary.js?v=20261007-runes4', '../potential.js?v=20261005-cc-decay-count', '../tower.js?v=20261007-rune-seen',
+  '../factory.js?v=20261007-runes4', '../newforge.js', '../forge.js?v=20261007-runes4', '../save.js?v=20261007-rune-seen',
   '../tasks.js?v=20261007-runes4'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261003-rename-weineng');
+importScripts('../gm_exec.js?v=20261007-rune-seen');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -909,6 +909,7 @@ function buildPanel(name, params) {
       // 一般寶石是 { type: { lv: n } } 計數；融合寶石才是個別實體
       return {
         gems: p.gems, fusedGems: p.fusedGems, runes: p.runes || {},
+        runewordSeen: p.runewordSeen || {},   // v48：成形過的符文真言 { id: 1 }，圖鑑據此決定顯示配方或問號
         shop: (typeof gemShop === 'function') ? gemShop() : p.gemShop
       };
     case 'skills':

@@ -71,14 +71,16 @@
    lifesteal／manaSteal 改為套用汲取倍率後「每次回復的定值」（不再是百分比，也不再依每秒回復換算）。
    主執行緒讀欄位一律帶 fallback，舊快照缺欄時退回基礎值。 */
 /* v42：skill2.ultSwitch 原子重選；fromOpt／fromLv／cost 釘住使用者確認內容。 */
-/* v45（2026-10-06 符文之語）：新增指令 rune.socket／rune.compose／rune.composeAll／rune.dismantle（87 → 92 之外的 4 條，88 → 92）。
+/* v45（2026-10-06 符文真言）：新增指令 rune.socket／rune.compose／rune.composeAll／rune.dismantle（87 → 92 之外的 4 條，88 → 92）。
    符文是獨立素材 G.player.runes = { 符文id: 數量 }，鑲在既有鑲孔（item.sockets 的 { rune: id }）；
-   取下沿用 gem.unsocket。gems 面板新增 runes 欄位（符文庫存）。符文之語是衍生狀態，不進存檔、不進協議。 */
+   取下沿用 gem.unsocket。gems 面板新增 runes 欄位（符文庫存）。符文真言是衍生狀態，不進存檔、不進協議。 */
 /* v46（2026-10-07 符文取代附魔）：符文改鑲在裝備專屬的符文孔 it.runes（最多 4 孔，取代附魔欄位），不再與寶石共用 item.sockets；
    新增 rune.unsocket(itemId, index)（取下符文，原本借用 gem.unsocket 的分流作廢），指令數 92 → 93。
    附魔指令（item.enchant／item.removeEnchant）保留但附魔功能已關閉（data.js ENCHANT_ENABLED），呼叫會回「附魔功能已關閉」。 */
 /* v47：battle.skillTimers 投影技能列的權威時鐘；不改 skillCds 或存檔。 */
-var WORKER_PROTOCOL_VERSION = 47;
+/* v48（2026-10-07 符文真言隱藏）：gems 面板新增 runewordSeen = { 真言id: 1 }（G.player.runewordSeen，成形過的符文真言）。
+   主執行緒據此決定圖鑑顯示配方與效果或問號；舊快照缺欄時一律視為都沒激活。指令數不變。 */
+var WORKER_PROTOCOL_VERSION = 48;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -323,7 +325,7 @@ var COMMANDS = {
   'gem.composeAll':        { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   'gem.dismantleAll':      { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   'gem.fuse':              { fn: 'fuseGemsV2',       args: { ref1: 'ref', ref2: 'ref' },          dirty: ['gems'] },
-  /* -- 符文（符文之語；js/runeword.js）--
+  /* -- 符文（符文真言；js/runeword.js）--
      符文是 { 符文id: 數量 } 的計數，沒有實例 id，所以用 runeId（符文 id 字串）定位。
      符文鑲在裝備專屬的符文孔 it.runes（v46 起，與寶石鑲孔分開）：鑲嵌 rune.socket、取下 rune.unsocket。 */
   'rune.socket':           { fn: 'socketRune',       args: { itemId: 'id', runeId: 'str', index: 'int?' }, limit: { index: { min: 0 } }, resolve: ['itemId'], dirty: ['inv', 'equip', 'gems', 'header'] },
