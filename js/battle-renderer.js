@@ -179,7 +179,10 @@ var BattleRenderer = (function () {
     watchdogTimer: 0,
     emptyText: null,
     pauseVeil: null,
-    resizeObs: null
+    resizeObs: null,
+    /* 延遲播放佇列（見 laterFrame）：特效事件與飄字的 POS_BUFFER_MS 等待都排在這裡，
+       由 tickWorld 每幀在預算內批次處理；不再每則事件排一個 setTimeout。 */
+    later: { q: [], ran: 0, dropped: 0, droppedFloat: 0, maxLateMs: 0, lastMaxLateMs: 0 }
   };
 
   /* ---- 小工具 ---- */
@@ -570,6 +573,67 @@ var BattleRenderer = (function () {
 
   /* 目前這一幀要播放的時刻。 */
   function renderClock() { return nowMs() - POS_BUFFER_MS; }
+
+  /* ---- 延遲播放佇列：取代「每則事件一個 setTimeout」（2026-10-06）----
+
+     原本特效事件與飄字進顯示層後，各排一個 setTimeout(POS_BUFFER_MS+) 才真正播放。
+     重負載（60 隻敵人、特效滿屏）實測：每秒排 1,050 個計時器、只被執行 514 個，
+     懸著的計時器堆到 8,600 個，每個晚 4.6～7.6 秒才執行——
+       · 特效與飄字晚幾秒才播（技能「不動」）、到了又過期（數字消失）；
+       · 同一條計時器佇列上的 uiTick（setInterval 200ms）一起被卡住，技能頁整頁空白。
+     計時器回呼本身很便宜（約 0.04ms，全部加起來不到主執行緒的 3%），
+     問題不在成本：畫格迴圈（rAF）把主執行緒塞滿時，瀏覽器每幀只放行約 20 個計時器任務，
+     上限約 600 個／秒，需求一超過佇列就無限堆積。
+
+     改成在畫格內批次處理：到期的項目由 tickWorld 在每幀開頭一次取出，一幀可處理上百個，
+     不受「每幀約 20 個計時器」的限制，也不再把其他計時器擠在後面。
+     處理量用時間預算約束（LATER_BUDGET_MS），來不及的留到下一幀；
+     飄字過期太久（LATER_FLOAT_MAX_LATE_MS）就不值得再畫了，直接丟；
+     佇列另設上限（LATER_CAP）當最後防線，滿了先丟最舊的飄字。
+     沒有過載時行為與 setTimeout 相同：到期那一幀就執行，只多等不到一幀。 */
+  var LATER_BUDGET_MS = 6;               // 每幀最多花在到期項目上的時間
+  var LATER_FLOAT_MAX_LATE_MS = 500;     // 飄字比預定時間晚超過這麼久就丟
+  var LATER_CAP = 1500;                  // 佇列長度上限
+  /* rank：0＝飄字（量最大、價值最低）、1＝特效事件。fn 在到期後執行，丟例外不影響其他項目。 */
+  function laterFrame(fn, delayMs, rank) {
+    var L = S.later;
+    var item = { due: nowMs() + Math.max(0, delayMs || 0), fn: fn, rank: rank | 0 };
+    var q = L.q, i = q.length;
+    while (i > 0 && q[i - 1].due > item.due) i--;      // 多半是尾端插入；回頭找位置維持依到期時間排序
+    q.splice(i, 0, item);
+    if (q.length > LATER_CAP) laterShed(nowMs());
+  }
+  /* 佇列超過上限：先丟最舊的飄字，還是超過就丟最舊的任何項目。 */
+  function laterShed(now) {
+    var L = S.later, q = L.q;
+    var over = q.length - LATER_CAP;
+    if (over <= 0) return;
+    for (var i = 0; i < q.length && over > 0; i++) {
+      if (q[i].rank === 0) { q.splice(i, 1); i--; over--; L.dropped++; L.droppedFloat++; }
+    }
+    if (over > 0) { q.splice(0, over); L.dropped += over; }
+  }
+  /* 取出並執行所有到期的項目，總時間不超過 budgetMs。回傳這次執行的件數。 */
+  function laterDrain(budgetMs) {
+    var L = S.later, q = L.q;
+    if (!q.length) return 0;
+    var t0 = nowMs(), ran = 0;
+    L.lastMaxLateMs = 0;
+    while (q.length && q[0].due <= t0) {
+      var item = q.shift();
+      var late = t0 - item.due;
+      if (late > L.lastMaxLateMs) L.lastMaxLateMs = late;
+      if (late > L.maxLateMs) L.maxLateMs = late;
+      if (item.rank === 0 && late > LATER_FLOAT_MAX_LATE_MS) { L.dropped++; L.droppedFloat++; continue; }
+      try { item.fn(); } catch (err) {
+        if (typeof console !== 'undefined' && console.error && (L.errLogged = (L.errLogged || 0) + 1) <= 3) console.error('[later]', err);
+      }
+      ran++;
+      if (nowMs() - t0 >= budgetMs) break;
+    }
+    L.ran += ran;
+    return ran;
+  }
 
   /* ---- 序列幀載入 ----
      幀定義 JSON：
@@ -1592,7 +1656,7 @@ var BattleRenderer = (function () {
     /* 與特效同一套顯示延遲：畫面上的世界落後模擬 POS_BUFFER_MS，姿勢也延後才對得上特效與站位 */
     if (!ev._buffered) {
       ev._buffered = true;
-      setTimeout(function () { onAct(ev); }, POS_BUFFER_MS);
+      laterFrame(function () { onAct(ev); }, POS_BUFFER_MS, 1);
       return;
     }
     var p = S.player;
@@ -5477,11 +5541,11 @@ var BattleRenderer = (function () {
     }
     var baseDelay = Math.max(0, spec.delayMs || 0);
     if (baseDelay > 0) {
-      setTimeout(function () {
+      laterFrame(function () {
         if (fxGate(spec)) return;
         spec.delayMs = 0;
         onVfx(spec);
-      }, baseDelay);
+      }, baseDelay, 1);
       return;
     }
     /* Preset 化（docs/vfx/VFX_RUNTIME_ADAPTER.md）：表格填了特效檔名、
@@ -6063,10 +6127,10 @@ var BattleRenderer = (function () {
     if (!ev._buffered) { ev._buffered = true; ev.delayMs = (ev.delayMs || 0) + POS_BUFFER_MS; }
     var delay = Math.max(0, ev.delayMs || 0);
     if (delay > 0) {
-      setTimeout(function () {
+      laterFrame(function () {
         if (!enemyFloatTargetAvailable(ev.elId)) return;
         onFloat({ elId: ev.elId, text: ev.text, cls: ev.cls, damageValue: ev.damageValue, _buffered: true });
-      }, delay);
+      }, delay, 0);
       return;
     }
     if (!enemyFloatTargetAvailable(ev.elId)) return;
@@ -6185,6 +6249,12 @@ var BattleRenderer = (function () {
     if (S.paused) dt = 0;
     var t = nowMs();
     var rClock = renderClock();      // 這一幀要播放的模擬時刻（見內插緩衝）
+    /* 到期的延遲事件（特效、飄字、施法姿勢）在這裡一次處理，見 laterFrame。
+       背景分頁不畫（與原本計時器回呼裡的 documentHidden 守門同義），直接清掉，避免回前景時一次補播。 */
+    if (S.later.q.length) {
+      if (documentHidden()) { S.later.dropped += S.later.q.length; S.later.q.length = 0; }
+      else laterDrain(LATER_BUDGET_MS);
+    }
 
   /* ---- 玩家：把模擬層算好的座標畫出來 ----
      跑向誰、跑多快、停在哪，全部是模擬層的事（js/battlefield.js bfTickPlayer）。
@@ -7488,6 +7558,9 @@ var BattleRenderer = (function () {
       size: S.W + 'x' + S.H,
       entities: Object.keys(S.entities).length,
       fx: S.fx.length, floats: S.floats.length, floatEvicted: S.floatEvicted,
+      /* 延遲播放佇列：長度、累計執行／丟棄、最近一幀最晚的項目晚了多久（正常應該 <50ms） */
+      later: { q: S.later.q.length, ran: S.later.ran, dropped: S.later.dropped, droppedFloat: S.later.droppedFloat,
+        lateMs: Math.round(S.later.lastMaxLateMs), maxLateMs: Math.round(S.later.maxLateMs) },
       /* Preset 端是另一套集合，同樣要看得到「只增不減」。 */
       preset: S.vfxrt ? S.vfxrt.stats() : null,
       paused: S.paused, zone: S.zoneKey,
