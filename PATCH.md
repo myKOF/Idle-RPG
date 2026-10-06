@@ -1,5 +1,16 @@
 # PATCH.md
 
+## 已裝配技能清單顯示 1px 白色外框與「已裝配」標籤，詳情右上角按鈕改為「卸下」（Antigravity 2026-10-06）
+
+- **已裝配技能外框與標籤更新（`css/ashen-forge.css`、`js/ui.js`）**：
+  - 技能列表（`sgbListItemHTML`）：已裝配於技能列之群組卡片新增 `.is-eq` 類名，右上角標籤文字由「已裝上」改為「已裝配」。
+  - 外框樣式（`css/ashen-forge.css`）：為 `.sgb-item.is-eq` 設定 `border: 1px solid #ffffff;`，hover 時保持白色外框；選中狀態（`.is-sel`）依設計維持金棕色高亮邊框。
+- **右上角卸下按鈕文字精簡（`js/ui.js`）**：
+  - 技能詳情標頭（`sgbHeadHTML`）：已裝配技能之右上角按鈕文字由「已裝上 · 卸下」調整為「卸下」。
+- **快取版本與測試**：
+  - [index.html](file:///d:/MyGame/Idle-RPG/antigravity/index.html) 快取版本更新為 `ashen-forge.css?v=1.0.59`、`ui.js?v=1.0.128`。
+  - 更新 [tests/skill2-ui.test.cjs](file:///d:/MyGame/Idle-RPG/antigravity/tests/skill2-ui.test.cjs) 並新增專屬測試 [tests/skill-equipped-style.test.cjs](file:///d:/MyGame/Idle-RPG/antigravity/tests/skill-equipped-style.test.cjs)。
+
 ## 裝備選中外框移除漸變動畫，點擊後立刻出現外框（Antigravity 2026-10-05）
 
 - **外框漸變動畫移除（`css/style.css`、`css/ashen-forge.css`）**：

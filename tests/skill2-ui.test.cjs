@@ -372,16 +372,18 @@ test('主動型被動：有裝備鈕與類型標籤；已裝上改為卸下', ()
   assert.match(h, /主動型被動/);
   const eq = detail(c, 'counter', snapshot({ counter: [10, 10, 0, 0, 0, 0, 0] }, { loadout: ['sg:counter'] }), 0);
   assert.match(eq, /data-skill-unequip="sg:counter"/);
+  assert.match(eq, />卸下<\/button>/);
 });
 
-test('清單：鎖住的群組標出解鎖門檻，已裝上的標出已裝上', () => {
+test('清單：鎖住的群組標出解鎖門檻，已裝配的標出已裝配與 is-eq 樣式', () => {
   const c = loadContext();
   const snap = snapshot({ windblade: [0, 0, 0, 0, 0, 0, 0], thrust: [10, 0, 0, 0, 0, 0, 0] });
   const locked = c.sgbListItemHTML('windblade', snap, [], false);
   assert.match(locked, /is-locked/);
   assert.match(locked, /解鎖/);
   const eq = c.sgbListItemHTML('thrust', snap, ['sg:thrust'], true);
-  assert.match(eq, /已裝上/);
+  assert.match(eq, /已裝配/);
+  assert.match(eq, /is-eq/);
   assert.match(eq, /is-sel/);
 });
 

@@ -2494,6 +2494,15 @@ html *::-webkit-scrollbar-corner {
   border-color: #3a3d44;
 }
 
+/* 已裝配的技能：外框顯示 1px 的白色外框 */
+.sgb-item.is-eq {
+  border: 1px solid #ffffff;
+}
+
+.sgb-item.is-eq:hover {
+  border-color: #ffffff;
+}
+
 .sgb-item.is-sel {
   border-color: #7a6440;
   background: #221c16;
