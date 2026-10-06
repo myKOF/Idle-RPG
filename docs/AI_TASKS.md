@@ -1,5 +1,15 @@
 # AI_TASKS.md
 
+## ELITE-HALO-NO-STACK-20261006 — 菁英光暈重疊不累積亮度
+
+- Owner：Codex；Done。使用者詢問菁英光暈是否疊加，要求會疊加時改為不疊加。現有makeEnemy每隻紫色Sprite用add，確認同像素會加亮；沿用現有Pixi內建max混合，以各通道最大值替代相加。單一開發者，前置菁英光暈已存在；後續接手者使用者。
+- 範圍：js/battle-renderer.js仅菁英glow混合模式及註解、index.html僅renderer快取1.6.173→1.6.174、本紀錄。禁止改光暈尺寸／alpha／顏色、技能／Worker／素材／其他功能／副本、合併／推送。renderer預檢乾淨；index與紀錄有Claude d65296c5符文未整合修改，使用者已明確同意只更新renderer快取並新增本任務段落；保留本副本逐風者進行中內容與使用者素材，分段隔離提交。
+- 驗收正式Pixi WebGL同位置1個與20個max光暈逐像素相同，舊add對照確實變亮；菁英大小／強度／標記／名稱／血條及普通敵人／Boss保持，相關回歸、Build／diff後獨立Commit。不新增素材或特效來源。
+- 完成／修改3檔：js/battle-renderer.js菁英glow blendMode由add改max及註解、index.html renderer快取1.6.174、本紀錄。保留alpha0.42／scale1.65／紫色／位置／骷髏／血條與名稱；未改生命週期、傷害、碰撞、其他特效或Worker。唯讀檢查未改：js/vendor/pixi.min.js（WebGL2 MAX與WebGL1 EXT_blend_minmax、WebGPU max均已內建）、makeMobBody／glowTexture／drawHpBar、tests/helpers/battle-scene.cjs、既有戰場／敵方特效測試及協作規範。沒有素材變更或素材庫Commit。
+- 像素驗證：隔離headless Edge／正式Pixi WebGL、隨機Port唯讀服務，執行正式makeEnemy／makeMobBody／glowTexture／drawHpBar，抽出同參數光暈比對1個／20個完全重疊；97×97區域max像素通道差異0，原add差異30,695個通道，證實不只是降低透明度。max支援成立、pageerror／Console error0；前後對照已檢視，保存於本聊天visualizations目錄elite-halo-no-stack-20261006.png，非真人存檔或完整技能實戰。浏览器／服務已關閉，無repo暫存檔。另Node VM驗正式makeEnemy已採max、原大小／強度／位置／菁英辨識及普通／Boss分支不變。
+- 回歸：`node --test tests/battle-perspective.test.cjs tests/battle-ground-projection.test.cjs tests/battle-perf.test.cjs tests/battle-fps-cap.test.cjs tests/enemy-attack-vfx-lifecycle.test.cjs`49/49通過；另`tests/vfx-editor-cache-versions.test.cjs`2/3，CV-1既有Pixi backend主頁20261006-alpha-cull／Editor20260930-bend-strength不一致。以HEAD兩頁唯讀替換重跑，CV-1同樣失敗且基準另有既有Runtime版號差異；未修改其他任務的快取或測試接受現況。首輪基準檔案攔截範圍過寬導致假CV-2失敗，改精確兩條完整路徑後消失。`npm.cmd run build`466檔通過，`git diff --check`通過。
+- 交付：Commit為本紀錄所在`[Codex] fix: 菁英光暈重疊不再累積亮度`提交。無未完成本次需求，可審查合併，未合併／推送；逐風者與使用者素材等未提交內容保留。已知表現差異：max也與背景取較亮通道，外圈比add收斂，不會因敵人數量而加亮；未做長時間真人密集戰鬥。下一步使用者重整遊戲驗收並整合，既有Editor快取差異交由原任務處理。
+
 ## SKILL-TIMER-DISPLAY-20261006 — 技能列施放間隔與觸發冷卻全面清查
 
 - Owner：Codex；Done。使用者要求進化為定時被動的技能列顯示實際間隔、復活技能觸發後才起算，全面清查同類技能。23群組／全部69項超神進化盤點完成；單一開發者。使用者明確授權與逐風者進行中修改分段作業並保留既有內容。

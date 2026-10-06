@@ -1364,7 +1364,7 @@ var BattleRenderer = (function () {
     shadow.ellipse(0, 0, shw, shw * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     view.addChild(shadow);
 
-    /* 菁英光環：讓紫光延伸到本體外側，保留發光辨識。 */
+    /* 菁英光環：重疊時取各通道最大值，避免累積亮度。 */
     if (isElite) {
       var glow = new PIXI.Sprite(glowTexture());
       glow.anchor.set(0.5);
@@ -1372,7 +1372,7 @@ var BattleRenderer = (function () {
       glow.alpha = 0.42;
       glow.scale.set(1.65);
       glow.y = -24;
-      glow.blendMode = 'add';
+      glow.blendMode = 'max';
       view.addChild(glow);
     }
 
