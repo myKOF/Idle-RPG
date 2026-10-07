@@ -10,7 +10,7 @@ function loadStatsContext() {
   const context = { console, Math: Object.create(Math), UI: { dirty: {} } };
   context.window = context;
   vm.createContext(context);
-  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/stats.js'].forEach((file) => {
+  ['js/util.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/item.js', 'js/stats.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   return context;
@@ -161,9 +161,9 @@ test('掉落統計 HTML：品質分行上色、材料含圖示、寶石逐行、
   assert.match(html, /icon_scrap\.png[^>]*>[^<]*<[^>]*>裝備碎片/);
   assert.match(html, /icon_essence\.png[^>]*>[^<]*<[^>]*>附魔精華/);
   assert.match(html, /💫[^<]*<[^>]*>魔塵/);
-  // 寶石：emoji＋階級＋名稱
-  assert.match(html, /🟡<span[^>]*>一級黃玉/);
-  assert.match(html, /🟣<span[^>]*>二級紫水晶/);
+  // 寶石：寶石圖（依階級）＋階級＋名稱
+  assert.match(html, /gem-topaz-01.png[^>]*>s*<span[^>]*>一級黃玉/);
+  assert.match(html, /gem-amethyst-02.png[^>]*>s*<span[^>]*>二級紫水晶/);
   // 金幣使用完整數字（千分位），不用 K/M 簡寫
   assert.match(html, /icon_gold\.png/);
   assert.match(html, /1,616,660,452,785,90/);

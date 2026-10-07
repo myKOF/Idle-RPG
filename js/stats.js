@@ -182,7 +182,7 @@ function statsLootHtml() {
     var parts = gemKeys[g].split(':');
     var gt = GEM_TYPES[parts[0]];
     if (!gt) continue;
-    html += '<div class="summary-card-row">' + gt.emoji +
+    html += '<div class="summary-card-row">' + gemIconHTML(parts[0], +parts[1], 'gi-inline') +
       '<span style="color:var(--accent)">' + GEM_NAMES[+parts[1]] + gt.name + '</span>：' +
       fmtFull(st.gems[gemKeys[g]]) + ' 顆</div>';
   }

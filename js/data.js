@@ -2278,6 +2278,16 @@ var GEM_TYPES = {
   wardWind: { name: '風抗寶石', emoji: '🍃', stat: 'resWind', statName: '疾風抗性%', base: 5, pct: true, linear: true },
   wardAll: { name: '全屬性抗性寶石', emoji: '🌈', stat: 'resAll', statName: '全屬性抗性%', base: 1, pct: true, linear: true }
 };
+/* 寶石圖：images/gems/gem-<key>-<階>.png（80×80 透明 PNG，48 種 × 10 階）。
+   階數決定外形（碎塊→…→圓形多邊，刻面與星芒隨階數增加）、種類決定顏色與材質；
+   元素類另有家族記號：「核」寶石內部有發光核心，「抗」寶石後方有一片柔和光暈。
+   程式產生（tools/gems），原稿在素材庫 claude-authored/gems。換圖時 +1 GEM_ICON_VER
+   （檔名沒有版本字尾，靠查詢字串破快取）。顯示入口是 js/item.js 的 gemIconHTML。 */
+var GEM_ICON_VER = 1;
+function gemIconSrc(type, level) {
+  var lv = Math.max(1, Math.min(GEM_FORGE_MAX_LEVEL, Math.floor(level) || 1));
+  return 'images/gems/gem-' + type + '-' + (lv < 10 ? '0' : '') + lv + '.png?v=' + GEM_ICON_VER;
+}
 // 寶石數值/插槽/附魔欄位公式（gemStatValue、socketCountFor、enchantCapFor）→ js/formula.js §8
 // 寶石合成：3 顆「同種類、同等級」→ 1 顆同種類下一級；UI 另支援全部類型逐種類合成
 var GEM_TYPE_ALL = '__all__';

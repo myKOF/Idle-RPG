@@ -1,0 +1,48 @@
+/* 寶石圖（images/gems，js/item.js 的 gemIconHTML／fusedGemIconHTML）
+   各處只定尺寸與位置，圖本身自帶顏色、階數外形與光暈。gi-* 是尺寸 class：
+   cell＝背包式方格／神鑄槽（跟著格子走）、chip＝寶石池 48px 小格、socket＝裝備鑲嵌面板、
+   lib／focus＝寶石庫列表與焦點、slot＝合成配方槽、conv＝轉換九宮格、shop＝商店、
+   row＝自動放入清單、inline＝文字行內。 */
+.gem-ico {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.gi-cell { width: 100%; height: auto; aspect-ratio: 1; }
+.gi-chip { width: 42px; height: 42px; }
+.gi-socket { width: 30px; height: 30px; }
+.gi-lib { width: 36px; height: 36px; }
+.gi-focus { width: 44px; height: 44px; }
+.gi-slot { width: 32px; height: 32px; }
+.gx-socket.is-out .gi-slot { width: 42px; height: 42px; }
+.gi-conv { width: 38px; height: 38px; }
+.gi-shop { width: 50px; height: 50px; }
+.gi-row { width: 24px; height: 24px; }
+.gem-ico.gi-inline,
+.gem-ico-fused.gi-inline { display: inline-block; width: 1.6em; height: 1.6em; vertical-align: -0.5em; }
+
+/* 融合寶石：兩種屬性的寶石斜疊（同屬性融合只有一種，就置中單顆） */
+.gem-ico-fused {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.gem-ico-fused .gem-ico-part {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+}
+
+.gem-ico-fused.is-pair .gem-ico-part {
+  width: 72%;
+  height: 72%;
+}
+
+.gem-ico-fused.is-pair .gem-ico-part:first-child { left: 0; top: 0; }
+.gem-ico-fused.is-pair .gem-ico-part:last-child { left: auto; right: 0; top: auto; bottom: 0; }

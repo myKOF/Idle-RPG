@@ -135,6 +135,18 @@ function fusedGemStatText(fg) {
     return gt.statName.replace('%', '') + ' +' + (gt.pct ? pctStr(v) : fmt(v));
   }).join('、');
 }
+/* 寶石圖（js/data.js 的 gemIconSrc）。cls＝各處用來定尺寸的 class（css/gems.css）。
+   融合寶石是兩種屬性的合體：兩顆 5 階寶石圖斜疊成一個圖示（同屬性融合只有一種，就單顆）。 */
+function gemIconHTML(type, level, cls) {
+  if (!GEM_TYPES[type]) return '';
+  return '<img class="gem-ico' + (cls ? ' ' + cls : '') + '" src="' + gemIconSrc(type, level) + '" alt="" draggable="false" decoding="async">';
+}
+function fusedGemIconHTML(fg, cls) {
+  var stats = fg.stats || [];
+  var two = stats.length > 1;
+  return '<span class="gem-ico-fused' + (two ? ' is-pair' : '') + (cls ? ' ' + cls : '') + '">' +
+    stats.map(function (s) { return gemIconHTML(s.type, fg.level || GEM_MAX_LEVEL, 'gem-ico-part'); }).join('') + '</span>';
+}
 function fusedGemLabel(fg) {
   var emojis = fg.stats.map(function (s) { return GEM_TYPES[s.type].emoji; }).join('');
   return emojis + '融合寶石（' + fusedGemStatText(fg) + '）';
@@ -690,10 +702,10 @@ function itemSocketHTML(it, mode) {
   var h = '<div class="it-sockets">' + (mode ? '' : '<div class="it-sockets-title">寶石鑲孔</div>');
   for (var si = 0; si < sockets.length; si++) {
     var g = sockets[si], text;
-    if (g && g.fused) text = (si + 1) + '. ' + esc(fusedGemLabel(g.fused));
+    if (g && g.fused) text = (si + 1) + '. ' + fusedGemIconHTML(g.fused, 'gi-inline') + ' ' + esc('融合寶石（' + fusedGemStatText(g.fused) + '）');
     else if (g && GEM_TYPES[g.type]) {
       var gt = GEM_TYPES[g.type];
-      text = '<span class="sk-name">' + (si + 1) + '. ' + gt.emoji + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
+      text = '<span class="sk-name">' + (si + 1) + '. ' + gemIconHTML(g.type, g.level, 'gi-inline') + ' ' + esc(GEM_NAMES[g.level] + gt.name) + '</span>' +
         '<span class="sk-val">' + esc(gt.statName.replace('%', '')) + ' +' +
         (gt.pct ? pctStr(gemStatValue(g.type, g.level)) : fmt(gemStatValue(g.type, g.level))) + '</span>';
     } else text = '◇ 鑲孔 ' + (si + 1) + '（空）';

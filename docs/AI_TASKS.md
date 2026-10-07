@@ -46,6 +46,18 @@
 - 實機：隔離headless Edge／隨機Port唯讀HTTP／全新Context／seed=9拋棄式角色、正式Worker47成功BOOT；使用原生引擎buildPanel的快照驗正式UI，在1920×1080與1280×720皆確認天霸1.5/3秒、天地15/30秒、不屈30/60秒，各遮罩180deg；兩種技能列相符、受擊風刃無CD／無魔標籤、復活就緒無CD、凍結1秒後天霸仍1.5秒。Console error／warning均0。精確排程、實際扣魔、自動施放、死亡與活著倒地、首觸發／充能、移除失效效果、高塔來源由新增引擎測試驗證；無真人存檔變動，服務／瀏覽器已關閉。
 - 交付：Commit為本紀錄所在`[Codex] fix: 同步技能列定時施放與觸發冷卻`提交；同副本逐風者與強化洗煉一秒任務期間已各自提交，本次僅提交上述10檔自己的變更。無本次未完成項目，既有38項回歸失敗保留，可審查合併，未合併／推送。下一步使用者重載遊戲驗收；未做長時間真人操作。
 
+## Claude｜寶石圖示：48 種寶石 × 10 階全部重做並接進遊戲（GEM-ICONS-20261007）
+
+- Owner：Claude；Done。使用者要求「將遊戲的寶石圖片全部重新製作」並給了三張參考圖（暗黑風寶石等級表、多色水晶圖示表、8 色 × 10 階切工寶石表）。原本遊戲裡**沒有任何寶石圖**，48 種寶石全是 emoji，所以是從零做一整套。預覽兩輪：第一輪使用者退回兩點——①抗性寶石的護盾泡「像寶石被包在泡泡裡」，改成光暈（A 柔光環／B 純光暈兩版給他選，選 B）；②「每種寶石都要不同顏色，不夠就用雙色或三色混搭」。核准後「接入遊戲吧」。
+- 需求分析：要的是一整套看得出「階數」與「種類」的寶石圖，不是單張華麗圖。階數 = 外形，種類 = 顏色與材質，元素類再用家族記號分開。
+- 技術決策：①程序化渲染（純 Node、確定性、無外部套件）：寶石是「一組平面取最小值」的凸多面體高度場，逐像素打光，工具 `tools/gems/`（沿用符文石的流程，但不需要瀏覽器 Canvas）。②10 階共用外形：薄片→碎塊→圓塊→六邊→菱形→長方→八方→星六→尖底→圓多邊。③48 種各有外觀表（`gem-defs.cjs`）；撞色就加第二色（漸層／中心／外緣／部分刻面）。④元素類三家族：一般／核（內部發光核心）／抗（後方純光暈），同一元素色系相近、主色與核心／光暈色不同。⑤**撞色檢查做成工具與測試**（CIELAB 3 群聚類的調色盤距離，`gem-audit.cjs`；測試量實際 80px 檔），而不是靠眼睛：第一輪就抓出 9 對太像並拉開。⑥輸出 80px（介面最大的圖示格也只有 46～72px），480 張約 4MB，按需載入；入口 `gemIconSrc`（data.js）／`gemIconHTML`／`fusedGemIconHTML`（item.js），各處只定尺寸 class（`css/gems.css`）。⑦融合寶石是兩種屬性的合體，用兩顆 5 階寶石圖斜疊成一個圖示。
+- 修改：新增 images/gems/（480 張）、tools/gems/（產生器 core／defs／palette／build／audit）、css/gems.css、tests/gem-icons.test.cjs（8 項）；js/data.js（`GEM_ICON_VER`、`gemIconSrc`）、js/item.js（`gemIconHTML`、`fusedGemIconHTML`、裝備詳情鑲孔列）、js/stats.js（統計卡片寶石列）、js/ui.js（約 20 處：裝備鑲嵌面板、自動放入清單、神鑄槽／結果／寶石格、寶石庫列表與焦點、合成配方槽、轉換九宮格與池、拆解／融合小格、商店）；tests/stats-panel.test.cjs（載入 item.js、斷言改為寶石圖）；index.html（掛 css/gems.css、data／stats／item／ui 四個版號）。純文字位置（資源列提示、下拉選項、戰鬥記錄、`gemLabel`）保留 emoji，測試把 ui.js 剩下的 emoji 位置釘成 2 處白名單。
+- 預檢：`.claude/check-conflicts.ps1` 退出碼 2——index.html／docs/AI_TASKS.md 被 ai/codex 的修改碰到（先是未提交、後來 codex 提交 d21067f2）。三方合併試跑：index.html 0 衝突（對方改 vfx-runtime／skills2／bridge 三行版號，我改 css 掛載與 data／stats／item／ui 四行）；AI_TASKS.md 本來就有 1 處（codex 檔頭段落與 8b0c89b2 重疊，codex 已記錄），我的段落放在較後面不增加。使用者選「兩支都改」後才動。**Worker 與 bridge.js 沒動**：`itemSocketHTML` 只由主執行緒 ui.js 呼叫、Worker 不產生 HTML，所以不必 bump `sim.worker.js` 的 importScripts 版號與 `WORKER_ASSET_VERSION`（也避開與 codex 同一行的衝突）。
+- 測試：tests/gem-icons.test.cjs 8 項全過（圖檔規格與透明角、gemIconSrc、融合斜疊、鑲孔列、ui.js 圖示位置白名單、CSS、48 種兩兩顏色距離、外觀表對應 GEM_TYPES）；`npm run build` 468 檔通過；完整測試 4017 項、失敗 258（基準 278，皆為既有失敗：技能／特效類；基準那份沒有 images 資料夾，圖檔類測試在基準也是紅的），**只在我這邊紅的有 0 項**。實機（埠 8331、真 Worker）：寶石庫列表／焦點、合成、轉換、拆解、融合、商店全部是圖，裝備鑲嵌面板 26 顆全是圖、鑲上後鑲孔列顯示圖與名稱；寶石請求全部 200、無破圖；Console 的 3 個 404 與寶石無關（沒有任何 /images/gems 404）。
+- 素材雙倉庫：素材庫 `claude-authored/gems`（480 張 256px 母圖、產生器副本、SOURCE.md 含重現指令與雜湊）Commit `5ead763`；遊戲專案 Commit 為本紀錄所在提交。素材庫未推送。
+- 風險／注意：①第 7～10 階在 48px 以下差異不大，主要靠刻面細節與星芒，靠階數徽章區分。②不透明石材（瑪瑙、綠松石、孔雀石、虎眼、日光石）紋理偏重，看起來比透明寶石更像圓盤。③「全部類型寶石」（合成配方的 `__all__`）沒有對應圖，維持 💎。④融合寶石只畫 5 階（`fg.level`）。⑤圖檔沒有版本字尾，換圖要 +1 `GEM_ICON_VER`；改色階後要跑 `node tools/gems/gem-audit.cjs`。⑥顏色距離門檻 12（產生器）／10（80px 實際檔）是我訂的，相近色系（如 amethyst 與 coreDark）靠家族記號區分，若使用者覺得仍太像再逐一調。
+- 建議驗證（Antigravity）：寶石頁六個分頁（合成／轉換／拆解／融合／商店／庫）圖示無破圖、尺寸不超出格子；裝備鑲嵌面板與詳情鑲孔列；神鑄頁寶石格與法陣槽（需解鎖）；融合寶石（兩種屬性斜疊）在融合池、轉換池、拆解池與鑲嵌面板；統計卡片的寶石列；高階（第 8～10 階）與抗性寶石的光暈在深色格子邊緣沒有方形截斷；縮放 50%／100%／150% 不變形。
+
 ## EQUIP-ACTION-ONE-SECOND-20261006 — 強化洗煉切頁冷卻改為一秒
 
 - Owner：Codex；Done。使用者將前次2秒改為1秒；依賴EQUIP-ACTION-COOLDOWN已完成，單一開發者。fetch後四檔衝突預檢無其他副本／分支衝突；本副本有逐風者進行中修改，僅碰index不同的UI引用與新增本任務段落，保留全部既有工作。
