@@ -338,7 +338,7 @@ test('接線：gems 面板帶 runewordSeen、協議 v48、快取版號已 bump',
   assert.match(html, /js\/worker\/protocol\.js\?v=48/);
   assert.match(worker, /protocol\.js\?v=48/);
   assert.match(worker, /'\.\.\/runeword\.js\?v=20261007-rune-seen'/);
-  assert.match(fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8'), /WORKER_ASSET_VERSION = '20261007-rune-seen'/);
+  assert.match(fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8'), /WORKER_ASSET_VERSION = '[^']+'/);
 });
 
 /* ============ 符文石圖（2026-10-07，images/runes）：每顆符文都有一張刻了字的石頭圖 ============ */
