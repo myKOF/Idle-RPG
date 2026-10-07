@@ -249,13 +249,25 @@ function bfTickApproach(enemies, dt) {
     if (nowIn && !ent._wasInRange) justInRange.push(ent);
     ent._wasInRange = nowIn;
   }
-  /* 互斥推擠：兩隻靠太近就各退一半。只做一輪，靠每個 tick 累積收斂。 */
+  /* 互斥推擠：兩隻靠太近就各退一半。只做一輪，靠每個 tick 累積收斂。
+     座標物件與半徑在迴圈外只取一次（推擠只改 x／y，不會讓座標失效，半徑也不變）；
+     內層先用 |dx|、|dy| 是否已 >= 兩半徑和做便宜的剔除——距離恆不小於任一軸分量，
+     所以被剔除的配對在原本的判斷裡也一定會被略過，結果與逐對 sqrt 完全一致。 */
+  var ps = [], rs = [];
   for (i = 0; i < live.length; i++) {
-    for (j = i + 1; j < live.length; j++) {
-      var a = bfPos(live[i]), b = bfPos(live[j]);
-      if (!a || !b) continue;
-      var minD = bfEntityRadius(live[i]) + bfEntityRadius(live[j]);
+    var pp = bfPos(live[i]);
+    if (!pp) continue;
+    ps.push(pp);
+    rs.push(bfEntityRadius(live[i]));
+  }
+  var cnt = ps.length;
+  for (i = 0; i < cnt; i++) {
+    var a = ps[i], ra = rs[i];
+    for (j = i + 1; j < cnt; j++) {
+      var b = ps[j];
+      var minD = ra + rs[j];
       var dx = b.x - a.x, dy = b.y - a.y;
+      if (dx >= minD || -dx >= minD || dy >= minD || -dy >= minD) continue;
       var dd = Math.sqrt(dx * dx + dy * dy);
       if (dd >= minD || dd <= 0.0001) continue;
       var push = (minD - dd) * 0.5;
