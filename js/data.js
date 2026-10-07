@@ -296,6 +296,47 @@ var FIELD_MONSTER_GROWTH = {
 };
 /* 野外菁英倍率（相對同階段普通怪）。BOSS 用的是同區的 FIELD_BOSS_*。 */
 var FIELD_ELITE = { hpMult: 4, atkMult: 2, rewardMult: 2, dodgeAdd: 1.5, aspd: 1 };
+/* ---- 菁英群組（參數表「4-菁英群組」；整個物件由 apply_params 重建，註解請寫在物件外）----
+   菁英不再單隻出現，而是成「群」：每群數隻，可能全是菁英、也可能由菁英帶著小兵。
+   出現時機有兩種：
+     菁英關（階段為 10 的倍數）  每一波都是菁英群，群數沿用 FIELD_ELITE_COUNT_TABLE* 那幾張權重表
+     普通關                       每一波有 normalChance% 的機率改成菁英群，群數看 normalGroupCount
+   各表的區間欄位寫法 [最低關, 最高關, …]；找不到對應地圖就用 other。
+     normalChance[地圖]  [最低關, 最高關, 每波變菁英群的機率%]
+     sizeWeights[地圖]   [最低關, 最高關, 群內隻數, 權重]
+     pureChance[地圖]    [最低關, 最高關, 全員菁英的機率%]（其餘為「菁英帶小兵」）
+     normalGroupCount    [群數, 權重]（普通關遇到菁英時一次出幾群）
+     skillCountWeights   [最低關, 最高關, 1個詞條權重, 2個詞條權重, 3個詞條權重]
+   leaders＝混合群的帶隊菁英數；minionHp／minionAtk／minionReward＝小兵相對普通怪的倍率。
+   skillDmgPct／cdPct＝菁英技能的傷害與冷卻倍率（%）；firstCastMax＝進場後第一次施放最久等幾秒；
+   maxZones＝同時存在的場域上限；summonCap＝每隻菁英一生最多召喚幾隻；linkBeam＝0 時不畫鏈結線。 */
+var ELITE_GROUP = {
+  normalChance: {
+    desert: [[1, 10, 1], [11, 50, 3], [51, 100, 5], [101, 9999, 7]],
+    Icefield: [[1, 100, 6], [101, 9999, 9]],
+    swamp: [[1, 100, 8], [101, 9999, 11]],
+    undead_mountains: [[1, 200, 10], [201, 9999, 13]],
+    other: [[1, 9999, 12]]
+  },
+  sizeWeights: {
+    desert: [[1, 100, 2, 60], [1, 100, 3, 30], [1, 100, 4, 10], [101, 9999, 2, 40], [101, 9999, 3, 40], [101, 9999, 4, 20]],
+    Icefield: [[1, 9999, 2, 50], [1, 9999, 3, 35], [1, 9999, 4, 15]],
+    swamp: [[1, 9999, 2, 40], [1, 9999, 3, 40], [1, 9999, 4, 20]],
+    undead_mountains: [[1, 9999, 2, 30], [1, 9999, 3, 40], [1, 9999, 4, 30]],
+    other: [[1, 9999, 2, 25], [1, 9999, 3, 40], [1, 9999, 4, 35]]
+  },
+  pureChance: {
+    desert: [[1, 100, 15], [101, 9999, 30]],
+    Icefield: [[1, 100, 25], [101, 9999, 35]],
+    swamp: [[1, 9999, 35]],
+    undead_mountains: [[1, 9999, 45]],
+    other: [[1, 9999, 55]]
+  },
+  normalGroupCount: [[1, 75], [2, 22], [3, 3]],
+  skillCountWeights: [[1, 100, 70, 28, 2], [101, 300, 45, 45, 10], [301, 9999, 25, 50, 25]],
+  leaders: 1, minionHp: 1, minionAtk: 1, minionReward: 1,
+  skillDmgPct: 100, cdPct: 100, firstCastMax: 3.5, maxZones: 24, summonCap: 6, linkBeam: 1
+};
 var MONSTER_DEFAULT_HIT = 100;   // 怪物固定命中（怪物資料未提供 hit 時的預設；參數表「3-戰鬥核心／怪物固定戰鬥值」）
 var FIELD_MONSTER_DODGE_BASE = 5;
 var FIELD_MONSTER_DODGE_GROWTH = [{ min: 1, max: 49, rate: 0.5 },

@@ -230,6 +230,8 @@ function bfTickApproach(enemies, dt) {
     var p = bfPos(ent);
     if (!p) continue;
     if (ent._enterCd > 0) continue;            // 還在進場：不參與逼近，也還不能被打
+    // 菁英詞條施法／衝鋒中：原地不動（衝鋒的位移由 js/elite.js 自己推進）
+    if (typeof eliteLocked === 'function' && eliteLocked(ent)) continue;
     /* 追的是我方**當前**座標，不是出生時的方位——我方跑走就得重新追。 */
     var dx0 = p.x - home.x, dy0 = p.y - home.y;
     var d = Math.sqrt(dx0 * dx0 + dy0 * dy0);

@@ -645,6 +645,59 @@ edits.push({
 });
 arrayContent('data', 'FIELD_ELITE_COUNT_TABLE', parseCountTuples('4-敵人數量', '菁英 數量權重500關之後'), 'FIELD_ELITE_COUNT_TABLE');
 arrayContent('data', 'FIELD_BOSS_COUNT_TABLE', parseCountTuples('4-敵人數量', 'BOSS 數量權重'), 'FIELD_BOSS_COUNT_TABLE');
+/* 菁英群組（參數表「4-菁英群組」）→ data.js 的 ELITE_GROUP（整個物件重建，註解寫在物件外面）。
+   區間欄位寫法 {下限~上限,值…}：普通關菁英機率／純菁英群機率各 1 個值，群組成員數權重 2 個值（隻數,權重），
+   技能數量權重 3 個值（1／2／3 個的權重）。留空或 0 的格子略過；整列沒有任何有效格就中止（不猜）。
+   群數權重沿用 {數量,權重} 的寫法（parseCountTuples）。 */
+const ELITE_GROUP_CAT = '4-菁英群組';
+const ELITE_GROUP_ZONES = [['desert', '荒漠'], ['Icefield', '冰原'], ['swamp', '沼澤'], ['undead_mountains', '亡靈山脈'], ['other', '其他地圖']];
+function parseEliteBandRows(name, valueCount) {
+  const params = index[ELITE_GROUP_CAT] && index[ELITE_GROUP_CAT][name];
+  if (!params) throw new Error('CSV 缺少列：' + ELITE_GROUP_CAT + ' / ' + name);
+  const re = new RegExp('^\\{\\s*(\\d+)\\s*~\\s*(\\d+)\\s*' + ',\\s*(-?[\\d.]+)\\s*'.repeat(valueCount) + '\\}$');
+  const out = [];
+  params.forEach(cell => {
+    const raw = (cell == null ? '' : String(cell)).trim();
+    if (raw === '' || raw === '0') return;             // Excel 會把留空欄填成 0
+    const m = re.exec(raw);
+    if (!m) throw new Error('菁英群組區間格式無法解析：' + name + ' →「' + raw + '」（應為 {下限~上限' + ',值'.repeat(valueCount) + '}）');
+    const lo = Number(m[1]), hi = Number(m[2]);
+    if (!(hi >= lo)) throw new Error('菁英群組區間上下界顛倒：' + name + ' →「' + raw + '」');
+    const vals = [];
+    for (let k = 0; k < valueCount; k++) {
+      const v = Number(m[3 + k]);
+      if (!Number.isFinite(v) || v < 0) throw new Error('菁英群組數值不可為負或非數字：' + name + ' →「' + raw + '」');
+      vals.push(v);
+    }
+    out.push('[' + [lo, hi].concat(vals).join(', ') + ']');
+  });
+  if (!out.length) throw new Error('菁英群組整列沒有有效格：' + name);
+  return '[' + out.join(', ') + ']';
+}
+function eliteGroupBody() {
+  const byZone = (prefix, valueCount) => '{\n' + ELITE_GROUP_ZONES.map(([key, zh]) =>
+    '    ' + key + ': ' + parseEliteBandRows(prefix + '(' + zh + ')', valueCount)).join(',\n') + '\n  }';
+  const n = (name, i) => {
+    const v = Number(P(ELITE_GROUP_CAT, name, i));
+    if (!Number.isFinite(v) || v < 0) throw new Error('菁英群組數值不可為負或非數字：' + name + ' 參數#' + i);
+    return String(v);
+  };
+  return '\n  normalChance: ' + byZone('普通關菁英機率', 1) +
+    ',\n  sizeWeights: ' + byZone('群組成員數權重', 2) +
+    ',\n  pureChance: ' + byZone('純菁英群機率', 1) +
+    ',\n  normalGroupCount: [' + parseCountTuples(ELITE_GROUP_CAT, '普通關菁英群數量權重') + ']' +
+    ',\n  skillCountWeights: ' + parseEliteBandRows('菁英技能數量權重', 3) +
+    ',\n  leaders: ' + n('混合群與小兵', 0) + ', minionHp: ' + n('混合群與小兵', 1) +
+    ', minionAtk: ' + n('混合群與小兵', 2) + ', minionReward: ' + n('混合群與小兵', 3) +
+    ',\n  skillDmgPct: ' + n('菁英技能全域設定', 0) + ', cdPct: ' + n('菁英技能全域設定', 1) +
+    ', firstCastMax: ' + n('菁英技能全域設定', 2) + ', maxZones: ' + n('菁英技能全域設定', 3) +
+    ', summonCap: ' + n('菁英技能全域設定', 4) + ', linkBeam: ' + n('菁英技能全域設定', 5);
+}
+edits.push({
+  file: 'data', scopeVar: 'ELITE_GROUP',
+  re: /ELITE_GROUP\s*=\s*\{([\s\S]*?)\n\};/,
+  grp: 1, multiGroup: true, label: 'ELITE_GROUP（4-菁英群組）', value: eliteGroupBody()
+});
 // 戰場站位（敵方棋盤）：格數、距離係數、BOSS 佔格 → js/battlefield.js 讀這些常數
 scalar('data', 'BF_COLS', '4-戰場站位', '棋盤格數', 0);
 scalar('data', 'BF_ROWS', '4-戰場站位', '棋盤格數', 1);

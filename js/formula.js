@@ -744,6 +744,8 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
     amount *= skill2AbyssDamageTakenMultiplier(ent);
   }
   amount = towerBossHpDamage(ent, amount);
+  // 菁英詞條（js/elite.js）：減傷／無敵／鏈結分擔；持續傷害與衍生傷害也要吃到
+  if (ent && ent.affixes && typeof eliteIncomingDamage === 'function') amount = eliteIncomingDamage(ent, amount, null);
   if (ent) {
     if (gmHpLockActive(ent) || ent._sgRevival) amount = 0;
     /* GM 鎖血（僅本機 GM 指令 god → js/gm_exec.js）：我方生命最低鎖 1。
@@ -765,6 +767,7 @@ function applyEnemyHpDamage(ent, damage, drainHits) {
     if (amount > 0 && ent.maxHp > 0 && typeof skills2OnEnemyDamaged === 'function') {
       skills2OnEnemyDamaged(ent, amount);
     }
+    if (amount > 0 && ent.affixes && typeof eliteOnDamaged === 'function') eliteOnDamaged(ent, amount, null);
   }
   return amount;
 }
@@ -949,6 +952,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   var attrRedTotal = (dCfg.resVsElem && aCfg.attr) ? (dCfg.resVsElem[aCfg.attr] || 0) : 0;
   if (attrRedTotal > 0) dmg *= 1 - enemyTypeDamageReduction(attrRedTotal, aCfg.level || 1);
   dmg = Math.max(DAMAGE_MIN, Math.round(dmg));   // 最低傷害由參數表決定
+  // 菁英詞條（js/elite.js）：減傷／無敵／鏈結分擔等「菁英受到傷害」的最終修正；非菁英或未載入時零成本
+  if (!dCfg.isPlayer && defender.affixes && typeof eliteIncomingDamage === 'function') {
+    dmg = eliteIncomingDamage(defender, dmg, attacker);
+  }
   // 符文真言【單次受傷上限】：玩家為防守方時，單次傷害最多為最大生命的 N%（護盾吸收之前）
   if (dCfg.isPlayer && dCfg.maxHitPct > 0 && dCfg.maxHp > 0) {
     dmg = Math.min(dmg, Math.max(1, Math.round(dCfg.maxHp * dCfg.maxHitPct / 100)));
@@ -988,6 +995,10 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (dCfg.isPlayer && typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.god && defender.hp < 1) defender.hp = 1;
   var actualHpLoss = Math.max(0, hpBeforeHit - Math.max(0, defender.hp));
   out.dmg = dmg + out.absorbed; // 統計上含護盾吸收量
+  // 菁英詞條（js/elite.js）：受傷後的反應（反震、生命鏈結分攤、狂暴門檻…）
+  if (!dCfg.isPlayer && defender.affixes && out.dmg > 0 && typeof eliteOnDamaged === 'function') {
+    eliteOnDamaged(defender, out.dmg, attacker);
+  }
   if (defender.hp <= 0) {
     // 神鑄特效【不朽】：致命攻擊時機率保留 1 點生命並回復一定比例最大生命（有內部冷卻）
     if (dCfg.undying && (!defender._undyingAt || GT - defender._undyingAt >= GODFORGED_UNDYING_COOLDOWN_SEC) && chance(dCfg.undying)) {
@@ -1351,6 +1362,83 @@ function rollFieldEnemyCount(rank, stage, zone) {
   var n = wpick(pairs);
   var cap = (typeof bfCellCount === 'function') ? bfCellCount() : n;
   return Math.max(1, Math.min(n, cap));
+}
+
+/* ---- 菁英群組（表本體與欄位語意 → data.js ELITE_GROUP）----
+   這一組函式只負責「擲骰」：這一波要不要出菁英群、出幾群、每群幾隻、全員菁英還是帶小兵、
+   每隻帶幾個詞條。實際生成敵人在 js/combat.js spawnEliteWave，詞條內容在 js/elite_data.js。 */
+function eliteZoneKey(zone) {
+  var z = zone == null && typeof G !== 'undefined' && G && G.stage ? G.stage.zone : zone;
+  z = z || 'desert';
+  var t = (typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP) ? ELITE_GROUP.normalChance : null;
+  return (t && t[z]) ? z : 'other';
+}
+/* 取「這一關落在哪一列」。列＝[最低關, 最高關, …]；沒有任何一列涵蓋時回 null。 */
+function eliteBandRows(rows, stage) {
+  var s = Math.floor(Number(stage) || 0);
+  var out = [];
+  for (var i = 0; i < (rows || []).length; i++) {
+    var r = rows[i];
+    if (r && s >= Number(r[0]) && s <= Number(r[1])) out.push(r);
+  }
+  return out;
+}
+function eliteGroupTable(name, zone) {
+  var g = (typeof ELITE_GROUP !== 'undefined') ? ELITE_GROUP : null;
+  if (!g || !g[name]) return [];
+  var tbl = g[name];
+  var key = eliteZoneKey(zone);
+  return tbl[key] || tbl.other || [];
+}
+/* 普通關：這一波變成菁英群的機率（%）。 */
+function eliteNormalChanceFor(stage, zone) {
+  var rows = eliteBandRows(eliteGroupTable('normalChance', zone), stage);
+  return rows.length ? Math.max(0, Number(rows[0][2]) || 0) : 0;
+}
+/* 群內隻數。表上沒有任何一列涵蓋時退回最小的一群（2 隻）。 */
+function rollEliteGroupSize(stage, zone) {
+  var rows = eliteBandRows(eliteGroupTable('sizeWeights', zone), stage);
+  var pairs = [];
+  for (var i = 0; i < rows.length; i++) {
+    var w = Number(rows[i][3]);
+    if (w > 0) pairs.push([Math.max(1, Math.floor(Number(rows[i][2]) || 1)), w]);
+  }
+  return pairs.length ? wpick(pairs) : 2;
+}
+/* 這一群是不是全員菁英。 */
+function rollEliteGroupPure(stage, zone) {
+  var rows = eliteBandRows(eliteGroupTable('pureChance', zone), stage);
+  var pct = rows.length ? Number(rows[0][2]) || 0 : 0;
+  return chance(pct);
+}
+/* 一次出幾群：菁英關沿用原本的「菁英數量」權重表（現在當群數用），普通關看 normalGroupCount。 */
+function rollEliteGroupCount(stage, zone, onEliteStage) {
+  if (onEliteStage) return rollFieldEnemyCount('elite', stage, zone);
+  var tbl = (typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP) ? ELITE_GROUP.normalGroupCount : null;
+  var pairs = [];
+  for (var i = 0; i < (tbl || []).length; i++) if (tbl[i][1] > 0) pairs.push(tbl[i]);
+  return pairs.length ? Math.max(1, Math.floor(wpick(pairs))) : 1;
+}
+/* 每隻菁英帶幾個詞條（1~3）。 */
+function rollEliteSkillCount(stage) {
+  var rows = eliteBandRows((typeof ELITE_GROUP !== 'undefined' && ELITE_GROUP) ? ELITE_GROUP.skillCountWeights : [], stage);
+  if (!rows.length) return 1;
+  var pairs = [];
+  for (var k = 0; k < 3; k++) {
+    var w = Number(rows[0][2 + k]);
+    if (w > 0) pairs.push([k + 1, w]);
+  }
+  return pairs.length ? wpick(pairs) : 1;
+}
+/* 一整個「菁英波」的計畫：[{ size, pure }, …]。
+   過關配額（fieldStageQuota）與實際出怪共用這一支，所以配額算的隻數與場上出現的一致。 */
+function planEliteWave(stage, zone, onEliteStage) {
+  var groups = rollEliteGroupCount(stage, zone, onEliteStage);
+  var plan = [];
+  for (var i = 0; i < groups; i++) {
+    plan.push({ size: rollEliteGroupSize(stage, zone), pure: rollEliteGroupPure(stage, zone) });
+  }
+  return plan;
 }
 
 /* 野外 BOSS 階段：階段為 FIELD_BOSS_STAGE_INTERVAL 的倍數；與菁英階段重疊時 BOSS 優先。

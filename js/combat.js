@@ -213,8 +213,17 @@ function fieldStageQuota() {
         var s = G.stage.current;
         var isBoss = isFieldBossStage(s) && !isFieldBossDefeated(G.stage.zone, s);
         var isElite = !isBoss && isEliteStage(s);
-        FIELD.stageQuota = Math.max(1, rollFieldEnemyCount(
-            isBoss ? 'boss' : (isElite ? 'elite' : 'normal'), s, G.stage.zone || 'desert'));
+        if (isElite && typeof eliteEquip === 'function' && typeof planEliteWave === 'function' &&
+            typeof ELITE_GROUP !== 'undefined') {
+            /* 菁英關的配額＝這一輪菁英群的總隻數（含帶隊的小兵）：每隻都要打掉才算過關。 */
+            var quotaPlan = planEliteWave(s, G.stage.zone || 'desert', true);
+            var quotaMembers = 0;
+            for (var qi = 0; qi < quotaPlan.length; qi++) quotaMembers += quotaPlan[qi].size;
+            FIELD.stageQuota = Math.max(1, quotaMembers);
+        } else {
+            FIELD.stageQuota = Math.max(1, rollFieldEnemyCount(
+                isBoss ? 'boss' : (isElite ? 'elite' : 'normal'), s, G.stage.zone || 'desert'));
+        }
     }
     return FIELD.stageQuota;
 }
@@ -237,6 +246,47 @@ function npcCombatProfile(mtype, base, zn) {
     };
 }
 
+/* 一隻野外敵人。普通波、菁英群、召喚與分裂都從這裡出，欄位語意只有一份。
+   mtype＝NPC 表一列；base＝monsterStatsFor 的階級基準；zn＝地圖倍率；s＝所屬關卡。
+   o：{ elite, boss, hpMult, atkMult, rewardMult, enterCd }（hpMult／atkMult 是額外倍率，給小兵與分身用） */
+function makeFieldEnemy(mtype, base, zn, s, o) {
+    o = o || {};
+    var hpMult = (Number(mtype.hpMult) > 0 ? Number(mtype.hpMult) : 1) * (Number(o.hpMult) > 0 ? Number(o.hpMult) : 1);
+    var atkMult = (Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1) * (Number(o.atkMult) > 0 ? Number(o.atkMult) : 1);
+    var defMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
+    var rewardMult = (o.rewardMult !== undefined && Number(o.rewardMult) >= 0) ? Number(o.rewardMult) : 1;
+    var profile = npcCombatProfile(mtype, base, zn);
+    var mAspd = profile.aspd; // NPC 表攻速 × 階級係數 × 場景攻速倍率
+    return {
+        // 名稱一律用 NPC 原名，不加「菁英・」前綴；階級改由圖示、名稱顏色與血條樣式表示。
+        name: mtype.name, emoji: mtype.emoji, npcId: mtype.id || null, appearance: mtype.appearance || mtype.emoji || '',
+        level: base.level,
+        maxHp: base.hp * zn.hpMult * hpMult, hp: base.hp * zn.hpMult * hpMult,
+        atk: base.atk * zn.atkMult * atkMult,
+        def: base.def * zn.defMult * defMult, mdef: base.mdef * zn.defMult * defMult,
+        magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
+        attr: mtype.attr || null,      // 屬性標籤（六大屬性；對X屬性傷害加成與 tips 顯示）
+        aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
+        runSpeed: profile.runSpeed, atkRange: profile.atkRange, // 座標單位；0＝用戰場預設 → js/battlefield.js
+        elite: !!o.elite, isBoss: !!o.boss,
+        gold: base.gold * zn.rewardMult * rewardMult, xp: base.xp * zn.rewardMult * rewardMult, // 金幣/經驗 x場景倍率
+        atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 帶 _spawnAt ＝ 吃控場遞減（→ formula.js「控場效果遞減」）
+        _stage: s,   // 這一隻屬於哪一關（過關配額只認本關的擊殺，見 onFieldKill）
+        /* 進場倒數：走進畫面前不可攻擊也不可被攻擊（→ fieldCombatReady）。
+           同一波逐隻錯開，避免整排同時抵達。 */
+        _enterCd: Number(o.enterCd) >= 0 ? Number(o.enterCd) : FIELD_ENEMY_ENTER_DELAY,
+        shield: 0, buffs: {}, dots: []
+    };
+}
+/* 這張地圖的敵人表抽一種（沒有敵人表就退回舊的怪物池）。 */
+function pickZoneMonsterType(zn) {
+    var enemyTable = zn.enemyTable || [];
+    var enemyPairs = enemyTable.map(function (entry) {
+        return [NPC_CONFIG_TABLE && NPC_CONFIG_TABLE[entry.npcId], Number(entry.weight) || 0];
+    }).filter(function (pair) { return pair[0] && pair[1] > 0; });
+    return enemyPairs.length ? wpick(enemyPairs) : pick(zn.pool);
+}
+
 /* append=true：波次串流補怪——保留場上既有敵人與站位，只把新的一波填進空格。
    不帶參數＝原本的「整批換波」行為（死亡重來、測試直接呼叫）。
    回傳這一波實際站上棋盤的敵人（沒有空位時回傳空陣列）。 */
@@ -247,7 +297,19 @@ function spawnFieldMonster(append) {
     /* 野外 BOSS 規則 → formula.js §4（優先於菁英）；每個 BOSS 只能打一次，
        該關通關後 BOSS 不再出現（isFieldBossDefeated → data.js），退回菁英規則。 */
     var boss = isFieldBossStage(s) && !isFieldBossDefeated(G.stage.zone, s);
-    var elite = !boss && isEliteStage(s); // 菁英規則 → formula.js §4（打過的 BOSS 階由此接手）
+    var eliteStage = !boss && isEliteStage(s); // 菁英規則 → formula.js §4（打過的 BOSS 階由此接手）
+    /* 菁英群：菁英關每一波都是菁英群；普通關每一波有一定機率改成菁英群。
+       參數與擲骰 → data.js ELITE_GROUP／formula.js planEliteWave；
+       詞條引擎（js/elite.js，只在 Worker 載入）沒載入的環境（部分單元測試）維持原本的單隻菁英。 */
+    if (!boss && typeof eliteEquip === 'function' && typeof planEliteWave === 'function' &&
+        typeof ELITE_GROUP !== 'undefined') {
+        var eliteWave = eliteStage || chance(eliteNormalChanceFor(s, G.stage.zone || 'desert'));
+        if (eliteWave) {
+            var wave = spawnEliteWave(append, eliteStage);
+            if (wave) return wave;
+        }
+    }
+    var elite = eliteStage;
     var base = monsterStatsFor(s, elite, boss);
     var zn = currentZoneDef();
     // 數量依敵種各自擲骰（小怪／菁英／BOSS 三張權重表 → data.js）
@@ -269,39 +331,17 @@ function spawnFieldMonster(append) {
     }
     var enemies = [];
     for (var i = 0; i < count; i++) {
-        var enemyTable = zn.enemyTable || [];
-        var enemyPairs = enemyTable.map(function (entry) {
-            return [NPC_CONFIG_TABLE && NPC_CONFIG_TABLE[entry.npcId], Number(entry.weight) || 0];
-        }).filter(function (pair) { return pair[0] && pair[1] > 0; });
-        var mtype = enemyPairs.length ? wpick(enemyPairs) : pick(zn.pool);
-        var hpMult = Number(mtype.hpMult) > 0 ? Number(mtype.hpMult) : 1;
-        var atkMult = Number(mtype.atkMult) > 0 ? Number(mtype.atkMult) : 1;
-        var defMult = Number(mtype.defMult) > 0 ? Number(mtype.defMult) : 1;
-        var profile = npcCombatProfile(mtype, base, zn);
-        var mAspd = profile.aspd; // NPC 表攻速 × 階級係數 × 場景攻速倍率
-        enemies.push({
-            // 名稱一律用 NPC 原名，不加「菁英・」前綴；階級改由圖示、名稱顏色與血條樣式表示。
-            name: mtype.name, emoji: mtype.emoji, npcId: mtype.id || null, appearance: mtype.appearance || mtype.emoji || '',
-            level: base.level,
-            maxHp: base.hp * zn.hpMult * hpMult, hp: base.hp * zn.hpMult * hpMult,
-            atk: base.atk * zn.atkMult * atkMult,
-            def: base.def * zn.defMult * defMult, mdef: base.mdef * zn.defMult * defMult,
-            magic: !!mtype.magic,          // 魔法系怪物：攻擊對玩家魔防
-            attr: mtype.attr || null,      // 屬性標籤（六大屬性；對X屬性傷害加成與 tips 顯示）
-            aspd: mAspd, dodge: base.dodge, hit: base.hit, // 命中率隨敵人等級成長 → formula.js §4
-            runSpeed: profile.runSpeed, atkRange: profile.atkRange, // 座標單位；0＝用戰場預設 → js/battlefield.js
-            elite: elite, isBoss: boss,
-            gold: base.gold * zn.rewardMult, xp: base.xp * zn.rewardMult, // 金幣/經驗 x場景倍率
-            atkCd: 1 / mAspd, effects: {}, ctrlRes: 0, _spawnAt: GT, // 帶 _spawnAt ＝ 吃控場遞減（→ formula.js「控場效果遞減」）
-            _stage: s,   // 這一隻屬於哪一關（過關配額只認本關的擊殺，見 onFieldKill）
-            /* 進場倒數：走進畫面前不可攻擊也不可被攻擊（→ fieldCombatReady）。
-               同一波逐隻錯開，避免整排同時抵達。 */
-            _enterCd: FIELD_ENEMY_ENTER_DELAY + i * FIELD_ENEMY_ENTER_STAGGER,
-            shield: 0, buffs: {}, dots: []
-        });
+        enemies.push(makeFieldEnemy(pickZoneMonsterType(zn), base, zn, s, {
+            elite: elite, boss: boss, enterCd: FIELD_ENEMY_ENTER_DELAY + i * FIELD_ENEMY_ENTER_STAGGER
+        }));
     }
-    // 站位：隨機配到 4×4 棋盤的空格（BOSS 佔 2×2）；棋盤放不下的敵人直接捨棄 → js/battlefield.js
+    return placeFieldWave(enemies, standing, append);
+}
+/* 站位與併入場上清單（普通波與菁英波共用）。 */
+function placeFieldWave(enemies, standing, append) {
+    // 站位：座標制，生成在離我方 BF_SPAWN_DIST 的圓周上；容量放不下的敵人直接捨棄 → js/battlefield.js
     var placed = bfPlaceEnemies(enemies, standing);
+    if (typeof eliteClusterGroups === 'function') eliteClusterGroups(placed);   // 同一群擠在一起進場
     if (append) {
         // 串流補波：接在既有清單後面（含還在淡出的屍體），不動場上任何人的站位；
         // 也不清普攻鎖定——目標還活著，沒有理由因為旁邊來了新怪就改打別隻。
@@ -310,6 +350,112 @@ function spawnFieldMonster(append) {
         FIELD.monsters = placed;
         if (FIELD.player) FIELD.player._lockTarget = null; // 整批換波＝重新選目標，順便釋放上一波的實體參照
     }
+    markFieldEnemyFloatTargets(FIELD.monsters);
+    syncFieldPrimary();
+    UI.dirty.battle = true;
+    return placed;
+}
+
+var FIELD_ELITE_GROUP_SEQ = 0;
+/* 菁英波：依 planEliteWave 的計畫生成若干「群」。
+   每群 size 隻；全員菁英，或前 leaders 隻是菁英、其餘是小兵（普通怪，數值乘 ELITE_GROUP.minion*）。
+   同一群共用一組詞條（讀起來是「這一群會放火鏈」），小兵沒有詞條。
+   回傳站上場的敵人陣列。 */
+function spawnEliteWave(append, eliteStage) {
+    var s = G.stage.current;
+    var zoneKey = G.stage.zone || 'desert';
+    var zn = currentZoneDef();
+    var plan = planEliteWave(s, zoneKey, eliteStage);
+    var eliteBase = monsterStatsFor(s, true, false);
+    var normalBase = monsterStatsFor(s, false, false);
+    var standing = append ? liveFieldEnemies() : [];
+    var room = Infinity;
+    if (append) {
+        var free = (typeof bfFreeCellCount === 'function') ? bfFreeCellCount(standing) : Infinity;
+        room = Math.min(fieldMaxLiveEnemiesFor(s, G.stage.zone) - standing.length, free);
+        if (room < 1) return [];
+    }
+    var leadersCfg = Math.max(1, Math.floor(Number(ELITE_GROUP.leaders) || 1));
+    var enemies = [];
+    var summary = [];
+    for (var gi = 0; gi < plan.length; gi++) {
+        var g = plan[gi];
+        var gid = ++FIELD_ELITE_GROUP_SEQ;
+        var leaders = g.pure ? g.size : Math.min(g.size, leadersCfg);
+        var affixes = (typeof eliteRollAffixes === 'function') ? eliteRollAffixes(s, rollEliteSkillCount(s)) : [];
+        var enterCd = FIELD_ENEMY_ENTER_DELAY + gi * FIELD_ENEMY_ENTER_STAGGER * 2;
+        for (var k = 0; k < g.size; k++) {
+            var isElite = k < leaders;
+            var e = makeFieldEnemy(pickZoneMonsterType(zn), isElite ? eliteBase : normalBase, zn, s, {
+                elite: isElite, enterCd: enterCd + k * 0.03,
+                hpMult: isElite ? 1 : ELITE_GROUP.minionHp, atkMult: isElite ? 1 : ELITE_GROUP.minionAtk,
+                rewardMult: isElite ? 1 : ELITE_GROUP.minionReward
+            });
+            e._gid = gid;
+            e._gRole = isElite ? (k === 0 ? 'leader' : 'elite') : 'minion';
+            if (isElite && typeof eliteEquip === 'function') eliteEquip(e, affixes);
+            enemies.push(e);
+        }
+        summary.push({ affixes: affixes, size: g.size, pure: g.pure });
+    }
+    if (enemies.length > room) enemies.length = Math.max(0, Math.floor(room));   // 放不下就從最後一群的尾端（小兵）砍起
+    if (!enemies.length) return [];
+    var placed = placeFieldWave(enemies, standing, append);
+    if (placed.length && typeof blog === 'function' && typeof eliteAffixLabel === 'function') {
+        summary.forEach(function (sm) {
+            var names = (sm.affixes || []).map(eliteAffixLabel).join('、') || '（無詞條）';
+            blog('👿 菁英群出現：' + sm.size + ' 隻' + (sm.pure ? '（全員菁英）' : '（菁英帶小兵）') + '｜' + names, 'warn', 'combat');
+        });
+    }
+    return placed;
+}
+/* 召喚師：在 owner 身邊生出 n 隻小兵（同一群、不計過關配額、不掉寶、經驗極少）。 */
+function spawnEliteSummons(owner, n) {
+    var s = G.stage.current;
+    var zn = currentZoneDef();
+    var base = monsterStatsFor(s, false, false);
+    var home = owner.pos || bfPlayerPos();
+    var made = [];
+    for (var i = 0; i < n; i++) {
+        var e = makeFieldEnemy(pickZoneMonsterType(zn), base, zn, s, {
+            hpMult: ELITE_GROUP.minionHp, atkMult: ELITE_GROUP.minionAtk, rewardMult: 0.15, enterCd: 0.5
+        });
+        var ang = Math.random() * Math.PI * 2;
+        e.pos = { x: home.x + Math.cos(ang) * 70, y: home.y + Math.sin(ang) * 70 };
+        e._gid = owner._gid;
+        e._gRole = 'summon';
+        e._stage = -1;      // 召喚物不計入過關配額
+        e._noDrop = true;
+        made.push(e);
+    }
+    return addFieldEnemies(made);
+}
+/* 分裂：owner 死亡處留下 n 隻較弱的分身。 */
+function spawnEliteSplits(owner, def) {
+    var s = G.stage.current;
+    var zn = currentZoneDef();
+    var base = monsterStatsFor(s, false, false);
+    var home = owner.pos || bfPlayerPos();
+    var made = [];
+    for (var i = 0; i < def.n; i++) {
+        var e = makeFieldEnemy(pickZoneMonsterType(zn), base, zn, s, { rewardMult: 0.2, enterCd: 0.35 });
+        e.name = owner.name; e.emoji = owner.emoji; e.npcId = owner.npcId; e.appearance = owner.appearance;
+        e.maxHp = Math.max(1, owner.maxHp * def.hp / 100); e.hp = e.maxHp;
+        e.atk = owner.atk * def.atk / 100;
+        var ang = Math.PI * 2 * i / def.n + Math.random();
+        e.pos = { x: home.x + Math.cos(ang) * 48, y: home.y + Math.sin(ang) * 48 };
+        e._gid = owner._gid;
+        e._gRole = 'split';
+        e._stage = -1;
+        e._noDrop = true;
+        made.push(e);
+    }
+    return addFieldEnemies(made);
+}
+function addFieldEnemies(list) {
+    var placed = list.filter(function (e) { return !!e; });
+    if (!placed.length) return placed;
+    FIELD.monsters = fieldEnemyList().concat(placed);
     markFieldEnemyFloatTargets(FIELD.monsters);
     syncFieldPrimary();
     UI.dirty.battle = true;
@@ -364,6 +510,7 @@ function gmArenaSpawn(count, kind, hpMult) {
             shield: 0, buffs: {}, dots: []
         });
     }
+    if (typeof eliteReset === 'function') eliteReset();
     FIELD._gmArena = true;
     FIELD._waveClearPending = false;
     FIELD.monsters = enemies;
@@ -373,7 +520,45 @@ function gmArenaSpawn(count, kind, hpMult) {
     UI.dirty.battle = true;
     return enemies.length;
 }
+/* GM 演武場：菁英群。groups 群、每群 size 隻（全員菁英）、詞條指定或隨機。
+   用來看某個詞條的施放與特效：elite 1 meteor；elite 2 all 3 1000（兩群、每群三隻、隨機詞條、千倍血）。
+   敵人生成在我方前方不遠處，立刻參戰（不走進場動畫），數量不受自然同時上限約束。 */
+function gmArenaSpawnElite(groups, affixIds, size, hpMult) {
+    groups = Math.max(1, Math.floor(Number(groups) || 1));
+    size = Math.max(1, Math.floor(Number(size) || 2));
+    var mult = Number(hpMult) > 0 ? Number(hpMult) : 1;
+    var s = G.stage.current;
+    var zn = currentZoneDef();
+    var base = monsterStatsFor(s, true, false);
+    var home = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : { x: 0, y: 0 };
+    var enemies = [];
+    for (var gi = 0; gi < groups; gi++) {
+        var gid = ++FIELD_ELITE_GROUP_SEQ;
+        var ids = (affixIds && affixIds.length) ? affixIds.slice() : eliteRollAffixes(s, rollEliteSkillCount(s));
+        var cx = home.x + 300 + Math.cos(gi * 2.1) * 120, cy = home.y + Math.sin(gi * 2.1) * 220;
+        for (var k = 0; k < size; k++) {
+            var e = makeFieldEnemy(pickZoneMonsterType(zn), base, zn, s, { elite: true, enterCd: 0.2 });
+            e.maxHp *= mult; e.hp = e.maxHp;
+            e._gid = gid; e._gRole = k === 0 ? 'leader' : 'elite';
+            e._stage = -1;
+            var ang = Math.PI * 2 * k / size;
+            e.pos = { x: cx + (k ? Math.cos(ang) * 58 : 0), y: cy + (k ? Math.sin(ang) * 58 : 0) };
+            eliteEquip(e, ids);
+            enemies.push(e);
+        }
+    }
+    eliteReset();
+    FIELD._gmArena = true;
+    FIELD._waveClearPending = false;
+    FIELD.monsters = enemies;
+    if (FIELD.player) FIELD.player._lockTarget = null;
+    markFieldEnemyFloatTargets(enemies);
+    syncFieldPrimary();
+    UI.dirty.battle = true;
+    return enemies.length;
+}
 function gmArenaOff() {
+    if (typeof eliteReset === 'function') eliteReset();
     FIELD._gmArena = false;
     FIELD.monsters = [];
     FIELD.monster = null;
@@ -967,7 +1152,8 @@ function globalDamageMultiplierForEntity(ent) {
 /* ---- 攻防組態（pEnt 可帶入戰鬥實體以套用技能增益） ---- */
 function playerAtkCfg(pEnt) {
     var st = getStats();
-    var atkMul = 1 + buffVal(pEnt, 'atkUp') / 100;
+    // 敵方菁英【衰弱詛咒】會在我方身上掛 atkDown（js/elite.js）；下限 10%，不會被減到沒有輸出
+    var atkMul = Math.max(0.1, 1 + (buffVal(pEnt, 'atkUp') - buffVal(pEnt, 'atkDown')) / 100);
     // 神鑄特效【神怒】：生命低於門檻時，造成的傷害提高
     if (pEnt && (st.passives.godWrath || 0) > 0 && pEnt.hp < st.hp * 0.3) {
         atkMul *= 1 + st.passives.godWrath / 100;
@@ -998,7 +1184,7 @@ function playerDefCfg(pEnt) {
     var st = getStats();
     /* 傳奇【風之壁】：暴風屏障作用中的防禦乘算（判定的唯一入口在 js/skills2.js）。
        乘在 defUp 之後＝與舊技能【鐵壁】的增益相乘，兩者互不覆寫。 */
-    var defMul = (1 + buffVal(pEnt, 'defUp') / 100) *
+    var defMul = Math.max(0.1, 1 + (buffVal(pEnt, 'defUp') - buffVal(pEnt, 'defDown')) / 100) *
         ((typeof skill2DefFactor === 'function') ? skill2DefFactor(pEnt) : 1);
     return {
         def: st.def * defMul, mdef: st.mdef * defMul, level: st.level,
@@ -1058,7 +1244,8 @@ function monsterAtkCfg(m, mult) {
         /* 新版技能超神【超重力場】的【僵化】（js/skills2.js）：敵人造成的傷害下降。
            掛在攻擊力這一格＝敵人的普攻與技能一體變弱，與【風切】的命中折減同一個位置。 */
         atk: m.atk * mult * (1 - buffVal(m, 'atkDown') / 100) *
-            ((typeof skill2EnemyDamageFactor === 'function') ? skill2EnemyDamageFactor(m) : 1),
+            ((typeof skill2EnemyDamageFactor === 'function') ? skill2EnemyDamageFactor(m) : 1) *
+            ((typeof eliteAtkFactor === 'function') ? eliteAtkFactor(m) : 1),   // 菁英詞條：狂暴、血祭
         dmgType: m.magic ? 'magic' : 'phys', level: m.level,
         // 敵人爆擊：爆擊率依敵種（普通/菁英/BOSS）、爆傷共用，數值 → formula.js §4 ENEMY_CRIT_*
         critRate: enemyCritRateFor(m), critDmg: ENEMY_CRIT_DMG_PCT,
@@ -1449,6 +1636,8 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
             logMsg += '<span class="log-hl-bad">［' + res.procs.join('・') + '］</span>';
         }
     }
+    // 菁英詞條（嗜血吸血、擊飛）：打中之後的反應 → js/elite.js
+    if (mEnt && mEnt.affixes && typeof eliteOnAttackHit === 'function') eliteOnAttackHit(mEnt, pEnt, res, hpDamage);
     var retaliationQueued = retaliationDelaySec > 0 && !res.miss && !res.invuln;
     if (retaliationQueued) {
         queueEnemyAttackRetaliation(mEnt, pEnt, floatSel, res, hpDamage, !!res.blocked, dCfg, retaliationDelaySec);
@@ -1473,6 +1662,8 @@ function doMonsterAttack(mEnt, pEnt, floatSel, mult, skillName) {
 // 執行一次野外敵人攻擊。新波生成時也會走這個入口，讓首次攻擊不必等下一個 tick。
 function fieldMonsterAttack(m, p) {
     if (!m || m.hp <= 0 || ccActionLocked(m)) return false;
+    // 菁英詞條施法／衝鋒中：站著不普攻（js/elite.js eliteLocked）
+    if (typeof eliteLocked === 'function' && eliteLocked(m)) return false;
     /* 打不到就不打。座標制改版前這裡沒有任何距離判定——站在戰場最遠端的敵人
        照樣打得到玩家，畫面上就是隔空互毆。魔法系是遠程，其餘要貼到近戰距離。 */
     if (typeof bfInAttackRange === 'function' && !bfInAttackRange(m)) return false;
@@ -1620,6 +1811,8 @@ function fieldTick(dt) {
     /* 逼近與推擠：敵人朝我方走、走到接觸距離就停，同伴之間互相推開。
        這是「要走到面前才打得到」的前提（→ js/battlefield.js 座標制）。
        回傳「本輪剛踏進攻擊距離」的敵人，牠們稍後會先出手（見下方首擊保證）。 */
+    // 菁英衝鋒進行中：沿路徑推進位置（模擬層決定座標，顯示層只內插）→ js/elite.js
+    if (typeof eliteStepMotion === 'function') eliteStepMotion(fieldEnemyList(), dt);
     var reachedEnemies = (typeof bfTickApproach === 'function')
       ? bfTickApproach(fieldEnemyList(), dt) : [];
     var debugFieldTick = combatDebugFieldSnapshot(fieldEnemyList());
@@ -1668,6 +1861,10 @@ function fieldTick(dt) {
         (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
         pickAndCastSkill(p, defensiveTargets, 'mv-float', { defensiveOnly: true });
     }
+    /* 菁英詞條（js/elite.js）：冷卻、施放、預警、場域與延遲事件。
+       放在「場上沒有敵人就返回」之前——菁英死後留下的毒雲、自爆倒數與排好的落雷仍要繼續結算。
+       回傳 true＝你在這一輪被打死了。 */
+    if (typeof eliteTick === 'function' && eliteTick(dt)) return;
     /* 以下所有戰鬥行為都只認「已經走進畫面」的敵人（→ fieldCombatReady）：
        選目標、範圍展開、持續傷害、敵人出手全部排除進場中的那些。
        新怪不再於生成當輪先出手——牠這時還在螢幕外；改成走到定位當下把
@@ -1854,6 +2051,8 @@ function completeFieldWave(st) {
 
 function onFieldKill(m) {
     if (!m || m._rewarded) return;
+    // 菁英詞條：不死鳥重生（回 true＝沒真的死，不結算）；自爆與分裂在死後留下東西 → js/elite.js
+    if (m.affixes && typeof eliteOnDeath === 'function' && eliteOnDeath(m)) return;
     // 死亡屍爆等（js/skills2.js）：須在清理死亡實體前結算
     if (typeof skills2OnEnemyDeath === 'function') skills2OnEnemyDeath(m, combatFieldEnemies());
     m.hp = 0;
@@ -1984,6 +2183,7 @@ function onPlayerFieldDeath() {
         UI.dirty.battle = true;
         return;
     }
+    if (typeof eliteReset === 'function') eliteReset();   // 死前排好的菁英預警與場域不能在復活後炸人
     // 死亡＝該場戰鬥結束——比照 finishTowerFight 清空技能執行期狀態，
     // 避免死前排程的場域／延遲結算在復活後對退階新波次集中結算
     if (typeof resetSkillRT === 'function') resetSkillRT();
@@ -2004,6 +2204,7 @@ function onPlayerFieldDeath() {
 
 /* ---- 掉落 ---- */
 function rollFieldDrops(m) {
+    if (m && m._noDrop) return [];   // 召喚物與分裂體不掉寶（防刷）
     var st = getStats();
     var s = G.stage.current;
     var lootBonus = st.loot + effectiveDropRateEffect(buffVal(FIELD.player, 'lootUp')); // 尋寶直覺增益已減半

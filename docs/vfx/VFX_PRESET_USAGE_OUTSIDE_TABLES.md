@@ -78,8 +78,70 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | `ground-firewall` | 火牆 | `js/vfx-runtime.js` 寫死的火牆三柱播放處理（火龍捲第 7 階在 2026-09-12 由無限火牆改成無限火龍後，技能表已經沒有任何一列填它） |
 | `bolt-chain-travel-bluewhite` | 連鎖閃電彈射 | Skills2 第 1 階攻擊特效指定；`js/vfx-runtime.js` 另有此 Preset 的圖集寬度及移動端點追蹤處理 |
 | `hit-thunderstrike-bluewhite` | 落雷命中 | `js/vfx-runtime.js` playRole 的受擊角色：填這份時改走 playThunderstrike（腳底錨定、跟著目標走的落雷擺法）。2026-09-18 補登記——Codex 15942105 起程式寫死了它，目前沒有任何表格填入（落雷術第 1 階的攻擊特效是 `bolt-thunderstrike-bluewhite`）。 |
+| `beam-light` | 菁英秘法光束 | 菁英詞條【秘法光束】的光束本體（`js/elite_data.js` 的 arcanebeam.beamPreset，由 `js/elite.js` 播放） |
+| `black-hole` | 菁英虛空漩渦 | 菁英詞條【虛空漩渦】的場域本體（`js/elite_data.js` 的 vortex.preset，由 `js/elite.js` 播放） |
+| `bolt-chain-lightning` | 菁英連鎖閃電 | 菁英詞條【連鎖閃電】的落雷（`js/elite_data.js` 的 chainlightning.bolt，由 `js/elite.js` 播放） |
+| `bolt-curtain-lightning` | 菁英電磁牆 | 菁英詞條【電磁牆】的場域本體（`js/elite_data.js` 的 thunderwall.preset，由 `js/elite.js` 播放） |
+| `bolt-sky-lightning` | 菁英雷霆風暴 | 菁英詞條【雷霆風暴】的落雷（`js/elite_data.js` 的 lightningstorm.bolt，由 `js/elite.js` 播放） |
+| `burst-blood` | 菁英血祭 | 菁英詞條【血祭】的施放光（`js/elite_data.js` 的 bloodsac.vfx，由 `js/elite.js` 播放） |
+| `burst-blood` | 菁英狂暴 | 菁英詞條【狂暴】的施放光（`js/elite_data.js` 的 enrage.vfx，由 `js/elite.js` 播放） |
+| `burst-detonate` | 菁英雷霆風暴 | 菁英詞條【雷霆風暴】的爆發（`js/elite_data.js` 的 lightningstorm.burst，由 `js/elite.js` 播放） |
+| `burst-detonate-dark` | 菁英瞬影突襲 | 菁英詞條【瞬影突襲】的爆發（`js/elite_data.js` 的 blink.burst，由 `js/elite.js` 播放） |
+| `burst-detonate-dark` | 菁英召喚師 | 菁英詞條【召喚師】的施放光（`js/elite_data.js` 的 summoner.vfx，由 `js/elite.js` 播放） |
+| `burst-detonate-phys` | 菁英共用 | 3 個菁英詞條共用（震地衝擊、野蠻衝鋒、反射護罩）的爆發，見 `js/elite_data.js`，由 `js/elite.js` 播放 |
+| `burst-earth` | 菁英地裂震擊 | 菁英詞條【地裂震擊】的爆發（`js/elite_data.js` 的 quake.burst，由 `js/elite.js` 播放） |
+| `burst-explosion-sheet` | 菁英自爆 | 菁英詞條【自爆】的爆發（`js/elite_data.js` 的 bomber.burst，由 `js/elite.js` 播放） |
+| `burst-fire` | 菁英烈焰火球 | 菁英詞條【烈焰火球】的爆發（`js/elite_data.js` 的 fireball.burst，由 `js/elite.js` 播放） |
+| `burst-fire` | 菁英不死鳥 | 菁英詞條【不死鳥】的施放光（`js/elite_data.js` 的 phoenix.vfx，由 `js/elite.js` 播放） |
+| `burst-fire-shockwave` | 菁英熔岩爆裂 | 菁英詞條【熔岩爆裂】的爆發（`js/elite_data.js` 的 moltenblast.burst，由 `js/elite.js` 播放） |
+| `burst-fire-shockwave-small` | 菁英隕石雨 | 菁英詞條【隕石雨】的爆發（`js/elite_data.js` 的 meteor.burst，由 `js/elite.js` 播放） |
+| `burst-frost-nova` | 菁英冰霜新星 | 菁英詞條【冰霜新星】的爆發（`js/elite_data.js` 的 frostnova.burst，由 `js/elite.js` 播放） |
+| `burst-gravity` | 菁英虛空漩渦 | 菁英詞條【虛空漩渦】的爆發（`js/elite_data.js` 的 vortex.burst，由 `js/elite.js` 播放） |
+| `burst-holy` | 菁英共用 | 3 個菁英詞條共用（魔法護盾、庇護光環、再生）的施放光，見 `js/elite_data.js`，由 `js/elite.js` 播放 |
+| `burst-rock-petrify` | 菁英地裂震擊 | 菁英詞條【地裂震擊】的爆發（第二層）（`js/elite_data.js` 的 quake.burst2，由 `js/elite.js` 播放） |
+| `burst-rock-petrify` | 菁英石化凝視 | 菁英詞條【石化凝視】的爆發（`js/elite_data.js` 的 petrify.burst，由 `js/elite.js` 播放） |
+| `burst-wind` | 菁英擊飛 | 菁英詞條【擊飛】的施放光（`js/elite_data.js` 的 knockback.vfx，由 `js/elite.js` 播放） |
+| `burst-zero-infection` | 菁英分裂 | 菁英詞條【分裂】的施放光（`js/elite_data.js` 的 splitter.vfx，由 `js/elite.js` 播放） |
+| `curse-dark` | 菁英衰弱詛咒 | 菁英詞條【衰弱詛咒】的施放光（`js/elite_data.js` 的 curse.vfx，由 `js/elite.js` 播放） |
+| `field-water-prison-dome` | 菁英水牢 | 菁英詞條【水牢】的場域本體（`js/elite_data.js` 的 waterprison.preset，由 `js/elite.js` 播放） |
+| `ground-blizzard` | 菁英暴風雪 | 菁英詞條【暴風雪】的場域本體（`js/elite_data.js` 的 blizzard.preset，由 `js/elite.js` 播放） |
+| `ground-domain-earth` | 菁英地裂震擊 | 菁英詞條【地裂震擊】的預警圈（`js/elite_data.js` 的 quake.warnPreset，由 `js/elite.js` 播放） |
+| `ground-domain-fire` | 菁英熔岩爆裂 | 菁英詞條【熔岩爆裂】的預警圈（`js/elite_data.js` 的 moltenblast.warnPreset，由 `js/elite.js` 播放） |
+| `ground-domain-ice` | 菁英冰霜新星 | 菁英詞條【冰霜新星】的預警圈（`js/elite_data.js` 的 frostnova.warnPreset，由 `js/elite.js` 播放） |
+| `ground-firewall` | 菁英火焰鎖鏈 | 菁英詞條【火焰鎖鏈】的場域本體（`js/elite_data.js` 的 firewall.preset，由 `js/elite.js` 播放） |
+| `ground-mire-lava` | 菁英熔岩足跡 | 菁英詞條【熔岩足跡】的場域本體（`js/elite_data.js` 的 moltenpool.preset，由 `js/elite.js` 播放） |
+| `ground-mire-magma-10` | 菁英褻瀆領域 | 菁英詞條【褻瀆領域】的場域本體（`js/elite_data.js` 的 darkzone.preset，由 `js/elite.js` 播放） |
+| `ground-mire-venom` | 菁英瘟疫毒雲 | 菁英詞條【瘟疫毒雲】的場域本體（`js/elite_data.js` 的 plaguecloud.preset，由 `js/elite.js` 播放） |
+| `ground-thunder-orb` | 菁英雷光球 | 菁英詞條【雷光球】的場域本體（`js/elite_data.js` 的 thunderorb.preset，由 `js/elite.js` 播放） |
+| `ground-tornado-wind` | 菁英追獵龍捲 | 菁英詞條【追獵龍捲】的場域本體（`js/elite_data.js` 的 tornado.preset，由 `js/elite.js` 播放） |
+| `hit-dark` | 菁英暗影彈幕 | 菁英詞條【暗影彈幕】的命中爆點（`js/elite_data.js` 的 darkorbs.hit，由 `js/elite.js` 播放） |
+| `hit-fire` | 菁英烈焰火球 | 菁英詞條【烈焰火球】的命中爆點（`js/elite_data.js` 的 fireball.hit，由 `js/elite.js` 播放） |
+| `hit-ice` | 菁英冰錐齊射 | 菁英詞條【冰錐齊射】的命中爆點（`js/elite_data.js` 的 iceshards.hit，由 `js/elite.js` 播放） |
+| `hit-lightning` | 菁英閃電矛 | 菁英詞條【閃電矛】的命中爆點（`js/elite_data.js` 的 lightningspear.hit，由 `js/elite.js` 播放） |
+| `hit-lightning` | 菁英連鎖閃電 | 菁英詞條【連鎖閃電】的命中爆點（`js/elite_data.js` 的 chainlightning.hit，由 `js/elite.js` 播放） |
+| `hit-phys` | 菁英荊棘 | 菁英詞條【荊棘】的命中爆點（`js/elite_data.js` 的 thorns.hit，由 `js/elite.js` 播放） |
+| `hit-poison` | 菁英劇毒吐息 | 菁英詞條【劇毒吐息】的命中爆點（`js/elite_data.js` 的 poisonspit.hit，由 `js/elite.js` 播放） |
+| `hit-wind` | 菁英旋風刃 | 菁英詞條【旋風刃】的命中爆點（`js/elite_data.js` 的 windblades.hit，由 `js/elite.js` 播放） |
+| `mark-blue` | 菁英共用 | 6 個菁英詞條共用（雷霆風暴、石化凝視、暴風雪、電磁牆、水牢、虛空漩渦）的預警圈，見 `js/elite_data.js`，由 `js/elite.js` 播放 |
+| `mark-red` | 菁英共用 | 10 個菁英詞條共用（隕石雨、震地衝擊、瘟疫毒雲、褻瀆領域、火焰鎖鏈、秘法光束、野蠻衝鋒、瞬影突襲、旋風斬、自爆）的預警圈，見 `js/elite_data.js`，由 `js/elite.js` 播放 |
+| `pillar-light` | 菁英神聖治癒 | 菁英詞條【神聖治癒】的施放光（`js/elite_data.js` 的 heal.vfx，由 `js/elite.js` 播放） |
+| `pillar-light` | 菁英不死鳥 | 菁英詞條【不死鳥】的施放光（第二層）（`js/elite_data.js` 的 phoenix.vfx2，由 `js/elite.js` 播放） |
+| `proj-bloodrage-drain` | 菁英嗜血 | 菁英詞條【嗜血】的彈體（`js/elite_data.js` 的 vampiric.proj，由 `js/elite.js` 播放） |
+| `proj-dark-orb` | 菁英暗影彈幕 | 菁英詞條【暗影彈幕】的彈體（`js/elite_data.js` 的 darkorbs.proj，由 `js/elite.js` 播放） |
+| `proj-fireball` | 菁英烈焰火球 | 菁英詞條【烈焰火球】的彈體（`js/elite_data.js` 的 fireball.proj，由 `js/elite.js` 播放） |
+| `proj-ice-shard` | 菁英冰錐齊射 | 菁英詞條【冰錐齊射】的彈體（`js/elite_data.js` 的 iceshards.proj，由 `js/elite.js` 播放） |
+| `proj-light-orb` | 菁英魔力吸取 | 菁英詞條【魔力吸取】的彈體（`js/elite_data.js` 的 manadrain.proj，由 `js/elite.js` 播放） |
+| `proj-lightning` | 菁英閃電矛 | 菁英詞條【閃電矛】的彈體（`js/elite_data.js` 的 lightningspear.proj，由 `js/elite.js` 播放） |
+| `proj-meteor-small` | 菁英隕石雨 | 菁英詞條【隕石雨】的落下的彈體（`js/elite_data.js` 的 meteor.fall，由 `js/elite.js` 播放） |
+| `proj-poison-drop` | 菁英劇毒吐息 | 菁英詞條【劇毒吐息】的彈體（`js/elite_data.js` 的 poisonspit.proj，由 `js/elite.js` 播放） |
+| `proj-wind-crescent` | 菁英旋風刃 | 菁英詞條【旋風刃】的彈體（`js/elite_data.js` 的 windblades.proj，由 `js/elite.js` 播放） |
+| `slash-phys-big` | 菁英野蠻衝鋒 | 菁英詞條【野蠻衝鋒】的撞擊命中（`js/elite_data.js` 的 charge.impact，由 `js/elite.js` 播放） |
+| `slash-wind-spin` | 菁英旋風斬 | 菁英詞條【旋風斬】的爆發（`js/elite_data.js` 的 whirlwind.burst，由 `js/elite.js` 播放） |
+| `cast-buff-dark` | 菁英施法光 | 菁英每次施放詞條時自身的施法光（`js/elite.js` eliteSelfPulse 預設） |
 
-除了最後三列（寫死在 `js/vfx-runtime.js`），上面全部來自 `js/data.js` 的
+菁英詞條（2026-10-07）：上面接在最後的 `菁英…` 列全部來自 `js/elite_data.js` 的 `ELITE_AFFIXES`（預警圈、爆發、彈體、場域、命中爆點、光束），由 `js/elite.js` 以 `variant: elite-*` 的事件送出，`js/vfx-runtime.js` 的 `collectPresetIds` 靠 `ELITE_VFX_PRESETS` 預載。新增或改掉詞條的特效時，同一個 Commit 內更新這幾列。
+
+除了 `js/vfx-runtime.js` 那三列與 `菁英…` 各列，上面全部來自 `js/data.js` 的
 `VFX_COMBAT_DEFAULTS`（2026-09-03 建立，目錄來源是 `tools/vfx/authoring/vfx-catalog.cjs` 的
 `COMBAT_DEFAULTS`）。各組是誰在用：`basicAttack` 在 `js/combat.js`（普攻）、`smite` 在
 `js/combat.js`（神鑄特效天罰）、`chainLightning` 在 `js/potential.js`（雷霆過載）、

@@ -1,5 +1,17 @@
 # AI_TASKS.md
 
+## Claude｜菁英敵人改造：成群出現、普通關也會遇到、47 個詞條技能（ELITE-GROUPS-20261008）
+
+- Owner：Claude；Done。使用者要求：①菁英也會在普通關出現，每 10 關固定的菁英照常 ②菁英成群（每群 2～4 隻，全員菁英或菁英帶小兵）③參數寫進 game_parameters ④每隻菁英放 1～3 種技能、總數至少 30 個，特效要一眼看出放了什麼 ⑤授權不中止做到完成，需詢問的先用建議做法、問題列在總結。
+- 需求分析：真正要的是「菁英有辨識度與壓力，且玩家看得懂」——不是只把數值加強。所以①群組與機率全在參數表；②每個技能必須有預警圈／爆發／彈體／場域等看得見的 Preset 表現，傷害判定與畫面共用同一組座標與半徑（AI_RULES 8.3）；③詞條數量與組合靠權重與互斥組控制，避免同一隻抽到互相打架的技能。
+- 技術決策：①群組出怪在 `combat.js spawnEliteWave`，擲骰在 `formula.js planEliteWave`（表在 `data.js ELITE_GROUP`，`apply_params` 整物件重建、錨點綁物件名）；普通關每波依「地圖×關卡區間」機率改出菁英群；菁英關的「菁英 數量權重」改當群數；過關配額＝群組總隻數。②詞條資料表 `js/elite_data.js`（主執行緒＋Worker 都載）＋引擎 `js/elite.js`（只在 Worker，同 legendary.js）；行為用 18 種原型參數化（多點落下、單點爆發、地面場域、彈體、光束、電弧、衝鋒、瞬移、連斬、漩渦、護盾、反射、群體無敵／治療、召喚、獻祭、詛咒、吸取）＋ 12 種常駐／被動，47 個詞條都是資料列。③傷害一律走 `resolveHit`（玩家減傷、抗性、格擋、反震照常），範圍技能 sure＝已給過預警不靠命中率；受傷管線在 `resolveHit`／`applyEnemyHpDamage` 各掛兩個 typeof 守衛的 hook（減傷／無敵／鏈結分攤、受傷反應）。④視覺全部用既有 Preset 事件（`variant: elite-*`、`presetOnly`），預載靠 `ELITE_VFX_PRESETS`；畫面標記（群組環、詞條圖示、狀態光環、生命鏈結連線）在新檔 `js/battle-elite.js`，battle-renderer 只加三處小掛勾。⑤詞條引擎沒載入的環境（既有單元測試）維持舊行為，所以既有測試零改動。
+- 修改：新增 js/elite_data.js、js/elite.js、js/battle-elite.js、tools/gen_elite_doc.cjs、docs/ELITE_AFFIXES.md、tests/{elite-data,elite-groups,elite-engine,elite-params,battle-elite}.test.cjs、tests/helpers/elite-env.cjs；修改 js/data.js（`ELITE_GROUP`）、formula.js（群組擲骰、兩個 hook）、combat.js（`makeFieldEnemy` 抽出、`spawnEliteWave`／召喚／分裂、`fieldTick` 掛 `eliteTick`、鎖定與死亡鉤子、玩家 atkDown／defDown 生效、GM `gmArenaSpawnElite`）、battlefield.js（施法中不逼近）、gm_exec.js（`elite` 指令）、battle-renderer.js、vfx-runtime.js（預載）、worker/sim.worker.js、bridge.js、index.html、tools/apply_params.cjs、config/Excel+CSV game_parameters（新增「4-菁英群組」19 列、6 列說明補註，由 Excel COM 寫入）、docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md（60 列登記）、GM_command.md。
+- 預檢：`.claude/check-conflicts.ps1` 退出碼 2——js/battle-renderer.js（ai/codex 未提交修改）、js/ui.js（ai/antigravity 一筆 commit，本次未改 ui.js）、index.html／js/bridge.js／js/worker/sim.worker.js／docs/AI_TASKS.md（ai/codex）。依使用者「需詢問者用建議做法先做、列在總結」授權繼續；三方合併試跑：battle-renderer.js 0 衝突，index.html 3／bridge.js 1／sim.worker.js 1／AI_TASKS.md 1 個衝突組，全是兩邊都加版號 token 的同一類（合併時取較大版號並保留兩邊的 token 即可）。
+- 測試：全庫 4068 項／257 失敗，乾淨 HEAD 副本 258 失敗；**失敗名稱差集：新增 0 條**。新增 5 支測試檔共 ~65 項（資料表接線、群組出怪規則、引擎行為、參數表一致與壞格擋下、畫面標記）；`apply_params` 549 項一致、錨點問題 0、`--check-anchors` 全通過；`npm run build` 478 檔通過。
+- 實機（獨立埠 8331，真 Worker＋真 Pixi，隱藏面板手動推幀抽圖）：逐一驗過隕石雨、雷霆風暴、熔岩爆裂、冰霜新星、毒雲、暴風雪、水牢、電磁牆、火焰鎖鏈、秘法光束、虛空漩渦、衝鋒、瞬影、旋風斬、各種彈體、護盾／無敵／治療的施放與預警→結算時序；抓到並修掉：圓形彈體沒給直徑會被放大成巨球（`lineWidth`）、光束預警改成沿路徑排圈、電磁牆改走顯示層既有的雷柱、連鎖閃電改走既有的追蹤電弧事件。
+- 風險／平衡：①所有詞條數值（傷害倍率、冷卻、半徑）與「4-菁英群組」的預設機率都是我先訂的，沒有對任何階段做過 DPS 平衡；總傷害與冷卻倍率在「菁英技能全域設定」可一鍵縮放。②群組讓菁英數量變多（菁英關群數沿用原本的數量表，每群再 2～4 隻），菁英關會比以前吃力，要減輕先調群數表與成員數表。③敵人在棋盤 100 隻時 `bfTickApproach` 的互斥推擠是 O(n²)（實測佔單步 6 成以上，與本次改動無關但群組會讓場上更容易滿），菁英引擎本身 24 隻只有約 2.6ms／步。④玩家身上的 `atkDown`／`defDown` 以前沒有任何效果，現在【衰弱詛咒】會讓 playerAtkCfg／playerDefCfg 生效（下限 10%）。⑤?canvas=0 的舊 DOM 戰鬥畫面不畫菁英技能特效（`presetOnly`），判定照常。⑥Excel 是用 Excel COM 追加列並重開驗證（未手工改 XML）；CSV 已由 xlsx 重轉。
+- 建議驗證（Antigravity）：GM `elite list`／`elite 1 <詞條> 2 1000000` 逐個詞條看預警圈→結算（離開範圍不受傷）；普通關連續推進時會遇到菁英群（機率看參數表）、菁英關每波都是菁英群；改「4-菁英群組」任一格後套用參數，行為跟著變；詞條 `lifelink`／`phoenix`／`bomber`／`splitter`／`summoner` 的死亡與分攤邊界；玩家死亡後場上沒有殘留預警或場域。
+
 ## Claude｜符文鑲嵌頁改成寶石版型、符文孔數改由 game_parameters 配置、雙手武器 +1 孔（RUNE-SLOTS-UI-20261008）
 
 - Owner：Claude；Done。使用者要求：①符文鑲嵌界面改成與寶石鑲嵌同版型（上方符文孔與能力、下方所有符文），操作邏輯一併照寶石 ②裝備的符文孔數在 game_parameters 編號 321～331 加參數讓使用者配置 ③雙手武器的符文孔比單手多 +1，不是加倍。
