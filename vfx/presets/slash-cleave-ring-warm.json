@@ -10,8 +10,8 @@
       "assetId": "particle-pack/png-black-background/slash_02.png",
       "zIndex": 0,
       "position": {
-        "x": 0,
-        "y": 0
+        "x": 12.6227,
+        "y": 36.2216
       },
       "rotation": -1.5708,
       "scale": {
@@ -315,7 +315,7 @@
         "y": 0.5197
       },
       "alpha": 0.025,
-      "tint": "#ffc62e",
+      "tint": "#ff2e2e",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
@@ -389,7 +389,7 @@
         "y": 0.2036976076555024
       },
       "alpha": 0.9,
-      "tint": "#ffc62e",
+      "tint": "#ff2e2e",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
@@ -463,7 +463,7 @@
         "y": 0.19336778309409888
       },
       "alpha": 0.8,
-      "tint": "#fff2bd",
+      "tint": "#ff2e2e",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
@@ -537,7 +537,7 @@
         "y": 0.1690334928229665
       },
       "alpha": 0.28,
-      "tint": "#ff8e24",
+      "tint": "#ff2eb2",
       "blendMode": "add",
       "delay": 0.035,
       "duration": 0.385,
