@@ -1684,7 +1684,7 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec, role);
           break;
         case 'attack':
-          if (spec.variant === 'wind-chaser-slash') {
+          if (spec.variant === 'wind-chaser-slash' || spec.variant === 'wind-chaser-spin') {
             // 追加斬擊以本次命中敵人為原點，沿用配置原尺寸與模擬方向。
             var chaserIds = spec.targets || [];
             for (var ci = 0; ci < chaserIds.length; ci++) {
@@ -1693,7 +1693,13 @@ var VFXRuntime = (function () {
                 depthY: footOf(chaserIds[ci]).y,
                 rotation: planePresets[presetId] && isNum(spec._planeAngle) ? spec._planeAngle : num(spec.angle, 0)
               };
-              if (play(fxRtFor(presetId), presetId, chaserParams, 1)) ok = true;
+              if (spec.variant === 'wind-chaser-spin' && spec.dur > 0) chaserParams.timeScale = presetDurations[presetId] / spec.dur;
+              var chaserRef = play(fxRtFor(presetId), presetId, chaserParams, 1);
+              if (chaserRef) {
+                ok = true;
+                if (spec.variant === 'wind-chaser-spin') follows.push({ref:chaserRef,
+                  key:chaserIds[ci], until:clock+spec.dur, requireVisible:true, body:true, mult:1});
+              }
             }
           } else if (spec.variant === 'thunder-curtain' && spec.area) {
             // 沿用舊雷幕的柱距與數量上限；每柱具有穩定 ID，不隨逐拍事件重建。
@@ -2022,7 +2028,7 @@ var VFXRuntime = (function () {
       for (var f = follows.length - 1; f >= 0; f--) {
         var fo = follows[f];
         if (fo.requireVisible && ctx.chainPoint && !ctx.chainPoint(fo.key)) { stopRef(fo.ref); follows.splice(f, 1); continue; }
-        var live = moveRef(fo.ref, { position: footOf(fo.key) });
+        var live = moveRef(fo.ref, { position: fo.body ? ctx.posOf(fo.key) : footOf(fo.key) }, fo.mult);
         if (!live || fo.until <= clock) {
           if (live && fo.until <= clock) stopRef(fo.ref);
           follows.splice(f, 1);

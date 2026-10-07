@@ -1,5 +1,21 @@
 # AI_TASKS.md
 
+## WINDCHASER-SPIN4-20261007 — 逐風者真空迴旋四段
+
+- Owner：Codex；Done。使用者指定觸發真空迴旋，4段各100%風系傷害、每級+10%；保留當前Excel自行調整的20%觸發率與迴旋斬增傷，單一開發者。逐敵人判定，原敵人連續4段、每段0.2秒，不新增傷害範圍或借用真空斬技能樹加成。
+- 範圍：Skills2 Excel／CSV／JS、逐段排程及統計、VFX Adapter逐敵人旋轉與命中、觸發說明、主端／Worker快取與相關測試／本紀錄。工具config_tables唯讀使用不修改；不改符文、Worker協議／存檔、素材圖檔／原刀波。依賴現有命中鉤與模擬時鐘已滿足。
+- 預檢：技能／Excel／CSV／Runtime／說明與測試無其他來源修改；index／bridge／sim.worker／AI_TASKS同Claude8b0c89b2重疊，使用者已同意分段，只改本次快取與任務段落、保留對方符文引用。現有Excel唯一儲存格變更為逐風者chance10→20，保留並一起提交。
+- 驗收：一次判定後固定4段、獨立命中／MISS／致死，逐敵人外觀、Lv1／10與本體增傷分離，直接／飛行／無座標路徑、取消／離場／死亡／reset不補打，非同步總傷與飄字完整；Excel正常模式重開保留格式、CSV／JS同源、正式Worker與Runtime、回歸／Build／雙倉庫必要素材盤點後提交，不合併／推送。
+
+- 完成：保留使用者20%觸發率，追加改為真空迴旋四段，每段基礎100%風系、每級+10%，本體150%／每級15%增傷不變。每個命中敵人各判定一次；首段立即、後三段按表定0.2秒模擬排程，逐段獨立命中／MISS／致死與統計。後段不重判機率或遞迴，目標離場／死亡、我方死亡／換角色或reset取消；使用既有待結算计數，使技能總傷飄字等待全部後段完成。無排程時不增加搜敵成本。
+- 表定觸發外觀改slash-wind-spin（既有合法Preset）；旋轉本體逐敵人播放一次、原尺寸跟隨該敵人並對齊0.8秒事件時長；四段成功命中各播hit-wind，MISS不播受擊，不建立龍捲場域、不繼承真空斬技能樹投資、不新增傷害範圍。疾風傳奇風捲殘雲原借用地板仍保留。
+- 修改14檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、tools/skills2-vfx.cjs、tests/skill2-wind-chaser.test.cjs、tests/skills2-vfx-usage.test.cjs、tests/vfx-runtime.test.cjs、index.html、tools/vfx/editor/index.html、js/bridge.js、js/worker/sim.worker.js、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄。主頁skills2 1.0.288、Runtime1.0.177（Editor同步）、bridge1.0.232；Worker Asset與skills2 import token為20261007-wind-chaser-spin4，協議48不變。未修改但檢查協作規範、config_tables、formula／combat／battlefield／Worker shim／protocol、原刀波及配置Preset／素材庫；保留符文與原刀波旋轉20%任務。
+- Excel：先以Artifact Tool匯入、渲染及編輯六個指定儲存格、重算與匯出核對，再由原生Excel API將該六格值轉入原工作簿副本，保留其他格式／原生特徵。Excel正常模式重開，所有其他儲存格、格式與物件數一致；僅row20六格及衍生長度公式值變化，最後雜湊防護替換来源。保留使用者預先修改的chance20。只同步Skills2 CSV，其他表格未動；禁止XML手工改寫已遵守。最終Excel／CSV逐格一致，`node tools/config_tables.cjs --apply Skills2`語意變更0。
+- 測試：`node --test tests/skill2-wind-chaser.test.cjs tests/vfx-load-shedding.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skills2-vfx-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs`100/100通過；`node --test --test-name-pattern='WIND-CHASER' tests/vfx-runtime.test.cjs`2/2通過。新增3項排程／MISS致死／取消與1項逐敵人跟隨回歸；原10項逐風者測試保留覆蓋並更新四段／新係數／新表定外觀，配置往返斷言同步slash-wind-spin。
+- 擴大回歸：`node --test tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs tests/vfx-load-shedding.test.cjs`161項、152通過／9失敗；以HEAD原skills2／CSV／Runtime與HEAD原測試記憶體唯讀重導基線160項、151通過／同9失敗，失敗名稱集合相同、新增失敗0（既有cleave5項与FIELD／CATALOG-3／CHAIN／STARFALL-TAIL4項）。`npm.cmd run build`467檔通過；最終技能調整後定向13項及Runtime2項再次全過，`git diff --check`通過。
+- 實機：隔離headless Edge／隨機Port唯讀HTTP／新Context；正式sim.worker完整載入協議48及所有importScripts，以拋棄式角色與固定命中夾具驗四拍累積1／2／3／4段、Lv10每段2000、總8000、pending0。將Worker實際派送事件交正式Pixi／Core／Runtime／Backend與配置Preset，核對attack1／hit4、結束active0及Console error／warning0。此為固定命中排程與正式渲染驗證，未做真人長時間戰鬥；沒有讀寫真人存檔，瀏覽器／服務已關閉，臨時腳本／工作簿／截圖清除。
+- 提交／交付：遊戲Commit為本紀錄所在`[Codex] feat: 逐風者改為四段真空迴旋`，含使用者Excel觸發率修改。全部Preset／素材圖檔原樣，僅改表定引用，素材庫乾淨無需新Commit。無本次未完成項目，可審查合併，9項既有失敗保留，不合併／推送。下一步重載遊戲驗收；Editor若有未儲存內容先另存備份再重載，勿直接覆蓋新版。
+
 ## CLEAVE-ROTATE20-20261007 — 撤回循環方案，原特效旋轉提高20%
 
 - Owner：Codex；Done。使用者退回循環方案，明確要求刪除剛才提交、改回原播放方式，僅在原基礎上提高旋轉速度20%；保留使用者配色與原有曲線形狀。依賴原cleave-ring事件已滿足，單一開發者。
