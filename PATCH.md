@@ -1,5 +1,18 @@
 # PATCH.md
 
+## 裝備詞條提示浮層長度自適應與底部延伸滾動（Antigravity 2026-10-07）
+
+- **詞條池樣式上限解除（`css/style.css`）**：
+  - 移除 `#affix-pool-overlay` 原先寫死的 `max-height: min(500px, calc(100vh - 16px))` 限制，改為 `max-height: calc(100vh - 16px)` 與 `box-sizing: border-box;`。
+  - 當詞條數量較少時，浮層高度完全依內容自然收縮；詞條數量較多時，浮層能順暢向下延伸，不再提前被 500px 截斷出捲軸。
+- **動態定位與延伸至畫面底部計算（`js/ui.js`）**：
+  - 新增 `positionAffixPool(anchorEl)` 統一管理位置與動態最高高度：預設由驚嘆號按鈕底部起算往下延伸，動態計算至視窗底部剩餘高度（留 8px 邊距），設置 `overlay.style.maxHeight`。
+  - 只有在浮層延伸至畫面最底部仍無法完整容納全部詞條時，才觸發垂直滾動條（`overflow-y: auto`）。
+  - 當視窗尺寸改變（`window resize`）或裝備詳情重繪時，自動重新計算並同步浮層高度與座標。
+  - 浮層關閉（`hideAffixPool`）時自動清空 `maxHeight` 與錨點引用，避免影響後續打開的量測。
+- **單元測試**：
+  - 新增專屬測試 [tests/affix-pool-layout.test.cjs](file:///d:/MyGame/Idle-RPG/antigravity/tests/affix-pool-layout.test.cjs)，涵蓋樣式上限驗證、定位與 maxHeight 計算、開關狀態及清理測試。
+
 ## 已裝配技能清單顯示 1px 白色外框與「已裝配」標籤，詳情右上角按鈕改為「卸下」（Antigravity 2026-10-06）
 
 - **已裝配技能外框與標籤更新（`css/ashen-forge.css`、`js/ui.js`）**：

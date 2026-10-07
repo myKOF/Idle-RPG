@@ -8,6 +8,7 @@ var UI = {
   saveNoticeId: null,
   tooltipAnchor: null,
   affixPoolSource: null,
+  affixPoolAnchor: null,
   towerTimerRaf: 0,
   towerTimerAnchor: null,
   inventoryVisibleRows: 3,
@@ -5712,6 +5713,8 @@ function renderDetail() {
       if (newSource) {
         overlay.innerHTML = newSource.innerHTML;
         UI.affixPoolSource = newSource;
+        UI.affixPoolAnchor = poolBtn;
+        if (typeof positionAffixPool === 'function') positionAffixPool(poolBtn);
       }
     }
   }
@@ -9997,8 +10000,40 @@ function hideAffixPool() {
   if (!overlay) return;
   overlay.style.display = 'none';
   overlay.innerHTML = '';
+  overlay.style.maxHeight = '';
   UI.affixPoolSource = null;
+  UI.affixPoolAnchor = null;
   UI.affixPoolItemId = null;
+}
+
+function positionAffixPool(anchorEl) {
+  var overlay = $id('affix-pool-overlay');
+  if (!overlay || !anchorEl) return;
+  var r = anchorEl.getBoundingClientRect();
+  var tw = overlay.offsetWidth;
+  var x = r.right - tw;
+  if (x < 8) x = r.left;
+  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
+  if (x < 8) x = 8;
+
+  var y = r.bottom + 8;
+  var bottomMargin = 8;
+  var spaceBelow = window.innerHeight - y - bottomMargin;
+  var spaceAbove = r.top - 8 - 8;
+
+  var maxH;
+  if (spaceBelow < 120 && spaceAbove > spaceBelow) {
+    maxH = Math.max(100, spaceAbove);
+    overlay.style.maxHeight = maxH + 'px';
+    y = Math.max(8, r.top - overlay.offsetHeight - 8);
+  } else {
+    maxH = Math.max(100, spaceBelow);
+    if (y < 8) y = 8;
+  }
+
+  overlay.style.left = x + 'px';
+  overlay.style.top = y + 'px';
+  overlay.style.maxHeight = maxH + 'px';
 }
 
 function toggleAffixPool(anchorEl) {
@@ -10010,19 +10045,13 @@ function toggleAffixPool(anchorEl) {
     return;
   }
   overlay.innerHTML = source.innerHTML;
+  overlay.style.maxHeight = '';
   overlay.style.display = 'block';
   UI.affixPoolSource = source;
+  UI.affixPoolAnchor = anchorEl;
   UI.affixPoolItemId = UI.sel ? UI.sel.id : null;
 
-  var r = anchorEl.getBoundingClientRect();
-  var tw = overlay.offsetWidth, th = overlay.offsetHeight;
-  var x = r.right - tw, y = r.bottom + 8;
-  if (x < 8) x = r.left;
-  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
-  if (y + th > window.innerHeight - 8) y = r.top - th - 8;
-  if (y < 8) y = 8;
-  overlay.style.left = x + 'px';
-  overlay.style.top = y + 'px';
+  positionAffixPool(anchorEl);
 }
 
 /* ---- 寶石分頁 ---- */
@@ -11240,8 +11269,11 @@ function closeTopmostModalOrOverlay() {
   // 6. 裝備可能詞條獨立浮層 (#affix-pool-overlay)
   var affixOverlay = $id('affix-pool-overlay');
   if (affixOverlay && affixOverlay.style.display !== 'none') {
-    affixOverlay.style.display = 'none';
-    UI.affixPoolItemId = null;
+    if (typeof hideAffixPool === 'function') hideAffixPool();
+    else {
+      affixOverlay.style.display = 'none';
+      UI.affixPoolItemId = null;
+    }
     return true;
   }
 
@@ -11339,6 +11371,10 @@ function initUI() {
       var box = $id('summary-modal-box') || (modal && modal.querySelector('.modal-box'));
       if (modal && modal.style.display !== 'none' && box && typeof ensureSummaryBoxPosition === 'function') {
         ensureSummaryBoxPosition(box);
+      }
+      var affixOverlay = $id('affix-pool-overlay');
+      if (affixOverlay && affixOverlay.style.display !== 'none' && UI.affixPoolAnchor && typeof positionAffixPool === 'function') {
+        positionAffixPool(UI.affixPoolAnchor);
       }
     });
     // 介面縮放（js/ui-scale.js）會改變格線容器寬度，欄數快取一樣得作廢

@@ -3280,11 +3280,12 @@ textarea#save-io {
   font-weight: normal;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   max-width: min(520px, calc(100vw - 16px));
-  max-height: min(500px, calc(100vh - 16px));
+  max-height: calc(100vh - 16px);
   overflow-y: auto;
   text-align: left;
   white-space: nowrap;
   min-width: 140px;
+  box-sizing: border-box;
 }
 
 .it-pool-title {
