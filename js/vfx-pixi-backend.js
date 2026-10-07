@@ -341,10 +341,14 @@ var VFXPixiBackend = (function () {
         var du=(axisY?w.b:w.a)*tw,dv=(axisY?w.d:w.c)*th;
         var vertical=Math.abs(dv)>Math.abs(du);
         var profile=v.bendStrength!==undefined&&v.bendStrength!==1?bendProfile(tex,vertical):null;
+        var clipped=Number.isFinite(w.clipMin)&&Number.isFinite(w.clipMax);
+        var taperOn=w.clipTaper>0&&clipped;
+        var P=Core.deformPrepare(v);
+        var pivotAcross=profile||v.bendStrength===undefined||v.bendStrength===1?undefined:P.pivot;
         for(var i=0;i<m.uvs.length;i+=2){
           var longitudinal=m.baseUvs[i],transverse=m.baseUvs[i+1];
           var u=vertical?transverse:longitudinal,vv=vertical?longitudinal:transverse;
-          if(Number.isFinite(w.clipMin)&&Number.isFinite(w.clipMax)){
+          if(clipped){
             // Distribute samples across the visible texels instead of collapsing most
             // vertices onto the crop edges. UV and position move together (no stretch).
             var slope=vertical?w.c*th:w.a*tw;
@@ -360,7 +364,7 @@ var VFXPixiBackend = (function () {
           }
           var x=(u-t.anchorX)*tw,y=(vv-t.anchorY)*th;
           // Crop both geometry and texture coordinates: interior texels keep their size.
-          if (Number.isFinite(w.clipMin)&&Number.isFinite(w.clipMax)) {
+          if (clipped) {
             var along=w.a*x+w.c*y+w.x;
             var delta=Math.max(w.clipMin,Math.min(w.clipMax,along))-along;
             if(Math.abs(w.a*tw)>Math.abs(w.c*th)) u+=delta/(w.a*tw);
@@ -371,15 +375,14 @@ var VFXPixiBackend = (function () {
           m.uvs[i]=u;m.uvs[i+1]=vv;
           // A readback error is reported once; keep the sprite visible while the
           // author repairs the texture source instead of collapsing its width.
-          var centerAcross=profile?undefined:Core.deformationValue(v.config,'pivot');
-          if(v.bendStrength===undefined||v.bendStrength===1)centerAcross=undefined;
+          var centerAcross=pivotAcross;
           if(profile){
             var center=profileCenter(profile,vertical?vv:u);
             var cx=vertical?(center-t.anchorX)*tw:x,cy=vertical?y:(center-t.anchorY)*th;
             centerAcross=axisY?w.a*cx+w.c*cy+w.x:w.b*cx+w.d*cy+w.y;
           }
-          Core.deformPoint(v,w.a*x+w.c*y+w.x,w.b*x+w.d*y+w.y,m.point,centerAcross);
-          if(w.clipTaper>0 && Number.isFinite(w.clipMin) && Number.isFinite(w.clipMax)) {
+          Core.deformPrepared(P,w.a*x+w.c*y+w.x,w.b*x+w.d*y+w.y,m.point,centerAcross);
+          if(taperOn) {
             var tip=Math.max(0,Math.min(1,(m.point.x-w.clipMin)/w.clipTaper,(w.clipMax-m.point.x)/w.clipTaper));
             m.point.y*=tip*tip*(3-2*tip);
           }

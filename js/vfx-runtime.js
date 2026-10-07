@@ -224,7 +224,8 @@ var VFXRuntime = (function () {
     hitGapStart: 0.3,    // 吃緊程度（0～1）到這裡才開始限頻，之後線性加到 hitGapMax。
                          // 不能一吃緊就限：單幀 50ms 就會讓密度從 1 掉到 0.92，那不該改變畫面
                          // （限頻會把「同一瞬間疊的 4 個爆點」砍成 1 個）。
-    hitLiveBase: 160     // 全場同時存活的命中特效上限＝此數 × 密度；密度 1＝不限
+    hitLiveBase: 160,    // 全場同時存活的命中特效上限＝此數 × 密度；密度 1＝不限
+    beamLiveBase: 120    // 全場同時存活的連鎖電弧上限＝此數 × 密度；密度 1＝不限（每道電弧是 3 張逐幀變形的網格）
   };
   var DENSITY = {
     slowDt: 1 / 45,      // 平滑後的幀時間超過這個＝畫面吃緊（<45 FPS）
@@ -950,6 +951,13 @@ var VFXRuntime = (function () {
         : (spec.sourceId ? ctx.posOf(spec.sourceId) : ctx.playerPos());
       var toId = ids.length >= 2 ? ids[1] : ids[0];
       if (!toId) return false;
+      /* 吃緊時連鎖電弧同時存活數上限：天地雷鎖陣滿場連鎖時每秒約 800 道、同屏 300 道，
+         每道 3 張網格每幀重算（實測佔幀成本約一半）。密度 1 不介入；被擋下的算「已處理」，
+         命中閃光與傷害數字照常，只是少畫幾道中間的電弧。 */
+      if (tracked && shedDepth() > 0 && trackingBeams.length >= Math.max(1, Math.round(SHED.beamLiveBase * governor.quality()))) {
+        counters.throttled++;
+        return true;
+      }
       var to = ctx.posOf(toId);
       if (tracked && ctx.chainPoint) {
         from = ctx.chainPoint(ids.length >= 2 ? ids[0] : (spec.sourceId || 'pv-float'));

@@ -307,3 +307,45 @@ test('CULL-5 t.visible === false 的原路徑不變', () => {
   backend.updateNode(node, { visible: false, alpha: 1 });
   assert.strictEqual(node.visible, false);
 });
+
+/* ================= 連鎖電弧：同時存活上限（2026-10-07） ================= */
+
+function beamHarness(gov) {
+  const log = { nodes: [] };
+  const adapter = VFXRuntime.create({
+    core: VFXCore, resolver: RESOLVER, governor: gov,
+    fxBackend: recordingBackend(log), zoneBackend: recordingBackend(log),
+    ctx: {
+      posOf: () => ({ x: 100, y: 50 }), playerPos: () => ({ x: 0, y: 0 }),
+      chainPoint: (id) => (id === 'a' ? { x: 0, y: 0 } : { x: 100, y: 0 })
+    }
+  });
+  adapter.registerPresets([hitPreset('bolt-x', 5)]);
+  return adapter;
+}
+const beamSpec = () => ({ fxKind: 'chain', variant: 'lightning-chain', targets: ['a', 'b'], travelMs: [0, 400], vfx: { attack: 'bolt-x' } });
+
+test('BEAM-1 密度 1：連鎖電弧不設上限（300 道都播）', () => {
+  const adapter = beamHarness(fixedGovernor(1));
+  for (let i = 0; i < 300; i++) adapter.tryPlay(beamSpec());
+  assert.strictEqual(adapter.stats().fx.activeEffects, 300);
+  assert.strictEqual(adapter.stats().throttled, 0);
+});
+
+test('BEAM-2 密度在下限：同時存活上限＝120×密度＝30，多的算已處理但不畫', () => {
+  const adapter = beamHarness(fixedGovernor(0.25));
+  for (let i = 0; i < 300; i++) assert.ok(adapter.tryPlay(beamSpec()));
+  const s = adapter.stats();
+  assert.strictEqual(s.fx.activeEffects, 30);
+  assert.strictEqual(s.throttled, 270);
+});
+
+test('BEAM-3 密度回 1 立刻放開上限', () => {
+  const gov = fixedGovernor(0.25);
+  const adapter = beamHarness(gov);
+  for (let i = 0; i < 40; i++) adapter.tryPlay(beamSpec());
+  assert.strictEqual(adapter.stats().fx.activeEffects, 30);
+  gov.q = 1;
+  for (let i = 0; i < 40; i++) adapter.tryPlay(beamSpec());
+  assert.strictEqual(adapter.stats().fx.activeEffects, 70);
+});
