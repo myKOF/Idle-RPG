@@ -61,7 +61,7 @@ test('socketRune：扣庫存、鑲進第一個空符文孔；庫存不足／已�
   assert.equal(c.runeCount('r01'), 1, '沒有符文孔時不扣庫存');
 });
 
-test('符文孔放滿：放不下的被拒；孔數隨稀有度，一般裝備最多 4 孔', () => {
+test('符文孔放滿：放不下的被拒；孔數隨稀有度（RARITIES.runeSlots，配置表 game_parameters 的參數g）', () => {
   const c = loadRuneEnv();
   c.addRune('r01', 9);
   const it = makeItem(c, { rarity: 3 });                    // 獨特：2 孔
@@ -71,8 +71,7 @@ test('符文孔放滿：放不下的被拒；孔數隨稀有度，一般裝備�
   assert.match(c.socketRune(it, 'r01'), /已滿/);
   assert.equal(c.runeCount('r01'), 7);
   const counts = c.RARITIES.map((r, i) => c.runeSlotCountFor({ rarity: i }));
-  assert.deepEqual(plain(counts), plain(c.RUNE_SETTINGS.slotsByRarity));
-  assert.equal(Math.max(...counts), 4, '一般裝備最多 4 孔（雙手武器之後才會到 5，見 twoHandBonusSlots）');
+  assert.deepEqual(plain(counts), plain(c.RARITIES.map((r) => r.runeSlots)), '一般裝備的孔數就是稀有度表的 runeSlots');
   assert.ok(Math.max(...counts) <= c.RUNE_SETTINGS.maxSlots);
   assert.ok(counts.every((n, i) => i === 0 || n >= counts[i - 1]), '稀有度越高孔數不減');
 });
@@ -198,7 +197,7 @@ test('單顆符文依武器／防具各給一條屬性，數值＝詞條基準�
   assert.equal(c.rwItemStatEntries(shield)[0].key, 'hpPct', '副手視同防具側');
 });
 
-test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2，也沒有額外符文孔', () => {
+test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2；符文孔只多 twoHandBonusSlots 個（加法）', () => {
   const c = loadRuneEnv();
   const one = fillRunes(makeItem(c, { rarity: 5, level: 100 }), ['r10']);
   const up = fillRunes(makeItem(c, { rarity: 5, level: 100, upgrade: 10 }), ['r10']);
@@ -206,7 +205,7 @@ test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2�
   const v = (it) => c.rwItemStatEntries(it)[0].val;
   assert.ok(v(up) > v(one) * 1.4, '+10 約 ×1.5');
   assert.equal(v(two), v(one), '雙手武器的符文屬性與單手相同');
-  assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one), '雙手武器的符文孔數與單手相同');
+  assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one) + c.RUNE_SETTINGS.twoHandBonusSlots, '雙手武器的符文孔數＝單手 + twoHandBonusSlots');
 });
 
 test('computeStats：符文真言屬性併入面板；拆下一顆就失效', () => {

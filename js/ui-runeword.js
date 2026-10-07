@@ -286,11 +286,11 @@ function runeUiAction(act) {
   });
 }
 
-/* 說明按鈕的文字：孔數與合成數量都讀設定（RUNE_SETTINGS），表一改說明就跟著變。 */
+/* 說明按鈕的文字：孔數與合成數量都讀設定（RARITIES.runeSlots、RUNE_SETTINGS），表一改說明就跟著變。 */
 function runeUiHelpText() {
   var by = {}, order = [];
   for (var i = 0; i < RARITIES.length; i++) {
-    var n = Number(RUNE_SETTINGS.slotsByRarity[i]) || 0;
+    var n = rwSlotCountAt(i, false);
     if (!n) continue;
     if (!by[n]) { by[n] = []; order.push(n); }
     by[n].push(RARITIES[i].name);
@@ -299,7 +299,7 @@ function runeUiHelpText() {
     var names = by[n];
     return (names.length > 1 ? names[0] + '～' + names[names.length - 1] : names[0]) + ' ' + n + ' 孔';
   }).join('、');
-  return '符文鑲在裝備專屬的符文孔裡（取代原本的附魔位置，與寶石鑲孔分開，一般裝備最多 ' + Math.max.apply(null, RUNE_SETTINGS.slotsByRarity) + ' 孔' + (RUNE_SETTINGS.twoHandBonusSlots > 0 ? '、雙手武器多 ' + RUNE_SETTINGS.twoHandBonusSlots + ' 孔' : '') + '；在裝備頁按「符文」鑲入）。' +
+  return '符文鑲在裝備專屬的符文孔裡（取代原本的附魔位置，與寶石鑲孔分開，一般裝備最多 ' + rwRegularMaxSlots() + ' 孔' + (RUNE_SETTINGS.twoHandBonusSlots > 0 ? '、雙手武器多 ' + RUNE_SETTINGS.twoHandBonusSlots + ' 孔' : '') + '；在裝備頁按「符文」鑲入）。' +
     '把「指定的符文、依指定順序」鑲進連續的符文孔，且裝備類型符合，就會成形為符文真言，獲得額外屬性與特殊威能；拆下任何一顆就失效，換回來又恢復。' +
     '每組符文真言要成形過一次，圖鑑才會顯示它的配方與效果；沒成形過的只看得到名稱、品質、需要的孔數與適用裝備。' +
     '符文從野外擊殺與封魔塔通關掉落，' + RUNE_COMPOSE_COUNT + ' 顆同種可合成為下一階（第 ' + RUNE_COMPOSE_MAX_TIER + ' 階以上只能掉落）。' +

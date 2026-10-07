@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
 
@@ -30,6 +31,24 @@ function mutate(fn) {
 }
 const findRow = (rows, kind, id) => rows.find((r) => r[0] === kind && r[1] === id);
 
+/* 各稀有度的符文孔數在 game_parameters「表-稀有度」的參數g，不在 Runes 表：驗證時讀 CSV，
+   測試用環境變數 GAME_PARAMETERS_CSV 指到暫存副本，把 11 個稀有度的孔數換成 slots。 */
+function withSlots(slots, fn) {
+  const rows = cfg.csvParse(fs.readFileSync(path.join(root, 'config', 'CSV', 'game_parameters.csv'), 'utf8'));
+  const cCat = rows[0].indexOf('系統分類'), cG = rows[0].indexOf('參數g');
+  let k = 0;
+  rows.forEach((r) => { if (r[cCat] === '表-稀有度') r[cG] = String(slots[k++]); });
+  assert.equal(k, slots.length, '表-稀有度 共 11 列');
+  const tmp = path.join(os.tmpdir(), 'gp-rune-slots-' + process.pid + '-' + Date.now() + '.csv');
+  fs.writeFileSync(tmp, cfg.csvStringify(rows), 'utf8');
+  const prev = process.env.GAME_PARAMETERS_CSV;
+  process.env.GAME_PARAMETERS_CSV = tmp;
+  try { return fn(); } finally {
+    if (prev === undefined) delete process.env.GAME_PARAMETERS_CSV; else process.env.GAME_PARAMETERS_CSV = prev;
+    fs.rmSync(tmp, { force: true });
+  }
+}
+
 test('Runes 表已登錄在配置撥離管線，xlsx 不由 --gen 手拼（AI_RULES 8.5）', () => {
   assert.ok(schema, 'SCHEMAS.Runes 存在');
   assert.deepEqual(schema.vars, ['RUNE_SETTINGS', 'RUNES', 'RUNEWORDS']);
@@ -56,7 +75,8 @@ test('由程式資料攤平成表格再重建，語意不變（往返無損）�
   rows.slice(1).forEach((r) => { kinds[r[0]] = (kinds[r[0]] || 0) + 1; });
   assert.equal(kinds['符文'], 33);
   assert.equal(kinds['符文真言'], lit(dataSrc, 'RUNEWORDS').length);
-  assert.ok(kinds['設定'] >= 19, '設定列：孔數上限＋11 個稀有度＋合成／拆解／縮放／掉落');
+  assert.ok(kinds['設定'] >= 10, '設定列：孔數上限＋雙手加成＋合成／拆解／縮放／掉落');
+  assert.ok(!rows.some((r) => r[0] === '設定' && /^slots_/.test(r[1])), '各稀有度的孔數已搬到 game_parameters，Runes 表不再有 slots_ 列');
   rows.forEach((r) => assert.equal(r.length, schema.header.length, '每列欄數與表頭一致'));
 });
 
@@ -81,8 +101,11 @@ test('建立 xlsx 的腳本走 Excel COM：不手拼 XML、不覆蓋既有檔、
 /* ---- 套用時的檢查：打錯一格要整次中止並指出位置 ---- */
 
 test('設定檢查：孔數超過上限、隨稀有度變少、雙手加成超過上限、拆解會賺、缺設定列都被擋下', () => {
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'slots_legendary')[c('設定值')] = '6'; })), /符文孔數：傳說.*0~5/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'slots_epic')[c('設定值')] = '4'; findRow(rows, '設定', 'slots_legendary')[c('設定值')] = '3'; })), /不可隨稀有度變少/);
+  assert.throws(() => withSlots([0, 1, 1, 2, 3, 6, 6, 6, 6, 6, 6], () => rebuildFrom(csvRows())), /「傳說」的參數g.*0~5/);
+  assert.throws(() => withSlots([0, 1, 1, 2, 4, 3, 3, 3, 3, 3, 3], () => rebuildFrom(csvRows())), /不可隨稀有度變少/);
+  assert.throws(() => withSlots([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], () => rebuildFrom(csvRows())), /全是 0/);
+  assert.throws(() => withSlots([0, 1, 1, 2, 3, 4, 4, 4, 4, 4, 5], () => rebuildFrom(csvRows())), /最高稀有度的孔數 5.*雙手加成 1 超過符文孔數上限 5/);
+  assert.doesNotThrow(() => withSlots([0, 1, 1, 2, 3, 4, 4, 4, 4, 4, 4], () => rebuildFrom(csvRows())), '現行孔數合法');
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'twoHandBonusSlots')[c('設定值')] = '2'; })), /雙手加成 2 超過符文孔數上限 5/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'twoHandBonusSlots')[c('設定值')] = '-1'; })), /雙手武器額外符文孔數必須是 ≥0/);
   assert.doesNotThrow(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '設定', 'twoHandBonusSlots')[c('設定值')] = '1'; })), '雙手加成 1 合法（之後把雙手武器調到 5 孔就是改這格）');
@@ -127,9 +150,9 @@ test('符文真言檢查：配方（太長／太短／不是符文／重複）�
   assert.throws(() => rebuildFrom(mutate((rows) => { word(rows)[0] = '亂填'; })), /類型.*只能是/);
 });
 
-test('設計表改了就會跟著遊戲走：改 CSV 的孔數／倍率／配方，重建出的字面值與引擎讀到的一致', () => {
+test('設計表改了就會跟著遊戲走：改 CSV 的合成顆數／倍率／配方，重建出的字面值與引擎讀到的一致', () => {
   const rows = mutate((r, c) => {
-    findRow(r, '設定', 'slots_rare')[c('設定值')] = '2';
+    findRow(r, '設定', 'composeCount')[c('設定值')] = '4';
     findRow(r, '符文', 'r10')[c('武器倍率')] = '1.5';
     findRow(r, '符文真言', 'rw_firstcry')[c('配方')] = '微光;巖心';
     const nu = word => word;
@@ -138,7 +161,7 @@ test('設計表改了就會跟著遊戲走：改 CSV 的孔數／倍率／配方
     r.push(clone); nu(clone);
   });
   const out = rebuildFrom(rows);
-  assert.equal(out.RUNE_SETTINGS.slotsByRarity[2], 2);
+  assert.equal(out.RUNE_SETTINGS.composeCount, 4);
   assert.deepEqual(out.RUNES[9].w, ['atkPct', 1.5]);
   assert.deepEqual(out.RUNEWORDS.find((w) => w.id === 'rw_firstcry').runes, ['r01', 'r05']);
   const extra = out.RUNEWORDS.find((w) => w.id === 'rw_extra_test');
@@ -151,7 +174,7 @@ test('設計表改了就會跟著遊戲走：改 CSV 的孔數／倍率／配方
   vm.createContext(ctx);
   vm.runInContext(dataSrc, ctx);
   vm.runInContext(text.RUNE_SETTINGS + '\n' + text.RUNES + '\n' + text.RUNEWORDS + '\nthis.__s = RUNE_SETTINGS; this.__w = RUNEWORDS.length;', ctx);
-  assert.equal(ctx.__s.slotsByRarity[2], 2);
+  assert.equal(ctx.__s.composeCount, 4);
   assert.equal(ctx.__w, out.RUNEWORDS.length);
 });
 

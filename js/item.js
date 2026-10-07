@@ -743,8 +743,8 @@ function itemRuneHTML(it, mode) {
   if (typeof rwSlots !== 'function') return '';
   var slots = rwSlots(it);
   if (!slots.length) {
-    return mode ? '<div class="it-sockets it-runes"><div class="equip-material-empty">這件裝備沒有符文孔（精良以上才有符文孔，孔數隨稀有度增加，最多 ' +
-      Math.max.apply(null, RUNE_SETTINGS.slotsByRarity) + ' 孔，雙手武器可能更多）。</div></div>' : '';
+    return mode ? '<div class="it-sockets it-runes"><div class="equip-material-empty">這件裝備沒有符文孔（孔數依稀有度而定，一般裝備最多 ' +
+      rwRegularMaxSlots() + ' 孔，雙手武器可能更多）。</div></div>' : '';
   }
   var rwAct = rwActiveWord(it);
   var filled = slots.filter(Boolean).length;

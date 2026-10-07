@@ -5,14 +5,14 @@
 
    ---- 玩法（參考暗黑 2 的符文真言）----
    1. 符文是獨立的素材（G.player.runes = { 符文id: 數量 }），鑲在裝備專屬的「符文孔」裡（it.runes，
-      一般裝備最多 4 孔；雙手武器之後可再加孔，最多到 RUNE_SETTINGS.maxSlots = 5），與寶石的鑲孔（it.sockets）完全分開。
+      孔數依稀有度，雙手武器再加孔，最多到 RUNE_SETTINGS.maxSlots），與寶石的鑲孔（it.sockets）完全分開。
       符文孔取代了原本的附魔欄位（附魔功能已關閉，見 data.js ENCHANT_ENABLED）。
    2. 把「指定的符文、依指定順序」鑲進「連續的符文孔」，且裝備類型符合 → 該裝備成為符文真言裝備。
       符文真言是**當場判定**的衍生狀態（不存檔）：拆下任何一顆符文就失效，換回順序又恢復。
-   3. 符文孔數由稀有度決定（RUNE_SETTINGS.slotsByRarity），一般裝備最多 4 孔：
-      2 符文要稀有以上、3 符文要史詩以上、4 符文要傳說以上。難度因此不靠孔數，而靠符文本身的階數與取得難度。
-      5 顆符文的真言（共 6 組，都是傳說級、只能用在雙手武器）是為「雙手武器之後最多 5 孔」預留的：
-      現在還做不出來，把 RUNE_SETTINGS.twoHandBonusSlots 設成 1 就會開放。
+   3. 符文孔數由稀有度決定（RARITIES[i].runeSlots，配置表 game_parameters「表-稀有度」的參數g）；
+      雙手武器在有符文孔的稀有度上再加 RUNE_SETTINGS.twoHandBonusSlots（加法，不是倍數）。
+      配方的符文數受孔數限制：一般裝備放得下的配方任何裝備都能用，比一般裝備最多孔數還長的配方只給雙手武器。
+      難度因此不靠孔數，而靠符文本身的階數與取得難度。
    4. 每顆符文單獨鑲著也有加成（武器／防具各一條），符文真言生效時兩者並存。
 
    ---- 數值口徑（單一權威）----
@@ -93,9 +93,9 @@ var RUNE_BY_ID = (function () {
 })();
 
 /* ---- 全域設定（配置表 Runes 的「設定」列；寫回時整塊重建，順序即表內順序）----
-   maxSlots       符文孔數的硬上限（符文真言最多幾顆符文）。目前 5：一般裝備最多 4 孔，5 顆符文的真言是為「雙手武器之後最多 5 孔」預留的
-   slotsByRarity  各稀有度的符文孔數（依 RARITIES 順序：普通 → 神鑄混沌），不得超過 maxSlots
-   twoHandBonusSlots  雙手武器額外多幾個符文孔（0＝與一般裝備相同；設成 1＝傳說以上的雙手武器有 5 孔，5 顆符文的真言才做得出來）
+   maxSlots       符文孔數的硬上限（符文真言最多幾顆符文）。各稀有度的孔數不在這裡：在 game_parameters「表-稀有度」的參數g（寫回 RARITIES.runeSlots）
+   twoHandBonusSlots  雙手武器額外多幾個符文孔（加法；0＝與一般裝備相同；只加在本來就有符文孔的稀有度上）。
+                  最多孔稀有度的孔數＋此值不得超過 maxSlots
    composeCount   合成：同種符文幾顆 → 下一階 1 顆
    composeMaxTier 能合成到第幾階（更高階只能靠掉落）
    dismantleYield 拆解 1 顆 → 低一階符文幾顆；必須小於 composeCount。≥2 會讓一顆高階符文拆出指數倍的低階符文、把低階稀有度整個破壞，
@@ -115,8 +115,7 @@ var RUNE_BY_ID = (function () {
    配方的難度只看「最高階那顆符文」：第 1 級最高階 ≤ 10、第 2 級 11～16、第 3 級 17～23、第 4 級 24～33。 */
 var RUNE_SETTINGS = {
   maxSlots: 5,
-  slotsByRarity: [0, 1, 1, 2, 3, 4, 4, 4, 4, 4, 4],
-  twoHandBonusSlots: 0,
+  twoHandBonusSlots: 1,
   composeCount: 3,
   composeMaxTier: 20,
   dismantleYield: 1,

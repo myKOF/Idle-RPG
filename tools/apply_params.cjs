@@ -314,7 +314,7 @@ function arrayContent(file, varName, contentStr, label) {
    映射定義
    =========================================================================== */
 const RAR_KEYS = { '普通': 'common', '精良': 'uncommon', '稀有': 'rare', '獨特': 'unique', '史詩': 'epic', '傳說': 'legendary', '神話': 'mythic', '創世': 'genesis', '神鑄創世': 'godforged', '混沌': 'chaos', '神鑄混沌': 'chaosGodforged' };
-// 稀有度表：mult(0) affix下限(1) affix上限(2) sockets(3) enchants(4) salv(5)
+// 稀有度表：mult(0) affix下限(1) affix上限(2) sockets(3) enchants(4) salv(5) runeSlots(6)
 Object.keys(RAR_KEYS).forEach(nm => {
   const anchor = "key: '" + RAR_KEYS[nm] + "'";
   objField('data', anchor, 'mult', '表-稀有度', nm, 0, nm);
@@ -322,6 +322,7 @@ Object.keys(RAR_KEYS).forEach(nm => {
   objField('data', anchor, 'sockets', '表-稀有度', nm, 3, nm);
   objField('data', anchor, 'enchants', '表-稀有度', nm, 4, nm);
   objField('data', anchor, 'salv', '表-稀有度', nm, 5, nm);
+  objField('data', anchor, 'runeSlots', '表-稀有度', nm, 6, nm);   // 符文孔數（js/runeword.js 的 rwSlotCountAt 讀它）
 });
 
 /* ---- 【2026-07-20 配置撥離】以下四組已改由獨立表單管理，apply_params 不再接線 ----

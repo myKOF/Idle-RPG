@@ -135,17 +135,17 @@ test('stats／passives／legend／fx／procs 只用已實作的詞彙', () => {
   });
 });
 
-test('RUNE_SETTINGS：孔數表長度對得上稀有度、單調不減、不超過上限；合成／掉落常數合理', () => {
+test('RUNE_SETTINGS／RARITIES.runeSlots：孔數表對得上稀有度、單調不減、不超過上限；合成／掉落常數合理', () => {
   const s = c.RUNE_SETTINGS;
-  assert.equal(s.slotsByRarity.length, c.RARITIES.length);
-  assert.equal(s.maxSlots, 5, '設計上限：配方最長 5 顆（一般裝備最多 4 孔，第 5 孔為雙手武器預留）');
-  s.slotsByRarity.forEach((n, i) => {
+  const slots = c.RARITIES.map((r) => r.runeSlots);
+  assert.ok(!('slotsByRarity' in s), '各稀有度的孔數只有一個來源：game_parameters 的參數g → RARITIES.runeSlots');
+  assert.equal(s.maxSlots, 5, '設計上限：配方最長 5 顆');
+  slots.forEach((n, i) => {
     assert.ok(Number.isInteger(n) && n >= 0 && n <= s.maxSlots, `稀有度 ${i} 的孔數 ${n} 不合法`);
-    if (i) assert.ok(n >= s.slotsByRarity[i - 1], '稀有度越高孔數不減');
+    if (i) assert.ok(n >= slots[i - 1], '稀有度越高孔數不減');
   });
-  assert.equal(Math.max(...s.slotsByRarity), 4, '一般裝備最多 4 孔');
   assert.ok(Number.isInteger(s.twoHandBonusSlots) && s.twoHandBonusSlots >= 0, 'twoHandBonusSlots');
-  assert.ok(s.slotsByRarity[s.slotsByRarity.length - 1] + s.twoHandBonusSlots <= s.maxSlots, '雙手加成不得超過上限');
+  assert.ok(slots[slots.length - 1] + s.twoHandBonusSlots <= s.maxSlots, '雙手加成不得超過上限');
   assert.ok(Number.isInteger(s.composeCount) && s.composeCount >= 2);
   assert.ok(Number.isInteger(s.composeMaxTier) && s.composeMaxTier >= 1 && s.composeMaxTier <= c.RUNES.length);
   assert.ok(Number.isInteger(s.dismantleYield) && s.dismantleYield >= 1 && s.dismantleYield < s.composeCount, '拆解不得賺：產出須小於合成所需');
@@ -159,29 +159,24 @@ test('RUNE_SETTINGS：孔數表長度對得上稀有度、單調不減、不超�
   assert.equal(c.RUNE_DROP, s.drop);
 });
 
-test('每一組符文真言在遊戲裡都做得出來：存在稀有度的符文孔數足夠；5 顆的真言要等雙手武器加孔', () => {
+test('每一組符文真言都有對應的稀有度可以做出來；比一般裝備最多孔數還長的配方只給雙手武器', () => {
   WORDS.forEach((w) => {
     const i = c.rwMinRarity(w);
-    if (w.runes.length <= Math.max(...c.RUNE_SETTINGS.slotsByRarity)) {
-      assert.ok(i >= 0, `${w.id} 需要 ${w.runes.length} 孔，最高稀有度也不夠`);
-      assert.ok(c.rwSlotCountAt(i, c.rwWordTwoHandOnly(w)) >= w.runes.length);
-    } else {
-      assert.equal(i, -1, w.id + ' 目前還沒有裝備有這麼多孔');
-      assert.match(c.rwSocketNeedText(w), /雙手武器・目前沒有裝備有這麼多孔/);
-    }
+    assert.ok(i >= 0, `${w.id} 需要 ${w.runes.length} 孔，目前沒有任何裝備放得下（孔數設定或雙手加成調太低）`);
+    assert.ok(c.rwSlotCountAt(i, c.rwWordTwoHandOnly(w)) >= w.runes.length);
+    if (w.runes.length > c.rwRegularMaxSlots()) assert.ok(c.rwWordTwoHandOnly(w), w.id + ' 比一般裝備最多孔數還長，只能是雙手武器專用');
   });
 });
 
-test('雙手武器加孔（twoHandBonusSlots = 1）之後：雙手武器傳說以上有 5 孔、5 顆符文的真言做得出來並能成形；其他裝備不受影響', () => {
+test('雙手武器比同稀有度的一般裝備多 twoHandBonusSlots 孔：傳說以上有 5 孔、5 顆符文的真言做得出來並能成形；其他裝備不受影響', () => {
   const { makeItem, fillRunes } = require('./helpers/runeword-env.cjs');
   const e = require('./helpers/runeword-env.cjs').loadRuneEnv();
   const axe = makeItem(e, { rarity: 5, weaponType: 'axe2h' }), sword = makeItem(e, { rarity: 5, weaponType: 'sword1h' });
-  assert.equal(e.runeSlotCountFor(axe), 4);
-  require('node:vm').runInContext('RUNE_SETTINGS.twoHandBonusSlots = 1;', e);
-  assert.equal(e.runeSlotCountFor(axe), 5, '雙手武器 +1 孔');
-  assert.equal(e.runeSlotCountFor(sword), 4, '單手武器不變');
-  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 5, slot: 'chest', weaponType: undefined })), 4);
-  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 3, weaponType: 'axe2h' })), 3, '獨特雙手 2+1');
+  assert.equal(e.RUNE_SETTINGS.twoHandBonusSlots, 1, '雙手武器 +1 孔');
+  assert.equal(e.runeSlotCountFor(axe), e.runeSlotCountFor(sword) + 1, '雙手武器 +1 孔');
+  assert.equal(e.runeSlotCountFor(axe), 5);
+  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 5, slot: 'chest', weaponType: undefined })), e.runeSlotCountFor(sword), '防具不受雙手加成影響');
+  assert.equal(e.runeSlotCountFor(makeItem(e, { rarity: 3, weaponType: 'axe2h' })), e.RARITIES[3].runeSlots + 1, '獨特雙手 2+1（加法，不是加倍）');
   const five = e.RUNEWORDS.filter((w) => w.runes.length === 5);
   assert.ok(five.length >= 6);
   five.forEach((w) => {
