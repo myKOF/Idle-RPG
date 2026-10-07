@@ -1,5 +1,18 @@
 # AI_TASKS.md
 
+## ATTACK-VFX-FACING-20261007 — 攻擊特效以正右方基準對準目標
+
+- Owner：Codex；Done。使用者觀測攻擊特效沿用Editor方向，要求以正右方90度作面敵基準。單一開發者；製作+X就是朝前，內部atan2以右方0偏轉、上方-π/2，避免多加90度。
+- 範圍：skills2迴旋斬事件angle、Runtime攻擊朝向／立即與延遲／範圍／月牙及相關測試、Adapter說明、主端／Editor／Worker必要快取與本紀錄。禁止改技能傷害／數值／範圍／命中、Preset／素材／Excel／存檔／Worker協議／其他副本，不合併／推送。
+- 預檢：技能／Runtime／測試／Adapter說明／Editor乾淨；index／bridge／sim.worker／本紀錄仍只有Claude b6bb1c63寶石与8b0c89b2符文，沿用使用者已明確核准的分段快取與紀錄授權，保留寶石、符文及已完成場景內容。依賴既有angle與投影流程已滿足。
+- 驗收：四向及斜向對準敵人、明確事件角優先、逐敵人立即與延遲一致、追加迴旋斬每次出手重新取當下方向、地面投影只轉一次；保留作者局部角度／曲線／尺寸／時長及受擊／場域用途，定向回歸、基線失敗集合比對、正式渲染與Build後Commit。
+- 完成：迴旋斬原地／飛行每道實際出手都傳angle，追加刀波重新取當下主目標方向，已發射刀波不追隨新角度。Runtime一般單體attack、範圍attack、疾風月牙閃及傳染毒咒補上以+X為朝前的整體旋轉；事件angle（含0）優先，否則取攻擊者到該敵人的腳點方向、沒有敵人則取區域中心，同座標用右方。延遲單體本體保留事件到達時的角度、位置仍跟目標當下位置；有area.a的幾何維持原判定角。地面層還原平面角後交Core投影一次，保留原局部位置／旋轉動畫，受擊、場域與天降／飛行路徑不追加此attack預設。
+- 修改10檔：js/skills2.js、js/vfx-runtime.js、tests/vfx-runtime.test.cjs、tests/cleave-rework.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、index.html、tools/vfx/editor/index.html、js/bridge.js、js/worker/sim.worker.js、本紀錄。主頁／Editor Runtime1.0.179、skills2 1.0.290、bridge1.0.234；Worker Asset／skills2 import為20261007-attack-vfx-facing，協議48不變。唯讀檢查但未修改AI規範、battlefield／BattleRenderer／Core／PixiBackend、shim／protocol、正式warm／spin／moon Preset及素材索引，Excel／CSV與素材庫內容未改。
+- 回歸：新增3項Runtime方向／延遲／權威角／圓形刀波及1項逐道出手事件；更新原2項月牙及1項毒咒「固定製作方向」斷言以符合本次使用者面敵規格。`node --test --test-name-pattern='FACING|GALE|POISON-SPREAD|WIND-CHASER' tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`9/9；`node --test tests/skill2-wind-chaser.test.cjs tests/vfx-duration.test.cjs tests/vfx-load-shedding.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-guard.test.cjs`81/81，八向覆蓋立即／延期、平面／直立、腳點與身體偏移、逐敵人及同座標。
+- 擴大回歸：`node --test tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`144項、135通過／9失敗；唯讀記憶體加载HEAD原skills2／Runtime與原兩項測試，140項／同9失敗，失敗名稱集合相同、新增失敗0（cleave5項、FIELD／CATALOG-3／CHAIN／STARFALL-TAIL）。`npm.cmd run build`468檔、`git diff --check`通過。測試夾具首次按延遲節點建立順序對應敵人，改成依原目標位置核對後通過，產品程式無另改。
+- 正式實機：隔離headless Edge／隨機Port唯讀HTTP／新Context完整載入正式sim.worker及協議48，用拋棄式角色／原地再移動出手，urgent事件angle依序0／-π/2。將正式事件交Pixi／Core／Runtime／Backend、warm Preset及真貼圖，以右／上／左／下／斜五方向核對12層完整位置／旋轉／尺寸／alpha，與原右方動畫加整體轉向最大差4.45e-16，到期active0，Console error／warning0。首輪Worker夾具位置使相對import落在根目錄，改成同Worker目錄後正常；多次獨立Backend驗證的贴圖卸載先後也改成最後統一回收後重驗通過，沒有改產品配合測試。未讀寫真人存檔或真人長時間戰鬥，服務／瀏覽器已关闭，臨時腳本／日誌刪除。
+- 提交／交付：Commit為本紀錄所在`[Codex] fix: 攻擊特效以正右方基準對準目標`。本次無未完成項目，可審查合併；9項既有回歸失敗保留，不合併／推送，沒有素材變更／新來源或素材Commit。唯一既存Runes CSV差異經hash確認canonical內容與HEAD一致、僅行尾stat，重新整理index後不产生內容變更。下一步重載遊戲確認攻擊朝向；Editor有未儲存內容先另存備份再重載，勿用舊頁覆蓋新版。
+
 ## WINDCHASER-SPIN-RADIUS6-20261007 — 逐風者真空迴旋特效半徑6米
 
 - Owner：Codex；Done。使用者要求縮小逐風者追加真空迴旋的特效至半徑6米；單一開發者。保留四段單體傷害、觸發率、增傷與事件時長，不改真空斬技能本體。

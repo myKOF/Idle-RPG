@@ -2935,6 +2935,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   function emitWave(at) {
     sgEmitVfx('cleave', [], floatSel, {
       fxKind:flying ? 'projectile' : 'slash', variant:'cleave-ring', projectile:true,
+      angle:typeof bfAngleTo === 'function' ? bfAngleTo(primary) : undefined,
       travelMs:[travel*1000], dur:travel,
       area:{x:at ? at.x : 0,y:at ? at.y : 0,r:radius},
       lineLength:radius, vfxRoles:roles, hit:false

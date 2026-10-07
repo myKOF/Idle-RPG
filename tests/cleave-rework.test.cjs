@@ -92,6 +92,19 @@ test('CLEAVE 連斬與七階相加、每波延遲及範圍一致，無四方重�
  assert.equal(h.hits.length,15);assert(h.hits.every(x=>Math.abs(x.dmg-3844)<1e-6));
  assert.equal(h.c.SKILL2_RT.projectiles.length,0);
 });
+test('CLEAVE-FACING 原地／飛行刀波每次實際出手傳遞當下面敵角',()=>{
+ for(const flying of [false,true]){
+  const h=setup([1,0,0,1,0,flying?1:0,0]);let player={x:0,y:0};
+  h.c.bfPlayerPos=()=>player;h.enemies[0].pos={x:100,y:0};h.cast();
+  assert.equal(h.events[0].angle,0);
+  player={x:100,y:100};h.tick(.3);
+  const waves=h.events.filter(e=>e.variant==='cleave-ring');
+  assert.equal(waves.length,2);assert.equal(waves[1].angle,-Math.PI/2);
+  assert.equal(waves[0].angle,0,'已發射的一道仍保留出手時的方向');
+  assert.equal(waves[1].area.x,100);assert.equal(waves[1].area.y,100);
+ }
+});
+
 test('CLEAVE 小數次數只決定額外一刀，不再有前置觸發機率',()=>{
  for(const [trigger,count] of [[false,2],[true,3]]) {
   const h=setup([1,0,0,6,0,0,0]);h.c.chance=()=>trigger;h.cast();assert.equal(h.c.SKILL2_RT.projectiles.length,count);
