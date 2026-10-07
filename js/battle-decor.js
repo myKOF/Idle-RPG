@@ -1270,13 +1270,15 @@ var BattleDecor = (function () {
     swamp: {
       tint: 0xffffff, deepTint: 0x7c8a78,
       props: [['reeds', 4, 70, 96, { base: '#6a7a3a', head: '#4a2e1a' }], ['mushrooms', 2.6, 62, 66, { cap: '#8a3a6a', stem: '#d8d0b8', spot: '#f0e0f0', glow: '#c070ff' }],
-        ['stump', 2, 64, 58, { wood: '#4a3424', ring: '#8a6a48', moss: '#4a6a2a' }], ['rock', 2.4, 64, 50, MOSSROCK, { moss: '#5a8a3a' }], ['deadTree', 1.4, 96, 132, { wood: '#2a2a1e', hi: '#8a9a6a' }],
-        ['grass', 3, 54, 40, { base: '#5a7a34' }]],
+        ['stump', 2, 82, 66, { wood: '#4a3424', ring: '#8a6a48', moss: '#4a6a2a' }], ['rock', 2.4, 84, 64, MOSSROCK, { moss: '#5a8a3a' }], ['deadTree', 1.4, 96, 132, { wood: '#2a2a1e', hi: '#8a9a6a' }],
+        ['grass', 2, 54, 40, { base: '#5a7a34' }], ['fern', 3, 76, 50, { base: '#5a7a34' }], ['log', 1.8, 120, 62, { wood: '#4a3424' }]],
       deepProps: [['mushrooms', 5, 70, 78, { cap: '#2a7a6a', stem: '#c8d8c8', spot: '#d0fff0', glow: '#40ffd0' }], ['stump', 2, 64, 58, { wood: '#3a2a1e', ring: '#7a5a3a', moss: '#3a5a2a' }],
-        ['rock', 2, 64, 50, MOSSROCK, { moss: '#3a7a4a' }], ['ruinWall', 1.2, 110, 70, { base: '#5a5a48', moss: '#4a7a3a' }], ['reeds', 2, 70, 96, { base: '#4a5a2a', head: '#2a1a10' }]],
+        ['rock', 2, 84, 64, MOSSROCK, { moss: '#3a7a4a' }], ['ruinWall', 1.2, 110, 70, { base: '#5a5a48', moss: '#4a7a3a' }], ['reeds', 2, 70, 96, { base: '#4a5a2a', head: '#2a1a10' }],
+        ['fern', 1.8, 70, 46, { base: '#3c6650' }], ['log', 1.4, 120, 62, { wood: '#3a2a1e' }]],
       decals: [['puddle', 5, 190, { color: '#2a3a24', rim: '#0a0e08' }], ['patch', 5, 340, { color: '#3a4a1e', alpha: 0.2 }], ['patch', 3, 300, { color: '#0e140a', alpha: 0.2 }],
-        ['pebbles', 2, 80, { color: '#4a5a3a' }]],
-      deepDecals: [['puddle', 5, 200, { color: '#1a3a34', rim: '#06100e' }], ['patch', 5, 340, { color: '#0a1410', alpha: 0.24 }], ['light', 2, 200, { color: '#40ffd0' }]],
+        ['pebbles', 2, 80, { color: '#4a5a3a' }], ['roots', 2, 150, {}], ['litter', 4, 210, {}]],
+      deepDecals: [['puddle', 5, 200, { color: '#1a3a34', rim: '#06100e' }], ['patch', 5, 340, { color: '#0a1410', alpha: 0.24 }], ['light', 2, 200, { color: '#40ffd0' }],
+        ['roots', 2, 150, {}], ['litter', 3, 210, {}]],
       ambient: { kind: 'fireflies', count: 26, color: 0xd8ff7a, fog: 3 }, deepAmbient: { kind: 'fireflies', count: 30, color: 0x60ffd8, fog: 4 }
     },
     undead_mountains: {
@@ -1327,6 +1329,23 @@ var BattleDecor = (function () {
   };
   KITS[''] = KITS.desert;
 
+  /* 地面覆蓋與岩石沿用各地貌配色；荒漠／冰原不長苔沼植物。 */
+  function natureStyle(kitKey, deep) {
+    var pal = { desert: SAND, Icefield: ICEROCK, swamp: MOSSROCK, undead_mountains: DARKSTONE,
+      god_battlefield: ASH, god_chaos: CHAOSROCK, god_sanctuary: MARBLE }[kitKey] || SAND;
+    var style = { stone: pal.base, light: pal.light, dark: pal.dark,
+      soil: pal.base, moss: kitKey === 'swamp', snow: kitKey === 'Icefield' };
+    if (kitKey === 'swamp') {
+      style.stone = '#718171'; style.light = '#b3b69b'; style.dark = '#2e443b'; style.soil = '#55563a';
+      if (deep) style.cap = '#456f69';
+    }
+    return style;
+  }
+  Object.keys(KITS).filter(function (k) { return k && k !== 'swamp'; }).forEach(function (key) {
+    KITS[key].decals.push(['litter', 2, 180, {}]);
+    KITS[key].deepDecals.push(['litter', 2, 180, {}]);
+  });
+
   /* 地標：大型場景物件，每個區塊約 14% 機率出現一個，其他擺件會避開它。格式同 props。 */
   var LANDMARKS = {
     desert: {
@@ -1372,9 +1391,9 @@ var BattleDecor = (function () {
     patch: decalPatch, crack: decalCrack, pebbles: decalPebbles, bones: decalBones, puddle: decalPuddle,
     runes: decalRunes, tiles: decalTiles, light: decalLight, snow: decalSnow
   };
-  /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt.js／battle-decor.js 要一起更新
+  /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.0';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.1';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1406,6 +1425,19 @@ var BattleDecor = (function () {
       var nv = d[0] === 'light' ? 1 : VARIANTS;
       for (var v = 0; v < nv; v++) specs.push({ kind: 'decal', key: 'd' + i + '_' + v, type: d[0], w: d[2], h: d[2], pal: d[3], seed: strHash(kitKey + d[0] + i + '_' + v + (deep ? 'd' : '')) });
     });
+    var style = natureStyle(kitKey, deep);
+    var natureProps = ['rock', 'stump', 'log', 'fern', 'reeds', 'mushrooms', 'grass'];
+    var contacts = [];
+    specs.forEach(function (s) {
+      s.natureStyle = style;
+      s.nature = s.kind === 'prop' && (s.type === 'rock' || (kitKey === 'swamp' && natureProps.indexOf(s.type) >= 0));
+      if (s.kind === 'decal') s.nature = s.type === 'litter' || s.type === 'roots' || (kitKey === 'swamp' && s.type === 'puddle');
+      if (s.kind !== 'prop') return;
+      // 接觸區不與本體一起 billboard：在地面層以同腳點、縮放與翻面放置。
+      contacts.push({ kind: 'contact', key: 'foot_' + s.key, type: s.type, propW: s.w,
+        w: Math.ceil(s.w * 1.65 + 28), h: Math.ceil(s.w * 0.9 + 40), seed: s.seed ^ 0x7f4a7c15, natureStyle: style });
+    });
+    specs = specs.concat(contacts);
     PARTICLE_SPECS.forEach(function (p) { specs.push({ kind: 'particle', key: p[0], type: p[0], w: p[1], h: p[2], seed: p[3] }); });
     // 架子式打包
     var PAD = 6, MAXW = 2048;
@@ -1442,7 +1474,14 @@ var BattleDecor = (function () {
     g.scale(TEX_SCALE, TEX_SCALE);
     var r = mulberry(s.seed);
     try {
-      if (s.kind === 'prop') PROP_DRAW[s.type](g, s.w, s.h, r, s.pal, s.opt);
+      if (s.kind === 'contact') {
+        g.translate(s.w / 2, s.h / 2); g.scale(1, 2);
+        DecorNature.drawContact(g, 0, 0, s.propW, s.seed, s.natureStyle);
+      } else if (s.nature && s.kind === 'prop') {
+        DecorNature.drawBody(g, s.type, s.w / 2, s.h - FOOT, s.w * 0.9, s.h - FOOT, s.seed, s.natureStyle);
+      } else if (s.nature && s.kind === 'decal') {
+        DecorNature.drawSurface(g, s.type, s.w, s.h, s.seed, s.natureStyle);
+      } else if (s.kind === 'prop') PROP_DRAW[s.type](g, s.w, s.h, r, s.pal, s.opt);
       else if (s.kind === 'decal') DECAL_DRAW[s.type](g, s.w, s.h, r, s.pal);
       else if (s.kind === 'flame') drawFlameFrame(g, s.w, s.h, r, s.pal, s.frame);
       else PARTICLE_DRAW[s.type](g, s.w, s.h, r);
@@ -1732,7 +1771,7 @@ var BattleDecor = (function () {
       var r = mulberry(hash3(cx, cy, D.seedBase));
       var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [] };
       var x0 = cx * CHUNK_W, y0 = cy * CHUNK_H;
-      var nDecal = lite ? 2 : 3 + Math.floor(r() * 3);
+      var nDecal = lite ? 2 : 2 + Math.floor(r() * 2);
       for (var i = 0; i < nDecal; i++) {
         var di = weightedPick(r, atlas.decals);
         var d = atlas.decals[di];
@@ -1750,9 +1789,9 @@ var BattleDecor = (function () {
         s.alpha = isLight ? 0.55 : range(r, 0.75, 1);
         (isLight ? chunk.lights : chunk.decals).push(s);
       }
-      // 大型擺件每區塊 1～3 個（偶爾空一塊留白），再補 1～3 個矮的小碎物（間距可以近一點）
+      // 大型擺件每區塊 1～3 個（偶爾空一塊留白），再補 1～2 個矮的小碎物。
       var nProp = lite ? (r() < 0.5 ? 1 : 0) : (r() < 0.12 ? 0 : (1 + Math.floor(r() * 2.6)));
-      var nSmall = lite ? 0 : 1 + Math.floor(r() * 3);
+      var nSmall = lite ? 0 : 1 + Math.floor(r() * 2);
       var smallList = atlas.props.map(function (p, idx) { return [idx, p[3] <= 60 ? p[1] : 0]; }).filter(function (x) { return x[1] > 0; });
       // placed：[x, y, 橫向避讓, 縱向避讓]（世界單位）
       var placed = [];
@@ -1770,6 +1809,16 @@ var BattleDecor = (function () {
         ps.zIndex = ps.y;
         ps._decorH = p[3] * k;
         ps._decorW = p[2] * k;
+        var groundTex = texFor('foot_' + texKey);
+        if (groundTex) {
+          var gs = takeSprite('decal', groundTex, decalLayer);
+          gs.anchor.set(0.5);
+          // 圖集接觸區以俯視空間畫，地面容器負責 groundScale 與透視。
+          gs.scale.set(sc * flip, sc);
+          gs.x = px; gs.y = py;
+          ps._decorGround = gs;
+          chunk.decals.push(gs);
+        }
         chunk.props.push(ps);
         return ps;
       }

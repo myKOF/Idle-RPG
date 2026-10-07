@@ -14,6 +14,31 @@
 - 正式渲染：隔離headless Edge／隨機Port唯讀HTTP、新Context載入正式Pixi／Core／Backend／Preset及160素材索引；確認貼圖載入後對照d21067f2原Adapter，逐敵人移動後可見尺寸兩軸均為原先60／272、半徑宣告6米，0.4秒active1、0.9秒active0，Console error／warning0。首輪夾具在Core建節點前等待貼圖，量到空貼圖邊界；改在首幀後等待真貼圖並加入實際尺寸門檻，重驗通過，產品程式無另改。未讀寫真人存檔，服務／瀏覽器已關閉，臨時腳本及日誌刪除。
 - 提交／交付：Commit為本紀錄所在`[Codex] fix: 逐風者真空迴旋特效縮至6米`，包含使用者Excel及其同源同步。Preset／素材庫無修改、無素材Commit。本次無未完成項目，可審查合併；9項既有回歸失敗保留，未驗收長時間真人戰鬥。同副本進行中場景內容依使用者授權保留未提交，由原聊天交付，不合併／推送。下一步重載遊戲驗收；Editor未儲存內容先另存備份再重載，勿直接覆蓋新版。
 
+## SCENE-RENEWAL-INTEGRATION-20261007 — 原創場景物件與地面過渡全面接入
+
+- Owner：Codex；Done。使用者核准苔沼預覽並要求全面接入，單一開發者。沿用正式Decor／Sculpt／圖集／區塊流程，苔沼接入九種設計；其他野外地圖依其地貌套用岩石風化與地面銜接，保留原主題物件及高塔祭壇。
+- 允許：js/decor-nature.js新原創繪圖模組、js/battle-decor.js圖集／組合／分層／擺放、Atlas Worker與主頁快取、既有Decor預覽工具、必要測試／文件、原創繪圖來源素材庫保存。前輪臨時預覽工具改用正式共用來源後清理；禁止技能／數值／模擬／存檔／第三方素材／其他副本，不合併／推送。
+- 前置：使用者核准SCENE-RENEWAL-PREVIEW，現有地形與透視流程已完成。預檢主要繪圖／Worker／測試無衝突；index／AI_TASKS涉及Claude8b0c89b2及b6bb1c63符文／寶石提交，使用者已明確同意分段修改、保留其他內容。主頁只碰場景腳本載入與快取，本紀錄只新增本次段落。
+- 驗收：七種地圖地表／地下圖集均有效，地面與直立物件分層同腳點／縮放／翻面，固定種子重返一致、回收與切圖無洩漏、遮擋淡出與高塔隱藏、Worker／主端畫法和版本一致；隔離瀏覽器正式Renderer視覺、Console／效能，定向回歸與Build、素材必要來源雜湊／双倉庫盤點後Commit。後續使用者整合並重載實戰驗收。
+- 完成：九種原創苔沼元素接入正式圖集，其他六張地圖依地貌加入風化岩石、砂石／雪緣與碎屑。每個直立物件新增同圖集的foot接觸貼片，與本體同腳點／倍率／翻面；地面走原平面投影，本體走原billboard與遮擋淡出。接觸區共用區塊回收與物件池，調整獨立貼片／小碎物密度維持原節點上限。沒有增加每幀美術建圖、特效Preset或外部圖片請求。
+- 修改10檔：js/decor-nature.js、js/battle-decor.js、js/worker/decor-atlas.worker.js、index.html、tools/decor-preview.html、tools/scene-renewal/export-source.cjs、tests/battle-decor.test.cjs、tests/battle-arena.test.cjs、docs/SCENE_NATURE.md、本紀錄。舊未提交預覽頁與獨立畫法已移除，正式Decor工具顯示本體與接觸區。主端／工具／Atlas Worker均載nature1.0.0、Decor1.0.10；Atlas Worker URL1.0.1。第8.1節Worker Asset更新沿用同副本逐風者任務5c460082已提交的20261007-wind-chaser-radius6／bridge1.0.233，未另改橋接或協議。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW、DecorSculpt／BattleRenderer／BattleArena、透視與測試Helper、knight序列幀、素材庫解析器及其他聊天的分段快取變更；未修改戰鬥公式、技能、存檔、Renderer／Sculpt／Arena或別人的任務內容。
+- 測試：`node --test tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs`40/40全過，新增3項地貌／腳點投影回收／版本回歸。`node --check js/decor-nature.js`、`node tools/scene-renewal/export-source.cjs --check`、`npm.cmd run build`468檔、`git diff --check`均通過；素材庫與遊戲來源SHA256 f6bb8d1d5ab05f5675191ab8c26f69f5d4eea068ca1469f46ac990f6596160fd一致。
+- 實機：隔離IAB頁載正式Pixi／Renderer／Decor／Arena及騎士，不載入bridge／模擬／存檔。七地圖、苔沼地表／地下與鏡頭前進返回均正常；正式背景Worker on、各圖16區塊／37～46本體，圖集最大2048×3098，快取2張。14組Worker圖集與主端同OffscreenCanvas後端的alpha及預乘RGB逐像素差異0。HTML Canvas與OffscreenCanvas直接位元比對首次有少量邊緣差異；相同後端復驗全相同，未降低測試門檻或修改產品以配合。最終操作無新增Console error／warning，診斷首輪的測試例外留在瀏覽器歷史日誌。
+- 效能：920×760隔離空場，關FPS節流後三輪各150幀on／off／on，ticker同步CPU成本median約0.2ms、P95約0.3ms；僅確認CPU提交成本，未量GPU時間或宣稱大量技能實戰FPS。原持續移動節點上限／回收測試全過；正式場景PNG留於工作區外供預覽。
+- 雙倉庫：素材库codex-authored/scene-nature保存原創母來源與SOURCE.md，先提交0f4dc6b。遊戲Commit為本紀錄所在`[Codex] feat: 全面接入原創場景物件與地面過渡`。圖集在執行期生成，臨時PNG／驗證頁不進遊戲或素材Commit；兩庫盤點只提交本次必要內容，保留無關工作區修改。
+- 交付：本次實作無未完成項目，可審查合併；未合併／推送。已知限制為Canvas後端抗鋸齒的少量邊缘差異、未驗收大量技能／真人長時間FPS。建議下一步由使用者整合後F5重載實戰檢視；素材編輯先更新母來源，再用export-source匯出，不維護第二套畫法。
+
+## SCENE-RENEWAL-PREVIEW-20261007 — 苔沼場景物件與地面銜接改造預覽
+
+- Owner：Codex；Done（使用者已核准外觀，接入見SCENE-RENEWAL-INTEGRATION-20261007）。使用者要求改善戰鬥場景岩石平切底緣與元素不足，先提供預覽。單一開發者；先以截圖苔沼製作原創可執行外觀，確認後再接入正式遊戲。
+- 範圍：新增 tools/scene-renewal/scene-art.js、tools/scene-renewal-preview.html；本紀錄僅新增此段。禁止改正式 Renderer／Decor／Worker／index、技能數值、存檔、第三方素材與其他副本，不合併／推送。依賴現有 Decor 作對照、現有角色作比例參考已滿足；後續使用者驗收外觀。
+- 預檢：兩個新增檔案無衝突。docs/AI_TASKS.md 有 Claude 8b0c89b2 未合併符文紀錄；使用者明確同意只新增本次段落並保留其內容。index 有 Claude 修改，這輪不需更動。RPG Maker MV 的 Outside_B、Forest 只讀觀察光影、植物群落與根部覆蓋，不匯入／裁切／描摹／改色。
+- 驗收：全景、目前／新岩石近景、九種物件設計頁；固定種子原創繪製、預覽下載、頁面 Console、Build 與 diff。Mote Studio 已確認可開啟；本輪沿用 Canvas 程序繪圖以保持變體與日後圖集流程，沒有產出遊戲用獨立素材圖片。先供外觀確認，不提交或替換正式遊戲。
+- 完成：岩石風化切面、裂紋與不規則下緣，接觸陰影／濕泥／苔蘚／碎石／草葉的基底過渡；苔岩群、樹樁、倒木、蕨葉、蘆葦、菌群、苔草、水窪及根系共九種元素，周邊群落配置保留中央戰鬥留白。兩個新增檔案及本段紀錄為唯一修改；唯讀檢查 Decor／Sculpt／Atlas Worker／Renderer、knight manifest／idle、規範及既有地形／透視測試。沒有改正式接線或使用者存檔。
+- 驗證：`node --check tools/scene-renewal/scene-art.js`、`npm.cmd run build`（467檔）、`node --test tests/battle-decor.test.cjs tests/battle-perspective.test.cjs`（27/27）、`git diff --check`均通過。IAB實際檢視三頁、切換正常，Console error／warning為0；由瀏覽器Canvas匯出三張PNG供確認，保存在工作區外本次visualizations目錄。人物裁圖依現有idle trim使用64×83，單格作比例參照。首次data URI下載工具逾時，改本機臨時匯出端點保存預览；不影響頁面本身下載連結。
+- 交付／限制：Commit無（依先預覽確認要求）；素材庫無變更，預覽PNG不屬正式素材。尚未接入／不得作正式功能合併；實戰FPS、鏡頭移動／地面投影、其他地圖延伸未驗收。接入時需將地面過渡和直立物件分層，沿用固定種子／共享圖集／區塊回收與遮擋淡出，並同步主頁及Atlas Worker快取。下一步使用者確認外觀後完成正式接線與素材流程，不合併或推送。
+
 ## WINDCHASER-SPIN4-20261007 — 逐風者真空迴旋四段
 
 - Owner：Codex；Done。使用者指定觸發真空迴旋，4段各100%風系傷害、每級+10%；保留當前Excel自行調整的20%觸發率與迴旋斬增傷，單一開發者。逐敵人判定，原敵人連續4段、每段0.2秒，不新增傷害範圍或借用真空斬技能樹加成。
