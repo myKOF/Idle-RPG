@@ -1,5 +1,16 @@
 # AI_TASKS.md
 
+## Claude｜符文鑲嵌頁改成寶石版型、符文孔數改由 game_parameters 配置、雙手武器 +1 孔（RUNE-SLOTS-UI-20261008）
+
+- Owner：Claude；Done。使用者要求：①符文鑲嵌界面改成與寶石鑲嵌同版型（上方符文孔與能力、下方所有符文），操作邏輯一併照寶石 ②裝備的符文孔數在 game_parameters 編號 321～331 加參數讓使用者配置 ③雙手武器的符文孔比單手多 +1，不是加倍。
+- 需求分析：①只動 UI（`rune.socket` 協議本來就有 `index`，不改協議）；②孔數原本在 Runes 表設定列 `slots_*`，使用者要的是和寶石孔、附魔孔同一張的稀有度表；③雙手武器的寶石孔是 ×1.75、附魔孔是 +1，符文孔要照附魔孔走加法。
+- 技術決策：①符文頁沿用寶石頁的容器與選孔狀態（`equipSlotModeFor`），鑲入與跳孔共用 `sendSlotSocketCommand`，右側素材面板不再使用；寶石格抽成 `equipGemGridHTML`。②孔數單一來源＝game_parameters「表-稀有度」的參數g → `RARITIES[i].runeSlots`（apply_params 新錨點），移除 `RUNE_SETTINGS.slotsByRarity` 與 Runes 表 11 列 `slots_*`，避免兩處都能配；Runes 表的配方長度檢查改讀 game_parameters.csv。③`twoHandBonusSlots` 預設改 1，只加在孔數 >0 的稀有度（普通的雙手武器仍 0 孔）——待確認：普通雙手武器是否也要給 1 孔。
+- 修改：js/ui.js、item.js（`itemRuneHTML` 支援選孔／卸下模式）、runeword.js（`rwSlotCountAt`、新增 `rwRegularMaxSlots`）、runeword_data.js、ui-runeword.js、data.js（`RARITIES.runeSlots`）、css/runeword.css；tools/apply_params.cjs、config_tables.cjs；config/Excel/game_parameters.xlsx（計算表 321～331 列的參數g 與說明欄）、Runes.xlsx（刪 11 列 `slots_*`、雙手加成 1、備註與欄位說明頁）與對應 CSV（Excel 皆以 Excel COM 寫入並重開驗證）；tests（新增 rune-slots-config，更新 equip-socket-ui／runeword-ui／runeword-engine／runeword-data／config-runes-table）；docs/RUNEWORD_DESIGN.md、game_formula.md、GM_command.md。
+- 預檢：`.claude/check-conflicts.ps1`：其餘檔案退出碼 0；index.html／js/bridge.js／js/worker/sim.worker.js／docs/AI_TASKS.md 有 ai/codex 的未提交修改，已用 `git merge-file` 試跑三方合併並取得使用者同意才改：這四個檔案和 codex 本來就各有 1～2 處衝突（雙方 bump 同幾行版號／檔頭各加紀錄），我的改動只落在既有的衝突區塊內，沒有新增衝突組；合併 develop 時這些區塊要人工取兩邊較新的版號。
+- 測試：全庫與乾淨 HEAD 比對失敗名稱差集，新增失敗 0 條；`config_tables --apply` 語意變更 0、`apply_params` 548 項一致、錨點問題 0；實機（瀏覽器）驗證鑲嵌、跳孔、卸下、鑲滿鎖定、符文真言成形、寶石⇄符文互切。
+- 風險：①套用參數時 Runes 表檢查會讀 game_parameters.csv（`套用參數.bat` 的順序保證它已是最新）；孔數全 0 或隨稀有度變少會中止並指出格子。②Worker 載入 data.js／runeword_data.js／item.js／runeword.js，已 bump `WORKER_ASSET_VERSION` 與 sim.worker.js 的對應 token；合併時兩邊的 token 要取同一個新值。③5 顆符文的真言現在做得出來（傳說以上雙手武器 5 孔），第 5 孔的符文頁排版已實測可用。
+- 建議驗證（Antigravity）：傳說以上雙手武器有 5 孔、單手與防具 4 孔；Excel 改 321～331 的參數g 後套用參數，孔數與符文頁說明跟著變；把參數g 調成 0 的稀有度沒有符文孔；符文頁選孔／鑲入／卸下／鑲滿；5 顆真言（滅世等）能鑲出並成形。
+
 ## Claude｜符文真言：3 顆符文補量、新增 5 顆符文的真言、傳說級全帶傳奇特效（RUNEWORD-SPREAD-20261008）
 
 - Owner：Claude；Done。使用者要求：①2 顆與 4 顆的符文真言佔 9 成以上、3 顆太少，把至少一半的 4 顆改為 3 顆，效果與組合重新調整 ②新增 6 組需要 5 顆符文的真言（為「雙手武器之後最多 5 孔」預留）③這 6 組為傳說級，並且所有傳說級真言至少帶一個傳說特效（例：萬軍的裂空飛斬），傳說特效要在 23 個主技能間平均，傳說級至少 23 組，不夠自行補。
