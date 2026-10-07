@@ -12,6 +12,59 @@ const VFXCore = require('../js/vfx-core.js');
 
 const root = path.resolve(__dirname, '..');
 
+test('FACING-TILT 面敵旋轉在固定outerScale內，保留外框傾角、鏡頭旗標及動畫', () => {
+  for (const angle of [0, Math.PI / 4, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+    const nodes = [];
+    const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {
+      createNode() { const n = {}; nodes.push(n); return n; },
+      updateNode(n, t) { n.t = { ...t }; }, destroyNode() {}
+    } });
+    const preset = { schemaVersion: 1, id: 'facing-tilt', duration: 1, layers: [
+      { id: 'ring', type: 'sprite', assetId: 'pack/ring.png', position: { x: 30, y: 0 },
+        outerScale: { x: 1, y: .6 }, rotationSpeed: 2, rotationOverLife: [[0, .1], [1, .5]],
+        perspective: false, cameraDepth: false, alpha: .4 }
+    ] };
+    const original = JSON.stringify(preset);
+    rt.registerPreset(preset);
+    const h = rt.play(preset.id, { position: { x: 50, y: 70 }, scale: 1.2, rotation: angle, facingBeforeOuterScale: true });
+    rt.update(.2);
+    const t = nodes[0].t;
+    const inner = Math.atan2(Math.sin(angle) / .6, Math.cos(angle));
+    const local = inner + .18 + .4;
+    const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`);
+    near(t.scaleX * Math.cos(t.rotation), 1.2 * Math.cos(local));
+    near(t.scaleX * Math.sin(t.rotation), .72 * Math.sin(local));
+    near(-t.scaleY * Math.sin(t.rotation - t.skewX), -1.2 * Math.sin(local));
+    near(t.scaleY * Math.cos(t.rotation - t.skewX), .72 * Math.cos(local));
+    near(t.x, 50 + 36 * Math.cos(inner)); near(t.y, 70 + 21.6 * Math.sin(inner));
+    near(Math.atan2(t.y - 70, t.x - 50), Math.atan2(Math.sin(angle), Math.cos(angle)));
+    assert.equal(t.perspective, false); assert.equal(t.cameraDepth, false); assert.equal(t.alpha, .4);
+    assert.equal(t.motionAngle, undefined); assert.equal(JSON.stringify(preset), original);
+    rt.setTransform(h, { facingBeforeOuterScale: false, rotation: 0 }); rt.update(0);
+    near(nodes[0].t.x, 86); near(nodes[0].t.y, 70);
+    rt.update(.81); assert.equal(rt.timeOf(h), null); rt.destroy();
+  }
+});
+
+test('FACING-TILT 未啟用選項保留整體rotation，鎖方向及退化外框保持有限值', () => {
+  for (const outerY of [.6, 0]) for (const enabled of [false, true]) {
+    const nodes = [];
+    const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {
+      createNode() { const n = {}; nodes.push(n); return n; },
+      updateNode(n, t) { n.t = { ...t }; }, destroyNode() {}
+    } });
+    rt.registerPreset({ schemaVersion: 1, id: 'fixed', duration: 1, layers: [
+      { id: 'body', type: 'sprite', assetId: 'pack/ring.png', outerScale: { x: 1, y: outerY } },
+      { id: 'fixed', type: 'sprite', assetId: 'pack/ring.png', outerScale: { x: 1, y: outerY }, followDirection: false }
+    ] });
+    rt.play('fixed', { rotation: Math.PI / 4, facingBeforeOuterScale: enabled }); rt.update(.1);
+    for (const node of nodes) for (const k of ['x', 'y', 'rotation', 'scaleX', 'scaleY', 'skewX']) assert.ok(Number.isFinite(node.t[k]));
+    assert.equal(nodes[1].t.rotation, 0); assert.equal(nodes[1].t.scaleX, 1); assert.equal(nodes[1].t.scaleY, outerY);
+    if (!enabled || outerY === 0) assert.equal(nodes[0].t.rotation, Math.PI / 4);
+    rt.destroy();
+  }
+});
+
 test('受擊可用腳點排序而維持身體中心的實際繪製位置', () => {
   const nodes = [];
   const rt = VFXCore.createRuntime({ resolver: { resolve: id => id }, backend: {

@@ -983,10 +983,8 @@ var BattleDecor = (function () {
       });
       g.restore();
     }
-    if (pal.glow) strokeAll(rgba(pal.glow, 0.55), 3, 10);
-    strokeAll(rgba(pal.rim || '#ffffff', 0.12), 2.4);
-    strokeAll(pal.dark || 'rgba(0,0,0,0.75)', 0);
-    if (pal.glow) strokeAll(shadeRgba(pal.glow, 0.5, 0.9), -1.5);
+    // 地板紋路只保留暗色刻痕，避免亮色分岔看似電絲或散落枝條。
+    strokeAll('rgba(8,8,10,0.64)', 0);
   }
 
   // 碎石：幾顆切面小石頭（浮雕），各自帶一點往右下的落影
@@ -1218,8 +1216,15 @@ var BattleDecor = (function () {
     g.restore();
   }
   // [名稱, 寬, 高, 種子]（邏輯像素）
-  var PARTICLE_SPECS = [['dot', 16, 16, 1], ['fog', 200, 120, 2], ['glow', 32, 32, 3], ['streak', 36, 10, 4], ['flake', 16, 16, 5], ['spark', 24, 24, 6], ['ray', 64, 256, 7]];
-  var PARTICLE_DRAW = { dot: particleDot, fog: particleFog, glow: particleGlow, streak: particleStreak, flake: particleFlake, spark: particleSpark, ray: particleRay };
+  function particleRipple(g,w,h) {
+    g.strokeStyle='rgba(225,245,224,.85)';g.lineWidth=1.4;g.beginPath();g.ellipse(w/2,h/2,w*.4,h*.3,0,0,Math.PI*2);g.stroke();
+  }
+  function particlePetal(g,w,h) {
+    var gr=g.createLinearGradient(0,0,w,h);gr.addColorStop(0,'#fff9ea');gr.addColorStop(1,'#cba5b2');
+    g.fillStyle=gr;g.beginPath();g.ellipse(w/2,h/2,w*.28,h*.42,.5,0,Math.PI*2);g.fill();
+  }
+  var PARTICLE_SPECS = [['dot',16,16,1],['fog',200,120,2],['glow',32,32,3],['streak',36,10,4],['flake',16,16,5],['spark',24,24,6],['ray',64,256,7],['ripple',48,24,8],['petal',16,16,9]];
+  var PARTICLE_DRAW = {dot:particleDot,fog:particleFog,glow:particleGlow,streak:particleStreak,flake:particleFlake,spark:particleSpark,ray:particleRay,ripple:particleRipple,petal:particlePetal};
   var PARTICLE_W = {};
   PARTICLE_SPECS.forEach(function (p) { PARTICLE_W[p[0]] = p[1]; });
 
@@ -1270,13 +1275,15 @@ var BattleDecor = (function () {
     swamp: {
       tint: 0xffffff, deepTint: 0x7c8a78,
       props: [['reeds', 4, 70, 96, { base: '#6a7a3a', head: '#4a2e1a' }], ['mushrooms', 2.6, 62, 66, { cap: '#8a3a6a', stem: '#d8d0b8', spot: '#f0e0f0', glow: '#c070ff' }],
-        ['stump', 2, 64, 58, { wood: '#4a3424', ring: '#8a6a48', moss: '#4a6a2a' }], ['rock', 2.4, 64, 50, MOSSROCK, { moss: '#5a8a3a' }], ['deadTree', 1.4, 96, 132, { wood: '#2a2a1e', hi: '#8a9a6a' }],
-        ['grass', 3, 54, 40, { base: '#5a7a34' }]],
+        ['stump', 2, 82, 66, { wood: '#4a3424', ring: '#8a6a48', moss: '#4a6a2a' }], ['rock', 2.4, 84, 64, MOSSROCK, { moss: '#5a8a3a' }], ['deadTree', 1.4, 96, 132, { wood: '#2a2a1e', hi: '#8a9a6a' }],
+        ['grass', 2, 54, 40, { base: '#5a7a34' }], ['fern', 3, 76, 50, { base: '#5a7a34' }], ['log', 1.8, 120, 62, { wood: '#4a3424' }]],
       deepProps: [['mushrooms', 5, 70, 78, { cap: '#2a7a6a', stem: '#c8d8c8', spot: '#d0fff0', glow: '#40ffd0' }], ['stump', 2, 64, 58, { wood: '#3a2a1e', ring: '#7a5a3a', moss: '#3a5a2a' }],
-        ['rock', 2, 64, 50, MOSSROCK, { moss: '#3a7a4a' }], ['ruinWall', 1.2, 110, 70, { base: '#5a5a48', moss: '#4a7a3a' }], ['reeds', 2, 70, 96, { base: '#4a5a2a', head: '#2a1a10' }]],
+        ['rock', 2, 84, 64, MOSSROCK, { moss: '#3a7a4a' }], ['ruinWall', 1.2, 110, 70, { base: '#5a5a48', moss: '#4a7a3a' }], ['reeds', 2, 70, 96, { base: '#4a5a2a', head: '#2a1a10' }],
+        ['fern', 1.8, 70, 46, { base: '#3c6650' }], ['log', 1.4, 120, 62, { wood: '#3a2a1e' }]],
       decals: [['puddle', 5, 190, { color: '#2a3a24', rim: '#0a0e08' }], ['patch', 5, 340, { color: '#3a4a1e', alpha: 0.2 }], ['patch', 3, 300, { color: '#0e140a', alpha: 0.2 }],
-        ['pebbles', 2, 80, { color: '#4a5a3a' }]],
-      deepDecals: [['puddle', 5, 200, { color: '#1a3a34', rim: '#06100e' }], ['patch', 5, 340, { color: '#0a1410', alpha: 0.24 }], ['light', 2, 200, { color: '#40ffd0' }]],
+        ['pebbles', 2, 80, { color: '#4a5a3a' }], ['roots', 2, 150, {}], ['litter', 4, 210, {}]],
+      deepDecals: [['puddle', 5, 200, { color: '#1a3a34', rim: '#06100e' }], ['patch', 5, 340, { color: '#0a1410', alpha: 0.24 }], ['light', 2, 200, { color: '#40ffd0' }],
+        ['roots', 2, 150, {}], ['litter', 3, 210, {}]],
       ambient: { kind: 'fireflies', count: 26, color: 0xd8ff7a, fog: 3 }, deepAmbient: { kind: 'fireflies', count: 30, color: 0x60ffd8, fog: 4 }
     },
     undead_mountains: {
@@ -1325,7 +1332,64 @@ var BattleDecor = (function () {
       deepAmbient: { kind: 'motes', count: 36, color: 0xffd060, rays: 2, rayColor: 0xffe0a0 }
     }
   };
+  // 每張地貌的本體重新造型，地下另配遺跡／結晶／枯木組合。
+  var REBUILT_PROPS = {
+    desert: {
+      surface: [['rock',3,92,70],['cactus',2,68,114],['dryGrass',3,78,49],['pillar',1.2,70,125],['urn',1.6,56,62],['deadTree',.8,104,140],['rubble',1.7,80,52]],
+      deep: [['arch',1,140,132],['pillar',2,68,132],['urn',2.2,56,64],['rock',2,90,66],['dryGrass',1,68,43],['rubble',2,86,55],['brazier',1.2,58,80,{metal:'#6a5a48'}]]
+    },
+    Icefield: {
+      surface: [['pine',2.2,125,178],['crystals',2,83,118],['rock',3,100,72],['shrub',3,78,52],['stump',1,78,62],['spire',1.2,73,113]],
+      deep: [['crystals',3.4,90,128],['spire',2,70,118],['rock',2,90,67],['pillar',1.4,74,131],['shrub',2,76,48],['brazier',1,58,80,{metal:'#5a6474',fire:'#4ab0ff',fire2:'#d8f4ff'}]]
+    },
+    swamp: {
+      surface: [['willow',1.3,138,185],['reeds',3,76,94],['fern',3,88,56],['mushrooms',2,63,60],['stump',1.5,90,70],['rock',2.1,95,70],['grass',2,64,43],['log',1.5,130,65]],
+      deep: [['willow',1,118,156],['mushrooms',3.2,70,75],['rock',2,96,71],['ruinWall',1.2,112,78],['reeds',1.5,74,93],['fern',2,81,52],['log',1.2,130,65]]
+    },
+    undead_mountains: {
+      surface: [['grave',3.2,76,100],['deadTree',1.8,113,159],['skullPile',1.5,92,64],['rock',2,97,72],['ruinWall',1.1,130,90],['dryGrass',2.8,70,46],['rubble',1.2,87,55]],
+      deep: [['arch',1.2,145,142],['grave',2.5,72,96],['skullPile',2,96,70],['urn',1.2,53,62],['pillar',1.6,72,133],['dryGrass',1.4,70,46],['brazier',1.4,58,80,{metal:'#4a4450',fire:'#9a4aff',fire2:'#e8c8ff'}]]
+    },
+    god_battlefield: {
+      surface: [['deadTree',1.6,110,156],['banner',2,88,146],['sword',2.2,62,99],['rock',2.1,105,76],['giantBones',.8,144,85],['dryGrass',2.8,77,49],['rubble',1.8,85,57]],
+      deep: [['arch',1,144,140],['banner',1.4,83,138],['sword',2.5,62,99],['deadTree',1.8,106,142],['rubble',2,84,56],['dryGrass',2,75,48],['brazier',1.2,58,80,{metal:'#78614a'}]]
+    },
+    god_chaos: {
+      surface: [['crystals',3,88,129],['runeStone',1.7,76,119],['rock',2,103,75],['deadTree',1.1,108,146],['spire',1.6,78,128],['shrub',2,74,53],['dryGrass',1.3,72,46],['rubble',1.3,82,54]],
+      deep: [['arch',1.1,143,137],['crystals',3.2,89,132],['runeStone',2,74,120],['spire',1.5,76,130],['deadTree',1,102,144],['shrub',2,74,53],['dryGrass',1.3,72,46],['rubble',1.4,85,56]]
+    },
+    god_sanctuary: {
+      surface: [['pillar',2.1,75,150],['urn',1.6,62,73],['shrub',3.5,88,59],['rock',1.6,88,66],['runeStone',1.4,76,121],['ruinWall',1,128,87],['rubble',1.4,86,57]],
+      deep: [['arch',1.3,145,139],['pillar',2,74,145],['urn',1.7,60,70],['shrub',3,85,58],['runeStone',1.6,74,118],['rubble',1.7,86,57],['brazier',1,58,80,{metal:'#a08850',fire:'#ffc040',fire2:'#fff4c0'}]]
+    }
+  };
+  Object.keys(REBUILT_PROPS).forEach(function(key){
+    KITS[key].props=REBUILT_PROPS[key].surface;
+    KITS[key].deepProps=REBUILT_PROPS[key].deep;
+    // 取消裝飾貼片裡的規則磚格，地面以磨損／碎屑建立層次。
+    KITS[key].decals=KITS[key].decals.filter(function(d){return d[0]!=='tiles';});
+    KITS[key].deepDecals=KITS[key].deepDecals.filter(function(d){return d[0]!=='tiles';});
+    KITS[key].motion={wind:.7, local: key==='swamp'?'gas':key==='Icefield'?'frost':key==='god_sanctuary'?'petal':key==='god_chaos'?'void':'smoke'};
+  });
   KITS[''] = KITS.desert;
+
+  /* 地面覆蓋與岩石沿用各地貌配色；荒漠／冰原不長苔沼植物。 */
+  function natureStyle(kitKey, deep) {
+    var pal = { desert: SAND, Icefield: ICEROCK, swamp: MOSSROCK, undead_mountains: DARKSTONE,
+      god_battlefield: ASH, god_chaos: CHAOSROCK, god_sanctuary: MARBLE }[kitKey] || SAND;
+    var style = { stone: pal.base, light: pal.light, dark: pal.dark,
+      soil: pal.base, moss: kitKey === 'swamp', snow: kitKey === 'Icefield', theme: kitKey, deep: !!deep,
+      accent: {Icefield:'#8dcced',god_chaos:'#a780d2',god_sanctuary:'#b6ad87',undead_mountains:'#9b98a8',god_battlefield:'#9c8771',desert:'#c6a46d'}[kitKey] };
+    if (kitKey === 'swamp') {
+      style.stone = '#718171'; style.light = '#b3b69b'; style.dark = '#2e443b'; style.soil = '#55563a';
+      if (deep) style.cap = '#456f69';
+    }
+    return style;
+  }
+  Object.keys(KITS).filter(function (k) { return k && k !== 'swamp'; }).forEach(function (key) {
+    KITS[key].decals.push(['litter', 2, 180, {}]);
+    KITS[key].deepDecals.push(['litter', 2, 180, {}]);
+  });
 
   /* 地標：大型場景物件，每個區塊約 14% 機率出現一個，其他擺件會避開它。格式同 props。 */
   var LANDMARKS = {
@@ -1372,9 +1436,9 @@ var BattleDecor = (function () {
     patch: decalPatch, crack: decalCrack, pebbles: decalPebbles, bones: decalBones, puddle: decalPuddle,
     runes: decalRunes, tiles: decalTiles, light: decalLight, snow: decalSnow
   };
-  /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt.js／battle-decor.js 要一起更新
+  /* 背景建圖 Worker（相對於 index.html）。改了 decor-sculpt／decor-nature／battle-decor 要一起更新
      這裡的版本與 Worker 檔內 importScripts 的版本字串，否則 Worker 會吃到快取的舊畫法。 */
-  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.0';
+  var ATLAS_WORKER_URL = 'js/worker/decor-atlas.worker.js?v=1.0.7';
   var VARIANTS = 3;          // 每種擺件／地面裝飾畫幾個變體
   var TEX_SCALE = 1.5;       // 圖集解析度（畫面放大或高 DPI 時仍清楚；開 mipmap 避免縮小時閃爍）
 
@@ -1406,6 +1470,19 @@ var BattleDecor = (function () {
       var nv = d[0] === 'light' ? 1 : VARIANTS;
       for (var v = 0; v < nv; v++) specs.push({ kind: 'decal', key: 'd' + i + '_' + v, type: d[0], w: d[2], h: d[2], pal: d[3], seed: strHash(kitKey + d[0] + i + '_' + v + (deep ? 'd' : '')) });
     });
+    var style = natureStyle(kitKey, deep);
+    var natureProps = ['rock','stump','log','fern','reeds','mushrooms','grass','willow','pine','deadTree','shrub','dryGrass','cactus','pillar','grave','urn','arch','ruinWall','rubble','runeStone','crystals','spire','skullPile','giantBones','banner','sword'];
+    var contacts = [];
+    specs.forEach(function (s) {
+      s.natureStyle = style;
+      s.nature = s.kind === 'prop' && natureProps.indexOf(s.type) >= 0;
+      if (s.kind === 'decal') s.nature = s.type === 'litter' || s.type === 'roots' || (kitKey === 'swamp' && s.type === 'puddle');
+      if (s.kind !== 'prop') return;
+      // 接觸區不與本體一起 billboard：在地面層以同腳點、縮放與翻面放置。
+      contacts.push({ kind: 'contact', key: 'foot_' + s.key, type: s.type, propW: s.w,
+        w: Math.ceil(s.w * 1.65 + 28), h: Math.ceil(s.w * 0.9 + 40), seed: s.seed ^ 0x7f4a7c15, natureStyle: style });
+    });
+    specs = specs.concat(contacts);
     PARTICLE_SPECS.forEach(function (p) { specs.push({ kind: 'particle', key: p[0], type: p[0], w: p[1], h: p[2], seed: p[3] }); });
     // 架子式打包
     var PAD = 6, MAXW = 2048;
@@ -1442,7 +1519,14 @@ var BattleDecor = (function () {
     g.scale(TEX_SCALE, TEX_SCALE);
     var r = mulberry(s.seed);
     try {
-      if (s.kind === 'prop') PROP_DRAW[s.type](g, s.w, s.h, r, s.pal, s.opt);
+      if (s.kind === 'contact') {
+        g.translate(s.w / 2, s.h / 2); g.scale(1, 2);
+        DecorNature.drawContact(g, 0, 0, s.propW, s.seed, s.natureStyle);
+      } else if (s.nature && s.kind === 'prop') {
+        DecorNature.drawBody(g, s.type, s.w / 2, s.h - FOOT, s.w * 0.9, s.h - FOOT, s.seed, s.natureStyle);
+      } else if (s.nature && s.kind === 'decal') {
+        DecorNature.drawSurface(g, s.type, s.w, s.h, s.seed, s.natureStyle);
+      } else if (s.kind === 'prop') PROP_DRAW[s.type](g, s.w, s.h, r, s.pal, s.opt);
       else if (s.kind === 'decal') DECAL_DRAW[s.type](g, s.w, s.h, r, s.pal);
       else if (s.kind === 'flame') drawFlameFrame(g, s.w, s.h, r, s.pal, s.frame);
       else PARTICLE_DRAW[s.type](g, s.w, s.h, r);
@@ -1588,15 +1672,17 @@ var BattleDecor = (function () {
 
     var D = {
       kitKey: null, deep: false, band: -1, atlas: null, baseTex: null, textures: {}, seedBase: 0,
-      chunks: new Map(), lastChunkKey: '', pools: { decal: [], prop: [], flame: [], light: [] },
+      chunks: new Map(), lastChunkKey: '', pools: { decal: [], prop: [], flame: [], light: [], local: [] },
       particles: [], fogs: [], rays: [], lastCam: null, visible: true, time: 0,
       counts: { decals: 0, props: 0 },
-      target: null, building: null, prebuild: null, cache: new Map()
+      target: null, building: null, prebuild: null, cache: new Map(),
+      localGroups: new Map(), localSelection: '', motionOn: true
     };
 
     function texFor(key) { return D.textures[key] || null; }
 
     function releaseAll() {
+      D.localGroups.forEach(releaseLocalGroup);D.localGroups.clear();D.localSelection='';
       D.chunks.forEach(function (c) { releaseChunk(c); });
       D.chunks.clear();
       D.lastChunkKey = '';
@@ -1605,7 +1691,7 @@ var BattleDecor = (function () {
     // 卸下目前的圖集：節點回收、貼圖釋放（GPU），畫好的畫布留在快取
     function deactivate() {
       releaseAll();
-      ['decal', 'prop', 'flame', 'light'].forEach(function (k) {
+      Object.keys(D.pools).forEach(function (k) {
         D.pools[k].forEach(function (s) { s.destroy(); });
         D.pools[k] = [];
       });
@@ -1730,9 +1816,9 @@ var BattleDecor = (function () {
     function buildChunk(cx, cy) {
       var atlas = D.atlas;
       var r = mulberry(hash3(cx, cy, D.seedBase));
-      var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [] };
+      var chunk = { cx: cx, cy: cy, decals: [], props: [], flames: [], lights: [], emitters: [] };
       var x0 = cx * CHUNK_W, y0 = cy * CHUNK_H;
-      var nDecal = lite ? 2 : 3 + Math.floor(r() * 3);
+      var nDecal = lite ? 2 : 2 + Math.floor(r() * 2);
       for (var i = 0; i < nDecal; i++) {
         var di = weightedPick(r, atlas.decals);
         var d = atlas.decals[di];
@@ -1749,10 +1835,11 @@ var BattleDecor = (function () {
         s.y = y0 + r() * CHUNK_H;
         s.alpha = isLight ? 0.55 : range(r, 0.75, 1);
         (isLight ? chunk.lights : chunk.decals).push(s);
+        if(d[0]==='puddle'&&(D.kitKey==='swamp'||D.kitKey==='Icefield'))chunk.emitters.push({key:cx+':'+cy+':d'+i,x:s.x,y:s.y,height:0,kind:D.kitKey==='swamp'?'gas':'frost',seed:hash3(cx,cy,i)});
       }
-      // 大型擺件每區塊 1～3 個（偶爾空一塊留白），再補 1～3 個矮的小碎物（間距可以近一點）
+      // 大型擺件每區塊 1～3 個（偶爾空一塊留白），再補 1～2 個矮的小碎物。
       var nProp = lite ? (r() < 0.5 ? 1 : 0) : (r() < 0.12 ? 0 : (1 + Math.floor(r() * 2.6)));
-      var nSmall = lite ? 0 : 1 + Math.floor(r() * 3);
+      var nSmall = lite ? 0 : 1 + Math.floor(r() * 2);
       var smallList = atlas.props.map(function (p, idx) { return [idx, p[3] <= 60 ? p[1] : 0]; }).filter(function (x) { return x[1] > 0; });
       // placed：[x, y, 橫向避讓, 縱向避讓]（世界單位）
       var placed = [];
@@ -1770,6 +1857,22 @@ var BattleDecor = (function () {
         ps.zIndex = ps.y;
         ps._decorH = p[3] * k;
         ps._decorW = p[2] * k;
+        ps._natureSway = {dryGrass:.055,shrub:.035,grass:.045,reeds:.025,willow:.012,pine:.008,banner:.05}[p[0]] || 0;
+        ps._naturePhase = (hash3(cx,cy,Math.floor(px+py))>>>0)/4294967296*Math.PI*2;
+        var localKind = (D.atlas.kit.motion || {}).local;
+        var localSource = localKind==='smoke'?p[0]==='deadTree':localKind==='gas'?p[0]==='stump':localKind==='frost'?p[0]==='crystals':localKind==='void'?p[0]==='crystals'||p[0]==='runeStone':localKind==='petal'?p[0]==='shrub':p[0]==='dryGrass';
+        if(D.kitKey==='desert'&&p[0]==='dryGrass'){localKind='dust';localSource=true;}
+        if(localSource)chunk.emitters.push({key:cx+':'+cy+':p'+texKey+':'+px,x:px,y:py,height:localKind==='smoke'?p[3]*k*.65:8,kind:localKind,seed:hash3(cx,cy,Math.floor(px))});
+        var groundTex = texFor('foot_' + texKey);
+        if (groundTex) {
+          var gs = takeSprite('decal', groundTex, decalLayer);
+          gs.anchor.set(0.5);
+          // 圖集接觸區以俯視空間畫，地面容器負責 groundScale 與透視。
+          gs.scale.set(sc * flip, sc);
+          gs.x = px; gs.y = py;
+          ps._decorGround = gs;
+          chunk.decals.push(gs);
+        }
         chunk.props.push(ps);
         return ps;
       }
@@ -1922,6 +2025,7 @@ var BattleDecor = (function () {
         for (var i = 0; i < c.props.length; i++) {
           var s = c.props[i];
           billboardSprite(s, bb, s._bbX, s._bbY);
+          if(s._natureSway&&!lite)s.skew.x+=Math.sin(D.time*.85+s._naturePhase)*s._natureSway;
         }
         for (var j = 0; j < c.flames.length; j++) {
           var f = c.flames[j];
@@ -2084,12 +2188,63 @@ var BattleDecor = (function () {
       }
       if (!D.atlas) return;
       var dt = Math.max(0, Math.min(0.1, view.dt || 0));
+      if(!D.visible||!D.motionOn)dt=0;
       D.time += dt;
       syncChunks(view);
       fadeNearPlayer(view);
       animateFlames(dt);
       billboardChunks();
+      updateLocalEffects(view);
       updateParticles(view, dt);
+    }
+
+    // 只選附近有限個源點；圖集煙團預先柔邊，不在每幀套模糊濾鏡。
+    function releaseLocalGroup(group) {
+      group.sprites.forEach(function(s){giveSprite('local',s);});
+    }
+    function updateLocalEffects(view) {
+      var selection=D.lastChunkKey+':'+Math.floor(view.camX/96)+':'+Math.floor(view.camY/96);
+      if(selection!==D.localSelection){
+        D.localSelection=selection;
+        var candidates=[];
+        D.chunks.forEach(function(c){c.emitters.forEach(function(e){
+          var dx=e.x-view.camX,dy=(e.y-view.camY)*groundScale;
+          if(Math.abs(dx)<view.W/2+100&&Math.abs(dy)<view.H/2+100)candidates.push({e:e,d:dx*dx+dy*dy});
+        });});
+        candidates.sort(function(a,b){return a.d-b.d||(a.e.key<b.e.key?-1:1);});
+        var wanted={},limit=lite?2:6;
+        candidates.slice(0,limit).forEach(function(c){wanted[c.e.key]=c.e;});
+        D.localGroups.forEach(function(group,key){if(!wanted[key]){releaseLocalGroup(group);D.localGroups.delete(key);}});
+        Object.keys(wanted).forEach(function(key){
+          if(D.localGroups.has(key))return;
+          var e=wanted[key],sprites=[],n=lite?1:3;
+          for(var i=0;i<n;i++){
+            var bubble=e.kind==='gas'&&e.height===0&&i===0;
+            var texture=bubble?'ripple':e.kind==='void'?'glow':e.kind==='petal'?'petal':e.kind==='dust'?'dot':'fog';
+            var s=takeSprite('local',texFor(texture),bubble?decalLayer:propLayer);s.anchor.set(.5);
+            s._decorLocal=true;s._natureBubble=bubble;s._natureIndex=i;s._natureTexture=texture;
+            s.tint=e.kind==='gas'?0xa6b969:e.kind==='frost'?0xc5e6ee:e.kind==='void'?0xb297db:e.kind==='smoke'?0x9e9b8b:0xe5cfac;
+            sprites.push(s);
+          }
+          D.localGroups.set(key,{source:e,sprites:sprites});
+        });
+      }
+      D.localGroups.forEach(function(group){
+        var e=group.source,phase=(e.seed>>>0)/4294967296;
+        group.sprites.forEach(function(s){
+          var age=(D.time*.22+phase+s._natureIndex/3)%1;
+          var fade=Math.sin(age*Math.PI),side=Math.sin(age*3+phase*6);
+          if(s._natureBubble){
+            s.x=e.x;s.y=e.y;s.scale.set((.15+age*.65)/TEX_SCALE);s.alpha=fade*.32;s.rotation=0;
+          }else{
+            var fog=s._natureTexture==='fog',base=fog?.16:s._natureTexture==='glow'?.22:.3;
+            s._bbX=s._bbY=base*(.6+age*.9);
+            s.x=e.x+side*(fog?18:30);s.y=e.y*groundScale-e.height-age*(fog?40:32);
+            s.zIndex=e.y*groundScale+.1;s.alpha=fade*(fog?.24:.65);
+            s.rotation=fog?0:age*2;billboardSprite(s,opts.billboard,s._bbX,s._bbY);
+          }
+        });
+      });
     }
 
     function setVisible(on) {
@@ -2103,6 +2258,7 @@ var BattleDecor = (function () {
         c.props.forEach(function (s) { s.visible = on; });
         c.flames.forEach(function (s) { s.visible = on; });
       });
+      D.localGroups.forEach(function(group){group.sprites.forEach(function(s){s.visible=on;});});
     }
 
     function stats() {
@@ -2112,6 +2268,7 @@ var BattleDecor = (function () {
         worker: WK.failed ? 'failed' : (WK.worker ? 'on' : 'off'),
         prebuilding: D.prebuild ? D.prebuild.key : null, cached: Array.from(D.cache.keys()),
         chunks: D.chunks.size, decals: D.counts.decals, props: D.counts.props, particles: D.particles.length + D.fogs.length + D.rays.length,
+        localSources:D.localGroups.size,localParticles:Array.from(D.localGroups.values()).reduce(function(n,g){return n+g.sprites.length;},0),motion:D.motionOn,motionTime:D.time,
         atlas: D.atlas ? D.atlas.width + 'x' + D.atlas.height + (D.atlas.bitmap ? ' (worker)' : '') : null
       };
     }
@@ -2127,7 +2284,7 @@ var BattleDecor = (function () {
       D.target = null;
     }
 
-    return { setScene: setScene, update: update, setVisible: setVisible, stats: stats, destroy: destroy, enabled: enabled };
+    return { setScene: setScene, update: update, setVisible: setVisible, setMotionEnabled:function(on){D.motionOn=!!on;}, stats: stats, destroy: destroy, enabled: enabled };
   }
 
   return {

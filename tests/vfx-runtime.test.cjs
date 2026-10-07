@@ -292,21 +292,21 @@ test('GALE 月牙只在主目標播放，依半徑等比縮放、不壓扁或複
   const t=log.nodes[0].transforms.at(-1);
   assert.equal(t.x,100); assert.equal(t.y,50);
   assert.equal(t.scaleX,1.5); assert.equal(t.scaleY,1.5);
-  assert.equal(t.rotation,0);
+  assert.equal(t.rotation,Math.atan2(50,100));
   for (let repeat=0;repeat<2;repeat++) {
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
       area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,0);
+    assert.equal(log.nodes.at(-1).transforms.at(-1).rotation,Math.atan2(50,100));
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:['mv-float-1'],
     area:{x:100,y:50,r:75},vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,0);
+  assert.equal(log.updates.at(-1).rotation,Math.atan2(50,100));
 });
 
-test('GALE 八方向、連續施放與同座標均保留 Preset 製作方向', () => {
+test('GALE 八方向與連續施放对準目標，保留局部角度，同座標用正右方', () => {
   const preset=unitPreset('moon');preset.layers[0].rotation=.4;
   const {adapter,log}=makeAdapter([preset]);
   for (let i=0;i<8;i++) {
@@ -315,12 +315,13 @@ test('GALE 八方向、連續施放與同座標均保留 Preset 製作方向', (
     const x=Math.cos(a)*100,y=Math.sin(a)*100;
     adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x,y,r:50},vfx:{attack:'moon'}});
     adapter.update(.01);
-    assert.equal(log.updates.at(-1).rotation,.4);
+    const expected=Math.atan2(y,x)+.4;
+    assert.ok(Math.abs(log.updates.at(-1).rotation-expected)<1e-9);
   }
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',sourceId:'mv-float-2',targets:['mv-float-1'],vfx:{attack:'moon'}});
   adapter.update(.01);
-  assert.equal(log.updates.at(-1).rotation,.4);
+  assert.equal(log.updates.at(-1).rotation,Math.PI+.4);
   adapter.clear();
   adapter.tryPlay({fxKind:'slash',variant:'gale-moon',targets:[],area:{x:0,y:0,r:50},vfx:{attack:'moon'}});
   adapter.update(.01);
@@ -384,6 +385,7 @@ function recordingBackend(log, tag) {
     updateNode(node, t) {
       if (!t || t.visible === false) return;
       node.transforms.push({ x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY, alpha: t.alpha, frame: t.frame, sortY: t.sortY, deformation: t.deformation ? {...t.deformation} : null });
+      for (const key of ['tint','perspective','cameraDepth','motionAngle','anchorX','anchorY']) node.transforms.at(-1)[key] = t[key];
       if (t.skewX) node.transforms[node.transforms.length - 1].skewX = t.skewX;
       log.updates.push({ tag, x: t.x, y: t.y, rotation: t.rotation, scaleX: t.scaleX, scaleY: t.scaleY });
     },
@@ -437,6 +439,27 @@ test('WIND-CHASER 追加斬擊與受擊特效逐敵人播放，保留配置尺�
   }
 });
 
+test('WIND-CHASER-SPIN 四段旋轉本體逐敵人跟隨，維持表定6米半徑與事件時長', () => {
+  const sizing=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/slash-wind-spin.json'),'utf8')).sizing;
+  assert.equal(sizing.radiusM,6);assert.equal(sizing.authored.radius,272);
+  for(const authoredSizing of [null,sizing]) {
+  const preset=unitPreset('configured-chaser-spin',.2), pos={a:{x:90,y:40},b:{x:220,y:70}};
+  if(authoredSizing)preset.sizing=authoredSizing;
+  const {adapter,log}=makeAdapter([preset],{profile:{scale:.3},ctx:{
+    posOf:id=>({...pos[id]}),playerPos:()=>({x:0,y:0}),chainPoint:id=>pos[id]}});
+  adapter.tryPlay({fxKind:'slash',variant:'wind-chaser-spin',dur:.8,
+    targets:['a','b'],vfx:{attack:preset.id},hit:false});
+  adapter.update(.1);assert.equal(log.nodes.length,2);
+  pos.a={x:120,y:45};adapter.update(.2);
+  assert.equal(adapter.stats().fx.activeEffects,2);
+  assert.deepEqual(log.nodes.map(n=>({x:n.transforms.at(-1).x,y:n.transforms.at(-1).y})),[pos.a,pos.b]);
+  for(const node of log.nodes)for(const axis of ['scaleX','scaleY'])
+    assert.ok(Math.abs(node.transforms.at(-1)[axis]-(authoredSizing ? .22058823529411764 : 1))<1e-9,
+      '跟隨更新保留60世界單位半徑，不受場景倍率或原繪製尺寸影響');
+  adapter.update(.51);assert.equal(adapter.stats().fx.activeEffects,0);
+  }
+});
+
 test('THUNDER-FLASH 光束原點、100×10米矩形與方向取自事件，伸展時間同步且不受場景倍率改變',()=>{
  const p=unitPreset('configured-flash',.28);
  p.sizing={shape:'custom',widthM:30,heightM:10,authored:{width:300,height:100}};
@@ -465,6 +488,103 @@ test('SINGLE-SIZE 單體攻擊保留製作尺寸，立即與延遲一致，範�
  const {adapter,log}=makeAdapter([p]);
  adapter.tryPlay({fxKind:'slash',area:{x:100,y:50,r:120},vfx:{attack:p.id}});adapter.update(.01);
  const t=log.nodes[0].transforms.at(-1);assert.equal(t.scaleX,2);assert.equal(t.scaleY,2);
+});
+
+test('ATTACK-FACING 八方向以正右方為基準，立即與延遲保留出手角及作者局部旋轉',()=>{
+ for(const plane of [false,true])for(const delay of [0,200])for(let d=0;d<8;d++){
+  const angle=d*Math.PI/4, preset=unitPreset('aim-test');preset.layers[0].rotation=.3;
+  if(plane)preset.layers[0].projection={x:1,y:.5};
+  const foot={a:{x:100*Math.cos(angle),y:50*Math.sin(angle)},b:{x:-100*Math.cos(angle),y:-50*Math.sin(angle)}};
+  const {adapter,log}=makeAdapter([preset],{groundScale:.5,ctx:{
+   playerPos:()=>({x:0,y:-25}),footOf:id=>foot[id]||{x:0,y:0},
+   posOf:id=>({x:foot[id].x,y:foot[id].y-30})}});
+  const original=[foot.a,foot.b].map(p=>Math.atan2(p.y/(plane?.5:1),p.x));
+  adapter.tryPlay({fxKind:'slash',targets:['a','b'],travelMs:[delay],hit:false,vfx:{attack:preset.id}});
+  if(delay){adapter.update(.1);assert.equal(log.nodes.length,0);foot.a={x:180,y:80};}
+  adapter.update(.11);assert.equal(log.nodes.length,2);
+  log.nodes.forEach(node=>{
+   const t=node.transforms.at(-1);
+   const i=['a','b'].findIndex(id=>Math.abs(t.x-foot[id].x)<1e-8&&Math.abs(t.y-foot[id].y+30)<1e-8);
+   assert.ok(i>=0,'各自仍定位在原目標身上');
+   const local=original[i]+.3, expected=plane?Math.atan2(.5*Math.sin(local),Math.cos(local)):local;
+   const actual=t.rotation;
+   assert.ok(Math.abs(Math.atan2(Math.sin(actual-expected),Math.cos(actual-expected)))<1e-8,
+    JSON.stringify({plane,delay,d,actual,expected}));
+   if(!plane){assert.equal(node.transforms.at(-1).scaleX,1);assert.equal(node.transforms.at(-1).scaleY,1);}
+  });
+ }
+});
+
+test('ATTACK-FACING 明確零角優先，範圍幾何方向與受擊圖層維持各自契約',()=>{
+ const preset=unitPreset('aim-explicit'), hit=unitPreset('aim-hit');
+ const {adapter,log}=makeAdapter([preset,hit]);
+ adapter.tryPlay({fxKind:'slash',angle:0,targets:['mv-float-1'],vfx:{attack:preset.id,hit:hit.id}});
+ adapter.update(.01);assert.equal(log.nodes[0].transforms.at(-1).rotation,0);
+ assert.equal(log.nodes[1].transforms.at(-1).rotation,0);
+ adapter.clear();adapter.tryPlay({fxKind:'slash',angle:0,area:{x:100,y:50,w:200,h:100,a:.7},vfx:{attack:preset.id}});
+ adapter.update(.01);assert.equal(log.updates.at(-1).rotation,.7);
+});
+
+test('CLEAVE-FACING 原地及飛行圓形刀波沿事件面敵角旋轉，尺寸及時長不變',()=>{
+ for(const role of ['attack','projectile'])for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2,Math.PI/4]){
+  const preset=unitPreset('aim-cleave',1);preset.layers[0].position={x:20,y:0};
+  preset.sizing={shape:'circle',radiusM:6,authored:{radius:100}};
+  const {adapter,log}=makeAdapter([preset]);
+  adapter.tryPlay({fxKind:role==='attack'?'slash':'projectile',variant:'cleave-ring',angle,
+   area:{x:30,y:40,r:120},travelMs:[800],hit:false,vfx:{[role]:preset.id}});
+  adapter.update(.1);const t=log.nodes[0].transforms.at(-1);
+  assert.ok(Math.abs(t.x-(30+24*Math.cos(angle)))<1e-8);
+  assert.ok(Math.abs(t.y-(40+24*Math.sin(angle)))<1e-8);
+  assert.equal(t.rotation,angle);assert.equal(t.scaleX,1.2);assert.equal(t.scaleY,1.2);
+  adapter.update(.71);assert.equal(adapter.stats().fx.activeEffects,0);
+ }
+});
+
+test('FACING-TILT 正式迴旋斬與飛行刀波八向只改內部朝向，不旋轉橢圓外框',()=>{
+ const matrix=t=>[Math.cos(t.rotation)*t.scaleX,Math.sin(t.rotation)*t.scaleX,
+  -Math.sin(t.rotation-(t.skewX||0))*t.scaleY,Math.cos(t.rotation-(t.skewX||0))*t.scaleY];
+ const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
+ for(const name of ['slash-cleave-ring-warm','proj-cleave-ring-tricolor-09']){
+  const preset=JSON.parse(fs.readFileSync(path.join(REPO,'vfx/presets/'+name+'.json'),'utf8'));
+  const unchanged=JSON.stringify(preset), role=name.startsWith('proj-')?'projectile':'attack';
+  const play=angle=>{
+   const {adapter,log}=makeAdapter([preset]);
+   adapter.tryPlay({fxKind:role==='attack'?'slash':'projectile',variant:'cleave-ring',angle,
+    area:{x:30,y:40,r:120},travelMs:[420],hit:false,vfx:{[role]:name}});
+   adapter.update(.14); const transforms=log.nodes.map(n=>({...n.transforms.at(-1)}));
+   adapter.update(.3); assert.equal(adapter.stats().fx.activeEffects,0);
+   return transforms;
+  };
+  const zero=play(0);assert.equal(zero.length,preset.layers.length);
+  for(let d=0;d<8;d++){
+   const angle=d*Math.PI/4, current=play(angle);
+   current.forEach((t,i)=>{
+    const o=preset.layers[i].outerScale, inner=Math.atan2(Math.sin(angle)/o.y,Math.cos(angle)/o.x);
+    const c=Math.cos(inner),s=Math.sin(inner),base=zero[i],b=matrix(base),m=matrix(t);
+    near(m[0],c*b[0]-s*o.x/o.y*b[1]);near(m[1],s*o.y/o.x*b[0]+c*b[1]);
+    near(m[2],c*b[2]-s*o.x/o.y*b[3]);near(m[3],s*o.y/o.x*b[2]+c*b[3]);
+    near(t.x-30,c*(base.x-30)-s*o.x/o.y*(base.y-40));
+    near(t.y-40,s*o.y/o.x*(base.x-30)+c*(base.y-40));
+    for(const key of ['alpha','tint','perspective','cameraDepth','motionAngle','frame','anchorX','anchorY','sortY'])assert.equal(t[key],base[key],key);
+   });
+  }
+  assert.equal(JSON.stringify(preset),unchanged,'正式素材不修改');
+ }
+});
+
+test('FACING-TILT 逐目標立即及延後播放同樣保留outerScale，受擊仍用原方向',()=>{
+ for(const delay of [0,200]){
+  const p=unitPreset('aim-flat');p.layers[0].outerScale={x:1,y:.6};
+  const hit=JSON.parse(JSON.stringify(p));hit.id='hit-flat';hit.layers[0].assetId='test/hit-flat.png';
+  const {adapter,log}=makeAdapter([p,hit],{ctx:{playerPos:()=>({x:0,y:0}),footOf:id=>id==='pv-float'?{x:0,y:0}:{x:100,y:100},posOf:()=>({x:100,y:100})}});
+  adapter.tryPlay({fxKind:'slash',targets:['a'],travelMs:[delay],vfx:{attack:p.id,hit:hit.id}});
+  adapter.update(delay/1000+.01);
+  const attack=log.nodes.find(n=>n.spec.assetUrl.includes('aim-flat')).transforms.at(-1);
+  assert.ok(Math.abs(attack.rotation-Math.PI/4)<1e-8,JSON.stringify({delay,attack}));
+  assert.ok(Math.abs(attack.scaleX-Math.sqrt(2/(1+1/.36)))<1e-8);
+  const impact=log.nodes.find(n=>n.spec.assetUrl.includes('hit-flat'));
+  assert.ok(impact);assert.equal(impact.transforms.at(-1).rotation,0);
+ }
 });
 
 test('DUALDANCE 延遲後播放第二刀並使用交替角差',()=>{
@@ -593,7 +713,7 @@ test('BLOOD-DOMAIN-RECT 長方形素材的領域光環撐滿判定圓的外框�
   delete global.statusVfxPreset;
 });
 
-test('POISON-SPREAD 傳染毒咒保持原尺寸方向，子彈仍沿兩敵連線飛行', () => {
+test('POISON-SPREAD 傳染毒咒保持原尺寸並面敵，子彈仍沿兩敵連線飛行', () => {
   for (const target of [{x:300,y:50},{x:100,y:350},{x:-100,y:-150}]) {
     const attack = unitPreset('configured-poison-curse');
     attack.layers[0].rotation = .3;
@@ -610,7 +730,7 @@ test('POISON-SPREAD 傳染毒咒保持原尺寸方向，子彈仍沿兩敵連線
     for(const [i,node] of curses.entries()) {
       const t=node.transforms.at(-1), pos=i?target:{x:100,y:50};
       assert.equal(t.x,pos.x);assert.equal(t.y,pos.y);
-      assert.equal(t.scaleX,1);assert.equal(t.scaleY,1);assert.equal(t.rotation,.3);
+      assert.equal(t.scaleX,1);assert.equal(t.scaleY,1);assert.equal(t.rotation,Math.atan2(pos.y,pos.x)+.3);
     }
     assert.equal(adapter.stats().projectiles,1);
     const flight=log.nodes.find(n=>n.spec.assetUrl.includes(projectile.id+'.png'));

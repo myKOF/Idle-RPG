@@ -9304,3 +9304,118 @@ Worker 存活且頁面正常完成載入。
 - 實機：隔離headless Edge／正式index／全新Context，實際sgCleaveOnHit→sgEmitVfx→Runtime→Core，正式slash-wind-crescent配置，確認前／側／後三敵人各自位置(120,0)／(0,90)／(-80,0)且縮放1；Console error／warning皆0。外觀不代造素材；未寫使用者存檔，瀏覽器／本機唯讀HTTP關閉，暫存腳本提交前清除。主頁Runtime1.0.174／skills2 1.0.287／bridge1.0.230，Worker技能token20261006-wind-chaser-target-vfx；Editor Runtime同步1.0.174，已提示先另存未儲存內容再重載；協議保持47。
 - 使用者特效：未代改三份Preset；Core schema皆有效。原樣保存Preset及對應layout至解析後素材庫codex-authored/cleave/{presets,layouts}，六份SHA256一致，素材庫先提交；`node tools/vfx/export-assets.cjs --check`243份Preset／160引用／61640.4KB內容與正式匯出一致，無須重匯出，沒有新增圖片或第三方素材。
 - 交付：遊戲Commit為本紀錄所在`[Codex] fix: 逐風者追加真空斬逐敵人播放`提交，包含使用者上述三份特效；素材庫Commit c5cd593。無本次未完成項目，可審查整合，未合併／推送；已知限制為四項既有Runtime失敗及未做長時間真人戰鬥觀感驗收。下一步整合時保留Claude的符文／協議與最新快取，重載遊戲觀察每個觸發敵人的追加斬擊。
+
+## ATTACK-VFX-FACING-TILT-20261007 — 攻擊特效只轉朝向、保留製作傾角
+
+- Owner：Codex；Done，單一開發者。使用者澄清只改面敵方向，傾角、FOV與其它製作參數維持原樣；修正上一版將已壓扁橢圓整體旋轉的錯誤。
+- 範圍：Core可選的投影前朝向、Runtime本次攻擊朝向接線、相關Core／Runtime回歸、Adapter說明、主頁／Editor必要快取及此段。禁止修改Preset／素材／技能數值／傷害／Worker協議／Excel／其他聊天的場景工作，不合併／推送。
+- 衝突預檢：Core／Runtime／兩項測試／Adapter／Editor乾淨；index與本紀錄仍為Claude b6bb1c63寶石及8b0c89b2符文來源，沿用使用者已核准的分段修改授權，只更新本次VFX快取與此段。保留同副本進行中SCENE-REBUILD-ALL的全部內容，由原聊天提交。
+- 驗收：正式warm與飛行刀波八方向維持原outerScale投影軸、旋轉曲線／大小／alpha／傾角／FOV；事件方向仍對準目標、延遲保存角度；既有projection路徑及未啟用此選項的Editor／其它用途保持原輸出。必要回歸、正式渲染與Build後提交。
+- 完成：攻擊播放啟用Core內部facingBeforeOuterScale，原outerScale的固定外框不隨面敵角轉動；以原外框反投影畫面面敵角，再在外框壓扁之前旋轉，原本已壓扁的局部位置以O·R·O^-1換算。只改根Sprite的朝向順序，明確projection沿用原流程，未啟用選項的Editor／受擊／場域等用途維持舊rotation契約；followDirection:false保留圖層锁定方向，零軸外框保留原退化路徑以避免除零。沒有修改Preset、outerScale、FOV／perspective／cameraDepth、曲線、尺寸、速度、時長、傷害、判定或Worker事件。
+- 修改8檔：js/vfx-core.js、js/vfx-runtime.js、tests/vfx-core.test.cjs、tests/vfx-runtime.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、index.html、tools/vfx/editor/index.html、本紀錄。主頁與Editor Core20261007-facing-keep-tilt／Runtime1.0.180；Worker未修改、Asset版本與協議48沿用。唯讀檢查但未修改AI規範、skills2、PixiBackend、場景Renderer、正式warm／tricolor-09／真空迴旋等Preset及素材索引；無素材變更或素材庫Commit。
+- 測試：`node --test --test-name-pattern='FACING|GALE|POISON-SPREAD|WIND-CHASER' tests/vfx-core.test.cjs tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`13/13；`node --test tests/vfx-core.test.cjs tests/vfx-duration.test.cjs tests/vfx-load-shedding.test.cjs tests/vfx-editor-guard.test.cjs`187/187，含Editor舊頁程式更新拒絕覆寫、備份及重啟保護。新增兩項Core及兩項Runtime回歸，正式warm與tricolor-09逐層八方向核對矩陣、位置及原鏡頭旗標，延遲攻擊保持相同外框、受擊方向不变。
+- 基線／Build：Runtime＋cleave完整回歸146項／137通過／9失敗；唯讀記憶體載入HEAD原Core／Runtime及原測試144項／135通過／同9失敗，失敗名称集合相同，新增失敗0，未降低既有斷言。`npm.cmd run build`468檔及`git diff --check`通過。首次新夾具把玩家與目標腳點都設同座標，修正夾具後方向測試通過；基線runner改用環境旗標避免Node test丟棄命令尾參數。
+- 正式渲染：隔離headless Edge／隨機Port唯讀HTTP／新Context，載入正式Pixi／Core／Runtime／Backend、warm及tricolor-09真貼圖，五方向共130圖層，最大矩陣／位置差5.69e-14；原固定橢圓外框保持水平，alpha／tint／鏡頭旗標與右方基準一致，到期active0，Console error／warning0。首次測試頁favicon404已補測試頁data圖示後重驗；沒有修改產品配合測試。未操作真人存檔或真人長時間戰鬥；服務／瀏覽器已關閉，臨時runner／日誌／截圖清除。
+- 提交／交付：本紀錄所在`[Codex] fix: 攻擊特效只轉朝向並保留原傾角`，只提交此8檔及共用檔本次片段，場景修改完整保留由原聊天提交。未完成項目無，可審查合併；9項既有回歸失敗仍待獨立任務，不合併／推送。下一步重載遊戲確認；Editor有未存內容先下載備份／另存，再重啟重載，勿用舊頁覆蓋。
+
+## SCENE-REBUILD-ALL-20261007 — 全場景原創重製、局部動態與無格線地板
+
+- Owner：Codex；Done，單一開發者。使用者要求以沼澤品質再提升，全面重製；每畫好一張即提供預覽，另加點綴動態與近乎不可見格線。涵蓋七野外地貌地表／地下及三塔祭壇，保持中央交戰留白。
+- 範圍：DecorNature母來源與匯出、BattleDecor地貌物件／局部環境動畫／回收、Arena美術、原創地板產生器與八張地板、Renderer地板快取、Atlas Worker／主頁／bridge必要快取、共用預覽工具、場景測試、場景說明／本紀錄。禁止技能／數值／傷害／模擬／存檔／他人內容／第三方素材，不合併／推送。場景毒氣為純裝飾。
+- 前置／衝突：既有場景接入5a2a0862已完成。fetch預檢其餘場景檔乾淨；index／bridge／本紀錄仍涉及Claude b6bb1c63寶石／8b0c89b2符文與同副本朝向任務，使用者明確同意分段保留，只碰場景載入／快取和新增此段。素材庫共用，僅本次母來源／地板來源與輸出；先Asset後遊戲提交。
+- 設計：荒漠風化砂岩／仙人掌／枯草／陶器；冰原積雪松／裂冰／霜叢；沼澤垂柳／蕨草／腐木／冒泡毒霧；亡靈山脈殘碑／骨骸／焦木；太古戰場斷刃／殘旗／餘煙；混沌之境裂晶／黑石門／異界霧；聖域大理石廢墟／花叢／月桂。三塔更新熔裂岩面／祭壇邊緣主題擺件，各有局部動態。原創程序畫法不引用RPG Maker圖檔；Mote前輪已確認可存取，圖集變體／固定種子與無縫地板仍適合程序作圖。
+- 使用者預覽修正：大型植物與獸骨不得以程序零件拼湊，明確指定呼叫AI繪圖。改用內建imagegen產出完整柳樹／焦木／雪松／仙人掌／冰晶群／巨獸骨骸透明素材（images/scene），小花草／碎石保留程序畫法。RTP Outside_B僅唯讀觀察自然樹形，生成不提供RTP圖、不仿描；保留母圖與完整提示詞於Asset，本機縮小匯出保持alpha。必要新增圖片載入僅建圖時使用，Worker與主端共用完整素材；更新原純程序檢查為原創混合素材檢查，另驗真透明、資產失敗重試／固定腳點與同版圖集。使用者當前指定imagegen优先於Mote規範，不需再詢問。
+- 使用者尺寸／細節修正：完整AI繪製流程已核准，但大型物件改為適合100～220像素顯示的粗輪廓、大色塊、少量枝葉／肋骨／切面，重製九張素材。內建繪圖工具無獨立尺寸參數，回傳原始候選留於工具目錄；必要母圖等比縮至1024×1024內再保存，正式透明貼圖等比裁透明留白後最大512×512。匯出器拒絕超限母圖、回歸釘住正式尺寸，原稿／匯出均驗alpha。
+- 使用者配色修正：已核准紫晶／樹樁的簡化風格；混沌亮黃綠草叢過於突兀，改為暗紫褐毒草、少量暗紅花及褐色枯草，地表／地下同步，不增加紋理密度。
+- 使用者遺跡／地板修正：石碑與碎牆仍有粗糙幾何拼接感，追加七份完整AI素材（符文碑、石柱、拱門、殘牆、崩塌石堆、陶甕、墓碑），同樣母圖1024／遊戲512上限。所有野外裂痕改為深色低對比，取消橙／紫／冰藍發光描邊；三塔普通地面裂痕改深色normal圖層，法陣保持清楚的儀式造型。
+- 驗收：逐場景正式Renderer PNG與可操作動畫預覽；14圖集＋3塔、地面接觸／固定種子／腳點透視／動態同根、暫停／隱藏與池化／切圖不洩漏、局部粒子總量上限、地板無方格接縫與素材匯出雜湊、定向回歸／Build／Console及空場CPU／區塊與粒子上限壓力驗證。資料與Worker協議不變；完成後雙倉庫Commit與限制說明。
+
+- 完成：七地貌地表／地下共14份圖集與三塔共17場景；16份完整AI大型物件、固定腳點接觸區、小型原創花草碎石、主題色盤與中央留白。沼澤泡紋／毒氣、焦木煙、植物與旗幟微風、冰霧／异界微光／花瓣加入既有池；普通最多18局部粒子、lite最多2，三塔固定6團。移除規則地板格線與普通裂痕彩色光邊，法陣／晶體等有明確造型的演出保留。換圖清除全部池修正局部節點殘留；通用地板晚到不再覆蓋已選地貌，另有真非同步回歸守住後備。
+- 修改39檔：docs/AI_TASKS.md／SCENE_NATURE.md、images/ground/八張、images/scene/十六張、index.html場景／bridge快取、js/battle-arena.js／battle-decor.js／battle-renderer.js／bridge.js／decor-nature.js／worker/decor-atlas.worker.js、tests/battle-arena.test.cjs／battle-decor.test.cjs、tools/decor-preview.html／scene-preview.html／gen_ground_tiles.py／scene-renewal/export-source.cjs。未改但檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Pixi與decor-sculpt、既有BattlePerspective測試／素材根解析／Build檢查、RTP參考內容；技能、Core／Runtime、模擬、Worker協議與存檔均未改。快取Nature1.0.6、Decor1.0.16、Arena1.0.5、Renderer1.6.177、AtlasWorker1.0.7、bridge1.0.235／20261007-scene-rebuild；保留同副本已提交的特效朝向與原傾角變更。
+- 測試指令／結果：`node --test tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs`44/44通過，包含圖片載入去重／缺圖補載／腳點等比、14種帶別、攝影機推進區塊上限、動態開關／隱藏／dt=0、lite限制／切圖銷毀、透視／塔轉場與地板載入競態。`node tools/scene-renewal/export-source.cjs --check`28份來源／輸出SHA256一致；`npm.cmd run build`468份JS／CJS語法與空檔檢查通過；另核對AtlasWorker及兩份預覽HTML內嵌程式語法。雙倉庫`git diff --check`及staged檢查通過；新預覽檔多餘EOF空行已移除，未放寬斷言。
+- 瀏覽器：CUA操作正式獨立Renderer頁，逐項保存並檢視17張920×760預覽，地表／地下和三塔皆正常；新增圖集驗證按鈕實際Worker建圖，14份主端／Worker圖集alpha差與預乘RGB差均0。圖集尺寸最大2048×3184；圖片載入一次並重用圖集，不是每幀重畫素材。動畫前進／返回與開關可操作；Console error／warning0。全圖集展示頁17張均成功載入，高塔篩選實點顯示3張並復原全部；動態與圖集頁保留供使用者查看，不讀寫真人存檔。
+- 效能／尺寸：沼澤空場動態開／關／開，每輪30幀暖機＋150幀測量，同步CPU中位數均約0.10ms、P95約0.30／0.20／0.30ms；5局部來源／15粒子，關閉時計時固定。16張必要母圖1024×1024，正式真透明PNG兩邊最大512，合計5,052,744 bytes（4.82MiB）；單份RGBA像素總和13,432,832 bytes（12.81MiB），不含Worker副本、圖集、GPU及原天氣。每張至少27.6%像素alpha=0。測量不含GPU，不代表大量技能／真人長時間戰鬥FPS，這是已知驗證限制；未改碰撞或傷害。
+- 素材／交付：Asset素材庫先提交`0dd6dfa`，包含必要16份1024原稿、16份512匯出、完整提示詞／生成雜湊／裁切記錄、八張地板、程序母來源與說明（46檔）。RPG Maker僅觀察輪廓，生成未提供其圖，成品皆原創；廢棄候選與臨時預覽未進倉庫。遊戲Commit為本紀錄所在`[Codex] feat: 全場景完整原創物件與局部動態改造`提交，母來源DecorNature SHA256 de84130db4554f645196b4ee3e2b53ba04dfd102f2ff2d0c5f3041c6e1533059。無本次未完成項目，可審查合併，未合併／推送；跨副本整合須保留符文／寶石與特效方向、快取及其他任務紀錄。下一步使用者重載本副本遊戲與預覽、檢視美術並整合；另一台電腦須同步遊戲與Asset兩倉庫。
+
+## ATTACK-VFX-FACING-20261007 — 攻擊特效以正右方基準對準目標
+
+- Owner：Codex；Done。使用者觀測攻擊特效沿用Editor方向，要求以正右方90度作面敵基準。單一開發者；製作+X就是朝前，內部atan2以右方0偏轉、上方-π/2，避免多加90度。
+- 範圍：skills2迴旋斬事件angle、Runtime攻擊朝向／立即與延遲／範圍／月牙及相關測試、Adapter說明、主端／Editor／Worker必要快取與本紀錄。禁止改技能傷害／數值／範圍／命中、Preset／素材／Excel／存檔／Worker協議／其他副本，不合併／推送。
+- 預檢：技能／Runtime／測試／Adapter說明／Editor乾淨；index／bridge／sim.worker／本紀錄仍只有Claude b6bb1c63寶石与8b0c89b2符文，沿用使用者已明確核准的分段快取與紀錄授權，保留寶石、符文及已完成場景內容。依賴既有angle與投影流程已滿足。
+- 驗收：四向及斜向對準敵人、明確事件角優先、逐敵人立即與延遲一致、追加迴旋斬每次出手重新取當下方向、地面投影只轉一次；保留作者局部角度／曲線／尺寸／時長及受擊／場域用途，定向回歸、基線失敗集合比對、正式渲染與Build後Commit。
+- 完成：迴旋斬原地／飛行每道實際出手都傳angle，追加刀波重新取當下主目標方向，已發射刀波不追隨新角度。Runtime一般單體attack、範圍attack、疾風月牙閃及傳染毒咒補上以+X為朝前的整體旋轉；事件angle（含0）優先，否則取攻擊者到該敵人的腳點方向、沒有敵人則取區域中心，同座標用右方。延遲單體本體保留事件到達時的角度、位置仍跟目標當下位置；有area.a的幾何維持原判定角。地面層還原平面角後交Core投影一次，保留原局部位置／旋轉動畫，受擊、場域與天降／飛行路徑不追加此attack預設。
+- 修改10檔：js/skills2.js、js/vfx-runtime.js、tests/vfx-runtime.test.cjs、tests/cleave-rework.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、index.html、tools/vfx/editor/index.html、js/bridge.js、js/worker/sim.worker.js、本紀錄。主頁／Editor Runtime1.0.179、skills2 1.0.290、bridge1.0.234；Worker Asset／skills2 import為20261007-attack-vfx-facing，協議48不變。唯讀檢查但未修改AI規範、battlefield／BattleRenderer／Core／PixiBackend、shim／protocol、正式warm／spin／moon Preset及素材索引，Excel／CSV與素材庫內容未改。
+- 回歸：新增3項Runtime方向／延遲／權威角／圓形刀波及1項逐道出手事件；更新原2項月牙及1項毒咒「固定製作方向」斷言以符合本次使用者面敵規格。`node --test --test-name-pattern='FACING|GALE|POISON-SPREAD|WIND-CHASER' tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`9/9；`node --test tests/skill2-wind-chaser.test.cjs tests/vfx-duration.test.cjs tests/vfx-load-shedding.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-guard.test.cjs`81/81，八向覆蓋立即／延期、平面／直立、腳點與身體偏移、逐敵人及同座標。
+- 擴大回歸：`node --test tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`144項、135通過／9失敗；唯讀記憶體加载HEAD原skills2／Runtime與原兩項測試，140項／同9失敗，失敗名稱集合相同、新增失敗0（cleave5項、FIELD／CATALOG-3／CHAIN／STARFALL-TAIL）。`npm.cmd run build`468檔、`git diff --check`通過。測試夾具首次按延遲節點建立順序對應敵人，改成依原目標位置核對後通過，產品程式無另改。
+- 正式實機：隔離headless Edge／隨機Port唯讀HTTP／新Context完整載入正式sim.worker及協議48，用拋棄式角色／原地再移動出手，urgent事件angle依序0／-π/2。將正式事件交Pixi／Core／Runtime／Backend、warm Preset及真貼圖，以右／上／左／下／斜五方向核對12層完整位置／旋轉／尺寸／alpha，與原右方動畫加整體轉向最大差4.45e-16，到期active0，Console error／warning0。首輪Worker夾具位置使相對import落在根目錄，改成同Worker目錄後正常；多次獨立Backend驗證的贴圖卸載先後也改成最後統一回收後重驗通過，沒有改產品配合測試。未讀寫真人存檔或真人長時間戰鬥，服務／瀏覽器已关闭，臨時腳本／日誌刪除。
+- 提交／交付：Commit為本紀錄所在`[Codex] fix: 攻擊特效以正右方基準對準目標`。本次無未完成項目，可審查合併；9項既有回歸失敗保留，不合併／推送，沒有素材變更／新來源或素材Commit。唯一既存Runes CSV差異經hash確認canonical內容與HEAD一致、僅行尾stat，重新整理index後不产生內容變更。下一步重載遊戲確認攻擊朝向；Editor有未儲存內容先另存備份再重載，勿用舊頁覆蓋新版。
+
+## WINDCHASER-SPIN-RADIUS6-20261007 — 逐風者真空迴旋特效半徑6米
+
+- Owner：Codex；Done。使用者要求縮小逐風者追加真空迴旋的特效至半徑6米；單一開發者。保留四段單體傷害、觸發率、增傷與事件時長，不改真空斬技能本體。
+- 範圍：js/vfx-runtime.js、既有Runtime回歸測試、docs/vfx/VFX_RUNTIME_ADAPTER.md、主頁／Editor Runtime快取及本次紀錄。Preset已宣告radiusM=6、authored.radius=272，本次修正忽略尺寸宣告的逐風者播放分支，不修改Excel／CSV／技能模擬／Worker／共用Preset／素材。
+- 預檢：Runtime／測試／Adapter說明／Editor無衝突；index與本紀錄涉及Claude b6bb1c63寶石、8b0c89b2符文及同副本進行中場景接線。使用者已同意分段，只改Runtime快取與新增此段，完整保留其他內容；場景工作由原聊天提交。
+- 驗收：正式Preset宣告6米換算、逐敵人跟隨中尺寸不被重設、事件時長／回收與舊追加斬擊相容；定向回歸、Build、隔離正式Renderer檢視與diff查核後提交。禁止合併／推送、改其他副本或真人存檔。
+- 使用者修改一併提交：處理期間Skills2.xlsx另有使用者儲存的施法消耗、連斬與神諭參數／說明共13格差異。依先前「包含我改的一起commit」，原樣保留工作簿並只同步Skills2 CSV／JS及必要主端／Worker快取；不改config_tables工具或其他表。技能／CSV無衝突；bridge／sim.worker仍只有先前已獲准分段修改的Claude8b0c89b2快取與符文引用，沿用授權保留符文內容。
+- 完成：逐風者旋轉本體改由defaultSize換算Preset宣告的radiusM=6及authored.radius=272，以1米10世界單位得到60／272等比縮放（原先scale1約27.2米）。逐敵人播放及移動跟隨中維持該尺寸；四段傷害、20%觸發率、事件0.8秒與受擊特效不变。舊追加斬擊與其他技能共用Preset播放分支未改，不新增寫死特效來源或素材。
+- 使用者Excel保留：最終已關閉活頁簿／CSV逐格及序列化位元一致；Skills2讀表回寫後語意變更0。突刺各階／超神消耗、虛空碎裂斬次數與增傷、天霸風神斬間隔成長及簡化說明原樣同步，並補齊Excel原已為12米但JS仍8米的迴旋斬本體範圍。該範圍的掃波測試改用10.5米敵人，保持「前緣到達前不命中、每道一次」驗收及明確12米期望值，沒有更改最高權威資料配合舊斷言。Skills2.xlsx未由本次工具改寫。
+- 修改12檔：js/vfx-runtime.js、tests/vfx-runtime.test.cjs、tests/cleave-rework.test.cjs、docs/vfx/VFX_RUNTIME_ADAPTER.md、index.html、tools/vfx/editor/index.html、config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/bridge.js、js/worker/sim.worker.js、本紀錄。主頁／Editor Runtime1.0.178、skills2 1.0.289、bridge1.0.233；Worker Asset與skills2 import token為20261007-wind-chaser-radius6，協議48不變。檢查但未修改AI規範、config_tables、Core／PixiBackend／battlefield米制、正式slash-wind-spin／shipped-assets與素材庫；同副本場景修改及符文／寶石內容保留。
+- 測試指令：`node --test --test-name-pattern='WIND-CHASER' tests/vfx-runtime.test.cjs`2/2；`node --test tests/skill2-wind-chaser.test.cjs tests/vfx-load-shedding.test.cjs tests/vfx-duration.test.cjs tests/worker-shim.test.cjs tests/worker-protocol.test.cjs tests/skills2-vfx-schema.test.cjs tests/skills2-vfx-usage.test.cjs`77/77；`node --test tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs`140项、131通過／9既有失敗（與上一輪相同名稱：cleave5項及FIELD／CATALOG-3／CHAIN／STARFALL-TAIL）。`node tools/config_tables.cjs --apply Skills2`語意變更0、`npm.cmd run build`468檔與`git diff --check`通過。
+- 正式渲染：隔離headless Edge／隨機Port唯讀HTTP、新Context載入正式Pixi／Core／Backend／Preset及160素材索引；確認貼圖載入後對照d21067f2原Adapter，逐敵人移動後可見尺寸兩軸均為原先60／272、半徑宣告6米，0.4秒active1、0.9秒active0，Console error／warning0。首輪夾具在Core建節點前等待貼圖，量到空貼圖邊界；改在首幀後等待真貼圖並加入實際尺寸門檻，重驗通過，產品程式無另改。未讀寫真人存檔，服務／瀏覽器已關閉，臨時腳本及日誌刪除。
+- 提交／交付：Commit為本紀錄所在`[Codex] fix: 逐風者真空迴旋特效縮至6米`，包含使用者Excel及其同源同步。Preset／素材庫無修改、無素材Commit。本次無未完成項目，可審查合併；9項既有回歸失敗保留，未驗收長時間真人戰鬥。同副本進行中場景內容依使用者授權保留未提交，由原聊天交付，不合併／推送。下一步重載遊戲驗收；Editor未儲存內容先另存備份再重載，勿直接覆蓋新版。
+
+## SCENE-RENEWAL-INTEGRATION-20261007 — 原創場景物件與地面過渡全面接入
+
+- Owner：Codex；Done。使用者核准苔沼預覽並要求全面接入，單一開發者。沿用正式Decor／Sculpt／圖集／區塊流程，苔沼接入九種設計；其他野外地圖依其地貌套用岩石風化與地面銜接，保留原主題物件及高塔祭壇。
+- 允許：js/decor-nature.js新原創繪圖模組、js/battle-decor.js圖集／組合／分層／擺放、Atlas Worker與主頁快取、既有Decor預覽工具、必要測試／文件、原創繪圖來源素材庫保存。前輪臨時預覽工具改用正式共用來源後清理；禁止技能／數值／模擬／存檔／第三方素材／其他副本，不合併／推送。
+- 前置：使用者核准SCENE-RENEWAL-PREVIEW，現有地形與透視流程已完成。預檢主要繪圖／Worker／測試無衝突；index／AI_TASKS涉及Claude8b0c89b2及b6bb1c63符文／寶石提交，使用者已明確同意分段修改、保留其他內容。主頁只碰場景腳本載入與快取，本紀錄只新增本次段落。
+- 驗收：七種地圖地表／地下圖集均有效，地面與直立物件分層同腳點／縮放／翻面，固定種子重返一致、回收與切圖無洩漏、遮擋淡出與高塔隱藏、Worker／主端畫法和版本一致；隔離瀏覽器正式Renderer視覺、Console／效能，定向回歸與Build、素材必要來源雜湊／双倉庫盤點後Commit。後續使用者整合並重載實戰驗收。
+- 完成：九種原創苔沼元素接入正式圖集，其他六張地圖依地貌加入風化岩石、砂石／雪緣與碎屑。每個直立物件新增同圖集的foot接觸貼片，與本體同腳點／倍率／翻面；地面走原平面投影，本體走原billboard與遮擋淡出。接觸區共用區塊回收與物件池，調整獨立貼片／小碎物密度維持原節點上限。沒有增加每幀美術建圖、特效Preset或外部圖片請求。
+- 修改10檔：js/decor-nature.js、js/battle-decor.js、js/worker/decor-atlas.worker.js、index.html、tools/decor-preview.html、tools/scene-renewal/export-source.cjs、tests/battle-decor.test.cjs、tests/battle-arena.test.cjs、docs/SCENE_NATURE.md、本紀錄。舊未提交預覽頁與獨立畫法已移除，正式Decor工具顯示本體與接觸區。主端／工具／Atlas Worker均載nature1.0.0、Decor1.0.10；Atlas Worker URL1.0.1。第8.1節Worker Asset更新沿用同副本逐風者任務5c460082已提交的20261007-wind-chaser-radius6／bridge1.0.233，未另改橋接或協議。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW、DecorSculpt／BattleRenderer／BattleArena、透視與測試Helper、knight序列幀、素材庫解析器及其他聊天的分段快取變更；未修改戰鬥公式、技能、存檔、Renderer／Sculpt／Arena或別人的任務內容。
+- 測試：`node --test tests/battle-decor.test.cjs tests/battle-arena.test.cjs tests/battle-perspective.test.cjs`40/40全過，新增3項地貌／腳點投影回收／版本回歸。`node --check js/decor-nature.js`、`node tools/scene-renewal/export-source.cjs --check`、`npm.cmd run build`468檔、`git diff --check`均通過；素材庫與遊戲來源SHA256 f6bb8d1d5ab05f5675191ab8c26f69f5d4eea068ca1469f46ac990f6596160fd一致。
+- 實機：隔離IAB頁載正式Pixi／Renderer／Decor／Arena及騎士，不載入bridge／模擬／存檔。七地圖、苔沼地表／地下與鏡頭前進返回均正常；正式背景Worker on、各圖16區塊／37～46本體，圖集最大2048×3098，快取2張。14組Worker圖集與主端同OffscreenCanvas後端的alpha及預乘RGB逐像素差異0。HTML Canvas與OffscreenCanvas直接位元比對首次有少量邊緣差異；相同後端復驗全相同，未降低測試門檻或修改產品以配合。最終操作無新增Console error／warning，診斷首輪的測試例外留在瀏覽器歷史日誌。
+- 效能：920×760隔離空場，關FPS節流後三輪各150幀on／off／on，ticker同步CPU成本median約0.2ms、P95約0.3ms；僅確認CPU提交成本，未量GPU時間或宣稱大量技能實戰FPS。原持續移動節點上限／回收測試全過；正式場景PNG留於工作區外供預覽。
+- 雙倉庫：素材库codex-authored/scene-nature保存原創母來源與SOURCE.md，先提交0f4dc6b。遊戲Commit為本紀錄所在`[Codex] feat: 全面接入原創場景物件與地面過渡`。圖集在執行期生成，臨時PNG／驗證頁不進遊戲或素材Commit；兩庫盤點只提交本次必要內容，保留無關工作區修改。
+- 交付：本次實作無未完成項目，可審查合併；未合併／推送。已知限制為Canvas後端抗鋸齒的少量邊缘差異、未驗收大量技能／真人長時間FPS。建議下一步由使用者整合後F5重載實戰檢視；素材編輯先更新母來源，再用export-source匯出，不維護第二套畫法。
+
+## SCENE-RENEWAL-PREVIEW-20261007 — 苔沼場景物件與地面銜接改造預覽
+
+- Owner：Codex；Done（使用者已核准外觀，接入見SCENE-RENEWAL-INTEGRATION-20261007）。使用者要求改善戰鬥場景岩石平切底緣與元素不足，先提供預覽。單一開發者；先以截圖苔沼製作原創可執行外觀，確認後再接入正式遊戲。
+- 範圍：新增 tools/scene-renewal/scene-art.js、tools/scene-renewal-preview.html；本紀錄僅新增此段。禁止改正式 Renderer／Decor／Worker／index、技能數值、存檔、第三方素材與其他副本，不合併／推送。依賴現有 Decor 作對照、現有角色作比例參考已滿足；後續使用者驗收外觀。
+- 預檢：兩個新增檔案無衝突。docs/AI_TASKS.md 有 Claude 8b0c89b2 未合併符文紀錄；使用者明確同意只新增本次段落並保留其內容。index 有 Claude 修改，這輪不需更動。RPG Maker MV 的 Outside_B、Forest 只讀觀察光影、植物群落與根部覆蓋，不匯入／裁切／描摹／改色。
+- 驗收：全景、目前／新岩石近景、九種物件設計頁；固定種子原創繪製、預覽下載、頁面 Console、Build 與 diff。Mote Studio 已確認可開啟；本輪沿用 Canvas 程序繪圖以保持變體與日後圖集流程，沒有產出遊戲用獨立素材圖片。先供外觀確認，不提交或替換正式遊戲。
+- 完成：岩石風化切面、裂紋與不規則下緣，接觸陰影／濕泥／苔蘚／碎石／草葉的基底過渡；苔岩群、樹樁、倒木、蕨葉、蘆葦、菌群、苔草、水窪及根系共九種元素，周邊群落配置保留中央戰鬥留白。兩個新增檔案及本段紀錄為唯一修改；唯讀檢查 Decor／Sculpt／Atlas Worker／Renderer、knight manifest／idle、規範及既有地形／透視測試。沒有改正式接線或使用者存檔。
+- 驗證：`node --check tools/scene-renewal/scene-art.js`、`npm.cmd run build`（467檔）、`node --test tests/battle-decor.test.cjs tests/battle-perspective.test.cjs`（27/27）、`git diff --check`均通過。IAB實際檢視三頁、切換正常，Console error／warning為0；由瀏覽器Canvas匯出三張PNG供確認，保存在工作區外本次visualizations目錄。人物裁圖依現有idle trim使用64×83，單格作比例參照。首次data URI下載工具逾時，改本機臨時匯出端點保存預览；不影響頁面本身下載連結。
+- 交付／限制：Commit無（依先預覽確認要求）；素材庫無變更，預覽PNG不屬正式素材。尚未接入／不得作正式功能合併；實戰FPS、鏡頭移動／地面投影、其他地圖延伸未驗收。接入時需將地面過渡和直立物件分層，沿用固定種子／共享圖集／區塊回收與遮擋淡出，並同步主頁及Atlas Worker快取。下一步使用者確認外觀後完成正式接線與素材流程，不合併或推送。
+
+## WINDCHASER-SPIN4-20261007 — 逐風者真空迴旋四段
+
+- Owner：Codex；Done。使用者指定觸發真空迴旋，4段各100%風系傷害、每級+10%；保留當前Excel自行調整的20%觸發率與迴旋斬增傷，單一開發者。逐敵人判定，原敵人連續4段、每段0.2秒，不新增傷害範圍或借用真空斬技能樹加成。
+- 範圍：Skills2 Excel／CSV／JS、逐段排程及統計、VFX Adapter逐敵人旋轉與命中、觸發說明、主端／Worker快取與相關測試／本紀錄。工具config_tables唯讀使用不修改；不改符文、Worker協議／存檔、素材圖檔／原刀波。依賴現有命中鉤與模擬時鐘已滿足。
+- 預檢：技能／Excel／CSV／Runtime／說明與測試無其他來源修改；index／bridge／sim.worker／AI_TASKS同Claude8b0c89b2重疊，使用者已同意分段，只改本次快取與任務段落、保留對方符文引用。現有Excel唯一儲存格變更為逐風者chance10→20，保留並一起提交。
+- 驗收：一次判定後固定4段、獨立命中／MISS／致死，逐敵人外觀、Lv1／10與本體增傷分離，直接／飛行／無座標路徑、取消／離場／死亡／reset不補打，非同步總傷與飄字完整；Excel正常模式重開保留格式、CSV／JS同源、正式Worker與Runtime、回歸／Build／雙倉庫必要素材盤點後提交，不合併／推送。
+
+- 完成：保留使用者20%觸發率，追加改為真空迴旋四段，每段基礎100%風系、每級+10%，本體150%／每級15%增傷不變。每個命中敵人各判定一次；首段立即、後三段按表定0.2秒模擬排程，逐段獨立命中／MISS／致死與統計。後段不重判機率或遞迴，目標離場／死亡、我方死亡／換角色或reset取消；使用既有待結算计數，使技能總傷飄字等待全部後段完成。無排程時不增加搜敵成本。
+- 表定觸發外觀改slash-wind-spin（既有合法Preset）；旋轉本體逐敵人播放一次、原尺寸跟隨該敵人並對齊0.8秒事件時長；四段成功命中各播hit-wind，MISS不播受擊，不建立龍捲場域、不繼承真空斬技能樹投資、不新增傷害範圍。疾風傳奇風捲殘雲原借用地板仍保留。
+- 修改14檔：config/Excel/Skills2.xlsx、config/CSV/Skills2.csv、js/skills2.js、js/vfx-runtime.js、tools/skills2-vfx.cjs、tests/skill2-wind-chaser.test.cjs、tests/skills2-vfx-usage.test.cjs、tests/vfx-runtime.test.cjs、index.html、tools/vfx/editor/index.html、js/bridge.js、js/worker/sim.worker.js、docs/vfx/VFX_RUNTIME_ADAPTER.md、本紀錄。主頁skills2 1.0.288、Runtime1.0.177（Editor同步）、bridge1.0.232；Worker Asset與skills2 import token為20261007-wind-chaser-spin4，協議48不變。未修改但檢查協作規範、config_tables、formula／combat／battlefield／Worker shim／protocol、原刀波及配置Preset／素材庫；保留符文與原刀波旋轉20%任務。
+- Excel：先以Artifact Tool匯入、渲染及編輯六個指定儲存格、重算與匯出核對，再由原生Excel API將該六格值轉入原工作簿副本，保留其他格式／原生特徵。Excel正常模式重開，所有其他儲存格、格式與物件數一致；僅row20六格及衍生長度公式值變化，最後雜湊防護替換来源。保留使用者預先修改的chance20。只同步Skills2 CSV，其他表格未動；禁止XML手工改寫已遵守。最終Excel／CSV逐格一致，`node tools/config_tables.cjs --apply Skills2`語意變更0。
+- 測試：`node --test tests/skill2-wind-chaser.test.cjs tests/vfx-load-shedding.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/skills2-vfx-usage.test.cjs tests/skills2-vfx-schema.test.cjs tests/skill-vfx-inheritance.test.cjs tests/vfx-preset-usage.test.cjs`100/100通過；`node --test --test-name-pattern='WIND-CHASER' tests/vfx-runtime.test.cjs`2/2通過。新增3項排程／MISS致死／取消與1項逐敵人跟隨回歸；原10項逐風者測試保留覆蓋並更新四段／新係數／新表定外觀，配置往返斷言同步slash-wind-spin。
+- 擴大回歸：`node --test tests/vfx-runtime.test.cjs tests/cleave-rework.test.cjs tests/vfx-load-shedding.test.cjs`161項、152通過／9失敗；以HEAD原skills2／CSV／Runtime與HEAD原測試記憶體唯讀重導基線160項、151通過／同9失敗，失敗名稱集合相同、新增失敗0（既有cleave5項与FIELD／CATALOG-3／CHAIN／STARFALL-TAIL4項）。`npm.cmd run build`467檔通過；最終技能調整後定向13項及Runtime2項再次全過，`git diff --check`通過。
+- 實機：隔離headless Edge／隨機Port唯讀HTTP／新Context；正式sim.worker完整載入協議48及所有importScripts，以拋棄式角色與固定命中夾具驗四拍累積1／2／3／4段、Lv10每段2000、總8000、pending0。將Worker實際派送事件交正式Pixi／Core／Runtime／Backend與配置Preset，核對attack1／hit4、結束active0及Console error／warning0。此為固定命中排程與正式渲染驗證，未做真人長時間戰鬥；沒有讀寫真人存檔，瀏覽器／服務已關閉，臨時腳本／工作簿／截圖清除。
+- 提交／交付：遊戲Commit為本紀錄所在`[Codex] feat: 逐風者改為四段真空迴旋`，含使用者Excel觸發率修改。全部Preset／素材圖檔原樣，僅改表定引用，素材庫乾淨無需新Commit。無本次未完成項目，可審查合併，9項既有失敗保留，不合併／推送。下一步重載遊戲驗收；Editor若有未儲存內容先另存備份再重載，勿直接覆蓋新版。
+
+## CLEAVE-ROTATE20-20261007 — 撤回循環方案，原特效旋轉提高20%
+
+- Owner：Codex；Done。使用者退回循環方案，明確要求刪除剛才提交、改回原播放方式，僅在原基礎上提高旋轉速度20%；保留使用者配色與原有曲線形狀。依賴原cleave-ring事件已滿足，單一開發者。
+- 範圍：撤回bde74dee的Core／Runtime循環與scaleProgress、文件和三項測試，還原原Preset loop=false；旋轉曲線增量乘1.2，時間節點／固定起始角／縮放／透明度／事件半徑及時長不變。僅更新必要Core／Runtime／Preset快取及本紀錄，不改技能／Worker／Excel／CSV／素材圖檔／符文。fetch預檢仍只有Claude 8b0c89b2涉及index與本紀錄，沿用使用者已授權的分段範圍。
+- 提交：兩倉庫乾淨、前次提交仍為各自未推送／未合併的HEAD；依使用者刪除提交授權，以amend替換遊戲bde74dee與素材庫286dcea，保留各自父提交和他人內容，不使用hard reset，不合併／推送。
+- 驗收：正式Core／Runtime輸出對比修改前，所有旋轉增量為1.2倍、位置／縮放／透明度／原時長一致；Core與相關回歸／Build／素材匯出查核／Editor保存防護，雙倉庫原樣雜湊核對。
+
+- 完成：Core／Runtime的循環管理、scaleProgress與三項新增測試全部撤除，VFX Adapter文件恢復原樣；Preset09 loop=false，14層旋轉曲線增量乘1.2，保留時間節點、固定起始角、原擴張／透明度與使用者兩處#00fa79。原事件timeScale持續對齊刀波時長，沒有整段動畫加速。主頁／Editor Core快取20261007-cleave-rotate20、Runtime1.0.176、DATA_VERSION同token，避免已開頁面繼續用循環版本。
+- 最終相對原父提交f951e6e9修改5檔：vfx/presets/proj-cleave-ring-tricolor-09.json、js/vfx-runtime.js（僅Preset快取token）、index.html、tools/vfx/editor/index.html、本紀錄。Core、兩項測試檔及docs/vfx/VFX_RUNTIME_ADAPTER.md逐位元恢復父提交；未修改但檢查AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Pixi Backend／shipped-assets索引／同名layout／Worker與技能回歸。素材圖片未修改，屬Preset動畫數值調整，無作圖或新來源。
+- 驗證：唯讀對照f951e6e9原Preset，排除已授權旋轉與使用者顏色後JSON完全一致。以正式Core及Adapter事件參數，核對0.15／0.42／1／2秒四種時長、14圖層共5160個有效影格的完整2D矩陣（含橢圓外層縮放）、圓心、原擴張曲線與準時回收；旋轉曲線與增量為原值1.2倍，其餘生命週期一致。
+- 測試指令：`node --test tests/vfx-core.test.cjs tests/vfx-duration.test.cjs tests/skill2-wind-chaser.test.cjs tests/vfx-editor-guard.test.cjs`174/174通過；`node --test tests/vfx-core.test.cjs tests/cleave-rework.test.cjs tests/vfx-runtime.test.cjs`280項、271通過／9既有失敗，與前次唯讀原基線相同，未改舊斷言。`npm.cmd run build`467檔通過；`node tools/vfx/export-assets.cjs --check`243Preset／160引用匯出一致；`git diff --check`通過。Editor舊頁拒絕覆蓋並保留未存內容的12項防護測試包含在174項內。
+- 實機：隔離headless Edge／隨機Port唯讀HTTP／新Context，正式Pixi、Core、Adapter、Backend與Preset素材播放1.4秒原刀波；非循環、0.5秒時仍有1份效果、1.5秒時已回收，Console error／warning為0。沒有連入真人存檔，瀏覽器與服務已關閉，臨時驗證腳本清除。
+- 雙倉庫提交：素材庫286dcea已由amend替換為`44f8746`，保留父提交4151cfe；保存Preset及原樣layout並逐位元核對遊戲檔（Preset SHA256：3844aa33c22702ca2805f640602ba8c44d2020c0a63885f1a6b851d2228b00a1）。遊戲bde74dee以本紀錄所在`[Codex] fix: 恢復原刀波並將旋轉速度提高20%`替換，保留父提交f951e6e9，舊循環提交不再位於兩條分支歷史。未合併／推送。
+- 交付：本次無未完成項目，可審查合併；完整回歸的9項既有失敗保留，未做長時間真人戰鬥。下一步先另存備份Editor未儲存內容，再重載Editor與遊戲驗收，勿將舊頁內容直接覆蓋新版。

@@ -10,6 +10,35 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 
+test('GROUND-LOAD-RACE 通用底圖晚到不覆蓋選定地貌，專用圖失敗仍能後備', async () => {
+  const source=fs.readFileSync(path.join(root,'js/battle-renderer.js'),'utf8'),requests=[],applied=[];
+  const ctx={S:{zoneKey:null},_groundTexCache:{},GROUND_ASSET_VERSION:'test',applyGroundTexture:tex=>applied.push(tex.id),PIXI:{Assets:{load:url=>new Promise((resolve,reject)=>requests.push({url,resolve,reject}))}}};
+  vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('  function loadGroundTexture('),source.indexOf('  function applyGroundTexture(')),ctx);
+  ctx.loadGroundTexture(null);ctx.S.zoneKey='desert';ctx.loadGroundTexture('desert');
+  requests[1].resolve({id:'desert'});await new Promise(r=>setImmediate(r));
+  requests[0].resolve({id:'default'});await new Promise(r=>setImmediate(r));
+  assert.deepEqual(applied,['desert'],'遲到的通用底圖不能蓋掉荒漠顏色');
+  ctx.S.zoneKey='Icefield';ctx.loadGroundTexture('Icefield');requests[2].reject(new Error('404'));
+  await new Promise(r=>setImmediate(r));assert.deepEqual(applied,['desert','default'],'專用貼圖不存在時必須繼續後備');
+});
+
+test('DECOR-IMAGE-LOAD 完整素材載入去重、失敗重試只補缺圖，等比縮放保持底部腳點', async () => {
+  const ctx={URL,console,location:{href:'https://game.test/tools/preview.html'}};vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(root,'js/decor-nature.js'),'utf8'),ctx);
+  const nature=ctx.DecorNature,calls=[],pending=[];
+  const loader=url=>{calls.push(url);return new Promise((resolve,reject)=>pending.push({url,resolve,reject}));};
+  const first=nature.loadImages('https://game.test/',loader),second=nature.loadImages('https://game.test/',loader);
+  assert.equal(first,second);assert.equal(calls.length,16);
+  for(const p of pending)if(p.url.includes('/willow.png'))p.reject(new Error('network'));else p.resolve({width:200,height:100});
+  await assert.rejects(first,/network/);await Promise.resolve();
+  await nature.loadImages('https://game.test/',url=>{calls.push(url);return Promise.resolve({width:100,height:200});});
+  assert.equal(calls.length,17);assert.ok(calls.every(url=>url.startsWith('https://game.test/images/scene/')));
+  await nature.loadImages('https://game.test/',()=>{throw new Error('已載入不應重新請求');});
+  const draws=[],g=fakeContext();g.drawImage=(...args)=>draws.push(args);
+  nature.drawBody(g,'willow',0,0,100,120,1,{});
+  assert.equal(draws.length,1);assert.deepEqual(draws[0].slice(1),[-30,-120,60,120]);
+});
+
 /* 假的 Canvas 2D：所有方法都接受、什麼都不畫；漸層物件有 addColorStop。用來確認畫法本身不拋例外。 */
 function fakeContext() {
   const gradient = { addColorStop() {} };
@@ -36,6 +65,8 @@ function loadDecor(extra) {
   vm.createContext(ctx);
   // 載入順序同 index.html：浮雕繪圖（decor-sculpt）在前
   vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-sculpt.js'), 'utf8'), ctx);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/decor-nature.js'), 'utf8'), ctx);
+  ctx.DecorNature.registerImages(Object.fromEntries(Object.keys(ctx.DecorNature.spriteFiles).map(key=>[key,{width:128,height:192}])));
   vm.runInContext(fs.readFileSync(path.join(root, 'js/battle-decor.js'), 'utf8'), ctx);
   return { BattleDecor: ctx.BattleDecor, DecorSculpt: ctx.DecorSculpt, warnings, ctx };
 }
@@ -116,7 +147,8 @@ test('DECOR-3 同一個區塊離開再回來，擺件位置完全一樣（以區
   const { decor, layers } = makeDecor(BattleDecor, P);
   decor.setScene('desert', 1);
   decor.update(view(0, 0));
-  const snap = () => layers.prop.children.map((s) => s.x.toFixed(2) + ',' + s.y.toFixed(2)).sort().join('|');
+  // 此處釘住地貌的放置；煙霧等局部演出的位置依動畫時間移動，另行驗證。
+  const snap = () => layers.prop.children.filter(s => !s._decorLocal).map((s) => s.x.toFixed(2) + ',' + s.y.toFixed(2)).sort().join('|');
   const first = snap();
   assert.ok(layers.prop.children.length > 0, '鏡頭附近應該有擺件');
   decor.update(view(20000, 0));
@@ -141,6 +173,36 @@ test('DECOR-4 鏡頭一路往前走，場景裡的節點數有上限（看不到
   assert.ok(P.alive() < 400, '建立過的精靈 ' + P.alive() + ' 個，物件池沒有重用');
   const st = decor.stats();
   assert.ok(st.chunks > 0 && st.chunks < 40);
+});
+
+test('DECOR-MOTION 局部點綴有上限、風只動本體，暫停／隱藏凍結動畫且切圖完整回收', () => {
+  for (const lite of [false,true]) {
+    const {BattleDecor}=loadDecor({location:{search:lite?'?decor=lite':''}});
+    const P=fakePixi(),{decor,layers}=makeDecor(BattleDecor,P);
+    decor.setScene('swamp',1);decor.update(view(0,0));
+    const local=()=>layers.prop.children.concat(layers.decal.children).filter(s=>s._decorLocal);
+    const snapshot=()=>JSON.stringify(local().map(s=>[s.x,s.y,s.alpha,s.scale.x,s.scale.y]));
+    assert.ok(decor.stats().localSources>0,'沼澤鏡頭應有局部源點');
+    assert.ok(decor.stats().localParticles <= (lite?2:18));
+    const bodies=layers.prop.children.filter(s=>s._natureSway);
+    assert.ok(bodies.length>0,'種子樣本需含風吹植被');
+    const feet=bodies.map(s=>[s.x,s.y]),skew=bodies.map(s=>s.skew.x),first=snapshot();
+    for(let i=0;i<100;i++)decor.update(view(0,0));
+    assert.notEqual(snapshot(),first,'煙團／漣漪應隨時間演出');
+    assert.deepEqual(bodies.map(s=>[s.x,s.y]),feet,'風吹不搬動物件腳點');
+    if(lite)assert.deepEqual(bodies.map(s=>s.skew.x),skew,'簡化模式省略枝葉擺動');
+    else assert.notDeepEqual(bodies.map(s=>s.skew.x),skew,'枝葉應有輕微擺動');
+    decor.setMotionEnabled(false);const paused=snapshot(),clock=decor.stats().motionTime;
+    decor.update(view(0,0));assert.equal(snapshot(),paused);assert.equal(decor.stats().motionTime,clock);
+    decor.setMotionEnabled(true);decor.setVisible(false);decor.update(view(0,0));
+    assert.equal(decor.stats().motionTime,clock);assert.ok(local().every(s=>!s.visible));
+    decor.setVisible(true);decor.update({...view(0,0),dt:0});assert.equal(snapshot(),paused,'遊戲dt=0同樣凍結');
+    for(const key of Object.keys(BattleDecor.KITS).filter(Boolean))for(const current of [1,11]){
+      decor.setScene(key,current);decor.update(view(0,0));
+      assert.ok(decor.stats().localParticles <= (lite?2:18),key+' 局部粒子超限');
+    }
+    decor.destroy();assert.equal(P.alive(),0,'包含局部粒子的全部節點均釋放');
+  }
 });
 
 test('DECOR-5 每 10 個階段換一帶：單數帶地表、雙數帶地下，地下的地板會壓暗', () => {
@@ -268,13 +330,92 @@ test('DECOR-10 浮雕打光：光從左上，球體左上半比右下半亮；�
   assert.ok(light[0] >= light[2], '亮部偏暖');
 });
 
-test('DECOR-11 裝飾美術全部執行期程序化產生：不載入任何圖檔（AI_RULES.md 第二原則：外部素材只參考、不直接使用）', () => {
-  for (const f of ['js/decor-sculpt.js', 'js/battle-decor.js']) {
+test('DECOR-11 場景只引用自製素材，小物件程序繪製、大型物件使用完整AI圖', () => {
+  for (const f of ['js/decor-sculpt.js', 'js/decor-nature.js', 'js/battle-decor.js']) {
     const src = fs.readFileSync(path.join(root, f), 'utf8');
-    assert.doesNotMatch(src, /\.(png|jpe?g|webp|gif)['"?]/i, f + ' 不該引用圖檔');
-    assert.doesNotMatch(src, /new Image\(|Assets\.load|fetch\(/, f + ' 不該在執行期載入外部資源');
     assert.doesNotMatch(src, /RPG ?Maker_MV|MyGame[\/]+Asset/i, f + ' 不該指向第三方素材庫');
   }
+  const {ctx}=loadDecor();
+  for(const file of Object.values(ctx.DecorNature.spriteFiles)){
+    const png=fs.readFileSync(path.join(root,'images/scene',file+'.png'));
+    assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(png[25],6,'RGBA素材保留alpha');
+    assert.ok(png.readUInt32BE(16)<=512&&png.readUInt32BE(20)<=512,'正式素材有尺寸上限');
+  }
+});
+
+test('DECOR-NATURE-1 每張地圖的直立物件都有獨立接觸區，苔沼接入蕨葉、倒木、根系與落葉', () => {
+  const { BattleDecor } = loadDecor();
+  for (const zone of Object.keys(BattleDecor.KITS).filter(Boolean)) {
+    for (const deep of [false, true]) {
+      const plan = BattleDecor._internals.planAtlas(zone, deep);
+      const props = plan.specs.filter(s => s.kind === 'prop');
+      assert.equal(plan.specs.filter(s => s.kind === 'contact').length, props.length);
+      for (const p of props) {
+        const foot = plan.specs.find(s => s.key === 'foot_' + p.key);
+        assert.equal(foot.propW, p.w);
+        assert.equal(foot.natureStyle.moss, zone === 'swamp');
+        assert.equal(foot.natureStyle.snow, zone === 'Icefield');
+        assert.ok(foot.w > p.w && foot.h > p.w * .5, '接觸區必須容納漸隱留白');
+        if (p.type === 'rock') assert.equal(p.nature, true, '各地圖岩石都走新版風化畫法');
+      }
+      assert.ok(plan.specs.some(s => s.type === 'litter'), '每張地圖都要有地貌碎屑');
+      if (zone === 'swamp') {
+        for (const type of ['fern', 'log', 'roots', 'puddle']) assert.ok(plan.specs.some(s => s.type === type && s.nature), type);
+      }
+    }
+  }
+});
+
+test('DECOR-NATURE-2 地面接觸區與本體同腳點、倍率與翻面，透視抵銷只作用於本體；回收重返仍配對', () => {
+  const { BattleDecor } = loadDecor();
+  const P = fakePixi(), layers = { decal: new P.Container(), light: new P.Container(), prop: new P.Container() };
+  const decor = BattleDecor.create({ PIXI: P.PIXI, groundScale: .5, decalLayer: layers.decal, lightLayer: layers.light, propLayer: layers.prop,
+    billboard: () => ({w: .83, shear: .17, skew: Math.atan2(.17,.83), k: Math.hypot(.17,.83)}), buildBudgetMs: Infinity, prebuildBudgetMs: 0 });
+  for (const [zone, stage] of [['swamp',1],['desert',1],['swamp',1],['Icefield',11],['swamp',1]]) {
+    decor.setScene(zone, stage);
+    for (const x of [0,20000,0]) {
+      decor.update(view(x,0));
+      for (const p of layers.prop.children.filter(s => s._decorGround)) {
+        const floor = p._decorGround;
+        assert.equal(floor.parent, layers.decal, '接觸區必須在地面層');
+        assert.equal(floor.x, p.x);
+        assert.equal(floor.y * .5, p.y);
+        assert.equal(floor.scale.x, p._bbX);
+        assert.equal(floor.scale.y, p._bbY);
+        assert.equal(floor.skew.x,0,'地面不可套 billboard 斜切');
+        assert.ok(Math.abs(p.scale.y-p._bbY*Math.hypot(.17,.83))<1e-10);
+        assert.equal(floor.anchor.x,.5);
+        assert.equal(floor.anchor.y,.5);
+      }
+    }
+  }
+  const p = layers.prop.children.find(s=>s._decorGround);
+  assert.ok(p);
+  const v=view(0,0);v.playerX=p.x;v.playerScreenY=p.y-1;
+  decor.update(v);
+  assert.ok(p.alpha<1,'遮住玩家時本體仍淡出');
+  assert.equal(p._decorGround.alpha,1,'地面接觸區不隨物件遮擋而闪爍');
+  decor.setVisible(false);
+  assert.equal(layers.decal.visible,false);
+  assert.ok(layers.prop.children.every(s=>!s.visible));
+  decor.setVisible(true);
+  assert.equal(layers.decal.visible,true);
+  decor.destroy();
+  assert.equal(layers.decal.children.length,0);
+  assert.equal(layers.prop.children.length,0);
+  assert.equal(P.alive(),0);
+});
+
+test('DECOR-NATURE-3 主頁、圖集 Worker 與開發工具載入同版原創畫法與 Decor', () => {
+  const read = f => fs.readFileSync(path.join(root,f),'utf8');
+  const html=read('index.html'), worker=read('js/worker/decor-atlas.worker.js'), tool=read('tools/decor-preview.html');
+  for (const file of ['decor-nature','battle-decor']) {
+    const token=html.match(new RegExp('js/'+file+'\\.js\\?v=([^"\\s]+)'))[1];
+    assert.ok(worker.includes('../'+file+'.js?v='+token), file+' Worker 快取不同步');
+    assert.ok(tool.includes('../js/'+file+'.js?v='+token),file+' 預覽工具快取不同步');
+  }
+  assert.ok(html.indexOf('js/decor-nature.js?v=')<html.indexOf('js/battle-decor.js?v='));
+  assert.ok(worker.indexOf('../decor-nature.js?v=')<worker.indexOf('../battle-decor.js?v='));
 });
 
 test('DECOR-BB 透視抵銷（opts.billboard）：擺件與火焰被抵銷後 Pixi 的 anchor 仍完好，切地圖重用物件池也不拋例外', () => {

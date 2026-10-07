@@ -68,72 +68,16 @@ var BossArena = (function () {
   /* ============ 地板：黑曜石石板（可四方連續，渲染器以 TilingSprite 鋪） ============ */
   var FLOOR_SIZE = 256;
   function drawFloor(g, pal, seed) {
-    var A = art(), r = A.mulberry(seed), S = FLOOR_SIZE;
-    g.fillStyle = '#050405';
-    g.fillRect(0, 0, S, S);
-    // 一次畫九份（自己＋八個鄰居的位移），貼圖的四邊自然接得起來
-    function wrap(fn) {
-      for (var dx = -S; dx <= S; dx += S) {
-        for (var dy = -S; dy <= S; dy += S) { g.save(); g.translate(dx, dy); fn(); g.restore(); }
-      }
-    }
-    var ROWS = 4, CELL = S / ROWS;
-    var slabs = [];
-    for (var row = 0; row < ROWS; row++) {
-      var off = (row % 2) ? CELL / 2 : 0;
-      for (var col = 0; col < ROWS; col++) {
-        slabs.push({ x: col * CELL + off, y: row * CELL, w: CELL, h: CELL,
-          tone: A.range(r, -0.12, 0.1), crack: r() < 0.35, seed: Math.floor(r() * 1e9) });
-      }
-    }
-    slabs.forEach(function (sl) {
-      wrap(function () {
-        var rr = A.mulberry(sl.seed);
-        var x0 = sl.x + 2, y0 = sl.y + 2, w = sl.w - 4, h = sl.h - 4;
-        var j = function () { return A.range(rr, -1.6, 1.6); };
-        var pts = [[x0 + j(), y0 + j()], [x0 + w + j(), y0 + j()], [x0 + w + j(), y0 + h + j()], [x0 + j(), y0 + h + j()]];
-        A.pathPoly(g, pts);
-        var gr = g.createLinearGradient(x0, y0, x0 + w, y0 + h);
-        gr.addColorStop(0, A.shade(pal.stone.base, 0.06 + sl.tone));
-        gr.addColorStop(1, A.shade(pal.stone.base, -0.45 + sl.tone));
-        g.fillStyle = gr;
-        g.fill();
-        // 斜面高光（左上）與暗邊（右下）
-        g.strokeStyle = A.rgba(pal.stone.light, 0.35);
-        g.lineWidth = 1;
-        g.beginPath(); g.moveTo(pts[3][0], pts[3][1]); g.lineTo(pts[0][0], pts[0][1]); g.lineTo(pts[1][0], pts[1][1]); g.stroke();
-        g.strokeStyle = 'rgba(0,0,0,0.6)';
-        g.beginPath(); g.moveTo(pts[1][0], pts[1][1]); g.lineTo(pts[2][0], pts[2][1]); g.lineTo(pts[3][0], pts[3][1]); g.stroke();
-        A.speckle(g, rr, x0, y0, w, h, 26, 'rgba(0,0,0,0.25)', 1.4);
-        A.speckle(g, rr, x0, y0, w, h, 8, A.rgba(pal.stone.light, 0.18), 1.2);
-        if (sl.crack) {
-          g.strokeStyle = 'rgba(0,0,0,0.75)';
-          g.lineWidth = 1.2;
-          g.beginPath();
-          var cx = x0 + A.range(rr, 0.2, 0.8) * w, cy = y0 + A.range(rr, 0.2, 0.8) * h;
-          g.moveTo(cx, cy);
-          for (var k = 0; k < 4; k++) { cx += A.range(rr, -12, 12); cy += A.range(rr, -12, 12); g.lineTo(cx, cy); }
-          g.stroke();
-        }
-      });
-    });
-    // 一部分石縫透出塔色的光（沿石板邊界畫，同樣九份，接縫連續）
-    for (var s2 = 0; s2 < 7; s2++) {
-      var sl2 = slabs[Math.floor(r() * slabs.length)];
-      var horizontal = r() < 0.5;
-      wrap(function () {
-        g.save();
-        g.shadowColor = pal.seam;
-        g.shadowBlur = 6;
-        g.strokeStyle = A.rgba(pal.seam, 0.55);
-        g.lineWidth = 1.3;
-        g.beginPath();
-        if (horizontal) { g.moveTo(sl2.x + 4, sl2.y); g.lineTo(sl2.x + sl2.w - 4, sl2.y); }
-        else { g.moveTo(sl2.x, sl2.y + 4); g.lineTo(sl2.x, sl2.y + sl2.h - 4); }
-        g.stroke();
-        g.restore();
-      });
-    }
+    DecorNature.drawArenaFloor(g,pal,seed,FLOOR_SIZE);
+  }
+
+  function environmentStyle(pal) {
+    return {stone:pal.stone.base,light:pal.stone.light,dark:pal.stone.dark,soil:'#3f3832',moss:false,snow:false,
+      theme:pal===TIERS.purgatory?'god_chaos':'undead_mountains',accent:pal.glow};
+  }
+  function drawRelic(g,w,h,r,pal) {
+    var kind=pal===TIERS.trial?'grave':pal===TIERS.hell?'deadTree':'crystals';
+    DecorNature.drawBody(g,kind,w/2,h-FOOT,w*.88,h-FOOT,Math.floor(r()*1e9),environmentStyle(pal));
   }
 
   /* ============ 法陣（白色線稿；由精靈 tint 上色，刻痕版與發光版共用） ============ */
@@ -254,8 +198,8 @@ var BossArena = (function () {
     g.translate(c, c);
     g.strokeStyle = '#ffffff';
     g.lineCap = 'round'; g.lineJoin = 'round';
-    g.shadowColor = '#ffffff';
-    g.shadowBlur = 8;
+    // 裂紋走深色材質；祭壇法陣另有自己的發光層。
+    g.shadowBlur = 0;
     var N = 13;
     for (var i = 0; i < N; i++) {
       var a = (i + A.range(r, -0.3, 0.3)) / N * Math.PI * 2;
@@ -557,6 +501,7 @@ var BossArena = (function () {
 
   /* 擺件規格：[種類, 寬, 高]（邏輯像素） */
   var PROP_SPECS = {
+    relic: {draw:drawRelic,w:112,h:156,variants:2},
     spike: { draw: drawSpike, w: 96, h: 168, variants: 3 },
     spikeSmall: { draw: drawSpike, w: 64, h: 104, variants: 2 },
     brazier: { draw: drawDemonBrazier, w: 72, h: 120, variants: 1 },
@@ -589,6 +534,8 @@ var BossArena = (function () {
     T.cracks = tex(paint(CRACK_SIZE, CRACK_SIZE, function (g) { drawCracks(g, seed ^ 3, CRACK_INNER); }));
     T.abyss = tex(paint(256, 256, function (g) { drawAbyss(g, 256); }));
     T.edge = tex(paint(256, 256, function (g) { drawEdgeGlow(g, 256); }));
+    T.contact = tex(paint(180,64,function(g){DecorNature.drawContact(g,90,32,138,seed^19,environmentStyle(pal));}));
+    T.fog = tex(paint(96,96,function(g){var gr=g.createRadialGradient(48,48,0,48,48,48);gr.addColorStop(0,'rgba(210,211,196,.4)');gr.addColorStop(.6,'rgba(180,182,172,.15)');gr.addColorStop(1,'transparent');g.fillStyle=gr;g.fillRect(0,0,96,96);}));
     T.dot = tex(paint(24, 24, function (g) { A.particleDot(g, 24, 24); }));
     T.flame = tex(paint(Math.ceil(40 * TEX_SCALE), Math.ceil(56 * TEX_SCALE), function (g) {
       g.scale(TEX_SCALE, TEX_SCALE); A.drawFlame(g, 40, 56, A.mulberry(seed ^ 4), { fire: pal.fire, fire2: pal.fire2 });
@@ -626,7 +573,7 @@ var BossArena = (function () {
       on: false, tier: null, T: null, cx: 0, cy: 0, rx: 0, ry: 0,
       time: 0, ignite: 0, enraged: false, enrageFlash: 0,
       base: [], glow: [], props: [], flames: [], eyes: [], lights: [],
-      particles: [], edge: null, title: null, rng: null
+      local: [], particles: [], edge: null, title: null, rng: null
     };
 
     function sprite(tex, parent) {
@@ -636,11 +583,11 @@ var BossArena = (function () {
     }
     function clearAll() {
       R.base.concat(R.glow, R.props, R.flames, R.eyes, R.lights).forEach(function (s) { if (s && !s.destroyed) s.destroy(); });
-      R.particles.forEach(function (p) { if (!p.s.destroyed) p.s.destroy(); });
+      R.particles.concat(R.local).forEach(function (p) { if (!p.s.destroyed) p.s.destroy(); });
       if (R.edge && !R.edge.destroyed) R.edge.destroy();
       if (R.title && !R.title.root.destroyed) R.title.root.destroy({ children: true });
       R.base = []; R.glow = []; R.props = []; R.flames = []; R.eyes = []; R.lights = [];
-      R.particles = []; R.edge = null; R.title = null;
+      R.local = []; R.particles = []; R.edge = null; R.title = null;
     }
 
     /* 進場：center 是世界座標（雙方開場站位的中點）；view 給畫面尺寸，用來決定圓場多大——
@@ -687,9 +634,9 @@ var BossArena = (function () {
       ck.anchor.set(0.5);
       ck.width = ck.height = sigilR / CRACK_INNER * 2;
       ck.x = R.cx; ck.y = R.cy;
-      ck.tint = parseInt(T.pal.glow.slice(1), 16);
-      ck.blendMode = 'add'; ck.alpha = 0; ck._cracks = true;
-      R.glow.push(ck);
+      ck.tint = 0x08080a;
+      ck.blendMode = 'normal'; ck.alpha = 0.55; ck._cracks = true;
+      R.base.push(ck);
       placeProps(T);
       setupAmbient(T);
       showTitle(o.title, o.subtitle, T.pal);
@@ -714,6 +661,12 @@ var BossArena = (function () {
         s.x = wx; s.y = wy * groundScale; s.zIndex = s.y;
         s._h = spec.h * sc; s._w = spec.w * sc;
         R.props.push(s);
+        var foot=sprite(T.contact,opts.planeBase);foot.anchor.set(.5);foot.x=wx;foot.y=wy;
+        foot.width=spec.w*sc*1.15;foot.height=spec.w*sc*.38/groundScale;foot.alpha=.6;R.base.push(foot);
+        if(key==='relic')for(var n=0;n<3;n++){
+          var fog=sprite(T.fog,layer);fog.anchor.set(.5);fog.tint=parseInt(T.pal.glowHi.slice(1),16);fog._arenaLocal=true;
+          R.local.push({s:fog,parent:s,sc:sc,index:n,phase:r(),height:spec.h*.6*sc});
+        }
         return { s: s, wx: wx, wy: wy, sc: sc, spec: spec };
       }
       function groundLight(wx, wy, size, alpha) {
@@ -772,7 +725,7 @@ var BossArena = (function () {
       });
       // 尖刺：上半圈與兩側
       [-120, -60, -168, -12, 168, 12, -100, -80].forEach(function (deg, i) {
-        put(i >= 6 ? 'spikeSmall' : 'spike', (deg + A.range(r, -5, 5)) * D, A.range(r, 0.85, 1.1), i >= 6 ? 1.18 : A.range(r, 0.98, 1.06));
+        put(i===2||i===3?'relic':i >= 6 ? 'spikeSmall' : 'spike', (deg + A.range(r, -5, 5)) * D, A.range(r, 0.85, 1.1), i >= 6 ? 1.18 : A.range(r, 0.98, 1.06));
       });
       // 下半圈（離鏡頭近、會擋視線的一側）只放矮的：小尖刺與燭台
       [118, 62].forEach(function (deg) { put('spikeSmall', deg * D, A.range(r, 0.8, 0.95)); });
@@ -901,6 +854,13 @@ var BossArena = (function () {
          鏡頭每幀都在動，shear 隨橫向位置變，所以每幀重算。 */
       var bboard = A.billboardSprite;
       for (var pi = 0; pi < R.props.length; pi++) bboard(R.props[pi], opts.billboard, R.props[pi]._bbX, R.props[pi]._bbY);
+      // 餘煙／冥霧附著在兩件主題遺物上；固定六團，不建立 Timer 或每幀節點。
+      R.local.forEach(function(p){
+        var age=(t*.18+p.phase+p.index/3)%1,fade=Math.sin(age*Math.PI);
+        var offX=Math.sin(t*.45+p.phase*7)*14,offY=-p.height-age*42;
+        p.s.alpha=fade*.23*ign*p.parent.alpha;p.s.zIndex=p.parent.zIndex+.1;
+        bboard(p.s,opts.billboard,p.sc*(.3+age*.3),p.sc*(.3+age*.3),p.parent,offX,offY);
+      });
       for (var fi = 0; fi < R.flames.length; fi++) {
         var fb = R.flames[fi];
         bboard(fb, opts.billboard, fb._bbX, fb._bbY, fb._bbParent, fb._bbOffX, fb._bbOffY);
@@ -959,7 +919,7 @@ var BossArena = (function () {
     function stats() {
       return {
         enabled: enabled, on: R.on, tier: R.tier, props: R.props.length, glow: R.glow.length,
-        particles: R.particles.length, title: !!R.title, enraged: R.enraged,
+        localParticles:R.local.length, particles: R.particles.length, title: !!R.title, enraged: R.enraged,
         center: R.on ? { x: R.cx, y: R.cy, rx: R.rx, ry: R.ry, sigilR: R.sigilR } : null
       };
     }

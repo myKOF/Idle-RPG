@@ -765,9 +765,24 @@ var VFXRuntime = (function () {
 
     /* ---- 主要角色的四種擺法 ---- */
 
+    /* 作者的正右方（+X）為朝前；事件角優先，沒有才取攻擊者到目標的方向。
+       地面層用判定平面角，由 Core 最後投影一次；直立層用畫面角。 */
+    function attackFacing(spec, presetId, targetId) {
+      if (planePresets[presetId] && isNum(spec._planeAngle)) return spec._planeAngle;
+      if (isNum(spec.angle)) return spec.angle;
+      var from = spec.sourceId ? footOf(spec.sourceId)
+        : ctx.footOf ? footOf('pv-float') : ctx.playerPos();
+      var area = spec.area;
+      if (!spec.sourceId && area && isNum(area.sourceX) && isNum(area.sourceY))
+        from = {x:area.sourceX, y:area.sourceY};
+      var id = targetId || (spec.targets && spec.targets[0]);
+      var to = id ? footOf(id) : area ? areaCentre(area) : from;
+      return Math.atan2((to.y-from.y)/(planePresets[presetId] ? groundScale : 1), to.x-from.x);
+    }
+
     /* 目標身上（受擊、詛咒、單體攻擊本體）。
        帶 sourceId 時（敵方近戰）把畫面轉向「攻擊者 → 目標」，爪痕才會朝著被打的人。 */
-    function playOnTargets(rt, presetId, spec, scale, delaySec, authoredSize, hitClass) {
+    function playOnTargets(rt, presetId, spec, scale, delaySec, authoredSize, hitClass, aimAttack) {
       var ids = Array.isArray(spec.targets) ? spec.targets.slice(0, 8) : [];
       if (!ids.length) return false;
       var any = false;
@@ -779,7 +794,8 @@ var VFXRuntime = (function () {
           spec.variant === 'heaven-tribulation-strike' || spec.variant === 'heaven-tribulation-impact';
         if (delaySec > 0) {
           pending.push({ at: clock + delaySec, rt: rt, presetId: presetId, targetId: ids[i], scale: scale,
-            authoredSize: authoredSize, groundFoot: groundFoot, chainTargets: chainTargets, hitClass: !!hitClass });
+            authoredSize: authoredSize, groundFoot: groundFoot, chainTargets: chainTargets, hitClass: !!hitClass,
+            rotation: aimAttack ? attackFacing(spec,presetId,ids[i]) : undefined, facingBeforeOuterScale: !!aimAttack });
           any = true;
           continue;
         }
@@ -794,7 +810,8 @@ var VFXRuntime = (function () {
         if (spec.variant === 'pillar' && presetId === 'pillar-light' && num(spec.dur, 0) > 0) {
           params.timeScale = presetDurations[presetId] / spec.dur;
         }
-        if (spec.sourceId) {
+        if (aimAttack) { params.rotation = attackFacing(spec,presetId,ids[i]); params.facingBeforeOuterScale = true; }
+        else if (spec.sourceId) {
           var src = ctx.posOf(spec.sourceId);
           params.rotation = Math.atan2(p.y - src.y, p.x - src.x);
         }
@@ -826,10 +843,11 @@ var VFXRuntime = (function () {
     }
 
     /* 範圍中心（爆發、場域一次性） */
-    function playOnArea(rt, presetId, spec) {
+    function playOnArea(rt, presetId, spec, aimAttack) {
       if (!spec.area) return false;
       var params = areaScaleParams(spec.area, presetId);
       params.position = areaCentre(spec.area);
+      if (aimAttack && !isNum(spec.area.a)) { params.rotation = attackFacing(spec,presetId); params.facingBeforeOuterScale = true; }
       return !!play(rt, presetId, params, profile.areaScale);
     }
 
@@ -881,6 +899,8 @@ var VFXRuntime = (function () {
         var ringSize = sizeOf(presetId, {r:spec.area.r}) || defaultSize(presetId,1);
         var duration = Math.max(0.05,travelSecAt(spec,0) || num(spec.dur,0.42));
         return !!play(rt,presetId,Object.assign({position:areaCentre(spec.area),
+          rotation:attackFacing(spec,presetId),
+          facingBeforeOuterScale:true,
           timeScale:presetDurations[presetId]/duration},ringSize));
       }
       var origin = ctx.playerPos();
@@ -1684,16 +1704,24 @@ var VFXRuntime = (function () {
           ok = playGround(presetId, spec, role);
           break;
         case 'attack':
-          if (spec.variant === 'wind-chaser-slash') {
-            // 追加斬擊以本次命中敵人為原點，沿用配置原尺寸與模擬方向。
+          if (spec.variant === 'wind-chaser-slash' || spec.variant === 'wind-chaser-spin') {
+            // 追加斬擊以命中敵人為原點；真空迴旋依配置的米制尺寸換算。
             var chaserIds = spec.targets || [];
             for (var ci = 0; ci < chaserIds.length; ci++) {
               var chaserParams = {
-                scaleX: 1, scaleY: 1, position: ctx.posOf(chaserIds[ci]),
+                position: ctx.posOf(chaserIds[ci]),
                 depthY: footOf(chaserIds[ci]).y,
                 rotation: planePresets[presetId] && isNum(spec._planeAngle) ? spec._planeAngle : num(spec.angle, 0)
               };
-              if (play(fxRtFor(presetId), presetId, chaserParams, 1)) ok = true;
+              Object.assign(chaserParams, spec.variant === 'wind-chaser-spin'
+                ? defaultSize(presetId) : {scaleX:1, scaleY:1});
+              if (spec.variant === 'wind-chaser-spin' && spec.dur > 0) chaserParams.timeScale = presetDurations[presetId] / spec.dur;
+              var chaserRef = play(fxRtFor(presetId), presetId, chaserParams, 1);
+              if (chaserRef) {
+                ok = true;
+                if (spec.variant === 'wind-chaser-spin') follows.push({ref:chaserRef,
+                  key:chaserIds[ci], until:clock+spec.dur, requireVisible:true, body:true, mult:1});
+              }
             }
           } else if (spec.variant === 'thunder-curtain' && spec.area) {
             // 沿用舊雷幕的柱距與數量上限；每柱具有穩定 ID，不隨逐拍事件重建。
@@ -1749,7 +1777,9 @@ var VFXRuntime = (function () {
           } else if (spec.variant === 'gale-moon') {
             var moonParams = sizeOf(presetId, { r: spec.area && spec.area.r }) || defaultSize(presetId, 1);
             moonParams.position = spec.targets && spec.targets.length ? ctx.posOf(spec.targets[0]) : areaCentre(spec.area);
-            // 保留 Preset 製作方向及圖層旋轉動畫，不依施法者位置追加旋轉。
+            // 以製作時的正右方為朝前，保留圖層自身旋轉動畫。
+            moonParams.rotation = attackFacing(spec,presetId);
+            moonParams.facingBeforeOuterScale = true;
             ok = !!play(rtFx, presetId, moonParams);
           } else if (/^cleave(?:-|$)/.test(spec.variant || '')) {
             ok = playCleave(rtFx, presetId, spec);
@@ -1762,18 +1792,18 @@ var VFXRuntime = (function () {
             }
             ok = playDirectional(rtFx, presetId, aimed);
           } else if (spec.variant === 'poison-spread') {
-            // 傳染的 chain 描述子彈路徑；繼承的毒咒仍在敵人身上原尺寸播放，不能拉成光束。
+            // 傳染的 chain 描述子彈路徑；毒咒在各敵人身上面敵播放，不能拉成光束。
             var poisonSpec = Object.assign({}, spec);
             delete poisonSpec.sourceId;
-            ok = playOnTargets(rtFx, presetId, poisonSpec, 1, 0, true);
+            ok = playOnTargets(rtFx, presetId, poisonSpec, 1, 0, true, false, true);
           } else if (spec.variant === 'lightning-chain' && spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
-          else if (spec.area) ok = playOnArea(rtFx, presetId, spec);
+          else if (spec.area) ok = playOnArea(rtFx, presetId, spec, true);
           else if (isFinite(spec.angle) && num(spec.lineLength, 0) > 0) ok = playDirectional(rtFx, presetId, spec);
           else if (spec.fxKind === 'beam' || spec.fxKind === 'chain') ok = playBeam(rtFx, presetId, spec);
           /* 整份都標了 perspective: false 的（例如天地再造的直立光柱）只投影落點並等比縮放，
              避免整張場景的 FOV 網格把柱身拉歪。判斷來自 preset 資料，不是寫死的名字。 */
           else ok = playOnTargets(fxRtFor(presetId),
-            presetId, spec, 1, hitDelayFor(spec), true);
+            presetId, spec, 1, hitDelayFor(spec), true, false, true);
           break;
         default:
           ok = false;
@@ -1880,6 +1910,8 @@ var VFXRuntime = (function () {
         var jobParams = Object.assign(job.authoredSize ? { scaleX: 1, scaleY: 1 } : defaultSize(job.presetId, job.scale),
           { position: job.groundFoot ? footOf(job.targetId) : ctx.posOf(job.targetId),
             depthY: footOf(job.targetId).y });
+        if (isNum(job.rotation)) jobParams.rotation = job.rotation;
+        if (job.facingBeforeOuterScale) jobParams.facingBeforeOuterScale = true;
         if (job.hitClass) { var jd = hitDensity(); if (jd) { jobParams.density = jd; counters.thinned++; } }
         var jobRef = play(job.rt, job.presetId, jobParams, job.authoredSize ? 1 : undefined);
         if (jobRef && job.hitClass) noteHit(job.presetId, job.targetId);
@@ -2022,7 +2054,7 @@ var VFXRuntime = (function () {
       for (var f = follows.length - 1; f >= 0; f--) {
         var fo = follows[f];
         if (fo.requireVisible && ctx.chainPoint && !ctx.chainPoint(fo.key)) { stopRef(fo.ref); follows.splice(f, 1); continue; }
-        var live = moveRef(fo.ref, { position: footOf(fo.key) });
+        var live = moveRef(fo.ref, { position: fo.body ? ctx.posOf(fo.key) : footOf(fo.key) }, fo.mult);
         if (!live || fo.until <= clock) {
           if (live && fo.until <= clock) stopRef(fo.ref);
           follows.splice(f, 1);
@@ -2177,7 +2209,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261003-wind-spin-authoring';
+  var DATA_VERSION = '20261007-cleave-rotate20';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

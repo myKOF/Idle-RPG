@@ -16,9 +16,11 @@
 </head>
 <body>
 <script src="../js/decor-sculpt.js"></script>
-<script src="../js/battle-decor.js"></script>
+<script src="../js/decor-nature.js?v=1.0.6"></script>
+<script src="../js/battle-decor.js?v=1.0.16"></script>
 <script>
-  (function () {
+  (async function () {
+    await DecorNature.loadImages();
     var q = new URLSearchParams(location.search);
     var only = q.get('kit');
     var scale = Number(q.get('scale')) || 1;
@@ -30,6 +32,18 @@
       desert: '#6e5a40', Icefield: '#5a6a7a', swamp: '#2e3a26', undead_mountains: '#2e2c32',
       god_battlefield: '#3a2c24', god_chaos: '#241c30', god_sanctuary: '#8a8478'
     };
+    // 共用正式圖集，把接觸區投影到地面，再疊同腳點的直立物件。
+    function tile(atlas, s) {
+      var foot = atlas.specs.find(function (f) { return f.key === 'foot_' + s.key; });
+      var w = Math.max(s.w, foot ? foot.w : 0), fy = s.h - BattleDecor.art.FOOT;
+      var h = Math.max(s.h, foot ? fy + foot.h * .25 : 0);
+      var c = document.createElement('canvas'), r = BattleDecor.art.TEX_SCALE;
+      c.width = Math.ceil(w * r); c.height = Math.ceil(h * r);
+      var g = c.getContext('2d'); g.scale(r, r);
+      if (foot) g.drawImage(atlas.canvas, foot.px, foot.py, foot.pw, foot.ph, (w - foot.w) / 2, fy - foot.h * .25, foot.w, foot.h * .5);
+      g.drawImage(atlas.canvas, s.px, s.py, s.pw, s.ph, (w - s.w) / 2, 0, s.w, s.h);
+      return { canvas: c, w: w, h: h };
+    }
     /* 拼成一張圖（給無法截圖的環境用）：decorSheet('desert', false, ['rock'], 2) 回傳 canvas；
        decorShot(...) 另外 POST 到本機接收伺服器（埠號用 ?recv=8197 指定）。 */
     window.decorSheet = function (kit, deep, onlyTypes, sc, withDecals) {
@@ -41,9 +55,10 @@
       }).sort(function (a, b) { return a.key < b.key ? -1 : 1; });
       var W = 1600, pad = 12, x = pad, y = pad, rowH = 0, pos = [];
       list.forEach(function (s) {
-        var dw = s.w * sc, dh = s.kind === 'decal' ? s.h * sc * 0.5 : s.h * sc;
+        var t = s.kind === 'prop' ? tile(atlas, s) : null;
+        var dw = (t ? t.w : s.w) * sc, dh = s.kind === 'decal' ? s.h * sc * 0.5 : (t ? t.h : s.h) * sc;
         if (x + dw + pad > W) { x = pad; y += rowH + pad; rowH = 0; }
-        pos.push([s, x, y, dw, dh]);
+        pos.push([s, x, y, dw, dh, t]);
         x += dw + pad; rowH = Math.max(rowH, dh);
       });
       var c = document.createElement('canvas');
@@ -52,7 +67,10 @@
       g.fillStyle = GROUND[kit] || '#333';
       g.fillRect(0, 0, c.width, c.height);
       if (deep) { g.fillStyle = 'rgba(0,0,0,0.38)'; g.fillRect(0, 0, c.width, c.height); }
-      pos.forEach(function (p) { g.drawImage(atlas.canvas, p[0].px, p[0].py, p[0].pw, p[0].ph, p[1], p[2], p[3], p[4]); });
+      pos.forEach(function (p) {
+        if (p[5]) g.drawImage(p[5].canvas, p[1], p[2], p[3], p[4]);
+        else g.drawImage(atlas.canvas, p[0].px, p[0].py, p[0].pw, p[0].ph, p[1], p[2], p[3], p[4]);
+      });
       return c;
     };
     window.decorShot = function (name, kit, deep, onlyTypes, sc, withDecals) {
@@ -76,6 +94,12 @@
         atlas.specs.filter(function (s) { return (s.kind === 'prop' || s.kind === 'flame') && (!types || types.indexOf(s.type) >= 0); })
           .sort(function (a, b) { return a.key < b.key ? -1 : 1; })
           .forEach(function (s) {
+            if (s.kind === 'prop') {
+              var t = tile(atlas, s), f = document.createElement('figure'), cap = document.createElement('figcaption');
+              t.canvas.style.width = (t.w * scale) + 'px'; t.canvas.style.height = (t.h * scale) + 'px';
+              cap.textContent = s.type + ' ' + s.key;
+              f.appendChild(t.canvas); f.appendChild(cap); row.appendChild(f); return;
+            }
             var c = document.createElement('canvas');
             c.width = s.pw; c.height = s.ph;
             c.style.width = (s.w * scale) + 'px';

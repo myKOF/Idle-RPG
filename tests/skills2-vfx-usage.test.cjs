@@ -15,7 +15,7 @@ test('觸發欄：中文欄位往返、逐風者設定及舊表拒絕，錯字�
  const parse=(data=rows.slice(1),h=header)=>a.evalLiteral(a.extractLiteral(a.sc.rebuild(data,h).SKILLS2,'SKILLS2').literal);
  const original=row[index];assert.ok(original);
  assert.equal(parse().cleave.ult[1].triggerVfx.ground,original);
- assert.equal(parse().cleave.ult[1].triggerVfx.attack,'slash-wind-crescent');
+ assert.equal(parse().cleave.ult[1].triggerVfx.attack,'slash-wind-spin');
  assert.equal(parse().cleave.ult[1].triggerVfx.hit,'hit-wind');
  for(const label of ['特殊效果','特效用途特效','特殊用途特效']) {
   const renamed=header.map((h,i)=>i===index?label:h);
@@ -26,7 +26,7 @@ test('觸發欄：中文欄位往返、逐風者設定及舊表拒絕，錯字�
  assert.equal(out[a.sc.header.indexOf('觸發地板特效')],original);
  row[index]='custom-ground';assert.equal(parse().cleave.ult[1].triggerVfx.ground,'custom-ground');
  row[index]='';assert.equal(parse().cleave.ult[1].triggerVfx.ground,undefined);
- assert.equal(parse().cleave.ult[1].triggerVfx.attack,'slash-wind-crescent');
+ assert.equal(parse().cleave.ult[1].triggerVfx.attack,'slash-wind-spin');
  row[index]='附加效菓';assert.throws(()=>parse(),/Preset 名稱/);
  const oldHeader=header.filter((_,i)=>i!==index),oldData=rows.slice(1).map(r=>r.filter((_,i)=>i!==index));
  assert.throws(()=>parse(oldData,oldHeader),/缺少新版觸發欄/);

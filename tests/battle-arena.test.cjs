@@ -58,6 +58,8 @@ function loadArena(search) {
   };
   vm.createContext(ctx);
   vm.runInContext(read('js/decor-sculpt.js'), ctx);
+  vm.runInContext(read('js/decor-nature.js'), ctx);
+  ctx.DecorNature.registerImages(Object.fromEntries(Object.keys(ctx.DecorNature.spriteFiles).map(key=>[key,{width:128,height:192}])));
   vm.runInContext(read('js/battle-decor.js'), ctx);
   vm.runInContext(read('js/battle-arena.js'), ctx);
   return { BossArena: ctx.BossArena, BattleDecor: ctx.BattleDecor, warnings };
@@ -112,6 +114,23 @@ test('ARENA-3 進出場不洩漏節點；連續進場（連挑）會先清掉上
   for (const l of Object.values(layers)) assert.equal(l.children.length, 0);
   assert.equal(arena.active(), false);
   assert.equal(arena.floorTexture(), null);
+});
+
+test('ARENA-MOTION 三塔局部煙霧固定六團、跟遺物腳點投影，dt=0凍結且退出全部回收', () => {
+  const {BossArena}=loadArena(),P=fakePixi(),{arena,layers}=makeArena(BossArena,P);
+  const baseline=P.alive();
+  for(const tier of ['trial','hell','purgatory']){
+    arena.enter({cx:100,cy:60,tier,W:800,H:800});
+    assert.equal(arena.stats().localParticles,6);
+    const local=layers.prop.children.filter(s=>s._arenaLocal);
+    const view={W:800,H:800,dt:.1,playerX:100,playerScreenY:30};
+    arena.update(view);
+    const snap=()=>JSON.stringify(local.map(s=>[s.x,s.y,s.alpha,s.scale.x,s.scale.y]));
+    const first=snap();arena.update({...view,dt:0});assert.equal(snap(),first);
+    arena.update(view);assert.notEqual(snap(),first,'局部煙霧應動態升起');
+    assert.ok(local.every(s=>Number.isFinite(s.x)&&Number.isFinite(s.y)));
+    arena.exit();assert.equal(P.alive(),baseline,'每個塔別離場均無煙霧節點殘留');
+  }
 });
 
 test('ARENA-4 標題卡播完自己收掉；狂暴時法陣更亮、心跳光暈更重', () => {

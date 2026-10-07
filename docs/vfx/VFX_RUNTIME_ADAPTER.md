@@ -1,5 +1,15 @@
 # VFX_RUNTIME_ADAPTER.md
 
+## 攻擊朝向的製作基準（2026-10-07）
+
+使用者指定正右方90度為面敵基準；即Editor的+X方向為「朝前」。遊戲內的角度採atan2弧度，正右方旋轉偏移0、向下+π/2、向左π、向上-π/2，不能再額外加90度。只改面敵朝向，作者的傾角、FOV、局部位置、縮放、角度與旋轉曲線仍完整保留。
+
+2026-10-07 使用者澄清：不能將已壓扁的橢圓整體旋轉。攻擊播放帶Core內部選項 `facingBeforeOuterScale`；根Sprite層有非零不等比outerScale時，以作者原外框反投影面敵角，再於外框壓扁之前旋轉。局部位置用 `O · R · O^-1`，因位置本來已按外框製作，避免再次壓扁；原投影軸保持固定。明確projection的Preset仍沿用projectionRotation原路徑，不新增FOV或場景投影設定。沒有啟用選項的Editor、受擊、場域等用途保留原rotation契約；Preset檔案與Worker事件不變。
+
+一般單體attack與範圍attack、疾風月牙閃及傳染毒咒優先取事件的明確angle（包含0）；沒有事件角時按攻擊者到該目標的腳點方向，無目標則用區域中心，同座標回正右方。矩形／有方向的區域保留area.a判定方向；受擊、施放與持續場域不套用這個attack預設。延期到命中時間播放的單體本體保存收到事件時的朝向，播放位置仍取目標當下座標。地面Preset使用原平面角或將腳點畫面Y差還原，再交Core投影一次，避免斜向角被壓扁兩次。
+
+迴旋斬每一道圓形刀波在實際出手時由模擬層傳遞當下面對主目標的angle，含原地與飛行版本；追加刀波重新取當下位置和方向，已發射刀波不追隨玩家或後續轉向。沿用既有Worker angle欄位，沒有協議或判定變動。垂直落雷／天降及方向型飛行物保留各自的權威落下／路徑方向。
+
 ## 重整時的載入空窗（2026-10-03）
 
 Canvas 的 ready 不代表 Preset 已載入。BattleRenderer 在 VFXRuntime.boot 尚未完成時，先暫存已走完位置緩衝的事件，禁止直接落入 legacy 程序畫法；同一 variant／area.id 的 aura 更新合併成最新一則，待播佇列最多256則。終止訊號按原順序保留，就緒後交給原表定素材，不增加任何特效來源。
@@ -487,7 +497,7 @@ Pixi 後端寫入 1.1、Pixi 渲染約 2.1）。滾雪球的是 `burst-icearrow-
 | sgCastThrust 1919 | thrust／-parallel／-pierce／-octagonal | `vfxTier: octagonal?7 : pierce?6 : parallel?4 : 1` |
 | sgCastCleave 2144 | cleave／-shockwave／-cross-shockwave | `vfxTier: cross?7 : isFlying?6 : 1` |
 | sgCleaveWhirlwind 2010 | wind-spin | `vfxGid:'vacuumslash', vfxTier:4` |
-| sgCleaveOnHit（逐風者） | wind-chaser-slash | `vfxUlt:'windChaser'`，只讀觸發 attack／hit；每個實際觸發敵人各播一次，attack與hit都落在該敵人，沿事件方向與原尺寸；不建立龍捲場域 |
+| sgCleaveOnHit（逐風者） | wind-chaser-spin | `vfxUlt:'windChaser'`，每個觸發敵人各播一次表定 attack，旋轉本體跟隨該敵人、依 Preset 米制尺寸（目前半徑6米）換算並對齊四段總時長；每段命中獨立派送 hit，MISS不播放hit，不建立龍捲場域或增加傷害範圍 |
 | sgSpawnGround 'gale' 2519（windtornado，傳奇風捲殘雲） | — | cfg `vfxGid:'cleave', vfxUlt:'windChaser'` |
 | sgKnifeBounceChain 2308 | knife-bounce／knife-soulhunter | bounce `vfxTier:3`；soulhunter `vfxUlt:'soulhunterBlade'` |
 | sgKnifeSplit 2339 | knife-bounce | `vfxTier:3` |
