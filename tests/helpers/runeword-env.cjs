@@ -1,5 +1,5 @@
 'use strict';
-/* 符文之語測試共用環境：以 Worker 的載入順序把模擬層全部載進同一個 vm 上下文，
+/* 符文真言測試共用環境：以 Worker 的載入順序把模擬層全部載進同一個 vm 上下文，
    再建立一份全新的遊戲狀態 G。測試可直接呼叫 computeStats／rwActiveWord／socketRune／doPlayerAttack…。 */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -60,7 +60,7 @@ function fillRunes(it, runes, start) {
 
 module.exports = { loadRuneEnv, makeItem, fillRunes, root, SIM_FILES };
 
-/* 為指定符文之語建一件「剛好能成形」的裝備：挑 bases 裡第一個可行的裝備型態（預設傳說，符文孔足夠）。 */
+/* 為指定符文真言建一件「剛好能成形」的裝備：挑 bases 裡第一個可行的裝備型態（預設傳說，符文孔足夠）。 */
 function wordItem(c, id, over) {
   const w = c.RUNEWORD_BY_ID[id];
   const base = { slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100 };

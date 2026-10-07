@@ -1,17 +1,17 @@
 'use strict';
-/* ============ 符文之語：資料表（符文 33 種、符文之語 56 組）============
+/* ============ 符文真言：資料表（符文 33 種、符文真言 56 組）============
    本檔只放資料與純查表函式，不碰 G、不寫狀態（共載檔規則）。
    執行邏輯（鑲嵌判定、屬性聚合、觸發引擎）→ js/runeword.js；兩支同時載入於主執行緒與 Worker。
 
-   ---- 玩法（參考暗黑 2 的符文之語）----
+   ---- 玩法（參考暗黑 2 的符文真言）----
    1. 符文是獨立的素材（G.player.runes = { 符文id: 數量 }），鑲在裝備專屬的「符文孔」裡（it.runes，
       最多 RUNE_SETTINGS.maxSlots = 4 孔），與寶石的鑲孔（it.sockets）完全分開。
       符文孔取代了原本的附魔欄位（附魔功能已關閉，見 data.js ENCHANT_ENABLED）。
-   2. 把「指定的符文、依指定順序」鑲進「連續的符文孔」，且裝備類型符合 → 該裝備成為符文之語裝備。
-      符文之語是**當場判定**的衍生狀態（不存檔）：拆下任何一顆符文就失效，換回順序又恢復。
-   3. 符文孔數由稀有度決定（RUNE_SETTINGS.slotsByRarity），最多 4 孔，所以任何符文之語最多 4 顆符文：
+   2. 把「指定的符文、依指定順序」鑲進「連續的符文孔」，且裝備類型符合 → 該裝備成為符文真言裝備。
+      符文真言是**當場判定**的衍生狀態（不存檔）：拆下任何一顆符文就失效，換回順序又恢復。
+   3. 符文孔數由稀有度決定（RUNE_SETTINGS.slotsByRarity），最多 4 孔，所以任何符文真言最多 4 顆符文：
       2 符文要稀有以上、3 符文要史詩以上、4 符文要傳說以上。難度因此不靠孔數，而靠符文本身的階數與取得難度。
-   4. 每顆符文單獨鑲著也有加成（武器／防具各一條），符文之語生效時兩者並存。
+   4. 每顆符文單獨鑲著也有加成（武器／防具各一條），符文真言生效時兩者並存。
 
    ---- 數值口徑（單一權威）----
    所有 stats 的數值＝ affixBaseValue(詞條, 裝備等級, 稀有度) × mult：
@@ -19,11 +19,17 @@
      與詞條系統同源，不另建第二套數值（AI_RULES §7）。mult 可為負數（＝代價）。
    fx／procs 的數字是固定值（不隨稀有度成長）——它們是機制，不是屬性。
 
-   ---- 強度分級（tier）----
+   ---- 強度分級（tier）與品質 ----
+     品質沿用裝備品質的名稱與顏色（RUNEWORD_TIER_RARITY，白＝普通、綠＝精良、藍＝稀有、紫＝史詩、橘＝傳說）。
+     目前只有 4 級，所以對應 普通／精良／史詩／傳說（藍色的「稀有」留空，之後要加第 5 級時可補）：
      1 普通      2~3 符文，最高階 ≤ 10　屬性包為主，附一點小機制
-     2 強力      3~4 符文，最高階 11～16　屬性包＋一個真正有感的機制
-     3 非常強力  3~4 符文，最高階 17～23　多重機制，定位明確
-     4 極度特殊  4 符文，最高階 24～33　改寫技能／生存／節奏規則，附代價或高門檻
+     2 精良      3~4 符文，最高階 11～16　屬性包＋一個真正有感的機制
+     3 史詩      3~4 符文，最高階 17～23　多重機制，定位明確
+     4 傳說      4 符文，最高階 24～33　改寫技能／生存／節奏規則，附代價或高門檻
+
+   ---- 「已激活」記錄（圖鑑隱藏機制；js/runeword.js §2）----
+   每組符文真言要「成形過一次」才會在圖鑑與符文庫顯示配方與效果（G.player.runewordSeen，隨存檔）；
+   在那之前只顯示名稱、品質、需要的孔數、適用裝備與風味文字，其餘用問號。內測版可以用符文頁的開關全部攤開。
    符文孔最多 4 孔，長度不再是難度來源；難度來自配方裡最高階那顆符文有多稀有（見 RUNE_SETTINGS.drop）。
    ============================================================ */
 
@@ -82,13 +88,13 @@ var RUNE_BY_ID = (function () {
 })();
 
 /* ---- 全域設定（配置表 Runes 的「設定」列；寫回時整塊重建，順序即表內順序）----
-   maxSlots       符文孔數的硬上限（符文之語最多幾顆符文）
+   maxSlots       符文孔數的硬上限（符文真言最多幾顆符文）
    slotsByRarity  各稀有度的符文孔數（依 RARITIES 順序：普通 → 神鑄混沌），不得超過 maxSlots
    composeCount   合成：同種符文幾顆 → 下一階 1 顆
    composeMaxTier 能合成到第幾階（更高階只能靠掉落）
    dismantleYield 拆解 1 顆 → 低一階符文幾顆；必須小於 composeCount。≥2 會讓一顆高階符文拆出指數倍的低階符文、把低階稀有度整個破壞，
                   所以預設 1（高階符文可以降階頂替較低階的需求，但不會變多）
-   statScale      全域縮放：符文與符文之語的 stats 一律乘此值（平衡用旋鈕）
+   statScale      全域縮放：符文與符文真言的 stats 一律乘此值（平衡用旋鈕）
    drop           掉落（野外擊殺／封魔塔 BOSS）；公式 runeDropTierMax／rollRuneTier 在 js/runeword.js
      basePct          野外每次擊殺的基礎掉落率（%），再乘掉寶率／地圖倍率（1～24 倍）／敵種倍率
      towerBossPct     封魔塔通關時的基礎機率（%）
@@ -143,7 +149,7 @@ var RW_PROC_TRIGGERS = ['hit', 'crit', 'kill', 'hurt', 'block', 'cast', 'tick', 
 var RW_ACTS = ['dmg', 'heal', 'shield', 'mana', 'buff', 'buffRandom', 'stun', 'slow', 'dot', 'cdr',
   'refresh', 'recast', 'castRandom', 'invuln', 'execute', 'cleanse'];
 
-/* ---- 符文之語 ----
+/* ---- 符文真言 ----
    runes  鑲入順序（符文 id，可重複）
    bases  允許的裝備（RW_BASE_TOKENS 或武器類型鍵），多項為「或」
    stats  [[詞條鍵, mult], …]
@@ -200,7 +206,7 @@ var RUNEWORDS = [
     procs: [{ on: 'cast', chance: 15, acts: [{ act: 'mana', pctMax: 12 }] }],
     flavor: '星火燎原，施法者的靈感湧現。' },
 
-  /* ===== 第二級　強力（3~4 符文）===== */
+  /* ===== 第二級　精良（3~4 符文）===== */
   { id: 'rw_galeblade', name: '疾風烈刃', tier: 2, runes: ['r13', 'r04', 'r07', 'r14'], bases: ['sword1h', 'dagger1h', 'magicSword1h'],
     stats: [['aspd', 2.5], ['critRate', 1.5], ['atkPct', 1.5]], fx: { aspdMult: 8 },
     flavor: '快過風的刃，連風聲都追不上。' },
@@ -253,7 +259,7 @@ var RUNEWORDS = [
     stats: [['gemEff', 3.0], ['affixCap', 2.0], ['enhanceSuccess', 3.0]],
     flavor: '鎚聲不絕，鋼與靈魂同鍛。' },
 
-  /* ===== 第三級　非常強力（4 符文為主）===== */
+  /* ===== 第三級　史詩（4 符文為主）===== */
   { id: 'rw_apocalypse', name: '天啟', tier: 3, runes: ['r10', 'r11', 'r21', 'r23'], bases: ['mainHand'],
     stats: [['atkPct', 3.0], ['matkPct', 3.0], ['critDmg', 3.0], ['bossDmg', 3.0]], fx: { dmgPct: 18, aspdMult: 10 },
     flavor: '號角響起，審判降臨。' },
@@ -309,7 +315,7 @@ var RUNEWORDS = [
     procs: [{ on: 'hit', every: 6, acts: [{ act: 'castRandom' }] }],
     flavor: '揮刀太快，連技能都被牽著走。' },
 
-  /* ===== 第四級　極度特殊（4 符文；改寫規則，常附代價）===== */
+  /* ===== 第四級　傳說（4 符文；改寫規則，常附代價）===== */
   { id: 'rw_reincarnation', name: '輪迴', tier: 4, runes: ['r28', 'r29', 'r30', 'r32'], bases: ['chest'],
     stats: [['hpPct', 4.0], ['defPct', 4.0], ['mdefPct', 4.0]],
     fx: { reviveHpPct: 60, reviveCdSec: 180, reviveInvulnSec: 3, reviveDmgPct: 60, reviveDmgSec: 10, reviveRefresh: 1 },
@@ -383,8 +389,22 @@ var RUNEWORD_BY_ID = (function () {
   return m;
 })();
 
-var RUNEWORD_TIER_NAMES = ['', '普通', '強力', '非常強力', '極度特殊'];
-var RUNEWORD_TIER_COLORS = ['', '#9aa5b1', '#4ade80', '#c084fc', '#fb923c'];
+/* 符文真言的品質：級距（tier 1~4）→ 裝備稀有度索引（RARITIES），名稱與顏色直接讀 RARITIES，不另寫一份。
+   RARITIES 在 data.js；沒載入時（單獨載入本檔的工具）退回同一組寫死值。 */
+var RUNEWORD_TIER_RARITY = [-1, 0, 1, 4, 5];   // 普通、精良、史詩、傳說
+var RUNEWORD_TIER_FALLBACK = [['', ''], ['普通', '#9aa5b1'], ['精良', '#4ade80'], ['史詩', '#c084fc'], ['傳說', '#fb923c']];
+var RUNEWORD_TIER_NAMES = RUNEWORD_TIER_RARITY.map(function (ri, t) {
+  return (ri >= 0 && typeof RARITIES !== 'undefined' && RARITIES[ri]) ? RARITIES[ri].name : RUNEWORD_TIER_FALLBACK[t][0];
+});
+var RUNEWORD_TIER_COLORS = RUNEWORD_TIER_RARITY.map(function (ri, t) {
+  return (ri >= 0 && typeof RARITIES !== 'undefined' && RARITIES[ri]) ? RARITIES[ri].color : RUNEWORD_TIER_FALLBACK[t][1];
+});
+
+/* 符文石圖：images/runes/stone-<符文id>.png（160×160 透明背景，33 張）。
+   由 tools/rune-stones 程序化繪製（高度圖＋光照，符文刻進石面）；256px 原圖與產生器收在素材庫
+   claude-authored/rune-stones。換圖時 +1 RUNE_STONE_VER（圖檔沒有版本字尾，靠查詢字串破快取）。 */
+var RUNE_STONE_VER = 1;
+function runeStoneSrc(id) { return 'images/runes/stone-' + id + '.png?v=' + RUNE_STONE_VER; }
 
 /* 符文名稱（含階數）。未知 id 回傳 id 本身，避免畫面上出現 undefined。 */
 function runeName(id) {

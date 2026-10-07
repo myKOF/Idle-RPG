@@ -4,7 +4,7 @@ const { loadRuneEnv, makeItem, fillRunes, wordItem } = require('./helpers/runewo
 // vm 內建立的物件原型與測試端不同，deepStrictEqual 會因此誤判；一律先轉成純 JSON 再比
 const plain = (x) => JSON.parse(JSON.stringify(x));
 
-/* 符文之語執行層：鑲嵌、判定、屬性聚合、各類機制。
+/* 符文真言執行層：鑲嵌、判定、屬性聚合、各類機制。
    每個測試都用全新的上下文（完整模擬層＋全新遊戲狀態），互不污染。 */
 
 function enemy(over) {
@@ -134,7 +134,7 @@ test('合成：3 顆 → 下一階；第 20 階起不能合成；拆解 1 顆 �
 
 /* ---------------- 判定 ---------------- */
 
-test('符文之語：順序必須完全一致；連續鑲孔即可，前後可以有別的鑲嵌物', () => {
+test('符文真言：順序必須完全一致；連續鑲孔即可，前後可以有別的鑲嵌物', () => {
   const c = loadRuneEnv();
   const w = WORD(c, 'rw_viperkiss');                       // r06 → r08，單手劍／匕首／魔劍
   const mk = (runes, start) => fillRunes(makeItem(c, { rarity: 5 }), runes, start);
@@ -147,7 +147,7 @@ test('符文之語：順序必須完全一致；連續鑲孔即可，前後可�
   assert.equal(c.rwActiveWord(gem).word.id, w.id, '寶石鑲孔與符文孔互不影響');
 });
 
-test('符文之語：裝備類型不符不成立（匕首可、法杖不可）', () => {
+test('符文真言：裝備類型不符不成立（匕首可、法杖不可）', () => {
   const c = loadRuneEnv();
   const ok = fillRunes(makeItem(c, { rarity: 5, weaponType: 'dagger1h' }), ['r06', 'r08']);
   const bad = fillRunes(makeItem(c, { rarity: 5, weaponType: 'staff2h' }), ['r06', 'r08']);
@@ -157,7 +157,7 @@ test('符文之語：裝備類型不符不成立（匕首可、法杖不可）',
   assert.equal(c.rwActiveWord(armor), null);
 });
 
-test('符文之語：多組同時符合時取符文數最多者；符文孔不足的裝備放不下', () => {
+test('符文真言：多組同時符合時取符文數最多者；符文孔不足的裝備放不下', () => {
   const c = loadRuneEnv();
   // 創造一組臨時的長配方，包含「初啼」r01→r02 作為前綴
   c.RUNEWORDS.push({ id: 'rw_test_long', name: '測試長配方', tier: 1, runes: ['r01', 'r02', 'r03'], bases: ['mainHand'], stats: [['atkFlat', 1]] });
@@ -208,7 +208,7 @@ test('強化倍率套用在符文屬性上；雙手武器不吃雙手詞條 ×2�
   assert.equal(c.runeSlotCountFor(two), c.runeSlotCountFor(one), '雙手武器的符文孔數與單手相同');
 });
 
-test('computeStats：符文之語屬性併入面板；拆下一顆就失效', () => {
+test('computeStats：符文真言屬性併入面板；拆下一顆就失效', () => {
   const c = loadRuneEnv();
   const before = c.getStats();
   const it = wordItem(c, 'rw_viperkiss');
@@ -223,7 +223,7 @@ test('computeStats：符文之語屬性併入面板；拆下一顆就失效', ()
   assert.ok(st2.critRate < st.critRate);
 });
 
-test('符文之語的被動並入 st.passives、借用的傳奇特效並入 legendaryEffects', () => {
+test('符文真言的被動並入 st.passives、借用的傳奇特效並入 legendaryEffects', () => {
   const c = loadRuneEnv();
   pin(c, 'rw_stoneskin', { passives: { thorns: 3 } });
   pin(c, 'rw_assassin', { legend: ['knifeShadowblade', 'knifeChain'] });
@@ -235,7 +235,7 @@ test('符文之語的被動並入 st.passives、借用的傳奇特效並入 lege
   assert.equal(c.legendaryHas(st2, 'knifeChain'), true);
 });
 
-test('同一組符文之語穿在兩件裝備上：屬性各算，機制只算一次', () => {
+test('同一組符文真言穿在兩件裝備上：屬性各算，機制只算一次', () => {
   const c = loadRuneEnv();
   const a = wordItem(c, 'rw_stoneskin', { slot: 'shoulder' });
   const b = wordItem(c, 'rw_stoneskin', { slot: 'legs' });
@@ -258,7 +258,7 @@ test('單次傷害上限取最嚴格者；其他 fx 數字相加', () => {
   assert.equal(agg.fx.dmgPct, 15);
 });
 
-test('符文屬性計入裝備評分；符文之語成形再乘一個階級係數', () => {
+test('符文屬性計入裝備評分；符文真言成形再乘一個階級係數', () => {
   const c = loadRuneEnv();
   const plain = makeItem(c, { rarity: 5 });
   const withRune = fillRunes(makeItem(c, { rarity: 5 }), ['r10']);
@@ -466,7 +466,7 @@ test('hurt／block 觸發以攻擊者為目標；受傷為 0 時不觸發 hurt',
   assert.ok(atk2.hp < 1e9, '格擋觸發反擊');
 });
 
-test('legendaryOnPlayerDamaged 入口確實會呼叫符文之語（受擊路徑接線）', () => {
+test('legendaryOnPlayerDamaged 入口確實會呼叫符文真言（受擊路徑接線）', () => {
   const c = loadRuneEnv();
   pin(c, 'rw_ironoath', { procs: [{ on: 'hurt', chance: 20, cd: 3, acts: [{ act: 'dmg', pct: 100, type: 'phys', to: 'attacker' }] }] });
   equip(c, 'shoulder', wordItem(c, 'rw_ironoath'));
@@ -653,7 +653,7 @@ test('野外掉落：符文入庫並回報字串；符文掉落率加成會放�
 
 /* ---------------- 顯示 ---------------- */
 
-test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文之語全部效果；差一顆時提示配方；寶石鑲孔不再混入符文', () => {
+test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文真言全部效果；差一顆時提示配方；寶石鑲孔不再混入符文', () => {
   const c = loadRuneEnv();
   const it = makeItem(c, { rarity: 5 });
   it.runes[0] = 'r06';
@@ -665,7 +665,7 @@ test('符文孔 HTML：符文顯示字形與實際數值；成形時列出符文
   assert.doesNotMatch(html, /data-rune-remove/, '符文面板沒開時不可取下');
   it.runes[1] = 'r08';
   html = c.itemRuneHTML(it, null);
-  assert.match(html, /符文之語【蛇吻】/);
+  assert.match(html, /符文真言【蛇吻】/);
   assert.match(html, /runeword-socket/);
   assert.match(html, /普通攻擊命中時有 15% 機率/);
   assert.doesNotMatch(html, /再鑲入/);

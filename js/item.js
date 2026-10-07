@@ -713,9 +713,18 @@ function itemSocketHTML(it, mode) {
   return h + '</div>';
 }
 
-/* 符文孔區塊（取代原本附魔欄位的位置；符文與符文之語 → js/runeword.js）。
+/* 符文石圖（js/runeword_data.js 的 runeStoneSrc）。cls＝各處用來定尺寸與位置的 class。
+   主執行緒的符文頁、裝備符文面板、背包角標與裝備詳情共用這一個入口。 */
+function runeStoneHTML(id, cls) {
+  if (!RUNE_BY_ID[id]) return '';
+  return '<img class="rune-stone' + (cls ? ' ' + cls : '') + '" src="' + runeStoneSrc(id) + '" alt="" draggable="false" decoding="async">';
+}
+
+/* 符文孔區塊（取代原本附魔欄位的位置；符文與符文真言 → js/runeword.js）。
    純函式（不讀 G、不改 it）。opts.rune.active＝符文面板開啟：已鑲的符文可點擊取下（data-rune-remove）。
-   符文之語成形時列出名稱與全部效果；未成形時提示「再放入哪幾顆符文就會成形」。
+   符文真言成形時列出名稱與全部效果；未成形時提示「再放入哪幾顆符文就會成形」——但那組真言還沒激活過
+   （圖鑑上是問號）的話，提示裡的符文與名稱也一併遮成問號（只告訴玩家「方向對了」），
+   是否已激活由主執行緒的 runeUiWordRevealed 回答（js/ui-runeword.js；Worker 端沒有這個函式，一律視為已激活）。
    沒有符文孔的裝備（普通品質）不輸出任何東西，符文面板那邊另有說明。 */
 function itemRuneHTML(it, opts) {
   if (typeof rwSlots !== 'function') return '';
@@ -734,12 +743,12 @@ function itemRuneHTML(it, opts) {
     }
     var attrs = canRemove ? ' data-rune-remove="' + i + '" data-tip="點擊取下（符文退回符文庫）"' : '';
     h += '<span class="socket filled rune-socket' + (inWord ? ' runeword-socket' : '') + (canRemove ? ' removable' : '') + '"' + attrs + '>' +
-      '<span class="sk-name">' + (i + 1) + '. ' + RUNE_BY_ID[id].glyph + ' ' + esc(runeLabel(id)) + '</span>' +
+      '<span class="sk-name">' + (i + 1) + '. ' + runeStoneHTML(id, 'rs-row') + ' ' + esc(runeLabel(id)) + '</span>' +
       '<span class="sk-val">' + esc(rwRuneStatLine(it, id)) + '</span></span>';
   }
   if (rwAct) {
     h += '<div class="it-runeword" style="--rw-c:' + RUNEWORD_TIER_COLORS[rwAct.word.tier] + '">' +
-      '<div class="it-runeword-name">✨ 符文之語【' + esc(rwAct.word.name) + '】<span class="it-runeword-tier">' +
+      '<div class="it-runeword-name">✨ 符文真言【' + esc(rwAct.word.name) + '】<span class="it-runeword-tier">' +
       esc(RUNEWORD_TIER_NAMES[rwAct.word.tier]) + '</span></div>';
     rwDescribeLines(rwAct.word, it).forEach(function (line) { h += '<div class="it-runeword-line">' + esc(line) + '</div>'; });
     h += '</div>';
@@ -747,7 +756,9 @@ function itemRuneHTML(it, opts) {
     var cand = rwCandidates(it);
     if (cand.length) {
       var near = cand.sort(function (a, b) { return a.missing.length - b.missing.length; })[0];
-      h += '<div class="it-runeword-hint">再鑲入「' + esc(near.missing.map(runeName).join('、')) + '」即可成形【' + esc(near.word.name) + '】</div>';
+      var hintRevealed = (typeof runeUiWordRevealed !== 'function') || runeUiWordRevealed(near.word.id);
+      h += '<div class="it-runeword-hint">再鑲入「' + esc(hintRevealed ? near.missing.map(runeName).join('、') : near.missing.map(function () { return '？'; }).join('、')) +
+        '」即可成形【' + esc(hintRevealed ? near.word.name : '？？？？') + '】</div>';
     }
   }
   return h + '</div>';

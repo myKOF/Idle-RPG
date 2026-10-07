@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-/* 由資料表（js/runeword_data.js）產生 docs/RUNEWORD_DESIGN.md 的「符文之語總表」。
+/* 由資料表（js/runeword_data.js）產生 docs/RUNEWORD_DESIGN.md 的「符文真言總表」。
    說明文件與實際資料同源——改了資料表就重跑本檔，文件不會漂移：
 
      node tools/gen_runeword_doc.cjs            # 寫入 docs/RUNEWORD_DESIGN.md 的自動段落
@@ -37,7 +37,7 @@ function generate() {
   L.push('');
   const counts = [0, 0, 0, 0, 0];
   c.RUNEWORDS.forEach((w) => counts[w.tier]++);
-  L.push(`### 符文之語（${c.RUNEWORDS.length} 組：` + [1, 2, 3, 4].map((t) => `${c.RUNEWORD_TIER_NAMES[t]} ${counts[t]}`).join('／') + '）');
+  L.push(`### 符文真言（${c.RUNEWORDS.length} 組：` + [1, 2, 3, 4].map((t) => `${c.RUNEWORD_TIER_NAMES[t]} ${counts[t]}`).join('／') + '）');
   L.push('');
   L.push('「屬性預算」＝ 該組 stats 的 mult 總和（負值＝代價會扣掉）；用來快速比較同級距內誰的屬性包比較肥。機制（fx／觸發）不計入預算，要看右邊的效果欄。');
   for (let t = 1; t <= 4; t++) {

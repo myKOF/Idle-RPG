@@ -11,7 +11,7 @@ const csvPath = path.join(root, 'config', 'CSV', 'Runes.csv');
 const xlsxPath = path.join(root, 'config', 'Excel', 'Runes.xlsx');
 const dataSrc = fs.readFileSync(path.join(root, 'js', 'runeword_data.js'), 'utf8');
 
-/* 配置表 Runes（2026-10-07）：符文、符文之語與全域設定的唯一資料來源。
+/* 配置表 Runes（2026-10-07）：符文、符文真言與全域設定的唯一資料來源。
    Excel（config/Excel/Runes.xlsx）→ CSV → js/runeword_data.js 三個字面值，由 tools/config_tables.cjs 接線。 */
 const csvRows = () => cfg.csvParse(fs.readFileSync(csvPath, 'utf8')).filter((r) => r.length > 1);
 const lit = (src, name) => cfg.evalLiteral(cfg.extractLiteral(src, name).literal);
@@ -55,7 +55,7 @@ test('由程式資料攤平成表格再重建，語意不變（往返無損）�
   const kinds = {};
   rows.slice(1).forEach((r) => { kinds[r[0]] = (kinds[r[0]] || 0) + 1; });
   assert.equal(kinds['符文'], 33);
-  assert.equal(kinds['符文之語'], lit(dataSrc, 'RUNEWORDS').length);
+  assert.equal(kinds['符文真言'], lit(dataSrc, 'RUNEWORDS').length);
   assert.ok(kinds['設定'] >= 19, '設定列：孔數上限＋11 個稀有度＋合成／拆解／縮放／掉落');
   rows.forEach((r) => assert.equal(r.length, schema.header.length, '每列欄數與表頭一致'));
 });
@@ -100,12 +100,12 @@ test('符文檢查：詞條不存在、倍率非正、列順序被改（階與 i
   assert.throws(() => rebuildFrom(mutate((rows, c) => { findRow(rows, '符文', 'r02')[c('名稱')] = findRow(rows, '符文', 'r01')[c('名稱')]; })), /名稱重複/);
 });
 
-test('符文之語檢查：配方（太長／太短／不是符文／重複）、裝備標記、屬性鍵、效果鍵、被動鍵、傳奇特效、事件觸發 JSON 都被擋下', () => {
-  const word = (rows) => findRow(rows, '符文之語', 'rw_viperkiss');
+test('符文真言檢查：配方（太長／太短／不是符文／重複）、裝備標記、屬性鍵、效果鍵、被動鍵、傳奇特效、事件觸發 JSON 都被擋下', () => {
+  const word = (rows) => findRow(rows, '符文真言', 'rw_viperkiss');
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;餘燼;霜痕;風語;巖心'; })), /5 顆符文，超過符文孔數上限 4/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光'; })), /至少要 2 顆/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = '微光;不存在的符文'; })), /不是符文/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = findRow(rows, '符文之語', 'rw_firstcry')[c('配方')]; })), /配方與別的符文之語完全相同/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('配方')] = findRow(rows, '符文真言', 'rw_firstcry')[c('配方')]; })), /配方與別的符文真言完全相同/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('適用裝備')] = 'sword1h;pants'; })), /適用裝備「pants」/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('適用裝備')] = ''; })), /不可空白/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('屬性加成')] = 'noSuchAffix:1'; })), /鍵「noSuchAffix」不存在/);
@@ -118,7 +118,7 @@ test('符文之語檢查：配方（太長／太短／不是符文／重複）�
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('事件觸發(JSON)')] = '[{"on":"hit","acts":[{"act":"explode"}]}]'; })), /不是已知動作/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('事件觸發(JSON)')] = '[{"on":"tick","acts":[{"act":"cleanse"}]}]'; })), /tick 必須有 every/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('階／級距')] = '7'; })), /級距.*1~4/);
-  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('名稱')] = findRow(rows, '符文之語', 'rw_firstcry')[c('名稱')]; })), /名稱重複/);
+  assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[c('名稱')] = findRow(rows, '符文真言', 'rw_firstcry')[c('名稱')]; })), /名稱重複/);
   assert.throws(() => rebuildFrom(mutate((rows, c) => { word(rows)[1] = 'viper'; })), /rw_ 開頭/);
   assert.throws(() => rebuildFrom(mutate((rows) => { word(rows)[0] = '亂填'; })), /類型.*只能是/);
 });
@@ -127,9 +127,9 @@ test('設計表改了就會跟著遊戲走：改 CSV 的孔數／倍率／配方
   const rows = mutate((r, c) => {
     findRow(r, '設定', 'slots_rare')[c('設定值')] = '2';
     findRow(r, '符文', 'r10')[c('武器倍率')] = '1.5';
-    findRow(r, '符文之語', 'rw_firstcry')[c('配方')] = '微光;巖心';
+    findRow(r, '符文真言', 'rw_firstcry')[c('配方')] = '微光;巖心';
     const nu = word => word;
-    const clone = findRow(r, '符文之語', 'rw_stoneskin').slice();
+    const clone = findRow(r, '符文真言', 'rw_stoneskin').slice();
     clone[1] = 'rw_extra_test'; clone[2] = '測試新語'; clone[8] = '霜痕;霜痕;霜痕'; clone[13] = 'dmgPct:5';
     r.push(clone); nu(clone);
   });
@@ -151,13 +151,13 @@ test('設計表改了就會跟著遊戲走：改 CSV 的孔數／倍率／配方
   assert.equal(ctx.__w, out.RUNEWORDS.length);
 });
 
-test('備註欄有能力中文名稱說明：符文列＝兩側屬性中文名，符文之語列＝屬性中文名與效果說明，不含英文鍵', () => {
+test('備註欄有能力中文名稱說明：符文列＝兩側屬性中文名，符文真言列＝屬性中文名與效果說明，不含英文鍵', () => {
   const rows = [schema.header].concat(schema.extract(dataSrc));
   const note = rows[0].indexOf('備註');
   const keys = Object.keys(lit(fs.readFileSync(path.join(root, 'js', 'data.js'), 'utf8'), 'AFFIX_POOL'));
   let runes = 0, words = 0;
   rows.slice(1).forEach((r) => {
-    if (r[0] !== '符文' && r[0] !== '符文之語') return;
+    if (r[0] !== '符文' && r[0] !== '符文真言') return;
     assert.ok(r[note], `${r[1]} 沒有備註`);
     assert.doesNotMatch(r[note], /undefined|NaN/);
     keys.filter((k) => k.length > 4).forEach((k) => assert.ok(!r[note].includes(k), `${r[1]} 的備註出現英文鍵 ${k}`));

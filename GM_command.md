@@ -158,11 +158,11 @@ gem ruby 5 100 （發放 100 顆 5 級紅寶石）
 gem fluorite 10 1 （發放 1 顆 10 級螢石）
 ```
 
-## 4.5 符文與符文之語（2026-10-06）
+## 4.5 符文與符文真言（2026-10-06）
 
 ```text
 rune 符文id|all [數量] （發放符文 / r01~r33，或 all＝33 種各給 N 顆 / 數量，預設 1）
-runeword 符文之語id|list （把該組配方的符文各發 1 顆；list 列出全部 id）
+runeword 符文真言id|list （把該組配方的符文各發 1 顆；list 列出全部 id）
 ```
 
 例如：
@@ -171,7 +171,7 @@ runeword 符文之語id|list （把該組配方的符文各發 1 顆；list 列�
 rune all 5 （33 種符文各發 5 顆）
 rune r28 2 （發放 2 顆第 28 階「命運」符文）
 runeword rw_viperkiss （發放「蛇吻」配方：毒牙、暗影）
-runeword list （列出 56 組符文之語 id）
+runeword list （列出 56 組符文真言 id）
 ```
 
 測試流程：`equipset legendary 100` 取得整套傳說裝備（每件 4 個符文孔）→ 裝備頁選裝備 → 「符文」→ 點符文依序鑲入（點已鑲的符文可取下）。

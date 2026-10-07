@@ -1,5 +1,29 @@
 # AI_TASKS.md
 
+## Claude｜符文石圖示：33 顆符文各一張刻了字的石頭（RUNE-STONES-20261007）
+
+- Owner：Claude；Done。依賴 RUNEWORD-REVEAL-20261007。使用者要求「將所有符文加上類似符文石或石碑的圖案，根據品質有不同的顏色與外型，圖做好先給我預覽、同意才上」。預覽共四輪，皆被使用者退件後才通過：①向量幾何（太簡單、像素風）②高度圖光照的華麗版（形狀太怪：水晶簇、皇冠、光環；字像貼上去的）③簡單卵石＋刻痕（藍的長方、橘的水滴、金的拱碑「太規整或不像符石」）④藍／橘／金改成使用者給的參考圖那種粗切多邊形立石，通過。
+- 需求分析：使用者要的是「一塊簡單的石頭，上面刻著符文」，品質靠石頭顏色與外形區分；字必須像刻進去而不是浮貼。不是華麗的圖示。
+- 技術決策：①程序化繪製（高度圖＋逐像素光照，字形遮罩扣進高度圖，礦脈只填溝槽底部），工具 `tools/rune-stones/`，與技能圖示同一流程；§8.7 優先的 RPG Mote Studio 是手繪網頁軟體，不適合 33 顆風格一致、字形依資料表自動刻的批次產圖，所以沿用程序化。②6 個色帶（每 6 階）各一種外形，同色帶外形一致。③遊戲用 160×160（最大顯示 64px，2 倍螢幕夠用，33 張約 1.2MB），256px 母圖與產生器收進素材庫。④圖入口集中在 `runeStoneHTML／runeStoneSrc`，各處只定尺寸 class；查詢字串 `RUNE_STONE_VER` 破快取。⑤**隱藏規則不變**：未激活的配方標籤仍是「品質色外框＋？」，不露出任何石頭圖。
+- 修改：新增 images/runes/stone-r01～r33.png、tools/rune-stones/（產生器五支）；js/runeword_data.js（`RUNE_STONE_VER、runeStoneSrc`）、js/item.js（`runeStoneHTML`、裝備詳情符文孔列）、js/ui-runeword.js（符文庫格子／選中大圖／配方標籤）、js/ui.js（裝備符文面板、背包角標）、css/runeword.css、index.html（5 個快取版號）、docs/RUNEWORD_DESIGN.md（§7.6）、tests/runeword-ui.test.cjs（新增 5 項）。**沒有改 Worker 檔與 WORKER_ASSET_VERSION**：新函式只在主執行緒用，Worker 載到舊版 item.js／runeword_data.js 行為相同。
+- 預檢：`.claude/check-conflicts.ps1` 退出碼 2（ai/codex 未合併的 c0ae3ca7、297fc04d 動了 index.html／docs/AI_TASKS.md）；三方合併試跑 index.html 0 衝突（他們改 936／945／951／972 行、我改 14／923／947／958／959 行），使用者同意後才改這兩個檔。另：我上一個 commit d65296c5 的 `js/bridge.js`（WORKER_ASSET_VERSION）與 `js/worker/sim.worker.js`（importScripts 版號行）已經會與 ai/codex 衝突（`git merge-tree` 實測），合併時兩行版號要手動擇一（保留較新的 token 即可，內容無語意衝突）。
+- 測試：tests/runeword-ui.test.cjs 21 項、runeword 其他測試與 worker-protocol 全過；`npm run build` 467 檔通過。實機（獨立埠 8399、真 Worker）：符文庫 227 張圖全部載入無破圖；裝備頁鑲兩顆符文後符文孔列、符文面板 33 顆、背包角標都是石頭圖；Console 無錯誤。
+- 素材雙倉庫：素材庫 `claude-authored/rune-stones`（256px 母圖 33 張＋產生器副本＋SOURCE.md）Commit `4151cfe`；遊戲專案 Commit 為本紀錄所在提交。素材庫未推送。
+- 風險／注意：①藍、橘在 24px 的字形比其他色帶弱（藍面窄、橘棕底對比低），15px 以下只剩剪影與顏色。②橘的輪廓上方有個雜訊造成的小凹口，不是刻意的。③石頭圖不隨裝備等級變化；若之後要做「已激活／未激活」的石頭外觀差異需另案。④圖檔沒有版本字尾，換圖要 +1 `RUNE_STONE_VER`。
+- 建議驗證（Antigravity）：docs/RUNEWORD_DESIGN.md §8 新增的「符文石圖」那條（各處都是石頭圖、無破圖、縮放不變形、沒持有的格子變暗、未激活配方不露圖）。
+
+## Claude｜符文真言改名、圖鑑隱藏機制與內測開關（RUNEWORD-REVEAL-20261007）
+
+- Owner：Claude；Done（符文石圖示另案：使用者看過預覽退件，重畫中，尚未整合）。使用者要求：①「符文之語」全改「符文真言」，頁面大標題只叫「符文」②符文頁頁首加「詳細說明」開關，關閉時圖鑑只顯示名稱／品質／孔數／適用裝備／風味，配方符文只留品質色外框（內容問號）、每條效果 8 個問號 ③品質沿用裝備品質（白普通綠精良藍稀有紫史詩橘傳說）④符文庫「用在這些符文真言」同樣問號（真言品質色）⑤開關只在內測版，正式版沒有且永遠問號 ⑥符文石圖先預覽再上。
+- 需求分析：真正要的是「保留探索感」——玩家要自己湊出真言，成形過一次才知道它的配方與效果；內測則要能一鍵攤開檢查。所以隱藏必須綁「成形過」這個會存檔的事實，而不是單純的畫面開關。
+- 技術決策：①記錄 `G.player.runewordSeen = { 真言id: 1 }`（只增不減、隨存檔）；`socketRune` 成形當下寫入，`save.js` 讀檔時對已成形的裝備補記（記錄功能上線前就成形的不必重鑲）。②gems 面板快照帶 `runewordSeen`，協議 v47 → v48，指令數不變。③畫面判斷集中在 `runeUiRevealed`（內測開關開 或 已成形）；開關只在 `isInternalServer()` 為真時顯示，選擇存 localStorage。④會洩漏「哪顆符文屬於哪組」的地方一併遮蔽：材料齊全旗標與「只看材料齊全」、符文庫用途的點擊導航、裝備詳情「再鑲入…即可成形」提示（這條是使用者沒提到、我加的）。⑤品質：`RUNEWORD_TIER_RARITY = [-1,0,1,4,5]`，名稱與顏色讀 `RARITIES`；目前只有 4 級，所以對應 普通／精良／史詩／傳說，**跳過藍色「稀有」**（沿用原本白綠紫橘，畫面顏色不變）。⑥配置表 Runes 的「類型」欄 `符文之語` → `符文真言`：解析器兩個名稱都收（舊 xlsx 不會壞），寫回一律新名稱。
+- 修改：js/runeword.js（`rwHasSeen／rwMarkSeen／rwSeenFromItem`）、js/runeword_data.js（品質對應）、js/player.js、js/save.js（整理與補記）、js/worker/sim.worker.js、js/worker/protocol.js、js/bridge.js、js/item.js（提示遮蔽）、js/ui-runeword.js（隱藏渲染與開關）、js/ui.js、js/combat.js、js/tower.js、js/gm_exec.js 等用語；index.html（標題、開關按鈕、說明、快取版號）、css/runeword.css、config/Excel/Runes.xlsx（Excel COM 腳本更新 67 格並正常模式重開驗證）、config/CSV/Runes.csv、tools/config_tables.cjs、tools/gen_runeword_doc.cjs、docs/RUNEWORD_DESIGN.md（§3 品質、新增 §7.5）、docs/WORKER_PROTOCOL.md、GM_command.md；新增 tests/runeword-seen.test.cjs（8 項），tests/runeword-ui.test.cjs 新增 11 項。
+- 預檢：`.claude/check-conflicts.ps1` 對 27 支檔案（含 Runes.xlsx）退出碼 0。
+- 測試：全庫 3990 項／257 失敗，乾淨 HEAD（0d7ce0e2）3971 項／256 失敗；**失敗名稱差集只有 1 條**（雙刀逐刀飄字，單獨重跑在本分支與基線都是失敗，屬既有的非決定性測試）。新增測試做過突變檢查（讓 `runeUiRevealed` 恆真 → 8 項轉紅）。`node tools/config_tables.cjs --apply` 語意變更 0。
+- 實機（獨立埠 8399，真瀏覽器＋真 Worker）：內測頁首有「詳細說明：開／關」，關閉後圖鑑 56 組全為問號；GM 發符文後經 `rune.socket` 鑲出初啼，gems 快照即刻帶 `runewordSeen:{rw_firstcry:1}`，初啼攤開、其餘仍問號；重新載入後記錄仍在；模擬正式版（覆寫 isInternalServer）開關隱藏。Console 無錯誤。
+- 風險／注意：①隱藏只是畫面層——配方在 js/runeword_data.js，看原始碼讀得到。②4 級對 5 種品質的取捨（跳過稀有）是我的判斷，要 5 級須重新分配 56 組。③圖鑑隱藏的是「內容」，名稱、品質、孔數、適用裝備與風味依使用者圖示保留。④`--sync` 會把其他 CSV 行尾改 CRLF，已用 git checkout 還原。
+- 建議驗證（Antigravity）：docs/RUNEWORD_DESIGN.md §8 新增的「隱藏機制」那條（內測開關與重新整理保持、非本機網址無開關且全問號、鑲出一組後該組立刻攤開並跨存讀檔保留、舊存檔已成形裝備讀檔後攤開、裝備詳情配方提示未激活是問號）；Excel 開啟 Runes.xlsx 確認沒有修復提示。
+
 ## SKILL-TIMER-DISPLAY-20261006 — 技能列施放間隔與觸發冷卻全面清查
 
 - Owner：Codex；Done。使用者要求進化為定時被動的技能列顯示實際間隔、復活技能觸發後才起算，全面清查同類技能。23群組／全部69項超神進化盤點完成；單一開發者。使用者明確授權與逐風者進行中修改分段作業並保留既有內容。
@@ -44,18 +68,18 @@
 
 ## Claude｜符文取代附魔、符文最多 4 孔、Runes 配置表（RUNES-TABLE-20261007）
 
-- Owner：Claude；Done（仍在獨立分支 `ai/claude-runeword`，**尚未合併**）。使用者追加：符文之語是用來取代現有附魔的——①把附魔關閉（不刪），符文取代附魔在裝備上的顯示與鑲嵌位置 ②符文最多 4 孔，全部符文之語的強度與組成數量重新調整 ③全部符文能力、符文之語組合與數值建成配置表 runes。
+- Owner：Claude；Done（仍在獨立分支 `ai/claude-runeword`，**尚未合併**）。使用者追加：符文真言是用來取代現有附魔的——①把附魔關閉（不刪），符文取代附魔在裝備上的顯示與鑲嵌位置 ②符文最多 4 孔，全部符文真言的強度與組成數量重新調整 ③全部符文能力、符文真言組合與數值建成配置表 runes。
 - 需求分析：附魔與符文都是「裝備上的額外欄位」，若並存會有兩套欄位、兩個按鈕；取代才符合原意。難度原本靠「孔數 5～6」撐，上限改 4 之後必須重新找難度來源。
-- 技術決策：①附魔用單一開關 `ENCHANT_ENABLED=false` 關閉（`itemEnchants` 回 []、`enchantCapFor` 回 0、`manualEnchant` 拒絕、不掉書），裝備上 `it.enchants` 與 `books` 原樣保留，改回 true 即恢復；`ENCHANTS` 同時是元素定義表，不能刪。②符文改鑲專屬符文孔 `it.runes`（0～4 孔依稀有度，雙手不加），不再佔寶石鑲孔；v45 共用鑲孔的符文讀檔時搬進符文孔。③**重做取得難度**：量測發現舊模型（掉落階數從解鎖上限往下遞減）讓終局最高階最常掉，配方幾秒湊齊；拆解 1→2 還會把一顆高階符文拆成指數倍低階符文。改為階越高越稀有（`P(t)∝0.74^(t-1)`，上限由進度解鎖）、拆解 1→1，配方難度只看最高階那顆（T1 ≤10、T2 11–16、T3 17–23、T4 24–33，強的配方放較高階）；`drop.basePct` 1.2→0.3。④強度：第 3、4 級由 5～6 顆減為 4 顆；探針抓到第 4 級離群後下修雷帝（×15→×9.8）、萬軍（×11→×7.8）、屠龍者、群獵。⑤配置表 `Runes`：一張表三種列（設定／符文／符文之語），`config_tables.cjs` 第九表整塊重建 `RUNE_SETTINGS`／`RUNES`／`RUNEWORDS` 並全檢查；xlsx 不由 `--gen` 手拼（AI_RULES 8.5），新建走新腳本 `tools/excel-create-table.ps1`（Excel COM，重開驗證兩次）。
+- 技術決策：①附魔用單一開關 `ENCHANT_ENABLED=false` 關閉（`itemEnchants` 回 []、`enchantCapFor` 回 0、`manualEnchant` 拒絕、不掉書），裝備上 `it.enchants` 與 `books` 原樣保留，改回 true 即恢復；`ENCHANTS` 同時是元素定義表，不能刪。②符文改鑲專屬符文孔 `it.runes`（0～4 孔依稀有度，雙手不加），不再佔寶石鑲孔；v45 共用鑲孔的符文讀檔時搬進符文孔。③**重做取得難度**：量測發現舊模型（掉落階數從解鎖上限往下遞減）讓終局最高階最常掉，配方幾秒湊齊；拆解 1→2 還會把一顆高階符文拆成指數倍低階符文。改為階越高越稀有（`P(t)∝0.74^(t-1)`，上限由進度解鎖）、拆解 1→1，配方難度只看最高階那顆（T1 ≤10、T2 11–16、T3 17–23、T4 24–33，強的配方放較高階）；`drop.basePct` 1.2→0.3。④強度：第 3、4 級由 5～6 顆減為 4 顆；探針抓到第 4 級離群後下修雷帝（×15→×9.8）、萬軍（×11→×7.8）、屠龍者、群獵。⑤配置表 `Runes`：一張表三種列（設定／符文／符文真言），`config_tables.cjs` 第九表整塊重建 `RUNE_SETTINGS`／`RUNES`／`RUNEWORDS` 並全檢查；xlsx 不由 `--gen` 手拼（AI_RULES 8.5），新建走新腳本 `tools/excel-create-table.ps1`（Excel COM，重開驗證兩次）。
 - 修改：js/data.js（`ENCHANT_ENABLED`、TASKS）、runeword_data.js（`RUNE_SETTINGS`、`RW_PASSIVE_KEYS`、全部配方）、runeword.js（符文孔、`rollRuneTier`、`rwMigrateSocketRunes`）、item.js（`itemRuneHTML`、附魔守衛）、ui.js（「符文」按鈕與面板、角標、附魔顯示隱藏）、ui-runeword.js、formula.js、combat.js、tower.js、save.js、factory.js、forge.js、tasks.js、player.js、worker/protocol.js（**v45 → v46**，+`rune.unsocket`，共 93 指令）、sim.worker.js、bridge.js、index.html、css/runeword.css；新增 config/Excel/Runes.xlsx、config/CSV/Runes.csv、tools/excel-create-table.ps1、tools/rw_econ_probe.cjs、tests/config-runes-table.test.cjs；Task.xlsx／Task.csv 第 10 號任務改為「在裝備上鑲嵌符文 2 次」（餘燼符文 ×3）；docs/RUNEWORD_DESIGN.md、docs/WORKER_PROTOCOL.md、GM_command.md、tools/參數表使用說明.md。
 - 預檢：`.claude/check-conflicts.ps1` 對 js/item.js、ui.js、formula.js、data.js、factory.js、save.js、index.html、config/Excel/Task.xlsx 等退出碼 0（無衝突來源）。
 - 測試：全庫 3924 項／235 失敗，基線 237 失敗；**失敗名稱差集：本分支沒有任何新增失敗**（基線獨有的 2 條為環境相關的參數表重建與雙刀飄字測試）；新增／改寫 runeword 資料、引擎（40）、UI、配置表（9）、裝備頁符文面板測試；保留下來的附魔測試改在打開 `ENCHANT_ENABLED` 的環境驗證（證明程式還在）；`node tools/build_check.cjs` 462 檔通過；`apply_params` 537 項一致、錨點 489 擾動皆命中一次；`config_tables --apply` 語意變更 0。實機（Browser 窗格，本機測試服）：裝備頁只有「符文」按鈕、詳情「符文孔 n／N」接在原附魔位置、符文面板高階在前、點符文鑲入 → 霜語成形並寫戰報、點已鑲符文取下、鑲嵌模式只剩寶石、重新整理後符文保留、背包格角標、任務快捷列顯示新任務、符文頁說明文字隨設定變；Console 無錯誤。
 - 風險／平衡：①取得難度小時數是估算（每小時 3000 次擊殺、掉寶 ×2；`node tools/rw_econ_probe.cjs`）：T1 ≲2h、T2 2–8h、T3 10–50h、T4 30–150h，內測請用 `drop.basePct` 整體校準。②降階頂替要一階一階拆（刻意，避免一步變出任意符文）。③**Runes.xlsx 由 Excel COM 建立並以正常模式重開驗證兩次，但尚未由人工在 Excel 介面開啟確認「沒有修復提示」**（AI_RULES 8.5）。④附魔精華仍用於洗煉，名稱沿用「附魔精華」。⑤既有的借用傳奇特效需配戴對應技能、無專屬 VFX、高塔沒有 kill 觸發等限制不變。
 - 建議驗證（Antigravity）：見 `docs/RUNEWORD_DESIGN.md` 第 8 節（符文面板、附魔已關閉的各處、成形判定、舊存檔搬移、掉落與合成、任務 10、Excel 開啟與改一格套用、故意打錯會整次中止）。
 
-## Claude｜符文之語系統（RUNEWORD-20261006）
+## Claude｜符文真言系統（RUNEWORD-20261006）
 
-- Owner：Claude；Done（在獨立分支 `ai/claude-runeword`，由 `ai/claude` 分出，**尚未合併**——使用者要求確認後才合併進當前分支）。使用者要求：參考暗黑破壞神 2 的符文之語，設計至少 40 種組合（能力、屬性加成、特殊威能，甚至打破現有技能框架），比例要平均分配（普通／強／非常強／極度特殊），授權全權設計並實作，可多設計幾個讓使用者篩選。
+- Owner：Claude；Done（在獨立分支 `ai/claude-runeword`，由 `ai/claude` 分出，**尚未合併**——使用者要求確認後才合併進當前分支）。使用者要求：參考暗黑破壞神 2 的符文真言，設計至少 40 種組合（能力、屬性加成、特殊威能，甚至打破現有技能框架），比例要平均分配（普通／強／非常強／極度特殊），授權全權設計並實作，可多設計幾個讓使用者篩選。
 - 需求分析：現有成長線全是數值疊加，缺一條「配方式終局目標」。設計成：符文（33 種、獨立素材）鑲進既有鑲孔，依序排出指定配方＋裝備類型符合 → 成形。**成形是當場判定的衍生狀態，不存檔**（拆一顆就失效），因此沒有遷移問題；存檔只新增 `player.runes`（mergeDefaults 補空表）。
 - 設計：56 組（普通／強力／非常強力／極度特殊各 14）；屬性與詞條同源（affixBaseValue × mult，隨裝備等級／稀有度／強化成長；雙手武器不吃詞條 ×2，已靠 ×1.75 鑲孔數補償），機制數字為固定值；平衡以 `tools/rw_dps_probe.cjs` 探針校準過一輪（結果見設計文件第 3 節）。機制由「靜態 fx ＋ 事件觸發 procs（hit／crit／kill／hurt／block／cast／tick／lowhp × 16 種動作）＋借用既有傳奇特效＋併入既有被動」組成。打破技能框架的手法：冷卻／攻速乘算突破上限、普攻引發免費技能、技能免費重施放、借用傳奇特效（不受武器類型限制）、死亡復活、單次受傷上限、條件式增傷、代價（最大生命乘區、每秒自損、傷害折減）。完整總表見 `docs/RUNEWORD_DESIGN.md`（由 `tools/gen_runeword_doc.cjs` 從資料表產生）。
 - 修改：新增 js/runeword_data.js、js/runeword.js、js/ui-runeword.js、css/runeword.css、tools/gen_runeword_doc.cjs、docs/RUNEWORD_DESIGN.md、tests/{runeword-data,runeword-engine,runeword-ui}.test.cjs、tests/helpers/runeword-env.cjs；修改 js/formula.js（computeStats 聚合、resolveHit 單次傷害上限、itemScore、生命%下限）、legendary.js、combat.js、tower.js、skills.js、skills2.js、item.js、factory.js、forge.js、player.js、save.js、gm_exec.js、js/worker/protocol.js（**v44 → v45**，+4 指令 rune.*）、sim.worker.js、bridge.js、index.html（符文分頁、快取版號）、GM_command.md、docs/WORKER_PROTOCOL.md、tests/worker-protocol.test.cjs。

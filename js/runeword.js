@@ -1,16 +1,17 @@
 'use strict';
-/* ============ 符文之語：執行層 ============
-   資料表在 js/runeword_data.js（符文、符文之語、效果詞彙）。本檔負責：
+/* ============ 符文真言：執行層 ============
+   資料表在 js/runeword_data.js（符文、符文真言、效果詞彙）。本檔負責：
      §1 符文庫存與合成／拆解     （G.player.runes = { 符文id: 數量 }，隨存檔）
-     §2 符文孔、鑲嵌與符文之語判定（符文孔 it.runes = [符文id|null, …]，最多 4 孔，與寶石鑲孔 it.sockets 分開；
-                                    符文之語是當場判定的衍生狀態，不存檔）
+     §2 符文孔、鑲嵌與符文真言判定（符文孔 it.runes = [符文id|null, …]，最多 4 孔，與寶石鑲孔 it.sockets 分開；
+                                    符文真言是當場判定的衍生狀態，不存檔；唯一存檔的是「成形過哪幾組」
+                                    G.player.runewordSeen，圖鑑靠它決定要不要顯示配方與效果）
      §3 屬性聚合                 （computeStats 呼叫 rwNewAggregate／rwAddItem／rwFinishAggregate）
      §4 戰鬥掛勾                 （傷害乘區、攻速、冷卻、法力、受擊、死亡、事件觸發 rwFire）
      §5 掉落
      §6 說明文字                 （由資料自動產生，說明與實際效果同源，不會漂移）
    戰鬥期短暫狀態存在 RW_RT，不進存檔。 */
 
-var RW_STAT_SCALE = RUNE_SETTINGS.statScale;   // 全域縮放：符文與符文之語的 stats 一律乘此值（平衡用旋鈕；配置表 Runes 的 statScale）
+var RW_STAT_SCALE = RUNE_SETTINGS.statScale;   // 全域縮放：符文與符文真言的 stats 一律乘此值（平衡用旋鈕；配置表 Runes 的 statScale）
 var RW_DEPTH_LIMIT = 3;         // 事件觸發的巢狀上限（擊殺 → 觸發 → 再擊殺…）
 
 /* ---- 戰鬥期狀態（不入存檔） ---- */
@@ -74,7 +75,7 @@ function dismantleRune(id) {
 }
 
 /* ============================================================
-   §2 符文孔、鑲嵌與符文之語判定
+   §2 符文孔、鑲嵌與符文真言判定
    ============================================================ */
 /* 符文孔數：由稀有度決定（RUNE_SETTINGS.slotsByRarity），不超過 maxSlots；沒有雙手加成。 */
 function runeSlotCountFor(it) {
@@ -125,10 +126,34 @@ function socketRune(it, runeId, index) {
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true; }
   var after = rwActiveWord(it);
+  if (after) rwMarkSeen(after.word.id);
   if (after && (!before || before.word.id !== after.word.id) && typeof blog === 'function') {
-    blog('✨ 符文之語【' + after.word.name + '】成形！', 'good');
+    blog('✨ 符文真言【' + after.word.name + '】成形！', 'good');
   }
   return null;
+}
+
+/* ---- 已激活記錄（G.player.runewordSeen = { 真言id: 1 }）----
+   成形過一次就永久記下，之後不論拆掉符文、換裝都不會消失。圖鑑與符文庫用它決定要不要顯示配方與效果
+   （未激活的只顯示問號；內測版的開關可以無視它，見 js/ui-runeword.js）。記錄只增不減。 */
+function rwHasSeen(id) {
+  var m = (typeof G !== 'undefined' && G && G.player) ? G.player.runewordSeen : null;
+  return !!(m && m[id]);
+}
+function rwMarkSeen(id) {
+  if (!RUNEWORD_BY_ID[id] || rwHasSeen(id)) return false;
+  if (!G.player.runewordSeen || typeof G.player.runewordSeen !== 'object') G.player.runewordSeen = {};
+  G.player.runewordSeen[id] = 1;
+  if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.gems = true; UI.dirty.equip = true; }
+  return true;
+}
+/* 讀檔補記：這件裝備目前成形的符文真言記進 seen（純資料操作，不碰 G）。回傳新記下的數量（0 或 1）。
+   記錄功能上線前就已成形的裝備，靠這個補回，玩家不用重新鑲一次。 */
+function rwSeenFromItem(seen, it) {
+  var act = rwActiveWord(it);
+  if (!act || seen[act.word.id]) return 0;
+  seen[act.word.id] = 1;
+  return 1;
 }
 
 /* 取下指定符文孔的符文回庫存。成功回 true。 */
@@ -193,7 +218,7 @@ function rwItemMatches(it, bases) {
   return false;
 }
 
-/* 這件裝備目前成形的符文之語：{ word, start }；沒有回 null。
+/* 這件裝備目前成形的符文真言：{ word, start }；沒有回 null。
    規則：連續鑲孔依序放滿該組符文，且裝備類型符合；多組同時符合取符文數最多者。 */
 function rwActiveWord(it) {
   if (!rwHasRune(it)) return null;
@@ -216,7 +241,7 @@ function rwActiveWord(it) {
   return best;
 }
 
-/* 配方提示：目前鑲孔狀態還有哪些符文之語「差幾顆就成形」。
+/* 配方提示：目前鑲孔狀態還有哪些符文真言「差幾顆就成形」。
    回傳 [{ word, start, missing: [符文id…] }]，missing 為尚缺的符文（依序、對應空孔）。
    至少要有一顆符文已放在正確位置才算候選（全空不列，不然 56 組全是候選）。 */
 function rwCandidates(it) {
@@ -251,7 +276,7 @@ function rwCandidates(it) {
 /* 單條 stats 的數值＝ 詞條基準值(詞條, 裝備等級, 稀有度) × mult × 強化倍率。
    與詞條同源（affixBaseValue／affixRoundValue → js/formula.js §6），隨裝備成長。
    不吃雙手倍率（TWO_HAND_AFFIX_VALUE_MULT）：雙手武器已經靠 ×1.75 的鑲孔數拿到補償
-   （更多符文屬性＋更容易湊出長配方），再 ×2 會讓雙手符文之語整整領先一個級距。 */
+   （更多符文屬性＋更容易湊出長配方），再 ×2 會讓雙手符文真言整整領先一個級距。 */
 function rwStatValue(it, key, mult) {
   if (!AFFIX_POOL[key] || !it) return 0;
   var um = (typeof upgradeMult === 'function') ? upgradeMult(it) : 1;
@@ -280,7 +305,7 @@ function rwRuneStatLine(it, runeId) {
   return rwFormatStat(spec[0], rwStatValue(it, spec[0], spec[1]));
 }
 
-/* 一件裝備上符文與符文之語提供的所有屬性：[{ key, val, src }]。 */
+/* 一件裝備上符文與符文真言提供的所有屬性：[{ key, val, src }]。 */
 function rwItemStatEntries(it) {
   var out = [];
   if (!rwHasRune(it)) return out;
@@ -308,7 +333,7 @@ function rwNewAggregate() {
 }
 
 /* 把一件裝備併入聚合；回傳該裝備的屬性條目供 computeStats 併入桶。
-   同一組符文之語穿在多件裝備上時：各件的 stats 都計，機制（fx／procs／passives／legend）只算一次。 */
+   同一組符文真言穿在多件裝備上時：各件的 stats 都計，機制（fx／procs／passives／legend）只算一次。 */
 function rwAddItem(agg, it) {
   var entries = rwItemStatEntries(it);
   var act = rwActiveWord(it);
@@ -475,7 +500,7 @@ function rwFreeCast(pEnt, gid, ctx, out) {
 function rwRunActs(proc, ctx, out) {
   var pEnt = ctx.pEnt;
   var st = getStats();
-  var label = '符文之語·' + (ctx.wordName || '');
+  var label = '符文真言·' + (ctx.wordName || '');
   var acts = proc.acts || [];
   for (var i = 0; i < acts.length; i++) {
     var a = acts[i], t, k, targets, res, amt;
@@ -637,7 +662,7 @@ function rwOnBasicAttack(pEnt, target, res, floatSel, st) {
     var others = rwAliveOnly(rwEnemies());
     for (var i = 0; i < others.length; i++) {
       if (others[i] === target) continue;
-      var sp = rwDirectDamage(others[i], res.dmg * fx.splashPct / 100, '符文之語·擴散', floatSel);
+      var sp = rwDirectDamage(others[i], res.dmg * fx.splashPct / 100, '符文真言·擴散', floatSel);
       if (sp) { out.dmg += sp.dmg; if (sp.killed) out.killed = true; }
     }
   }
@@ -775,7 +800,7 @@ function rwTryRevive(pEnt) {
       }
     }
   }
-  if (typeof blog === 'function') blog('♻️ 符文之語【輪迴】——你在死亡邊緣重生了！', 'good');
+  if (typeof blog === 'function') blog('♻️ 符文真言【輪迴】——你在死亡邊緣重生了！', 'good');
   if (typeof floatPlayerEvent === 'function') floatPlayerEvent(rwPlayerFloat(), '♻️重生', 'buff');
   return true;
 }
@@ -910,7 +935,7 @@ function rwProcText(p) {
   return text;
 }
 
-/* 符文之語的效果文字（陣列，一行一條）。it 有給時，屬性行會帶該裝備上實際算出的數值。 */
+/* 符文真言的效果文字（陣列，一行一條）。it 有給時，屬性行會帶該裝備上實際算出的數值。 */
 function rwDescribeLines(word, it) {
   var lines = [];
   var st = word.stats || [];
@@ -939,7 +964,7 @@ function rwDescribeLines(word, it) {
   }
   return lines;
 }
-/* 這組符文之語最少要什麼稀有度才有足夠的符文孔（RUNE_SETTINGS.slotsByRarity）。-1＝做不出來。 */
+/* 這組符文真言最少要什麼稀有度才有足夠的符文孔（RUNE_SETTINGS.slotsByRarity）。-1＝做不出來。 */
 function rwMinRarity(word) {
   for (var i = 0; i < RARITIES.length; i++) {
     if (Number(RUNE_SETTINGS.slotsByRarity[i]) >= word.runes.length) return i;

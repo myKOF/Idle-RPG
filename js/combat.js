@@ -1023,7 +1023,7 @@ function playerDefCfg(pEnt) {
         thornsPct: ((st.passives.thorns || 0) + buffVal(pEnt, 'thornsUp')) *
             ((typeof skill2RageThornsFactor === 'function') ? skill2RageThornsFactor() : 1),
         maxHp: st.hp, isPlayer: true,
-        maxHitPct: (typeof rwMaxHitPct === 'function') ? rwMaxHitPct() : 0 // 符文之語：單次受傷上限（js/runeword.js）
+        maxHitPct: (typeof rwMaxHitPct === 'function') ? rwMaxHitPct() : 0 // 符文真言：單次受傷上限（js/runeword.js）
     };
 }
 var ENEMY_FRENZY_DELAY_SEC = 10;
@@ -1239,13 +1239,13 @@ function doPlayerAttack(pEnt, mEnt, floatSel, depth, opts) {
                 logMsg += ' <span class="log-hl-good">傳奇特效追加 ' + fmt(legendaryBasic.dmg || 0) + ' 傷害</span>';
             }
         }
-        // 符文之語：普攻擴散、命中／暴擊觸發（js/runeword.js）；與傳奇特效同一條邊界，追加攻擊不重複觸發
+        // 符文真言：普攻擴散、命中／暴擊觸發（js/runeword.js）；與傳奇特效同一條邊界，追加攻擊不重複觸發
         if (typeof rwOnBasicAttack === 'function') {
             var rwBasic = rwOnBasicAttack(pEnt, mEnt, res, floatSel, st);
             if (rwBasic) {
                 res.dmg += rwBasic.dmg || 0;
                 if (rwBasic.killed) res.killed = true;
-                if (rwBasic.dmg > 0) logMsg += ' <span class="log-hl-good">符文之語追加 ' + fmt(rwBasic.dmg) + ' 傷害</span>';
+                if (rwBasic.dmg > 0) logMsg += ' <span class="log-hl-good">符文真言追加 ' + fmt(rwBasic.dmg) + ' 傷害</span>';
             }
         }
         /* 新版技能超神【火神降臨】（火狩，js/skills2.js）：普攻同時射出數顆火狩星環。
@@ -1870,7 +1870,7 @@ function onFieldKill(m) {
         }
     }
     if (typeof legendaryOnEnemyKill === 'function') legendaryOnEnemyKill(FIELD.player);
-    if (typeof rwOnKill === 'function') rwOnKill(FIELD.player, m);   // 符文之語：擊殺回復與觸發（js/runeword.js）
+    if (typeof rwOnKill === 'function') rwOnKill(FIELD.player, m);   // 符文真言：擊殺回復與觸發（js/runeword.js）
     m._deathClearCd = FIELD_ENEMY_DEATH_CLEAR_DELAY;
     var st = getStats();
     /* 2026-08：擊殺回復（每殺一隻回 12%）已移除，改為整波清空回復一次
@@ -1979,7 +1979,7 @@ function onPlayerFieldDeath() {
         UI.dirty.battle = true;
         return;
     }
-    /* 符文之語【輪迴】（js/runeword.js）：技能類的救命手段都用完了才輪到它——最後一道防線。 */
+    /* 符文真言【輪迴】（js/runeword.js）：技能類的救命手段都用完了才輪到它——最後一道防線。 */
     if (typeof rwTryRevive === 'function' && FIELD.player && rwTryRevive(FIELD.player)) {
         UI.dirty.battle = true;
         return;
@@ -2041,7 +2041,7 @@ function rollFieldDrops(m) {
             drops.push('💎' + gemLabel(gtype, lv));
         }
     }
-    // 符文（符文之語的素材）：掉落率與階數公式在 js/runeword.js，常數在 js/runeword_data.js RUNE_DROP
+    // 符文（符文真言的素材）：掉落率與階數公式在 js/runeword.js，常數在 js/runeword_data.js RUNE_DROP
     if (typeof rwRollFieldRuneDrops === 'function') {
         rwRollFieldRuneDrops(G.stage.zone, s, lootBonus, rw, eliteDropMult, drops);
     }

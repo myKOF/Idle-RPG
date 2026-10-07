@@ -1459,27 +1459,29 @@ SCHEMAS.Skills2 = {
      符文        33 種符文。列的先後順序＝階數（第 1 列是第 1 階），不可重排；「階」欄僅供對照。
                  「武器詞條／倍率」＝鑲在主手／雙手武器時的屬性；「防具詞條／倍率」＝鑲在防具、飾品、副手時的屬性。
                  倍率＝該裝備上一條滿刻度中位數詞條的幾倍（隨裝備等級、稀有度、強化成長）。
-     符文之語    符文組合與其全部能力。配方＝符文名稱（或 id）依序用「;」分隔，最多「符文孔數上限」顆；
+     符文真言    符文組合與其全部能力。配方＝符文名稱（或 id）依序用「;」分隔，最多「符文孔數上限」顆；
                  適用裝備＝標記或裝備欄位／武器類型，用「;」分隔（多項為「或」）；
                  屬性加成／被動／靜態效果＝「鍵:數值」用「;」分隔；傳奇特效＝鍵用「;」分隔；
                  事件觸發＝JSON 陣列（寫法見 js/runeword_data.js 檔頭與 docs/RUNEWORD_DESIGN.md）。
    說明文字（裝備詳情、符文頁圖鑑）由資料自動產生，不另設說明欄。
    寫回：rebuild 整塊重建 RUNE_SETTINGS／RUNES／RUNEWORDS 三個字面值（語意無變更時不動檔案）。
    xlsx 不由 --gen 產生（AI_RULES 8.5 禁止手拼 xlsx XML）；初次建立用 tools/excel-create-table.ps1（Excel COM）。 */
+/* 「類型」欄的符文真言列：新名稱「符文真言」，舊名稱「符文之語」仍讀得進來（Excel 還沒改過名時 --sync 不會壞；寫回一律用新名稱）。 */
+const RUNEWORD_KINDS = ['符文真言', '符文之語'];
 const RUNE_TABLE_HEADER = ['類型', 'id', '名稱', '階／級距', '武器詞條', '武器倍率', '防具詞條', '防具倍率',
   '配方', '適用裝備', '屬性加成', '被動', '傳奇特效', '靜態效果', '事件觸發(JSON)', '風味文字', '設定值', '備註'];
 const RUNE_SETTING_NOTES = {
-  maxSlots: '符文孔數的硬上限，也是符文之語最多能有幾顆符文。',
+  maxSlots: '符文孔數的硬上限，也是符文真言最多能有幾顆符文。',
   composeCount: '合成：同種符文幾顆合成下一階 1 顆。',
   composeMaxTier: '能合成到第幾階；更高階的符文只能靠擊殺與封魔塔掉落。',
   dismantleYield: '拆解 1 顆得到低一階符文幾顆；必須小於合成所需顆數。≥2 會讓一顆高階符文拆出指數倍的低階符文、破壞稀有度，所以預設 1（只能降階頂替、不會變多）。',
-  statScale: '全域縮放：符文與符文之語的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。',
+  statScale: '全域縮放：符文與符文真言的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。',
   drop_basePct: '野外每次擊殺的基礎掉落率（%），再乘掉寶率、地圖倍率與敵種倍率。',
   drop_towerBossPct: '封魔塔通關時的基礎掉落機率（%）。',
   drop_tierSpread: '階數稀有度：第 t+1 階的出現機率是第 t 階的這個倍數（0~1，越小高階越稀有）。階越高越稀有，與進度無關；進度只決定能掉到幾階。',
   drop_progressPerTier: '進度（地圖序號＋關卡比例）每 +1 對應的最高掉落階增量（解鎖速度，不影響稀有度）。'
 };
-const RUNE_TIER_NAMES_FOR_TABLE = ['', '普通', '強力', '非常強力', '極度特殊'];
+const RUNE_TIER_NAMES_FOR_TABLE = ['', '普通', '精良', '史詩', '傳說'];   // 沿用裝備品質名稱（js/runeword_data.js RUNEWORD_TIER_RARITY）
 /* Runes 表的「欄位說明」頁（xlsx 第二頁；程式不讀取，僅供編表者查閱）。 */
 const RUNE_GLOSSARY_ROWS = [
   ['符文表（Runes）欄位與規則說明'],
@@ -1489,13 +1491,13 @@ const RUNE_GLOSSARY_ROWS = [
   ['── 三種列（「類型」欄；用篩選看各自的那一段）──'],
   ['設定：全域設定。id 是鑰匙欄，不可改名；數值填在「設定值」。'],
   ['符文：33 種符文。列的先後順序＝階數（第 1 列＝第 1 階），id 依序為 r01～r33，不可重排、不可增刪。'],
-  ['符文之語：符文組合與其全部能力。可以新增列（id 以 rw_ 開頭、英數字、不重複）、刪除列、修改任何欄位。'],
+  ['符文真言：符文組合與其全部能力。可以新增列（id 以 rw_ 開頭、英數字、不重複）、刪除列、修改任何欄位。'],
   [''],
   ['── 設定列 ──'],
-  ['maxSlots：符文孔數上限，同時也是符文之語最多能有幾顆符文（設計上限 4）。'],
+  ['maxSlots：符文孔數上限，同時也是符文真言最多能有幾顆符文（設計上限 4）。'],
   ['slots_<稀有度>：該稀有度裝備的符文孔數；0～上限，不可隨稀有度變少，最高稀有度必須等於上限。符文孔取代原本的附魔欄位，與寶石鑲孔分開，雙手武器沒有額外加成。'],
   ['composeCount／composeMaxTier／dismantleYield：合成（同種幾顆→下一階 1 顆）、最高合成階（更高階只能掉落）、拆解產出（必須小於合成所需顆數；預設 1＝只能降階頂替、不會變多）。'],
-  ['statScale：全域屬性縮放，符文與符文之語的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
+  ['statScale：全域屬性縮放，符文與符文真言的屬性加成一律乘此值（平衡用旋鈕，1＝不縮放）。'],
   ['drop_*：掉落。basePct 野外每次擊殺的基礎掉落率(%)（再乘掉寶率與地圖獎勵倍率）、towerBossPct 封魔塔通關的基礎掉落率(%)、tierSpread 階數稀有度（相鄰兩階的機率比，0~1，越小高階越稀有）、progressPerTier 每 +1 進度對應的最高掉落階增量。'],
   ['　　取得難度只由「配方最高階那顆符文」決定；各級距的最高階區間與估算小時數見 docs/RUNEWORD_DESIGN.md，估算用 node tools/rw_econ_probe.cjs。'],
   [''],
@@ -1503,14 +1505,14 @@ const RUNE_GLOSSARY_ROWS = [
   ['武器詞條／武器倍率：符文鑲在主手或雙手武器時給的屬性（詞條鍵見 Equipment_Affix 表的詞條池）。倍率＝這件裝備上「一條滿刻度中位數詞條」的幾倍；數值隨裝備等級、稀有度、強化成長，與詞條同一套算法。'],
   ['　　是「額外附加」的一條屬性，直接加進角色該屬性的加總，不是乘在裝備原有詞條上，也不是乘整個角色的數值。'],
   ['防具詞條／防具倍率：符文鑲在防具、飾品、副手時給的屬性，規則同上。'],
-  ['單獨鑲著就有效；組成符文之語時，符文之語的屬性與能力另外並存。'],
+  ['單獨鑲著就有效；組成符文真言時，符文真言的屬性與能力另外並存。'],
   [''],
-  ['── 符文之語列 ──'],
-  ['級距：1 普通／2 強力／3 非常強力／4 極度特殊。只影響圖鑑的分組與顏色，不影響數值（強度要自己調屬性加成與效果）。'],
-  ['配方：符文名稱依序用「;」分隔（也可填 id）。至少 2 顆、最多＝符文孔數上限；順序不同就是不同配方，不得與別的符文之語完全相同。成形條件＝依序放進連續的符文孔，且裝備類型符合。'],
+  ['── 符文真言列 ──'],
+  ['級距：1 普通／2 精良／3 史詩／4 傳說（沿用裝備品質的名稱與顏色）。只影響圖鑑的分組與顏色，不影響數值（強度要自己調屬性加成與效果）。'],
+  ['配方：符文名稱依序用「;」分隔（也可填 id）。至少 2 顆、最多＝符文孔數上限；順序不同就是不同配方，不得與別的符文真言完全相同。成形條件＝依序放進連續的符文孔，且裝備類型符合。'],
   ['適用裝備：用「;」分隔，多項為「或」。標記：any 任意、armor 八件防具、jewelry 戒指＋項鍊、mainHand 主手與雙手武器、twoHand 雙手武器、oneHand 單手武器、offHand 副手、melee 近戰武器、caster 施法類武器／副手；'],
   ['　　也可填裝備欄位（weapon、helmet、shoulder、chest、belt、gloves、wrist、legs、boots、ring、amulet）或武器類型鍵（sword1h、dagger1h、staff2h、shield、focus… 見 data.js WEAPON_TYPES）。'],
-  ['屬性加成：「詞條鍵:倍率」用「;」分隔，例如 atkPct:1.2;critRate:1。倍率意義同符文列；負數＝代價。同一組符文之語穿在多件裝備上時，各件的屬性都計。'],
+  ['屬性加成：「詞條鍵:倍率」用「;」分隔，例如 atkPct:1.2;critRate:1。倍率意義同符文列；負數＝代價。同一組符文真言穿在多件裝備上時，各件的屬性都計。'],
   ['被動：「鍵:數值」用「;」分隔，鍵限 thorns（反震）、smite（天罰）、undying（不朽）、sunder（破甲）、trueDmg（真傷）、omniDrain（萬象汲取）、soulEater、annihilate、sanctuary、godWrath；並入既有被動。'],
   ['傳奇特效：借用既有傳奇特效（Equipment_Affix 表傳奇特效池的 id，用「;」分隔），不受該特效原本的武器類型限制，但仍需要配戴對應技能才有感。'],
   ['靜態效果：「鍵:數值」用「;」分隔，數字固定、不隨稀有度成長。可用鍵：'],
@@ -1523,10 +1525,10 @@ const RUNE_GLOSSARY_ROWS = [
   ['　　動作 act：dmg {pct, elem?, type?(magic/phys), to?(target/all/rand/attacker), n?}、heal {pctMax}、shield {pctMax, sec}、mana {pctMax}、buff {sid, val, sec, max?}、buffRandom {sec, from:[{sid,val}]}、stun {sec, to?}、slow {sec, to?}、'],
   ['　　dot {pct, sec, name(poison/burn/bleed/corrode), to?}、cdr {sec}、refresh {n?}、recast、castRandom、invuln {sec}、execute {hpBelow}、cleanse。elem 可填 fire/ice/lightning/poison/light/dark/earth/wind/random。'],
   ['風味文字：圖鑑與詳情顯示的一句話，可留空。效果說明文字由資料自動產生，不需要另外寫。'],
-  ['備註：設定列＝該設定的說明；符文列＝兩側屬性的中文名稱與倍率；符文之語列＝屬性中文名稱與倍率，加上被動／靜態效果／事件觸發／借用傳奇特效的中文說明（與遊戲內圖鑑同一份文字）。'],
+  ['備註：設定列＝該設定的說明；符文列＝兩側屬性的中文名稱與倍率；符文真言列＝屬性中文名稱與倍率，加上被動／靜態效果／事件觸發／借用傳奇特效的中文說明（與遊戲內圖鑑同一份文字）。'],
   ['　　備註是自動產生的參考，不進遊戲、不影響套用；你改了能力之後，備註不會自動更新（請 AI 重新產生），以左邊各欄實際內容為準。']
 ];
-/* 備註欄的「能力中文名稱說明」：依該列目前的內容產生（符文＝兩側屬性的中文名與倍率；符文之語＝屬性中文名與倍率＋
+/* 備註欄的「能力中文名稱說明」：依該列目前的內容產生（符文＝兩側屬性的中文名與倍率；符文真言＝屬性中文名與倍率＋
    被動／靜態效果／事件觸發／借用傳奇特效的中文說明，文字與遊戲內圖鑑同源 rwDescribeLines）。
    純參考：不寫回遊戲、不影響套用；使用者改了能力後，備註要重新產生才會跟上（--gen Runes 或 annotateRuneRows）。 */
 function runeNoteEnv() {
@@ -1559,7 +1561,7 @@ function annotateRuneRows(rows) {
     notes[w.id] = (stats ? '屬性：' + stats : '') + (rest.length ? (stats ? '｜' : '') + rest.join('；') : '');
   });
   return rows.map((r, i) => {
-    if (!i || (r[0] !== '符文' && r[0] !== '符文之語') || notes[r[1]] === undefined) return r;
+    if (!i || (r[0] !== '符文' && !RUNEWORD_KINDS.includes(r[0])) || notes[r[1]] === undefined) return r;
     const out = r.slice(); out[col] = notes[r[1]]; return out;
   });
 }
@@ -1630,7 +1632,7 @@ SCHEMAS.Runes = {
       rows.push(mk('符文', { id: r.id, 名稱: r.name, '階／級距': String(i + 1), 武器詞條: r.w[0], 武器倍率: numStr(r.w[1]), 防具詞條: r.a[0], 防具倍率: numStr(r.a[1]) }));
     });
     WORDS.forEach(w => {
-      rows.push(mk('符文之語', {
+      rows.push(mk('符文真言', {
         id: w.id, 名稱: w.name, '階／級距': String(w.tier),
         配方: w.runes.map(id => nameById[id] || id).join(';'), 適用裝備: joinList(w.bases),
         屬性加成: runePairsText(w.stats), 被動: runeObjText(w.passives), 傳奇特效: joinList(w.legend),
@@ -1651,8 +1653,8 @@ SCHEMAS.Runes = {
       const item = { r, line: i + 2, id: get(r, 'id').trim(), name: get(r, '名稱').trim() };
       if (kind === '設定') setRows.push(item);
       else if (kind === '符文') runeRows.push(item);
-      else if (kind === '符文之語') wordRows.push(item);
-      else fail('第 ' + item.line + ' 列的「類型」是「' + kind + '」，只能是 設定／符文／符文之語');
+      else if (RUNEWORD_KINDS.includes(kind)) wordRows.push(item);
+      else fail('第 ' + item.line + ' 列的「類型」是「' + kind + '」，只能是 設定／符文／符文真言');
     });
     const where = (it, what) => 'Runes 表 第' + it.line + '列（' + what + '「' + (it.name || it.id) + '」）';
 
@@ -1703,18 +1705,18 @@ SCHEMAS.Runes = {
       return { id: it.id, name: it.name, w: side('武器詞條', '武器倍率'), a: side('防具詞條', '防具倍率') };
     });
 
-    /* ---- 符文之語 ---- */
-    if (!wordRows.length) fail('Runes 表沒有任何符文之語列');
+    /* ---- 符文真言 ---- */
+    if (!wordRows.length) fail('Runes 表沒有任何符文真言列');
     const wordIds = new Set(), wordNames = new Set(), recipes = new Set();
     const words = wordRows.map(it => {
-      const w = where(it, '符文之語');
+      const w = where(it, '符文真言');
       if (!/^rw_[A-Za-z0-9_]+$/.test(it.id)) fail(w + '：id 必須是 rw_ 開頭的英數字（鑰匙欄）');
       if (wordIds.has(it.id)) fail(w + '：id 重複');
       if (!it.name) fail(w + '：缺名稱');
       if (wordNames.has(it.name)) fail(w + '：名稱重複');
       wordIds.add(it.id); wordNames.add(it.name);
       const tier = Number(get(it.r, '階／級距').trim());
-      if (!isInt(tier) || tier < 1 || tier > 4) fail(w + '：「級距」必須是 1~4（1 普通／2 強力／3 非常強力／4 極度特殊）');
+      if (!isInt(tier) || tier < 1 || tier > 4) fail(w + '：「級距」必須是 1~4（1 普通／2 精良／3 史詩／4 傳說）');
       const recipe = splitList(get(it.r, '配方')).map(t => {
         if (runeIds.has(t)) return t;
         if (runeNames[t]) return runeNames[t];
@@ -1723,7 +1725,7 @@ SCHEMAS.Runes = {
       if (recipe.length < 2) fail(w + '：配方至少要 2 顆符文');
       if (recipe.length > maxSlots) fail(w + '：配方有 ' + recipe.length + ' 顆符文，超過符文孔數上限 ' + maxSlots);
       const key = recipe.join(',');
-      if (recipes.has(key)) fail(w + '：配方與別的符文之語完全相同');
+      if (recipes.has(key)) fail(w + '：配方與別的符文真言完全相同');
       recipes.add(key);
       const bases = splitList(get(it.r, '適用裝備'));
       if (!bases.length) fail(w + '：「適用裝備」不可空白（要填 any 才是不限）');
