@@ -1,5 +1,20 @@
 # AI_TASKS.md
 
+## CLEAVE-ROTATE20-20261007 — 撤回循環方案，原特效旋轉提高20%
+
+- Owner：Codex；Done。使用者退回循環方案，明確要求刪除剛才提交、改回原播放方式，僅在原基礎上提高旋轉速度20%；保留使用者配色與原有曲線形狀。依賴原cleave-ring事件已滿足，單一開發者。
+- 範圍：撤回bde74dee的Core／Runtime循環與scaleProgress、文件和三項測試，還原原Preset loop=false；旋轉曲線增量乘1.2，時間節點／固定起始角／縮放／透明度／事件半徑及時長不變。僅更新必要Core／Runtime／Preset快取及本紀錄，不改技能／Worker／Excel／CSV／素材圖檔／符文。fetch預檢仍只有Claude 8b0c89b2涉及index與本紀錄，沿用使用者已授權的分段範圍。
+- 提交：兩倉庫乾淨、前次提交仍為各自未推送／未合併的HEAD；依使用者刪除提交授權，以amend替換遊戲bde74dee與素材庫286dcea，保留各自父提交和他人內容，不使用hard reset，不合併／推送。
+- 驗收：正式Core／Runtime輸出對比修改前，所有旋轉增量為1.2倍、位置／縮放／透明度／原時長一致；Core與相關回歸／Build／素材匯出查核／Editor保存防護，雙倉庫原樣雜湊核對。
+
+- 完成：Core／Runtime的循環管理、scaleProgress與三項新增測試全部撤除，VFX Adapter文件恢復原樣；Preset09 loop=false，14層旋轉曲線增量乘1.2，保留時間節點、固定起始角、原擴張／透明度與使用者兩處#00fa79。原事件timeScale持續對齊刀波時長，沒有整段動畫加速。主頁／Editor Core快取20261007-cleave-rotate20、Runtime1.0.176、DATA_VERSION同token，避免已開頁面繼續用循環版本。
+- 最終相對原父提交f951e6e9修改5檔：vfx/presets/proj-cleave-ring-tricolor-09.json、js/vfx-runtime.js（僅Preset快取token）、index.html、tools/vfx/editor/index.html、本紀錄。Core、兩項測試檔及docs/vfx/VFX_RUNTIME_ADAPTER.md逐位元恢復父提交；未修改但檢查AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex.md、Pixi Backend／shipped-assets索引／同名layout／Worker與技能回歸。素材圖片未修改，屬Preset動畫數值調整，無作圖或新來源。
+- 驗證：唯讀對照f951e6e9原Preset，排除已授權旋轉與使用者顏色後JSON完全一致。以正式Core及Adapter事件參數，核對0.15／0.42／1／2秒四種時長、14圖層共5160個有效影格的完整2D矩陣（含橢圓外層縮放）、圓心、原擴張曲線與準時回收；旋轉曲線與增量為原值1.2倍，其餘生命週期一致。
+- 測試指令：`node --test tests/vfx-core.test.cjs tests/vfx-duration.test.cjs tests/skill2-wind-chaser.test.cjs tests/vfx-editor-guard.test.cjs`174/174通過；`node --test tests/vfx-core.test.cjs tests/cleave-rework.test.cjs tests/vfx-runtime.test.cjs`280項、271通過／9既有失敗，與前次唯讀原基線相同，未改舊斷言。`npm.cmd run build`467檔通過；`node tools/vfx/export-assets.cjs --check`243Preset／160引用匯出一致；`git diff --check`通過。Editor舊頁拒絕覆蓋並保留未存內容的12項防護測試包含在174項內。
+- 實機：隔離headless Edge／隨機Port唯讀HTTP／新Context，正式Pixi、Core、Adapter、Backend與Preset素材播放1.4秒原刀波；非循環、0.5秒時仍有1份效果、1.5秒時已回收，Console error／warning為0。沒有連入真人存檔，瀏覽器與服務已關閉，臨時驗證腳本清除。
+- 雙倉庫提交：素材庫286dcea已由amend替換為`44f8746`，保留父提交4151cfe；保存Preset及原樣layout並逐位元核對遊戲檔（Preset SHA256：3844aa33c22702ca2805f640602ba8c44d2020c0a63885f1a6b851d2228b00a1）。遊戲bde74dee以本紀錄所在`[Codex] fix: 恢復原刀波並將旋轉速度提高20%`替換，保留父提交f951e6e9，舊循環提交不再位於兩條分支歷史。未合併／推送。
+- 交付：本次無未完成項目，可審查合併；完整回歸的9項既有失敗保留，未做長時間真人戰鬥。下一步先另存備份Editor未儲存內容，再重載Editor與遊戲驗收，勿將舊頁內容直接覆蓋新版。
+
 ## Claude｜符文石圖示：33 顆符文各一張刻了字的石頭（RUNE-STONES-20261007）
 
 - Owner：Claude；Done。依賴 RUNEWORD-REVEAL-20261007。使用者要求「將所有符文加上類似符文石或石碑的圖案，根據品質有不同的顏色與外型，圖做好先給我預覽、同意才上」。預覽共四輪，皆被使用者退件後才通過：①向量幾何（太簡單、像素風）②高度圖光照的華麗版（形狀太怪：水晶簇、皇冠、光環；字像貼上去的）③簡單卵石＋刻痕（藍的長方、橘的水滴、金的拱碑「太規整或不像符石」）④藍／橘／金改成使用者給的參考圖那種粗切多邊形立石，通過。
